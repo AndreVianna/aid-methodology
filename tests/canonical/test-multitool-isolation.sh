@@ -282,7 +282,10 @@ echo "=== T13-T20: byte-identity of canonical bodies across trees (AC1) ==="
 # aid/scripts/ whose bodies are purely computational with no tool-root
 # references.
 CANONICAL_BODIES=(
-    "aid/templates/delivery-blueprint-template.md"
+    # delivery-blueprint-template.md was here until BLUEPRINT.md was retired: the
+    # delivery definition now lives in the delivery's own PLAN.md stanza. The entry is
+    # removed rather than replaced -- the list samples tool-root-free canonical bodies,
+    # and the remaining entries still cover that property.
     "aid/templates/delivery-plans/task-template.md"
     "aid/templates/requirements.md"
     "aid/templates/known-issues.md"

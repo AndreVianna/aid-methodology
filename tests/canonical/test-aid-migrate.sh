@@ -13,7 +13,10 @@
 # manifest (never written into settings.yml by era-a repair or era-b synthesis).
 #
 #   Gate 4a: era-a VALID settings (inline comments + alignment) -> flat format-3
-#             rewrite (comments dropped, format_version: 3 stamped)
+#             rewrite (comments dropped, format_version: 4 stamped -- task-008
+#             bumped AID_SUPPORTED_FORMAT 3 -> 4 for the STATE.md -> STATE.yml
+#             conversion; the settings SCHEMA shape itself is unchanged since
+#             format 3, hence "flat format-3 schema" below still names the shape)
 #   Gate 4b: era-a MALFORMED settings (missing section) + kb_baseline + skill override
 #             -> repaired to the flat format-3 schema; kb_baseline + override DROPPED
 #   Gate 4c: era-a bare value-less name: -> repaired to basename (top-level, flat schema)
@@ -28,6 +31,17 @@
 #   Gate 7c: format-2 both-exist -- stale .aid/dashboard/kb.html + authoritative
 #             .aid/knowledge/kb.html -> proper kept, stale stray dropped, dashboard/ removed
 #   Gate 8:  bare .aid/.temp/ (no marker) -> non-candidate, zero writes
+#   Gate 15: STEP 5 -- STATE.md -> STATE.yml FORMAT-4 CONVERSION (task-008 /
+#             SPEC.md SS L-6 step 2; task-015 addendum, additive per
+#             test-baseline-pre-refactor.md SS 5.3): a flat-layout work-level
+#             STATE.md with real content in every AUTHORED section converts to
+#             the documented STATE.yml key shape and the .md is deleted;
+#             second run is byte-identical (Gate 6 extends this); a full-layout
+#             delivery + task STATE.md pair converts the same way; a STATE.md
+#             carrying a REAL row under a guarded DERIVED heading (SP-3) hits
+#             the hard-error path -- WARN to stderr, conversion refused,
+#             STATE.md left in place, no STATE.yml written (WARN-not-fail:
+#             __migrate-repo's own exit code is unaffected).
 #
 # ISOLATION: every test builds a throwaway CODE_HOME (bin/aid + lib/ + VERSION + dashboard/)
 # and a separate throwaway STATE_HOME (AID_HOME= for mutable state only), plus a throwaway
@@ -180,11 +194,17 @@ G4A_SETTINGS_EOF
 
 run_migrate "${G4A_CODE_HOME}" "${G4A_STATE_HOME}" "${G4A_REPO}"
 assert_exit_eq "$MIG_RC" 0 "G4A-01 __migrate-repo valid+commented fixture -> exit 0"
-# G4A-02: format_version: 3 stamped at the top of the rewritten flat file
+# G4A-02: format_version: 4 stamped at the top of the rewritten flat file
 # (config-schema redesign -- full rewrite, not a targeted repair).
+# task-015 addendum (SP-16 / AC-10): this literally asserted "format_version: 3"
+# before -- stale since task-008 bumped AID_SUPPORTED_FORMAT 3 -> 4 for the
+# STATE.md -> STATE.yml conversion (bin/aid C1 comment block); the settings
+# writer here always stamps whatever AID_SUPPORTED_FORMAT currently is, so the
+# assertion was silently wrong (a hardcoded "3" the writer never produced
+# again) rather than testing anything real. See known-issues.md KI-011.
 G4A_FMT_LINE="$(grep '^format_version:' "${G4A_REPO}/.aid/settings.yml" | head -1)"
-assert_eq "$G4A_FMT_LINE" "format_version: 3" \
-    "G4A-02 format_version: 3 stamped on the rewritten flat file"
+assert_eq "$G4A_FMT_LINE" "format_version: 4" \
+    "G4A-02 format_version: 4 stamped on the rewritten flat file"
 
 # Spot-check each value is flattened to top level with the inline comment dropped.
 G4A_TYPE_LINE="$(grep '^type:' "${G4A_REPO}/.aid/settings.yml")"
@@ -581,6 +601,308 @@ assert_file_not_contains "${G5C_REPO}/.aid/settings.yml" "tools:" \
     "G5C-03 synthesized: no tools: block (tools live in the manifest only, and none exists here)"
 
 # ===========================================================================
+# Gate 15 -- STEP 5: STATE.md -> STATE.yml FORMAT-4 CONVERSION
+# (task-008 / SPEC.md SS L-6 step 2; task-015 addendum -- additive, per
+# test-baseline-pre-refactor.md SS 5.3 "a new gate for the FR-9 work-state
+# conversion"). _aid_sc_convert_repo runs as STEP 5 of _aid_migrate_repo,
+# AFTER the settings step above, over every .aid/works/*/STATE.md (and, on
+# the full layout, every deliveries/*/STATE.md and
+# deliveries/*/tasks/*/STATE.md). Every fixture below also needs an era
+# marker (.aid/knowledge/STATE.md, untouched by this step -- see Gate 5a's
+# note and SS 5.6 Q1) so STEP 0 qualifies the repo as a candidate at all.
+# ===========================================================================
+echo ""
+echo "=== Gate 15a: flat-layout work STATE.md -> STATE.yml (full content, all sections) ==="
+
+G15A_CODE_HOME="$(new_code_home)"
+G15A_STATE_HOME="$(new_state_home)"
+G15A_REPO="$(mktemp -d "${TMP}/g15a-repo.XXXXXX")"
+mkdir -p "${G15A_REPO}/.aid/knowledge"
+touch "${G15A_REPO}/.aid/knowledge/STATE.md"
+mkdir -p "${G15A_REPO}/.aid/works/work-101-conv-ok/tasks/task-001"
+touch "${G15A_REPO}/.aid/works/work-101-conv-ok/tasks/task-001/DETAIL.md"
+touch "${G15A_REPO}/.aid/works/work-101-conv-ok/BLUEPRINT.md"
+
+# Flat-layout fixture (no deliveries/ subfolder): every AUTHORED section
+# carries real content so every emitter in _aid_sc_convert_work_body fires;
+# every DERIVED section carries only its authored-empty sentinel row/text
+# (the "_none yet_" table sentinel or "_None yet." narrative sentinel) so
+# the SP-3 guard passes clean -- Gate 15c below covers the hard-error path.
+cat > "${G15A_REPO}/.aid/works/work-101-conv-ok/STATE.md" << 'G15A_MD_EOF'
+---
+lifecycle: Running
+phase: Execute
+---
+
+# Work State -- work-101-conv-ok
+
+## Interview State
+
+**State:** Complete  **Grade:** A
+
+| # | Section | State | Last Updated |
+|---|---------|-------|--------------|
+| 1 | Objective | Done | 2026-01-01 |
+
+## Lifecycle History
+
+| Date | Phase Transition / Gate | Grade | Notes |
+|------|------------------------|-------|-------|
+| 2026-01-01 | Work created | -- | Initial scaffold |
+
+## Deploy State
+
+| Delivery | State | PR | KB Updated | Tag | Notes |
+|----------|-------|----|-----------|-----|-------|
+| _none yet_ | | | | | |
+
+## Delivery Lifecycle
+
+- **Updated:** 2026-01-02T00:00:00Z
+- **Block Reason:** --
+- **Block Artifact:** --
+
+### Tasks lifecycle
+
+| Task | State | Review | Elapsed | Notes | Name |
+|------|-------|--------|---------|-------|------|
+| task-001 | Done | A | 30m | -- | Sample task |
+
+## Delivery Gate
+
+- **Issue List:** none
+
+## Cross-phase Q&A
+
+_None yet._
+
+## Features State
+
+| # | Feature | Spec State | Spec Grade | Q&A Count | Notes |
+|---|---------|------------|------------|-----------|-------|
+| _none yet_ | | | | | |
+
+## Plan / Deliveries
+
+| Delivery | State | Tasks | Notes |
+|----------|-------|-------|-------|
+| _none yet_ | | | |
+
+## Tasks State
+
+| # | Task | Type | Wave | State | Review | Elapsed | Notes |
+|---|------|------|------|-------|--------|---------|-------|
+| _none yet_ | | | | | | | |
+
+## Delivery Gates
+
+_None yet. Each delivery-NNN/STATE.md carries its own gate block._
+
+## Calibration Log
+
+| Date | Agent | Task / Cycle | ETA Band | Actual | Notes |
+|------|-------|-------------|----------|--------|-------|
+
+## Dispatches
+
+_None yet. Delivery task dispatch logs live in delivery-NNN/tasks/task-NNN/STATE.md.
+G15A_MD_EOF
+
+run_migrate "${G15A_CODE_HOME}" "${G15A_STATE_HOME}" "${G15A_REPO}"
+assert_exit_eq "$MIG_RC" 0 "G15A-01 __migrate-repo with a full flat-layout STATE.md -> exit 0"
+assert_output_contains "$MIG_OUT" "converted -> ${G15A_REPO}/.aid/works/work-101-conv-ok/STATE.yml" \
+    "G15A-02 OK line names the converted file pair"
+
+if [[ -f "${G15A_REPO}/.aid/works/work-101-conv-ok/STATE.md" ]]; then
+    fail "G15A-03 STATE.md deleted after a verified conversion -- it is still present"
+else
+    pass "G15A-03 STATE.md deleted after a verified conversion"
+fi
+assert_file_exists "${G15A_REPO}/.aid/works/work-101-conv-ok/STATE.yml" \
+    "G15A-04 STATE.yml written"
+
+G15A_YML="${G15A_REPO}/.aid/works/work-101-conv-ok/STATE.yml"
+# Frontmatter scalars copied through verbatim (untouched by the body converter).
+assert_file_contains "$G15A_YML" "lifecycle: Running" \
+    "G15A-05 frontmatter lifecycle: carried through verbatim"
+assert_file_contains "$G15A_YML" "phase: Execute" \
+    "G15A-06 frontmatter phase: carried through verbatim"
+# Interview State -> interview: (header bold-line + one table row).
+assert_file_contains "$G15A_YML" "  grade: A" \
+    "G15A-07 interview.grade parsed from the bold State/Grade header line"
+assert_file_contains "$G15A_YML" "      name: Objective" \
+    "G15A-08 interview.sections[0].name parsed from the table row"
+# Lifecycle History -> lifecycle_history: (one row).
+assert_file_contains "$G15A_YML" "    event: 'Work created'" \
+    "G15A-09 lifecycle_history[0].event parsed from the table row"
+# Deploy State -- authored-empty sentinel -> deploy: [] (no entries emitted).
+assert_file_contains "$G15A_YML" "deploy: []" \
+    "G15A-10 deploy: [] -- the _none yet_ sentinel row emits no entries"
+# Delivery Lifecycle + Tasks lifecycle (flat-only sections).
+assert_file_contains "$G15A_YML" "  updated: '2026-01-02T00:00:00Z'" \
+    "G15A-11 delivery_lifecycle.updated parsed from the Updated: bullet"
+assert_file_contains "$G15A_YML" "  task-001:" \
+    "G15A-12 tasks_lifecycle.task-001: mapping key present"
+assert_file_contains "$G15A_YML" "    display_name: 'Sample task'" \
+    "G15A-13 tasks_lifecycle.task-001.display_name parsed from the Name column"
+# Delivery Gate -- "Issue List: none" -> issue_list: [] (no entries).
+assert_file_contains "$G15A_YML" "  issue_list: []" \
+    "G15A-14 delivery_gate.issue_list: [] -- 'none' emits no entries"
+# Cross-phase Q&A -- authored-empty sentinel, no ### Q blocks -> qa: [].
+assert_file_contains "$G15A_YML" "qa: []" \
+    "G15A-15 qa: [] -- no ### Q blocks in the fixture"
+# The 6 DERIVED headings (guarded, all authored-empty) never emit a key at all --
+# proving the guard is silent (not merely non-fatal) on the empty-sentinel case.
+for _g15a_key in "features_state" "plan_deliveries" "tasks_state" "delivery_gates" \
+                 "calibration_log" "dispatches"; do
+    assert_file_not_contains "$G15A_YML" "${_g15a_key}:" \
+        "G15A-16 no ${_g15a_key}: key emitted (DERIVED section, read-only, never authored here)"
+done
+
+echo ""
+echo "=== Gate 15b: full-layout delivery + task STATE.md -> STATE.yml ==="
+
+G15B_CODE_HOME="$(new_code_home)"
+G15B_STATE_HOME="$(new_state_home)"
+G15B_REPO="$(mktemp -d "${TMP}/g15b-repo.XXXXXX")"
+mkdir -p "${G15B_REPO}/.aid/knowledge"
+touch "${G15B_REPO}/.aid/knowledge/STATE.md"
+mkdir -p "${G15B_REPO}/.aid/works/work-102-full/deliveries/delivery-001/tasks/task-001"
+touch "${G15B_REPO}/.aid/works/work-102-full/BLUEPRINT.md"
+
+cat > "${G15B_REPO}/.aid/works/work-102-full/deliveries/delivery-001/STATE.md" << 'G15B_DELIVERY_EOF'
+---
+lifecycle: Done
+---
+
+# Delivery State -- delivery-001
+
+## Delivery Lifecycle
+
+- **Updated:** 2026-01-03T00:00:00Z
+- **Block Reason:** --
+- **Block Artifact:** --
+
+## Delivery Gate
+
+- **Issue List:** none
+
+## Cross-phase Q&A
+
+_None yet._
+
+## Tasks State
+
+| # | Task | Type | Wave | State | Review | Elapsed | Notes |
+|---|------|------|------|-------|--------|---------|-------|
+| _none yet_ | | | | | | | |
+G15B_DELIVERY_EOF
+
+cat > "${G15B_REPO}/.aid/works/work-102-full/deliveries/delivery-001/tasks/task-001/STATE.md" << 'G15B_TASK_EOF'
+---
+state: Done
+---
+
+# Task State -- task-001
+
+## Quick Check Findings
+
+- **Reviewer Tier:** Small
+- **Findings:**
+  - [LOW] example finding -- file.sh:10 -- Deferred-to-gate
+
+## Dispatch Log
+
+| Date | Agent | Task / Cycle | ETA Band | Actual | Notes |
+|------|-------|-------------|----------|--------|-------|
+| 2026-01-03 | developer | task-001 / EXECUTE | 30m | 25m | done |
+G15B_TASK_EOF
+
+run_migrate "${G15B_CODE_HOME}" "${G15B_STATE_HOME}" "${G15B_REPO}"
+assert_exit_eq "$MIG_RC" 0 "G15B-01 __migrate-repo with a full-layout delivery+task pair -> exit 0"
+
+G15B_DELIVERY_YML="${G15B_REPO}/.aid/works/work-102-full/deliveries/delivery-001/STATE.yml"
+G15B_TASK_YML="${G15B_REPO}/.aid/works/work-102-full/deliveries/delivery-001/tasks/task-001/STATE.yml"
+assert_file_exists "$G15B_DELIVERY_YML" "G15B-02 delivery-level STATE.yml written"
+assert_file_exists "$G15B_TASK_YML" "G15B-03 task-level STATE.yml written"
+if [[ -f "${G15B_REPO}/.aid/works/work-102-full/deliveries/delivery-001/STATE.md" ]] \
+   || [[ -f "${G15B_REPO}/.aid/works/work-102-full/deliveries/delivery-001/tasks/task-001/STATE.md" ]]; then
+    fail "G15B-04 both source STATE.md files deleted after a verified conversion -- at least one is still present"
+else
+    pass "G15B-04 both source STATE.md files deleted after a verified conversion"
+fi
+assert_file_contains "$G15B_DELIVERY_YML" "  updated: '2026-01-03T00:00:00Z'" \
+    "G15B-05 delivery_lifecycle.updated parsed from the delivery-level Updated: bullet"
+assert_file_contains "$G15B_TASK_YML" "  reviewer_tier: Small" \
+    "G15B-06 quick_check.reviewer_tier parsed from the task-level Reviewer Tier: bullet"
+assert_file_contains "$G15B_TASK_YML" "    - '[LOW] example finding -- file.sh:10 -- Deferred-to-gate'" \
+    "G15B-07 quick_check.findings[0] parsed from the task-level Findings bullet list"
+assert_file_contains "$G15B_TASK_YML" "  - date: '2026-01-03'" \
+    "G15B-08 dispatch_log[0].date parsed from the task-level Dispatch Log table row"
+
+echo ""
+echo "=== Gate 15c: DERIVED-guard hard error (SP-3) -- real row under a guarded heading ==="
+
+G15C_CODE_HOME="$(new_code_home)"
+G15C_STATE_HOME="$(new_state_home)"
+G15C_REPO="$(mktemp -d "${TMP}/g15c-repo.XXXXXX")"
+mkdir -p "${G15C_REPO}/.aid/knowledge"
+touch "${G15C_REPO}/.aid/knowledge/STATE.md"
+mkdir -p "${G15C_REPO}/.aid/works/work-103-derived-guard"
+
+# A leftover REAL row under the work-level DERIVED "## Tasks State" heading --
+# the signature of a work that still needs migrate-work-hierarchy (SS 2147-2155
+# above), not a genuinely hand-authored DERIVED row (none exists; the guard
+# cannot distinguish the two, by design -- SP-3's whole point is that ANY real
+# row here is refused rather than silently dropped).
+cat > "${G15C_REPO}/.aid/works/work-103-derived-guard/STATE.md" << 'G15C_MD_EOF'
+---
+lifecycle: Running
+phase: Execute
+---
+
+# Work State -- work-103-derived-guard
+
+## Tasks State
+
+| # | Task | Type | Wave | State | Review | Elapsed | Notes |
+|---|------|------|------|-------|--------|---------|-------|
+| 1 | task-001 | CODE | 1 | Done | A | 30m | real leftover row from a pre-hierarchy work |
+G15C_MD_EOF
+
+run_migrate "${G15C_CODE_HOME}" "${G15C_STATE_HOME}" "${G15C_REPO}"
+# WARN-not-fail (SS 2186-2190 above): _aid_sc_convert_repo always returns 0,
+# so this file-level hard error does NOT change __migrate-repo's own exit code.
+assert_exit_eq "$MIG_RC" 0 \
+    "G15C-01 __migrate-repo exit code unaffected by a per-file DERIVED-guard refusal (WARN-not-fail)"
+assert_output_contains "$MIG_OUT" \
+    "DERIVED section '## Tasks State' holds real data -- conversion refused for this file" \
+    "G15C-02 WARN names the guarded heading and states the refusal"
+assert_output_contains "$MIG_OUT" "Remedy: run migrate-work-hierarchy on this work, then re-run 'aid update'." \
+    "G15C-03 WARN states the documented remedy"
+if [[ -f "${G15C_REPO}/.aid/works/work-103-derived-guard/STATE.md" ]]; then
+    pass "G15C-04 STATE.md left in place (nothing dropped) after the guard refusal"
+else
+    fail "G15C-04 STATE.md was REMOVED despite the guard refusing conversion -- data-loss risk"
+fi
+if [[ -f "${G15C_REPO}/.aid/works/work-103-derived-guard/STATE.yml" ]]; then
+    fail "G15C-05 STATE.yml was written despite the guard refusing conversion"
+else
+    pass "G15C-05 no STATE.yml written -- the guard refused before the candidate file was ever built"
+fi
+
+echo ""
+echo "=== Gate 15d: format_version stamp advances to AID_SUPPORTED_FORMAT (4) ==="
+
+# Confirms AC-10/SP-12 independently of G4A-02 above, using a repo whose ONLY
+# migrate-relevant content is the STATE.md conversion fixtures themselves (no
+# era-a settings.yml pre-existing) -- STEP 1 (SETTINGS) still runs before STEP
+# 5 regardless, so the stamp is set on every candidate repo, converted or not.
+G15D_FMT_LINE="$(grep '^format_version:' "${G15A_REPO}/.aid/settings.yml" | head -1)"
+assert_eq "$G15D_FMT_LINE" "format_version: 4" \
+    "G15D-01 settings.yml format_version: 4 on a repo that also converted a work-level STATE.md"
+
+# ===========================================================================
 # Gate 6 -- Idempotency: second run on any migrated fixture is byte-identical
 #
 # Run __migrate-repo a second time on each fixture from Gates 4a, 4b, 4c, 5a,
@@ -636,6 +958,49 @@ assert_exit_eq "$MIG_RC" 0 "G6-11 Gate-5c: 2nd run exits 0"
 G6_SHA_5C_AFTER="$(file_sha256 "${G5C_REPO}/.aid/settings.yml")"
 assert_eq "$G6_SHA_5C_BEFORE" "$G6_SHA_5C_AFTER" \
     "G6-12 Gate-5c: 2nd run byte-identical (no-manifest synthesized file unchanged)"
+
+# Gate 15a fixture (task-015 addendum): already converted -- STATE.yml exists,
+# so _aid_sc_convert_file is a same-file no-op (SS 2173-2180 above: idempotent
+# because the .yml's mere presence short-circuits before any read/write).
+G6_SHA_15A_BEFORE="$(file_sha256 "${G15A_REPO}/.aid/works/work-101-conv-ok/STATE.yml")"
+run_migrate "${G15A_CODE_HOME}" "${G15A_STATE_HOME}" "${G15A_REPO}"
+assert_exit_eq "$MIG_RC" 0 "G6-13 Gate-15a: 2nd run exits 0"
+G6_SHA_15A_AFTER="$(file_sha256 "${G15A_REPO}/.aid/works/work-101-conv-ok/STATE.yml")"
+assert_eq "$G6_SHA_15A_BEFORE" "$G6_SHA_15A_AFTER" \
+    "G6-14 Gate-15a: 2nd run byte-identical (converted work STATE.yml unchanged)"
+if [[ -f "${G15A_REPO}/.aid/works/work-101-conv-ok/STATE.md" ]]; then
+    fail "G6-15 Gate-15a: 2nd run resurrected STATE.md -- conversion is not a true no-op"
+else
+    pass "G6-15 Gate-15a: 2nd run does not resurrect STATE.md (stays absent)"
+fi
+
+# Gate 15b fixture: full-layout delivery + task pair, same idempotency property.
+G6_SHA_15B_D_BEFORE="$(file_sha256 "$G15B_DELIVERY_YML")"
+G6_SHA_15B_T_BEFORE="$(file_sha256 "$G15B_TASK_YML")"
+run_migrate "${G15B_CODE_HOME}" "${G15B_STATE_HOME}" "${G15B_REPO}"
+assert_exit_eq "$MIG_RC" 0 "G6-16 Gate-15b: 2nd run exits 0"
+G6_SHA_15B_D_AFTER="$(file_sha256 "$G15B_DELIVERY_YML")"
+G6_SHA_15B_T_AFTER="$(file_sha256 "$G15B_TASK_YML")"
+assert_eq "$G6_SHA_15B_D_BEFORE" "$G6_SHA_15B_D_AFTER" \
+    "G6-17 Gate-15b: 2nd run byte-identical (converted delivery STATE.yml unchanged)"
+assert_eq "$G6_SHA_15B_T_BEFORE" "$G6_SHA_15B_T_AFTER" \
+    "G6-18 Gate-15b: 2nd run byte-identical (converted task STATE.yml unchanged)"
+
+# Gate 15c fixture: the DERIVED guard refused conversion on the 1st run, so the
+# 2nd run must hit the SAME guard again (STATE.md still present, still a
+# real row) -- NOT idempotent-as-converted, but idempotent-as-refused: the
+# same WARN, the same refusal, no drift toward silently dropping the row on
+# a later attempt.
+run_migrate "${G15C_CODE_HOME}" "${G15C_STATE_HOME}" "${G15C_REPO}"
+assert_exit_eq "$MIG_RC" 0 "G6-19 Gate-15c: 2nd run exits 0 (still WARN-not-fail)"
+assert_output_contains "$MIG_OUT" \
+    "DERIVED section '## Tasks State' holds real data -- conversion refused for this file" \
+    "G6-20 Gate-15c: 2nd run hits the identical guard refusal (no silent drop on retry)"
+if [[ -f "${G15C_REPO}/.aid/works/work-103-derived-guard/STATE.yml" ]]; then
+    fail "G6-21 Gate-15c: 2nd run wrote a STATE.yml despite the still-unresolved DERIVED row"
+else
+    pass "G6-21 Gate-15c: 2nd run still writes no STATE.yml (guard re-fires identically)"
+fi
 
 # ===========================================================================
 # Gate 7a -- no-delete: existing .aid/knowledge/kb.html + legacy knowledge-summary.html -> both kept

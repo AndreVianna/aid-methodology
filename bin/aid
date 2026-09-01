@@ -106,14 +106,19 @@ _aid_is_project_dir() {
 # NOTE (work-007 C6): the install-time settings seed also stamps this value.
 # On a bump, update ALL carriers together: this line, bin/aid.ps1
 # AidSupportedFormat, and lib/AidInstallCore.psm1 $script:_AidSupportedFormat.
-# (lib/aid-install-core.sh reads THIS var via ${AID_SUPPORTED_FORMAT:-1}.)
+# (lib/aid-install-core.sh reads THIS var via ${AID_SUPPORTED_FORMAT:-4}.)
 # ---------------------------------------------------------------------------
 # format 2 (was 1): eliminated the per-repo .aid/dashboard/ folder -- home.html is now
 # served from the CLI, and kb.html moved to .aid/knowledge/kb.html (aid migrate relocates).
 # format 3 (was 2): settings.yml flattened -- top-level name/description/type/
 # source_control/minimum_grade/heartbeat_interval + a knowledge: block; the installed
 # tools + AID version now live only in the manifest (.aid/.aid-manifest.json).
-readonly AID_SUPPORTED_FORMAT=3
+# format 4 (was 3): work-tree state files are YAML STATE.yml, not markdown
+# STATE.md -- every .aid/works/*/STATE.md (and, on the full layout, every
+# deliveries/*/STATE.md and deliveries/*/tasks/*/STATE.md) is rewritten in place
+# and the .md deleted. Performed by the STATE.md -> STATE.yml FORMAT-4
+# CONVERSION step in _aid_migrate_repo (task-008 / SPEC.md SS L-6 step 2).
+readonly AID_SUPPORTED_FORMAT=4
 
 # ---------------------------------------------------------------------------
 # Source the shared install core from AID_CODE_HOME/lib/.
@@ -2008,9 +2013,10 @@ _aid_format_gate() {
 
 # ---------------------------------------------------------------------------
 # _aid_migrate_repo <repo>  (FF-1 / LC-MIG / task-077)
-# Per-repo migration core.  Runs DETECT->SETTINGS->ADD->RELOCATE->REGISTER in
-# order.  Each step is WARN-not-fail: a step failure logs WARN and the next
-# step runs; the function always returns 0 (SEC-4 / NFR12).
+# Per-repo migration core.  Runs
+# DETECT->SETTINGS->ADD->RELOCATE->REGISTER->CONVERT-STATE in order.  Each
+# step is WARN-not-fail: a step failure logs WARN and the next step runs;
+# the function always returns 0 (SEC-4 / NFR12).
 # <repo> is a CAN-1 canonical repo base folder (resolved by the caller via
 # cd "$repo" && pwd -- identical to bin/aid:1366 / feature-010 SEC-5).
 # ---------------------------------------------------------------------------
@@ -2122,6 +2128,1032 @@ _aid_migrate_repo() {
     fi
     registry_register "${_canon_repo}" "$_migrate_tier" || true
 
+    # ------------------------------------------------------------------
+    # STEP 5 -- CONVERT-STATE (work-009-refactor task-008 / SPEC.md SS L-6
+    # step 2). See the runbook/rollback/ordering header comment on
+    # _aid_sc_convert_repo below for the full contract. WARN-not-fail per
+    # this function's own always-return-0 rule; the guard case inside the
+    # converter (SP-3, a real DERIVED row) is what turns into a WARN here.
+    # ------------------------------------------------------------------
+    _aid_sc_convert_repo "${repo}" || true
+
+    return 0
+}
+
+# ===========================================================================
+# STATE.md -> STATE.yml FORMAT-4 CONVERSION  (task-008 / SPEC.md SS L-6 step 2)
+#
+# RUNBOOK -- ORDERING (binding, stated here AND in migrate-work-hierarchy.sh's
+# own header): hierarchy migration runs FIRST, format conversion SECOND.
+# migrate-work-hierarchy.sh/.ps1 stay markdown-in / markdown-out (an ERA
+# migration: monolithic single-STATE.md -> the per-unit hierarchy) and their
+# output is exactly what this converter expects as its input -- a
+# CURRENT-SHAPE (post-hierarchy) work tree, whose STATE.md files still carry
+# the DERIVED placeholder sections but never a REAL DERIVED row. A work that
+# still needs the hierarchy migration is detected here as the "DERIVED
+# section holds real data" hard-error case below (SP-3): the remedy that
+# error names is "run migrate-work-hierarchy, then re-run aid update".
+#
+# RUNBOOK -- ROLLBACK. No reverse (yml -> md) converter exists, and none is
+# ever added -- that would reopen the dual-format window SPEC.md SS L-6
+# rejects (a hard cutover, not a dual-read compatibility window).
+#   - Per-FILE rollback (a conversion that fails verification mid-run): there
+#     is nothing to roll back. The .yml is built in a same-directory temp
+#     file, re-parsed and count-verified BEFORE the .md is ever touched; on
+#     any verification failure the temp is discarded and the .md is left
+#     exactly as it was (byte-unchanged) -- this fail-safe ordering IS the
+#     rollback story for a single file.
+#   - Per-REPO rollback (undoing an already-completed conversion): restore
+#     the .md files from version control (e.g. `git checkout <pre-update
+#     commit> -- .aid/works/`) and roll the repo's .aid/settings.yml
+#     format_version stamp back to its prior value. There is no in-place
+#     "unconvert" operation -- VCS is the only supported path back, which is
+#     why this is a hard cutover and not a compatibility window.
+#
+# IDEMPOTENT: a work whose STATE.yml already exists (STATE.md absent or
+# present) is a no-op for that file -- _aid_sc_convert_file returns
+# immediately without writing or reading further once it sees the .yml is
+# already there. Re-running the whole step changes nothing for a fully
+# converted repo. The one legitimate exception: a file the DERIVED guard
+# previously refused converts on the NEXT run once its DERIVED row is
+# resolved (by running the hierarchy migration) -- that is the intended
+# remedy path, not an idempotency violation (SPEC.md SS L-6 step 2).
+#
+# SCOPE: every .aid/works/*/STATE.md, and -- on the full (non-flattened)
+# layout, detected per work by the presence of a deliveries/ subfolder --
+# every deliveries/*/STATE.md and deliveries/*/tasks/*/STATE.md.
+#
+# WARN-NOT-FAIL: this whole subsystem never raises past _aid_sc_convert_repo,
+# which always returns 0; every failure mode (malformed frontmatter, a
+# DERIVED row with real data, a verification mismatch) is reported via a
+# `WARN: aid migrate: ...` line naming the file (and, for the DERIVED guard,
+# the section and the remedy) and moves on to the next file.
+# ===========================================================================
+
+# _aid_sc_trim VALUE -> stdout: VALUE with leading/trailing whitespace removed.
+_aid_sc_trim() {
+    local s="$1"
+    local rstrip="${s##*[![:space:]]}"; s="${s%"${rstrip}"}"
+    local lstrip="${s%%[![:space:]]*}"; s="${s#"${lstrip}"}"
+    printf '%s' "$s"
+}
+
+# _aid_sc_heading_level LINE -> stdout: 3 for a "### " line, 2 for a "## "
+# line, 0 otherwise (not a heading this converter recognizes).
+_aid_sc_heading_level() {
+    local line="$1"
+    if [[ "$line" == "### "* ]]; then
+        echo 3
+    elif [[ "$line" == "## "* ]]; then
+        echo 2
+    else
+        echo 0
+    fi
+}
+
+# _aid_sc_find_heading TEXT START END -> stdout: the absolute index (into the
+# caller's in-scope _SC_LINES array, bash dynamic scope -- see
+# _aid_sc_convert_file) of the first line in [START,END) whose
+# trailing-trimmed text equals TEXT exactly; or -1 if not found. Return code
+# mirrors the printed value's sign.
+_aid_sc_find_heading() {
+    local text="$1" start="$2" end="$3" i
+    for ((i=start; i<end; i++)); do
+        if [[ "$(_aid_sc_trim "${_SC_LINES[$i]}")" == "$text" ]]; then
+            echo "$i"
+            return 0
+        fi
+    done
+    echo -1
+    return 1
+}
+
+# _aid_sc_section_end START END -> stdout: the index of the next heading
+# line at a level <= the heading level found AT index START (which must
+# itself be a heading line), scanning (START,END); or END if none.
+_aid_sc_section_end() {
+    local start="$1" end="$2" i lvl mlvl
+    mlvl="$(_aid_sc_heading_level "${_SC_LINES[$start]}")"
+    for ((i=start+1; i<end; i++)); do
+        lvl="$(_aid_sc_heading_level "${_SC_LINES[$i]}")"
+        if [[ "$lvl" -gt 0 ]] && [[ "$lvl" -le "$mlvl" ]]; then
+            echo "$i"
+            return 0
+        fi
+    done
+    echo "$end"
+}
+
+# _aid_sc_table_rows START END -> sets the caller-scope global array
+# _SC_ROWS (bash dynamic scope), one element per DATA row found in [START,
+# END) -- a markdown pipe-table's header row and its "---|---" separator
+# row (the first two "|...|" lines encountered) are always skipped; a
+# single remaining row whose first cell is exactly "_none yet_" (the
+# templates' authored-empty sentinel) is dropped too, leaving _SC_ROWS
+# empty. Each row is one string with cells joined by ASCII 0x1F (unit
+# separator) -- split with `IFS=$'\x1f' read -ra cells <<< "$row"`.
+_aid_sc_table_rows() {
+    local start="$1" end="$2" i line body
+    _SC_ROWS=()
+    local header_seen=0 sep_seen=0
+    for ((i=start; i<end; i++)); do
+        line="${_SC_LINES[$i]}"
+        [[ "$line" =~ ^[[:space:]]*\|.*\|[[:space:]]*$ ]] || continue
+        if [[ "$header_seen" -eq 0 ]]; then header_seen=1; continue; fi
+        if [[ "$sep_seen" -eq 0 ]]; then sep_seen=1; continue; fi
+        body="$(_aid_sc_trim "$line")"
+        body="${body#|}"
+        body="${body%|}"
+        local -a cells=()
+        IFS='|' read -ra cells <<< "$body"
+        local j joined=""
+        for j in "${!cells[@]}"; do
+            local c; c="$(_aid_sc_trim "${cells[$j]}")"
+            if [[ "$j" -gt 0 ]]; then joined+=$'\x1f'; fi
+            joined+="$c"
+        done
+        _SC_ROWS+=("$joined")
+    done
+    if [[ "${#_SC_ROWS[@]}" -eq 1 ]]; then
+        local first="${_SC_ROWS[0]%%$'\x1f'*}"
+        [[ "$first" == "_none yet_" ]] && _SC_ROWS=()
+    fi
+}
+
+# _aid_sc_bullet_value START END LABEL -> stdout: the value of a
+# "- **LABEL:** value" bullet line found in [START,END); empty string (exit
+# 1) if not found. LABEL is inserted as literal text (every label this
+# converter uses is plain ASCII with no regex metacharacters).
+_aid_sc_bullet_value() {
+    local start="$1" end="$2" label="$3" i line
+    for ((i=start; i<end; i++)); do
+        line="${_SC_LINES[$i]}"
+        if [[ "$line" =~ ^-[[:space:]]*\*\*${label}:\*\*[[:space:]]*(.*)$ ]]; then
+            _aid_sc_trim "${BASH_REMATCH[1]}"
+            return 0
+        fi
+    done
+    printf ''
+    return 1
+}
+
+# _aid_sc_interview_header START END -> sets _SC_INTERVIEW_STATE /
+# _SC_INTERVIEW_GRADE from the "**State:** X  **Grade:** Y" bold-line inside
+# [START,END); returns 1 (both left empty) if no such line is found.
+_aid_sc_interview_header() {
+    local start="$1" end="$2" i line
+    _SC_INTERVIEW_STATE=""
+    _SC_INTERVIEW_GRADE=""
+    for ((i=start; i<end; i++)); do
+        line="${_SC_LINES[$i]}"
+        if [[ "$line" =~ ^\*\*State:\*\*(.*)\*\*Grade:\*\*(.*)$ ]]; then
+            _SC_INTERVIEW_STATE="$(_aid_sc_trim "${BASH_REMATCH[1]}")"
+            _SC_INTERVIEW_GRADE="$(_aid_sc_trim "${BASH_REMATCH[2]}")"
+            return 0
+        fi
+    done
+    return 1
+}
+
+# _aid_sc_is_placeholder_item ITEM -> true (exit 0) iff ITEM is the
+# TEMPLATE's own un-instantiated example row still sitting in a
+# never-touched section (e.g. "[HIGH] {description} -- {source-file:line}
+# -- Deferred-to-gate") rather than real authored content. A freshly-
+# scaffolded, not-yet-quick-checked task's ## Quick Check Findings (and,
+# analogously, a never-blocked delivery's Issue List) legitimately still
+# carries this literal doc text -- the same `{...}` token the readers'
+# own `_looks_like_unfilled_placeholder` (state_schema.py) treats as
+# unfilled, not data. One CLASS of construct, checked here at the ONE
+# place a list of real rows can also legitimately be empty.
+_aid_sc_is_placeholder_item() {
+    [[ "$1" =~ \{[^}]*\} ]]
+}
+
+# _aid_sc_issue_list START END -> sets the caller-scope global array
+# _SC_ISSUES, one severity-tagged string per issue -- parsing the exact
+# shape aid-execute/references/state-delivery-gate.md documents and
+# writeback-state.sh's own (pre-existing) parse_issue_list_block mirrors:
+#   - **Issue List:** none | {first item inline}
+#     {one further item per line, or nothing}
+_aid_sc_issue_list() {
+    local start="$1" end="$2" i line rest item trimmed in_list=0
+    _SC_ISSUES=()
+    for ((i=start; i<end; i++)); do
+        line="${_SC_LINES[$i]}"
+        if [[ "$in_list" -eq 0 ]]; then
+            if [[ "$line" =~ ^-[[:space:]]*\*\*Issue[[:space:]]List:\*\*[[:space:]]*(.*)$ ]]; then
+                in_list=1
+                rest="${BASH_REMATCH[1]}"
+                if [[ -n "$rest" && "$rest" != "none" ]]; then
+                    item="$rest"
+                    [[ "$item" == -\ * ]] && item="${item#- }"
+                    if [[ -n "$item" ]] && ! _aid_sc_is_placeholder_item "$item"; then
+                        _SC_ISSUES+=("$item")
+                    fi
+                fi
+            fi
+            continue
+        fi
+        trimmed="$(_aid_sc_trim "$line")"
+        [[ -z "$trimmed" ]] && continue
+        [[ "$trimmed" == "---" ]] && continue
+        item="$trimmed"
+        [[ "$item" == -\ * ]] && item="${item#- }"
+        [[ "$item" == "none" ]] && continue
+        _aid_sc_is_placeholder_item "$item" && continue
+        _SC_ISSUES+=("$item")
+    done
+}
+
+# _aid_sc_findings START END -> sets _SC_TIER (scalar) and the caller-scope
+# global array _SC_FINDINGS, mirroring writeback-state.sh's own (pre-
+# existing) parse_findings_block for the same markdown shape:
+#   - **Reviewer Tier:** Small
+#   - **Findings:**
+#     - [HIGH] description -- source:line -- Deferred-to-gate
+_aid_sc_findings() {
+    local start="$1" end="$2" i line trimmed item
+    _SC_TIER=""
+    _SC_FINDINGS=()
+    for ((i=start; i<end; i++)); do
+        line="${_SC_LINES[$i]}"
+        if [[ "$line" =~ ^-[[:space:]]*\*\*Reviewer[[:space:]]Tier:\*\*[[:space:]]*(.*)$ ]]; then
+            # Strip a trailing "(...)" doc annotation -- the template's own
+            # never-touched default line is literally "Small (quick check
+            # always uses Small tier)"; the enum value is the bare token
+            # before the parenthetical, which the real writer emits alone.
+            _SC_TIER="$(_aid_sc_trim "${BASH_REMATCH[1]%%(*}")"
+            continue
+        fi
+        if [[ "$line" =~ ^-[[:space:]]*\*\*Findings:\*\*[[:space:]]*(.*)$ ]]; then
+            continue
+        fi
+        trimmed="$(_aid_sc_trim "$line")"
+        [[ "$trimmed" == -\ * ]] || continue
+        item="${trimmed#- }"
+        [[ -z "$item" || "$item" == "none" ]] && continue
+        _aid_sc_is_placeholder_item "$item" && continue
+        _SC_FINDINGS+=("$item")
+    done
+}
+
+# _aid_sc_qa_entries START END -> sets the caller-scope global array _SC_QA,
+# one element per "### Q{N}" block found in [START,END), each a
+# \x1f-joined tuple: id,category,impact,state,context,suggested,answer,
+# applied_to.
+_aid_sc_qa_entries() {
+    local start="$1" end="$2" i line
+    _SC_QA=()
+    local -a qidx=()
+    for ((i=start; i<end; i++)); do
+        line="${_SC_LINES[$i]}"
+        if [[ "$line" =~ ^###[[:space:]]+Q([0-9]+)[[:space:]]*$ ]]; then
+            qidx+=("${i}:${BASH_REMATCH[1]}")
+        fi
+    done
+    local n="${#qidx[@]}" k
+    for ((k=0; k<n; k++)); do
+        local entry="${qidx[$k]}"
+        local qs="${entry%%:*}" qid="${entry##*:}"
+        local qe
+        if (( k+1 < n )); then
+            local nxt="${qidx[$((k+1))]}"
+            qe="${nxt%%:*}"
+        else
+            qe="$end"
+        fi
+        local category impact qstate context suggested answer applied
+        category="$(_aid_sc_bullet_value "$((qs+1))" "$qe" "Category")"
+        impact="$(_aid_sc_bullet_value "$((qs+1))" "$qe" "Impact")"
+        qstate="$(_aid_sc_bullet_value "$((qs+1))" "$qe" "State")"
+        context="$(_aid_sc_bullet_value "$((qs+1))" "$qe" "Context")"
+        suggested="$(_aid_sc_bullet_value "$((qs+1))" "$qe" "Suggested")"
+        answer="$(_aid_sc_bullet_value "$((qs+1))" "$qe" "Answer")"
+        applied="$(_aid_sc_bullet_value "$((qs+1))" "$qe" "Applied to")"
+        _SC_QA+=("${qid}"$'\x1f'"${category}"$'\x1f'"${impact}"$'\x1f'"${qstate}"$'\x1f'"${context}"$'\x1f'"${suggested}"$'\x1f'"${answer}"$'\x1f'"${applied}")
+    done
+}
+
+# _aid_sc_yaml_scalar VALUE -> stdout: the SPEC.md SS D-5-compliant scalar
+# token for VALUE -- bare, single-quoted (embedded ' doubled), or double-
+# quoted with the five-escape subset (\" \\ \n \r \t) when VALUE carries a
+# literal newline/CR/tab. Mirrors writeback-state.sh's own emission rule so
+# a migrated value is byte-compatible with what the (already-refactored)
+# writer would itself emit for the same value.
+_aid_sc_yaml_scalar() {
+    local v="$1"
+    if [[ "$v" == *$'\n'* || "$v" == *$'\r'* || "$v" == *$'\t'* ]]; then
+        local esc="$v"
+        esc="${esc//\\/\\\\}"
+        esc="${esc//\"/\\\"}"
+        esc="${esc//$'\r'/\\r}"
+        esc="${esc//$'\n'/\\n}"
+        esc="${esc//$'\t'/\\t}"
+        printf '"%s"' "$esc"
+        return 0
+    fi
+    if [[ -z "$v" ]]; then
+        printf "''"
+        return 0
+    fi
+    if [[ "$v" =~ ^[A-Za-z0-9_.+/-]+$ ]]; then
+        case "$v" in
+            y|Y|yes|Yes|YES|n|N|no|No|NO|true|True|TRUE|false|False|FALSE|on|On|ON|off|Off|OFF|null|Null|NULL|~) ;;
+            [0-9]*|-[0-9]*|+[0-9]*) ;;
+            *)
+                printf '%s' "$v"
+                return 0
+                ;;
+        esac
+    fi
+    local q="${v//\'/\'\'}"
+    printf "'%s'" "$q"
+}
+
+# ---- AUTHORED-zone emitters. Each appends lines to the caller-scope global
+# array _SC_OUT (bash dynamic scope) and, where the source is a list/table,
+# records its row count into a caller-scope global counter consumed by
+# _aid_sc_verify_roundtrip (reset once per file by _aid_sc_convert_file). ----
+
+_aid_sc_emit_interview() {
+    local start="$1" end="$2"
+    local hstate="Pending" hgrade="Pending"
+    if _aid_sc_interview_header "$start" "$end"; then
+        [[ -n "$_SC_INTERVIEW_STATE" ]] && hstate="$_SC_INTERVIEW_STATE"
+        [[ -n "$_SC_INTERVIEW_GRADE" ]] && hgrade="$_SC_INTERVIEW_GRADE"
+    fi
+    _aid_sc_table_rows "$start" "$end"
+    _SC_CNT_INTERVIEW="${#_SC_ROWS[@]}"
+    _SC_OUT+=("interview:")
+    _SC_OUT+=("  state: $(_aid_sc_yaml_scalar "$hstate")")
+    _SC_OUT+=("  grade: $(_aid_sc_yaml_scalar "$hgrade")")
+    if [[ "${#_SC_ROWS[@]}" -eq 0 ]]; then
+        _SC_OUT+=("  sections: []")
+        return 0
+    fi
+    _SC_OUT+=("  sections:")
+    local row idn name st upd
+    for row in "${_SC_ROWS[@]}"; do
+        IFS=$'\x1f' read -r idn name st upd <<< "$row"
+        _SC_OUT+=("    - id: ${idn}")
+        _SC_OUT+=("      name: $(_aid_sc_yaml_scalar "$name")")
+        _SC_OUT+=("      state: $(_aid_sc_yaml_scalar "$st")")
+        _SC_OUT+=("      updated: $(_aid_sc_yaml_scalar "$upd")")
+    done
+}
+
+_aid_sc_emit_lifecycle_history() {
+    local start="$1" end="$2"
+    _aid_sc_table_rows "$start" "$end"
+    _SC_CNT_LFH="${#_SC_ROWS[@]}"
+    if [[ "${#_SC_ROWS[@]}" -eq 0 ]]; then
+        _SC_OUT+=("lifecycle_history: []")
+        return 0
+    fi
+    _SC_OUT+=("lifecycle_history:")
+    local row rdate revent rgrade rnotes
+    for row in "${_SC_ROWS[@]}"; do
+        IFS=$'\x1f' read -r rdate revent rgrade rnotes <<< "$row"
+        _SC_OUT+=("  - date: $(_aid_sc_yaml_scalar "$rdate")")
+        _SC_OUT+=("    event: $(_aid_sc_yaml_scalar "$revent")")
+        _SC_OUT+=("    grade: $(_aid_sc_yaml_scalar "$rgrade")")
+        _SC_OUT+=("    notes: $(_aid_sc_yaml_scalar "$rnotes")")
+    done
+}
+
+_aid_sc_emit_deploy() {
+    local start="$1" end="$2"
+    _aid_sc_table_rows "$start" "$end"
+    _SC_CNT_DEPLOY="${#_SC_ROWS[@]}"
+    if [[ "${#_SC_ROWS[@]}" -eq 0 ]]; then
+        _SC_OUT+=("deploy: []")
+        return 0
+    fi
+    _SC_OUT+=("deploy:")
+    local row rdelivery rstate rpr rkbu rtag rnotes
+    for row in "${_SC_ROWS[@]}"; do
+        IFS=$'\x1f' read -r rdelivery rstate rpr rkbu rtag rnotes <<< "$row"
+        _SC_OUT+=("  - delivery: $(_aid_sc_yaml_scalar "$rdelivery")")
+        _SC_OUT+=("    state: $(_aid_sc_yaml_scalar "$rstate")")
+        _SC_OUT+=("    pr: $(_aid_sc_yaml_scalar "$rpr")")
+        _SC_OUT+=("    kb_updated: $(_aid_sc_yaml_scalar "$rkbu")")
+        _SC_OUT+=("    tag: $(_aid_sc_yaml_scalar "$rtag")")
+        _SC_OUT+=("    notes: $(_aid_sc_yaml_scalar "$rnotes")")
+    done
+}
+
+_aid_sc_emit_delivery_lifecycle() {
+    local start="$1" end="$2"
+    local updated block_reason block_artifact
+    updated="$(_aid_sc_bullet_value "$start" "$end" "Updated")"
+    block_reason="$(_aid_sc_bullet_value "$start" "$end" "Block Reason")"
+    block_artifact="$(_aid_sc_bullet_value "$start" "$end" "Block Artifact")"
+    [[ -z "$updated" ]] && updated="--"
+    [[ -z "$block_reason" ]] && block_reason="--"
+    [[ -z "$block_artifact" ]] && block_artifact="--"
+    _SC_OUT+=("delivery_lifecycle:")
+    _SC_OUT+=("  updated: $(_aid_sc_yaml_scalar "$updated")")
+    _SC_OUT+=("  block_reason: $(_aid_sc_yaml_scalar "$block_reason")")
+    _SC_OUT+=("  block_artifact: $(_aid_sc_yaml_scalar "$block_artifact")")
+}
+
+_aid_sc_emit_tasks_lifecycle() {
+    local start="$1" end="$2"
+    _aid_sc_table_rows "$start" "$end"
+    _SC_CNT_TASKSLC="${#_SC_ROWS[@]}"
+    if [[ "${#_SC_ROWS[@]}" -eq 0 ]]; then
+        _SC_OUT+=("tasks_lifecycle: {}")
+        return 0
+    fi
+    _SC_OUT+=("tasks_lifecycle:")
+    local row rtask rstate rreview relapsed rnotes rname
+    for row in "${_SC_ROWS[@]}"; do
+        IFS=$'\x1f' read -r rtask rstate rreview relapsed rnotes rname <<< "$row"
+        _SC_OUT+=("  ${rtask}:")
+        _SC_OUT+=("    state: $(_aid_sc_yaml_scalar "$rstate")")
+        _SC_OUT+=("    review: $(_aid_sc_yaml_scalar "$rreview")")
+        _SC_OUT+=("    elapsed: $(_aid_sc_yaml_scalar "$relapsed")")
+        _SC_OUT+=("    notes: $(_aid_sc_yaml_scalar "$rnotes")")
+        _SC_OUT+=("    display_name: $(_aid_sc_yaml_scalar "$rname")")
+    done
+}
+
+_aid_sc_emit_delivery_gate() {
+    local start="$1" end="$2"
+    _aid_sc_issue_list "$start" "$end"
+    _SC_CNT_ISSUES="${#_SC_ISSUES[@]}"
+    _SC_OUT+=("delivery_gate:")
+    if [[ "${#_SC_ISSUES[@]}" -eq 0 ]]; then
+        _SC_OUT+=("  issue_list: []")
+        return 0
+    fi
+    _SC_OUT+=("  issue_list:")
+    local it
+    for it in "${_SC_ISSUES[@]}"; do
+        _SC_OUT+=("    - $(_aid_sc_yaml_scalar "$it")")
+    done
+}
+
+_aid_sc_emit_qa() {
+    local start="$1" end="$2"
+    _aid_sc_qa_entries "$start" "$end"
+    _SC_CNT_QA="${#_SC_QA[@]}"
+    if [[ "${#_SC_QA[@]}" -eq 0 ]]; then
+        _SC_OUT+=("qa: []")
+        return 0
+    fi
+    _SC_OUT+=("qa:")
+    local row rid rcat rimp rst rctx rsug rans rapp
+    for row in "${_SC_QA[@]}"; do
+        IFS=$'\x1f' read -r rid rcat rimp rst rctx rsug rans rapp <<< "$row"
+        _SC_OUT+=("  - id: ${rid}")
+        _SC_OUT+=("    category: $(_aid_sc_yaml_scalar "$rcat")")
+        _SC_OUT+=("    impact: $(_aid_sc_yaml_scalar "$rimp")")
+        _SC_OUT+=("    state: $(_aid_sc_yaml_scalar "$rst")")
+        _SC_OUT+=("    context: $(_aid_sc_yaml_scalar "$rctx")")
+        _SC_OUT+=("    suggested: $(_aid_sc_yaml_scalar "$rsug")")
+        _SC_OUT+=("    answer: $(_aid_sc_yaml_scalar "$rans")")
+        _SC_OUT+=("    applied_to: $(_aid_sc_yaml_scalar "$rapp")")
+    done
+}
+
+# ---- DERIVED-zone guards (SP-3): a section that is absent, or holds only
+# its authored-empty placeholder, is dropped silently (no key emitted --
+# the correct, documented behavior); a section holding a REAL row is a hard
+# error naming the file, the section and the remedy. ----
+
+_aid_sc_guard_derived_table() {
+    local md="$1" heading="$2" start="$3" end="$4" h hend
+    h="$(_aid_sc_find_heading "$heading" "$start" "$end")"
+    [[ "$h" -ge 0 ]] || return 0
+    hend="$(_aid_sc_section_end "$h" "$end")"
+    _aid_sc_table_rows "$((h+1))" "$hend"
+    if [[ "${#_SC_ROWS[@]}" -gt 0 ]]; then
+        echo "WARN: aid migrate: ${md}: DERIVED section '${heading}' holds real data -- conversion refused for this file (nothing dropped). Remedy: run migrate-work-hierarchy on this work, then re-run 'aid update'." >&2
+        return 1
+    fi
+    return 0
+}
+
+_aid_sc_guard_derived_narrative() {
+    local md="$1" heading="$2" start="$3" end="$4" h hend i line trimmed in_comment=0
+    h="$(_aid_sc_find_heading "$heading" "$start" "$end")"
+    [[ "$h" -ge 0 ]] || return 0
+    hend="$(_aid_sc_section_end "$h" "$end")"
+    for ((i=h+1; i<hend; i++)); do
+        line="${_SC_LINES[$i]}"
+        trimmed="$(_aid_sc_trim "$line")"
+        [[ -z "$trimmed" ]] && continue
+        [[ "$trimmed" == "---" ]] && continue
+        if [[ "$in_comment" -eq 1 ]]; then
+            [[ "$trimmed" == *"-->"* ]] && in_comment=0
+            continue
+        fi
+        if [[ "$trimmed" == "<!--"* ]]; then
+            [[ "$trimmed" == *"-->"* ]] || in_comment=1
+            continue
+        fi
+        [[ "$trimmed" =~ ^_None\ yet ]] && continue
+        echo "WARN: aid migrate: ${md}: DERIVED section '${heading}' holds real data -- conversion refused for this file (nothing dropped). Remedy: run migrate-work-hierarchy on this work, then re-run 'aid update'." >&2
+        return 1
+    done
+    return 0
+}
+
+# _aid_sc_convert_work_body MD LAYOUT BSTART BEND -> populates the
+# caller-scope global _SC_OUT with the work-level AUTHORED-zone YAML lines
+# (SPEC.md SS D-2/D-4); returns 1 on a DERIVED-guard hard error (SP-3).
+_aid_sc_convert_work_body() {
+    local md="$1" layout="$2" bstart="$3" bend="$4"
+    _SC_OUT=()
+
+    local h_i h_i_end
+    h_i="$(_aid_sc_find_heading "## Interview State" "$bstart" "$bend")"
+    if [[ "$h_i" -ge 0 ]]; then
+        h_i_end="$(_aid_sc_section_end "$h_i" "$bend")"
+        _aid_sc_emit_interview "$((h_i+1))" "$h_i_end"
+    else
+        _SC_OUT+=("interview:")
+        _SC_OUT+=("  state: Pending")
+        _SC_OUT+=("  grade: Pending")
+        _SC_OUT+=("  sections: []")
+    fi
+
+    local h_l h_l_end
+    h_l="$(_aid_sc_find_heading "## Lifecycle History" "$bstart" "$bend")"
+    if [[ "$h_l" -ge 0 ]]; then
+        h_l_end="$(_aid_sc_section_end "$h_l" "$bend")"
+        _aid_sc_emit_lifecycle_history "$((h_l+1))" "$h_l_end"
+    else
+        _SC_OUT+=("lifecycle_history: []")
+    fi
+
+    local h_d h_d_end
+    h_d="$(_aid_sc_find_heading "## Deploy State" "$bstart" "$bend")"
+    if [[ "$h_d" -ge 0 ]]; then
+        h_d_end="$(_aid_sc_section_end "$h_d" "$bend")"
+        _aid_sc_emit_deploy "$((h_d+1))" "$h_d_end"
+    else
+        _SC_OUT+=("deploy: []")
+    fi
+
+    if [[ "$layout" == "flat" ]]; then
+        local h_dl h_dl_end
+        h_dl="$(_aid_sc_find_heading "## Delivery Lifecycle" "$bstart" "$bend")"
+        if [[ "$h_dl" -ge 0 ]]; then
+            h_dl_end="$(_aid_sc_section_end "$h_dl" "$bend")"
+            _aid_sc_emit_delivery_lifecycle "$((h_dl+1))" "$h_dl_end"
+
+            local h_tl h_tl_end
+            h_tl="$(_aid_sc_find_heading "### Tasks lifecycle" "$h_dl" "$h_dl_end")"
+            if [[ "$h_tl" -ge 0 ]]; then
+                h_tl_end="$(_aid_sc_section_end "$h_tl" "$h_dl_end")"
+                _aid_sc_emit_tasks_lifecycle "$((h_tl+1))" "$h_tl_end"
+            else
+                _SC_OUT+=("tasks_lifecycle: {}")
+            fi
+        else
+            _SC_OUT+=("delivery_lifecycle:")
+            _SC_OUT+=("  updated: --")
+            _SC_OUT+=("  block_reason: --")
+            _SC_OUT+=("  block_artifact: --")
+            _SC_OUT+=("tasks_lifecycle: {}")
+        fi
+
+        local h_g h_g_end
+        h_g="$(_aid_sc_find_heading "## Delivery Gate" "$bstart" "$bend")"
+        if [[ "$h_g" -ge 0 ]]; then
+            h_g_end="$(_aid_sc_section_end "$h_g" "$bend")"
+            _aid_sc_emit_delivery_gate "$((h_g+1))" "$h_g_end"
+        else
+            _SC_OUT+=("delivery_gate:")
+            _SC_OUT+=("  issue_list: []")
+        fi
+
+        local h_q h_q_end
+        h_q="$(_aid_sc_find_heading "## Cross-phase Q&A" "$bstart" "$bend")"
+        if [[ "$h_q" -ge 0 ]]; then
+            h_q_end="$(_aid_sc_section_end "$h_q" "$bend")"
+            _aid_sc_emit_qa "$((h_q+1))" "$h_q_end"
+        else
+            _SC_OUT+=("qa: []")
+        fi
+    fi
+
+    local -a derived_table_headings=("## Features State" "## Plan / Deliveries" "## Tasks State" "## Calibration Log")
+    local dh
+    for dh in "${derived_table_headings[@]}"; do
+        _aid_sc_guard_derived_table "$md" "$dh" "$bstart" "$bend" || return 1
+    done
+    local -a derived_narrative_headings=("## Delivery Gates" "## Dispatches")
+    for dh in "${derived_narrative_headings[@]}"; do
+        _aid_sc_guard_derived_narrative "$md" "$dh" "$bstart" "$bend" || return 1
+    done
+    if [[ "$layout" == "full" ]]; then
+        _aid_sc_guard_derived_narrative "$md" "## Cross-phase Q&A" "$bstart" "$bend" || return 1
+    fi
+
+    return 0
+}
+
+# _aid_sc_convert_delivery_body MD BSTART BEND -> populates _SC_OUT with the
+# delivery-level AUTHORED-zone YAML lines (full layout only); returns 1 on
+# a DERIVED-guard hard error.
+_aid_sc_convert_delivery_body() {
+    local md="$1" bstart="$2" bend="$3"
+    _SC_OUT=()
+
+    local h_dl h_dl_end
+    h_dl="$(_aid_sc_find_heading "## Delivery Lifecycle" "$bstart" "$bend")"
+    if [[ "$h_dl" -ge 0 ]]; then
+        h_dl_end="$(_aid_sc_section_end "$h_dl" "$bend")"
+        _aid_sc_emit_delivery_lifecycle "$((h_dl+1))" "$h_dl_end"
+    else
+        _SC_OUT+=("delivery_lifecycle:")
+        _SC_OUT+=("  updated: --")
+        _SC_OUT+=("  block_reason: --")
+        _SC_OUT+=("  block_artifact: --")
+    fi
+
+    local h_g h_g_end
+    h_g="$(_aid_sc_find_heading "## Delivery Gate" "$bstart" "$bend")"
+    if [[ "$h_g" -ge 0 ]]; then
+        h_g_end="$(_aid_sc_section_end "$h_g" "$bend")"
+        _aid_sc_emit_delivery_gate "$((h_g+1))" "$h_g_end"
+    else
+        _SC_OUT+=("delivery_gate:")
+        _SC_OUT+=("  issue_list: []")
+    fi
+
+    local h_q h_q_end
+    h_q="$(_aid_sc_find_heading "## Cross-phase Q&A" "$bstart" "$bend")"
+    if [[ "$h_q" -ge 0 ]]; then
+        h_q_end="$(_aid_sc_section_end "$h_q" "$bend")"
+        _aid_sc_emit_qa "$((h_q+1))" "$h_q_end"
+    else
+        _SC_OUT+=("qa: []")
+    fi
+
+    _aid_sc_guard_derived_table "$md" "## Tasks State" "$bstart" "$bend" || return 1
+    return 0
+}
+
+# _aid_sc_convert_task_body MD BSTART BEND -> populates _SC_OUT with the
+# task-level AUTHORED-zone YAML lines (full layout only). No DERIVED
+# section exists at this level (SPEC.md SS D-2), so nothing is guarded.
+_aid_sc_convert_task_body() {
+    local md="$1" bstart="$2" bend="$3"
+    _SC_OUT=()
+
+    local h_qc h_qc_end
+    h_qc="$(_aid_sc_find_heading "## Quick Check Findings" "$bstart" "$bend")"
+    local tier="Small"
+    if [[ "$h_qc" -ge 0 ]]; then
+        h_qc_end="$(_aid_sc_section_end "$h_qc" "$bend")"
+        _aid_sc_findings "$((h_qc+1))" "$h_qc_end"
+        [[ -n "$_SC_TIER" ]] && tier="$(_aid_sc_trim "$_SC_TIER")"
+    else
+        _SC_FINDINGS=()
+    fi
+    _SC_CNT_FINDINGS="${#_SC_FINDINGS[@]}"
+    _SC_OUT+=("quick_check:")
+    _SC_OUT+=("  reviewer_tier: $(_aid_sc_yaml_scalar "$tier")")
+    if [[ "${#_SC_FINDINGS[@]}" -eq 0 ]]; then
+        _SC_OUT+=("  findings: []")
+    else
+        _SC_OUT+=("  findings:")
+        local it
+        for it in "${_SC_FINDINGS[@]}"; do
+            _SC_OUT+=("    - $(_aid_sc_yaml_scalar "$it")")
+        done
+    fi
+
+    local h_dp h_dp_end
+    h_dp="$(_aid_sc_find_heading "## Dispatch Log" "$bstart" "$bend")"
+    if [[ "$h_dp" -ge 0 ]]; then
+        h_dp_end="$(_aid_sc_section_end "$h_dp" "$bend")"
+        _aid_sc_table_rows "$((h_dp+1))" "$h_dp_end"
+    else
+        _SC_ROWS=()
+    fi
+    _SC_CNT_DISPATCH="${#_SC_ROWS[@]}"
+    if [[ "${#_SC_ROWS[@]}" -eq 0 ]]; then
+        _SC_OUT+=("dispatch_log: []")
+    else
+        _SC_OUT+=("dispatch_log:")
+        local row rdate ragent reta ractual routcome
+        for row in "${_SC_ROWS[@]}"; do
+            IFS=$'\x1f' read -r rdate ragent reta ractual routcome <<< "$row"
+            _SC_OUT+=("  - date: $(_aid_sc_yaml_scalar "$rdate")")
+            _SC_OUT+=("    agent: $(_aid_sc_yaml_scalar "$ragent")")
+            _SC_OUT+=("    eta_band: $(_aid_sc_yaml_scalar "$reta")")
+            _SC_OUT+=("    actual: $(_aid_sc_yaml_scalar "$ractual")")
+            _SC_OUT+=("    outcome: $(_aid_sc_yaml_scalar "$routcome")")
+        done
+    fi
+    return 0
+}
+
+# ---- Round-trip verification (SP-12): re-parse the just-written candidate
+# under the SAME SS D-3 shape rules this converter itself targets, and
+# confirm the row/entry counts captured while READING the .md match what a
+# fresh, independent scan of the WRITTEN bytes finds. ----
+
+# _aid_sc_yaml_indent LINE -> stdout: LINE's leading-whitespace column count.
+_aid_sc_yaml_indent() {
+    local s="$1" stripped
+    stripped="${s#"${s%%[![:space:]]*}"}"
+    echo $(( ${#s} - ${#stripped} ))
+}
+
+# _aid_sc_yaml_block_range KEYTEXT -> stdout: "START,END" (0-indexed, into
+# the caller-scope global _SC_YLINES; START is the line right after
+# KEYTEXT, END is exclusive) for KEYTEXT's nested block -- every line more
+# indented than KEYTEXT, stopping at the first line at or below KEYTEXT's
+# own indent. KEYTEXT is matched against each line right-trimmed only (its
+# OWN leading whitespace is part of the match, so pass it exactly as
+# written, e.g. "  issue_list:"). "-1,-1" if KEYTEXT is not found.
+_aid_sc_yaml_block_range() {
+    local keytext="$1" i n="${#_SC_YLINES[@]}"
+    for ((i=0; i<n; i++)); do
+        local raw="${_SC_YLINES[$i]}"
+        local rs="${raw##*[![:space:]]}"; local rtrimmed="${raw%"${rs}"}"
+        if [[ "$rtrimmed" == "$keytext" ]]; then
+            local key_indent; key_indent="$(_aid_sc_yaml_indent "$raw")"
+            local j
+            for ((j=i+1; j<n; j++)); do
+                local jl="${_SC_YLINES[$j]}"
+                local jtrim; jtrim="$(_aid_sc_trim "$jl")"
+                [[ -z "$jtrim" ]] && continue
+                [[ "$jtrim" == \#* ]] && continue
+                local jindent; jindent="$(_aid_sc_yaml_indent "$jl")"
+                if [[ "$jindent" -le "$key_indent" ]]; then
+                    echo "$((i+1)),$j"
+                    return 0
+                fi
+            done
+            echo "$((i+1)),$n"
+            return 0
+        fi
+    done
+    echo "-1,-1"
+    return 1
+}
+
+_aid_sc_yaml_count_dash_items() {
+    local start="$1" end="$2" i c=0
+    for ((i=start; i<end; i++)); do
+        local t; t="$(_aid_sc_trim "${_SC_YLINES[$i]}")"
+        [[ "$t" == "- "* ]] && c=$((c+1))
+    done
+    echo "$c"
+}
+
+_aid_sc_yaml_count_map_children() {
+    local start="$1" end="$2" i min_indent=999999
+    for ((i=start; i<end; i++)); do
+        local t; t="$(_aid_sc_trim "${_SC_YLINES[$i]}")"
+        [[ -z "$t" ]] && continue
+        [[ "$t" == \#* ]] && continue
+        local ind; ind="$(_aid_sc_yaml_indent "${_SC_YLINES[$i]}")"
+        [[ "$ind" -lt "$min_indent" ]] && min_indent="$ind"
+    done
+    local c=0
+    for ((i=start; i<end; i++)); do
+        local raw="${_SC_YLINES[$i]}"
+        local t; t="$(_aid_sc_trim "$raw")"
+        [[ -z "$t" ]] && continue
+        local ind; ind="$(_aid_sc_yaml_indent "$raw")"
+        [[ "$ind" -eq "$min_indent" ]] || continue
+        [[ "$t" == *: ]] && c=$((c+1))
+    done
+    echo "$c"
+}
+
+# _aid_sc_yaml_block_count KEYTEXT -> stdout: the sequence-item count (or,
+# for "tasks_lifecycle:", the mapping-child count) found under KEYTEXT in
+# the caller-scope global _SC_YLINES; 0 for an inline "KEYTEXT []"/"{}" or
+# an absent key.
+_aid_sc_yaml_block_count() {
+    local keytext="$1" i n="${#_SC_YLINES[@]}"
+    for ((i=0; i<n; i++)); do
+        local raw="${_SC_YLINES[$i]}"
+        local rs="${raw##*[![:space:]]}"; local rtrimmed="${raw%"${rs}"}"
+        if [[ "$rtrimmed" == "${keytext} []" ]] || [[ "$rtrimmed" == "${keytext} {}" ]]; then
+            echo 0
+            return 0
+        fi
+    done
+    local range; range="$(_aid_sc_yaml_block_range "$keytext")"
+    local start="${range%%,*}" bend="${range##*,}"
+    if [[ "$start" -lt 0 ]]; then
+        echo 0
+        return 0
+    fi
+    local kt_trim; kt_trim="$(_aid_sc_trim "$keytext")"
+    if [[ "$kt_trim" == "tasks_lifecycle:" ]]; then
+        _aid_sc_yaml_count_map_children "$start" "$bend"
+    else
+        _aid_sc_yaml_count_dash_items "$start" "$bend"
+    fi
+}
+
+# _aid_sc_verify_roundtrip MD CANDIDATE LEVEL LAYOUT -> 0 iff CANDIDATE (a)
+# is entirely composed of recognized SS D-3 shapes (no tab indentation, no
+# odd indentation, no line that is neither a comment/blank, a "key:" line
+# nor a sequence entry) and (b) reproduces, for every list/table this
+# converter targeted at LEVEL, the exact row/entry count captured while
+# reading MD (the caller-scope globals _SC_CNT_* set by the _aid_sc_emit_*
+# functions above). This is the "verify the result parses and round-trips"
+# gate SPEC.md SS L-6 requires before the .md may be deleted.
+_aid_sc_verify_roundtrip() {
+    local md="$1" candidate="$2" level="$3" layout="$4"
+    local -a _SC_YLINES=()
+    local _l
+    while IFS= read -r _l || [[ -n "$_l" ]]; do
+        _SC_YLINES+=("$_l")
+    done < "$candidate"
+
+    local i line
+    for ((i=0; i<${#_SC_YLINES[@]}; i++)); do
+        line="${_SC_YLINES[$i]}"
+        local trimmed; trimmed="$(_aid_sc_trim "$line")"
+        [[ -z "$trimmed" ]] && continue
+        if [[ "$line" == *$'\t'* ]]; then
+            echo "WARN: aid migrate: ${md}: candidate STATE.yml line $((i+1)) has a tab; round-trip verification failed" >&2
+            return 1
+        fi
+        local ind; ind="$(_aid_sc_yaml_indent "$line")"
+        if [[ $((ind % 2)) -ne 0 ]]; then
+            echo "WARN: aid migrate: ${md}: candidate STATE.yml line $((i+1)) has odd indentation; round-trip verification failed" >&2
+            return 1
+        fi
+        [[ "$trimmed" == \#* ]] && continue
+        if [[ "$trimmed" == "- "* ]] || [[ "$trimmed" == "-" ]]; then continue; fi
+        if [[ "$trimmed" =~ ^[A-Za-z0-9_.-]+:([[:space:]].*)?$ ]]; then continue; fi
+        echo "WARN: aid migrate: ${md}: candidate STATE.yml line $((i+1)) is not a recognized key/sequence line; round-trip verification failed" >&2
+        return 1
+    done
+
+    local ok=1
+    case "$level" in
+        work)
+            if [[ "$(_aid_sc_yaml_block_count "  sections:")" != "$_SC_CNT_INTERVIEW" ]]; then
+                ok=0; echo "WARN: aid migrate: ${md}: round-trip mismatch on interview.sections count" >&2
+            fi
+            if [[ "$(_aid_sc_yaml_block_count "lifecycle_history:")" != "$_SC_CNT_LFH" ]]; then
+                ok=0; echo "WARN: aid migrate: ${md}: round-trip mismatch on lifecycle_history count" >&2
+            fi
+            if [[ "$(_aid_sc_yaml_block_count "deploy:")" != "$_SC_CNT_DEPLOY" ]]; then
+                ok=0; echo "WARN: aid migrate: ${md}: round-trip mismatch on deploy count" >&2
+            fi
+            if [[ "$layout" == "flat" ]]; then
+                if [[ "$(_aid_sc_yaml_block_count "tasks_lifecycle:")" != "$_SC_CNT_TASKSLC" ]]; then
+                    ok=0; echo "WARN: aid migrate: ${md}: round-trip mismatch on tasks_lifecycle count" >&2
+                fi
+                if [[ "$(_aid_sc_yaml_block_count "  issue_list:")" != "$_SC_CNT_ISSUES" ]]; then
+                    ok=0; echo "WARN: aid migrate: ${md}: round-trip mismatch on delivery_gate.issue_list count" >&2
+                fi
+                if [[ "$(_aid_sc_yaml_block_count "qa:")" != "$_SC_CNT_QA" ]]; then
+                    ok=0; echo "WARN: aid migrate: ${md}: round-trip mismatch on qa count" >&2
+                fi
+            fi
+            ;;
+        delivery)
+            if [[ "$(_aid_sc_yaml_block_count "  issue_list:")" != "$_SC_CNT_ISSUES" ]]; then
+                ok=0; echo "WARN: aid migrate: ${md}: round-trip mismatch on delivery_gate.issue_list count" >&2
+            fi
+            if [[ "$(_aid_sc_yaml_block_count "qa:")" != "$_SC_CNT_QA" ]]; then
+                ok=0; echo "WARN: aid migrate: ${md}: round-trip mismatch on qa count" >&2
+            fi
+            ;;
+        task)
+            if [[ "$(_aid_sc_yaml_block_count "  findings:")" != "$_SC_CNT_FINDINGS" ]]; then
+                ok=0; echo "WARN: aid migrate: ${md}: round-trip mismatch on quick_check.findings count" >&2
+            fi
+            if [[ "$(_aid_sc_yaml_block_count "dispatch_log:")" != "$_SC_CNT_DISPATCH" ]]; then
+                ok=0; echo "WARN: aid migrate: ${md}: round-trip mismatch on dispatch_log count" >&2
+            fi
+            ;;
+    esac
+    [[ "$ok" -eq 1 ]]
+}
+
+# _aid_sc_convert_file MD YML LEVEL LAYOUT -> the per-file converter.
+# Idempotent (returns immediately, doing nothing, if YML already exists);
+# fail-safe (the .md is deleted ONLY after the candidate .yml passes
+# _aid_sc_verify_roundtrip); WARN-not-fail (every failure path echoes a
+# `WARN: aid migrate: ...` line to stderr and returns 1 -- the caller
+# never propagates that past _aid_sc_convert_repo, which always returns 0).
+_aid_sc_convert_file() {
+    local md="$1" yml="$2" level="$3" layout="$4"
+
+    [[ -f "$md" ]] || return 0
+    [[ -f "$yml" ]] && return 0
+
+    local -a _SC_LINES=()
+    local _l
+    while IFS= read -r _l || [[ -n "$_l" ]]; do
+        _SC_LINES+=("${_l%$'\r'}")
+    done < "$md"
+
+    _SC_CNT_INTERVIEW=0; _SC_CNT_LFH=0; _SC_CNT_DEPLOY=0; _SC_CNT_TASKSLC=0
+    _SC_CNT_ISSUES=0; _SC_CNT_QA=0; _SC_CNT_FINDINGS=0; _SC_CNT_DISPATCH=0
+
+    local n="${#_SC_LINES[@]}"
+    if [[ "$n" -lt 2 ]] || [[ "${_SC_LINES[0]}" != "---" ]]; then
+        echo "WARN: aid migrate: ${md}: no frontmatter fence found; skipped (STATE.md left in place)" >&2
+        return 1
+    fi
+    local fm_end=-1 i
+    for ((i=1; i<n; i++)); do
+        if [[ "${_SC_LINES[$i]}" == "---" ]]; then fm_end=$i; break; fi
+    done
+    if [[ "$fm_end" -lt 0 ]]; then
+        echo "WARN: aid migrate: ${md}: frontmatter block never closes; skipped (STATE.md left in place)" >&2
+        return 1
+    fi
+
+    local -a fm_lines=()
+    for ((i=1; i<fm_end; i++)); do fm_lines+=("${_SC_LINES[$i]}"); done
+    local body_start=$((fm_end+1))
+
+    local -a _SC_OUT=()
+    case "$level" in
+        work)     _aid_sc_convert_work_body "$md" "$layout" "$body_start" "$n" || return 1 ;;
+        delivery) _aid_sc_convert_delivery_body "$md" "$body_start" "$n" || return 1 ;;
+        task)     _aid_sc_convert_task_body "$md" "$body_start" "$n" || return 1 ;;
+        *)        echo "WARN: aid migrate: ${md}: unknown conversion level '${level}' (continuing)" >&2; return 1 ;;
+    esac
+
+    local tmp
+    tmp="$(mktemp "$(dirname "$md")/.state-convert.XXXXXX" 2>/dev/null)" || tmp="${md}.convert.tmp.$$"
+    {
+        for i in "${!fm_lines[@]}"; do printf '%s\n' "${fm_lines[$i]}"; done
+        printf '\n'
+        local ol
+        for ol in "${_SC_OUT[@]}"; do printf '%s\n' "$ol"; done
+    } > "$tmp"
+
+    if ! _aid_sc_verify_roundtrip "$md" "$tmp" "$level" "$layout"; then
+        rm -f "$tmp"
+        echo "WARN: aid migrate: ${md}: failed round-trip verification; skipped (STATE.md left in place)" >&2
+        return 1
+    fi
+
+    if ! mv -f "$tmp" "$yml" 2>/dev/null; then
+        rm -f "$tmp"
+        echo "WARN: aid migrate: ${md}: could not write ${yml} (continuing)" >&2
+        return 1
+    fi
+    rm -f "$md"
+    echo "OK: aid migrate: ${md} converted -> ${yml}"
+    return 0
+}
+
+# _aid_sc_convert_one_work WORK_DIR -> converts a single work's STATE.md
+# and, on the full layout (a deliveries/ subfolder present), every
+# deliveries/*/STATE.md and deliveries/*/tasks/*/STATE.md. Never fails the
+# caller (per-file failures are already WARN-not-fail inside
+# _aid_sc_convert_file).
+_aid_sc_convert_one_work() {
+    local wd="$1"
+    local layout="flat"
+    [[ -d "${wd}/deliveries" ]] && layout="full"
+
+    _aid_sc_convert_file "${wd}/STATE.md" "${wd}/STATE.yml" work "$layout"
+
+    [[ "$layout" == "full" ]] || return 0
+
+    local dd
+    for dd in "${wd}/deliveries"/*/; do
+        [[ -d "$dd" ]] || continue
+        dd="${dd%/}"
+        _aid_sc_convert_file "${dd}/STATE.md" "${dd}/STATE.yml" delivery "$layout"
+
+        [[ -d "${dd}/tasks" ]] || continue
+        local td
+        for td in "${dd}/tasks"/*/; do
+            [[ -d "$td" ]] || continue
+            td="${td%/}"
+            _aid_sc_convert_file "${td}/STATE.md" "${td}/STATE.yml" task "$layout"
+        done
+    done
+    return 0
+}
+
+# _aid_sc_convert_repo REPO -> the migration-engine STEP 5 entry point
+# (called from _aid_migrate_repo). Converts every in-scope STATE.md under
+# REPO/.aid/works/. Always returns 0 (WARN-not-fail).
+_aid_sc_convert_repo() {
+    local repo="$1"
+    local works_dir="${repo}/.aid/works"
+    [[ -d "$works_dir" ]] || return 0
+    local wd
+    for wd in "$works_dir"/*/; do
+        [[ -d "$wd" ]] || continue
+        _aid_sc_convert_one_work "${wd%/}"
+    done
     return 0
 }
 
@@ -2724,7 +3756,7 @@ _aid_scaffold_bare_project() {
     local _canon="$1"
     local _name _fmt _ver _sc _now
     _name="$(basename "$_canon")"
-    _fmt="${AID_SUPPORTED_FORMAT:-3}"
+    _fmt="${AID_SUPPORTED_FORMAT:-4}"
     _ver=""
     [[ -f "${AID_CODE_HOME}/VERSION" ]] && \
         _ver="$(tr -d '[:space:]' < "${AID_CODE_HOME}/VERSION" 2>/dev/null)"
@@ -2810,7 +3842,7 @@ _cmd_projects_add() {
         # registry unit-test harness's extract range) AND the project actually
         # has a settings.yml to migrate (a bare .aid/ has nothing to migrate);
         # AID_SUPPORTED_FORMAT defaults so the harness never hits an unbound var.
-        local _sup="${AID_SUPPORTED_FORMAT:-3}"
+        local _sup="${AID_SUPPORTED_FORMAT:-4}"
         if declare -F _aid_repo_format >/dev/null 2>&1; then
             local _repo_fmt
             _repo_fmt="$(_aid_repo_format "${_canon}")"

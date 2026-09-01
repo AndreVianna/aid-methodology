@@ -1,6 +1,6 @@
 # REVIEW — Re-review Existing Tasks
 
-Existing task files found; re-review against current PLAN.md and SPECs.
+Existing task files found; re-review against current PLAN.md and feature sections.
 
 Load `references/task-decomposition.md` for task type rules, file format, and quality criteria.
 
@@ -17,18 +17,19 @@ If user confirms → continue below.
 If user has a specific concern → record it as context for the review.
 
 Enter **the same loop at step 4** — review tasks against
-current PLAN.md and SPECs.
+current PLAN.md and feature sections.
 
 ### Load Current State
 
-Re-read PLAN.md, all feature SPECs, all existing task files.
+Re-read PLAN.md, every `### Feature NNN` section of REQUIREMENTS.md § 11, and all
+existing task files.
 
 ### Review Each Deliverable's Tasks
 
 For each deliverable, check its corresponding tasks:
 
 1. **PLAN.md changed** — deliverables added, removed, resequenced?
-2. **SPECs changed** — feature content updated since tasks were written?
+2. **Feature sections changed** — feature content updated since tasks were written?
 3. **Orphan tasks** — tasks referencing deliverables/features that no longer exist?
 4. **Missing tasks** — new deliverables/features with no corresponding tasks?
 5. **Sequence broken** — task order invalid given changes?
@@ -41,7 +42,7 @@ Render `references/reviewer-brief.md` with:
 - `{{CONTEXT}}` = `Re-review of all tasks for work-NNN after PLAN/SPEC changes.`
 
 Include in the prompt:
-- **Ledger lifecycle:** "Read `.aid/.temp/review-pending/detail.md` if it exists.
+- **Ledger lifecycle:** "Read `{{LEDGER}}` if it exists.
   For each existing row: verify on disk, update Status (Pending→Fixed if resolved;
   Fixed→Recurred if regressed). Append new findings with Status: Pending.
   Output per `.codex/aid/templates/reviewer-ledger-schema.md` — ONE table, no narrative."
@@ -55,14 +56,14 @@ Dispatch the `aid-reviewer` subagent **at Large tier** (the executor is the Larg
 After aid-reviewer returns, run grade.sh:
 
 ```bash
-bash .codex/aid/scripts/grade.sh --explain .aid/.temp/review-pending/detail.md
+bash .codex/aid/scripts/grade.sh --explain {{LEDGER}}
 ```
 
 Compare to minimum grade from `bash .codex/aid/scripts/config/read-setting.sh --skill detail --key minimum_grade --default A`.
 
 | Condition | Action |
 |-----------|--------|
-| Grade ≥ minimum | Print summary, done. Delete ledger: `rm -f .aid/.temp/review-pending/detail.md` |
+| Grade ≥ minimum | Print summary, done. Delete ledger: `rm -f {{LEDGER}}` |
 | Grade < minimum, tasks fixable | List findings, re-enter loop for affected deliverables. |
 | Grade < minimum, most tasks orphaned | Recommend `--reset`. |
 
@@ -70,5 +71,11 @@ For grades below minimum: re-enter the loop for affected deliverables.
 Update task files, create new ones, delete orphans, renumber if needed.
 
 [State: REVIEW] complete.
+
+**Cycle 1 also runs the cross-document contradiction pass (Guard 2).** This review receives
+every artifact of the phase at once, which is the only vantage point from which a
+contradiction between two of them is visible. Run it on cycle 1 only -- that makes it
+once per phase by construction. Definition:
+`reviewer-dispatch.md` section "The cross-document contradiction pass (Guard 2)".
 
 **Advance:** **CHAIN** → [State: DONE] (continue inline).

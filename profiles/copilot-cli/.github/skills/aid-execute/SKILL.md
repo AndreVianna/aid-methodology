@@ -1,10 +1,11 @@
 ---
 name: aid-execute
 description: >
-  Execute a task based on its type: RESEARCH, DESIGN, IMPLEMENT, TEST,
-  DOCUMENT, MIGRATE, REFACTOR, or CONFIGURE. Built-in review loop per type.
-  State machine: EXECUTE → REVIEW → FIX → back to REVIEW → DONE when grade ≥ minimum.
-  Branch per delivery for isolation.
+  Carry out one planned task and review the result. Use this skill when tasks have been
+  detailed and you are ready for the work to actually be done. It runs the task according to
+  its type -- RESEARCH, DESIGN, IMPLEMENT, TEST, DOCUMENT, MIGRATE, REFACTOR or CONFIGURE --
+  then loops through review and fixes until the result meets the configured minimum grade.
+  Each delivery runs on its own branch, so deliveries stay isolated from each other.
 allowed-tools: Read, Glob, Grep, Write, Edit, shell
 argument-hint: "work-001 (required if multiple works)  task-001 (required)"
 ---
@@ -47,9 +48,9 @@ Read the type. Do the work. Review it. Fix it. Ship it.
    `<path>\t<status>`), and enter the returned path. Keep the defensive empty-path/non-zero
    backstop that stops rather than operate blindly — it should not fire against the real helper.
    Never create a new worktree — creation belongs to the work-starting skills only.
-4. **Detect the layout** (per-work, presence-based; additive — does not change the full-path resolution below):
+4. **Detect the layout** (per-work, DECLARED first; additive — does not change the full-path resolution below). Read `pipeline.path` from the work-root `STATE.yml`: `lite` → flat, `full` → nested. Infer from file presence ONLY when no value is declared, which means an un-migrated work:
    - **Full path (nested):** `.aid/works/{work}/deliveries/` exists → tasks live at `deliveries/delivery-NNN/tasks/task-NNN/DETAIL.md`.
-   - **Flat path (feature-001, single-delivery):** a work-root `BLUEPRINT.md` present AND `.aid/works/{work}/tasks/task-NNN/DETAIL.md` exists directly under the work root AND no `deliveries/` wrapper under it → the delivery is always the synthesized `delivery-001` (no per-task `STATE.md`; task mutable cells live in the work-root `STATE.md § ### Tasks lifecycle` instead — see `## Workspace` below).
+   - **Flat path (feature-001, single-delivery):** `.aid/works/{work}/tasks/task-NNN/DETAIL.md` exists directly under the work root AND no `deliveries/` wrapper under it → the delivery is always the synthesized `delivery-001` (no per-task `STATE.yml`; task mutable cells live in the work-root `STATE.yml`'s `tasks_lifecycle` mapping instead — see `## Workspace` below).
 5. Find the task definition at the layout-appropriate path from step 4.
 6. Task not found → **STOP.** List available tasks.
 
@@ -75,9 +76,9 @@ Read the Execution Graph:
   `references/state-execute.md § Locate the Execution Graph`).
 
 Check that all tasks listed in `Depends on:` have `State: Done`:
-- **Full path:** in their respective `deliveries/delivery-NNN/tasks/task-NNN/STATE.md`
-  files (the `## Task State` section).
-- **Flat path:** in the work-root `STATE.md § ### Tasks lifecycle` table (keyed by `task-NNN`).
+- **Full path:** in their respective `deliveries/delivery-NNN/tasks/task-NNN/STATE.yml`
+  files (the top-level `state` key).
+- **Flat path:** in the work-root `STATE.yml`'s `tasks_lifecycle` mapping (keyed by `task-NNN`).
 
 If any dependency is not Done → **STOP.** List which dependencies are pending.
 
@@ -117,8 +118,8 @@ If the task only produces `.aid/` artifacts, skip branch isolation.
 ### Check 6: Determine State
 
 Read the task's `State`:
-- **Full path:** from `deliveries/delivery-NNN/tasks/task-NNN/STATE.md` `## Task State` section, if it exists.
-- **Flat path:** from the work-root `STATE.md § ### Tasks lifecycle` table row for `task-NNN`, if present.
+- **Full path:** from `deliveries/delivery-NNN/tasks/task-NNN/STATE.yml`'s top-level `state` key, if the file exists.
+- **Flat path:** from the work-root `STATE.yml`'s `tasks_lifecycle` entry for `task-NNN`, if present.
 
 Apply the routing table in `## State Detection` below.
 
@@ -159,8 +160,8 @@ aid-execute  ▸ you are here
 
 ⚠️ **FILESYSTEM IS THE ONLY SOURCE OF TRUTH.** Never assume or infer state from
 conversation history. Read the task's `State` from
-`deliveries/delivery-NNN/tasks/task-NNN/STATE.md` `## Task State` section (full path) —
-or, on the flat path, the work-root `STATE.md § ### Tasks lifecycle` row for `task-NNN`:
+`deliveries/delivery-NNN/tasks/task-NNN/STATE.yml`'s top-level `state` key (full path) —
+or, on the flat path, the work-root `STATE.yml`'s `tasks_lifecycle` entry for `task-NNN`:
 
 | Condition | State |
 |-----------|-------|
@@ -179,11 +180,30 @@ KB docs are relevant to this task, then load them. Let the INDEX guide you.
   - Full path: `.aid/works/{work}/deliveries/delivery-NNN/tasks/task-NNN/DETAIL.md`
   - Flat path: `.aid/works/{work}/tasks/task-NNN/DETAIL.md`
 - Task mutable state (State, Review, Elapsed, Notes):
-  - Full path: `.aid/works/{work}/deliveries/delivery-NNN/tasks/task-NNN/STATE.md`
-  - Flat path: work-root `.aid/works/{work}/STATE.md § ### Tasks lifecycle` row for `task-NNN`
-- Feature / architectural spec:
-  - Full path: `.aid/works/{work}/features/{feature}/SPEC.md` — Technical Specification
-  - Flat path: work-root `.aid/works/{work}/SPEC.md` — the single feature's Technical Specification
+  - Full path: `.aid/works/{work}/deliveries/delivery-NNN/tasks/task-NNN/STATE.yml`
+  - Flat path: work-root `.aid/works/{work}/STATE.yml`'s `tasks_lifecycle` entry for `task-NNN`
+  - **The requirements SLICE this task traces to — not the whole document:**
+
+    ```
+    bash .github/aid/scripts/execute/slice-requirements.sh .aid/works/{work} task-NNN
+    ```
+
+    Prints the task's own `§ 11` feature section (the technical specification it builds
+    against), the `§ 9` `AC-N` entries its `**Source:**` line cites, and the identity
+    block. Nothing else.
+
+    Every task execution loads a statement of intent; when that statement is the whole
+    of `REQUIREMENTS.md`, a 16-task work reads the whole document 16 times, and the cost
+    scales with task count where a gate's does not. On this repo's own requirements the
+    slice is ~93% smaller than the document.
+
+    The slice is derivable because the task already declares what it traces to — no new
+    field, no map to maintain, no judgment at read time. A task whose `**Source:**` cites
+    no criterion exits 3 rather than returning a near-empty slice: it has nothing to be
+    judged against, which is a defect in the DETAIL, not a small slice.
+
+    Read the whole document only when the task genuinely spans the work — rare, and
+    visible as a `**Source:**` citing many criteria rather than as a judgment call here.
 - `.aid/works/{work}/PLAN.md` — delivery context and **Execution Graph** (dependencies and parallelism;
   flat path: the top-level `## Execution Graph`, single delivery)
 
@@ -202,7 +222,7 @@ KB docs are relevant to this task, then load them. Let the INDEX guide you.
 | DELIVERY-GATE | `references/state-delivery-gate.md` | `aid-reviewer` (tier = complexity score) | → halt (grade ≥ min) / → FIX (grade < min) |
 
 On state entry, print `[State: NAME]` + the "you are here" map from State Detection above.
-When a state completes, route by its `**Advance:**` type (per [`state-machine-chaining.md`](../../templates/state-machine-chaining.md)):
+When a state completes, route by its `**Advance:**` type (per [`state-machine-chaining.md`](../../aid/templates/state-machine-chaining.md)):
 - **CHAIN** → begin the next state's reference doc within the same invocation; no exit.
 - **PAUSE-FOR-USER-ACTION** / **PAUSE-FOR-USER-DECISION** → print the pause reason + resume command and exit.
 - **HALT** → print the closing summary and exit.
@@ -222,50 +242,51 @@ dispatch in this skill.
     STATE.md                ← Q&A, Review History (settings -> .aid/settings.yml)
   works/
     work-NNN-{name}/
-      STATE.md                ← work-level pipeline header (AUTHORED); derived views (read-only)
-      PLAN.md                 ← delivery context (full path)
-      SPEC.md                 ← work definition + delivery/task graph (lite path)
+      STATE.yml                ← work-level pipeline header (AUTHORED); derived views (read-only)
+      REQUIREMENTS.md         ← work definition; § 11 holds the feature sections
+      PLAN.md                 ← delivery stanzas (each the delivery definition) +
+                              #  execution graph
       known-issues.md         ← issues to watch for
       deliveries/
         delivery-NNN/
-          STATE.md              ← delivery lifecycle (SD-8, AUTHORED) + gate + Q&A + derived task rollup
+          STATE.yml              ← delivery lifecycle (SD-8, AUTHORED) + gate + Q&A + derived task rollup
           tasks/
             task-NNN/
               DETAIL.md         ← PRIMARY INPUT (task definition: Type, Scope, AC)
-              STATE.md          ← task mutable state: State, Review, Elapsed, Notes
-      features/
-        feature-NNN-{name}/
-          SPEC.md             ← architectural constraints (full path only)
+              STATE.yml          ← task mutable state: state, review, elapsed, notes
+      REQUIREMENTS.md        ← § 11 `### Feature NNN` sections: architectural
+                             #  constraints (full path only)
 ```
 
-**Flat (single-delivery) layout — feature-001.** Detected by: a work-root
-`BLUEPRINT.md` present AND `tasks/task-NNN/DETAIL.md` present directly under
-the work root AND no `deliveries/` wrapper under it. Additive alongside the
-full path above (AC-9 — no regression):
+**Flat (single-delivery) layout — feature-001.** Detected by `pipeline.path: lite`
+in the work-root `STATE.yml`; for an un-migrated work that declares nothing, inferred
+from `tasks/task-NNN/DETAIL.md` present directly under the work root AND no
+`deliveries/` wrapper under it. Additive alongside the full path above (AC-9 — no
+regression):
 
 ```
 .aid/
   works/
     work-NNN-{name}/                     (flat / single-delivery — no features/, no deliveries/)
-      STATE.md                ← work-level pipeline header (AUTHORED) + the promoted
-                                 ## Delivery Lifecycle (### Tasks lifecycle) /
-                                 ## Delivery Gate AUTHORED blocks (single writer;
-                                 replaces delivery-NNN/STATE.md + per-task STATE.md)
-      REQUIREMENTS.md          ← requirements
-      SPEC.md                  ← the single feature spec (no features/ folder)
-      PLAN.md                  ← the single delivery's Deliverables + top-level
-                                 ## Execution Graph (no ### delivery-NNN heading)
-      BLUEPRINT.md              ← the single delivery definition: objective, scope,
-                                 Gate Criteria, task listing, dependencies
+      STATE.yml                ← work-level pipeline header (AUTHORED) + the promoted
+                                 delivery_lifecycle (tasks_lifecycle) /
+                                 delivery_gate AUTHORED keys (single writer;
+                                 replaces delivery-NNN/STATE.yml + per-task STATE.yml)
+      REQUIREMENTS.md          ← requirements AND, in § 11, the single feature section
+                                 with its own #### Technical Specification
+      PLAN.md                  ← the single delivery: its Deliverables stanza, which IS
+                                 the delivery definition (objective, scope, Gate
+                                 Criteria), plus the top-level ## Execution Graph
+                                 (no ### delivery-NNN heading)
       tasks/
         task-NNN/
           DETAIL.md            ← PRIMARY INPUT (task definition: Type, Scope, AC);
-                                 NO per-task STATE.md — cells live in the work
-                                 STATE.md § ### Tasks lifecycle instead
+                                 NO per-task STATE.yml — cells live in the work
+                                 STATE.yml's tasks_lifecycle mapping instead
 ```
 
 Branch is synthesized `aid/{work}-delivery-001` (Check 5); delivery gate criteria
-come from work-root `BLUEPRINT.md § Gate Criteria` (see
+come from the delivery's stanza in `PLAN.md` (see
 `references/state-delivery-gate.md`).
 
 **Ephemeral worktrees (pool dispatch PD-2):** `.aid/.worktrees/task-NNN/` are
@@ -318,9 +339,14 @@ effective `MaxConcurrent=1`. A user-visible notice is printed:
 [degradation] MaxConcurrent={N} requested, host capability=sequential — running effective=1
 ```
 
-The degradation event is also appended to the work `STATE.md ## Calibration Log`.
-The pool algorithm runs identically at pool size 1 — no behavioral difference
-other than one task in flight at a time (sequential execution).
+The degradation event has no per-task home to log to (it fires once, before any task is
+dispatched, so there is no `task-NNN` `dispatch_log` entry it belongs to; the retired
+`## Calibration Log` markdown section that could take a non-task row directly no
+longer has a corresponding key — `work-state-template.yml`'s Calibration Log/Dispatches
+views are DERIVED solely from per-task `dispatch_log` entries). The degradation notice
+above is therefore the sole record of this event. The pool algorithm runs identically
+at pool size 1 — no behavioral difference other than one task in flight at a time
+(sequential execution).
 
 ### EXECUTE-WAVE: AC4 Sub-unit Drill-down
 
@@ -376,10 +402,10 @@ into EXECUTE, not a continuation that can skip it); retry from Step 1.
 - Artifacts appropriate to the task type (code, tests, docs, configs, research, designs)
 - Grade >= minimum grade (from `bash .github/aid/scripts/config/read-setting.sh --skill execute --key minimum_grade --default A`)
 - Commit messages reference task-NNN (for types that produce commits)
-- `deliveries/delivery-NNN/tasks/task-NNN/STATE.md` `## Task State` updated with full review history
-  (flat path: the work-root `STATE.md § ### Tasks lifecycle` row for `task-NNN`)
-- `deliveries/delivery-NNN/STATE.md` `## Delivery Lifecycle` advanced (Executing -> Gated -> Done, or Blocked)
-  (flat path: the work-root `STATE.md § ## Delivery Lifecycle`)
+- `deliveries/delivery-NNN/tasks/task-NNN/STATE.yml`'s `state`/`review` keys updated with full review history
+  (flat path: the work-root `STATE.yml`'s `tasks_lifecycle` entry for `task-NNN`)
+- `deliveries/delivery-NNN/STATE.yml`'s `delivery_state` advanced (Executing -> Gated -> Done, or Blocked)
+  (flat path: the work-root `STATE.yml`'s `delivery_state`)
 - IMPEDIMENT-task-NNN.md if blocked
 
 ## Ticket Suggestion (conditional)
@@ -394,8 +420,8 @@ connector is catalogued.
 
 - [ ] Task Type read correctly from `deliveries/delivery-NNN/tasks/task-NNN/DETAIL.md`
   (flat path: `tasks/task-NNN/DETAIL.md` directly under the work root)
-- [ ] Task State read from `deliveries/delivery-NNN/tasks/task-NNN/STATE.md` (not the work-level table)
-  (flat path: the work-root `STATE.md § ### Tasks lifecycle` row — not the plural `## Tasks State` derived view)
+- [ ] Task State read from `deliveries/delivery-NNN/tasks/task-NNN/STATE.yml` (not the work-level rollup)
+  (flat path: the work-root `STATE.yml`'s `tasks_lifecycle` entry — not the plural Tasks State derived view)
 - [ ] On correct delivery branch (or skipped for RESEARCH/DOCUMENT-only tasks)
 - [ ] KB docs loaded via INDEX.md (not hardcoded)
 - [ ] Type-specific rules followed
@@ -407,7 +433,7 @@ connector is catalogued.
 - [ ] Non-CODE issues marked as Loopback with target phase
 - [ ] No silent workarounds — impediments documented
 - [ ] Commit messages reference task-NNN (where applicable)
-- [ ] `deliveries/delivery-NNN/tasks/task-NNN/STATE.md` `## Task State` has full review history
-  (flat path: the work-root `STATE.md § ### Tasks lifecycle` row)
-- [ ] `deliveries/delivery-NNN/STATE.md` `## Delivery Lifecycle` advanced to correct enum value (SD-8)
-  (flat path: the work-root `STATE.md § ## Delivery Lifecycle`)
+- [ ] `deliveries/delivery-NNN/tasks/task-NNN/STATE.yml`'s `state`/`review` keys have full review history
+  (flat path: the work-root `STATE.yml`'s `tasks_lifecycle` entry)
+- [ ] `deliveries/delivery-NNN/STATE.yml`'s `delivery_state` advanced to correct enum value (SD-8)
+  (flat path: the work-root `STATE.yml`'s `delivery_state`)

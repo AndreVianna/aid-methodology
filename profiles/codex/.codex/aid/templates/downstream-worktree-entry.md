@@ -31,7 +31,7 @@ times.
 > a main-checkout invocation with a false "no works found" before this document's Step 1 ever runs.
 > A single enumerated record auto-selects; multiple records prompt the user to choose; zero records
 > on any worktree is the genuine "no works" STOP. `aid-define` additionally narrows that
-> cross-worktree candidate set to `## Interview State: Approved` via a per-candidate `git show`
+> cross-worktree candidate set to `interview.state: Approved` via a per-candidate `git show`
 > (its own `SKILL.md § Task Routing` documents that sub-filter; this document does not repeat it).
 
 ---
@@ -116,7 +116,7 @@ mechanics; it only names the contract every consumer follows):
 
 Only after Steps 1-3 complete does the calling skill run its remaining pre-flight checks and state
 machine. This ordering is the whole point: the skill's first local `.aid/works/{work}/…` read (a
-feature-SPEC glob, a `PLAN.md`/`DETAIL.md` existence check, a `STATE.md` read) now resolves inside
+feature-SPEC glob, a `PLAN.md`/`DETAIL.md` existence check, a `STATE.yml` read) now resolves inside
 the entered worktree -- not against the empty `.aid/works/` a `master` checkout would show (`master`
 tracks no `.aid/works/` at all; every work lives in its own worktree).
 

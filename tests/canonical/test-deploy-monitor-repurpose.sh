@@ -10,8 +10,8 @@
 #
 #   Part 1 -- Re-point (part b, Must, § Q-A9):
 #     `aid-monitor` `state-route.md` routes BUG -> `/aid-fix` and CHANGE REQUEST ->
-#     `/aid-triage` (fixture findings); no aid-monitor file (SKILL.md, state-route.md,
-#     README.md) carries the deprecated "Route to aid-describe", "re-enters at
+#     `/aid-triage` (fixture findings); no aid-monitor file (SKILL.md, state-route.md)
+#     carries the deprecated "Route to aid-describe", "re-enters at
 #     aid-describe", "lite bug-fix triage", or "LITE-BUG-FIX" phrasing; pipeline-contracts.md
 #     L9/L10 targets updated in lockstep.
 #
@@ -28,10 +28,10 @@
 #     test-catalog-dirs-parity.sh's own CDP{i}e exemption logic).
 #
 #   Part 4 -- Full catalog-to-dirs parity:
-#     independently re-derived counts: exactly 58 rows total, all 58 of them canonical
-#     (`alias_of: null`) and 0 alias -- the alias layer is retired -- of which 24 carry
+#     independently re-derived counts: exactly 94 rows total, all 94 of them canonical
+#     (`alias_of: null`) and 0 alias -- the alias layer is retired -- of which 60 carry
 #     `repurpose: true` (hand-authored skills) and the other 34 are generated thin doorways
-#     (24 + 34 = 58); no orphan directory, no orphan row.
+#     (60 + 34 = 94); no orphan directory, no orphan row.
 #     (test-catalog-dirs-parity.sh itself stays COUNT-AGNOSTIC by design -- this is the
 #     dedicated count assertion its own header comment defers to task-035.)
 #
@@ -53,7 +53,6 @@ MONITOR_DIR="${REPO_ROOT}/canonical/skills/aid-monitor"
 DEPLOY_DIR="${REPO_ROOT}/canonical/skills/aid-deploy"
 MONITOR_SKILL="${MONITOR_DIR}/SKILL.md"
 MONITOR_ROUTE="${MONITOR_DIR}/references/state-route.md"
-MONITOR_README="${MONITOR_DIR}/README.md"
 DEPLOY_SKILL="${DEPLOY_DIR}/SKILL.md"
 CATALOG="${REPO_ROOT}/canonical/aid/templates/shortcut-catalog.yml"
 SKILLS_ROOT="${REPO_ROOT}/canonical/skills"
@@ -63,7 +62,6 @@ echo "=== Deploy/Monitor re-purpose + full catalog parity (task-035, feature-012
 
 assert_file_exists "$MONITOR_SKILL" "DMR00a aid-monitor/SKILL.md exists"
 assert_file_exists "$MONITOR_ROUTE" "DMR00b aid-monitor/references/state-route.md exists"
-assert_file_exists "$MONITOR_README" "DMR00c aid-monitor/README.md exists"
 assert_file_exists "$DEPLOY_SKILL" "DMR00d aid-deploy/SKILL.md exists"
 assert_file_exists "$CATALOG" "DMR00e shortcut-catalog.yml exists"
 assert_file_exists "$PIPELINE_CONTRACTS" "DMR00f pipeline-contracts.md exists"
@@ -90,11 +88,11 @@ assert_file_contains "$MONITOR_ROUTE" "BUG → /aid-fix:" \
 assert_file_contains "$MONITOR_ROUTE" "CHANGE REQUEST → /aid-triage:" \
     "DMR02b state-route.md Step 5 Act block: CHANGE REQUEST -> /aid-triage"
 
-# DMR-03: SKILL.md Routing-targets + README.md routing table both re-pointed.
+# DMR-03: SKILL.md Routing-targets re-pointed. The routing lives in the SHIPPING file;
+# the former README.md duplicates (DMR03c/DMR03d) went with the internal READMEs, and
+# asserted nothing DMR03a/DMR03b do not already assert against SKILL.md.
 assert_file_contains "$MONITOR_SKILL" "BUG → \`/aid-fix\`" "DMR03a SKILL.md Routing targets: BUG -> /aid-fix"
 assert_file_contains "$MONITOR_SKILL" "Change Request → \`/aid-triage\`" "DMR03b SKILL.md Routing targets: Change Request -> /aid-triage"
-assert_file_contains "$MONITOR_README" "| BUG | \`/aid-fix\`" "DMR03c README.md routing table: BUG -> /aid-fix"
-assert_file_contains "$MONITOR_README" "| Change Request | \`/aid-triage\`" "DMR03d README.md routing table: Change Request -> /aid-triage"
 
 # DMR-04: no residual deprecated phrasing anywhere under aid-monitor/.
 DEPRECATED_PATTERNS=(
@@ -216,12 +214,6 @@ EOF
 
 - **Name:** ${verb} sample
 - **Description:** Shortcut-generated flattened Lite work for ${verb}.
-
-## Change Log
-
-| Date | Change | Source |
-|------|--------|--------|
-| 2026-07-08 | Initial capture (shortcut: ${name}) | /${name} |
 EOF
     cat > "${work_dir}/PLAN.md" <<EOF
 # Plan -- work-NNN-${verb}-sample
@@ -315,13 +307,16 @@ echo "--- Part 4: full ${TOTAL_ROWS}-row catalog-to-dirs parity ---"
 #   at 58, and repurpose:true went 30 -> 24 as six of those hand-authored rows ceased to exist.
 #   The retired names themselves are deliberately NOT spelled out here: this file is swept for
 #   them and must return zero hits. `git log -- <this catalog>` is the place to read them.
+#   work-006 then added the design stage: 36 hand-authored rows landed (58 -> 94 rows), all of
+#   them repurpose:true (24 -> 60), so the generated thin-doorway count did not move and stays
+#   at 34.
 # Only the last figures in that narration are asserted; the rest is the record of how we got here.
-assert_eq "$TOTAL_ROWS" "58" "DMR30 catalog carries exactly 58 total rows"
-assert_eq "$CANONICAL_ROWS" "58" "DMR31 catalog carries exactly 58 canonical (alias_of: null) rows -- i.e. every row, the alias layer having been retired"
+assert_eq "$TOTAL_ROWS" "94" "DMR30 catalog carries exactly 94 total rows"
+assert_eq "$CANONICAL_ROWS" "94" "DMR31 catalog carries exactly 94 canonical (alias_of: null) rows -- i.e. every row, the alias layer having been retired"
 assert_eq "${ALIAS_ROWS} alias of ${ALIAS_FIELD_LINES} rows carrying an alias_of field" \
-    "0 alias of 58 rows carrying an alias_of field" \
-    "DMR32 catalog carries zero alias rows, out of the 58 rows that DO carry an alias_of field (paired so a moved, emptied or re-keyed catalog cannot pass this as a free zero)"
-assert_eq "$REPURPOSE_ROWS" "24" "DMR33 catalog carries exactly 24 repurpose:true rows (the hand-authored skills; the other 34 rows are generated thin doorways -- 24 + 34 = 58)"
+    "0 alias of 94 rows carrying an alias_of field" \
+    "DMR32 catalog carries zero alias rows, out of the 94 rows that DO carry an alias_of field (paired so a moved, emptied or re-keyed catalog cannot pass this as a free zero)"
+assert_eq "$REPURPOSE_ROWS" "60" "DMR33 catalog carries exactly 60 repurpose:true rows (the hand-authored skills; the other 34 rows are generated thin doorways -- 60 + 34 = 94)"
 CANONICAL_PLUS_ALIAS=$((CANONICAL_ROWS + ALIAS_ROWS))
 assert_eq "$CANONICAL_PLUS_ALIAS" "$TOTAL_ROWS" "DMR34 canonical + alias == total (no row miscounted/double-counted)"
 

@@ -46,11 +46,13 @@ stalled task never surfaces as `Failed` for anyone watching the board.
 
 **Both layouts, no special-casing:** `writeback-state.sh --delivery-id DDD
 --task-id NNN --field State --value V` auto-detects the layout -- **full
-layout** writes the per-task `deliveries/delivery-NNN/tasks/task-NNN/STATE.md`
-frontmatter; **flat layout** (feature-001) writes the SAME task's row in the
-work-root `STATE.md § ### Tasks lifecycle` table instead. Same command, same
-call sites, no branching in the instructions above -- the script handles the
-layout difference so the executing agent does not have to.
+layout** writes the `state` top-level key in the per-task
+`deliveries/delivery-NNN/tasks/task-NNN/STATE.yml` (no separate frontmatter/body
+split at the task level any more -- every key is top-level); **flat layout**
+(feature-001) writes the SAME task's `tasks_lifecycle.task-NNN.state` entry in the
+work-root `STATE.yml` instead. Same command, same call sites, no branching in the
+instructions above -- the script handles the layout difference so the executing
+agent does not have to.
 
 **Both dispatch modes, no special-casing:** for a **single-task invocation**
 the writes above happen inline as the task's own EXECUTE/REVIEW states run
@@ -75,7 +77,7 @@ cooperative stop-signal channel -- the dashboard-side half (`pipeline.finish` / 
 `task.resume`, `write-control-signal.sh`) lives in `dashboard/server/`; this section is what
 makes a signal the dashboard raised actually bite on the running session.
 
-**(1) Pipeline Finish.** Re-read the work `lifecycle` from `STATE.md` frontmatter (the same
+**(1) Pipeline Finish.** Re-read the work `lifecycle` from `STATE.yml` frontmatter (the same
 field `writeback-state.sh --pipeline --field Lifecycle` writes; enum `Running |
 Paused-Awaiting-Input | Blocked | Completed | Canceled`). Any value **other than** `Running` ->
 STOP: dispatch no new task, dispatch no new reviewer/fix cycle for any task, and do NOT advance
@@ -163,7 +165,8 @@ Each task type dispatches a specific executor agent. The reviewer is always the 
 
 **Model override per task type.** Each executor has a default tier from its agent definition (Developer is Medium tier, etc.). For genuinely complex work — REFACTOR over a tangled module, MIGRATE with edge cases, IMPLEMENT touching critical security paths — the orchestrator may dispatch with an explicit higher-tier model in the Task tool's `model` parameter. This is a runtime decision per dispatch, not a skill configuration.
 
-**Mechanical sub-tasks.** Executors may delegate mechanical work (extraction, file enumeration, template filling) to `aid-clerk` (with `operation: extract`, `operation: glob`, or `operation: format` respectively) — Small-tier utility sub-agents. See `agents/aid-clerk/README.md` for the caller contract.
+**Mechanical sub-tasks.** Executors may delegate mechanical work (extraction, file enumeration, template filling) to `aid-clerk` (with `operation: extract`, `operation: glob`, or `operation: format` respectively) — Small-tier utility sub-agents. See `agents/aid-clerk/AGENT.md § Caller Contract` for what each
+operation requires.
 
 ## EXECUTE-WAVE: Pool Dispatch (delivery-level, FR6)
 
@@ -214,15 +217,11 @@ Each task type dispatches a specific executor agent. The reviewer is always the 
 
       where `{N}` is the configured value read in step 1.
 
-   d. **Append degradation event to work `STATE.md` `## Calibration Log`:**
-
-      ```
-      | {YYYY-MM-DD} | probe | background_execution | n/a | n/a | degraded — host capability=sequential; effective MaxConcurrent=1 (configured={N}) |
-      ```
-
-      Use the current date for `{YYYY-MM-DD}` and the actual configured value
-      for `{N}`. This entry is informational — it records that degradation
-      occurred, its reason, and the configured value that was overridden.
+   d. **This degradation event has no persisted log target.** The `[degradation]`
+      notice printed in step c above is the sole record: the work-level Calibration
+      Log / Dispatches views are now DERIVED solely from per-task `dispatch_log`
+      entries (`work-state-template.yml`), and this probe fires once, before any
+      task is dispatched, so there is no `task-NNN` for an entry to belong to.
 
    e. Continue with `MaxConcurrent=1`. The pool algorithm below operates
       identically in serial mode — "fill pool" (PD-2) dispatches exactly one
@@ -233,24 +232,25 @@ Each task type dispatches a specific executor agent. The reviewer is always the 
    configured `MaxConcurrent` from step 1 as the effective value.
 
 3. **Locate the Execution Graph:**
-   - **Flat path (feature-001, single-delivery)** — detected by: a work-root
-     `BLUEPRINT.md` present AND `tasks/task-NNN/DETAIL.md` present directly
-     under the work root AND no `deliveries/` wrapper under it → read the
+   - **Flat path (feature-001, single-delivery)** — detected by `pipeline.path: lite`
+     in the work-root `STATE.yml`, or for an un-migrated work by
+     `tasks/task-NNN/DETAIL.md` present directly under the work root AND no
+     `deliveries/` wrapper under it → read the
      top-level `## Execution Graph` from the work-root `PLAN.md` (no
      `### delivery-NNN` heading; the single delivery is implicit).
    - **Full path** — otherwise, if `PLAN.md` exists in the work directory → read
      the `#### Execution Graph` block from the delivery's section.
-   - Otherwise (lite path) → read the equivalent block from the work-root
-     `SPEC.md`.
+   - Otherwise (lite path) → there is no stored graph; derive it with
+     `derive-waves.sh --from-tasks .aid/works/{work}`.
    - Parse the `| Task | Depends On |` table into an in-memory dependency map.
 
 ### PD-1: Initialize State
 
 Compute the **ready set** — every task whose `Depends On` list is `—` (no deps)
 or whose every dependency already has `State: Done`:
-- **Full path:** in its respective `deliveries/delivery-NNN/tasks/task-NNN/STATE.md`
-  `## Task State` section.
-- **Flat path:** in the work-root `STATE.md § ### Tasks lifecycle` row for that task.
+- **Full path:** in its respective `deliveries/delivery-NNN/tasks/task-NNN/STATE.yml`
+  top-level `state` key.
+- **Flat path:** in the work-root `STATE.yml`'s `tasks_lifecycle` entry for that task.
 
 Mark all other tasks **Pending** (no state write needed — absence of `Done` implies
 Pending). The **in-flight set** starts empty. The **blocked set** starts empty.
@@ -279,7 +279,7 @@ Wave ∞ (pool) · 0/{T} done
 
 **MANDATORY, before filling the pool -- Pipeline Finish check (feature-008; full mandate:
 `§ MANDATORY: Executor-side Cooperative Poll` above):** re-read the work `lifecycle` from
-`STATE.md` frontmatter. If it is anything other than `Running`, STOP here -- do not dispatch
+`STATE.yml` frontmatter. If it is anything other than `Running`, STOP here -- do not dispatch
 any new task from the ready set on this pass. This is the pool's own "between tasks"
 task-dispatch boundary -- it re-fires every time PD-2 is (re-)entered, including on the
 loop-back from PD-4 step 7.
@@ -332,7 +332,7 @@ Repeat until pool is full (`|in-flight| = MaxConcurrent`) or ready set is empty.
 
 Each dispatched agent receives a prompt that branches on layout exactly as
 PD-0 step 3 / PD-1 above (a flat work has no `deliveries/` wrapper and no
-per-task `STATE.md`):
+per-task `STATE.yml`):
 
 **Full path:**
 
@@ -347,7 +347,7 @@ HEARTBEAT_INTERVAL: 1m
 Execute task-{NNN} using the aid-execute skill in per-task mode -- full pipeline
 EXECUTE -> QUICK CHECK -> REVIEW -> cycles until DONE.
 Read task definition from .aid/works/{work}/deliveries/delivery-{DDD}/tasks/task-{NNN}/DETAIL.md.
-Read task state from .aid/works/{work}/deliveries/delivery-{DDD}/tasks/task-{NNN}/STATE.md.
+Read task state from .aid/works/{work}/deliveries/delivery-{DDD}/tasks/task-{NNN}/STATE.yml.
 Follow the type-specific executor rules from references/task-type-rules.md.
 MANDATORY: write your own State at EVERY transition you run yourself --
 In Progress at your own EXECUTE entry, In Review at your own execute-complete,
@@ -363,8 +363,8 @@ Report: DONE or FAILED with reason.
 ```
 
 **Flat path (feature-001, single-delivery)** -- no `deliveries/` wrapper; the
-task's mutable state cells live in the work-root `STATE.md`'s `### Tasks
-lifecycle` table row, not a per-task `STATE.md`:
+task's mutable state cells live in the work-root `STATE.yml`'s `tasks_lifecycle`
+mapping entry, not a per-task `STATE.yml`:
 
 ```
 TASK: task-{NNN}
@@ -377,8 +377,8 @@ HEARTBEAT_INTERVAL: 1m
 Execute task-{NNN} using the aid-execute skill in per-task mode -- full pipeline
 EXECUTE -> QUICK CHECK -> REVIEW -> cycles until DONE.
 Read task definition from .aid/works/{work}/tasks/task-{NNN}/DETAIL.md.
-Read task state from the work-root .aid/works/{work}/STATE.md § ### Tasks lifecycle
-(row for task-{NNN}; there is no per-task STATE.md in this layout).
+Read task state from the work-root .aid/works/{work}/STATE.yml's tasks_lifecycle
+mapping (entry for task-{NNN}; there is no per-task STATE.yml in this layout).
 Follow the type-specific executor rules from references/task-type-rules.md.
 MANDATORY: write your own State at EVERY transition you run yourself --
 In Progress at your own EXECUTE entry, In Review at your own execute-complete,
@@ -445,8 +445,13 @@ Remove `task-{NNN}` from the in-flight set.
    now entirely `Done`, add that task to the ready set.
 
 4. Emit `✓ <executor> done for task-{NNN} in <actual>`.
-   Append to work `STATE.md ## Calibration Log`:
-   `| YYYY-MM-DD | <executor> | task-{NNN} | <ETA-band> | <actual> | pool-dispatch |`
+   Append a `dispatch_log` entry to this task's own state (full path:
+   `deliveries/delivery-NNN/tasks/task-NNN/STATE.yml`; flat path:
+   `tasks_lifecycle.task-{NNN}.dispatch_log` in the work-root `STATE.yml`) --
+   `- date: YYYY-MM-DD / agent: <executor> / eta_band: <ETA-band> / actual: <actual> /
+   outcome: pool-dispatch` (this is what the work-level Calibration Log / Dispatches
+   views derive from at read time; there is no direct work-root Calibration Log write
+   any more).
 
 5. Delete the worktree: `git worktree remove .aid/.worktrees/task-{NNN}/`.
    Delete heartbeat file.
@@ -608,12 +613,12 @@ Next steps:
 **State invariants at fixed point (Case B):**
 
 - Every task in the failed set has `State: Failed` in its per-task state cell (full path:
-  `deliveries/delivery-NNN/tasks/task-NNN/STATE.md`; flat layout: its `task-NNN` row in the
-  work-root `STATE.md § ### Tasks lifecycle` -- there is no per-task STATE.md in the flat layout).
+  `deliveries/delivery-NNN/tasks/task-NNN/STATE.yml`; flat layout: its `task-NNN` entry in the
+  work-root `STATE.yml`'s `tasks_lifecycle` -- there is no per-task STATE.yml in the flat layout).
 - Every task in the blocked set has `State: Blocked` in that same per-task state cell (full path:
-  `deliveries/delivery-NNN/tasks/task-NNN/STATE.md`; flat layout: its `task-NNN` row in the
-  work-root `STATE.md § ### Tasks lifecycle`) with a Notes entry naming its failed ancestor.
-- The delivery `STATE.md` `## Delivery Lifecycle` has `State: Blocked`.
+  `deliveries/delivery-NNN/tasks/task-NNN/STATE.yml`; flat layout: its `task-NNN` entry in the
+  work-root `STATE.yml`'s `tasks_lifecycle`) with a Notes entry naming its failed ancestor.
+- The delivery's `delivery_state` key has value `Blocked`.
 - No Blocked task was dispatched (Blocked tasks never enter the ready set).
 - Every task NOT in the failed or blocked sets and not already `Done` has
   `State: Pending` -- it was not reached this run because it was not yet ready
@@ -668,11 +673,11 @@ If `MaxConcurrent` is `1` because the user *configured* it that way (not because
 of host capability), only the local reminder is printed at PD-1 (no "requested N"
 prefix — the user intentionally chose 1).
 
-**Calibration Log entry:** The degradation event was appended to
-`STATE.md ## Calibration Log` at PD-0 step 2d (on probe failure). No additional
-Calibration Log entry is written at PD-6 for the same degradation event. If
-`MaxConcurrent=1` is user-configured (no degradation), no Calibration Log entry
-is written (not an event — it is the intended configuration).
+**Calibration Log entry:** as PD-0 step 2d now notes, the degradation event has no
+persisted Calibration Log target -- the `[degradation]` console notice at PD-0 step 2c
+is its sole record. No Calibration Log entry is written at PD-6 for the same
+degradation event, nor when `MaxConcurrent=1` is user-configured (no degradation --
+not an event, it is the intended configuration).
 
 Serial-mode tasks share the delivery branch without coordination overhead —
 each commit lands before the next task starts, so no cherry-pick step is needed;
@@ -694,7 +699,7 @@ decision tree — lives in its own reference to keep this state file navigable:
 
 **MANDATORY, before any write below -- Pipeline Finish check (feature-008; full mandate:
 `§ MANDATORY: Executor-side Cooperative Poll` above):** re-read the work `lifecycle` from
-`STATE.md` frontmatter AS IT CURRENTLY STANDS ON DISK -- before this state's own writes below
+`STATE.yml` frontmatter AS IT CURRENTLY STANDS ON DISK -- before this state's own writes below
 (which include an unconditional `Lifecycle: Running` write) have a chance to run, since those
 writes would otherwise silently clobber a dashboard-set `Completed`/`Blocked` value and make
 this check a no-op. If the re-read value is anything other than `Running`, STOP here -- do not
@@ -733,7 +738,10 @@ Dispatch with the Task tool, setting `subagent_type` explicitly to the chosen ex
 
 **Before dispatching, print:** `[Step 1] Dispatching {executor} for {Type} task -> subagent_type={executor}` (substituting actual values).
 
-Dispatch metadata is logged via the Calibration Log appendix in STATE.md (per work-003 traceability rule -- always, not conditional).
+Dispatch metadata is narrated via the closing `✓ ... done` bracket (per work-003
+traceability rule -- always, not conditional); this task's own `dispatch_log` entry
+(full path: this task's `STATE.yml`; flat path: `tasks_lifecycle.task-{NNN}.dispatch_log`)
+is what the work-level Calibration Log / Dispatches views derive from at read time.
 
 ▶ {executor} starting (~{time band per rough-time-hints})
 Load the section matching the task's Type from `references/task-type-rules.md` and pass it to the executor as the type-specific RULES it must follow.

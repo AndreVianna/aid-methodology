@@ -52,40 +52,19 @@ def _make_repo(tmp: Path) -> tuple[Path, Path]:
     return root, aid
 
 
+# SPEC.md sec:D-4 flat-work STATE.yml shape (work-009-refactor task-016: was
+# a fenced-frontmatter STATE.md with '## Pipeline State' / '## Tasks State'
+# markdown-heading blocks + a pipe-table -- both retired. The per-task mutable
+# cells now live in the `tasks_lifecycle` mapping, keyed by task_id.)
 _STATE_TEMPLATE = """\
-## Pipeline State
-
-- **Lifecycle:** {lifecycle}
-- **Phase:** Execute
-- **Active Skill:** aid-execute
-- **Updated:** {updated}
-- **Pause Reason:** --
-- **Block Reason:** --
-- **Block Artifact:** --
-
-## Tasks State
-
-| # | Task | Type | Wave | State | Review | Elapsed | Notes |
-|---|------|------|------|-------|--------|---------|-------|
-{task_rows}
-"""
-
-# Legacy (old-naming) state fixture for backwards compatibility test
-_STATE_TEMPLATE_LEGACY = """\
-## Pipeline Status
-
-- **Lifecycle:** {lifecycle}
-- **Phase:** Execute
-- **Active Skill:** aid-execute
-- **Updated:** {updated}
-- **Pause Reason:** --
-- **Block Reason:** --
-- **Block Artifact:** --
-
-## Tasks Status
-
-| # | Task | Type | Wave | Status | Review | Elapsed | Notes |
-|---|------|------|------|--------|--------|---------|-------|
+lifecycle: {lifecycle}
+phase: Execute
+active_skill: aid-execute
+updated: '{updated}'
+pause_reason: --
+block_reason: --
+block_artifact: --
+tasks_lifecycle:
 {task_rows}
 """
 
@@ -94,14 +73,33 @@ def _state_text(
     lifecycle: str = "Running",
     updated: str = "2026-06-10T12:00:00Z",
     tasks: list[tuple[str, str]] | None = None,
-    use_legacy: bool = False,
 ) -> str:
-    """Build a minimal STATE.md text."""
-    template = _STATE_TEMPLATE_LEGACY if use_legacy else _STATE_TEMPLATE
+    """Build a minimal flat-layout STATE.yml text."""
     rows = ""
-    for i, (task_id, state) in enumerate(tasks or []):
-        rows += f"| {i+1:03d} | {task_id} | IMPLEMENT | delivery-001 | {state} | -- | -- | -- |\n"
-    return template.format(lifecycle=lifecycle, updated=updated, task_rows=rows)
+    for task_id, state in (tasks or []):
+        rows += (
+            f"  {task_id}:\n"
+            f"    state: {state}\n"
+            f"    review: --\n"
+            f"    elapsed: --\n"
+            f"    notes: --\n"
+        )
+    if not rows:
+        rows = "  {}\n"
+    return _STATE_TEMPLATE.format(lifecycle=lifecycle, updated=updated, task_rows=rows)
+
+
+def _make_flat_task_dirs(work_dir: Path, task_ids: list[str]) -> None:
+    """Create BLUEPRINT.md + tasks/task-NNN/DETAIL.md for each task_id, so
+    _detect_flat() routes this work through _read_work_flat (SPEC.md sec:D-4)."""
+    work_dir.mkdir(parents=True, exist_ok=True)
+    (work_dir / "BLUEPRINT.md").write_text("# Blueprint\n", encoding="utf-8")
+    for task_id in task_ids:
+        task_dir = work_dir / "tasks" / task_id
+        task_dir.mkdir(parents=True, exist_ok=True)
+        (task_dir / "DETAIL.md").write_text(
+            f"# {task_id}\n\n**Type:** IMPLEMENT\n", encoding="utf-8",
+        )
 
 
 # ---------------------------------------------------------------------------
@@ -481,8 +479,8 @@ class TestReconcileIntegration(unittest.TestCase):
         root, aid = _make_repo(self.tmp)
         # Main root work
         work_main = aid / "works" / work_id
-        work_main.mkdir(parents=True, exist_ok=True)
-        (work_main / "STATE.md").write_text(
+        _make_flat_task_dirs(work_main, [t for t, _ in main_tasks])
+        (work_main / "STATE.yml").write_text(
             _state_text(updated=main_updated, tasks=main_tasks),
             encoding="utf-8",
         )
@@ -495,8 +493,8 @@ class TestReconcileIntegration(unittest.TestCase):
 
         # Main root work
         work_main = aid / "works" / work_id
-        work_main.mkdir(parents=True, exist_ok=True)
-        (work_main / "STATE.md").write_text(
+        _make_flat_task_dirs(work_main, ["task-001", "task-002"])
+        (work_main / "STATE.yml").write_text(
             _state_text(
                 updated="2026-06-10T09:00:00Z",
                 tasks=[("task-001", "In Progress"), ("task-002", "Pending")],
@@ -507,8 +505,9 @@ class TestReconcileIntegration(unittest.TestCase):
         # Simulate a second root with the same work_id (a worktree)
         wt_root = self.tmp / "worktree-feat"
         wt_aid = wt_root / ".aid"
-        (wt_aid / "works" / work_id).mkdir(parents=True, exist_ok=True)
-        (wt_aid / "works" / work_id / "STATE.md").write_text(
+        wt_work = wt_aid / "works" / work_id
+        _make_flat_task_dirs(wt_work, ["task-001", "task-003"])
+        (wt_work / "STATE.yml").write_text(
             _state_text(
                 updated="2026-06-10T12:00:00Z",   # NEWER
                 tasks=[("task-001", "Done"), ("task-003", "Blocked")],
@@ -553,15 +552,17 @@ class TestReconcileIntegration(unittest.TestCase):
         """model.read.work_count reflects deduplicated count (1, not 2)."""
         root, aid = _make_repo(self.tmp)
         work_id = "work-002-count-check"
-        (aid / "works" / work_id).mkdir(parents=True, exist_ok=True)
-        (aid / "works" / work_id / "STATE.md").write_text(
+        work_main = aid / "works" / work_id
+        _make_flat_task_dirs(work_main, ["task-001"])
+        (work_main / "STATE.yml").write_text(
             _state_text(updated="2026-06-01T00:00:00Z", tasks=[("task-001", "Pending")]),
             encoding="utf-8",
         )
         wt_root = self.tmp / "wt"
         wt_aid = wt_root / ".aid"
-        (wt_aid / "works" / work_id).mkdir(parents=True, exist_ok=True)
-        (wt_aid / "works" / work_id / "STATE.md").write_text(
+        wt_work = wt_aid / "works" / work_id
+        _make_flat_task_dirs(wt_work, ["task-001"])
+        (wt_work / "STATE.yml").write_text(
             _state_text(updated="2026-06-02T00:00:00Z", tasks=[("task-001", "In Progress")]),
             encoding="utf-8",
         )
@@ -590,13 +591,15 @@ class TestReconcileIntegration(unittest.TestCase):
             tasks=[("task-001", "Done")],
         )
 
-        (aid / "works" / work_id).mkdir(parents=True, exist_ok=True)
-        (aid / "works" / work_id / "STATE.md").write_text(older_text, encoding="utf-8")
+        work_main = aid / "works" / work_id
+        _make_flat_task_dirs(work_main, ["task-001"])
+        (work_main / "STATE.yml").write_text(older_text, encoding="utf-8")
 
         wt_root = self.tmp / "wt2"
         wt_aid = wt_root / ".aid"
-        (wt_aid / "works" / work_id).mkdir(parents=True, exist_ok=True)
-        (wt_aid / "works" / work_id / "STATE.md").write_text(newer_text, encoding="utf-8")
+        wt_work = wt_aid / "works" / work_id
+        _make_flat_task_dirs(wt_work, ["task-001"])
+        (wt_work / "STATE.yml").write_text(newer_text, encoding="utf-8")
 
         import unittest.mock as mock
         with mock.patch(
@@ -651,24 +654,25 @@ class TestReconcileNeverThrows(unittest.TestCase):
         # Pending(6) beats Unknown(7)
         self.assertEqual(result.tasks[0].status, TaskStatus.Pending)
 
-    def test_malformed_state_md_on_disk_does_not_throw(self):
-        """read_repo with a truncated STATE.md on one root never throws."""
+    def test_malformed_state_yml_on_disk_does_not_throw(self):
+        """read_repo with a truncated STATE.yml on one root never throws
+        (work-009-refactor task-016: was a truncated STATE.md prose fragment)."""
         import tempfile
         with tempfile.TemporaryDirectory() as d:
             root = Path(d)
             root_, aid = _make_repo(root)
             work_id = "work-001-bad"
             (aid / "works" / work_id).mkdir(parents=True, exist_ok=True)
-            (aid / "works" / work_id / "STATE.md").write_text(
-                "## Pipeline Status\n\n- **Lifecycle",  # truncated
+            (aid / "works" / work_id / "STATE.yml").write_text(
+                "lifecycle: Runni",  # truncated mid-value
                 encoding="utf-8",
             )
             model = read_repo(root)
         self.assertIsNotNone(model)
         # Should NOT raise; may have parse_warnings
 
-    def test_missing_state_md_on_one_root_does_not_throw(self):
-        """read_repo when STATE.md is absent on the second root never throws."""
+    def test_missing_state_yml_on_one_root_does_not_throw(self):
+        """read_repo when STATE.yml is absent on the second root never throws."""
         import tempfile
         import unittest.mock as mock
         with tempfile.TemporaryDirectory() as d:
@@ -676,17 +680,18 @@ class TestReconcileNeverThrows(unittest.TestCase):
             root_, aid = _make_repo(root)
             work_id = "work-001-nostate"
 
-            # Main root has STATE.md
-            (aid / "works" / work_id).mkdir(parents=True, exist_ok=True)
-            (aid / "works" / work_id / "STATE.md").write_text(
+            # Main root has STATE.yml
+            work_main = aid / "works" / work_id
+            _make_flat_task_dirs(work_main, ["task-001"])
+            (work_main / "STATE.yml").write_text(
                 _state_text(updated="2026-06-10T00:00:00Z", tasks=[("task-001", "Done")]),
                 encoding="utf-8",
             )
 
-            # Second root has no STATE.md
+            # Second root has no STATE.yml
             wt_aid = Path(d) / "wt" / ".aid"
             (wt_aid / "works" / work_id).mkdir(parents=True, exist_ok=True)
-            # Deliberately omit STATE.md
+            # Deliberately omit STATE.yml
 
             with mock.patch(
                 "dashboard.reader.reader.enumerate_worktree_roots",
@@ -714,8 +719,9 @@ class TestReconcileDistinctWorks(unittest.TestCase):
             root_, aid = _make_repo(root)
 
             for wid in ["work-001-alpha", "work-002-beta"]:
-                (aid / "works" / wid).mkdir(parents=True, exist_ok=True)
-                (aid / "works" / wid / "STATE.md").write_text(
+                work_dir = aid / "works" / wid
+                _make_flat_task_dirs(work_dir, ["task-001"])
+                (work_dir / "STATE.yml").write_text(
                     _state_text(updated="2026-06-10T00:00:00Z", tasks=[("task-001", "Done")]),
                     encoding="utf-8",
                 )

@@ -3,7 +3,7 @@
 #
 # Exercises canonical/aid/scripts/summarize/assemble.sh against a SELF-CONTAINED
 # fixture summary-src (built in a temp dir), so it always runs in CI -- it does NOT
-# depend on the committed kb.html or the gitignored summary-src workspace (work-013).
+# depend on the committed kb.html or the gitignored summary-src workspace.
 #
 # Asserts:
 #   ME01  when a md-export-payload.html is present in the source layout, assemble.sh

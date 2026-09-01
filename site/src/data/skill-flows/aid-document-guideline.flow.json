@@ -31,16 +31,16 @@
       "provenance": {
         "file": "canonical/skills/aid-create-document/SKILL.md",
         "startLine": 41,
-        "endLine": 61,
+        "endLine": 64,
         "sourceKind": "skill",
-        "excerpt": "## State: INTAKE\n\n1. **Require a subject.** Empty argument -> ask one bootstrapping question (\"What do you\n   want documented, and for whom?\") and wait.\n2. **Resolve format + genre** from the request (or the hint a kind-sibling bound): e.g. \"an\n   ADR for X\" -> markdown ADR; \"a diagram of the pipeline\" -> mermaid; \"the release notes\"\n   -> changelog. Use the genre structures in `document.md`.\n3. **Pick the path:** **Fast** -- a clear subject + kind -> author now. **Guided** -- vague\n   -> scope subject / audience / kind first.\n4. **Classify complexity (model + effort):** most docs -> `aid-tech-writer` at **sonnet /\n   medium**; a heavy architecture write-up -> **opus / high**. Verifier tier >= producer.\n5. **Consult the Work Initiation Gate, then allocate the work folder + STATE.** First run\n   the gate (`canonical/aid/templates/work-initiation-gate.md`):\n   `bash canonical/aid/scripts/works/enumerate-works.sh` (main tree + every git worktree).\n   Empty -> allocate, no prompt. Works exist -> ask new-vs-continuation; on **continuation**\n   route to the chosen work's resume door and STOP (allocate nothing); on **new work**:\n   create and enter the worktree per the gate's `§ 3a` step 2\n   (`worktree-lifecycle.sh create <work-id> <name>`, STOP on a non-zero exit or empty path,\n   else enter the resolved path), **then** allocate (`pipeline.path: lite`, `initiator:\n   aid-create-document`, `lifecycle: Running`, `active_skill: aid-create-document`;\n   `phase` not driven)."
+        "excerpt": "## State: INTAKE\n\n1. **Require a subject.** Empty argument -> ask one bootstrapping question (\"What do you\n   want documented, and for whom?\") and wait.\n2. **Resolve format + genre** from the request (or the hint a kind-sibling bound): e.g. \"an\n   ADR for X\" -> markdown ADR; \"a diagram of the pipeline\" -> mermaid; \"the release notes\"\n   -> changelog. Use the genre structures in `document.md`.\n3. **Pick the path:** **Fast** -- a clear subject + kind -> author now. **Guided** -- vague\n   -> scope subject / audience / kind first.\n4. **Classify complexity (model + effort):** most docs -> `aid-tech-writer` at **sonnet /\n   medium**; a heavy architecture write-up -> **opus / high**. Verifier tier >= producer.\n5. **Consult the Work Initiation Gate, then allocate the work folder + STATE.** First run\n   the gate (`canonical/aid/templates/work-initiation-gate.md`):\n   `bash canonical/aid/scripts/works/enumerate-works.sh` (main tree + every git worktree).\n   Empty -> allocate, no prompt. Works exist -> ask new-vs-continuation; on **continuation**\n   route to the chosen work's resume door and STOP (allocate nothing); on **new work**:\n   create and enter the worktree per the gate's `§ 3a` step 2\n   (`worktree-lifecycle.sh create <work-id> <name>`, STOP on a non-zero exit or empty path,\n   else enter the resolved path), **then** allocate (`pipeline.path: lite`, `initiator:\n   aid-create-document`, `lifecycle: Running`, `active_skill: aid-create-document`;\n   `phase` not driven).\n6. **Read the design seed, if present.** If `.aid/design/document.md` exists, read it as\n   prior context before drafting; it is an input, never a substitute, and is not modified\n   by this run."
       },
       "detail": {
         "file": "canonical/skills/aid-create-document/SKILL.md",
         "startLine": 41,
-        "endLine": 63,
+        "endLine": 66,
         "sourceKind": "skill",
-        "excerpt": "## State: INTAKE\n\n1. **Require a subject.** Empty argument -> ask one bootstrapping question (\"What do you\n   want documented, and for whom?\") and wait.\n2. **Resolve format + genre** from the request (or the hint a kind-sibling bound): e.g. \"an\n   ADR for X\" -> markdown ADR; \"a diagram of the pipeline\" -> mermaid; \"the release notes\"\n   -> changelog. Use the genre structures in `document.md`.\n3. **Pick the path:** **Fast** -- a clear subject + kind -> author now. **Guided** -- vague\n   -> scope subject / audience / kind first.\n4. **Classify complexity (model + effort):** most docs -> `aid-tech-writer` at **sonnet /\n   medium**; a heavy architecture write-up -> **opus / high**. Verifier tier >= producer.\n5. **Consult the Work Initiation Gate, then allocate the work folder + STATE.** First run\n   the gate (`canonical/aid/templates/work-initiation-gate.md`):\n   `bash canonical/aid/scripts/works/enumerate-works.sh` (main tree + every git worktree).\n   Empty -> allocate, no prompt. Works exist -> ask new-vs-continuation; on **continuation**\n   route to the chosen work's resume door and STOP (allocate nothing); on **new work**:\n   create and enter the worktree per the gate's `§ 3a` step 2\n   (`worktree-lifecycle.sh create <work-id> <name>`, STOP on a non-zero exit or empty path,\n   else enter the resolved path), **then** allocate (`pipeline.path: lite`, `initiator:\n   aid-create-document`, `lifecycle: Running`, `active_skill: aid-create-document`;\n   `phase` not driven).\n\n**Advance:** AUTHOR."
+        "excerpt": "## State: INTAKE\n\n1. **Require a subject.** Empty argument -> ask one bootstrapping question (\"What do you\n   want documented, and for whom?\") and wait.\n2. **Resolve format + genre** from the request (or the hint a kind-sibling bound): e.g. \"an\n   ADR for X\" -> markdown ADR; \"a diagram of the pipeline\" -> mermaid; \"the release notes\"\n   -> changelog. Use the genre structures in `document.md`.\n3. **Pick the path:** **Fast** -- a clear subject + kind -> author now. **Guided** -- vague\n   -> scope subject / audience / kind first.\n4. **Classify complexity (model + effort):** most docs -> `aid-tech-writer` at **sonnet /\n   medium**; a heavy architecture write-up -> **opus / high**. Verifier tier >= producer.\n5. **Consult the Work Initiation Gate, then allocate the work folder + STATE.** First run\n   the gate (`canonical/aid/templates/work-initiation-gate.md`):\n   `bash canonical/aid/scripts/works/enumerate-works.sh` (main tree + every git worktree).\n   Empty -> allocate, no prompt. Works exist -> ask new-vs-continuation; on **continuation**\n   route to the chosen work's resume door and STOP (allocate nothing); on **new work**:\n   create and enter the worktree per the gate's `§ 3a` step 2\n   (`worktree-lifecycle.sh create <work-id> <name>`, STOP on a non-zero exit or empty path,\n   else enter the resolved path), **then** allocate (`pipeline.path: lite`, `initiator:\n   aid-create-document`, `lifecycle: Running`, `active_skill: aid-create-document`;\n   `phase` not driven).\n6. **Read the design seed, if present.** If `.aid/design/document.md` exists, read it as\n   prior context before drafting; it is an input, never a substitute, and is not modified\n   by this run.\n\n**Advance:** AUTHOR."
       }
     },
     {
@@ -52,15 +52,15 @@
       "terminal": null,
       "provenance": {
         "file": "canonical/skills/aid-create-document/SKILL.md",
-        "startLine": 67,
-        "endLine": 74,
+        "startLine": 70,
+        "endLine": 77,
         "sourceKind": "skill",
         "excerpt": "## State: AUTHOR\n\nDispatch **`aid-tech-writer`** (clean context, tiered) to write the document in the resolved\nformat + genre structure, **grounded in and accurate to** the KB + project source\n(`task-type-rules.md ## DOCUMENT` -- verify accuracy against the current codebase and KB).\nIt drafts into the work folder (not yet placed). Text formats are produced natively\n(markdown, mermaid, HTML, CSV/tables); for a format it cannot cleanly emit (native\n`.pptx`/`.xlsx`), it produces the best text form and notes the conversion handoff."
       },
       "detail": {
         "file": "canonical/skills/aid-create-document/SKILL.md",
-        "startLine": 67,
-        "endLine": 76,
+        "startLine": 70,
+        "endLine": 79,
         "sourceKind": "skill",
         "excerpt": "## State: AUTHOR\n\nDispatch **`aid-tech-writer`** (clean context, tiered) to write the document in the resolved\nformat + genre structure, **grounded in and accurate to** the KB + project source\n(`task-type-rules.md ## DOCUMENT` -- verify accuracy against the current codebase and KB).\nIt drafts into the work folder (not yet placed). Text formats are produced natively\n(markdown, mermaid, HTML, CSV/tables); for a format it cannot cleanly emit (native\n`.pptx`/`.xlsx`), it produces the best text form and notes the conversion handoff.\n\n**Advance:** VERIFY."
       }
@@ -74,15 +74,15 @@
       "terminal": null,
       "provenance": {
         "file": "canonical/skills/aid-create-document/SKILL.md",
-        "startLine": 80,
-        "endLine": 88,
+        "startLine": 83,
+        "endLine": 91,
         "sourceKind": "skill",
         "excerpt": "## State: VERIFY\n\n1. **Mechanical grounding check** (no dispatch): claims about the project cite a KB doc or\n   `file:line`; the genre's required structure is present.\n2. **Adversarial verification** -- clean-context **`aid-reviewer`** checks the draft:\n   accurate against KB + codebase, complete for its genre, no fabricated content. Writes a\n   review-quality ledger to `.aid/.temp/review-pending/<work>-verify.md`.\n3. **Grade:** `bash canonical/aid/scripts/grade.sh --explain <ledger>`. Not clean -> loop\n   to AUTHOR. Circuit-breaker: 3 cycles -> IMPEDIMENT + `lifecycle: Blocked`."
       },
       "detail": {
         "file": "canonical/skills/aid-create-document/SKILL.md",
-        "startLine": 80,
-        "endLine": 90,
+        "startLine": 83,
+        "endLine": 93,
         "sourceKind": "skill",
         "excerpt": "## State: VERIFY\n\n1. **Mechanical grounding check** (no dispatch): claims about the project cite a KB doc or\n   `file:line`; the genre's required structure is present.\n2. **Adversarial verification** -- clean-context **`aid-reviewer`** checks the draft:\n   accurate against KB + codebase, complete for its genre, no fabricated content. Writes a\n   review-quality ledger to `.aid/.temp/review-pending/<work>-verify.md`.\n3. **Grade:** `bash canonical/aid/scripts/grade.sh --explain <ledger>`. Not clean -> loop\n   to AUTHOR. Circuit-breaker: 3 cycles -> IMPEDIMENT + `lifecycle: Blocked`.\n\n**Advance:** PRESENT."
       }
@@ -96,15 +96,15 @@
       "terminal": null,
       "provenance": {
         "file": "canonical/skills/aid-create-document/SKILL.md",
-        "startLine": 94,
-        "endLine": 98,
+        "startLine": 97,
+        "endLine": 101,
         "sourceKind": "skill",
         "excerpt": "## State: PRESENT  (hard stop -- human final say before placing)\n\nSet `lifecycle: Paused-Awaiting-Input`. Present the drafted document **and the proposed\ntarget location** (KB-informed: `docs/`, an ADR dir, `CHANGELOG.md`, a runbook path, ...).\nAwait approval. **Never writes `.aid/knowledge/`.**"
       },
       "detail": {
         "file": "canonical/skills/aid-create-document/SKILL.md",
-        "startLine": 94,
-        "endLine": 100,
+        "startLine": 97,
+        "endLine": 103,
         "sourceKind": "skill",
         "excerpt": "## State: PRESENT  (hard stop -- human final say before placing)\n\nSet `lifecycle: Paused-Awaiting-Input`. Present the drafted document **and the proposed\ntarget location** (KB-informed: `docs/`, an ADR dir, `CHANGELOG.md`, a runbook path, ...).\nAwait approval. **Never writes `.aid/knowledge/`.**\n\n**Advance:** PLACE on approval; else DONE (draft kept in the work folder)."
       }
@@ -118,15 +118,15 @@
       "terminal": null,
       "provenance": {
         "file": "canonical/skills/aid-create-document/SKILL.md",
-        "startLine": 104,
-        "endLine": 110,
+        "startLine": 107,
+        "endLine": 113,
         "sourceKind": "skill",
         "excerpt": "## State: PLACE  (only on approval)\n\nWrite the document to its approved target location. **Extra care on overwrite or on the\npublished `docs/` tree:** inspect the target first and show the diff -- never silently\noverwrite an existing doc. Then optionally print handoffs the user may act on: `/aid-update-kb`\n(if it belongs in the KB), `/aid-create*` (if it describes something not yet built),\n`/aid-refactor` (an ADR mandating a refactor)."
       },
       "detail": {
         "file": "canonical/skills/aid-create-document/SKILL.md",
-        "startLine": 104,
-        "endLine": 112,
+        "startLine": 107,
+        "endLine": 115,
         "sourceKind": "skill",
         "excerpt": "## State: PLACE  (only on approval)\n\nWrite the document to its approved target location. **Extra care on overwrite or on the\npublished `docs/` tree:** inspect the target first and show the diff -- never silently\noverwrite an existing doc. Then optionally print handoffs the user may act on: `/aid-update-kb`\n(if it belongs in the KB), `/aid-create*` (if it describes something not yet built),\n`/aid-refactor` (an ADR mandating a refactor).\n\n**Advance:** DONE."
       }
@@ -143,15 +143,15 @@
       },
       "provenance": {
         "file": "canonical/skills/aid-create-document/SKILL.md",
-        "startLine": 116,
-        "endLine": 119,
+        "startLine": 119,
+        "endLine": 122,
         "sourceKind": "skill",
         "excerpt": "## State: DONE\n\nSet `lifecycle: Completed`, `updated` now, append a `## Lifecycle History` row. Keep the\nwork folder (draft + verify ledger) as the audit record."
       },
       "detail": {
         "file": "canonical/skills/aid-create-document/SKILL.md",
-        "startLine": 116,
-        "endLine": 119,
+        "startLine": 119,
+        "endLine": 122,
         "sourceKind": "skill",
         "excerpt": "## State: DONE\n\nSet `lifecycle: Completed`, `updated` now, append a `## Lifecycle History` row. Keep the\nwork folder (draft + verify ledger) as the audit record."
       }
@@ -180,8 +180,8 @@
       "advanceType": "UNSPECIFIED",
       "provenance": {
         "file": "canonical/skills/aid-create-document/SKILL.md",
-        "startLine": 63,
-        "endLine": 63,
+        "startLine": 66,
+        "endLine": 66,
         "sourceKind": "skill",
         "excerpt": "**Advance:** AUTHOR."
       }
@@ -194,8 +194,8 @@
       "advanceType": "UNSPECIFIED",
       "provenance": {
         "file": "canonical/skills/aid-create-document/SKILL.md",
-        "startLine": 76,
-        "endLine": 76,
+        "startLine": 79,
+        "endLine": 79,
         "sourceKind": "skill",
         "excerpt": "**Advance:** VERIFY."
       }
@@ -208,8 +208,8 @@
       "advanceType": "UNSPECIFIED",
       "provenance": {
         "file": "canonical/skills/aid-create-document/SKILL.md",
-        "startLine": 88,
-        "endLine": 88,
+        "startLine": 91,
+        "endLine": 91,
         "sourceKind": "skill",
         "excerpt": "   to AUTHOR. Circuit-breaker: 3 cycles -> IMPEDIMENT + `lifecycle: Blocked`."
       }
@@ -222,8 +222,8 @@
       "advanceType": "UNSPECIFIED",
       "provenance": {
         "file": "canonical/skills/aid-create-document/SKILL.md",
-        "startLine": 90,
-        "endLine": 90,
+        "startLine": 93,
+        "endLine": 93,
         "sourceKind": "skill",
         "excerpt": "**Advance:** PRESENT."
       }
@@ -236,8 +236,8 @@
       "advanceType": "UNSPECIFIED",
       "provenance": {
         "file": "canonical/skills/aid-create-document/SKILL.md",
-        "startLine": 100,
-        "endLine": 100,
+        "startLine": 103,
+        "endLine": 103,
         "sourceKind": "skill",
         "excerpt": "**Advance:** PLACE on approval; else DONE (draft kept in the work folder)."
       }
@@ -250,8 +250,8 @@
       "advanceType": "UNSPECIFIED",
       "provenance": {
         "file": "canonical/skills/aid-create-document/SKILL.md",
-        "startLine": 100,
-        "endLine": 100,
+        "startLine": 103,
+        "endLine": 103,
         "sourceKind": "skill",
         "excerpt": "**Advance:** PLACE on approval; else DONE (draft kept in the work folder)."
       }
@@ -264,8 +264,8 @@
       "advanceType": "UNSPECIFIED",
       "provenance": {
         "file": "canonical/skills/aid-create-document/SKILL.md",
-        "startLine": 112,
-        "endLine": 112,
+        "startLine": 115,
+        "endLine": 115,
         "sourceKind": "skill",
         "excerpt": "**Advance:** DONE."
       }

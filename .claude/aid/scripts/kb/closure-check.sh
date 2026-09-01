@@ -390,7 +390,7 @@ awk -v dnf="$DEFINED_NORM" '
 
 # Glob the KB doc list ONCE (was re-run per term).
 DOC_LIST="${TMPDIR_CC}/doc_list.txt"
-find "$KB_DIR" -maxdepth 1 -type f -name '*.md' ! -name '.*' 2>/dev/null | sort > "$DOC_LIST" || true
+find "$KB_DIR" -maxdepth 1 -type f -name '*.md' ! -name '.*' 2>/dev/null | LC_ALL=C sort > "$DOC_LIST" || true
 
 # ---------------------------------------------------------------------------
 # sources: helpers (used by the batched presence scan below AND by output (b))

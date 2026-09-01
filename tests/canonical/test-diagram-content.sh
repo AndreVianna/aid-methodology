@@ -4,7 +4,7 @@
 # Exercises canonical/aid/scripts/summarize/validate-diagram-content.mjs against
 # SELF-CONTAINED fixtures (a temp kb.html + a temp manifest), so it always runs in
 # CI -- it does NOT depend on the committed kb.html or the summary-src workspace
-# (which is gitignored scratch under .aid/.temp/ since work-013).
+# (which is gitignored scratch under .aid/.temp/).
 #
 # Asserts the gate:
 #   DC01  exits 0 when every required token is present and no forbidden token is,

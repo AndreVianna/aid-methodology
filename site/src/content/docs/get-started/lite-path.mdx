@@ -66,8 +66,9 @@ Each shortcut invocation allocates a brand-new `work-NNN`; there is no cross-ses
 
 3. **Review at the approval halt.**
 
-   The engine writes the full flattened artifact set — `REQUIREMENTS.md`, `SPEC.md`, `PLAN.md`,
-   `BLUEPRINT.md`, and the task files under `tasks/` — grades every document at GATE, then halts
+   The engine writes the flattened artifact set — `REQUIREMENTS.md` (its § 11 carrying the
+   single feature section, technical specification included) and the task `DETAIL.md` files
+   under `tasks/` — grades every document at GATE, then halts
    for your approval. Review the set and approve.
 
 4. **Execute.**
@@ -89,15 +90,12 @@ The lite path produces a **flattened** work item: a single implicit delivery, wi
 ```
 .aid/
   work-NNN-name/
-    STATE.md          # work lifecycle, with the sole delivery's gate + Q&A promoted into it
-    REQUIREMENTS.md
-    SPEC.md
-    PLAN.md
-    BLUEPRINT.md      # the single delivery's definition, at the work root
+    STATE.yml         # work lifecycle, with the sole delivery's gate + Q&A promoted into it
+    REQUIREMENTS.md   # § 11 carries the single feature section
     tasks/
       task-NNN/
-        DETAIL.md      # task definition — the flattened path has NO per-task STATE.md;
-                       #   each task's cells live in the work-root STATE.md § ### Tasks lifecycle
+        DETAIL.md      # task definition — the flattened path has NO per-task STATE.yml;
+                       #   each task's cells live in the work-root STATE.yml `tasks_lifecycle`
 ```
 
 Compare this to the full path's nested `deliveries/delivery-NNN/` structure, covered in
@@ -110,7 +108,7 @@ Compare this to the full path's nested `deliveries/delivery-NNN/` structure, cov
 | Entry | A shortcut (`/aid-fix`, `/aid-create-api`, …), or a `/aid-triage` suggestion | `/aid-describe` |
 | Best for | Small, low-risk, well-bounded work | Complex, high-risk, or poorly understood work |
 | Phases | One collapsed, mostly-autonomous engine run (Describe → Detail) | Discover → Describe → Define → Specify → Plan → Detail → Execute |
-| Artifacts | Flattened: `REQUIREMENTS.md`, `SPEC.md`, `PLAN.md`, `BLUEPRINT.md`, `tasks/task-NNN/DETAIL.md` | Nested: `REQUIREMENTS.md`, per-feature `SPEC.md`, `PLAN.md`, `deliveries/delivery-NNN/BLUEPRINT.md`, `deliveries/delivery-NNN/tasks/task-NNN/DETAIL.md` |
+| Artifacts | Flattened: `REQUIREMENTS.md`, `tasks/task-NNN/DETAIL.md` | Nested: `REQUIREMENTS.md` (§ 11 feature sections), `PLAN.md` (`### delivery-NNN` stanzas), `deliveries/delivery-NNN/tasks/task-NNN/DETAIL.md` |
 | Gates | Terminal approval halt (plus rare gap-questions) | One per phase |
 
 The lite path is not a shortcut that skips quality — it is proportionate rigour. `/aid-triage` is

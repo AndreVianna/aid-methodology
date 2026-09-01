@@ -115,23 +115,20 @@ make_git_repo() {
 
 # make_work <repo_root> <work_id> <phase> <lifecycle> <title> [delivery_state]
 # Creates a work as a direct subfolder of <repo_root>/.aid/works/ with a
-# frontmatter STATE.md (phase/lifecycle -- the routing inputs the helper reads
-# via its `_frontmatter_value`) and a REQUIREMENTS.md carrying the `**Name:**`
-# identity line (the title source `_work_title` reads).
+# flat STATE.yml (phase/lifecycle top-level scalars -- the routing inputs the
+# helper reads via its `_frontmatter_value`) and a REQUIREMENTS.md carrying the
+# `**Name:**` identity line (the title source `_work_title` reads).
 make_work() {
     local base="$1" wid="$2" phase="$3" lifecycle="$4" title="$5" dstate="${6:-}"
     local wd="$base/.aid/works/$wid"
     mkdir -p "$wd"
     {
-        echo "---"
+        echo "# Work State -- $wid"
         echo "phase: $phase"
         echo "lifecycle: $lifecycle"
         [[ -n "$dstate" ]] && echo "delivery_state: $dstate"
         echo "updated: '2026-07-17T00:00:00Z'"
-        echo "---"
-        echo ""
-        echo "# Work State -- $wid"
-    } > "$wd/STATE.md"
+    } > "$wd/STATE.yml"
     printf -- '- **Name:** %s\n' "$title" > "$wd/REQUIREMENTS.md"
 }
 
@@ -360,15 +357,15 @@ assert_file_contains "$GATE_DOC" "Create-failure guard" "F: doc documents § 3a'
 # come immediately after the letters: a hyphen before it (`FF-01`) defeats step 2 and
 # falls through to whole-label masking, which is exactly the defect being repaired.
 gate_create_line=$(grep -nF -- "worktree-lifecycle.sh create <work-id> <name>" "$GATE_DOC" | head -1 | cut -d: -f1)
-gate_scaffold_line=$(grep -nF -- 'scaffold `STATE.md`' "$GATE_DOC" | head -1 | cut -d: -f1)
+gate_scaffold_line=$(grep -nF -- 'scaffold `STATE.yml`' "$GATE_DOC" | head -1 | cut -d: -f1)
 if [[ -z "$gate_create_line" ]]; then
     fail "FF01-gate-doc — F: 'worktree-lifecycle.sh create <work-id> <name>' mention not found"
 elif [[ -z "$gate_scaffold_line" ]]; then
-    fail "FF01-gate-doc — F: 'scaffold \`STATE.md\`' mention not found"
+    fail "FF01-gate-doc — F: 'scaffold \`STATE.yml\`' mention not found"
 elif [[ "$gate_create_line" -lt "$gate_scaffold_line" ]]; then
-    pass "FF01-gate-doc — F: § 3a create mention (line $gate_create_line) precedes the STATE.md-scaffold mention (line $gate_scaffold_line)"
+    pass "FF01-gate-doc — F: § 3a create mention (line $gate_create_line) precedes the STATE.yml-scaffold mention (line $gate_scaffold_line)"
 else
-    fail "FF01-gate-doc — F: § 3a create mention (line $gate_create_line) does NOT precede the STATE.md-scaffold mention (line $gate_scaffold_line)"
+    fail "FF01-gate-doc — F: § 3a create mention (line $gate_create_line) does NOT precede the STATE.yml-scaffold mention (line $gate_scaffold_line)"
 fi
 
 assert_file_contains "$GATE_DOC" "Never** re-scan a local" \
@@ -411,15 +408,15 @@ assert_eq "${#STARTERS[@]}" "10" "G: exactly ten affected work-starters under co
 
 # Per-starter anchor for the create-before-allocate ordering check below: the first line,
 # after the `worktree-lifecycle.sh create` mention, that is this starter's own
-# STATE.md-scaffold / work-folder-allocation line (wording differs per starter -- some
-# name `STATE.md` literally, some fold the allocation into a single "**then** allocate ("
+# STATE.yml-scaffold / work-folder-allocation line (wording differs per starter -- some
+# name `STATE.yml` literally, some fold the allocation into a single "**then** allocate ("
 # clause; each anchor here is verified unique-enough to sit strictly after its file's first
 # `create` mention).
 declare -A STARTER_ALLOC_ANCHOR=(
-    ["canonical/aid/templates/shortcut-engine.md"]="### Step 4: Scaffold STATE.md"
+    ["canonical/aid/templates/shortcut-engine.md"]="### Step 4: Scaffold STATE.yml"
     ["canonical/skills/aid-describe/SKILL.md"]="create \`.aid/works/work-001-{name}/\`"
-    ["canonical/skills/aid-review/SKILL.md"]="STATE.md"
-    ["canonical/skills/aid-research/SKILL.md"]="STATE.md"
+    ["canonical/skills/aid-review/SKILL.md"]="STATE.yml"
+    ["canonical/skills/aid-research/SKILL.md"]="STATE.yml"
     ["canonical/skills/aid-design/SKILL.md"]="**then** allocate (\`"
     ["canonical/skills/aid-report/SKILL.md"]="**then** allocate (\`"
     ["canonical/skills/aid-test/SKILL.md"]="**then** allocate (\`"

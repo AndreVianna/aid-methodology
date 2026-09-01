@@ -1,19 +1,20 @@
 ---
 name: aid-describe
 description: >
-  Conversational requirements gathering through adaptive interview, driven by the
-  seasoned-analyst elicitation engine (references/elicitation-engine.md): one fixed
-  D1 opener plus a deterministic five-step next-move selector (stop check, gap
-  selection, move selection, calibration shaping, NFR-7 envelope + emit). First run
-  builds REQUIREMENTS.md incrementally. Subsequent runs resume the interview for
-  incomplete sections. Final step presents approved requirements for handoff to
-  /aid-define.
-  State machine: FIRST-RUN -> Q-AND-A -> CONTINUE -> {greenfield: DESCRIBE-SEED ->} COMPLETION [PAUSE -> /aid-define].
+  Gather requirements through an adaptive interview and write them to REQUIREMENTS.md. Use
+  this skill when you know roughly what you want built but the scope, the users, and the
+  acceptance criteria are not yet pinned down. It asks one question at a time, each chosen
+  by a seasoned-analyst elicitation engine that picks its next move from the gaps in what
+  you have said so far. The first run builds the document incrementally; a later run resumes
+  wherever it is still incomplete. It ends by presenting the finished requirements for your
+  approval and handing off to `/aid-define`.
 allowed-tools: Read, Glob, Grep, Bash, Write, Edit
 argument-hint: "[work-001] resume work  [--reset work-001] clear and restart"
 ---
 
 # Conversational Requirements Gathering
+
+State machine: FIRST-RUN -> Q-AND-A -> CONTINUE -> {greenfield: DESCRIBE-SEED ->} COMPLETION [PAUSE -> /aid-define].
 
 ## Agents Involved
 
@@ -43,7 +44,8 @@ immediately.
     REQUIREMENTS.md    <- product (clean document, only project information)
     features/          <- product (one folder per feature, created by /aid-define)
       feature-001-name/
-        SPEC.md        <- product (technical specification, added by /aid-specify)
+                       #  § 11 feature sections gain their technical specification
+                       #  when /aid-specify runs
 ```
 
 **First run:** Conversational interview from scratch.
@@ -277,7 +279,7 @@ aid-describe  ▸ you are here
 | COMPLETION | `references/state-completion.md` | `aid-interviewer` | PAUSE-FOR-USER-DECISION → Run /aid-define {work} |
 
 On state entry, print `[State: NAME]` + the "you are here" map from State Detection above.
-When a state completes, route by its `**Advance:**` type (per [`state-machine-chaining.md`](../../templates/state-machine-chaining.md)):
+When a state completes, route by its `**Advance:**` type (per [`state-machine-chaining.md`](../../aid/templates/state-machine-chaining.md)):
 - **CHAIN** → begin the next state's reference doc within the same invocation; no exit.
 - **PAUSE-FOR-USER-ACTION** / **PAUSE-FOR-USER-DECISION** → print the pause reason + resume command and exit.
 - **HALT** → print the closing summary and exit.
@@ -293,7 +295,7 @@ When a downstream phase (e.g., `/aid-specify`) needs clarification on requiremen
 2. Next `/aid-describe {work}` run detects Pending Q&A → enters State 2 (Q-AND-A)
 3. Questions are presented to the user one at a time
 4. Answers are recorded in STATE.md `## Cross-phase Q&A` and REQUIREMENTS.md
-5. Feature SPEC.md files are updated if the answer affects a specific feature
+5. The affected `§ 11` feature section is updated if the answer bears on one feature
 
 **Q&A entry format for downstream phases to write:**
 

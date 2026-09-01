@@ -1,16 +1,17 @@
 ---
 name: aid-monitor
 description: >
-  Observe production, classify findings, and route actions. Combines telemetry
-  interpretation with triage — detect anomalies, perform root cause analysis
-  for bugs, and route findings — bugs to /aid-fix, change requests to
-  /aid-triage.
-  Per-work scope. Use post-deployment, on schedule, or on-demand.
-  State machine: OBSERVE → CLASSIFY → ROUTE → DONE.
+  Watch production, classify what you find, and route it to whoever should act. Use this
+  skill after a deployment, on a schedule, or whenever something looks wrong in the field.
+  It reads telemetry, detects anomalies, performs root-cause analysis on the ones that are
+  bugs, and then routes: bugs to `/aid-fix`, change requests to `/aid-triage`. Scoped to one
+  work at a time.
 allowed-tools: Read, Glob, Grep, Bash, Write
 ---
 
 # Observe, Classify, Act
+
+State machine: OBSERVE → CLASSIFY → ROUTE → DONE.
 
 Monitor production. Detect what's wrong. Route it to where it gets fixed.
 
@@ -60,7 +61,7 @@ Step 0):
   known-issues.md              ← known problems
 ```
 
-<!-- NOTE: The Monitor area STATE is deferred until the area matures. When authored, MONITOR-STATE.md follows the area-STATE pattern documented at .claude/aid/templates/work-state-template.md (per-work) and .aid/knowledge/schemas.md §1A. -->
+<!-- NOTE: The Monitor area STATE is deferred until the area matures. When authored, MONITOR-STATE.md follows the area-STATE pattern documented at .claude/aid/templates/work-state-template.yml (per-work) and .aid/knowledge/schemas.md §1A. -->
 
 ## ⚠️ Pre-flight Checks
 
@@ -147,7 +148,7 @@ Any combination of: error tracking (Sentry, AppInsights, CloudWatch), CI/CD resu
 APM/performance metrics, test trends, user feedback, support tickets, log files.
 
 **From AID artifacts (what's expected):**
-- Feature SPECs (`.aid/works/{work}/features/*/SPEC.md`) — expected behavior
+- Feature specifications (`.aid/works/{work}/REQUIREMENTS.md § 11`) — expected behavior
 - Per-task `DETAIL.md` — acceptance criteria; full path: `.aid/works/{work}/deliveries/delivery-NNN/tasks/task-NNN/DETAIL.md`; lite path: `.aid/works/{work}/tasks/task-NNN/DETAIL.md`
 - Package files — what was deployed and when
 - `known-issues.md` — exclude known problems
@@ -186,11 +187,15 @@ protocol lives in two reference docs; this section is a checklist citing them.
 
 **On completion / failure:**
 
-- **Success:** emit `✓ <agent> done in <actual>` with measured time. Append a row to
-  the work `STATE.md ## Calibration Log` section (create section if missing) with
-  format `| YYYY-MM-DD | <agent> | <task-id/cycle> | <ETA-band> | <actual> | <notes> |`.
-  Also update the task's `## Dispatches` sub-column with the dispatch record.
-  Both are mandatory per work-003 traceability (never optional, never "if tracked").
+- **Success:** emit `✓ <agent> done in <actual>` with measured time. When the dispatch is
+  for a real `task-NNN`, append a `dispatch_log` entry to that task's own state (full
+  path: its `STATE.yml`; flat path: `tasks_lifecycle.task-NNN.dispatch_log`) with
+  fields `date`/`agent`/`eta_band`/`actual`/`outcome` -- this is what the work-level
+  Calibration Log / Dispatches views are now DERIVED from at read time
+  (`work-state-template.yml`); there is no longer an independent work-root section to
+  append to directly. When the dispatch is NOT task-scoped, there is no persisted
+  target at all -- the console narration above is the sole record. Mandatory per
+  work-003 traceability wherever a target exists (never optional, never "if tracked").
   Delete heartbeat file.
 - **Failure:** emit `✗ <agent> FAILED after <elapsed> (reason: <one-line>)`.
   Decide whether to re-dispatch, fall back, or surface to user. Delete
@@ -217,7 +222,7 @@ them more informative by adding mid-wait check-ins + structured progress.
 | DONE | _(inline — see Re-run below)_ | `inline` | → halt |
 
 On state entry, print `[State: NAME]` + the "you are here" map from State Detection above.
-When a state completes, route by its `**Advance:**` type (per [`state-machine-chaining.md`](../../templates/state-machine-chaining.md)):
+When a state completes, route by its `**Advance:**` type (per [`state-machine-chaining.md`](../../aid/templates/state-machine-chaining.md)):
 - **CHAIN** → begin the next state's reference doc within the same invocation; no exit.
 - **PAUSE-FOR-USER-ACTION** / **PAUSE-FOR-USER-DECISION** → print the pause reason + resume command and exit.
 - **HALT** → print the closing summary and exit.

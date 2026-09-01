@@ -13,9 +13,15 @@ tags: [C1, structure, layout, directories, files]
 see_also: [module-map.md, architecture.md, technology-stack.md]
 owner: architect
 audience: [developer, architect]
-intent: |
-  Repository layout, top-level directory purposes, and file-inventory shape. Read this to understand the on-disk organization of the project before navigating any subtree.
-contracts: []
+review-criteria:
+  - id: F-01
+    kind: validate
+    criterion: >
+      Every top-level directory present in the repository appears in the directory tree here.
+    severity: MEDIUM
+    why: >
+      This tree is how an agent orients before it edits; a directory missing from it reads as
+      one that does not exist.
 ---
 
 # Project Structure
@@ -37,7 +43,6 @@ contracts: []
 - [Documentation Found in Repository](#documentation-found-in-repository)
 - [Unusual Structure Notes](#unusual-structure-notes)
 - [Invariants](#invariants)
-- [Change Log](#change-log)
 
 ---
 
@@ -92,8 +97,8 @@ AID/
 ├── release.sh                # maintainer release-packaging runbook script
 ├── VERSION                   # single-line canonical version string
 ├── canonical/                # SOURCE OF TRUTH for the AID toolkit
-│   ├── skills/               # 76 skill definitions (18 curated + 58 catalog skills)
-│   ├── agents/               # agent role definitions (AGENT.md + README.md each)
+│   ├── skills/               # 111 skill definitions (17 curated + 94 catalog skills)
+│   ├── agents/               # agent role definitions (one AGENT.md each)
 │   ├── aid/                  # toolkit payload installed under the tool's aid/ subtree
 │   │   ├── scripts/          # helper scripts grouped by phase (kb, execute, ...)
 │   │   └── templates/        # KB seeds, doc/state templates, schemas, shortcut catalog + engine + scaffolding
@@ -130,6 +135,7 @@ AID/
 │   └── agents/  skills/  aid/ # the same toolkit, rendered for Cursor
 └── .aid/                     # DOGFOOD pipeline state + Knowledge Base
     ├── knowledge/            # the Knowledge Base (KB docs + INDEX + STATE + kb.html)
+    ├── design/               # design seeds under construction (.aid/design/README.md defines the convention)
     ├── works/                # tracked works: one work-NNN-*/ folder per work
     ├── generated/            # discovery scratch (project-index, candidate-concepts)
     ├── connectors/           # connector catalog: descriptors + INDEX.md + git-ignored .secrets/
@@ -179,10 +185,9 @@ CONFIRMED. The "edit in canonical, not profiles" rule is stated in
 | `packages/pypi/pyproject.toml` | PyPI `aid-installer` build config. |
 | `site/package.json` | Astro website build config (separate from the CLI). |
 | `canonical/EMISSION-MANIFEST.md` | Declares which files the profile renderer emits per profile. |
-| `canonical/aid/templates/shortcut-catalog.yml` | Single-source 58-row manifest, every row a canonical invocation name, that generates the 34 verb-first shortcut doorway directories, alongside 24 hand-authored `repurpose` skills that own their own directories; read by the maintainer build helper (`build-shortcut-skills.py`) and by `/aid-triage`. |
+| `canonical/aid/templates/shortcut-catalog.yml` | Single-source 94-row manifest, every row a canonical invocation name, that generates the 34 verb-first shortcut doorway directories, alongside 60 hand-authored `repurpose` skills that own their own directories; read by the maintainer build helper (`build-shortcut-skills.py`) and by `/aid-triage`. |
 | `canonical/aid/templates/shortcut-engine.md` | The shared state machine every shortcut skill delegates to (INTAKE → CAPTURE → SPEC → PLAN → DETAIL → GATE → APPROVAL-HALT). |
 | `canonical/aid/templates/shortcut-scaffolding/` | Per-family SPEC/PLAN/DETAIL scaffolding the shortcut engine consults (one file per verb family: create, change-refactor, fix, document, prototype, test-experiment, analyze-report). |
-| `canonical/aid/templates/delivery-blueprint-template.md` | Template for a delivery definition (`BLUEPRINT.md`, formerly the delivery-level `SPEC.md`). |
 | `canonical/aid/templates/task-detail-template.md` | Template for a task definition (`DETAIL.md`, formerly the task-level `SPEC.md` / `task-NNN.md`). |
 | `.aid/settings.yml` | AID pipeline configuration — the authoritative settings other skills read. |
 | `tests/run-all.sh` | Aggregate runner for the canonical test suites. |
@@ -266,7 +271,7 @@ CONFIRMED. Run `find tests -name 'test-*.sh' | wc -l` for the live canonical-sui
 | `CONTRIBUTING.md` | How to contribute skills, templates, examples. |
 | `CLAUDE.md` | Repo agent instructions with an AID-managed region. |
 | `examples/` | Walkthrough samples (greenfield, brownfield full-path, brownfield lite-path). |
-| `dashboard/README.md`, `tests/README.md`, `canonical/.../README.md` | Subsystem-local READMEs. |
+| `dashboard/README.md`, `tests/README.md` | Subsystem-local READMEs. `canonical/` carries none: the per-skill and per-agent READMEs were removed, since nothing installed or ran resolved to them. |
 
 CONFIRMED by direct listing of `docs/`, root, and `examples/`.
 
@@ -313,6 +318,3 @@ These are intentional or notable layout traits a newcomer will trip over:
 - **`.aid/` is per-project working state** (the Knowledge Base + pipeline run-state), not part
   of the shipped product; the dogfood `.claude/` + `.cursor/` + `.aid/` in this repo are
   real working state, not example data.
-
----
-

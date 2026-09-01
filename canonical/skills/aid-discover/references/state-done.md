@@ -12,7 +12,7 @@ Print: _"Discovery is complete and approved (Grade: {grade}). Do you want to reo
 
 Delete the review ledger:
 ```bash
-rm -f .aid/.temp/review-pending/discovery.md
+rm -f {{LEDGER}}
 rmdir --ignore-fail-on-non-empty .aid/.temp/review-pending/ 2>/dev/null || true
 ```
 

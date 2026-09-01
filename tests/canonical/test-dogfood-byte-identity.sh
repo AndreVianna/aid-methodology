@@ -159,12 +159,26 @@ dbi_allowlisted() {
 # skills/release-aid/* have no counterpart under .cursor/ at all, so importing
 # them would excuse files that do not exist and check strictly less.
 #
-# What makes EMPTY correct is an ORPHAN count, not a directory count: the
-# repo-root .cursor/ file set and the cursor manifest's .cursor/ dst set
-# coincide exactly, so there is nothing for an allowlist to excuse before
-# worktrees/* excludes anything. (The .claude/-vs-.cursor/ skills-directory
-# comparison explains only why .claude/ needs its two skills/* arms; it says
-# nothing about the other four patterns.)
+# What makes the list SHORT is an ORPHAN count, not a directory count: the
+# repo-root .cursor/ file set and the cursor manifest's .cursor/ dst set very
+# nearly coincide. (The .claude/-vs-.cursor/ skills-directory comparison
+# explains only why .claude/ needs its two skills/* arms; it says nothing about
+# the other four patterns.)
+#
+# rules/* is the one exception, and it is a property of the directory rather
+# than of AID: .cursor/ is Cursor's OWN configuration home, shared with the
+# user, not a tree AID owns outright -- the same situation as the repo-root
+# CLAUDE.md/AGENTS.md, where AID owns only its marked region. A user's Cursor
+# rules legitimately live at .cursor/rules/*.mdc beside the AID-emitted
+# content. This arm cannot mask an AID orphan, because AID emits into exactly
+# three .cursor/ subtrees -- agents/, aid/ and skills/ -- and never into
+# rules/; verify with:
+#   rg -o '"dst": "\.cursor/[^/]+' profiles/cursor/emission-manifest.jsonl | sort -u
+# Before this arm existed, a single user-authored rule file turned the whole
+# suite red, which is what happened when .cursor/rules/output-style.mdc landed.
+# And if AID ever DOES emit into .cursor/rules/, this arm still cannot hide it:
+# Directions 1 and 2 are both driven off the manifest and neither consults an
+# allowlist, so a manifest dst that went missing or drifted would fail there.
 #
 # worktrees/* is load-bearing only in the PRIMARY checkout, whose .cursor/
 # carries agents, aid, skills AND worktrees. A worktree checkout's .cursor/
@@ -175,6 +189,7 @@ dbi_cursor_allowlisted() {
     local rel="$1"
     case "$rel" in
         worktrees/*) return 0 ;;
+        rules/*)     return 0 ;;
         *) return 1 ;;
     esac
 }

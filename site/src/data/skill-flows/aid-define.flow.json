@@ -9,13 +9,13 @@
       "id": "n1",
       "order": 1,
       "name": "FEATURE-DECOMPOSITION",
-      "label": "Requirements are approved and no feature folders exist yet…",
+      "label": "Requirements are approved and REQUIREMENTS.md § 11 Features…",
       "kind": "entry",
       "terminal": null,
       "provenance": {
         "file": "canonical/skills/aid-define/SKILL.md",
-        "startLine": 230,
-        "endLine": 230,
+        "startLine": 240,
+        "endLine": 240,
         "sourceKind": "skill",
         "excerpt": "| FEATURE-DECOMPOSITION | `references/state-feature-decomposition.md` | `aid-architect` | → CROSS-REFERENCE |"
       },
@@ -24,7 +24,7 @@
         "startLine": 1,
         "endLine": 21,
         "sourceKind": "worker",
-        "excerpt": "# State: FEATURE-DECOMPOSITION\n\nRequirements are approved and no feature folders exist yet; decompose Functional Requirements (§5) into discrete, independently implementable features with SPEC.md files.\n\nEmit pipeline phase (silent state-write only — no output, no gate):\n```\nbash canonical/aid/scripts/execute/writeback-state.sh --pipeline --field Lifecycle --value Running\nbash canonical/aid/scripts/execute/writeback-state.sh --pipeline --field Phase --value Define\nbash canonical/aid/scripts/execute/writeback-state.sh --pipeline --field \"Active Skill\" --value aid-define\nbash canonical/aid/scripts/execute/writeback-state.sh --pipeline --field Updated --value \"$(date -u +%Y-%m-%dT%H:%M:%SZ)\"\n```\n\n**Agent:** This is design work, not interview work. Dispatch with `subagent_type: aid-architect` (overriding the default `aid-interviewer`). Print before dispatch: `[State 5] Dispatching aid-architect for Feature Decomposition.`\n\n▶ aid-architect starting (~2–4 min)\nRead `references/feature-decomposition.md` for the full decomposition process\n(analyze, propose, create folders, update meta-documents).\n✓ aid-architect done (record actual time) — or ✗ aid-architect failed: {reason}\n\n**Advance:** **CHAIN** → [State: CROSS-REFERENCE] when decomposition completes (continue inline).\n"
+        "excerpt": "# State: FEATURE-DECOMPOSITION\n\nRequirements are approved and `REQUIREMENTS.md § 11 Features` has no feature sections yet; decompose Functional Requirements (§5) into discrete, independently implementable features, each a `### Feature NNN` subsection of §11.\n\nEmit pipeline phase (silent state-write only — no output, no gate):\n```\nbash canonical/aid/scripts/execute/writeback-state.sh --pipeline --field Lifecycle --value Running\nbash canonical/aid/scripts/execute/writeback-state.sh --pipeline --field Phase --value Define\nbash canonical/aid/scripts/execute/writeback-state.sh --pipeline --field \"Active Skill\" --value aid-define\nbash canonical/aid/scripts/execute/writeback-state.sh --pipeline --field Updated --value \"$(date -u +%Y-%m-%dT%H:%M:%SZ)\"\n```\n\n**Agent:** This is design work, not interview work. Dispatch with `subagent_type: aid-architect` (overriding the default `aid-interviewer`). Print before dispatch: `[State 5] Dispatching aid-architect for Feature Decomposition.`\n\n▶ aid-architect starting (~2–4 min)\nRead `references/feature-decomposition.md` for the full decomposition process\n(analyze, propose, create folders, update meta-documents).\n✓ aid-architect done (record actual time) — or ✗ aid-architect failed: {reason}\n\n**Advance:** **CHAIN** → [State: CROSS-REFERENCE] when decomposition completes (continue inline).\n"
       }
     },
     {
@@ -36,17 +36,17 @@
       "terminal": null,
       "provenance": {
         "file": "canonical/skills/aid-define/SKILL.md",
-        "startLine": 231,
-        "endLine": 231,
+        "startLine": 241,
+        "endLine": 241,
         "sourceKind": "skill",
         "excerpt": "| CROSS-REFERENCE | `references/state-cross-reference.md` | `aid-reviewer` | → DONE |"
       },
       "detail": {
         "file": "canonical/skills/aid-define/references/state-cross-reference.md",
         "startLine": 1,
-        "endLine": 36,
+        "endLine": 42,
         "sourceKind": "worker",
-        "excerpt": "# State: CROSS-REFERENCE\n\nRequirements are approved and features exist but cross-reference validation has not yet been completed; validate REQUIREMENTS.md against KB documents and codebase, grade findings, and create Q&A entries for gaps.\n\n**Agent:** This is adversarial validation, not interview work. Dispatch with `subagent_type: aid-reviewer` (overriding the default `aid-interviewer`) **at Large tier** — the features were decomposed by the Large `aid-architect`, so reviewer tier >= executor tier (`canonical/aid/templates/agent-dispatch-tiering.md`).\n\n**Dispatch package:** render `references/reviewer-brief.md` with:\n- `{{ARTIFACTS}}` = `.aid/works/{work}/REQUIREMENTS.md` + every `.aid/works/{work}/features/feature-*/SPEC.md` scaffold\n- `{{CONTEXT}}` = `REQUIREMENTS.md was just approved and N features were decomposed from §5 Functional Requirements. This is the cross-reference pass that validates requirements + feature boundaries against the KB and codebase before any feature reaches /aid-specify.`\n\nInclude in the prompt:\n- **Ledger lifecycle:** \"Append new findings as rows with Status: Pending to\n  `.aid/.temp/review-pending/interview-<work>-cross-ref.md`. Read the existing file\n  first if it exists. Output per `canonical/aid/templates/reviewer-ledger-schema.md` —\n  ONE table, no narrative. After writing the ledger, run:\n  `bash canonical/aid/scripts/grade.sh .aid/.temp/review-pending/interview-<work>-cross-ref.md`\n  and include the grade in your return message.\"\n\nThen append the cross-reference process body from `references/cross-reference.md`\n(load context, cross-reference, grade, present findings, create Q&A, wrap up) so\nthe subagent has the per-step execution detail.\n\nPrint before dispatch: `[State 6] Dispatching aid-reviewer for Cross-Reference validation.`\n\n▶ aid-reviewer starting (~1–2 min)\nWait for completion.\n✓ aid-reviewer done (record actual time) — or ✗ aid-reviewer failed: {reason}\n\nAfter aid-reviewer returns, run grade.sh on the ledger to confirm the grade:\n\n```bash\nbash canonical/aid/scripts/grade.sh --explain .aid/.temp/review-pending/interview-<work>-cross-ref.md\n```\n\n**Advance:** **CHAIN** → [State: DONE] when cross-reference completes (continue inline).\n"
+        "excerpt": "# State: CROSS-REFERENCE\n\nRequirements are approved and features exist but cross-reference validation has not yet been completed; validate REQUIREMENTS.md against KB documents and codebase, grade findings, and create Q&A entries for gaps.\n\n**Agent:** This is adversarial validation, not interview work. Dispatch with `subagent_type: aid-reviewer` (overriding the default `aid-interviewer`) **at Large tier** — the features were decomposed by the Large `aid-architect`, so reviewer tier >= executor tier (`canonical/aid/templates/agent-dispatch-tiering.md`).\n\n**Dispatch package:** render `references/reviewer-brief.md` with:\n- `{{ARTIFACTS}}` = `.aid/works/{work}/REQUIREMENTS.md` (including `§11 Features`, one subsection per feature)\n- `{{CONTEXT}}` = `REQUIREMENTS.md was just approved and N features were decomposed from §5 Functional Requirements. This is the cross-reference pass that validates requirements + feature boundaries against the KB and codebase before any feature reaches /aid-specify.`\n\nInclude in the prompt:\n- **Ledger lifecycle:** \"Append new findings as rows with Status: Pending to\n  `.aid/.temp/review-pending/interview-<work>-cross-ref.md`. Read the existing file\n  first if it exists. Output per `canonical/aid/templates/reviewer-ledger-schema.md` —\n  ONE table, no narrative. After writing the ledger, run:\n  `bash canonical/aid/scripts/grade.sh .aid/.temp/review-pending/interview-<work>-cross-ref.md`\n  and include the grade in your return message.\"\n\nThen append the cross-reference process body from `references/cross-reference.md`\n(load context, cross-reference, grade, present findings, create Q&A, wrap up) so\nthe subagent has the per-step execution detail.\n\nPrint before dispatch: `[State 6] Dispatching aid-reviewer for Cross-Reference validation.`\n\n▶ aid-reviewer starting (~1–2 min)\nWait for completion.\n✓ aid-reviewer done (record actual time) — or ✗ aid-reviewer failed: {reason}\n\nAfter aid-reviewer returns, run grade.sh on the ledger to confirm the grade:\n\n```bash\nbash canonical/aid/scripts/grade.sh --explain .aid/.temp/review-pending/interview-<work>-cross-ref.md\n```\n\n**Cycle 1 also runs the cross-document contradiction pass (Guard 2).** This review receives\nevery artifact of the phase at once, which is the only vantage point from which a\ncontradiction between two of them is visible. Run it on cycle 1 only -- that makes it\nonce per phase by construction. Definition:\n`reviewer-dispatch.md` section \"The cross-document contradiction pass (Guard 2)\".\n\n**Advance:** **CHAIN** → [State: DONE] when cross-reference completes (continue inline).\n"
       }
     },
     {
@@ -61,8 +61,8 @@
       },
       "provenance": {
         "file": "canonical/skills/aid-define/SKILL.md",
-        "startLine": 232,
-        "endLine": 232,
+        "startLine": 242,
+        "endLine": 242,
         "sourceKind": "skill",
         "excerpt": "| DONE | `references/state-done.md` | `inline` | → halt |"
       },
@@ -71,7 +71,7 @@
         "startLine": 1,
         "endLine": 38,
         "sourceKind": "worker",
-        "excerpt": "# State: DONE\n\nInterview is complete, approved, features decomposed, and cross-references validated; offer to add information, re-validate, or close.\n\nPrint:\n\n```\nInterview for {work} is complete and approved.\n\n[1] Add more information — reopen for additional input\n[2] Re-run cross-reference validation\n[3] Done — nothing to add\n```\n\n- **[1] Add more information:**\n  - Ask: _\"What would you like to add or change?\"_\n  - If the user wants to change **requirements-level content** (Objective, Problem Statement,\n    Functional Requirements, etc.) — print: `For requirements-level changes, run\n    /aid-describe {work} to reopen the requirements interview.` and exit.\n  - Otherwise, record the user's input into the relevant REQUIREMENTS.md section, update\n    STATE.md `## Interview State` section statuses if needed, update affected feature SPEC.md\n    files if the change impacts a feature, and update KB documents if the new info is KB-relevant.\n  - Print: `✅ Updated. Run /aid-define {work} again to re-validate.`\n\n- **[2] Re-run cross-reference:**\n  - Proceed to State 6 (CROSS-REFERENCE) for a fresh validation pass\n\n- **[3] Done:**\n  - Delete review ledgers:\n    ```bash\n    rm -f .aid/.temp/review-pending/interview-{work}-cross-ref.md\n    rm -f .aid/.temp/review-pending/interview-{work}-lite.md\n    rmdir --ignore-fail-on-non-empty .aid/.temp/review-pending/ 2>/dev/null || true\n    ```\n  - Print: `✅ Interview complete. Requirements approved. Ready for /aid-specify.`\n\n**Advance:** **HALT**. This is the terminal state. Run `/aid-define` again only to add information or re-validate.\n"
+        "excerpt": "# State: DONE\n\nInterview is complete, approved, features decomposed, and cross-references validated; offer to add information, re-validate, or close.\n\nPrint:\n\n```\nInterview for {work} is complete and approved.\n\n[1] Add more information — reopen for additional input\n[2] Re-run cross-reference validation\n[3] Done — nothing to add\n```\n\n- **[1] Add more information:**\n  - Ask: _\"What would you like to add or change?\"_\n  - If the user wants to change **requirements-level content** (Objective, Problem Statement,\n    Functional Requirements, etc.) — print: `For requirements-level changes, run\n    /aid-describe {work} to reopen the requirements interview.` and exit.\n  - Otherwise, record the user's input into the relevant REQUIREMENTS.md section, update\n    `interview.sections[].state` (STATE.yml) if needed, update the affected §11 feature section\n    files if the change impacts a feature, and update KB documents if the new info is KB-relevant.\n  - Print: `✅ Updated. Run /aid-define {work} again to re-validate.`\n\n- **[2] Re-run cross-reference:**\n  - Proceed to State 6 (CROSS-REFERENCE) for a fresh validation pass\n\n- **[3] Done:**\n  - Delete review ledgers:\n    ```bash\n    rm -f .aid/.temp/review-pending/interview-{work}-cross-ref.md\n    rm -f .aid/.temp/review-pending/interview-{work}-lite.md\n    rmdir --ignore-fail-on-non-empty .aid/.temp/review-pending/ 2>/dev/null || true\n    ```\n  - Print: `✅ Interview complete. Requirements approved. Ready for /aid-specify.`\n\n**Advance:** **HALT**. This is the terminal state. Run `/aid-define` again only to add information or re-validate.\n"
       }
     }
   ],
@@ -112,8 +112,8 @@
       "advanceType": "UNSPECIFIED",
       "provenance": {
         "file": "canonical/skills/aid-define/references/state-cross-reference.md",
-        "startLine": 35,
-        "endLine": 35,
+        "startLine": 41,
+        "endLine": 41,
         "sourceKind": "worker",
         "excerpt": "**Advance:** **CHAIN** → [State: DONE] when cross-reference completes (continue inline)."
       }
@@ -126,8 +126,8 @@
       "advanceType": "CHAIN",
       "provenance": {
         "file": "canonical/skills/aid-define/references/state-cross-reference.md",
-        "startLine": 35,
-        "endLine": 35,
+        "startLine": 41,
+        "endLine": 41,
         "sourceKind": "worker",
         "excerpt": "**Advance:** **CHAIN** → [State: DONE] when cross-reference completes (continue inline)."
       }

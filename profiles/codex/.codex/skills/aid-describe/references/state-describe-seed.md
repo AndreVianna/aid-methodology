@@ -35,7 +35,7 @@ adaptive elicitation machinery (step 2). Do NOT re-implement the engine -- consu
 ## Contents
 
 - [Entry Conditions](#entry-conditions)
-- [STATE.md Tracking](#statemd-tracking)
+- [STATE.yml Tracking](#stateyml-tracking)
 - [Gap Inventory -- 5-Element Seed Model](#gap-inventory----5-element-seed-model)
 - [Stop Predicate (RQ-A5)](#stop-predicate-rq-a5)
 - [Record Sink](#record-sink)
@@ -52,27 +52,43 @@ adaptive elicitation machinery (step 2). Do NOT re-implement the engine -- consu
 
 DESCRIBE-SEED fires when ALL of the following hold (read from disk):
 
-- `**Interview State:**` is `In Progress` AND every section in the Section Status table under
-  `## Interview State` is `Complete` or `N/A`.
+- `interview.state` is `In Progress` AND every entry in `interview.sections[].state`
+  is `Complete` or `N/A`.
 - Greenfield: no brownfield KB on disk. Read `.aid/knowledge/`: if no `.md` files are present
   OR every `.md` file present carries `source: forward-authored` (authored by DESCRIBE-SEED in a
   prior session), the project is greenfield. If any file carries `source: hand-authored` or
   `source: generated`, a brownfield KB already exists -- skip DESCRIBE-SEED entirely and route to
   COMPLETION.
-- Seed authoring not yet complete: `## Seed Authoring` section is absent from STATE.md OR its
-  `**Status:**` field is not `Complete`.
+- Seed authoring not yet complete: per the STATE.yml Tracking accuracy note below, not yet
+  `Complete`.
 
 When DESCRIBE-SEED is re-entered on a subsequent `/aid-describe` call (after the user answered a
 seed question), the same entry conditions still hold (seed not yet complete). Step 1 reads
-STATE.md and `.aid/knowledge/` to determine exactly where to resume (engine loop vs. coherence
-check vs. review gate re-run).
+its own tracking (below) and `.aid/knowledge/` to determine exactly where to resume (engine loop
+vs. coherence check vs. review gate re-run).
 
 ---
 
-## STATE.md Tracking
+## STATE.yml Tracking
 
-DESCRIBE-SEED tracks its progress in STATE.md `## Seed Authoring`. If this section is absent,
-write it before asking the first question:
+> **Accuracy note (schema gap, not a rename target -- flagged for follow-up, not resolved by
+> this task).** DESCRIBE-SEED's `## Seed Authoring` tracking block was an ad hoc markdown
+> section appended into the pre-refactor `STATE.md`, alongside its `---`-fenced YAML
+> frontmatter. It was never one of the three canonical state templates' declared keys
+> (`work-state-template.yml` has no `seed_authoring` key), so task-002's conversion neither
+> preserved nor removed it -- it was simply never in scope. The new `STATE.yml` is a single
+> pure-YAML document with no separate frontmatter/body split, so this ad hoc block can no
+> longer be appended into it at all without corrupting the file's YAML syntax. The tracking
+> shape below (`## Seed Authoring` markdown) is therefore the pre-existing, aspirational
+> design -- accurately describing what this state has always tried to track, but not a
+> writable target in the current schema. Until a schema decision adds a real key (out of
+> this DOCUMENT task's scope), the mechanical parts of this state (the elicitation loop,
+> the coherence check, the review gate) can still run; only the durable persistence of
+> resume-point tracking across separate `/aid-describe` invocations is affected.
+
+DESCRIBE-SEED tracks its progress in the shape below (see the accuracy note above for where
+this can actually be persisted today). If not yet started, write it before asking the first
+question:
 
 ```
 ## Seed Authoring
@@ -210,8 +226,8 @@ cognitect.com/blog/2011/11/15/documenting-architecture-decisions; JPH ADR README
 creating a new ADR." -- web-validation G1.)
 
 KB doc layout (authoring-conventions.md KB Document Layout):
-frontmatter -> `# <Title>` -> `## Contents` (when more than 3 sections) -> content sections ->
-`## Change Log` (always the last section).
+frontmatter -> `# <Title>` -> `## Contents` (when more than 3 sections) -> content sections.
+No `## Change Log` -- per-doc history lives in git.
 
 After each confirmed answer, record it with Move 10 (scribe) from `references/move-playbook.md`:
 "Got it: recording `[content]` in `.aid/knowledge/<doc>.md`."

@@ -2119,9 +2119,9 @@ seed_settings_yml() {
     # Seed from the template, but STAMP the format_version as the first line so
     # the settings-format gate does not warn on every subsequent command (the raw
     # template ships unstamped; era-b synthesis stamps -- we match it here). The
-    # value mirrors bin/aid's AID_SUPPORTED_FORMAT (fallback 3 for install.sh).
+    # value mirrors bin/aid's AID_SUPPORTED_FORMAT (fallback 4 for install.sh).
     local _fmt _seed_tmp
-    _fmt="${AID_SUPPORTED_FORMAT:-3}"
+    _fmt="${AID_SUPPORTED_FORMAT:-4}"
     _seed_tmp="$(mktemp "${dst}.aid-tmp.XXXXXX")" || {
         echo "WARN: aid-install-core: could not create temp file to seed .aid/settings.yml for '${tool}'." >&2
         return 0

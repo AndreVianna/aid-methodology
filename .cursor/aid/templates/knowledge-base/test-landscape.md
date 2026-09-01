@@ -12,7 +12,7 @@ owner: developer
 audience: [developer, architect]
 intent: |
   Test frameworks in use, coverage areas, and gaps. Read this before writing or modifying tests to follow established patterns.
-contracts: []
+review-criteria: []
 ---
 
 # Test Landscape

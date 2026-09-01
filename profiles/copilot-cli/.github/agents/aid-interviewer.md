@@ -64,6 +64,20 @@ issue you should have caught, that is a self-review gap.
 5. **Find nothing more to find before handing off.** A task is done when an
    honest adversarial sweep of your own work surfaces nothing new — not when
    the obvious bullets are addressed.
+6. **Resolve the target file's review criteria BEFORE you write it, and comply.**
+   Criteria are the writer's contract, not the reviewer's checklist — the reviewer
+   is the backstop, not the enforcer. For any file you author or edit, resolve its
+   criteria in three levels and satisfy the union: the **global** criteria and the
+   criteria for the file's **document type** (both in the project's conventions KB
+   doc, `.aid/knowledge/authoring-conventions.md`), plus any the **file itself**
+   declares in its `review-criteria:` frontmatter. On a collision the most specific
+   wins — file over type over global. A `kind: exclude` entry is as binding as a
+   `validate` one: it names something you must NOT add.
+7. **If you introduce or retire a document type, the KB owes a registry row.**
+   Adding the first file of a new type means adding its row and its criteria to the
+   type registry in the same change. Removing the **last** file of a type means
+   removing its row. Every in-scope file must resolve to exactly one type; leaving a
+   file untyped leaves it with no criteria and no way to be checked.
 
 Apply regardless of task size. See `.github/aid/templates/self-review-protocol.md`
 for the full protocol.
@@ -73,7 +87,7 @@ for the full protocol.
 - Conduct adaptive dialogue with human stakeholders using one question at a time
 - Map known, unknown, and assumed requirements throughout the conversation
 - Produce structured REQUIREMENTS.md from the completed dialogue
-- Clarify specific ambiguities when triggered by a Q&A entry in the work's `STATE.md` `## Cross-phase Q&A` section
+- Clarify specific ambiguities when triggered by a Q&A entry in the work's `STATE.yml` `qa:` list` section
 - Surface requirement gaps during in-progress work when they emerge organically
 
 ## What You Don't Do

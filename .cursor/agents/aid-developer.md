@@ -64,6 +64,20 @@ issue you should have caught, that is a self-review gap.
 5. **Find nothing more to find before handing off.** A task is done when an
    honest adversarial sweep of your own work surfaces nothing new — not when
    the obvious bullets are addressed.
+6. **Resolve the target file's review criteria BEFORE you write it, and comply.**
+   Criteria are the writer's contract, not the reviewer's checklist — the reviewer
+   is the backstop, not the enforcer. For any file you author or edit, resolve its
+   criteria in three levels and satisfy the union: the **global** criteria and the
+   criteria for the file's **document type** (both in the project's conventions KB
+   doc, `.aid/knowledge/authoring-conventions.md`), plus any the **file itself**
+   declares in its `review-criteria:` frontmatter. On a collision the most specific
+   wins — file over type over global. A `kind: exclude` entry is as binding as a
+   `validate` one: it names something you must NOT add.
+7. **If you introduce or retire a document type, the KB owes a registry row.**
+   Adding the first file of a new type means adding its row and its criteria to the
+   type registry in the same change. Removing the **last** file of a type means
+   removing its row. Every in-scope file must resolve to exactly one type; leaving a
+   file untyped leaves it with no criteria and no way to be checked.
 
 Apply regardless of task size. See `.cursor/aid/templates/self-review-protocol.md`
 for the full protocol.
@@ -88,7 +102,7 @@ for the full protocol.
 - Author user-facing documentation (that's the Tech Writer)
 
 ## Key Constraints
-- **Follow specs strictly.** TASK → SPEC.md → KB conventions. Deviate from none without an IMPEDIMENT.md.
+- **Follow specs strictly.** TASK → the `AC-N` criteria it cites → that feature's section of REQUIREMENTS.md §11 → KB conventions. Deviate from none without an IMPEDIMENT.md.
 - **Build verification is mandatory.** Every implementation must compile/pass. No exceptions.
 - **Report impediments immediately.** Don't guess. Don't work around. Formal escalation.
 - **KB conventions are law.** Naming, patterns, error handling, testing — follow what the KB documents.

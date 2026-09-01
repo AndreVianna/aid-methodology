@@ -37,102 +37,51 @@ For each delivery, produce TWO tables **plus** a normalized `wave-map` block (se
 
 **This graph is what `/aid-execute` reads to determine task ordering and parallelism.**
 
-### Normalized wave-map block (PF-5a)
+### Normalized wave-map block (PF-5a) — DERIVED, never authored
 
-Immediately after the human-facing dependency tables above, also emit a fenced `wave-map` block
-for **each** `### delivery-NNN execution graph` section. This block is the machine-readable lane
-map consumed by the dashboard reader. Keep the prose/dependency tables too — the `wave-map` is
-additive and does not replace them.
+The dashboard reader consumes a machine-readable `wave-map` block per delivery. **Do not write
+it by hand.** A wave-map is a topological sort of the `Depends On` table you just wrote, so it
+carries no information that table does not — computing it by hand spends effort on arithmetic and
+can silently disagree with the table it came from.
 
-A "wave" (lane) is the set of tasks that can start at the same point in the sequential execution
-order derived from the dependency graph: wave 1 = tasks with no dependencies; wave 2 = tasks
-whose only dependencies are wave-1 tasks; and so on. Where a wave contains parallel sub-lanes
-(e.g. two independent feature tracks that both unblock at the same wave), emit one `wave N:` line
-per sub-lane so the dashboard can distinguish them.
+Write the derived blocks into `PLAN.md`:
 
-#### DERIVATION rule (PF-5a+)
-
-The agent MUST derive the wave-map **mechanically** from the `Depends On` table it just wrote —
-**not** hand-compose it independently:
-
-1. **Wave 1:** collect every task whose `Depends On` entry is `—` (no dependencies).
-2. **Wave N (N > 1):** collect every task whose ALL dependencies are already assigned to waves
-   `< N`. Repeat until every task is assigned.
-3. **Parallel sub-lanes within a wave:** where two or more tasks in the same wave are independent
-   of each other AND represent distinct execution tracks (e.g. two feature lanes), emit one
-   `wave N:` line per sub-lane. Tasks that are fully parallel with no inter-dependence within
-   the wave MAY be listed on the same `wave N:` line when they share no sub-lane distinction.
-
-**Mandatory SELF-CHECK (MUST, not optional):** after drafting the wave-map block, verify that
-every task id appearing in the delivery's `Depends On` table appears in **exactly one** `wave N:`
-line. If any task id is missing or duplicated, correct the block before writing. This totality
-invariant is enforced mechanically by the PF-9 producer-completeness gate on the fixture.
-
-**Format (exact — must match the reader's parse rule):**
-
-````markdown
-```wave-map
-delivery: NNN
-wave 1: task-001
-wave 2: task-002, task-003, task-004
-wave 3: task-005
+```bash
+bash .claude/aid/scripts/execute/derive-waves.sh <path-to-PLAN.md> --write
 ```
-````
 
-Rules for the block:
-- The opening fence is exactly ` ```wave-map ` (no extra text on the fence line).
-- Line 1 inside the block: `delivery: NNN` — the three-digit zero-padded delivery number
-  (matches the `### delivery-NNN` heading above it, e.g. `delivery: 001`).
-- Each subsequent line: `wave N: <comma-separated task ids>` — one line per wave/lane; task ids
-  are space-trimmed, comma-separated (e.g. `task-001, task-002`).
-- Where a wave has parallel sub-lanes, emit one `wave N:` line per sub-lane (they carry the same
-  wave number `N`; the reader treats each as a distinct lane within that wave).
-- Every task in the delivery MUST appear in exactly one `wave N:` line — the map is total.
-- All characters are ASCII. No trailing spaces.
+`--write` is **idempotent** and splices each block into its own delivery section:
+existing blocks are replaced, not appended, so re-running after correcting a dependency table is
+safe and running it twice changes nothing. On a plan that is already correct it is a byte-identical
+no-op. **Never redirect the output with `>>`** — that duplicates every block.
 
-**Example for a two-delivery plan:**
+Then confirm the file agrees with itself:
+
+```bash
+bash .claude/aid/scripts/execute/derive-waves.sh <path-to-PLAN.md> --check
+```
+
+`--check` exits 0 when every block matches its table, 1 on a disagreement (printing both), and 2
+on a malformed graph — a dependency cycle, or a task the table never defines. **A non-zero exit is
+a defect in the dependency table, not in the script:** fix the table and re-derive.
+
+This replaces the former hand-derivation steps and their manual totality self-check. Both are now
+guaranteed by construction: `tests/canonical/test-derive-waves.sh` pins the ordering, the exact
+output format, totality, cycle detection, and read-only behaviour.
+
+The emitted format, for reference when reading a plan:
 
 ````markdown
-### delivery-001 execution graph
-
-| Task | Depends On |
-|------|-----------|
-| task-001 | — |
-| task-002 | task-001 |
-| task-003 | task-001 |
-
-| Can Be Done In Parallel |
-|------------------------|
-| task-002, task-003 |
-
 ```wave-map
 delivery: 001
 wave 1: task-001
 wave 2: task-002, task-003
 ```
-
-### delivery-002 execution graph
-
-| Task | Depends On |
-|------|-----------|
-| task-004 | — |
-| task-005 | task-004 |
-
-| Can Be Done In Parallel |
-|------------------------|
-| — |
-
-```wave-map
-delivery: 002
-wave 1: task-004
-wave 2: task-005
-```
 ````
 
-**Reader parse rule (for reference — do not change the block format):**
-The reader scans `PLAN.md` for ` ```wave-map ` fences; for each block it reads `delivery: NNN`
-and each `wave N: id, id, ...` line and builds `task_id -> {delivery: NNN, lane: N}` as a
-deterministic table lookup. The prose/dependency tables above the block are not parsed for lane
-data (they remain human-facing only).
+The reader builds `task_id -> {delivery: NNN, lane: N}` from `delivery:` and each `wave N:` line.
+Because the lane value comes from the wave *number*, two `wave 2:` lines are indistinguishable
+from one holding the same tasks — so the script emits one line per wave, and no sub-lane judgment
+is required.
 
 **Advance:** **CHAIN** → continue with the parent state's flow.

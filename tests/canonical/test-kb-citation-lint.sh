@@ -73,6 +73,118 @@ EOF
 bash "$LINT" --root "$KB2" >/dev/null 2>&1
 assert_eq "$?" "0" "CL08 exits 0 on a clean doc-set"
 
+# ===========================================================================
+# CL09  Depth. The default is 1 and must stay 1, because the KB's own shape is
+#       flat and changing it would silently rescope every existing caller.
+#
+#       These assert the OPENED COUNT, not the verdict. A depth-1 scan of a
+#       nested tree returns exit 0 having opened almost nothing, and that
+#       verdict is byte-identical to a genuinely clean run -- so a suite that
+#       checked only the verdict would pass against the bug.
+# ===========================================================================
+NEST="$(mktemp -d)"
+mkdir -p "${NEST}/root/features/feature-001"
+
+cat > "${NEST}/root/TOP.md" <<'EOF'
+A top-level doc with a durable anchor: `foo.sh:run_loop`.
+EOF
+cat > "${NEST}/root/features/feature-001/SPEC.md" <<'EOF'
+A nested doc with a BARE citation: see handler.py:88 for the branch.
+EOF
+
+opened_1="$(bash "$LINT" --root "${NEST}/root" 2>&1 >/dev/null | grep -oE 'opened [0-9]+' | grep -oE '[0-9]+')"
+bash "$LINT" --root "${NEST}/root" >/dev/null 2>&1
+code_1=$?
+
+opened_all="$(bash "$LINT" --root "${NEST}/root" --depth all 2>&1 >/dev/null | grep -oE 'opened [0-9]+' | grep -oE '[0-9]+')"
+bash "$LINT" --root "${NEST}/root" --depth all >/dev/null 2>&1
+code_all=$?
+
+assert_eq "$opened_1"   "1" "CL09 default depth opens only the top level (1 file)"
+assert_eq "$code_1"     "0" "CL09 ...and returns a CLEAN verdict while the nested violation stands"
+assert_eq "$opened_all" "2" "CL09 --depth all opens the nested doc too (2 files)"
+assert_eq "$code_all"   "1" "CL09 ...and finds the violation depth-1 missed"
+
+assert_eq "$(bash "$LINT" --root "${NEST}/root" --recursive 2>&1 >/dev/null | grep -oE 'opened [0-9]+' | grep -oE '[0-9]+')" \
+          "2" "CL09 --recursive is an alias for --depth all"
+
+bash "$LINT" --root "${NEST}/root" --depth 0 >/dev/null 2>&1
+assert_eq "$?" "2" "CL09 --depth 0 is an invocation error, not a silent no-op"
+bash "$LINT" --root "${NEST}/root" --depth banana >/dev/null 2>&1
+assert_eq "$?" "2" "CL09 --depth banana is an invocation error"
+
+# ===========================================================================
+# CL10  A reviewer ledger's `Line` column is not a citation.
+#
+#       The 7-column ledger puts the line number in its own cell, so it never
+#       forms a `file.ext:LINE` token. Flagging it would make the lint
+#       unusable against exactly the artifacts reviews produce.
+# ===========================================================================
+LEDG="$(mktemp -d)"
+mkdir -p "${LEDG}/root"
+cat > "${LEDG}/root/FINDINGS.md" <<'EOF'
+| # | Severity | Status | Doc | Line | Description | Evidence |
+|---|---|---|---|---|---|---|
+| 1 | [HIGH] | Pending | handler.py | 88 | branch is unreachable | proven by the suite |
+EOF
+
+bash "$LINT" --root "${LEDG}/root" --depth all >/dev/null 2>&1
+assert_eq "$?" "0" "CL10 a ledger Line cell is not treated as a bare citation"
+
+# ===========================================================================
+# CL11  A scan that opens NOTHING must not report clean.
+#
+#       "clean" and "looked at nothing" are the same exit code otherwise, which
+#       is the whole failure this lint's opened-count exists to expose. Exit 2,
+#       not 1: the caller pointed it somewhere wrong, which is an invocation
+#       error rather than a finding about content.
+# ===========================================================================
+EMPTY="$(mktemp -d)"
+mkdir -p "${EMPTY}/no-markdown-here"
+
+bash "$LINT" --root "${EMPTY}/no-markdown-here" --depth all >/dev/null 2>&1
+assert_eq "$?" "2" "CL11 a root with no markdown -- exit 2, not a clean bill"
+
+out_empty="$(bash "$LINT" --root "${EMPTY}/no-markdown-here" --depth all 2>&1)"
+assert_output_contains "$out_empty" "refusing to report clean" "CL11 -- says why"
+assert_output_not_contains "$out_empty" "clean (no bare" "CL11 -- does not print the clean verdict"
+
+# Reachable the sneaky way too: docs exist, but below the requested depth.
+mkdir -p "${EMPTY}/nested/a/b"
+cat > "${EMPTY}/nested/a/b/DEEP.md" <<'EOF'
+A doc well below depth 1, with a bare citation: handler.py:88
+EOF
+bash "$LINT" --root "${EMPTY}/nested" --depth 1 >/dev/null 2>&1
+assert_eq "$?" "2" "CL11 docs exist but below --depth -- exit 2, not a false clean"
+bash "$LINT" --root "${EMPTY}/nested" --depth all >/dev/null 2>&1
+assert_eq "$?" "1" "CL11 ...and --depth all finds them"
+
+# ===========================================================================
+# CL12  A symlinked --root is followed.
+#
+#       bash's `-d` guard follows a symlink but `find` without `-L` does not, so
+#       the script accepted the root, opened zero files and reported clean for a
+#       tree that did contain violations.
+# ===========================================================================
+SYM="$(mktemp -d)"
+mkdir -p "${SYM}/real"
+cat > "${SYM}/real/D.md" <<'EOF'
+A bare citation behind a symlink: foo.py:12
+EOF
+ln -s "${SYM}/real" "${SYM}/link"
+
+opened_real="$(bash "$LINT" --root "${SYM}/real" --depth all 2>&1 >/dev/null | grep -oE 'opened [0-9]+' | grep -oE '[0-9]+')"
+opened_link="$(bash "$LINT" --root "${SYM}/link" --depth all 2>&1 >/dev/null | grep -oE 'opened [0-9]+' | grep -oE '[0-9]+')"
+bash "$LINT" --root "${SYM}/link" --depth all >/dev/null 2>&1
+code_link=$?
+
+assert_eq "$opened_link" "$opened_real" "CL12 a symlinked root opens the same files as the real path"
+assert_eq "$code_link"   "1"            "CL12 ...and finds the same violation"
+
+rm -rf "$EMPTY" "$SYM"
+
+rm -rf "$NEST" "$LEDG"
+
 echo
 test_summary
 exit $?

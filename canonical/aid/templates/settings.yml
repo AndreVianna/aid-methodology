@@ -3,6 +3,10 @@
 # The AID version + installed tools are recorded in the manifest
 # (.aid/.aid-manifest.json), not here.
 
+format_version: 4                  # schema stamp — machine-written, do not hand-edit.
+                                   # `aid` reads it to decide whether this file
+                                   # needs migrating to a newer layout.
+
 name: <project-name>               # set during /aid-config INIT
 description: <project-description>  # sole source of truth (not in CLAUDE.md/AGENTS.md)
 type: brownfield                   # brownfield | greenfield
@@ -20,15 +24,3 @@ knowledge:
   # last_update:                   # ISO-8601 datetime of the last KB build vs source
   # doc_set: []                    # runtime-written by aid-discover
   # term_exclusions: []            # runtime-written by aid-discover
-
-# graph: knowledge-graph node enumeration overrides (feature-004). Seeded commented out --
-# uncommenting declares an empty-or-populated ignore list, which is a different state from
-# not declaring the section at all (undeclared vs. declared-empty), so leave it commented
-# unless you mean to opt in. Patterns are repo-relative globs matched with bash `case`
-# semantics (the same style build-project-index.sh uses for NOTABLE_PATH_PATTERNS). An
-# ignore pattern may NOT contain a comma -- the resolver returns items comma-joined, so
-# "a,b" is indistinguishable downstream from two patterns "a" and "b" (a comma in an item
-# is split and reported, not silently kept).
-# graph:
-#   ignore:
-#     - examples/**                  # repo-relative globs excluded from node enumeration

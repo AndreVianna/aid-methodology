@@ -1,20 +1,20 @@
 ---
 name: aid-update-kb
 description: >
-  Optional on-demand targeted KB update skill. Isolates itself in its own
-  worktree, analyzes how a free-form instruction lands in the Knowledge Base
-  (an aid-researcher Impact Map), turns that into a minimal aid-architect
-  Scope Plan traced to the instruction (+ an explicit Not-Changing list), and
-  pauses for an explicit human CONFIRM before any edit. Applies only the
-  confirmed scope, reviews it through f005's four-mandate panel (scoped to
-  the changed docs), and commits only after a second explicit human approval.
-  State-machine: ANALYZE -> SCOPE -> CONFIRM -> APPLY -> REVIEW -> APPROVAL ->
-  DONE (FIX loop inside REVIEW).
+  Apply one targeted, human-confirmed change to the Knowledge Base. Use this skill when you
+  know what changed and which part of the KB should reflect it, and you want that edit and
+  nothing more. It works in its own worktree: it analyses how your instruction lands across
+  the KB, turns that into a minimal scope plan with an explicit list of what it will not
+  change, and pauses for your confirmation before any edit. Only the confirmed scope is
+  applied, it is reviewed against the four-mandate panel, and it commits only after you
+  approve a second time.
 allowed-tools: Read, Glob, Grep, Bash, Write, Edit, Agent
 argument-hint: "<what changed / what to update in the KB>"
 ---
 
 # Targeted KB Update
+
+State machine: ANALYZE -> SCOPE -> CONFIRM -> APPLY -> REVIEW -> APPROVAL -> DONE (FIX loop inside REVIEW).
 
 Analyzes how a prompt-driven instruction lands in the Knowledge Base,
 confirms the correct understanding and the exact scope with the user BEFORE
@@ -517,9 +517,8 @@ Detection above. When a state completes, route by its `**Advance:**` type per
 
 ## Hard limits (HL-1..HL-8)
 
-Owner-confirmed limits every state above cites; SPEC.md § Governing hard
-limits is the source of truth. `/aid-update-kb` never ships a change that
-violates one of these.
+Owner-confirmed limits every state above cites. `/aid-update-kb` never ships a
+change that violates one of these.
 
 - **HL-1 No apply without confirmation.** No KB edit before the user
   confirms scope + understanding at CONFIRM. Enforced by: CONFIRM is a PAUSE

@@ -333,6 +333,39 @@ for line in lines:
 open(path, 'w').writelines(out)
 " "${WORK_DIR}/PLAN.md"
     fi
+
+    # work-009-refactor task-016: the monolithic reader path NEVER populates
+    # tasks[] (SPEC.md L-3), so degrading work-001's PLAN wave-map alone can no
+    # longer make a task's lane null -- there are no tasks to carry a lane. To
+    # keep exercising the completeness gate's lane/delivery branch we add a
+    # HIERARCHICAL work whose single per-unit task has a non-null identity
+    # (title/short_name/delivery) but a null lane (its PLAN.md carries no
+    # wave-map). That yields exactly one COMPLETENESS-FAIL: "lane is null".
+    python3 - "$dst" <<'PYHIER'
+import sys
+from pathlib import Path
+aid = Path(sys.argv[1]) / ".aid"
+w = aid / "works" / "work-007-hier-nolane"
+d = w / "deliveries" / "delivery-001"
+t = d / "tasks" / "task-001"
+t.mkdir(parents=True, exist_ok=True)
+(w / "STATE.yml").write_text(
+    "lifecycle: Running\nphase: Execute\nactive_skill: aid-execute\n"
+    "updated: '2026-06-10T12:00:00Z'\npause_reason: --\nblock_reason: --\n"
+    "block_artifact: --\n", encoding="utf-8")
+(w / "REQUIREMENTS.md").write_text("- **Name:** Hier No Lane\n", encoding="utf-8")
+# PLAN.md exists (has_plan True) but carries NO wave-map -> task lane is null.
+(w / "PLAN.md").write_text("# Plan\n\nNo wave-map here.\n", encoding="utf-8")
+(d / "DETAIL.md").write_text("# delivery-001: scope\n\nBody.\n", encoding="utf-8")
+(d / "STATE.yml").write_text(
+    "delivery_state: Executing\ndelivery_lifecycle:\n"
+    "  updated: '2026-06-10T12:00:00Z'\n  block_reason: --\n"
+    "  block_artifact: --\nqa: []\n", encoding="utf-8")
+(t / "DETAIL.md").write_text(
+    "# task-001: Do the thing\n\n**Type:** IMPLEMENT\n\nBody.\n", encoding="utf-8")
+(t / "STATE.yml").write_text(
+    "state: In Progress\nreview: --\nelapsed: --\nnotes: --\n", encoding="utf-8")
+PYHIER
 }
 
 # ---------------------------------------------------------------------------

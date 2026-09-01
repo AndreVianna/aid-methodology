@@ -1,22 +1,22 @@
 ---
 name: aid-housekeep
 description: >
-  Optional on-demand housekeeping skill. Runs three gated jobs in strict order:
-  KB-DELTA (re-discover changed docs since last KB approval; brownfield docs take the
-  doc<-code drift path, while source: forward-authored greenfield docs take the
-  Conformance Lane -- a code->design shadow-extract that FLAGS design vs as-built
-  divergence for human reconciliation and never auto-overwrites the design) → SUMMARY-DELTA
-  (regenerate the visual summary if the KB changed) → CLEANUP (sweep stale
-  work-area artifacts). Each stage commits its own changes on an aid/housekeep-*
-  branch; the skill never pushes. Re-entrant: a stalled run resumes at the stalled
-  stage on re-invocation. State-machine: PREFLIGHT → KB-DELTA → SUMMARY-DELTA →
-  CLEANUP → DONE. Source-driven global reconcile; for a targeted prompt-named delta
-  use /aid-update-kb.
+  Sweep the project back into a consistent state after work has landed. Use this skill when
+  the Knowledge Base has drifted from the code, the generated summary is stale, or work-area
+  artifacts have piled up. It runs three gated jobs in order: re-discovering KB docs that
+  changed since the last approval, regenerating the visual summary if the KB moved, and
+  clearing stale work-area artifacts. Forward-authored greenfield docs take the Conformance
+  Lane, which flags design-versus-as-built divergence for you to reconcile and never
+  overwrites the design itself. Each stage commits on its own branch and nothing is pushed;
+  a stalled run resumes where it stopped. This is the source-driven global reconcile -- for
+  a targeted, prompt-named delta use `/aid-update-kb`.
 allowed-tools: Read, Glob, Grep, Bash, Write, Edit, Agent
 argument-hint: "[--cleanup-only] [--grade X] jump to cleanup stage, or set minimum summary grade"
 ---
 
 # Knowledge Base Housekeeping
+
+State machine: PREFLIGHT → KB-DELTA → SUMMARY-DELTA → CLEANUP → DONE.
 
 Runs the three standard housekeeping jobs in a safe, fixed order, on a dedicated
 `aid/housekeep-*` branch, with one commit per stage. Re-running after a stalled
@@ -31,7 +31,7 @@ pipeline mapping and no phase gate references it.
 
 **State machine — each `/aid-housekeep` invocation drives the state machine until
 it hits a natural pause point per
-[`canonical/aid/templates/state-machine-chaining.md`](../../templates/state-machine-chaining.md).
+[`canonical/aid/templates/state-machine-chaining.md`](../../aid/templates/state-machine-chaining.md).
 Mechanical states auto-chain; only PAUSE-FOR-USER-ACTION and HALT stop the run.**
 
 > ```
@@ -87,12 +87,16 @@ protocol lives in two reference docs; this section is a checklist citing them.
 
 **On completion / failure:**
 
-- **Success:** emit `✓ <agent> done in <actual>` with measured time. Append a row to
-  the work `STATE.md ## Calibration Log` section (create section if missing) with
-  format `| YYYY-MM-DD | <agent> | <task-id/cycle> | <ETA-band> | <actual> | <notes> |`.
-  Also update the task's `## Dispatches` sub-column with the dispatch record.
-  Both are mandatory per work-003 traceability (never optional, never "if tracked").
-  Delete heartbeat file.
+- **Success:** emit `✓ <agent> done in <actual>` with measured time. When the dispatch is
+  for a real `task-NNN`, append a `dispatch_log` entry to that task's own state (full
+  path: its `STATE.yml`; flat path: `tasks_lifecycle.task-NNN.dispatch_log`) with
+  fields `date`/`agent`/`eta_band`/`actual`/`outcome` -- this is what the work-level
+  Calibration Log / Dispatches views are now DERIVED from at read time
+  (`work-state-template.yml`); there is no longer an independent work-root section to
+  append to directly. When the dispatch is NOT task-scoped (a housekeep-internal
+  cycle, not a `task-NNN`), there is no persisted target at all -- the console
+  narration above is the sole record. Mandatory per work-003 traceability wherever a
+  target exists (never optional, never "if tracked"). Delete heartbeat file.
 - **Failure:** emit `✗ <agent> FAILED after <elapsed> (reason: <one-line>)`.
   Decide whether to re-dispatch, fall back, or surface to user. Delete
   heartbeat file.
@@ -113,7 +117,7 @@ Do NOT rely on memory from previous runs. ALWAYS read actual files on disk.
 
 Resolve `<STATE_FILE>` to the **project-level housekeep run-state file** under
 `.aid/.temp/` — `/aid-housekeep` is project maintenance, so its run-state does NOT
-live in any work-area `STATE.md`. The file is transient (gitignored, never
+live in any work-area `STATE.yml`. The file is transient (gitignored, never
 committed/pushed) and is named `HOUSEKEEP_STATE_<YYYYMMDDHHMM>.md`; the DONE state
 removes it (and any stale siblings) at the end of a run.
 
@@ -233,7 +237,7 @@ aid-housekeep  ▸ you are here
 > `references/state-kb-delta.md` (authored by task-004 / feature-002).
 
 On state entry, print `[State: NAME]` + the "you are here" map from State Detection above.
-When a state completes, route by its `**Advance:**` type (per [`state-machine-chaining.md`](../../templates/state-machine-chaining.md)):
+When a state completes, route by its `**Advance:**` type (per [`state-machine-chaining.md`](../../aid/templates/state-machine-chaining.md)):
 - **CHAIN** → begin the next state's reference doc within the same invocation; no exit.
 - **PAUSE-FOR-USER-ACTION** → print the pause reason + resume command and exit.
 - **HALT** → print the closing summary and exit.

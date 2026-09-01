@@ -77,7 +77,7 @@ assert_output_contains "$DOC_TXT" \
     'The hand-authored collapse body produces the document **directly** and emits no separate' \
     "DFS02a collapse produces the document directly, emits no separate SPEC.md"
 assert_output_contains "$DOC_TXT" \
-    'there is no `## Technical Specification` to activate and no schema change' \
+    'there is no `#### Technical Specification` to activate and no schema change' \
     "DFS02b no ## Technical Specification to activate (no schema change)"
 
 # DFS-03: DETAIL -- the collapse emits no task or SPEC artifact (aid-create-document writes
@@ -219,12 +219,6 @@ build_document_decision_fixture() {
 - **Description:** Document the decision to adopt Kafka over RabbitMQ/SQS for the
   order-processing pipeline.
 
-## Change Log
-
-| Date | Change | Source |
-|------|--------|--------|
-| 2026-07-09 | Initial capture (shortcut: aid-document-decision) | /aid-document-decision |
-
 ## 1. Objective
 
 Write the ADR recording the message-queue decision for the order-processing pipeline.
@@ -274,12 +268,6 @@ EOF
 
     cat > "${work_dir}/SPEC.md" <<'EOF'
 # ADR -- order-processing message queue choice
-
-## Change Log
-
-| Date | Change | Source |
-|------|--------|--------|
-| 2026-07-09 | SPEC authored from REQUIREMENTS.md | /aid-document-decision |
 
 ## Source
 
@@ -466,12 +454,6 @@ build_document_runbook_fixture() {
 - **Description:** Write the operational runbook for responding to the checkout-service
   high-latency alert.
 
-## Change Log
-
-| Date | Change | Source |
-|------|--------|--------|
-| 2026-07-09 | Initial capture (shortcut: aid-document-runbook) | /aid-document-runbook |
-
 ## 1. Objective
 
 Write the runbook that guides an on-call responder through the checkout-service
@@ -525,12 +507,6 @@ EOF
 
     cat > "${work_dir}/SPEC.md" <<'EOF'
 # runbook -- checkout-service high-latency alert
-
-## Change Log
-
-| Date | Change | Source |
-|------|--------|--------|
-| 2026-07-09 | SPEC authored from REQUIREMENTS.md | /aid-document-runbook |
 
 ## Source
 

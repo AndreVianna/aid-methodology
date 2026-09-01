@@ -38,14 +38,14 @@
 #      (main worktree always first, always included; degrade to main-only on
 #      ANY git failure -- git absent / non-git / timeout / parse failure).
 #   4. FOUND = every root R where -d "$R/.aid/works/<work_id>". Empty -> 1.
-#   5. Select the SINGLE reconciled winner $W among FOUND: newest STATE.md
+#   5. Select the SINGLE reconciled winner $W among FOUND: newest STATE.yml
 #      frontmatter `updated` wins; tie -> branch_label lexical, "main" first
 #      -- the SAME rule `_reconcile_same_work` / `resolve_work_dir` use, so
 #      $W is exactly the copy the reader rendered / the dashboard confirmed.
 #      Only $W is removed -- a work_id shadowed in another worktree is left
 #      untouched (WT-1 symmetry).
 #   6. Guards (before ANY removal), evaluated on $W:
-#        - Running guard: $W/.aid/works/<work_id>/STATE.md frontmatter
+#        - Running guard: $W/.aid/works/<work_id>/STATE.yml frontmatter
 #          `lifecycle` == Running -> 7 (no removal).
 #        - Current-worktree guard: $W is non-main AND its realpath equals
 #          the realpath of `git -C "$PWD" rev-parse --show-toplevel` -> 7
@@ -156,18 +156,16 @@ _main_branch_label() {
 }
 
 # _frontmatter_value <state-file> <key> -> the value of a top-level
-# frontmatter scalar (e.g. lifecycle / updated). Reads only the YAML block
-# delimited by the leading `---` fences; strips surrounding quotes + inline
-# `#` comments. Empty output if absent. Verbatim mirror of enumerate-works.sh
-# so a lifecycle/updated read here can never diverge from the skill-facing
-# helper's own reading of the SAME frontmatter shape.
+# frontmatter scalar (e.g. lifecycle / updated). Scans the whole document for
+# a column-0 key (no leading `---` fence required); strips surrounding quotes
+# + inline `#` comments. Empty output if absent. Verbatim mirror of
+# enumerate-works.sh so a lifecycle/updated read here can never diverge from
+# the skill-facing helper's own reading of the SAME frontmatter shape.
 _frontmatter_value() {
     local file="$1" key="$2"
     [[ -f "$file" ]] || return 0
     awk -v key="$key" '
-        NR==1 && $0=="---" { infm=1; next }
-        infm && $0=="---" { exit }
-        infm && $0 ~ "^"key":" {
+        $0 ~ "^"key":" {
             sub("^"key":[[:space:]]*", "")
             sub("[[:space:]]+#.*$", "")
             gsub("^[\"\047]|[\"\047]$", "")
@@ -282,7 +280,7 @@ for i in "${!ROOT_PATHS[@]}"; do
     wt="${ROOT_PATHS[$i]}"
     candidate="$wt/.aid/works/$WORK_ID"
     if [[ -d "$candidate" ]]; then
-        upd="$(_frontmatter_value "$candidate/STATE.md" updated)"
+        upd="$(_frontmatter_value "$candidate/STATE.yml" updated)"
         FOUND_LABELS+=("${ROOT_LABELS[$i]}")
         FOUND_PATHS+=("$wt")
         FOUND_UPDATED+=("$upd")
@@ -345,7 +343,7 @@ fi
 # ---------------------------------------------------------------------------
 
 # Running guard
-LIFECYCLE="$(_frontmatter_value "$CANDIDATE/STATE.md" lifecycle)"
+LIFECYCLE="$(_frontmatter_value "$CANDIDATE/STATE.yml" lifecycle)"
 if [[ "$LIFECYCLE" == "Running" ]]; then
     echo "delete-pipeline.sh: '$WORK_ID' lifecycle=Running -- refusing to delete a running pipeline" >&2
     exit 7

@@ -13,7 +13,7 @@ Fixture matrix (one class per fixture scenario):
   6. Normalized work (## Pipeline Status present -> source_mode=normalized)
   7. Empty repo (.aid/ with no work folders -> works=[])
   8. Absent .aid/ (-> empty model + parse_warning)
-  9. Malformed/torn STATE.md -> parse_warning + best-effort WorkModel; never aborts
+  9. Malformed/torn STATE.yml -> parse_warning + best-effort WorkModel; never aborts
 
 Each fixture asserts:
   - Exactly ONE lifecycle matching the intended state (FR16/AC3)
@@ -116,190 +116,204 @@ def _make_work_dir(aid: Path, work_id: str) -> Path:
     return wd
 
 
-def _write_state_md(work_dir: Path, content: str) -> None:
-    (work_dir / "STATE.md").write_text(content, encoding="utf-8")
+def _write_state_yml(work_dir: Path, content: str) -> None:
+    (work_dir / "STATE.yml").write_text(content, encoding="utf-8")
+
+
+def _add_flat_markers(work_dir: Path, task_ids: list[str]) -> None:
+    """BLUEPRINT.md + tasks/task-NNN/DETAIL.md -- the presence markers
+    _detect_flat() requires (SPEC.md sec:D-4/L-3). A bare monolithic
+    STATE.yml's tasks are ALWAYS [] now (parse_state_md never populates
+    pw.tasks) -- fixtures that assert real task lists must be FLAT layout,
+    with their per-task mutable cells authored in the work-root STATE.yml's
+    `tasks_lifecycle` mapping instead."""
+    work_dir.mkdir(parents=True, exist_ok=True)
+    (work_dir / "BLUEPRINT.md").write_text("# Blueprint\n", encoding="utf-8")
+    for tid in task_ids:
+        task_dir = work_dir / "tasks" / tid
+        task_dir.mkdir(parents=True, exist_ok=True)
+        (task_dir / "DETAIL.md").write_text(f"# {tid}\n\n**Type:** IMPLEMENT\n", encoding="utf-8")
 
 
 # ---------------------------------------------------------------------------
-# STATE.md fixture bodies
+# STATE.yml fixture bodies (work-009-refactor task-016: were bullet-heading
+# STATE.md files with embedded '## Tasks Status'/'## Cross-phase Q&A'
+# markdown blocks -- retired, SPEC.md sec:D-4)
 # ---------------------------------------------------------------------------
 
 # Fixture 1: Running work with PARALLEL tasks across multiple waves (FR14).
 # Has tasks in Wave 1 (Done), Wave 2 (two In Progress -- PARALLEL), Wave 3 (Pending).
+# FLAT layout (_add_flat_markers) so these 6 tasks are actually populated.
 _STATE_RUNNING_PARALLEL = """\
-# Work State -- work-001-parallel
-
-## Pipeline Status
-
-- **Lifecycle:** Running
-- **Phase:** Execute
-- **Active Skill:** aid-execute
-- **Updated:** 2026-06-10T12:00:00Z
-- **Pause Reason:** --
-- **Block Reason:** --
-- **Block Artifact:** --
-
-## Tasks Status
-
-| # | Task | Type | Wave | Status | Review | Elapsed | Notes |
-|---|------|------|------|--------|--------|---------|-------|
-| 001 | task-001 | CODE | delivery-001-wave-1 | Done | A | 2h | -- |
-| 002 | task-002 | TEST | delivery-001-wave-1 | Done | A | 1h | -- |
-| 003 | task-003 | CODE | delivery-001-wave-2 | In Progress | -- | -- | parallel a |
-| 004 | task-004 | CODE | delivery-001-wave-2 | In Progress | -- | -- | parallel b |
-| 005 | task-005 | CONFIGURE | delivery-001-wave-2 | In Progress | -- | -- | parallel c |
-| 006 | task-006 | TEST | delivery-001-wave-3 | Pending | -- | -- | -- |
-
-## Cross-phase Q&A (Pending)
-
+lifecycle: Running
+phase: Execute
+active_skill: aid-execute
+updated: '2026-06-10T12:00:00Z'
+pause_reason: --
+block_reason: --
+block_artifact: --
+tasks_lifecycle:
+  task-001:
+    state: Done
+    review: A
+    elapsed: 2h
+    notes: --
+  task-002:
+    state: Done
+    review: A
+    elapsed: 1h
+    notes: --
+  task-003:
+    state: In Progress
+    review: --
+    elapsed: --
+    notes: parallel a
+  task-004:
+    state: In Progress
+    review: --
+    elapsed: --
+    notes: parallel b
+  task-005:
+    state: In Progress
+    review: --
+    elapsed: --
+    notes: parallel c
+  task-006:
+    state: Pending
+    review: --
+    elapsed: --
+    notes: --
+qa: []
 """
+_STATE_RUNNING_PARALLEL_TASK_IDS = [f"task-00{n}" for n in range(1, 7)]
 
-# Fixture 2: Paused-Awaiting-Input work (normalized; pending Q&A with Status: Pending).
+# Fixture 2: Paused-Awaiting-Input work (normalized; pending Q&A with state: Pending).
+# Monolithic (no task-list assertions in TestFixturePaused).
 _STATE_PAUSED = """\
-# Work State -- work-002-paused
-
-## Pipeline Status
-
-- **Lifecycle:** Paused-Awaiting-Input
-- **Phase:** Specify
-- **Active Skill:** aid-specify
-- **Updated:** 2026-06-09T10:00:00Z
-- **Pause Reason:** Awaiting user decision on database technology
-
-## Tasks Status
-
-| # | Task | Type | Wave | Status | Review | Elapsed | Notes |
-|---|------|------|------|--------|--------|---------|-------|
-| 001 | task-001 | DESIGN | delivery-001 | Pending | -- | -- | -- |
-
-## Cross-phase Q&A (Pending)
-
-### Q1
-
-- **Category:** Architecture
-- **Impact:** High
-- **Status:** Pending
-- **Context:** Need to decide between PostgreSQL and SQLite before SPEC is complete
-- **Suggested:** PostgreSQL (better for concurrent access)
-
-### Q2
-
-- **Category:** Security
-- **Impact:** Medium
-- **Status:** Answered
-- **Context:** Already resolved
-- **Answer:** Use bcrypt for passwords
-- **Applied to:** SPEC.md
-
+lifecycle: Paused-Awaiting-Input
+phase: Specify
+active_skill: aid-specify
+updated: '2026-06-09T10:00:00Z'
+pause_reason: Awaiting user decision on database technology
+qa:
+  - id: 1
+    category: Architecture
+    impact: High
+    state: Pending
+    context: Need to decide between PostgreSQL and SQLite before SPEC is complete
+    suggested: PostgreSQL (better for concurrent access)
+  - id: 2
+    category: Security
+    impact: Medium
+    state: Answered
+    context: Already resolved
+    answer: Use bcrypt for passwords
+    applied_to: SPEC.md
 """
 
 # Fixture 3: Blocked work with normalized block + FLAT IMPEDIMENT file.
-# The IMPEDIMENT file path will be created on disk; the STATE.md references it.
+# The IMPEDIMENT file path will be created on disk; STATE.yml references it.
+# FLAT layout so task-005's Blocked state is actually populated.
 _STATE_BLOCKED = """\
-# Work State -- work-003-blocked
-
-## Pipeline Status
-
-- **Lifecycle:** Blocked
-- **Phase:** Execute
-- **Active Skill:** aid-execute
-- **Updated:** 2026-06-08T15:00:00Z
-- **Pause Reason:** --
-- **Block Reason:** Task 005 reviewer found critical issue
-- **Block Artifact:** IMPEDIMENT-task-005.md
-
-## Tasks Status
-
-| # | Task | Type | Wave | Status | Review | Elapsed | Notes |
-|---|------|------|------|--------|--------|---------|-------|
-| 003 | task-003 | CODE | delivery-001-wave-1 | Done | A | 2h | -- |
-| 004 | task-004 | TEST | delivery-001-wave-1 | Done | B | 1h | -- |
-| 005 | task-005 | CODE | delivery-001-wave-2 | Blocked | -- | -- | impediment raised |
-
+lifecycle: Blocked
+phase: Execute
+active_skill: aid-execute
+updated: '2026-06-08T15:00:00Z'
+pause_reason: --
+block_reason: Task 005 reviewer found critical issue
+block_artifact: IMPEDIMENT-task-005.md
+tasks_lifecycle:
+  task-003:
+    state: Done
+    review: A
+    elapsed: 2h
+    notes: --
+  task-004:
+    state: Done
+    review: B
+    elapsed: 1h
+    notes: --
+  task-005:
+    state: Blocked
+    review: --
+    elapsed: --
+    notes: impediment raised
 """
+_STATE_BLOCKED_TASK_IDS = ["task-003", "task-004", "task-005"]
 
-# Fixture 4: Completed work (normalized).
+# Fixture 4: Completed work (normalized). FLAT layout (3 Done tasks tested).
 _STATE_COMPLETED = """\
-# Work State -- work-004-completed
-
-## Pipeline Status
-
-- **Lifecycle:** Completed
-- **Phase:** Execute
-- **Active Skill:** none
-- **Updated:** 2026-06-05T08:00:00Z
-- **Pause Reason:** --
-- **Block Reason:** --
-- **Block Artifact:** --
-
-## Tasks Status
-
-| # | Task | Type | Wave | Status | Review | Elapsed | Notes |
-|---|------|------|------|--------|--------|---------|-------|
-| 001 | task-001 | CODE | delivery-001 | Done | A | 4h | -- |
-| 002 | task-002 | TEST | delivery-001 | Done | A | 2h | -- |
-| 003 | task-003 | CONFIGURE | delivery-001 | Done | B | 1h | -- |
-
+lifecycle: Completed
+phase: Execute
+active_skill: none
+updated: '2026-06-05T08:00:00Z'
+pause_reason: --
+block_reason: --
+block_artifact: --
+tasks_lifecycle:
+  task-001:
+    state: Done
+    review: A
+    elapsed: 4h
+    notes: --
+  task-002:
+    state: Done
+    review: A
+    elapsed: 2h
+    notes: --
+  task-003:
+    state: Done
+    review: B
+    elapsed: 1h
+    notes: --
 """
+_STATE_COMPLETED_TASK_IDS = ["task-001", "task-002", "task-003"]
 
-# Fixture 5: Fallback work (NO ## Pipeline Status block).
-# Uses only legacy signals. Has an In Progress task -> Running via fallback.
+# Fixture 5: Fallback work (NO `lifecycle` key at all -- the modern equivalent
+# of "no ## Pipeline Status block"; LC-3 fallback derivation fires). FLAT
+# layout: the flat reader path populates tasks from `tasks_lifecycle`
+# independent of whether `lifecycle` is present (that key only feeds
+# parse_state_md's OWN lifecycle_present check, read separately).
 _STATE_FALLBACK = """\
-# Work State -- work-005-fallback
-
-> **Status:** Executing
-> **Phase:** Execute
-> **Minimum Grade:** B
-> **Started:** 2026-06-01
-
-## Tasks Status
-
-| # | Task | Type | Wave | Status | Review | Elapsed | Notes |
-|---|------|------|------|--------|--------|---------|-------|
-| 001 | task-001 | CODE | 1 | In Progress | -- | -- | -- |
-| 002 | task-002 | TEST | 1 | Pending | -- | -- | -- |
-
-## Lifecycle History
-
-| Date | Phase | Event | Phase Transition / Gate | Notes |
-|------|-------|-------|--------------------------|-------|
-| 2026-06-01 | Describe | Work created | Describe start | -- |
-| 2026-06-09 | Execute | Execution started | Specify -> Execute | -- |
-
+tasks_lifecycle:
+  task-001:
+    state: In Progress
+    review: --
+    elapsed: --
+    notes: --
+  task-002:
+    state: Pending
+    review: --
+    elapsed: --
+    notes: --
+lifecycle_history:
+  - date: '2026-06-01'
+    event: Work created
+    grade: --
+    notes: --
+  - date: '2026-06-09'
+    event: Execution started
+    grade: --
+    notes: --
 """
+_STATE_FALLBACK_TASK_IDS = ["task-001", "task-002"]
 
-# Fixture 6: Normalized work (## Pipeline Status present -> source_mode=normalized).
+# Fixture 6: Normalized work (`lifecycle` key present -> source_mode=normalized).
 # Same as the general normalized test but explicitly named for clarity.
+# Monolithic (no task-list assertions in TestFixtureNormalized).
 _STATE_NORMALIZED = """\
-# Work State -- work-006-normalized
-
-## Pipeline Status
-
-- **Lifecycle:** Running
-- **Phase:** Execute
-- **Active Skill:** aid-execute
-- **Updated:** 2026-06-10T09:00:00Z
-- **Pause Reason:** --
-- **Block Reason:** --
-- **Block Artifact:** --
-
-## Tasks Status
-
-| # | Task | Type | Wave | Status | Review | Elapsed | Notes |
-|---|------|------|------|--------|--------|---------|-------|
-| 001 | task-001 | CODE | delivery-001 | In Progress | -- | -- | -- |
-
+lifecycle: Running
+phase: Execute
+active_skill: aid-execute
+updated: '2026-06-10T09:00:00Z'
+pause_reason: --
+block_reason: --
+block_artifact: --
 """
 
-# Fixture 9: Malformed/torn STATE.md (truncated in the middle of Pipeline Status).
-# Must yield parse_warning + best-effort WorkModel and NEVER abort the whole pass.
-_STATE_MALFORMED = """\
-# Work State -- work-009-malformed
-
-## Pipeline Status
-
-- **Lifecycle: Running
-"""  # Deliberately truncated/malformed: bold syntax broken; no closing ** on Lifecycle
+# Fixture 9: Malformed/torn STATE.yml (truncated mid-value). Must yield
+# parse_warning + best-effort WorkModel and NEVER abort the whole pass.
+_STATE_MALFORMED = "lifecycle: Runni"  # Deliberately truncated mid-scalar-value
 
 
 # ---------------------------------------------------------------------------
@@ -326,7 +340,8 @@ class TestFixtureRunningParallel(unittest.TestCase):
         _write_manifest(aid)
         _write_settings(aid, "ParallelProject")
         wd = _make_work_dir(aid, "work-001-parallel")
-        _write_state_md(wd, _STATE_RUNNING_PARALLEL)
+        _add_flat_markers(wd, _STATE_RUNNING_PARALLEL_TASK_IDS)
+        _write_state_yml(wd, _STATE_RUNNING_PARALLEL)
 
     def tearDown(self):
         shutil.rmtree(self.tmp, ignore_errors=True)
@@ -355,11 +370,17 @@ class TestFixtureRunningParallel(unittest.TestCase):
         self.assertGreaterEqual(len(in_progress), 2, "At least 2 In Progress tasks in wave-2")
 
     def test_parallel_tasks_have_same_wave(self):
-        """FR14: parallel tasks carry the same wave label."""
+        """FR14: parallel tasks carry the same wave label. (work-009-refactor
+        task-016: the pre-refactor fixture authored a distinct
+        'delivery-001-wave-N' wave string per task-table row; the flat
+        reader path (_read_work_flat) now hardcodes wave="delivery-001" for
+        EVERY task -- there is no per-task wave field left to author, so
+        "same wave" now trivially holds for the whole task list, not just
+        the wave-2 subset.)"""
         model = read_repo(self.root)
         w = model.works[0]
-        wave2 = [t for t in w.tasks if t.wave == "delivery-001-wave-2"]
-        self.assertEqual(len(wave2), 3, "Wave-2 must have 3 tasks")
+        wave2 = [t for t in w.tasks if t.wave == "delivery-001"]
+        self.assertEqual(len(wave2), 6, "All 6 tasks share the flat layout's single implicit delivery-001 wave")
 
     def test_no_tasks_collapsed(self):
         """FR14: tasks[] is a flat list; the rollup lifecycle does not replace it."""
@@ -410,7 +431,7 @@ class TestFixturePaused(unittest.TestCase):
         _write_manifest(aid)
         _write_settings(aid, "PausedProject")
         wd = _make_work_dir(aid, "work-002-paused")
-        _write_state_md(wd, _STATE_PAUSED)
+        _write_state_yml(wd, _STATE_PAUSED)
 
     def tearDown(self):
         shutil.rmtree(self.tmp, ignore_errors=True)
@@ -471,7 +492,8 @@ class TestFixtureBlocked(unittest.TestCase):
         _write_manifest(aid)
         _write_settings(aid, "BlockedProject")
         wd = _make_work_dir(aid, "work-003-blocked")
-        _write_state_md(wd, _STATE_BLOCKED)
+        _add_flat_markers(wd, _STATE_BLOCKED_TASK_IDS)
+        _write_state_yml(wd, _STATE_BLOCKED)
         # Create the flat IMPEDIMENT file (de-facto producer path, KI-003)
         (wd / "IMPEDIMENT-task-005.md").write_text(
             "# Impediment — task-005\n\nCritical issue found during review.\n",
@@ -539,7 +561,8 @@ class TestFixtureCompleted(unittest.TestCase):
         _write_manifest(aid)
         _write_settings(aid, "CompletedProject")
         wd = _make_work_dir(aid, "work-004-completed")
-        _write_state_md(wd, _STATE_COMPLETED)
+        _add_flat_markers(wd, _STATE_COMPLETED_TASK_IDS)
+        _write_state_yml(wd, _STATE_COMPLETED)
 
     def tearDown(self):
         shutil.rmtree(self.tmp, ignore_errors=True)
@@ -595,7 +618,8 @@ class TestFixtureFallback(unittest.TestCase):
         _write_manifest(aid)
         _write_settings(aid, "FallbackProject")
         wd = _make_work_dir(aid, "work-005-fallback")
-        _write_state_md(wd, _STATE_FALLBACK)
+        _add_flat_markers(wd, _STATE_FALLBACK_TASK_IDS)
+        _write_state_yml(wd, _STATE_FALLBACK)
 
     def tearDown(self):
         shutil.rmtree(self.tmp, ignore_errors=True)
@@ -606,7 +630,10 @@ class TestFixtureFallback(unittest.TestCase):
         self.assertEqual(w.source_mode, SourceMode.Fallback)
 
     def test_lifecycle_running_via_fallback(self):
-        """Fallback: In Progress task -> Running (SM-2 prio-5 default)."""
+        """Fallback: no `lifecycle` key, no terminal/pause/block signal ->
+        Running (SM-2 prio-5's unconditional default -- work-009-refactor
+        task-016: this is NOT actually gated on task status; it fires
+        whenever nothing else matches, regardless of any task's state)."""
         model = read_repo(self.root)
         w = model.works[0]
         self.assertEqual(w.lifecycle, Lifecycle.Running)
@@ -653,7 +680,7 @@ class TestFixtureNormalized(unittest.TestCase):
         _write_manifest(aid)
         _write_settings(aid, "NormalizedProject")
         wd = _make_work_dir(aid, "work-006-normalized")
-        _write_state_md(wd, _STATE_NORMALIZED)
+        _write_state_yml(wd, _STATE_NORMALIZED)
 
     def tearDown(self):
         shutil.rmtree(self.tmp, ignore_errors=True)
@@ -809,16 +836,16 @@ class TestFixtureAbsentAidDir(unittest.TestCase):
 
 
 # ---------------------------------------------------------------------------
-# Fixture 9: Malformed/torn STATE.md
+# Fixture 9: Malformed/torn STATE.yml
 # ---------------------------------------------------------------------------
 
 class TestFixtureMalformedStateMd(unittest.TestCase):
-    """Fixture 9: Malformed/torn STATE.md.
+    """Fixture 9: Malformed/torn STATE.yml.
 
     Asserts (AC1/AC4):
     - parse_warning is added (non-fatal anomaly noted)
     - A best-effort WorkModel is returned (never aborts the pass)
-    - The whole read_repo() call does NOT abort due to one bad STATE.md
+    - The whole read_repo() call does NOT abort due to one bad STATE.yml
     - Other (good) works in the same repo are still enumerated correctly
     - lifecycle is some Lifecycle enum value (not an exception)
 
@@ -833,25 +860,26 @@ class TestFixtureMalformedStateMd(unittest.TestCase):
         self.aid = _make_aid_dir(self.root)
         _write_manifest(self.aid)
         _write_settings(self.aid, "MixedProject")
-        # Work 1: malformed STATE.md
+        # Work 1: malformed STATE.yml
         wd_bad = _make_work_dir(self.aid, "work-001-bad")
-        _write_state_md(wd_bad, _STATE_MALFORMED)
-        # Work 2: good normalized STATE.md
+        _write_state_yml(wd_bad, _STATE_MALFORMED)
+        # Work 2: good normalized STATE.yml
         wd_good1 = _make_work_dir(self.aid, "work-002-good")
-        _write_state_md(wd_good1, _STATE_NORMALIZED.replace("work-006-normalized", "work-002-good"))
+        _write_state_yml(wd_good1, _STATE_NORMALIZED)
         # Work 3: another good work
         wd_good2 = _make_work_dir(self.aid, "work-003-also-good")
-        _write_state_md(wd_good2, _STATE_COMPLETED.replace("work-004-completed", "work-003-also-good"))
+        _add_flat_markers(wd_good2, _STATE_COMPLETED_TASK_IDS)
+        _write_state_yml(wd_good2, _STATE_COMPLETED)
 
     def tearDown(self):
         shutil.rmtree(self.tmp, ignore_errors=True)
 
     def test_no_exception_on_malformed(self):
-        """AC1/AC4: malformed STATE.md must never abort the whole pass."""
+        """AC1/AC4: malformed STATE.yml must never abort the whole pass."""
         try:
             model = read_repo(self.root)
         except Exception as exc:
-            self.fail(f"read_repo raised on malformed STATE.md: {exc}")
+            self.fail(f"read_repo raised on malformed STATE.yml: {exc}")
 
     def test_still_enumerates_all_works(self):
         """AC1: all three works must be returned even when one is malformed."""
@@ -876,29 +904,29 @@ class TestFixtureMalformedStateMd(unittest.TestCase):
         self.assertEqual(good.source_mode, SourceMode.Normalized)
 
     def test_no_exception_on_fully_empty_state(self):
-        """A completely empty STATE.md also must not abort."""
+        """A completely empty STATE.yml also must not abort."""
         aid2 = _make_aid_dir(self.root / "repo2")
         _write_manifest(aid2)
         _write_settings(aid2)
         wd = _make_work_dir(aid2, "work-001-empty-state")
-        _write_state_md(wd, "")
+        _write_state_yml(wd, "")
         try:
             model = read_repo(self.root / "repo2")
         except Exception as exc:
-            self.fail(f"read_repo raised on empty STATE.md: {exc}")
+            self.fail(f"read_repo raised on empty STATE.yml: {exc}")
         self.assertEqual(model.read.work_count, 1)
 
     def test_no_exception_on_binary_garbage(self):
-        """A STATE.md with binary/invalid UTF-8 must not abort (errors='replace')."""
+        """A STATE.yml with binary/invalid UTF-8 must not abort (errors='replace')."""
         aid3 = _make_aid_dir(self.root / "repo3")
         _write_manifest(aid3)
         _write_settings(aid3)
         wd = _make_work_dir(aid3, "work-001-binary")
-        (wd / "STATE.md").write_bytes(b"\xff\xfe\x00\x01invalid utf-8 garbage")
+        (wd / "STATE.yml").write_bytes(b"\xff\xfe\x00\x01invalid utf-8 garbage")
         try:
             model = read_repo(self.root / "repo3")
         except Exception as exc:
-            self.fail(f"read_repo raised on binary STATE.md: {exc}")
+            self.fail(f"read_repo raised on binary STATE.yml: {exc}")
         self.assertEqual(model.read.work_count, 1)
 
 
@@ -907,11 +935,14 @@ class TestFixtureMalformedStateMd(unittest.TestCase):
 # ---------------------------------------------------------------------------
 
 class TestFixtureNoneYetRow(unittest.TestCase):
-    """_none yet_ placeholder row in ## Tasks Status -> tasks=[] (DM-5).
-
-    Asserts:
-    - A STATE.md with only a _none yet_ row produces tasks=[]
-    - This is true for both normalized and fallback paths
+    """A bare monolithic STATE.yml (no BLUEPRINT.md/deliveries/ wrapper)
+    always produces tasks=[] -- true for both a normalized (`lifecycle`
+    key present) and fallback (`lifecycle` key absent) document, since
+    parse_state_md() never populates pw.tasks regardless of content
+    (SPEC.md L-3). (work-009-refactor task-016: was a '_none yet_'
+    placeholder row under '## Tasks Status' -- retired; that specific
+    placeholder-row-skip mechanism is moot now that the monolithic path
+    never reads a task table at all.)
     """
 
     def setUp(self):
@@ -922,46 +953,30 @@ class TestFixtureNoneYetRow(unittest.TestCase):
         shutil.rmtree(self.tmp, ignore_errors=True)
 
     def test_none_yet_row_skipped_normalized(self):
-        """Normalized path: _none yet_ produces tasks=[]."""
+        """Normalized path (`lifecycle` key present): tasks=[]."""
         aid = _make_aid_dir(self.root)
         _write_manifest(aid)
         _write_settings(aid)
         wd = _make_work_dir(aid, "work-001-none-yet")
-        _write_state_md(wd, """\
-## Pipeline Status
-
-- **Lifecycle:** Running
-- **Phase:** Execute
-- **Active Skill:** none
-- **Updated:** 2026-06-01T00:00:00Z
-- **Pause Reason:** --
-- **Block Reason:** --
-- **Block Artifact:** --
-
-## Tasks Status
-
-| # | Task | Type | Wave | Status | Review | Elapsed | Notes |
-|---|------|------|------|--------|--------|---------|-------|
-| _none yet_ | | | | | | | |
+        _write_state_yml(wd, """\
+lifecycle: Running
+phase: Execute
+active_skill: none
+updated: '2026-06-01T00:00:00Z'
+pause_reason: --
+block_reason: --
+block_artifact: --
 """)
         model = read_repo(self.root)
         self.assertEqual(model.works[0].tasks, [])
 
     def test_none_yet_row_skipped_fallback(self):
-        """Fallback path: _none yet_ also produces tasks=[]."""
+        """Fallback path (no `lifecycle` key): tasks=[] also holds."""
         aid2 = _make_aid_dir(self.root / "repo2")
         _write_manifest(aid2)
         _write_settings(aid2)
         wd = _make_work_dir(aid2, "work-001-none-yet-fb")
-        _write_state_md(wd, """\
-# Work State
-
-## Tasks Status
-
-| # | Task | Type | Wave | Status | Review | Elapsed | Notes |
-|---|------|------|------|--------|--------|---------|-------|
-| _none yet_ | | | | | | | |
-""")
+        _write_state_yml(wd, "# no lifecycle key -- fallback derivation\n")
         model = read_repo(self.root / "repo2")
         self.assertEqual(model.works[0].tasks, [])
 
@@ -988,13 +1003,15 @@ class TestFixtureMixedModeRepo(unittest.TestCase):
         _write_settings(aid, "MixedModeProject")
         # Normalized work
         wd_norm = _make_work_dir(aid, "work-001-normalized")
-        _write_state_md(wd_norm, _STATE_NORMALIZED.replace("work-006-normalized", "work-001-normalized"))
+        _write_state_yml(wd_norm, _STATE_NORMALIZED)
         # Fallback work
         wd_fall = _make_work_dir(aid, "work-002-fallback")
-        _write_state_md(wd_fall, _STATE_FALLBACK.replace("work-005-fallback", "work-002-fallback"))
+        _add_flat_markers(wd_fall, _STATE_FALLBACK_TASK_IDS)
+        _write_state_yml(wd_fall, _STATE_FALLBACK)
         # Another normalized work
         wd_comp = _make_work_dir(aid, "work-003-completed")
-        _write_state_md(wd_comp, _STATE_COMPLETED.replace("work-004-completed", "work-003-completed"))
+        _add_flat_markers(wd_comp, _STATE_COMPLETED_TASK_IDS)
+        _write_state_yml(wd_comp, _STATE_COMPLETED)
 
     def tearDown(self):
         shutil.rmtree(self.tmp, ignore_errors=True)
@@ -1045,17 +1062,12 @@ class TestFixtureFallbackBlocked(unittest.TestCase):
         _write_manifest(aid)
         _write_settings(aid)
         wd = _make_work_dir(aid, "work-001-fb-blocked")
-        # No ## Pipeline Status block
-        _write_state_md(wd, """\
-# Work State -- work-001-fb-blocked
-
-## Tasks Status
-
-| # | Task | Type | Wave | Status | Review | Elapsed | Notes |
-|---|------|------|------|--------|--------|---------|-------|
-| 001 | task-001 | CODE | 1 | In Progress | -- | -- | -- |
-
-""")
+        # No `lifecycle` key at all (work-009-refactor task-016: was "no ##
+        # Pipeline Status block" -- retired, SPEC.md sec:D-4). The Blocked
+        # signal comes from the flat IMPEDIMENT file's presence alone
+        # (derivation.py's _find_block_signal, unchanged, L-3) -- independent
+        # of any task list, so a bare comment-only STATE.yml suffices.
+        _write_state_yml(wd, "# no lifecycle key -- fallback derivation\n")
         # Create flat IMPEDIMENT file (KI-003 path)
         (wd / "IMPEDIMENT-task-001.md").write_text(
             "# Impediment\nCritical failure.", encoding="utf-8"
@@ -1090,12 +1102,29 @@ class TestFixtureFallbackBlocked(unittest.TestCase):
 # ---------------------------------------------------------------------------
 
 class TestFixtureFallbackPaused(unittest.TestCase):
-    """Fallback-path Paused work: no ## Pipeline Status; pending Q&A present.
+    """Fallback-path work with pending Q&A authored, but NO `lifecycle` key.
 
-    Asserts (SM-2 prio-4 fallback):
-    - source_mode = fallback
-    - Lifecycle = Paused-Awaiting-Input
-    - pause_reason references the pending Q&A question IDs
+    (work-009-refactor task-016: this class's ORIGINAL premise -- pending
+    Q&A drives the Paused-Awaiting-Input SM-2 prio-4 fallback signal -- is
+    now a DEAD path via parse_state_md(): `qa` is parsed into
+    `pw.pending_inputs` STRICTLY AFTER the `if lifecycle_present / else:
+    derive_lifecycle(...)` branch already ran (parsers.py parse_state_md),
+    so `derive_lifecycle`'s own `pending_inputs` argument is ALWAYS `[]` at
+    the moment it is called in the fallback branch, even though
+    `pw.pending_inputs` DOES get populated post-hoc afterward. This is a
+    real (narrow -- a live STATE.yml always carries a `lifecycle` key)
+    ordering quirk, not something this task fixes (parsers.py belongs to
+    task-003/004/021) -- mirrors test_derivation.py's
+    test_fallback_pending_qa_signal_is_a_noop_via_parse_state_md, which
+    covers the exact same ordering quirk directly against the parser.
+    Retained here (rather than deleted) to prove the quirk end-to-end
+    through the full read_repo() call, not just the unit-level parser.
+
+    Asserts:
+    - source_mode = fallback (no `lifecycle` key)
+    - Lifecycle = Running (SM-2 prio-5's unconditional default -- NOT
+      Paused, since pending_inputs is [] at derive_lifecycle-call time)
+    - pause_reason is None (no signal fired to set it)
     - work in fallback_works
     """
 
@@ -1106,31 +1135,20 @@ class TestFixtureFallbackPaused(unittest.TestCase):
         _write_manifest(aid)
         _write_settings(aid)
         wd = _make_work_dir(aid, "work-001-fb-paused")
-        _write_state_md(wd, """\
-# Work State -- work-001-fb-paused
-
-## Tasks Status
-
-| # | Task | Type | Wave | Status | Review | Elapsed | Notes |
-|---|------|------|------|--------|--------|---------|-------|
-| 001 | task-001 | DESIGN | 1 | Pending | -- | -- | -- |
-
-## Cross-phase Q&A (Pending)
-
-### Q1
-
-- **Category:** Architecture
-- **Impact:** High
-- **Status:** Pending
-- **Context:** Waiting for user input on DB choice
-
-### Q2
-
-- **Category:** Security
-- **Impact:** Medium
-- **Status:** Pending
-- **Context:** Auth mechanism still unresolved
-
+        # No `lifecycle` key at all (work-009-refactor task-016: was "no ##
+        # Pipeline Status block" -- retired, SPEC.md sec:D-4).
+        _write_state_yml(wd, """\
+qa:
+  - id: 1
+    category: Architecture
+    impact: High
+    state: Pending
+    context: Waiting for user input on DB choice
+  - id: 2
+    category: Security
+    impact: Medium
+    state: Pending
+    context: Auth mechanism still unresolved
 """)
 
     def tearDown(self):
@@ -1141,17 +1159,15 @@ class TestFixtureFallbackPaused(unittest.TestCase):
         w = model.works[0]
         self.assertEqual(w.source_mode, SourceMode.Fallback)
 
-    def test_lifecycle_paused(self):
+    def test_lifecycle_running_pending_qa_signal_is_a_noop(self):
         model = read_repo(self.root)
         w = model.works[0]
-        self.assertEqual(w.lifecycle, Lifecycle.PausedAwaitingInput)
+        self.assertEqual(w.lifecycle, Lifecycle.Running)
 
-    def test_pause_reason_has_question_ids(self):
+    def test_pause_reason_is_none_pending_qa_signal_is_a_noop(self):
         model = read_repo(self.root)
         w = model.works[0]
-        self.assertIsNotNone(w.pause_reason)
-        self.assertIn("Q1", w.pause_reason)
-        self.assertIn("Q2", w.pause_reason)
+        self.assertIsNone(w.pause_reason)
 
     def test_in_fallback_works(self):
         model = read_repo(self.root)
@@ -1502,11 +1518,12 @@ class TestFixtureRetentionEnumeration(unittest.TestCase):
         _write_settings(aid)
         # Three works: completed + running + paused (mixed lifecycle states)
         wd1 = _make_work_dir(aid, "work-001-done")
-        _write_state_md(wd1, _STATE_COMPLETED.replace("work-004-completed", "work-001-done"))
+        _add_flat_markers(wd1, _STATE_COMPLETED_TASK_IDS)
+        _write_state_yml(wd1, _STATE_COMPLETED)
         wd2 = _make_work_dir(aid, "work-002-running")
-        _write_state_md(wd2, _STATE_NORMALIZED.replace("work-006-normalized", "work-002-running"))
+        _write_state_yml(wd2, _STATE_NORMALIZED)
         wd3 = _make_work_dir(aid, "work-003-paused")
-        _write_state_md(wd3, _STATE_PAUSED.replace("work-002-paused", "work-003-paused"))
+        _write_state_yml(wd3, _STATE_PAUSED)
 
     def tearDown(self):
         shutil.rmtree(self.tmp, ignore_errors=True)

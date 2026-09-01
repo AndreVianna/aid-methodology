@@ -10,6 +10,15 @@ sub-agent. Follows `.agent/aid/templates/reviewer-dispatch.md`.
 ARTIFACTS UNDER REVIEW:
 {{ARTIFACTS}}
 
+  On cycle 1 and on the final full pass this is ONE unlabelled list, as before.
+  From cycle 2 it carries TWO labelled lists and they mean different things:
+    VERIFY (full)  -- re-check EVERY existing ledger row against these. Never
+                      scoped: skipping one breaks Recurred detection.
+    HUNT (scoped)  -- look for NEW findings ONLY here. This is what the
+                      previous FIX changed, plus the files that reference it.
+  Do not hunt outside HUNT, and do not skip anything in VERIFY. Definitions:
+  `reviewer-ledger-schema.md` section "Two sets from cycle 2".
+
 CONTEXT:
 {{CONTEXT}}
 
@@ -20,7 +29,7 @@ CONTEXT:
 
 SCOPE: {{SCOPE}}   # one of: per-deliverable | whole-list
   per-deliverable: Grade the task list for ONE delivery just written.
-  whole-list:      Re-grade all task files against current PLAN.md + SPECs.
+  whole-list:      Re-grade all task files against current PLAN.md + feature sections.
 
 RUBRIC: .agent/aid/templates/grading-rubric.md (universal severity → grade table)
   Grade tasks for:
@@ -33,8 +42,37 @@ RUBRIC: .agent/aid/templates/grading-rubric.md (universal severity → grade tab
     - Sequence respects natural ordering (RESEARCH/DESIGN before IMPLEMENT; TEST after; etc.)
     - Quality gate cascade present (REQUIREMENTS §6 inherited; feature-specific gates added)
 
+DECLARED REVIEW CRITERIA (resolve; do not invent):
+  Each artifact declares, or inherits, the criteria it must be true against. Resolve them
+  and verify against the union -- global, then the artifact's document type, then any
+  file-class row whose membership test it satisfies, then the artifact's own
+  `review-criteria:` frontmatter; most specific wins on an id collision. An artifact outside
+  the registry's corpus (a work artifact under `.aid/works/`) resolves to NO type, which is
+  correct and not a finding -- the file-class rows are what reach it.
+  Resolution is defined in .agent/aid/templates/kb-authoring/review-rubric.md
+  (section: Resolving review criteria); the type registry and the criteria table live in
+  .aid/knowledge/authoring-conventions.md. This brief deliberately does NOT restate them.
+  - Cite the criterion `id` as a prefix in the ledger's Description cell (7 columns, no
+    new column). A finding citing no id, or an id resolving nowhere, is itself a defect.
+  - A `kind: exclude` criterion binds you: reporting it is a defect in the review.
+  - **If a criterion carries an `oracle:`, RUN it -- do not re-read the criterion to
+    reach the same verdict.** Invoke it from the repository root under a 60-second
+    timeout. It reports per FILE: exit 0 means no violation among the files it decided,
+    exit 1 means at least one `VIOLATION <path>` line, exit 2 (or any other exit, a
+    timeout, or exit 1 with no VIOLATION line) means it could not decide.
+  - **`UNDECIDED <path>` lines are normal, not a failure.** Take the decided files as
+    settled and judge only the undecided remainder by reading.
+  - **A missing, non-executable, crashing, timed-out or malformed oracle DEGRADES that
+    criterion to reading, and you record that the degradation happened.** Never let a
+    degraded oracle read as a pass, and never file it as a violation -- "I could not
+    tell" is neither.
+  - One finding per `VIOLATION` line: the criterion `id` as the Description prefix, the
+    invocation and that line in Evidence. Seven columns, unchanged.
+  - If the severity came from a file-level override, record the resolved severity and the
+    overriding file's `why` in the Evidence cell.
+
 OUT OF SCOPE (do NOT grade against):
-  - SPEC.md content — that's /aid-specify's grade
+  - feature technical-specification content — that's /aid-specify's grade
   - PLAN.md deliverable sequencing — that's /aid-plan's grade
   - KB document accuracy — route KB-source findings to /aid-discover Q&A
   - Execution detail (which agent, what branch) — /aid-execute owns runtime decisions
@@ -42,12 +80,19 @@ OUT OF SCOPE (do NOT grade against):
 
 OUT-OF-SCOPE FINDINGS POLICY:
   Log OOS findings as Status: OOS rows in the same ledger table at
-  `.aid/.temp/review-pending/detail-{work}.md`. Do NOT count toward severity totals
+  `{{LEDGER}}`. Do NOT count toward severity totals
   or grade. Note the routing destination (PLAN | SPEC | KB) in Description/Evidence.
 
 DELIVERABLES:
+  - BEFORE dispatching: render this brief to
+    `.aid/works/{work}/briefs/<scope>-cycle-<N>.md` and, from that same step, run
+    `bash tests/review-cost-meter.sh record --task <scope> --cycle <N> --brief <that file>`.
+    The file is what you are given and what the meter measures, so they cannot disagree;
+    its absence is the signal that the step did not run. See
+    `reviewer-dispatch.md` -- "Render the brief TO A FILE".
+
   - Findings format: severity-tagged + source-tagged (TASK | PLAN | SPEC | KB)
-  - Output location: `.aid/.temp/review-pending/detail-{work}.md`
+  - Output location: `{{LEDGER}}`
   - Severity scale: CRITICAL | HIGH | MEDIUM | LOW | MINOR (per grading-rubric.md)
   - Grade: per .agent/aid/scripts/grade.sh; minimum resolved via
     `bash .agent/aid/scripts/config/read-setting.sh --skill detail --key minimum_grade --default A`
@@ -62,7 +107,7 @@ DELIVERABLES:
   `.aid/works/{work}/deliveries/delivery-NNN/tasks/task-NNN/DETAIL.md` (all deliveries) + the full PLAN.md.
 - `{{CONTEXT}}` — short, descriptive-only background:
   ```
-    (per-deliverable) Tasks for delivery-NNN of work-NNN; feature SPECs:
+    (per-deliverable) Tasks for delivery-NNN of work-NNN; feature sections:
                       feature-NNN-{name}, ...
     (whole-list)      Re-review of all tasks for work-NNN after PLAN/SPEC changes.
   ```

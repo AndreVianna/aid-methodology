@@ -12,7 +12,7 @@ owner: architect
 audience: [developer, architect]
 intent: |
   Public API surfaces, frontmatter schemas, request/response shapes, and protocol contracts. Read this when implementing or modifying any externally-visible interface.
-contracts: []
+review-criteria: []
 ---
 
 # API Contracts

@@ -28,7 +28,7 @@ Ask for:
 - Version/tag name (suggest based on versioning scheme from KB)
 - Package name slug (for the filename: `package-NNN-{slug}.md`)
 
-Create the package file from template (`../../templates/package.md`):
+Create the package file from template (`../../../aid/templates/package.md`):
 - Fill in: deliveries, deployment type/target from KB, environment from KB
 - Determine package number (next sequential after existing packages)
 - Save to `.aid/works/{work}/packages/package-NNN-{slug}.md`

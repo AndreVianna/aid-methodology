@@ -145,8 +145,6 @@ not a project-wide discovery pass.
   recommendation routes instead
 - `.claude/aid/templates/reviewer-ledger-schema.md` -- the ledger schema
   `aid-review`'s `task-001` emits
-- `features/feature-011-analyze-and-report-family/SPEC.md`
-  (work-001-lite-aid-skills) -- the settled design this reference implements
 - `.claude/skills/aid-execute/references/task-type-rules.md ## RESEARCH /
   ## IMPLEMENT` -- the per-type execution rules this breakdown maps onto
 - `.aid/knowledge/artifact-schemas.md § Task DETAIL.md` -- the one-type-per-task

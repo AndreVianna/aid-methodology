@@ -171,9 +171,14 @@ def _make_flat_work(root: Path, work_id: str, *, notes: str = "--",
                      req_name: str = "Old Title") -> Path:
     """A flat/Lite-layout work: BLUEPRINT.md + tasks/task-001/DETAIL.md markers,
     a REQUIREMENTS.md with a Name bullet (pipeline.rename target), and a
-    STATE.md with a legacy 5-column '### Tasks lifecycle' row (task.set-notes
-    target) -- mirrors test_task008_display_rename.py's / test_task010's own
-    flat-work fixture shape."""
+    STATE.yml with a `tasks_lifecycle` entry (task.set-notes target) --
+    mirrors test_task008_display_rename.py's / test_task010's own flat-work
+    fixture shape. (work-009-refactor task-016: was a fenced-frontmatter
+    STATE.md with a '### Tasks lifecycle' markdown table -- retired,
+    SPEC.md sec:D-4. Without the STATE.yml sibling, SP-9's legacy detector
+    fires FIRST and returns a minimal WorkModel regardless of REQUIREMENTS.md
+    content -- this bit BOTH the notes-round-trip AND the pipeline.rename
+    read-back assertions before this fix.)"""
     work_dir = root / ".aid" / "works" / work_id
     (work_dir / "tasks" / "task-001").mkdir(parents=True, exist_ok=True)
     (work_dir / "BLUEPRINT.md").write_text("# Blueprint\n", encoding="utf-8")
@@ -183,16 +188,15 @@ def _make_flat_work(root: Path, work_id: str, *, notes: str = "--",
     (work_dir / "REQUIREMENTS.md").write_text(
         f"# Requirements\n\n- **Name:** {req_name}\n", encoding="utf-8",
     )
-    (work_dir / "STATE.md").write_text(
-        "---\n"
+    (work_dir / "STATE.yml").write_text(
         "lifecycle: Running\n"
         "updated: '2026-01-01T00:00:00Z'\n"
-        "---\n\n"
-        "# Work State\n\n"
-        "### Tasks lifecycle\n\n"
-        "| Task | State | Review | Elapsed | Notes |\n"
-        "| --- | --- | --- | --- | --- |\n"
-        f"| task-001 | Pending | -- | -- | {notes} |\n",
+        "tasks_lifecycle:\n"
+        "  task-001:\n"
+        "    state: Pending\n"
+        "    review: --\n"
+        "    elapsed: --\n"
+        f"    notes: {notes}\n",
         encoding="utf-8",
     )
     return work_dir
@@ -200,26 +204,27 @@ def _make_flat_work(root: Path, work_id: str, *, notes: str = "--",
 
 def _make_hierarchical_work(root: Path, work_id: str, *, notes: "str | None" = None) -> Path:
     """A full-nested-layout work: deliveries/delivery-001/tasks/task-001, with
-    a per-task STATE.md frontmatter carrying (optionally) a `notes` scalar."""
+    a per-task STATE.yml carrying (optionally) a `notes` scalar.
+    (work-009-refactor task-016: was fenced/bullet-heading STATE.md files --
+    retired, SPEC.md sec:D-4.)"""
     del_dir = root / ".aid" / "works" / work_id / "deliveries" / "delivery-001"
     task_dir = del_dir / "tasks" / "task-001"
     task_dir.mkdir(parents=True, exist_ok=True)
-    (root / ".aid" / "works" / work_id / "STATE.md").write_text(
-        "## Pipeline State\n\n- **Lifecycle:** Running\n", encoding="utf-8",
+    (root / ".aid" / "works" / work_id / "STATE.yml").write_text(
+        "lifecycle: Running\n", encoding="utf-8",
     )
-    (del_dir / "STATE.md").write_text(
-        "## Delivery Lifecycle\n\n- **State:** Executing\n", encoding="utf-8",
+    (del_dir / "STATE.yml").write_text(
+        "state: Executing\n", encoding="utf-8",
     )
     (task_dir / "DETAIL.md").write_text(
         "# task-001: Nested task\n\n**Type:** IMPLEMENT\n\n"
         "**Source:** feature-006-task-notes -> delivery-001\n",
         encoding="utf-8",
     )
-    fm = "---\nstate: Pending\n"
+    fm = "state: Pending\n"
     if notes is not None:
         fm += f"notes: {notes}\n"
-    fm += "---\n\n## Task State\n"
-    (task_dir / "STATE.md").write_text(fm, encoding="utf-8")
+    (task_dir / "STATE.yml").write_text(fm, encoding="utf-8")
     return root / ".aid" / "works" / work_id
 
 

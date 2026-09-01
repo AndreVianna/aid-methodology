@@ -112,8 +112,8 @@ linter doesn't either. The principles are enforced by the **`aid-reviewer`
 sub-agent** in the REVIEW state:
 
 - The reviewer reads each KB doc, validates its frontmatter against the schema in
-  [frontmatter-schema.md](frontmatter-schema.md), checks declared `contracts:`
-  against actual source, flags inline T4 markers in primary-category docs, and
+  [frontmatter-schema.md](frontmatter-schema.md), checks its resolved
+  `review-criteria:` against actual source, flags inline T4 markers in primary-category docs, and
   spot-checks claims. A semantic agent doing this holistically per doc is faster
   and more accurate than a per-claim shell loop.
 - Generated-file existence (`.aid/generated/*`) is the only check that warrants a
@@ -164,13 +164,14 @@ objective: One-line noun-phrase purpose (required for hand-authored primary/exte
 summary: One-sentence scope (required for hand-authored primary/extension).
 sources:
   - path/or/glob                # required for hand-authored primary/extension
+review-criteria:               # optional -- criteria true of THIS doc only
+  - id: F-01
+    kind: validate
+    criterion: <what a reviewer checks this doc against>
+    severity: HIGH
+    why: <what goes wrong when it drifts>
 intent: |
   (superseded) Kept during coexistence window; see frontmatter-schema.md.
-contracts:
-  - "Structural claim 1 (verified by lint)"
-  - "Structural claim 2"
-changelog:
-  - 2026-05-26: Migrated to v2 format (KB Authoring overhaul)
 ---
 ```
 
@@ -181,9 +182,15 @@ there is a **P6 carve-out**: the required new fields (`objective:`, `summary:`,
 by human reviewer judgment.
 
 **What stays exempt (no review impact):**
-- Legacy fields: `intent:`, `contracts:`, `changelog:`
+- Legacy fields: `intent:`, `changelog:`
 - Optional new fields: `tags:`, `see_also:`, `owner:`, `audience:`
 - Prose *quality* of `objective:` / `summary:` (only presence and mechanical shape are checked)
+
+**`review-criteria:` is not exempt — it is graded content.** A field that states what a
+reviewer must check cannot be the one field the reviewer may not read. Its *presence* is
+still never required (a doc covered by its type correctly declares nothing), but any entry
+it does carry is graded against disk at that entry's own `severity`. See
+[frontmatter-schema.md](frontmatter-schema.md) `§ P6 carve-out`.
 
 **What the lint checks (P6 carve-out, for `source: hand-authored` docs with `kb-category:`
 in `{primary, extension}` that already carry any of the new fields):**

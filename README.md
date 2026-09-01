@@ -23,31 +23,61 @@ pipeline underneath, one approval at the end.
 **Choosing your entry:** know your change → run the matching shortcut. Know it's big or new → `/aid-describe`. Not sure which? → `/aid-triage`. Just have a question? → `/aid-ask`.
 
 ```mermaid
+---
+config:
+  flowchart:
+    defaultRenderer: "elk"
+---
 flowchart TD
-    subgraph Entry["Choose your entry"]
-        SC["/aid-&lt;verb&gt;[-&lt;artifact&gt;]<br/>shortcut — I know my change"]
-        TR["/aid-triage<br/>— not sure? (suggest-only)"]
-        DS["/aid-describe<br/>— broad / new project"]
-        ASK["/aid-ask<br/>— just asking a question"]
+    subgraph Start["Start Here"]
+        direction LR
+        IDK{"I Know What<br/>I need to do"}
+        TR["/aid-triage <br/>Get a Suggestion"]
+        GTG["I am Good to Start"]
+        IDK -.YES.-> GTG
+        IDK -.NO.-> TR --> GTG
     end
-    TR -. suggests .-> SC
-    TR -. suggests .-> DS
-    TR -. "question" .-> ASK
+    GTG --> CFG
+    GTG --> DS
+    GTG --> SC
+    GTG --> ASK
+    GTG --> UKB
 
-    CFG["/aid-config (bootstrap · once)"] --> DISC["/aid-discover (brownfield)"]
-    DISC --> DS
+    subgraph STU["Initialize"]
+        CFG["/aid-config"] --> DISC["Already have some code? (brownfield project)<br/><br/>/aid-discover"]
+        DISC --> SUM(["/aid-summary"])
+    end
+    DISC --> LKG
 
-    SC --> ENG["Shortcut engine<br/>INTAKE→CAPTURE→SPEC→PLAN→DETAIL→GATE→APPROVAL-HALT<br/>(Describe→Detail, collapsed &amp; autonomous)"]
-    ENG --> HALT{{"Approval halt"}}
+    subgraph Ask["Just Ask"]
+        ASK["/aid-ask<br/>"]
+    end
+    subgraph Upd["Something Needs To Change"]
+        UKB["/aid-update-kb"]
+    end
+    UKB --> LKG
 
-    DS --> DEF["/aid-define"] --> SPC["/aid-specify"] --> PLN["/aid-plan"] --> DTL["/aid-detail"]
+    subgraph Lite["Small Changes (Lite Path)"]
+        SC["/aid-&lt;verb&gt;[-&lt;artifact&gt;]<br/><br/>DESCRIBE<br/>↓<br/>DEFINE<br/>↓<br/>SPECIFY<br/>↓<br/>PLAN<br/>↓<br/>DETAIL"]
+    end
+    SC --> HALT{{"Human Approval Gate"}}
+
+    subgraph Full["Big Changes (Full Path)"]
+        DS["/aid-describe<br/>"]
+        DS -->  HALT0{{"Human Approval Gate"}} --> DEF["/aid-define"] --> HALT1{{"Human Approval Gate"}} --> SPC["/aid-specify"] --> HALT2{{"Human Approval Gate"}} --> PLN["/aid-plan"] --> HALT3{{"Human Approval Gate"}} --> DTL["/aid-detail"]
+    end
     DTL --> HALT
 
-    HALT --> EXE["/aid-execute (graded loop · 8 task types)"]
-    EXE -. "optional separate path" .-> DEP["/aid-deploy"]
-    DEP -. optional .-> MON["/aid-monitor"]
-    MON -. "bug → /aid-fix" .-> SC
-    MON -. "change request → /aid-triage" .-> TR
+    HALT --> EXE["Let's do it<br/>/aid-execute"]
+    EXE --> FHALT{{"Final Human Approval Gate"}}
+
+    subgraph CHG["Something Has Changed"]
+        HK["/aid-housekeep"]
+    end
+    FHALT --> HK
+    HK --> LKG
+    
+    LKG{{"Looks Good"}} --> KB[("Knowledge Base")]
 ```
 
 *3 entry points (shortcut, `/aid-triage`, `/aid-describe`) plus `/aid-ask` for a plain question. Full methodology: [docs/aid-methodology.md](docs/aid-methodology.md).*
@@ -154,14 +184,13 @@ Open your AI coding tool in your project and run the skills as slash commands:
 /aid-deploy           # optional — package and ship a delivery
 /aid-monitor          # optional — classify production findings and route fixes back (bug → /aid-fix, change request → /aid-triage)
 /aid-summarize        # optional — generate an offline HTML viewer of the KB
-/aid-graph            # optional — build the KB relationship table + interactive graph (needs an approved KB)
 /aid-housekeep        # on-demand — keep the Knowledge Base current (off-pipeline)
 /aid-update-kb        # on-demand — apply a targeted delta to KB docs through the review gate
 /aid-set-connector    # on-demand — create or update a connector descriptor for an external tool
 /aid-unset-connector  # on-demand — remove a connector descriptor and purge its secret
 ```
 
-**Brownfield** projects run `/aid-config` → `/aid-discover` → `/aid-describe` → `/aid-define`. **Greenfield** projects skip Discovery and start at `/aid-describe`. For a small, well-scoped change, skip straight to a shortcut instead — or run `/aid-triage` if you're not sure which one fits. Just have a question, not a change? Run `/aid-ask`. Every phase is gated — nothing advances without your approval. The block above is the pipeline and the on-demand skills; the rest of AID's 76 skills are the verb-first shortcut doorways and the hand-authored task skills behind them, all rendered from one canonical source into 5 tool profiles.
+**Brownfield** projects run `/aid-config` → `/aid-discover` → `/aid-describe` → `/aid-define`. **Greenfield** projects skip Discovery and start at `/aid-describe`. For a small, well-scoped change, skip straight to a shortcut instead — or run `/aid-triage` if you're not sure which one fits. Just have a question, not a change? Run `/aid-ask`. Every phase is gated — nothing advances without your approval. The block above is the pipeline and the on-demand skills; the rest of AID's 111 skills are the verb-first shortcut doorways and the hand-authored task skills behind them, all rendered from one canonical source into 5 tool profiles.
 
 [See it applied step by step →](examples/)
 
@@ -186,8 +215,8 @@ Hand a capable coding agent a vague task and a large repository and you get pred
 | **Knowledge gaps** | The agent invents how the existing system works. | Discovery builds the Knowledge Base first — a fixed-shape, evidence-backed picture of the codebase before any spec is written. |
 | **Hallucination** | The agent states things about the code that aren't true. | Every KB claim carries a `path:line` citation. Agents navigate to exact lines instead of guessing. |
 | **Drift** | Implementation quietly diverges from intent; the spec rots. | Spec-as-hypothesis + 11 formal feedback loops. When reality contradicts an artifact the agent files a Q&A entry or IMPEDIMENT and the upstream artifact is revised — traceably. |
-| **Overengineering** | The agent adds scope nobody asked for. | Typed, PR-sized tasks with explicit acceptance criteria. The Reviewer grades against the spec, not vibes. |
-| **Oversights** | Bugs and untested paths slip through review. | Separate adversarial review: the agent that writes never grades its own work — a higher-tier Reviewer with clean context loops until grade >= minimum. |
+| **Overengineering** | The agent adds scope nobody asked for. | Typed, PR-sized tasks with explicit acceptance criteria. The Reviewer grades against the spec and against the criteria declared for that file — global, per-document-type, and any the file adds itself — not vibes. |
+| **Oversights** | Bugs and untested paths slip through review. | Separate adversarial review: the agent that writes never grades its own work — a higher-tier Reviewer with clean context loops until grade >= minimum. Every finding cites the criterion it violates, so a review is a bounded check rather than an open hunt. |
 | **Context exhaustion** | Loading the whole repo — slow, expensive, lossy. | A 3-tier context economy: always-loaded index -> one KB doc on demand -> exact `path:line`. The agent pays only for what the task needs. |
 
 [Full philosophy and design rationale →](docs/aid-methodology.md)

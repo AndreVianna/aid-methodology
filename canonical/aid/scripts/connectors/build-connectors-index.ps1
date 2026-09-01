@@ -8,7 +8,7 @@
     Regenerates `.aid/connectors/INDEX.md` from connector descriptor
     frontmatter, realizing feature-001's frozen "Connectors INDEX.md contract"
     (work-002-external_sources): columns Connector | Type | Endpoint | Auth |
-    Secret Ref | Summary, its own source:/generator:/intent:/contracts:
+    Secret Ref | Summary, its own source:/generator:/intent:/review-criteria:
     frontmatter, a single flat table -- NOT a KB doc (no kb-category:, no
     primary/meta/extension grouping, no ../knowledge/ cross-links).
 
@@ -171,7 +171,7 @@ foreach ($f in $descriptors) {
 
 # ---------------------------------------------------------------------------
 # Compose the file. Frontmatter carries no dated/timestamped field (KI-010):
-# source: generated / generator: / intent: / contracts: only (feature-001's
+# source: generated / generator: / intent: / review-criteria: only (feature-001's
 # frozen "own frontmatter" contract) -- no kb-category:, no changelog:. The
 # body is title + single flat table only: feature-005 explicitly does not add
 # a consumption-contract preamble here (that documentation lives in the
@@ -188,8 +188,12 @@ $outLines.Add('  add/update/remove (feature-002 author, feature-006')
 $outLines.Add('  reconcile trigger this builder; feature-005 owns it). An agent reaches this')
 $outLines.Add('  file via the "## Connectors" context-file pointer, then opens the specific')
 $outLines.Add('  descriptor.')
-$outLines.Add('contracts:')
-$outLines.Add('  - "One row per connector descriptor under .aid/connectors/"')
+$outLines.Add('review-criteria:')
+$outLines.Add('  - id: F-01')
+$outLines.Add('    kind: validate')
+$outLines.Add('    criterion: "One row per connector descriptor under .aid/connectors/"')
+$outLines.Add('    severity: HIGH')
+$outLines.Add('    why: "An agent reaches a descriptor through this table; a missing row hides a catalogued connector"')
 $outLines.Add('---')
 $outLines.Add('')
 $outLines.Add('# Connectors Index')

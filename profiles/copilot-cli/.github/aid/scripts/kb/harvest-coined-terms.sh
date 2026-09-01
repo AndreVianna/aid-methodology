@@ -311,10 +311,13 @@ cd "$ROOT"
 # Merge the project-local denylist override (comm-union with the supplied one).
 if [[ -f "$LOCAL_DENYLIST_REL" ]]; then
   local_sorted="$TMPD/local_denylist.txt"
-  sort -f "$LOCAL_DENYLIST_REL" | tr '[:upper:]' '[:lower:]' | sort > "$local_sorted"
+  # LC_ALL=C throughout: `comm` requires both inputs in the SAME collation, and
+  # $DENYLIST_FILE is byte-sorted elsewhere in this script. A locale-aware sort
+  # here silently mis-pairs the two lists instead of failing.
+  LC_ALL=C sort -f "$LOCAL_DENYLIST_REL" | tr '[:upper:]' '[:lower:]' | LC_ALL=C sort > "$local_sorted"
   if [[ -s "$DENYLIST_FILE" ]]; then
-    comm -23 "$local_sorted" "$DENYLIST_FILE" >> "$DENYLIST_FILE" 2>/dev/null || true
-    sort -o "$DENYLIST_FILE" "$DENYLIST_FILE"
+    LC_ALL=C comm -23 "$local_sorted" "$DENYLIST_FILE" >> "$DENYLIST_FILE" 2>/dev/null || true
+    LC_ALL=C sort -o "$DENYLIST_FILE" "$DENYLIST_FILE"
   else
     cp "$local_sorted" "$DENYLIST_FILE"
   fi

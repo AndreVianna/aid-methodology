@@ -1,17 +1,15 @@
 ---
 name: aid-research
 description: >
-  Investigate an open technical question NOW -- evaluate options, or (only with
-  your explicit authorization) run an isolated feasibility spike -- and return a
-  curated, verified answer in one pass. It RESOLVES NOTHING: it presents the
-  in-depth answer plus conclusions (positive AND negative), conflicts /
-  contradictions (each with its reason), and gaps, clearly and simply; you
-  resolve. Grounded two ways: the Knowledge Base (.aid/knowledge/) and the
-  project source/codebase are the authoritative grounding truth; external / web
-  sources are allowed and encouraged but supplementary, cited with URL + access
-  date. A KB<->web contradiction is surfaced to you with its reason, never
-  silently resolved. Produced by the aid-researcher agent and independently
-  verified by aid-reviewer before you see it. Allocates a work-NNN folder.
+  Investigate an open technical question and return a verified answer in one pass --
+  evaluating options, or running an isolated feasibility spike if you explicitly authorise
+  one. Use this skill when a decision is blocked on something nobody has established yet. It
+  presents the answer, the conclusions both positive and negative, any contradictions with
+  the reason for each, and the gaps; you decide. The Knowledge Base and the project source
+  are the authoritative grounding; web sources are encouraged but supplementary, cited with
+  a URL and access date, and a contradiction between them is surfaced rather than silently
+  resolved. For open-ended exploration of a problem space rather than a specific question,
+  use `/aid-brainstorm`.
 allowed-tools: Read, Glob, Grep, shell, Write, Edit, Agent
 argument-hint: "<question> -- an open technical question to investigate"
 ---
@@ -61,8 +59,8 @@ on each state.
    (`worktree-lifecycle.sh create <work-id> <name>`, STOP on a non-zero exit or empty path,
    else enter the resolved path); **only then** allocate: `.aid/works/<work-id>-<slug>/`
    under `.aid/works/`; slug from the question. Copy
-   `.github/aid/templates/work-state-template.md` to
-   `.aid/works/work-NNN-<slug>/STATE.md`; write opening frontmatter (`pipeline.path: lite`,
+   `.github/aid/templates/work-state-template.yml` to
+   `.aid/works/work-NNN-<slug>/STATE.yml`; write opening frontmatter (`pipeline.path: lite`,
    `initiator: aid-research`, `lifecycle: Running`, `active_skill: aid-research`,
    `started`/`updated`). Do NOT drive the 7-phase `phase` scalar. Associate a git worktree
    only if a spike is later authorized (INVESTIGATE).

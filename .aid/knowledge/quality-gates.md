@@ -16,17 +16,27 @@ tags: [C6, quality-gates, review, grading, ledger, gates]
 see_also: [test-landscape.md, authoring-conventions.md, pipeline-contracts.md]
 owner: architect
 audience: [developer, architect, pm]
-intent: |
-  The methodology's quality gates: A-grade gating, the reviewer agent + 7-column
-  ledger, per-phase REVIEW loops, the A+..F scale, minimum-grade thresholds, the
-  review->fix->re-review loop, the discover review panel, the delivery gate, and
-  the shortcut/Lite-path GATE + APPROVAL-HALT. Distinct from the automated tests
-  in test-landscape.md.
-contracts:
-  - "Grade is computed ONLY from reviewer-ledger rows where Status in {Pending, Recurred}, by Severity column"
-  - "Worst severity dominates; count within it sets the modifier (1 -> +, 2-5 -> none, 6+ -> -)"
-  - "A skill exits REVIEW only when grade >= the resolved minimum_grade (per-skill override -> review.minimum_grade -> hardcoded default; the shortcut/Lite path's built-in default is A+)"
-  - "Every reviewer ledger is exactly one 7-column markdown table at .aid/.temp/review-pending/<scope>.md — no narrative"
+review-criteria:
+  - id: F-01
+    kind: validate
+    criterion: "The grade is computed only from reviewer-ledger rows whose Status is Pending or Recurred, read from the Severity column"
+    severity: HIGH
+    why: "This doc is where a phase learns what its gate measures; if it disagrees with grade.sh, the gate a skill thinks it passed is not the one that ran"
+  - id: F-02
+    kind: validate
+    criterion: "Worst severity dominates, and the count within it sets the modifier -- one is plus, two to five is none, six or more is minus"
+    severity: MEDIUM
+    why: "Stated as the rule rather than a table of outcomes, because a table drifts from grade.sh's modifier_for_count"
+  - id: F-03
+    kind: validate
+    criterion: "A skill leaves REVIEW only when the grade reaches the resolved minimum, resolved per-skill override then review.minimum_grade then the built-in default"
+    severity: HIGH
+    why: "The resolution order decides which threshold applies; getting it wrong lets a skill exit below its own gate"
+  - id: F-04
+    kind: validate
+    criterion: "Every reviewer ledger is exactly one 7-column markdown table at .aid/.temp/review-pending/<scope>.md, with no narrative"
+    severity: MEDIUM
+    why: "Duplicated from nowhere -- it is the one ledger fact a phase needs before it can grade, and reviewer-ledger-schema.md owns the full shape"
 ---
 
 # Quality Gates
@@ -46,6 +56,7 @@ deliverables*.
 - [How the Grade Is Computed](#how-the-grade-is-computed)
 - [Minimum-Grade Thresholds](#minimum-grade-thresholds)
 - [The Per-Phase REVIEW to FIX Loop](#the-per-phase-review-to-fix-loop)
+- [State Files Are Never Reviewable Artifacts](#state-files-are-never-reviewable-artifacts)
 - [The Discover Review Panel](#the-discover-review-panel)
 - [The Delivery Gate (aid-execute)](#the-delivery-gate-aid-execute)
 - [The Shortcut / Lite-Path Gate (shortcut engine)](#the-shortcut--lite-path-gate-shortcut-engine)
@@ -53,7 +64,6 @@ deliverables*.
 - [Mechanical Gates Run by the Orchestrator](#mechanical-gates-run-by-the-orchestrator)
 - [Blocking vs Advisory](#blocking-vs-advisory)
 - [Validation Commands](#validation-commands)
-- [Change Log](#change-log)
 
 ---
 
@@ -93,9 +103,10 @@ everything). CONFIRMED in `.claude/aid/templates/grading-rubric.md` (Grade Calcu
 - **Count sets the modifier within a severity:** exactly 1 → `+`; 2-5 → none; 6+ → `-`
   (CONFIRMED in `grade.sh` `modifier_for_count`).
 
-Severity meanings (from the rubric): Minor = cosmetic; Low = works-but-deviates; Medium =
-incorrect non-critical behavior / missing edge case; High = blocks functionality / security
-/ data integrity; Critical = system failure / data loss / fundamentally wrong approach.
+What each severity level MEANS is defined once, in
+`canonical/aid/templates/grading-rubric.md § Issue Severities` -- that file's own `F-01` claims
+the definition exclusively, so this doc cites it rather than paraphrasing it. What lives here is
+the scoring: which rows count, how the worst dominates, and the thresholds a phase must clear.
 
 ---
 
@@ -200,6 +211,35 @@ inflating findings. CONFIRMED in `.claude/aid/templates/reviewer-dispatch.md`.
 
 ---
 
+## State Files Are Never Reviewable Artifacts
+
+A per-work/delivery/task state file (`STATE.yml`, or the discovery-area `STATE.md`) is
+**never listed in `{{ARTIFACTS}}`** — the single upstream rule in
+`canonical/aid/templates/reviewer-dispatch.md § ARTIFACTS UNDER REVIEW` (`filter_reviewable_artifacts`,
+applied where `{{ARTIFACTS}}` is derived from `git diff --name-only <base>..HEAD`) drops every
+state-file path, at any of the three work-tree levels and in both the flattened and full
+layout, before it ever reaches a brief. State churn appearing in a reviewed diff is therefore
+**not a finding**, and it is **not an OOS row either** — an OOS row observes an artifact, and a
+state file is pipeline-written data, not authored content. The reviewer still *writes* its
+outcome (grade, findings, Status) into state as a downstream effect of the review — excluding
+state from being read as an artifact does not exclude it from being written to.
+
+**No grading change.** No new ledger column, severity, or grade mechanism was introduced for
+this rule, and `grade.sh` is **unmodified** — it grades a 7-column ledger and reads no state
+file, so a completed cycle whose diff includes state churn grades identically with or without
+that churn.
+
+**Test coverage.** `tests/canonical/test-state-review-surface.sh` extracts
+`filter_reviewable_artifacts` from `reviewer-dispatch.md` and asserts it drops every state-file
+path shape (all three levels, both layouts, `STATE.md` legacy and `STATE.yml`) while passing
+every authored-artifact path through unchanged, plus a static check that no brief template
+names a state file inside an `ARTIFACTS` block. It is the sibling suite to
+`tests/canonical/test-kb-review-surface.sh` (which covers the KB's own `list_reviewable`
+exclusion, untouched by this one) and is auto-discovered by `tests/run-all.sh` — like that
+suite, it is not one of the orchestrator-run mechanical gates below.
+
+---
+
 ## The Discover Review Panel
 
 `/aid-discover` (which produced this KB) does not run a single reviewer — it dispatches a
@@ -243,10 +283,10 @@ status `Failed` or `Blocked` — the pool-dispatch guard (PD-5) ensures all task
 before the gate is entered.
 
 **Flattened Lite layout.** In a shortcut/Lite work there is a single delivery and **no**
-`deliveries/delivery-NNN/` folder, so there is no per-delivery `STATE.md` to write.
+`deliveries/delivery-NNN/` folder, so there is no per-delivery `STATE.yml` to write.
 `writeback-state.sh` auto-detects the flat layout (`is_flat_layout`) and records the delivery
-lifecycle + gate directly into the **work-root** `STATE.md` (`## Delivery Lifecycle` /
-`## Delivery Gate`, promoted from the per-delivery file). CONFIRMED in
+lifecycle + gate directly into the **work-root** `STATE.yml` (the `delivery_lifecycle` /
+`delivery_gate` keys, promoted from the per-delivery file's shape). CONFIRMED in
 `canonical/aid/scripts/execute/writeback-state.sh`.
 
 ---
@@ -263,7 +303,7 @@ stops at a human **APPROVAL-HALT**. CONFIRMED in `shortcut-engine.md`.
 **GATE — two batched grading passes.** GATE dispatches `aid-reviewer` (Large) and runs the
 same REVIEW → GRADE → FIX loop as every other phase, batched into two passes over the
 flattened work just produced:
-- **Pass 1 — definition documents:** `REQUIREMENTS.md`, `SPEC.md`, `PLAN.md`, `BLUEPRINT.md`
+- **Pass 1 — definition documents:** `REQUIREMENTS.md` (§ 11 sections included), `PLAN.md`
   (ledger `.aid/.temp/review-pending/shortcut-{work}-defn.md`).
 - **Pass 2 — task set:** every `tasks/task-NNN/DETAIL.md` (ledger `…-tasks.md`), entered only
   after Pass 1 clears.
@@ -280,11 +320,12 @@ order but its **built-in hardcoded default is `A+`** (feature-004), not the `A` 
 skill falls back to. A project may still lower it with an explicit `{name}.minimum_grade`
 override in `.aid/settings.yml`.
 
-**Where the grades are recorded.** On clearing, GATE appends two rows to the **work-root**
-`STATE.md § ## Lifecycle History` (Pass 1 / Pass 2), then deletes both ledgers. In the
-flattened Lite layout there is no `features/{feature}/SPEC.md`, so the full-path
-`## Features State` Spec-Grade column does not apply — `## Lifecycle History` is the
-authoritative record of these definition-phase gates.
+**Where the grades are recorded.** On clearing, GATE appends two entries to the **work-root**
+`STATE.yml`'s `lifecycle_history` sequence (Pass 1 / Pass 2), then deletes both ledgers. In the
+flattened Lite layout has one feature section rather than many, so the full-path Features State
+view (a DERIVED, read-time dashboard rollup — not a key in any `STATE.yml`) has no Spec-Grade
+column to populate — `lifecycle_history` is the authoritative record of these definition-phase
+gates.
 
 **APPROVAL-HALT — the human gate.** A cleared grade is **necessary but not sufficient**: the
 engine never executes. APPROVAL-HALT presents the GATE-cleared work, sets Lifecycle
@@ -389,6 +430,3 @@ bash .claude/aid/scripts/kb/build-kb-index.sh --root .aid/knowledge --output /tm
 # Force F for a non-functional artifact (build/run failed)
 bash .claude/aid/scripts/grade.sh --non-functional
 ```
-
----
-

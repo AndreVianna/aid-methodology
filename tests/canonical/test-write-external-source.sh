@@ -95,7 +95,7 @@ audience: [developer, architect]
 ## Contents
 
 - [Sources](#sources)
-- [Change Log](#change-log)
+- [Notes](#notes)
 
 ---
 
@@ -105,7 +105,7 @@ $PLACEHOLDER
 
 ---
 
-## Change Log
+## Notes
 
 | Rev | Date | Source | Description |
 |-----|------|--------|-------------|
@@ -138,7 +138,7 @@ tags: [external-docs]
 
 ---
 
-## Change Log
+## Notes
 
 | Rev | Date | Source | Description |
 |-----|------|--------|-------------|
@@ -379,14 +379,14 @@ bash "$SUT" --op add --value "https://x.example.com" --file "$f" >/dev/null 2>&1
 assert_file_contains "$f" "kb-category: meta" "U22 unrelated frontmatter scalar preserved"
 assert_file_contains "$f" "see_also: [integration-map.md]" "U22 unrelated frontmatter list preserved"
 assert_file_contains "$f" "owner: architect" "U22 unrelated frontmatter scalar 2 preserved"
-assert_file_contains "$f" "## Change Log" "U22 unrelated body heading preserved"
+assert_file_contains "$f" "## Notes" "U22 unrelated body heading preserved"
 assert_file_contains "$f" "| 1.0 | 2026-06-25 | aid-discover | Initial external source analysis (none provided) |" "U22 unrelated body table row preserved"
 
 # ---------------------------------------------------------------------------
 # U23 -- CRLF source file: line endings preserved
 # ---------------------------------------------------------------------------
 f="${TMPDIR_BASE}/u23.md"
-printf -- '---\r\nsources:\r\n  - (none)\r\n---\r\n\r\n## Sources\r\n\r\n%s\r\n\r\n---\r\n\r\n## Change Log\r\n' "$PLACEHOLDER" > "$f"
+printf -- '---\r\nsources:\r\n  - (none)\r\n---\r\n\r\n## Sources\r\n\r\n%s\r\n\r\n---\r\n\r\n## Notes\r\n' "$PLACEHOLDER" > "$f"
 bash "$SUT" --op add --value "https://x.example.com" --file "$f" >/dev/null 2>&1
 crlf_count=$(grep -c $'\r$' "$f")
 total_lines=$(wc -l < "$f")

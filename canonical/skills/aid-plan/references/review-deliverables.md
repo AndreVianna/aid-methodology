@@ -1,6 +1,6 @@
 # State: REVIEW
 
-PLAN.md exists and was previously completed; re-review deliverables against current SPECs and KB.
+PLAN.md exists and was previously completed; re-review deliverables against the current feature sections and KB.
 
 ## REVIEW (re-run on existing PLAN.md)
 
@@ -17,7 +17,7 @@ against current reality.
 
 ### Load Current State
 
-Re-read all feature SPECs, REQUIREMENTS.md, KB docs (same as first run).
+Re-read REQUIREMENTS.md (its § 11 feature sections included) and the KB docs (same as first run).
 
 ### Review Each Deliverable
 
@@ -25,7 +25,7 @@ For each deliverable in PLAN.md, run step 4:
 
 1. **New features** not assigned to any deliverable?
 2. **Removed features** still referenced in PLAN.md?
-3. **Changed SPECs** since PLAN.md was written?
+3. **Changed feature sections** since PLAN.md was written?
 4. **Priority shifts** in REQUIREMENTS.md?
 5. **Dependency changes** from SPEC updates?
 6. **Cross-cutting risks** emerged or resolved?
@@ -34,11 +34,12 @@ For each deliverable in PLAN.md, run step 4:
 
 Render `references/reviewer-brief.md` with:
 - `{{SCOPE}}` = `whole-plan`
-- `{{ARTIFACTS}}` = full `PLAN.md` + every `.aid/works/{work}/features/feature-*/SPEC.md`
-- `{{CONTEXT}}` = `PLAN.md for work-NNN with N deliveries; re-review against current SPECs.`
+- `{{ARTIFACTS}}` = full `PLAN.md` + the `### Feature NNN` sections of
+  `.aid/works/{work}/REQUIREMENTS.md § 11`
+- `{{CONTEXT}}` = `PLAN.md for work-NNN with N deliveries; re-review against the current feature sections.`
 
 Include in the prompt:
-- **Ledger lifecycle:** "Read `.aid/.temp/review-pending/plan.md` if it exists.
+- **Ledger lifecycle:** "Read `{{LEDGER}}` if it exists.
   For each existing row: verify on disk, update Status (Pending→Fixed if resolved;
   Fixed→Recurred if regressed). Append new findings with Status: Pending.
   Output per `canonical/aid/templates/reviewer-ledger-schema.md` — ONE table, no narrative."
@@ -52,20 +53,26 @@ Dispatch the `aid-reviewer` subagent **at Large tier** (the executor is the Larg
 After aid-reviewer returns, run grade.sh:
 
 ```bash
-bash canonical/aid/scripts/grade.sh --explain .aid/.temp/review-pending/plan.md
+bash canonical/aid/scripts/grade.sh --explain {{LEDGER}}
 ```
 
 Compare to minimum grade from `bash canonical/aid/scripts/config/read-setting.sh --skill plan --key minimum_grade --default A`.
 
 | Condition | Action |
 |-----------|--------|
-| Grade >= minimum | Ensure all delivery folders exist (deliveries/delivery-NNN/BLUEPRINT.md + STATE.md for each delivery in PLAN.md; create any missing ones, seeding the frontmatter's `delivery_state` scalar as `Pending-Spec` -- task-001/004). Delete ledger: `rm -f .aid/.temp/review-pending/plan.md`. Print summary, done. |
+| Grade >= minimum | Ensure `deliveries/delivery-NNN/STATE.yml` exists for each delivery in PLAN.md; create any missing ones, seeding the top-level `delivery_state` scalar as `Pending-Spec` -- task-001/004. Delete ledger: `rm -f {{LEDGER}}`. Print summary, done. |
 | Grade < minimum, deliverables fixable | List findings, re-enter loop for affected deliverables. |
 | Grade < minimum, sequence invalidated | Recommend `--reset`. |
 
 For grades below minimum: re-enter the loop for affected deliverables.
 
-> NOTE: Do NOT write delivery rows into the work STATE.md `## Plan / Deliveries`. That section
-> is a DERIVED read-only view assembled at read time from `deliveries/delivery-NNN/STATE.md` files.
+> NOTE: Do NOT write delivery rows into the work STATE.yml's Plan/Deliveries view. That view
+> is a DERIVED read-only view assembled at read time from `deliveries/delivery-NNN/STATE.yml` files.
+
+**Cycle 1 also runs the cross-document contradiction pass (Guard 2).** This review receives
+every artifact of the phase at once, which is the only vantage point from which a
+contradiction between two of them is visible. Run it on cycle 1 only -- that makes it
+once per phase by construction. Definition:
+`reviewer-dispatch.md` section "The cross-document contradiction pass (Guard 2)".
 
 **Advance:** **CHAIN** -> [State: DONE] when the grade meets minimum and all delivery folders are created (continue inline).

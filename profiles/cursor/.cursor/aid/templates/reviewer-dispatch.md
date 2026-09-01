@@ -27,7 +27,7 @@ ARTIFACTS UNDER REVIEW:
 CONTEXT:
   - (descriptive-only background — see §CONTEXT discipline below)
 
-RUBRIC: <named rubric from a rubric catalog>
+RUBRIC: <named rubric>
   (which rubric applies to each artifact, by category if mixed)
 
 OUT OF SCOPE (do not grade against):
@@ -65,10 +65,129 @@ An **explicit file list**. The reviewer reads + grades exactly these files. No
 wildcards beyond the artifact set (e.g., `.cursor/aid/templates/kb-authoring/*.md` is
 fine if the entire directory is in scope; `canonical/**` is too broad).
 
+**From cycle 2 this section carries TWO labelled lists, not one.** Cycle 1 and the final
+full pass carry a single unlabelled list, unchanged.
+
+```
+ARTIFACTS UNDER REVIEW:
+  VERIFY (full -- every existing ledger row is re-checked against these):
+    - (every file named in a ledger row's Doc column; plus the whole cycle-1
+       set if any row's Doc is `—`)
+  HUNT (scoped -- look for NEW findings only here):
+    - (what the previous FIX changed, plus the files that reference it)
+```
+
+The two exist because a cycle does two jobs and only one is expensive. Verifying a
+`Pending` row is a targeted disk check and stays FULL — scoping it would break `Recurred`
+detection. Hunting for new findings is what forced a full re-scan every cycle, and that is
+the half that becomes scoped. The split, the derivation of each set, and the guards are
+defined once in `reviewer-ledger-schema.md § Two sets from cycle 2`; this section carries
+them, it does not redefine them.
+
+A reviewer given two labelled lists must not hunt outside the HUNT list, and must not skip
+any file in the VERIFY list.
+
+**A coverage unit may be a path, or a path with a heading anchor.** The anchor form is the durable
+anchor `.aid/knowledge/authoring-conventions.md § Citation Rule (Durable Anchors)` already
+mandates — a path plus a grep-recoverable heading. No new notation is introduced here, and the rule
+is cited rather than restated so the two cannot drift.
+
+**The trigger is when the two lists would name the same path.** At that point the HUNT list has
+scoped nothing: the reviewer is told to hunt in exactly what it must already verify in full, and
+the cycle costs a full read while claiming to be scoped. When that happens, the HUNT list names
+**regions** — `path § Heading` — rather than the path.
+
+The insufficiency is measured, not asserted. From `review-cost.tsv`:
+
+```
+$ grep -E '^specify-feature-001' .aid/works/{work}/review-cost.tsv
+specify-feature-001-single-review-path-alignment   1   2dd1eb0e...   42034
+specify-feature-001-single-review-path-alignment   2   2dd1eb0e...   84934
+```
+
+Cycle 2 declared **exactly twice** cycle 1: `84934 = 2 × 42467`. The re-read ratio is 2.02, against
+a mechanism whose whole purpose is a ratio below 1. And `42467` is not `42034`, so this is not the
+same surface read twice over — it is one path appearing on both lists within a single cycle and
+counted once for each. A path can only be deduplicated away; a region is what lets the hunt half
+actually shrink.
+
+**A worklist unit is written as the ledger row number or the criterion id** — `row 4`, `G-14` —
+never as a restatement of the finding. The row already says what is wrong; a worklist that
+paraphrases it creates a second copy to drift.
+
+The VERIFY set's derivation is untouched: it is still every file named in a ledger row's `Doc`
+column, in full. Only the HUNT half gains regions, because only the HUNT half was ever the
+expensive one.
+
 The reviewer MUST NOT open any file not listed here, except to:
 - Resolve a citation reference (e.g., a docfile cites `path/to/foo.sh:42` — the
   reviewer may open `foo.sh` to verify the citation but does not grade `foo.sh`)
 - Look up a named rubric definition
+- **Resolve a listed artifact's review criteria** — read the artifact's own
+  frontmatter (`review-criteria:`) and the project's criteria tables
+  (`.aid/knowledge/authoring-conventions.md`). The brief does **not** restate the
+  criteria: the artifact declares them, and the reviewer reads the declaration.
+  Copying them into the brief would put a stale second copy in every dispatch.
+
+#### State files are never artifacts (the rule)
+
+A state file — `STATE.md` (legacy) or `STATE.yml`, at any of the three levels
+(work-root, `deliveries/delivery-NNN/`, or
+`deliveries/delivery-NNN/tasks/task-NNN/`), in either the flattened or the full
+layout — is **NEVER listed in `{{ARTIFACTS}}`**. State churn appearing in a
+reviewed diff is not a finding, and — this is the half reviewers get wrong —
+**it is not an OOS row either**: an OOS row is an observation *about an
+artifact*, and a state file is not one; it is pipeline-written data, not
+authored content, so there is nothing for an OOS row to observe.
+
+Excluding state from being *read as an artifact* is not the same as excluding
+it from being *written to*. The reviewer still writes its outcome (grade,
+findings, Status) into state (A-3) — that write is a downstream effect of the
+review, not a subject of it, and nothing here changes it.
+
+#### `filter_reviewable_artifacts` — the filter
+
+Modeled on the KB's own exclusion function, `list_reviewable` in
+[`aid-discover/references/doc-set-resolve.md`](../../skills/aid-discover/references/doc-set-resolve.md)
+(which keeps M3/M4 keystone-gate ingestion off `kb-category: meta` KB docs) —
+same intent, applied to the work-tree instead of the KB, and defined here
+rather than there because this exclusion is about the reviewable-artifact
+surface a dispatch builds, not the KB's own doc-set. Reads candidate artifact
+paths, one per line, on stdin; drops every state-file path and passes every
+other path through unchanged.
+
+```bash
+# filter_reviewable_artifacts — reads candidate artifact paths (one per line)
+# on stdin, drops every state-file path and echoes the rest, one per line.
+# A state file is always named STATE.md (legacy) or STATE.yml, whether it
+# sits at the work root, at deliveries/delivery-NNN/, or at
+# deliveries/delivery-NNN/tasks/task-NNN/ — the basename alone identifies it
+# at every level, in both the flattened and the full layout, so no directory
+# pattern is needed. Authored artifacts (REQUIREMENTS.md, PLAN.md,
+# tasks/task-NNN/DETAIL.md) never share that basename and pass through untouched.
+#
+# The `|| true` is load-bearing, not defensive habit: `grep -v` exits 1 when it
+# emits no lines, so a change set consisting ONLY of state files -- the most
+# common commit shape in this pipeline, since every `writeback-state.sh` write
+# produces one -- would otherwise abort a caller running under `set -e`. The
+# correct answer for that input is an empty artifact list and exit 0, not a
+# failed dispatch.
+filter_reviewable_artifacts() {
+  grep -Ev '(^|/)STATE\.(md|yml)$' || true
+}
+```
+
+Applied at the derivation point that `## Brief generation` (below) already
+mandates; defined once, here, and referenced from there rather than restated.
+
+The match is on basename, so it is repo-wide rather than work-tree-scoped. That
+is deliberate: no authored artifact anywhere is named `STATE.md`/`STATE.yml`, so
+there is no path this can drop by mistake. It does also match the discovery-area
+ledger `.aid/knowledge/STATE.md`, which is harmless — that path is never a
+member of a work-tree artifact list in the first place, and its exclusion
+remains **owned** by `list_reviewable` in `doc-set-resolve.md`. This filter does
+not take that ownership over, and a test for this filter must not assert
+anything about the KB ledger.
 
 ### CONTEXT
 
@@ -114,13 +233,11 @@ about the brief itself, then proceeds with the narrow ARTIFACTS-only scope.
 
 ### RUBRIC
 
-A **named rubric** drawn from a rubric catalog. Examples:
+A **named rubric**. Examples:
 
 - `kb-authoring/review-rubric.md#full-primary` — for hand-authored KB primary docs
 - `kb-authoring/review-rubric.md#spot-check-snapshot` — for KB meta docs
 - `kb-authoring/review-rubric.md#build-verify-only` — for generated docs
-- (future) `code-review-rubric.md#standard` — for code task review
-- (future) `spec-review-rubric.md#standard` — for spec review
 
 If multiple artifacts use different rubrics, the brief maps each to its rubric:
 
@@ -132,6 +249,53 @@ RUBRIC:
 
 When no pre-defined rubric exists (one-off reviews like Phase A foundation),
 the brief enumerates the checks inline.
+
+**On a scoped cycle the criteria resolve against the scoped surface.** Criteria resolution
+is scope-free by construction — a file's resolved list depends only on its path and
+frontmatter, never on its content — so the list for a section IS the list for its file, and
+scoping the hunt needs no change to resolution. What changes is only WHICH files the
+reviewer resolves criteria for on that cycle: the VERIFY set in full, and the HUNT set for
+new findings.
+
+**A named rubric does not replace the artifact's declared criteria — the two compose.**
+The rubric says how to review a *class* of artifact; the criteria say what *this* file
+must be true against, resolved global → type → file per
+`kb-authoring/review-rubric.md § Resolving review criteria`. Every finding cites the
+criterion `id` it violates as a prefix in the ledger's `Description` cell, so the brief
+never needs a `Rule` column and the ledger keeps its 7-column shape.
+
+### The cross-document contradiction pass (Guard 2)
+
+**Run on CYCLE 1 of any review whose `ARTIFACTS` span more than one artifact.** A review of
+a single artifact does not run it and does not need to.
+
+Pinning it to cycle 1 makes it once-per-phase **by construction**: cycle 1 is the full-read
+cycle that happens anyway, and a multi-artifact review happens once per phase. No
+"is this the last one?" detection is needed, and none should be invented.
+
+Three reviews already receive every artifact of a phase at once, and they are its
+invocation sites:
+
+| Review | Already receives | Covers |
+|---|---|---|
+| `aid-define` CROSS-REFERENCE | `REQUIREMENTS.md`, whose `§ 11` holds every feature section | Define's own output |
+| `aid-plan` | full `PLAN.md` + **every** `§ 11` feature section | Specify's per-feature specifications |
+| `aid-detail` | every `task-NNN/DETAIL.md` + `PLAN.md` | Detail's task set |
+
+**`aid-specify` deliberately gets no invocation.** It dispatches a reviewer PER feature, so
+no single specify review could see a contradiction spanning two features; the feature
+sections are cross-checked at `aid-plan`'s review, the first review after Specify that sees
+them together. Adding one there would run the pass once per feature, which is the opposite of
+once per phase.
+
+What the pass looks for is unchanged — two artifacts asserting different values for one
+shared fact. Only its cadence moves. It gets *better* rather than merely cheaper: a
+contradiction between siblings is invisible to a gate that only ever reads one of them.
+
+**The residual window, stated:** a contradiction introduced by the pass's own fix is not
+re-checked by that pass, because the pass is pinned to cycle 1 and the fix lands after it.
+The final full pass before approval is the backstop. Re-running the pass every cycle until
+fixpoint would rebuild the per-cycle loop this change exists to remove.
 
 ### OUT OF SCOPE
 
@@ -176,7 +340,7 @@ The expected output. Always:
 Each skill that dispatches a reviewer ships a brief template at
 `.cursor/skills/<skill>/references/reviewer-brief.md`. Six per-skill briefs
 are shipped: `aid-discover`, `aid-execute`, `aid-specify`, `aid-plan`,
-`aid-detail`, `aid-describe`, `aid-define`. Each renders this protocol's 5-section structure
+`aid-detail`, `aid-define`. Each renders this protocol's 5-section structure
 with skill-specific RUBRIC + OUT OF SCOPE; the consumer state file fills the
 dynamic slots and dispatches.
 
@@ -191,20 +355,92 @@ The template is HYBRID — fixed structure with two dynamic slots:
 | OOS POLICY | **Static** — identical across all skills, this protocol |
 | DELIVERABLES | **Static per skill** — same expected outputs |
 
-Substitution mechanism: the brief template uses `{{ARTIFACTS}}` and
-`{{CONTEXT}}` placeholders (some briefs also use `{{MODE}}` or `{{SCOPE}}`).
+Substitution mechanism: the brief template uses `{{ARTIFACTS}}`, `{{CONTEXT}}` and
+`{{LEDGER}}` placeholders (some briefs also use `{{MODE}}` or `{{SCOPE}}`).
 Skill renders them at dispatch time (bash heredoc, small render helper, or
 inline string substitution).
 
+`{{LEDGER}}` is the ledger path for the scope, and it is the same value the preflight below
+resolves — one resolution, used by the check and by the brief, so the two cannot disagree about
+which file is under discussion. Every brief takes it as a parameter; none names a path. A brief
+that hardcodes one is naming a scope it cannot know at authoring time, which is how a review
+writes its findings where the next cycle will not look for them.
+
 **Deriving `{{ARTIFACTS}}` — always from disk, never from memory.** For
-PR-level reviews, derive from `git diff --name-only <base>..HEAD` filtered
-by the OUT-OF-SCOPE list. For per-task/per-delivery reviews, derive from
-the executor's produced-file list. Building the list from memory of what
-was worked on tends to omit incidentally-touched files; the reviewer then
-can't grade what it doesn't know about.
+PR-level reviews, derive from
+`git diff --name-only <base>..HEAD | filter_reviewable_artifacts`, then
+filtered by the OUT-OF-SCOPE list. For per-task/per-delivery reviews, derive
+from the executor's produced-file list, piped through the same
+`filter_reviewable_artifacts` (`§ARTIFACTS UNDER REVIEW` above — defined
+once, applied here). Building the list from memory of what was worked on
+tends to omit incidentally-touched files; the reviewer then can't grade what
+it doesn't know about.
+
+**Render the brief TO A FILE, then dispatch and record from that same file — one step.**
+
+```
+ledger=.aid/.temp/review-pending/<scope>.md
+brief=.aid/works/{work}/briefs/<scope>-cycle-<N>.md
+
+# PREFLIGHT -- resolve the ledger path for this scope and assert its state matches the cycle.
+if [ "<N>" = "1" ] && [ -e "$ledger" ]; then
+    echo "PREFLIGHT FAILED: cycle 1 but a ledger already exists at $ledger" >&2
+    echo "  A cycle-1 reviewer must start from a clean context. That file is a prior" >&2
+    echo "  cycle's findings; leaving it in place is how a 'fresh' cycle inherits them." >&2
+    echo "  Delete it, or dispatch as cycle 2." >&2
+    exit 1
+fi
+if [ "<N>" != "1" ] && [ ! -e "$ledger" ]; then
+    echo "PREFLIGHT FAILED: cycle <N> but no ledger exists at $ledger" >&2
+    echo "  A cycle-2-or-later brief tells the reviewer to update rows in place. There are" >&2
+    echo "  none. Either this is really cycle 1, or the ledger was deleted mid-scope." >&2
+    exit 1
+fi
+
+<render the brief into $brief>
+bash tests/review-cost-meter.sh record --task <task-or-scope> --cycle <N> --brief "$brief"
+<dispatch the reviewer with the contents of $brief>
+```
+
+**The preflight is an addition, not a substitution.** It runs *ahead of* the render and the
+metering; it replaces neither. All three components of the mandate above — render to a file, record
+from that same file, dispatch from that same file — still stand exactly as written.
+
+**It fails, it does not warn.** A warning on the cycle-1 case would leave the leak open, because a
+warning is satisfiable by ignoring it and the leftover file is still there for the reviewer to
+read. The check names the offending path so the operator can see what it found rather than being
+told only that something is wrong.
+
+This closes by construction what the cycle-1 instruction previously asked for by request. A brief
+can tell a new cycle not to read the prior ledger, and being told is not the same as being unable —
+the intent was defeated the first time it was tested.
+
+**Which literal paths were parameterised, and which were deliberately left.** The test applied is
+whether a reader *executes* the line or *reads* it. An instruction is executed, so a literal path in
+one silently hardcodes a scope and is what this change removes. Documentation is read, so a literal
+path in it is the concrete example that makes the abstraction legible, and replacing it with
+`<scope>` would cost the reader the very thing the example is for.
+
+By that test the § Worked example keeps `phase-a-foundation-v2.md` throughout — it is a transcript
+of one real dispatch, and a transcript with placeholders in it is not a transcript. Everything on
+the instruction path already resolves the ledger from `<scope>`.
+
+This is not bookkeeping bolted onto the dispatch; it is the dispatch. The file is what the
+reviewer is given AND what the meter measures, so the two cannot disagree, and the brief's
+absence is a visible signal that the step did not run.
+
+**Why it is written this way.** An earlier version mandated the `record` call separately
+from rendering. That mandate was satisfiable by doing nothing: with the brief composed
+inline there was no file to point at and no step that failed when `record` was skipped, so
+an entire delivery's measurements were silently never taken. That is the failure class
+`tech-debt.md` `W5-5` documents — fourteen mandated state-writes that every call site failed
+to make work, invisibly, for as long as nobody looked. A mandate an agent can satisfy by
+doing nothing will be satisfied by doing nothing; binding the write to the artifact the work
+already produces is what closes it.
 
 **Inspectability requirement:** the rendered brief is logged with the dispatch
-record so it can be inspected after the fact (per work-003 traceability).
+record so it can be inspected after the fact (per work-003 traceability) — satisfied by the
+same file, rather than by a second artifact that could drift from it.
 
 ## One-off reviews
 
@@ -279,25 +515,15 @@ DELIVERABLES:
 This doc is normative for all reviewer dispatches. Changes affect every skill.
 Revisions should:
 
-1. Update the changelog entry below (see §Bootstrap exemption for how this doc tracks history)
-2. Update per-skill `reviewer-brief.md` templates to reflect any new fixed sections
-3. Be announced via a single deliberate revision PR, not folded into other work
+1. Update per-skill `reviewer-brief.md` templates to reflect any new fixed sections
+2. Be announced via a single deliberate revision PR, not folded into other work
 
-## Bootstrap exemption
+## Why this doc carries no frontmatter
 
 This doc lives in `.cursor/aid/templates/` and is a **skill-bundle artifact**, not a KB
 document. The frontmatter schema defined in `kb-authoring/frontmatter-schema.md` applies
 to `.aid/knowledge/*.md` (KB docs in adopter projects), NOT to canonical skill-bundle
 docs. Therefore this doc carries no `kb-category:`/`source:` frontmatter.
-
-For changes to this doc, append a dated line at the bottom of this section:
-
-- 2026-05-26: Initial authoring (Phase A KB Authoring overhaul)
-- 2026-05-27: Phase B landed 6 per-skill `reviewer-brief.md` templates
-  (aid-discover, aid-execute, aid-specify, aid-plan, aid-detail,
-  aid-describe, aid-define); removed the "not yet implemented" parenthetical;
-  documented the rendering convention; added "derive ARTIFACTS from
-  disk, not memory" rule (closes F10, F22, F26 from PR #15 review)
 
 ## See also
 

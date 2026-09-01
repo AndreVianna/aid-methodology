@@ -130,9 +130,11 @@ and grades the decomposition.
 
 The Specify skill writes a technical specification for one feature at a time. Point it at
 a feature file; it reads `REQUIREMENTS.md`, the Knowledge Base, and the feature stub,
-then appends a `SPEC.md` section with design decisions and an acceptance-criteria mapping.
+then appends a `#### Technical Specification` subsection with design decisions and an
+acceptance-criteria mapping.
 
-**Artifact produced:** `SPEC.md` appended to `features/feature-NNN-*.md`.
+**Artifact produced:** a `#### Technical Specification` subsection appended to that
+feature's `### Feature NNN` section in `REQUIREMENTS.md` § 11.
 
 **Run once per feature** — repeat this phase for each feature before moving to Plan.
 
@@ -147,10 +149,11 @@ then appends a `SPEC.md` section with design decisions and an acceptance-criteri
 The Plan skill reads all your feature specs and sequences them into a delivery roadmap.
 It decides which features go into which delivery, respecting dependencies, writes `PLAN.md`
 with the strategy, and creates a `deliveries/delivery-NNN/` folder per delivery with its
-`BLUEPRINT.md` — the delivery definition (scope, gate criteria, dependencies).
+A `### delivery-NNN` stanza in `PLAN.md` — the delivery definition (scope, gate criteria,
+dependencies).
 
 **Artifact produced:** `PLAN.md` — the delivery sequence and dependency graph — plus one
-`deliveries/delivery-NNN/BLUEPRINT.md` per delivery.
+one `### delivery-NNN` stanza in `PLAN.md` per delivery.
 
 <LinkCard
   title="All skills"

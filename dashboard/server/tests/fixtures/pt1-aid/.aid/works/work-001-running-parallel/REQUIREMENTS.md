@@ -3,13 +3,6 @@
 - **Name:** AID Dashboard
 - **Description:** A local, read-only, live HTML dashboard for visualizing AID pipeline runs.
 
-## Change Log
-
-| Date | Change | Source |
-|------|--------|--------|
-| 2026-06-10 | Initial interview started | /aid-describe |
-| 2026-06-10 | Interview complete -- approved | /aid-describe |
-
 ## 1. Objective
 
 The AID Dashboard provides a browser-viewable local interface for monitoring active and

@@ -84,50 +84,54 @@ When the user agrees on a deliverable, **IMMEDIATELY write it to the file.**
 WARNING: **DO NOT continue to the next deliverable without writing this one first.**
 WARNING: **DO NOT accumulate multiple deliverables "in your head" -- write each one immediately.**
 
+The stanza IS the delivery definition. Alongside the `**What it delivers:**` /
+`**Features:**` / `**Depends on:**` / `**Priority:**` fields, write into the SAME stanza:
+
+- `**Objective:**` = the "What it delivers" value, expanded to one paragraph
+- `**Scope:**` = features assigned to this delivery; `**Out of scope:**` = features
+  explicitly deferred
+- `**Gate Criteria**` = concrete acceptance criteria, each naming an observable (derive
+  from the feature's section in `REQUIREMENTS.md § 11`, citing its `AC-N` ids; always
+  include "All section-6 quality gates pass"). Leave placeholders if criteria will be
+  refined by aid-specify.
+- `**Notes:**` = constraints not captured by the gate criteria; omit when there are none
+
+Do NOT write a task listing or a Blocks field into the stanza. Both are DERIVED: the task
+listing from each task's `**Source:** ... -> delivery-NNN` field, and the reverse edges
+from the `**Depends on:**` fields across stanzas. Storing either creates a second copy that
+can disagree with the first.
+
+A delivery with ZERO tasks (e.g. a SPIKE delivery that defines a sibling delivery) is
+valid and still gets a full stanza -- the objective and gate criteria are what make it a
+delivery, and neither depends on tasks existing.
+
 **Immediately after writing the PLAN.md stanza,** create the delivery folder:
 
-**4a. Create `deliveries/delivery-NNN/BLUEPRINT.md`** (seed from `.claude/aid/templates/delivery-blueprint-template.md`):
+**4a. Create `deliveries/delivery-NNN/STATE.yml`** (seed from `.claude/aid/templates/delivery-state-template.yml`):
 
-Fill in from the approved PLAN.md stanza:
-- `Delivery:` = delivery-NNN
-- `Work:` = work-NNN-{name}
-- `Created:` = today's date (YYYY-MM-DD)
-- `## Objective` = the delivery's "What it delivers" value, expanded to one paragraph
-- `## Scope` = features assigned to this delivery; Out of scope = features explicitly deferred
-- `## Gate Criteria` = concrete acceptance criteria (derive from feature SPECs; always include
-  "All section-6 quality gates pass"); leave placeholders if criteria will be refined by aid-specify
-- `## Tasks` = empty table (`_none yet_`) -- aid-detail will fill this later
-- `## Dependencies` = Depends on / Blocks from the PLAN.md stanza
+`Delivery:` / `Work:` / `Branch:` are INFERRED from the folder path and git worktree --
+never authored here. Fill in the template's own keys:
+- `delivery_state: Pending-Spec`     (SD-8: authored independent lifecycle, NOT derived from tasks)
+- `delivery_lifecycle` key:
+  - `updated:` = current UTC timestamp ($(date -u +%Y-%m-%dT%H:%M:%SZ))
+  - `block_reason:` = --
+  - `block_artifact:` = --
+- `gate_tier` / `gate_grade` / `gate_timestamp` and `delivery_gate.issue_list`: leave at template placeholders
+- `qa` key: leave as template placeholder (`[]`)
+- Tasks State: nothing to write -- it is DERIVED at read time from `tasks/task-NNN/STATE.yml`
+  files, which do not exist yet for a new delivery
 
-A delivery with ZERO tasks (e.g. a SPIKE delivery that defines a sibling delivery) is valid.
-Write the BLUEPRINT with the zero-task table (`_none yet_`) -- do not skip BLUEPRINT creation.
-
-**4b. Create `deliveries/delivery-NNN/STATE.md`** (seed from `.claude/aid/templates/delivery-state-template.md`):
-
-Fill in:
-- `Delivery:` = delivery-NNN
-- `Work:` = work-NNN-{name}
-- `Branch:` = aid/work-NNN-delivery-NNN
-- `## Delivery Lifecycle` block:
-  - `State: Pending-Spec`     (SD-8: authored independent lifecycle, NOT derived from tasks)
-  - `Updated:` = current UTC timestamp ($(date -u +%Y-%m-%dT%H:%M:%SZ))
-  - `Block Reason:` = --
-  - `Block Artifact:` = --
-- `## Delivery Gate` section: leave all fields as template placeholders
-- `## Cross-phase Q&A` section: leave as template placeholder
-- `## Tasks State` table: `_none yet_` (correct and expected for a new delivery)
-
-> SD-9 NOTE: A delivery created with ZERO tasks renders correctly at `Pending-Spec` with
-> `_none yet_` in the Tasks State table. This is the canonical SPIKE-defines-sibling scenario.
+> SD-9 NOTE: A delivery created with ZERO tasks renders correctly at `Pending-Spec` with an
+> empty DERIVED Tasks State. This is the canonical SPIKE-defines-sibling scenario.
 > The delivery lifecycle is authored independently -- it does NOT derive from the task rollup.
-> The `## Plan / Deliveries` view in the WORK STATE.md is DERIVED at read time from these
-> deliveries/delivery-NNN/STATE.md files. `aid-plan` does NOT write any rows into the work STATE.md.
+> The Plan/Deliveries view in the WORK STATE.yml is DERIVED at read time from these
+> deliveries/delivery-NNN/STATE.yml files. `aid-plan` does NOT write any rows into the work STATE.yml.
 
 **4c. Connector awareness — record this delivery's `ticket_ref` (optional).** If this deliverable
 corresponds to (or the user names) an external tracker item, fetch it by invoking `/aid-read-ticket
 [<connector>:]<ticket-id>` — the connector resolution and host-MCP fetch live there (feature-001);
 no direct-fetch recipe is re-implemented here — and record `ticket_ref: <stem>:<external-id>` in
-the delivery's `STATE.md` frontmatter just written above (4b). Skip silently when no such ticket
+the delivery's `STATE.yml` frontmatter just written above (4a). Skip silently when no such ticket
 applies or no matching connector is catalogued; the delegated read is non-destructive, so no extra
 confirm is added. If instead the team wants a new tracker item filed for this deliverable, aid-plan
 does not file one itself. If a catalogued `issue-tracker` connector exists in `.aid/connectors/` →
@@ -144,7 +148,7 @@ silent (no output) if no issue-tracker connector is catalogued.
 
 Include in the prompt:
 - **Ledger lifecycle:** "Append new findings as rows with Status: Pending to
-  `.aid/.temp/review-pending/plan.md`. Read the existing file first if it exists.
+  `{{LEDGER}}`. Read the existing file first if it exists.
   Output per `.claude/aid/templates/reviewer-ledger-schema.md` — ONE table, no narrative."
 
 Print before dispatch: `[Review] Dispatching aid-reviewer for PLAN validation (per-deliverable scope).`
@@ -159,7 +163,7 @@ After writing, **review immediately:** Does it hold up?
 After aid-reviewer returns, run grade.sh:
 
 ```bash
-bash .claude/aid/scripts/grade.sh --explain .aid/.temp/review-pending/plan.md
+bash .claude/aid/scripts/grade.sh --explain {{LEDGER}}
 ```
 
 | Condition | Action |
@@ -193,11 +197,12 @@ After all deliverables are written, check for risks that span features:
 2. Confirm every agreed deliverable is written
 3. If any deliverable is missing → write it NOW
 4. If Cross-Cutting Risks or Deferred sections apply → append them NOW
-5. For each delivery-NNN in PLAN.md, confirm both `deliveries/delivery-NNN/BLUEPRINT.md` and
-   `deliveries/delivery-NNN/STATE.md` exist under `.aid/works/{work}/`. If either is missing -> create it NOW
-   (seed from the templates; replace the frontmatter's `delivery_state` placeholder with
-   `delivery_state: Pending-Spec` -- the scalar lives in the leading YAML block per
-   `delivery-state-template.md`, task-001/004; direct field edit, same scaffold-time
+5. For each delivery-NNN in PLAN.md, confirm its stanza carries an objective, scope and gate
+   criteria, and that `deliveries/delivery-NNN/STATE.yml` exists under `.aid/works/{work}/`.
+   If either is missing -> write it NOW
+   (seed from the templates; replace the top-level `delivery_state` placeholder with
+   `delivery_state: Pending-Spec` -- the scalar lives at the top of the file per
+   `delivery-state-template.yml`, task-001/004; direct field edit, same scaffold-time
    convention as `state-first-run.md § 1b-ii`).
 
 Then print:
@@ -216,8 +221,8 @@ Cross-cutting risks: {count} identified (see PLAN.md)
 
 PLAN.md written to: .aid/works/{work}/PLAN.md
 Delivery folders created:
-  .aid/works/{work}/deliveries/delivery-001/{BLUEPRINT.md, STATE.md} (State: Pending-Spec)
-  .aid/works/{work}/deliveries/delivery-002/{BLUEPRINT.md, STATE.md} (State: Pending-Spec)
+  .aid/works/{work}/deliveries/delivery-001/STATE.yml (delivery_state: Pending-Spec)
+  .aid/works/{work}/deliveries/delivery-002/STATE.yml (delivery_state: Pending-Spec)
   ...
 ```
 

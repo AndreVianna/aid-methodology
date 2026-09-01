@@ -16,8 +16,6 @@ status: Planned
 planned-by: aid-plan
 features:
   - refund-workflow
-changelog:
-  - 2026-06-03: Initial plan produced by aid-plan
 ---
 
 # Plan: work-003 — Refund Workflow
@@ -73,7 +71,7 @@ webhook emission, REST controllers, and full integration test coverage.
 | task-010 | DOCUMENT | Update API reference: document three new endpoints with request/response shapes | task-007 |
 
 **Done when:** All seven tasks pass reviewer grade ≥ A. PR is green on CI.
-Integration tests cover the acceptance criteria from `SPEC.md`.
+Integration tests cover the acceptance criteria from `REQUIREMENTS.md § 9`.
 
 ---
 

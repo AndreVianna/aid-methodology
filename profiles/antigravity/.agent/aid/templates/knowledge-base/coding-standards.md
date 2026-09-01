@@ -12,7 +12,7 @@ owner: architect
 audience: [developer, reviewer]
 intent: |
   Project-specific authoring conventions mined from actual code: naming, formatting, idioms, and any process rules the project follows. Read this before writing or reviewing code.
-contracts: []
+review-criteria: []
 ---
 
 # Coding Standards

@@ -1,22 +1,39 @@
 ---
 kb-category: meta
 source: hand-authored
-intent: |
-  The canonical schema for every reviewer-output ledger in AID. Applies to all
-  REVIEW states across all skills (discover, execute, specify, plan, detail,
-  interview, summarize, deploy), to every script-based validator, and to
-  ad-hoc user-prompted reviews. Defines the table shape, severity + status
-  enums, file lifecycle, and grade.sh integration. Single source of truth so
-  grade.sh, agents, skills, and humans all read findings identically.
-contracts:
-  - "7-column table is the entire ledger file (no headers, no narrative, no sections)"
-  - "Severity enum: [CRITICAL] | [HIGH] | [MEDIUM] | [LOW] | [MINOR]"
-  - "Status enum: Pending | Fixed | Recurred | Accepted | OOS | Invalid"
-  - "Grade is computed over rows where Status ∈ {Pending, Recurred}, by Severity column"
-  - "File path: .aid/.temp/review-pending/<scope>.md (scope = skill or skill-task)"
-  - "Persists across REVIEW→FIX cycles within one skill invocation; deleted at skill DONE"
-changelog:
-  - 2026-05-28: Initial schema spec
+objective: The canonical schema for every reviewer-output ledger in AID.
+summary: Defines the 7-column table shape, the Severity and Status enums, the file lifecycle, and how grade.sh reads it.
+review-criteria:
+  - id: F-01
+    kind: validate
+    criterion: "The 7-column table is the entire ledger file -- no title, no section headings, no narrative, no scratch space"
+    severity: HIGH
+    why: "grade.sh parses the file as a table; anything else in it is either ignored or misparsed as a row"
+  - id: F-02
+    kind: validate
+    criterion: "Severity enum, bracketed all-caps: CRITICAL, HIGH, MEDIUM, LOW, MINOR"
+    severity: HIGH
+    why: "grade.sh counts the bracketed tag and nothing else, so a sentence-case severity counts as zero findings and silently yields A+"
+  - id: F-03
+    kind: validate
+    criterion: "Status enum: Pending, Fixed, Recurred, Accepted, OOS, Invalid"
+    severity: HIGH
+    why: "Status decides whether a row counts toward the grade; a value outside the enum is not counted and the finding disappears"
+  - id: F-04
+    kind: validate
+    criterion: "The grade is computed over rows whose Status is Pending or Recurred, read from the Severity column"
+    severity: MEDIUM
+    why: "This is the contract grade.sh implements; a doc that describes it differently teaches a reviewer to write an ungradeable ledger"
+  - id: F-05
+    kind: validate
+    criterion: "The ledger lives at .aid/.temp/review-pending/<scope>.md, where scope names the skill or the skill and task"
+    severity: MEDIUM
+    why: "Two skills writing one path collide; a scope-less name is what makes that happen"
+  - id: F-06
+    kind: validate
+    criterion: "The file persists across REVIEW and FIX cycles within one skill invocation and is deleted when the skill reaches DONE"
+    severity: LOW
+    why: "A ledger left behind is read as a live finding list by the next run"
 ---
 
 # Reviewer Ledger Schema
@@ -67,22 +84,65 @@ The `.aid/.temp/review-pending/` directory is gitignored (per `.gitignore` `.aid
 | 3 | `Status` | yes | Plain word (no brackets): `Pending`, `Fixed`, `Recurred`, `Accepted`, `OOS`, or `Invalid`. See **Status values** below. Drives grade computation. |
 | 4 | `Doc` | yes | Affected file path (relative to repo root). Examples: `foo.md`, `.cursor/aid/scripts/bar.sh`, `tests/canonical/baz.sh`. For doc-wide issues with no specific file, use `—`. |
 | 5 | `Line` | yes | Affected line number, or a line range like `42-45`, or `—` for doc-wide. |
-| 6 | `Description` | yes | ONE sentence stating what's wrong. Form: "claim X is wrong: doc says Y, actual Z." Avoid hedging or explanation; explanation goes in Evidence. |
-| 7 | `Evidence` | yes | The disk-truth that contradicts the doc's claim, AND/OR the source-of-truth command. Form: "`wc -l foo = 1070` (doc claims 1071)" or "`grep -c X bar = 5` (doc claims 6)". For Status=Fixed/Recurred/Accepted/OOS/Invalid, include enough context to justify the status (e.g., "Fixed in commit abc123" or "Accepted: user decision cycle-1 Q5"). |
+| 6 | `Description` | yes | The criterion `id` violated, then ONE sentence stating what's wrong, then a **why-line**: a short clause naming the consequence. Form: "`SK-01` — dispatch table names a non-existent agent, so a dispatch resolves to nothing at run time." The consequence clause is the one explanation this column admits, and it is required: a severity asserted without one cannot be argued with, because there is nothing to disagree about except the reviewer's judgement. Everything else that would explain rather than state still goes in Evidence, and hedging goes nowhere. See **Citing the criterion** below. |
+| 7 | `Evidence` | yes | The disk-truth that contradicts the doc's claim, AND/OR the source-of-truth command. Form: "`wc -l foo = 1070` (doc claims 1071)" or "`grep -c X bar = 5` (doc claims 6)". For Status=Fixed/Recurred/Accepted/OOS/Invalid, include enough context to justify the status (e.g., "Fixed in commit abc123" or "Accepted: user decision cycle-1 Q5"). When the severity came from a file-level **override** of a declared criterion, record the resolved severity and the overriding file's `why` here. **Severity provenance** is recorded with one of three tokens, so a band can be traced without re-reading the cascade: `severity: declared` — taken unchanged from the cited criterion's `severity:`; `severity: override <level>` — the criterion declares one band and a more specific level declares another; `<level>` names **where the winning band came from** (`file`, `file-class`, or `type`), not the band itself, which is already in the Severity column; `severity: judged` — no criterion declares a severity for this, so the reviewer set it. A row whose band differs from its cited criterion's declared `severity:` and carries no token is a defect in the review: the divergence is the interesting part and it has been silently dropped. |
 
 **Pipe-character escape:** if Description or Evidence contains a `|` (pipe), escape it as `\|` so the markdown table doesn't break.
 
+## Citing the criterion
+
+**A task acceptance criterion is cited as `task-NNN AC-N`.** A task's `DETAIL.md` carries its
+criteria as a checkbox list with no `id:` field, so neither of the two forms below reaches them: a
+scope-prefixed id resolves in the criteria table, an `F-` id resolves in a file's frontmatter, and
+a task AC lives in neither. Without this form a task-gate reviewer cannot cite a resolvable id for
+the thing it was actually asked to check, which makes every task-gate ledger defective by this
+schema's own rule.
+
+`task-037 AC-3` resolves by reading that task's `DETAIL.md` and counting the **top-level**
+checkboxes under `**Acceptance Criteria:**` — a nested `- [ ]` sub-item is part of its parent and is
+not counted, or the ordinal would shift and a citation would silently resolve to the wrong
+criterion. The ordinal is the citation; the ACs are not renumbered once a task is
+executing.
+
+**Every finding names the criterion it violates, as an `id` prefix inside the `Description`
+cell.** No eighth column: the shape stays 7 columns and `grade.sh` keeps its positional parse
+(it reads `cols[3]` and `cols[4]` from the left and ignores `cols[5..8]`).
+
+```markdown
+| 3 | [HIGH] | Pending | .cursor/skills/aid-plan/SKILL.md | 42 | SK-01 — dispatch table names a non-existent agent | ls .cursor/agents/ |
+```
+
+- A **scope-prefixed** id (`G-`, `KB-`, `SK-`, ...) resolves in the project's criteria table
+  (`.aid/knowledge/authoring-conventions.md`).
+- An **`F-`** id resolves in the `review-criteria:` frontmatter of the file named in `Doc`.
+- **A finding citing no id, or an id that resolves nowhere, is itself a defect** — it means the
+  reviewer invented a criterion.
+
+How criteria resolve (global → type → file, most specific wins) is defined in
+`.cursor/aid/templates/kb-authoring/review-rubric.md § Resolving review criteria`; this schema
+does not restate it.
+
+**Overrides are recorded in `Evidence`.** When the severity used came from a file-level override
+rather than the global or type level, the `Evidence` cell carries the resolved severity and the
+overriding file's `why`, so a reader can see which level won and on what grounds:
+
+```markdown
+| 7 | [LOW] | Pending | .cursor/aid/templates/foo.md | 12 | G-01 — inline count not measured at authoring time | resolved LOW via file-level override of G-01 (MINOR global); why: "this count gates a downstream parse" |
+```
+
+The `Evidence` cell is inert to grading, so an override is visible without any change to the
+grade machinery.
+
 ## Severity values
 
-| Tag | Meaning | Grade impact |
-|---|---|---|
-| `[CRITICAL]` | Factual error that will mislead downstream phases or break tooling. Build-broken, data-loss, security-broken category. | Drives grade to E (severity dominates) |
-| `[HIGH]` | Wrong claim, dead reference, broken citation, or missing post-merge content. | Drives grade to D |
-| `[MEDIUM]` | Internal inconsistency, off-by-1 in counts, or contract drift between docs. | Drives grade to C |
-| `[LOW]` | Stale narrative, minor process violation (e.g., P1 inline-T3 with accurate value), or single-doc cosmetic issue. | Drives grade to B |
-| `[MINOR]` | Cosmetic, wording drift, formatting nit. | Drives grade to A (or A- if >5) |
+The enum is `[CRITICAL]` | `[HIGH]` | `[MEDIUM]` | `[LOW]` | `[MINOR]`, always in the bracketed
+all-caps form — that is the form `grade.sh` counts.
 
-Worst severity dominates; count within that severity determines the modifier (1 → `+`, 2-5 → none, 6+ → `-`).
+**What each level means, and the severity-to-letter-grade mapping, are defined once in
+`.cursor/aid/templates/grading-rubric.md`** (`§ Issue Severities` and `§ Grade Calculation`).
+This schema owns the ledger's *shape*, not the scale: a level restated here becomes a second
+definition that drifts from the one the grade is computed against, which is what happened to the
+per-level "grade impact" notes this section used to carry.
 
 ## Status values
 
@@ -98,10 +158,69 @@ Worst severity dominates; count within that severity determines the modifier (1 
 **Workflow:**
 
 1. **REVIEW (cycle 1):** create file; append rows as `Status: Pending` for every finding. Existing-file case: NO (cycle 1 is the first).
-2. **REVIEW (cycle N≥2):** read existing file. For each existing `Pending` row: verify on disk → if resolved, change Status to `Fixed`; if still wrong, leave as `Pending`. For each existing `Fixed` row: verify still resolved → if regressed, change Status to `Recurred`. Append new rows as `Pending` for newly-found issues.
+2. **REVIEW (cycle N≥2):** read existing file. **Verification is FULL; the hunt for new findings is SCOPED.** See *Two sets from cycle 2* below.
+   - *Verify — over the full verification set:* for each existing `Pending` row, check on disk → if resolved, change Status to `Fixed`; if still wrong, leave as `Pending`. For each existing `Fixed` row, check it is still resolved → if regressed, change Status to `Recurred`.
+   - *Hunt — over the scoped hunt set only:* append new rows as `Pending` for newly-found issues.
 3. **FIX:** read Pending + Recurred rows. Address each. Do NOT mark rows `Fixed` during FIX — that's the next reviewer's job (separation of concerns: fixer fixes, reviewer verifies).
 4. **Orchestrator (any phase):** may mark a row `Accepted` with user authorization (record rationale in Description). May mark `Invalid` if reviewer was wrong, with evidence.
 5. **Skill reaches DONE:** orchestrator deletes the ledger file. If `.aid/.temp/review-pending/` is then empty, the directory is also removed.
+
+### Two sets from cycle 2
+
+Cycle 1 reads the whole artifact and is unchanged. From cycle 2 a review does two
+different jobs, and only one of them is expensive:
+
+| Set | Contents | Scope |
+|---|---|---|
+| **Verification set** | every file named in an existing ledger row's `Doc` column, **plus the full cycle-1 artifact set whenever any row's `Doc` is `—`** | **FULL — never scoped** |
+| **Hunt set** | what the previous FIX changed, plus the sections that reference it | **SCOPED** |
+
+**Verification is never scoped, and that is what protects `Recurred`.** Checking a
+`Pending` row against disk is a targeted lookup that was always cheap; scoping it would
+break regression detection, which is the backstop the whole design leans on. The `Doc: —`
+widening exists because a doc-wide row names no file: a verification set built only by
+collecting `Doc` values would contain nothing for it, so the row could never be
+re-verified and would sit `Pending` forever or, worse, be treated as verified because
+nothing contradicted it.
+
+**Only the hunt is scoped**, because "find NEW issues" is the clause that forced a full
+re-scan every cycle. It is what made a five-cycle gate re-read the whole artifact five
+times to keep finding roughly as many new issues as it closed.
+
+The hunt set is derived, never judged:
+
+```
+changed   := git diff --name-only <previous-cycle-commit>..HEAD
+             | filter_reviewable_artifacts
+referrers := files containing a literal reference to any changed path,
+             or to a changed section's heading anchor
+hunt      := changed ∪ referrers
+```
+
+`referrers` is a **grep, not a judgment call**: a fix in one section can break another
+that references it, and the expansion that catches this must be reproducible rather than
+a model's guess about what "might be affected" — a guess that varies between cycles is
+the non-determinism this change exists to remove.
+
+**Where no previous-cycle commit is recorded, the cycle is UNSCOPED** — it reads
+everything, exactly as today. Degrading to current behaviour is always the safe direction,
+and it is chosen deliberately over inferring a base.
+
+**Two limits, stated rather than left to be discovered:**
+
+- A reference expressed in prose without naming the path ("the ledger schema says…") is
+  not found by grep. The mechanical expansion is the cheap catch; the final full pass is
+  the complete one. Widening the grep to prose synonyms would reintroduce exactly the
+  judgment the guard exists to eliminate.
+- **A scoped cycle never approves.** One full pass runs before approval as the backstop,
+  and `Recurred` already exists in the Status enum for anything a scoped cycle missed and
+  a later one re-finds.
+
+**The cross-document contradiction pass is kept, and moves to once per phase** — run on
+cycle 1 of any review whose artifact list spans more than one artifact, rather than once
+per cycle inside each single-artifact gate. It gets *better* rather than merely cheaper: a
+contradiction between two sibling documents is invisible to a gate that only ever reads
+one of them.
 
 ## grade.sh integration
 

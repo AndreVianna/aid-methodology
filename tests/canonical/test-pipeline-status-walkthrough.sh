@@ -27,30 +27,29 @@ source "${SCRIPT_DIR}/../lib/assert.sh"
 TMPDIR_BASE=$(mktemp -d)
 trap 'rm -rf "$TMPDIR_BASE"' EXIT
 
-# Helper: create a minimal STATE.md with no ## Pipeline Status section.
-# Also creates the required AID_LOCK_DIR alongside it.
+# Helper: create a minimal STATE.yml with none of the pipeline scalar keys yet.
+# Also creates the required AID_LOCK_DIR alongside it. The two comment blocks
+# below stand in for arbitrary unrelated content (retargeted from the
+# pre-refactor `## Tasks Status` / `## Deploy Status` markdown sections,
+# which have no home in the one-zone document any more, D-1) -- their
+# purpose is unchanged: prove a --pipeline write does not disturb content it
+# does not own.
 make_state() {
     local dest="$1"
     mkdir -p "$(dirname "$dest")"
     cat > "$dest" <<'STATEEOF'
 # Work State -- work-walkthrough-test
 
-## Tasks Status
+# Tasks Status (comment-only fixture content, unrelated to pipeline keys)
+# 001 | task-001-alpha | IMPLEMENT | 1 | Pending | -- | -- | --
 
-| # | Task | Type | Wave | Status | Review | Elapsed | Notes |
-|---|------|------|------|--------|--------|---------|-------|
-| 001 | task-001-alpha | IMPLEMENT | 1 | Pending | -- | -- | -- |
-
-## Deploy Status
-
-| Delivery | State | PR |
-|----------|----|---|
-| -- | -- | -- |
+# Deploy Status (comment-only fixture content, unrelated to pipeline keys)
+# -- | -- | --
 STATEEOF
 }
 
 # Helper: emit a single --pipeline field write.
-# Sets AID_STATE_FILE and AID_LOCK_DIR to the directory of STATE.md.
+# Sets AID_STATE_FILE and AID_LOCK_DIR to the directory of STATE.yml.
 pipeline_write() {
     local sf="$1" field="$2" val="$3"
     local lockdir
@@ -59,21 +58,14 @@ pipeline_write() {
         bash "$WRITEBACK" --pipeline --field "$field" --value "$val" 2>/dev/null
 }
 
-# Helper: extract the leading YAML frontmatter block (between the opening and
-# closing "---" fences) from a STATE.md.
-#
-# work-003-state-schema task-004 relocated every Pipeline State scalar
-# (Lifecycle/Phase/Active Skill/Updated/Pause Reason/Block Reason/Block
-# Artifact) from a "## Pipeline State" body bullet into this frontmatter block
-# via writeback-state.sh's wb_set_frontmatter -- the body section is now a
-# static enum-reference blockquote/comment that writeback-state.sh never
-# touches (and, in this suite's make_state fixture, does not exist at all --
-# the fixture only ships ## Tasks Status / ## Deploy Status). Every Part A
-# assertion below reads this frontmatter block, not the body, to see the
-# value a --pipeline write actually produced.
+# Helper: the whole STATE.yml IS the key space now -- there is no separate
+# frontmatter zone to extract (D-1 collapses the pre-refactor `---`-fenced
+# block onto the whole document). Retargeted from the pre-refactor fence
+# extraction; every Part A assertion below still reads "the block a
+# --pipeline write actually produced", now simply the whole file.
 get_frontmatter_block() {
     local f="$1"
-    awk 'NR==1 && /^---[ \t]*$/{in_fm=1; next} in_fm && /^---[ \t]*$/{exit} in_fm{print}' "$f"
+    cat "$f"
 }
 
 # ===========================================================================
@@ -142,9 +134,10 @@ for i in "${!A1_PHASES[@]}"; do
         fi
     done
 
-    # Tasks Status section must not be disturbed
-    assert_file_contains "$A1_STATE" "## Tasks Status" \
-        "A1 phase=$phase: Tasks Status section preserved"
+    # Tasks Status comment content must not be disturbed (retargeted -- no
+    # markdown heading survives, D-1)
+    assert_file_contains "$A1_STATE" "# Tasks Status" \
+        "A1 phase=$phase: Tasks Status comment content preserved"
 done
 
 # ---------------------------------------------------------------------------

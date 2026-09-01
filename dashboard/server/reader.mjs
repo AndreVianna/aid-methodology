@@ -22,7 +22,7 @@ import { execFileSync } from "child_process";
 // Security hardening (v2.1.0, FIX-3 MEDIUM): shared bounded-read helper.
 // Twin of dashboard/reader/io_bounds.py read_bytes_bounded() (byte-parity minded).
 //
-// Problem: the reader read every STATE.md / DETAIL.md / BLUEPRINT.md / PLAN.md /
+// Problem: the reader read every STATE.yml / DETAIL.md / BLUEPRINT.md / PLAN.md /
 // delivery-NNN-issues.md / KB doc fully into memory with no size cap -- a very
 // large (or maliciously large) file at any of these well-known paths could
 // exhaust process memory (DoS) -- every reader read site called readFileSync()
@@ -125,8 +125,26 @@ function isNull(val) {
 }
 
 // ---------------------------------------------------------------------------
-// STATE YAML-frontmatter dual-format read (work-003-state-schema task-002)
-// Twin of dashboard/reader/state_schema.py -- keep the two in lockstep.
+// STATE.yml whole-document read (work-009-refactor task-004, porting
+// task-003's Python state_schema.py to this Node runtime).
+//
+// parseStateDocument(text, {fileLabel, allowFrontmatterFence}) is THE single
+// hand-rolled parser for the SPEC.md (work-009-refactor) D-3 permitted YAML
+// subset: shapes S1-S5, both D-5 quoting/escape modes, inline- and
+// full-line-comment handling, and the D-3 reject list. By default (every
+// state-file reader in this file) it parses the WHOLE input as one
+// YAML-subset document; the CALLER, never the document's own leading bytes,
+// opts in to the ORIGINAL fenced-frontmatter-only scan
+// (_parseFencedFrontmatterLoose) via allowFrontmatterFence -- the ONE
+// legitimate caller is parseKbState, for .aid/knowledge/STATE.md (out of
+// scope for this work; SPEC.md D-6). parseBoolYesno / parseHeaderBoldField /
+// resolveKind round out the same public surface as the Python twin.
+//
+// Node twin of dashboard/reader/state_schema.py, which defines the SAME
+// functions (parse_state_document / parse_bool_yesno / parse_header_bold_
+// field / resolve_kind) across its own module boundary since Python can
+// split responsibility into a package while this Node reader is a single
+// file. Keep both in lockstep.
 // ---------------------------------------------------------------------------
 
 const RE_FM_FENCE_GENERIC = /^---\s*$/;
@@ -170,9 +188,14 @@ function _looksLikeUnfilledPlaceholder(val, isFreetext) {
   return false;
 }
 
-function parseFrontmatterScalars(text) {
-  // Tolerant flat + one-level-nested frontmatter scalar scan.
-  // Twin of Python parse_frontmatter_scalars(). Returns a plain object:
+function _parseFencedFrontmatterLoose(text) {
+  // The ORIGINAL parseFrontmatterScalars scan, UNCHANGED: tolerant flat +
+  // one-level-nested frontmatter scalar scan between the first pair of '---'
+  // lines. Never emits parse_warnings (matches the original contract). This
+  // is the path `.aid/knowledge/STATE.md` (out of scope, stays markdown, may
+  // legitimately carry constructs -- e.g. a flow list `tags: [a, b]` -- the
+  // strict D-3 engine below would reject) continues to use verbatim.
+  // Twin of Python _parse_fenced_frontmatter_loose(). Returns a plain object:
   //   top-level scalar keys map directly:       {started: "2026-07-10"}
   //   one level of nested mapping is dot-joined: {"pipeline.path": "lite"}
   // Never throws (NFR7). No file I/O. Returns {} when no opening '---' fence.
@@ -237,6 +260,363 @@ function parseFrontmatterScalars(text) {
   }
 
   return result;
+}
+
+// ---------------------------------------------------------------------------
+// SPEC.md (work-009-refactor) D-5 quoted-scalar decoding
+// Twin of dashboard/reader/state_schema.py _decode_double_quoted / _decode_scalar.
+// ---------------------------------------------------------------------------
+
+const DQ_ESCAPES = { '"': '"', "\\": "\\", n: "\n", r: "\r", t: "\t" };
+
+function _decodeDoubleQuoted(inner, lineNo, fileLabel, warnings) {
+  // Decode the five-escape subset (\" \\ \n \r \t) inside a double-quoted
+  // scalar's INNER text (quotes already stripped). Any other backslash
+  // escape (\uXXXX, \x41, ...) is REJECTED per D-3: a parse_warning is
+  // emitted naming file/line, and the backslash + following character are
+  // kept LITERALLY (never throws, never drops the rest of the value).
+  const out = [];
+  let i = 0;
+  const n = inner.length;
+  while (i < n) {
+    const c = inner[i];
+    if (c === "\\" && i + 1 < n) {
+      const nxt = inner[i + 1];
+      const mapped = DQ_ESCAPES[nxt];
+      if (mapped !== undefined) {
+        out.push(mapped);
+        i += 2;
+        continue;
+      }
+      warnings.push(
+        fileLabel + ":" + lineNo + ": unsupported double-quoted escape '\\" + nxt + "' rejected; kept literally"
+      );
+      out.push(c);
+      out.push(nxt);
+      i += 2;
+      continue;
+    }
+    out.push(c);
+    i += 1;
+  }
+  return out.join("");
+}
+
+function _decodeScalar(v, lineNo, fileLabel, warnings) {
+  // Decode one already comment-stripped, already-trimmed scalar token.
+  // Double-quoted -> the D-5 mode-3 five-escape subset (_decodeDoubleQuoted).
+  // Single-quoted / bare -> _stripScalarQuotes (unchanged helper).
+  if (v.length >= 2 && v[0] === '"' && v[v.length - 1] === '"') {
+    return _decodeDoubleQuoted(v.slice(1, -1), lineNo, fileLabel, warnings);
+  }
+  return _stripScalarQuotes(v);
+}
+
+// ---------------------------------------------------------------------------
+// Strict SPEC.md (work-009-refactor) D-3 whole-document engine (S1-S5 + reject
+// list). Twin of dashboard/reader/state_schema.py's _tokenize / _finalize_value /
+// _build_tree / parse_state_document -- keep the two in lockstep.
+// ---------------------------------------------------------------------------
+
+const _RE_KEY_LINE = /^([A-Za-z0-9_-]+):\s*(.*)$/;
+const _MAX_LEVEL = 3; // S3 (3 mapping levels) / S5 (a sequence at the 2nd level)
+const _REJECT = Symbol("REJECT"); // sentinel: "skip this key/item entirely, emit no value"
+
+function _tokenize(numbered, warnings, fileLabel) {
+  // Pass 1: classify each line into a token, applying every non-value D-3
+  // reject rule decidable from indentation/shape alone (tabs, indent-not-
+  // multiple-of-two, nesting-too-deep, a second document marker, a line that
+  // is neither a 'key:' line nor a sequence entry). Full-line comments (any
+  // indentation) and blank lines are silently skipped (not a reject -- D-3
+  // says these are normal, expected constructs).
+  const tokens = [];
+  for (const [lineNo, raw] of numbered) {
+    const leadMatch = raw.match(/^[ \t]*/);
+    const lead = leadMatch ? leadMatch[0] : "";
+    if (lead.includes("\t")) {
+      warnings.push(fileLabel + ":" + lineNo + ": tab indentation rejected; line skipped");
+      continue;
+    }
+
+    const line = raw.replace(/[\r\n]+$/, "");
+    if (!line.trim()) continue; // blank line
+
+    const indentMatch = line.match(/^ */);
+    const indent = indentMatch[0].length;
+    const content = line.slice(indent);
+
+    if (content.startsWith("#")) continue; // full-line comment, any indentation (D-3)
+
+    if (indent % 2 !== 0) {
+      warnings.push(fileLabel + ":" + lineNo + ": indentation not a multiple of two; line skipped");
+      continue;
+    }
+
+    const level = indent / 2;
+    if (level > _MAX_LEVEL) {
+      warnings.push(fileLabel + ":" + lineNo + ": nesting deeper than S5; line skipped");
+      continue;
+    }
+
+    if (content === "---" || content === "...") {
+      warnings.push(fileLabel + ":" + lineNo + ": a second document ('" + content + "') is rejected; line skipped");
+      continue;
+    }
+
+    // A bare (non-'key:') directive/anchor/alias/tag line at column 0 or
+    // deeper -- e.g. a YAML directive '%YAML 1.2'. None of these four
+    // indicator characters can start a valid key (_RE_KEY_LINE's charset is
+    // alnum/underscore/hyphen only), so this check is unambiguous and must
+    // run BEFORE the key-line/malformed-line fallback below, which would
+    // otherwise report it as a generic malformed line instead of naming the
+    // specific rejected construct (D-3).
+    if (content.length > 0 && ["%", "&", "*", "!"].includes(content[0])) {
+      warnings.push(fileLabel + ":" + lineNo + ": anchor/alias/tag/directive rejected");
+      continue;
+    }
+
+    if (content === "-" || content.startsWith("- ")) {
+      const body = content.startsWith("- ") ? content.slice(2) : "";
+      const m = body ? body.match(_RE_KEY_LINE) : null;
+      if (m) {
+        tokens.push({ lineNo: lineNo, level: level, dash: true, key: m[1], rest: m[2] });
+      } else {
+        tokens.push({ lineNo: lineNo, level: level, dash: true, key: null, rest: body });
+      }
+      continue;
+    }
+
+    const m = content.match(_RE_KEY_LINE);
+    if (!m) {
+      warnings.push(fileLabel + ":" + lineNo + ": malformed line (neither a 'key:' line nor a sequence entry); line skipped");
+      continue;
+    }
+    tokens.push({ lineNo: lineNo, level: level, dash: false, key: m[1], rest: m[2] });
+  }
+
+  return tokens;
+}
+
+function _finalizeValue(rawRest, tok, fileLabel, warnings, opts) {
+  // Turn a token's raw value text into a scalar string, [], {}, or _REJECT.
+  // Applies, in order: inline-comment stripping (D-3, via the SAME
+  // stripYamlInlineComment idiom parseProjectSettings/parseMinimumGrade use),
+  // the flow-collection / block-scalar / anchor-alias-tag-directive reject
+  // checks (D-3, each on first-character shape so a quoted value is never
+  // misdetected), D-5 scalar decoding, and -- for key-based values only,
+  // never for a bare sequence-of-scalars item -- the rollout-safety
+  // placeholder check.
+  const keyName = opts && opts.keyName !== undefined ? opts.keyName : null;
+  const isListItem = !!(opts && opts.isListItem);
+
+  const v = stripYamlInlineComment(rawRest).trim();
+  const wasQuoted = v.length > 0 && (v[0] === "'" || v[0] === '"');
+  let decoded;
+  if (v === "") {
+    decoded = "";
+  } else {
+    const first = v[0];
+    if (first === "[" || first === "{") {
+      if (v === "[]") return [];
+      if (v === "{}") return {};
+      warnings.push(
+        fileLabel + ":" + tok.lineNo + ": flow collection rejected (only the literal [] / {} is permitted)"
+      );
+      return _REJECT;
+    }
+    if (first === "|" || first === ">") {
+      warnings.push(fileLabel + ":" + tok.lineNo + ": block scalar rejected");
+      return _REJECT;
+    }
+    if (["&", "*", "!", "%"].includes(first)) {
+      warnings.push(fileLabel + ":" + tok.lineNo + ": anchor/alias/tag/directive rejected");
+      return _REJECT;
+    }
+    decoded = _decodeScalar(v, tok.lineNo, fileLabel, warnings);
+  }
+
+  if (!isListItem) {
+    const isFreetext = wasQuoted || (keyName !== null && FREETEXT_FM_KEYS.has(keyName));
+    if (_looksLikeUnfilledPlaceholder(decoded, isFreetext)) {
+      return _REJECT;
+    }
+  }
+
+  return decoded;
+}
+
+function _buildTree(tokens, warnings, fileLabel) {
+  // Pass 2: assemble the token stream into a nested object/array tree. Uses a
+  // level-indexed stack of currently-open containers (level 0 == the root
+  // mapping; deeper levels are opened by a bare 'key:' mapping opener or by a
+  // dash-with-inline-key sequence item, and closed the moment a shallower-or-
+  // equal-level token arrives). A bare opener's object-vs-array shape is
+  // decided by a single-token lookahead (its first child's dash-ness) --
+  // defaulting to an empty mapping when it has no children at all (D-3: "an
+  // absent key is semantically identical to an empty collection").
+  //
+  // Duplicate keys at the same mapping level: last value wins, and a
+  // parse_warning is emitted (D-3).
+  const root = {};
+  const stack = { 0: root };
+  const stackKind = { 0: "map" };
+
+  const n = tokens.length;
+  for (let i = 0; i < n; i++) {
+    const tok = tokens[i];
+    const level = tok.level;
+
+    for (const lvl of Object.keys(stack).map(Number).filter((l) => l > level)) {
+      delete stack[lvl];
+      delete stackKind[lvl];
+    }
+
+    const parent = stack[level];
+    const parentKind = stackKind[level];
+    if (parent === undefined) {
+      warnings.push(fileLabel + ":" + tok.lineNo + ": orphan line (no open parent container at this indentation); line skipped");
+      continue;
+    }
+
+    if (tok.dash) {
+      if (parentKind !== "list") {
+        warnings.push(fileLabel + ":" + tok.lineNo + ": sequence entry where a mapping key was expected; line skipped");
+        continue;
+      }
+      if (tok.key !== null) {
+        const item = {};
+        const val = _finalizeValue(tok.rest, tok, fileLabel, warnings, { keyName: tok.key });
+        if (val !== _REJECT) {
+          item[tok.key] = val;
+        }
+        parent.push(item);
+        stack[level + 1] = item;
+        stackKind[level + 1] = "map";
+      } else {
+        const val = _finalizeValue(tok.rest, tok, fileLabel, warnings, { isListItem: true });
+        if (val !== _REJECT) {
+          parent.push(val);
+        }
+      }
+      continue;
+    }
+
+    // Plain 'key:' line
+    if (parentKind !== "map") {
+      warnings.push(fileLabel + ":" + tok.lineNo + ": mapping key where a sequence entry was expected; line skipped");
+      continue;
+    }
+
+    const key = tok.key;
+    const rest = tok.rest.trim();
+    if (rest === "") {
+      const nxt = i + 1 < n ? tokens[i + 1] : null;
+      let newContainer, newKind;
+      if (nxt !== null && nxt.level === level + 1 && nxt.dash) {
+        newContainer = [];
+        newKind = "list";
+      } else {
+        newContainer = {};
+        newKind = "map";
+      }
+      if (Object.prototype.hasOwnProperty.call(parent, key)) {
+        warnings.push(fileLabel + ":" + tok.lineNo + ": duplicate key '" + key + "'; last value wins");
+      }
+      parent[key] = newContainer;
+      stack[level + 1] = newContainer;
+      stackKind[level + 1] = newKind;
+      continue;
+    }
+
+    const val = _finalizeValue(rest, tok, fileLabel, warnings, { keyName: key });
+    if (val !== _REJECT) {
+      if (Object.prototype.hasOwnProperty.call(parent, key)) {
+        warnings.push(fileLabel + ":" + tok.lineNo + ": duplicate key '" + key + "'; last value wins");
+      }
+      parent[key] = val;
+    }
+  }
+
+  return root;
+}
+
+function parseStateDocument(text, options) {
+  // Parse a STATE.yml document -- or, ONLY when the caller opts in, a legacy
+  // frontmatter block -- into a nested object tree, plus a list of
+  // parse_warning strings. Twin of Python parse_state_document().
+  //
+  // Dispatch is decided by the CALLER, via allowFrontmatterFence, NEVER by
+  // sniffing the document's own content. A prior revision of this function
+  // decided strict-vs-loose by checking whether text's first line was a bare
+  // '---'; that made a malformed STATE.yml that happens to open with a fence
+  // (the exact construct D-1/D-3 forbid: "one file, one document" / "a
+  // second document ... at column 0") silently take the LOOSE path instead
+  // of being rejected. Content can decide WHAT is wrong with a document; it
+  // must never decide WHICH GRAMMAR is used to read it.
+  //
+  //   - allowFrontmatterFence=false (the default -- every state-file reader
+  //     in this file uses this): the WHOLE text is parsed by the strict D-3
+  //     subset engine (_tokenize + _buildTree): shapes S1-S5, both D-5
+  //     quoting/escape modes, inline- and full-line-comment stripping, and
+  //     the full reject list. Every reject emits a parse_warning naming
+  //     file/line/construct, skips exactly that key, and keeps parsing --
+  //     never throws.
+  //   - allowFrontmatterFence=true (the ONE legitimate caller: parseKbState,
+  //     for .aid/knowledge/STATE.md, which stays markdown-with-frontmatter
+  //     by design and is out of scope for this work -- SPEC.md D-6) -- a
+  //     leading '---' fence on the text's very first line switches to the
+  //     ORIGINAL, unchanged, flat + one-level-nested scan
+  //     (_parseFencedFrontmatterLoose), bounded to the region between the
+  //     first and second '---' lines (or to EOF if no closing fence is
+  //     found). This path emits no parse_warnings, exactly like the original
+  //     function. If the caller passes allowFrontmatterFence=true but the
+  //     text does NOT open with a fence, the strict engine runs anyway.
+  //
+  // A leading byte-order mark is stripped and a parse_warning is emitted
+  // naming the file, in EITHER path, before fence detection runs.
+  //
+  // Returns [data, warnings]:
+  //   - data: nested object tree in the strict path (S1 scalar keys map to
+  //     string; S2/S3 mapping keys map to object; S4/S5 sequence keys map to
+  //     array); a FLAT dot-joined object in the fenced-legacy path.
+  //   - warnings: array of parse_warning strings; always [] in the
+  //     fenced-legacy path.
+  //
+  // Never throws (NFR7). No file I/O -- pure text -> value.
+  const opts = options || {};
+  const fileLabel = opts.fileLabel !== undefined ? opts.fileLabel : "STATE";
+  const allowFrontmatterFence = opts.allowFrontmatterFence === true;
+
+  const warnings = [];
+
+  if (text.length > 0 && text.charCodeAt(0) === 0xFEFF) {
+    text = text.slice(1);
+    warnings.push(fileLabel + ": byte-order mark (BOM) stripped");
+  }
+
+  const rawLines = text.split("\n");
+
+  if (allowFrontmatterFence && rawLines.length > 0 && RE_FM_FENCE_GENERIC.test(rawLines[0])) {
+    // Legacy fenced-frontmatter shape -- unchanged loose scan, bounded to
+    // the region between the first and second '---' lines. Reachable ONLY
+    // when the caller opted in (parseKbState); every state-file reader
+    // leaves allowFrontmatterFence at its strict default, so a state file
+    // opening with '---' falls through to the strict engine below and is
+    // rejected as a second document, like any other one.
+    const bodyLines = [];
+    for (let i = 1; i < rawLines.length; i++) {
+      if (RE_FM_FENCE_GENERIC.test(rawLines[i])) break;
+      bodyLines.push(rawLines[i]);
+    }
+    const fencedText = "---\n" + bodyLines.join("\n") + "\n---\n";
+    const data = _parseFencedFrontmatterLoose(fencedText);
+    return [data, warnings];
+  }
+
+  const numbered = rawLines.map((ln, idx) => [idx + 1, ln]);
+  const tokens = _tokenize(numbered, warnings, fileLabel);
+  const data = _buildTree(tokens, warnings, fileLabel);
+  return [data, warnings];
 }
 
 function parseHeaderBoldField(text, label) {
@@ -364,6 +744,44 @@ export const SHORTCUT_KIND_MAP = {
   "aid-monitor": ["monitor", ""],
   "aid-query-kb": ["query", ""],
   "aid-ask": ["query", ""],
+  // --- work-006: the design stage (design/create/update over nine artifact
+  // types) plus brainstorm. Catalogue order; keep in lockstep with the Python twin.
+  "aid-create-roadmap": ["create", "roadmap"],
+  "aid-create-backlog": ["create", "backlog"],
+  "aid-create-mvp": ["create", "mvp"],
+  "aid-create-architecture": ["create", "architecture"],
+  "aid-create-stack": ["create", "stack"],
+  "aid-create-testing-strategy": ["create", "testing-strategy"],
+  "aid-create-cicd": ["create", "cicd"],
+  "aid-update-roadmap": ["update", "roadmap"],
+  "aid-update-mvp": ["update", "mvp"],
+  "aid-update-backlog": ["update", "backlog"],
+  "aid-update-architecture": ["update", "architecture"],
+  "aid-update-stack": ["update", "stack"],
+  "aid-update-testing-strategy": ["update", "testing-strategy"],
+  "aid-update-cicd": ["update", "cicd"],
+  "aid-design-roadmap": ["design", "roadmap"],
+  "aid-design-mvp": ["design", "mvp"],
+  "aid-design-backlog": ["design", "backlog"],
+  "aid-design-api": ["design", "api"],
+  "aid-design-ui": ["design", "ui"],
+  "aid-design-theme": ["design", "theme"],
+  "aid-design-cli": ["design", "cli"],
+  "aid-design-data-model": ["design", "data-model"],
+  "aid-design-data-pipeline": ["design", "data-pipeline"],
+  "aid-design-messaging": ["design", "messaging"],
+  "aid-design-integration": ["design", "integration"],
+  "aid-design-job": ["design", "job"],
+  "aid-design-config": ["design", "config"],
+  "aid-design-infra": ["design", "infra"],
+  "aid-design-test": ["design", "test"],
+  "aid-design-document": ["design", "document"],
+  "aid-design-dashboard": ["design", "dashboard"],
+  "aid-brainstorm": ["brainstorm", ""],
+  "aid-design-architecture": ["design", "architecture"],
+  "aid-design-stack": ["design", "stack"],
+  "aid-design-testing-strategy": ["design", "testing-strategy"],
+  "aid-design-cicd": ["design", "cicd"],
 };
 
 // The FULL-pipeline starting skill -- never a shortcut-catalog.yml row.
@@ -669,7 +1087,7 @@ function parseProjectName(settingsPath) {
 // parse_minimum_grade() -- named parseSettingsMinimumGrade (not
 // parseMinimumGrade) in this flat file only to avoid colliding with the
 // pre-existing per-work parseMinimumGrade(text) below (twin of
-// derivation.py's _parse_minimum_grade, a STATE.md-text scan -- Python
+// derivation.py's _parse_minimum_grade, a STATE.yml-text scan -- Python
 // keeps the two apart via module namespacing + the underscore prefix;
 // this single-file Node twin needs a distinct name instead).
 function parseSettingsMinimumGrade(settingsPath) {
@@ -883,7 +1301,16 @@ function parseKbState(kbDir) {
       raw = readFileBounded(statePath);
       bytesRead += raw.length;
       const stateText = raw.toString("utf-8");
-      const fm = parseFrontmatterScalars(stateText);
+      // .aid/knowledge/STATE.md is OUT OF SCOPE for this work (SPEC.md D-6):
+      // it stays markdown-with-frontmatter. This is the ONE caller in this
+      // file that opts INTO the legacy fenced-frontmatter scan
+      // (allowFrontmatterFence: true) -- every state-file reader leaves it
+      // at the strict default. Dispatch on the CALLER, not on the document's
+      // own leading bytes (see parseStateDocument's docstring).
+      const [fm, _kbFmWarnings] = parseStateDocument(stateText, {
+        fileLabel: "knowledge/STATE.md",
+        allowFrontmatterFence: true,
+      });
       [summaryApproved, lastSummaryDate, sourceMode] = parseKbSummaryApproval(stateText, fm);
 
       // Newly-captured discovery-status scalars (task-002): frontmatter-first,
@@ -1643,11 +2070,6 @@ function _checkSourceNode(entry, approvedAtCommit, repoRoot) {
 const RE_HISTORY_SECTION = /^##\s+Lifecycle History\s*$/i;
 const RE_TABLE_SEP = /^\|[\s\-|]+\|$/;
 const CANCEL_RE = /cancel(?:ed)?/i;
-const RE_DATE = /\b(\d{4}-\d{2}-\d{2})\b/;
-
-function hasTableSep(stripped) {
-  return RE_TABLE_SEP.test(stripped);
-}
 
 function hasCancellationInHistory(text, warnings, workId) {
   let inHistory = false;
@@ -1663,7 +2085,7 @@ function hasCancellationInHistory(text, warnings, workId) {
       if (/^##\s+/.test(line)) break;
       const stripped = line.trim();
       if (!stripped.startsWith("|")) continue;
-      if (hasTableSep(stripped)) continue;
+      if (RE_TABLE_SEP.test(stripped)) continue;
       const cols = stripped.replace(/^\||\|$/g, "").split("|").map(c => c.trim());
       if (!headerSeen) {
         headerSeen = true;
@@ -1687,40 +2109,6 @@ function hasCancellationInHistory(text, warnings, workId) {
   return false;
 }
 
-function extractLatestHistoryDate(text) {
-  let inHistory = false;
-  let headerSeen = false;
-  let latest = null;
-
-  for (const line of text.split("\n")) {
-    if (RE_HISTORY_SECTION.test(line)) {
-      inHistory = true;
-      headerSeen = false;
-      continue;
-    }
-    if (inHistory) {
-      if (/^##\s+/.test(line)) break;
-      const stripped = line.trim();
-      if (!stripped.startsWith("|")) continue;
-      if (hasTableSep(stripped)) continue;
-      const cols = stripped.replace(/^\||\|$/g, "").split("|").map(c => c.trim());
-      if (!headerSeen) {
-        headerSeen = true;
-        continue;
-      }
-      const dateCol = cols.length > 0 ? cols[0].trim() : "";
-      const m = dateCol.match(RE_DATE);
-      if (m) {
-        const d = m[1];
-        if (latest === null || d > latest) {
-          latest = d;
-        }
-      }
-    }
-  }
-  return latest;
-}
-
 const RE_DEPLOY_STATUS = /^##\s+Deploy Status\s*$/i;
 const RE_PLAN_DELIVERIES = /^##\s+Plan\s*\/\s*Deliveries\s*$/i;
 const SHIPPED_RE = /\b(shipped|deployed|done|complete[d]?)\b/i;
@@ -1740,7 +2128,7 @@ function deployStatusShipped(text) {
       if (/^##\s+/.test(line)) break;
       const stripped = line.trim();
       if (!stripped.startsWith("|")) continue;
-      if (hasTableSep(stripped)) continue;
+      if (RE_TABLE_SEP.test(stripped)) continue;
       const cols = stripped.replace(/^\||\|$/g, "").split("|").map(c => c.trim());
       if (!headerSeen) {
         headerSeen = true;
@@ -1771,7 +2159,7 @@ function allDeliveriesDone(text) {
       if (/^##\s+/.test(line)) break;
       const stripped = line.trim();
       if (!stripped.startsWith("|")) continue;
-      if (hasTableSep(stripped)) continue;
+      if (RE_TABLE_SEP.test(stripped)) continue;
       const cols = stripped.replace(/^\||\|$/g, "").split("|").map(c => c.trim());
       if (!headerSeen) {
         headerSeen = true;
@@ -1895,7 +2283,34 @@ function findBlockSignal(workDir, tasks, stateText) {
   return [null, null];
 }
 
-function deriveLifecycle({ workDir, tasks, pendingInputs, stateText, workId }) {
+function deriveLifecycle({ workDir, tasks, pendingInputs, stateText, workId, latestHistoryDate }) {
+  // LC-3 fallback derivation (mirrors derivation.py derive_lifecycle;
+  // UNCHANGED aside from the `updated` slot, task-004 note below). Called
+  // ONLY when the STATE.yml document carries no `lifecycle` key at all.
+  //
+  // The `updated` slot (6th return element) is `latestHistoryDate`, computed
+  // ONCE by the caller (parseStateMd) via computeLatestHistoryDate() over
+  // the already-parsed `lifecycle_history` array -- NOT re-derived per
+  // branch. All five branches receive the SAME single value.
+  //
+  // BOTH TWINS DO THIS, and the symmetry is deliberate. derivation.py's
+  // `derive_lifecycle` takes a `latest_history_date` parameter computed by
+  // `parse_state_md` via `_compute_latest_history_date()` -- the same
+  // max(lifecycle_history[].date) over the parsed sequence, skipping
+  // non-string and `--` sentinel dates.
+  //
+  // It was NOT always so. task-004 landed this side first while
+  // derivation.py still called `_extract_latest_history_date(state_text)`, a
+  // raw "## Lifecycle History" markdown-table scan with no construct left to
+  // match in a STATE.yml document -- dead code that returned None where this
+  // side returned a real date. That asymmetry was the delivery's first
+  // genuine twin divergence (known-issues.md KI-004): Python had also LOST a
+  // fallback it had pre-refactor, which a behavior-preserving restructure
+  // forbids. task-021 fixed the Python side toward this one and deleted the
+  // dead scan. Worth recording because two independent cross-twin parity
+  // harnesses both MISSED it -- the divergence needs three conditions at
+  // once (no `lifecycle`, no `updated`, a populated `lifecycle_history`), and
+  // any fixture carrying an explicit `updated:` masks it entirely.
   const warnings = [];
 
   // Prio 1: Canceled
@@ -1903,7 +2318,7 @@ function deriveLifecycle({ workDir, tasks, pendingInputs, stateText, workId }) {
     return [
       Lifecycle.Canceled, SourceMode.Fallback,
       null, null, null,
-      extractLatestHistoryDate(stateText),
+      latestHistoryDate,
       warnings,
     ];
   }
@@ -1913,7 +2328,7 @@ function deriveLifecycle({ workDir, tasks, pendingInputs, stateText, workId }) {
     return [
       Lifecycle.Completed, SourceMode.Fallback,
       null, null, null,
-      extractLatestHistoryDate(stateText),
+      latestHistoryDate,
       warnings,
     ];
   }
@@ -1924,7 +2339,7 @@ function deriveLifecycle({ workDir, tasks, pendingInputs, stateText, workId }) {
     return [
       Lifecycle.Blocked, SourceMode.Fallback,
       null, blockReason, blockArtifact,
-      extractLatestHistoryDate(stateText),
+      latestHistoryDate,
       warnings,
     ];
   }
@@ -1936,7 +2351,7 @@ function deriveLifecycle({ workDir, tasks, pendingInputs, stateText, workId }) {
     return [
       Lifecycle.PausedAwaitingInput, SourceMode.Fallback,
       pauseReason, null, null,
-      extractLatestHistoryDate(stateText),
+      latestHistoryDate,
       warnings,
     ];
   }
@@ -1945,7 +2360,7 @@ function deriveLifecycle({ workDir, tasks, pendingInputs, stateText, workId }) {
   return [
     Lifecycle.Running, SourceMode.Fallback,
     null, null, null,
-    extractLatestHistoryDate(stateText),
+    latestHistoryDate,
     warnings,
   ];
 }
@@ -2271,554 +2686,276 @@ function numberFromWorkId(workId) {
 }
 
 // ---------------------------------------------------------------------------
-// STATE.md parser (mirrors parsers.py parse_state_md)
+// STATE.yml parser -- structured document read (work-009-refactor task-004,
+// porting task-003's Python parse_state_md). The legacy section-header
+// regexes and the section state machine that used to scan '## Pipeline
+// State' / '## Tasks State' / '## Cross-phase Q&A' / '## Triage' / '##
+// Features State' / '## Plan / Deliveries' / '## Lifecycle History' prose
+// are GONE: parseStateDocument already turns the whole file into a nested
+// object, so parseStateMd below is parse-document-then-map-keys, not a
+// markdown scanner.
 // ---------------------------------------------------------------------------
 
-// Accept BOTH new "State" names (work-004 rename) and legacy "Status" names
-// (Pillar 3 / Pillar 6 coexistence: new works use "State"; old works keep "Status").
-const RE_PIPELINE_STATUS = /^##\s+Pipeline (?:State|Status)\s*$/i;
-const RE_TASKS_STATUS = /^##\s+Tasks (?:State|Status)\s*$/i;
-const RE_CROSSPHASE_QA = /^##\s+Cross-phase Q&A/i;
-const RE_TRIAGE = /^##\s+Triage\s*$/i;
-const RE_FEATURES_STATUS = /^##\s+Features (?:State|Status)\s*$/i;
-// RE_PLAN_DELIVERIES already declared in derivation helpers above (reused here)
-const RE_LIFECYCLE_HISTORY_SECTION = /^##\s+Lifecycle History\s*$/i;
-const RE_SECTION = /^##\s+\S/;
+function qaQuestionId(rawId) {
+  // Format a qa[].id value as the historical 'Q{N}' display form. Twin of
+  // Python _qa_question_id(). Never throws.
+  if (rawId === undefined || rawId === null) return "";
+  const s = String(rawId).trim();
+  if (!s) return "";
+  if (s[0].toLowerCase() === "q") return s;
+  return "Q" + s;
+}
 
-const RE_TRIAGE_PATH   = /^\s*-\s*\*\*Path:\*\*\s*(.+)/i;
-const RE_TRIAGE_RECIPE = /^\s*-\s*\*\*Recipe:\*\*\s*(.+)/i;
+function noneIfNull(val) {
+  // Return null for a null-sentinel-or-non-string value, else the string.
+  // Twin of Python _none_if_null().
+  if (typeof val !== "string") return null;
+  return isNull(val) ? null : val;
+}
 
-const RE_PS_LIFECYCLE    = /^\s*-\s*\*\*Lifecycle:\*\*\s*(.+)/i;
-const RE_PS_PHASE        = /^\s*-\s*\*\*Phase:\*\*\s*(.+)/i;
-const RE_PS_SKILL        = /^\s*-\s*\*\*Active Skill:\*\*\s*(.+)/i;
-const RE_PS_UPDATED      = /^\s*-\s*\*\*Updated:\*\*\s*(.+)/i;
-const RE_PS_PAUSE_REASON = /^\s*-\s*\*\*Pause Reason:\*\*\s*(.+)/i;
-const RE_PS_BLOCK_REASON = /^\s*-\s*\*\*Block Reason:\*\*\s*(.+)/i;
-const RE_PS_BLOCK_ART    = /^\s*-\s*\*\*Block Artifact:\*\*\s*(.+)/i;
-
-const RE_QN_HEADER  = /^###\s+(Q\d+)\s*$/;
-const RE_QN_STATUS  = /^\s*-\s*\*\*Status:\*\*\s*(.+)/i;
-const RE_QN_CAT     = /^\s*-\s*\*\*Category:\*\*\s*(.+)/i;
-const RE_QN_IMPACT  = /^\s*-\s*\*\*Impact:\*\*\s*(.+)/i;
-const RE_QN_CONTEXT = /^\s*-\s*\*\*Context:\*\*\s*(.+)/i;
-const RE_QN_SUGGEST = /^\s*-\s*\*\*Suggested:\*\*\s*(.+)/i;
-
-const NONE_YET = "_none yet_";
-
-function parseStateText(text, workId, workDir) {
-  // Dual-format (task-002): parse the YAML frontmatter block ONCE; applied
-  // AFTER the legacy prose line-scan below (frontmatter wins when present).
-  const fm = parseFrontmatterScalars(text);
-
-  // ParsedWork fields
-  let lifecycle = Lifecycle.Unknown;
-  let phase = null;
-  let activeSkill = null;
-  let updated = null;
-  let pauseReason = null;
-  let blockReason = null;
-  let blockArtifact = null;
-  const tasks = [];
-  const pendingInputs = [];
-  let sourceMode = SourceMode.Fallback;
-  const parseWarnings = [];
-  let bytesRead = 0; // bytes accounted by caller
-  // prototype: work-overview header fields
-  let workPath = null;
-  let recipe = null;
-  const features = [];
-  const deliverables = [];
-  // work-003-state-schema task-002: dual-format frontmatter read, new fields
-  let kind = null;
-  let started = null;
-  let minimumGrade = null;
-  let userApproved = null;
-
-  let inPipelineStatus = false;
-  let pipelineStatusFound = false;
-  let inTasks = false;
-  let inCrossphase = false;
-  let inTriage = false;
-  let inFeatures = false;
-  let inDeliveries = false;
-  let inLifecycleHistory = false;
-  let tasksHeaderSeen = false;
-  let featuresHeaderSeen = false;
-  let deliveriesHeaderSeen = false;
-  let lifecycleHistoryHeaderSeen = false;
-  let created = null;
-
-  let currentQId = null;
-  let currentQ = {};
-
-  function flushQ() {
-    if (currentQId && (currentQ.status || "").toLowerCase() === "pending") {
-      pendingInputs.push({
-        question_id: currentQId,
-        category: currentQ.category || null,
-        impact: currentQ.impact || null,
-        context: currentQ.context || null,
-        suggested: currentQ.suggested || null,
-      });
+function computeLatestHistoryDate(lifecycleHistory) {
+  // max(lifecycle_history[].date) -- the newest AUTHORED history entry's
+  // date, sourced from the ALREADY-parsed lifecycle_history array (no
+  // second file read, no re-scan of raw text). Replaces the pre-refactor
+  // extractLatestHistoryDate()'s raw-markdown "## Lifecycle History" table
+  // scan, which has no construct to scan against a STATE.yml document (the
+  // table no longer exists; lifecycle_history is now a YAML list).
+  if (!Array.isArray(lifecycleHistory)) return null;
+  let latest = null;
+  for (const entry of lifecycleHistory) {
+    if (!entry || typeof entry !== "object" || Array.isArray(entry)) continue;
+    const d = entry.date;
+    if (typeof d === "string" && !isNull(d)) {
+      const dv = d.trim();
+      if (dv && (latest === null || dv > latest)) latest = dv;
     }
-    currentQId = null;
-    currentQ = {};
+  }
+  return latest;
+}
+
+function _applyPipelineFrontmatter(data, pw) {
+  // Map the document's top-level pipeline-state scalar keys onto pw.
+  // Returns true iff the 'lifecycle' key was present with a valid (non-null)
+  // value -- the caller (parseStateMd) uses this to decide sourceMode
+  // (Normalized iff present; Fallback -- via deriveLifecycle -- otherwise).
+  // Twin of Python _apply_pipeline_frontmatter().
+  let lifecyclePresent = false;
+
+  let v = data.lifecycle;
+  if (typeof v === "string" && !isNull(v)) {
+    pw.lifecycle = parseLifecycle(v.trim());
+    lifecyclePresent = true;
   }
 
-  function resetSections() {
-    inPipelineStatus = false;
-    inTasks = false;
-    inCrossphase = false;
-    inTriage = false;
-    inFeatures = false;
-    inDeliveries = false;
-    inLifecycleHistory = false;
+  v = data.phase;
+  if (typeof v === "string" && !isNull(v)) {
+    pw.phase = parsePhase(v.trim());
   }
 
-  const lines = text.split("\n");
-  for (const line of lines) {
-    if (RE_PIPELINE_STATUS.test(line)) {
-      flushQ(); resetSections();
-      inPipelineStatus = true;
-      // Mirror Python parsers.py:748: pipeline_status_found=True for ANY line in the section.
-      // The heading itself counts -- presence of ## Pipeline Status means normalized source.
-      pipelineStatusFound = true;
-      continue;
-    }
-    if (RE_TASKS_STATUS.test(line)) {
-      flushQ(); resetSections();
-      inTasks = true;
-      tasksHeaderSeen = false;
-      continue;
-    }
-    if (RE_CROSSPHASE_QA.test(line)) {
-      flushQ(); resetSections();
-      inCrossphase = true;
-      continue;
-    }
-    if (RE_TRIAGE.test(line)) {
-      flushQ(); resetSections();
-      inTriage = true;
-      continue;
-    }
-    if (RE_FEATURES_STATUS.test(line)) {
-      flushQ(); resetSections();
-      inFeatures = true;
-      featuresHeaderSeen = false;
-      continue;
-    }
-    if (RE_PLAN_DELIVERIES.test(line)) {
-      flushQ(); resetSections();
-      inDeliveries = true;
-      deliveriesHeaderSeen = false;
-      continue;
-    }
-    if (RE_LIFECYCLE_HISTORY_SECTION.test(line)) {
-      flushQ(); resetSections();
-      inLifecycleHistory = true;
-      lifecycleHistoryHeaderSeen = false;
-      continue;
-    }
-    if (RE_SECTION.test(line)) {
-      flushQ(); resetSections();
-      continue;
+  v = data.active_skill;
+  if (typeof v === "string") {
+    const vv = v.trim();
+    pw.activeSkill = (isNull(vv) || vv.toLowerCase() === "none") ? null : vv;
+  }
+
+  v = data.updated;
+  if (typeof v === "string" && !isNull(v)) {
+    pw.updated = v.trim();
+  }
+
+  v = data.pause_reason;
+  if (typeof v === "string") {
+    const vv = v.trim();
+    pw.pauseReason = isNull(vv) ? null : vv;
+  }
+
+  v = data.block_reason;
+  if (typeof v === "string") {
+    const vv = v.trim();
+    pw.blockReason = isNull(vv) ? null : vv;
+  }
+
+  v = data.block_artifact;
+  if (typeof v === "string") {
+    const vv = v.trim();
+    pw.blockArtifact = isNull(vv) ? null : vv;
+  }
+
+  return lifecyclePresent;
+}
+
+function _applyIdentityFrontmatter(data, pw) {
+  // Map the document's pipeline-identity + captured-scalar keys onto pw:
+  // pipeline.path -> workPath, pipeline.initiator -> kind, started,
+  // minimumGrade, userApproved. No legacy header-blockquote fallback
+  // remains -- a legacy STATE.md is diagnosed at the work level (SP-9)
+  // before this function is ever reached. Twin of Python
+  // _apply_identity_frontmatter().
+  const pipeline = data.pipeline;
+  if (pipeline && typeof pipeline === "object" && !Array.isArray(pipeline)) {
+    let v = pipeline.path;
+    if (typeof v === "string" && !isNull(v)) {
+      pw.workPath = v.trim().toLowerCase();
     }
 
-    if (inPipelineStatus) {
-      let m;
-      if ((m = line.match(RE_PS_LIFECYCLE))) {
-        lifecycle = parseLifecycle(m[1].trim());
-        pipelineStatusFound = true;
-        continue;
-      }
-      if ((m = line.match(RE_PS_PHASE))) {
-        phase = parsePhase(m[1].trim());
-        pipelineStatusFound = true;
-        continue;
-      }
-      if ((m = line.match(RE_PS_SKILL))) {
-        const val = m[1].trim();
-        activeSkill = (isNull(val) || val === "none") ? null : val;
-        pipelineStatusFound = true;
-        continue;
-      }
-      if ((m = line.match(RE_PS_UPDATED))) {
-        const val = m[1].trim();
-        updated = isNull(val) ? null : val;
-        pipelineStatusFound = true;
-        continue;
-      }
-      if ((m = line.match(RE_PS_PAUSE_REASON))) {
-        const val = m[1].trim();
-        pauseReason = isNull(val) ? null : val;
-        pipelineStatusFound = true;
-        continue;
-      }
-      if ((m = line.match(RE_PS_BLOCK_REASON))) {
-        const val = m[1].trim();
-        blockReason = isNull(val) ? null : val;
-        pipelineStatusFound = true;
-        continue;
-      }
-      if ((m = line.match(RE_PS_BLOCK_ART))) {
-        const val = m[1].trim();
-        blockArtifact = isNull(val) ? null : val;
-        pipelineStatusFound = true;
-        continue;
-      }
-      // Any recognized Pipeline Status line counts as found
-      if (/^\s*-\s*\*\*/.test(line)) {
-        pipelineStatusFound = true;
-      }
-      continue;
-    }
-
-    if (inTasks) {
-      const stripped = line.trim();
-      if (!stripped.startsWith("|")) continue;
-      if (hasTableSep(stripped)) continue;
-
-      const cols = stripped.replace(/^\||\|$/g, "").split("|").map(c => c.trim());
-      if (cols.length < 2) continue;
-
-      // Skip header row: pattern-based only (col[0] is "#" or blank), mirrors Python
-      // parsers.py:910 which only skips when cols[0] in ("#", "").
-      // Do NOT unconditionally skip the first row -- a headerless table must keep it.
-      if ((cols[0] === "#" || cols[0] === "") && !tasksHeaderSeen) {
-        tasksHeaderSeen = true;
-        continue;
-      }
-      // Mark first non-separator pipe row seen (matches Python header_seen tracking)
-      tasksHeaderSeen = true;
-
-      // Skip _none yet_ placeholder
-      if (cols.some(c => c.includes(NONE_YET))) continue;
-
-      function col(idx) {
-        if (idx < cols.length) {
-          const v = cols[idx].trim();
-          return isNull(v) ? null : v;
-        }
-        return null;
-      }
-
-      const taskId = col(1) || col(0) || "";
-      if (!taskId || taskId === "#") continue;
-
-      const statusStr = col(4) || "";
-      const status = parseTaskStatus(statusStr);
-
-      tasks.push({
-        task_id: taskId,
-        type: col(2) || "",
-        wave: col(3),
-        status: status,
-        review_grade: col(5),
-        elapsed: col(6),
-        notes: col(7),
-      });
-      continue;
-    }
-
-    if (inCrossphase) {
-      let m;
-      if ((m = line.match(RE_QN_HEADER))) {
-        flushQ();
-        currentQId = m[1];
-        currentQ = {};
-        continue;
-      }
-      if (currentQId) {
-        // Accept both "Status:" (legacy) and "State:" (new, Pillar 3) for Q&A state
-        if ((m = line.match(RE_QN_STATUS)) ||
-            (m = line.match(/^\s*-\s*\*\*State:\*\*\s*(.+)/i))) {
-          currentQ.status = m[1].trim();
-          continue;
-        }
-        if ((m = line.match(RE_QN_CAT))) {
-          currentQ.category = m[1].trim();
-          continue;
-        }
-        if ((m = line.match(RE_QN_IMPACT))) {
-          currentQ.impact = m[1].trim();
-          continue;
-        }
-        if ((m = line.match(RE_QN_CONTEXT))) {
-          currentQ.context = m[1].trim();
-          continue;
-        }
-        if ((m = line.match(RE_QN_SUGGEST))) {
-          currentQ.suggested = m[1].trim();
-          continue;
-        }
-      }
-    }
-
-    if (inTriage) {
-      let m;
-      if ((m = line.match(RE_TRIAGE_PATH))) {
-        const val = m[1].trim();
-        if (!isNull(val)) workPath = val.toLowerCase();
-      } else if ((m = line.match(RE_TRIAGE_RECIPE))) {
-        const val = m[1].trim();
-        if (!isNull(val)) recipe = val;
-      }
-      continue;
-    }
-
-    if (inFeatures) {
-      // mirrors parsers.py _parse_features_line
-      const stripped = line.trim();
-      if (!stripped.startsWith("|")) continue;
-      if (hasTableSep(stripped)) continue;
-      const cols = stripped.replace(/^\||\|$/g, "").split("|").map(c => c.trim());
-      if (cols.length < 2) continue;
-      // Skip header row: pattern-based (col[0] is "#" or empty) before first data row seen
-      if ((cols[0] === "#" || cols[0] === "") && !featuresHeaderSeen) {
-        featuresHeaderSeen = true;
-        continue;
-      }
-      // Mark first non-separator pipe row seen (mirrors Python: header_seen set after any | row)
-      featuresHeaderSeen = true;
-
-      function fcol(idx) {
-        if (idx < cols.length) { const v = cols[idx].trim(); return isNull(v) ? null : v; }
-        return null;
-      }
-      const numStr = fcol(0) || "";
-      const featureName = fcol(1) || "";
-      if (!numStr || numStr === "#" || !featureName) continue;
-      const number = parseInt(numStr, 10);
-      if (isNaN(number)) continue;
-      // Readable name: strip "feature-NNN-" prefix (mirrors Python)
-      let readable = featureName.replace(/^feature-\d+-/i, "").replace(/-/g, " ").trim();
-      if (!readable) readable = featureName;
-      features.push({ number: number, name: readable });
-      continue;
-    }
-
-    if (inDeliveries) {
-      // mirrors parsers.py _parse_deliveries_line
-      const stripped = line.trim();
-      if (!stripped.startsWith("|")) continue;
-      if (hasTableSep(stripped)) continue;
-      const cols = stripped.replace(/^\||\|$/g, "").split("|").map(c => c.trim());
-      if (cols.length < 3) continue;
-      // Skip header row: pattern-based (first col "Delivery" or blank) before first data row seen
-      if ((cols[0].toLowerCase() === "delivery" || cols[0] === "") && !deliveriesHeaderSeen) {
-        deliveriesHeaderSeen = true;
-        continue;
-      }
-      // Mark first non-separator pipe row seen (mirrors Python: header_seen set after any | row)
-      deliveriesHeaderSeen = true;
-
-      function dcol(idx) {
-        if (idx < cols.length) { const v = cols[idx].trim(); return isNull(v) ? null : v; }
-        return null;
-      }
-      const deliveryId = dcol(0) || "";
-      const tasksStr = dcol(2) || "";
-      const notesStr = dcol(3) || "";
-      if (!deliveryId || deliveryId.toLowerCase() === "delivery") continue;
-      // Parse delivery number from "delivery-NNN"
-      const dm = deliveryId.match(/^delivery-(\d+)/i);
-      if (!dm) continue;
-      const number = parseInt(dm[1], 10);
-      // task_count: leading integer from tasks column
-      let taskCount = 0;
-      const tm = tasksStr.match(/^(\d+)/);
-      if (tm) taskCount = parseInt(tm[1], 10);
-      // name: first clause of notes (split on ";", " - ", " -- ")
-      let name = deliveryId;
-      if (notesStr) {
-        const short = notesStr.split(";")[0].split(" - ")[0].split(" -- ")[0].trim();
-        if (short) name = short;
-      }
-      deliverables.push({ number: number, name: name, task_count: taskCount });
-      continue;
-    }
-
-    if (inLifecycleHistory) {
-      // mirrors parsers.py _parse_lifecycle_history_line + its caller
-      // The caller flips header_seen for ANY non-separator pipe row regardless
-      // of column count; the <2-col guard only skips data extraction.
-      const stripped = line.trim();
-      if (!stripped.startsWith("|")) continue;
-      if (hasTableSep(stripped)) continue;
-      // Flip header-seen for ALL non-separator pipe rows (mirrors Python caller)
-      const wasHeaderSeen = lifecycleHistoryHeaderSeen;
-      lifecycleHistoryHeaderSeen = true;
-      const cols = stripped.replace(/^\||\|$/g, "").split("|").map(c => c.trim());
-      if (cols.length < 2) continue;
-      // Skip header row (first non-separator pipe row) before first data row
-      if (!wasHeaderSeen) continue;
-      // Only extract created once (first matching row)
-      if (created === null) {
-        const dateVal = cols[0].trim();
-        const gateVal = cols[1].trim();
-        if (gateVal.toLowerCase() === "work created" && dateVal) {
-          created = dateVal;
-        }
-      }
-      continue;
+    v = pipeline.initiator;
+    if (typeof v === "string" && !isNull(v)) {
+      pw.kind = resolveKind(v.trim());
     }
   }
 
-  flushQ();
-
-  // Dual-format (task-002): frontmatter-first override for the ## Pipeline
-  // State scalars, applied AFTER the legacy prose scan above so frontmatter
-  // (the newer, authoritative source) wins whenever both are present. A
-  // migrated STATE.md's ## Pipeline State section body is enum-reference
-  // prose ONLY (no more "- **Lifecycle:** ..." bullets) -- without this
-  // override, a migrated work would render Lifecycle.Unknown despite
-  // pipelineStatusFound=true (the section header alone is still seen).
-  let fmLifecyclePresent = false;
-  {
-    let v = fm["lifecycle"];
-    if (v !== undefined && !isNull(v)) {
-      lifecycle = parseLifecycle(v.trim());
-      fmLifecyclePresent = true;
-    }
-    v = fm["phase"];
-    if (v !== undefined && !isNull(v)) {
-      phase = parsePhase(v.trim());
-    }
-    v = fm["active_skill"];
-    if (v !== undefined) {
-      const vv = v.trim();
-      activeSkill = (isNull(vv) || vv.toLowerCase() === "none") ? null : vv;
-    }
-    v = fm["updated"];
-    if (v !== undefined && !isNull(v)) {
-      updated = v.trim();
-    }
-    v = fm["pause_reason"];
-    if (v !== undefined) {
-      const vv = v.trim();
-      pauseReason = isNull(vv) ? null : vv;
-    }
-    v = fm["block_reason"];
-    if (v !== undefined) {
-      const vv = v.trim();
-      blockReason = isNull(vv) ? null : vv;
-    }
-    v = fm["block_artifact"];
-    if (v !== undefined) {
-      const vv = v.trim();
-      blockArtifact = isNull(vv) ? null : vv;
-    }
+  // started (top-level scalar). pw.created is ALSO backfilled from it so
+  // existing consumers (home.html work.created, the JSON 'created' key)
+  // keep working unchanged -- lifecycle_history's "Work created" entry
+  // (read by the caller, parseStateMd) overrides this when present.
+  let v = data.started;
+  if (typeof v === "string" && !isNull(v)) {
+    const startedVal = v.trim();
+    pw.started = startedVal;
+    pw.created = startedVal;
   }
 
-  // Normalized path: if ## Pipeline Status was found (legacy prose) OR the
-  // frontmatter supplied a valid `lifecycle` scalar, set source_mode=normalized.
-  if (pipelineStatusFound || fmLifecyclePresent) {
-    sourceMode = SourceMode.Normalized;
+  v = data.minimum_grade;
+  if (typeof v === "string" && !isNull(v)) {
+    pw.minimumGrade = v.trim().toUpperCase();
+  }
+
+  // userApproved: 'yes'/'no'/'true'/'false' (case-insensitive) -> bool.
+  // Work-level approval, distinct from the KB's summary_approved
+  // (parseKbState, a different file entirely).
+  v = data.user_approved;
+  if (typeof v === "string") {
+    pw.userApproved = parseBoolYesno(v);
+  }
+}
+
+function parseStateMd(text, workId, workDir) {
+  // Parse a work-root STATE.yml document into a ParsedWork-shaped plain
+  // object. Twin of Python parse_state_md() (work-009-refactor task-003,
+  // ported to the Node runtime by task-004).
+  //
+  // Parse-document-then-map-keys: the whole file is parsed ONCE by
+  // parseStateDocument (D-3 subset engine) into a nested object;
+  // _applyPipelineFrontmatter / _applyIdentityFrontmatter then map that
+  // object's keys onto pw -- together they ARE the whole of this function
+  // now (no more markdown section state machine).
+  //
+  // Three things this function still does, beyond the two _apply* mappers:
+  //   - falls back to deriveLifecycle() (LC-3, UNCHANGED) when the document
+  //     carries no `lifecycle` key at all (an absent/empty/truncated file);
+  //   - reads `lifecycle_history` for the work's `created` date (the first
+  //     entry whose `event` is "Work created", newest-last per the
+  //     template);
+  //   - reads `qa` for pendingInputs (flattened-Lite-only AUTHORED
+  //     Cross-phase Q&A; DERIVED on the full path, where no `qa` key is
+  //     present at all).
+  const label = workId ? workId + "/STATE.yml" : "STATE.yml";
+  const [data, warnings] = parseStateDocument(text, { fileLabel: label });
+
+  const pw = {
+    lifecycle: Lifecycle.Unknown,
+    phase: null,
+    activeSkill: null,
+    updated: null,
+    pauseReason: null,
+    blockReason: null,
+    blockArtifact: null,
+    tasks: [],
+    pendingInputs: [],
+    sourceMode: SourceMode.Fallback,
+    parseWarnings: [...warnings],
+    workPath: null,
+    recipe: null,
+    features: [],
+    deliverables: [],
+    created: null,
+    kind: null,
+    started: null,
+    minimumGrade: null,
+    userApproved: null,
+  };
+
+  const lifecyclePresent = _applyPipelineFrontmatter(data, pw);
+
+  const lifecycleHistory = Array.isArray(data.lifecycle_history) ? data.lifecycle_history : null;
+
+  if (lifecyclePresent) {
+    pw.sourceMode = SourceMode.Normalized;
   } else {
-    // LC-3 FALLBACK ADAPTER
+    // LC-3 FALLBACK ADAPTER (task-011, audited task-013 M6; UNCHANGED,
+    // deriveLifecycle's own body is out of this task's edit surface): no
+    // `lifecycle` key at all -- absent/empty/truncated document.
+    // deriveLifecycle scans legacy markdown signals (IMPEDIMENT files, task
+    // rollup, Q&A, Deploy Status); against a YAML document it finds none of
+    // those and returns Unknown/Fallback -- a safe no-op that still
+    // satisfies "best-effort model, never raises" (SP-9). latestHistoryDate
+    // is computed from the STRUCTURED lifecycle_history (see
+    // computeLatestHistoryDate's own comment for why this replaces the old
+    // raw-markdown-table scan).
     const _wd = workDir || ".";
+    const latestHistoryDate = computeLatestHistoryDate(lifecycleHistory);
     const [
       derivedLifecycle, derivedSourceMode,
       derivedPauseReason, derivedBlockReason, derivedBlockArtifact,
       derivedUpdated, extraWarnings,
     ] = deriveLifecycle({
       workDir: _wd,
-      tasks,
-      pendingInputs,
+      tasks: pw.tasks,
+      pendingInputs: pw.pendingInputs,
       stateText: text,
       workId: workId || "",
+      latestHistoryDate,
     });
-    lifecycle = derivedLifecycle;
-    sourceMode = derivedSourceMode;
-    pauseReason = derivedPauseReason;
-    blockReason = derivedBlockReason;
-    blockArtifact = derivedBlockArtifact;
-    if (updated === null) {
-      updated = derivedUpdated;
+    pw.lifecycle = derivedLifecycle;
+    pw.sourceMode = derivedSourceMode;
+    pw.pauseReason = derivedPauseReason;
+    pw.blockReason = derivedBlockReason;
+    pw.blockArtifact = derivedBlockArtifact;
+    if (pw.updated === null) {
+      pw.updated = derivedUpdated;
     }
-    parseWarnings.push(...extraWarnings);
+    pw.parseWarnings.push(...extraWarnings);
   }
 
-  // Dual-format (task-002): pipeline-identity + newly-captured scalars.
-  // Independent of the lifecycle/sourceMode decision above -- these fields
-  // have their own frontmatter-first / legacy-prose-fallback resolution.
-  {
-    // pipeline.path -> workPath (stop inferring via _detectFlat/_detectHierarchy
-    // when present; readWork/_readWorkFlat/_readWorkHierarchical keep those
-    // layout-detection heuristics as the fallback default for un-migrated works).
-    let v = fm["pipeline.path"];
-    if (v !== undefined && !isNull(v)) {
-      workPath = v.trim().toLowerCase();
-    }
+  _applyIdentityFrontmatter(data, pw);
 
-    // pipeline.initiator -> kind (display verb, shortcut-catalog.yml mapping).
-    // No legacy prose equivalent exists (the old ## Triage **Recipe:** field --
-    // still read into `recipe` above -- is a distinct, older, dead-prose concept).
-    v = fm["pipeline.initiator"];
-    if (v !== undefined && !isNull(v)) {
-      kind = resolveKind(v.trim());
-    }
-
-    // started (frontmatter-only; no working legacy prose fallback ever existed
-    // -- see state_schema.py's docstring). Retires the fragile 'Work created'
-    // row-scrape for migrated works: `created` is ALSO backfilled here so
-    // existing consumers (home.html work.created, the JSON 'created' key)
-    // keep working unchanged.
-    v = fm["started"];
-    if (v !== undefined && !isNull(v)) {
-      const startedVal = v.trim();
-      started = startedVal;
-      created = startedVal;
-    }
-
-    // minimum_grade: frontmatter-first; legacy fallback reuses the EXISTING
-    // header-blockquote scan (parseMinimumGrade) -- its role in the
-    // sub-minimum Blocked-gate derivation (findSubminimumGate) is UNCHANGED;
-    // this is a separate exposure of the same value onto the model.
-    v = fm["minimum_grade"];
-    if (v !== undefined && !isNull(v)) {
-      minimumGrade = v.trim().toUpperCase();
-    } else {
-      const legacyGrade = parseMinimumGrade(text);
-      if (legacyGrade) minimumGrade = legacyGrade;
-    }
-
-    // user_approved: frontmatter yes/no/true/false (case-insensitive) -> bool;
-    // legacy header-blockquote '**User Approved:**' line as fallback.
-    // Work-level approval, distinct from the KB's summary_approved.
-    v = fm["user_approved"];
-    if (v !== undefined) {
-      userApproved = parseBoolYesno(v);
-    } else {
-      const legacyVal = parseHeaderBoldField(text, "User Approved");
-      if (legacyVal !== null && !isNull(legacyVal)) {
-        userApproved = parseBoolYesno(legacyVal);
+  // lifecycle_history (AUTHORED) -> pw.created: the first entry (append-only,
+  // newest LAST per the template) whose event is "Work created".
+  if (lifecycleHistory) {
+    for (const entry of lifecycleHistory) {
+      if (!entry || typeof entry !== "object" || Array.isArray(entry)) continue;
+      const event = entry.event;
+      if (typeof event === "string" && event.trim().toLowerCase() === "work created") {
+        const dateVal = entry.date;
+        if (typeof dateVal === "string" && !isNull(dateVal)) {
+          pw.created = dateVal;
+        }
+        break;
       }
     }
   }
 
-  return {
-    lifecycle,
-    phase,
-    activeSkill,
-    updated,
-    pauseReason,
-    blockReason,
-    blockArtifact,
-    tasks,
-    pendingInputs,
-    sourceMode,
-    parseWarnings,
-    workPath,
-    recipe,
-    features,
-    deliverables,
-    created,
-    kind,
-    started,
-    minimumGrade,
-    userApproved,
-  };
+  // qa (flattened-Lite-only AUTHORED Cross-phase Q&A; absent/DERIVED on the
+  // full path, where the hierarchical assembly unions per-delivery Q&A
+  // instead) -> pendingInputs, Pending entries only.
+  const qaList = data.qa;
+  if (Array.isArray(qaList)) {
+    for (const entry of qaList) {
+      if (!entry || typeof entry !== "object" || Array.isArray(entry)) continue;
+      const stateVal = entry.state;
+      if (typeof stateVal === "string" && stateVal.trim().toLowerCase() === "pending") {
+        pw.pendingInputs.push({
+          question_id: qaQuestionId(entry.id),
+          category: noneIfNull(entry.category),
+          impact: noneIfNull(entry.impact),
+          context: noneIfNull(entry.context),
+          suggested: noneIfNull(entry.suggested),
+        });
+      }
+    }
+  }
+
+  return pw;
 }
 
 // ---------------------------------------------------------------------------
@@ -2835,7 +2972,7 @@ function slugFromWorkId(workId) {
 // ---------------------------------------------------------------------------
 
 export function readRepo(root) {
-  // Thin wrapper: run full pass, discard STATE.md cache, return model only.
+  // Thin wrapper: run full pass, discard STATE.yml cache, return model only.
   // Signature and return type are UNCHANGED (DR-1/DD-3/NFR4 satisfied by _readRepoFull).
   return _readRepoFull(root).model;
 }
@@ -2844,7 +2981,7 @@ function _readRepoFull(root) {
   // Run the full always-on repo read pass.
   // Returns { model, stateCache } where stateCache maps workId -> [stateText, statePathLabel].
   // The cache is a by-product (zero extra I/O); readRepoDetail uses it to satisfy
-  // DR-1/DD-3/NFR4 (raw_state reuses bytes already read; no re-read of STATE.md).
+  // DR-1/DD-3/NFR4 (raw_state reuses bytes already read; no re-read of STATE.yml).
 
   // Normalize: accept repo root or .aid/ dir itself
   let resolvedRoot = resolve(root);
@@ -2948,7 +3085,7 @@ function _readRepoFull(root) {
   // WorkModel is tagged with branchLabel. Cross-root merge of same work_id is Step 6.
   const worktreeRoots = _enumerateWorktreeRoots(resolvedRoot);
 
-  // Steps 5a-5g: PER WORK -- parse STATE.md; build WorkModel list (pre-reconcile).
+  // Steps 5a-5g: PER WORK -- parse STATE.yml; build WorkModel list (pre-reconcile).
   // Intermediate accumulator: maps work_id -> [[WorkModel, stateText, stateLabel], ...]
   const workCopies = {}; // work_id -> array of [WorkModel, stateText, stateLabel]
 
@@ -2986,7 +3123,7 @@ function _readRepoFull(root) {
   // Single-copy works pass through _reconcileSameWork unchanged (trivial case).
   const works = [];
   const fallbackWorks = [];
-  // Build per-work STATE.md cache as a by-product of the always-on pass.
+  // Build per-work STATE.yml cache as a by-product of the always-on pass.
   const stateCache = {};
 
   for (const workId of Object.keys(workCopies)) {
@@ -3032,8 +3169,8 @@ function _taskStopRequested(workDir, workId, taskId) {
   // the Python twin's `_task_stop_requested` (reader.py) performs the
   // byte-identical stat via `work_dir.parent.parent`.
   //
-  // Never parsed from / written to STATE.md (the control file is a new
-  // control-artifact class, outside STATE.md's C1 single-writer scope -- see
+  // Never parsed from / written to STATE.yml (the control file is a new
+  // control-artifact class, outside STATE.yml's C1 single-writer scope -- see
   // feature-008 SPEC.md "C1 scope note"). Fail-safe: a missing `.control/`
   // directory, a missing signal file, or any error all yield false -- never a
   // parse warning, never a thrown exception (mirrors the reader's
@@ -3047,6 +3184,45 @@ function _taskStopRequested(workDir, workId, taskId) {
 }
 
 function readWork(workDir, workId) {
+  const statePathLabel = ".aid/works/" + workId + "/STATE.yml";
+  const statePath = join(workDir, "STATE.yml");
+
+  // SP-10: one stat here, reused below (the monolithic branch's own
+  // presence check and the legacy-detection guard immediately below both
+  // consult this SAME result -- never re-stat the same path twice in one
+  // readWork call). KI-002 ruling: this is the ONE stat AC-6/SP-10 accepts
+  // as newly added -- it is the mechanism the mandated legacy diagnosis
+  // requires and cannot be produced from anything else. Mirrors reader.py's
+  // state_exists (task-003); the Node twin keeps the SAME single-stat
+  // posture rather than an EAFP read-then-catch alternative (KI-002).
+  let stateExists = false;
+  try {
+    stateExists = statSync(statePath).isFile();
+  } catch (_) {
+    stateExists = false;
+  }
+
+  // Legacy detection (SP-9): STATE.md present, STATE.yml absent -> diagnose,
+  // don't parse. This runs FIRST, before any layout routing: a work
+  // directory holding the retired STATE.md with no sibling STATE.yml is
+  // diagnosed regardless of what its OTHER files (BLUEPRINT.md,
+  // deliveries/) would otherwise suggest about its layout.
+  if (!stateExists) {
+    let legacyExists = false;
+    try {
+      legacyExists = statSync(join(workDir, "STATE.md")).isFile();
+    } catch (_) {
+      legacyExists = false;
+    }
+    if (legacyExists) {
+      const parseWarnings = [
+        workId + ": legacy STATE.md found with no STATE.yml sibling; " +
+        "run 'aid update' to migrate this work; returning minimal WorkModel.",
+      ];
+      return [_minimalWorkModel(workId), parseWarnings, 0, "", statePathLabel];
+    }
+  }
+
   // Pillar 6: hierarchy detection (per-work, presence-based)
   if (_detectHierarchy(workDir)) {
     return _readWorkHierarchical(workDir, workId);
@@ -3059,20 +3235,11 @@ function readWork(workDir, workId) {
   }
 
   // --- Legacy monolithic path (preserved behavior) ---
-  const statePath = join(workDir, "STATE.md");
-  const statePathLabel = ".aid/works/" + workId + "/STATE.md";
   const parseWarnings = [];
   let bytesRead = 0;
 
-  let isFile = false;
-  try {
-    isFile = statSync(statePath).isFile();
-  } catch (_) {
-    isFile = false;
-  }
-
-  if (!isFile) {
-    parseWarnings.push(workId + ": STATE.md not found; returning minimal WorkModel.");
+  if (!stateExists) {
+    parseWarnings.push(workId + ": STATE.yml not found; returning minimal WorkModel.");
     return [_minimalWorkModel(workId), parseWarnings, 0, "", statePathLabel];
   }
 
@@ -3083,11 +3250,11 @@ function readWork(workDir, workId) {
     bytesRead = raw.length;
     text = raw.toString("utf-8");
   } catch (exc) {
-    parseWarnings.push(workId + ": STATE.md read error (" + exc + "); returning minimal WorkModel.");
+    parseWarnings.push(workId + ": STATE.yml read error (" + exc + "); returning minimal WorkModel.");
     return [_minimalWorkModel(workId), parseWarnings, 0, "", statePathLabel];
   }
 
-  const pw = parseStateText(text, workId, workDir);
+  const pw = parseStateMd(text, workId, workDir);
   parseWarnings.push(...pw.parseWarnings);
 
   const name = slugFromWorkId(workId);
@@ -3392,9 +3559,10 @@ const RE_DELIVERY_DIR = /^delivery-(\d+)$/i;
 const RE_TASK_DIR_H = /^(task-\d+)$/i;
 
 function _detectHierarchy(workDir) {
-  // Return true if this work has the new per-unit STATE.md hierarchy.
-  // Detection: if ANY deliveries/delivery-NNN/tasks/task-NNN/STATE.md exists under workDir.
-  // Presence-based, per-work. Never throws.
+  // Return true if this work has the new per-unit STATE.yml hierarchy.
+  // Detection: if ANY deliveries/delivery-NNN/tasks/task-NNN/STATE.yml exists under workDir.
+  // Presence-based, per-work. Never throws. Filename retargeted only
+  // (work-009-refactor task-004, SP-7) -- the rule itself is unchanged.
   try {
     const deliveriesDir = join(workDir, "deliveries");
     let entries;
@@ -3413,7 +3581,7 @@ function _detectHierarchy(workDir) {
       try { taskEntries = readdirSync(tasksDir); } catch (_) { continue; }
       for (const tname of taskEntries) {
         if (!RE_TASK_DIR_H.test(tname)) continue;
-        const taskStatePath = join(tasksDir, tname, "STATE.md");
+        const taskStatePath = join(tasksDir, tname, "STATE.yml");
         let isFile = false;
         try { isFile = statSync(taskStatePath).isFile(); } catch (_) { isFile = false; }
         if (isFile) return true;
@@ -3425,24 +3593,78 @@ function _detectHierarchy(workDir) {
   return false;
 }
 
+// Exported for the three-way parity test (bash + Python + Node on one corpus). Not
+// part of the consumed surface -- _detectFlat calls it internally.
+export function _declaredWorkPath(workDir) {
+  // Return the work-root STATE.yml `pipeline.path`, or null.
+  // Mirror reader.py _declared_work_path.
+  //
+  // STATE.yml only -- no legacy fallback, deliberately. SP-9 routes a work
+  // holding the retired markdown name with no sibling STATE.yml to the
+  // legacy-work detector in readWork, which runs BEFORE any layout routing and
+  // diagnoses rather than parses. A legacy work therefore never reaches
+  // _detectFlat, so a fallback here would be unreachable and contrary to that
+  // policy.
+  //
+  // Reads `pipeline.path` out of the nested tree via parseStateDocument -- the
+  // same D-3 subset engine every other state reader uses -- exactly as
+  // _applyPipelineIdentity does. Never throws (NFR7).
+  try {
+    const statePath = join(workDir, "STATE.yml");
+    let isFile = false;
+    try { isFile = statSync(statePath).isFile(); } catch (_) { isFile = false; }
+    if (!isFile) return null;
+    const text = readFileBounded(statePath).toString("utf8");
+    const [data] = parseStateDocument(text, { fileLabel: "STATE.yml" });
+    const pipeline = data && data.pipeline;
+    if (!pipeline || typeof pipeline !== "object") return null;
+    const v = pipeline.path;
+    if (typeof v !== "string") return null;
+    const s = v.trim().toLowerCase();
+    return s === "" ? null : s;
+  } catch (_) {
+    return null;
+  }
+}
+
 function _detectFlat(workDir) {
   // Return true if this work has the FLATTENED single-delivery layout (feature-001).
   // Mirror reader.py _detect_flat.
   //
-  // Detection rule (3-part; identical across all consumers): a work-root
-  // BLUEPRINT.md exists AND at least one tasks/task-NNN/DETAIL.md exists
-  // directly under the work root AND no `deliveries/` wrapper exists under
-  // the work root. This layout has no per-task STATE.md; this check does not
-  // look for one.
+  // DECLARED FIRST, inferred only as a fallback. The layout is a property of
+  // the WHOLE WORK, so it is read from the work-root STATE.yml
+  // (`pipeline.path: lite | full`) when that key is present. A declared value
+  // cannot be ambiguous; an inferred one can -- and inferring it from a FILE
+  // PRESENCE made an ordinary artifact load-bearing, so `BLUEPRINT.md` could
+  // not be retired or relocated without silently changing how three separate
+  // implementations classified the work.
   //
-  // Mirrors the SAME 3-part detection rule as `is_flat_layout()` in
+  // The surviving fallback is the original 3-part presence rule: a work-root
+  // BLUEPRINT.md exists AND at least one tasks/task-NNN/DETAIL.md exists
+  // directly under the work root AND no `deliveries/` wrapper exists. This
+  // layout has no per-task STATE.yml; the check does not look for one.
+  //
+  // This file already documented exactly this shape for the `workPath` FIELD
+  // ("stop inferring via _detectFlat/_detectHierarchy when present ... the
+  // fallback default for un-migrated works"); this extends it to the layout
+  // DISPATCH, which is what actually made the artifact load-bearing.
+  //
+  // The 3-part presence rule survives only for un-migrated works whose STATE.md
+  // predates the frontmatter block: a work-root BLUEPRINT.md exists AND at
+  // least one tasks/task-NNN/DETAIL.md exists directly under the work root AND
+  // no `deliveries/` wrapper exists.
+  //
+  // Mirrors the SAME rule as `is_flat_layout()` in
   // canonical/aid/scripts/execute/writeback-state.sh and reader.py's
   // `_detect_flat` (lockstep Python twin).
   //
-  // Presence-based, per-work. Mutually exclusive with _detectHierarchy by
-  // construction (this function explicitly asserts `deliveries/` absence,
-  // not just call-site ordering). Never throws.
+  // Mutually exclusive with _detectHierarchy by construction (the fallback
+  // explicitly asserts `deliveries/` absence, not just call-site ordering).
+  // Never throws.
   try {
+    const declared = _declaredWorkPath(workDir);
+    if (declared !== null) return declared === "lite";
+
     let blueprintIsFile = false;
     try { blueprintIsFile = statSync(join(workDir, "BLUEPRINT.md")).isFile(); } catch (_) { blueprintIsFile = false; }
     if (!blueprintIsFile) return false;
@@ -3474,112 +3696,88 @@ function _detectFlat(workDir) {
   return false;
 }
 
-// Regexes for hierarchical parsers (mirror parsers.py)
-const RE_TASK_STATE_SECTION = /^##\s+Task State\s*$/i;
-const RE_TS_STATE   = /^\s*-\s*\*\*State:\*\*\s*(.+)/i;
-const RE_TS_REVIEW  = /^\s*-\s*\*\*Review:\*\*\s*(.+)/i;
-const RE_TS_ELAPSED = /^\s*-\s*\*\*Elapsed:\*\*\s*(.+)/i;
-const RE_TS_NOTES   = /^\s*-\s*\*\*Notes:\*\*\s*(.+)/i;
+// Hierarchical per-unit STATE.yml parsers (work-009-refactor task-004,
+// porting task-003's Python parse_task_state_md / parse_delivery_state_md /
+// parse_tasks_lifecycle_md). No more per-section regexes or a legacy prose
+// scan: each file is parsed ONCE by parseStateDocument, then every scalar
+// and structure is read directly by key.
 
-const RE_DELIVERY_LIFECYCLE_SECTION = /^##\s+Delivery Lifecycle\s*$/i;
-const RE_DELIVERY_GATE_SECTION      = /^##\s+Delivery Gate\s*$/i;
-const RE_DELIVERY_CROSSPHASE_QA     = /^##\s+Cross-phase Q&A/i;
-const RE_DELIVERY_TASKS_STATE_H     = /^##\s+Tasks State\s*$/i;
-
-const RE_DL_STATE        = /^\s*-\s*\*\*State:\*\*\s*(.+)/i;
-const RE_DL_UPDATED      = /^\s*-\s*\*\*Updated:\*\*\s*(.+)/i;
-const RE_DL_BLOCK_REASON = /^\s*-\s*\*\*Block Reason:\*\*\s*(.+)/i;
-const RE_DL_BLOCK_ART    = /^\s*-\s*\*\*Block Artifact:\*\*\s*(.+)/i;
-
-const RE_DG_REVIEWER_TIER = /^\s*-\s*\*\*Reviewer Tier:\*\*\s*(.+)/i;
-const RE_DG_GRADE         = /^\s*-\s*\*\*Grade:\*\*\s*(.+)/i;
-const RE_DG_TIMESTAMP     = /^\s*-\s*\*\*Timestamp:\*\*\s*(.+)/i;
-
+// Valid SD-8 delivery lifecycle enum values (Pillar 1 / SD-8)
 const DELIVERY_STATE_VALUES = new Set([
   "Pending-Spec", "Specified", "Executing", "Gated", "Done", "Blocked",
 ]);
 
 function _parseTaskStateMd(text, taskId) {
-  // Mirror parsers.py parse_task_state_md.
-  // Returns { state, review, elapsed, notes, displayName, parseWarnings }
+  // Parse a task-level STATE.yml into a ParsedTaskState-shaped plain object.
+  // Twin of Python parse_task_state_md(). Structured read: the whole
+  // document is parsed once by parseStateDocument, then every top-level
+  // scalar and the quick_check / dispatch_log structures are read directly
+  // by key -- no prose fallback (a legacy STATE.md this task belongs to is
+  // diagnosed at the work level before this function is ever reached,
+  // SP-9). Returns { state, review, elapsed, notes, displayName,
+  // quickCheckReviewerTier, quickCheckFindings, dispatchLog, parseWarnings }.
   const pts = {
     state: TaskStatus.Unknown,
     review: null,
     elapsed: null,
     notes: null,
     displayName: null,
+    quickCheckReviewerTier: null,
+    quickCheckFindings: [],
+    dispatchLog: [],
     parseWarnings: [],
   };
 
   try {
-    let inTaskState = false;
-    for (const line of text.split("\n")) {
-      if (RE_TASK_STATE_SECTION.test(line)) {
-        inTaskState = true;
-        continue;
-      }
-      if (RE_SECTION.test(line)) {
-        inTaskState = false;
-        continue;
-      }
-      if (!inTaskState) continue;
+    const label = taskId ? taskId + "/STATE.yml" : "STATE.yml";
+    const [data, warnings] = parseStateDocument(text, { fileLabel: label });
+    pts.parseWarnings.push(...warnings);
 
-      let m;
-      if ((m = line.match(RE_TS_STATE))) {
-        pts.state = parseTaskStatus(m[1].trim());
-        continue;
-      }
-      if ((m = line.match(RE_TS_REVIEW))) {
-        const val = m[1].trim();
-        pts.review = isNull(val) ? null : val;
-        continue;
-      }
-      if ((m = line.match(RE_TS_ELAPSED))) {
-        const val = m[1].trim();
-        pts.elapsed = isNull(val) ? null : val;
-        continue;
-      }
-      if ((m = line.match(RE_TS_NOTES))) {
-        const val = m[1].trim();
-        pts.notes = isNull(val) ? null : val;
-        continue;
-      }
-    }
-
-    // Frontmatter-first override (task-002): applied after the legacy prose
-    // scan so frontmatter wins whenever both are present.
-    const fm = parseFrontmatterScalars(text);
-    let v = fm["state"];
-    if (v !== undefined && !isNull(v)) {
+    let v = data.state;
+    if (typeof v === "string" && !isNull(v)) {
       pts.state = parseTaskStatus(v.trim());
     }
-    v = fm["review"];
-    if (v !== undefined) {
-      const vv = v.trim();
-      pts.review = isNull(vv) ? null : vv;
-    }
-    v = fm["elapsed"];
-    if (v !== undefined) {
-      const vv = v.trim();
-      pts.elapsed = isNull(vv) ? null : vv;
-    }
-    v = fm["notes"];
-    if (v !== undefined) {
-      const vv = v.trim();
-      pts.notes = isNull(vv) ? null : vv;
+
+    v = data.review;
+    if (typeof v === "string") pts.review = isNull(v) ? null : v;
+
+    v = data.elapsed;
+    if (typeof v === "string") pts.elapsed = isNull(v) ? null : v;
+
+    v = data.notes;
+    if (typeof v === "string") pts.notes = isNull(v) ? null : v;
+
+    v = data.display_name;
+    if (typeof v === "string") pts.displayName = isNull(v) ? null : v;
+
+    const quickCheck = data.quick_check;
+    if (quickCheck && typeof quickCheck === "object" && !Array.isArray(quickCheck)) {
+      const tier = quickCheck.reviewer_tier;
+      if (typeof tier === "string" && !isNull(tier)) pts.quickCheckReviewerTier = tier;
+
+      const rawFindings = quickCheck.findings;
+      if (Array.isArray(rawFindings)) {
+        for (const f of rawFindings) {
+          if (!f || typeof f !== "object" || Array.isArray(f)) continue;
+          const severityRaw = f.severity;
+          pts.quickCheckFindings.push({
+            severity: parseSeverity(typeof severityRaw === "string" ? severityRaw : ""),
+            description: typeof f.description === "string" ? f.description.trim() : "",
+            location: noneIfNull(f.source),
+            disposition: noneIfNull(f.disposition),
+            reviewer_tier: pts.quickCheckReviewerTier,
+          });
+        }
+      }
     }
 
-    // feature-005 (work-017 task-008): display_name is a NEW frontmatter-only
-    // key -- no legacy prose bullet form exists, so it is read only here (no
-    // body-scan counterpart above, unlike state/review/elapsed/notes).
-    v = fm["display_name"];
-    if (v !== undefined) {
-      const vv = v.trim();
-      pts.displayName = isNull(vv) ? null : vv;
+    const dispatchLog = data.dispatch_log;
+    if (Array.isArray(dispatchLog)) {
+      pts.dispatchLog = dispatchLog.filter((d) => d && typeof d === "object" && !Array.isArray(d));
     }
   } catch (exc) {
     pts.parseWarnings.push(
-      taskId + ": error parsing task STATE.md (" + exc + "); returning best-effort task state"
+      taskId + ": error parsing task STATE.yml (" + exc + "); returning best-effort task state"
     );
   }
 
@@ -3587,9 +3785,19 @@ function _parseTaskStateMd(text, taskId) {
 }
 
 function _parseDeliveryStateMd(text, deliveryId) {
-  // Mirror parsers.py parse_delivery_state_md.
-  // Returns { deliveryState, updated, blockReason, blockArtifact,
-  //           gateGrade, gateReviewerTier, gateTimestamp, pendingInputs, tasks, parseWarnings }
+  // Parse a delivery-level STATE.yml into a ParsedDeliveryState-shaped plain
+  // object. Twin of Python parse_delivery_state_md(). Structured read:
+  //   - delivery_state (top-level scalar, SD-8 enum)
+  //   - gate_tier / gate_grade / gate_timestamp (top-level scalars)
+  //   - delivery_lifecycle.updated / .block_reason / .block_artifact
+  //   - delivery_gate.issue_list
+  //   - qa -> pendingInputs (Pending entries only)
+  // deliveryState is the INDEPENDENTLY AUTHORED SD-8 enum, NOT derived from
+  // the task rollup (SD-9); pds.tasks stays [] always (the derived Tasks
+  // State rollup is never authored in this file). Called by BOTH the
+  // hierarchical path (deliveries/delivery-NNN/STATE.yml) and the flat path
+  // (the work-root STATE.yml itself, whose delivery_lifecycle/delivery_gate/
+  // qa keys are AUTHORED directly for the single implicit delivery).
   const pds = {
     deliveryState: null,
     updated: null,
@@ -3598,208 +3806,87 @@ function _parseDeliveryStateMd(text, deliveryId) {
     gateGrade: null,
     gateReviewerTier: null,
     gateTimestamp: null,
+    deliveryGateIssueList: [],
     pendingInputs: [],
     tasks: [],
     parseWarnings: [],
   };
 
   try {
-    let inLifecycle = false;
-    let inGate = false;
-    let inCrossphase = false;
-    let inTasks = false;
-    let tasksHeaderSeen = false;
-    let currentQId = null;
-    let currentQ = {};
+    const label = deliveryId ? deliveryId + "/STATE.yml" : "STATE.yml";
+    const [data, warnings] = parseStateDocument(text, { fileLabel: label });
+    pds.parseWarnings.push(...warnings);
 
-    function flushQ() {
-      if (currentQId && (currentQ.state || "").toLowerCase() === "pending") {
-        pds.pendingInputs.push({
-          question_id: currentQId,
-          category: currentQ.category || null,
-          impact: currentQ.impact || null,
-          context: currentQ.context || null,
-          suggested: currentQ.suggested || null,
-        });
-      }
-      currentQId = null;
-      currentQ = {};
-    }
-
-    for (const line of text.split("\n")) {
-      if (RE_DELIVERY_LIFECYCLE_SECTION.test(line)) {
-        flushQ();
-        inLifecycle = true; inGate = false; inCrossphase = false; inTasks = false;
-        continue;
-      }
-      if (RE_DELIVERY_GATE_SECTION.test(line)) {
-        flushQ();
-        inLifecycle = false; inGate = true; inCrossphase = false; inTasks = false;
-        continue;
-      }
-      if (RE_DELIVERY_CROSSPHASE_QA.test(line)) {
-        flushQ();
-        inLifecycle = false; inGate = false; inCrossphase = true; inTasks = false;
-        continue;
-      }
-      if (RE_DELIVERY_TASKS_STATE_H.test(line)) {
-        flushQ();
-        inLifecycle = false; inGate = false; inCrossphase = false; inTasks = true;
-        tasksHeaderSeen = false;
-        continue;
-      }
-      if (RE_SECTION.test(line)) {
-        flushQ();
-        inLifecycle = false; inGate = false; inCrossphase = false; inTasks = false;
-        continue;
-      }
-
-      if (inLifecycle) {
-        let m;
-        if ((m = line.match(RE_DL_STATE))) {
-          const raw = m[1].trim();
-          if (DELIVERY_STATE_VALUES.has(raw)) {
-            pds.deliveryState = raw;
-          } else if (!raw.includes("|") && raw) {
-            pds.parseWarnings.push(
-              deliveryId + ": unknown Delivery Lifecycle State '" + raw + "'"
-            );
-          }
-          continue;
-        }
-        if ((m = line.match(RE_DL_UPDATED))) {
-          const val = m[1].trim();
-          pds.updated = isNull(val) ? null : val;
-          continue;
-        }
-        if ((m = line.match(RE_DL_BLOCK_REASON))) {
-          const val = m[1].trim();
-          pds.blockReason = isNull(val) ? null : val;
-          continue;
-        }
-        if ((m = line.match(RE_DL_BLOCK_ART))) {
-          const val = m[1].trim();
-          pds.blockArtifact = isNull(val) ? null : val;
-          continue;
-        }
-        continue;
-      }
-
-      if (inGate) {
-        let m;
-        if ((m = line.match(RE_DG_REVIEWER_TIER)) && pds.gateReviewerTier === null) {
-          const val = m[1].trim();
-          const split = val ? val.split(/\s+/)[0] : null;
-          pds.gateReviewerTier = split && !isNull(split) ? split : null;
-          continue;
-        }
-        if ((m = line.match(RE_DG_GRADE)) && pds.gateGrade === null) {
-          const val = m[1].trim();
-          const split = val ? val.split(/\s+/)[0] : null;
-          if (split && !isNull(split) && split.toLowerCase() !== "pending") {
-            pds.gateGrade = split;
-          }
-          continue;
-        }
-        if ((m = line.match(RE_DG_TIMESTAMP)) && pds.gateTimestamp === null) {
-          const val = m[1].trim();
-          pds.gateTimestamp = isNull(val) ? null : val;
-          continue;
-        }
-        continue;
-      }
-
-      if (inCrossphase) {
-        let m;
-        if ((m = line.match(RE_QN_HEADER))) {
-          flushQ();
-          currentQId = m[1];
-          currentQ = {};
-          continue;
-        }
-        if (currentQId) {
-          // Accept both "State:" (new) and "Status:" (legacy) for Q&A state
-          m = line.match(/^\s*-\s*\*\*(?:State|Status):\*\*\s*(.+)/i);
-          if (m) { currentQ.state = m[1].trim(); continue; }
-          if ((m = line.match(RE_QN_CAT)))     { currentQ.category  = m[1].trim(); continue; }
-          if ((m = line.match(RE_QN_IMPACT)))   { currentQ.impact    = m[1].trim(); continue; }
-          if ((m = line.match(RE_QN_CONTEXT)))  { currentQ.context   = m[1].trim(); continue; }
-          if ((m = line.match(RE_QN_SUGGEST)))  { currentQ.suggested = m[1].trim(); continue; }
-        }
-        continue;
-      }
-
-      if (inTasks) {
-        // Parse derived task rollup table (same column layout as work-level Tasks table)
-        const stripped = line.trim();
-        if (!stripped.startsWith("|")) continue;
-        if (RE_TABLE_SEP.test(stripped)) continue;
-        const cols = stripped.replace(/^\||\|$/g, "").split("|").map(c => c.trim());
-        if (cols.length < 2) continue;
-        if ((cols[0] === "#" || cols[0] === "") && !tasksHeaderSeen) {
-          tasksHeaderSeen = true;
-          continue;
-        }
-        tasksHeaderSeen = true;
-        if (cols.some(c => c.includes(NONE_YET))) continue;
-        function dcol(idx) {
-          if (idx < cols.length) { const v = cols[idx].trim(); return isNull(v) ? null : v; }
-          return null;
-        }
-        const taskId = dcol(1) || dcol(0) || "";
-        if (!taskId || taskId === "#") continue;
-        const statusStr = dcol(4) || "";
-        pds.tasks.push({
-          task_id: taskId,
-          type: dcol(2) || "",
-          wave: dcol(3),
-          status: parseTaskStatus(statusStr),
-          review_grade: dcol(5),
-          elapsed: dcol(6),
-          notes: dcol(7),
-        });
-        continue;
-      }
-    }
-
-    flushQ();
-
-    // Frontmatter-first override (task-002): applied after the legacy prose
-    // scan so frontmatter wins whenever both are present.
-    const fm = parseFrontmatterScalars(text);
-    let v = fm["delivery_state"];
-    if (v !== undefined && !isNull(v)) {
+    let v = data.delivery_state;
+    if (typeof v === "string" && !isNull(v)) {
       const raw = v.trim();
       if (DELIVERY_STATE_VALUES.has(raw)) {
         pds.deliveryState = raw;
       } else {
         pds.parseWarnings.push(
-          deliveryId + ": unknown frontmatter delivery_state '" + raw + "'"
+          deliveryId + ": unknown delivery_state '" + raw + "'; expected one of " +
+          Array.from(DELIVERY_STATE_VALUES).sort().join(", ")
         );
       }
     }
 
-    v = fm["gate_tier"];
-    if (v !== undefined && !isNull(v)) {
+    v = data.gate_tier;
+    if (typeof v === "string" && !isNull(v)) {
       const split = v.trim().split(/\s+/);
       if (split.length && split[0]) pds.gateReviewerTier = split[0];
     }
 
-    v = fm["gate_grade"];
-    if (v !== undefined && !isNull(v)) {
+    v = data.gate_grade;
+    if (typeof v === "string" && !isNull(v)) {
       const split = v.trim().split(/\s+/);
+      // Treat "Pending" placeholder as absent grade (pre-existing rule).
       if (split.length && split[0] && split[0].toLowerCase() !== "pending") {
         pds.gateGrade = split[0];
       }
     }
 
-    v = fm["gate_timestamp"];
-    if (v !== undefined && !isNull(v)) {
+    v = data.gate_timestamp;
+    if (typeof v === "string" && !isNull(v)) {
       pds.gateTimestamp = v.trim();
+    }
+
+    const deliveryLifecycle = data.delivery_lifecycle;
+    if (deliveryLifecycle && typeof deliveryLifecycle === "object" && !Array.isArray(deliveryLifecycle)) {
+      v = deliveryLifecycle.updated;
+      if (typeof v === "string") pds.updated = isNull(v) ? null : v;
+      v = deliveryLifecycle.block_reason;
+      if (typeof v === "string") pds.blockReason = isNull(v) ? null : v;
+      v = deliveryLifecycle.block_artifact;
+      if (typeof v === "string") pds.blockArtifact = isNull(v) ? null : v;
+    }
+
+    const deliveryGate = data.delivery_gate;
+    if (deliveryGate && typeof deliveryGate === "object" && !Array.isArray(deliveryGate)) {
+      const issueList = deliveryGate.issue_list;
+      if (Array.isArray(issueList)) {
+        pds.deliveryGateIssueList = issueList.filter((i) => typeof i === "string");
+      }
+    }
+
+    const qaList = data.qa;
+    if (Array.isArray(qaList)) {
+      for (const entry of qaList) {
+        if (!entry || typeof entry !== "object" || Array.isArray(entry)) continue;
+        const stateVal = entry.state;
+        if (typeof stateVal === "string" && stateVal.trim().toLowerCase() === "pending") {
+          pds.pendingInputs.push({
+            question_id: qaQuestionId(entry.id),
+            category: noneIfNull(entry.category),
+            impact: noneIfNull(entry.impact),
+            context: noneIfNull(entry.context),
+            suggested: noneIfNull(entry.suggested),
+          });
+        }
+      }
     }
   } catch (exc) {
     pds.parseWarnings.push(
-      deliveryId + ": error parsing delivery STATE.md (" + exc + "); returning best-effort delivery state"
+      deliveryId + ": error parsing delivery STATE.yml (" + exc + "); returning best-effort delivery state"
     );
   }
 
@@ -3807,87 +3894,50 @@ function _parseDeliveryStateMd(text, deliveryId) {
 }
 
 // ---------------------------------------------------------------------------
-// feature-001 (flattened single-delivery layout): ### Tasks lifecycle parser
-// Mirror parsers.py parse_tasks_lifecycle_md.
+// feature-001 (flattened single-delivery layout): `tasks_lifecycle` mapping
+// read. Twin of Python parse_tasks_lifecycle_md().
 //
-// The flat layout has no per-task STATE.md and no per-delivery STATE.md -- the
-// promoted ## Delivery Lifecycle / ## Delivery Gate blocks (parsed above via
-// _parseDeliveryStateMd, unchanged) plus a ### Tasks lifecycle SUBSECTION live
-// directly in the work-root STATE.md. This table REPLACES the per-task
-// STATE.md's ## Task State section, but uses a NARROWER column layout (no
-// leading # / Type / Wave columns -- type comes from DETAIL.md, wave is the
-// synthesized delivery-001 for every task in this layout):
-//
-//   | Task | State | Review | Elapsed | Notes | Name |
-//
-// Name (feature-005, work-017 task-008) is the trailing col 5 (0-indexed) --
-// a legacy 5-column row (pre-feature-005) yields displayName null.
+// The flat layout has no per-task STATE.yml and no per-delivery STATE.yml --
+// the promoted delivery_lifecycle / delivery_gate keys (read above via
+// _parseDeliveryStateMd, unchanged) plus a tasks_lifecycle mapping (keyed by
+// task-NNN, D-3 shape S3) live directly in the work-root STATE.yml. This
+// mapping REPLACES the per-task STATE.yml's top-level scalars for the
+// flattened path. Called ONLY by the flat reader path (_readWorkFlat).
 // ---------------------------------------------------------------------------
-
-const RE_TASKS_LIFECYCLE_SECTION = /^###\s+Tasks lifecycle\s*$/i;
-// Any ## or ### heading ends the ### Tasks lifecycle subsection (nested under
-// ## Delivery Lifecycle, so a plain ## heading -- e.g. ## Delivery Gate --
-// must also close it, not just another ###).
-const RE_SECTION_2_OR_3 = /^#{2,3}\s+\S/;
 
 function parseTasksLifecycleMd(text) {
   // Returns [taskIdLowerToState, parseWarnings] where taskIdLowerToState maps
-  // task_id.toLowerCase() -> { state, review, elapsed, notes }.
-  // Header/separator rows and the _none yet_ placeholder row are skipped.
+  // task_id.toLowerCase() -> { state, review, elapsed, notes, displayName }.
   // Never throws (NFR7).
   const result = {};
   const warnings = [];
 
   try {
-    let inSection = false;
-    let headerSeen = false;
+    const [data, docWarnings] = parseStateDocument(text, { fileLabel: "STATE.yml" });
+    warnings.push(...docWarnings);
 
-    for (const line of text.split("\n")) {
-      if (RE_TASKS_LIFECYCLE_SECTION.test(line)) {
-        inSection = true;
-        headerSeen = false;
-        continue;
+    const tasksLifecycle = data.tasks_lifecycle;
+    if (tasksLifecycle && typeof tasksLifecycle === "object" && !Array.isArray(tasksLifecycle)) {
+      for (const [taskId, fields] of Object.entries(tasksLifecycle)) {
+        if (!fields || typeof fields !== "object" || Array.isArray(fields)) continue;
+
+        function field(name) {
+          const v = fields[name];
+          if (typeof v === "string") return isNull(v) ? null : v;
+          return null;
+        }
+
+        result[String(taskId).toLowerCase()] = {
+          state: parseTaskStatus(field("state") || ""),
+          review: field("review"),
+          elapsed: field("elapsed"),
+          notes: field("notes"),
+          displayName: field("display_name"),
+        };
       }
-      if (inSection && RE_SECTION_2_OR_3.test(line)) {
-        inSection = false;
-        continue;
-      }
-      if (!inSection) continue;
-
-      const stripped = line.trim();
-      if (!stripped.startsWith("|")) continue;
-      if (RE_TABLE_SEP.test(stripped)) continue;
-
-      const cols = stripped.replace(/^\||\|$/g, "").split("|").map(c => c.trim());
-      if (cols.length < 2) continue;
-
-      if (!headerSeen) {
-        headerSeen = true;
-        continue;
-      }
-      if (cols.some(c => c.includes(NONE_YET))) continue;
-
-      function fcol(idx) {
-        if (idx < cols.length) { const v = cols[idx].trim(); return isNull(v) ? null : v; }
-        return null;
-      }
-
-      const taskId = fcol(0) || "";
-      if (!taskId || taskId.toLowerCase() === "task") continue;
-
-      // feature-005 (work-017 task-008): trailing Name column (col 5); a
-      // legacy 5-column row (no Name column authored yet) yields
-      // fcol(5) === null -> displayName null -> shortName/taskId fallback.
-      result[taskId.toLowerCase()] = {
-        state: parseTaskStatus(fcol(1) || ""),
-        review: fcol(2),
-        elapsed: fcol(3),
-        notes: fcol(4),
-        displayName: fcol(5),
-      };
     }
   } catch (exc) {
-    warnings.push("error parsing ### Tasks lifecycle table (" + exc + "); returning best-effort");
+    warnings.push("error parsing 'tasks_lifecycle' mapping (" + exc + "); returning best-effort");
   }
 
   return [result, warnings];
@@ -3934,10 +3984,111 @@ function _parseTaskSpecType(specText) {
   return "";
 }
 
+export function _deriveLanesFromDetails(details) {
+  // Derive {taskId: wave} from task DETAIL bodies, by topological sort.
+  // Mirror reader.py _derive_lanes_from_details.
+  //
+  // `details` maps a task id ('task-001') to that task's DETAIL.md text. Each task's
+  // `**Depends on:**` field IS the graph, so a work needs no stored execution graph to
+  // have one: the flattened/Lite layout has a single delivery and therefore no
+  // sequencing decision to record.
+  //
+  // Mirrors canonical/aid/scripts/execute/derive-waves.sh, whose awk pass is the
+  // reference implementation, INCLUDING its two non-obvious rules:
+  //   - a dependency naming a task absent from `details` is treated as already
+  //     SATISFIED, since deliveries run in series
+  //   - waves start at 1 and every task lands in exactly one wave
+  //
+  // A CYCLE yields {} rather than a partial map or a throw (NFR7): a partial map would
+  // show some tasks laned and others not, reading as a problem with the tasks rather
+  // than with the graph.
+  try {
+    const depRe = /^\*\*Depends on:\*\*(.*)$/im;
+    const taskRe = /task-\d+/gi;
+
+    const deps = {};
+    for (const [taskId, text] of Object.entries(details)) {
+      const key = taskId.toLowerCase();
+      const found = new Set();
+      const m = (text || "").match(depRe);
+      if (m) {
+        for (const hit of m[1].match(taskRe) || []) found.add(hit.toLowerCase());
+      }
+      // A task never depends on itself; a self-edge would deadlock the sort.
+      found.delete(key);
+      deps[key] = found;
+    }
+
+    const lanes = {};
+    const total = Object.keys(deps).length;
+    let wave = 0;
+    while (Object.keys(lanes).length < total) {
+      wave++;
+      const ready = Object.keys(deps).filter((t) => {
+        if (t in lanes) return false;
+        for (const x of deps[t]) {
+          if (!(x in lanes) && x in deps) return false;
+        }
+        return true;
+      });
+      if (ready.length === 0) return {};   // cycle
+      for (const t of ready) lanes[t] = wave;
+    }
+    return lanes;
+  } catch (_) {
+    return {};
+  }
+}
+
+// Exported for the cross-runtime parity test only (its Python twin is importable as
+// a module-level function, so the Node side must be reachable too). Not part of the
+// reader's consumed surface -- readRepo/readRepoDetail call it internally.
+export function _parsePlanDeliveryTitles(planText) {
+  // Map deliveryId -> title from PLAN.md's delivery stanzas.
+  // Mirror reader.py _parse_plan_delivery_titles.
+  //
+  // PLAN.md now carries the delivery DEFINITION, so its stanza is the title's home;
+  // the retired per-delivery BLUEPRINT.md H1 is only consulted for works created
+  // before the fold.
+  //
+  // Two spellings, because the two layouts spell the stanza differently and both are
+  // current:
+  //   - nested:    '### delivery-001: Some Title'
+  //   - flattened: '- **Delivery:** delivery-001 -- Some Title'
+  // The flattened PLAN.md emits NO '### delivery-NNN' heading by design, so the
+  // bullet form is the only one it has.
+  //
+  // Template placeholders ('{Name}') are rejected, matching _parseDeliverySpecTitle.
+  const titles = {};
+  try {
+    const heading = /^#{2,}\s+(delivery-\d+)\s*:\s*(.+?)\s*$/i;
+    // Em dash written as \u2014, not literally: this file is ASCII-only enforced
+    // (test-ascii-only.sh). The escape is the same character to the regex engine.
+    const bullet = /^[-*]\s+\*\*Delivery:\*\*\s*(delivery-\d+)\s*(?:--|\u2014|-)\s*(.+?)\s*$/i;
+    for (const line of planText.split("\n")) {
+      const stripped = line.trim();
+      const m = stripped.match(heading) || stripped.match(bullet);
+      if (!m) continue;
+      const deliveryId = m[1].toLowerCase();
+      const title = m[2].trim();
+      // First stanza wins, as in the Python twin.
+      if (title && !title.startsWith("{") && !(deliveryId in titles)) {
+        titles[deliveryId] = title;
+      }
+    }
+  } catch (_) {
+    return {};
+  }
+  return titles;
+}
+
 function _parseDeliverySpecTitle(specText) {
   // Extract the delivery title from a delivery-level BLUEPRINT.md.
   // Mirror parsers.py _parse_delivery_spec_title.
   // Returns the title portion after '# ... delivery-NNN: Title', or null.
+  //
+  // LEGACY source, kept for works created before the delivery definition folded
+  // into PLAN.md's stanza. Callers prefer the PLAN.md title and only fall back here.
   try {
     for (const line of specText.split("\n")) {
       const stripped = line.trim();
@@ -3961,36 +4112,38 @@ function _readWorkFlat(workDir, workId) {
   // Assemble a WorkModel from the FLATTENED single-delivery layout (feature-001).
   //
   // Reads:
-  //   - workDir/STATE.md                  -- work-level lifecycle/triage/history, PLUS the
-  //                                           promoted ## Delivery Lifecycle (### Tasks
-  //                                           lifecycle) / ## Delivery Gate AUTHORED blocks
-  //                                           (single writer; no deliveries/ wrapper)
-  //   - workDir/tasks/task-NNN/DETAIL.md  -- task type / short-name (no per-task STATE.md --
-  //                                           mutable cells come from the work STATE.md
-  //                                           ### Tasks lifecycle table)
-  //   - workDir/BLUEPRINT.md              -- the single delivery's title (synthesized
-  //                                           DeliverableRef name)
+  //   - workDir/STATE.yml                 -- work-level lifecycle/history, PLUS the
+  //                                           promoted delivery_lifecycle (tasks_lifecycle)
+  //                                           / delivery_gate AUTHORED keys (single writer;
+  //                                           no deliveries/ wrapper)
+  //   - workDir/tasks/task-NNN/DETAIL.md  -- task type / short-name (no per-task STATE.yml --
+  //                                           mutable cells come from the work STATE.yml
+  //                                           tasks_lifecycle mapping)
+  //   - workDir/PLAN.md                   -- the single delivery's title, from its
+  //                                           `### delivery-NNN` stanza (synthesized
+  //                                           DeliverableRef name). Was BLUEPRINT.md;
+  //                                           that artifact is retired.
   //
   // Synthesizes exactly ONE DeliverableRef for delivery-001 (every task gets
   // wave="delivery-001", delivery=1) -- there is no deliveries/ wrapper to enumerate.
   //
   // pendingInputs is taken from pw.pendingInputs ONLY -- see reader.py docstring for
-  // why _parseDeliveryStateMd's own Cross-phase Q&A scan is intentionally NOT unioned
-  // here (would double-count the work's single shared ## Cross-phase Q&A section).
+  // why _parseDeliveryStateMd's own qa scan is intentionally NOT unioned here (would
+  // double-count the work's single shared qa list).
   //
   // Returns [workModel, parseWarnings, bytesRead, stateText, stateLabel]. Never raises.
-  const stateLabel = ".aid/works/" + workId + "/STATE.md";
+  const stateLabel = ".aid/works/" + workId + "/STATE.yml";
   const parseWarnings = [];
   let bytesRead = 0;
 
-  const statePath = join(workDir, "STATE.md");
+  const statePath = join(workDir, "STATE.yml");
   let workText = "";
   let workIsFile = false;
   try { workIsFile = statSync(statePath).isFile(); } catch (_) { workIsFile = false; }
 
   if (!workIsFile) {
     parseWarnings.push(
-      workId + ": STATE.md not found (flat mode); work-level lifecycle will be Unknown."
+      workId + ": STATE.yml not found (flat mode); work-level lifecycle will be Unknown."
     );
   } else {
     try {
@@ -3999,12 +4152,12 @@ function _readWorkFlat(workDir, workId) {
       workText = raw.toString("utf-8");
     } catch (exc) {
       parseWarnings.push(
-        workId + ": STATE.md read error (" + exc + "); work-level lifecycle will be Unknown."
+        workId + ": STATE.yml read error (" + exc + "); work-level lifecycle will be Unknown."
       );
     }
   }
 
-  const pw = parseStateText(workText, workId, workDir);
+  const pw = parseStateMd(workText, workId, workDir);
   parseWarnings.push(...pw.parseWarnings);
 
   const name = slugFromWorkId(workId);
@@ -4033,20 +4186,21 @@ function _readWorkFlat(workDir, workId) {
 
   // PF-5: parse PLAN.md execution graph for lane assignments. The flat PLAN.md's
   // top-level ## Execution Graph carries no wave-map fence / "### delivery-NNN
-  // Execution Graph" prose header, so this yields an empty map -- lane stays null
-  // for every task (harmless; no lane derivation is defined for the flat shape).
+  // Execution Graph" prose header, so this yields an empty map. It is no longer the
+  // last word: an empty map is filled by deriving lanes from the task DETAILs below,
+  // which is why this is `let` and not `const`.
   const planPath = join(workDir, "PLAN.md");
-  const [taskLaneMap, planBytes] = parseExecutionGraph(planPath);
+  let [taskLaneMap, planBytes] = parseExecutionGraph(planPath);
   bytesRead += planBytes;
 
-  // Parse the promoted ## Delivery Lifecycle / ## Delivery Gate blocks from the SAME
-  // work-root STATE.md text via the existing _parseDeliveryStateMd -- it keys on the
-  // exact headings regardless of which file they live in. Only pds.deliveryState is
+  // Parse the promoted delivery_lifecycle / delivery_gate keys from the SAME
+  // work-root STATE.yml text via the existing _parseDeliveryStateMd -- it reads the
+  // exact keys regardless of which file they live in. Only pds.deliveryState is
   // used (see function comment for why pds.pendingInputs is not unioned).
   const pds = _parseDeliveryStateMd(workText, "delivery-001");
   parseWarnings.push(...pds.parseWarnings);
 
-  // Parse the promoted ### Tasks lifecycle table (replaces per-task STATE.md)
+  // Parse the promoted tasks_lifecycle mapping (replaces per-task STATE.yml)
   const [tasksLifecycle, tlWarnings] = parseTasksLifecycleMd(workText);
   parseWarnings.push(...tlWarnings);
 
@@ -4077,27 +4231,40 @@ function _readWorkFlat(workDir, workId) {
     taskDirEntries = [];
   }
 
+  // Read every DETAIL.md ONCE, up front. Mirror reader.py: the per-task fields come
+  // from these texts, and the same texts derive the lane map -- the graph is the set of
+  // `**Depends on:**` fields, so it cannot be known until all of them are in hand.
+  const detailTexts = {};
   for (const [taskIdStr, taskDir] of taskDirEntries) {
-    // Read task DETAIL.md for short_name and type (no per-task STATE.md here)
     const taskDetailPath = join(taskDir, "DETAIL.md");
+    let isFile = false;
+    try { isFile = statSync(taskDetailPath).isFile(); } catch (_) { isFile = false; }
+    if (!isFile) continue;
+    try {
+      const raw = readFileBounded(taskDetailPath);
+      bytesRead += raw.length;
+      detailTexts[taskIdStr] = raw.toString("utf-8");
+    } catch (_) {
+      // pass
+    }
+  }
+
+  // Lanes on this layout are DERIVED, not read -- see reader.py for the full rationale.
+  // An authored map, where one exists, still wins; this only fills an empty one.
+  if (Object.keys(taskLaneMap).length === 0) {
+    taskLaneMap = _deriveLanesFromDetails(detailTexts);
+  }
+
+  for (const [taskIdStr, taskDir] of taskDirEntries) {
+    const detailText = detailTexts[taskIdStr];
     let shortName = null;
     let taskType = "";
-    let taskDetailIsFile = false;
-    try { taskDetailIsFile = statSync(taskDetailPath).isFile(); } catch (_) { taskDetailIsFile = false; }
-
-    if (taskDetailIsFile) {
-      try {
-        const raw = readFileBounded(taskDetailPath);
-        bytesRead += raw.length;
-        const detailText = raw.toString("utf-8");
-        shortName = _parseTaskSpecShortName(detailText);
-        taskType = _parseTaskSpecType(detailText);
-      } catch (_) {
-        // pass
-      }
+    if (detailText !== undefined) {
+      shortName = _parseTaskSpecShortName(detailText);
+      taskType = _parseTaskSpecType(detailText);
     }
 
-    // Mutable cells from the work-root STATE.md ### Tasks lifecycle table
+    // Mutable cells from the work-root STATE.yml tasks_lifecycle mapping
     const pts = tasksLifecycle[taskIdStr.toLowerCase()] || {
       state: TaskStatus.Unknown, review: null, elapsed: null, notes: null, displayName: null,
     };
@@ -4179,21 +4346,21 @@ function _readWorkFlat(workDir, workId) {
 
 function _readWorkHierarchical(workDir, workId) {
   // Mirror reader.py _read_work_hierarchical.
-  // Assemble a WorkModel from the per-unit STATE.md hierarchy.
+  // Assemble a WorkModel from the per-unit STATE.yml hierarchy.
   // Returns [workModel, parseWarnings, bytesRead, stateText, stateLabel].
-  const stateLabel = ".aid/works/" + workId + "/STATE.md";
+  const stateLabel = ".aid/works/" + workId + "/STATE.yml";
   const parseWarnings = [];
   let bytesRead = 0;
 
-  // Read work-level STATE.md (for Pipeline State / Lifecycle History / Triage)
-  const statePath = join(workDir, "STATE.md");
+  // Read work-level STATE.yml (for lifecycle / lifecycle_history)
+  const statePath = join(workDir, "STATE.yml");
   let workText = "";
   let workIsFile = false;
   try { workIsFile = statSync(statePath).isFile(); } catch (_) { workIsFile = false; }
 
   if (!workIsFile) {
     parseWarnings.push(
-      workId + ": STATE.md not found (hierarchical mode); work-level lifecycle will be Unknown."
+      workId + ": STATE.yml not found (hierarchical mode); work-level lifecycle will be Unknown."
     );
   } else {
     try {
@@ -4202,15 +4369,15 @@ function _readWorkHierarchical(workDir, workId) {
       workText = raw.toString("utf-8");
     } catch (exc) {
       parseWarnings.push(
-        workId + ": STATE.md read error (" + exc + "); work-level lifecycle will be Unknown."
+        workId + ": STATE.yml read error (" + exc + "); work-level lifecycle will be Unknown."
       );
     }
   }
 
-  // Parse work-level STATE.md for pipeline/lifecycle/triage fields
-  // (tasks[] from this parse are IGNORED in hierarchical mode; per-unit task STATE.md files
+  // Parse work-level STATE.yml for pipeline/lifecycle fields
+  // (tasks[] from this parse are IGNORED in hierarchical mode; per-unit task STATE.yml files
   // are authoritative)
-  const pw = parseStateText(workText, workId, workDir);
+  const pw = parseStateMd(workText, workId, workDir);
   parseWarnings.push(...pw.parseWarnings);
 
   const name = slugFromWorkId(workId);
@@ -4242,6 +4409,22 @@ function _readWorkHierarchical(workDir, workId) {
   const [taskLaneMap, planBytes] = parseExecutionGraph(planPath);
   bytesRead += planBytes;
 
+  // Delivery titles come from the same file. Its bytes are NOT added again --
+  // parseExecutionGraph above already counted this exact read, and counting it twice
+  // would overstate the byte budget. Mirrors reader.py.
+  let planDeliveryTitles = {};
+  {
+    let planIsFile = false;
+    try { planIsFile = statSync(planPath).isFile(); } catch (_) { planIsFile = false; }
+    if (planIsFile) {
+      try {
+        planDeliveryTitles = _parsePlanDeliveryTitles(readFileBounded(planPath).toString("utf-8"));
+      } catch (_) {
+        planDeliveryTitles = {};
+      }
+    }
+  }
+
   // Enumerate deliveries and their tasks from the hierarchy
   const allTasks = [];
   const allDeliverables = [];
@@ -4268,8 +4451,8 @@ function _readWorkHierarchical(workDir, workId) {
     const dm = deliveryId.match(RE_DELIVERY_DIR);
     const deliveryNumber = dm ? parseInt(dm[1], 10) : 0;
 
-    // Read delivery-level STATE.md
-    const deliveryStatePath = join(deliveryDir, "STATE.md");
+    // Read delivery-level STATE.yml
+    const deliveryStatePath = join(deliveryDir, "STATE.yml");
     let deliveryStateText = "";
     let deliveryStateIsFile = false;
     try { deliveryStateIsFile = statSync(deliveryStatePath).isFile(); } catch (_) { deliveryStateIsFile = false; }
@@ -4281,7 +4464,7 @@ function _readWorkHierarchical(workDir, workId) {
         deliveryStateText = raw.toString("utf-8");
       } catch (exc) {
         parseWarnings.push(
-          workId + "/" + deliveryId + ": STATE.md read error (" + exc + "); delivery lifecycle will be unknown."
+          workId + "/" + deliveryId + ": STATE.yml read error (" + exc + "); delivery lifecycle will be unknown."
         );
       }
     }
@@ -4317,8 +4500,8 @@ function _readWorkHierarchical(workDir, workId) {
     for (const [taskIdStr, taskDir] of taskDirEntries) {
       deliveryTaskCount++;
 
-      // Read task-level STATE.md
-      const taskStatePath = join(taskDir, "STATE.md");
+      // Read task-level STATE.yml
+      const taskStatePath = join(taskDir, "STATE.yml");
       let taskStateText = "";
       let taskStateIsFile = false;
       try { taskStateIsFile = statSync(taskStatePath).isFile(); } catch (_) { taskStateIsFile = false; }
@@ -4330,7 +4513,7 @@ function _readWorkHierarchical(workDir, workId) {
           taskStateText = raw.toString("utf-8");
         } catch (exc) {
           parseWarnings.push(
-            workId + "/" + deliveryId + "/" + taskIdStr + ": STATE.md read error (" + exc + "); task state will be Unknown."
+            workId + "/" + deliveryId + "/" + taskIdStr + ": STATE.yml read error (" + exc + "); task state will be Unknown."
           );
         }
       }
@@ -4377,21 +4560,29 @@ function _readWorkHierarchical(workDir, workId) {
       });
     }
 
-    // Build DeliverableRef for this delivery
-    const deliverySpecPath = join(deliveryDir, "BLUEPRINT.md");
+    // Build DeliverableRef for this delivery.
+    // Title resolution: PLAN.md stanza -> legacy BLUEPRINT.md H1 -> deliveryId.
+    // PLAN.md's stanza is the delivery definition now, so it is authoritative; the
+    // BLUEPRINT read survives only for works predating the fold.
     let deliveryName = deliveryId;
-    let deliverySpecIsFile = false;
-    try { deliverySpecIsFile = statSync(deliverySpecPath).isFile(); } catch (_) { deliverySpecIsFile = false; }
+    const planTitle = planDeliveryTitles[deliveryId.toLowerCase()];
+    if (planTitle) {
+      deliveryName = planTitle;
+    } else {
+      const deliverySpecPath = join(deliveryDir, "BLUEPRINT.md");
+      let deliverySpecIsFile = false;
+      try { deliverySpecIsFile = statSync(deliverySpecPath).isFile(); } catch (_) { deliverySpecIsFile = false; }
 
-    if (deliverySpecIsFile) {
-      try {
-        const raw = readFileBounded(deliverySpecPath);
-        bytesRead += raw.length;
-        const specText = raw.toString("utf-8");
-        const specName = _parseDeliverySpecTitle(specText);
-        if (specName) deliveryName = specName;
-      } catch (_) {
-        // pass
+      if (deliverySpecIsFile) {
+        try {
+          const raw = readFileBounded(deliverySpecPath);
+          bytesRead += raw.length;
+          const specText = raw.toString("utf-8");
+          const specName = _parseDeliverySpecTitle(specText);
+          if (specName) deliveryName = specName;
+        } catch (_) {
+          // pass
+        }
       }
     }
 
@@ -4699,15 +4890,15 @@ function _peekWorkUpdated(workDir, workId) {
   // Best-effort read of a work directory's Pipeline State `updated` field.
   // Used only by resolveWorkDir to break ties between worktree copies of the
   // same work_id (the winner rule needs `updated`, not a full WorkModel). Reads
-  // workDir/STATE.md -- present regardless of monolithic/flat/hierarchical
-  // layout, since all three read the work-root STATE.md for Pipeline State --
-  // and parses it with the SAME parseStateText() the always-on read path uses.
+  // workDir/STATE.yml -- present regardless of monolithic/flat/hierarchical
+  // layout, since all three read the work-root STATE.yml for lifecycle --
+  // and parses it with the SAME parseStateMd() the always-on read path uses.
   //
-  // Returns null on a missing STATE.md or any read/parse failure; never
+  // Returns null on a missing STATE.yml or any read/parse failure; never
   // throws. A null result only affects tie-break ordering, never candidate
   // inclusion -- the work_id directory's presence is the sole inclusion test
   // (WT-1).
-  const statePath = join(workDir, "STATE.md");
+  const statePath = join(workDir, "STATE.yml");
   let isFile = false;
   try {
     isFile = statSync(statePath).isFile();
@@ -4718,7 +4909,7 @@ function _peekWorkUpdated(workDir, workId) {
   try {
     const raw = readFileBounded(statePath);
     const text = raw.toString("utf-8");
-    return parseStateText(text, workId, workDir).updated;
+    return parseStateMd(text, workId, workDir).updated;
   } catch (_) {
     return null;
   }
@@ -4949,159 +5140,62 @@ function _buildRepoModel({ tool, repo, works, read }) {
 // ASCII-only source (shipped script posture; coding-standards.md).
 // ---------------------------------------------------------------------------
 
-// Section header regexes for forensic sections (twin of parsers.py)
-const RE_QUICK_CHECK_FINDINGS = /^##\s+Quick Check Findings\s*$/i;
-const RE_DELIVERY_GATES_SECTION = /^##\s+Delivery Gates\s*$/i;
-const RE_TASK_BLOCK_HEADER = /^###\s+(task-\S+)\s*$/i;
-const RE_DELIVERY_BLOCK_HEADER = /^###\s+(delivery-\d+[^\s]*)\s*$/i;
-
-const RE_FINDINGS_REVIEWER_TIER = /^\s*-\s*\*\*Reviewer Tier:\*\*\s*(.+)/i;
-const RE_GATE_GRADE = /^\s*-\s*\*\*Grade:\*\*\s*(.+)/i;
-const RE_GATE_REVIEWER_TIER = /^\s*-\s*\*\*Reviewer Tier:\*\*\s*(.+)/i;
-const RE_GATE_TIMESTAMP = /^\s*-\s*\*\*Timestamp:\*\*\s*(.+)/i;
-const RE_LOCATION = /\{([^}]+:[^}]*)\}/;
-
-// Severity normalization (twin of _parse_severity in parsers.py)
+// Severity normalization (twin of _parse_severity in parsers.py). Accepts
+// EITHER the bracketed legacy-bullet form ('[HIGH]') or the bare D-4
+// structured-field form ('HIGH', the on-disk quick_check.findings[].severity
+// value -- no brackets, per the task-state-template.yml comment "severity:
+// CRITICAL | HIGH"). Mirrors feature-002 DM-6: lower/unknown -> [MINOR]
+// neutral, never throws (NFR7). This is the twin-parity fix task-003 made in
+// Python's _parse_severity (the pre-refactor Node version recognized only
+// the bracketed form).
 function parseSeverity(tag) {
-  const normalized = tag.toUpperCase().trim();
+  let normalized = tag.toUpperCase().trim();
+  if (!normalized.startsWith("[")) {
+    normalized = "[" + normalized + "]";
+  }
   if (normalized === "[CRITICAL]" || normalized === "[HIGH]") return normalized;
   return "[MINOR]";
 }
 
-// Disposition tokens
-const DISPOSITION_TOKENS = ["Fixed-on-spot", "Deferred-to-gate"];
-
-// Parse one **Findings:** bullet into a Finding object (twin of _parse_finding_bullet)
-function parseFindingBullet(bulletText, reviewerTier) {
-  const text = bulletText.trim();
-  if (!text) return null;
-
-  // Extract leading bracketed tag: [SEVERITY]
-  const tagM = text.match(/^(\[\S+?\])\s+(.*)/);
-  let tag, rest;
-  if (tagM) {
-    tag = tagM[1];
-    rest = tagM[2].trim();
-  } else {
-    // No bracketed tag -- whole text is description with MINOR severity
-    return {
-      severity: "[MINOR]",
-      description: text,
-      location: null,
-      disposition: null,
-      reviewer_tier: reviewerTier,
-    };
-  }
-
-  const severity = parseSeverity(tag);
-
-  // Split on em-dash (U+2014, canonical) or legacy ' -- ' (ASCII double-dash).
-  // The canonical findings template uses U+2014; accept both for back-compat.
-  // \u2014 escape used (not literal em-dash) to satisfy the ASCII-only CI gate.
-  const segments = rest.split(/ (?:\u2014|--) /);
-  const description = segments.length > 0 ? segments[0].trim() : rest;
-
-  // Extract location from any segment: {file:line}
-  let location = null;
-  for (let i = 1; i < segments.length; i++) {
-    const lm = segments[i].match(RE_LOCATION);
-    if (lm) {
-      location = lm[1].trim();
-      break;
-    }
-  }
-
-  // Extract disposition
-  let disposition = null;
-  for (const seg of segments) {
-    const stripped = seg.trim();
-    for (const token of DISPOSITION_TOKENS) {
-      if (stripped === token || stripped.startsWith(token)) {
-        disposition = token;
-        break;
-      }
-    }
-    if (disposition) break;
-  }
-
-  return {
-    severity: severity,
-    description: description,
-    location: location,
-    disposition: disposition,
-    reviewer_tier: reviewerTier,
-  };
-}
-
-// DR-2: parse ## Quick Check Findings -> ### task-NNN -> **Findings:** bullets
-// Twin of parse_quick_check_findings in parsers.py (byte-parity minded)
+// DR-2: read quick_check.findings for the given task_id. Twin of Python
+// parse_quick_check_findings() (work-009-refactor task-003, retargeted to
+// keys). `quick_check` exists ONLY in a per-task STATE.yml (deliveries/
+// delivery-NNN/tasks/task-NNN/STATE.yml), never in the work-root file
+// `stateText` is always called with here (via the always-on pass's
+// state-text cache -- DR-1/NFR4, no re-read). So `data.quick_check` is
+// always absent for a current-shape work and this still returns [] --
+// pre-existing staleness preserved, not repaired (SPEC.md L-12).
 function parseQuickCheckFindings(stateText, taskId, parseWarnings) {
   const findings = [];
-  let inFindingsSection = false;
-  let inTaskBlock = false;
-  let inFindingsList = false;
-  let reviewerTier = null;
-  const taskIdLower = taskId.toLowerCase();
 
   try {
-    const lines = stateText.split("\n");
-    for (const line of lines) {
-      if (RE_QUICK_CHECK_FINDINGS.test(line)) {
-        inFindingsSection = true;
-        inTaskBlock = false;
-        inFindingsList = false;
-        reviewerTier = null;
-        continue;
-      }
-      if (inFindingsSection) {
-        // A ## section (not ###) ends the quick-check findings section
-        if (/^##\s+\S/.test(line) && !/^###/.test(line)) {
-          inFindingsSection = false;
-          inTaskBlock = false;
-          inFindingsList = false;
-          continue;
-        }
-        // ### task-NNN sub-section header
-        const tm = line.match(RE_TASK_BLOCK_HEADER);
-        if (tm) {
-          const blockTaskId = tm[1].toLowerCase();
-          inTaskBlock = (blockTaskId === taskIdLower);
-          inFindingsList = false;
-          reviewerTier = null;
-          continue;
-        }
-        if (inTaskBlock) {
-          // **Reviewer Tier:** line
-          const rtm = line.match(RE_FINDINGS_REVIEWER_TIER);
-          if (rtm) {
-            reviewerTier = rtm[1].trim();
-            continue;
-          }
-          // **Findings:** heading line
-          if (/^\s*-\s*\*\*Findings:\*\*\s*$/i.test(line)) {
-            inFindingsList = true;
-            continue;
-          }
-          if (inFindingsList) {
-            const stripped = line.trim();
-            if (stripped.startsWith("- [") || stripped.startsWith("-[")) {
-              // Parse the bullet (strip the leading '- ')
-              const bulletBody = stripped.replace(/^-\s*/, "");
-              const f = parseFindingBullet(bulletBody, reviewerTier);
-              if (f !== null) findings.push(f);
-              continue;
-            }
-            // Blank line or non-bullet ends findings list
-            if (stripped && !stripped.startsWith("-")) {
-              inFindingsList = false;
-            }
-          }
+    const label = taskId ? taskId + "/STATE.yml" : "STATE.yml";
+    const [data, docWarnings] = parseStateDocument(stateText, { fileLabel: label });
+    parseWarnings.push(...docWarnings);
+
+    const quickCheck = data.quick_check;
+    if (quickCheck && typeof quickCheck === "object" && !Array.isArray(quickCheck)) {
+      const reviewerTierRaw = quickCheck.reviewer_tier;
+      const reviewerTier = typeof reviewerTierRaw === "string" ? reviewerTierRaw : null;
+      const rawFindings = quickCheck.findings;
+      if (Array.isArray(rawFindings)) {
+        for (const f of rawFindings) {
+          if (!f || typeof f !== "object" || Array.isArray(f)) continue;
+          const severityRaw = f.severity;
+          const descriptionRaw = f.description;
+          findings.push({
+            severity: parseSeverity(typeof severityRaw === "string" ? severityRaw : ""),
+            description: typeof descriptionRaw === "string" ? descriptionRaw.trim() : "",
+            location: noneIfNull(f.source),
+            disposition: noneIfNull(f.disposition),
+            reviewer_tier: reviewerTier,
+          });
         }
       }
     }
   } catch (exc) {
     parseWarnings.push(
-      taskId + ": error parsing ## Quick Check Findings (" + exc + "); " +
+      taskId + ": error parsing 'quick_check' (" + exc + "); " +
       "returning best-effort findings"
     );
   }
@@ -5109,111 +5203,46 @@ function parseQuickCheckFindings(stateText, taskId, parseWarnings) {
   return findings;
 }
 
-// DR-3: parse ## Delivery Gates -> ### delivery-NNN for grade/tier/timestamp
-// Twin of parse_delivery_gate in parsers.py (byte-parity minded)
-//
-// Fallback (flat/lite works): a shortcut-produced work promotes a SINGULAR
-// "## Delivery Gate" block into the work-root STATE.md instead of the derived
-// plural "## Delivery Gates" -> "### delivery-NNN" rollup. When no plural
-// section is present at all, the singular block -- if any -- is read as
-// delivery-001's gate. Additive: never fires when a plural section exists, so
-// full/hierarchical works are unaffected.
+// DR-3: read delivery_gate (+ top-level gate_grade/gate_tier/gate_timestamp)
+// for grade/tier/timestamp. Twin of Python parse_delivery_gate() (work-009-
+// refactor task-003, retargeted to keys). `stateText` here is always the
+// work-root document (via the state-text cache -- DR-1/NFR4, no re-read);
+// `delivery_gate` only ever carries `issue_list` (D-4), so `delivery_gate.
+// grade`/`.reviewer_tier`/`.gate_timestamp` are always absent, and this
+// still returns (null, null, null) for a current-shape work -- pre-existing
+// staleness preserved, not repaired (SPEC.md L-12). The pre-refactor
+// singular-vs-plural "## Delivery Gate" / "## Delivery Gates" markdown
+// fallback has no YAML counterpart: `delivery_gate` is always a single
+// top-level key regardless of full/flat layout, so that distinction is
+// gone, not ported.
 function parseDeliveryGate(stateText, deliveryId, parseWarnings) {
   let grade = null;
   let reviewerTier = null;
   let gateTimestamp = null;
 
-  let inGates = false;
-  let inDeliveryBlock = false;
-  let foundGatesSection = false;
-  const deliveryIdLower = deliveryId.toLowerCase();
-
   try {
-    for (const line of stateText.split("\n")) {
-      if (RE_DELIVERY_GATES_SECTION.test(line)) {
-        inGates = true;
-        inDeliveryBlock = false;
-        foundGatesSection = true;
-        continue;
-      }
-      if (inGates) {
-        // A ## section (not ###) ends the delivery gates section
-        if (/^##\s+\S/.test(line) && !/^###/.test(line)) {
-          inGates = false;
-          inDeliveryBlock = false;
-          continue;
-        }
-        // ### delivery-NNN sub-section header
-        const dm = line.match(RE_DELIVERY_BLOCK_HEADER);
-        if (dm) {
-          const blockDeliveryId = dm[1].toLowerCase();
-          inDeliveryBlock = (blockDeliveryId === deliveryIdLower);
-          continue;
-        }
-        if (inDeliveryBlock) {
-          const gm = line.match(RE_GATE_GRADE);
-          if (gm && grade === null) {
-            const raw = gm[1].trim();
-            grade = raw ? raw.split(/\s+/)[0] : null;
-            continue;
-          }
-          const rtm = line.match(RE_GATE_REVIEWER_TIER);
-          if (rtm && reviewerTier === null) {
-            const raw = rtm[1].trim();
-            reviewerTier = raw ? raw.split(/\s+/)[0] : null;
-            continue;
-          }
-          const tsm = line.match(RE_GATE_TIMESTAMP);
-          if (tsm && gateTimestamp === null) {
-            gateTimestamp = tsm[1].trim() || null;
-            continue;
-          }
-          // Once all three are found, stop scanning
-          if (grade && reviewerTier && gateTimestamp) break;
-        }
-      }
-    }
+    const label = deliveryId ? deliveryId + "/STATE.yml" : "STATE.yml";
+    const [data, docWarnings] = parseStateDocument(stateText, { fileLabel: label });
+    parseWarnings.push(...docWarnings);
 
-    // Fallback: no plural ## Delivery Gates section anywhere in the text --
-    // try the singular ## Delivery Gate block (flat/lite promoted layout),
-    // treated as delivery-001's gate.
-    if (!foundGatesSection && deliveryIdLower === "delivery-001") {
-      let inGate = false;
-      for (const line of stateText.split("\n")) {
-        if (RE_DELIVERY_GATE_SECTION.test(line)) {
-          inGate = true;
-          continue;
-        }
-        if (inGate) {
-          // Any ## section (not ###) ends the singular gate block
-          if (/^##\s+\S/.test(line) && !/^###/.test(line)) {
-            inGate = false;
-            continue;
-          }
-          const gm = line.match(RE_GATE_GRADE);
-          if (gm && grade === null) {
-            const raw = gm[1].trim();
-            grade = raw ? raw.split(/\s+/)[0] : null;
-            continue;
-          }
-          const rtm = line.match(RE_GATE_REVIEWER_TIER);
-          if (rtm && reviewerTier === null) {
-            const raw = rtm[1].trim();
-            reviewerTier = raw ? raw.split(/\s+/)[0] : null;
-            continue;
-          }
-          const tsm = line.match(RE_GATE_TIMESTAMP);
-          if (tsm && gateTimestamp === null) {
-            gateTimestamp = tsm[1].trim() || null;
-            continue;
-          }
-          if (grade && reviewerTier && gateTimestamp) break;
-        }
+    const gate = data.delivery_gate;
+    if (gate && typeof gate === "object" && !Array.isArray(gate)) {
+      let v = gate.grade;
+      if (typeof v === "string" && v.trim()) {
+        grade = v.trim().split(/\s+/)[0];
+      }
+      v = gate.reviewer_tier;
+      if (typeof v === "string" && v.trim()) {
+        reviewerTier = v.trim().split(/\s+/)[0];
+      }
+      v = gate.gate_timestamp;
+      if (typeof v === "string" && v.trim()) {
+        gateTimestamp = v.trim();
       }
     }
   } catch (exc) {
     parseWarnings.push(
-      deliveryId + ": error parsing ## Delivery Gates (" + exc + "); " +
+      deliveryId + ": error parsing 'delivery_gate' (" + exc + "); " +
       "returning best-effort gate fields"
     );
   }
@@ -5384,10 +5413,10 @@ export function readRepoDetail(root, detailTaskIds) {
   // detailTaskIds: array of composite 'work_id/task_id' strings.
   // Returns { model, details } where details is {} when detailTaskIds is empty.
   //
-  // DR-1/DD-3/NFR4: STATE.md bytes are reused from the always-on pass cache.
+  // DR-1/DD-3/NFR4: STATE.yml bytes are reused from the always-on pass cache.
   // No disk re-read for raw_state. Read-only / no-LLM / no subprocess (NFR2/NFR7).
 
-  // Step 1: run full pass; get STATE.md cache as by-product (zero extra I/O).
+  // Step 1: run full pass; get STATE.yml cache as by-product (zero extra I/O).
   const { model, stateCache } = _readRepoFull(root);
 
   if (!detailTaskIds || detailTaskIds.length === 0) {
@@ -5432,18 +5461,18 @@ export function readRepoDetail(root, detailTaskIds) {
 
     const taskWarnings = [];
 
-    // DR-1: get STATE.md text from the always-on pass cache (no disk re-read).
+    // DR-1: get STATE.yml text from the always-on pass cache (no disk re-read).
     // If work_id was not enumerated (detail for a non-enumerated work), use empty
     // text and add a warning -- never re-read from disk (DR-1/DD-3/NFR4).
     let stateText = "";
-    let statePathLabel = ".aid/works/" + workId + "/STATE.md";
+    let statePathLabel = ".aid/works/" + workId + "/STATE.yml";
 
     if (stateCache[workId] !== undefined) {
       [stateText, statePathLabel] = stateCache[workId];
     } else {
       taskWarnings.push(
         workId + "/" + taskId + ": work not found in always-on pass; " +
-        "STATE.md unavailable; raw_state will be empty"
+        "STATE.yml unavailable; raw_state will be empty"
       );
     }
 

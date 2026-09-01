@@ -15,11 +15,13 @@ reviewing all sections against current reality.
 
 ### Load Current Context
 
-Same as INITIALIZE Step 1: SPEC.md, REQUIREMENTS.md, KB docs, codebase.
+Same as INITIALIZE Step 1: this feature's section of REQUIREMENTS.md § 11, plus the
+REQUIREMENTS.md **slice** it traces to (the `§5`/`§9` entries its section cites by id,
+never the whole document), KB docs, codebase.
 
 ### Review All Sections
 
-For each section in SPEC.md, run step 4 of the loop against current state:
+For each technical section of this feature, run step 4 of the loop against current state:
 
 1. **KB drift** — SPEC references KB content that changed?
 2. **Requirements drift** — Requirements changed since spec was written?
@@ -30,8 +32,8 @@ For each section in SPEC.md, run step 4 of the loop against current state:
 ### Dispatch the Reviewer
 
 Render `references/reviewer-brief.md` with:
-- `{{ARTIFACTS}}` = `SPEC.md` path + the section list under review (or "full SPEC")
-- `{{CONTEXT}}` = `SPEC.md for feature-NNN-{name} in work-NNN-{name}. All sections marked Complete in the work STATE.md \`## Features State\` row. This is the final review pass before the feature is marked Ready.`
+- `{{ARTIFACTS}}` = `REQUIREMENTS.md` + the `§11 / Feature NNN` subsection under review, naming the technical sections in scope (or "the whole feature section")
+- `{{CONTEXT}}` = `REQUIREMENTS.md §11 / Feature NNN in work-NNN-{name}. All sections marked Complete in the work STATE.md \`## Features State\` row. This is the final review pass before the feature is marked Ready.`
 
 Include in the prompt:
 - **Ledger lifecycle:** "Read `.aid/.temp/review-pending/specify-<feature>.md` if it
@@ -59,6 +61,20 @@ Compare to minimum grade from `bash .claude/aid/scripts/config/read-setting.sh -
 | Grade ≥ minimum | Print summary, done. Set feature status to `Ready` in work STATE.md. |
 | Grade < minimum, fixable sections | List findings, re-enter loop for affected sections. |
 | Grade < minimum, core assumptions wrong | Recommend `--reset`. |
+
+<!-- A delivery-definition review step once sat here and is retired, for two independent
+     reasons either of which is sufficient.
+
+     First, the artifact is gone: a delivery definition is now a `### delivery-NNN` stanza in
+     PLAN.md, and the per-delivery file it used to live in is retired.
+
+     Second, and this held even before that: `/aid-specify` runs BEFORE any delivery exists
+     (Specify precedes Plan -- SKILL.md states it in as many words). There is no delivery for a
+     feature to refine at this point in the pipeline, so the step could never have run. It
+     instructed a review of an artifact that cannot exist yet.
+
+     The ledger discipline it carried is not lost -- it is the same discipline the feature
+     review above already applies, on that review's own scope. -->
 
 ```
 Reviewing {work}/{feature} against current KB and codebase...

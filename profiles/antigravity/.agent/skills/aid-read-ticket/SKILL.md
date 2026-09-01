@@ -1,15 +1,15 @@
 ---
 name: aid-read-ticket
 description: >
-  On-demand, non-destructive ticket read. `aid-read-ticket [<connector>:]<ticket-id>` parses the
-  ref (an optional `<stem>:` prefix plus the tracker's own id), resolves which issue-tracker
-  connector answers it via the shared connector-resolution ladder (explicit override; a single
-  catalogued issue-tracker connector used silently; a choice asked when two or more are
-  catalogued; the host tool's own tracker MCP as fallback; a "no issue-tracker connector found."
-  notice otherwise), fetches the ticket through the host tool's own MCP -- AID resolves no
-  credential and stores none -- and displays its fields. Never writes, locally or to the
-  tracker, and never shows a confirmation prompt; a failed, not-found, unauthorized, or
-  unavailable fetch surfaces the tracker's error verbatim and exits without side effects.
+  Read one ticket from the project's issue tracker and show its fields. Use this skill when
+  you need a ticket's current contents -- during triage, before starting work, or while
+  writing a change that references it. Its grammar is `aid-read-ticket
+  [<connector>:]<ticket-id>` -- the tracker's own id, optionally prefixed with a connector
+  name when more than one tracker is catalogued. It resolves which tracker answers, fetches
+  through your host tool's own MCP so AID never handles a credential, and displays the
+  result. It never writes, locally or to the tracker, and never asks for confirmation; a
+  failed, not-found, unauthorized or unavailable fetch surfaces the tracker's own error and
+  exits without side effects.
 allowed-tools: Read, Glob, Grep, AskUserQuestion
 argument-hint: "[<connector>:]<ticket-id>"
 ---
@@ -22,7 +22,7 @@ specific tracker, and instead resolves which one to use through AID's connector 
 
 **Not a numbered pipeline phase.** Optional, on-demand utility skill, a peer of `aid-ask` /
 `aid-set-connector` — no phase gate references it, no `shortcut-catalog.yml` entry, no
-`work-NNN` scaffold, no `STATE.md` of its own.
+`work-NNN` scaffold, no `STATE.yml` of its own.
 
 **Single-shot, no confirm.** One pass: parse → resolve → fetch → display → exit. Reading is
 non-destructive (feature-001 AC-1) — it never prompts for a write, regardless of how many
@@ -160,7 +160,7 @@ the whole run is State 3's single read.
   `[<connector>:]<ticket-id>`, or the write-preview/confirm convention is owned by
   `ticket-resolution.md`; this file only points to it and names which outcome applies where.
 - **No work folder.** `/aid-read-ticket` does not create `.aid/works/work-*/` directories or a
-  `STATE.md` of its own.
+  `STATE.yml` of its own.
 - **Content isolation.** `aid-` prefix (satisfied by the skill name); the shared reference this
   skill points to lives under the `aid/` template subtree.
 

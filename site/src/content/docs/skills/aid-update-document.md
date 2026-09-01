@@ -1,6 +1,6 @@
 ---
 title: 'aid-update-document'
-description: 'Update an EXISTING document NOW -- revise/extend a markdown doc, an ADR, a runbook, a changelog, a diagram, etc.'
+description: 'Revise or extend a document that already exists, in one pass.'
 generatedFrom: 'canonical/skills/aid-update-document/SKILL.md'
 ---
 
@@ -9,7 +9,7 @@ generatedFrom: 'canonical/skills/aid-update-document/SKILL.md'
 ## Frontmatter
 
 - **`name`** — aid-update-document
-- **`description`** — Update an EXISTING document NOW -- revise/extend a markdown doc, an ADR, a runbook, a changelog, a diagram, etc. -- in one pass. Reads the existing document first, then edits it, grounded in and accuracy-checked against the Knowledge Base (.aid/knowledge/) and the project source. It RESOLVES NOTHING: it drafts the change, you approve (with a diff shown), then it is written back. Produced by aid-tech-writer, verified by aid-reviewer. NEVER writes into .aid/knowledge/ (that is /aid-update-kb).
+- **`description`** — Revise or extend a document that already exists, in one pass. Use this skill when a document has drifted from the code, is missing a section, or needs a correction -- and you want the change drafted against the current source rather than written from memory. It reads the existing document first, then edits it, grounded in and accuracy-checked against the Knowledge Base (`.aid/knowledge/`) and the project source. It resolves nothing: it drafts the change and shows you a diff, and only after you approve is it written back. It never writes into `.aid/knowledge/` -- that is `/aid-update-kb`'s territory.
 - **`allowed-tools`** — Read, Glob, Grep, Bash, Write, Edit, Agent
 - **`argument-hint`** — &lt;document + change> -- which existing document to update, and how
 
@@ -56,7 +56,7 @@ Every node in the chart above, in chart order, with the exact `canonical/` text 
 
 <a id="fragment-n1"></a>**1 · `INTAKE`** · _entry_
 
-~~~~plaintext title="canonical/skills/aid-update-document/SKILL.md#L33-L50" wrap
+~~~~plaintext title="canonical/skills/aid-update-document/SKILL.md#L32-L52" wrap
 ## State: INTAKE
 
 1. **Require a target document + a change.** Empty argument -> ask one bootstrapping
@@ -75,13 +75,16 @@ Every node in the chart above, in chart order, with the exact `canonical/` text 
    (`worktree-lifecycle.sh create <work-id> <name>`, STOP on a non-zero exit or empty path,
    else enter the resolved path), **then** allocate (`initiator: aid-update-document`;
    `phase` not driven).
+5. **Read the design seed, if present.** If `.aid/design/document.md` exists, read it as
+   prior context before drafting; it is an input, never a substitute, and is not modified
+   by this run.
 ~~~~
 
-[Source: `canonical/skills/aid-update-document/SKILL.md#L33-L50`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-update-document/SKILL.md#L33-L50) · [full step: `canonical/skills/aid-update-document/SKILL.md#L33-L52`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-update-document/SKILL.md#L33-L52)
+[Source: `canonical/skills/aid-update-document/SKILL.md#L32-L52`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-update-document/SKILL.md#L32-L52) · [full step: `canonical/skills/aid-update-document/SKILL.md#L32-L54`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-update-document/SKILL.md#L32-L54)
 
 <a id="fragment-n2"></a>**2 · `AUTHOR`** · _step_
 
-~~~~plaintext title="canonical/skills/aid-update-document/SKILL.md#L56-L60" wrap
+~~~~plaintext title="canonical/skills/aid-update-document/SKILL.md#L58-L62" wrap
 ## State: AUTHOR
 
 Dispatch **`aid-tech-writer`** (clean context, tiered) to produce the **revised** document
@@ -89,11 +92,11 @@ Dispatch **`aid-tech-writer`** (clean context, tiered) to produce the **revised*
 project source, preserving the document's existing genre structure.
 ~~~~
 
-[Source: `canonical/skills/aid-update-document/SKILL.md#L56-L60`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-update-document/SKILL.md#L56-L60) · [full step: `canonical/skills/aid-update-document/SKILL.md#L56-L62`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-update-document/SKILL.md#L56-L62)
+[Source: `canonical/skills/aid-update-document/SKILL.md#L58-L62`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-update-document/SKILL.md#L58-L62) · [full step: `canonical/skills/aid-update-document/SKILL.md#L58-L64`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-update-document/SKILL.md#L58-L64)
 
 <a id="fragment-n3"></a>**3 · `VERIFY`** · _step_
 
-~~~~plaintext title="canonical/skills/aid-update-document/SKILL.md#L66-L70" wrap
+~~~~plaintext title="canonical/skills/aid-update-document/SKILL.md#L68-L72" wrap
 ## State: VERIFY
 
 Same as `/aid-create-document`: mechanical grounding check + a clean-context **`aid-reviewer`**
@@ -101,36 +104,36 @@ adversarial check (accurate, complete, no fabrication, structure preserved) -> `
 -> loop on failure (3-cycle circuit-breaker -> IMPEDIMENT + `lifecycle: Blocked`).
 ~~~~
 
-[Source: `canonical/skills/aid-update-document/SKILL.md#L66-L70`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-update-document/SKILL.md#L66-L70) · [full step: `canonical/skills/aid-update-document/SKILL.md#L66-L72`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-update-document/SKILL.md#L66-L72)
+[Source: `canonical/skills/aid-update-document/SKILL.md#L68-L72`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-update-document/SKILL.md#L68-L72) · [full step: `canonical/skills/aid-update-document/SKILL.md#L68-L74`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-update-document/SKILL.md#L68-L74)
 
 <a id="fragment-n4"></a>**4 · `PRESENT`** — hard stop -- human final say · _decision_
 
-~~~~plaintext title="canonical/skills/aid-update-document/SKILL.md#L76-L79" wrap
+~~~~plaintext title="canonical/skills/aid-update-document/SKILL.md#L78-L81" wrap
 ## State: PRESENT  (hard stop -- human final say)
 
 Set `lifecycle: Paused-Awaiting-Input`. Present the revised document **as a diff against
 the current file** + the target path. Await approval. Never writes `.aid/knowledge/`.
 ~~~~
 
-[Source: `canonical/skills/aid-update-document/SKILL.md#L76-L79`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-update-document/SKILL.md#L76-L79) · [full step: `canonical/skills/aid-update-document/SKILL.md#L76-L81`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-update-document/SKILL.md#L76-L81)
+[Source: `canonical/skills/aid-update-document/SKILL.md#L78-L81`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-update-document/SKILL.md#L78-L81) · [full step: `canonical/skills/aid-update-document/SKILL.md#L78-L83`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-update-document/SKILL.md#L78-L83)
 
 <a id="fragment-n5"></a>**5 · `WRITE`** — only on approval · _step_
 
-~~~~plaintext title="canonical/skills/aid-update-document/SKILL.md#L85-L88" wrap
+~~~~plaintext title="canonical/skills/aid-update-document/SKILL.md#L87-L90" wrap
 ## State: WRITE  (only on approval)
 
 Write the revision back to the existing document (the diff was already reviewed at PRESENT).
 Then optionally print handoffs (`/aid-update-kb`, `/aid-create*`, ...).
 ~~~~
 
-[Source: `canonical/skills/aid-update-document/SKILL.md#L85-L88`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-update-document/SKILL.md#L85-L88) · [full step: `canonical/skills/aid-update-document/SKILL.md#L85-L90`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-update-document/SKILL.md#L85-L90)
+[Source: `canonical/skills/aid-update-document/SKILL.md#L87-L90`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-update-document/SKILL.md#L87-L90) · [full step: `canonical/skills/aid-update-document/SKILL.md#L87-L92`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-update-document/SKILL.md#L87-L92)
 
 <a id="fragment-n6"></a>**6 · `DONE`** · _exit_ · UNSPECIFIED
 
-~~~~plaintext title="canonical/skills/aid-update-document/SKILL.md#L94-L96" wrap
+~~~~plaintext title="canonical/skills/aid-update-document/SKILL.md#L96-L98" wrap
 ## State: DONE
 
 Set `lifecycle: Completed`, `updated` now, append a `## Lifecycle History` row.
 ~~~~
 
-[Source: `canonical/skills/aid-update-document/SKILL.md#L94-L96`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-update-document/SKILL.md#L94-L96) · [full step: `canonical/skills/aid-update-document/SKILL.md#L94-L96`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-update-document/SKILL.md#L94-L96)
+[Source: `canonical/skills/aid-update-document/SKILL.md#L96-L98`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-update-document/SKILL.md#L96-L98) · [full step: `canonical/skills/aid-update-document/SKILL.md#L96-L98`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-update-document/SKILL.md#L96-L98)

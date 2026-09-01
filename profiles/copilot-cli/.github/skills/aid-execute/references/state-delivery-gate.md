@@ -97,15 +97,23 @@ the same tier reviewer).
 ### Complexity Score Computation
 
 Read the delivery's Execution Graph from:
-- **Flat path (feature-001, single-delivery)** — detected by: a work-root
-  `BLUEPRINT.md` present AND `tasks/task-NNN/DETAIL.md` present directly
-  under the work root AND no `deliveries/` wrapper under it → the top-level
-  `## Execution Graph` in the work-root `PLAN.md` (no
-  `### delivery-NNN` heading; the single delivery is implicit).
-- **Full path** — otherwise, `PLAN.md` in the work directory (`#### Execution
-  Graph` block for this delivery).
-- **Lite path** — the work-root `SPEC.md` (`.aid/works/{work}/SPEC.md`), which
-  contains the merged delivery + dependency graph information.
+- **Flat / Lite path (feature-001, single-delivery)** — detected by
+  `pipeline.path: lite` in the work-root `STATE.yml`, or for an un-migrated work by
+  `tasks/task-NNN/DETAIL.md` present directly under the work root AND no
+  `deliveries/` wrapper under it → there is NO stored graph. DERIVE it:
+
+  ```
+  bash .github/aid/scripts/execute/derive-waves.sh --from-tasks .aid/works/{work}
+  ```
+
+  Each task's `**Depends on:**` field is the graph, so a single-delivery work has
+  nothing to sequence and nothing to store. The script prints the dependency table
+  and the wave-map, and its output is accepted directly as `--plan-file` by
+  `complexity-score.sh` and `compute-block-radius.sh` — with no `--delivery-id`,
+  because for one delivery it emits the flattened heading on purpose.
+- **Full path** — `PLAN.md` in the work directory (`#### Execution Graph` block for
+  this delivery), where the sequencing across several deliveries IS an authored
+  decision.
 
 Parse the `| Task | Depends On |` table to build the dependency map.
 
@@ -116,7 +124,7 @@ Parse the `| Task | Depends On |` table to build the dependency map.
 | Task count | tasks in this delivery (Execution Graph) | +1 per task |
 | Graph depth | longest dependency chain (longest path in DAG) | +1 per edge on the longest chain |
 | Risk-weighted types | each task's `Type` field (`deliveries/delivery-NNN/tasks/task-NNN/DETAIL.md`; flat path: `tasks/task-NNN/DETAIL.md` directly under the work root) | `MIGRATE`/`REFACTOR` +2; `IMPLEMENT`/`TEST` +1; `RESEARCH`/`DESIGN`/`DOCUMENT`/`CONFIGURE` +0 |
-| Specialist consults | count of: quick-check `[CRITICAL]` fix-on-spot events (from `## Quick Check Findings`) + tasks whose Agent-Selection row triggers an `aid-researcher` analysis consult | +1 each |
+| Specialist consults | count of: quick-check `[CRITICAL]` fix-on-spot events (from each task's `quick_check` key -- full path: the `quick_check.findings` sequence in its `STATE.yml`; flat path: the single escaped scalar at `tasks_lifecycle.task-NNN.quick_check`, known-issues.md § KI-005) + tasks whose Agent-Selection row triggers an `aid-researcher` analysis consult | +1 each |
 
 ### Tier Selection
 
@@ -150,8 +158,11 @@ Large). Clean context — reviewer must NOT inherit any executor working notes.
 **Before dispatching, print:**
 `[DELIVERY-GATE Step 2] Dispatching aid-reviewer (gate, {tier} tier) → subagent_type=aid-reviewer`
 
-Dispatch metadata is logged via the Calibration Log appendix in the work
-`STATE.md` (per work-003 traceability rule — never optional).
+Dispatch metadata is narrated via the closing `✓ ... done` bracket (per work-003
+traceability rule — never optional); a delivery-level gate reviewer dispatch has no
+`task-NNN` of its own, so unlike a per-task dispatch there is no `dispatch_log` entry
+for it to land in — the work-level Calibration Log / Dispatches views are DERIVED
+solely from per-task `dispatch_log` entries (`work-state-template.yml`).
 
 Follow the Dispatch Protocol (L1+L2+L3 subagent visibility) from `SKILL.md`:
 arm 3 L2 timers; pre-create heartbeat file; include `HEARTBEAT_FILE` +
@@ -163,7 +174,7 @@ The gate reviewer receives a **fresh, clean-context package** — not a summary
 of per-task reviews. The package wrapper is the universal brief at
 `references/reviewer-brief.md` rendered with:
 - `{{MODE}}` = `per-delivery`
-- `{{ARTIFACTS}}` = the full delivery branch diff + every task's STATE.md row + the PLAN.md delivery section
+- `{{ARTIFACTS}}` = the full delivery branch diff + every task's STATE.yml state + the delivery's criteria (its `PLAN.md` stanza on the full path; `REQUIREMENTS.md § 9` on the flat/Lite path)
 - `{{CONTEXT}}` = `delivery-NNN aggregates tasks {NNN..MMM}; this is the post-execution quality gate before merge to main.`
 
 Include in the prompt:
@@ -182,18 +193,21 @@ Then append the gate-specific prompt below. The reviewer reads directly from sou
   Source, Scope, Acceptance Criteria):
   - Full path: `deliveries/delivery-NNN/tasks/task-NNN/DETAIL.md`
   - Flat path: `tasks/task-NNN/DETAIL.md` directly under the work root
-- **Feature SPEC(s):**
-  - Full path: per-feature `SPEC.md` files (`.aid/works/{work}/features/*/SPEC.md`)
-  - Flat path (feature-001, single-delivery): work-root `SPEC.md` (single feature)
-  - Lite path: work-root `SPEC.md` (`.aid/works/{work}/SPEC.md`)
+- **Feature specification(s)** — the `### Feature NNN` subsections of
+  `.aid/works/{work}/REQUIREMENTS.md § 11`, each carrying its own technical
+  specification. Read only the sections claimed by this delivery, not all of § 11.
 - **Delivery-level acceptance criteria:**
-  - Full path: from the delivery's `BLUEPRINT.md § Gate Criteria`
-  - Flat path: from the work-root `BLUEPRINT.md § Gate Criteria`
-  - Lite path: from work-root `SPEC.md`
+  - **Full path** — the `**Gate Criteria**` list in the delivery's own stanza in
+    `PLAN.md`, under that delivery's `### delivery-NNN` heading.
+  - **Flat / Lite path** — the `AC-N` set in `REQUIREMENTS.md § 9`. With one delivery
+    the work IS the delivery, so its acceptance criteria are the delivery's; a
+    separate restatement would be a second copy able to disagree with the first.
+    Add the two standing criteria every delivery carries regardless of layout:
+    all its tasks are Done or Canceled, and all section-6 quality gates pass.
 - **`delivery-NNN-issues.md`** — the deferred `[HIGH]` prior context (from
   AGGREGATE). Read as context only; the reviewer produces its own fresh list.
 - **KB docs via INDEX.md** — load relevant docs per INDEX summaries
-- **Grading rubric** (`../../../templates/grading-rubric.md`)
+- **Grading rubric** (`../../../aid/templates/grading-rubric.md`)
 
 ### Gate Reviewer Prompt (gate mode)
 
@@ -241,8 +255,9 @@ findings where Status ∈ {Pending, Recurred}, and prints a grade letter
 (`A+`, `A`, `A-`, `B+`, …, `F`). The `--explain` flag prints the count
 breakdown to stderr.
 
-**Record the grade** in the work `STATE.md` `## Delivery Gates` section
-(partial write — will be completed by RECORD step on PASS):
+**Record the grade** for the work-level Delivery Gates view (DERIVED at read time;
+partial for now — the persisted `gate_grade` write is completed by the RECORD step
+on PASS):
 
 ```
 [DELIVERY-GATE Step 3: GRADE]
@@ -289,8 +304,8 @@ Gate grade below minimum. Next steps:
 
 **Non-CODE issues (TASK, SPEC, KB):**
 - **TASK** → Present to user with suggestion. User updates task, re-run.
-- **SPEC** → Write Q&A to `deliveries/delivery-NNN/STATE.md` `## Cross-phase Q&A` (SD-5:
-  the delivery gate writes to its OWN delivery STATE.md, not the shared work STATE.md,
+- **SPEC** → Append to the `qa` sequence in `deliveries/delivery-NNN/STATE.yml` (SD-5:
+  the delivery gate writes to its OWN delivery STATE.yml, not the shared work STATE.yml,
   to preserve the disjoint-write property -- two delivery branches cannot collide) →
   suggest `/aid-specify`
 - **KB** → Write Q&A to `.aid/knowledge/STATE.md` `## Q&A (Pending)` →
@@ -359,28 +374,29 @@ bash .github/aid/scripts/execute/writeback-state.sh --pipeline --field Updated -
 
 ---
 
-## Step 6: RECORD (Write Gate Outcome to STATE.md)
+## Step 6: RECORD (Write Gate Outcome to STATE.yml)
 
 Gate has PASSED (grade ≥ minimum). Write the gate record and mark the
 delivery Done.
 
-### 6a: Build the Delivery Gate Block
+### 6a: Build the Delivery Gate Issue List
 
-Reviewer Tier / Grade / Timestamp were relocated to frontmatter by
-work-003-state-schema task-001/004 (`gate_tier`/`gate_grade`/`gate_timestamp`);
-only Complexity Score / Cycles / Issue List remain as the `## Delivery Gate`
-body block content. Compose the reduced block:
+Reviewer Tier / Grade / Timestamp are frontmatter-zone top-level scalars
+(`gate_tier`/`gate_grade`/`gate_timestamp`, work-003-state-schema task-001/004).
+Complexity Score and Cycles are **not persisted** to `STATE.yml` at all -- they were
+console-only values from Step 1 (SCORE) and this loop's own cycle counter, and the
+current writer (`writeback-state.sh --block`) parses and stores only the Issue List
+into `delivery_gate.issue_list`; there is no key for Complexity Score or Cycles in
+`delivery-state-template.yml`. Compose the block the writer expects:
 
 ```markdown
-- **Complexity Score:** {N}
-- **Cycles:** {N}
 - **Issue List:**
   {gate reviewer's issue list, all severities, or "none" if A+}
 ```
 
-### 6b: Write to Delivery STATE.md
+### 6b: Write to Delivery STATE.yml
 
-Set the 3 relocated frontmatter scalars, then write the reduced body block:
+Set the 3 relocated frontmatter scalars, then write the issue list:
 
 ```bash
 bash .github/aid/scripts/execute/writeback-state.sh --delivery-id NNN --gate-field Tier --gate-value "{Small|Medium|Large}"
@@ -390,21 +406,22 @@ bash .github/aid/scripts/execute/writeback-state.sh --delivery-id NNN --block "B
 ```
 
 > **Helper target:** the `--gate-field`/`--gate-value` calls write the
-> `gate_tier`/`gate_grade`/`gate_timestamp` frontmatter scalars (surgical
-> rewrite; markdown body untouched); `--block BLOCK` writes the reduced
-> `## Delivery Gate` body block (Complexity Score/Cycles/Issue List only) in
-> `deliveries/delivery-NNN/STATE.md` (SD-5: the delivery gate is authored by
+> `gate_tier`/`gate_grade`/`gate_timestamp` top-level scalars (surgical
+> single-key rewrite); `--block BLOCK` writes the `delivery_gate.issue_list`
+> sequence (Issue List only -- Complexity Score/Cycles are not persisted, per 6a
+> above) in `deliveries/delivery-NNN/STATE.yml` (SD-5: the delivery gate is authored by
 > this delivery's branch only; it is NOT written into the shared work
-> STATE.md). The work-level `## Delivery Gates` view is DERIVED at read time
-> as the union of all delivery gate blocks (body) + frontmatter (scalars).
+> STATE.yml). The work-level Delivery Gates view is DERIVED at read time
+> as the union of all delivery `delivery_gate.issue_list` sequences + `gate_*` scalars.
 >
-> **Flat path (feature-001, single-delivery):** with a work-root `BLUEPRINT.md`
-> present and no `deliveries/` wrapper (`--delivery-id 001`), the SAME helper
-> calls instead target the work-root `STATE.md`'s own frontmatter + the
-> singular AUTHORED `## Delivery Gate` body block directly (there is exactly
+> **Flat path (feature-001, single-delivery):** on a work declaring
+> `pipeline.path: lite` with no `deliveries/` wrapper (`--delivery-id 001`), the SAME helper
+> calls instead target the work-root `STATE.yml`'s own frontmatter scalars + the
+> singular AUTHORED `delivery_gate.issue_list` key directly (there is exactly
 > one delivery, so the disjoint-write concern above does not apply — see
 > `writeback-state.sh`). This is distinct from the plural DERIVED
-> `## Delivery Gates` view (different heading, singular vs. plural).
+> Delivery Gates view (singular key vs. plural derived view, not a heading
+> distinction any more).
 
 ### 6b-2: Advance delivery lifecycle to Done
 
@@ -422,15 +439,15 @@ For each row in `delivery-NNN-issues.md`:
 
 Update the file directly (no helper needed — single writer by construction).
 
-### 6d: Update Delivery Row in Work STATE.md
+### 6d: Update Delivery Row in Work STATE.yml
 
-The work-level `## Plan / Deliveries` derived view is computed at read time from
-the per-delivery `## Delivery Lifecycle` State values. Since we already advanced the
-delivery lifecycle to Done in step 6b-2, the dashboard reader will reflect `Done`
+The work-level Plan / Deliveries derived view is computed at read time from
+the per-delivery `delivery_state` key. Since we already advanced `delivery_state`
+to Done in step 6b-2, the dashboard reader will reflect `Done`
 in the work-level view automatically. No additional writeback is needed here.
 
 _(Previously this step wrote a "Status: Done" row to the work STATE.md; under the
-hierarchical layout, the delivery's lifecycle State is the authoritative source.)_
+hierarchical layout, the delivery's own `delivery_state` key is the authoritative source.)_
 
 ### 6e: Delete Ledger
 

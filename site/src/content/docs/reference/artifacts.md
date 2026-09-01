@@ -21,14 +21,13 @@ below.
 | Artifact | Path | Produced by | Description |
 |----------|------|-------------|-------------|
 | `REQUIREMENTS.md` | `.aid/{work}/REQUIREMENTS.md` | `aid-describe` (full path) or the shortcut engine (lite path) | Functional and non-functional requirements. Contains user stories, acceptance criteria, constraints, assumptions, and priority rankings. |
-| `SPEC.md` (work-root) | `.aid/{work}/SPEC.md` | The shortcut engine | Lite path only. The work-root technical specification for the single implicit delivery. The full path has no work-root `SPEC.md` — specification happens per feature instead. |
-| `SPEC.md` (per-feature) | `.aid/{work}/features/{feature}/SPEC.md` | `aid-specify` | Full-path only. One spec per feature, produced by `aid-specify`. Each feature SPEC is self-contained with its own acceptance criteria and technical decisions. |
 | `PLAN.md` | `.aid/{work}/PLAN.md` | `aid-plan` (full path) or the shortcut engine (lite path) | The delivery plan: ordered deliverables (each a functional MVP), feature-to-delivery mapping, and the sequencing rationale. On the lite path there is a single implicit delivery. |
-| `BLUEPRINT.md` (delivery definition) | `.aid/{work}/deliveries/{delivery}/BLUEPRINT.md` (full path) or `.aid/{work}/BLUEPRINT.md` (lite path) | `aid-plan` (full path) or the shortcut engine (lite path) | The delivery definition: objective, scope, gate criteria, task list, and dependencies. Full path: one per delivery, nested under `deliveries/delivery-NNN/`. Lite path: the sole delivery's definition, at the work root. |
-| `STATE.md` (delivery-area) | `.aid/{work}/deliveries/{delivery}/STATE.md` | `aid-plan` (created) / `aid-execute` (updated) | Full-path only. Delivery lifecycle state and gate criteria for one delivery. On the lite path, the sole delivery's lifecycle and gate are promoted into the work-area `STATE.md` instead. |
+| Feature section | `.aid/{work}/REQUIREMENTS.md` § 11, one `### Feature NNN` per feature | `aid-define` (created) / `aid-specify` (technical specification appended) | The feature definition. A SECTION, not a file: there is no per-feature `SPEC.md` and no `features/` folder. |
+| Delivery stanza | `.aid/{work}/PLAN.md`, one `### delivery-NNN` per delivery | `aid-plan` | The delivery definition -- objective, scope, gate criteria, dependencies -- in the document that already orders the deliveries. |
+| `STATE.yml` (delivery-area) | `.aid/{work}/deliveries/{delivery}/STATE.yml` | `aid-plan` (created) / `aid-execute` (updated) | Full-path only. Delivery lifecycle state and gate criteria for one delivery. On the lite path, the sole delivery's lifecycle and gate are promoted into the work-area `STATE.md` instead. |
 | `DETAIL.md` (task definition) | `.aid/{work}/deliveries/{delivery}/tasks/{task}/DETAIL.md` (full path) or `.aid/{work}/tasks/{task}/DETAIL.md` (lite path) | `aid-detail` (full path) or the shortcut engine (lite path) | Individual task definition. Each task has one of the eight types (`RESEARCH`, `DESIGN`, `IMPLEMENT`, `TEST`, `DOCUMENT`, `MIGRATE`, `REFACTOR`, `CONFIGURE`), acceptance criteria, scope, and dependencies. Tasks are the unit of execution for `aid-execute`. |
-| `STATE.md` (task-area) | `.aid/{work}/deliveries/{delivery}/tasks/{task}/STATE.md` | `aid-detail` (created) / `aid-execute` (updated) | Full-path only. Task lifecycle state and review history for one task. The lite path has no per-task `STATE.md` — task cells live in the work-root `STATE.md` § `### Tasks lifecycle`. |
-| `STATE.md` (work-area) | `.aid/{work}/STATE.md` | all skills | State machine state for the current work item. Records which phase the work is in, what has been completed, and Q&A/review history for re-entrant skill invocations. On the lite path, the sole delivery's gate and Q&A are promoted directly into this file. |
+| `STATE.yml` (task-area) | `.aid/{work}/deliveries/{delivery}/tasks/{task}/STATE.yml` | `aid-detail` (created) / `aid-execute` (updated) | Full-path only. Task lifecycle state and review history for one task. The lite path has no per-task `STATE.md` — task cells live in the work-root `STATE.md` § `### Tasks lifecycle`. |
+| `STATE.yml` (work-area) | `.aid/{work}/STATE.yml` | all skills | State machine state for the current work item. Records which phase the work is in, what has been completed, and Q&A/review history for re-entrant skill invocations. On the lite path, the sole delivery's gate and Q&A are promoted directly into this file. |
 | `IMPEDIMENT-task-NNN.md` | `.aid/{work}/IMPEDIMENT-task-NNN.md` | `aid-execute` (developer agent) | Formal escalation artifact, produced by the Execute phase. Created when implementation reveals a spec contradiction or impossible acceptance criterion. Contains: type, evidence, blocked task, and proposed resolution. Triggers the appropriate feedback loop. |
 
 ### Lite-path artifact shape
@@ -40,19 +39,22 @@ no `delivery-001/` folder.
 ```
 .aid/
   work-NNN-name/
-    STATE.md          # work lifecycle, with the sole delivery's gate + Q&A promoted into it
-    REQUIREMENTS.md
-    SPEC.md
-    PLAN.md
-    BLUEPRINT.md       # the single delivery's definition, at the work root
+    STATE.yml         # work lifecycle, with the sole delivery's gate + Q&A promoted into it
+    REQUIREMENTS.md   # § 11 carries the single feature section
     tasks/
       task-NNN/
-        DETAIL.md      # task definition — the flattened path has NO per-task STATE.md;
-                       #   each task's cells live in the work-root STATE.md § ### Tasks lifecycle
+        DETAIL.md      # task definition — the flattened path has NO per-task STATE.yml;
+                       #   each task's cells live in the work-root STATE.yml `tasks_lifecycle`
 ```
 
-Terminology is unchanged across both paths: **delivery definition = `BLUEPRINT.md`**, **task
-definition = `DETAIL.md`**, **feature definition = `SPEC.md`**.
+The Lite path writes exactly TWO artifact types: `REQUIREMENTS.md` and one `DETAIL.md`
+per task. There is no `SPEC.md` (the feature's technical specification is a section of
+`REQUIREMENTS.md`) and no `PLAN.md` — with one feature and one delivery there is no
+sequencing decision to record.
+
+Terminology across both paths: **feature definition = a `REQUIREMENTS.md` § 11 section**,
+**delivery definition = a `PLAN.md` `### delivery-NNN` stanza** (full path only), **task
+definition = `DETAIL.md`**.
 
 ## Knowledge Base artifacts
 

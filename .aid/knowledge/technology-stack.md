@@ -15,11 +15,16 @@ tags: [C0, languages, runtimes, frameworks, build-tools, testing, polyglot]
 see_also: [architecture.md, infrastructure.md, test-landscape.md]
 owner: architect
 audience: [developer, architect, devops]
-intent: |
-  Languages, runtimes, frameworks, build tools, and test infrastructure AID uses, with
-  actual versions from config files plus the exact runnable build/lint/test commands. Read
-  this for language-version or tool-version questions.
-contracts: []
+review-criteria:
+  - id: F-01
+    kind: validate
+    criterion: >
+      Every version this doc states for AID itself is asserted as lockstep with the `VERSION`
+      file, never written as a literal number.
+    severity: MEDIUM
+    why: >
+      A hard-coded version is stale at the next release and this doc is where a reader checks
+      it. The number moved 1.1.1 to 2.0.6 to 2.3.0 while three literals here stayed put.
 ---
 
 # Technology Stack
@@ -39,7 +44,6 @@ contracts: []
 - [Test Commands](#test-commands)
 - [Key Dependencies](#key-dependencies)
 - [Version Concerns](#version-concerns)
-- [Change Log](#change-log)
 
 ---
 
@@ -52,9 +56,12 @@ channels. CONFIRMED in `project-structure.md` (search: "AID is polyglot by desig
 install through Bash and PowerShell hosts and ship via both npm and PyPI") and the parity
 suite `tests/canonical/test-aid-cli-parity.sh`.
 
-Product version: **2.0.6** (`VERSION`; npm and PyPI wrappers both at `2.0.6`). CONFIRMED in
-`VERSION`, `packages/npm/package.json` (search: `"version": "2.0.6"`),
-`packages/pypi/pyproject.toml` (search: `version = "2.0.6"`).
+Product version: whatever `VERSION` holds — read it rather than trusting a number written here.
+The invariant is **lockstep**: the npm and PyPI wrappers carry the same value, so
+`packages/npm/package.json` (search: `"version"`) and `packages/pypi/pyproject.toml` (search:
+`version =`) must both match `VERSION`, and `canonical/aid/scripts/release/check-version-sync.sh`
+is what enforces it. A literal here was stale within three releases (1.1.1, then 2.0.6, then the
+current value), which is why this doc asserts the lockstep and not the number.
 
 ---
 
@@ -66,7 +73,7 @@ Product version: **2.0.6** (`VERSION`; npm and PyPI wrappers both at `2.0.6`). C
 | **Bash / Shell** | POSIX bash | Installers, CLI (`bin/aid`), install-core (`lib/aid-install-core.sh`), phase scripts, test suites — run `find . -name '*.sh' \| wc -l` for the live count. |
 | **PowerShell** | **Windows PowerShell 5.1+** (compat floor) | Windows installer/CLI parity (`install.ps1`, `lib/AidInstallCore.psm1`, `bin/aid.ps1`). CONFIRMED `README.md` (search: "PowerShell 5.1+"). |
 | **Python** | **>=3.8** (PyPI); CI pins **3.11** | The profile renderer, dashboard reader, PyPI wrapper. CONFIRMED `packages/pypi/pyproject.toml` (search: "requires-python = \">=3.8\"") and `.github/workflows/test.yml` (search: "python-version: '3.11'"). |
-| **JavaScript (Node)** | **>=22** (npm wrapper and summarize validators); CI pins **24** | npm wrapper, dashboard Node server/reader (`reader.mjs`). The summarize validators (`validate-visuals.mjs`, `contrast-check.mjs`) require >=20 because Playwright 1.61.1 declared in their `package.json` does not support Node 18/19. CONFIRMED `packages/npm/package.json` (search: "node\": \">=18") and the repository-root `package.json` (search: "\"node\": \">=20\"") and `.github/workflows/test.yml` (search: "node-version: '20'"). |
+| **JavaScript (Node)** | **>=22** (npm wrapper and repository root); CI pins **24** | npm wrapper, dashboard Node server/reader (`reader.mjs`), the summarize validators (`validate-visuals.mjs`, `contrast-check.mjs`), and the site's build-time generators. CONFIRMED `packages/npm/package.json` (search: "\"node\": \">=22\"") and the repository-root `package.json` (search: "\"node\": \">=22\"") and `.github/workflows/test.yml` (search: "node-version: '24'"). |
 | **TypeScript** | **6.0.3** (site dev dep) | The Astro website only. CONFIRMED `site/package.json` (search: "typescript"). |
 
 **Node version policy (one floor, one test target -- they are different promises):** every
@@ -250,6 +257,3 @@ imports needed at runtime) — CONFIRMED by the empty PyPI dependency set and
 
 No EOL or known-CVE runtime dependency was observed (the CLI ships none). See
 `tech-debt.md` for risk items beyond versioning.
-
----
-

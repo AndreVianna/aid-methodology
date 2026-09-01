@@ -15,12 +15,16 @@
 #   BI10  Summary predicate -- no sentence terminator -> whole collapsed line is Summary.
 #   BI11  Summary predicate -- sentence exceeding 200 chars is truncated to 200 + '...'
 #   BI12  Empty-KB guard -- no docs found emits the no-KB-docs notice.
-#   BI13  Category grouping -- primary/meta/extension docs appear in correct sections.
+#   BI13  Category grouping -- primary/meta sections only; extension folds into Primary.
 #   BI14  Alphabetical sort within a category table.
 #   BI15  Empty cell renders as a single space (table stays well-formed).
-#   BI16  Table header row emitted once per category (6-column header + separator).
+#   BI16  Table header row emitted once per emitted section (6-column header + separator).
 #   BI17  see_also bare token (no .md suffix) renders as link.
 #   BI18  see_also prose entry with spaces renders verbatim (not linked).
+#   BI19  Row order is locale-independent: two runs differing only in LC_ALL
+#         produce identical output (byte collation, not the caller's locale).
+#   BI19b Mutation control -- the same doc set under a locale-aware sort really
+#         does order differently, so BI19 is not vacuous.
 #
 # Usage:
 #   HOME=$(mktemp -d) bash tests/canonical/test-build-kb-index.sh [--verbose]
@@ -99,9 +103,9 @@ assert_file_contains "$OUT01" "[schemas.md](../knowledge/schemas.md)" "BI01 See-
 assert_file_contains "$OUT01" "architect, developer" "BI01 Audience cell -- populated"
 
 # Verify the table header row was emitted.
-assert_file_contains "$OUT01" "| Document | Objective | Summary | Tags | See-instead | Audience |" \
+assert_file_contains "$OUT01" "| Document | Audience | Tags | See-instead | Objective | Summary |" \
     "BI01 table header row present"
-assert_file_contains "$OUT01" "|----------|-----------|---------|------|-------------|----------|" \
+assert_file_contains "$OUT01" "|----------|----------|------|-------------|-----------|---------|" \
     "BI01 table separator row present"
 
 # ===========================================================================
@@ -368,7 +372,8 @@ run_index "$KB12" "$OUT12"
 assert_file_contains "$OUT12" "*(no KB docs found" "BI12 empty KB -- no-docs notice present"
 
 # ===========================================================================
-# BI13  Category grouping -- docs appear under correct ## section headers.
+# BI13  Category grouping -- only Primary and Meta ## section headers are emitted;
+#       a kb-category: extension doc is folded into the Primary table.
 # ===========================================================================
 KB13="${TMPDIR_BASE}/kb13"
 mkdir -p "$KB13"
@@ -397,15 +402,33 @@ body"
 OUT13="${TMPDIR_BASE}/INDEX13.md"
 run_index "$KB13" "$OUT13"
 
-# Category headers
+# Category headers -- Primary and Meta are the only sections emitted; the
+# extension category no longer gets a section of its own.
 assert_file_contains "$OUT13" "## Primary" "BI13 Primary category header present"
 assert_file_contains "$OUT13" "## Meta" "BI13 Meta category header present"
-assert_file_contains "$OUT13" "## Extension" "BI13 Extension category header present"
+assert_file_not_contains "$OUT13" "## Extension" "BI13 no Extension section header emitted (extension folds into Primary)"
 
 # Each doc in its correct section -- verify by checking the file contains the link
 assert_file_contains "$OUT13" "[primary-doc.md](../knowledge/primary-doc.md)" "BI13 primary-doc.md in output"
 assert_file_contains "$OUT13" "[meta-doc.md](../knowledge/meta-doc.md)" "BI13 meta-doc.md in output"
 assert_file_contains "$OUT13" "[ext-doc.md](../knowledge/ext-doc.md)" "BI13 ext-doc.md in output"
+
+# The extension doc is not merely present -- its row must fall INSIDE the Primary
+# table, i.e. between the Primary heading and the next "## " heading.
+primary_head_line=$(grep -n "^## Primary" "$OUT13" | head -1 | cut -d: -f1)
+ext_row_line=$(grep -nF "[ext-doc.md](../knowledge/ext-doc.md)" "$OUT13" | head -1 | cut -d: -f1)
+if [[ -n "$primary_head_line" ]]; then
+    next_head_line=$(awk -v start="$primary_head_line" 'NR > start && /^## / { print NR; exit }' "$OUT13")
+    [[ -z "$next_head_line" ]] && next_head_line=$(( $(wc -l < "$OUT13") + 1 ))
+else
+    next_head_line=""
+fi
+if [[ -n "$primary_head_line" && -n "$ext_row_line" && -n "$next_head_line" \
+      && "$ext_row_line" -gt "$primary_head_line" && "$ext_row_line" -lt "$next_head_line" ]]; then
+    pass "BI13 ext-doc.md row rendered inside the Primary table (extension folded into Primary)"
+else
+    fail "BI13 ext-doc.md row not inside the Primary table -- Primary heading line '${primary_head_line:-none}', ext-doc row line '${ext_row_line:-none}', next '## ' heading line '${next_head_line:-none}'"
+fi
 
 # ===========================================================================
 # BI14  Alphabetical sort within a category table.
@@ -462,11 +485,12 @@ fi
 assert_file_contains "$OUT02" "|   |" "BI15 blank cell renders as single space (|<sp+sp+sp>| in rendered row)"
 
 # ===========================================================================
-# BI16  Table header row emitted once per category (6-column header).
+# BI16  Table header row emitted once per emitted section (6-column header).
 # ===========================================================================
-# kb13 has all three categories; each must have exactly one header row.
-header_count=$(grep -c "| Document | Objective | Summary | Tags | See-instead | Audience |" "$OUT13")
-assert_eq "$header_count" "3" "BI16 table header row emitted once per category (3 categories = 3 headers)"
+# kb13 declares all three categories, but extension folds into Primary, so only
+# two sections are emitted; each must have exactly one header row.
+header_count=$(grep -c "| Document | Audience | Tags | See-instead | Objective | Summary |" "$OUT13")
+assert_eq "$header_count" "2" "BI16 table header row emitted once per emitted section (2 sections = 2 headers)"
 
 # ===========================================================================
 # BI17  see_also bare token (no .md suffix) renders as link.
@@ -512,6 +536,64 @@ assert_file_contains "$OUT18" "use the architect role for design decisions" \
     "BI18 prose see_also entry appears verbatim"
 assert_file_not_contains "$OUT18" "[use the architect" \
     "BI18 prose see_also entry NOT wrapped in a markdown link"
+
+# ===========================================================================
+# BI19  Row order is locale-independent.
+#
+#       The regression this pins: the doc list was sorted with a bare `sort`,
+#       so collation followed the caller's locale. Under LC_ALL=C an uppercase
+#       name sorts before every lowercase one; under en_US.UTF-8 it does not.
+#       A no-op regenerate therefore produced a row-order diff decided by who
+#       ran it, and CI and a developer machine disagreed on a generated file.
+# ===========================================================================
+KB19="${TMPDIR_BASE}/kb19"
+mkdir -p "$KB19"
+# Mixed case is the whole point: these three names order differently under a
+# byte collation than under a locale-aware one.
+make_doc "${KB19}/UPPER.md" "---
+kb-category: primary
+source: hand-authored
+objective: Uppercase-named doc
+summary: Sorts first under byte collation.
+---
+body"
+make_doc "${KB19}/alpha.md" "---
+kb-category: primary
+source: hand-authored
+objective: Lowercase a doc
+summary: Lowercase alpha.
+---
+body"
+make_doc "${KB19}/beta.md" "---
+kb-category: primary
+source: hand-authored
+objective: Lowercase b doc
+summary: Lowercase beta.
+---
+body"
+
+OUT19_C="${TMPDIR_BASE}/INDEX19_c.md"
+OUT19_UTF8="${TMPDIR_BASE}/INDEX19_utf8.md"
+LC_ALL=C bash "$SCRIPT" --root "$KB19" --output "$OUT19_C" >/dev/null 2>&1
+LC_ALL=en_US.UTF-8 bash "$SCRIPT" --root "$KB19" --output "$OUT19_UTF8" >/dev/null 2>&1
+
+if diff <(filter_timestamps "$OUT19_C") <(filter_timestamps "$OUT19_UTF8") >/dev/null 2>&1; then
+    pass "BI19 row order identical under LC_ALL=C and LC_ALL=en_US.UTF-8"
+else
+    fail "BI19 row order differs between locales -- the doc-list sort is locale-dependent"
+fi
+
+# BI19b mutation control: prove the fixture CAN order differently, so BI19 is
+# not passing merely because this host has one locale installed.
+order_c=$(printf 'UPPER.md\nalpha.md\nbeta.md\n' | LC_ALL=C sort | tr '\n' ' ')
+order_locale=$(printf 'UPPER.md\nalpha.md\nbeta.md\n' | LC_ALL=en_US.UTF-8 sort | tr '\n' ' ')
+if [[ "$order_c" != "$order_locale" ]]; then
+    pass "BI19b control -- the two collations really do disagree on this fixture"
+else
+    # No second collation available on this host: BI19 cannot fail here, so say
+    # so rather than reporting a green that proves nothing.
+    pass "BI19b control SKIPPED -- this host has only one collation available"
+fi
 
 # ===========================================================================
 test_summary

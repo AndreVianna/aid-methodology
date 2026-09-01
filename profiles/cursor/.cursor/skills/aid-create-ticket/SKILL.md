@@ -1,17 +1,14 @@
 ---
 name: aid-create-ticket
 description: >
-  On-demand utility skill that files one new ticket via whatever issue-tracker connector the
-  project has registered, or the host tool's own tracker MCP when none is catalogued. Parses
-  `--connector <stem>`, `--level epic|story|task`, and `--parent <ref>` flags in any order ahead
-  of a free-text `<description>` (create has no leading-token connector heuristic), resolves the
-  connector via the shared ladder, composes the new-ticket payload (fixing level and parent by
-  precedence, defaulting neither silently), resolves the canonical tier to the tracker's concrete
-  issue-type at runtime via a non-destructive read (graceful degradation when the tracker has no
-  matching type), previews the exact payload, and gates on one in-run AskUserQuestion confirm --
-  which also carries the epic|story|task pick when the level is neither explicit nor inferable --
-  before filing. Returns the new `<connector-stem>:<external-id>` only after the user confirms;
-  nothing is filed, and no local file is ever written, before that.
+  File one new ticket in the project's issue tracker. Use this skill when work needs
+  recording where the team tracks it, rather than only inside AID. Describe the ticket in
+  free text; flags let you name the connector, the level (epic, story or task) and a parent.
+  It resolves which tracker to use, composes the payload, maps the level to that tracker's
+  own issue type, and shows you the exact payload before anything is filed. One confirmation
+  gates the write, and carries the level choice when you did not give one. It returns the
+  new ticket's id only after you confirm; nothing is filed, and no local file is written,
+  before that.
 allowed-tools: Read, Glob, Grep, AskUserQuestion
 argument-hint: "[--connector <stem>] [--level epic|story|task] [--parent <ref>] <description>"
 ---
@@ -21,8 +18,7 @@ argument-hint: "[--connector <stem>] [--level epic|story|task] [--parent <ref>] 
 `/aid-create-ticket` files a new ticket in a catalogued (or host-owned) issue tracker after
 previewing the exact payload and gaining an explicit confirm. It is one of three peer, on-demand
 ticket skills — alongside `/aid-read-ticket` and `/aid-update-ticket` — that give AID users a
-tool-agnostic way to interact with whatever tracker their project has integrated
-(feature-001-dedicated-ticket-skills SPEC.md).
+tool-agnostic way to interact with whatever tracker their project has integrated.
 
 **Shared reference.** The connector-resolution ladder, the grammar-parse rules, the write
 preview/confirm-gate convention, Level Resolution, and Parent Resolution this skill uses are all
@@ -32,7 +28,7 @@ never restates any of that — each state below points to the relevant section i
 
 **Absent from the mandatory pipeline flow.** Like `/aid-ask` and `/aid-set-connector`, this is
 an optional, on-demand utility skill outside the Discover-Execute flow: no phase gate references
-it, no `shortcut-catalog.yml` entry, no `work-NNN` scaffold, no `STATE.md` of its own — invoked
+it, no `shortcut-catalog.yml` entry, no `work-NNN` scaffold, no `STATE.yml` of its own — invoked
 directly by name.
 
 **State-machine chaining:** each `/aid-create-ticket` invocation drives the state machine —
@@ -47,12 +43,11 @@ earlier stop/cancel) without exiting mid-run to collect an answer.
 the tracker's issue-type list is queried (a non-destructive read), never written. Nothing about
 the level, the parent, or the rest of the payload reaches the tracker until the user explicitly
 confirms at `CONFIRM`; `FILE` is the only state that writes, and it writes exactly once, right
-after that confirm (feature-001 SPEC.md § Security Specs).
+after that confirm.
 
 **Writes no local file.** This skill's only external effect is the host-MCP ticket file (`FILE`
 state, gated behind confirm) — there is no `Write`/`Edit` tool in `allowed-tools`, and no file
-under this repo is ever touched (the three ticket skills persist nothing locally — feature-001
-SPEC.md § Layers & Components).
+under this repo is ever touched: the three ticket skills persist nothing locally.
 
 ---
 
@@ -130,7 +125,7 @@ and proceeds.
 ### State 3 — COMPOSE
 
 Build the new-ticket payload from `<description>`. Fix two attributes by precedence, **defaulting
-neither silently** (feature-001 SPEC.md § Feature Flow):
+neither silently**:
 
 - **Level:** explicit `--level` › description-inferred (e.g. "this epic…", "bug:") › **unset**. A
   description-inferred level is only a *candidate* here — it is surfaced for explicit confirmation
@@ -148,7 +143,7 @@ quoted literal, or unset), and the parent ref (or none). Nothing is sent anywher
 ### State 4 — LEVEL-RESOLVE
 
 A **non-destructive** host-MCP issue-type query — it runs before the gate precisely because it
-only reads (feature-001 SPEC.md § Security Specs: "no new silent behavior and no new write"). Per
+only reads -- no new silent behaviour and no new write. Per
 [`ticket-resolution.md`](../../aid/templates/connectors/ticket-resolution.md) § "Level Resolution
 (create only)":
 
@@ -214,8 +209,7 @@ Reached **only** after an explicit `[1] File it` confirm. Writes via the host MC
    is noted.
 
 A failed / not-found / unauthorized / unavailable host-MCP call surfaces the tracker's error
-**verbatim** and exits **non-destructively** — never a partial write (feature-001 SPEC.md § Feature
-Flow, MCP-call failure policy).
+**verbatim** and exits **non-destructively** — never a partial write.
 
 **Advance:** → State: RETURN-REF (continue inline).
 

@@ -99,27 +99,30 @@ def _make_flat_markers(work_dir: Path) -> None:
 
 
 def _make_flat_work(root: Path, work_id: str) -> Path:
-    """A well-formed flat-layout work: markers + a valid STATE.md with the
-    '### Tasks lifecycle' table and a task-001 row. Round-trips cleanly."""
+    """A well-formed flat-layout work: markers + a valid STATE.yml with a
+    `tasks_lifecycle` mapping and a task-001 entry. Round-trips cleanly.
+    (work-009-refactor task-016: was a fenced-frontmatter STATE.md with a
+    '### Tasks lifecycle' markdown table -- retired, SPEC.md sec:D-4.
+    `AID_STATE_FILE` is an explicit override to `STATE.yml` for this op
+    (task-020), so the fixture MUST use that filename.)"""
     work_dir = root / ".aid" / "works" / work_id
     _make_flat_markers(work_dir)
-    (work_dir / "STATE.md").write_text(
-        "---\n"
+    (work_dir / "STATE.yml").write_text(
         "lifecycle: Running\n"
         "updated: '2026-01-01T00:00:00Z'\n"
-        "---\n\n"
-        "# Work State\n\n"
-        "### Tasks lifecycle\n\n"
-        "| Task | State | Review | Elapsed | Notes |\n"
-        "| --- | --- | --- | --- | --- |\n"
-        "| task-001 | Pending | -- | -- | -- |\n",
+        "tasks_lifecycle:\n"
+        "  task-001:\n"
+        "    state: Pending\n"
+        "    review: --\n"
+        "    elapsed: --\n"
+        "    notes: --\n",
         encoding="utf-8",
     )
     return work_dir
 
 
 def _make_flat_work_no_state(root: Path, work_id: str) -> Path:
-    """Flat markers present, but NO STATE.md at all -- writeback-state.sh's
+    """Flat markers present, but NO STATE.yml at all -- writeback-state.sh's
     write_task_field_flat() hits `[[ ! -f "$STATE_FILE" ]]` -> die exit 1
     ('does not exist' -> DEFAULT_MAP 404 'not-found'). resolve_work_dir still
     resolves this directory (presence-only inclusion test, WT-1/task-002),
@@ -130,13 +133,17 @@ def _make_flat_work_no_state(root: Path, work_id: str) -> Path:
 
 
 def _make_flat_work_malformed_state(root: Path, work_id: str) -> Path:
-    """Flat markers + a STATE.md present but lacking '### Tasks lifecycle' --
-    writeback-state.sh's write_task_field_flat() -> die exit 6 ('malformed
-    work STATE.md ... (flat layout)' -> DEFAULT_MAP 500 'write-failed')."""
+    """Flat markers + a STATE.yml present but NOT a mapping (SPEC.md sec:D-3
+    `wb_state_is_mapping`'s "first non-blank/non-comment line is a column-0
+    `key:` line" check fails) -- writeback-state.sh's write_task_field_flat()
+    -> die exit 6 ('malformed work STATE.yml ... (flat layout)' -> DEFAULT_MAP
+    500 'write-failed'). (work-009-refactor task-016: was a fenced-frontmatter
+    STATE.md lacking '### Tasks lifecycle' -- retired, replaced by the
+    generic is-a-mapping check.)"""
     work_dir = root / ".aid" / "works" / work_id
     _make_flat_markers(work_dir)
-    (work_dir / "STATE.md").write_text(
-        "---\nlifecycle: Running\n---\n\n# Work State\n\nNo tasks section here.\n",
+    (work_dir / "STATE.yml").write_text(
+        "# no tasks_lifecycle mapping here -- not a valid key: line\n",
         encoding="utf-8",
     )
     return work_dir
@@ -155,17 +162,17 @@ def _make_nested_work_unresolvable_delivery(root: Path, work_id: str) -> Path:
     del_dir = root / ".aid" / "works" / work_id / "deliveries" / "delivery-001"
     task_dir = del_dir / "tasks" / "task-001"
     task_dir.mkdir(parents=True, exist_ok=True)
-    (root / ".aid" / "works" / work_id / "STATE.md").write_text(
-        "## Pipeline State\n\n- **Lifecycle:** Running\n", encoding="utf-8",
+    (root / ".aid" / "works" / work_id / "STATE.yml").write_text(
+        "lifecycle: Running\n", encoding="utf-8",
     )
-    (del_dir / "STATE.md").write_text(
-        "## Delivery Lifecycle\n\n- **State:** Executing\n", encoding="utf-8",
+    (del_dir / "STATE.yml").write_text(
+        "state: Executing\n", encoding="utf-8",
     )
     (task_dir / "DETAIL.md").write_text(
         "# task-001: Nested task (no Source line)\n\n**Type:** IMPLEMENT\n", encoding="utf-8",
     )
-    (task_dir / "STATE.md").write_text(
-        "---\nstate: Pending\n---\n\n## Task State\n", encoding="utf-8",
+    (task_dir / "STATE.yml").write_text(
+        "state: Pending\n", encoding="utf-8",
     )
     return root / ".aid" / "works" / work_id
 
@@ -194,9 +201,9 @@ class TestDefaultMapExitMatrixLive(unittest.TestCase):
     def tearDown(self) -> None:
         shutil.rmtree(str(self._base), ignore_errors=True)
 
-    def test_exit1_missing_state_md_is_404_not_found(self):
+    def test_exit1_missing_state_yml_is_404_not_found(self):
         """task.set-notes against a work dir that exists (WT-1 resolves it) but
-        has no STATE.md -> writeback-state.sh exit 1 -> DEFAULT_MAP 404."""
+        has no STATE.yml -> writeback-state.sh exit 1 -> DEFAULT_MAP 404."""
         _make_flat_work_no_state(self._repo_a, "work-711-nostate")
         with _ServerThread(str(self._aid_home), write_enabled=True) as server:
             status, body = server.post_json(
@@ -285,8 +292,8 @@ class TestDefaultMapExitMatrixLive(unittest.TestCase):
         self.assertEqual(status, 422)
         self.assertEqual(json.loads(body)["error"], "invalid-value")
 
-    def test_exit6_malformed_state_md_is_500_write_failed(self):
-        """A flat-layout work whose STATE.md lacks '### Tasks lifecycle' ->
+    def test_exit6_malformed_state_yml_is_500_write_failed(self):
+        """A flat-layout work whose STATE.yml is not a mapping ->
         writeback-state.sh's write_task_field_flat() -> exit 6 -> DEFAULT_MAP
         500 'write-failed'."""
         _make_flat_work_malformed_state(self._repo_a, "work-716-malformed")

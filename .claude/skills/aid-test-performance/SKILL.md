@@ -1,11 +1,11 @@
 ---
 name: aid-test-performance
 description: >
-  Run a performance verification NOW -- benchmark, load test, or stress test
-  against a threshold/SLO -- and report measured-vs-threshold. A thin kind-sibling
-  of /aid-test with the verification kind bound to performance. Read-only; resolves
-  nothing; findings hand off to /aid-fix. This file carries no logic of its own --
-  its full behavior is defined by .claude/skills/aid-test/SKILL.md.
+  Run a performance verification against a threshold or SLO -- a benchmark, a load test, or
+  a stress test -- and report measured against target. Use this skill when you need to know
+  whether something is fast enough, and by how much. Read-only; it resolves nothing, and
+  findings hand off to `/aid-fix`. A thin kind-sibling of `/aid-test`, which defines its
+  full behavior.
 allowed-tools: Read, Glob, Grep, Bash, Write, Edit, Agent
 argument-hint: "<target + threshold> -- the hot path/endpoint and the SLO to measure against"
 ---

@@ -6,10 +6,9 @@ summary: Read this before changing any skill, artifact template, or phase hand-o
 sources:
   - docs/aid-methodology.md
   - canonical/skills/
-  - canonical/aid/templates/work-state-template.md
+  - canonical/aid/templates/work-state-template.yml
   - canonical/aid/templates/grading-rubric.md
   - canonical/aid/templates/requirements.md
-  - canonical/aid/templates/delivery-blueprint-template.md
   - canonical/aid/templates/task-detail-template.md
   - canonical/aid/templates/shortcut-engine.md
   - .aid/settings.yml
@@ -17,11 +16,15 @@ tags: [C2, pipeline, contracts, phases, artifacts, state-machines, feedback-loop
 see_also: [integration-map.md, architecture.md, domain-glossary.md, artifact-schemas.md]
 owner: architect
 audience: [developer, architect]
-intent: |
-  The typed data contracts between AID pipeline phases — artifact hand-offs, state-machine
-  transitions, the grading gate, and the feedback loops. Read this when modifying a skill,
-  an artifact template, or any phase boundary.
-contracts: []
+review-criteria:
+  - id: F-01
+    kind: validate
+    criterion: >
+      Every loopback row names a skill that exists as a directory under `canonical/skills/`.
+    severity: HIGH
+    why: >
+      These rows are the routing table an agent follows at a phase boundary, so a row naming a
+      skill that does not exist dead-ends the run rather than failing visibly here.
 ---
 
 # Pipeline Contracts
@@ -50,7 +53,6 @@ server, is documented in [integration-map.md](integration-map.md).)
 - [Conventions](#conventions)
 - [Contracts](#contracts)
 - [Invariants](#invariants)
-- [Change Log](#change-log)
 
 ---
 
@@ -92,22 +94,22 @@ Inventory" table, "§4 The Phases").
 
 | # | Phase (skill) | Consumes | Produces | Gate |
 |---|---------------|----------|----------|------|
-| — | `aid-config` (bootstrap) | user metadata (greenfield/brownfield, name, min grade) | `.aid/` scaffold · KB placeholders · context file (`CLAUDE.md`/`AGENTS.md`) · seeded `STATE.md` · `settings.yml` | none (setup) |
+| — | `aid-config` (bootstrap) | user metadata (greenfield/brownfield, name, min grade) | `.aid/` scaffold · KB placeholders · context file (`CLAUDE.md`/`AGENTS.md`) · seeded `STATE.yml` · `settings.yml` | none (setup) |
 | 1 | `aid-discover` (full path; brownfield) | repository source · `project-index.md` pre-pass · confirmed `discovery.doc_set` | the confirmed KB doc-set · `INDEX.md` · `README.md` · discovery-area `STATE.md` grade/Q&A · ELICIT E1: `## External Documentation` in `.aid/knowledge/STATE.md` (population signal into `external-sources.md`, written by Scout) · ELICIT E2: `.aid/connectors/` registry (descriptors + `INDEX.md`) | deterministic grade ≥ minimum + human approval |
 | 2a | `aid-describe` (full path only) | `.aid/knowledge/` · user answers | approved `REQUIREMENTS.md` (+ greenfield: a forward-authored KB seed in `.aid/knowledge/`) | grade ≥ minimum + human approval |
-| 2b | `aid-define` (full path only) | approved `REQUIREMENTS.md` · KB · codebase | per-feature `SPEC.md` stubs in `features/` + cross-reference Q&A | grade ≥ minimum + human approval |
-| 3 | `aid-specify` (full path only) | a feature `SPEC.md` (requirements side) · `REQUIREMENTS.md` · KB · codebase | `## Technical Specification` appended to the feature `SPEC.md` | per-section grade ≥ minimum |
-| 4 | `aid-plan` (full path only) | feature `SPEC.md` files marked `Ready` · `REQUIREMENTS.md` · KB | `PLAN.md` (ordered deliveries) + per-delivery `BLUEPRINT.md` stubs (objective/scope/gate criteria) + delivery `STATE.md` (`Pending-Spec`) | grade ≥ minimum |
-| 5 | `aid-detail` (full path only) | `PLAN.md` · feature `SPEC.md` · `BLUEPRINT.md` · KB | per-task `DETAIL.md` files + execution graph appended to `PLAN.md` | grade ≥ minimum |
-| 6 | `aid-execute` | task `DETAIL.md` (with Type) · `PLAN.md` · feature `SPEC.md` · `BLUEPRINT.md` · `INDEX.md` · `known-issues.md` (if present) | reviewed/graded artifacts to grade ≥ minimum; results in delivery/task `STATE.md` | per-task quick-check + delivery-gate grade ≥ minimum |
+| 2b | `aid-define` (full path only) | approved `REQUIREMENTS.md` · KB · codebase | one `### Feature NNN` section per feature under `REQUIREMENTS.md § 11` + cross-reference Q&A | grade ≥ minimum + human approval |
+| 3 | `aid-specify` (full path only) | a feature's `§ 11` section (requirements side) · the `§ 5`/`§ 9` slice it cites · KB · codebase | `#### Technical Specification` appended to that feature section | per-section grade ≥ minimum |
+| 4 | `aid-plan` (full path only) | `§ 11` feature sections marked `Ready` · `REQUIREMENTS.md` · KB | `PLAN.md` — ordered deliveries, each stanza carrying that delivery's definition (objective/scope/gate criteria) + delivery `STATE.yml` (`Pending-Spec`) | grade ≥ minimum |
+| 5 | `aid-detail` (full path only) | `PLAN.md` · the `§ 11` feature sections · KB | per-task `DETAIL.md` files + execution graph appended to `PLAN.md` | grade ≥ minimum |
+| 6 | `aid-execute` | task `DETAIL.md` (with Type) · `PLAN.md` · the requirements SLICE the task cites (`slice-requirements.sh`) · `INDEX.md` · `known-issues.md` (if present) | reviewed/graded artifacts to grade ≥ minimum; results in delivery/task `STATE.yml` | per-task quick-check + delivery-gate grade ≥ minimum |
 
 CONFIRMED by the per-phase deep-dives in `docs/aid-methodology.md` ("## 4. The Phases"),
 the artifact table ("Skill Inventory"), and the `aid-describe` / `aid-define`
 `SKILL.md` files (frontmatter `State machine:` + State Detection blocks). The **flattened Lite
-path** produces the same artifact *types* at the work root, collapsed: the shortcut engine
-authors `REQUIREMENTS.md` (CAPTURE), a single work-root feature `SPEC.md` (SPEC), `PLAN.md` +
-`BLUEPRINT.md` (PLAN), and `tasks/task-NNN/DETAIL.md` (DETAIL) — see the On-Disk Work Hierarchy
-below. CONFIRMED: `canonical/aid/templates/shortcut-engine.md` (CAPTURE/SPEC/PLAN/DETAIL steps);
+path** collapses further, to two artifact types at the work root: the shortcut engine authors
+`REQUIREMENTS.md` (CAPTURE, then SPEC writes its `§ 11` feature section) and
+`tasks/task-NNN/DETAIL.md` (DETAIL). Its PLAN state writes nothing — one feature and one
+delivery means no sequencing decision to record — see the On-Disk Work Hierarchy below. CONFIRMED: `canonical/aid/templates/shortcut-engine.md` (CAPTURE/SPEC/PLAN/DETAIL steps);
 `docs/aid-methodology.md` ("Skill Inventory" shortcut row, "The Lite Path").
 
 Greenfield projects skip phase 1 (no existing system) and enter at Describe (2a). Instead of
@@ -136,64 +138,65 @@ cells are authored directly at the work root.
   knowledge/                                  # shared KB (from Discovery) — one per project
   works/
     work-NNN-{slug}/
-      STATE.md                                  # work-area run-state (DERIVED rollups + Q&A)
-      REQUIREMENTS.md                           # full path only
-      features/feature-NNN-{name}/
-        SPEC.md                                 # feature definition (Define) + tech spec (Specify)
-        STATE.md                                # feature-level state
-      PLAN.md                                   # full path only (Detail appends the execution graph)
+      STATE.yml                                 # work-area run-state (DERIVED rollups + Q&A)
+      REQUIREMENTS.md                           # full path only; § 11 holds one
+                                                #   `### Feature NNN` section per feature:
+                                                #   definition (Define) + tech spec (Specify)
+      PLAN.md                                   # full path only; each `### delivery-NNN`
+                                                #   stanza IS that delivery's definition
+                                                #   (objective/scope/gate criteria).
+                                                #   Detail appends the execution graph
       deliveries/delivery-NNN/
-        BLUEPRINT.md                            # delivery definition (objective/scope/gate criteria/tasks)
-        STATE.md                                # delivery lifecycle + gate + delivery-scoped Q&A
+        STATE.yml                               # delivery lifecycle + gate + delivery-scoped Q&A
         tasks/task-NNN/
           DETAIL.md                             # the task definition (Type, Source, Depends on, Scope, AC)
-          STATE.md                              # mutable task cells (State, Review, Elapsed, Notes)
+          STATE.yml                             # mutable task cells (State, Review, Elapsed, Notes)
       IMPEDIMENT-task-NNN.md                     # written by Execute on an unresolved contradiction
       packages/package-NNN-{slug}.md             # written by Deploy
       DEPLOYMENT-STATE.md · MONITOR-STATE.md     # written by Deploy / Monitor
 ```
 
-**Flattened Lite path** (no `deliveries/`, no `delivery-NNN/` folder, and no per-task `STATE.md`):
+**Flattened Lite path** (no `deliveries/`, no `delivery-NNN/` folder, and no per-task `STATE.yml`):
 
 ```
 .aid/
   knowledge/                                  # shared KB (from Discovery) — one per project
   works/
     work-NNN-{slug}/
-      STATE.md                                  # work-area run-state; ALSO carries the sole
-                                                 # delivery's ## Delivery Lifecycle (with its
-                                                 # ### Tasks lifecycle table) / ## Delivery Gate /
-                                                 # ## Cross-phase Q&A (AUTHORED directly)
-      REQUIREMENTS.md                           # shortcut engine CAPTURE
-      SPEC.md                                   # single work-root feature spec (requirements + technical)
-      PLAN.md                                   # single-delivery plan + execution graph
-      BLUEPRINT.md                              # the sole delivery's definition, at the work root
+      STATE.yml                                 # work-area run-state; ALSO carries the sole
+                                                 # delivery's `delivery_lifecycle` key (with its
+                                                 # `tasks_lifecycle` mapping) / `delivery_gate` key /
+                                                 # `qa` key (AUTHORED directly)
+      REQUIREMENTS.md                           # shortcut engine CAPTURE; § 11 gains the single
+                                                #   feature section at SPEC, § 9 carries the
+                                                #   delivery's gate criteria. No SPEC.md and no
+                                                #   PLAN.md: one feature and one delivery leaves
+                                                #   nothing to sequence, and the execution graph
+                                                #   derives from each **Depends on:** field
       tasks/task-NNN/
-        DETAIL.md                               # the task definition — IMMUTABLE, no sibling STATE.md;
-                                                 # mutable cells live in STATE.md ### Tasks lifecycle
+        DETAIL.md                               # the task definition — IMMUTABLE, no sibling STATE.yml;
+                                                 # mutable cells live in STATE.yml's `tasks_lifecycle` mapping
       IMPEDIMENT-task-NNN.md                     # written by Execute on an unresolved contradiction
       packages/package-NNN-{slug}.md             # written by Deploy
       DEPLOYMENT-STATE.md · MONITOR-STATE.md     # written by Deploy / Monitor
 ```
 
-CONFIRMED: `canonical/aid/templates/work-state-template.md` (`deliveries/delivery-NNN/STATE.md`
-blocks for the full path; the AUTHORED `## Delivery Lifecycle` / `### Tasks lifecycle` /
-`## Delivery Gate` sections for the single-delivery flattened work) and
-`canonical/aid/templates/delivery-state-template.md` / `delivery-blueprint-template.md`
-(full-path-only header notes; the flattened work authors these directly in the work-root
-STATE.md and a work-root `BLUEPRINT.md`). The `features/` folder is created by `aid-define` (2b)
-FEATURE-DECOMPOSITION, not by the interview half — CONFIRMED: `canonical/skills/aid-define/SKILL.md`
-("Workspace structure", "created by FEATURE-DECOMPOSITION").
+CONFIRMED: `canonical/aid/templates/work-state-template.yml` (`deliveries/delivery-NNN/STATE.yml`
+blocks for the full path; the AUTHORED `delivery_lifecycle` / `tasks_lifecycle` /
+`delivery_gate` keys for the single-delivery flattened work) and
+`canonical/aid/templates/delivery-state-template.yml` (a full-path-only header note; the
+flattened work authors the same keys directly in its work-root STATE.yml). The `§ 11` feature
+sections are written by `aid-define` (2b) FEATURE-DECOMPOSITION, not by the interview half --
+CONFIRMED: `canonical/skills/aid-define/SKILL.md`.
 
-The flattened Lite path omits `features/`, `deliveries/`, and `delivery-NNN/`, and creates **no
-per-task `STATE.md`**: the shortcut engine writes work-root `REQUIREMENTS.md` + `SPEC.md` +
-`PLAN.md` + `BLUEPRINT.md` plus one `tasks/task-NNN/DETAIL.md` per task, and each task's mutable
-cells are authored into the work-root `STATE.md § ### Tasks lifecycle` table (targeted by
+The flattened Lite path omits `deliveries/` and `delivery-NNN/`, and creates **no per-task
+`STATE.yml`**: the shortcut engine writes work-root `REQUIREMENTS.md` plus one
+`tasks/task-NNN/DETAIL.md` per task, and each task's mutable
+cells are authored into the work-root `STATE.yml`'s `tasks_lifecycle` mapping (targeted by
 `writeback-state.sh`'s auto-detected flat-layout branch). CONFIRMED:
 `canonical/aid/templates/shortcut-engine.md` ("emits `tasks/task-NNN/DETAIL.md` … no per-task
-`STATE.md`"); `canonical/aid/scripts/execute/writeback-state.sh` (flattened-layout `--task-id`
-targets `### Tasks lifecycle`); `docs/aid-methodology.md` ("Detail is skipped on the lite path …
-with no per-task `STATE.md`").
+`STATE.yml`"); `canonical/aid/scripts/execute/writeback-state.sh` (flattened-layout `--task-id`
+targets `tasks_lifecycle.task-NNN.<field>` in the work-root `STATE.yml`).
 
 ---
 
@@ -204,23 +207,22 @@ is the contract a producing phase must satisfy and a consuming phase relies on.
 
 | Artifact | Produced by | Consumed by | Required shape (load-bearing fields) | Lifecycle |
 |----------|-------------|-------------|--------------------------------------|-----------|
-| KB doc-set | Discover (brownfield) / `aid-describe` DESCRIBE-SEED (greenfield seed) | all phases | per-doc frontmatter (`kb-category`, `source`, `objective`, `summary`, `sources`, `tags`, `audience`, `owner`) + `# Title` + content + `## Change Log` | living |
+| KB doc-set | Discover (brownfield) / `aid-describe` DESCRIBE-SEED (greenfield seed) | all phases | per-doc frontmatter (`kb-category`, `source`, `objective`, `summary`, `sources`, `tags`, `audience`, `owner`) + `# Title` + content | living |
 | `INDEX.md` | config/Discover/Describe | all phases | one 2–3 line summary row per KB doc | regenerated, never hand-maintained |
 | `STATE.md` (discovery area) | config/Discover/Summarize | Discover (resume), all phases | grade, Q&A (Pending), review & summarization history, calibration log; ELICIT (State 0) additionally writes `## Discovery Elicitation` (Sources/Tools/Tools step/Skipped/Resolved) and `## External Documentation` (Path/Type/Accessible/Notes, one row per declared source — E1) | living |
 | `.aid/connectors/` registry | `aid-discover` ELICIT (State 0, Step E2) | all phases (agents requesting a declared integration) | one `<stem>.md` descriptor per connector (`name`, `connection_type`, `endpoint`, `auth_method`, `secret_reference` [aid-managed only], `preset`, `objective`, `summary`, `tags`, `audience`) + generated `INDEX.md` | living, reconciled (add/update/remove) each ELICIT cycle |
-| `REQUIREMENTS.md` | `aid-describe` (full) or shortcut engine CAPTURE (flattened Lite) | Define, Specify, Plan (full); SPEC/PLAN/DETAIL (engine) | `## Change Log` + 10 numbered sections (Objective … Priority) | frozen after approval, rev-tracked |
-| feature `SPEC.md` | `aid-define` + Specify | Plan, Detail, Execute | `## Change Log` · Source · Description · User Stories · Priority · Acceptance Criteria · `## Technical Specification` (Specify) | living |
-| work-root `SPEC.md` (flattened Lite) | shortcut engine SPEC | engine PLAN/DETAIL, Execute | single consolidated feature spec (`# {Title}`, Change Log, Source, Description, Acceptance Criteria, `## Technical Specification`), no `features/` | living |
-| `PLAN.md` | Plan (full) or shortcut engine PLAN (flattened Lite) | Detail, Deploy | `## Deliverables` (ordered, each with What/Features/Depends on/Priority) + execution graph (Detail) + `## Revision History` | living, rev-tracked |
-| `BLUEPRINT.md` (delivery definition) | `aid-plan` / `aid-specify` (full, at `deliveries/delivery-NNN/`) or shortcut engine PLAN (flattened Lite, at work root) | Detail, Execute (delivery gate reads `## Gate Criteria`) | `## Objective` · `## Scope` (+ Out of scope) · `## Gate Criteria` (testable checkboxes; last = "All section-6 quality gates pass") · `## Tasks` (nav table) · `## Dependencies` · `## Notes` | immutable definition |
+| `REQUIREMENTS.md` | `aid-describe` (full) or shortcut engine CAPTURE (flattened Lite) | Define, Specify, Plan (full); SPEC/PLAN/DETAIL (engine) | 10 numbered sections (Objective … Priority) | frozen after approval; history in git |
+| feature section (`REQUIREMENTS.md § 11`) | `aid-define` + Specify | Plan, Detail, Execute | Description · User Stories · Priority · cited `§ 5 FR-N` / `§ 9 AC-N` · `#### Technical Specification` | one section per feature |
+| `PLAN.md` | Plan (full) or shortcut engine PLAN (flattened Lite) | Detail, Deploy | `## Deliverables` (ordered, each with What/Features/Depends on/Priority) + execution graph (Detail) | living; history in git |
+| delivery stanza (`PLAN.md` `### delivery-NNN`) | `aid-plan` (full path) | Detail, Execute, Deploy | Objective · Scope / Out of scope · **Gate Criteria** · Notes | one stanza per delivery; the Lite path has no plan |
 | task `DETAIL.md` | `aid-detail` (full) or shortcut engine DETAIL (flattened Lite) | Execute | `Type` ∈ {RESEARCH, DESIGN, IMPLEMENT, TEST, DOCUMENT, MIGRATE, REFACTOR, CONFIGURE} · Source · Depends on · Scope · Acceptance Criteria | immutable (rev-tracked if amended) |
 | `IMPEDIMENT-task-NNN.md` | Execute | Specify, Detail, Discover | Summary · Type ∈ {wrong-assumption, missing-dependency, architecture-conflict, kb-gap} · Options · Recommendation | closed when resolved |
 | `package-NNN-{slug}.md` | Deploy | Monitor, stakeholders | deliveries included · verification results · environment · release notes | one per shipped release |
 | `MONITOR-STATE.md` | Monitor | `/aid-fix` (bugs), `/aid-triage` (CRs) | Last Run · Active Findings (Classification/Severity/Evidence/Routing) · Resolved Findings | living |
 
 CONFIRMED by the template files under `canonical/aid/templates/` and the artifact reference
-in `docs/aid-methodology.md` ("Skill Inventory" and "§4 The Phases"). The delivery `BLUEPRINT.md`
-shape is CONFIRMED: `canonical/aid/templates/delivery-blueprint-template.md`; the task `DETAIL.md`
+in `docs/aid-methodology.md` ("Skill Inventory" and "§4 The Phases"). The delivery definition's
+shape is CONFIRMED by `aid-plan/SKILL.md` § Output; the task `DETAIL.md`
 shape: `canonical/aid/templates/task-detail-template.md`. The ELICIT-produced rows
 (`## Discovery Elicitation` / `## External Documentation` / `.aid/connectors/` registry) are
 CONFIRMED: `canonical/skills/aid-discover/references/state-elicit.md` ("Step E1: External
@@ -306,7 +308,7 @@ until the computed grade meets the project minimum. CONFIRMED: `docs/aid-methodo
   full review-fix-review loop at the end of each delivery; High quick-check findings accumulate
   for the gate. CONFIRMED: `docs/aid-methodology.md` ("The two-tier review design").
 - **Lite GATE:** the shortcut engine's GATE state grades every generated document
-  (`REQUIREMENTS.md` / `SPEC.md` / `PLAN.md` / `BLUEPRINT.md` + each `DETAIL.md`) mechanically
+  (`REQUIREMENTS.md` / `PLAN.md` + each `DETAIL.md`) mechanically
   against the project minimum before the APPROVAL-HALT; it is the sole quality checkpoint on the
   Lite path. CONFIRMED: `canonical/aid/templates/shortcut-engine.md` (GATE state).
 
@@ -337,6 +339,51 @@ The IMPEDIMENT routing (L6) is by Type: `kb-gap` routes to Discover, `architectu
 to Specify, `missing-dependency` to Detail, and `wrong-assumption` to a task/SPEC update.
 CONFIRMED: `docs/aid-methodology.md` ("Loop 6"). The Monitor re-points (L9/L10) are CONFIRMED:
 `canonical/skills/aid-monitor/SKILL.md` ("bugs to /aid-fix, change requests to /aid-triage").
+
+### The `design -> create -> update` artifact lifecycle (on-demand, off the numbered pipeline)
+
+Thirty-six skills share one contract, `canonical/aid/templates/design-lifecycle.md`. They **bind**
+it rather than restating it, so the rules below live in one file and the bodies stay thin.
+
+**None of the thirty-six declares a `phase:`.** They are on-demand skills in the same shape
+`/aid-design` and `/aid-prototype` already have, so they carry no phase membership and none routes
+to `/aid-execute`. C-1's closed `phase:` enum is **not** extended by this family, and no contract
+below implies it was.
+
+| Stage | Precondition | Writes | Refuses when |
+|-------|--------------|--------|--------------|
+| `design` | none -- the shape is still open | `.aid/design/<artifact>.md`, and nothing else | -- |
+| `create` | a ready seed exists | the destination artifact; on first creation, its registration too | one of exactly three conditions, below |
+| `update` | the destination already carries committed content | the named revision only | the destination is `source: generated` |
+
+**`create` has exactly three refusal conditions and no fourth:** no seed at
+`.aid/design/<artifact>.md`; the seed's `## Open questions` still unresolved with no
+`--override-open-questions` supplied; or the destination's frontmatter reading
+`source: generated`, which means a registered build script owns that content. Whatever the
+destination already holds is **never itself** a reason to refuse -- an as-built document is the
+normal case these skills are for.
+
+**A repeat `create` never halts with nothing done.** Every part of the seed that is new is
+written; each part that would overwrite content an earlier run of the same lifecycle committed is
+named and **routed** to `update`. The seed is deleted only when everything its `## Destination`
+named was written -- otherwise it stays in place carrying just the unrealized parts, which
+`update` then consumes.
+
+**Registration happens in the creating run, never later and never by another skill.** When
+`create` creates a document it appends one `.aid/settings.yml` `knowledge.doc_set` entry
+`<file>|<owner>|required` -- the owner taken from the document's matrix row, never a blanket
+`skill-self` -- and one `.aid/knowledge/README.md` Completeness row, incrementing that file's
+doc-set count. Both use the append-block idiom and both must succeed in the same run.
+
+**Frontmatter invariants.** A document `create` creates gets `source: forward-authored` and
+`sources: []`; a document that already existed keeps its `source:` value unchanged, and `update`
+never rewrites a production mode. `approved_at_commit:` is never written and never restamped by
+either verb -- it is generator-written on approval, and these skills are not that generator.
+
+**`update` asks every run which derived outputs to update alongside the one it is writing, and
+stores the answer nowhere** -- no frontmatter backlink, no manifest, no registry, no state carried
+between runs. The question is asked afresh each time, and no tracking metadata is written into any
+output it touches.
 
 ### Greenfield forward-authoring + the conformance feedback
 
@@ -376,18 +423,25 @@ Load-bearing keys: `project.{name,description,type}`, `tools.installed`,
 
 ## Known Issues
 
-- No open pipeline-contract drift. The former methodology-doc drift (the flat
-  `.aid/works/{work}/tasks/task-NNN.md` layout) is resolved: `docs/aid-methodology.md` now describes
-  the nested full-path `deliveries/delivery-NNN/tasks/task-NNN/DETAIL.md` shape and the flattened
-  Lite `tasks/task-NNN/DETAIL.md` (no per-task `STATE.md`) shape, matching the live skills and
-  templates.
-- The skill taxonomy is **76 skill directories** under `canonical/skills/`: 18 curated
+- The former layout-shape drift (the flat `.aid/works/{work}/tasks/task-NNN.md` layout) is
+  resolved: `docs/aid-methodology.md` describes the nested full-path
+  `deliveries/delivery-NNN/tasks/task-NNN/DETAIL.md` shape and the flattened Lite
+  `tasks/task-NNN/DETAIL.md` shape (no per-task state file on that path), matching the live
+  skills and templates. A separate, narrower drift is open: `docs/aid-methodology.md` was not
+  part of the state-file YAML conversion and still names the per-work-tree state file
+  `STATE.md` throughout; the live templates and scripts
+  (`canonical/aid/templates/work-state-template.yml` /
+  `delivery-state-template.yml` / `task-state-template.yml`,
+  `canonical/aid/scripts/execute/writeback-state.sh`) are the current source of truth and name it
+  `STATE.yml`.
+- The skill taxonomy is **111 skill directories** under `canonical/skills/`: 17 curated
   pipeline/on-demand/router skills (including `aid-read-ticket`, `aid-create-ticket`,
-  `aid-update-ticket`) + the 58-row shortcut catalog's skills, every row a canonical
+  `aid-update-ticket`) + the 94-row shortcut catalog's skills, every row a canonical
   name — 34 verb-first direct-entry shortcut doorways (generated from
-  `shortcut-catalog.yml`) plus 24 hand-authored `repurpose` skills — up from
-  82 dirs / 67 shortcuts / a 69-row catalog before the v2.1.0 coverage-gap follow-on added the <!-- count-history -->
-  `remove`/`deprecate`/`migrate` + `review`/`research` families. The recipe system
+  `shortcut-catalog.yml`) plus 60 hand-authored `repurpose` skills. The alias model is
+  retired: `alias_of` is required but always `null`, so no row is a synonym of another. <!-- count-history -->
+  Re-derive both figures rather than trusting this prose — `ls -1d canonical/skills/*/`
+  and `grep -c '^  - name:' canonical/aid/templates/shortcut-catalog.yml`. The recipe system
   (`canonical/aid/recipes/`, `parse-recipe.sh`, `{{slot}}` placeholders) was removed and
   replaced by the shortcut engine + `shortcut-scaffolding/<family>.md`; the prior "51 vs 52
   recipes" count drift is closed. Agents (9) and KB doc types (14) are unchanged.
@@ -422,12 +476,13 @@ Load-bearing keys: `project.{name,description,type}`, `tools.installed`,
   computes the letter. Any consumer of the grade depends on the deterministic mapping in
   `grading-rubric.md` — adding a severity tier or changing the dominance rule is a breaking
   change to every grading skill.
-- **State-file contract:** run-state (grades, Q&A, history, rollups) lives in the area's
-  `STATE.md`; the dashboard and `/aid-execute` read these files to track a pipeline. Artifact
-  files alone are not trackable. On the flattened Lite path there is no per-task `STATE.md` —
-  each task's cells live in the work-root `STATE.md § ### Tasks lifecycle`. Renaming or
-  restructuring `STATE.md` sections breaks the dashboard reader (see
-  [integration-map.md](integration-map.md)).
+- **State-file contract:** run-state (grades, Q&A, history, rollups) for a work/delivery/task
+  lives in that area's `STATE.yml` (the discovery/KB area's ledger is the one exception and
+  stays `STATE.md`, `kb-category: meta`); the dashboard and `/aid-execute` read these files to
+  track a pipeline. Artifact files alone are not trackable. On the flattened Lite path there is
+  no per-task `STATE.yml` — each task's cells live in the work-root `STATE.yml`'s
+  `tasks_lifecycle` mapping. Renaming or restructuring a `STATE.yml` key breaks the dashboard
+  reader (see [integration-map.md](integration-map.md)).
 - **Forward-authored marker contract:** a greenfield seed doc carries `source: forward-authored`
   in its frontmatter; this marker is what routes the doc into the `/aid-housekeep` Conformance
   Lane (code -> design, flag-not-overwrite) instead of the normal doc <- code update lane.
@@ -466,6 +521,18 @@ Load-bearing keys: `project.{name,description,type}`, `tools.installed`,
   that create, read, or update work folders as their live runtime state (Execute, Deploy,
   Monitor, the dashboard reader) are the intended operators of that state, not a dependency,
   and are exempt.
-
----
-
+- **A derived constant is a dependency even though it does not look like one.** The rule
+  above catches dependencies a reader can SEE -- a path, a citation, a fixture read from
+  disk. A number measured from a work folder and then hardcoded into a permanent artifact
+  is the same dependency with the link removed: a threshold tuned against one work's
+  artifacts, a ratio taken from one work's documents, a default sized from one work's task
+  count. It survives the pruning that would have exposed it, and what it loses is not
+  correctness but CHECKABILITY -- nobody can re-derive it, confirm it still holds, or tell
+  what would make it wrong. The same applies to a generated file whose inputs came from a
+  work folder: the output is durable, its provenance is not.
+  Two ways to discharge it, and one of them must hold. Either the derivation is
+  reproducible from durable inputs -- so re-running it is a real check -- or the
+  measurement is recorded INLINE beside the constant in enough detail to re-do by hand:
+  the raw quantities, what was counted, and when. A bare number with a work id in a comment
+  satisfies neither, because the work id is the dangling pointer this rule exists to
+  prevent.

@@ -282,8 +282,7 @@ different purposes:
 | Domain (Step 0cx) | languages, dir shape, notable files, concepts | `## Discovery Domain` | doc-set matrix lookup (Step 0d) |
 | Path (Step 0f) | source-file count, LOC, dirs, concept count | `## Discovery Triage` | fan-out depth (Steps 1-5) |
 
-Step 0f path-triage **stays in discovery** (resolved; delivery-010 STATE Q1 — see §7 of
-feature-014/SPEC.md). Do not re-decide this boundary.
+Step 0f path-triage **stays in discovery** (a resolved boundary). Do not re-decide it.
 
 ### Step 0d: Propose & Confirm Doc-Set (matrix-or-research)
 
@@ -838,29 +837,44 @@ the **Targeted Discovery** section of `SKILL.md`. Wait, verify again. Repeat unt
 
 Semantic verification of the docs (frontmatter compliance, contract claims, cross-doc consistency, spot-checks against source) happens in the **REVIEW** state, dispatched as the `aid-reviewer` sub-agent — not as a separate shell script.
 
-### Step 5a: Citation Lint Gate (mechanical authoring gate)
+### Step 5a: Mechanical Authoring Gate (citation lint + frontmatter lint)
 
-**Run AFTER the fan-out, BEFORE closure.** The no-bare-citation rule (kb-authoring P1d: use
-durable `file:symbol` anchors, never `file.ext:LINE`) is given to agents as prose and verified
-only by their self-report — which is unreliable (agents have shipped bare line citations while
-self-reporting "durable anchors only"). This gate enforces it mechanically: trust the script,
-not the agent's word.
+**Run AFTER the fan-out, BEFORE closure.** Two authoring rules are mechanical, so neither is left
+to an agent's self-report:
+
+- the **no-bare-citation** rule (kb-authoring P1d: use durable `file:symbol` anchors, never
+  `file.ext:LINE`), and
+- the **required-frontmatter** rule (`objective`, `summary`, `sources` present and well-shaped on
+  every primary/extension hand-authored doc).
+
+Both were given to agents as prose and verified only by their word, which is unreliable — agents
+have shipped bare line citations while self-reporting "durable anchors only". This gate enforces
+both mechanically: trust the scripts, not the agent's word.
 
 ```bash
 bash .claude/aid/scripts/kb/kb-citation-lint.sh --root .aid/knowledge
+bash .claude/aid/scripts/kb/lint-frontmatter.sh --root .aid/knowledge
 ```
 
-- **Exit 0 (clean):** print `[5a] Citation lint: clean.` and CHAIN to Step 5b.
-- **Exit 1 (violations):** the script lists each `doc:line -> file.ext:LINE`. Do NOT proceed.
-  Partition the violations by KB doc, resolve each doc's owner from the declared doc-set
-  (`owns-<agent>` accessor), and **re-dispatch the owning agent(s)** with the violation list and
-  this directive: *"Convert each listed bare line citation to a durable anchor — the file path
-  plus a grep-recoverable symbol/heading/string at that location (NOT a line number)."* Agents
-  run in parallel (one per affected doc). After they return, **re-run the lint**; repeat until
-  exit 0 (cap at 2 rounds — any residual is escalated to a Q&A entry, never shipped silently).
+Run both, even if the first fails, so one round reports every defect rather than uncovering the
+second only after the first is fixed.
+
+- **Both exit 0 (clean):** print `[5a] Authoring gate: clean.` and CHAIN to Step 5b.
+- **Either exits 1 (violations):** each script lists its own findings — `kb-citation-lint.sh` as
+  `doc:line -> file.ext:LINE`, `lint-frontmatter.sh` as `[FM-MISSING]`/`[FM-INVALID]`. Do NOT
+  proceed. Partition the violations by KB doc, resolve each doc's owner from the declared doc-set
+  (`owns-<agent>` accessor), and **re-dispatch the owning agent(s)** with that doc's violation
+  list and the matching directive:
+  - citation: *"Convert each listed bare line citation to a durable anchor — the file path plus a
+    grep-recoverable symbol/heading/string at that location (NOT a line number)."*
+  - frontmatter: *"Add or correct the named frontmatter field so it is present and well-shaped."*
+
+  A doc with both kinds gets one dispatch carrying both. Agents run in parallel (one per affected
+  doc). After they return, **re-run both lints**; repeat until both exit 0 (cap at 2 rounds — any
+  residual is escalated to a Q&A entry, never shipped silently).
 
 This gate is the model for moving any MECHANICAL authoring rule from "self-reported in GENERATE /
-caught in REVIEW" to "mechanically gated in GENERATE" (cf. `lint-frontmatter.sh` for frontmatter).
+caught in REVIEW" to "mechanically gated in GENERATE".
 
 ### Step 5b: SYNTHESIS + CLOSURE
 
@@ -978,14 +992,15 @@ Then **CHAIN -> Step 6.**
 
 The orchestrator generates these directly — they require reading across all KB documents.
 
-**.aid/knowledge/README.md** — completeness tracking table and revision history:
+**.aid/knowledge/README.md** — completeness tracking table:
 - Table with all declared documents, status, and notes
-- Revision history table with dates and update descriptions
+- NO revision-history table. KB docs carry no change-log apparatus; git records
+  per-doc history with author, date and diff.
 
 **.aid/knowledge/INDEX.md** — 2-3 line summary of every declared KB document for agent self-service.
 Regenerate on every discovery run.
 
-**.aid/knowledge/feature-inventory.md** — copy template from `../../templates/feature-inventory.md`.
+**.aid/knowledge/feature-inventory.md** — copy template from `../../../aid/templates/feature-inventory.md`.
 Populated during Q&A → FIX cycle, but must exist for state machine. (For a non-software domain
 the C9 doc may instead be `capability-inventory.md` / `content-inventory.md` etc. per the
 declared set — copy whichever C9 orchestrator-owned doc the doc-set declares; it must exist for

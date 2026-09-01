@@ -90,10 +90,13 @@ REPORT_SKILL="${REPO_ROOT}/canonical/skills/aid-report/SKILL.md"
 CONSUMPTION_PROTOCOL="${REPO_ROOT}/canonical/aid/templates/connectors/consumption-protocol.md"
 
 # -- AC-10/NFR-3: the four ticket_ref-carrying templates (FR-11, untouched) --
-WORK_STATE_TPL="${REPO_ROOT}/canonical/aid/templates/work-state-template.md"
-DELIVERY_STATE_TPL="${REPO_ROOT}/canonical/aid/templates/delivery-state-template.md"
-TASK_STATE_TPL="${REPO_ROOT}/canonical/aid/templates/task-state-template.md"
-SPEC_TPL="${REPO_ROOT}/canonical/aid/templates/specs/spec-template.md"
+# task-015 addendum (SP-16/AC-8): retargeted to the *-state-template.yml
+# one-zone shape (work-009 task-002); the ticket_ref KEY itself is untouched
+# by that conversion (FR-11 still holds), only its file extension moved.
+WORK_STATE_TPL="${REPO_ROOT}/canonical/aid/templates/work-state-template.yml"
+DELIVERY_STATE_TPL="${REPO_ROOT}/canonical/aid/templates/delivery-state-template.yml"
+TASK_STATE_TPL="${REPO_ROOT}/canonical/aid/templates/task-state-template.yml"
+FEATURE_TPL="${REPO_ROOT}/canonical/aid/templates/requirements/requirements-template.md"
 
 ALL_FILES=(
     "$DESCRIBE_COMPLETION" "$DETAIL_TASKDECOMP" "$PLAN_SKILL" "$EXECUTE_SKILL"
@@ -101,7 +104,7 @@ ALL_FILES=(
     "$DESCRIBE_FIRSTRUN" "$SPECIFY_INIT" "$SHORTCUT_ENGINE" "$ASK_SKILL"
     "$REVIEW_SKILL" "$DEVELOPER_AGENT" "$RESEARCHER_AGENT" "$RESEARCH_SKILL"
     "$REPORT_SKILL" "$CONSUMPTION_PROTOCOL" "$WORK_STATE_TPL" "$DELIVERY_STATE_TPL"
-    "$TASK_STATE_TPL" "$SPEC_TPL"
+    "$TASK_STATE_TPL" "$FEATURE_TPL"
 )
 for f in "${ALL_FILES[@]}"; do
     if [[ ! -f "$f" ]]; then
@@ -381,10 +384,10 @@ assert_file_contains "$CONSUMPTION_PROTOCOL" '/aid-update-ticket' "T086 consumpt
 # (T092, T096-T097) and at the three remaining PM-TOOL suggestion sites
 # (T093-T095).
 # ===========================================================================
-assert_file_contains "$WORK_STATE_TPL" 'ticket_ref' "T087 work-state-template.md still carries the ticket_ref frontmatter key (FR-11 untouched)"
-assert_file_contains "$DELIVERY_STATE_TPL" 'ticket_ref' "T088 delivery-state-template.md still carries the ticket_ref frontmatter key (FR-11 untouched)"
-assert_file_contains "$TASK_STATE_TPL" 'ticket_ref' "T089 task-state-template.md still carries the ticket_ref frontmatter key (FR-11 untouched)"
-assert_file_contains "$SPEC_TPL" 'Ticket:' "T090 specs/spec-template.md still carries the '> **Ticket:**' line (FR-11 untouched)"
+assert_file_contains "$WORK_STATE_TPL" 'ticket_ref' "T087 work-state-template.yml still carries the ticket_ref key (FR-11 untouched)"
+assert_file_contains "$DELIVERY_STATE_TPL" 'ticket_ref' "T088 delivery-state-template.yml still carries the ticket_ref key (FR-11 untouched)"
+assert_file_contains "$TASK_STATE_TPL" 'ticket_ref' "T089 task-state-template.yml still carries the ticket_ref key (FR-11 untouched)"
+assert_file_contains "$FEATURE_TPL" 'Ticket:' "T090 the feature section still carries the '> **Ticket:**' line (FR-11 untouched)"
 assert_wrapped_contains "$CONSUMPTION_PROTOCOL" 'sourced from a **user-supplied ref**' "T091 consumption-protocol.md: ticket_ref is documented as populated only from a user-supplied ref"
 assert_wrapped_contains "$DESCRIBE_FIRSTRUN" 'Skip silently when no such ticket is named or no matching connector is catalogued' "T092 aid-describe state-first-run.md: silent-skip on no-connector/no-ticket_ref is documented"
 

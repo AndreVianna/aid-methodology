@@ -1,6 +1,6 @@
 ---
 title: 'aid-research'
-description: 'Investigate an open technical question NOW -- evaluate options, or (only with your explicit authorization) run an isolated feasibility spike -- and return a…'
+description: 'Investigate an open technical question and return a verified answer in one pass -- evaluating options, or running an isolated feasibility spike if you…'
 generatedFrom: 'canonical/skills/aid-research/SKILL.md'
 ---
 
@@ -9,7 +9,7 @@ generatedFrom: 'canonical/skills/aid-research/SKILL.md'
 ## Frontmatter
 
 - **`name`** — aid-research
-- **`description`** — Investigate an open technical question NOW -- evaluate options, or (only with your explicit authorization) run an isolated feasibility spike -- and return a curated, verified answer in one pass. It RESOLVES NOTHING: it presents the in-depth answer plus conclusions (positive AND negative), conflicts / contradictions (each with its reason), and gaps, clearly and simply; you resolve. Grounded two ways: the Knowledge Base (.aid/knowledge/) and the project source/codebase are the authoritative grounding truth; external / web sources are allowed and encouraged but supplementary, cited with URL + access date. A KB&lt;->web contradiction is surfaced to you with its reason, never silently resolved. Produced by the aid-researcher agent and independently verified by aid-reviewer before you see it. Allocates a work-NNN folder.
+- **`description`** — Investigate an open technical question and return a verified answer in one pass -- evaluating options, or running an isolated feasibility spike if you explicitly authorise one. Use this skill when a decision is blocked on something nobody has established yet. It presents the answer, the conclusions both positive and negative, any contradictions with the reason for each, and the gaps; you decide. The Knowledge Base and the project source are the authoritative grounding; web sources are encouraged but supplementary, cited with a URL and access date, and a contradiction between them is surfaced rather than silently resolved. For open-ended exploration of a problem space rather than a specific question, use `/aid-brainstorm`.
 - **`allowed-tools`** — Read, Glob, Grep, Bash, Write, Edit, Agent
 - **`argument-hint`** — &lt;question> -- an open technical question to investigate
 
@@ -57,7 +57,7 @@ Every node in the chart above, in chart order, with the exact `canonical/` text 
 
 <a id="fragment-n1"></a>**1 · `INTAKE`** · _entry_
 
-~~~~plaintext title="canonical/skills/aid-research/SKILL.md#L39-L69" wrap
+~~~~plaintext title="canonical/skills/aid-research/SKILL.md#L36-L66" wrap
 ## State: INTAKE
 
 1. **Require a question.** If the argument is empty, ask one bootstrapping question ("What
@@ -84,29 +84,29 @@ Every node in the chart above, in chart order, with the exact `canonical/` text 
    (`worktree-lifecycle.sh create <work-id> <name>`, STOP on a non-zero exit or empty path,
    else enter the resolved path); **only then** allocate: `.aid/works/<work-id>-<slug>/`
    under `.aid/works/`; slug from the question. Copy
-   `canonical/aid/templates/work-state-template.md` to
-   `.aid/works/work-NNN-<slug>/STATE.md`; write opening frontmatter (`pipeline.path: lite`,
+   `canonical/aid/templates/work-state-template.yml` to
+   `.aid/works/work-NNN-<slug>/STATE.yml`; write opening frontmatter (`pipeline.path: lite`,
    `initiator: aid-research`, `lifecycle: Running`, `active_skill: aid-research`,
    `started`/`updated`). Do NOT drive the 7-phase `phase` scalar. Associate a git worktree
    only if a spike is later authorized (INVESTIGATE).
 ~~~~
 
-[Source: `canonical/skills/aid-research/SKILL.md#L39-L69`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-research/SKILL.md#L39-L69) · [full step: `canonical/skills/aid-research/SKILL.md#L39-L71`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-research/SKILL.md#L39-L71)
+[Source: `canonical/skills/aid-research/SKILL.md#L36-L66`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-research/SKILL.md#L36-L66) · [full step: `canonical/skills/aid-research/SKILL.md#L36-L68`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-research/SKILL.md#L36-L68)
 
 <a id="fragment-n2"></a>**2 · `INVESTIGATE`** · _step_
 
-~~~~plaintext title="canonical/skills/aid-research/SKILL.md#L75-L78" wrap
+~~~~plaintext title="canonical/skills/aid-research/SKILL.md#L72-L75" wrap
 ## State: INVESTIGATE
 
 Dispatch **`aid-researcher`** (clean context, model+effort from INTAKE Step 3) to gather
 and curate the evidence:
 ~~~~
 
-[Source: `canonical/skills/aid-research/SKILL.md#L75-L78`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-research/SKILL.md#L75-L78) · [full step: `canonical/skills/aid-research/SKILL.md#L75-L95`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-research/SKILL.md#L75-L95)
+[Source: `canonical/skills/aid-research/SKILL.md#L72-L75`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-research/SKILL.md#L72-L75) · [full step: `canonical/skills/aid-research/SKILL.md#L72-L92`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-research/SKILL.md#L72-L92)
 
 <a id="fragment-n3"></a>**3 · `VERIFY`** — who reviews the researcher · _loop-back_
 
-~~~~plaintext title="canonical/skills/aid-research/SKILL.md#L99-L113" wrap
+~~~~plaintext title="canonical/skills/aid-research/SKILL.md#L96-L110" wrap
 ## State: VERIFY  (who reviews the researcher)
 
 1. **Mechanical grounding check** (no dispatch): every project claim carries a KB/source
@@ -124,11 +124,11 @@ and curate the evidence:
    surface it.
 ~~~~
 
-[Source: `canonical/skills/aid-research/SKILL.md#L99-L113`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-research/SKILL.md#L99-L113) · [full step: `canonical/skills/aid-research/SKILL.md#L99-L117`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-research/SKILL.md#L99-L117)
+[Source: `canonical/skills/aid-research/SKILL.md#L96-L110`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-research/SKILL.md#L96-L110) · [full step: `canonical/skills/aid-research/SKILL.md#L96-L114`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-research/SKILL.md#L96-L114)
 
 <a id="fragment-n4"></a>**4 · `PRESENT`** — always a hard stop -- the user resolves · _decision_
 
-~~~~plaintext title="canonical/skills/aid-research/SKILL.md#L121-L126" wrap
+~~~~plaintext title="canonical/skills/aid-research/SKILL.md#L118-L123" wrap
 ## State: PRESENT  (always a hard stop -- the user resolves)
 
 Set STATE `lifecycle: Paused-Awaiting-Input`. Present `RESEARCH.md` **clearly and simply**:
@@ -137,11 +137,11 @@ the in-depth answer, conclusions (positive **and** negative), conflicts/contradi
 gaps are first-class, never buried under positives.
 ~~~~
 
-[Source: `canonical/skills/aid-research/SKILL.md#L121-L126`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-research/SKILL.md#L121-L126) · [full step: `canonical/skills/aid-research/SKILL.md#L121-L128`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-research/SKILL.md#L121-L128)
+[Source: `canonical/skills/aid-research/SKILL.md#L118-L123`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-research/SKILL.md#L118-L123) · [full step: `canonical/skills/aid-research/SKILL.md#L118-L125`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-research/SKILL.md#L118-L125)
 
 <a id="fragment-n5"></a>**5 · `HANDOFF`** — optional; printed suggestions only · _step_
 
-~~~~plaintext title="canonical/skills/aid-research/SKILL.md#L132-L138" wrap
+~~~~plaintext title="canonical/skills/aid-research/SKILL.md#L129-L135" wrap
 ## State: HANDOFF  (optional; printed suggestions only)
 
 Offer the natural next steps as **printed suggestions**, each requiring the user to act:
@@ -151,15 +151,15 @@ a source ticket (`/aid-update-ticket comment [<connector>:]<ticket-id> <text>`).
 auto-invoked; never a resolution.
 ~~~~
 
-[Source: `canonical/skills/aid-research/SKILL.md#L132-L138`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-research/SKILL.md#L132-L138) · [full step: `canonical/skills/aid-research/SKILL.md#L132-L140`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-research/SKILL.md#L132-L140)
+[Source: `canonical/skills/aid-research/SKILL.md#L129-L135`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-research/SKILL.md#L129-L135) · [full step: `canonical/skills/aid-research/SKILL.md#L129-L137`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-research/SKILL.md#L129-L137)
 
 <a id="fragment-n6"></a>**6 · `DONE`** · _exit_ · UNSPECIFIED
 
-~~~~plaintext title="canonical/skills/aid-research/SKILL.md#L144-L147" wrap
+~~~~plaintext title="canonical/skills/aid-research/SKILL.md#L141-L144" wrap
 ## State: DONE
 
 Set STATE `lifecycle: Completed`, `updated` now, append a `## Lifecycle History` row. Keep
 the work folder (`RESEARCH.md`, any spike scratch, the verify ledger) as the audit record.
 ~~~~
 
-[Source: `canonical/skills/aid-research/SKILL.md#L144-L147`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-research/SKILL.md#L144-L147) · [full step: `canonical/skills/aid-research/SKILL.md#L144-L147`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-research/SKILL.md#L144-L147)
+[Source: `canonical/skills/aid-research/SKILL.md#L141-L144`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-research/SKILL.md#L141-L144) · [full step: `canonical/skills/aid-research/SKILL.md#L141-L144`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-research/SKILL.md#L141-L144)

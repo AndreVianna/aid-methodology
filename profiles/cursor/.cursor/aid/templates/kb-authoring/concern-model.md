@@ -66,11 +66,33 @@ The spine and the KB capture what a deliverable **is** -- its durable product/ar
 concerns. They deliberately exclude the **governance** layer: project-management artifacts
 such as a project charter, schedule/plan, risk and stakeholder registers, or a sprint
 backlog (PMBOK / PRINCE2 / Scrum). Those frameworks are real and necessary, but they
-describe *how the work is run*, not *what the deliverable is*, and they map to AID's own
-**pipeline artifacts** (`REQUIREMENTS.md`, `SPEC.md`, `PLAN.md`, the per-work `STATE.md`
-tracking), which already exist. The KB is the product layer; the pipeline is the governance
-layer. A doc proposed for the KB that is really a governance artifact (a plan, a backlog, a
-register) is a scope smell -- route it to the pipeline, not the doc-set.
+describe *how the work is run*, not *what the deliverable is*. The KB is the product layer;
+the pipeline is the governance layer.
+
+The line the KB draws is **scope, not genre**: a document is not excluded merely for
+looking forward or tracking commitments -- it is excluded when it governs a single work,
+at per-work granularity.
+
+- **Per-work governance** (a sprint backlog, a work plan, a task register) remains a scope
+  smell. It maps to AID's own **pipeline artifacts** (`REQUIREMENTS.md`, `PLAN.md`,
+  the per-work `STATE.yml` tracking) -- route it there, not to the doc-set.
+- **Project-level governance** (the roadmap, the backlog, the release ledger) is
+  **admissible as a conditional document**: the pipeline artifacts a per-work item would
+  route to are per-work and transient -- pruned when the work ships -- leaving no durable
+  home for a project-level concern.
+
+**Admission is a general rule, not two named exceptions.** The propose->confirm gate (see
+*Propose->confirm rules* below) is one arrival path for a conditional document: something
+an agent can derive from code or repo history and offer the user to confirm. Not every
+conditional document has that path -- a project's forward plan or its list of committed
+items cannot be derived from code, because no researcher observes a future commitment in a
+repository. A **skill-created** conditional document is admitted the same way: the
+document's own owning `create` skill writes it on first use, and the skill's own run is
+the confirmation -- recorded with `skill-self` as the declared owner in place of a
+confirming researcher role. Both paths produce the same artifact, a conditional document
+under one of the eleven dimensions; the doctrine does not distinguish by naming individual
+documents, only by whether a researcher can derive the document or only the document's own
+skill can write it.
 
 ---
 
@@ -191,6 +213,32 @@ example that a project MAY add under C9 (capabilities / user-facing presentation
 propose->confirm gate. It appears in `doc-set-resolve.md` as
 `repo-presentation.md|aid-researcher-architecture|conditional`. Name it only as a
 conditional extension example, never as a default.
+
+**`roadmap.md`, `backlog.md` and `release-tracking.md` are three more conditional
+extensions, none a seed doc.** Each is `skill-self`-owned and domain-agnostic (CC-6),
+proposed on a project-specific condition rather than by default:
+
+- **`roadmap.md`** is conditional under **D** -- a second conditional realization of the
+  eleventh dimension, alongside `decisions.md`: a roadmap entry is itself a committed
+  decision ("we have decided to do X next"), true now, with a rationale. It is proposed
+  only when a project maintains a forward plan.
+- **`backlog.md`** is conditional under **C7** (Risk & debt), the same dimension as
+  `tech-debt.md`: an item accepted into the plan but not yet shipped is owed, not merely
+  observed. It is proposed only when a project maintains a defined-and-prioritized
+  backlog.
+- **`release-tracking.md`** is conditional under **C8** (Shipping & operation), the same
+  dimension as `infrastructure.md`: it records what has shipped and when. It is proposed
+  only when a project cuts versioned releases and records what shipped in each.
+
+None of the three is added to `synth_default_seed`; the byte-stable software seed above
+remains exactly 15 docs.
+
+**`quality-gates.md` is a fourth conditional extension, under C6** (Quality & testing) --
+the same dimension as `test-landscape.md`, but owned by `aid-researcher-quality` rather
+than `skill-self`: it records which gates block a merge and who may waive one. It is
+proposed only when a project enforces merge-blocking quality gates. Like the three above it
+is **not** a seed doc and has no template under `.cursor/aid/templates/knowledge-base/`,
+so it too leaves `synth_default_seed` unchanged.
 
 ---
 

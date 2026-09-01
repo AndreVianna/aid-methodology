@@ -1,0 +1,12 @@
+{
+  "file_label": "STATE.yml",
+  "values": {
+    "tasks_lifecycle": {
+      "task-001": {
+        "review": "--",
+        "state": "Pending"
+      }
+    }
+  },
+  "warnings": []
+}

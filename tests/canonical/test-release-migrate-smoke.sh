@@ -42,7 +42,13 @@ REAL_GIT_BEFORE="$(git -C "${REPO_ROOT}" status --porcelain 2>/dev/null | wc -l)
 # ---- HOME pin (bulletproof): every child inherits a throwaway HOME -------------
 export HOME="${TMP}/fakehome"; mkdir -p "${HOME}"
 
-# Seed ONE "old" repo that needs migration: valid era-a settings, NO format_version stamp.
+# Seed ONE "old" repo that needs migration: valid era-a settings, NO format_version stamp,
+# PLUS a legacy flat-layout work-state STATE.md (task-015 addendum, SP-16/AC-10:
+# "RMS-NPM-01 / RMS-PYPI-01 extended to assert the work-state conversion ran as an
+# install side effect" -- test-baseline-pre-refactor.md SS 5.3). The STATE.md -> STATE.yml
+# conversion (bin/aid STEP 5, task-008) is exercised by the SAME real
+# install/upgrade path this suite already drives -- not a re-run of the
+# test-aid-migrate.sh unit fixture matrix, but proof the wiring reaches it too.
 # feature-001: the lazy-stamp model WARNs on encounter; __migrate-repo stamps format_version.
 seed_old_repo() {  # $1 = code_home (the dir where bin/aid lives)
     local r="$1/legacy-repo"
@@ -54,12 +60,35 @@ seed_old_repo() {  # $1 = code_home (the dir where bin/aid lives)
     # warns "Run: aid update" for tracked repos (manifest present).
     printf '%s\n' '{"manifest_version":1,"aid_version":"1.0.0","tools":{"claude-code":{"version":"1.0.0"}}}' \
         > "${r}/.aid/.aid-manifest.json"
+    # A minimal flat-layout legacy work-state STATE.md (frontmatter fence +
+    # one AUTHORED section is enough to prove the converter ran -- the exhaustive
+    # shape matrix lives in test-aid-migrate.sh Gate 15).
+    mkdir -p "${r}/.aid/works/work-901-rms-legacy"
+    cat > "${r}/.aid/works/work-901-rms-legacy/STATE.md" << 'RMS_LEGACY_MD_EOF'
+---
+lifecycle: Running
+phase: Execute
+---
+
+# Work State -- work-901-rms-legacy
+
+## Interview State
+
+**State:** Complete  **Grade:** A
+
+| # | Section | State | Last Updated |
+|---|---------|-------|--------------|
+| 1 | Objective | Done | 2026-01-01 |
+RMS_LEGACY_MD_EOF
     printf '%s\n' "${r}"
 }
 # Assert feature-001 lazy-stamp behavior:
 #   - 'aid status' in stamp-less repo: WARN "older format" printed, exit 0.
-#   - After explicit 'aid __migrate-repo': settings.yml stamped format_version: 3
-#     (config-schema redesign: flat schema, format 3; home.html is CLI-served, not per-repo).
+#   - After explicit 'aid __migrate-repo': settings.yml stamped format_version: 4
+#     (config-schema redesign: flat schema, format 3 for the schema shape;
+#     task-008 bumped the STAMP to 4 for the STATE.md -> STATE.yml conversion --
+#     task-015 addendum, SP-16/AC-10, see known-issues.md KI-011; home.html is
+#     CLI-served, not per-repo).
 assert_migrated() {  # $1 = repo path  $2 = label  $3 = aid binary  $4 = aid_home
     local repo="$1" label="$2" aid_bin="$3" aid_home="$4"
     # Step 1: WARN on encounter.
@@ -75,10 +104,27 @@ assert_migrated() {  # $1 = repo path  $2 = label  $3 = aid binary  $4 = aid_hom
     AID_HOME="${aid_home}" AID_NO_UPDATE_CHECK=1 \
         bash "${aid_bin}" __migrate-repo "${repo}" >/dev/null 2>&1 || true
     local _sf="${repo}/.aid/settings.yml"
-    if grep -q '^format_version: 3' "${_sf}" 2>/dev/null; then
-        pass "${label}-B -- after __migrate-repo: settings.yml stamped format_version: 3"
+    if grep -q '^format_version: 4' "${_sf}" 2>/dev/null; then
+        pass "${label}-B -- after __migrate-repo: settings.yml stamped format_version: 4"
     else
-        fail "${label}-B -- after __migrate-repo: format_version: 3 stamp missing at ${_sf}"
+        fail "${label}-B -- after __migrate-repo: format_version: 4 stamp missing at ${_sf}"
+    fi
+    # Step 3 (task-015 addendum, SP-16/AC-10): the same real install/upgrade path
+    # also converted the legacy work-state tree seed_old_repo planted -- STEP 5
+    # (STATE.md -> STATE.yml) runs unconditionally within the same __migrate-repo
+    # call as the settings stamp above, so this is the wiring proof, not a re-test
+    # of the conversion logic itself (that matrix lives in test-aid-migrate.sh).
+    local _work_yml="${repo}/.aid/works/work-901-rms-legacy/STATE.yml"
+    local _work_md="${repo}/.aid/works/work-901-rms-legacy/STATE.md"
+    if [[ -f "${_work_yml}" ]]; then
+        pass "${label}-C -- after __migrate-repo: legacy work-state STATE.md converted to STATE.yml"
+    else
+        fail "${label}-C -- after __migrate-repo: work-901-rms-legacy/STATE.yml missing (conversion did not reach this real install path)"
+    fi
+    if [[ -f "${_work_md}" ]]; then
+        fail "${label}-D -- after __migrate-repo: legacy STATE.md still present (conversion did not run/verify)"
+    else
+        pass "${label}-D -- after __migrate-repo: legacy STATE.md deleted (verified conversion)"
     fi
 }
 
