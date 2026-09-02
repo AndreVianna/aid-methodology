@@ -81,9 +81,11 @@ have written it, and `act` proves a turn ran. The probe is nevertheless required
 | Clock drift over block | 0.0004 s — no suspend |
 | Wake → act latency | **voided — see below** |
 
-Cursor honours the same `decision: block` convention as Claude Code, so no `exit2` retry was
-needed. The probe's unbroken `alive=true` through the full 30 s, followed by death only *after*
-`end` was written, establishes that Cursor did not kill the hook. **Test 3 therefore starts from a
+A wake occurred: the instruction reached the model and the agent complied. **How** it reached the
+model is not established by this run — see F8. The spike sent Claude Code's `decision: block` shape,
+which is not in Cursor's documented schema, so the earlier claim that Cursor honours the same
+convention is withdrawn. The probe's unbroken `alive=true` through the full 30 s, followed by death
+only *after* `end` was written, does establish that Cursor did not kill the hook. **Test 3 therefore starts from a
 measured floor: Cursor tolerates at least 30 s.**
 
 ### The latency from this run is void
@@ -154,6 +156,53 @@ has been run. What this number does establish is that the wake mechanism is not 
 
 ## Findings that change the design
 
+### F8 — The spike used the wrong wake mechanism on Cursor, and the right one solves F1
+
+Cursor's documented `stop` hook contract, from `cursor.com/docs/hooks`:
+
+```
+// Input   { "status": "completed" | "aborted" | "error", "loop_count": 0 }
+// Output  { "followup_message": "<message text>" }
+```
+
+`followup_message`, when non-empty, is submitted as the next user message. **`decision: block` is
+Claude Code's convention and does not appear in Cursor's schema at all.** The spike sent the Claude
+shape to both hosts.
+
+The ACKs at `D` = 30 and `D` = 60 are therefore not evidence that Cursor honours `decision: block`.
+Something carried the text to the model — most likely the same path Claude Code used, where
+unrecognised hook output surfaces as an error string the model then reads — but the supported
+mechanism was never exercised. Test 2's earlier claim that "Cursor honours the same convention as
+Claude Code" is withdrawn; what was established is only that a wake *occurred*, not how.
+
+**The input side matters more.** `loop_count` tells the hook how many automatic follow-ups this
+conversation has already triggered, and `loop_limit` caps them — **default 5 for Cursor hooks,
+`null` (uncapped) for Claude Code hooks**.
+
+That is F1's re-entry rule, already built and already documented. Feature 003 does not need to
+invent one for Cursor: it reads `loop_count` and stops when it judges enough. The throwaway
+sentinel was solving a problem the host had already solved.
+
+It also sharpens F1 rather than retiring it. On Cursor the wake loop is bounded at 5 by default. On
+**Claude Code the documented default is `null`, meaning uncapped** — so the loop F1 observed there
+has no host-side backstop, and the re-entry rule is not optional on that host.
+
+The apparatus now carries `--wake-schema cursor` emitting `followup_message`, and logs `status`,
+`loop_count` and the set of keys the host actually sent, so a run records what it was given rather
+than what it assumed.
+
+### F9 — `beforeShellExecution` can close F5's approval gate
+
+`beforeShellExecution` is documented to return `{"permission": "allow" | "deny" | "ask", ...}`. A
+hook that returns `allow` for the specific command the woken turn runs would remove the human click
+that voided `T2-001-a`'s latency.
+
+This does not retract F5: the gate is real, and a product cannot assume users have installed such a
+hook. It does mean the constraint is closable by configuration rather than being a hard limit —
+which is the difference between "the woken turn may not use tools" and "the woken turn may use tools
+the operator has pre-authorised". Feature 003 should decide which of those it requires, because they
+imply different install instructions.
+
 ### F7 — Cursor's hook `timeout` abandons the hook; it does not kill it
 
 The `stop` hook was registered with an explicit per-hook timeout:
@@ -196,9 +245,21 @@ The first half stands: Cursor genuinely does not kill a long hook. The second wa
 reading a configured 90 s as a discovered boundary, and the bisection it implied would have spent
 runs rediscovering a number already written in the config file.
 
-**Still open:** whether `timeout` has a maximum Cursor will accept, and whether 90 is a default it
-supplied or a value chosen when the hook was registered. The first bounds how long a waker may ever
-block on this host; the second decides whether the product must assume 90 s in the field.
+**On the default.** Cursor's documentation gives `timeout` as "platform default" and **states no
+number**, at either place the option table appears. One third-party reimplementation of the hook
+runner uses 30 s and calls it "Cursor's platform hook timeout default", but that is someone's
+inference, not the vendor's statement, and it is not evidence about this build.
+
+So the default is unknown and must be measured, which the apparatus is already equipped to do: with
+the `timeout` line removed, a run at `D` = 60 separates a 30 s default (ABANDONED) from anything
+≥ 60 s (SURVIVED). That single run is worth more than the doc reading.
+
+Also documented and relevant: hook failures including timeout are **fail-open** by default, so a
+timed-out waker does not block the user's session. `failClosed: true` would invert that, and a waker
+must never set it — a hung long-poll would then freeze the agent.
+
+**Still open:** whether Cursor enforces a maximum acceptable `timeout`. That would bound how long
+any waker may block on this host, independent of what the product prefers.
 
 ### F1 — The stop hook re-fires after the woken turn
 

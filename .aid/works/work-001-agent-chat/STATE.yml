@@ -519,6 +519,40 @@ review_history:
       waker may ever block on this host, and whether 90 was Cursor's own default or a value chosen at
       registration, which decides whether the product must assume 90 s in the field.
     applied_to: 'FINDINGS.md (F7 rewritten, test 3 answer, ladder framing)'
+  - date: '2026-09-02'
+    event: 'Feature 001 spike -- Cursor hooks documentation read; F8 and F9 filed; wrong wake schema corrected'
+    outcome: 'Docs state NO numeric timeout default. F8: wrong mechanism used, and loop_count solves F1. F9: F5 gate is closable'
+    notes: >-
+      Cursor's own hooks documentation was consulted to answer whether a default hook timeout is
+      specified. It is not: the option table gives timeout as 'platform default' with no number, at
+      both places it appears. A third-party reimplementation of the hook runner hard-codes 30 s and
+      labels it Cursor's platform default, but that is an inference rather than a vendor statement
+      and says nothing about this build. With the operator's timeout line now removed, the default is
+      measurable: a run at D=60 separates a 30 s default (ABANDONED) from anything at or above 60 s
+      (SURVIVED), which is worth more than further doc reading. Two further documented facts changed
+      the record. F8: Cursor's stop hook contract is input {status, loop_count} and output
+      {followup_message}, and decision=block is Claude Code's convention that does not appear in
+      Cursor's schema at all. The spike sent the Claude shape to both hosts, so the ACKs at D=30 and
+      D=60 are NOT evidence that Cursor honours decision=block -- something carried the text to the
+      model, most likely unrecognised hook output surfacing as an error string the model then read,
+      but the supported mechanism was never exercised. Test 2's claim that Cursor honours the same
+      convention as Claude Code is withdrawn; what stands is that a wake occurred, not how. The input
+      side matters more: loop_count reports how many automatic follow-ups a conversation has already
+      triggered and loop_limit caps them, default 5 on Cursor and null (UNCAPPED) on Claude Code. That
+      is F1's re-entry rule, already built and documented, so Feature 003 reads loop_count rather than
+      inventing a sentinel -- and F1 is sharpened rather than retired, because Claude Code's uncapped
+      default means the loop observed there has no host-side backstop. F9: beforeShellExecution
+      returns {permission: allow|deny|ask}, so a hook can pre-authorise the exact command a woken turn
+      runs, which closes the approval gate that voided T2-001-a's latency. That does not retract F5 --
+      the gate is real and a product cannot assume users installed such a hook -- but it makes the
+      constraint closable by configuration, which is the difference between 'the woken turn may not
+      use tools' and 'may use tools the operator pre-authorised', and those imply different install
+      instructions. Also recorded: hook failures including timeout are fail-open by default, and a
+      waker must never set failClosed true because a hung long-poll would then freeze the agent.
+      Apparatus updated: --wake-schema cursor emits followup_message, and the hook now reads the
+      host's stdin payload and logs status, loop_count and the key set actually received, so a run
+      records what it was given rather than what it assumed. All four schemas verified.
+    applied_to: 'FINDINGS.md (F8, F9, F7 default paragraph, test 2 claim withdrawn); throwaway/spike_hook.py'
 # [A] written by the orchestrator on the work's active branch (single
 #     writer). Append-only audit trail of phase transitions and gate
 #     approvals, newest LAST (append to bottom).

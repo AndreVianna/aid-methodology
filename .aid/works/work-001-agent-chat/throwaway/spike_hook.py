@@ -193,6 +193,33 @@ def _block(url: str, after: int, deadline: float) -> tuple[str, str]:
     return "failed", note
 
 
+def _read_host_input() -> dict[str, Any]:
+    """Read the JSON the host writes to stdin. Never fatal.
+
+    Cursor's `stop` hook is documented to receive {"status", "loop_count"}, where loop_count is how
+    many automatic follow-ups this conversation has already triggered. That field is the host's own
+    answer to the re-entry problem the spike had been solving with a sentinel file, so it is worth
+    capturing on every run rather than inferring the loop from log archaeology.
+
+    A host that sends nothing, or sends something unparseable, must not fail the run: stdin is
+    evidence here, not input the measurement depends on.
+    """
+    if sys.stdin is None or sys.stdin.closed:
+        return {}
+    try:
+        raw = sys.stdin.read()
+    except Exception:  # noqa: BLE001 -- a closed or absent stdin is normal
+        return {}
+    raw = (raw or "").strip()
+    if not raw:
+        return {}
+    try:
+        parsed = json.loads(raw)
+    except json.JSONDecodeError:
+        return {"_unparsed": raw[:200]}
+    return parsed if isinstance(parsed, dict) else {"_nonobject": raw[:200]}
+
+
 def _act_command(run: str) -> str:
     """The exact command the woken turn must run, built from this process's own facts.
 
@@ -250,8 +277,14 @@ def _wake(schema: str, run: str, action: str = "command") -> int:
         _emit("wake", note=f"schema=exit2; stderr+exit2; cmd={_act_command(run)}")
         print(instruction, file=sys.stderr)
         return 2
-    payload = {"decision": "block", "reason": instruction}
-    _emit("wake", note=f"schema=claude action={action}; stdout json; "
+    if schema == "cursor":
+        # Cursor's documented stop-hook output. `followup_message`, when non-empty, is submitted as
+        # the next user message. This is the supported path on that host; `decision: block` is
+        # Claude Code's convention and is not in Cursor's schema at all.
+        payload: dict[str, Any] = {"followup_message": instruction}
+    else:
+        payload = {"decision": "block", "reason": instruction}
+    _emit("wake", note=f"schema={schema} action={action}; stdout json; "
                     f"witness={'refire' if action == 'text' else 'act'}")
     print(json.dumps(payload))
     return EXIT_OK
@@ -297,9 +330,10 @@ def main() -> int:
                          "tool calls behind human approval then measures the operator, not itself. "
                          "'text' asks only for a word, needs no approval, and is witnessed by the "
                          "refire line -- use it for the timing ladder")
-    ap.add_argument("--wake-schema", choices=("claude", "exit2", "none"), default="claude",
+    ap.add_argument("--wake-schema", choices=("claude", "cursor", "exit2", "none"), default="claude",
                     help="how to ask the host for one more turn once the block ends "
-                         "(default claude: JSON decision=block on stdout)")
+                         "(claude: decision=block + reason. cursor: followup_message, which is "
+                         "the shape Cursor documents. exit2: stderr + exit 2. none: control)")
     ap.add_argument("--log", default=None,
                     help="NDJSON log path (default throwaway/logs/<run>.ndjson)")
     args = ap.parse_args()
@@ -356,9 +390,14 @@ def main() -> int:
         after = args.after if args.after is not None else int(args.deadline) + 30
         _install_signal_handlers()
 
+        host_input = _read_host_input()
         _emit("start", d=args.deadline,
               note=f"host={args.host} url={args.url} after={after} "
-                   f"python={sys.version.split()[0]} platform={sys.platform}")
+                   f"python={sys.version.split()[0]} platform={sys.platform} "
+                   f"schema={args.wake_schema} action={args.wake_action}",
+              host_status=host_input.get("status"),
+              loop_count=host_input.get("loop_count"),
+              host_input_keys=sorted(host_input) or None)
 
         verdict, note = _block(args.url, after, args.deadline)
 
