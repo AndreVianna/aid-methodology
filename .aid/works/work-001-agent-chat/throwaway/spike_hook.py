@@ -155,8 +155,18 @@ def _act_command(run: str) -> str:
     sys.executable and __file__ are used rather than anything the operator types, so the
     command cannot pick up a PATH shim. On this spike's first target machine `python` on PATH
     was a pyenv-win python.bat, which would have made the act a grandchild of cmd.exe.
+
+    Separators are normalised to forward slashes. Windows accepts them everywhere, and the host
+    may well run this through bash -- Claude Code does on Windows, reporting /usr/bin/bash. Inside
+    double quotes bash preserves a backslash, so the native form would survive intact; unquoted it
+    would NOT, because bash eats each backslash and
+    "C:\\Users\\a\\spike_hook.py" collapses to "C:Usersaspike_hook.py". That failure reads as a
+    missing file rather than as a mangled path, so it is worth not depending on the agent
+    reproducing the quoting exactly.
     """
-    return f'"{sys.executable}" "{Path(__file__).resolve()}" --act {run}'
+    exe = str(sys.executable).replace("\\", "/")
+    me = str(Path(__file__).resolve()).replace("\\", "/")
+    return f'"{exe}" "{me}" --act {run}'
 
 
 def _wake(schema: str, run: str) -> int:
