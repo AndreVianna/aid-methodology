@@ -431,9 +431,10 @@ its override reinstates a design that was rejected.
 > **On the ids.** These were `D1`–`D14` while they lived in `STATE.md`, and are `ID-1`–`ID-14`
 > here — `ID` for *interview decision*, mapping exactly `Dn` → `ID-n`. Two live namespaces
 > already claim the obvious spellings: `.aid/knowledge/decisions.md` uses `D1`–`D29` for AID's
-> own decisions, and Feature 003's Scope Ledger below uses `D-1`–`D-8` for its spec-level ones.
-> A prefix that cannot be confused with either is worth more than continuity with a numbering
-> that only ever existed in a file now being retired.
+> own decisions. A prefix that cannot be confused with that is worth more than continuity with
+> a numbering that only ever existed in a file now retired. (An earlier draft also cited a
+> per-feature Scope Ledger using `D-1`–`D-8`; that specification is not carried forward, so
+> the collision it warned about no longer exists.)
 
 | # | Decision | Rejected alternative, and why |
 |---|---|---|
@@ -763,6 +764,16 @@ is nothing for the criterion to be true of. **And the product cannot be a single
 prose. Below those two constraints, the stages are also where cohesion falls, because they were
 drawn around what ships together.
 
+> **Feature ids were reassigned when this set was re-decomposed, and that is a hazard worth
+> naming rather than a fact worth burying.** Eleven features became five, and three of the new
+> ids — 003, 004, 005 — now denote something different from what they denoted before. Prose
+> carried across that change kept citing the old numbers and therefore silently named the
+> wrong feature; a cross-reference pass caught five such citations, and they are corrected
+> above. **The lesson for anything written from here on:** cite a feature by id *and* title on
+> first mention in a passage, so a future reassignment is visible as a contradiction rather
+> than resolving quietly to the wrong target. Criterion ids are safe to cite bare — §9's are
+> stable and a script proves each is owned exactly once.
+
 ### Feature 001 — Wake Feasibility Spike
 
 - **Priority:** Must
@@ -851,7 +862,7 @@ stage exists to *not* build.
 
 **`after` is the send.** The stub has no `send` operation and gains none: the arrival time is
 chosen by the caller when it arms the wait, and the timer expiring *is* the message being
-sent. A real send path is Feature 005, and building one here would produce exactly the
+sent. A real send path is Feature 002, and building one here would produce exactly the
 artifact most likely to be promoted. `after=0` therefore does double duty — it is how a woken
 session reports that it woke (the request itself is the machine-readable witness), at the cost
 of nothing, because an immediate return is the same code path.
@@ -937,7 +948,7 @@ layout is a spike someone will promote.
 
 ###### Where they live, and why that location is the disposability mechanism
 
-All three live in **`.aid/works/work-007-agent-chat/throwaway/`** — a new directory, created by
+All three live in **`.aid/works/work-001-agent-chat/throwaway/`** — a new directory, created by
 this feature and deleted by it. (Re-homed on 2026-09-01: the path was under a per-feature folder,
 and features are now sections of this document rather than folders, so there is no per-feature
 directory to nest it in. Nothing about the disposability argument below depends on the depth.)
@@ -1007,7 +1018,7 @@ Convention), `from __future__ import annotations`, type hints, `argparse` inside
 codes reuse the documented scheme (§ Exit Codes): `0` success, `1` runtime failure, `2` usage
 or argument error, `3` for a bind or connection failure, whose semantics match the existing
 network/fetch code. Each header additionally opens with the line
-`THROWAWAY - work-007 stage P0. Deleted when the spike closes. Do not import, copy, or
+`THROWAWAY - work-001 stage P0. Deleted when the spike closes. Do not import, copy, or
 promote.`
 
 ###### Host configuration is the operator's, and never this repository's
@@ -1161,9 +1172,10 @@ run count including void runs; Cursor version; OS and version; network (loopback
 
 **What the number is for, stated but not acted on here.** §6 defaults the long-poll timeout to
 30 s. If `S` lands near or below 60 s, that default is challenged, and if it lands in the
-hundreds of seconds it is comfortably safe. Recording the implication is in scope; changing the
-requirement is not — that belongs to Feature 006 and Feature 007, which is why the STATE
-row for Feature 007 already says it is shaped by this number.
+hundreds of seconds it is comfortably safe. Recording the implication is in scope; changing
+the requirement is not — **that belongs to Feature 003 (The Wake)**, which owns both the
+subscription and the per-host adapters, and whose own note already says it is shaped by this
+number.
 
 ###### Test 4 — two machines on the LAN (AC-20 question 4)
 
@@ -1190,7 +1202,7 @@ number test 3 produced, and both figures are recorded.
 **What test 4 does not prove, stated plainly.** It proves that a message crossing the LAN wakes
 a session on the far machine and that the woken turn can reach the other machine's service. It
 does **not** prove node-to-node federation, peer discovery, or store-and-forward — those are
-FR-6 and Feature 009 at stage P3, and no line of this spike touches them.
+FR-6 and Feature 004 at stage P3, and no line of this spike touches them.
 
 ##### External Integrations
 
@@ -1251,7 +1263,7 @@ tool worth keeping, which is the failure mode this stage is guarding against.
 
 **The record is the deliverable** (§10: "Its only deliverable is the answers"). It is written
 to
-**`.aid/works/work-007-agent-chat/FINDINGS.md`** — at the work root, outside `throwaway/`, so
+**`.aid/works/work-001-agent-chat/FINDINGS.md`** — at the work root, outside `throwaway/`, so
 that deleting the code does not delete the result. (Re-homed on 2026-09-01 with the `throwaway/`
 directory above, for the same reason: features are sections of this document now, not folders.)
 
@@ -1272,7 +1284,7 @@ Its shape:
    empty paragraph is a failed criterion, not a formatting lapse.
 4. **Order of execution**, since test 2 may depend on test 3's result (see test 2).
 5. **The implication for the design**, recorded and not acted upon: what the measured budget
-   means for the §6 long-poll default, addressed to Feature 006 and Feature 007.
+   means for the §6 long-poll default, addressed to Feature 003 (The Wake).
 
 ###### Disposal and the no-carry-forward check
 
@@ -1296,7 +1308,7 @@ forward — is then checked three ways, because the obvious check is vacuous:
 AC-20 requires the answers to be written down and does not say where they live **after** this
 work ships. `FINDINGS.md` satisfies the criterion and serves every consumer inside this work,
 but the work folder is prunable by rule — and the measured Cursor number is a durable fact
-about a third-party harness, not pipeline state. Feature 007's adapter design turns on it,
+about a third-party harness, not pipeline state. Feature 003's adapter design turns on it,
 and re-measuring costs hours.
 
 **Decided: the results are promoted to `.aid/knowledge/external-sources.md` when the spike
@@ -1313,7 +1325,9 @@ The **full run record stays in `FINDINGS.md`** and is pruned with the folder. Wh
 is the conclusion and enough method to trust or re-derive it — not the raw ladder.
 
 **One hard constraint on the KB entry.** It states the measurement and its method **only**:
-no work id, no work-folder path, no "measured by work-007" — in prose, table or frontmatter.
+no work id and no work-folder path — in prose, table or frontmatter. "Measured by the P0
+spike of work-NNN" is exactly the shape to avoid; "measured 2026-09-01 against Cursor
+x.y, method as below" is the shape to use.
 The project's context file forbids naming a work in the Knowledge Base, for the exact reason
 that applies here: the folder this measurement came from will not exist, so a citation to it
 is a dangling pointer by design. Cite the host, the version and the date instead.
@@ -1448,7 +1462,7 @@ learn a chat's name in order to join it.
 
 Each chat keeps a **durable log**, and each member keeps **their own place** in it. Being
 away delays messages; it does not lose them — right up until the node gives that member up
-for gone and reaps it, which is retention's job and is covered in Feature 011. Within that
+for gone and reaps it, which is retention's job and is covered in Feature 005. Within that
 window, being away costs nothing. A message may arrive twice, so each carries an
 identifier that lets a recipient spot the repeat. Within one chat everyone sees the same
 order.
@@ -1553,9 +1567,9 @@ must work on its own, because it is the floor every host falls back to.
 - [ ] Given the node's distribution, when it is inspected, then it offers **no client library
       or SDK** for a caller to bind to. So an in-tool skill written later has nothing to
       reimplement against and invokes the CLI by construction, which is what FR-7.4's first
-      clause asks for. (The rendered chat skill Feature 008 adds at stage P2 is instructions
+      clause asks for. (The rendered chat skill Feature 003 adds at stage P2 is instructions
       that call `aid chat`, not a client library — and the separate question of the HTTP
-      transport staying internal to the subscriber belongs to Feature 006.)
+      transport staying internal to the subscriber belongs to Feature 003.)
 - [ ] Given the node's implementation, when it is inspected, then message-plane logic lives
       in one core that the CLI calls rather than reimplements — so every face added later,
       the chat skill included, has a single core behind it.
@@ -1963,7 +1977,7 @@ What happens once a chat has more than two members: aiming a message at someone,
 something only one of them can see.
 
 **Not in this feature:** plain delivery to every member of a larger chat. That is ordinary
-fan-out, built and tested at stage P1 (AC-13, Feature 005). This feature adds only
+fan-out, built and tested at stage P1 (AC-13, Feature 002). This feature adds only
 **addressing within** a chat that already delivers to everyone.
 
 With exactly two members, every message already has exactly one recipient — there is nobody
