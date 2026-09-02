@@ -196,7 +196,12 @@ PYEXE HOOK --host claude --run T1-000-a --deadline 30
 
 **36.** Write down the current time as the no-touch start.
 
-**37.** Let the Claude Code session go idle.
+**37.** Send the session one short prompt, such as `say ok`, and let it finish answering.
+> A stop hook fires when a turn **ends**, so a session that was never prompted never fires one.
+> The prompt only has to produce a turn; its content is irrelevant. Send it, let the answer
+> finish, and the hook arms itself at that moment -- that is when the no-touch window really
+> begins.
+
 
 **38.** Do not touch the machine for 60 seconds.
 
@@ -250,11 +255,28 @@ PYEXE HOOK --host claude --run T1-000-a --deadline 30
 PYEXE HOOK --host cursor --run T2-000-a --deadline 30
 ```
 
+> The hook defaults to the wake convention Claude Code documents: JSON on stdout carrying
+> `decision: block` plus the command to run. Whether Cursor honours that same shape is **not
+> known** — finding out is part of what this test is for.
+>
+> So if this run blocks cleanly but no `act` line ever appears, do not record Fail yet. Repeat the
+> run as `T2-001-a` with `--wake-schema exit2` appended, which puts the instruction on stderr and
+> exits 2 instead. Record which schema produced the `act`, because that answer is as much a
+> finding as the Pass itself.
+>
+> If neither schema works, Fail is the correct record — and `FR-5.2` already allows Cursor
+> degrading to the pull floor.
+
 **56.** Pre-approve that command in Cursor's settings.
 
 **57.** Write down the current time as the no-touch start.
 
-**58.** Let the Cursor session go idle.
+**58.** Send the session one short prompt, such as `say ok`, and let it finish answering.
+> A stop hook fires when a turn **ends**, so a session that was never prompted never fires one.
+> The prompt only has to produce a turn; its content is irrelevant. Send it, let the answer
+> finish, and the hook arms itself at that moment -- that is when the no-touch window really
+> begins.
+
 
 **59.** Do not touch the machine for 60 seconds.
 
@@ -306,7 +328,7 @@ letter (`a`, `b`, `c`).
 
 **R5.** Write down the current time as the no-touch start.
 
-**R6.** Let the Cursor session go idle.
+**R6.** Send the session one short prompt and let it finish answering.
 
 **R7.** Wait until either terminal 2's probe exits, or `D` + 120 seconds have passed.
 
@@ -503,9 +525,9 @@ Get-NetIPAddress -AddressFamily IPv4 | Where-Object { $_.InterfaceAlias -notmatc
 > `machine` field comes out wrong in the logs, set the variable at user scope instead:
 > `[Environment]::SetEnvironmentVariable('SPIKE_MACHINE','B','User')`, then restart Cursor.
 
-**136.** Let the machine A session go idle.
+**136.** Send the machine A session one short prompt and let it finish answering.
 
-**137.** Let the machine B session go idle.
+**137.** Send the machine B session one short prompt and let it finish answering.
 
 **138.** Confirm both hooks have written a `start` line before the arrival.
 

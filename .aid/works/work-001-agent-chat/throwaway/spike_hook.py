@@ -149,6 +149,50 @@ def _block(url: str, after: int, deadline: float) -> tuple[bool, str]:
     return ("err" in result, json.dumps(result)[:300])
 
 
+def _act_command(run: str) -> str:
+    """The exact command the woken turn must run, built from this process's own facts.
+
+    sys.executable and __file__ are used rather than anything the operator types, so the
+    command cannot pick up a PATH shim. On this spike's first target machine `python` on PATH
+    was a pyenv-win python.bat, which would have made the act a grandchild of cmd.exe.
+    """
+    return f'"{sys.executable}" "{Path(__file__).resolve()}" --act {run}'
+
+
+def _wake(schema: str, run: str) -> int:
+    """Hand the host something that makes it run one more turn. Returns the process exit code.
+
+    This is the whole wake. The hook blocking proves only that the host TOLERATED a long
+    hook; it proves nothing about waking. The host has to be told to continue, and told what
+    to do, or the turn never happens and no `act` is ever written -- which is indistinguishable
+    in the log from a host that refused to wake.
+
+    Two conventions are offered because the hosts document different ones and this spike exists
+    partly to find out which each honours:
+      claude -- JSON on stdout with decision=block; the documented Stop-hook shape, where
+                `reason` is fed to the model instead of the turn ending.
+      exit2  -- the instruction on stderr with exit status 2, the other documented convention
+                for a hook that wants to interrupt and be heard.
+      none   -- emit nothing, the control: any `act` under `none` means something OTHER than
+                this payload woke the host, and the run is not evidence for the payload.
+    """
+    instruction = (
+        "A message arrived on the chat channel. Do not stop yet. "
+        "Run exactly this command, then stop:\n" + _act_command(run)
+    )
+    if schema == "none":
+        _emit("wake", note="schema=none; nothing emitted (control)")
+        return EXIT_OK
+    if schema == "exit2":
+        _emit("wake", note=f"schema=exit2; stderr+exit2; cmd={_act_command(run)}")
+        print(instruction, file=sys.stderr)
+        return 2
+    payload = {"decision": "block", "reason": instruction}
+    _emit("wake", note=f"schema=claude; stdout json; cmd={_act_command(run)}")
+    print(json.dumps(payload))
+    return EXIT_OK
+
+
 def _act(url: str, run: str) -> int:
     """The woken turn's single request -- the machine-readable witness that a turn ran.
 
@@ -183,6 +227,9 @@ def main() -> int:
                     help="what to ask the stub to wait (default: deadline + 30)")
     ap.add_argument("--deadline", type=float, default=30.0,
                     help="target block duration D in seconds (default 30)")
+    ap.add_argument("--wake-schema", choices=("claude", "exit2", "none"), default="claude",
+                    help="how to ask the host for one more turn once the block ends "
+                         "(default claude: JSON decision=block on stdout)")
     ap.add_argument("--log", default=None,
                     help="NDJSON log path (default throwaway/logs/<run>.ndjson)")
     args = ap.parse_args()
@@ -241,6 +288,9 @@ def main() -> int:
                 # which only the stub's log can show. The classification is made when the
                 # record is written, from both logs.
                 _emit("end", d=args.deadline, note=f"returned under own power at deadline; {note}")
+                # Blocking is not waking. The host must now be told to run a turn, or no act
+                # can ever be written and ABANDONED becomes unfalsifiable.
+                return _wake(args.wake_schema, run)
             else:
                 _emit("error", d=args.deadline,
                       note=f"stub answered before the deadline -- run is VOID; {note}")
