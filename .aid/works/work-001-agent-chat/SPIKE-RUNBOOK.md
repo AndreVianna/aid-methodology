@@ -103,9 +103,21 @@ Copy-Item C:\path\to\repo\.aid\works\work-001-agent-chat\throwaway\spike_*.py ~\
 
 **21.** Write down the Windows version.
 
-**22.** Open Windows Settings and set the screen to never turn off.
+**22.** Record your current timeouts so you can restore them: `powercfg /query SCHEME_CURRENT SUB_SLEEP`
 
-**23.** In the same place, set sleep to never.
+**23.** Disable screen-blank and sleep on both power sources:
+
+```powershell
+powercfg /change monitor-timeout-ac 0; powercfg /change monitor-timeout-dc 0
+powercfg /change standby-timeout-ac 0; powercfg /change standby-timeout-dc 0
+```
+
+> `0` means never. `-ac` is plugged in and `-dc` is on battery, and a laptop needs both — a run
+> that sleeps is void, and discovering that after a 600 s ladder rung is expensive. Restore your
+> values at close-out; the spike should not permanently change your power settings.
+>
+> This governs sleep and the screen only. It does not stop the host tool itself idling, which is
+> the thing under test.
 
 ---
 
@@ -534,6 +546,10 @@ mandatory "what was tried" paragraph for anything Inconclusive.
 
 **158.** On machine A, remove the firewall rule:
 `Remove-NetFirewallRule -DisplayName "spike 8811"`
+
+> Also restore the power timeouts you recorded at step 22, and remove the stop hooks from the two
+> scratch projects. The spike should leave no lasting change to the machine or to either host
+> tool's configuration.
 
 **159.** Remove the force-added scripts from version control:
 `git rm --cached .aid/works/work-001-agent-chat/throwaway/spike_*.py`
