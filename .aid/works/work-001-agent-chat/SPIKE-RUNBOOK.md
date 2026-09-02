@@ -1,120 +1,172 @@
-# P0 Spike Runbook
+# P0 Spike Runbook — Windows (PowerShell)
 
 **One action per step.** Do them in order.
+
+**Shell:** Windows PowerShell or PowerShell 7. **Not `cmd.exe`** — several steps rely on `~`
+expansion and PowerShell cmdlets that `cmd` does not have.
 
 **What you are producing:** four answers, one of them a number. Nothing else.
 
 **Authority:** `REQUIREMENTS.md § 11 / Feature 001` is the protocol. This file only sequences the
 actions. If the two disagree, the specification wins.
 
+If machine A turns out to be a Linux VM, see **Appendix — Linux machine A** at the end.
+
 Transient. Delete this file with the spike.
+
+---
+
+## Read this before Part 0 — two things Windows changes
+
+**Windows change A — your test 3 number will have ±0.25 s resolution, not exact.** On POSIX the hook catches
+SIGTERM and writes the kill instant from inside itself. Windows has no deliverable signal for a
+terminated process, so the hook gets no chance to write. The kill is bounded instead by the last
+`beat` line, which lands every 250 ms. **The record must say `resolution: ±0.25 s` and
+`signal: none observable (Windows)`.** This is expected and the specification already provides
+for it — it is not a defect in the run.
+
+**Windows change B — `taskkill`, `Stop-Process` and Ctrl-C are not the same thing.** When you need to end a
+process by hand, use Ctrl-C in its own terminal. Do not use `Stop-Process -Force` on the hook
+during a measurement run — you would be the thing that killed it, and the log would read as
+though Cursor did.
 
 ---
 
 ## Part 0 — Setup (once)
 
-**1.** Create a scratch folder outside this repository: `mkdir ~/spike`
+**1.** Open PowerShell.
 
-**2.** Change into it: `cd ~/spike`
+**2.** Create a scratch folder outside this repository: `mkdir ~\spike`
 
-**3.** Copy the three scripts into it:
-`cp /path/to/repo/.aid/works/work-001-agent-chat/throwaway/spike_*.py ~/spike/`
+**3.** Change into it: `cd ~\spike`
 
-**4.** Run `python3 --version`.
+**4.** On your laptop, pull this branch: `git fetch origin work-001; git checkout work-001`
 
-**5.** Confirm it is 3.9 or newer.
+**5.** Copy the three scripts into the scratch folder:
 
-**6.** Write down the Python version.
+```powershell
+Copy-Item C:\path\to\repo\.aid\works\work-001-agent-chat\throwaway\spike_*.py ~\spike\
+```
 
-**7.** Open Cursor.
+> The three `spike_*.py` files are force-added to this branch **only** so you can fetch them.
+> `throwaway/` is otherwise gitignored, and step 162 removes them from version control at
+> close-out — `AC-20` requires that none of this code is carried forward.
 
-**8.** Write down the Cursor version.
+**6.** Run `py -3 --version`.
 
-**9.** Run `claude --version`.
+**7.** If that failed, run `python --version`.
 
-**10.** Write down the Claude Code version.
+**8.** If that also failed, run `python3 --version`.
 
-**11.** Write down your OS name and version.
+**9.** Write down whichever of those three commands worked. Call it `PY`.
 
-**12.** Turn off machine sleep.
+> Windows does not reliably provide `python3`. `py -3` is the launcher that ships with
+> python.org installs; `python` is what the Microsoft Store install exposes. Every step below
+> writes `PY` — substitute whichever worked.
 
-**13.** Turn off display sleep.
+**10.** Confirm the version it printed is 3.9 or newer.
 
-**14.** Run `which python3`.
+**11.** Write down the Python version.
 
-**15.** Write down that absolute path. Call it `PY`.
+**12.** Run `Get-Command python | Select-Object -ExpandProperty Source`.
 
-**16.** Run `realpath ~/spike/spike_hook.py`.
+**13.** Write down that absolute path. Call it `PYEXE`.
 
-**17.** Write down that absolute path. Call it `HOOK`.
+> `PYEXE` is the interpreter's own `.exe` path. You need it because a host hook must be
+> registered as an absolute interpreter path — `py -3` is a launcher shim and is not suitable
+> there.
 
-> `PY` and `HOOK` must both be absolute, and you must never wrap them in a shell script. The
-> process the host spawns has to be the process being measured. A wrapper leaves the interpreter
-> as an orphaned grandchild and makes "still alive" unreadable.
+**14.** Run `Resolve-Path ~\spike\spike_hook.py`.
+
+**15.** Write down that absolute path. Call it `HOOK`.
+
+> `PYEXE` and `HOOK` must both be absolute, and you must never wrap them in a `.bat`, `.cmd` or
+> `.ps1` script. The process the host spawns has to be the process being measured. A wrapper
+> leaves the interpreter as an orphaned grandchild and makes "still alive" unreadable.
+
+**16.** Open Cursor.
+
+**17.** Write down the Cursor version.
+
+**18.** Run `claude --version`.
+
+**19.** Write down the Claude Code version.
+
+**20.** Run `[System.Environment]::OSVersion.VersionString`.
+
+**21.** Write down the Windows version.
+
+**22.** Open Windows Settings and set the screen to never turn off.
+
+**23.** In the same place, set sleep to never.
 
 ---
 
 ## Part 1 — Test 1: does an idle Claude Code session wake?
 
-**18.** Open a terminal. Call it **terminal 1**.
+**24.** Open a PowerShell window. Call it **terminal 1**.
 
-**19.** In terminal 1, run `python3 ~/spike/spike_stub_node.py --port 8811`.
+**25.** In terminal 1, run `PY ~\spike\spike_stub_node.py --port 8811`.
 
-**20.** Confirm it printed a line saying it is listening.
+**26.** Confirm it printed a line saying it is listening.
 
-**21.** Leave terminal 1 alone for the rest of this part.
+**27.** Leave terminal 1 alone for the rest of this part.
 
-**22.** Open a second terminal. Call it **terminal 2**.
+**28.** Open a second PowerShell window. Call it **terminal 2**.
 
-**23.** In terminal 2, run `python3 ~/spike/spike_probe.py --run T1-000-a`.
+**29.** In terminal 2, run `PY ~\spike\spike_probe.py --run T1-000-a`.
 
-**24.** Confirm it printed that it is waiting for the hook's start line.
+**30.** Confirm it printed that it is waiting for the hook's start line.
 
-**25.** Leave terminal 2 alone for the rest of this part.
+**31.** Leave terminal 2 alone for the rest of this part.
 
-**26.** Open a new empty folder as a project in Claude Code.
+**32.** Open a new empty folder as a project in Claude Code.
 
 > It must not be this repository. `FR-0.4` says the product writes no host tool's configuration,
 > and this repo's `.claude/settings.json` is tracked — a hook there lands in every contributor's
 > checkout.
 
-**27.** Register this as that project's stop hook: `PY HOOK --host claude --run T1-000-a --deadline 30`
+**33.** Register this as that project's stop hook, substituting your `PYEXE` and `HOOK`:
 
-**28.** Pre-approve that command in Claude Code's permission settings.
+```
+PYEXE HOOK --host claude --run T1-000-a --deadline 30
+```
 
-**29.** Confirm no other hook is registered in that project.
+**34.** Pre-approve that command in Claude Code's permission settings.
 
-**30.** Write down the current time as the no-touch start.
+**35.** Confirm no other hook is registered in that project.
 
-**31.** Let the Claude Code session go idle.
+**36.** Write down the current time as the no-touch start.
 
-**32.** Do not touch either machine for 60 seconds.
+**37.** Let the Claude Code session go idle.
 
-**33.** Write down the current time as the no-touch end.
+**38.** Do not touch the machine for 60 seconds.
 
-**34.** Run `cat ~/spike/logs/T1-000-a.ndjson`.
+**39.** Write down the current time as the no-touch end.
 
-**35.** Search the output for a line containing `"event": "act"`.
+**40.** Run `Get-Content ~\spike\logs\T1-000-a.ndjson`.
 
-**36.** If that line is present, record test 1 as **Pass**.
+**41.** Search the output for a line containing `"event": "act"`.
 
-**37.** If that line is absent, record test 1 as **Fail**.
+**42.** If that line is present, record test 1 as **Pass**.
 
-**38.** Copy the log into your notes now.
+**43.** If that line is absent, record test 1 as **Fail**.
+
+**44.** Copy the log into your notes now.
 
 > Not later. A run reconstructed from memory is not evidence.
 
-**39.** Check whether any of the five void conditions happened (see the box below).
+**45.** Check whether any of the five void conditions happened (box below).
 
-**40.** If none happened, go to Part 2.
+**46.** If none happened, go to Part 2.
 
-**41.** If one happened, write down which one.
+**47.** If one happened, write down which one.
 
-**42.** Delete `~/spike/logs/T1-000-a.ndjson`.
+**48.** Run `Remove-Item ~\spike\logs\T1-000-a.ndjson`.
 
-**43.** Delete `~/spike/logs/T1-000-a.armed`.
+**49.** Run `Remove-Item ~\spike\logs\T1-000-a.armed`.
 
-**44.** Repeat this part from step 19, using run id `T1-000-b`.
+**50.** Repeat this part from step 25, using run id `T1-000-b`.
 
 > **The five void conditions.** A run is void if: you interacted with the session; the host
 > raised a permission prompt; the machine slept; the stub restarted or returned early; or the
@@ -124,41 +176,45 @@ Transient. Delete this file with the spike.
 
 ## Part 2 — Test 2: does an idle Cursor session wake?
 
-**45.** In terminal 1, press Ctrl-C to stop the stub.
+**51.** In terminal 1, press Ctrl-C to stop the stub.
 
-**46.** In terminal 1, run `python3 ~/spike/spike_stub_node.py --port 8811`.
+**52.** In terminal 1, run `PY ~\spike\spike_stub_node.py --port 8811`.
 
 > The stub is restarted before every run. That is what makes `seq` reliable for ordering.
 
-**47.** In terminal 2, run `python3 ~/spike/spike_probe.py --run T2-000-a`.
+**53.** In terminal 2, run `PY ~\spike\spike_probe.py --run T2-000-a`.
 
-**48.** Open a new empty folder as a project in Cursor.
+**54.** Open a new empty folder as a project in Cursor.
 
-**49.** Register this as that project's `stop` hook: `PY HOOK --host cursor --run T2-000-a --deadline 30`
+**55.** Register this as that project's `stop` hook:
 
-**50.** Pre-approve that command in Cursor's settings.
+```
+PYEXE HOOK --host cursor --run T2-000-a --deadline 30
+```
 
-**51.** Write down the current time as the no-touch start.
+**56.** Pre-approve that command in Cursor's settings.
 
-**52.** Let the Cursor session go idle.
+**57.** Write down the current time as the no-touch start.
 
-**53.** Do not touch either machine for 60 seconds.
+**58.** Let the Cursor session go idle.
 
-**54.** Write down the current time as the no-touch end.
+**59.** Do not touch the machine for 60 seconds.
 
-**55.** Run `cat ~/spike/logs/T2-000-a.ndjson`.
+**60.** Write down the current time as the no-touch end.
 
-**56.** Search for a line containing `"event": "act"`.
+**61.** Run `Get-Content ~\spike\logs\T2-000-a.ndjson`.
 
-**57.** If present, record test 2 as **Pass**.
+**62.** Search for a line containing `"event": "act"`.
 
-**58.** If absent, record test 2 as **Fail**.
+**63.** If present, record test 2 as **Pass**.
 
-**59.** Copy the log into your notes now.
+**64.** If absent, record test 2 as **Fail**.
 
-**60.** Check the five void conditions again.
+**65.** Copy the log into your notes now.
 
-**61.** If one happened, repeat this part with run id `T2-000-b`.
+**66.** Check the five void conditions again.
+
+**67.** If one happened, repeat this part with run id `T2-000-b`.
 
 ---
 
@@ -166,13 +222,13 @@ Transient. Delete this file with the spike.
 
 ### The prior
 
-**62.** Open `https://cursor.com/docs/hooks`.
+**68.** Open `https://cursor.com/docs/hooks`.
 
-**63.** Find any statement about a hook timeout.
+**69.** Find any statement about a hook timeout.
 
-**64.** Write down what it says. If it says nothing, write down "none stated".
+**70.** Write down what it says. If it says nothing, write down "none stated".
 
-**65.** Write down the Cursor version next to it.
+**71.** Write down the Cursor version next to it.
 
 > A documented number is not a measured one. You measure regardless. If the two disagree, that
 > disagreement is a finding and is recorded both ways.
@@ -184,11 +240,11 @@ letter (`a`, `b`, `c`).
 
 **R1.** In terminal 1, press Ctrl-C to stop the stub.
 
-**R2.** In terminal 1, run `python3 ~/spike/spike_stub_node.py --port 8811`.
+**R2.** In terminal 1, run `PY ~\spike\spike_stub_node.py --port 8811`.
 
-**R3.** In terminal 2, run `python3 ~/spike/spike_probe.py --run T3-<D>-<L>`.
+**R3.** In terminal 2, run `PY ~\spike\spike_probe.py --run T3-<D>-<L>`.
 
-**R4.** Register the Cursor stop hook: `PY HOOK --host cursor --run T3-<D>-<L> --deadline <D>`
+**R4.** Register the Cursor stop hook: `PYEXE HOOK --host cursor --run T3-<D>-<L> --deadline <D>`
 
 **R5.** Write down the current time as the no-touch start.
 
@@ -196,55 +252,54 @@ letter (`a`, `b`, `c`).
 
 **R7.** Wait until either terminal 2's probe exits, or `D` + 120 seconds have passed.
 
-**R8.** Read `~/spike/logs/T3-<D>-<L>.ndjson`.
+**R8.** Run `Get-Content ~\spike\logs\T3-<D>-<L>.ndjson`.
 
-**R9.** Write down the outcome, using exactly one of the three labels in the table below, plus
-the log excerpt.
+**R9.** Write down the outcome, using exactly one label from the table below, plus the log excerpt.
 
 | Label | What the log shows |
 |---|---|
 | **SURVIVED(D)** | An `"event": "end"` line whose note says *returned under own power*, **and** an `act` line after it |
-| **KILLED(t)** | A `"event": "killed"` line at `t` < `D`, **and** a `probe` line with `"alive": false`. `t` is exact on POSIX, ±0.25 s on Windows |
+| **KILLED(t)** | The `beat` lines stop at `t` < `D`, **and** a `probe` line shows `"alive": false`. On Windows there will be **no** `killed` line and no `signal` — the last `beat` bounds `t` to ±0.25 s |
 | **ABANDONED(D)** | `probe` lines show alive all the way through `D`, the hook returned, but **no** `act` line within 120 s |
 
 ### Phase 1 — the ladder
 
-**66.** Run the recipe with `D` = 5, `L` = `a`.
+**72.** Run the recipe with `D` = 5, `L` = `a`.
 
-**67.** If the outcome was SURVIVED, run the recipe with `D` = 15, `L` = `a`.
+**73.** If the outcome was SURVIVED, run the recipe with `D` = 15, `L` = `a`.
 
-**68.** If that SURVIVED, run the recipe with `D` = 30.
+**74.** If that SURVIVED, run the recipe with `D` = 30.
 
-**69.** If that SURVIVED, run the recipe with `D` = 60.
+**75.** If that SURVIVED, run the recipe with `D` = 60.
 
-**70.** If that SURVIVED, run the recipe with `D` = 120.
+**76.** If that SURVIVED, run the recipe with `D` = 120.
 
-**71.** If that SURVIVED, run the recipe with `D` = 300.
+**77.** If that SURVIVED, run the recipe with `D` = 300.
 
-**72.** If that SURVIVED, run the recipe with `D` = 600.
+**78.** If that SURVIVED, run the recipe with `D` = 600.
 
-**73.** Write down `S` — the largest `D` that SURVIVED.
+**79.** Write down `S` — the largest `D` that SURVIVED.
 
-**74.** Write down `F` — the smallest `D` that did not.
+**80.** Write down `F` — the smallest `D` that did not.
 
-**75.** If `D` = 600 SURVIVED, write down the answer as "≥ 600 s, no limit observed".
+**81.** If `D` = 600 SURVIVED, write down the answer as "≥ 600 s, no limit observed".
 
-**76.** If `D` = 600 SURVIVED, write down that 600 s was the ceiling probed.
+**82.** If `D` = 600 SURVIVED, write down that 600 s was the ceiling probed.
 
-**77.** If `D` = 600 SURVIVED, skip to step 88.
+**83.** If `D` = 600 SURVIVED, skip to step 94.
 
 > Chasing an upper bound past 600 s spends hours to change no decision: `§6`'s long-poll default
 > is 30 s. Recording the ceiling stops "≥ 600 s" being misread as "unbounded".
 
-**78.** If `D` = 5 did **not** SURVIVE, run the recipe with `D` = 2.
+**84.** If `D` = 5 did **not** SURVIVE, run the recipe with `D` = 2.
 
-**79.** If `D` = 2 did not SURVIVE, run the recipe with `D` = 1.
+**85.** If `D` = 2 did not SURVIVE, run the recipe with `D` = 1.
 
-**80.** If `D` = 1 did not SURVIVE, write down the answer as "the `stop` hook may not block at all".
+**86.** If `D` = 1 did not SURVIVE, write down the answer as "the `stop` hook may not block at all".
 
-**81.** If `D` = 1 did not SURVIVE, write down the terminal mode and the observed `t`.
+**87.** If `D` = 1 did not SURVIVE, write down the terminal mode and the observed `t`.
 
-**82.** If `D` = 1 did not SURVIVE, skip to step 92.
+**88.** If `D` = 1 did not SURVIVE, skip to step 98.
 
 > That outcome is not a failure of the spike — it is the answer this stage exists to find. Cursor
 > would have no viable waker adapter and would degrade to the pull floor, which `FR-5.2` already
@@ -252,176 +307,235 @@ the log excerpt.
 
 ### Phase 2 — bisection
 
-**83.** Calculate `max(5, 0.10 × F)`. Call it `T`.
+**89.** Calculate `max(5, 0.10 × F)`. Call it `T`.
 
-**84.** If `F − S` is less than or equal to `T`, go to step 88.
+**90.** If `F − S` is less than or equal to `T`, go to step 94.
 
-**85.** Calculate `D = round((S + F) / 2)`.
+**91.** Calculate `D = round((S + F) / 2)`.
 
-**86.** Run the recipe at that `D`, `L` = `a`.
+**92.** Run the recipe at that `D`, `L` = `a`.
 
-**87.** If it SURVIVED, replace `S` with that `D`. Otherwise replace `F` with that `D`. Then go
-back to step 84.
+**93.** If it SURVIVED, replace `S` with that `D`; otherwise replace `F` with that `D`. Then go
+back to step 90.
 
 ### Phase 3 — confirmation
 
-**88.** Run the recipe at `D` = `S`, `L` = `a`.
+**94.** Run the recipe at `D` = `S`, `L` = `a`.
 
-**89.** Run the recipe at `D` = `S`, `L` = `b`.
+**95.** Run the recipe at `D` = `S`, `L` = `b`.
 
-**90.** Run the recipe at `D` = `S`, `L` = `c`.
+**96.** Run the recipe at `D` = `S`, `L` = `c`.
 
-**91.** If there is an `F`, run the recipe at `D` = `F` with `L` = `a`, then `b`, then `c` —
-three separate runs.
+**97.** If there is an `F`, run the recipe at `D` = `F` with `L` = `a`, then `b`, then `c` — three
+separate runs.
 
 > Where the ladder reached the 600 s ceiling there is no `F`, and the three ceiling runs are the
 > whole of phase 3.
 
-**92.** Count how many of the three `S` runs SURVIVED.
+**98.** Count how many of the three `S` runs SURVIVED.
 
-**93.** Count how many of the three `F` runs failed.
+**99.** Count how many of the three `F` runs failed.
 
-**94.** If `S` is 3 of 3 and `F` is 3 of 3, write down the result as confirmed.
+**100.** If `S` is 3 of 3 and `F` is 3 of 3, write down the result as confirmed.
 
-**95.** If either end is mixed, write down "the limit is not deterministic".
+**101.** If either end is mixed, write down "the limit is not deterministic".
 
-**96.** If either end is mixed, write down the bracket and the per-endpoint counts.
+**102.** If either end is mixed, write down the bracket and the per-endpoint counts.
 
 > Do not average a mixed result into one number. The design would then trust it.
 
 ### Stop
 
-**97.** Count the total runs performed in Part 3.
+**103.** Count the total runs performed in Part 3.
 
-**98.** If you reached 25 runs without confirming, stop.
+**104.** If you reached 25 runs without confirming, stop.
 
-**99.** If 4 hours of wall clock have passed without confirming, stop.
+**105.** If 4 hours of wall clock have passed without confirming, stop.
 
-**100.** If you stopped on either budget, write down the bracket you reached.
+**106.** If you stopped on either budget, write down the bracket you reached.
 
-**101.** If you stopped on either budget, write down every run performed.
+**107.** If you stopped on either budget, write down every run performed.
 
-**102.** If you stopped on either budget, write down why you stopped.
+**108.** If you stopped on either budget, write down why you stopped.
 
 > That is a valid answer. `AC-20` accepts "could not determine" in exactly this form.
 
-**103.** Count how many runs in Part 3 were void.
+**109.** Count how many runs in Part 3 were void.
 
-**104.** Write down that count.
+**110.** Write down that count.
 
-**105.** Write down the reason for each void run.
+**111.** Write down the reason for each void run.
 
 > A test that only completes four times in ten attempts is itself a finding.
+
+**112.** Write down `resolution: ±0.25 s` and `signal: none observable (Windows)`.
 
 ---
 
 ## Part 4 — Test 4: two machines
 
-Machine **A** hosts Claude Code and the stub. Machine **B** hosts Cursor. A VM is fine for either.
+Machine **A** hosts the stub and Claude Code. Machine **B** hosts Cursor. Your Windows laptop
+should be **B**, because Cursor needs a desktop session. A VM is fine for **A**.
 
-**106.** On machine A, run `hostname -I`.
+If A is Linux, use the Appendix's command forms on that side.
 
-**107.** Write down machine A's LAN address. Call it `A_ADDR`.
+**113.** On machine A, find its LAN address:
 
-**108.** On machine B, run `ping A_ADDR`.
+```powershell
+Get-NetIPAddress -AddressFamily IPv4 | Where-Object { $_.InterfaceAlias -notmatch 'Loopback' } | Select-Object IPAddress, InterfaceAlias
+```
 
-**109.** Confirm the ping replies.
+**114.** Write down machine A's LAN address. Call it `A_ADDR`.
 
-**110.** Copy the three scripts to machine B.
+**115.** On machine B, run `ping A_ADDR`.
 
-**111.** On machine B, run `python3 --version`.
+**116.** Confirm the ping replies.
 
-**112.** Confirm it is 3.9 or newer.
+**117.** Copy the three scripts to machine A.
 
-**113.** Write down machine B's Python version.
+**118.** On machine A, check Python is 3.9 or newer.
 
-**114.** Write down machine B's OS name and version.
+**119.** Write down machine A's Python version.
 
-**115.** Turn off machine sleep on machine B.
+**120.** Write down machine A's OS name and version.
 
-**116.** Turn off display sleep on machine B.
+**121.** Turn off sleep on machine A.
 
-**117.** On machine A, stop the stub with Ctrl-C.
+**122.** On machine A, allow inbound TCP on port 8811 through the firewall.
 
-**118.** On machine A, run
-`SPIKE_MACHINE=A python3 ~/spike/spike_stub_node.py --bind 0.0.0.0 --port 8811`.
+> Windows blocks it by default and the failure looks like a network problem. On Windows machine A:
+> `New-NetFirewallRule -DisplayName "spike 8811" -Direction Inbound -LocalPort 8811 -Protocol TCP -Action Allow`
+> Remove the rule when the spike closes.
 
-**119.** On machine B, run `curl "http://A_ADDR:8811/wait?after=0&run=T4-PING&text=ping"`.
+**123.** On machine A, set the machine label: `$env:SPIKE_MACHINE = 'A'`
 
-**120.** Confirm it returned JSON.
+**124.** On machine A, run `PY ~\spike\spike_stub_node.py --bind 0.0.0.0 --port 8811`.
 
-**121.** If it did not, fix the network before going further.
+> PowerShell has no inline `VAR=value command` syntax. Setting `$env:` first, as its own step, is
+> why steps 123 and 124 are separate.
 
-**122.** On machine A, run `SPIKE_MACHINE=A python3 ~/spike/spike_probe.py --run T4-000-a`.
+**125.** On machine B, run `curl.exe "http://A_ADDR:8811/wait?after=0&run=T4-PING&text=ping"`.
 
-**123.** On machine B, run `SPIKE_MACHINE=B python3 ~/spike/spike_probe.py --run T4-000-a`.
+> Use `curl.exe`, not `curl`. In Windows PowerShell 5.1 `curl` is an **alias for
+> `Invoke-WebRequest`**, which takes different arguments and returns a different object.
 
-**124.** On machine A, register the Claude Code stop hook:
-`SPIKE_MACHINE=A PY HOOK --host claude --run T4-000-a --deadline 60`
+**126.** Confirm it returned JSON.
 
-**125.** On machine B, register the Cursor stop hook:
-`SPIKE_MACHINE=B PY HOOK --host cursor --run T4-000-a --deadline 60 --url http://A_ADDR:8811/wait`
+**127.** If it did not, fix the network or the firewall before going further.
 
-**126.** Let the machine A session go idle.
+**128.** On machine A, open a second terminal.
 
-**127.** Let the machine B session go idle.
+**129.** In it, set the label: `$env:SPIKE_MACHINE = 'A'`
 
-**128.** Confirm both hooks have written a `start` line before the arrival.
+**130.** Run `PY ~\spike\spike_probe.py --run T4-000-a`.
 
-**129.** Do not touch either machine.
+**131.** On machine B, open a terminal.
 
-**130.** On machine A, run `cat ~/spike/logs/stub-8811.ndjson`.
+**132.** In it, set the label: `$env:SPIKE_MACHINE = 'B'`
 
-**131.** Confirm the log contains two `request` lines — one per waiter.
+**133.** Run `PY ~\spike\spike_probe.py --run T4-000-a`.
 
-**132.** Confirm it contains the single arrival.
+**134.** On machine A, register the Claude Code stop hook:
+`PYEXE HOOK --host claude --run T4-000-a --deadline 60`
 
-**133.** Confirm it contains two `act` lines.
+**135.** On machine B, register the Cursor stop hook:
+`PYEXE HOOK --host cursor --run T4-000-a --deadline 60 --url http://A_ADDR:8811/wait`
 
-**134.** Confirm one `act` line's `note` field shows `client=` with machine B's address.
+> The hooks inherit `SPIKE_MACHINE` from the host process, not from your terminal. If the
+> `machine` field comes out wrong in the logs, set the variable at user scope instead:
+> `[Environment]::SetEnvironmentVariable('SPIKE_MACHINE','B','User')`, then restart Cursor.
 
-**135.** Record test 4 as **Pass** if steps 131 to 134 all held.
+**136.** Let the machine A session go idle.
 
-**136.** Record test 4 as **Fail** if any did not.
+**137.** Let the machine B session go idle.
+
+**138.** Confirm both hooks have written a `start` line before the arrival.
+
+**139.** Do not touch either machine.
+
+**140.** On machine A, run `Get-Content ~\spike\logs\stub-8811.ndjson`.
+
+**141.** Confirm the log contains two `request` lines — one per waiter.
+
+**142.** Confirm it contains the single arrival.
+
+**143.** Confirm it contains two `act` lines.
+
+**144.** Confirm one `act` line's `note` field shows `client=` with machine B's address.
+
+**145.** Record test 4 as **Pass** if steps 141 to 144 all held.
+
+**146.** Record test 4 as **Fail** if any did not.
 
 > One log on one machine, so the ordering is unambiguous and no clock synchronisation between the
 > machines is needed.
 
-**137.** Run the recipe once more at `D` = `S` over the LAN, using run id `T4-CONF-a` and machine
-B's `--url`.
+**147.** Run the recipe once more at `D` = `S` over the LAN, run id `T4-CONF-a`, with machine B's
+`--url`.
 
-**138.** If that run did not SURVIVE, write down both figures: test 3's loopback number, and this
+**148.** If that run did not SURVIVE, write down both figures: test 3's loopback number, and this
 smaller LAN number.
 
 ---
 
 ## Part 5 — Hand back
 
-**139.** Collect every file in `~/spike/logs/` on machine A.
+**149.** Collect every file in `~\spike\logs\` on machine A.
 
-**140.** Collect every file in `~/spike/logs/` on machine B.
+**150.** Collect every file in `~\spike\logs\` on machine B.
 
-**141.** Collect your Part 0 notes: the versions and OS for both machines.
+**151.** Collect your Part 0 notes: versions and OS for both machines.
 
-**142.** Collect your no-touch windows.
+**152.** Collect your no-touch windows.
 
-**143.** Collect your void counts and reasons.
+**153.** Collect your void counts and reasons.
 
-**144.** Collect the four recorded outcomes.
+**154.** Collect the four recorded outcomes.
 
-**145.** Give me all of it.
+**155.** Give me all of it.
 
 I will classify each run, work the ladder and bisection, and write `FINDINGS.md` in the shape the
 specification requires — the apparatus block per host, the four answers one row each, and a
 mandatory "what was tried" paragraph for anything Inconclusive.
 
-**146.** Wait until `FINDINGS.md` is written and reviewed.
+**156.** Wait until `FINDINGS.md` is written and reviewed.
 
-**147.** Delete `~/spike/`.
+**157.** Run `Remove-Item -Recurse -Force ~\spike`.
 
-**148.** Delete `throwaway/` from the work folder.
+**158.** On machine A, remove the firewall rule:
+`Remove-NetFirewallRule -DisplayName "spike 8811"`
 
-**149.** Delete the `.aid/works/work-001-agent-chat/throwaway/` line from `.gitignore`.
+**159.** Remove the force-added scripts from version control:
+`git rm --cached .aid/works/work-001-agent-chat/throwaway/spike_*.py`
+
+**160.** Delete `throwaway/` from the work folder.
+
+**161.** Delete the `.aid/works/work-001-agent-chat/throwaway/` line from `.gitignore`.
+
+**162.** Confirm `git ls-files | Select-String spike_` returns nothing.
 
 > `AC-20` requires that no code from this feature is carried forward. Every filename starts with
 > `spike_` so that check is a search rather than a judgement.
+
+---
+
+## Appendix — Linux machine A
+
+If machine A is a Linux VM, the scripts are identical; only the shell forms differ.
+
+| Windows (PowerShell) | Linux |
+|---|---|
+| `PY script.py` | `python3 script.py` |
+| `$env:SPIKE_MACHINE = 'A'` then the command | `SPIKE_MACHINE=A python3 script.py` (one line) |
+| `Get-Content file` | `cat file` |
+| `Copy-Item a b` | `cp a b` |
+| `Get-NetIPAddress ...` | `hostname -I` |
+| `curl.exe "URL"` | `curl "URL"` |
+| `Remove-Item -Recurse -Force dir` | `rm -rf dir` |
+| `New-NetFirewallRule ...` | usually nothing; if `ufw` is active: `sudo ufw allow 8811/tcp` |
+| `~\spike\` | `~/spike/` |
+
+**On Linux, test 3's resolution is exact rather than ±0.25 s**, because the hook can catch
+SIGTERM and record the kill instant itself. That only matters if the Cursor session is the Linux
+one — and it will not be, since Cursor needs the desktop. So expect ±0.25 s regardless, and
+record it.
