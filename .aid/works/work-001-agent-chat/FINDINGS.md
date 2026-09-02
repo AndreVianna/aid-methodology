@@ -245,14 +245,29 @@ The first half stands: Cursor genuinely does not kill a long hook. The second wa
 reading a configured 90 s as a discovered boundary, and the bisection it implied would have spent
 runs rediscovering a number already written in the config file.
 
-**On the default.** Cursor's documentation gives `timeout` as "platform default" and **states no
-number**, at either place the option table appears. One third-party reimplementation of the hook
-runner uses 30 s and calls it "Cursor's platform hook timeout default", but that is someone's
-inference, not the vendor's statement, and it is not evidence about this build.
+**On the default — measured.** Cursor's documentation gives `timeout` as "platform default" and
+**states no number**, at either place the option table appears. So it was measured: with the
+`timeout` line removed entirely, a run at `D` = 60 produced **no ACK**.
 
-So the default is unknown and must be measured, which the apparatus is already equipped to do: with
-the `timeout` line removed, a run at `D` = 60 separates a 30 s default (ABANDONED) from anything
-≥ 60 s (SURVIVED). That single run is worth more than the doc reading.
+| Configuration | `D` | ACK | Implies |
+|---|---|---|---|
+| `timeout: 90` | 30 | yes | `D` < `timeout` |
+| `timeout: 90` | 60 | yes | `D` < `timeout` |
+| `timeout: 90` | 120 | no | `D` > `timeout` |
+| *no `timeout` line* | 60 | **no** | **platform default < 60 s** |
+
+The platform default is therefore **under 60 seconds**. That makes the third-party 30 s figure
+consistent with measurement, though it does not confirm it as the exact value — narrowing further
+needs runs with the line absent at smaller `D`.
+
+**This collides with `§6`'s own default.** The product's long-poll default is 30 s, and the wake is
+honoured only while `D` < `timeout`. If Cursor's platform default is 30 s, a 30 s long-poll running
+under it sits exactly at the boundary and would not be honoured — the node would hold the message,
+the hook would return, and nothing would happen.
+
+So the waker **cannot rely on Cursor's default hook timeout**. It must write an explicit `timeout`
+comfortably above its own long-poll, and that instruction belongs in whatever the product tells users
+to install. This is not a tuning preference; at the default it does not work.
 
 Also documented and relevant: hook failures including timeout are **fail-open** by default, so a
 timed-out waker does not block the user's session. `failClosed: true` would invert that, and a waker
