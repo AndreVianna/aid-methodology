@@ -576,6 +576,34 @@ review_history:
       documented schema, so followup_message remains the shape to ship and is still UNTESTED, as is
       the stdin capture of status and loop_count.
     applied_to: 'FINDINGS.md (test 3 answer, ladder table, latency, F7, F8)'
+  - date: '2026-09-02'
+    event: 'Feature 001 spike -- followup_message confirmed; loop_count absent; F10 filed, F8 corrected'
+    outcome: 'followup_message WORKS. loop_count does NOT reach the hook, so F8 re-entry claim withdrawn'
+    notes: >-
+      Run T5-schema-b under --wake-schema cursor produced SURVIVED(60): blocked 60.105 s, socket
+      elapsed 60.061 s, elapsed/D 1.0010, drift 0.0004 s, probe alive throughout, ACK in the session,
+      refire 3.875 s after the wake. So followup_message is confirmed as a working supported wake
+      mechanism on Cursor, and it is the shape the product should ship. Latency is now four samples,
+      3.264, 3.890, 3.368 and 3.875 s, mean 3.599 with a 0.626 spread; the followup_message run sits
+      inside the same range as the decision=block runs and latency does not scale with block
+      duration. The input half went the other way and F10 records it. The start line shows
+      host_status null, loop_count null, host_input_keys ["_unparsed"], and _unparsed is the branch
+      the reader takes when stdin was NON-EMPTY but not valid JSON -- empty stdin logs null keys and a
+      valid payload logs ["loop_count","status"], all three verified directly against the apparatus.
+      So Cursor wrote something to the hook's stdin and it was not the documented {status, loop_count}
+      object, which means loop_count does NOT reach the hook on this build. F8 had argued Feature 003
+      could read loop_count instead of inventing a re-entry rule; that argument does not survive, and
+      the re-entry problem returns to the design on BOTH hosts -- uncapped by default on Claude Code,
+      unobservable on Cursor. loop_limit may still cap Cursor's follow-ups host-side at 5 even with the
+      count invisible to the hook, which would bound runaway looping without helping the hook decide;
+      untested, and testing it needs a deliberate loop of six or more wakes. What Cursor actually sent
+      is still unknown and that is an instrumentation failure of mine: the reader captured the raw text
+      but the start line logged only the key NAMES, so the run reports 'not JSON' and nothing
+      actionable. Fixed -- the hook now logs host_input_raw with the parser's own error, repr-quoted so
+      control characters and shell noise are visible, and one more run recovers what was lost. Worth
+      noting alongside F2: Cursor invokes hooks through bash on Windows, so the hook's stdin may be
+      whatever bash handed it rather than what Cursor intended to write. Suggestive, not evidence.
+    applied_to: 'FINDINGS.md (F10, F8 correction, latency, ladder table); throwaway/spike_hook.py'
 # [A] written by the orchestrator on the work's active branch (single
 #     writer). Append-only audit trail of phase transitions and gate
 #     approvals, newest LAST (append to bottom).

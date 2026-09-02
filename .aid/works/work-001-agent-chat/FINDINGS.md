@@ -113,6 +113,7 @@ wake", which would have been false.
 | `T3-60-a` (pid 51852) | 60 | 60.086 s | 1.0009 | alive throughout | 3.890 s | **SURVIVED(60)** |
 | `T3-120-a` (`timeout` 90) | 120 | 120.097 s | 1.0006 | alive throughout | **none** | **ABANDONED(120)** |
 | `T3-120-a` (`timeout` 3600) | 120 | 120.083 s | 1.0004 | alive throughout | 3.368 s | **SURVIVED(120)** |
+| `T5-schema-b` (`followup_message`) | 60 | 60.105 s | 1.0010 | alive throughout | 3.875 s | **SURVIVED(60)** |
 
 Two runs were executed at `D` = 60 under the **same run id**, distinguished here by pid. Both
 survived, so 60 has two of the three consistent runs the confirmation phase requires.
@@ -149,11 +150,11 @@ were searching for a boundary that turned out to be a number the operator writes
 One incidental observation on `T3-120-a`: a single skipped beat at `t_mono` ≈ 61 s, 0.504 s against a
 0.252 s cadence. Well inside the 2 s void threshold, so the run stands.
 
-### Cursor's real wake latency is about 3.5 s
+### Cursor's real wake latency is about 3.6 s
 
-Wake to `refire` across three runs — `T3-60-a` pids 50100 and 51852, and `T3-120-a` under
-`timeout` 3600: **3.264 s, 3.890 s, 3.368 s**. Mean 3.507 s, spread 0.626 s. The 3.368 s sample came
-from a 120 s block, so latency does not appear to scale with block duration. This is the figure the voided 118.823 s was hiding: with no
+Wake to `refire` across four runs: **3.264, 3.890, 3.368, 3.875 s**. Mean 3.599 s, spread 0.626 s.
+Two of those came from 60 s blocks and one from 120 s, so latency does not appear to scale with block
+duration, and the `followup_message` run sits inside the same range as the `decision: block` runs. This is the figure the voided 118.823 s was hiding: with no
 approval prompt in the path, Cursor turns a returned hook into a completed turn in under four
 seconds, using about 3% of the 120 s window rather than 99%.
 
@@ -170,6 +171,39 @@ has been run. What this number does establish is that the wake mechanism is not 
 ---
 
 ## Findings that change the design
+
+### F10 — `followup_message` works; `loop_count` never arrives
+
+Run `T5-schema-b`, `--wake-schema cursor`. The documented output shape produced a clean
+SURVIVED(60): blocked 60.105 s, ACK in the session, `refire` 3.875 s after the wake, probe alive
+throughout. **`followup_message` is confirmed as a working, supported wake mechanism on Cursor** —
+that half of F8 is settled, and it is the shape the product should ship.
+
+The input half is not. The `start` line records:
+
+```
+"host_status": null, "loop_count": null, "host_input_keys": ["_unparsed"]
+```
+
+`_unparsed` is the branch the reader takes when stdin was **non-empty but not valid JSON**; empty
+stdin logs `host_input_keys: null` instead, and a valid payload logs `["loop_count", "status"]`. All
+three cases were verified against the apparatus directly. So Cursor wrote something to the hook's
+stdin and it was not the documented `{"status", "loop_count"}` object.
+
+**`loop_count` does not reach the hook on this build.** F8 argued that Feature 003 could read it
+instead of inventing a re-entry rule, and that argument does not survive this run: the field is
+documented but not observed. The re-entry problem returns to the design, and on Cursor it must be
+solved without host help — as it already must on Claude Code, where `loop_limit` defaults to `null`.
+
+**What Cursor actually sent is still unknown**, and that is an instrumentation failure of mine: the
+reader captured the raw text but the `start` line logged only the *key names*, so the run reports
+"not JSON" and nothing more. A finding nobody can act on. The hook now logs the raw bytes under
+`host_input_raw` with the parser's own error, `repr()`-quoted so control characters and shell noise
+are visible. One more run recovers what was lost.
+
+That the payload arrives malformed is itself suggestive given F2: Cursor invokes hooks through bash
+on Windows, so the hook's stdin may be whatever bash handed it rather than what Cursor intended to
+write. Suggestive is not evidence, and the bytes will decide it.
 
 ### F8 — The spike used the wrong wake mechanism on Cursor, and the right one solves F1
 
@@ -195,17 +229,18 @@ narrowed rather than withdrawn: the observable holds, the explanation does not. 
 would mean depending on behaviour outside the vendor's schema, which can change without notice —
 `followup_message` is still the shape to ship, and **it remains untested.**
 
-**The input side matters more.** `loop_count` tells the hook how many automatic follow-ups this
-conversation has already triggered, and `loop_limit` caps them — **default 5 for Cursor hooks,
-`null` (uncapped) for Claude Code hooks**.
+**The input side was expected to matter more.** `loop_count` is documented to tell the hook how many
+automatic follow-ups a conversation has already triggered, with `loop_limit` capping them — default 5
+for Cursor hooks, `null` (uncapped) for Claude Code hooks.
 
-That is F1's re-entry rule, already built and already documented. Feature 003 does not need to
-invent one for Cursor: it reads `loop_count` and stops when it judges enough. The throwaway
-sentinel was solving a problem the host had already solved.
+That would have been F1's re-entry rule, already built. **It was measured and it is not there:** see
+F10. `loop_count` never reaches the hook on this build, so the design cannot read it, and the
+re-entry problem stays with Feature 003 on both hosts — uncapped by default on Claude Code, and
+unobservable on Cursor.
 
-It also sharpens F1 rather than retiring it. On Cursor the wake loop is bounded at 5 by default. On
-**Claude Code the documented default is `null`, meaning uncapped** — so the loop F1 observed there
-has no host-side backstop, and the re-entry rule is not optional on that host.
+`loop_limit` may still cap Cursor's follow-ups host-side at 5 even though the count is invisible to
+the hook. That would bound runaway looping without helping the hook decide anything, and it has not
+been tested — doing so needs a deliberate loop of six or more wakes.
 
 The apparatus now carries `--wake-schema cursor` emitting `followup_message`, and logs `status`,
 `loop_count` and the set of keys the host actually sent, so a run records what it was given rather

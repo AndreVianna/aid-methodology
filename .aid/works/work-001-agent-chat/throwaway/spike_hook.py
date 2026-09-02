@@ -215,9 +215,11 @@ def _read_host_input() -> dict[str, Any]:
         return {}
     try:
         parsed = json.loads(raw)
-    except json.JSONDecodeError:
-        return {"_unparsed": raw[:200]}
-    return parsed if isinstance(parsed, dict) else {"_nonobject": raw[:200]}
+    except json.JSONDecodeError as exc:
+        # repr() so control characters, stray prompts and shell noise are all visible. A run
+        # that reports only "not JSON" states a fact nobody can act on; the bytes are the finding.
+        return {"_unparsed": repr(raw[:400]), "_parse_error": str(exc)}
+    return parsed if isinstance(parsed, dict) else {"_nonobject": repr(raw[:400])}
 
 
 def _act_command(run: str) -> str:
@@ -397,7 +399,9 @@ def main() -> int:
                    f"schema={args.wake_schema} action={args.wake_action}",
               host_status=host_input.get("status"),
               loop_count=host_input.get("loop_count"),
-              host_input_keys=sorted(host_input) or None)
+              host_input_keys=sorted(host_input) or None,
+              host_input_raw=host_input.get("_unparsed") or host_input.get("_nonobject"),
+              host_input_error=host_input.get("_parse_error"))
 
         verdict, note = _block(args.url, after, args.deadline)
 
