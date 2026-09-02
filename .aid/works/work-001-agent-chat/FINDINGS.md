@@ -34,7 +34,7 @@ none observable (Windows)`.
 |---|---|---|---|
 | 1 | Does an idle Claude Code session wake? | **Yes** | `T1-000-a` |
 | 2 | Does an idle Cursor session wake? | **Yes** | `T2-001-a` |
-| 3 | How long may a Cursor `stop` hook block? | **Bounded by the hook's own `timeout` setting**, not by a host limit. Honoured iff `D` < `timeout`; on expiry the hook is abandoned, not killed. | `T2-001-a`, `T3-60-a`, `T3-120-a` |
+| 3 | How long may a Cursor `stop` hook block? | **As long as the hook's own `timeout` allows — there is no separate host limit.** The wake fires iff `D` < `timeout`, verified across five configurations. Platform default is under 60 s; an explicit 3600 was accepted. On expiry the hook is abandoned, not killed. | `T2-001-a`, `T3-60-a` ×2, `T3-120-a` ×2 |
 | 4 | Does the wake cross two machines? | *not yet run* | — |
 
 ---
@@ -111,7 +111,8 @@ wake", which would have been false.
 | `T2-001-a` | 30 | 30.104 s | 1.002 | alive throughout | — | SURVIVED(30) |
 | `T3-60-a` (pid 50100) | 60 | 60.072 s | 1.0007 | alive throughout | 3.264 s | **SURVIVED(60)** |
 | `T3-60-a` (pid 51852) | 60 | 60.086 s | 1.0009 | alive throughout | 3.890 s | **SURVIVED(60)** |
-| `T3-120-a` | 120 | 120.097 s | 1.0006 | alive throughout | **none** | **ABANDONED(120)** |
+| `T3-120-a` (`timeout` 90) | 120 | 120.097 s | 1.0006 | alive throughout | **none** | **ABANDONED(120)** |
+| `T3-120-a` (`timeout` 3600) | 120 | 120.083 s | 1.0004 | alive throughout | 3.368 s | **SURVIVED(120)** |
 
 Two runs were executed at `D` = 60 under the **same run id**, distinguished here by pid. Both
 survived, so 60 has two of the three consistent runs the confirmation phase requires.
@@ -127,24 +128,38 @@ died 0.099 s after writing its own `end`. Cursor did not interfere with it at an
 `T3-120-a` blocked for the full 120 s and returned under its own power with the probe never seeing
 it die — Cursor did not kill it. But no `refire` was written and no `ACK` appeared in the session.
 
-The cause is not a host limit: the hook was registered with `"timeout": 90`, and `D` = 120 exceeded
-it. See F7. **Bisection between 60 and 120 is therefore cancelled** — it would have spent runs
-rediscovering a number already present in the configuration. The rungs at 300 and 600 are moot for
-the same reason.
+The cause was not a host limit: the hook carried `"timeout": 90`, and `D` = 120 exceeded it. Raising
+`timeout` to 3600 and rerunning the same `D` = 120 produced a clean SURVIVED with an ACK and a
+3.368 s refire. See F7.
+
+**Test 3 is answered.** Five configurations, one rule, no exceptions:
+
+| `timeout` | `D` | Predicted | Observed |
+|---|---|---|---|
+| *absent* | 60 | no wake (default < 60) | no wake |
+| 90 | 30 | wake | wake |
+| 90 | 60 | wake | wake |
+| 90 | 120 | no wake | no wake |
+| 3600 | 120 | wake | wake |
+
+There is no host-imposed blocking limit distinct from the configured `timeout`, and Cursor accepted
+3600 without clamping it below 120. The bisection, and the rungs at 300 and 600, are all moot: they
+were searching for a boundary that turned out to be a number the operator writes.
 
 One incidental observation on `T3-120-a`: a single skipped beat at `t_mono` ≈ 61 s, 0.504 s against a
 0.252 s cadence. Well inside the 2 s void threshold, so the run stands.
 
-### Cursor's real wake latency is about 3.6 s
+### Cursor's real wake latency is about 3.5 s
 
-Runs `T3-60-a` pids 50100 and 51852, wake to `refire`: **3.264 s and 3.890 s**, mean 3.577 s,
-spread 0.626 s over two samples. This is the figure the voided 118.823 s was hiding: with no
+Wake to `refire` across three runs — `T3-60-a` pids 50100 and 51852, and `T3-120-a` under
+`timeout` 3600: **3.264 s, 3.890 s, 3.368 s**. Mean 3.507 s, spread 0.626 s. The 3.368 s sample came
+from a 120 s block, so latency does not appear to scale with block duration. This is the figure the voided 118.823 s was hiding: with no
 approval prompt in the path, Cursor turns a returned hook into a completed turn in under four
 seconds, using about 3% of the 120 s window rather than 99%.
 
-Two samples establish an order of magnitude, not a distribution. The spread between them is 19% of
-the mean, so the third confirmation run at this rung should be treated as informative about
-variance rather than as a formality.
+Three samples establish an order of magnitude, not a distribution. The spread is 18% of the mean,
+which is wide enough that any design budgeting on this number should use the observed maximum rather
+than the mean.
 
 **It is not comparable to Claude Code's 7.581 s.** That figure is wake-to-`act`, which includes
 spawning a Python interpreter and completing an HTTP round trip; this one is wake-to-`refire` for a
@@ -169,11 +184,16 @@ Cursor's documented `stop` hook contract, from `cursor.com/docs/hooks`:
 Claude Code's convention and does not appear in Cursor's schema at all.** The spike sent the Claude
 shape to both hosts.
 
-The ACKs at `D` = 30 and `D` = 60 are therefore not evidence that Cursor honours `decision: block`.
-Something carried the text to the model — most likely the same path Claude Code used, where
-unrecognised hook output surfaces as an error string the model then reads — but the supported
-mechanism was never exercised. Test 2's earlier claim that "Cursor honours the same convention as
-Claude Code" is withdrawn; what was established is only that a wake *occurred*, not how.
+**`decision: block` nevertheless wakes Cursor**, in four runs out of four where `D` < `timeout`
+(30, 60, 60, 120). So the Claude shape works on this host, undocumented, and it is the shape every
+run so far has used — the `start` lines show `schema=claude`. What is *not* established is the
+mechanism: something carries the text to the model, plausibly the same path Claude Code uses where
+unrecognised hook output surfaces as an error string the model then reads, but that is inference.
+
+Two consequences. Test 2's claim that "Cursor honours the same convention as Claude Code" is
+narrowed rather than withdrawn: the observable holds, the explanation does not. And building on it
+would mean depending on behaviour outside the vendor's schema, which can change without notice —
+`followup_message` is still the shape to ship, and **it remains untested.**
 
 **The input side matters more.** `loop_count` tells the hook how many automatic follow-ups this
 conversation has already triggered, and `loop_limit` caps them — **default 5 for Cursor hooks,

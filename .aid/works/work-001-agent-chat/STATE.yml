@@ -553,6 +553,29 @@ review_history:
       host's stdin payload and logs status, loop_count and the key set actually received, so a run
       records what it was given rather than what it assumed. All four schemas verified.
     applied_to: 'FINDINGS.md (F8, F9, F7 default paragraph, test 2 claim withdrawn); throwaway/spike_hook.py'
+  - date: '2026-09-02'
+    event: 'Feature 001 spike -- test 3 ANSWERED: SURVIVED(120) under timeout 3600'
+    outcome: 'Test 3 complete. No host blocking limit distinct from the configured timeout; 3600 accepted'
+    notes: >-
+      T3-120-a rerun with the hook's timeout raised to 3600 produced SURVIVED(120): blocked 120.083 s,
+      socket elapsed 120.051 s, elapsed/D 1.0004, drift 0.0005 s, probe alive throughout and dying
+      0.080 s after end, ACK seen in the session, refire 3.368 s after the wake. The identical D that
+      had ABANDONED under timeout 90 now survives, so timeout is the only gate and Cursor accepted
+      3600 without clamping below 120. Test 3 is answered: there is no host-imposed blocking limit
+      distinct from the configured timeout. Five configurations now fit one rule with no exceptions --
+      timeout absent at D=60 no wake, 90 at 30 and 60 wake, 90 at 120 no wake, 3600 at 120 wake --
+      which makes the bisection and the 300 and 600 rungs all moot, since they were searching for a
+      boundary that is a number the operator writes. Latency is now three samples, 3.264, 3.890 and
+      3.368 s, mean 3.507 with an 18 percent spread; the 3.368 came from a 120 s block, so latency
+      does not appear to scale with block duration, and a design budgeting on it should use the
+      observed maximum rather than the mean. One correction to F8: the start line on this run carries
+      no schema= or host_status or loop_count fields, so it ran the pre-pull hook with --wake-schema
+      defaulting to claude. decision=block therefore demonstrably wakes Cursor, four runs out of four
+      where D < timeout, so test 2's claim is narrowed rather than withdrawn -- the observable holds,
+      the explanation does not. Building on it would mean depending on behaviour outside the vendor's
+      documented schema, so followup_message remains the shape to ship and is still UNTESTED, as is
+      the stdin capture of status and loop_count.
+    applied_to: 'FINDINGS.md (test 3 answer, ladder table, latency, F7, F8)'
 # [A] written by the orchestrator on the work's active branch (single
 #     writer). Append-only audit trail of phase transitions and gate
 #     approvals, newest LAST (append to bottom).
