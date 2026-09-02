@@ -134,7 +134,7 @@ ticket_ref: --
 #   sections[].state: Pending | Complete
 interview:
   state: Approved
-  grade: Pending
+  grade: A+
   sections:
     - id: 1
       name: Objective
@@ -320,6 +320,25 @@ review_history:
       specification is unchanged because its boundary is. Verified: 22 criteria owned exactly
       once, 40 requirements mapped, section 10 and section 11 agreeing stage for stage.
       Feature 005 is recorded as the weakest cohesion of the five rather than presented as clean.
+  - date: '2026-09-02'
+    event: 'Cross-Reference -- 2 cycles, D then B, closing A+'
+    outcome: 'A+ (8 ledger rows, all Fixed); minimum A met'
+    notes: >-
+      Cycle 1 graded D on six findings, five sharing one root cause the re-decomposition had
+      created: it REUSED feature ids, so prose carried across the change kept citing old numbers
+      and silently named a different feature. The sixth was a stale predecessor work-folder path
+      surviving into this document, including into a .gitignore instruction that would have
+      excluded the wrong tree. Fixed as a class rather than as six lines, and that mattered --
+      sweeping on the property found three occurrences the reviewers line list had not named.
+      Cycle 2 confirmed all six Fixed and raised two new LOW findings, both in the blockquote the
+      fix itself had added: a stated count of corrected citations that was wrong, and a claim that
+      a script proves criterion ownership when no repository script does. Both fixed -- the count
+      removed rather than corrected, because a stated count is what drifts and this documents
+      predecessor got exactly that wrong six times in a row, and the ownership claim restated as
+      what it is, verified by hand and by a tool that is not part of the repository. No cycle 3 was
+      dispatched: the two remaining findings were single-sentence factual claims verifiable by
+      grep, and both were re-measured directly rather than re-reviewed. The id-reuse hazard is
+      recorded in section 11 rather than merely repaired, because it outlives the fix.
 
 # [A] written by the orchestrator on the work's active branch (single
 #     writer). Append-only audit trail of phase transitions and gate

@@ -767,12 +767,21 @@ drawn around what ships together.
 > **Feature ids were reassigned when this set was re-decomposed, and that is a hazard worth
 > naming rather than a fact worth burying.** Eleven features became five, and three of the new
 > ids — 003, 004, 005 — now denote something different from what they denoted before. Prose
-> carried across that change kept citing the old numbers and therefore silently named the
-> wrong feature; a cross-reference pass caught five such citations, and they are corrected
-> above. **The lesson for anything written from here on:** cite a feature by id *and* title on
-> first mention in a passage, so a future reassignment is visible as a contradiction rather
-> than resolving quietly to the wrong target. Criterion ids are safe to cite bare — §9's are
-> stable and a script proves each is owned exactly once.
+> carried across that change kept citing the old numbers and therefore silently named the wrong
+> feature. A cross-reference pass caught it, and **the sweep that fixed it found further
+> occurrences than the review had listed** — which is why it was swept on the property (no
+> citation names a feature other than the one that owns the thing cited) rather than on the
+> lines the review named. No count is given here on purpose: a stated count is the thing most
+> likely to drift out of date, and this document's predecessor got exactly that wrong six times
+> in a row.
+>
+> **The lesson for anything written from here on:** cite a feature by id *and* title on first
+> mention in a passage, so a future reassignment surfaces as a contradiction rather than
+> resolving quietly to the wrong target. Criterion ids are safer to cite bare, because §9's are
+> stable — but that is a property of §9, not a guarantee from tooling: **no repository script
+> checks criterion ownership.** It was verified for this document by hand and by an ad-hoc
+> script that is not part of the repository, so a later reader should re-derive it rather than
+> assume it still holds.
 
 ### Feature 001 — Wake Feasibility Spike
 
