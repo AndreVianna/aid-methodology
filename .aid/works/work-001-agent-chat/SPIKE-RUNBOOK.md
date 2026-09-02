@@ -1,160 +1,427 @@
-# P0 Spike Runbook — operator steps
+# P0 Spike Runbook
 
-> **What this is.** The steps a human must perform to run Feature 001's spike, because they
-> need two live host sessions and a cloud agent cannot be one. The apparatus is built and
-> smoke-tested; everything below is yours.
->
-> **What this is not.** Not a substitute for Feature 001's specification in
-> `REQUIREMENTS.md § 11`. That is the authority on the protocol — the ladder, the bisection,
-> the three outcome definitions, what voids a run, and the shape of the answer record. This
-> file only sequences the operator actions and records what was already verified for you.
->
-> Transient, like everything in this folder. Delete it with the spike.
+**One action per step.** Do them in order.
+
+**What you are producing:** four answers, one of them a number. Nothing else.
+
+**Authority:** `REQUIREMENTS.md § 11 / Feature 001` is the protocol. This file only sequences the
+actions. If the two disagree, the specification wins.
+
+Transient. Delete this file with the spike.
 
 ---
 
-## What is already done
+## Part 0 — Setup (once)
 
-The three artefacts exist in `throwaway/` and are **git-ignored** (`.gitignore`:68), so they
-cannot be committed by accident:
+**1.** Create a scratch folder outside this repository: `mkdir ~/spike`
 
-| File | Verified |
+**2.** Change into it: `cd ~/spike`
+
+**3.** Copy the three scripts into it:
+`cp /path/to/repo/.aid/works/work-001-agent-chat/throwaway/spike_*.py ~/spike/`
+
+**4.** Run `python3 --version`.
+
+**5.** Confirm it is 3.9 or newer.
+
+**6.** Write down the Python version.
+
+**7.** Open Cursor.
+
+**8.** Write down the Cursor version.
+
+**9.** Run `claude --version`.
+
+**10.** Write down the Claude Code version.
+
+**11.** Write down your OS name and version.
+
+**12.** Turn off machine sleep.
+
+**13.** Turn off display sleep.
+
+**14.** Run `which python3`.
+
+**15.** Write down that absolute path. Call it `PY`.
+
+**16.** Run `realpath ~/spike/spike_hook.py`.
+
+**17.** Write down that absolute path. Call it `HOOK`.
+
+> `PY` and `HOOK` must both be absolute, and you must never wrap them in a shell script. The
+> process the host spawns has to be the process being measured. A wrapper leaves the interpreter
+> as an orphaned grandchild and makes "still alive" unreadable.
+
+---
+
+## Part 1 — Test 1: does an idle Claude Code session wake?
+
+**18.** Open a terminal. Call it **terminal 1**.
+
+**19.** In terminal 1, run `python3 ~/spike/spike_stub_node.py --port 8811`.
+
+**20.** Confirm it printed a line saying it is listening.
+
+**21.** Leave terminal 1 alone for the rest of this part.
+
+**22.** Open a second terminal. Call it **terminal 2**.
+
+**23.** In terminal 2, run `python3 ~/spike/spike_probe.py --run T1-000-a`.
+
+**24.** Confirm it printed that it is waiting for the hook's start line.
+
+**25.** Leave terminal 2 alone for the rest of this part.
+
+**26.** Open a new empty folder as a project in Claude Code.
+
+> It must not be this repository. `FR-0.4` says the product writes no host tool's configuration,
+> and this repo's `.claude/settings.json` is tracked — a hook there lands in every contributor's
+> checkout.
+
+**27.** Register this as that project's stop hook: `PY HOOK --host claude --run T1-000-a --deadline 30`
+
+**28.** Pre-approve that command in Claude Code's permission settings.
+
+**29.** Confirm no other hook is registered in that project.
+
+**30.** Write down the current time as the no-touch start.
+
+**31.** Let the Claude Code session go idle.
+
+**32.** Do not touch either machine for 60 seconds.
+
+**33.** Write down the current time as the no-touch end.
+
+**34.** Run `cat ~/spike/logs/T1-000-a.ndjson`.
+
+**35.** Search the output for a line containing `"event": "act"`.
+
+**36.** If that line is present, record test 1 as **Pass**.
+
+**37.** If that line is absent, record test 1 as **Fail**.
+
+**38.** Copy the log into your notes now.
+
+> Not later. A run reconstructed from memory is not evidence.
+
+**39.** Check whether any of the five void conditions happened (see the box below).
+
+**40.** If none happened, go to Part 2.
+
+**41.** If one happened, write down which one.
+
+**42.** Delete `~/spike/logs/T1-000-a.ndjson`.
+
+**43.** Delete `~/spike/logs/T1-000-a.armed`.
+
+**44.** Repeat this part from step 19, using run id `T1-000-b`.
+
+> **The five void conditions.** A run is void if: you interacted with the session; the host
+> raised a permission prompt; the machine slept; the stub restarted or returned early; or the
+> hook log has a gap over 2 s between `beat` lines with no matching `probe` line.
+
+---
+
+## Part 2 — Test 2: does an idle Cursor session wake?
+
+**45.** In terminal 1, press Ctrl-C to stop the stub.
+
+**46.** In terminal 1, run `python3 ~/spike/spike_stub_node.py --port 8811`.
+
+> The stub is restarted before every run. That is what makes `seq` reliable for ordering.
+
+**47.** In terminal 2, run `python3 ~/spike/spike_probe.py --run T2-000-a`.
+
+**48.** Open a new empty folder as a project in Cursor.
+
+**49.** Register this as that project's `stop` hook: `PY HOOK --host cursor --run T2-000-a --deadline 30`
+
+**50.** Pre-approve that command in Cursor's settings.
+
+**51.** Write down the current time as the no-touch start.
+
+**52.** Let the Cursor session go idle.
+
+**53.** Do not touch either machine for 60 seconds.
+
+**54.** Write down the current time as the no-touch end.
+
+**55.** Run `cat ~/spike/logs/T2-000-a.ndjson`.
+
+**56.** Search for a line containing `"event": "act"`.
+
+**57.** If present, record test 2 as **Pass**.
+
+**58.** If absent, record test 2 as **Fail**.
+
+**59.** Copy the log into your notes now.
+
+**60.** Check the five void conditions again.
+
+**61.** If one happened, repeat this part with run id `T2-000-b`.
+
+---
+
+## Part 3 — Test 3: the number
+
+### The prior
+
+**62.** Open `https://cursor.com/docs/hooks`.
+
+**63.** Find any statement about a hook timeout.
+
+**64.** Write down what it says. If it says nothing, write down "none stated".
+
+**65.** Write down the Cursor version next to it.
+
+> A documented number is not a measured one. You measure regardless. If the two disagree, that
+> disagreement is a finding and is recorded both ways.
+
+### One run — the recipe
+
+Every run in this part uses these nine steps. `D` is the duration being tried. `L` is the repeat
+letter (`a`, `b`, `c`).
+
+**R1.** In terminal 1, press Ctrl-C to stop the stub.
+
+**R2.** In terminal 1, run `python3 ~/spike/spike_stub_node.py --port 8811`.
+
+**R3.** In terminal 2, run `python3 ~/spike/spike_probe.py --run T3-<D>-<L>`.
+
+**R4.** Register the Cursor stop hook: `PY HOOK --host cursor --run T3-<D>-<L> --deadline <D>`
+
+**R5.** Write down the current time as the no-touch start.
+
+**R6.** Let the Cursor session go idle.
+
+**R7.** Wait until either terminal 2's probe exits, or `D` + 120 seconds have passed.
+
+**R8.** Read `~/spike/logs/T3-<D>-<L>.ndjson`.
+
+**R9.** Write down the outcome, using exactly one of the three labels in the table below, plus
+the log excerpt.
+
+| Label | What the log shows |
 |---|---|
-| `spike_stub_node.py` | `GET /wait` returns `{run, text, sent_at, seq}`; `seq` increments per request and resets on restart; 404 on an unknown path; 400 on a non-integer, negative, or over-`--max-wait` `after`; refuses to start on a bound port rather than silently moving |
-| `spike_hook.py` | Blocks on a real socket read (never `sleep`); beats every 250 ms while blocked; returns under its own power at `--deadline`; writes `killed` with the signal number on SIGTERM; arms once per run via a `<run>.armed` sentinel; flags a run VOID if the stub answers first |
-| `spike_probe.py` | Learns the hook's pid from the run log's `proc: hook` / `event: start` line; samples liveness every 250 ms; distinguishes *pid gone* from *hook ended while pid alive* — which is the KILLED/ABANDONED distinction |
+| **SURVIVED(D)** | An `"event": "end"` line whose note says *returned under own power*, **and** an `act` line after it |
+| **KILLED(t)** | A `"event": "killed"` line at `t` < `D`, **and** a `probe` line with `"alive": false`. `t` is exact on POSIX, ±0.25 s on Windows |
+| **ABANDONED(D)** | `probe` lines show alive all the way through `D`, the hook returned, but **no** `act` line within 120 s |
 
-**End-to-end runs performed here:** a SURVIVED(3 s) run with 13 beats, the probe observing
-the pid throughout and then gone, and the act reaching the stub; a KILLED run where SIGTERM
-at ~1.5 s of a 30 s block produced `killed` with `signal: 15` and the probe confirmed the pid
-gone 0.5 s later. Log paths resolve from the scripts' own location, so they work whatever
-working directory a host spawns a hook in — verified by running from `/tmp`.
+### Phase 1 — the ladder
 
-**What was NOT verified, and cannot be from here:** anything a host does. No Cursor, no
-Claude Code, one machine. Tests 1–4 are entirely unrun.
+**66.** Run the recipe with `D` = 5, `L` = `a`.
 
----
+**67.** If the outcome was SURVIVED, run the recipe with `D` = 15, `L` = `a`.
 
-## What you need
+**68.** If that SURVIVED, run the recipe with `D` = 30.
 
-- **Your laptop** with Cursor (desktop — the `stop` hook needs a real session, not headless
-  print mode) and Claude Code.
-- **A second machine for test 4.** A VM is fine. The spike hand-passes the peer address and
-  tests no discovery, so hypervisor NAT eating multicast does not matter here. Machine B
-  needs to be able to open a TCP connection to machine A's stub port.
-- **Python 3.9+** on both. Standard library only — nothing to install.
+**69.** If that SURVIVED, run the recipe with `D` = 60.
 
-## Before anything: the hook goes in a scratch project, never in this repository
+**70.** If that SURVIVED, run the recipe with `D` = 120.
 
-`FR-0.4` — *the product writes no host tool's configuration* — governs this, and the
-specification is explicit: each host session runs in **a scratch project directory outside
-the AID repository**, with its hook registered in that scratch project's own config or in
-your user-scope config. The repository's `.claude/settings.json` is tracked; a hook written
-there would land in every contributor's checkout. If you use a project-scope file at all,
-use the git-ignored `.claude/settings.local.json`.
+**71.** If that SURVIVED, run the recipe with `D` = 300.
 
-Copy the three scripts wherever you like. They need no repository context.
+**72.** If that SURVIVED, run the recipe with `D` = 600.
 
----
+**73.** Write down `S` — the largest `D` that SURVIVED.
 
-## Run discipline (from the specification — these void a run if broken)
+**74.** Write down `F` — the smallest `D` that did not.
 
-- **Run id** is `<test>-<parameter>-<repeat>`, e.g. `T3-060-b`. Every log line carries it.
-- **Before each run:** restart the stub, disable machine and display sleep, register no other
-  hook, and pre-approve the woken turn's command in the host's permission settings.
-- **During each run:** do not touch either machine. Record the no-touch window.
-- **After each run:** record the outcome and the log excerpt *immediately*. A run
-  reconstructed from memory is not evidence.
-- **A run is void** if you interacted with the session, the host raised a permission prompt,
-  the machine slept, the stub restarted or returned early, or the hook's log shows a
-  heartbeat gap over 2 s with no matching probe observation. Void runs are logged with their
-  reason — *how many runs voided and why is itself part of the record.*
+**75.** If `D` = 600 SURVIVED, write down the answer as "≥ 600 s, no limit observed".
 
----
+**76.** If `D` = 600 SURVIVED, write down that 600 s was the ceiling probed.
 
-## Test 1 — an idle Claude Code session
+**77.** If `D` = 600 SURVIVED, skip to step 88.
 
-1. Start the stub: `python3 spike_stub_node.py --port 8811`
-2. In a scratch project, register `spike_hook.py --host claude --run T1-000-a --deadline 30`
-   as the hook, using an **absolute interpreter path and absolute script path, no shell
-   wrapper** — the process the host spawns must be the process being measured.
-3. Start the probe in its own terminal: `python3 spike_probe.py --run T1-000-a`
-4. Let the session go idle. Do not touch it.
-5. **Pass** when the session acts on the message with no human action — evidenced by an
-   `act` line in the run log, with the session transcript showing no assistant activity
-   across the block.
+> Chasing an upper bound past 600 s spends hours to change no decision: `§6`'s long-poll default
+> is 30 s. Recording the ceiling stops "≥ 600 s" being misread as "unbounded".
 
-## Test 2 — an idle Cursor session
+**78.** If `D` = 5 did **not** SURVIVE, run the recipe with `D` = 2.
 
-Same shape, `--host cursor`, run id `T2-000-a`. The route is Cursor's `stop` hook, which
-fires when the agent loop ends and can submit the next message.
+**79.** If `D` = 2 did not SURVIVE, run the recipe with `D` = 1.
 
-## Test 3 — the number
+**80.** If `D` = 1 did not SURVIVE, write down the answer as "the `stop` hook may not block at all".
 
-**This is the deliverable that is a measurement.** Follow the specification's phases exactly;
-they are stated there to the point of tedium and I will not paraphrase them into ambiguity.
-In outline: **Phase 0** record what Cursor's docs claim (including "none stated") plus the
-Cursor version; **Phase 1** ladder at D = 5, 15, 30, 60, 120, 300, 600 s ascending, stopping
-at the first non-SURVIVED, and *descending* to 2 s and 1 s if the lowest rung fails;
-**Phase 2** bisect until `F - S ≤ max(5 s, 0.10 × F)`; **Phase 3** three runs at `S` and three
-at `F`, accepted only on 3-of-3 at each end.
+**81.** If `D` = 1 did not SURVIVE, write down the terminal mode and the observed `t`.
 
-Command per run: `python3 spike_hook.py --host cursor --run T3-<D>-<rep> --deadline <D>`,
-with the probe on the same run id. Loopback deliberately — test 3 measures the host, not the
-network.
+**82.** If `D` = 1 did not SURVIVE, skip to step 92.
 
-**Stopping rule:** the first of phase 3 confirming, or 25 runs, or 4 hours of wall clock. If
-the budget is exhausted, record the bracket reached, every run performed, and why it stopped
-— that is exactly the shape `AC-20` requires of a "could not determine".
+> That outcome is not a failure of the spike — it is the answer this stage exists to find. Cursor
+> would have no viable waker adapter and would degrade to the pull floor, which `FR-5.2` already
+> allows for.
 
-## Test 4 — two machines
+### Phase 2 — bisection
 
-Machine **A** binds `0.0.0.0` and hosts **Claude Code**; machine **B** hosts **Cursor**,
-whose hook holds its block across the network:
+**83.** Calculate `max(5, 0.10 × F)`. Call it `T`.
 
-```
-# machine A
-SPIKE_MACHINE=A python3 spike_stub_node.py --bind 0.0.0.0 --port 8811
-SPIKE_MACHINE=A python3 spike_hook.py --host claude --run T4-000-a --deadline 60
+**84.** If `F − S` is less than or equal to `T`, go to step 88.
 
-# machine B  (A_ADDR is machine A's LAN address)
-SPIKE_MACHINE=B python3 spike_hook.py --host cursor --run T4-000-a --deadline 60 \
-    --url http://A_ADDR:8811/wait
-```
+**85.** Calculate `D = round((S + F) / 2)`.
 
-Choose the arrival so both sessions are armed before it. **Pass** when machine A's stub log
-holds, in order, both waits, the single arrival, and both acts — with machine B's act arriving
-from B's address. One log on one machine, so no clock synchronisation is needed.
+**86.** Run the recipe at that `D`, `L` = `a`.
 
-Also carry **one confirmation run at `S`** over the LAN: if a block that survived on loopback
-does not survive across the network, the usable LAN budget is smaller than test 3's number,
-and **both figures are recorded**.
+**87.** If it SURVIVED, replace `S` with that `D`. Otherwise replace `F` with that `D`. Then go
+back to step 84.
 
-`SPIKE_MACHINE` is read by all three scripts and written to the `machine` field, so set it on
-each side.
+### Phase 3 — confirmation
+
+**88.** Run the recipe at `D` = `S`, `L` = `a`.
+
+**89.** Run the recipe at `D` = `S`, `L` = `b`.
+
+**90.** Run the recipe at `D` = `S`, `L` = `c`.
+
+**91.** If there is an `F`, run the recipe at `D` = `F` with `L` = `a`, then `b`, then `c` —
+three separate runs.
+
+> Where the ladder reached the 600 s ceiling there is no `F`, and the three ceiling runs are the
+> whole of phase 3.
+
+**92.** Count how many of the three `S` runs SURVIVED.
+
+**93.** Count how many of the three `F` runs failed.
+
+**94.** If `S` is 3 of 3 and `F` is 3 of 3, write down the result as confirmed.
+
+**95.** If either end is mixed, write down "the limit is not deterministic".
+
+**96.** If either end is mixed, write down the bracket and the per-endpoint counts.
+
+> Do not average a mixed result into one number. The design would then trust it.
+
+### Stop
+
+**97.** Count the total runs performed in Part 3.
+
+**98.** If you reached 25 runs without confirming, stop.
+
+**99.** If 4 hours of wall clock have passed without confirming, stop.
+
+**100.** If you stopped on either budget, write down the bracket you reached.
+
+**101.** If you stopped on either budget, write down every run performed.
+
+**102.** If you stopped on either budget, write down why you stopped.
+
+> That is a valid answer. `AC-20` accepts "could not determine" in exactly this form.
+
+**103.** Count how many runs in Part 3 were void.
+
+**104.** Write down that count.
+
+**105.** Write down the reason for each void run.
+
+> A test that only completes four times in ten attempts is itself a finding.
 
 ---
 
-## When you are done
+## Part 4 — Test 4: two machines
 
-Hand me `throwaway/logs/*.ndjson` from both machines. I will do the analysis — classifying each
-run SURVIVED / KILLED / ABANDONED from the hook and probe lines together, working the ladder and
-bisection, and writing `FINDINGS.md` at the work root in the shape the specification requires:
-the apparatus block per host, the four answers one row each, and a mandatory "what was tried"
-paragraph for any `Inconclusive`.
+Machine **A** hosts Claude Code and the stub. Machine **B** hosts Cursor. A VM is fine for either.
 
-Two things then follow, and neither is automatic:
+**106.** On machine A, run `hostname -I`.
 
-1. **The measured Cursor number and the two wake results are promoted to
-   `.aid/knowledge/external-sources.md`** as first-hand measurements carrying method, bound and
-   date. They are durable facts about a third-party harness, and re-measuring costs hours. The
-   entry names **no work id and no work-folder path** — this folder is pruned when the work
-   ships, so a citation to it would be a dangling pointer by design.
-2. **Feature 003 unblocks**, and `§6`'s 30 s long-poll default gets re-examined: if the number
-   lands near or below 60 s that default is challenged, and if it lands in the hundreds of
-   seconds it is comfortably safe. Recording the implication is the spike's job; changing the
-   requirement is Feature 003's.
+**107.** Write down machine A's LAN address. Call it `A_ADDR`.
 
-Then delete `throwaway/` and its `.gitignore` line. `AC-20` requires that no code from this
-feature is carried forward, and the `spike_` prefix on every filename is there so the check is
-a search rather than a judgement.
+**108.** On machine B, run `ping A_ADDR`.
+
+**109.** Confirm the ping replies.
+
+**110.** Copy the three scripts to machine B.
+
+**111.** On machine B, run `python3 --version`.
+
+**112.** Confirm it is 3.9 or newer.
+
+**113.** Write down machine B's Python version.
+
+**114.** Write down machine B's OS name and version.
+
+**115.** Turn off machine sleep on machine B.
+
+**116.** Turn off display sleep on machine B.
+
+**117.** On machine A, stop the stub with Ctrl-C.
+
+**118.** On machine A, run
+`SPIKE_MACHINE=A python3 ~/spike/spike_stub_node.py --bind 0.0.0.0 --port 8811`.
+
+**119.** On machine B, run `curl "http://A_ADDR:8811/wait?after=0&run=T4-PING&text=ping"`.
+
+**120.** Confirm it returned JSON.
+
+**121.** If it did not, fix the network before going further.
+
+**122.** On machine A, run `SPIKE_MACHINE=A python3 ~/spike/spike_probe.py --run T4-000-a`.
+
+**123.** On machine B, run `SPIKE_MACHINE=B python3 ~/spike/spike_probe.py --run T4-000-a`.
+
+**124.** On machine A, register the Claude Code stop hook:
+`SPIKE_MACHINE=A PY HOOK --host claude --run T4-000-a --deadline 60`
+
+**125.** On machine B, register the Cursor stop hook:
+`SPIKE_MACHINE=B PY HOOK --host cursor --run T4-000-a --deadline 60 --url http://A_ADDR:8811/wait`
+
+**126.** Let the machine A session go idle.
+
+**127.** Let the machine B session go idle.
+
+**128.** Confirm both hooks have written a `start` line before the arrival.
+
+**129.** Do not touch either machine.
+
+**130.** On machine A, run `cat ~/spike/logs/stub-8811.ndjson`.
+
+**131.** Confirm the log contains two `request` lines — one per waiter.
+
+**132.** Confirm it contains the single arrival.
+
+**133.** Confirm it contains two `act` lines.
+
+**134.** Confirm one `act` line's `note` field shows `client=` with machine B's address.
+
+**135.** Record test 4 as **Pass** if steps 131 to 134 all held.
+
+**136.** Record test 4 as **Fail** if any did not.
+
+> One log on one machine, so the ordering is unambiguous and no clock synchronisation between the
+> machines is needed.
+
+**137.** Run the recipe once more at `D` = `S` over the LAN, using run id `T4-CONF-a` and machine
+B's `--url`.
+
+**138.** If that run did not SURVIVE, write down both figures: test 3's loopback number, and this
+smaller LAN number.
+
+---
+
+## Part 5 — Hand back
+
+**139.** Collect every file in `~/spike/logs/` on machine A.
+
+**140.** Collect every file in `~/spike/logs/` on machine B.
+
+**141.** Collect your Part 0 notes: the versions and OS for both machines.
+
+**142.** Collect your no-touch windows.
+
+**143.** Collect your void counts and reasons.
+
+**144.** Collect the four recorded outcomes.
+
+**145.** Give me all of it.
+
+I will classify each run, work the ladder and bisection, and write `FINDINGS.md` in the shape the
+specification requires — the apparatus block per host, the four answers one row each, and a
+mandatory "what was tried" paragraph for anything Inconclusive.
+
+**146.** Wait until `FINDINGS.md` is written and reviewed.
+
+**147.** Delete `~/spike/`.
+
+**148.** Delete `throwaway/` from the work folder.
+
+**149.** Delete the `.aid/works/work-001-agent-chat/throwaway/` line from `.gitignore`.
+
+> `AC-20` requires that no code from this feature is carried forward. Every filename starts with
+> `spike_` so that check is a search rather than a judgement.
