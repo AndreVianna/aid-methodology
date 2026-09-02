@@ -34,7 +34,7 @@ none observable (Windows)`.
 |---|---|---|---|
 | 1 | Does an idle Claude Code session wake? | **Yes** | `T1-000-a` |
 | 2 | Does an idle Cursor session wake? | **Yes** | `T2-001-a` |
-| 3 | How long may a Cursor `stop` hook block? | **≥ 120 s** — but it stops *acting* on the wake between 60 s and 120 s. Bisecting. | `T3-60-a`, `T3-120-a` |
+| 3 | How long may a Cursor `stop` hook block? | **Bounded by the hook's own `timeout` setting**, not by a host limit. Honoured iff `D` < `timeout`; on expiry the hook is abandoned, not killed. | `T2-001-a`, `T3-60-a`, `T3-120-a` |
 | 4 | Does the wake cross two machines? | *not yet run* | — |
 
 ---
@@ -122,13 +122,13 @@ disk. Recorded as a limitation rather than presented as if the raw evidence were
 `T3-60-a` overshot its deadline by 0.072 s, drifted 0.0007 s between wall and monotonic clocks, and
 died 0.099 s after writing its own `end`. Cursor did not interfere with it at any point.
 
-`T3-120-a` blocked for the full 120 s and returned under its own power with the probe never
-seeing it die — Cursor did not kill it. But no `refire` was written and **no `ACK` ever appeared in
-the session**, confirmed by the operator. The 120 s witness window had closed before the check, so
-`ABANDONED(120)` is a determination, not a timing artefact.
+`T3-120-a` blocked for the full 120 s and returned under its own power with the probe never seeing
+it die — Cursor did not kill it. But no `refire` was written and no `ACK` appeared in the session.
 
-Bracket is therefore `S` = 60, `F` = 120. Tolerance is `max(5, 0.10 × 120)` = 12 s, and `F − S` = 60,
-so the ladder stops climbing and bisection begins at `D` = 90. The rungs at 300 and 600 are moot.
+The cause is not a host limit: the hook was registered with `"timeout": 90`, and `D` = 120 exceeded
+it. See F7. **Bisection between 60 and 120 is therefore cancelled** — it would have spent runs
+rediscovering a number already present in the configuration. The rungs at 300 and 600 are moot for
+the same reason.
 
 One incidental observation on `T3-120-a`: a single skipped beat at `t_mono` ≈ 61 s, 0.504 s against a
 0.252 s cadence. Well inside the 2 s void threshold, so the run stands.
@@ -154,33 +154,51 @@ has been run. What this number does establish is that the wake mechanism is not 
 
 ## Findings that change the design
 
-### F7 — Tolerating a long block and acting on it afterwards are two different limits
+### F7 — Cursor's hook `timeout` abandons the hook; it does not kill it
 
-`T3-60-a` (twice) versus `T3-120-a`. At 60 s Cursor blocked, returned, and ran the woken turn. At
-120 s Cursor **still blocked for the full duration and still let the hook return under its own
-power** — the probe watched it alive the whole time — but then did nothing. No `ACK`, no `refire`.
+The `stop` hook was registered with an explicit per-hook timeout:
 
-The specification asked one question, "how long may a `stop` hook block", and the apparatus was
-built to answer one. There are two:
+```json
+{ "version": 1,
+  "hooks": { "stop": [ { "command": "... --deadline 120 --wake-action text", "timeout": 90 } ] } }
+```
 
-| Limit | Measured |
-|---|---|
-| How long the host lets a hook **block** | ≥ 120 s, no upper bound found |
-| How long it stays willing to **act** afterwards | somewhere in (60, 120] |
+Every run is explained by one rule — **the wake is honoured if and only if `D` < `timeout`**:
 
-A design that reads only the first number would conclude a 120 s long-poll is safe. It is not: the
-hook returns, the message is in hand, and nothing happens. That is the worst failure shape available
-— indistinguishable, from inside the product, from no message having arrived.
+| Run | `D` | vs `timeout` 90 | ACK | Outcome |
+|---|---|---|---|---|
+| `T2-001-a` | 30 | under | seen | SURVIVED |
+| `T3-60-a` (pid 50100) | 60 | under | seen | SURVIVED |
+| `T3-60-a` (pid 51852) | 60 | under | seen | SURVIVED |
+| `T3-120-a` | 120 | **over** | none | ABANDONED |
 
-`§6`'s 30 s long-poll default sits comfortably inside the region where both limits hold, so the
-default is not in question. What is now excluded is treating the long-poll as freely tunable upward
-on the strength of the blocking limit alone.
+No unexplained host policy is needed. `ABANDONED(120)` is `D` exceeding a configured value, not a
+discovered limit.
 
-**Open, and not answered by this run:** whether Cursor read the `decision: block` payload and
-declined it, or had already stopped listening to the hook's stdout by the time it was written. The
-observable is the same either way, but the two imply different mitigations — the first is a policy to
-work within, the second a deadline to stay inside. Distinguishing them needs host-side instrumentation
-the spike does not have.
+**The behaviour at expiry is the finding, and the probe already caught it.** Cursor's timeout fired
+around 90 s into `T3-120-a`, yet the probe recorded `alive: true` until 120.097 s, dying only 0.158 s
+after the hook wrote its own `end`. The process outlived Cursor's abandonment by roughly 30 seconds.
+
+So on timeout Cursor **discards the hook's output and stops waiting, but leaves the process
+running**. It does not terminate it. Consequences for Feature 003:
+
+- Every wake attempt that outlasts `timeout` leaves an orphaned process behind. Repeated on a poll
+  cycle, that is a process leak, and nothing in the host reports it.
+- The orphan still holds its long-poll socket open, so the node sees a waiter that no longer has a
+  listener. A server counting connected waiters would over-count.
+- The waker must therefore keep its own block strictly under the host's configured `timeout`, and
+  cannot discover that value by observation alone — it is per-hook configuration, not a host
+  constant.
+
+**Correction to an earlier reading.** Before the configuration was known, this evidence was written
+up as two independent limits — block-tolerance ≥ 120 s versus act-willingness somewhere in (60, 120].
+The first half stands: Cursor genuinely does not kill a long hook. The second was an artefact of
+reading a configured 90 s as a discovered boundary, and the bisection it implied would have spent
+runs rediscovering a number already written in the config file.
+
+**Still open:** whether `timeout` has a maximum Cursor will accept, and whether 90 is a default it
+supplied or a value chosen when the hook was registered. The first bounds how long a waker may ever
+block on this host; the second decides whether the product must assume 90 s in the field.
 
 ### F1 — The stop hook re-fires after the woken turn
 

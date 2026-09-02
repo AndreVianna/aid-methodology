@@ -492,6 +492,33 @@ review_history:
       D=90. One incidental note: a single skipped beat at t_mono ~61 s, 0.504 s against a 0.252 s
       cadence, well inside the 2 s void threshold, so the run stands.
     applied_to: 'FINDINGS.md (F7, ladder table, test 3 answer)'
+  - date: '2026-09-02'
+    event: 'Feature 001 spike -- F7 corrected: the boundary was a configured hook timeout, not a host limit'
+    outcome: 'Corrected. Real finding: Cursor abandons a timed-out hook without killing it. Bisection cancelled'
+    notes: >-
+      The operator supplied the actual hook registration, which carries "timeout": 90 alongside the
+      command. That explains every run under a single rule -- the wake is honoured if and only if D
+      is less than timeout -- with D=30, 60 and 60 all under it and honoured, and D=120 over it and
+      not. No unexplained host policy is needed, and ABANDONED(120) is D exceeding a configured
+      value rather than a discovered limit. The bisection between 60 and 120 is CANCELLED: it would
+      have spent runs rediscovering a number already written in the config file, and the 300 and 600
+      rungs are moot for the same reason. The correction matters because the earlier write-up
+      inferred two independent limits, block-tolerance at >=120 s versus act-willingness somewhere in
+      (60, 120]. The first half stands and is confirmed: Cursor genuinely does not kill a long hook.
+      The second was an artefact of reading a configured 90 s as a discovered boundary. What replaces
+      it is sharper and was already in the data: Cursor's timeout fired around 90 s into T3-120-a,
+      yet the probe recorded alive=true until 120.097 s, dying only 0.158 s after the hook wrote its
+      own end -- so the process outlived Cursor's abandonment by about 30 s. On timeout Cursor
+      discards the hook's output and stops waiting but LEAVES THE PROCESS RUNNING. Three consequences
+      for Feature 003: every wake attempt outlasting timeout orphans a process, which on a poll cycle
+      is a leak nothing in the host reports; the orphan still holds its long-poll socket, so a node
+      counting connected waiters over-counts; and the waker must keep its block strictly under the
+      host's configured timeout, a value it cannot discover by observation because it is per-hook
+      configuration rather than a host constant. Two questions remain open and were put to the
+      operator: whether Cursor enforces a maximum acceptable timeout, which would bound how long a
+      waker may ever block on this host, and whether 90 was Cursor's own default or a value chosen at
+      registration, which decides whether the product must assume 90 s in the field.
+    applied_to: 'FINDINGS.md (F7 rewritten, test 3 answer, ladder framing)'
 # [A] written by the orchestrator on the work's active branch (single
 #     writer). Append-only audit trail of phase transitions and gate
 #     approvals, newest LAST (append to bottom).
