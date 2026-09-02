@@ -118,7 +118,7 @@ phase: Describe
 # [W] aid-{skill} | none
 active_skill: none
 # [W]
-updated: '2026-09-02T14:32:15Z'
+updated: '2026-09-02'
 # [W] set only when lifecycle = Paused-Awaiting-Input
 pause_reason: 'Requirements approved — run /aid-define work-001 to decompose into features'
 # [W] set only when lifecycle = Blocked
@@ -362,6 +362,36 @@ review_history:
       grep, and both were re-measured directly rather than re-reviewed. The id-reuse hazard is
       recorded in section 11 rather than merely repaired, because it outlives the fix.
 
+  - date: '2026-09-02'
+    event: 'Apparatus portability -- Windows operator target'
+    outcome: 'Fixed: 1 silent-wrong-measurement defect, 21 broken runbook commands'
+    notes: >-
+      The operator's machine is Windows, and the apparatus was POSIX-only in one way that would
+      have produced a wrong number rather than an error. spike_probe.py used os.kill(pid, 0) for
+      liveness. On POSIX that is the standard existence probe -- signal 0 is never delivered and
+      only the existence and permission check runs. On Windows CPython has no signal concept: for
+      any sig other than CTRL_C_EVENT/CTRL_BREAK_EVENT it opens the process and calls
+      TerminateProcess(handle, sig), so os.kill(pid, 0) terminates the target with exit code 0.
+      The probe would have killed the hook at its first sample, 250 ms in, and test 3 would have
+      recorded KILLED(0.25) -- the observer killing the process it exists to observe, attributed
+      to the host, and nothing downstream would have caught it because the shape is exactly what
+      a real kill looks like. Liveness now dispatches on sys.platform: POSIX keeps signal 0,
+      Windows uses OpenProcess + GetExitCodeProcess via ctypes with
+      PROCESS_QUERY_LIMITED_INFORMATION so the probe can watch a host-spawned hook without
+      elevation. The POSIX path was regression-checked and still yields the SURVIVED shape.
+      spike_hook.py needed no change: it already resolves SIGHUP through getattr and skips it
+      where absent. Separately, 21 runbook commands do not exist or behave differently on
+      Windows; two of them fail quietly rather than loudly -- bare curl is an alias for
+      Invoke-WebRequest in PowerShell 5.1, and inline VAR=value prefixes are not PowerShell
+      syntax, so SPIKE_MACHINE would have stayed unset and every test 4 line would have carried
+      the wrong machine label. The runbook is now PowerShell throughout (162 atomic steps, plus a
+      Linux appendix for machine A), resolves the interpreter once as a recorded PY because
+      Windows does not reliably provide python3, and states two Windows consequences before Part 0
+      instead of leaving them to be discovered mid-run: test 3 resolves to +/-0.25 s from the last
+      beat rather than exactly, and the record must carry that resolution plus
+      'signal: none observable (Windows)'. The three spike_*.py files are force-added so they can
+      be fetched onto the laptop; close-out step 159 git-rm's them and step 162 verifies none
+      survive, keeping AC-20's no-carry-forward requirement checkable by search.
 # [A] written by the orchestrator on the work's active branch (single
 #     writer). Append-only audit trail of phase transitions and gate
 #     approvals, newest LAST (append to bottom).
