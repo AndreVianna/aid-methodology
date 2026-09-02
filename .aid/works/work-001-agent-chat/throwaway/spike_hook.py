@@ -213,7 +213,7 @@ def _act_command(run: str) -> str:
     return f'"{exe}" "{me}" --act {run}'
 
 
-def _wake(schema: str, run: str) -> int:
+def _wake(schema: str, run: str, action: str = "command") -> int:
     """Hand the host something that makes it run one more turn. Returns the process exit code.
 
     This is the whole wake. The hook blocking proves only that the host TOLERATED a long
@@ -230,10 +230,19 @@ def _wake(schema: str, run: str) -> int:
       none   -- emit nothing, the control: any `act` under `none` means something OTHER than
                 this payload woke the host, and the run is not evidence for the payload.
     """
-    instruction = (
-        "A message arrived on the chat channel. Do not stop yet. "
-        "Run exactly this command, then stop:\n" + _act_command(run)
-    )
+    if action == "text":
+        # Nothing here requires a tool call, so nothing can be gated behind an approval
+        # prompt. The witness is the `refire` line written when this turn ends.
+        instruction = (
+            "A message arrived on the chat channel. Do not stop yet. "
+            "Reply with exactly the word ACK and nothing else, then stop. "
+            "Do not run any command and do not use any tool."
+        )
+    else:
+        instruction = (
+            "A message arrived on the chat channel. Do not stop yet. "
+            "Run exactly this command, then stop:\n" + _act_command(run)
+        )
     if schema == "none":
         _emit("wake", note="schema=none; nothing emitted (control)")
         return EXIT_OK
@@ -242,7 +251,8 @@ def _wake(schema: str, run: str) -> int:
         print(instruction, file=sys.stderr)
         return 2
     payload = {"decision": "block", "reason": instruction}
-    _emit("wake", note=f"schema=claude; stdout json; cmd={_act_command(run)}")
+    _emit("wake", note=f"schema=claude action={action}; stdout json; "
+                    f"witness={'refire' if action == 'text' else 'act'}")
     print(json.dumps(payload))
     return EXIT_OK
 
@@ -281,6 +291,12 @@ def main() -> int:
                     help="what to ask the stub to wait (default: deadline + 30)")
     ap.add_argument("--deadline", type=float, default=30.0,
                     help="target block duration D in seconds (default 30)")
+    ap.add_argument("--wake-action", choices=("command", "text"), default="command",
+                    help="what the woken turn is asked to do. 'command' runs the --act request, a "
+                         "stronger witness that also proves network reach, but a host that gates "
+                         "tool calls behind human approval then measures the operator, not itself. "
+                         "'text' asks only for a word, needs no approval, and is witnessed by the "
+                         "refire line -- use it for the timing ladder")
     ap.add_argument("--wake-schema", choices=("claude", "exit2", "none"), default="claude",
                     help="how to ask the host for one more turn once the block ends "
                          "(default claude: JSON decision=block on stdout)")
@@ -318,7 +334,19 @@ def main() -> int:
         try:
             fd = os.open(str(armed), os.O_CREAT | os.O_EXCL | os.O_WRONLY)
         except FileExistsError:
-            _emit("void", d=args.deadline, note="already armed for this run; not re-blocking")
+            # NOT a void. This is the approval-free witness that the host ran another turn.
+            #
+            # A stop hook fires when a turn ends. This run's block already happened and was
+            # already served, so a SECOND stop event can only mean the host started and
+            # finished a further turn -- which is precisely what "did it wake?" asks. The
+            # `act` request is a stronger witness because it also proves the woken turn could
+            # reach the network, but it costs a tool call, and a host that gates tool calls
+            # behind human approval makes that witness measure the operator's reaction time
+            # instead of the host's latency. Observed directly: a Cursor run's act landed
+            # 118.8 s after the wake, 1.2 s inside the 120 s ABANDONED threshold, essentially
+            # all of it spent waiting for a human to click approve.
+            _emit("refire", d=args.deadline,
+                  note="stop fired again: the host ran another turn; not re-blocking")
             print(f"already armed for run {run}; not re-blocking", file=sys.stderr)
             return EXIT_OK
         with os.fdopen(fd, "w") as fh:
@@ -344,7 +372,7 @@ def main() -> int:
                 _emit("end", d=args.deadline, note=f"returned under own power at deadline; {note}")
                 # Blocking is not waking. The host must now be told to run a turn, or no act
                 # can ever be written and ABANDONED becomes unfalsifiable.
-                return _wake(args.wake_schema, run)
+                return _wake(args.wake_schema, run, args.wake_action)
             elif verdict == "early_answer":
                 _emit("error", d=args.deadline,
                       note=f"stub answered before the deadline -- run is VOID; {note}")

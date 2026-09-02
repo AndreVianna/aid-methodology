@@ -33,8 +33,8 @@ none observable (Windows)`.
 | # | Question | Answer | Evidence |
 |---|---|---|---|
 | 1 | Does an idle Claude Code session wake? | **Yes** | `T1-000-a` |
-| 2 | Does an idle Cursor session wake? | *not yet run* | — |
-| 3 | How long may a Cursor `stop` hook block? | *not yet run* | — |
+| 2 | Does an idle Cursor session wake? | **Yes** | `T2-001-a` |
+| 3 | How long may a Cursor `stop` hook block? | *not yet run* — floor of **≥ 30 s** already established | `T2-001-a` |
 | 4 | Does the wake cross two machines? | *not yet run* | — |
 
 ---
@@ -68,6 +68,38 @@ have written it, and `act` proves a turn ran. The probe is nevertheless required
 
 ---
 
+## Test 2 — Cursor wakes
+
+**Pass.** Run `T2-001-a`, Cursor 3.18.9. Full probe coverage.
+
+| Measurement | Value |
+|---|---|
+| Block requested | 30.0 s |
+| Block achieved | **30.104 s**, returned under own power |
+| Socket elapsed | 30.061 s, `kind=timeout` — 100.2% of the deadline |
+| Probe | `alive=true` throughout; `alive=false` 0.235 s after `end` |
+| Clock drift over block | 0.0004 s — no suspend |
+| Wake → act latency | **voided — see below** |
+
+Cursor honours the same `decision: block` convention as Claude Code, so no `exit2` retry was
+needed. The probe's unbroken `alive=true` through the full 30 s, followed by death only *after*
+`end` was written, establishes that Cursor did not kill the hook. **Test 3 therefore starts from a
+measured floor: Cursor tolerates at least 30 s.**
+
+### The latency from this run is void
+
+The `act` line arrived 118.823 s after the wake — 1.177 s inside the 120 s `ABANDONED` threshold,
+and 15.7 times Claude Code's 7.581 s. The operator confirms Cursor raised a command-approval prompt
+and that nearly all of that interval was spent walking back to the window, reading it, and clicking
+approve.
+
+So the figure measures a human, not a host, and the runbook already voids a run on exactly this
+condition. It is recorded here rather than deleted because the near-miss is the useful part: one
+more distraction and this run would have been written up as `ABANDONED`, meaning "Cursor refused to
+wake", which would have been false.
+
+---
+
 ## Findings that change the design
 
 ### F1 — The stop hook re-fires after the woken turn
@@ -83,6 +115,28 @@ for a decision the design now has to make explicitly: what distinguishes a stop 
 from a stop that is merely the tail of a wake it already served.
 
 This was not anticipated in the specification and is the most consequential result so far.
+**It reproduces on Cursor**: run `T2-001-a`'s stop hook re-fired 6.626 s after its act, against
+6.257 s on Claude Code. The loop is not host-specific.
+
+The re-fire is also, usefully, a witness. A second stop event can only mean the host ran a further
+turn, which is what "did it wake?" asks — and unlike a tool call it cannot be gated behind an
+approval prompt. The apparatus now records it as `refire` rather than `void` for that reason.
+
+### F5 — The woken turn's tool call is gated behind human approval on Cursor
+
+Run `T2-001-a`. The wake was delivered and the agent complied, but the shell command it was asked
+to run raised an approval prompt and sat there until a human clicked it.
+
+This is the finding that most constrains Feature 003. An autonomous channel between two agents
+cannot depend on a woken turn performing a gated action, because the gate is a human. Either the
+action must be pre-authorised on every participating host, or **the woken turn must do nothing that
+requires authorisation** — the message is delivered as context and the agent simply continues.
+
+It also invalidated the spike's own instrumentation for the timing ladder, since `ABANDONED` is
+defined as "no `act` within 120 s" and an unapproved `act` never arrives. Test 3's up-to-25 runs
+would each have been measuring operator attention. The apparatus now carries `--wake-action text`,
+which asks the woken turn only for a word — no tool, no gate — and takes its witness from the
+`refire` line instead. That is the mode the ladder uses.
 
 ### F2 — Claude Code runs hooks through bash on Windows
 
@@ -117,6 +171,7 @@ the running process itself, never from `PATH`.
 - **Test 2** — Cursor 3.18.9. Whether Cursor honours the same `decision: block` convention is
   unknown; if it does not, the run repeats under `--wake-schema exit2` before Fail is recorded.
 - **Test 3** — the ladder, bisection and confirmation runs that give the Cursor blocking limit.
-  Requires probe coverage on every run.
+  Requires probe coverage on every run, and must use `--wake-action text` so that no run's
+  classification depends on a human approving a prompt (F5). Starts from a measured floor of 30 s.
 - **Test 4** — two machines. Needs a second machine for the Cursor side, since Cursor requires a
   desktop session.

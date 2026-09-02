@@ -417,6 +417,36 @@ review_history:
       interpreter on PATH may be a shim -- this machine's python is a pyenv-win python.bat -- so
       the waker must resolve the interpreter from the running process, never from PATH.
     applied_to: 'FINDINGS.md (created); throwaway/spike_hook.py; throwaway/spike_probe.py; SPIKE-RUNBOOK.md'
+  - date: '2026-09-02'
+    event: 'Feature 001 spike -- test 2 executed; latency voided; apparatus corrected for the ladder'
+    outcome: 'Pass: Cursor wakes. Floor >=30s established. Latency void (approval gate). F5 filed, F1 reproduced'
+    notes: >-
+      Run T2-001-a on Cursor 3.18.9 with full probe coverage. The hook blocked 30.104 s with socket
+      elapsed 30.061 s and kind=timeout, so the new three-way verdict correctly classified it as
+      own_power rather than as one of the failure modes it used to be indistinguishable from. The
+      probe held alive=true through the whole 30 s and went false only 0.235 s AFTER end was
+      written, which establishes positively that Cursor did not kill the hook. Test 3 therefore
+      begins from a measured floor rather than from zero: Cursor tolerates at least 30 s. Cursor
+      also honours the same decision=block convention as Claude Code, so the exit2 fallback was
+      not needed. The wake-to-act latency of 118.823 s is VOID and must not be quoted: the
+      operator confirms Cursor raised a command-approval prompt and that nearly all of that
+      interval was spent returning to the window and clicking approve. It is kept in the record
+      because the near-miss is instructive -- it landed 1.177 s inside the 120 s ABANDONED
+      threshold, so one more distraction would have produced a written finding of 'Cursor refused
+      to wake' that was simply false. F5 filed and it is the most constraining result for Feature
+      003 after F1: on Cursor the woken turn's tool call is gated behind human approval, so an
+      autonomous channel cannot depend on a woken turn performing a gated action -- either the
+      action is pre-authorised on every host, or the woken turn must do nothing requiring
+      authorisation and the message arrives as context. That gate also invalidated the spike's own
+      instrumentation for the ladder, since ABANDONED is defined by no act within 120 s and an
+      unapproved act never arrives, which would have made each of up to 25 runs a measurement of
+      operator attention. Two apparatus corrections followed. The already-armed path now emits
+      refire instead of void, because a second stop event can only mean the host ran a further
+      turn and, unlike a tool call, cannot be gated -- so it is an approval-free witness. And
+      --wake-action text was added, asking the woken turn for a single word with no tool and no
+      command, which is the mode the ladder will use. F1 also reproduced on Cursor, re-firing
+      6.626 s after the act against 6.257 s on Claude Code, so the wake loop is not host-specific.
+    applied_to: 'FINDINGS.md; throwaway/spike_hook.py (refire witness, --wake-action)'
 # [A] written by the orchestrator on the work's active branch (single
 #     writer). Append-only audit trail of phase transitions and gate
 #     approvals, newest LAST (append to bottom).
