@@ -103,21 +103,37 @@ Copy-Item C:\path\to\repo\.aid\works\work-001-agent-chat\throwaway\spike_*.py ~\
 
 **21.** Write down the Windows version.
 
-**22.** Record your current timeouts so you can restore them: `powercfg /query SCHEME_CURRENT SUB_SLEEP`
-
-**23.** Disable screen-blank and sleep on both power sources:
+**22.** Check whether the machine can sleep while plugged in:
 
 ```powershell
-powercfg /change monitor-timeout-ac 0; powercfg /change monitor-timeout-dc 0
-powercfg /change standby-timeout-ac 0; powercfg /change standby-timeout-dc 0
+powercfg /query SCHEME_CURRENT SUB_SLEEP | Select-String "STANDBYIDLE|HIBERNATEIDLE|Current AC|Current DC"
 ```
 
-> `0` means never. `-ac` is plugged in and `-dc` is on battery, and a laptop needs both — a run
-> that sleeps is void, and discovering that after a 600 s ladder rung is expensive. Restore your
-> values at close-out; the spike should not permanently change your power settings.
+**23.** Confirm the AC index for both *Sleep after* and *Hibernate after* reads `0x00000000`.
+
+> `0` means never, and `Current AC` is the plugged-in value. If both AC indexes are already `0`,
+> **plug the laptop in and change nothing** — you are done with this step. Screen blanking and the
+> lock screen do not matter: they do not suspend processes, and only a suspend can corrupt a run.
 >
-> This governs sleep and the screen only. It does not stop the host tool itself idling, which is
-> the thing under test.
+> On a domain-joined machine these settings are often owned by Group Policy and cannot be changed;
+> a local edit would be silently reverted at the next policy refresh anyway. Verifying and staying
+> on AC is the reliable route, not fighting the policy.
+>
+> If the AC index is **not** `0`, and policy will not let you change it, the spike is still
+> runnable — a suspend is detectable rather than silent, by either of two independent checks on
+> data every line already carries.
+>
+> Every line logs both `ts_wall` (absolute UTC) and `t_mono`. Where the platform's monotonic clock
+> **stops** during suspend, wall time races ahead of it and any consecutive pair disagreeing by
+> more than a second is proof. Where the monotonic clock instead **keeps counting** through
+> suspend, as `GetTickCount64` may on Windows, the two agree and that first check sees nothing —
+> but the beat interval then gives it away, because beats are 250 ms apart and a process that was
+> not scheduled leaves a gap far larger. That is the same over-2 s beat gap already listed as a
+> void condition.
+>
+> Report the logs either way; both checks are applied during analysis.
+>
+> None of this suppresses host tool idling, which is the thing under test.
 
 ---
 
@@ -547,9 +563,9 @@ mandatory "what was tried" paragraph for anything Inconclusive.
 **158.** On machine A, remove the firewall rule:
 `Remove-NetFirewallRule -DisplayName "spike 8811"`
 
-> Also restore the power timeouts you recorded at step 22, and remove the stop hooks from the two
-> scratch projects. The spike should leave no lasting change to the machine or to either host
-> tool's configuration.
+> Also remove the stop hooks from the two scratch projects, and restore any power timeout you
+> actually changed at step 23 — on a policy-managed machine that is usually nothing. The spike
+> should leave no lasting change to the machine or to either host tool's configuration.
 
 **159.** Remove the force-added scripts from version control:
 `git rm --cached .aid/works/work-001-agent-chat/throwaway/spike_*.py`
