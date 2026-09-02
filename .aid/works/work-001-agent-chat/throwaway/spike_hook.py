@@ -204,13 +204,25 @@ def _read_host_input() -> dict[str, Any]:
     A host that sends nothing, or sends something unparseable, must not fail the run: stdin is
     evidence here, not input the measurement depends on.
     """
-    if sys.stdin is None or sys.stdin.closed:
+    if sys.stdin is None:
         return {}
     try:
-        raw = sys.stdin.read()
+        # Read BYTES and decode with utf-8-sig, which strips a leading byte-order mark.
+        #
+        # Cursor prefixes its stdin payload with the UTF-8 BOM, EF BB BF. RFC 8259 does not
+        # permit a BOM in JSON, so json.loads rejects the whole document with
+        # "Expecting value: line 1 column 1 (char 0)" -- an error that names the first
+        # character and so reads like malformed JSON rather than a valid document wearing a hat.
+        # Decoding through sys.stdin.read() made it worse: the platform locale rendered those
+        # three bytes as cp1252 text, so the BOM did not even appear as U+FEFF.
+        #
+        # This cost a wrong conclusion. The previous version reported that loop_count "does not
+        # reach the hook", when the field was present all along.
+        raw_bytes = sys.stdin.buffer.read() if hasattr(sys.stdin, "buffer") else b""
+        raw = raw_bytes.decode("utf-8-sig", errors="replace")
     except Exception:  # noqa: BLE001 -- a closed or absent stdin is normal
         return {}
-    raw = (raw or "").strip()
+    raw = raw.lstrip("\ufeff").strip()
     if not raw:
         return {}
     try:
@@ -399,6 +411,8 @@ def main() -> int:
                    f"schema={args.wake_schema} action={args.wake_action}",
               host_status=host_input.get("status"),
               loop_count=host_input.get("loop_count"),
+              conversation_id=host_input.get("conversation_id"),
+              host_model=host_input.get("model"),
               host_input_keys=sorted(host_input) or None,
               host_input_raw=host_input.get("_unparsed") or host_input.get("_nonobject"),
               host_input_error=host_input.get("_parse_error"))

@@ -604,6 +604,37 @@ review_history:
       noting alongside F2: Cursor invokes hooks through bash on Windows, so the hook's stdin may be
       whatever bash handed it rather than what Cursor intended to write. Suggestive, not evidence.
     applied_to: 'FINDINGS.md (F10, F8 correction, latency, ladder table); throwaway/spike_hook.py'
+  - date: '2026-09-02'
+    event: 'Feature 001 spike -- BOM found: Cursor prefixes its stdin JSON with EF BB BF; F10 corrected'
+    outcome: 'loop_count IS delivered. Prior "absent" reading was a BOM parse failure. F8 restored. Rich undocumented payload found'
+    notes: >-
+      Run T5-stdin-a captured the raw stdin bytes and they begin with the three characters shown as
+      i-diaeresis, guillemet, inverted-question-mark, which are EF BB BF -- the UTF-8 byte-order mark.
+      RFC 8259 does not permit a BOM in JSON, so json.loads rejects the whole document with
+      'Expecting value: line 1 column 1 (char 0)', an error that names the first character and so
+      reads like malformed JSON rather than a valid document wearing a hat. Reading stdin as text made
+      it worse, because the platform locale rendered those bytes as cp1252 and the BOM never even
+      appeared as U+FEFF. This must be stated plainly: the PREVIOUS entry concluded loop_count 'does
+      not reach the hook' and withdrew F8's re-entry argument on that basis, and BOTH were wrong.
+      loop_count is delivered, its value in this run was 0, and the failure was the spike's parser.
+      F8's claim that Feature 003 can read loop_count instead of inventing a sentinel is RESTORED. The
+      apparatus now reads stdin as bytes and decodes with utf-8-sig, verified against the operator's
+      exact payload including the BOM, and still handles BOM-less and empty stdin correctly. The BOM
+      is a real interoperability constraint rather than only a spike bug: any hook piping Cursor's
+      stdin into a strict JSON parser fails on the first byte with an error pointing at the payload
+      instead of the encoding, so a waker must decode utf-8-sig or strip U+FEFF, and emitting a BOM
+      ahead of JSON is worth reporting upstream as non-conforming. The payload is also far richer than
+      documented. Documented: status, loop_count. Actually delivered and undocumented:
+      conversation_id, generation_id, model, model_id, model_params, input_tokens, output_tokens,
+      cache_read_tokens, cache_write_tokens. conversation_id is the most consequential -- a stable
+      per-conversation identity is exactly what a chat channel needs to name a peer, and the spec had
+      assumed one would have to be invented; generation_id distinguishes a re-fire from a fresh stop.
+      Undocumented fields can vanish without notice, so conversation_id should be an optimisation with
+      a fallback rather than load-bearing. Also: followup_message confirmed working across two runs
+      now, and latency is five samples -- 3.264, 3.890, 3.368, 3.875, 4.303 s, mean 3.740 -- where the
+      observed MAXIMUM keeps rising as samples accumulate, so any derived timeout should use the
+      maximum with headroom rather than the mean.
+    applied_to: 'FINDINGS.md (F10 rewritten, F8 restored, latency, ladder); throwaway/spike_hook.py'
 # [A] written by the orchestrator on the work's active branch (single
 #     writer). Append-only audit trail of phase transitions and gate
 #     approvals, newest LAST (append to bottom).
