@@ -447,6 +447,25 @@ review_history:
       command, which is the mode the ladder will use. F1 also reproduced on Cursor, re-firing
       6.626 s after the act against 6.257 s on Claude Code, so the wake loop is not host-specific.
     applied_to: 'FINDINGS.md; throwaway/spike_hook.py (refire witness, --wake-action)'
+  - date: '2026-09-02'
+    event: 'Feature 001 spike -- test 3 ladder rung 1 (D=60) on Cursor'
+    outcome: 'SURVIVED(60). Cursor blocking floor now >=60s. Clean wake latency measured: 3.264s'
+    notes: >-
+      Run T3-60-a under --wake-action text, so nothing in the path could raise an approval prompt.
+      The hook blocked 60.072 s against a 60 s deadline with socket elapsed 60.043 s and
+      kind=timeout, which is 1.0007 of D and so comfortably past the 0.90 floor the verdict logic
+      requires. Wall and monotonic clocks drifted 0.0007 s, so no suspend. Probe coverage was
+      complete: alive=true across the whole minute, going false only 0.099 s after the hook wrote
+      its own end, which establishes positively that Cursor did not kill it. Cursor's blocking floor
+      is therefore at least 60 s and the ladder continues at 120, 300, 600. The run also produced
+      the wake latency the voided T2-001-a figure had been hiding: wake to refire in 3.264 s, or
+      2.7 percent of the 120 s ABANDONED window rather than the 99 percent that a human clicking
+      approve consumed. That vindicates voiding the earlier number rather than reporting it. The
+      3.264 s must NOT be ranked against Claude Code's 7.581 s: the latter is wake-to-act and
+      includes spawning an interpreter and an HTTP round trip, while this is wake-to-refire for a
+      one-word reply, so they measure different work and no same-action pair has been run on both
+      hosts.
+    applied_to: 'FINDINGS.md (test 3 ladder table, latency finding)'
 # [A] written by the orchestrator on the work's active branch (single
 #     writer). Append-only audit trail of phase transitions and gate
 #     approvals, newest LAST (append to bottom).

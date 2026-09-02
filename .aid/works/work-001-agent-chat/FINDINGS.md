@@ -34,7 +34,7 @@ none observable (Windows)`.
 |---|---|---|---|
 | 1 | Does an idle Claude Code session wake? | **Yes** | `T1-000-a` |
 | 2 | Does an idle Cursor session wake? | **Yes** | `T2-001-a` |
-| 3 | How long may a Cursor `stop` hook block? | *not yet run* — floor of **≥ 30 s** already established | `T2-001-a` |
+| 3 | How long may a Cursor `stop` hook block? | *ladder in progress* — **≥ 60 s** confirmed, no limit yet observed | `T3-60-a` |
 | 4 | Does the wake cross two machines? | *not yet run* | — |
 
 ---
@@ -97,6 +97,34 @@ So the figure measures a human, not a host, and the runbook already voids a run 
 condition. It is recorded here rather than deleted because the near-miss is the useful part: one
 more distraction and this run would have been written up as `ABANDONED`, meaning "Cursor refused to
 wake", which would have been false.
+
+---
+
+## Test 3 — the Cursor blocking limit (in progress)
+
+`--wake-action text`, so no run's classification depends on a human approving a prompt.
+
+| Run | `D` | Block achieved | `elapsed`/`D` | Probe | Wake → refire | Outcome |
+|---|---|---|---|---|---|---|
+| `T2-001-a` | 30 | 30.104 s | 1.002 | alive throughout | — | SURVIVED(30) |
+| `T3-60-a` | 60 | 60.072 s | 1.0007 | alive throughout | 3.264 s | **SURVIVED(60)** |
+
+`T3-60-a` overshot its deadline by 0.072 s, drifted 0.0007 s between wall and monotonic clocks, and
+died 0.099 s after writing its own `end`. Cursor did not interfere with it at any point.
+
+Ladder continues at 120, then 300, then 600.
+
+### Cursor's real wake latency is 3.264 s
+
+Run `T3-60-a`, wake to `refire`. This is the figure the voided 118.823 s was hiding: with no
+approval prompt in the path, Cursor turns a returned hook into a completed turn in a little over
+three seconds, using 2.7% of the 120 s window rather than 99%.
+
+**It is not comparable to Claude Code's 7.581 s.** That figure is wake-to-`act`, which includes
+spawning a Python interpreter and completing an HTTP round trip; this one is wake-to-`refire` for a
+one-word reply. Ranking the two hosts would need the same action measured on both, and no such pair
+has been run. What this number does establish is that the wake mechanism is not slow, and that
+`ABANDONED`'s 120 s threshold is generous by a factor of about 37 for an unblocked path.
 
 ---
 
