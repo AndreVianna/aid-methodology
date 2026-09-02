@@ -120,7 +120,11 @@ active_skill: none
 # [W]
 updated: '2026-09-02'
 # [W] set only when lifecycle = Paused-Awaiting-Input
-pause_reason: 'Requirements approved — run /aid-define work-001 to decompose into features'
+pause_reason: >-
+  Feature 001 spike: tests 1, 2 and 3 answered on machine A; test 4 (two machines) needs a
+  second machine for the Cursor side. Awaiting a decision on whether to run it or close the
+  spike at three answers. 10 findings recorded in FINDINGS.md, of which F1, F5, F7 and F10
+  constrain Feature 003's design.
 # [W] set only when lifecycle = Blocked
 block_reason: --
 # [W] e.g. IMPEDIMENT-task-NNN.md, or the failed gate
@@ -206,7 +210,7 @@ interview:
 features:
   - id: '001'
     name: wake-feasibility-spike
-    state: Ready
+    state: In Progress
     grade: A+
     qa_count: 0
     started: 2026-09-01
