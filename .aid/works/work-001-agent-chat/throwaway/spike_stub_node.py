@@ -137,11 +137,28 @@ class _Handler(BaseHTTPRequestHandler):
             "sent_at": int(time.time() * 1000),
             "seq": seq,
         }).encode("utf-8")
-        self.send_response(200)
-        self.send_header("Content-Type", "application/json")
-        self.send_header("Content-Length", str(len(body)))
-        self.end_headers()
-        self.wfile.write(body)
+        try:
+            self.send_response(200)
+            self.send_header("Content-Type", "application/json")
+            self.send_header("Content-Length", str(len(body)))
+            self.end_headers()
+            self.wfile.write(body)
+        except (ConnectionAbortedError, ConnectionResetError, BrokenPipeError) as exc:
+            # The waiter closed the socket before this sleep finished. On a wake test that is the
+            # EXPECTED and desired outcome, not a fault: the hook asks for `after` = D + 30 and
+            # times out its own read at D, so it is always gone 30 s before this write is
+            # attempted. Windows reports it as WinError 10053.
+            #
+            # It is logged rather than swallowed because it is independent corroboration, from the
+            # far end of the socket, that the hook returned under its own power instead of being
+            # answered early. Previously this raised out of do_GET: socketserver printed a
+            # multi-line traceback into the operator's terminal mid-run, and the only trace left in
+            # the log was the ABSENCE of a `respond` line. An absent line is weak evidence, being
+            # indistinguishable from one that was never written for some other reason.
+            _emit(self.log_sink, "client_gone", run, seq=seq, d=after,
+                  note=f"client={self.client_address[0]} waited={after}s "
+                       f"err={type(exc).__name__}: this CONFIRMS the waiter left first")
+            return
         _emit(self.log_sink, "respond", run, seq=seq, d=after,
               note=f"client={self.client_address[0]}")
 
@@ -157,6 +174,20 @@ class _Handler(BaseHTTPRequestHandler):
     def log_message(self, fmt: str, *args: Any) -> None:
         """Silence BaseHTTPRequestHandler's stderr chatter; the NDJSON log is the record."""
         return
+
+    def handle_one_request(self) -> None:
+        """Route any remaining per-request failure to the log instead of the terminal.
+
+        A traceback printed mid-run invites the operator to assume the run is spoiled. The log is
+        the record, so a failure belongs there, named.
+        """
+        try:
+            super().handle_one_request()
+        except (ConnectionAbortedError, ConnectionResetError, BrokenPipeError) as exc:
+            _emit(self.log_sink, "client_gone", "",
+                  note=f"client={self.client_address[0]} err={type(exc).__name__} "
+                       f"(outside the response path)")
+            self.close_connection = True
 
 
 def main() -> int:

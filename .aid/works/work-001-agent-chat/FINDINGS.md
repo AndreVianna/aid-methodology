@@ -150,6 +150,24 @@ The re-fire is also, usefully, a witness. A second stop event can only mean the 
 turn, which is what "did it wake?" asks — and unlike a tool call it cannot be gated behind an
 approval prompt. The apparatus now records it as `refire` rather than `void` for that reason.
 
+### F6 — The stub's aborted response is evidence, and was being thrown away
+
+Every wake run leaves a `WinError 10053` traceback in the stub's terminal, roughly 30 s after the
+measurement ends. It is not a fault. The hook asks the stub for `after` = `D` + 30 and times out its
+own read at `D`, so the waiter is always gone before the stub finishes sleeping and tries to write.
+The traceback is therefore *caused by* the hook correctly returning under its own power, and cannot
+occur on a run where the stub answered first — that case is the `VOID` one.
+
+Two problems followed from letting it raise. A multi-line traceback appearing mid-run invites the
+operator to assume the run is spoiled, and the only trace left in the log was the **absence** of a
+`respond` line, which is weak evidence: indistinguishable from a line never written for some other
+reason.
+
+The stub now catches it and logs `client_gone` with the sequence number and how long it had been
+asked to wait. That turns a discarded exception into independent corroboration, from the far end of
+the socket, that the waiter left first — confirming `own_power` without relying on the hook's own
+account of itself.
+
 ### F5 — The woken turn's tool call is gated behind human approval on Cursor
 
 Run `T2-001-a`. The wake was delivered and the agent complied, but the shell command it was asked
