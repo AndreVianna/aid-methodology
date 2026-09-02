@@ -142,11 +142,12 @@ orchestrator and needs to see and audit what was sent between them.
   serves the only thing a second surface was needed for — discoverability — on better terms:
   all five hosts by construction, no third-party dependency, and nothing for the user to
   install by hand. §7 carries the full reasoning.
-- **Raising the repository's Python floor.** With the adopter-facing runtime on Node and the
-  PyPI channel dropped, no shipped code will declare a Python floor to raise. (Dropping that
-  channel is a settled decision arriving as a premise, not work this document performs — see
-  the FR-8 note.) The maintainer-only profile renderer stays on Python and is a separate,
-  maintainer-scoped concern.
+- **Raising the repository's Python floor.** Nothing in this design depends on what the
+  repository declares — the node states its own runtime requirement (FR-7.7) — so the raise is
+  not this work's to make, whatever else changes around it. (A channel decision has been
+  described to this document as settled; it is an input, not a fact this document asserts, and
+  the exclusion holds either way — see the FR-8 note.) The maintainer-only profile renderer
+  stays on Python and is a separate, maintainer-scoped concern.
 - **A second implementation of the node.** One runtime, one implementation. The local
   dashboard server's Node/Python twin is a precedent this work declines to follow — roughly
   8,300 lines mirroring roughly 10,100, kept in step by a dedicated CI parity gate. A node
@@ -277,15 +278,20 @@ own, administered through `aid`, with state under `$AID_HOME`.
 ### FR-8 — withdrawn
 
 **The number FR-8 is not reused**, so that any reference to FR-8.1–FR-8.7 resolves here rather
-than to a different requirement that inherited it. FR-8 would have raised the repository's
-declared Python floor; with the adopter-facing runtime on Node and the PyPI channel dropped,
-no shipped artifact declares a Python floor for it to raise.
+than to a different requirement that inherited it.
 
-> **A premise, not a deliverable, and the distinction is load-bearing.** Dropping the PyPI
-> channel arrives here as an **input**: this document is written on the strength of that
-> decision, and does not perform it. Executing it — deleting `packages/pypi/`, retiring the
-> publish job, choosing the dashboard's surviving implementation — is adjacent work, in scope
-> for neither this document nor any criterion in §9.
+FR-8 would have raised the repository's declared Python floor. **It is withdrawn because that
+raise was never a prerequisite for this work** — nothing in the messaging design depends on
+what the repository declares, and the node states its own runtime requirement (FR-7.7). The
+floor is due a raise on its own merit, and belongs to whichever work is due to do it.
+
+> **What this withdrawal does *not* rest on.** A channel decision has been described to this
+> document as settled — that PyPI is dropped, after which no shipped artifact would declare a
+> Python floor at all. That is an **input this document was handed, not a fact it may assert
+> about the repository**, and the withdrawal above is deliberately independent of it: if the
+> channel stays, FR-8 is still withdrawn, for the reason given. Executing any of it — deleting
+> `packages/pypi/`, retiring the publish job, choosing the dashboard's surviving implementation
+> — is adjacent work, in scope for neither this document nor any criterion in §9.
 >
 > **On disk today `packages/pypi/pyproject.toml` still exists and still reads `>=3.8`**, so the
 > Knowledge Base entry recording that untested floor (`M5`) is accurate and must not be closed

@@ -150,7 +150,7 @@ interview:
       updated: '2026-09-01'
     - id: 4
       name: Scope
-      state: Pending
+      state: Complete
       updated: '2026-09-01'
     - id: 5
       name: 'Functional Requirements'
@@ -376,7 +376,7 @@ qa:
   - id: 1
     category: Requirements
     impact: High
-    state: Pending
+    state: Answered
     context: >-
       Section 4 Out of Scope and the FR-8 note both rest on "the PyPI channel is dropped".
       The repository has not acted on it: packages/pypi/pyproject.toml exists and still reads
@@ -393,5 +393,14 @@ qa:
       and restate the PyPI line as what it is: an input this document was handed, not a fact
       about the repository it may assert. Nothing else changes: the node is Node either way,
       and no criterion in section 9 depends on the channel.
-    answer: --
-    applied_to: --
+    answer: >-
+      Accepted as suggested. The withdrawal is kept and what it rests on is changed. FR-8 is now
+      withdrawn because raising the repository's declared Python floor was never a prerequisite
+      for this work -- nothing in the messaging design depends on what the repository declares,
+      and the node states its own runtime requirement (FR-7.7) -- so the raise belongs to
+      whichever work is due to make it. The channel decision is restated as an input this
+      document was handed rather than a fact it asserts about the repository, and both the FR-8
+      note and the section 4 exclusion now say explicitly that they hold either way. Nothing
+      else moved: the node is Node regardless, and no section 9 criterion depends on the
+      channel.
+    applied_to: 'Section 4 Out of Scope (Python floor bullet); section 5 FR-8 note'
