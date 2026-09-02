@@ -209,100 +209,51 @@ features:
     state: Ready
     grade: A+
     qa_count: 0
-    started: '2026-09-01'
-    updated: '2026-09-01'
+    started: 2026-09-01
+    updated: '2026-09-02'
     sections: []
-    notes: 'Stage P0. Specification carried forward intact -- an executable experiment design, reviewed to A+ over five cycles. Runs before anything is built (ID-14).'
+    notes: >-
+      Stage P0. Specification carried forward intact and unchanged -- an executable experiment design, reviewed to A+. Stays its own feature at any merge depth: AC-20 requires that none of its code be carried forward, which only means something if the boundary exists.
+  - id: '002'
+    name: node-and-message-plane
+    state: Pending
+    grade: Pending
+    qa_count: 0
+    started: --
+    updated: '2026-09-02'
+    sections: []
+    notes: >-
+      Stage P1, the keystone -- process model, CLI surface, store schema and the one core. Specify FIRST. Merged from three earlier features whose split had failed on its own terms: one owned the store schema another needed, so a schema defect in the first blocked the second outright. Largest feature at 9 of 22 criteria; if it proves too large the place to slice it is /aid-plan, not a new boundary. Carries two constraints from a dropped specification: exit code 5 is taken, and id INTEGER PRIMARY KEY without AUTOINCREMENT reuses a reaped member's id.
   - id: '003'
-    name: node-service-lifecycle
+    name: the-wake
     state: Pending
     grade: Pending
     qa_count: 0
     started: --
-    updated: '2026-09-01'
+    updated: '2026-09-02'
     sections: []
-    notes: 'Stage P1, and the keystone: owns the process model, the CLI surface and the store schema. Specify FIRST. Its predecessor specification was deliberately not carried; two of its findings travel on as constraints in the section itself.'
+    notes: >-
+      Stage P2. Node-side subscription, per-host waker adapters and the rendered chat skill. Cannot be specified before Feature 001 answers -- its Cursor half is shaped by the measured hook-blocking limit. One feature because none of the three delivers the wake alone.
   - id: '004'
-    name: session-registration
-    state: Pending
-    grade: Pending
-    qa_count: 0
-    started: --
-    updated: '2026-09-01'
-    sections: []
-    notes: 'Stage P1.'
-  - id: '005'
-    name: durable-chat-messaging
-    state: Pending
-    grade: Pending
-    qa_count: 0
-    started: --
-    updated: '2026-09-01'
-    sections: []
-    notes: 'Stage P1. Largest criterion set (6). Depends on the store schema Feature 003 fixes.'
-  - id: '006'
-    name: push-subscription
-    state: Pending
-    grade: Pending
-    qa_count: 0
-    started: --
-    updated: '2026-09-01'
-    sections: []
-    notes: 'Stage P2.'
-  - id: '007'
-    name: host-waker-adapters
-    state: Pending
-    grade: Pending
-    qa_count: 0
-    started: --
-    updated: '2026-09-01'
-    sections: []
-    notes: 'Stage P2. Shaped by the number Feature 001 measures -- cannot be specified before the spike answers.'
-  - id: '008'
-    name: chat-skill
-    state: Pending
-    grade: Pending
-    qa_count: 0
-    started: --
-    updated: '2026-09-01'
-    sections: []
-    notes: 'Stage P2. Replaces the withdrawn MCP facade; carries Description and user stories already.'
-  - id: '009'
     name: lan-federation
     state: Pending
     grade: Pending
     qa_count: 0
     started: --
-    updated: '2026-09-01'
+    updated: '2026-09-02'
     sections: []
-    notes: 'Stage P3 -- the target case. Its Description still states discovery as zero-configuration announcement, which FR-6.1 and AC-4 no longer support; reconcile when specifying.'
-  - id: '010'
-    name: directed-chat-messages
+    notes: >-
+      Stage P3 -- the target case. Carries the constraint that FR-6.4's compatibility contract is stated by its own protocol version number and never inferred from VERSION.
+  - id: '005'
+    name: directed-retention-visibility
     state: Pending
     grade: Pending
     qa_count: 0
     started: --
-    updated: '2026-09-01'
+    updated: '2026-09-02'
     sections: []
-    notes: 'Stage P4.'
-  - id: '011'
-    name: retention-enforcement
-    state: Pending
-    grade: Pending
-    qa_count: 0
-    started: --
-    updated: '2026-09-01'
-    sections: []
-    notes: 'Stage P4.'
-  - id: '012'
-    name: operator-visibility
-    state: Pending
-    grade: Pending
-    qa_count: 0
-    started: --
-    updated: '2026-09-01'
-    sections: []
-    notes: 'Stage P4. Read-only by design.'
+    notes: >-
+      Stage P4. Weakest cohesion of the five and recorded as such: mention/whisper, retention and operator visibility share a stage and a dependency on the store rather than a subject. Kept as one because the decomposition was asked to be minimal and none of the three is large; splitting into three costs nothing but a boundary.
 
 # [A] appended by aid-describe / aid-define as the interview and its
 #     cross-reference pass proceed. Append-only, newest LAST. Distinct from
@@ -350,6 +301,25 @@ review_history:
     event: 'Approval gate'
     outcome: 'Approved'
     notes: 'Stakeholder approved the assembled requirements after a whole-picture read-back. Ten sections Complete, 22 criteria each owned by exactly one feature, 40 functional sub-requirements each mapped. Five interview turns, five decisions: the pre-reset deploy/install residue swept as a class (which reopened section 1, since it had carried the defect while marked Complete and exempt from sweeping); zero-configuration discovery bounded to best-effort rather than promised; the nodes Node floor declared >=22.13.0, determined by the store rather than chosen; node:sqlites experimental warning suppressed narrowly; and the scope-reset prehistory stripped from sections 1-10. Q1 answered: FR-8s withdrawal now stands on a reason independent of the PyPI channel decision, which is labelled an input rather than asserted as fact. One assumption re-confirmed at the gate and left standing on that footing. Next: /aid-define work-001.'
+  - date: '2026-09-02'
+    event: 'Feature Decomposition -- 11 features re-decomposed into 5'
+    outcome: '5 features, one per section-10 stage; all 95 scenarios carried'
+    notes: >-
+      Stakeholder directive: the minimum number of features, one if possible, with maximum
+      cohesion. One is unreachable -- AC-20 requires that no code from the spike be carried
+      forward, which is a statement about a boundary and means nothing without one. Two is
+      unreachable for a different reason -- /aid-plan sequences features into deliveries, so a
+      single product feature yields one delivery and section 10s requirement that each stage
+      from P1 leaves working product behind would exist only as prose. Five, one per stage, is
+      the floor, and it is also where cohesion falls because the stages were drawn around what
+      ships together. The load-bearing merge is Feature 002, which collapses the three features
+      an earlier decomposition had split: that split had failed on its own terms, one feature
+      owning the store schema another needed, so a schema defect in the first blocked the second
+      outright. Content was carried rather than retyped -- all 95 verification scenarios, every
+      Description and every user story survive the boundary change, and Feature 001s A+
+      specification is unchanged because its boundary is. Verified: 22 criteria owned exactly
+      once, 40 requirements mapped, section 10 and section 11 agreeing stage for stage.
+      Feature 005 is recorded as the weakest cohesion of the five rather than presented as clean.
 
 # [A] written by the orchestrator on the work's active branch (single
 #     writer). Append-only audit trail of phase transitions and gate

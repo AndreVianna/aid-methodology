@@ -748,22 +748,33 @@ expected to reuse the same adapter contract (FR-5.2), but none of the three gate
 
 ## 11. Features
 
-One `###` subsection per feature — a decomposition of §5 into an independently implementable unit, not a second place to state requirements. Every §5 functional requirement maps to at least one feature, and **every §9 criterion is owned by exactly one feature**, so both are checkable. §9 holds a gapless **AC-1–AC-22**, and the ownership below accounts for all twenty-two, once each, matching §10 stage for stage.
+One `###` subsection per feature — a decomposition of §5 into an independently implementable
+unit, not a second place to state requirements. Every §5 functional requirement maps to at
+least one feature, and **every §9 criterion is owned by exactly one feature**, so both are
+checkable. §9 holds a gapless **AC-1–AC-22**, and the ownership below accounts for all
+twenty-two, once each, matching §10 stage for stage.
 
-**Feature ids are not contiguous — there is no Feature 002, and that is deliberate.** Ids are
-never reused or renumbered, because §10, the criteria carve-outs above and every task that
-will later cite a feature all depend on an id meaning one thing forever. This set was seeded
-from a predecessor whose 002 was withdrawn before seeding. Closing the gap would have meant
-re-pointing roughly a hundred prose citations with no mechanical way to prove each one landed
-on the right feature — a real risk of silently mis-aimed references, traded against one
-contiguous number. §9's criteria were renumbered gapless because there the check is
-mechanical: every criterion must be owned exactly once, and a script proves it.
+**Five features, one per §10 stage, and the count is a floor rather than a preference.** Two
+things set it. **The spike cannot merge into anything:** AC-20 requires that no code from it be
+carried forward, which is a statement about a feature boundary — with no separate feature there
+is nothing for the criterion to be true of. **And the product cannot be a single feature:**
+`/aid-plan` sequences features into deliveries, so one product feature yields one delivery and
+§10's requirement that each stage from P1 leaves working product behind would exist only as
+prose. Below those two constraints, the stages are also where cohesion falls, because they were
+drawn around what ships together.
 
 ### Feature 001 — Wake Feasibility Spike
 
 - **Priority:** Must
-- **Requirements:** **No §5 requirement.** This feature produces evidence, not product — it verifies the §8 assumption that a host can hold a token-free wait and turn an arriving message into a turn. Traces to §10 stage P0 (scope, expectations, rationale) and §8 Assumptions (host research; the unvalidated assumption)
+- **Requirements:** **No §5 requirement.** This feature produces evidence, not product — it
+  verifies the §8 assumption that a host can hold a token-free wait and turn an arriving message
+  into a turn. Traces to §10 stage P0 and §8 Assumptions (host research; the unvalidated
+  assumption)
 - **Criteria:** AC-20  ← ids from §9; never restated here
+
+> **Runs first, and alone.** Everything else in §11 is built on the answer this produces, and
+> AC-20 requires that none of its code survive into the next stage — which is why it stays its
+> own feature no matter how far the others are merged.
 
 #### Description
 
@@ -1312,10 +1323,11 @@ obligation; it does not pre-write the entry.
 
 ##### BDD Scenarios
 
-> **Provenance.** Carried from the retired per-feature `SPEC.md` schema, whose
-> `## Acceptance Criteria` section held feature-level criteria. §9 is now the only place a
-> criterion is stated, so these are verification scenarios rather than criteria; the criteria
-> this feature owns are cited above.
+> **Provenance.** The scenarios below are not `/aid-specify` output. They were authored
+> during requirements work under a retired schema that held feature-level acceptance
+> criteria; §9 is now the only place a criterion is stated, so these are verification
+> detail and an input to `/aid-specify`. Several cover a claimed FR clause that no §9
+> criterion reaches on its own, which is why they were kept rather than deleted.
 
 - [ ] Given an idle Claude Code session with the stub armed, when a message is sent, then
       the session acts on it with no human action — recorded as pass or fail.
@@ -1330,16 +1342,42 @@ obligation; it does not pre-write the entry.
 - [ ] Given the spike is complete, when P1 begins, then **no code from this feature has
       been carried forward**.
 
-### Feature 003 — Node Service Lifecycle
+### Feature 002 — Node and Message Plane
 
 - **Priority:** Must
-- **Requirements:** §5 FR-0.1, FR-0.3 (the administration and message-plane halves only — the subscriber half completes in Feature 006), FR-1.1–1.3, FR-7.2 (the start / stop / status / configuration clauses only — chat lifecycle and other-session membership belong to Feature 005, retention policy to Feature 011), FR-7.4 (the **no-client-library** clause only — see the ownership note below), FR-7.5, FR-7.6, FR-7.7; §7 Constraints; §10 stage P1
-- **Criteria:** AC-9, AC-22  ← ids from §9; never restated here
+- **Requirements:** §5 FR-0.1, FR-0.3 *(the administration and message-plane halves — the
+  subscriber half completes in Feature 003)*, FR-1.1–1.3, FR-2.1, FR-2.2 *(the single-machine
+  half: the id's shape)*, FR-2.3 *(liveness tracking and stale-marking — reaping belongs to
+  Feature 005)*, FR-3.1 *(local half)*, FR-3.4, FR-4.1–4.7 *(the plain-delivery envelope —
+  FR-4.1's `mention?` / `whisper_to?` fields and FR-4.3's whisper filtering belong to Feature
+  005)*, FR-5.3, FR-7.2 *(start / stop / status / configuration, chat lifecycle, and any change
+  to another session's membership — retention policy belongs to Feature 005)*, FR-7.4 *(the
+  **no-client-library** clause — see the ownership note below)*, FR-7.5, FR-7.6, FR-7.7;
+  §6 Delivery semantics *(durability, delivery guarantee, progress tracking, ordering)*;
+  §6 Limits *(the **stale-session threshold**)*; §7 Constraints; §10 stage P1
+- **Criteria:** AC-3, AC-6, AC-7, AC-8, AC-9, AC-10, AC-13, AC-21, AC-22  ← ids from §9; never restated here
 
-> **Specify this feature first.** It is the keystone: it owns the node's process model, its CLI
-> surface and the store schema, and Feature 005 cannot proceed until the schema is settled. Its
-> predecessor specification is not carried forward — see the Technical Specification below for
-> what it contained, why it was dropped, and the two findings that travel on as constraints.
+> **Specify this feature first.** It is the keystone: the process model, the CLI surface, the
+> store schema and the one core all live here, and every later feature builds on them.
+>
+> **Why this is one feature and not three.** An earlier decomposition split it into node
+> lifecycle, session registration and durable messaging, and the split failed on its own terms:
+> the lifecycle feature owned the store schema the messaging feature needed, so a schema defect
+> in the first blocked the second outright, and the plan had to record one feature as NO-GO until
+> the other was fixed. Lifecycle, registration, chats and messaging all touch **one** store
+> schema and **one** core API. They change together, so they are specified together — which
+> removes that coupling instead of managing it.
+>
+> **It is the largest feature here, and that is stated rather than hidden.** Nine of the
+> twenty-two criteria. Every candidate split line runs through the store schema, which is what
+> went wrong before; if it proves too large to build in one pass, the place to slice it is
+> `/aid-plan`, which can stage one feature across deliveries without re-drawing a boundary.
+>
+> **FR-7.4 ownership — two features, and this is where it is settled.** FR-7.4 has three
+> separable clauses. **This feature** owns *the node publishes no client library or SDK*.
+> **Feature 003** owns the other two — *the chat skill's instructions are CLI invocations* and
+> *the subscriber is a CLI invocation*. Together they keep the HTTP transport internal to the
+> node, which is what FR-7.4 asks for.
 
 #### Description
 
@@ -1368,6 +1406,60 @@ since every operation it describes is an `aid chat` invocation. This matters mor
 sounds: two implementations drift, and the drift shows up as messages that behave
 differently depending on which door they came through.
 
+How a session says who it is, and how it gets its place back.
+
+A session registers a **name** — plus which tool it is, where it is working, and what it can
+do. The name is an identity, not an address: it is how the session is recognised inside a
+chat, mentioned, and whispered to. Nobody sends *to* a name.
+
+Names matter because sessions do not last. They crash, hit their limits, get cleared and
+restarted, constantly. If a session's place in its conversations were tied to the window,
+every restart would lose it. Tying it to the name instead means restarting and re-claiming
+the name puts you back exactly where you were — in every chat you belong to, at the point
+you had read up to in each.
+
+A session's full identity is its machine plus its name, matching how chats are addressed.
+Names are unique per machine.
+
+The node also tracks whether a session is still alive. One quiet for 30 minutes is marked
+**stale** — probably gone — so the operator's view distinguishes "reading slowly" from
+"never coming back". Being marked stale changes nothing about what is kept.
+
+Giving a session up **for good** is a later, separate state (reaping, at 24 hours) and
+belongs to retention, not registration. This feature observes and reports liveness; it
+never releases anything.
+
+The chat, and everything you do with one.
+
+**A chat is the only thing a message is addressed to.** There is no send-to-a-person. The
+smallest chat has two members, and that *is* a private conversation — the same mechanism,
+not a special case. One idea instead of two.
+
+You create and delete chats through the CLI; a session only joins and leaves for itself, and
+joining one that does not exist fails rather than quietly creating it. Chat lifecycle lives
+here rather than with node administration because it is the thing every other criterion in
+this feature depends on — there is nothing to send to until a chat exists.
+
+A chat may have any number of members. Two is the minimum and the proving case, but a
+message fans out to **every** member from the start; larger chats need nothing new here.
+What they add later is a way to address *within* them. A session can also list the
+chats on this machine and the ones it belongs to — without that, there would be no way to
+learn a chat's name in order to join it.
+
+Each chat keeps a **durable log**, and each member keeps **their own place** in it. Being
+away delays messages; it does not lose them — right up until the node gives that member up
+for gone and reaps it, which is retention's job and is covered in Feature 011. Within that
+window, being away costs nothing. A message may arrive twice, so each carries an
+identifier that lets a recipient spot the repeat. Within one chat everyone sees the same
+order.
+
+Nothing here blocks. A reply is just another message sent back, matched to what it answers
+by a shared identifier. No session ever waits on another — two turn-based agents cannot
+safely be put on the same clock.
+
+This stage is **pull only**: a session reads its own mail when it takes a turn. That path
+must work on its own, because it is the floor every host falls back to.
+
 #### User Stories
 
 - As the operator, I want one command to stand the node up on a clean machine, so that
@@ -1378,41 +1470,60 @@ differently depending on which door they came through.
   guessing at a background process.
 - As a session, I want the node to already be there, so that my ability to send a message
   does not depend on which window opened first.
+- As a session, I want to claim a stable name, so that others can recognise me across
+  restarts.
+- As a session that just restarted, I want to re-claim my name and find my unread messages
+  waiting, so that a crash costs me nothing.
+- As a session in several chats, I want each chat to remember separately how far I have
+  read, so that catching up in one does not skip messages in another.
+- As the operator, I want sessions that have gone quiet to be marked as such, so that I can
+  tell a slow reader from a dead one.
+- As the operator, I want to create a chat and add sessions to it, so that they have
+  somewhere to talk.
+- As the operator, I want to delete a chat I no longer need, so that the list stays
+  meaningful.
+- As a session, I want to list the chats here and join one by name, so that I can take part
+  without being told an address out of band.
+- As a session, I want to read messages that arrived while I was away, so that being busy
+  costs me nothing.
+- As a session, I want to mark how far I have read, so that I do not re-read the same
+  messages.
+- As a session, I want to spot a repeated message, so that acting twice on one instruction
+  cannot happen.
+- As a session, I want to send a reply that is recognisably an answer, so that a request
+  and its response can be matched without either side waiting.
 
 #### Technical Specification
 
 > **Not yet specified.** `/aid-specify` has not run on this feature.
 >
-> A specification for it did exist and is **deliberately not carried forward.** It was written
-> before the runtime decision and rested on four premises that decision contradicts: the store
-> was stdlib `sqlite3` rather than the runtime's built-in SQLite; the node was a separate
-> `chat-node/` distributable carrying its own `pyproject.toml` rather than shipping inside the
-> `aid` payload (FR-7.6); a **Python** runtime was the prerequisite rather than Node (FR-7.7);
-> and `aid chat deploy` was specified as an idempotent verb, though FR-7.2 deletes it outright.
-> It never passed review — it stood at grade **D** with twelve findings open, two of them HIGH.
-> Re-specifying around 1,100 lines of known-false design costs more than starting from the
-> criteria. `git log --follow` on the predecessor's requirements document recovers it if ever
-> needed.
+> A specification for part of it existed and is **deliberately not carried forward** — it was
+> written before the runtime decision and rested on premises that decision contradicts (a
+> separate distributable, a Python prerequisite, an install step), and it never passed review.
+> `git log --follow` on this document recovers it if ever needed.
 >
-> **Two of those twelve findings are carried forward as constraints, because they are defects a
-> re-specification would otherwise walk straight back into:**
+> **Two findings from that specification's review are carried forward as constraints, because
+> they are defects a re-specification would otherwise walk straight back into:**
 >
-> 1. **Exit code `5` is already taken.** The earlier specification allocated it while explicitly
->    dismissing the table that records the existing use as non-authoritative — the second time
->    that same reasoning produced a collision. Whatever codes this feature allocates must be
->    checked against every existing use, not against a list believed to be complete.
+> 1. **Exit code `5` is already taken.** The earlier specification allocated it while dismissing
+>    the table that records the existing use as non-authoritative — the second time that same
+>    reasoning produced a collision. Whatever codes this feature allocates must be checked
+>    against every existing use, not against a list believed to be complete.
 > 2. **`id INTEGER PRIMARY KEY` without `AUTOINCREMENT` is a rowid alias**, so SQLite **reuses a
 >    reaped member's id**. A later member then silently inherits every message its predecessor
->    sent — a correctness defect with no error and no symptom until someone reads the wrong
->    mail. Verified to behave this way on the built-in SQLite module. Feature 005 depends on the
->    store schema this feature fixes, so this must be closed here rather than routed around.
+>    sent — a correctness defect with no error and no symptom until someone reads the wrong mail.
+>    Verified to behave this way on the built-in SQLite module. Reaping is Feature 005's, but the
+>    schema that makes it safe is this feature's.
 
 ##### BDD Scenarios
 
-> **Provenance.** Carried from the retired per-feature `SPEC.md` schema, whose
-> `## Acceptance Criteria` section held feature-level criteria. §9 is now the only place a
-> criterion is stated, so these are verification scenarios rather than criteria; the criteria
-> this feature owns are cited above.
+> **Provenance.** The scenarios below are not `/aid-specify` output. They were authored
+> during requirements work under a retired schema that held feature-level acceptance
+> criteria; §9 is now the only place a criterion is stated, so these are verification
+> detail and an input to `/aid-specify`. Several cover a claimed FR clause that no §9
+> criterion reaches on its own, which is why they were kept rather than deleted.
+
+*From Node Service Lifecycle:*
 
 - [ ] Given a machine where `aid` is installed and the node has never run, when the operator
       starts it, then it runs — with nothing fetched, resolved, verified or installed first.
@@ -1449,60 +1560,7 @@ differently depending on which door they came through.
       in one core that the CLI calls rather than reimplements — so every face added later,
       the chat skill included, has a single core behind it.
 
-### Feature 004 — Session Registration
-
-- **Priority:** Must
-- **Requirements:** §5 FR-2.1, FR-2.2 (the single-machine half — the id's shape; the cross-machine half is Feature 009 at stage P3), FR-2.3 (the liveness-tracking and stale-marking clauses only — the reaping clause belongs to Feature 011); §6 Limits (the **stale-session threshold** only); §10 stage P1
-- **Criteria:** AC-3  ← ids from §9; never restated here
-
-#### Description
-
-How a session says who it is, and how it gets its place back.
-
-A session registers a **name** — plus which tool it is, where it is working, and what it can
-do. The name is an identity, not an address: it is how the session is recognised inside a
-chat, mentioned, and whispered to. Nobody sends *to* a name.
-
-Names matter because sessions do not last. They crash, hit their limits, get cleared and
-restarted, constantly. If a session's place in its conversations were tied to the window,
-every restart would lose it. Tying it to the name instead means restarting and re-claiming
-the name puts you back exactly where you were — in every chat you belong to, at the point
-you had read up to in each.
-
-A session's full identity is its machine plus its name, matching how chats are addressed.
-Names are unique per machine.
-
-The node also tracks whether a session is still alive. One quiet for 30 minutes is marked
-**stale** — probably gone — so the operator's view distinguishes "reading slowly" from
-"never coming back". Being marked stale changes nothing about what is kept.
-
-Giving a session up **for good** is a later, separate state (reaping, at 24 hours) and
-belongs to retention, not registration. This feature observes and reports liveness; it
-never releases anything.
-
-#### User Stories
-
-- As a session, I want to claim a stable name, so that others can recognise me across
-  restarts.
-- As a session that just restarted, I want to re-claim my name and find my unread messages
-  waiting, so that a crash costs me nothing.
-- As a session in several chats, I want each chat to remember separately how far I have
-  read, so that catching up in one does not skip messages in another.
-- As the operator, I want sessions that have gone quiet to be marked as such, so that I can
-  tell a slow reader from a dead one.
-
-#### Technical Specification
-
-> **Not yet specified — `/aid-specify` has not run on this feature.**
->
-> The scenarios below are **not** its output. They were authored by `/aid-define`'s
-> cross-reference pass under the retired per-feature `SPEC.md` schema, which carried
-> feature-level acceptance criteria. Criteria now live once in §9 and are cited above, so these
-> are retained here as **verification detail and an input to `/aid-specify`** — several of them
-> cover a claimed FR clause that no §9 criterion reaches on its own, which is why deleting them
-> would lose coverage the cross-reference pass built.
-
-##### BDD Scenarios
+*From Session Registration:*
 
 - [ ] Given a new session, when it registers a name with its tool, working directory and
       capabilities, then it is recognised by that name.
@@ -1520,74 +1578,7 @@ never releases anything.
 - [ ] Given a session marked stale, when its chats are inspected, then its position is
       still held — being marked stale discards nothing.
 
-### Feature 005 — Durable Chat Messaging
-
-- **Priority:** Must
-- **Requirements:** §5 FR-3.1 (local half), FR-3.4 (whole — a session's own join / leave / list **and** the operator-only clause that changes another session's membership), FR-4.1–4.7 (the plain-delivery envelope; FR-4.1's `mention?` / `whisper_to?` fields and FR-4.3's whisper filtering belong to Feature 010), FR-5.3, FR-7.2 (the chat-lifecycle clause **and** the other-session-membership clause); §6 Delivery semantics (durability, delivery guarantee, progress tracking, ordering — the Retention row belongs to Feature 011); §10 stage P1
-- **Criteria:** AC-6, AC-7, AC-8, AC-10, AC-13, AC-21  ← ids from §9; never restated here
-
-#### Description
-
-The chat, and everything you do with one.
-
-**A chat is the only thing a message is addressed to.** There is no send-to-a-person. The
-smallest chat has two members, and that *is* a private conversation — the same mechanism,
-not a special case. One idea instead of two.
-
-You create and delete chats through the CLI; a session only joins and leaves for itself, and
-joining one that does not exist fails rather than quietly creating it. Chat lifecycle lives
-here rather than with node administration because it is the thing every other criterion in
-this feature depends on — there is nothing to send to until a chat exists.
-
-A chat may have any number of members. Two is the minimum and the proving case, but a
-message fans out to **every** member from the start; larger chats need nothing new here.
-What they add later is a way to address *within* them. A session can also list the
-chats on this machine and the ones it belongs to — without that, there would be no way to
-learn a chat's name in order to join it.
-
-Each chat keeps a **durable log**, and each member keeps **their own place** in it. Being
-away delays messages; it does not lose them — right up until the node gives that member up
-for gone and reaps it, which is retention's job and is covered in Feature 011. Within that
-window, being away costs nothing. A message may arrive twice, so each carries an
-identifier that lets a recipient spot the repeat. Within one chat everyone sees the same
-order.
-
-Nothing here blocks. A reply is just another message sent back, matched to what it answers
-by a shared identifier. No session ever waits on another — two turn-based agents cannot
-safely be put on the same clock.
-
-This stage is **pull only**: a session reads its own mail when it takes a turn. That path
-must work on its own, because it is the floor every host falls back to.
-
-#### User Stories
-
-- As the operator, I want to create a chat and add sessions to it, so that they have
-  somewhere to talk.
-- As the operator, I want to delete a chat I no longer need, so that the list stays
-  meaningful.
-- As a session, I want to list the chats here and join one by name, so that I can take part
-  without being told an address out of band.
-- As a session, I want to read messages that arrived while I was away, so that being busy
-  costs me nothing.
-- As a session, I want to mark how far I have read, so that I do not re-read the same
-  messages.
-- As a session, I want to spot a repeated message, so that acting twice on one instruction
-  cannot happen.
-- As a session, I want to send a reply that is recognisably an answer, so that a request
-  and its response can be matched without either side waiting.
-
-#### Technical Specification
-
-> **Not yet specified — `/aid-specify` has not run on this feature.**
->
-> The scenarios below are **not** its output. They were authored by `/aid-define`'s
-> cross-reference pass under the retired per-feature `SPEC.md` schema, which carried
-> feature-level acceptance criteria. Criteria now live once in §9 and are cited above, so these
-> are retained here as **verification detail and an input to `/aid-specify`** — several of them
-> cover a claimed FR clause that no §9 criterion reaches on its own, which is why deleting them
-> would lose coverage the cross-reference pass built.
-
-##### BDD Scenarios
+*From Durable Chat Messaging:*
 
 - [ ] Given the operator, when a chat is created through the CLI, then a session can join it.
 - [ ] Given a chat, when the operator deletes it through the CLI, then it can no longer be
@@ -1623,18 +1614,28 @@ must work on its own, because it is the floor every host falls back to.
 - [ ] Given any operation in the message plane, when it is called, then it returns without
       waiting on another session.
 
-### Feature 006 — Push Subscription
+### Feature 003 — The Wake
 
 - **Priority:** Must
-- **Requirements:** §5 FR-0.3 (the subscriber half, completing what Feature 003 begins at P1), FR-5.1, FR-5.4 (node-side accumulation), FR-7.4 (the **subscriber-is-a-CLI-invocation** clause only); §6 Limits (the **long-poll timeout** only); §10 stage P2
-- **Criteria:** AC-12  ← ids from §9; never restated here
+- **Requirements:** §5 FR-0.2, FR-0.3 *(the subscriber half, completing what Feature 002
+  begins)*, FR-0.4, FR-5.1, FR-5.2, FR-5.4, FR-5.5, FR-7.3, FR-7.4 *(the
+  **skill-invokes-the-CLI** and **subscriber-is-a-CLI-invocation** clauses — see the ownership
+  note under Feature 002)*; §6 Limits *(the **long-poll timeout**)*; §4 In Scope *(the rendered
+  chat skill)* and §4 Out of Scope *(the withdrawn MCP façade)*; §7 Constraints *(the
+  agent-facing-surface bullet)*; §10 stage P2
+- **Criteria:** AC-1, AC-12, AC-15  ← ids from §9; never restated here
 
-> **Re-specification pending.** Flagged by the 2026-08-10 runtime decision, and the concrete
-> defect is one stale carve-out: the retired `SPEC.md` claimed FR-7.4's subscriber clause "only —
-> the in-tool-skills clause belongs to Feature 003", which was true when Feature 008 was an MCP
-> façade and is not now. That clause is Feature 008's; see the FR-7.4 ownership note under
-> Feature 003. Nothing else here is contradicted by the runtime change — the connection, the
-> re-arm gap and the long-poll timeout are transport properties, not runtime ones.
+> **This is the feature the spike exists for.** Its per-host half is shaped by the number
+> Feature 001 measures — how long a Cursor `stop` hook may block before the host kills it — so
+> it cannot be specified before that answer exists.
+>
+> **Three parts, one job: turn an arriving message into a turn.** The node side holds a
+> connection open and pushes. The host side is one small adapter per tool, behind a single
+> contract — wait without spending anything, and when a message arrives, produce a turn. The
+> rendered chat skill is what makes any of it discoverable to a session that would otherwise
+> never learn the commands exist. They are one feature because none of them delivers the wake
+> alone: a subscriber with no adapter wakes nothing, an adapter with no subscriber has nothing
+> to wait on, and either without the skill is a capability no session knows to use.
 
 #### Description
 
@@ -1658,54 +1659,6 @@ anything else missed. This is the entire reason the durable log exists.
 
 This half is host-independent. It is the node, the connection, and the wire — the same
 everywhere. The per-tool half lives in the waker adapters.
-
-#### User Stories
-
-- As a subscriber, I want the node to push a message as soon as it arrives, so that nothing
-  has to poll.
-- As a subscriber, I want to stay connected after receiving a message, so that a busy chat
-  does not mean constant reconnection.
-- As a subscriber on a host that cannot hold a socket, I want a long wait that reconnects,
-  so that the same behaviour is available with a simpler transport.
-- As a session, I want messages that arrived while I was reconnecting to be delivered next
-  time, in order, so that the gap costs latency and not correctness.
-
-#### Technical Specification
-
-> **Not yet specified — `/aid-specify` has not run on this feature.**
->
-> The scenarios below are **not** its output. They were authored by `/aid-define`'s
-> cross-reference pass under the retired per-feature `SPEC.md` schema, which carried
-> feature-level acceptance criteria. Criteria now live once in §9 and are cited above, so these
-> are retained here as **verification detail and an input to `/aid-specify`** — several of them
-> cover a claimed FR clause that no §9 criterion reaches on its own, which is why deleting them
-> would lose coverage the cross-reference pass built.
-
-##### BDD Scenarios
-
-- [ ] Given an armed subscriber, when a message is sent to its chat, then the node pushes
-      it without being polled.
-- [ ] Given a subscriber that has just received a message, when another arrives, then it is
-      delivered over the same connection with no reconnection in between.
-- [ ] Given messages arriving while a subscriber is between connections, when it
-      reconnects, then **all** of them are delivered, in order.
-- [ ] Given an idle subscriber and no traffic, when the configured timeout elapses, then it
-      reconnects and remains able to receive.
-- [ ] Given a host that cannot hold a socket open, when it subscribes by long wait, then it
-      receives the same messages as a socket subscriber.
-- [ ] Given the timeout is reconfigured, when a subscriber reconnects, then the new value
-      is in effect — the limit is a default, not a constant.
-- [ ] Given the subscriber, when it is inspected, then it is **a CLI invocation** rather than
-      a separate program speaking HTTP — the transport stays internal to the node, and the
-      CLI is what carries the subscriber, completing FR-0.3.
-
-### Feature 007 — Host Waker Adapters
-
-- **Priority:** Must
-- **Requirements:** §5 FR-5.2, FR-5.4 (the host-side clause — handing accumulated messages over at the next turn boundary; the node-side accumulation that makes them available belongs to Feature 006), FR-5.5; §3 Users (the v1 proving pair, the target case); §8 Assumptions (host research); §10 stage P2
-- **Criteria:** AC-1  ← ids from §9; never restated here
-
-#### Description
 
 The piece that turns an arriving message into a turn — the only part of this product that
 differs per tool, and the only part nobody has built before.
@@ -1743,56 +1696,6 @@ works everywhere. Five hosts are named (§3) and only two get an adapter here; t
 what lets the remaining three — and any tool named later — be added without touching anything
 else.
 
-#### User Stories
-
-- As a developer in Claude Code, I want a message from a colleague's session to reach me
-  while I am idle, so that I do not have to check.
-- As a developer in Cursor, I want the same, so that the tool I use does not decide whether
-  I can be reached.
-- As a developer mid-task, I want messages that arrived while I was working handed to me
-  when I finish, so that being busy delays them rather than losing them.
-- As the operator, I want an idle session to cost nothing while it waits, so that leaving
-  sessions open all day is free.
-- As a maintainer, I want a new tool to need only a new adapter, so that support does not
-  mean redesign.
-
-#### Technical Specification
-
-> **Not yet specified — `/aid-specify` has not run on this feature.**
->
-> The scenarios below are **not** its output. They were authored by `/aid-define`'s
-> cross-reference pass under the retired per-feature `SPEC.md` schema, which carried
-> feature-level acceptance criteria. Criteria now live once in §9 and are cited above, so these
-> are retained here as **verification detail and an input to `/aid-specify`** — several of them
-> cover a claimed FR clause that no §9 criterion reaches on its own, which is why deleting them
-> would lose coverage the cross-reference pass built.
-
-##### BDD Scenarios
-
-- [ ] Given an idle Claude Code session in one repository and an idle Cursor session in
-      another **on the same machine**, when one sends a message to their shared chat, then
-      the recipient acts on it with no human action.
-- [ ] Given an idle session with an adapter armed, when a message arrives, then a turn
-      begins without human input.
-- [ ] Given a session mid-turn, when a message arrives, then it is delivered at that
-      session's next turn boundary.
-- [ ] Given several messages arriving while a session is busy, when its turn ends, then all
-      are delivered, in order.
-- [ ] Given an armed adapter and no traffic, when it waits for an extended period, then no
-      model tokens are consumed.
-- [ ] Given a host with no adapter, when a message arrives, then the session can still read
-      it at its next turn — degraded, not broken.
-- [ ] Given both shipped adapters, when their implementations are compared, then they share
-      the same node, store and wire protocol, differing only in the adapter.
-
-### Feature 008 — Chat Skill
-
-- **Priority:** Must
-- **Requirements:** §5 FR-0.2, FR-0.4, FR-7.3, FR-7.4 (the **skill-invokes-the-CLI** clause only — see the ownership note under Feature 003); §4 In Scope (the rendered chat skill) and §4 Out of Scope (the withdrawn MCP façade); §7 Constraints (the agent-facing-surface bullet); §10 stage P2
-- **Criteria:** AC-15  ← ids from §9; never restated here
-
-#### Description
-
 The thing that tells a session the chat exists.
 
 **The CLI is not the problem; being found is.** `aid chat` is on PATH globally and carries the
@@ -1829,6 +1732,24 @@ believed empty here — but it is the one real loss, and it is named.
 
 #### User Stories
 
+- As a subscriber, I want the node to push a message as soon as it arrives, so that nothing
+  has to poll.
+- As a subscriber, I want to stay connected after receiving a message, so that a busy chat
+  does not mean constant reconnection.
+- As a subscriber on a host that cannot hold a socket, I want a long wait that reconnects,
+  so that the same behaviour is available with a simpler transport.
+- As a session, I want messages that arrived while I was reconnecting to be delivered next
+  time, in order, so that the gap costs latency and not correctness.
+- As a developer in Claude Code, I want a message from a colleague's session to reach me
+  while I am idle, so that I do not have to check.
+- As a developer in Cursor, I want the same, so that the tool I use does not decide whether
+  I can be reached.
+- As a developer mid-task, I want messages that arrived while I was working handed to me
+  when I finish, so that being busy delays them rather than losing them.
+- As the operator, I want an idle session to cost nothing while it waits, so that leaving
+  sessions open all day is free.
+- As a maintainer, I want a new tool to need only a new adapter, so that support does not
+  mean redesign.
 - As a session, I want to discover that the chat exists without being told by a human, so that
   I use it at all.
 - As a session, I want to send and read messages as part of my work, so that messaging is not a
@@ -1844,16 +1765,53 @@ believed empty here — but it is the one real loss, and it is named.
 
 #### Technical Specification
 
-> **Not yet specified — `/aid-specify` has not run on this feature.**
->
-> The scenarios below are **not** its output. They were authored by `/aid-define`'s
-> cross-reference pass under the retired per-feature `SPEC.md` schema, which carried
-> feature-level acceptance criteria. Criteria now live once in §9 and are cited above, so these
-> are retained here as **verification detail and an input to `/aid-specify`** — several of them
-> cover a claimed FR clause that no §9 criterion reaches on its own, which is why deleting them
-> would lose coverage the cross-reference pass built.
+{Added by /aid-specify — do not fill during interview.}
 
 ##### BDD Scenarios
+
+> **Provenance.** The scenarios below are not `/aid-specify` output. They were authored
+> during requirements work under a retired schema that held feature-level acceptance
+> criteria; §9 is now the only place a criterion is stated, so these are verification
+> detail and an input to `/aid-specify`. Several cover a claimed FR clause that no §9
+> criterion reaches on its own, which is why they were kept rather than deleted.
+
+*From Push Subscription:*
+
+- [ ] Given an armed subscriber, when a message is sent to its chat, then the node pushes
+      it without being polled.
+- [ ] Given a subscriber that has just received a message, when another arrives, then it is
+      delivered over the same connection with no reconnection in between.
+- [ ] Given messages arriving while a subscriber is between connections, when it
+      reconnects, then **all** of them are delivered, in order.
+- [ ] Given an idle subscriber and no traffic, when the configured timeout elapses, then it
+      reconnects and remains able to receive.
+- [ ] Given a host that cannot hold a socket open, when it subscribes by long wait, then it
+      receives the same messages as a socket subscriber.
+- [ ] Given the timeout is reconfigured, when a subscriber reconnects, then the new value
+      is in effect — the limit is a default, not a constant.
+- [ ] Given the subscriber, when it is inspected, then it is **a CLI invocation** rather than
+      a separate program speaking HTTP — the transport stays internal to the node, and the
+      CLI is what carries the subscriber, completing FR-0.3.
+
+*From Host Waker Adapters:*
+
+- [ ] Given an idle Claude Code session in one repository and an idle Cursor session in
+      another **on the same machine**, when one sends a message to their shared chat, then
+      the recipient acts on it with no human action.
+- [ ] Given an idle session with an adapter armed, when a message arrives, then a turn
+      begins without human input.
+- [ ] Given a session mid-turn, when a message arrives, then it is delivered at that
+      session's next turn boundary.
+- [ ] Given several messages arriving while a session is busy, when its turn ends, then all
+      are delivered, in order.
+- [ ] Given an armed adapter and no traffic, when it waits for an extended period, then no
+      model tokens are consumed.
+- [ ] Given a host with no adapter, when a message arrives, then the session can still read
+      it at its next turn — degraded, not broken.
+- [ ] Given both shipped adapters, when their implementations are compared, then they share
+      the same node, store and wire protocol, differing only in the adapter.
+
+*From Chat Skill:*
 
 - [ ] Given a session following the chat skill, when it sends, reads, acknowledges, joins and
       leaves, then all succeed.
@@ -1879,25 +1837,22 @@ believed empty here — but it is the one real loss, and it is named.
 - [ ] Given the documentation, when the privilege boundary is described, then it states plainly
       that a session with shell access can reach the administrative surface.
 
-### Feature 009 — LAN Federation
+### Feature 004 — LAN Federation
 
 - **Priority:** Must
-- **Requirements:** §5 FR-2.2 (the cross-machine half of name uniqueness), FR-3.1 (network half), FR-3.2, FR-3.3, FR-6.1–6.4; §4 Scope; §8 Assumptions (cross-machine reach); §10 stage P3
+- **Requirements:** §5 FR-2.2 *(the cross-machine half of name uniqueness)*, FR-3.1 *(network
+  half)*, FR-3.2, FR-3.3, FR-6.1–6.4; §4 Scope; §8 Assumptions *(cross-machine reach)*;
+  §10 stage P3
 - **Criteria:** AC-2, AC-4, AC-5, AC-16, AC-19  ← ids from §9; never restated here
 
-> **The discovery contradiction is closed (2026-09-01).** The Description, the user story and
-> the scenario each promised discovery *without configuration*, while AC-4 — the criterion
-> this feature owns — requires only that discovery be satisfiable by a path depending on no
-> network feature. All three now state the bounded promise §4 makes, and the scenario is split
-> so the guaranteed path is tested and the zero-configuration layer is marked best-effort and
-> criterion-free. What `/aid-specify` still owns is **which** mechanisms fill each layer;
-> FR-6.1 fixes only that the outcome is reached and that no layer is load-bearing alone.
+> **This stage delivers the target case** — a developer in one tool on one machine exchanging
+> messages with a developer in another tool on another machine.
 >
-> **One constraint carried in from stakeholder decision Q24, recorded because its own question
-> closed by deletion and the constraint would otherwise have gone with it:** the node ships
-> inside the `aid` payload and so carries `VERSION`, which makes the artifact version and the
-> **protocol** version independent. FR-6.4's compatibility contract must therefore be stated by a
-> protocol version number of its own and **never inferred from `VERSION`**.
+> **One constraint carried in from a stakeholder decision whose own question closed by deletion,
+> recorded because it would otherwise have gone with it:** the node ships inside the `aid`
+> payload and so carries `VERSION`, which makes the artifact version and the **protocol** version
+> independent. FR-6.4's compatibility contract must therefore be stated by a protocol version
+> number of its own and **never inferred from `VERSION`**.
 
 #### Description
 
@@ -1943,16 +1898,15 @@ nothing reports an error.
 
 #### Technical Specification
 
-> **Not yet specified — `/aid-specify` has not run on this feature.**
->
-> The scenarios below are **not** its output. They were authored by `/aid-define`'s
-> cross-reference pass under the retired per-feature `SPEC.md` schema, which carried
-> feature-level acceptance criteria. Criteria now live once in §9 and are cited above, so these
-> are retained here as **verification detail and an input to `/aid-specify`** — several of them
-> cover a claimed FR clause that no §9 criterion reaches on its own, which is why deleting them
-> would lose coverage the cross-reference pass built.
+{Added by /aid-specify — do not fill during interview.}
 
 ##### BDD Scenarios
+
+> **Provenance.** The scenarios below are not `/aid-specify` output. They were authored
+> during requirements work under a retired schema that held feature-level acceptance
+> criteria; §9 is now the only place a criterion is stated, so these are verification
+> detail and an input to `/aid-specify`. Several cover a claimed FR clause that no §9
+> criterion reaches on its own, which is why they were kept rather than deleted.
 
 - [ ] Given a Cursor session on one machine and a Claude Code session on another on the same
       network, when one sends to their shared chat, then the recipient **acts on it with no
@@ -1983,11 +1937,25 @@ nothing reports an error.
 - [ ] Given a machine on the network, when a session lists its chats, then it sees the chats
       that machine hosts and their members.
 
-### Feature 010 — Directed Chat Messages
+### Feature 005 — Directed Messages, Retention and Visibility
 
 - **Priority:** Must
-- **Requirements:** §5 FR-3.5, FR-3.6, FR-3.7, FR-4.1 (the `mention?` / `whisper_to?` fields), FR-4.3 (whisper filtering); §10 stage P4
-- **Criteria:** AC-17, AC-18  ← ids from §9; never restated here
+- **Requirements:** §5 FR-2.3 *(the reaping clause)*, FR-3.5, FR-3.6, FR-3.7, FR-4.1 *(the
+  `mention?` / `whisper_to?` fields)*, FR-4.3 *(whisper filtering)*, FR-7.1, FR-7.2 *(the
+  retention-policy clause)*; §6 Limits, retention and policy *(the TTL, unread-depth,
+  overflow-policy, payload-size and **reap-threshold** parameters)*; §6 Delivery semantics *(the
+  Retention row)*; §3 Users & Stakeholders *(the operator)*; §10 stage P4
+- **Criteria:** AC-11, AC-14, AC-17, AC-18  ← ids from §9; never restated here
+
+> **The weakest cohesion of the five, and it is worth saying so.** Addressing within a chat,
+> retention, and the operator's view share a stage and a dependency on the store rather than a
+> subject. They are one feature because none is large and the decomposition was asked to be
+> minimal; splitting them into three is available at any point and costs nothing but a boundary.
+>
+> **What holds them together is the store's own tail.** Mention and whisper are visibility rules
+> over the existing durable log. Retention decides when a row may leave it. Operator visibility
+> reads what is in it — including the unread depths that reaping changes. All three are the
+> consequences of a chat having history, which is why they arrive after it does.
 
 #### Description
 
@@ -2016,51 +1984,6 @@ can see a mention of someone who cannot see the message.
 Everything else already works: a chat message reaches every member through the existing
 durable log, and each member keeps their own place. Whisper is a visibility rule on top of
 that, not a second delivery mechanism.
-
-#### User Stories
-
-- As a session in a busy chat, I want to aim a message at a particular member, so that they
-  know it needs them while everyone keeps the context.
-- As a session, I want to say something to one member only, so that a side conversation does
-  not interrupt everyone.
-- As a whisper recipient, I want to be sure nobody else can read it, so that private means
-  private.
-- As a member who was not whispered to, I want no trace of it in the history, so that the
-  record matches what I was shown at the time.
-
-#### Technical Specification
-
-> **Not yet specified — `/aid-specify` has not run on this feature.**
->
-> The scenarios below are **not** its output. They were authored by `/aid-define`'s
-> cross-reference pass under the retired per-feature `SPEC.md` schema, which carried
-> feature-level acceptance criteria. Criteria now live once in §9 and are cited above, so these
-> are retained here as **verification detail and an input to `/aid-specify`** — several of them
-> cover a claimed FR clause that no §9 criterion reaches on its own, which is why deleting them
-> would lose coverage the cross-reference pass built.
-
-##### BDD Scenarios
-
-- [ ] Given a message that mentions a member, when it is delivered, then every member
-      receives it and the mentioned member can tell it was aimed at them.
-- [ ] Given a message whispered to one member, when it is delivered, then only that member
-      and the sender receive it.
-- [ ] Given a whispered message, when another member reads the chat's history, then it does
-      not appear — **not on delivery and not afterwards**.
-- [ ] Given a message, when it carries both a mention and a whisper, then it is rejected.
-- [ ] Given a two-member chat, when a message is sent with neither mention nor whisper, then
-      it behaves exactly as before — larger chats add these, they do not change the small
-      case.
-- [ ] Given a whisper, when it is stored, then it uses the same durable log and per-member
-      position as every other message.
-
-### Feature 011 — Retention Enforcement
-
-- **Priority:** Must
-- **Requirements:** §5 FR-2.3 (the reaping clause), FR-7.2 (the retention-policy clause); §6 Limits, retention and policy (the TTL, unread-depth, overflow-policy, payload-size and **reap-threshold** parameters — the stale-session threshold belongs to Feature 004 and the long-poll timeout to Feature 006); §6 Delivery semantics (the Retention row only); §10 stage P4
-- **Criteria:** AC-11  ← ids from §9; never restated here
-
-#### Description
 
 The part that stops a chat growing forever — without ever losing a message to do it.
 
@@ -2105,8 +2028,33 @@ Every limit is a **default, not a constant** — how long messages are kept, how
 member may fall, what happens on overflow, how long silence means gone. All of it is
 changeable through the CLI without touching code.
 
+Your window into what the sessions have been saying to each other.
+
+The operator launches the fleet and is accountable for it, but sees none of the traffic —
+the messages go between sessions, not through a person. This gives you the view: which
+machines and sessions exist, which chats are on this machine and who is in them, how far
+behind each member is, and a record of what was sent.
+
+The unread counts are the diagnostic that matters. A member sitting at zero is keeping up.
+One climbing toward the limit is a session that has stopped reading — a stuck agent, a
+closed window, an adapter that quietly failed. That number is usually the first visible
+symptom.
+
+**This feature only reads.** It changes nothing, sends nothing, and deletes nothing. That
+separation is deliberate: cleanup runs on a timer and modifies state, whereas this prints
+what is there. They shared a name in an earlier draft, which hid the fact that they have
+nothing in common.
+
 #### User Stories
 
+- As a session in a busy chat, I want to aim a message at a particular member, so that they
+  know it needs them while everyone keeps the context.
+- As a session, I want to say something to one member only, so that a side conversation does
+  not interrupt everyone.
+- As a whisper recipient, I want to be sure nobody else can read it, so that private means
+  private.
+- As a member who was not whispered to, I want no trace of it in the history, so that the
+  record matches what I was shown at the time.
 - As the operator, I want old messages removed automatically once everyone has read them, so
   that a long-running node does not fill the disk.
 - As a recipient who was away, I want a message addressed to me to still be there when I come
@@ -2117,19 +2065,43 @@ changeable through the CLI without touching code.
   not stop cleanup for everyone in that chat.
 - As the operator, I want to change any of these numbers without a code change, so that I can
   tune them to how I actually work.
+- As the operator, I want to see which sessions are registered and which are marked stale, so
+  that I know what is actually alive.
+- As the operator, I want to see the chats on this machine and their members, so that I know
+  who can hear whom.
+- As the operator, I want each member's unread count, so that I can spot a session that has
+  stopped reading before anyone complains.
+- As the operator, I want a record of what was sent, so that I can audit what the sessions
+  told each other.
 
 #### Technical Specification
 
-> **Not yet specified — `/aid-specify` has not run on this feature.**
->
-> The scenarios below are **not** its output. They were authored by `/aid-define`'s
-> cross-reference pass under the retired per-feature `SPEC.md` schema, which carried
-> feature-level acceptance criteria. Criteria now live once in §9 and are cited above, so these
-> are retained here as **verification detail and an input to `/aid-specify`** — several of them
-> cover a claimed FR clause that no §9 criterion reaches on its own, which is why deleting them
-> would lose coverage the cross-reference pass built.
+{Added by /aid-specify — do not fill during interview.}
 
 ##### BDD Scenarios
+
+> **Provenance.** The scenarios below are not `/aid-specify` output. They were authored
+> during requirements work under a retired schema that held feature-level acceptance
+> criteria; §9 is now the only place a criterion is stated, so these are verification
+> detail and an input to `/aid-specify`. Several cover a claimed FR clause that no §9
+> criterion reaches on its own, which is why they were kept rather than deleted.
+
+*From Directed Chat Messages:*
+
+- [ ] Given a message that mentions a member, when it is delivered, then every member
+      receives it and the mentioned member can tell it was aimed at them.
+- [ ] Given a message whispered to one member, when it is delivered, then only that member
+      and the sender receive it.
+- [ ] Given a whispered message, when another member reads the chat's history, then it does
+      not appear — **not on delivery and not afterwards**.
+- [ ] Given a message, when it carries both a mention and a whisper, then it is rejected.
+- [ ] Given a two-member chat, when a message is sent with neither mention nor whisper, then
+      it behaves exactly as before — larger chats add these, they do not change the small
+      case.
+- [ ] Given a whisper, when it is stored, then it uses the same durable log and per-member
+      position as every other message.
+
+*From Retention Enforcement:*
 
 - [ ] Given a message older than the configured lifetime **that every live member has read**,
       when retention runs, then it is removed.
@@ -2157,54 +2129,7 @@ changeable through the CLI without touching code.
 - [ ] Given a very large message, when it is sent, then it is accepted — size is not limited,
       and the unread count is what bounds storage.
 
-### Feature 012 — Operator Visibility
-
-- **Priority:** Must
-- **Requirements:** §5 FR-7.1; §3 Users & Stakeholders (the operator); §10 stage P4
-- **Criteria:** AC-14  ← ids from §9; never restated here
-
-#### Description
-
-Your window into what the sessions have been saying to each other.
-
-The operator launches the fleet and is accountable for it, but sees none of the traffic —
-the messages go between sessions, not through a person. This gives you the view: which
-machines and sessions exist, which chats are on this machine and who is in them, how far
-behind each member is, and a record of what was sent.
-
-The unread counts are the diagnostic that matters. A member sitting at zero is keeping up.
-One climbing toward the limit is a session that has stopped reading — a stuck agent, a
-closed window, an adapter that quietly failed. That number is usually the first visible
-symptom.
-
-**This feature only reads.** It changes nothing, sends nothing, and deletes nothing. That
-separation is deliberate: cleanup runs on a timer and modifies state, whereas this prints
-what is there. They shared a name in an earlier draft, which hid the fact that they have
-nothing in common.
-
-#### User Stories
-
-- As the operator, I want to see which sessions are registered and which are marked stale, so
-  that I know what is actually alive.
-- As the operator, I want to see the chats on this machine and their members, so that I know
-  who can hear whom.
-- As the operator, I want each member's unread count, so that I can spot a session that has
-  stopped reading before anyone complains.
-- As the operator, I want a record of what was sent, so that I can audit what the sessions
-  told each other.
-
-#### Technical Specification
-
-> **Not yet specified — `/aid-specify` has not run on this feature.**
->
-> The scenarios below are **not** its output. They were authored by `/aid-define`'s
-> cross-reference pass under the retired per-feature `SPEC.md` schema, which carried
-> feature-level acceptance criteria. Criteria now live once in §9 and are cited above, so these
-> are retained here as **verification detail and an input to `/aid-specify`** — several of them
-> cover a claimed FR clause that no §9 criterion reaches on its own, which is why deleting them
-> would lose coverage the cross-reference pass built.
-
-##### BDD Scenarios
+*From Operator Visibility:*
 
 - [ ] Given registered sessions, when the operator lists them, then each is shown with its
       machine, tool and liveness.
