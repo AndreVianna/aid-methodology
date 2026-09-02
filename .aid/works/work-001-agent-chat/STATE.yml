@@ -110,17 +110,17 @@ started: '2026-09-01'
 # [W] resolved at runtime by `bash canonical/aid/scripts/config/read-setting.sh --skill {phase} --key minimum_grade --default A`; source is `.aid/settings.yml`
 minimum_grade: A
 # [W] 'yes' | 'no' -- quoted, see NFR-2 / D-5
-user_approved: 'no'
+user_approved: 'yes'
 # [W] Running | Paused-Awaiting-Input | Blocked | Completed | Canceled
-lifecycle: Running
+lifecycle: Paused-Awaiting-Input
 # [W] Describe | Define | Specify | Plan | Detail | Execute
 phase: Describe
 # [W] aid-{skill} | none
 active_skill: none
 # [W]
-updated: '2026-09-01T00:00:00Z'
+updated: '2026-09-02T14:32:15Z'
 # [W] set only when lifecycle = Paused-Awaiting-Input
-pause_reason: --
+pause_reason: 'Requirements approved — run /aid-define work-001 to decompose into features'
 # [W] set only when lifecycle = Blocked
 block_reason: --
 # [W] e.g. IMPEDIMENT-task-NNN.md, or the failed gate
@@ -133,7 +133,7 @@ ticket_ref: --
 #   grade: {grade} | Pending
 #   sections[].state: Pending | Complete
 interview:
-  state: 'In Progress'
+  state: Approved
   grade: Pending
   sections:
     - id: 1
@@ -346,6 +346,10 @@ review_history:
     event: 'COMPLETION -- quality check and KB hydration'
     outcome: 'quality check clean with one noted caveat; 1 KB doc hydrated'
     notes: 'Quality check: every feature owns at least one criterion; all 22 criteria name an observable; sections 4 and 5 consistent across the six in-scope items checked; the three reset classes swept in earlier turns are clean. One caveat recorded rather than fixed -- AC-9s second half ("running the command again is safe") is falsifiable only as far as "does not fail destructively" until FR-1.1s open start-idempotence sub-decision lands, which the document already flags. KB hydration: external-sources.md gains the node:sqlite entry -- vendor version history (added 22.5.0 flagged, unflagged 22.13.0, release candidate 24.15.0) plus the first-hand store-contract measurements on v22.14.0, v24.19.0 and v26.7.0, with method and dates. Both are durable facts about a third-party runtime, the same class as the host harness docs already there, and expensive to re-derive. Nothing forward-looking was written: the node does not exist, so no technology-stack or architecture content is true yet.'
+  - date: '2026-09-02'
+    event: 'Approval gate'
+    outcome: 'Approved'
+    notes: 'Stakeholder approved the assembled requirements after a whole-picture read-back. Ten sections Complete, 22 criteria each owned by exactly one feature, 40 functional sub-requirements each mapped. Five interview turns, five decisions: the pre-reset deploy/install residue swept as a class (which reopened section 1, since it had carried the defect while marked Complete and exempt from sweeping); zero-configuration discovery bounded to best-effort rather than promised; the nodes Node floor declared >=22.13.0, determined by the store rather than chosen; node:sqlites experimental warning suppressed narrowly; and the scope-reset prehistory stripped from sections 1-10. Q1 answered: FR-8s withdrawal now stands on a reason independent of the PyPI channel decision, which is labelled an input rather than asserted as fact. One assumption re-confirmed at the gate and left standing on that footing. Next: /aid-define work-001.'
 
 # [A] written by the orchestrator on the work's active branch (single
 #     writer). Append-only audit trail of phase transitions and gate
