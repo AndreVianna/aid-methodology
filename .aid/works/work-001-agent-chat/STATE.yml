@@ -392,6 +392,31 @@ review_history:
       'signal: none observable (Windows)'. The three spike_*.py files are force-added so they can
       be fetched onto the laptop; close-out step 159 git-rm's them and step 162 verifies none
       survive, keeping AC-20's no-carry-forward requirement checkable by search.
+  - date: '2026-09-02'
+    event: 'Feature 001 spike -- test 1 executed on machine A'
+    outcome: 'Pass: Claude Code wakes. SURVIVED(30) + act. 4 findings recorded, 1 design-changing'
+    notes: >-
+      Run T1-000-a on Claude Code 2.1.258 / Windows 11 26200 / win32. The hook blocked 30.117 s
+      against a 30 s deadline and returned under its own power; the stub had been asked to wait
+      60 s so it could not have answered first, which is what makes the return the hook's own and
+      not a stub artifact. Claude Code parsed the decision=block payload, surfaced its reason
+      field, and the agent ran the named command, writing the act line 7.581 s after the wake was
+      emitted. Wall and monotonic clocks agreed to 0.0003 s and no beat gap exceeded 0.258 s, so
+      the machine did not suspend and the process was scheduled throughout. The probe never armed
+      for this run -- three attempts expired before the hook started -- so there is no external
+      liveness evidence, which is acceptable here because end proves the hook was not killed and
+      act proves a turn ran, but is not acceptable for test 3 where KILLED and ABANDONED are
+      otherwise indistinguishable. Four findings recorded in FINDINGS.md. F1 is design-changing
+      and was not anticipated by the specification: the stop hook RE-FIRES 6.257 s after the
+      woken turn, so waking is inherently a loop -- the wake ends a turn, ending a turn fires the
+      stop hook, and the stop hook wakes the agent. Only the throwaway arming sentinel stopped a
+      second block. Feature 003 must therefore carry an explicit re-entry rule; 'block on every
+      stop event' is not implementable. F2: Claude Code runs hooks through bash on Windows, so a
+      waker cannot assume native-shell quoting and must emit paths bash will not eat. F3: the
+      instruction reaches the model labelled as a hook error, which is user-visible. F4: an
+      interpreter on PATH may be a shim -- this machine's python is a pyenv-win python.bat -- so
+      the waker must resolve the interpreter from the running process, never from PATH.
+    applied_to: 'FINDINGS.md (created); throwaway/spike_hook.py; throwaway/spike_probe.py; SPIKE-RUNBOOK.md'
 # [A] written by the orchestrator on the work's active branch (single
 #     writer). Append-only audit trail of phase transitions and gate
 #     approvals, newest LAST (append to bottom).
