@@ -138,7 +138,7 @@ interview:
   sections:
     - id: 1
       name: Objective
-      state: Pending
+      state: Complete
       updated: '2026-09-01'
     - id: 2
       name: 'Problem Statement'
@@ -162,11 +162,11 @@ interview:
       updated: '2026-09-01'
     - id: 7
       name: Constraints
-      state: Pending
+      state: Complete
       updated: '2026-09-01'
     - id: 8
       name: 'Assumptions & Dependencies'
-      state: Pending
+      state: Complete
       updated: '2026-09-01'
     - id: 9
       name: 'Acceptance Criteria'
@@ -338,6 +338,10 @@ review_history:
     event: 'Interview turn 4 -- the experimental warning is suppressed, narrowly'
     outcome: '3 edits; FR-7.7 gains a requirement, Feature 003 a scenario'
     notes: 'Below Node 24.15.0 the built-in SQLite module prints an ExperimentalWarning to stderr on every open -- observed first-hand on v22.14.0 -- so on the floor just declared every start would carry a line the operator cannot act on. Stakeholder decision: suppress it. Scoped deliberately to that one message on that one runtime range, never warnings wholesale, so a different experimental warning still surfaces on a module at release-candidate status. The reasoning is FR-7.7s own actionable-error principle applied to success rather than failure: the nodes stderr is where AC-22s prerequisite error must land, and a line on every start is what teaches an operator to stop reading it. No section-9 criterion was added -- the behaviour is verified as a Feature 003 scenario, because section 9 was just renumbered gapless and appending to it should be deliberate rather than a side effect. The filter expires by construction once the declared floor reaches 24.15.0.'
+  - date: '2026-09-01'
+    event: 'Interview turn 5 -- scope-reset prehistory stripped from sections 1-10'
+    outcome: '11 edits; sections 1, 7 and 8 closed, 4 still open'
+    notes: 'A requirements document states what is true now and why, not how it came to say that -- git holds the latter. Removed: dated reset markers, previously-X framing, and reversal narratives, across section 1, section 4s facade bullet, FR-6.1, FR-7.6, the FR-8 note, section 7s agent-surface bullet, section 8s toolchain line and closed-by-deletion paragraph, and section 10s adjacency note. Kept, restated in the present tense where needed: every live rationale, including why a skill beats an MCP facade and the one thing that choice gives up. Three things deliberately not stripped -- FR-1.1s open start-idempotence sub-decision, the ID-9/12/13 override annotations (a conclusion copied without its override reinstates a rejected design), and the PyPI premise itself, which is the next open question. Section 4 stays Pending because it carries that premise.'
 
 # [A] written by the orchestrator on the work's active branch (single
 #     writer). Append-only audit trail of phase transitions and gate

@@ -33,8 +33,7 @@ node itself has a single responsibility, message exchange, and ships no operator
 its own. Nodes federate to other machines over a trusted LAN. Sessions reach the node
 **through the `aid` CLI**, which carries the whole message plane over one core; a **rendered
 chat skill** makes that surface discoverable to a session without being a second surface of its
-own (§4, FR-0). An MCP façade was specified here and **withdrawn on 2026-08-10** — see §4 Out of
-Scope for why.
+own (§4, FR-0).
 
 A hosting server is available but is **deliberately unused in v1**; it is held in reserve
 for a later delivery, should NAT traversal or relay ever be required.
@@ -139,19 +138,15 @@ orchestrator and needs to see and audit what was sent between them.
 
 ### Out of Scope
 
-- **An MCP façade.** Dropped on 2026-08-10. §7 rested the choice on two reasons "and no
-  broader one" and named the second decisive — that MCP reaches a session "not running AID at
-  all". **That reason does not hold:** AID must be present for the chat to exist, and the
-  `aid` CLI is installed globally on PATH, so the CLI already reaches every session a rendered
-  skill could not. What was left was discoverability, and the skill above serves it on better
-  terms — all five hosts by construction rather than "confirmed for two", no third-party
-  dependency, and no configuration snippet for the user to install by hand.
-- **Raising the repository's Python floor.** Removed from scope on 2026-08-10, and this is a
-  deletion rather than a deferral: with the adopter-facing runtime on Node and the PyPI
-  channel dropped, no shipped code will declare a Python floor to raise. (Dropping that channel
-  is a settled decision arriving as a premise, not work this document performs — see the FR-8
-  withdrawal note.) The maintainer-only
-  profile renderer stays on Python and is a separate, maintainer-scoped concern.
+- **An MCP façade.** The rendered chat skill above is the agent-facing surface instead, and it
+  serves the only thing a second surface was needed for — discoverability — on better terms:
+  all five hosts by construction, no third-party dependency, and nothing for the user to
+  install by hand. §7 carries the full reasoning.
+- **Raising the repository's Python floor.** With the adopter-facing runtime on Node and the
+  PyPI channel dropped, no shipped code will declare a Python floor to raise. (Dropping that
+  channel is a settled decision arriving as a premise, not work this document performs — see
+  the FR-8 note.) The maintainer-only profile renderer stays on Python and is a separate,
+  maintainer-scoped concern.
 - **A second implementation of the node.** One runtime, one implementation. The local
   dashboard server's Node/Python twin is a precedent this work declines to follow — roughly
   8,300 lines mirroring roughly 10,100, kept in step by a dedicated CI parity gate. A node
@@ -254,7 +249,7 @@ concept instead of two, with private conversation as its smallest instance.
 
 | # | Requirement |
 |---|---|
-| FR-6.1 | **Nodes find each other on the LAN.** This is stated as an *outcome*, not a mechanism, and the change is deliberate: the mechanism was previously fixed as mDNS, and research established that no single mechanism reaches every environment users are actually in — WSL2 host-to-distro multicast is an open upstream defect, access-point client isolation and VLAN splits defeat broadcast and multicast alike, and macOS 15+ gates both silently for a per-user agent. Of eleven comparable local-first tools surveyed, only two make mDNS their primary mechanism, and **every one of them ships a manual path as the backstop.** The requirement is therefore that discovery **works**, with a guaranteed path that depends on no network feature, and zero-configuration discovery layered above it as best-effort. `/aid-specify` fixes the layers; this requirement fixes only that the outcome is reached and that no layer is load-bearing alone |
+| FR-6.1 | **Nodes find each other on the LAN.** This is stated as an *outcome* rather than a mechanism, deliberately: research established that no single mechanism reaches every environment users are actually in — WSL2 host-to-distro multicast is an open upstream defect, access-point client isolation and VLAN splits defeat broadcast and multicast alike, and macOS 15+ gates both silently for a per-user agent. Of eleven comparable local-first tools surveyed, only two make mDNS their primary mechanism, and **every one of them ships a manual path as the backstop.** The requirement is therefore that discovery **works**, with a guaranteed path that depends on no network feature, and zero-configuration discovery layered above it as best-effort. `/aid-specify` fixes the layers; this requirement fixes only that the outcome is reached and that no layer is load-bearing alone |
 | FR-6.2 | Node-to-node trust is **implicit in network membership** — a node reachable on the trusted LAN participates. No key, password, or login is required, of a peer node or of a session |
 | FR-6.3 | The **sending** node stores and forwards a message whose destination chat's **home machine** is offline, delivering it once that machine returns |
 | FR-6.4 | The handshake compares protocol versions by **semantic versioning**: nodes sharing a **major** version interoperate, and minor or patch differences are compatible by contract. Only a **major** difference — which by definition means a breaking change — fails the handshake, and it fails with an explicit error |
@@ -276,39 +271,27 @@ own, administered through `aid`, with state under `$AID_HOME`.
 | FR-7.3 | **The agent-facing surface describes the message plane and nothing else.** The chat skill documents `send` / `inbox` / `ack` and a session's own membership (FR-3.4). It does not describe stopping the node, altering configuration, retention policy, creating or deleting a chat, or changing another session's membership. It documents no `wait` either: FR-4.7 forbids a blocking operation anywhere, and waiting is the waker adapter's job. **This is a surface boundary, not a sandbox** — and the honesty is now structural rather than a caveat: the boundary is a *skill that omits things*, and any session whose host lets it run shell commands can invoke the full CLI directly. It states what the product **offers** an agent and is explicit that it prevents nothing. Real containment would need a session-scoped credential, which this product does not have (there is no authentication anywhere — §4) and does not claim |
 | FR-7.4 | **Every face invokes the CLI rather than reimplementing node behaviour**, and the node publishes no client library or SDK for one to bind to. The chat skill is instructions that call `aid chat`; the subscriber of FR-5.1 is a CLI invocation. Together these keep the HTTP transport internal to the node |
 | FR-7.5 | The node has a **single responsibility: message exchange.** It ships no CLI and no operator surface of its own, and every human-facing operation against it is an `aid` subcommand. A change that would give the node its own operator-facing command is out of scope |
-| FR-7.6 | **The node ships inside the `aid` payload, and carries no third-party dependency.** This requirement was previously the opposite — the node was a separate distributable *because* it needed third-party libraries — and **that premise is now false**, which is why the conclusion inverts rather than being defended. Both named libraries are gone: mDNS is replaced by a discovery design built on the standard library (FR-6.1), and the MCP server implementation left with the façade (§4 Out of Scope). A component with zero dependencies costs an uninterested user nothing but disk, so the separation bought nothing and cost a whole install-and-fetch surface. The node is therefore provisioned exactly as `dashboard/` already is: a runtime component at the repository root, listed in a manifest that every publication channel derives its file set from. **AID's zero-runtime-dependency decision is preserved literally, not amended** — no carve-out is required, because there is nothing to carve out |
+| FR-7.6 | **The node ships inside the `aid` payload, and carries no third-party dependency.** The node needs no third-party library at all: mDNS is replaced by a discovery design built on the standard library (FR-6.1), and the MCP server implementation left with the façade (§4 Out of Scope). A component with zero dependencies costs an uninterested user nothing but disk, so the separation bought nothing and cost a whole install-and-fetch surface. The node is therefore provisioned exactly as `dashboard/` already is: a runtime component at the repository root, listed in a manifest that every publication channel derives its file set from. **AID's zero-runtime-dependency decision is preserved literally, not amended** — no carve-out is required, because there is nothing to carve out |
 | FR-7.7 | **A Node runtime is a prerequisite of the chat node, and this is stated rather than implied.** The `aid` CLI itself remains runtime-free — Bash and PowerShell only — so installing, updating and removing AID needs nothing but a shell. What this requirement governs is **the chat node**. Two other components need Node already, before and independently of this work, and are named for context rather than claimed as scope: the two on-demand skills that invoke Node scripts, and the dashboard server, which has offered a Node runtime alongside a Python one for as long as it has existed — **which of those two the dashboard keeps is adjacent work, not this requirement's** (see §10). The prerequisite is **checked before any side effect, with an explicit, actionable error** — never a stack trace, never a silent failure. It is honest about reach, and the distinction it draws is the load-bearing one: the audience installs its host tools through npm, so a runtime is **present**, but **no named host tool establishes which version** — several bundle their own or declare no minimum at all (§8 states this per host rather than as a count, deliberately). So Node may be assumed present; *a recent* Node may not, which argues for a **low** declared floor. **The node's floor is therefore `>=22.13.0`** — low, and determined rather than chosen: the built-in SQLite module the store depends on does not exist before 22.5.0 and needs a flag the node cannot assume until 22.13.0 (§8). It is stated here rather than deferred precisely because it looks like a judgement call and is not; a reader weighing the adoption argument alone would reasonably inherit the repository's `>=22` and ship a node that cannot open its own store on five of that line's releases. **The floor for components every adopter runs is a separate number and is not this requirement's** — they have different needs and need not agree. **One consequence of that floor is a requirement in its own right: the node emits no runtime warning the operator cannot act on.** Below Node 24.15.0 the built-in SQLite module prints an `ExperimentalWarning` to stderr on every open, so on the declared floor every start would carry a line nobody can do anything about. The node suppresses **that** message on **that** runtime range and nothing else — never warnings wholesale, so a different experimental warning still reaches the operator. This is the same principle as the actionable-error rule above, applied to success rather than failure: the node's stderr is where AC-22's prerequisite error has to land, and a line on every start is what teaches an operator to stop reading it |
 
 ### FR-8 — withdrawn
 
-**FR-8 (repository Python floor) was deleted on 2026-08-10 and is not renumbered**, so that
-every reference to FR-8.1–FR-8.7 elsewhere resolves to this note rather than to silence or,
-worse, to a different requirement that inherited the number.
+**The number FR-8 is not reused**, so that any reference to FR-8.1–FR-8.7 resolves here rather
+than to a different requirement that inherited it. FR-8 would have raised the repository's
+declared Python floor; with the adopter-facing runtime on Node and the PyPI channel dropped,
+no shipped artifact declares a Python floor for it to raise.
 
-It required raising the declared Python floor to 3.12 across a declaration, eight CI pins,
-fourteen documentation statements and eleven Knowledge Base places. **The runtime decision
-removes its subject rather than deferring its work:** the adopter-facing runtime components
-move to Node and the PyPI channel is dropped, so `packages/pypi/pyproject.toml` — the file
-carrying the declaration — **is slated for deletion**, after which no shipped artifact declares a
-Python floor.
+> **A premise, not a deliverable, and the distinction is load-bearing.** Dropping the PyPI
+> channel arrives here as an **input**: this document is written on the strength of that
+> decision, and does not perform it. Executing it — deleting `packages/pypi/`, retiring the
+> publish job, choosing the dashboard's surviving implementation — is adjacent work, in scope
+> for neither this document nor any criterion in §9.
+>
+> **On disk today `packages/pypi/pyproject.toml` still exists and still reads `>=3.8`**, so the
+> Knowledge Base entry recording that untested floor (`M5`) is accurate and must not be closed
+> until the deletion lands — at which point it closes as *Not Applicable*, its premise removed
+> rather than its defect fixed.
 
-> **A premise, not a deliverable — and the distinction is load-bearing, so it is stated once here
-> and referenced from every other withdrawal note.** Dropping the PyPI channel is a **settled
-> stakeholder decision that arrives as an input to this document.** Executing it — deleting
-> `packages/pypi/`, retiring the publish job, choosing the dashboard's surviving implementation —
-> is **adjacent work that is not in this document's scope and is verified by no criterion here**
-> (§10). Both halves are needed to read the withdrawals correctly:
->
-> - Because the decision is **settled**, FR-8 is withdrawn *now*: building a requirement whose
->   only subject is a file already slated for deletion would be waste, whichever work deletes it.
-> - Because the execution is **adjacent**, this document must not claim credit for it, predict
->   its date, or describe it as done.
->
-> **On disk today `packages/pypi/pyproject.toml` still exists and still reads `>=3.8`.** An
-> earlier draft of this note said it "ceases to exist", which read as an accomplished fact and was
-> false. It also means the `tech-debt.md` entry recording the untested floor (`M5`) is **still
-> accurate today** and must not be closed until the deletion actually lands — at which point it
-> closes as *Not Applicable*, its premise removed rather than its defect fixed.
 The maintainer-only profile renderer remains on Python. It declares no floor of its own today,
 and if it should, that is a separate maintainer-scoped change with no adopter-facing effect.
 
@@ -403,14 +386,13 @@ release condition. Speed is deliberately unconstrained until the design is prove
   `aid chat` to a model, and a session that does not know the command exists will not guess it.
   A skill is exactly the artifact that fixes that, and this repository already renders one
   canonical skill into all five host dialects automatically.
-  **This replaces an MCP façade, and the reversal is recorded rather than quietly dropped**,
-  because the argument that was called decisive was wrong. That argument was that MCP "reaches
-  a session not running AID at all", which a rendered skill cannot. It does not hold: AID must
-  be present for a chat to exist at all, and the globally-installed CLI already reaches any
-  session a skill could not. Set against that, MCP cost a third-party dependency, a
-  per-host configuration snippet the **user** had to install by hand (the old FR-0.4), and a
-  coverage claim established for only two of five named hosts — while the skill route covers
-  all five by construction, costs no dependency, and needs no step from the user.
+  **An MCP façade is the alternative, and it loses on every axis that matters here.** The one
+  thing it could do that a skill cannot — reach a session not running AID at all — is not a
+  case that exists: AID must be present for a chat to exist, and the globally-installed CLI
+  already reaches any session a skill could not. Against that it costs a third-party
+  dependency, a per-host configuration snippet the **user** installs by hand, and coverage
+  established for only two of the five named hosts — where the skill route covers all five by
+  construction, costs no dependency, and needs no step from the user.
   **What this is deliberately *not* claimed on:** hosts that permit tool calls but forbid shell
   execution. Such a host would be reachable by MCP and not by a skill. All five named targets
   are terminal coding agents for which shell access is constitutive, so the category is
@@ -467,7 +449,7 @@ its override reinstates a design that was rejected.
 ## 8. Assumptions & Dependencies
 
 **Cross-machine reach — resolved.** v1 assumes a flat, **trusted LAN**: peers find each other
-(FR-6.1 — an outcome, no longer a named mechanism),
+(FR-6.1 — stated as an outcome),
 trust implicit in network membership, store-and-forward for offline peers. Because there is
 no authentication anywhere in the product, the security boundary *is* the network — anything
 that can reach the LAN can send, read, and register. NAT/firewall traversal and any
@@ -531,8 +513,7 @@ unmeasured. That is why P0 tests Claude Code first (test 1) and Cursor second. T
 number that decides the design is **how long a Cursor `stop` hook may block before the host
 kills it.**
 
-**Toolchain — Node, with no third-party runtime dependency.** Replaced on 2026-08-10; the
-previous entry read "Python 3.12, `mcp`/FastMCP for the MCP façade, `zeroconf` for mDNS."
+**Toolchain — Node, with no third-party runtime dependency.**
 
 | Concern | Choice | Third-party dependency |
 |---|---|---|
@@ -599,13 +580,6 @@ would double the test matrix permanently to insure against a failure that has no
 a product with no performance target. What is built instead is a startup assertion on the
 runtime's reported SQLite version and the engine's own reported version, failing with an
 actionable message rather than a stack trace.
-
-**Closed by deletion: where `aid chat deploy` obtains the node.** This was recorded here as a
-deliberate deferral to `/aid-specify`, turning on the offline air-gapped channel that has no
-package index to reach. **The question no longer has a subject.** The node ships inside the
-`aid` payload (FR-7.6), so there is nothing to fetch on any channel, air-gapped included, and
-`deploy` itself is gone. It is recorded as closed rather than removed, so that the deferral is
-seen to have been resolved rather than forgotten.
 
 **Two floors, not one — and only one of them is still open.** The components every adopter runs
 and the opt-in node have different needs and need not agree. The research below is explicit
@@ -725,21 +699,17 @@ existing users and the only deliverable whose value was independent of whether t
 mechanism works at all. Everything remaining is on the critical path, and everything remaining
 depends on P0's answer.
 
-**This requirement set now ships no breaking change of its own**, and the distinction matters
-enough to state rather than leave implied. P0b was the only stage that did.
+**This requirement set ships no breaking change of its own**, and the distinction matters
+enough to state rather than leave implied.
 
-The runtime decision that removed P0b **does** carry breaking changes — dropping the PyPI
-publication channel, and which implementation of the dashboard is the shipped one — but **those
-are not in this document's scope and are not verified by any criterion here.** This is the
-Agent Chat Channel; §4 In Scope names the chat, the node, federation, delivery and the chat
-skill, and it names no publication channel and no dashboard work. They are adjacent changes that
-share a cause with this reset, released and announced on their own terms.
+Two breaking changes sit nearby and are **not** in this document's scope, nor verified by any
+criterion in §9: dropping the PyPI publication channel, and which implementation of the
+dashboard is the shipped one. This is the Agent Chat Channel — §4 In Scope names the chat, the
+node, federation, delivery and the chat skill, and names no publication channel and no dashboard
+work. Both are released and announced on their own terms.
 
-Stating it this way is deliberate, because the alternative was the error this note replaces: an
-earlier draft asserted that "retiring the dashboard's Python implementation" ships as part of
-this work, which nothing in §4, §5 or §9 supports. The reason P0b was kept separate applies to
-those changes too — a breaking change buried inside a feature is how breaking changes ship by
-accident — but the way to honour that here is to disclaim them, not to adopt them.
+They are disclaimed rather than adopted, and deliberately so: a breaking change buried inside a
+feature is how breaking changes ship by accident.
 
 **Rationale.** P0 is near-free — a stub endpoint that waits, then answers — and is the only
 stage capable of invalidating the architecture. If a host cannot hold a token-free wait and
