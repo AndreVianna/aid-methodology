@@ -151,6 +151,12 @@ powercfg /query SCHEME_CURRENT SUB_SLEEP | Select-String "STANDBYIDLE|HIBERNATEI
 
 **29.** In terminal 2, run `PY ~\spike\spike_probe.py --run T1-000-a`.
 
+> The probe waits up to 15 minutes for the hook to arm, which is deliberate: registering a hook
+> in a host tool's UI and then prompting a session does not fit inside a minute. If the probe
+> prints `no hook start line for this run within ...s`, it gave up before the hook fired and the
+> run is void for that reason alone -- restart the probe and prompt sooner, or pass a larger
+> `--arm-timeout`.
+
 **30.** Confirm it printed that it is waiting for the hook's start line.
 
 **31.** Leave terminal 2 alone for the rest of this part.
@@ -197,11 +203,11 @@ PYEXE HOOK --host claude --run T1-000-a --deadline 30
 **36.** Write down the current time as the no-touch start.
 
 **37.** Send the session one short prompt, such as `say ok`, and let it finish answering.
+
 > A stop hook fires when a turn **ends**, so a session that was never prompted never fires one.
 > The prompt only has to produce a turn; its content is irrelevant. Send it, let the answer
 > finish, and the hook arms itself at that moment -- that is when the no-touch window really
 > begins.
-
 
 **38.** Do not touch the machine for 60 seconds.
 
@@ -255,28 +261,16 @@ PYEXE HOOK --host claude --run T1-000-a --deadline 30
 PYEXE HOOK --host cursor --run T2-000-a --deadline 30
 ```
 
-> The hook defaults to the wake convention Claude Code documents: JSON on stdout carrying
-> `decision: block` plus the command to run. Whether Cursor honours that same shape is **not
-> known** — finding out is part of what this test is for.
->
-> So if this run blocks cleanly but no `act` line ever appears, do not record Fail yet. Repeat the
-> run as `T2-001-a` with `--wake-schema exit2` appended, which puts the instruction on stderr and
-> exits 2 instead. Record which schema produced the `act`, because that answer is as much a
-> finding as the Pass itself.
->
-> If neither schema works, Fail is the correct record — and `FR-5.2` already allows Cursor
-> degrading to the pull floor.
-
 **56.** Pre-approve that command in Cursor's settings.
 
 **57.** Write down the current time as the no-touch start.
 
 **58.** Send the session one short prompt, such as `say ok`, and let it finish answering.
+
 > A stop hook fires when a turn **ends**, so a session that was never prompted never fires one.
 > The prompt only has to produce a turn; its content is irrelevant. Send it, let the answer
 > finish, and the hook arms itself at that moment -- that is when the no-touch window really
 > begins.
-
 
 **59.** Do not touch the machine for 60 seconds.
 
@@ -324,7 +318,17 @@ letter (`a`, `b`, `c`).
 
 **R3.** In terminal 2, run `PY ~\spike\spike_probe.py --run T3-<D>-<L>`.
 
-**R4.** Register the Cursor stop hook: `PYEXE HOOK --host cursor --run T3-<D>-<L> --deadline <D>`
+**R4.** Register the Cursor stop hook:
+`PYEXE HOOK --host cursor --run T3-<D>-<L> --deadline <D> --wake-action text`
+
+> `--wake-action text` is mandatory for the ladder. It asks the woken turn for a single word, using
+> no tool and no command, so nothing it does can raise an approval prompt. Under the default
+> `command` action the woken turn's tool call is gated behind a human click on Cursor, and since
+> `ABANDONED` means "no witness within 120 s", every rung would have been timing the operator
+> instead of the host. One measured run came within 1.2 s of being misfiled as "Cursor refused to
+> wake" for exactly that reason.
+>
+> The witness in this mode is the `refire` line, not `act`.
 
 **R5.** Write down the current time as the no-touch start.
 
@@ -336,54 +340,70 @@ letter (`a`, `b`, `c`).
 
 **R9.** Write down the outcome, using exactly one label from the table below, plus the log excerpt.
 
+
 | Label | What the log shows |
 |---|---|
-| **SURVIVED(D)** | An `"event": "end"` line whose note says *returned under own power*, **and** an `act` line after it |
-| **KILLED(t)** | The `beat` lines stop at `t` < `D`, **and** a `probe` line shows `"alive": false`. On Windows there will be **no** `killed` line and no `signal` — the last `beat` bounds `t` to ±0.25 s |
-| **ABANDONED(D)** | `probe` lines show alive all the way through `D`, the hook returned, but **no** `act` line within 120 s |
+| **SURVIVED(D)** | An `end` line saying *returned under own power*, with `kind` = `timeout` and `elapsed` at least 90% of `D`, followed by a `refire` line within 120 s |
+| **KILLED(t)** | The `beat` lines stop at `t` < `D`, **and** a `probe` line shows `"alive": false`. On Windows there is **no** `killed` line and no `signal` — the last `beat` bounds `t` to ±0.25 s |
+| **ABANDONED(D)** | `probe` lines show alive all the way through `D`, `end` says *returned under own power*, but **no** `refire` line within 120 s |
+| **VOID** | An `error` line. `APPARATUS FAULT` means the request never reached the stub, so nothing was measured — check the stub is listening, then rerun. *stub answered before the deadline* means the wrong `--after` or the wrong stub |
+
+> Read `kind` and `elapsed` on the `end` line, not only its wording. A request that failed in
+> milliseconds used to be reported as a full-duration block; `elapsed` is what makes the difference
+> visible, because a genuine block shows `elapsed` at essentially `D`.
+
 
 ### Phase 1 — the ladder
 
-**72.** Run the recipe with `D` = 5, `L` = `a`.
+**72.** Run the recipe with `D` = 60, `L` = `a`.
 
-**73.** If the outcome was SURVIVED, run the recipe with `D` = 15, `L` = `a`.
+> The ladder starts at 60, not 5. Test 2's run `T2-001-a` already held Cursor for 30.104 s with
+> unbroken probe coverage, dying only after writing its own `end`, so every rung below 30 is
+> already known to survive and spending runs there buys nothing. Step 81 covers the case where 60
+> fails.
 
-**74.** If that SURVIVED, run the recipe with `D` = 30.
+**73.** If that SURVIVED, run the recipe with `D` = 120, `L` = `a`.
 
-**75.** If that SURVIVED, run the recipe with `D` = 60.
+**74.** If that SURVIVED, run the recipe with `D` = 300, `L` = `a`.
 
-**76.** If that SURVIVED, run the recipe with `D` = 120.
+**75.** If that SURVIVED, run the recipe with `D` = 600, `L` = `a`.
 
-**77.** If that SURVIVED, run the recipe with `D` = 300.
+**76.** Write down `S` — the largest `D` that SURVIVED.
 
-**78.** If that SURVIVED, run the recipe with `D` = 600.
+**77.** Write down `F` — the smallest `D` that did not.
 
-**79.** Write down `S` — the largest `D` that SURVIVED.
+**78.** If `D` = 600 SURVIVED, write down the answer as "≥ 600 s, no limit observed".
 
-**80.** Write down `F` — the smallest `D` that did not.
+**79.** If `D` = 600 SURVIVED, write down that 600 s was the ceiling probed.
 
-**81.** If `D` = 600 SURVIVED, write down the answer as "≥ 600 s, no limit observed".
-
-**82.** If `D` = 600 SURVIVED, write down that 600 s was the ceiling probed.
-
-**83.** If `D` = 600 SURVIVED, skip to step 94.
+**80.** If `D` = 600 SURVIVED, skip to step 94.
 
 > Chasing an upper bound past 600 s spends hours to change no decision: `§6`'s long-poll default
 > is 30 s. Recording the ceiling stops "≥ 600 s" being misread as "unbounded".
 
-**84.** If `D` = 5 did **not** SURVIVE, run the recipe with `D` = 2.
+**81.** If `D` = 60 did **not** SURVIVE, set `S` = 30 and `F` = 60.
 
-**85.** If `D` = 2 did not SURVIVE, run the recipe with `D` = 1.
+**82.** If `D` = 60 did not SURVIVE, go to step 89 and bisect between them.
 
-**86.** If `D` = 1 did not SURVIVE, write down the answer as "the `stop` hook may not block at all".
+> `S` = 30 is not assumed, it is Test 2's measurement. The bisection then searches 30 to 60 exactly
+> as it would any other bracket.
 
-**87.** If `D` = 1 did not SURVIVE, write down the terminal mode and the observed `t`.
+**83.** If any rung at or below 30 fails, rerun that same rung once before believing it.
 
-**88.** If `D` = 1 did not SURVIVE, skip to step 98.
+**84.** If it fails the rerun, write down that the limit sits below Test 2's measured 30 s.
 
-> That outcome is not a failure of the spike — it is the answer this stage exists to find. Cursor
-> would have no viable waker adapter and would degrade to the pull floor, which `FR-5.2` already
-> allows for.
+**85.** If it fails the rerun, write down both figures — Test 2's 30.104 s and this rung's outcome.
+
+**86.** If it fails the rerun, treat the disagreement between them as the finding.
+
+**87.** If it fails the rerun, write down what differed between the two runs.
+
+**88.** If it fails the rerun, skip to step 98.
+
+> A rung below 30 failing contradicts a measurement already in hand, so it is reported as a
+> contradiction rather than silently replacing the earlier number. Cursor having no viable waker at
+> all remains a legitimate answer — `FR-5.2` already allows degrading to the pull floor — but it
+> needs two consistent runs, not one.
 
 ### Phase 2 — bisection
 
@@ -497,7 +517,7 @@ Get-NetIPAddress -AddressFamily IPv4 | Where-Object { $_.InterfaceAlias -notmatc
 **125.** On machine B, run `curl.exe "http://A_ADDR:8811/wait?after=0&run=T4-PING&text=ping"`.
 
 > Use `curl.exe`, not `curl`. In Windows PowerShell 5.1 `curl` is an **alias for
-> `Invoke-WebRequest`**, which takes different arguments and returns a different object.
+> `Invoke-WebRequest**`, which takes different arguments and returns a different object.
 
 **126.** Confirm it returned JSON.
 
@@ -607,17 +627,19 @@ mandatory "what was tried" paragraph for anything Inconclusive.
 
 If machine A is a Linux VM, the scripts are identical; only the shell forms differ.
 
-| Windows (PowerShell) | Linux |
-|---|---|
-| `PY script.py` | `python3 script.py` |
-| `$env:SPIKE_MACHINE = 'A'` then the command | `SPIKE_MACHINE=A python3 script.py` (one line) |
-| `Get-Content file` | `cat file` |
-| `Copy-Item a b` | `cp a b` |
-| `Get-NetIPAddress ...` | `hostname -I` |
-| `curl.exe "URL"` | `curl "URL"` |
-| `Remove-Item -Recurse -Force dir` | `rm -rf dir` |
-| `New-NetFirewallRule ...` | usually nothing; if `ufw` is active: `sudo ufw allow 8811/tcp` |
-| `~\spike\` | `~/spike/` |
+
+| Windows (PowerShell)                        | Linux                                                          |
+| ------------------------------------------- | -------------------------------------------------------------- |
+| `PY script.py`                              | `python3 script.py`                                            |
+| `$env:SPIKE_MACHINE = 'A'` then the command | `SPIKE_MACHINE=A python3 script.py` (one line)                 |
+| `Get-Content file`                          | `cat file`                                                     |
+| `Copy-Item a b`                             | `cp a b`                                                       |
+| `Get-NetIPAddress ...`                      | `hostname -I`                                                  |
+| `curl.exe "URL"`                            | `curl "URL"`                                                   |
+| `Remove-Item -Recurse -Force dir`           | `rm -rf dir`                                                   |
+| `New-NetFirewallRule ...`                   | usually nothing; if `ufw` is active: `sudo ufw allow 8811/tcp` |
+| `~\spike\`                                  | `~/spike/`                                                     |
+
 
 **On Linux, test 3's resolution is exact rather than ±0.25 s**, because the hook can catch
 SIGTERM and record the kill instant itself. That only matters if the Cursor session is the Linux
