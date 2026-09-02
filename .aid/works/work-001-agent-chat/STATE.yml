@@ -321,6 +321,28 @@ review_history:
       once, 40 requirements mapped, section 10 and section 11 agreeing stage for stage.
       Feature 005 is recorded as the weakest cohesion of the five rather than presented as clean.
   - date: '2026-09-02'
+    event: 'Feature 001 apparatus built and smoke-tested (out of phase, deliberately)'
+    outcome: '3 throwaway scripts, gitignored; 4 host tests remain unrun'
+    notes: >-
+      The spike blocks Feature 003, and it needs two live host sessions that a cloud agent cannot
+      be -- the protocols own validity rule says a session holding a foreground shell call open is
+      busy, not idle, and a run arranged that way is invalid, so this process cannot be both the
+      harness under test and the observer. What it CAN do is build the apparatus, so it did:
+      spike_stub_node.py, spike_hook.py and spike_probe.py, written to the A+ specification and
+      smoke-tested end to end. Verified here -- the endpoint contract including all three 400
+      cases and the 404, seq incrementing per request, refusal to start on a bound port, a
+      SURVIVED run with 13 beats and the act reaching the stub, a KILLED run where SIGTERM at 1.5s
+      of a 30s block produced signal 15 with the probe confirming the pid gone, the arm-once
+      sentinel refusing a second block, and VOID detection when the stub answers first. One defect
+      found and fixed in the process: default log paths resolved from the working directory, which
+      created a nested throwaway/throwaway when run from inside the scripts own folder and would
+      have put logs somewhere unpredictable when a host spawned a hook -- they now resolve from the
+      scripts own location, verified by running from /tmp. NOT verified and not verifiable here:
+      anything a host does. All four tests are unrun. SPIKE-RUNBOOK.md carries the operator steps,
+      and the hook placement is the operators by requirement, not by convenience -- FR-0.4 forbids
+      the product writing any host tools configuration, and the specification puts the hook in a
+      scratch project outside this repository.
+  - date: '2026-09-02'
     event: 'Cross-Reference -- 2 cycles, D then B, closing A+'
     outcome: 'A+ (8 ledger rows, all Fixed); minimum A met'
     notes: >-
