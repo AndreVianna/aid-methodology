@@ -14,6 +14,7 @@ sources:
   - https://antigravity.google/docs/cli/subagents
   - https://github.com/orgs/community/discussions/160291
   - https://forum.cursor.com/t/mcp-elicitation-support-immediate-need/116516
+  - https://nodejs.org/api/sqlite.html
 tags: [meta, external-docs, vendor-specs, references]
 see_also: [integration-map.md]
 owner: architect
@@ -70,5 +71,43 @@ marketing: MCP is a **pull** surface on these hosts. Server-initiated MCP messag
 unsupported in Copilot and unimplemented in Cursor, so no MCP server can start a turn in an
 idle session. Most vendor "notification" features notify the **human**, not the agent — a
 distinction worth checking before relying on any of them.
+
+### Node's built-in SQLite module
+
+`node:sqlite` is the runtime's own SQLite binding — no third-party dependency, no native
+build step. Its **availability is version-gated in a way the module's own presence does not
+reveal**, which is the reason this entry exists: a declared floor of `>=22` admits releases on
+which `require('node:sqlite')` throws, and the failure reads as a missing module rather than
+as an unmet version requirement.
+
+| Source | URL | What it answers | Accessed |
+|---|---|---|---|
+| Node.js SQLite API | https://nodejs.org/api/sqlite.html | Version history: **added in v22.5.0** behind `--experimental-sqlite`; the flag requirement was **removed in v22.13.0** (and v23.4.0); **release-candidate status in v24.15.0** (and v25.7.0). Below 24.15.0 the module emits an `ExperimentalWarning` on stderr at every open | 2026-09-01 |
+
+**So the usable floor is 22.13.0, not 22.** On 22.0–22.4 the module does not exist at all; on
+22.5–22.12 it exists only behind a flag. Anything declaring a Node floor for a component that
+opens `node:sqlite` needs 22.13.0 or later, and a floor of `>=22` is not one.
+
+#### First-hand measurements
+
+Run against the module directly rather than read from documentation, and recorded here as
+first-hand — the same distinction this document draws for the Claude Code harness above.
+**Method:** each clause executed against a real database file on each runtime; **runtimes:**
+Node v22.14.0, v24.19.0 and v26.7.0; **date:** 2026-09-01 (v22.14.0) and 2026-08-10 (the
+other two).
+
+| Property | Result |
+|---|---|
+| Write-ahead logging | Engages and persists across reopen |
+| `synchronous=FULL` | Sticks |
+| Partial unique index | Rejects a duplicate key while permitting many nulls |
+| `ON DELETE CASCADE` | Fires |
+| Concurrent reader/writer | A reader held a transaction open 3 s while a writer committed 49 rows; slowest commit 3 ms |
+| Crash durability | `SIGKILL` mid-transaction left the committed rows, discarded the uncommitted one, and passed `integrity_check` |
+
+**Two findings that surprise people, and are worth knowing before designing against this
+module:** the default `busy_timeout` is **0**, so a second writer fails instantly rather than
+waiting unless a non-zero value is set explicitly; and there is **no `db.transaction()`
+helper**, so a transaction wrapper is hand-written.
 
 If further external documentation becomes available, re-run discovery or add it here.
