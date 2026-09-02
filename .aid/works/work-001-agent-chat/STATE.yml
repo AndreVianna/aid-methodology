@@ -466,6 +466,32 @@ review_history:
       one-word reply, so they measure different work and no same-action pair has been run on both
       hosts.
     applied_to: 'FINDINGS.md (test 3 ladder table, latency finding)'
+  - date: '2026-09-02'
+    event: 'Feature 001 spike -- ABANDONED(120) on Cursor; two limits separated; bisection opens'
+    outcome: 'ABANDONED(120). F7 filed: block-tolerance and act-willingness are distinct limits. S=60 F=120'
+    notes: >-
+      Run T3-120-a blocked the full 120.097 s with socket elapsed 120.068 s, kind=timeout,
+      elapsed/D 1.0006, drift 0.0017 s, and the probe holding alive=true throughout before going
+      false 0.158 s after end. So Cursor did NOT kill it. But no refire was written and the operator
+      confirms no ACK ever appeared in the session, and the 120 s witness window had closed before
+      the check, so ABANDONED(120) is a determination rather than a timing artefact. This is F7 and
+      it corrects a premise the specification and the apparatus shared: the question 'how long may a
+      stop hook block' is two questions. How long the host lets a hook BLOCK measures at >= 120 s
+      with no upper bound found; how long it stays willing to ACT afterwards falls somewhere in
+      (60, 120]. A design reading only the first number would conclude a 120 s long-poll is safe
+      when it is not -- the hook returns, the message is in hand, and nothing happens, which from
+      inside the product is indistinguishable from no message having arrived. Section 6's 30 s
+      long-poll default sits inside the region where both limits hold, so the default is not in
+      question; what is now excluded is treating the long-poll as freely tunable upward on the
+      strength of the blocking limit alone. Left open and NOT answered by this run: whether Cursor
+      read the decision=block payload and declined it, or had already stopped listening to the
+      hook's stdout. Same observable, different mitigations -- a policy to work within versus a
+      deadline to stay inside -- and distinguishing them needs host-side instrumentation the spike
+      does not have. Bracket is now S=60 F=120 with tolerance max(5, 0.10*120)=12 s; F-S=60 exceeds
+      it, so the ladder stops climbing, the 300 and 600 rungs are moot, and bisection begins at
+      D=90. One incidental note: a single skipped beat at t_mono ~61 s, 0.504 s against a 0.252 s
+      cadence, well inside the 2 s void threshold, so the run stands.
+    applied_to: 'FINDINGS.md (F7, ladder table, test 3 answer)'
 # [A] written by the orchestrator on the work's active branch (single
 #     writer). Append-only audit trail of phase transitions and gate
 #     approvals, newest LAST (append to bottom).

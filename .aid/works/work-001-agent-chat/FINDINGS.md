@@ -34,7 +34,7 @@ none observable (Windows)`.
 |---|---|---|---|
 | 1 | Does an idle Claude Code session wake? | **Yes** | `T1-000-a` |
 | 2 | Does an idle Cursor session wake? | **Yes** | `T2-001-a` |
-| 3 | How long may a Cursor `stop` hook block? | *ladder in progress* — **≥ 60 s** confirmed, no limit yet observed | `T3-60-a` |
+| 3 | How long may a Cursor `stop` hook block? | **≥ 120 s** — but it stops *acting* on the wake between 60 s and 120 s. Bisecting. | `T3-60-a`, `T3-120-a` |
 | 4 | Does the wake cross two machines? | *not yet run* | — |
 
 ---
@@ -109,6 +109,7 @@ wake", which would have been false.
 | `T2-001-a` | 30 | 30.104 s | 1.002 | alive throughout | — | SURVIVED(30) |
 | `T3-60-a` (pid 50100) | 60 | 60.072 s | 1.0007 | alive throughout | 3.264 s | **SURVIVED(60)** |
 | `T3-60-a` (pid 51852) | 60 | 60.086 s | 1.0009 | alive throughout | 3.890 s | **SURVIVED(60)** |
+| `T3-120-a` | 120 | 120.097 s | 1.0006 | alive throughout | **none** | **ABANDONED(120)** |
 
 Two runs were executed at `D` = 60 under the **same run id**, distinguished here by pid. Both
 survived, so 60 has two of the three consistent runs the confirmation phase requires.
@@ -121,7 +122,16 @@ disk. Recorded as a limitation rather than presented as if the raw evidence were
 `T3-60-a` overshot its deadline by 0.072 s, drifted 0.0007 s between wall and monotonic clocks, and
 died 0.099 s after writing its own `end`. Cursor did not interfere with it at any point.
 
-Ladder continues at 120, then 300, then 600.
+`T3-120-a` blocked for the full 120 s and returned under its own power with the probe never
+seeing it die — Cursor did not kill it. But no `refire` was written and **no `ACK` ever appeared in
+the session**, confirmed by the operator. The 120 s witness window had closed before the check, so
+`ABANDONED(120)` is a determination, not a timing artefact.
+
+Bracket is therefore `S` = 60, `F` = 120. Tolerance is `max(5, 0.10 × 120)` = 12 s, and `F − S` = 60,
+so the ladder stops climbing and bisection begins at `D` = 90. The rungs at 300 and 600 are moot.
+
+One incidental observation on `T3-120-a`: a single skipped beat at `t_mono` ≈ 61 s, 0.504 s against a
+0.252 s cadence. Well inside the 2 s void threshold, so the run stands.
 
 ### Cursor's real wake latency is about 3.6 s
 
@@ -143,6 +153,34 @@ has been run. What this number does establish is that the wake mechanism is not 
 ---
 
 ## Findings that change the design
+
+### F7 — Tolerating a long block and acting on it afterwards are two different limits
+
+`T3-60-a` (twice) versus `T3-120-a`. At 60 s Cursor blocked, returned, and ran the woken turn. At
+120 s Cursor **still blocked for the full duration and still let the hook return under its own
+power** — the probe watched it alive the whole time — but then did nothing. No `ACK`, no `refire`.
+
+The specification asked one question, "how long may a `stop` hook block", and the apparatus was
+built to answer one. There are two:
+
+| Limit | Measured |
+|---|---|
+| How long the host lets a hook **block** | ≥ 120 s, no upper bound found |
+| How long it stays willing to **act** afterwards | somewhere in (60, 120] |
+
+A design that reads only the first number would conclude a 120 s long-poll is safe. It is not: the
+hook returns, the message is in hand, and nothing happens. That is the worst failure shape available
+— indistinguishable, from inside the product, from no message having arrived.
+
+`§6`'s 30 s long-poll default sits comfortably inside the region where both limits hold, so the
+default is not in question. What is now excluded is treating the long-poll as freely tunable upward
+on the strength of the blocking limit alone.
+
+**Open, and not answered by this run:** whether Cursor read the `decision: block` payload and
+declined it, or had already stopped listening to the hook's stdout by the time it was written. The
+observable is the same either way, but the two imply different mitigations — the first is a policy to
+work within, the second a deadline to stay inside. Distinguishing them needs host-side instrumentation
+the spike does not have.
 
 ### F1 — The stop hook re-fires after the woken turn
 
