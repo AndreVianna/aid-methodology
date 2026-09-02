@@ -356,3 +356,42 @@ lifecycle_history:
 #     files; aid-deploy is the sole author):
 #   - delivery / state / pr / kb_updated / tag / notes
 deploy: []
+
+# [A] AUTHORED here, not derived. One entry per cross-phase question.
+#   - id / category (e.g. Architecture, Requirements, Security) /
+#     impact: High | Medium | Low | Required /
+#     state: Pending | Answered | Skipped /
+#     context / suggested / answer / applied_to
+#
+# DEVIATION from the template's full-layout omission rule, recorded rather than
+# silent. That rule drops `qa` from a full-path work because it is "DERIVED on
+# the full path" -- assembled from per-delivery STATE.yml files. This work is at
+# Describe. Plan has not run, no delivery exists, and so nothing derives it and a
+# real question has nowhere to live. Declaring the key is the same remedy applied
+# to `features` and `review_history`, and for the same reason: a key called
+# DERIVED whose source does not exist yet cannot hold the data that is real now.
+# aid-specify/SKILL.md already documents this gap one phase later; it bites at
+# Describe too.
+qa:
+  - id: 1
+    category: Requirements
+    impact: High
+    state: Pending
+    context: >-
+      Section 4 Out of Scope and the FR-8 note both rest on "the PyPI channel is dropped".
+      The repository has not acted on it: packages/pypi/pyproject.toml exists and still reads
+      requires-python = ">=3.8", technology-stack.md states that all four channels ship the
+      same CLI, and neither backlog.md nor roadmap.md records a drop. The document hedges the
+      premise correctly -- it calls it an input rather than work this document performs -- but
+      FR-8's withdrawal currently rests on that premise ALONE. Checked: no independent reason
+      for the withdrawal appears anywhere in the document. So if the channel is not dropped,
+      FR-8's subject returns and the withdrawal has nothing left holding it up.
+    suggested: >-
+      Keep the withdrawal; change what it rests on. Give FR-8's withdrawal the reason that
+      holds either way -- raising the repository's Python floor was never a prerequisite for
+      the messaging work, and belongs to whichever work is due to do it, not to this one --
+      and restate the PyPI line as what it is: an input this document was handed, not a fact
+      about the repository it may assert. Nothing else changes: the node is Node either way,
+      and no criterion in section 9 depends on the channel.
+    answer: --
+    applied_to: --
