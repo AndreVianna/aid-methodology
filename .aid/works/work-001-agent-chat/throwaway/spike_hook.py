@@ -39,6 +39,7 @@ import argparse
 import json
 import os
 import signal
+import socket
 import sys
 import threading
 import time
@@ -116,22 +117,54 @@ def _install_signal_handlers() -> None:
             pass
 
 
-def _block(url: str, after: int, deadline: float) -> tuple[bool, str]:
-    """Block on a real socket read. Returns (returned_under_own_power, note)."""
+# Fraction of the deadline a timeout must reach to count as the hook having blocked for its
+# full duration. A timeout is the expected terminal path, but only if it arrives when the
+# deadline says it should; one that fires far earlier means the socket layer gave up, not that
+# the hook served its time.
+_TIMEOUT_TOLERANCE = 0.90
+
+
+def _block(url: str, after: int, deadline: float) -> tuple[str, str]:
+    """Block on a real socket read. Returns (verdict, note).
+
+    verdict is one of:
+      own_power    -- timed out client-side at approximately `deadline`; the hook served its
+                      full block and returned by itself. The only measurable outcome.
+      early_answer -- the stub responded before the deadline. It was asked for deadline+30, so
+                      this cannot happen unless the wrong stub or wrong `after` was used. VOID.
+      failed       -- the request failed for any other reason, or timed out far too early:
+                      connection refused, DNS, TLS, a wrong port. VOID, and specifically NOT a
+                      measurement.
+
+    The three were previously collapsed into `"err" in result`, which made every failure look
+    like a successful full-duration block. A stub that was not listening produced connection
+    refused in tens of milliseconds and was recorded as
+    `end -- returned under own power at deadline`, i.e. a SURVIVED at the full deadline that
+    never happened. That is the worst available failure mode: silent, plausible, and wrong in
+    the direction that flatters the result.
+    """
     result: dict[str, Any] = {}
 
     def _request() -> None:
         full = f"{url}?after={after}&run={_run}&text=wake"
+        started = time.monotonic()
         try:
             with urllib.request.urlopen(full, timeout=deadline) as resp:
                 result["body"] = resp.read().decode("utf-8", "replace")[:200]
+                result["kind"] = "answered"
+        except (TimeoutError, socket.timeout) as exc:
+            # The expected terminal path -- but see the elapsed check below.
+            result["err"] = f"{type(exc).__name__}: {exc}"
+            result["kind"] = "timeout"
         except urllib.error.URLError as exc:
-            # A client-side timeout at `deadline` is the EXPECTED path: the stub was asked
-            # for deadline+30, so it cannot have answered. That is the hook returning under
-            # its own power, not a failure.
+            reason = getattr(exc, "reason", None)
             result["err"] = str(exc)
+            result["kind"] = "timeout" if isinstance(reason, (TimeoutError, socket.timeout)) \
+                else "failed"
         except Exception as exc:  # noqa: BLE001 -- the record wants whatever happened
             result["err"] = f"{type(exc).__name__}: {exc}"
+            result["kind"] = "failed"
+        result["elapsed"] = round(time.monotonic() - started, 6)
 
     worker = threading.Thread(target=_request, daemon=True)
     worker.start()
@@ -146,7 +179,18 @@ def _block(url: str, after: int, deadline: float) -> tuple[bool, str]:
             next_beat = now + BEAT_INTERVAL_S
         time.sleep(min(0.05, BEAT_INTERVAL_S))
     worker.join(timeout=1.0)
-    return ("err" in result, json.dumps(result)[:300])
+
+    kind = result.get("kind", "failed")
+    elapsed = result.get("elapsed", 0.0)
+    note = json.dumps(result)[:300]
+
+    if kind == "answered":
+        return "early_answer", note
+    if kind == "timeout" and elapsed >= deadline * _TIMEOUT_TOLERANCE:
+        return "own_power", note
+    if kind == "timeout":
+        return "failed", f"timeout after only {elapsed}s of a {deadline}s deadline; {note}"
+    return "failed", note
 
 
 def _act_command(run: str) -> str:
@@ -288,11 +332,11 @@ def main() -> int:
               note=f"host={args.host} url={args.url} after={after} "
                    f"python={sys.version.split()[0]} platform={sys.platform}")
 
-        own_power, note = _block(args.url, after, args.deadline)
+        verdict, note = _block(args.url, after, args.deadline)
 
         if not _terminal_written.is_set():
             _terminal_written.set()
-            if own_power:
+            if verdict == "own_power":
                 # Returned at D on its own. Whether this is SURVIVED or ABANDONED is not
                 # this process's call -- it depends on whether an act follows within 120 s,
                 # which only the stub's log can show. The classification is made when the
@@ -301,10 +345,17 @@ def main() -> int:
                 # Blocking is not waking. The host must now be told to run a turn, or no act
                 # can ever be written and ABANDONED becomes unfalsifiable.
                 return _wake(args.wake_schema, run)
-            else:
+            elif verdict == "early_answer":
                 _emit("error", d=args.deadline,
                       note=f"stub answered before the deadline -- run is VOID; {note}")
                 print("VOID: the stub returned before the client deadline", file=sys.stderr)
+            else:
+                # Apparatus fault, not a host result. Named separately so it can never be
+                # mistaken for a block that ran its course.
+                _emit("error", d=args.deadline,
+                      note=f"request failed -- APPARATUS FAULT, not a measurement; {note}")
+                print(f"VOID: the wait request failed, so nothing was measured; {note}",
+                      file=sys.stderr)
         return EXIT_OK
     finally:
         if _sink is not None:
