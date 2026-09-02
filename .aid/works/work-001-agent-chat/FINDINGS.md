@@ -107,18 +107,32 @@ wake", which would have been false.
 | Run | `D` | Block achieved | `elapsed`/`D` | Probe | Wake → refire | Outcome |
 |---|---|---|---|---|---|---|
 | `T2-001-a` | 30 | 30.104 s | 1.002 | alive throughout | — | SURVIVED(30) |
-| `T3-60-a` | 60 | 60.072 s | 1.0007 | alive throughout | 3.264 s | **SURVIVED(60)** |
+| `T3-60-a` (pid 50100) | 60 | 60.072 s | 1.0007 | alive throughout | 3.264 s | **SURVIVED(60)** |
+| `T3-60-a` (pid 51852) | 60 | 60.086 s | 1.0009 | alive throughout | 3.890 s | **SURVIVED(60)** |
+
+Two runs were executed at `D` = 60 under the **same run id**, distinguished here by pid. Both
+survived, so 60 has two of the three consistent runs the confirmation phase requires.
+
+The repetition cost the first run's raw log: the operator cleared `T3-60-a.*` before the second
+attempt, which is what allowed the arming sentinel to be bypassed. The first run's figures above are
+preserved from the extraction made when its log was produced, and are **not** re-derivable from
+disk. Recorded as a limitation rather than presented as if the raw evidence were still in hand.
 
 `T3-60-a` overshot its deadline by 0.072 s, drifted 0.0007 s between wall and monotonic clocks, and
 died 0.099 s after writing its own `end`. Cursor did not interfere with it at any point.
 
 Ladder continues at 120, then 300, then 600.
 
-### Cursor's real wake latency is 3.264 s
+### Cursor's real wake latency is about 3.6 s
 
-Run `T3-60-a`, wake to `refire`. This is the figure the voided 118.823 s was hiding: with no
-approval prompt in the path, Cursor turns a returned hook into a completed turn in a little over
-three seconds, using 2.7% of the 120 s window rather than 99%.
+Runs `T3-60-a` pids 50100 and 51852, wake to `refire`: **3.264 s and 3.890 s**, mean 3.577 s,
+spread 0.626 s over two samples. This is the figure the voided 118.823 s was hiding: with no
+approval prompt in the path, Cursor turns a returned hook into a completed turn in under four
+seconds, using about 3% of the 120 s window rather than 99%.
+
+Two samples establish an order of magnitude, not a distribution. The spread between them is 19% of
+the mean, so the third confirmation run at this rung should be treated as informative about
+variance rather than as a formality.
 
 **It is not comparable to Claude Code's 7.581 s.** That figure is wake-to-`act`, which includes
 spawning a Python interpreter and completing an HTTP round trip; this one is wake-to-`refire` for a
