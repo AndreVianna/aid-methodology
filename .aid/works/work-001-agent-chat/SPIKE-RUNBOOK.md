@@ -139,6 +139,29 @@ Copy-Item C:\path\to\repo\.aid\works\work-001-agent-chat\throwaway\spike_*.py ~\
 PYEXE HOOK --host claude --run T1-000-a --deadline 30
 ```
 
+> Prefer Claude Code's own `/hooks` command to register it — an interactive editor cannot get the
+> JSON shape wrong. If you edit `.claude/settings.json` by hand, the event key is `Stop` and the
+> command is a single string:
+>
+> ```json
+> {
+>   "hooks": {
+>     "Stop": [
+>       { "matcher": "",
+>         "hooks": [ { "type": "command", "command": "PYEXE HOOK --host claude --run T1-000-a --deadline 30" } ] }
+>     ]
+>   }
+> }
+> ```
+>
+> **On Windows every backslash in that string must be doubled** — `C:\\Users\\...\\python.exe`. A
+> single backslash is a JSON escape character, so `\U` and `\s` are invalid escapes and the file
+> will either fail to parse or silently mangle the path. Forward slashes also work and avoid the
+> problem entirely: `C:/Users/.../python.exe`.
+>
+> Two paths sit in that one string, `PYEXE` then `HOOK`, separated by a space. Neither may be
+> quoted with single quotes, and neither may point at a `.bat`, `.cmd` or `.ps1`.
+
 **34.** Pre-approve that command in Claude Code's permission settings.
 
 **35.** Confirm no other hook is registered in that project.
