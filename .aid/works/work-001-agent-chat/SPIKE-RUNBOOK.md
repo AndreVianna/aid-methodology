@@ -68,13 +68,20 @@ Copy-Item C:\path\to\repo\.aid\works\work-001-agent-chat\throwaway\spike_*.py ~\
 
 **11.** Write down the Python version.
 
-**12.** Run `Get-Command python | Select-Object -ExpandProperty Source`.
+**12.** Run `PY -c "import sys; print(sys.executable)"`.
 
 **13.** Write down that absolute path. Call it `PYEXE`.
 
-> `PYEXE` is the interpreter's own `.exe` path. You need it because a host hook must be
-> registered as an absolute interpreter path — `py -3` is a launcher shim and is not suitable
-> there.
+> Ask the interpreter where it lives; do not ask `PATH`. `Get-Command python` returns the first
+> match on `PATH`, which on Windows is frequently a Scoop shim, a `WindowsApps` alias stub, or a
+> profile alias — and a shim re-launches the real interpreter as a **child**. The host would then
+> be measuring the shim, the shim would exit immediately, and "still alive" would be unreadable
+> for the process that matters. `sys.executable` is the interpreter's own answer and cannot be a
+> shim.
+>
+> Sanity-check it before going on: the path should end in `python.exe`, and
+> `& "PYEXE" --version` should print the same version you wrote down at step 11. If it ends in
+> `py.exe`, or the version differs, you have the wrong path.
 
 **14.** Run `Resolve-Path ~\spike\spike_hook.py`.
 
