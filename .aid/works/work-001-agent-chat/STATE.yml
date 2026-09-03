@@ -114,20 +114,22 @@ user_approved: 'yes'
 # [W] Running | Paused-Awaiting-Input | Blocked | Completed | Canceled
 lifecycle: Paused-Awaiting-Input
 # [W] Describe | Define | Specify | Plan | Detail | Execute
-phase: Describe
+phase: Specify
 # [W] aid-{skill} | none
 active_skill: none
 # [W]
 updated: '2026-09-03'
 # [W] set only when lifecycle = Paused-Awaiting-Input
 pause_reason: >-
-  The spike is closed: all four tests answered, AC-20 satisfied, findings folded into
-  REQUIREMENTS.md, and Feature 003 unblocked. One thing gates specification -- Feature 002 carries
-  an identity fork, whether to use Cursor's host-supplied conversation_id, and FR-2.4's answer
-  (mint our own, treat the host's as metadata) needs the user's explicit ratification since it was
-  written from a finding rather than decided. Then specify 002, 004, 005, 003 in that order. The
-  spike's own teardown -- delete ~\spike on both machines, remove the stop hooks, drop the port-8811
-  firewall rule, restore power settings -- is still owed by the operator.
+  NOTHING GATES SPECIFICATION. The spike is closed (four of four answered, AC-20 satisfied,
+  findings folded into REQUIREMENTS.md, Feature 003 unblocked) and the identity fork it left is
+  ratified (qa id 2): the product mints its own conversation id because it must control that id's
+  immutability. Awaiting only the go-ahead to run /aid-specify, taking Feature 002 first -- it is
+  the keystone at 9 of 22 criteria and every other feature depends on its store schema -- then 004,
+  005, 003. Two items owed but blocking nothing: the operator's spike teardown (delete the spike
+  folder on both machines, remove the stop hooks, drop the port-8811 firewall rule, restore power
+  settings), and Feature 002's specification must solve stale reattachment without a host-supplied
+  id, which is the cost the ratified decision accepts.
 # [W] set only when lifecycle = Blocked
 block_reason: --
 # [W] e.g. IMPEDIMENT-task-NNN.md, or the failed gate
@@ -765,6 +767,18 @@ lifecycle_history:
     event: 'Work created'
     grade: --
     notes: 'Re-baselined from a predecessor rather than interviewed from zero. The predecessor was wound down because a major release retired the artifact set it was built on and its state file could not be converted without loss; its requirements were sound and are carried. Next: /aid-describe to close sections 4, 7 and 8.'
+  - date: '2026-09-02'
+    event: 'Describe complete -- requirements approved at the gate'
+    grade: A+
+    notes: 'Ten sections Complete, 22 criteria each owned by exactly one feature, 40 functional sub-requirements each mapped, stakeholder approved after a whole-picture read-back. Recorded late: this entry and the two below were owed when they happened and were not written, which is the exact tracking failure AGENTS.md names. Written now from review_history rather than reconstructed from memory -- each cites the review_history entry that is its evidence.'
+  - date: '2026-09-02'
+    event: 'Define complete -- features decomposed and cross-referenced'
+    grade: A+
+    notes: 'Both aid-define stages ran, but INLINE during the Describe cleanup rather than as a separate /aid-define invocation, and that deviation is recorded rather than smoothed over. FEATURE-DECOMPOSITION re-cut section 11 from eleven features to five, aligned to the section 10 priority stages; CROSS-REFERENCE ran two adversarial cycles, D then B, closing A+ on eight ledger rows all Fixed. The features array carries one entry per section 11 feature. No features/ folder was created -- a feature is a section, per the artifact schema.'
+  - date: '2026-09-03'
+    event: 'Feature 001 executed; AC-20 satisfied; the last specification gate cleared'
+    grade: A+
+    notes: 'The P0 spike ran to completion across two machines and both hosts wake. Twelve findings; six became FR-5.6..FR-5.10 and FR-2.4. The one decision the spike left for the stakeholder -- conversation identity -- is ratified (qa id 2) on the stronger reason than the requirement had carried: the product must control the id immutability. Nothing now gates Specify. Next: /aid-specify work-001, taking Feature 002 first, then 004, 005, 003.'
 
 # [A] aid-deploy only; one entry per delivery (never derived from child
 #     files; aid-deploy is the sole author):
@@ -779,13 +793,13 @@ deploy: []
 #
 # DEVIATION from the template's full-layout omission rule, recorded rather than
 # silent. That rule drops `qa` from a full-path work because it is "DERIVED on
-# the full path" -- assembled from per-delivery STATE.yml files. This work is at
-# Describe. Plan has not run, no delivery exists, and so nothing derives it and a
-# real question has nowhere to live. Declaring the key is the same remedy applied
-# to `features` and `review_history`, and for the same reason: a key called
-# DERIVED whose source does not exist yet cannot hold the data that is real now.
-# aid-specify/SKILL.md already documents this gap one phase later; it bites at
-# Describe too.
+# the full path" -- assembled from per-delivery STATE.yml files. Plan has not run,
+# no delivery exists, and so nothing derives it and a real question has nowhere to
+# live. Declaring the key is the same remedy applied to `features` and
+# `review_history`, and for the same reason: a key called DERIVED whose source does
+# not exist yet cannot hold the data that is real now. This bit at Describe, where
+# the first entry was written, and still bites at Specify -- aid-specify/SKILL.md
+# documents the same gap for its own phase.
 qa:
   - id: 1
     category: Requirements
@@ -818,3 +832,31 @@ qa:
       else moved: the node is Node regardless, and no section 9 criterion depends on the
       channel.
     applied_to: 'Section 4 Out of Scope (Python floor bullet); section 5 FR-8 note'
+  - id: 2
+    category: Architecture
+    impact: Required
+    state: Answered
+    context: >-
+      The spike found that Cursor hands its stop hook an undocumented conversation_id (F10),
+      which is exactly the per-conversation identity Feature 002 needs and had assumed it would
+      have to invent. FR-2.4 was written from that finding to mint the product's own id and treat
+      the host's as correlation metadata only, but a requirement written FROM a finding is not the
+      same as a decision taken, and this one has a real cost: FR-2.2 lets a name be re-registered
+      and reattaches the session to its existing memberships and unread positions, which a
+      product-minted id cannot distinguish from a different conversation reusing the same name,
+      while a host-supplied id could. So the fork was left explicit and unratified rather than
+      settled quietly by the agent.
+    suggested: >-
+      Ratify FR-2.4 as written -- mint the product's own id, carry the host's alongside as
+      correlation metadata, key nothing on it -- and treat stale reattachment as a specification
+      problem for Feature 002 to solve without the host's id, so that the behaviour is correct on
+      all five hosts rather than only on the one that supplies a field.
+    answer: >-
+      Ratified, and the stakeholder supplied the governing reason, which is stronger than the one
+      the requirement had: the product must control the id's IMMUTABILITY, and it cannot control
+      that for a value another program owns and may re-issue, re-scope or reuse on its own
+      schedule. Reach -- one host in five, undocumented -- reinforces the decision but no longer
+      carries it. FR-2.4 now leads with immutability; the reach argument is demoted to support.
+      Consequence carried into Feature 002 unchanged: stale reattachment must be solved without a
+      host-supplied id.
+    applied_to: 'Section 5 FR-2.4; section 11 Feature 002 identity note'
