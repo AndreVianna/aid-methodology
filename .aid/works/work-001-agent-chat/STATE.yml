@@ -703,6 +703,32 @@ review_history:
       in the record later readers would mistake for the product's cross-machine limit. The
       idle-timeout risk moves to Feature 004, where the inter-node link is designed.
     applied_to: 'REQUIREMENTS.md (FR-2.4, Feature 002 note); FINDINGS.md (F11, answer table)'
+  - date: '2026-09-03'
+    event: 'Test 4 partial: LAN wake proven; F12 filed on per-host shell quoting'
+    outcome: 'Wake across the LAN confirmed. B act failed on PowerShell quoting; fixed to emit bare paths'
+    notes: >-
+      Run T4-000-b. Machine A (Claude Code) woke and its act reached the stub. Machine B (Cursor) was
+      also woken -- the wake message appeared in the session -- which means B's hook blocked, reached
+      machine A's stub ACROSS THE LAN, and returned under its own power, since a request that never
+      reached the stub would have been classified an apparatus fault and emitted no wake at all. That
+      is the substantive half of AC-20's fourth question and it is now answered yes. The return leg
+      failed: B's act command was rejected by PowerShell with 'Unexpected token', while the identical
+      string had run on machine A. F12 records why. The woken turn's shell differs by host -- bash on
+      Claude Code, PowerShell on Cursor, same OS -- and the two disagree about a leading quoted
+      string: bash treats a quoted word in command position as the command, PowerShell treats it as a
+      string expression and needs the call operator. The operator is not the fix, because in bash it
+      means background and would break the host that works. Portable answer: bare paths, correct in
+      both shells, with host-specific quoting only when a path contains a space. The apparatus now
+      does that. F12 extends FR-5.10 rather than contradicting it -- that requirement covered how the
+      host INVOKES the hook; this adds the shell the WOKEN TURN runs in, which is a separate question.
+      Worth carrying forward: machine B had a Program Files interpreter available with a space in its
+      path, and the space-free pyenv one was chosen deliberately, so the portable form was available
+      by luck of configuration rather than by design. A product cannot choose its users' install
+      paths. Two apparatus-hygiene notes: both machines' probes were still the stale 60 s arm-timeout
+      copy, and a two-machine setup exceeds 60 s comfortably, which is why B's probe gave up even
+      though its hook fired -- and test 4 does not need the probe at all, its criteria being entirely
+      in the stub log.
+    applied_to: 'FINDINGS.md (F12, answer table); throwaway/spike_hook.py'
 # [A] written by the orchestrator on the work's active branch (single
 #     writer). Append-only audit trail of phase transitions and gate
 #     approvals, newest LAST (append to bottom).

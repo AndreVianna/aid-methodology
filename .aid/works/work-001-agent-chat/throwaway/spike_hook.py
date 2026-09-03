@@ -67,6 +67,7 @@ _t0 = time.monotonic()
 _log_lock = threading.Lock()
 _sink: TextIO | None = None
 _run = ""
+_host = ""
 _deadline = 0.0
 _terminal_written = threading.Event()
 
@@ -237,20 +238,31 @@ def _read_host_input() -> dict[str, Any]:
 def _act_command(run: str) -> str:
     """The exact command the woken turn must run, built from this process's own facts.
 
-    sys.executable and __file__ are used rather than anything the operator types, so the
-    command cannot pick up a PATH shim. On this spike's first target machine `python` on PATH
-    was a pyenv-win python.bat, which would have made the act a grandchild of cmd.exe.
+    sys.executable and __file__ are used rather than anything the operator types, so the command
+    cannot pick up a PATH shim. On this spike's target machines `python` on PATH was a pyenv-win
+    python.bat, which would have made the act a grandchild of cmd.exe.
 
-    Separators are normalised to forward slashes. Windows accepts them everywhere, and the host
-    may well run this through bash -- Claude Code does on Windows, reporting /usr/bin/bash. Inside
-    double quotes bash preserves a backslash, so the native form would survive intact; unquoted it
-    would NOT, because bash eats each backslash and
-    "C:\\Users\\a\\spike_hook.py" collapses to "C:Usersaspike_hook.py". That failure reads as a
-    missing file rather than as a mangled path, so it is worth not depending on the agent
-    reproducing the quoting exactly.
+    Quoting is the subtle part, because **the shell the woken turn uses differs by host**, and the
+    two shells disagree about a quoted command:
+
+      bash        a quoted word in command position IS the command, so quotes are safe.
+      PowerShell  a line beginning with a quoted string is a STRING EXPRESSION, not a command.
+                  Quotes there give "Unexpected token" unless the call operator `&` precedes them --
+                  and `&` is not portable, because in bash it means background.
+
+    Observed directly: Claude Code on Windows runs the woken turn through bash and accepted the
+    quoted form; Cursor on Windows uses PowerShell and rejected the identical string.
+
+    So when no path contains a space, emit the paths BARE -- correct in both shells, no host
+    knowledge needed. Only a path containing a space forces quoting, and then the host's own
+    convention must be followed, which is the only reason `--host` is consulted here.
     """
     exe = str(sys.executable).replace("\\", "/")
     me = str(Path(__file__).resolve()).replace("\\", "/")
+    if " " not in exe and " " not in me:
+        return f"{exe} {me} --act {run}"
+    if _host == "cursor":
+        return f'& "{exe}" "{me}" --act {run}'
     return f'"{exe}" "{me}" --act {run}'
 
 
@@ -324,7 +336,7 @@ def _act(url: str, run: str) -> int:
 
 
 def main() -> int:
-    global _sink, _run, _deadline
+    global _sink, _run, _host, _deadline
 
     ap = argparse.ArgumentParser(description="THROWAWAY P0 spike hook / act.")
     ap.add_argument("--host", choices=("claude", "cursor"),
@@ -364,6 +376,7 @@ def main() -> int:
         return EXIT_USAGE
 
     _run = run
+    _host = args.host or ""
     log_path = Path(args.log) if args.log else _LOG_DIR / f"{run}.ndjson"
     try:
         log_path.parent.mkdir(parents=True, exist_ok=True)

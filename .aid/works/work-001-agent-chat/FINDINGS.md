@@ -35,7 +35,7 @@ none observable (Windows)`.
 | 1 | Does an idle Claude Code session wake? | **Yes** | `T1-000-a` |
 | 2 | Does an idle Cursor session wake? | **Yes** | `T2-001-a` |
 | 3 | How long may a Cursor `stop` hook block? | **As long as the hook's own `timeout` allows — there is no separate host limit.** The wake fires iff `D` < `timeout`, verified across five configurations. Platform default is under 60 s; an explicit 3600 was accepted. On expiry the hook is abandoned, not killed. | `T2-001-a`, `T3-60-a` ×2, `T3-120-a` ×2 |
-| 4 | Does the wake cross two machines? | *not yet run* — and **half of it should not be**, see F11 | — |
+| 4 | Does the wake cross two machines? | **Wake: yes** — machine B's hook blocked, reached machine A's stub across the LAN, and woke the session (`T4-000-b`). The return leg is unproven: B's act failed on shell quoting (F12), now fixed, and awaits a rerun | `T4-000-b` |
 
 ---
 
@@ -176,6 +176,48 @@ has been run. What this number does establish is that the wake mechanism is not 
 ---
 
 ## Findings that change the design
+
+### F12 — The shell the woken turn uses differs by host, and the two disagree about quoting
+
+Run `T4-000-b`. Machine B's Cursor session was woken across the LAN and tried to run the act
+command it was handed. It failed: *"PowerShell rejected the quoted paths (Unexpected token)."* The
+identical string had worked on machine A under Claude Code.
+
+The command was:
+
+```
+"C:/Users/andre/.pyenv/.../python3.exe" "C:/Users/andre/spike/spike_hook.py" --act T4-000-b
+```
+
+| Shell | How it reads a leading quoted string |
+|---|---|
+| **bash** | A quoted word in command position **is** the command. Runs. |
+| **PowerShell** | A line beginning with a quoted string is a **string expression**, not a command. `Unexpected token` unless the call operator `&` precedes it. |
+
+So the woken turn's shell is **PowerShell on Cursor** and **bash on Claude Code** — on the same
+machine family, same OS. F2 recorded the bash half from Claude Code's own error message; this is the
+other half, and the two together mean **a waker cannot emit one command string for both hosts**
+unless it avoids the construct they disagree on.
+
+`&` is not the fix: in bash it means *background*, so prefixing it would break the host that
+currently works.
+
+**What is portable:** unquoted paths. A bare path in command position is correct in both shells. It
+only breaks when a path contains a space, and then quoting is unavoidable and must follow the host's
+own convention — which is the single case where the adapter has to know which host it is talking to.
+The apparatus now emits bare paths when neither the interpreter nor the script contains a space, and
+host-specific quoting only when one does.
+
+This extends FR-5.10 rather than contradicting it. That requirement already said an adapter assumes
+nothing about how the host **invokes** it; this adds that it must assume nothing about the shell the
+**woken turn** runs in either, and that the two are not the same question — Claude Code invokes the
+hook through bash *and* runs the woken turn's command through bash, while Cursor's woken turn uses
+PowerShell.
+
+**A path with a space is the case to watch.** Machine B had two interpreters available:
+`C:\Program Files\Python312\python.exe` and a pyenv one with no space. The space-free path was
+chosen deliberately for this run, which meant the portable form was available. A product cannot
+choose its users' install paths, and `C:\Program Files\` is where Windows puts things.
 
 ### F11 — Test 4's network shape is not the product's, so half of it measures the wrong link
 
