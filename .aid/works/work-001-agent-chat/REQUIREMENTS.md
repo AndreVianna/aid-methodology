@@ -284,7 +284,7 @@ rule inside** a channel (whisper, FR-3.6), never a second address space.
 | FR-4.1 | `send(body, kind?, idempotency_key?, mention?, whisper_to?)` delivers to the channel the caller is in — which is the only one it can be in (FR-3.4), so the channel is not a parameter. **It fails with an explicit error where the caller is in no channel, and where the caller is the channel's only member** — the second because a message with nobody to receive it must not be silently accepted (FR-3 preamble). `mention` flags members without restricting visibility; `whisper_to` restricts visibility to one member (FR-3.5, FR-3.6). The two are mutually exclusive on a single message |
 | FR-4.2 | Each **channel** owns a **message log**, replicated to every hub with a member in it, and each **member holds its own position** in that log. **A member joins at the channel's current head: it receives what is said after it arrives, and no history from before.** So a hub acquiring a channel for the first time starts an **empty** replica and accumulates from the join point — there is no backfill, nothing to choose a source hub for, and no way for two hubs' differing trim points (§6 Retention) to produce two different pasts for the same conversation. This is the walkie-talkie rule again: tuning in mid-transmission does not replay what was already said. It also means the only history question left is a *returning* member's, which FR-2.2 answers by its acknowledged position. A session holds **one position pair** (FR-4.4), because it is in one channel. **Durability is bounded by the channel's life, and that bound is stated rather than implied:** the log survives a session restart and a node restart, and is **discarded when the channel closes** (FR-3.3). A channel is a live conversation, not an archive — there is no resuming yesterday's channel, and anything worth keeping is the participants' to write down elsewhere |
 | FR-4.3 | `inbox(cursor?)` returns messages after the caller's **acknowledged** position in its channel — the default, and the only baseline that governs redelivery (FR-4.4). **`cursor` is a read-only override and moves neither position:** given one, the call returns messages after *that* point instead, which lets a caller re-read something it has already acknowledged without rewinding its own progress. A cursor ahead of `acked` skips nothing permanently, because `acked` is untouched and those messages are still returned by the next default call. **Because the override moves nothing, it also confers no right to acknowledge**: a cursor beyond `delivered` may return messages the session has not been handed, and acknowledging those fails under FR-4.4. Re-reading is what the override is for; making progress is what a bare `inbox()` is for. Whispers not addressed to the caller are never returned |
-| FR-4.4 | **A member holds two positions, `delivered` and `acked`, and redelivery keys on `acked`.** `delivered` records what has been handed toward the session and is advanced by **whatever performed the handing, on both paths**: the waker adapter on the push path, since a woken turn cannot be assumed able to call anything (FR-5.7); and **`inbox()` itself on the pull path** (FR-5.3), where there is no adapter — a read hands messages over, so it advances `delivered` to the last message it returned. Naming both is not pedantry: if `delivered` never moved on the pull path, the split would have no meaning for a pull-only session and at-least-once would be undefined on the one path every host falls back to. `ack(cursor)` advances `acked`, and only the session does that; **`acked` may never exceed `delivered`, and an `ack` beyond it fails with an explicit error** rather than being clamped — a session acknowledging what was never handed to it is a caller defect, and silently clamping it would hide the defect while skipping the messages in between. **A message that was delivered but never acknowledged is presented again**, deduped by FR-4.5's idempotency key. This is what keeps at-least-once honest on a host that gates the session's own calls: without the split, a crash between the hand-off and the turn would mark a message read that no model ever saw, and the adapter would be silently converting at-least-once into at-most-once |
+| FR-4.4 | **A member holds two positions, `delivered` and `acked`, and redelivery keys on `acked`.** `delivered` records what has been handed toward the session and is advanced by **whatever performed the handing, on both paths**: the waker adapter on the push path, since a woken turn cannot be assumed able to call anything (FR-5.7); and **`inbox()` itself on the pull path** (FR-5.3), where there is no adapter — a read hands messages over, so it advances `delivered`. **It advances to the end of the contiguous prefix, never simply to the last message returned**: per-speaker ordering can hold a message back while later-arriving ones are handed over, and a position that jumped over the held-back one would strand it behind the cursor permanently. Naming both is not pedantry: if `delivered` never moved on the pull path, the split would have no meaning for a pull-only session and at-least-once would be undefined on the one path every host falls back to. `ack(cursor)` advances `acked`, and only the session does that; **`acked` may never exceed `delivered`, and an `ack` beyond it fails with an explicit error** rather than being clamped — a session acknowledging what was never handed to it is a caller defect, and silently clamping it would hide the defect while skipping the messages in between. **A message that was delivered but never acknowledged is presented again**, deduped by FR-4.5's idempotency key. This is what keeps at-least-once honest on a host that gates the session's own calls: without the split, a crash between the hand-off and the turn would mark a message read that no model ever saw, and the adapter would be silently converting at-least-once into at-most-once |
 | FR-4.5 | Delivery is at-least-once; recipients dedupe on the idempotency key. **FR-4.4 makes this load-bearing rather than a formality** — re-presentation of an unacknowledged message is a normal event, not an error path |
 | FR-4.6 | Messages carry a `kind` and an optional `correlation_id` / `reply_to` |
 | FR-4.7 | A reply is an **ordinary asynchronous message** that wakes the requester through the normal path. The API exposes **no blocking operation** — no session's turn ever stalls waiting on another session |
@@ -412,6 +412,8 @@ limit is hardcoded. All configuration is applied through the CLI (FR-7.2).
 | Stale-session threshold | 30 min without heartbeat → marked unavailable in the roster (FR-9.2). **Nothing is discarded** — the member keeps its place in its channel, and its channel stays open |
 | **Reap threshold** | **24 h** without heartbeat → the hub gives the member up for gone and **drops its claim on its channel**. What is released is its hold on the trim point, so messages it never acknowledged *do* then become removable — that is the point. **If it was the channel's last member, the channel closes** (FR-3.3). Its **name is not destroyed**: re-registering it is accepted at any time |
 | Long-poll timeout | **30 s**; the subscriber reconnects on timeout. **Must stay strictly under the host's hook timeout** (FR-5.8), which the operator writes and the adapter is told |
+| Gap grace | **60 s** — how long a message waits for its immediate per-speaker predecessor before the hub declares the gap permanent, releases the successor, and records the skip. Without a bound, a predecessor that never arrives holds every later message from that sender **forever, silently**; with one, a rare loss is visible and bounded |
+| Adapter timeout margin | **5 s** — the headroom an adapter leaves between its own block and the host's configured hook timeout (FR-5.8). Sized from measurement rather than taste: the observed wake-to-turn maximum was 4.303 s and still rising |
 | **Channel inactivity timeout** | **None, deliberately — there is no such parameter.** A quiet channel is the normal state of this product, so a timer here would close a conversation while both parties were waiting on each other. Idleness is bounded on the *session* instead, by the two thresholds above, plus the operator's ability to remove a session from its channel (FR-7.2) |
 
 **Nothing bounds an eternally idle but live session, and that is a decision rather than an
@@ -1957,8 +1959,8 @@ specifies and is the only thing that touches the store.
    not terminate: a predecessor can be permanently absent — trimmed on the sending hub before it
    replicated, or lost with a hub that never came back — and every later message from that sender
    would be held on this hub **forever**, silently. So a gap older than the configured
-   `gap_grace` (default 60 s, a limit like any other and therefore configurable) is declared
-   permanent: the successor is released and the skip is recorded in the audit log. Losing a message
+   `gap_grace` (`§6`) is declared
+   permanent (`§6` Limits): the successor is released and the skip is recorded in the audit log. Losing a message
    is bad; losing a speaker is worse, and doing it with no error at all is worst.
 4. Drop whispers not addressed to the caller (Feature 005 fills the rule; the read path reserves
    the point at which it applies). **Filtering happens after ordering and never creates a gap** —
@@ -1968,7 +1970,11 @@ specifies and is the only thing that touches the store.
    held-back message, or the highest `arrival_seq` returned when nothing was held back. *Not* to
    the last message returned: a held-back message has a **lower** `arrival_seq` than the ones
    returned after it, so advancing past it would put it permanently behind the position and it
-   would never be delivered at all. Nothing moves when a `cursor` override was given (FR-4.3).
+   would never be delivered at all. **When nothing is returned, the prefix still advances**: a
+   window in which every message was filtered away as somebody else's whisper is fully handed
+   over as far as this caller is concerned, and leaving the position behind would re-scan those
+   rows on every subsequent call until they were trimmed. Nothing moves when a `cursor` override
+   was given (FR-4.3).
    This is the pull path's hand-off, and naming it here is what keeps at-least-once meaningful
    where there is no adapter (FR-4.4).
 
@@ -2205,8 +2211,12 @@ trace, in keeping with FR-7.7's actionable-error principle applied to the ordina
 - [ ] Given a session, when it acknowledges a cursor **ahead of** what has been delivered to it, then
       the call fails with an explicit error and neither position moves.
 - [ ] Given a pull-only session with no subscriber armed, when it reads its inbox, then `delivered`
-      advances to the last message returned — the read is the hand-off, so the two-position rule
-      still holds where there is no adapter.
+      advances — the read is the hand-off, so the two-position rule still holds where there is no
+      adapter.
+- [ ] Given a read in which one message is held back for per-speaker ordering while later ones are
+      returned, when `delivered` is inspected, then it stopped **below the held-back message**, and
+      that message is still delivered on a later read — the position tracks the contiguous prefix,
+      not the highest thing handed over.
 - [ ] Given a session registered on a host that supplies its own conversation id, when the session's
       identity is inspected, then the id in use is the **product's own** and the host's value appears
       only as correlation metadata.
@@ -2298,9 +2308,11 @@ trace, in keeping with FR-7.7's actionable-error principle applied to the ordina
 > - **Nothing about the invocation may be assumed** (FR-5.10). Claude Code runs hooks through bash
 >   on Windows, and a `PATH` interpreter may be a shim.
 >
-> Two measured numbers worth carrying into the specification: the wake takes about **3.7 s** from
-> the block ending to the woken turn completing, five samples, and the observed maximum was still
-> rising as samples accumulated — so budget from the maximum, not the mean. And Cursor supplies a
+> Two measured numbers worth carrying into the specification: on one host, **wake to the stop hook
+> re-firing** — the event that proves a turn ran — averaged **3.740 s** over five samples with an
+> observed maximum of **4.303 s**, still rising as samples accumulated, so budget from the maximum
+> rather than the mean. The other host's **7.581 s** timed a different action and the two do not
+> compare. And Cursor supplies a
 > **`conversation_id`** the design had assumed it would have to invent (FR-2.4).
 >
 > **Three parts, one job: turn an arriving message into a turn.** The node side holds a
@@ -2518,7 +2530,7 @@ left running with its socket still open** (F7). Nothing in the host reports it. 
   `aid chat subscribe --host-timeout <seconds>`, and `<seconds>` is the same number the operator
   puts in the host's own `timeout` field. One value, written once, in the one file the operator
   owns — which is the only mechanism available given FR-0.4, since the product cannot read a file
-  it is forbidden to write. The adapter blocks for `min(long_poll_default, host_timeout - margin)`.
+  it is forbidden to write. The adapter blocks for `min(long_poll_default, host_timeout - margin)`, where **`margin` is `§6`'s adapter timeout margin, 5 s by default** and configurable like every other limit. With `§6`'s 30 s long-poll that means an operator writing `timeout: 60` gets a 30 s block, and one writing `timeout: 20` gets 15 s — shorter than preferred, but honoured, which is the whole point of bounding by what the host will actually wait for.
 - Where the flag is absent, it falls back to a block short enough to be safe under the shortest
   default known, accepting a shorter wait over a wake that never arrives. It does **not** try to
   discover the value: the host does not report it, and the spike established that inferring it from
@@ -2860,9 +2872,17 @@ flowchart LR
 **Replication.** A hub that accepts a send delivers it to every peer holding a member of that
 channel — the distinct machines in `channel_member` for that channel —: immediately where the peer is reachable, and into `outbox` where it is not (FR-6.3). The
 receiving hub assigns **its own** `arrival_seq` and applies its own uniqueness constraints, so a
-message replayed after a reconnect collides on `(channel_id, idempotency_key)` and is absorbed
-rather than duplicated. That collision is the whole of the exactly-once story at the store, and it
-is why FR-4.5's idempotency key is load-bearing rather than a formality.
+message replayed after a reconnect collides on
+`(channel_id, sender_machine, sender_name, idempotency_key)` and is absorbed rather than
+duplicated. **The key is scoped to the sender**, so two senders numbering their own messages
+independently cannot swallow each other's. That collision is the whole of the exactly-once story at
+the store, and it is why FR-4.5's idempotency key is load-bearing rather than a formality.
+
+**The replicated payload carries the sender's own `sender_seq`, and the receiving hub stores it
+verbatim.** Only `arrival_seq` is assigned locally. This is the one field a receiving hub must not
+regenerate: `sender_seq` is the sender's numbering and the sole carrier of per-speaker FIFO, so a
+hub that renumbered it would produce an order derived from arrival — exactly the guarantee `§6`
+declines to make.
 
 **Per-speaker order survives the network for free.** The receiving hub reorders on read by
 `sender_seq` (Feature 002's read path), so out-of-order arrival across the LAN is corrected at
@@ -3152,7 +3172,10 @@ looking exactly like a delivered private message from the sender's side. That is
 sent-but-never-delivered-and-never-reported failure the overflow rule exists to prevent, arriving
 by a third door. `mention` is checked the same way but **warns rather than refuses**: it changes
 attention, not delivery, so a stale name costs nothing and refusing the send would be
-disproportionate.
+disproportionate. **The warning is observable or it is not a warning:** the send succeeds with exit
+`0`, and the unmatched names go to **stderr** as `mention_unknown: <names>` — which is the
+repository's existing split, where stdout carries the result and stderr carries diagnostics, and
+is why a warning needs no new exit code.
 
 One index is added for the trim job, and only when the job exists:
 
