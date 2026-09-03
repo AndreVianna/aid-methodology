@@ -23,14 +23,21 @@ Provide a communication channel that lets one AI coding-assistant session send m
 notifications to another. The sessions work in **different repositories**, and are started
 by the operator's own orchestrator rather than by a lead-spawns-teammates framework.
 
-Sessions talk in **chats**. A chat is the only thing a message is addressed to, and the
-smallest chat — two members — *is* a direct message. Larger chats add **mention** (aimed at
+Sessions talk in **channels**. A channel is the only thing a message is addressed to, and the
+smallest channel — two members — *is* a direct message. Larger channels add **mention** (aimed at
 someone, visible to all) and **whisper** (visible only to one member).
 
-The channel is delivered as a **local node** — a service started and administered by the
+A channel is a walkie-talkie channel rather than a room: a name agreed on, replicated to every
+machine with a member in it and owned by none of them, holding **one agent at a time** from each
+participating session, and lasting only while somebody is on it. Getting *into* a conversation is a
+separate plane — an agent joins its machine's **hub** when it registers, sees who is available
+there, and asks to be connected with one named agent.
+
+The channel is delivered as a **local node**, or hub — a service started and administered by the
 `aid` CLI, running on each machine and serving every session on it, regardless of tool. The
 node itself has a single responsibility, message exchange, and ships no operator surface of
-its own. Nodes federate to other machines over a trusted LAN. Sessions reach the node
+its own. **A session speaks only to its own machine's hub, ever**, and hubs federate to other
+machines over a trusted LAN. Sessions reach the node
 **through the `aid` CLI**, which carries the whole message plane over one core; a **rendered
 chat skill** makes that surface discoverable to a session without being a second surface of its
 own (§4, FR-0).
@@ -107,15 +114,20 @@ orchestrator and needs to see and audit what was sent between them.
 
 ### In Scope
 
-- **Chat-based messaging between sessions**, regardless of which tool hosts each session.
-  A chat is the only addressing unit; a two-member chat is a direct message. Within a chat
-  of more than two, a message may **mention** members (visible to all) or **whisper** to one
-  (visible only to them).
+- **Channel-based messaging between sessions**, regardless of which tool hosts each session.
+  A channel is the only addressing unit for messages; a two-member channel is a direct message.
+  Within a channel of more than two, a message may **mention** members (visible to all) or
+  **whisper** to one (visible only to them). **An agent holds one channel at a time**, and a
+  channel lasts only while somebody is on it — it is a live conversation, not an archive.
+- **A hub plane, which is how agents meet.** A session joins its machine's hub when it registers,
+  independently of any channel; there it can see which agents are available and **ask to be
+  connected with one named agent**. This is signalling rather than messaging, and it is the only
+  thing that can reach an agent sharing no channel with the caller.
 - A **local service (node)**, started by the CLI, that all local sessions connect to.
   There is no installation step: the node ships inside the `aid` payload (FR-7.6).
-- **Cross-machine** connection between nodes on a **trusted LAN**: peers **find each other**,
-  and store-and-forward at the sending node so a peer whose machine is offline still
-  receives its messages. **The discovery mechanism is deliberately not named here** — it is
+- **Cross-machine** connection between hubs on a **trusted LAN**: peers **find each other**,
+  channels **replicate** to every hub with a member in them, and a hub queues for a peer it
+  cannot reach so that being offline delays rather than loses. **The discovery mechanism is deliberately not named here** — it is
   stated as an outcome, because the research behind FR-6.1 found that no single mechanism
   works everywhere users actually are.
   **And the promise is deliberately bounded: discovery always works, by a path that depends
@@ -161,6 +173,16 @@ orchestrator and needs to see and audit what was sent between them.
   LAN is the only condition for participating. There is no key, password, or login
   anywhere in this product — so the network itself must be a controlled one.
 - **Launching or resuming sessions.**
+- **Broadcast to every agent, and any channel that everybody is on.** A message reaches the members
+  of one channel and no wider audience (FR-3.8). This follows from an agent holding one channel at a
+  time, and it is listed so the absence is a recorded decision rather than a gap somebody later
+  reads as an oversight. Reaching an agent you share no channel with is the hub's connect request.
+- **A conversation that outlives its participants.** A channel's log is discarded when its last
+  member is gone (FR-3.3), so there is no archive, no history browser, and no resuming yesterday's
+  channel. Anything worth keeping is the participants' to write down elsewhere.
+- **A total order across speakers.** Each speaker's own messages arrive in order; two speakers'
+  messages carry no promised relative order (§6). Anything needing causality states it in the
+  message, through `reply_to`.
 
 ## 5. Functional Requirements
 
@@ -178,7 +200,7 @@ second surface. It carries no logic and holds no state: every operation it descr
 | # | Requirement |
 |---|---|
 | FR-0.1 | There is **one core implementation** of the message plane. No face may reimplement it, and a face that cannot be expressed as a call into that core is not added |
-| FR-0.2 | **A session reaches the message plane through the CLI** — `send`, `inbox`, `ack`, plus its own chat membership (`join`, `leave`, list-my-chats; FR-3.4). Administrative operations exist on the same CLI and are **not** described by the chat skill (see FR-7.3) |
+| FR-0.2 | **A session reaches the message plane through the CLI** — `send`, `inbox`, `ack`, plus its own channel (open, `join`, `leave`, which-channel-am-I-in; FR-3.4) and the hub verbs (roster, connect request; FR-9). Administrative operations exist on the same CLI and are **not** described by the chat skill (see FR-7.3) |
 | FR-0.3 | The CLI covers administration, the subscriber, **and** the full message plane, so the product is fully functional on every host, with no per-host protocol support required of anyone |
 | FR-0.4 | **The product writes no host tool's configuration.** It renders a skill into the host dialects it already supports, through the same pipeline as every other AID skill, and touches nothing else — no MCP registration, no settings file, no hook wiring. A host whose skill is absent loses discoverability, never capability: the full message plane stays reachable over the CLI per FR-0.3 |
 
@@ -203,37 +225,49 @@ second surface. It carries no logic and holds no state: every operation it descr
 
 | # | Requirement |
 |---|---|
-| FR-2.1 | A session registers with `register(name, tool, cwd, capabilities)`, binding itself to a **stable name**. The name is an **identity, not an address** — it is how a session is recognised inside a chat, mentioned, and whispered to; it is never a destination on its own |
-| FR-2.2 | A session's full id is **machine address + session name**, mirroring the chat rule in FR-3.2. Names are unique per machine. Re-registering an existing name **reattaches** that session to its existing chat memberships and positions |
-| FR-2.3 | **Liveness is tracked** (heartbeat or connection), and drives **two distinct states at two thresholds** (§6). **Stale** — quiet past the stale threshold — is a *display* state: the member is shown as probably gone and **nothing is released**. **Reaped** — quiet past the longer reap threshold — is the node giving the member up for good: its registration is released and it **stops counting toward its chats' trim points**, which is what lets those logs be trimmed again — **including messages it never read.** Its identity is not destroyed: the name is free and re-registering it is accepted at any time. Tracking and stale-marking belong to registration; reaping belongs to retention |
+| FR-2.1 | A session registers with `register(name, tool, cwd, capabilities)`, binding itself to a **stable name**. The name is an **identity, not an address** — it is how a session is recognised inside a channel, mentioned, and whispered to; it is never a destination on its own |
+| FR-2.2 | A session's full id is **machine address + session name**. Names are unique per machine — a session genuinely lives on one machine, which is why its id stays machine-qualified even though a channel's no longer is (FR-3.2). Re-registering an existing name **reattaches** that session to its channel *if that channel is still open*, at its **acknowledged** position (FR-4.2). Where the channel closed in the meantime, the name is re-registered with no channel: reattachment restores a place in a conversation that still exists and never resurrects one that ended |
+| FR-2.3 | **Liveness is tracked** (heartbeat or connection), and drives **two distinct states at two thresholds** (§6). **Stale** — quiet past the stale threshold — is a *display* state: the member is shown as probably gone, is **unavailable** to a connect request (FR-9.3), and **nothing is released**. **Reaped** — quiet past the longer reap threshold — is the node giving the member up for good: its registration is released and it **stops counting toward its channel's trim point**, which is what lets those logs be trimmed again — **including messages it never read.** Its identity is not destroyed: the name is free and re-registering it is accepted at any time. Tracking and stale-marking belong to registration; reaping belongs to retention. **A dropped connection is never a leave.** A session that crashes, loses its network, or has its host closed has not left its channel — it goes stale, then reaped, on the thresholds above. This is load-bearing rather than pedantic: a channel closes when its last member is gone (FR-3.3), so treating a dropped connection as a departure would let a network blip destroy a live conversation and its log |
 | FR-2.4 | **The product mints its own conversation id, and no host's is adopted as identity.** A registration is bound to a conversation id the product generates. **The reason is immutability, and it is the product's to guarantee:** an identifier the product does not issue is one whose stability it cannot promise, because another program may re-issue, re-scope or reuse it on its own schedule. Reach reinforces that but does not carry it — one host offers such an id today, four do not, and the one that does leaves it undocumented and so withdrawable without notice. A host-supplied id **may be recorded as correlation metadata** beside the product's own, for reconciling the product's log against the host's, and nothing may key on it |
 
-### FR-3 — Chats and addressing
+### FR-3 — Channels and addressing
 
-**The chat is the only addressing unit.** There is no direct-to-session address. A message
-is always sent *to a chat*, and a chat always has at least two members. A two-member chat
-**is** a direct message — the same mechanism, not a special case. This is deliberate: one
-concept instead of two, with private conversation as its smallest instance.
+**The channel is the only addressing unit for messages.** There is no direct-to-session
+message address. A message is always sent *to a channel*, and a channel always has at least
+two members. A two-member channel **is** a direct message — the same mechanism, not a special
+case. This is deliberate: one concept instead of two, with private conversation as its
+smallest instance. Aiming at one individual is a **visibility rule inside** a channel
+(whisper, FR-3.6), never a second address space.
+
+> **A channel is a walkie-talkie channel, and the metaphor is load-bearing rather than
+> decorative.** It is a name people agree to use, not an object a machine owns. Anyone reachable
+> can tune in, because there is no authentication anywhere in this product to gate it with (§4).
+> Each speaker frames its own transmission, so a message is an atomic unit and a listener never
+> sees half of one. Two speakers' transmissions are ordered relative to themselves and not to
+> each other (§6), and a channel exists only while somebody is on it.
+>
+> **Requests to connect are a different plane** — signalling, not messages — and live in FR-9.
 
 | # | Requirement |
 |---|---|
-| FR-3.1 | **Listing has a local half and a network half, and they ship at different stages.** *Local* — list the chats hosted on this machine, and the chats the calling session belongs to. Needs no network and is available from the first usable release, because a session cannot join a chat it has no way to name. *Network* — list machines on the network and, for a given machine, the chats it hosts and their members, with tool, liveness, and declared capabilities. Arrives with federation |
-| FR-3.2 | A chat's full id is **machine address + chat name**. When the machine address is omitted, resolution is **local-machine-only**: if no chat of that name exists on this machine the result is **not found**, even when a chat of that name exists on another machine. There is no silent remote fallback |
-| FR-3.3 | Every chat has a **home machine** — the machine in its id. Members on other machines take part remotely; the chat itself lives in one place |
-| FR-3.4 | **Chat control is split.** Chat *existence* (create, delete) and any change to *another* session's membership are administrative and CLI-only (FR-7.2). A session may manage **only its own** membership: `join(chat)`, `leave(chat)`, and listing the chats it belongs to. Joining a chat that does not exist **fails with an explicit error** — a session never creates a chat implicitly |
-| FR-3.5 | **Mention** — a message may flag one or more members by name. The message stays visible to the whole chat; the flag marks who it is aimed at |
-| FR-3.6 | **Whisper** — a message may be directed to exactly one member, and is then visible **only** to that member and its sender. Other members never see it, in delivery or in history |
-| FR-3.7 | Mention and whisper are meaningful only in a chat of **more than two** members. In a two-member chat every message already has exactly one recipient, so neither is required — and a whisper there is equivalent to an ordinary message |
+| FR-3.1 | **Listing has a local half and a network half, and they ship at different stages.** *Local* — list the open channels this hub knows and the channel the calling session is in. *Network* — list machines on the network and the agents they host, with name, tool, liveness, declared capabilities, and whether each is available to connect. Arrives with federation. The agent-facing half of this is the roster of FR-9.2 |
+| FR-3.2 | **A channel is named, not owned. There is no machine address in a channel's id.** A channel is a bare name, the same name on every hub — like a radio frequency rather than a room in a particular building. It is **replicated to every hub that has a member in it**, and no hub is authoritative over it. *This requirement previously gave a channel a machine-qualified id with local-only resolution; both are retired, and the number is kept rather than reused so that a later reference resolves here instead of to something that inherited it.* |
+| FR-3.3 | **A channel's life is bounded by its membership, not by a clock.** It comes into being when an agent opens it and ends when its **last member leaves explicitly or is reaped** (FR-2.3) — at which point its log is discarded. There is **deliberately no channel inactivity timeout**: idle waiting is this product's normal state, so a timer on the channel would destroy a conversation during exactly the case the product exists for. Where a bound on idleness is wanted, it belongs to the *session* (§6 stale and reap thresholds) and to the operator's ability to remove one (FR-7.2). *This requirement previously gave every chat a home machine; that is retired with FR-3.2.* |
+| FR-3.4 | **An agent manages its own channel membership, and holds at most one channel at a time.** It may open a channel (which is create-and-join in one step), `join` an open one, `leave` the one it is in, and see which one that is. **Joining while already in a channel is refused with an explicit error** — the agent leaves first. One channel at a time is what bounds channel creation, so no separate quota is needed. The **creator has no lasting claim**: a channel does not close because whoever opened it left, only when the last member is gone (FR-3.3) |
+| FR-3.5 | **Mention** — a message may flag one or more members by name. The message stays visible to the whole channel; the flag marks who it is aimed at |
+| FR-3.6 | **Whisper** — a message may be directed to exactly one member, and is then visible **only** to that member and its sender. Other members never see it, in delivery or in history. **This is the only way to aim at an individual**, and it works inside a channel: no direct session-to-session message address exists (FR-3 preamble, FR-2.1) |
+| FR-3.7 | Mention and whisper are meaningful only in a channel of **more than two** members. In a two-member channel every message already has exactly one recipient, so neither is required — and a whisper there is equivalent to an ordinary message |
+| FR-3.8 | **There is no broadcast to every agent, and no channel that everybody is on.** A message reaches exactly the members of one channel. This is a consequence of FR-3.4 rather than a separate restriction — an agent holding one channel at a time cannot also sit on an all-call — and it is stated so that "send to everyone" is a recorded exclusion rather than an unnoticed gap. Reaching an agent that shares no channel with the caller is the connect request's job (FR-9.3), not a message's |
 
 ### FR-4 — Messaging
 
 | # | Requirement |
 |---|---|
-| FR-4.1 | `send(chat, body, kind?, idempotency_key?, mention?, whisper_to?)` delivers to a chat. `mention` flags members without restricting visibility; `whisper_to` restricts visibility to one member (FR-3.5, FR-3.6). The two are mutually exclusive on a single message |
-| FR-4.2 | Each **chat** owns a **durable message log** that persists across session restarts and node restarts, and each **member holds its own position** in that log. A session in several chats holds one position per chat |
-| FR-4.3 | `inbox(chat?, cursor?)` returns messages after the caller's position — for one chat, or across every chat the caller belongs to when `chat` is omitted. Whispers not addressed to the caller are never returned |
-| FR-4.4 | `ack(chat, cursor)` advances the caller's committed position in that chat |
-| FR-4.5 | Delivery is at-least-once; recipients dedupe on the idempotency key |
+| FR-4.1 | `send(body, kind?, idempotency_key?, mention?, whisper_to?)` delivers to the channel the caller is in — which is the only one it can be in (FR-3.4), so the channel is not a parameter. `mention` flags members without restricting visibility; `whisper_to` restricts visibility to one member (FR-3.5, FR-3.6). The two are mutually exclusive on a single message |
+| FR-4.2 | Each **channel** owns a **message log**, replicated to every hub with a member in it, and each **member holds its own position** in that log. A session holds **one position pair** (FR-4.4), because it is in one channel. **Durability is bounded by the channel's life, and that bound is stated rather than implied:** the log survives a session restart and a node restart, and is **discarded when the channel closes** (FR-3.3). A channel is a live conversation, not an archive — there is no resuming yesterday's channel, and anything worth keeping is the participants' to write down elsewhere |
+| FR-4.3 | `inbox(cursor?)` returns messages after the caller's acknowledged position in its channel. Whispers not addressed to the caller are never returned |
+| FR-4.4 | **A member holds two positions, `delivered` and `acked`, and redelivery keys on `acked`.** `delivered` records what has been handed toward the session and is advanced by whatever performed the handing — which is normally the waker adapter, since a woken turn cannot be assumed able to call anything (FR-5.7). `ack(cursor)` advances `acked`, and only the session does that. **A message that was delivered but never acknowledged is presented again**, deduped by FR-4.5's idempotency key. This is what keeps at-least-once honest on a host that gates the session's own calls: without the split, a crash between the hand-off and the turn would mark a message read that no model ever saw, and the adapter would be silently converting at-least-once into at-most-once |
+| FR-4.5 | Delivery is at-least-once; recipients dedupe on the idempotency key. **FR-4.4 makes this load-bearing rather than a formality** — re-presentation of an unacknowledged message is a normal event, not an error path |
 | FR-4.6 | Messages carry a `kind` and an optional `correlation_id` / `reply_to` |
 | FR-4.7 | A reply is an **ordinary asynchronous message** that wakes the requester through the normal path. The API exposes **no blocking operation** — no session's turn ever stalls waiting on another session |
 
@@ -248,9 +282,10 @@ concept instead of two, with private conversation as its smallest instance.
 | FR-5.5 | **The wait must be free.** An adapter blocks in a process outside the model, never by keeping the model in a poll loop. Cost while idle is zero tokens |
 | FR-5.6 | **Every adapter carries a re-entry rule.** Waking is inherently a loop: the wake ends a turn, ending a turn fires the stop hook, and the stop hook wakes the session again. An adapter must therefore distinguish a stop that should wait from one that is merely the tail of a wake it already served, and "block on every stop event" is not an implementable adapter. Where the host reports how many automatic follow-ups a conversation has already triggered, the adapter reads it; where the host offers no such signal, or offers no cap, the adapter carries the count itself |
 | FR-5.7 | **The woken turn requires no authorisation.** Whatever the adapter asks the woken session to do must be something the host will perform without a human approving it, because a gate on that action is a human and an autonomous channel cannot wait on one. An adapter that needs a privileged action must have it pre-authorised by host configuration the operator installs knowingly — never assumed |
-| FR-5.8 | **The block stays strictly inside the host's own hook timeout, and the adapter sets that timeout.** A host may abandon an over-running hook rather than killing it: output discarded, wait abandoned, **process left running and its connection still open.** Each such wake leaks a process and inflates the node's count of connected waiters, and nothing in the host reports it. The adapter's block must therefore end before the host stops listening, and because the platform default may be shorter than the product's own long-poll, the adapter must write an explicit timeout rather than inherit one |
+| FR-5.8 | **The block stays strictly inside the host's own hook timeout — and the product does not write that timeout, because it writes no host configuration at all (FR-0.4).** A host may abandon an over-running hook rather than killing it: output discarded, wait abandoned, **process left running and its connection still open.** Each such wake leaks a process and inflates the node's count of connected waiters, and nothing in the host reports it. So the adapter's block must end before the host stops listening, and the ownership of that number is split three ways rather than assumed: **the operator writes it**, in the host configuration only the operator touches; **the product states the required value** in the rendered skill and the install instructions, since it is the product that knows what its long-poll needs; and **the adapter is told it** and bounds its own block by what it was told. Where the adapter is told nothing it must **not inherit the platform default** — measurement put one host's default under 60 s, shorter than this product's own 30 s long-poll (§6) — and must instead fall back to a block short enough to be safe under the shortest default known, accepting a shorter wait rather than a wake that never arrives |
 | FR-5.9 | **The host's wake contract is per-host and taken from its documentation.** Both the payload an adapter reads and the response shape it returns differ by host, and an undocumented shape that happens to work is not a contract — it may change without notice. An adapter must also **tolerate a byte-order mark** on the host's payload: a leading BOM is not permitted in JSON and makes a strict parser reject an otherwise valid document, reporting it as malformed at its first character |
-| FR-5.10 | **An adapter assumes nothing about how the host invokes it.** The host may run the hook through a shell that is not the platform's native one, so any path the adapter emits must survive that shell, and it must resolve its own interpreter from the running process rather than from `PATH` — a `PATH` entry may be a shim that re-launches the real interpreter as a child, which leaves the process the host is watching unrelated to the process that blocks |
+| FR-5.10 | **An adapter assumes nothing about how the host invokes it, nor about the shell the woken turn uses.** The host may run the hook through a shell that is not the platform's native one, so any path the adapter emits must survive that shell, and it must resolve its own interpreter from the running process rather than from `PATH` — a `PATH` entry may be a shim that re-launches the real interpreter as a child, which leaves the process the host is watching unrelated to the process that blocks. These are two questions and not one: measurement found a host that invokes its hook through one shell while running the woken turn's command in another, and the two disagree about how a leading quoted path is read, so a command string correct on one host is a syntax error on the other |
+| FR-5.11 | **The node is host-blind, and stays that way; only the adapter knows which host it serves.** One canonical message format on the wire and in the store; the adapter renders it into the host's shape at the last step (FR-5.9). A session declares its **capabilities** — data the node can honour without interpretation, such as a payload ceiling or an inability to act on a gated call — and the `tool` it runs in is recorded for the operator's benefit (FR-7.1), **never as a formatting switch**. This is what keeps FR-5.2's promise real: if the node formatted per host, it would grow a branch per host, every new host would touch the node and the store, and "only the adapter differs" would be false |
 
 ### FR-6 — Cross-machine (trusted LAN)
 
@@ -258,8 +293,9 @@ concept instead of two, with private conversation as its smallest instance.
 |---|---|
 | FR-6.1 | **Nodes find each other on the LAN.** This is stated as an *outcome* rather than a mechanism, deliberately: research established that no single mechanism reaches every environment users are actually in — WSL2 host-to-distro multicast is an open upstream defect, access-point client isolation and VLAN splits defeat broadcast and multicast alike, and macOS 15+ gates both silently for a per-user agent. Of eleven comparable local-first tools surveyed, only two make mDNS their primary mechanism, and **every one of them ships a manual path as the backstop.** The requirement is therefore that discovery **works**, with a guaranteed path that depends on no network feature, and zero-configuration discovery layered above it as best-effort. `/aid-specify` fixes the layers; this requirement fixes only that the outcome is reached and that no layer is load-bearing alone |
 | FR-6.2 | Node-to-node trust is **implicit in network membership** — a node reachable on the trusted LAN participates. No key, password, or login is required, of a peer node or of a session |
-| FR-6.3 | The **sending** node stores and forwards a message whose destination chat's **home machine** is offline, delivering it once that machine returns |
+| FR-6.3 | **A hub queues for a peer hub it cannot currently reach, and catches that peer up on reconnect.** With no home machine to be offline (FR-3.2), what store-and-forward now covers is replication lag: a message accepted locally is delivered to every peer hub with a member in the channel, immediately where the peer is reachable and on reconnect where it is not. Being offline delays; it does not lose. **A peer that returns after its channel has closed everywhere else receives nothing to catch up on**, which is correct rather than a gap — the conversation ended (FR-3.3) |
 | FR-6.4 | The handshake compares protocol versions by **semantic versioning**: nodes sharing a **major** version interoperate, and minor or patch differences are compatible by contract. Only a **major** difference — which by definition means a breaking change — fails the handshake, and it fails with an explicit error |
+| FR-6.5 | **The inter-node link is long-lived and must survive an idle network, and this is a requirement because it is the one link no evidence covers.** It carries three things at once: channel replication (FR-6.3), the federated roster (FR-9.2), and connect-request relay (FR-9.4). It must therefore tolerate a router, NIC, or OS idle-connection timeout closing it — by keepalive, by reconnect, or by both — and a reconnect must not lose a queued message or leave the roster stating something that is no longer true. **The P0 spike could not measure this**: it had one stub and no second node, so what it exercised was a subscriber holding a connection across a LAN, which no part of this design opens. Validating it belongs to whichever feature builds federation, and the duty is larger than it looks, because presence and replication are held on the link rather than occasional requests over it |
 
 ### FR-7 — Administration and the privilege boundary
 
@@ -273,9 +309,9 @@ own, administered through `aid`, with state under `$AID_HOME`.
 
 | # | Requirement |
 |---|---|
-| FR-7.1 | The CLI shows machines and registered sessions, the chats on this machine with their members, each member's unread depth per chat, and a message audit log |
-| FR-7.2 | All service management — start, stop, status, configuration, retention policy, **chat lifecycle (create, delete) and any change to another session's chat membership** — is performed **through the CLI only**. The CLI holds the complete chat mechanism, including everything a session can do for itself. **`deploy` was the first item on this list and is deleted, not moved:** the node ships in the `aid` payload (FR-7.6), so there is no install operation to administer. There is no peer-pairing operation either: trust is implicit in network membership (FR-6.2), so there is nothing to exchange or approve |
-| FR-7.3 | **The agent-facing surface describes the message plane and nothing else.** The chat skill documents `send` / `inbox` / `ack` and a session's own membership (FR-3.4). It does not describe stopping the node, altering configuration, retention policy, creating or deleting a chat, or changing another session's membership. It documents no `wait` either: FR-4.7 forbids a blocking operation anywhere, and waiting is the waker adapter's job. **This is a surface boundary, not a sandbox** — and the honesty is now structural rather than a caveat: the boundary is a *skill that omits things*, and any session whose host lets it run shell commands can invoke the full CLI directly. It states what the product **offers** an agent and is explicit that it prevents nothing. Real containment would need a session-scoped credential, which this product does not have (there is no authentication anywhere — §4) and does not claim |
+| FR-7.1 | The CLI shows machines and registered sessions, the open channels this hub knows with their members, each member's unread depth and how long it has been idle, and a message audit log |
+| FR-7.2 | All service management — start, stop, status, configuration, retention policy, and **removing a session from its channel** — is performed **through the CLI only**. The CLI still holds everything a session can do for itself, so the operator can act on a session's behalf. **Channel lifecycle has LEFT this list**, and that is a deliberate reversal rather than an omission: an agent opens and closes its own channel (FR-3.4), because requiring a human to pre-create a channel would defeat an autonomous channel between two agents, and FR-7.3 already concedes the boundary was never enforcement. **What the operator keeps is eviction** — removing a session from its channel — which is also the remedy for a session that sits idle forever (§6). **`deploy` was the first item on this list and is deleted, not moved:** the node ships in the `aid` payload (FR-7.6), so there is no install operation to administer. There is no peer-pairing operation either: trust is implicit in network membership (FR-6.2), so there is nothing to exchange or approve |
+| FR-7.3 | **The agent-facing surface describes the message plane, the hub plane, and nothing else.** The chat skill documents `send` / `inbox` / `ack`, the session's own channel — opening, joining and leaving it (FR-3.4) — and the hub verbs: the roster and the connect request (FR-9.2, FR-9.3). It does not describe stopping the node, altering configuration, retention policy, or removing another session from its channel. It documents no `wait` either: FR-4.7 forbids a blocking operation anywhere, and waiting is the waker adapter's job. **This is a surface boundary, not a sandbox** — and the honesty is now structural rather than a caveat: the boundary is a *skill that omits things*, and any session whose host lets it run shell commands can invoke the full CLI directly. It states what the product **offers** an agent and is explicit that it prevents nothing. Real containment would need a session-scoped credential, which this product does not have (there is no authentication anywhere — §4) and does not claim |
 | FR-7.4 | **Every face invokes the CLI rather than reimplementing node behaviour**, and the node publishes no client library or SDK for one to bind to. The chat skill is instructions that call `aid chat`; the subscriber of FR-5.1 is a CLI invocation. Together these keep the HTTP transport internal to the node |
 | FR-7.5 | The node has a **single responsibility: message exchange.** It ships no CLI and no operator surface of its own, and every human-facing operation against it is an `aid` subcommand. A change that would give the node its own operator-facing command is out of scope |
 | FR-7.6 | **The node ships inside the `aid` payload, and carries no third-party dependency.** The node needs no third-party library at all: mDNS is replaced by a discovery design built on the standard library (FR-6.1), and the MCP server implementation left with the façade (§4 Out of Scope). A component with zero dependencies costs an uninterested user nothing but disk, so the separation bought nothing and cost a whole install-and-fetch surface. The node is therefore provisioned exactly as `dashboard/` already is: a runtime component at the repository root, listed in a manifest that every publication channel derives its file set from. **AID's zero-runtime-dependency decision is preserved literally, not amended** — no carve-out is required, because there is nothing to carve out |
@@ -307,6 +343,26 @@ floor is due a raise on its own merit, and belongs to whichever work is due to d
 The maintainer-only profile renderer remains on Python. It declares no floor of its own today,
 and if it should, that is a separate maintainer-scoped change with no adopter-facing effect.
 
+### FR-9 — The hub plane
+
+**A session's connection to the hub is separate from, and outlives, any channel.** This is the
+control plane: it is how an agent becomes visible, sees who else is there, and gets into a
+conversation with an agent it shares no channel with. The message plane (FR-3, FR-4) carries
+traffic *within* a channel; this one carries signalling *about* channels.
+
+> **Why this exists at all.** With one channel per agent (FR-3.4) and no all-call (FR-3.8), an
+> agent in no channel is unreachable by any message — a wake only ever reaches members of a
+> channel. To talk you need a shared channel; to agree on a shared channel you need to talk. The
+> hub plane breaks that deadlock, and it is the *only* thing that does.
+
+| # | Requirement |
+|---|---|
+| FR-9.1 | **A session joins the hub when it registers (FR-2.1), independently of any channel, and remains on it until reaped.** Hub membership is registration plus liveness — **not a held socket.** The held wait belongs to the subscriber (FR-5.1), and an agent in no channel still holds one, because a connect request must be able to reach it |
+| FR-9.2 | **Roster.** A session may ask its hub who else is there: each agent's name, the tool hosting it, its declared capabilities, its liveness, and **whether it is available** — registered, not stale, and not already in a channel. The roster spans hubs (FR-9.4), so an agent on one machine sees agents on another. It is the agent-facing half of FR-3.1's listing |
+| FR-9.3 | **A connect request is directed at one named agent, and the hub answers it from state with no accept step.** A session asks to be connected with one agent, naming a channel; to reach several, it sends several requests. There is no broadcast form (FR-3.8). The hub answers immediately from what it already knows: **target available** — the target is joined to the channel and learns so on its next wake; **target unavailable** — already in a channel, stale, or unknown — the request **fails at once with an explicit reason.** There is no pending invitation, no accept, no decline, and no timeout, so nothing accumulates and nothing expires. **The reason there is no accept step is measured, not stylistic:** an accept would be a call the woken session makes, and on a host that gates an agent's calls behind human approval that call waits on a person, which FR-5.7 forbids assuming. Answering from state removes the human from the path entirely. **Consent is not what is being modelled here** — there is no authentication anywhere in this product (§4), so a gate would be advisory at best; what the request supplies is *notification*, and availability is arbitrated by FR-3.4's one-channel bound |
+| FR-9.4 | **Requests and the roster cross machines hub to hub, and the answer does not change with distance.** A session speaks only to its local hub, ever (FR-6, FR-7.4); the hubs relay between themselves over the link of FR-6.5. A request to an agent on another machine succeeds or fails on the same rules as a local one, and **a hub that cannot currently reach the peer fails the request rather than queueing it** — a connect request answered minutes later would arrive after the asking agent's circumstances changed, which is the pending state FR-9.3 exists to avoid |
+| FR-9.5 | **One wait serves both planes, and the adapter tells the two apart.** The subscriber's held wait (FR-5.1) returns on *either* an arriving message or an arriving connect-request outcome, so no second connection and no second waiting mechanism is introduced. The wake payload therefore carries an **event kind**, and the adapter renders each into the host's shape (FR-5.9) — a message is content to read, a connect outcome is a change in the agent's own situation |
+
 ## 6. Non-Functional Requirements
 
 ### Delivery semantics
@@ -316,11 +372,11 @@ mechanism required.
 
 | Property | Requirement |
 |---|---|
-| Durability | Messages persist in the chat's log; survive subscriber disconnect and node restart |
-| Delivery guarantee | **At-least-once**, with an idempotency key so a recipient can dedupe |
-| Progress tracking | **Per-member position per chat**, with explicit acknowledgement — an unsubscribed interval delays delivery, it does not lose it |
-| Ordering | FIFO **within a chat**: every member sees that chat's messages in the same order. **No** ordering guarantee *across* chats |
-| Retention | A message is removed once it is **past its TTL *and* read by every live member** — never while an un-reaped member has still not read it. Plus a max **unread depth per member per chat** (the one bound defined in the limits table below), and **dead-session reaping** so a member that never reads cannot hold a chat's log from being trimmed indefinitely |
+| Durability | Messages persist in the channel's log and survive subscriber disconnect and node restart — **for as long as the channel is open.** A closed channel's log is discarded (FR-3.3, FR-4.2). Durability here means "no message is lost while the conversation is live", not "the conversation is archived" |
+| Delivery guarantee | **At-least-once**, with an idempotency key so a recipient can dedupe. Re-presentation of an unacknowledged message is normal (FR-4.4), so dedupe is exercised in ordinary operation rather than only after a fault |
+| Progress tracking | **Two positions per member — `delivered` and `acked`** (FR-4.4). Redelivery keys on `acked`, so an unsubscribed interval, or a hand-off the model never acted on, **delays** delivery rather than losing it |
+| Ordering | **Per-speaker FIFO, and nothing stronger.** Every member sees one speaker's messages in the order that speaker sent them. **There is deliberately no total order across speakers** and none is promised: two speakers' messages may reach different members in different relative orders. Nor is there any ordering guarantee across channels — though with one channel per agent (FR-3.4) that has little left to bite on. **Causality is therefore carried in the message, not inferred from position:** a reply names what it answers, through FR-4.6's `reply_to` / `correlation_id`. This is the walkie-talkie property — a channel has no sequencer, and "replying to" is spoken aloud rather than deduced |
+| Retention | **Local to each hub, and that is the whole rule.** Each hub trims its own replica of a channel's log using **its own** members' acknowledged positions: a message is removed once it is **past its TTL *and* acknowledged by every live member on that hub** — never while an un-reaped local member has still not read it. Plus a max **unread depth per member** (below), and **dead-session reaping** so a member that never reads cannot pin the log indefinitely. **No hub waits on another hub's readers**, so no cross-hub position gossip exists and none needs designing; the consequence, stated plainly, is that the same message may live longer on one machine than another, which no member can observe |
 
 ### Limits, retention, and policy
 
@@ -329,52 +385,74 @@ limit is hardcoded. All configuration is applied through the CLI (FR-7.2).
 
 | Parameter | Default |
 |---|---|
-| Message TTL | **24 h** — the age at which a message becomes *eligible* for removal. It is removed only once every member has also read it; age alone never deletes an unread message |
-| Max unread depth per member per chat | 1,000 messages |
-| **Overflow policy** | **Reject the new send with an explicit error** (alternative: drop-oldest) |
+| Message TTL | **24 h** — the age at which a message becomes *eligible* for removal. It is removed only once every live local member has also acknowledged it; age alone never deletes an unacknowledged message |
+| Max unread depth per member | 1,000 messages |
+| **Overflow policy** | **Reject the new send with an explicit error** (alternative: drop-oldest). **Judged on local knowledge:** a hub applies this to the members it holds positions for, since it holds no other hub's (Retention, above) |
 | Max payload size | **None — messages are not size-limited** |
-| Stale-session threshold | 30 min without heartbeat → marked stale in discovery. **Nothing is discarded** — the member keeps its place in every chat |
-| **Reap threshold** | **24 h** without heartbeat → the node gives the member up for gone and **drops its claim on its chats**. What is released is its hold on the trim point, so messages it never read *do* then become removable — that is the point. Its **name is not destroyed**: re-registering it is accepted at any time |
-| Long-poll timeout | **30 s**; the subscriber reconnects on timeout |
+| Stale-session threshold | 30 min without heartbeat → marked unavailable in the roster (FR-9.2). **Nothing is discarded** — the member keeps its place in its channel, and its channel stays open |
+| **Reap threshold** | **24 h** without heartbeat → the hub gives the member up for gone and **drops its claim on its channel**. What is released is its hold on the trim point, so messages it never read *do* then become removable — that is the point. **If it was the channel's last member, the channel closes** (FR-3.3). Its **name is not destroyed**: re-registering it is accepted at any time |
+| Long-poll timeout | **30 s**; the subscriber reconnects on timeout. **Must stay strictly under the host's hook timeout** (FR-5.8), which the operator writes and the adapter is told |
+| **Channel inactivity timeout** | **None, deliberately — there is no such parameter.** A quiet channel is the normal state of this product, so a timer here would close a conversation while both parties were waiting on each other. Idleness is bounded on the *session* instead, by the two thresholds above, plus the operator's ability to remove a session from its channel (FR-7.2) |
+
+**Nothing bounds an eternally idle but live session, and that is a decision rather than an
+oversight.** What such a session actually holds is bounded already: its channel's log by the TTL,
+its held connection and hook process by FR-5.8's no-orphan rule, and its name by reaping. What is
+left is the channel's continued existence, which costs a row. And the product **cannot distinguish**
+a session legitimately waiting hours for a peer's long task from one that will never receive
+anything — only the human knows which. So v1 adds no mechanism and relies on reaping for the dead
+plus FR-7.1's visibility and FR-7.2's eviction for the rest. *If that proves insufficient, the
+growth path is to **probe rather than assume** — wake the session after a generous configurable
+period and ask whether it is still waiting, resetting on an answer and reaping on silence, which
+costs a few cheap turns a day and asks a question instead of guessing. It is recorded here as the
+named alternative, not adopted.*
 
 Overflow rejects rather than drops: a member that has fallen 1,000 messages behind is
 broken, and the sender must learn that rather than have messages disappear silently.
 
-**No message is destroyed unread by a member that is still there.** A chat's log is trimmed
-only up to the point *every live* member has read, and a message is removed only when it is
-**both** past its TTL **and** read by all of them. The TTL is an eligibility condition, not a
-hard expiry — age alone never deletes a message a live member has not seen. This is
-deliberate: a message that was sent, never delivered and never reported as undelivered is
-exactly the failure the overflow policy above exists to prevent, and a hard expiry would
-reintroduce it by another door.
+**No message is destroyed unread by a member that is still there — on the hub that holds it.**
+A hub trims its replica only up to the point *every live local* member has acknowledged, and a
+message is removed only when it is **both** past its TTL **and** acknowledged by all of them. The
+TTL is an eligibility condition, not a hard expiry — age alone never deletes a message a live
+member has not seen. This is deliberate: a message that was sent, never delivered and never
+reported as undelivered is exactly the failure the overflow policy above exists to prevent, and a
+hard expiry would reintroduce it by another door.
 
-**A reaped member stops counting.** Reaping is the one thing that can cause an unread message
-to be removed, and that is its entire purpose: once a member is given up for gone, it is no
+**The guarantee is per hub, and that is the trade the replicated model buys.** No hub can see
+another's positions, so each answers only for its own members. Two consequences, both accepted:
+the same message may be trimmed on one machine while it still exists on another, which no member
+can observe because a member only ever reads its own hub (FR-7.4); and **a hub is never held up by
+a slow reader on another machine**, which is what removes cross-hub position gossip from the design
+entirely.
+
+**A reaped member stops counting.** Reaping is the one thing that can cause an unacknowledged
+message to be removed, and that is its entire purpose: once a member is given up for gone, it is no
 longer one of the members the trim point waits for, so a message only it never read becomes
 removable. The guarantee is therefore bounded, not absolute — a message survives for as long
-as some member that has not been reaped still has not read it.
+as some member on that hub that has not been reaped still has not acknowledged it.
 
-**What bounds storage is therefore not time.** Two mechanisms carry it, and both are
-required. The **unread-depth limit** stops a chat growing behind a member that has stopped
-reading: once any member is 1,000 messages behind, further sends to that chat are rejected
-with an explicit error. **Reaping** then clears the blockage: a member silent past the reap
-threshold is given up for gone and its claim on the trim point is dropped, after which the
-expired messages go. One consequence is accepted and stated plainly rather than left to be
-discovered: a chat holding unread messages for a crashed session **keeps** them, and may stop
-accepting new sends, until that session is reaped.
+**What bounds storage is therefore not time.** Three mechanisms carry it. The **unread-depth
+limit** stops a channel growing behind a member that has stopped reading: once any local member is
+1,000 messages behind, further sends to that channel are rejected with an explicit error.
+**Reaping** then clears the blockage: a member silent past the reap threshold is given up for gone
+and its claim on the trim point is dropped, after which the expired messages go. And **the channel
+closing** discards the log outright (FR-3.3), which is the mechanism that makes the other two
+rarely matter — an ephemeral channel does not accumulate for long. One consequence is accepted and
+stated plainly rather than left to be discovered: a channel holding unacknowledged messages for a
+crashed session **keeps** them, and may stop accepting new sends, until that session is reaped.
 
 **Stale and reaped are two different states, and only the second releases anything.** Marking
-a member **stale** (30 min without heartbeat) is a display state and changes nothing.
-**Reaping** (24 h) is the node deciding a member is gone for good and releasing its claim, so
-the trim point can move again — which does mean messages that member never read can now go.
-Its **name survives**: re-registering it is accepted at any time, and the member simply starts
-from the chat's current state.
+a member **stale** (30 min without heartbeat) makes it unavailable to a connect request (FR-9.3)
+and changes nothing else — it keeps its place and its channel stays open. **Reaping** (24 h) is the
+hub deciding a member is gone for good and releasing its claim, so the trim point can move again —
+which does mean messages that member never read can now go, and which closes the channel if it was
+the last member. Its **name survives**: re-registering it is accepted at any time, and the member
+either rejoins its channel where that channel is still open, or starts with none (FR-2.2).
 
 The reap threshold and the message TTL share a 24 h default but are **separate settings**, so
 message lifetime and dead-session patience can be tuned independently.
 
 **There is no maximum payload size.** A message is never rejected or truncated for being
-large. The consequence is that a chat's storage is bounded only by its message *count*, not
+large. The consequence is that a channel's storage is bounded only by its message *count*, not
 by its size on disk — the unread-depth limit caps how many messages may wait, not how many
 bytes.
 
@@ -382,6 +460,15 @@ bytes.
 
 **None for v1.** No latency, throughput, or wake-time target is set, and none is a
 release condition. Speed is deliberately unconstrained until the design is proven.
+
+**Two measured figures are on record and are inputs to design, not targets.** A returned hook
+becomes a completed turn in roughly **3.7 s** on one host and **7.5 s** on the other, and the
+observed maximum rose as samples accumulated. Anything that derives a timeout from these must use
+the **observed maximum with headroom**, never the mean — five samples bound nothing.
+
+**One capacity figure is *not* on record, and is called out so it is not assumed:** concurrent
+waiters were demonstrated at **two**, not at *n*. A machine running several idle sessions holds
+several waits at once (FR-9.1), and nothing measured bounds how many one hub serves.
 
 ## 7. Constraints
 
@@ -400,7 +487,7 @@ release condition. Speed is deliberately unconstrained until the design is prove
   canonical skill into all five host dialects automatically.
   **An MCP façade is the alternative, and it loses on every axis that matters here.** The one
   thing it could do that a skill cannot — reach a session not running AID at all — is not a
-  case that exists: AID must be present for a chat to exist, and the globally-installed CLI
+  case that exists: AID must be present for a channel to exist, and the globally-installed CLI
   already reaches any session a skill could not. Against that it costs a third-party
   dependency, a per-host configuration snippet the **user** installs by hand, and coverage
   established for only two of the five named hosts — where the skill route covers all five by
@@ -451,13 +538,21 @@ its override reinstates a design that was rejected.
 | ID-5 | **No process spawning and no session resumption in the product** | Channel-owns-launching — the operator's orchestrator already launches sessions, so a dead session is a launch problem rather than a wake problem |
 | ID-6 | **Address by stable name**, session id internal; the mailbox binds to the name | Session-id addressing — sessions restart constantly (context limits, crashes, `/clear`), which orphans undelivered mail and forces every sender to re-discover ids |
 | ID-7 | **Async request/reply** via `correlation_id`, and **no blocking API** | A synchronous `ask(timeout)` — couples two turn-based agents' timelines; the asking agent stalls while the peer may not even be awake, and any timeout is a guess |
-| ID-8 | **Durable log, at-least-once, per-member cursor, explicit ack** | Fire-and-forget. Under the durable model the re-arm gap becomes *latency* rather than loss — standard consumer-offset semantics |
+| ID-8 | **Durable log, at-least-once, per-member cursor, explicit ack.** **Two elements are OVERRIDDEN.** *Durability is now bounded by the channel's life* — a closed channel's log is discarded (FR-3.3, FR-4.2), so "durable" means no loss while the conversation is live, not an archive. And *one cursor became two* — `delivered` and `acked` (FR-4.4) — because on a host that gates the session's own calls the hand-off and the acknowledgement are performed by different parties, and collapsing them would silently convert at-least-once into at-most-once. **The surviving core is unchanged** | Fire-and-forget. Under the durable model the re-arm gap becomes *latency* rather than loss — standard consumer-offset semantics |
 | ID-9 | **Reject on overflow.** A full mailbox means a broken consumer, and the sender must learn that rather than have messages vanish. **The oversized-payload half of this decision is OVERRIDDEN:** it originally also hard-rejected large payloads, and there is now **no message size limit** at all — a message is never rejected or truncated for being large (§6). One consequence follows and is stated in §6: storage is bounded by message *count*, never by bytes | Drop-oldest, or truncation. Silent truncation had already been recorded as tech debt in the originating workspace |
 | ID-10 | **Every limit is configurable through the CLI** | Hardcoded constants |
-| ID-11 | **The CLI is the complete administrative interface, and the privilege boundary is absolute** — no administrative operation is reachable from the agent-facing surface | Exposing administration over MCP — an agent could then pair an unknown peer or stop the node |
+| ID-11 | **The CLI is the complete administrative interface**, and no administrative operation is reachable from the agent-facing surface. **The word "absolute" is OVERRIDDEN twice over.** First by candour: FR-7.3 states that the boundary is a skill that omits things, not a sandbox, and any session whose host runs shell commands can call the CLI directly. Second by scope: **channel lifecycle is no longer administrative** — an agent opens and closes its own channel (FR-3.4), because requiring a human to pre-create one would defeat an autonomous exchange between two agents. What remains administrative is service management, retention policy, and evicting a session from its channel | Exposing administration over MCP — an agent could then pair an unknown peer or stop the node |
 | ID-12 | **One shared core, and no second implementation of the message plane.** **The MCP half of this decision is OVERRIDDEN ENTIRELY** (§4 Out of Scope): it originally put the message plane on *both* the CLI and an MCP façade over one core, and the façade is withdrawn — a rendered chat skill takes its place. **Note what the override does to the rejected alternative opposite:** the objection to CLI-only was that skills are the least portable layer and would need hand-authoring per host, and that is now known to be false for this repository, which renders one canonical skill into all five host dialects automatically. The surviving half — one core, no second implementation — is unchanged and is now FR-0.1 | CLI-only — skills are the least portable layer and would need hand-authoring per tool, forever, including future ones. MCP-only — leaves hosts with weak MCP configuration stranded |
 | ID-13 | **v1 is same-machine plus a trusted LAN**, with no NAT traversal and no relay. **Two elements are OVERRIDDEN.** The pre-shared key is gone: there is **no authentication anywhere** in this product, and trust is implicit in network membership, which makes the network itself the security boundary (§4, §8). mDNS is gone as a *named mechanism*: FR-6.1 now states discovery as an **outcome**, because research found no single mechanism reaches every environment users are actually in — of eleven comparable local-first tools surveyed only two make mDNS primary, and **all eleven** ship a manual backstop. **The surviving core is unchanged** | Same-machine-only — loses the federation the stakeholder wanted. Full NAT traversal or a relay tier — all of the risk, none of the core value |
 | ID-14 | **Risk-first priority:** the P0 spike runs before anything is built | Folding validation into P2 — would build federation on top of a wake mechanism that may not exist on three of the five target hosts |
+| ID-15 | **Per-speaker order, not a total order.** Each speaker's messages arrive in that speaker's order; two speakers' messages carry no promised relative order, and causality is stated in the message via `reply_to` | A total order per channel — needs a sequencer, and a sequencer is a per-channel owner by another name, which reintroduces everything ID-16 removes. Logical clocks with a tie-break, or a CRDT — turns a problem §6 classes as solved into a distributed-consensus problem, for a LAN of two or three machines |
+| ID-16 | **No per-channel home. A channel is a name, replicated to every hub with a member in it, authoritative nowhere** | A single home machine per channel — it decided whose disk held the log, whose uptime gated *reads*, and whose retention policy governed the conversation, and nothing in the design ever told the operator they were choosing that. It also forced cross-hub position gossip for the trim point, which the local rule now deletes outright |
+| ID-17 | **One channel per agent at a time**, so opening one is bounded by leaving the last | Membership in several channels at once — a position pair per channel, an inbox that fans in across channels, and channel creation needing a quota nobody had specified. The bound removes all three, and its cost — an agent must leave one conversation to join another — is accepted |
+| ID-18 | **A channel ends when its last member leaves or is reaped, and never on a clock** | A channel inactivity timeout — proposed at one hour and rejected because idle waiting is this product's normal state: two agents each waiting on the other are "inactive" by definition, so the timer would destroy the conversation during precisely the case the product exists for. Treating a dropped connection as a departure — a network blip would then garbage-collect a live channel and its log |
+| ID-19 | **A hub control plane: a roster of who is available, and a directed connect request the hub answers from state with no accept step** | An all-call channel used as a hailing frequency — incompatible with ID-17, since an agent cannot sit on both its channel and the all-call, and it wakes every idle agent for every hail. Pending invitations with an explicit accept — an accept is a call the woken session makes, and measurement found a host that gates such a call behind a human click, so the request would wait on a person (FR-5.7). Human-mediated rendezvous, the operator naming the channel to both agents — workable and needing no mechanism, but it makes a human a component of every autonomous exchange |
+| ID-20 | **The operator writes the host's hook timeout; the product states the value it needs and the adapter is told it** | The product writing the host's configuration — FR-0.4 forbids it, and that prohibition is load-bearing, not a preference. The adapter inheriting the platform default — measurement put one host's default under 60 s, shorter than this product's own 30 s long-poll, so inheriting it means the wake never arrives and nothing reports why |
+| ID-21 | **The node is host-blind; only the adapter knows which host it serves** | The node rendering per host, using the `tool` a session declares — it grows a branch per host in the node and the store, every new host then touches both, and FR-5.2's "only the adapter differs" becomes false. What a session declares instead is capability *data* the node can honour without interpreting |
+| ID-22 | **Nothing bounds an eternally idle but live session in v1** — reaping removes the dead, and the operator can see and evict the rest | A generic idle timeout — the product cannot tell a session waiting hours for a peer's long task from one that will never receive anything, and only the human can. A probe-on-idle wake that asks rather than assumes is the recorded growth path, not the v1 choice |
 
 ## 8. Assumptions & Dependencies
 
@@ -636,25 +731,25 @@ any host tool guarantees a version.**
 
 | # | Criterion |
 |---|---|
-| AC-1 | **The wake works, across tools.** A Cursor session and a Claude Code session **on the same machine**, in different repositories, share a chat and exchange a message, and the recipient **acts on it without any human action**. This is the stage-P2 form: it proves the wake and the cross-tool adapter contract without depending on federation |
+| AC-1 | **The wake works, across tools.** A Cursor session and a Claude Code session **on the same machine**, in different repositories, share a channel and exchange a message, and the recipient **acts on it without any human action**. This is the stage-P2 form: it proves the wake and the cross-tool adapter contract without depending on federation |
 | AC-2 | **The target case, end to end.** The same exchange with the two sessions on **different machines on the same network**. Identical to AC-1 except for the network hop, and deliberately separate because federation does not exist until stage P3 — AC-1 cannot pass at P2 while requiring a second machine |
-| AC-3 | A member whose session restarts mid-flight receives its undelivered messages on reattaching to the same name, in every chat it belongs to, resuming each chat's own position |
+| AC-3 | **A restart does not lose mail, and a dropped connection does not end a conversation.** A member whose session restarts mid-flight re-registers under the same name, rejoins the channel it was in *provided that channel is still open*, and resumes from its **acknowledged** position — so anything delivered but never acknowledged is presented again (FR-4.4). The same run demonstrates the other half: while that session was gone it was **stale, not departed**, so the channel did not close under it (FR-2.3, FR-3.3) |
 | AC-4 | **Two machines on the LAN discover each other**, complete the handshake, and deliver a message across. Stated as an outcome: the criterion is silent on *how* they discover each other, because FR-6.1 is. It must be satisfiable by the guaranteed path alone — a criterion that can only pass when a particular network feature happens to work is a criterion that fails for reasons the product does not control |
-| AC-5 | A message sent to a chat whose **home machine is offline** is delivered once that machine returns |
+| AC-5 | **An unreachable peer delays, never loses.** A message sent while a peer hub is unreachable is delivered to that hub once it returns, and its local members then read it. Where the channel has closed everywhere in the meantime there is nothing to deliver, which is the correct outcome rather than a loss (FR-6.3) |
 | AC-6 | With **no subscriber armed**, the message is still readable via `inbox()` at the session's next turn |
-| AC-7 | **A two-member chat is a direct message.** Two sessions exchange private messages through an ordinary chat, using no mention and no whisper |
+| AC-7 | **A two-member channel is a direct message.** Two sessions exchange private messages through an ordinary channel, using no mention and no whisper |
 | AC-8 | A duplicate delivery is deduped by idempotency key; a reply correlates to its originating request |
 | AC-9 | **The CLI stands the node up on a clean machine with no installation step**, and running the command again is safe. "Clean machine" now means only that `aid` is installed and the node has never run — there is nothing to fetch, resolve or verify, so the criterion no longer has an install path to exercise. Its remaining substance is that a first run works from nothing but the shipped payload, and that a second run does not fail. The precise form of the second half is the sub-decision named under FR-1.1 |
 | AC-10 | **Node restart:** unacknowledged messages and every member's position survive a restart of the node itself — not merely of a session |
-| AC-11 | **Retention holds, and nothing is lost to a live member.** A message past its TTL that every live member has read is removed; a message past its TTL that an un-reaped member has **not** read is **kept**. The max-unread-depth bound is enforced. A member silent past the **reap threshold** has its claim dropped and stops counting toward the trim point, after which that chat's log can be trimmed past where it had reached — **including messages that member never read**, which is the whole purpose of reaping |
+| AC-11 | **Retention holds per hub, and nothing is lost to a live local member.** A message past its TTL that every live member *on that hub* has acknowledged is removed; a message past its TTL that an un-reaped local member has **not** acknowledged is **kept**. The max-unread-depth bound is enforced. A member silent past the **reap threshold** has its claim dropped and stops counting toward the trim point, after which that hub's replica can be trimmed past where it had reached — **including messages that member never read**, which is the whole purpose of reaping. **The criterion is deliberately silent about other hubs**: no hub waits on another's readers, so a message outliving its TTL on a second machine is conformant, not a defect (§6 Retention) |
 | AC-12 | **Re-arm window:** messages arriving while the subscriber is between arms are all delivered, in order, on the next arm |
-| AC-13 | **Chat delivery:** a message sent to a chat reaches every member of that chat, whether it has two members or many |
-| AC-14 | **Operator visibility:** the CLI shows machines and sessions, this machine's chats and their members, per-member unread depth, and the audit log |
-| AC-15 | **Surface boundary holds:** the agent-facing surface — the rendered chat skill — describes no operation that stops the node, changes configuration, creates or deletes a chat, or changes another session's chat membership, and *does* describe a session joining and leaving chats itself; joining a non-existent chat fails explicitly. **The verification changes shape with the surface, and honestly:** this is now a check on what the skill *offers*, not a check that an agent is *prevented*. FR-7.3 already said the boundary was never a sandbox, and with the surface being documentation rather than a protocol, that is plain instead of a caveat |
+| AC-13 | **Channel delivery:** a message sent to a channel reaches every member of that channel, whether it has two members or many, and on whichever machine each member sits |
+| AC-14 | **Operator visibility:** the CLI shows machines and sessions, the open channels this hub knows and their members, per-member unread depth and idle time, and the audit log |
+| AC-15 | **Surface boundary holds, where the boundary now runs.** The agent-facing surface — the rendered chat skill — describes no operation that stops the node, changes configuration, sets retention policy, or removes another session from its channel; and it *does* describe the session's own channel (open, join, leave) and the hub verbs (roster, connect request). **Channel creation is on the agent side now, which is a deliberate reversal** — requiring a human to pre-create a channel would defeat an autonomous exchange. **And the verification is a check on what the skill *offers*, not that an agent is *prevented*:** FR-7.3 was always explicit that the boundary is not a sandbox, and with the surface being documentation rather than a protocol that is plain instead of a caveat |
 | AC-16 | **Only a major-version difference errors:** two nodes differing by minor or patch version interoperate normally; a major-version difference fails the handshake with a clear error — never silently half-work |
-| AC-17 | **Whisper is private:** in a chat of three or more, a whispered message reaches only its target. Every other member sees it neither on delivery nor in history |
+| AC-17 | **Whisper is private:** in a channel of three or more, a whispered message reaches only its target. Every other member sees it neither on delivery nor in history |
 | AC-18 | **Mention is visible:** a mentioned message reaches every member, and the mentioned member can tell it was aimed at them |
-| AC-19 | **Local-only resolution:** a chat name given without a machine address resolves on this machine only. When no such chat exists here the result is **not found** — even with a chat of that name on another machine on the network |
+| AC-19 | **RETIRED, and the number is not reused.** It required local-only resolution of a chat name given without a machine address. A channel no longer *has* a machine address (FR-3.2) — it is one name on every hub — so the criterion tests a distinction the product no longer draws. Kept as a row so that a reference to AC-19 resolves here rather than to a criterion that inherited the number |
 | AC-20 | **The spike answers, and the answers are written down.** All four P0 questions have recorded outcomes: whether an idle Claude Code session acts on a message with no human action; whether an idle Cursor session does; **what bounds how long a Cursor `stop` hook may block, and what the host does when that bound is passed**; and whether the exchange holds across two machines on the LAN. A "we could not determine it" is a valid answer only when it records what was tried. No P0 code survives into P1 |
 
 > **Why the third question is no longer "the measured limit … before the host kills it".** It was
@@ -664,12 +759,18 @@ any host tool guarantees a version.**
 > it: output discarded, process left running. Asked in its original form the question has no honest
 > answer, because it presumes a kill that does not happen and a number that is whatever was
 > configured. Restated, it is answerable and the answer is more useful: it yields FR-5.8.
-| AC-21 | **Chat lifecycle is the operator's, and it works.** The operator creates a chat and deletes one through the CLI; a created chat is joinable and a deleted one is not. Nothing else in §9 exercised chat creation, though every other criterion depends on a chat existing |
+| AC-21 | **RETIRED, and the number is not reused.** It made chat lifecycle the operator's, verified through the CLI. Channel lifecycle is now the agent's (FR-3.4) and its end is automatic (FR-3.3), so there is no operator create or delete left to exercise. What replaced it is AC-29 (an agent opens a channel and holds one at a time) and AC-30 (a channel ends when its last member is gone). Kept as a row so that a reference to AC-21 resolves here |
 | AC-22 | **A missing runtime fails clearly, and only for the component that needs it.** On a machine with `aid` installed and no usable Node present, starting the node fails with an explicit message naming Node as the prerequisite — not a stack trace — and every `aid` command that needs no runtime continues to work. **Restated, not withdrawn:** the criterion previously named Python and the `deploy` verb; the prerequisite is now Node and the verb is `start`, but the property being tested is unchanged and still worth testing, because the CLI itself remains runtime-free and that promise is exactly what this criterion protects |
 | AC-23 | **A wake does not loop.** A session woken by an arriving message runs one turn and settles. The stop event that ends the woken turn does not start another wait, and the session does not wake again until a further message arrives — demonstrated on a host whose stop hook re-fires after the woken turn, which is the case that makes this non-trivial (FR-5.6) |
 | AC-24 | **The woken turn completes with no human in the path.** From arrival to the session having acted, no approval prompt is raised, on a host whose default is to gate an agent's privileged actions. Where the design chose pre-authorisation instead, the operator's install step is what satisfies this and the criterion is met only with that step performed (FR-5.7) |
 | AC-25 | **An over-running wake leaves nothing behind.** After a wake whose block would exceed the host's hook timeout, no adapter process survives and the node's count of connected waiters returns to what it was. Verified by process and connection count, not by absence of error, since the host reports nothing in this case (FR-5.8) |
 | AC-26 | **A host payload carrying a byte-order mark is read, not rejected.** The adapter parses a stop payload prefixed with a UTF-8 BOM and acts on its contents (FR-5.9) |
+| AC-27 | **The roster shows who can be reached.** A session asks its hub who else is there and gets, for each agent, its name, host tool, declared capabilities, liveness, and whether it is **available** — registered, not stale, and not already in a channel. Agents on other machines appear in the same answer once federation exists, and a session in no channel appears in every other agent's roster (FR-9.1, FR-9.2) |
+| AC-28 | **A directed connect request is answered from state, immediately, with no human in the path.** Sent at an **available** agent, it joins that agent to the named channel and the agent learns so on its next wake. Sent at an agent **already in a channel**, or stale, or unknown, it **fails at once with an explicit reason**. No approval prompt is raised at either end, nothing is left pending, and there is no accept, decline, or expiry to observe (FR-9.3). Verified across machines as well as locally, where an unreachable peer makes the request fail rather than queue (FR-9.4) |
+| AC-29 | **One channel at a time, and an agent opens its own.** A session with no channel opens one and is in it. A session already in a channel that tries to join another is **refused with an explicit error**, and succeeds after leaving. A session's own `leave` removes only itself, and the channel survives its creator leaving while another member remains (FR-3.3, FR-3.4) |
+| AC-30 | **A channel ends when its last member is gone — and only then.** It closes when the last member leaves explicitly, and it closes when the last member is **reaped**; its log is then discarded. It does **not** close because it fell quiet, because its creator left, or because a member's connection dropped: a dropped connection is stale, then reaped (FR-2.3, FR-3.3). The absence of an inactivity close is part of the criterion — a channel whose two members both wait past any plausible timer is still there |
+| AC-31 | **Per-speaker order holds; no cross-speaker order is claimed.** Every member receives one speaker's messages in the order that speaker sent them. The criterion asserts **nothing** about the relative order of two speakers' messages, and a run in which two members observe two speakers in different relative orders is **conformant, not a defect** — which is why a reply is matched by `reply_to` rather than by position (§6 Ordering, AC-8) |
+| AC-32 | **Delivered is not acknowledged.** A message handed toward a session that never acknowledged it is **presented again**, and the recipient dedupes it on the idempotency key. Demonstrated by interrupting a session between the hand-off and its acknowledgement, after which the message is still there — the case that would otherwise silently turn at-least-once into at-most-once (FR-4.4, FR-4.5) |
 
 > **Every criterion above is settled; none is pending.** Most are stakeholder-ratified
 > outright. Nine arrived from a quality check in an earlier interview and were unratified on
@@ -690,7 +791,8 @@ any host tool guarantees a version.**
 > pipeline text.
 >
 > **Three from the cross-reference pass:** **AC-21** (new — chat lifecycle was verified by
-> nothing, though every other criterion depends on a chat existing), **AC-22** (new — carrying
+> nothing, though every other criterion depends on a chat existing; **since retired**, because
+> channel lifecycle became the agent's and its end automatic — AC-29 and AC-30 replaced it), **AC-22** (new — carrying
 > the stakeholder's decision that a runtime is a prerequisite of the node rather than of AID),
 > and the rewrite of **AC-11**, which now turns on the live-member bound and the reap threshold.
 >
@@ -718,10 +820,10 @@ exception and is meant to be** — it produces answers, not product.
 | Stage | Scope | Verifies |
 |---|---|---|
 | **P0 — POC** | Four tests against a throwaway stub node (one endpoint that waits, then returns a message), on **Claude Code and Cursor only**: (1) idle Claude Code session acts on a message with no human action; (2) idle Cursor session does the same via a blocking `stop` hook; (3) **what bounds how long a Cursor `stop` hook may block, and what the host does at that bound**; (4) the same exchange across two machines on the LAN | AC-20 — the single unvalidated assumption |
-| **P1 — Skeleton** | Node lifecycle + CLI + registration by stable name + chat create/delete/**join/leave**, **including the operator changing another session's membership** (FR-7.2, FR-3.4 — CLI-only, and the counterpart to AC-15's prohibition) + the local half of listing (FR-3.1) + durable `send`/`inbox`/`ack` with fan-out to every member, **pull only** (FR-5.3 — the pull floor ships here, not at P2). **Lifecycle is smaller than it was:** with the node shipping in the `aid` payload (FR-7.6) there is no install step to build | AC-3, AC-6, AC-7, AC-8, AC-9, AC-10, AC-13, AC-21, AC-22 |
+| **P1 — Skeleton** | Node lifecycle + CLI + registration by stable name + **the hub plane** (roster and the directed connect request, FR-9) + an agent opening / joining / leaving its **one** channel and that channel's automatic end (FR-3.3, FR-3.4) + the operator's **eviction** of a session from its channel (FR-7.2) + the local half of listing (FR-3.1) + durable `send`/`inbox`/`ack` with the two positions (FR-4.4) and fan-out to every member, **pull only** (FR-5.3 — the pull floor ships here, not at P2). **The hub plane lands here and not later, because nothing else can create a channel:** with one channel per agent and no all-call, the connect request is the only way two agents ever meet (FR-9), so P2's headline exchange cannot be set up without it | AC-3, AC-6, AC-7, AC-8, AC-9, AC-10, AC-13, AC-22, AC-27, AC-28, AC-29, AC-30, AC-31, AC-32 |
 | **P2 — The wake** | Subscriber and re-arm (FR-5.1, FR-5.2, FR-5.4, FR-5.5 — FR-5.3's pull floor already shipped at P1), and the **rendered chat skill** (FR-0.2, FR-0.4 — FR-0.1 already shipped at P1), which replaces the withdrawn MCP façade. **FR-0.3 completes here, not at P1:** P1 delivered its administration and message-plane halves, but FR-0.3 also requires the CLI to carry the subscriber, which does not exist until this stage | **AC-1 (headline — same machine, cross-tool)**, AC-12, AC-15 |
-| **P3 — Federation** | Discovery, handshake, store-and-forward, version negotiation (FR-6), machine-qualified chat ids and local-only resolution (FR-3.2), the network half of listing (FR-3.1). **Discovery is layered, and the layering is now matched by what §4 promises:** the guaranteed path (a static peer list plus heartbeat) satisfies AC-4, and it is also the whole of the promise — §4 offers zero-configuration discovery as a convenience where the network permits and commits to it nowhere. So shipping the floor delivers this stage rather than leaving a promise unmet, and the best-effort layer above it improves the experience without carrying a criterion | **AC-2 (the target case)**, AC-4, AC-5, AC-16, AC-19 |
-| **P4 — Completeness** | Mention and whisper, audit/operator visibility, retention enforcement. Chats of more than two need nothing new here — fan-out to every member is P1 (AC-13); what P4 adds is **addressing within** a larger chat | AC-11, AC-14, AC-17, AC-18 |
+| **P3 — Federation** | Discovery, handshake, version negotiation (FR-6.1–6.4), **channel replication and queue-on-unreachable-peer** (FR-6.3), the **federated roster and cross-machine connect request** (FR-9.4), the network half of listing (FR-3.1), and **the durability of the inter-node link itself** (FR-6.5 — the one link no measurement covers, and it now carries presence and replication rather than occasional requests). **Discovery is layered, and the layering is matched by what §4 promises:** the guaranteed path (a static peer list plus heartbeat) satisfies AC-4, and it is also the whole of the promise — §4 offers zero-configuration discovery as a convenience where the network permits and commits to it nowhere | **AC-2 (the target case)**, AC-4, AC-5, AC-16 |
+| **P4 — Completeness** | Mention and whisper, audit/operator visibility, retention enforcement. Channels of more than two need nothing new here — fan-out to every member is P1 (AC-13); what P4 adds is **addressing within** a larger channel, plus the per-hub trim rule (§6 Retention) | AC-11, AC-14, AC-17, AC-18 |
 
 **Every stage is required. None is optional.** The stages are a delivery *order*, not a
 priority scale — each is reached in turn, and from P1 onward each leaves working product
@@ -783,7 +885,7 @@ One `###` subsection per feature — a decomposition of §5 into an independentl
 unit, not a second place to state requirements. Every §5 functional requirement maps to at
 least one feature, and **every §9 criterion is owned by exactly one feature**, so both are
 checkable. §9 holds a gapless **AC-1–AC-22**, and the ownership below accounts for all
-twenty-two, once each, matching §10 stage for stage.
+thirty live criteria, once each, matching §10 stage for stage. (AC-19 and AC-21 are retired rows and are owned by nobody — see §9.)
 
 **Five features, one per §10 stage, and the count is a floor rather than a preference.** Two
 things set it. **The spike cannot merge into anything:** AC-20 requires that no code from it be
@@ -1418,14 +1520,18 @@ obligation; it does not pre-write the entry.
 - **Requirements:** §5 FR-0.1, FR-0.3 *(the administration and message-plane halves — the
   subscriber half completes in Feature 003)*, FR-1.1–1.3, FR-2.1, FR-2.2 *(the single-machine
   half: the id's shape)*, FR-2.3 *(liveness tracking and stale-marking — reaping belongs to
-  Feature 005)*, FR-2.4 *(conversation identity — ratified, see the note below)*, FR-3.1 *(local half)*, FR-3.4, FR-4.1–4.7 *(the plain-delivery envelope —
-  FR-4.1's `mention?` / `whisper_to?` fields and FR-4.3's whisper filtering belong to Feature
-  005)*, FR-5.3, FR-7.2 *(start / stop / status / configuration, chat lifecycle, and any change
-  to another session's membership — retention policy belongs to Feature 005)*, FR-7.4 *(the
+  Feature 005)*, FR-2.4 *(conversation identity — ratified, see the note below)*, FR-3.1 *(local
+  half)*, FR-3.2, FR-3.3, FR-3.4, FR-3.8, FR-4.1–4.7 *(the plain-delivery envelope, including
+  FR-4.4's two positions — FR-4.1's `mention?` / `whisper_to?` fields and FR-4.3's whisper
+  filtering belong to Feature 005)*, FR-5.3, FR-5.11 *(the node stays host-blind, which the store
+  schema either honours or does not)*, FR-9.1, FR-9.2, FR-9.3, FR-9.5 *(the hub plane; FR-9.4's
+  cross-machine half belongs to Feature 004)*, FR-7.2 *(start / stop / status / configuration, and
+  eviction of a session from its channel — retention policy belongs to Feature 005)*, FR-7.4 *(the
   **no-client-library** clause — see the ownership note below)*, FR-7.5, FR-7.6, FR-7.7;
   §6 Delivery semantics *(durability, delivery guarantee, progress tracking, ordering)*;
-  §6 Limits *(the **stale-session threshold**)*; §7 Constraints; §10 stage P1
-- **Criteria:** AC-3, AC-6, AC-7, AC-8, AC-9, AC-10, AC-13, AC-21, AC-22  ← ids from §9; never restated here
+  §6 Limits *(the **stale-session threshold**, and the deliberate absence of a channel inactivity
+  timeout)*; §7 Constraints; §10 stage P1
+- **Criteria:** AC-3, AC-6, AC-7, AC-8, AC-9, AC-10, AC-13, AC-22, AC-27, AC-28, AC-29, AC-30, AC-31, AC-32  ← ids from §9; never restated here
 
 > **Specify this feature first.** It is the keystone: the process model, the CLI surface, the
 > store schema and the one core all live here, and every later feature builds on them.
@@ -1434,14 +1540,18 @@ obligation; it does not pre-write the entry.
 > lifecycle, session registration and durable messaging, and the split failed on its own terms:
 > the lifecycle feature owned the store schema the messaging feature needed, so a schema defect
 > in the first blocked the second outright, and the plan had to record one feature as NO-GO until
-> the other was fixed. Lifecycle, registration, chats and messaging all touch **one** store
+> the other was fixed. Lifecycle, registration, the hub plane, channels and messaging all touch **one** store
 > schema and **one** core API. They change together, so they are specified together — which
 > removes that coupling instead of managing it.
 >
-> **It is the largest feature here, and that is stated rather than hidden.** Nine of the
-> twenty-two criteria. Every candidate split line runs through the store schema, which is what
-> went wrong before; if it proves too large to build in one pass, the place to slice it is
-> `/aid-plan`, which can stage one feature across deliveries without re-drawing a boundary.
+> **It is by a distance the largest feature here, and that is stated rather than hidden.** Fourteen
+> of the thirty live criteria. It grew when the **hub plane** landed at stage P1, and that placement
+> is forced rather than chosen: with one channel per agent and no all-call, the connect request is
+> the only way two agents ever meet (FR-9), so nothing downstream can be exercised without it.
+> Every candidate split line still runs through the store schema, which is what went wrong before,
+> and the hub plane is no exception — channel membership and the roster read the same tables. If it
+> proves too large to build in one pass, the place to slice it is `/aid-plan`, which can stage one
+> feature across deliveries without re-drawing a boundary.
 >
 > **FR-7.4 ownership — two features, and this is where it is settled.** FR-7.4 has three
 > separable clauses. **This feature** owns *the node publishes no client library or SDK*.
@@ -1459,14 +1569,19 @@ obligation; it does not pre-write the entry.
 > The host's value may be carried alongside as correlation metadata, so the product's log can be
 > reconciled against the host's, and nothing keys on it.
 >
-> **What that costs, stated so the specifier does not rediscover it.** FR-2.2 lets a name be
-> re-registered, and re-registering **reattaches** the session to its existing chat memberships and
-> positions. A product-minted id cannot tell whether the thing reattaching is the same conversation
-> as before or a different one that happens to reuse the name — a host-supplied id could, because
-> the host knows. So a stale reattachment is possible: a fresh conversation inherits a previous
-> one's unread positions and membership. Whether that matters is a specification question. If it
-> does, the correlation metadata is where the check would come from, and the check would then work
-> on Cursor and nowhere else — which is a good reason to make the behaviour correct without it.
+> **What that costs — and how much smaller the cost became.** FR-2.2 lets a name be re-registered,
+> and re-registering **reattaches** the session to its channel. A product-minted id cannot tell
+> whether the thing reattaching is the same conversation as before or a different one reusing the
+> name; a host-supplied id could, because the host knows. So a stale reattachment is possible: a
+> fresh conversation inherits a previous one's position. **Two later decisions shrank this
+> considerably**, which is worth recording so the specifier does not budget for the original
+> problem: an agent holds **one** channel rather than many (FR-3.4), so there is one position to
+> inherit rather than a set of memberships; and a channel **closes when its last member is gone**
+> (FR-3.3), so a name returning to a conversation that has ended reattaches to nothing at all. What
+> remains is the narrow case of a fresh conversation reusing a name while that name's channel is
+> still open with other members in it. Whether that matters is a specification question. If it does,
+> the correlation metadata is where a check would come from — and it would work on one host and
+> nowhere else, which is a good reason to make the behaviour correct without it.
 
 #### Description
 
@@ -1499,16 +1614,23 @@ How a session says who it is, and how it gets its place back.
 
 A session registers a **name** — plus which tool it is, where it is working, and what it can
 do. The name is an identity, not an address: it is how the session is recognised inside a
-chat, mentioned, and whispered to. Nobody sends *to* a name.
+channel, mentioned, whispered to, and asked to connect. Nobody sends *to* a name.
+
+Registering also puts the session **on the hub**, which is a separate thing from being in a
+channel and outlasts every channel it joins. That is what makes it visible to other agents and
+reachable by a request to connect — an agent in no channel is unreachable by any message, so
+without the hub it could never be invited into one.
 
 Names matter because sessions do not last. They crash, hit their limits, get cleared and
-restarted, constantly. If a session's place in its conversations were tied to the window,
+restarted, constantly. If a session's place in its conversation were tied to the window,
 every restart would lose it. Tying it to the name instead means restarting and re-claiming
-the name puts you back exactly where you were — in every chat you belong to, at the point
-you had read up to in each.
+the name puts you back where you were — in your channel, if it is still open, at the point you
+had acknowledged. Where the channel ended while you were gone, you come back with none, which is
+correct rather than a loss: the conversation is over.
 
-A session's full identity is its machine plus its name, matching how chats are addressed.
-Names are unique per machine.
+A session's full identity is its machine plus its name; names are unique per machine. A **channel**
+carries no machine in its name, and the asymmetry is deliberate — a session really does live on one
+machine, while a channel is one name everywhere (FR-3.2).
 
 The node also tracks whether a session is still alive. One quiet for 30 minutes is marked
 **stale** — probably gone — so the operator's view distinguishes "reading slowly" from
@@ -1518,29 +1640,56 @@ Giving a session up **for good** is a later, separate state (reaping, at 24 hour
 belongs to retention, not registration. This feature observes and reports liveness; it
 never releases anything.
 
-The chat, and everything you do with one.
+How two agents find each other, and how a conversation starts.
 
-**A chat is the only thing a message is addressed to.** There is no send-to-a-person. The
-smallest chat has two members, and that *is* a private conversation — the same mechanism,
+The hub keeps a **roster**: who is registered, what tool they are in, what they can do, whether
+they are still alive, and — the part that matters — whether they are **available**, meaning not
+already in a channel. A session reads that roster and picks somebody.
+
+Then it **asks to be connected**, naming one agent and one channel. The hub answers straight away
+from what it already knows: if the target is available it is put into the channel and finds out on
+its next wake; if it is already talking to somebody, or has gone quiet, or is not there at all, the
+request fails immediately and says which. There is no invitation waiting to be accepted, nothing to
+decline, and nothing that expires — **and the reason is measured rather than aesthetic.** An accept
+would be an action the woken agent performs, and on at least one host an agent's actions are gated
+behind a human clicking approve; a request that needs a click is not autonomous. Answering from
+state removes the person from the path.
+
+To talk to two agents, ask twice. There is no broadcast and no channel that everybody sits on.
+
+The channel, and everything you do with one.
+
+**A channel is the only thing a message is addressed to.** There is no send-to-a-person. The
+smallest channel has two members, and that *is* a private conversation — the same mechanism,
 not a special case. One idea instead of two.
 
-You create and delete chats through the CLI; a session only joins and leaves for itself, and
-joining one that does not exist fails rather than quietly creating it. Chat lifecycle lives
-here rather than with node administration because it is the thing every other criterion in
-this feature depends on — there is nothing to send to until a chat exists.
+**An agent opens its own channel and holds exactly one at a time.** Opening is joining, in one
+step. To go elsewhere it leaves first — trying to join a second while in a first is refused and
+says so. That single rule does several jobs at once: it is why an agent needs no quota on channels,
+why "available" in the roster has a precise meaning, and why the store keeps one position per
+session instead of one per membership.
 
-A chat may have any number of members. Two is the minimum and the proving case, but a
-message fans out to **every** member from the start; larger chats need nothing new here.
-What they add later is a way to address *within* them. A session can also list the
-chats on this machine and the ones it belongs to — without that, there would be no way to
-learn a chat's name in order to join it.
+Nobody owns a channel. It survives whoever opened it walking away, and it **ends when its last
+member is gone** — left explicitly, or given up for dead — at which point its log is discarded. It
+is a conversation, not a room and not an archive. There is deliberately **no idle timeout**: two
+agents waiting hours on each other is this product's normal state, and a clock here would kill the
+conversation in exactly that case.
 
-Each chat keeps a **durable log**, and each member keeps **their own place** in it. Being
-away delays messages; it does not lose them — right up until the node gives that member up
-for gone and reaps it, which is retention's job and is covered in Feature 005. Within that
-window, being away costs nothing. A message may arrive twice, so each carries an
-identifier that lets a recipient spot the repeat. Within one chat everyone sees the same
-order.
+A channel may have any number of members. Two is the minimum and the proving case, but a
+message fans out to **every** member from the start; larger channels need nothing new here.
+What they add later is a way to address *within* them.
+
+Each channel keeps a log, and each member keeps **two places** in it — what has been handed
+toward them, and what they have actually acknowledged. Redelivery follows the second, which is
+what stops a message being marked read because it was passed to a session that then died before
+its turn ran. Being away delays messages; it does not lose them — right up until the node gives
+that member up for gone and reaps it, which is retention's job and is covered in Feature 005.
+A message may arrive twice, so each carries an identifier that lets a recipient spot the repeat;
+here that is ordinary traffic rather than a fault path.
+
+**Order is per speaker, and only per speaker.** Everyone sees one speaker's messages in the order
+that speaker sent them, and nothing promises how two speakers' messages interleave. A reply
+therefore names what it answers instead of relying on where it lands.
 
 Nothing here blocks. A reply is just another message sent back, matched to what it answers
 by a shared identifier. No session ever waits on another — two turn-based agents cannot
@@ -1563,16 +1712,22 @@ must work on its own, because it is the floor every host falls back to.
   restarts.
 - As a session that just restarted, I want to re-claim my name and find my unread messages
   waiting, so that a crash costs me nothing.
-- As a session in several chats, I want each chat to remember separately how far I have
-  read, so that catching up in one does not skip messages in another.
+- As a session that restarted while my channel had already ended, I want to come back with no
+  channel rather than a broken reference, so that a finished conversation stays finished.
 - As the operator, I want sessions that have gone quiet to be marked as such, so that I can
   tell a slow reader from a dead one.
-- As the operator, I want to create a chat and add sessions to it, so that they have
-  somewhere to talk.
-- As the operator, I want to delete a chat I no longer need, so that the list stays
-  meaningful.
-- As a session, I want to list the chats here and join one by name, so that I can take part
-  without being told an address out of band.
+- As a session with nothing to do, I want to see which other agents are available, so that I can
+  choose somebody to work with instead of waiting to be told.
+- As a session, I want to open a channel and pull one named agent into it, so that a conversation
+  can start without a human setting it up for us.
+- As a session, I want a request to an agent that is already busy to fail immediately and say so,
+  so that I try somebody else rather than wait on something that will never happen.
+- As a session already in a channel, I want an attempt to join a second one to be refused clearly,
+  so that I am never half in two conversations.
+- As a session, I want the channel to outlive whoever opened it, so that the conversation does not
+  end because one participant moved on.
+- As the operator, I want a session removed from its channel when I can see it is idle for no
+  reason, so that I have a remedy without restarting anything.
 - As a session, I want to read messages that arrived while I was away, so that being busy
   costs me nothing.
 - As a session, I want to mark how far I have read, so that I do not re-read the same
@@ -1580,7 +1735,10 @@ must work on its own, because it is the floor every host falls back to.
 - As a session, I want to spot a repeated message, so that acting twice on one instruction
   cannot happen.
 - As a session, I want to send a reply that is recognisably an answer, so that a request
-  and its response can be matched without either side waiting.
+  and its response can be matched without either side waiting — and without depending on the order
+  two speakers' messages happen to arrive in.
+- As a session that was handed a message and then crashed before acting on it, I want that message
+  presented again, so that nothing is marked read that I never saw.
 
 #### Technical Specification
 
@@ -1653,8 +1811,10 @@ must work on its own, because it is the floor every host falls back to.
 
 - [ ] Given a new session, when it registers a name with its tool, working directory and
       capabilities, then it is recognised by that name.
-- [ ] Given a name already held, when the same session restarts and re-registers it, then
-      it is reattached to every chat it belonged to, at its previous position in each.
+- [ ] Given a name already held whose channel is still open, when the same session restarts and
+      re-registers it, then it rejoins that channel at its previously **acknowledged** position.
+- [ ] Given a name whose channel closed while the session was gone, when it re-registers, then it
+      is accepted and holds **no** channel — a finished conversation is not resurrected.
 - [ ] Given a session that restarted mid-flight, when it reattaches, then messages that
       arrived while it was gone are still waiting.
 - [ ] Given a registered session, when its full identity is read, then it is **this machine's
@@ -1664,20 +1824,51 @@ must work on its own, because it is the floor every host falls back to.
       of the id's shape, not a cross-machine test.
 - [ ] Given a session that has sent no heartbeat for the configured interval, when the
       operator lists sessions, then it is shown as stale.
-- [ ] Given a session marked stale, when its chats are inspected, then its position is
-      still held — being marked stale discards nothing.
+- [ ] Given a session marked stale, when its channel is inspected, then its position is
+      still held and the channel is still open — being marked stale discards nothing, and a quiet
+      member does not end a conversation.
+- [ ] Given a registered session in no channel, when another agent reads the roster, then it appears
+      as **available** — hub membership is independent of any channel.
 
-*From Durable Chat Messaging:*
+*From the hub plane:*
 
-- [ ] Given the operator, when a chat is created through the CLI, then a session can join it.
-- [ ] Given a chat, when the operator deletes it through the CLI, then it can no longer be
-      joined.
-- [ ] Given a chat with two members, when one sends a message, then the other can read it.
-- [ ] Given a chat with more than two members, when one sends a message, then **every**
+- [ ] Given two registered sessions and neither in a channel, when one reads the roster, then it
+      sees the other with its tool, capabilities, liveness, and marked **available**.
+- [ ] Given an available target, when a session asks to connect to it naming a channel, then the
+      target is in that channel and learns so on its next wake — with **no approval prompt raised
+      at either end** and nothing left pending.
+- [ ] Given a target already in a channel, when a session asks to connect to it, then the request
+      **fails immediately** with a reason naming that it is busy.
+- [ ] Given a target that has gone stale, when a session asks to connect to it, then the request
+      fails immediately rather than waiting for it to come back.
+- [ ] Given a name that is not registered, when a session asks to connect to it, then the request
+      fails immediately and explicitly.
+- [ ] Given a session that has asked to connect, when its own state is inspected, then there is no
+      pending invitation anywhere — the answer was given from state, so nothing is stored to accept,
+      decline, or expire.
+- [ ] Given a session wanting to reach two agents, when it tries, then it sends **two** requests —
+      there is no broadcast form to reach for.
+
+*From durable channel messaging:*
+
+- [ ] Given a session in no channel, when it opens one, then it is in that channel and the channel
+      exists.
+- [ ] Given a session already in a channel, when it tries to join another, then the attempt is
+      **refused with an explicit error**, and it succeeds after the session leaves the first.
+- [ ] Given a channel whose creator has left while another member remains, when the channel is
+      inspected, then it is **still open** — the creator holds no lasting claim.
+- [ ] Given a channel whose last member leaves, when it is inspected, then it is closed and its log
+      is gone.
+- [ ] Given a channel whose last member stops heartbeating, when the reap threshold passes, then
+      the channel closes — and **not before**, however long it has been quiet.
+- [ ] Given a channel with two members both idle far longer than any plausible timer, when it is
+      inspected, then it is still open. There is no inactivity close, deliberately.
+- [ ] Given a channel with two members, when one sends a message, then the other can read it.
+- [ ] Given a channel with more than two members, when one sends a message, then **every**
       member can read it — fan-out is not limited to the two-member case.
 - [ ] Given no subscriber armed, when a message arrives, then it is readable at the
       session's next turn — the pull path works alone.
-- [ ] Given two sessions in a two-member chat, when they exchange messages, then it behaves
+- [ ] Given two sessions in a two-member channel, when they exchange messages, then it behaves
       as a private conversation, with no mention or whisper involved.
 - [ ] Given a message read and acknowledged, when the session reads again, then it is not
       returned a second time.
@@ -1685,21 +1876,23 @@ must work on its own, because it is the floor every host falls back to.
       repeat is identifiable by its identifier.
 - [ ] Given a message sent as a reply to an earlier one, when the recipient reads it, then it
       can tell which message it answers — a reply correlates to its originating request.
-- [ ] Given a member of a chat, when it leaves through the CLI, then it stops receiving that
-      chat's messages and the chat no longer lists it as a member.
-- [ ] Given the operator and a chat, when they add **another** session to it through the CLI,
-      then that session is a member and receives the chat's messages — the operator can place
-      a session, which no session can do for another (AC-15).
-- [ ] Given the operator and a chat, when they remove **another** session from it through the
-      CLI, then that session stops receiving its messages.
+- [ ] Given a member of a channel, when it leaves, then it stops receiving that channel's messages
+      and the channel no longer lists it as a member.
+- [ ] Given the operator and a session sitting idle in a channel, when they remove it through the
+      CLI, then it stops receiving that channel's messages — eviction is the operator's remedy, and
+      no session can do it to another (AC-15).
 - [ ] Given unacknowledged messages, when the node is restarted, then those messages and
       every member's position survive.
-- [ ] Given several messages sent into one chat, when members read them, then all members
-      see them in the same order.
-- [ ] Given a session, when it tries to join a chat that does not exist, then the attempt
-      fails explicitly and no chat is created.
-- [ ] Given a session, when it lists chats, then it sees the chats on this machine and the
-      ones it belongs to.
+- [ ] Given several messages sent by **one** speaker into a channel, when members read them, then
+      every member sees that speaker's messages in the order it sent them.
+- [ ] Given two speakers sending concurrently, when two members read the channel, then a difference
+      in the **relative** order of the two speakers' messages is **conformant** — no total order is
+      claimed, and this scenario exists to stop a later reader filing that as a defect.
+- [ ] Given a message handed toward a session that is interrupted before acknowledging it, when the
+      session comes back, then that message is presented again and is identifiable as a repeat by
+      its idempotency key.
+- [ ] Given a session, when it lists channels, then it sees the open channels this hub knows and
+      which one it is in.
 - [ ] Given any operation in the message plane, when it is called, then it returns without
       waiting on another session.
 
@@ -1768,7 +1961,7 @@ message arriving two seconds in is delivered two seconds in. It only decides how
 idle connection recycles.
 
 There is a gap, however small, between one connection closing and the next opening. **The
-gap must not lose anything.** Because the chat log is durable and every member keeps their
+gap must not lose anything.** Because the channel log is durable and every member keeps their
 own place, a message arriving mid-gap is simply read on reconnection, in order, along with
 anything else missed. This is the entire reason the durable log exists.
 
@@ -1783,7 +1976,7 @@ a number the spike measures: how long a `stop` hook may block before the host ki
 sequencing is carried by the stage order (P0 before P2) and belongs in the delivery plan;
 it is stated here so the dependency is visible to anyone reading this feature alone.
 
-Everything underneath is identical everywhere: the node, the chats, the wire. What differs
+Everything underneath is identical everywhere: the node, the channels, the wire. What differs
 is how each tool can be made to notice something. That difference is confined to one small
 adapter per tool, behind a single contract: **wait without spending anything, and when a
 message arrives, produce a turn.**
@@ -1811,7 +2004,7 @@ works everywhere. Five hosts are named (§3) and only two get an adapter here; t
 what lets the remaining three — and any tool named later — be added without touching anything
 else.
 
-The thing that tells a session the chat exists.
+The thing that tells a session the channel exists.
 
 **The CLI is not the problem; being found is.** `aid chat` is on PATH globally and carries the
 whole message plane, so a session that knows the command can already do everything. Nothing,
@@ -1821,9 +2014,10 @@ already renders one canonical skill into all five host dialects automatically.
 
 So this feature ships **documentation the model can find**, not a second surface. It carries no
 logic and holds no state: every operation it describes is an `aid chat` invocation (FR-7.4).
-Through it a session can send, read, acknowledge, and manage **its own** chat membership. That
-is the entire described surface. Creating or deleting a chat, changing somebody else's
-membership, altering configuration, stopping the node — none of it is described here.
+Through it a session can send, read, acknowledge, manage **its own** channel, read the roster, and
+ask to connect to one named agent. That is the entire described surface. Stopping the node,
+changing configuration, setting retention policy, evicting another session from its channel — none
+of it is described here.
 
 **This is a surface boundary, not a cage, and the change of mechanism makes that plainer rather
 than weaker.** The full administrative surface lives in the same `aid` CLI, and any session
@@ -1849,7 +2043,7 @@ believed empty here — but it is the one real loss, and it is named.
 
 - As a subscriber, I want the node to push a message as soon as it arrives, so that nothing
   has to poll.
-- As a subscriber, I want to stay connected after receiving a message, so that a busy chat
+- As a subscriber, I want to stay connected after receiving a message, so that a busy channel
   does not mean constant reconnection.
 - As a subscriber on a host that cannot hold a socket, I want a long wait that reconnects,
   so that the same behaviour is available with a simpler transport.
@@ -1865,18 +2059,20 @@ believed empty here — but it is the one real loss, and it is named.
   sessions open all day is free.
 - As a maintainer, I want a new tool to need only a new adapter, so that support does not
   mean redesign.
-- As a session, I want to discover that the chat exists without being told by a human, so that
+- As a session, I want to discover that the channel exists without being told by a human, so that
   I use it at all.
 - As a session, I want to send and read messages as part of my work, so that messaging is not a
   detour I have to invent.
-- As a session, I want to join and leave chats myself, so that I am not waiting on a human for
-  something about only me.
+- As a session, I want to open, join and leave my channel myself — and to find somebody to talk to
+  through the roster — so that I am not waiting on a human for something about only me.
 - As the operator, I want the agent-facing surface to describe no administrative operation, so
   that the ordinary path does not invite reconfiguring my fleet.
 - As the operator, I want the boundary's real limits stated plainly, so that I do not mistake a
   design contract for a sandbox.
-- As a user, I want the chat to work on my tool with **no setup step of my own**, so that
-  installing AID is the whole of it.
+- As a user, I want the channel to work on my tool with **no setup step of my own**, so that
+  installing AID is the whole of it. *(One exception is named rather than hidden: the host's stop
+  hook and its timeout are the operator's to install, because the product writes no host
+  configuration — FR-0.4, FR-5.8.)*
 
 #### Technical Specification
 
@@ -1892,7 +2088,7 @@ believed empty here — but it is the one real loss, and it is named.
 
 *From Push Subscription:*
 
-- [ ] Given an armed subscriber, when a message is sent to its chat, then the node pushes
+- [ ] Given an armed subscriber, when a message is sent to its channel, then the node pushes
       it without being polled.
 - [ ] Given a subscriber that has just received a message, when another arrives, then it is
       delivered over the same connection with no reconnection in between.
@@ -1911,7 +2107,7 @@ believed empty here — but it is the one real loss, and it is named.
 *From Host Waker Adapters:*
 
 - [ ] Given an idle Claude Code session in one repository and an idle Cursor session in
-      another **on the same machine**, when one sends a message to their shared chat, then
+      another **on the same machine**, when one sends a message to their shared channel, then
       the recipient acts on it with no human action.
 - [ ] Given an idle session with an adapter armed, when a message arrives, then a turn
       begins without human input.
@@ -1928,16 +2124,20 @@ believed empty here — but it is the one real loss, and it is named.
 
 *From Chat Skill:*
 
-- [ ] Given a session following the chat skill, when it sends, reads, acknowledges, joins and
-      leaves, then all succeed.
-- [ ] Given a session following the chat skill, when it tries to join a chat that does not
-      exist, then the attempt **fails explicitly** and no chat is created — the surface that
-      lets a session manage its own membership does not let it create one by implication.
+- [ ] Given a session following the chat skill, when it sends, reads, acknowledges, opens a
+      channel, joins and leaves, then all succeed.
+- [ ] Given a session following the chat skill, when it reads the roster and asks to connect to one
+      named agent, then both succeed — the hub plane is part of the described surface, because
+      without it a session cannot get into a conversation at all.
+- [ ] Given a session following the chat skill and already in a channel, when it tries to join a
+      second, then the attempt **fails explicitly** — the one-channel bound is visible at the
+      surface rather than only inside the node.
 - [ ] Given the chat skill, when it is read, then it **describes no operation** that stops the
-      node, changes configuration, creates or deletes a chat, or changes another session's
-      membership. This is a check on what the surface *offers*, and is deliberately not phrased
+      node, changes configuration, sets retention policy, or removes another session from its
+      channel. This is a check on what the surface *offers*, and is deliberately not phrased
       as "the attempt is unavailable" — the operations remain reachable through the same CLI, as
-      FR-7.3 states outright.
+      FR-7.3 states outright. **Channel creation is deliberately absent from the prohibited list**:
+      it moved to the agent side (FR-3.4).
 - [ ] Given an operation performed by following the skill and the same operation invoked
       directly on the CLI, when both complete, then they produce the same result against the
       same store — because the skill's instructions *are* CLI invocations.
@@ -1956,9 +2156,11 @@ believed empty here — but it is the one real loss, and it is named.
 
 - **Priority:** Must
 - **Requirements:** §5 FR-2.2 *(the cross-machine half of name uniqueness)*, FR-3.1 *(network
-  half)*, FR-3.2, FR-3.3, FR-6.1–6.4; §4 Scope; §8 Assumptions *(cross-machine reach)*;
+  half)*, FR-6.1–6.5, FR-9.4 *(the federated roster and the cross-machine connect request)*;
+  §4 Scope; §6 Retention *(the per-hub trim rule's cross-machine consequence)*;
+  §8 Assumptions *(cross-machine reach)*;
   §10 stage P3
-- **Criteria:** AC-2, AC-4, AC-5, AC-16, AC-19  ← ids from §9; never restated here
+- **Criteria:** AC-2, AC-4, AC-5, AC-16  ← ids from §9; never restated here
 
 > **This stage delivers the target case** — a developer in one tool on one machine exchanging
 > messages with a developer in another tool on another machine.
@@ -1982,13 +2184,27 @@ and not predictably the user's. There is
 condition for taking part. That is a deliberate choice, and its consequence is stated
 plainly: the network *is* the security boundary, so it has to be one you trust.
 
-Every chat has a **home machine**, and its full name is machine plus chat name. Leave the
-machine off and the lookup is local only: if there is no such chat here, the answer is *not
-found* — even when a chat by that name exists next door. **No silent hop to another
-machine.** Guessing on the user's behalf is how you send a message to the wrong room.
+**No machine owns a channel.** A channel is one name on every hub, replicated to each hub that
+has a member in it, and authoritative nowhere. That is what removes the question "which machine
+must stay up for this conversation to be readable?" — the answer is none of them, because every
+participating hub holds the whole channel and every session reads its own hub. *An earlier draft
+gave each chat a home machine and resolved a bare name locally; both are retired, and what they
+were protecting against — reaching a same-named room on the wrong machine — cannot arise when the
+name means one channel everywhere.*
 
-When a chat's home machine is off, the sending node holds the message and delivers it when
-that machine returns. Being offline delays; it does not lose.
+**Presence and signalling cross the same link.** Hubs exchange the roster, so an agent sees who is
+available on other machines, and they relay connect requests, so an agent can ask to talk to one of
+them. A session never opens a connection to another machine itself.
+
+When a peer hub cannot be reached, the sending hub queues for it and catches it up on reconnect.
+Being offline delays; it does not lose. A peer that returns after the channel has closed everywhere
+else finds nothing to catch up on, which is correct: the conversation ended.
+
+**The link itself is the risk this stage owns, and it is the one link no measurement covers.** It
+holds replication, the roster and request relay continuously rather than carrying occasional
+requests, so a router, NIC or OS idle-connection timeout closing it is a real failure mode, and
+reconnecting must lose no queued message and leave no stale entry in the roster. The P0 spike could
+not model this — it had one stub and no second hub — so this stage validates it first-hand.
 
 Machines will run different versions, because each is updated whenever its owner updates it.
 Patch and minor differences work together by contract. Only a **major** difference — which
@@ -2004,10 +2220,14 @@ nothing reports an error.
 - As the operator, I want adding a machine to work on any network I can reach, so that
   discovery never fails for a reason I cannot diagnose — and, where the network allows it,
   to happen without my configuring anything.
-- As a session, I want a bare chat name to mean *here*, so that I never reach a same-named
-  room on another machine by accident.
+- As a session, I want a channel name to mean the same channel on every machine, so that I do not
+  have to know or care where the conversation "lives".
+- As a session with no channel, I want to see agents on other machines and ask one of them to talk,
+  so that a conversation can start across machines without a human introducing us.
 - As a sender, I want messages to a machine that is currently off to be delivered when it
   returns, so that I do not have to resend.
+- As the operator, I want a link that drops overnight to reconnect without losing a queued message
+  or leaving a departed agent showing as available, so that presence never lies to me.
 - As the operator, I want two mismatched nodes to refuse each other clearly, so that I never
   debug a half-working connection.
 
@@ -2024,7 +2244,7 @@ nothing reports an error.
 > criterion reaches on its own, which is why they were kept rather than deleted.
 
 - [ ] Given a Cursor session on one machine and a Claude Code session on another on the same
-      network, when one sends to their shared chat, then the recipient **acts on it with no
+      network, when one sends to their shared channel, then the recipient **acts on it with no
       human action** — the target case.
 - [ ] Given two machines on a network that blocks broadcast and multicast, when both nodes
       are running and the guaranteed path is used, then each finds the other — discovery
@@ -2040,11 +2260,18 @@ nothing reports an error.
       are valid and can be told apart by machine — names are unique per machine, not globally, and
       this is the stage where that first becomes observable. (A name is still never a
       destination; nothing here sends *to* one.)
-- [ ] Given a chat whose home machine is off, when a message is sent to it, then it is
-      delivered once that machine returns.
-- [ ] Given a chat name with no machine and no such chat on this machine, when it is
-      resolved, then the result is **not found** — even with a chat of that name elsewhere
-      on the network.
+- [ ] Given a peer hub that is unreachable, when a message is sent to a channel that peer has a
+      member in, then that hub receives it once it returns and its local member reads it.
+- [ ] Given a peer hub that is unreachable, when an agent asks to connect to an agent on it, then
+      the request **fails at once with an explicit reason** rather than queueing — a connect
+      request answered minutes later would arrive after the asking agent had moved on.
+- [ ] Given the same channel name used on two hubs with members on both, when either sends, then
+      every member on both hubs receives it — one name, one channel, no machine qualifier.
+- [ ] Given an inter-node link left idle long enough for the network to close it, when either hub
+      next has something to send, then the link is re-established, the queued message arrives, and
+      the roster on both sides still reflects who is actually there.
+- [ ] Given an agent that leaves its channel on one machine, when the roster is read on the other
+      machine, then that agent shows as **available** — presence converges across hubs.
 - [ ] Given two nodes differing only by patch or minor version, when they connect, then they
       interoperate normally.
 - [ ] Given two nodes differing by major version, when they connect, then the handshake fails
@@ -2062,7 +2289,7 @@ nothing reports an error.
   Retention row)*; §3 Users & Stakeholders *(the operator)*; §10 stage P4
 - **Criteria:** AC-11, AC-14, AC-17, AC-18  ← ids from §9; never restated here
 
-> **The weakest cohesion of the five, and it is worth saying so.** Addressing within a chat,
+> **The weakest cohesion of the five, and it is worth saying so.** Addressing within a channel,
 > retention, and the operator's view share a stage and a dependency on the store rather than a
 > subject. They are one feature because none is large and the decomposition was asked to be
 > minimal; splitting them into three is available at any point and costs nothing but a boundary.
@@ -2070,16 +2297,16 @@ nothing reports an error.
 > **What holds them together is the store's own tail.** Mention and whisper are visibility rules
 > over the existing durable log. Retention decides when a row may leave it. Operator visibility
 > reads what is in it — including the unread depths that reaping changes. All three are the
-> consequences of a chat having history, which is why they arrive after it does.
+> consequences of a channel having history, which is why they arrive after it does.
 
 #### Description
 
-What happens once a chat has more than two members: aiming a message at someone, and saying
+What happens once a channel has more than two members: aiming a message at someone, and saying
 something only one of them can see.
 
-**Not in this feature:** plain delivery to every member of a larger chat. That is ordinary
+**Not in this feature:** plain delivery to every member of a larger channel. That is ordinary
 fan-out, built and tested at stage P1 (AC-13, Feature 002). This feature adds only
-**addressing within** a chat that already delivers to everyone.
+**addressing within** a channel that already delivers to everyone.
 
 With exactly two members, every message already has exactly one recipient — there is nobody
 to aim at and nowhere to hide. Add a third and both become meaningful.
@@ -2096,11 +2323,11 @@ The two cannot be combined on one message. Mention broadens attention within ful
 visibility; whisper narrows visibility. A message that does both would have to answer who
 can see a mention of someone who cannot see the message.
 
-Everything else already works: a chat message reaches every member through the existing
+Everything else already works: a channel message reaches every member through the existing
 durable log, and each member keeps their own place. Whisper is a visibility rule on top of
 that, not a second delivery mechanism.
 
-The part that stops a chat growing forever — without ever losing a message to do it.
+The part that stops a channel growing forever — without ever losing a message to do it.
 
 **No message is destroyed unread by a member that is still there.** A message is removed only
 when it is **both** older than its lifetime **and** read by every live member. Age alone is
@@ -2121,21 +2348,21 @@ would let it back in through another door.
 **So time is not what bounds storage here. Two other things are, and both are required.**
 
 The first is the **unread limit**. A member may fall behind by a thousand messages; past
-that, new sends to that chat are **rejected with an explicit error** rather than quietly
+that, new sends to that channel are **rejected with an explicit error** rather than quietly
 dropping the oldest. A member that far behind is broken and the sender needs to learn it.
 This limit carries more weight than it looks: **there is no maximum message size**, so
-nothing bounds a chat in bytes.
+nothing bounds a channel in bytes.
 
 The second is **reaping**. A member gone quiet long enough is given up for gone and its claim
 on the trim point is dropped, after which the expired messages finally go. Without it, one
-abandoned session would pin its chat's log indefinitely.
+abandoned session would pin its channel's log indefinitely.
 
 **Reaped is not the same as stale.** Stale (30 min) is a display state and releases nothing.
 Reaped (24 h) is what actually unblocks cleanup: what is released is the member's hold on the
 trim point, so messages only it never read do then become removable. Its **name** is not
 destroyed — re-registering it is accepted at any time.
 
-One consequence is accepted rather than hidden: a chat holding unread messages for a crashed
+One consequence is accepted rather than hidden: a channel holding unread messages for a crashed
 session **keeps** them, and may stop accepting new sends once the unread limit is reached,
 until that session is reaped.
 
@@ -2147,7 +2374,7 @@ Your window into what the sessions have been saying to each other.
 
 The operator launches the fleet and is accountable for it, but sees none of the traffic —
 the messages go between sessions, not through a person. This gives you the view: which
-machines and sessions exist, which chats are on this machine and who is in them, how far
+machines and sessions exist, which channels are on this machine and who is in them, how far
 behind each member is, and a record of what was sent.
 
 The unread counts are the diagnostic that matters. A member sitting at zero is keeping up.
@@ -2162,7 +2389,7 @@ nothing in common.
 
 #### User Stories
 
-- As a session in a busy chat, I want to aim a message at a particular member, so that they
+- As a session in a busy channel, I want to aim a message at a particular member, so that they
   know it needs them while everyone keeps the context.
 - As a session, I want to say something to one member only, so that a side conversation does
   not interrupt everyone.
@@ -2177,12 +2404,12 @@ nothing in common.
 - As a sender, I want an explicit error when a member is too far behind, so that I learn the
   consumer is broken instead of losing messages silently.
 - As the operator, I want an abandoned session's place released, so that one dead window does
-  not stop cleanup for everyone in that chat.
+  not stop cleanup for everyone in that channel.
 - As the operator, I want to change any of these numbers without a code change, so that I can
   tune them to how I actually work.
 - As the operator, I want to see which sessions are registered and which are marked stale, so
   that I know what is actually alive.
-- As the operator, I want to see the chats on this machine and their members, so that I know
+- As the operator, I want to see the channels on this machine and their members, so that I know
   who can hear whom.
 - As the operator, I want each member's unread count, so that I can spot a session that has
   stopped reading before anyone complains.
@@ -2207,11 +2434,11 @@ nothing in common.
       receives it and the mentioned member can tell it was aimed at them.
 - [ ] Given a message whispered to one member, when it is delivered, then only that member
       and the sender receive it.
-- [ ] Given a whispered message, when another member reads the chat's history, then it does
+- [ ] Given a whispered message, when another member reads the channel's history, then it does
       not appear — **not on delivery and not afterwards**.
 - [ ] Given a message, when it carries both a mention and a whisper, then it is rejected.
-- [ ] Given a two-member chat, when a message is sent with neither mention nor whisper, then
-      it behaves exactly as before — larger chats add these, they do not change the small
+- [ ] Given a two-member channel, when a message is sent with neither mention nor whisper, then
+      it behaves exactly as before — larger channels add these, they do not change the small
       case.
 - [ ] Given a whisper, when it is stored, then it uses the same durable log and per-member
       position as every other message.
@@ -2227,17 +2454,17 @@ nothing in common.
       read**, when retention runs, then it **is** removed — a reaped member stops counting
       toward the trim point, which is what reaping is for.
 - [ ] Given a member at the configured unread limit, when another message is sent to that
-      chat, then the send is rejected with an explicit error.
-- [ ] Given a rejected send, when the chat is inspected, then no existing message was
+      channel, then the send is rejected with an explicit error.
+- [ ] Given a rejected send, when the channel is inspected, then no existing message was
       discarded to make room.
 - [ ] Given a member silent past the **reap threshold** (default 24 h, distinct from the
-      30-minute stale threshold), when it is reaped, then its claim is dropped and its chat's
+      30-minute stale threshold), when it is reaped, then its claim is dropped and its channel's
       log can be trimmed past the point it had reached.
 - [ ] Given a member marked stale but not yet past the reap threshold, when retention runs,
       then its claim is **still held** — stale alone releases nothing.
 - [ ] Given a reaped member, when it re-registers under the same name, then it is accepted
-      and starts from the chat's current state.
-- [ ] Given a chat whose live members have all read up to a point, when retention runs, then
+      and starts from the channel's current state.
+- [ ] Given a channel whose live members have all read up to a point, when retention runs, then
       the log is trimmed no further than that point.
 - [ ] Given any retention limit, when it is changed through the CLI, then the new value takes
       effect without a code change.
@@ -2248,13 +2475,13 @@ nothing in common.
 
 - [ ] Given registered sessions, when the operator lists them, then each is shown with its
       machine, tool and liveness.
-- [ ] Given chats on this machine, when the operator lists them, then each is shown with its
+- [ ] Given channels on this machine, when the operator lists them, then each is shown with its
       members.
-- [ ] Given a member behind on its reading, when the operator lists chats, then that
+- [ ] Given a member behind on its reading, when the operator lists channels, then that
       member's unread count is shown.
 - [ ] Given messages that have been sent, when the operator reads the audit log, then it
-      records what was sent, by whom, and to which chat.
-- [ ] Given any command in this feature, when it runs, then no message, chat, membership or
+      records what was sent, by whom, and to which channel.
+- [ ] Given any command in this feature, when it runs, then no message, channel, membership or
       configuration is modified.
 - [ ] Given a machine on the network, when the operator lists machines, then it appears with
       its liveness.
