@@ -1,4 +1,4 @@
-# task-018: Rendered chat skill
+# task-018: Claude Code waker adapter
 
 > **Execution protocol (binding on whoever executes this task -- no
 > exceptions):** the moment this task's `State` changes, write it --
@@ -15,19 +15,23 @@
 
 **Type:** IMPLEMENT
 
-**Source:** feature-003-the-wake -> delivery-003 -> AC-15
+**Source:** feature-003-the-wake -> delivery-003 -> AC-23, AC-24, AC-25, AC-26
 
 **Depends on:** task-017
 
 **Scope:**
-- One canonical skill rendered into all five host dialects by the pipeline this repository already has -- no per-host hand authoring.
-- It describes `send` / `inbox` / `ack`, the session's own channel, and the hub verbs; it carries no logic and holds no state.
-- It describes no administrative operation and no `wait`, and the product writes no host configuration.
+- Read the host's stop payload, decoding with `utf-8-sig`.
+- Re-entry via `stop_hook_active` **plus the adapter's own count**, because this host's `loop_limit` is documented `null` and therefore uncapped.
+- Emit this host's documented shape, carrying the message body as the text the model reads.
+- Forward-slash paths that survive bash; the interpreter resolved from the running process, never from `PATH`.
 
 **Acceptance Criteria:**
-- [ ] The skill renders into all five profiles through the existing generator, with no hand-authored per-host variant.
-- [ ] Its verb list is exactly what FR-7.3 permits and contains nothing FR-7.3 forbids; verified by diffing the two lists.
-- [ ] It documents no `wait` verb.
-- [ ] An operation performed by following the skill and the same operation invoked directly on the CLI produce the same result against the same store.
-- [ ] All existing tests pass; build passes.
+- [ ] A woken session runs one turn and settles; the stop event that ends the woken turn does not start another wait.
+- [ ] From arrival to the session having acted, no approval prompt is raised.
+- [ ] After a block that would exceed the configured hook timeout, no adapter process survives and the node's waiter count returns to its prior value; verified by process and connection count rather than by absence of error.
+- [ ] A stop payload prefixed with a UTF-8 byte-order mark is parsed and acted on.
+- [ ] The emitted command contains no backslash and no `PATH` lookup; verified by reading the emitted string.
+- [ ] Unit tests for every new public function or endpoint this task adds.
+- [ ] All existing tests still pass.
+- [ ] Build passes.
 - [ ] All section-6 quality gates pass

@@ -15,7 +15,7 @@
 
 **Type:** CONFIGURE
 
-**Source:** feature-002-node-and-message-plane -> delivery-001 -> AC-9, AC-22
+**Source:** feature-002-node-and-message-plane -> delivery-001 -> AC-9
 
 **Depends on:** --
 
@@ -26,8 +26,8 @@
 
 **Acceptance Criteria:**
 - [ ] `chat-node/` exists at the repository root and appears in every manifest that names `dashboard/`; verified by grepping each manifest for both names and comparing the counts.
-- [ ] `aid`'s package manifests still declare **zero** third-party dependencies after this task; verified by reading each dependency list.
+- [ ] `aid`'s package manifests declare **zero** third-party dependencies after this task; verified by reading each dependency list.
 - [ ] A fresh install from each channel places the node's files on disk; verified by listing the installed tree per channel.
-- [ ] Re-running the provisioning step changes nothing (idempotent); verified by a second run producing no diff.
-- [ ] No plaintext secrets in anything this task adds.
+- [ ] Re-running the provisioning step produces no diff (idempotent).
+- [ ] Nothing this task adds contains a plaintext secret; verified by the repository's existing secret scan.
 - [ ] All section-6 quality gates pass

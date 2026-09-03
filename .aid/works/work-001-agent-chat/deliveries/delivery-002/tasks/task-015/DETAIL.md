@@ -1,4 +1,4 @@
-# task-010: Integration tests for the hub that holds a conversation
+# task-015: Integration tests for the hub plane
 
 > **Execution protocol (binding on whoever executes this task -- no
 > exceptions):** the moment this task's `State` changes, write it --
@@ -15,19 +15,18 @@
 
 **Type:** TEST
 
-**Source:** feature-002-node-and-message-plane -> delivery-001 -> AC-3, AC-6, AC-7, AC-8, AC-9, AC-10, AC-13, AC-22, AC-29, AC-30, AC-31, AC-32, AC-33
+**Source:** feature-002-node-and-message-plane -> delivery-002 -> AC-27, AC-28
 
-**Depends on:** task-009
+**Depends on:** task-014
 
 **Scope:**
-- End-to-end tests over the real node and the real CLI for each of this delivery's thirteen criteria.
-- Explicit coverage of node-restart durability, the two-member direct message, per-speaker ordering, and delivered-versus-acknowledged redelivery.
+- End-to-end tests over the real node for both criteria and every refusal case reachable from these two verbs.
+- The simultaneous reciprocal request, ordered deterministically rather than raced.
 
 **Acceptance Criteria:**
-- [ ] Each of the thirteen criteria has at least one test naming its id; the mapping is checkable by grepping the suite for the ids.
-- [ ] Restarting the **node** preserves unacknowledged messages and every member's positions.
-- [ ] `AC-13` is verified on this machine only; its cross-machine clause is delivery-004's and is asserted nowhere here.
-- [ ] A test asserts that two members observing two speakers in different relative orders is a **pass**.
+- [ ] Both criteria have tests naming their ids.
+- [ ] Every refusal reason reachable from these verbs has a test.
+- [ ] The simultaneous reciprocal case is ordered around an explicit barrier rather than left to a race, and asserts both requests fail.
 - [ ] Every automated test here is deterministic: run three times in succession it gives the same result. Any check needing a live host session or a real network is **not** automated -- it is listed by name, with its steps, in the manual-procedures record, so the set of non-automated checks is enumerable rather than implied.
 - [ ] Clean setup and teardown: the suite leaves no store, no process and no channel behind, verified by running it twice in the same working directory.
 - [ ] All existing tests still pass.

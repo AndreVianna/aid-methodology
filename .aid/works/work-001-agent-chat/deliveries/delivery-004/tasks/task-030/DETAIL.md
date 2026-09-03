@@ -1,4 +1,4 @@
-# task-010: Integration tests for the hub that holds a conversation
+# task-030: Integration tests for federation, including the idle-link validation
 
 > **Execution protocol (binding on whoever executes this task -- no
 > exceptions):** the moment this task's `State` changes, write it --
@@ -15,19 +15,19 @@
 
 **Type:** TEST
 
-**Source:** feature-002-node-and-message-plane -> delivery-001 -> AC-3, AC-6, AC-7, AC-8, AC-9, AC-10, AC-13, AC-22, AC-29, AC-30, AC-31, AC-32, AC-33
+**Source:** feature-004-lan-federation -> delivery-004 -> AC-2, AC-4, AC-5, AC-16, AC-34
 
-**Depends on:** task-009
+**Depends on:** task-029
 
 **Scope:**
-- End-to-end tests over the real node and the real CLI for each of this delivery's thirteen criteria.
-- Explicit coverage of node-restart durability, the two-member direct message, per-speaker ordering, and delivered-versus-acknowledged redelivery.
+- The target case across two machines; discovery by the guaranteed path alone; delivery to a hub that was offline; version refusal; the cross-machine connect cases.
+- A **real** long-idle link followed by a send -- the property nothing upstream has measured.
 
 **Acceptance Criteria:**
-- [ ] Each of the thirteen criteria has at least one test naming its id; the mapping is checkable by grepping the suite for the ids.
-- [ ] Restarting the **node** preserves unacknowledged messages and every member's positions.
-- [ ] `AC-13` is verified on this machine only; its cross-machine clause is delivery-004's and is asserted nowhere here.
-- [ ] A test asserts that two members observing two speakers in different relative orders is a **pass**.
+- [ ] `AC-2` passes with the two sessions on different machines on the same network.
+- [ ] Each of the five criteria has a test naming its id.
+- [ ] The idle-link check runs against a real network left idle long enough for a connection to be closed, and records its duration and outcome; a simulated close does **not** satisfy it.
+- [ ] Fan-out reaches members on both machines, completing `AC-13`'s cross-machine clause.
 - [ ] Every automated test here is deterministic: run three times in succession it gives the same result. Any check needing a live host session or a real network is **not** automated -- it is listed by name, with its steps, in the manual-procedures record, so the set of non-automated checks is enumerable rather than implied.
 - [ ] Clean setup and teardown: the suite leaves no store, no process and no channel behind, verified by running it twice in the same working directory.
 - [ ] All existing tests still pass.

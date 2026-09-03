@@ -1,4 +1,4 @@
-# task-008: `aid chat` CLI twins, exit codes and stderr tokens
+# task-008: The two positions: contiguous prefix, cursor override and the ack bound
 
 > **Execution protocol (binding on whoever executes this task -- no
 > exceptions):** the moment this task's `State` changes, write it --
@@ -15,20 +15,23 @@
 
 **Type:** IMPLEMENT
 
-**Source:** feature-002-node-and-message-plane -> delivery-001 -> AC-6, AC-9
+**Source:** feature-002-node-and-message-plane -> delivery-001 -> AC-6, AC-32
 
 **Depends on:** task-007
 
 **Scope:**
-- `aid chat` in both `bin/aid` and `bin/aid.ps1`, behaviourally equivalent.
-- One HTTP call per verb into the one core; **no rule and no SQL** in either CLI.
-- The exit-code map including `8` for a well-formed request the node refused; the stable stderr token table.
-- stdout carries the result, stderr the diagnostics -- the repository's existing split.
+- `inbox` returning after the caller's baseline -- `acked_seq` by default, or the `cursor` override.
+- `delivered_seq` advanced to the **contiguous prefix**: one below the first held-back message, or the highest `arrival_seq` examined when nothing was held back -- including when every message in the window was filtered.
+- `cursor` as a read-only override that moves neither position and confers no right to acknowledge.
+- `ack` refusing a cursor ahead of `delivered_seq`.
 
 **Acceptance Criteria:**
-- [ ] Every `aid chat` verb behaves identically under Bash and PowerShell; verified by extending the repository's existing CLI parity test to the new verbs.
-- [ ] A refusal exits 8 with its stable token first on stderr; a usage error exits 2; a runtime failure exits 1.
-- [ ] stdout carries only the result; verified by piping stdout alone into a parser and asserting it parses.
-- [ ] Neither CLI reimplements node behaviour; verified by grepping both for SQL and for route construction beyond the single call site.
-- [ ] Unit tests; all existing tests pass; build passes.
+- [ ] With no subscriber armed, a message is readable at the session's next turn.
+- [ ] Where a message is held back, `delivered_seq` stops **below** it, and that message is delivered on a later read rather than stranded.
+- [ ] A window in which every message was filtered still advances `delivered_seq`.
+- [ ] A `cursor` override moves neither position, and acknowledging a message seen only under an override fails with `ack_ahead_of_delivered`.
+- [ ] A message delivered but never acknowledged is returned again after an interruption, and is identifiable as a repeat by its key.
+- [ ] Unit tests for every new public function or endpoint this task adds.
+- [ ] All existing tests still pass.
+- [ ] Build passes.
 - [ ] All section-6 quality gates pass

@@ -1,4 +1,4 @@
-# task-009: Integration tests for the hub that holds a conversation
+# task-009: `aid chat` CLI twins, exit codes and stderr tokens
 
 > **Execution protocol (binding on whoever executes this task -- no
 > exceptions):** the moment this task's `State` changes, write it --
@@ -13,21 +13,24 @@
 > `aid-execute/references/state-execute.md § MANDATORY: State-Write
 > Protocol`.
 
-**Type:** TEST
+**Type:** IMPLEMENT
 
-**Source:** feature-002-node-and-message-plane -> delivery-001 -> AC-3, AC-6, AC-7, AC-8, AC-9, AC-10, AC-13, AC-22, AC-29, AC-30, AC-31, AC-32, AC-33
+**Source:** feature-002-node-and-message-plane -> delivery-001 -> AC-6, AC-9
 
 **Depends on:** task-008
 
 **Scope:**
-- End-to-end tests over the real node and the real CLI for each of this delivery's thirteen criteria.
-- Explicit coverage of node-restart durability, the two-member direct message, per-speaker ordering, and delivered-versus-acknowledged redelivery.
+- `aid chat` in both `bin/aid` and `bin/aid.ps1`, behaviourally equivalent.
+- One HTTP call per verb into the one core; **no rule and no SQL** in either CLI.
+- The exit-code map including `8` for a well-formed request the node refused; the stable stderr token table.
+- stdout carries the result, stderr the diagnostics.
 
 **Acceptance Criteria:**
-- [ ] Each of the thirteen criteria has at least one test naming its id; the mapping is checkable by grepping the suite for the ids.
-- [ ] Restarting the **node** preserves unacknowledged messages and every member's positions.
-- [ ] `AC-13` is verified for a channel of two and of more than two **on this machine**; its "on whichever machine each member sits" clause is out of scope here and is verified at delivery-004.
-- [ ] A test asserts that two members observing two speakers in different relative orders is a **pass**, so a later reader cannot file per-speaker ordering as a defect.
-- [ ] Tests are deterministic, with clean setup and teardown.
+- [ ] Every `aid chat` verb behaves identically under Bash and PowerShell; verified by extending the repository's existing CLI parity test to the new verbs.
+- [ ] A refusal exits 8 with its stable token first on stderr; a usage error exits 2; a runtime failure exits 1.
+- [ ] stdout carries only the result; verified by piping stdout alone into a parser and asserting it parses.
+- [ ] Neither CLI reimplements node behaviour; verified by grepping both for SQL and for route construction beyond the single call site.
+- [ ] Unit tests for every new public function or endpoint this task adds.
 - [ ] All existing tests still pass.
+- [ ] Build passes.
 - [ ] All section-6 quality gates pass

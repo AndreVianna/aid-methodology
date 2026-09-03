@@ -1,4 +1,4 @@
-# task-029: Operator visibility and the audit log
+# task-033: Operator visibility and the audit log
 
 > **Execution protocol (binding on whoever executes this task -- no
 > exceptions):** the moment this task's `State` changes, write it --
@@ -17,7 +17,7 @@
 
 **Source:** feature-005-directed-retention-visibility -> delivery-005 -> AC-14
 
-**Depends on:** task-027, task-028
+**Depends on:** task-032
 
 **Scope:**
 - The CLI showing machines and sessions, this hub's open channels and their members, each member's unread depth **and idle time**, and the audit log.
@@ -30,5 +30,7 @@
 - [ ] The audit log records that a whisper was sent and between whom, and does **not** contain its body; verified by sending a whisper containing a unique string and grepping the audit output for it.
 - [ ] Evicting a session removes it from its channel and it stops receiving that channel's messages.
 - [ ] Retention parameters are settable through the CLI and take effect with no code change.
-- [ ] Unit tests; all existing tests pass; build passes.
+- [ ] Unit tests for every new public function or endpoint this task adds.
+- [ ] All existing tests still pass.
+- [ ] Build passes.
 - [ ] All section-6 quality gates pass

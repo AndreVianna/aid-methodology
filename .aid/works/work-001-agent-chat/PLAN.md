@@ -113,8 +113,9 @@ graph LR
   task_006["task-006<br/>IMPLEMENT"]
   task_007["task-007<br/>IMPLEMENT"]
   task_008["task-008<br/>IMPLEMENT"]
-  task_009["task-009<br/>TEST"]
-  task_010["task-010<br/>DOCUMENT"]
+  task_009["task-009<br/>IMPLEMENT"]
+  task_010["task-010<br/>TEST"]
+  task_011["task-011<br/>DOCUMENT"]
   task_001 --> task_002
   task_002 --> task_003
   task_003 --> task_004
@@ -123,11 +124,13 @@ graph LR
   task_006 --> task_007
   task_007 --> task_008
   task_008 --> task_009
-  task_007 --> task_010
+  task_009 --> task_010
+  task_008 --> task_011
 ```
 
-**Parallel groups** -- these have no dependency on each other and no shared state:
-- task-008, task-010
+**Parallel groups** -- no dependency between them, and no file or table written by both:
+- task-009, task-011
+
 ### delivery-002: Finding a peer
 - **What it delivers:** An agent can see which other agents are available and pull one named agent
   into a conversation, instead of waiting for somebody to look at a channel list.
@@ -186,17 +189,18 @@ delivery-004, because a criterion cannot be satisfied a stage before the federat
 
 ```mermaid
 graph LR
-  task_011["task-011<br/>IMPLEMENT"]
   task_012["task-012<br/>IMPLEMENT"]
   task_013["task-013<br/>IMPLEMENT"]
-  task_014["task-014<br/>TEST"]
-  task_008 --> task_011
-  task_011 --> task_012
+  task_014["task-014<br/>IMPLEMENT"]
+  task_015["task-015<br/>TEST"]
+  task_009 --> task_012
   task_012 --> task_013
   task_013 --> task_014
+  task_014 --> task_015
 ```
 
-**No parallelism.** Every task in this delivery depends on its predecessor; the chain is the honest graph, not a scheduling choice.
+**No parallelism.** Every task here depends on its predecessor; that is the honest graph, not a scheduling choice.
+
 ### delivery-003: The wake
 - **What it delivers:** An idle session acts on an arriving message with no human touching anything
   -- the thing that makes this a channel between agents rather than a mailbox they must remember to
@@ -252,22 +256,27 @@ degrades to delivery-001's pull floor rather than blocking anything.
 
 ```mermaid
 graph LR
-  task_015["task-015<br/>IMPLEMENT"]
   task_016["task-016<br/>IMPLEMENT"]
   task_017["task-017<br/>IMPLEMENT"]
   task_018["task-018<br/>IMPLEMENT"]
-  task_019["task-019<br/>TEST"]
+  task_019["task-019<br/>IMPLEMENT"]
   task_020["task-020<br/>DOCUMENT"]
-  task_014 --> task_015
-  task_015 --> task_016
-  task_015 --> task_017
+  task_021["task-021<br/>TEST"]
+  task_022["task-022<br/>DOCUMENT"]
+  task_014 --> task_016
+  task_016 --> task_017
   task_017 --> task_018
-  task_018 --> task_019
-  task_019 --> task_020
+  task_017 --> task_019
+  task_017 --> task_020
+  task_018 --> task_021
+  task_019 --> task_021
+  task_020 --> task_021
+  task_021 --> task_022
 ```
 
-**Parallel groups** -- these have no dependency on each other and no shared state:
-- task-016, task-017
+**Parallel groups** -- no dependency between them, and no file or table written by both:
+- task-018, task-019, task-020
+
 ### delivery-004: LAN federation
 - **What it delivers:** The target case -- the two sessions on **different machines** on the same
   network, with everything else unchanged.
@@ -322,23 +331,26 @@ here rather than a note because nothing upstream has measured it and the spike c
 
 ```mermaid
 graph LR
-  task_021["task-021<br/>IMPLEMENT"]
-  task_022["task-022<br/>IMPLEMENT"]
   task_023["task-023<br/>IMPLEMENT"]
   task_024["task-024<br/>IMPLEMENT"]
   task_025["task-025<br/>IMPLEMENT"]
-  task_026["task-026<br/>TEST"]
-  task_020 --> task_021
-  task_021 --> task_022
+  task_026["task-026<br/>IMPLEMENT"]
+  task_027["task-027<br/>IMPLEMENT"]
+  task_028["task-028<br/>IMPLEMENT"]
+  task_029["task-029<br/>IMPLEMENT"]
+  task_030["task-030<br/>TEST"]
   task_022 --> task_023
   task_023 --> task_024
-  task_022 --> task_025
-  task_024 --> task_026
+  task_024 --> task_025
   task_025 --> task_026
+  task_026 --> task_027
+  task_027 --> task_028
+  task_028 --> task_029
+  task_029 --> task_030
 ```
 
-**Parallel groups** -- these have no dependency on each other and no shared state:
-- task-023, task-025
+**No parallelism.** Every task here depends on its predecessor; that is the honest graph, not a scheduling choice.
+
 ### delivery-005: Directed messages, retention and visibility
 - **What it delivers:** Aiming a message at one member of a larger channel, saying something only
   one member can see, keeping storage bounded without losing anybody's mail, and letting the
@@ -389,19 +401,18 @@ written then is read by this delivery unaltered.
 
 ```mermaid
 graph LR
-  task_027["task-027<br/>IMPLEMENT"]
-  task_028["task-028<br/>IMPLEMENT"]
-  task_029["task-029<br/>IMPLEMENT"]
-  task_030["task-030<br/>TEST"]
-  task_026 --> task_027
-  task_026 --> task_028
-  task_027 --> task_029
-  task_028 --> task_029
-  task_029 --> task_030
+  task_031["task-031<br/>IMPLEMENT"]
+  task_032["task-032<br/>IMPLEMENT"]
+  task_033["task-033<br/>IMPLEMENT"]
+  task_034["task-034<br/>TEST"]
+  task_030 --> task_031
+  task_031 --> task_032
+  task_032 --> task_033
+  task_033 --> task_034
 ```
 
-**Parallel groups** -- these have no dependency on each other and no shared state:
-- task-027, task-028
+**No parallelism.** Every task here depends on its predecessor; that is the honest graph, not a scheduling choice.
+
 ## Cross-Cutting Risks
 
 | # | Risk | Impact | Mitigation |

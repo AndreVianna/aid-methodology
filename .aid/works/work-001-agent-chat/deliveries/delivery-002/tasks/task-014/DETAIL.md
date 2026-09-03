@@ -1,4 +1,4 @@
-# task-014: Integration tests for the hub plane
+# task-014: Roster and connect on the `aid chat` surface
 
 > **Execution protocol (binding on whoever executes this task -- no
 > exceptions):** the moment this task's `State` changes, write it --
@@ -13,20 +13,21 @@
 > `aid-execute/references/state-execute.md § MANDATORY: State-Write
 > Protocol`.
 
-**Type:** TEST
+**Type:** IMPLEMENT
 
 **Source:** feature-002-node-and-message-plane -> delivery-002 -> AC-27, AC-28
 
 **Depends on:** task-013
 
 **Scope:**
-- End-to-end tests over the real node for both criteria and every refusal case reachable from these two verbs.
-- The simultaneous reciprocal request, ordered deterministically rather than raced.
+- Both verbs on both CLI twins, with their exit codes and stderr tokens.
+- The agent-facing surface gaining exactly these two verbs and no administrative one.
 
 **Acceptance Criteria:**
-- [ ] Both criteria have tests naming their ids.
-- [ ] Every refusal reason reachable from these verbs has a test.
-- [ ] The simultaneous reciprocal case is tested **deterministically** -- both requests ordered around an explicit barrier rather than left to a race -- and asserts both fail.
-- [ ] Tests are deterministic, with clean setup and teardown.
+- [ ] Both verbs behave identically under Bash and PowerShell; covered by the parity test.
+- [ ] A refusal from either exits 8 with its token on stderr.
+- [ ] The verbs added are exactly the roster and the connect request; verified by diffing the agent-facing surface against FR-7.3's prohibited list.
+- [ ] Unit tests for every new public function or endpoint this task adds.
 - [ ] All existing tests still pass.
+- [ ] Build passes.
 - [ ] All section-6 quality gates pass

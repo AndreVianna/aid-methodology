@@ -1,4 +1,4 @@
-# task-017: Cursor waker adapter
+# task-017: CLI subscriber and the host-timeout bound
 
 > **Execution protocol (binding on whoever executes this task -- no
 > exceptions):** the moment this task's `State` changes, write it --
@@ -15,22 +15,21 @@
 
 **Type:** IMPLEMENT
 
-**Source:** feature-003-the-wake -> delivery-003 -> AC-23, AC-24, AC-25, AC-26
+**Source:** feature-003-the-wake -> delivery-003 -> AC-12
 
-**Depends on:** task-015
+**Depends on:** task-016
 
 **Scope:**
-- The same contract in this host's shapes: `followup_message` on output, `loop_count` for re-entry.
-- `utf-8-sig` decoding, because this host prefixes its stdin payload with a byte-order mark.
-- Unquoted paths, which are correct in PowerShell as well as bash; host-specific quoting **only** where a path contains a space.
-- `decision: block` deliberately not used, though it works: it is absent from this host's schema and can change without notice.
+- `aid chat subscribe` as a CLI invocation holding the wait against the **local** hub, on both twins.
+- `--host-timeout <seconds>` and the block bound `min(long_poll_default, host_timeout - margin)`, with the documented fallback when the flag is absent.
+- Re-arm after each return.
 
 **Acceptance Criteria:**
-- [ ] A woken session runs one turn and settles; the stop event ending it does not start another wait.
-- [ ] From arrival to the session having acted, no approval prompt is raised -- or, where the design requires pre-authorisation, the operator step that satisfies it is performed and named.
-- [ ] After a block exceeding the configured hook timeout, no adapter process survives and the waiter count returns to its prior value.
-- [ ] A payload prefixed with a byte-order mark is parsed and acted on.
-- [ ] The command emitted for the woken turn is accepted by PowerShell; verified by executing it there. Where a path contains a space, the quoted form is used and is also accepted.
-- [ ] `decision: block` appears nowhere in this adapter; verified by grep.
-- [ ] Unit tests; all existing tests pass; build passes.
+- [ ] Messages arriving while the subscriber is between arms are all delivered, in order, on the next arm.
+- [ ] With `--host-timeout 20` the block is 15 s; with 60 it is 30 s; verified by timing the call.
+- [ ] With the flag absent the block is short enough to be safe under the shortest platform default known, and the value used is reported so it is observable rather than implicit.
+- [ ] The wait costs no model tokens: it runs as a process with no model call in its path, verified by inspecting the invocation.
+- [ ] Unit tests for every new public function or endpoint this task adds.
+- [ ] All existing tests still pass.
+- [ ] Build passes.
 - [ ] All section-6 quality gates pass

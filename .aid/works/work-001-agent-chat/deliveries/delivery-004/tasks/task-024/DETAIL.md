@@ -1,4 +1,4 @@
-# task-024: Federated roster and the cross-machine connect relay
+# task-024: The inter-node link: keepalive, reconnect and jittered backoff
 
 > **Execution protocol (binding on whoever executes this task -- no
 > exceptions):** the moment this task's `State` changes, write it --
@@ -15,23 +15,22 @@
 
 **Type:** IMPLEMENT
 
-**Source:** feature-004-lan-federation -> delivery-004 -> AC-34
+**Source:** feature-004-lan-federation -> delivery-004 -> AC-5
 
 **Depends on:** task-023
 
 **Scope:**
-- The roster fetched from each reachable peer and merged for the answer, **never stored**.
-- An answer given while a peer is unreachable naming that peer explicitly rather than omitting its agents silently.
-- Connect requests relayed and answered against the target hub's state at the moment the relay arrives.
-- An unreachable peer **failing** the request rather than queueing it.
-- A hub asked for a channel name it has never seen creating its local replica and joining its agent.
+- One long-lived connection per peer, carrying replication, roster queries and connect relays.
+- Keepalive at an interval well under the shortest plausible network idle timeout.
+- Reconnect that loses nothing, because everything not yet delivered is in the store rather than in the link.
+- Backoff with jitter, so two hubs reconnecting cannot settle into lockstep.
 
 **Acceptance Criteria:**
-- [ ] An agent on one machine sees agents on another in its roster.
-- [ ] A roster answered while a peer is unreachable returns the agents it could reach **plus an explicit list of those it could not**, and does not fail outright.
-- [ ] A relayed request returns the same outcomes as a local one.
-- [ ] An unreachable peer makes the request fail rather than queue; verified by taking a peer down and asking.
-- [ ] A hub that has never seen the named channel creates its replica and joins its agent.
-- [ ] A relayed request whose asker left before it arrived leaves the target alone in a channel, which then closes when the target leaves or is reaped.
-- [ ] Unit tests; all existing tests pass; build passes.
+- [ ] A link left idle long enough for the network to close it is re-established on the next send.
+- [ ] The link holds no unreplicated state; verified by killing it mid-send and asserting the message is still queued in the store.
+- [ ] Successive reconnect intervals differ; verified by recording ten of them and asserting they are not identical.
+- [ ] After a reconnect the roster reflects who is actually there -- no departed agent shows as available.
+- [ ] Unit tests for every new public function or endpoint this task adds.
+- [ ] All existing tests still pass.
+- [ ] Build passes.
 - [ ] All section-6 quality gates pass

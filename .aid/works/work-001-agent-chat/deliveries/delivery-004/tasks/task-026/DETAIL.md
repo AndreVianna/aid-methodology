@@ -1,4 +1,4 @@
-# task-026: Integration tests for federation, including the idle-link validation
+# task-026: Outbox and the drain on reconnect
 
 > **Execution protocol (binding on whoever executes this task -- no
 > exceptions):** the moment this task's `State` changes, write it --
@@ -13,19 +13,23 @@
 > `aid-execute/references/state-execute.md § MANDATORY: State-Write
 > Protocol`.
 
-**Type:** TEST
+**Type:** IMPLEMENT
 
-**Source:** feature-004-lan-federation -> delivery-004 -> AC-2, AC-4, AC-5, AC-16, AC-34
+**Source:** feature-004-lan-federation -> delivery-004 -> AC-5
 
-**Depends on:** task-024, task-025
+**Depends on:** task-025
 
 **Scope:**
-- The target case across two machines; discovery by the guaranteed path alone; delivery to a hub that was offline; version refusal; the cross-machine connect cases.
-- A **real** long-idle link followed by a send -- the property nothing upstream has measured.
+- The `outbox` table and its drain: queued items replayed to a peer on reconnect, oldest first.
+- Queueing only where a peer is unreachable; immediate delivery where it is not.
+- Attempt counting, so a peer that never returns does not hide a growing queue from the operator.
 
 **Acceptance Criteria:**
-- [ ] AC-2 passes with the two sessions on different machines on the same network.
-- [ ] Each of the five criteria has a test naming its id.
-- [ ] The idle-link test runs against a real network left idle long enough for a connection to be closed, and records its duration and outcome; a simulated close does **not** satisfy it.
-- [ ] Tests are deterministic where they can be; the two-machine and idle-link tests are marked manual with their procedures recorded.
+- [ ] An item queued while a peer is unreachable is delivered on reconnect, and the queue is empty afterwards.
+- [ ] Items drain oldest-first; verified by queueing three and asserting arrival order.
+- [ ] A peer that never returns leaves a queue whose depth is visible to the operator; verified by listing it.
+- [ ] The drain is idempotent: interrupting it mid-way and re-running delivers each item exactly once, verified by the receiving hub's row count.
+- [ ] Unit tests for every new public function or endpoint this task adds.
+- [ ] All existing tests still pass.
+- [ ] Build passes.
 - [ ] All section-6 quality gates pass

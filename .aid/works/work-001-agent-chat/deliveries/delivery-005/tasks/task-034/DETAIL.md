@@ -1,4 +1,4 @@
-# task-030: Integration tests for directed messages, retention and visibility
+# task-034: Integration tests for directed messages, retention and visibility
 
 > **Execution protocol (binding on whoever executes this task -- no
 > exceptions):** the moment this task's `State` changes, write it --
@@ -17,7 +17,7 @@
 
 **Source:** feature-005-directed-retention-visibility -> delivery-005 -> AC-11, AC-14, AC-17, AC-18
 
-**Depends on:** task-029
+**Depends on:** task-033
 
 **Scope:**
 - The four criteria end to end, plus the whisper-absent-from-audit property and the reap-plus-close atomicity.
@@ -27,6 +27,7 @@
 - [ ] A test asserts a whisper is absent from **history** for a non-target, not merely absent on delivery.
 - [ ] A test asserts the whisper body is absent from the operator's audit output.
 - [ ] A test interrupts between reaping and channel close and asserts no zero-member channel survives.
-- [ ] Tests are deterministic, with clean setup and teardown.
+- [ ] Every automated test here is deterministic: run three times in succession it gives the same result. Any check needing a live host session or a real network is **not** automated -- it is listed by name, with its steps, in the manual-procedures record, so the set of non-automated checks is enumerable rather than implied.
+- [ ] Clean setup and teardown: the suite leaves no store, no process and no channel behind, verified by running it twice in the same working directory.
 - [ ] All existing tests still pass.
 - [ ] All section-6 quality gates pass

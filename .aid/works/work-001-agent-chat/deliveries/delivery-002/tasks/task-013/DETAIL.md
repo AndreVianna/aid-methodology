@@ -1,4 +1,4 @@
-# task-013: Roster and connect on the `aid chat` surface
+# task-013: Directed connect request answered from state
 
 > **Execution protocol (binding on whoever executes this task -- no
 > exceptions):** the moment this task's `State` changes, write it --
@@ -15,17 +15,24 @@
 
 **Type:** IMPLEMENT
 
-**Source:** feature-002-node-and-message-plane -> delivery-002 -> AC-27, AC-28
+**Source:** feature-002-node-and-message-plane -> delivery-002 -> AC-28
 
 **Depends on:** task-012
 
 **Scope:**
-- Both verbs on both CLI twins, with their exit codes and stderr tokens.
-- The agent-facing surface gaining exactly these two verbs and no administrative one.
+- A connect request naming exactly one target agent and one channel.
+- The asker must already be in the channel it names, and may not name itself.
+- An available target joined in the **same transaction** that sets its positions to the channel head and records the outcome as durable per-session state.
+- An unavailable target refused at once with a reason; no accept, no decline, no pending record, no expiry.
+- Reciprocal-request arbitration falling out of the asker-is-busy property, plus jittered retry so two agents cannot fail each other in lockstep.
 
 **Acceptance Criteria:**
-- [ ] Both verbs behave identically under Bash and PowerShell; covered by the parity test.
-- [ ] A refusal from either exits 8 with its token on stderr.
-- [ ] The verbs added are exactly the roster and the connect request; verified by diffing the agent-facing surface against FR-7.3's prohibited list.
-- [ ] Unit tests; all existing tests pass; build passes.
+- [ ] A request at an available agent puts it in the named channel at that channel's head, and it learns so on its next call of any kind.
+- [ ] A request at an agent already in a channel, stale, or unknown fails at once with `target_unavailable` at exit 8.
+- [ ] A request from a session in no channel, or naming itself, is refused with its own reason.
+- [ ] After either outcome **no pending-invitation state exists anywhere**; verified by reading the schema and the store.
+- [ ] Two agents that each open a channel and then request the other, ordered around an explicit barrier, **both fail as busy**; neither ends up in the other's channel.
+- [ ] Unit tests for every new public function or endpoint this task adds.
+- [ ] All existing tests still pass.
+- [ ] Build passes.
 - [ ] All section-6 quality gates pass

@@ -29,8 +29,10 @@
 **Acceptance Criteria:**
 - [ ] A send by a channel's only member fails with `solo_channel`; by a session in no channel with `no_channel`; both at exit 8.
 - [ ] The same idempotency key sent twice yields **one** message and the same `arrival_seq` from both calls.
-- [ ] Two different senders using the same key value both have their messages stored -- the key is sender-scoped, so neither swallows the other.
+- [ ] Two different senders using the same key value both have their messages stored -- neither swallows the other.
 - [ ] A local member at the unread bound causes further sends to that channel to be refused with `overflow` rather than dropping anything.
-- [ ] A message reaches every member of a two-member channel and of a channel with more than two.
-- [ ] Unit tests; all existing tests pass; build passes.
+- [ ] A message reaches every member of a two-member channel and of a channel with more than two, **on this machine**; the "on whichever machine each member sits" clause of `AC-13` is delivery-004's and is out of scope here.
+- [ ] Unit tests for every new public function or endpoint this task adds.
+- [ ] All existing tests still pass.
+- [ ] Build passes.
 - [ ] All section-6 quality gates pass

@@ -21,14 +21,16 @@
 
 **Scope:**
 - `register(name, tool, cwd, capabilities)` minting the product's own conversation id; any host-supplied id stored as correlation metadata that nothing keys on.
-- Heartbeat, and stale derived from `last_heartbeat_at` rather than stored.
-- Re-registering an existing name reattaches to its channel at `acked_seq` when that channel is still open, and to **no** channel when it closed.
+- Heartbeat; stale derived from `last_heartbeat_at` rather than stored.
+- Re-registering reattaches to its channel at `acked_seq` when that channel is still open, and to **no** channel when it closed.
 - `next_sender_seq` reset on joining a channel.
 
 **Acceptance Criteria:**
 - [ ] Registering while supplying a host conversation id yields a **product-minted** id, and the host value appears only in `host_conversation_id`; verified by reading the row.
 - [ ] A session that re-registers while its channel is open resumes at its `acked_seq`, and messages that arrived while it was gone are returned.
-- [ ] A session that re-registers after its channel closed is accepted with `channel_id` null -- a finished conversation is not resurrected.
+- [ ] A session that re-registers after its channel closed is accepted with `channel_id` null.
 - [ ] A session quiet past the stale threshold reports stale while keeping its position, and its channel stays open.
-- [ ] Unit tests; all existing tests pass; build passes.
+- [ ] Unit tests for every new public function or endpoint this task adds.
+- [ ] All existing tests still pass.
+- [ ] Build passes.
 - [ ] All section-6 quality gates pass

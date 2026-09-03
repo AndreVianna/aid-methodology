@@ -1,4 +1,4 @@
-# task-020: Operator install instructions for the stop hook and its timeout
+# task-020: Rendered chat skill
 
 > **Execution protocol (binding on whoever executes this task -- no
 > exceptions):** the moment this task's `State` changes, write it --
@@ -15,20 +15,19 @@
 
 **Type:** DOCUMENT
 
-**Source:** feature-003-the-wake -> delivery-003 -> AC-24, AC-25
+**Source:** feature-003-the-wake -> delivery-003 -> AC-15
 
-**Depends on:** task-019
+**Depends on:** task-017
 
 **Scope:**
-- Per-host instructions for installing the stop hook that the product will never write itself.
-- The `--host-timeout` value to use, and the arithmetic relating it to the long-poll default and the adapter margin.
-- What happens when the operator omits it, stated as the observed failure rather than in the abstract.
-- The pre-authorisation option, what it buys, and what it costs.
-- The instruction never to set fail-closed, and why a hung wait would then freeze the user's session.
+- One canonical skill rendered into all five host dialects by the pipeline this repository already has -- no per-host hand authoring.
+- It describes `send` / `inbox` / `ack`, the session's own channel, and the hub verbs. It carries **no logic and no state**, which is why this task is DOCUMENT rather than IMPLEMENT: there is no function to unit-test.
+- It describes no administrative operation and no `wait`, and the product writes no host configuration.
 
 **Acceptance Criteria:**
-- [ ] The document states an explicit timeout value for each host that ships an adapter, with the arithmetic shown.
-- [ ] It states the consequence of omitting it in terms of what the operator will observe -- a wake that never arrives, with nothing reporting why.
-- [ ] It says never to set fail-closed, and gives the reason.
-- [ ] Accuracy verified by an operator following it on a clean machine and reaching a working wake.
+- [ ] The skill renders into all five profiles through the existing generator, with no hand-authored per-host variant; verified by running the generator and diffing the outputs.
+- [ ] Its verb list is exactly what FR-7.3 permits and contains nothing FR-7.3 forbids; verified by diffing the two lists.
+- [ ] It documents no `wait` verb; verified by grep.
+- [ ] An operation performed by following the skill and the same operation invoked directly on the CLI produce the same store state; verified by comparing the store after each.
+- [ ] All existing tests still pass; build passes.
 - [ ] All section-6 quality gates pass

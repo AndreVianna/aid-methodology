@@ -17,7 +17,7 @@
 
 **Source:** feature-004-lan-federation -> delivery-004 -> AC-16
 
-**Depends on:** task-022
+**Depends on:** task-024
 
 **Scope:**
 - A protocol version number of its own, **never inferred from `VERSION`** -- the node ships in the `aid` payload, so the artifact version moves for reasons the protocol does not.
@@ -26,7 +26,9 @@
 
 **Acceptance Criteria:**
 - [ ] Two hubs differing by patch or by minor interoperate normally.
-- [ ] A major difference refuses the connection with a clear error and does not silently half-work -- verified by asserting no message crosses after the refusal.
+- [ ] A major difference refuses the connection with a clear error and does not silently half-work; verified by asserting no message crosses after the refusal.
 - [ ] The protocol number is independent of `VERSION`; verified by bumping `VERSION` and asserting the handshake outcome is unchanged.
-- [ ] Unit tests; all existing tests pass; build passes.
+- [ ] Unit tests for every new public function or endpoint this task adds.
+- [ ] All existing tests still pass.
+- [ ] Build passes.
 - [ ] All section-6 quality gates pass

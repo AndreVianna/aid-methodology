@@ -1,4 +1,4 @@
-# task-019: Integration tests for the wake, on both proving hosts
+# task-019: Cursor waker adapter
 
 > **Execution protocol (binding on whoever executes this task -- no
 > exceptions):** the moment this task's `State` changes, write it --
@@ -13,20 +13,26 @@
 > `aid-execute/references/state-execute.md § MANDATORY: State-Write
 > Protocol`.
 
-**Type:** TEST
+**Type:** IMPLEMENT
 
-**Source:** feature-003-the-wake -> delivery-003 -> AC-1, AC-12, AC-23, AC-24, AC-25, AC-26
+**Source:** feature-003-the-wake -> delivery-003 -> AC-23, AC-24, AC-25, AC-26
 
-**Depends on:** task-018
+**Depends on:** task-017
 
 **Scope:**
-- The cross-tool same-machine exchange, the re-arm window, no-loop, no-human-in-the-path, no-orphan, and byte-order-mark tolerance.
-- The connect-outcome-through-wake case, which the plan carries as its own gate criterion because no section-9 criterion covers it.
+- The same contract in this host's shapes: `followup_message` on output, `loop_count` for re-entry.
+- `utf-8-sig` decoding, because this host prefixes its stdin payload with a byte-order mark.
+- Unquoted paths, correct in PowerShell as well as bash; host-specific quoting **only** where a path contains a space.
+- `decision: block` deliberately unused, though it works: it is absent from this host's schema and can change without notice.
 
 **Acceptance Criteria:**
-- [ ] AC-1 passes with a Cursor session and a Claude Code session on one machine, in different repositories.
-- [ ] A connect outcome reaches an **idle** target through the wake, with the target having called nothing first.
-- [ ] Orphan absence is verified by process and connection count, not by absence of error.
-- [ ] Each of the six criteria has a test naming its id.
-- [ ] Tests are deterministic where they can be; any test requiring a live host session is marked manual and its procedure recorded so it is repeatable.
+- [ ] A woken session runs one turn and settles; the stop event ending it does not start another wait.
+- [ ] From arrival to the session having acted, no approval prompt is raised -- or, where pre-authorisation is required, the operator step that satisfies it is named and performed.
+- [ ] After a block exceeding the configured hook timeout, no adapter process survives and the waiter count returns to its prior value.
+- [ ] A payload prefixed with a byte-order mark is parsed and acted on.
+- [ ] The command emitted for the woken turn is accepted by PowerShell; verified by executing it there. Where a path contains a space the quoted form is used and is also accepted.
+- [ ] `decision: block` appears nowhere in this adapter; verified by grep.
+- [ ] Unit tests for every new public function or endpoint this task adds.
+- [ ] All existing tests still pass.
+- [ ] Build passes.
 - [ ] All section-6 quality gates pass

@@ -1,4 +1,4 @@
-# task-007: Read path: per-speaker order, gap grace, the contiguous prefix and ack
+# task-007: Per-speaker ordering on read, and the gap-grace rule
 
 > **Execution protocol (binding on whoever executes this task -- no
 > exceptions):** the moment this task's `State` changes, write it --
@@ -15,25 +15,22 @@
 
 **Type:** IMPLEMENT
 
-**Source:** feature-002-node-and-message-plane -> delivery-001 -> AC-6, AC-31, AC-32
+**Source:** feature-002-node-and-message-plane -> delivery-001 -> AC-31
 
 **Depends on:** task-006
 
 **Scope:**
-- `inbox` returning messages after the caller's baseline -- `acked_seq`, or the `cursor` override.
 - Reorder within each sender by `sender_seq`, holding back a message whose immediate predecessor has not arrived; nothing held back across senders.
-- A gap older than `gap_grace` declared permanent: the successor released and the skip recorded in the audit log.
-- The point at which the whisper filter applies reserved, and stated to run **after** ordering so a filtered message never creates a gap.
-- `delivered_seq` advanced to the **contiguous prefix**, including when everything in the window was filtered; nothing moved under a `cursor` override.
-- `ack` refusing a cursor ahead of `delivered_seq`.
+- A gap older than `gap_grace` declared permanent: the successor released and the skip written to the audit log.
+- The whisper filter's position in the pipeline fixed as **after** ordering, so a message the caller cannot see never creates a gap for that sender.
 
 **Acceptance Criteria:**
-- [ ] With no subscriber armed, a message is readable at the session's next turn.
 - [ ] One speaker's messages are returned in that speaker's order even when they arrived interleaved with another's.
-- [ ] A message whose `sender_seq` predecessor is absent is withheld and `delivered_seq` stops **below** it; when the predecessor arrives, both are returned in order.
+- [ ] A message whose `sender_seq` predecessor is absent is withheld; when the predecessor arrives, both are returned in that speaker's order.
 - [ ] A gap older than `gap_grace` releases the successor and writes a skip to the audit log -- a speaker is never stalled forever, and never silently.
-- [ ] A window in which every message was filtered still advances `delivered_seq`.
-- [ ] A `cursor` override moves neither position, and acknowledging a message seen only under an override fails with `ack_ahead_of_delivered`.
-- [ ] A message delivered but never acknowledged is returned again after an interruption, and is identifiable as a repeat by its key.
-- [ ] Unit tests; all existing tests pass; build passes.
+- [ ] A message filtered out for this caller does not stall that sender's later messages; verified by filtering one and asserting the next is returned.
+- [ ] Two callers observing two speakers in different relative orders is a **pass**, asserted as such by a test.
+- [ ] Unit tests for every new public function or endpoint this task adds.
+- [ ] All existing tests still pass.
+- [ ] Build passes.
 - [ ] All section-6 quality gates pass

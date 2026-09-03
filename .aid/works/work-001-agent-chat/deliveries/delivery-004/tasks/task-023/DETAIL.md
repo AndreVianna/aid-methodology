@@ -1,4 +1,4 @@
-# task-023: Replication, the outbox drain and membership
+# task-023: Peer registry and discovery
 
 > **Execution protocol (binding on whoever executes this task -- no
 > exceptions):** the moment this task's `State` changes, write it --
@@ -15,23 +15,20 @@
 
 **Type:** IMPLEMENT
 
-**Source:** feature-004-lan-federation -> delivery-004 -> AC-5, AC-13
+**Source:** feature-004-lan-federation -> delivery-004 -> AC-4
 
 **Depends on:** task-022
 
 **Scope:**
-- The `outbox` and `channel_member` tables.
-- A send delivered to every peer holding a member of that channel -- immediately where reachable, queued where not, drained oldest-first on reconnect.
-- The receiving hub assigning **its own** `arrival_seq` and storing the sender's `sender_seq` **verbatim**.
-- Dedupe on the sender-scoped key, which is what absorbs a replay.
-- Membership replicated as its own kind, so replication targeting and the solo-send check become computable.
-- **This task completes the cross-machine clause of `AC-13`** -- "on whichever machine each member sits" -- which delivery-001 built fan-out for but could not verify with one machine. `AC-13` stays owned by delivery-001; this task answers to the half that needs a peer.
+- The `peer` table, and CLI verbs to add and list peers.
+- **The guaranteed path** -- a static peer list plus heartbeat -- depending on no network feature.
+- Zero-configuration discovery layered **above** it as best-effort, carrying no criterion and never load-bearing.
 
 **Acceptance Criteria:**
-- [ ] A message sent while a peer is unreachable reaches that peer on reconnect, and its local member reads it.
-- [ ] A message replayed after a reconnect is absorbed rather than duplicated -- exactly one row remains.
-- [ ] A receiving hub stores the sender's `sender_seq` unchanged; verified by comparing the rows on both hubs.
-- [ ] Per-speaker order holds on the receiving hub even when messages arrive out of order across the network.
-- [ ] A sender alone on its own hub but not alone in the channel **can** send -- the solo check counts remote members.
-- [ ] Unit tests; all existing tests pass; build passes.
+- [ ] Two machines on a network that blocks broadcast and multicast find each other by the guaranteed path alone.
+- [ ] On a network that permits it they also find each other with no configuration; recorded as best-effort and not gating.
+- [ ] Disabling the best-effort layer entirely leaves `AC-4` passing; verified by running the criterion with it switched off.
+- [ ] Unit tests for every new public function or endpoint this task adds.
+- [ ] All existing tests still pass.
+- [ ] Build passes.
 - [ ] All section-6 quality gates pass

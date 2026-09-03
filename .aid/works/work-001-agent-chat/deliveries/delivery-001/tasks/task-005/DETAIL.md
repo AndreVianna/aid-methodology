@@ -22,7 +22,7 @@
 **Scope:**
 - `open` as create-and-join in one step, setting both positions to the channel's head; `join` at head; `leave`.
 - A join attempt while already in a channel refused with `already_in_channel`.
-- Close when the last member leaves **or is reaped**, deleting the row and cascading its messages away.
+- Close when the last member leaves **or is reaped**, deleting the row and cascading its messages away. **The close-on-reap code path is built and triggerable here; the periodic job that decides *when* to reap is task-032** -- FR-2.3 puts tracking with registration and reaping with retention, so this task owns the rule and that one owns the schedule.
 - Local channel listing (`FR-3.1` local half).
 - A dropped connection is **not** a leave -- it is stale, then reaped.
 
@@ -31,7 +31,9 @@
 - [ ] A member joining a channel that already carries messages receives only messages sent **after** it joined.
 - [ ] A channel whose creator has left while another member remains is still open.
 - [ ] A channel whose last member leaves is gone, and its messages are gone with it; verified by querying the store.
-- [ ] A channel whose last member stops heartbeating closes at the reap threshold and **not before**, however long it has been quiet.
+- [ ] Reaping the last member **when the reap path is invoked directly** closes the channel; and a channel quiet for any duration with a live member is **not** closed, verified by holding one member heartbeating for longer than the reap threshold.
 - [ ] Listing shows the open channels this hub knows and which one the caller is in.
-- [ ] Unit tests; all existing tests pass; build passes.
+- [ ] Unit tests for every new public function or endpoint this task adds.
+- [ ] All existing tests still pass.
+- [ ] Build passes.
 - [ ] All section-6 quality gates pass
