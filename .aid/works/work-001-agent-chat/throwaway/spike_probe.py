@@ -12,7 +12,7 @@ Purpose: THROWAWAY P0 spike probe -- the EXTERNAL observer that distinguishes a 
          Deleted when the spike closes. Do not import, copy, or depend on this file.
 
 Usage:   spike_probe.py --run <run id> [--log PATH] [--interval-ms 250]
-                        [--arm-timeout 60]
+                        [--arm-timeout 900]
 
          Run it BEFORE arming the host, in its own terminal. It waits for the hook's start
          line, so the order within a few seconds does not matter.
@@ -22,6 +22,12 @@ Exit codes:
          1  runtime failure (log unwritable)
          2  usage error
          3  gave up waiting for the hook's start line (--arm-timeout exceeded)
+
+         --arm-timeout is generous on purpose. Arming spans a human registering a hook in a
+         host tool's UI and then prompting a session, which does not fit in a minute; the
+         original 60 s default meant the probe expired before the hook could ever fire, and
+         the run failed for a reason that had nothing to do with the host. Waiting costs
+         nothing here -- an unarmed probe only watches.
 """
 from __future__ import annotations
 
@@ -174,7 +180,7 @@ def main() -> int:
                          "file the hook resolves for that run)")
     ap.add_argument("--interval-ms", type=int, default=250,
                     help="sampling cadence in milliseconds (default 250, matching the hook's beat)")
-    ap.add_argument("--arm-timeout", type=float, default=60.0,
+    ap.add_argument("--arm-timeout", type=float, default=900.0,
                     help="seconds to wait for the hook's start line before giving up (default 60)")
     args = ap.parse_args()
 
