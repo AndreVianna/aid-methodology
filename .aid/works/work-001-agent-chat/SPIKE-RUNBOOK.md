@@ -564,20 +564,37 @@ Get-NetIPAddress -AddressFamily IPv4 | Where-Object { $_.InterfaceAlias -notmatc
 
 **140.** On machine A, run `Get-Content ~\spike\logs\stub-8811.ndjson`.
 
-**141.** Confirm the log contains two `request` lines — one per waiter.
+**141.** Confirm the log contains **two `request` lines** — one per waiter.
 
-**142.** Confirm it contains the single arrival.
+**142.** Confirm those two lines carry **different `client=` addresses**: one loopback, one machine
+B's LAN address.
 
-**143.** Confirm it contains two `act` lines.
+**143.** Confirm the log contains **two `act` lines**.
 
-**144.** Confirm one `act` line's `note` field shows `client=` with machine B's address.
+**144.** Confirm one `act` line's `client=` is **machine B's address**.
 
 **145.** Record test 4 as **Pass** if steps 141 to 144 all held.
 
 **146.** Record test 4 as **Fail** if any did not.
 
-> One log on one machine, so the ordering is unambiguous and no clock synchronisation between the
-> machines is needed.
+> **Why there is no "single arrival" to look for.** An earlier version of this step asked you to
+> confirm one. The stub cannot produce one: it sleeps `after` on each request's **own thread** and
+> answers that request alone, so two waiters that arm twenty seconds apart are released twenty
+> seconds apart. There is no shared release and no `arrival` event — the stub emits only `start`,
+> `request`, `respond`, `client_gone`, `error` and `end`.
+>
+> Nothing is lost. `AC-20`'s fourth question asks whether the exchange holds across two machines,
+> not whether one arrival fans out to two waiters. What the four checks above establish is the whole
+> of it: two sessions on two machines each waited, each was woken, and the one on the far machine
+> **reached back across the LAN** — which is the `client=` on its `act` line, and the reason the
+> stub rather than the sessions holds the authoritative log.
+>
+> **Expect an approval prompt on machine B, and approve it.** Test 4 needs the `act` — a real
+> request crossing the network — so it runs the default `command` action rather than `text`, and F5
+> established that Cursor gates a woken turn's command behind a human click. That is fine here:
+> test 4 is a reachability check, not a latency measurement, so your reaction time does not spoil it.
+> Do not use `--wake-action text` for this test; there would be no `act` and nothing would cross the
+> LAN.
 
 **147.** Do **not** run the LAN confirmation run at `D` = `S`. Record it as **not applicable**.
 
