@@ -491,6 +491,15 @@ Get-NetIPAddress -AddressFamily IPv4 | Where-Object { $_.InterfaceAlias -notmatc
 
 **116.** Confirm the ping replies.
 
+> **If the ping fails and both machines are on Wi-Fi, suspect access-point client isolation before
+> anything else.** Many consumer networks and nearly all guest networks block client-to-client
+> traffic outright, so two machines with working internet cannot reach each other at all. `FR-6.1`
+> already names it as one of the mechanisms that defeats discovery, alongside VLAN splits.
+>
+> It is a property of the network, not of either machine, and no setting on the machines will fix
+> it. Either use a network without isolation, or wire both to the same switch. Wi-Fi is otherwise
+> the **right** medium to test on, being what users will actually have.
+
 **117.** Copy the three scripts to machine A.
 
 **118.** On machine A, check Python is 3.9 or newer.
@@ -570,15 +579,22 @@ Get-NetIPAddress -AddressFamily IPv4 | Where-Object { $_.InterfaceAlias -notmatc
 > One log on one machine, so the ordering is unambiguous and no clock synchronisation between the
 > machines is needed.
 
-**147.** Run the recipe once more at `D` = `S` over the LAN, run id `T4-CONF-a`, with machine B's
-`--url`.
+**147.** Do **not** run the LAN confirmation run at `D` = `S`. Record it as **not applicable**.
 
-**148.** If that run did not SURVIVE, write down both figures: test 3's loopback number, and this
-smaller LAN number.
+**148.** Write down the reason: the spike has machine B's hook long-poll machine A's stub across the
+LAN, and the product never opens that connection.
 
----
-
-## Part 5 — Hand back
+> The runbook previously asked for a confirmation run at `S` over the LAN, to see whether a block
+> that survived on loopback also survives the network. That was written to catch a router, NIC or OS
+> idle-connection timeout biting a held connection — a real risk, but **not on this link.**
+>
+> `REQUIREMENTS.md` is explicit that a session subscribes to its **local** node, and `FR-6` puts the
+> LAN hop between *nodes*: a session on B subscribes to node B over loopback, and node B talks to
+> node A. The spike has one stub and no second node, so it cannot reproduce that shape. A number
+> measured here would bound a connection nothing makes, and a later reader would reasonably mistake
+> it for the product's cross-machine limit.
+>
+> The risk moves to Feature 004, where the inter-node link is designed. Recorded as F11.
 
 **149.** Collect every file in `~\spike\logs\` on machine A.
 
