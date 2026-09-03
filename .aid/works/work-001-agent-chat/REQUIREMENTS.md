@@ -300,7 +300,7 @@ rule inside** a channel (whisper, FR-3.6), never a second address space.
 | FR-5.5 | **The wait must be free.** An adapter blocks in a process outside the model, never by keeping the model in a poll loop. Cost while idle is zero tokens |
 | FR-5.6 | **Every adapter carries a re-entry rule.** Waking is inherently a loop: the wake ends a turn, ending a turn fires the stop hook, and the stop hook wakes the session again. An adapter must therefore distinguish a stop that should wait from one that is merely the tail of a wake it already served, and "block on every stop event" is not an implementable adapter. Where the host reports how many automatic follow-ups a conversation has already triggered, the adapter reads it; where the host offers no such signal, or offers no cap, the adapter carries the count itself |
 | FR-5.7 | **The woken turn requires no authorisation.** Whatever the adapter asks the woken session to do must be something the host will perform without a human approving it, because a gate on that action is a human and an autonomous channel cannot wait on one. An adapter that needs a privileged action must have it pre-authorised by host configuration the operator installs knowingly — never assumed |
-| FR-5.8 | **The block stays strictly inside the host's own hook timeout — and the product does not write that timeout, because it writes no host configuration at all (FR-0.4).** A host may abandon an over-running hook rather than killing it: output discarded, wait abandoned, **process left running and its connection still open.** Each such wake leaks a process and inflates the node's count of connected waiters, and nothing in the host reports it. So the adapter's block must end before the host stops listening, and the ownership of that number is split three ways rather than assumed: **the operator writes it**, in the host configuration only the operator touches; **the product states the required value** in the rendered skill and the install instructions, since it is the product that knows what its long-poll needs; and **the adapter is told it** and bounds its own block by what it was told. Where the adapter is told nothing it must **not inherit the platform default** — measurement put one host's default under 60 s, shorter than this product's own 30 s long-poll (§6) — and must instead fall back to a block short enough to be safe under the shortest default known, accepting a shorter wait rather than a wake that never arrives |
+| FR-5.8 | **The block stays strictly inside the host's own hook timeout — and the product does not write that timeout, because it writes no host configuration at all (FR-0.4).** A host may abandon an over-running hook rather than killing it: output discarded, wait abandoned, **process left running and its connection still open.** Each such wake leaks a process and inflates the node's count of connected waiters, and nothing in the host reports it. So the adapter's block must end before the host stops listening, and the ownership of that number is split three ways rather than assumed: **the operator writes it**, in the host configuration only the operator touches; **the product states the required value** in the rendered skill and the install instructions, since it is the product that knows what its long-poll needs; and **the adapter is told it** and bounds its own block by what it was told. Where the adapter is told nothing it must **not inherit the platform default**. Measurement bounded one host's default at **under 60 s** and no tighter; whether it is above or below this product's own 30 s long-poll (§6) **was not established**, and that uncertainty is the argument rather than a weaker version of it — an adapter cannot rely on a bound nobody has measured, in either direction. So it falls back to a block short enough to be safe under the shortest default known, accepting a shorter wait rather than a wake that never arrives |
 | FR-5.9 | **The host's wake contract is per-host and taken from its documentation.** Both the payload an adapter reads and the response shape it returns differ by host, and an undocumented shape that happens to work is not a contract — it may change without notice. An adapter must also **tolerate a byte-order mark** on the host's payload: a leading BOM is not permitted in JSON and makes a strict parser reject an otherwise valid document, reporting it as malformed at its first character |
 | FR-5.10 | **An adapter assumes nothing about how the host invokes it, nor about the shell the woken turn uses.** The host may run the hook through a shell that is not the platform's native one, so any path the adapter emits must survive that shell, and it must resolve its own interpreter from the running process rather than from `PATH` — a `PATH` entry may be a shim that re-launches the real interpreter as a child, which leaves the process the host is watching unrelated to the process that blocks. These are two questions and not one: measurement found a host that invokes its hook through one shell while running the woken turn's command in another, and the two disagree about how a leading quoted path is read, so a command string correct on one host is a syntax error on the other |
 | FR-5.11 | **The node is host-blind, and stays that way; only the adapter knows which host it serves.** One canonical message format on the wire and in the store; the adapter renders it into the host's shape at the last step (FR-5.9). A session declares its **capabilities** — data the node can honour without interpretation, such as a payload ceiling or an inability to act on a gated call — and the `tool` it runs in is recorded for the operator's benefit (FR-7.1), **never as a formatting switch**. This is what keeps FR-5.2's promise real: if the node formatted per host, it would grow a branch per host, every new host would touch the node and the store, and "only the adapter differs" would be false |
@@ -413,7 +413,7 @@ limit is hardcoded. All configuration is applied through the CLI (FR-7.2).
 | **Reap threshold** | **24 h** without heartbeat → the hub gives the member up for gone and **drops its claim on its channel**. What is released is its hold on the trim point, so messages it never acknowledged *do* then become removable — that is the point. **If it was the channel's last member, the channel closes** (FR-3.3). Its **name is not destroyed**: re-registering it is accepted at any time |
 | Long-poll timeout | **30 s**; the subscriber reconnects on timeout. **Must stay strictly under the host's hook timeout** (FR-5.8), which the operator writes and the adapter is told |
 | Gap grace | **60 s** — how long a message waits for its immediate per-speaker predecessor before the hub declares the gap permanent, releases the successor, and records the skip. Without a bound, a predecessor that never arrives holds every later message from that sender **forever, silently**; with one, a rare loss is visible and bounded |
-| Adapter timeout margin | **5 s** — the headroom an adapter leaves between its own block and the host's configured hook timeout (FR-5.8). Sized from measurement rather than taste: the observed wake-to-turn maximum was 4.303 s and still rising |
+| Adapter timeout margin | **5 s** — the headroom an adapter leaves between its own block and the host's configured hook timeout (FR-5.8). Sized from measurement rather than taste: the observed wake-to-refire maximum was 4.303 s and still rising |
 | **Channel inactivity timeout** | **None, deliberately — there is no such parameter.** A quiet channel is the normal state of this product, so a timer here would close a conversation while both parties were waiting on each other. Idleness is bounded on the *session* instead, by the two thresholds above, plus the operator's ability to remove a session from its channel (FR-7.2) |
 
 **Nothing bounds an eternally idle but live session, and that is a decision rather than an
@@ -579,7 +579,7 @@ its override reinstates a design that was rejected.
 | ID-17 | **One channel per agent at a time**, so opening one is bounded by leaving the last | Membership in several channels at once — a position pair per channel, an inbox that fans in across channels, and channel creation needing a quota nobody had specified. The bound removes all three, and its cost — an agent must leave one conversation to join another — is accepted |
 | ID-18 | **A channel ends when its last member leaves or is reaped, and never on a clock** | A channel inactivity timeout — proposed at one hour and rejected because idle waiting is this product's normal state: two agents each waiting on the other are "inactive" by definition, so the timer would destroy the conversation during precisely the case the product exists for. Treating a dropped connection as a departure — a network blip would then garbage-collect a live channel and its log |
 | ID-19 | **A hub control plane: a roster of who is available, and a directed connect request the hub answers from state with no accept step** | An all-call channel used as a hailing frequency — incompatible with ID-17, since an agent cannot sit on both its channel and the all-call, and it wakes every idle agent for every hail. Pending invitations with an explicit accept — an accept is a call the woken session makes, and measurement found a host that gates such a call behind a human click, so the request would wait on a person (FR-5.7). Human-mediated rendezvous, the operator naming the channel to both agents — workable and needing no mechanism, but it makes a human a component of every autonomous exchange |
-| ID-20 | **The operator writes the host's hook timeout; the product states the value it needs and the adapter is told it** | The product writing the host's configuration — FR-0.4 forbids it, and that prohibition is load-bearing, not a preference. The adapter inheriting the platform default — measurement put one host's default under 60 s, shorter than this product's own 30 s long-poll, so inheriting it means the wake never arrives and nothing reports why |
+| ID-20 | **The operator writes the host's hook timeout; the product states the value it needs and the adapter is told it** | The product writing the host's configuration — FR-0.4 forbids it, and that prohibition is load-bearing, not a preference. The adapter inheriting the platform default — measurement bounded one host's default at under 60 s and no tighter, so whether a 30 s long-poll fits inside it is **unknown**, and a wake that never arrives reports nothing when it does not |
 | ID-21 | **The node is host-blind; only the adapter knows which host it serves** | The node rendering per host, using the `tool` a session declares — it grows a branch per host in the node and the store, every new host then touches both, and FR-5.2's "only the adapter differs" becomes false. What a session declares instead is capability *data* the node can honour without interpreting |
 | ID-22 | **Nothing bounds an eternally idle but live session in v1** — reaping removes the dead, and the operator can see and evict the rest | A generic idle timeout — the product cannot tell a session waiting hours for a peer's long task from one that will never receive anything, and only the human can. A probe-on-idle wake that asks rather than assumes is the recorded growth path, not the v1 choice |
 
@@ -1973,7 +1973,10 @@ specifies and is the only thing that touches the store.
    would never be delivered at all. **When nothing is returned, the prefix still advances**: a
    window in which every message was filtered away as somebody else's whisper is fully handed
    over as far as this caller is concerned, and leaving the position behind would re-scan those
-   rows on every subsequent call until they were trimmed. Nothing moves when a `cursor` override
+   rows on every subsequent call until they were trimmed. **It advances to the same place it would
+   have** — one below the first held-back message, or the highest `arrival_seq` examined in the
+   window when nothing was held back. Filtering changes what the caller sees, never where the
+   prefix ends. Nothing moves when a `cursor` override
    was given (FR-4.3).
    This is the pull path's hand-off, and naming it here is what keeps at-least-once meaningful
    where there is no adapter (FR-4.4).
@@ -2089,6 +2092,12 @@ indistinguishable from a crash.
 | `channel_unknown` | join | No open channel of that name on this hub |
 | `whisper_target_not_member` | send | `whisper_to` names somebody who is not in the channel (Feature 005) |
 | `mention_and_whisper` | send | Both set on one message; they are mutually exclusive (FR-4.1) |
+
+**One token is a warning rather than a refusal, and it belongs in this table for exactly that
+reason:** `mention_unknown: <names>` is written to stderr while the send **succeeds with exit `0`**
+(Feature 005). A mention changes attention rather than delivery, so a stale name is worth reporting
+and not worth refusing. Listing it here keeps this table what it claims to be — the registry of
+every stable token the node writes to stderr — rather than the registry of refusals only.
 
 The reason is a stable token on stderr with a human sentence after it, matching the repository's
 existing "stdout carries the result, stderr carries diagnostics" rule. A refusal is not a stack
@@ -2300,8 +2309,9 @@ trace, in keeping with FR-7.7's actionable-error principle applied to the ordina
 >   an approval prompt and waited for a human. This is the constraint that most shapes what an
 >   adapter may ask the woken session to do.
 > - **The block must end before the host stops listening, and the adapter must set that bound**
->   (FR-5.8). The platform default measured under 60 s — shorter than `§6`'s own 30 s long-poll is
->   comfortable with — and an over-run leaks a process whose socket stays open.
+>   (FR-5.8). The platform default was bounded at under 60 s and no tighter, so whether `§6`'s own
+>   30 s long-poll fits inside it is unknown — and an over-run leaks a process whose socket stays
+>   open.
 > - **The host contract is per-host, documented, and BOM-tolerant** (FR-5.9). Cursor's supported
 >   response shape is `followup_message`; the Claude Code shape also works there but is
 >   undocumented, and Cursor prefixes its payload with a UTF-8 BOM that defeats a strict parser.
@@ -2524,8 +2534,12 @@ left running with its socket still open** (F7). Nothing in the host reports it. 
   the **operator writes** the timeout in host configuration, because FR-0.4 forbids the product
   writing any; the **product states the value it needs**, in the rendered skill and the install
   instructions; the **adapter is told it** and bounds its block by what it was told.
-- **It must never inherit the platform default.** Measured under 60 s on one host, against this
-  product's own 30 s long-poll — at the default it does not work, and it fails silently.
+- **It must never inherit the platform default.** Measurement bounded one host's default at
+  **under 60 s** and no tighter: a run at `D` = 60 with the `timeout` line absent produced no wake.
+  Whether the default is also under `§6`'s 30 s long-poll **is not established**, and the honest
+  form of the conclusion is stronger for admitting it — an adapter would be relying on a number
+  nobody has measured, and the failure mode when it guesses wrong is a wake that never arrives with
+  nothing reporting why.
 - **How it is told is a flag on the invocation the operator already writes**: the hook command is
   `aid chat subscribe --host-timeout <seconds>`, and `<seconds>` is the same number the operator
   puts in the host's own `timeout` field. One value, written once, in the one file the operator
