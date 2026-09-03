@@ -68,6 +68,7 @@ _log_lock = threading.Lock()
 _sink: TextIO | None = None
 _run = ""
 _host = ""
+_url = ""
 _deadline = 0.0
 _terminal_written = threading.Event()
 
@@ -259,11 +260,17 @@ def _act_command(run: str) -> str:
     """
     exe = str(sys.executable).replace("\\", "/")
     me = str(Path(__file__).resolve()).replace("\\", "/")
+    # --url must be carried through. The block reached a specific stub; the act has to reach the
+    # SAME one. Omitting it silently falls back to the loopback default, which is correct only on
+    # the machine that hosts the stub -- so on a second machine the act fails with connection
+    # refused, after the wake has already succeeded. That is the worst place for it to break: the
+    # hard part worked and the trivial part did not.
+    tail = f"--act {run} --url {_url}"
     if " " not in exe and " " not in me:
-        return f"{exe} {me} --act {run}"
+        return f"{exe} {me} {tail}"
     if _host == "cursor":
-        return f'& "{exe}" "{me}" --act {run}'
-    return f'"{exe}" "{me}" --act {run}'
+        return f'& "{exe}" "{me}" {tail}'
+    return f'"{exe}" "{me}" {tail}'
 
 
 def _wake(schema: str, run: str, action: str = "command") -> int:
@@ -336,7 +343,7 @@ def _act(url: str, run: str) -> int:
 
 
 def main() -> int:
-    global _sink, _run, _host, _deadline
+    global _sink, _run, _host, _url, _deadline
 
     ap = argparse.ArgumentParser(description="THROWAWAY P0 spike hook / act.")
     ap.add_argument("--host", choices=("claude", "cursor"),
@@ -377,6 +384,7 @@ def main() -> int:
 
     _run = run
     _host = args.host or ""
+    _url = args.url
     log_path = Path(args.log) if args.log else _LOG_DIR / f"{run}.ndjson"
     try:
         log_path.parent.mkdir(parents=True, exist_ok=True)
