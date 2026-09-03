@@ -871,7 +871,22 @@ review_history:
       note, that "count remote members from the start" read literally meant querying a table absent
       for three deliveries (now stated as a seam returning zero), and one parameter-wiring ambiguity
       between the reaping and trim tasks. The final spec-coverage sweep found NO unbuilt mechanism.
-    applied_to: 'deliveries/delivery-00{1..5}/tasks/task-0{01..36}/{DETAIL.md,STATE.yml} (new); PLAN.md (five execution graphs, section-6 carve-out correction); .aid/.temp/review-pending/tasks-cycle{1,2,3}.md'
+    applied_to: 'deliveries/delivery-00{1..5}/tasks/task-0{01..36}/{DETAIL.md,STATE.yml} (new); PLAN.md (five execution graphs, section-6 carve-out correction)'
+  - date: '2026-09-03'
+    event: 'Detail and Plan close-out corrected: the graded ledgers were not deleted'
+    outcome: 'Ledgers removed per both skills; findings preserved here, which is their durable home'
+    notes: >-
+      Caught by the stakeholder asking what about /aid-detail, which was the right question. Both
+      aid-detail's REVIEW state and aid-plan's have the same line in their pass row -- on a grade at
+      or above minimum, delete the ledger -- and neither was done. The ledgers for the task and plan
+      cycles are now removed. Nothing is lost: every finding, its severity and its fix is recorded in
+      this review_history, which is the durable record, whereas .aid/.temp is transient by name and by
+      rule. The requirements and specification ledgers remain on disk because no skill instructed
+      their deletion -- those review loops were run directly rather than through a skill state, so
+      there is no pass row to obey, and removing them on my own initiative would be a worse error than
+      leaving them. Recorded because a skipped close-out step is exactly the kind of omission that
+      looks like nothing and is how a state machine quietly stops being followed.
+    applied_to: 'Deleted .aid/.temp/review-pending/tasks-cycle{1,2,3}.md and plan-cycle{1,2}.md'
 # [A] written by the orchestrator on the work's active branch (single
 #     writer). Append-only audit trail of phase transitions and gate
 #     approvals, newest LAST (append to bottom).
