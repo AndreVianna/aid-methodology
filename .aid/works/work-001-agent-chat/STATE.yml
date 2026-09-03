@@ -114,29 +114,25 @@ user_approved: 'no'
 # [W] Running | Paused-Awaiting-Input | Blocked | Completed | Canceled
 lifecycle: Paused-Awaiting-Input
 # [W] Describe | Define | Specify | Plan | Detail | Execute
-phase: Describe
+phase: Specify
 # [W] aid-{skill} | none
 active_skill: none
 # [W]
 updated: '2026-09-03'
 # [W] set only when lifecycle = Paused-Awaiting-Input
 pause_reason: >-
-  DESCRIBE IS REOPENED, and specification must NOT start until it closes. An architecture review
-  (qa 3-6) replaced the message-plane model the approved requirements describe: the per-chat home
-  machine is gone, global FIFO relaxes to per-speaker order, channels become replicated ephemeral
-  directory names that agents create, an agent holds at most one channel at a time, a crash is not
-  a leave, broadcast and the all-call are removed, and a new hub control plane carries a roster and
-  a directed connect request that the hub answers from state with no accept step. Sections 4, 5, 6,
-  9 and 10 are therefore Pending again and user_approved is back to no. Three decisions are still
-  open and are the immediate blockers: (a) what bounds an eternally idle but live session --
-  nothing, leaning on reaping plus operator eviction, or a probe-on-idle wake (qa 4); (b) who
-  writes the host hook timeout, since FR-0.4 forbids the product writing any host configuration
-  while FR-5.8 requires the adapter to set that timeout, and the spike proved the platform default
-  is too short to inherit; (c) whether the adapter acknowledges on the session's behalf, which
-  decides whether "acknowledged" means handed to the model or read by it. Sequence: close those
-  three, write ONE amendment, re-run the cross-reference gate because feature boundaries move
-  (002 gains the hub plane, 004 loses the home, 005 loses broadcast), then specify. Also still
-  owed but blocking nothing: the operator's spike teardown.
+  DESCRIBE AND DEFINE ARE CLOSED AGAIN; SPECIFY IS THE CURRENT PHASE. The architecture review's
+  decisions (qa 3-6, all Answered) are written into REQUIREMENTS.md and the document survived four
+  adversarial review cycles -- 13, 9, 5 and 4 findings, every one Fixed, the fourth finding nothing
+  above MEDIUM. Every cycle caught at least one fix applied in one place while the same claim
+  survived in another, which is this document's characteristic defect and worth watching for in any
+  later edit. Verified independently rather than from the document's own claims: 31 live criteria,
+  each appearing in the section 10 stage table exactly once and owned by exactly one feature; 56
+  functional sub-requirements each mapped to at least one feature. Next: /aid-specify, Feature 002
+  first -- it is the keystone at 15 of 31 criteria and every other feature builds on its store
+  schema -- then 004, 005, 003. Still owed but blocking nothing: the operator's spike teardown
+  (delete the spike folder on both machines, remove the stop hooks, drop the port-8811 firewall rule,
+  restore power settings).
 # [W] set only when lifecycle = Blocked
 block_reason: --
 # [W] e.g. IMPEDIMENT-task-NNN.md, or the failed gate
@@ -149,7 +145,7 @@ ticket_ref: --
 #   grade: {grade} | Pending
 #   sections[].state: Pending | Complete
 interview:
-  state: In Progress
+  state: Approved
   grade: A+
   sections:
     - id: 1
@@ -166,15 +162,15 @@ interview:
       updated: '2026-09-01'
     - id: 4
       name: Scope
-      state: Pending
+      state: Complete
       updated: '2026-09-03'
     - id: 5
       name: 'Functional Requirements'
-      state: Pending
+      state: Complete
       updated: '2026-09-03'
     - id: 6
       name: 'Non-Functional Requirements'
-      state: Pending
+      state: Complete
       updated: '2026-09-03'
     - id: 7
       name: Constraints
@@ -186,11 +182,11 @@ interview:
       updated: '2026-09-01'
     - id: 9
       name: 'Acceptance Criteria'
-      state: Pending
+      state: Complete
       updated: '2026-09-03'
     - id: 10
       name: Priority
-      state: Pending
+      state: Complete
       updated: '2026-09-03'
 
 # [A] one entry per feature, in id order. Created by aid-define at feature
@@ -232,7 +228,7 @@ features:
       Stage P0. EXECUTED AND CLOSED -- all four tests have recorded outcomes and AC-20 is satisfied. Both hosts wake; the Cursor bound is the hook's own configured timeout and not a host constant; the exchange holds across two machines in both directions (T4-000-f). Evidence and twelve findings in FINDINGS.md; six became FR-5.6..FR-5.10 and FR-2.4. Open questions are routed to 002/003/004 and none of them block. `state: Ready` is the enum value for "specification complete" -- the feature's execution outcome is this note, because features[].state has no terminal value for an executed spike. Specification carried forward intact and unchanged -- an executable experiment design, reviewed to A+. Stays its own feature at any merge depth: AC-20 requires that none of its code be carried forward, which only means something if the boundary exists.
   - id: '002'
     name: node-and-message-plane
-    state: Pending
+    state: Answered
     grade: Pending
     qa_count: 0
     started: --
@@ -242,7 +238,7 @@ features:
       Stage P1, the keystone -- process model, CLI surface, store schema and the one core. Specify FIRST. Merged from three earlier features whose split had failed on its own terms: one owned the store schema another needed, so a schema defect in the first blocked the second outright. Largest feature at 9 of 22 criteria; if it proves too large the place to slice it is /aid-plan, not a new boundary. Carries two constraints from a dropped specification: exit code 5 is taken, and id INTEGER PRIMARY KEY without AUTOINCREMENT reuses a reaped member's id.
   - id: '003'
     name: the-wake
-    state: Pending
+    state: Answered
     grade: Pending
     qa_count: 0
     started: --
@@ -252,7 +248,7 @@ features:
       Stage P2. Node-side subscription, per-host waker adapters and the rendered chat skill. Cannot be specified before Feature 001 answers -- its Cursor half is shaped by the measured hook-blocking limit. One feature because none of the three delivers the wake alone.
   - id: '004'
     name: lan-federation
-    state: Pending
+    state: Answered
     grade: Pending
     qa_count: 0
     started: --
@@ -788,6 +784,32 @@ review_history:
       further P0 spike; what remains is validation of an ordinary networking property inside the
       feature that designs it.
     applied_to: 'FINDINGS.md (new "Does this evidence still hold" section; open-questions table)'
+  - date: '2026-09-03'
+    event: 'Requirements amended for the redesigned message plane; 4 review cycles, A+'
+    outcome: 'A+ (31 findings across 4 cycles, all Fixed; cycle 4 found nothing above MEDIUM)'
+    notes: >-
+      Describe was reopened and closed again in one pass, before any specification existed, which was
+      the cheap moment. Sections 1, 4, 5, 6, 7, 9, 10 and 11 all moved, and THE CASCADE WAS MOSTLY
+      DELETION: FR-3.2 and FR-3.3 retired with their numbers kept, AC-19 and AC-21 retired, and
+      cross-hub position gossip never has to be designed at all. Added: FR-3.8 (no broadcast, as a
+      stated exclusion), FR-5.11 (the node stays host-blind), FR-6.5 (the inter-node link, the one
+      link no measurement covers), FR-9.1-9.7 (the hub plane), AC-27 to AC-33, ID-15 to ID-22.
+      FOUR ADVERSARIAL CYCLES, 13 then 9 then 5 then 4 findings, all Fixed. EVERY CYCLE CAUGHT AT
+      LEAST ONE FIX APPLIED IN ONE PLACE WHILE THE SAME CLAIM SURVIVED IN ANOTHER -- the criterion
+      range was wrong three times in three locations, the two-member membership minimum three times
+      -- so that is this document's characteristic defect and the thing to sweep for on any later
+      edit. The most valuable single finding was a contradiction the fixes themselves introduced: the
+      FR-3 preamble said a send into a one-member channel would sit in the log for whoever joined
+      next, while FR-4.2's new join-at-head rule gives a joiner nothing sent before it arrived. Such a
+      send is now rejected outright, which is also what ID-9 already decided for a full mailbox and
+      avoids precisely the failure section 6 builds the overflow rule to prevent. Cycle 2 and 3 also
+      forced three real design answers the proposal had not carried: an asker must already be in the
+      channel it names (which incidentally makes reciprocal requests fail symmetrically with no
+      coordination, FR-9.6), a connect outcome is durable per-session state rather than an event so it
+      cannot be missed, and a relayed request never fails for not recognising a channel name. Counts
+      verified independently at each cycle rather than read off the document: 31 live criteria, each
+      in the stage table once and owned by exactly one feature, 56 sub-requirements each mapped.
+    applied_to: 'REQUIREMENTS.md (sections 1, 4, 5, 6, 7, 9, 10, 11); .aid/.temp/review-pending/requirements-amendment{,-cycle2,-cycle3,-cycle4}.md'
 # [A] written by the orchestrator on the work's active branch (single
 #     writer). Append-only audit trail of phase transitions and gate
 #     approvals, newest LAST (append to bottom).
@@ -812,6 +834,10 @@ lifecycle_history:
     event: 'Describe REOPENED -- architecture review replaced the message-plane model'
     grade: '--'
     notes: 'Reverted from Specify to Describe before any specification was written, which is the cheap moment to do it. An architecture review with the stakeholder (qa 3-6) took decisions the approved requirements contradict in roughly a dozen places: the per-chat home machine is retired, ordering relaxes from global FIFO to per-speaker, channels become replicated ephemeral directory names that agents create rather than operator-owned objects, an agent holds at most one channel at a time, a crash is stale-then-reaped rather than a leave, broadcast and the all-call are removed, and a hub control plane is added carrying a roster and a directed connect request the hub answers from state with no accept step. Sections 4, 5, 6, 9 and 10 return to Pending; user_approved returns to no; the A+ grade is retained as the grade of the SUPERSEDED document rather than claimed for the amended one. The cascade is mostly deletion, so the amendment should shrink the document: FR-3.2, FR-3.3, AC-19 and AC-21 retire outright, and cross-node position gossip never has to be designed. Three decisions must close first -- idle-session bound, hook-timeout ownership (FR-0.4 versus FR-5.8), and whether the adapter acks for the session. Specification does not start until the amended document is re-gated and the feature boundaries are re-cross-referenced.'
+  - date: '2026-09-03'
+    event: 'Describe and Define CLOSED again at A+; Specify is now current'
+    grade: A+
+    notes: 'The amendment landed and passed four adversarial cycles (13, 9, 5, 4 findings, all Fixed; the fourth found nothing above MEDIUM). Define did not need re-running as a separate pass: no feature boundary moved, so the five features stand -- what changed is what each owns, and that was re-derived and verified. Feature 002 grew from 9 criteria to 15 because the hub plane lands at stage P1, and the placement is forced rather than chosen: with one channel per agent and no all-call, the connect request is the only way two agents ever meet, so nothing downstream is exercisable without it. user_approved stays no until the stakeholder ratifies the amended document; the A+ recorded here is the review gate, not the human gate. Next: /aid-specify, Feature 002 first, then 004, 005, 003.'
 
 # [A] aid-deploy only; one entry per delivery (never derived from child
 #     files; aid-deploy is the sole author):
@@ -896,7 +922,7 @@ qa:
   - id: 3
     category: Architecture
     impact: High
-    state: Pending
+    state: Answered
     context: >-
       Raised by the stakeholder during an architecture review: who decides which machine is a
       chat's home? Nothing in the document says. It falls out of WHERE the operator ran chat
@@ -936,12 +962,22 @@ qa:
       Half-duplex (one speaker holds the channel) is ruled OUT rather than open: it would restore a
       total order but only by blocking a sender, and FR-4.7 forbids any blocking operation.
       Unresolved pending the stakeholder's choice.
-    answer: '--'
-    applied_to: '--'
+    answer: >-
+      RESOLVED as the walkie-talkie model, with the per-chat home retired outright. A channel is one
+      name on every hub, replicated to each hub with a member in it, authoritative nowhere (FR-3.2,
+      ID-16); ordering relaxes to per-speaker FIFO with causality carried in-band by reply_to
+      (section 6, ID-15, AC-31); and retention becomes LOCAL to each hub, trimming against its own
+      members' acknowledged positions, which deletes cross-hub position gossip from the design. The
+      stakeholder's own question -- who decides the home -- stops having an answer because it stops
+      being a question. One rule was added to make the replicated model decidable without consensus:
+      a member JOINS AT THE CHANNEL'S CURRENT HEAD and receives no history from before (FR-4.2), so a
+      hub acquiring a channel starts an empty replica, there is no backfill and no source hub to
+      choose, and two hubs' differing trim points cannot produce two different pasts.
+    applied_to: 'Sections 1, 4, 5 (FR-3.2, FR-3.3, FR-4.2, FR-6.3), 6, 7 (ID-15, ID-16), 9 (AC-5, AC-11, AC-19 retired, AC-31), 10, 11 (Features 002, 004)'
   - id: 4
     category: Architecture
     impact: High
-    state: Pending
+    state: Answered
     context: >-
       Stakeholder-proposed bound on the walkie-talkie channel model (qa 3): an agent is connected to
       at most ONE channel at a time and must leave its current channel to join another; it may create
@@ -971,7 +1007,7 @@ qa:
       FR-4.2's durable-log language, so that language must be restated rather than left standing
       beside it.
     answer: >-
-      PARTLY DECIDED; one sub-question still open. DECIDED: (a) a crash is not a leave -- a dropped
+      FULLY DECIDED. Originally partly decided with one sub-question open, now closed at the end. DECIDED: (a) a crash is not a leave -- a dropped
       connection means stale, then reaped -- so the channel-close rule keys on explicit leave plus
       reaping, and AC-3's mid-flight reattachment survives. (b) The 1-hour CHANNEL inactivity timer
       is dropped; a channel with live members waiting on each other must never expire, and cleanup
@@ -985,8 +1021,14 @@ qa:
       nothing and leans on reaping plus FR-7.1/FR-7.2 operator visibility and eviction; or the node
       PROBES on idle, waking the session after a generous configurable period to ask whether it is
       still waiting, resetting on an answer and reaping on silence. Either way the timer belongs on
-      the session, never on the channel.
-    applied_to: '--'
+      the session, never on the channel. THAT SUB-QUESTION IS NOW CLOSED as ID-22: v1 adds nothing.
+      The product cannot distinguish a session legitimately waiting hours for a peer's long task from
+      one that will never receive anything, and only the human can, so reaping removes the dead and
+      FR-7.1's visibility plus FR-7.2's eviction cover the rest. Probe-on-idle is recorded in ID-22
+      as the named growth path rather than adopted. Section 6 also states the accounting that makes this
+      defensible: the log is bounded by the TTL, the held connection and hook process by FR-5.8's
+      no-orphan rule, the name by reaping, leaving only the channel's existence, which costs a row.
+    applied_to: 'Sections 4, 5 (FR-2.3, FR-3.3, FR-3.4, FR-3.8, FR-9.3, FR-9.6), 6 (Limits, and the idle-session paragraph), 7 (ID-17, ID-18, ID-22), 9 (AC-3, AC-29, AC-30), 11'
   - id: 5
     category: Architecture
     impact: Medium
@@ -1011,7 +1053,7 @@ qa:
   - id: 6
     category: Architecture
     impact: High
-    state: Pending
+    state: Answered
     context: >-
       Removing the all-call channel (qa 4) reopens a structural gap the one-channel bound created:
       how do two agents that share no channel ever meet? A wake only reaches members of a channel
@@ -1051,5 +1093,20 @@ qa:
       AC-15 change shape. Note also that a federated roster exposes session names, tool and liveness
       to every agent on the LAN, which is consistent with FR-6.2 but is the same exposure the
       all-call would have had.
-    answer: '--'
-    applied_to: '--'
+    answer: >-
+      RESOLVED by the stakeholder's hub-plane proposal, which is better than either option recorded
+      above and needs neither an all-call nor a pending-invitation store. FR-9.1 to FR-9.7: a session
+      joins the hub on register independently of any channel and stays reachable there; FR-9.2's
+      roster shows who is available; FR-9.3's connect request names ONE agent and the hub answers it
+      FROM STATE with no accept step -- available target joined, busy or stale or unknown target
+      failed at once. The no-accept rule is driven by measurement rather than taste: an accept is a
+      call the woken session makes, and the spike's F5 found a host that gates such a call behind a
+      human click, which FR-5.7 forbids assuming. Three further rules closed holes review found in
+      the proposal: an asker must already be in the channel it names and may not name itself
+      (FR-9.3); a connect outcome is DURABLE PER-SESSION STATE rather than an event, so being placed
+      in a channel IS the notification and nothing can be missed between arms (FR-9.5); and a relayed
+      request never fails for want of recognising a channel name -- the target's hub creates its
+      replica and joins, accepting the race where the asker already left (FR-9.7). Human-mediated
+      rendezvous is recorded as the rejected alternative in ID-19, with the all-call and pending
+      invitations.
+    applied_to: 'Sections 1, 4, 5 (FR-0.2, FR-9.1-9.7, FR-7.3), 7 (ID-19), 9 (AC-27, AC-28, AC-33), 10 stage P1, 11 (Features 002, 003, 004)'
