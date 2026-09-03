@@ -49,8 +49,16 @@ message-plane halves, `FR-7.4` no-client-library clause). Criteria: `AC-3`, `AC-
 **Out of scope:** The roster and the directed connect request (delivery-002). Any wake, subscriber
 or host adapter (delivery-003). Peers, replication and anything cross-machine (delivery-004).
 Mention, whisper, retention enforcement and the operator's audit view (delivery-005). Rendezvous in
-this delivery is a session listing channels and joining one by name, which is why it needs neither
-the hub plane nor a human naming the channel out of band.
+this delivery is a session listing channels (`FR-3.1` local half) and joining one by name
+(`FR-3.4`), which is why it needs neither the hub plane nor a human naming the channel out of band.
+
+> **This rests on a correction, and the correction is in the requirements rather than only here.**
+> `§ 10`'s P1 row and Feature 002's own note both used to claim the connect request was "the only way
+> two agents ever meet", which would have made this delivery's rendezvous impossible and its
+> standalone claim false. Both were wrong and both now say so in place: `FR-3.1` plus `FR-3.4` are
+> sufficient while somebody is looking, and the connect request's necessity appears at delivery-003,
+> where the wake arrives and an idle agent stops looking. A reader who finds the old claim quoted
+> anywhere should treat it as stale, not as a competing view.
 
 **Gate Criteria**
 
@@ -76,7 +84,11 @@ the hub plane nor a human naming the channel out of band.
 - [ ] `AC-32` -- a message delivered but never acknowledged is presented again and deduped
 - [ ] `AC-8` -- a duplicate delivery is deduped by idempotency key; a reply correlates to its request
 - [ ] `AC-10` -- unacknowledged messages and every member's positions survive a restart of the node
-- [ ] All section-6 quality gates pass
+- [ ] All section-6 quality gates pass -- **meaning those its own scope makes applicable.** The
+      delivery-semantics rows (durability, at-least-once, the two positions, per-speaker ordering)
+      are all testable here. `§ 6`'s **retention** row and its TTL, unread-depth and reap parameters
+      are **not**: nothing enforces them until delivery-005, so a gate asserting them here would be
+      vacuous. The same qualification applies to every later stanza's copy of this line
 
 **Notes:** The store schema is written **in full** here, including `message.mention` and
 `message.whisper_to`, which stay null until delivery-005. This is deliberate: the predecessor's
@@ -97,8 +109,14 @@ and the other lists channels and joins -- which works only while somebody is loo
 makes rendezvous proactive: a session joins the hub when it registers, independently of any channel,
 reads a roster of who is available, and asks to be connected with one named agent. The hub answers
 **from state, with no accept step**, so no human is in the path and nothing is left pending. This is
-separable from delivery-001 precisely because a channel directory already exists; it becomes
-load-bearing at delivery-003, where an idle agent stops looking at anything.
+separable from delivery-001 precisely because a channel directory already exists.
+
+**What it is worth on its own, stated without inflation:** a roster view, and a way to put a named
+agent into your channel in one step instead of waiting for it to notice a channel list. Useful, and
+smaller than what it becomes at delivery-003 -- where an idle agent stops looking at anything and
+the connect request turns into the only rendezvous that works. If that value seems too thin to gate
+on its own, the honest remedy is to fold this delivery into delivery-001 rather than to overstate
+it; both are stage P1 and both are Feature 002, so nothing but the delivery boundary moves.
 
 **Scope:** Hub membership independent of channels (`FR-9.1`); the roster and its computed
 availability (`FR-9.2`); the directed connect request answered from state, its precondition that the
@@ -115,9 +133,15 @@ that makes a connect outcome arrive without the target calling anything (deliver
 
 - [ ] `AC-27` -- a session reads the roster and sees each agent's name, tool, capabilities, liveness,
       and whether it is available; a session in no channel appears as available to every other agent
-- [ ] `AC-28` -- a request at an available agent joins it to the named channel and it learns so on its
-      next call; a request at an agent already in a channel, stale, or unknown fails at once with an
-      explicit reason; no approval prompt is raised at either end and nothing is left pending
+- [ ] `AC-28` -- a request at an available agent joins it to the named channel and it learns so on
+      **its next call of any kind**; a request at an agent already in a channel, stale, or unknown
+      fails at once with an explicit reason; no approval prompt is raised at either end and nothing
+      is left pending. **`AC-28` as authored says "on its next wake", and there is no wake until
+      delivery-003**, so that half is verified by delivery-003's own connect-outcome gate criterion
+      -- **not** by `AC-1`, which tests a *message* arriving through the wake and would pass with the
+      connect path entirely unwired. `FR-9.5` permits both readings because the outcome is durable
+      state rather than an event; that is what makes the deferral safe, and the delivery-003
+      criterion is what makes it verified rather than merely permitted
 - [ ] A session in no channel, or naming itself as the target, is refused -- the asker must already
       be in the channel it names (`FR-9.3`)
 - [ ] Two idle agents that each open a channel and then request the other simultaneously **both fail
@@ -275,9 +299,10 @@ written then is read by this delivery unaltered.
 | # | Risk | Impact | Mitigation |
 |---|------|--------|------------|
 | 1 | **Delivery-001 carries the store schema for every later delivery**, so a schema defect found at delivery-004 or -005 is a migration rather than an edit. This is the failure that killed the predecessor's decomposition, arriving by a different route: there, one feature owned a schema another needed; here, one delivery does | H | The schema is written **in full** at delivery-001, columns for later deliveries included, and Feature 002's specification states which requirement each schema decision carries so a later reader can check the schema against the rule rather than rediscover it. Both discharged constraints -- `AUTOINCREMENT` on every surrogate key and an audited exit-code allocation -- are schema-level and land here |
-| 2 | **The inter-node link is unmeasured and now carries more than the spike could model** -- replication, presence and connect relay held open rather than dialled per request. The spike had one stub and no second hub | H | `FR-6.5` makes idle survival a requirement rather than an implementation detail, and delivery-004 carries it as a **gate criterion** with an overnight-idle validation rather than a unit test |
-| 3 | **Sequencing is strictly linear** -- every delivery depends on its predecessor, so a slip anywhere moves everything after it. There is no parallel path and `§ 10` states there is none | M | Accepted rather than mitigated. The dependencies are real: nothing can be reached before there is a hub, nothing wakes before there is a subscriber, and nothing crosses a network before there is a peer. Delivery-002 is the only genuinely small one and the only candidate for folding into a neighbour if schedule pressure demands it |
-| 4 | **Two hosts are proven; three are not.** Copilot CLI's wake route is documented but unmeasured, Antigravity's documentation is silent, and Codex has not been researched at all | M | Not a gate on any delivery. `FR-5.2` makes a host with no viable adapter degrade to delivery-001's pull floor, so an unproven host costs discoverability and convenience rather than capability. The exposure is stated per host in `§ 8` rather than as a count |
+| 2 | **The Feature 002 split is proved at the schema layer and asserted at the code layer.** Risk 1 covers a schema defect; this covers the possibility that the hub plane's code and the message plane's code do not divide as cleanly as their columns do. The roster reads the same `session` rows the message plane writes, and the connect request mutates `channel_id` and both positions in one transaction -- so delivery-002 is not a bolt-on module but an edit to paths delivery-001 built | M | The split line was chosen because it does **not** cross the store schema, which is the coupling that broke the predecessor. If the code proves inseparable, the remedy is to fold delivery-002 back into delivery-001 -- both are stage P1 and both are Feature 002, so no feature boundary moves and no criterion changes owner. That escape route is why this is Medium rather than High |
+| 3 | **The inter-node link is unmeasured and now carries more than the spike could model** -- replication, presence and connect relay held open rather than dialled per request. The spike had one stub and no second hub | H | `FR-6.5` makes idle survival a requirement rather than an implementation detail, and delivery-004 carries it as a **gate criterion** with an overnight-idle validation rather than a unit test |
+| 4 | **Sequencing is strictly linear** -- every delivery depends on its predecessor, so a slip anywhere moves everything after it. There is no parallel path and `§ 10` states there is none | M | Accepted rather than mitigated. The dependencies are real: nothing can be reached before there is a hub, nothing wakes before there is a subscriber, and nothing crosses a network before there is a peer. Delivery-002 is the only genuinely small one and the only candidate for folding into a neighbour if schedule pressure demands it |
+| 5 | **Two hosts are proven; three are not.** Copilot CLI's wake route is documented but unmeasured, Antigravity's documentation is silent, and Codex has not been researched at all | M | Not a gate on any delivery. `FR-5.2` makes a host with no viable adapter degrade to delivery-001's pull floor, so an unproven host costs discoverability and convenience rather than capability. The exposure is stated per host in `§ 8` rather than as a count |
 
 ## Deferred
 
