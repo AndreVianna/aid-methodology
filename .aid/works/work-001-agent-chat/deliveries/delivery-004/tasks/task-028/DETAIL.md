@@ -23,7 +23,8 @@
 - A send delivered to every peer holding a member of that channel, using `channel_member` to decide which.
 - The receiving hub assigning **its own** `arrival_seq` and storing the sender's `sender_seq` **verbatim** -- the one field it must not regenerate.
 - Dedupe on the sender-scoped key, which is what absorbs a replay after a reconnect.
-- Replication attempted only to a peer whose handshake succeeded (task-025), so a major-version mismatch never receives a message.
+- Replication attempted only to a peer whose handshake succeeded, so a major-version mismatch never receives a message.
+- **This task also answers to the cross-machine clause of `AC-13`** -- "on whichever machine each member sits" -- which delivery-001 built fan-out for but could not verify with one machine. `AC-13` stays owned by delivery-001; this task answers only to the half that needs a peer.
 
 **Acceptance Criteria:**
 - [ ] A message sent while a peer is unreachable reaches that peer on reconnect, and its local member reads it.

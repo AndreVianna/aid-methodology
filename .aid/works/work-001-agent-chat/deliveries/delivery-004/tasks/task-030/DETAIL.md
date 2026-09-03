@@ -1,4 +1,4 @@
-# task-030: Integration tests for federation, including the idle-link validation
+# task-030: The cross-machine connect relay
 
 > **Execution protocol (binding on whoever executes this task -- no
 > exceptions):** the moment this task's `State` changes, write it --
@@ -13,22 +13,23 @@
 > `aid-execute/references/state-execute.md § MANDATORY: State-Write
 > Protocol`.
 
-**Type:** TEST
+**Type:** IMPLEMENT
 
-**Source:** feature-004-lan-federation -> delivery-004 -> AC-2, AC-4, AC-5, AC-16, AC-34
+**Source:** feature-004-lan-federation -> delivery-004 -> AC-34
 
 **Depends on:** task-029
 
 **Scope:**
-- The target case across two machines; discovery by the guaranteed path alone; delivery to a hub that was offline; version refusal; the cross-machine connect cases.
-- A **real** long-idle link followed by a send -- the property nothing upstream has measured.
+- Connect requests relayed to the target's hub and answered against **that hub's state at the moment the relay arrives**.
+- An unreachable peer **failing** the request rather than queueing it -- the deliberate asymmetry with messages, which do queue.
+- A hub asked for a channel name it has never seen creating its local replica and joining its agent, because a channel is a name and there is no authority to consult.
 
 **Acceptance Criteria:**
-- [ ] `AC-2` passes with the two sessions on different machines on the same network.
-- [ ] Each of the five criteria has a test naming its id.
-- [ ] The idle-link check runs against a real network left idle long enough for a connection to be closed, and records its duration and outcome; a simulated close does **not** satisfy it.
-- [ ] Fan-out reaches members on both machines, completing `AC-13`'s cross-machine clause.
-- [ ] Every automated test here is deterministic: run three times in succession it gives the same result. Any check needing a live host session or a real network is **not** automated -- it is listed by name, with its steps, in the manual-procedures record, so the set of non-automated checks is enumerable rather than implied.
-- [ ] Clean setup and teardown: the suite leaves no store, no process and no channel behind, verified by running it twice in the same working directory.
+- [ ] A relayed request returns the same outcomes as a local one, for each of available, busy, stale and unknown.
+- [ ] An unreachable peer makes the request fail rather than queue; verified by taking a peer down and asking.
+- [ ] A hub that has never seen the named channel creates its replica and joins its agent.
+- [ ] A relayed request whose asker left before it arrived leaves the target alone in a channel, which then closes when the target leaves or is reaped.
+- [ ] Unit tests for every new public function or endpoint this task adds.
 - [ ] All existing tests still pass.
+- [ ] Build passes.
 - [ ] All section-6 quality gates pass

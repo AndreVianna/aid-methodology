@@ -23,7 +23,7 @@
 - Per-host instructions for installing the stop hook the product will never write itself.
 - The `--host-timeout` value to use, and the arithmetic relating it to the long-poll default and the adapter margin.
 - What happens when the operator omits it, stated as the observed failure rather than in the abstract.
-- The pre-authorisation option, what it buys and what it costs -- which is the clause of `AC-24` that makes this document part of satisfying a criterion rather than commentary on one.
+- The pre-authorisation option, what it buys and what it costs -- the clause of `AC-24` that makes this document part of satisfying a criterion rather than commentary on one.
 - The instruction never to set fail-closed, and why a hung wait would then freeze the user's session.
 
 **Acceptance Criteria:**

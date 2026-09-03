@@ -22,7 +22,7 @@
 **Scope:**
 - `open` as create-and-join in one step, setting both positions to the channel's head; `join` at head; `leave`.
 - A join attempt while already in a channel refused with `already_in_channel`.
-- Close when the last member leaves **or is reaped**, deleting the row and cascading its messages away. **The close-on-reap code path is built and triggerable here; the periodic job that decides *when* to reap is task-032** -- FR-2.3 puts tracking with registration and reaping with retention, so this task owns the rule and that one owns the schedule.
+- Close when the last member leaves **or is reaped**, deleting the row and cascading its messages away. **The close-on-reap code path is built and triggerable here; the periodic job that decides *when* to reap belongs to the reaping-schedule task in delivery-005** -- FR-2.3 puts tracking with registration and reaping with retention, so this task owns the rule and that one owns the schedule.
 - Local channel listing (`FR-3.1` local half).
 - A dropped connection is **not** a leave -- it is stale, then reaped.
 

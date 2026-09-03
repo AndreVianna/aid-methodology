@@ -29,5 +29,5 @@
 - [ ] The record uses the same section headings as the newest existing decision record in `.aid/knowledge/decisions.md`, and is placed in that file; verified by diffing its heading list against that record's.
 - [ ] It names both rejected alternatives, each with the reason it fails **here** rather than in general.
 - [ ] It states the two properties the design depends on, so that a future change to either is recognisable as invalidating this decision.
-- [ ] Accuracy verified by a named procedure: read `chat-node`'s schema and read path as built, and confirm each factual claim in the record against a cited file and line. Any claim that cannot be so cited is removed.
+- [ ] Accuracy verified by a named procedure: read `chat-node`'s schema and read path as built, and confirm each factual claim against a cited file and line. Any claim that cannot be so cited is removed.
 - [ ] All section-6 quality gates pass

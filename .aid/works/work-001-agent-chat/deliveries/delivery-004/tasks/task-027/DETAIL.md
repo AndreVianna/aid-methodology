@@ -23,7 +23,7 @@
 - The `channel_member` table, holding **remote** members only -- local membership stays `session.channel_id`, so there is no second copy to drift.
 - A join, a leave, and a channel close replicated as membership records.
 - The two things this makes computable: which peers to replicate a message to, and whether a sender is alone in its channel.
-- **This task completes the cross-machine clause of `AC-13`** -- "on whichever machine each member sits" -- which delivery-001 built fan-out for but could not verify with one machine. `AC-13` stays owned by delivery-001.
+- **This task also answers to the cross-machine clause of `AC-13`** -- "on whichever machine each member sits" -- which delivery-001 built fan-out for but could not verify with one machine. `AC-13` stays owned by delivery-001; this task answers only to the half that needs a peer.
 
 **Acceptance Criteria:**
 - [ ] A member joining on one hub appears in the other hub's `channel_member` for that channel.

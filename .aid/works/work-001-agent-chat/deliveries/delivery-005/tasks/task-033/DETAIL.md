@@ -1,4 +1,4 @@
-# task-033: Operator visibility and the audit log
+# task-033: The reaping schedule and its atomic channel close
 
 > **Execution protocol (binding on whoever executes this task -- no
 > exceptions):** the moment this task's `State` changes, write it --
@@ -15,21 +15,20 @@
 
 **Type:** IMPLEMENT
 
-**Source:** feature-005-directed-retention-visibility -> delivery-005 -> AC-14
+**Source:** feature-005-directed-retention-visibility -> delivery-005 -> AC-11
 
 **Depends on:** task-032
 
 **Scope:**
-- The CLI showing machines and sessions, this hub's open channels and their members, each member's unread depth **and idle time**, and the audit log.
-- Whisper bodies excluded from the audit log, while the fact of a whisper and its parties are recorded.
-- Retention policy settable through the CLI.
-- Eviction: removing a session from its channel.
+- The periodic reaping job -- the schedule the channel-lifecycle task deliberately left to this delivery -- running on the configured threshold.
+- Deleting the session row and, when it was the last member, closing its channel **in one transaction**, using the close-on-reap path already built.
+- The threshold read from settings; nothing hardcoded.
 
 **Acceptance Criteria:**
-- [ ] The listing shows all of: machines, sessions, open channels with members, per-member unread depth, per-member idle time, and the audit log.
-- [ ] The audit log records that a whisper was sent and between whom, and does **not** contain its body; verified by sending a whisper containing a unique string and grepping the audit output for it.
-- [ ] Evicting a session removes it from its channel and it stops receiving that channel's messages.
-- [ ] Retention parameters are settable through the CLI and take effect with no code change.
+- [ ] A member quiet past the reap threshold is reaped by the job with no manual trigger.
+- [ ] Reaping the last member and closing its channel is atomic; verified by interrupting between the two and asserting no channel with zero members survives.
+- [ ] A reaped member stops counting toward its channel's trim point; verified by reading the trim point before and after.
+- [ ] The threshold is settable and takes effect with no code change.
 - [ ] Unit tests for every new public function or endpoint this task adds.
 - [ ] All existing tests still pass.
 - [ ] Build passes.

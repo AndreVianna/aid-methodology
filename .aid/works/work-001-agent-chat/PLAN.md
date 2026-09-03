@@ -90,9 +90,11 @@ this delivery is a session listing channels (`FR-3.1` local half) and joining on
 - [ ] `AC-10` -- unacknowledged messages and every member's positions survive a restart of the node
 - [ ] All section-6 quality gates pass -- **meaning those its own scope makes applicable.** The
       delivery-semantics rows (durability, at-least-once, the two positions, per-speaker ordering)
-      are all testable here. `§ 6`'s **retention** row and its TTL, unread-depth and reap parameters
-      are **not**: nothing enforces them until delivery-005, so a gate asserting them here would be
-      vacuous. The same qualification applies to every later stanza's copy of this line
+      are all testable here. `§ 6`'s **retention** row and its TTL and reap parameters are **not**: nothing enforces
+      them until delivery-005, so a gate asserting them here would be vacuous. **The unread-depth
+      bound is the exception and is enforced here** -- the send path raises `overflow` from this
+      delivery onward; what delivery-005 adds is making the value operator-settable and the trim job
+      that relieves the condition. The same qualification applies to every later stanza's copy of this line
 
 **Notes:** The store schema is written **in full** here, including `message.mention` and
 `message.whisper_to`, which stay null until delivery-005. This is deliberate: the predecessor's
@@ -338,7 +340,8 @@ graph LR
   task_027["task-027<br/>IMPLEMENT"]
   task_028["task-028<br/>IMPLEMENT"]
   task_029["task-029<br/>IMPLEMENT"]
-  task_030["task-030<br/>TEST"]
+  task_030["task-030<br/>IMPLEMENT"]
+  task_031["task-031<br/>TEST"]
   task_022 --> task_023
   task_023 --> task_024
   task_024 --> task_025
@@ -347,6 +350,7 @@ graph LR
   task_027 --> task_028
   task_028 --> task_029
   task_029 --> task_030
+  task_030 --> task_031
 ```
 
 **No parallelism.** Every task here depends on its predecessor; that is the honest graph, not a scheduling choice.
@@ -401,14 +405,16 @@ written then is read by this delivery unaltered.
 
 ```mermaid
 graph LR
-  task_031["task-031<br/>IMPLEMENT"]
   task_032["task-032<br/>IMPLEMENT"]
   task_033["task-033<br/>IMPLEMENT"]
-  task_034["task-034<br/>TEST"]
-  task_030 --> task_031
+  task_034["task-034<br/>IMPLEMENT"]
+  task_035["task-035<br/>IMPLEMENT"]
+  task_036["task-036<br/>TEST"]
   task_031 --> task_032
   task_032 --> task_033
   task_033 --> task_034
+  task_034 --> task_035
+  task_035 --> task_036
 ```
 
 **No parallelism.** Every task here depends on its predecessor; that is the honest graph, not a scheduling choice.

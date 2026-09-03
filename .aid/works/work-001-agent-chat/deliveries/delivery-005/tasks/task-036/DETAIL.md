@@ -1,4 +1,4 @@
-# task-010: Integration tests for the hub that holds a conversation
+# task-036: Integration tests for directed messages, retention and visibility
 
 > **Execution protocol (binding on whoever executes this task -- no
 > exceptions):** the moment this task's `State` changes, write it --
@@ -15,22 +15,20 @@
 
 **Type:** TEST
 
-**Source:** feature-002-node-and-message-plane -> delivery-001 -> AC-3, AC-6, AC-7, AC-8, AC-9, AC-10, AC-13, AC-22, AC-29, AC-30, AC-31, AC-32, AC-33
+**Source:** feature-005-directed-retention-visibility -> delivery-005 -> AC-11, AC-14, AC-17, AC-18
 
-**Depends on:** task-009
+**Depends on:** task-035
 
 **Scope:**
-- End-to-end tests over the real node and the real CLI for each of this delivery's thirteen criteria.
-- Explicit coverage of node-restart durability, the two-member direct message, per-speaker ordering, and delivered-versus-acknowledged redelivery.
-- **Creation of `chat-node/tests/MANUAL-PROCEDURES.md`** -- the record every later TEST task appends to. It exists because a criterion that defers to an enumerable list of manual checks is only falsifiable if the list is a real file with a known owner.
+- The four criteria end to end, plus the whisper-absent-from-audit property, the two-member whisper case, and the reap-plus-close atomicity.
 
 **Acceptance Criteria:**
-- [ ] Each of the thirteen criteria has at least one test naming its id; the mapping is checkable by grepping the suite for the ids.
-- [ ] Restarting the **node** preserves unacknowledged messages and every member's positions.
-- [ ] `AC-13` is verified on this machine only; its cross-machine clause is delivery-004's and is asserted nowhere here.
-- [ ] A test asserts that two members observing two speakers in different relative orders is a **pass**.
+- [ ] Each of the four criteria has a test naming its id.
+- [ ] A test asserts a whisper is absent from **history** for a non-target, not merely absent on delivery.
+- [ ] A test asserts the whisper body is absent from the operator's audit output.
+- [ ] A test interrupts between reaping and channel close and asserts no zero-member channel survives.
 - [ ] Every automated test here is deterministic: run three times in succession it gives the same result. Any check needing a live host session or a real network is **not** automated -- it is recorded by name, with its steps, in `chat-node/tests/MANUAL-PROCEDURES.md`, so the set of non-automated checks is enumerable rather than implied.
-- [ ] That record is created by this task, and every entry names the check, its steps, and what a pass looks like.
+- [ ] This task appends its own non-automated checks to `chat-node/tests/MANUAL-PROCEDURES.md`, and every entry names the check, its steps, and what a pass looks like.
 - [ ] Clean setup and teardown: the suite leaves no store, no process and no channel behind, verified by running it twice in the same working directory.
 - [ ] All existing tests still pass.
 - [ ] All section-6 quality gates pass

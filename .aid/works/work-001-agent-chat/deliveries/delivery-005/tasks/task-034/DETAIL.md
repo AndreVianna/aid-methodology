@@ -1,4 +1,4 @@
-# task-034: Integration tests for directed messages, retention and visibility
+# task-034: The trim job, its index and the settings wiring
 
 > **Execution protocol (binding on whoever executes this task -- no
 > exceptions):** the moment this task's `State` changes, write it --
@@ -13,21 +13,25 @@
 > `aid-execute/references/state-execute.md § MANDATORY: State-Write
 > Protocol`.
 
-**Type:** TEST
+**Type:** IMPLEMENT
 
-**Source:** feature-005-directed-retention-visibility -> delivery-005 -> AC-11, AC-14, AC-17, AC-18
+**Source:** feature-005-directed-retention-visibility -> delivery-005 -> AC-11
 
 **Depends on:** task-033
 
 **Scope:**
-- The four criteria end to end, plus the whisper-absent-from-audit property and the reap-plus-close atomicity.
+- The trim job, per hub, over its own live members' acknowledged positions **and** the TTL -- both conditions required.
+- `CREATE INDEX message_trim ON message (channel_id, received_at)`, the one index Feature 005 adds, created here because the trim job is its only reader.
+- The unread-depth bound made operator-settable; **the enforcement mechanism itself belongs to the send-path task in delivery-001** and is not reimplemented here.
+- Every retention parameter resolved through the settings reader.
 
 **Acceptance Criteria:**
-- [ ] Each of the four criteria has a test naming its id.
-- [ ] A test asserts a whisper is absent from **history** for a non-target, not merely absent on delivery.
-- [ ] A test asserts the whisper body is absent from the operator's audit output.
-- [ ] A test interrupts between reaping and channel close and asserts no zero-member channel survives.
-- [ ] Every automated test here is deterministic: run three times in succession it gives the same result. Any check needing a live host session or a real network is **not** automated -- it is listed by name, with its steps, in the manual-procedures record, so the set of non-automated checks is enumerable rather than implied.
-- [ ] Clean setup and teardown: the suite leaves no store, no process and no channel behind, verified by running it twice in the same working directory.
+- [ ] A message past its TTL that every live local member has acknowledged is removed; one an un-reaped local member has not acknowledged is kept.
+- [ ] When no live member has acknowledged anything, nothing is deleted.
+- [ ] `message_trim` exists after this task; verified by reading the schema back.
+- [ ] Changing the unread-depth setting changes the point at which `overflow` is raised, without the send path being modified; verified by changing the setting and re-sending.
+- [ ] No retention limit is hardcoded; verified by changing each parameter in settings and observing the behaviour change.
+- [ ] Unit tests for every new public function or endpoint this task adds.
 - [ ] All existing tests still pass.
+- [ ] Build passes.
 - [ ] All section-6 quality gates pass
