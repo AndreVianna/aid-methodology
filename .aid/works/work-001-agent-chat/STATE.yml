@@ -118,13 +118,13 @@ phase: Describe
 # [W] aid-{skill} | none
 active_skill: none
 # [W]
-updated: '2026-09-02'
+updated: '2026-09-03'
 # [W] set only when lifecycle = Paused-Awaiting-Input
 pause_reason: >-
-  Feature 001 spike: tests 1, 2 and 3 answered on machine A; test 4 (two machines) needs a
-  second machine for the Cursor side. Awaiting a decision on whether to run it or close the
-  spike at three answers. 10 findings recorded in FINDINGS.md, of which F1, F5, F7 and F10
-  constrain Feature 003's design.
+  Spike findings are folded into REQUIREMENTS.md and Feature 003 is unblocked. Two things gate
+  specification: AC-20 is unsatisfied until test 4 (two machines) has a recorded outcome, and
+  Feature 002 carries an identity fork -- whether to use Cursor's host-supplied conversation_id --
+  that needs a deliberate decision. Then specify 002, 004, 005, 003 in that order.
 # [W] set only when lifecycle = Blocked
 block_reason: --
 # [W] e.g. IMPEDIMENT-task-NNN.md, or the failed gate
@@ -639,6 +639,39 @@ review_history:
       observed MAXIMUM keeps rising as samples accumulate, so any derived timeout should use the
       maximum with headroom rather than the mean.
     applied_to: 'FINDINGS.md (F10 rewritten, F8 restored, latency, ladder); throwaway/spike_hook.py'
+  - date: '2026-09-03'
+    event: 'Spike findings folded into REQUIREMENTS.md; AC-20 restated; Feature 003 unblocked'
+    outcome: 'Requirements now carry the measured constraints. 6 new requirements, 4 new criteria, AC-20 premise fixed'
+    notes: >-
+      Four of the ten findings were absent from REQUIREMENTS.md entirely -- re-entry and loop_count,
+      conversation_id, the BOM, and followup_message -- so specifying 002 or 003 would have meant
+      writing correct specs against superseded text. Folded in as follows. FR-5.6: every adapter
+      carries a re-entry rule, because waking is inherently a loop and 'block on every stop event' is
+      not implementable. FR-5.7: the woken turn requires no authorisation, since a gate on that
+      action is a human and an autonomous channel cannot wait on one. FR-5.8: the block stays inside
+      the host's hook timeout and the adapter SETS that timeout, because the platform default measured
+      under 60 s and an over-run leaks a process whose socket stays open. FR-5.9: the wake contract is
+      per-host and taken from documentation, and the adapter tolerates a byte-order mark. FR-5.10: no
+      assumption about how the host invokes the hook -- not the shell, not PATH. FR-2.4: a
+      host-supplied conversation identity is preferred where offered and never depended on. Four new
+      criteria AC-23 to AC-26 cover the loop, the unattended turn, the orphan, and the BOM. AC-20's
+      third question was restated: it had asked for 'the measured limit on how long a Cursor stop hook
+      may block BEFORE THE HOST KILLS IT, as a number', and the spike found neither a kill nor a
+      constant -- the bound is the configured timeout and the host abandons rather than kills -- so in
+      its original form the question had no honest answer. It now asks what bounds the block and what
+      the host does when that bound is passed, and a note records why. Section 8's host table was
+      updated from deferred-proof to measured on both Claude Code and Cursor, and the paragraph
+      warning that FR-5 might have no demonstrated instance now records that the risk is retired;
+      Cursor's row notes that its documentation denies the capability its hook demonstrably provides,
+      so documentation silence is evidence about documentation rather than about capability. Feature
+      003 is no longer blocked: its blocking note said it could not be specified before a number that
+      does not exist, and it now points at the five requirements the spike produced instead, plus the
+      3.7 s wake latency and the instruction to budget from the observed maximum rather than the mean.
+      Feature 002 gains FR-2.4 and a note naming the identity fork the specifier must take
+      deliberately rather than by default. Feature 001 carries a Status line stating it executed, that
+      AC-20 is NOT yet satisfied because the cross-machine question has no recorded outcome, and that
+      the criterion admits 'could not determine' only with a record of what was tried.
+    applied_to: 'REQUIREMENTS.md (FR-2.4, FR-5.6-5.10, AC-20 restated, AC-23-26, section 8 host table, Features 001/002/003)'
 # [A] written by the orchestrator on the work's active branch (single
 #     writer). Append-only audit trail of phase transitions and gate
 #     approvals, newest LAST (append to bottom).

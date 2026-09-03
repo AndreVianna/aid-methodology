@@ -88,7 +88,7 @@ one vendor:
 
 | Participant | Status |
 |---|---|
-| Claude Code | **v1 proving pair.** Reference host; wake mechanism understood first-hand but **not yet proven — the P0 spike tests it first** (§8) |
+| Claude Code | **v1 proving pair.** Reference host; **wake demonstrated** by the P0 spike — an idle session acted on an arriving message with no human action (§8) |
 | Cursor | **v1 proving pair.** Wake route identified, one measurement outstanding (P0) |
 | Antigravity | Named target; not a v1 gate. Researched, but its documentation is **silent** on external wake — no route known |
 | Copilot CLI | Named target; not a v1 gate. Wake route documented (`agentStop`), unmeasured. (GitHub Copilot CLI — named **Copilot CLI** throughout, matching the profile AID renders into) |
@@ -206,6 +206,7 @@ second surface. It carries no logic and holds no state: every operation it descr
 | FR-2.1 | A session registers with `register(name, tool, cwd, capabilities)`, binding itself to a **stable name**. The name is an **identity, not an address** — it is how a session is recognised inside a chat, mentioned, and whispered to; it is never a destination on its own |
 | FR-2.2 | A session's full id is **machine address + session name**, mirroring the chat rule in FR-3.2. Names are unique per machine. Re-registering an existing name **reattaches** that session to its existing chat memberships and positions |
 | FR-2.3 | **Liveness is tracked** (heartbeat or connection), and drives **two distinct states at two thresholds** (§6). **Stale** — quiet past the stale threshold — is a *display* state: the member is shown as probably gone and **nothing is released**. **Reaped** — quiet past the longer reap threshold — is the node giving the member up for good: its registration is released and it **stops counting toward its chats' trim points**, which is what lets those logs be trimmed again — **including messages it never read.** Its identity is not destroyed: the name is free and re-registering it is accepted at any time. Tracking and stale-marking belong to registration; reaping belongs to retention |
+| FR-2.4 | **A host-supplied conversation identity is used where one exists, and is never depended on.** Some hosts hand the adapter a stable per-conversation id, which is the thing a session name exists to provide and is more trustworthy than anything the product could infer. Where it is offered it is preferred; where it is undocumented it is treated as an optimisation with a fallback, because an undocumented field can be withdrawn without notice; and the identity in FR-2.1 remains the product's own and authoritative |
 
 ### FR-3 — Chats and addressing
 
@@ -245,6 +246,11 @@ concept instead of two, with private conversation as its smallest instance.
 | FR-5.3 | **Pull floor:** reading the inbox is fully usable with no subscriber armed |
 | FR-5.4 | **Idle and busy are different paths, both required.** *Idle* — the adapter produces a turn as soon as a message arrives. *Busy* — messages accumulate and are delivered at the session's next turn boundary. Neither path loses a message; the busy path only delays it |
 | FR-5.5 | **The wait must be free.** An adapter blocks in a process outside the model, never by keeping the model in a poll loop. Cost while idle is zero tokens |
+| FR-5.6 | **Every adapter carries a re-entry rule.** Waking is inherently a loop: the wake ends a turn, ending a turn fires the stop hook, and the stop hook wakes the session again. An adapter must therefore distinguish a stop that should wait from one that is merely the tail of a wake it already served, and "block on every stop event" is not an implementable adapter. Where the host reports how many automatic follow-ups a conversation has already triggered, the adapter reads it; where the host offers no such signal, or offers no cap, the adapter carries the count itself |
+| FR-5.7 | **The woken turn requires no authorisation.** Whatever the adapter asks the woken session to do must be something the host will perform without a human approving it, because a gate on that action is a human and an autonomous channel cannot wait on one. An adapter that needs a privileged action must have it pre-authorised by host configuration the operator installs knowingly — never assumed |
+| FR-5.8 | **The block stays strictly inside the host's own hook timeout, and the adapter sets that timeout.** A host may abandon an over-running hook rather than killing it: output discarded, wait abandoned, **process left running and its connection still open.** Each such wake leaks a process and inflates the node's count of connected waiters, and nothing in the host reports it. The adapter's block must therefore end before the host stops listening, and because the platform default may be shorter than the product's own long-poll, the adapter must write an explicit timeout rather than inherit one |
+| FR-5.9 | **The host's wake contract is per-host and taken from its documentation.** Both the payload an adapter reads and the response shape it returns differ by host, and an undocumented shape that happens to work is not a contract — it may change without notice. An adapter must also **tolerate a byte-order mark** on the host's payload: a leading BOM is not permitted in JSON and makes a strict parser reject an otherwise valid document, reporting it as malformed at its first character |
+| FR-5.10 | **An adapter assumes nothing about how the host invokes it.** The host may run the hook through a shell that is not the platform's native one, so any path the adapter emits must survive that shell, and it must resolve its own interpreter from the running process rather than from `PATH` — a `PATH` entry may be a shim that re-launches the real interpreter as a child, which leaves the process the host is watching unrelated to the process that blocks |
 
 ### FR-6 — Cross-machine (trusted LAN)
 
@@ -488,17 +494,24 @@ checked against **published vendor documentation**, catalogued in the Knowledge 
 external-source registry. **Claude Code was not** — its row rests on the capability
 description exposed by the tool at runtime, which is first-hand but is not a citable
 published document and is not in that registry. That asymmetry matters, because Claude Code
-is the host whose mechanism is understood in the most detail — **not one that has been
-demonstrated.** Nothing here is a proven wake; the table below rates confidence in the
-*mechanism*, and its Claude Code row ends by deferring proof to the spike. If that row is
-wrong, FR-5 has **no demonstrated instance** at all — the blocking-hook route on Cursor and
-Copilot CLI would still be plausible, but every one of them would then be unproven together.
-That is why P0 tests Claude Code first and Cursor second.
+is the host whose mechanism was understood in the most detail — and, when this was written, not
+one that had been demonstrated. **That is no longer the position.** The P0 spike woke an idle
+session on both Claude Code and Cursor, so FR-5 now has two demonstrated instances rather than
+none, and the risk this paragraph was written to flag has been retired.
+
+The sourcing asymmetry itself stands: Claude Code's row still rests on first-hand runtime
+description rather than a citable document, so what changed is that the *mechanism* is now backed
+by measurement on this project's own hardware. Cursor's route went the other way and is worth
+recording plainly — its documentation says no mechanism exists for a background process to
+initiate a turn, and the blocking `stop` hook nevertheless wakes it. Documentation silence is
+therefore evidence about documentation, not about capability.
+
+The table below rates confidence in the mechanism, and the two proven rows now say so.
 
 | Host | Wakes an idle agent? | Confidence |
 |---|---|---|
-| **Claude Code** | **Yes.** A long-lived monitor streams events into the session, including a WebSocket source that the server pushes to, and events arrive even while the session waits on the user | High on the mechanism, but **first-hand rather than cited** — taken from the tool's own runtime capability description, not from a published document, and therefore absent from the external-source registry. **Proof is deferred to the spike** |
-| **Cursor** | **Not directly.** Its docs state plainly that no mechanism exists for a background process to initiate a turn. But its `stop` hook fires when the agent loop ends and can **inject the next user message**, so a hook that *blocks* until mail arrives is a viable waker | Medium — mechanism documented, blocking duration unmeasured |
+| **Claude Code** | **Yes — demonstrated.** A blocking `Stop` hook held for 30 s, returned under its own power, and the woken session acted with no human involvement | **Measured**, on Windows 11 / Claude Code 2.1.258. The mechanism description remains first-hand rather than cited, but the wake itself is no longer inferred |
+| **Cursor** | **Yes — demonstrated**, despite documentation to the contrary. Its docs state plainly that no mechanism exists for a background process to initiate a turn; its `stop` hook nevertheless blocks until mail arrives and then injects the next user message via `followup_message`. Blocks of 30, 60 and 120 s all held | **Measured**, on Cursor 3.18.9. The blocking duration is **not a host constant**: it is bounded by the hook's own `timeout` setting, whose platform default is under 60 s and which accepted an explicit 3600 (FR-5.8) |
 | **Copilot CLI** | **Not directly.** Docs are explicit that no idle hook exists and no external process can inject into a session. Its `agentStop` hook can force a further turn, giving the same blocking-hook route as Cursor | High on the limit, unmeasured on the route |
 | **Antigravity** | **Unknown.** Documentation is silent | Low |
 | **Codex** | **Unknown — not researched.** The fifth profile AID renders into, and the one host nobody has looked at. Recorded so its absence is a stated gap rather than an oversight | None |
@@ -637,9 +650,21 @@ any host tool guarantees a version.**
 | AC-17 | **Whisper is private:** in a chat of three or more, a whispered message reaches only its target. Every other member sees it neither on delivery nor in history |
 | AC-18 | **Mention is visible:** a mentioned message reaches every member, and the mentioned member can tell it was aimed at them |
 | AC-19 | **Local-only resolution:** a chat name given without a machine address resolves on this machine only. When no such chat exists here the result is **not found** — even with a chat of that name on another machine on the network |
-| AC-20 | **The spike answers, and the answers are written down.** All four P0 questions have recorded outcomes: whether an idle Claude Code session acts on a message with no human action; whether an idle Cursor session does; **the measured limit on how long a Cursor `stop` hook may block before the host kills it**, as a number; and whether the exchange holds across two machines on the LAN. A "we could not determine it" is a valid answer only when it records what was tried. No P0 code survives into P1 |
+| AC-20 | **The spike answers, and the answers are written down.** All four P0 questions have recorded outcomes: whether an idle Claude Code session acts on a message with no human action; whether an idle Cursor session does; **what bounds how long a Cursor `stop` hook may block, and what the host does when that bound is passed**; and whether the exchange holds across two machines on the LAN. A "we could not determine it" is a valid answer only when it records what was tried. No P0 code survives into P1 |
+
+> **Why the third question is no longer "the measured limit … before the host kills it".** It was
+> written expecting a host constant, and asked for it as a number. The spike found neither. The
+> bound is the hook's own configured `timeout`, which the operator writes — so the "limit" is a
+> setting, not a discovery — and on passing it the host **abandons** the hook rather than killing
+> it: output discarded, process left running. Asked in its original form the question has no honest
+> answer, because it presumes a kill that does not happen and a number that is whatever was
+> configured. Restated, it is answerable and the answer is more useful: it yields FR-5.8.
 | AC-21 | **Chat lifecycle is the operator's, and it works.** The operator creates a chat and deletes one through the CLI; a created chat is joinable and a deleted one is not. Nothing else in §9 exercised chat creation, though every other criterion depends on a chat existing |
 | AC-22 | **A missing runtime fails clearly, and only for the component that needs it.** On a machine with `aid` installed and no usable Node present, starting the node fails with an explicit message naming Node as the prerequisite — not a stack trace — and every `aid` command that needs no runtime continues to work. **Restated, not withdrawn:** the criterion previously named Python and the `deploy` verb; the prerequisite is now Node and the verb is `start`, but the property being tested is unchanged and still worth testing, because the CLI itself remains runtime-free and that promise is exactly what this criterion protects |
+| AC-23 | **A wake does not loop.** A session woken by an arriving message runs one turn and settles. The stop event that ends the woken turn does not start another wait, and the session does not wake again until a further message arrives — demonstrated on a host whose stop hook re-fires after the woken turn, which is the case that makes this non-trivial (FR-5.6) |
+| AC-24 | **The woken turn completes with no human in the path.** From arrival to the session having acted, no approval prompt is raised, on a host whose default is to gate an agent's privileged actions. Where the design chose pre-authorisation instead, the operator's install step is what satisfies this and the criterion is met only with that step performed (FR-5.7) |
+| AC-25 | **An over-running wake leaves nothing behind.** After a wake whose block would exceed the host's hook timeout, no adapter process survives and the node's count of connected waiters returns to what it was. Verified by process and connection count, not by absence of error, since the host reports nothing in this case (FR-5.8) |
+| AC-26 | **A host payload carrying a byte-order mark is read, not rejected.** The adapter parses a stop payload prefixed with a UTF-8 BOM and acts on its contents (FR-5.9) |
 
 > **Every criterion above is settled; none is pending.** Most are stakeholder-ratified
 > outright. Nine arrived from a quality check in an earlier interview and were unratified on
@@ -791,6 +816,12 @@ drawn around what ships together.
   into a turn. Traces to §10 stage P0 and §8 Assumptions (host research; the unvalidated
   assumption)
 - **Criteria:** AC-20  ← ids from §9; never restated here
+- **Status:** **Executed.** Three of the four questions are answered on one machine; the
+  cross-machine question is outstanding, so AC-20 is **not yet satisfied** — it admits a
+  "could not determine" only when the record says what was tried. The evidence and ten
+  findings are in `FINDINGS.md`; five of them became FR-5.6 through FR-5.10 and FR-2.4,
+  and one of them restated AC-20's own third question, which had presumed a host constant
+  that does not exist
 
 > **Runs first, and alone.** Everything else in §11 is built on the answer this produces, and
 > AC-20 requires that none of its code survive into the next stage — which is why it stays its
@@ -1371,7 +1402,7 @@ obligation; it does not pre-write the entry.
 - **Requirements:** §5 FR-0.1, FR-0.3 *(the administration and message-plane halves — the
   subscriber half completes in Feature 003)*, FR-1.1–1.3, FR-2.1, FR-2.2 *(the single-machine
   half: the id's shape)*, FR-2.3 *(liveness tracking and stale-marking — reaping belongs to
-  Feature 005)*, FR-3.1 *(local half)*, FR-3.4, FR-4.1–4.7 *(the plain-delivery envelope —
+  Feature 005)*, FR-2.4 *(whether to prefer a host-supplied conversation id — see the note below)*, FR-3.1 *(local half)*, FR-3.4, FR-4.1–4.7 *(the plain-delivery envelope —
   FR-4.1's `mention?` / `whisper_to?` fields and FR-4.3's whisper filtering belong to Feature
   005)*, FR-5.3, FR-7.2 *(start / stop / status / configuration, chat lifecycle, and any change
   to another session's membership — retention policy belongs to Feature 005)*, FR-7.4 *(the
@@ -1401,6 +1432,19 @@ obligation; it does not pre-write the entry.
 > **Feature 003** owns the other two — *the chat skill's instructions are CLI invocations* and
 > *the subscriber is a CLI invocation*. Together they keep the HTTP transport internal to the
 > node, which is what FR-7.4 asks for.
+
+> **A decision the spike created, and the specifier must take deliberately.** Cursor hands its
+> stop hook a `conversation_id` — a stable per-conversation identity, which is the thing FR-2.1's
+> session name exists to provide. The design had assumed no host would supply one, so it planned to
+> mint its own and only its own.
+>
+> That assumption is now false on at least one host, and the fork is real: a host-supplied id is
+> more trustworthy than anything the product can infer about a session, but it is **undocumented**,
+> so it can be withdrawn without notice, and it exists on one host out of five. FR-2.4 fixes the
+> policy — prefer it where offered, never depend on it, and keep the product's own identity
+> authoritative — but *where it is used* is a specification decision: as a reattachment hint on
+> re-registration, as a cross-check that a name has not been reused by a different conversation, or
+> not at all in v1. Deciding by default here would be deciding not to look.
 
 #### Description
 
@@ -1641,16 +1685,42 @@ must work on its own, because it is the floor every host falls back to.
 
 - **Priority:** Must
 - **Requirements:** §5 FR-0.2, FR-0.3 *(the subscriber half, completing what Feature 002
-  begins)*, FR-0.4, FR-5.1, FR-5.2, FR-5.4, FR-5.5, FR-7.3, FR-7.4 *(the
-  **skill-invokes-the-CLI** and **subscriber-is-a-CLI-invocation** clauses — see the ownership
-  note under Feature 002)*; §6 Limits *(the **long-poll timeout**)*; §4 In Scope *(the rendered
-  chat skill)* and §4 Out of Scope *(the withdrawn MCP façade)*; §7 Constraints *(the
-  agent-facing-surface bullet)*; §10 stage P2
-- **Criteria:** AC-1, AC-12, AC-15  ← ids from §9; never restated here
+  begins)*, FR-0.4, FR-5.1, FR-5.2, FR-5.4, FR-5.5, **FR-5.6, FR-5.7, FR-5.8, FR-5.9, FR-5.10**
+  *(the five the spike produced)*, FR-7.3, FR-7.4 *(the **skill-invokes-the-CLI** and
+  **subscriber-is-a-CLI-invocation** clauses — see the ownership note under Feature 002)*; §6
+  Limits *(the **long-poll timeout**)*; §4 In Scope *(the rendered chat skill)* and §4 Out of
+  Scope *(the withdrawn MCP façade)*; §7 Constraints *(the agent-facing-surface bullet)*; §10
+  stage P2
+- **Criteria:** AC-1, AC-12, AC-15, **AC-23, AC-24, AC-25, AC-26**  ← ids from §9; never restated here
 
-> **This is the feature the spike exists for.** Its per-host half is shaped by the number
-> Feature 001 measures — how long a Cursor `stop` hook may block before the host kills it — so
-> it cannot be specified before that answer exists.
+> **The spike has run, and this feature is no longer blocked.** It was written waiting on a
+> number — how long a Cursor `stop` hook may block before the host kills it. That number does not
+> exist: the bound is the hook's own configured `timeout`, and on passing it the host abandons the
+> hook rather than killing it. What the spike delivered instead is five requirements, FR-5.6
+> through FR-5.10, and they are more constraining than the number would have been:
+>
+> - **Waking is a loop** (FR-5.6). The wake ends a turn, ending a turn fires the stop hook, and the
+>   stop hook wakes the session. Every adapter needs a re-entry rule; "block on every stop event"
+>   is not implementable. Observed on both hosts. Cursor supplies the count as `loop_count` on the
+>   hook's stdin and documents a `loop_limit` capping follow-ups at 5; **Claude Code's documented
+>   `loop_limit` default is `null`, meaning uncapped**, so on that host the rule is not optional and
+>   has no host-side backstop.
+> - **The woken turn may not need permission** (FR-5.7). On Cursor a woken turn's tool call raised
+>   an approval prompt and waited for a human. This is the constraint that most shapes what an
+>   adapter may ask the woken session to do.
+> - **The block must end before the host stops listening, and the adapter must set that bound**
+>   (FR-5.8). The platform default measured under 60 s — shorter than `§6`'s own 30 s long-poll is
+>   comfortable with — and an over-run leaks a process whose socket stays open.
+> - **The host contract is per-host, documented, and BOM-tolerant** (FR-5.9). Cursor's supported
+>   response shape is `followup_message`; the Claude Code shape also works there but is
+>   undocumented, and Cursor prefixes its payload with a UTF-8 BOM that defeats a strict parser.
+> - **Nothing about the invocation may be assumed** (FR-5.10). Claude Code runs hooks through bash
+>   on Windows, and a `PATH` interpreter may be a shim.
+>
+> Two measured numbers worth carrying into the specification: the wake takes about **3.7 s** from
+> the block ending to the woken turn completing, five samples, and the observed maximum was still
+> rising as samples accumulated — so budget from the maximum, not the mean. And Cursor supplies a
+> **`conversation_id`** the design had assumed it would have to invent (FR-2.4).
 >
 > **Three parts, one job: turn an arriving message into a turn.** The node side holds a
 > connection open and pushes. The host side is one small adapter per tool, behind a single
