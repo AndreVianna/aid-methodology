@@ -2086,18 +2086,19 @@ indistinguishable from a crash.
 | `already_in_channel` | open, join | FR-3.4's bound; leave first |
 | `solo_channel` | send | Nobody else is in the channel (FR-4.1) |
 | `overflow` | send | A local member is at the unread bound (`§6`) |
-| `target_unavailable` | connect | Busy, stale, or unknown (FR-9.3) |
+| `target_unavailable` | connect | Busy, stale, or unknown (FR-9.3) — and, once federation exists, **the peer holding the target being unreachable** (FR-9.4). The same token covers all four, because the asking agent's remedy is identical in every case: pick somebody else. What must not happen is queueing, which is why unreachability is a refusal here and store-and-forward everywhere else |
 | `target_is_self` | connect | A session may not name itself (FR-9.3) |
 | `ack_ahead_of_delivered` | ack | FR-4.4 |
 | `channel_unknown` | join | No open channel of that name on this hub |
 | `whisper_target_not_member` | send | `whisper_to` names somebody who is not in the channel (Feature 005) |
 | `mention_and_whisper` | send | Both set on one message; they are mutually exclusive (FR-4.1) |
+| `mention_unknown` | send | **A warning, not a refusal** — `mention` names somebody who is not in the channel. The send **succeeds with exit `0`** and the unmatched names follow the token on stderr (Feature 005) |
 
-**One token is a warning rather than a refusal, and it belongs in this table for exactly that
-reason:** `mention_unknown: <names>` is written to stderr while the send **succeeds with exit `0`**
-(Feature 005). A mention changes attention rather than delivery, so a stale name is worth reporting
-and not worth refusing. Listing it here keeps this table what it claims to be — the registry of
-every stable token the node writes to stderr — rather than the registry of refusals only.
+**One row above is a warning rather than a refusal, and it is in the table for exactly that
+reason.** A mention changes attention rather than delivery, so a stale name is worth reporting and
+not worth refusing — and a warning nobody can observe is not a warning. Keeping it in the table
+makes this what it claims to be: **the registry of every stable token the node writes to stderr**,
+rather than the registry of refusals only.
 
 The reason is a stable token on stderr with a human sentence after it, matching the repository's
 existing "stdout carries the result, stderr carries diagnostics" rule. A refusal is not a stack

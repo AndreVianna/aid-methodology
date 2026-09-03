@@ -121,18 +121,18 @@ active_skill: none
 updated: '2026-09-03'
 # [W] set only when lifecycle = Paused-Awaiting-Input
 pause_reason: >-
-  DESCRIBE AND DEFINE ARE CLOSED AGAIN; SPECIFY IS THE CURRENT PHASE. The architecture review's
-  decisions (qa 3-6, all Answered) are written into REQUIREMENTS.md and the document survived four
-  adversarial review cycles -- 13, 9, 5 and 4 findings, every one Fixed, the fourth finding nothing
-  above MEDIUM. Every cycle caught at least one fix applied in one place while the same claim
-  survived in another, which is this document's characteristic defect and worth watching for in any
-  later edit. Verified independently rather than from the document's own claims: 31 live criteria,
-  each appearing in the section 10 stage table exactly once and owned by exactly one feature; 56
-  functional sub-requirements each mapped to at least one feature. Next: /aid-specify, Feature 002
-  first -- it is the keystone at 15 of 31 criteria and every other feature builds on its store
-  schema -- then 004, 005, 003. Still owed but blocking nothing: the operator's spike teardown
-  (delete the spike folder on both machines, remove the stop hooks, drop the port-8811 firewall rule,
-  restore power settings).
+  SPECIFY IS COMPLETE. All five features are Ready at A+. Features 002 to 005 carry technical
+  specifications that survived four adversarial cycles -- 17, 5, 4 and 2 findings, every one Fixed,
+  with three recurrences of this document's characteristic defect (a fix applied in one place while
+  the same claim survived in another) caught in cycles 2 and 3. Cycle 4 found nothing above LOW and
+  no recurrence. Verified independently rather than from the document's own claims: 32 live criteria
+  each in the section 10 stage table exactly once and owned by exactly one feature; 56 functional
+  sub-requirements each mapped. AWAITING THE HUMAN GATE: user_approved is still no, because the
+  stakeholder has not read the amended requirements or the four specifications end to end, and a
+  substantial number of design decisions inside them were taken on the stakeholder's behalf and
+  flagged for veto rather than ratified. Next after approval: /aid-plan, which is also where Feature
+  002 gets sliced across deliveries if 15 of 32 criteria proves too large for one pass. Still owed
+  but blocking nothing: the operator's spike teardown.
 # [W] set only when lifecycle = Blocked
 block_reason: --
 # [W] e.g. IMPEDIMENT-task-NNN.md, or the failed gate
@@ -228,8 +228,8 @@ features:
       Stage P0. EXECUTED AND CLOSED -- all four tests have recorded outcomes and AC-20 is satisfied. Both hosts wake; the Cursor bound is the hook's own configured timeout and not a host constant; the exchange holds across two machines in both directions (T4-000-f). Evidence and twelve findings in FINDINGS.md; six became FR-5.6..FR-5.10 and FR-2.4. Open questions are routed to 002/003/004 and none of them block. `state: Ready` is the enum value for "specification complete" -- the feature's execution outcome is this note, because features[].state has no terminal value for an executed spike. Specification carried forward intact and unchanged -- an executable experiment design, reviewed to A+. Stays its own feature at any merge depth: AC-20 requires that none of its code be carried forward, which only means something if the boundary exists.
   - id: '002'
     name: node-and-message-plane
-    state: In Discussion
-    grade: Pending
+    state: Ready
+    grade: A+
     qa_count: 0
     started: 2026-09-03
     updated: '2026-09-03'
@@ -238,31 +238,31 @@ features:
       Stage P1, the keystone -- process model, CLI surface, store schema and the one core. Specify FIRST. Merged from three earlier features whose split had failed on its own terms: one owned the store schema another needed, so a schema defect in the first blocked the second outright. Largest feature at 9 of 22 criteria; if it proves too large the place to slice it is /aid-plan, not a new boundary. Carries two constraints from a dropped specification: exit code 5 is taken, and id INTEGER PRIMARY KEY without AUTOINCREMENT reuses a reaped member's id.
   - id: '003'
     name: the-wake
-    state: Pending
-    grade: Pending
+    state: Ready
+    grade: A+
     qa_count: 0
-    started: --
-    updated: '2026-09-02'
+    started: 2026-09-03
+    updated: '2026-09-03'
     sections: []
     notes: >-
       Stage P2. Node-side subscription, per-host waker adapters and the rendered chat skill. Cannot be specified before Feature 001 answers -- its Cursor half is shaped by the measured hook-blocking limit. One feature because none of the three delivers the wake alone.
   - id: '004'
     name: lan-federation
-    state: Pending
-    grade: Pending
+    state: Ready
+    grade: A+
     qa_count: 0
-    started: --
-    updated: '2026-09-02'
+    started: 2026-09-03
+    updated: '2026-09-03'
     sections: []
     notes: >-
       Stage P3 -- the target case. Carries the constraint that FR-6.4's compatibility contract is stated by its own protocol version number and never inferred from VERSION.
   - id: '005'
     name: directed-retention-visibility
-    state: Pending
-    grade: Pending
+    state: Ready
+    grade: A+
     qa_count: 0
-    started: --
-    updated: '2026-09-02'
+    started: 2026-09-03
+    updated: '2026-09-03'
     sections: []
     notes: >-
       Stage P4. Weakest cohesion of the five and recorded as such: mention/whisper, retention and operator visibility share a stage and a dependency on the store rather than a subject. Kept as one because the decomposition was asked to be minimal and none of the three is large; splitting into three costs nothing but a boundary.
@@ -810,6 +810,34 @@ review_history:
       verified independently at each cycle rather than read off the document: 31 live criteria, each
       in the stage table once and owned by exactly one feature, 56 sub-requirements each mapped.
     applied_to: 'REQUIREMENTS.md (sections 1, 4, 5, 6, 7, 9, 10, 11); .aid/.temp/review-pending/requirements-amendment{,-cycle2,-cycle3,-cycle4}.md'
+  - date: '2026-09-03'
+    event: 'Specify: technical specifications for Features 002-005; 4 review cycles, A+'
+    outcome: 'A+ (28 findings across 4 cycles, all Fixed; cycle 4 found nothing above LOW)'
+    notes: >-
+      Four specifications written and gated. The load-bearing one is Feature 002's store schema,
+      which encodes requirements structurally rather than as rules somebody enforces: channel_id is
+      a COLUMN on session, so the one-channel bound is a thing the store cannot represent otherwise;
+      positions are two integers indexing THIS HUB'S arrival order, which works only because a
+      session reads its own hub and never moves machines, and which is what makes the replicated
+      model implementable without vector clocks; sender_seq carries per-speaker FIFO and is enforced
+      on READ, so ordering is a delivery property rather than a storage one. Cycle 1 found three
+      criticals, all in that position design and all silent-data-loss shaped: arrival_seq started at
+      0 against a position defaulting to 0, so the first message of every channel was unreachable
+      forever; delivered advanced to the last message returned, which jumped over held-back messages
+      that have LOWER arrival_seq and stranded them permanently; and the dedupe key was scoped to the
+      channel, so two senders numbering from 1 would swallow each other's messages. Cycle 1 also
+      found the hold-back rule non-terminating (a predecessor trimmed before it replicated holds a
+      speaker forever, silently), join-at-head specified but never implemented, and a solo-send check
+      that would be wrong the day federation landed. Cycles 2 and 3 caught three recurrences, two at
+      critical, both the same shape: the spec corrected and the requirement it implements left
+      stating the old rule, with section 5 being the higher authority. Cycle 3's most valuable finding
+      was self-inflicted: an overstated measurement in four locations, claiming a host's default hook
+      timeout is shorter than the product's 30 s long-poll when FINDINGS bounds it only at under 60 s
+      -- corrected everywhere, and the honest form is the stronger argument, since an adapter would
+      be relying on a number nobody has measured in either direction. Two new criteria were needed:
+      AC-33 for FR-2.4, which no criterion reached, and AC-34 for the connect request's cross-machine
+      cases, which AC-28 had assigned to a feature shipping a stage before federation exists.
+    applied_to: 'REQUIREMENTS.md (section 11 Features 002-005 Technical Specification; section 5 FR-4.4; section 6 Limits; section 9 AC-28, AC-33, AC-34; section 10 P1/P3); .aid/.temp/review-pending/specs-cycle{1,2,3,4}.md'
 # [A] written by the orchestrator on the work's active branch (single
 #     writer). Append-only audit trail of phase transitions and gate
 #     approvals, newest LAST (append to bottom).
@@ -838,6 +866,10 @@ lifecycle_history:
     event: 'Describe and Define CLOSED again at A+; Specify is now current'
     grade: A+
     notes: 'The amendment landed and passed four adversarial cycles (13, 9, 5, 4 findings, all Fixed; the fourth found nothing above MEDIUM). Define did not need re-running as a separate pass: no feature boundary moved, so the five features stand -- what changed is what each owns, and that was re-derived and verified. Feature 002 grew from 9 criteria to 15 because the hub plane lands at stage P1, and the placement is forced rather than chosen: with one channel per agent and no all-call, the connect request is the only way two agents ever meet, so nothing downstream is exercisable without it. user_approved stays no until the stakeholder ratifies the amended document; the A+ recorded here is the review gate, not the human gate. Next: /aid-specify, Feature 002 first, then 004, 005, 003.'
+  - date: '2026-09-03'
+    event: 'Specify COMPLETE -- all five features Ready at A+'
+    grade: A+
+    notes: 'Features 002 to 005 specified and gated over four adversarial cycles (17, 5, 4 and 2 findings, all Fixed; the fourth found nothing above LOW and no recurrence). The numbered pipeline ends at Execute, and the next step is /aid-plan -- which is also the place to slice Feature 002 if 15 of 32 criteria proves too large for one delivery, since every candidate split line runs through the store schema and re-drawing the feature boundary is what failed in the predecessor. user_approved remains no: the A+ is the review gate, and the human gate is unclaimed because a substantial number of design decisions inside these specifications were taken on the stakeholder behalf and flagged for veto rather than ratified.'
 
 # [A] aid-deploy only; one entry per delivery (never derived from child
 #     files; aid-deploy is the sole author):
