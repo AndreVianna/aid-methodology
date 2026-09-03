@@ -96,7 +96,7 @@ one vendor:
 | Participant | Status |
 |---|---|
 | Claude Code | **v1 proving pair.** Reference host; **wake demonstrated** by the P0 spike — an idle session acted on an arriving message with no human action (§8) |
-| Cursor | **v1 proving pair.** Wake route identified, one measurement outstanding (P0) |
+| Cursor | **v1 proving pair.** **Wake demonstrated** by the P0 spike, despite the vendor's documentation stating that no background process can start a turn (§8). The blocking bound turned out not to be a host constant but the hook's own configured timeout (FR-5.8) |
 | Antigravity | Named target; not a v1 gate. Researched, but its documentation is **silent** on external wake — no route known |
 | Copilot CLI | Named target; not a v1 gate. Wake route documented (`agentStop`), unmeasured. (GitHub Copilot CLI — named **Copilot CLI** throughout, matching the profile AID renders into) |
 | Codex | Named target; not a v1 gate. **Not researched at all** — the only host nobody has looked at, which is a different gap from Antigravity's, where the looking was done and found nothing |
@@ -226,8 +226,8 @@ second surface. It carries no logic and holds no state: every operation it descr
 | # | Requirement |
 |---|---|
 | FR-2.1 | A session registers with `register(name, tool, cwd, capabilities)`, binding itself to a **stable name**. The name is an **identity, not an address** — it is how a session is recognised inside a channel, mentioned, and whispered to; it is never a destination on its own |
-| FR-2.2 | A session's full id is **machine address + session name**. Names are unique per machine — a session genuinely lives on one machine, which is why its id stays machine-qualified even though a channel's no longer is (FR-3.2). Re-registering an existing name **reattaches** that session to its channel *if that channel is still open*, at its **acknowledged** position (FR-4.2). Where the channel closed in the meantime, the name is re-registered with no channel: reattachment restores a place in a conversation that still exists and never resurrects one that ended |
-| FR-2.3 | **Liveness is tracked** (heartbeat or connection), and drives **two distinct states at two thresholds** (§6). **Stale** — quiet past the stale threshold — is a *display* state: the member is shown as probably gone, is **unavailable** to a connect request (FR-9.3), and **nothing is released**. **Reaped** — quiet past the longer reap threshold — is the node giving the member up for good: its registration is released and it **stops counting toward its channel's trim point**, which is what lets those logs be trimmed again — **including messages it never read.** Its identity is not destroyed: the name is free and re-registering it is accepted at any time. Tracking and stale-marking belong to registration; reaping belongs to retention. **A dropped connection is never a leave.** A session that crashes, loses its network, or has its host closed has not left its channel — it goes stale, then reaped, on the thresholds above. This is load-bearing rather than pedantic: a channel closes when its last member is gone (FR-3.3), so treating a dropped connection as a departure would let a network blip destroy a live conversation and its log |
+| FR-2.2 | A session's full id is **machine address + session name**. Names are unique per machine — a session genuinely lives on one machine, which is why its id stays machine-qualified even though a channel's no longer is (FR-3.2). Re-registering an existing name **reattaches** that session to its channel *if that channel is still open*, at its **acknowledged** position (FR-4.4). Where the channel closed in the meantime, the name is re-registered with no channel: reattachment restores a place in a conversation that still exists and never resurrects one that ended |
+| FR-2.3 | **Liveness is tracked** (heartbeat or connection), and drives **two distinct states at two thresholds** (§6). **Stale** — quiet past the stale threshold — is a *display* state: the member is shown as probably gone, is **unavailable** to a connect request (FR-9.3), and **nothing is released**. **Reaped** — quiet past the longer reap threshold — is the node giving the member up for good: its registration is released and it **stops counting toward its channel's trim point**, which is what lets those logs be trimmed again — **including messages it never acknowledged.** Its identity is not destroyed: the name is free and re-registering it is accepted at any time. Tracking and stale-marking belong to registration; reaping belongs to retention. **A dropped connection is never a leave.** A session that crashes, loses its network, or has its host closed has not left its channel — it goes stale, then reaped, on the thresholds above. This is load-bearing rather than pedantic: a channel closes when its last member is gone (FR-3.3), so treating a dropped connection as a departure would let a network blip destroy a live conversation and its log |
 | FR-2.4 | **The product mints its own conversation id, and no host's is adopted as identity.** A registration is bound to a conversation id the product generates. **The reason is immutability, and it is the product's to guarantee:** an identifier the product does not issue is one whose stability it cannot promise, because another program may re-issue, re-scope or reuse it on its own schedule. Reach reinforces that but does not carry it — one host offers such an id today, four do not, and the one that does leaves it undocumented and so withdrawable without notice. A host-supplied id **may be recorded as correlation metadata** beside the product's own, for reconciling the product's log against the host's, and nothing may key on it |
 
 ### FR-3 — Channels and addressing
@@ -265,7 +265,7 @@ smallest instance. Aiming at one individual is a **visibility rule inside** a ch
 |---|---|
 | FR-4.1 | `send(body, kind?, idempotency_key?, mention?, whisper_to?)` delivers to the channel the caller is in — which is the only one it can be in (FR-3.4), so the channel is not a parameter. `mention` flags members without restricting visibility; `whisper_to` restricts visibility to one member (FR-3.5, FR-3.6). The two are mutually exclusive on a single message |
 | FR-4.2 | Each **channel** owns a **message log**, replicated to every hub with a member in it, and each **member holds its own position** in that log. A session holds **one position pair** (FR-4.4), because it is in one channel. **Durability is bounded by the channel's life, and that bound is stated rather than implied:** the log survives a session restart and a node restart, and is **discarded when the channel closes** (FR-3.3). A channel is a live conversation, not an archive — there is no resuming yesterday's channel, and anything worth keeping is the participants' to write down elsewhere |
-| FR-4.3 | `inbox(cursor?)` returns messages after the caller's acknowledged position in its channel. Whispers not addressed to the caller are never returned |
+| FR-4.3 | `inbox(cursor?)` returns messages after the caller's **acknowledged** position in its channel — the default, and the only baseline that governs redelivery (FR-4.4). **`cursor` is a read-only override and moves neither position:** given one, the call returns messages after *that* point instead, which lets a caller re-read something it has already acknowledged without rewinding its own progress. A cursor ahead of `acked` skips nothing permanently, because `acked` is untouched and those messages are still returned by the next default call. Whispers not addressed to the caller are never returned |
 | FR-4.4 | **A member holds two positions, `delivered` and `acked`, and redelivery keys on `acked`.** `delivered` records what has been handed toward the session and is advanced by whatever performed the handing — which is normally the waker adapter, since a woken turn cannot be assumed able to call anything (FR-5.7). `ack(cursor)` advances `acked`, and only the session does that. **A message that was delivered but never acknowledged is presented again**, deduped by FR-4.5's idempotency key. This is what keeps at-least-once honest on a host that gates the session's own calls: without the split, a crash between the hand-off and the turn would mark a message read that no model ever saw, and the adapter would be silently converting at-least-once into at-most-once |
 | FR-4.5 | Delivery is at-least-once; recipients dedupe on the idempotency key. **FR-4.4 makes this load-bearing rather than a formality** — re-presentation of an unacknowledged message is a normal event, not an error path |
 | FR-4.6 | Messages carry a `kind` and an optional `correlation_id` / `reply_to` |
@@ -390,7 +390,7 @@ limit is hardcoded. All configuration is applied through the CLI (FR-7.2).
 | **Overflow policy** | **Reject the new send with an explicit error** (alternative: drop-oldest). **Judged on local knowledge:** a hub applies this to the members it holds positions for, since it holds no other hub's (Retention, above) |
 | Max payload size | **None — messages are not size-limited** |
 | Stale-session threshold | 30 min without heartbeat → marked unavailable in the roster (FR-9.2). **Nothing is discarded** — the member keeps its place in its channel, and its channel stays open |
-| **Reap threshold** | **24 h** without heartbeat → the hub gives the member up for gone and **drops its claim on its channel**. What is released is its hold on the trim point, so messages it never read *do* then become removable — that is the point. **If it was the channel's last member, the channel closes** (FR-3.3). Its **name is not destroyed**: re-registering it is accepted at any time |
+| **Reap threshold** | **24 h** without heartbeat → the hub gives the member up for gone and **drops its claim on its channel**. What is released is its hold on the trim point, so messages it never acknowledged *do* then become removable — that is the point. **If it was the channel's last member, the channel closes** (FR-3.3). Its **name is not destroyed**: re-registering it is accepted at any time |
 | Long-poll timeout | **30 s**; the subscriber reconnects on timeout. **Must stay strictly under the host's hook timeout** (FR-5.8), which the operator writes and the adapter is told |
 | **Channel inactivity timeout** | **None, deliberately — there is no such parameter.** A quiet channel is the normal state of this product, so a timer here would close a conversation while both parties were waiting on each other. Idleness is bounded on the *session* instead, by the two thresholds above, plus the operator's ability to remove a session from its channel (FR-7.2) |
 
@@ -426,7 +426,7 @@ entirely.
 
 **A reaped member stops counting.** Reaping is the one thing that can cause an unacknowledged
 message to be removed, and that is its entire purpose: once a member is given up for gone, it is no
-longer one of the members the trim point waits for, so a message only it never read becomes
+longer one of the members the trim point waits for, so a message only it never acknowledged becomes
 removable. The guarantee is therefore bounded, not absolute — a message survives for as long
 as some member on that hub that has not been reaped still has not acknowledged it.
 
@@ -444,7 +444,7 @@ crashed session **keeps** them, and may stop accepting new sends, until that ses
 a member **stale** (30 min without heartbeat) makes it unavailable to a connect request (FR-9.3)
 and changes nothing else — it keeps its place and its channel stays open. **Reaping** (24 h) is the
 hub deciding a member is gone for good and releasing its claim, so the trim point can move again —
-which does mean messages that member never read can now go, and which closes the channel if it was
+which does mean messages that member never acknowledged can now go, and which closes the channel if it was
 the last member. Its **name survives**: re-registering it is accepted at any time, and the member
 either rejoins its channel where that channel is still open, or starts with none (FR-2.2).
 
@@ -461,10 +461,14 @@ bytes.
 **None for v1.** No latency, throughput, or wake-time target is set, and none is a
 release condition. Speed is deliberately unconstrained until the design is proven.
 
-**Two measured figures are on record and are inputs to design, not targets.** A returned hook
-becomes a completed turn in roughly **3.7 s** on one host and **7.5 s** on the other, and the
-observed maximum rose as samples accumulated. Anything that derives a timeout from these must use
-the **observed maximum with headroom**, never the mean — five samples bound nothing.
+**Two measured figures are on record, as inputs to design rather than targets — and they are
+explicitly NOT comparable to each other.** One host turned a returned hook into a completed
+one-word reply in about **3.7 s**; the other completed a woken turn that spawned an interpreter and
+made an HTTP round trip in about **7.5 s**. Those are different actions, so the pair ranks nothing
+about the hosts, and no reader should read the smaller number as the faster host. What they jointly
+establish is an order of magnitude: seconds, not tens of seconds. Anything deriving a timeout from
+them must use the **observed maximum with headroom**, never the mean — the observed maximum rose as
+samples accumulated, and five samples bound no tail.
 
 **One capacity figure is *not* on record, and is called out so it is not assumed:** concurrent
 waiters were demonstrated at **two**, not at *n*. A machine running several idle sessions holds
@@ -821,7 +825,7 @@ exception and is meant to be** — it produces answers, not product.
 |---|---|---|
 | **P0 — POC** | Four tests against a throwaway stub node (one endpoint that waits, then returns a message), on **Claude Code and Cursor only**: (1) idle Claude Code session acts on a message with no human action; (2) idle Cursor session does the same via a blocking `stop` hook; (3) **what bounds how long a Cursor `stop` hook may block, and what the host does at that bound**; (4) the same exchange across two machines on the LAN | AC-20 — the single unvalidated assumption |
 | **P1 — Skeleton** | Node lifecycle + CLI + registration by stable name + **the hub plane** (roster and the directed connect request, FR-9) + an agent opening / joining / leaving its **one** channel and that channel's automatic end (FR-3.3, FR-3.4) + the operator's **eviction** of a session from its channel (FR-7.2) + the local half of listing (FR-3.1) + durable `send`/`inbox`/`ack` with the two positions (FR-4.4) and fan-out to every member, **pull only** (FR-5.3 — the pull floor ships here, not at P2). **The hub plane lands here and not later, because nothing else can create a channel:** with one channel per agent and no all-call, the connect request is the only way two agents ever meet (FR-9), so P2's headline exchange cannot be set up without it | AC-3, AC-6, AC-7, AC-8, AC-9, AC-10, AC-13, AC-22, AC-27, AC-28, AC-29, AC-30, AC-31, AC-32 |
-| **P2 — The wake** | Subscriber and re-arm (FR-5.1, FR-5.2, FR-5.4, FR-5.5 — FR-5.3's pull floor already shipped at P1), and the **rendered chat skill** (FR-0.2, FR-0.4 — FR-0.1 already shipped at P1), which replaces the withdrawn MCP façade. **FR-0.3 completes here, not at P1:** P1 delivered its administration and message-plane halves, but FR-0.3 also requires the CLI to carry the subscriber, which does not exist until this stage | **AC-1 (headline — same machine, cross-tool)**, AC-12, AC-15 |
+| **P2 — The wake** | Subscriber and re-arm (FR-5.1, FR-5.2, FR-5.4, FR-5.5 — FR-5.3's pull floor already shipped at P1), and the **rendered chat skill** (FR-0.2, FR-0.4 — FR-0.1 already shipped at P1), which replaces the withdrawn MCP façade. **FR-0.3 completes here, not at P1:** P1 delivered its administration and message-plane halves, but FR-0.3 also requires the CLI to carry the subscriber, which does not exist until this stage | **AC-1 (headline — same machine, cross-tool)**, AC-12, AC-15, AC-23, AC-24, AC-25, AC-26 |
 | **P3 — Federation** | Discovery, handshake, version negotiation (FR-6.1–6.4), **channel replication and queue-on-unreachable-peer** (FR-6.3), the **federated roster and cross-machine connect request** (FR-9.4), the network half of listing (FR-3.1), and **the durability of the inter-node link itself** (FR-6.5 — the one link no measurement covers, and it now carries presence and replication rather than occasional requests). **Discovery is layered, and the layering is matched by what §4 promises:** the guaranteed path (a static peer list plus heartbeat) satisfies AC-4, and it is also the whole of the promise — §4 offers zero-configuration discovery as a convenience where the network permits and commits to it nowhere | **AC-2 (the target case)**, AC-4, AC-5, AC-16 |
 | **P4 — Completeness** | Mention and whisper, audit/operator visibility, retention enforcement. Channels of more than two need nothing new here — fan-out to every member is P1 (AC-13); what P4 adds is **addressing within** a larger channel, plus the per-hub trim rule (§6 Retention) | AC-11, AC-14, AC-17, AC-18 |
 
@@ -884,8 +888,9 @@ expected to reuse the same adapter contract (FR-5.2), but none of the three gate
 One `###` subsection per feature — a decomposition of §5 into an independently implementable
 unit, not a second place to state requirements. Every §5 functional requirement maps to at
 least one feature, and **every §9 criterion is owned by exactly one feature**, so both are
-checkable. §9 holds a gapless **AC-1–AC-22**, and the ownership below accounts for all
-thirty live criteria, once each, matching §10 stage for stage. (AC-19 and AC-21 are retired rows and are owned by nobody — see §9.)
+checkable. §9 holds a gapless **AC-1–AC-32**, of which **thirty are live** — AC-19 and AC-21 are retired
+rows kept so that references to them resolve, and are owned by nobody. The ownership below accounts
+for all thirty live criteria, once each, matching §10 stage for stage.
 
 **Five features, one per §10 stage, and the count is a floor rather than a preference.** Two
 things set it. **The spike cannot merge into anything:** AC-20 requires that no code from it be
@@ -941,10 +946,15 @@ Answer the one question that can invalidate the whole design, before anything is
 top of it: **can a message arriving from outside turn an idle AI session into a live turn,
 with no human touching anything?**
 
-**Neither host has actually been proven.** For Claude Code the mechanism is understood
-first-hand — a long-lived monitor streams events into a session, and events arrive even while
-the session sits waiting — but that is a runtime capability description, not a published
-document and not a demonstration, so it is untested like everything else here. That is
+> **Read this section as the question the spike was given, not as the current state of
+> knowledge.** It is preserved in its original tense because it records *why* the spike was
+> designed the way it was, and rewriting it would erase the reasoning. **Both hosts are now
+> proven** — see the Status field above and `FINDINGS.md`.
+
+**Neither host had actually been proven when this was written.** For Claude Code the mechanism was
+understood first-hand — a long-lived monitor streams events into a session, and events arrive even
+while the session sits waiting — but that is a runtime capability description, not a published
+document and not a demonstration, so it was untested like everything else here. That is
 precisely why it is **test 1**: if the one host rated most likely to work does not, FR-5 has
 no demonstrated instance at all. Cursor is weaker still. Cursor's
 documentation states plainly that no background process can start a turn; the only way in
@@ -1501,18 +1511,31 @@ obligation; it does not pre-write the entry.
 > detail and an input to `/aid-specify`. Several cover a claimed FR clause that no §9
 > criterion reaches on its own, which is why they were kept rather than deleted.
 
-- [ ] Given an idle Claude Code session with the stub armed, when a message is sent, then
-      the session acts on it with no human action — recorded as pass or fail.
-- [ ] Given an idle Cursor session with a blocking `stop` hook, when a message is sent,
-      then the session acts on it with no human action — recorded as pass or fail.
-- [ ] Given a Cursor `stop` hook that blocks indefinitely, when the host terminates it,
-      then **the elapsed time is recorded as a number**.
-- [ ] Given the two sessions on different machines on the same network, when a message is
-      sent, then the exchange is recorded as pass or fail.
-- [ ] Given any test that could not be completed, when the spike closes, then the record
+> **Checked boxes below are the spike's recorded outcome, not an intention.** Each was verified
+> against an NDJSON run log and is written up in `FINDINGS.md`, cited by run id. The boxes were
+> left open in an earlier draft, which read as though nothing had been run.
+
+- [x] Given an idle Claude Code session with the stub armed, when a message is sent, then
+      the session acts on it with no human action — **pass** (`T1-000-a`).
+- [x] Given an idle Cursor session with a blocking `stop` hook, when a message is sent,
+      then the session acts on it with no human action — **pass** (`T2-001-a`).
+- [x] Given a Cursor `stop` hook asked to block past its configured `timeout`, when that timeout
+      passes, then **what the host does is recorded** — and what it does is *abandon* the hook, not
+      terminate it: output discarded, wait abandoned, process still running. *This scenario
+      originally read "when the host terminates it, then the elapsed time is recorded as a number",
+      which presumed both a kill and a host constant. Measurement found neither, so the scenario is
+      restated to ask what happens rather than to assume it.*
+- [x] Given the two sessions on different machines on the same network, when a message is
+      sent, then the exchange is recorded as pass or fail — **pass in both directions**
+      (`T4-000-f`).
+- [x] Given any test that could not be completed, when the spike closes, then the record
       states what was attempted and why it was inconclusive — silence is not an outcome.
+      Satisfied by two entries rather than vacuously: the held-connection-over-LAN
+      confirmation run is recorded **not applicable with its reason**, and machine B's wake
+      latency is recorded as **not derivable** with its reason.
 - [ ] Given the spike is complete, when P1 begins, then **no code from this feature has
-      been carried forward**.
+      been carried forward**. *Still open by construction — P1 has not begun. The operator's
+      teardown of the throwaway apparatus is also still outstanding.*
 
 ### Feature 002 — Node and Message Plane
 
@@ -1971,10 +1994,14 @@ everywhere. The per-tool half lives in the waker adapters.
 The piece that turns an arriving message into a turn — the only part of this product that
 differs per tool, and the only part nobody has built before.
 
-**This feature cannot be specified before the spike answers.** Its Cursor half is shaped by
-a number the spike measures: how long a `stop` hook may block before the host kills it. That
-sequencing is carried by the stage order (P0 before P2) and belongs in the delivery plan;
-it is stated here so the dependency is visible to anyone reading this feature alone.
+**The spike has answered, and this feature is no longer waiting on anything.** It was written
+expecting its Cursor half to be shaped by a measured number — how long a `stop` hook may block
+before the host kills it. **There is no such number.** The bound is the hook's own configured
+`timeout`, which the operator writes (FR-5.8), and on passing it the host **abandons** the hook
+rather than killing it: output discarded, wait abandoned, process left running. What the spike
+delivered in place of the number is six requirements — FR-5.6 through FR-5.11 — and those are what
+shape this feature. The stage order (P0 before P2) still holds, but as sequencing rather than as a
+blocker.
 
 Everything underneath is identical everywhere: the node, the channels, the wire. What differs
 is how each tool can be made to notice something. That difference is confined to one small
@@ -1985,15 +2012,16 @@ The waiting must be free. A shell process sitting on a connection costs nothing;
 asked to check repeatedly costs money forever. Any adapter that keeps the model in a loop
 fails the contract regardless of whether it works.
 
-Two adapters ship. **Claude Code** can hold a long-lived subscription that streams events
-into a session, including while it waits on the user. That mechanism is **first-hand, not
-cited** — taken from the tool's own runtime capability description rather than from any
-published document, so it is absent from the source registry and its **proof is deferred to
-the spike** (§8). No host is a proven wake; this is simply the one whose mechanism is
-understood in the most detail, which is exactly why
-the spike tests it first. **Cursor** cannot be pushed to at all; its only way in is a hook that fires when a
-turn ends and can submit the next message. Making that a waker means letting the hook block
-until mail arrives, which is why the spike's measured number decides the shape here.
+Two adapters ship, and **both are now demonstrated rather than argued for.** **Claude Code** can
+hold a long-lived subscription that streams events into a session, including while it waits on the
+user. That mechanism description remains **first-hand, not cited** — taken from the tool's own
+runtime capability description rather than any published document, so it is absent from the source
+registry — but the wake itself is measured: an idle session acted on an arriving message with no
+human action (§8). **Cursor** cannot be pushed to at all, and its documentation says so plainly;
+its only way in is a hook that fires when a turn ends and can submit the next message. Letting that
+hook block until mail arrives **works**, in every run where the block stayed inside the configured
+timeout. So the sourcing asymmetry between the two hosts survives, and the capability gap between
+them does not.
 
 Two paths must both work. **Idle** — a turn is produced on arrival. **Busy** — messages
 accumulate and are handed over at the next turn boundary. Neither loses anything; the busy
@@ -2276,8 +2304,9 @@ nothing reports an error.
       interoperate normally.
 - [ ] Given two nodes differing by major version, when they connect, then the handshake fails
       with an explicit error and no partial connection is established.
-- [ ] Given a machine on the network, when a session lists its chats, then it sees the chats
-      that machine hosts and their members.
+- [ ] Given a machine on the network, when a session lists what is there, then it sees that
+      machine's agents and their members — **and not "the channels that machine hosts"**, because no
+      machine hosts a channel any more (FR-3.2). A channel appears wherever it has a member.
 
 ### Feature 005 — Directed Messages, Retention and Visibility
 
@@ -2336,7 +2365,7 @@ the place every live member has read up to — says when it actually goes. A mes
 a colleague who is simply slow, or away for the afternoon, is still there.
 
 **Reaping is the one exception, and it is the point of reaping.** A member given up for gone
-stops counting toward the trim point, so a message only that member never read becomes
+stops counting toward the trim point, so a message only that member never acknowledged becomes
 removable. The guarantee is bounded, not absolute: a message survives as long as some
 un-reaped member still has not read it — which by default means about a day past the last
 sign of life, not forever.
@@ -2359,7 +2388,7 @@ abandoned session would pin its channel's log indefinitely.
 
 **Reaped is not the same as stale.** Stale (30 min) is a display state and releases nothing.
 Reaped (24 h) is what actually unblocks cleanup: what is released is the member's hold on the
-trim point, so messages only it never read do then become removable. Its **name** is not
+trim point, so messages only it never acknowledged do then become removable. Its **name** is not
 destroyed — re-registering it is accepted at any time.
 
 One consequence is accepted rather than hidden: a channel holding unread messages for a crashed
