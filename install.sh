@@ -727,6 +727,32 @@ if [[ "$_INSTALL_MODE" == "BOOTSTRAP" ]]; then
         done
     fi
 
+    # Stage the agent chat node. Same single-source rule and same reason as the dashboard
+    # block above: the curated file set is read from chat-node/MANIFEST (shared with
+    # install.ps1, vendor.js, vendor.py and release.sh; guarded by
+    # tests/canonical/test-chat-node-manifest.sh), never a copy hand-maintained here. The
+    # node ships inside the aid payload so there is nothing to fetch at chat time.
+    _BOOTSTRAP_CHATNODE_SRC="${SCRIPT_DIR}/chat-node"
+    if [[ -n "${_AID_CLI_BUNDLE_EXTRACT_DIR:-}" ]]; then
+        _BOOTSTRAP_CHATNODE_SRC="${_AID_CLI_BUNDLE_EXTRACT_DIR}/chat-node"
+    fi
+    _CHATNODE_FILES=()
+    if [[ -f "${_BOOTSTRAP_CHATNODE_SRC}/MANIFEST" ]]; then
+        while IFS= read -r _mline || [[ -n "$_mline" ]]; do
+            _mline="${_mline%%#*}"
+            _mline="${_mline#"${_mline%%[![:space:]]*}"}"
+            _mline="${_mline%"${_mline##*[![:space:]]}"}"
+            [[ -n "$_mline" ]] && _CHATNODE_FILES+=("$_mline")
+        done < "${_BOOTSTRAP_CHATNODE_SRC}/MANIFEST"
+    fi
+    if [[ -d "$_BOOTSTRAP_CHATNODE_SRC" && ${#_CHATNODE_FILES[@]} -gt 0 ]]; then
+        for _cf in "${_CHATNODE_FILES[@]}"; do
+            _cf_src="${_BOOTSTRAP_CHATNODE_SRC}/${_cf}"
+            _cf_dst="${_BOOTSTRAP_STAGE}/chat-node/${_cf}"
+            [[ -f "$_cf_src" ]] && { mkdir -p "$(dirname "$_cf_dst")"; cp "$_cf_src" "$_cf_dst"; }
+        done
+    fi
+
     # Pre-copy sanity: verify the source lib contains the required sentinel function.
     # This catches a bad AID_LIB_PATH (empty file, truncated download, wrong file).
     if ! grep -qF 'aid_status_body' "$_SOURCED_LIB_FILE" 2>/dev/null; then

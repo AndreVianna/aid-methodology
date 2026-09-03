@@ -22,6 +22,7 @@ packages/npm/bin/aid.ps1
 packages/npm/bin/aid.cmd
 packages/npm/lib/
 packages/npm/dashboard/
+packages/npm/chat-node/
 packages/npm/VERSION
 
 # PyPI package vendored copies (generated at build time by scripts/vendor.py; not committed)

@@ -737,6 +737,43 @@ if ($script:_InstallMode -eq 'BOOTSTRAP') {
         }
     }
 
+    # Install the agent chat node. Same single-source rule and same reason as the dashboard
+    # block above: the curated file set is read from chat-node/MANIFEST (shared with
+    # install.sh, vendor.js, vendor.py and release.sh; guarded by
+    # tests/canonical/test-chat-node-manifest.sh), never a copy hand-maintained here. The
+    # node ships inside the aid payload so there is nothing to fetch at chat time.
+    $bsNodeSrc = $null
+    if ($bsCliBundleExtract) {
+        $bsNodeSrc = Join-Path $bsCliBundleExtract 'chat-node'
+    } elseif (-not [string]::IsNullOrEmpty($script:_InstallPs1Path)) {
+        $bsNodeSrc = Join-Path (Split-Path -Parent $script:_InstallPs1Path) 'chat-node'
+    }
+    if ($bsNodeSrc -and (Test-Path $bsNodeSrc -PathType Container)) {
+        $bsNodeManifest = Join-Path $bsNodeSrc 'MANIFEST'
+        $bsNodeFiles = @()
+        if (Test-Path $bsNodeManifest -PathType Leaf) {
+            foreach ($bsLine in (Get-Content -LiteralPath $bsNodeManifest -Encoding utf8)) {
+                $bsLine = ($bsLine -replace '#.*$', '').Trim()
+                if ($bsLine) { $bsNodeFiles += ($bsLine -replace '/', '\') }
+            }
+        }
+        if ($bsNodeFiles.Count -gt 0) {
+            # Clean-replace the node so upgrades never leave old bits behind.
+            $bsNodeDest = Join-Path $aidHome 'chat-node'
+            if (Test-Path $bsNodeDest -PathType Container) {
+                Remove-Item -LiteralPath $bsNodeDest -Recurse -Force -ErrorAction SilentlyContinue
+            }
+            foreach ($bsNf in $bsNodeFiles) {
+                $bsNfSrc = Join-Path $bsNodeSrc $bsNf
+                $bsNfDst = Join-Path $bsNodeDest $bsNf
+                if (Test-Path $bsNfSrc -PathType Leaf) {
+                    New-Item -ItemType Directory -Path (Split-Path -Parent $bsNfDst) -Force | Out-Null
+                    Copy-Item -LiteralPath $bsNfSrc -Destination $bsNfDst -Force
+                }
+            }
+        }
+    }
+
     # Pre-copy sanity: verify the source lib contains the required sentinel function.
     # This catches a bad AID_LIB_PATH (empty file, truncated download, wrong file).
     $bsLibSrcContent = Get-Content -LiteralPath $bsLibSrc -Raw -Encoding utf8 -ErrorAction SilentlyContinue
