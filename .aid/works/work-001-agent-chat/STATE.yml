@@ -116,7 +116,7 @@ lifecycle: Running
 # [W] Describe | Define | Specify | Plan | Detail | Execute
 phase: Plan
 # [W] aid-{skill} | none
-active_skill: aid-plan
+active_skill: none
 # [W]
 updated: '2026-09-03T18:50:12Z'
 # [W] set only when lifecycle = Paused-Awaiting-Input
@@ -826,6 +826,29 @@ review_history:
       AC-33 for FR-2.4, which no criterion reached, and AC-34 for the connect request's cross-machine
       cases, which AC-28 had assigned to a feature shipping a stage before federation exists.
     applied_to: 'REQUIREMENTS.md (section 11 Features 002-005 Technical Specification; section 5 FR-4.4; section 6 Limits; section 9 AC-28, AC-33, AC-34; section 10 P1/P3); .aid/.temp/review-pending/specs-cycle{1,2,3,4}.md'
+  - date: '2026-09-03'
+    event: 'Plan: five deliveries with Feature 002 split across the first two; 2 cycles, A+'
+    outcome: 'A+ (8 findings across 2 cycles, all Fixed)'
+    notes: >-
+      Section 10 already fixed the stage order, so sequence was not this phase to decide. What it
+      decided is the one thing section 10 left open -- whether the keystone fits in one delivery. It
+      does not, and finding the split line required correcting a claim I had made wrongly and
+      repeated into the requirements: that the connect request is the only way two agents ever meet.
+      It is not. The local channel listing in FR-3.1 plus the join in FR-3.4 let one agent open a
+      channel and another find it by name, so the hub plane is separable and the split does not cross
+      the store schema -- which is the coupling that broke the predecessor decomposition. The claim
+      was corrected in section 10 P1, in the Feature 002 note, and annotated in a lifecycle_history
+      entry where it had also been recorded as fact. Deliveries: 001 a hub that holds a conversation
+      (pull-only, and a real product because FR-5.3 makes the pull floor fully usable), 002 finding a
+      peer, 003 the wake, 004 federation, 005 directed messages and retention. No delivery for the
+      completed spike, at the stakeholder call; AC-20 is recorded as satisfied outside the sequence so
+      coverage stays checkable. Cycle 2 caught a hole one of my own fixes opened: AC-28 wake half was
+      deferred to delivery-003 with the claim AC-1 re-tests it, and AC-1 does not -- it exercises a
+      MESSAGE through the wake and would pass with the connect path unwired. FR-9.5 now splits across
+      the two deliveries and delivery-003 carries its own connect-outcome gate criterion. Verified
+      independently: 31 criteria claimed across five deliveries plus AC-20 outside, none unassigned,
+      none twice, dependency graph linear and acyclic.
+    applied_to: 'PLAN.md (new); deliveries/delivery-00{1..5}/STATE.yml (new, Pending-Spec); REQUIREMENTS.md (section 10 P1 row, Feature 002 note); .aid/knowledge/tech-debt.md (W1-1); .aid/.temp/review-pending/plan-cycle{1,2}.md'
 # [A] written by the orchestrator on the work's active branch (single
 #     writer). Append-only audit trail of phase transitions and gate
 #     approvals, newest LAST (append to bottom).
@@ -858,6 +881,10 @@ lifecycle_history:
     event: 'Specify COMPLETE -- all five features Ready at A+'
     grade: A+
     notes: 'Features 002 to 005 specified and gated over four adversarial cycles (17, 5, 4 and 2 findings, all Fixed; the fourth found nothing above LOW and no recurrence). The numbered pipeline ends at Execute, and the next step is /aid-plan -- which is also the place to slice Feature 002 if 15 of 32 criteria proves too large for one delivery, since every candidate split line runs through the store schema and re-drawing the feature boundary is what failed in the predecessor. user_approved remains no: the A+ is the review gate, and the human gate is unclaimed because a substantial number of design decisions inside these specifications were taken on the stakeholder behalf and flagged for veto rather than ratified.'
+  - date: '2026-09-03'
+    event: 'Plan COMPLETE -- five deliveries at A+; numbered pipeline reaches Detail'
+    grade: A+
+    notes: 'PLAN.md and five deliveries/delivery-NNN/STATE.yml written at delivery_state Pending-Spec. Feature 002 is split across delivery-001 and delivery-002 -- a delivery-level split, not a redrawn feature boundary, and the escape route if the code does not divide as cleanly as the columns is to fold the two back together, since both are stage P1 and both are Feature 002. Also filed W1-1 in the tech-debt ledger: the pipeline state write that opens aid-plan corrupted this very file, because writeback-state.sh clears a folded scalar by rewriting only its key line and orphaning the body. Repaired by hand. Next: /aid-detail. user_approved remains no -- the human gate over the amended requirements, the four specifications and this plan is still unclaimed.'
 
 # [A] aid-deploy only; one entry per delivery (never derived from child
 #     files; aid-deploy is the sole author):
