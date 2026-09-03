@@ -112,27 +112,15 @@ minimum_grade: A
 # [W] 'yes' | 'no' -- quoted, see NFR-2 / D-5
 user_approved: 'no'
 # [W] Running | Paused-Awaiting-Input | Blocked | Completed | Canceled
-lifecycle: Paused-Awaiting-Input
+lifecycle: Running
 # [W] Describe | Define | Specify | Plan | Detail | Execute
-phase: Specify
+phase: Plan
 # [W] aid-{skill} | none
-active_skill: none
+active_skill: aid-plan
 # [W]
-updated: '2026-09-03'
+updated: '2026-09-03T18:50:12Z'
 # [W] set only when lifecycle = Paused-Awaiting-Input
-pause_reason: >-
-  SPECIFY IS COMPLETE. All five features are Ready at A+. Features 002 to 005 carry technical
-  specifications that survived four adversarial cycles -- 17, 5, 4 and 2 findings, every one Fixed,
-  with three recurrences of this document's characteristic defect (a fix applied in one place while
-  the same claim survived in another) caught in cycles 2 and 3. Cycle 4 found nothing above LOW and
-  no recurrence. Verified independently rather than from the document's own claims: 32 live criteria
-  each in the section 10 stage table exactly once and owned by exactly one feature; 56 functional
-  sub-requirements each mapped. AWAITING THE HUMAN GATE: user_approved is still no, because the
-  stakeholder has not read the amended requirements or the four specifications end to end, and a
-  substantial number of design decisions inside them were taken on the stakeholder's behalf and
-  flagged for veto rather than ratified. Next after approval: /aid-plan, which is also where Feature
-  002 gets sliced across deliveries if 15 of 32 criteria proves too large for one pass. Still owed
-  but blocking nothing: the operator's spike teardown.
+pause_reason: --
 # [W] set only when lifecycle = Blocked
 block_reason: --
 # [W] e.g. IMPEDIMENT-task-NNN.md, or the failed gate
