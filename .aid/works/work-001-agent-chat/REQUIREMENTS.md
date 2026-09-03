@@ -7,7 +7,7 @@
 > carried verbatim; §5 carries FR-0–FR-7 with FR-8 withdrawn and deliberately not
 > renumbered; §9 was renumbered to a gapless **AC-1–AC-22** at seeding, since a fresh work has no
 > citation history to protect and the criteria deleted during the interview or withdrawn
-> with FR-8 needed no struck rows. **It has since grown to AC-1–AC-33 and is no longer
+> with FR-8 needed no struck rows. **It has since grown to AC-1–AC-34 and is no longer
 > gapless**: AC-19 and AC-21 are retired rows, kept precisely so that references to them
 > resolve, which is the citation history this work now does have. §9 is the authority for the
 > live set; this bullet records only where the numbering started.
@@ -793,12 +793,13 @@ any host tool guarantees a version.**
 | AC-25 | **An over-running wake leaves nothing behind.** After a wake whose block would exceed the host's hook timeout, no adapter process survives and the node's count of connected waiters returns to what it was. Verified by process and connection count, not by absence of error, since the host reports nothing in this case (FR-5.8) |
 | AC-26 | **A host payload carrying a byte-order mark is read, not rejected.** The adapter parses a stop payload prefixed with a UTF-8 BOM and acts on its contents (FR-5.9) |
 | AC-27 | **The roster shows who can be reached.** A session asks its hub who else is there and gets, for each agent, its name, host tool, declared capabilities, liveness, and whether it is **available** — registered, not stale, and not already in a channel. Agents on other machines appear in the same answer once federation exists, and a session in no channel appears in every other agent's roster (FR-9.1, FR-9.2) |
-| AC-28 | **A directed connect request is answered from state, immediately, with no human in the path.** Sent at an **available** agent, it joins that agent to the named channel and the agent learns so on its next wake. Sent at an agent **already in a channel**, or stale, or unknown, it **fails at once with an explicit reason**. No approval prompt is raised at either end, nothing is left pending, and there is no accept, decline, or expiry to observe (FR-9.3). Verified across machines as well as locally, in both of its cross-machine cases: an **unreachable** peer makes the request fail rather than queue (FR-9.4), and a peer that has **never seen the named channel** creates its own replica and joins its agent rather than failing, because a channel is a name and there is no authority to consult (FR-9.7) |
+| AC-28 | **A directed connect request is answered from state, immediately, with no human in the path.** Sent at an **available** agent, it joins that agent to the named channel and the agent learns so on its next wake. Sent at an agent **already in a channel**, or stale, or unknown, it **fails at once with an explicit reason**. No approval prompt is raised at either end, nothing is left pending, and there is no accept, decline, or expiry to observe (FR-9.3). **Verified on one machine; the cross-machine cases are AC-34**, because they need federation and this criterion must pass a stage before federation exists |
 | AC-29 | **One channel at a time, and an agent opens its own.** A session with no channel opens one and is in it. A session already in a channel that tries to join another is **refused with an explicit error**, and succeeds after leaving. A session's own `leave` removes only itself, and the channel survives its creator leaving while another member remains (FR-3.3, FR-3.4) |
 | AC-30 | **A channel ends when its last member is gone — and only then.** It closes when the last member leaves explicitly, and it closes when the last member is **reaped**; its log is then discarded. It does **not** close because it fell quiet, because its creator left, or because a member's connection dropped: a dropped connection is stale, then reaped (FR-2.3, FR-3.3). The absence of an inactivity close is part of the criterion — a channel whose two members both wait past any plausible timer is still there |
 | AC-31 | **Per-speaker order holds; no cross-speaker order is claimed.** Every member receives one speaker's messages in the order that speaker sent them. The criterion asserts **nothing** about the relative order of two speakers' messages, and a run in which two members observe two speakers in different relative orders is **conformant, not a defect** — which is why a reply is matched by `reply_to` rather than by position (§6 Ordering, AC-8) |
 | AC-32 | **Delivered is not acknowledged.** A message handed toward a session that never acknowledged it is **presented again**, and the recipient dedupes it on the idempotency key. Demonstrated by interrupting a session between the hand-off and its acknowledgement, after which the message is still there — the case that would otherwise silently turn at-least-once into at-most-once (FR-4.4, FR-4.5) |
 | AC-33 | **Identity is the product's own.** A session's conversation id is one the product minted: it is not equal to, not derived from, and not invalidated by any value the host supplied, and a session registered on a host that supplies such a value **still gets a product-minted id**, with the host's value recorded only as correlation metadata that nothing keys on. Verified on the one host that supplies one, since on the other four there is nothing to be tempted by (FR-2.4) |
+| AC-34 | **The connect request behaves the same across machines, in both of its cross-machine cases.** A request naming an agent on another machine is relayed, answered against that machine's state at the moment the relay arrives, and returns the same outcomes as a local one. An **unreachable** peer makes the request **fail rather than queue** (FR-9.4) — messages are store-and-forwarded and requests are not, and the asymmetry is the criterion, not an omission. A peer that has **never seen the named channel** creates its own replica and joins its agent rather than failing, because a channel is a name and there is no authority to consult (FR-9.7) |
 
 > **Every criterion above is settled; none is pending.** Most are stakeholder-ratified
 > outright. Nine arrived from a quality check in an earlier interview and were unratified on
@@ -850,7 +851,7 @@ exception and is meant to be** — it produces answers, not product.
 | **P0 — POC** | Four tests against a throwaway stub node (one endpoint that waits, then returns a message), on **Claude Code and Cursor only**: (1) idle Claude Code session acts on a message with no human action; (2) idle Cursor session does the same via a blocking `stop` hook; (3) **what bounds how long a Cursor `stop` hook may block, and what the host does at that bound**; (4) the same exchange across two machines on the LAN | AC-20 — the single unvalidated assumption |
 | **P1 — Skeleton** | Node lifecycle + CLI + registration by stable name + **the hub plane** (roster and the directed connect request, FR-9) + an agent opening / joining / leaving its **one** channel and that channel's automatic end (FR-3.3, FR-3.4) + the operator's **eviction** of a session from its channel (FR-7.2) + the local half of listing (FR-3.1) + durable `send`/`inbox`/`ack` with the two positions (FR-4.4) and fan-out to every member, **pull only** (FR-5.3 — the pull floor ships here, not at P2). **The hub plane lands here and not later, because nothing else can create a channel:** with one channel per agent and no all-call, the connect request is the only way two agents ever meet (FR-9), so P2's headline exchange cannot be set up without it | AC-3, AC-6, AC-7, AC-8, AC-9, AC-10, AC-13, AC-22, AC-27, AC-28, AC-29, AC-30, AC-31, AC-32, AC-33 |
 | **P2 — The wake** | Subscriber and re-arm (FR-5.1, FR-5.2, FR-5.4, FR-5.5 — FR-5.3's pull floor already shipped at P1), and the **rendered chat skill** (FR-0.2, FR-0.4 — FR-0.1 already shipped at P1), which replaces the withdrawn MCP façade. **FR-0.3 completes here, not at P1:** P1 delivered its administration and message-plane halves, but FR-0.3 also requires the CLI to carry the subscriber, which does not exist until this stage | **AC-1 (headline — same machine, cross-tool)**, AC-12, AC-15, AC-23, AC-24, AC-25, AC-26 |
-| **P3 — Federation** | Discovery, handshake, version negotiation (FR-6.1–6.4), **channel replication and queue-on-unreachable-peer** (FR-6.3), the **federated roster and cross-machine connect request** (FR-9.4), the network half of listing (FR-3.1), and **the durability of the inter-node link itself** (FR-6.5 — the one link no measurement covers, and it now carries presence and replication rather than occasional requests). **Discovery is layered, and the layering is matched by what §4 promises:** the guaranteed path (a static peer list plus heartbeat) satisfies AC-4, and it is also the whole of the promise — §4 offers zero-configuration discovery as a convenience where the network permits and commits to it nowhere | **AC-2 (the target case)**, AC-4, AC-5, AC-16 |
+| **P3 — Federation** | Discovery, handshake, version negotiation (FR-6.1–6.4), **channel replication and queue-on-unreachable-peer** (FR-6.3), the **federated roster and cross-machine connect request** (FR-9.4), the network half of listing (FR-3.1), and **the durability of the inter-node link itself** (FR-6.5 — the one link no measurement covers, and it now carries presence and replication rather than occasional requests). **Discovery is layered, and the layering is matched by what §4 promises:** the guaranteed path (a static peer list plus heartbeat) satisfies AC-4, and it is also the whole of the promise — §4 offers zero-configuration discovery as a convenience where the network permits and commits to it nowhere | **AC-2 (the target case)**, AC-4, AC-5, AC-16, AC-34 |
 | **P4 — Completeness** | Mention and whisper, audit/operator visibility, retention enforcement. Channels of more than two need nothing new here — fan-out to every member is P1 (AC-13); what P4 adds is **addressing within** a larger channel, plus the per-hub trim rule (§6 Retention) | AC-11, AC-14, AC-17, AC-18 |
 
 **Every stage is required. None is optional.** The stages are a delivery *order*, not a
@@ -912,11 +913,11 @@ expected to reuse the same adapter contract (FR-5.2), but none of the three gate
 One `###` subsection per feature — a decomposition of §5 into an independently implementable
 unit, not a second place to state requirements. Every §5 functional requirement maps to at
 least one feature, and **every §9 criterion is owned by exactly one feature**, so both are
-checkable. §9 holds **AC-1–AC-33**, of which **thirty-one are live** — AC-19 and AC-21 are retired rows kept
+checkable. §9 holds **AC-1–AC-34**, of which **thirty-two are live** — AC-19 and AC-21 are retired rows kept
 so that references to them resolve, and are owned by nobody, which is why the range is **not**
 gapless. §9 is the authority for that set and this preamble restates it; where the two ever
 disagree, §9 wins and this line is the defect. The ownership below accounts
-for all thirty-one live criteria, once each, matching §10 stage for stage.
+for all thirty-two live criteria, once each, matching §10 stage for stage.
 
 **Five features, one per §10 stage, and the count is a floor rather than a preference.** Two
 things set it. **The spike cannot merge into anything:** AC-20 requires that no code from it be
@@ -1594,7 +1595,7 @@ obligation; it does not pre-write the entry.
 > removes that coupling instead of managing it.
 >
 > **It is by a distance the largest feature here, and that is stated rather than hidden.** Fifteen
-> of the thirty-one live criteria. It grew when the **hub plane** landed at stage P1, and that placement
+> of the thirty-two live criteria. It grew when the **hub plane** landed at stage P1, and that placement
 > is forced rather than chosen: with one channel per agent and no all-call, the connect request is
 > the only way two agents ever meet (FR-9), so nothing downstream can be exercised without it.
 > Every candidate split line still runs through the store schema, which is what went wrong before,
@@ -1842,15 +1843,16 @@ CREATE TABLE session (
   registered_at         INTEGER NOT NULL,               -- epoch ms
   last_heartbeat_at     INTEGER NOT NULL,
   channel_id            INTEGER REFERENCES channel(id) ON DELETE SET NULL,
-  delivered_seq         INTEGER NOT NULL DEFAULT 0,     -- FR-4.4
-  acked_seq             INTEGER NOT NULL DEFAULT 0
+  delivered_seq         INTEGER NOT NULL DEFAULT 0,     -- FR-4.4; 0 means "nothing yet"
+  acked_seq             INTEGER NOT NULL DEFAULT 0,
+  next_sender_seq       INTEGER NOT NULL DEFAULT 1      -- this session's own counter, reset on join
 );
 
 CREATE TABLE channel (
   id          INTEGER PRIMARY KEY AUTOINCREMENT,
   name        TEXT    NOT NULL UNIQUE,   -- one name, no machine part (FR-3.2)
   opened_at   INTEGER NOT NULL,
-  next_seq    INTEGER NOT NULL DEFAULT 0 -- this hub's arrival counter for this channel
+  next_seq    INTEGER NOT NULL DEFAULT 1 -- this hub's arrival counter; FIRST arrival_seq IS 1
 );
 
 CREATE TABLE message (
@@ -1871,12 +1873,19 @@ CREATE TABLE message (
   received_at      INTEGER NOT NULL,     -- this hub's clock
   UNIQUE (channel_id, arrival_seq),
   UNIQUE (channel_id, sender_machine, sender_name, sender_seq),
-  UNIQUE (channel_id, idempotency_key)
+  UNIQUE (channel_id, sender_machine, sender_name, idempotency_key)
 );
 
 CREATE INDEX message_read     ON message (channel_id, arrival_seq);
 CREATE INDEX session_liveness ON session (last_heartbeat_at);
 ```
+
+> **Sequences start at 1 and positions start at 0, and the pairing is load-bearing.** A position
+> means *the last thing I have*, so `0` has to mean *nothing*. If `arrival_seq` also started at 0
+> the first message of every channel would sit at the position that means "nothing", and the read
+> predicate `arrival_seq > delivered_seq` would exclude it from every query for every member,
+> forever. The same pairing is what makes Feature 005's trim safe when nobody has acknowledged
+> anything: `min(acked_seq)` is then `0`, and `arrival_seq <= 0` selects no rows.
 
 **Five schema decisions carry requirements, and each is stated here because the schema is where
 they are either honoured or quietly lost.**
@@ -1914,15 +1923,26 @@ specifies and is the only thing that touches the store.
 
 1. Resolve the caller by name. Unknown name → refusal `not_registered`.
 2. Read the caller's `channel_id`. Null → refusal `no_channel` (FR-4.1).
-3. Count the channel's other members. Zero → refusal `solo_channel` (FR-4.1, FR-3 preamble). *This
-   is the check that stops a message being accepted with nobody to receive it.*
+3. Count the channel's other members — **local and remote both**. Zero → refusal `solo_channel`
+   (FR-4.1, FR-3 preamble). *This is the check that stops a message being accepted with nobody to
+   receive it.* At stage P1 there are no remote members and the count is over `session`; from
+   stage P3 it also counts Feature 004's `channel_member`, and **the check is written that way from
+   the start** rather than being local-only and quietly wrong the day federation lands.
 4. Count the maximum unread depth across local members. Over the bound → refusal `overflow`
    (`§6`, ID-9). Judged on local knowledge only, because this hub holds no other hub's positions.
-5. In one transaction: take `channel.next_seq`, insert the message with that `arrival_seq` and the
-   sender's next `sender_seq`, bump `next_seq`. A duplicate `idempotency_key` collides on the
-   unique index and is answered as success with the existing message's id — at-least-once means a
-   retry must be safe, not that it must be visible.
-6. Wake every local waiter on that channel (below). Hand off to replication where Feature 004 has
+5. In one transaction: take `channel.next_seq` as this message's `arrival_seq` and bump it; take
+   the sender's `next_sender_seq` as its `sender_seq` and bump that. **Both counters are columns**
+   (`channel.next_seq`, `session.next_sender_seq`) rather than a `MAX(...)` over the log, because a
+   `MAX` over a trimmed log restarts at a number already used.
+6. **The idempotency key is the caller's if given and minted by the node if not** — FR-4.1 marks it
+   optional, and a `NOT NULL` column with no generation rule would turn an omitted optional into a
+   constraint violation. A duplicate key collides on the unique index and is **answered as success,
+   returning the existing message's `arrival_seq`**, so a retrying caller receives the same answer
+   as the original send and can tell it was absorbed by comparing what it got back. At-least-once
+   means a retry must be *safe*, not that it must be *visible*. **The key is scoped to the sender**,
+   not to the channel: two senders numbering their own messages from 1 must not silently swallow
+   each other's.
+7. Wake every local waiter on that channel (below). Hand off to replication where Feature 004 has
    built it; until then the channel is local by construction.
 
 **The read path** is where per-speaker order is produced:
@@ -1930,14 +1950,27 @@ specifies and is the only thing that touches the store.
 1. Select messages in `arrival_seq` order after the caller's baseline — `acked_seq` by default, or
    the caller's `cursor` override (FR-4.3).
 2. **Reorder within each sender to `sender_seq` order**, holding back any message whose immediate
-   `sender_seq` predecessor has not arrived. A gap means a message is in flight, not lost; holding
-   it back is what makes FR-4.3's answer per-speaker FIFO rather than arrival order. Nothing is
-   held back across senders, which is precisely why no cross-speaker order is promised.
-3. Drop whispers not addressed to the caller (Feature 005 fills the rule; the read path reserves
-   the point at which it applies).
-4. **Advance `delivered_seq`** to the last message returned — *unless* a `cursor` override was
-   given, in which case nothing moves (FR-4.3). This is the pull path's hand-off, and naming it
-   here is what keeps at-least-once meaningful where there is no adapter (FR-4.4).
+   `sender_seq` predecessor has not arrived. A gap normally means a message is in flight, not lost;
+   holding it back is what makes FR-4.3's answer per-speaker FIFO rather than arrival order.
+   Nothing is held back across senders, which is precisely why no cross-speaker order is promised.
+3. **A gap is held for a bounded grace period and then abandoned.** Without a bound the rule does
+   not terminate: a predecessor can be permanently absent — trimmed on the sending hub before it
+   replicated, or lost with a hub that never came back — and every later message from that sender
+   would be held on this hub **forever**, silently. So a gap older than the configured
+   `gap_grace` (default 60 s, a limit like any other and therefore configurable) is declared
+   permanent: the successor is released and the skip is recorded in the audit log. Losing a message
+   is bad; losing a speaker is worse, and doing it with no error at all is worst.
+4. Drop whispers not addressed to the caller (Feature 005 fills the rule; the read path reserves
+   the point at which it applies). **Filtering happens after ordering and never creates a gap** —
+   the hold-back rule reads the stored sequence, not the caller's visible one, so a whisper the
+   caller cannot see does not stall that sender.
+5. **Advance `delivered_seq` to the end of the contiguous prefix**, which is one below the first
+   held-back message, or the highest `arrival_seq` returned when nothing was held back. *Not* to
+   the last message returned: a held-back message has a **lower** `arrival_seq` than the ones
+   returned after it, so advancing past it would put it permanently behind the position and it
+   would never be delivered at all. Nothing moves when a `cursor` override was given (FR-4.3).
+   This is the pull path's hand-off, and naming it here is what keeps at-least-once meaningful
+   where there is no adapter (FR-4.4).
 
 ##### Layers & Components
 
@@ -1975,7 +2008,7 @@ membership (FR-6.2, `§4`), and stating that here stops a later reader assuming 
 | join | `POST /channel/join` | Joins an open channel at its head; refuses if the caller is in a channel |
 | leave | `POST /channel/leave` | Leaves; closes the channel if it was the last member (FR-3.3) |
 | connect | `POST /connect` | The directed request, answered from state (FR-9.3) |
-| send | `POST /messages` | Per the send path above |
+| send | `POST /messages` | Per the send path above; mints an `idempotency_key` when the caller omits it |
 | inbox | `GET /messages` | Per the read path above |
 | ack | `POST /messages/ack` | Advances `acked_seq`; refuses a cursor ahead of `delivered_seq` (FR-4.4) |
 | subscribe | `GET /subscribe` | The held wait; returns on a message, a connect outcome, or timeout (FR-5.1, FR-9.5) |
@@ -1985,9 +2018,15 @@ membership (FR-6.2, `§4`), and stating that here stops a later reader assuming 
 threshold, and `channel_id IS NULL`. Storing it would create a second source of truth that a
 missed heartbeat could desynchronise.
 
+**Joining sets both positions to the channel's head, and that is what implements FR-4.2.** Every
+path that puts a session into a channel — `open`, `join`, and the connect request — sets
+`delivered_seq = acked_seq = channel.next_seq - 1` in the same transaction. Leaving `DEFAULT 0`
+would hand a new member the channel's entire backlog, which is the opposite of the rule. It also
+sets `next_sender_seq = 1`, so a session's own numbering restarts per channel.
+
 **The connect request is one transaction, and its outcome is a row, not an event.** The hub reads
-the target's state and, where the target is available, sets its `channel_id` in the same
-transaction that records the outcome. That record is what FR-9.5 means by durable state: a target
+the target's state and, where the target is available, sets its `channel_id` and its positions in
+the same transaction that records the outcome. That record is what FR-9.5 means by durable state: a target
 between arms is already in the channel, and its next call of any kind — subscribe, inbox, heartbeat —
 reports it. Nothing is queued and nothing can be missed, because there is no event to lose.
 
@@ -2042,6 +2081,8 @@ indistinguishable from a crash.
 | `target_is_self` | connect | A session may not name itself (FR-9.3) |
 | `ack_ahead_of_delivered` | ack | FR-4.4 |
 | `channel_unknown` | join | No open channel of that name on this hub |
+| `whisper_target_not_member` | send | `whisper_to` names somebody who is not in the channel (Feature 005) |
+| `mention_and_whisper` | send | Both set on one message; they are mutually exclusive (FR-4.1) |
 
 The reason is a stable token on stderr with a human sentence after it, matching the repository's
 existing "stdout carries the result, stderr carries diagnostics" rule. A refusal is not a stack
@@ -2301,8 +2342,10 @@ expecting its Cursor half to be shaped by a measured number — how long a `stop
 before the host kills it. **There is no such number.** The bound is the hook's own configured
 `timeout`, which the operator writes (FR-5.8), and on passing it the host **abandons** the hook
 rather than killing it: output discarded, wait abandoned, process left running. What the spike
-delivered in place of the number is six requirements — FR-5.6 through FR-5.11 — and those are what
-shape this feature. The stage order (P0 before P2) still holds, but as sequencing rather than as a
+delivered in place of the number is **five** requirements, FR-5.6 through FR-5.10, and those are
+what shape this feature. (FR-5.11, the node staying host-blind, is often listed with them and did
+**not** come from the spike — it came from the architecture review, and it constrains Feature 002's
+store as much as this feature's adapters.) The stage order (P0 before P2) still holds, but as sequencing rather than as a
 blocker.
 
 Everything underneath is identical everywhere: the node, the channels, the wire. What differs
@@ -2471,8 +2514,16 @@ left running with its socket still open** (F7). Nothing in the host reports it. 
   instructions; the **adapter is told it** and bounds its block by what it was told.
 - **It must never inherit the platform default.** Measured under 60 s on one host, against this
   product's own 30 s long-poll — at the default it does not work, and it fails silently.
-- Where the adapter is told nothing, it falls back to a block short enough to be safe under the
-  shortest default known, accepting a shorter wait over a wake that never arrives.
+- **How it is told is a flag on the invocation the operator already writes**: the hook command is
+  `aid chat subscribe --host-timeout <seconds>`, and `<seconds>` is the same number the operator
+  puts in the host's own `timeout` field. One value, written once, in the one file the operator
+  owns — which is the only mechanism available given FR-0.4, since the product cannot read a file
+  it is forbidden to write. The adapter blocks for `min(long_poll_default, host_timeout - margin)`.
+- Where the flag is absent, it falls back to a block short enough to be safe under the shortest
+  default known, accepting a shorter wait over a wake that never arrives. It does **not** try to
+  discover the value: the host does not report it, and the spike established that inferring it from
+  behaviour means reading a configured number as a discovered constant, which is the error F7
+  corrected.
 - The node must treat its waiter count as a hint, not a fact: an abandoned hook leaves a waiter
   nobody is reading (Feature 002, waiter registry).
 
@@ -2549,11 +2600,14 @@ instrumentation was throwaway apparatus and none of it survives into the product
 
 ##### Performance
 
-No target (`§6`). Two measured figures are inputs, **and they are not comparable to each other**:
-about 3.7 s from a returned hook to a completed one-word reply on one host, about 7.5 s on the
-other for a turn that spawned an interpreter and made an HTTP round trip. Different actions, so
-they rank nothing. Anything deriving a timeout from them uses the **observed maximum with
-headroom** — the observed maximum rose as samples accumulated, and five samples bound no tail.
+No target (`§6`). Two measured figures are inputs, **and they are not comparable to each other**,
+because they time different things. On one host, **wake to the stop hook re-firing** — which is
+what proves a turn ran — averaged 3.740 s over five samples, with an observed **maximum of
+4.303 s**. On the other, **wake to the woken turn's shell command reaching the stub** was 7.581 s,
+a figure that includes spawning an interpreter and an HTTP round trip. Ranking the hosts would need
+the same action measured on both, and no such pair was run. Anything deriving a timeout from these
+uses the **observed maximum with headroom** — the maximum rose as samples accumulated, and five
+samples bound no tail.
 
 ##### Host configuration is the operator's, and this is a boundary rather than a preference
 
@@ -2651,7 +2705,7 @@ adapter degrades to the pull floor rather than blocking the product (FR-5.2, FR-
   §4 Scope; §6 Retention *(the per-hub trim rule's cross-machine consequence)*;
   §8 Assumptions *(cross-machine reach)*;
   §10 stage P3
-- **Criteria:** AC-2, AC-4, AC-5, AC-16  ← ids from §9; never restated here
+- **Criteria:** AC-2, AC-4, AC-5, AC-16, AC-34  ← ids from §9; never restated here
 
 > **This stage delivers the target case** — a developer in one tool on one machine exchanging
 > messages with a developer in another tool on another machine.
@@ -2754,8 +2808,31 @@ CREATE TABLE outbox (
 CREATE INDEX outbox_drain ON outbox (peer_id, id);
 ```
 
+```sql
+CREATE TABLE channel_member (
+  channel_id  INTEGER NOT NULL REFERENCES channel(id) ON DELETE CASCADE,
+  machine     TEXT    NOT NULL,   -- always a REMOTE machine; local members are session.channel_id
+  name        TEXT    NOT NULL,
+  joined_at   INTEGER NOT NULL,
+  PRIMARY KEY (channel_id, machine, name)
+);
+```
+
 `message` gains nothing: `sender_machine` was already there in Feature 002, put there for this
 stage rather than discovered at it.
+
+**`channel_member` answers the question replication cannot work without: which peers hold members
+of this channel.** Feature 002 could derive membership from `session.channel_id` because every
+member was local; across machines that derivation stops working, and a hub must be told. So a
+join, a leave, and a channel close are replicated as `outbox.kind = 'membership'` — a small record
+naming the channel, the machine, the member, and whether it arrived or left — and each hub keeps
+the remote half of the roll in this table. Two things then become computable that otherwise are
+not: **where to replicate a message** (the distinct machines in `channel_member`), and **whether a
+sender is alone** (Feature 002's `solo_channel` check, which counts local members *and* these).
+
+The table holds **only remote members**, deliberately. Mirroring local ones would create a second
+place for a fact `session.channel_id` already holds, and the two would drift the first time a
+transaction updated one and not the other.
 
 **There is no `remote_session` table.** The roster of agents on other machines is **not stored** —
 it is fetched from each reachable peer when asked and merged for the answer. Storing it would
@@ -2763,6 +2840,13 @@ create a second source of truth for liveness that no heartbeat maintains, and a 
 an agent is available is worse than a slow answer: FR-9.3 refuses a request against a target that
 is not available, and a lying roster would send an agent to ask for somebody who left an hour ago.
 This is the same reasoning that makes `available` computed rather than stored in Feature 002.
+
+**A roster answered while a peer is unreachable is partial, and says so.** The response carries the
+agents from every peer that answered, plus an explicit list of the peers that did not. It never
+silently omits an unreachable peer's agents, and it never fails outright because one peer is down:
+a silent omission would read as "nobody is there", which is the one answer that makes an agent stop
+looking. This is the roster's whole job — telling an agent who it might talk to — so an incomplete
+answer labelled incomplete is useful and an incomplete answer labelled complete is a lie.
 
 ##### Feature Flow
 
@@ -2774,7 +2858,7 @@ flowchart LR
 ```
 
 **Replication.** A hub that accepts a send delivers it to every peer holding a member of that
-channel: immediately where the peer is reachable, and into `outbox` where it is not (FR-6.3). The
+channel — the distinct machines in `channel_member` for that channel —: immediately where the peer is reachable, and into `outbox` where it is not (FR-6.3). The
 receiving hub assigns **its own** `arrival_seq` and applies its own uniqueness constraints, so a
 message replayed after a reconnect collides on `(channel_id, idempotency_key)` and is absorbed
 rather than duplicated. That collision is the whole of the exactly-once story at the store, and it
@@ -3059,7 +3143,16 @@ No new tables. Feature 002 reserved the two columns this feature fills:
 
 `mention` and `whisper_to` are **mutually exclusive on one message** (FR-4.1), enforced at the
 send path rather than by a constraint, because SQLite's `CHECK` would give a caller a constraint
-violation where the error taxonomy owes it a refusal.
+violation where the error taxonomy owes it a refusal (`mention_and_whisper`).
+
+**`whisper_to` must name a current member of the channel, and a send that does not is refused**
+(`whisper_target_not_member`). Without that check a whisper addressed to somebody who left, or who
+was never there, is accepted, stored, and delivered to nobody but its sender — silently, and
+looking exactly like a delivered private message from the sender's side. That is the same
+sent-but-never-delivered-and-never-reported failure the overflow rule exists to prevent, arriving
+by a third door. `mention` is checked the same way but **warns rather than refuses**: it changes
+attention, not delivery, so a stale name costs nothing and refusing the send would be
+disproportionate.
 
 One index is added for the trim job, and only when the job exists:
 
@@ -3101,6 +3194,11 @@ for each channel on this hub:
     delete messages where arrival_seq <= trim_to
                      and received_at  <= now - ttl
 ```
+
+**When no live member has acknowledged anything, `min(acked_seq)` is `0` and nothing is deleted** —
+because `arrival_seq` starts at `1`, so `arrival_seq <= 0` selects no rows. That is the intended
+behaviour rather than a lucky accident of the numbering, and it is why Feature 002 pairs a
+one-based sequence with a zero-based position.
 
 **Two conditions, and both must hold.** Age alone never deletes an unacknowledged message; the TTL
 says when a message becomes *eligible*, and the trim point says when it actually goes. This is
