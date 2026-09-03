@@ -22,6 +22,7 @@
 **Scope:**
 - The target case across two machines; discovery by the guaranteed path alone; delivery to a hub that was offline; version refusal; the cross-machine connect cases.
 - A **real** long-idle link followed by a send -- the property nothing upstream has measured.
+- **This task also verifies the cross-machine clause of `AC-13`** -- "on whichever machine each member sits" -- which delivery-001 built fan-out for but could not verify with one machine. `AC-13` stays owned by delivery-001; the criterion below covers only the half that needs a peer.
 
 **Acceptance Criteria:**
 - [ ] `AC-2` passes with the two sessions on different machines on the same network.

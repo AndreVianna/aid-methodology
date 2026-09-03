@@ -116,7 +116,7 @@ lifecycle: Running
 # [W] Describe | Define | Specify | Plan | Detail | Execute
 phase: Detail
 # [W] aid-{skill} | none
-active_skill: aid-detail
+active_skill: none
 # [W]
 updated: '2026-09-03T19:59:16Z'
 # [W] set only when lifecycle = Paused-Awaiting-Input
@@ -849,6 +849,29 @@ review_history:
       independently: 31 criteria claimed across five deliveries plus AC-20 outside, none unassigned,
       none twice, dependency graph linear and acyclic.
     applied_to: 'PLAN.md (new); deliveries/delivery-00{1..5}/STATE.yml (new, Pending-Spec); REQUIREMENTS.md (section 10 P1 row, Feature 002 note); .aid/knowledge/tech-debt.md (W1-1); .aid/.temp/review-pending/plan-cycle{1,2}.md'
+  - date: '2026-09-03'
+    event: 'Detail: 36 typed tasks across five deliveries; 3 review cycles, A+'
+    outcome: 'A+ (28 findings across 3 cycles, all Fixed; cycle 3 found nothing above MEDIUM and no recurrence)'
+    notes: >-
+      36 tasks, one type each, every one tracing to at least one live criterion by id, every
+      criterion of every delivery covered by a task in that delivery. The breakdown was REGENERATED
+      TWICE rather than patched, because cycle 1 and cycle 2 each found splits that would have left a
+      patched set incoherent -- 30 tasks, then 34, then 36. After the second regeneration the
+      generator keys dependencies BY NAME rather than by number, so a future split cannot silently
+      desynchronise a Depends-on line from the execution graph; that change came directly out of
+      having renumbered twice by hand. Cycle 1's seven highs were mostly structural: two tasks too
+      large (the read path, and replication), two false parallel pairs (message replication needed the
+      version handshake; mention/whisper and retention both edit the send handler), one forward
+      dependency (a channel-close criterion needing the reaping schedule from four deliveries later,
+      split along FR-2.3's own line), and one component with no task at all -- the node-side subscribe
+      route and waiter registry, named in Feature 002's API contract and built by nobody. Cycle 2's
+      two highs: a criterion in all five TEST tasks deferred to a manual-procedures record no task
+      created, which made it unfalsifiable; and a second cross-delivery AC-13 citation missing the
+      note the first one carried. Cycle 3 found only that a third AC-13 reference wanted the same
+      note, that "count remote members from the start" read literally meant querying a table absent
+      for three deliveries (now stated as a seam returning zero), and one parameter-wiring ambiguity
+      between the reaping and trim tasks. The final spec-coverage sweep found NO unbuilt mechanism.
+    applied_to: 'deliveries/delivery-00{1..5}/tasks/task-0{01..36}/{DETAIL.md,STATE.yml} (new); PLAN.md (five execution graphs, section-6 carve-out correction); .aid/.temp/review-pending/tasks-cycle{1,2,3}.md'
 # [A] written by the orchestrator on the work's active branch (single
 #     writer). Append-only audit trail of phase transitions and gate
 #     approvals, newest LAST (append to bottom).
@@ -889,6 +912,10 @@ lifecycle_history:
     event: 'HUMAN GATE PASSED -- stakeholder approved the amended requirements, the four specifications and the plan'
     grade: A+
     notes: 'user_approved moves from no to yes. This is the gate that had been deliberately withheld through the amendment, the four specifications and the plan: every review A+ recorded before this line is a review gate, and none of them stood in for this one. What is approved is the whole set as it stands on this branch -- the message-plane redesign (no per-chat home, per-speaker ordering, ephemeral one-at-a-time channels, the hub plane with a connect request answered from state), the four technical specifications, and the five-delivery plan with Feature 002 split across the first two. It includes the decisions taken on the stakeholder behalf and flagged for veto rather than ratified, none of which were vetoed. Next: /aid-detail.'
+  - date: '2026-09-03'
+    event: 'Detail COMPLETE -- 36 tasks at A+; the numbered pipeline is fully planned'
+    grade: A+
+    notes: 'Every delivery has its tasks, every task has one type, an explicit scope, falsifiable criteria and a declared dependency, and each delivery carries an execution graph DERIVED from the task files rather than authored beside them. The numbered sequence Discover through Detail is now complete and the next step is /aid-execute, which starts at task-001. Task numbering is global and the graph is a strict DAG; delivery-001 has no parallelism at all and says so, because each of its implement tasks genuinely needs the previous one schema or core. The two genuine parallel groups are the CLI twins against the ADR in delivery-001, and the two host adapters against the rendered skill in delivery-003.'
 
 # [A] aid-deploy only; one entry per delivery (never derived from child
 #     files; aid-deploy is the sole author):

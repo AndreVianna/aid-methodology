@@ -23,14 +23,14 @@
 - The trim job, per hub, over its own live members' acknowledged positions **and** the TTL -- both conditions required.
 - `CREATE INDEX message_trim ON message (channel_id, received_at)`, the one index Feature 005 adds, created here because the trim job is its only reader.
 - The unread-depth bound made operator-settable; **the enforcement mechanism itself belongs to the send-path task in delivery-001** and is not reimplemented here.
-- Every retention parameter resolved through the settings reader.
+- The retention parameters **this task introduces** resolved through the settings reader: the message TTL, the unread-depth bound, and the overflow policy. The **reap threshold is task-033's** and is not re-wired here -- naming the split avoids two tasks appearing to own the same wiring.
 
 **Acceptance Criteria:**
 - [ ] A message past its TTL that every live local member has acknowledged is removed; one an un-reaped local member has not acknowledged is kept.
 - [ ] When no live member has acknowledged anything, nothing is deleted.
 - [ ] `message_trim` exists after this task; verified by reading the schema back.
 - [ ] Changing the unread-depth setting changes the point at which `overflow` is raised, without the send path being modified; verified by changing the setting and re-sending.
-- [ ] No retention limit is hardcoded; verified by changing each parameter in settings and observing the behaviour change.
+- [ ] No limit this task introduces is hardcoded; verified by changing the TTL, the unread bound and the overflow policy in settings and observing each behaviour change. The reap threshold is task-033's and is covered by its own criterion.
 - [ ] Unit tests for every new public function or endpoint this task adds.
 - [ ] All existing tests still pass.
 - [ ] Build passes.

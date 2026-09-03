@@ -22,7 +22,7 @@
 **Scope:**
 - `send` with its refusals: `not_registered`, `no_channel`, `solo_channel`, `overflow`, and the mention/whisper exclusivity check.
 - **This task owns the overflow *mechanism*** -- the unread-depth bound enforced on send, reading its value from settings. Making that value operator-settable, and the trim job that relieves the condition, belong to delivery-005; the division is stated here because two tasks would otherwise appear to own the same rule.
-- The other-member count written to include **remote** members from the start, so it is not quietly wrong the day federation lands.
+- The other-member count written **as one function with a remote half from the start**, so it is not quietly wrong the day federation lands. `channel_member` does not exist until task-027, and this task must not query it: the remote half is a seam that **returns zero while the table is absent** and is filled in by task-027. That is the whole of the pathway, stated here because "counts remote members from the start" read literally would mean querying a table that is not there for three deliveries.
 - Idempotency key minted when the caller omits it, **scoped to the sender**; a collision answered as success returning the existing `arrival_seq`.
 - One transaction taking `channel.next_seq` and `session.next_sender_seq` as columns, never a `MAX()` over a trimmed log.
 - Fan-out to every member; exit code 8 and the stable stderr tokens.
