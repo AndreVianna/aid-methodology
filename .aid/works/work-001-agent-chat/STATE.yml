@@ -112,7 +112,7 @@ minimum_grade: A
 # [W] 'yes' | 'no' -- quoted, see NFR-2 / D-5
 user_approved: 'yes'
 # [W] Running | Paused-Awaiting-Input | Blocked | Completed | Canceled
-lifecycle: Running
+lifecycle: Paused-Awaiting-Input
 # [W] Describe | Define | Specify | Plan | Detail | Execute
 phase: Detail
 # [W] aid-{skill} | none
@@ -120,7 +120,16 @@ active_skill: none
 # [W]
 updated: '2026-09-03T19:59:16Z'
 # [W] set only when lifecycle = Paused-Awaiting-Input
-pause_reason: --
+pause_reason: >-
+  DETAIL IS COMPLETE AND NOTHING IS RUNNING. The numbered pipeline is planned end to end: 36 typed
+  tasks across five deliveries, each tracing to a criterion, each with an explicit scope and
+  falsifiable criteria, and each delivery carrying an execution graph derived from the task files.
+  Awaiting the go-ahead for /aid-execute, which starts at task-001 (the node runtime component in
+  the aid payload) and proceeds through delivery-001's chain -- schema, lifecycle, registration,
+  channel, send, ordering, positions, CLI, tests, ADR. Execute is where product code first exists,
+  so it is the first phase whose output is not a document. Two items owed and blocking nothing: the
+  operator's teardown of the throwaway spike apparatus, and W1-1 in the tech-debt ledger, which is a
+  defect in this pipeline's own state writer rather than in this work.
 # [W] set only when lifecycle = Blocked
 block_reason: --
 # [W] e.g. IMPEDIMENT-task-NNN.md, or the failed gate
