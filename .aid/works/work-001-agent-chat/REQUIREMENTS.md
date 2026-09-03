@@ -248,8 +248,13 @@ rule inside** a channel (whisper, FR-3.6), never a second address space.
 > last member, not the second-to-last), or a cross-machine request landed just as the other side
 > left (FR-9.4). An earlier draft asserted "at least two members" as an invariant; it was false
 > against FR-3.3 on the day it was written, and nothing should be built on it. **A one-member
-> channel accepts sends** — they simply reach nobody, and sit in the log for whoever joins next
-> under FR-4.2's join-at-head rule.
+> **A send into a channel with no other member is REJECTED**, with an explicit error naming that
+> there is nobody to receive it. An earlier draft of this blockquote said such a send would "sit in
+> the log for whoever joins next", which contradicted FR-4.2 outright — a joiner arrives at the
+> head and receives nothing sent before it — and would have produced exactly the failure `§6`
+> builds the overflow rule to prevent: a message sent, never delivered, and never reported as
+> undelivered. Rejecting is also the same choice ID-9 already made for a full mailbox, for the same
+> reason: the sender must learn.
 
 > **A channel is a walkie-talkie channel, and the metaphor is load-bearing rather than
 > decorative.** It is a name people agree to use, not an object a machine owns. Anyone reachable
@@ -277,7 +282,7 @@ rule inside** a channel (whisper, FR-3.6), never a second address space.
 |---|---|
 | FR-4.1 | `send(body, kind?, idempotency_key?, mention?, whisper_to?)` delivers to the channel the caller is in — which is the only one it can be in (FR-3.4), so the channel is not a parameter. `mention` flags members without restricting visibility; `whisper_to` restricts visibility to one member (FR-3.5, FR-3.6). The two are mutually exclusive on a single message |
 | FR-4.2 | Each **channel** owns a **message log**, replicated to every hub with a member in it, and each **member holds its own position** in that log. **A member joins at the channel's current head: it receives what is said after it arrives, and no history from before.** So a hub acquiring a channel for the first time starts an **empty** replica and accumulates from the join point — there is no backfill, nothing to choose a source hub for, and no way for two hubs' differing trim points (§6 Retention) to produce two different pasts for the same conversation. This is the walkie-talkie rule again: tuning in mid-transmission does not replay what was already said. It also means the only history question left is a *returning* member's, which FR-2.2 answers by its acknowledged position. A session holds **one position pair** (FR-4.4), because it is in one channel. **Durability is bounded by the channel's life, and that bound is stated rather than implied:** the log survives a session restart and a node restart, and is **discarded when the channel closes** (FR-3.3). A channel is a live conversation, not an archive — there is no resuming yesterday's channel, and anything worth keeping is the participants' to write down elsewhere |
-| FR-4.3 | `inbox(cursor?)` returns messages after the caller's **acknowledged** position in its channel — the default, and the only baseline that governs redelivery (FR-4.4). **`cursor` is a read-only override and moves neither position:** given one, the call returns messages after *that* point instead, which lets a caller re-read something it has already acknowledged without rewinding its own progress. A cursor ahead of `acked` skips nothing permanently, because `acked` is untouched and those messages are still returned by the next default call. Whispers not addressed to the caller are never returned |
+| FR-4.3 | `inbox(cursor?)` returns messages after the caller's **acknowledged** position in its channel — the default, and the only baseline that governs redelivery (FR-4.4). **`cursor` is a read-only override and moves neither position:** given one, the call returns messages after *that* point instead, which lets a caller re-read something it has already acknowledged without rewinding its own progress. A cursor ahead of `acked` skips nothing permanently, because `acked` is untouched and those messages are still returned by the next default call. **Because the override moves nothing, it also confers no right to acknowledge**: a cursor beyond `delivered` may return messages the session has not been handed, and acknowledging those fails under FR-4.4. Re-reading is what the override is for; making progress is what a bare `inbox()` is for. Whispers not addressed to the caller are never returned |
 | FR-4.4 | **A member holds two positions, `delivered` and `acked`, and redelivery keys on `acked`.** `delivered` records what has been handed toward the session and is advanced by **whatever performed the handing, on both paths**: the waker adapter on the push path, since a woken turn cannot be assumed able to call anything (FR-5.7); and **`inbox()` itself on the pull path** (FR-5.3), where there is no adapter — a read hands messages over, so it advances `delivered` to the last message it returned. Naming both is not pedantry: if `delivered` never moved on the pull path, the split would have no meaning for a pull-only session and at-least-once would be undefined on the one path every host falls back to. `ack(cursor)` advances `acked`, and only the session does that; **`acked` may never exceed `delivered`, and an `ack` beyond it fails with an explicit error** rather than being clamped — a session acknowledging what was never handed to it is a caller defect, and silently clamping it would hide the defect while skipping the messages in between. **A message that was delivered but never acknowledged is presented again**, deduped by FR-4.5's idempotency key. This is what keeps at-least-once honest on a host that gates the session's own calls: without the split, a crash between the hand-off and the turn would mark a message read that no model ever saw, and the adapter would be silently converting at-least-once into at-most-once |
 | FR-4.5 | Delivery is at-least-once; recipients dedupe on the idempotency key. **FR-4.4 makes this load-bearing rather than a formality** — re-presentation of an unacknowledged message is a normal event, not an error path |
 | FR-4.6 | Messages carry a `kind` and an optional `correlation_id` / `reply_to` |
@@ -521,7 +526,10 @@ several waits at once (FR-9.1), and nothing measured bounds how many one hub ser
 
 ### Decisions taken, and the alternatives rejected
 
-Fourteen decisions that shaped this design, each with the alternative it rejected and why. The
+Twenty-two decisions that shaped this design, each with the alternative it rejected and why.
+ID-1 to ID-14 came from the predecessor's decision registry, several since overridden in part and
+said so in place; **ID-15 to ID-22 were taken in the architecture review that reshaped the message
+plane**, and they are the ones a later reader is most likely to want to re-propose. The
 rejected branch is the load-bearing half: the conclusions above and in §5 can be restated from
 the design, but *what was tried and discarded* cannot, and without it a later reader re-proposes
 a rejected option in good faith.
@@ -784,7 +792,7 @@ any host tool guarantees a version.**
 | AC-25 | **An over-running wake leaves nothing behind.** After a wake whose block would exceed the host's hook timeout, no adapter process survives and the node's count of connected waiters returns to what it was. Verified by process and connection count, not by absence of error, since the host reports nothing in this case (FR-5.8) |
 | AC-26 | **A host payload carrying a byte-order mark is read, not rejected.** The adapter parses a stop payload prefixed with a UTF-8 BOM and acts on its contents (FR-5.9) |
 | AC-27 | **The roster shows who can be reached.** A session asks its hub who else is there and gets, for each agent, its name, host tool, declared capabilities, liveness, and whether it is **available** — registered, not stale, and not already in a channel. Agents on other machines appear in the same answer once federation exists, and a session in no channel appears in every other agent's roster (FR-9.1, FR-9.2) |
-| AC-28 | **A directed connect request is answered from state, immediately, with no human in the path.** Sent at an **available** agent, it joins that agent to the named channel and the agent learns so on its next wake. Sent at an agent **already in a channel**, or stale, or unknown, it **fails at once with an explicit reason**. No approval prompt is raised at either end, nothing is left pending, and there is no accept, decline, or expiry to observe (FR-9.3). Verified across machines as well as locally, where an unreachable peer makes the request fail rather than queue (FR-9.4) |
+| AC-28 | **A directed connect request is answered from state, immediately, with no human in the path.** Sent at an **available** agent, it joins that agent to the named channel and the agent learns so on its next wake. Sent at an agent **already in a channel**, or stale, or unknown, it **fails at once with an explicit reason**. No approval prompt is raised at either end, nothing is left pending, and there is no accept, decline, or expiry to observe (FR-9.3). Verified across machines as well as locally, in both of its cross-machine cases: an **unreachable** peer makes the request fail rather than queue (FR-9.4), and a peer that has **never seen the named channel** creates its own replica and joins its agent rather than failing, because a channel is a name and there is no authority to consult (FR-9.7) |
 | AC-29 | **One channel at a time, and an agent opens its own.** A session with no channel opens one and is in it. A session already in a channel that tries to join another is **refused with an explicit error**, and succeeds after leaving. A session's own `leave` removes only itself, and the channel survives its creator leaving while another member remains (FR-3.3, FR-3.4) |
 | AC-30 | **A channel ends when its last member is gone — and only then.** It closes when the last member leaves explicitly, and it closes when the last member is **reaped**; its log is then discarded. It does **not** close because it fell quiet, because its creator left, or because a member's connection dropped: a dropped connection is stale, then reaped (FR-2.3, FR-3.3). The absence of an inactivity close is part of the criterion — a channel whose two members both wait past any plausible timer is still there |
 | AC-31 | **Per-speaker order holds; no cross-speaker order is claimed.** Every member receives one speaker's messages in the order that speaker sent them. The criterion asserts **nothing** about the relative order of two speakers' messages, and a run in which two members observe two speakers in different relative orders is **conformant, not a defect** — which is why a reply is matched by `reply_to` rather than by position (§6 Ordering, AC-8) |
@@ -903,8 +911,10 @@ expected to reuse the same adapter contract (FR-5.2), but none of the three gate
 One `###` subsection per feature — a decomposition of §5 into an independently implementable
 unit, not a second place to state requirements. Every §5 functional requirement maps to at
 least one feature, and **every §9 criterion is owned by exactly one feature**, so both are
-checkable. §9 holds a gapless **AC-1–AC-32**, of which **thirty-one are live** — AC-19 and AC-21 are retired
-rows kept so that references to them resolve, and are owned by nobody. The ownership below accounts
+checkable. §9 holds **AC-1–AC-33**, of which **thirty-one are live** — AC-19 and AC-21 are retired rows kept
+so that references to them resolve, and are owned by nobody, which is why the range is **not**
+gapless. §9 is the authority for that set and this preamble restates it; where the two ever
+disagree, §9 wins and this line is the defect. The ownership below accounts
 for all thirty-one live criteria, once each, matching §10 stage for stage.
 
 **Five features, one per §10 stage, and the count is a floor rather than a preference.** Two
@@ -1713,8 +1723,9 @@ is a conversation, not a room and not an archive. There is deliberately **no idl
 agents waiting hours on each other is this product's normal state, and a clock here would kill the
 conversation in exactly that case.
 
-A channel may have any number of members. Two is the minimum and the proving case, but a
-message fans out to **every** member from the start; larger channels need nothing new here.
+A channel may have any number of members. **Two is what a conversation needs** — one is a real
+state, and a send with nobody else there is refused rather than swallowed (FR-3 preamble) — and two
+is the proving case, but a message fans out to **every** member from the start; larger channels need nothing new here.
 What they add later is a way to address *within* them.
 
 Each channel keeps a log, and each member keeps **two places** in it — what has been handed
@@ -2337,6 +2348,13 @@ nothing reports an error.
       the roster on both sides still reflects who is actually there.
 - [ ] Given an agent that leaves its channel on one machine, when the roster is read on the other
       machine, then that agent shows as **available** — presence converges across hubs.
+- [ ] Given a channel name the target's hub has **never seen**, when a relayed connect request names
+      it, then that hub creates its own replica and joins its local agent — the request does not fail
+      for want of recognising the name (FR-9.7).
+- [ ] Given a relayed connect request whose asker left before it arrived, when it is answered, then
+      the target is joined and finds itself alone, and that channel closes when the target leaves or
+      is reaped. The race is accepted rather than prevented; this scenario pins the outcome so it is
+      not later filed as a defect.
 - [ ] Given two nodes differing only by patch or minor version, when they connect, then they
       interoperate normally.
 - [ ] Given two nodes differing by major version, when they connect, then the handshake fails
