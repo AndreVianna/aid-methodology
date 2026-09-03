@@ -7,6 +7,11 @@ expansion and PowerShell cmdlets that `cmd` does not have.
 
 **What you are producing:** four answers, one of them a number. Nothing else.
 
+**Status: all four parts have been run.** Every outcome is in `FINDINGS.md`, which is the record.
+This file is kept only so a reader can see how those outcomes were produced, and it is deleted with
+the spike. The one step still owed is the close-out below — teardown, and restoring the power and
+hook settings Part 0 changed.
+
 **Authority:** `REQUIREMENTS.md § 11 / Feature 001` is the protocol. This file only sequences the
 actions. If the two disagree, the specification wins.
 

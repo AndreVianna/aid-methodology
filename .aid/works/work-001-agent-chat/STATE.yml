@@ -121,10 +121,13 @@ active_skill: none
 updated: '2026-09-03'
 # [W] set only when lifecycle = Paused-Awaiting-Input
 pause_reason: >-
-  Spike findings are folded into REQUIREMENTS.md and Feature 003 is unblocked. Two things gate
-  specification: AC-20 is unsatisfied until test 4 (two machines) has a recorded outcome, and
-  Feature 002 carries an identity fork -- whether to use Cursor's host-supplied conversation_id --
-  that needs a deliberate decision. Then specify 002, 004, 005, 003 in that order.
+  The spike is closed: all four tests answered, AC-20 satisfied, findings folded into
+  REQUIREMENTS.md, and Feature 003 unblocked. One thing gates specification -- Feature 002 carries
+  an identity fork, whether to use Cursor's host-supplied conversation_id, and FR-2.4's answer
+  (mint our own, treat the host's as metadata) needs the user's explicit ratification since it was
+  written from a finding rather than decided. Then specify 002, 004, 005, 003 in that order. The
+  spike's own teardown -- delete ~\spike on both machines, remove the stop hooks, drop the port-8811
+  firewall rule, restore power settings -- is still owed by the operator.
 # [W] set only when lifecycle = Blocked
 block_reason: --
 # [W] e.g. IMPEDIMENT-task-NNN.md, or the failed gate
@@ -210,14 +213,14 @@ interview:
 features:
   - id: '001'
     name: wake-feasibility-spike
-    state: In Progress
+    state: Ready
     grade: A+
     qa_count: 0
     started: 2026-09-01
-    updated: '2026-09-02'
+    updated: '2026-09-03'
     sections: []
     notes: >-
-      Stage P0. Specification carried forward intact and unchanged -- an executable experiment design, reviewed to A+. Stays its own feature at any merge depth: AC-20 requires that none of its code be carried forward, which only means something if the boundary exists.
+      Stage P0. EXECUTED AND CLOSED -- all four tests have recorded outcomes and AC-20 is satisfied. Both hosts wake; the Cursor bound is the hook's own configured timeout and not a host constant; the exchange holds across two machines in both directions (T4-000-f). Evidence and twelve findings in FINDINGS.md; six became FR-5.6..FR-5.10 and FR-2.4. Open questions are routed to 002/003/004 and none of them block. `state: Ready` is the enum value for "specification complete" -- the feature's execution outcome is this note, because features[].state has no terminal value for an executed spike. Specification carried forward intact and unchanged -- an executable experiment design, reviewed to A+. Stays its own feature at any merge depth: AC-20 requires that none of its code be carried forward, which only means something if the boundary exists.
   - id: '002'
     name: node-and-message-plane
     state: Pending
@@ -729,6 +732,31 @@ review_history:
       though its hook fired -- and test 4 does not need the probe at all, its criteria being entirely
       in the stub log.
     applied_to: 'FINDINGS.md (F12, answer table); throwaway/spike_hook.py'
+  - date: '2026-09-03'
+    event: 'Test 4 PASS on all four criteria; the spike is closed and AC-20 is satisfied'
+    outcome: 'Both machines woke and both acted. Feature 001 executed; four of four questions answered'
+    notes: >-
+      Run T4-000-f, witnessed entirely by machine A's stub log, which is why no clock synchronisation
+      between the machines was needed. Two waits from two different clients -- 127.0.0.1 at
+      02:39:34.982 and 192.168.2.20 at 02:39:48.208 -- overlapped for roughly seventeen seconds, so
+      one single-endpoint stub held concurrent long-polls from two machines. Both were woken and both
+      acted: machine A's woken turn at 02:40:12.517 from loopback, 7.490 s after its wake, and
+      MACHINE B's woken turn at 02:40:30.091 FROM ITS OWN LAN ADDRESS, which is the return leg that
+      T4-000-b lost to F12's quoting bug. F12's bare-path fix is therefore verified in the field, not
+      only reasoned about. Runbook steps 141 to 144 all held. Machine A also re-fired its stop hook
+      3.5 s after the act, reproducing F1 a third time. One new observation, recorded in the Test 4
+      section rather than as its own finding: the LAN waiter left NO client_gone line -- the stub's
+      write at 02:40:48.208 succeeded into the local socket buffer 30 s after B's waiter had gone,
+      because no reset had arrived from the far end. So F6's corroboration mechanism works on loopback
+      only, and over a network a successful respond says nothing about whether anyone was reading.
+      That sharpens F7's waiter over-counting consequence for Feature 004: waiter liveness cannot come
+      from the connection's own state. Two figures deliberately NOT recorded -- machine B's wake-to-act
+      latency, since B's hook log was not collected and B ran the command action whose approval prompt
+      (F5) would void it anyway; and the held-connection-over-LAN budget, retired per F11 because the
+      spike puts the LAN hop between subscriber and node where the product never does. Feature 001
+      moves to Ready with an executed note; the remaining open questions are routed to 002, 003 and
+      004 in FINDINGS.md and none of them block specification.
+    applied_to: 'FINDINGS.md (Test 4 section, apparatus, answer table, F12, open-questions table); REQUIREMENTS.md (section 8 assumption, section 10 P0 row, Feature 001 status, Feature 001 test-4 pass criteria); SPIKE-RUNBOOK.md (status header)'
 # [A] written by the orchestrator on the work's active branch (single
 #     writer). Append-only audit trail of phase transitions and gate
 #     approvals, newest LAST (append to bottom).

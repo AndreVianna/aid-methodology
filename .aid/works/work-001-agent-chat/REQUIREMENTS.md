@@ -525,13 +525,18 @@ that the façade was never load-bearing for the one hard part of this product. S
 floor is not a nicety — on any host whose blocking-hook route fails, it is the only mechanism
 left.
 
-**Assumption requiring validation (P0).** That a host can hold a token-free wait and turn
-an arriving message into a turn **while the session is otherwise idle**. **Unproven on both
-proving hosts** — for Claude Code the mechanism is understood first-hand but never
-demonstrated end to end, and for Cursor the route is documented but its blocking limit is
-unmeasured. That is why P0 tests Claude Code first (test 1) and Cursor second. The single
-number that decides the design is **how long a Cursor `stop` hook may block before the host
-kills it.**
+**Assumption validated (P0) — this was the one that could have invalidated the design.** That a
+host can hold a token-free wait and turn an arriving message into a turn **while the session is
+otherwise idle**. It now holds on **both** proving hosts, demonstrated end to end, and it holds
+**across two machines in both directions**: a session on the far machine was woken by a message
+that originated off-machine, and its woken turn reached back across the LAN to the other machine's
+service.
+
+The question that was expected to decide the design — how long a Cursor `stop` hook may block
+before the host kills it — **turned out to be malformed**. The host does not kill it, and the bound
+is not a host constant: it is the hook's own configured `timeout`, which the waker writes (FR-5.8).
+Everything the spike measured, along with twelve findings and the questions it deliberately left
+open, is in Feature 001's `FINDINGS.md`.
 
 **Toolchain — Node, with no third-party runtime dependency.**
 
@@ -712,7 +717,7 @@ exception and is meant to be** — it produces answers, not product.
 
 | Stage | Scope | Verifies |
 |---|---|---|
-| **P0 — POC** | Four tests against a throwaway stub node (one endpoint that waits, then returns a message), on **Claude Code and Cursor only**: (1) idle Claude Code session acts on a message with no human action; (2) idle Cursor session does the same via a blocking `stop` hook; (3) **how long a Cursor `stop` hook may block before the host kills it**; (4) the same exchange across two machines on the LAN | AC-20 — the single unvalidated assumption |
+| **P0 — POC** | Four tests against a throwaway stub node (one endpoint that waits, then returns a message), on **Claude Code and Cursor only**: (1) idle Claude Code session acts on a message with no human action; (2) idle Cursor session does the same via a blocking `stop` hook; (3) **what bounds how long a Cursor `stop` hook may block, and what the host does at that bound**; (4) the same exchange across two machines on the LAN | AC-20 — the single unvalidated assumption |
 | **P1 — Skeleton** | Node lifecycle + CLI + registration by stable name + chat create/delete/**join/leave**, **including the operator changing another session's membership** (FR-7.2, FR-3.4 — CLI-only, and the counterpart to AC-15's prohibition) + the local half of listing (FR-3.1) + durable `send`/`inbox`/`ack` with fan-out to every member, **pull only** (FR-5.3 — the pull floor ships here, not at P2). **Lifecycle is smaller than it was:** with the node shipping in the `aid` payload (FR-7.6) there is no install step to build | AC-3, AC-6, AC-7, AC-8, AC-9, AC-10, AC-13, AC-21, AC-22 |
 | **P2 — The wake** | Subscriber and re-arm (FR-5.1, FR-5.2, FR-5.4, FR-5.5 — FR-5.3's pull floor already shipped at P1), and the **rendered chat skill** (FR-0.2, FR-0.4 — FR-0.1 already shipped at P1), which replaces the withdrawn MCP façade. **FR-0.3 completes here, not at P1:** P1 delivered its administration and message-plane halves, but FR-0.3 also requires the CLI to carry the subscriber, which does not exist until this stage | **AC-1 (headline — same machine, cross-tool)**, AC-12, AC-15 |
 | **P3 — Federation** | Discovery, handshake, store-and-forward, version negotiation (FR-6), machine-qualified chat ids and local-only resolution (FR-3.2), the network half of listing (FR-3.1). **Discovery is layered, and the layering is now matched by what §4 promises:** the guaranteed path (a static peer list plus heartbeat) satisfies AC-4, and it is also the whole of the promise — §4 offers zero-configuration discovery as a convenience where the network permits and commits to it nowhere. So shipping the floor delivers this stage rather than leaving a promise unmet, and the best-effort layer above it improves the experience without carrying a criterion | **AC-2 (the target case)**, AC-4, AC-5, AC-16, AC-19 |
@@ -816,12 +821,13 @@ drawn around what ships together.
   into a turn. Traces to §10 stage P0 and §8 Assumptions (host research; the unvalidated
   assumption)
 - **Criteria:** AC-20  ← ids from §9; never restated here
-- **Status:** **Executed.** Three of the four questions are answered on one machine; the
-  cross-machine question is outstanding, so AC-20 is **not yet satisfied** — it admits a
-  "could not determine" only when the record says what was tried. The evidence and ten
-  findings are in `FINDINGS.md`; five of them became FR-5.6 through FR-5.10 and FR-2.4,
-  and one of them restated AC-20's own third question, which had presumed a host constant
-  that does not exist
+- **Status:** **Done. AC-20 is satisfied.** All four questions have recorded outcomes — both hosts
+  wake, the Cursor bound is the hook's own configured `timeout` and not a host constant, and the
+  exchange holds across two machines in both directions. The evidence and twelve findings are in
+  `FINDINGS.md`; six of them became FR-5.6 through FR-5.10 and FR-2.4, one restated AC-20's own
+  third question, which had presumed a host constant that does not exist, and one retired half of
+  test 4 as measuring a link the product does not open. Questions the spike raised and left open
+  are routed to Features 002, 003 and 004 in `FINDINGS.md`, none of them blocking
 
 > **Runs first, and alone.** Everything else in §11 is built on the answer this produces, and
 > AC-20 requires that none of its code survive into the next stage — which is why it stays its
@@ -1230,14 +1236,24 @@ Procedure: arm both sessions; each calls `GET /wait?after=<N>&run=<run>` with an
 both are armed before the arrival; at `t0+N` both are released by the same stub. Each woken turn
 performs its act, and machine B's act crosses the LAN back to the stub.
 
-**Pass** when the stub's request log holds, in order, both waits, the single arrival, and both
-acts, with machine B's act arriving from B's address. The log is one file on one machine, so the
-ordering is unambiguous and no clock synchronisation between the machines is required — the
-reason the stub, and not the sessions, holds the authoritative log.
+**Pass** when the stub's request log holds two waits carrying two different `client=` addresses —
+one loopback, one machine B's — and two acts, one of them arriving from machine B's address. The log
+is one file on one machine, so the ordering is unambiguous and no clock synchronisation between the
+machines is required — the reason the stub, and not the sessions, holds the authoritative log.
 
-Test 4 also carries **one confirmation run at `S`** over the LAN. If the block that survived on
-loopback does not survive across the network, the usable budget over LAN is smaller than the
-number test 3 produced, and both figures are recorded.
+> **Corrected during execution: there is no "single arrival" to look for.** The criterion originally
+> required both waits, *one* arrival, and both acts, on the assumption that one stub release would
+> free both waiters. It cannot: each waiter's release is timed from **its own** request, and a human
+> arms two sessions on two machines seconds apart. The waits overlap, which is what matters, but they
+> end separately. The criterion above is what the stub log can actually witness.
+
+**The confirmation run at `S` over the LAN is retired, not run.** It was specified to catch a router,
+NIC or OS idle-connection timeout biting a held connection, which is a real risk — but in this spike
+the held connection runs from **subscriber to node**, and the product never opens that connection
+across a machine boundary (FR-6 puts the LAN hop between *nodes*; a session subscribes to its local
+node over loopback). A number from this arrangement would bound a connection nothing makes, and a
+later reader would reasonably mistake it for the product's cross-machine limit. The risk moves to
+Feature 004, where the inter-node link is designed and can be measured on the link that exists.
 
 **What test 4 does not prove, stated plainly.** It proves that a message crossing the LAN wakes
 a session on the far machine and that the woken turn can reach the other machine's service. It

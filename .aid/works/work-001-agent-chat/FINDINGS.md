@@ -1,6 +1,6 @@
 # P0 Wake Feasibility Spike — Findings
 
-Status: **in progress.** Test 1 complete. Tests 2, 3 and 4 outstanding.
+Status: **complete.** All four tests have recorded outcomes.
 
 Every number here comes from an NDJSON run log, cited by run id. Nothing is inferred from
 recollection, and nothing measured on one host is asserted of the other.
@@ -9,17 +9,21 @@ recollection, and nothing measured on one host is asserted of the other.
 
 ## Apparatus
 
-| | Machine A |
-|---|---|
-| Host name | `L-OTTAVIANNA` |
-| OS | Windows 11, build 26200, x64 |
-| Shell | PowerShell 7.6.5 |
-| Python | 3.13.3, `sys.platform` = `win32` |
-| Interpreter | `C:/Users/andre.vianna/.pyenv/pyenv-win/versions/3.13.3/python.exe` (pyenv-win) |
-| Claude Code | 2.1.258 |
-| Cursor | 3.18.9 (Electron 40.10.3, bundled Node 24.15.0) |
-| Stub | `127.0.0.1:8811`, `max_wait` 86400 |
-| Beat interval | 250 ms |
+| | Machine A | Machine B (test 4 only) |
+|---|---|---|
+| Host name | `L-OTTAVIANNA` | not recorded |
+| OS | Windows 11, build 26200, x64 | Windows 11 |
+| Shell | PowerShell 7.6.5 | PowerShell (the shell Cursor's woken turn used — F12) |
+| Python | 3.13.3, `sys.platform` = `win32` | pyenv, version not recorded |
+| Interpreter | `C:/Users/andre.vianna/.pyenv/pyenv-win/versions/3.13.3/python.exe` (pyenv-win) | a pyenv path with **no space**, chosen over `C:\Program Files\Python312\` (F12) |
+| Claude Code | 2.1.258 | not used |
+| Cursor | 3.18.9 (Electron 40.10.3, bundled Node 24.15.0) | version not recorded |
+| Stub | `127.0.0.1:8811` for tests 1-3, `0.0.0.0:8811` for test 4; `max_wait` 86400 | none — B used A's stub |
+| LAN address | not recorded | `192.168.2.20` |
+| Beat interval | 250 ms | 250 ms |
+
+Machine B's version and OS-build fields were not captured before the run. They are left blank rather
+than filled from recollection; nothing concluded below depends on them.
 
 **Kill-instant resolution on this platform is ±0.25 s, not exact.** Windows delivers no signal a
 terminated process can act on, so a killed hook cannot write its own terminal line and the last
@@ -35,7 +39,7 @@ none observable (Windows)`.
 | 1 | Does an idle Claude Code session wake? | **Yes** | `T1-000-a` |
 | 2 | Does an idle Cursor session wake? | **Yes** | `T2-001-a` |
 | 3 | How long may a Cursor `stop` hook block? | **As long as the hook's own `timeout` allows — there is no separate host limit.** The wake fires iff `D` < `timeout`, verified across five configurations. Platform default is under 60 s; an explicit 3600 was accepted. On expiry the hook is abandoned, not killed. | `T2-001-a`, `T3-60-a` ×2, `T3-120-a` ×2 |
-| 4 | Does the wake cross two machines? | **Wake: yes** — machine B's hook blocked, reached machine A's stub across the LAN, and woke the session (`T4-000-b`). The return leg is unproven: B's act failed on shell quoting (F12), now fixed, and awaits a rerun | `T4-000-b` |
+| 4 | Does the wake cross two machines? | **Yes** — both legs. Machine B's hook blocked, reached machine A's stub across the LAN, was woken, and its woken turn reached back across the LAN and acted. The confirmation run at `S` over the LAN is **not applicable**, with a reason (F11) | `T4-000-f` |
 
 ---
 
@@ -102,7 +106,7 @@ wake", which would have been false.
 
 ---
 
-## Test 3 — the Cursor blocking limit (in progress)
+## Test 3 — the Cursor blocking limit
 
 `--wake-action text`, so no run's classification depends on a human approving a prompt.
 
@@ -175,6 +179,62 @@ has been run. What this number does establish is that the wake mechanism is not 
 
 ---
 
+## Test 4 — two machines
+
+**Pass.** Run `T4-000-f`. Machine A ran the stub bound to `0.0.0.0:8811` and a Claude Code session;
+machine B ran a Cursor session against `http://<A>:8811/wait` across the LAN from `192.168.2.20`.
+
+| Time (UTC) | Line | What it shows |
+|---|---|---|
+| 02:39:34.982 | `request` seq 17, `client=127.0.0.1` | A's hook blocks, over loopback |
+| 02:39:48.208 | `request` seq 18, `client=192.168.2.20` | **B's hook blocks, across the LAN** |
+| 02:40:05.026 | A `end`, `d=30.0` | 30.097 s blocked, `kind=timeout`, returned under own power |
+| 02:40:05.027 | A `wake` | payload emitted 1 ms later |
+| 02:40:12.517 | `request` seq 19 `text='act'`, `client=127.0.0.1` | A's woken turn acts — wake to act **7.490 s** |
+| 02:40:16.000 | A `refire` | A's stop hook fires again (F1, third host-run reproduction) |
+| 02:40:30.091 | `request` seq 20 `text='act'`, `client=192.168.2.20` | **B's woken turn acts, back across the LAN** |
+| 02:40:34.982 | `client_gone` seq 17, `waited=60s` | A's waiter had left first |
+| 02:40:48.208 | `respond` seq 18, `client=192.168.2.20` | B's 60 s sleep completes and the stub writes — see below |
+
+All four pass conditions held: two `request` lines, carrying two different `client=` addresses, one
+loopback and one machine B's; two `act` lines; and one of those `act` lines from machine B's address.
+
+The two blocks **overlapped** — B's began at 02:39:48 and A's ran to 02:40:05 — so the single-endpoint
+stub held two concurrent long-polls from two machines and answered both.
+
+**The finding is the return leg.** Nothing before this run had exercised a wake whose trigger
+originated off-machine, and the previous attempt (`T4-000-b`) got the wake but not the act, because
+the command handed to B's woken turn was quoted for bash and B's shell is PowerShell (F12). That fix
+is verified here: seq 20 is B's woken turn running the act command successfully against A's service.
+This is `§3`'s target case — Cursor on one machine, Claude Code on another — end to end.
+
+### What this run does not establish
+
+**No latency for machine B.** B's own hook log is not in hand, so its block duration and wake-to-act
+interval cannot be derived from A's stub log. Even with it, the figure would be void for T2-001-a's
+reason: B used `--wake-action command` on Cursor, so F5's approval prompt sits in the path.
+
+**No held-connection-over-LAN budget.** The confirmation run at `D` = `S` across the LAN was
+deliberately not run — see F11. The spike's arrangement puts the LAN hop between subscriber and node,
+which is not where the product puts it, so a number from it would bound a connection nothing makes.
+
+### A small but load-bearing asymmetry: the LAN peer left no `client_gone`
+
+Seq 17 (loopback) aborted with `ConnectionAbortedError` when the stub finally wrote, exactly as F6
+describes. Seq 18 (LAN) did **not**: at 02:40:48.208, 60 s after its request, the stub logged a clean
+`respond` even though B's waiter had returned under its own power some 30 s earlier.
+
+The write succeeded because it went into the local socket buffer and no reset had arrived from the far
+end yet. So **F6's corroboration only works on loopback.** Across a network, a successful `respond`
+says nothing about whether anyone was still reading, and its absence is not detectable in time.
+
+This sharpens F7's over-counting point rather than adding a new one: a node counting connected waiters
+is already wrong when a host abandons a hook, and over a LAN it cannot even learn it was wrong from
+the socket. Feature 004 needs waiter liveness to come from something other than the connection's
+own state.
+
+---
+
 ## Findings that change the design
 
 ### F12 — The shell the woken turn uses differs by host, and the two disagree about quoting
@@ -206,7 +266,8 @@ currently works.
 only breaks when a path contains a space, and then quoting is unavoidable and must follow the host's
 own convention — which is the single case where the adapter has to know which host it is talking to.
 The apparatus now emits bare paths when neither the interpreter nor the script contains a space, and
-host-specific quoting only when one does.
+host-specific quoting only when one does. **Verified**: `T4-000-f` seq 20 is B's woken turn running
+the bare-path form under PowerShell and reaching A's stub.
 
 This extends FR-5.10 rather than contradicting it. That requirement already said an adapter assumes
 nothing about how the host **invokes** it; this adds that it must assume nothing about the shell the
@@ -506,12 +567,17 @@ the running process itself, never from `PATH`.
 
 ---
 
-## Still to run
+## Left open, and where each one goes
 
-- **Test 2** — Cursor 3.18.9. Whether Cursor honours the same `decision: block` convention is
-  unknown; if it does not, the run repeats under `--wake-schema exit2` before Fail is recorded.
-- **Test 3** — the ladder, bisection and confirmation runs that give the Cursor blocking limit.
-  Requires probe coverage on every run, and must use `--wake-action text` so that no run's
-  classification depends on a human approving a prompt (F5). Starts from a measured floor of 30 s.
-- **Test 4** — two machines. Needs a second machine for the Cursor side, since Cursor requires a
-  desktop session.
+Nothing here blocks AC-20, which asks for recorded answers to the four questions and has them. Each
+item below is a question the spike raised and deliberately did not close.
+
+| Open question | Where it belongs |
+|---|---|
+| Does Cursor enforce a **maximum** acceptable hook `timeout`? A ceiling would bound how long any waker may block on this host. 3600 was accepted; higher was not tried | Feature 003, before it picks a long-poll default |
+| Cursor's platform default `timeout` is known only as "under 60 s". Narrowing it needs runs with the line absent at smaller `D` | Feature 003 — but only as a curiosity, since F7 already concludes the waker must set the value explicitly |
+| Does Cursor's `loop_limit` enforce its documented cap of 5? Needs a deliberate loop of six or more wakes | Feature 003, alongside the re-entry rule |
+| Is `conversation_id` stable across host restarts, and does it survive a Cursor upgrade? It is undocumented | Feature 002, which is why FR-2.4 mints its own id and treats the host's as metadata |
+| Does a held **inter-node** connection survive a router, NIC or OS idle timeout across a LAN? | Feature 004. The spike had no second node and could not model it (F11) |
+| Waiter liveness over a LAN cannot be read from the socket | Feature 004 |
+| Does the wake work on hosts other than Claude Code and Cursor? | Out of scope by §10 — P0 was scoped to these two |
