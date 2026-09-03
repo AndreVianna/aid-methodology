@@ -672,6 +672,37 @@ review_history:
       AC-20 is NOT yet satisfied because the cross-machine question has no recorded outcome, and that
       the criterion admits 'could not determine' only with a record of what was tried.
     applied_to: 'REQUIREMENTS.md (FR-2.4, FR-5.6-5.10, AC-20 restated, AC-23-26, section 8 host table, Features 001/002/003)'
+  - date: '2026-09-03'
+    event: 'Conversation-id fork decided (product mints its own); F11 filed on test 4 topology'
+    outcome: 'FR-2.4 rewritten: product-minted id, host value as correlation metadata only. Test 4 split by F11'
+    notes: >-
+      Operator decided the conversation id is the product's own and independent of Cursor. FR-2.4 was
+      rewritten accordingly: a registration is bound to an id the product generates, not derived from
+      and not depending on anything a host supplies -- one host in five offers such a field, that one
+      leaves it undocumented and therefore withdrawable, and an identity a vendor can withdraw is not
+      an identity. A host-supplied value may be recorded as correlation metadata beside the product's
+      own so the two logs can be reconciled, and nothing may key on it. Feature 002's note records the
+      decision and the one thing it costs, so the specifier does not rediscover it: FR-2.2 lets a name
+      be re-registered and reattaches its memberships and positions, and a product-minted id cannot
+      tell whether the thing reattaching is the same conversation or a different one reusing the name,
+      whereas a host-supplied id could because the host knows. So a stale reattachment is possible --
+      a fresh conversation inheriting a previous one's unread positions -- and whether that matters is
+      a specification question; if it does, the check would work on Cursor and nowhere else, which is
+      itself a reason to make the behaviour correct without it. Separately, F11 was filed after
+      checking test 4's arrangement against the product's topology and finding they differ. Test 4 has
+      machine B's hook long-poll machine A's stub across the LAN, but the requirements are explicit
+      that a session subscribes to its LOCAL node and FR-6 puts the LAN hop between nodes, so in the
+      product a session on B subscribes to node B over loopback and node B talks to node A. The spike
+      has one stub and no second node and cannot reproduce that. This splits test 4: the half asking
+      whether a message crossing the LAN wakes a far session is worth running, being section 3's
+      target case and the only unexercised wake whose trigger originates off-machine; the half asking
+      whether the loopback block survives the network measures a connection the product never opens,
+      because the idle-timeout risk it targets applies to the INTER-NODE link, which the spike cannot
+      model. The confirmation-run-at-S-over-LAN should therefore be recorded as not applicable with
+      that reason rather than run, since reporting a number from that arrangement would put a figure
+      in the record later readers would mistake for the product's cross-machine limit. The
+      idle-timeout risk moves to Feature 004, where the inter-node link is designed.
+    applied_to: 'REQUIREMENTS.md (FR-2.4, Feature 002 note); FINDINGS.md (F11, answer table)'
 # [A] written by the orchestrator on the work's active branch (single
 #     writer). Append-only audit trail of phase transitions and gate
 #     approvals, newest LAST (append to bottom).

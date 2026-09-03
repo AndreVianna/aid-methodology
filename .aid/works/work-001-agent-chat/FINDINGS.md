@@ -35,7 +35,7 @@ none observable (Windows)`.
 | 1 | Does an idle Claude Code session wake? | **Yes** | `T1-000-a` |
 | 2 | Does an idle Cursor session wake? | **Yes** | `T2-001-a` |
 | 3 | How long may a Cursor `stop` hook block? | **As long as the hook's own `timeout` allows — there is no separate host limit.** The wake fires iff `D` < `timeout`, verified across five configurations. Platform default is under 60 s; an explicit 3600 was accepted. On expiry the hook is abandoned, not killed. | `T2-001-a`, `T3-60-a` ×2, `T3-120-a` ×2 |
-| 4 | Does the wake cross two machines? | *not yet run* | — |
+| 4 | Does the wake cross two machines? | *not yet run* — and **half of it should not be**, see F11 | — |
 
 ---
 
@@ -176,6 +176,37 @@ has been run. What this number does establish is that the wake mechanism is not 
 ---
 
 ## Findings that change the design
+
+### F11 — Test 4's network shape is not the product's, so half of it measures the wrong link
+
+Test 4 has machine B's Cursor hook **long-poll machine A's stub across the LAN**. The product does
+not do that. `REQUIREMENTS.md` is explicit that a session subscribes to its **local** node, and
+FR-6 puts the LAN hop between *nodes*: a session on B subscribes to node B over loopback, and node B
+talks to node A. FR-3.3's "members on other machines take part remotely" describes chat membership,
+not the subscriber's connection.
+
+The spike has only one stub and no second node, so it cannot reproduce that topology. What it
+reproduces instead is a subscriber holding a long-lived connection across a LAN — a connection the
+product never opens.
+
+**This splits test 4 into a half worth running and a half that measures nothing the design uses.**
+
+| Half | Verdict |
+|---|---|
+| Does a message crossing the LAN wake a session on the far machine, and can that woken turn reach the other machine's service? | **Worth running.** It is `§3`'s target case — Cursor on one machine, Claude Code on another — and nothing so far has exercised a wake whose trigger originated off-machine. |
+| Does the block that survived on loopback also survive across the network? | **Measures the wrong link.** Its stated purpose is to catch a router, NIC or OS idle-connection timeout biting a held connection. That risk is real, but in the product it applies to the **inter-node** link, which this spike has no second node to model. A number from the spike's arrangement would bound a connection nothing makes. |
+
+The second half is not wrong so much as misattributed: the specification wrote it before the
+subscriber's locality was pinned down, and the two facts were never checked against each other.
+
+**Consequence for AC-20.** The criterion asks "whether the exchange holds across two machines on the
+LAN". The first half answers exactly that and should be run if a second machine is available. The
+confirmation-run-at-`S`-over-LAN that test 4 also carries should be recorded as **not applicable,
+with this reason**, rather than run and reported as a budget — reporting it would put a number in the
+record that later readers would reasonably mistake for the product's cross-machine limit.
+
+The idle-timeout risk itself does not disappear. It moves to **Feature 004**, where the inter-node
+link is designed, and it belongs in that feature's own validation rather than here.
 
 ### F10 — `followup_message` works, and Cursor prefixes its stdin payload with a UTF-8 BOM
 

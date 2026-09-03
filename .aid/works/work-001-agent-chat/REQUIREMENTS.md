@@ -206,7 +206,7 @@ second surface. It carries no logic and holds no state: every operation it descr
 | FR-2.1 | A session registers with `register(name, tool, cwd, capabilities)`, binding itself to a **stable name**. The name is an **identity, not an address** — it is how a session is recognised inside a chat, mentioned, and whispered to; it is never a destination on its own |
 | FR-2.2 | A session's full id is **machine address + session name**, mirroring the chat rule in FR-3.2. Names are unique per machine. Re-registering an existing name **reattaches** that session to its existing chat memberships and positions |
 | FR-2.3 | **Liveness is tracked** (heartbeat or connection), and drives **two distinct states at two thresholds** (§6). **Stale** — quiet past the stale threshold — is a *display* state: the member is shown as probably gone and **nothing is released**. **Reaped** — quiet past the longer reap threshold — is the node giving the member up for good: its registration is released and it **stops counting toward its chats' trim points**, which is what lets those logs be trimmed again — **including messages it never read.** Its identity is not destroyed: the name is free and re-registering it is accepted at any time. Tracking and stale-marking belong to registration; reaping belongs to retention |
-| FR-2.4 | **A host-supplied conversation identity is used where one exists, and is never depended on.** Some hosts hand the adapter a stable per-conversation id, which is the thing a session name exists to provide and is more trustworthy than anything the product could infer. Where it is offered it is preferred; where it is undocumented it is treated as an optimisation with a fallback, because an undocumented field can be withdrawn without notice; and the identity in FR-2.1 remains the product's own and authoritative |
+| FR-2.4 | **The product mints its own conversation id, and no host's is adopted as identity.** A registration is bound to a conversation id the product generates. It is not derived from, and does not depend on, anything a host supplies — one host offers such an id today, four do not, and the one that does leaves it undocumented and so withdrawable without notice. A host-supplied id **may be recorded as correlation metadata** beside the product's own, for reconciling the product's log against the host's, and nothing may key on it |
 
 ### FR-3 — Chats and addressing
 
@@ -1433,18 +1433,21 @@ obligation; it does not pre-write the entry.
 > *the subscriber is a CLI invocation*. Together they keep the HTTP transport internal to the
 > node, which is what FR-7.4 asks for.
 
-> **A decision the spike created, and the specifier must take deliberately.** Cursor hands its
-> stop hook a `conversation_id` — a stable per-conversation identity, which is the thing FR-2.1's
-> session name exists to provide. The design had assumed no host would supply one, so it planned to
-> mint its own and only its own.
+> **Conversation identity is the product's own — decided, not inherited.** Cursor hands its stop
+> hook a `conversation_id`, and the spike found it (F10). It is not adopted: the product mints its
+> own conversation id per FR-2.4, because one host in five offers such a field, that one leaves it
+> undocumented, and an identity that can be withdrawn by a vendor is not an identity. The host's
+> value may be carried alongside as correlation metadata, so the product's log can be reconciled
+> against the host's, and nothing keys on it.
 >
-> That assumption is now false on at least one host, and the fork is real: a host-supplied id is
-> more trustworthy than anything the product can infer about a session, but it is **undocumented**,
-> so it can be withdrawn without notice, and it exists on one host out of five. FR-2.4 fixes the
-> policy — prefer it where offered, never depend on it, and keep the product's own identity
-> authoritative — but *where it is used* is a specification decision: as a reattachment hint on
-> re-registration, as a cross-check that a name has not been reused by a different conversation, or
-> not at all in v1. Deciding by default here would be deciding not to look.
+> **What that costs, stated so the specifier does not rediscover it.** FR-2.2 lets a name be
+> re-registered, and re-registering **reattaches** the session to its existing chat memberships and
+> positions. A product-minted id cannot tell whether the thing reattaching is the same conversation
+> as before or a different one that happens to reuse the name — a host-supplied id could, because
+> the host knows. So a stale reattachment is possible: a fresh conversation inherits a previous
+> one's unread positions and membership. Whether that matters is a specification question. If it
+> does, the correlation metadata is where the check would come from, and the check would then work
+> on Cursor and nowhere else — which is a good reason to make the behaviour correct without it.
 
 #### Description
 
