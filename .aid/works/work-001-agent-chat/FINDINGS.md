@@ -567,6 +567,61 @@ the running process itself, never from `PATH`.
 
 ---
 
+## Does this evidence still hold after the message plane was redesigned?
+
+Checked deliberately, because a spike whose premises moved is worth re-reading rather than
+assuming. An architecture review replaced most of the message plane — the per-chat home machine
+retired, global ordering relaxed to per-speaker, channels became replicated ephemeral names that
+agents create, one channel per agent at a time, broadcast removed, and a hub control plane added
+carrying a roster and a directed connect request.
+
+**Nothing above is invalidated, and the reason is structural: this spike tested the wake, not the
+message plane.** Every measured claim is about a host turning an arriving byte into a turn — which
+host, which timeout, which shell, which payload encoding. None of it referenced chats, homes,
+ordering or retention, so none of it moved when those did. AC-20's four answers stand as written.
+
+Two findings became **more** load-bearing, not less:
+
+| Finding | Why it matters more now |
+|---|---|
+| **F5** — the woken turn's tool call is gated behind human approval on Cursor | It is the reason the connect request has **no accept step**. An accept would be a tool call, so it would stall on a human click, which FR-5.7 forbids assuming. The hub answers from state instead: target idle, it is joined; target already in a channel, the request fails as busy. A measured host constraint decided a protocol shape |
+| **F10** — Cursor delivers an undocumented `conversation_id` | Considered and rejected as identity (FR-2.4), on the stakeholder's reason that the product must control the id's immutability. The finding still earns its place: it names the alternative that was weighed, so a later reader does not rediscover the field and assume nobody looked |
+
+### One accident in the spike's favour
+
+**The stub was a hub, not a chat.** It exposed a single `/wait` endpoint with no notion of a chat,
+a member or a position — the hook simply held a connection and took whatever came back. That was a
+simplification at the time, made to keep the apparatus throwaway. Under the new architecture it is
+the more faithful model: an agent's wait now belongs to the **hub**, and an agent in no channel at
+all still holds one, waiting for either a message or a connect request. So the spike measured the
+wait the product actually has, rather than the one the superseded design would have given it.
+
+### The one gap, and it got bigger
+
+**The inter-node link is still unmeasured, and the new architecture leans on it harder.** F11
+already established that the spike could not model it — there was one stub and no second node, so
+what test 4 exercised was a subscriber holding a connection across a LAN, which the product never
+opens. That conclusion is unchanged. What changed is the load:
+
+| Under the superseded design | Under the new design |
+|---|---|
+| A member on B read a chat homed on A through a **proxied request/response**. Short-lived calls | Nodes **replicate channel content continuously**, maintain a **federated roster** of presence, and **relay connect requests**. Long-lived and chatty |
+
+So the idle-connection-timeout risk F11 moved to Feature 004 is now a risk to a link that carries
+presence and replication rather than occasional proxied reads. It is still Feature 004's to
+validate and still not a P0 blocker — held connections with keepalive and reconnect are ordinary
+engineering, and `§6` already classes the delivery-semantics problem as a solved one — but the
+requirement to validate it should be stated as larger than F11 left it.
+
+**A smaller gap, recorded so it is not mistaken for proven:** concurrent waiters were demonstrated
+at **two** (one loopback, one LAN, in `T4-000-f`), not at *n*. A machine running several idle
+sessions holds several waits at once, and nothing here bounds how many one node serves.
+
+**No further P0 spike is needed.** The question that could have invalidated the design — can an
+arriving message start a turn with no human in the path — is answered on both proving hosts and
+across two machines. What remains is validation of an ordinary networking property, in the feature
+that designs it.
+
 ## Left open, and where each one goes
 
 Nothing here blocks AC-20, which asks for recorded answers to the four questions and has them. Each
@@ -578,6 +633,7 @@ item below is a question the spike raised and deliberately did not close.
 | Cursor's platform default `timeout` is known only as "under 60 s". Narrowing it needs runs with the line absent at smaller `D` | Feature 003 — but only as a curiosity, since F7 already concludes the waker must set the value explicitly |
 | Does Cursor's `loop_limit` enforce its documented cap of 5? Needs a deliberate loop of six or more wakes | Feature 003, alongside the re-entry rule |
 | Is `conversation_id` stable across host restarts, and does it survive a Cursor upgrade? It is undocumented | Feature 002, which is why FR-2.4 mints its own id and treats the host's as metadata |
-| Does a held **inter-node** connection survive a router, NIC or OS idle timeout across a LAN? | Feature 004. The spike had no second node and could not model it (F11) |
+| Does a held **inter-node** connection survive a router, NIC or OS idle timeout across a LAN? **Now carries replication, a federated roster and connect-request relay, not occasional proxied reads** | Feature 004. The spike had no second node and could not model it (F11) |
 | Waiter liveness over a LAN cannot be read from the socket | Feature 004 |
+| How many concurrent waiters does one node serve? Demonstrated at two, not at *n* | Feature 002, which builds the node |
 | Does the wake work on hosts other than Claude Code and Cursor? | Out of scope by §10 — P0 was scoped to these two |

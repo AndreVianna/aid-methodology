@@ -766,6 +766,28 @@ review_history:
       moves to Ready with an executed note; the remaining open questions are routed to 002, 003 and
       004 in FINDINGS.md and none of them block specification.
     applied_to: 'FINDINGS.md (Test 4 section, apparatus, answer table, F12, open-questions table); REQUIREMENTS.md (section 8 assumption, section 10 P0 row, Feature 001 status, Feature 001 test-4 pass criteria); SPIKE-RUNBOOK.md (status header)'
+  - date: '2026-09-03'
+    event: 'Spike evidence re-read against the redesigned message plane'
+    outcome: 'All twelve findings hold; no new P0 spike needed; one gap grew'
+    notes: >-
+      Asked by the stakeholder before any amendment was written, and worth answering rather than
+      assuming. Nothing in the spike is invalidated, and the reason is structural: the spike tested
+      THE WAKE, not the message plane. Every measured claim concerns a host turning an arriving byte
+      into a turn -- which host, which timeout, which shell, which payload encoding -- and none of it
+      referenced chats, homes, ordering or retention, so none of it moved when those did. AC-20's
+      four answers stand. Two findings became MORE load-bearing: F5's approval gate is the reason the
+      connect request has no accept step, so a measured host constraint decided a protocol shape; and
+      F10's conversation_id is the alternative FR-2.4 weighed and rejected. One accident favours the
+      spike -- its stub was a HUB, not a chat, exposing a single wait endpoint with no notion of chat,
+      member or position, which is now the more faithful model, because an agent's wait belongs to the
+      hub and an agent in no channel still holds one. The one real gap GREW: the inter-node link is
+      still unmeasured (F11) and now carries continuous replication, a federated roster and
+      connect-request relay rather than occasional proxied reads, so Feature 004's validation duty is
+      larger than F11 left it. A smaller gap recorded so it is not mistaken for proven: concurrent
+      waiters were demonstrated at two, not at n, which belongs to Feature 002. Conclusion: no
+      further P0 spike; what remains is validation of an ordinary networking property inside the
+      feature that designs it.
+    applied_to: 'FINDINGS.md (new "Does this evidence still hold" section; open-questions table)'
 # [A] written by the orchestrator on the work's active branch (single
 #     writer). Append-only audit trail of phase transitions and gate
 #     approvals, newest LAST (append to bottom).
