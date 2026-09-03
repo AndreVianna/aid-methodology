@@ -110,15 +110,15 @@ started: '2026-09-01'
 # [W] resolved at runtime by `bash canonical/aid/scripts/config/read-setting.sh --skill {phase} --key minimum_grade --default A`; source is `.aid/settings.yml`
 minimum_grade: A
 # [W] 'yes' | 'no' -- quoted, see NFR-2 / D-5
-user_approved: 'no'
+user_approved: 'yes'
 # [W] Running | Paused-Awaiting-Input | Blocked | Completed | Canceled
 lifecycle: Running
 # [W] Describe | Define | Specify | Plan | Detail | Execute
-phase: Plan
+phase: Detail
 # [W] aid-{skill} | none
-active_skill: none
+active_skill: aid-detail
 # [W]
-updated: '2026-09-03T18:50:12Z'
+updated: '2026-09-03T19:59:16Z'
 # [W] set only when lifecycle = Paused-Awaiting-Input
 pause_reason: --
 # [W] set only when lifecycle = Blocked
@@ -885,6 +885,10 @@ lifecycle_history:
     event: 'Plan COMPLETE -- five deliveries at A+; numbered pipeline reaches Detail'
     grade: A+
     notes: 'PLAN.md and five deliveries/delivery-NNN/STATE.yml written at delivery_state Pending-Spec. Feature 002 is split across delivery-001 and delivery-002 -- a delivery-level split, not a redrawn feature boundary, and the escape route if the code does not divide as cleanly as the columns is to fold the two back together, since both are stage P1 and both are Feature 002. Also filed W1-1 in the tech-debt ledger: the pipeline state write that opens aid-plan corrupted this very file, because writeback-state.sh clears a folded scalar by rewriting only its key line and orphaning the body. Repaired by hand. Next: /aid-detail. user_approved remains no -- the human gate over the amended requirements, the four specifications and this plan is still unclaimed.'
+  - date: '2026-09-03'
+    event: 'HUMAN GATE PASSED -- stakeholder approved the amended requirements, the four specifications and the plan'
+    grade: A+
+    notes: 'user_approved moves from no to yes. This is the gate that had been deliberately withheld through the amendment, the four specifications and the plan: every review A+ recorded before this line is a review gate, and none of them stood in for this one. What is approved is the whole set as it stands on this branch -- the message-plane redesign (no per-chat home, per-speaker ordering, ephemeral one-at-a-time channels, the hub plane with a connect request answered from state), the four technical specifications, and the five-delivery plan with Feature 002 split across the first two. It includes the decisions taken on the stakeholder behalf and flagged for veto rather than ratified, none of which were vetoed. Next: /aid-detail.'
 
 # [A] aid-deploy only; one entry per delivery (never derived from child
 #     files; aid-deploy is the sole author):
