@@ -153,6 +153,13 @@ fi
 # CN07 — destination side: each channel must actually deliver the component.
 # One assertion per consumer, each naming the specific thing that channel does with the
 # files after reading the manifest.
+#
+# EACH NEEDLE MUST BE UNIQUE TO THE DELIVERING LINE. Two of these originally were not: a
+# bare 'chat-node' also matched vendor.js's clean-slate rmSync, and a bare
+# _chat_node_copies also matched vendor.py's comment and its own def -- so deleting the
+# delivery while leaving those behind would have passed. That is the same false pass CN07
+# exists to prevent, reproduced inside CN07 itself, which is why the needles now include
+# their call arguments.
 _cn07() {  # $1 = consumer path, $2 = needle, $3 = what the needle proves
     local f="${REPO_ROOT}/${1}"
     if [[ -f "$f" ]] && grep -qF -- "$2" "$f"; then
@@ -163,8 +170,8 @@ _cn07() {  # $1 = consumer path, $2 = needle, $3 = what the needle proves
 }
 _cn07 "install.sh"                      '${AID_HOME}/chat-node'   "install the node into AID_HOME"
 _cn07 "install.ps1"                     "Join-Path \$aidHome 'chat-node'" "install the node into aidHome"
-_cn07 "packages/npm/scripts/vendor.js"  "'chat-node'"             "vendor the node into the npm payload"
-_cn07 "packages/pypi/scripts/vendor.py" "_chat_node_copies"       "vendor the node into the pypi payload"
+_cn07 "packages/npm/scripts/vendor.js"  "readComponentManifest(repoRoot, 'chat-node')" "vendor the node into the npm payload"
+_cn07 "packages/pypi/scripts/vendor.py" "_chat_node_copies(repo_root)" "vendor the node into the pypi payload"
 _cn07 "release.sh"                      "./chat-node/%s"          "add the node's files to the CLI-bundle tar list"
 
 # CN08 — npm ships only what `files` names.

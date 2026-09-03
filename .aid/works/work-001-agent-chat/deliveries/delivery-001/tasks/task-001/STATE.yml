@@ -51,7 +51,18 @@ review: --
 # [W] HH:MM | --
 elapsed: --
 # [W]
-notes: --
+notes: >-
+  AC-3 verification, stated per channel rather than claimed as a whole. RUN FOR REAL and
+  observed to place both files: npm vendoring (node packages/npm/scripts/vendor.js) and pypi
+  vendoring (python3 packages/pypi/scripts/vendor.py). VERIFIED BY REPRODUCING ITS EXACT
+  TAR-LIST LOGIC standalone: the CLI bundle, whose archive was inspected and contains
+  ./chat-node/MANIFEST and ./chat-node/server/node.mjs. VERIFIED BY EXECUTING THE BLOCK
+  against scratch directories: install.sh's install-to-AID_HOME loop, which placed the file
+  and produced a byte-identical tree on a second run. NOT EXECUTED: install.ps1, because no
+  PowerShell is available in this environment -- it is a line-for-line mirror of its own
+  dashboard block and of the verified install.sh block, but that is a code reading and is
+  recorded as one rather than as a pass. The reviewer was right that AC-3 could not be
+  settled by inspection; four of five channels are now settled by execution instead.
 # [W] mutable display-name override (writeback-state.sh:829). Documentation
 #     fix, not a schema change (SP-2's one documented exception): the writer
 #     already writes this key today; it was simply never declared here.
