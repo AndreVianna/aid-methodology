@@ -2406,7 +2406,167 @@ believed empty here — but it is the one real loss, and it is named.
 
 #### Technical Specification
 
-{Added by /aid-specify — do not fill during interview.}
+The only part of this product that differs per host, and the only part with measured evidence
+behind it. **Every number and every host behaviour below comes from the P0 spike**, cited by
+finding; nothing here is inferred from documentation alone, and where documentation and
+measurement disagreed, measurement won and the disagreement is recorded.
+
+##### Layers & Components
+
+```mermaid
+flowchart LR
+  HOST["host tool"] -->|"fires the stop hook"| AD["waker adapter (a CLI invocation)"]
+  AD -->|"aid chat subscribe"| HUB["local hub, loopback"]
+  HUB -.->|"message or connect outcome"| AD
+  AD -->|"host-shaped payload"| HOST
+  HOST --> TURN["a turn runs"]
+```
+
+| Component | Per host? | Holds |
+|---|---|---|
+| Subscriber | No | The held wait: one `aid chat subscribe` invocation against the local hub |
+| Adapter | **Yes, one per host** | Reading the host's stop payload, deciding whether to wait, rendering the wake in the host's own shape |
+| Rendered chat skill | No (rendered into each dialect by existing machinery) | Documentation the model can find; no logic, no state (FR-0.4, FR-7.4) |
+
+**The node knows none of this** (FR-5.11). One canonical message on the wire; the adapter renders
+it at the last step. If the node branched per host, every new host would touch the node and the
+store, and FR-5.2's "only the adapter differs" would be false.
+
+##### The adapter contract
+
+Every adapter satisfies one contract — *wait without spending tokens, and turn an arriving message
+into a turn* — and five rules the spike produced.
+
+**1. Re-entry (FR-5.6). The wake is inherently a loop and the rule is not optional.**
+The wake ends a turn; ending a turn fires the stop hook; the stop hook wakes the session. Measured
+on both hosts: the stop hook re-fired 6.3 s after the woken turn on one and 6.6 s on the other
+(F1). "Block on every stop event" is not an implementable adapter.
+
+| Host | Signal available | Rule |
+|---|---|---|
+| Cursor | `loop_count` in the stop payload, and a documented `loop_limit` defaulting to 5 | Read `loop_count`; do not re-arm on the tail of a wake already served |
+| Claude Code | `stop_hook_active`; **`loop_limit` documented as `null`, meaning uncapped** | The adapter carries the count itself. There is no host-side backstop on this host, so the rule is load-bearing rather than belt-and-braces |
+
+**2. The woken turn requires no authorisation (FR-5.7).** Measured: on one host the woken turn's
+shell command raised an approval prompt and waited for a human click (F5). An autonomous channel
+cannot depend on that. So **the wake carries the message body as text**, and the adapter — not the
+woken session — has already read the inbox and advanced `delivered` (FR-4.4). The session simply
+continues with the message as context.
+
+> **This is the single most consequential thing the spike changed**, and it is why FR-4.4 has two
+> positions rather than one. If the adapter both delivered *and* acknowledged, a crash between the
+> hand-off and the turn would mark a message read that no model ever saw. The adapter advances
+> `delivered`; the session advances `acked` when it next calls anything; redelivery keys on
+> `acked`. Where the operator has pre-authorised the call (F9 shows this is configurable), the
+> acknowledgement is prompt; where they have not, it lags and the message is presented again and
+> deduped. Both are correct, which is the point.
+
+**3. The block stays inside the host's hook timeout, and the adapter does not write it (FR-5.8).**
+Measured: on timeout the host **abandons** the hook — output discarded, wait abandoned, **process
+left running with its socket still open** (F7). Nothing in the host reports it. Consequences:
+
+- The adapter's own block must end strictly before the host stops listening. Ownership is split:
+  the **operator writes** the timeout in host configuration, because FR-0.4 forbids the product
+  writing any; the **product states the value it needs**, in the rendered skill and the install
+  instructions; the **adapter is told it** and bounds its block by what it was told.
+- **It must never inherit the platform default.** Measured under 60 s on one host, against this
+  product's own 30 s long-poll — at the default it does not work, and it fails silently.
+- Where the adapter is told nothing, it falls back to a block short enough to be safe under the
+  shortest default known, accepting a shorter wait over a wake that never arrives.
+- The node must treat its waiter count as a hint, not a fact: an abandoned hook leaves a waiter
+  nobody is reading (Feature 002, waiter registry).
+
+**4. The host's contract is per-host and taken from its documentation (FR-5.9).**
+
+| Host | Output shape | Input |
+|---|---|---|
+| Cursor | `{"followup_message": "<text>"}` — documented, and measured working | JSON on stdin, **prefixed with a UTF-8 BOM** |
+| Claude Code | `{"decision": "block", "reason": "<text>"}` | JSON on stdin |
+
+**The BOM is a real interoperability constraint, not a spike artefact** (F10). RFC 8259 does not
+permit a BOM in JSON, so a strict parser rejects the whole document and reports it as malformed at
+its first character — an error that points at the payload rather than the encoding. **Adapters
+decode with `utf-8-sig`, or strip `U+FEFF` before parsing.**
+
+One shape that works is recorded as *not* a contract: `decision: block` also wakes Cursor, in four
+runs of four, and does not appear in Cursor's schema at all. Building on it would mean depending on
+undocumented behaviour, so `followup_message` is what ships.
+
+**5. An adapter assumes nothing about shells (FR-5.10), and the two questions are separate.**
+
+| Question | Measured |
+|---|---|
+| What shell does the host **invoke the hook** through? | Not the platform's native one — one host runs hooks through bash on Windows (F2) |
+| What shell does the **woken turn's command** run in? | Different again — the same machine ran hooks through bash and woken-turn commands through PowerShell (F12) |
+
+The two shells disagree about a leading quoted path: bash treats a quoted word in command position
+as the command; PowerShell treats it as a string expression and errors. **The call operator is not
+the fix** — in bash it means *background*. **What is portable is an unquoted path**, correct in
+both, and it only breaks when a path contains a space, which is the one case where the adapter must
+know which host it is talking to. A product cannot choose its users' install paths, and
+`C:\Program Files\` is where Windows puts things.
+
+**The interpreter is resolved from the running process, never from `PATH`** — a `PATH` entry may be
+a shim that re-launches the real interpreter as a child, leaving the process the host watches
+unrelated to the process that blocks (F4).
+
+##### Feature Flow
+
+```mermaid
+sequenceDiagram
+  participant H as host
+  participant A as adapter
+  participant N as local hub
+  H->>A: stop hook fires, payload on stdin (decode utf-8-sig)
+  A->>A: re-entry check (loop_count / own counter)
+  alt tail of a wake already served
+    A-->>H: return at once, do not wait
+  else
+    A->>N: subscribe, block < the configured hook timeout
+    N-->>A: message, or connect outcome, or timeout
+    alt timeout
+      A-->>H: return with no wake
+    else something arrived
+      A->>A: advance delivered (FR-4.4)
+      A-->>H: host-shaped payload carrying the text
+      H->>H: a turn runs with it as context
+    end
+  end
+```
+
+**Idle and busy are one implementation, not two** (FR-5.4). The hook fires at turn end, so a
+message arriving mid-turn is simply found by the next stop — the busy path needs no push at all.
+The subscription therefore exists **only while the session is idle**, which is exactly when push is
+needed.
+
+**Two event kinds share the one wait** (FR-9.5): a message is content to read, a connect outcome is
+a change in the agent's own situation. The adapter renders each into the host's shape.
+
+##### Telemetry & Tracking
+
+None beyond the hub's own audit log (FR-7.1). Stated rather than omitted: the spike's NDJSON
+instrumentation was throwaway apparatus and none of it survives into the product (AC-20).
+
+##### Performance
+
+No target (`§6`). Two measured figures are inputs, **and they are not comparable to each other**:
+about 3.7 s from a returned hook to a completed one-word reply on one host, about 7.5 s on the
+other for a turn that spawned an interpreter and made an HTTP round trip. Different actions, so
+they rank nothing. Anything deriving a timeout from them uses the **observed maximum with
+headroom** — the observed maximum rose as samples accumulated, and five samples bound no tail.
+
+##### Host configuration is the operator's, and this is a boundary rather than a preference
+
+The product renders a skill and touches nothing else: no MCP registration, no settings file, no
+hook wiring (FR-0.4). So the stop hook and its timeout are installed **by the operator**, and the
+product's job is to state exactly what to install and why the timeout matters. A host whose skill
+is absent loses discoverability, never capability — the full message plane stays reachable over
+the CLI (FR-0.3).
+
+Two hosts ship adapters. **Copilot CLI has a documented route (`agentStop`) that is unmeasured**,
+and **Antigravity's documentation is silent**; neither is a v1 gate, and a host with no viable
+adapter degrades to the pull floor rather than blocking the product (FR-5.2, FR-5.3).
+
 
 ##### BDD Scenarios
 
@@ -2564,7 +2724,133 @@ nothing reports an error.
 
 #### Technical Specification
 
-{Added by /aid-specify — do not fill during interview.}
+Builds on Feature 002's schema and core, and adds exactly three things: peers, replication, and
+the relay of the hub plane across machines. It changes no rule — a session's experience is
+identical whether its peer is on this machine or another, which is the point.
+
+##### Data Model
+
+Two tables added to Feature 002's store, and one column.
+
+```sql
+CREATE TABLE peer (
+  id             INTEGER PRIMARY KEY AUTOINCREMENT,
+  machine        TEXT    NOT NULL UNIQUE,  -- the address a peer is reached at
+  protocol_major INTEGER,                  -- learned at handshake (FR-6.4); NULL until then
+  source         TEXT    NOT NULL,         -- 'configured' | 'discovered'
+  last_seen_at   INTEGER,
+  state          TEXT    NOT NULL          -- 'reachable' | 'unreachable'
+);
+
+CREATE TABLE outbox (
+  id          INTEGER PRIMARY KEY AUTOINCREMENT,
+  peer_id     INTEGER NOT NULL REFERENCES peer(id) ON DELETE CASCADE,
+  kind        TEXT    NOT NULL,   -- 'message' | 'membership' | 'roster'
+  payload     TEXT    NOT NULL,   -- JSON
+  queued_at   INTEGER NOT NULL,
+  attempts    INTEGER NOT NULL DEFAULT 0
+);
+
+CREATE INDEX outbox_drain ON outbox (peer_id, id);
+```
+
+`message` gains nothing: `sender_machine` was already there in Feature 002, put there for this
+stage rather than discovered at it.
+
+**There is no `remote_session` table.** The roster of agents on other machines is **not stored** —
+it is fetched from each reachable peer when asked and merged for the answer. Storing it would
+create a second source of truth for liveness that no heartbeat maintains, and a stale row claiming
+an agent is available is worse than a slow answer: FR-9.3 refuses a request against a target that
+is not available, and a lying roster would send an agent to ask for somebody who left an hour ago.
+This is the same reasoning that makes `available` computed rather than stored in Feature 002.
+
+##### Feature Flow
+
+```mermaid
+flowchart LR
+  S["session on B"] -->|loopback only, ever| HB["hub B"]
+  HB <-->|"replication + roster + connect relay"| HA["hub A"]
+  HA --> SA["session on A"]
+```
+
+**Replication.** A hub that accepts a send delivers it to every peer holding a member of that
+channel: immediately where the peer is reachable, and into `outbox` where it is not (FR-6.3). The
+receiving hub assigns **its own** `arrival_seq` and applies its own uniqueness constraints, so a
+message replayed after a reconnect collides on `(channel_id, idempotency_key)` and is absorbed
+rather than duplicated. That collision is the whole of the exactly-once story at the store, and it
+is why FR-4.5's idempotency key is load-bearing rather than a formality.
+
+**Per-speaker order survives the network for free.** The receiving hub reorders on read by
+`sender_seq` (Feature 002's read path), so out-of-order arrival across the LAN is corrected at
+delivery without the sending hub having to guarantee anything about transmission order. This is the
+dividend of relaxing global ordering: replication needs no sequencer, no agreement, and no
+reordering buffer of its own.
+
+**Membership and the connect relay.** A `connect` naming a target on another machine is relayed to
+that machine's hub, which answers **from its own state at the moment the relay arrives** (FR-9.4)
+and replies with the outcome. Two rules make this decidable without agreement:
+
+- **An unreachable peer fails the request rather than queueing it** (FR-9.4). A connect outcome
+  delivered minutes late would arrive after the asker's situation changed, which is the pending
+  state FR-9.3 exists to eliminate. Note this is the one thing that is *not* store-and-forwarded:
+  messages queue, requests do not, and the asymmetry is deliberate.
+- **A hub asked to place its agent into a channel name it has never seen creates that channel
+  locally and joins the agent** (FR-9.7). There is nothing to look up: a channel is a name. The
+  race — the asker having left in the interval — resolves by the target finding itself alone, and
+  that channel closing when the target leaves or is reaped.
+
+##### Layers & Components
+
+| Component | Holds |
+|---|---|
+| Peer registry | The `peer` table, the configured list, and whatever discovery found |
+| Discovery | The guaranteed path (a static peer list plus heartbeat) and, above it, best-effort zero-configuration probing |
+| Link | One long-lived connection per peer, carrying replication, roster queries, and connect relays |
+| Outbox drain | Replays queued items to a peer on reconnect, oldest first |
+
+**Discovery is layered and only the lower layer carries a criterion.** The guaranteed path depends
+on no network feature and is what satisfies AC-4; zero-configuration discovery sits above it as a
+convenience where the network permits (FR-6.1, `§4`). Research behind FR-6.1 found no single
+mechanism reaches every environment users are actually in, so the specification fixes the *outcome*
+and leaves the best-effort mechanism to implementation, which is unusual and deliberate.
+
+##### The link, which is this stage's real risk
+
+FR-6.5 exists because this is the one link no measurement covers. The P0 spike had one stub and no
+second hub, so what it exercised was a subscriber holding a connection across a LAN — a connection
+this design never opens. What the link actually carries is heavier than what the spike modelled:
+continuous replication, roster queries, and connect relays, held open rather than dialled per
+request.
+
+| Property | Requirement on the implementation |
+|---|---|
+| Idle survival | A router, NIC or OS idle-connection timeout **will** close it. Keepalive at an interval well under the shortest plausible idle timeout, and reconnect on failure |
+| Reconnect loses nothing | Queued items are in `outbox`, which is in the store; the link holds no unreplicated state of its own |
+| Reconnect tells no lies | The roster is fetched, never cached, so a link that was down cannot leave a departed agent showing as available |
+| Backoff | Reconnection backs off, and two hubs must not resynchronise into lockstep — the same hazard FR-9.6 names for reciprocal connect requests |
+
+**This is the property to validate first-hand at this stage**, because nothing upstream has. The
+honest form of that validation is an overnight idle followed by a send, not a unit test.
+
+##### Migration Plan
+
+None. The `peer` and `outbox` tables are additive, and no existing row changes shape. A hub that
+has never federated is a hub with an empty `peer` table, which is also exactly what a P1 hub is —
+so P1 and P3 stores are the same store, and there is no upgrade step between them.
+
+##### Security Specs
+
+**The trust model changes here and nowhere else, so it is stated here.** A hub reachable on the
+LAN participates: no key, no password, no login, of a peer or of a session (FR-6.2). The network
+*is* the security boundary, which means:
+
+- Anything that can reach the LAN can register, read, send, and read the roster.
+- The roster discloses session names, host tool, working directory and liveness to every peer.
+  That is the same exposure the retired all-call would have carried, and it is not recovered by
+  having removed it.
+- Version negotiation refuses only on a **major** mismatch (FR-6.4), and the protocol version is
+  its own number, **never inferred from `VERSION`** — the node ships inside the `aid` payload, so
+  the artifact version moves for reasons the protocol does not.
 
 ##### BDD Scenarios
 
@@ -2757,7 +3043,104 @@ nothing in common.
 
 #### Technical Specification
 
-{Added by /aid-specify — do not fill during interview.}
+Three subjects that share a stage and a dependency on the store rather than a subject, which the
+feature's own note already says out loud. Nothing here adds a delivery mechanism: mention and
+whisper are **visibility rules over the existing log**, retention is **when a row may leave it**,
+and operator visibility is **reading what is in it**.
+
+##### Data Model
+
+No new tables. Feature 002 reserved the two columns this feature fills:
+
+| Column | Filled here with |
+|---|---|
+| `message.mention` | A JSON array of member names, or `NULL`. Changes attention, never visibility |
+| `message.whisper_to` | Exactly one member name, or `NULL`. Changes visibility, never attention |
+
+`mention` and `whisper_to` are **mutually exclusive on one message** (FR-4.1), enforced at the
+send path rather than by a constraint, because SQLite's `CHECK` would give a caller a constraint
+violation where the error taxonomy owes it a refusal.
+
+One index is added for the trim job, and only when the job exists:
+
+```sql
+CREATE INDEX message_trim ON message (channel_id, received_at);
+```
+
+##### Whisper is a read rule, and getting it wrong is worse than not having it
+
+A whisper is returned only to its target and its sender. The read path (Feature 002) filters it,
+and **the filter applies to history exactly as it applies to delivery** — this is the part that has
+to be right. A private aside that reappears when somebody scrolls back is worse than no privacy at
+all, because it was believed private. So the rule is stated as a property of the *query*, not of
+the delivery moment:
+
+> A `SELECT` on behalf of member M returns a message with `whisper_to` non-null **only if**
+> `whisper_to = M` or `sender_name = M`. There is no second query path, no operator view that
+> bypasses it, and no export that reconstructs it.
+
+**One consequence is deliberate and stated so it is not later filed as a bug:** the operator's
+audit log (FR-7.1) shows *that* a whisper was sent, from whom to whom, and does **not** show its
+body. An operator who could read whispers would make the guarantee a lie for everyone, and FR-7.1
+asks for accountability, not for content.
+
+**Mention** needs no filtering at all: the message is visible to the whole channel and `mention`
+merely flags who it was aimed at. Both are meaningful only above two members (FR-3.7) — in a
+two-member channel every message already has exactly one recipient — and the send path accepts
+them without objection there rather than refusing, because a channel can drop to two members after
+a message was composed.
+
+##### Retention: the trim job
+
+Per hub, against its own members' acknowledged positions, and nothing else (`§6`).
+
+```
+for each channel on this hub:
+    live      = members not reaped
+    trim_to   = min(acked_seq) over live, or channel head when live is empty
+    delete messages where arrival_seq <= trim_to
+                     and received_at  <= now - ttl
+```
+
+**Two conditions, and both must hold.** Age alone never deletes an unacknowledged message; the TTL
+says when a message becomes *eligible*, and the trim point says when it actually goes. This is
+deliberate: a message sent, never delivered and never reported as undelivered is exactly the
+failure the overflow rule exists to prevent, and a hard expiry would let it back in by another
+door.
+
+**Reaping is the one thing that can remove an unacknowledged message**, and that is its entire
+purpose: a member given up for gone stops counting toward `min(acked_seq)`, so the trim point can
+move past what only it never read. The guarantee is therefore bounded rather than absolute.
+
+| Job | Cadence | Effect |
+|---|---|---|
+| Stale marking | Continuous, derived | Unavailable to a connect request; releases nothing |
+| Reaping | Periodic | Deletes the `session` row; **closes the channel if it was the last member** (FR-3.3) |
+| Trim | Periodic | The rule above |
+
+**Reaping and channel closure are one transaction.** Deleting the last member's session row and
+deleting the channel it pointed at must not be separable, or a crash between them leaves a channel
+with no members that nothing will ever close — the one way this design could leak a channel.
+
+**Three storage bounds, and the third is the one that usually acts.** The unread-depth limit stops
+a channel growing behind a member that stopped reading; reaping clears that blockage; and **the
+channel closing discards the log outright**, which is why an ephemeral channel rarely accumulates
+enough for the other two to matter. That ordering is worth knowing before tuning anything.
+
+##### Operator visibility
+
+`FR-7.1`, read-only over the same store, no second query path (above). The CLI shows machines and
+sessions, the open channels this hub knows with their members, each member's unread depth and idle
+time, and the audit log. **Idle time is in the operator's view because it is the input to the one
+remedy this design leaves them** — eviction (FR-7.2, ID-22). v1 bounds an eternally idle live
+session with nothing automatic, on the ground that the product cannot tell legitimate waiting from
+abandonment and only the human can, so the human needs to see it to act on it.
+
+##### Migration Plan
+
+None. Both columns exist from Feature 002 and are nullable; the one index is additive. A store
+written by a P1 hub is read by a P4 hub without alteration.
+
 
 ##### BDD Scenarios
 
