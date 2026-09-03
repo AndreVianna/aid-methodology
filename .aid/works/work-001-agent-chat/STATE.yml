@@ -110,26 +110,33 @@ started: '2026-09-01'
 # [W] resolved at runtime by `bash canonical/aid/scripts/config/read-setting.sh --skill {phase} --key minimum_grade --default A`; source is `.aid/settings.yml`
 minimum_grade: A
 # [W] 'yes' | 'no' -- quoted, see NFR-2 / D-5
-user_approved: 'yes'
+user_approved: 'no'
 # [W] Running | Paused-Awaiting-Input | Blocked | Completed | Canceled
 lifecycle: Paused-Awaiting-Input
 # [W] Describe | Define | Specify | Plan | Detail | Execute
-phase: Specify
+phase: Describe
 # [W] aid-{skill} | none
 active_skill: none
 # [W]
 updated: '2026-09-03'
 # [W] set only when lifecycle = Paused-Awaiting-Input
 pause_reason: >-
-  NOTHING GATES SPECIFICATION. The spike is closed (four of four answered, AC-20 satisfied,
-  findings folded into REQUIREMENTS.md, Feature 003 unblocked) and the identity fork it left is
-  ratified (qa id 2): the product mints its own conversation id because it must control that id's
-  immutability. Awaiting only the go-ahead to run /aid-specify, taking Feature 002 first -- it is
-  the keystone at 9 of 22 criteria and every other feature depends on its store schema -- then 004,
-  005, 003. Two items owed but blocking nothing: the operator's spike teardown (delete the spike
-  folder on both machines, remove the stop hooks, drop the port-8811 firewall rule, restore power
-  settings), and Feature 002's specification must solve stale reattachment without a host-supplied
-  id, which is the cost the ratified decision accepts.
+  DESCRIBE IS REOPENED, and specification must NOT start until it closes. An architecture review
+  (qa 3-6) replaced the message-plane model the approved requirements describe: the per-chat home
+  machine is gone, global FIFO relaxes to per-speaker order, channels become replicated ephemeral
+  directory names that agents create, an agent holds at most one channel at a time, a crash is not
+  a leave, broadcast and the all-call are removed, and a new hub control plane carries a roster and
+  a directed connect request that the hub answers from state with no accept step. Sections 4, 5, 6,
+  9 and 10 are therefore Pending again and user_approved is back to no. Three decisions are still
+  open and are the immediate blockers: (a) what bounds an eternally idle but live session --
+  nothing, leaning on reaping plus operator eviction, or a probe-on-idle wake (qa 4); (b) who
+  writes the host hook timeout, since FR-0.4 forbids the product writing any host configuration
+  while FR-5.8 requires the adapter to set that timeout, and the spike proved the platform default
+  is too short to inherit; (c) whether the adapter acknowledges on the session's behalf, which
+  decides whether "acknowledged" means handed to the model or read by it. Sequence: close those
+  three, write ONE amendment, re-run the cross-reference gate because feature boundaries move
+  (002 gains the hub plane, 004 loses the home, 005 loses broadcast), then specify. Also still
+  owed but blocking nothing: the operator's spike teardown.
 # [W] set only when lifecycle = Blocked
 block_reason: --
 # [W] e.g. IMPEDIMENT-task-NNN.md, or the failed gate
@@ -142,7 +149,7 @@ ticket_ref: --
 #   grade: {grade} | Pending
 #   sections[].state: Pending | Complete
 interview:
-  state: Approved
+  state: In Progress
   grade: A+
   sections:
     - id: 1
@@ -159,16 +166,16 @@ interview:
       updated: '2026-09-01'
     - id: 4
       name: Scope
-      state: Complete
-      updated: '2026-09-01'
+      state: Pending
+      updated: '2026-09-03'
     - id: 5
       name: 'Functional Requirements'
-      state: Complete
-      updated: '2026-09-01'
+      state: Pending
+      updated: '2026-09-03'
     - id: 6
       name: 'Non-Functional Requirements'
-      state: Complete
-      updated: '2026-09-01'
+      state: Pending
+      updated: '2026-09-03'
     - id: 7
       name: Constraints
       state: Complete
@@ -179,12 +186,12 @@ interview:
       updated: '2026-09-01'
     - id: 9
       name: 'Acceptance Criteria'
-      state: Complete
-      updated: '2026-09-01'
+      state: Pending
+      updated: '2026-09-03'
     - id: 10
       name: Priority
-      state: Complete
-      updated: '2026-09-01'
+      state: Pending
+      updated: '2026-09-03'
 
 # [A] one entry per feature, in id order. Created by aid-define at feature
 #     decomposition (one entry per `### Feature NNN` section it appends to
@@ -779,6 +786,10 @@ lifecycle_history:
     event: 'Feature 001 executed; AC-20 satisfied; the last specification gate cleared'
     grade: A+
     notes: 'The P0 spike ran to completion across two machines and both hosts wake. Twelve findings; six became FR-5.6..FR-5.10 and FR-2.4. The one decision the spike left for the stakeholder -- conversation identity -- is ratified (qa id 2) on the stronger reason than the requirement had carried: the product must control the id immutability. Nothing now gates Specify. Next: /aid-specify work-001, taking Feature 002 first, then 004, 005, 003.'
+  - date: '2026-09-03'
+    event: 'Describe REOPENED -- architecture review replaced the message-plane model'
+    grade: '--'
+    notes: 'Reverted from Specify to Describe before any specification was written, which is the cheap moment to do it. An architecture review with the stakeholder (qa 3-6) took decisions the approved requirements contradict in roughly a dozen places: the per-chat home machine is retired, ordering relaxes from global FIFO to per-speaker, channels become replicated ephemeral directory names that agents create rather than operator-owned objects, an agent holds at most one channel at a time, a crash is stale-then-reaped rather than a leave, broadcast and the all-call are removed, and a hub control plane is added carrying a roster and a directed connect request the hub answers from state with no accept step. Sections 4, 5, 6, 9 and 10 return to Pending; user_approved returns to no; the A+ grade is retained as the grade of the SUPERSEDED document rather than claimed for the amended one. The cascade is mostly deletion, so the amendment should shrink the document: FR-3.2, FR-3.3, AC-19 and AC-21 retire outright, and cross-node position gossip never has to be designed. Three decisions must close first -- idle-session bound, hook-timeout ownership (FR-0.4 versus FR-5.8), and whether the adapter acks for the session. Specification does not start until the amended document is re-gated and the feature boundaries are re-cross-referenced.'
 
 # [A] aid-deploy only; one entry per delivery (never derived from child
 #     files; aid-deploy is the sole author):
@@ -860,3 +871,163 @@ qa:
       Consequence carried into Feature 002 unchanged: stale reattachment must be solved without a
       host-supplied id.
     applied_to: 'Section 5 FR-2.4; section 11 Feature 002 identity note'
+  - id: 3
+    category: Architecture
+    impact: High
+    state: Pending
+    context: >-
+      Raised by the stakeholder during an architecture review: who decides which machine is a
+      chat's home? Nothing in the document says. It falls out of WHERE the operator ran chat
+      create -- create is CLI-only and acts on the local node, so the chat is born there and
+      FR-3.3's "the machine in its id" is that machine. There is no --home parameter and no
+      placement step. Three consequences are unspecified: whether a chat may be created homed on
+      ANOTHER machine (FR-3.2 makes lookup local-only but says nothing about create); whether a
+      chat can be re-homed later (today only delete-and-recreate, which loses the log); and that
+      the operator is making a durable placement decision without being told, since the home
+      machine is whose disk holds the log, whose uptime gates reads, and whose retention policy
+      governs the chat. It is the same single point of failure as the offline-home read gap.
+    suggested: >-
+      For v1 state it out loud in FR-3.3 -- create is local-only, home is where you created it, no
+      remote create, no re-homing -- and let aid-specify decide whether reads degrade or fail when
+      the home machine is away. The stakeholder then proposed a stronger alternative: drop the
+      per-chat home entirely, give every machine its own node, and let nodes replicate and route
+      among themselves so a session only ever knows its local node. Half of that is already the
+      design (sessions subscribe locally; FR-6 puts the LAN hop between nodes, confirmed by F11).
+      The genuine change is removing the single authoritative owner per chat, which buys
+      availability and costs the two guarantees section 6 already promises: FIFO within a chat
+      (the home is the sequencer) and the global trim condition "read by every live member". A
+      middle option is on the table -- keep the home as sequencer and writer, add a local
+      read-replica on every participating node -- which fixes offline reads without giving up
+      order. THE STAKEHOLDER THEN RELAXED THE PREMISE: message ordering is not a hard requirement,
+      and the model to design to is a walkie-talkie -- each machine has its own device, chats are
+      channels, and each speaker frames its own transmission with a start and an end. That makes
+      the fully replicated shape cheap, because per-speaker FIFO needs no sequencer, and it
+      simplifies two further things rather than complicating them: retention becomes LOCAL (each
+      node trims its own replica against its own members' positions, so the cross-node position
+      gossip disappears) and a channel becomes a name rather than an owned object (which retires
+      FR-3.2's machine-qualified chat id and its local-only resolution rule). Costs identified:
+      cross-speaker causality is no longer positional in chats of three or more, so a causal link
+      must be carried in-band by FR-4.6's reply_to/correlation_id; and the overflow and
+      unread-depth bounds become local-knowledge-only. One question it forces, still open: whether
+      a channel needs creating at all -- a radio frequency exists whether or not anyone is on it,
+      which collides with FR-3.4's no-implicit-create and AC-21's operator-creates-a-chat.
+      Half-duplex (one speaker holds the channel) is ruled OUT rather than open: it would restore a
+      total order but only by blocking a sender, and FR-4.7 forbids any blocking operation.
+      Unresolved pending the stakeholder's choice.
+    answer: '--'
+    applied_to: '--'
+  - id: 4
+    category: Architecture
+    impact: High
+    state: Pending
+    context: >-
+      Stakeholder-proposed bound on the walkie-talkie channel model (qa 3): an agent is connected to
+      at most ONE channel at a time and must leave its current channel to join another; it may create
+      one channel; a channel closes when the last agent leaves OR after an inactivity timeout
+      (proposed 1 hour), with a notification to any agent still connected; and a channel does NOT
+      close merely because its creator left. This collapses real machinery -- one position per
+      session rather than one per session-per-chat (FR-4.2), no cross-channel branch in inbox
+      (FR-4.3), an implicit quota, and automatic lifecycle that retires operator create/delete
+      (FR-7.2, AC-21). Rule 2 is redundant with rule 1: "connected to one at a time" already bounds
+      creation, since creating is create-and-join.
+    suggested: >-
+      Accept the one-channel bound; fix three things before it is written into the requirements.
+      (1) THE 1-HOUR INACTIVITY TIMER FIGHTS THE PRODUCT'S PURPOSE. Idle waiting is the normal
+      state; two agents each waiting on the other are "inactive" by definition, so the channel would
+      be destroyed underneath exactly the scenario this product exists for. Close on
+      last-member-out only, counting a member as out once REAPED, and reuse FR-2.3's existing
+      thresholds (stale 30 min, reap 24 h) instead of adding a channel-level timer. (2) A CRASH MUST
+      NOT COUNT AS A LEAVE. If a dropped connection empties the channel, a network blip or a host
+      restart garbage-collects the conversation and destroys its log, and AC-3 -- a session
+      restarting mid-flight receives its undelivered messages on reattaching -- fails. Explicit
+      leave means gone; a dropped connection means stale, then reaped. (3) THE ONE-CHANNEL BOUND
+      KILLS THE ALL-CALL BROADCAST CHANNEL agreed one turn earlier, since a session cannot be in
+      both its channel and the all-call. Pick one: drop broadcast, model it as a node-level notice
+      outside the channel model, or allow the all-call as the single explicit exception. Also to be
+      accepted knowingly: channels become EPHEMERAL -- the last member out destroys the history and
+      a conversation cannot be resumed tomorrow -- which is walkie-talkie-consistent but contradicts
+      FR-4.2's durable-log language, so that language must be restated rather than left standing
+      beside it.
+    answer: >-
+      PARTLY DECIDED; one sub-question still open. DECIDED: (a) a crash is not a leave -- a dropped
+      connection means stale, then reaped -- so the channel-close rule keys on explicit leave plus
+      reaping, and AC-3's mid-flight reattachment survives. (b) The 1-hour CHANNEL inactivity timer
+      is dropped; a channel with live members waiting on each other must never expire, and cleanup
+      rides on FR-2.3's existing member thresholds instead. (c) The all-call broadcast channel is
+      removed for now, which also removes broadcast-to-all-agents as a feature and reopens
+      rendezvous (see qa 6). STILL OPEN: what, if anything, bounds an ETERNALLY IDLE but live
+      session. Accounting offered -- the log is bounded by the 24 h TTL, the held connection and
+      hook process by FR-5.8's no-orphan rule, the name by reaping -- leaving only the channel's
+      continued existence, which is a directory row. The product cannot distinguish a session
+      waiting legitimately from one that will never receive anything, so the options are: v1 adds
+      nothing and leans on reaping plus FR-7.1/FR-7.2 operator visibility and eviction; or the node
+      PROBES on idle, waking the session after a generous configurable period to ask whether it is
+      still waiting, resetting on an answer and reaping on silence. Either way the timer belongs on
+      the session, never on the channel.
+    applied_to: '--'
+  - id: 5
+    category: Architecture
+    impact: Medium
+    state: Answered
+    context: >-
+      In the walkie-talkie model the stakeholder described messages directed "to an individual id".
+      That reads two ways, and they are not equivalent: a whisper INSIDE a channel, which FR-3.6
+      already provides, or a direct session-to-session address that needs no channel. The second
+      would reverse FR-3's core rule -- the chat is the only addressing unit, and a session name is
+      "an identity, not an address ... never a destination on its own" (FR-2.1) -- and would add a
+      second address space alongside channels.
+    suggested: >-
+      Keep whisper; add no second address space. Three visibility modes on one addressing unit
+      (ordinary to all, mention flagged but visible to all, whisper visible to one) cover the need
+      without a parallel routing rule.
+    answer: >-
+      Confirmed by the stakeholder: "individual id" means WHISPER INSIDE A CHANNEL. No direct
+      session-to-session address is added, the channel remains the only addressing unit, and FR-3.6
+      stands as written. No requirement change follows -- this entry records the alternative that was
+      considered and rejected, so a later reader does not reopen it.
+    applied_to: 'No change; FR-3.6 and FR-2.1 stand as written'
+  - id: 6
+    category: Architecture
+    impact: High
+    state: Pending
+    context: >-
+      Removing the all-call channel (qa 4) reopens a structural gap the one-channel bound created:
+      how do two agents that share no channel ever meet? A wake only reaches members of a channel
+      the recipient is in, so an agent in no shared channel cannot be notified at all -- to talk you
+      need a shared channel, and to agree on one you need to talk. The all-call was the zero-new-
+      mechanism answer, being a channel everyone monitors, exactly as maritime VHF hails on channel
+      16 and then moves to a working channel. It is now gone. Note also that joining needs no
+      PERMISSION mechanism: there is no authentication anywhere (section 4; FR-6.2 makes network
+      membership the whole condition for taking part), so a join gate would be advisory only, in the
+      same way FR-7.3 concedes the privilege boundary is not a sandbox. What is missing is
+      notification, not authorisation.
+    suggested: >-
+      For v1, human-mediated rendezvous: the operator names the channel to both agents, which is
+      realistic for a developer running two assistants on a trusted LAN, needs no new mechanism, and
+      keeps FR-3.1's channel listing as the discovery surface for an agent that is already awake.
+      The growth path, if automatic rendezvous is wanted later, is invitations as CONTROL PLANE
+      rather than messages -- invite(name, channel) routed node-to-node and held as pending state on
+      the target's node, surfaced when its hook next fires. That costs a second delivery path,
+      because the wake payload stops being just a message, which is why it is not the v1 choice.
+      STAKEHOLDER PROPOSAL, better than either option above: an agent connects to the HUB (the node)
+      on register, independently of any channel. At hub level it can see which agents are available
+      and send a DIRECTED connect request to one named agent to open a channel -- several requests
+      for several agents, never a broadcast -- and hubs federate to hubs so the request crosses
+      machines. This solves rendezvous with no all-call and no pending-invitation store. It reconciles
+      with qa 5 by introducing TWO PLANES: a control plane at the hub (register, roster,
+      connect-request) and a message plane in the channel (send, inbox, ack, whisper, mention). The
+      channel remains the only addressing unit FOR MESSAGES; a connect request is signalling, not a
+      message, so no direct session-to-session MESSAGE address is added. Most of it is free: the
+      roster is derivable from state that already exists (registration plus FR-2.3 liveness plus
+      whether the agent is in a channel), hub-to-hub is FR-6 as written, and one long-poll serves
+      both event kinds. Recommended refinement, driven by the spike's F5: NO ACCEPT STEP. An explicit
+      accept would be a tool call, which Cursor gates behind a human click, so the hub answers from
+      state instead -- target idle, it is joined immediately and its wake says so; target already in
+      a channel, the request fails instantly as busy. The one-channel bound becomes the arbiter,
+      which removes pending state, timeouts and an invitation store altogether. Costs: the wake
+      payload carries two event kinds, the agent-facing surface grows two verbs, and FR-7.3 with
+      AC-15 change shape. Note also that a federated roster exposes session names, tool and liveness
+      to every agent on the LAN, which is consistent with FR-6.2 but is the same exposure the
+      all-call would have had.
+    answer: '--'
+    applied_to: '--'
