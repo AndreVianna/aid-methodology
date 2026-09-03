@@ -228,17 +228,17 @@ features:
       Stage P0. EXECUTED AND CLOSED -- all four tests have recorded outcomes and AC-20 is satisfied. Both hosts wake; the Cursor bound is the hook's own configured timeout and not a host constant; the exchange holds across two machines in both directions (T4-000-f). Evidence and twelve findings in FINDINGS.md; six became FR-5.6..FR-5.10 and FR-2.4. Open questions are routed to 002/003/004 and none of them block. `state: Ready` is the enum value for "specification complete" -- the feature's execution outcome is this note, because features[].state has no terminal value for an executed spike. Specification carried forward intact and unchanged -- an executable experiment design, reviewed to A+. Stays its own feature at any merge depth: AC-20 requires that none of its code be carried forward, which only means something if the boundary exists.
   - id: '002'
     name: node-and-message-plane
-    state: Answered
+    state: In Discussion
     grade: Pending
     qa_count: 0
-    started: --
-    updated: '2026-09-02'
+    started: 2026-09-03
+    updated: '2026-09-03'
     sections: []
     notes: >-
       Stage P1, the keystone -- process model, CLI surface, store schema and the one core. Specify FIRST. Merged from three earlier features whose split had failed on its own terms: one owned the store schema another needed, so a schema defect in the first blocked the second outright. Largest feature at 9 of 22 criteria; if it proves too large the place to slice it is /aid-plan, not a new boundary. Carries two constraints from a dropped specification: exit code 5 is taken, and id INTEGER PRIMARY KEY without AUTOINCREMENT reuses a reaped member's id.
   - id: '003'
     name: the-wake
-    state: Answered
+    state: Pending
     grade: Pending
     qa_count: 0
     started: --
@@ -248,7 +248,7 @@ features:
       Stage P2. Node-side subscription, per-host waker adapters and the rendered chat skill. Cannot be specified before Feature 001 answers -- its Cursor half is shaped by the measured hook-blocking limit. One feature because none of the three delivers the wake alone.
   - id: '004'
     name: lan-federation
-    state: Answered
+    state: Pending
     grade: Pending
     qa_count: 0
     started: --

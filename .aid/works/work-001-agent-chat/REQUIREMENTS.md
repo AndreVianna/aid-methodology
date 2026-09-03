@@ -1792,9 +1792,7 @@ must work on its own, because it is the floor every host falls back to.
 
 #### Technical Specification
 
-> **Not yet specified.** `/aid-specify` has not run on this feature.
->
-> A specification for part of it existed and is **deliberately not carried forward** — it was
+> **The predecessor's partial specification is deliberately not carried forward.** A specification for part of it existed and is **deliberately not carried forward** — it was
 > written before the runtime decision and rested on premises that decision contradicts (a
 > separate distributable, a Python prerequisite, an install step), and it never passed review.
 > `git log --follow` on this document recovers it if ever needed.
@@ -1811,6 +1809,258 @@ must work on its own, because it is the floor every host falls back to.
 >    sent — a correctness defect with no error and no symptom until someone reads the wrong mail.
 >    Verified to behave this way on the built-in SQLite module. Reaping is Feature 005's, but the
 >    schema that makes it safe is this feature's.
+
+> **Both constraints above are discharged in this specification, and where is said rather than
+> left to be checked:** the exit-code audit is under *Error taxonomy and exit codes* and allocates
+> `8` after establishing that `0`–`4`, `6` and `7` are in live use and `5` is retired-but-not-recycled;
+> `AUTOINCREMENT` is on every surrogate key in *Data Model*, with the reason attached to the schema
+> rather than to a comment somebody deletes.
+
+##### Data Model
+
+The store is one SQLite database opened through Node's built-in `node:sqlite` module (FR-7.6,
+FR-7.7). One file per machine, under the existing per-user state home rather than anywhere in a
+repository, because a hub serves every session on the machine regardless of which project each
+session is working in.
+
+**`AUTOINCREMENT` is on every surrogate key, and it is not a style choice.** `id INTEGER PRIMARY
+KEY` alone is a rowid alias, and SQLite reuses the id of a deleted row. This store deletes rows as
+routine business — reaping removes sessions, closing removes channels and their messages — so
+without `AUTOINCREMENT` a new session can inherit the id of a reaped one and, with it, that
+predecessor's messages and positions. There is no error and no symptom until somebody reads the
+wrong mail.
+
+```sql
+CREATE TABLE session (
+  id                    INTEGER PRIMARY KEY AUTOINCREMENT,
+  name                  TEXT    NOT NULL UNIQUE,        -- identity, never an address (FR-2.1)
+  conversation_id       TEXT    NOT NULL UNIQUE,        -- product-minted, never a host's (FR-2.4)
+  tool                  TEXT    NOT NULL,               -- for the operator (FR-7.1); never a switch (FR-5.11)
+  cwd                   TEXT    NOT NULL,
+  capabilities          TEXT    NOT NULL DEFAULT '{}',  -- JSON; data the node honours uninterpreted
+  host_conversation_id  TEXT,                           -- correlation metadata only; nothing keys on it
+  registered_at         INTEGER NOT NULL,               -- epoch ms
+  last_heartbeat_at     INTEGER NOT NULL,
+  channel_id            INTEGER REFERENCES channel(id) ON DELETE SET NULL,
+  delivered_seq         INTEGER NOT NULL DEFAULT 0,     -- FR-4.4
+  acked_seq             INTEGER NOT NULL DEFAULT 0
+);
+
+CREATE TABLE channel (
+  id          INTEGER PRIMARY KEY AUTOINCREMENT,
+  name        TEXT    NOT NULL UNIQUE,   -- one name, no machine part (FR-3.2)
+  opened_at   INTEGER NOT NULL,
+  next_seq    INTEGER NOT NULL DEFAULT 0 -- this hub's arrival counter for this channel
+);
+
+CREATE TABLE message (
+  id               INTEGER PRIMARY KEY AUTOINCREMENT,
+  channel_id       INTEGER NOT NULL REFERENCES channel(id) ON DELETE CASCADE,
+  arrival_seq      INTEGER NOT NULL,     -- THIS hub's arrival order; positions index into it
+  sender_name      TEXT    NOT NULL,     -- denormalised: outlives the sender's reaping
+  sender_machine   TEXT    NOT NULL,
+  sender_seq       INTEGER NOT NULL,     -- the sender's own counter; carries per-speaker FIFO
+  idempotency_key  TEXT    NOT NULL,
+  kind             TEXT    NOT NULL DEFAULT 'message',
+  body             TEXT    NOT NULL,
+  correlation_id   TEXT,
+  reply_to         TEXT,
+  mention          TEXT,                 -- JSON array of names, or NULL (Feature 005)
+  whisper_to       TEXT,                 -- one name, or NULL (Feature 005)
+  sent_at          INTEGER NOT NULL,     -- the SENDER's clock: display only, never ordering
+  received_at      INTEGER NOT NULL,     -- this hub's clock
+  UNIQUE (channel_id, arrival_seq),
+  UNIQUE (channel_id, sender_machine, sender_name, sender_seq),
+  UNIQUE (channel_id, idempotency_key)
+);
+
+CREATE INDEX message_read     ON message (channel_id, arrival_seq);
+CREATE INDEX session_liveness ON session (last_heartbeat_at);
+```
+
+**Five schema decisions carry requirements, and each is stated here because the schema is where
+they are either honoured or quietly lost.**
+
+| Decision | Why the schema looks like this |
+|---|---|
+| **`session.channel_id` is a column, not a join table** | FR-3.4 bounds an agent to one channel at a time, so membership is a single-valued attribute of the session. A join table would make the bound a rule somebody has to enforce; a column makes it a thing the store cannot represent otherwise. It is also why FR-4.1 needs no channel parameter |
+| **Positions live on `session` as two integers** | One channel per session means one position pair (FR-4.4), so there is no `position` table and no composite key. `delivered_seq` and `acked_seq` are indices into `message.arrival_seq` |
+| **Positions index THIS hub's arrival order, not a global one** | There is no global order to index into — `§6` promises per-speaker FIFO only. A position can be a scalar *because* a session only ever reads its own hub (FR-7.4) and a session never moves machines, so each hub's arrival order is a private, total, and sufficient ordering. This is the single structural consequence of relaxing ordering, and it is what makes the replicated model implementable without vector clocks |
+| **Per-speaker FIFO is carried by `sender_seq`, and enforced on read** | The uniqueness constraint stops a sender's message being stored twice; the read path (below) is what guarantees a sender's messages are handed over in `sender_seq` order even when they arrived interleaved. Ordering is a delivery property, not a storage one |
+| **`sender_name` and `sender_machine` are denormalised, not foreign keys** | A message must outlive its sender's reaping (`§6`), and a foreign key to `session` would either block the delete or cascade the message away with it. This is the same defect `AUTOINCREMENT` guards against, approached from the other side |
+
+**What is deliberately absent.** No `peer` or `outbox` table — replication and the queue for an
+unreachable hub are Feature 004's, and adding empty tables here would invite this feature's tests to
+assert a shape federation has not yet earned. No retention columns beyond what trimming reads; the
+trim job is Feature 005's. No `member` table: a channel's membership is the set of sessions whose
+`channel_id` points at it, which is derivable and therefore not stored twice.
+
+##### Feature Flow
+
+```mermaid
+flowchart TD
+  CLI["aid chat &lt;verb&gt;"] -->|"HTTP over loopback"| API[HTTP entry]
+  API --> CORE["the one core (FR-0.1)"]
+  CORE --> STORE[(SQLite)]
+  CORE --> WAIT["waiter registry (in memory)"]
+  WAIT -.->|"resolves a held wait"| API
+```
+
+**Every face is the CLI and every CLI verb is one HTTP call into one core** (FR-0.1, FR-7.4). The
+HTTP layer parses and serialises; it holds no rules. The core holds every rule this feature
+specifies and is the only thing that touches the store.
+
+**The send path**, which is where the ordering and refusal rules become concrete:
+
+1. Resolve the caller by name. Unknown name → refusal `not_registered`.
+2. Read the caller's `channel_id`. Null → refusal `no_channel` (FR-4.1).
+3. Count the channel's other members. Zero → refusal `solo_channel` (FR-4.1, FR-3 preamble). *This
+   is the check that stops a message being accepted with nobody to receive it.*
+4. Count the maximum unread depth across local members. Over the bound → refusal `overflow`
+   (`§6`, ID-9). Judged on local knowledge only, because this hub holds no other hub's positions.
+5. In one transaction: take `channel.next_seq`, insert the message with that `arrival_seq` and the
+   sender's next `sender_seq`, bump `next_seq`. A duplicate `idempotency_key` collides on the
+   unique index and is answered as success with the existing message's id — at-least-once means a
+   retry must be safe, not that it must be visible.
+6. Wake every local waiter on that channel (below). Hand off to replication where Feature 004 has
+   built it; until then the channel is local by construction.
+
+**The read path** is where per-speaker order is produced:
+
+1. Select messages in `arrival_seq` order after the caller's baseline — `acked_seq` by default, or
+   the caller's `cursor` override (FR-4.3).
+2. **Reorder within each sender to `sender_seq` order**, holding back any message whose immediate
+   `sender_seq` predecessor has not arrived. A gap means a message is in flight, not lost; holding
+   it back is what makes FR-4.3's answer per-speaker FIFO rather than arrival order. Nothing is
+   held back across senders, which is precisely why no cross-speaker order is promised.
+3. Drop whispers not addressed to the caller (Feature 005 fills the rule; the read path reserves
+   the point at which it applies).
+4. **Advance `delivered_seq`** to the last message returned — *unless* a `cursor` override was
+   given, in which case nothing moves (FR-4.3). This is the pull path's hand-off, and naming it
+   here is what keeps at-least-once meaningful where there is no adapter (FR-4.4).
+
+##### Layers & Components
+
+| Layer | Holds | Depends on |
+|---|---|---|
+| `aid chat …` (Bash + PowerShell) | Argument parsing, one HTTP call, exit-code mapping, human-readable output | Nothing but a shell |
+| HTTP entry | Route, parse, serialise, map a refusal to its wire shape | The core |
+| Core | Every rule in this specification | The store, the waiter registry |
+| Store | The schema above, and only it | `node:sqlite` |
+| Waiter registry | In-memory map of channel → held responses, plus per-session pending connect outcomes | Nothing |
+
+**The CLI is twinned across Bash and PowerShell and the node is not.** That follows the repository's
+existing rule for `bin/aid` and `bin/aid.ps1`, and is the reason FR-7.6 puts the node itself in one
+implementation: the twin is the *surface*, not the logic, and the logic is over the wire.
+
+**The waiter registry is deliberately in memory and deliberately not authoritative.** It holds held
+connections so an arrival can resolve them without polling. It is rebuilt from nothing on restart,
+and losing it costs a subscriber one long-poll timeout, never a message — because the message is in
+the store and the position is in the store. The spike's F7 is why this is stated: a host that
+abandons a hook leaves the node holding a waiter nobody is reading, so the registry must be treated
+as a hint about who is listening and never as a fact about who exists.
+
+##### API Contracts
+
+Internal to the node and reached only through the CLI (FR-7.4). Loopback only in this feature;
+FR-6 opens it to peers at stage P3. **No authentication, by decision** — trust is network
+membership (FR-6.2, `§4`), and stating that here stops a later reader assuming an omission.
+
+| Verb | Route | Answers |
+|---|---|---|
+| register | `POST /session` | The product-minted `conversation_id`; reattaches to an open channel at `acked_seq` (FR-2.2) |
+| heartbeat | `POST /session/heartbeat` | Liveness (FR-2.3) |
+| roster | `GET /agents` | Every session with name, tool, capabilities, liveness, and `available` (FR-9.2) |
+| open | `POST /channel` | Creates and joins in one step; refuses if the caller is in a channel (FR-3.4) |
+| join | `POST /channel/join` | Joins an open channel at its head; refuses if the caller is in a channel |
+| leave | `POST /channel/leave` | Leaves; closes the channel if it was the last member (FR-3.3) |
+| connect | `POST /connect` | The directed request, answered from state (FR-9.3) |
+| send | `POST /messages` | Per the send path above |
+| inbox | `GET /messages` | Per the read path above |
+| ack | `POST /messages/ack` | Advances `acked_seq`; refuses a cursor ahead of `delivered_seq` (FR-4.4) |
+| subscribe | `GET /subscribe` | The held wait; returns on a message, a connect outcome, or timeout (FR-5.1, FR-9.5) |
+| status / stop | `GET /status`, `POST /stop` | Operator only, and not described by the chat skill (FR-7.3) |
+
+**`available` is computed, never stored:** registered, `last_heartbeat_at` within the stale
+threshold, and `channel_id IS NULL`. Storing it would create a second source of truth that a
+missed heartbeat could desynchronise.
+
+**The connect request is one transaction, and its outcome is a row, not an event.** The hub reads
+the target's state and, where the target is available, sets its `channel_id` in the same
+transaction that records the outcome. That record is what FR-9.5 means by durable state: a target
+between arms is already in the channel, and its next call of any kind — subscribe, inbox, heartbeat —
+reports it. Nothing is queued and nothing can be missed, because there is no event to lose.
+
+##### State Machines
+
+**A session**, from the hub's point of view:
+
+```mermaid
+stateDiagram-v2
+  [*] --> Live: register
+  Live --> Stale: no heartbeat for 30 min
+  Stale --> Live: heartbeat, or any call
+  Stale --> Reaped: no heartbeat for 24 h
+  Live --> Reaped: no heartbeat for 24 h
+  Reaped --> [*]: row deleted, name free
+  note right of Stale
+    unavailable to a connect request;
+    keeps its place, its channel stays open
+  end note
+```
+
+**A channel:** opened by an agent, closed when its last member leaves or is reaped, never on a
+clock (FR-3.3). Closing deletes the row, which cascades its messages away and sets every former
+member's `channel_id` to null. There is no closed state to observe: a closed channel is an absent
+one, which is what makes "reattaches only if the channel is still open" (FR-2.2) a simple null
+check rather than a lifecycle query.
+
+##### Error taxonomy and exit codes
+
+**The audit first, because the carried constraint asks for it rather than for a conclusion.**
+In live use today: `0` success, `1` generic runtime, `2` usage or argument error, `3` network or
+fetch failure, `4` checksum mismatch, `6` uninstall with no manifest, and `7` a missing install-tree
+asset (`bin/aid`, dashboard entry point). **`5` is retired** — it was protect-on-diff, removed in
+v1.1.0 — and is **not recycled here**, because an old installation's `5` meant something else and a
+recycled code makes two eras indistinguishable in a log.
+
+**One new code is allocated: `8` — the request was well-formed and the node refused it.** No
+existing code fits: this is not a usage error (`2`), because the command was correct and the caller
+could not have known the answer in advance; and it is not a runtime failure (`1`), because nothing
+went wrong. Every refusal in this feature is an expected outcome that a caller must be able to
+branch on — *is the agent I want busy?* — and collapsing them into `1` would make a normal answer
+indistinguishable from a crash.
+
+| Reason on stderr | Raised by | Meaning |
+|---|---|---|
+| `not_registered` | any verb | The caller's name is unknown to this hub |
+| `no_channel` | send, leave, connect | The caller is in no channel |
+| `already_in_channel` | open, join | FR-3.4's bound; leave first |
+| `solo_channel` | send | Nobody else is in the channel (FR-4.1) |
+| `overflow` | send | A local member is at the unread bound (`§6`) |
+| `target_unavailable` | connect | Busy, stale, or unknown (FR-9.3) |
+| `target_is_self` | connect | A session may not name itself (FR-9.3) |
+| `ack_ahead_of_delivered` | ack | FR-4.4 |
+| `channel_unknown` | join | No open channel of that name on this hub |
+
+The reason is a stable token on stderr with a human sentence after it, matching the repository's
+existing "stdout carries the result, stderr carries diagnostics" rule. A refusal is not a stack
+trace, in keeping with FR-7.7's actionable-error principle applied to the ordinary case.
+
+##### Security Specs
+
+**There is no authentication, and this is a decision with a stated boundary rather than a gap**
+(`§4`, FR-6.2, ID-13). Consequences worth writing down where an implementer will meet them:
+
+- The node binds **loopback only** in this feature. Opening it to a LAN interface is Feature 004's
+  and arrives with the trust model that justifies it.
+- Any process on the machine can call the node as any session, because a name is claimed rather
+  than proved. FR-7.3 already concedes the agent-facing boundary is not a sandbox; this is the same
+  admission at the transport.
+- `capabilities` and `body` are stored as opaque text and never evaluated. The node parses JSON and
+  nothing else.
+- The store lives under the per-user state home, so filesystem permissions are the only access
+  control there is, and they are the operating system's rather than this product's.
 
 ##### BDD Scenarios
 
