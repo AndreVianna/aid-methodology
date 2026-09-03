@@ -375,9 +375,16 @@ CLI_BUNDLE="${REPO_ROOT}/${STAGE_DIR}/aid-cli-v${VERSION}.tar.gz"
             "./lib/aid-install-core.sh" \
             "./lib/AidInstallCore.psm1" \
             "./VERSION" \
-            "./dashboard/MANIFEST"
+            "./dashboard/MANIFEST" \
+            "./chat-node/MANIFEST"
         for _df in "${_DASH_FILES[@]}"; do
             printf './dashboard/%s\n' "$_df"
+        done
+        # The node's files must be in the TAR LIST, not merely staged: staging without
+        # listing produced a bundle that omitted the component entirely while every
+        # manifest-reading check still passed.
+        for _nf in "${_NODE_FILES[@]}"; do
+            printf './chat-node/%s\n' "$_nf"
         done
     } > "$_cli_fl"
     tar -czf "${CLI_BUNDLE}" --no-recursion -T "$_cli_fl"

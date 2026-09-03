@@ -67,11 +67,12 @@ readComponentManifest(repoRoot, 'chat-node').forEach(function (rel) {
     copies.push(['chat-node/' + rel, 'chat-node/' + rel]);
 });
 
-// Clean slate: remove any prior vendored payload (lib/ dir, dashboard/ dir, the vendored
+// Clean slate: remove any prior vendored payload (lib/ dir, dashboard/ dir, chat-node/ dir, the vendored
 // bin scripts, VERSION) so stray runtime artifacts or files from an older version never
 // ship. Keep the committed shim bin/aid.js.
 try { fs.rmSync(path.join(pkgRoot, 'lib'),       { recursive: true, force: true }); } catch (e) {}
 try { fs.rmSync(path.join(pkgRoot, 'dashboard'), { recursive: true, force: true }); } catch (e) {}
+try { fs.rmSync(path.join(pkgRoot, 'chat-node'), { recursive: true, force: true }); } catch (e) {}
 ['bin/aid', 'bin/aid.ps1', 'bin/aid.cmd', 'VERSION'].forEach(function (f) {
     try { fs.rmSync(path.join(pkgRoot, f), { force: true }); } catch (e) {}
 });

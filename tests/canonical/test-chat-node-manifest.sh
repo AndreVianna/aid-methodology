@@ -24,6 +24,15 @@
 #         set from the manifest rather than re-inlining a hand-maintained list)
 #   CN06  no third-party dependency is introduced by the node: every publication manifest
 #         that declares dependencies still declares none
+#   CN07  each channel actually DELIVERS the component, not merely reads its manifest.
+#         CN05 alone is not enough and that is not hypothetical: the first version of this
+#         wiring staged the node in install.sh without installing it, and listed its
+#         manifest in release.sh without adding its files to the tar list -- and CN05
+#         passed both, because the string it greps for was present in the reading half.
+#         A guard that certifies a channel which demonstrably omits the component is worse
+#         than no guard, so each consumer gets a destination-side assertion of its own.
+#   CN08  packages/npm/package.json's `files` array ships chat-node/ (npm publishes only
+#         what `files` names, so vendoring it and not listing it ships nothing)
 #
 # Fast + hermetic: reads files only, binds no port, mutates nothing, git-independent.
 #
@@ -114,6 +123,16 @@ done
 
 # CN06 — the node adds no third-party dependency. FR-7.6 is satisfied literally rather than
 # by a carve-out, so the declared dependency lists must still be empty after it ships.
+_pypi_toml="${REPO_ROOT}/packages/pypi/pyproject.toml"
+if [[ -f "$_pypi_toml" ]]; then
+    # Match `dependencies = []` allowing whitespace; a non-empty list fails.
+    if grep -qE '^[[:space:]]*dependencies[[:space:]]*=[[:space:]]*\[[[:space:]]*\]' "$_pypi_toml"; then
+        pass "CN06 packages/pypi/pyproject.toml declares no third-party dependency"
+    else
+        fail "CN06 packages/pypi/pyproject.toml declares a third-party dependency (FR-7.6 requires none)"
+    fi
+fi
+
 _npm_pkg="${REPO_ROOT}/packages/npm/package.json"
 if [[ -f "$_npm_pkg" ]]; then
     if python3 - "$_npm_pkg" <<'PY'
@@ -128,6 +147,37 @@ PY
         pass "CN06 packages/npm/package.json declares no third-party dependency"
     else
         fail "CN06 packages/npm/package.json declares a third-party dependency (FR-7.6 requires none)"
+    fi
+fi
+
+# CN07 — destination side: each channel must actually deliver the component.
+# One assertion per consumer, each naming the specific thing that channel does with the
+# files after reading the manifest.
+_cn07() {  # $1 = consumer path, $2 = needle, $3 = what the needle proves
+    local f="${REPO_ROOT}/${1}"
+    if [[ -f "$f" ]] && grep -qF -- "$2" "$f"; then
+        pass "CN07 ${1} ${3}"
+    else
+        fail "CN07 ${1} fails to ${3} (reads the manifest but never delivers the files?)"
+    fi
+}
+_cn07 "install.sh"                      '${AID_HOME}/chat-node'   "install the node into AID_HOME"
+_cn07 "install.ps1"                     "Join-Path \$aidHome 'chat-node'" "install the node into aidHome"
+_cn07 "packages/npm/scripts/vendor.js"  "'chat-node'"             "vendor the node into the npm payload"
+_cn07 "packages/pypi/scripts/vendor.py" "_chat_node_copies"       "vendor the node into the pypi payload"
+_cn07 "release.sh"                      "./chat-node/%s"          "add the node's files to the CLI-bundle tar list"
+
+# CN08 — npm ships only what `files` names.
+_npm_pkg_json="${REPO_ROOT}/packages/npm/package.json"
+if [[ -f "$_npm_pkg_json" ]]; then
+    if python3 - "$_npm_pkg_json" <<'PY'
+import json, sys
+sys.exit(0 if "chat-node/" in (json.load(open(sys.argv[1])).get("files") or []) else 1)
+PY
+    then
+        pass "CN08 packages/npm/package.json files[] includes chat-node/"
+    else
+        fail "CN08 packages/npm/package.json files[] omits chat-node/ (npm would publish without the node)"
     fi
 fi
 

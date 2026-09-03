@@ -789,6 +789,20 @@ if [[ "$_INSTALL_MODE" == "BOOTSTRAP" ]]; then
         done
     fi
 
+    # Install the chat node ONLY if a replacement was staged, guarded the same way and for
+    # the same reason: a missing or empty chat-node/MANIFEST must never wipe an existing
+    # node without providing a new one. Staging alone is not installing -- the first version
+    # of this block staged the files and stopped, which left every manifest check passing
+    # while $AID_HOME had no node in it.
+    if [[ -f "${_BOOTSTRAP_STAGE}/chat-node/server/node.mjs" ]]; then
+        rm -rf "${AID_HOME}/chat-node" 2>/dev/null || true
+        mkdir -p "${AID_HOME}/chat-node"
+        for _cf in "${_CHATNODE_FILES[@]}"; do
+            _cf_staged="${_BOOTSTRAP_STAGE}/chat-node/${_cf}"
+            [[ -f "$_cf_staged" ]] && { mkdir -p "$(dirname "${AID_HOME}/chat-node/${_cf}")"; cp "$_cf_staged" "${AID_HOME}/chat-node/${_cf}"; }
+        done
+    fi
+
     # Post-copy verify: sha256 of installed lib must match the source we copied from.
     # A grep-based sentinel check (the previous approach) passes stale/partial files
     # that contain the sentinel string in a comment earlier in the file.
