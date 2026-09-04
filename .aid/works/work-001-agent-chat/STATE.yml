@@ -270,6 +270,35 @@ features:
 #   - date / event / outcome / notes
 review_history:
   - date: 2026-09-04
+    scope: correction and strengthening round
+    outcome: >-
+      Nothing Open remains. Six items fixed, six accepted with their reasons recorded, nine needing the
+      operator's own hardware. 336 assertions across ten chat suites; 161 canonical suites with the same
+      15 pre-existing failures, unchanged throughout.
+      The round was asked to recheck the work against its OBJECTIVE rather than its criteria, and that
+      is what found the most. Nothing had ever run all five deliveries in ONE scenario -- each suite
+      exercised the layer its delivery built -- so the joins were unexamined. The new end-to-end suite
+      runs the work's own target case across all of it, and its first assertion checks the invariant the
+      whole design rests on and nothing had checked: that a session's every address is loopback.
+      FALSIFYING THAT ASSERTION FOUND A REAL DEFECT. Pointing the chat base URL at an unreachable host
+      did not make the CLI fail -- it made it STOP, with no timeout on any chat HTTP call, and the suite
+      waiting on it hung for nineteen minutes. A user meets the same shape through a stale port file.
+      Every chat call in both twins is now bounded; measured at 25s+ before and exactly 5s after.
+      W1-18 was fixed after being reproduced rather than reasoned about, which is what made the fix
+      small: the state writer replaced only the KEY LINE of a block scalar and orphaned its body, and an
+      orphaned line with a colon made the file unparseable -- the error that halted this pipeline three
+      times. Fixed in the canonical source, all seven renders, and narrowly in the dashboard's
+      deliberate fork so its Deploy value survived. Six regression cases, five of which fail against the
+      unfixed writer while the ordinary-scalar control does not.
+      Two checks were repointed and one guard was found to be defeated by its own subject: the
+      surface-boundary check now reads all five RENDERED skills against the canonical source rather
+      than against each other, which closed a gap where a generator mangling all five identically would
+      have passed.
+      Also nearly shipped a broken bin/aid: a backup taken mid-falsification had already captured the
+      break, and only the git diff caught it.
+    grade: A+
+
+  - date: 2026-09-04
     scope: delivery-005 gate (three cycles) -- the last delivery
     outcome: >-
       PASSED at A+ on cycle 3. Five tasks, 301 assertions across nine suites, zero regressions
