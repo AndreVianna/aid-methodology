@@ -113,11 +113,13 @@ assert_eq "$s1" "$s2" "AC-8 a duplicate send is deduped by idempotency key, at t
 absorbed=$($AID chat send --name alice --body dup --key fixed 2>/dev/null | _field "['absorbed']")
 assert_eq "$absorbed" "True" "AC-8 the retry is reported as absorbed rather than silently repeated"
 
-# AC-8's other half: a reply correlates to its originating request. Sent through the node's own
-# route because the CLI does not surface reply_to, which is itself worth recording.
-_hub="http://127.0.0.1:$(cat "${AID_CHAT_RUNTIME}/hub.port")"
+# AC-8's other half: a reply correlates to its originating request -- sent through the CLI's own
+# --reply-to and --correlation-id, which is the surface a session actually has. An earlier
+# version reached past the CLI to curl because those flags did not exist; leaving the curl in
+# after adding them would have left the flags themselves untested.
 orig_key=$($AID chat send --name alice --body 'a question' --key q1 2>/dev/null | _field "['idempotency_key']")
-curl -sS -X POST "${_hub}/messages" --data-binary "{\"name\":\"bob\",\"body\":\"an answer\",\"reply_to\":\"${orig_key}\",\"correlation_id\":\"c-1\"}" >/dev/null
+$AID chat send --name bob --body 'an answer' --reply-to "$orig_key" --correlation-id c-1 >/dev/null 2>&1
+assert_eq "$?" "0" "AC-8 the CLI accepts --reply-to and --correlation-id"
 corr=$($AID chat inbox --name carol 2>/dev/null | python3 -c "
 import json,sys
 ms=[m for m in json.load(sys.stdin)['messages'] if m['body']=='an answer']
@@ -205,10 +207,23 @@ timers=$(grep -nE 'setInterval|setTimeout' "${REPO_ROOT}"/chat-node/server/*.mjs
 assert_eq "$timers" "0" "AC-30 no timer in the node targets channel closure (grepped, not assumed)"
 QQ chat node stop >/dev/null 2>&1
 
-# AC-30's reap path, end to end through the CLI rather than only through the core.
-$AID chat leave --name q2 >/dev/null 2>&1
-$AID chat reap --name q1 >/dev/null 2>&1
-gone=$($AID chat list --name q2 2>/dev/null | python3 -c "import json,sys; print(not any(c['name']=='quiet' for c in json.load(sys.stdin)['channels']))")
+# AC-30's TARGETED reap path (`reap --name <session>` rather than the bulk `--all`), end to end
+# through the CLI. This block previously ran against the MAIN node using sessions that had been
+# moved to the quiet node, so it asserted the absence of a channel that had never been there --
+# it would have passed with reaping deleted entirely. It now builds its own channel here, on the
+# node the assertion reads, and checks the channel is present BEFORE the reap so that the
+# after-state means something.
+$AID chat register --name r1 --tool t >/dev/null 2>&1
+$AID chat register --name r2 --tool t >/dev/null 2>&1
+$AID chat open --name r1 --channel reaped >/dev/null 2>&1
+$AID chat join --name r2 --channel reaped >/dev/null 2>&1
+present=$($AID chat list --name r1 2>/dev/null | python3 -c "import json,sys; print(any(c['name']=='reaped' for c in json.load(sys.stdin)['channels']))")
+assert_eq "$present" "True" "AC-30 the channel to be reaped exists first, so its later absence means something"
+$AID chat leave --name r2 >/dev/null 2>&1
+out=$($AID chat reap --name r1 2>/dev/null)
+closed=$(printf '%s' "$out" | _field "['channel_closed']")
+assert_eq "$closed" "True" "AC-30 a targeted reap of the last member reports closing the channel"
+gone=$($AID chat list --name r2 2>/dev/null | python3 -c "import json,sys; print(not any(c['name']=='reaped' for c in json.load(sys.stdin)['channels']))")
 assert_eq "$gone" "True" "AC-30 reaping the last member closes the channel, exercised through the CLI"
 
 # --- AC-10 -------------------------------------------------------------------

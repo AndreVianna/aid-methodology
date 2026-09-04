@@ -302,4 +302,40 @@ JS
 )
 assert_eq "$out" "1,true" "CO22 a delivered-but-unacknowledged message is presented again, identifiable by its key"
 
+# CO23 — the complement of CO17. A grace skip releases a successor; the predecessor then turns
+# up anyway. It must NOT be released (that would be out of that speaker's order), must NOT stall
+# the speaker (it is already past), and must be REPORTED rather than silently dropped -- the
+# discard is the only loss this design can produce, so it is the one that must be visible.
+#
+# The ACK in the middle is load-bearing, and writing this test is what established why: the
+# discard happens only once the reader has ACKNOWLEDGED past the skip. Before that its baseline
+# is still behind the gap, so a late predecessor is simply delivered in the right order and
+# nothing is lost at all. The window for loss is therefore narrower than "a predecessor arrived
+# late" -- it is "a predecessor arrived after the reader had already committed to a position past
+# it", which is the only point at which taking it back would move a position backwards.
+out=$(AID_CHAT_GAP_GRACE_MS=1 _run <<'JS' 2>/dev/null
+const db = await S.openStore({ path: ':memory:' });
+for (const n of ['a','r']) C.register(db, { name: n, tool: 't', cwd: '/' });
+C.openChannel(db, { name: 'a', channelName: 'ch' }); C.joinChannel(db, { name: 'r', channelName: 'ch' });
+const id = db.prepare('SELECT id FROM channel WHERE name=?').get('ch').id;
+const put = (sseq, aseq, age) => db.prepare('INSERT INTO message(channel_id,arrival_seq,sender_name,sender_machine,sender_seq,idempotency_key,body,sent_at,received_at) VALUES (?,?,?,?,?,?,?,1,?)')
+    .run(id, aseq, 'a', 'local', sseq, 'k' + sseq, 'm' + sseq, Date.now() - age);
+put(2, 1, 5000);                 // seq 2 arrives with seq 1 missing and the grace long expired
+db.prepare('UPDATE channel SET next_seq=2 WHERE id=?').run(id);
+const first = C.inbox(db, { name: 'r' });        // releases seq 2, recording the skip
+C.ack(db, { name: 'r', cursor: first.delivered_seq });   // and the reader ACKNOWLEDGES it
+put(1, 2, 0);                                    // seq 1 turns up AFTER the skip passed it
+db.prepare('UPDATE channel SET next_seq=3 WHERE id=?').run(id);
+const second = C.inbox(db, { name: 'r' });
+process.stdout.write([
+    first.messages.length, first.messages[0].skipped_from_sender_seq,
+    second.messages.length,                       // the late predecessor is NOT released
+    second.discarded_too_late.length,              // it IS reported
+    second.discarded_too_late[0] ? second.discarded_too_late[0].sender_seq : 'none',
+    second.held_back,                              // and it does not stall the speaker
+].join(','));
+JS
+)
+assert_eq "$out" "1,1,0,1,1,false" "CO23 a predecessor arriving after a grace skip is not released, not stalling, and reported as discarded"
+
 test_summary

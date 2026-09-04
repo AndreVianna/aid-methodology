@@ -394,8 +394,14 @@ function reorderPerSpeaker(rows, { graceMs, now, lastSeqBySender }) {
                 // after all. Releasing it here would hand the caller a message out of that
                 // speaker's order, and treating it as a forward gap would stall the speaker
                 // waiting for a predecessor that has already been passed. It is genuinely too
-                // late: the skip was recorded when it happened, so the loss is on the record
-                // rather than silent, and the position must never move backwards.
+                // late, so it is discarded -- and reported, because the position must never
+                // move backwards and a silent discard would be the one loss nobody could see.
+                //
+                // This is NARROWER than "the predecessor arrived late". It requires the reader
+                // to have ACKNOWLEDGED past the skip: until it does, its baseline is still
+                // behind the gap, the late predecessor is simply delivered in the right order,
+                // and nothing is lost. The loss window is exactly "arrived after the reader
+                // committed to a position past it" (see CO23).
                 m._arrived_too_late = expected;
                 tooLate.push(m);
                 continue;
