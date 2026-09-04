@@ -288,12 +288,33 @@ import re, sys
 root = sys.argv[1]
 bash = open(f'{root}/bin/aid', encoding='utf-8').read()
 ps1  = open(f'{root}/bin/aid.ps1', encoding='utf-8').read()
+# Both the SHARED dispatch list and every SEPARATELY dispatched verb.
+#
+# Reading only the shared list is how this guard missed `hook`: it was added to bin/aid with its own
+# case arm and to bin/aid.ps1 with its own branch, so deleting the PowerShell branch entirely still
+# reported 'in-sync'. A guard against a missing verb that cannot see half the dispatch shapes is a
+# guard that passes at exactly the wrong moment.
 bm = re.search(r'register\|heartbeat[^)]*', bash)
 pm = re.search(r"'register','heartbeat'[^)]*", ps1)
 if not bm or not pm:
     print('DISPATCH-NOT-FOUND'); raise SystemExit
 bv = set(bm.group(0).split('|'))
 pv = set(pm.group(0).replace("'", '').split(','))
+
+# Separately dispatched: a bare `        <verb>)` arm inside the chat dispatcher, and its
+# `$action -eq '<verb>'` counterpart. Sliced to the chat command so unrelated dispatchers stay out.
+# Each side sliced to ITS OWN dispatcher, or the scan picks up local `$action` comparisons inside
+# unrelated helpers -- the hook generator's own `--check` parsing was caught that way.
+bm2 = re.search(r'^_cmd_chat_ctl\(\) \{.*?^\}', bash, re.M | re.S)
+pm2 = re.search(r'^function script:Invoke-AidChatCtl \{.*?^\}', ps1, re.M | re.S)
+if not bm2 or not pm2:
+    print('CHAT-DISPATCHER-NOT-FOUND'); raise SystemExit
+bv |= set(re.findall(r'^        ([a-z][a-z-]*)\)$', bm2.group(0), re.M))
+pv |= set(re.findall(r"\$action -eq '([a-z][a-z-]*)'", pm2.group(0)))
+# The `aid chat node <x>` lifecycle sub-verbs are a separate surface with its own shape in each twin,
+# asserted by the lifecycle suite rather than here. `node`/`help` are shapes, not plane verbs.
+for shape in ('node', 'help', 'start', 'stop', 'status', ''):
+    bv.discard(shape); pv.discard(shape)
 if bv == pv:
     print(f'in-sync:{len(bv)}')
 else:

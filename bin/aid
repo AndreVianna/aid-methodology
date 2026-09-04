@@ -210,6 +210,11 @@ _aid_usage() {
             printf '                 falls back to a short value rather than inheriting any\n'
             printf '                 platform default. --follow re-arms instead of returning.\n'
             printf '                 Spends no model tokens: it blocks in a process, not a prompt.\n'
+            printf 'aid chat hook    --tool <claude-code|cursor> [--timeout <s>] [--check]\n'
+            printf '                 print the stop-hook block to paste, with the node path, install\n'
+            printf '                 path and both timeout numbers filled in from this machine; or\n'
+            printf '                 --check to read an installed one back and report what is wrong.\n'
+            printf '                 It WRITES NOTHING: AID writes no host tool configuration.\n'
             printf 'aid chat show                                  machines, sessions, channels, members,\n'
             printf '                 per-member unread depth and idle time (operator)\n'
             printf 'aid chat audit   [--limit <n>]                  what happened, never what was said:\n'
@@ -5473,6 +5478,181 @@ _aid_chat_default_name() {
     printf '%s\n' "$base"
 }
 
+# `aid chat hook` -- generate the stop-hook snippet, and check an installed one.
+#
+# IT WRITES NOTHING, and that is a requirement rather than caution: FR-0.4 says the product writes no
+# host tool's configuration, and the reasoning is concrete -- a project-scoped host config file is
+# tracked in git, so writing one would put a hook into every contributor's checkout, and a user-scoped
+# one belongs to a human who also edits it by hand.
+#
+# What it removes is the part that actually goes wrong. Installing this by hand means finding an
+# absolute path to `node`, getting the install path right, and putting the SAME number in two places --
+# and the failure when the numbers disagree is silent: no error, no log, just a wake that never comes.
+# So this fills all of that in from the running system, and `--check` reads the file back and says
+# whether what is there will work.
+_aid_chat_hook_node_path() {
+    local n
+    n="$(command -v node 2>/dev/null)"
+    [[ -z "$n" ]] && { echo "ERROR: aid: chat hook: no node on PATH; install Node (>= 22.13.0) first." >&2; return 1; }
+    # Resolved to a real path, because a PATH entry may be a shim that re-launches the real interpreter
+    # as a child -- which leaves the process the host watches unrelated to the one that blocks.
+    if command -v readlink >/dev/null 2>&1; then
+        n="$(readlink -f "$n" 2>/dev/null || printf '%s' "$n")"
+    fi
+    printf '%s\n' "$n"
+}
+
+_aid_chat_hook_config_path() {
+    case "$1" in
+        claude-code) printf '%s\n' "${HOME}/.claude/settings.json" ;;
+        cursor)      printf '%s\n' "${HOME}/.cursor/settings.json" ;;
+        *)           return 1 ;;
+    esac
+}
+
+_cmd_chat_hook() {
+    local tool="" timeout=60 action=print
+    while [[ $# -gt 0 ]]; do
+        case "$1" in
+            --tool)    tool="$2"; shift 2 ;;
+            --timeout) timeout="$2"; shift 2 ;;
+            --check)   action=check; shift ;;
+            *) echo "ERROR: aid: chat hook: unknown option '$1'" >&2; return 2 ;;
+        esac
+    done
+    case "$tool" in
+        claude-code|cursor) ;;
+        "") echo "ERROR: aid: chat hook: --tool is required (claude-code | cursor)" >&2; return 2 ;;
+        *)  echo "ERROR: aid: chat hook: no adapter ships for '${tool}'; that host falls back to 'aid chat inbox'." >&2; return 2 ;;
+    esac
+    if ! [[ "$timeout" =~ ^[0-9]+$ ]] || [[ "$timeout" -lt 10 ]]; then
+        echo "ERROR: aid: chat hook: --timeout must be an integer of at least 10 seconds" >&2
+        return 2
+    fi
+
+    local node_path adapter cfg
+    node_path="$(_aid_chat_hook_node_path)" || return 1
+    adapter="${AID_CODE_HOME}/chat-node/adapters/${tool}.mjs"
+    cfg="$(_aid_chat_hook_config_path "$tool")"
+
+    if [[ ! -f "$adapter" ]]; then
+        echo "ERROR: aid: chat hook: adapter missing at ${adapter}; reinstall aid." >&2
+        return 1
+    fi
+
+    if [[ "$action" == "check" ]]; then
+        # READING a config file is not writing it. This is the half that catches the silent failure:
+        # a timeout in the file that disagrees with the one on the command line.
+        if [[ ! -f "$cfg" ]]; then
+            echo "aid: chat hook: no hook installed -- ${cfg} does not exist." >&2
+            echo "  Run 'aid chat hook --tool ${tool}' and paste what it prints into that file." >&2
+            return 1
+        fi
+        python3 - "$cfg" "$tool" <<'PY'
+import json, re, sys
+cfg_path, tool = sys.argv[1], sys.argv[2]
+try:
+    raw = open(cfg_path, encoding='utf-8').read()
+    cfg = json.loads(raw)
+except Exception as e:
+    print(f"aid: chat hook: {cfg_path} is not readable JSON ({e.__class__.__name__}); check it by hand.", file=sys.stderr)
+    raise SystemExit(1)
+
+blob = json.dumps(cfg)
+if f'adapters/{tool}.mjs' not in blob:
+    print(f"aid: chat hook: no chat stop hook found in {cfg_path}.", file=sys.stderr)
+    print(f"  Run 'aid chat hook --tool {tool}' and paste what it prints.", file=sys.stderr)
+    raise SystemExit(1)
+
+# The two numbers that must agree, and the silent failure when they do not.
+flag = re.search(r'--host-timeout\s+(\d+)', blob)
+field = re.search(r'"timeout"\s*:\s*(\d+)', blob)
+problems = []
+if not flag:
+    problems.append("the command has no --host-timeout, so the adapter falls back to a short block")
+if not field:
+    problems.append('the hook has no "timeout" field, so the host uses its own default -- which is not measured')
+if flag and field and flag.group(1) != field.group(1):
+    problems.append(f'the numbers DISAGREE: timeout={field.group(1)} but --host-timeout={flag.group(1)}. '
+                    'This fails silently -- no error, just a wake that never arrives')
+if 'node' in blob and not re.search(r'"[^"]*/(bin/)?node"|/node ', blob):
+    problems.append("node may not be an absolute path; a PATH shim can leave the host watching the wrong process")
+if re.search(r'"fail_closed"\s*:\s*true|"blocking"\s*:\s*true', blob):
+    problems.append("fail-closed is set; a hook that must succeed can freeze the session it belongs to")
+
+if problems:
+    print("aid: chat hook: the installed hook has problems:", file=sys.stderr)
+    for p in problems:
+        print(f"  - {p}", file=sys.stderr)
+    raise SystemExit(1)
+print(f"aid: chat hook: the hook in {cfg_path} looks correct (timeout {field.group(1)}s, matched on both sides).")
+PY
+        return $?
+    fi
+
+    # Print, with everything filled in from this machine.
+    #
+    # The block is min(long-poll default, timeout - margin), NOT timeout - margin: an earlier version of
+    # this line printed the second and told an operator with timeout 60 that the node blocks 55s, when
+    # the long poll caps it at 30. A number in the output that does not match what the node does is
+    # worse than no number.
+    local block margin long_poll
+    margin="$(( ${AID_CHAT_ADAPTER_MARGIN_MS:-5000} / 1000 ))"
+    long_poll="$(( ${AID_CHAT_LONG_POLL_MS:-30000} / 1000 ))"
+    block=$(( timeout - margin ))
+    [[ "$block" -gt "$long_poll" ]] && block="$long_poll"
+    cat <<HOOKDOC
+# Paste the block below into:
+#   ${cfg}
+#
+# Nothing writes it for you: AID writes no host tool's configuration, because a project-scoped
+# config file is tracked in git and would put this hook into every contributor's checkout.
+#
+# The two numbers are already matched. With timeout ${timeout}: the node blocks ${block}s, the adapter
+# guards just under ${timeout}s, and your host gives up at ${timeout}s -- in that order, which is the
+# only order where a late answer is still an answer.
+# There is no session name in the command: the adapter derives it from the working directory, so this
+# one block serves every session on this machine.
+#
+# Do NOT set this hook to fail closed. Its normal behaviour is to block and return with nothing, and
+# under fail-closed a stopped node would freeze the session instead of just missing a wake.
+HOOKDOC
+    if [[ "$tool" == "claude-code" ]]; then
+        cat <<HOOKJSON
+{
+  "hooks": {
+    "Stop": [
+      {
+        "matcher": "*",
+        "hooks": [
+          {
+            "type": "command",
+            "timeout": ${timeout},
+            "command": "${node_path} ${adapter} --host-timeout ${timeout}"
+          }
+        ]
+      }
+    ]
+  }
+}
+HOOKJSON
+    else
+        cat <<HOOKJSON
+{
+  "hooks": {
+    "stop": [
+      {
+        "command": "${node_path} ${adapter} --host-timeout ${timeout}",
+        "timeout": ${timeout}
+      }
+    ]
+  }
+}
+HOOKJSON
+    fi
+    printf '\nThen check it with:  aid chat hook --tool %s --check\n' "$tool"
+}
+
 _cmd_chat_plane() {
     local verb="$1"; shift
     local name="" body="" channel="" cursor="" key="" whisper="" mention="" reply_to="" corr="" target="" host_timeout="" follow=0 machine="" peer_action=list limit="" setting=""
@@ -5622,6 +5802,10 @@ _cmd_chat_ctl() {
     local action="${1:-}"
     # The message-plane verbs are handled first; `node ...` is the lifecycle surface.
     case "$action" in
+        hook)
+            shift
+            _cmd_chat_hook "$@"
+            return $? ;;
         register|heartbeat|open|join|leave|list|send|inbox|ack|reap|roster|connect|subscribe|peers|show|audit|evict|retention)
             shift
             _cmd_chat_plane "$action" "$@"

@@ -565,6 +565,104 @@ for host in Codex "Copilot CLI" Antigravity; do
 done
 assert_file_contains "$DOC" "degrades to the pull floor" "WK27 and says what a host with no adapter falls back to"
 
+# --- WK28-WK34: `aid chat hook` -- generate the block, and read an installed one back. ------------
+#
+# The hook is the one step an operator does by hand, and the way it goes wrong is silent: two numbers
+# that must agree, and a wake that simply never arrives when they do not. These check that the
+# generator fills both from the same source, and that --check catches the mismatch.
+HOOKHOME="${_TMPD}/hookhome"
+mkdir -p "${HOOKHOME}/.cursor" "${HOOKHOME}/.claude"
+
+_hook() { ( cd "$REPO_ROOT" && HOME="$HOOKHOME" AID_CODE_HOME="$REPO_ROOT" bash bin/aid chat hook "$@" 2>&1 ); }
+
+out="$(_hook --tool cursor --timeout 60)"
+assert_output_contains "$out" '"timeout": 60' "WK28 the generated block carries the host timeout as a field"
+assert_output_contains "$out" '--host-timeout 60' "WK28 and the same number on the command line"
+assert_output_contains "$out" "chat-node/adapters/cursor.mjs" "WK28 pointing at the adapter that ships"
+assert_output_not_contains "$out" '--name' "WK28 and carries no session name, so one block serves every session"
+
+# The number it PRINTS as the block must be what the node actually does -- min(long poll, timeout -
+# margin), not timeout - margin. A number in the output that does not match behaviour is worse than none.
+assert_output_contains "$(_hook --tool cursor --timeout 60)" "the node blocks 30s" \
+    "WK29 with a wide host timeout the printed block is capped by the long poll, not timeout minus margin"
+assert_output_contains "$(_hook --tool cursor --timeout 20)" "the node blocks 15s" \
+    "WK29 and with a narrow one it is the host timeout minus the margin"
+
+# node resolved to an absolute path: a bare `node` in a hook command depends on the host's PATH, which
+# is not the shell's, and a shim can leave the host watching a process that is not the one blocking.
+assert_output_contains "$out" "$(command -v node >/dev/null && readlink -f "$(command -v node)")" \
+    "WK30 node is an absolute resolved path, not a bare command name"
+
+# It writes nothing. This is FR-0.4, and the check is that the config file is still absent afterwards.
+rm -f "${HOOKHOME}/.cursor/settings.json"
+_hook --tool cursor >/dev/null 2>&1
+if [[ -e "${HOOKHOME}/.cursor/settings.json" ]]; then
+    fail "WK31 generating the block writes no host configuration file (FR-0.4)"
+else
+    pass "WK31 generating the block writes no host configuration file (FR-0.4)"
+fi
+
+# --check, on the failure that is otherwise silent.
+_hook --tool cursor --timeout 60 2>/dev/null | sed -n '/^{/,/^}/p' > "${HOOKHOME}/.cursor/settings.json"
+if _hook --tool cursor --check >/dev/null 2>&1; then
+    pass "WK32 --check passes a block that came from the generator"
+else
+    fail "WK32 --check passes a block that came from the generator"
+fi
+
+python3 - "${HOOKHOME}/.cursor/settings.json" <<'MISMATCH'
+import json, sys
+p = sys.argv[1]
+d = json.load(open(p))
+d['hooks']['stop'][0]['timeout'] = 20   # the command still says 60
+json.dump(d, open(p, 'w'), indent=2)
+MISMATCH
+mism="$(_hook --tool cursor --check || true)"
+assert_output_contains "$mism" "DISAGREE" "WK33 --check catches the two numbers disagreeing -- the silent failure"
+if _hook --tool cursor --check >/dev/null 2>&1; then
+    fail "WK33 and exits non-zero on a mismatch"
+else
+    pass "WK33 and exits non-zero on a mismatch"
+fi
+
+# Claude Code too, and NOT as a formality: its block is the nested shape (a matcher, then an inner
+# `hooks` array), so it is the one more likely to be generated wrong. An earlier falsification pass
+# broke this line specifically and every case still passed, because all of them named cursor.
+cc="$(_hook --tool claude-code --timeout 45)"
+assert_output_contains "$cc" '"timeout": 45' "WK34a the Claude Code block carries the host timeout as a field"
+assert_output_contains "$cc" '--host-timeout 45' "WK34a and the same number on the command line"
+assert_output_contains "$cc" '"matcher"' "WK34a in the nested shape that host requires"
+assert_output_contains "$cc" "adapters/claude-code.mjs" "WK34a pointing at its own adapter, not the other host's"
+assert_output_not_contains "$cc" "cursor.mjs" "WK34a and not at cursor's"
+# Round-trips through --check, which is what proves the generator and the checker agree on the shape.
+_hook --tool claude-code --timeout 45 2>/dev/null | sed -n '/^{/,/^}$/p' > "${HOOKHOME}/.claude/settings.json"
+if _hook --tool claude-code --check >/dev/null 2>&1; then
+    pass "WK34b a generated Claude Code block passes --check"
+else
+    fail "WK34b a generated Claude Code block passes --check"
+fi
+python3 - "${HOOKHOME}/.claude/settings.json" <<'CCMISMATCH'
+import json, sys
+d = json.load(open(sys.argv[1]))
+d['hooks']['Stop'][0]['hooks'][0]['timeout'] = 30   # the command still says 45
+json.dump(d, open(sys.argv[1], 'w'), indent=2)
+CCMISMATCH
+assert_output_contains "$(_hook --tool claude-code --check || true)" "DISAGREE" \
+    "WK34b and a mismatch in the nested shape is caught there too"
+rm -f "${HOOKHOME}/.claude/settings.json"
+
+rm -f "${HOOKHOME}/.cursor/settings.json"
+absent="$(_hook --tool cursor --check || true)"
+assert_output_contains "$absent" "no hook installed" "WK34 --check says so plainly when nothing is installed"
+assert_output_contains "$absent" "aid chat hook --tool cursor" "WK34 and names the command that produces one"
+nohost="$(_hook --tool codex 2>&1 || true)"
+assert_output_contains "$nohost" "no adapter ships" "WK34 a host with no adapter is refused, not given a broken block"
+
+# The document has to lead with the generator, or an operator does by hand what a command does better.
+assert_file_contains "$DOC" "aid chat hook --tool cursor" "WK35 the install document names the generator"
+assert_file_contains "$DOC" "Do not do this by hand" "WK35 and says up front not to assemble the block manually"
+assert_file_contains "$DOC" "tracked in git" "WK35 and gives the concrete reason nothing is written for you"
+
 # Non-automated checks are enumerated, not implied.
 for mp in MP-05 MP-06 MP-07 MP-08; do
     assert_file_contains "${REPO_ROOT}/chat-node/tests/MANUAL-PROCEDURES.md" "$mp" \

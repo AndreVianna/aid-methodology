@@ -1,12 +1,36 @@
 # Installing the chat wake
 
 The chat node ships with AID and needs nothing installed. **The wake does** — one stop hook per
-host tool, written by you.
+host tool, and *you* paste it in.
 
-The product does not write it, and that is a boundary rather than an omission: AID writes no host
-configuration at all. It renders a skill and touches nothing else — no settings file, no hook
-wiring, no MCP registration. So the hook and its timeout are yours, and this document's job is to
-tell you exactly what to put where, and why one number matters more than it looks.
+## Do not do this by hand
+
+Two commands do the fiddly parts:
+
+```bash
+aid chat hook --tool cursor            # prints the block to paste, filled in for THIS machine
+aid chat hook --tool cursor --check    # reads it back and tells you if it will actually work
+```
+
+The first fills in the absolute path to `node`, the path to the adapter, and **both** timeout
+numbers already matched. The second reads the file back and names what is wrong — most importantly
+the mismatch described below, which otherwise fails with no error at all.
+
+So the rest of this document is **why**, and what to do when `--check` complains. You do not need
+to assemble any of it yourself.
+
+## Why you paste it instead of it being written for you
+
+Because AID writes no host tool's configuration, and the reason is concrete rather than doctrinal.
+Host config comes in two scopes and the product cannot safely write either. A **project**-scoped
+file is tracked in git, so writing one would commit a hook into every contributor's checkout — one
+machine's absolute paths, imposed on everybody. A **user**-scoped file belongs to a human who also
+edits it by hand and whose other tools write to it; a tool that rewrites it is a tool that will
+eventually clobber something it did not put there.
+
+Generating the exact text removes the error-prone part without taking on either risk. `--check`
+covers the rest: the product will not write that file, but it will read it and tell you the truth
+about it.
 
 Without the hook, everything still works — you read your inbox when you think to. The hook is what
 turns "a mailbox you remember to check" into "a channel that reaches you".
@@ -32,15 +56,18 @@ because a host's hook configuration is per-tool, not per-session.
 
 ## The one number that matters
 
-You will write the same number in two places:
+`aid chat hook` already matches this for you. Read on if `--check` has told you it does not, or if
+you are changing the value.
+
+The same number appears in two places:
 
 ```
 timeout: 60                                    <- the host's own field
 aid chat subscribe --host-timeout 60           <- the command it runs
 ```
 
-**They must match.** Here is the arithmetic, because the consequence of getting it wrong is
-invisible:
+**They must match**, and nothing warns you when they do not — the wake simply never arrives. That
+silence is exactly why `aid chat hook --check` exists. Here is the arithmetic:
 
 ```
 block = min(long-poll default, host_timeout - margin)

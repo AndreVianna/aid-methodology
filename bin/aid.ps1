@@ -263,6 +263,11 @@ function script:Show-AidUsage {
             Write-Host '                 falls back to a short value rather than inheriting any'
             Write-Host '                 platform default. --follow re-arms instead of returning.'
             Write-Host '                 Spends no model tokens: it blocks in a process, not a prompt.'
+            Write-Host 'aid chat hook    --tool <claude-code|cursor> [--timeout <s>] [--check]'
+            Write-Host '                 print the stop-hook block to paste, with the node path, install'
+            Write-Host '                 path and both timeout numbers filled in from this machine; or'
+            Write-Host '                 --check to read an installed one back and report what is wrong.'
+            Write-Host '                 It WRITES NOTHING: AID writes no host tool configuration.'
             Write-Host 'aid chat show                                  machines, sessions, channels, members,'
             Write-Host '                 per-member unread depth and idle time (operator)'
             Write-Host 'aid chat audit   [--limit <n>]                  what happened, never what was said:'
@@ -4952,6 +4957,130 @@ function script:Get-AidChatDefaultName {
     return $base
 }
 
+# `aid chat hook` -- the PowerShell twin. Generates the stop-hook block and checks an installed one,
+# and like the Bash twin it WRITES NOTHING: AID writes no host tool's configuration.
+function script:Invoke-AidChatHook {
+    param([string[]]$HookArgs)
+
+    $tool = ''; $timeout = 60; $action = 'print'
+    for ($i = 0; $i -lt $HookArgs.Count; $i++) {
+        switch ($HookArgs[$i]) {
+            '--tool'    { $tool = $HookArgs[$i + 1]; $i++ }
+            '--timeout' { $timeout = [int]$HookArgs[$i + 1]; $i++ }
+            '--check'   { $action = 'check' }
+            default {
+                [Console]::Error.WriteLine("ERROR: aid: chat hook: unknown option '$($HookArgs[$i])'")
+                return 2
+            }
+        }
+    }
+    if (-not $tool) { [Console]::Error.WriteLine('ERROR: aid: chat hook: --tool is required (claude-code | cursor)'); return 2 }
+    if ($tool -notin @('claude-code', 'cursor')) {
+        [Console]::Error.WriteLine("ERROR: aid: chat hook: no adapter ships for '$tool'; that host falls back to 'aid chat inbox'.")
+        return 2
+    }
+    if ($timeout -lt 10) { [Console]::Error.WriteLine('ERROR: aid: chat hook: --timeout must be at least 10 seconds'); return 2 }
+
+    $nodeCmd = Get-Command node -ErrorAction SilentlyContinue
+    if (-not $nodeCmd) { [Console]::Error.WriteLine('ERROR: aid: chat hook: no node on PATH; install Node (>= 22.13.0) first.'); return 1 }
+    # The resolved path, because a PATH entry may be a shim that re-launches the real interpreter as a
+    # child -- leaving the host watching a process unrelated to the one that blocks.
+    $nodePath = ($nodeCmd.Source -replace '\\', '/')
+    $adapter = (Join-Path $script:_AidCodeHome "chat-node/adapters/$tool.mjs") -replace '\\', '/'
+    $cfg = if ($tool -eq 'claude-code') { Join-Path $HOME '.claude/settings.json' } else { Join-Path $HOME '.cursor/settings.json' }
+
+    if (-not (Test-Path -LiteralPath $adapter -PathType Leaf)) {
+        [Console]::Error.WriteLine("ERROR: aid: chat hook: adapter missing at $adapter; reinstall aid.")
+        return 1
+    }
+
+    if ($action -eq 'check') {
+        if (-not (Test-Path -LiteralPath $cfg -PathType Leaf)) {
+            [Console]::Error.WriteLine("aid: chat hook: no hook installed -- $cfg does not exist.")
+            [Console]::Error.WriteLine("  Run 'aid chat hook --tool $tool' and paste what it prints into that file.")
+            return 1
+        }
+        $raw = Get-Content -LiteralPath $cfg -Raw
+        $problems = @()
+        if ($raw -notmatch [regex]::Escape("adapters/$tool.mjs")) {
+            [Console]::Error.WriteLine("aid: chat hook: no chat stop hook found in $cfg.")
+            [Console]::Error.WriteLine("  Run 'aid chat hook --tool $tool' and paste what it prints.")
+            return 1
+        }
+        $flag  = [regex]::Match($raw, '--host-timeout\s+(\d+)')
+        $field = [regex]::Match($raw, '"timeout"\s*:\s*(\d+)')
+        if (-not $flag.Success)  { $problems += 'the command has no --host-timeout, so the adapter falls back to a short block' }
+        if (-not $field.Success) { $problems += 'the hook has no "timeout" field, so the host uses its own default -- which is not measured' }
+        if ($flag.Success -and $field.Success -and $flag.Groups[1].Value -ne $field.Groups[1].Value) {
+            $problems += ("the numbers DISAGREE: timeout=" + $field.Groups[1].Value + " but --host-timeout=" + $flag.Groups[1].Value +
+                          '. This fails silently -- no error, just a wake that never arrives')
+        }
+        if ($raw -match '"fail_closed"\s*:\s*true|"blocking"\s*:\s*true') {
+            $problems += 'fail-closed is set; a hook that must succeed can freeze the session it belongs to'
+        }
+        if ($problems.Count -gt 0) {
+            [Console]::Error.WriteLine('aid: chat hook: the installed hook has problems:')
+            foreach ($p in $problems) { [Console]::Error.WriteLine("  - $p") }
+            return 1
+        }
+        Write-Host "aid: chat hook: the hook in $cfg looks correct (timeout $($field.Groups[1].Value)s, matched on both sides)."
+        return 0
+    }
+
+    $marginS   = [int](([int]($env:AID_CHAT_ADAPTER_MARGIN_MS | ForEach-Object { if ($_) { $_ } else { 5000 } })) / 1000)
+    $longPollS = [int](([int]($env:AID_CHAT_LONG_POLL_MS | ForEach-Object { if ($_) { $_ } else { 30000 } })) / 1000)
+    $block = $timeout - $marginS
+    if ($block -gt $longPollS) { $block = $longPollS }
+
+    Write-Host "# Paste the block below into:"
+    Write-Host "#   $cfg"
+    Write-Host '#'
+    Write-Host "# Nothing writes it for you: AID writes no host tool's configuration, because a project-scoped"
+    Write-Host '# config file is tracked in git and would put this hook into every contributor''s checkout.'
+    Write-Host '#'
+    Write-Host "# The two numbers are already matched. With timeout ${timeout}: the node blocks ${block}s, the adapter"
+    Write-Host "# guards just under ${timeout}s, and your host gives up at ${timeout}s -- in that order."
+    Write-Host '# There is no session name in the command: the adapter derives it from the working directory.'
+    Write-Host '#'
+    Write-Host '# Do NOT set this hook to fail closed. Its normal behaviour is to block and return with nothing.'
+    if ($tool -eq 'claude-code') {
+        Write-Host @"
+{
+  "hooks": {
+    "Stop": [
+      {
+        "matcher": "*",
+        "hooks": [
+          {
+            "type": "command",
+            "timeout": $timeout,
+            "command": "$nodePath $adapter --host-timeout $timeout"
+          }
+        ]
+      }
+    ]
+  }
+}
+"@
+    } else {
+        Write-Host @"
+{
+  "hooks": {
+    "stop": [
+      {
+        "command": "$nodePath $adapter --host-timeout $timeout",
+        "timeout": $timeout
+      }
+    ]
+  }
+}
+"@
+    }
+    Write-Host ""
+    Write-Host "Then check it with:  aid chat hook --tool $tool --check"
+    return 0
+}
+
 function script:Invoke-AidChatPlane {
     param([string]$Verb, [string[]]$PlaneArgs)
 
@@ -5109,6 +5238,11 @@ function script:Invoke-AidChatCtl {
 
     $action = if ($CcArgs.Count -ge 1) { $CcArgs[0] } else { '' }
     # The message-plane verbs are handled first; `node ...` is the lifecycle surface.
+    if ($action -eq 'hook') {
+        $hookArgs = @()
+        if ($CcArgs.Count -gt 1) { $hookArgs = $CcArgs[1..($CcArgs.Count - 1)] }
+        script:Exit-Aid (script:Invoke-AidChatHook -HookArgs $hookArgs)
+    }
     if ($action -in @('register','heartbeat','open','join','leave','list','send','inbox','ack','reap','roster','connect','subscribe','peers','show','audit','evict','retention')) {
         $planeArgs = @()
         if ($CcArgs.Count -gt 1) { $planeArgs = $CcArgs[1..($CcArgs.Count - 1)] }
