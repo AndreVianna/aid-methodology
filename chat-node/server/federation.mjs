@@ -34,7 +34,34 @@ export function peersForChannel(db, channelId) {
 // a hub that does not yet know it holds a member of this channel still needs to be told when one
 // arrives, so a join is announced to every reachable peer rather than only to those already involved.
 function announceTargets(db) {
-    return peers.listPeers(db).map((p) => p.machine);
+    // REACHABLE peers only. Announcing to a peer that handshook once and vanished would queue an item
+    // per membership change for a hub that may never return -- and an unbounded queue against a dead
+    // address is exactly what the attempt counter exists to make visible, not something to create on
+    // purpose. A peer that comes back gets the current state from the join that follows.
+    return peers.listPeers(db).filter((p) => p.state === 'reachable').map((p) => p.machine);
+}
+
+// Does any reachable peer know this channel name?
+//
+// This exists because of a tension the stake rule creates and must resolve: a hub records a remote
+// member only for a channel it already knows, which stops every hub replicating every channel on the
+// network -- but it also means a hub cannot learn a name from an announcement alone, so joining a
+// name that exists only on a PEER would fail as unknown.
+//
+// A channel is a name and authoritative nowhere, so ANY hub that has it is sufficient authority to
+// join it. Asking is bounded, happens only on the local miss, and is the honest reading of the model:
+// there is nobody to consult, so consult everybody and take the first yes.
+export async function peerKnowsChannel(db, link, channelName) {
+    for (const machine of announceTargets(db)) {
+        if (!link || !link.isUp(machine)) continue;
+        const res = await link.request(machine, 'has_channel', { channel: channelName });
+        // The answer carries the channel's MEMBERS, not just its existence. Creating the replica
+        // without them would leave the joining hub blind to everyone already there: the earlier join
+        // announcements were ignored (no stake at the time) and nothing re-sends them, so the new
+        // member would see an empty channel and every send from it would be refused as solo.
+        if (res && res.ok && res.exists) return { known: true, machine, members: res.members || [] };
+    }
+    return { known: false };
 }
 
 // --- outbound ---------------------------------------------------------------
@@ -239,7 +266,17 @@ export async function federatedRoster(db, link, { name = null } = {}) {
 
     for (const p of peers.listPeers(db)) {
         if (!link || !link.isUp(p.machine)) {
-            unreachable.push({ machine: p.machine, machine_id: p.machine_id, reason: 'link_down' });
+            // A CONFIGURED peer that is down makes the answer partial: an operator named it, so it is
+            // part of the expected set and its absence is a gap the asker must know about.
+            //
+            // A DISCOVERED peer that has never been reachable does not. It may be an address that
+            // said hello once and was never a listening hub, and letting that mark every roster
+            // partial forever would make the partial flag meaningless -- which is worse than not
+            // having it, because the flag exists to be believed.
+            const everReached = p.last_seen_at !== null && p.last_seen_at !== undefined;
+            if (p.source === 'configured' || everReached) {
+                unreachable.push({ machine: p.machine, machine_id: p.machine_id, reason: 'link_down' });
+            }
             continue;
         }
         const res = await link.request(p.machine, 'roster', {});

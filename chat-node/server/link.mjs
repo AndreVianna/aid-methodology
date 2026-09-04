@@ -253,7 +253,12 @@ export function createLinkManager({ db, handlers = {}, linkPort = null, machineI
             socket.on('data', onFrame);
             socket.on('close', () => {
                 if (!settled) return fail('closed_before_handshake');
-                if (l.state === 'up') teardown(machine);
+                // ONLY if this is still the live socket for that peer. A peer that was killed and came
+                // back has a NEW link by the time the old socket's close fires, and tearing down on
+                // that event marked a perfectly good peer unreachable -- which then failed the next
+                // connect relay with "peer unreachable" while the link was demonstrably up. A real
+                // race, and one that only appears when a peer restarts.
+                if (l.socket === socket && l.state === 'up') teardown(machine);
             });
         });
     }

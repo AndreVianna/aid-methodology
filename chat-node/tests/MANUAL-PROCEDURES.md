@@ -240,3 +240,73 @@ procedure is entirely in what it adds.
 **Specifically worth watching:** whether they find the absolute path to `node` without being told
 how; whether they put the same number in both places without it being pointed out; and whether they
 understand what they will observe if they do not (nothing at all, which is the whole difficulty).
+
+---
+
+## MP-09 — `AC-2`: the two sessions on different machines
+
+**Verifies:** the target case. A Cursor session on one machine and a Claude Code session on another,
+on the same network, share a channel and exchange a message, and the recipient acts on it with no
+human action. `AC-2` is `AC-1` plus a network hop, and this is the hop.
+
+**Why not automated here:** the automated suite (`test-chat-node-federation.sh`) runs two real hubs
+with a real TCP link between them, so every property of the PROTOCOL is covered — handshake,
+replication, outbox, relay, partial roster. What it cannot do is put them on two machines: both are
+on loopback, and a loopback link never meets a router, a firewall, or an MTU it did not choose.
+
+**Steps:**
+
+1. On machine A: `aid chat node start`, then install the stop hook per `docs/chat-wake-install.md`.
+2. On machine B: the same, with the other tool.
+3. On A: `aid chat peers --add --machine <B's address>:8814`, then check
+   `aid chat peers` shows it `reachable`. If it does not, that is the finding — record what the
+   network did.
+4. On A: register a session, `aid chat open --channel pair`.
+5. On A: `aid chat roster` — B's agent must appear, carrying B's machine.
+6. On A: `aid chat connect --target <B's agent>`.
+7. On A: `aid chat send --body 'what test framework does this repo use?'`
+8. **Do nothing.** Watch machine B.
+
+**Pass looks like:** B's session begins a turn on its own with the question as context, and answers.
+Nothing was clicked between step 7 and that turn. Then reverse the direction and confirm the same.
+
+**Record:** the two addresses, whether discovery (`aid chat peers --discover`) found the peer without
+step 3, and the observed delay between step 7 and B's turn starting.
+
+---
+
+## MP-10 — `FR-6.5`: the inter-node link survives an idle network
+
+**Verifies:** left idle long enough for the network to close the connection, the next send
+re-establishes the link, the queued message arrives, and the roster on both sides still reflects who
+is actually there.
+
+**Why not automated here, and why a simulation would not do:** this is the one property nothing
+upstream has measured — the P0 spike had a single stub and no second hub, so what it exercised was a
+subscriber holding a connection across a LAN, which this design never opens. The property is about
+middleboxes: NATs and stateful firewalls that drop an idle flow without telling either end. A
+loopback connection meets none of them, so there is nothing here to survive.
+
+A test that closed the socket itself and asserted recovery would prove the reconnect path works —
+which `FD06` and `FD13` already cover — and would prove **nothing** about whether the 15-second
+keepalive is short enough for the networks people actually have. That is the whole question.
+
+**Steps:**
+
+1. Two machines, linked, per `MP-09` steps 1–3. Confirm `aid chat links` shows the link `up` on both.
+2. Note the time. Leave both machines running and **send nothing** — overnight is the honest
+   duration; anything under an hour does not exercise a typical NAT timeout.
+3. In the morning, before sending anything: `aid chat links` on both. Record what each says.
+4. On A, send a message to a channel B has a member in.
+5. Immediately check `aid chat outbox` on A, then check B's session receives the message.
+6. `aid chat roster` on both.
+
+**Pass looks like:** the message arrives. Whether the link stayed up or was rebuilt is *information*,
+not the pass condition — either is acceptable, and which one happened is the thing worth recording.
+The roster on both sides afterwards names the same agents, with nobody listed who has gone and nobody
+missing who is there.
+
+**Record, because this is a measurement and not just a check:** the idle duration, what step 3
+reported on each side, whether the message was queued at step 5, and how long it took to arrive.
+If the message did NOT arrive, the keepalive interval is too long for that network and the finding is
+the number it needs to be.

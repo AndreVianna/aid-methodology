@@ -278,6 +278,21 @@ export function makeRouter({ db, startedAt, onReady = null }) {
                     return core.joinChannel(db, { name: target, channelName: channel });
                 },
             }),
+            // Does this hub know a channel name? Asked by a peer whose local session is trying to join
+            // a name it has never seen -- a channel is authoritative nowhere, so any hub that has it
+            // is sufficient authority to join it.
+            has_channel: async (body) => {
+                const ch = db.prepare('SELECT id FROM channel WHERE name = ?').get(body.channel);
+                if (!ch) return { ok: true, exists: false, members: [] };
+                // Both halves of the roll, expressed the same way: this hub's own sessions carry its
+                // machine id, and the remote ones carry theirs. The asker needs the whole roll, not
+                // the part that happens to be local here.
+                const local = db.prepare('SELECT name FROM session WHERE channel_id = ?').all(ch.id)
+                    .map((r) => ({ machine: thisMachine(), name: r.name }));
+                const remote = db.prepare('SELECT machine, name FROM channel_member WHERE channel_id = ?')
+                    .all(ch.id).map((r) => ({ machine: r.machine, name: r.name }));
+                return { ok: true, exists: true, members: [...local, ...remote] };
+            },
             // A membership change on another hub. Applied to the remote half of the roll.
             membership: async (body) => fed.applyMembership(db, body),
             // A message from another hub, stored with OUR arrival order and THEIR sender_seq.
@@ -389,9 +404,12 @@ export function makeRouter({ db, startedAt, onReady = null }) {
             ? String(b.target).split('/', 2)
             : [null, b.target];
 
+        // REACHABLE peers only. An unreachable peer cannot be hosting the target, so asking it costs a
+        // round trip to learn nothing -- and, worse, its "peer unreachable" answer used to overwrite
+        // the informative refusal a peer that DID answer had already given.
         const candidates = qualMachine
             ? [qualMachine]
-            : peers.listPeers(db).map((p) => p.machine_id || p.machine);
+            : peers.listPeers(db).filter((p) => p.state === 'reachable').map((p) => p.machine_id || p.machine);
 
         let lastRelayed = null;
         for (const machineId of candidates) {
@@ -408,11 +426,16 @@ export function makeRouter({ db, startedAt, onReady = null }) {
                 });
                 return answer(res, { ok: true, connected: qualName, machine: machineId, channel: chRow.name, relayed: true });
             }
-            // Keep the most informative refusal seen. A relayed "already in a channel" is strictly
-            // better information than the local "unknown", and answering with the local one told an
-            // asker the target does not exist when in fact it was simply busy.
+            // Keep the MOST INFORMATIVE refusal, not the most recent one. A peer that answered and
+            // said "already in a channel" knows something; a peer that could not be reached knows
+            // nothing. Taking the last answer meant one unreachable peer later in the list erased the
+            // real reason an earlier peer had given, and the asker was told its target did not exist
+            // when in fact it was merely busy.
             if (relayed && relayed.detail && relayed.detail !== 'no peer for that machine') {
-                lastRelayed = relayed;
+                const informative = (r) => !String(r.detail || '').startsWith('peer unreachable');
+                if (!lastRelayed || (informative(relayed) && !informative(lastRelayed))) {
+                    lastRelayed = relayed;
+                }
             }
         }
         // Nothing anywhere. Prefer a relayed reason over the local one, and keep the retry hint --
@@ -433,7 +456,22 @@ export function makeRouter({ db, startedAt, onReady = null }) {
     });
     routes.set('POST /channel/join', async (req, res) => {
         const b = await readJsonBody(req);
-        const r = core.joinChannel(db, { name: b.name, channelName: b.channel });
+        let r = core.joinChannel(db, { name: b.name, channelName: b.channel });
+        // A name unknown HERE may exist on a peer. Refusing without asking would make a channel a
+        // per-machine thing, which is precisely what "replicated, authoritative nowhere" denies. The
+        // lookup happens only on the miss, so the ordinary join costs no network at all.
+        if (!r.ok && r.reason === 'channel_unknown') {
+            const found = await fed.peerKnowsChannel(db, link, b.channel);
+            if (found.known) {
+                db.prepare('INSERT INTO channel(name, opened_at) VALUES (?,?)').run(b.channel, nowMs());
+                // Record who is already there, from the answer. Without this the new member joins a
+                // channel it believes is empty, and its first send is refused as solo.
+                for (const m of found.members || []) {
+                    fed.applyMembership(db, { channel: b.channel, machine: m.machine, name: m.name, event: 'join' });
+                }
+                r = core.joinChannel(db, { name: b.name, channelName: b.channel });
+            }
+        }
         if (r.ok) fed.replicateMembership(db, link, { channelName: r.channel, name: b.name, event: 'join' }).catch(() => {});
         answer(res, r);
     });
