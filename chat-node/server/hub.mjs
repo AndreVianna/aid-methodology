@@ -246,11 +246,38 @@ export function makeRouter({ db, startedAt, onReady = null }) {
     // `onReady` so shutdown can stop it. The handler table is what a PEER may ask of this hub, and it
     // is deliberately small: the same table serves inbound and outbound links, so whichever hub
     // dialled first does not determine which one can ask questions.
+    // Federation borrows the core's roster rather than importing the whole core surface, which also
+    // keeps the local half of a federated answer visibly the same shape as the remote half.
+    fed.setCoreRoster(core.roster);
+
     const link = createLinkManager({
         db,
         handlers: {
             // A peer announcing who is on it. Answered from live state, never from a stored copy.
             roster: async () => ({ ok: true, agents: core.roster(db).agents, machine: thisMachine() }),
+            // A relayed connect request, answered against THIS hub's state at the moment it arrives.
+            connect: async (body) => fed.applyRelayedConnect(db, body, {
+                joinLocal: ({ target, channel }) => {
+                    // Availability FIRST, and only then the replica. Creating the channel before this
+                    // check left an orphan behind every refused relay.
+                    const t = core.getSession(db, target);
+                    if (!t) return { ok: false, reason: 'target_unavailable', detail: 'unknown' };
+                    if (t.channel_id !== null) return { ok: false, reason: 'target_unavailable', detail: 'already in a channel' };
+                    if (core.isStale(t)) return { ok: false, reason: 'target_unavailable', detail: 'stale' };
+
+                    // A hub asked for a name it has never seen CREATES its local replica: a channel is
+                    // a name, there is nothing to look up and no authority to consult, so refusing
+                    // would mean inventing an authority the model deliberately does not have (FR-9.7).
+                    const known = db.prepare('SELECT id FROM channel WHERE name = ?').get(channel);
+                    if (!known) {
+                        db.prepare('INSERT INTO channel(name, opened_at) VALUES (?,?)').run(channel, nowMs());
+                    }
+                    // Uses the ordinary join, so a relayed request reaches the same rules a local one
+                    // does -- including joining at the channel's head. A separate path here would be
+                    // a second implementation of membership for one caller.
+                    return core.joinChannel(db, { name: target, channelName: channel });
+                },
+            }),
             // A membership change on another hub. Applied to the remote half of the roll.
             membership: async (body) => fed.applyMembership(db, body),
             // A message from another hub, stored with OUR arrival order and THEIR sender_seq.
@@ -339,11 +366,62 @@ export function makeRouter({ db, startedAt, onReady = null }) {
     // Hub plane -- signalling, not messaging. Separate from the channel and message planes
     // because hub membership is registration plus liveness rather than a held socket, which is
     // what lets a connect request reach an agent that is in no channel at all.
-    routes.set('GET /roster', (req, res, url) =>
-        answer(res, core.roster(db, { name: url.searchParams.get('name') })));
+    // Federated, and its partial-answer shape is the point: an agent must be able to tell "there is
+    // nobody" from "I could not see one of the places somebody might be".
+    routes.set('GET /roster', async (req, res, url) =>
+        answer(res, await fed.federatedRoster(db, link, { name: url.searchParams.get('name') })));
     routes.set('POST /connect', async (req, res) => {
         const b = await readJsonBody(req);
-        answer(res, core.connect(db, { name: b.name, target: b.target }));
+        // Try locally first. A target on this machine needs no network at all, and reaching for the
+        // relay before checking here would make a local connect depend on a link being up.
+        const local = core.connect(db, { name: b.name, target: b.target });
+        if (local.ok || local.reason !== 'target_unavailable') return answer(res, local);
+
+        // Not here, or not available here. `target` may be plain or machine-qualified; a bare name is
+        // tried against every peer, because a name alone is not a destination and the asker may not
+        // know which machine its peer is on.
+        const asker = core.getSession(db, b.name);
+        if (!asker || !asker.channel_id) return answer(res, local);
+        const chRow = db.prepare('SELECT name FROM channel WHERE id = ?').get(asker.channel_id);
+        if (!chRow) return answer(res, local);
+
+        const [qualMachine, qualName] = String(b.target).includes('/')
+            ? String(b.target).split('/', 2)
+            : [null, b.target];
+
+        const candidates = qualMachine
+            ? [qualMachine]
+            : peers.listPeers(db).map((p) => p.machine_id || p.machine);
+
+        let lastRelayed = null;
+        for (const machineId of candidates) {
+            const relayed = await fed.relayConnect(db, link, {
+                targetMachineId: machineId, target: qualName,
+                channelName: chRow.name,
+                askerMachine: thisMachine(), askerName: b.name,
+            });
+            if (relayed.ok) {
+                // The target's hub joined it; record it here as a remote member so replication knows
+                // where to send, without waiting for its membership announcement to arrive.
+                fed.applyMembership(db, {
+                    channel: chRow.name, machine: machineId, name: qualName, event: 'join',
+                });
+                return answer(res, { ok: true, connected: qualName, machine: machineId, channel: chRow.name, relayed: true });
+            }
+            // Keep the most informative refusal seen. A relayed "already in a channel" is strictly
+            // better information than the local "unknown", and answering with the local one told an
+            // asker the target does not exist when in fact it was simply busy.
+            if (relayed && relayed.detail && relayed.detail !== 'no peer for that machine') {
+                lastRelayed = relayed;
+            }
+        }
+        // Nothing anywhere. Prefer a relayed reason over the local one, and keep the retry hint --
+        // which the local refusal carries and a relayed one does not, because the jitter is minted by
+        // whichever hub refuses.
+        if (lastRelayed) {
+            return answer(res, { ...local, detail: lastRelayed.detail, relayed: true });
+        }
+        answer(res, local);
     });
 
     // Channel plane.

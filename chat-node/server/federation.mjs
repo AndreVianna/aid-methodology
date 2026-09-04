@@ -148,10 +148,21 @@ export function applyMembership(db, { channel, machine, name, event }) {
         return { ok: true, applied: event, channel_closed: false };
     }
 
-    const ch = ensureChannel(db, channel);
+    // A JOIN IS RECORDED ONLY WHERE THIS HUB ALREADY KNOWS THE CHANNEL, and this is a correction of
+    // something that was wrong: announcing joins to every peer and creating a replica on receipt meant
+    // every hub ended up holding a replica of every channel anywhere on the network -- channels
+    // nobody local was in, whose names leaked across the LAN for no purpose.
+    //
+    // A hub earns a replica two ways, both of which mean it has a stake: a local session opened or
+    // joined that name, or a relayed connect request put a local agent into it (FR-9.7, where creating
+    // the replica IS the rule). An announcement about a name this hub has never heard of is neither,
+    // so it is ignored -- and ignoring it costs nothing, because the announcement will be sent again
+    // the moment a local agent does join.
+    const existing = db.prepare('SELECT * FROM channel WHERE name = ?').get(channel);
+    if (!existing) return { ok: true, ignored: 'no local stake in that channel' };
     db.prepare('INSERT OR REPLACE INTO channel_member(channel_id, machine, name, joined_at) VALUES (?,?,?,?)')
-      .run(ch.id, machine, name, nowMs());
-    return { ok: true, applied: 'join', channel: ch.name };
+      .run(existing.id, machine, name, nowMs());
+    return { ok: true, applied: 'join', channel: existing.name };
 }
 
 // A replicated message, stored with THIS hub's own arrival order.
@@ -206,4 +217,117 @@ export function applyMessage(db, payload) {
         throw err;
     }
     return { ok: true, arrival_seq: arrivalSeq, absorbed: false, channel: ch.name };
+}
+
+// --- the federated roster ---------------------------------------------------
+//
+// Fetched from every reachable peer and merged for the answer. NOT STORED, for the reason given at
+// the top of this file, and worth restating because the temptation to cache it is strong: a stored
+// roster would be a second source of truth for liveness that no heartbeat maintains.
+//
+// AN ANSWER GIVEN WHILE A PEER IS UNREACHABLE IS PARTIAL AND SAYS SO. It carries the agents from
+// every peer that answered plus an explicit list of those that did not, and it never fails outright
+// because one peer is down. Both alternatives are worse in the same way: silently omitting an
+// unreachable peer's agents reads as "nobody is there", which is the one answer that makes an agent
+// stop looking, and failing the whole call because one peer is down makes an outage on any machine an
+// outage on all of them. An incomplete answer labelled incomplete is useful; an incomplete answer
+// labelled complete is a lie.
+export async function federatedRoster(db, link, { name = null } = {}) {
+    const local = require_local(db, name);
+    const unreachable = [];
+    const remote = [];
+
+    for (const p of peers.listPeers(db)) {
+        if (!link || !link.isUp(p.machine)) {
+            unreachable.push({ machine: p.machine, machine_id: p.machine_id, reason: 'link_down' });
+            continue;
+        }
+        const res = await link.request(p.machine, 'roster', {});
+        if (!res || !res.ok || !Array.isArray(res.agents)) {
+            unreachable.push({ machine: p.machine, machine_id: p.machine_id, reason: (res && res.reason) || 'no_answer' });
+            continue;
+        }
+        for (const a of res.agents) {
+            // Stamped with the machine it came from, because THE SAME SHORT NAME ON TWO MACHINES IS
+            // TWO DISTINCT SESSIONS. A name alone is not a destination and never was; qualifying it
+            // here is what keeps that true once agents are on more than one machine.
+            remote.push({ ...a, machine: res.machine || p.machine_id || p.machine, is_self: false });
+        }
+    }
+
+    return {
+        ok: true,
+        agents: [...local, ...remote],
+        // Named rather than omitted. An agent reading this can tell "there is nobody" from "I could
+        // not see one of the places somebody might be".
+        unreachable_peers: unreachable,
+        partial: unreachable.length > 0,
+    };
+}
+
+function require_local(db, name) {
+    // Local agents carry this hub's own machine id for the same qualification reason.
+    const me = thisMachine();
+    return coreRoster(db, name).map((a) => ({ ...a, machine: me }));
+}
+
+// Kept as a tiny indirection so this module does not import the whole core surface just for one call,
+// and so the local half is visibly the same shape as the remote half.
+let coreRosterFn = null;
+export function setCoreRoster(fn) { coreRosterFn = fn; }
+function coreRoster(db, name) {
+    if (!coreRosterFn) return [];
+    const r = coreRosterFn(db, { name });
+    return r && r.ok ? r.agents : [];
+}
+
+// --- the cross-machine connect relay ----------------------------------------
+//
+// Relayed to the target's hub and answered against THAT hub's state at the moment the relay arrives.
+// Not against a cached view of it: availability is exactly the kind of fact that goes stale, and the
+// whole point of answering from state is that the state is current.
+//
+// AN UNREACHABLE PEER FAILS THE REQUEST RATHER THAN QUEUEING IT. This is the deliberate asymmetry
+// with messages, which do queue, and it is the same reasoning that removed the accept step: a connect
+// request answered minutes later arrives after the asking agent's circumstances have changed -- it
+// may have left, been reaped, or found somebody else -- which is precisely the pending state the
+// design exists to avoid.
+export async function relayConnect(db, link, { targetMachineId, target, channelName, askerMachine, askerName }) {
+    const address = peers.getPeer(db, targetMachineId)
+        ? targetMachineId
+        : peers.addressForMachineId(db, targetMachineId);
+    if (!address) return { ok: false, reason: 'target_unavailable', detail: 'no peer for that machine' };
+    if (!link || !link.isUp(address)) {
+        return { ok: false, reason: 'target_unavailable', detail: 'peer unreachable; a connect request is never queued' };
+    }
+    const res = await link.request(address, 'connect', {
+        target, channel: channelName, asker_machine: askerMachine, asker_name: askerName,
+    });
+    return res || { ok: false, reason: 'target_unavailable', detail: 'no answer' };
+}
+
+// The inbound half, run on the TARGET's hub.
+//
+// A hub asked for a channel name it has never seen CREATES its local replica and joins its agent,
+// because a channel is a name and there is no authority to consult. One consequence is accepted
+// rather than engineered away: if the asker left in the interval, the target arrives alone in a
+// channel whose conversation has ended, and that channel closes when the target leaves or is reaped.
+// Making that impossible would require agreement between hubs about a channel's existence, which is
+// the consensus problem this whole model is shaped to avoid.
+export function applyRelayedConnect(db, { target, channel, asker_machine, asker_name }, { joinLocal }) {
+    if (!target || !channel) {
+        return { ok: false, reason: 'bad_request', detail: 'target and channel are required' };
+    }
+    // Creating the replica is the caller's job, AFTER it has decided the target can actually be
+    // joined. Creating it here left an orphan every time a relay was refused: the channel was made,
+    // the join then failed because the target was busy, and the replica stayed behind with no local
+    // member and no remote one -- a name nothing would ever close. Measured, not theorised.
+    const result = joinLocal({ target, channel });
+    if (!result.ok) return result;
+    // The asker is recorded as a remote member here, so this hub knows where to replicate back to
+    // without waiting for a separate membership announcement to arrive.
+    if (asker_machine && asker_name && asker_machine !== thisMachine()) {
+        applyMembership(db, { channel, machine: asker_machine, name: asker_name, event: 'join' });
+    }
+    return result;
 }
