@@ -4835,8 +4835,16 @@ function script:Invoke-AidChatCall {
             409 {
                 $reason = if ($text -match '"reason":"([^"]*)"') { $Matches[1] } else { 'refused' }
                 $detail = if ($text -match '"detail":"([^"]*)"') { $Matches[1] } else { $null }
-                if ($detail) { [Console]::Error.WriteLine("${reason}: ${detail}") }
-                else         { [Console]::Error.WriteLine($reason) }
+                # A retry hint is the one part of a refusal a caller must ACT on rather than
+                # report, so it has to reach the caller -- otherwise the jitter exists in the node
+                # and the livelock it prevents is still there for every agent using this surface.
+                $retry  = if ($text -match '"retry_after_ms":([0-9]+)') { $Matches[1] } else { $null }
+                $line = $reason
+                if ($detail) { $line = "${line}: ${detail}" }
+                if ($retry)  { $line = "${line} (retry after ${retry}ms)" }
+                [Console]::Error.WriteLine($line)
+                # Also on stdout as JSON, so a program can read it without parsing prose.
+                Write-Output $text
                 return 14
             }
             400 { [Console]::Error.WriteLine("ERROR: aid: chat: the request was malformed: $text"); return 2 }

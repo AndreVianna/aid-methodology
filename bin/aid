@@ -5293,12 +5293,21 @@ _aid_chat_respond() {
             printf '%s\n' "$body"
             return 0 ;;
         409)
-            local reason detail
+            local reason detail retry
             reason="$(printf '%s' "$body" | sed -n 's/.*"reason":"\([^"]*\)".*/\1/p')"
             detail="$(printf '%s' "$body" | sed -n 's/.*"detail":"\([^"]*\)".*/\1/p')"
+            # A retry hint is the one part of a refusal a caller must ACT on rather than report,
+            # so it has to reach the caller. Without this the jitter existed in the node and was
+            # unreachable from the surface every agent actually uses -- which is to say the
+            # livelock it prevents was still there.
+            retry="$(printf '%s' "$body" | sed -n 's/.*"retry_after_ms":\([0-9]*\).*/\1/p')"
             printf '%s' "${reason:-refused}" >&2
             [[ -n "$detail" ]] && printf ': %s' "$detail" >&2
+            [[ -n "$retry" ]] && printf ' (retry after %sms)' "$retry" >&2
             printf '\n' >&2
+            # Also on stdout as JSON, so a program can read it without parsing prose. stdout stays
+            # machine-readable on refusal exactly as it is on success.
+            printf '%s\n' "$body"
             return 14 ;;
         400)
             printf 'ERROR: aid: chat: the request was malformed: %s\n' "$body" >&2

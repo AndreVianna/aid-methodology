@@ -103,7 +103,19 @@ export function heartbeat(db, name) {
     const s = db.prepare('SELECT id FROM session WHERE name = ?').get(name);
     if (!s) return no(REFUSAL.NOT_REGISTERED);
     db.prepare('UPDATE session SET last_heartbeat_at = ? WHERE id = ?').run(nowMs(), s.id);
-    return ok();
+    // Answers with the caller's current channel, because a connect outcome must be learnable on
+    // its next call of ANY kind -- and heartbeat is the weakest call there is. Returning bare
+    // `ok()` made that promise false for exactly the caller most likely to be relying on it: one
+    // that is idle and doing nothing but keeping itself alive.
+    const row = db.prepare('SELECT channel_id, delivered_seq, acked_seq FROM session WHERE id = ?').get(s.id);
+    const ch = row.channel_id
+        ? db.prepare('SELECT name FROM channel WHERE id = ?').get(row.channel_id)
+        : null;
+    return ok({
+        channel: ch ? ch.name : null,
+        delivered_seq: row.delivered_seq,
+        acked_seq: row.acked_seq,
+    });
 }
 
 // Stale is DERIVED, never stored: a stored flag and a missed heartbeat desynchronise, and then
@@ -611,15 +623,19 @@ export function connect(db, { name, target }) {
     if (!asker.channel_id) return no(REFUSAL.NO_CHANNEL, 'open a channel before requesting a peer');
     if (target === name) return no(REFUSAL.TARGET_IS_SELF);
 
-    const ch = db.prepare('SELECT * FROM channel WHERE id = ?').get(asker.channel_id);
     const now = nowMs();
     const t = getSession(db, target);
 
-    // Unknown, stale, and already-in-a-channel are ONE refusal with one token, deliberately.
-    // They are the same fact from the asker's side -- that agent cannot be pulled in right now --
-    // and splitting them would let an asker distinguish "no such agent" from "that agent is
-    // busy", which is a small enumeration oracle over who exists on this hub. `detail` carries
-    // the distinction for a human reading the log, where it is useful and harmless.
+    // Unknown, stale, and already-in-a-channel are ONE refusal with one token, deliberately --
+    // but NOT for the reason first written here, which claimed the collapse denied an asker an
+    // enumeration oracle over who exists on this hub. That claim was wrong, and wrong in a way
+    // worth leaving recorded: the ROSTER already lists every session by name to every caller, so
+    // there is nothing to withhold. Hiding "unknown" from "busy" here would have protected
+    // nothing while making the refusal harder to act on.
+    //
+    // The real reason is simpler and honest: from the asker's side these are ONE fact -- that
+    // agent cannot be pulled in right now -- so one token keeps a caller's branching to one
+    // case, and `detail` says which, for whoever is reading.
     if (!t || isStale(t, now) || t.channel_id !== null) {
         const why = !t ? 'unknown' : (isStale(t, now) ? 'stale' : 'already in a channel');
         return no(REFUSAL.TARGET_UNAVAILABLE, why, {
@@ -634,8 +650,29 @@ export function connect(db, { name, target }) {
     // Joined in the SAME TRANSACTION that sets its positions to the channel head. Two statements
     // would leave a window where the target is a member with positions of 0 -- and a member at 0
     // in a channel whose head is 40 is owed forty messages it was never present for.
+    //
+    // Both preconditions are RE-READ inside the lock, not trusted from the checks above. Those
+    // ran before `BEGIN IMMEDIATE` took the write lock, so between them and here the asker could
+    // have left (closing the channel, if it was last) or the target could have been placed
+    // elsewhere. Re-reading costs two statements and removes the window entirely; the alternative
+    // is placing an agent into a channel that no longer exists.
+    let channelName;
     db.exec('BEGIN IMMEDIATE');
     try {
+        const chNow = db.prepare('SELECT * FROM channel WHERE id = ?').get(asker.channel_id);
+        const askerNow = db.prepare('SELECT channel_id FROM session WHERE id = ?').get(asker.id);
+        const targetNow = db.prepare('SELECT channel_id FROM session WHERE id = ?').get(t.id);
+        if (!chNow || !askerNow || askerNow.channel_id !== asker.channel_id) {
+            db.exec('ROLLBACK');
+            return no(REFUSAL.CHANNEL_UNKNOWN, 'the channel closed while the request was in flight');
+        }
+        if (!targetNow || targetNow.channel_id !== null) {
+            db.exec('ROLLBACK');
+            return no(REFUSAL.TARGET_UNAVAILABLE, 'taken while the request was in flight', {
+                retry_after_ms: 250 + Math.floor(Math.random() * 750),
+            });
+        }
+        channelName = chNow.name;
         placeInChannel(db, t.id, asker.channel_id);
         db.exec('COMMIT');
     } catch (err) {
@@ -649,7 +686,7 @@ export function connect(db, { name, target }) {
     // kind, and there is no event to buffer or lose.
     return ok({
         connected: target,
-        channel: ch.name,
+        channel: channelName,
         joined_at_seq: db.prepare('SELECT acked_seq FROM session WHERE id = ?').get(t.id).acked_seq,
     });
 }

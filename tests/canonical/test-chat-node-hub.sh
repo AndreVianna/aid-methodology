@@ -162,6 +162,12 @@ assert_eq "$(printf '%s' "$out" | _field "['channel']")" "standup" "HP06 into th
 # even a re-register or a list reveals it.
 learned=$($AID chat register --name bob --tool cursor 2>/dev/null | _field "['channel']")
 assert_eq "$learned" "standup" "HP07 the target learns on its next call of any kind, not only on a wake"
+# And specifically on the WEAKEST call there is. `heartbeat` asks nothing about channels, and an
+# idle agent doing nothing but keeping itself alive is exactly the caller most likely to be
+# relying on this -- so if `heartbeat` did not report it, "any kind" would be false where it
+# matters most. It returned a bare ok() until the gate caught it.
+hb=$($AID chat heartbeat --name bob 2>/dev/null | _field "['channel']")
+assert_eq "$hb" "standup" "HP07 even a bare heartbeat -- the weakest call -- reveals the connect outcome"
 mine=$($AID chat list --name bob 2>/dev/null | python3 -c "
 import json,sys
 print([c['name'] for c in json.load(sys.stdin)['channels'] if c['is_mine']])")
@@ -230,6 +236,28 @@ if [[ "$hints" -gt 1 ]]; then
 else
     fail "HP18 the retry hint is constant across refusals; two agents can retry in step forever"
 fi
+
+# HP22 -- the retry hint must REACH a caller. It existed in the node and was dropped by the CLI,
+# which means the livelock it prevents was still there for every agent using that surface. Both
+# channels are checked: prose on stderr for a human, and JSON on stdout for a program.
+e=$($AID chat connect --name recip1 --target recip2 2>&1 >/dev/null)
+assert_output_contains "$e" "retry after" "HP22 the refusal tells a human when to retry"
+hint=$($AID chat connect --name recip1 --target recip2 2>/dev/null | _field "['retry_after_ms']")
+if [[ "$hint" =~ ^[0-9]+$ ]] && [[ "$hint" -ge 250 && "$hint" -le 1000 ]]; then
+    pass "HP22 and gives a program a machine-readable hint in range (${hint}ms)"
+else
+    fail "HP22 the retry hint did not reach stdout as a number in range: '${hint}'"
+fi
+
+# HP23 -- a refusal keeps stdout machine-readable, exactly as a success does. A caller should not
+# need two parsing strategies depending on the outcome.
+# `set -o pipefail` is on, so putting the CLI in a pipeline makes the pipeline's status the
+# CLI's 14 and not the parser's verdict -- which is what two earlier versions of this assertion
+# actually measured. Take the output first, then parse it as a separate command.
+_refusal_out="$($AID chat connect --name recip1 --target recip2 2>/dev/null || true)"
+_json_ok=0
+printf '%s' "$_refusal_out" | python3 -c "import json,sys; json.load(sys.stdin)" 2>/dev/null || _json_ok=1
+assert_eq "${_json_ok}" "0" "HP23 stdout parses as JSON on refusal as well as on success"
 
 # --- surface boundary -------------------------------------------------------
 # The agent-facing surface is a SKILL that omits things, and that skill is a later delivery's

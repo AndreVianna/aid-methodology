@@ -60,7 +60,10 @@ notes: >-
   delivery's artifact. What is checkable now is the CLI's own plane-verb set, so HP19 asserts it
   gained exactly `roster` and `connect` over delivery-001's, and HP20 asserts no administrative
   verb entered it (node lifecycle and reap stay operator-side). When the skill exists, the
-  criterion should be re-verified against the skill itself.
+  criterion should be re-verified against the skill itself. So that this does not simply lapse --
+  nothing re-opens a criterion already ticked -- the gap is FILED as W1-3 in
+  .aid/knowledge/tech-debt.md, which is the only mechanism in this repository that survives the
+  work folder being pruned.
 # [W] mutable display-name override (writeback-state.sh:829). Documentation
 #     fix, not a schema change (SP-2's one documented exception): the writer
 #     already writes this key today; it was simply never declared here.

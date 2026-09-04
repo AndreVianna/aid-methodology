@@ -338,4 +338,43 @@ JS
 )
 assert_eq "$out" "1,1,0,1,1,false" "CO23 a predecessor arriving after a grace skip is not released, not stalling, and reported as discarded"
 
+# CO24 -- connect's preconditions are re-read INSIDE the write lock rather than trusted from the
+# checks that ran before it.
+#
+# Stated plainly: with foreign keys on and a single-threaded core, the interleaving this guards
+# against CANNOT currently occur -- the schema will not even let the inconsistent state be
+# constructed, which is why an earlier version of this test failed rather than passing. The guard
+# is depth, not a fix for a live defect. To test it at all, the state has to be built with
+# foreign keys briefly off, which is honest about what is being verified: not that the race
+# happens, but that the guard would catch it if it ever could.
+out=$(_run <<'JS' 2>/dev/null
+const db = await S.openStore({ path: ':memory:' });
+for (const n of ['asker','target']) C.register(db, { name: n, tool: 't', cwd: '/' });
+C.openChannel(db, { name: 'asker', channelName: 'ch' });
+const chId = db.prepare('SELECT id FROM channel WHERE name=?').get('ch').id;
+db.exec('PRAGMA foreign_keys = OFF');
+db.prepare('DELETE FROM channel WHERE id = ?').run(chId);
+db.prepare('UPDATE session SET channel_id = ? WHERE name = ?').run(chId, 'asker');
+db.exec('PRAGMA foreign_keys = ON');
+const r = C.connect(db, { name: 'asker', target: 'target' });
+const placed = db.prepare('SELECT channel_id FROM session WHERE name=?').get('target').channel_id;
+process.stdout.write([r.ok, r.reason, String(placed)].join(','));
+JS
+)
+assert_eq "$out" "false,channel_unknown,null" "CO24 connect re-reads under the lock: a vanished channel is refused and nobody is placed"
+
+# CO25 -- heartbeat reports the caller's channel, so a connect outcome is learnable on the
+# weakest call an agent can make.
+out=$(_run <<'JS' 2>/dev/null
+const db = await S.openStore({ path: ':memory:' });
+for (const n of ['a','b']) C.register(db, { name: n, tool: 't', cwd: '/' });
+const before = C.heartbeat(db, 'b');
+C.openChannel(db, { name: 'a', channelName: 'ch' });
+C.connect(db, { name: 'a', target: 'b' });
+const after = C.heartbeat(db, 'b');
+process.stdout.write([String(before.channel), String(after.channel)].join(','));
+JS
+)
+assert_eq "$out" "null,ch" "CO25 heartbeat reports the channel, so the outcome is learnable on the weakest call there is"
+
 test_summary
