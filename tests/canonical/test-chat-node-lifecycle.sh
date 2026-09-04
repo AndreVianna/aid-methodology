@@ -42,8 +42,22 @@ if ! command -v node >/dev/null 2>&1; then
     exit 0
 fi
 
-_HUBS_AT_START="$(ps -eo args | grep -c '[s]erver/hub.mjs')"
 _TMPD="$(mktemp -d)"
+# Count only THIS suite's own hub processes, by matching the private runtime dir in each
+# process's environment. A machine-wide count is NOT usable here: tests/run-all.sh dispatches
+# suites concurrently under `xargs -P`, so a sibling suite's healthy node would read as this
+# suite's leak. Scoping to `_TMPD` -- unique per run via mktemp -- makes the check both precise
+# and parallel-safe, and it asks the question that actually matters: did *this* suite clean up?
+_own_hubs() {
+    local n=0 p
+    for p in $(pgrep -f 'server/hub.mjs' 2>/dev/null); do
+        if tr '\0' '\n' < "/proc/${p}/environ" 2>/dev/null | grep -q "^AID_CHAT_RUNTIME=${_TMPD}"; then
+            n=$((n + 1))
+        fi
+    done
+    printf '%s\n' "$n"
+}
+
 export AID_CODE_HOME="$REPO_ROOT"
 export AID_CHAT_RUNTIME="${_TMPD}/rt"
 export AID_CHAT_STORE="${_TMPD}/rt/chat.db"
@@ -173,11 +187,11 @@ fi
 _cleanup
 trap - EXIT
 sleep 0.3
-_leaked="$(ps -eo args | grep -c '[s]erver/hub.mjs')"
-if [[ "$_leaked" -le "${_HUBS_AT_START:-0}" ]]; then
-    pass "LC11 the suite leaves no hub process behind (${_leaked} running, ${_HUBS_AT_START:-0} at start)"
+_leaked="$(_own_hubs)"
+if [[ "$_leaked" -eq 0 ]]; then
+    pass "LC11 the suite leaves none of its own hub processes behind"
 else
-    fail "LC11 the suite leaked $(( _leaked - ${_HUBS_AT_START:-0} )) hub process(es)"
+    fail "LC11 the suite leaked ${_leaked} of its own hub process(es)"
 fi
 
 test_summary
