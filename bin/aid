@@ -5442,9 +5442,40 @@ print(json.dumps(wake))
 ' "$1" "$2"
 }
 
+# The session name, when the caller did not give one.
+#
+# THIS EXISTS BECAUSE THE PRODUCT SHIPPED WITHOUT IT AND DID NOT WORK. The requirement has a session
+# register ITSELF under a STABLE name, and the rendered skill told the agent to pass
+# `--name "$AID_CHAT_SESSION"` -- a variable nothing anywhere ever set. Following the skill exactly
+# produced `--name ""` and an error. Every test passed, because every test passed `--name` explicitly.
+#
+# So the default is DERIVED, from the working directory:
+#
+#   STABLE across restarts, which FR-2.2 requires: reattachment finds a session's channel again by
+#   name, so a name that changed per process would orphan the mail it was meant to recover.
+#   DISTINCT per repository, which is the objective's own case -- sessions work in different
+#   repositories, so the directory is the natural discriminator.
+#   AND IT NEEDS NO CONFIGURATION, which matters most: the operator writes one hook line with no name
+#   in it, and every session in every repository gets a correct one.
+#
+# `AID_CHAT_SESSION` still wins, for two sessions sharing a repository or for a friendlier name.
+_aid_chat_default_name() {
+    if [[ -n "${AID_CHAT_SESSION:-}" ]]; then
+        printf '%s\n' "$AID_CHAT_SESSION"
+        return 0
+    fi
+    local base
+    base="$(basename "$PWD")"
+    # Keep it to what a name may contain, so a directory with spaces or punctuation still yields a
+    # usable identity rather than a quoting problem for every later command.
+    base="$(printf '%s' "$base" | tr -c 'A-Za-z0-9._-' '-' | sed 's/^-*//; s/-*$//')"
+    [[ -z "$base" ]] && base="session"
+    printf '%s\n' "$base"
+}
+
 _cmd_chat_plane() {
     local verb="$1"; shift
-    local name="${AID_CHAT_SESSION:-}" body="" channel="" cursor="" key="" whisper="" mention="" reply_to="" corr="" target="" host_timeout="" follow=0 machine="" peer_action=list limit="" setting=""
+    local name="" body="" channel="" cursor="" key="" whisper="" mention="" reply_to="" corr="" target="" host_timeout="" follow=0 machine="" peer_action=list limit="" setting=""
     while [[ $# -gt 0 ]]; do
         case "$1" in
             --name)     name="$2"; shift 2 ;;
@@ -5474,6 +5505,11 @@ _cmd_chat_plane() {
     case "$verb" in
         show|audit|retention) name="${name:-operator}" ;;
     esac
+    # No name given: derive one. This is what makes the rendered skill's commands work as written and
+    # the operator's hook line identical for every session.
+    if [[ -z "$name" && "$verb" != "peers" ]]; then
+        name="$(_aid_chat_default_name)"
+    fi
     # `peers` is operator-facing and belongs to no session, so it is exempt from the name rule.
     if [[ -z "$name" && "$verb" != "peers" ]]; then
         echo "ERROR: aid: chat ${verb}: --name is required (or set AID_CHAT_SESSION)" >&2
@@ -5483,6 +5519,9 @@ _cmd_chat_plane() {
 
     case "$verb" in
         register)
+            # The name is echoed on stderr when it was DERIVED rather than given, so whoever ran this
+            # learns what identity they now have. Silence would leave an agent guessing at its own name.
+            [[ -z "${AID_CHAT_SESSION:-}" ]] && printf 'aid: chat: registered as %s (derived from this directory; set AID_CHAT_SESSION or pass --name to choose)\n' "$name" >&2
             local tool="${_AID_CHAT_TOOL:-${AID_CHAT_TOOL:-unknown}}"
             _aid_chat_call POST /session \
                 "{\"name\":\"${n}\",\"tool\":\"$(_aid_json_escape "$tool")\",\"cwd\":\"$(_aid_json_escape "$PWD")\"}" ;;

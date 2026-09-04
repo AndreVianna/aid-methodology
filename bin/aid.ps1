@@ -4939,10 +4939,23 @@ function script:Invoke-AidChatWaitOnce {
     }
 }
 
+# The session name, when the caller did not give one -- the PowerShell twin of
+# _aid_chat_default_name. See that function for why this exists: the rendered skill told an agent to
+# pass a variable nothing set, so following it produced an empty name and an error.
+function script:Get-AidChatDefaultName {
+    if ($env:AID_CHAT_SESSION) { return $env:AID_CHAT_SESSION }
+    $base = Split-Path -Leaf $PWD.Path
+    # Keep it to what a name may contain, so a directory with spaces or punctuation still yields a
+    # usable identity rather than a quoting problem for every later command.
+    $base = ($base -replace '[^A-Za-z0-9._-]', '-').Trim('-')
+    if (-not $base) { $base = 'session' }
+    return $base
+}
+
 function script:Invoke-AidChatPlane {
     param([string]$Verb, [string[]]$PlaneArgs)
 
-    $name = $env:AID_CHAT_SESSION
+    $name = ''
     $body = ''; $channel = ''; $cursor = ''; $key = ''; $whisper = ''; $mention = ''; $tool = ''
     $replyTo = ''; $corr = ''; $target = ''; $hostTimeout = ''; $follow = $false
     $machine = ''; $peerAction = 'list'; $limit = ''; $setting = ''
@@ -4981,6 +4994,9 @@ function script:Invoke-AidChatPlane {
     # These are operator-facing and belong to no session -- except `evict`, which names the session
     # being removed.
     if ($Verb -in @('show', 'audit', 'retention') -and -not $name) { $name = 'operator' }
+    # No name given: derive one, so the skill's commands work as written and the operator's hook line
+    # is identical for every session.
+    if (-not $name -and $Verb -ne 'peers') { $name = script:Get-AidChatDefaultName }
     # `peers` is operator-facing and belongs to no session, so it is exempt from the name rule.
     if (-not $name -and $Verb -ne 'peers') {
         [Console]::Error.WriteLine("ERROR: aid: chat ${Verb}: --name is required (or set AID_CHAT_SESSION)")
@@ -4990,6 +5006,10 @@ function script:Invoke-AidChatPlane {
 
     switch ($Verb) {
         'register' {
+            # Echoed when the name was DERIVED, so whoever ran this learns what identity they have.
+            if (-not $env:AID_CHAT_SESSION) {
+                [Console]::Error.WriteLine("aid: chat: registered as ${n} (derived from this directory; set AID_CHAT_SESSION or pass --name to choose)")
+            }
             $t = if ($tool) { $tool } elseif ($env:AID_CHAT_TOOL) { $env:AID_CHAT_TOOL } else { 'unknown' }
             return script:Invoke-AidChatCall 'POST' '/session' `
                 ('{"name":"' + $n + '","tool":"' + (script:ConvertTo-AidJsonString $t) + '","cwd":"' + (script:ConvertTo-AidJsonString $PWD.Path) + '"}')

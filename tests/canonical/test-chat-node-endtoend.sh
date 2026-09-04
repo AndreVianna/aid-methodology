@@ -342,6 +342,70 @@ assert_eq "$(curl -sS "${BA}/outbox" 2>/dev/null | _j "d['total']")" "0" "E2E14 
 arrived="$(_B chat inbox --name dev-claude --cursor 0 2>/dev/null | _j "any('while beta was down' in m['body'] for m in d['messages'])")"
 assert_eq "$arrived" "True" "E2E14 the message sent during the outage is delivered"
 
+# --- E2E17: onboarding, from cold, with nothing pre-set ---------------------
+#
+# THE PATH A REAL USER TAKES, and it did not work. FR-2.1 has a session bind ITSELF to a stable name,
+# and the rendered skill told the agent to pass `--name "$AID_CHAT_SESSION"` -- a variable nothing in
+# the product ever set. Following the skill exactly produced an empty name and an error, and every
+# test passed anyway because every test passed `--name` explicitly. Nothing had walked in cold.
+#
+# The name is now DERIVED from the working directory when none is given: stable across restarts, which
+# reattachment needs, and distinct per repository, which is the objective's own case.
+export -n AID_CHAT_SESSION 2>/dev/null || true
+unset AID_CHAT_SESSION
+mkdir -p "${_TMPD}/proj-api" "${_TMPD}/proj-web"
+_CI() { ( cd "$1" && env AID_CHAT_RUNTIME="${_TMPD}/A" AID_CHAT_STORE="${_TMPD}/A/chat.db" \
+              AID_CHAT_MACHINE=alpha AID_CHAT_LINK_PORT="$LINK_A" AID_CHAT_JOB_INTERVAL_MS=0 \
+              bash "${REPO_ROOT}/bin/aid" "${@:2}" ); }
+
+reg_a="$(_CI "${_TMPD}/proj-api" chat register --tool cursor 2>/dev/null)"
+assert_eq "$(printf '%s' "$reg_a" | _j "d['ok']")" "True" "E2E17 a session registers with no --name and no environment variable"
+_CI "${_TMPD}/proj-web" chat register --tool claude-code >/dev/null 2>&1
+
+# The names must be the DIRECTORIES, which is what makes them predictable enough to use.
+seen="$(_CI "${_TMPD}/proj-api" chat roster 2>/dev/null | _j "sorted(a['name'] for a in d['agents'] if a['name'].startswith('proj-'))")"
+assert_eq "$seen" "['proj-api', 'proj-web']" "E2E17 each session is named for the repository it works in, so two repositories are two sessions"
+
+# And every later verb finds the same name without being told it.
+_CI "${_TMPD}/proj-api" chat open --channel onboard >/dev/null 2>&1
+conn="$(_CI "${_TMPD}/proj-api" chat connect --target proj-web 2>/dev/null)"
+assert_eq "$(printf '%s' "$conn" | _j "(d['ok'], d['connected'])")" "(True, 'proj-web')" \
+    "E2E17 open and connect work with no --name: the derived name is the same one register bound"
+_CI "${_TMPD}/proj-api" chat send --body 'cold start works' >/dev/null 2>&1
+got="$(_CI "${_TMPD}/proj-web" chat inbox 2>/dev/null | _j "[m['body'] for m in d['messages']]")"
+assert_eq "$got" "['cold start works']" "E2E17 and so do send and inbox, from either side"
+
+# Stability is the property reattachment depends on: the same directory must give the same name.
+again="$(_CI "${_TMPD}/proj-web" chat register --tool claude-code 2>/dev/null)"
+assert_eq "$(printf '%s' "$again" | _j "(d['reattached'], d['channel'])")" "(True, 'onboard')" \
+    "E2E17 re-registering from the same directory reattaches: the derived name is stable across a restart"
+
+# An explicit name still wins, for two sessions sharing one repository.
+named="$(_CI "${_TMPD}/proj-api" chat register --name a-second-one --tool cursor 2>/dev/null)"
+assert_eq "$(printf '%s' "$named" | _j "d['ok']")" "True" "E2E17 an explicit --name still overrides, for two sessions in one repository"
+# AND THE WAKE, with no name in the hook line -- which is what the install document now tells an
+# operator to write, because a host's hook configuration is per-tool and cannot carry a per-session
+# name. The adapter must therefore derive the SAME name the CLI derived, from the same directory. It
+# did not, until this was checked: removing the name from the documented line would have produced a
+# session that registered fine and never woke.
+_CI "${_TMPD}/proj-api" chat send --body 'woken with no name anywhere' >/dev/null 2>&1
+sleep 0.4
+woke_nameless="$( cd "${_TMPD}/proj-web" && echo '{"session_id":"cold","stop_hook_active":false}' \
+    | env AID_CHAT_RUNTIME="${_TMPD}/A" AID_CHAT_STORE="${_TMPD}/A/chat.db" \
+      node "${REPO_ROOT}/chat-node/adapters/claude-code.mjs" --host-timeout 60 2>/dev/null )"
+carried="$(printf '%s' "$woke_nameless" | python3 -c "
+import json,sys
+try:
+    d=json.load(sys.stdin)
+except Exception:
+    print('no-json'); raise SystemExit
+print('yes' if 'woken with no name anywhere' in d.get('reason','') else 'no')")"
+assert_eq "$carried" "yes" \
+    "E2E17 the adapter derives the same name from the same directory, so the documented hook line needs none"
+
+_CI "${_TMPD}/proj-api" chat leave >/dev/null 2>&1
+_CI "${_TMPD}/proj-web" chat leave >/dev/null 2>&1
+
 # --- E2E16: every chat call is bounded --------------------------------------
 #
 # Found by falsifying E2E01: pointing the chat base URL at an unreachable host did not make the CLI

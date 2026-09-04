@@ -75,6 +75,23 @@ export function ownInterpreter({ quoteStyle = 'none' } = {}) {
     return shellSafePath(process.execPath, { quoteStyle });
 }
 
+// The session name, when the host's hook line did not give one.
+//
+// THE SAME DERIVATION `bin/aid` USES, and it must be, or the two disagree about who this session is --
+// which shows up as a session that registered fine and never wakes. That is what removing `--name`
+// from the documented hook line would have caused if this were missing, and it was missing until a
+// review walked the operator's path instead of reading it.
+//
+// The host runs a stop hook with the session's own working directory as the cwd, which is the same
+// directory the session registered from, which is why both sides land on the same name.
+export function defaultSessionName() {
+    if (process.env.AID_CHAT_SESSION) return process.env.AID_CHAT_SESSION;
+    const base = (process.cwd().split(/[\\/]/).filter(Boolean).pop() || 'session')
+        .replace(/[^A-Za-z0-9._-]/g, '-')
+        .replace(/^-+|-+$/g, '');
+    return base || 'session';
+}
+
 // --- Rule 1: re-entry -------------------------------------------------------
 //
 // Waking is inherently a loop: the wake ends a turn, ending a turn fires the stop hook, and the

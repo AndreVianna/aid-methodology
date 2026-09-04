@@ -26,7 +26,7 @@
 //   node <this file> --name <session> --host-timeout <seconds>
 
 import {
-    adapterGuardMs, armOnce, hostTimeoutFromArgs, readHostPayload, renderWakeText, shellSafePath,
+    adapterGuardMs, armOnce, defaultSessionName, hostTimeoutFromArgs, readHostPayload, renderWakeText, shellSafePath,
 } from './common.mjs';
 
 // This host documents its own cap, defaulting to 5. The adapter reads the count rather than keeping
@@ -67,7 +67,7 @@ function ackHintFor(name, seq) {
 
 async function main() {
     const argv = process.argv.slice(2);
-    const name = argValue(argv, '--name') || process.env.AID_CHAT_SESSION;
+    const name = argValue(argv, '--name') || defaultSessionName();
     const hostTimeoutSec = hostTimeoutFromArgs(argv);
 
     if (!name) {

@@ -11,6 +11,25 @@ tell you exactly what to put where, and why one number matters more than it look
 Without the hook, everything still works — you read your inbox when you think to. The hook is what
 turns "a mailbox you remember to check" into "a channel that reaches you".
 
+## Step zero: each session joins in
+
+Before any of the below matters, each session needs an identity:
+
+```bash
+aid chat register --tool cursor        # run this from the session's own working directory
+```
+
+It prints the name it bound, **derived from that directory**. Two sessions in two repositories get two
+names with no configuration; two sessions in the SAME repository need `--name` or `AID_CHAT_SESSION` to
+tell them apart.
+
+The name is derived rather than random because it has to be **stable**: after a restart, a session
+re-registers from the same directory, gets the same name, and is put back in the channel it was in.
+
+**This is why the hook command below carries no `--name`.** It derives the same name the session
+registered under, so one hook line serves every session on the machine — which is what you want,
+because a host's hook configuration is per-tool, not per-session.
+
 ## The one number that matters
 
 You will write the same number in two places:
@@ -118,8 +137,8 @@ The wake is an enhancement. It must never be able to hold up the work you are ac
 
 ## Claude Code
 
-Add a `Stop` hook. Replace `<AID_HOME>` with your install path and `<name>` with the session name
-you register.
+Add a `Stop` hook. Replace `<AID_HOME>` with your install path. There is no name in this line: the adapter derives the
+same one the session registered under, so one line serves every session.
 
 ```json
 {
@@ -131,7 +150,7 @@ you register.
           {
             "type": "command",
             "timeout": 60,
-            "command": "/usr/bin/node <AID_HOME>/chat-node/adapters/claude-code.mjs --name <name> --host-timeout 60"
+            "command": "/usr/bin/node <AID_HOME>/chat-node/adapters/claude-code.mjs --host-timeout 60"
           }
         ]
       }
@@ -161,7 +180,7 @@ Add a stop hook:
   "hooks": {
     "stop": [
       {
-        "command": "/usr/bin/node <AID_HOME>/chat-node/adapters/cursor.mjs --name <name> --host-timeout 60",
+        "command": "/usr/bin/node <AID_HOME>/chat-node/adapters/cursor.mjs --host-timeout 60",
         "timeout": 60
       }
     ]
@@ -211,21 +230,21 @@ from the keyboard. If you would rather not, don't install the hook; the pull flo
 
 ```bash
 aid chat node start
-aid chat register --name me --tool <your-host>
-aid chat roster --name me
+aid chat register --tool <your-host>     # from the session's working directory
+aid chat roster
 ```
 
 Then, from a second session with its own name:
 
 ```bash
-aid chat open    --name other --channel test
-aid chat connect --name other --target me
-aid chat send    --name other --body 'ping'
+aid chat open    --channel test
+aid chat connect --target <the first session's name>
+aid chat send    --body 'ping'
 ```
 
 Your first session should begin a turn on its own, with `ping` in front of it. If it does not:
 
-1. `aid chat inbox --name me` — if the message is there, the node is fine and the hook is not firing.
+1. `aid chat inbox` — if the message is there, the node is fine and the hook is not firing.
 2. Check the hook is installed for the **Stop** event, not another one.
 3. Check both numbers match.
 4. Check `node` in the hook command is an absolute path.

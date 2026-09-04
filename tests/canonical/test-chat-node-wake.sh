@@ -474,7 +474,11 @@ _verbs_in() { grep -oE '^aid chat [a-z-]+' "$1" | awk '{print $3}' | sort -u | t
 # The permitted set. Broader than the verbs FR-7.3 enumerates by name, because FR-3.1 adds the
 # listing -- so the set is stated here AND cross-checked against the requirement below, rather than
 # being a copy nobody compares to anything.
-permitted="ack connect inbox join leave list open roster send"
+# `register` is here because FR-2.1 has a session bind ITSELF to a stable name: the verb that does
+# that must be reachable from the surface the session can see. FR-7.3's list originally omitted it,
+# which made FR-2.1 unimplementable by an agent -- the one place in this work where two requirements
+# contradicted each other. FR-7.3 was amended rather than the skill trimmed.
+permitted="ack connect inbox join leave list open register roster send"
 assert_eq "$(_verbs_in "$SKILL")" "$permitted" "WK21 the canonical skill's verb list is exactly what the surface boundary permits"
 
 # Cross-checked against the requirement text itself, so the list above cannot drift away from the
@@ -490,7 +494,7 @@ named = set(re.findall(r'`([a-z][a-z-]*)`', row))
 print(' '.join(sorted(named)))
 PY
 )"
-for v in send inbox ack; do
+for v in send inbox ack register; do
     case " ${permitted} " in
         *" ${v} "*) ;;
         *) fail "WK21 FR-7.3 names '${v}' as permitted but the tested set omits it" ;;

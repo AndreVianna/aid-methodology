@@ -19,7 +19,7 @@
 //   node <this file> --name <session> --host-timeout <seconds>
 
 import {
-    adapterGuardMs, armOnce, clearOwnCount, hostTimeoutFromArgs,
+    adapterGuardMs, armOnce, defaultSessionName, clearOwnCount, hostTimeoutFromArgs,
     readHostPayload, readOwnCount, renderWakeText, shellSafePath, writeOwnCount,
 } from './common.mjs';
 
@@ -52,7 +52,7 @@ function ackHintFor(name, seq) {
 
 async function main() {
     const argv = process.argv.slice(2);
-    const name = argValue(argv, '--name') || process.env.AID_CHAT_SESSION;
+    const name = argValue(argv, '--name') || defaultSessionName();
     const hostTimeoutSec = hostTimeoutFromArgs(argv);
 
     if (!name) {
