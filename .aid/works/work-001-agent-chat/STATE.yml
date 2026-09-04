@@ -270,6 +270,49 @@ features:
 #   - date / event / outcome / notes
 review_history:
   - date: 2026-09-04
+    scope: delivery-005 gate (three cycles) -- the last delivery
+    outcome: >-
+      PASSED at A+ on cycle 3. Five tasks, 301 assertions across nine suites, zero regressions
+      (160 suites, the same 15 pre-existing failures). Eight findings, all fixed. NOTHING in this
+      delivery needed a live host or a second machine, so nothing was deferred to a manual procedure.
+      Cycle 1's HIGH is the one worth remembering, because the code was correct everywhere it was
+      checked and the guarantee was still not sound: whisper visibility was right in every reader, but
+      replication sent the BODY to every hub holding any member, so the text landed in stores on
+      machines where nobody was permitted to read it. A guarantee resting on every future reader
+      remembering to filter is not a guarantee. Fixed at the routing layer -- a whisper now travels
+      only to its target's hub, or nowhere if the target is local.
+      Cycle 2 held at A over one gap, and the reviewer's reason for it was wrong: it said the storage
+      boundary was untestable without a live two-hub environment, when the federation suite had run two
+      real hubs since delivery-003. FD25 now runs THREE, and asserts the body is absent from a
+      non-party hub's database while a plain message sent alongside it did arrive -- which
+      distinguishes "the whisper did not arrive" from "nothing arrived". The reviewer agreed on
+      re-examination. A reviewer's judgement about what is testable is worth checking against what the
+      harness can already do.
+      A half-feature was also caught: retention set through the CLI wrote only to the environment, so
+      it reverted on restart and the evidence would have arrived hours later.
+    grade: A+
+  - date: 2026-09-04
+    scope: WORK close-out -- all five deliveries
+    outcome: >-
+      All 36 tasks Done across five deliveries, every one gated at A+. 301 assertions in nine chat
+      suites; 160 canonical suites total with the same 15 pre-existing failures confirmed against a
+      pre-work checkout. Fifteen gate cycles, and CYCLE 1 REFUSED EVERY DELIVERY.
+      What the gates were actually for, stated plainly because it is the most useful thing this work
+      produced: they caught code that was correct but unreachable, criteria that skipped rather than
+      ran, a rationale that was wrong while the code was right, three checks that encoded a proxy and
+      stopped tracking the property as the product grew, two of my own fixes that introduced the
+      defect they were fixing in a second copy of the logic, and a privacy guarantee that held in
+      every reader and leaked at the storage layer.
+      Roughly a dozen defects were found by writing a test rather than by a test failing -- the act of
+      having to state a property exposed that it was not true.
+      What is NOT verified is enumerated rather than implied: five criteria need the operator's own
+      machines or a live host, recorded as MP-05 through MP-10 with steps and pass conditions, and the
+      PowerShell twins remain unexecuted for want of an interpreter. Everything deferred, accepted, or
+      verified by a weaker means than its criterion deserves is listed in PENDING.md for the
+      correction round.
+    grade: A+
+
+  - date: 2026-09-04
     scope: delivery-004 gate (three cycles)
     outcome: >-
       PASSED at A+ on cycle 3. Nine tasks, 259 assertions across eight suites, zero regressions

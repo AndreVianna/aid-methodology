@@ -1,5 +1,9 @@
 # Pending — to be addressed in the correction and strengthening round
 
+> **All five deliveries are now Done and gated at A+.** This list is what the correction round
+> inherits. Three items were closed ahead of it (marked `Done` below) because they were guards rather
+> than fixes, and a guard is worth more before the work it checks than after.
+
 Everything deferred, accepted, or verified by a weaker means than the criterion deserves, gathered
 in one place so the strengthening round has a worklist rather than a memory.
 

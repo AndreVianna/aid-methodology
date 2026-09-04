@@ -48,13 +48,13 @@
 # lifecycle MUST be independently authored.
 
 # [W] Pending-Spec | Specified | Executing | Gated | Done | Blocked
-delivery_state: Gated
+delivery_state: Done
 # [W] Small | Medium | Large
-gate_tier: Small
+gate_tier: Standard
 # [W]
-gate_grade: Pending
+gate_grade: A+
 # [W]
-gate_timestamp: --
+gate_timestamp: 2026-09-04T18:49:55Z
 # [W] {connector-stem}:{external-id} | -- -- OPTIONAL; e.g. jira:PROJ-123; see the ticket_ref note above
 ticket_ref: --
 # [A] single writer: this delivery's branch only. Written by aid-plan,
