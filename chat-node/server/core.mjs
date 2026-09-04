@@ -32,13 +32,29 @@ export const REFUSAL = {
     TARGET_IS_SELF:        'target_is_self',
 };
 
-// A single announcement seam. The core does not know what a held HTTP response is, and must not:
-// the registry of who is currently listening belongs to the transport, because that is where the
+// The announcement seam. The core does not know what a held HTTP response is, and must not: the
+// registry of who is currently listening belongs to the transport, because that is where the
 // connections are. So the core states what happened and the transport decides whether anybody
-// cares. One function, set once at startup, and a no-op when nothing is listening -- which is
-// also what makes the store usable from a test with no server at all.
-let announce = () => {};
-export function setAnnouncer(fn) { announce = typeof fn === 'function' ? fn : () => {}; }
+// cares -- and it is a no-op when nothing is listening, which is what makes the store usable from a
+// test with no server at all.
+//
+// ADDITIVE, not a single slot. A single slot is silently wrong the moment a process holds two
+// routers -- a second server, or a test building one alongside another -- because the second
+// registration would replace the first and the first router's channels would go quiet with nothing
+// reporting why. Each listener gets its own registration and its own way to remove it.
+const announcers = new Set();
+function announce(event) {
+    for (const fn of announcers) {
+        // One listener throwing must not stop the others being told, and must not fail the write
+        // that triggered it: the message is already committed by this point.
+        try { fn(event); } catch { /* a listener's fault is not the sender's */ }
+    }
+}
+export function setAnnouncer(fn) {
+    if (typeof fn !== 'function') return () => {};
+    announcers.add(fn);
+    return () => announcers.delete(fn);
+}
 
 const ok = (value = {}) => ({ ok: true, ...value });
 // `extra` carries fields a caller needs in order to ACT on a refusal (a retry hint, say) as

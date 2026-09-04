@@ -141,6 +141,20 @@ export function makeRouter({ db, startedAt, onReady = null }) {
             ? { blockMs: Math.max(0, Number(explicit)), basis: 'explicit-block-ms' }
             : blockMsFor({ hostTimeoutSec: hostTimeout === null ? null : Number(hostTimeout) });
 
+        // Close the read-then-wait window HERE, which is the only place it can be closed. A client
+        // that reads its inbox and then arms has a gap between the two, and a message landing in
+        // that gap is not lost -- it is simply not pushed, so the client waits out a whole block
+        // before finding it. Checking the caller's own pending depth at the moment of registration
+        // removes the gap: by then the client cannot have anything unread that this does not see.
+        const pending = core.inbox(db, { name, cursor: session.acked_seq });
+        if (pending.ok && pending.messages && pending.messages.length > 0) {
+            return json(res, 200, {
+                ok: true, kind: 'message', from_backlog: true,
+                arrival_seq: pending.messages[pending.messages.length - 1].arrival_seq,
+                block_ms: 0, basis: 'pending-at-arm', waiters: waiters.count(),
+            });
+        }
+
         // A zero block is answered at once rather than registered. Registering a waiter that is
         // due to expire immediately would put a reader in the count for no purpose.
         if (blockMs <= 0) {

@@ -377,4 +377,39 @@ JS
 )
 assert_eq "$out" "null,ch" "CO25 heartbeat reports the channel, so the outcome is learnable on the weakest call there is"
 
+# CO26 -- two routers in one process must not clobber each other's announcer. A single slot is
+# silently wrong here: the second registration would replace the first, and the first router's
+# channels would go quiet with nothing reporting why.
+out=$(_run <<'JS' 2>/dev/null
+const db = await S.openStore({ path: ':memory:' });
+for (const n of ['a','b']) C.register(db, { name: n, tool: 't', cwd: '/' });
+C.openChannel(db, { name: 'a', channelName: 'ch' }); C.joinChannel(db, { name: 'b', channelName: 'ch' });
+const heard = [];
+const offOne = C.setAnnouncer(() => heard.push('one'));
+C.setAnnouncer(() => heard.push('two'));
+C.send(db, { name: 'a', body: 'both listeners should hear this' });
+// And removing one must leave the other working.
+offOne();
+C.send(db, { name: 'a', body: 'only the second now' });
+process.stdout.write(heard.join(','));
+JS
+)
+assert_eq "$out" "one,two,two" "CO26 two announcers both hear an event, and removing one leaves the other working"
+
+# CO27 -- one listener throwing must not stop the others being told, and must not fail the send:
+# the message is already committed by the time anybody is announced to.
+out=$(_run <<'JS' 2>/dev/null
+const db = await S.openStore({ path: ':memory:' });
+for (const n of ['a','b']) C.register(db, { name: n, tool: 't', cwd: '/' });
+C.openChannel(db, { name: 'a', channelName: 'ch' }); C.joinChannel(db, { name: 'b', channelName: 'ch' });
+const heard = [];
+C.setAnnouncer(() => { throw new Error('a listener fault'); });
+C.setAnnouncer(() => heard.push('still told'));
+const r = C.send(db, { name: 'a', body: 'x' });
+const stored = db.prepare('SELECT COUNT(*) AS n FROM message').get().n;
+process.stdout.write([r.ok, heard.join('|'), stored].join(','));
+JS
+)
+assert_eq "$out" "true,still told,1" "CO27 a throwing announcer neither fails the send nor silences the others"
+
 test_summary

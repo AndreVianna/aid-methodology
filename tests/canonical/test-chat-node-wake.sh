@@ -94,6 +94,15 @@ trap _cleanup EXIT
 
 _field() { python3 -c "import json,sys; d=json.load(sys.stdin); print(eval('d'+sys.argv[1]))" "$1"; }
 _waiters() { curl -sS "${HUB}/waiters" 2>/dev/null | _field "['waiters_hint']"; }
+# Bring a session fully up to date. A subscriber only ever arms when it has nothing unread -- the
+# node now answers an arm from the backlog if there is one, so a test that wants to observe a HELD
+# wait has to establish that precondition rather than assume it.
+_drain() {
+    local who="$1" d
+    d="$($AID chat inbox --name "$who" 2>/dev/null | _field "['delivered_seq']" 2>/dev/null || echo 0)"
+    [[ "${d:-0}" -gt 0 ]] && $AID chat ack --name "$who" --cursor "$d" >/dev/null 2>&1
+    return 0
+}
 
 $AID chat node start --port 0 >/dev/null 2>&1
 HUB="http://127.0.0.1:$(cat "${AID_CHAT_RUNTIME}/hub.port")"
@@ -102,6 +111,7 @@ $AID chat open --name alice --channel ch >/dev/null 2>&1
 $AID chat join --name bob --channel ch >/dev/null 2>&1
 
 # --- held wait --------------------------------------------------------------
+_drain bob
 curl -sS "${HUB}/wait?name=bob&block_ms=8000" > "${_TMPD}/w1.json" 2>/dev/null &
 W=$!
 sleep 0.5
@@ -117,6 +127,7 @@ else
     fail "WK01 the message vanished when the wait resolved"
 fi
 
+_drain alice
 t0=$(date +%s%N)
 out="$(curl -sS "${HUB}/wait?name=alice&block_ms=800" 2>/dev/null)"
 t1=$(( ($(date +%s%N) - t0) / 1000000 ))
@@ -136,6 +147,7 @@ wait $W2 2>/dev/null
 assert_eq "$(_field "['kind']" < "${_TMPD}/w2.json")" "connect" "WK03 a connect outcome resolves a held wait, tagged as its own kind"
 $AID chat leave --name idle >/dev/null 2>&1
 
+_drain bob
 before="$(_waiters)"
 curl -sS "${HUB}/wait?name=bob&block_ms=30000" >/dev/null 2>&1 &
 W3=$!
@@ -153,6 +165,23 @@ assert_eq "$(_waiters)" "0" "WK05 restarting the node rebuilds the registry from
 $AID chat send --name alice --body 'sent with nobody listening' >/dev/null 2>&1
 got="$($AID chat inbox --name bob 2>/dev/null | python3 -c "import json,sys; print(any(m['body']=='sent with nobody listening' for m in json.load(sys.stdin)['messages']))")"
 assert_eq "$got" "True" "WK05 and loses no message"
+
+# WK05b -- the arm-time gap. A client that reads its inbox and then arms has a window between the
+# two; a message landing in it used to be found only after a whole block expired. The node now
+# checks the caller's own pending depth at the moment of registration, so an arm with something
+# unread is answered at once and identifies itself as coming from the backlog.
+_drain bob
+$AID chat send --name alice --body 'landed before the arm' >/dev/null 2>&1
+t0=$(date +%s%N)
+armed="$(curl -sS "${HUB}/wait?name=bob&block_ms=20000" 2>/dev/null)"
+t1=$(( ($(date +%s%N) - t0) / 1000000 ))
+assert_eq "$(printf '%s' "$armed" | _field "['basis']")" "pending-at-arm" \
+    "WK05b an arm with something already unread is answered from the backlog, not held"
+if [[ "$t1" -lt 2000 ]]; then
+    pass "WK05b and answered at once (${t1}ms) rather than after a full block"
+else
+    fail "WK05b it held ${t1}ms with a message already waiting"
+fi
 
 # --- subscriber -------------------------------------------------------------
 arith="$(node --input-type=module -e "
@@ -244,6 +273,24 @@ else
     fail "WK16 the adapter woke on every attempt; with loop_limit null there is then no cap at all"
 fi
 
+# WK16b -- the own-count EXPIRES. Where the host supplies no conversation id the key falls back to
+# the session name, and a name is reused across conversations -- so a counter left by an earlier one
+# must not decline a new conversation's wake for a loop it was not part of.
+expiry="$(node --input-type=module -e "
+import { readOwnCount, writeOwnCount } from '${REPO_ROOT}/chat-node/adapters/common.mjs';
+import { writeFileSync, mkdirSync } from 'node:fs';
+const dir = process.env.AID_CHAT_RUNTIME;
+mkdirSync(dir, { recursive: true });
+await writeOwnCount('exp', 2);
+const fresh = readOwnCount('exp');
+writeFileSync(\`\${dir}/wake-exp.count\`, '2 ' + (Date.now() - 120000));
+const stale = readOwnCount('exp');
+writeFileSync(\`\${dir}/wake-exp.count\`, '2');
+const legacy = readOwnCount('exp');
+console.log([fresh, stale, legacy].join(','));
+")"
+assert_eq "$expiry" "2,0,0" "WK16b the own-count is honoured while fresh, and treated as absent when stale or untimestamped"
+
 hint="$(python3 -c "
 import json,re
 d=json.load(open('${_TMPD}/cur.json'))
@@ -253,16 +300,46 @@ line=lines[0] if lines else ''
 print('BACKSLASH' if chr(92) in line else 'ok', 'INTERP' if re.search(r'\b(bash|sh|python3?|node)\s', line) else 'ok')")"
 assert_eq "$hint" "ok ok" "WK17 the emitted acknowledge command has no backslash and names no interpreter"
 
-# WK18 -- an over-running wake leaves nothing behind. The adapter is given a host timeout it cannot
-# satisfy, so it must decline to wait at all rather than block past what the host will wait for.
+# WK18 -- what AC-25 is actually about, in two parts, because ONE of them was previously mistaken
+# for the other. The criterion names the case where the host ABANDONS an over-running hook: output
+# discarded, wait abandoned, and the process left running with its socket still open.
+#
+# 18a is the CHEAP half: a host timeout so small the margin leaves no room to wait, so the adapter
+# must decline to wait at all. Real, but it is the refused-to-wait path -- no waiter is ever
+# registered, so it cannot demonstrate a waiter being released.
 w_before="$(_waiters)"
 a_before="$(_own_adapters)"
 _ack_cursor
 echo '{"session_id":"s-over","stop_hook_active":false}' \
     | node "${REPO_ROOT}/chat-node/adapters/claude-code.mjs" --name bob --host-timeout 5 >/dev/null 2>&1
 sleep 0.6
-assert_eq "$(_waiters)" "$w_before" "WK18 an over-running wake leaves the waiter count where it was"
-assert_eq "$(_own_adapters)" "$a_before" "WK18 and leaves no adapter process behind"
+assert_eq "$(_waiters)" "$w_before" "WK18a a host timeout below the margin makes the adapter decline to wait, registering nothing"
+assert_eq "$(_own_adapters)" "$a_before" "WK18a and leaves no adapter process behind"
+
+# 18b is the ACTUAL abandoned-hook shape, simulated the only way it can be here: the adapter is
+# started with a long block and then ABANDONED -- killed without being allowed to finish, exactly as
+# a host that stops listening leaves it. The process is gone; the question AC-25 asks is whether the
+# node's waiter count comes back down, because the host reports nothing and an inflated count is the
+# only trace such a wake leaves.
+_ack_cursor
+w_before="$(_waiters)"
+node "${REPO_ROOT}/chat-node/adapters/claude-code.mjs" --name bob --host-timeout 60 >/dev/null 2>&1 &
+ADPID=$!
+sleep 1.0
+w_during="$(_waiters)"
+kill -9 "$ADPID" 2>/dev/null
+wait "$ADPID" 2>/dev/null
+sleep 1.0
+w_after="$(_waiters)"
+a_after="$(_own_adapters)"
+assert_eq "$w_during" "$((w_before + 1))" "WK18b an armed adapter is visible in the waiter count while it waits"
+assert_eq "$w_after" "$w_before" "WK18b and an ABANDONED adapter releases its waiter: the count returns to where it was"
+assert_eq "$a_after" "$a_before" "WK18b with no adapter process surviving"
+
+# 18c -- and the count is checked by OBSERVATION rather than by an absence of errors, which is what
+# AC-25 insists on. Confirm the number is actually reported, not merely absent.
+hint_field="$(curl -sS "${HUB}/waiters" 2>/dev/null | python3 -c "import json,sys; print('waiters_hint' in json.load(sys.stdin))")"
+assert_eq "$hint_field" "True" "WK18c the waiter count is reported as an observable number, not inferred from silence"
 
 # WK19 -- a connect outcome reaching an IDLE target through the wake, with the target having called
 # nothing. This is the case the plan carries as its own criterion because no section-9 one covers it.

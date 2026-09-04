@@ -29,10 +29,19 @@ import {
     armOnce, hostTimeoutFromArgs, readHostPayload, renderWakeText, shellSafePath,
 } from './common.mjs';
 
-// This host documents its own cap, defaulting to 5. The adapter reads the count rather than
-// keeping one: where the host offers the signal, using it is what keeps the two in agreement.
-// A `loop_count` above zero means this stop is a follow-up the host itself already triggered, so
-// it is the tail of a wake already served and must not start another wait.
+// This host documents its own cap, defaulting to 5. The adapter reads the count rather than keeping
+// one: where the host offers the signal, using it is what keeps the two in agreement.
+//
+// THE THRESHOLD IS 1, NOT 5, AND THAT IS DELIBERATELY STRICTER THAN THE HOST. Any `loop_count`
+// above zero means this stop is a follow-up the host itself triggered, which is to say the tail of
+// a wake already served -- so waiting again on it is the loop, regardless of how many the host would
+// still permit. Waiting up to the host's cap of 5 would mean holding a block on up to four stops
+// that exist only because the wake fired.
+//
+// The cost of being stricter is bounded and worth naming: a message arriving during a follow-up turn
+// is not pushed at that moment. It is NOT lost -- the next stop with `loop_count` 0 reads it out of
+// the store before it waits (see `armOnce`), so the worst case is one deferred wake rather than a
+// missed one. A missed push is recoverable; a wake loop is not.
 const FOLLOWUP_MEANS_ALREADY_SERVED = 1;
 
 function argValue(argv, flag) {

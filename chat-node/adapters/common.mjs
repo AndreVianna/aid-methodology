@@ -91,10 +91,25 @@ export function ownCountPath(sessionKey) {
     return `${dir}/wake-${safe}.count`;
 }
 
+// The count EXPIRES. Where the host supplies no conversation id, the key falls back to the session
+// name -- and a name is reused across conversations, so a counter left behind by an earlier one
+// would decline a new conversation's wake for a loop it was not part of. The count only means
+// anything within one wake chain, and a wake chain is short: measurement put the stop-hook re-fire
+// at 6.3 s and 6.6 s on the two proving hosts. Anything older than a minute is therefore not part of
+// the current chain and is treated as absent.
+const OWN_COUNT_TTL_MS = 60_000;
+
 export function readOwnCount(sessionKey) {
     try {
-        const n = Number(readFileSync(ownCountPath(sessionKey), 'utf8').trim());
-        return Number.isFinite(n) && n >= 0 ? n : 0;
+        const raw = readFileSync(ownCountPath(sessionKey), 'utf8').trim();
+        const [nRaw, tsRaw] = raw.split(/\s+/);
+        const n = Number(nRaw);
+        if (!Number.isFinite(n) || n < 0) return 0;
+        const ts = Number(tsRaw);
+        // No timestamp means a file from an older format; treat it as expired rather than trusted.
+        if (!Number.isFinite(ts)) return 0;
+        if (Date.now() - ts > OWN_COUNT_TTL_MS) return 0;
+        return n;
     } catch {
         return 0;
     }
@@ -104,7 +119,8 @@ export async function writeOwnCount(sessionKey, n) {
     const { writeFile, mkdir } = await import('node:fs/promises');
     const path = ownCountPath(sessionKey);
     await mkdir(path.replace(/\/[^/]+$/, ''), { recursive: true });
-    await writeFile(path, String(n), 'utf8');
+    // The timestamp is what makes the count expirable, so it is written with it rather than beside it.
+    await writeFile(path, `${n} ${Date.now()}`, 'utf8');
 }
 
 export async function clearOwnCount(sessionKey) {

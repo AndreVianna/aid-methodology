@@ -255,6 +255,14 @@ function script:Show-AidUsage {
             Write-Host 'aid chat ack     --name <n> --cursor <c>      advance your acknowledged position'
             Write-Host 'aid chat roster  --name <n>                   who else is on this hub, and who is free'
             Write-Host 'aid chat connect --name <n> --target <t>      pull one named agent into YOUR channel'
+            Write-Host 'aid chat subscribe --name <n> [--host-timeout <s>] [--follow]'
+            Write-Host '                 hold ONE wait for an arriving message or connect outcome.'
+            Write-Host '                 --host-timeout <s> MUST be the same number as the host stop'
+            Write-Host '                 hook timeout you configured; the block is'
+            Write-Host '                 min(long-poll default, s - margin). Omit it and the block'
+            Write-Host '                 falls back to a short value rather than inheriting any'
+            Write-Host '                 platform default. --follow re-arms instead of returning.'
+            Write-Host '                 Spends no model tokens: it blocks in a process, not a prompt.'
             Write-Host 'aid chat reap    --name <n> | --name --all     give a session up for gone (operator)'
             Write-Host '  --name may be omitted when AID_CHAT_SESSION is set.'
             Write-Host '  --cursor on inbox RE-READS from that point and moves neither position.'
@@ -4858,12 +4866,65 @@ function script:ConvertTo-AidJsonString { param([string]$Value)
     return $Value.Replace('\', '\\').Replace('"', '\"').Replace("`n", '\n')
 }
 
+# One armed wait, and whatever it returns turned into one line of JSON on stdout. The PowerShell
+# twin of _aid_chat_wait_once in bin/aid.
+function script:Invoke-AidChatWaitOnce {
+    param([string]$Name, [string]$HostTimeout)
+
+    $base = script:Get-AidChatBaseUrl
+    if (-not $base) {
+        [Console]::Error.WriteLine("ERROR: aid: chat subscribe: the node is not running; run 'aid chat node start' first.")
+        return 1
+    }
+
+    # READ BEFORE WAITING, for the same reason the adapter does: a message that arrived while this
+    # session was busy is already in the store and is not going to "arrive" again. Going straight to
+    # the wait would block, time out, and leave it unread until some later message happened to land
+    # while this was listening -- which is the whole busy path silently missing.
+    try {
+        $pending = Invoke-WebRequest -Uri "$base/messages?name=$Name" -UseBasicParsing -ErrorAction Stop
+        $pj = $pending.Content | ConvertFrom-Json
+        if ($pj.messages -and $pj.messages.Count -gt 0) {
+            $merged = [ordered]@{
+                ok = $true; kind = 'message'; from_backlog = $true
+                messages = $pj.messages; delivered_seq = $pj.delivered_seq; acked_seq = $pj.acked_seq
+            }
+            Write-Output ($merged | ConvertTo-Json -Compress -Depth 6)
+            return 0
+        }
+    } catch {
+        # A failed pending read is not fatal: fall through to the wait.
+    }
+
+    $q = "/wait?name=$Name"
+    if ($HostTimeout) { $q = "$q&host_timeout=$HostTimeout" }
+    try {
+        $resp = Invoke-WebRequest -Uri "$base$q" -UseBasicParsing -ErrorAction Stop
+        $wake = $resp.Content | ConvertFrom-Json
+        if ($wake.kind -eq 'message') {
+            $inbox = (Invoke-WebRequest -Uri "$base/messages?name=$Name" -UseBasicParsing -ErrorAction Stop).Content | ConvertFrom-Json
+            $merged = [ordered]@{
+                ok = $wake.ok; kind = $wake.kind; arrival_seq = $wake.arrival_seq
+                block_ms = $wake.block_ms; basis = $wake.basis
+                messages = $inbox.messages; delivered_seq = $inbox.delivered_seq; acked_seq = $inbox.acked_seq
+            }
+            Write-Output ($merged | ConvertTo-Json -Compress -Depth 6)
+        } else {
+            Write-Output $resp.Content
+        }
+        return 0
+    } catch {
+        [Console]::Error.WriteLine("ERROR: aid: chat subscribe: the wait failed: $($_.Exception.Message)")
+        return 1
+    }
+}
+
 function script:Invoke-AidChatPlane {
     param([string]$Verb, [string[]]$PlaneArgs)
 
     $name = $env:AID_CHAT_SESSION
     $body = ''; $channel = ''; $cursor = ''; $key = ''; $whisper = ''; $mention = ''; $tool = ''
-    $replyTo = ''; $corr = ''; $target = ''
+    $replyTo = ''; $corr = ''; $target = ''; $hostTimeout = ''; $follow = $false
     for ($i = 0; $i -lt $PlaneArgs.Count; $i++) {
         $needsValue = $true
         switch ($PlaneArgs[$i]) {
@@ -4875,9 +4936,14 @@ function script:Invoke-AidChatPlane {
             '--whisper-to' { $whisper = $PlaneArgs[$i + 1] }
             '--mention'    { $mention = $PlaneArgs[$i + 1] }
             '--target'     { $target  = $PlaneArgs[$i + 1] }
+            '--host-timeout' { $hostTimeout = $PlaneArgs[$i + 1] }
             '--reply-to'   { $replyTo = $PlaneArgs[$i + 1] }
             '--correlation-id' { $corr = $PlaneArgs[$i + 1] }
             '--tool'       { $tool    = $PlaneArgs[$i + 1] }
+            # A bare switch: it takes no value, so it must NOT consume the next argument. Handling
+            # it inside the switch with $needsValue is what keeps that correct -- checking for it
+            # after the index has already advanced would read the wrong element.
+            '--follow'     { $follow  = $true; $needsValue = $false }
             default {
                 [Console]::Error.WriteLine("ERROR: aid: chat ${Verb}: unknown option '$($PlaneArgs[$i])'")
                 return 2
@@ -4915,6 +4981,20 @@ function script:Invoke-AidChatPlane {
         'leave' { return script:Invoke-AidChatCall 'POST' '/channel/leave' ('{"name":"' + $n + '"}') }
         'list'  { return script:Invoke-AidChatCall 'GET' ("/channels?name=$n") }
         'roster' { return script:Invoke-AidChatCall 'GET' ("/roster?name=$n") }
+        'subscribe' {
+            # THE WAIT COSTS NO MODEL TOKENS, and that is a property of what this is rather than a
+            # claim about it: a PowerShell function blocking on a web request. There is no model in
+            # the path to spend anything.
+            #
+            # ONE WAIT PER INVOCATION by default, because the documented hook command is exactly
+            # this line: the host fires its stop hook, this runs, it returns, and the host fires it
+            # again next time. --follow is for a standalone subscriber that re-arms itself.
+            do {
+                $rc = script:Invoke-AidChatWaitOnce -Name $n -HostTimeout $hostTimeout
+                if ($rc -ne 0) { return $rc }
+            } while ($follow)
+            return 0
+        }
         'connect' {
             if (-not $target) { [Console]::Error.WriteLine('ERROR: aid: chat connect: --target is required'); return 2 }
             # No channel parameter: the channel is the one the caller is already in, which is why
@@ -4949,7 +5029,7 @@ function script:Invoke-AidChatCtl {
 
     $action = if ($CcArgs.Count -ge 1) { $CcArgs[0] } else { '' }
     # The message-plane verbs are handled first; `node ...` is the lifecycle surface.
-    if ($action -in @('register','heartbeat','open','join','leave','list','send','inbox','ack','reap','roster','connect')) {
+    if ($action -in @('register','heartbeat','open','join','leave','list','send','inbox','ack','reap','roster','connect','subscribe')) {
         $planeArgs = @()
         if ($CcArgs.Count -gt 1) { $planeArgs = $CcArgs[1..($CcArgs.Count - 1)] }
         script:Exit-Aid (script:Invoke-AidChatPlane -Verb $action -PlaneArgs $planeArgs)
