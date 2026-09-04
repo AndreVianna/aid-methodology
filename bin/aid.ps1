@@ -243,6 +243,16 @@ function script:Show-AidUsage {
             Write-Host 'aid version'
             Write-Host '  Print the installed aid CLI version and exit 0.'
         }
+        'chat' {
+            Write-Host 'aid chat node start [--port <n>]'
+            Write-Host 'aid chat node stop'
+            Write-Host 'aid chat node status'
+            Write-Host '  Start, stop or query the local agent chat node (the hub).'
+            Write-Host '  The node serves every session on this machine, whichever tool hosts each one.'
+            Write-Host '  --port <n>  listen port on 127.0.0.1 (default 8812; 0 picks a free port).'
+            Write-Host '  Requires a Node runtime (>= 22.13.0); exits 9 with an explicit message if absent.'
+            Write-Host '  start on an already-running node exits 8 and changes nothing.'
+        }
         'dashboard' {
             Write-Host 'aid dashboard start <node|python> [--remote] [--allow-writes] [--port <n>]'
             Write-Host 'aid dashboard stop'
@@ -4752,10 +4762,152 @@ if ($SUBCMD -eq 'remove') {
 
 
 # ---------------------------------------------------------------------------
+# Chat node control (aid chat node start|stop|status) -- the PowerShell twin of
+# _cmd_chat_ctl in bin/aid. Behaviour, messages and exit codes are the same by
+# requirement, not by coincidence: the CLI parity gate compares them.
+#
+# Exit codes REUSE the established meanings rather than minting new ones:
+#   8  the node is already running          (same as `aid dashboard start`)
+#   9  no usable Node runtime on PATH       (same as the dashboard's runtime check)
+#   2  usage error
+#   1  runtime failure
+# ---------------------------------------------------------------------------
+function script:Invoke-AidChatCtl {
+    param([string[]]$CcArgs)
+
+    $action = if ($CcArgs.Count -ge 1) { $CcArgs[0] } else { '' }
+    $rest   = @()
+    if ($action -eq 'node') {
+        $action = if ($CcArgs.Count -ge 2) { $CcArgs[1] } else { '' }
+        if ($CcArgs.Count -gt 2) { $rest = $CcArgs[2..($CcArgs.Count - 1)] }
+    } elseif ($CcArgs.Count -gt 1) {
+        $rest = $CcArgs[1..($CcArgs.Count - 1)]
+    }
+
+    if ($action -in @('', '-h', '--help')) { script:Show-AidUsage 'chat'; script:Exit-Aid 0 }
+    if ($action -notin @('start', 'stop', 'status')) {
+        [Console]::Error.WriteLine("ERROR: aid: chat: unknown action '$action' (expected: node start | node stop | node status)")
+        script:Exit-Aid 2
+    }
+
+    $rtDir = if ($env:AID_CHAT_RUNTIME) { $env:AID_CHAT_RUNTIME } else { Join-Path $HOME '.aid\chat' }
+    $pidFile  = Join-Path $rtDir 'hub.pid'
+    $portFile = Join-Path $rtDir 'hub.port'
+
+    $hubPid = $null
+    if (Test-Path -LiteralPath $pidFile -PathType Leaf) {
+        $hubPid = (Get-Content -LiteralPath $pidFile -Raw).Trim()
+    }
+    # A recorded pid that is not alive is a STALE record, not a running node -- reclaiming it
+    # silently is what makes `start` safe to run without checking first (FR-1.1).
+    $alive = $false
+    if ($hubPid) {
+        $alive = [bool](Get-Process -Id ([int]$hubPid) -ErrorAction SilentlyContinue)
+    }
+    $port = ''
+    if (Test-Path -LiteralPath $portFile -PathType Leaf) {
+        $port = (Get-Content -LiteralPath $portFile -Raw).Trim()
+    }
+
+    switch ($action) {
+        'status' {
+            if ($alive) {
+                Write-Host "aid: chat node running (pid $hubPid, http://127.0.0.1:$(if ($port) { $port } else { 'unknown' }))"
+                script:Exit-Aid 0
+            }
+            if ($hubPid) { Write-Host "aid: chat node not running (stale record for pid $hubPid)" }
+            else         { Write-Host 'aid: chat node not running' }
+            script:Exit-Aid 0
+        }
+        'stop' {
+            if (-not $alive) {
+                Write-Host 'aid: chat node not running.'
+                Remove-Item -LiteralPath $pidFile, $portFile -Force -ErrorAction SilentlyContinue
+                script:Exit-Aid 0
+            }
+            Stop-Process -Id ([int]$hubPid) -ErrorAction SilentlyContinue
+            $w = 0
+            while ($w -lt 50 -and (Get-Process -Id ([int]$hubPid) -ErrorAction SilentlyContinue)) {
+                Start-Sleep -Milliseconds 100; $w++
+            }
+            if (Get-Process -Id ([int]$hubPid) -ErrorAction SilentlyContinue) {
+                Stop-Process -Id ([int]$hubPid) -Force -ErrorAction SilentlyContinue
+            }
+            Remove-Item -LiteralPath $pidFile, $portFile -Force -ErrorAction SilentlyContinue
+            Write-Host 'aid: chat node stopped.'
+            script:Exit-Aid 0
+        }
+        'start' {
+            if ($alive) {
+                Write-Host "aid: chat node already running (pid $hubPid, http://127.0.0.1:$(if ($port) { $port } else { 'unknown' })); run 'aid chat node stop' first."
+                script:Exit-Aid 8
+            }
+            if ($hubPid) { Remove-Item -LiteralPath $pidFile, $portFile -Force -ErrorAction SilentlyContinue }
+
+            # The Node prerequisite, checked BEFORE any side effect, with an actionable error
+            # and never a stack trace (FR-7.7). The CLI itself is runtime-free, so a missing
+            # runtime must fail only the component that needs one.
+            if (-not (Get-Command node -ErrorAction SilentlyContinue)) {
+                [Console]::Error.WriteLine('ERROR: aid: chat: the chat node requires a Node runtime and none was found on PATH.')
+                [Console]::Error.WriteLine("       Install Node (>= 22.13.0) and re-run. Every other 'aid' command keeps working without it.")
+                script:Exit-Aid 9
+            }
+
+            $entry = Join-Path $script:_AidCodeHome 'chat-node\server\hub.mjs'
+            if (-not (Test-Path -LiteralPath $entry -PathType Leaf)) {
+                [Console]::Error.WriteLine("ERROR: aid: chat: the chat node is missing from the install tree (expected $entry). Reinstall aid.")
+                script:Exit-Aid 7
+            }
+
+            $portArg = if ($env:AID_CHAT_PORT) { $env:AID_CHAT_PORT } else { '8812' }
+            for ($i = 0; $i -lt $rest.Count; $i++) {
+                if ($rest[$i] -eq '--port') {
+                    if ($i + 1 -ge $rest.Count) { [Console]::Error.WriteLine('ERROR: aid: chat: --port requires a value'); script:Exit-Aid 2 }
+                    $portArg = $rest[$i + 1]; $i++
+                } else {
+                    [Console]::Error.WriteLine("ERROR: aid: chat: unknown option '$($rest[$i])'"); script:Exit-Aid 2
+                }
+            }
+            $portInt = 0
+            if (-not [int]::TryParse($portArg, [ref]$portInt) -or
+                ($portInt -ne 0 -and ($portInt -lt 1024 -or $portInt -gt 65535))) {
+                [Console]::Error.WriteLine('ERROR: aid: chat: --port must be 0 or an integer in 1024..65535')
+                script:Exit-Aid 2
+            }
+
+            New-Item -ItemType Directory -Path $rtDir -Force | Out-Null
+            # Detached, so the node outlives the shell that started it (FR-1.2).
+            Start-Process -FilePath 'node' -ArgumentList @($entry, '--port', $portArg) `
+                -WindowStyle Hidden -RedirectStandardOutput (Join-Path $rtDir 'hub.log') `
+                -RedirectStandardError (Join-Path $rtDir 'hub.err.log') | Out-Null
+            $s = 0
+            while ($s -lt 50 -and -not (Test-Path -LiteralPath $portFile -PathType Leaf)) {
+                Start-Sleep -Milliseconds 100; $s++
+            }
+            if (Test-Path -LiteralPath $portFile -PathType Leaf) {
+                $p = (Get-Content -LiteralPath $portFile -Raw).Trim()
+                Write-Host "aid: chat node started (http://127.0.0.1:$p)"
+                script:Exit-Aid 0
+            }
+            [Console]::Error.WriteLine("ERROR: aid: chat: the node did not report a listening port; see $(Join-Path $rtDir 'hub.log')")
+            script:Exit-Aid 1
+        }
+    }
+}
+
+# ---------------------------------------------------------------------------
 # dashboard
 # ---------------------------------------------------------------------------
 if ($SUBCMD -eq 'dashboard') {
     script:Invoke-AidDashboardCtl -DcArgs $script:_RemArgs
+    script:Exit-Aid $LASTEXITCODE
+}
+
+# ---------------------------------------------------------------------------
+# chat
+# ---------------------------------------------------------------------------
+if ($SUBCMD -eq 'chat') {
+    script:Invoke-AidChatCtl -CcArgs $script:_RemArgs
     script:Exit-Aid $LASTEXITCODE
 }
 

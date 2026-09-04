@@ -190,6 +190,16 @@ _aid_usage() {
             printf 'aid version\n'
             printf '  Print the installed aid CLI version and exit 0.\n'
             ;;
+        chat)
+            printf 'aid chat node start [--port <n>]\n'
+            printf 'aid chat node stop\n'
+            printf 'aid chat node status\n'
+            printf '  Start, stop or query the local agent chat node (the hub).\n'
+            printf '  The node serves every session on this machine, whichever tool hosts each one.\n'
+            printf '  --port <n>  listen port on 127.0.0.1 (default 8812; 0 picks a free port).\n'
+            printf '  Requires a Node runtime (>= 22.13.0); exits 9 with an explicit message if absent.\n'
+            printf '  start on an already-running node exits 8 and changes nothing.\n'
+            ;;
         dashboard)
             printf 'aid dashboard start <node|python> [--remote] [--allow-writes] [--port <n>]\n'
             printf 'aid dashboard stop\n'
@@ -5204,9 +5214,140 @@ if [[ "$SUBCMD" == "remove" ]]; then
     # We do this check after parsing flags below, so continue to parse first.
 fi
 
+# ---------------------------------------------------------------------------
+# Chat node control (aid chat node start|stop|status).
+#
+# The node is a service with no operator surface of its own (FR-7.5): everything a human
+# does to it is an `aid` subcommand, and this is that surface. The message-plane verbs
+# (send / inbox / ack) are added by their own task; this function owns lifecycle only.
+#
+# Exit codes REUSE the established meanings rather than minting new ones:
+#   8  the node is already running          (same as `aid dashboard start`)
+#   9  no usable Node runtime on PATH       (same as the dashboard's runtime check)
+#   2  usage error
+#   1  runtime failure
+# ---------------------------------------------------------------------------
+_aid_chat_runtime_dir() {
+    printf '%s\n' "${AID_CHAT_RUNTIME:-${HOME}/.aid/chat}"
+}
+
+_aid_chat_hub_entry() {
+    printf '%s\n' "${AID_CODE_HOME}/chat-node/server/hub.mjs"
+}
+
+# Check the Node prerequisite BEFORE any side effect, with an actionable error and never a
+# stack trace. FR-7.7 makes this a requirement in its own right: the CLI itself is
+# runtime-free, so a missing runtime must fail only the component that needs one.
+_aid_chat_require_node() {
+    if ! command -v node >/dev/null 2>&1; then
+        echo "ERROR: aid: chat: the chat node requires a Node runtime and none was found on PATH." >&2
+        echo "       Install Node (>= 22.13.0) and re-run. Every other 'aid' command keeps working without it." >&2
+        exit 9
+    fi
+}
+
+_cmd_chat_ctl() {
+    local action="${1:-}"
+    if [[ "$action" == "node" ]]; then shift; action="${1:-}"; fi
+    case "$action" in
+        start|stop|status) ;;
+        ''|-h|--help) _aid_usage chat; exit 0 ;;
+        *) echo "ERROR: aid: chat: unknown action '${action}' (expected: node start | node stop | node status)" >&2; exit 2 ;;
+    esac
+    shift || true
+
+    local rt_dir pid_file port_file pid
+    rt_dir="$(_aid_chat_runtime_dir)"
+    pid_file="${rt_dir}/hub.pid"
+    port_file="${rt_dir}/hub.port"
+    pid=""
+    [[ -f "$pid_file" ]] && pid="$(tr -d '[:space:]' < "$pid_file")"
+
+    # A recorded pid that is not alive is a STALE record, not a running node. Reclaiming it
+    # silently is what makes `start` safe to run without checking first (FR-1.1).
+    local alive=0
+    if [[ -n "$pid" ]] && kill -0 "$pid" 2>/dev/null; then alive=1; fi
+
+    case "$action" in
+        status)
+            if [[ "$alive" -eq 1 ]]; then
+                local port=""
+                [[ -f "$port_file" ]] && port="$(tr -d '[:space:]' < "$port_file")"
+                echo "aid: chat node running (pid ${pid}, http://127.0.0.1:${port:-unknown})"
+                exit 0
+            fi
+            [[ -n "$pid" ]] && echo "aid: chat node not running (stale record for pid ${pid})" || echo "aid: chat node not running"
+            exit 0
+            ;;
+        stop)
+            if [[ "$alive" -ne 1 ]]; then
+                echo "aid: chat node not running."
+                rm -f "$pid_file" "$port_file" 2>/dev/null || true
+                exit 0
+            fi
+            kill -TERM "$pid" 2>/dev/null || true
+            local _w=0
+            while [[ "$_w" -lt 50 ]] && kill -0 "$pid" 2>/dev/null; do sleep 0.1; _w=$((_w+1)); done
+            kill -0 "$pid" 2>/dev/null && kill -KILL "$pid" 2>/dev/null || true
+            rm -f "$pid_file" "$port_file" 2>/dev/null || true
+            echo "aid: chat node stopped."
+            exit 0
+            ;;
+        start)
+            if [[ "$alive" -eq 1 ]]; then
+                local port=""
+                [[ -f "$port_file" ]] && port="$(tr -d '[:space:]' < "$port_file")"
+                echo "aid: chat node already running (pid ${pid}, http://127.0.0.1:${port:-unknown}); run 'aid chat node stop' first."
+                exit 8
+            fi
+            [[ -n "$pid" ]] && rm -f "$pid_file" "$port_file" 2>/dev/null || true
+
+            _aid_chat_require_node
+
+            local entry port_arg
+            entry="$(_aid_chat_hub_entry)"
+            if [[ ! -f "$entry" ]]; then
+                echo "ERROR: aid: chat: the chat node is missing from the install tree (expected ${entry}). Reinstall aid." >&2
+                exit 7
+            fi
+            port_arg="${AID_CHAT_PORT:-8812}"
+            while [[ $# -gt 0 ]]; do
+                case "$1" in
+                    --port) [[ $# -lt 2 ]] && _aid_die "chat: --port requires a value" 2
+                            port_arg="$2"; shift 2 ;;
+                    *) echo "ERROR: aid: chat: unknown option '$1'" >&2; exit 2 ;;
+                esac
+            done
+            if ! [[ "$port_arg" =~ ^[0-9]+$ ]] || [[ "$port_arg" -lt 1024 && "$port_arg" -ne 0 ]] || [[ "$port_arg" -gt 65535 ]]; then
+                echo "ERROR: aid: chat: --port must be 0 or an integer in 1024..65535" >&2
+                exit 2
+            fi
+
+            mkdir -p "$rt_dir"
+            # Detached, so the node outlives the shell that started it (FR-1.2).
+            nohup node "$entry" --port "$port_arg" >"${rt_dir}/hub.log" 2>&1 &
+            disown 2>/dev/null || true
+            local _s=0
+            while [[ "$_s" -lt 50 && ! -f "$port_file" ]]; do sleep 0.1; _s=$((_s+1)); done
+            if [[ -f "$port_file" ]]; then
+                echo "aid: chat node started (http://127.0.0.1:$(tr -d '[:space:]' < "$port_file"))"
+                exit 0
+            fi
+            echo "ERROR: aid: chat: the node did not report a listening port; see ${rt_dir}/hub.log" >&2
+            exit 1
+            ;;
+    esac
+}
+
 # ---- dashboard --------------------------------------------------------------
 if [[ "$SUBCMD" == "dashboard" ]]; then
     _cmd_dashboard_ctl "$@"
+    exit $?
+fi
+
+# ---- chat -------------------------------------------------------------------
+if [[ "$SUBCMD" == "chat" ]]; then
+    _cmd_chat_ctl "$@"
     exit $?
 fi
 
