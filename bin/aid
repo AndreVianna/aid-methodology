@@ -197,6 +197,7 @@ _aid_usage() {
             printf 'aid chat leave   --name <n>                   leave; closes it if you were last\n'
             printf 'aid chat list    --name <n>                   the open channels this hub knows\n'
             printf 'aid chat send    --name <n> --body <text> [--key <k>] [--whisper-to <m>] [--mention <m>]\n'
+            printf '                 [--reply-to <key>] [--correlation-id <id>]\n'
             printf 'aid chat inbox   --name <n> [--cursor <c>]    messages after your position\n'
             printf 'aid chat ack     --name <n> --cursor <c>      advance your acknowledged position\n'
             printf 'aid chat reap    --name <n> | --name --all     give a session up for gone (operator)\n'
@@ -5334,7 +5335,7 @@ _aid_json_escape() {
 
 _cmd_chat_plane() {
     local verb="$1"; shift
-    local name="${AID_CHAT_SESSION:-}" body="" channel="" cursor="" key="" whisper="" mention=""
+    local name="${AID_CHAT_SESSION:-}" body="" channel="" cursor="" key="" whisper="" mention="" reply_to="" corr=""
     while [[ $# -gt 0 ]]; do
         case "$1" in
             --name)     name="$2"; shift 2 ;;
@@ -5344,6 +5345,8 @@ _cmd_chat_plane() {
             --key)      key="$2"; shift 2 ;;
             --whisper-to) whisper="$2"; shift 2 ;;
             --mention)  mention="$2"; shift 2 ;;
+            --reply-to) reply_to="$2"; shift 2 ;;
+            --correlation-id) corr="$2"; shift 2 ;;
             --tool)     _AID_CHAT_TOOL="$2"; shift 2 ;;
             *) echo "ERROR: aid: chat ${verb}: unknown option '$1'" >&2; return 2 ;;
         esac
@@ -5382,6 +5385,8 @@ _cmd_chat_plane() {
             [[ -n "$key" ]]     && payload="${payload},\"idempotency_key\":\"$(_aid_json_escape "$key")\""
             [[ -n "$whisper" ]] && payload="${payload},\"whisper_to\":\"$(_aid_json_escape "$whisper")\""
             [[ -n "$mention" ]] && payload="${payload},\"mention\":[\"$(_aid_json_escape "$mention")\"]"
+            [[ -n "$reply_to" ]] && payload="${payload},\"reply_to\":\"$(_aid_json_escape "$reply_to")\""
+            [[ -n "$corr" ]]     && payload="${payload},\"correlation_id\":\"$(_aid_json_escape "$corr")\""
             payload="${payload}}"
             _aid_chat_call POST /messages "$payload" ;;
         inbox)

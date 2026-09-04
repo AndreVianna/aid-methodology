@@ -116,8 +116,12 @@ export function makeRouter({ db, startedAt }) {
     // that follows the spec to receive a 404. It answers first and shuts down after, so the
     // caller gets a reply rather than a dropped connection.
     routes.set('POST /stop', (_req, res) => {
+        // Shut down only once the response has actually been written. A timer would be a race:
+        // `json()` buffers, the socket write is asynchronous, and the SIGTERM handler exits
+        // immediately without draining -- so a busy event loop could drop the reply the caller
+        // is waiting for. `finish` fires when the last byte has been handed to the socket.
+        res.on('finish', () => process.kill(process.pid, 'SIGTERM'));
         json(res, 200, { ok: true, stopping: true, pid: process.pid });
-        setTimeout(() => process.kill(process.pid, 'SIGTERM'), 25);
     });
 
     routes.set('GET /status', (_req, res) => json(res, 200, {

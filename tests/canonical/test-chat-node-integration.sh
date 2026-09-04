@@ -166,16 +166,44 @@ open_after_last=$($AID chat list --name bob 2>/dev/null | _field "['channels']._
 assert_eq "$open_after_last" "0" "AC-30 the channel closes when its last member leaves"
 
 # AC-30's negative, which the criterion states explicitly: a channel does NOT close because it
-# fell quiet. Run with the reap threshold set very low, so "quiet for longer than the threshold"
-# is a real elapsed condition rather than a simulated one -- and assert the channel is STILL
-# THERE, because nothing closes a channel on a clock.
-$AID chat register --name q1 --tool t >/dev/null 2>&1
-$AID chat register --name q2 --tool t >/dev/null 2>&1
-$AID chat open --name q1 --channel quiet >/dev/null 2>&1
-$AID chat join --name q2 --channel quiet >/dev/null 2>&1
-sleep 1.1
-still=$($AID chat list --name q1 2>/dev/null | python3 -c "import json,sys; print(any(c['name']=='quiet' for c in json.load(sys.stdin)['channels']))")
-assert_eq "$still" "True" "AC-30 a channel that fell quiet is still there: nothing closes one on a clock"
+# fell quiet. An earlier version of this case slept 1.1s against the 24h default and asserted
+# survival -- which an inactivity timer of two seconds would also have passed. It proved the
+# channel survived 1.1s and nothing more.
+#
+# This version makes the condition real in the only way that is honest: the hub runs with a
+# REAP THRESHOLD OF 300 ms, both members keep heartbeating, and the channel is then quiet for
+# many multiples of that threshold. If anything closed a channel on elapsed silence, this would
+# close it. The members' heartbeats are what separate the two ideas the criterion distinguishes
+# -- a quiet channel is not a departed member.
+# On its OWN node, with its own runtime dir and store. The first version of this case reaped
+# every session on the shared node, which destroyed the sessions AC-10 needs later -- a test that
+# breaks another test is a test that has to be isolated, not reordered around.
+QRT="${_TMPD}/quiet-rt"; QST="${_TMPD}/quiet-rt/chat.db"
+QQ() { env AID_CHAT_RUNTIME="$QRT" AID_CHAT_STORE="$QST" AID_CHAT_REAP_MS=300 bash "${REPO_ROOT}/bin/aid" "$@"; }
+QQ chat node start --port 0 >/dev/null 2>&1
+QQ chat register --name q1 --tool t >/dev/null 2>&1
+QQ chat register --name q2 --tool t >/dev/null 2>&1
+QQ chat open --name q1 --channel quiet >/dev/null 2>&1
+QQ chat join --name q2 --channel quiet >/dev/null 2>&1
+for _ in 1 2 3 4 5 6; do
+    sleep 0.25
+    QQ chat heartbeat --name q1 >/dev/null 2>&1
+    QQ chat heartbeat --name q2 >/dev/null 2>&1
+done
+still=$(QQ chat list --name q1 2>/dev/null | python3 -c "import json,sys; print(any(c['name']=='quiet' for c in json.load(sys.stdin)['channels']))")
+assert_eq "$still" "True" "AC-30 a channel quiet for many multiples of the reap threshold is STILL THERE while its members live"
+
+# And the complement, which is what makes the case above mean something: with the same low
+# threshold, members that STOP heartbeating are reapable, and reaping the last one does close it.
+sleep 0.5
+QQ chat reap --name --all >/dev/null 2>&1
+gone_after_silence=$(QQ chat register --name probe --tool t >/dev/null 2>&1; QQ chat list --name probe 2>/dev/null | python3 -c "import json,sys; print(not any(c['name']=='quiet' for c in json.load(sys.stdin)['channels']))")
+assert_eq "$gone_after_silence" "True" "AC-30 the same channel DOES close once its members stop heartbeating and are reaped -- so the case above tests the distinction, not the absence of any mechanism"
+
+# No timer targets channel closure anywhere in the node: the absence is asserted, not assumed.
+timers=$(grep -nE 'setInterval|setTimeout' "${REPO_ROOT}"/chat-node/server/*.mjs | grep -viE 'SIGTERM|process\.kill' | wc -l | tr -d ' ')
+assert_eq "$timers" "0" "AC-30 no timer in the node targets channel closure (grepped, not assumed)"
+QQ chat node stop >/dev/null 2>&1
 
 # AC-30's reap path, end to end through the CLI rather than only through the core.
 $AID chat leave --name q2 >/dev/null 2>&1

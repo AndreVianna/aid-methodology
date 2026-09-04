@@ -72,7 +72,12 @@ delivery_lifecycle:
 #     pass. `issue_list` is a writer-targeted child key (--append-issue, L-2).
 #   issue_list: severity-tagged strings, or [] when the gate passed clean
 delivery_gate:
-  issue_list: []
+  issue_list:
+    - "[CYCLE-2-REVIEW] Suite results: manifest 18/18, store 11/11, lifecycle 22/22, core 19/19, integration 33/33 — all 103 assertions pass."
+    - "[MEDIUM] #11 _arrived_too_late is dead metadata: retroactively-arriving messages are silently discarded with no caller-visible signal (chat-node/server/core.mjs:398)."
+    - "[MEDIUM] #12 AC-30 quiet-negative test sleeps 1.1s with no low threshold configured; cannot distinguish no-timer from timer>1.1s (tests/canonical/test-chat-node-integration.sh:169)."
+    - "[LOW] #13 POST /stop 25ms race: process.exit(0) in shutdown could close socket before TCP send-buffer is flushed (chat-node/server/hub.mjs:118)."
+    - "[MEDIUM] #14 aid chat send lacks --reply-to/--correlation-id flags; AC-8 reply-correlation tested through curl, not CLI, contrary to FR-0.2 (bin/aid:5380)."
 # [A] single writer: this delivery's branch (via the delivery-gate step of
 #     aid-execute). delivery-gate SPEC Q&A is written here, NOT into the
 #     shared work-level STATE.yml, to preserve the disjoint-write property

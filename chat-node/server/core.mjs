@@ -377,6 +377,7 @@ function reorderPerSpeaker(rows, { graceMs, now, lastSeqBySender }) {
         bySpeaker.get(k).push(r);
     }
     const releasable = [];
+    const tooLate = [];
     let firstHeldBack = null;
     for (const [k, msgs] of bySpeaker) {
         msgs.sort((a, b) => a.sender_seq - b.sender_seq);
@@ -396,6 +397,7 @@ function reorderPerSpeaker(rows, { graceMs, now, lastSeqBySender }) {
                 // late: the skip was recorded when it happened, so the loss is on the record
                 // rather than silent, and the position must never move backwards.
                 m._arrived_too_late = expected;
+                tooLate.push(m);
                 continue;
             }
             // A gap. Normally the predecessor is in flight; hold this message back so the
@@ -437,7 +439,7 @@ function reorderPerSpeaker(rows, { graceMs, now, lastSeqBySender }) {
         inOrder.forEach((m, i) => slotted.push({ slot: slots[i], msg: m }));
     }
     slotted.sort((a, b) => a.slot - b.slot);
-    return { releasable: slotted.map((x) => x.msg), firstHeldBack };
+    return { releasable: slotted.map((x) => x.msg), firstHeldBack, tooLate };
 }
 
 function lastSeqPerSender(db, channelId, uptoSeq) {
@@ -464,7 +466,7 @@ export function inbox(db, { name, cursor = null } = {}) {
                              WHERE channel_id = ? AND arrival_seq > ?
                              ORDER BY arrival_seq`).all(s.channel_id, baseline);
     const now = nowMs();
-    const { releasable, firstHeldBack } = reorderPerSpeaker(rows, {
+    const { releasable, firstHeldBack, tooLate } = reorderPerSpeaker(rows, {
         graceMs: limits().gapGraceMs,
         now,
         lastSeqBySender: lastSeqPerSender(db, s.channel_id, baseline),
@@ -515,6 +517,14 @@ export function inbox(db, { name, cursor = null } = {}) {
         delivered_seq: override ? s.delivered_seq : Math.max(prefixEnd, s.delivered_seq),
         acked_seq: s.acked_seq,
         held_back: firstHeldBack !== null,
+        // A message discarded for arriving behind a point already passed is REPORTED, not just
+        // flagged on an object nobody reads. It is the only loss this design can produce, so the
+        // caller learns of it in the same answer rather than never: the skip was recorded when
+        // the grace period expired, and this is the other half of that record.
+        discarded_too_late: tooLate.map((m) => ({
+            from: m.sender_name, machine: m.sender_machine,
+            sender_seq: m.sender_seq, expected_at_least: m._arrived_too_late,
+        })),
         cursor_override: override,
     });
 }

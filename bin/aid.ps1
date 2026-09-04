@@ -250,6 +250,7 @@ function script:Show-AidUsage {
             Write-Host 'aid chat leave   --name <n>                   leave; closes it if you were last'
             Write-Host 'aid chat list    --name <n>                   the open channels this hub knows'
             Write-Host 'aid chat send    --name <n> --body <text> [--key <k>] [--whisper-to <m>] [--mention <m>]'
+            Write-Host '                 [--reply-to <key>] [--correlation-id <id>]'
             Write-Host 'aid chat inbox   --name <n> [--cursor <c>]    messages after your position'
             Write-Host 'aid chat ack     --name <n> --cursor <c>      advance your acknowledged position'
             Write-Host 'aid chat reap    --name <n> | --name --all     give a session up for gone (operator)'
@@ -4852,6 +4853,7 @@ function script:Invoke-AidChatPlane {
 
     $name = $env:AID_CHAT_SESSION
     $body = ''; $channel = ''; $cursor = ''; $key = ''; $whisper = ''; $mention = ''; $tool = ''
+    $replyTo = ''; $corr = ''
     for ($i = 0; $i -lt $PlaneArgs.Count; $i++) {
         $needsValue = $true
         switch ($PlaneArgs[$i]) {
@@ -4862,6 +4864,8 @@ function script:Invoke-AidChatPlane {
             '--key'        { $key     = $PlaneArgs[$i + 1] }
             '--whisper-to' { $whisper = $PlaneArgs[$i + 1] }
             '--mention'    { $mention = $PlaneArgs[$i + 1] }
+            '--reply-to'   { $replyTo = $PlaneArgs[$i + 1] }
+            '--correlation-id' { $corr = $PlaneArgs[$i + 1] }
             '--tool'       { $tool    = $PlaneArgs[$i + 1] }
             default {
                 [Console]::Error.WriteLine("ERROR: aid: chat ${Verb}: unknown option '$($PlaneArgs[$i])'")
@@ -4905,6 +4909,8 @@ function script:Invoke-AidChatPlane {
             if ($key)     { $payload += ',"idempotency_key":"' + (script:ConvertTo-AidJsonString $key) + '"' }
             if ($whisper) { $payload += ',"whisper_to":"' + (script:ConvertTo-AidJsonString $whisper) + '"' }
             if ($mention) { $payload += ',"mention":["' + (script:ConvertTo-AidJsonString $mention) + '"]' }
+            if ($replyTo) { $payload += ',"reply_to":"' + (script:ConvertTo-AidJsonString $replyTo) + '"' }
+            if ($corr)    { $payload += ',"correlation_id":"' + (script:ConvertTo-AidJsonString $corr) + '"' }
             $payload += '}'
             return script:Invoke-AidChatCall 'POST' '/messages' $payload
         }
