@@ -270,6 +270,29 @@ features:
 #   - date / event / outcome / notes
 review_history:
   - date: 2026-09-04
+    scope: delivery-002 gate (four cycles)
+    outcome: >-
+      PASSED at A+ on cycle 4. Four tasks, 158 assertions across seven suites, zero regressions
+      (157 suites, the same 15 pre-existing failures). Eleven findings, ten fixed and one accepted
+      (the unexecuted PowerShell twin, recorded as MP-03).
+      Cycle 1 REFUSED on one HIGH, and the instructive part is which half was wrong: I collapsed
+      unknown/stale/busy into one refusal token and justified it as denying an asker an enumeration
+      oracle, then printed the distinction in `detail`. The reviewer caught the contradiction -- but
+      the RATIONALE was the mistake, not the field, because the roster already lists every session
+      by name to every caller. The comment now states the real reason and records that the first one
+      was wrong, so a future reader does not reinstate the hiding believing it restores a property.
+      The MEDIUM was worse in effect than in severity: the jittered retry hint was computed in the
+      node and dropped by the CLI, so the livelock it prevents was still there for every agent using
+      the surface agents actually use.
+      Cycle 3 found that MY OWN FIX broke the no-work-ids-in-the-KB rule -- the anti-collision note
+      named a work twice -- and that a second, older violation had survived three cycles. That rule
+      binds every agent and nothing checked it, which is exactly why. There is now a guard
+      (test-kb-no-work-ids.sh) that scans the whole KB for work ids and work-folder paths in prose,
+      exempts command-syntax examples inside code spans, self-falsifies, and records its own known
+      limits rather than implying completeness.
+    grade: A+
+
+  - date: 2026-09-04
     scope: delivery-001 gate (four cycles)
     outcome: >-
       PASSED at A+ on cycle 4. Eleven tasks, 109 assertions across five canonical suites,

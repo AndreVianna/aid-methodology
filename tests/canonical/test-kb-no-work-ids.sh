@@ -17,6 +17,14 @@
 #         the same rule's corollary: git records per-doc history at higher fidelity
 #   KW04  the check itself is falsifiable (it detects a planted violation)
 #
+# KNOWN LIMITS, recorded so nobody reads this guard as airtight:
+#   - A work id SPLIT ACROSS A LINE BREAK is not detected. Markdown wrapping breaks at spaces, so
+#     `work-042` cannot be split accidentally; this is an evasion, not a mistake anybody makes.
+#   - A genuine citation written inside backticks would pass, because code spans are stripped
+#     (below). That is the cost of the exemption, and it is accepted: KB citations use file paths
+#     and anchors, so a bare work id in code format is already anomalous enough to notice in review.
+# Both are deliberate. The guard is aimed at accidental citation, which is what actually happened.
+#
 # WHAT IS DELIBERATELY ALLOWED: a work id inside an inline code span or a fenced block. Those are
 # command SYNTAX -- `/aid-execute work-001 task-001` shows a reader how to invoke a skill -- and a
 # placeholder in an example is neither a dangling pointer nor a historical citation, so it is
