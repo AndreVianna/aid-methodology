@@ -244,6 +244,19 @@ function script:Show-AidUsage {
             Write-Host '  Print the installed aid CLI version and exit 0.'
         }
         'chat' {
+            Write-Host 'aid chat register --name <n> [--tool <t>]     register this session'
+            Write-Host 'aid chat open    --name <n> --channel <c>     open a channel and join it'
+            Write-Host 'aid chat join    --name <n> --channel <c>     join an open channel'
+            Write-Host 'aid chat leave   --name <n>                   leave; closes it if you were last'
+            Write-Host 'aid chat list    --name <n>                   the open channels this hub knows'
+            Write-Host 'aid chat send    --name <n> --body <text> [--key <k>] [--whisper-to <m>] [--mention <m>]'
+            Write-Host 'aid chat inbox   --name <n> [--cursor <c>]    messages after your position'
+            Write-Host 'aid chat ack     --name <n> --cursor <c>      advance your acknowledged position'
+            Write-Host '  --name may be omitted when AID_CHAT_SESSION is set.'
+            Write-Host '  --cursor on inbox RE-READS from that point and moves neither position.'
+            Write-Host '  Exit 14 means the node refused a well-formed request; the reason is the first'
+            Write-Host '  word on stderr (solo_channel, no_channel, already_in_channel, overflow, ...).'
+            Write-Host ''
             Write-Host 'aid chat node start [--port <n>]'
             Write-Host 'aid chat node stop'
             Write-Host 'aid chat node status'
@@ -4772,10 +4785,144 @@ if ($SUBCMD -eq 'remove') {
 #   2  usage error
 #   1  runtime failure
 # ---------------------------------------------------------------------------
+# ---------------------------------------------------------------------------
+# Chat message plane -- the PowerShell twin of _cmd_chat_plane in bin/aid.
+# One HTTP call per verb into the one core; no rule and no SQL here.
+# Exit codes: 0 ok | 14 the node refused a well-formed request | 2 usage | 1 runtime.
+# ---------------------------------------------------------------------------
+function script:Get-AidChatBaseUrl {
+    $rtDir = if ($env:AID_CHAT_RUNTIME) { $env:AID_CHAT_RUNTIME } else { Join-Path $HOME '.aid\chat' }
+    $portFile = Join-Path $rtDir 'hub.port'
+    if (-not (Test-Path -LiteralPath $portFile -PathType Leaf)) { return $null }
+    $p = (Get-Content -LiteralPath $portFile -Raw).Trim()
+    if (-not $p) { return $null }
+    return "http://127.0.0.1:$p"
+}
+
+# One place that turns the node's answer into output plus an exit code, so no verb invents its
+# own convention. stdout carries the result; stderr carries the diagnostic.
+function script:Invoke-AidChatCall {
+    param([string]$Method, [string]$Path, [string]$Body = $null)
+
+    $base = script:Get-AidChatBaseUrl
+    if (-not $base) {
+        [Console]::Error.WriteLine("ERROR: aid: chat: the node is not running; run 'aid chat node start' first.")
+        return 1
+    }
+    try {
+        $args = @{ Uri = "$base$Path"; Method = $Method; UseBasicParsing = $true; ErrorAction = 'Stop' }
+        if ($Body) { $args.Body = $Body; $args.ContentType = 'application/json' }
+        $resp = Invoke-WebRequest @args
+        Write-Output $resp.Content
+        return 0
+    } catch [System.Net.WebException], [Microsoft.PowerShell.Commands.HttpResponseException] {
+        $r = $_.Exception.Response
+        if (-not $r) {
+            [Console]::Error.WriteLine("ERROR: aid: chat: the node is not reachable; run 'aid chat node start' first.")
+            return 1
+        }
+        $code = [int]$r.StatusCode
+        $text = ''
+        try {
+            $sr = New-Object System.IO.StreamReader($r.GetResponseStream())
+            $text = $sr.ReadToEnd()
+        } catch { $text = '' }
+        switch ($code) {
+            409 {
+                $reason = if ($text -match '"reason":"([^"]*)"') { $Matches[1] } else { 'refused' }
+                $detail = if ($text -match '"detail":"([^"]*)"') { $Matches[1] } else { $null }
+                if ($detail) { [Console]::Error.WriteLine("${reason}: ${detail}") }
+                else         { [Console]::Error.WriteLine($reason) }
+                return 14
+            }
+            400 { [Console]::Error.WriteLine("ERROR: aid: chat: the request was malformed: $text"); return 2 }
+            default { [Console]::Error.WriteLine("ERROR: aid: chat: the node answered ${code}: $text"); return 1 }
+        }
+    }
+}
+
+function script:ConvertTo-AidJsonString { param([string]$Value)
+    if ($null -eq $Value) { return '' }
+    return $Value.Replace('\', '\\').Replace('"', '\"').Replace("`n", '\n')
+}
+
+function script:Invoke-AidChatPlane {
+    param([string]$Verb, [string[]]$PlaneArgs)
+
+    $name = $env:AID_CHAT_SESSION
+    $body = ''; $channel = ''; $cursor = ''; $key = ''; $whisper = ''; $mention = ''; $tool = ''
+    for ($i = 0; $i -lt $PlaneArgs.Count; $i++) {
+        $needsValue = $true
+        switch ($PlaneArgs[$i]) {
+            '--name'       { $name    = $PlaneArgs[$i + 1] }
+            '--body'       { $body    = $PlaneArgs[$i + 1] }
+            '--channel'    { $channel = $PlaneArgs[$i + 1] }
+            '--cursor'     { $cursor  = $PlaneArgs[$i + 1] }
+            '--key'        { $key     = $PlaneArgs[$i + 1] }
+            '--whisper-to' { $whisper = $PlaneArgs[$i + 1] }
+            '--mention'    { $mention = $PlaneArgs[$i + 1] }
+            '--tool'       { $tool    = $PlaneArgs[$i + 1] }
+            default {
+                [Console]::Error.WriteLine("ERROR: aid: chat ${Verb}: unknown option '$($PlaneArgs[$i])'")
+                return 2
+            }
+        }
+        if ($needsValue) { $i++ }
+    }
+    if (-not $name) {
+        [Console]::Error.WriteLine("ERROR: aid: chat ${Verb}: --name is required (or set AID_CHAT_SESSION)")
+        return 2
+    }
+    $n = script:ConvertTo-AidJsonString $name
+
+    switch ($Verb) {
+        'register' {
+            $t = if ($tool) { $tool } elseif ($env:AID_CHAT_TOOL) { $env:AID_CHAT_TOOL } else { 'unknown' }
+            return script:Invoke-AidChatCall 'POST' '/session' `
+                ('{"name":"' + $n + '","tool":"' + (script:ConvertTo-AidJsonString $t) + '","cwd":"' + (script:ConvertTo-AidJsonString $PWD.Path) + '"}')
+        }
+        'heartbeat' { return script:Invoke-AidChatCall 'POST' '/session/heartbeat' ('{"name":"' + $n + '"}') }
+        'open' {
+            if (-not $channel) { [Console]::Error.WriteLine('ERROR: aid: chat open: --channel is required'); return 2 }
+            return script:Invoke-AidChatCall 'POST' '/channel' ('{"name":"' + $n + '","channel":"' + (script:ConvertTo-AidJsonString $channel) + '"}')
+        }
+        'join' {
+            if (-not $channel) { [Console]::Error.WriteLine('ERROR: aid: chat join: --channel is required'); return 2 }
+            return script:Invoke-AidChatCall 'POST' '/channel/join' ('{"name":"' + $n + '","channel":"' + (script:ConvertTo-AidJsonString $channel) + '"}')
+        }
+        'leave' { return script:Invoke-AidChatCall 'POST' '/channel/leave' ('{"name":"' + $n + '"}') }
+        'list'  { return script:Invoke-AidChatCall 'GET' ("/channels?name=$n") }
+        'send' {
+            if (-not $body) { [Console]::Error.WriteLine('ERROR: aid: chat send: --body is required'); return 2 }
+            $payload = '{"name":"' + $n + '","body":"' + (script:ConvertTo-AidJsonString $body) + '"'
+            if ($key)     { $payload += ',"idempotency_key":"' + (script:ConvertTo-AidJsonString $key) + '"' }
+            if ($whisper) { $payload += ',"whisper_to":"' + (script:ConvertTo-AidJsonString $whisper) + '"' }
+            if ($mention) { $payload += ',"mention":["' + (script:ConvertTo-AidJsonString $mention) + '"]' }
+            $payload += '}'
+            return script:Invoke-AidChatCall 'POST' '/messages' $payload
+        }
+        'inbox' {
+            if ($cursor) { return script:Invoke-AidChatCall 'GET' ("/messages?name=$n&cursor=$cursor") }
+            return script:Invoke-AidChatCall 'GET' ("/messages?name=$n")
+        }
+        'ack' {
+            if (-not $cursor) { [Console]::Error.WriteLine('ERROR: aid: chat ack: --cursor is required'); return 2 }
+            return script:Invoke-AidChatCall 'POST' '/messages/ack' ('{"name":"' + $n + '","cursor":' + $cursor + '}')
+        }
+        default { [Console]::Error.WriteLine("ERROR: aid: chat: unknown verb '$Verb'"); return 2 }
+    }
+}
+
 function script:Invoke-AidChatCtl {
     param([string[]]$CcArgs)
 
     $action = if ($CcArgs.Count -ge 1) { $CcArgs[0] } else { '' }
+    # The message-plane verbs are handled first; `node ...` is the lifecycle surface.
+    if ($action -in @('register','heartbeat','open','join','leave','list','send','inbox','ack')) {
+        $planeArgs = @()
+        if ($CcArgs.Count -gt 1) { $planeArgs = $CcArgs[1..($CcArgs.Count - 1)] }
+        script:Exit-Aid (script:Invoke-AidChatPlane -Verb $action -PlaneArgs $planeArgs)
+    }
     $rest   = @()
     if ($action -eq 'node') {
         $action = if ($CcArgs.Count -ge 2) { $CcArgs[1] } else { '' }
@@ -4786,7 +4933,7 @@ function script:Invoke-AidChatCtl {
 
     if ($action -in @('', '-h', '--help')) { script:Show-AidUsage 'chat'; script:Exit-Aid 0 }
     if ($action -notin @('start', 'stop', 'status')) {
-        [Console]::Error.WriteLine("ERROR: aid: chat: unknown action '$action' (expected: node start | node stop | node status)")
+        [Console]::Error.WriteLine("ERROR: aid: chat: unknown action '$action' (expected a message verb, or: node start | node stop | node status)")
         script:Exit-Aid 2
     }
 

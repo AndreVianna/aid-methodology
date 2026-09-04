@@ -45,13 +45,23 @@
 # one -- never self-written by the task being executed.)
 
 # [W] Pending | In Progress | In Review | Blocked | Done | Failed | Canceled
-state: Pending
+state: Done
 # [W]
 review: --
 # [W] HH:MM | --
 elapsed: --
 # [W]
-notes: --
+notes: >-
+  The Bash side is verified by execution end to end: register, open, join, send, inbox, ack,
+  and the refusal path (exit 14 with the stable token first on stderr, stdout parsing as JSON
+  on its own). The PowerShell twin is NOT verified by execution -- no PowerShell exists in this
+  environment, so tests/canonical/test-aid-cli-parity.sh skips and the twin was written by
+  mirroring the verified Bash implementation. That is a code reading and is recorded as one
+  rather than counted as a pass; it is the same limitation task-003 carries, and the delivery
+  gate should treat both as one open item rather than two.
+  The no-rules-in-the-CLI criterion is verified by grep: the only apparent SQL in either twin is
+  the word "select" inside dashboard help text, and there is exactly one HTTP call site per twin
+  (two adjacent lines in Bash for the GET and POST branches of the same helper).
 # [W] mutable display-name override (writeback-state.sh:829). Documentation
 #     fix, not a schema change (SP-2's one documented exception): the writer
 #     already writes this key today; it was simply never declared here.

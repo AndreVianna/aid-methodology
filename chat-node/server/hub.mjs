@@ -15,6 +15,7 @@ import { existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'node
 import { dirname, join } from 'node:path';
 
 import { nowMs, openStore, stateHome } from './store.mjs';
+import * as core from './core.mjs';
 
 export const DEFAULT_PORT = 8812;   // 8787 is the dashboard's; 8799 and 8811 are also taken
 export const LOOPBACK = '127.0.0.1';
@@ -85,6 +86,29 @@ function json(res, status, body) {
     res.end(text);
 }
 
+// A refused request is answered with 409 and its stable token, not 400 and not 500. 400 would
+// say the caller sent something malformed, which it did not; 500 would say the hub broke, which
+// it did not. The CLI maps this status to exit 14 -- one shape, one meaning, all the way out.
+function answer(res, result) {
+    if (result && result.ok) return json(res, 200, result);
+    const status = result && result.reason === 'bad_request' ? 400 : 409;
+    return json(res, status, result);
+}
+
+async function readJsonBody(req) {
+    const chunks = [];
+    for await (const c of req) chunks.push(c);
+    if (!chunks.length) return {};
+    // Decode with utf-8 BOM tolerance. RFC 8259 does not permit a BOM in JSON, so a strict
+    // parser rejects an otherwise valid document at its FIRST character -- an error that reads
+    // as malformed JSON rather than as an encoding problem. The spike lost two runs to exactly
+    // that, and any client of this hub could hit it, so the tolerance lives here rather than in
+    // each caller.
+    const text = Buffer.concat(chunks).toString('utf8').replace(/^\uFEFF/, '');
+    try { return JSON.parse(text); }
+    catch (err) { const e = new Error(`malformed JSON body: ${err.message}`); e.badRequest = true; throw e; }
+}
+
 export function makeRouter({ db, startedAt }) {
     const routes = new Map();
 
@@ -96,6 +120,58 @@ export function makeRouter({ db, startedAt }) {
         store: db ? 'open' : 'closed',
     }));
 
+    // Session plane.
+    routes.set('POST /session', async (req, res) => {
+        const b = await readJsonBody(req);
+        answer(res, core.register(db, {
+            name: b.name, tool: b.tool, cwd: b.cwd,
+            capabilities: b.capabilities, hostConversationId: b.host_conversation_id || null,
+        }));
+    });
+    routes.set('POST /session/heartbeat', async (req, res) => {
+        const b = await readJsonBody(req);
+        answer(res, core.heartbeat(db, b.name));
+    });
+    routes.set('GET /sessions', (_req, res) => json(res, 200, { ok: true, sessions: core.listSessions(db) }));
+
+    // Channel plane.
+    routes.set('POST /channel', async (req, res) => {
+        const b = await readJsonBody(req);
+        answer(res, core.openChannel(db, { name: b.name, channelName: b.channel }));
+    });
+    routes.set('POST /channel/join', async (req, res) => {
+        const b = await readJsonBody(req);
+        answer(res, core.joinChannel(db, { name: b.name, channelName: b.channel }));
+    });
+    routes.set('POST /channel/leave', async (req, res) => {
+        const b = await readJsonBody(req);
+        answer(res, core.leaveChannel(db, { name: b.name }));
+    });
+    routes.set('GET /channels', (req, res, url) =>
+        json(res, 200, { ok: true, channels: core.listChannels(db, { name: url.searchParams.get('name') }) }));
+
+    // Message plane.
+    routes.set('POST /messages', async (req, res) => {
+        const b = await readJsonBody(req);
+        answer(res, core.send(db, {
+            name: b.name, body: b.body, kind: b.kind,
+            idempotencyKey: b.idempotency_key || null,
+            mention: b.mention || null, whisperTo: b.whisper_to || null,
+            correlationId: b.correlation_id || null, replyTo: b.reply_to || null,
+        }));
+    });
+    routes.set('GET /messages', (req, res, url) => {
+        const cursor = url.searchParams.get('cursor');
+        answer(res, core.inbox(db, {
+            name: url.searchParams.get('name'),
+            cursor: cursor === null ? null : Number(cursor),
+        }));
+    });
+    routes.set('POST /messages/ack', async (req, res) => {
+        const b = await readJsonBody(req);
+        answer(res, core.ack(db, { name: b.name, cursor: b.cursor }));
+    });
+
     return async function route(req, res) {
         const url = new URL(req.url, `http://${LOOPBACK}`);
         const key = `${req.method} ${url.pathname}`;
@@ -104,9 +180,12 @@ export function makeRouter({ db, startedAt }) {
         try {
             await handler(req, res, url);
         } catch (err) {
+            if (err && err.badRequest) {
+                return json(res, 400, { ok: false, reason: 'bad_request', detail: String(err.message) });
+            }
             // A handler fault is the hub's fault, not the caller's: report it as one rather
             // than leaking a stack trace over the wire.
-            json(res, 500, { error: 'internal', detail: String(err && err.message || err) });
+            json(res, 500, { ok: false, reason: 'internal', detail: String(err && err.message || err) });
         }
     };
 }

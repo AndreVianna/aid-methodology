@@ -191,6 +191,19 @@ _aid_usage() {
             printf '  Print the installed aid CLI version and exit 0.\n'
             ;;
         chat)
+            printf 'aid chat register --name <n> [--tool <t>]     register this session\n'
+            printf 'aid chat open    --name <n> --channel <c>     open a channel and join it\n'
+            printf 'aid chat join    --name <n> --channel <c>     join an open channel\n'
+            printf 'aid chat leave   --name <n>                   leave; closes it if you were last\n'
+            printf 'aid chat list    --name <n>                   the open channels this hub knows\n'
+            printf 'aid chat send    --name <n> --body <text> [--key <k>] [--whisper-to <m>] [--mention <m>]\n'
+            printf 'aid chat inbox   --name <n> [--cursor <c>]    messages after your position\n'
+            printf 'aid chat ack     --name <n> --cursor <c>      advance your acknowledged position\n'
+            printf '  --name may be omitted when AID_CHAT_SESSION is set.\n'
+            printf '  --cursor on inbox RE-READS from that point and moves neither position.\n'
+            printf '  Exit 14 means the node refused a well-formed request; the reason is the first\n'
+            printf '  word on stderr (solo_channel, no_channel, already_in_channel, overflow, ...).\n'
+            printf '\n'
             printf 'aid chat node start [--port <n>]\n'
             printf 'aid chat node stop\n'
             printf 'aid chat node status\n'
@@ -5246,13 +5259,149 @@ _aid_chat_require_node() {
     fi
 }
 
+# ---------------------------------------------------------------------------
+# Chat message plane (aid chat register|send|inbox|ack|open|join|leave|list).
+#
+# One HTTP call per verb into the one core (FR-0.1, FR-7.4). This function parses arguments,
+# makes exactly one request, maps the answer to an exit code and prints. It holds NO rule and
+# NO SQL -- every decision is the node's.
+#
+# Exit codes: 0 ok | 14 the node refused a well-formed request | 2 usage | 1 runtime.
+# 14 is the only new code this feature needed; 8 and 9 were reused from their existing
+# meanings. See the exit-code audit in the requirements.
+# ---------------------------------------------------------------------------
+_aid_chat_base_url() {
+    local rt port
+    rt="$(_aid_chat_runtime_dir)"
+    [[ -f "${rt}/hub.port" ]] || return 1
+    port="$(tr -d '[:space:]' < "${rt}/hub.port")"
+    [[ -n "$port" ]] || return 1
+    printf 'http://127.0.0.1:%s\n' "$port"
+}
+
+# One place that turns the node's answer into output + an exit code, so no verb can invent its
+# own convention. stdout carries the result; stderr carries the diagnostic, per the
+# repository's existing split.
+_aid_chat_respond() {
+    local http_code="$1" body="$2"
+    case "$http_code" in
+        200)
+            printf '%s\n' "$body"
+            return 0 ;;
+        409)
+            local reason detail
+            reason="$(printf '%s' "$body" | sed -n 's/.*"reason":"\([^"]*\)".*/\1/p')"
+            detail="$(printf '%s' "$body" | sed -n 's/.*"detail":"\([^"]*\)".*/\1/p')"
+            printf '%s' "${reason:-refused}" >&2
+            [[ -n "$detail" ]] && printf ': %s' "$detail" >&2
+            printf '\n' >&2
+            return 14 ;;
+        400)
+            printf 'ERROR: aid: chat: the request was malformed: %s\n' "$body" >&2
+            return 2 ;;
+        000|'')
+            echo "ERROR: aid: chat: the node is not reachable; run 'aid chat node start' first." >&2
+            return 1 ;;
+        *)
+            printf 'ERROR: aid: chat: the node answered %s: %s\n' "$http_code" "$body" >&2
+            return 1 ;;
+    esac
+}
+
+_aid_chat_call() {
+    local method="$1" path="$2" data="${3:-}" base out code
+    if ! base="$(_aid_chat_base_url)"; then
+        echo "ERROR: aid: chat: the node is not running; run 'aid chat node start' first." >&2
+        return 1
+    fi
+    command -v curl >/dev/null 2>&1 || { echo "ERROR: aid: chat: curl not found on PATH" >&2; return 1; }
+    if [[ "$method" == "GET" ]]; then
+        out="$(curl -sS -w '\n%{http_code}' "${base}${path}" 2>/dev/null)"
+    else
+        out="$(curl -sS -w '\n%{http_code}' -X "$method" "${base}${path}" --data-binary "${data}" 2>/dev/null)"
+    fi
+    code="$(printf '%s' "$out" | tail -n1)"
+    _aid_chat_respond "$code" "$(printf '%s' "$out" | sed '$d')"
+}
+
+# Minimal JSON string escaping for the values this CLI passes through. Enough for the fields
+# the message plane accepts, and deliberately not a general encoder -- a general one belongs in
+# the node, which already has a real parser.
+_aid_json_escape() {
+    printf '%s' "$1" | sed -e 's/\\/\\\\/g' -e 's/"/\\"/g' -e ':a' -e 'N' -e '$!ba' -e 's/\n/\\n/g'
+}
+
+_cmd_chat_plane() {
+    local verb="$1"; shift
+    local name="${AID_CHAT_SESSION:-}" body="" channel="" cursor="" key="" whisper="" mention=""
+    while [[ $# -gt 0 ]]; do
+        case "$1" in
+            --name)     name="$2"; shift 2 ;;
+            --body)     body="$2"; shift 2 ;;
+            --channel)  channel="$2"; shift 2 ;;
+            --cursor)   cursor="$2"; shift 2 ;;
+            --key)      key="$2"; shift 2 ;;
+            --whisper-to) whisper="$2"; shift 2 ;;
+            --mention)  mention="$2"; shift 2 ;;
+            --tool)     _AID_CHAT_TOOL="$2"; shift 2 ;;
+            *) echo "ERROR: aid: chat ${verb}: unknown option '$1'" >&2; return 2 ;;
+        esac
+    done
+    if [[ -z "$name" ]]; then
+        echo "ERROR: aid: chat ${verb}: --name is required (or set AID_CHAT_SESSION)" >&2
+        return 2
+    fi
+    local n; n="$(_aid_json_escape "$name")"
+
+    case "$verb" in
+        register)
+            local tool="${_AID_CHAT_TOOL:-${AID_CHAT_TOOL:-unknown}}"
+            _aid_chat_call POST /session \
+                "{\"name\":\"${n}\",\"tool\":\"$(_aid_json_escape "$tool")\",\"cwd\":\"$(_aid_json_escape "$PWD")\"}" ;;
+        heartbeat)
+            _aid_chat_call POST /session/heartbeat "{\"name\":\"${n}\"}" ;;
+        open)
+            [[ -z "$channel" ]] && { echo "ERROR: aid: chat open: --channel is required" >&2; return 2; }
+            _aid_chat_call POST /channel "{\"name\":\"${n}\",\"channel\":\"$(_aid_json_escape "$channel")\"}" ;;
+        join)
+            [[ -z "$channel" ]] && { echo "ERROR: aid: chat join: --channel is required" >&2; return 2; }
+            _aid_chat_call POST /channel/join "{\"name\":\"${n}\",\"channel\":\"$(_aid_json_escape "$channel")\"}" ;;
+        leave)
+            _aid_chat_call POST /channel/leave "{\"name\":\"${n}\"}" ;;
+        list)
+            _aid_chat_call GET "/channels?name=${n}" ;;
+        send)
+            [[ -z "$body" ]] && { echo "ERROR: aid: chat send: --body is required" >&2; return 2; }
+            local payload="{\"name\":\"${n}\",\"body\":\"$(_aid_json_escape "$body")\""
+            [[ -n "$key" ]]     && payload="${payload},\"idempotency_key\":\"$(_aid_json_escape "$key")\""
+            [[ -n "$whisper" ]] && payload="${payload},\"whisper_to\":\"$(_aid_json_escape "$whisper")\""
+            [[ -n "$mention" ]] && payload="${payload},\"mention\":[\"$(_aid_json_escape "$mention")\"]"
+            payload="${payload}}"
+            _aid_chat_call POST /messages "$payload" ;;
+        inbox)
+            if [[ -n "$cursor" ]]; then _aid_chat_call GET "/messages?name=${n}&cursor=${cursor}"
+            else                        _aid_chat_call GET "/messages?name=${n}"; fi ;;
+        ack)
+            [[ -z "$cursor" ]] && { echo "ERROR: aid: chat ack: --cursor is required" >&2; return 2; }
+            _aid_chat_call POST /messages/ack "{\"name\":\"${n}\",\"cursor\":${cursor}}" ;;
+        *) echo "ERROR: aid: chat: unknown verb '${verb}'" >&2; return 2 ;;
+    esac
+}
+
 _cmd_chat_ctl() {
     local action="${1:-}"
+    # The message-plane verbs are handled first; `node ...` is the lifecycle surface.
+    case "$action" in
+        register|heartbeat|open|join|leave|list|send|inbox|ack)
+            shift
+            _cmd_chat_plane "$action" "$@"
+            return $? ;;
+    esac
     if [[ "$action" == "node" ]]; then shift; action="${1:-}"; fi
     case "$action" in
         start|stop|status) ;;
         ''|-h|--help) _aid_usage chat; exit 0 ;;
-        *) echo "ERROR: aid: chat: unknown action '${action}' (expected: node start | node stop | node status)" >&2; exit 2 ;;
+        *) echo "ERROR: aid: chat: unknown action '${action}' (expected a message verb, or: node start | node stop | node status)" >&2; exit 2 ;;
     esac
     shift || true
 
