@@ -165,6 +165,23 @@ CREATE TABLE IF NOT EXISTS outbox (
 
 CREATE INDEX IF NOT EXISTS outbox_drain ON outbox (peer_id, id);
 
+-- The operator's audit log. Written by the hub, read only by the operator, and it records WHAT
+-- HAPPENED rather than what was said: a whisper's parties are here and its body is not, because an
+-- operator who could read whispers would make that guarantee a lie for everyone rather than just for
+-- them. The same reasoning is why there is no body column at all -- not "we choose not to fill it
+-- for whispers", which is a policy one edit away from being reversed, but nowhere to put it.
+CREATE TABLE IF NOT EXISTS audit (
+  id          INTEGER PRIMARY KEY AUTOINCREMENT,
+  at          INTEGER NOT NULL,
+  event       TEXT    NOT NULL,   -- 'register' | 'open' | 'join' | 'leave' | 'send' | 'whisper' | 'connect' | 'reap' | 'evict' | 'trim'
+  actor       TEXT,               -- the session that did it, where there was one
+  subject     TEXT,               -- who or what it was done to
+  channel     TEXT,
+  detail      TEXT                -- a short, non-content note; never a message body
+);
+
+CREATE INDEX IF NOT EXISTS audit_recent ON audit (at DESC);
+
 -- The one index retention adds. Its only reader is the trim job, which selects by channel and by
 -- age; without it that job scans every message in the store on every run, which is precisely the
 -- work it exists to make unnecessary.

@@ -210,6 +210,12 @@ _aid_usage() {
             printf '                 falls back to a short value rather than inheriting any\n'
             printf '                 platform default. --follow re-arms instead of returning.\n'
             printf '                 Spends no model tokens: it blocks in a process, not a prompt.\n'
+            printf 'aid chat show                                  machines, sessions, channels, members,\n'
+            printf '                 per-member unread depth and idle time (operator)\n'
+            printf 'aid chat audit   [--limit <n>]                  what happened, never what was said:\n'
+            printf '                 a whisper appears with its parties and no body (operator)\n'
+            printf 'aid chat evict   --name <n>                     remove a session from its channel (operator)\n'
+            printf 'aid chat retention [--set <key>=<value>]        show or set retention policy (operator)\n'
             printf 'aid chat peers   [--add|--remove --machine <host[:port]>] [--discover]\n'
             printf '                 list, add or remove peer hubs (operator). Naming an address is\n'
             printf '                 the GUARANTEED path and needs no network feature; --discover is\n'
@@ -5424,7 +5430,7 @@ print(json.dumps(wake))
 
 _cmd_chat_plane() {
     local verb="$1"; shift
-    local name="${AID_CHAT_SESSION:-}" body="" channel="" cursor="" key="" whisper="" mention="" reply_to="" corr="" target="" host_timeout="" follow=0 machine="" peer_action=list
+    local name="${AID_CHAT_SESSION:-}" body="" channel="" cursor="" key="" whisper="" mention="" reply_to="" corr="" target="" host_timeout="" follow=0 machine="" peer_action=list limit="" setting=""
     while [[ $# -gt 0 ]]; do
         case "$1" in
             --name)     name="$2"; shift 2 ;;
@@ -5437,6 +5443,8 @@ _cmd_chat_plane() {
             --target)   target="$2"; shift 2 ;;
             --host-timeout) host_timeout="$2"; shift 2 ;;
             --machine)  machine="$2"; shift 2 ;;
+            --limit)    limit="$2"; shift 2 ;;
+            --set)      setting="$2"; shift 2 ;;
             --add)      peer_action=add; shift ;;
             --remove)   peer_action=remove; shift ;;
             --discover) peer_action=discover; shift ;;
@@ -5447,6 +5455,11 @@ _cmd_chat_plane() {
             *) echo "ERROR: aid: chat ${verb}: unknown option '$1'" >&2; return 2 ;;
         esac
     done
+    # These are operator-facing and belong to no session, so they are exempt from the name rule --
+    # except `evict`, which names the session being removed.
+    case "$verb" in
+        show|audit|retention) name="${name:-operator}" ;;
+    esac
     # `peers` is operator-facing and belongs to no session, so it is exempt from the name rule.
     if [[ -z "$name" && "$verb" != "peers" ]]; then
         echo "ERROR: aid: chat ${verb}: --name is required (or set AID_CHAT_SESSION)" >&2
@@ -5478,6 +5491,26 @@ _cmd_chat_plane() {
             _aid_chat_call GET "/channels?name=${n}" ;;
         roster)
             _aid_chat_call GET "/roster?name=${n}" ;;
+        show)
+            # What is in the store, plus the derived numbers an operator acts on: unread depth and
+            # idle time. Idle time is the input to eviction, which is the one remedy left to a human.
+            _aid_chat_call GET /status/detail ;;
+        audit)
+            # What happened, never what was said. A whisper appears here as a whisper between two
+            # parties; its body is not in the schema at all.
+            if [[ -n "$limit" ]]; then _aid_chat_call GET "/audit?limit=${limit}"
+            else                       _aid_chat_call GET /audit; fi ;;
+        evict)
+            _aid_chat_call POST /evict "{\"name\":\"${n}\"}" ;;
+        retention)
+            if [[ -z "$setting" ]]; then _aid_chat_call GET /retention
+            else
+                # --set key=value, converted to the one-key body the node expects.
+                local rk rv
+                rk="${setting%%=*}"; rv="${setting#*=}"
+                [[ "$rk" == "$setting" ]] && { echo "ERROR: aid: chat retention: --set expects key=value" >&2; return 2; }
+                _aid_chat_call POST /retention "{\"$(_aid_json_escape "$rk")\":${rv}}"
+            fi ;;
         peers)
             # Operator-facing, and the GUARANTEED discovery path: naming an address depends on no
             # network feature. --discover is best-effort on top and finds nothing on a network with
@@ -5536,7 +5569,7 @@ _cmd_chat_ctl() {
     local action="${1:-}"
     # The message-plane verbs are handled first; `node ...` is the lifecycle surface.
     case "$action" in
-        register|heartbeat|open|join|leave|list|send|inbox|ack|reap|roster|connect|subscribe|peers)
+        register|heartbeat|open|join|leave|list|send|inbox|ack|reap|roster|connect|subscribe|peers|show|audit|evict|retention)
             shift
             _cmd_chat_plane "$action" "$@"
             return $? ;;

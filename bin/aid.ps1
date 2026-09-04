@@ -263,6 +263,12 @@ function script:Show-AidUsage {
             Write-Host '                 falls back to a short value rather than inheriting any'
             Write-Host '                 platform default. --follow re-arms instead of returning.'
             Write-Host '                 Spends no model tokens: it blocks in a process, not a prompt.'
+            Write-Host 'aid chat show                                  machines, sessions, channels, members,'
+            Write-Host '                 per-member unread depth and idle time (operator)'
+            Write-Host 'aid chat audit   [--limit <n>]                  what happened, never what was said:'
+            Write-Host '                 a whisper appears with its parties and no body (operator)'
+            Write-Host 'aid chat evict   --name <n>                     remove a session from its channel (operator)'
+            Write-Host 'aid chat retention [--set <key>=<value>]        show or set retention policy (operator)'
             Write-Host 'aid chat peers   [--add|--remove --machine <host[:port]>] [--discover]'
             Write-Host '                 list, add or remove peer hubs (operator). Naming an address is'
             Write-Host '                 the GUARANTEED path and needs no network feature; --discover is'
@@ -4929,7 +4935,7 @@ function script:Invoke-AidChatPlane {
     $name = $env:AID_CHAT_SESSION
     $body = ''; $channel = ''; $cursor = ''; $key = ''; $whisper = ''; $mention = ''; $tool = ''
     $replyTo = ''; $corr = ''; $target = ''; $hostTimeout = ''; $follow = $false
-    $machine = ''; $peerAction = 'list'
+    $machine = ''; $peerAction = 'list'; $limit = ''; $setting = ''
     for ($i = 0; $i -lt $PlaneArgs.Count; $i++) {
         $needsValue = $true
         switch ($PlaneArgs[$i]) {
@@ -4950,6 +4956,8 @@ function script:Invoke-AidChatPlane {
             # after the index has already advanced would read the wrong element.
             '--follow'     { $follow  = $true; $needsValue = $false }
             '--machine'    { $machine = $PlaneArgs[$i + 1] }
+            '--limit'      { $limit   = $PlaneArgs[$i + 1] }
+            '--set'        { $setting = $PlaneArgs[$i + 1] }
             '--add'        { $peerAction = 'add';      $needsValue = $false }
             '--remove'     { $peerAction = 'remove';   $needsValue = $false }
             '--discover'   { $peerAction = 'discover'; $needsValue = $false }
@@ -4960,6 +4968,9 @@ function script:Invoke-AidChatPlane {
         }
         if ($needsValue) { $i++ }
     }
+    # These are operator-facing and belong to no session -- except `evict`, which names the session
+    # being removed.
+    if ($Verb -in @('show', 'audit', 'retention') -and -not $name) { $name = 'operator' }
     # `peers` is operator-facing and belongs to no session, so it is exempt from the name rule.
     if (-not $name -and $Verb -ne 'peers') {
         [Console]::Error.WriteLine("ERROR: aid: chat ${Verb}: --name is required (or set AID_CHAT_SESSION)")
@@ -4991,6 +5002,18 @@ function script:Invoke-AidChatPlane {
         'leave' { return script:Invoke-AidChatCall 'POST' '/channel/leave' ('{"name":"' + $n + '"}') }
         'list'  { return script:Invoke-AidChatCall 'GET' ("/channels?name=$n") }
         'roster' { return script:Invoke-AidChatCall 'GET' ("/roster?name=$n") }
+        'show'  { return script:Invoke-AidChatCall 'GET' '/status/detail' }
+        'audit' {
+            if ($limit) { return script:Invoke-AidChatCall 'GET' ("/audit?limit=$limit") }
+            return script:Invoke-AidChatCall 'GET' '/audit'
+        }
+        'evict' { return script:Invoke-AidChatCall 'POST' '/evict' ('{"name":"' + $n + '"}') }
+        'retention' {
+            if (-not $setting) { return script:Invoke-AidChatCall 'GET' '/retention' }
+            $parts = $setting -split '=', 2
+            if ($parts.Count -ne 2) { [Console]::Error.WriteLine('ERROR: aid: chat retention: --set expects key=value'); return 2 }
+            return script:Invoke-AidChatCall 'POST' '/retention' ('{"' + (script:ConvertTo-AidJsonString $parts[0]) + '":' + $parts[1] + '}')
+        }
         'peers' {
             # Operator-facing, and the GUARANTEED discovery path: naming an address depends on no
             # network feature. --discover is best-effort on top and finds nothing on a network with
@@ -5056,7 +5079,7 @@ function script:Invoke-AidChatCtl {
 
     $action = if ($CcArgs.Count -ge 1) { $CcArgs[0] } else { '' }
     # The message-plane verbs are handled first; `node ...` is the lifecycle surface.
-    if ($action -in @('register','heartbeat','open','join','leave','list','send','inbox','ack','reap','roster','connect','subscribe','peers')) {
+    if ($action -in @('register','heartbeat','open','join','leave','list','send','inbox','ack','reap','roster','connect','subscribe','peers','show','audit','evict','retention')) {
         $planeArgs = @()
         if ($CcArgs.Count -gt 1) { $planeArgs = $CcArgs[1..($CcArgs.Count - 1)] }
         script:Exit-Aid (script:Invoke-AidChatPlane -Verb $action -PlaneArgs $planeArgs)

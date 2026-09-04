@@ -314,12 +314,27 @@ esac
 verbs=$(grep -oE 'register\|heartbeat\|open\|join\|leave\|list\|send\|inbox\|ack\|reap\|roster\|connect' "${REPO_ROOT}/bin/aid" | head -1)
 assert_eq "$verbs" "register|heartbeat|open|join|leave|list|send|inbox|ack|reap|roster|connect" \
     "HP19 the plane-verb set gained exactly roster and connect over delivery-001's"
-for forbidden in evict configure retention set-limit stop-node wait; do
-    if grep -qE "^        ${forbidden}\)" "${REPO_ROOT}/bin/aid"; then
-        fail "HP20 an administrative verb '${forbidden}' entered the plane-verb set"
+# HP20 -- THE BOUNDARY IS THE SKILL, NOT THE CLI, and this assertion used to have that backwards.
+#
+# It listed `evict` and `retention` as sentinels for "administrative" and failed if either appeared in
+# the CLI at all -- which was a usable proxy while the agent-facing skill did not exist, and became
+# wrong the moment the operator legitimately needed those verbs. FR-7.3 is explicit that the boundary
+# is a skill that OMITS things and that it prevents nothing: any session whose host lets it run shell
+# commands can invoke the whole CLI.
+#
+# So the real property is two-sided, and both sides are checked: the operator verbs must EXIST on the
+# CLI, because an operator with no way to evict or set retention has no remedy at all; and they must be
+# ABSENT from the skill, which is what the agent is told about. The skill half is asserted in detail by
+# WK21-WK23 against all five rendered copies.
+for admin in evict retention show audit; do
+    if ! grep -qE "^        ${admin}\)" "${REPO_ROOT}/bin/aid"; then
+        fail "HP20 the operator verb '${admin}' is missing from the CLI, leaving an operator without it"
+    fi
+    if grep -qE "^aid chat ${admin}\b" "${REPO_ROOT}/canonical/skills/aid-chat/SKILL.md"; then
+        fail "HP20 the administrative verb '${admin}' is documented in the agent-facing skill"
     fi
 done
-pass "HP20 no administrative verb entered the plane-verb set: node lifecycle and reap stay operator-side"
+pass "HP20 the operator verbs exist on the CLI and none of them is documented in the agent-facing skill"
 
 # HP21 — this suite leaves no hub process behind. Enforced rather than assumed, because the
 # lifecycle suite was found leaking one process per run while its own comment claimed otherwise.

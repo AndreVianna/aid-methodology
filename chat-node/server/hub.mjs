@@ -333,6 +333,55 @@ export function makeRouter({ db, startedAt, onReady = null }) {
         });
     }
 
+    // Operator visibility: what is in the store, plus the derived numbers an operator acts on.
+    routes.set('GET /status/detail', (_req, res) => answer(res, core.operatorView(db)));
+    routes.set('GET /audit', (req, res, url) =>
+        answer(res, core.readAudit(db, { limit: Number(url.searchParams.get('limit')) || 100 })));
+
+    // Eviction: removing a session from its channel. The ONE remedy this design leaves a human, which
+    // is why it is here and not on the agent surface -- an agent manages its own membership only.
+    routes.set('POST /evict', async (req, res) => {
+        const b = await readJsonBody(req);
+        const target = core.getSession(db, b.name);
+        if (!target) return answer(res, { ok: false, reason: 'not_registered' });
+        if (!target.channel_id) return answer(res, { ok: false, reason: 'no_channel' });
+        const ch = db.prepare('SELECT name FROM channel WHERE id = ?').get(target.channel_id);
+        const r = core.leaveChannel(db, { name: b.name });
+        if (r.ok) {
+            core.audit(db, { event: 'evict', subject: b.name, channel: ch && ch.name,
+                             detail: r.channel_closed ? 'channel closed with them' : 'channel remains' });
+            if (ch) {
+                fed.replicateMembership(db, link, {
+                    channelName: ch.name, name: b.name,
+                    event: r.channel_closed ? 'close' : 'leave',
+                }).catch(() => {});
+            }
+        }
+        answer(res, r);
+    });
+
+    // Retention policy, settable at runtime. The values live in the settings registry and are read on
+    // every use, so setting one takes effect without a restart.
+    routes.set('GET /retention', (_req, res) => json(res, 200, { ok: true, limits: settings.limits() }));
+    routes.set('POST /retention', async (req, res) => {
+        const b = await readJsonBody(req);
+        const applied = {};
+        for (const [key, env] of Object.entries(settings.LIMIT_ENV)) {
+            if (b[key] === undefined) continue;
+            const n = Number(b[key]);
+            if (!Number.isFinite(n) || n < 0) {
+                return answer(res, { ok: false, reason: 'bad_request', detail: `${key} must be a non-negative number` });
+            }
+            process.env[env] = String(n);
+            applied[key] = n;
+        }
+        if (!Object.keys(applied).length) {
+            return answer(res, { ok: false, reason: 'bad_request', detail: `nothing to set; known keys: ${Object.keys(settings.LIMIT_ENV).join(', ')}` });
+        }
+        core.audit(db, { event: 'retention', detail: Object.entries(applied).map(([k, v]) => `${k}=${v}`).join(' ') });
+        answer(res, { ok: true, applied, limits: settings.limits() });
+    });
+
     routes.set('GET /protocol', (_req, res) => json(res, 200, {
         ok: true, protocol: PROTOCOL_VERSION, machine: thisMachine(), link_port: link.linkPort(),
     }));
@@ -514,12 +563,25 @@ export function makeRouter({ db, startedAt, onReady = null }) {
     // Message plane.
     routes.set('POST /messages', async (req, res) => {
         const b = await readJsonBody(req);
-        answer(res, core.send(db, {
+        const sent = core.send(db, {
             name: b.name, body: b.body, kind: b.kind,
             idempotencyKey: b.idempotency_key || null,
             mention: b.mention || null, whisperTo: b.whisper_to || null,
             correlationId: b.correlation_id || null, replyTo: b.reply_to || null,
-        }));
+        });
+        if (sent.ok && !sent.absorbed) {
+            const who = core.getSession(db, b.name);
+            const ch = who && who.channel_id
+                ? db.prepare('SELECT name FROM channel WHERE id = ?').get(who.channel_id) : null;
+            // A whisper is its own event, so the log shows one happened and between whom -- and the
+            // `detail` carries a length, not a body. There is nowhere in the schema to put a body.
+            core.audit(db, b.whisper_to
+                ? { event: 'whisper', actor: b.name, subject: b.whisper_to, channel: ch && ch.name,
+                    detail: `${String(b.body || '').length} chars` }
+                : { event: 'send', actor: b.name, channel: ch && ch.name,
+                    detail: `seq ${sent.arrival_seq}` });
+        }
+        answer(res, sent);
     });
     routes.set('GET /messages', (req, res, url) => {
         const cursor = url.searchParams.get('cursor');

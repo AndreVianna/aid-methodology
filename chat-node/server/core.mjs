@@ -835,3 +835,86 @@ export function trim(db, { now = nowMs() } = {}) {
     }
     return ok({ trimmed: removed, ttl_ms: ttlMs });
 }
+
+// ---------------------------------------------------------------------------
+// The audit log (task-035).
+//
+// THERE IS NO PLACE TO PUT A MESSAGE BODY, and that is the design rather than the discipline. The
+// requirement is that an operator can see a whisper happened and between whom, and cannot read it --
+// and a schema with a `body` column plus a rule saying "leave it null for whispers" is a rule one
+// edit away from being broken by somebody who does not know why it is there. A schema with nowhere to
+// put a body cannot be broken that way.
+//
+// `detail` is deliberately narrow: counts, reasons, positions. Never content.
+export function audit(db, { event, actor = null, subject = null, channel = null, detail = null }) {
+    // Never fatal. An audit write that failed and took the operation with it would make the log a
+    // liability rather than a record -- the thing being recorded already happened.
+    try {
+        db.prepare('INSERT INTO audit(at, event, actor, subject, channel, detail) VALUES (?,?,?,?,?,?)')
+          .run(nowMs(), event, actor, subject, channel, detail);
+    } catch { /* the log is a record, not a precondition */ }
+}
+
+export function readAudit(db, { limit = 100 } = {}) {
+    const rows = db.prepare('SELECT * FROM audit ORDER BY at DESC, id DESC LIMIT ?').all(limit);
+    return ok({ entries: rows, note: 'this log records what happened; message bodies are not stored here' });
+}
+
+// ---------------------------------------------------------------------------
+// Operator visibility (task-035).
+//
+// Reads what is in the store and computes what is derived, which is the same split as everywhere
+// else: idle time is the observable fact, and it is the input to the one remedy this design leaves a
+// human -- eviction. So it is reported as a number rather than a judgement.
+export function operatorView(db) {
+    const now = nowMs();
+    const { staleMs, reapMs } = limits();
+
+    const sessions = db.prepare('SELECT * FROM session ORDER BY name').all().map((r) => {
+        const ch = r.channel_id
+            ? db.prepare('SELECT name, next_seq FROM channel WHERE id = ?').get(r.channel_id)
+            : null;
+        return {
+            name: r.name,
+            tool: r.tool,
+            cwd: r.cwd,
+            machine: thisMachine(),
+            channel: ch ? ch.name : null,
+            // The two numbers an operator actually acts on.
+            unread: ch ? Math.max(0, (ch.next_seq - 1) - r.acked_seq) : 0,
+            idle_ms: now - r.last_heartbeat_at,
+            stale: (now - r.last_heartbeat_at) > staleMs,
+            reapable: (now - r.last_heartbeat_at) > reapMs,
+            delivered_seq: r.delivered_seq,
+            acked_seq: r.acked_seq,
+        };
+    });
+
+    const hasRemote = db.prepare(
+        "SELECT COUNT(*) AS n FROM sqlite_master WHERE type='table' AND name='channel_member'"
+    ).get().n > 0;
+
+    const channels = db.prepare('SELECT * FROM channel ORDER BY name').all().map((c) => {
+        const local = db.prepare('SELECT name, acked_seq FROM session WHERE channel_id = ? ORDER BY name')
+                        .all(c.id);
+        const remote = hasRemote
+            ? db.prepare('SELECT machine, name FROM channel_member WHERE channel_id = ? ORDER BY machine, name').all(c.id)
+            : [];
+        const head = c.next_seq - 1;
+        return {
+            name: c.name,
+            opened_at: c.opened_at,
+            head_seq: head,
+            stored_messages: db.prepare('SELECT COUNT(*) AS n FROM message WHERE channel_id = ?').get(c.id).n,
+            members: [
+                ...local.map((m) => ({ machine: thisMachine(), name: m.name, unread: Math.max(0, head - m.acked_seq) })),
+                // A remote member's unread depth is NOT reported, because this hub cannot know it --
+                // acknowledged positions are local state on the machine that holds the member. Omitted
+                // rather than guessed at, since a number an operator cannot trust is worse than none.
+                ...remote.map((m) => ({ machine: m.machine, name: m.name, unread: null })),
+            ],
+        };
+    });
+
+    return ok({ machine: thisMachine(), sessions, channels });
+}
