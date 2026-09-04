@@ -63,7 +63,7 @@ spike was.
 
 | # | Item | Status | Durable row |
 |---|---|---|---|
-| P3-1 | `FR-7.3`'s surface boundary is checked against the CLI's verb list, not against the rendered skill it is actually about. The skill now exists (delivery-003), so this check **can be strengthened in this work** and no longer needs deferring | Open | `W1-20` |
+| P3-1 | ~~`FR-7.3`'s surface boundary checked against the CLI rather than the rendered skill.~~ **DONE** before delivery-005, deliberately: the check now reads all five rendered copies -- verb list, forbidden list, and body against the canonical source rather than against each other. Strengthened first so the last delivery's skill changes are held to it. `W1-20` closed | Done | — |
 | P3-2 | `AC-25`'s abandoned-hook case is simulated by killing the adapter (`WK18b`) and by a silent server (`WK18d`). Neither is a host discarding output and walking away, though `WK18d` exercises the mechanism that bounds it | Accepted | — |
 | P3-3 | `CO24` builds its state with foreign keys briefly off, because the interleaving it guards cannot occur with them on and a single-threaded core. Honest, and worth re-reading if the core ever becomes concurrent | Accepted | — |
 
@@ -111,8 +111,8 @@ In order, because they are not equally valuable:
 
 1. **`P1-5`** — write the missing manual procedures. Cheap, and it converts an invisible gap into a
    closeable one. The verb that already bit us is in this set.
-2. **`P3-1`** — strengthen the surface-boundary check to read the rendered skill. The artifact it
-   needs now exists; deferring it further would be deferring by habit.
+2. ~~**`P3-1`**~~ — done ahead of delivery-005 rather than after it, so the last delivery's skill
+   changes are checked by it instead of being checked afterwards.
 3. **`P4-4`** — make the two subscriber twins agree on their output shape.
 4. **`P5-1`** — either fix `writeback-state.sh` or stop using the affected path. Three hits is
    enough evidence.

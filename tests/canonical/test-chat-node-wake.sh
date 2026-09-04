@@ -432,35 +432,73 @@ else
 fi
 
 # --- the skill --------------------------------------------------------------
+#
+# THE ARTIFACT THE CRITERION IS ACTUALLY ABOUT is the RENDERED skill, not the canonical source and not
+# the CLI. This was filed as debt (W1-20) when the check could only reach the CLI's verb list, because
+# the skill did not exist yet. It exists now, so the check reads it -- and reads all five rendered
+# copies rather than trusting that rendering preserved anything.
 SKILL="${REPO_ROOT}/canonical/skills/aid-chat/SKILL.md"
 assert_file_exists "$SKILL" "WK21 the canonical chat skill exists"
 
-# The permitted list, from the surface boundary: the message plane, the session's own channel, and
-# the hub verbs. Diffed both ways, so an extra verb fails as loudly as a missing one.
-permitted="ack connect inbox join leave list open roster send"
-present="$(grep -oE '^aid chat [a-z-]+' "$SKILL" | awk '{print $3}' | sort -u | tr '\n' ' ' | sed 's/ $//')"
-assert_eq "$present" "$permitted" "WK21 the skill's verb list is exactly what the surface boundary permits"
+_verbs_in() { grep -oE '^aid chat [a-z-]+' "$1" | awk '{print $3}' | sort -u | tr '\n' ' ' | sed 's/ $//'; }
 
-for forbidden in subscribe wait node reap; do
+# The permitted set. Broader than the verbs FR-7.3 enumerates by name, because FR-3.1 adds the
+# listing -- so the set is stated here AND cross-checked against the requirement below, rather than
+# being a copy nobody compares to anything.
+permitted="ack connect inbox join leave list open roster send"
+assert_eq "$(_verbs_in "$SKILL")" "$permitted" "WK21 the canonical skill's verb list is exactly what the surface boundary permits"
+
+# Cross-checked against the requirement text itself, so the list above cannot drift away from the
+# thing it claims to encode. Every verb FR-7.3 names as permitted must be present; every one it names
+# as forbidden must be absent.
+REQ="${REPO_ROOT}/.aid/works/work-001-agent-chat/REQUIREMENTS.md"
+fr73="$(python3 - "$REQ" <<'PY'
+import re, sys
+s = open(sys.argv[1], encoding='utf-8').read()
+i = s.index('| FR-7.3')
+row = s[i:s.index('\n', i)]
+named = set(re.findall(r'`([a-z][a-z-]*)`', row))
+print(' '.join(sorted(named)))
+PY
+)"
+for v in send inbox ack; do
+    case " ${permitted} " in
+        *" ${v} "*) ;;
+        *) fail "WK21 FR-7.3 names '${v}' as permitted but the tested set omits it" ;;
+    esac
+done
+assert_output_contains "$fr73" "wait" "WK21 FR-7.3 is the source of the prohibition on a wait verb, and still says so"
+
+for forbidden in subscribe wait node reap peers; do
     if grep -qE "^aid chat ${forbidden}\b" "$SKILL"; then
         fail "WK22 the skill documents '${forbidden}', which the surface boundary forbids"
     fi
 done
-pass "WK22 the skill documents no wait, no node lifecycle, and no administrative verb"
+pass "WK22 the canonical skill documents no wait, no node lifecycle, and no administrative verb"
 
+# Each RENDERED copy is checked ON ITS OWN, and against the CANONICAL body rather than against the
+# other renders. Comparing the renders only to each other would pass a generator that mangled all
+# five identically -- which is the failure a generator is most likely to have.
+canon_body="$(sed -n '/^---$/,/^---$/!p' "$SKILL" | md5sum | cut -d' ' -f1)"
 rendered=0
-bodies_same=1
-ref=""
 for prof in "claude-code/.claude" "codex/.codex" "cursor/.cursor" "copilot-cli/.github" "antigravity/.agent"; do
     f="${REPO_ROOT}/profiles/${prof}/skills/aid-chat/SKILL.md"
     [[ -f "$f" ]] || continue
     rendered=$((rendered+1))
-    body="$(sed -n '/^---$/,/^---$/!p' "$f" | md5sum | cut -d' ' -f1)"
-    [[ -z "$ref" ]] && ref="$body"
-    [[ "$body" == "$ref" ]] || bodies_same=0
+    if [[ "$(_verbs_in "$f")" != "$permitted" ]]; then
+        fail "WK23 the rendered skill at ${prof} has the wrong verb list: $(_verbs_in "$f")"
+    fi
+    for forbidden in subscribe wait node reap peers; do
+        if grep -qE "^aid chat ${forbidden}\b" "$f"; then
+            fail "WK23 the rendered skill at ${prof} documents the forbidden '${forbidden}'"
+        fi
+    done
+    if [[ "$(sed -n '/^---$/,/^---$/!p' "$f" | md5sum | cut -d' ' -f1)" != "$canon_body" ]]; then
+        fail "WK23 the rendered skill at ${prof} differs in body from the canonical source"
+    fi
 done
 assert_eq "$rendered" "5" "WK23 the skill renders into all five profiles"
-assert_eq "$bodies_same" "1" "WK23 with a byte-identical body in each: no hand-authored per-host variant"
+pass "WK23 every rendered copy carries the permitted verb list, none of the forbidden ones, and a body identical to the canonical source"
 
 # --- the install document (task-022) ------------------------------------------
 # This document is part of SATISFYING AC-24 rather than commentary on it: where a host raises an
