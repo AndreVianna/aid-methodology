@@ -30,7 +30,10 @@ export function normalizeMachine(addr) {
     // pasted a URL and a caller that typed a bare host must not become two peers.
     let host = raw.replace(/^[a-z]+:\/\//i, '').replace(/\/.*$/, '');
     if (!host) return null;
-    if (!/:\d+$/.test(host)) host = `${host}:8812`;
+    // Defaults to the LINK port, not the HTTP one. A peer address names where PEERS connect, and
+    // that is a different listener from the loopback HTTP the sessions use -- the two cannot share a
+    // port, and conflating them would have an operator naming an address nothing is listening on.
+    if (!/:\d+$/.test(host)) host = `${host}:${process.env.AID_CHAT_LINK_PORT || 8814}`;
     return host.toLowerCase();
 }
 

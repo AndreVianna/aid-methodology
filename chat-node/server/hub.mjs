@@ -16,8 +16,12 @@ import { dirname, join } from 'node:path';
 
 import { nowMs, openStore, stateHome } from './store.mjs';
 import * as core from './core.mjs';
+import { thisMachine } from './core.mjs';
 import { blockMsFor, createRegistry } from './waiters.mjs';
 import * as peers from './peers.mjs';
+import * as outbox from './outbox.mjs';
+import { createLinkManager } from './link.mjs';
+import { PROTOCOL_VERSION } from './protocol.mjs';
 
 export const DEFAULT_PORT = 8812;   // 8787 is the dashboard's; 8799 and 8811 are also taken
 export const LOOPBACK = '127.0.0.1';
@@ -126,10 +130,8 @@ export function makeRouter({ db, startedAt, onReady = null }) {
         else if (event.kind === 'connect') waiters.announceConnect(event);
     });
 
-    // Handed back to the caller AFTER both handles exist, so shutdown can detach the announcer and
-    // drain held waits. Calling this any earlier reads `detachAnnouncer` before its declaration --
-    // which is a temporal dead zone error that takes the whole node down at startup, and did.
-    if (onReady) onReady({ waiters, detachAnnouncer });
+    // NOTE: the caller is handed these at the END of this function, not here. See the comment on the
+    // `onReady` call at the bottom -- this position is where it used to be, and it was wrong twice.
 
     // The held wait. One connection, held open, resolved by whichever comes first: a message in
     // the caller's channel, a change in the caller's own situation, or the block expiring.
@@ -239,6 +241,46 @@ export function makeRouter({ db, startedAt, onReady = null }) {
     });
     routes.set('GET /sessions', (_req, res) => json(res, 200, { ok: true, sessions: core.listSessions(db) }));
 
+    // The link manager. Built here so the routes can reach it, and handed to the caller through
+    // `onReady` so shutdown can stop it. The handler table is what a PEER may ask of this hub, and it
+    // is deliberately small: the same table serves inbound and outbound links, so whichever hub
+    // dialled first does not determine which one can ask questions.
+    const link = createLinkManager({
+        db,
+        handlers: {
+            // A peer announcing who is on it. Answered from live state, never from a stored copy.
+            roster: async () => ({ ok: true, agents: core.roster(db).agents, machine: thisMachine() }),
+            onLinkUp: async (machine) => { await drainTo(machine); },
+        },
+    });
+
+    async function drainTo(machine) {
+        const p = peers.getPeer(db, machine);
+        if (!p) return { ok: false, reason: 'peer_unknown' };
+        return outbox.drain(db, {
+            peerId: p.id,
+            machine,
+            deliver: async ({ kind, payload }) => link.request(machine, kind, payload),
+        });
+    }
+
+    routes.set('GET /protocol', (_req, res) => json(res, 200, {
+        ok: true, protocol: PROTOCOL_VERSION, machine: thisMachine(), link_port: link.linkPort(),
+    }));
+    routes.set('GET /links', (_req, res) => json(res, 200, { ok: true, links: link.status() }));
+    routes.set('POST /peers/connect', async (req, res) => {
+        const b = await readJsonBody(req);
+        const m = peers.normalizeMachine(b.machine);
+        if (!m) return answer(res, { ok: false, reason: 'bad_request', detail: 'a machine address is required' });
+        peers.addPeer(db, { machine: m, source: 'configured' });
+        answer(res, await link.connect(m));
+    });
+    routes.set('GET /outbox', (_req, res) => json(res, 200, {
+        ok: true,
+        total: outbox.depth(db),
+        by_peer: peers.listPeers(db).map((p) => ({ machine: p.machine, queued: p.queued })),
+    }));
+
     // Peers. Operator-facing: an operator names the addresses, which is the guaranteed discovery
     // path and depends on no network feature at all.
     routes.set('GET /peers', (_req, res) => json(res, 200, { ok: true, peers: peers.listPeers(db) }));
@@ -314,6 +356,16 @@ export function makeRouter({ db, startedAt, onReady = null }) {
         answer(res, core.ack(db, { name: b.name, cursor: b.cursor }));
     });
 
+    // EVERY handle the caller needs, passed at the point where all of them exist.
+    //
+    // This call has now been in the wrong place TWICE, for the same reason each time: it sat near the
+    // top of the function and passed a `const` declared further down, which is a temporal dead zone
+    // error that takes the whole node down at startup with a message nowhere near the cause. The
+    // first time it was the announcer handle; the second time, with the identical fix applied, it was
+    // the link. Moving it here makes the class of mistake impossible rather than fixing one instance
+    // of it: nothing is declared after this point, so nothing can be referenced too early.
+    if (onReady) onReady({ waiters, detachAnnouncer, link });
+
     return async function route(req, res) {
         const url = new URL(req.url, `http://${LOOPBACK}`);
         const key = `${req.method} ${url.pathname}`;
@@ -340,9 +392,10 @@ export async function serve({ port = DEFAULT_PORT, storeFile = null } = {}) {
     const startedAt = nowMs();
     let registry = null;
     let detach = null;
+    let linkMgr = null;
     const server = createServer(makeRouter({
         db, startedAt,
-        onReady: ({ waiters, detachAnnouncer }) => { registry = waiters; detach = detachAnnouncer; },
+        onReady: (h) => { registry = h.waiters; detach = h.detachAnnouncer; linkMgr = h.link; },
     }));
 
     await new Promise((resolve, reject) => {
@@ -355,10 +408,31 @@ export async function serve({ port = DEFAULT_PORT, storeFile = null } = {}) {
     const actualPort = server.address().port;
     writeRuntimeFiles(process.pid, actualPort);
 
+    // The LAN-facing listener. Started only when federation is asked for, so a single-machine install
+    // binds nothing beyond loopback -- which keeps delivery-001's trust boundary intact for anybody
+    // who never sets up a peer.
+    if (linkMgr && process.env.AID_CHAT_LINK_PORT !== 'off') {
+        try {
+            const info = await linkMgr.listen();
+            // Dial every peer already known, so a restart re-establishes its links without an
+            // operator doing anything. A failure here is not fatal: the peer is marked unreachable
+            // and the reconnect schedule takes over.
+            for (const p of peers.listPeers(db)) {
+                linkMgr.connect(p.machine).catch(() => {});
+            }
+            if (process.env.AID_CHAT_VERBOSE) {
+                process.stderr.write(`chat-node: link listening on ${info.port}\n`);
+            }
+        } catch (err) {
+            process.stderr.write(`chat-node: link listener unavailable: ${err && err.message}\n`);
+        }
+    }
+
     const shutdown = () => {
         // Settle held waits BEFORE closing the server, so each client gets an answer rather than
         // a dropped connection it has to time out on.
         // Detach first, so nothing can be announced to a registry that is about to be drained.
+        try { if (linkMgr) linkMgr.stop(); } catch { /* already stopped */ }
         try { if (detach) detach(); } catch { /* already detached */ }
         try { if (registry) registry.drain(); } catch { /* nothing held */ }
         try { server.close(); } catch { /* already closing */ }

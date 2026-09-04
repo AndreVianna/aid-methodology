@@ -25,8 +25,11 @@ adapters/common.mjs
 adapters/cursor.mjs
 server/core.mjs
 server/hub.mjs
+server/link.mjs
+server/outbox.mjs
 server/node.mjs
 server/peers.mjs
+server/protocol.mjs
 server/settings.mjs
 server/store.mjs
 server/waiters.mjs
