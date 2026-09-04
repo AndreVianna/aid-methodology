@@ -21,3 +21,4 @@
 # and one component learning that lesson does not protect the next one.
 
 server/node.mjs
+server/store.mjs
