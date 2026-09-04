@@ -5,6 +5,7 @@
 # asserted directly against a real database rather than inferred from the schema text:
 #
 #   ST01  the store opens and creates its schema from nothing
+#   ST12  the federation tables are created as well
 #   ST02  AUTOINCREMENT on every surrogate key: a deleted id is never reused
 #   ST03  sequences start at 1 and positions at 0 — the pairing that keeps the first
 #         message of a channel reachable, and makes a trim before any ack delete nothing
@@ -58,7 +59,27 @@ const t = db.prepare("SELECT name FROM sqlite_master WHERE type='table' ORDER BY
 process.stdout.write(t.join(','));
 JS
 )
-assert_eq "$out" "channel,message,session" "ST01 store opens and creates all three tables"
+# Asserted as a SUPERSET check rather than an exact list. An exact list makes every later addition
+# to the schema look like a regression here -- federation legitimately added three tables, and the
+# thing this case is about is that opening from nothing produces a usable store, not that the schema
+# has stopped growing. The tables federation adds have their own assertions in ST12.
+for _t in channel message session; do
+    case ",${out}," in
+        *",${_t},"*) ;;
+        *) fail "ST01 opening from nothing did not create the '${_t}' table (got: ${out})" ;;
+    esac
+done
+pass "ST01 opening from nothing creates the core tables (schema now: ${out})"
+
+# ST12 -- the federation tables, so their presence is asserted somewhere rather than merely
+# tolerated by a relaxed ST01.
+for _t in peer outbox channel_member; do
+    case ",${out}," in
+        *",${_t},"*) ;;
+        *) fail "ST12 the federation table '${_t}' is missing (got: ${out})" ;;
+    esac
+done
+pass "ST12 the federation tables are created too: peer, outbox, channel_member"
 
 # ST02 -- a deleted id is never reused, on every table with a surrogate key.
 out=$(_node <<'JS' 2>/dev/null
