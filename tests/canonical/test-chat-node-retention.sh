@@ -337,6 +337,39 @@ console.log([names(plain), names(remote), names(localTo)].join('|'));
 assert_eq "$whisper_targets" "hubA+hubB|hubA|none" \
     "RT27 a plain message goes to every hub with a member; a whisper goes ONLY to its target's hub; a whisper to a local member leaves this machine at all"
 
+# RT28 -- A WHISPER WHOSE TARGET VANISHED IS RECORDED. The sender was already told `ok`, correctly:
+# at the moment it asked, the target was a member. Discovering otherwise milliseconds later leaves no
+# caller to return to, so the audit log is the only place an operator asking "why did that whisper
+# never arrive" can look -- and a path that exists only in code nobody exercises is a path that rots.
+#
+# The condition is built directly: a remote member is recorded, a whisper is aimed at it, and its
+# membership row is removed before replication resolves the target.
+undeliverable="$(node --input-type=module -e "
+import { openStore } from '${REPO_ROOT}/chat-node/server/store.mjs';
+import * as C from '${REPO_ROOT}/chat-node/server/core.mjs';
+import * as fed from '${REPO_ROOT}/chat-node/server/federation.mjs';
+const db = await openStore({ path: ':memory:' });
+// The sink, wired as the hub wires it.
+fed.setUndeliverableSink(({ channelName, target, sender, reason }) =>
+    C.audit(db, { event: 'whisper_undeliverable', actor: sender, subject: target, channel: channelName, detail: reason }));
+for (const n of ['s1', 's2']) C.register(db, { name: n, tool: 't', cwd: '/' });
+C.openChannel(db, { name: 's1', channelName: 'gone' });
+C.joinChannel(db, { name: 's2', channelName: 'gone' });
+const cid = db.prepare('SELECT id FROM channel WHERE name=?').get('gone').id;
+const msg = {
+  sender_machine: 'local', sender_name: 's1', sender_seq: 1, idempotency_key: 'k1',
+  kind: 'message', body: 'FOR-A-GHOST', correlation_id: null, reply_to: null,
+  mention: null, whisper_to: 'departed', sent_at: 1,
+};
+// No membership row for 'departed': exactly the state left when a target leaves in the interval.
+await fed.replicateMessage(db, { isUp: () => false }, { channelId: cid, channelName: 'gone', message: msg });
+const rows = db.prepare(\"SELECT event, actor, subject, channel, detail FROM audit WHERE event='whisper_undeliverable'\").all();
+const anyBody = db.prepare(\"SELECT COUNT(*) AS n FROM audit WHERE detail LIKE '%FOR-A-GHOST%'\").get().n;
+console.log([rows.length, rows[0] ? rows[0].subject : 'none', anyBody].join(','));
+" 2>/dev/null)"
+assert_eq "$undeliverable" "1,departed,0" \
+    "RT28 an undeliverable whisper is recorded in the audit log, names its target, and carries no body"
+
 # Tear down FIRST, then measure, since the EXIT trap runs after this line.
 _cleanup
 trap - EXIT

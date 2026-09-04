@@ -96,7 +96,10 @@ _kill_own() {
         fi
     done
 }
-_cleanup() { _kill_own A; _kill_own B; sleep 0.3; rm -rf "${_TMPD}"; }
+# Every hub this suite may start, including the third one FD25 adds. Listing them here rather than
+# where each is started is what makes an abnormal exit clean up as thoroughly as a normal one -- FD25
+# killed hub C on its own happy path and nowhere else, so a failure before that line leaked it.
+_cleanup() { _kill_own A; _kill_own B; _kill_own C; sleep 0.3; rm -rf "${_TMPD}"; }
 trap _cleanup EXIT
 
 _start() {  # _start <A|B> <machine-id> <link-port>

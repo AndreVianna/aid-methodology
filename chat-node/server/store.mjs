@@ -173,7 +173,7 @@ CREATE INDEX IF NOT EXISTS outbox_drain ON outbox (peer_id, id);
 CREATE TABLE IF NOT EXISTS audit (
   id          INTEGER PRIMARY KEY AUTOINCREMENT,
   at          INTEGER NOT NULL,
-  event       TEXT    NOT NULL,   -- 'register' | 'open' | 'join' | 'leave' | 'send' | 'whisper' | 'connect' | 'reap' | 'evict' | 'trim'
+  event       TEXT    NOT NULL,   -- 'register' | 'open' | 'join' | 'leave' | 'send' | 'whisper' | 'whisper_undeliverable' | 'connect' | 'reap' | 'evict' | 'retention'
   actor       TEXT,               -- the session that did it, where there was one
   subject     TEXT,               -- who or what it was done to
   channel     TEXT,
