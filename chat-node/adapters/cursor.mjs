@@ -26,7 +26,7 @@
 //   node <this file> --name <session> --host-timeout <seconds>
 
 import {
-    armOnce, hostTimeoutFromArgs, readHostPayload, renderWakeText, shellSafePath,
+    adapterGuardMs, armOnce, hostTimeoutFromArgs, readHostPayload, renderWakeText, shellSafePath,
 } from './common.mjs';
 
 // This host documents its own cap, defaulting to 5. The adapter reads the count rather than keeping
@@ -88,7 +88,7 @@ async function main() {
     // --- The wait -----------------------------------------------------------
     // Self-bounded as well as node-bounded, so a node that stops answering mid-wait cannot make
     // this process outlive the host's willingness to listen.
-    const guardMs = hostTimeoutSec ? Math.max(1000, (hostTimeoutSec * 1000) - 2000) : 12_000;
+    const guardMs = adapterGuardMs(hostTimeoutSec);
     const outcome = await armOnce({ name, hostTimeoutSec, timeoutGuardMs: guardMs });
 
     if (!outcome.ok || outcome.kind === 'timeout' || outcome.kind === 'shutdown') {

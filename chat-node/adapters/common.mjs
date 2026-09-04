@@ -10,6 +10,8 @@
 // documented shape) is the one that cannot be shared, by definition.
 
 import { readFileSync } from 'node:fs';
+import { UNKNOWN_TIMEOUT_BLOCK_MS } from '../server/waiters.mjs';
+import { limits } from '../server/settings.mjs';
 import { request } from 'node:http';
 
 // --- Rule 4, the half that IS shared: tolerate a byte-order mark ------------
@@ -140,6 +142,28 @@ export async function clearOwnCount(sessionKey) {
 // and bounds its own block by what it was told. Where it is told nothing it must not inherit the
 // platform default -- measurement bounded one host's default at under 60 s and no tighter, and
 // whether that is also under this product's long poll was never established.
+// The adapter's OWN guard, derived from the configurable margin rather than a hardcoded number.
+//
+// Three bounds sit inside the host's timeout, and they have to nest: the node blocks for
+// `host_timeout - margin`, the adapter guards at `host_timeout - margin/2`, and the host stops
+// listening at `host_timeout`. So the adapter's guard fires after the node would have returned and
+// before the host gives up, which is the only ordering that makes a late answer still an answer.
+//
+// WHAT THIS CANNOT PROTECT AGAINST, stated because an operator on a busy machine will meet it: these
+// are event-loop timers, and a machine under enough CPU contention will run them late. The adapter
+// itself does no long synchronous work -- it reads stdin, makes at most two requests, writes stdout --
+// so it cannot starve its own loop; only the machine can. No in-process mechanism survives an OS that
+// will not schedule the process, so the remedy is the margin, and the margin is configurable for
+// exactly this reason: on a loaded machine, widen it.
+export function adapterGuardMs(hostTimeoutSec) {
+    const { adapterMarginMs, longPollMs } = limits();
+    if (!hostTimeoutSec) {
+        // Told nothing: guard just past the fallback block, so an unanswered wait still ends.
+        return Math.min(longPollMs, UNKNOWN_TIMEOUT_BLOCK_MS) + Math.floor(adapterMarginMs / 2);
+    }
+    return Math.max(1000, (hostTimeoutSec * 1000) - Math.floor(adapterMarginMs / 2));
+}
+
 export function hostTimeoutFromArgs(argv) {
     const i = argv.indexOf('--host-timeout');
     if (i === -1 || i + 1 >= argv.length) return null;

@@ -35,11 +35,12 @@ The risk is not theoretical any more, and it compounds with every delivery.
 | P1-2 | `MP-01` — the lifecycle and message-plane verbs under PowerShell | Needs-hardware |
 | P1-3 | `MP-02` — a fresh install via `install.ps1` places `chat-node/` correctly | Needs-hardware |
 | P1-4 | `MP-03` — `roster` and `connect` under PowerShell | Needs-hardware |
-| P1-5 | ~~**Nine verbs had no manual procedure at all**~~ — **DONE**: `MP-11` covers them in one sitting and `HP25` guards against a new verb being added unrecorded. Originally: **`subscribe`, `heartbeat`, `leave`, `list` and `reap` have no manual procedure at all** — five verbs whose PowerShell twin is neither executed nor recorded as needing execution. `subscribe` is the one that already produced a HIGH finding | Open |
+| P1-5 | ~~**Nine verbs had no manual procedure at all**~~ — **DONE**: `MP-11` covers them in one sitting and `HP25` guards against a new verb being added unrecorded. Originally: **`subscribe`, `heartbeat`, `leave`, `list` and `reap` have no manual procedure at all** — five verbs whose PowerShell twin is neither executed nor recorded as needing execution. `subscribe` is the one that already produced a HIGH finding | Done |
 
-`P1-5` is the actionable one and should be done in this work, not deferred to hardware: the fix is
-to extend the manual procedures so the uncovered verbs are at least *enumerable*. A gap that is
-recorded can be closed by whoever has a Windows machine; a gap nobody wrote down cannot.
+`P1-5` was the actionable one and is done: `MP-11` covers all nine verbs in one sitting, and `HP25`
+fails when a verb is added without being recorded. A gap that is recorded can be closed by whoever has
+a Windows machine; a gap nobody wrote down cannot, which is why this was worth doing here rather than
+waiting for the hardware.
 
 ---
 
@@ -93,18 +94,18 @@ is on disk at `profiles/*/skills/aid-chat/SKILL.md`.
 
 | # | Item | Status |
 |---|---|---|
-| P4b-1 | `WK18d` (the adapter's self-bounding guard, driven against a server that accepts and never answers) failed once during a heavily loaded sequential batch: event-loop starvation pushed the run past the harness bound. It passed three consecutive individual runs and passes under `run-all.sh`. The harness bound is now 90s so the failure mode is unambiguous -- a late guard fails the 25s assertion rather than being killed and reported as exit 124, which reads the same as "the guard never fired". The underlying question is whether an 18s guard is reliable on a starved event loop, and the honest answer is that it is not, which matters for a real adapter on a busy machine | Open |
+| P4b-1 | ~~Whether the adapter's guard is reliable on a starved event loop.~~ **DECIDED, not engineered around.** It is not, and nothing in-process can make it so: these are event-loop timers, and no mechanism inside a process survives an OS that will not schedule it. The adapter does no slow work of its own, so only machine contention can delay it. The remedy is therefore the MARGIN, and the margin is now what the guard derives from rather than a hardcoded 2 seconds — so widening it widens every bound together. `WK18e` asserts the three bounds nest in one order at every configured margin, falsified by inverting the guard, and `docs/chat-wake-install.md` tells an operator on a busy machine to widen it and what it costs | Done |
 
-`P4b-1` deserves a decision in the strengthening round rather than a looser threshold: if the guard
-can be starved past the host's timeout, the abandoned-adapter case it prevents is reachable in
-production, and the answer may be to bound it with something the event loop cannot delay.
+`P4b-1` got that decision. The answer was not a tighter mechanism but an honest one: name the limit,
+derive the guard from the configurable margin so an operator can buy headroom, assert that widening it
+cannot break the ordering, and write down in the install document when to do it.
 
 ## P5 — Tooling that slowed the work
 
 | # | Item | Status | Durable row |
 |---|---|---|---|
 | P5-1 | ~~`writeback-state.sh` corrupts a multi-line folded scalar.~~ **FIXED** in the correction round: the writer now consumes a block scalar's indented body with its header. Reproduced first, then fixed, then falsified — five of six regression cases fail against the unfixed writer, and the ordinary-scalar control does not. Applied to the canonical source, all seven renders, and narrowly to the dashboard fork so its `Deploy` value survives. `W1-18` closed | Done | — |
-| P5-2 | `test-aid-migrate-trigger.sh` ISOL-01 fails on any uncommitted edit under `packages/npm/` | Open | `W1-19` |
+| P5-2 | ~~ISOL-01 fails on any uncommitted edit under `packages/npm/`.~~ **FIXED**: it snapshots that directory before the runs it guards and compares after against before, so pre-existing work is ignored and only NEW scratch fails. Verified both ways — with a work-in-progress edit the old check fails and the new one passes. `W1-19` closed | Done | — |
 | P5-3 | 15 canonical suites fail and did so before this work began — confirmed by running them in a clean worktree at the pre-work commit. Out of scope for this work; listed so the number is not mistaken for a regression | Accepted | — |
 
 ---

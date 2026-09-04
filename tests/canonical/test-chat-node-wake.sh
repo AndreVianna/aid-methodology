@@ -341,6 +341,35 @@ assert_eq "$a_after" "$a_before" "WK18b with no adapter process surviving"
 hint_field="$(curl -sS "${HUB}/waiters" 2>/dev/null | python3 -c "import json,sys; print('waiters_hint' in json.load(sys.stdin))")"
 assert_eq "$hint_field" "True" "WK18c the waiter count is reported as an observable number, not inferred from silence"
 
+# 18e -- THE THREE BOUNDS MUST NEST, in one order and no other: the node returns first, then the
+# adapter's guard fires, then the host stops listening. Any other order breaks something specific -- a
+# guard before the node's block turns every long wait into a false timeout, and a guard after the host's
+# timeout IS the abandoned process the guard exists to prevent.
+#
+# Checked across the range an operator might configure AND with the margin widened, because widening it
+# is the documented remedy for a loaded machine, and a remedy that broke the ordering would be worse
+# than the problem it treats.
+cat > "${_TMPD}/nesting.mjs" <<MJS
+import { adapterGuardMs } from '${REPO_ROOT}/chat-node/adapters/common.mjs';
+import { blockMsFor } from '${REPO_ROOT}/chat-node/server/waiters.mjs';
+const bad = [];
+for (const margin of [5000, 20000]) {
+  process.env.AID_CHAT_ADAPTER_MARGIN_MS = String(margin);
+  for (const t of [10, 20, 30, 60, 120]) {
+    const block = blockMsFor({ hostTimeoutSec: t }).blockMs;
+    const guard = adapterGuardMs(t);
+    const host = t * 1000;
+    if (!(block <= guard && guard < host)) {
+      bad.push('margin=' + margin + ' t=' + t + ' block=' + block + ' guard=' + guard + ' host=' + host);
+    }
+  }
+}
+console.log(bad.length ? bad.join(' | ') : 'nested');
+MJS
+nesting="$(node "${_TMPD}/nesting.mjs" 2>/dev/null)"
+assert_eq "$nesting" "nested" \
+    "WK18e the node's block, the adapter's guard and the host's timeout nest in that order, at every configured margin"
+
 # 18d -- THE ADAPTER'S OWN GUARD, which is the mechanism that actually bounds an abandoned adapter in
 # production and which 18b does not reach. 18b kills the process, so the OS closes the socket; a host
 # that abandons a hook does NOT kill it -- it discards the output and walks away, leaving the adapter

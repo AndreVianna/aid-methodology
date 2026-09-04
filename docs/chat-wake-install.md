@@ -76,6 +76,33 @@ curl -s http://127.0.0.1:$(cat ~/.aid/chat/hub.port)/waiters
 
 If `waiters_hint` climbs and never falls while nothing is armed, your two numbers disagree.
 
+### On a busy machine, widen the margin
+
+Three bounds sit inside your `timeout`, and they nest: the node returns first, the adapter's own guard
+fires next, and your host stops listening last.
+
+```
+node blocks   = min(30s, timeout - margin)     <- returns first
+adapter guard = timeout - margin/2             <- fires if the node went quiet
+host timeout  = timeout                        <- gives up last
+```
+
+`margin` defaults to 5 seconds. **These are timers on an event loop, and a machine under heavy CPU
+contention will run them late.** The adapter itself does nothing slow — it reads its input, makes at
+most two local requests, and writes its answer — so it cannot delay itself; only the machine can. And
+no mechanism inside a process survives an operating system that will not schedule it.
+
+So the remedy is the margin, which is why it is configurable:
+
+```bash
+aid chat retention --set adapterMarginMs=20000    # 20s of headroom instead of 5s
+```
+
+Widen it if you run many builds, tests, or containers on the same machine as your sessions. The cost is
+a shorter block and therefore slightly less prompt wakes; the benefit is that a loaded moment does not
+turn into an abandoned process. Both orderings above hold at any margin — that is asserted by a test,
+so widening it cannot break the nesting.
+
 ## Never set the hook to fail closed
 
 Whatever your host calls it — `fail_closed`, `blocking`, `required`, "abort on hook failure" —

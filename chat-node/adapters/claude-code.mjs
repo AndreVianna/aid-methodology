@@ -19,7 +19,7 @@
 //   node <this file> --name <session> --host-timeout <seconds>
 
 import {
-    armOnce, clearOwnCount, hostTimeoutFromArgs,
+    adapterGuardMs, armOnce, clearOwnCount, hostTimeoutFromArgs,
     readHostPayload, readOwnCount, renderWakeText, shellSafePath, writeOwnCount,
 } from './common.mjs';
 
@@ -85,7 +85,7 @@ async function main() {
     // Self-bounded as well as node-bounded. The node bounding its own block is not enough: if it
     // stopped answering mid-wait, this process would sit past the host's timeout and become exactly
     // the abandoned process that leaks a waiter with nothing reporting it.
-    const guardMs = hostTimeoutSec ? Math.max(1000, (hostTimeoutSec * 1000) - 2000) : 12_000;
+    const guardMs = adapterGuardMs(hostTimeoutSec);
     const outcome = await armOnce({ name, hostTimeoutSec, timeoutGuardMs: guardMs });
 
     if (!outcome.ok || outcome.kind === 'timeout' || outcome.kind === 'shutdown') {
