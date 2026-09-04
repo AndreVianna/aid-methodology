@@ -5339,6 +5339,15 @@ _aid_chat_respond() {
     esac
 }
 
+# Every chat call is BOUNDED. Without this a stale port file -- or any address that accepts nothing --
+# makes `aid chat ...` hang with no output and no way to tell it apart from a slow node. Found by
+# pointing the base URL at an unreachable host to falsify another test: the CLI did not fail, it
+# stopped, and so did everything waiting on it.
+#
+# These bounds are for the SHORT verbs. The held wait has its own, necessarily longer, below.
+_AID_CHAT_CONNECT_TIMEOUT=5
+_AID_CHAT_MAX_TIME=30
+
 _aid_chat_call() {
     local method="$1" path="$2" data="${3:-}" base out code
     if ! base="$(_aid_chat_base_url)"; then
@@ -5346,10 +5355,11 @@ _aid_chat_call() {
         return 1
     fi
     command -v curl >/dev/null 2>&1 || { echo "ERROR: aid: chat: curl not found on PATH" >&2; return 1; }
+    local tmo=(--connect-timeout "$_AID_CHAT_CONNECT_TIMEOUT" --max-time "$_AID_CHAT_MAX_TIME")
     if [[ "$method" == "GET" ]]; then
-        out="$(curl -sS -w '\n%{http_code}' "${base}${path}" 2>/dev/null)"
+        out="$(curl -sS "${tmo[@]}" -w '\n%{http_code}' "${base}${path}" 2>/dev/null)"
     else
-        out="$(curl -sS -w '\n%{http_code}' -X "$method" "${base}${path}" --data-binary "${data}" 2>/dev/null)"
+        out="$(curl -sS "${tmo[@]}" -w '\n%{http_code}' -X "$method" "${base}${path}" --data-binary "${data}" 2>/dev/null)"
     fi
     code="$(printf '%s' "$out" | tail -n1)"
     _aid_chat_respond "$code" "$(printf '%s' "$out" | sed '$d')"
@@ -5382,7 +5392,7 @@ _aid_chat_wait_once() {
     # session was busy is already in the store and is not going to "arrive" again. Going straight to
     # the wait would block, time out, and leave it unread until some later message happened to land
     # while this was listening -- which is the whole busy path silently missing.
-    pending="$(curl -sS "${base}/messages?name=${n}" 2>/dev/null)"
+    pending="$(curl -sS --connect-timeout "$_AID_CHAT_CONNECT_TIMEOUT" --max-time "$_AID_CHAT_MAX_TIME" "${base}/messages?name=${n}" 2>/dev/null)"
     depth="$(printf '%s' "$pending" | python3 -c 'import json,sys
 try: print(len(json.load(sys.stdin).get("messages", [])))
 except Exception: print(0)')"
@@ -5390,7 +5400,11 @@ except Exception: print(0)')"
         printf '%s\n' "$(_aid_chat_merge_wake '{"ok":true,"kind":"message","from_backlog":true}' "$pending")"
         return 0
     fi
-    out="$(curl -sS -w '\n%{http_code}' "${base}${q}" 2>/dev/null)"
+    # The held wait is bounded too, just generously: it is SUPPOSED to block, so the bound has to
+    # exceed the node's own block rather than compete with it. The node blocks at most its long-poll
+    # default, and this is that with room to spare -- enough that a working wait is never cut short,
+    # and little enough that an unreachable node still ends.
+    out="$(curl -sS --connect-timeout "$_AID_CHAT_CONNECT_TIMEOUT" --max-time 120 -w '\n%{http_code}' "${base}${q}" 2>/dev/null)"
     code="$(printf '%s' "$out" | tail -n1)"
     body="$(printf '%s' "$out" | sed '$d')"
     if [[ "$code" != "200" ]]; then
@@ -5402,7 +5416,7 @@ except Exception: print(0)')"
     if [[ "$kind" == "message" ]]; then
         # One JSON object carrying both the wake and its content, so an adapter needs one call.
         local inbox
-        inbox="$(curl -sS "${base}/messages?name=${n}" 2>/dev/null)"
+        inbox="$(curl -sS --connect-timeout "$_AID_CHAT_CONNECT_TIMEOUT" --max-time "$_AID_CHAT_MAX_TIME" "${base}/messages?name=${n}" 2>/dev/null)"
         printf '%s\n' "$(_aid_chat_merge_wake "$body" "$inbox")"
     else
         printf '%s\n' "$body"

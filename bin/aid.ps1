@@ -4832,7 +4832,10 @@ function script:Invoke-AidChatCall {
         return 1
     }
     try {
-        $args = @{ Uri = "$base$Path"; Method = $Method; UseBasicParsing = $true; ErrorAction = 'Stop' }
+        # Bounded, for the same reason the Bash twin is: an address that accepts nothing must make the
+        # command FAIL rather than stop. Invoke-WebRequest has no default timeout.
+        $args = @{ Uri = "$base$Path"; Method = $Method; UseBasicParsing = $true; ErrorAction = 'Stop'
+                   TimeoutSec = 30 }
         if ($Body) { $args.Body = $Body; $args.ContentType = 'application/json' }
         $resp = Invoke-WebRequest @args
         Write-Output $resp.Content
@@ -4892,7 +4895,7 @@ function script:Invoke-AidChatWaitOnce {
     # the wait would block, time out, and leave it unread until some later message happened to land
     # while this was listening -- which is the whole busy path silently missing.
     try {
-        $pending = Invoke-WebRequest -Uri "$base/messages?name=$Name" -UseBasicParsing -ErrorAction Stop
+        $pending = Invoke-WebRequest -Uri "$base/messages?name=$Name" -UseBasicParsing -ErrorAction Stop -TimeoutSec 30
         $pj = $pending.Content | ConvertFrom-Json
         if ($pj.messages -and $pj.messages.Count -gt 0) {
             $merged = [ordered]@{
@@ -4909,10 +4912,12 @@ function script:Invoke-AidChatWaitOnce {
     $q = "/wait?name=$Name"
     if ($HostTimeout) { $q = "$q&host_timeout=$HostTimeout" }
     try {
-        $resp = Invoke-WebRequest -Uri "$base$q" -UseBasicParsing -ErrorAction Stop
+        # Generously bounded: the held wait is SUPPOSED to block, so this must exceed the node's own
+        # block rather than compete with it.
+        $resp = Invoke-WebRequest -Uri "$base$q" -UseBasicParsing -ErrorAction Stop -TimeoutSec 120
         $wake = $resp.Content | ConvertFrom-Json
         if ($wake.kind -eq 'message') {
-            $inbox = (Invoke-WebRequest -Uri "$base/messages?name=$Name" -UseBasicParsing -ErrorAction Stop).Content | ConvertFrom-Json
+            $inbox = (Invoke-WebRequest -Uri "$base/messages?name=$Name" -UseBasicParsing -ErrorAction Stop -TimeoutSec 30).Content | ConvertFrom-Json
             $merged = [ordered]@{
                 ok = $wake.ok; kind = $wake.kind; arrival_seq = $wake.arrival_seq
                 block_ms = $wake.block_ms; basis = $wake.basis
