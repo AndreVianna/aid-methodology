@@ -250,6 +250,14 @@ export function makeRouter({ db, startedAt, onReady = null }) {
     // Federation borrows the core's roster rather than importing the whole core surface, which also
     // keeps the local half of a federated answer visibly the same shape as the remote half.
     fed.setCoreRoster(core.roster);
+    // A whisper whose target left between the send and its replication has no caller left to tell, so
+    // it goes in the audit log -- where an operator asking why a whisper never arrived will look.
+    fed.setUndeliverableSink(({ channelName, target, sender, reason }) => {
+        core.audit(db, {
+            event: 'whisper_undeliverable', actor: sender, subject: target,
+            channel: channelName, detail: reason,
+        });
+    });
 
     const link = createLinkManager({
         db,

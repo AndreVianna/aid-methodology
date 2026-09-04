@@ -446,6 +446,69 @@ MJS
 deadletter="$(node "${_TMPD}/deadletter.mjs" 2>/dev/null)"
 assert_eq "$deadletter" "0,2,2"     "FD23 persistently refused items are given up on so the queue drains; an unreachable peer stops the drain and loses nothing"
 
+# FD25 -- THE WHISPER STORAGE BOUNDARY, end to end, against two real hubs. RT27 in the retention suite
+# asserts which hubs are CHOSEN, which is the causal root of the defect; this asserts the consequence
+# where it actually matters -- that the body is not in the other hub's database. Both are worth having:
+# a future regression in `applyMessage` that stored every replicated payload regardless would pass the
+# selection test and fail this one.
+#
+# Three members: the sender and a bystander on A, the target on B.
+curl -sS -X POST "${BA}/session" -d '{"name":"wsender","tool":"t","cwd":"/w"}' >/dev/null 2>&1
+curl -sS -X POST "${BA}/session" -d '{"name":"wbystander","tool":"t","cwd":"/w"}' >/dev/null 2>&1
+curl -sS -X POST "${BB}/session" -d '{"name":"wtarget","tool":"t","cwd":"/w"}' >/dev/null 2>&1
+curl -sS -X POST "${BA}/channel" -d '{"name":"wsender","channel":"whisperch"}' >/dev/null 2>&1
+curl -sS -X POST "${BA}/channel/join" -d '{"name":"wbystander","channel":"whisperch"}' >/dev/null 2>&1
+sleep 0.4
+curl -sS -X POST "${BB}/channel/join" -d '{"name":"wtarget","channel":"whisperch"}' >/dev/null 2>&1
+sleep 0.6
+
+# A whisper from A to the target on B, and a plain message for comparison.
+curl -sS -X POST "${BA}/messages" -d '{"name":"wsender","body":"WHISPER-SECRET-XYZ","whisper_to":"wtarget"}' >/dev/null 2>&1
+curl -sS -X POST "${BA}/messages" -d '{"name":"wsender","body":"PLAIN-VISIBLE-XYZ"}' >/dev/null 2>&1
+sleep 0.9
+
+# The target's hub must hold the whisper; the target must be able to read it.
+b_has_whisper="$(python3 - "${B_RT}/chat.db" <<'PY'
+import sqlite3, sys
+c = sqlite3.connect(sys.argv[1])
+print(c.execute("SELECT COUNT(*) FROM message WHERE body LIKE '%WHISPER-SECRET%'").fetchone()[0])
+PY
+)"
+assert_eq "$b_has_whisper" "1" "FD25 the target's hub does hold the whisper, so it can be delivered"
+target_reads="$(curl -sS "${BB}/messages?name=wtarget" 2>/dev/null | _j "any('WHISPER-SECRET' in m['body'] for m in d['messages'])")"
+assert_eq "$target_reads" "True" "FD25 and the target reads it"
+
+# The bystander is on hub A, which is where the whisper originated -- it is stored there and filtered
+# on read, which is correct and is what the read filter is for.
+bystander_reads="$(curl -sS "${BA}/messages?name=wbystander" 2>/dev/null | _j "any('WHISPER-SECRET' in m['body'] for m in d['messages'])")"
+assert_eq "$bystander_reads" "False" "FD25 a bystander on the sender's own hub cannot read it"
+
+# Now the part the selection test cannot show: a hub that holds NO party to the whisper must not hold
+# the BODY. Add a third hub with a member of the same channel and confirm nothing arrives.
+LINK_C=$(( LINK_B + 1 ))
+mkdir -p "${_TMPD}/C"
+BC="$(_start C gamma "$LINK_C")" || fail "FD25 a third hub would not start"
+curl -sS -X POST "${BA}/peers/connect" -d "{\"machine\":\"127.0.0.1:${LINK_C}\"}" >/dev/null 2>&1
+sleep 0.6
+curl -sS -X POST "${BC}/session" -d '{"name":"wouter","tool":"t","cwd":"/w"}' >/dev/null 2>&1
+curl -sS -X POST "${BC}/channel/join" -d '{"name":"wouter","channel":"whisperch"}' >/dev/null 2>&1
+sleep 0.8
+curl -sS -X POST "${BA}/messages" -d '{"name":"wsender","body":"WHISPER-SECOND-ABC","whisper_to":"wtarget"}' >/dev/null 2>&1
+curl -sS -X POST "${BA}/messages" -d '{"name":"wsender","body":"PLAIN-SECOND-ABC"}' >/dev/null 2>&1
+sleep 1.0
+
+c_state="$(python3 - "${_TMPD}/C/chat.db" <<'PY'
+import sqlite3, sys
+c = sqlite3.connect(sys.argv[1])
+w = c.execute("SELECT COUNT(*) FROM message WHERE body LIKE '%WHISPER-SECOND%'").fetchone()[0]
+p = c.execute("SELECT COUNT(*) FROM message WHERE body LIKE '%PLAIN-SECOND%'").fetchone()[0]
+print(f'{w},{p}')
+PY
+)"
+assert_eq "$c_state" "0,1" \
+    "FD25 a hub holding no party to the whisper has the body NOWHERE in its store, while the plain message did arrive"
+_kill_own C
+
 # Non-automated checks are enumerated, not implied.
 for mp in MP-09 MP-10; do
     assert_file_contains "${REPO_ROOT}/chat-node/tests/MANUAL-PROCEDURES.md" "$mp" \

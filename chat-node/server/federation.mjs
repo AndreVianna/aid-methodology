@@ -20,7 +20,15 @@
 import { nowMs } from './store.mjs';
 import * as peers from './peers.mjs';
 import * as outbox from './outbox.mjs';
-import { thisMachine } from './core.mjs';
+import { audit, thisMachine } from './core.mjs';
+
+// Where an undeliverable whisper is recorded. Injected rather than imported directly so this module
+// does not need the database handle threaded through every caller for one diagnostic.
+let undeliverableSink = null;
+export function setUndeliverableSink(fn) { undeliverableSink = fn; }
+function noteUndeliverable(info) {
+    try { if (undeliverableSink) undeliverableSink(info); } catch { /* a diagnostic is not a precondition */ }
+}
 
 // The peers that hold a member of this channel, which is what decides where a message goes. Derived
 // from `channel_member` because that is the only place the answer exists once members are remote.
@@ -127,7 +135,18 @@ export async function replicateMessage(db, link, { channelId, channelName, messa
         // them. `send` already refused a whisper to a non-member, so reaching here means the target
         // left between the send and the replication -- and a body sent after that is a body sent to a
         // hub that will never deliver it.
+        //
+        // REPORTED rather than dropped in silence. The sender has already been told `ok`, because at
+        // the moment it asked the target was a member; discovering otherwise a few milliseconds later
+        // is not something to hide, and an operator looking at why a whisper never arrived needs the
+        // record. It is the audit log's job precisely because there is no caller left to return to.
         targets = row ? [row.machine] : [];
+        if (!row) {
+            noteUndeliverable({
+                channelName, target: message.whisper_to, sender: message.sender_name,
+                reason: 'the target left the channel between the send and its replication',
+            });
+        }
     } else {
         targets = peersForChannel(db, channelId);
     }
