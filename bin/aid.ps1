@@ -252,6 +252,7 @@ function script:Show-AidUsage {
             Write-Host 'aid chat send    --name <n> --body <text> [--key <k>] [--whisper-to <m>] [--mention <m>]'
             Write-Host 'aid chat inbox   --name <n> [--cursor <c>]    messages after your position'
             Write-Host 'aid chat ack     --name <n> --cursor <c>      advance your acknowledged position'
+            Write-Host 'aid chat reap    --name <n> | --name --all     give a session up for gone (operator)'
             Write-Host '  --name may be omitted when AID_CHAT_SESSION is set.'
             Write-Host '  --cursor on inbox RE-READS from that point and moves neither position.'
             Write-Host '  Exit 14 means the node refused a well-formed request; the reason is the first'
@@ -4882,6 +4883,12 @@ function script:Invoke-AidChatPlane {
                 ('{"name":"' + $n + '","tool":"' + (script:ConvertTo-AidJsonString $t) + '","cwd":"' + (script:ConvertTo-AidJsonString $PWD.Path) + '"}')
         }
         'heartbeat' { return script:Invoke-AidChatCall 'POST' '/session/heartbeat' ('{"name":"' + $n + '"}') }
+        'reap' {
+            # Operator-facing: give a session up for gone now, or sweep every session already
+            # past the reap threshold. The RULE lives in the node; the schedule is retention's.
+            if ($name -eq '--all') { return script:Invoke-AidChatCall 'POST' '/session/reap' '{}' }
+            return script:Invoke-AidChatCall 'POST' '/session/reap' ('{"name":"' + $n + '"}')
+        }
         'open' {
             if (-not $channel) { [Console]::Error.WriteLine('ERROR: aid: chat open: --channel is required'); return 2 }
             return script:Invoke-AidChatCall 'POST' '/channel' ('{"name":"' + $n + '","channel":"' + (script:ConvertTo-AidJsonString $channel) + '"}')
@@ -4918,7 +4925,7 @@ function script:Invoke-AidChatCtl {
 
     $action = if ($CcArgs.Count -ge 1) { $CcArgs[0] } else { '' }
     # The message-plane verbs are handled first; `node ...` is the lifecycle surface.
-    if ($action -in @('register','heartbeat','open','join','leave','list','send','inbox','ack')) {
+    if ($action -in @('register','heartbeat','open','join','leave','list','send','inbox','ack','reap')) {
         $planeArgs = @()
         if ($CcArgs.Count -gt 1) { $planeArgs = $CcArgs[1..($CcArgs.Count - 1)] }
         script:Exit-Aid (script:Invoke-AidChatPlane -Verb $action -PlaneArgs $planeArgs)

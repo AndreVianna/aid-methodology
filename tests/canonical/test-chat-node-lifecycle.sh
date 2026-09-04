@@ -127,9 +127,14 @@ assert_eq "$rc" "0" "LC08 start reclaims a stale record instead of refusing with
 $AID chat node stop >/dev/null 2>&1
 
 # LC09 — no Node on PATH.
-NONODE="$(printf '%s' "$PATH" | tr ':' '\n' | grep -v "$(dirname "$(command -v node)")" | paste -sd:)"
+# Strip EVERY path entry that can reach node, not just the first -- the same correction the
+# integration suite needed. Dropping only `dirname $(command -v node)` leaves this case SKIPPED
+# on any machine with more than one node on PATH, and a case that skips is a case that did not run.
+NONODE="$(printf '%s' "$PATH" | tr ':' '\n' | while IFS= read -r d; do
+    [[ -n "$d" && -x "${d}/node" ]] || printf '%s\n' "$d"
+done | paste -sd:)"
 if env PATH="$NONODE" bash -c 'command -v node >/dev/null 2>&1'; then
-    log "LC09 SKIPPED: node is reachable by more than one PATH entry; cannot hide it"
+    fail "LC09 could not hide node from PATH; the case did not run"
 else
     out=$(env PATH="$NONODE" AID_CODE_HOME="$AID_CODE_HOME" AID_CHAT_RUNTIME="$AID_CHAT_RUNTIME" \
               bash "${REPO_ROOT}/bin/aid" chat node start 2>&1); rc=$?

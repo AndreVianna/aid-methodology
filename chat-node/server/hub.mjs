@@ -112,6 +112,14 @@ async function readJsonBody(req) {
 export function makeRouter({ db, startedAt }) {
     const routes = new Map();
 
+    // The requirements' API table promises this route, so it exists rather than leaving a caller
+    // that follows the spec to receive a 404. It answers first and shuts down after, so the
+    // caller gets a reply rather than a dropped connection.
+    routes.set('POST /stop', (_req, res) => {
+        json(res, 200, { ok: true, stopping: true, pid: process.pid });
+        setTimeout(() => process.kill(process.pid, 'SIGTERM'), 25);
+    });
+
     routes.set('GET /status', (_req, res) => json(res, 200, {
         running: true,
         pid: process.pid,
@@ -149,6 +157,15 @@ export function makeRouter({ db, startedAt }) {
     });
     routes.set('GET /channels', (req, res, url) =>
         json(res, 200, { ok: true, channels: core.listChannels(db, { name: url.searchParams.get('name') }) }));
+
+    // Retention trigger. The rule lives in the core and the SCHEDULE is retention's; this route
+    // is what makes the reap-driven channel close reachable through the product instead of only
+    // from inside the process.
+    routes.set('POST /session/reap', async (req, res) => {
+        const b = await readJsonBody(req);
+        if (b && b.name) return answer(res, core.reapSession(db, { name: b.name }));
+        answer(res, core.reapStale(db));
+    });
 
     // Message plane.
     routes.set('POST /messages', async (req, res) => {

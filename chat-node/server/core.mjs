@@ -167,12 +167,16 @@ export function openChannel(db, { name, channelName }) {
     if (!channelName) return no('bad_request', 'channel name is required');
 
     let ch = channelByName(db, channelName);
+    const created = !ch;
     if (!ch) {
         db.prepare('INSERT INTO channel(name, opened_at) VALUES (?,?)').run(channelName, nowMs());
         ch = channelByName(db, channelName);
     }
     const head = placeInChannel(db, s.id, ch.id);
-    return ok({ channel: ch.name, joined_at_seq: head, created: true });
+    // `created` reports which of the two things happened. Always answering true would make the
+    // second agent to `open` the same name believe it had created the channel, which is exactly
+    // the kind of small lie that a later reader builds on.
+    return ok({ channel: ch.name, joined_at_seq: head, created });
 }
 
 export function joinChannel(db, { name, channelName }) {
@@ -231,6 +235,24 @@ export function reapSession(db, { name }) {
     return ok({ reaped: name, channel_closed: closed });
 }
 
+// Reap every member quiet past the threshold. This is the RULE with a surface, so the criterion
+// that says a channel closes when its last member is reaped can be exercised through the
+// product rather than only through this module. The SCHEDULE -- deciding when to run this -- is
+// still retention's, and nothing here runs it on a timer.
+export function reapStale(db, { now = nowMs() } = {}) {
+    const reaped = [];
+    const closed = [];
+    for (const row of db.prepare('SELECT * FROM session').all()) {
+        if (!isReapable(row, now)) continue;
+        const r = reapSession(db, { name: row.name });
+        if (r.ok) {
+            reaped.push(row.name);
+            if (r.channel_closed) closed.push(row.name);
+        }
+    }
+    return ok({ reaped, channels_closed: closed.length });
+}
+
 export function listChannels(db, { name = null } = {}) {
     const mine = name ? getSession(db, name) : null;
     return db.prepare('SELECT * FROM channel ORDER BY name').all().map((c) => ({
@@ -287,9 +309,14 @@ export function send(db, { name, body, kind = 'message', idempotencyKey = null,
     // prevent, and accepting it silently would let that failure in by another door.
     if (otherMemberCount(db, s.channel_id, s.id) === 0) return no(REFUSAL.SOLO_CHANNEL);
 
-    const ch = db.prepare('SELECT * FROM channel WHERE id = ?').get(s.channel_id);
-    const head = ch.next_seq - 1;
-    if (maxUnreadDepth(db, s.channel_id, head) >= limits().maxUnread) return no(REFUSAL.OVERFLOW);
+    // The unread check reads `next_seq` only to compute the current head. The authoritative read
+    // of that counter happens inside the transaction below, and nothing between the two writes
+    // it -- but taking a second read across a transaction boundary is the shape that becomes a
+    // race the moment this core is not single-threaded, so the boundary is named rather than
+    // relied on: `BEGIN IMMEDIATE` takes the write lock before re-reading, and the value used
+    // for the insert is only ever the one read inside.
+    const headForDepth = db.prepare('SELECT next_seq FROM channel WHERE id = ?').get(s.channel_id).next_seq - 1;
+    if (maxUnreadDepth(db, s.channel_id, headForDepth) >= limits().maxUnread) return no(REFUSAL.OVERFLOW);
 
     // The key is the caller's if given and minted here if not: FR-4.1 marks it optional, and a
     // NOT NULL column with no generation rule would turn an omitted optional into a constraint
@@ -360,6 +387,17 @@ function reorderPerSpeaker(rows, { graceMs, now, lastSeqBySender }) {
                 expected += 1;
                 continue;
             }
+            if (m.sender_seq < expected) {
+                // Not a gap: this message arrived BEHIND the point already reached, which
+                // happens when a grace skip moved past it and the predecessor then turned up
+                // after all. Releasing it here would hand the caller a message out of that
+                // speaker's order, and treating it as a forward gap would stall the speaker
+                // waiting for a predecessor that has already been passed. It is genuinely too
+                // late: the skip was recorded when it happened, so the loss is on the record
+                // rather than silent, and the position must never move backwards.
+                m._arrived_too_late = expected;
+                continue;
+            }
             // A gap. Normally the predecessor is in flight; hold this message back so the
             // answer is per-speaker FIFO rather than arrival order.
             //
@@ -390,8 +428,9 @@ function reorderPerSpeaker(rows, { graceMs, now, lastSeqBySender }) {
     // speaker's slots with that speaker's messages in `sender_seq` order. The result reads
     // roughly chronologically, and every speaker's own sequence is intact.
     const slotted = [];
+    const released = new Set(releasable);   // O(1) lookup; the array scan was O(n*m)
     for (const msgs of bySpeaker.values()) {
-        const mine = msgs.filter((m) => releasable.includes(m));
+        const mine = msgs.filter((m) => released.has(m));
         if (!mine.length) continue;
         const slots = mine.map((m) => m.arrival_seq).sort((a, b) => a - b);
         const inOrder = [...mine].sort((a, b) => a.sender_seq - b.sender_seq);

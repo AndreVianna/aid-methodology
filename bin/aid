@@ -199,6 +199,7 @@ _aid_usage() {
             printf 'aid chat send    --name <n> --body <text> [--key <k>] [--whisper-to <m>] [--mention <m>]\n'
             printf 'aid chat inbox   --name <n> [--cursor <c>]    messages after your position\n'
             printf 'aid chat ack     --name <n> --cursor <c>      advance your acknowledged position\n'
+            printf 'aid chat reap    --name <n> | --name --all     give a session up for gone (operator)\n'
             printf '  --name may be omitted when AID_CHAT_SESSION is set.\n'
             printf '  --cursor on inbox RE-READS from that point and moves neither position.\n'
             printf '  Exit 14 means the node refused a well-formed request; the reason is the first\n'
@@ -5360,6 +5361,11 @@ _cmd_chat_plane() {
                 "{\"name\":\"${n}\",\"tool\":\"$(_aid_json_escape "$tool")\",\"cwd\":\"$(_aid_json_escape "$PWD")\"}" ;;
         heartbeat)
             _aid_chat_call POST /session/heartbeat "{\"name\":\"${n}\"}" ;;
+        reap)
+            # Operator-facing: give a session up for gone now, or sweep every session already
+            # past the reap threshold. The RULE lives in the node; the schedule is retention's.
+            if [[ "$name" == "--all" ]]; then _aid_chat_call POST /session/reap '{}'
+            else                              _aid_chat_call POST /session/reap "{\"name\":\"${n}\"}"; fi ;;
         open)
             [[ -z "$channel" ]] && { echo "ERROR: aid: chat open: --channel is required" >&2; return 2; }
             _aid_chat_call POST /channel "{\"name\":\"${n}\",\"channel\":\"$(_aid_json_escape "$channel")\"}" ;;
@@ -5392,7 +5398,7 @@ _cmd_chat_ctl() {
     local action="${1:-}"
     # The message-plane verbs are handled first; `node ...` is the lifecycle surface.
     case "$action" in
-        register|heartbeat|open|join|leave|list|send|inbox|ack)
+        register|heartbeat|open|join|leave|list|send|inbox|ack|reap)
             shift
             _cmd_chat_plane "$action" "$@"
             return $? ;;
