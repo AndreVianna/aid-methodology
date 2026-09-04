@@ -42,6 +42,7 @@ if ! command -v node >/dev/null 2>&1; then
     exit 0
 fi
 
+_HUBS_AT_START="$(ps -eo args | grep -c '[s]erver/hub.mjs')"
 _TMPD="$(mktemp -d)"
 export AID_CODE_HOME="$REPO_ROOT"
 export AID_CHAT_RUNTIME="${_TMPD}/rt"
@@ -69,7 +70,12 @@ if unshare -rn true 2>/dev/null; then
     else
         fail "LC02 start failed with the network disabled: ${out}"
     fi
-    # That node lived in the namespace and is gone with it; clear the record it left.
+    # That node does NOT go away with the namespace, which measuring proved rather than assuming:
+    # it was started detached, so it outlives the `unshare` that created its namespace and is
+    # reparented rather than reaped. Kill it by the pid it recorded BEFORE clearing the record,
+    # or the suite leaks one process per run with nothing left to find it by.
+    _ns_pid="$(tr -d '[:space:]' < "${AID_CHAT_RUNTIME}/hub.pid" 2>/dev/null || echo '')"
+    [[ -n "$_ns_pid" ]] && kill -TERM "$_ns_pid" 2>/dev/null || true
     rm -f "${AID_CHAT_RUNTIME}/hub.pid" "${AID_CHAT_RUNTIME}/hub.port" 2>/dev/null || true
 else
     log "LC02 SKIPPED: unshare unavailable, cannot disable the network hermetically"
@@ -157,6 +163,21 @@ if [[ -f "${AID_CHAT_RUNTIME}/hub.pid" ]]; then
     fail "LC10 a rejected --port still started something"
 else
     pass "LC10 a rejected --port started nothing"
+fi
+
+# LC11 — the suite leaves no hub process behind. A test suite that leaks a process per run is a
+# suite that degrades the machine it runs on, and this one did: LC02's namespace node outlives the
+# `unshare` that created it, which measuring showed and an earlier comment here wrongly denied.
+# Tear down FIRST, then measure. The EXIT trap runs after this line, so measuring before
+# stopping would count this suite's own still-running node and report a leak that is not one.
+_cleanup
+trap - EXIT
+sleep 0.3
+_leaked="$(ps -eo args | grep -c '[s]erver/hub.mjs')"
+if [[ "$_leaked" -le "${_HUBS_AT_START:-0}" ]]; then
+    pass "LC11 the suite leaves no hub process behind (${_leaked} running, ${_HUBS_AT_START:-0} at start)"
+else
+    fail "LC11 the suite leaked $(( _leaked - ${_HUBS_AT_START:-0} )) hub process(es)"
 fi
 
 test_summary

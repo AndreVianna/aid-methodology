@@ -253,6 +253,8 @@ function script:Show-AidUsage {
             Write-Host '                 [--reply-to <key>] [--correlation-id <id>]'
             Write-Host 'aid chat inbox   --name <n> [--cursor <c>]    messages after your position'
             Write-Host 'aid chat ack     --name <n> --cursor <c>      advance your acknowledged position'
+            Write-Host 'aid chat roster  --name <n>                   who else is on this hub, and who is free'
+            Write-Host 'aid chat connect --name <n> --target <t>      pull one named agent into YOUR channel'
             Write-Host 'aid chat reap    --name <n> | --name --all     give a session up for gone (operator)'
             Write-Host '  --name may be omitted when AID_CHAT_SESSION is set.'
             Write-Host '  --cursor on inbox RE-READS from that point and moves neither position.'
@@ -4853,7 +4855,7 @@ function script:Invoke-AidChatPlane {
 
     $name = $env:AID_CHAT_SESSION
     $body = ''; $channel = ''; $cursor = ''; $key = ''; $whisper = ''; $mention = ''; $tool = ''
-    $replyTo = ''; $corr = ''
+    $replyTo = ''; $corr = ''; $target = ''
     for ($i = 0; $i -lt $PlaneArgs.Count; $i++) {
         $needsValue = $true
         switch ($PlaneArgs[$i]) {
@@ -4864,6 +4866,7 @@ function script:Invoke-AidChatPlane {
             '--key'        { $key     = $PlaneArgs[$i + 1] }
             '--whisper-to' { $whisper = $PlaneArgs[$i + 1] }
             '--mention'    { $mention = $PlaneArgs[$i + 1] }
+            '--target'     { $target  = $PlaneArgs[$i + 1] }
             '--reply-to'   { $replyTo = $PlaneArgs[$i + 1] }
             '--correlation-id' { $corr = $PlaneArgs[$i + 1] }
             '--tool'       { $tool    = $PlaneArgs[$i + 1] }
@@ -4903,6 +4906,13 @@ function script:Invoke-AidChatPlane {
         }
         'leave' { return script:Invoke-AidChatCall 'POST' '/channel/leave' ('{"name":"' + $n + '"}') }
         'list'  { return script:Invoke-AidChatCall 'GET' ("/channels?name=$n") }
+        'roster' { return script:Invoke-AidChatCall 'GET' ("/roster?name=$n") }
+        'connect' {
+            if (-not $target) { [Console]::Error.WriteLine('ERROR: aid: chat connect: --target is required'); return 2 }
+            # No channel parameter: the channel is the one the caller is already in, which is why
+            # a request always pulls a target into a conversation its asker is present in.
+            return script:Invoke-AidChatCall 'POST' '/connect' ('{"name":"' + $n + '","target":"' + (script:ConvertTo-AidJsonString $target) + '"}')
+        }
         'send' {
             if (-not $body) { [Console]::Error.WriteLine('ERROR: aid: chat send: --body is required'); return 2 }
             $payload = '{"name":"' + $n + '","body":"' + (script:ConvertTo-AidJsonString $body) + '"'
@@ -4931,7 +4941,7 @@ function script:Invoke-AidChatCtl {
 
     $action = if ($CcArgs.Count -ge 1) { $CcArgs[0] } else { '' }
     # The message-plane verbs are handled first; `node ...` is the lifecycle surface.
-    if ($action -in @('register','heartbeat','open','join','leave','list','send','inbox','ack','reap')) {
+    if ($action -in @('register','heartbeat','open','join','leave','list','send','inbox','ack','reap','roster','connect')) {
         $planeArgs = @()
         if ($CcArgs.Count -gt 1) { $planeArgs = $CcArgs[1..($CcArgs.Count - 1)] }
         script:Exit-Aid (script:Invoke-AidChatPlane -Verb $action -PlaneArgs $planeArgs)

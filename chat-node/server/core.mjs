@@ -33,7 +33,12 @@ export const REFUSAL = {
 };
 
 const ok = (value = {}) => ({ ok: true, ...value });
-const no = (reason, detail = null) => ({ ok: false, reason, ...(detail ? { detail } : {}) });
+// `extra` carries fields a caller needs in order to ACT on a refusal (a retry hint, say) as
+// opposed to merely report it. Kept as a third parameter rather than folded into `detail`,
+// because `detail` is prose for a human and these are values for a program.
+const no = (reason, detail = null, extra = null) => ({
+    ok: false, reason, ...(detail ? { detail } : {}), ...(extra || {}),
+});
 
 // ---------------------------------------------------------------------------
 // Identity.
@@ -547,4 +552,104 @@ export function ack(db, { name, cursor }) {
     if (c > s.delivered_seq) return no(REFUSAL.ACK_AHEAD, `delivered_seq is ${s.delivered_seq}`);
     if (c > s.acked_seq) db.prepare('UPDATE session SET acked_seq = ? WHERE id = ?').run(c, s.id);
     return ok({ acked_seq: Math.max(c, s.acked_seq) });
+}
+
+// ---------------------------------------------------------------------------
+// The hub plane (tasks 012 and 013).
+//
+// SEPARATE FROM THE MESSAGE PLANE, and separate for a reason that is easy to lose: this is
+// SIGNALLING, not messaging. Hub membership is registration plus liveness -- not a held socket
+// -- so an agent in no channel is still reachable, which is the whole point. Without this
+// plane two idle agents deadlock: each is waiting to be told to talk, and neither can tell the
+// other, because telling requires a channel and a channel requires somebody to have been told.
+
+// `available` is COMPUTED at read time from three facts -- registered, not stale, not already
+// in a channel -- and stored nowhere. A stored flag would need updating from every one of those
+// three places, and the first one anybody forgets makes the roster lie about who can be reached.
+function isAvailable(row, now) {
+    return !isStale(row, now) && row.channel_id === null;
+}
+
+export function roster(db, { name = null } = {}) {
+    const now = nowMs();
+    const rows = db.prepare('SELECT * FROM session ORDER BY name').all();
+    return ok({
+        agents: rows.map((r) => ({
+            name: r.name,
+            tool: r.tool,
+            capabilities: JSON.parse(r.capabilities || '{}'),
+            // Liveness is reported as the observable fact (how long quiet) alongside the
+            // derived judgement, so a caller can see WHY an agent is unavailable rather than
+            // only that it is.
+            quiet_for_ms: now - r.last_heartbeat_at,
+            stale: isStale(r, now),
+            in_channel: r.channel_id !== null,
+            available: isAvailable(r, now),
+            is_self: name !== null && r.name === name,
+        })),
+    });
+}
+
+// A directed connect request, answered FROM STATE with no accept step.
+//
+// The absence of an accept step is a measured decision, not a stylistic one: an accept would be
+// a call the woken session makes, and on a host that gates an agent's calls behind human
+// approval that call waits on a person. Answering from state removes the human from the path.
+// Consent is not being modelled -- there is no authentication anywhere in this product, so a
+// gate would be advisory at best. What the request supplies is NOTIFICATION, and availability
+// is arbitrated by the one-channel bound.
+//
+// The channel is IMPLICIT: it is the asker's own, which is why the asker must already be in one.
+// A request therefore always pulls a target into a conversation its asker is present in, never
+// into an empty one.
+export function connect(db, { name, target }) {
+    const asker = getSession(db, name);
+    if (!asker) return no(REFUSAL.NOT_REGISTERED);
+    if (!target || typeof target !== 'string') return no('bad_request', 'target is required');
+    // The asker must already be in the channel it names. This precondition is what makes
+    // reciprocal arbitration free: see the comment on the two-failures case below.
+    if (!asker.channel_id) return no(REFUSAL.NO_CHANNEL, 'open a channel before requesting a peer');
+    if (target === name) return no(REFUSAL.TARGET_IS_SELF);
+
+    const ch = db.prepare('SELECT * FROM channel WHERE id = ?').get(asker.channel_id);
+    const now = nowMs();
+    const t = getSession(db, target);
+
+    // Unknown, stale, and already-in-a-channel are ONE refusal with one token, deliberately.
+    // They are the same fact from the asker's side -- that agent cannot be pulled in right now --
+    // and splitting them would let an asker distinguish "no such agent" from "that agent is
+    // busy", which is a small enumeration oracle over who exists on this hub. `detail` carries
+    // the distinction for a human reading the log, where it is useful and harmless.
+    if (!t || isStale(t, now) || t.channel_id !== null) {
+        const why = !t ? 'unknown' : (isStale(t, now) ? 'stale' : 'already in a channel');
+        return no(REFUSAL.TARGET_UNAVAILABLE, why, {
+            // Jittered, because two agents that each open a channel and then request the other
+            // BOTH fail -- and if both then retried after the same fixed delay they would fail
+            // each other again, indefinitely. That is a real livelock, not a theoretical one.
+            // The hint is the node's, so the two ends cannot accidentally agree on a period.
+            retry_after_ms: 250 + Math.floor(Math.random() * 750),
+        });
+    }
+
+    // Joined in the SAME TRANSACTION that sets its positions to the channel head. Two statements
+    // would leave a window where the target is a member with positions of 0 -- and a member at 0
+    // in a channel whose head is 40 is owed forty messages it was never present for.
+    db.exec('BEGIN IMMEDIATE');
+    try {
+        placeInChannel(db, t.id, asker.channel_id);
+        db.exec('COMMIT');
+    } catch (err) {
+        db.exec('ROLLBACK');
+        throw err;
+    }
+
+    // Nothing is recorded as pending, because there is nothing pending: being placed in the
+    // channel IS the notification. That is what makes the outcome impossible to miss -- a
+    // session between arms, mid-turn, or restarting reads it as state on its next call of any
+    // kind, and there is no event to buffer or lose.
+    return ok({
+        connected: target,
+        channel: ch.name,
+        joined_at_seq: db.prepare('SELECT acked_seq FROM session WHERE id = ?').get(t.id).acked_seq,
+    });
 }

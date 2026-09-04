@@ -146,6 +146,16 @@ export function makeRouter({ db, startedAt }) {
     });
     routes.set('GET /sessions', (_req, res) => json(res, 200, { ok: true, sessions: core.listSessions(db) }));
 
+    // Hub plane -- signalling, not messaging. Separate from the channel and message planes
+    // because hub membership is registration plus liveness rather than a held socket, which is
+    // what lets a connect request reach an agent that is in no channel at all.
+    routes.set('GET /roster', (req, res, url) =>
+        answer(res, core.roster(db, { name: url.searchParams.get('name') })));
+    routes.set('POST /connect', async (req, res) => {
+        const b = await readJsonBody(req);
+        answer(res, core.connect(db, { name: b.name, target: b.target }));
+    });
+
     // Channel plane.
     routes.set('POST /channel', async (req, res) => {
         const b = await readJsonBody(req);

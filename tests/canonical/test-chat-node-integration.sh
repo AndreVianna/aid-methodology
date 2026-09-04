@@ -39,6 +39,7 @@ REPO_ROOT="$(cd "${SCRIPT_DIR}/../.." && pwd)"
 command -v node >/dev/null 2>&1 || { echo "SKIP: node not available" >&2; exit 0; }
 command -v curl >/dev/null 2>&1 || { echo "SKIP: curl not available" >&2; exit 0; }
 
+_HUBS_AT_START="$(ps -eo args | grep -c '[s]erver/hub.mjs')"
 _TMPD="$(mktemp -d)"
 export AID_CODE_HOME="$REPO_ROOT"
 export AID_CHAT_RUNTIME="${_TMPD}/rt"
@@ -264,5 +265,20 @@ assert_file_exists "${REPO_ROOT}/chat-node/tests/MANUAL-PROCEDURES.md" \
     "the manual-procedures record exists, so the set of non-automated checks is enumerable"
 assert_file_contains "${REPO_ROOT}/chat-node/tests/MANUAL-PROCEDURES.md" "MP-01" \
     "the record names the PowerShell twin as the one unexecuted surface"
+
+# The suite leaves no hub process behind. It starts three nodes over its lifetime (the main one,
+# a restarted one, and the isolated quiet-case node), so this is worth asserting rather than
+# assuming -- the lifecycle suite was found leaking one per run.
+# Tear down FIRST, then measure. The EXIT trap runs after this line, so measuring before
+# stopping would count this suite's own still-running node and report a leak that is not one.
+_cleanup
+trap - EXIT
+sleep 0.3
+_leaked="$(ps -eo args | grep -c '[s]erver/hub.mjs')"
+if [[ "$_leaked" -le "${_HUBS_AT_START:-0}" ]]; then
+    pass "the suite leaves no hub process behind (${_leaked} running, ${_HUBS_AT_START:-0} at start)"
+else
+    fail "the suite leaked $(( _leaked - ${_HUBS_AT_START:-0} )) hub process(es)"
+fi
 
 test_summary

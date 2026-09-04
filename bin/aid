@@ -200,6 +200,8 @@ _aid_usage() {
             printf '                 [--reply-to <key>] [--correlation-id <id>]\n'
             printf 'aid chat inbox   --name <n> [--cursor <c>]    messages after your position\n'
             printf 'aid chat ack     --name <n> --cursor <c>      advance your acknowledged position\n'
+            printf 'aid chat roster  --name <n>                   who else is on this hub, and who is free\n'
+            printf 'aid chat connect --name <n> --target <t>      pull one named agent into YOUR channel\n'
             printf 'aid chat reap    --name <n> | --name --all     give a session up for gone (operator)\n'
             printf '  --name may be omitted when AID_CHAT_SESSION is set.\n'
             printf '  --cursor on inbox RE-READS from that point and moves neither position.\n'
@@ -5335,7 +5337,7 @@ _aid_json_escape() {
 
 _cmd_chat_plane() {
     local verb="$1"; shift
-    local name="${AID_CHAT_SESSION:-}" body="" channel="" cursor="" key="" whisper="" mention="" reply_to="" corr=""
+    local name="${AID_CHAT_SESSION:-}" body="" channel="" cursor="" key="" whisper="" mention="" reply_to="" corr="" target=""
     while [[ $# -gt 0 ]]; do
         case "$1" in
             --name)     name="$2"; shift 2 ;;
@@ -5345,6 +5347,7 @@ _cmd_chat_plane() {
             --key)      key="$2"; shift 2 ;;
             --whisper-to) whisper="$2"; shift 2 ;;
             --mention)  mention="$2"; shift 2 ;;
+            --target)   target="$2"; shift 2 ;;
             --reply-to) reply_to="$2"; shift 2 ;;
             --correlation-id) corr="$2"; shift 2 ;;
             --tool)     _AID_CHAT_TOOL="$2"; shift 2 ;;
@@ -5379,6 +5382,13 @@ _cmd_chat_plane() {
             _aid_chat_call POST /channel/leave "{\"name\":\"${n}\"}" ;;
         list)
             _aid_chat_call GET "/channels?name=${n}" ;;
+        roster)
+            _aid_chat_call GET "/roster?name=${n}" ;;
+        connect)
+            [[ -z "$target" ]] && { echo "ERROR: aid: chat connect: --target is required" >&2; return 2; }
+            # No channel parameter: the channel is the one the caller is already in, which is why
+            # a request always pulls a target into a conversation its asker is present in.
+            _aid_chat_call POST /connect "{\"name\":\"${n}\",\"target\":\"$(_aid_json_escape "$target")\"}" ;;
         send)
             [[ -z "$body" ]] && { echo "ERROR: aid: chat send: --body is required" >&2; return 2; }
             local payload="{\"name\":\"${n}\",\"body\":\"$(_aid_json_escape "$body")\""
@@ -5403,7 +5413,7 @@ _cmd_chat_ctl() {
     local action="${1:-}"
     # The message-plane verbs are handled first; `node ...` is the lifecycle surface.
     case "$action" in
-        register|heartbeat|open|join|leave|list|send|inbox|ack|reap)
+        register|heartbeat|open|join|leave|list|send|inbox|ack|reap|roster|connect)
             shift
             _cmd_chat_plane "$action" "$@"
             return $? ;;

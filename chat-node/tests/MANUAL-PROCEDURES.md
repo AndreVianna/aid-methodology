@@ -54,3 +54,61 @@ and compare it to `chat-node/MANIFEST`; run it again and diff the two trees.
 
 **Pass looks like:** every manifest path present after the first run, and a byte-identical
 tree after the second.
+
+---
+
+## MP-03 — The PowerShell twin of `aid chat roster` and `aid chat connect`
+
+**Verifies:** `bin/aid.ps1` behaves identically to `bin/aid` for the two hub-plane verbs,
+including the refusal exit code `14` and the stderr tokens `target_unavailable`,
+`target_is_self` and `no_channel`.
+
+**Why not automated here:** no PowerShell interpreter exists in this environment, so
+`tests/canonical/test-aid-cli-parity.sh` reports SKIP. The twin was written by mirroring the
+executed Bash implementation, which is a code reading and not a test. Same limitation as MP-01,
+extended to the two verbs this delivery adds.
+
+**Steps** (on a machine with PowerShell 7+ and Node >= 22.13.0):
+
+1. `pwsh -NoProfile -File ./bin/aid.ps1 chat node start --port 0`
+2. `... chat register --name alice --tool cursor`, then the same for `bob`.
+3. `... chat roster --name alice` — expect both agents with `"available": true`, and
+   `"is_self": true` on alice only. stdout must parse as JSON alone.
+4. `... chat connect --name alice --target bob` — expect `no_channel` on stderr, **exit 14**
+   (alice is in no channel yet).
+5. `... chat open --name alice --channel standup`, then repeat step 4 — expect
+   `{"connected":"bob",...}`, exit 0.
+6. `... chat connect --name alice --target alice` — expect `target_is_self`, **exit 14**.
+7. `... chat connect --name alice --target bob` again — expect `target_unavailable`, **exit 14**
+   (bob is now in a channel).
+8. `... chat roster --name alice` — expect both agents now `"available": false`.
+9. `... chat node stop`.
+
+**Pass looks like:** every step matches, and each exit code equals the one the Bash twin
+produces for the same input.
+
+---
+
+## MP-04 — A connect request raises no approval prompt on a real host
+
+**Verifies:** the claim that answering from state removes the human from the path — that a real
+host session, on either end, sees no approval dialog and is asked to confirm nothing when a
+connect request places it in a channel.
+
+**Why not automated here:** it is a claim about a **live host's** behaviour (Claude Code,
+Cursor, or another), and no host session runs in this environment. The automated suite asserts
+the structural half — that no code path in the node or the CLI reads stdin or waits for a third
+party (`HP15`) — which is necessary but cannot observe a host's own UI.
+
+**Steps** (two host sessions on one machine, each with a chat session registered):
+
+1. Start the node. Register session A from host 1 and session B from host 2.
+2. From A: `aid chat open --name A --channel pair`.
+3. From A: `aid chat connect --name A --target B`.
+4. Watch **host 2's** window for the whole exchange.
+5. From B, make any call: `aid chat inbox --name B`.
+
+**Pass looks like:** step 3 returns immediately with `connected`. Host 2 raises **no dialog, no
+permission request and no confirmation** at any point. Step 5 shows B already in `pair` — it
+learned by reading state, having been asked nothing. If host 2 prompts for anything, the claim
+fails and `FR-9.3`'s reasoning needs revisiting, not the test.

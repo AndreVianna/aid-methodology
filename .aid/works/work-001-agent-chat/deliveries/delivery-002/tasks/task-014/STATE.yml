@@ -45,13 +45,22 @@
 # one -- never self-written by the task being executed.)
 
 # [W] Pending | In Progress | In Review | Blocked | Done | Failed | Canceled
-state: Pending
+state: Done
 # [W]
 review: --
 # [W] HH:MM | --
 elapsed: --
 # [W]
-notes: --
+notes: >-
+  The PowerShell twin is again unverified by execution -- no PowerShell in this environment, so
+  the parity test skips -- and it is recorded as MP-03 in chat-node/tests/MANUAL-PROCEDURES.md
+  with steps and expected exit codes rather than counted as a pass.
+  FR-7.3's surface-boundary criterion is verified in the only way currently possible: the
+  agent-facing surface it describes is a SKILL that omits things, and that skill is a later
+  delivery's artifact. What is checkable now is the CLI's own plane-verb set, so HP19 asserts it
+  gained exactly `roster` and `connect` over delivery-001's, and HP20 asserts no administrative
+  verb entered it (node lifecycle and reap stay operator-side). When the skill exists, the
+  criterion should be re-verified against the skill itself.
 # [W] mutable display-name override (writeback-state.sh:829). Documentation
 #     fix, not a schema change (SP-2's one documented exception): the writer
 #     already writes this key today; it was simply never declared here.

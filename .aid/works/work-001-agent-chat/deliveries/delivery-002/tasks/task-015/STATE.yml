@@ -45,13 +45,25 @@
 # one -- never self-written by the task being executed.)
 
 # [W] Pending | In Progress | In Review | Blocked | Done | Failed | Canceled
-state: Pending
+state: Done
 # [W]
 review: --
 # [W] HH:MM | --
 elapsed: --
 # [W]
-notes: --
+notes: >-
+  Determinism verified by three consecutive runs of the hub suite (36 assertions, identical each
+  time) and the whole chat set run twice in the same working directory (147 assertions, identical).
+  Clean teardown is now an ASSERTED property rather than a claim: HP21, LC11 and the integration
+  suite's own guard each tear down first and then compare the hub-process count against the count
+  taken before the suite started. That guard was written because measuring found the lifecycle
+  suite leaking one process per run -- LC02's node is started detached inside a network namespace
+  and outlives the `unshare` that created it, which an earlier comment in that file wrongly denied.
+  Falsified by disabling the fix: LC11 reports the leak.
+  Two non-automated checks were added to MANUAL-PROCEDURES.md: MP-03 (the PowerShell twin of both
+  verbs) and MP-04 (that a real host raises no approval prompt -- HP15 asserts the structural half,
+  that nothing in the connect path reads stdin or waits on a third party, but only a live host can
+  show its own UI).
 # [W] mutable display-name override (writeback-state.sh:829). Documentation
 #     fix, not a schema change (SP-2's one documented exception): the writer
 #     already writes this key today; it was simply never declared here.
