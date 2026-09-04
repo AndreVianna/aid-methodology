@@ -270,6 +270,41 @@ features:
 #   - date / event / outcome / notes
 review_history:
   - date: 2026-09-04
+    scope: onboarding friction -- the hand-written stop hook
+    outcome: >-
+      The stakeholder objected to the one manual step left in the wake install: assembling a stop hook
+      by hand from an absolute node path, an adapter path, and the SAME timeout number written twice.
+      The objection was well aimed, because that last part fails SILENTLY -- numbers that disagree
+      produce no error and no log, only a wake that never arrives.
+      Automating the WRITE was refused, and not on doctrine. FR-0.4 forbids it, and its reasoning is
+      concrete: a project-scoped host config file is tracked in git, so writing one would commit one
+      machine's absolute paths into every contributor's checkout, while a user-scoped one belongs to a
+      human who also edits it by hand and whose other tools write to it.
+      Automating the GENERATION carries neither risk and removes the part that actually goes wrong. New
+      FR-0.5: `aid chat hook --tool <host>` prints the block with the resolved node path, the adapter
+      path and both numbers already matched, and `--check` READS an installed hook back and names what
+      is wrong with it. Generating text and reading a file are both short of writing one, so FR-0.5
+      depends on FR-0.4 rather than weakening it. `hook` is an operator verb and stays out of the
+      agent-facing skill per ID-11.
+      TWO GUARDS WERE WRONG AND ARE FIXED. HP24 compares the verb sets of the two CLI twins and exists
+      precisely because `subscribe` once shipped in bin/aid while being wholly absent from bin/aid.ps1.
+      It read only the SHARED dispatch list, so when `hook` arrived on its own arm, deleting the entire
+      PowerShell branch still reported in-sync -- the exact failure the guard was written to catch,
+      recurring through a blind spot in the guard rather than a lapse in the code. It now reads both
+      dispatch shapes, each side scoped to its own dispatcher, and was falsified against both `hook`
+      and the original `subscribe` escape. Separately, the first eight new assertions all named cursor,
+      so a falsification pass that broke the CLAUDE CODE line saw every one still pass; that host's
+      nested block is the more intricate of the two and is now covered, round-tripped through --check.
+      One defect in the generator itself came from writing its test: it printed `timeout - margin` as
+      the block duration, telling an operator with timeout 60 that the node blocks 55s when the long
+      poll caps it at 30. A number in the output that does not match behaviour is worse than none.
+      367 assertions across ten chat suites, 0 failing. Every new assertion was falsified by breaking
+      what it guards.
+    applied_to: >-
+      REQUIREMENTS.md (FR-0.5), bin/aid + bin/aid.ps1 (chat hook, in lockstep),
+      docs/chat-wake-install.md (leads with the generator), tests/canonical/test-chat-node-wake.sh
+      (WK28-WK35), tests/canonical/test-chat-node-hub.sh (HP24 widened)
+  - date: 2026-09-04
     scope: correction and strengthening round
     outcome: >-
       Nothing Open remains. Six items fixed, six accepted with their reasons recorded, nine needing the
