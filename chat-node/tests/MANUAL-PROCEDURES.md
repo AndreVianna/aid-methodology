@@ -210,3 +210,33 @@ released after the wake was served.
 **Fail looks like:** a second turn with nothing new to report, or turns continuing indefinitely.
 That is the loop this rule exists to prevent, and on Claude Code there is no host-side cap behind
 it — `loop_limit` is documented `null`.
+
+---
+
+## MP-08 — `docs/chat-wake-install.md` is followable by someone who did not write it
+
+**Verifies:** the install document's accuracy, which is the one acceptance criterion of its task
+that cannot be checked by reading it. A document written by the person who built the thing is the
+worst possible judge of whether it is followable, because every step they omitted is a step they
+did not notice needing.
+
+**Why not automated here:** it needs a person who has not read the implementation, and a clean
+machine with a real host tool installed.
+
+**Steps:**
+
+1. Find someone who has not worked on this delivery. Give them only
+   `docs/chat-wake-install.md` — not this file, not the task, not the requirements.
+2. Give them a machine with AID installed and either Claude Code or Cursor, and no hook configured.
+3. Ask them to reach a working wake: a session that begins a turn on its own when another session
+   sends it a message.
+4. Watch without helping. **Write down every point at which they hesitate, guess, or ask.**
+5. Add each of those to the document.
+
+**Pass looks like:** they reach a working wake using only the document. Any step they had to guess
+is a defect in the document, not in them — and step 5 is not optional, because the value of this
+procedure is entirely in what it adds.
+
+**Specifically worth watching:** whether they find the absolute path to `node` without being told
+how; whether they put the same number in both places without it being pointed out; and whether they
+understand what they will observe if they do not (nothing at all, which is the whole difficulty).

@@ -332,9 +332,43 @@ done
 assert_eq "$rendered" "5" "WK23 the skill renders into all five profiles"
 assert_eq "$bodies_same" "1" "WK23 with a byte-identical body in each: no hand-authored per-host variant"
 
+# --- the install document (task-022) ------------------------------------------
+# This document is part of SATISFYING AC-24 rather than commentary on it: where a host raises an
+# approval prompt, the criterion is met only with the operator's pre-authorisation step performed,
+# and an operator cannot perform a step nobody wrote down. So its load-bearing claims are asserted.
+DOC="${REPO_ROOT}/docs/chat-wake-install.md"
+assert_file_exists "$DOC" "WK24 the wake install document exists"
+
+for host in "Claude Code" "Cursor"; do
+    assert_file_contains "$DOC" "## ${host}" "WK24 it has a section for ${host}, which ships an adapter"
+done
+assert_file_contains "$DOC" "host_timeout - margin" "WK24 it shows the arithmetic relating the two numbers, not just the values"
+assert_file_contains "$DOC" "min(30s, 60s - 5s)" "WK24 with the numbers worked through"
+
+# The consequence of omitting the flag, stated as what the operator will OBSERVE. "Nothing" is the
+# honest answer and the hardest one to guess, which is exactly why it has to be written down.
+assert_file_contains "$DOC" "What you see: nothing" "WK24 it states the observable consequence of a mismatch: nothing at all"
+assert_file_contains "$DOC" "fallback-unknown-host-timeout" "WK24 and shows what the subscriber reports when the flag is absent"
+
+# Never fail-closed, and the reason, not just the instruction.
+assert_file_contains "$DOC" "Never set the hook to fail closed" "WK25 it says never to set fail-closed"
+assert_file_contains "$DOC" "your own session freezing" "WK25 and gives the reason: a hung wait would freeze the user's own session"
+
+# The pre-authorisation option, what it buys and what it costs -- the AC-24 clause.
+assert_file_contains "$DOC" "pre-authorise" "WK26 it names the pre-authorisation option AC-24 depends on"
+assert_file_contains "$DOC" "the pull floor is always there" "WK26 and states the alternative, so the trade is a choice rather than a demand"
+
+# Every host that ships no adapter is named as such, so a reader is not left wondering.
+for host in Codex "Copilot CLI" Antigravity; do
+    assert_file_contains "$DOC" "$host" "WK27 it accounts for ${host}, which ships no adapter"
+done
+assert_file_contains "$DOC" "degrades to the pull floor" "WK27 and says what a host with no adapter falls back to"
+
 # Non-automated checks are enumerated, not implied.
-assert_file_contains "${REPO_ROOT}/chat-node/tests/MANUAL-PROCEDURES.md" "MP-05" \
-    "the live-host criteria this suite cannot reach are recorded as manual procedures"
+for mp in MP-05 MP-06 MP-07 MP-08; do
+    assert_file_contains "${REPO_ROOT}/chat-node/tests/MANUAL-PROCEDURES.md" "$mp" \
+        "the checks this suite cannot reach are recorded as ${mp}, by name and with steps"
+done
 
 # Tear down FIRST, then measure, since the EXIT trap runs after this line.
 _cleanup
