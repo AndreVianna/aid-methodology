@@ -146,6 +146,7 @@
 {"dst": ".github/aid/templates/worktree-lifecycle.md", "profile": "copilot-cli", "sha256": "ffc3d911691b85d54d1b90ade357eedce6092d1caa9806ccc91ff49bdb59d8e1", "src": "canonical/templates/worktree-lifecycle.md"}
 {"dst": ".github/skills/aid-ask/SKILL.md", "profile": "copilot-cli", "sha256": "5bf54bb9cd45372e6d22c39e15a375ca3a5f11690fdbd440042a62c9375349e3", "src": "canonical/skills/aid-ask/SKILL.md"}
 {"dst": ".github/skills/aid-brainstorm/SKILL.md", "profile": "copilot-cli", "sha256": "9e7c5a42842d15a88b0cdcb11e77fa25fb23ef0170b34da0df5d13678d67fabb", "src": "canonical/skills/aid-brainstorm/SKILL.md"}
+{"dst": ".github/skills/aid-chat/SKILL.md", "profile": "copilot-cli", "sha256": "19ea85d3e8e38d0b0c8ada87ebaf81ba1b8e3171c6f231a41f071ca705b7d8e7", "src": "canonical/skills/aid-chat/SKILL.md"}
 {"dst": ".github/skills/aid-config/SKILL.md", "profile": "copilot-cli", "sha256": "534cb2eebee5d824131ed1ea4e50e52f0af82b88140969894d8191d9065dd16c", "src": "canonical/skills/aid-config/SKILL.md"}
 {"dst": ".github/skills/aid-create-api/SKILL.md", "profile": "copilot-cli", "sha256": "fa452f22654cf442e13202a16701134114d50bbd45beb2f43176542a8e22e611", "src": "canonical/skills/aid-create-api/SKILL.md"}
 {"dst": ".github/skills/aid-create-architecture/SKILL.md", "profile": "copilot-cli", "sha256": "2ecab8dd1d4b602badf47a6dc625844ef18858fb8ba19b99c0ab16b2aef9faaa", "src": "canonical/skills/aid-create-architecture/SKILL.md"}

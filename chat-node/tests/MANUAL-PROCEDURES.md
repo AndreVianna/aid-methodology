@@ -112,3 +112,101 @@ party (`HP15`) — which is necessary but cannot observe a host's own UI.
 permission request and no confirmation** at any point. Step 5 shows B already in `pair` — it
 learned by reading state, having been asked nothing. If host 2 prompts for anything, the claim
 fails and `FR-9.3`'s reasoning needs revisiting, not the test.
+
+---
+
+## MP-05 — `AC-1`: a Cursor session and a Claude Code session exchange a message on one machine
+
+**Verifies:** the wake works across tools. Two sessions in **different tools**, in **different
+repositories**, on **one machine**, share a channel and exchange a message, and the recipient acts
+on it with **no human action**.
+
+**Why not automated here:** it needs two live host sessions. No host session runs in this
+environment, and a stub cannot stand in — the thing being tested is whether a real host fires its
+stop hook, hands the adapter its payload, accepts the adapter's reply, and runs a turn from it. The
+automated suite covers everything from the node to the adapter's stdout (`test-chat-node-wake.sh`,
+WK01–WK20); this is the last link, and it is the host's half.
+
+The P0 spike already established the mechanism on both hosts and across two machines. This
+procedure re-runs it against the shipped product rather than the spike's apparatus.
+
+**Steps:**
+
+1. On the machine, `aid chat node start`.
+2. Install the stop hook in **Cursor**, per `docs/chat-wake-install.md`, with `timeout: 60` and
+   `--host-timeout 60`.
+3. Install the stop hook in **Claude Code**, same document, same two numbers.
+4. Open a Cursor session in repository A. Register it: `aid chat register --name cursor-a --tool cursor`.
+5. Open a Claude Code session in repository B. Register it: `aid chat register --name claude-b --tool claude-code`.
+6. From the Cursor session: `aid chat open --name cursor-a --channel pair`.
+7. From the Cursor session: `aid chat connect --name cursor-a --target claude-b`.
+8. From the Cursor session: `aid chat send --name cursor-a --body 'What test framework does this repo use?'`
+9. **Do nothing.** Watch the Claude Code session.
+
+**Pass looks like:** the Claude Code session begins a turn on its own, with the question visible as
+its context, and answers it. Nobody clicked anything between step 8 and that turn. Then reverse the
+direction — send from Claude Code to Cursor — and the same holds.
+
+**Fail looks like:** the recipient stays idle (check the hook is installed and both numbers match),
+or a dialog appears (that is `MP-06`, not this).
+
+---
+
+## MP-06 — `AC-24`: no approval prompt is raised, on a host that gates privileged actions
+
+**Verifies:** from a message arriving to the session having acted, **no approval prompt is raised**,
+on a host whose default is to gate an agent's privileged actions. Where the design chose
+pre-authorisation instead, the criterion is met only with the operator's install step performed —
+so this procedure covers both the unprompted path and, if a prompt does appear, the named step that
+removes it.
+
+**Why not automated here:** it is a claim about a live host's own UI. A stub that never prompts
+proves nothing about a host that would. The automated suite asserts the structural half — that no
+code path in the node, the CLI, or either adapter reads stdin or waits on a third party (`HP15` in
+`test-chat-node-hub.sh`) — which is necessary and not sufficient.
+
+This is why the wake carries the message body as **text**: the spike measured a host raising an
+approval prompt for the woken turn's own shell command and waiting for a human click. The adapter
+reads the inbox before the session runs, so the woken turn needs no privileged call at all.
+
+**Steps:**
+
+1. Configure the host with its **default** approval behaviour — do not pre-authorise anything yet.
+2. Register two sessions and put them in one channel (steps 4–7 of `MP-05`).
+3. Send a message to the gated session.
+4. Watch that session's window continuously from the moment of sending until it has replied.
+
+**Pass looks like:** it wakes, reads, and replies with no dialog of any kind. The message text was
+already in its context, so it had no privileged call to make.
+
+**If a prompt does appear:** record which action raised it. Then perform the pre-authorisation step
+named in `docs/chat-wake-install.md` for that host, repeat steps 3–4, and confirm the prompt is
+gone. The criterion is met **with that step performed**, and the step must be in the install
+document — if it is not, add it, because an operator cannot perform an instruction nobody wrote.
+
+---
+
+## MP-07 — `AC-23`: a wake does not loop, on a host whose stop hook re-fires
+
+**Verifies:** a woken session runs **one** turn and settles. The stop event that ends the woken turn
+does not start another wait, and the session does not wake again until a further message arrives.
+
+**Why not automated here:** the automated suite drives each adapter's re-entry rule directly (WK12,
+WK15, WK16) by handing it the payload a re-fired stop would carry — which tests the rule. It cannot
+test that the *host* actually re-fires, and the whole difficulty of this criterion is that it does:
+measurement saw the stop hook re-fire 6.3 s and 6.6 s after the woken turn on the two proving hosts.
+
+**Steps:**
+
+1. Complete `MP-05` through step 8 so a wake has just been served.
+2. Watch the woken session for **60 seconds** after it finishes its reply.
+3. Send nothing during that time.
+4. Then look at `${AID_CHAT_RUNTIME}/wake-*.count` if the host is Claude Code.
+
+**Pass looks like:** exactly one turn ran. The session is idle after it, and stays idle for the full
+60 seconds. On Claude Code the count file is absent or zero, meaning the adapter's own ceiling
+released after the wake was served.
+
+**Fail looks like:** a second turn with nothing new to report, or turns continuing indefinitely.
+That is the loop this rule exists to prevent, and on Claude Code there is no host-side cap behind
+it — `loop_limit` is documented `null`.

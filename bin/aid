@@ -5363,10 +5363,22 @@ _aid_json_escape() {
 # Reading the inbox advances `delivered` and NOT `acked`. If this advanced both, a crash between
 # the hand-off and the turn would mark a message read that no model ever saw.
 _aid_chat_wait_once() {
-    local q="$1" n="$2" base out code body
+    local q="$1" n="$2" base out code body pending depth
     if ! base="$(_aid_chat_base_url)"; then
         echo "ERROR: aid: chat subscribe: the node is not running; run 'aid chat node start' first." >&2
         return 1
+    fi
+    # READ BEFORE WAITING, for the same reason the adapter does: a message that arrived while this
+    # session was busy is already in the store and is not going to "arrive" again. Going straight to
+    # the wait would block, time out, and leave it unread until some later message happened to land
+    # while this was listening -- which is the whole busy path silently missing.
+    pending="$(curl -sS "${base}/messages?name=${n}" 2>/dev/null)"
+    depth="$(printf '%s' "$pending" | python3 -c 'import json,sys
+try: print(len(json.load(sys.stdin).get("messages", [])))
+except Exception: print(0)')"
+    if [[ "${depth:-0}" -gt 0 ]]; then
+        printf '%s\n' "$(_aid_chat_merge_wake '{"ok":true,"kind":"message","from_backlog":true}' "$pending")"
+        return 0
     fi
     out="$(curl -sS -w '\n%{http_code}' "${base}${q}" 2>/dev/null)"
     code="$(printf '%s' "$out" | tail -n1)"
