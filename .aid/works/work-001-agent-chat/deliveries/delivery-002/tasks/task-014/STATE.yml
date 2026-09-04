@@ -61,7 +61,7 @@ notes: >-
   gained exactly `roster` and `connect` over delivery-001's, and HP20 asserts no administrative
   verb entered it (node lifecycle and reap stay operator-side). When the skill exists, the
   criterion should be re-verified against the skill itself. So that this does not simply lapse --
-  nothing re-opens a criterion already ticked -- the gap is FILED as W1-3 in
+  nothing re-opens a criterion already ticked -- the gap is FILED as W1-20 in
   .aid/knowledge/tech-debt.md, which is the only mechanism in this repository that survives the
   work folder being pruned.
 # [W] mutable display-name override (writeback-state.sh:829). Documentation
