@@ -270,6 +270,30 @@ features:
 #   - date / event / outcome / notes
 review_history:
   - date: 2026-09-04
+    scope: delivery-003 gate (three cycles)
+    outcome: >-
+      PASSED at A+ on cycle 3. Seven tasks, 217 assertions across seven suites, zero regressions
+      (158 suites, the same 15 pre-existing failures). Nine findings: eight fixed, one out of scope.
+      THREE of this delivery's criteria cannot be automated here and are recorded as manual
+      procedures rather than quietly deferred: AC-1 needs two live host sessions, AC-24 needs a host
+      that gates privileged actions by default, and AC-23's host half needs a stop hook that
+      actually re-fires. A stub that never prompts proves nothing about a host that would. MP-05,
+      MP-06 and MP-07 carry them with steps and pass conditions; the spike already ran all three.
+      Cycle 1 REFUSED on the plainest kind of miss: `aid chat subscribe` was in bin/aid and entirely
+      absent from bin/aid.ps1, and the parity test that would have caught it skips here for want of
+      PowerShell. That gap had been recorded in task notes since delivery-001; this is the first time
+      it hid a defect rather than merely an unverified line.
+      TWICE, writing a test found a real defect. The read-before-wait fix went into the adapters and
+      not the CLI subscriber, so `aid chat subscribe` would block past a message already in the
+      store. And building the guard-timer test exposed the guard being applied PER REQUEST rather
+      than per run -- 36 seconds against an 18 second budget, which is exactly the orphaned adapter
+      the guard exists to prevent.
+      One fix broke the node at startup (a temporal dead zone on the announcer handle) and the suite
+      caught it at once, though the symptom -- eight unrelated assertions returning empty strings --
+      looked nothing like the one-line cause in the node's log.
+    grade: A+
+
+  - date: 2026-09-04
     scope: delivery-002 gate (four cycles)
     outcome: >-
       PASSED at A+ on cycle 4. Four tasks, 158 assertions across seven suites, zero regressions
