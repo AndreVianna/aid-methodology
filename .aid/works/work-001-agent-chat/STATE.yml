@@ -270,6 +270,31 @@ features:
 #   - date / event / outcome / notes
 review_history:
   - date: 2026-09-04
+    scope: delivery-004 gate (three cycles)
+    outcome: >-
+      PASSED at A+ on cycle 3. Nine tasks, 259 assertions across eight suites, zero regressions
+      (159 suites, the same 15 pre-existing failures). Fourteen findings: thirteen fixed, one out of
+      scope.
+      TWO OF THIS DELIVERY'S CRITERIA NEED TWO MACHINES and are recorded as MP-09 and MP-10 rather
+      than simulated. The automated suite runs two real hubs with a real TCP link, so every property
+      of the PROTOCOL is genuinely tested; what it cannot do is meet a NAT or a stateful firewall, and
+      the idle-link property is entirely about those. A test that closed the socket itself would prove
+      the reconnect path works -- already covered -- and nothing about whether a 15-second keepalive
+      suits real networks.
+      Cycle 1 refused the delivery on the delivery's worst failure mode, and it failed SILENTLY: two
+      hubs that nobody configured both took the identity 'local', which made every membership
+      announcement look like the hub's own, so each side saw an empty channel and every send was
+      refused as solo with nothing naming the cause. Fixed three ways -- hostname default, an explicit
+      refusal on collision, and a manual procedure that sets and checks it.
+      Then cycle 2 found that MY OWN FIX had a second copy of the logic it was fixing: link.mjs
+      resolved the identity itself, so the hostname default never reached the wire and two documents
+      claimed otherwise. The documentation was right about the intent; the second copy was wrong about
+      the fact, which is what a second copy is for.
+      SEVEN defects across the delivery were found by running two hubs rather than by reading, among
+      them a link that was only half bidirectional and two namespaces sharing one column name.
+    grade: A+
+
+  - date: 2026-09-04
     scope: delivery-003 gate (three cycles)
     outcome: >-
       PASSED at A+ on cycle 3. Seven tasks, 217 assertions across seven suites, zero regressions

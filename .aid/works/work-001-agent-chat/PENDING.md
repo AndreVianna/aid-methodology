@@ -85,6 +85,16 @@ is on disk at `profiles/*/skills/aid-chat/SKILL.md`.
 
 ---
 
+## P4b — A test of my own that can flake under load
+
+| # | Item | Status |
+|---|---|---|
+| P4b-1 | `WK18d` (the adapter's self-bounding guard, driven against a server that accepts and never answers) failed once during a heavily loaded sequential batch: event-loop starvation pushed the run past the harness bound. It passed three consecutive individual runs and passes under `run-all.sh`. The harness bound is now 90s so the failure mode is unambiguous -- a late guard fails the 25s assertion rather than being killed and reported as exit 124, which reads the same as "the guard never fired". The underlying question is whether an 18s guard is reliable on a starved event loop, and the honest answer is that it is not, which matters for a real adapter on a busy machine | Open |
+
+`P4b-1` deserves a decision in the strengthening round rather than a looser threshold: if the guard
+can be starved past the host's timeout, the abandoned-adapter case it prevents is reachable in
+production, and the answer may be to bound it with something the event loop cannot delay.
+
 ## P5 — Tooling that slowed the work
 
 | # | Item | Status | Durable row |

@@ -373,7 +373,11 @@ if [[ -s "${_TMPD}/silent.port" ]]; then
     mkdir -p "${_TMPD}/silent-rt"
     cp "${_TMPD}/silent.port" "${_TMPD}/silent-rt/hub.port"
     t0=$(date +%s%N)
-    ( AID_CHAT_RUNTIME="${_TMPD}/silent-rt" timeout 40 node "${REPO_ROOT}/chat-node/adapters/claude-code.mjs"         --name bob --host-timeout 20 >"${_TMPD}/silent.out" 2>/dev/null )
+    # The outer bound is a harness backstop and is generous ON PURPOSE. The guard is 18s and the
+    # assertion below is 25s, so a guard that fires late must FAIL THAT ASSERTION rather than be
+    # killed here and reported as exit 124 -- which reads identically to "the guard never fired".
+    # Observed flaking once on a loaded VM where event-loop starvation pushed the run past 40s.
+    ( AID_CHAT_RUNTIME="${_TMPD}/silent-rt" timeout 90 node "${REPO_ROOT}/chat-node/adapters/claude-code.mjs"         --name bob --host-timeout 20 >"${_TMPD}/silent.out" 2>/dev/null )
     rc=$?
     t1=$(( ($(date +%s%N) - t0) / 1000000 ))
     # The guard is host_timeout - 2s = 18s. It must return under its own power inside that, and well
@@ -381,7 +385,7 @@ if [[ -s "${_TMPD}/silent.port" ]]; then
     if [[ "$rc" -eq 0 && "$t1" -lt 25000 ]]; then
         pass "WK18d against a server that accepts and never answers, the adapter returns under its own guard (${t1}ms, exit ${rc})"
     else
-        fail "WK18d the adapter did not self-bound: ${t1}ms, exit ${rc} (124 means the outer timeout killed it)"
+        fail "WK18d the adapter did not self-bound within 25s: ${t1}ms, exit ${rc} (the 18s guard should have returned it; 124 would mean even the 90s harness bound was reached)"
     fi
     assert_eq "$(tr -d ' \n' < "${_TMPD}/silent.out")" "{}" "WK18d and returns the no-wake shape rather than a crash"
 else
