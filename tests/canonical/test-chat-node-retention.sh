@@ -287,6 +287,56 @@ assert_output_contains "$bad" "non-negative" "RT25 a bad retention value is refu
 assert_eq "$($AID chat retention --set ttlMs=7000 2>/dev/null | _j "d['applied']['ttlMs']")" "7000" \
     "RT25 and a good one is applied and reported back"
 
+# RT26 -- A RETENTION SETTING SURVIVES A RESTART. Without this, "operator-settable" is half a feature:
+# the setting appears to work, and the evidence that it did not arrives hours later when messages the
+# operator expected to be gone are still there.
+$AID chat retention --set ttlMs=4242 >/dev/null 2>&1
+$AID chat node stop >/dev/null 2>&1
+$AID chat node start --port 0 >/dev/null 2>&1
+assert_eq "$($AID chat retention 2>/dev/null | _j "d['limits']['ttlMs']")" "4242" \
+    "RT26 a retention value set through the CLI is still in force after the node restarts"
+
+# And an explicit environment variable still WINS over a persisted one, because that is how a test or
+# a one-off run says "just for now" -- a persisted value that could not be overridden would be a file
+# somebody has to find and delete.
+$AID chat node stop >/dev/null 2>&1
+AID_CHAT_TTL_MS=999 $AID chat node start --port 0 >/dev/null 2>&1
+assert_eq "$($AID chat retention 2>/dev/null | _j "d['limits']['ttlMs']")" "999" \
+    "RT26 an explicit environment variable still overrides a persisted setting"
+
+# RT27 -- A WHISPER BODY DOES NOT CROSS TO A HUB THAT HOLDS NO TARGET. The read filter was always
+# right, but replicating the body to every hub with any member put the text in stores where nobody was
+# permitted to read it -- and a guarantee that rests on every future reader remembering to filter is
+# not a guarantee. Checked at the REPLICATION DECISION rather than over a live link, because what is
+# being asserted is which hubs are chosen.
+whisper_targets="$(node --input-type=module -e "
+import { openStore } from '${REPO_ROOT}/chat-node/server/store.mjs';
+import * as C from '${REPO_ROOT}/chat-node/server/core.mjs';
+import * as fed from '${REPO_ROOT}/chat-node/server/federation.mjs';
+const db = await openStore({ path: ':memory:' });
+for (const n of ['here', 'alsohere']) C.register(db, { name: n, tool: 't', cwd: '/' });
+C.openChannel(db, { name: 'here', channelName: 'w' });
+C.joinChannel(db, { name: 'alsohere', channelName: 'w' });
+const cid = db.prepare('SELECT id FROM channel WHERE name=?').get('w').id;
+// Two remote hubs hold members; only one holds the whisper target.
+for (const [m, n] of [['hubA', 'target'], ['hubB', 'bystander']]) {
+  db.prepare('INSERT INTO channel_member(channel_id, machine, name, joined_at) VALUES (?,?,?,1)').run(cid, m, n);
+}
+const mk = (whisperTo) => ({
+  sender_machine: 'local', sender_name: 'here', sender_seq: 1,
+  idempotency_key: 'k' + String(whisperTo), kind: 'message', body: 'secret',
+  correlation_id: null, reply_to: null, mention: null, whisper_to: whisperTo, sent_at: 1,
+});
+const link = { isUp: () => false };   // nothing delivers; only the CHOICE of targets is asserted
+const plain   = await fed.replicateMessage(db, link, { channelId: cid, channelName: 'w', message: mk(null) });
+const remote  = await fed.replicateMessage(db, link, { channelId: cid, channelName: 'w', message: mk('target') });
+const localTo = await fed.replicateMessage(db, link, { channelId: cid, channelName: 'w', message: mk('alsohere') });
+const names = (r) => (r.replicated_to || []).map(x => x.machine).sort().join('+') || 'none';
+console.log([names(plain), names(remote), names(localTo)].join('|'));
+" 2>/dev/null)"
+assert_eq "$whisper_targets" "hubA+hubB|hubA|none" \
+    "RT27 a plain message goes to every hub with a member; a whisper goes ONLY to its target's hub; a whisper to a local member leaves this machine at all"
+
 # Tear down FIRST, then measure, since the EXIT trap runs after this line.
 _cleanup
 trap - EXIT

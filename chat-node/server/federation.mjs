@@ -105,7 +105,32 @@ export async function replicateMembership(db, link, { channelName, name, event }
 }
 
 export async function replicateMessage(db, link, { channelId, channelName, message }) {
-    const targets = peersForChannel(db, channelId);
+    // A WHISPER GOES ONLY WHERE ITS TARGET IS, and this is a storage-layer rule rather than a read
+    // rule. The read filter was already correct everywhere -- a non-target's `inbox` never returns a
+    // whisper on any hub -- but replicating the BODY to every hub holding any member of the channel
+    // put the text in stores on machines where nobody was permitted to read it. "Reaches only its
+    // target" has to mean the body does not travel to hubs with no business holding it, or the
+    // guarantee rests entirely on every future reader remembering to filter.
+    //
+    // So: if the target is local, the whisper replicates NOWHERE. If the target is remote, it goes to
+    // that one hub and no other.
+    let targets;
+    if (message.whisper_to) {
+        const targetIsLocal = db.prepare('SELECT 1 FROM session WHERE channel_id = ? AND name = ?')
+                                .get(channelId, message.whisper_to);
+        if (targetIsLocal) {
+            return { ok: true, replicated_to: [], whisper_kept_local: true };
+        }
+        const row = db.prepare('SELECT machine FROM channel_member WHERE channel_id = ? AND name = ?')
+                      .get(channelId, message.whisper_to);
+        // No record of the target anywhere: send nothing rather than broadcast in the hope of finding
+        // them. `send` already refused a whisper to a non-member, so reaching here means the target
+        // left between the send and the replication -- and a body sent after that is a body sent to a
+        // hub that will never deliver it.
+        targets = row ? [row.machine] : [];
+    } else {
+        targets = peersForChannel(db, channelId);
+    }
     const payload = {
         channel: channelName,
         sender_machine: message.sender_machine,

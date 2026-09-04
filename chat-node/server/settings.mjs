@@ -11,6 +11,8 @@
 // each value from the environment, which is where the CLI puts it after resolving it through
 // the sanctioned reader. That keeps one parser for the YAML and one place for the defaults.
 
+import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
+
 const DEFAULTS = {
     // Message TTL: the age at which a message becomes ELIGIBLE for removal. Age alone never
     // deletes an unacknowledged message -- the trim point decides that.
@@ -53,12 +55,62 @@ const ENV = {
 
 // Read on every call rather than cached, so a test or an operator changing a value takes
 // effect without restarting the process. The cost is a handful of env reads.
+// Where a runtime override is kept so it OUTLIVES THE PROCESS.
+//
+// An operator who set retention through the CLI and found it reverted after a restart has been given
+// half a feature: the setting appeared to work, and the evidence that it did not arrives hours later
+// when messages they expected to be gone are still there.
+//
+// It is NOT written to `.aid/settings.yml`. That file is the project's, edited by people and read
+// through the sanctioned reader; a service writing to it would be a second author for a file with one
+// owner. The runtime directory is the node's own, which is exactly what this is.
+function overridePath() {
+    const dir = process.env.AID_CHAT_RUNTIME || `${process.env.HOME || '.'}/.aid/chat`;
+    return `${dir}/retention.json`;
+}
+
+// Re-read on every call rather than cached, so a value written by one process is seen by another.
+function loadOverrides() {
+    try {
+        const v = JSON.parse(readFileSync(overridePath(), 'utf8'));
+        return v && typeof v === 'object' ? v : {};
+    } catch {
+        return {};
+    }
+}
+
+// Persisted AND applied, so a value set at runtime takes effect at once and again after a restart.
+export function persistOverrides(values) {
+    const current = { ...loadOverrides() };
+    for (const [k, v] of Object.entries(values || {})) {
+        if (!(k in DEFAULTS)) continue;
+        current[k] = Number(v);
+        process.env[ENV[k]] = String(Number(v));
+    }
+    try {
+        mkdirSync(overridePath().replace(/\/[^/]+$/, ''), { recursive: true });
+        writeFileSync(overridePath(), JSON.stringify(current, null, 2), 'utf8');
+        return { ok: true, persisted: current };
+    } catch (err) {
+        // Applied in memory but not written: REPORTED rather than swallowed, because the operator
+        // needs to know the setting will not survive a restart.
+        return { ok: true, persisted: current, warning: `applied but not written to disk: ${err && err.message}` };
+    }
+}
+
+// PRECEDENCE, stated once: an explicit environment variable wins, then a persisted override, then the
+// default. The environment wins because that is how a test or a one-off run says "just for now", and a
+// persisted value would otherwise be impossible to override without deleting a file.
+
 export function limits() {
+    const stored = loadOverrides();
     const out = {};
     for (const [key, def] of Object.entries(DEFAULTS)) {
         const raw = process.env[ENV[key]];
         const n = raw === undefined || raw === '' ? NaN : Number(raw);
-        out[key] = Number.isFinite(n) && n >= 0 ? n : def;
+        if (Number.isFinite(n) && n >= 0) { out[key] = n; continue; }
+        const stashed = Number(stored[key]);
+        out[key] = Number.isFinite(stashed) && stashed >= 0 ? stashed : def;
     }
     return out;
 }

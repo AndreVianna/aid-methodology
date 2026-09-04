@@ -366,20 +366,22 @@ export function makeRouter({ db, startedAt, onReady = null }) {
     routes.set('POST /retention', async (req, res) => {
         const b = await readJsonBody(req);
         const applied = {};
-        for (const [key, env] of Object.entries(settings.LIMIT_ENV)) {
+        for (const key of Object.keys(settings.LIMIT_ENV)) {
             if (b[key] === undefined) continue;
             const n = Number(b[key]);
             if (!Number.isFinite(n) || n < 0) {
                 return answer(res, { ok: false, reason: 'bad_request', detail: `${key} must be a non-negative number` });
             }
-            process.env[env] = String(n);
             applied[key] = n;
         }
         if (!Object.keys(applied).length) {
             return answer(res, { ok: false, reason: 'bad_request', detail: `nothing to set; known keys: ${Object.keys(settings.LIMIT_ENV).join(', ')}` });
         }
+        // Persisted, not merely applied. An operator who set a value and found it reverted after a
+        // restart would have been given half a feature, and the evidence would arrive hours later.
+        const wrote = settings.persistOverrides(applied);
         core.audit(db, { event: 'retention', detail: Object.entries(applied).map(([k, v]) => `${k}=${v}`).join(' ') });
-        answer(res, { ok: true, applied, limits: settings.limits() });
+        answer(res, { ok: true, applied, persisted: true, limits: settings.limits(), ...(wrote.warning ? { warning: wrote.warning } : {}) });
     });
 
     routes.set('GET /protocol', (_req, res) => json(res, 200, {

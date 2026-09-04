@@ -419,14 +419,11 @@ export function send(db, { name, body, kind = 'message', idempotencyKey = null,
     // prevent, and accepting it silently would let that failure in by another door.
     if (otherMemberCount(db, s.channel_id, s.id) === 0) return no(REFUSAL.SOLO_CHANNEL);
 
-    // The unread check reads `next_seq` only to compute the current head. The authoritative read
-    // of that counter happens inside the transaction below, and nothing between the two writes
-    // it -- but taking a second read across a transaction boundary is the shape that becomes a
-    // race the moment this core is not single-threaded, so the boundary is named rather than
-    // relied on: `BEGIN IMMEDIATE` takes the write lock before re-reading, and the value used
-    // for the insert is only ever the one read inside.
-    const headForDepth = db.prepare('SELECT next_seq FROM channel WHERE id = ?').get(s.channel_id).next_seq - 1;
-    if (maxUnreadDepth(db, s.channel_id, headForDepth) >= limits().maxUnread) return no(REFUSAL.OVERFLOW);
+    // The overflow check now happens INSIDE the transaction, with the same counter read the insert
+    // uses. It was outside, with a comment explaining that the second read was safe because nothing
+    // between them writes -- which was true and beside the point: two reads of a counter across a
+    // transaction boundary is a shape that becomes a race the moment anything changes, and there was
+    // no reason to keep it when one read serves both.
 
     // The key is the caller's if given and minted here if not: FR-4.1 marks it optional, and a
     // NOT NULL column with no generation rule would turn an omitted optional into a constraint
@@ -452,6 +449,10 @@ export function send(db, { name, body, kind = 'message', idempotencyKey = null,
         // Both counters are COLUMNS, never a MAX() over the log: a MAX over a trimmed log
         // restarts at a number already used.
         arrivalSeq = db.prepare('SELECT next_seq FROM channel WHERE id = ?').get(s.channel_id).next_seq;
+        if (maxUnreadDepth(db, s.channel_id, arrivalSeq - 1) >= limits().maxUnread) {
+            db.exec('ROLLBACK');
+            return no(REFUSAL.OVERFLOW);
+        }
         const senderSeq = db.prepare('SELECT next_sender_seq FROM session WHERE id = ?').get(s.id).next_sender_seq;
         db.prepare(`INSERT INTO message
             (channel_id, arrival_seq, sender_name, sender_machine, sender_seq, idempotency_key,
@@ -820,11 +821,15 @@ export function trim(db, { now = nowMs() } = {}) {
         // a rule of its own: reaping deletes the session row, so it is simply not here to hold the
         // point back. That is why reaping and trimming need no coordination.
         const positions = db.prepare('SELECT acked_seq FROM session WHERE channel_id = ?').all(ch.id);
-        // No live local member: nothing here needs any of it. The channel itself is closed by the
-        // reaping path, not by this one -- trimming removes messages, never channels.
+        // No live local member: nothing here needs any of it, so the floor is the channel's own head
+        // rather than a sentinel. Same effect and a real number -- MAX_SAFE_INTEGER was a value that
+        // could never be a sequence, which is the sort of thing that reads as a bug to whoever finds
+        // it next. The channel itself is closed by the reaping path, not by this one: trimming removes
+        // messages, never channels.
+        const head = db.prepare('SELECT next_seq FROM channel WHERE id = ?').get(ch.id).next_seq - 1;
         const floor = positions.length
             ? Math.min(...positions.map((p) => p.acked_seq))
-            : Number.MAX_SAFE_INTEGER;
+            : head;
 
         const info = db.prepare(`DELETE FROM message
                                  WHERE channel_id = ? AND arrival_seq <= ? AND received_at < ?`)
@@ -866,6 +871,15 @@ export function readAudit(db, { limit = 100 } = {}) {
 // Reads what is in the store and computes what is derived, which is the same split as everywhere
 // else: idle time is the observable fact, and it is the input to the one remedy this design leaves a
 // human -- eviction. So it is reported as a number rather than a judgement.
+// How many messages this member would actually be handed from here. Counted through the SAME
+// visibility rule the read path uses, so the operator's number and the member's experience cannot
+// disagree -- which they did when this was a subtraction.
+function countVisibleAfter(db, channelId, ackedSeq, viewer) {
+    const rows = db.prepare('SELECT sender_name, whisper_to FROM message WHERE channel_id = ? AND arrival_seq > ?')
+                   .all(channelId, ackedSeq);
+    return rows.filter((m) => whisperVisibleTo(m, viewer)).length;
+}
+
 export function operatorView(db) {
     const now = nowMs();
     const { staleMs, reapMs } = limits();
@@ -880,8 +894,12 @@ export function operatorView(db) {
             cwd: r.cwd,
             machine: thisMachine(),
             channel: ch ? ch.name : null,
-            // The two numbers an operator actually acts on.
-            unread: ch ? Math.max(0, (ch.next_seq - 1) - r.acked_seq) : 0,
+            // The two numbers an operator actually acts on -- and `unread` counts what this member
+            // would ACTUALLY RECEIVE, not the positional gap. Those differ whenever somebody else's
+            // whisper sits in the range: the positional gap would tell an operator a session is four
+            // behind when `inbox` will hand it two, and an operator deciding whether to evict on that
+            // number would be acting on a figure the session never sees.
+            unread: ch ? countVisibleAfter(db, r.channel_id, r.acked_seq, r.name) : 0,
             idle_ms: now - r.last_heartbeat_at,
             stale: (now - r.last_heartbeat_at) > staleMs,
             reapable: (now - r.last_heartbeat_at) > reapMs,
@@ -907,7 +925,10 @@ export function operatorView(db) {
             head_seq: head,
             stored_messages: db.prepare('SELECT COUNT(*) AS n FROM message WHERE channel_id = ?').get(c.id).n,
             members: [
-                ...local.map((m) => ({ machine: thisMachine(), name: m.name, unread: Math.max(0, head - m.acked_seq) })),
+                ...local.map((m) => ({
+                    machine: thisMachine(), name: m.name,
+                    unread: countVisibleAfter(db, c.id, m.acked_seq, m.name),
+                })),
                 // A remote member's unread depth is NOT reported, because this hub cannot know it --
                 // acknowledged positions are local state on the machine that holds the member. Omitted
                 // rather than guessed at, since a number an operator cannot trust is worse than none.

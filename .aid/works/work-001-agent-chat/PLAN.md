@@ -398,8 +398,13 @@ nice-to-have tail.
       per-member unread depth and idle time, and the audit log
 - [ ] All section-6 quality gates pass
 
-**Notes:** No new tables and no migration -- delivery-001 wrote both columns as nullable and a store
-written then is read by this delivery unaltered.
+**Notes:** **No migration, and no new columns on `message`** -- delivery-001 wrote `mention` and
+`whisper_to` as nullable, so a store written then is read by this delivery unaltered. This delivery
+DOES add two schema objects of its own, and the earlier wording ("no new tables") was wrong about
+that: the `audit` table, which operator visibility needs and which deliberately has nowhere to put a
+message body, and the `message_trim` index, whose only reader is the trim job. Both are created
+`IF NOT EXISTS`, so backward compatibility holds -- which is what the note was reaching for and
+should have said.
 
 **Execution graph**
 
