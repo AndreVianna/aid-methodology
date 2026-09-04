@@ -202,6 +202,14 @@ _aid_usage() {
             printf 'aid chat ack     --name <n> --cursor <c>      advance your acknowledged position\n'
             printf 'aid chat roster  --name <n>                   who else is on this hub, and who is free\n'
             printf 'aid chat connect --name <n> --target <t>      pull one named agent into YOUR channel\n'
+            printf 'aid chat subscribe --name <n> [--host-timeout <s>] [--follow]\n'
+            printf '                 hold ONE wait for an arriving message or connect outcome.\n'
+            printf '                 --host-timeout <s> MUST be the same number as the host stop\n'
+            printf '                 hook timeout you configured; the block is\n'
+            printf '                 min(long-poll default, s - margin). Omit it and the block\n'
+            printf '                 falls back to a short value rather than inheriting any\n'
+            printf '                 platform default. --follow re-arms instead of returning.\n'
+            printf '                 Spends no model tokens: it blocks in a process, not a prompt.\n'
             printf 'aid chat reap    --name <n> | --name --all     give a session up for gone (operator)\n'
             printf '  --name may be omitted when AID_CHAT_SESSION is set.\n'
             printf '  --cursor on inbox RE-READS from that point and moves neither position.\n'
@@ -5344,9 +5352,63 @@ _aid_json_escape() {
     printf '%s' "$1" | sed -e 's/\\/\\\\/g' -e 's/"/\\"/g' -e ':a' -e 'N' -e '$!ba' -e 's/\n/\\n/g'
 }
 
+# One armed wait, and whatever it returns turned into one line of JSON on stdout.
+#
+# On a message this ALSO reads the inbox, which is deliberate and is the single most consequential
+# thing the spike changed: the wake carries the message body as TEXT, because on one host the woken
+# turn's own shell command raised an approval prompt and waited for a human click. So the adapter
+# has already read the inbox by the time the session runs, and the session simply continues with
+# the message as context rather than having to call anything.
+#
+# Reading the inbox advances `delivered` and NOT `acked`. If this advanced both, a crash between
+# the hand-off and the turn would mark a message read that no model ever saw.
+_aid_chat_wait_once() {
+    local q="$1" n="$2" base out code body
+    if ! base="$(_aid_chat_base_url)"; then
+        echo "ERROR: aid: chat subscribe: the node is not running; run 'aid chat node start' first." >&2
+        return 1
+    fi
+    out="$(curl -sS -w '\n%{http_code}' "${base}${q}" 2>/dev/null)"
+    code="$(printf '%s' "$out" | tail -n1)"
+    body="$(printf '%s' "$out" | sed '$d')"
+    if [[ "$code" != "200" ]]; then
+        _aid_chat_respond "$code" "$body"
+        return $?
+    fi
+    local kind
+    kind="$(printf '%s' "$body" | sed -n 's/.*"kind":"\([^"]*\)".*/\1/p')"
+    if [[ "$kind" == "message" ]]; then
+        # One JSON object carrying both the wake and its content, so an adapter needs one call.
+        local inbox
+        inbox="$(curl -sS "${base}/messages?name=${n}" 2>/dev/null)"
+        printf '%s\n' "$(_aid_chat_merge_wake "$body" "$inbox")"
+    else
+        printf '%s\n' "$body"
+    fi
+    return 0
+}
+
+# Merge the wait outcome and the inbox into one object. Done in python3 rather than by string
+# surgery because both halves are real JSON and a message body can contain anything -- braces,
+# quotes, newlines -- which is exactly where hand-splicing goes wrong.
+_aid_chat_merge_wake() {
+    python3 -c '
+import json, sys
+wake = json.loads(sys.argv[1])
+try:
+    inbox = json.loads(sys.argv[2])
+except Exception:
+    inbox = {}
+wake["messages"] = inbox.get("messages", [])
+wake["delivered_seq"] = inbox.get("delivered_seq")
+wake["acked_seq"] = inbox.get("acked_seq")
+print(json.dumps(wake))
+' "$1" "$2"
+}
+
 _cmd_chat_plane() {
     local verb="$1"; shift
-    local name="${AID_CHAT_SESSION:-}" body="" channel="" cursor="" key="" whisper="" mention="" reply_to="" corr="" target=""
+    local name="${AID_CHAT_SESSION:-}" body="" channel="" cursor="" key="" whisper="" mention="" reply_to="" corr="" target="" host_timeout="" follow=0
     while [[ $# -gt 0 ]]; do
         case "$1" in
             --name)     name="$2"; shift 2 ;;
@@ -5357,6 +5419,8 @@ _cmd_chat_plane() {
             --whisper-to) whisper="$2"; shift 2 ;;
             --mention)  mention="$2"; shift 2 ;;
             --target)   target="$2"; shift 2 ;;
+            --host-timeout) host_timeout="$2"; shift 2 ;;
+            --follow)   follow=1; shift ;;
             --reply-to) reply_to="$2"; shift 2 ;;
             --correlation-id) corr="$2"; shift 2 ;;
             --tool)     _AID_CHAT_TOOL="$2"; shift 2 ;;
@@ -5393,6 +5457,23 @@ _cmd_chat_plane() {
             _aid_chat_call GET "/channels?name=${n}" ;;
         roster)
             _aid_chat_call GET "/roster?name=${n}" ;;
+        subscribe)
+            # THE WAIT COSTS NO MODEL TOKENS, and that is a property of what this is rather than a
+            # claim about it: a shell function that blocks in `curl`. There is no model in the path
+            # to spend anything -- no prompt is built, nothing is sent to an API, and the process
+            # holding the wait is `curl` waiting on a socket.
+            #
+            # ONE WAIT PER INVOCATION by default, because the documented hook command is exactly
+            # this line: the host fires its stop hook, this runs, it returns, and the host fires it
+            # again next time. `--follow` is for a standalone subscriber that re-arms itself, which
+            # is useful for an operator watching a channel but is not how an adapter runs.
+            local q="/wait?name=${n}"
+            [[ -n "$host_timeout" ]] && q="${q}&host_timeout=${host_timeout}"
+            while :; do
+                _aid_chat_wait_once "$q" "$n" || return $?
+                [[ "$follow" -eq 1 ]] || break
+            done
+            return 0 ;;
         connect)
             [[ -z "$target" ]] && { echo "ERROR: aid: chat connect: --target is required" >&2; return 2; }
             # No channel parameter: the channel is the one the caller is already in, which is why
@@ -5422,7 +5503,7 @@ _cmd_chat_ctl() {
     local action="${1:-}"
     # The message-plane verbs are handled first; `node ...` is the lifecycle surface.
     case "$action" in
-        register|heartbeat|open|join|leave|list|send|inbox|ack|reap|roster|connect)
+        register|heartbeat|open|join|leave|list|send|inbox|ack|reap|roster|connect|subscribe)
             shift
             _cmd_chat_plane "$action" "$@"
             return $? ;;

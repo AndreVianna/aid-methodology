@@ -32,6 +32,14 @@ export const REFUSAL = {
     TARGET_IS_SELF:        'target_is_self',
 };
 
+// A single announcement seam. The core does not know what a held HTTP response is, and must not:
+// the registry of who is currently listening belongs to the transport, because that is where the
+// connections are. So the core states what happened and the transport decides whether anybody
+// cares. One function, set once at startup, and a no-op when nothing is listening -- which is
+// also what makes the store usable from a test with no server at all.
+let announce = () => {};
+export function setAnnouncer(fn) { announce = typeof fn === 'function' ? fn : () => {}; }
+
 const ok = (value = {}) => ({ ok: true, ...value });
 // `extra` carries fields a caller needs in order to ACT on a refusal (a retry hint, say) as
 // opposed to merely report it. Kept as a third parameter rather than folded into `detail`,
@@ -373,6 +381,10 @@ export function send(db, { name, body, kind = 'message', idempotencyKey = null,
         db.exec('ROLLBACK');
         throw err;
     }
+    // Announced AFTER the commit, so nothing can be woken to read a message that is not yet
+    // durable. The announcement carries no body: a listener is told a channel advanced and reads
+    // the store itself, which keeps one source of truth for what a message says.
+    announce({ kind: 'message', channel_id: s.channel_id, arrival_seq: arrivalSeq, from: s.name });
     return ok({ arrival_seq: arrivalSeq, idempotency_key: key, absorbed: false });
 }
 
@@ -684,6 +696,9 @@ export function connect(db, { name, target }) {
     // channel IS the notification. That is what makes the outcome impossible to miss -- a
     // session between arms, mid-turn, or restarting reads it as state on its next call of any
     // kind, and there is no event to buffer or lose.
+    // A connect outcome is announced FOR THE TARGET, not the channel: it is a change in that one
+    // agent's own situation rather than content anybody else should be woken for.
+    announce({ kind: 'connect', session_name: target, channel: channelName });
     return ok({
         connected: target,
         channel: channelName,

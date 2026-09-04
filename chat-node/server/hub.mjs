@@ -16,6 +16,7 @@ import { dirname, join } from 'node:path';
 
 import { nowMs, openStore, stateHome } from './store.mjs';
 import * as core from './core.mjs';
+import { blockMsFor, createRegistry } from './waiters.mjs';
 
 export const DEFAULT_PORT = 8812;   // 8787 is the dashboard's; 8799 and 8811 are also taken
 export const LOOPBACK = '127.0.0.1';
@@ -109,13 +110,84 @@ async function readJsonBody(req) {
     catch (err) { const e = new Error(`malformed JSON body: ${err.message}`); e.badRequest = true; throw e; }
 }
 
-export function makeRouter({ db, startedAt }) {
+export function makeRouter({ db, startedAt, onReady = null }) {
     const routes = new Map();
+    const waiters = createRegistry();
+    // Handed back to the caller so shutdown can drain held waits. Without this a SIGTERM would
+    // close the server while clients were still holding responses nobody would ever write, and
+    // each of those clients would sit until its own timeout rather than being told at once.
+    if (onReady) onReady({ waiters });
+    // The core announces; the transport decides who cares. Wiring it here rather than inside the
+    // core is what keeps the core transport-blind.
+    core.setAnnouncer((event) => {
+        if (event.kind === 'message') waiters.announceMessage(event);
+        else if (event.kind === 'connect') waiters.announceConnect(event);
+    });
+
+    // The held wait. One connection, held open, resolved by whichever comes first: a message in
+    // the caller's channel, a change in the caller's own situation, or the block expiring.
+    //
+    // It answers 200 in EVERY case including the timeout, because a timeout is not an error -- it
+    // is the normal outcome of an idle period, and a non-2xx would make an ordinary quiet minute
+    // look like a fault to every client and every log.
+    routes.set('GET /wait', (req, res, url) => {
+        const name = url.searchParams.get('name');
+        const session = name ? core.getSession(db, name) : null;
+        if (!session) return answer(res, { ok: false, reason: 'not_registered' });
+
+        const hostTimeout = url.searchParams.get('host_timeout');
+        const explicit = url.searchParams.get('block_ms');
+        const { blockMs, basis } = explicit !== null
+            ? { blockMs: Math.max(0, Number(explicit)), basis: 'explicit-block-ms' }
+            : blockMsFor({ hostTimeoutSec: hostTimeout === null ? null : Number(hostTimeout) });
+
+        // A zero block is answered at once rather than registered. Registering a waiter that is
+        // due to expire immediately would put a reader in the count for no purpose.
+        if (blockMs <= 0) {
+            return json(res, 200, {
+                ok: true, kind: 'timeout', block_ms: 0, basis,
+                waiters: waiters.count(),
+            });
+        }
+
+        const settle = (outcome) => {
+            if (res.writableEnded) return;
+            json(res, 200, {
+                ok: true,
+                kind: outcome.kind,
+                ...(outcome.arrival_seq !== undefined ? { arrival_seq: outcome.arrival_seq } : {}),
+                ...(outcome.channel !== undefined ? { channel: outcome.channel } : {}),
+                block_ms: blockMs,
+                basis,
+                waiters: waiters.count(),
+            });
+        };
+
+        const waiter = waiters.register({
+            sessionName: name,
+            channelId: session.channel_id,
+            timeoutMs: blockMs,
+            settle,
+        });
+        // The abandoned-client path. A host that abandons an over-running hook leaves this socket
+        // open with nobody reading it, and `close` is the only notice that ever comes -- so it is
+        // wired to the same release path as every other ending, which is what makes the waiter
+        // count return to where it started instead of drifting upward with each abandoned wake.
+        req.on('close', () => waiter.abandon());
+        req.on('aborted', () => waiter.abandon());
+    });
+
+    // The count, so AC-25 can be checked by observation rather than by trusting an absence of
+    // errors. Deliberately reports it as a HINT, in the field name, because that is what it is.
+    routes.set('GET /waiters', (_req, res) => json(res, 200, {
+        ok: true, waiters_hint: waiters.count(),
+    }));
 
     // The requirements' API table promises this route, so it exists rather than leaving a caller
     // that follows the spec to receive a 404. It answers first and shuts down after, so the
     // caller gets a reply rather than a dropped connection.
     routes.set('POST /stop', (_req, res) => {
+        waiters.drain();
         // Shut down only once the response has actually been written. A timer would be a race:
         // `json()` buffers, the socket write is asynchronous, and the SIGTERM handler exits
         // immediately without draining -- so a busy event loop could drop the reply the caller
@@ -227,7 +299,10 @@ export function makeRouter({ db, startedAt }) {
 export async function serve({ port = DEFAULT_PORT, storeFile = null } = {}) {
     const db = await openStore(storeFile ? { path: storeFile } : {});
     const startedAt = nowMs();
-    const server = createServer(makeRouter({ db, startedAt }));
+    let registry = null;
+    const server = createServer(makeRouter({
+        db, startedAt, onReady: ({ waiters }) => { registry = waiters; },
+    }));
 
     await new Promise((resolve, reject) => {
         server.once('error', reject);
@@ -240,6 +315,9 @@ export async function serve({ port = DEFAULT_PORT, storeFile = null } = {}) {
     writeRuntimeFiles(process.pid, actualPort);
 
     const shutdown = () => {
+        // Settle held waits BEFORE closing the server, so each client gets an answer rather than
+        // a dropped connection it has to time out on.
+        try { if (registry) registry.drain(); } catch { /* nothing held */ }
         try { server.close(); } catch { /* already closing */ }
         try { db.close(); } catch { /* already closed */ }
         clearRuntimeFiles();

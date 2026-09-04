@@ -218,8 +218,42 @@ gone_after_silence=$(QQ chat register --name probe --tool t >/dev/null 2>&1; QQ 
 assert_eq "$gone_after_silence" "True" "AC-30 the same channel DOES close once its members stop heartbeating and are reaped -- so the case above tests the distinction, not the absence of any mechanism"
 
 # No timer targets channel closure anywhere in the node: the absence is asserted, not assumed.
-timers=$(grep -nE 'setInterval|setTimeout' "${REPO_ROOT}"/chat-node/server/*.mjs | grep -viE 'SIGTERM|process\.kill' | wc -l | tr -d ' ')
-assert_eq "$timers" "0" "AC-30 no timer in the node targets channel closure (grepped, not assumed)"
+#
+# This assertion used to read "no timer exists at all", which was a valid PROXY while none did, and
+# became wrong the moment the long-poll block needed one. A timer that expires a held HTTP wait has
+# nothing to do with closing a channel, so a check that forbids every timer would force the wrong
+# design to keep a test green. Narrowed to its actual intent: no timer's callback may reach anything
+# that ends a channel.
+timers=$(python3 - "${REPO_ROOT}/chat-node" <<'PY'
+import os, re, sys
+root = sys.argv[1]
+# Text of each timer callback, up to the matching close of the setTimeout/setInterval call.
+call = re.compile(r'set(?:Timeout|Interval)\s*\(')
+closure_verbs = re.compile(r'reapStale|reapSession|closeIdle|closeChannel|DELETE\s+FROM\s+channel|channel_id\s*=\s*NULL')
+offenders = []
+for dirpath, _d, files in os.walk(root):
+    if 'tests' in dirpath.split(os.sep):
+        continue
+    for fn in files:
+        if not fn.endswith('.mjs'):
+            continue
+        path = os.path.join(dirpath, fn)
+        src = open(path, encoding='utf-8').read()
+        for m in call.finditer(src):
+            depth, i = 1, m.end()
+            while i < len(src) and depth:
+                if src[i] == '(': depth += 1
+                elif src[i] == ')': depth -= 1
+                i += 1
+            body = src[m.end():i]
+            if closure_verbs.search(body):
+                offenders.append(f'{os.path.relpath(path, root)}: {body.strip()[:60]}')
+print(len(offenders))
+for o in offenders:
+    print(o, file=sys.stderr)
+PY
+)
+assert_eq "$timers" "0" "AC-30 no timer's callback in the node can close a channel (parsed, not assumed)"
 QQ chat node stop >/dev/null 2>&1
 
 # AC-30's TARGETED reap path (`reap --name <session>` rather than the bulk `--all`), end to end
