@@ -26,6 +26,7 @@ import { createConnection, createServer } from 'node:net';
 import { nowMs } from './store.mjs';
 import { PROTOCOL_VERSION, checkCompatibility } from './protocol.mjs';
 import * as peers from './peers.mjs';
+import { thisMachine } from './core.mjs';
 
 export const DEFAULT_LINK_PORT = 8814;
 
@@ -33,8 +34,9 @@ export const DEFAULT_LINK_PORT = 8814;
 // drop an idle flow at 60 s and some at 30 s, so 15 s leaves room for one to be missed without the
 // flow going quiet long enough to be reaped.
 const KEEPALIVE_MS = 15_000;
-// A peer that has not answered TWO keepalives is treated as gone -- two rather than one so a single
-// dropped packet or a moment of scheduling delay does not tear down a healthy link.
+// A peer is treated as gone once it has FAILED MORE THAN THIS MANY keepalives -- so two misses are
+// tolerated and the third tears the link down. Tolerating any at all is deliberate: a single dropped
+// packet or a moment of scheduling delay should not kill a healthy link.
 //
 // The constant is the number of misses TOLERATED, and the teardown happens on the one after, so this
 // is 2 and the condition is `missed > GRACE`. An earlier comment said "two unanswered keepalives"
@@ -67,9 +69,11 @@ function makeFramer(onFrame, { onOverflow = null } = {}) {
         buf += chunk.toString('utf8');
         if (buf.length > MAX_FRAME_BYTES) {
             // Discarded rather than trimmed: a partial frame this large cannot be parsed, and keeping
-            // any of it would leave the stream mid-frame with no way to resynchronise.
+            // any of it would leave the stream mid-frame with no way to resynchronise. The overflow is
+            // REPORTED rather than swallowed -- a link that silently drops a frame this size looks
+            // exactly like a link that is working, and the operator would have nothing to go on.
             buf = '';
-            if (onOverflow) onOverflow();
+            if (onOverflow) onOverflow(MAX_FRAME_BYTES);
             return;
         }
         let nl;
@@ -104,7 +108,14 @@ export function createLinkManager({ db, handlers = {}, linkPort = null, machineI
     let stopped = false;
 
     const myPort = linkPort || Number(process.env.AID_CHAT_LINK_PORT) || DEFAULT_LINK_PORT;
-    const myMachine = machineId || process.env.AID_CHAT_MACHINE || 'local';
+    // ONE source of truth for this hub's identity, and this line is why that matters. It used to
+    // resolve the identity ITSELF -- `process.env.AID_CHAT_MACHINE || 'local'` -- which meant the
+    // hostname default added to `thisMachine()` never reached the link. Two machines with perfectly
+    // distinct hostnames and no environment variable both announced 'local' and refused each other,
+    // while the specification and the install procedure both claimed the hostname was used. The
+    // documentation was not wrong about the intent; the second copy of the logic was wrong about the
+    // fact, which is what a second copy is for.
+    const myMachine = machineId || thisMachine();
 
     function linkFor(machine) {
         if (!links.has(machine)) {
@@ -281,6 +292,11 @@ export function createLinkManager({ db, handlers = {}, linkPort = null, machineI
                     return;
                 }
                 await handleFrame(socket, frame, machine);
+            }, {
+                onOverflow: (limit) => {
+                    process.stderr.write(`chat-node: link ${machine} sent a frame over ${limit} bytes; dropping the link\n`);
+                    try { socket.destroy(); } catch { /* already gone */ }
+                },
             });
 
             socket.on('data', onFrame);
@@ -376,6 +392,11 @@ export function createLinkManager({ db, handlers = {}, linkPort = null, machineI
                     return;
                 }
                 await handleFrame(socket, frame, theirMachine);
+            }, {
+                onOverflow: (limit) => {
+                    process.stderr.write(`chat-node: inbound link sent a frame over ${limit} bytes; dropping it\n`);
+                    try { socket.destroy(); } catch { /* already gone */ }
+                },
             });
             socket.on('data', onFrame);
             socket.on('error', () => { try { socket.destroy(); } catch { /* gone */ } });

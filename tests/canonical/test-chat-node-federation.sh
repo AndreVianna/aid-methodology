@@ -376,20 +376,44 @@ db.prepare("INSERT INTO channel(name, opened_at) VALUES (?,?)").run("c", 1);
 const base = { channel: "c", sender_machine: "elsewhere", sender_name: "x",
                idempotency_key: "k", body: "hi" };
 const out = [];
-for (const bad of [undefined, null, "three", 0, -1, 1.5]) {
+for (const bad of [undefined, null, "three", 0, -1, 1.5, "", [], {}]) {
     const r = fed.applyMessage(db, { ...base, sender_seq: bad, idempotency_key: "k" + String(bad) });
     out.push(r.ok ? "STORED" : r.reason);
 }
 const good = fed.applyMessage(db, { ...base, sender_seq: 7, idempotency_key: "kgood" });
 out.push(good.ok ? "ok" : "REFUSED-GOOD");
+// A NUMERIC STRING is accepted and coerced, deliberately rather than by oversight: "8" crossing a
+// JSON wire means the integer 8, and refusing it would reject a peer whose serialiser is merely
+// stricter about types than ours. What matters is that what gets STORED is a number, because the
+// read path subtracts it -- so the assertion reads the stored type as well as the values.
+const coerced = fed.applyMessage(db, { ...base, sender_seq: "8", idempotency_key: "kstr" });
+out.push(coerced.ok ? "coerced" : "REFUSED-STRING");
 const stored = db.prepare("SELECT sender_seq FROM message").all().map(r => r.sender_seq);
-console.log(out.join(",") + "|" + JSON.stringify(stored));
+const types = [...new Set(stored.map(v => typeof v))];
+console.log(out.join(",") + "|" + JSON.stringify(stored) + "|" + types.join(","));
 ''' % (sys.argv[2], sys.argv[2])
 r = subprocess.run(['node', '--input-type=module', '-e', script], capture_output=True, text=True)
 print(r.stdout.strip() or ('ERR:' + r.stderr.strip()[:120]))
 PY
 )"
-assert_eq "$badseq" "bad_request,bad_request,bad_request,bad_request,bad_request,bad_request,ok|[7]"     "FD22 a replicated message with an absent, non-numeric, zero, negative or fractional sender_seq is refused; only a valid one is stored"
+assert_eq "$badseq" "bad_request,bad_request,bad_request,bad_request,bad_request,bad_request,bad_request,bad_request,bad_request,ok,coerced|[7,8]|number"     "FD22 an absent, empty, non-numeric, zero, negative, fractional or structured sender_seq is refused; a numeric string is coerced; only numbers are stored"
+
+# FD24 -- the identity default. The specification and the install procedure both claim it falls
+# back to the HOSTNAME, and that claim was FALSE for the link, which resolved the identity itself
+# and so never saw the fallback: two machines with distinct hostnames and no environment variable
+# refused each other. A claim in prose that nothing checks is a claim that drifts.
+ident="$(env -u AID_CHAT_MACHINE node --input-type=module -e "
+import { thisMachine } from '${REPO_ROOT}/chat-node/server/core.mjs';
+import { hostname } from 'node:os';
+const m = thisMachine();
+console.log([m === hostname(), m !== 'local'].join(','));
+" 2>/dev/null)"
+assert_eq "$ident" "true,true" "FD24 with no environment variable the identity is the hostname, not the literal 'local'"
+
+# And the LINK must take that same identity rather than resolving a second copy, since the second
+# copy is exactly what made the documented behaviour untrue.
+linkident="$(grep -c "machineId || thisMachine()" "${REPO_ROOT}/chat-node/server/link.mjs")"
+assert_eq "$linkident" "1" "FD24 the link takes its identity from thisMachine() rather than resolving its own"
 
 # FD23 -- an item the peer keeps REFUSING must not block the queue forever, while an UNREACHABLE peer
 # still stops the drain. The two look alike from a call site and are opposites: one will never succeed,
