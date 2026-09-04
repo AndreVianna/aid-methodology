@@ -20,5 +20,6 @@
 # dashboard shipped a file that was imported at runtime and absent from every manifest,
 # and one component learning that lesson does not protect the next one.
 
+server/hub.mjs
 server/node.mjs
 server/store.mjs

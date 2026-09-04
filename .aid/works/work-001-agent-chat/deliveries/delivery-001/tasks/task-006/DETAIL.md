@@ -28,7 +28,7 @@
 - Fan-out to every member; exit code 8 and the stable stderr tokens.
 
 **Acceptance Criteria:**
-- [ ] A send by a channel's only member fails with `solo_channel`; by a session in no channel with `no_channel`; both at exit 8.
+- [ ] A send by a channel's only member fails with `solo_channel`; by a session in no channel with `no_channel`; both at exit `14`.
 - [ ] The same idempotency key sent twice yields **one** message and the same `arrival_seq` from both calls.
 - [ ] Two different senders using the same key value both have their messages stored -- neither swallows the other.
 - [ ] A local member at the unread bound causes further sends to that channel to be refused with `overflow` rather than dropping anything.

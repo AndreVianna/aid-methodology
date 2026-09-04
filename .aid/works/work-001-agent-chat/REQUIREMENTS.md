@@ -2070,19 +2070,41 @@ check rather than a lifecycle query.
 
 ##### Error taxonomy and exit codes
 
-**The audit first, because the carried constraint asks for it rather than for a conclusion.**
-In live use today: `0` success, `1` generic runtime, `2` usage or argument error, `3` network or
-fetch failure, `4` checksum mismatch, `6` uninstall with no manifest, and `7` a missing install-tree
-asset (`bin/aid`, dashboard entry point). **`5` is retired** — it was protect-on-diff, removed in
-v1.1.0 — and is **not recycled here**, because an old installation's `5` meant something else and a
-recycled code makes two eras indistinguishable in a log.
+**The audit first, because the carried constraint asks for it rather than for a conclusion — and
+the first version of this audit was WRONG in exactly the way that constraint warned about.** It
+listed `0`–`4`, `6` and `7` as in use, called `5` retired, and allocated `8`. `8`, `9` and `10` are
+all in live use, which a grep for every numeric exit across `bin/aid`, `bin/aid.ps1`, `lib/` and the
+installers establishes in one command. The constraint said to check against every existing use
+rather than a list believed complete; the correction below is what that check actually returns, and
+the fact that this document made the named mistake anyway is left on the record rather than tidied
+away.
 
-**One new code is allocated: `8` — the request was well-formed and the node refused it.** No
-existing code fits: this is not a usage error (`2`), because the command was correct and the caller
-could not have known the answer in advance; and it is not a runtime failure (`1`), because nothing
-went wrong. Every refusal in this feature is an expected outcome that a caller must be able to
-branch on — *is the agent I want busy?* — and collapsing them into `1` would make a normal answer
-indistinguishable from a crash.
+| Code | Existing meaning |
+|---|---|
+| `0` | success |
+| `1` | generic runtime failure |
+| `2` | usage or argument error |
+| `3` | network or fetch failure |
+| `4` | checksum mismatch |
+| `5` | **retired** — protect-on-diff, removed in v1.1.0 |
+| `6` | uninstall requested with no manifest |
+| `7` | a missing install-tree asset |
+| `8` | **the service is already running** (`aid dashboard start`) |
+| `9` | **a required runtime is not on `PATH`** |
+| `10` | remote exposure requested and unavailable (`11` and `12` are internal to that path and map to `10`) |
+| `13` | returned when a command would need elevation |
+
+**So two of this feature's three conditions REUSE an existing code, which is what the coding
+standard asks for**, and only one is new:
+
+| Condition | Code | Why |
+|---|---|---|
+| The chat node is already running | **`8`** | Semantically identical to the dashboard's already-running case. A second code for the same condition on a different service would be a distinction without a difference |
+| No usable Node runtime | **`9`** | Exactly what `9` already means, including in the dashboard's own runtime check |
+| **The request was well-formed and the node refused it** | **`14`** | New, and the first genuinely free code. No existing code fits: it is not a usage error (`2`), because the command was correct and the caller could not have known the answer in advance; and it is not a runtime failure (`1`), because nothing went wrong. Every refusal here is an expected outcome a caller must branch on — *is the agent I want busy?* — and collapsing them into `1` would make a normal answer indistinguishable from a crash |
+
+**`5` is not recycled**, because an old installation's `5` meant something else and a recycled code
+makes two eras indistinguishable in a log.
 
 | Reason on stderr | Raised by | Meaning |
 |---|---|---|

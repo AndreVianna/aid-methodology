@@ -25,7 +25,7 @@
 
 **Acceptance Criteria:**
 - [ ] Both verbs behave identically under Bash and PowerShell; covered by the parity test.
-- [ ] A refusal from either exits 8 with its token on stderr.
+- [ ] A refusal from either exits `14` with its token on stderr.
 - [ ] The verbs added are exactly the roster and the connect request; verified by diffing the agent-facing surface against FR-7.3's prohibited list.
 - [ ] Unit tests for every new public function or endpoint this task adds.
 - [ ] All existing tests still pass.

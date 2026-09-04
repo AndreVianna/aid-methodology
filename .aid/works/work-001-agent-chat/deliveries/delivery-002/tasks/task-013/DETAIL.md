@@ -28,7 +28,7 @@
 
 **Acceptance Criteria:**
 - [ ] A request at an available agent puts it in the named channel at that channel's head, and it learns so on its next call of any kind.
-- [ ] A request at an agent already in a channel, stale, or unknown fails at once with `target_unavailable` at exit 8.
+- [ ] A request at an agent already in a channel, stale, or unknown fails at once with `target_unavailable` at exit `14`.
 - [ ] A request from a session in no channel, or naming itself, is refused with its own reason.
 - [ ] After either outcome **no pending-invitation state exists anywhere**; verified by reading the schema and the store.
 - [ ] Two agents that each open a channel and then request the other, ordered around an explicit barrier, **both fail as busy**; neither ends up in the other's channel.
