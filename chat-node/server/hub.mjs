@@ -113,16 +113,22 @@ async function readJsonBody(req) {
 export function makeRouter({ db, startedAt, onReady = null }) {
     const routes = new Map();
     const waiters = createRegistry();
-    // Handed back to the caller so shutdown can drain held waits. Without this a SIGTERM would
-    // close the server while clients were still holding responses nobody would ever write, and
-    // each of those clients would sit until its own timeout rather than being told at once.
-    if (onReady) onReady({ waiters });
     // The core announces; the transport decides who cares. Wiring it here rather than inside the
     // core is what keeps the core transport-blind.
-    core.setAnnouncer((event) => {
+    // The unregister is KEPT, not discarded. Additive announcers fixed the clobbering problem but
+    // introduced the mirror of it: a router that never unregisters leaves its listener attached to
+    // the core for the life of the process, so a second router's arrival no longer breaks the first
+    // and the first's departure no longer stops it being told. Holding the handle is what makes a
+    // router's lifetime symmetric -- it registers when built and detaches when torn down.
+    const detachAnnouncer = core.setAnnouncer((event) => {
         if (event.kind === 'message') waiters.announceMessage(event);
         else if (event.kind === 'connect') waiters.announceConnect(event);
     });
+
+    // Handed back to the caller AFTER both handles exist, so shutdown can detach the announcer and
+    // drain held waits. Calling this any earlier reads `detachAnnouncer` before its declaration --
+    // which is a temporal dead zone error that takes the whole node down at startup, and did.
+    if (onReady) onReady({ waiters, detachAnnouncer });
 
     // The held wait. One connection, held open, resolved by whichever comes first: a message in
     // the caller's channel, a change in the caller's own situation, or the block expiring.
@@ -314,8 +320,10 @@ export async function serve({ port = DEFAULT_PORT, storeFile = null } = {}) {
     const db = await openStore(storeFile ? { path: storeFile } : {});
     const startedAt = nowMs();
     let registry = null;
+    let detach = null;
     const server = createServer(makeRouter({
-        db, startedAt, onReady: ({ waiters }) => { registry = waiters; },
+        db, startedAt,
+        onReady: ({ waiters, detachAnnouncer }) => { registry = waiters; detach = detachAnnouncer; },
     }));
 
     await new Promise((resolve, reject) => {
@@ -331,6 +339,8 @@ export async function serve({ port = DEFAULT_PORT, storeFile = null } = {}) {
     const shutdown = () => {
         // Settle held waits BEFORE closing the server, so each client gets an answer rather than
         // a dropped connection it has to time out on.
+        // Detach first, so nothing can be announced to a registry that is about to be drained.
+        try { if (detach) detach(); } catch { /* already detached */ }
         try { if (registry) registry.drain(); } catch { /* nothing held */ }
         try { server.close(); } catch { /* already closing */ }
         try { db.close(); } catch { /* already closed */ }

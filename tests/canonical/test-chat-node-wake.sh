@@ -341,6 +341,55 @@ assert_eq "$a_after" "$a_before" "WK18b with no adapter process surviving"
 hint_field="$(curl -sS "${HUB}/waiters" 2>/dev/null | python3 -c "import json,sys; print('waiters_hint' in json.load(sys.stdin))")"
 assert_eq "$hint_field" "True" "WK18c the waiter count is reported as an observable number, not inferred from silence"
 
+# 18d -- THE ADAPTER'S OWN GUARD, which is the mechanism that actually bounds an abandoned adapter in
+# production and which 18b does not reach. 18b kills the process, so the OS closes the socket; a host
+# that abandons a hook does NOT kill it -- it discards the output and walks away, leaving the adapter
+# running. What stops it running forever is its own guard timer, and that is only exercised when the
+# far end accepts the connection and then never answers.
+#
+# So: a server that accepts and stays silent. The adapter must return under its own power, well
+# inside the host timeout it was given, rather than hanging until something else intervenes.
+python3 - "${_TMPD}/silent.port" <<'PY' &
+import socket, sys, time
+srv = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+srv.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+srv.bind(('127.0.0.1', 0))
+srv.listen(8)
+open(sys.argv[1], 'w').write(str(srv.getsockname()[1]))
+held = []
+deadline = time.time() + 60
+while time.time() < deadline:
+    srv.settimeout(1.0)
+    try:
+        conn, _ = srv.accept()
+        held.append(conn)          # accepted, and deliberately never answered
+    except socket.timeout:
+        pass
+PY
+SILENT=$!
+for _ in 1 2 3 4 5 6 7 8 9 10; do [[ -s "${_TMPD}/silent.port" ]] && break; sleep 0.2; done
+if [[ -s "${_TMPD}/silent.port" ]]; then
+    # Point a throwaway runtime dir at the silent server, so the adapter connects there.
+    mkdir -p "${_TMPD}/silent-rt"
+    cp "${_TMPD}/silent.port" "${_TMPD}/silent-rt/hub.port"
+    t0=$(date +%s%N)
+    ( AID_CHAT_RUNTIME="${_TMPD}/silent-rt" timeout 40 node "${REPO_ROOT}/chat-node/adapters/claude-code.mjs"         --name bob --host-timeout 20 >"${_TMPD}/silent.out" 2>/dev/null )
+    rc=$?
+    t1=$(( ($(date +%s%N) - t0) / 1000000 ))
+    # The guard is host_timeout - 2s = 18s. It must return under its own power inside that, and well
+    # inside the 20s the host would wait -- not be cut off by the outer `timeout`.
+    if [[ "$rc" -eq 0 && "$t1" -lt 25000 ]]; then
+        pass "WK18d against a server that accepts and never answers, the adapter returns under its own guard (${t1}ms, exit ${rc})"
+    else
+        fail "WK18d the adapter did not self-bound: ${t1}ms, exit ${rc} (124 means the outer timeout killed it)"
+    fi
+    assert_eq "$(tr -d ' \n' < "${_TMPD}/silent.out")" "{}" "WK18d and returns the no-wake shape rather than a crash"
+else
+    fail "WK18d could not start the silent server, so the guard was not exercised"
+fi
+kill "$SILENT" 2>/dev/null
+wait "$SILENT" 2>/dev/null
+
 # WK19 -- a connect outcome reaching an IDLE target through the wake, with the target having called
 # nothing. This is the case the plan carries as its own criterion because no section-9 one covers it.
 $AID chat register --name sleeper --tool cursor >/dev/null 2>&1

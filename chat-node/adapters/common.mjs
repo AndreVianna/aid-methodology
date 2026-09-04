@@ -174,6 +174,14 @@ export async function armOnce({ name, hostTimeoutSec, timeoutGuardMs = null }) {
     const base = hubBaseUrl();
     if (!base) return { ok: false, reason: 'node_not_running' };
 
+    // ONE DEADLINE FOR THE WHOLE RUN, not one per request. This function makes up to two calls -- the
+    // pending read and then the wait -- and giving each its own guard means the adapter can take
+    // TWICE the guard. Against a far end that accepts and never answers, that is exactly the orphan
+    // the guard exists to prevent: measured at 36s for an 18s guard, comfortably past the host
+    // timeout it was told about. Each request now gets whatever is LEFT of the one budget.
+    const deadline = timeoutGuardMs ? Date.now() + timeoutGuardMs : null;
+    const remaining = () => (deadline === null ? null : Math.max(1, deadline - Date.now()));
+
     // READ BEFORE WAITING. This is what makes idle and busy ONE implementation rather than two, and
     // leaving it out breaks the busy path completely: the hook fires at the end of a turn, so a
     // message that arrived DURING that turn is already in the store and is not going to "arrive"
@@ -182,7 +190,7 @@ export async function armOnce({ name, hostTimeoutSec, timeoutGuardMs = null }) {
     //
     // So the pending read is the busy path, and it needs no push at all. The wait below is only for
     // the idle case -- which is exactly when a push is the only thing that would work.
-    const pending = await getJson(`${base}/messages?name=${encodeURIComponent(name)}`, timeoutGuardMs);
+    const pending = await getJson(`${base}/messages?name=${encodeURIComponent(name)}`, remaining());
     if (pending && pending.ok && Array.isArray(pending.messages) && pending.messages.length > 0) {
         return {
             ok: true, kind: 'message', from_backlog: true,
@@ -194,11 +202,16 @@ export async function armOnce({ name, hostTimeoutSec, timeoutGuardMs = null }) {
     if (hostTimeoutSec !== null && hostTimeoutSec !== undefined) {
         q.set('host_timeout', String(hostTimeoutSec));
     }
-    const wake = await getJson(`${base}/wait?${q}`, timeoutGuardMs);
+    // Out of budget before even arming: return without waiting rather than start a wait that cannot
+    // finish before the host stops listening.
+    const leftToWait = remaining();
+    if (leftToWait !== null && leftToWait <= 1) return { ok: true, kind: 'timeout', self_bounded: true };
+
+    const wake = await getJson(`${base}/wait?${q}`, leftToWait);
     if (!wake.ok) return wake;
     if (wake.kind !== 'message') return wake;
 
-    const inbox = await getJson(`${base}/messages?name=${encodeURIComponent(name)}`, timeoutGuardMs);
+    const inbox = await getJson(`${base}/messages?name=${encodeURIComponent(name)}`, remaining());
     return { ...wake, messages: inbox.messages || [], delivered_seq: inbox.delivered_seq };
 }
 
