@@ -18,6 +18,7 @@ import { nowMs, openStore, stateHome } from './store.mjs';
 import * as core from './core.mjs';
 import { thisMachine } from './core.mjs';
 import { blockMsFor, createRegistry } from './waiters.mjs';
+import * as settings from './settings.mjs';
 import * as peers from './peers.mjs';
 import * as outbox from './outbox.mjs';
 import { createLinkManager } from './link.mjs';
@@ -532,6 +533,48 @@ export function makeRouter({ db, startedAt, onReady = null }) {
         answer(res, core.ack(db, { name: b.name, cursor: b.cursor }));
     });
 
+    // ---------------------------------------------------------------------------
+    // The periodic jobs (tasks 033 and 034). The RULES live in the core; this is only the schedule,
+    // which is the split the earlier deliveries deliberately left: reaping's effect was built with
+    // channel lifecycle, trimming's with retention, and neither ran on a clock until now.
+    //
+    // TWO JOBS, ONE TIMER, and in this order. Reaping first, because it removes members, and a member
+    // removed is a member no longer holding the trim point back -- running trim first would keep
+    // everything a just-departed session had not acknowledged for one more interval, every interval.
+    //
+    // What this timer must NEVER do is close a channel because the CHANNEL fell quiet. It closes one
+    // only as a consequence of reaping its last MEMBER, which keys on that member's heartbeat and not
+    // on the channel's activity. The distinction is the whole of the no-inactivity-timeout rule, and
+    // the test that guards it checks exactly that difference.
+    let jobTimer = null;
+    const runJobs = () => {
+        try {
+            core.reapStale(db);
+        } catch (err) {
+            process.stderr.write(`chat-node: reaping failed: ${err && err.message}\n`);
+        }
+        try {
+            core.trim(db);
+        } catch (err) {
+            process.stderr.write(`chat-node: trim failed: ${err && err.message}\n`);
+        }
+    };
+    const startJobs = () => {
+        const { jobIntervalMs } = settings.limits();
+        if (jobIntervalMs <= 0) return null;   // 0 disables them, which a test needs
+        jobTimer = setInterval(runJobs, jobIntervalMs);
+        if (jobTimer.unref) jobTimer.unref();
+        return jobTimer;
+    };
+    const stopJobs = () => { if (jobTimer) clearInterval(jobTimer); jobTimer = null; };
+
+    // Operator-triggered, so the schedule is never the only way to make them happen -- an operator
+    // debugging a retention question should not have to wait an interval to see the effect.
+    routes.set('POST /jobs/run', (_req, res) => {
+        runJobs();
+        json(res, 200, { ok: true, ran: ['reap', 'trim'] });
+    });
+
     // EVERY handle the caller needs, passed at the point where all of them exist.
     //
     // This call has now been in the wrong place TWICE, for the same reason each time: it sat near the
@@ -540,7 +583,7 @@ export function makeRouter({ db, startedAt, onReady = null }) {
     // first time it was the announcer handle; the second time, with the identical fix applied, it was
     // the link. Moving it here makes the class of mistake impossible rather than fixing one instance
     // of it: nothing is declared after this point, so nothing can be referenced too early.
-    if (onReady) onReady({ waiters, detachAnnouncer, detachFederation, link });
+    if (onReady) onReady({ waiters, detachAnnouncer, detachFederation, link, startJobs, stopJobs });
 
     return async function route(req, res) {
         const url = new URL(req.url, `http://${LOOPBACK}`);
@@ -570,11 +613,14 @@ export async function serve({ port = DEFAULT_PORT, storeFile = null } = {}) {
     let detach = null;
     let detachFed = null;
     let linkMgr = null;
+    let startJobs = null;
+    let stopJobs = null;
     const server = createServer(makeRouter({
         db, startedAt,
         onReady: (h) => {
             registry = h.waiters; detach = h.detachAnnouncer;
             detachFed = h.detachFederation; linkMgr = h.link;
+            startJobs = h.startJobs; stopJobs = h.stopJobs;
         },
     }));
 
@@ -608,7 +654,10 @@ export async function serve({ port = DEFAULT_PORT, storeFile = null } = {}) {
         }
     }
 
+    if (startJobs) startJobs();
+
     const shutdown = () => {
+        try { if (stopJobs) stopJobs(); } catch { /* already stopped */ }
         // Settle held waits BEFORE closing the server, so each client gets an answer rather than
         // a dropped connection it has to time out on.
         // Detach first, so nothing can be announced to a registry that is about to be drained.

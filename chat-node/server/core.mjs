@@ -355,6 +355,31 @@ function maxUnreadDepth(db, channelId, headSeq) {
     return worst;
 }
 
+// Is this name a CURRENT member of the channel, local or remote? Both halves, because a whisper to
+// an agent on another machine is as legitimate as one to an agent here, and asking only about local
+// sessions would refuse it.
+function isMemberOf(db, channelId, who) {
+    const local = db.prepare('SELECT 1 FROM session WHERE channel_id = ? AND name = ?').get(channelId, who);
+    if (local) return true;
+    const hasRemote = db.prepare(
+        "SELECT COUNT(*) AS n FROM sqlite_master WHERE type='table' AND name='channel_member'"
+    ).get().n > 0;
+    if (!hasRemote) return false;
+    return !!db.prepare('SELECT 1 FROM channel_member WHERE channel_id = ? AND name = ?').get(channelId, who);
+}
+
+// THE ONE PLACE A WHISPER'S VISIBILITY IS DECIDED, and it exists as a named function precisely so
+// there is nowhere else to decide it. The rule is the same on delivery and in history, and it has to
+// be applied by every reader without exception -- including the operator's views, because an operator
+// who could read whispers would make the guarantee a lie for everyone rather than just for them.
+//
+// A whisper is visible to its target and to its sender. The sender is included because a message you
+// cannot see having sent is a message you cannot tell you sent.
+export function whisperVisibleTo(message, viewerName) {
+    if (!message.whisper_to) return true;
+    return message.whisper_to === viewerName || message.sender_name === viewerName;
+}
+
 export function send(db, { name, body, kind = 'message', idempotencyKey = null,
                            mention = null, whisperTo = null, correlationId = null,
                            replyTo = null } = {}) {
@@ -363,6 +388,31 @@ export function send(db, { name, body, kind = 'message', idempotencyKey = null,
     if (!s.channel_id) return no(REFUSAL.NO_CHANNEL);
     if (typeof body !== 'string' || body.length === 0) return no('bad_request', 'body is required');
     if (mention && whisperTo) return no(REFUSAL.MENTION_AND_WHISPER);
+
+    // A WHISPER IS REFUSED if its target is not a current member, and a MENTION of a non-member is
+    // only WARNED about. The asymmetry is deliberate and follows from what each one promises: a
+    // whisper narrows visibility to one named member, so a target who is not there means the message
+    // has no reader at all and accepting it would be accepting a message nobody will ever see. A
+    // mention only changes attention within full visibility -- everybody still receives it -- so a
+    // stale or misspelled name costs nothing and refusing would throw away a message the channel can
+    // still use.
+    const warnings = [];
+    if (whisperTo) {
+        if (whisperTo === name) {
+            return no(REFUSAL.WHISPER_NOT_MEMBER, 'a whisper to yourself has no other reader');
+        }
+        if (!isMemberOf(db, s.channel_id, whisperTo)) {
+            return no(REFUSAL.WHISPER_NOT_MEMBER, `${whisperTo} is not a member of this channel`);
+        }
+    }
+    if (mention) {
+        const names = Array.isArray(mention) ? mention : [mention];
+        for (const m of names) {
+            if (!isMemberOf(db, s.channel_id, m)) {
+                warnings.push({ mention: m, warning: 'not a member of this channel; the message was still sent' });
+            }
+        }
+    }
 
     // Nobody else here: REFUSED rather than accepted. A message with no recipient that is
     // neither delivered nor reported as undelivered is the failure the overflow rule exists to
@@ -420,7 +470,10 @@ export function send(db, { name, body, kind = 'message', idempotencyKey = null,
     // durable. The announcement carries no body: a listener is told a channel advanced and reads
     // the store itself, which keeps one source of truth for what a message says.
     announce({ kind: 'message', channel_id: s.channel_id, arrival_seq: arrivalSeq, from: s.name });
-    return ok({ arrival_seq: arrivalSeq, idempotency_key: key, absorbed: false });
+    return ok({
+        arrival_seq: arrivalSeq, idempotency_key: key, absorbed: false,
+        ...(warnings.length ? { warnings } : {}),
+    });
 }
 
 // ---------------------------------------------------------------------------
@@ -545,7 +598,9 @@ export function inbox(db, { name, cursor = null } = {}) {
     // Whisper filtering runs AFTER ordering, so a message this caller cannot see never creates
     // a gap for that speaker. The rule itself is delivery-005's; the point at which it applies
     // is fixed here.
-    const visible = releasable.filter((m) => !m.whisper_to || m.whisper_to === s.name || m.sender_name === s.name);
+    // Through `whisperVisibleTo` rather than an inline copy of the rule. An inline copy is how the
+    // operator's views ended up needing their own, and two copies of a visibility rule is one too many.
+    const visible = releasable.filter((m) => whisperVisibleTo(m, s.name));
 
     // `delivered_seq` advances to the END OF THE CONTIGUOUS PREFIX -- one below the first
     // held-back message, or the highest arrival_seq EXAMINED when nothing was held back.
@@ -739,4 +794,44 @@ export function connect(db, { name, target }) {
         channel: channelName,
         joined_at_seq: db.prepare('SELECT acked_seq FROM session WHERE id = ?').get(t.id).acked_seq,
     });
+}
+
+// ---------------------------------------------------------------------------
+// Retention (task-034).
+//
+// THE TRIM POINT IS PER HUB, and against THIS hub's own live members' acknowledged positions. Not
+// against remote members: a hub cannot know whether an agent on another machine has read something,
+// and waiting for an answer it cannot get would mean never trimming. Each hub keeps what its own
+// members still need and no more, which is what makes retention a local decision rather than a
+// distributed one.
+//
+// BOTH CONDITIONS ARE REQUIRED. Age alone never removes a message -- a message past its TTL that a
+// live member has not acknowledged is KEPT, because "no message is lost while the conversation is
+// live" is the durability promise and a clock is not a reader. And an acknowledged message younger
+// than the TTL is kept too, so a reader that acknowledges instantly does not erase the history the
+// others may still be reading.
+export function trim(db, { now = nowMs() } = {}) {
+    const { ttlMs } = limits();
+    const cutoff = now - ttlMs;
+    const removed = [];
+
+    for (const ch of db.prepare('SELECT id, name FROM channel').all()) {
+        // A REAPED member stops counting, and that falls out of reading the table rather than being
+        // a rule of its own: reaping deletes the session row, so it is simply not here to hold the
+        // point back. That is why reaping and trimming need no coordination.
+        const positions = db.prepare('SELECT acked_seq FROM session WHERE channel_id = ?').all(ch.id);
+        // No live local member: nothing here needs any of it. The channel itself is closed by the
+        // reaping path, not by this one -- trimming removes messages, never channels.
+        const floor = positions.length
+            ? Math.min(...positions.map((p) => p.acked_seq))
+            : Number.MAX_SAFE_INTEGER;
+
+        const info = db.prepare(`DELETE FROM message
+                                 WHERE channel_id = ? AND arrival_seq <= ? AND received_at < ?`)
+                       .run(ch.id, floor, cutoff);
+        if (info.changes > 0) {
+            removed.push({ channel: ch.name, messages: info.changes, below_seq: floor });
+        }
+    }
+    return ok({ trimmed: removed, ttl_ms: ttlMs });
 }

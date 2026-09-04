@@ -165,6 +165,11 @@ CREATE TABLE IF NOT EXISTS outbox (
 
 CREATE INDEX IF NOT EXISTS outbox_drain ON outbox (peer_id, id);
 
+-- The one index retention adds. Its only reader is the trim job, which selects by channel and by
+-- age; without it that job scans every message in the store on every run, which is precisely the
+-- work it exists to make unnecessary.
+CREATE INDEX IF NOT EXISTS message_trim ON message (channel_id, received_at);
+
 -- The REMOTE half of a channel's roll, and only the remote half. Local membership stays in
 -- session.channel_id, so there is no second copy of a fact to drift: mirroring local members
 -- here would create two places for one truth, and they would disagree the first time a

@@ -217,19 +217,54 @@ QQ chat reap --name --all >/dev/null 2>&1
 gone_after_silence=$(QQ chat register --name probe --tool t >/dev/null 2>&1; QQ chat list --name probe 2>/dev/null | python3 -c "import json,sys; print(not any(c['name']=='quiet' for c in json.load(sys.stdin)['channels']))")
 assert_eq "$gone_after_silence" "True" "AC-30 the same channel DOES close once its members stop heartbeating and are reaped -- so the case above tests the distinction, not the absence of any mechanism"
 
-# No timer targets channel closure anywhere in the node: the absence is asserted, not assumed.
+# No timer closes a channel because the CHANNEL fell quiet. The absence is asserted, not assumed.
 #
-# This assertion used to read "no timer exists at all", which was a valid PROXY while none did, and
-# became wrong the moment the long-poll block needed one. A timer that expires a held HTTP wait has
-# nothing to do with closing a channel, so a check that forbids every timer would force the wrong
-# design to keep a test green. Narrowed to its actual intent: no timer's callback may reach anything
-# that ends a channel.
+# This assertion has now been narrowed twice, and both narrowings were forced by the code being right
+# and the check being wrong about what "right" meant:
+#
+#   It began as "no timer exists at all", a valid proxy while none did, and became wrong the moment the
+#   long-poll block needed one.
+#
+#   It then parsed each timer's INLINE body for anything that closes a channel -- and delivery-005's
+#   reaping job walked straight through it, because `setInterval(runJobs, ...)` names a function
+#   instead of inlining one. A guard defeated by ordinary indirection is not a guard.
+#
+# So it now follows one level of naming, AND expresses the rule it actually means. Reaping on a clock
+# is SPECIFIED: it keys on a MEMBER's heartbeat, and closing a channel whose last member is gone is a
+# consequence of that. What is forbidden is closing a channel because of the channel's OWN age or
+# activity, which is what an inactivity timeout would be -- so `opened_at` and any channel-idle notion
+# may not be reachable from a timer, while reaping may.
 timers=$(python3 - "${REPO_ROOT}/chat-node" <<'PY'
 import os, re, sys
+
 root = sys.argv[1]
-# Text of each timer callback, up to the matching close of the setTimeout/setInterval call.
 call = re.compile(r'set(?:Timeout|Interval)\s*\(')
-closure_verbs = re.compile(r'reapStale|reapSession|closeIdle|closeChannel|DELETE\s+FROM\s+channel|channel_id\s*=\s*NULL')
+# Closing a channel because the channel itself fell quiet. Reaping is deliberately NOT here.
+forbidden = re.compile(r'closeIdle|opened_at\s*<|channel_idle|inactiv', re.I)
+name_ref = re.compile(r'^\s*([A-Za-z_$][\w$]*)\s*,')
+
+def body_of(src, start):
+    depth, i = 1, start
+    while i < len(src) and depth:
+        if src[i] == '(': depth += 1
+        elif src[i] == ')': depth -= 1
+        i += 1
+    return src[start:i]
+
+def named_fn_body(src, fname):
+    m = re.search(r'(?:function\s+%s\s*\(|(?:const|let|var)\s+%s\s*=\s*(?:async\s*)?\()' % (fname, fname), src)
+    if not m:
+        return ''
+    brace = src.find('{', m.end())
+    if brace == -1:
+        return ''
+    depth, i = 1, brace + 1
+    while i < len(src) and depth:
+        if src[i] == '{': depth += 1
+        elif src[i] == '}': depth -= 1
+        i += 1
+    return src[brace:i]
+
 offenders = []
 for dirpath, _d, files in os.walk(root):
     if 'tests' in dirpath.split(os.sep):
@@ -240,20 +275,20 @@ for dirpath, _d, files in os.walk(root):
         path = os.path.join(dirpath, fn)
         src = open(path, encoding='utf-8').read()
         for m in call.finditer(src):
-            depth, i = 1, m.end()
-            while i < len(src) and depth:
-                if src[i] == '(': depth += 1
-                elif src[i] == ')': depth -= 1
-                i += 1
-            body = src[m.end():i]
-            if closure_verbs.search(body):
-                offenders.append(f'{os.path.relpath(path, root)}: {body.strip()[:60]}')
+            body = body_of(src, m.end())
+            reachable = body
+            # Follow ONE level of naming: setInterval(runJobs, ...) must be read as runJobs' body.
+            nm = name_ref.match(body)
+            if nm:
+                reachable += named_fn_body(src, nm.group(1))
+            if forbidden.search(reachable):
+                offenders.append(f'{os.path.relpath(path, root)}: {reachable.strip()[:70]}')
 print(len(offenders))
 for o in offenders:
     print(o, file=sys.stderr)
 PY
 )
-assert_eq "$timers" "0" "AC-30 no timer's callback in the node can close a channel (parsed, not assumed)"
+assert_eq "$timers" "0" "AC-30 no timer can close a channel because the channel itself fell quiet (parsed, following named callbacks)"
 QQ chat node stop >/dev/null 2>&1
 
 # AC-30's TARGETED reap path (`reap --name <session>` rather than the bulk `--all`), end to end

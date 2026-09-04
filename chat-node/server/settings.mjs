@@ -30,6 +30,10 @@ const DEFAULTS = {
     // bound the hold-back rule does not terminate: a predecessor that never arrives holds
     // every later message from that sender forever, and silently.
     gapGraceMs: 60 * 1000,
+    // How often the periodic jobs run. Not a policy value -- the policy is `ttlMs` and `reapMs` -- but
+    // the granularity at which they are applied, and it is configurable for the same reason as the
+    // rest: a test needs it small and an operator may want it large.
+    jobIntervalMs: 60 * 1000,
     // The headroom an adapter leaves between its own block and the host's configured hook
     // timeout. Sized from measurement rather than taste: the observed wake-to-refire maximum
     // was 4.303 s and still rising as samples accumulated.
@@ -44,6 +48,7 @@ const ENV = {
     longPollMs:      'AID_CHAT_LONG_POLL_MS',
     gapGraceMs:      'AID_CHAT_GAP_GRACE_MS',
     adapterMarginMs: 'AID_CHAT_ADAPTER_MARGIN_MS',
+    jobIntervalMs:   'AID_CHAT_JOB_INTERVAL_MS',
 };
 
 // Read on every call rather than cached, so a test or an operator changing a value takes
