@@ -96,12 +96,33 @@ export function getPeer(db, machine) {
 // that a peer's reachability is not derivable from anything this hub holds: there is no heartbeat
 // arriving from a peer to compare a clock against, only the outcome of the last thing we tried. So
 // it is a record of what happened, written by whoever tried.
-export function markReachable(db, machine, { protocolMajor = null } = {}) {
+export function markReachable(db, machine, { protocolMajor = null, machineId = null } = {}) {
     const p = getPeer(db, machine);
     if (!p) return false;
-    db.prepare("UPDATE peer SET state = 'reachable', last_seen_at = ?, protocol_major = COALESCE(?, protocol_major) WHERE id = ?")
-      .run(nowMs(), protocolMajor, p.id);
+    db.prepare(`UPDATE peer
+                SET state = 'reachable', last_seen_at = ?,
+                    protocol_major = COALESCE(?, protocol_major),
+                    machine_id = COALESCE(?, machine_id)
+                WHERE id = ?`)
+      .run(nowMs(), protocolMajor, machineId, p.id);
     return true;
+}
+
+// Resolve an ADDRESS from a logical machine name.
+//
+// Two namespaces meet here, and keeping them straight is the whole point of this function. A peer is
+// REACHED at an address (`peer.machine`); a member is IDENTIFIED by the logical name of the machine
+// it sits on (`channel_member.machine`, and `message.sender_machine`). Those are different kinds of
+// thing that a shared column name makes look identical, and conflating them silently breaks
+// replication: the routing lookup finds no peer for the name, so nothing is sent and nothing errors.
+//
+// The mapping is LEARNED at handshake, where a hub announces its own logical name, rather than
+// configured -- an operator who had to state both would have two chances to state them
+// inconsistently.
+export function addressForMachineId(db, machineId) {
+    if (!machineId) return null;
+    const row = db.prepare('SELECT machine FROM peer WHERE machine_id = ?').get(machineId);
+    return row ? row.machine : null;
 }
 
 export function markUnreachable(db, machine) {

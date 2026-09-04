@@ -24,6 +24,7 @@ adapters/claude-code.mjs
 adapters/common.mjs
 adapters/cursor.mjs
 server/core.mjs
+server/federation.mjs
 server/hub.mjs
 server/link.mjs
 server/outbox.mjs

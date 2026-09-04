@@ -241,7 +241,7 @@ export function createLinkManager({ db, handlers = {}, linkPort = null, machineI
                     l.socket = socket;
                     l.state = 'up';
                     l.attempt = 0;
-                    peers.markReachable(db, machine, { protocolMajor: verdict.major });
+                    peers.markReachable(db, machine, { protocolMajor: verdict.major, machineId: frame.machine });
                     startKeepalive(machine);
                     if (!settled) { settled = true; resolve({ ok: true, protocol: frame.protocol }); }
                     if (handlers.onLinkUp) handlers.onLinkUp(machine).catch(() => {});
@@ -302,7 +302,27 @@ export function createLinkManager({ db, handlers = {}, linkPort = null, machineI
                     // depend on configuring both ends identically.
                     if (theirMachine) {
                         peers.addPeer(db, { machine: theirMachine, source: 'discovered' });
-                        peers.markReachable(db, theirMachine, { protocolMajor: verdict.major });
+                        peers.markReachable(db, theirMachine, { protocolMajor: verdict.major, machineId: frame.machine });
+
+                        // AND THE SOCKET IS REGISTERED AS A USABLE LINK, which is what makes it
+                        // genuinely bidirectional. Without this an inbound peer could be ANSWERED but
+                        // never ASKED: this hub would reply to its requests and have no way to send it
+                        // one, so whichever hub dialled first would silently be the only one able to
+                        // replicate. Measured: a join on the dialled-to hub never reached the dialler,
+                        // so its member stayed invisible and every send there was refused as solo.
+                        //
+                        // Registered only if there is no outbound link already up, so a hub that
+                        // dialled and was dialled does not replace a working link with a second one.
+                        const l = linkFor(theirMachine);
+                        if (!l.socket || l.socket.destroyed) {
+                            l.socket = socket;
+                            l.state = 'up';
+                            l.attempt = 0;
+                            startKeepalive(theirMachine);
+                            socket.on('close', () => {
+                                if (l.socket === socket) teardown(theirMachine, { reconnect: false });
+                            });
+                        }
                     }
                     send(socket, { t: 'hello-ack', protocol: PROTOCOL_VERSION, machine: myMachine, port: myPort });
                     if (handlers.onLinkUp && theirMachine) handlers.onLinkUp(theirMachine).catch(() => {});

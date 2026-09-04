@@ -21,6 +21,7 @@ import { blockMsFor, createRegistry } from './waiters.mjs';
 import * as peers from './peers.mjs';
 import * as outbox from './outbox.mjs';
 import { createLinkManager } from './link.mjs';
+import * as fed from './federation.mjs';
 import { PROTOCOL_VERSION } from './protocol.mjs';
 
 export const DEFAULT_PORT = 8812;   // 8787 is the dashboard's; 8799 and 8811 are also taken
@@ -250,6 +251,24 @@ export function makeRouter({ db, startedAt, onReady = null }) {
         handlers: {
             // A peer announcing who is on it. Answered from live state, never from a stored copy.
             roster: async () => ({ ok: true, agents: core.roster(db).agents, machine: thisMachine() }),
+            // A membership change on another hub. Applied to the remote half of the roll.
+            membership: async (body) => fed.applyMembership(db, body),
+            // A message from another hub, stored with OUR arrival order and THEIR sender_seq.
+            message: async (body) => {
+                const result = fed.applyMessage(db, body);
+                // A replicated message wakes local listeners exactly as a local one does. Without
+                // this a federated message would be durable and unnoticed -- readable on the next
+                // pull and never pushed -- which is the wake working on one machine only.
+                if (result.ok && !result.absorbed && !result.ignored) {
+                    const ch = db.prepare('SELECT id FROM channel WHERE name = ?').get(body.channel);
+                    if (ch) {
+                        waiters.announceMessage({
+                            channel_id: ch.id, arrival_seq: result.arrival_seq, from: body.sender_name,
+                        });
+                    }
+                }
+                return result;
+            },
             onLinkUp: async (machine) => { await drainTo(machine); },
         },
     });
@@ -280,6 +299,24 @@ export function makeRouter({ db, startedAt, onReady = null }) {
         total: outbox.depth(db),
         by_peer: peers.listPeers(db).map((p) => ({ machine: p.machine, queued: p.queued })),
     }));
+
+    // Replication rides the core's announcement seam as a SECOND listener, which is only possible
+    // because that seam is additive. The alternative -- calling replication from inside `core.send` --
+    // would put the network in the core and make it aware of peers, which is the thing the whole
+    // design keeps out of it.
+    const detachFederation = core.setAnnouncer((event) => {
+        if (event.kind !== 'message') return;
+        const ch = db.prepare('SELECT id, name FROM channel WHERE id = ?').get(event.channel_id);
+        if (!ch) return;
+        const msg = db.prepare('SELECT * FROM message WHERE channel_id = ? AND arrival_seq = ?')
+                      .get(event.channel_id, event.arrival_seq);
+        // Only replicate what originated HERE. A message that arrived from a peer is already on its
+        // way to everyone that peer could reach, and forwarding it again would multiply every message
+        // by the number of hubs it passed through.
+        if (!msg || msg.sender_machine !== thisMachine()) return;
+        fed.replicateMessage(db, link, { channelId: ch.id, channelName: ch.name, message: msg })
+           .catch(() => {});
+    });
 
     // Peers. Operator-facing: an operator names the addresses, which is the guaranteed discovery
     // path and depends on no network feature at all.
@@ -312,15 +349,31 @@ export function makeRouter({ db, startedAt, onReady = null }) {
     // Channel plane.
     routes.set('POST /channel', async (req, res) => {
         const b = await readJsonBody(req);
-        answer(res, core.openChannel(db, { name: b.name, channelName: b.channel }));
+        const r = core.openChannel(db, { name: b.name, channelName: b.channel });
+        if (r.ok) fed.replicateMembership(db, link, { channelName: r.channel, name: b.name, event: 'join' }).catch(() => {});
+        answer(res, r);
     });
     routes.set('POST /channel/join', async (req, res) => {
         const b = await readJsonBody(req);
-        answer(res, core.joinChannel(db, { name: b.name, channelName: b.channel }));
+        const r = core.joinChannel(db, { name: b.name, channelName: b.channel });
+        if (r.ok) fed.replicateMembership(db, link, { channelName: r.channel, name: b.name, event: 'join' }).catch(() => {});
+        answer(res, r);
     });
     routes.set('POST /channel/leave', async (req, res) => {
         const b = await readJsonBody(req);
-        answer(res, core.leaveChannel(db, { name: b.name }));
+        // The channel name has to be read BEFORE leaving, because leaving may close the channel and
+        // then there is nothing left to name in the announcement.
+        const before = core.getSession(db, b.name);
+        const chRow = before && before.channel_id
+            ? db.prepare('SELECT name FROM channel WHERE id = ?').get(before.channel_id) : null;
+        const r = core.leaveChannel(db, { name: b.name });
+        if (r.ok && chRow) {
+            fed.replicateMembership(db, link, {
+                channelName: chRow.name, name: b.name,
+                event: r.channel_closed ? 'close' : 'leave',
+            }).catch(() => {});
+        }
+        answer(res, r);
     });
     routes.set('GET /channels', (req, res, url) =>
         json(res, 200, { ok: true, channels: core.listChannels(db, { name: url.searchParams.get('name') }) }));
@@ -364,7 +417,7 @@ export function makeRouter({ db, startedAt, onReady = null }) {
     // first time it was the announcer handle; the second time, with the identical fix applied, it was
     // the link. Moving it here makes the class of mistake impossible rather than fixing one instance
     // of it: nothing is declared after this point, so nothing can be referenced too early.
-    if (onReady) onReady({ waiters, detachAnnouncer, link });
+    if (onReady) onReady({ waiters, detachAnnouncer, detachFederation, link });
 
     return async function route(req, res) {
         const url = new URL(req.url, `http://${LOOPBACK}`);
@@ -392,10 +445,14 @@ export async function serve({ port = DEFAULT_PORT, storeFile = null } = {}) {
     const startedAt = nowMs();
     let registry = null;
     let detach = null;
+    let detachFed = null;
     let linkMgr = null;
     const server = createServer(makeRouter({
         db, startedAt,
-        onReady: (h) => { registry = h.waiters; detach = h.detachAnnouncer; linkMgr = h.link; },
+        onReady: (h) => {
+            registry = h.waiters; detach = h.detachAnnouncer;
+            detachFed = h.detachFederation; linkMgr = h.link;
+        },
     }));
 
     await new Promise((resolve, reject) => {
@@ -434,6 +491,7 @@ export async function serve({ port = DEFAULT_PORT, storeFile = null } = {}) {
         // Detach first, so nothing can be announced to a registry that is about to be drained.
         try { if (linkMgr) linkMgr.stop(); } catch { /* already stopped */ }
         try { if (detach) detach(); } catch { /* already detached */ }
+        try { if (detachFed) detachFed(); } catch { /* already detached */ }
         try { if (registry) registry.drain(); } catch { /* nothing held */ }
         try { server.close(); } catch { /* already closing */ }
         try { db.close(); } catch { /* already closed */ }

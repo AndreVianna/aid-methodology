@@ -143,7 +143,8 @@ CREATE INDEX IF NOT EXISTS session_liveness ON session (last_heartbeat_at);
 -- answers to "is it reachable".
 CREATE TABLE IF NOT EXISTS peer (
   id             INTEGER PRIMARY KEY AUTOINCREMENT,
-  machine        TEXT    NOT NULL UNIQUE,
+  machine        TEXT    NOT NULL UNIQUE,   -- the ADDRESS a peer is reached at
+  machine_id     TEXT,                      -- the logical name it announced at handshake
   protocol_major INTEGER,
   source         TEXT    NOT NULL,
   last_seen_at   INTEGER,
