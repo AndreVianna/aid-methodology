@@ -210,6 +210,10 @@ _aid_usage() {
             printf '                 falls back to a short value rather than inheriting any\n'
             printf '                 platform default. --follow re-arms instead of returning.\n'
             printf '                 Spends no model tokens: it blocks in a process, not a prompt.\n'
+            printf 'aid chat peers   [--add|--remove --machine <host[:port]>] [--discover]\n'
+            printf '                 list, add or remove peer hubs (operator). Naming an address is\n'
+            printf '                 the GUARANTEED path and needs no network feature; --discover is\n'
+            printf '                 best-effort broadcast on top and may legitimately find nobody.\n'
             printf 'aid chat reap    --name <n> | --name --all     give a session up for gone (operator)\n'
             printf '  --name may be omitted when AID_CHAT_SESSION is set.\n'
             printf '  --cursor on inbox RE-READS from that point and moves neither position.\n'
@@ -5420,7 +5424,7 @@ print(json.dumps(wake))
 
 _cmd_chat_plane() {
     local verb="$1"; shift
-    local name="${AID_CHAT_SESSION:-}" body="" channel="" cursor="" key="" whisper="" mention="" reply_to="" corr="" target="" host_timeout="" follow=0
+    local name="${AID_CHAT_SESSION:-}" body="" channel="" cursor="" key="" whisper="" mention="" reply_to="" corr="" target="" host_timeout="" follow=0 machine="" peer_action=list
     while [[ $# -gt 0 ]]; do
         case "$1" in
             --name)     name="$2"; shift 2 ;;
@@ -5432,6 +5436,10 @@ _cmd_chat_plane() {
             --mention)  mention="$2"; shift 2 ;;
             --target)   target="$2"; shift 2 ;;
             --host-timeout) host_timeout="$2"; shift 2 ;;
+            --machine)  machine="$2"; shift 2 ;;
+            --add)      peer_action=add; shift ;;
+            --remove)   peer_action=remove; shift ;;
+            --discover) peer_action=discover; shift ;;
             --follow)   follow=1; shift ;;
             --reply-to) reply_to="$2"; shift 2 ;;
             --correlation-id) corr="$2"; shift 2 ;;
@@ -5439,7 +5447,8 @@ _cmd_chat_plane() {
             *) echo "ERROR: aid: chat ${verb}: unknown option '$1'" >&2; return 2 ;;
         esac
     done
-    if [[ -z "$name" ]]; then
+    # `peers` is operator-facing and belongs to no session, so it is exempt from the name rule.
+    if [[ -z "$name" && "$verb" != "peers" ]]; then
         echo "ERROR: aid: chat ${verb}: --name is required (or set AID_CHAT_SESSION)" >&2
         return 2
     fi
@@ -5469,6 +5478,18 @@ _cmd_chat_plane() {
             _aid_chat_call GET "/channels?name=${n}" ;;
         roster)
             _aid_chat_call GET "/roster?name=${n}" ;;
+        peers)
+            # Operator-facing, and the GUARANTEED discovery path: naming an address depends on no
+            # network feature. --discover is best-effort on top and finds nothing on a network with
+            # broadcast disabled, which is why it is never the only way to reach a peer.
+            case "$peer_action" in
+                add)      [[ -z "$machine" ]] && { echo "ERROR: aid: chat peers --add: --machine is required" >&2; return 2; }
+                          _aid_chat_call POST /peers "{\"machine\":\"$(_aid_json_escape "$machine")\"}" ;;
+                remove)   [[ -z "$machine" ]] && { echo "ERROR: aid: chat peers --remove: --machine is required" >&2; return 2; }
+                          _aid_chat_call POST /peers/remove "{\"machine\":\"$(_aid_json_escape "$machine")\"}" ;;
+                discover) _aid_chat_call POST /peers/discover '{}' ;;
+                *)        _aid_chat_call GET /peers ;;
+            esac ;;
         subscribe)
             # THE WAIT COSTS NO MODEL TOKENS, and that is a property of what this is rather than a
             # claim about it: a shell function that blocks in `curl`. There is no model in the path
@@ -5515,7 +5536,7 @@ _cmd_chat_ctl() {
     local action="${1:-}"
     # The message-plane verbs are handled first; `node ...` is the lifecycle surface.
     case "$action" in
-        register|heartbeat|open|join|leave|list|send|inbox|ack|reap|roster|connect|subscribe)
+        register|heartbeat|open|join|leave|list|send|inbox|ack|reap|roster|connect|subscribe|peers)
             shift
             _cmd_chat_plane "$action" "$@"
             return $? ;;

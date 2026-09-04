@@ -17,6 +17,7 @@ import { dirname, join } from 'node:path';
 import { nowMs, openStore, stateHome } from './store.mjs';
 import * as core from './core.mjs';
 import { blockMsFor, createRegistry } from './waiters.mjs';
+import * as peers from './peers.mjs';
 
 export const DEFAULT_PORT = 8812;   // 8787 is the dashboard's; 8799 and 8811 are also taken
 export const LOOPBACK = '127.0.0.1';
@@ -237,6 +238,24 @@ export function makeRouter({ db, startedAt, onReady = null }) {
         answer(res, core.heartbeat(db, b.name));
     });
     routes.set('GET /sessions', (_req, res) => json(res, 200, { ok: true, sessions: core.listSessions(db) }));
+
+    // Peers. Operator-facing: an operator names the addresses, which is the guaranteed discovery
+    // path and depends on no network feature at all.
+    routes.set('GET /peers', (_req, res) => json(res, 200, { ok: true, peers: peers.listPeers(db) }));
+    routes.set('POST /peers', async (req, res) => {
+        const b = await readJsonBody(req);
+        answer(res, peers.addPeer(db, { machine: b.machine, source: b.source || 'configured' }));
+    });
+    routes.set('POST /peers/remove', async (req, res) => {
+        const b = await readJsonBody(req);
+        answer(res, peers.removePeer(db, { machine: b.machine }));
+    });
+    // Best-effort, above the guaranteed path. Carries no criterion: where broadcast is blocked this
+    // finds nobody, and an operator can always name addresses instead.
+    routes.set('POST /peers/discover', async (_req, res) => {
+        const port = Number(process.env.AID_CHAT_ADVERTISED_PORT || 0) || null;
+        answer(res, await peers.announceAndDiscover(db, { myPort: port }));
+    });
 
     // Hub plane -- signalling, not messaging. Separate from the channel and message planes
     // because hub membership is registration plus liveness rather than a held socket, which is

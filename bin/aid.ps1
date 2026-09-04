@@ -263,6 +263,10 @@ function script:Show-AidUsage {
             Write-Host '                 falls back to a short value rather than inheriting any'
             Write-Host '                 platform default. --follow re-arms instead of returning.'
             Write-Host '                 Spends no model tokens: it blocks in a process, not a prompt.'
+            Write-Host 'aid chat peers   [--add|--remove --machine <host[:port]>] [--discover]'
+            Write-Host '                 list, add or remove peer hubs (operator). Naming an address is'
+            Write-Host '                 the GUARANTEED path and needs no network feature; --discover is'
+            Write-Host '                 best-effort broadcast on top and may legitimately find nobody.'
             Write-Host 'aid chat reap    --name <n> | --name --all     give a session up for gone (operator)'
             Write-Host '  --name may be omitted when AID_CHAT_SESSION is set.'
             Write-Host '  --cursor on inbox RE-READS from that point and moves neither position.'
@@ -4925,6 +4929,7 @@ function script:Invoke-AidChatPlane {
     $name = $env:AID_CHAT_SESSION
     $body = ''; $channel = ''; $cursor = ''; $key = ''; $whisper = ''; $mention = ''; $tool = ''
     $replyTo = ''; $corr = ''; $target = ''; $hostTimeout = ''; $follow = $false
+    $machine = ''; $peerAction = 'list'
     for ($i = 0; $i -lt $PlaneArgs.Count; $i++) {
         $needsValue = $true
         switch ($PlaneArgs[$i]) {
@@ -4944,6 +4949,10 @@ function script:Invoke-AidChatPlane {
             # it inside the switch with $needsValue is what keeps that correct -- checking for it
             # after the index has already advanced would read the wrong element.
             '--follow'     { $follow  = $true; $needsValue = $false }
+            '--machine'    { $machine = $PlaneArgs[$i + 1] }
+            '--add'        { $peerAction = 'add';      $needsValue = $false }
+            '--remove'     { $peerAction = 'remove';   $needsValue = $false }
+            '--discover'   { $peerAction = 'discover'; $needsValue = $false }
             default {
                 [Console]::Error.WriteLine("ERROR: aid: chat ${Verb}: unknown option '$($PlaneArgs[$i])'")
                 return 2
@@ -4951,7 +4960,8 @@ function script:Invoke-AidChatPlane {
         }
         if ($needsValue) { $i++ }
     }
-    if (-not $name) {
+    # `peers` is operator-facing and belongs to no session, so it is exempt from the name rule.
+    if (-not $name -and $Verb -ne 'peers') {
         [Console]::Error.WriteLine("ERROR: aid: chat ${Verb}: --name is required (or set AID_CHAT_SESSION)")
         return 2
     }
@@ -4981,6 +4991,23 @@ function script:Invoke-AidChatPlane {
         'leave' { return script:Invoke-AidChatCall 'POST' '/channel/leave' ('{"name":"' + $n + '"}') }
         'list'  { return script:Invoke-AidChatCall 'GET' ("/channels?name=$n") }
         'roster' { return script:Invoke-AidChatCall 'GET' ("/roster?name=$n") }
+        'peers' {
+            # Operator-facing, and the GUARANTEED discovery path: naming an address depends on no
+            # network feature. --discover is best-effort on top and finds nothing on a network with
+            # broadcast disabled, which is why it is never the only way to reach a peer.
+            switch ($peerAction) {
+                'add' {
+                    if (-not $machine) { [Console]::Error.WriteLine('ERROR: aid: chat peers --add: --machine is required'); return 2 }
+                    return script:Invoke-AidChatCall 'POST' '/peers' ('{"machine":"' + (script:ConvertTo-AidJsonString $machine) + '"}')
+                }
+                'remove' {
+                    if (-not $machine) { [Console]::Error.WriteLine('ERROR: aid: chat peers --remove: --machine is required'); return 2 }
+                    return script:Invoke-AidChatCall 'POST' '/peers/remove' ('{"machine":"' + (script:ConvertTo-AidJsonString $machine) + '"}')
+                }
+                'discover' { return script:Invoke-AidChatCall 'POST' '/peers/discover' '{}' }
+                default    { return script:Invoke-AidChatCall 'GET' '/peers' }
+            }
+        }
         'subscribe' {
             # THE WAIT COSTS NO MODEL TOKENS, and that is a property of what this is rather than a
             # claim about it: a PowerShell function blocking on a web request. There is no model in
@@ -5029,7 +5056,7 @@ function script:Invoke-AidChatCtl {
 
     $action = if ($CcArgs.Count -ge 1) { $CcArgs[0] } else { '' }
     # The message-plane verbs are handled first; `node ...` is the lifecycle surface.
-    if ($action -in @('register','heartbeat','open','join','leave','list','send','inbox','ack','reap','roster','connect','subscribe')) {
+    if ($action -in @('register','heartbeat','open','join','leave','list','send','inbox','ack','reap','roster','connect','subscribe','peers')) {
         $planeArgs = @()
         if ($CcArgs.Count -gt 1) { $planeArgs = $CcArgs[1..($CcArgs.Count - 1)] }
         script:Exit-Aid (script:Invoke-AidChatPlane -Verb $action -PlaneArgs $planeArgs)

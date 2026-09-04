@@ -259,6 +259,38 @@ _json_ok=0
 printf '%s' "$_refusal_out" | python3 -c "import json,sys; json.load(sys.stdin)" 2>/dev/null || _json_ok=1
 assert_eq "${_json_ok}" "0" "HP23 stdout parses as JSON on refusal as well as on success"
 
+# HP24 -- THE TWO CLI TWINS CARRY THE SAME VERB SET. This is a text-level comparison and needs no
+# PowerShell, which is the point: the real parity suite skips in every environment without an
+# interpreter, and that skip is what let a whole verb -- `subscribe` -- ship in bin/aid and be
+# entirely absent from bin/aid.ps1 through a full delivery and its gate.
+#
+# It does not prove the two behave alike. It proves neither has a verb the other lacks, which is the
+# single most likely way for them to diverge and the one that costs a user a missing feature rather
+# than a subtle difference.
+twin_sync="$(python3 - "${REPO_ROOT}" <<'PY'
+import re, sys
+root = sys.argv[1]
+bash = open(f'{root}/bin/aid', encoding='utf-8').read()
+ps1  = open(f'{root}/bin/aid.ps1', encoding='utf-8').read()
+bm = re.search(r'register\|heartbeat[^)]*', bash)
+pm = re.search(r"'register','heartbeat'[^)]*", ps1)
+if not bm or not pm:
+    print('DISPATCH-NOT-FOUND'); raise SystemExit
+bv = set(bm.group(0).split('|'))
+pv = set(pm.group(0).replace("'", '').split(','))
+if bv == pv:
+    print(f'in-sync:{len(bv)}')
+else:
+    only_bash = sorted(bv - pv)
+    only_ps1 = sorted(pv - bv)
+    print(f'DIVERGED bash-only={only_bash} ps1-only={only_ps1}')
+PY
+)"
+case "$twin_sync" in
+    in-sync:*) pass "HP24 both CLI twins carry the same chat verb set (${twin_sync#in-sync:} verbs)" ;;
+    *)         fail "HP24 the CLI twins have diverged: ${twin_sync}" ;;
+esac
+
 # --- surface boundary -------------------------------------------------------
 # The agent-facing surface is a SKILL that omits things, and that skill is a later delivery's
 # artifact. What is checkable here is the CLI's own plane-verb set: this delivery must have added

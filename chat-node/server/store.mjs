@@ -133,6 +133,51 @@ CREATE TABLE IF NOT EXISTS message (
 
 CREATE INDEX IF NOT EXISTS message_read     ON message (channel_id, arrival_seq);
 CREATE INDEX IF NOT EXISTS session_liveness ON session (last_heartbeat_at);
+
+-- ---------------------------------------------------------------------------
+-- Federation (delivery-004). Three additions and no changed rule: a session's
+-- experience is identical whether its peer is on this machine or another.
+
+-- The peers this hub knows. machine is the address a peer is reached at, and it is
+-- UNIQUE because two rows for one address would mean two links, two outboxes, and two
+-- answers to "is it reachable".
+CREATE TABLE IF NOT EXISTS peer (
+  id             INTEGER PRIMARY KEY AUTOINCREMENT,
+  machine        TEXT    NOT NULL UNIQUE,
+  protocol_major INTEGER,
+  source         TEXT    NOT NULL,
+  last_seen_at   INTEGER,
+  state          TEXT    NOT NULL DEFAULT 'unreachable'
+);
+
+-- What is owed to a peer that was not reachable when it was produced. Everything not yet
+-- delivered lives HERE rather than in the link, which is what makes a reconnect lose
+-- nothing: the link can be dropped and rebuilt without consulting anybody.
+CREATE TABLE IF NOT EXISTS outbox (
+  id          INTEGER PRIMARY KEY AUTOINCREMENT,
+  peer_id     INTEGER NOT NULL REFERENCES peer(id) ON DELETE CASCADE,
+  kind        TEXT    NOT NULL,
+  payload     TEXT    NOT NULL,
+  queued_at   INTEGER NOT NULL,
+  attempts    INTEGER NOT NULL DEFAULT 0
+);
+
+CREATE INDEX IF NOT EXISTS outbox_drain ON outbox (peer_id, id);
+
+-- The REMOTE half of a channel's roll, and only the remote half. Local membership stays in
+-- session.channel_id, so there is no second copy of a fact to drift: mirroring local members
+-- here would create two places for one truth, and they would disagree the first time a
+-- transaction updated one and not the other.
+--
+-- This answers the question replication cannot work without -- which peers hold members of
+-- this channel -- and, with the local count, whether a sender is alone.
+CREATE TABLE IF NOT EXISTS channel_member (
+  channel_id  INTEGER NOT NULL REFERENCES channel(id) ON DELETE CASCADE,
+  machine     TEXT    NOT NULL,
+  name        TEXT    NOT NULL,
+  joined_at   INTEGER NOT NULL,
+  PRIMARY KEY (channel_id, machine, name)
+);
 `;
 
 // ---------------------------------------------------------------------------
