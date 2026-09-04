@@ -18,6 +18,7 @@
 // corporate network blocks multicast, and then have no answer at all. Here the fallback is the
 // foundation and the convenience is the addition.
 
+import { networkInterfaces } from 'node:os';
 import { nowMs } from './store.mjs';
 
 // A peer is identified by the address it is reached at, so `machine` is the natural key and is
@@ -75,15 +76,23 @@ export function removePeer(db, { machine }) {
 }
 
 export function listPeers(db) {
-    return db.prepare('SELECT * FROM peer ORDER BY machine').all().map((p) => ({
+    // One query, not one per peer. This is called on every roster request, so a COUNT per peer row
+    // turned a peer list into N+1 statements against a table that grows during an outage -- exactly
+    // when an operator is most likely to be asking.
+    return db.prepare(`SELECT p.*, COUNT(o.id) AS queued
+                       FROM peer p
+                       LEFT JOIN outbox o ON o.peer_id = p.id
+                       GROUP BY p.id
+                       ORDER BY p.machine`).all().map((p) => ({
         machine: p.machine,
+        machine_id: p.machine_id,
         source: p.source,
         state: p.state,
         protocol_major: p.protocol_major,
         last_seen_at: p.last_seen_at,
         // Reported so an operator can see a queue building against a peer that never returns,
         // rather than discovering it when the disk fills.
-        queued: db.prepare('SELECT COUNT(*) AS n FROM outbox WHERE peer_id = ?').get(p.id).n,
+        queued: p.queued,
     }));
 }
 
@@ -149,6 +158,18 @@ export function reachablePeers(db) {
 // operator can always name addresses. This function may therefore return an empty list on a
 // perfectly healthy network, and that is not a fault.
 
+// Every address this host answers on, so a hub can recognise its own broadcast whichever interface
+// it comes back through.
+function localAddresses() {
+    const out = new Set(['127.0.0.1', '::1', 'localhost']);
+    try {
+        for (const list of Object.values(networkInterfaces() || {})) {
+            for (const iface of list || []) out.add(iface.address);
+        }
+    } catch { /* an unenumerable stack is not fatal: the port check still applies */ }
+    return out;
+}
+
 export const DISCOVERY_PORT = 8813;
 const DISCOVERY_MAGIC = 'aid-chat-hub/1';
 
@@ -186,10 +207,16 @@ export async function announceAndDiscover(db, { myPort, timeoutMs = 1500 } = {})
             const port = text.split(' ')[1];
             if (!port || !/^\d+$/.test(port)) return;
             const m = normalizeMachine(`${rinfo.address}:${port}`);
-            // Do not discover yourself. A hub hearing its own broadcast would add itself as a peer
-            // and then replicate every message to itself, which is a loop with a database at both
-            // ends of it.
-            if (m && String(port) !== String(myPort)) found.add(m);
+            // Do not discover yourself. A hub hearing its own broadcast would add itself as a peer and
+            // then replicate every message to itself, which is a loop with a database at both ends.
+            //
+            // The port alone is not enough: on a host with several interfaces a hub hears its own
+            // broadcast back on a DIFFERENT source address, so the address matched nothing while the
+            // port matched exactly. Both are checked, and the local addresses are enumerated rather
+            // than guessed.
+            const selfAddresses = localAddresses();
+            const isSelf = String(port) === String(myPort) && selfAddresses.has(rinfo.address);
+            if (m && !isSelf) found.add(m);
         });
 
         try {

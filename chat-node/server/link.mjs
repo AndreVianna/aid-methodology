@@ -33,9 +33,14 @@ export const DEFAULT_LINK_PORT = 8814;
 // drop an idle flow at 60 s and some at 30 s, so 15 s leaves room for one to be missed without the
 // flow going quiet long enough to be reaped.
 const KEEPALIVE_MS = 15_000;
-// A peer that has not answered two keepalives is treated as gone. Two rather than one so a single
-// dropped datagram or a moment of scheduling delay does not tear down a healthy link.
-const KEEPALIVE_GRACE = 2;
+// A peer that has not answered TWO keepalives is treated as gone -- two rather than one so a single
+// dropped packet or a moment of scheduling delay does not tear down a healthy link.
+//
+// The constant is the number of misses TOLERATED, and the teardown happens on the one after, so this
+// is 2 and the condition is `missed > GRACE`. An earlier comment said "two unanswered keepalives"
+// while the code tore down on the third, which is the kind of drift that makes somebody reasoning
+// about the idle-timeout margin get the wrong answer by trusting the prose.
+const KEEPALIVE_TOLERATED_MISSES = 2;
 
 // Reconnect backoff, JITTERED. Two hubs that lost each other will both try to reconnect, and with a
 // fixed schedule they can settle into lockstep -- each retrying exactly when the other is between
@@ -51,10 +56,22 @@ function backoffFor(attempt) {
 // --- framing ----------------------------------------------------------------
 // Newline-delimited JSON. A message body can contain a newline, so it is JSON-escaped by
 // `JSON.stringify` before it ever reaches the wire -- which is exactly why the delimiter is safe.
-function makeFramer(onFrame) {
+// A frame larger than this is not a frame. A peer streaming bytes without a newline would otherwise
+// grow this buffer until the process died -- which is a denial of service reachable by a network
+// glitch, not only by a hostile peer. Generous enough for any real message and bounded.
+const MAX_FRAME_BYTES = 4 * 1024 * 1024;
+
+function makeFramer(onFrame, { onOverflow = null } = {}) {
     let buf = '';
     return (chunk) => {
         buf += chunk.toString('utf8');
+        if (buf.length > MAX_FRAME_BYTES) {
+            // Discarded rather than trimmed: a partial frame this large cannot be parsed, and keeping
+            // any of it would leave the stream mid-frame with no way to resynchronise.
+            buf = '';
+            if (onOverflow) onOverflow();
+            return;
+        }
         let nl;
         while ((nl = buf.indexOf('\n')) !== -1) {
             const line = buf.slice(0, nl);
@@ -172,8 +189,8 @@ export function createLinkManager({ db, handlers = {}, linkPort = null, machineI
         l.keepaliveTimer = setInterval(() => {
             if (!l.socket || l.socket.destroyed) return;
             l.missed += 1;
-            if (l.missed > KEEPALIVE_GRACE) {
-                // Two unanswered keepalives: treat the peer as gone and rebuild rather than sit on a
+            if (l.missed > KEEPALIVE_TOLERATED_MISSES) {
+                // Past the tolerated misses: treat the peer as gone and rebuild rather than sit on a
                 // socket the network has already dropped without telling either end.
                 teardown(machine);
                 return;
@@ -224,6 +241,22 @@ export function createLinkManager({ db, handlers = {}, linkPort = null, machineI
 
             const onFrame = makeFramer(async (frame) => {
                 if (frame.t === 'hello' || frame.t === 'hello-ack') {
+                    // A peer announcing OUR identity is refused here, loudly, rather than allowed to
+                    // become a silent failure later: two hubs sharing a machine id make every
+                    // membership announcement look like one's own, so each sees an empty channel and
+                    // every send is refused as solo with nothing pointing at the cause.
+                    if (frame.machine && frame.machine === myMachine) {
+                        if (!settled) {
+                            settled = true;
+                            try { socket.destroy(); } catch { /* gone */ }
+                            l.socket = null; l.state = 'refused';
+                            resolve({
+                                ok: false, reason: 'machine_id_collision',
+                                detail: `peer announces the same machine id as this hub (${myMachine}); set AID_CHAT_MACHINE to a distinct value on each machine`,
+                            });
+                        }
+                        return;
+                    }
                     const verdict = checkCompatibility(frame.protocol);
                     if (!verdict.compatible) {
                         if (!settled) {
@@ -293,6 +326,15 @@ export function createLinkManager({ db, handlers = {}, linkPort = null, machineI
             let theirMachine = null;
             const onFrame = makeFramer(async (frame) => {
                 if (frame.t === 'hello') {
+                    if (frame.machine && frame.machine === myMachine) {
+                        send(socket, {
+                            t: 'refused', reason: 'machine_id_collision',
+                            detail: `peer announces the same machine id as this hub (${myMachine}); set AID_CHAT_MACHINE to a distinct value on each machine`,
+                            protocol: PROTOCOL_VERSION,
+                        });
+                        try { socket.destroy(); } catch { /* gone */ }
+                        return;
+                    }
                     const verdict = checkCompatibility(frame.protocol);
                     if (!verdict.compatible) {
                         // Refused explicitly and by name, rather than by dropping the socket. The

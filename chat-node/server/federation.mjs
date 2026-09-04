@@ -208,6 +208,18 @@ export function applyMessage(db, payload) {
     if (!channel || !sender_machine || !sender_name || !idempotency_key || typeof body !== 'string') {
         return { ok: false, reason: 'bad_request', detail: 'channel, sender, key and body are required' };
     }
+    // `sender_seq` IS VALIDATED, and it belongs in the same breath as the rest because it is load
+    // bearing in a way the others are not: the read path sorts by `a.sender_seq - b.sender_seq`, so a
+    // null pair compares equal and a string pair yields NaN. Either way per-speaker FIFO -- the one
+    // ordering guarantee this product makes -- is silently gone for every replicated message, with
+    // nothing failing and nothing to see.
+    const seq = Number(sender_seq);
+    if (!Number.isInteger(seq) || seq < 1) {
+        return {
+            ok: false, reason: 'bad_request',
+            detail: `sender_seq must be a positive integer, got ${JSON.stringify(sender_seq)}`,
+        };
+    }
     // Our own message coming back to us. Dropped rather than stored: replication is not a loop, and a
     // hub that accepted its own send would double every message in a three-hub channel.
     if (sender_machine === thisMachine()) return { ok: true, ignored: 'own message' };
@@ -233,7 +245,7 @@ export function applyMessage(db, payload) {
             (channel_id, arrival_seq, sender_name, sender_machine, sender_seq, idempotency_key,
              kind, body, correlation_id, reply_to, mention, whisper_to, sent_at, received_at)
             VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?)`)
-          .run(ch.id, arrivalSeq, sender_name, sender_machine, sender_seq, idempotency_key,
+          .run(ch.id, arrivalSeq, sender_name, sender_machine, seq, idempotency_key,
                kind, body, correlation_id, reply_to,
                mention ? (typeof mention === 'string' ? mention : JSON.stringify(mention)) : null,
                whisper_to, sent_at || t, t);

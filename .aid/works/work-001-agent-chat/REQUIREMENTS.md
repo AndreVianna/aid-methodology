@@ -2843,7 +2843,8 @@ Two tables added to Feature 002's store, and one column.
 ```sql
 CREATE TABLE peer (
   id             INTEGER PRIMARY KEY AUTOINCREMENT,
-  machine        TEXT    NOT NULL UNIQUE,  -- the address a peer is reached at
+  machine        TEXT    NOT NULL UNIQUE,  -- the ADDRESS a peer is reached at
+  machine_id     TEXT,                     -- the LOGICAL name it announced at handshake; NULL until then
   protocol_major INTEGER,                  -- learned at handshake (FR-6.4); NULL until then
   source         TEXT    NOT NULL,         -- 'configured' | 'discovered'
   last_seen_at   INTEGER,
@@ -2871,6 +2872,19 @@ CREATE TABLE channel_member (
   PRIMARY KEY (channel_id, machine, name)
 );
 ```
+
+**`peer.machine_id` is the bridge between two namespaces that a shared column name hides.** A peer is
+REACHED at an address (`peer.machine`); a member is IDENTIFIED by the logical name of the machine it
+sits on (`channel_member.machine`, and `message.sender_machine`). Those are different kinds of thing,
+and without a mapping between them replication has no way to turn "there is a member on `beta`" into
+"open a connection to `192.168.2.20:8814`". The mapping is LEARNED at handshake, where a hub already
+announces its own name, rather than configured -- an operator asked to state both would have two
+chances to state them inconsistently.
+
+The logical name defaults to the **hostname**, and a peer announcing the same name as the local hub is
+refused at handshake with an explicit error. Both matter: two hubs sharing an identity makes every
+membership announcement look like one's own, so each hub sees a channel with no remote members and
+every send is refused as `solo_channel` -- a silent failure with nothing pointing at the cause.
 
 `message` gains nothing: `sender_machine` was already there in Feature 002, put there for this
 stage rather than discovered at it.

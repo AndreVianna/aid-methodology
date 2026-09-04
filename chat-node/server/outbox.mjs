@@ -58,8 +58,13 @@ export function countAttempt(db, id) {
 // `attempts` is counted per item so an operator can see a peer that never succeeds. A queue growing
 // silently is the failure mode this exists to prevent: without the count, a peer that has been gone
 // for a week and one that is merely slow look identical from the outside.
+// How many times a peer may REFUSE one item before it is given up on. Only refusals count against
+// this; an unreachable peer is not the item's fault and never will be.
+export const MAX_ATTEMPTS = 5;
+
 export async function drain(db, { peerId, machine, deliver }) {
     const items = pending(db, peerId);
+    const dropped = [];
     let sent = 0;
     for (const item of items) {
         let payload;
@@ -74,10 +79,26 @@ export async function drain(db, { peerId, machine, deliver }) {
         countAttempt(db, item.id);
         const result = await deliver({ kind: item.kind, payload, machine });
         if (!result || !result.ok) {
-            return { ok: false, sent, remaining: depth(db, peerId), stopped_on: item.id, reason: (result && result.reason) || 'deliver_failed' };
+            // A REFUSAL and a FAILURE are different, and treating them alike blocks the queue forever.
+            // If the peer answered and rejected the item -- a malformed payload, a schema it cannot
+            // read -- no number of retries will change its mind, and every item behind it waits on one
+            // that can never leave. So a well-formed refusal past the attempt ceiling is dropped and
+            // counted, while an unreachable peer still stops the drain: THAT one is transient, and
+            // skipping past it would deliver a speaker's messages out of order.
+            const refused = result && (result.reason === 'bad_request' || result.reason === 'handler_error'
+                                       || result.reason === 'unknown_op');
+            if (refused && item.attempts + 1 >= MAX_ATTEMPTS) {
+                forget(db, item.id);
+                dropped.push({ id: item.id, kind: item.kind, reason: result.reason, attempts: item.attempts + 1 });
+                continue;
+            }
+            return {
+                ok: false, sent, dropped, remaining: depth(db, peerId), stopped_on: item.id,
+                reason: (result && result.reason) || 'deliver_failed',
+            };
         }
         forget(db, item.id);
         sent += 1;
     }
-    return { ok: true, sent, remaining: depth(db, peerId) };
+    return { ok: true, sent, dropped, remaining: depth(db, peerId) };
 }

@@ -202,7 +202,23 @@ fi
 # it is asserted structurally: the successful exchange above was two CLI calls, and neither the
 # node nor the CLI has any code path that waits for a third party to answer. A prompt would have
 # to be a read of stdin or a blocking wait; there is neither.
-prompts=$(grep -cE 'read -[rp]|AskUser|confirm|prompt' "${REPO_ROOT}/chat-node/server/core.mjs" "${REPO_ROOT}/chat-node/server/hub.mjs" 2>/dev/null | awk -F: '{s+=$2} END {print s+0}')
+# Comments are STRIPPED before searching. An earlier version grepped the whole file and matched the
+# word "confirm" inside a comment explaining why something is NOT confirmed -- so the guard failed on
+# prose that agreed with it. A check that can be tripped by its own explanation is a check that will
+# be quietly reworded around rather than trusted.
+prompts=$(python3 - "${REPO_ROOT}/chat-node/server" <<'PY'
+import os, re, sys
+pat = re.compile(r'read -[rp]|AskUser|confirm|prompt', re.I)
+hits = 0
+for fn in ('core.mjs', 'hub.mjs'):
+    src = open(os.path.join(sys.argv[1], fn), encoding='utf-8').read()
+    src = re.sub(r'/\*.*?\*/', '', src, flags=re.S)        # block comments
+    src = re.sub(r'^\s*//.*$', '', src, flags=re.M)         # whole-line comments
+    src = re.sub(r'\s//.*$', '', src, flags=re.M)           # trailing comments
+    hits += len(pat.findall(src))
+print(hits)
+PY
+)
 assert_eq "$prompts" "0" "HP15 no approval prompt exists in the connect path: nothing reads stdin or waits for a third party"
 
 # --- reciprocal -------------------------------------------------------------

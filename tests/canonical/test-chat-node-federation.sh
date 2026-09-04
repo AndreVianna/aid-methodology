@@ -342,6 +342,86 @@ PY
 )"
 assert_eq "$orphans" "none" "FD20 no channel is left with neither a local nor a remote member: a refused relay leaves no orphan"
 
+# FD21 -- TWO HUBS MUST NOT SHARE AN IDENTITY, and the refusal must say so. This was the delivery's
+# worst failure mode because it failed SILENTLY: a peer announcing the same machine id made every
+# membership announcement look like the hub's own, so each side saw a channel with no remote members
+# and every send was refused as solo, with nothing anywhere naming the cause.
+collide="$(python3 - "$LINK_A" <<'PY'
+import socket, json, sys
+try:
+    s = socket.create_connection(('127.0.0.1', int(sys.argv[1])), timeout=3)
+    # Announce the identity hub A itself uses.
+    s.sendall((json.dumps({'t':'hello','protocol':'1.0.0','machine':'alpha','port':9500})+'\n').encode())
+    s.settimeout(3)
+    f = json.loads(s.recv(4096).decode().strip().split('\n')[0])
+    s.close()
+    print(f"{f.get('t')}:{f.get('reason')}:{'AID_CHAT_MACHINE' in (f.get('detail') or '')}")
+except Exception as e:
+    print(f'ERROR:{e}')
+PY
+)"
+assert_eq "$collide" "refused:machine_id_collision:True"     "FD21 a peer announcing this hub's own identity is refused, and the error names the variable to set"
+
+# FD22 -- `sender_seq` is load-bearing for per-speaker order, so a replicated message without a valid
+# one is REFUSED rather than stored. Stored, it would compare equal (null) or NaN (string) in the read
+# path's sort, and the one ordering guarantee this product makes would be gone for every replicated
+# message with nothing failing.
+badseq="$(python3 - "${B_RT}/chat.db" "${REPO_ROOT}" <<'PY'
+import subprocess, sys, json
+script = '''
+import { openStore } from "%s/chat-node/server/store.mjs";
+import * as fed from "%s/chat-node/server/federation.mjs";
+const db = await openStore({ path: ":memory:" });
+db.prepare("INSERT INTO channel(name, opened_at) VALUES (?,?)").run("c", 1);
+const base = { channel: "c", sender_machine: "elsewhere", sender_name: "x",
+               idempotency_key: "k", body: "hi" };
+const out = [];
+for (const bad of [undefined, null, "three", 0, -1, 1.5]) {
+    const r = fed.applyMessage(db, { ...base, sender_seq: bad, idempotency_key: "k" + String(bad) });
+    out.push(r.ok ? "STORED" : r.reason);
+}
+const good = fed.applyMessage(db, { ...base, sender_seq: 7, idempotency_key: "kgood" });
+out.push(good.ok ? "ok" : "REFUSED-GOOD");
+const stored = db.prepare("SELECT sender_seq FROM message").all().map(r => r.sender_seq);
+console.log(out.join(",") + "|" + JSON.stringify(stored));
+''' % (sys.argv[2], sys.argv[2])
+r = subprocess.run(['node', '--input-type=module', '-e', script], capture_output=True, text=True)
+print(r.stdout.strip() or ('ERR:' + r.stderr.strip()[:120]))
+PY
+)"
+assert_eq "$badseq" "bad_request,bad_request,bad_request,bad_request,bad_request,bad_request,ok|[7]"     "FD22 a replicated message with an absent, non-numeric, zero, negative or fractional sender_seq is refused; only a valid one is stored"
+
+# FD23 -- an item the peer keeps REFUSING must not block the queue forever, while an UNREACHABLE peer
+# still stops the drain. The two look alike from a call site and are opposites: one will never succeed,
+# the other will succeed as soon as the network returns, and skipping the second would deliver a
+# speaker's messages out of order.
+cat > "${_TMPD}/deadletter.mjs" <<MJS
+import { openStore } from '${REPO_ROOT}/chat-node/server/store.mjs';
+import * as ob from '${REPO_ROOT}/chat-node/server/outbox.mjs';
+const db = await openStore({ path: ':memory:' });
+db.prepare("INSERT INTO peer(machine, source, state) VALUES ('p','configured','reachable')").run();
+const pid = db.prepare('SELECT id FROM peer').get().id;
+for (const n of [1, 2, 3]) ob.enqueue(db, { peerId: pid, kind: 'message', payload: { n } });
+// A peer that REFUSES: the first item can never leave, so it must eventually be given up on or every
+// item behind it waits on one that will never succeed.
+// Enough rounds to exhaust all three items: the ceiling is per ITEM, and a drain stops at the first
+// failure, so three items at five attempts each needs fifteen rounds and not ten. Getting this wrong
+// once is what made this assertion look like a defect when the behaviour was right.
+for (let i = 0; i < 20; i++) {
+  const r = await ob.drain(db, { peerId: pid, machine: 'p', deliver: async () => ({ ok: false, reason: 'bad_request' }) });
+  if (r.ok) break;
+}
+const afterRefusals = ob.depth(db, pid);
+// A peer that is UNREACHABLE: the drain must stop, and nothing may be dropped -- that failure is
+// transient, and skipping past it would deliver a speaker's messages out of order.
+for (const n of [4, 5]) ob.enqueue(db, { peerId: pid, kind: 'message', payload: { n } });
+const before = ob.depth(db, pid);
+await ob.drain(db, { peerId: pid, machine: 'p', deliver: async () => ({ ok: false, reason: 'peer_unreachable' }) });
+console.log([afterRefusals, before, ob.depth(db, pid)].join(','));
+MJS
+deadletter="$(node "${_TMPD}/deadletter.mjs" 2>/dev/null)"
+assert_eq "$deadletter" "0,2,2"     "FD23 persistently refused items are given up on so the queue drains; an unreachable peer stops the drain and loses nothing"
+
 # Non-automated checks are enumerated, not implied.
 for mp in MP-09 MP-10; do
     assert_file_contains "${REPO_ROOT}/chat-node/tests/MANUAL-PROCEDURES.md" "$mp" \

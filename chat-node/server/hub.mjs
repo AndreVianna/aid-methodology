@@ -289,6 +289,13 @@ export function makeRouter({ db, startedAt, onReady = null }) {
                 // the part that happens to be local here.
                 const local = db.prepare('SELECT name FROM session WHERE channel_id = ?').all(ch.id)
                     .map((r) => ({ machine: thisMachine(), name: r.name }));
+                // Remote members are passed on as this hub knows them. It may be slightly behind --
+                // a `leave` from a third hub can still be in flight -- and that is accepted rather
+                // than papered over: the joining hub would learn the same thing from the same
+                // announcement, and a member believed present when it has gone costs at most one
+                // send that should have been refused as solo. The alternative, asking every peer to
+                // confirm every member, makes one join an O(peers) round trip to remove a window that
+                // closes itself.
                 const remote = db.prepare('SELECT machine, name FROM channel_member WHERE channel_id = ?')
                     .all(ch.id).map((r) => ({ machine: r.machine, name: r.name }));
                 return { ok: true, exists: true, members: [...local, ...remote] };

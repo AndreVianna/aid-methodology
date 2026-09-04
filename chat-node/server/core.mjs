@@ -14,6 +14,7 @@
 // caller must be able to branch on -- "is the agent I want busy?" -- rather than a fault.
 // A thrown error from this module means the core is broken; a refusal means it is working.
 
+import { hostname } from 'node:os';
 import { nowMs } from './store.mjs';
 import { limits } from './settings.mjs';
 
@@ -76,8 +77,26 @@ export function mintConversationId() {
     return `cv_${globalThis.crypto.randomUUID()}`;
 }
 
+// This hub's own identity, and the default MATTERS more than it looks.
+//
+// It used to be the literal 'local', which meant two hubs that nobody configured shared an identity
+// -- and sharing it fails SILENTLY in the worst possible way: `applyMembership` treats a peer's
+// announcement as its own machine and ignores it, so each hub sees a channel with no remote members
+// and every send is refused as `solo_channel`. An operator would see a refusal with no path to the
+// cause.
+//
+// So the default is the HOSTNAME, which is unique on a LAN by the same convention that makes the LAN
+// navigable at all, and the link refuses a peer that announces the same identity as ours rather than
+// letting the collision turn into an unexplainable refusal later.
 export function thisMachine() {
-    return process.env.AID_CHAT_MACHINE || 'local';
+    if (process.env.AID_CHAT_MACHINE) return process.env.AID_CHAT_MACHINE;
+    // `require` does not exist in an ES module, so an earlier version of this silently fell through
+    // to 'local' -- which is the exact failure it was written to prevent, dressed as a fix.
+    try {
+        const h = hostname();
+        if (h && h !== 'localhost') return h;
+    } catch { /* fall through */ }
+    return 'local';
 }
 
 // ---------------------------------------------------------------------------

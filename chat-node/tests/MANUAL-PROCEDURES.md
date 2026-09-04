@@ -254,6 +254,24 @@ with a real TCP link between them, so every property of the PROTOCOL is covered 
 replication, outbox, relay, partial roster. What it cannot do is put them on two machines: both are
 on loopback, and a loopback link never meets a router, a firewall, or an MTU it did not choose.
 
+**Before anything else — give each machine a distinct identity:**
+
+```bash
+export AID_CHAT_MACHINE=alpha    # on machine A
+export AID_CHAT_MACHINE=beta     # on machine B
+```
+
+It defaults to the hostname, so on two normally-named machines this is already true and the export is
+belt and braces. **Check it rather than assume it:** `curl -s http://127.0.0.1:$(cat
+~/.aid/chat/hub.port)/protocol` reports each hub's `machine`, and the two must differ.
+
+Why this is step zero rather than a footnote: two hubs sharing an identity makes every membership
+announcement from the peer look like the hub's own, so each sees a channel with no remote members and
+**every send is refused as `solo_channel`** — a refusal with nothing in it pointing at the cause. The
+link now refuses a peer announcing the same identity, with an explicit error naming this variable, so
+the failure is loud; but a hub whose hostname is `localhost` on both machines would hit it, and this
+is where you find that out.
+
 **Steps:**
 
 1. On machine A: `aid chat node start`, then install the stop hook per `docs/chat-wake-install.md`.
