@@ -269,6 +269,25 @@ features:
 #
 #   - date / event / outcome / notes
 review_history:
+  - date: 2026-09-04
+    scope: delivery-001 gate (four cycles)
+    outcome: >-
+      PASSED at A+ on cycle 4. Eleven tasks, 109 assertions across five canonical suites,
+      zero regressions against the pre-work baseline (verified in a clean worktree at the
+      commit before the delivery began, not by stashing). Seventeen findings across four
+      cycles, all fixed. Cycle 1 REFUSED the delivery on two HIGHs, and both were the same
+      species: code that was correct but unreachable (reapSession had no route or verb, so
+      AC-30's reap clause could not be exercised through the product) and a criterion that
+      skipped rather than ran (AC-22's PATH-stripping removed only the first directory
+      containing node, and this machine has two). Two of cycle 3's findings were introduced
+      by cycle 2's own fixes -- a vacuous assertion left pointing at the wrong node, and a
+      flag added without a test -- which is the argument for re-gating after fixing.
+      Writing the last test (CO23) corrected an understanding rather than confirming one:
+      the too-late discard occurs only once a reader has ACKNOWLEDGED past a grace skip, so
+      the loss window is narrower than first documented, and both the test and core.mjs now
+      state the narrower condition.
+    grade: A+
+
   - date: '2026-09-01'
     event: 'Seeded from a predecessor'
     outcome: 'seven sections Complete, three Pending'
