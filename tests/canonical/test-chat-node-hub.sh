@@ -307,6 +307,30 @@ case "$twin_sync" in
     *)         fail "HP24 the CLI twins have diverged: ${twin_sync}" ;;
 esac
 
+# HP25 -- EVERY CHAT VERB IS COVERED BY A MANUAL PROCEDURE. Not because a procedure is as good as a
+# test, but because the PowerShell twins cannot be executed here at all, and the only honest handling
+# of a check this environment cannot perform is to make the SET of them countable. Nine verbs had no
+# procedure and so were neither executed nor recorded as needing execution -- including `subscribe`,
+# which is the one that had already shipped missing from a twin.
+#
+# This fails when a verb is ADDED without being recorded, which is exactly when it would otherwise be
+# forgotten.
+uncovered="$(python3 - "${REPO_ROOT}" <<'PY'
+import re, sys
+root = sys.argv[1]
+src = open(f'{root}/bin/aid', encoding='utf-8').read()
+m = re.search(r'register\|heartbeat[^)]*', src)
+if not m:
+    print('DISPATCH-NOT-FOUND'); raise SystemExit
+verbs = sorted(set(m.group(0).split('|'))) + ['node start', 'node stop', 'node status']
+mp = open(f'{root}/chat-node/tests/MANUAL-PROCEDURES.md', encoding='utf-8').read()
+missing = [v for v in verbs if f'chat {v}' not in mp]
+print(' '.join(missing) if missing else 'all-covered')
+PY
+)"
+assert_eq "$uncovered" "all-covered" \
+    "HP25 every chat verb appears in a manual procedure, so the set of unexecuted checks is countable"
+
 # --- surface boundary -------------------------------------------------------
 # The agent-facing surface is a SKILL that omits things, and that skill is a later delivery's
 # artifact. What is checkable here is the CLI's own plane-verb set: this delivery must have added

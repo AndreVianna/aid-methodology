@@ -21,7 +21,7 @@
 {"dst": ".codex/aid/scripts/execute/derive-waves.sh", "profile": "codex", "sha256": "92900f4adbb4c52cbe69b7d571c54f8df0177400578bbbe83d972ff552ccd6f8", "src": "canonical/scripts/execute/derive-waves.sh"}
 {"dst": ".codex/aid/scripts/execute/slice-requirements.sh", "profile": "codex", "sha256": "e2601e4f741cc92793a9302f922f6b62dfc67c222d168b14fe25852f002c6aeb", "src": "canonical/scripts/execute/slice-requirements.sh"}
 {"dst": ".codex/aid/scripts/execute/write-control-signal.sh", "profile": "codex", "sha256": "4adc99a9d9aff96d5a3c418fb461af28167f48cfada8a1d2ed88b17454fb17fc", "src": "canonical/scripts/execute/write-control-signal.sh"}
-{"dst": ".codex/aid/scripts/execute/writeback-state.sh", "profile": "codex", "sha256": "6ef6abf10272fcc7bbe9d4410a5a2789cc85764f0bc15361545f7e8b954eaaa0", "src": "canonical/scripts/execute/writeback-state.sh"}
+{"dst": ".codex/aid/scripts/execute/writeback-state.sh", "profile": "codex", "sha256": "56db99a2f4705ff803813920fa73cfbd6eea1ed4ff6ac208d0cc258f9868f3d9", "src": "canonical/scripts/execute/writeback-state.sh"}
 {"dst": ".codex/aid/scripts/grade.sh", "profile": "codex", "sha256": "478103d69baa1eb0f080538923ebe4a583629cbce540d04c567f15b4c76350f3", "src": "canonical/scripts/grade.sh"}
 {"dst": ".codex/aid/scripts/housekeep/branch-commit.sh", "profile": "codex", "sha256": "4317500099dcff627c2ed2d4dd59ecaf78d1173a9536baa6a35330dd9d7b9a9f", "src": "canonical/scripts/housekeep/branch-commit.sh"}
 {"dst": ".codex/aid/scripts/housekeep/cleanup-classify.sh", "profile": "codex", "sha256": "56a0d4980a5833e9b9b395f72dc4b60c5a21375924298e14f3b9a680f2c0bd19", "src": "canonical/scripts/housekeep/cleanup-classify.sh"}

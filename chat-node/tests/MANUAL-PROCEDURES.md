@@ -11,6 +11,30 @@ machine — never to excuse a test that could have been automated.
 
 ---
 
+## What an operator actually needs to run, in one list
+
+Eleven procedures, and they need three different setups. Grouped by setup rather than by number,
+because the grouping is what decides how many sittings this takes.
+
+| Setup you need | Procedures | What it settles |
+|---|---|---|
+| **A Windows or macOS machine with PowerShell 7+** | `MP-01`, `MP-02`, `MP-03`, `MP-11` | Every PowerShell twin. This is the largest gap in the work: four deliveries of code that has never been executed. `HP24` catches a verb missing entirely; nothing catches one that behaves differently |
+| **One machine, two host tools (Claude Code and Cursor), both with the stop hook installed** | `MP-05`, `MP-06`, `MP-07`, `MP-08` | That the wake works on real hosts: a cross-tool exchange with no human action, no approval prompt on a gating host, one turn and not a loop, and that the install document is followable by somebody who did not write it |
+| **Two machines on one network** | `MP-09`, `MP-10` | The target case with a real network hop, and whether a 15-second keepalive survives a real idle network. `MP-10` is a **measurement to record**, not a box to tick |
+| — | `MP-04` | Folded into `MP-06`: it is the same observation on the same setup |
+
+**If you only do one group,** do the middle one. The wake is the feature that makes this a channel
+rather than a mailbox, and it is the only group whose failure would mean the product does not do what
+it claims. The PowerShell group is the largest *risk* but its failure mode is a Windows user hitting a
+broken verb, not a broken design. The two-machine group is the most *interesting* — `MP-10` measures
+something nothing upstream has measured — but delivery-004's protocol half is covered by two real hubs
+in `test-chat-node-federation.sh` and three in the end-to-end suite.
+
+**Nothing here is a known failure.** Every one is a check this environment cannot perform, listed so
+the set is countable rather than implied.
+
+---
+
 ## MP-01 — The PowerShell twin of every `aid chat` verb
 
 **Verifies:** `bin/aid.ps1` behaves identically to `bin/aid` for the chat lifecycle verbs
@@ -328,3 +352,55 @@ missing who is there.
 reported on each side, whether the message was queued at step 5, and how long it took to arrive.
 If the message did NOT arrive, the keepalive interval is too long for that network and the finding is
 the number it needs to be.
+
+---
+
+## MP-11 — The nine `aid chat` verbs no other procedure reaches, under PowerShell
+
+**Verifies:** the PowerShell twin of every chat verb not already covered by `MP-01` or `MP-03`:
+`subscribe`, `heartbeat`, `leave`, `list`, `reap`, `show`, `audit`, `evict`, `retention`.
+
+**Why it exists as one entry rather than nine:** they share a single failure mode — a verb present in
+`bin/aid` and absent or misparsed in `bin/aid.ps1` — and one sitting checks all of them. Splitting
+them would make the list longer without making it more likely to be run.
+
+**Why not automated here:** no PowerShell interpreter in this environment, so
+`tests/canonical/test-aid-cli-parity.sh` reports SKIP. `HP24` compares the two verb SETS as text and
+needs no interpreter, so a verb missing entirely is now caught automatically — that guard exists
+because exactly that happened to `subscribe`. What `HP24` cannot check is whether each verb *behaves*
+the same, which is what this procedure is for.
+
+**Steps** (PowerShell 7+, Node >= 22.13.0, from the repository root):
+
+1. `pwsh -NoProfile -File ./bin/aid.ps1 chat node start --port 0`
+2. `... chat register --name a --tool cursor`, then `... chat register --name b --tool cursor`
+3. `... chat heartbeat --name a` — expect `"channel": null` (a is in no channel yet), exit 0.
+4. `... chat open --name a --channel t`, `... chat join --name b --channel t`
+5. `... chat heartbeat --name a` — expect `"channel": "t"` now. This is the case that matters: a
+   connect outcome must be learnable on the weakest call there is.
+6. `... chat list --name a` — expect channel `t` with `"is_mine": true`.
+7. `... chat send --name a --body hello`
+8. `... chat subscribe --name b --host-timeout 60` — expect it to return **at once** with the pending
+   message (the busy path reads before waiting), `"block_ms"` and `"basis"` present.
+9. `... chat subscribe --name b --host-timeout 6` — with nothing pending, expect it to block about
+   1 second and return `"kind": "timeout"`. Then `--host-timeout 60` and confirm it blocks longer.
+10. `... chat show` — expect both sessions with `unread`, `idle_ms`, `stale`; channel `t` with its
+    members.
+11. `... chat audit --limit 10` — expect the `register` / `open` / `join` / `send` events, and **no
+    message body anywhere**.
+12. `... chat retention` then `... chat retention --set ttlMs=5000` then `... chat retention` again —
+    expect 5000. Then `... chat node stop`, `... chat node start --port 0`, `... chat retention` —
+    expect **5000 still**, because the override is persisted.
+13. `... chat retention --set ttlMs=-1` — expect a refusal naming the value, exit 2.
+14. `... chat leave --name b` — expect `"channel_closed": false` (a is still there).
+15. `... chat evict --name a` — expect it to succeed and the channel to close with them.
+16. `... chat reap --name a` — expect `"reaped": "a"`.
+17. `... chat node stop`.
+
+**Pass looks like:** every step matches, and each exit code equals the one the Bash twin produces for
+the same input. Run the same sequence with `bash ./bin/aid` and diff the two transcripts; the only
+differences should be timing values and generated ids.
+
+**Record:** any step where the two twins disagree, and any PowerShell parse error — the flag-parsing
+loop handles bare switches (`--follow`, `--add`, `--remove`, `--discover`) differently from
+value-taking flags, and that is the most likely place for a divergence.

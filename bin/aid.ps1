@@ -4898,6 +4898,7 @@ function script:Invoke-AidChatWaitOnce {
         $pending = Invoke-WebRequest -Uri "$base/messages?name=$Name" -UseBasicParsing -ErrorAction Stop -TimeoutSec 30
         $pj = $pending.Content | ConvertFrom-Json
         if ($pj.messages -and $pj.messages.Count -gt 0) {
+            # The same shape the Bash twin emits for a backlog read, field for field.
             $merged = [ordered]@{
                 ok = $true; kind = 'message'; from_backlog = $true
                 messages = $pj.messages; delivered_seq = $pj.delivered_seq; acked_seq = $pj.acked_seq
@@ -4918,11 +4919,15 @@ function script:Invoke-AidChatWaitOnce {
         $wake = $resp.Content | ConvertFrom-Json
         if ($wake.kind -eq 'message') {
             $inbox = (Invoke-WebRequest -Uri "$base/messages?name=$Name" -UseBasicParsing -ErrorAction Stop -TimeoutSec 30).Content | ConvertFrom-Json
-            $merged = [ordered]@{
-                ok = $wake.ok; kind = $wake.kind; arrival_seq = $wake.arrival_seq
-                block_ms = $wake.block_ms; basis = $wake.basis
-                messages = $inbox.messages; delivered_seq = $inbox.delivered_seq; acked_seq = $inbox.acked_seq
-            }
+            # EVERY field the server sent is carried, not a fixed list of them. Copying a chosen set
+            # meant a field added to the wake -- `from_backlog`, say, or the next one -- would appear
+            # in the Bash twin's output and silently not in this one, and an adapter reading the two
+            # would behave differently on Windows for no reason it could see.
+            $merged = [ordered]@{}
+            foreach ($prop in $wake.PSObject.Properties) { $merged[$prop.Name] = $prop.Value }
+            $merged['messages']      = $inbox.messages
+            $merged['delivered_seq'] = $inbox.delivered_seq
+            $merged['acked_seq']     = $inbox.acked_seq
             Write-Output ($merged | ConvertTo-Json -Compress -Depth 6)
         } else {
             Write-Output $resp.Content

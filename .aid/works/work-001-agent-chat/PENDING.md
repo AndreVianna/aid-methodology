@@ -35,7 +35,7 @@ The risk is not theoretical any more, and it compounds with every delivery.
 | P1-2 | `MP-01` — the lifecycle and message-plane verbs under PowerShell | Needs-hardware |
 | P1-3 | `MP-02` — a fresh install via `install.ps1` places `chat-node/` correctly | Needs-hardware |
 | P1-4 | `MP-03` — `roster` and `connect` under PowerShell | Needs-hardware |
-| P1-5 | **`subscribe`, `heartbeat`, `leave`, `list` and `reap` have no manual procedure at all** — five verbs whose PowerShell twin is neither executed nor recorded as needing execution. `subscribe` is the one that already produced a HIGH finding | Open |
+| P1-5 | ~~**Nine verbs had no manual procedure at all**~~ — **DONE**: `MP-11` covers them in one sitting and `HP25` guards against a new verb being added unrecorded. Originally: **`subscribe`, `heartbeat`, `leave`, `list` and `reap` have no manual procedure at all** — five verbs whose PowerShell twin is neither executed nor recorded as needing execution. `subscribe` is the one that already produced a HIGH finding | Open |
 
 `P1-5` is the actionable one and should be done in this work, not deferred to hardware: the fix is
 to extend the manual procedures so the uncovered verbs are at least *enumerable*. A gap that is
@@ -83,7 +83,7 @@ is on disk at `profiles/*/skills/aid-chat/SKILL.md`.
 | P4-1 | The Cursor adapter declines re-entry at `loop_count >= 1` while the host's own cap is 5. Stricter on purpose; the cost is at most one deferred wake because the next stop reads the store first. Re-read if the host's follow-up semantics change | Accepted |
 | P4-2 | Unknown, stale and already-in-a-channel collapse to one `target_unavailable` token, with the distinction in `detail`. The first rationale for this was wrong and is recorded as wrong in the code | Accepted |
 | P4-3 | `test-kb-no-work-ids.sh` allows a work id inside a code span, on the argument that command syntax is not a citation. A real citation in backticks would pass | Accepted |
-| P4-4 | The PowerShell subscriber's merged wake object copies a fixed field set, where the Bash twin merges every field the server sent. Cosmetic; a new server field would appear in one twin and not the other | Open |
+| P4-4 | ~~The PowerShell subscriber copied a fixed field set.~~ **DONE**: it now carries every field the server sent, so a new field cannot appear in one twin and silently not the other | Done |
 
 `P4-4` is small and real, and belongs in the strengthening round.
 
@@ -103,7 +103,7 @@ production, and the answer may be to bound it with something the event loop cann
 
 | # | Item | Status | Durable row |
 |---|---|---|---|
-| P5-1 | `writeback-state.sh` corrupts a multi-line folded scalar by rewriting only its key line, leaving the file unparseable. Hit **three times** across this work | Open | `W1-18` |
+| P5-1 | ~~`writeback-state.sh` corrupts a multi-line folded scalar.~~ **FIXED** in the correction round: the writer now consumes a block scalar's indented body with its header. Reproduced first, then fixed, then falsified — five of six regression cases fail against the unfixed writer, and the ordinary-scalar control does not. Applied to the canonical source, all seven renders, and narrowly to the dashboard fork so its `Deploy` value survives. `W1-18` closed | Done | — |
 | P5-2 | `test-aid-migrate-trigger.sh` ISOL-01 fails on any uncommitted edit under `packages/npm/` | Open | `W1-19` |
 | P5-3 | 15 canonical suites fail and did so before this work began — confirmed by running them in a clean worktree at the pre-work commit. Out of scope for this work; listed so the number is not mistaken for a regression | Accepted | — |
 
@@ -113,12 +113,13 @@ production, and the answer may be to bound it with something the event loop cann
 
 In order, because they are not equally valuable:
 
-1. **`P1-5`** — write the missing manual procedures. Cheap, and it converts an invisible gap into a
-   closeable one. The verb that already bit us is in this set.
+1. ~~**`P1-5`**~~ — done: `MP-11` covers all nine uncovered verbs in one sitting, and `HP25` now
+   fails when a verb is added without being recorded, which is when it would otherwise be forgotten.
 2. ~~**`P3-1`**~~ — done ahead of delivery-005 rather than after it, so the last delivery's skill
    changes are checked by it instead of being checked afterwards.
-3. **`P4-4`** — make the two subscriber twins agree on their output shape.
-4. **`P5-1`** — either fix `writeback-state.sh` or stop using the affected path. Three hits is
-   enough evidence.
+3. ~~**`P4-4`**~~ — done: the PowerShell subscriber carries every field the server sent instead of a
+   chosen list, so a field added to the wake cannot appear in one twin and silently not the other.
+4. ~~**`P5-1`**~~ — fixed. Reproducing it first was what made the fix small: the defect was one
+   function's handling of one YAML shape, not the writer's design.
 5. Hand the operator a single consolidated list of what needs their hardware, rather than eight
    manual procedures spread through one file.
