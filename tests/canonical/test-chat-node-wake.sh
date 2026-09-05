@@ -754,6 +754,61 @@ assert_file_contains "${REPO_ROOT}/canonical/skills/aid-chat/SKILL.md" "When a m
 assert_file_contains "${REPO_ROOT}/canonical/skills/aid-chat/SKILL.md" "cannot see the channel" \
     "WK40 and tells the agent to surface what arrived"
 
+# --- WK41: a sustained exchange, and where the re-entry cap stops it ------------------------------
+#
+# The objective's own question: an agent decides mid-task that it needs something from a peer. Can it
+# ask, can the peer act and answer, and can the answer come back -- with nobody typing anything?
+#
+# Yes, for a bounded number of hops, and the bound is the point of this case. Waking is inherently a
+# loop -- the wake ends a turn, ending a turn fires the stop hook, the stop hook wakes again, measured
+# at 6.3s and 6.6s per cycle on the two proving hosts -- so both adapters cap re-entry. What matters is
+# that the cap DEFERS rather than DROPS: a declined push leaves the message pending, to arrive at the
+# next stop with a clean count or on the next `inbox`. Asserted here because "how long can they talk
+# unattended" is the first thing anyone asks, and the answer should come from a measurement.
+_drain alice
+_drain bob
+
+_hop_bob() {  # a Claude Code stop in conversation $1
+    ( cd "$_TMPD" && printf '{"session_id":"%s","stop_hook_active":false}' "$1" \
+        | timeout 25 node "${REPO_ROOT}/chat-node/adapters/claude-code.mjs" --name bob --host-timeout 15 2>/dev/null )
+}
+_hop_alice() {  # a Cursor stop with loop_count $1
+    ( cd "$_TMPD" && printf '{"conversation_id":"cv-wk41","loop_count":%s}' "$1" \
+        | timeout 25 node "${REPO_ROOT}/chat-node/adapters/cursor.mjs" --name alice --host-timeout 15 2>/dev/null )
+}
+_woke() { printf '%s' "$1" | grep -q '"reason"\|"followup_message"' && echo woke || echo declined; }
+
+$AID chat send --name alice --body 'wk41 question' >/dev/null
+assert_eq "$(_woke "$(_hop_bob wk41-conv)")" "woke" \
+    "WK41 hop 1: a peer asks mid-task and the other side is woken with it, nobody typing"
+
+$AID chat send --name bob --body 'wk41 answer' >/dev/null
+assert_eq "$(_woke "$(_hop_alice 0)")" "woke" \
+    "WK41 hop 2: the answer reaches the asker the same way -- a full round trip"
+
+$AID chat send --name alice --body 'wk41 follow-up' >/dev/null
+assert_eq "$(_woke "$(_hop_bob wk41-conv)")" "woke" \
+    "WK41 hop 3: the exchange continues past one round trip"
+
+# The cap. Claude Code's own ceiling is 2 served wakes per conversation; Cursor declines any
+# loop_count at or above 1, which is stricter than that host's own limit of 5 on purpose.
+$AID chat send --name alice --body 'wk41 one too many' >/dev/null
+assert_eq "$(_woke "$(_hop_bob wk41-conv)")" "declined" \
+    "WK41 hop 4: a third push in one conversation is declined -- the loop has to terminate somewhere"
+assert_eq "$(_woke "$(_hop_alice 1)")" "declined" \
+    "WK41 and a host follow-up push is declined on the other side too"
+
+# DEFERRED, NOT DROPPED. This is the half that makes the cap acceptable rather than a message sink.
+# `_field` is this suite's JSON helper; an earlier version of this line called `_j`, which exists in
+# the end-to-end suite and NOT here, so it silently produced an empty string and failed while the
+# product was correct. An undefined command in a substitution is not an error, only an absence.
+still="$($AID chat inbox --name bob | _field "['messages']")"
+assert_output_contains "$still" "wk41 one too many" \
+    "WK41 the message a declined push did not carry is still pending, not lost"
+# And it arrives on the next stop that starts a fresh count, which is what a user typing produces.
+assert_eq "$(_woke "$(_hop_bob wk41-fresh-conv)")" "woke" \
+    "WK41 and a stop in a NEW conversation delivers it, so the exchange resumes rather than ending"
+
 # The document has to lead with the generator, or an operator does by hand what a command does better.
 assert_file_contains "$DOC" "aid chat hook --tool cursor" "WK35 the install document names the generator"
 assert_file_contains "$DOC" "Do not do this by hand" "WK35 and says up front not to assemble the block manually"
