@@ -28,7 +28,7 @@
 # Adapters (tasks 018/019, AC-23, AC-25, AC-26)
 #   WK10  Cursor: a BOM-prefixed payload is parsed and acted on
 #   WK11  Cursor: the documented shape is `followup_message`, carrying the message text
-#   WK12  Cursor: `loop_count` > 0 returns at once and starts no wait
+#   WK12  Cursor: `loop_count` at the configured ceiling returns at once and starts no wait
 #   WK13  Cursor: `decision: block` is never emitted, though it is known to work
 #   WK14  Claude Code: the documented shape is `decision` + `reason`
 #   WK15  Claude Code: `stop_hook_active` returns at once
@@ -228,12 +228,16 @@ carries="$(python3 -c "import json; print('text for cursor' in json.load(open('$
 assert_eq "$carries" "True" "WK11 and it carries the message text, so the session need not call anything"
 
 _ack_cursor
-$AID chat send --name alice --body 'should not wake a follow-up' >/dev/null 2>&1
+$AID chat send --name alice --body 'should not wake past the limit' >/dev/null 2>&1
 t0=$(date +%s%N)
-printf '\xef\xbb\xbf{"loop_count":1,"conversation_id":"cv-1"}' \
+# AT the configured ceiling, not merely above zero. This assertion used to send `loop_count: 1` because
+# the threshold was 1 -- decline any stop the host itself triggered. The ceiling now matches Cursor's
+# own documented cap of 5, so 1 is a served follow-up and the boundary under test is 5. What is being
+# checked has not changed: that the cap exists and returns without starting a wait.
+printf '\xef\xbb\xbf{"loop_count":5,"conversation_id":"cv-1"}' \
     | node "${REPO_ROOT}/chat-node/adapters/cursor.mjs" --name bob --host-timeout 60 > "${_TMPD}/cur2.json" 2>/dev/null
 t1=$(( ($(date +%s%N) - t0) / 1000000 ))
-assert_eq "$(cat "${_TMPD}/cur2.json" | tr -d ' \n')" "{}" "WK12 Cursor: loop_count>0 declines to wake"
+assert_eq "$(cat "${_TMPD}/cur2.json" | tr -d ' \n')" "{}" "WK12 Cursor: loop_count at the ceiling declines to wake"
 if [[ "$t1" -lt 2000 ]]; then
     pass "WK12 and returns at once (${t1}ms) rather than holding a wait"
 else
@@ -258,9 +262,15 @@ assert_eq "$(cat "${_TMPD}/cc2.json" | tr -d ' \n')" "{}" "WK15 Claude Code: sto
 
 # WK16 -- the adapter's own count. On this host `loop_limit` is documented null, meaning uncapped,
 # so this ceiling is the only backstop in existence.
+#
+# The loop runs to the ceiling PLUS ONE rather than a fixed three. It was three when the ceiling was
+# two; at the current default of five, three attempts all legitimately wake and the assertion failed
+# while the adapter was behaving exactly as configured. Deriving the bound from the limit keeps the
+# case meaningful at whatever the limit becomes.
 rm -f "${AID_CHAT_RUNTIME}"/wake-*.count
+_limit="${AID_CHAT_LOOP_LIMIT:-5}"
 declines=0
-for i in 1 2 3; do
+for i in $(seq 1 $(( _limit + 1 )) ); do
     _ack_cursor
     $AID chat send --name alice --body "loop-${i}" >/dev/null 2>&1
     echo '{"session_id":"s-count","stop_hook_active":false}' \
@@ -268,9 +278,9 @@ for i in 1 2 3; do
     if [[ "$(tr -d ' \n' < "${_TMPD}/loop.json")" == "{}" ]]; then declines=$((declines+1)); fi
 done
 if [[ "$declines" -ge 1 ]]; then
-    pass "WK16 Claude Code: the adapter's own count caps re-entry where the host caps nothing (${declines} of 3 declined)"
+    pass "WK16 Claude Code: the adapter's own count caps re-entry where the host caps nothing (${declines} of $(( _limit + 1 )) declined)"
 else
-    fail "WK16 the adapter woke on every attempt; with loop_limit null there is then no cap at all"
+    fail "WK16 the adapter woke on every one of $(( _limit + 1 )) attempts; with loop_limit null there is then no cap at all"
 fi
 
 # WK16b -- the own-count EXPIRES. Where the host supplies no conversation id the key falls back to
@@ -754,17 +764,24 @@ assert_file_contains "${REPO_ROOT}/canonical/skills/aid-chat/SKILL.md" "When a m
 assert_file_contains "${REPO_ROOT}/canonical/skills/aid-chat/SKILL.md" "cannot see the channel" \
     "WK40 and tells the agent to surface what arrived"
 
-# --- WK41: a sustained exchange, and where the re-entry cap stops it ------------------------------
+# --- WK41: a sustained exchange, and where the re-entry cap throttles it ---------------------------
 #
 # The objective's own question: an agent decides mid-task that it needs something from a peer. Can it
 # ask, can the peer act and answer, and can the answer come back -- with nobody typing anything?
 #
-# Yes, for a bounded number of hops, and the bound is the point of this case. Waking is inherently a
-# loop -- the wake ends a turn, ending a turn fires the stop hook, the stop hook wakes again, measured
-# at 6.3s and 6.6s per cycle on the two proving hosts -- so both adapters cap re-entry. What matters is
-# that the cap DEFERS rather than DROPS: a declined push leaves the message pending, to arrive at the
-# next stop with a clean count or on the next `inbox`. Asserted here because "how long can they talk
-# unattended" is the first thing anyone asks, and the answer should come from a measurement.
+# Yes, and the depth is what this case measures. Waking is inherently a loop -- the wake ends a turn,
+# ending a turn fires the stop hook, the hook wakes again, at 6.3s and 6.6s per cycle on the two
+# proving hosts -- so both adapters bound re-entry. The bound is `adapterLoopLimit`, 5 by default,
+# matching Cursor's own documented cap.
+#
+# It was 1 on the Cursor side and 2 on the Claude Code side, which measured three hops before stalling.
+# The reasoning for being stricter than the host was sound about loops and wrong about cost: a wake
+# needs a MESSAGE, because `armOnce` reads what is pending before it waits and returns empty when there
+# is nothing, so a chain of follow-ups carries a chain of real messages rather than empty laps.
+#
+# Two properties matter more than the number, and both are asserted: the cap THROTTLES rather than
+# ends -- a declined stop clears the count, so the next one serves again -- and it DEFERS rather than
+# drops, leaving the message pending for whichever stop comes next.
 _drain alice
 _drain bob
 
@@ -778,41 +795,186 @@ _hop_alice() {  # a Cursor stop with loop_count $1
 }
 _woke() { printf '%s' "$1" | grep -q '"reason"\|"followup_message"' && echo woke || echo declined; }
 
-$AID chat send --name alice --body 'wk41 question' >/dev/null
-assert_eq "$(_woke "$(_hop_bob wk41-conv)")" "woke" \
-    "WK41 hop 1: a peer asks mid-task and the other side is woken with it, nobody typing"
+# Five consecutive pushes on the host with no cap of its own, which is the deeper risk and so the
+# case worth walking one at a time.
+for i in 1 2 3 4 5; do
+    $AID chat send --name alice --body "wk41 msg ${i}" >/dev/null
+    assert_eq "$(_woke "$(_hop_bob wk41-conv)")" "woke" \
+        "WK41 hop ${i} of an unattended exchange is pushed, nobody typing"
+done
 
-$AID chat send --name bob --body 'wk41 answer' >/dev/null
-assert_eq "$(_woke "$(_hop_alice 0)")" "woke" \
-    "WK41 hop 2: the answer reaches the asker the same way -- a full round trip"
-
-$AID chat send --name alice --body 'wk41 follow-up' >/dev/null
-assert_eq "$(_woke "$(_hop_bob wk41-conv)")" "woke" \
-    "WK41 hop 3: the exchange continues past one round trip"
-
-# The cap. Claude Code's own ceiling is 2 served wakes per conversation; Cursor declines any
-# loop_count at or above 1, which is stricter than that host's own limit of 5 on purpose.
-$AID chat send --name alice --body 'wk41 one too many' >/dev/null
+# The sixth is the throttle.
+$AID chat send --name alice --body 'wk41 past the limit' >/dev/null
 assert_eq "$(_woke "$(_hop_bob wk41-conv)")" "declined" \
-    "WK41 hop 4: a third push in one conversation is declined -- the loop has to terminate somewhere"
-assert_eq "$(_woke "$(_hop_alice 1)")" "declined" \
-    "WK41 and a host follow-up push is declined on the other side too"
+    "WK41 the sixth consecutive push is declined -- the loop has to pause somewhere"
 
-# DEFERRED, NOT DROPPED. This is the half that makes the cap acceptable rather than a message sink.
-# `_field` is this suite's JSON helper; an earlier version of this line called `_j`, which exists in
-# the end-to-end suite and NOT here, so it silently produced an empty string and failed while the
-# product was correct. An undefined command in a substitution is not an error, only an absence.
-still="$($AID chat inbox --name bob | _field "['messages']")"
-assert_output_contains "$still" "wk41 one too many" \
-    "WK41 the message a declined push did not carry is still pending, not lost"
-# And it arrives on the next stop that starts a fresh count, which is what a user typing produces.
-assert_eq "$(_woke "$(_hop_bob wk41-fresh-conv)")" "woke" \
-    "WK41 and a stop in a NEW conversation delivers it, so the exchange resumes rather than ending"
+# DEFERRED, NOT DROPPED. This is the half that makes a cap acceptable rather than a message sink.
+assert_output_contains "$($AID chat inbox --name bob | _field "['messages']")" "wk41 past the limit" \
+    "WK41 the message the declined push did not carry is still pending, not lost"
 
-# The document has to lead with the generator, or an operator does by hand what a command does better.
-assert_file_contains "$DOC" "aid chat hook --tool cursor" "WK35 the install document names the generator"
+# THROTTLED, NOT ENDED. The declined stop clears the count, so the exchange resumes by itself rather
+# than needing a human to restart it -- which is what makes the bound a breather and not a ceiling.
+assert_eq "$(_woke "$(_hop_bob wk41-conv)")" "woke" \
+    "WK41 and the stop after the declined one serves again: the cap throttles rather than ends"
+
+# The other host, where the count comes from the host itself rather than a file the adapter keeps.
+# Asserted at the boundary on both sides, because an off-by-one here is a silently shorter exchange.
+_drain alice
+for lc in 0 4; do
+    $AID chat send --name bob --body "wk41 reply ${lc}" >/dev/null
+    assert_eq "$(_woke "$(_hop_alice $lc)")" "woke" \
+        "WK41 Cursor serves loop_count ${lc}, up to the host's own documented cap"
+done
+$AID chat send --name bob --body 'wk41 reply 5' >/dev/null
+assert_eq "$(_woke "$(_hop_alice 5)")" "declined" \
+    "WK41 and declines at loop_count 5, which is where that host stops asking anyway"
+
+# The limit is one registry value, not two constants, so the two sides cannot drift apart -- an
+# exchange is only as deep as its shallower side, and cross-tool is the case this exists for.
+assert_file_contains "${REPO_ROOT}/chat-node/server/settings.mjs" "adapterLoopLimit" \
+    "WK41 the ceiling is a configurable limit (ID-10), not a constant in each adapter"
+for ad in cursor claude-code; do
+    assert_file_contains "${REPO_ROOT}/chat-node/adapters/${ad}.mjs" "adapterLoopLimit" \
+        "WK41 and the ${ad} adapter reads that one value rather than its own"
+done
+# Tunable without editing code, which is the point of it being a limit.
+low="$( cd "$_TMPD" && AID_CHAT_LOOP_LIMIT=1 printf '{"conversation_id":"cv-low","loop_count":1}' \
+    | AID_CHAT_LOOP_LIMIT=1 timeout 25 node "${REPO_ROOT}/chat-node/adapters/cursor.mjs" \
+        --name alice --host-timeout 15 2>/dev/null )"
+assert_eq "$(_woke "$low")" "declined" \
+    "WK41 and AID_CHAT_LOOP_LIMIT lowers it without a code change"
+
+# --- WK42-WK45: --install writes host configuration, under guards ---------------------------------
+#
+# This is the one place the product writes a host tool's configuration, and it does so only because
+# that was explicitly authorised. The blanket refusal it replaces rested on two concrete hazards, not
+# on principle, and what is asserted here is that both are handled rather than waived:
+#
+#   - a PROJECT-scoped file is tracked in git, so writing one puts a single machine's absolute paths
+#     into every contributor's checkout;
+#   - a USER-scoped file belongs to a human who edits it by hand and whose other tools write to it.
+#
+# So: user scope only, tracked targets refused outright, merge rather than overwrite, a backup first,
+# and no write at all without an answer.
+_HH="${_TMPD}/hosthome"
+_ih() { ( cd "$REPO_ROOT" && HOME="$_HH" AID_CODE_HOME="$REPO_ROOT" bash bin/aid chat hook "$@" 2>&1 ); }
+
+# A settings file that already holds things that are not ours. This is the realistic case and the one
+# that breaks a writer that serialises a fresh document over the top.
+mkdir -p "${_HH}/.cursor"
+cat > "${_HH}/.cursor/settings.json" <<'PRIOR'
+{
+  "editor.fontSize": 14,
+  "hooks": { "stop": [ { "command": "/usr/local/bin/theirs.sh", "timeout": 30 } ] },
+  "telemetry": false
+}
+PRIOR
+
+out="$(_ih --tool cursor --install --yes)"
+assert_output_contains "$out" "installed into" "WK42 --install writes the hook into user-scope settings"
+assert_output_contains "$out" "backed up" "WK42 and backs the file up first, because the file is not ours"
+merged="$(cat "${_HH}/.cursor/settings.json")"
+assert_output_contains "$merged" "editor.fontSize" "WK42 unrelated settings survive the write"
+assert_output_contains "$merged" "theirs.sh" "WK42 and so does the user's own stop hook"
+assert_output_contains "$merged" "adapters/cursor.mjs" "WK42 with ours added alongside it"
+
+# --check has to agree with --install, and this is where it did not: while it matched `"timeout"` with
+# a regex over the whole file, the first one it found after a merge was the USER's, so it reported a
+# mismatch on a correct install. A false alarm about a silent failure is worse than no check at all.
+if _ih --tool cursor --check >/dev/null 2>&1; then
+    pass "WK43 --check passes an installed hook in a file that also holds the user's own hooks"
+else
+    fail "WK43 --check passes an installed hook in a file that also holds the user's own hooks"
+fi
+
+# Idempotent in both directions, because a command safe to re-run is one an operator will re-run
+# rather than inspect first.
+assert_output_contains "$(_ih --tool cursor --install --yes)" "unchanged" \
+    "WK43 re-installing is a no-op rather than a second copy"
+ours="$(python3 -c "
+import json,sys
+d=json.load(open(sys.argv[1]))
+print(sum('cursor.mjs' in h.get('command','') for h in d['hooks']['stop']))" "${_HH}/.cursor/settings.json")"
+assert_eq "$ours" "1" "WK43 and exactly one of our hooks is present after two installs"
+
+# Uninstall is surgical: ours goes, theirs stays.
+assert_output_contains "$(_ih --tool cursor --uninstall --yes)" "removed from" "WK44 --uninstall removes the hook"
+left="$(cat "${_HH}/.cursor/settings.json")"
+assert_output_contains "$left" "theirs.sh" "WK44 and leaves the user's own hook in place"
+assert_output_not_contains "$left" "adapters/cursor.mjs" "WK44 with ours gone"
+assert_output_contains "$left" "editor.fontSize" "WK44 and everything unrelated still there"
+assert_output_contains "$(_ih --tool cursor --uninstall --yes)" "already absent" \
+    "WK44 uninstalling twice is a no-op, not an error"
+
+# --- The refusals. Each is a hazard the old blanket prohibition existed to prevent. ---
+# No answer, no write. A prompt that proceeds on a bare Enter is not a confirmation, and a
+# non-interactive caller has nobody to answer it.
+noconfirm="$( cd "$REPO_ROOT" && HOME="$_HH" AID_CODE_HOME="$REPO_ROOT" \
+    bash bin/aid chat hook --tool cursor --install </dev/null 2>&1 || true )"
+assert_output_contains "$noconfirm" "without a confirmation" \
+    "WK45 no write without an answer, and a non-terminal stdin cannot give one"
+assert_output_not_contains "$(cat "${_HH}/.cursor/settings.json")" "adapters/cursor.mjs" \
+    "WK45 and nothing was written when the confirmation could not be obtained"
+
+# A GIT-TRACKED target, refused outright. This is the failure the user cannot undo alone: it reaches
+# every checkout on the next commit.
+_TRK="${_TMPD}/tracked"
+mkdir -p "${_TRK}/.cursor"
+( cd "$_TRK" && git init -q . && printf '{}\n' > .cursor/settings.json && git add -A \
+    && git -c user.email=t@t -c user.name=t commit -qm init ) >/dev/null 2>&1
+trk="$( cd "$REPO_ROOT" && HOME="$_TRK" AID_CODE_HOME="$REPO_ROOT" \
+    bash bin/aid chat hook --tool cursor --install --yes 2>&1 || true )"
+assert_output_contains "$trk" "TRACKED IN GIT" "WK45 a git-tracked settings file is refused outright"
+assert_output_contains "$trk" "every checkout" "WK45 and the refusal says why"
+assert_eq "$(tr -d ' \n' < "${_TRK}/.cursor/settings.json")" "{}" "WK45 and the tracked file is untouched"
+
+# Unparseable JSON is not overwritten. 'it was malformed anyway' is not ours to decide about a file
+# holding somebody else's settings.
+_BAD="${_TMPD}/badjson"
+mkdir -p "${_BAD}/.cursor"
+printf '{ not json at all' > "${_BAD}/.cursor/settings.json"
+bad="$( cd "$REPO_ROOT" && HOME="$_BAD" AID_CODE_HOME="$REPO_ROOT" \
+    bash bin/aid chat hook --tool cursor --install --yes 2>&1 || true )"
+assert_output_contains "$bad" "will NOT be modified" "WK45 an unreadable settings file is left alone"
+assert_eq "$(cat "${_BAD}/.cursor/settings.json")" "{ not json at all" \
+    "WK45 and its contents are byte-identical afterwards"
+
+# The nested Claude Code shape, which is the more intricate of the two and so the one a writer gets
+# wrong. Its hook lives inside a matcher group's inner array, not at the top of `Stop`.
+mkdir -p "${_HH}/.claude"
+cat > "${_HH}/.claude/settings.json" <<'PRIORCC'
+{
+  "permissions": { "allow": ["Bash"] },
+  "hooks": { "Stop": [ { "matcher": "*", "hooks": [ { "type": "command", "command": "/their/cc.sh", "timeout": 20 } ] } ] }
+}
+PRIORCC
+_ih --tool claude-code --install --yes >/dev/null
+ccm="$(cat "${_HH}/.claude/settings.json")"
+assert_output_contains "$ccm" "adapters/claude-code.mjs" "WK45 the Claude Code hook installs into its nested shape"
+assert_output_contains "$ccm" "their/cc.sh" "WK45 without disturbing the hook already in that matcher group"
+assert_output_contains "$ccm" "permissions" "WK45 or anything else in the file"
+if _ih --tool claude-code --check >/dev/null 2>&1; then
+    pass "WK45 and the result passes --check"
+else
+    fail "WK45 and the result passes --check"
+fi
+
+# The writer has to SHIP, which is what the manifest is for -- a runtime file absent from it is the
+# defect this component's guard was written after.
+assert_file_contains "${REPO_ROOT}/chat-node/MANIFEST" "scripts/hook-install.py" \
+    "WK45 the installer script is in the manifest, so it ships"
+
+# The document has to lead with the command, or an operator does by hand what a command does better.
+# It also has to state the guards, because `--install` writes a file the operator owns: somebody
+# deciding whether to run it needs to know what it will and will not touch, and finding that out by
+# running it is not an option on a settings file.
+assert_file_contains "$DOC" "aid chat hook --tool cursor --install" "WK35 the install document leads with --install"
 assert_file_contains "$DOC" "Do not do this by hand" "WK35 and says up front not to assemble the block manually"
-assert_file_contains "$DOC" "tracked in git" "WK35 and gives the concrete reason nothing is written for you"
+assert_file_contains "$DOC" "git-tracked" "WK35 and documents the tracked-file refusal"
+assert_file_contains "$DOC" "merges, it does not overwrite" "WK35 and that it merges rather than overwrites"
+assert_file_contains "$DOC" "backs the file up" "WK35 and that it takes a backup"
+assert_file_contains "$DOC" "nothing without an answer" "WK35 and that it asks before writing"
+assert_file_contains "$DOC" "--uninstall" "WK35 and how to undo it"
 
 # Non-automated checks are enumerated, not implied.
 for mp in MP-05 MP-06 MP-07 MP-08; do

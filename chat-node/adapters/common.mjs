@@ -214,6 +214,14 @@ export function adapterGuardMs(hostTimeoutSec) {
     return Math.max(1000, (hostTimeoutSec * 1000) - Math.floor(adapterMarginMs / 2));
 }
 
+// The re-entry ceiling, from the limits registry so an operator can tune it without a code change
+// (ID-10). Both adapters use the same number: an exchange is only as deep as its shallower side, so
+// leaving one at a lower ceiling would cap the cross-tool case that is the whole objective.
+export function adapterLoopLimit() {
+    const { adapterLoopLimit: n } = limits();
+    return Number.isFinite(n) && n >= 1 ? n : 5;
+}
+
 export function hostTimeoutFromArgs(argv) {
     const i = argv.indexOf('--host-timeout');
     if (i === -1 || i + 1 >= argv.length) return null;

@@ -23,12 +23,13 @@
 adapters/claude-code.mjs
 adapters/common.mjs
 adapters/cursor.mjs
+scripts/hook-install.py
 server/core.mjs
 server/federation.mjs
 server/hub.mjs
 server/link.mjs
-server/outbox.mjs
 server/node.mjs
+server/outbox.mjs
 server/peers.mjs
 server/protocol.mjs
 server/settings.mjs

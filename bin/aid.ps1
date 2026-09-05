@@ -264,7 +264,8 @@ function script:Show-AidUsage {
             Write-Host '                 platform default. --follow re-arms instead of returning.'
             Write-Host '                 Spends no model tokens: it blocks in a process, not a prompt.'
             Write-Host 'aid chat rename  [--name <old>] --to <new>       rename a session, in progress'
-            Write-Host 'aid chat hook    --tool <claude-code|cursor> [--timeout <s>] [--check]'
+            Write-Host 'aid chat hook    --tool <claude-code|cursor> [--timeout <s>]'
+            Write-Host '                 [--check | --install | --uninstall] [--yes]'
             Write-Host '                 print the stop-hook block to paste, with the node path, install'
             Write-Host '                 path and both timeout numbers filled in from this machine; or'
             Write-Host '                 --check to read an installed one back and report what is wrong.'
@@ -4980,13 +4981,17 @@ function script:Resolve-AidChatName {
 function script:Invoke-AidChatHook {
     param([string[]]$HookArgs)
 
-    $tool = ''; $timeout = 60; $action = 'print'
+    $tool = ''; $timeout = 60; $action = 'print'; $assumeYes = $false
     for ($i = 0; $i -lt $HookArgs.Count; $i++) {
         switch ($HookArgs[$i]) {
             '--tool'    { $tool = $HookArgs[$i + 1]; $i++ }
             '--to'      { $to = $PlaneArgs[$i + 1]; $i++ }
             '--timeout' { $timeout = [int]$HookArgs[$i + 1]; $i++ }
             '--check'   { $action = 'check' }
+            '--install' { $action = 'install' }
+            '--uninstall' { $action = 'uninstall' }
+            '--yes'     { $assumeYes = $true }
+            '-y'        { $assumeYes = $true }
             default {
                 [Console]::Error.WriteLine("ERROR: aid: chat hook: unknown option '$($HookArgs[$i])'")
                 return 2
@@ -5013,37 +5018,76 @@ function script:Invoke-AidChatHook {
         return 1
     }
 
-    if ($action -eq 'check') {
-        if (-not (Test-Path -LiteralPath $cfg -PathType Leaf)) {
-            [Console]::Error.WriteLine("aid: chat hook: no hook installed -- $cfg does not exist.")
-            [Console]::Error.WriteLine("  Run 'aid chat hook --tool $tool' and paste what it prints into that file.")
+    # install / uninstall / check all delegate to chat-node/scripts/hook-install.py -- the same writer
+    # the Bash twin calls, rather than a second implementation here.
+    #
+    # The inline version this replaces did its own regex pass over the file, and that is exactly what
+    # went wrong in the Bash twin: matching `"timeout"` across the whole document found the USER's hook
+    # after --install began merging into files that already had one, and reported a mismatch on a
+    # correct install. One parser, used by both twins, is the fix that stays fixed.
+    if ($action -in @('install', 'uninstall', 'check')) {
+        $py = Get-Command python3 -ErrorAction SilentlyContinue
+        if (-not $py) { $py = Get-Command python -ErrorAction SilentlyContinue }
+        if (-not $py) {
+            [Console]::Error.WriteLine('ERROR: aid: chat hook: python3 is required to read or edit the hook safely')
             return 1
         }
-        $raw = Get-Content -LiteralPath $cfg -Raw
-        $problems = @()
-        if ($raw -notmatch [regex]::Escape("adapters/$tool.mjs")) {
-            [Console]::Error.WriteLine("aid: chat hook: no chat stop hook found in $cfg.")
-            [Console]::Error.WriteLine("  Run 'aid chat hook --tool $tool' and paste what it prints.")
-            return 1
+        $script = Join-Path $script:_AidCodeHome 'chat-node/scripts/hook-install.py'
+
+        # A tracked target is refused before anything is read: it is the one mistake the user cannot
+        # undo alone, because it reaches every checkout on the next commit.
+        if ($action -ne 'check') {
+            $dir = Split-Path -Parent $cfg
+            $inRepo = $false
+            try {
+                $null = & git -C $dir rev-parse --is-inside-work-tree 2>$null
+                $inRepo = ($LASTEXITCODE -eq 0)
+            } catch { $inRepo = $false }
+            if ($inRepo) {
+                try { $null = & git -C $dir ls-files --error-unmatch $cfg 2>$null } catch { }
+                if ($LASTEXITCODE -eq 0) {
+                    [Console]::Error.WriteLine("ERROR: aid: chat hook: $cfg is TRACKED IN GIT and will not be written.")
+                    [Console]::Error.WriteLine("  Writing it would commit this machine's absolute paths into every checkout.")
+                    [Console]::Error.WriteLine("  Run 'aid chat hook --tool $tool' and paste it in by hand instead.")
+                    return 1
+                }
+            }
         }
-        $flag  = [regex]::Match($raw, '--host-timeout\s+(\d+)')
-        $field = [regex]::Match($raw, '"timeout"\s*:\s*(\d+)')
-        if (-not $flag.Success)  { $problems += 'the command has no --host-timeout, so the adapter falls back to a short block' }
-        if (-not $field.Success) { $problems += 'the hook has no "timeout" field, so the host uses its own default -- which is not measured' }
-        if ($flag.Success -and $field.Success -and $flag.Groups[1].Value -ne $field.Groups[1].Value) {
-            $problems += ("the numbers DISAGREE: timeout=" + $field.Groups[1].Value + " but --host-timeout=" + $flag.Groups[1].Value +
-                          '. This fails silently -- no error, just a wake that never arrives')
+
+        $env:AID_HOOK_CFG = $cfg
+        $env:AID_HOOK_TOOL = $tool
+        $env:AID_HOOK_NODE = $nodePath
+        $env:AID_HOOK_ADAPTER = $adapter
+        $env:AID_HOOK_TIMEOUT = "$timeout"
+        $env:AID_HOOK_MODE = $action
+        try {
+            if ($action -eq 'check') {
+                & $py.Source $script --check
+                return $LASTEXITCODE
+            }
+            & $py.Source $script --plan
+            if ($LASTEXITCODE -ne 0) { return $LASTEXITCODE }
+            # Nothing is written without an answer, and the default is no.
+            if (-not $assumeYes) {
+                if ([Console]::IsInputRedirected) {
+                    [Console]::Error.WriteLine("aid: chat hook: refusing to $action without a confirmation.")
+                    [Console]::Error.WriteLine('  stdin is not a terminal, so nobody can answer. Re-run with --yes if you meant it.')
+                    return 1
+                }
+                [Console]::Error.Write("Apply this change to $cfg" + '? [y/N] ')
+                $reply = [Console]::In.ReadLine()
+                if ($reply -notmatch '^(y|Y|yes|YES)$') {
+                    [Console]::Error.WriteLine('aid: chat hook: nothing written.')
+                    return 1
+                }
+            }
+            & $py.Source $script --apply
+            return $LASTEXITCODE
+        } finally {
+            foreach ($v in 'AID_HOOK_CFG','AID_HOOK_TOOL','AID_HOOK_NODE','AID_HOOK_ADAPTER','AID_HOOK_TIMEOUT','AID_HOOK_MODE') {
+                Remove-Item "env:$v" -ErrorAction SilentlyContinue
+            }
         }
-        if ($raw -match '"fail_closed"\s*:\s*true|"blocking"\s*:\s*true') {
-            $problems += 'fail-closed is set; a hook that must succeed can freeze the session it belongs to'
-        }
-        if ($problems.Count -gt 0) {
-            [Console]::Error.WriteLine('aid: chat hook: the installed hook has problems:')
-            foreach ($p in $problems) { [Console]::Error.WriteLine("  - $p") }
-            return 1
-        }
-        Write-Host "aid: chat hook: the hook in $cfg looks correct (timeout $($field.Groups[1].Value)s, matched on both sides)."
-        return 0
     }
 
     $marginS   = [int](([int]($env:AID_CHAT_ADAPTER_MARGIN_MS | ForEach-Object { if ($_) { $_ } else { 5000 } })) / 1000)

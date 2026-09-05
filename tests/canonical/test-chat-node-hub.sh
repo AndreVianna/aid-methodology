@@ -299,7 +299,11 @@ ps1  = open(f'{root}/bin/aid.ps1', encoding='utf-8').read()
 # between them: the regex missed, the comparison reported DISPATCH-NOT-FOUND, and a guard that cannot
 # find what it compares is a guard that has stopped guarding.
 bm = re.search(r'^\s{8}([a-z|-]+)\)\n\s+shift\n\s+_cmd_chat_plane', bash, re.M)
-pm = re.search(r"\$action -in @\(([^)]*)\)", ps1)
+# Anchored on the arm that dispatches to the PLANE, not on the first `-in @(...)` in the file.
+# The unanchored form matched `$action -in @('install','uninstall','check')` inside the hook
+# generator once that was added, and reported every plane verb as bash-only -- a guard finding the
+# wrong list is a guard comparing the wrong thing.
+pm = re.search(r"\$action -in @\(([^)]*)\)[^\n]*\n(?:[^\n]*\n){0,6}?[^\n]*Invoke-AidChatPlane", ps1)
 if not bm or not pm:
     print('DISPATCH-NOT-FOUND'); raise SystemExit
 bv = set(bm.group(1).split('|'))

@@ -40,6 +40,20 @@ const DEFAULTS = {
     // timeout. Sized from measurement rather than taste: the observed wake-to-refire maximum
     // was 4.303 s and still rising as samples accumulated.
     adapterMarginMs: 5 * 1000,
+    // How many automatic follow-ups an adapter will keep waiting through -- the depth of an
+    // unattended exchange, in turns, before a session stops being pushed and waits for its next
+    // natural stop.
+    //
+    // 5 MATCHES CURSOR'S OWN DOCUMENTED CAP, and the reason it is safe to go that far is that a wake
+    // requires a MESSAGE: `armOnce` reads pending first and returns empty when there is nothing, so a
+    // chain of five wakes means five real messages, not five empty laps. The host's own limit remains
+    // the outer backstop on that host.
+    //
+    // It was 1, which was stricter than any host required and cost most of the unattended exchange:
+    // measured at three hops before the cap bit, with the fourth deferred to the next natural stop.
+    // Nothing is lost at the ceiling either way -- a declined push leaves the message pending -- so
+    // this trades a longer autonomous conversation against a longer worst-case ping-pong, both bounded.
+    adapterLoopLimit: 5,
 };
 
 const ENV = {
@@ -48,6 +62,7 @@ const ENV = {
     staleMs:         'AID_CHAT_STALE_MS',
     reapMs:          'AID_CHAT_REAP_MS',
     longPollMs:      'AID_CHAT_LONG_POLL_MS',
+    adapterLoopLimit: 'AID_CHAT_LOOP_LIMIT',
     gapGraceMs:      'AID_CHAT_GAP_GRACE_MS',
     adapterMarginMs: 'AID_CHAT_ADAPTER_MARGIN_MS',
     jobIntervalMs:   'AID_CHAT_JOB_INTERVAL_MS',

@@ -270,6 +270,51 @@ features:
 #   - date / event / outcome / notes
 review_history:
   - date: 2026-09-05
+    scope: authorised host-config writes, and the re-entry ceiling raised to the host's own cap
+    outcome: >-
+      Two owner decisions, both taken against previously-ratified positions and recorded as amendments
+      rather than quietly contradicted.
+      FR-0.4 forbade writing host configuration ABSOLUTELY. The owner authorised it, with confirmation.
+      The amendment is deliberately narrow -- one hook entry, not a general licence -- because the two
+      hazards behind the original rule are real and are now handled as CHECKS instead of a refusal.
+      FR-0.6: user scope only, re-verified by the writer rather than trusted from its caller; a
+      git-tracked target refused outright, whatever its path, because that is the one mistake an
+      operator cannot undo alone once it reaches every checkout; merge rather than overwrite, with an
+      unparseable file left untouched because "it was malformed anyway" is not the product's judgement
+      to make about somebody else's settings; a backup first; and no write without an answer, defaulting
+      to no, with a non-interactive caller refused rather than defaulted. `--uninstall` is the inverse
+      and equally surgical, and both are idempotent.
+      FR-5.7b: the re-entry ceiling moves from 1 (Cursor) and 2 (Claude Code) to a single configurable
+      `adapterLoopLimit` of 5, matching Cursor's documented cap. The old reasoning was sound about loops
+      and wrong about cost: a wake requires a MESSAGE, because the adapter reads what is pending before
+      it waits, so a chain of follow-ups carries real messages rather than empty laps. Measured before
+      and after: three hops to stall, now five per breather -- and the cap THROTTLES rather than ends,
+      since a declined stop clears the count and the next one serves again. One registry value rather
+      than two constants, because an exchange is only as deep as its shallower side and cross-tool is
+      the case the whole thing exists for.
+      TWO DEFECTS OF MY OWN, both surfaced by the change rather than by a test written for it. `--check`
+      compared `"timeout"` against `--host-timeout` with regexes over the WHOLE file, which was adequate
+      only while the file held nothing but our hook; the moment `--install` began merging into files
+      with the user's own hooks, the first match belonged to THEM and it reported a mismatch on a
+      correct install -- a false alarm about a silent failure being worse than no check. Fixed by moving
+      `--check` into the same script that installs, so one parser serves both and the PowerShell twin
+      delegates instead of carrying a third copy. And HP24's ps1 anchor matched the first
+      `$action -in @(...)` in the file, which became the hook generator's own install/uninstall/check
+      list, so it reported every plane verb as bash-only; re-anchored on the arm that dispatches to the
+      plane, and falsified against a genuine divergence afterwards.
+      Three stale assertions updated honestly rather than deleted: WK12 and WK16 encoded the old
+      ceiling and now derive their boundary from the limit, and WK35 asserted the doc's old promise that
+      nothing is ever written and now asserts that the guards are documented -- somebody deciding
+      whether to run `--install` on their own settings file cannot find out by running it.
+      443 assertions across ten chat suites, 0 failing. Every guard falsified: making the writer
+      overwrite instead of merge fails 12; removing the tracked-file refusal or the confirmation gate
+      fails 2 each.
+    applied_to: >-
+      REQUIREMENTS.md (FR-0.4 amended, FR-0.6, FR-5.7b), chat-node/scripts/hook-install.py (new),
+      chat-node/MANIFEST, chat-node/server/settings.mjs (adapterLoopLimit), chat-node/adapters/*,
+      bin/aid + bin/aid.ps1 (--install/--uninstall/--check), docs/chat-wake-install.md,
+      tests (WK12, WK16, WK35, WK41 rewritten, WK42-WK45 new, HP24 re-anchored)
+  - date: 2026-09-05
     scope: session naming -- minted names, and renaming in progress
     outcome: >-
       The stakeholder rejected directory-derived session names on three grounds, all correct, and one of

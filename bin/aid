@@ -211,11 +211,14 @@ _aid_usage() {
             printf '                 platform default. --follow re-arms instead of returning.\n'
             printf '                 Spends no model tokens: it blocks in a process, not a prompt.\n'
             printf 'aid chat rename  [--name <old>] --to <new>       rename a session, in progress\n'
-            printf 'aid chat hook    --tool <claude-code|cursor> [--timeout <s>] [--check]\n'
-            printf '                 print the stop-hook block to paste, with the node path, install\n'
-            printf '                 path and both timeout numbers filled in from this machine; or\n'
-            printf '                 --check to read an installed one back and report what is wrong.\n'
-            printf '                 It WRITES NOTHING: AID writes no host tool configuration.\n'
+            printf 'aid chat hook    --tool <claude-code|cursor> [--timeout <s>]\n'
+            printf '                 [--check | --install | --uninstall] [--yes]\n'
+            printf '                 Default prints the stop-hook block to paste, with the node path,\n'
+            printf '                 install path and both timeout numbers filled in from this machine.\n'
+            printf '                 --check reads an installed one back and reports what is wrong.\n'
+            printf '                 --install writes it into your USER-scope host settings, after\n'
+            printf '                 showing the change and asking; it merges rather than overwrites,\n'
+            printf '                 backs the file up, and refuses any git-tracked target.\n'
             printf 'aid chat show                                  machines, sessions, channels, members,\n'
             printf '                 per-member unread depth and idle time (operator)\n'
             printf 'aid chat audit   [--limit <n>]                  what happened, never what was said:\n'
@@ -5551,6 +5554,9 @@ _cmd_chat_hook() {
             --tool)    tool="$2"; shift 2 ;;
             --timeout) timeout="$2"; shift 2 ;;
             --check)   action=check; shift ;;
+            --install) action=install; shift ;;
+            --uninstall) action=uninstall; shift ;;
+            --yes|-y)  _AID_CHAT_YES=1; shift ;;
             *) echo "ERROR: aid: chat hook: unknown option '$1'" >&2; return 2 ;;
         esac
     done
@@ -5574,53 +5580,73 @@ _cmd_chat_hook() {
         return 1
     fi
 
-    if [[ "$action" == "check" ]]; then
-        # READING a config file is not writing it. This is the half that catches the silent failure:
-        # a timeout in the file that disagrees with the one on the command line.
-        if [[ ! -f "$cfg" ]]; then
-            echo "aid: chat hook: no hook installed -- ${cfg} does not exist." >&2
-            echo "  Run 'aid chat hook --tool ${tool}' and paste what it prints into that file." >&2
-            return 1
+    if [[ "$action" == "install" || "$action" == "uninstall" ]]; then
+        # WRITING HOST CONFIGURATION, which the product refused to do until it was explicitly
+        # authorised. FR-0.4's reasoning was concrete rather than doctrinal, and the guards below are
+        # exactly those reasons turned into checks rather than a blanket refusal:
+        #
+        #   - A PROJECT-scoped host config file is tracked in git, so writing one would commit one
+        #     machine's absolute paths into every contributor's checkout. Hence: user scope only, and
+        #     a hard refusal if the target is tracked, whatever its path.
+        #   - A USER-scoped file belongs to a human who also edits it by hand and whose other tools
+        #     write to it. Hence: merge into what is there, never overwrite; back up first; and show
+        #     the change for confirmation before touching it.
+        command -v python3 >/dev/null 2>&1 || {
+            echo "ERROR: aid: chat hook: python3 is required to edit JSON safely" >&2; return 1; }
+
+        # A tracked target is refused before anything is read, because this is the one failure that
+        # cannot be undone by the user alone -- it lands in everybody's checkout on the next commit.
+        if git -C "$(dirname "$cfg")" rev-parse --is-inside-work-tree >/dev/null 2>&1; then
+            if git -C "$(dirname "$cfg")" ls-files --error-unmatch "$cfg" >/dev/null 2>&1; then
+                echo "ERROR: aid: chat hook: ${cfg} is TRACKED IN GIT and will not be written." >&2
+                echo "  Writing it would commit this machine's absolute paths into every checkout." >&2
+                echo "  Run 'aid chat hook --tool ${tool}' and paste it in by hand instead." >&2
+                return 1
+            fi
         fi
-        python3 - "$cfg" "$tool" <<'PY'
-import json, re, sys
-cfg_path, tool = sys.argv[1], sys.argv[2]
-try:
-    raw = open(cfg_path, encoding='utf-8').read()
-    cfg = json.loads(raw)
-except Exception as e:
-    print(f"aid: chat hook: {cfg_path} is not readable JSON ({e.__class__.__name__}); check it by hand.", file=sys.stderr)
-    raise SystemExit(1)
 
-blob = json.dumps(cfg)
-if f'adapters/{tool}.mjs' not in blob:
-    print(f"aid: chat hook: no chat stop hook found in {cfg_path}.", file=sys.stderr)
-    print(f"  Run 'aid chat hook --tool {tool}' and paste what it prints.", file=sys.stderr)
-    raise SystemExit(1)
+        local plan
+        plan="$(AID_HOOK_CFG="$cfg" AID_HOOK_TOOL="$tool" AID_HOOK_NODE="$node_path" \
+                AID_HOOK_ADAPTER="$adapter" AID_HOOK_TIMEOUT="$timeout" AID_HOOK_MODE="$action" \
+                python3 "${AID_CODE_HOME}/chat-node/scripts/hook-install.py" --plan)" || {
+            printf '%s\n' "$plan" >&2
+            return 1
+        }
+        printf '%s\n' "$plan"
 
-# The two numbers that must agree, and the silent failure when they do not.
-flag = re.search(r'--host-timeout\s+(\d+)', blob)
-field = re.search(r'"timeout"\s*:\s*(\d+)', blob)
-problems = []
-if not flag:
-    problems.append("the command has no --host-timeout, so the adapter falls back to a short block")
-if not field:
-    problems.append('the hook has no "timeout" field, so the host uses its own default -- which is not measured')
-if flag and field and flag.group(1) != field.group(1):
-    problems.append(f'the numbers DISAGREE: timeout={field.group(1)} but --host-timeout={flag.group(1)}. '
-                    'This fails silently -- no error, just a wake that never arrives')
-if 'node' in blob and not re.search(r'"[^"]*/(bin/)?node"|/node ', blob):
-    problems.append("node may not be an absolute path; a PATH shim can leave the host watching the wrong process")
-if re.search(r'"fail_closed"\s*:\s*true|"blocking"\s*:\s*true', blob):
-    problems.append("fail-closed is set; a hook that must succeed can freeze the session it belongs to")
+        # NOTHING IS WRITTEN WITHOUT AN ANSWER, and the default is no. A prompt that proceeds on a bare
+        # Enter is not a confirmation.
+        if [[ "${_AID_CHAT_YES:-0}" != "1" ]]; then
+            if [[ ! -t 0 ]]; then
+                echo "aid: chat hook: refusing to ${action} without a confirmation." >&2
+                echo "  stdin is not a terminal, so nobody can answer. Re-run with --yes if you meant it." >&2
+                return 1
+            fi
+            local reply=""
+            printf 'Apply this change to %s? [y/N] ' "$cfg" >&2
+            read -r reply || reply=""
+            case "$reply" in
+                y|Y|yes|YES) ;;
+                *) echo "aid: chat hook: nothing written." >&2; return 1 ;;
+            esac
+        fi
 
-if problems:
-    print("aid: chat hook: the installed hook has problems:", file=sys.stderr)
-    for p in problems:
-        print(f"  - {p}", file=sys.stderr)
-    raise SystemExit(1)
-print(f"aid: chat hook: the hook in {cfg_path} looks correct (timeout {field.group(1)}s, matched on both sides).")
-PY
+        AID_HOOK_CFG="$cfg" AID_HOOK_TOOL="$tool" AID_HOOK_NODE="$node_path" \
+            AID_HOOK_ADAPTER="$adapter" AID_HOOK_TIMEOUT="$timeout" AID_HOOK_MODE="$action" \
+            python3 "${AID_CODE_HOME}/chat-node/scripts/hook-install.py" --apply || return 1
+        return 0
+    fi
+
+    if [[ "$action" == "check" ]]; then
+        # READING a config file is not writing it. Delegated to the same script that installs, so the
+        # two share one parser: while `--check` had its own regex pass over the whole file, it compared
+        # OUR --host-timeout against whichever `"timeout"` appeared first, which after a merge into a
+        # file holding the user's own hooks was theirs. It reported a mismatch on a correct install.
+        command -v python3 >/dev/null 2>&1 || {
+            echo "ERROR: aid: chat hook: python3 is required to read the hook safely" >&2; return 1; }
+        AID_HOOK_CFG="$cfg" AID_HOOK_TOOL="$tool" AID_HOOK_NODE="$node_path" \
+            AID_HOOK_ADAPTER="$adapter" AID_HOOK_TIMEOUT="$timeout" AID_HOOK_MODE=check \
+            python3 "${AID_CODE_HOME}/chat-node/scripts/hook-install.py" --check
         return $?
     fi
 

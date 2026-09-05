@@ -1,36 +1,45 @@
 # Installing the chat wake
 
 The chat node ships with AID and needs nothing installed. **The wake does** — one stop hook per
-host tool, and *you* paste it in.
+host tool. One command installs it.
 
 ## Do not do this by hand
 
-Two commands do the fiddly parts:
-
 ```bash
-aid chat hook --tool cursor            # prints the block to paste, filled in for THIS machine
-aid chat hook --tool cursor --check    # reads it back and tells you if it will actually work
+aid chat hook --tool cursor --install    # shows the change, asks, then writes it
 ```
 
-The first fills in the absolute path to `node`, the path to the adapter, and **both** timeout
-numbers already matched. The second reads the file back and names what is wrong — most importantly
-the mismatch described below, which otherwise fails with no error at all.
+It fills in the absolute path to `node`, the path to the adapter, and **both** timeout numbers
+already matched; shows you the before and after; and writes only if you say yes.
+
+```bash
+aid chat hook --tool cursor              # just print the block, write nothing
+aid chat hook --tool cursor --check      # read an installed one back, and say if it will work
+aid chat hook --tool cursor --uninstall  # remove it again
+```
 
 So the rest of this document is **why**, and what to do when `--check` complains. You do not need
 to assemble any of it yourself.
 
-## Why you paste it instead of it being written for you
+## What `--install` will and will not touch
 
-Because AID writes no host tool's configuration, and the reason is concrete rather than doctrinal.
-Host config comes in two scopes and the product cannot safely write either. A **project**-scoped
-file is tracked in git, so writing one would commit a hook into every contributor's checkout — one
-machine's absolute paths, imposed on everybody. A **user**-scoped file belongs to a human who also
-edits it by hand and whose other tools write to it; a tool that rewrites it is a tool that will
-eventually clobber something it did not put there.
+Writing your host's settings was forbidden outright until it was explicitly authorised, and the
+original reasoning was concrete rather than doctrinal. Both hazards behind it are now handled as
+checks rather than as a refusal:
 
-Generating the exact text removes the error-prone part without taking on either risk. `--check`
-covers the rest: the product will not write that file, but it will read it and tell you the truth
-about it.
+- **It writes user-scope settings only** (`~/.cursor/settings.json`, `~/.claude/settings.json`), and
+  it **refuses any git-tracked file outright**, whatever its path. A project-scoped config file is
+  tracked, so writing one would commit *your* absolute paths into every contributor's checkout —
+  the one mistake you could not undo on your own.
+- **It merges, it does not overwrite.** Your other settings and your other stop hooks survive; only
+  the entry AID owns is changed. A file it cannot parse is left alone rather than replaced, because
+  "it was malformed anyway" is not its call to make about your settings.
+- **It backs the file up first**, to `<file>.aid-backup`.
+- **It writes nothing without an answer.** The default is no, and a non-interactive run is refused
+  rather than assumed. `--yes` skips the prompt when you mean it.
+- **It is idempotent both ways.** Re-installing the same hook, or removing an absent one, is a no-op.
+
+If you would rather do it by hand, `aid chat hook --tool <host>` prints the block and writes nothing.
 
 Without the hook, everything still works — you read your inbox when you think to. The hook is what
 turns "a mailbox you remember to check" into "a channel that reaches you".

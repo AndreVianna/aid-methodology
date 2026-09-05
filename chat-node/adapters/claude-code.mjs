@@ -21,13 +21,22 @@
 import {
     adapterGuardMs, armOnce, defaultSessionName, resolveSessionName, clearOwnCount, hostTimeoutFromArgs,
     readHostPayload, readOwnCount, renderWakeText,
-    wakeHints, writeOwnCount,
+    wakeHints, writeOwnCount, adapterLoopLimit,
 } from './common.mjs';
 
-// This host offers no cap of its own, so the adapter's own ceiling is the only one there is. Two
-// is enough to serve a wake and refuse the tail of it; higher would allow a chain of wakes with no
-// message behind them.
-const OWN_LOOP_CEILING = 2;
+// This host offers no cap of its own, so the adapter's own ceiling is the only one there is -- there is
+// no outer backstop here the way Cursor's documented limit backstops that adapter.
+//
+// It was 2, on the reasoning that a higher ceiling would allow a chain of wakes with no message behind
+// them. That premise does not hold: `armOnce` reads what is pending before it waits and returns empty
+// when there is nothing, so a wake cannot occur without a message to carry. What a higher ceiling
+// actually allows is a longer CONVERSATION.
+//
+// It now reads the same registry value as the Cursor adapter, defaulting to 5. Matching matters more
+// than the number: an exchange is only as deep as its shallower side, so a Cursor session talking to
+// this one would have stalled at 2 no matter how high Cursor's own ceiling went -- and cross-tool is
+// the case the whole thing exists for.
+const ownLoopCeiling = () => adapterLoopLimit();
 
 function argValue(argv, flag) {
     const i = argv.indexOf(flag);
@@ -74,7 +83,7 @@ async function main() {
     }
     // Then the adapter's own count, which on THIS host is the only backstop that exists.
     const served = readOwnCount(sessionKey);
-    if (served >= OWN_LOOP_CEILING) {
+    if (served >= ownLoopCeiling()) {
         await clearOwnCount(sessionKey);
         process.stdout.write('{}\n');
         return 0;

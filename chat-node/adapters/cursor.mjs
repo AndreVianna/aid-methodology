@@ -27,23 +27,23 @@
 
 import {
     adapterGuardMs, armOnce, defaultSessionName, resolveSessionName, hostTimeoutFromArgs, readHostPayload, renderWakeText,
-    wakeHints, shellSafePath,
+    wakeHints, adapterLoopLimit,
 } from './common.mjs';
 
 // This host documents its own cap, defaulting to 5. The adapter reads the count rather than keeping
 // one: where the host offers the signal, using it is what keeps the two in agreement.
 //
-// THE THRESHOLD IS 1, NOT 5, AND THAT IS DELIBERATELY STRICTER THAN THE HOST. Any `loop_count`
-// above zero means this stop is a follow-up the host itself triggered, which is to say the tail of
-// a wake already served -- so waiting again on it is the loop, regardless of how many the host would
-// still permit. Waiting up to the host's cap of 5 would mean holding a block on up to four stops
-// that exist only because the wake fired.
+// THE THRESHOLD NOW MATCHES THE HOST'S OWN CAP, and did not always. It was 1 -- decline any stop the
+// host itself triggered -- on the reasoning that a follow-up stop is the tail of a wake already served,
+// so waiting again on it is the loop.
 //
-// The cost of being stricter is bounded and worth naming: a message arriving during a follow-up turn
-// is not pushed at that moment. It is NOT lost -- the next stop with `loop_count` 0 reads it out of
-// the store before it waits (see `armOnce`), so the worst case is one deferred wake rather than a
-// missed one. A missed push is recoverable; a wake loop is not.
-const FOLLOWUP_MEANS_ALREADY_SERVED = 1;
+// That reasoning was sound about loops and wrong about cost. A wake requires a MESSAGE: `armOnce` reads
+// what is pending before it waits and returns empty when there is nothing, so a chain of follow-ups
+// carries a chain of real messages rather than empty laps. At a threshold of 1 an unattended exchange
+// measured three hops before it stalled, which is a short conversation for the sake of a loop that
+// cannot form without somebody sending into it. The host's cap of 5 stays the outer backstop, and a
+// declined push still defers rather than drops.
+const followupLimit = () => adapterLoopLimit();
 
 function argValue(argv, flag) {
     const i = argv.indexOf(flag);
@@ -79,7 +79,7 @@ async function main() {
 
     // --- Re-entry -----------------------------------------------------------
     const loopCount = Number(payload.loop_count ?? 0);
-    if (Number.isFinite(loopCount) && loopCount >= FOLLOWUP_MEANS_ALREADY_SERVED) {
+    if (Number.isFinite(loopCount) && loopCount >= followupLimit()) {
         process.stdout.write('{}\n');
         return 0;
     }
