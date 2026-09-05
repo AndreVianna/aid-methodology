@@ -1,0 +1,89 @@
+# Task State -- task-NNN   (single writer: the delivery branch that owns this task)
+#
+# This is the TASK-LEVEL STATE.yml template -- FULL PATH ONLY. It lives at
+# deliveries/delivery-NNN/tasks/task-NNN/STATE.yml. Every key below is a
+# top-level scalar (no more separate frontmatter/body zones); `quick_check`
+# and `dispatch_log` are AUTHORED alongside the machine scalars, in the same
+# file. All of it is written by a single writer: the delivery branch that
+# owns this task. This file is the SOLE write target for all per-task mutable
+# state (state cell, review, elapsed, notes, display_name, findings, dispatch
+# log). Its parent deliveries/delivery-NNN/STATE.yml Tasks State and the
+# work-level Tasks State are DERIVED read-only views assembled from this file
+# at read time -- never written directly.
+#
+# Lite (flattened) path has NO per-task STATE.yml at all: each task's mutable
+# cells live directly in the work-root STATE.yml's `tasks_lifecycle` mapping,
+# written via `writeback-state.sh --task-id` targeting that entry instead of
+# a sibling file.
+#
+# `task-NNN` / `delivery-NNN` / `work-NNN-{name}` (this file's own location)
+# are INFERRED from the folder path -- never authored here.
+#
+# Optional `ticket_ref` (full-path only): links this task to an external
+# tracker item ({connector-stem}:{external-id}, e.g. jira:PROJ-123). Left
+# `--` when this task is not independently linked; resolution then falls back
+# to this task's owning (SPEC-traced) feature, else its delivery, else the
+# work (nearest-ancestor contract:
+# canonical/aid/templates/connectors/consumption-protocol.md). The flattened
+# path (no per-task STATE.yml; `tasks_lifecycle` mapping instead) carries no
+# separate task-level `ticket_ref` of its own -- resolution for a flattened
+# task passes straight through to its delivery/work levels, which do carry
+# the scalar (work-state-template.yml's top-level keys, both layouts).
+#
+# State enum (closed; single source of truth):
+#   Pending | In Progress | In Review | Blocked | Done | Failed | Canceled
+# Ordering (most-advanced wins on reconcile):
+#   Done > Canceled > In Review > In Progress > Blocked > Failed > Pending
+#
+# MANDATORY (aid-execute/references/state-execute.md § State-Write Protocol):
+# `state` MUST be written the INSTANT it changes -- In Progress before work
+# starts, In Review before the reviewer is dispatched, a terminal value
+# (Done/Failed) when finished. Binds whoever executes this task -- the
+# main/orchestrator agent running it directly, or a dispatched sub-agent --
+# with no exception either way. (Blocked is a distinct, orchestrator-
+# assigned value for a different, downstream task that depends on a failed
+# one -- never self-written by the task being executed.)
+
+# [W] Pending | In Progress | In Review | Blocked | Done | Failed | Canceled
+state: Done
+# [W]
+review: --
+# [W] HH:MM | --
+elapsed: --
+# [W]
+notes: >-
+  The Bash side is verified by execution end to end: register, open, join, send, inbox, ack,
+  and the refusal path (exit 14 with the stable token first on stderr, stdout parsing as JSON
+  on its own). The PowerShell twin is NOT verified by execution -- no PowerShell exists in this
+  environment, so tests/canonical/test-aid-cli-parity.sh skips and the twin was written by
+  mirroring the verified Bash implementation. That is a code reading and is recorded as one
+  rather than counted as a pass; it is the same limitation task-003 carries, and the delivery
+  gate should treat both as one open item rather than two.
+  The no-rules-in-the-CLI criterion is verified by grep: the only apparent SQL in either twin is
+  the word "select" inside dashboard help text, and there is exactly one HTTP call site per twin
+  (two adjacent lines in Bash for the GET and POST branches of the same helper).
+# [W] mutable display-name override (writeback-state.sh:829). Documentation
+#     fix, not a schema change (SP-2's one documented exception): the writer
+#     already writes this key today; it was simply never declared here.
+display_name: --
+# [W] {connector-stem}:{external-id} | -- -- OPTIONAL; e.g. jira:PROJ-123; see the ticket_ref note above
+ticket_ref: --
+# [W] written by `writeback-state.sh --task-id NNN --findings ...` during the
+#     per-task quick-check step of aid-execute. Records the reviewer tier
+#     used and all [HIGH] and [CRITICAL] findings for this task. [CRITICAL]
+#     findings trigger an immediate fix-on-spot; [HIGH] findings are deferred
+#     to the delivery gate via delivery-NNN-issues.md. No grade is recorded
+#     here -- grading is per-delivery, not per-task.
+#   reviewer_tier: Small (quick check always uses Small tier)
+#   findings entries: - severity: CRITICAL | HIGH / description / source /
+#     disposition: Fixed-on-spot | Deferred-to-gate
+quick_check:
+  reviewer_tier: Small
+  findings: []
+# [A] appended by the dispatcher on subagent completion (L1+L2+L3
+#     traceability; always-on, never optional). One row per dispatch. The
+#     work-level Calibration Log and Dispatches views are DERIVED unions of
+#     all per-task dispatch_log entries. Source:
+#     canonical/skills/aid-discover/SKILL.md § Dispatch Protocol.
+#   - date / agent / eta_band / actual / outcome
+dispatch_log: []

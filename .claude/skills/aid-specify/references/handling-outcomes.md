@@ -8,14 +8,14 @@ that arise during the propose→discuss→write→review loop.
 **Simple fix:** Fix the KB document directly, note in the `qa` sequence (STATE.yml).
 
 **Needs re-discovery:** Add Q&A entry to `.aid/knowledge/STATE.md` `## Q&A (Pending)`,
-note the loopback in the Features State view (work STATE.yml), continue with non-blocked sections.
+note the loopback in this feature's `features:` entry (work STATE.yml), continue with non-blocked sections.
 
 ## Requirements are Wrong or Incomplete
 
 **Simple fix:** Fix REQUIREMENTS.md directly — both the upstream section and the feature's own §11 subsection live there.
 
 **Needs re-interview:** Add Q&A entry to the `qa` sequence (`.aid/works/{work}/STATE.yml`),
-note the loopback in the Features State view (work STATE.yml).
+note the loopback in this feature's `features:` entry (work STATE.yml).
 
 ## Spike Needed (State 3)
 

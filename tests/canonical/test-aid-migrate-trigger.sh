@@ -899,6 +899,12 @@ echo ""
 echo "=== Gate 9: npm postinstall path ==="
 
 # ---------------------------------------------------------------------------
+# Snapshot packages/npm/'s dirt BEFORE the runs below, so the isolation check that follows compares
+# what THESE runs left against what was already there. Comparing against "clean" instead made the check
+# fail on any uncommitted work in that directory -- legitimate work in progress, indistinguishable from
+# scratch -- which is a test that punishes the developer for editing the thing it is testing.
+_NPM_DIRT_BEFORE="$(git -C "${REPO_ROOT}" status --porcelain packages/npm/ 2>/dev/null | sort || true)"
+
 # TRG-G: default mode (no AID_MIGRATE_YES) -> notice printed, exit 0.
 # Run with isolated AID_HOME + HOME so no scratch lands in packages/npm/.
 # ---------------------------------------------------------------------------
@@ -970,11 +976,16 @@ fi
 # ---------------------------------------------------------------------------
 # Post-TRG isolation check: packages/npm/ must be clean (no new scratch from node runs).
 # ---------------------------------------------------------------------------
-_NPM_SCRATCH="$(git -C "${REPO_ROOT}" status --porcelain packages/npm/ 2>/dev/null || true)"
+_NPM_DIRT_AFTER="$(git -C "${REPO_ROOT}" status --porcelain packages/npm/ 2>/dev/null | sort || true)"
+_NPM_SCRATCH="$(comm -13 <(printf '%s\n' "${_NPM_DIRT_BEFORE}") <(printf '%s\n' "${_NPM_DIRT_AFTER}"))"
 if [[ -z "${_NPM_SCRATCH}" ]]; then
-    pass "ISOL-01 packages/npm/ clean: no scratch from TRG-G/H/I node runs"
+    if [[ -n "${_NPM_DIRT_BEFORE}" ]]; then
+        pass "ISOL-01 TRG-G/H/I left no new scratch in packages/npm/ (pre-existing changes ignored, as they should be)"
+    else
+        pass "ISOL-01 packages/npm/ clean: no scratch from TRG-G/H/I node runs"
+    fi
 else
-    fail "ISOL-01 packages/npm/ dirty after TRG-G/H/I: ${_NPM_SCRATCH}"
+    fail "ISOL-01 TRG-G/H/I left NEW scratch in packages/npm/: ${_NPM_SCRATCH}"
 fi
 
 # ===========================================================================

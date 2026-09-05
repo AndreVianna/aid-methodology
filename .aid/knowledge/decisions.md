@@ -622,6 +622,54 @@ Decisions that are expensive to reverse and currently constrain most changes:
   fields it came from).
 - **Status:** Accepted (supersedes D23).
 
+## D30 — A chat member's position is a scalar into its own hub's arrival order
+
+- **What:** In the agent chat node, a member's read position is a single integer indexing
+  `message.arrival_seq` — a counter each hub assigns for itself, per channel — rather than an
+  index into any order shared between hubs. A member holds two such integers, `delivered` and
+  `acked`. Per-speaker ordering is produced on READ, by reordering each sender's messages into
+  that sender's own `sender_seq` order; it is not a property of how they are stored.
+  Evidence: `chat-node/server/store.mjs` (the schema), `chat-node/server/core.mjs`
+  (`reorderPerSpeaker`, `inbox`), `tests/canonical/test-chat-node-core.sh` (CO15–CO22).
+- **Why:** There is no global order to index into. The delivery semantics promise **per-speaker
+  FIFO and nothing stronger**: every member sees one speaker's messages in the order that
+  speaker sent them, and two speakers' messages carry no promised relative order. A scalar
+  position is nevertheless sufficient, and it is sufficient because of two properties that hold
+  by construction rather than by luck:
+
+  *A session reads only its own hub.* Every face is the CLI, and the CLI talks to the local
+  node over loopback. No session ever reads a position from a hub other than its own, so each
+  hub's private arrival order is a total order over everything that member can observe.
+
+  *A session never moves machines.* A session's identity is machine-qualified, so a position
+  minted against one hub's arrival order is never later interpreted against another's.
+
+  Together these turn "there is no global order" from an obstacle into a non-issue: the design
+  needs no vector clock, no logical timestamp and no agreement between hubs, and replication
+  reduces to delivering messages and letting each receiving hub number them for itself. That is
+  the single structural reason a replicated, ownerless channel model is implementable here at
+  all.
+- **Rejected:** A **vector clock or per-sender version vector** per member (rejected — it is the
+  correct general answer, and the general problem is not the one this product has; the two
+  properties above make a scalar exact, and a vector would cost a position that grows with the
+  number of speakers to buy an ordering guarantee the requirements explicitly decline to make).
+  A **per-channel sequencer** assigning one authoritative order (rejected — a sequencer is a
+  per-channel owner by another name, and reintroduces the single machine whose uptime gates the
+  conversation; retiring that owner is what made the channel model ownerless in the first
+  place). **Ordering enforced at write time** by refusing an out-of-order arrival (rejected —
+  it converts a normal network reordering into an error, and the receiving hub cannot
+  distinguish "arrived out of order" from "predecessor permanently lost" at the moment of
+  arrival).
+- **Consequences worth knowing before changing either property:** if a session ever became
+  readable from a hub other than its own, or migratable between machines, this decision is
+  invalidated and the position must become a vector. Both are therefore load-bearing invariants
+  rather than incidental facts. Two smaller ones: `arrival_seq` starts at 1 while positions
+  start at 0, so that 0 means "nothing" and the first message of a channel is not excluded by
+  the read predicate; and because ordering is produced on read, a read path that sorts its
+  whole result by arrival order silently replaces the per-speaker guarantee with the arrival
+  guarantee — a defect that was written, caught by CO15, and is the reason that test exists.
+- **Status:** Accepted.
+
 **Superseded (not load-bearing):** the `.aid-new` sidecar (by D11), the machine `.migrated`
 marker + `$HOME`-scan (by D12/D13), the five discovery-* agents (by D15), the Mermaid engine
 in the summary (by D18), the recipe catalog + `parse-recipe.sh` (by D22), and the

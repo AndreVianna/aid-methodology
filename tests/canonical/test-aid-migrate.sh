@@ -892,6 +892,254 @@ else
 fi
 
 echo ""
+echo "=== Gate 15e: Features State is AUTHORED -- a post-/aid-define work converts ==="
+
+# REGRESSION GATE. `## Features State` was in the DERIVED guard list, on the
+# premise (SS 2147-2155) that a real DERIVED row proves a work predates the
+# per-unit hierarchy. That premise is false for this section: nothing derives it
+# -- aid-define creates a row per feature and aid-specify updates it -- so EVERY
+# work that had been through /aid-define was refused, and the remedy the WARN
+# names (migrate-work-hierarchy) exits 3 on a work with no tasks/, which is
+# exactly the population the guard caught. Restore the guard entry and G15E-01
+# fails.
+#
+# The fixture is shaped after a real work: two column sets are in circulation
+# for this table, a withdrawn feature keeps a struck row, the Interview State
+# section carries a SECOND table (Review History) that is not sections, and the
+# section-status table is one column wider than the interview emitter's four.
+
+G15E_CODE_HOME="$(new_code_home)"
+G15E_STATE_HOME="$(new_state_home)"
+G15E_REPO="$(mktemp -d "${TMP}/g15e-repo.XXXXXX")"
+mkdir -p "${G15E_REPO}/.aid/knowledge"
+touch "${G15E_REPO}/.aid/knowledge/STATE.md"
+mkdir -p "${G15E_REPO}/.aid/works/work-105-features"
+
+cat > "${G15E_REPO}/.aid/works/work-105-features/STATE.md" << 'G15E_MD_EOF'
+---
+lifecycle: Running
+phase: Specify
+---
+
+# Work State -- work-105-features
+
+## Interview State
+
+**Interview State:** Revising  **Grade:** B+ (earned earlier)
+
+### Cross-Reference
+
+**State:** Complete  **Grade:** A+  **Minimum:** A  **Cycles:** 14
+
+### Review History
+
+| Date | Event | Outcome | Notes |
+|------|-------|---------|-------|
+| 2026-01-02 | Interview opened | — | seeded |
+| 2026-01-03 | Quality check | 4 fixed | swept |
+
+| # | Section | State | Last Updated | Reopened by the runtime decision? |
+|---|---------|-------|--------------|-----------------------------------|
+| 1 | Objective | Complete | 2026-01-02 | No — runtime-independent |
+| 2 | Scope | Revising | 2026-01-04 | Yes |
+
+## Features State
+
+| # | Feature | Spec State | Spec Grade | Q&A Count | Notes |
+|---|---------|------------|------------|-----------|-------|
+| 001 | wake-spike | Ready | **A+** (cycle 5) | 1 | Stage P0 |
+| ~~002~~ | ~~python-floor~~ | **DELETED** | ~~A+~~ | 1 | withdrawn with FR-8 |
+| 003 | node-lifecycle | In Review (PAUSED at user request) | D (cycle 3) | 2 | keystone |
+
+## Lifecycle History
+
+| Date | Phase Transition / Gate | Grade | Notes |
+|------|------------------------|-------|-------|
+| 2026-01-02 | Work created | -- | scaffold |
+
+## Cross-phase Q&A
+
+### Q1
+
+- **Category:** Architecture
+- **Impact:** Required
+- **Status:** Answered
+- **Context:** the old spelling
+- **Suggested:** something
+- **Answer:** accepted
+
+### Q2
+
+- **Category:** Requirements
+- **Impact:** Medium
+- **State:** Pending
+- **Context:** the current spelling
+- **Suggested:** something else
+- **Answer:** _pending_
+
+### Q3
+
+- **Category:** Process
+- **Impact:** Low
+- **Status:** Closed  <!-- flipped 2026-01-05 to match this entry's own body -->
+- **Context:** an annotated state
+- **Suggested:** nothing
+- **Answer:** closed by deletion
+
+## Deploy State
+
+| Delivery | State | PR | KB Updated | Tag | Notes |
+|----------|-------|----|-----------|-----|-------|
+| _none yet_ | | | | | |
+
+## Tasks State
+
+| # | Task | Type | Wave | State | Review | Elapsed | Notes |
+|---|------|------|------|-------|--------|---------|-------|
+| _none yet_ | | | | | | | |
+
+## Plan / Deliveries
+
+| Delivery | State | Tasks | Notes |
+|----------|-------|-------|-------|
+| _none yet_ | | | |
+
+## Calibration Log
+
+| Date | Agent | Task / Cycle | ETA Band | Actual | Notes |
+|------|-------|-------------|----------|--------|-------|
+
+## Delivery Gates
+
+_None yet._
+
+## Dispatches
+
+_None yet._
+G15E_MD_EOF
+
+run_migrate "${G15E_CODE_HOME}" "${G15E_STATE_HOME}" "${G15E_REPO}"
+G15E_YML="${G15E_REPO}/.aid/works/work-105-features/STATE.yml"
+
+assert_output_contains "$MIG_OUT" "STATE.md converted -> ${G15E_YML}" \
+    "G15E-01 a work with a real Features State table CONVERTS (was refused by the DERIVED guard)"
+assert_output_not_contains "$MIG_OUT" "DERIVED section '## Features State'" \
+    "G15E-02 no DERIVED-guard WARN for Features State"
+
+# A raw \x1f leaking out of a wider-than-expected row makes the whole document
+# unparseable -- that is how the interview emitter's fixed-field read was caught.
+# Asserted without a YAML library on purpose: both shipped packages declare zero
+# dependencies, so no suite may require PyYAML.
+# Control characters only. A "non-printable" test would be wrong here: under
+# LC_ALL=C every byte of a UTF-8 em dash reads as non-printable, and this corpus
+# is full of them.
+if LC_ALL=C grep -q '[[:cntrl:]]' "$G15E_YML"; then
+    fail "G15E-03 converted STATE.yml contains a control character -- a field separator or tab leaked"
+else
+    pass "G15E-03 converted STATE.yml is free of control characters"
+fi
+if LC_ALL=C grep -q "$(printf '\037')" "$G15E_YML"; then
+    fail "G15E-04 raw \\x1f field separator found in the converted document"
+else
+    pass "G15E-04 no raw \\x1f anywhere in the converted document"
+fi
+
+assert_file_contains "$G15E_YML" "features:" \
+    "G15E-05 features key emitted"
+assert_file_contains "$G15E_YML" "name: wake-spike" \
+    "G15E-06 a live feature row carries its name"
+assert_file_contains "$G15E_YML" "state: 'In Review (PAUSED at user request)'" \
+    "G15E-07 a non-enum state is carried verbatim, not rejected (translation, not validation)"
+assert_file_contains "$G15E_YML" "withdrawn: true" \
+    "G15E-08 a struck row is marked withdrawn rather than dropped"
+assert_file_contains "$G15E_YML" "- id: '002'" \
+    "G15E-09 a struck row keeps a clean numeric id, so citations still resolve"
+
+# Interview: the Review History table shares the range and must not contribute
+# rows, and the section-status table is 5 columns wide against 4 emitted fields.
+assert_file_contains "$G15E_YML" "state: Revising" \
+    "G15E-10 interview.state comes from the **Interview State:** line, not the Cross-Reference block"
+assert_file_not_contains "$G15E_YML" "name: 'Interview opened'" \
+    "G15E-11 Review History rows do NOT land in interview.sections"
+assert_file_not_contains "$G15E_YML" "name: Event" \
+    "G15E-12 a second table's HEADER row does not become a section"
+# Sequence-entry counts, awk-only (no YAML library -- see G15E-03). INDENT
+# selects the nesting depth: top-level sequences under `key:` sit at 2 spaces,
+# `interview.sections` entries at 4.
+g15e_count_seq() {
+    awk -v key="$2" -v ind="$3" '
+        $0 == key ":"                    { inblock = 1; next }
+        inblock && /^[A-Za-z0-9_]+:/     { inblock = 0 }
+        inblock && $0 ~ "^" ind "- "     { n++ }
+        END                              { print n + 0 }
+    ' "$1"
+}
+G15E_N="$(g15e_count_seq "$G15E_YML" features '  ') \
+$(g15e_count_seq "$G15E_YML" interview '    ') \
+$(g15e_count_seq "$G15E_YML" lifecycle_history '  ') \
+$(g15e_count_seq "$G15E_YML" deploy '  ')"
+G15E_N="$(echo $G15E_N)"
+if [[ "$G15E_N" == "3 2 1 0" ]]; then
+    pass "G15E-13 counts exact: 3 features, 2 interview sections, 1 lifecycle row, 0 deploy"
+else
+    fail "G15E-13 counts wrong (features/sections/lifecycle/deploy): got '${G15E_N}', want '3 2 1 0'"
+fi
+assert_file_contains "$G15E_YML" "updated: '2026-01-02 -- No — runtime-independent'" \
+    "G15E-14 a column beyond the emitted fields is folded into the last one, not dropped"
+
+# Q&A state: every pre-conversion file on disk writes `**Status:**`, because the
+# state-not-status naming contract renamed the templates and not the works
+# already written against them. Reading only `**State:**` silently emptied the
+# one field that says whether a question is still open.
+assert_file_contains "$G15E_YML" "state: Answered" \
+    "G15E-15 a Q&A entry's legacy **Status:** bullet is read (not silently emptied)"
+assert_file_contains "$G15E_YML" "state: Pending" \
+    "G15E-16 a Q&A entry's current **State:** bullet is still read"
+# `empty` is passed in rather than written inline: a literal '' inside a
+# single-quoted awk program is consumed by the shell before awk ever sees it,
+# which silently turned this assertion into a no-op.
+G15E_QA_EMPTY="$(awk -v empty="    state: ''" '
+    $0 == "qa:"                   { inblock = 1; next }
+    inblock && /^[A-Za-z0-9_]+:/  { inblock = 0 }
+    inblock && $0 == empty        { n++ }
+    inblock && /^    state:[ ]*$/ { n++ }
+    END                           { print n + 0 }
+' "$G15E_YML")"
+if [[ "$G15E_QA_EMPTY" == "0" ]]; then
+    pass "G15E-17 no Q&A entry converted with an empty state"
+else
+    fail "G15E-17 ${G15E_QA_EMPTY} Q&A entr(ies) converted with an empty state -- the label lookup missed"
+fi
+
+# `state` is a machine-read closed enum, so an inline annotation must not ride
+# along in it -- `Closed <!-- ... -->` compares equal to nothing. It moves to
+# `answer`, which is prose, rather than being discarded.
+assert_file_contains "$G15E_YML" "state: Closed" \
+    "G15E-18 an annotated state converts to the bare enum member"
+assert_file_not_contains "$G15E_YML" "state: 'Closed  <!--" \
+    "G15E-19 the inline HTML comment does not ride along in the enum field"
+# Substring stops before the apostrophe: a YAML single-quoted scalar doubles it.
+assert_file_contains "$G15E_YML" "[state note: flipped 2026-01-05 to match this entry" \
+    "G15E-20 the annotation is preserved on the entry, not discarded"
+
+# Review History sits under a `###` heading inside the legacy `## Interview State`
+# section, so it shares that range. Selecting interview.sections by header stopped its rows
+# being mis-filed as sections -- and would have DROPPED them outright without a
+# key of its own. A table the schema does not name is still data.
+assert_file_contains "$G15E_YML" "review_history:" \
+    "G15E-21 review_history key emitted"
+assert_file_contains "$G15E_YML" "event: 'Interview opened'" \
+    "G15E-22 Review History rows are preserved, not dropped with the mis-filing"
+assert_file_contains "$G15E_YML" "outcome: '4 fixed'" \
+    "G15E-23 a Review History row keeps its Outcome column"
+G15E_RH="$(g15e_count_seq "$G15E_YML" review_history '  ')"
+if [[ "$G15E_RH" == "2" ]]; then
+    pass "G15E-24 exactly 2 review_history entries (no header or separator row among them)"
+else
+    fail "G15E-24 review_history has ${G15E_RH} entries, want 2"
+fi
+
+echo ""
 echo "=== Gate 15d: format_version stamp advances to AID_SUPPORTED_FORMAT (4) ==="
 
 # Confirms AC-10/SP-12 independently of G4A-02 above, using a repo whose ONLY

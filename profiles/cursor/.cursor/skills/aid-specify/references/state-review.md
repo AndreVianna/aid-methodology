@@ -2,7 +2,7 @@
 
 All sections complete; re-review entire spec against current KB and codebase.
 
-The spec was completed previously (feature status `Ready` in work STATE.md `## Features State`).
+The spec was completed previously (the work `STATE.yml`'s `features:` entry has `state: Ready`).
 
 **Ask first:** _"This feature spec is marked Ready. Do you want to reopen it for review?
 Is there something specific you want to re-examine?"_
@@ -33,7 +33,7 @@ For each technical section of this feature, run step 4 of the loop against curre
 
 Render `references/reviewer-brief.md` with:
 - `{{ARTIFACTS}}` = `REQUIREMENTS.md` + the `§11 / Feature NNN` subsection under review, naming the technical sections in scope (or "the whole feature section")
-- `{{CONTEXT}}` = `REQUIREMENTS.md §11 / Feature NNN in work-NNN-{name}. All sections marked Complete in the work STATE.md \`## Features State\` row. This is the final review pass before the feature is marked Ready.`
+- `{{CONTEXT}}` = `REQUIREMENTS.md §11 / Feature NNN in work-NNN-{name}. Every section of this feature's `features:` entry is Complete in the work STATE.yml. This is the final review pass before the feature is marked Ready.`
 
 Include in the prompt:
 - **Ledger lifecycle:** "Read `.aid/.temp/review-pending/specify-<feature>.md` if it
@@ -58,7 +58,7 @@ Compare to minimum grade from `bash .cursor/aid/scripts/config/read-setting.sh -
 
 | Condition | Action |
 |-----------|--------|
-| Grade ≥ minimum | Print summary, done. Set feature status to `Ready` in work STATE.md. |
+| Grade ≥ minimum | Print summary, done. Set this feature's `state: Ready` and its `grade` in the work `STATE.yml`'s `features:` sequence. |
 | Grade < minimum, fixable sections | List findings, re-enter loop for affected sections. |
 | Grade < minimum, core assumptions wrong | Recommend `--reset`. |
 

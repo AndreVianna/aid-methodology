@@ -63,10 +63,13 @@ import { skillSummary } from './summary.mjs';
 export const CURATED_GROUPS = [
   {
     group: 'Support',
-    blurb: "Skills for configuring AID and managing tickets and connectors. Start here if you're not sure which skill to use.",
+    blurb: "Skills for configuring AID, managing tickets and connectors, and talking to a peer AI session. Start here if you're not sure which skill to use.",
     members: [
       'aid-triage',
       'aid-config',
+      // An on-demand utility like the ticket skills: it belongs to no pipeline phase and has no verb
+      // family, so it is neither a Definition full-path entry nor a shortcut-catalog row.
+      'aid-chat',
       'aid-set-connector',
       'aid-unset-connector',
       'aid-read-ticket',

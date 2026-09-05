@@ -79,7 +79,7 @@ flowchart TB
     HK  -. "targeted KB refresh" .-> Disc
 ```
 
-*111 skill directories, four skill groups plus a direct-entry shortcut layer. Three doors in: a **shortcut** (`aid-<verb>[-<artifact>]`) when you already know the kind of change; **`/aid-triage`** when you don't — it suggests, never runs, either a shortcut, the full path, or `/aid-ask` when your input is a question rather than a change; or **`/aid-describe`** directly for broad or new-project work. The six numbered phases (Discover through Execute) form the mandatory sequential pipeline for the full path — brownfield enters at Discover, greenfield at Describe (Phase 2a). A shortcut instead drives the shared shortcut engine, which collapses Describe through Detail into one autonomous run and hands off straight to Execute. Deploy and Monitor are optional shortcut paths in the Definition group. `aid-housekeep` is a Knowledge Base Maintenance skill that runs off the pipeline on demand. `/aid-ask` answers project questions on demand and captures knowledge gaps. `/aid-update-kb` applies targeted KB updates through the review gate.*
+*112 skill directories, four skill groups plus a direct-entry shortcut layer. Three doors in: a **shortcut** (`aid-<verb>[-<artifact>]`) when you already know the kind of change; **`/aid-triage`** when you don't — it suggests, never runs, either a shortcut, the full path, or `/aid-ask` when your input is a question rather than a change; or **`/aid-describe`** directly for broad or new-project work. The six numbered phases (Discover through Execute) form the mandatory sequential pipeline for the full path — brownfield enters at Discover, greenfield at Describe (Phase 2a). A shortcut instead drives the shared shortcut engine, which collapses Describe through Detail into one autonomous run and hands off straight to Execute. Deploy and Monitor are optional shortcut paths in the Definition group. `aid-housekeep` is a Knowledge Base Maintenance skill that runs off the pipeline on demand. `/aid-ask` answers project questions on demand and captures knowledge gaps. `/aid-update-kb` applies targeted KB updates through the review gate.*
 
 ### The Full Path
 
@@ -101,9 +101,9 @@ The shortcut path is not a fallback — it is the default entry for the majority
 
 ### Skill Inventory
 
-*111 skill directories in total — 17 curated pipeline / on-demand / router skills plus the 94-row shortcut catalog's skills (34 engine-generated verb-first shortcuts + 60 hand-authored `repurpose` skills). Unchanged: 9 agents, 14 KB doc types.*
+*112 skill directories in total — 18 curated pipeline / on-demand / router skills plus the 94-row shortcut catalog's skills (34 engine-generated verb-first shortcuts + 60 hand-authored `repurpose` skills). Unchanged: 9 agents, 14 KB doc types.*
 
-**A. The 17 curated skills** — the pipeline phases plus the on-demand and router skills that are *not* in the shortcut catalog; their groups, phase numbers, and mandatory pipeline membership. (`aid-deploy` and `aid-monitor` are catalog `repurpose` rows — see table D; `/aid-ask`, also a `repurpose` row, is covered in table C.)
+**A. The 18 curated skills** — the pipeline phases plus the on-demand and router skills that are *not* in the shortcut catalog; their groups, phase numbers, and mandatory pipeline membership. (`aid-deploy` and `aid-monitor` are catalog `repurpose` rows — see table D; `/aid-ask`, also a `repurpose` row, is covered in table C.)
 
 | **Skill** | Group | Phase | Mandatory pipeline? |
 |-----------|-------|-------|---------------------|
@@ -871,7 +871,7 @@ AID ships as five rendered install trees. The single canonical source (`canonica
 
 ```
 canonical/  (single source of truth — never edit profiles/ directly)
-  ├── skills/        (111 skill directories — 17 curated + 94 catalog skills)
+  ├── skills/        (112 skill directories — 18 curated + 94 catalog skills)
   ├── agents/        (9 agents)
   └── aid/
         ├── templates/     (KB templates, document templates, shortcut-catalog.yml, shortcut-scaffolding/)

@@ -30,10 +30,12 @@ var path = require('path');
 var repoRoot = path.join(__dirname, '..', '..', '..');
 var pkgRoot  = path.join(__dirname, '..');
 
-// Read the curated dashboard file set from the single-source manifest (dashboard/MANIFEST).
-// One path per line, relative to dashboard/; #-comments and blank lines ignored.
-function readDashboardManifest(root) {
-    var text = fs.readFileSync(path.join(root, 'dashboard', 'MANIFEST'), 'utf8');
+// Read a curated component file set from its single-source manifest -- dashboard/MANIFEST or
+// chat-node/MANIFEST. One path per line, relative to the component; #-comments and blank
+// lines ignored. Parameterised over the component because both follow the same rule and a
+// second hand-written copy of this parser is exactly the drift the manifests exist to stop.
+function readComponentManifest(root, component) {
+    var text = fs.readFileSync(path.join(root, component, 'MANIFEST'), 'utf8');
     // Split on CRLF or LF (a Windows checkout may carry \r\n); strip #-comments and
     // surrounding whitespace. Using /#.*/ (no $) + \r?\n split avoids the JS-regex gotcha
     // where '.' and '$' do not span a trailing '\r', which would leak comment lines.
@@ -54,15 +56,23 @@ var copies = [
 // vendored too, so the npm payload is self-describing (in lockstep with vendor.py and
 // release.sh, which also ship it).
 copies.push(['dashboard/MANIFEST', 'dashboard/MANIFEST']);
-readDashboardManifest(repoRoot).forEach(function (rel) {
+readComponentManifest(repoRoot, 'dashboard').forEach(function (rel) {
     copies.push(['dashboard/' + rel, 'dashboard/' + rel]);
 });
+// Append the agent chat node from chat-node/MANIFEST, on the same terms and for the same
+// reason. The node carries no third-party dependency, so vendoring it does not touch this
+// package's dependency list -- which must stay empty.
+copies.push(['chat-node/MANIFEST', 'chat-node/MANIFEST']);
+readComponentManifest(repoRoot, 'chat-node').forEach(function (rel) {
+    copies.push(['chat-node/' + rel, 'chat-node/' + rel]);
+});
 
-// Clean slate: remove any prior vendored payload (lib/ dir, dashboard/ dir, the vendored
+// Clean slate: remove any prior vendored payload (lib/ dir, dashboard/ dir, chat-node/ dir, the vendored
 // bin scripts, VERSION) so stray runtime artifacts or files from an older version never
 // ship. Keep the committed shim bin/aid.js.
 try { fs.rmSync(path.join(pkgRoot, 'lib'),       { recursive: true, force: true }); } catch (e) {}
 try { fs.rmSync(path.join(pkgRoot, 'dashboard'), { recursive: true, force: true }); } catch (e) {}
+try { fs.rmSync(path.join(pkgRoot, 'chat-node'), { recursive: true, force: true }); } catch (e) {}
 ['bin/aid', 'bin/aid.ps1', 'bin/aid.cmd', 'VERSION'].forEach(function (f) {
     try { fs.rmSync(path.join(pkgRoot, f), { force: true }); } catch (e) {}
 });

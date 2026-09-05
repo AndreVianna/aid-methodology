@@ -22,6 +22,7 @@ packages/npm/bin/aid.ps1
 packages/npm/bin/aid.cmd
 packages/npm/lib/
 packages/npm/dashboard/
+packages/npm/chat-node/
 packages/npm/VERSION
 
 # PyPI package vendored copies (generated at build time by scripts/vendor.py; not committed)
@@ -65,6 +66,7 @@ desktop.ini
 .aid/works/work-023-ticket-integration/
 .aid/works/work-004-optimize-skill-library/
 .aid/works/work-009-refactor/
+.aid/works/work-001-agent-chat/throwaway/
 
 # >>> AID managed -- do not edit (aid add/update maintains this block) >>>
 .aid/.temp/

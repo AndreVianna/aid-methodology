@@ -1,0 +1,126 @@
+# Pending — to be addressed in the correction and strengthening round
+
+> **All five deliveries are now Done and gated at A+.** This list is what the correction round
+> inherits. Three items were closed ahead of it (marked `Done` below) because they were guards rather
+> than fixes, and a guard is worth more before the work it checks than after.
+
+Everything deferred, accepted, or verified by a weaker means than the criterion deserves, gathered
+in one place so the strengthening round has a worklist rather than a memory.
+
+**Why this file exists:** each item below was recorded somewhere at the time — a task note, a gate
+ledger, a tech-debt row, a manual procedure. Scattered across three deliveries, that is a set
+nobody can act on. This is the flat list.
+
+**Scope note:** this file is work-folder state and is pruned when the work ships. Anything here
+that must outlive the work is ALSO filed in `.aid/knowledge/tech-debt.md`, and the row id is given.
+
+Status values: `Open` (needs doing) · `Needs-hardware` (needs the operator's second machine or a
+live host) · `Accepted` (a deliberate trade, listed so it is re-decided rather than forgotten).
+
+---
+
+## P1 — The PowerShell twins, which is the largest single gap
+
+Four deliveries have shipped PowerShell code that **has never been executed**. No PowerShell
+interpreter exists in this environment, so `tests/canonical/test-aid-cli-parity.sh` reports SKIP on
+every run, and every twin was written by mirroring the verified Bash side. That is a code reading.
+
+**It has already cost something.** The delivery-003 gate found `aid chat subscribe` present in
+`bin/aid` and *entirely absent* from `bin/aid.ps1` — a whole verb, missed because nothing ran it.
+The risk is not theoretical any more, and it compounds with every delivery.
+
+| # | Item | Status |
+|---|---|---|
+| P1-1 | Run `tests/canonical/test-aid-cli-parity.sh` on a machine with PowerShell 7+ and fix whatever it reports | Needs-hardware |
+| P1-2 | `MP-01` — the lifecycle and message-plane verbs under PowerShell | Needs-hardware |
+| P1-3 | `MP-02` — a fresh install via `install.ps1` places `chat-node/` correctly | Needs-hardware |
+| P1-4 | `MP-03` — `roster` and `connect` under PowerShell | Needs-hardware |
+| P1-5 | ~~**Nine verbs had no manual procedure at all**~~ — **DONE**: `MP-11` covers them in one sitting and `HP25` guards against a new verb being added unrecorded. Originally: **`subscribe`, `heartbeat`, `leave`, `list` and `reap` have no manual procedure at all** — five verbs whose PowerShell twin is neither executed nor recorded as needing execution. `subscribe` is the one that already produced a HIGH finding | Done |
+
+`P1-5` was the actionable one and is done: `MP-11` covers all nine verbs in one sitting, and `HP25`
+fails when a verb is added without being recorded. A gap that is recorded can be closed by whoever has
+a Windows machine; a gap nobody wrote down cannot, which is why this was worth doing here rather than
+waiting for the hardware.
+
+---
+
+## P2 — Criteria that need a live host or a second machine
+
+These are not weaknesses in the implementation. They are criteria whose subject is a *host's own
+behaviour* or a *real network*, and neither exists in this environment. A stub that never raises an
+approval prompt proves nothing about a host that would.
+
+| # | Item | Status |
+|---|---|---|
+| P2-1 | `MP-05` / `AC-1` — a Cursor session and a Claude Code session exchanging a message on one machine, recipient acting with no human action | Needs-hardware |
+| P2-2 | `MP-06` / `AC-24` — no approval prompt raised, on a host that gates privileged actions by default | Needs-hardware |
+| P2-3 | `MP-07` / `AC-23` — a wake does not loop, on a host whose stop hook actually re-fires | Needs-hardware |
+| P2-4 | `MP-08` — the install document followed by somebody who did not write it, on a clean machine | Needs-hardware |
+| P2-5 | delivery-004's two-machine criteria: `AC-2`, `AC-4`, and the inter-node link surviving an idle network. The plan itself says the honest validation of the last one is an overnight idle followed by a send, not a unit test | Needs-hardware |
+
+The P0 spike already established `P2-1` through `P2-3` on two machines against its own apparatus.
+What is owed is re-running them against the **shipped product**, which is a smaller job than the
+spike was.
+
+---
+
+## P3 — Verified by a weaker means than the criterion deserves
+
+| # | Item | Status | Durable row |
+|---|---|---|---|
+| P3-1 | ~~`FR-7.3`'s surface boundary checked against the CLI rather than the rendered skill.~~ **DONE** before delivery-005, deliberately: the check now reads all five rendered copies -- verb list, forbidden list, and body against the canonical source rather than against each other. Strengthened first so the last delivery's skill changes are held to it. `W1-20` closed | Done | — |
+| P3-2 | `AC-25`'s abandoned-hook case is simulated by killing the adapter (`WK18b`) and by a silent server (`WK18d`). Neither is a host discarding output and walking away, though `WK18d` exercises the mechanism that bounds it | Accepted | — |
+| P3-3 | `CO24` builds its state with foreign keys briefly off, because the interleaving it guards cannot occur with them on and a single-threaded core. Honest, and worth re-reading if the core ever becomes concurrent | Accepted | — |
+
+`P3-1` is the one to act on: it was filed as needing hardware and it does not — the rendered skill
+is on disk at `profiles/*/skills/aid-chat/SKILL.md`.
+
+---
+
+## P4 — Deliberate trades, listed so they are re-decided rather than forgotten
+
+| # | Item | Status |
+|---|---|---|
+| P4-1 | The Cursor adapter declines re-entry at `loop_count >= 1` while the host's own cap is 5. Stricter on purpose; the cost is at most one deferred wake because the next stop reads the store first. Re-read if the host's follow-up semantics change | Accepted |
+| P4-2 | Unknown, stale and already-in-a-channel collapse to one `target_unavailable` token, with the distinction in `detail`. The first rationale for this was wrong and is recorded as wrong in the code | Accepted |
+| P4-3 | `test-kb-no-work-ids.sh` allows a work id inside a code span, on the argument that command syntax is not a citation. A real citation in backticks would pass | Accepted |
+| P4-4 | ~~The PowerShell subscriber copied a fixed field set.~~ **DONE**: it now carries every field the server sent, so a new field cannot appear in one twin and silently not the other | Done |
+
+`P4-4` is small and real, and belongs in the strengthening round.
+
+---
+
+## P4b — A test of my own that can flake under load
+
+| # | Item | Status |
+|---|---|---|
+| P4b-1 | ~~Whether the adapter's guard is reliable on a starved event loop.~~ **DECIDED, not engineered around.** It is not, and nothing in-process can make it so: these are event-loop timers, and no mechanism inside a process survives an OS that will not schedule it. The adapter does no slow work of its own, so only machine contention can delay it. The remedy is therefore the MARGIN, and the margin is now what the guard derives from rather than a hardcoded 2 seconds — so widening it widens every bound together. `WK18e` asserts the three bounds nest in one order at every configured margin, falsified by inverting the guard, and `docs/chat-wake-install.md` tells an operator on a busy machine to widen it and what it costs | Done |
+
+`P4b-1` got that decision. The answer was not a tighter mechanism but an honest one: name the limit,
+derive the guard from the configurable margin so an operator can buy headroom, assert that widening it
+cannot break the ordering, and write down in the install document when to do it.
+
+## P5 — Tooling that slowed the work
+
+| # | Item | Status | Durable row |
+|---|---|---|---|
+| P5-1 | ~~`writeback-state.sh` corrupts a multi-line folded scalar.~~ **FIXED** in the correction round: the writer now consumes a block scalar's indented body with its header. Reproduced first, then fixed, then falsified — five of six regression cases fail against the unfixed writer, and the ordinary-scalar control does not. Applied to the canonical source, all seven renders, and narrowly to the dashboard fork so its `Deploy` value survives. `W1-18` closed | Done | — |
+| P5-2 | ~~ISOL-01 fails on any uncommitted edit under `packages/npm/`.~~ **FIXED**: it snapshots that directory before the runs it guards and compares after against before, so pre-existing work is ignored and only NEW scratch fails. Verified both ways — with a work-in-progress edit the old check fails and the new one passes. `W1-19` closed | Done | — |
+| P5-3 | 15 canonical suites fail and did so before this work began — confirmed by running them in a clean worktree at the pre-work commit. Out of scope for this work; listed so the number is not mistaken for a regression | Accepted | — |
+
+---
+
+## What the strengthening round should actually do
+
+In order, because they are not equally valuable:
+
+1. ~~**`P1-5`**~~ — done: `MP-11` covers all nine uncovered verbs in one sitting, and `HP25` now
+   fails when a verb is added without being recorded, which is when it would otherwise be forgotten.
+2. ~~**`P3-1`**~~ — done ahead of delivery-005 rather than after it, so the last delivery's skill
+   changes are checked by it instead of being checked afterwards.
+3. ~~**`P4-4`**~~ — done: the PowerShell subscriber carries every field the server sent instead of a
+   chosen list, so a field added to the wake cannot appear in one twin and silently not the other.
+4. ~~**`P5-1`**~~ — fixed. Reproducing it first was what made the fix small: the defect was one
+   function's handling of one YAML shape, not the writer's design.
+5. Hand the operator a single consolidated list of what needs their hardware, rather than eight
+   manual procedures spread through one file.

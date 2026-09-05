@@ -7,15 +7,24 @@
 #     lifecycle/gate scalars. Written ONLY by `writeback-state.sh` (surgical
 #     single-key write; every other line is reproduced byte-for-byte).
 #   AUTHORED (single-writer, YAML structures under a key, one key per former
-#     markdown section) -- interview, lifecycle_history, deploy,
+#     markdown section) -- interview, features, lifecycle_history, deploy,
 #     delivery_lifecycle (incl. its tasks_lifecycle child), delivery_gate, qa.
-#   DERIVED (read-only, assembled at read time) -- Features State,
-#     Plan/Deliveries, Tasks State, Delivery Gates, Calibration Log,
-#     Dispatches. NOT represented here -- no key at all. A reader seeing no
-#     key derives the same union it derives today. Agents that write state
-#     must target the per-unit STATE.yml files instead. `qa` is the one
-#     former-DERIVED name that keeps a key here, because on the flattened
-#     Lite path it is AUTHORED.
+#   DERIVED (read-only, assembled at read time) -- Plan/Deliveries, Tasks
+#     State, Delivery Gates, Calibration Log, Dispatches. NOT represented
+#     here -- no key at all. A reader seeing no key derives the same union it
+#     derives today. Agents that write state must target the per-unit
+#     STATE.yml files instead. `qa` is the one former-DERIVED name that keeps
+#     a key here, because on the flattened Lite path it is AUTHORED.
+#
+#     `features` was ALSO listed as DERIVED here and that was wrong. Nothing
+#     derives it: /aid-define creates a row per feature at decomposition and
+#     /aid-specify updates that row as the feature advances, so it is
+#     AUTHORED like `interview`. The mislabel was not merely a documentation
+#     defect -- it made the STATE.md -> STATE.yml converter treat a real
+#     Features State row as proof that a work still needed the pre-hierarchy
+#     era migration, so it REFUSED to convert any work that had been through
+#     /aid-define, and named a remedy that cannot run on a work with no
+#     tasks/. Declaring the key is what closes that.
 #
 # Writer legend -- stated in full-line comments above each key, NEVER as a
 # trailing comment on the key itself (D-3):
@@ -52,6 +61,8 @@
 # gate_grade, gate_timestamp (the four flattened-only gate/delivery scalars),
 # minus delivery_lifecycle, tasks_lifecycle, delivery_gate (each lives in its
 # own delivery/task file instead), and minus qa (DERIVED on the full path).
+# `features` is NOT on that list: a feature is a work-level concept on both
+# layouts, so the key is present either way.
 #
 # Optional `ticket_ref` scalar (top-level, both layouts): links this work to
 # an external tracker item ({connector-stem}:{external-id}, e.g.
@@ -175,6 +186,49 @@ interview:
       name: Priority
       state: Pending
       updated: --
+
+# [A] one entry per feature, in id order. Created by aid-define at feature
+#     decomposition (one entry per `### Feature NNN` section it appends to
+#     REQUIREMENTS.md § 11) and updated by aid-specify as each feature
+#     advances. Present on BOTH layouts -- a feature is a work-level concept,
+#     so this key is never omitted for a full multi-delivery work.
+#
+#     A feature is a SECTION, not a folder: `id` identifies
+#     `REQUIREMENTS.md § 11 ### Feature NNN`, and there is no
+#     features/feature-NNN/ directory and no per-feature SPEC.md to point at.
+#     Ids are never reused or renumbered -- a withdrawn feature keeps its
+#     entry with `withdrawn: true` so that every citation of it still
+#     resolves, and the number is not handed to a later feature.
+#
+#     `state` and `grade` describe that section's `#### Technical
+#     Specification` -- the part aid-specify fills. `sections` is the
+#     per-technical-section progress aid-specify tracks while it works
+#     through The Loop; it is the declared home for that tracking and is
+#     legitimately empty until aid-specify has run.
+#
+#   id:       '001'.. -- quoted, so a leading zero survives the YAML read
+#   name:     short slug; the §11 section title is authoritative
+#   state:    Pending | In Discussion | Spike Needed | Blocked | Ready
+#   grade:    {grade} | Pending
+#   qa_count: integer
+#   withdrawn: true -- omit the key entirely for a live feature
+#   sections[].state: Pending | In Discussion | Complete
+features: []
+
+# [A] appended by aid-describe / aid-define as the interview and its
+#     cross-reference pass proceed. Append-only, newest LAST. Distinct from
+#     `lifecycle_history`, which records PHASE transitions and gates: this
+#     records what happened INSIDE the interview -- a question round, a
+#     stakeholder comment pass, a quality check, a cross-reference cycle.
+#
+#     Declared because the alternative is losing it. It lived under a
+#     `### Review History` heading inside the legacy markdown `## Interview State`
+#     section with no key of its own, which made it invisible to the schema and
+#     mergeable into `interview.sections` by anything reading tables from that
+#     range. A table the schema does not name is still data.
+#
+#   - date / event / outcome / notes
+review_history: []
 
 # [A] written by the orchestrator on the work's active branch (single
 #     writer). Append-only audit trail of phase transitions and gate
