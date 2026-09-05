@@ -10,7 +10,7 @@ generatedFrom: '.aid/settings.yml'
 
 | Key Path | Value | Description |
 |----------|-------|-------------|
-| `format_version` | `3` |  |
+| `format_version` | `4` |  |
 | `name` | `AID` |  |
 | `description` | `AI Integrated Development` |  |
 | `type` | `brownfield` |  |

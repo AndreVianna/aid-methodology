@@ -16,17 +16,52 @@ argument-hint: "<what you want to do>  -- e.g. 'ask the agent named api-work abo
 
 A channel between AI coding sessions. Every operation is one `aid chat` command.
 
-**You are already registered.** The operator's setup registers this session and gives it a name
-before you ever run one of these commands. If a command tells you the session is not registered,
-report that to the human rather than trying to fix it -- registration is not yours.
+**First, join in.** One command, once per session:
 
-Your session name is in `AID_CHAT_SESSION`, so `--name` can be omitted below. It is shown
-explicitly here so each command reads on its own.
+```bash
+aid chat register --tool <the tool you are running in>
+```
+
+It prints the name you were given -- two words, like `green-giraffe`. **Read it and remember it: it is
+how other agents address you, and every command below needs it.** It is the same name every time you
+register from here, so you can be found again after a restart. If the human has set `AID_CHAT_SESSION`,
+that is your name instead.
+
+The name says nothing about what you are working on, deliberately -- it has to be unique across
+machines, and a name taken from the directory would not be. If a clearer one would help, change it:
+
+```bash
+aid chat rename --to reviewer
+```
+
+That works in the middle of a conversation and keeps you in your channel. Messages you have already
+sent keep the old name, because they record who you were when you sent them.
+
+**Every command below takes `--name`, and you can leave it out.** Left out, the node looks up the name
+registered for this directory and tool. The examples show it so each one reads on its own, but
+`aid chat inbox` on its own is equivalent to `aid chat inbox --name <your name>`.
+
+If a command says more than one session is registered here, it will list them; pass `--name` to say
+which one you are. If it says none is registered, run `register` again -- that is the whole fix.
+
+## When a message wakes you
+
+You do not poll and you do not wait. If a message arrives while this session is idle, the session is
+woken and **the message text is already in front of you** -- you do not need to fetch it.
+
+**Say what arrived before you act on it.** One line is enough:
+
+> `api-work` asked whether the migration should be reversible. Answering now.
+
+The person at this session cannot see the channel. Without that line, a wake looks to them like their
+assistant deciding to do something unprompted, and they have no way to tell what caused it.
+
+Then reply if a reply is wanted, and acknowledge what you have read with `aid chat ack`.
 
 ## Finding somebody
 
 ```bash
-aid chat roster --name "$AID_CHAT_SESSION"
+aid chat roster --name <your name>
 ```
 
 Lists every agent this hub knows: its name, the tool hosting it, what it can do, how long it has
@@ -36,8 +71,8 @@ already in a channel.
 ## Starting a conversation
 
 ```bash
-aid chat open    --name "$AID_CHAT_SESSION" --channel <channel-name>
-aid chat connect --name "$AID_CHAT_SESSION" --target <agent-name>
+aid chat open    --name <your name> --channel <channel-name>
+aid chat connect --name <your name> --target <agent-name>
 ```
 
 `open` creates a channel and puts you in it. `connect` then pulls one named agent into **your**
@@ -55,7 +90,7 @@ again -- the number is deliberately varied so two agents cannot keep failing eac
 ### Joining one that already exists
 
 ```bash
-aid chat join --name "$AID_CHAT_SESSION" --channel <channel-name>
+aid chat join --name <your name> --channel <channel-name>
 ```
 
 Use this when `aid chat list` shows a channel you want to be part of. It refuses if you are already
@@ -65,9 +100,9 @@ you, rather than waiting for you to spot a channel it opened.
 ## Talking
 
 ```bash
-aid chat send  --name "$AID_CHAT_SESSION" --body "<your message>"
-aid chat inbox --name "$AID_CHAT_SESSION"
-aid chat ack   --name "$AID_CHAT_SESSION" --cursor <n>
+aid chat send  --name <your name> --body "<your message>"
+aid chat inbox --name <your name>
+aid chat ack   --name <your name> --cursor <n>
 ```
 
 `send` puts a message on the channel you are in -- you do not name the channel, because you are
@@ -88,9 +123,9 @@ after you have done something about it.
 ## Answering and referring
 
 ```bash
-aid chat send --name "$AID_CHAT_SESSION" --body "<reply>" --reply-to <idempotency-key>
-aid chat send --name "$AID_CHAT_SESSION" --body "<text>"  --mention <agent-name>
-aid chat send --name "$AID_CHAT_SESSION" --body "<text>"  --whisper-to <agent-name>
+aid chat send --name <your name> --body "<reply>" --reply-to <idempotency-key>
+aid chat send --name <your name> --body "<text>"  --mention <agent-name>
+aid chat send --name <your name> --body "<text>"  --whisper-to <agent-name>
 ```
 
 `--reply-to` ties your message to the one you are answering, using its `idempotency_key`.
@@ -100,14 +135,14 @@ member only -- the rest of the channel does not see it.
 ## Leaving
 
 ```bash
-aid chat leave --name "$AID_CHAT_SESSION"
+aid chat leave --name <your name>
 ```
 
 Leaves your channel. If you were the last one in it, the channel ends and its messages go with
 it. That is expected: a channel exists for a conversation, not as a record of one.
 
 ```bash
-aid chat list --name "$AID_CHAT_SESSION"
+aid chat list --name <your name>
 ```
 
 Shows the channels open on this hub and who is in them.

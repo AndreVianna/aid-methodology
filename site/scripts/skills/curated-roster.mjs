@@ -30,6 +30,9 @@ export const SKILL_GROUPS = [
     group: 'Support',
     skills: [
       { name: 'aid-config' },
+      // Filed with the ticket skills for the same reason: an on-demand utility belonging to no
+      // pipeline phase and no verb family, so it has no shortcut-catalog row to be found through.
+      { name: 'aid-chat' },
       { name: 'aid-set-connector' },
       { name: 'aid-unset-connector' },
       { name: 'aid-read-ticket' },
