@@ -84,6 +84,39 @@ export function ownInterpreter({ quoteStyle = 'none' } = {}) {
 //
 // The host runs a stop hook with the session's own working directory as the cwd, which is the same
 // directory the session registered from, which is why both sides land on the same name.
+// The name this working directory goes by, ASKED OF THE NODE.
+//
+// Deriving it locally was correct only while the name WAS the directory basename. Once a name can be
+// minted or renamed, a derived name is simply wrong: the adapter would arm a wait for `demo-api` while
+// the session is registered as `alice`, and the wake would never find it. The node holds `cwd` on the
+// session row, so it can answer, and asking costs one loopback request inside a wait that already
+// makes two.
+export async function resolveSessionName(tool = null, timeoutMs = 3000) {
+    if (process.env.AID_CHAT_SESSION) return process.env.AID_CHAT_SESSION;
+    const base = hubBaseUrl();
+    if (!base) return null;
+    const ac = new AbortController();
+    const timer = setTimeout(() => ac.abort(), timeoutMs);
+    try {
+        // The tool is sent because an adapter KNOWS which host it is: two hosts started from one
+        // folder are two sessions, and resolving without the tool would pick whichever registered last.
+        const q = new URLSearchParams({ cwd: process.cwd() });
+        if (tool) q.set('tool', tool);
+        const url = `${base}/session/name?${q}`;
+        const r = await fetch(url, { signal: ac.signal });
+        if (!r.ok) return null;
+        const body = await r.json();
+        return body && body.name ? body.name : null;
+    } catch {
+        // A hook that cannot reach the node has nothing to wait on anyway; the caller exits quietly.
+        return null;
+    } finally {
+        clearTimeout(timer);
+    }
+}
+
+// Kept for the directory part of a minted name and for the counter-file key, which needs SOMETHING
+// stable before the node has been asked anything. It is no longer the session's identity.
 export function defaultSessionName() {
     if (process.env.AID_CHAT_SESSION) return process.env.AID_CHAT_SESSION;
     const base = (process.cwd().split(/[\\/]/).filter(Boolean).pop() || 'session')
@@ -315,7 +348,7 @@ export function renderWakeText({ kind, messages = [], channel = null, ackHint = 
             'Another agent asked to talk with you. You are now a member of that channel.',
             youAre,
             inboxHint ? `To see anything already said: ${inboxHint}` : '',
-
+            replyHint ? `To say something: ${replyHint}` : '',
         ].filter(Boolean).join('\n');
     }
     if (!messages.length) return '';
@@ -327,7 +360,7 @@ export function renderWakeText({ kind, messages = [], channel = null, ackHint = 
         '',
         youAre,
         'Do not stop yet. Consider whether this needs a reply, and reply if it does.',
-
+        replyHint ? `Reply with: ${replyHint}` : '',
         ackHint ? `Acknowledge with: ${ackHint}` : '',
     ].filter(Boolean).join('\n');
 }

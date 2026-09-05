@@ -26,7 +26,7 @@
 //   node <this file> --name <session> --host-timeout <seconds>
 
 import {
-    adapterGuardMs, armOnce, defaultSessionName, hostTimeoutFromArgs, readHostPayload, renderWakeText,
+    adapterGuardMs, armOnce, defaultSessionName, resolveSessionName, hostTimeoutFromArgs, readHostPayload, renderWakeText,
     wakeHints, shellSafePath,
 } from './common.mjs';
 
@@ -60,7 +60,13 @@ function argValue(argv, flag) {
 // so the path alone is the command.
 async function main() {
     const argv = process.argv.slice(2);
-    const name = argValue(argv, '--name') || defaultSessionName();
+    // Asked of the node rather than derived: a minted or renamed session's name is not its directory.
+    // With no name resolvable there is no registered session here, so there is nothing to wait for.
+    const name = argValue(argv, '--name') || await resolveSessionName('cursor');
+    if (!name) {
+        process.stdout.write('{}\n');
+        return 0;
+    }
     const hostTimeoutSec = hostTimeoutFromArgs(argv);
 
     if (!name) {

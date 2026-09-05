@@ -19,7 +19,7 @@
 //   node <this file> --name <session> --host-timeout <seconds>
 
 import {
-    adapterGuardMs, armOnce, defaultSessionName, clearOwnCount, hostTimeoutFromArgs,
+    adapterGuardMs, armOnce, defaultSessionName, resolveSessionName, clearOwnCount, hostTimeoutFromArgs,
     readHostPayload, readOwnCount, renderWakeText,
     wakeHints, writeOwnCount,
 } from './common.mjs';
@@ -45,7 +45,13 @@ function argValue(argv, flag) {
 // `ownInterpreter()`, which reads the running process rather than the environment.
 async function main() {
     const argv = process.argv.slice(2);
-    const name = argValue(argv, '--name') || defaultSessionName();
+    // Asked of the node rather than derived: a minted or renamed session's name is not its directory.
+    // With no name resolvable there is no registered session here, so there is nothing to wait for.
+    const name = argValue(argv, '--name') || await resolveSessionName('claude-code');
+    if (!name) {
+        process.stdout.write('{}\n');
+        return 0;
+    }
     const hostTimeoutSec = hostTimeoutFromArgs(argv);
 
     if (!name) {

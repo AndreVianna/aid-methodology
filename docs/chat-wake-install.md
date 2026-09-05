@@ -43,15 +43,23 @@ Before any of the below matters, each session needs an identity:
 aid chat register --tool cursor        # run this from the session's own working directory
 ```
 
-It prints the name it bound, **derived from that directory**. Two sessions in two repositories get two
-names with no configuration; two sessions in the SAME repository need `--name` or `AID_CHAT_SESSION` to
-tell them apart.
+It prints the name it bound — something like `green-giraffe` or `proud-thistle`, minted for you.
 
-The name is derived rather than random because it has to be **stable**: after a restart, a session
-re-registers from the same directory, gets the same name, and is put back in the channel it was in.
+The name is **random rather than descriptive**, and that is a trade. A directory-based name would tell
+you what the session is working on, but it collides: every checkout has a `src`, two machines with the
+same project both produce `api`, and one folder can hold both Claude Code and Cursor. A minted name is
+opaque and unique, and `aid chat rename --to <name>` is one command away when the opacity bites:
 
-**This is why the hook command below carries no `--name`.** It derives the same name the session
-registered under, so one hook line serves every session on the machine — which is what you want,
+```bash
+aid chat rename --to reviewer        # works mid-conversation; the channel is kept
+```
+
+It is **stable**: the node remembers which name belongs to this directory *and this tool*, so a session
+that restarts re-registers under the same name and is put back in the channel it was in. Two tools in
+one folder get two names; two sessions of the *same* tool in one folder need `--name`.
+
+**This is why the hook command below carries no `--name`.** The adapter asks the node which name this
+directory goes by, so one hook line serves every session on the machine — which is what you want,
 because a host's hook configuration is per-tool, not per-session.
 
 ## The one number that matters

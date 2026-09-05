@@ -478,7 +478,12 @@ _verbs_in() { grep -oE '^aid chat [a-z-]+' "$1" | awk '{print $3}' | sort -u | t
 # that must be reachable from the surface the session can see. FR-7.3's list originally omitted it,
 # which made FR-2.1 unimplementable by an agent -- the one place in this work where two requirements
 # contradicted each other. FR-7.3 was amended rather than the skill trimmed.
-permitted="ack connect inbox join leave list open register roster send"
+# `rename` is here for the same reason as `register`, and the line between them and the operator verbs
+# is WHOSE state the verb changes. Registering and renaming change the CALLER'S OWN identity, which
+# FR-2.1c gives a session the right to do; `evict`, `retention` and `audit` change or read OTHER
+# sessions' state, which is why they stay out (ID-11). A session that cannot rename itself is stuck
+# with an opaque minted name it was never asked about.
+permitted="ack connect inbox join leave list open register rename roster send"
 assert_eq "$(_verbs_in "$SKILL")" "$permitted" "WK21 the canonical skill's verb list is exactly what the surface boundary permits"
 
 # Cross-checked against the requirement text itself, so the list above cannot drift away from the

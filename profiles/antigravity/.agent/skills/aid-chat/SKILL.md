@@ -22,15 +22,27 @@ A channel between AI coding sessions. Every operation is one `aid chat` command.
 aid chat register --tool <the tool you are running in>
 ```
 
-It prints the name you were given. That name is **derived from the directory you are working in**, so
-it is the same every time you run it from here -- which is what lets you be found again after a
-restart. If the human has set `AID_CHAT_SESSION`, that is your name instead.
+It prints the name you were given -- two words, like `green-giraffe`. **Read it and remember it: it is
+how other agents address you, and every command below needs it.** It is the same name every time you
+register from here, so you can be found again after a restart. If the human has set `AID_CHAT_SESSION`,
+that is your name instead.
 
-**Every command below takes `--name`, and you can leave it out.** Left out, it derives the same name
-`register` gave you. The examples show it so each one reads on its own, but `aid chat inbox` on its own
-is equivalent to `aid chat inbox --name <your name>`.
+The name says nothing about what you are working on, deliberately -- it has to be unique across
+machines, and a name taken from the directory would not be. If a clearer one would help, change it:
 
-If a command tells you the session is not registered, run `register` again -- that is the whole fix.
+```bash
+aid chat rename --to reviewer
+```
+
+That works in the middle of a conversation and keeps you in your channel. Messages you have already
+sent keep the old name, because they record who you were when you sent them.
+
+**Every command below takes `--name`, and you can leave it out.** Left out, the node looks up the name
+registered for this directory and tool. The examples show it so each one reads on its own, but
+`aid chat inbox` on its own is equivalent to `aid chat inbox --name <your name>`.
+
+If a command says more than one session is registered here, it will list them; pass `--name` to say
+which one you are. If it says none is registered, run `register` again -- that is the whole fix.
 
 ## Finding somebody
 

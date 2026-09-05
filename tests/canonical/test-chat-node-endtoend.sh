@@ -349,8 +349,15 @@ assert_eq "$arrived" "True" "E2E14 the message sent during the outage is deliver
 # the product ever set. Following the skill exactly produced an empty name and an error, and every
 # test passed anyway because every test passed `--name` explicitly. Nothing had walked in cold.
 #
-# The name is now DERIVED from the working directory when none is given: stable across restarts, which
-# reattachment needs, and distinct per repository, which is the objective's own case.
+# The name is MINTED as `<adjective>-<noun>` when none is given, and looked up from the node afterwards.
+# It is deliberately NOT the working directory: a basename collides within a machine (every checkout
+# has a `src`), collides ACROSS machines almost by construction (two people with the same project both
+# produce `api`, and the federated roster then shows one name for two sessions), and cannot tell two
+# hosts apart when both are started from one folder.
+#
+# So what is asserted here is not what the name IS -- it is random -- but the three properties the rest
+# of the product depends on: it is stable across a restart, it is distinct per (directory, tool), and
+# every later verb including the WAKE finds it without being told it.
 export -n AID_CHAT_SESSION 2>/dev/null || true
 unset AID_CHAT_SESSION
 mkdir -p "${_TMPD}/proj-api" "${_TMPD}/proj-web"
@@ -360,35 +367,80 @@ _CI() { ( cd "$1" && env AID_CHAT_RUNTIME="${_TMPD}/A" AID_CHAT_STORE="${_TMPD}/
 
 reg_a="$(_CI "${_TMPD}/proj-api" chat register --tool cursor 2>/dev/null)"
 assert_eq "$(printf '%s' "$reg_a" | _j "d['ok']")" "True" "E2E17 a session registers with no --name and no environment variable"
-_CI "${_TMPD}/proj-web" chat register --tool claude-code >/dev/null 2>&1
+name_a="$(printf '%s' "$reg_a" | _j "d['name']")"
+assert_eq "$(printf '%s' "$reg_a" | _j "d['minted']")" "True" "E2E17 and the node reports that it minted the name"
 
-# The names must be the DIRECTORIES, which is what makes them predictable enough to use.
-seen="$(_CI "${_TMPD}/proj-api" chat roster 2>/dev/null | _j "sorted(a['name'] for a in d['agents'] if a['name'].startswith('proj-'))")"
-assert_eq "$seen" "['proj-api', 'proj-web']" "E2E17 each session is named for the repository it works in, so two repositories are two sessions"
+reg_b="$(_CI "${_TMPD}/proj-web" chat register --tool claude-code 2>/dev/null)"
+name_b="$(printf '%s' "$reg_b" | _j "d['name']")"
 
-# And every later verb finds the same name without being told it.
-_CI "${_TMPD}/proj-api" chat open --channel onboard >/dev/null 2>&1
-conn="$(_CI "${_TMPD}/proj-api" chat connect --target proj-web 2>/dev/null)"
-assert_eq "$(printf '%s' "$conn" | _j "(d['ok'], d['connected'])")" "(True, 'proj-web')" \
-    "E2E17 open and connect work with no --name: the derived name is the same one register bound"
-_CI "${_TMPD}/proj-api" chat send --body 'cold start works' >/dev/null 2>&1
-got="$(_CI "${_TMPD}/proj-web" chat inbox 2>/dev/null | _j "[m['body'] for m in d['messages']]")"
+# The SHAPE is asserted, not the value: two lowercase words joined by a hyphen. A name is something one
+# agent types at another, so it has to be sayable.
+shape="$(printf '%s\n%s\n' "$name_a" "$name_b" | grep -cE '^[a-z]+-[a-z]+$' || true)"
+assert_eq "$shape" "2" "E2E17 each minted name is <adjective>-<noun>: two lowercase words, one hyphen"
+if [[ "$name_a" != "$name_b" ]]; then
+    pass "E2E17 two directories get two distinct names"
+else
+    fail "E2E17 two directories get two distinct names (both '${name_a}')"
+fi
+# NOT the directory basename, which is the whole point of minting.
+if [[ "$name_a" == "proj-api" || "$name_b" == "proj-web" ]]; then
+    fail "E2E17 the name is not the directory basename"
+else
+    pass "E2E17 the name is not the directory basename"
+fi
+
+# THE CASE THAT MOTIVATED THIS: two hosts started from ONE folder are two sessions. Keyed on directory
+# alone, the second `register` REATTACHED to the first one's session -- same name, same conversation id,
+# one identity silently shared by two agents.
+same_dir="$(_CI "${_TMPD}/proj-api" chat register --tool claude-code 2>/dev/null)"
+sd_name="$(printf '%s' "$same_dir" | _j "d['name']")"
+if [[ -n "$sd_name" && "$sd_name" != "$name_a" ]]; then
+    pass "E2E17 a second TOOL in the same directory gets its own identity, not the first one's"
+else
+    fail "E2E17 a second TOOL in the same directory gets its own identity (got '${sd_name}' vs '${name_a}')"
+fi
+assert_eq "$(printf '%s' "$same_dir" | _j "d['reattached']")" "False" \
+    "E2E17 and it registers fresh rather than reattaching to the other tool's session"
+
+# With two sessions in one directory a nameless verb cannot choose, and must SAY SO rather than pick.
+# Picking is the same defect as keying on the directory: one agent acting as another.
+amb="$( _CI "${_TMPD}/proj-api" chat list 2>&1 >/dev/null )"
+assert_output_contains "$amb" "more than one session is registered" \
+    "E2E17 a nameless verb in a two-session directory refuses instead of guessing"
+assert_output_contains "$amb" "$name_a" "E2E17 and names the candidates it could not choose between"
+
+# Every later verb finds the name without being told it, where there is exactly one session.
+_CI "${_TMPD}/proj-web" chat open --channel onboard >/dev/null 2>&1
+conn="$(_CI "${_TMPD}/proj-web" chat connect --target "$name_a" 2>/dev/null)"
+assert_eq "$(printf '%s' "$conn" | _j "(d['ok'], d['connected'])")" "(True, '${name_a}')" \
+    "E2E17 open and connect work with no --name: the node resolves the same name register bound"
+_CI "${_TMPD}/proj-web" chat send --body 'cold start works' >/dev/null 2>&1
+got="$(_CI "${_TMPD}/proj-api" chat inbox --name "$name_a" 2>/dev/null | _j "[m['body'] for m in d['messages']]")"
 assert_eq "$got" "['cold start works']" "E2E17 and so do send and inbox, from either side"
 
-# Stability is the property reattachment depends on: the same directory must give the same name.
+# Stability is the property reattachment depends on: the same directory and tool must give the same
+# name after a restart, or a returning session loses the channel it was in.
 again="$(_CI "${_TMPD}/proj-web" chat register --tool claude-code 2>/dev/null)"
-assert_eq "$(printf '%s' "$again" | _j "(d['reattached'], d['channel'])")" "(True, 'onboard')" \
-    "E2E17 re-registering from the same directory reattaches: the derived name is stable across a restart"
+assert_eq "$(printf '%s' "$again" | _j "(d['reattached'], d['name'], d['channel'])")" \
+    "(True, '${name_b}', 'onboard')" \
+    "E2E17 re-registering from the same directory reattaches under the SAME minted name"
 
-# An explicit name still wins, for two sessions sharing one repository.
-named="$(_CI "${_TMPD}/proj-api" chat register --name a-second-one --tool cursor 2>/dev/null)"
-assert_eq "$(printf '%s' "$named" | _j "d['ok']")" "True" "E2E17 an explicit --name still overrides, for two sessions in one repository"
-# AND THE WAKE, with no name in the hook line -- which is what the install document now tells an
-# operator to write, because a host's hook configuration is per-tool and cannot carry a per-session
-# name. The adapter must therefore derive the SAME name the CLI derived, from the same directory. It
-# did not, until this was checked: removing the name from the documented line would have produced a
-# session that registered fine and never woke.
-_CI "${_TMPD}/proj-api" chat send --body 'woken with no name anywhere' >/dev/null 2>&1
+# Renaming, which is the answer to a minted name being opaque.
+ren="$(_CI "${_TMPD}/proj-web" chat rename --to friendly-name 2>/dev/null)"
+assert_eq "$(printf '%s' "$ren" | _j "(d['ok'], d['name'], d['channel'])")" "(True, 'friendly-name', 'onboard')" \
+    "E2E17 a session renames itself mid-conversation and keeps its channel"
+_CI "${_TMPD}/proj-web" chat send --body 'after the rename' >/dev/null 2>&1
+after="$(_CI "${_TMPD}/proj-api" chat inbox --name "$name_a" 2>/dev/null | _j "[(m['from'], m['body']) for m in d['messages']]")"
+assert_output_contains "$after" "friendly-name" "E2E17 messages after a rename carry the new name"
+assert_output_contains "$after" "'after the rename'" \
+    "E2E17 and arrive immediately -- a rename restarts the speaker sequence, so nothing is held back"
+
+# AND THE WAKE, with no name in the hook line -- which is what the install document tells an operator to
+# write, because a host's hook configuration is per-tool and cannot carry a per-session name. The
+# adapter must resolve the SAME name, which it can only do by asking the node: a minted name is not
+# derivable from the directory, so an adapter that derived one would arm a wait for a session that does
+# not exist and never wake.
+_CI "${_TMPD}/proj-api" chat send --name "$name_a" --body 'woken with no name anywhere' >/dev/null 2>&1
 sleep 0.4
 woke_nameless="$( cd "${_TMPD}/proj-web" && echo '{"session_id":"cold","stop_hook_active":false}' \
     | env AID_CHAT_RUNTIME="${_TMPD}/A" AID_CHAT_STORE="${_TMPD}/A/chat.db" \
@@ -399,11 +451,14 @@ try:
     d=json.load(sys.stdin)
 except Exception:
     print('no-json'); raise SystemExit
-print('yes' if 'woken with no name anywhere' in d.get('reason','') else 'no')")"
+r = d.get('reason','')
+print('yes' if 'woken with no name anywhere' in r else 'no')")"
 assert_eq "$carried" "yes" \
-    "E2E17 the adapter derives the same name from the same directory, so the documented hook line needs none"
+    "E2E17 the adapter resolves the minted name from the node, so the documented hook line needs none"
+assert_output_contains "$woke_nameless" "friendly-name" \
+    "E2E17 and the wake tells the woken turn the name it now goes by, including after a rename"
 
-_CI "${_TMPD}/proj-api" chat leave >/dev/null 2>&1
+_CI "${_TMPD}/proj-api" chat leave --name "$name_a" >/dev/null 2>&1
 _CI "${_TMPD}/proj-web" chat leave >/dev/null 2>&1
 
 # --- E2E16: every chat call is bounded --------------------------------------

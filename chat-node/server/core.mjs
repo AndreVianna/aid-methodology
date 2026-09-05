@@ -102,9 +102,187 @@ export function thisMachine() {
 // ---------------------------------------------------------------------------
 // Sessions: registration, liveness, reattachment.
 
-export function register(db, { name, tool, cwd, capabilities = {}, hostConversationId = null }) {
+// --- Naming -----------------------------------------------------------------
+//
+// A name is `<adjective>-<noun>` -- `green-giraffe`, `proud-thistle` -- minted at random.
+//
+// It is NOT derived from the working directory, and three separate things rule that out. A directory
+// basename collides constantly within one machine, where every checkout has a `src`. It collides
+// ACROSS machines almost by construction, since two developers with the same project laid out the same
+// way both produce `api`, and the federated roster then shows two identical names for two distinct
+// sessions. And it says nothing about WHICH session it is when two tools run from one folder, which is
+// an ordinary thing to do.
+//
+// A random name is opaque -- `proud-thistle` tells you nothing about what it is working on -- and that
+// is the accepted cost. Uniqueness and memorability are worth more here: a name is something an agent
+// has to type at another agent, and `aid chat rename` is one command away when the opacity bites.
+//
+// WHAT UNIQUENESS MEANS EXACTLY. `session.name` is UNIQUE, so a collision cannot happen on one hub:
+// minting retries until it finds a free name. Across hubs it is improbable rather than impossible --
+// roughly 11,000 combinations, so a handful of sessions collide with vanishing probability, and the
+// addressing layer already treats a bare name as machine-qualifiable (`machine/name`) precisely
+// because "the same short name on two machines is two distinct sessions" was always true.
+const NAME_ADJECTIVES = [
+    'amber', 'ancient', 'autumn', 'blue', 'bold', 'brave', 'bright', 'brisk', 'calm', 'candid',
+    'cheerful', 'clever', 'cobalt', 'cool', 'coral', 'cosmic', 'crimson', 'crisp', 'curious', 'daring',
+    'dawn', 'deep', 'deft', 'diligent', 'eager', 'early', 'easy', 'elder', 'electric', 'emerald',
+    'fair', 'fearless', 'fleet', 'fond', 'frank', 'gentle', 'giddy', 'glad', 'golden', 'grand',
+    'green', 'happy', 'hardy', 'hidden', 'honest', 'humble', 'indigo', 'ivory', 'jolly', 'keen',
+    'kind', 'lively', 'lofty', 'loyal', 'lucid', 'lucky', 'merry', 'mighty', 'mild', 'modest',
+    'noble', 'olive', 'patient', 'placid', 'polite', 'proud', 'quick', 'quiet', 'rapid', 'ready',
+    'restless', 'rosy', 'royal', 'ruby', 'rustic', 'sage', 'scarlet', 'sharp', 'silent', 'silver',
+    'sleek', 'slender', 'smart', 'smooth', 'snug', 'solemn', 'solid', 'spry', 'steady', 'stout',
+    'sunny', 'swift', 'teal', 'tidy', 'tranquil', 'true', 'valiant', 'violet', 'vivid', 'warm',
+    'watchful', 'willing', 'wise', 'witty', 'yellow', 'zesty',
+];
+
+const NAME_NOUNS = [
+    'acorn', 'anchor', 'antler', 'anvil', 'arbor', 'arrow', 'badger', 'basin', 'beacon', 'beetle',
+    'bison', 'blossom', 'boulder', 'branch', 'bridge', 'brook', 'burrow', 'canyon', 'cedar', 'chair',
+    'cinder', 'cliff', 'clover', 'comet', 'compass', 'coral', 'cove', 'crane', 'crest', 'crow',
+    'dolphin', 'donkey', 'dragon', 'ember', 'falcon', 'fathom', 'fennel', 'fern', 'ferry', 'fjord',
+    'forge', 'fossil', 'fountain', 'garnet', 'gazelle', 'geyser', 'giraffe', 'glacier', 'glade',
+    'granite', 'grotto', 'harbor', 'hazel', 'heron', 'hollow', 'ibis', 'island', 'jackal', 'jasmine',
+    'kestrel', 'lagoon', 'lantern', 'ledger', 'lemur', 'lichen', 'lizard', 'lodge', 'lupine', 'magpie',
+    'manor', 'maple', 'marble', 'meadow', 'mesa', 'minnow', 'mongoose', 'moth', 'nectar', 'nettle',
+    'oriole', 'osprey', 'otter', 'panther', 'pebble', 'pelican', 'pillar', 'pinion', 'plateau',
+    'quarry', 'quail', 'quartz', 'raven', 'reef', 'ridge', 'river', 'rookery', 'saffron', 'sparrow',
+    'spruce', 'summit', 'thicket', 'thistle', 'tundra', 'valley', 'walrus', 'willow', 'yarrow',
+];
+
+export function mintSessionName(attempt = 0) {
+    const adj = NAME_ADJECTIVES[Math.floor(Math.random() * NAME_ADJECTIVES.length)];
+    const noun = NAME_NOUNS[Math.floor(Math.random() * NAME_NOUNS.length)];
+    // The numeric tail appears only after random draws have repeatedly lost, so the common case stays
+    // clean and the pathological one still terminates.
+    return attempt > 0 ? `${adj}-${noun}-${attempt + 1}` : `${adj}-${noun}`;
+}
+
+// The name a session in THIS directory under THIS tool already goes by, or null.
+//
+// Keyed on the tool as well as the directory, and that is a correctness matter rather than a
+// refinement: keyed on directory alone, starting Claude Code and Cursor from one folder made the
+// second one REATTACH to the first one's session -- same name, same conversation id, one identity
+// silently shared by two agents.
+//
+// Two sessions of the SAME tool in the SAME directory still cannot be told apart here, and that is a
+// stated limit rather than a solved problem: pass `--name`, or set `AID_CHAT_SESSION`.
+// The tool is OPTIONAL, because only `register` is told one -- `aid chat send` is not. So:
+//
+//   tool given     -> the session in this directory under that tool
+//   tool omitted    -> the session in this directory, IF THERE IS EXACTLY ONE
+//   two candidates  -> no answer, and the candidates are returned so the caller can say which
+//
+// Guessing when there are two would silently make one agent speak as another, which is the same defect
+// as keying on the directory alone; refusing with the list is the only honest third case.
+export function namesForCwd(db, cwd, tool = null) {
+    if (!cwd) return { name: null, candidates: [] };
+    const rows = tool
+        ? db.prepare('SELECT name, tool FROM session WHERE cwd = ? AND tool = ? ORDER BY registered_at DESC').all(cwd, tool)
+        : db.prepare('SELECT name, tool FROM session WHERE cwd = ? ORDER BY registered_at DESC').all(cwd);
+    if (rows.length === 1) return { name: rows[0].name, candidates: rows };
+    // More than one under a GIVEN tool means two sessions of that tool in one directory, which this
+    // cannot resolve either -- the stated limit, reported rather than guessed at.
+    return { name: null, candidates: rows };
+}
+
+export function nameForCwdTool(db, cwd, tool) {
+    return namesForCwd(db, cwd, tool).name;
+}
+
+// Renaming is a rename of the SESSION and its MEMBERSHIP, and deliberately not of history.
+//
+// `message.sender_name` is left alone. The log records who said a thing at the time they said it, and
+// that stays true after a rename; rewriting it would also break the idempotency and per-speaker
+// uniqueness keys that include the sender name. So the roster shows the new name and the transcript
+// keeps the old one, which is the honest reading of both.
+export function rename(db, { name, to }) {
     if (!name || typeof name !== 'string') return no('bad_request', 'name is required');
+    if (!to || typeof to !== 'string') return no('bad_request', 'to is required');
+    if (!/^[A-Za-z0-9._-]{1,64}$/.test(to)) {
+        return no('bad_request', 'a name may hold letters, digits, dot, underscore and hyphen, up to 64');
+    }
+    if (to === name) return ok({ renamed: false, name, reason: 'already_named_that' });
+
+    const self = db.prepare('SELECT * FROM session WHERE name = ?').get(name);
+    if (!self) return no(REFUSAL.NOT_REGISTERED);
+    if (db.prepare('SELECT 1 FROM session WHERE name = ?').get(to)) {
+        return no('name_taken', `"${to}" is already registered on this machine`);
+    }
+
+    const channelRow = self.channel_id
+        ? db.prepare('SELECT name FROM channel WHERE id = ?').get(self.channel_id)
+        : null;
+
+    // LOCAL membership needs no rewrite, and it is worth being exact about why: `channel_member` holds
+    // REMOTE members only -- a local session's membership IS `session.channel_id`. An earlier version
+    // updated `channel_member` here under a comment about preventing ghost rows, which was dead code
+    // making a false claim; on this machine there is no row to update.
+    //
+    // Peers are the ones holding a `channel_member` row under the old name, so the caller replicates
+    // the change. That is returned rather than done here because core does no I/O.
+    // PER-SPEAKER ORDERING KEYS ON THE NAME, so a rename mid-sequence has to restart the sequence or
+    // it leaves a gap no message can ever fill.
+    //
+    // Readers hold an expected next `sender_seq` per (machine, sender_name) and HOLD BACK anything
+    // ahead of it, on the sound assumption that a gap means a message still in flight. A rename breaks
+    // that assumption: renaming after saying one thing made the next message (alice, seq 2) while
+    // nothing had ever been (alice, seq 1), so the reader waited out the full gap grace on a message
+    // that had already arrived. Measured: held_back true, and the message invisible until the grace
+    // expired.
+    //
+    // The sequence continues from whatever this NAME has already said in this channel, which is right
+    // in every direction: a fresh name starts at 1, and a name renamed BACK resumes above its own
+    // earlier messages instead of colliding with them on the uniqueness key.
+    //
+    // The deeper fix is for the ordering key to be the session's stable id rather than its display
+    // name; that is a schema change across the message table, the reorder path and replication, and is
+    // recorded as debt rather than smuggled into a rename.
+    try {
+        db.exec('BEGIN IMMEDIATE');
+        db.prepare('UPDATE session SET name = ? WHERE id = ?').run(to, self.id);
+        if (self.channel_id) {
+            const prior = db.prepare(
+                `SELECT COALESCE(MAX(sender_seq), 0) AS hi FROM message
+                 WHERE channel_id = ? AND sender_machine = ? AND sender_name = ?`,
+            ).get(self.channel_id, thisMachine(), to);
+            db.prepare('UPDATE session SET next_sender_seq = ? WHERE id = ?')
+              .run(prior.hi + 1, self.id);
+        }
+        db.exec('COMMIT');
+    } catch (e) {
+        try { db.exec('ROLLBACK'); } catch { /* the failure below is the one that matters */ }
+        return no('rename_failed', String(e && e.message ? e.message : e));
+    }
+    return ok({
+        renamed: true,
+        from: name,
+        name: to,
+        channel: channelRow ? channelRow.name : null,
+    });
+}
+
+export function register(db, { name, tool, cwd, capabilities = {}, hostConversationId = null }) {
     if (!tool || typeof tool !== 'string') return no('bad_request', 'tool is required');
+    // A missing name is RESOLVED, not refused: the directory's existing name if it has one, otherwise
+    // a fresh minted one. Looking it up first is what makes a random name survive a restart.
+    let minted = false;
+    if (!name || typeof name !== 'string') {
+        name = nameForCwdTool(db, cwd, tool);
+        if (!name) {
+            // Bounded, and the bound matters: UNIQUE on session.name means minting can lose a race,
+            // and an unbounded retry would spin forever once the wordlist is exhausted.
+            for (let attempt = 0; attempt < 64; attempt += 1) {
+                const candidate = mintSessionName(attempt >= 32 ? attempt : 0);
+                if (!db.prepare('SELECT 1 FROM session WHERE name = ?').get(candidate)) {
+                    name = candidate;
+                    break;
+                }
+            }
+            if (!name) return no('name_exhausted', 'could not mint a free name for this directory');
+            minted = true;
+        }
+    }
     const caps = JSON.stringify(capabilities || {});
     const t = nowMs();
 
@@ -116,7 +294,7 @@ export function register(db, { name, tool, cwd, capabilities = {}, hostConversat
              registered_at, last_heartbeat_at)
             VALUES (?,?,?,?,?,?,?,?)`)
           .run(name, conversationId, tool, cwd || '', caps, hostConversationId, t, t);
-        return ok({ conversation_id: conversationId, reattached: false, channel: null });
+        return ok({ conversation_id: conversationId, name, minted, reattached: false, channel: null });
     }
 
     // Re-registering an existing name REATTACHES it -- but only to a channel that is still
@@ -136,6 +314,8 @@ export function register(db, { name, tool, cwd, capabilities = {}, hostConversat
         : null;
     return ok({
         conversation_id: row.conversation_id,   // unchanged: the id is the product's, and stable
+        name,
+        minted: false,
         reattached: true,
         channel: channel ? channel.name : null,
         acked_seq: row.acked_seq,

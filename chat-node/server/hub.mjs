@@ -237,6 +237,45 @@ export function makeRouter({ db, startedAt, onReady = null }) {
             capabilities: b.capabilities, hostConversationId: b.host_conversation_id || null,
         }));
     });
+    // Renaming is two replications rather than one, because a peer holds membership under a NAME: the
+    // old row has to go or it stays forever as a member that never reads and never leaves.
+    //
+    // Order matters. Leave-then-join, and if the join were sent first a peer applying them out of
+    // order could end with the old name surviving -- which is the ghost this exists to avoid.
+    routes.set('POST /session/rename', async (req, res) => {
+        const b = await readJsonBody(req);
+        const before = core.getSession(db, b && b.name);
+        const wasInChannel = !!(before && before.channel_id);
+        const r = core.rename(db, { name: b.name, to: b.to });
+        if (r.ok && r.renamed && wasInChannel && r.channel) {
+            (async () => {
+                await fed.replicateMembership(db, link, {
+                    channelName: r.channel, name: r.from, event: 'leave',
+                });
+                await fed.replicateMembership(db, link, {
+                    channelName: r.channel, name: r.name, event: 'join',
+                });
+            })().catch(() => {});
+        }
+        answer(res, r);
+    });
+
+    // What name does this working directory already go by? The adapters ask this instead of deriving
+    // the name themselves: derivation forced the name to be a pure function of the directory, and the
+    // whole point of minting is that it is not.
+    routes.set('GET /session/name', (req, res) => {
+        const q = new URL(req.url, 'http://x').searchParams;
+        const cwd = q.get('cwd') || '';
+        // The tool is part of the key. Without it, two hosts started from one folder resolve to the
+        // same session, so one of them acts under the other's identity.
+        const tool = q.get('tool') || null;
+        const r = core.namesForCwd(db, cwd, tool);
+        json(res, 200, {
+            ok: true, name: r.name, cwd, tool,
+            candidates: r.candidates.map((c) => ({ name: c.name, tool: c.tool })),
+        });
+    });
+
     routes.set('POST /session/heartbeat', async (req, res) => {
         const b = await readJsonBody(req);
         answer(res, core.heartbeat(db, b.name));

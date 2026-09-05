@@ -294,12 +294,16 @@ ps1  = open(f'{root}/bin/aid.ps1', encoding='utf-8').read()
 # case arm and to bin/aid.ps1 with its own branch, so deleting the PowerShell branch entirely still
 # reported 'in-sync'. A guard against a missing verb that cannot see half the dispatch shapes is a
 # guard that passes at exactly the wrong moment.
-bm = re.search(r'register\|heartbeat[^)]*', bash)
-pm = re.search(r"'register','heartbeat'[^)]*", ps1)
+# Anchored on the DISPATCH ITSELF rather than on two verb names happening to sit next to each other.
+# The previous anchor was the literal `register|heartbeat`, which broke the moment a verb was added
+# between them: the regex missed, the comparison reported DISPATCH-NOT-FOUND, and a guard that cannot
+# find what it compares is a guard that has stopped guarding.
+bm = re.search(r'^\s{8}([a-z|-]+)\)\n\s+shift\n\s+_cmd_chat_plane', bash, re.M)
+pm = re.search(r"\$action -in @\(([^)]*)\)", ps1)
 if not bm or not pm:
     print('DISPATCH-NOT-FOUND'); raise SystemExit
-bv = set(bm.group(0).split('|'))
-pv = set(pm.group(0).replace("'", '').split(','))
+bv = set(bm.group(1).split('|'))
+pv = set(pm.group(1).replace("'", '').replace(' ', '').split(','))
 
 # Separately dispatched: a bare `        <verb>)` arm inside the chat dispatcher, and its
 # `$action -eq '<verb>'` counterpart. Sliced to the chat command so unrelated dispatchers stay out.
@@ -340,10 +344,12 @@ uncovered="$(python3 - "${REPO_ROOT}" <<'PY'
 import re, sys
 root = sys.argv[1]
 src = open(f'{root}/bin/aid', encoding='utf-8').read()
-m = re.search(r'register\|heartbeat[^)]*', src)
+# Anchored on the dispatch structure, not on two verb names being adjacent: the literal anchor broke
+# the moment a verb was inserted between them, and reported DISPATCH-NOT-FOUND rather than a miss.
+m = re.search(r'^\s{8}([a-z|-]+)\)\n\s+shift\n\s+_cmd_chat_plane', src, re.M)
 if not m:
     print('DISPATCH-NOT-FOUND'); raise SystemExit
-verbs = sorted(set(m.group(0).split('|'))) + ['node start', 'node stop', 'node status']
+verbs = sorted(set(m.group(1).split('|'))) + ['node start', 'node stop', 'node status']
 mp = open(f'{root}/chat-node/tests/MANUAL-PROCEDURES.md', encoding='utf-8').read()
 missing = [v for v in verbs if f'chat {v}' not in mp]
 print(' '.join(missing) if missing else 'all-covered')
@@ -356,9 +362,23 @@ assert_eq "$uncovered" "all-covered" \
 # The agent-facing surface is a SKILL that omits things, and that skill is a later delivery's
 # artifact. What is checkable here is the CLI's own plane-verb set: this delivery must have added
 # exactly the roster and the connect request, and no administrative verb.
-verbs=$(grep -oE 'register\|heartbeat\|open\|join\|leave\|list\|send\|inbox\|ack\|reap\|roster\|connect' "${REPO_ROOT}/bin/aid" | head -1)
-assert_eq "$verbs" "register|heartbeat|open|join|leave|list|send|inbox|ack|reap|roster|connect" \
-    "HP19 the plane-verb set gained exactly roster and connect over delivery-001's"
+#
+# Compared as a SET against an explicit expected list, rather than as one contiguous literal string.
+# The literal form asserted that the verbs sat in a fixed ORDER as well as a fixed set, so inserting a
+# verb anywhere but the end failed the check for the wrong reason -- and the failure said the set had
+# changed shape when only its spelling had. The ratchet is unchanged in strength: an unexpected verb
+# still fails, because the expected set is written out here in full.
+verbs="$(python3 - "${REPO_ROOT}" <<'PY'
+import re, sys
+src = open(f'{sys.argv[1]}/bin/aid', encoding='utf-8').read()
+m = re.search(r'^\s{8}([a-z|-]+)\)\n\s+shift\n\s+_cmd_chat_plane', src, re.M)
+print('|'.join(sorted(m.group(1).split('|'))) if m else 'DISPATCH-NOT-FOUND')
+PY
+)"
+expected="$(printf '%s\n' ack audit connect evict heartbeat inbox join leave list open peers register \
+    rename reap retention roster send show subscribe | sort -u | paste -sd'|' -)"
+assert_eq "$verbs" "$expected" \
+    "HP19 the plane-verb set is exactly the expected one -- a new verb must be added here deliberately"
 # HP20 -- THE BOUNDARY IS THE SKILL, NOT THE CLI, and this assertion used to have that backwards.
 #
 # It listed `evict` and `retention` as sentinels for "administrative" and failed if either appeared in

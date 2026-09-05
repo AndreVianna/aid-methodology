@@ -382,6 +382,18 @@ the same, which is what this procedure is for.
 7. `... chat send --name a --body hello`
 8. `... chat subscribe --name b --host-timeout 60` — expect it to return **at once** with the pending
    message (the busy path reads before waiting), `"block_ms"` and `"basis"` present.
+8a. `... chat register --tool cursor` with **no** `--name`, from a directory where nothing is
+    registered — expect a minted `<directory>-<word>` name echoed on stderr, and the same name again
+    on a second run from the same directory. Stability is the whole point: a session that comes back
+    under a new name is a session that lost its channel.
+8b. `... chat rename --name a --to alice`, then `... chat send --name alice --body after` — expect the
+    rename to report the channel it kept, and the send to succeed. Then `... chat inbox --name b` and
+    confirm the earlier message still reads `[a]`: the transcript records who spoke at the time.
+8c. `... chat send --body x` from that directory with **no** `--name` — expect it to resolve the
+    renamed name from the node. This is the case that fails if the twin still derives the name from
+    the directory, and it fails silently by addressing a session that does not exist.
+8d. `... chat hook --tool cursor` — expect a pasteable block with both timeout numbers equal, then
+    `... chat hook --tool cursor --check` against a file you have pasted it into.
 9. `... chat subscribe --name b --host-timeout 6` — with nothing pending, expect it to block about
    1 second and return `"kind": "timeout"`. Then `--host-timeout 60` and confirm it blocks longer.
 10. `... chat show` — expect both sessions with `unread`, `idle_ms`, `stale`; channel `t` with its

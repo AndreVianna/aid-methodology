@@ -269,6 +269,58 @@ features:
 #
 #   - date / event / outcome / notes
 review_history:
+  - date: 2026-09-05
+    scope: session naming -- minted names, and renaming in progress
+    outcome: >-
+      The stakeholder rejected directory-derived session names on three grounds, all correct, and one of
+      them was a defect rather than a preference.
+      A directory basename collides ACROSS machines almost by construction -- two people with the same
+      project laid out the same way both produce `api`, and the federated roster then shows one name for
+      two distinct sessions. It cannot tell two hosts apart when both are started from one folder, which
+      is an ordinary thing to do. And `<directory>-<adjective>` was poor English with the adjective
+      trailing, on a wordlist that mixed the two parts of speech up.
+      MY OWN INTERMEDIATE DESIGN CARRIED A REAL BUG, which the stakeholder's second point exposed: the
+      name was looked up by working directory ALONE, so starting Claude Code and Cursor in one folder
+      made the second REATTACH to the first one's session -- same name, same conversation id, one
+      identity silently shared by two agents. The lookup is now keyed on (cwd, tool). Two sessions of
+      the SAME tool in one directory remain indistinguishable, and that is stated rather than solved:
+      a nameless verb REFUSES and lists the candidates instead of picking one, because picking is that
+      same defect wearing a different hat.
+      FR-2.1a/b/c: names are minted `<adjective>-<noun>` from roughly 11,000 combinations; the name is
+      LOOKED UP rather than recomputed, which is what lets a random name survive the restart that
+      FR-2.2's reattachment depends on; and `rename` changes a session's identity mid-conversation.
+      `rename` is on the AGENT-facing surface, and the line it sits on is whose state a verb changes:
+      register and rename change the caller's OWN identity, while evict, retention and audit reach
+      other sessions, which is what keeps those off it (ID-11). FR-7.3 amended accordingly.
+      Renaming leaves the TRANSCRIPT alone -- the log records who spoke at the time they spoke, and
+      rewriting it would break the idempotency and per-speaker uniqueness keys that include the sender
+      name. It does restart the speaker sequence, because per-speaker FIFO keys on the NAME: renaming
+      after one message made the next message (alice, seq 2) while nothing had ever been (alice, seq 1),
+      and the reader held it back for the full gap grace. Reproduced with held_back true, then fixed by
+      resuming from whatever the new name has already said in the channel -- which also makes renaming
+      BACK to an earlier name correct instead of a uniqueness collision. The residual coupling of
+      ordering to a mutable field is filed as W1-21.
+      FOUR DEFECTS CAME FROM MY OWN EDITS, all caught before commit. A greedy `sed` read the LAST
+      "name" in the lookup response, which was a CANDIDATE, so a two-session directory resolved
+      silently to one of them -- the exact failure the resolver exists to prevent, reintroduced by the
+      parser. The candidate list was then set inside a command substitution, so it died in the subshell
+      and turned "pick one of these two" into the flatly untrue "no session is registered here". A
+      shell expansion blanked both `replyHint` lines in the wake renderer, which WK36-WK38 caught in
+      four places. And HP19/HP24/HP25 all anchored on the literal `register|heartbeat`, so inserting
+      `rename` between them made three guards report DISPATCH-NOT-FOUND rather than compare anything;
+      all three now anchor on the dispatch structure, and HP19 compares a set against an explicit
+      expected list so a surprise verb still fails.
+      390 assertions across ten chat suites, 0 failing. E2E17 was rewritten: it had asserted the name
+      EQUALS the directory basename, a premise this change retires, and now asserts the properties that
+      actually matter -- shape, stability across restart, distinctness per (directory, tool), refusal on
+      ambiguity, and the nameless hook still waking a RENAMED session.
+    applied_to: >-
+      REQUIREMENTS.md (FR-2.1a/b/c, FR-7.3), chat-node/server/core.mjs (minting, namesForCwd, rename),
+      chat-node/server/hub.mjs (/session/rename, /session/name), chat-node/adapters/* (resolve via the
+      node), bin/aid + bin/aid.ps1 (rename verb, resolver, candidate reporting),
+      canonical/skills/aid-chat/SKILL.md + five rendered profiles, docs/chat-wake-install.md,
+      chat-node/tests/MANUAL-PROCEDURES.md, tests (E2E17 rewritten, WK21, HP19/HP24/HP25),
+      .aid/knowledge/tech-debt.md (W1-21)
   - date: 2026-09-04
     scope: onboarding friction -- the hand-written stop hook
     outcome: >-

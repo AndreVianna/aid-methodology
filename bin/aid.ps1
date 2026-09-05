@@ -263,6 +263,7 @@ function script:Show-AidUsage {
             Write-Host '                 falls back to a short value rather than inheriting any'
             Write-Host '                 platform default. --follow re-arms instead of returning.'
             Write-Host '                 Spends no model tokens: it blocks in a process, not a prompt.'
+            Write-Host 'aid chat rename  [--name <old>] --to <new>       rename a session, in progress'
             Write-Host 'aid chat hook    --tool <claude-code|cursor> [--timeout <s>] [--check]'
             Write-Host '                 print the stop-hook block to paste, with the node path, install'
             Write-Host '                 path and both timeout numbers filled in from this machine; or'
@@ -4947,14 +4948,31 @@ function script:Invoke-AidChatWaitOnce {
 # The session name, when the caller did not give one -- the PowerShell twin of
 # _aid_chat_default_name. See that function for why this exists: the rendered skill told an agent to
 # pass a variable nothing set, so following it produced an empty name and an error.
-function script:Get-AidChatDefaultName {
+# The name this working directory already goes by, ASKED OF THE NODE rather than derived here.
+#
+# The Bash twin's `_aid_chat_resolve_name`. Deriving from the directory basename was only correct while
+# the name WAS the basename; once a name can be minted or renamed, a derived name addresses the wrong
+# session. The node holds `cwd` on the session row and is the single source of truth.
+function script:Resolve-AidChatName {
     if ($env:AID_CHAT_SESSION) { return $env:AID_CHAT_SESSION }
-    $base = Split-Path -Leaf $PWD.Path
-    # Keep it to what a name may contain, so a directory with spaces or punctuation still yields a
-    # usable identity rather than a quoting problem for every later command.
-    $base = ($base -replace '[^A-Za-z0-9._-]', '-').Trim('-')
-    if (-not $base) { $base = 'session' }
-    return $base
+    $base = script:Get-AidChatBaseUrl
+    if (-not $base) { return '' }
+    try {
+        $cwd = [uri]::EscapeDataString($PWD.Path)
+        $r = Invoke-WebRequest -Uri "${base}/session/name?cwd=${cwd}" -Method GET `
+                -TimeoutSec 30 -UseBasicParsing -ErrorAction Stop
+        # The top-level `name` only. A leftmost match over the whole body finds a CANDIDATE's name
+        # when the top-level one is null, which resolves a two-session directory to one of them
+        # silently -- the same defect the Bash twin had, for the same reason.
+        $head = $r.Content
+        $cut = $head.IndexOf('"candidates"')
+        if ($cut -ge 0) { $head = $head.Substring(0, $cut) }
+        $m = [regex]::Match($head, '"name"\s*:\s*"([^"]*)"')
+        if ($m.Success) { return $m.Groups[1].Value }
+        return ''
+    } catch {
+        return ''
+    }
 }
 
 # `aid chat hook` -- the PowerShell twin. Generates the stop-hook block and checks an installed one,
@@ -4966,6 +4984,7 @@ function script:Invoke-AidChatHook {
     for ($i = 0; $i -lt $HookArgs.Count; $i++) {
         switch ($HookArgs[$i]) {
             '--tool'    { $tool = $HookArgs[$i + 1]; $i++ }
+            '--to'      { $to = $PlaneArgs[$i + 1]; $i++ }
             '--timeout' { $timeout = [int]$HookArgs[$i + 1]; $i++ }
             '--check'   { $action = 'check' }
             default {
@@ -5085,6 +5104,7 @@ function script:Invoke-AidChatPlane {
     param([string]$Verb, [string[]]$PlaneArgs)
 
     $name = ''
+    $to   = ''
     $body = ''; $channel = ''; $cursor = ''; $key = ''; $whisper = ''; $mention = ''; $tool = ''
     $replyTo = ''; $corr = ''; $target = ''; $hostTimeout = ''; $follow = $false
     $machine = ''; $peerAction = 'list'; $limit = ''; $setting = ''
@@ -5125,23 +5145,52 @@ function script:Invoke-AidChatPlane {
     if ($Verb -in @('show', 'audit', 'retention') -and -not $name) { $name = 'operator' }
     # No name given: derive one, so the skill's commands work as written and the operator's hook line
     # is identical for every session.
-    if (-not $name -and $Verb -ne 'peers') { $name = script:Get-AidChatDefaultName }
-    # `peers` is operator-facing and belongs to no session, so it is exempt from the name rule.
-    if (-not $name -and $Verb -ne 'peers') {
-        [Console]::Error.WriteLine("ERROR: aid: chat ${Verb}: --name is required (or set AID_CHAT_SESSION)")
-        return 2
+    if (-not $name -and $Verb -notin @('peers', 'register')) {
+        $name = script:Resolve-AidChatName
+        if (-not $name) {
+            [Console]::Error.WriteLine("ERROR: aid: chat ${Verb}: no session is registered for this directory.")
+            [Console]::Error.WriteLine("  Run 'aid chat register --tool <host>' first, or pass --name.")
+            return 2
+        }
     }
+    # `peers` is operator-facing and belongs to no session; `register` is the verb that MINTS a name.
+    # Both are exempt, and the block that used to repeat this refusal is gone: the resolver above
+    # already returns for every other verb, so a second identical check could never fire.
     $n = script:ConvertTo-AidJsonString $name
 
     switch ($Verb) {
-        'register' {
-            # Echoed when the name was DERIVED, so whoever ran this learns what identity they have.
-            if (-not $env:AID_CHAT_SESSION) {
-                [Console]::Error.WriteLine("aid: chat: registered as ${n} (derived from this directory; set AID_CHAT_SESSION or pass --name to choose)")
+        'rename' {
+            # Renaming an in-progress session. The node moves membership with it and leaves the
+            # transcript alone, because the log records who spoke at the time they spoke.
+            if (-not $to) {
+                [Console]::Error.WriteLine('ERROR: aid: chat rename: --to <new name> is required')
+                return 2
             }
+            return script:Invoke-AidChatCall 'POST' '/session/rename' `
+                ('{"name":"' + $n + '","to":"' + (script:ConvertTo-AidJsonString $to) + '"}')
+        }
+        'register' {
+            # The name the node MINTED is echoed, because a session that does not know its own name
+            # cannot address anything -- every other verb requires it.
             $t = if ($tool) { $tool } elseif ($env:AID_CHAT_TOOL) { $env:AID_CHAT_TOOL } else { 'unknown' }
-            return script:Invoke-AidChatCall 'POST' '/session' `
-                ('{"name":"' + $n + '","tool":"' + (script:ConvertTo-AidJsonString $t) + '","cwd":"' + (script:ConvertTo-AidJsonString $PWD.Path) + '"}')
+            $tail = '"tool":"' + (script:ConvertTo-AidJsonString $t) + '","cwd":"' + (script:ConvertTo-AidJsonString $PWD.Path) + '"}'
+            # No name field at all when none was given, so the node mints one. An empty string would
+            # register a session literally called "".
+            $body = if ($name) { '{"name":"' + $n + '",' + $tail } else { '{' + $tail }
+            # The helper writes the body to the output stream and returns its code, so both arrive
+            # together and the body has to be separated from the code before either can be used.
+            $res  = @(script:Invoke-AidChatCall 'POST' '/session' $body)
+            $code = $res[-1]
+            $content = if ($res.Count -gt 1) { ($res[0..($res.Count - 2)] -join [Environment]::NewLine) } else { '' }
+            if (-not $env:AID_CHAT_SESSION -and -not $name) {
+                $m = [regex]::Match([string]$content, '"name"\s*:\s*"([^"]*)"')
+                if ($m.Success) {
+                    [Console]::Error.WriteLine('aid: chat: registered as ' + $m.Groups[1].Value +
+                        ' (pass --name, or "aid chat rename --to <name>" to change it)')
+                }
+            }
+            if ($content) { Write-Output $content }
+            return $code
         }
         'heartbeat' { return script:Invoke-AidChatCall 'POST' '/session/heartbeat' ('{"name":"' + $n + '"}') }
         'reap' {
@@ -5243,7 +5292,7 @@ function script:Invoke-AidChatCtl {
         if ($CcArgs.Count -gt 1) { $hookArgs = $CcArgs[1..($CcArgs.Count - 1)] }
         script:Exit-Aid (script:Invoke-AidChatHook -HookArgs $hookArgs)
     }
-    if ($action -in @('register','heartbeat','open','join','leave','list','send','inbox','ack','reap','roster','connect','subscribe','peers','show','audit','evict','retention')) {
+    if ($action -in @('register','rename','heartbeat','open','join','leave','list','send','inbox','ack','reap','roster','connect','subscribe','peers','show','audit','evict','retention')) {
         $planeArgs = @()
         if ($CcArgs.Count -gt 1) { $planeArgs = $CcArgs[1..($CcArgs.Count - 1)] }
         script:Exit-Aid (script:Invoke-AidChatPlane -Verb $action -PlaneArgs $planeArgs)
