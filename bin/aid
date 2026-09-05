@@ -190,6 +190,60 @@ _aid_usage() {
             printf 'aid version\n'
             printf '  Print the installed aid CLI version and exit 0.\n'
             ;;
+        chat)
+            printf 'aid chat register --name <n> [--tool <t>]     register this session\n'
+            printf 'aid chat open    --name <n> --channel <c>     open a channel and join it\n'
+            printf 'aid chat join    --name <n> --channel <c>     join an open channel\n'
+            printf 'aid chat leave   --name <n>                   leave; closes it if you were last\n'
+            printf 'aid chat list    --name <n>                   the open channels this hub knows\n'
+            printf 'aid chat send    --name <n> --body <text> [--key <k>] [--whisper-to <m>] [--mention <m>]\n'
+            printf '                 [--reply-to <key>] [--correlation-id <id>]\n'
+            printf 'aid chat inbox   --name <n> [--cursor <c>]    messages after your position\n'
+            printf 'aid chat ack     --name <n> --cursor <c>      advance your acknowledged position\n'
+            printf 'aid chat roster  --name <n>                   who else is on this hub, and who is free\n'
+            printf 'aid chat connect --name <n> --target <t>      pull one named agent into YOUR channel\n'
+            printf 'aid chat subscribe --name <n> [--host-timeout <s>] [--follow]\n'
+            printf '                 hold ONE wait for an arriving message or connect outcome.\n'
+            printf '                 --host-timeout <s> MUST be the same number as the host stop\n'
+            printf '                 hook timeout you configured; the block is\n'
+            printf '                 min(long-poll default, s - margin). Omit it and the block\n'
+            printf '                 falls back to a short value rather than inheriting any\n'
+            printf '                 platform default. --follow re-arms instead of returning.\n'
+            printf '                 Spends no model tokens: it blocks in a process, not a prompt.\n'
+            printf 'aid chat rename  [--name <old>] --to <new>       rename a session, in progress\n'
+            printf 'aid chat hook    --tool <claude-code|cursor> [--timeout <s>]\n'
+            printf '                 [--check | --install | --uninstall] [--yes]\n'
+            printf '                 Default prints the stop-hook block to paste, with the node path,\n'
+            printf '                 install path and both timeout numbers filled in from this machine.\n'
+            printf '                 --check reads an installed one back and reports what is wrong.\n'
+            printf '                 --install writes it into your USER-scope host settings, after\n'
+            printf '                 showing the change and asking; it merges rather than overwrites,\n'
+            printf '                 backs the file up, and refuses any git-tracked target.\n'
+            printf 'aid chat show                                  machines, sessions, channels, members,\n'
+            printf '                 per-member unread depth and idle time (operator)\n'
+            printf 'aid chat audit   [--limit <n>]                  what happened, never what was said:\n'
+            printf '                 a whisper appears with its parties and no body (operator)\n'
+            printf 'aid chat evict   --name <n>                     remove a session from its channel (operator)\n'
+            printf 'aid chat retention [--set <key>=<value>]        show or set retention policy (operator)\n'
+            printf 'aid chat peers   [--add|--remove --machine <host[:port]>] [--discover]\n'
+            printf '                 list, add or remove peer hubs (operator). Naming an address is\n'
+            printf '                 the GUARANTEED path and needs no network feature; --discover is\n'
+            printf '                 best-effort broadcast on top and may legitimately find nobody.\n'
+            printf 'aid chat reap    --name <n> | --name --all     give a session up for gone (operator)\n'
+            printf '  --name may be omitted when AID_CHAT_SESSION is set.\n'
+            printf '  --cursor on inbox RE-READS from that point and moves neither position.\n'
+            printf '  Exit 14 means the node refused a well-formed request; the reason is the first\n'
+            printf '  word on stderr (solo_channel, no_channel, already_in_channel, overflow, ...).\n'
+            printf '\n'
+            printf 'aid chat node start [--port <n>]\n'
+            printf 'aid chat node stop\n'
+            printf 'aid chat node status\n'
+            printf '  Start, stop or query the local agent chat node (the hub).\n'
+            printf '  The node serves every session on this machine, whichever tool hosts each one.\n'
+            printf '  --port <n>  listen port on 127.0.0.1 (default 8812; 0 picks a free port).\n'
+            printf '  Requires a Node runtime (>= 22.13.0); exits 9 with an explicit message if absent.\n'
+            printf '  start on an already-running node exits 8 and changes nothing.\n'
+            ;;
         dashboard)
             printf 'aid dashboard start <node|python> [--remote] [--allow-writes] [--port <n>]\n'
             printf 'aid dashboard stop\n'
@@ -2252,31 +2306,111 @@ _aid_sc_section_end() {
 # templates' authored-empty sentinel) is dropped too, leaving _SC_ROWS
 # empty. Each row is one string with cells joined by ASCII 0x1F (unit
 # separator) -- split with `IFS=$'\x1f' read -ra cells <<< "$row"`.
+# _aid_sc_row_cells LINE -> stdout: the line's table cells, trimmed and joined
+# with \x1f. Split back out with _aid_sc_row_split, never with a fixed-field
+# `read` (see that function's own note).
+_aid_sc_row_cells() {
+    local raw="$1" j joined=""
+    local -a cells=()
+    raw="$(_aid_sc_trim "$raw")"
+    raw="${raw#|}"
+    raw="${raw%|}"
+    IFS='|' read -ra cells <<< "$raw"
+    for j in "${!cells[@]}"; do
+        local c; c="$(_aid_sc_trim "${cells[$j]}")"
+        if [[ "$j" -gt 0 ]]; then joined+=$'\x1f'; fi
+        joined+="$c"
+    done
+    printf '%s' "$joined"
+}
+
 _aid_sc_table_rows() {
-    local start="$1" end="$2" i line body
+    local start="$1" end="$2" want="${3-}" i line body
     _SC_ROWS=()
-    local header_seen=0 sep_seen=0
+    _SC_HEADER=()
+
+    # A markdown table is recognised by its SEPARATOR row (|---|---|): the line
+    # immediately above one is that table's header, and the data rows follow it
+    # until the run of pipe lines breaks. Detecting tables this way, rather than
+    # assuming the range holds exactly one, is what keeps a second table's
+    # header and separator out of the first table's rows -- a real case, since a
+    # legacy `## Interview State` section carries both a Review History table and
+    # the section-status table, and every heading below `##` stays inside its range.
+    #
+    # WANT, when given, is a header cell that the wanted table must carry. It
+    # selects ONE table out of the range by name instead of merging every table
+    # in it. Without it, all tables in the range contribute (the historical
+    # behaviour), minus the header/separator leak.
+    local in_table=0 selected=0
     for ((i=start; i<end; i++)); do
         line="${_SC_LINES[$i]}"
-        [[ "$line" =~ ^[[:space:]]*\|.*\|[[:space:]]*$ ]] || continue
-        if [[ "$header_seen" -eq 0 ]]; then header_seen=1; continue; fi
-        if [[ "$sep_seen" -eq 0 ]]; then sep_seen=1; continue; fi
+        if [[ ! "$line" =~ ^[[:space:]]*\|.*\|[[:space:]]*$ ]]; then
+            in_table=0
+            continue
+        fi
         body="$(_aid_sc_trim "$line")"
-        body="${body#|}"
-        body="${body%|}"
-        local -a cells=()
-        IFS='|' read -ra cells <<< "$body"
-        local j joined=""
-        for j in "${!cells[@]}"; do
-            local c; c="$(_aid_sc_trim "${cells[$j]}")"
-            if [[ "$j" -gt 0 ]]; then joined+=$'\x1f'; fi
-            joined+="$c"
-        done
-        _SC_ROWS+=("$joined")
+        # Separator row: the line above it was the header. Decide, here, whether
+        # this table is the wanted one.
+        if [[ "$body" =~ ^\|[[:space:]:|-]+\|$ ]]; then
+            local hdr_row=""
+            if [[ "$i" -gt "$start" ]]; then
+                hdr_row="$(_aid_sc_row_cells "${_SC_LINES[$((i-1))]}")"
+            fi
+            selected=1
+            if [[ -n "$want" ]]; then
+                selected=0
+                local hc
+                while IFS= read -r hc; do
+                    [[ "$hc" == "$want" ]] && selected=1
+                done < <(printf '%s' "$hdr_row" | tr $'\x1f' '\n')
+            fi
+            if [[ "$selected" -eq 1 ]]; then
+                local -a hcells=()
+                IFS=$'\x1f' read -ra hcells <<< "$hdr_row"
+                _SC_HEADER=("${hcells[@]}")
+            fi
+            in_table=1
+            continue
+        fi
+        # A header row is consumed by the separator branch above, so any pipe
+        # line reached here while in_table is a data row.
+        [[ "$in_table" -eq 1 && "$selected" -eq 1 ]] || continue
+        _SC_ROWS+=("$(_aid_sc_row_cells "$line")")
     done
+
     if [[ "${#_SC_ROWS[@]}" -eq 1 ]]; then
         local first="${_SC_ROWS[0]%%$'\x1f'*}"
         [[ "$first" == "_none yet_" ]] && _SC_ROWS=()
+    fi
+}
+
+# _aid_sc_row_split ROW N -> populates the caller-scope global _SC_CELLS with
+# EXACTLY N entries, padding with empty strings and folding any cell beyond the
+# Nth into the Nth with ' -- '.
+#
+# Why this exists rather than `IFS=$'\x1f' read -r a b c d <<< "$row"`: bash
+# assigns every remaining field, SEPARATORS INCLUDED, to the last named
+# variable. A table one column wider than its emitter expects therefore wrote a
+# raw \x1f into the YAML, which is not a printable character and makes the whole
+# document unparseable. Folding instead keeps the extra content (the same rule
+# the features emitter applies to an unrecognised column) and can never leak the
+# separator.
+_aid_sc_row_split() {
+    local row="$1" n="$2" i
+    local -a all=()
+    IFS=$'\x1f' read -ra all <<< "$row"
+    _SC_CELLS=()
+    for ((i=0; i<n; i++)); do _SC_CELLS+=("${all[$i]-}"); done
+    if [[ "${#all[@]}" -gt "$n" ]]; then
+        local extra=""
+        for ((i=n; i<${#all[@]}; i++)); do
+            [[ -n "${all[$i]}" ]] || continue
+            extra+="${extra:+ -- }${all[$i]}"
+        done
+        if [[ -n "$extra" ]]; then
+            local last=$((n - 1))
+            _SC_CELLS[$last]="${_SC_CELLS[$last]:+${_SC_CELLS[$last]} -- }${extra}"
+        fi
     fi
 }
 
@@ -2301,18 +2435,41 @@ _aid_sc_bullet_value() {
 # _SC_INTERVIEW_GRADE from the "**State:** X  **Grade:** Y" bold-line inside
 # [START,END); returns 1 (both left empty) if no such line is found.
 _aid_sc_interview_header() {
-    local start="$1" end="$2" i line
+    local start="$1" end="$2" i line rest="" found=0
     _SC_INTERVIEW_STATE=""
     _SC_INTERVIEW_GRADE=""
+    # The labelled `**Interview State:**` line is preferred over a bare
+    # `**State:**` one. In the legacy markdown shape that section may also carry a
+    # `### Cross-Reference` block with its own `**State:**` line, and matching
+    # that first reported the cross-reference's state as the interview's.
     for ((i=start; i<end; i++)); do
         line="${_SC_LINES[$i]}"
-        if [[ "$line" =~ ^\*\*State:\*\*(.*)\*\*Grade:\*\*(.*)$ ]]; then
-            _SC_INTERVIEW_STATE="$(_aid_sc_trim "${BASH_REMATCH[1]}")"
-            _SC_INTERVIEW_GRADE="$(_aid_sc_trim "${BASH_REMATCH[2]}")"
-            return 0
+        if [[ "$line" =~ ^\*\*Interview\ State:\*\*(.*)$ ]]; then
+            rest="${BASH_REMATCH[1]}"; found=1; break
         fi
     done
-    return 1
+    if [[ "$found" -eq 0 ]]; then
+        for ((i=start; i<end; i++)); do
+            line="${_SC_LINES[$i]}"
+            if [[ "$line" =~ ^\*\*State:\*\*(.*)$ ]]; then
+                rest="${BASH_REMATCH[1]}"; found=1; break
+            fi
+        done
+    fi
+    [[ "$found" -eq 1 ]] || return 1
+    if [[ "$rest" =~ ^(.*)\*\*Grade:\*\*(.*)$ ]]; then
+        _SC_INTERVIEW_STATE="$(_aid_sc_trim "${BASH_REMATCH[1]}")"
+        local g="${BASH_REMATCH[2]}" trimmed
+        # A further bold label on the same line (`**Minimum:** A **Cycles:** 14`)
+        # is not part of the grade. Only trim when something survives, so a
+        # grade written as `**A+**` is not erased.
+        trimmed="$(_aid_sc_trim "${g%%\*\**}")"
+        [[ -n "$trimmed" ]] && g="$trimmed"
+        _SC_INTERVIEW_GRADE="$(_aid_sc_trim "$g")"
+    else
+        _SC_INTERVIEW_STATE="$(_aid_sc_trim "$rest")"
+    fi
+    return 0
 }
 
 # _aid_sc_is_placeholder_item ITEM -> true (exit 0) iff ITEM is the
@@ -2425,11 +2582,34 @@ _aid_sc_qa_entries() {
         local category impact qstate context suggested answer applied
         category="$(_aid_sc_bullet_value "$((qs+1))" "$qe" "Category")"
         impact="$(_aid_sc_bullet_value "$((qs+1))" "$qe" "Impact")"
+        # `State` is the current spelling; `Status` is what every pre-conversion
+        # file on disk actually says, because the state-not-status naming
+        # contract renamed the templates and not the works already written
+        # against them. Reading only `State` silently emptied the one field that
+        # says whether a question is still open -- 28 of 28 entries in the first
+        # real work this ran on. Falling back is the whole job of a migration.
         qstate="$(_aid_sc_bullet_value "$((qs+1))" "$qe" "State")"
+        [[ -z "$qstate" ]] && qstate="$(_aid_sc_bullet_value "$((qs+1))" "$qe" "Status")"
+        # An inline HTML comment annotating WHY the state was last changed is a
+        # real and useful habit, but `state` is a machine-read closed enum: left
+        # in place, `Answered <!-- ... -->` compares equal to nothing. Move the
+        # annotation into `answer`, which is free prose and is where the entry's
+        # disposition is discussed anyway -- so the enum is clean and the note is
+        # still on the entry. `state` is the only field treated this way; every
+        # other one is prose and keeps its comment where the author put it.
+        local qnote=""
+        if [[ "$qstate" == *"<!--"* ]]; then
+            qnote="${qstate#*<!--}"
+            qnote="$(_aid_sc_trim "${qnote%%-->*}")"
+            qstate="$(_aid_sc_trim "${qstate%%<!--*}")"
+        fi
         context="$(_aid_sc_bullet_value "$((qs+1))" "$qe" "Context")"
         suggested="$(_aid_sc_bullet_value "$((qs+1))" "$qe" "Suggested")"
         answer="$(_aid_sc_bullet_value "$((qs+1))" "$qe" "Answer")"
         applied="$(_aid_sc_bullet_value "$((qs+1))" "$qe" "Applied to")"
+        if [[ -n "$qnote" ]]; then
+            answer="${answer:+${answer} }[state note: ${qnote}]"
+        fi
         _SC_QA+=("${qid}"$'\x1f'"${category}"$'\x1f'"${impact}"$'\x1f'"${qstate}"$'\x1f'"${context}"$'\x1f'"${suggested}"$'\x1f'"${answer}"$'\x1f'"${applied}")
     done
 }
@@ -2482,7 +2662,9 @@ _aid_sc_emit_interview() {
         [[ -n "$_SC_INTERVIEW_STATE" ]] && hstate="$_SC_INTERVIEW_STATE"
         [[ -n "$_SC_INTERVIEW_GRADE" ]] && hgrade="$_SC_INTERVIEW_GRADE"
     fi
-    _aid_sc_table_rows "$start" "$end"
+    # Selected by header cell: the legacy section also carries a Review History
+    # table, whose rows are not sections.
+    _aid_sc_table_rows "$start" "$end" "Section"
     _SC_CNT_INTERVIEW="${#_SC_ROWS[@]}"
     _SC_OUT+=("interview:")
     _SC_OUT+=("  state: $(_aid_sc_yaml_scalar "$hstate")")
@@ -2492,53 +2674,155 @@ _aid_sc_emit_interview() {
         return 0
     fi
     _SC_OUT+=("  sections:")
-    local row idn name st upd
+    local row
     for row in "${_SC_ROWS[@]}"; do
-        IFS=$'\x1f' read -r idn name st upd <<< "$row"
-        _SC_OUT+=("    - id: ${idn}")
-        _SC_OUT+=("      name: $(_aid_sc_yaml_scalar "$name")")
-        _SC_OUT+=("      state: $(_aid_sc_yaml_scalar "$st")")
-        _SC_OUT+=("      updated: $(_aid_sc_yaml_scalar "$upd")")
+        _aid_sc_row_split "$row" 4
+        _SC_OUT+=("    - id: $(_aid_sc_yaml_scalar "${_SC_CELLS[0]}")")
+        _SC_OUT+=("      name: $(_aid_sc_yaml_scalar "${_SC_CELLS[1]}")")
+        _SC_OUT+=("      state: $(_aid_sc_yaml_scalar "${_SC_CELLS[2]}")")
+        _SC_OUT+=("      updated: $(_aid_sc_yaml_scalar "${_SC_CELLS[3]}")")
     done
 }
 
 _aid_sc_emit_lifecycle_history() {
     local start="$1" end="$2"
-    _aid_sc_table_rows "$start" "$end"
+    _aid_sc_table_rows "$start" "$end" "Phase Transition / Gate"
     _SC_CNT_LFH="${#_SC_ROWS[@]}"
     if [[ "${#_SC_ROWS[@]}" -eq 0 ]]; then
         _SC_OUT+=("lifecycle_history: []")
         return 0
     fi
     _SC_OUT+=("lifecycle_history:")
-    local row rdate revent rgrade rnotes
+    local row
     for row in "${_SC_ROWS[@]}"; do
-        IFS=$'\x1f' read -r rdate revent rgrade rnotes <<< "$row"
-        _SC_OUT+=("  - date: $(_aid_sc_yaml_scalar "$rdate")")
-        _SC_OUT+=("    event: $(_aid_sc_yaml_scalar "$revent")")
-        _SC_OUT+=("    grade: $(_aid_sc_yaml_scalar "$rgrade")")
-        _SC_OUT+=("    notes: $(_aid_sc_yaml_scalar "$rnotes")")
+        _aid_sc_row_split "$row" 4
+        _SC_OUT+=("  - date: $(_aid_sc_yaml_scalar "${_SC_CELLS[0]}")")
+        _SC_OUT+=("    event: $(_aid_sc_yaml_scalar "${_SC_CELLS[1]}")")
+        _SC_OUT+=("    grade: $(_aid_sc_yaml_scalar "${_SC_CELLS[2]}")")
+        _SC_OUT+=("    notes: $(_aid_sc_yaml_scalar "${_SC_CELLS[3]}")")
     done
 }
 
 _aid_sc_emit_deploy() {
     local start="$1" end="$2"
-    _aid_sc_table_rows "$start" "$end"
+    _aid_sc_table_rows "$start" "$end" "Delivery"
     _SC_CNT_DEPLOY="${#_SC_ROWS[@]}"
     if [[ "${#_SC_ROWS[@]}" -eq 0 ]]; then
         _SC_OUT+=("deploy: []")
         return 0
     fi
     _SC_OUT+=("deploy:")
-    local row rdelivery rstate rpr rkbu rtag rnotes
+    local row
     for row in "${_SC_ROWS[@]}"; do
-        IFS=$'\x1f' read -r rdelivery rstate rpr rkbu rtag rnotes <<< "$row"
-        _SC_OUT+=("  - delivery: $(_aid_sc_yaml_scalar "$rdelivery")")
-        _SC_OUT+=("    state: $(_aid_sc_yaml_scalar "$rstate")")
-        _SC_OUT+=("    pr: $(_aid_sc_yaml_scalar "$rpr")")
-        _SC_OUT+=("    kb_updated: $(_aid_sc_yaml_scalar "$rkbu")")
-        _SC_OUT+=("    tag: $(_aid_sc_yaml_scalar "$rtag")")
-        _SC_OUT+=("    notes: $(_aid_sc_yaml_scalar "$rnotes")")
+        _aid_sc_row_split "$row" 6
+        _SC_OUT+=("  - delivery: $(_aid_sc_yaml_scalar "${_SC_CELLS[0]}")")
+        _SC_OUT+=("    state: $(_aid_sc_yaml_scalar "${_SC_CELLS[1]}")")
+        _SC_OUT+=("    pr: $(_aid_sc_yaml_scalar "${_SC_CELLS[2]}")")
+        _SC_OUT+=("    kb_updated: $(_aid_sc_yaml_scalar "${_SC_CELLS[3]}")")
+        _SC_OUT+=("    tag: $(_aid_sc_yaml_scalar "${_SC_CELLS[4]}")")
+        _SC_OUT+=("    notes: $(_aid_sc_yaml_scalar "${_SC_CELLS[5]}")")
+    done
+}
+
+# _aid_sc_emit_features START END -> the `features:` sequence, mapped from the
+# legacy `## Features State` table BY COLUMN NAME (`_aid_sc_table_rows` records the
+# matched header in `_SC_HEADER`).
+#
+# Three properties are deliberate, because each one is a way this could have
+# reintroduced the failure it exists to fix:
+#
+#   * It NEVER refuses. `state` and `grade` carry whatever the markdown said,
+#     unvalidated -- a real table holds values like
+#     "In Review (PAUSED at user request)" that are not enum members, and
+#     rejecting them would put us back to a work that cannot be converted.
+#     The enum in work-state-template.yml binds WRITERS; this is translation.
+#   * No column is dropped. A header this function does not recognise is
+#     folded into `notes` as "<Header>: <value>" rather than discarded, so an
+#     unknown column costs tidiness and never data.
+#   * A struck row (`~~002~~`) becomes `withdrawn: true` with a clean numeric
+#     id, so the entry stays machine-addressable while still reading as
+#     withdrawn. Ids are never reused, so the entry must survive.
+_aid_sc_emit_features() {
+    local start="$1" end="$2"
+    _aid_sc_table_rows "$start" "$end" "Feature"
+    _SC_CNT_FEATURES="${#_SC_ROWS[@]}"
+    if [[ "${#_SC_ROWS[@]}" -eq 0 ]]; then
+        _SC_OUT+=("features: []")
+        return 0
+    fi
+    _SC_OUT+=("features:")
+    local row
+    for row in "${_SC_ROWS[@]}"; do
+        local -a cells=()
+        IFS=$'\x1f' read -ra cells <<< "$row"
+        local fid="" fname="" fstate="" fgrade="" fqa="" fstarted="" fupdated="" fnotes=""
+        local fsections="" withdrawn=0 extra=""
+        local j cell hdr
+        for j in "${!cells[@]}"; do
+            cell="${cells[$j]}"
+            hdr="${_SC_HEADER[$j]:-}"
+            # Strip markdown strikethrough; record that it was there.
+            if [[ "$cell" == '~~'*'~~' ]]; then
+                withdrawn=1
+                cell="${cell#\~\~}"
+                cell="${cell%\~\~}"
+            fi
+            case "$hdr" in
+                '#'|'Id'|'ID'|'id')                 fid="$cell" ;;
+                'Feature')                          fname="$cell" ;;
+                'Spec State'|'State')               fstate="$cell" ;;
+                'Spec Grade'|'Grade')               fgrade="$cell" ;;
+                'Q&A Count'|'QA Count')             fqa="$cell" ;;
+                'Started')                          fstarted="$cell" ;;
+                'Last Updated'|'Updated')           fupdated="$cell" ;;
+                'Sections')                         fsections="$cell" ;;
+                'Notes')                            fnotes="$cell" ;;
+                '')                                 [[ -n "$cell" ]] && extra+="${extra:+; }${cell}" ;;
+                *)                                  [[ -n "$cell" ]] && extra+="${extra:+; }${hdr}: ${cell}" ;;
+            esac
+        done
+        # An unrecognised column is folded into notes rather than dropped.
+        [[ -n "$fsections" ]] && extra+="${extra:+; }Sections: ${fsections}"
+        [[ -n "$extra" ]] && fnotes="${fnotes:+${fnotes} -- }${extra}"
+        # Reduce the id to its digits so a decorated cell stays addressable.
+        local idnum="${fid//[^0-9]/}"
+        [[ -n "$idnum" ]] && fid="$idnum"
+        [[ -z "$fstate" ]] && fstate="Pending"
+        [[ -z "$fgrade" ]] && fgrade="Pending"
+        _SC_OUT+=("  - id: $(_aid_sc_yaml_scalar "$fid")")
+        _SC_OUT+=("    name: $(_aid_sc_yaml_scalar "$fname")")
+        _SC_OUT+=("    state: $(_aid_sc_yaml_scalar "$fstate")")
+        _SC_OUT+=("    grade: $(_aid_sc_yaml_scalar "$fgrade")")
+        [[ -n "$fqa" ]]      && _SC_OUT+=("    qa_count: $(_aid_sc_yaml_scalar "$fqa")")
+        [[ -n "$fstarted" ]] && _SC_OUT+=("    started: $(_aid_sc_yaml_scalar "$fstarted")")
+        [[ -n "$fupdated" ]] && _SC_OUT+=("    updated: $(_aid_sc_yaml_scalar "$fupdated")")
+        [[ "$withdrawn" -eq 1 ]] && _SC_OUT+=("    withdrawn: true")
+        _SC_OUT+=("    notes: $(_aid_sc_yaml_scalar "$fnotes")")
+    done
+}
+
+# _aid_sc_emit_review_history START END -> the `review_history:` sequence, from
+# the legacy `### Review History` table. Selected by header cell like every other
+# table, and emitted rather than dropped: it is not `interview.sections` (its
+# rows are interview events, not the ten numbered requirement sections), and it
+# is not `lifecycle_history` (that records phase transitions), so without a key
+# of its own it would simply be lost on conversion.
+_aid_sc_emit_review_history() {
+    local start="$1" end="$2"
+    _aid_sc_table_rows "$start" "$end" "Outcome"
+    _SC_CNT_REVHIST="${#_SC_ROWS[@]}"
+    if [[ "${#_SC_ROWS[@]}" -eq 0 ]]; then
+        _SC_OUT+=("review_history: []")
+        return 0
+    fi
+    _SC_OUT+=("review_history:")
+    local row
+    for row in "${_SC_ROWS[@]}"; do
+        _aid_sc_row_split "$row" 4
+        _SC_OUT+=("  - date: $(_aid_sc_yaml_scalar "${_SC_CELLS[0]}")")
+        _SC_OUT+=("    event: $(_aid_sc_yaml_scalar "${_SC_CELLS[1]}")")
+        _SC_OUT+=("    outcome: $(_aid_sc_yaml_scalar "${_SC_CELLS[2]}")")
+        _SC_OUT+=("    notes: $(_aid_sc_yaml_scalar "${_SC_CELLS[3]}")")
     done
 }
 
@@ -2559,22 +2843,22 @@ _aid_sc_emit_delivery_lifecycle() {
 
 _aid_sc_emit_tasks_lifecycle() {
     local start="$1" end="$2"
-    _aid_sc_table_rows "$start" "$end"
+    _aid_sc_table_rows "$start" "$end" "Task"
     _SC_CNT_TASKSLC="${#_SC_ROWS[@]}"
     if [[ "${#_SC_ROWS[@]}" -eq 0 ]]; then
         _SC_OUT+=("tasks_lifecycle: {}")
         return 0
     fi
     _SC_OUT+=("tasks_lifecycle:")
-    local row rtask rstate rreview relapsed rnotes rname
+    local row
     for row in "${_SC_ROWS[@]}"; do
-        IFS=$'\x1f' read -r rtask rstate rreview relapsed rnotes rname <<< "$row"
-        _SC_OUT+=("  ${rtask}:")
-        _SC_OUT+=("    state: $(_aid_sc_yaml_scalar "$rstate")")
-        _SC_OUT+=("    review: $(_aid_sc_yaml_scalar "$rreview")")
-        _SC_OUT+=("    elapsed: $(_aid_sc_yaml_scalar "$relapsed")")
-        _SC_OUT+=("    notes: $(_aid_sc_yaml_scalar "$rnotes")")
-        _SC_OUT+=("    display_name: $(_aid_sc_yaml_scalar "$rname")")
+        _aid_sc_row_split "$row" 6
+        _SC_OUT+=("  ${_SC_CELLS[0]}:")
+        _SC_OUT+=("    state: $(_aid_sc_yaml_scalar "${_SC_CELLS[1]}")")
+        _SC_OUT+=("    review: $(_aid_sc_yaml_scalar "${_SC_CELLS[2]}")")
+        _SC_OUT+=("    elapsed: $(_aid_sc_yaml_scalar "${_SC_CELLS[3]}")")
+        _SC_OUT+=("    notes: $(_aid_sc_yaml_scalar "${_SC_CELLS[4]}")")
+        _SC_OUT+=("    display_name: $(_aid_sc_yaml_scalar "${_SC_CELLS[5]}")")
     done
 }
 
@@ -2672,11 +2956,27 @@ _aid_sc_convert_work_body() {
     if [[ "$h_i" -ge 0 ]]; then
         h_i_end="$(_aid_sc_section_end "$h_i" "$bend")"
         _aid_sc_emit_interview "$((h_i+1))" "$h_i_end"
+        # Same range: in the legacy shape the Review History table sits under a
+        # `###` heading inside that section, so it is in scope here and only here.
+        _aid_sc_emit_review_history "$((h_i+1))" "$h_i_end"
     else
         _SC_OUT+=("interview:")
         _SC_OUT+=("  state: Pending")
         _SC_OUT+=("  grade: Pending")
         _SC_OUT+=("  sections: []")
+        _SC_OUT+=("review_history: []")
+    fi
+
+    # AUTHORED on both layouts (a feature is a work-level concept). Was in the
+    # DERIVED guard list below until it was recognised as AUTHORED; guarding it
+    # is what made every post-/aid-define work unconvertible.
+    local h_f h_f_end
+    h_f="$(_aid_sc_find_heading "## Features State" "$bstart" "$bend")"
+    if [[ "$h_f" -ge 0 ]]; then
+        h_f_end="$(_aid_sc_section_end "$h_f" "$bend")"
+        _aid_sc_emit_features "$((h_f+1))" "$h_f_end"
+    else
+        _SC_OUT+=("features: []")
     fi
 
     local h_l h_l_end
@@ -2740,7 +3040,7 @@ _aid_sc_convert_work_body() {
         fi
     fi
 
-    local -a derived_table_headings=("## Features State" "## Plan / Deliveries" "## Tasks State" "## Calibration Log")
+    local -a derived_table_headings=("## Plan / Deliveries" "## Tasks State" "## Calibration Log")
     local dh
     for dh in "${derived_table_headings[@]}"; do
         _aid_sc_guard_derived_table "$md" "$dh" "$bstart" "$bend" || return 1
@@ -3001,6 +3301,12 @@ _aid_sc_verify_roundtrip() {
             if [[ "$(_aid_sc_yaml_block_count "  sections:")" != "$_SC_CNT_INTERVIEW" ]]; then
                 ok=0; echo "WARN: aid migrate: ${md}: round-trip mismatch on interview.sections count" >&2
             fi
+            if [[ "$(_aid_sc_yaml_block_count "features:")" != "$_SC_CNT_FEATURES" ]]; then
+                ok=0; echo "WARN: aid migrate: ${md}: round-trip mismatch on features count" >&2
+            fi
+            if [[ "$(_aid_sc_yaml_block_count "review_history:")" != "$_SC_CNT_REVHIST" ]]; then
+                ok=0; echo "WARN: aid migrate: ${md}: round-trip mismatch on review_history count" >&2
+            fi
             if [[ "$(_aid_sc_yaml_block_count "lifecycle_history:")" != "$_SC_CNT_LFH" ]]; then
                 ok=0; echo "WARN: aid migrate: ${md}: round-trip mismatch on lifecycle_history count" >&2
             fi
@@ -3059,6 +3365,7 @@ _aid_sc_convert_file() {
 
     _SC_CNT_INTERVIEW=0; _SC_CNT_LFH=0; _SC_CNT_DEPLOY=0; _SC_CNT_TASKSLC=0
     _SC_CNT_ISSUES=0; _SC_CNT_QA=0; _SC_CNT_FINDINGS=0; _SC_CNT_DISPATCH=0
+    _SC_CNT_FEATURES=0; _SC_CNT_REVHIST=0
 
     local n="${#_SC_LINES[@]}"
     if [[ "$n" -lt 2 ]] || [[ "${_SC_LINES[0]}" != "---" ]]; then
@@ -4951,9 +5258,756 @@ if [[ "$SUBCMD" == "remove" ]]; then
     # We do this check after parsing flags below, so continue to parse first.
 fi
 
+# ---------------------------------------------------------------------------
+# Chat node control (aid chat node start|stop|status).
+#
+# The node is a service with no operator surface of its own (FR-7.5): everything a human
+# does to it is an `aid` subcommand, and this is that surface. The message-plane verbs
+# (send / inbox / ack) are added by their own task; this function owns lifecycle only.
+#
+# Exit codes REUSE the established meanings rather than minting new ones:
+#   8  the node is already running          (same as `aid dashboard start`)
+#   9  no usable Node runtime on PATH       (same as the dashboard's runtime check)
+#   2  usage error
+#   1  runtime failure
+# ---------------------------------------------------------------------------
+_aid_chat_runtime_dir() {
+    printf '%s\n' "${AID_CHAT_RUNTIME:-${HOME}/.aid/chat}"
+}
+
+_aid_chat_hub_entry() {
+    printf '%s\n' "${AID_CODE_HOME}/chat-node/server/hub.mjs"
+}
+
+# Check the Node prerequisite BEFORE any side effect, with an actionable error and never a
+# stack trace. FR-7.7 makes this a requirement in its own right: the CLI itself is
+# runtime-free, so a missing runtime must fail only the component that needs one.
+_aid_chat_require_node() {
+    if ! command -v node >/dev/null 2>&1; then
+        echo "ERROR: aid: chat: the chat node requires a Node runtime and none was found on PATH." >&2
+        echo "       Install Node (>= 22.13.0) and re-run. Every other 'aid' command keeps working without it." >&2
+        exit 9
+    fi
+}
+
+# ---------------------------------------------------------------------------
+# Chat message plane (aid chat register|send|inbox|ack|open|join|leave|list).
+#
+# One HTTP call per verb into the one core (FR-0.1, FR-7.4). This function parses arguments,
+# makes exactly one request, maps the answer to an exit code and prints. It holds NO rule and
+# NO SQL -- every decision is the node's.
+#
+# Exit codes: 0 ok | 14 the node refused a well-formed request | 2 usage | 1 runtime.
+# 14 is the only new code this feature needed; 8 and 9 were reused from their existing
+# meanings. See the exit-code audit in the requirements.
+# ---------------------------------------------------------------------------
+_aid_chat_base_url() {
+    local rt port
+    rt="$(_aid_chat_runtime_dir)"
+    [[ -f "${rt}/hub.port" ]] || return 1
+    port="$(tr -d '[:space:]' < "${rt}/hub.port")"
+    [[ -n "$port" ]] || return 1
+    printf 'http://127.0.0.1:%s\n' "$port"
+}
+
+# One place that turns the node's answer into output + an exit code, so no verb can invent its
+# own convention. stdout carries the result; stderr carries the diagnostic, per the
+# repository's existing split.
+_aid_chat_respond() {
+    local http_code="$1" body="$2"
+    case "$http_code" in
+        200)
+            printf '%s\n' "$body"
+            return 0 ;;
+        409)
+            local reason detail retry
+            reason="$(printf '%s' "$body" | sed -n 's/.*"reason":"\([^"]*\)".*/\1/p')"
+            detail="$(printf '%s' "$body" | sed -n 's/.*"detail":"\([^"]*\)".*/\1/p')"
+            # A retry hint is the one part of a refusal a caller must ACT on rather than report,
+            # so it has to reach the caller. Without this the jitter existed in the node and was
+            # unreachable from the surface every agent actually uses -- which is to say the
+            # livelock it prevents was still there.
+            retry="$(printf '%s' "$body" | sed -n 's/.*"retry_after_ms":\([0-9]*\).*/\1/p')"
+            printf '%s' "${reason:-refused}" >&2
+            [[ -n "$detail" ]] && printf ': %s' "$detail" >&2
+            [[ -n "$retry" ]] && printf ' (retry after %sms)' "$retry" >&2
+            printf '\n' >&2
+            # Also on stdout as JSON, so a program can read it without parsing prose. stdout stays
+            # machine-readable on refusal exactly as it is on success.
+            printf '%s\n' "$body"
+            return 14 ;;
+        400)
+            printf 'ERROR: aid: chat: the request was malformed: %s\n' "$body" >&2
+            return 2 ;;
+        000|'')
+            echo "ERROR: aid: chat: the node is not reachable; run 'aid chat node start' first." >&2
+            return 1 ;;
+        *)
+            printf 'ERROR: aid: chat: the node answered %s: %s\n' "$http_code" "$body" >&2
+            return 1 ;;
+    esac
+}
+
+# Every chat call is BOUNDED. Without this a stale port file -- or any address that accepts nothing --
+# makes `aid chat ...` hang with no output and no way to tell it apart from a slow node. Found by
+# pointing the base URL at an unreachable host to falsify another test: the CLI did not fail, it
+# stopped, and so did everything waiting on it.
+#
+# These bounds are for the SHORT verbs. The held wait has its own, necessarily longer, below.
+_AID_CHAT_CONNECT_TIMEOUT=5
+_AID_CHAT_MAX_TIME=30
+
+_aid_chat_call() {
+    local method="$1" path="$2" data="${3:-}" base out code
+    if ! base="$(_aid_chat_base_url)"; then
+        echo "ERROR: aid: chat: the node is not running; run 'aid chat node start' first." >&2
+        return 1
+    fi
+    command -v curl >/dev/null 2>&1 || { echo "ERROR: aid: chat: curl not found on PATH" >&2; return 1; }
+    local tmo=(--connect-timeout "$_AID_CHAT_CONNECT_TIMEOUT" --max-time "$_AID_CHAT_MAX_TIME")
+    if [[ "$method" == "GET" ]]; then
+        out="$(curl -sS "${tmo[@]}" -w '\n%{http_code}' "${base}${path}" 2>/dev/null)"
+    else
+        out="$(curl -sS "${tmo[@]}" -w '\n%{http_code}' -X "$method" "${base}${path}" --data-binary "${data}" 2>/dev/null)"
+    fi
+    code="$(printf '%s' "$out" | tail -n1)"
+    _aid_chat_respond "$code" "$(printf '%s' "$out" | sed '$d')"
+}
+
+# Minimal JSON string escaping for the values this CLI passes through. Enough for the fields
+# the message plane accepts, and deliberately not a general encoder -- a general one belongs in
+# the node, which already has a real parser.
+_aid_json_escape() {
+    printf '%s' "$1" | sed -e 's/\\/\\\\/g' -e 's/"/\\"/g' -e ':a' -e 'N' -e '$!ba' -e 's/\n/\\n/g'
+}
+
+# One armed wait, and whatever it returns turned into one line of JSON on stdout.
+#
+# On a message this ALSO reads the inbox, which is deliberate and is the single most consequential
+# thing the spike changed: the wake carries the message body as TEXT, because on one host the woken
+# turn's own shell command raised an approval prompt and waited for a human click. So the adapter
+# has already read the inbox by the time the session runs, and the session simply continues with
+# the message as context rather than having to call anything.
+#
+# Reading the inbox advances `delivered` and NOT `acked`. If this advanced both, a crash between
+# the hand-off and the turn would mark a message read that no model ever saw.
+_aid_chat_wait_once() {
+    local q="$1" n="$2" base out code body pending depth
+    if ! base="$(_aid_chat_base_url)"; then
+        echo "ERROR: aid: chat subscribe: the node is not running; run 'aid chat node start' first." >&2
+        return 1
+    fi
+    # READ BEFORE WAITING, for the same reason the adapter does: a message that arrived while this
+    # session was busy is already in the store and is not going to "arrive" again. Going straight to
+    # the wait would block, time out, and leave it unread until some later message happened to land
+    # while this was listening -- which is the whole busy path silently missing.
+    pending="$(curl -sS --connect-timeout "$_AID_CHAT_CONNECT_TIMEOUT" --max-time "$_AID_CHAT_MAX_TIME" "${base}/messages?name=${n}" 2>/dev/null)"
+    depth="$(printf '%s' "$pending" | python3 -c 'import json,sys
+try: print(len(json.load(sys.stdin).get("messages", [])))
+except Exception: print(0)')"
+    if [[ "${depth:-0}" -gt 0 ]]; then
+        printf '%s\n' "$(_aid_chat_merge_wake '{"ok":true,"kind":"message","from_backlog":true}' "$pending")"
+        return 0
+    fi
+    # The held wait is bounded too, just generously: it is SUPPOSED to block, so the bound has to
+    # exceed the node's own block rather than compete with it. The node blocks at most its long-poll
+    # default, and this is that with room to spare -- enough that a working wait is never cut short,
+    # and little enough that an unreachable node still ends.
+    out="$(curl -sS --connect-timeout "$_AID_CHAT_CONNECT_TIMEOUT" --max-time 120 -w '\n%{http_code}' "${base}${q}" 2>/dev/null)"
+    code="$(printf '%s' "$out" | tail -n1)"
+    body="$(printf '%s' "$out" | sed '$d')"
+    if [[ "$code" != "200" ]]; then
+        _aid_chat_respond "$code" "$body"
+        return $?
+    fi
+    local kind
+    kind="$(printf '%s' "$body" | sed -n 's/.*"kind":"\([^"]*\)".*/\1/p')"
+    if [[ "$kind" == "message" ]]; then
+        # One JSON object carrying both the wake and its content, so an adapter needs one call.
+        local inbox
+        inbox="$(curl -sS --connect-timeout "$_AID_CHAT_CONNECT_TIMEOUT" --max-time "$_AID_CHAT_MAX_TIME" "${base}/messages?name=${n}" 2>/dev/null)"
+        printf '%s\n' "$(_aid_chat_merge_wake "$body" "$inbox")"
+    else
+        printf '%s\n' "$body"
+    fi
+    return 0
+}
+
+# Merge the wait outcome and the inbox into one object. Done in python3 rather than by string
+# surgery because both halves are real JSON and a message body can contain anything -- braces,
+# quotes, newlines -- which is exactly where hand-splicing goes wrong.
+_aid_chat_merge_wake() {
+    python3 -c '
+import json, sys
+wake = json.loads(sys.argv[1])
+try:
+    inbox = json.loads(sys.argv[2])
+except Exception:
+    inbox = {}
+wake["messages"] = inbox.get("messages", [])
+wake["delivered_seq"] = inbox.get("delivered_seq")
+wake["acked_seq"] = inbox.get("acked_seq")
+print(json.dumps(wake))
+' "$1" "$2"
+}
+
+# The session name, when the caller did not give one.
+#
+# THIS EXISTS BECAUSE THE PRODUCT SHIPPED WITHOUT IT AND DID NOT WORK. The requirement has a session
+# register ITSELF under a STABLE name, and the rendered skill told the agent to pass
+# `--name "$AID_CHAT_SESSION"` -- a variable nothing anywhere ever set. Following the skill exactly
+# produced `--name ""` and an error. Every test passed, because every test passed `--name` explicitly.
+#
+# So the default is DERIVED, from the working directory:
+#
+#   STABLE across restarts, which FR-2.2 requires: reattachment finds a session's channel again by
+#   name, so a name that changed per process would orphan the mail it was meant to recover.
+#   DISTINCT per repository, which is the objective's own case -- sessions work in different
+#   repositories, so the directory is the natural discriminator.
+#   AND IT NEEDS NO CONFIGURATION, which matters most: the operator writes one hook line with no name
+#   in it, and every session in every repository gets a correct one.
+#
+# `AID_CHAT_SESSION` still wins, for two sessions sharing a repository or for a friendlier name.
+# The name this working directory already goes by, ASKED OF THE NODE rather than derived here.
+#
+# It used to be derived from the directory basename, in this function and again in each adapter. That
+# made stability a property two independent implementations had to compute identically, and forced the
+# name to be a pure function of the directory -- so every checkout called `src` collided, and a
+# friendlier minted name was impossible. The node records `cwd` on the session row, so it can answer
+# this, and it is then the single source of truth.
+#
+# `AID_CHAT_SESSION` still wins, for two sessions sharing one directory or for a name you choose.
+_aid_chat_resolve_name() {
+    if [[ -n "${AID_CHAT_SESSION:-}" ]]; then
+        printf '%s\n' "$AID_CHAT_SESSION"
+        return 0
+    fi
+    local base out
+    base="$(_aid_chat_base_url)" || return 1
+    command -v curl >/dev/null 2>&1 || return 1
+    local tool="${_AID_CHAT_TOOL:-${AID_CHAT_TOOL:-}}"
+    out="$(curl -sS --connect-timeout "$_AID_CHAT_CONNECT_TIMEOUT" --max-time "$_AID_CHAT_MAX_TIME" \
+        --get "${base}/session/name" --data-urlencode "cwd=${PWD}" \
+        --data-urlencode "tool=${tool}" 2>/dev/null)" || return 1
+    # THE TOP-LEVEL `name` ONLY, which is why the body is cut at `candidates` before it is read.
+    #
+    # Reading the whole body found the LAST "name" in it, because `.*` is greedy -- and when the
+    # top-level name was null, the last one was a CANDIDATE. So a directory holding two sessions
+    # resolved silently to one of them instead of refusing: exactly the "one agent speaks as another"
+    # failure this resolver exists to prevent, reintroduced by the parser rather than the logic.
+    local head resolved
+    head="${out%%\"candidates\"*}"
+    resolved="$(printf '%s' "$head" | sed -n 's/.*"name"[[:space:]]*:[[:space:]]*"\([^"]*\)".*/\1/p')"
+    if [[ -n "$resolved" && "$resolved" != "null" ]]; then
+        printf '%s\n' "$resolved"
+        return 0
+    fi
+    # No single answer. The candidates come back THROUGH STDOUT behind a sentinel, because this function
+    # is called in a command substitution: a variable set here lives in a subshell and is gone by the
+    # time the caller reads it, which turned "two sessions are registered here, pick one" into the
+    # flatly untrue "no session is registered for this directory".
+    local cands
+    cands="$(printf '%s' "$out" \
+        | grep -oE '"name":"[^"]*","tool":"[^"]*"' \
+        | sed -e 's/"name":"//' -e 's/","tool":"/ (/' -e 's/"$/)/' \
+        | paste -sd', ' -)"
+    [[ -n "$cands" ]] && printf '!AMBIGUOUS:%s\n' "$cands"
+    return 1
+}
+
+# `aid chat hook` -- generate the stop-hook snippet, and check an installed one.
+#
+# IT WRITES NOTHING, and that is a requirement rather than caution: FR-0.4 says the product writes no
+# host tool's configuration, and the reasoning is concrete -- a project-scoped host config file is
+# tracked in git, so writing one would put a hook into every contributor's checkout, and a user-scoped
+# one belongs to a human who also edits it by hand.
+#
+# What it removes is the part that actually goes wrong. Installing this by hand means finding an
+# absolute path to `node`, getting the install path right, and putting the SAME number in two places --
+# and the failure when the numbers disagree is silent: no error, no log, just a wake that never comes.
+# So this fills all of that in from the running system, and `--check` reads the file back and says
+# whether what is there will work.
+_aid_chat_hook_node_path() {
+    local n
+    n="$(command -v node 2>/dev/null)"
+    [[ -z "$n" ]] && { echo "ERROR: aid: chat hook: no node on PATH; install Node (>= 22.13.0) first." >&2; return 1; }
+    # Resolved to a real path, because a PATH entry may be a shim that re-launches the real interpreter
+    # as a child -- which leaves the process the host watches unrelated to the one that blocks.
+    if command -v readlink >/dev/null 2>&1; then
+        n="$(readlink -f "$n" 2>/dev/null || printf '%s' "$n")"
+    fi
+    printf '%s\n' "$n"
+}
+
+_aid_chat_hook_config_path() {
+    case "$1" in
+        claude-code) printf '%s\n' "${HOME}/.claude/settings.json" ;;
+        cursor)      printf '%s\n' "${HOME}/.cursor/settings.json" ;;
+        *)           return 1 ;;
+    esac
+}
+
+_cmd_chat_hook() {
+    local tool="" timeout=60 action=print
+    while [[ $# -gt 0 ]]; do
+        case "$1" in
+            --tool)    tool="$2"; shift 2 ;;
+            --timeout) timeout="$2"; shift 2 ;;
+            --check)   action=check; shift ;;
+            --install) action=install; shift ;;
+            --uninstall) action=uninstall; shift ;;
+            --yes|-y)  _AID_CHAT_YES=1; shift ;;
+            *) echo "ERROR: aid: chat hook: unknown option '$1'" >&2; return 2 ;;
+        esac
+    done
+    case "$tool" in
+        claude-code|cursor) ;;
+        "") echo "ERROR: aid: chat hook: --tool is required (claude-code | cursor)" >&2; return 2 ;;
+        *)  echo "ERROR: aid: chat hook: no adapter ships for '${tool}'; that host falls back to 'aid chat inbox'." >&2; return 2 ;;
+    esac
+    if ! [[ "$timeout" =~ ^[0-9]+$ ]] || [[ "$timeout" -lt 10 ]]; then
+        echo "ERROR: aid: chat hook: --timeout must be an integer of at least 10 seconds" >&2
+        return 2
+    fi
+
+    local node_path adapter cfg
+    node_path="$(_aid_chat_hook_node_path)" || return 1
+    adapter="${AID_CODE_HOME}/chat-node/adapters/${tool}.mjs"
+    cfg="$(_aid_chat_hook_config_path "$tool")"
+
+    if [[ ! -f "$adapter" ]]; then
+        echo "ERROR: aid: chat hook: adapter missing at ${adapter}; reinstall aid." >&2
+        return 1
+    fi
+
+    if [[ "$action" == "install" || "$action" == "uninstall" ]]; then
+        # WRITING HOST CONFIGURATION, which the product refused to do until it was explicitly
+        # authorised. FR-0.4's reasoning was concrete rather than doctrinal, and the guards below are
+        # exactly those reasons turned into checks rather than a blanket refusal:
+        #
+        #   - A PROJECT-scoped host config file is tracked in git, so writing one would commit one
+        #     machine's absolute paths into every contributor's checkout. Hence: user scope only, and
+        #     a hard refusal if the target is tracked, whatever its path.
+        #   - A USER-scoped file belongs to a human who also edits it by hand and whose other tools
+        #     write to it. Hence: merge into what is there, never overwrite; back up first; and show
+        #     the change for confirmation before touching it.
+        command -v python3 >/dev/null 2>&1 || {
+            echo "ERROR: aid: chat hook: python3 is required to edit JSON safely" >&2; return 1; }
+
+        # A tracked target is refused before anything is read, because this is the one failure that
+        # cannot be undone by the user alone -- it lands in everybody's checkout on the next commit.
+        if git -C "$(dirname "$cfg")" rev-parse --is-inside-work-tree >/dev/null 2>&1; then
+            if git -C "$(dirname "$cfg")" ls-files --error-unmatch "$cfg" >/dev/null 2>&1; then
+                echo "ERROR: aid: chat hook: ${cfg} is TRACKED IN GIT and will not be written." >&2
+                echo "  Writing it would commit this machine's absolute paths into every checkout." >&2
+                echo "  Run 'aid chat hook --tool ${tool}' and paste it in by hand instead." >&2
+                return 1
+            fi
+        fi
+
+        local plan
+        plan="$(AID_HOOK_CFG="$cfg" AID_HOOK_TOOL="$tool" AID_HOOK_NODE="$node_path" \
+                AID_HOOK_ADAPTER="$adapter" AID_HOOK_TIMEOUT="$timeout" AID_HOOK_MODE="$action" \
+                python3 "${AID_CODE_HOME}/chat-node/scripts/hook-install.py" --plan)" || {
+            printf '%s\n' "$plan" >&2
+            return 1
+        }
+        printf '%s\n' "$plan"
+
+        # NOTHING IS WRITTEN WITHOUT AN ANSWER, and the default is no. A prompt that proceeds on a bare
+        # Enter is not a confirmation.
+        if [[ "${_AID_CHAT_YES:-0}" != "1" ]]; then
+            if [[ ! -t 0 ]]; then
+                echo "aid: chat hook: refusing to ${action} without a confirmation." >&2
+                echo "  stdin is not a terminal, so nobody can answer. Re-run with --yes if you meant it." >&2
+                return 1
+            fi
+            local reply=""
+            printf 'Apply this change to %s? [y/N] ' "$cfg" >&2
+            read -r reply || reply=""
+            case "$reply" in
+                y|Y|yes|YES) ;;
+                *) echo "aid: chat hook: nothing written." >&2; return 1 ;;
+            esac
+        fi
+
+        AID_HOOK_CFG="$cfg" AID_HOOK_TOOL="$tool" AID_HOOK_NODE="$node_path" \
+            AID_HOOK_ADAPTER="$adapter" AID_HOOK_TIMEOUT="$timeout" AID_HOOK_MODE="$action" \
+            python3 "${AID_CODE_HOME}/chat-node/scripts/hook-install.py" --apply || return 1
+        return 0
+    fi
+
+    if [[ "$action" == "check" ]]; then
+        # READING a config file is not writing it. Delegated to the same script that installs, so the
+        # two share one parser: while `--check` had its own regex pass over the whole file, it compared
+        # OUR --host-timeout against whichever `"timeout"` appeared first, which after a merge into a
+        # file holding the user's own hooks was theirs. It reported a mismatch on a correct install.
+        command -v python3 >/dev/null 2>&1 || {
+            echo "ERROR: aid: chat hook: python3 is required to read the hook safely" >&2; return 1; }
+        AID_HOOK_CFG="$cfg" AID_HOOK_TOOL="$tool" AID_HOOK_NODE="$node_path" \
+            AID_HOOK_ADAPTER="$adapter" AID_HOOK_TIMEOUT="$timeout" AID_HOOK_MODE=check \
+            python3 "${AID_CODE_HOME}/chat-node/scripts/hook-install.py" --check
+        return $?
+    fi
+
+    # Print, with everything filled in from this machine.
+    #
+    # The block is min(long-poll default, timeout - margin), NOT timeout - margin: an earlier version of
+    # this line printed the second and told an operator with timeout 60 that the node blocks 55s, when
+    # the long poll caps it at 30. A number in the output that does not match what the node does is
+    # worse than no number.
+    local block margin long_poll
+    margin="$(( ${AID_CHAT_ADAPTER_MARGIN_MS:-5000} / 1000 ))"
+    long_poll="$(( ${AID_CHAT_LONG_POLL_MS:-30000} / 1000 ))"
+    block=$(( timeout - margin ))
+    [[ "$block" -gt "$long_poll" ]] && block="$long_poll"
+    cat <<HOOKDOC
+# Paste the block below into:
+#   ${cfg}
+#
+# Nothing writes it for you: AID writes no host tool's configuration, because a project-scoped
+# config file is tracked in git and would put this hook into every contributor's checkout.
+#
+# The two numbers are already matched. With timeout ${timeout}: the node blocks ${block}s, the adapter
+# guards just under ${timeout}s, and your host gives up at ${timeout}s -- in that order, which is the
+# only order where a late answer is still an answer.
+# There is no session name in the command: the adapter derives it from the working directory, so this
+# one block serves every session on this machine.
+#
+# Do NOT set this hook to fail closed. Its normal behaviour is to block and return with nothing, and
+# under fail-closed a stopped node would freeze the session instead of just missing a wake.
+HOOKDOC
+    if [[ "$tool" == "claude-code" ]]; then
+        cat <<HOOKJSON
+{
+  "hooks": {
+    "Stop": [
+      {
+        "matcher": "*",
+        "hooks": [
+          {
+            "type": "command",
+            "timeout": ${timeout},
+            "command": "${node_path} ${adapter} --host-timeout ${timeout}"
+          }
+        ]
+      }
+    ]
+  }
+}
+HOOKJSON
+    else
+        cat <<HOOKJSON
+{
+  "hooks": {
+    "stop": [
+      {
+        "command": "${node_path} ${adapter} --host-timeout ${timeout}",
+        "timeout": ${timeout}
+      }
+    ]
+  }
+}
+HOOKJSON
+    fi
+    printf '\nThen check it with:  aid chat hook --tool %s --check\n' "$tool"
+}
+
+_cmd_chat_plane() {
+    local verb="$1"; shift
+    local name="" body="" channel="" cursor="" key="" whisper="" mention="" reply_to="" corr="" target="" host_timeout="" follow=0 machine="" peer_action=list limit="" setting=""
+    while [[ $# -gt 0 ]]; do
+        case "$1" in
+            --name)     name="$2"; shift 2 ;;
+            --body)     body="$2"; shift 2 ;;
+            --channel)  channel="$2"; shift 2 ;;
+            --cursor)   cursor="$2"; shift 2 ;;
+            --key)      key="$2"; shift 2 ;;
+            --whisper-to) whisper="$2"; shift 2 ;;
+            --mention)  mention="$2"; shift 2 ;;
+            --target)   target="$2"; shift 2 ;;
+            --host-timeout) host_timeout="$2"; shift 2 ;;
+            --machine)  machine="$2"; shift 2 ;;
+            --limit)    limit="$2"; shift 2 ;;
+            --set)      setting="$2"; shift 2 ;;
+            --add)      peer_action=add; shift ;;
+            --remove)   peer_action=remove; shift ;;
+            --discover) peer_action=discover; shift ;;
+            --follow)   follow=1; shift ;;
+            --reply-to) reply_to="$2"; shift 2 ;;
+            --correlation-id) corr="$2"; shift 2 ;;
+            --tool)     _AID_CHAT_TOOL="$2"; shift 2 ;;
+            --to)       _AID_CHAT_TO="$2"; shift 2 ;;
+            *) echo "ERROR: aid: chat ${verb}: unknown option '$1'" >&2; return 2 ;;
+        esac
+    done
+    # These are operator-facing and belong to no session, so they are exempt from the name rule --
+    # except `evict`, which names the session being removed.
+    case "$verb" in
+        show|audit|retention) name="${name:-operator}" ;;
+    esac
+    # No name given: derive one. This is what makes the rendered skill's commands work as written and
+    # the operator's hook line identical for every session.
+    # `register` is the one verb that may proceed with NO name: it is what mints one. Every other verb
+    # needs an identity that already exists, so it asks the node which name this directory goes by.
+    if [[ -z "$name" && "$verb" != "peers" && "$verb" != "register" ]]; then
+        name="$(_aid_chat_resolve_name)"
+        if [[ "$name" == '!AMBIGUOUS:'* ]]; then
+            echo "ERROR: aid: chat ${verb}: more than one session is registered in this directory." >&2
+            echo "  Candidates: ${name#!AMBIGUOUS:}" >&2
+            echo "  Pass --name <one of those>, --tool <host>, or set AID_CHAT_SESSION." >&2
+            return 2
+        fi
+        if [[ -z "$name" ]]; then
+            echo "ERROR: aid: chat ${verb}: no session is registered for this directory." >&2
+            echo "  Run 'aid chat register --tool <host>' first, or pass --name." >&2
+            return 2
+        fi
+    fi
+    # `peers` is operator-facing and belongs to no session, so it is exempt from the name rule.
+    if [[ -z "$name" && "$verb" != "peers" && "$verb" != "register" ]]; then
+        echo "ERROR: aid: chat ${verb}: --name is required (or set AID_CHAT_SESSION)" >&2
+        return 2
+    fi
+    local n; n="$(_aid_json_escape "$name")"
+
+    case "$verb" in
+        rename)
+            # Renaming an in-progress session. The node moves membership with it and leaves the
+            # transcript alone, because the log records who spoke at the time they spoke.
+            if [[ -z "${_AID_CHAT_TO:-}" ]]; then
+                echo "ERROR: aid: chat rename: --to <new name> is required" >&2
+                return 2
+            fi
+            _aid_chat_call POST /session/rename \
+                "{\"name\":\"${n}\",\"to\":\"$(_aid_json_escape "$_AID_CHAT_TO")\"}" ;;
+        register)
+            # The name the node MINTED is echoed on stderr, because a session that does not know its own
+            # name cannot address anything -- every other verb needs it.
+            local tool="${_AID_CHAT_TOOL:-${AID_CHAT_TOOL:-unknown}}"
+            local body out
+            if [[ -n "$name" ]]; then
+                body="{\"name\":\"${n}\",\"tool\":\"$(_aid_json_escape "$tool")\",\"cwd\":\"$(_aid_json_escape "$PWD")\"}"
+            else
+                # No name field at all, so the node mints one. Sending an empty string instead would
+                # register a session literally called "".
+                body="{\"tool\":\"$(_aid_json_escape "$tool")\",\"cwd\":\"$(_aid_json_escape "$PWD")\"}"
+            fi
+            out="$(_aid_chat_call POST /session "$body")"
+            local rc=$?
+            if [[ -z "${AID_CHAT_SESSION:-}" && -z "$name" ]]; then
+                local bound
+                bound="$(printf '%s' "$out" | sed -n 's/.*"name"[[:space:]]*:[[:space:]]*"\([^"]*\)".*/\1/p')"
+                [[ -n "$bound" ]] && printf 'aid: chat: registered as %s (pass --name, or "aid chat rename --to <name>" to change it)\n' "$bound" >&2
+            fi
+            printf '%s\n' "$out"
+            return $rc ;;
+        heartbeat)
+            _aid_chat_call POST /session/heartbeat "{\"name\":\"${n}\"}" ;;
+        reap)
+            # Operator-facing: give a session up for gone now, or sweep every session already
+            # past the reap threshold. The RULE lives in the node; the schedule is retention's.
+            if [[ "$name" == "--all" ]]; then _aid_chat_call POST /session/reap '{}'
+            else                              _aid_chat_call POST /session/reap "{\"name\":\"${n}\"}"; fi ;;
+        open)
+            [[ -z "$channel" ]] && { echo "ERROR: aid: chat open: --channel is required" >&2; return 2; }
+            _aid_chat_call POST /channel "{\"name\":\"${n}\",\"channel\":\"$(_aid_json_escape "$channel")\"}" ;;
+        join)
+            [[ -z "$channel" ]] && { echo "ERROR: aid: chat join: --channel is required" >&2; return 2; }
+            _aid_chat_call POST /channel/join "{\"name\":\"${n}\",\"channel\":\"$(_aid_json_escape "$channel")\"}" ;;
+        leave)
+            _aid_chat_call POST /channel/leave "{\"name\":\"${n}\"}" ;;
+        list)
+            _aid_chat_call GET "/channels?name=${n}" ;;
+        roster)
+            _aid_chat_call GET "/roster?name=${n}" ;;
+        show)
+            # What is in the store, plus the derived numbers an operator acts on: unread depth and
+            # idle time. Idle time is the input to eviction, which is the one remedy left to a human.
+            _aid_chat_call GET /status/detail ;;
+        audit)
+            # What happened, never what was said. A whisper appears here as a whisper between two
+            # parties; its body is not in the schema at all.
+            if [[ -n "$limit" ]]; then _aid_chat_call GET "/audit?limit=${limit}"
+            else                       _aid_chat_call GET /audit; fi ;;
+        evict)
+            _aid_chat_call POST /evict "{\"name\":\"${n}\"}" ;;
+        retention)
+            if [[ -z "$setting" ]]; then _aid_chat_call GET /retention
+            else
+                # --set key=value, converted to the one-key body the node expects.
+                local rk rv
+                rk="${setting%%=*}"; rv="${setting#*=}"
+                [[ "$rk" == "$setting" ]] && { echo "ERROR: aid: chat retention: --set expects key=value" >&2; return 2; }
+                _aid_chat_call POST /retention "{\"$(_aid_json_escape "$rk")\":${rv}}"
+            fi ;;
+        peers)
+            # Operator-facing, and the GUARANTEED discovery path: naming an address depends on no
+            # network feature. --discover is best-effort on top and finds nothing on a network with
+            # broadcast disabled, which is why it is never the only way to reach a peer.
+            case "$peer_action" in
+                add)      [[ -z "$machine" ]] && { echo "ERROR: aid: chat peers --add: --machine is required" >&2; return 2; }
+                          _aid_chat_call POST /peers "{\"machine\":\"$(_aid_json_escape "$machine")\"}" ;;
+                remove)   [[ -z "$machine" ]] && { echo "ERROR: aid: chat peers --remove: --machine is required" >&2; return 2; }
+                          _aid_chat_call POST /peers/remove "{\"machine\":\"$(_aid_json_escape "$machine")\"}" ;;
+                discover) _aid_chat_call POST /peers/discover '{}' ;;
+                *)        _aid_chat_call GET /peers ;;
+            esac ;;
+        subscribe)
+            # THE WAIT COSTS NO MODEL TOKENS, and that is a property of what this is rather than a
+            # claim about it: a shell function that blocks in `curl`. There is no model in the path
+            # to spend anything -- no prompt is built, nothing is sent to an API, and the process
+            # holding the wait is `curl` waiting on a socket.
+            #
+            # ONE WAIT PER INVOCATION by default, because the documented hook command is exactly
+            # this line: the host fires its stop hook, this runs, it returns, and the host fires it
+            # again next time. `--follow` is for a standalone subscriber that re-arms itself, which
+            # is useful for an operator watching a channel but is not how an adapter runs.
+            local q="/wait?name=${n}"
+            [[ -n "$host_timeout" ]] && q="${q}&host_timeout=${host_timeout}"
+            while :; do
+                _aid_chat_wait_once "$q" "$n" || return $?
+                [[ "$follow" -eq 1 ]] || break
+            done
+            return 0 ;;
+        connect)
+            [[ -z "$target" ]] && { echo "ERROR: aid: chat connect: --target is required" >&2; return 2; }
+            # No channel parameter: the channel is the one the caller is already in, which is why
+            # a request always pulls a target into a conversation its asker is present in.
+            _aid_chat_call POST /connect "{\"name\":\"${n}\",\"target\":\"$(_aid_json_escape "$target")\"}" ;;
+        send)
+            [[ -z "$body" ]] && { echo "ERROR: aid: chat send: --body is required" >&2; return 2; }
+            local payload="{\"name\":\"${n}\",\"body\":\"$(_aid_json_escape "$body")\""
+            [[ -n "$key" ]]     && payload="${payload},\"idempotency_key\":\"$(_aid_json_escape "$key")\""
+            [[ -n "$whisper" ]] && payload="${payload},\"whisper_to\":\"$(_aid_json_escape "$whisper")\""
+            [[ -n "$mention" ]] && payload="${payload},\"mention\":[\"$(_aid_json_escape "$mention")\"]"
+            [[ -n "$reply_to" ]] && payload="${payload},\"reply_to\":\"$(_aid_json_escape "$reply_to")\""
+            [[ -n "$corr" ]]     && payload="${payload},\"correlation_id\":\"$(_aid_json_escape "$corr")\""
+            payload="${payload}}"
+            _aid_chat_call POST /messages "$payload" ;;
+        inbox)
+            if [[ -n "$cursor" ]]; then _aid_chat_call GET "/messages?name=${n}&cursor=${cursor}"
+            else                        _aid_chat_call GET "/messages?name=${n}"; fi ;;
+        ack)
+            [[ -z "$cursor" ]] && { echo "ERROR: aid: chat ack: --cursor is required" >&2; return 2; }
+            _aid_chat_call POST /messages/ack "{\"name\":\"${n}\",\"cursor\":${cursor}}" ;;
+        *) echo "ERROR: aid: chat: unknown verb '${verb}'" >&2; return 2 ;;
+    esac
+}
+
+_cmd_chat_ctl() {
+    local action="${1:-}"
+    # The message-plane verbs are handled first; `node ...` is the lifecycle surface.
+    case "$action" in
+        hook)
+            shift
+            _cmd_chat_hook "$@"
+            return $? ;;
+        register|rename|heartbeat|open|join|leave|list|send|inbox|ack|reap|roster|connect|subscribe|peers|show|audit|evict|retention)
+            shift
+            _cmd_chat_plane "$action" "$@"
+            return $? ;;
+    esac
+    if [[ "$action" == "node" ]]; then shift; action="${1:-}"; fi
+    case "$action" in
+        start|stop|status) ;;
+        ''|-h|--help) _aid_usage chat; exit 0 ;;
+        *) echo "ERROR: aid: chat: unknown action '${action}' (expected a message verb, or: node start | node stop | node status)" >&2; exit 2 ;;
+    esac
+    shift || true
+
+    local rt_dir pid_file port_file pid
+    rt_dir="$(_aid_chat_runtime_dir)"
+    pid_file="${rt_dir}/hub.pid"
+    port_file="${rt_dir}/hub.port"
+    pid=""
+    [[ -f "$pid_file" ]] && pid="$(tr -d '[:space:]' < "$pid_file")"
+
+    # A recorded pid that is not alive is a STALE record, not a running node. Reclaiming it
+    # silently is what makes `start` safe to run without checking first (FR-1.1).
+    local alive=0
+    if [[ -n "$pid" ]] && kill -0 "$pid" 2>/dev/null; then alive=1; fi
+
+    case "$action" in
+        status)
+            if [[ "$alive" -eq 1 ]]; then
+                local port=""
+                [[ -f "$port_file" ]] && port="$(tr -d '[:space:]' < "$port_file")"
+                echo "aid: chat node running (pid ${pid}, http://127.0.0.1:${port:-unknown})"
+                exit 0
+            fi
+            [[ -n "$pid" ]] && echo "aid: chat node not running (stale record for pid ${pid})" || echo "aid: chat node not running"
+            exit 0
+            ;;
+        stop)
+            if [[ "$alive" -ne 1 ]]; then
+                echo "aid: chat node not running."
+                rm -f "$pid_file" "$port_file" 2>/dev/null || true
+                exit 0
+            fi
+            kill -TERM "$pid" 2>/dev/null || true
+            local _w=0
+            while [[ "$_w" -lt 50 ]] && kill -0 "$pid" 2>/dev/null; do sleep 0.1; _w=$((_w+1)); done
+            kill -0 "$pid" 2>/dev/null && kill -KILL "$pid" 2>/dev/null || true
+            rm -f "$pid_file" "$port_file" 2>/dev/null || true
+            echo "aid: chat node stopped."
+            exit 0
+            ;;
+        start)
+            if [[ "$alive" -eq 1 ]]; then
+                local port=""
+                [[ -f "$port_file" ]] && port="$(tr -d '[:space:]' < "$port_file")"
+                echo "aid: chat node already running (pid ${pid}, http://127.0.0.1:${port:-unknown}); run 'aid chat node stop' first."
+                exit 8
+            fi
+            [[ -n "$pid" ]] && rm -f "$pid_file" "$port_file" 2>/dev/null || true
+
+            _aid_chat_require_node
+
+            local entry port_arg
+            entry="$(_aid_chat_hub_entry)"
+            if [[ ! -f "$entry" ]]; then
+                echo "ERROR: aid: chat: the chat node is missing from the install tree (expected ${entry}). Reinstall aid." >&2
+                exit 7
+            fi
+            port_arg="${AID_CHAT_PORT:-8812}"
+            while [[ $# -gt 0 ]]; do
+                case "$1" in
+                    --port) [[ $# -lt 2 ]] && _aid_die "chat: --port requires a value" 2
+                            port_arg="$2"; shift 2 ;;
+                    *) echo "ERROR: aid: chat: unknown option '$1'" >&2; exit 2 ;;
+                esac
+            done
+            if ! [[ "$port_arg" =~ ^[0-9]+$ ]] || [[ "$port_arg" -lt 1024 && "$port_arg" -ne 0 ]] || [[ "$port_arg" -gt 65535 ]]; then
+                echo "ERROR: aid: chat: --port must be 0 or an integer in 1024..65535" >&2
+                exit 2
+            fi
+
+            mkdir -p "$rt_dir"
+            # Detached, so the node outlives the shell that started it (FR-1.2).
+            nohup node "$entry" --port "$port_arg" >"${rt_dir}/hub.log" 2>&1 &
+            disown 2>/dev/null || true
+            local _s=0
+            while [[ "$_s" -lt 50 && ! -f "$port_file" ]]; do sleep 0.1; _s=$((_s+1)); done
+            if [[ -f "$port_file" ]]; then
+                echo "aid: chat node started (http://127.0.0.1:$(tr -d '[:space:]' < "$port_file"))"
+                exit 0
+            fi
+            echo "ERROR: aid: chat: the node did not report a listening port; see ${rt_dir}/hub.log" >&2
+            exit 1
+            ;;
+    esac
+}
+
 # ---- dashboard --------------------------------------------------------------
 if [[ "$SUBCMD" == "dashboard" ]]; then
     _cmd_dashboard_ctl "$@"
+    exit $?
+fi
+
+# ---- chat -------------------------------------------------------------------
+if [[ "$SUBCMD" == "chat" ]]; then
+    _cmd_chat_ctl "$@"
     exit $?
 fi
 

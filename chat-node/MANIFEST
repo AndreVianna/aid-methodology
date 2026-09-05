@@ -1,0 +1,37 @@
+# chat-node/MANIFEST -- single source of truth for the agent chat node component.
+#
+# One path per line, relative to chat-node/. Blank lines and #-comments are ignored;
+# trailing #-comments on a path line are stripped. Order is not significant.
+#
+# This is the curated set the installer/vendor paths provision -- it EXCLUDES tests/,
+# __pycache__/, *.pyc, README.md, and this MANIFEST file itself.
+#
+# Consumed by (all five must derive their chat-node file set from this file, never a
+# hand-maintained copy):
+#   - install.sh                          (curl|bash bootstrap + local-checkout provisioning)
+#   - install.ps1                         (PowerShell bootstrap)
+#   - packages/npm/scripts/vendor.js      (npm prepack vendoring)
+#   - packages/pypi/scripts/vendor.py     (hatchling build-hook vendoring)
+#   - release.sh                          (the aid-cli-v*.tar.gz CLI bundle)
+#
+# Guarded by tests/canonical/test-chat-node-manifest.sh, which asserts this list is
+# byte-for-byte the curated chat-node/ tree and that all five consumers reference this
+# manifest rather than an inline list. This mirrors dashboard/MANIFEST deliberately: the
+# dashboard shipped a file that was imported at runtime and absent from every manifest,
+# and one component learning that lesson does not protect the next one.
+
+adapters/claude-code.mjs
+adapters/common.mjs
+adapters/cursor.mjs
+scripts/hook-install.py
+server/core.mjs
+server/federation.mjs
+server/hub.mjs
+server/link.mjs
+server/node.mjs
+server/outbox.mjs
+server/peers.mjs
+server/protocol.mjs
+server/settings.mjs
+server/store.mjs
+server/waiters.mjs

@@ -14,6 +14,10 @@
       "dest": "site/src/content/docs/skills/aid-brainstorm.md"
     },
     {
+      "src": "canonical/skills/aid-chat/SKILL.md",
+      "dest": "site/src/content/docs/skills/aid-chat.md"
+    },
+    {
       "src": "canonical/skills/aid-config/SKILL.md",
       "dest": "site/src/content/docs/skills/aid-config.md"
     },
@@ -454,6 +458,7 @@
     "site/src/content/docs/skills/index.md",
     "site/src/content/docs/skills/aid-ask.md",
     "site/src/content/docs/skills/aid-brainstorm.md",
+    "site/src/content/docs/skills/aid-chat.md",
     "site/src/content/docs/skills/aid-config.md",
     "site/src/content/docs/skills/aid-create-api.md",
     "site/src/content/docs/skills/aid-create-architecture.md",
@@ -572,6 +577,10 @@
     {
       "src": "canonical/skills/aid-brainstorm/SKILL.md",
       "dest": "site/src/data/skill-flows/aid-brainstorm.flow.json"
+    },
+    {
+      "src": "canonical/skills/aid-chat/SKILL.md",
+      "dest": "site/src/data/skill-flows/aid-chat.flow.json"
     },
     {
       "src": "canonical/skills/aid-config/SKILL.md",
@@ -1015,6 +1024,6 @@
     "inline-states": 44,
     "sibling-doorway": 13,
     "engine-doorway": 34,
-    "residual": 7
+    "residual": 8
   }
 }

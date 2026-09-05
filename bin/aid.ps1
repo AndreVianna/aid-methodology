@@ -243,6 +243,58 @@ function script:Show-AidUsage {
             Write-Host 'aid version'
             Write-Host '  Print the installed aid CLI version and exit 0.'
         }
+        'chat' {
+            Write-Host 'aid chat register --name <n> [--tool <t>]     register this session'
+            Write-Host 'aid chat open    --name <n> --channel <c>     open a channel and join it'
+            Write-Host 'aid chat join    --name <n> --channel <c>     join an open channel'
+            Write-Host 'aid chat leave   --name <n>                   leave; closes it if you were last'
+            Write-Host 'aid chat list    --name <n>                   the open channels this hub knows'
+            Write-Host 'aid chat send    --name <n> --body <text> [--key <k>] [--whisper-to <m>] [--mention <m>]'
+            Write-Host '                 [--reply-to <key>] [--correlation-id <id>]'
+            Write-Host 'aid chat inbox   --name <n> [--cursor <c>]    messages after your position'
+            Write-Host 'aid chat ack     --name <n> --cursor <c>      advance your acknowledged position'
+            Write-Host 'aid chat roster  --name <n>                   who else is on this hub, and who is free'
+            Write-Host 'aid chat connect --name <n> --target <t>      pull one named agent into YOUR channel'
+            Write-Host 'aid chat subscribe --name <n> [--host-timeout <s>] [--follow]'
+            Write-Host '                 hold ONE wait for an arriving message or connect outcome.'
+            Write-Host '                 --host-timeout <s> MUST be the same number as the host stop'
+            Write-Host '                 hook timeout you configured; the block is'
+            Write-Host '                 min(long-poll default, s - margin). Omit it and the block'
+            Write-Host '                 falls back to a short value rather than inheriting any'
+            Write-Host '                 platform default. --follow re-arms instead of returning.'
+            Write-Host '                 Spends no model tokens: it blocks in a process, not a prompt.'
+            Write-Host 'aid chat rename  [--name <old>] --to <new>       rename a session, in progress'
+            Write-Host 'aid chat hook    --tool <claude-code|cursor> [--timeout <s>]'
+            Write-Host '                 [--check | --install | --uninstall] [--yes]'
+            Write-Host '                 print the stop-hook block to paste, with the node path, install'
+            Write-Host '                 path and both timeout numbers filled in from this machine; or'
+            Write-Host '                 --check to read an installed one back and report what is wrong.'
+            Write-Host '                 It WRITES NOTHING: AID writes no host tool configuration.'
+            Write-Host 'aid chat show                                  machines, sessions, channels, members,'
+            Write-Host '                 per-member unread depth and idle time (operator)'
+            Write-Host 'aid chat audit   [--limit <n>]                  what happened, never what was said:'
+            Write-Host '                 a whisper appears with its parties and no body (operator)'
+            Write-Host 'aid chat evict   --name <n>                     remove a session from its channel (operator)'
+            Write-Host 'aid chat retention [--set <key>=<value>]        show or set retention policy (operator)'
+            Write-Host 'aid chat peers   [--add|--remove --machine <host[:port]>] [--discover]'
+            Write-Host '                 list, add or remove peer hubs (operator). Naming an address is'
+            Write-Host '                 the GUARANTEED path and needs no network feature; --discover is'
+            Write-Host '                 best-effort broadcast on top and may legitimately find nobody.'
+            Write-Host 'aid chat reap    --name <n> | --name --all     give a session up for gone (operator)'
+            Write-Host '  --name may be omitted when AID_CHAT_SESSION is set.'
+            Write-Host '  --cursor on inbox RE-READS from that point and moves neither position.'
+            Write-Host '  Exit 14 means the node refused a well-formed request; the reason is the first'
+            Write-Host '  word on stderr (solo_channel, no_channel, already_in_channel, overflow, ...).'
+            Write-Host ''
+            Write-Host 'aid chat node start [--port <n>]'
+            Write-Host 'aid chat node stop'
+            Write-Host 'aid chat node status'
+            Write-Host '  Start, stop or query the local agent chat node (the hub).'
+            Write-Host '  The node serves every session on this machine, whichever tool hosts each one.'
+            Write-Host '  --port <n>  listen port on 127.0.0.1 (default 8812; 0 picks a free port).'
+            Write-Host '  Requires a Node runtime (>= 22.13.0); exits 9 with an explicit message if absent.'
+            Write-Host '  start on an already-running node exits 8 and changes nothing.'
+        }
         'dashboard' {
             Write-Host 'aid dashboard start <node|python> [--remote] [--allow-writes] [--port <n>]'
             Write-Host 'aid dashboard stop'
@@ -4752,10 +4804,675 @@ if ($SUBCMD -eq 'remove') {
 
 
 # ---------------------------------------------------------------------------
+# Chat node control (aid chat node start|stop|status) -- the PowerShell twin of
+# _cmd_chat_ctl in bin/aid. Behaviour, messages and exit codes are the same by
+# requirement, not by coincidence: the CLI parity gate compares them.
+#
+# Exit codes REUSE the established meanings rather than minting new ones:
+#   8  the node is already running          (same as `aid dashboard start`)
+#   9  no usable Node runtime on PATH       (same as the dashboard's runtime check)
+#   2  usage error
+#   1  runtime failure
+# ---------------------------------------------------------------------------
+# ---------------------------------------------------------------------------
+# Chat message plane -- the PowerShell twin of _cmd_chat_plane in bin/aid.
+# One HTTP call per verb into the one core; no rule and no SQL here.
+# Exit codes: 0 ok | 14 the node refused a well-formed request | 2 usage | 1 runtime.
+# ---------------------------------------------------------------------------
+function script:Get-AidChatBaseUrl {
+    $rtDir = if ($env:AID_CHAT_RUNTIME) { $env:AID_CHAT_RUNTIME } else { Join-Path $HOME '.aid\chat' }
+    $portFile = Join-Path $rtDir 'hub.port'
+    if (-not (Test-Path -LiteralPath $portFile -PathType Leaf)) { return $null }
+    $p = (Get-Content -LiteralPath $portFile -Raw).Trim()
+    if (-not $p) { return $null }
+    return "http://127.0.0.1:$p"
+}
+
+# One place that turns the node's answer into output plus an exit code, so no verb invents its
+# own convention. stdout carries the result; stderr carries the diagnostic.
+function script:Invoke-AidChatCall {
+    param([string]$Method, [string]$Path, [string]$Body = $null)
+
+    $base = script:Get-AidChatBaseUrl
+    if (-not $base) {
+        [Console]::Error.WriteLine("ERROR: aid: chat: the node is not running; run 'aid chat node start' first.")
+        return 1
+    }
+    try {
+        # Bounded, for the same reason the Bash twin is: an address that accepts nothing must make the
+        # command FAIL rather than stop. Invoke-WebRequest has no default timeout.
+        $args = @{ Uri = "$base$Path"; Method = $Method; UseBasicParsing = $true; ErrorAction = 'Stop'
+                   TimeoutSec = 30 }
+        if ($Body) { $args.Body = $Body; $args.ContentType = 'application/json' }
+        $resp = Invoke-WebRequest @args
+        Write-Output $resp.Content
+        return 0
+    } catch [System.Net.WebException], [Microsoft.PowerShell.Commands.HttpResponseException] {
+        $r = $_.Exception.Response
+        if (-not $r) {
+            [Console]::Error.WriteLine("ERROR: aid: chat: the node is not reachable; run 'aid chat node start' first.")
+            return 1
+        }
+        $code = [int]$r.StatusCode
+        $text = ''
+        try {
+            $sr = New-Object System.IO.StreamReader($r.GetResponseStream())
+            $text = $sr.ReadToEnd()
+        } catch { $text = '' }
+        switch ($code) {
+            409 {
+                $reason = if ($text -match '"reason":"([^"]*)"') { $Matches[1] } else { 'refused' }
+                $detail = if ($text -match '"detail":"([^"]*)"') { $Matches[1] } else { $null }
+                # A retry hint is the one part of a refusal a caller must ACT on rather than
+                # report, so it has to reach the caller -- otherwise the jitter exists in the node
+                # and the livelock it prevents is still there for every agent using this surface.
+                $retry  = if ($text -match '"retry_after_ms":([0-9]+)') { $Matches[1] } else { $null }
+                $line = $reason
+                if ($detail) { $line = "${line}: ${detail}" }
+                if ($retry)  { $line = "${line} (retry after ${retry}ms)" }
+                [Console]::Error.WriteLine($line)
+                # Also on stdout as JSON, so a program can read it without parsing prose.
+                Write-Output $text
+                return 14
+            }
+            400 { [Console]::Error.WriteLine("ERROR: aid: chat: the request was malformed: $text"); return 2 }
+            default { [Console]::Error.WriteLine("ERROR: aid: chat: the node answered ${code}: $text"); return 1 }
+        }
+    }
+}
+
+function script:ConvertTo-AidJsonString { param([string]$Value)
+    if ($null -eq $Value) { return '' }
+    return $Value.Replace('\', '\\').Replace('"', '\"').Replace("`n", '\n')
+}
+
+# One armed wait, and whatever it returns turned into one line of JSON on stdout. The PowerShell
+# twin of _aid_chat_wait_once in bin/aid.
+function script:Invoke-AidChatWaitOnce {
+    param([string]$Name, [string]$HostTimeout)
+
+    $base = script:Get-AidChatBaseUrl
+    if (-not $base) {
+        [Console]::Error.WriteLine("ERROR: aid: chat subscribe: the node is not running; run 'aid chat node start' first.")
+        return 1
+    }
+
+    # READ BEFORE WAITING, for the same reason the adapter does: a message that arrived while this
+    # session was busy is already in the store and is not going to "arrive" again. Going straight to
+    # the wait would block, time out, and leave it unread until some later message happened to land
+    # while this was listening -- which is the whole busy path silently missing.
+    try {
+        $pending = Invoke-WebRequest -Uri "$base/messages?name=$Name" -UseBasicParsing -ErrorAction Stop -TimeoutSec 30
+        $pj = $pending.Content | ConvertFrom-Json
+        if ($pj.messages -and $pj.messages.Count -gt 0) {
+            # The same shape the Bash twin emits for a backlog read, field for field.
+            $merged = [ordered]@{
+                ok = $true; kind = 'message'; from_backlog = $true
+                messages = $pj.messages; delivered_seq = $pj.delivered_seq; acked_seq = $pj.acked_seq
+            }
+            Write-Output ($merged | ConvertTo-Json -Compress -Depth 6)
+            return 0
+        }
+    } catch {
+        # A failed pending read is not fatal: fall through to the wait.
+    }
+
+    $q = "/wait?name=$Name"
+    if ($HostTimeout) { $q = "$q&host_timeout=$HostTimeout" }
+    try {
+        # Generously bounded: the held wait is SUPPOSED to block, so this must exceed the node's own
+        # block rather than compete with it.
+        $resp = Invoke-WebRequest -Uri "$base$q" -UseBasicParsing -ErrorAction Stop -TimeoutSec 120
+        $wake = $resp.Content | ConvertFrom-Json
+        if ($wake.kind -eq 'message') {
+            $inbox = (Invoke-WebRequest -Uri "$base/messages?name=$Name" -UseBasicParsing -ErrorAction Stop -TimeoutSec 30).Content | ConvertFrom-Json
+            # EVERY field the server sent is carried, not a fixed list of them. Copying a chosen set
+            # meant a field added to the wake -- `from_backlog`, say, or the next one -- would appear
+            # in the Bash twin's output and silently not in this one, and an adapter reading the two
+            # would behave differently on Windows for no reason it could see.
+            $merged = [ordered]@{}
+            foreach ($prop in $wake.PSObject.Properties) { $merged[$prop.Name] = $prop.Value }
+            $merged['messages']      = $inbox.messages
+            $merged['delivered_seq'] = $inbox.delivered_seq
+            $merged['acked_seq']     = $inbox.acked_seq
+            Write-Output ($merged | ConvertTo-Json -Compress -Depth 6)
+        } else {
+            Write-Output $resp.Content
+        }
+        return 0
+    } catch {
+        [Console]::Error.WriteLine("ERROR: aid: chat subscribe: the wait failed: $($_.Exception.Message)")
+        return 1
+    }
+}
+
+# The session name, when the caller did not give one -- the PowerShell twin of
+# _aid_chat_default_name. See that function for why this exists: the rendered skill told an agent to
+# pass a variable nothing set, so following it produced an empty name and an error.
+# The name this working directory already goes by, ASKED OF THE NODE rather than derived here.
+#
+# The Bash twin's `_aid_chat_resolve_name`. Deriving from the directory basename was only correct while
+# the name WAS the basename; once a name can be minted or renamed, a derived name addresses the wrong
+# session. The node holds `cwd` on the session row and is the single source of truth.
+function script:Resolve-AidChatName {
+    if ($env:AID_CHAT_SESSION) { return $env:AID_CHAT_SESSION }
+    $base = script:Get-AidChatBaseUrl
+    if (-not $base) { return '' }
+    try {
+        $cwd = [uri]::EscapeDataString($PWD.Path)
+        $r = Invoke-WebRequest -Uri "${base}/session/name?cwd=${cwd}" -Method GET `
+                -TimeoutSec 30 -UseBasicParsing -ErrorAction Stop
+        # The top-level `name` only. A leftmost match over the whole body finds a CANDIDATE's name
+        # when the top-level one is null, which resolves a two-session directory to one of them
+        # silently -- the same defect the Bash twin had, for the same reason.
+        $head = $r.Content
+        $cut = $head.IndexOf('"candidates"')
+        if ($cut -ge 0) { $head = $head.Substring(0, $cut) }
+        $m = [regex]::Match($head, '"name"\s*:\s*"([^"]*)"')
+        if ($m.Success) { return $m.Groups[1].Value }
+        return ''
+    } catch {
+        return ''
+    }
+}
+
+# `aid chat hook` -- the PowerShell twin. Generates the stop-hook block and checks an installed one,
+# and like the Bash twin it WRITES NOTHING: AID writes no host tool's configuration.
+function script:Invoke-AidChatHook {
+    param([string[]]$HookArgs)
+
+    $tool = ''; $timeout = 60; $action = 'print'; $assumeYes = $false
+    for ($i = 0; $i -lt $HookArgs.Count; $i++) {
+        switch ($HookArgs[$i]) {
+            '--tool'    { $tool = $HookArgs[$i + 1]; $i++ }
+            '--to'      { $to = $PlaneArgs[$i + 1]; $i++ }
+            '--timeout' { $timeout = [int]$HookArgs[$i + 1]; $i++ }
+            '--check'   { $action = 'check' }
+            '--install' { $action = 'install' }
+            '--uninstall' { $action = 'uninstall' }
+            '--yes'     { $assumeYes = $true }
+            '-y'        { $assumeYes = $true }
+            default {
+                [Console]::Error.WriteLine("ERROR: aid: chat hook: unknown option '$($HookArgs[$i])'")
+                return 2
+            }
+        }
+    }
+    if (-not $tool) { [Console]::Error.WriteLine('ERROR: aid: chat hook: --tool is required (claude-code | cursor)'); return 2 }
+    if ($tool -notin @('claude-code', 'cursor')) {
+        [Console]::Error.WriteLine("ERROR: aid: chat hook: no adapter ships for '$tool'; that host falls back to 'aid chat inbox'.")
+        return 2
+    }
+    if ($timeout -lt 10) { [Console]::Error.WriteLine('ERROR: aid: chat hook: --timeout must be at least 10 seconds'); return 2 }
+
+    $nodeCmd = Get-Command node -ErrorAction SilentlyContinue
+    if (-not $nodeCmd) { [Console]::Error.WriteLine('ERROR: aid: chat hook: no node on PATH; install Node (>= 22.13.0) first.'); return 1 }
+    # The resolved path, because a PATH entry may be a shim that re-launches the real interpreter as a
+    # child -- leaving the host watching a process unrelated to the one that blocks.
+    $nodePath = ($nodeCmd.Source -replace '\\', '/')
+    $adapter = (Join-Path $script:_AidCodeHome "chat-node/adapters/$tool.mjs") -replace '\\', '/'
+    $cfg = if ($tool -eq 'claude-code') { Join-Path $HOME '.claude/settings.json' } else { Join-Path $HOME '.cursor/settings.json' }
+
+    if (-not (Test-Path -LiteralPath $adapter -PathType Leaf)) {
+        [Console]::Error.WriteLine("ERROR: aid: chat hook: adapter missing at $adapter; reinstall aid.")
+        return 1
+    }
+
+    # install / uninstall / check all delegate to chat-node/scripts/hook-install.py -- the same writer
+    # the Bash twin calls, rather than a second implementation here.
+    #
+    # The inline version this replaces did its own regex pass over the file, and that is exactly what
+    # went wrong in the Bash twin: matching `"timeout"` across the whole document found the USER's hook
+    # after --install began merging into files that already had one, and reported a mismatch on a
+    # correct install. One parser, used by both twins, is the fix that stays fixed.
+    if ($action -in @('install', 'uninstall', 'check')) {
+        $py = Get-Command python3 -ErrorAction SilentlyContinue
+        if (-not $py) { $py = Get-Command python -ErrorAction SilentlyContinue }
+        if (-not $py) {
+            [Console]::Error.WriteLine('ERROR: aid: chat hook: python3 is required to read or edit the hook safely')
+            return 1
+        }
+        $script = Join-Path $script:_AidCodeHome 'chat-node/scripts/hook-install.py'
+
+        # A tracked target is refused before anything is read: it is the one mistake the user cannot
+        # undo alone, because it reaches every checkout on the next commit.
+        if ($action -ne 'check') {
+            $dir = Split-Path -Parent $cfg
+            $inRepo = $false
+            try {
+                $null = & git -C $dir rev-parse --is-inside-work-tree 2>$null
+                $inRepo = ($LASTEXITCODE -eq 0)
+            } catch { $inRepo = $false }
+            if ($inRepo) {
+                try { $null = & git -C $dir ls-files --error-unmatch $cfg 2>$null } catch { }
+                if ($LASTEXITCODE -eq 0) {
+                    [Console]::Error.WriteLine("ERROR: aid: chat hook: $cfg is TRACKED IN GIT and will not be written.")
+                    [Console]::Error.WriteLine("  Writing it would commit this machine's absolute paths into every checkout.")
+                    [Console]::Error.WriteLine("  Run 'aid chat hook --tool $tool' and paste it in by hand instead.")
+                    return 1
+                }
+            }
+        }
+
+        $env:AID_HOOK_CFG = $cfg
+        $env:AID_HOOK_TOOL = $tool
+        $env:AID_HOOK_NODE = $nodePath
+        $env:AID_HOOK_ADAPTER = $adapter
+        $env:AID_HOOK_TIMEOUT = "$timeout"
+        $env:AID_HOOK_MODE = $action
+        try {
+            if ($action -eq 'check') {
+                & $py.Source $script --check
+                return $LASTEXITCODE
+            }
+            & $py.Source $script --plan
+            if ($LASTEXITCODE -ne 0) { return $LASTEXITCODE }
+            # Nothing is written without an answer, and the default is no.
+            if (-not $assumeYes) {
+                if ([Console]::IsInputRedirected) {
+                    [Console]::Error.WriteLine("aid: chat hook: refusing to $action without a confirmation.")
+                    [Console]::Error.WriteLine('  stdin is not a terminal, so nobody can answer. Re-run with --yes if you meant it.')
+                    return 1
+                }
+                [Console]::Error.Write("Apply this change to $cfg" + '? [y/N] ')
+                $reply = [Console]::In.ReadLine()
+                if ($reply -notmatch '^(y|Y|yes|YES)$') {
+                    [Console]::Error.WriteLine('aid: chat hook: nothing written.')
+                    return 1
+                }
+            }
+            & $py.Source $script --apply
+            return $LASTEXITCODE
+        } finally {
+            foreach ($v in 'AID_HOOK_CFG','AID_HOOK_TOOL','AID_HOOK_NODE','AID_HOOK_ADAPTER','AID_HOOK_TIMEOUT','AID_HOOK_MODE') {
+                Remove-Item "env:$v" -ErrorAction SilentlyContinue
+            }
+        }
+    }
+
+    $marginS   = [int](([int]($env:AID_CHAT_ADAPTER_MARGIN_MS | ForEach-Object { if ($_) { $_ } else { 5000 } })) / 1000)
+    $longPollS = [int](([int]($env:AID_CHAT_LONG_POLL_MS | ForEach-Object { if ($_) { $_ } else { 30000 } })) / 1000)
+    $block = $timeout - $marginS
+    if ($block -gt $longPollS) { $block = $longPollS }
+
+    Write-Host "# Paste the block below into:"
+    Write-Host "#   $cfg"
+    Write-Host '#'
+    Write-Host "# Nothing writes it for you: AID writes no host tool's configuration, because a project-scoped"
+    Write-Host '# config file is tracked in git and would put this hook into every contributor''s checkout.'
+    Write-Host '#'
+    Write-Host "# The two numbers are already matched. With timeout ${timeout}: the node blocks ${block}s, the adapter"
+    Write-Host "# guards just under ${timeout}s, and your host gives up at ${timeout}s -- in that order."
+    Write-Host '# There is no session name in the command: the adapter derives it from the working directory.'
+    Write-Host '#'
+    Write-Host '# Do NOT set this hook to fail closed. Its normal behaviour is to block and return with nothing.'
+    if ($tool -eq 'claude-code') {
+        Write-Host @"
+{
+  "hooks": {
+    "Stop": [
+      {
+        "matcher": "*",
+        "hooks": [
+          {
+            "type": "command",
+            "timeout": $timeout,
+            "command": "$nodePath $adapter --host-timeout $timeout"
+          }
+        ]
+      }
+    ]
+  }
+}
+"@
+    } else {
+        Write-Host @"
+{
+  "hooks": {
+    "stop": [
+      {
+        "command": "$nodePath $adapter --host-timeout $timeout",
+        "timeout": $timeout
+      }
+    ]
+  }
+}
+"@
+    }
+    Write-Host ""
+    Write-Host "Then check it with:  aid chat hook --tool $tool --check"
+    return 0
+}
+
+function script:Invoke-AidChatPlane {
+    param([string]$Verb, [string[]]$PlaneArgs)
+
+    $name = ''
+    $to   = ''
+    $body = ''; $channel = ''; $cursor = ''; $key = ''; $whisper = ''; $mention = ''; $tool = ''
+    $replyTo = ''; $corr = ''; $target = ''; $hostTimeout = ''; $follow = $false
+    $machine = ''; $peerAction = 'list'; $limit = ''; $setting = ''
+    for ($i = 0; $i -lt $PlaneArgs.Count; $i++) {
+        $needsValue = $true
+        switch ($PlaneArgs[$i]) {
+            '--name'       { $name    = $PlaneArgs[$i + 1] }
+            '--body'       { $body    = $PlaneArgs[$i + 1] }
+            '--channel'    { $channel = $PlaneArgs[$i + 1] }
+            '--cursor'     { $cursor  = $PlaneArgs[$i + 1] }
+            '--key'        { $key     = $PlaneArgs[$i + 1] }
+            '--whisper-to' { $whisper = $PlaneArgs[$i + 1] }
+            '--mention'    { $mention = $PlaneArgs[$i + 1] }
+            '--target'     { $target  = $PlaneArgs[$i + 1] }
+            '--host-timeout' { $hostTimeout = $PlaneArgs[$i + 1] }
+            '--reply-to'   { $replyTo = $PlaneArgs[$i + 1] }
+            '--correlation-id' { $corr = $PlaneArgs[$i + 1] }
+            '--tool'       { $tool    = $PlaneArgs[$i + 1] }
+            # A bare switch: it takes no value, so it must NOT consume the next argument. Handling
+            # it inside the switch with $needsValue is what keeps that correct -- checking for it
+            # after the index has already advanced would read the wrong element.
+            '--follow'     { $follow  = $true; $needsValue = $false }
+            '--machine'    { $machine = $PlaneArgs[$i + 1] }
+            '--limit'      { $limit   = $PlaneArgs[$i + 1] }
+            '--set'        { $setting = $PlaneArgs[$i + 1] }
+            '--add'        { $peerAction = 'add';      $needsValue = $false }
+            '--remove'     { $peerAction = 'remove';   $needsValue = $false }
+            '--discover'   { $peerAction = 'discover'; $needsValue = $false }
+            default {
+                [Console]::Error.WriteLine("ERROR: aid: chat ${Verb}: unknown option '$($PlaneArgs[$i])'")
+                return 2
+            }
+        }
+        if ($needsValue) { $i++ }
+    }
+    # These are operator-facing and belong to no session -- except `evict`, which names the session
+    # being removed.
+    if ($Verb -in @('show', 'audit', 'retention') -and -not $name) { $name = 'operator' }
+    # No name given: derive one, so the skill's commands work as written and the operator's hook line
+    # is identical for every session.
+    if (-not $name -and $Verb -notin @('peers', 'register')) {
+        $name = script:Resolve-AidChatName
+        if (-not $name) {
+            [Console]::Error.WriteLine("ERROR: aid: chat ${Verb}: no session is registered for this directory.")
+            [Console]::Error.WriteLine("  Run 'aid chat register --tool <host>' first, or pass --name.")
+            return 2
+        }
+    }
+    # `peers` is operator-facing and belongs to no session; `register` is the verb that MINTS a name.
+    # Both are exempt, and the block that used to repeat this refusal is gone: the resolver above
+    # already returns for every other verb, so a second identical check could never fire.
+    $n = script:ConvertTo-AidJsonString $name
+
+    switch ($Verb) {
+        'rename' {
+            # Renaming an in-progress session. The node moves membership with it and leaves the
+            # transcript alone, because the log records who spoke at the time they spoke.
+            if (-not $to) {
+                [Console]::Error.WriteLine('ERROR: aid: chat rename: --to <new name> is required')
+                return 2
+            }
+            return script:Invoke-AidChatCall 'POST' '/session/rename' `
+                ('{"name":"' + $n + '","to":"' + (script:ConvertTo-AidJsonString $to) + '"}')
+        }
+        'register' {
+            # The name the node MINTED is echoed, because a session that does not know its own name
+            # cannot address anything -- every other verb requires it.
+            $t = if ($tool) { $tool } elseif ($env:AID_CHAT_TOOL) { $env:AID_CHAT_TOOL } else { 'unknown' }
+            $tail = '"tool":"' + (script:ConvertTo-AidJsonString $t) + '","cwd":"' + (script:ConvertTo-AidJsonString $PWD.Path) + '"}'
+            # No name field at all when none was given, so the node mints one. An empty string would
+            # register a session literally called "".
+            $body = if ($name) { '{"name":"' + $n + '",' + $tail } else { '{' + $tail }
+            # The helper writes the body to the output stream and returns its code, so both arrive
+            # together and the body has to be separated from the code before either can be used.
+            $res  = @(script:Invoke-AidChatCall 'POST' '/session' $body)
+            $code = $res[-1]
+            $content = if ($res.Count -gt 1) { ($res[0..($res.Count - 2)] -join [Environment]::NewLine) } else { '' }
+            if (-not $env:AID_CHAT_SESSION -and -not $name) {
+                $m = [regex]::Match([string]$content, '"name"\s*:\s*"([^"]*)"')
+                if ($m.Success) {
+                    [Console]::Error.WriteLine('aid: chat: registered as ' + $m.Groups[1].Value +
+                        ' (pass --name, or "aid chat rename --to <name>" to change it)')
+                }
+            }
+            if ($content) { Write-Output $content }
+            return $code
+        }
+        'heartbeat' { return script:Invoke-AidChatCall 'POST' '/session/heartbeat' ('{"name":"' + $n + '"}') }
+        'reap' {
+            # Operator-facing: give a session up for gone now, or sweep every session already
+            # past the reap threshold. The RULE lives in the node; the schedule is retention's.
+            if ($name -eq '--all') { return script:Invoke-AidChatCall 'POST' '/session/reap' '{}' }
+            return script:Invoke-AidChatCall 'POST' '/session/reap' ('{"name":"' + $n + '"}')
+        }
+        'open' {
+            if (-not $channel) { [Console]::Error.WriteLine('ERROR: aid: chat open: --channel is required'); return 2 }
+            return script:Invoke-AidChatCall 'POST' '/channel' ('{"name":"' + $n + '","channel":"' + (script:ConvertTo-AidJsonString $channel) + '"}')
+        }
+        'join' {
+            if (-not $channel) { [Console]::Error.WriteLine('ERROR: aid: chat join: --channel is required'); return 2 }
+            return script:Invoke-AidChatCall 'POST' '/channel/join' ('{"name":"' + $n + '","channel":"' + (script:ConvertTo-AidJsonString $channel) + '"}')
+        }
+        'leave' { return script:Invoke-AidChatCall 'POST' '/channel/leave' ('{"name":"' + $n + '"}') }
+        'list'  { return script:Invoke-AidChatCall 'GET' ("/channels?name=$n") }
+        'roster' { return script:Invoke-AidChatCall 'GET' ("/roster?name=$n") }
+        'show'  { return script:Invoke-AidChatCall 'GET' '/status/detail' }
+        'audit' {
+            if ($limit) { return script:Invoke-AidChatCall 'GET' ("/audit?limit=$limit") }
+            return script:Invoke-AidChatCall 'GET' '/audit'
+        }
+        'evict' { return script:Invoke-AidChatCall 'POST' '/evict' ('{"name":"' + $n + '"}') }
+        'retention' {
+            if (-not $setting) { return script:Invoke-AidChatCall 'GET' '/retention' }
+            $parts = $setting -split '=', 2
+            if ($parts.Count -ne 2) { [Console]::Error.WriteLine('ERROR: aid: chat retention: --set expects key=value'); return 2 }
+            return script:Invoke-AidChatCall 'POST' '/retention' ('{"' + (script:ConvertTo-AidJsonString $parts[0]) + '":' + $parts[1] + '}')
+        }
+        'peers' {
+            # Operator-facing, and the GUARANTEED discovery path: naming an address depends on no
+            # network feature. --discover is best-effort on top and finds nothing on a network with
+            # broadcast disabled, which is why it is never the only way to reach a peer.
+            switch ($peerAction) {
+                'add' {
+                    if (-not $machine) { [Console]::Error.WriteLine('ERROR: aid: chat peers --add: --machine is required'); return 2 }
+                    return script:Invoke-AidChatCall 'POST' '/peers' ('{"machine":"' + (script:ConvertTo-AidJsonString $machine) + '"}')
+                }
+                'remove' {
+                    if (-not $machine) { [Console]::Error.WriteLine('ERROR: aid: chat peers --remove: --machine is required'); return 2 }
+                    return script:Invoke-AidChatCall 'POST' '/peers/remove' ('{"machine":"' + (script:ConvertTo-AidJsonString $machine) + '"}')
+                }
+                'discover' { return script:Invoke-AidChatCall 'POST' '/peers/discover' '{}' }
+                default    { return script:Invoke-AidChatCall 'GET' '/peers' }
+            }
+        }
+        'subscribe' {
+            # THE WAIT COSTS NO MODEL TOKENS, and that is a property of what this is rather than a
+            # claim about it: a PowerShell function blocking on a web request. There is no model in
+            # the path to spend anything.
+            #
+            # ONE WAIT PER INVOCATION by default, because the documented hook command is exactly
+            # this line: the host fires its stop hook, this runs, it returns, and the host fires it
+            # again next time. --follow is for a standalone subscriber that re-arms itself.
+            do {
+                $rc = script:Invoke-AidChatWaitOnce -Name $n -HostTimeout $hostTimeout
+                if ($rc -ne 0) { return $rc }
+            } while ($follow)
+            return 0
+        }
+        'connect' {
+            if (-not $target) { [Console]::Error.WriteLine('ERROR: aid: chat connect: --target is required'); return 2 }
+            # No channel parameter: the channel is the one the caller is already in, which is why
+            # a request always pulls a target into a conversation its asker is present in.
+            return script:Invoke-AidChatCall 'POST' '/connect' ('{"name":"' + $n + '","target":"' + (script:ConvertTo-AidJsonString $target) + '"}')
+        }
+        'send' {
+            if (-not $body) { [Console]::Error.WriteLine('ERROR: aid: chat send: --body is required'); return 2 }
+            $payload = '{"name":"' + $n + '","body":"' + (script:ConvertTo-AidJsonString $body) + '"'
+            if ($key)     { $payload += ',"idempotency_key":"' + (script:ConvertTo-AidJsonString $key) + '"' }
+            if ($whisper) { $payload += ',"whisper_to":"' + (script:ConvertTo-AidJsonString $whisper) + '"' }
+            if ($mention) { $payload += ',"mention":["' + (script:ConvertTo-AidJsonString $mention) + '"]' }
+            if ($replyTo) { $payload += ',"reply_to":"' + (script:ConvertTo-AidJsonString $replyTo) + '"' }
+            if ($corr)    { $payload += ',"correlation_id":"' + (script:ConvertTo-AidJsonString $corr) + '"' }
+            $payload += '}'
+            return script:Invoke-AidChatCall 'POST' '/messages' $payload
+        }
+        'inbox' {
+            if ($cursor) { return script:Invoke-AidChatCall 'GET' ("/messages?name=$n&cursor=$cursor") }
+            return script:Invoke-AidChatCall 'GET' ("/messages?name=$n")
+        }
+        'ack' {
+            if (-not $cursor) { [Console]::Error.WriteLine('ERROR: aid: chat ack: --cursor is required'); return 2 }
+            return script:Invoke-AidChatCall 'POST' '/messages/ack' ('{"name":"' + $n + '","cursor":' + $cursor + '}')
+        }
+        default { [Console]::Error.WriteLine("ERROR: aid: chat: unknown verb '$Verb'"); return 2 }
+    }
+}
+
+function script:Invoke-AidChatCtl {
+    param([string[]]$CcArgs)
+
+    $action = if ($CcArgs.Count -ge 1) { $CcArgs[0] } else { '' }
+    # The message-plane verbs are handled first; `node ...` is the lifecycle surface.
+    if ($action -eq 'hook') {
+        $hookArgs = @()
+        if ($CcArgs.Count -gt 1) { $hookArgs = $CcArgs[1..($CcArgs.Count - 1)] }
+        script:Exit-Aid (script:Invoke-AidChatHook -HookArgs $hookArgs)
+    }
+    if ($action -in @('register','rename','heartbeat','open','join','leave','list','send','inbox','ack','reap','roster','connect','subscribe','peers','show','audit','evict','retention')) {
+        $planeArgs = @()
+        if ($CcArgs.Count -gt 1) { $planeArgs = $CcArgs[1..($CcArgs.Count - 1)] }
+        script:Exit-Aid (script:Invoke-AidChatPlane -Verb $action -PlaneArgs $planeArgs)
+    }
+    $rest   = @()
+    if ($action -eq 'node') {
+        $action = if ($CcArgs.Count -ge 2) { $CcArgs[1] } else { '' }
+        if ($CcArgs.Count -gt 2) { $rest = $CcArgs[2..($CcArgs.Count - 1)] }
+    } elseif ($CcArgs.Count -gt 1) {
+        $rest = $CcArgs[1..($CcArgs.Count - 1)]
+    }
+
+    if ($action -in @('', '-h', '--help')) { script:Show-AidUsage 'chat'; script:Exit-Aid 0 }
+    if ($action -notin @('start', 'stop', 'status')) {
+        [Console]::Error.WriteLine("ERROR: aid: chat: unknown action '$action' (expected a message verb, or: node start | node stop | node status)")
+        script:Exit-Aid 2
+    }
+
+    $rtDir = if ($env:AID_CHAT_RUNTIME) { $env:AID_CHAT_RUNTIME } else { Join-Path $HOME '.aid\chat' }
+    $pidFile  = Join-Path $rtDir 'hub.pid'
+    $portFile = Join-Path $rtDir 'hub.port'
+
+    $hubPid = $null
+    if (Test-Path -LiteralPath $pidFile -PathType Leaf) {
+        $hubPid = (Get-Content -LiteralPath $pidFile -Raw).Trim()
+    }
+    # A recorded pid that is not alive is a STALE record, not a running node -- reclaiming it
+    # silently is what makes `start` safe to run without checking first (FR-1.1).
+    $alive = $false
+    if ($hubPid) {
+        $alive = [bool](Get-Process -Id ([int]$hubPid) -ErrorAction SilentlyContinue)
+    }
+    $port = ''
+    if (Test-Path -LiteralPath $portFile -PathType Leaf) {
+        $port = (Get-Content -LiteralPath $portFile -Raw).Trim()
+    }
+
+    switch ($action) {
+        'status' {
+            if ($alive) {
+                Write-Host "aid: chat node running (pid $hubPid, http://127.0.0.1:$(if ($port) { $port } else { 'unknown' }))"
+                script:Exit-Aid 0
+            }
+            if ($hubPid) { Write-Host "aid: chat node not running (stale record for pid $hubPid)" }
+            else         { Write-Host 'aid: chat node not running' }
+            script:Exit-Aid 0
+        }
+        'stop' {
+            if (-not $alive) {
+                Write-Host 'aid: chat node not running.'
+                Remove-Item -LiteralPath $pidFile, $portFile -Force -ErrorAction SilentlyContinue
+                script:Exit-Aid 0
+            }
+            Stop-Process -Id ([int]$hubPid) -ErrorAction SilentlyContinue
+            $w = 0
+            while ($w -lt 50 -and (Get-Process -Id ([int]$hubPid) -ErrorAction SilentlyContinue)) {
+                Start-Sleep -Milliseconds 100; $w++
+            }
+            if (Get-Process -Id ([int]$hubPid) -ErrorAction SilentlyContinue) {
+                Stop-Process -Id ([int]$hubPid) -Force -ErrorAction SilentlyContinue
+            }
+            Remove-Item -LiteralPath $pidFile, $portFile -Force -ErrorAction SilentlyContinue
+            Write-Host 'aid: chat node stopped.'
+            script:Exit-Aid 0
+        }
+        'start' {
+            if ($alive) {
+                Write-Host "aid: chat node already running (pid $hubPid, http://127.0.0.1:$(if ($port) { $port } else { 'unknown' })); run 'aid chat node stop' first."
+                script:Exit-Aid 8
+            }
+            if ($hubPid) { Remove-Item -LiteralPath $pidFile, $portFile -Force -ErrorAction SilentlyContinue }
+
+            # The Node prerequisite, checked BEFORE any side effect, with an actionable error
+            # and never a stack trace (FR-7.7). The CLI itself is runtime-free, so a missing
+            # runtime must fail only the component that needs one.
+            if (-not (Get-Command node -ErrorAction SilentlyContinue)) {
+                [Console]::Error.WriteLine('ERROR: aid: chat: the chat node requires a Node runtime and none was found on PATH.')
+                [Console]::Error.WriteLine("       Install Node (>= 22.13.0) and re-run. Every other 'aid' command keeps working without it.")
+                script:Exit-Aid 9
+            }
+
+            $entry = Join-Path $script:_AidCodeHome 'chat-node\server\hub.mjs'
+            if (-not (Test-Path -LiteralPath $entry -PathType Leaf)) {
+                [Console]::Error.WriteLine("ERROR: aid: chat: the chat node is missing from the install tree (expected $entry). Reinstall aid.")
+                script:Exit-Aid 7
+            }
+
+            $portArg = if ($env:AID_CHAT_PORT) { $env:AID_CHAT_PORT } else { '8812' }
+            for ($i = 0; $i -lt $rest.Count; $i++) {
+                if ($rest[$i] -eq '--port') {
+                    if ($i + 1 -ge $rest.Count) { [Console]::Error.WriteLine('ERROR: aid: chat: --port requires a value'); script:Exit-Aid 2 }
+                    $portArg = $rest[$i + 1]; $i++
+                } else {
+                    [Console]::Error.WriteLine("ERROR: aid: chat: unknown option '$($rest[$i])'"); script:Exit-Aid 2
+                }
+            }
+            $portInt = 0
+            if (-not [int]::TryParse($portArg, [ref]$portInt) -or
+                ($portInt -ne 0 -and ($portInt -lt 1024 -or $portInt -gt 65535))) {
+                [Console]::Error.WriteLine('ERROR: aid: chat: --port must be 0 or an integer in 1024..65535')
+                script:Exit-Aid 2
+            }
+
+            New-Item -ItemType Directory -Path $rtDir -Force | Out-Null
+            # Detached, so the node outlives the shell that started it (FR-1.2).
+            Start-Process -FilePath 'node' -ArgumentList @($entry, '--port', $portArg) `
+                -WindowStyle Hidden -RedirectStandardOutput (Join-Path $rtDir 'hub.log') `
+                -RedirectStandardError (Join-Path $rtDir 'hub.err.log') | Out-Null
+            $s = 0
+            while ($s -lt 50 -and -not (Test-Path -LiteralPath $portFile -PathType Leaf)) {
+                Start-Sleep -Milliseconds 100; $s++
+            }
+            if (Test-Path -LiteralPath $portFile -PathType Leaf) {
+                $p = (Get-Content -LiteralPath $portFile -Raw).Trim()
+                Write-Host "aid: chat node started (http://127.0.0.1:$p)"
+                script:Exit-Aid 0
+            }
+            [Console]::Error.WriteLine("ERROR: aid: chat: the node did not report a listening port; see $(Join-Path $rtDir 'hub.log')")
+            script:Exit-Aid 1
+        }
+    }
+}
+
+# ---------------------------------------------------------------------------
 # dashboard
 # ---------------------------------------------------------------------------
 if ($SUBCMD -eq 'dashboard') {
     script:Invoke-AidDashboardCtl -DcArgs $script:_RemArgs
+    script:Exit-Aid $LASTEXITCODE
+}
+
+# ---------------------------------------------------------------------------
+# chat
+# ---------------------------------------------------------------------------
+if ($SUBCMD -eq 'chat') {
+    script:Invoke-AidChatCtl -CcArgs $script:_RemArgs
     script:Exit-Aid $LASTEXITCODE
 }
 

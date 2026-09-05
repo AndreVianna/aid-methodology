@@ -2214,5 +2214,121 @@ assert_declared_flat "$DECL_G" "26g: undeclared work still falls back to the pre
 
 # ---------------------------------------------------------------------------
 echo ""
+# --- W1-18: replacing a block scalar must consume its body ---------------------
+#
+# The writer replaced only the KEY LINE of a folded or literal scalar, leaving the indented body
+# behind under a key that no longer described it. Where an orphaned line contained a colon it became a
+# mapping key at the wrong indentation, and the file stopped parsing -- which halted this repository's
+# own pipeline three times before it was diagnosed.
+#
+# Every block-scalar shape is covered, because the bug was in recognising the SHAPE: folded, literal,
+# chomped, a blank line inside the body, the block as the file's last key, and nested one level down.
+# The last case in the list is the control: an ordinary single-line scalar must be untouched, or the
+# fix would be consuming lines it has no business consuming.
+# The writer is reached by EXTRACTING it, because this suite drives the script as a CLI and the CLI has
+# no mode that writes an arbitrary scalar key into an arbitrary file. Extracting `wb_set_kv` and its awk
+# program into a harness is what lets the unit be observed on its own, which is what these cases need:
+# the bug was in one function's handling of one YAML shape.
+_WB_HARNESS="${TMPDIR_BASE}/wb-harness.sh"
+python3 - "$SCRIPT" "$_WB_HARNESS" <<'PY'
+import re, sys
+src = open(sys.argv[1], encoding='utf-8').read()
+m = re.search(r"^WB_SET_KV_AWK='", src, re.M)
+awk = src[m.start(): src.index("\n'\n", m.end()) + 3]
+lines = src.split('\n')
+a = next(i for i, l in enumerate(lines) if l.startswith('wb_set_kv() {'))
+b = next(i for i in range(a + 1, len(lines)) if lines[i] == '}')
+fn = '\n'.join(lines[a:b + 1])
+open(sys.argv[2], 'w', encoding='utf-8').write(
+    '#!/usr/bin/env bash\nset -uo pipefail\n' + awk + fn + '\nwb_set_kv "$1" "$2" scalar "$3"\n')
+PY
+
+_wb_block_case() {  # _wb_block_case <label> <key> <before-yaml> <expected-value>
+    local label="$1" key="$2" before="$3" want="$4"
+    printf '%s' "$before" > "${TMPDIR_BASE}/blk.yml"
+    bash "$_WB_HARNESS" "${TMPDIR_BASE}/blk.yml" "$key" "$want" > "${TMPDIR_BASE}/blk.out" 2>/dev/null
+
+    if ! python3 -c "import yaml,sys; yaml.safe_load(open('${TMPDIR_BASE}/blk.out'))" 2>/dev/null; then
+        fail "W1-18 ${label}: the result does not parse as YAML"
+        return
+    fi
+    local check
+    check="$(python3 - "${TMPDIR_BASE}/blk.yml" "${TMPDIR_BASE}/blk.out" "$key" "$want" <<'PY'
+import sys, yaml
+before = yaml.safe_load(open(sys.argv[1]))
+after = yaml.safe_load(open(sys.argv[2]))
+key, want = sys.argv[3], sys.argv[4]
+problems = []
+if list(before) != list(after):
+    problems.append(f'key order or set changed: {list(before)} -> {list(after)}')
+if '.' in key:
+    p, c = key.split('.')
+    if after[p][c] != want:
+        problems.append(f'value not replaced: {after[p][c]!r}')
+    for k in before[p]:
+        if k != c and before[p][k] != after[p][k]:
+            problems.append(f'sibling {k} changed')
+else:
+    if after[key] != want:
+        problems.append(f'value not replaced: {after[key]!r}')
+    for k in before:
+        if k != key and before[k] != after[k]:
+            problems.append(f'sibling {k} changed')
+print('; '.join(problems) if problems else 'clean')
+PY
+)"
+    if [[ "$check" == "clean" ]]; then
+        pass "W1-18 ${label}: the body is consumed, the value replaced, every sibling intact"
+    else
+        fail "W1-18 ${label}: ${check}"
+    fi
+}
+
+_wb_block_case "folded with a colon in the body" "block_reason" \
+'delivery_state: Blocked
+block_reason: >-
+  The gate refused this: a criterion was not met.
+  Fixed in the next cycle.
+gate_grade: Pending
+' "--"
+
+_wb_block_case "literal block with a blank line inside it" "note" \
+'a: 1
+note: |
+  first line
+
+  after a blank line
+b: 2
+' "REPLACED"
+
+_wb_block_case "kept-newline folded block" "note" \
+'a: 1
+note: >+
+  a body
+b: 2
+' "REPLACED"
+
+_wb_block_case "block scalar as the last key in the file" "note" \
+'a: 1
+note: >-
+  only a body
+  and nothing after it
+' "REPLACED"
+
+_wb_block_case "nested block scalar under a parent" "parent.child" \
+'parent:
+  child: >-
+    a folded body
+    over two lines
+  sibling: kept
+' "REPLACED"
+
+# The control: an ordinary scalar must be replaced without consuming anything around it.
+_wb_block_case "an ordinary single-line scalar (control)" "note" \
+'a: 1
+note: plain value
+b: 2
+' "REPLACED"
+
 test_summary
 exit $?

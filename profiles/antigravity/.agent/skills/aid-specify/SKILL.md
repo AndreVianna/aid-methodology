@@ -40,25 +40,28 @@ Every section follows the same cycle:
 .aid/
   knowledge/               ← shared KB
   work-NNN-{name}/
-    STATE.yml              ← process (Features State view, qa sequence)
+    STATE.yml              ← process (features sequence, qa sequence)
     REQUIREMENTS.md        ← product: §11 Features holds one section per
                               feature (decomposition from /aid-define +
                               Technical Specification from here). Features have
                               no folders and no files of their own.
 ```
 
-> **Accuracy note (both DERIVED views, pre-existing -- not introduced by the
-> STATE.md->STATE.yml rename):** Features State carries no key in any of the three
-> state templates, in either the old markdown design or the current YAML one --
-> it is documented as a read-only view in both. Cross-phase Q&A's `qa` key is
+> **Accuracy note.** Features State is **AUTHORED**, and it now has a real
+> target: the `features:` sequence in `work-state-template.yml`, one entry per
+> feature, created by `/aid-define` at decomposition and updated here as each
+> feature advances. It carried no key and was documented as a read-only DERIVED
+> view for as long as this note said so, which was wrong twice over -- nothing
+> derives it, and the mislabel made the `STATE.md` -> `STATE.yml` converter treat
+> a real row as proof that a work predated the per-unit hierarchy, so it refused
+> every work that had been through `/aid-define`. Cross-phase Q&A's `qa` key is
 > AUTHORED only at the delivery level (`delivery-state-template.yml`) or, on the
 > flattened Lite path, at the work level (`work-state-template.yml`) -- a
 > full-path work has no `qa` key at the work level at all (full-layout omission
 > rule), and `/aid-specify` runs before any delivery exists (Specify precedes
-> Plan), so a full-path work has no delivery yet to hold one either. The steps
-> below describe the pre-existing, aspirational behavior; where an actual
-> writable target does not yet exist, that gap is a candidate follow-up, not a
-> defect this task introduced.
+> Plan), so a full-path work has no delivery yet to hold one either -- that half
+> of the gap is unchanged and is still a candidate follow-up. The Features State
+> half is closed: write `features[]` entries for real.
 
 ---
 
@@ -91,7 +94,7 @@ entered — the feature glob below runs only after that.
      feature-002-password      [In Discussion — 2/5 sections]
    ```
    Read `REQUIREMENTS.md § 11 Features` inside the entered worktree. For each `###`
-   feature subsection, check the work STATE.yml's Features State view (row for that
+   feature subsection, check the work STATE.yml's `features:` entry (the one whose id is that
    feature) and show status.
    Exit.
 4. **Multiple works** → present the work list:
@@ -155,10 +158,10 @@ to disambiguate and no glob to widen.
 
 ## State Detection
 
-The feature is a section of `.aid/works/{work}/REQUIREMENTS.md § 11`; its per-feature process state is the work STATE.md `## Features State` row.
+The feature is a section of `.aid/works/{work}/REQUIREMENTS.md § 11`; its per-feature process state is its entry in the work `STATE.yml`'s `features:` sequence.
 
 ```
-State 1: No Feature State row in work STATE.yml               → INITIALIZE
+State 1: No features[] entry, or state Pending, in work STATE.yml -> INITIALIZE
 State 2: Feature State: In Discussion                         → CONTINUE
 State 3: Feature State: Spike Needed                          → SPIKE
 State 4: Feature State: Blocked (loopback pending)            → BLOCKED

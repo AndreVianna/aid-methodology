@@ -4,6 +4,7 @@
 # Dropped: 5-renderer import block (render_agents, render_skills, render_templates,
 #          render_canonical_scripts, render_recipes).
 # Kept: load/validate -> render_profile -> diff/prune -> manifest/write -> verify spine.
+import subprocess
 import sys
 from pathlib import Path
 
@@ -87,4 +88,29 @@ print(
     f"checked={report_advisory['checked_count']}"
 )
 
-print("\nDone. Install trees updated.")
+# The dogfood resync, run HERE rather than left to whoever remembers.
+#
+# `.claude/` and `.cursor/` at the repository root are this repo eating its own output, and
+# `test-dogfood-byte-identity.sh` compares them byte-for-byte against the profile emission manifests.
+# So a render that is not followed by a resync leaves those trees stale and CI red -- which is exactly
+# what happened: the resync script carried that warning in its own header and NOTHING called it, in CI,
+# in the generator, or in release.sh. It was a manual step with no enforcement, and it was missed twice
+# in one sitting before three checks went red over it.
+#
+# Chaining it to the render removes the opportunity to forget. A failure here is fatal, because
+# finishing "successfully" with trees the byte-identity guard will reject is worse than stopping.
+print("\nResyncing dogfood trees (.claude/ and .cursor/)...")
+_sync = Path(__file__).resolve().parent / "sync_dogfood.py"
+_res = subprocess.run(
+    [sys.executable, str(_sync)],
+    cwd=str(repo),
+    capture_output=True,
+    text=True,
+)
+sys.stdout.write(_res.stdout)
+if _res.returncode != 0:
+    sys.stderr.write(_res.stderr)
+    print("DOGFOOD RESYNC FAILED -- .claude/ and .cursor/ may not match the manifests", file=sys.stderr)
+    sys.exit(1)
+
+print("\nDone. Install trees updated, dogfood trees resynced.")

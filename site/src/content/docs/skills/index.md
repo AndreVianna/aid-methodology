@@ -8,16 +8,17 @@ sidebar:
 
 <!-- generated — do not edit; source: canonical/skills/*/SKILL.md, canonical/aid/templates/shortcut-catalog.yml -->
 
-AID ships **111 skill directories** across four skill groups (Support, Knowledge Base Maintenance, Definition, Execution), with the Definition group subdivided into **18 verb families** derived from the shortcut catalog. Each card below links to that skill’s detail page.
+AID ships **112 skill directories** across four skill groups (Support, Knowledge Base Maintenance, Definition, Execution), with the Definition group subdivided into **18 verb families** derived from the shortcut catalog. Each card below links to that skill’s detail page.
 
 > **Note:** This page is the roster, and it files skills per FR-5’s Placement rules. `aid-triage` is **Support** here and **Definition** in the curated roster that [the methodology's skill inventory](/concepts/methodology/) publishes. Where they disagree about grouping, **this page is authoritative**. How the shortcut skills themselves work — the shared engine and its INTAKE → APPROVAL-HALT sequence — is at [Reference → Shortcut engine](/reference/skills/).
 
 ## Support
 
-Skills for configuring AID and managing tickets and connectors. Start here if you're not sure which skill to use.
+Skills for configuring AID, managing tickets and connectors, and talking to a peer AI session. Start here if you're not sure which skill to use.
 
 - [`aid-triage`](/skills/aid-triage/) — Suggest which AID entry point fits the work you are describing.
 - [`aid-config`](/skills/aid-config/) — View or update AID pipeline settings.
+- [`aid-chat`](/skills/aid-chat/) — Talk to another AI coding session.
 - [`aid-set-connector`](/skills/aid-set-connector/) — Add or update one entry in the connector catalog.
 - [`aid-unset-connector`](/skills/aid-unset-connector/) — Remove one entry from the connector catalog.
 - [`aid-read-ticket`](/skills/aid-read-ticket/) — Read one ticket from the project's issue tracker and show its fields.

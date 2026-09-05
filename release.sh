@@ -311,7 +311,8 @@ echo "release.sh: building CLI bundle (aid-cli-v${VERSION}.tar.gz) ..."
 
 CLI_BUNDLE_STAGE="${STAGE_DIR}/.cli-bundle-tmp"
 mkdir -p "${CLI_BUNDLE_STAGE}/bin" "${CLI_BUNDLE_STAGE}/lib" \
-         "${CLI_BUNDLE_STAGE}/dashboard"
+         "${CLI_BUNDLE_STAGE}/dashboard" \
+         "${CLI_BUNDLE_STAGE}/chat-node"
 
 cp "${REPO_ROOT}/bin/aid"              "${CLI_BUNDLE_STAGE}/bin/aid"
 cp "${REPO_ROOT}/bin/aid.ps1"          "${CLI_BUNDLE_STAGE}/bin/aid.ps1"
@@ -341,6 +342,25 @@ for _df in "${_DASH_FILES[@]}"; do
     cp "${REPO_ROOT}/dashboard/${_df}" "${CLI_BUNDLE_STAGE}/dashboard/${_df}"
 done
 
+# Agent chat node -- derived from the single-source manifest chat-node/MANIFEST (shared with
+# install.sh, install.ps1, vendor.js and vendor.py; guarded by
+# tests/canonical/test-chat-node-manifest.sh), on the same terms and for the same reason as
+# the dashboard block above. MANIFEST is itself bundled so the piped-bootstrap installer
+# reads its file set from the fetched, checksum-verified tarball.
+_NODE_MANIFEST="${REPO_ROOT}/chat-node/MANIFEST"
+_NODE_FILES=()
+while IFS= read -r _mline || [[ -n "$_mline" ]]; do
+    _mline="${_mline%%#*}"
+    _mline="${_mline#"${_mline%%[![:space:]]*}"}"
+    _mline="${_mline%"${_mline##*[![:space:]]}"}"
+    [[ -n "$_mline" ]] && _NODE_FILES+=("$_mline")
+done < "$_NODE_MANIFEST"
+cp "${_NODE_MANIFEST}" "${CLI_BUNDLE_STAGE}/chat-node/MANIFEST"
+for _nf in "${_NODE_FILES[@]}"; do
+    mkdir -p "$(dirname "${CLI_BUNDLE_STAGE}/chat-node/${_nf}")"
+    cp "${REPO_ROOT}/chat-node/${_nf}" "${CLI_BUNDLE_STAGE}/chat-node/${_nf}"
+done
+
 CLI_BUNDLE="${REPO_ROOT}/${STAGE_DIR}/aid-cli-v${VERSION}.tar.gz"
 
 # Build deterministically from cli-bundle-tmp/: flat layout (no wrapping dir prefix).
@@ -355,9 +375,16 @@ CLI_BUNDLE="${REPO_ROOT}/${STAGE_DIR}/aid-cli-v${VERSION}.tar.gz"
             "./lib/aid-install-core.sh" \
             "./lib/AidInstallCore.psm1" \
             "./VERSION" \
-            "./dashboard/MANIFEST"
+            "./dashboard/MANIFEST" \
+            "./chat-node/MANIFEST"
         for _df in "${_DASH_FILES[@]}"; do
             printf './dashboard/%s\n' "$_df"
+        done
+        # The node's files must be in the TAR LIST, not merely staged: staging without
+        # listing produced a bundle that omitted the component entirely while every
+        # manifest-reading check still passed.
+        for _nf in "${_NODE_FILES[@]}"; do
+            printf './chat-node/%s\n' "$_nf"
         done
     } > "$_cli_fl"
     tar -czf "${CLI_BUNDLE}" --no-recursion -T "$_cli_fl"

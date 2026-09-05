@@ -1,0 +1,426 @@
+// chat-node/server/federation.mjs -- replication: what crosses machines, and what does not.
+//
+// The rule this whole module exists to preserve: A SESSION'S EXPERIENCE IS IDENTICAL whether its peer
+// is on this machine or another. Nothing here changes a rule; it moves facts between hubs so that the
+// rules in `core.mjs` reach the same answers on both.
+//
+// TWO THINGS REPLICATE AND ONE DOES NOT.
+//
+//   Membership replicates, because replication cannot work without it. A hub must know which peers
+//   hold members of a channel in order to know where to send a message, and it cannot derive that
+//   from `session.channel_id` once members are elsewhere.
+//
+//   Messages replicate, obviously.
+//
+//   The ROSTER does not. It is fetched when asked and merged for the answer, never stored -- because
+//   a stored roster is a second source of truth for liveness that no heartbeat maintains, and a stale
+//   row claiming an agent is available would send an asker after somebody who left an hour ago. A
+//   slow answer beats a lying one.
+
+import { nowMs } from './store.mjs';
+import * as peers from './peers.mjs';
+import * as outbox from './outbox.mjs';
+import { audit, thisMachine } from './core.mjs';
+
+// Where an undeliverable whisper is recorded. Injected rather than imported directly so this module
+// does not need the database handle threaded through every caller for one diagnostic.
+let undeliverableSink = null;
+export function setUndeliverableSink(fn) { undeliverableSink = fn; }
+function noteUndeliverable(info) {
+    try { if (undeliverableSink) undeliverableSink(info); } catch { /* a diagnostic is not a precondition */ }
+}
+
+// The peers that hold a member of this channel, which is what decides where a message goes. Derived
+// from `channel_member` because that is the only place the answer exists once members are remote.
+export function peersForChannel(db, channelId) {
+    return db.prepare(`SELECT DISTINCT cm.machine
+                       FROM channel_member cm
+                       WHERE cm.channel_id = ?`).all(channelId).map((r) => r.machine);
+}
+
+// Every peer we would tell about a channel's membership. Broader than `peersForChannel` on purpose:
+// a hub that does not yet know it holds a member of this channel still needs to be told when one
+// arrives, so a join is announced to every reachable peer rather than only to those already involved.
+function announceTargets(db) {
+    // REACHABLE peers only. Announcing to a peer that handshook once and vanished would queue an item
+    // per membership change for a hub that may never return -- and an unbounded queue against a dead
+    // address is exactly what the attempt counter exists to make visible, not something to create on
+    // purpose. A peer that comes back gets the current state from the join that follows.
+    return peers.listPeers(db).filter((p) => p.state === 'reachable').map((p) => p.machine);
+}
+
+// Does any reachable peer know this channel name?
+//
+// This exists because of a tension the stake rule creates and must resolve: a hub records a remote
+// member only for a channel it already knows, which stops every hub replicating every channel on the
+// network -- but it also means a hub cannot learn a name from an announcement alone, so joining a
+// name that exists only on a PEER would fail as unknown.
+//
+// A channel is a name and authoritative nowhere, so ANY hub that has it is sufficient authority to
+// join it. Asking is bounded, happens only on the local miss, and is the honest reading of the model:
+// there is nobody to consult, so consult everybody and take the first yes.
+export async function peerKnowsChannel(db, link, channelName) {
+    for (const machine of announceTargets(db)) {
+        if (!link || !link.isUp(machine)) continue;
+        const res = await link.request(machine, 'has_channel', { channel: channelName });
+        // The answer carries the channel's MEMBERS, not just its existence. Creating the replica
+        // without them would leave the joining hub blind to everyone already there: the earlier join
+        // announcements were ignored (no stake at the time) and nothing re-sends them, so the new
+        // member would see an empty channel and every send from it would be refused as solo.
+        if (res && res.ok && res.exists) return { known: true, machine, members: res.members || [] };
+    }
+    return { known: false };
+}
+
+// --- outbound ---------------------------------------------------------------
+
+// Send now if the peer is reachable; queue if it is not. The queue is the record of an outage and
+// nothing else -- the ordinary path does not touch it.
+//
+// A send that FAILS is queued too, not dropped. "Reachable" is the state of the last thing we tried,
+// so it can be stale by the time we act on it, and treating a failed write as delivered would lose
+// exactly the message the outbox exists to protect.
+async function deliverOrQueue(db, link, machine, kind, payload) {
+    // `machine` here may be either an address or a logical machine id, because the two callers know
+    // different things: a membership announcement goes to every peer (addresses), while a message
+    // goes to the machines holding members (logical names). Resolving both to an address in one place
+    // is what keeps that difference from becoming a routing bug -- and it WAS one: a message routed
+    // by logical name found no peer, so it was neither sent nor queued nor reported.
+    const peer = peers.getPeer(db, machine) || (() => {
+        const addr = peers.addressForMachineId(db, machine);
+        return addr ? peers.getPeer(db, addr) : null;
+    })();
+    if (!peer) return { ok: false, reason: 'peer_unknown', detail: `no peer for ${machine}` };
+    machine = peer.machine;
+
+    if (link && link.isUp(machine)) {
+        const res = await link.request(machine, kind, payload);
+        if (res && res.ok) return { ok: true, delivered: true };
+        outbox.enqueue(db, { peerId: peer.id, kind, payload });
+        return { ok: true, delivered: false, queued: true, reason: (res && res.reason) || 'deliver_failed' };
+    }
+    outbox.enqueue(db, { peerId: peer.id, kind, payload });
+    return { ok: true, delivered: false, queued: true, reason: 'peer_unreachable' };
+}
+
+export async function replicateMembership(db, link, { channelName, name, event }) {
+    const payload = { channel: channelName, machine: thisMachine(), name, event, at: nowMs() };
+    const results = [];
+    for (const machine of announceTargets(db)) {
+        results.push({ machine, ...(await deliverOrQueue(db, link, machine, 'membership', payload)) });
+    }
+    return { ok: true, replicated_to: results };
+}
+
+export async function replicateMessage(db, link, { channelId, channelName, message }) {
+    // A WHISPER GOES ONLY WHERE ITS TARGET IS, and this is a storage-layer rule rather than a read
+    // rule. The read filter was already correct everywhere -- a non-target's `inbox` never returns a
+    // whisper on any hub -- but replicating the BODY to every hub holding any member of the channel
+    // put the text in stores on machines where nobody was permitted to read it. "Reaches only its
+    // target" has to mean the body does not travel to hubs with no business holding it, or the
+    // guarantee rests entirely on every future reader remembering to filter.
+    //
+    // So: if the target is local, the whisper replicates NOWHERE. If the target is remote, it goes to
+    // that one hub and no other.
+    let targets;
+    if (message.whisper_to) {
+        const targetIsLocal = db.prepare('SELECT 1 FROM session WHERE channel_id = ? AND name = ?')
+                                .get(channelId, message.whisper_to);
+        if (targetIsLocal) {
+            return { ok: true, replicated_to: [], whisper_kept_local: true };
+        }
+        const row = db.prepare('SELECT machine FROM channel_member WHERE channel_id = ? AND name = ?')
+                      .get(channelId, message.whisper_to);
+        // No record of the target anywhere: send nothing rather than broadcast in the hope of finding
+        // them. `send` already refused a whisper to a non-member, so reaching here means the target
+        // left between the send and the replication -- and a body sent after that is a body sent to a
+        // hub that will never deliver it.
+        //
+        // REPORTED rather than dropped in silence. The sender has already been told `ok`, because at
+        // the moment it asked the target was a member; discovering otherwise a few milliseconds later
+        // is not something to hide, and an operator looking at why a whisper never arrived needs the
+        // record. It is the audit log's job precisely because there is no caller left to return to.
+        targets = row ? [row.machine] : [];
+        if (!row) {
+            noteUndeliverable({
+                channelName, target: message.whisper_to, sender: message.sender_name,
+                reason: 'the target left the channel between the send and its replication',
+            });
+        }
+    } else {
+        targets = peersForChannel(db, channelId);
+    }
+    const payload = {
+        channel: channelName,
+        sender_machine: message.sender_machine,
+        sender_name: message.sender_name,
+        // Carried VERBATIM. This is the one field a receiving hub must not regenerate: it is the
+        // sender's own sequence, and per-speaker order is reconstructed from it on every hub. A hub
+        // that renumbered it would silently replace the sender's order with its own arrival order.
+        sender_seq: message.sender_seq,
+        idempotency_key: message.idempotency_key,
+        kind: message.kind,
+        body: message.body,
+        correlation_id: message.correlation_id,
+        reply_to: message.reply_to,
+        mention: message.mention,
+        whisper_to: message.whisper_to,
+        sent_at: message.sent_at,
+    };
+    const results = [];
+    for (const machine of targets) {
+        results.push({ machine, ...(await deliverOrQueue(db, link, machine, 'message', payload)) });
+    }
+    return { ok: true, replicated_to: results };
+}
+
+// --- inbound ----------------------------------------------------------------
+
+// A hub asked about a channel name it has never seen CREATES its local replica. A channel is a name;
+// there is nothing to look up and no authority to consult, so refusing would mean inventing an
+// authority the model deliberately does not have.
+function ensureChannel(db, channelName) {
+    let ch = db.prepare('SELECT * FROM channel WHERE name = ?').get(channelName);
+    if (!ch) {
+        db.prepare('INSERT INTO channel(name, opened_at) VALUES (?,?)').run(channelName, nowMs());
+        ch = db.prepare('SELECT * FROM channel WHERE name = ?').get(channelName);
+    }
+    return ch;
+}
+
+export function applyMembership(db, { channel, machine, name, event }) {
+    if (!channel || !machine || !name) {
+        return { ok: false, reason: 'bad_request', detail: 'channel, machine and name are required' };
+    }
+    // Never record a local member here. `channel_member` holds the REMOTE half only, so mirroring our
+    // own members would create a second place for a fact `session.channel_id` already holds, and the
+    // two would disagree the first time a transaction updated one and not the other.
+    if (machine === thisMachine()) {
+        return { ok: true, ignored: 'own machine' };
+    }
+
+    if (event === 'leave' || event === 'close') {
+        const ch = db.prepare('SELECT id FROM channel WHERE name = ?').get(channel);
+        if (!ch) return { ok: true, ignored: 'unknown channel' };
+        if (event === 'close') {
+            db.prepare('DELETE FROM channel_member WHERE channel_id = ? AND machine = ?').run(ch.id, machine);
+        } else {
+            db.prepare('DELETE FROM channel_member WHERE channel_id = ? AND machine = ? AND name = ?')
+              .run(ch.id, machine, name);
+        }
+        // A channel with no local member and no remote member left is over on this hub too. Keeping
+        // an empty replica would leave a name nothing will ever close.
+        const localMembers = db.prepare('SELECT COUNT(*) AS n FROM session WHERE channel_id = ?').get(ch.id).n;
+        const remoteMembers = db.prepare('SELECT COUNT(*) AS n FROM channel_member WHERE channel_id = ?').get(ch.id).n;
+        if (localMembers === 0 && remoteMembers === 0) {
+            db.prepare('DELETE FROM channel WHERE id = ?').run(ch.id);
+            return { ok: true, applied: event, channel_closed: true };
+        }
+        return { ok: true, applied: event, channel_closed: false };
+    }
+
+    // A JOIN IS RECORDED ONLY WHERE THIS HUB ALREADY KNOWS THE CHANNEL, and this is a correction of
+    // something that was wrong: announcing joins to every peer and creating a replica on receipt meant
+    // every hub ended up holding a replica of every channel anywhere on the network -- channels
+    // nobody local was in, whose names leaked across the LAN for no purpose.
+    //
+    // A hub earns a replica two ways, both of which mean it has a stake: a local session opened or
+    // joined that name, or a relayed connect request put a local agent into it (FR-9.7, where creating
+    // the replica IS the rule). An announcement about a name this hub has never heard of is neither,
+    // so it is ignored -- and ignoring it costs nothing, because the announcement will be sent again
+    // the moment a local agent does join.
+    const existing = db.prepare('SELECT * FROM channel WHERE name = ?').get(channel);
+    if (!existing) return { ok: true, ignored: 'no local stake in that channel' };
+    db.prepare('INSERT OR REPLACE INTO channel_member(channel_id, machine, name, joined_at) VALUES (?,?,?,?)')
+      .run(existing.id, machine, name, nowMs());
+    return { ok: true, applied: 'join', channel: existing.name };
+}
+
+// A replicated message, stored with THIS hub's own arrival order.
+//
+// `arrival_seq` is ours; `sender_seq` is theirs, verbatim. That split is the whole of the ordering
+// design: each hub numbers what it receives in the order it receives it, and per-speaker order is
+// reconstructed on read from the sender's own sequence. Neither hub needs to agree with the other
+// about anything, which is why no consensus is required and why a scalar read position is exact.
+export function applyMessage(db, payload) {
+    const {
+        channel, sender_machine, sender_name, sender_seq, idempotency_key,
+        kind = 'message', body, correlation_id = null, reply_to = null,
+        mention = null, whisper_to = null, sent_at = null,
+    } = payload || {};
+
+    if (!channel || !sender_machine || !sender_name || !idempotency_key || typeof body !== 'string') {
+        return { ok: false, reason: 'bad_request', detail: 'channel, sender, key and body are required' };
+    }
+    // `sender_seq` IS VALIDATED, and it belongs in the same breath as the rest because it is load
+    // bearing in a way the others are not: the read path sorts by `a.sender_seq - b.sender_seq`, so a
+    // null pair compares equal and a string pair yields NaN. Either way per-speaker FIFO -- the one
+    // ordering guarantee this product makes -- is silently gone for every replicated message, with
+    // nothing failing and nothing to see.
+    const seq = Number(sender_seq);
+    if (!Number.isInteger(seq) || seq < 1) {
+        return {
+            ok: false, reason: 'bad_request',
+            detail: `sender_seq must be a positive integer, got ${JSON.stringify(sender_seq)}`,
+        };
+    }
+    // Our own message coming back to us. Dropped rather than stored: replication is not a loop, and a
+    // hub that accepted its own send would double every message in a three-hub channel.
+    if (sender_machine === thisMachine()) return { ok: true, ignored: 'own message' };
+
+    const ch = ensureChannel(db, channel);
+
+    // Dedupe on the SENDER-SCOPED key, which is what absorbs a replay after a reconnect. The outbox
+    // may legitimately deliver an item twice -- it counts an attempt before delivering, so a failure
+    // after the peer stored it looks identical to a failure before -- and this is where that becomes
+    // harmless instead of a duplicate.
+    const dup = db.prepare(`SELECT arrival_seq FROM message
+                            WHERE channel_id = ? AND sender_machine = ? AND sender_name = ?
+                              AND idempotency_key = ?`)
+                  .get(ch.id, sender_machine, sender_name, idempotency_key);
+    if (dup) return { ok: true, arrival_seq: dup.arrival_seq, absorbed: true };
+
+    const t = nowMs();
+    let arrivalSeq;
+    db.exec('BEGIN IMMEDIATE');
+    try {
+        arrivalSeq = db.prepare('SELECT next_seq FROM channel WHERE id = ?').get(ch.id).next_seq;
+        db.prepare(`INSERT INTO message
+            (channel_id, arrival_seq, sender_name, sender_machine, sender_seq, idempotency_key,
+             kind, body, correlation_id, reply_to, mention, whisper_to, sent_at, received_at)
+            VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?)`)
+          .run(ch.id, arrivalSeq, sender_name, sender_machine, seq, idempotency_key,
+               kind, body, correlation_id, reply_to,
+               mention ? (typeof mention === 'string' ? mention : JSON.stringify(mention)) : null,
+               whisper_to, sent_at || t, t);
+        db.prepare('UPDATE channel SET next_seq = next_seq + 1 WHERE id = ?').run(ch.id);
+        db.exec('COMMIT');
+    } catch (err) {
+        db.exec('ROLLBACK');
+        throw err;
+    }
+    return { ok: true, arrival_seq: arrivalSeq, absorbed: false, channel: ch.name };
+}
+
+// --- the federated roster ---------------------------------------------------
+//
+// Fetched from every reachable peer and merged for the answer. NOT STORED, for the reason given at
+// the top of this file, and worth restating because the temptation to cache it is strong: a stored
+// roster would be a second source of truth for liveness that no heartbeat maintains.
+//
+// AN ANSWER GIVEN WHILE A PEER IS UNREACHABLE IS PARTIAL AND SAYS SO. It carries the agents from
+// every peer that answered plus an explicit list of those that did not, and it never fails outright
+// because one peer is down. Both alternatives are worse in the same way: silently omitting an
+// unreachable peer's agents reads as "nobody is there", which is the one answer that makes an agent
+// stop looking, and failing the whole call because one peer is down makes an outage on any machine an
+// outage on all of them. An incomplete answer labelled incomplete is useful; an incomplete answer
+// labelled complete is a lie.
+export async function federatedRoster(db, link, { name = null } = {}) {
+    const local = require_local(db, name);
+    const unreachable = [];
+    const remote = [];
+
+    for (const p of peers.listPeers(db)) {
+        if (!link || !link.isUp(p.machine)) {
+            // A CONFIGURED peer that is down makes the answer partial: an operator named it, so it is
+            // part of the expected set and its absence is a gap the asker must know about.
+            //
+            // A DISCOVERED peer that has never been reachable does not. It may be an address that
+            // said hello once and was never a listening hub, and letting that mark every roster
+            // partial forever would make the partial flag meaningless -- which is worse than not
+            // having it, because the flag exists to be believed.
+            const everReached = p.last_seen_at !== null && p.last_seen_at !== undefined;
+            if (p.source === 'configured' || everReached) {
+                unreachable.push({ machine: p.machine, machine_id: p.machine_id, reason: 'link_down' });
+            }
+            continue;
+        }
+        const res = await link.request(p.machine, 'roster', {});
+        if (!res || !res.ok || !Array.isArray(res.agents)) {
+            unreachable.push({ machine: p.machine, machine_id: p.machine_id, reason: (res && res.reason) || 'no_answer' });
+            continue;
+        }
+        for (const a of res.agents) {
+            // Stamped with the machine it came from, because THE SAME SHORT NAME ON TWO MACHINES IS
+            // TWO DISTINCT SESSIONS. A name alone is not a destination and never was; qualifying it
+            // here is what keeps that true once agents are on more than one machine.
+            remote.push({ ...a, machine: res.machine || p.machine_id || p.machine, is_self: false });
+        }
+    }
+
+    return {
+        ok: true,
+        agents: [...local, ...remote],
+        // Named rather than omitted. An agent reading this can tell "there is nobody" from "I could
+        // not see one of the places somebody might be".
+        unreachable_peers: unreachable,
+        partial: unreachable.length > 0,
+    };
+}
+
+function require_local(db, name) {
+    // Local agents carry this hub's own machine id for the same qualification reason.
+    const me = thisMachine();
+    return coreRoster(db, name).map((a) => ({ ...a, machine: me }));
+}
+
+// Kept as a tiny indirection so this module does not import the whole core surface just for one call,
+// and so the local half is visibly the same shape as the remote half.
+let coreRosterFn = null;
+export function setCoreRoster(fn) { coreRosterFn = fn; }
+function coreRoster(db, name) {
+    if (!coreRosterFn) return [];
+    const r = coreRosterFn(db, { name });
+    return r && r.ok ? r.agents : [];
+}
+
+// --- the cross-machine connect relay ----------------------------------------
+//
+// Relayed to the target's hub and answered against THAT hub's state at the moment the relay arrives.
+// Not against a cached view of it: availability is exactly the kind of fact that goes stale, and the
+// whole point of answering from state is that the state is current.
+//
+// AN UNREACHABLE PEER FAILS THE REQUEST RATHER THAN QUEUEING IT. This is the deliberate asymmetry
+// with messages, which do queue, and it is the same reasoning that removed the accept step: a connect
+// request answered minutes later arrives after the asking agent's circumstances have changed -- it
+// may have left, been reaped, or found somebody else -- which is precisely the pending state the
+// design exists to avoid.
+export async function relayConnect(db, link, { targetMachineId, target, channelName, askerMachine, askerName }) {
+    const address = peers.getPeer(db, targetMachineId)
+        ? targetMachineId
+        : peers.addressForMachineId(db, targetMachineId);
+    if (!address) return { ok: false, reason: 'target_unavailable', detail: 'no peer for that machine' };
+    if (!link || !link.isUp(address)) {
+        return { ok: false, reason: 'target_unavailable', detail: 'peer unreachable; a connect request is never queued' };
+    }
+    const res = await link.request(address, 'connect', {
+        target, channel: channelName, asker_machine: askerMachine, asker_name: askerName,
+    });
+    return res || { ok: false, reason: 'target_unavailable', detail: 'no answer' };
+}
+
+// The inbound half, run on the TARGET's hub.
+//
+// A hub asked for a channel name it has never seen CREATES its local replica and joins its agent,
+// because a channel is a name and there is no authority to consult. One consequence is accepted
+// rather than engineered away: if the asker left in the interval, the target arrives alone in a
+// channel whose conversation has ended, and that channel closes when the target leaves or is reaped.
+// Making that impossible would require agreement between hubs about a channel's existence, which is
+// the consensus problem this whole model is shaped to avoid.
+export function applyRelayedConnect(db, { target, channel, asker_machine, asker_name }, { joinLocal }) {
+    if (!target || !channel) {
+        return { ok: false, reason: 'bad_request', detail: 'target and channel are required' };
+    }
+    // Creating the replica is the caller's job, AFTER it has decided the target can actually be
+    // joined. Creating it here left an orphan every time a relay was refused: the channel was made,
+    // the join then failed because the target was busy, and the replica stayed behind with no local
+    // member and no remote one -- a name nothing would ever close. Measured, not theorised.
+    const result = joinLocal({ target, channel });
+    if (!result.ok) return result;
+    // The asker is recorded as a remote member here, so this hub knows where to replicate back to
+    // without waiting for a separate membership announcement to arrive.
+    if (asker_machine && asker_name && asker_machine !== thisMachine()) {
+        applyMembership(db, { channel, machine: asker_machine, name: asker_name, event: 'join' });
+    }
+    return result;
+}

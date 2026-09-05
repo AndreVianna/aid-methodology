@@ -1,0 +1,1500 @@
+# Work State -- work-NNN-{name}
+#
+# This is the WORK-LEVEL STATE.yml template. It is divided into three zones:
+#   FRONTMATTER (single-writer, machine-parsed scalars) -- top-level keys,
+#     verbatim: pipeline identity, work-level lifecycle/phase/approval
+#     scalars, and (for flattened single-delivery works only) the delivery
+#     lifecycle/gate scalars. Written ONLY by `writeback-state.sh` (surgical
+#     single-key write; every other line is reproduced byte-for-byte).
+#   AUTHORED (single-writer, YAML structures under a key, one key per former
+#     markdown section) -- interview, features, lifecycle_history, deploy,
+#     delivery_lifecycle (incl. its tasks_lifecycle child), delivery_gate, qa.
+#   DERIVED (read-only, assembled at read time) -- Plan/Deliveries, Tasks
+#     State, Delivery Gates, Calibration Log, Dispatches. NOT represented
+#     here -- no key at all. A reader seeing no key derives the same union it
+#     derives today. Agents that write state must target the per-unit
+#     STATE.yml files instead. `qa` is the one former-DERIVED name that keeps
+#     a key here, because on the flattened Lite path it is AUTHORED.
+#
+#     `features` was ALSO listed as DERIVED here and that was wrong. Nothing
+#     derives it: /aid-define creates a row per feature at decomposition and
+#     /aid-specify updates that row as the feature advances, so it is
+#     AUTHORED like `interview`. The mislabel was not merely a documentation
+#     defect -- it made the STATE.md -> STATE.yml converter treat a real
+#     Features State row as proof that a work still needed the pre-hierarchy
+#     era migration, so it REFUSED to convert any work that had been through
+#     /aid-define, and named a remedy that cannot run on a work with no
+#     tasks/. Declaring the key is what closes that.
+#
+# Writer legend -- stated in full-line comments above each key, NEVER as a
+# trailing comment on the key itself (D-3):
+#   [W] writeback-state.sh is the sole writer (surgical single-key write)
+#   [A] authored by this work's active branch (single writer)
+#
+# This is the single state file for THIS work -- the full dev lifecycle from
+# req to spec to plan to impl to deploy. One STATE.yml per
+# .aid/works/work-NNN-{name}/ directory. See also: per-delivery
+# delivery-NNN/STATE.yml (delivery lifecycle + gate + delivery-scoped Q&A +
+# derived task rollup) and per-task delivery-NNN/tasks/task-NNN/STATE.yml
+# (mutable task cells).
+#
+# Artifact files (REQUIREMENTS.md, PLAN.md, per-task DETAIL.md) carry NO inline
+# "## Change Log" section. Content history -- what changed in the document -- is
+# exactly what git records, with author, date and full diff, and without drift;
+# a hand-maintained table duplicates it at lower fidelity. This is the same
+# reasoning the tracking-discipline rule already applies to .aid/knowledge/ docs,
+# extended to work artifacts. Process state (where are we in the workflow) is
+# what THIS file is for, and it stays here.
+#
+# The AUTHORED delivery_lifecycle / tasks_lifecycle / delivery_gate keys
+# (singular) apply ONLY to single-delivery flattened works (no
+# deliveries/delivery-NNN/ wrapper). They are promoted verbatim from
+# delivery-state-template.yml / task-state-template.yml and are distinct from
+# the plural DERIVED Delivery Gates / Plan-Deliveries / Tasks State union
+# views, which are omitted here entirely. Left absent (keys omitted) for full
+# multi-delivery works, where each delivery's own lifecycle/gate lives in its
+# delivery-NNN/STATE.yml and each task's own state lives in its
+# delivery-NNN/tasks/task-NNN/STATE.yml instead.
+#
+# Full-layout omission rule: a full multi-delivery work's STATE.yml is
+# IDENTICAL to this template minus these keys: delivery_state, gate_tier,
+# gate_grade, gate_timestamp (the four flattened-only gate/delivery scalars),
+# minus delivery_lifecycle, tasks_lifecycle, delivery_gate (each lives in its
+# own delivery/task file instead), and minus qa (DERIVED on the full path).
+# `features` is NOT on that list: a feature is a work-level concept on both
+# layouts, so the key is present either way.
+#
+# Optional `ticket_ref` scalar (top-level, both layouts): links this work to
+# an external tracker item ({connector-stem}:{external-id}, e.g.
+# jira:PROJ-123). Left `--` when this work is not linked; readers/dashboard
+# ignore it. Nearest-ancestor resolution + MCP-first consumption contract:
+# canonical/aid/templates/connectors/consumption-protocol.md. `ticket_ref` is
+# a lifecycle-unit field only -- the connector descriptor schema is unchanged.
+#
+# STATE ADVANCEMENT ORDERING (authoritative source; schemas.md inline copy is downstream)
+#
+# Ordered from most-advanced to least-advanced:
+#   1. Done           -- task completed and accepted; all subtasks resolved
+#   2. Canceled       -- resolved terminal (explicitly abandoned); ranks just below Done
+#   3. In Review      -- work submitted; awaiting reviewer decision
+#   4. In Progress    -- actively being executed on its delivery branch
+#   5. Blocked        -- attempted but impeded; recoverable-in-place; more actionable than Failed
+#   6. Failed         -- completed attempt rejected; a parallel branch may have superseded
+#   7. Pending        -- not yet started
+#
+# Rationale: the dashboard "most-advanced wins" reconcile answers "how far has
+# this work gotten across all worktree branches." Done/Canceled are
+# terminal-resolved and rank highest. In Review outranks In Progress (review
+# is a later pipeline stage). Blocked outranks Failed because a blocked task
+# is recoverable-in-place and signals "needs attention now," whereas a failed
+# task represents a completed-but-rejected attempt that a parallel branch may
+# have already superseded -- surfacing "blocked" is the more actionable
+# signal. Both Blocked and Failed rank above Pending because they represent
+# work that was attempted and surfaced information (more informative than
+# "not started").
+#
+# Closed enum VALUES (unchanged): Pending | In Progress | In Review | Blocked | Done | Failed | Canceled
+#
+# This ordering is encoded ONCE here. Both reader twins (Python + Node)
+# reference schemas.md for the ordered list at runtime; schemas.md carries an
+# inline copy derived from this source.
+
+# [W]
+#   path: lite | full  -- lite = flattened (no deliveries/ wrapper); full = deliveries/delivery-NNN/ wrapper
+#   initiator: aid-describe | aid-{shortcut-skill}  -- the pipeline-starting skill: aid-describe, or a shortcut-catalog.yml skill (e.g. aid-fix, aid-refactor, aid-create-api)
+pipeline:
+  path: full
+  initiator: aid-describe
+# [W]
+started: '2026-09-01'
+# [W] resolved at runtime by `bash canonical/aid/scripts/config/read-setting.sh --skill {phase} --key minimum_grade --default A`; source is `.aid/settings.yml`
+minimum_grade: A
+# [W] 'yes' | 'no' -- quoted, see NFR-2 / D-5
+user_approved: 'yes'
+# [W] Running | Paused-Awaiting-Input | Blocked | Completed | Canceled
+lifecycle: Running
+# [W] Describe | Define | Specify | Plan | Detail | Execute
+phase: Execute
+# [W] aid-{skill} | none
+active_skill: aid-execute
+# [W]
+updated: '2026-09-03T19:59:16Z'
+# [W] set only when lifecycle = Paused-Awaiting-Input
+pause_reason: --
+# [W] set only when lifecycle = Blocked
+block_reason: --
+# [W] e.g. IMPEDIMENT-task-NNN.md, or the failed gate
+block_artifact: --
+# [W] {connector-stem}:{external-id} | -- -- OPTIONAL; e.g. jira:PROJ-123; see the ticket_ref note above
+ticket_ref: --
+
+# [A] updated by aid-describe as each section is completed.
+#   state: In Progress | Complete | Approved
+#   grade: {grade} | Pending
+#   sections[].state: Pending | Complete
+interview:
+  state: Approved
+  grade: A+
+  sections:
+    - id: 1
+      name: Objective
+      state: Complete
+      updated: '2026-09-01'
+    - id: 2
+      name: 'Problem Statement'
+      state: Complete
+      updated: '2026-09-01'
+    - id: 3
+      name: 'Users & Stakeholders'
+      state: Complete
+      updated: '2026-09-01'
+    - id: 4
+      name: Scope
+      state: Complete
+      updated: '2026-09-03'
+    - id: 5
+      name: 'Functional Requirements'
+      state: Complete
+      updated: '2026-09-03'
+    - id: 6
+      name: 'Non-Functional Requirements'
+      state: Complete
+      updated: '2026-09-03'
+    - id: 7
+      name: Constraints
+      state: Complete
+      updated: '2026-09-01'
+    - id: 8
+      name: 'Assumptions & Dependencies'
+      state: Complete
+      updated: '2026-09-01'
+    - id: 9
+      name: 'Acceptance Criteria'
+      state: Complete
+      updated: '2026-09-03'
+    - id: 10
+      name: Priority
+      state: Complete
+      updated: '2026-09-03'
+
+# [A] one entry per feature, in id order. Created by aid-define at feature
+#     decomposition (one entry per `### Feature NNN` section it appends to
+#     REQUIREMENTS.md § 11) and updated by aid-specify as each feature
+#     advances. Present on BOTH layouts -- a feature is a work-level concept,
+#     so this key is never omitted for a full multi-delivery work.
+#
+#     A feature is a SECTION, not a folder: `id` identifies
+#     `REQUIREMENTS.md § 11 ### Feature NNN`, and there is no
+#     features/feature-NNN/ directory and no per-feature SPEC.md to point at.
+#     Ids are never reused or renumbered -- a withdrawn feature keeps its
+#     entry with `withdrawn: true` so that every citation of it still
+#     resolves, and the number is not handed to a later feature.
+#
+#     `state` and `grade` describe that section's `#### Technical
+#     Specification` -- the part aid-specify fills. `sections` is the
+#     per-technical-section progress aid-specify tracks while it works
+#     through The Loop; it is the declared home for that tracking and is
+#     legitimately empty until aid-specify has run.
+#
+#   id:       '001'.. -- quoted, so a leading zero survives the YAML read
+#   name:     short slug; the §11 section title is authoritative
+#   state:    Pending | In Discussion | Spike Needed | Blocked | Ready
+#   grade:    {grade} | Pending
+#   qa_count: integer
+#   withdrawn: true -- omit the key entirely for a live feature
+#   sections[].state: Pending | In Discussion | Complete
+features:
+  - id: '001'
+    name: wake-feasibility-spike
+    state: Ready
+    grade: A+
+    qa_count: 0
+    started: 2026-09-01
+    updated: '2026-09-03'
+    sections: []
+    notes: >-
+      Stage P0. EXECUTED AND CLOSED -- all four tests have recorded outcomes and AC-20 is satisfied. Both hosts wake; the Cursor bound is the hook's own configured timeout and not a host constant; the exchange holds across two machines in both directions (T4-000-f). Evidence and twelve findings in FINDINGS.md; six became FR-5.6..FR-5.10 and FR-2.4. Open questions are routed to 002/003/004 and none of them block. `state: Ready` is the enum value for "specification complete" -- the feature's execution outcome is this note, because features[].state has no terminal value for an executed spike. Specification carried forward intact and unchanged -- an executable experiment design, reviewed to A+. Stays its own feature at any merge depth: AC-20 requires that none of its code be carried forward, which only means something if the boundary exists.
+  - id: '002'
+    name: node-and-message-plane
+    state: Ready
+    grade: A+
+    qa_count: 0
+    started: 2026-09-03
+    updated: '2026-09-03'
+    sections: []
+    notes: >-
+      Stage P1, the keystone -- process model, CLI surface, store schema and the one core. Specify FIRST. Merged from three earlier features whose split had failed on its own terms: one owned the store schema another needed, so a schema defect in the first blocked the second outright. Largest feature at 9 of 22 criteria; if it proves too large the place to slice it is /aid-plan, not a new boundary. Carries two constraints from a dropped specification: exit code 5 is taken, and id INTEGER PRIMARY KEY without AUTOINCREMENT reuses a reaped member's id.
+  - id: '003'
+    name: the-wake
+    state: Ready
+    grade: A+
+    qa_count: 0
+    started: 2026-09-03
+    updated: '2026-09-03'
+    sections: []
+    notes: >-
+      Stage P2. Node-side subscription, per-host waker adapters and the rendered chat skill. Cannot be specified before Feature 001 answers -- its Cursor half is shaped by the measured hook-blocking limit. One feature because none of the three delivers the wake alone.
+  - id: '004'
+    name: lan-federation
+    state: Ready
+    grade: A+
+    qa_count: 0
+    started: 2026-09-03
+    updated: '2026-09-03'
+    sections: []
+    notes: >-
+      Stage P3 -- the target case. Carries the constraint that FR-6.4's compatibility contract is stated by its own protocol version number and never inferred from VERSION.
+  - id: '005'
+    name: directed-retention-visibility
+    state: Ready
+    grade: A+
+    qa_count: 0
+    started: 2026-09-03
+    updated: '2026-09-03'
+    sections: []
+    notes: >-
+      Stage P4. Weakest cohesion of the five and recorded as such: mention/whisper, retention and operator visibility share a stage and a dependency on the store rather than a subject. Kept as one because the decomposition was asked to be minimal and none of the three is large; splitting into three costs nothing but a boundary.
+
+# [A] appended by aid-describe / aid-define as the interview and its
+#     cross-reference pass proceed. Append-only, newest LAST. Distinct from
+#     `lifecycle_history`, which records PHASE transitions and gates: this
+#     records what happened INSIDE the interview -- a question round, a
+#     stakeholder comment pass, a quality check, a cross-reference cycle.
+#
+#     Declared because the alternative is losing it. It lived under a
+#     `### Review History` heading inside the legacy markdown `## Interview State`
+#     section with no key of its own, which made it invisible to the schema and
+#     mergeable into `interview.sections` by anything reading tables from that
+#     range. A table the schema does not name is still data.
+#
+#   - date / event / outcome / notes
+review_history:
+  - date: 2026-09-05
+    scope: authorised host-config writes, and the re-entry ceiling raised to the host's own cap
+    outcome: >-
+      Two owner decisions, both taken against previously-ratified positions and recorded as amendments
+      rather than quietly contradicted.
+      FR-0.4 forbade writing host configuration ABSOLUTELY. The owner authorised it, with confirmation.
+      The amendment is deliberately narrow -- one hook entry, not a general licence -- because the two
+      hazards behind the original rule are real and are now handled as CHECKS instead of a refusal.
+      FR-0.6: user scope only, re-verified by the writer rather than trusted from its caller; a
+      git-tracked target refused outright, whatever its path, because that is the one mistake an
+      operator cannot undo alone once it reaches every checkout; merge rather than overwrite, with an
+      unparseable file left untouched because "it was malformed anyway" is not the product's judgement
+      to make about somebody else's settings; a backup first; and no write without an answer, defaulting
+      to no, with a non-interactive caller refused rather than defaulted. `--uninstall` is the inverse
+      and equally surgical, and both are idempotent.
+      FR-5.7b: the re-entry ceiling moves from 1 (Cursor) and 2 (Claude Code) to a single configurable
+      `adapterLoopLimit` of 5, matching Cursor's documented cap. The old reasoning was sound about loops
+      and wrong about cost: a wake requires a MESSAGE, because the adapter reads what is pending before
+      it waits, so a chain of follow-ups carries real messages rather than empty laps. Measured before
+      and after: three hops to stall, now five per breather -- and the cap THROTTLES rather than ends,
+      since a declined stop clears the count and the next one serves again. One registry value rather
+      than two constants, because an exchange is only as deep as its shallower side and cross-tool is
+      the case the whole thing exists for.
+      TWO DEFECTS OF MY OWN, both surfaced by the change rather than by a test written for it. `--check`
+      compared `"timeout"` against `--host-timeout` with regexes over the WHOLE file, which was adequate
+      only while the file held nothing but our hook; the moment `--install` began merging into files
+      with the user's own hooks, the first match belonged to THEM and it reported a mismatch on a
+      correct install -- a false alarm about a silent failure being worse than no check. Fixed by moving
+      `--check` into the same script that installs, so one parser serves both and the PowerShell twin
+      delegates instead of carrying a third copy. And HP24's ps1 anchor matched the first
+      `$action -in @(...)` in the file, which became the hook generator's own install/uninstall/check
+      list, so it reported every plane verb as bash-only; re-anchored on the arm that dispatches to the
+      plane, and falsified against a genuine divergence afterwards.
+      Three stale assertions updated honestly rather than deleted: WK12 and WK16 encoded the old
+      ceiling and now derive their boundary from the limit, and WK35 asserted the doc's old promise that
+      nothing is ever written and now asserts that the guards are documented -- somebody deciding
+      whether to run `--install` on their own settings file cannot find out by running it.
+      443 assertions across ten chat suites, 0 failing. Every guard falsified: making the writer
+      overwrite instead of merge fails 12; removing the tracked-file refusal or the confirmation gate
+      fails 2 each.
+    applied_to: >-
+      REQUIREMENTS.md (FR-0.4 amended, FR-0.6, FR-5.7b), chat-node/scripts/hook-install.py (new),
+      chat-node/MANIFEST, chat-node/server/settings.mjs (adapterLoopLimit), chat-node/adapters/*,
+      bin/aid + bin/aid.ps1 (--install/--uninstall/--check), docs/chat-wake-install.md,
+      tests (WK12, WK16, WK35, WK41 rewritten, WK42-WK45 new, HP24 re-anchored)
+  - date: 2026-09-05
+    scope: session naming -- minted names, and renaming in progress
+    outcome: >-
+      The stakeholder rejected directory-derived session names on three grounds, all correct, and one of
+      them was a defect rather than a preference.
+      A directory basename collides ACROSS machines almost by construction -- two people with the same
+      project laid out the same way both produce `api`, and the federated roster then shows one name for
+      two distinct sessions. It cannot tell two hosts apart when both are started from one folder, which
+      is an ordinary thing to do. And `<directory>-<adjective>` was poor English with the adjective
+      trailing, on a wordlist that mixed the two parts of speech up.
+      MY OWN INTERMEDIATE DESIGN CARRIED A REAL BUG, which the stakeholder's second point exposed: the
+      name was looked up by working directory ALONE, so starting Claude Code and Cursor in one folder
+      made the second REATTACH to the first one's session -- same name, same conversation id, one
+      identity silently shared by two agents. The lookup is now keyed on (cwd, tool). Two sessions of
+      the SAME tool in one directory remain indistinguishable, and that is stated rather than solved:
+      a nameless verb REFUSES and lists the candidates instead of picking one, because picking is that
+      same defect wearing a different hat.
+      FR-2.1a/b/c: names are minted `<adjective>-<noun>` from roughly 11,000 combinations; the name is
+      LOOKED UP rather than recomputed, which is what lets a random name survive the restart that
+      FR-2.2's reattachment depends on; and `rename` changes a session's identity mid-conversation.
+      `rename` is on the AGENT-facing surface, and the line it sits on is whose state a verb changes:
+      register and rename change the caller's OWN identity, while evict, retention and audit reach
+      other sessions, which is what keeps those off it (ID-11). FR-7.3 amended accordingly.
+      Renaming leaves the TRANSCRIPT alone -- the log records who spoke at the time they spoke, and
+      rewriting it would break the idempotency and per-speaker uniqueness keys that include the sender
+      name. It does restart the speaker sequence, because per-speaker FIFO keys on the NAME: renaming
+      after one message made the next message (alice, seq 2) while nothing had ever been (alice, seq 1),
+      and the reader held it back for the full gap grace. Reproduced with held_back true, then fixed by
+      resuming from whatever the new name has already said in the channel -- which also makes renaming
+      BACK to an earlier name correct instead of a uniqueness collision. The residual coupling of
+      ordering to a mutable field is filed as W1-21.
+      FOUR DEFECTS CAME FROM MY OWN EDITS, all caught before commit. A greedy `sed` read the LAST
+      "name" in the lookup response, which was a CANDIDATE, so a two-session directory resolved
+      silently to one of them -- the exact failure the resolver exists to prevent, reintroduced by the
+      parser. The candidate list was then set inside a command substitution, so it died in the subshell
+      and turned "pick one of these two" into the flatly untrue "no session is registered here". A
+      shell expansion blanked both `replyHint` lines in the wake renderer, which WK36-WK38 caught in
+      four places. And HP19/HP24/HP25 all anchored on the literal `register|heartbeat`, so inserting
+      `rename` between them made three guards report DISPATCH-NOT-FOUND rather than compare anything;
+      all three now anchor on the dispatch structure, and HP19 compares a set against an explicit
+      expected list so a surprise verb still fails.
+      390 assertions across ten chat suites, 0 failing. E2E17 was rewritten: it had asserted the name
+      EQUALS the directory basename, a premise this change retires, and now asserts the properties that
+      actually matter -- shape, stability across restart, distinctness per (directory, tool), refusal on
+      ambiguity, and the nameless hook still waking a RENAMED session.
+    applied_to: >-
+      REQUIREMENTS.md (FR-2.1a/b/c, FR-7.3), chat-node/server/core.mjs (minting, namesForCwd, rename),
+      chat-node/server/hub.mjs (/session/rename, /session/name), chat-node/adapters/* (resolve via the
+      node), bin/aid + bin/aid.ps1 (rename verb, resolver, candidate reporting),
+      canonical/skills/aid-chat/SKILL.md + five rendered profiles, docs/chat-wake-install.md,
+      chat-node/tests/MANUAL-PROCEDURES.md, tests (E2E17 rewritten, WK21, HP19/HP24/HP25),
+      .aid/knowledge/tech-debt.md (W1-21)
+  - date: 2026-09-04
+    scope: onboarding friction -- the hand-written stop hook
+    outcome: >-
+      The stakeholder objected to the one manual step left in the wake install: assembling a stop hook
+      by hand from an absolute node path, an adapter path, and the SAME timeout number written twice.
+      The objection was well aimed, because that last part fails SILENTLY -- numbers that disagree
+      produce no error and no log, only a wake that never arrives.
+      Automating the WRITE was refused, and not on doctrine. FR-0.4 forbids it, and its reasoning is
+      concrete: a project-scoped host config file is tracked in git, so writing one would commit one
+      machine's absolute paths into every contributor's checkout, while a user-scoped one belongs to a
+      human who also edits it by hand and whose other tools write to it.
+      Automating the GENERATION carries neither risk and removes the part that actually goes wrong. New
+      FR-0.5: `aid chat hook --tool <host>` prints the block with the resolved node path, the adapter
+      path and both numbers already matched, and `--check` READS an installed hook back and names what
+      is wrong with it. Generating text and reading a file are both short of writing one, so FR-0.5
+      depends on FR-0.4 rather than weakening it. `hook` is an operator verb and stays out of the
+      agent-facing skill per ID-11.
+      TWO GUARDS WERE WRONG AND ARE FIXED. HP24 compares the verb sets of the two CLI twins and exists
+      precisely because `subscribe` once shipped in bin/aid while being wholly absent from bin/aid.ps1.
+      It read only the SHARED dispatch list, so when `hook` arrived on its own arm, deleting the entire
+      PowerShell branch still reported in-sync -- the exact failure the guard was written to catch,
+      recurring through a blind spot in the guard rather than a lapse in the code. It now reads both
+      dispatch shapes, each side scoped to its own dispatcher, and was falsified against both `hook`
+      and the original `subscribe` escape. Separately, the first eight new assertions all named cursor,
+      so a falsification pass that broke the CLAUDE CODE line saw every one still pass; that host's
+      nested block is the more intricate of the two and is now covered, round-tripped through --check.
+      One defect in the generator itself came from writing its test: it printed `timeout - margin` as
+      the block duration, telling an operator with timeout 60 that the node blocks 55s when the long
+      poll caps it at 30. A number in the output that does not match behaviour is worse than none.
+      367 assertions across ten chat suites, 0 failing. Every new assertion was falsified by breaking
+      what it guards.
+    applied_to: >-
+      REQUIREMENTS.md (FR-0.5), bin/aid + bin/aid.ps1 (chat hook, in lockstep),
+      docs/chat-wake-install.md (leads with the generator), tests/canonical/test-chat-node-wake.sh
+      (WK28-WK35), tests/canonical/test-chat-node-hub.sh (HP24 widened)
+  - date: 2026-09-04
+    scope: correction and strengthening round
+    outcome: >-
+      Nothing Open remains. Six items fixed, six accepted with their reasons recorded, nine needing the
+      operator's own hardware. 336 assertions across ten chat suites; 161 canonical suites with the same
+      15 pre-existing failures, unchanged throughout.
+      The round was asked to recheck the work against its OBJECTIVE rather than its criteria, and that
+      is what found the most. Nothing had ever run all five deliveries in ONE scenario -- each suite
+      exercised the layer its delivery built -- so the joins were unexamined. The new end-to-end suite
+      runs the work's own target case across all of it, and its first assertion checks the invariant the
+      whole design rests on and nothing had checked: that a session's every address is loopback.
+      FALSIFYING THAT ASSERTION FOUND A REAL DEFECT. Pointing the chat base URL at an unreachable host
+      did not make the CLI fail -- it made it STOP, with no timeout on any chat HTTP call, and the suite
+      waiting on it hung for nineteen minutes. A user meets the same shape through a stale port file.
+      Every chat call in both twins is now bounded; measured at 25s+ before and exactly 5s after.
+      W1-18 was fixed after being reproduced rather than reasoned about, which is what made the fix
+      small: the state writer replaced only the KEY LINE of a block scalar and orphaned its body, and an
+      orphaned line with a colon made the file unparseable -- the error that halted this pipeline three
+      times. Fixed in the canonical source, all seven renders, and narrowly in the dashboard's
+      deliberate fork so its Deploy value survived. Six regression cases, five of which fail against the
+      unfixed writer while the ordinary-scalar control does not.
+      Two checks were repointed and one guard was found to be defeated by its own subject: the
+      surface-boundary check now reads all five RENDERED skills against the canonical source rather
+      than against each other, which closed a gap where a generator mangling all five identically would
+      have passed.
+      Also nearly shipped a broken bin/aid: a backup taken mid-falsification had already captured the
+      break, and only the git diff caught it.
+    grade: A+
+
+  - date: 2026-09-04
+    scope: delivery-005 gate (three cycles) -- the last delivery
+    outcome: >-
+      PASSED at A+ on cycle 3. Five tasks, 301 assertions across nine suites, zero regressions
+      (160 suites, the same 15 pre-existing failures). Eight findings, all fixed. NOTHING in this
+      delivery needed a live host or a second machine, so nothing was deferred to a manual procedure.
+      Cycle 1's HIGH is the one worth remembering, because the code was correct everywhere it was
+      checked and the guarantee was still not sound: whisper visibility was right in every reader, but
+      replication sent the BODY to every hub holding any member, so the text landed in stores on
+      machines where nobody was permitted to read it. A guarantee resting on every future reader
+      remembering to filter is not a guarantee. Fixed at the routing layer -- a whisper now travels
+      only to its target's hub, or nowhere if the target is local.
+      Cycle 2 held at A over one gap, and the reviewer's reason for it was wrong: it said the storage
+      boundary was untestable without a live two-hub environment, when the federation suite had run two
+      real hubs since delivery-003. FD25 now runs THREE, and asserts the body is absent from a
+      non-party hub's database while a plain message sent alongside it did arrive -- which
+      distinguishes "the whisper did not arrive" from "nothing arrived". The reviewer agreed on
+      re-examination. A reviewer's judgement about what is testable is worth checking against what the
+      harness can already do.
+      A half-feature was also caught: retention set through the CLI wrote only to the environment, so
+      it reverted on restart and the evidence would have arrived hours later.
+    grade: A+
+  - date: 2026-09-04
+    scope: WORK close-out -- all five deliveries
+    outcome: >-
+      All 36 tasks Done across five deliveries, every one gated at A+. 301 assertions in nine chat
+      suites; 160 canonical suites total with the same 15 pre-existing failures confirmed against a
+      pre-work checkout. Fifteen gate cycles, and CYCLE 1 REFUSED EVERY DELIVERY.
+      What the gates were actually for, stated plainly because it is the most useful thing this work
+      produced: they caught code that was correct but unreachable, criteria that skipped rather than
+      ran, a rationale that was wrong while the code was right, three checks that encoded a proxy and
+      stopped tracking the property as the product grew, two of my own fixes that introduced the
+      defect they were fixing in a second copy of the logic, and a privacy guarantee that held in
+      every reader and leaked at the storage layer.
+      Roughly a dozen defects were found by writing a test rather than by a test failing -- the act of
+      having to state a property exposed that it was not true.
+      What is NOT verified is enumerated rather than implied: five criteria need the operator's own
+      machines or a live host, recorded as MP-05 through MP-10 with steps and pass conditions, and the
+      PowerShell twins remain unexecuted for want of an interpreter. Everything deferred, accepted, or
+      verified by a weaker means than its criterion deserves is listed in PENDING.md for the
+      correction round.
+    grade: A+
+
+  - date: 2026-09-04
+    scope: delivery-004 gate (three cycles)
+    outcome: >-
+      PASSED at A+ on cycle 3. Nine tasks, 259 assertions across eight suites, zero regressions
+      (159 suites, the same 15 pre-existing failures). Fourteen findings: thirteen fixed, one out of
+      scope.
+      TWO OF THIS DELIVERY'S CRITERIA NEED TWO MACHINES and are recorded as MP-09 and MP-10 rather
+      than simulated. The automated suite runs two real hubs with a real TCP link, so every property
+      of the PROTOCOL is genuinely tested; what it cannot do is meet a NAT or a stateful firewall, and
+      the idle-link property is entirely about those. A test that closed the socket itself would prove
+      the reconnect path works -- already covered -- and nothing about whether a 15-second keepalive
+      suits real networks.
+      Cycle 1 refused the delivery on the delivery's worst failure mode, and it failed SILENTLY: two
+      hubs that nobody configured both took the identity 'local', which made every membership
+      announcement look like the hub's own, so each side saw an empty channel and every send was
+      refused as solo with nothing naming the cause. Fixed three ways -- hostname default, an explicit
+      refusal on collision, and a manual procedure that sets and checks it.
+      Then cycle 2 found that MY OWN FIX had a second copy of the logic it was fixing: link.mjs
+      resolved the identity itself, so the hostname default never reached the wire and two documents
+      claimed otherwise. The documentation was right about the intent; the second copy was wrong about
+      the fact, which is what a second copy is for.
+      SEVEN defects across the delivery were found by running two hubs rather than by reading, among
+      them a link that was only half bidirectional and two namespaces sharing one column name.
+    grade: A+
+
+  - date: 2026-09-04
+    scope: delivery-003 gate (three cycles)
+    outcome: >-
+      PASSED at A+ on cycle 3. Seven tasks, 217 assertions across seven suites, zero regressions
+      (158 suites, the same 15 pre-existing failures). Nine findings: eight fixed, one out of scope.
+      THREE of this delivery's criteria cannot be automated here and are recorded as manual
+      procedures rather than quietly deferred: AC-1 needs two live host sessions, AC-24 needs a host
+      that gates privileged actions by default, and AC-23's host half needs a stop hook that
+      actually re-fires. A stub that never prompts proves nothing about a host that would. MP-05,
+      MP-06 and MP-07 carry them with steps and pass conditions; the spike already ran all three.
+      Cycle 1 REFUSED on the plainest kind of miss: `aid chat subscribe` was in bin/aid and entirely
+      absent from bin/aid.ps1, and the parity test that would have caught it skips here for want of
+      PowerShell. That gap had been recorded in task notes since delivery-001; this is the first time
+      it hid a defect rather than merely an unverified line.
+      TWICE, writing a test found a real defect. The read-before-wait fix went into the adapters and
+      not the CLI subscriber, so `aid chat subscribe` would block past a message already in the
+      store. And building the guard-timer test exposed the guard being applied PER REQUEST rather
+      than per run -- 36 seconds against an 18 second budget, which is exactly the orphaned adapter
+      the guard exists to prevent.
+      One fix broke the node at startup (a temporal dead zone on the announcer handle) and the suite
+      caught it at once, though the symptom -- eight unrelated assertions returning empty strings --
+      looked nothing like the one-line cause in the node's log.
+    grade: A+
+
+  - date: 2026-09-04
+    scope: delivery-002 gate (four cycles)
+    outcome: >-
+      PASSED at A+ on cycle 4. Four tasks, 158 assertions across seven suites, zero regressions
+      (157 suites, the same 15 pre-existing failures). Eleven findings, ten fixed and one accepted
+      (the unexecuted PowerShell twin, recorded as MP-03).
+      Cycle 1 REFUSED on one HIGH, and the instructive part is which half was wrong: I collapsed
+      unknown/stale/busy into one refusal token and justified it as denying an asker an enumeration
+      oracle, then printed the distinction in `detail`. The reviewer caught the contradiction -- but
+      the RATIONALE was the mistake, not the field, because the roster already lists every session
+      by name to every caller. The comment now states the real reason and records that the first one
+      was wrong, so a future reader does not reinstate the hiding believing it restores a property.
+      The MEDIUM was worse in effect than in severity: the jittered retry hint was computed in the
+      node and dropped by the CLI, so the livelock it prevents was still there for every agent using
+      the surface agents actually use.
+      Cycle 3 found that MY OWN FIX broke the no-work-ids-in-the-KB rule -- the anti-collision note
+      named a work twice -- and that a second, older violation had survived three cycles. That rule
+      binds every agent and nothing checked it, which is exactly why. There is now a guard
+      (test-kb-no-work-ids.sh) that scans the whole KB for work ids and work-folder paths in prose,
+      exempts command-syntax examples inside code spans, self-falsifies, and records its own known
+      limits rather than implying completeness.
+    grade: A+
+
+  - date: 2026-09-04
+    scope: delivery-001 gate (four cycles)
+    outcome: >-
+      PASSED at A+ on cycle 4. Eleven tasks, 109 assertions across five canonical suites,
+      zero regressions against the pre-work baseline (verified in a clean worktree at the
+      commit before the delivery began, not by stashing). Seventeen findings across four
+      cycles, all fixed. Cycle 1 REFUSED the delivery on two HIGHs, and both were the same
+      species: code that was correct but unreachable (reapSession had no route or verb, so
+      AC-30's reap clause could not be exercised through the product) and a criterion that
+      skipped rather than ran (AC-22's PATH-stripping removed only the first directory
+      containing node, and this machine has two). Two of cycle 3's findings were introduced
+      by cycle 2's own fixes -- a vacuous assertion left pointing at the wrong node, and a
+      flag added without a test -- which is the argument for re-gating after fixing.
+      Writing the last test (CO23) corrected an understanding rather than confirming one:
+      the too-late discard occurs only once a reader has ACKNOWLEDGED past a grace skip, so
+      the loss window is narrower than first documented, and both the test and core.mjs now
+      state the narrower condition.
+    grade: A+
+
+  - date: '2026-09-01'
+    event: 'Seeded from a predecessor'
+    outcome: 'seven sections Complete, three Pending'
+    notes: 'Sections 1-3, 5, 6, 9 and 10 carried; 4, 7 and 8 carried but left open for this interview. Section 9 renumbered to a gapless AC-1..AC-22.'
+  - date: '2026-09-01'
+    event: 'Interview turn 1 -- pre-reset residue swept as a class'
+    outcome: '10 edits across 1, 4 and Feature 003; section 1 reopened'
+    notes: 'The deleted deploy verb was still live text in eight places, contradicting FR-1.1 and FR-7.6. Sweeping the class rather than the eight lines found four further pre-reset assertions in Feature 003 that the deploy hits had not pointed at: the node as a separate package aid does not contain, Python as its prerequisite, an open question about where deploy fetches the node (which section 8 already records as closed by deletion, with the opposite premise), and the withdrawn MCP facade treated as shipping. Section 1 moved Complete -> Pending: it carried the defect while marked Complete and exempt from sweeping as runtime-independent, so its clean bill was unverified rather than earned.'
+  - date: '2026-09-01'
+    event: 'Interview turn 2 -- discovery promise bounded'
+    outcome: '6 edits across 4, 10 and Feature 009; contradiction closed'
+    notes: 'Zero-configuration discovery was promised in Feature 009s Description, user story and scenario, while AC-4 -- the criterion that feature owns -- requires only a path depending on no network feature, and section 10 stated in writing that shipping the floor would leave the promise unmet with the criterion green. Stakeholder decision: best-effort, not a v1 promise. A criterion for it was considered and rejected on AC-4s own reasoning -- it would be environment-dependent by construction and red on an ordinary laptop (WSL2 multicast, AP client isolation, macOS 15+). The scenario is split so the guaranteed path is tested and the zero-configuration layer is marked best-effort and criterion-free.'
+  - date: '2026-09-01'
+    event: 'Interview turn 3 -- the node Node floor declared'
+    outcome: '3 edits across FR-7.7 and section 8; one coupled question left open'
+    notes: 'Section 8 deferred the number to /aid-specify while already carrying the evidence that determines it: node:sqlite does not exist before 22.5.0 and needs a flag until 22.13.0, so the repository floor of >=22 admits five releases on which the node cannot open its own store. Stakeholder decision: declare >=22.13.0 now, in FR-7.7 and section 8. Low, and determined rather than chosen -- the lowest floor that works rather than the lowest available. Deferring invited a later reader to inherit >=22 from the adoption argument alone, which is the M5 pattern (a declared floor nothing demonstrates) arriving from the other direction. Still open and deliberately not settled: the ExperimentalWarning the module emits on stderr on 22.x and 23.x, and whether an operator-started service may print it.'
+  - date: '2026-09-01'
+    event: 'Interview turn 4 -- the experimental warning is suppressed, narrowly'
+    outcome: '3 edits; FR-7.7 gains a requirement, Feature 003 a scenario'
+    notes: 'Below Node 24.15.0 the built-in SQLite module prints an ExperimentalWarning to stderr on every open -- observed first-hand on v22.14.0 -- so on the floor just declared every start would carry a line the operator cannot act on. Stakeholder decision: suppress it. Scoped deliberately to that one message on that one runtime range, never warnings wholesale, so a different experimental warning still surfaces on a module at release-candidate status. The reasoning is FR-7.7s own actionable-error principle applied to success rather than failure: the nodes stderr is where AC-22s prerequisite error must land, and a line on every start is what teaches an operator to stop reading it. No section-9 criterion was added -- the behaviour is verified as a Feature 003 scenario, because section 9 was just renumbered gapless and appending to it should be deliberate rather than a side effect. The filter expires by construction once the declared floor reaches 24.15.0.'
+  - date: '2026-09-01'
+    event: 'Interview turn 5 -- scope-reset prehistory stripped from sections 1-10'
+    outcome: '11 edits; sections 1, 7 and 8 closed, 4 still open'
+    notes: 'A requirements document states what is true now and why, not how it came to say that -- git holds the latter. Removed: dated reset markers, previously-X framing, and reversal narratives, across section 1, section 4s facade bullet, FR-6.1, FR-7.6, the FR-8 note, section 7s agent-surface bullet, section 8s toolchain line and closed-by-deletion paragraph, and section 10s adjacency note. Kept, restated in the present tense where needed: every live rationale, including why a skill beats an MCP facade and the one thing that choice gives up. Three things deliberately not stripped -- FR-1.1s open start-idempotence sub-decision, the ID-9/12/13 override annotations (a conclusion copied without its override reinstates a rejected design), and the PyPI premise itself, which is the next open question. Section 4 stays Pending because it carries that premise.'
+  - date: '2026-09-01'
+    event: 'COMPLETION -- quality check and KB hydration'
+    outcome: 'quality check clean with one noted caveat; 1 KB doc hydrated'
+    notes: 'Quality check: every feature owns at least one criterion; all 22 criteria name an observable; sections 4 and 5 consistent across the six in-scope items checked; the three reset classes swept in earlier turns are clean. One caveat recorded rather than fixed -- AC-9s second half ("running the command again is safe") is falsifiable only as far as "does not fail destructively" until FR-1.1s open start-idempotence sub-decision lands, which the document already flags. KB hydration: external-sources.md gains the node:sqlite entry -- vendor version history (added 22.5.0 flagged, unflagged 22.13.0, release candidate 24.15.0) plus the first-hand store-contract measurements on v22.14.0, v24.19.0 and v26.7.0, with method and dates. Both are durable facts about a third-party runtime, the same class as the host harness docs already there, and expensive to re-derive. Nothing forward-looking was written: the node does not exist, so no technology-stack or architecture content is true yet.'
+  - date: '2026-09-02'
+    event: 'Approval gate'
+    outcome: 'Approved'
+    notes: 'Stakeholder approved the assembled requirements after a whole-picture read-back. Ten sections Complete, 22 criteria each owned by exactly one feature, 40 functional sub-requirements each mapped. Five interview turns, five decisions: the pre-reset deploy/install residue swept as a class (which reopened section 1, since it had carried the defect while marked Complete and exempt from sweeping); zero-configuration discovery bounded to best-effort rather than promised; the nodes Node floor declared >=22.13.0, determined by the store rather than chosen; node:sqlites experimental warning suppressed narrowly; and the scope-reset prehistory stripped from sections 1-10. Q1 answered: FR-8s withdrawal now stands on a reason independent of the PyPI channel decision, which is labelled an input rather than asserted as fact. One assumption re-confirmed at the gate and left standing on that footing. Next: /aid-define work-001.'
+  - date: '2026-09-02'
+    event: 'Feature Decomposition -- 11 features re-decomposed into 5'
+    outcome: '5 features, one per section-10 stage; all 95 scenarios carried'
+    notes: >-
+      Stakeholder directive: the minimum number of features, one if possible, with maximum
+      cohesion. One is unreachable -- AC-20 requires that no code from the spike be carried
+      forward, which is a statement about a boundary and means nothing without one. Two is
+      unreachable for a different reason -- /aid-plan sequences features into deliveries, so a
+      single product feature yields one delivery and section 10s requirement that each stage
+      from P1 leaves working product behind would exist only as prose. Five, one per stage, is
+      the floor, and it is also where cohesion falls because the stages were drawn around what
+      ships together. The load-bearing merge is Feature 002, which collapses the three features
+      an earlier decomposition had split: that split had failed on its own terms, one feature
+      owning the store schema another needed, so a schema defect in the first blocked the second
+      outright. Content was carried rather than retyped -- all 95 verification scenarios, every
+      Description and every user story survive the boundary change, and Feature 001s A+
+      specification is unchanged because its boundary is. Verified: 22 criteria owned exactly
+      once, 40 requirements mapped, section 10 and section 11 agreeing stage for stage.
+      Feature 005 is recorded as the weakest cohesion of the five rather than presented as clean.
+  - date: '2026-09-02'
+    event: 'Feature 001 apparatus built and smoke-tested (out of phase, deliberately)'
+    outcome: '3 throwaway scripts, gitignored; 4 host tests remain unrun'
+    notes: >-
+      The spike blocks Feature 003, and it needs two live host sessions that a cloud agent cannot
+      be -- the protocols own validity rule says a session holding a foreground shell call open is
+      busy, not idle, and a run arranged that way is invalid, so this process cannot be both the
+      harness under test and the observer. What it CAN do is build the apparatus, so it did:
+      spike_stub_node.py, spike_hook.py and spike_probe.py, written to the A+ specification and
+      smoke-tested end to end. Verified here -- the endpoint contract including all three 400
+      cases and the 404, seq incrementing per request, refusal to start on a bound port, a
+      SURVIVED run with 13 beats and the act reaching the stub, a KILLED run where SIGTERM at 1.5s
+      of a 30s block produced signal 15 with the probe confirming the pid gone, the arm-once
+      sentinel refusing a second block, and VOID detection when the stub answers first. One defect
+      found and fixed in the process: default log paths resolved from the working directory, which
+      created a nested throwaway/throwaway when run from inside the scripts own folder and would
+      have put logs somewhere unpredictable when a host spawned a hook -- they now resolve from the
+      scripts own location, verified by running from /tmp. NOT verified and not verifiable here:
+      anything a host does. All four tests are unrun. SPIKE-RUNBOOK.md carries the operator steps,
+      and the hook placement is the operators by requirement, not by convenience -- FR-0.4 forbids
+      the product writing any host tools configuration, and the specification puts the hook in a
+      scratch project outside this repository.
+  - date: '2026-09-02'
+    event: 'Cross-Reference -- 2 cycles, D then B, closing A+'
+    outcome: 'A+ (8 ledger rows, all Fixed); minimum A met'
+    notes: >-
+      Cycle 1 graded D on six findings, five sharing one root cause the re-decomposition had
+      created: it REUSED feature ids, so prose carried across the change kept citing old numbers
+      and silently named a different feature. The sixth was a stale predecessor work-folder path
+      surviving into this document, including into a .gitignore instruction that would have
+      excluded the wrong tree. Fixed as a class rather than as six lines, and that mattered --
+      sweeping on the property found three occurrences the reviewers line list had not named.
+      Cycle 2 confirmed all six Fixed and raised two new LOW findings, both in the blockquote the
+      fix itself had added: a stated count of corrected citations that was wrong, and a claim that
+      a script proves criterion ownership when no repository script does. Both fixed -- the count
+      removed rather than corrected, because a stated count is what drifts and this documents
+      predecessor got exactly that wrong six times in a row, and the ownership claim restated as
+      what it is, verified by hand and by a tool that is not part of the repository. No cycle 3 was
+      dispatched: the two remaining findings were single-sentence factual claims verifiable by
+      grep, and both were re-measured directly rather than re-reviewed. The id-reuse hazard is
+      recorded in section 11 rather than merely repaired, because it outlives the fix.
+
+  - date: '2026-09-02'
+    event: 'Apparatus portability -- Windows operator target'
+    outcome: 'Fixed: 1 silent-wrong-measurement defect, 21 broken runbook commands'
+    notes: >-
+      The operator's machine is Windows, and the apparatus was POSIX-only in one way that would
+      have produced a wrong number rather than an error. spike_probe.py used os.kill(pid, 0) for
+      liveness. On POSIX that is the standard existence probe -- signal 0 is never delivered and
+      only the existence and permission check runs. On Windows CPython has no signal concept: for
+      any sig other than CTRL_C_EVENT/CTRL_BREAK_EVENT it opens the process and calls
+      TerminateProcess(handle, sig), so os.kill(pid, 0) terminates the target with exit code 0.
+      The probe would have killed the hook at its first sample, 250 ms in, and test 3 would have
+      recorded KILLED(0.25) -- the observer killing the process it exists to observe, attributed
+      to the host, and nothing downstream would have caught it because the shape is exactly what
+      a real kill looks like. Liveness now dispatches on sys.platform: POSIX keeps signal 0,
+      Windows uses OpenProcess + GetExitCodeProcess via ctypes with
+      PROCESS_QUERY_LIMITED_INFORMATION so the probe can watch a host-spawned hook without
+      elevation. The POSIX path was regression-checked and still yields the SURVIVED shape.
+      spike_hook.py needed no change: it already resolves SIGHUP through getattr and skips it
+      where absent. Separately, 21 runbook commands do not exist or behave differently on
+      Windows; two of them fail quietly rather than loudly -- bare curl is an alias for
+      Invoke-WebRequest in PowerShell 5.1, and inline VAR=value prefixes are not PowerShell
+      syntax, so SPIKE_MACHINE would have stayed unset and every test 4 line would have carried
+      the wrong machine label. The runbook is now PowerShell throughout (162 atomic steps, plus a
+      Linux appendix for machine A), resolves the interpreter once as a recorded PY because
+      Windows does not reliably provide python3, and states two Windows consequences before Part 0
+      instead of leaving them to be discovered mid-run: test 3 resolves to +/-0.25 s from the last
+      beat rather than exactly, and the record must carry that resolution plus
+      'signal: none observable (Windows)'. The three spike_*.py files are force-added so they can
+      be fetched onto the laptop; close-out step 159 git-rm's them and step 162 verifies none
+      survive, keeping AC-20's no-carry-forward requirement checkable by search.
+  - date: '2026-09-02'
+    event: 'Feature 001 spike -- test 1 executed on machine A'
+    outcome: 'Pass: Claude Code wakes. SURVIVED(30) + act. 4 findings recorded, 1 design-changing'
+    notes: >-
+      Run T1-000-a on Claude Code 2.1.258 / Windows 11 26200 / win32. The hook blocked 30.117 s
+      against a 30 s deadline and returned under its own power; the stub had been asked to wait
+      60 s so it could not have answered first, which is what makes the return the hook's own and
+      not a stub artifact. Claude Code parsed the decision=block payload, surfaced its reason
+      field, and the agent ran the named command, writing the act line 7.581 s after the wake was
+      emitted. Wall and monotonic clocks agreed to 0.0003 s and no beat gap exceeded 0.258 s, so
+      the machine did not suspend and the process was scheduled throughout. The probe never armed
+      for this run -- three attempts expired before the hook started -- so there is no external
+      liveness evidence, which is acceptable here because end proves the hook was not killed and
+      act proves a turn ran, but is not acceptable for test 3 where KILLED and ABANDONED are
+      otherwise indistinguishable. Four findings recorded in FINDINGS.md. F1 is design-changing
+      and was not anticipated by the specification: the stop hook RE-FIRES 6.257 s after the
+      woken turn, so waking is inherently a loop -- the wake ends a turn, ending a turn fires the
+      stop hook, and the stop hook wakes the agent. Only the throwaway arming sentinel stopped a
+      second block. Feature 003 must therefore carry an explicit re-entry rule; 'block on every
+      stop event' is not implementable. F2: Claude Code runs hooks through bash on Windows, so a
+      waker cannot assume native-shell quoting and must emit paths bash will not eat. F3: the
+      instruction reaches the model labelled as a hook error, which is user-visible. F4: an
+      interpreter on PATH may be a shim -- this machine's python is a pyenv-win python.bat -- so
+      the waker must resolve the interpreter from the running process, never from PATH.
+    applied_to: 'FINDINGS.md (created); throwaway/spike_hook.py; throwaway/spike_probe.py; SPIKE-RUNBOOK.md'
+  - date: '2026-09-02'
+    event: 'Feature 001 spike -- test 2 executed; latency voided; apparatus corrected for the ladder'
+    outcome: 'Pass: Cursor wakes. Floor >=30s established. Latency void (approval gate). F5 filed, F1 reproduced'
+    notes: >-
+      Run T2-001-a on Cursor 3.18.9 with full probe coverage. The hook blocked 30.104 s with socket
+      elapsed 30.061 s and kind=timeout, so the new three-way verdict correctly classified it as
+      own_power rather than as one of the failure modes it used to be indistinguishable from. The
+      probe held alive=true through the whole 30 s and went false only 0.235 s AFTER end was
+      written, which establishes positively that Cursor did not kill the hook. Test 3 therefore
+      begins from a measured floor rather than from zero: Cursor tolerates at least 30 s. Cursor
+      also honours the same decision=block convention as Claude Code, so the exit2 fallback was
+      not needed. The wake-to-act latency of 118.823 s is VOID and must not be quoted: the
+      operator confirms Cursor raised a command-approval prompt and that nearly all of that
+      interval was spent returning to the window and clicking approve. It is kept in the record
+      because the near-miss is instructive -- it landed 1.177 s inside the 120 s ABANDONED
+      threshold, so one more distraction would have produced a written finding of 'Cursor refused
+      to wake' that was simply false. F5 filed and it is the most constraining result for Feature
+      003 after F1: on Cursor the woken turn's tool call is gated behind human approval, so an
+      autonomous channel cannot depend on a woken turn performing a gated action -- either the
+      action is pre-authorised on every host, or the woken turn must do nothing requiring
+      authorisation and the message arrives as context. That gate also invalidated the spike's own
+      instrumentation for the ladder, since ABANDONED is defined by no act within 120 s and an
+      unapproved act never arrives, which would have made each of up to 25 runs a measurement of
+      operator attention. Two apparatus corrections followed. The already-armed path now emits
+      refire instead of void, because a second stop event can only mean the host ran a further
+      turn and, unlike a tool call, cannot be gated -- so it is an approval-free witness. And
+      --wake-action text was added, asking the woken turn for a single word with no tool and no
+      command, which is the mode the ladder will use. F1 also reproduced on Cursor, re-firing
+      6.626 s after the act against 6.257 s on Claude Code, so the wake loop is not host-specific.
+    applied_to: 'FINDINGS.md; throwaway/spike_hook.py (refire witness, --wake-action)'
+  - date: '2026-09-02'
+    event: 'Feature 001 spike -- test 3 ladder rung 1 (D=60) on Cursor'
+    outcome: 'SURVIVED(60). Cursor blocking floor now >=60s. Clean wake latency measured: 3.264s'
+    notes: >-
+      Run T3-60-a under --wake-action text, so nothing in the path could raise an approval prompt.
+      The hook blocked 60.072 s against a 60 s deadline with socket elapsed 60.043 s and
+      kind=timeout, which is 1.0007 of D and so comfortably past the 0.90 floor the verdict logic
+      requires. Wall and monotonic clocks drifted 0.0007 s, so no suspend. Probe coverage was
+      complete: alive=true across the whole minute, going false only 0.099 s after the hook wrote
+      its own end, which establishes positively that Cursor did not kill it. Cursor's blocking floor
+      is therefore at least 60 s and the ladder continues at 120, 300, 600. The run also produced
+      the wake latency the voided T2-001-a figure had been hiding: wake to refire in 3.264 s, or
+      2.7 percent of the 120 s ABANDONED window rather than the 99 percent that a human clicking
+      approve consumed. That vindicates voiding the earlier number rather than reporting it. The
+      3.264 s must NOT be ranked against Claude Code's 7.581 s: the latter is wake-to-act and
+      includes spawning an interpreter and an HTTP round trip, while this is wake-to-refire for a
+      one-word reply, so they measure different work and no same-action pair has been run on both
+      hosts.
+    applied_to: 'FINDINGS.md (test 3 ladder table, latency finding)'
+  - date: '2026-09-02'
+    event: 'Feature 001 spike -- ABANDONED(120) on Cursor; two limits separated; bisection opens'
+    outcome: 'ABANDONED(120). F7 filed: block-tolerance and act-willingness are distinct limits. S=60 F=120'
+    notes: >-
+      Run T3-120-a blocked the full 120.097 s with socket elapsed 120.068 s, kind=timeout,
+      elapsed/D 1.0006, drift 0.0017 s, and the probe holding alive=true throughout before going
+      false 0.158 s after end. So Cursor did NOT kill it. But no refire was written and the operator
+      confirms no ACK ever appeared in the session, and the 120 s witness window had closed before
+      the check, so ABANDONED(120) is a determination rather than a timing artefact. This is F7 and
+      it corrects a premise the specification and the apparatus shared: the question 'how long may a
+      stop hook block' is two questions. How long the host lets a hook BLOCK measures at >= 120 s
+      with no upper bound found; how long it stays willing to ACT afterwards falls somewhere in
+      (60, 120]. A design reading only the first number would conclude a 120 s long-poll is safe
+      when it is not -- the hook returns, the message is in hand, and nothing happens, which from
+      inside the product is indistinguishable from no message having arrived. Section 6's 30 s
+      long-poll default sits inside the region where both limits hold, so the default is not in
+      question; what is now excluded is treating the long-poll as freely tunable upward on the
+      strength of the blocking limit alone. Left open and NOT answered by this run: whether Cursor
+      read the decision=block payload and declined it, or had already stopped listening to the
+      hook's stdout. Same observable, different mitigations -- a policy to work within versus a
+      deadline to stay inside -- and distinguishing them needs host-side instrumentation the spike
+      does not have. Bracket is now S=60 F=120 with tolerance max(5, 0.10*120)=12 s; F-S=60 exceeds
+      it, so the ladder stops climbing, the 300 and 600 rungs are moot, and bisection begins at
+      D=90. One incidental note: a single skipped beat at t_mono ~61 s, 0.504 s against a 0.252 s
+      cadence, well inside the 2 s void threshold, so the run stands.
+    applied_to: 'FINDINGS.md (F7, ladder table, test 3 answer)'
+  - date: '2026-09-02'
+    event: 'Feature 001 spike -- F7 corrected: the boundary was a configured hook timeout, not a host limit'
+    outcome: 'Corrected. Real finding: Cursor abandons a timed-out hook without killing it. Bisection cancelled'
+    notes: >-
+      The operator supplied the actual hook registration, which carries "timeout": 90 alongside the
+      command. That explains every run under a single rule -- the wake is honoured if and only if D
+      is less than timeout -- with D=30, 60 and 60 all under it and honoured, and D=120 over it and
+      not. No unexplained host policy is needed, and ABANDONED(120) is D exceeding a configured
+      value rather than a discovered limit. The bisection between 60 and 120 is CANCELLED: it would
+      have spent runs rediscovering a number already written in the config file, and the 300 and 600
+      rungs are moot for the same reason. The correction matters because the earlier write-up
+      inferred two independent limits, block-tolerance at >=120 s versus act-willingness somewhere in
+      (60, 120]. The first half stands and is confirmed: Cursor genuinely does not kill a long hook.
+      The second was an artefact of reading a configured 90 s as a discovered boundary. What replaces
+      it is sharper and was already in the data: Cursor's timeout fired around 90 s into T3-120-a,
+      yet the probe recorded alive=true until 120.097 s, dying only 0.158 s after the hook wrote its
+      own end -- so the process outlived Cursor's abandonment by about 30 s. On timeout Cursor
+      discards the hook's output and stops waiting but LEAVES THE PROCESS RUNNING. Three consequences
+      for Feature 003: every wake attempt outlasting timeout orphans a process, which on a poll cycle
+      is a leak nothing in the host reports; the orphan still holds its long-poll socket, so a node
+      counting connected waiters over-counts; and the waker must keep its block strictly under the
+      host's configured timeout, a value it cannot discover by observation because it is per-hook
+      configuration rather than a host constant. Two questions remain open and were put to the
+      operator: whether Cursor enforces a maximum acceptable timeout, which would bound how long a
+      waker may ever block on this host, and whether 90 was Cursor's own default or a value chosen at
+      registration, which decides whether the product must assume 90 s in the field.
+    applied_to: 'FINDINGS.md (F7 rewritten, test 3 answer, ladder framing)'
+  - date: '2026-09-02'
+    event: 'Feature 001 spike -- Cursor hooks documentation read; F8 and F9 filed; wrong wake schema corrected'
+    outcome: 'Docs state NO numeric timeout default. F8: wrong mechanism used, and loop_count solves F1. F9: F5 gate is closable'
+    notes: >-
+      Cursor's own hooks documentation was consulted to answer whether a default hook timeout is
+      specified. It is not: the option table gives timeout as 'platform default' with no number, at
+      both places it appears. A third-party reimplementation of the hook runner hard-codes 30 s and
+      labels it Cursor's platform default, but that is an inference rather than a vendor statement
+      and says nothing about this build. With the operator's timeout line now removed, the default is
+      measurable: a run at D=60 separates a 30 s default (ABANDONED) from anything at or above 60 s
+      (SURVIVED), which is worth more than further doc reading. Two further documented facts changed
+      the record. F8: Cursor's stop hook contract is input {status, loop_count} and output
+      {followup_message}, and decision=block is Claude Code's convention that does not appear in
+      Cursor's schema at all. The spike sent the Claude shape to both hosts, so the ACKs at D=30 and
+      D=60 are NOT evidence that Cursor honours decision=block -- something carried the text to the
+      model, most likely unrecognised hook output surfacing as an error string the model then read,
+      but the supported mechanism was never exercised. Test 2's claim that Cursor honours the same
+      convention as Claude Code is withdrawn; what stands is that a wake occurred, not how. The input
+      side matters more: loop_count reports how many automatic follow-ups a conversation has already
+      triggered and loop_limit caps them, default 5 on Cursor and null (UNCAPPED) on Claude Code. That
+      is F1's re-entry rule, already built and documented, so Feature 003 reads loop_count rather than
+      inventing a sentinel -- and F1 is sharpened rather than retired, because Claude Code's uncapped
+      default means the loop observed there has no host-side backstop. F9: beforeShellExecution
+      returns {permission: allow|deny|ask}, so a hook can pre-authorise the exact command a woken turn
+      runs, which closes the approval gate that voided T2-001-a's latency. That does not retract F5 --
+      the gate is real and a product cannot assume users installed such a hook -- but it makes the
+      constraint closable by configuration, which is the difference between 'the woken turn may not
+      use tools' and 'may use tools the operator pre-authorised', and those imply different install
+      instructions. Also recorded: hook failures including timeout are fail-open by default, and a
+      waker must never set failClosed true because a hung long-poll would then freeze the agent.
+      Apparatus updated: --wake-schema cursor emits followup_message, and the hook now reads the
+      host's stdin payload and logs status, loop_count and the key set actually received, so a run
+      records what it was given rather than what it assumed. All four schemas verified.
+    applied_to: 'FINDINGS.md (F8, F9, F7 default paragraph, test 2 claim withdrawn); throwaway/spike_hook.py'
+  - date: '2026-09-02'
+    event: 'Feature 001 spike -- test 3 ANSWERED: SURVIVED(120) under timeout 3600'
+    outcome: 'Test 3 complete. No host blocking limit distinct from the configured timeout; 3600 accepted'
+    notes: >-
+      T3-120-a rerun with the hook's timeout raised to 3600 produced SURVIVED(120): blocked 120.083 s,
+      socket elapsed 120.051 s, elapsed/D 1.0004, drift 0.0005 s, probe alive throughout and dying
+      0.080 s after end, ACK seen in the session, refire 3.368 s after the wake. The identical D that
+      had ABANDONED under timeout 90 now survives, so timeout is the only gate and Cursor accepted
+      3600 without clamping below 120. Test 3 is answered: there is no host-imposed blocking limit
+      distinct from the configured timeout. Five configurations now fit one rule with no exceptions --
+      timeout absent at D=60 no wake, 90 at 30 and 60 wake, 90 at 120 no wake, 3600 at 120 wake --
+      which makes the bisection and the 300 and 600 rungs all moot, since they were searching for a
+      boundary that is a number the operator writes. Latency is now three samples, 3.264, 3.890 and
+      3.368 s, mean 3.507 with an 18 percent spread; the 3.368 came from a 120 s block, so latency
+      does not appear to scale with block duration, and a design budgeting on it should use the
+      observed maximum rather than the mean. One correction to F8: the start line on this run carries
+      no schema= or host_status or loop_count fields, so it ran the pre-pull hook with --wake-schema
+      defaulting to claude. decision=block therefore demonstrably wakes Cursor, four runs out of four
+      where D < timeout, so test 2's claim is narrowed rather than withdrawn -- the observable holds,
+      the explanation does not. Building on it would mean depending on behaviour outside the vendor's
+      documented schema, so followup_message remains the shape to ship and is still UNTESTED, as is
+      the stdin capture of status and loop_count.
+    applied_to: 'FINDINGS.md (test 3 answer, ladder table, latency, F7, F8)'
+  - date: '2026-09-02'
+    event: 'Feature 001 spike -- followup_message confirmed; loop_count absent; F10 filed, F8 corrected'
+    outcome: 'followup_message WORKS. loop_count does NOT reach the hook, so F8 re-entry claim withdrawn'
+    notes: >-
+      Run T5-schema-b under --wake-schema cursor produced SURVIVED(60): blocked 60.105 s, socket
+      elapsed 60.061 s, elapsed/D 1.0010, drift 0.0004 s, probe alive throughout, ACK in the session,
+      refire 3.875 s after the wake. So followup_message is confirmed as a working supported wake
+      mechanism on Cursor, and it is the shape the product should ship. Latency is now four samples,
+      3.264, 3.890, 3.368 and 3.875 s, mean 3.599 with a 0.626 spread; the followup_message run sits
+      inside the same range as the decision=block runs and latency does not scale with block
+      duration. The input half went the other way and F10 records it. The start line shows
+      host_status null, loop_count null, host_input_keys ["_unparsed"], and _unparsed is the branch
+      the reader takes when stdin was NON-EMPTY but not valid JSON -- empty stdin logs null keys and a
+      valid payload logs ["loop_count","status"], all three verified directly against the apparatus.
+      So Cursor wrote something to the hook's stdin and it was not the documented {status, loop_count}
+      object, which means loop_count does NOT reach the hook on this build. F8 had argued Feature 003
+      could read loop_count instead of inventing a re-entry rule; that argument does not survive, and
+      the re-entry problem returns to the design on BOTH hosts -- uncapped by default on Claude Code,
+      unobservable on Cursor. loop_limit may still cap Cursor's follow-ups host-side at 5 even with the
+      count invisible to the hook, which would bound runaway looping without helping the hook decide;
+      untested, and testing it needs a deliberate loop of six or more wakes. What Cursor actually sent
+      is still unknown and that is an instrumentation failure of mine: the reader captured the raw text
+      but the start line logged only the key NAMES, so the run reports 'not JSON' and nothing
+      actionable. Fixed -- the hook now logs host_input_raw with the parser's own error, repr-quoted so
+      control characters and shell noise are visible, and one more run recovers what was lost. Worth
+      noting alongside F2: Cursor invokes hooks through bash on Windows, so the hook's stdin may be
+      whatever bash handed it rather than what Cursor intended to write. Suggestive, not evidence.
+    applied_to: 'FINDINGS.md (F10, F8 correction, latency, ladder table); throwaway/spike_hook.py'
+  - date: '2026-09-02'
+    event: 'Feature 001 spike -- BOM found: Cursor prefixes its stdin JSON with EF BB BF; F10 corrected'
+    outcome: 'loop_count IS delivered. Prior "absent" reading was a BOM parse failure. F8 restored. Rich undocumented payload found'
+    notes: >-
+      Run T5-stdin-a captured the raw stdin bytes and they begin with the three characters shown as
+      i-diaeresis, guillemet, inverted-question-mark, which are EF BB BF -- the UTF-8 byte-order mark.
+      RFC 8259 does not permit a BOM in JSON, so json.loads rejects the whole document with
+      'Expecting value: line 1 column 1 (char 0)', an error that names the first character and so
+      reads like malformed JSON rather than a valid document wearing a hat. Reading stdin as text made
+      it worse, because the platform locale rendered those bytes as cp1252 and the BOM never even
+      appeared as U+FEFF. This must be stated plainly: the PREVIOUS entry concluded loop_count 'does
+      not reach the hook' and withdrew F8's re-entry argument on that basis, and BOTH were wrong.
+      loop_count is delivered, its value in this run was 0, and the failure was the spike's parser.
+      F8's claim that Feature 003 can read loop_count instead of inventing a sentinel is RESTORED. The
+      apparatus now reads stdin as bytes and decodes with utf-8-sig, verified against the operator's
+      exact payload including the BOM, and still handles BOM-less and empty stdin correctly. The BOM
+      is a real interoperability constraint rather than only a spike bug: any hook piping Cursor's
+      stdin into a strict JSON parser fails on the first byte with an error pointing at the payload
+      instead of the encoding, so a waker must decode utf-8-sig or strip U+FEFF, and emitting a BOM
+      ahead of JSON is worth reporting upstream as non-conforming. The payload is also far richer than
+      documented. Documented: status, loop_count. Actually delivered and undocumented:
+      conversation_id, generation_id, model, model_id, model_params, input_tokens, output_tokens,
+      cache_read_tokens, cache_write_tokens. conversation_id is the most consequential -- a stable
+      per-conversation identity is exactly what a chat channel needs to name a peer, and the spec had
+      assumed one would have to be invented; generation_id distinguishes a re-fire from a fresh stop.
+      Undocumented fields can vanish without notice, so conversation_id should be an optimisation with
+      a fallback rather than load-bearing. Also: followup_message confirmed working across two runs
+      now, and latency is five samples -- 3.264, 3.890, 3.368, 3.875, 4.303 s, mean 3.740 -- where the
+      observed MAXIMUM keeps rising as samples accumulate, so any derived timeout should use the
+      maximum with headroom rather than the mean.
+    applied_to: 'FINDINGS.md (F10 rewritten, F8 restored, latency, ladder); throwaway/spike_hook.py'
+  - date: '2026-09-03'
+    event: 'Spike findings folded into REQUIREMENTS.md; AC-20 restated; Feature 003 unblocked'
+    outcome: 'Requirements now carry the measured constraints. 6 new requirements, 4 new criteria, AC-20 premise fixed'
+    notes: >-
+      Four of the ten findings were absent from REQUIREMENTS.md entirely -- re-entry and loop_count,
+      conversation_id, the BOM, and followup_message -- so specifying 002 or 003 would have meant
+      writing correct specs against superseded text. Folded in as follows. FR-5.6: every adapter
+      carries a re-entry rule, because waking is inherently a loop and 'block on every stop event' is
+      not implementable. FR-5.7: the woken turn requires no authorisation, since a gate on that
+      action is a human and an autonomous channel cannot wait on one. FR-5.8: the block stays inside
+      the host's hook timeout and the adapter SETS that timeout, because the platform default measured
+      under 60 s and an over-run leaks a process whose socket stays open. FR-5.9: the wake contract is
+      per-host and taken from documentation, and the adapter tolerates a byte-order mark. FR-5.10: no
+      assumption about how the host invokes the hook -- not the shell, not PATH. FR-2.4: a
+      host-supplied conversation identity is preferred where offered and never depended on. Four new
+      criteria AC-23 to AC-26 cover the loop, the unattended turn, the orphan, and the BOM. AC-20's
+      third question was restated: it had asked for 'the measured limit on how long a Cursor stop hook
+      may block BEFORE THE HOST KILLS IT, as a number', and the spike found neither a kill nor a
+      constant -- the bound is the configured timeout and the host abandons rather than kills -- so in
+      its original form the question had no honest answer. It now asks what bounds the block and what
+      the host does when that bound is passed, and a note records why. Section 8's host table was
+      updated from deferred-proof to measured on both Claude Code and Cursor, and the paragraph
+      warning that FR-5 might have no demonstrated instance now records that the risk is retired;
+      Cursor's row notes that its documentation denies the capability its hook demonstrably provides,
+      so documentation silence is evidence about documentation rather than about capability. Feature
+      003 is no longer blocked: its blocking note said it could not be specified before a number that
+      does not exist, and it now points at the five requirements the spike produced instead, plus the
+      3.7 s wake latency and the instruction to budget from the observed maximum rather than the mean.
+      Feature 002 gains FR-2.4 and a note naming the identity fork the specifier must take
+      deliberately rather than by default. Feature 001 carries a Status line stating it executed, that
+      AC-20 is NOT yet satisfied because the cross-machine question has no recorded outcome, and that
+      the criterion admits 'could not determine' only with a record of what was tried.
+    applied_to: 'REQUIREMENTS.md (FR-2.4, FR-5.6-5.10, AC-20 restated, AC-23-26, section 8 host table, Features 001/002/003)'
+  - date: '2026-09-03'
+    event: 'Conversation-id fork decided (product mints its own); F11 filed on test 4 topology'
+    outcome: 'FR-2.4 rewritten: product-minted id, host value as correlation metadata only. Test 4 split by F11'
+    notes: >-
+      Operator decided the conversation id is the product's own and independent of Cursor. FR-2.4 was
+      rewritten accordingly: a registration is bound to an id the product generates, not derived from
+      and not depending on anything a host supplies -- one host in five offers such a field, that one
+      leaves it undocumented and therefore withdrawable, and an identity a vendor can withdraw is not
+      an identity. A host-supplied value may be recorded as correlation metadata beside the product's
+      own so the two logs can be reconciled, and nothing may key on it. Feature 002's note records the
+      decision and the one thing it costs, so the specifier does not rediscover it: FR-2.2 lets a name
+      be re-registered and reattaches its memberships and positions, and a product-minted id cannot
+      tell whether the thing reattaching is the same conversation or a different one reusing the name,
+      whereas a host-supplied id could because the host knows. So a stale reattachment is possible --
+      a fresh conversation inheriting a previous one's unread positions -- and whether that matters is
+      a specification question; if it does, the check would work on Cursor and nowhere else, which is
+      itself a reason to make the behaviour correct without it. Separately, F11 was filed after
+      checking test 4's arrangement against the product's topology and finding they differ. Test 4 has
+      machine B's hook long-poll machine A's stub across the LAN, but the requirements are explicit
+      that a session subscribes to its LOCAL node and FR-6 puts the LAN hop between nodes, so in the
+      product a session on B subscribes to node B over loopback and node B talks to node A. The spike
+      has one stub and no second node and cannot reproduce that. This splits test 4: the half asking
+      whether a message crossing the LAN wakes a far session is worth running, being section 3's
+      target case and the only unexercised wake whose trigger originates off-machine; the half asking
+      whether the loopback block survives the network measures a connection the product never opens,
+      because the idle-timeout risk it targets applies to the INTER-NODE link, which the spike cannot
+      model. The confirmation-run-at-S-over-LAN should therefore be recorded as not applicable with
+      that reason rather than run, since reporting a number from that arrangement would put a figure
+      in the record later readers would mistake for the product's cross-machine limit. The
+      idle-timeout risk moves to Feature 004, where the inter-node link is designed.
+    applied_to: 'REQUIREMENTS.md (FR-2.4, Feature 002 note); FINDINGS.md (F11, answer table)'
+  - date: '2026-09-03'
+    event: 'Test 4 partial: LAN wake proven; F12 filed on per-host shell quoting'
+    outcome: 'Wake across the LAN confirmed. B act failed on PowerShell quoting; fixed to emit bare paths'
+    notes: >-
+      Run T4-000-b. Machine A (Claude Code) woke and its act reached the stub. Machine B (Cursor) was
+      also woken -- the wake message appeared in the session -- which means B's hook blocked, reached
+      machine A's stub ACROSS THE LAN, and returned under its own power, since a request that never
+      reached the stub would have been classified an apparatus fault and emitted no wake at all. That
+      is the substantive half of AC-20's fourth question and it is now answered yes. The return leg
+      failed: B's act command was rejected by PowerShell with 'Unexpected token', while the identical
+      string had run on machine A. F12 records why. The woken turn's shell differs by host -- bash on
+      Claude Code, PowerShell on Cursor, same OS -- and the two disagree about a leading quoted
+      string: bash treats a quoted word in command position as the command, PowerShell treats it as a
+      string expression and needs the call operator. The operator is not the fix, because in bash it
+      means background and would break the host that works. Portable answer: bare paths, correct in
+      both shells, with host-specific quoting only when a path contains a space. The apparatus now
+      does that. F12 extends FR-5.10 rather than contradicting it -- that requirement covered how the
+      host INVOKES the hook; this adds the shell the WOKEN TURN runs in, which is a separate question.
+      Worth carrying forward: machine B had a Program Files interpreter available with a space in its
+      path, and the space-free pyenv one was chosen deliberately, so the portable form was available
+      by luck of configuration rather than by design. A product cannot choose its users' install
+      paths. Two apparatus-hygiene notes: both machines' probes were still the stale 60 s arm-timeout
+      copy, and a two-machine setup exceeds 60 s comfortably, which is why B's probe gave up even
+      though its hook fired -- and test 4 does not need the probe at all, its criteria being entirely
+      in the stub log.
+    applied_to: 'FINDINGS.md (F12, answer table); throwaway/spike_hook.py'
+  - date: '2026-09-03'
+    event: 'Test 4 PASS on all four criteria; the spike is closed and AC-20 is satisfied'
+    outcome: 'Both machines woke and both acted. Feature 001 executed; four of four questions answered'
+    notes: >-
+      Run T4-000-f, witnessed entirely by machine A's stub log, which is why no clock synchronisation
+      between the machines was needed. Two waits from two different clients -- 127.0.0.1 at
+      02:39:34.982 and 192.168.2.20 at 02:39:48.208 -- overlapped for roughly seventeen seconds, so
+      one single-endpoint stub held concurrent long-polls from two machines. Both were woken and both
+      acted: machine A's woken turn at 02:40:12.517 from loopback, 7.490 s after its wake, and
+      MACHINE B's woken turn at 02:40:30.091 FROM ITS OWN LAN ADDRESS, which is the return leg that
+      T4-000-b lost to F12's quoting bug. F12's bare-path fix is therefore verified in the field, not
+      only reasoned about. Runbook steps 141 to 144 all held. Machine A also re-fired its stop hook
+      3.5 s after the act, reproducing F1 a third time. One new observation, recorded in the Test 4
+      section rather than as its own finding: the LAN waiter left NO client_gone line -- the stub's
+      write at 02:40:48.208 succeeded into the local socket buffer 30 s after B's waiter had gone,
+      because no reset had arrived from the far end. So F6's corroboration mechanism works on loopback
+      only, and over a network a successful respond says nothing about whether anyone was reading.
+      That sharpens F7's waiter over-counting consequence for Feature 004: waiter liveness cannot come
+      from the connection's own state. Two figures deliberately NOT recorded -- machine B's wake-to-act
+      latency, since B's hook log was not collected and B ran the command action whose approval prompt
+      (F5) would void it anyway; and the held-connection-over-LAN budget, retired per F11 because the
+      spike puts the LAN hop between subscriber and node where the product never does. Feature 001
+      moves to Ready with an executed note; the remaining open questions are routed to 002, 003 and
+      004 in FINDINGS.md and none of them block specification.
+    applied_to: 'FINDINGS.md (Test 4 section, apparatus, answer table, F12, open-questions table); REQUIREMENTS.md (section 8 assumption, section 10 P0 row, Feature 001 status, Feature 001 test-4 pass criteria); SPIKE-RUNBOOK.md (status header)'
+  - date: '2026-09-03'
+    event: 'Spike evidence re-read against the redesigned message plane'
+    outcome: 'All twelve findings hold; no new P0 spike needed; one gap grew'
+    notes: >-
+      Asked by the stakeholder before any amendment was written, and worth answering rather than
+      assuming. Nothing in the spike is invalidated, and the reason is structural: the spike tested
+      THE WAKE, not the message plane. Every measured claim concerns a host turning an arriving byte
+      into a turn -- which host, which timeout, which shell, which payload encoding -- and none of it
+      referenced chats, homes, ordering or retention, so none of it moved when those did. AC-20's
+      four answers stand. Two findings became MORE load-bearing: F5's approval gate is the reason the
+      connect request has no accept step, so a measured host constraint decided a protocol shape; and
+      F10's conversation_id is the alternative FR-2.4 weighed and rejected. One accident favours the
+      spike -- its stub was a HUB, not a chat, exposing a single wait endpoint with no notion of chat,
+      member or position, which is now the more faithful model, because an agent's wait belongs to the
+      hub and an agent in no channel still holds one. The one real gap GREW: the inter-node link is
+      still unmeasured (F11) and now carries continuous replication, a federated roster and
+      connect-request relay rather than occasional proxied reads, so Feature 004's validation duty is
+      larger than F11 left it. A smaller gap recorded so it is not mistaken for proven: concurrent
+      waiters were demonstrated at two, not at n, which belongs to Feature 002. Conclusion: no
+      further P0 spike; what remains is validation of an ordinary networking property inside the
+      feature that designs it.
+    applied_to: 'FINDINGS.md (new "Does this evidence still hold" section; open-questions table)'
+  - date: '2026-09-03'
+    event: 'Requirements amended for the redesigned message plane; 4 review cycles, A+'
+    outcome: 'A+ (31 findings across 4 cycles, all Fixed; cycle 4 found nothing above MEDIUM)'
+    notes: >-
+      Describe was reopened and closed again in one pass, before any specification existed, which was
+      the cheap moment. Sections 1, 4, 5, 6, 7, 9, 10 and 11 all moved, and THE CASCADE WAS MOSTLY
+      DELETION: FR-3.2 and FR-3.3 retired with their numbers kept, AC-19 and AC-21 retired, and
+      cross-hub position gossip never has to be designed at all. Added: FR-3.8 (no broadcast, as a
+      stated exclusion), FR-5.11 (the node stays host-blind), FR-6.5 (the inter-node link, the one
+      link no measurement covers), FR-9.1-9.7 (the hub plane), AC-27 to AC-33, ID-15 to ID-22.
+      FOUR ADVERSARIAL CYCLES, 13 then 9 then 5 then 4 findings, all Fixed. EVERY CYCLE CAUGHT AT
+      LEAST ONE FIX APPLIED IN ONE PLACE WHILE THE SAME CLAIM SURVIVED IN ANOTHER -- the criterion
+      range was wrong three times in three locations, the two-member membership minimum three times
+      -- so that is this document's characteristic defect and the thing to sweep for on any later
+      edit. The most valuable single finding was a contradiction the fixes themselves introduced: the
+      FR-3 preamble said a send into a one-member channel would sit in the log for whoever joined
+      next, while FR-4.2's new join-at-head rule gives a joiner nothing sent before it arrived. Such a
+      send is now rejected outright, which is also what ID-9 already decided for a full mailbox and
+      avoids precisely the failure section 6 builds the overflow rule to prevent. Cycle 2 and 3 also
+      forced three real design answers the proposal had not carried: an asker must already be in the
+      channel it names (which incidentally makes reciprocal requests fail symmetrically with no
+      coordination, FR-9.6), a connect outcome is durable per-session state rather than an event so it
+      cannot be missed, and a relayed request never fails for not recognising a channel name. Counts
+      verified independently at each cycle rather than read off the document: 31 live criteria, each
+      in the stage table once and owned by exactly one feature, 56 sub-requirements each mapped.
+    applied_to: 'REQUIREMENTS.md (sections 1, 4, 5, 6, 7, 9, 10, 11); .aid/.temp/review-pending/requirements-amendment{,-cycle2,-cycle3,-cycle4}.md'
+  - date: '2026-09-03'
+    event: 'Specify: technical specifications for Features 002-005; 4 review cycles, A+'
+    outcome: 'A+ (28 findings across 4 cycles, all Fixed; cycle 4 found nothing above LOW)'
+    notes: >-
+      Four specifications written and gated. The load-bearing one is Feature 002's store schema,
+      which encodes requirements structurally rather than as rules somebody enforces: channel_id is
+      a COLUMN on session, so the one-channel bound is a thing the store cannot represent otherwise;
+      positions are two integers indexing THIS HUB'S arrival order, which works only because a
+      session reads its own hub and never moves machines, and which is what makes the replicated
+      model implementable without vector clocks; sender_seq carries per-speaker FIFO and is enforced
+      on READ, so ordering is a delivery property rather than a storage one. Cycle 1 found three
+      criticals, all in that position design and all silent-data-loss shaped: arrival_seq started at
+      0 against a position defaulting to 0, so the first message of every channel was unreachable
+      forever; delivered advanced to the last message returned, which jumped over held-back messages
+      that have LOWER arrival_seq and stranded them permanently; and the dedupe key was scoped to the
+      channel, so two senders numbering from 1 would swallow each other's messages. Cycle 1 also
+      found the hold-back rule non-terminating (a predecessor trimmed before it replicated holds a
+      speaker forever, silently), join-at-head specified but never implemented, and a solo-send check
+      that would be wrong the day federation landed. Cycles 2 and 3 caught three recurrences, two at
+      critical, both the same shape: the spec corrected and the requirement it implements left
+      stating the old rule, with section 5 being the higher authority. Cycle 3's most valuable finding
+      was self-inflicted: an overstated measurement in four locations, claiming a host's default hook
+      timeout is shorter than the product's 30 s long-poll when FINDINGS bounds it only at under 60 s
+      -- corrected everywhere, and the honest form is the stronger argument, since an adapter would
+      be relying on a number nobody has measured in either direction. Two new criteria were needed:
+      AC-33 for FR-2.4, which no criterion reached, and AC-34 for the connect request's cross-machine
+      cases, which AC-28 had assigned to a feature shipping a stage before federation exists.
+    applied_to: 'REQUIREMENTS.md (section 11 Features 002-005 Technical Specification; section 5 FR-4.4; section 6 Limits; section 9 AC-28, AC-33, AC-34; section 10 P1/P3); .aid/.temp/review-pending/specs-cycle{1,2,3,4}.md'
+  - date: '2026-09-03'
+    event: 'Plan: five deliveries with Feature 002 split across the first two; 2 cycles, A+'
+    outcome: 'A+ (8 findings across 2 cycles, all Fixed)'
+    notes: >-
+      Section 10 already fixed the stage order, so sequence was not this phase to decide. What it
+      decided is the one thing section 10 left open -- whether the keystone fits in one delivery. It
+      does not, and finding the split line required correcting a claim I had made wrongly and
+      repeated into the requirements: that the connect request is the only way two agents ever meet.
+      It is not. The local channel listing in FR-3.1 plus the join in FR-3.4 let one agent open a
+      channel and another find it by name, so the hub plane is separable and the split does not cross
+      the store schema -- which is the coupling that broke the predecessor decomposition. The claim
+      was corrected in section 10 P1, in the Feature 002 note, and annotated in a lifecycle_history
+      entry where it had also been recorded as fact. Deliveries: 001 a hub that holds a conversation
+      (pull-only, and a real product because FR-5.3 makes the pull floor fully usable), 002 finding a
+      peer, 003 the wake, 004 federation, 005 directed messages and retention. No delivery for the
+      completed spike, at the stakeholder call; AC-20 is recorded as satisfied outside the sequence so
+      coverage stays checkable. Cycle 2 caught a hole one of my own fixes opened: AC-28 wake half was
+      deferred to delivery-003 with the claim AC-1 re-tests it, and AC-1 does not -- it exercises a
+      MESSAGE through the wake and would pass with the connect path unwired. FR-9.5 now splits across
+      the two deliveries and delivery-003 carries its own connect-outcome gate criterion. Verified
+      independently: 31 criteria claimed across five deliveries plus AC-20 outside, none unassigned,
+      none twice, dependency graph linear and acyclic.
+    applied_to: 'PLAN.md (new); deliveries/delivery-00{1..5}/STATE.yml (new, Pending-Spec); REQUIREMENTS.md (section 10 P1 row, Feature 002 note); .aid/knowledge/tech-debt.md (W1-1); .aid/.temp/review-pending/plan-cycle{1,2}.md'
+  - date: '2026-09-03'
+    event: 'Detail: 36 typed tasks across five deliveries; 3 review cycles, A+'
+    outcome: 'A+ (28 findings across 3 cycles, all Fixed; cycle 3 found nothing above MEDIUM and no recurrence)'
+    notes: >-
+      36 tasks, one type each, every one tracing to at least one live criterion by id, every
+      criterion of every delivery covered by a task in that delivery. The breakdown was REGENERATED
+      TWICE rather than patched, because cycle 1 and cycle 2 each found splits that would have left a
+      patched set incoherent -- 30 tasks, then 34, then 36. After the second regeneration the
+      generator keys dependencies BY NAME rather than by number, so a future split cannot silently
+      desynchronise a Depends-on line from the execution graph; that change came directly out of
+      having renumbered twice by hand. Cycle 1's seven highs were mostly structural: two tasks too
+      large (the read path, and replication), two false parallel pairs (message replication needed the
+      version handshake; mention/whisper and retention both edit the send handler), one forward
+      dependency (a channel-close criterion needing the reaping schedule from four deliveries later,
+      split along FR-2.3's own line), and one component with no task at all -- the node-side subscribe
+      route and waiter registry, named in Feature 002's API contract and built by nobody. Cycle 2's
+      two highs: a criterion in all five TEST tasks deferred to a manual-procedures record no task
+      created, which made it unfalsifiable; and a second cross-delivery AC-13 citation missing the
+      note the first one carried. Cycle 3 found only that a third AC-13 reference wanted the same
+      note, that "count remote members from the start" read literally meant querying a table absent
+      for three deliveries (now stated as a seam returning zero), and one parameter-wiring ambiguity
+      between the reaping and trim tasks. The final spec-coverage sweep found NO unbuilt mechanism.
+    applied_to: 'deliveries/delivery-00{1..5}/tasks/task-0{01..36}/{DETAIL.md,STATE.yml} (new); PLAN.md (five execution graphs, section-6 carve-out correction)'
+  - date: '2026-09-03'
+    event: 'Detail and Plan close-out corrected: the graded ledgers were not deleted'
+    outcome: 'Ledgers removed per both skills; findings preserved here, which is their durable home'
+    notes: >-
+      Caught by the stakeholder asking what about /aid-detail, which was the right question. Both
+      aid-detail's REVIEW state and aid-plan's have the same line in their pass row -- on a grade at
+      or above minimum, delete the ledger -- and neither was done. The ledgers for the task and plan
+      cycles are now removed. Nothing is lost: every finding, its severity and its fix is recorded in
+      this review_history, which is the durable record, whereas .aid/.temp is transient by name and by
+      rule. The requirements and specification ledgers remain on disk because no skill instructed
+      their deletion -- those review loops were run directly rather than through a skill state, so
+      there is no pass row to obey, and removing them on my own initiative would be a worse error than
+      leaving them. Recorded because a skipped close-out step is exactly the kind of omission that
+      looks like nothing and is how a state machine quietly stops being followed.
+    applied_to: 'Deleted .aid/.temp/review-pending/tasks-cycle{1,2,3}.md and plan-cycle{1,2}.md'
+# [A] written by the orchestrator on the work's active branch (single
+#     writer). Append-only audit trail of phase transitions and gate
+#     approvals, newest LAST (append to bottom).
+lifecycle_history:
+  - date: '2026-09-01'
+    event: 'Work created'
+    grade: --
+    notes: 'Re-baselined from a predecessor rather than interviewed from zero. The predecessor was wound down because a major release retired the artifact set it was built on and its state file could not be converted without loss; its requirements were sound and are carried. Next: /aid-describe to close sections 4, 7 and 8.'
+  - date: '2026-09-02'
+    event: 'Describe complete -- requirements approved at the gate'
+    grade: A+
+    notes: 'Ten sections Complete, 22 criteria each owned by exactly one feature, 40 functional sub-requirements each mapped, stakeholder approved after a whole-picture read-back. Recorded late: this entry and the two below were owed when they happened and were not written, which is the exact tracking failure AGENTS.md names. Written now from review_history rather than reconstructed from memory -- each cites the review_history entry that is its evidence.'
+  - date: '2026-09-02'
+    event: 'Define complete -- features decomposed and cross-referenced'
+    grade: A+
+    notes: 'Both aid-define stages ran, but INLINE during the Describe cleanup rather than as a separate /aid-define invocation, and that deviation is recorded rather than smoothed over. FEATURE-DECOMPOSITION re-cut section 11 from eleven features to five, aligned to the section 10 priority stages; CROSS-REFERENCE ran two adversarial cycles, D then B, closing A+ on eight ledger rows all Fixed. The features array carries one entry per section 11 feature. No features/ folder was created -- a feature is a section, per the artifact schema.'
+  - date: '2026-09-03'
+    event: 'Feature 001 executed; AC-20 satisfied; the last specification gate cleared'
+    grade: A+
+    notes: 'The P0 spike ran to completion across two machines and both hosts wake. Twelve findings; six became FR-5.6..FR-5.10 and FR-2.4. The one decision the spike left for the stakeholder -- conversation identity -- is ratified (qa id 2) on the stronger reason than the requirement had carried: the product must control the id immutability. Nothing now gates Specify. Next: /aid-specify work-001, taking Feature 002 first, then 004, 005, 003.'
+  - date: '2026-09-03'
+    event: 'Describe REOPENED -- architecture review replaced the message-plane model'
+    grade: '--'
+    notes: 'Reverted from Specify to Describe before any specification was written, which is the cheap moment to do it. An architecture review with the stakeholder (qa 3-6) took decisions the approved requirements contradict in roughly a dozen places: the per-chat home machine is retired, ordering relaxes from global FIFO to per-speaker, channels become replicated ephemeral directory names that agents create rather than operator-owned objects, an agent holds at most one channel at a time, a crash is stale-then-reaped rather than a leave, broadcast and the all-call are removed, and a hub control plane is added carrying a roster and a directed connect request the hub answers from state with no accept step. Sections 4, 5, 6, 9 and 10 return to Pending; user_approved returns to no; the A+ grade is retained as the grade of the SUPERSEDED document rather than claimed for the amended one. The cascade is mostly deletion, so the amendment should shrink the document: FR-3.2, FR-3.3, AC-19 and AC-21 retire outright, and cross-node position gossip never has to be designed. Three decisions must close first -- idle-session bound, hook-timeout ownership (FR-0.4 versus FR-5.8), and whether the adapter acks for the session. Specification does not start until the amended document is re-gated and the feature boundaries are re-cross-referenced.'
+  - date: '2026-09-03'
+    event: 'Describe and Define CLOSED again at A+; Specify is now current'
+    grade: A+
+    notes: 'The amendment landed and passed four adversarial cycles (13, 9, 5, 4 findings, all Fixed; the fourth found nothing above MEDIUM). Define did not need re-running as a separate pass: no feature boundary moved, so the five features stand -- what changed is what each owns, and that was re-derived and verified. Feature 002 grew from 9 criteria to 15 because the hub plane lands at stage P1, and the placement is forced rather than chosen: with one channel per agent and no all-call, the connect request is the only way two agents ever meet, so nothing downstream is exercisable without it. CORRECTION APPENDED during /aid-plan on 2026-09-03: THAT SENTENCE IS FALSE and must not be carried forward as fact. The local channel listing in FR-3.1 plus the join in FR-3.4 already let one agent open a channel and another find it by name, with no hub plane involved. The necessity of the hub plane appears one stage later, at P2, where the wake arrives and an idle agent stops looking at channel lists. The P1 row in section 10 and the note under Feature 002 are both corrected in place. This entry is history, so it is annotated rather than rewritten. user_approved stays no until the stakeholder ratifies the amended document; the A+ recorded here is the review gate, not the human gate. Next: /aid-specify, Feature 002 first, then 004, 005, 003.'
+  - date: '2026-09-03'
+    event: 'Specify COMPLETE -- all five features Ready at A+'
+    grade: A+
+    notes: 'Features 002 to 005 specified and gated over four adversarial cycles (17, 5, 4 and 2 findings, all Fixed; the fourth found nothing above LOW and no recurrence). The numbered pipeline ends at Execute, and the next step is /aid-plan -- which is also the place to slice Feature 002 if 15 of 32 criteria proves too large for one delivery, since every candidate split line runs through the store schema and re-drawing the feature boundary is what failed in the predecessor. user_approved remains no: the A+ is the review gate, and the human gate is unclaimed because a substantial number of design decisions inside these specifications were taken on the stakeholder behalf and flagged for veto rather than ratified.'
+  - date: '2026-09-03'
+    event: 'Plan COMPLETE -- five deliveries at A+; numbered pipeline reaches Detail'
+    grade: A+
+    notes: 'PLAN.md and five deliveries/delivery-NNN/STATE.yml written at delivery_state Pending-Spec. Feature 002 is split across delivery-001 and delivery-002 -- a delivery-level split, not a redrawn feature boundary, and the escape route if the code does not divide as cleanly as the columns is to fold the two back together, since both are stage P1 and both are Feature 002. Also filed W1-1 in the tech-debt ledger: the pipeline state write that opens aid-plan corrupted this very file, because writeback-state.sh clears a folded scalar by rewriting only its key line and orphaning the body. Repaired by hand. Next: /aid-detail. user_approved remains no -- the human gate over the amended requirements, the four specifications and this plan is still unclaimed.'
+  - date: '2026-09-03'
+    event: 'HUMAN GATE PASSED -- stakeholder approved the amended requirements, the four specifications and the plan'
+    grade: A+
+    notes: 'user_approved moves from no to yes. This is the gate that had been deliberately withheld through the amendment, the four specifications and the plan: every review A+ recorded before this line is a review gate, and none of them stood in for this one. What is approved is the whole set as it stands on this branch -- the message-plane redesign (no per-chat home, per-speaker ordering, ephemeral one-at-a-time channels, the hub plane with a connect request answered from state), the four technical specifications, and the five-delivery plan with Feature 002 split across the first two. It includes the decisions taken on the stakeholder behalf and flagged for veto rather than ratified, none of which were vetoed. Next: /aid-detail.'
+  - date: '2026-09-03'
+    event: 'Detail COMPLETE -- 36 tasks at A+; the numbered pipeline is fully planned'
+    grade: A+
+    notes: 'Every delivery has its tasks, every task has one type, an explicit scope, falsifiable criteria and a declared dependency, and each delivery carries an execution graph DERIVED from the task files rather than authored beside them. The numbered sequence Discover through Detail is now complete and the next step is /aid-execute, which starts at task-001. Task numbering is global and the graph is a strict DAG; delivery-001 has no parallelism at all and says so, because each of its implement tasks genuinely needs the previous one schema or core. The two genuine parallel groups are the CLI twins against the ADR in delivery-001, and the two host adapters against the rendered skill in delivery-003.'
+
+# [A] aid-deploy only; one entry per delivery (never derived from child
+#     files; aid-deploy is the sole author):
+#   - delivery / state / pr / kb_updated / tag / notes
+deploy: []
+
+# [A] AUTHORED here, not derived. One entry per cross-phase question.
+#   - id / category (e.g. Architecture, Requirements, Security) /
+#     impact: High | Medium | Low | Required /
+#     state: Pending | Answered | Skipped /
+#     context / suggested / answer / applied_to
+#
+# DEVIATION from the template's full-layout omission rule, recorded rather than
+# silent. That rule drops `qa` from a full-path work because it is "DERIVED on
+# the full path" -- assembled from per-delivery STATE.yml files. Plan has not run,
+# no delivery exists, and so nothing derives it and a real question has nowhere to
+# live. Declaring the key is the same remedy applied to `features` and
+# `review_history`, and for the same reason: a key called DERIVED whose source does
+# not exist yet cannot hold the data that is real now. This bit at Describe, where
+# the first entry was written, and still bites at Specify -- aid-specify/SKILL.md
+# documents the same gap for its own phase.
+qa:
+  - id: 1
+    category: Requirements
+    impact: High
+    state: Answered
+    context: >-
+      Section 4 Out of Scope and the FR-8 note both rest on "the PyPI channel is dropped".
+      The repository has not acted on it: packages/pypi/pyproject.toml exists and still reads
+      requires-python = ">=3.8", technology-stack.md states that all four channels ship the
+      same CLI, and neither backlog.md nor roadmap.md records a drop. The document hedges the
+      premise correctly -- it calls it an input rather than work this document performs -- but
+      FR-8's withdrawal currently rests on that premise ALONE. Checked: no independent reason
+      for the withdrawal appears anywhere in the document. So if the channel is not dropped,
+      FR-8's subject returns and the withdrawal has nothing left holding it up.
+    suggested: >-
+      Keep the withdrawal; change what it rests on. Give FR-8's withdrawal the reason that
+      holds either way -- raising the repository's Python floor was never a prerequisite for
+      the messaging work, and belongs to whichever work is due to do it, not to this one --
+      and restate the PyPI line as what it is: an input this document was handed, not a fact
+      about the repository it may assert. Nothing else changes: the node is Node either way,
+      and no criterion in section 9 depends on the channel.
+    answer: >-
+      Accepted as suggested. The withdrawal is kept and what it rests on is changed. FR-8 is now
+      withdrawn because raising the repository's declared Python floor was never a prerequisite
+      for this work -- nothing in the messaging design depends on what the repository declares,
+      and the node states its own runtime requirement (FR-7.7) -- so the raise belongs to
+      whichever work is due to make it. The channel decision is restated as an input this
+      document was handed rather than a fact it asserts about the repository, and both the FR-8
+      note and the section 4 exclusion now say explicitly that they hold either way. Nothing
+      else moved: the node is Node regardless, and no section 9 criterion depends on the
+      channel.
+    applied_to: 'Section 4 Out of Scope (Python floor bullet); section 5 FR-8 note'
+  - id: 2
+    category: Architecture
+    impact: Required
+    state: Answered
+    context: >-
+      The spike found that Cursor hands its stop hook an undocumented conversation_id (F10),
+      which is exactly the per-conversation identity Feature 002 needs and had assumed it would
+      have to invent. FR-2.4 was written from that finding to mint the product's own id and treat
+      the host's as correlation metadata only, but a requirement written FROM a finding is not the
+      same as a decision taken, and this one has a real cost: FR-2.2 lets a name be re-registered
+      and reattaches the session to its existing memberships and unread positions, which a
+      product-minted id cannot distinguish from a different conversation reusing the same name,
+      while a host-supplied id could. So the fork was left explicit and unratified rather than
+      settled quietly by the agent.
+    suggested: >-
+      Ratify FR-2.4 as written -- mint the product's own id, carry the host's alongside as
+      correlation metadata, key nothing on it -- and treat stale reattachment as a specification
+      problem for Feature 002 to solve without the host's id, so that the behaviour is correct on
+      all five hosts rather than only on the one that supplies a field.
+    answer: >-
+      Ratified, and the stakeholder supplied the governing reason, which is stronger than the one
+      the requirement had: the product must control the id's IMMUTABILITY, and it cannot control
+      that for a value another program owns and may re-issue, re-scope or reuse on its own
+      schedule. Reach -- one host in five, undocumented -- reinforces the decision but no longer
+      carries it. FR-2.4 now leads with immutability; the reach argument is demoted to support.
+      Consequence carried into Feature 002 unchanged: stale reattachment must be solved without a
+      host-supplied id.
+    applied_to: 'Section 5 FR-2.4; section 11 Feature 002 identity note'
+  - id: 3
+    category: Architecture
+    impact: High
+    state: Answered
+    context: >-
+      Raised by the stakeholder during an architecture review: who decides which machine is a
+      chat's home? Nothing in the document says. It falls out of WHERE the operator ran chat
+      create -- create is CLI-only and acts on the local node, so the chat is born there and
+      FR-3.3's "the machine in its id" is that machine. There is no --home parameter and no
+      placement step. Three consequences are unspecified: whether a chat may be created homed on
+      ANOTHER machine (FR-3.2 makes lookup local-only but says nothing about create); whether a
+      chat can be re-homed later (today only delete-and-recreate, which loses the log); and that
+      the operator is making a durable placement decision without being told, since the home
+      machine is whose disk holds the log, whose uptime gates reads, and whose retention policy
+      governs the chat. It is the same single point of failure as the offline-home read gap.
+    suggested: >-
+      For v1 state it out loud in FR-3.3 -- create is local-only, home is where you created it, no
+      remote create, no re-homing -- and let aid-specify decide whether reads degrade or fail when
+      the home machine is away. The stakeholder then proposed a stronger alternative: drop the
+      per-chat home entirely, give every machine its own node, and let nodes replicate and route
+      among themselves so a session only ever knows its local node. Half of that is already the
+      design (sessions subscribe locally; FR-6 puts the LAN hop between nodes, confirmed by F11).
+      The genuine change is removing the single authoritative owner per chat, which buys
+      availability and costs the two guarantees section 6 already promises: FIFO within a chat
+      (the home is the sequencer) and the global trim condition "read by every live member". A
+      middle option is on the table -- keep the home as sequencer and writer, add a local
+      read-replica on every participating node -- which fixes offline reads without giving up
+      order. THE STAKEHOLDER THEN RELAXED THE PREMISE: message ordering is not a hard requirement,
+      and the model to design to is a walkie-talkie -- each machine has its own device, chats are
+      channels, and each speaker frames its own transmission with a start and an end. That makes
+      the fully replicated shape cheap, because per-speaker FIFO needs no sequencer, and it
+      simplifies two further things rather than complicating them: retention becomes LOCAL (each
+      node trims its own replica against its own members' positions, so the cross-node position
+      gossip disappears) and a channel becomes a name rather than an owned object (which retires
+      FR-3.2's machine-qualified chat id and its local-only resolution rule). Costs identified:
+      cross-speaker causality is no longer positional in chats of three or more, so a causal link
+      must be carried in-band by FR-4.6's reply_to/correlation_id; and the overflow and
+      unread-depth bounds become local-knowledge-only. One question it forces, still open: whether
+      a channel needs creating at all -- a radio frequency exists whether or not anyone is on it,
+      which collides with FR-3.4's no-implicit-create and AC-21's operator-creates-a-chat.
+      Half-duplex (one speaker holds the channel) is ruled OUT rather than open: it would restore a
+      total order but only by blocking a sender, and FR-4.7 forbids any blocking operation.
+      Unresolved pending the stakeholder's choice.
+    answer: >-
+      RESOLVED as the walkie-talkie model, with the per-chat home retired outright. A channel is one
+      name on every hub, replicated to each hub with a member in it, authoritative nowhere (FR-3.2,
+      ID-16); ordering relaxes to per-speaker FIFO with causality carried in-band by reply_to
+      (section 6, ID-15, AC-31); and retention becomes LOCAL to each hub, trimming against its own
+      members' acknowledged positions, which deletes cross-hub position gossip from the design. The
+      stakeholder's own question -- who decides the home -- stops having an answer because it stops
+      being a question. One rule was added to make the replicated model decidable without consensus:
+      a member JOINS AT THE CHANNEL'S CURRENT HEAD and receives no history from before (FR-4.2), so a
+      hub acquiring a channel starts an empty replica, there is no backfill and no source hub to
+      choose, and two hubs' differing trim points cannot produce two different pasts.
+    applied_to: 'Sections 1, 4, 5 (FR-3.2, FR-3.3, FR-4.2, FR-6.3), 6, 7 (ID-15, ID-16), 9 (AC-5, AC-11, AC-19 retired, AC-31), 10, 11 (Features 002, 004)'
+  - id: 4
+    category: Architecture
+    impact: High
+    state: Answered
+    context: >-
+      Stakeholder-proposed bound on the walkie-talkie channel model (qa 3): an agent is connected to
+      at most ONE channel at a time and must leave its current channel to join another; it may create
+      one channel; a channel closes when the last agent leaves OR after an inactivity timeout
+      (proposed 1 hour), with a notification to any agent still connected; and a channel does NOT
+      close merely because its creator left. This collapses real machinery -- one position per
+      session rather than one per session-per-chat (FR-4.2), no cross-channel branch in inbox
+      (FR-4.3), an implicit quota, and automatic lifecycle that retires operator create/delete
+      (FR-7.2, AC-21). Rule 2 is redundant with rule 1: "connected to one at a time" already bounds
+      creation, since creating is create-and-join.
+    suggested: >-
+      Accept the one-channel bound; fix three things before it is written into the requirements.
+      (1) THE 1-HOUR INACTIVITY TIMER FIGHTS THE PRODUCT'S PURPOSE. Idle waiting is the normal
+      state; two agents each waiting on the other are "inactive" by definition, so the channel would
+      be destroyed underneath exactly the scenario this product exists for. Close on
+      last-member-out only, counting a member as out once REAPED, and reuse FR-2.3's existing
+      thresholds (stale 30 min, reap 24 h) instead of adding a channel-level timer. (2) A CRASH MUST
+      NOT COUNT AS A LEAVE. If a dropped connection empties the channel, a network blip or a host
+      restart garbage-collects the conversation and destroys its log, and AC-3 -- a session
+      restarting mid-flight receives its undelivered messages on reattaching -- fails. Explicit
+      leave means gone; a dropped connection means stale, then reaped. (3) THE ONE-CHANNEL BOUND
+      KILLS THE ALL-CALL BROADCAST CHANNEL agreed one turn earlier, since a session cannot be in
+      both its channel and the all-call. Pick one: drop broadcast, model it as a node-level notice
+      outside the channel model, or allow the all-call as the single explicit exception. Also to be
+      accepted knowingly: channels become EPHEMERAL -- the last member out destroys the history and
+      a conversation cannot be resumed tomorrow -- which is walkie-talkie-consistent but contradicts
+      FR-4.2's durable-log language, so that language must be restated rather than left standing
+      beside it.
+    answer: >-
+      FULLY DECIDED. Originally partly decided with one sub-question open, now closed at the end. DECIDED: (a) a crash is not a leave -- a dropped
+      connection means stale, then reaped -- so the channel-close rule keys on explicit leave plus
+      reaping, and AC-3's mid-flight reattachment survives. (b) The 1-hour CHANNEL inactivity timer
+      is dropped; a channel with live members waiting on each other must never expire, and cleanup
+      rides on FR-2.3's existing member thresholds instead. (c) The all-call broadcast channel is
+      removed for now, which also removes broadcast-to-all-agents as a feature and reopens
+      rendezvous (see qa 6). STILL OPEN: what, if anything, bounds an ETERNALLY IDLE but live
+      session. Accounting offered -- the log is bounded by the 24 h TTL, the held connection and
+      hook process by FR-5.8's no-orphan rule, the name by reaping -- leaving only the channel's
+      continued existence, which is a directory row. The product cannot distinguish a session
+      waiting legitimately from one that will never receive anything, so the options are: v1 adds
+      nothing and leans on reaping plus FR-7.1/FR-7.2 operator visibility and eviction; or the node
+      PROBES on idle, waking the session after a generous configurable period to ask whether it is
+      still waiting, resetting on an answer and reaping on silence. Either way the timer belongs on
+      the session, never on the channel. THAT SUB-QUESTION IS NOW CLOSED as ID-22: v1 adds nothing.
+      The product cannot distinguish a session legitimately waiting hours for a peer's long task from
+      one that will never receive anything, and only the human can, so reaping removes the dead and
+      FR-7.1's visibility plus FR-7.2's eviction cover the rest. Probe-on-idle is recorded in ID-22
+      as the named growth path rather than adopted. Section 6 also states the accounting that makes this
+      defensible: the log is bounded by the TTL, the held connection and hook process by FR-5.8's
+      no-orphan rule, the name by reaping, leaving only the channel's existence, which costs a row.
+    applied_to: 'Sections 4, 5 (FR-2.3, FR-3.3, FR-3.4, FR-3.8, FR-9.3, FR-9.6), 6 (Limits, and the idle-session paragraph), 7 (ID-17, ID-18, ID-22), 9 (AC-3, AC-29, AC-30), 11'
+  - id: 5
+    category: Architecture
+    impact: Medium
+    state: Answered
+    context: >-
+      In the walkie-talkie model the stakeholder described messages directed "to an individual id".
+      That reads two ways, and they are not equivalent: a whisper INSIDE a channel, which FR-3.6
+      already provides, or a direct session-to-session address that needs no channel. The second
+      would reverse FR-3's core rule -- the chat is the only addressing unit, and a session name is
+      "an identity, not an address ... never a destination on its own" (FR-2.1) -- and would add a
+      second address space alongside channels.
+    suggested: >-
+      Keep whisper; add no second address space. Three visibility modes on one addressing unit
+      (ordinary to all, mention flagged but visible to all, whisper visible to one) cover the need
+      without a parallel routing rule.
+    answer: >-
+      Confirmed by the stakeholder: "individual id" means WHISPER INSIDE A CHANNEL. No direct
+      session-to-session address is added, the channel remains the only addressing unit, and FR-3.6
+      stands as written. No requirement change follows -- this entry records the alternative that was
+      considered and rejected, so a later reader does not reopen it.
+    applied_to: 'No change; FR-3.6 and FR-2.1 stand as written'
+  - id: 6
+    category: Architecture
+    impact: High
+    state: Answered
+    context: >-
+      Removing the all-call channel (qa 4) reopens a structural gap the one-channel bound created:
+      how do two agents that share no channel ever meet? A wake only reaches members of a channel
+      the recipient is in, so an agent in no shared channel cannot be notified at all -- to talk you
+      need a shared channel, and to agree on one you need to talk. The all-call was the zero-new-
+      mechanism answer, being a channel everyone monitors, exactly as maritime VHF hails on channel
+      16 and then moves to a working channel. It is now gone. Note also that joining needs no
+      PERMISSION mechanism: there is no authentication anywhere (section 4; FR-6.2 makes network
+      membership the whole condition for taking part), so a join gate would be advisory only, in the
+      same way FR-7.3 concedes the privilege boundary is not a sandbox. What is missing is
+      notification, not authorisation.
+    suggested: >-
+      For v1, human-mediated rendezvous: the operator names the channel to both agents, which is
+      realistic for a developer running two assistants on a trusted LAN, needs no new mechanism, and
+      keeps FR-3.1's channel listing as the discovery surface for an agent that is already awake.
+      The growth path, if automatic rendezvous is wanted later, is invitations as CONTROL PLANE
+      rather than messages -- invite(name, channel) routed node-to-node and held as pending state on
+      the target's node, surfaced when its hook next fires. That costs a second delivery path,
+      because the wake payload stops being just a message, which is why it is not the v1 choice.
+      STAKEHOLDER PROPOSAL, better than either option above: an agent connects to the HUB (the node)
+      on register, independently of any channel. At hub level it can see which agents are available
+      and send a DIRECTED connect request to one named agent to open a channel -- several requests
+      for several agents, never a broadcast -- and hubs federate to hubs so the request crosses
+      machines. This solves rendezvous with no all-call and no pending-invitation store. It reconciles
+      with qa 5 by introducing TWO PLANES: a control plane at the hub (register, roster,
+      connect-request) and a message plane in the channel (send, inbox, ack, whisper, mention). The
+      channel remains the only addressing unit FOR MESSAGES; a connect request is signalling, not a
+      message, so no direct session-to-session MESSAGE address is added. Most of it is free: the
+      roster is derivable from state that already exists (registration plus FR-2.3 liveness plus
+      whether the agent is in a channel), hub-to-hub is FR-6 as written, and one long-poll serves
+      both event kinds. Recommended refinement, driven by the spike's F5: NO ACCEPT STEP. An explicit
+      accept would be a tool call, which Cursor gates behind a human click, so the hub answers from
+      state instead -- target idle, it is joined immediately and its wake says so; target already in
+      a channel, the request fails instantly as busy. The one-channel bound becomes the arbiter,
+      which removes pending state, timeouts and an invitation store altogether. Costs: the wake
+      payload carries two event kinds, the agent-facing surface grows two verbs, and FR-7.3 with
+      AC-15 change shape. Note also that a federated roster exposes session names, tool and liveness
+      to every agent on the LAN, which is consistent with FR-6.2 but is the same exposure the
+      all-call would have had.
+    answer: >-
+      RESOLVED by the stakeholder's hub-plane proposal, which is better than either option recorded
+      above and needs neither an all-call nor a pending-invitation store. FR-9.1 to FR-9.7: a session
+      joins the hub on register independently of any channel and stays reachable there; FR-9.2's
+      roster shows who is available; FR-9.3's connect request names ONE agent and the hub answers it
+      FROM STATE with no accept step -- available target joined, busy or stale or unknown target
+      failed at once. The no-accept rule is driven by measurement rather than taste: an accept is a
+      call the woken session makes, and the spike's F5 found a host that gates such a call behind a
+      human click, which FR-5.7 forbids assuming. Three further rules closed holes review found in
+      the proposal: an asker must already be in the channel it names and may not name itself
+      (FR-9.3); a connect outcome is DURABLE PER-SESSION STATE rather than an event, so being placed
+      in a channel IS the notification and nothing can be missed between arms (FR-9.5); and a relayed
+      request never fails for want of recognising a channel name -- the target's hub creates its
+      replica and joins, accepting the race where the asker already left (FR-9.7). Human-mediated
+      rendezvous is recorded as the rejected alternative in ID-19, with the all-call and pending
+      invitations.
+    applied_to: 'Sections 1, 4, 5 (FR-0.2, FR-9.1-9.7, FR-7.3), 7 (ID-19), 9 (AC-27, AC-28, AC-33), 10 stage P1, 11 (Features 002, 003, 004)'

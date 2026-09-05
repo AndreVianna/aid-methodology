@@ -104,7 +104,7 @@ DELIVERABLES:
 - `{{CONTEXT}}` — short, descriptive-only background:
   ```
     Feature NNN in work-NNN-{name}, from REQUIREMENTS.md § 11. All sections marked Complete
-    in the work STATE.yml's Features State view (row for this feature). This is the
+    in the work STATE.yml's `features:` entry for this feature. This is the
     final review pass before the feature is marked Ready.
   ```
   Do NOT include the aid-architect's working notes, prior REVIEW cycle grades, or

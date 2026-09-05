@@ -41,8 +41,9 @@ _REPO_ROOT = _PKG_ROOT.parent.parent  # repo root
 
 _VENDOR_DIR = _PKG_ROOT / "aid_installer" / "_vendor"
 
-# The non-dashboard aid-cli files (static). The dashboard server+reader unit is derived
-# from the single-source manifest dashboard/MANIFEST -- see _dashboard_copies().
+# The static aid-cli files. The dashboard server+reader unit and the agent chat node are
+# each derived from their own single-source manifest -- see _dashboard_copies() and
+# _chat_node_copies().
 _BASE_COPIES: list[tuple[str, str]] = [
     ("bin/aid",                          "bin/aid"),
     ("bin/aid.ps1",                      "bin/aid.ps1"),
@@ -53,10 +54,15 @@ _BASE_COPIES: list[tuple[str, str]] = [
 ]
 
 _DASHBOARD_MANIFEST_REL = "dashboard/MANIFEST"
+_CHAT_NODE_MANIFEST_REL = "chat-node/MANIFEST"
 
 
-def _read_dashboard_manifest(manifest_path: Path) -> list[str]:
-    """Parse dashboard/MANIFEST -> dashboard-relative paths (strip #-comments + blanks)."""
+def _read_component_manifest(manifest_path: Path) -> list[str]:
+    """Parse a component MANIFEST -> component-relative paths (strip #-comments + blanks).
+
+    Shared by the dashboard and the chat node: both follow the same single-source rule, and
+    a second copy of this parser is the drift the manifests exist to prevent.
+    """
     files: list[str] = []
     for line in manifest_path.read_text(encoding="utf-8").splitlines():
         line = line.split("#", 1)[0].strip()
@@ -65,14 +71,25 @@ def _read_dashboard_manifest(manifest_path: Path) -> list[str]:
     return files
 
 
-def _dashboard_copies(root: Path) -> list[tuple[str, str]]:
-    """Dashboard server+reader unit, derived from ``root``/dashboard/MANIFEST. MANIFEST
+def _component_copies(root: Path, component: str, manifest_rel: str) -> list[tuple[str, str]]:
+    """One component's curated unit, derived from ``root``/``component``/MANIFEST. MANIFEST
     itself is included first so the vendored payload is self-describing (the build-from-
     sdist completeness check re-reads it from the payload)."""
-    entries: list[tuple[str, str]] = [(_DASHBOARD_MANIFEST_REL, _DASHBOARD_MANIFEST_REL)]
-    for rel in _read_dashboard_manifest(root / "dashboard" / "MANIFEST"):
-        entries.append((f"dashboard/{rel}", f"dashboard/{rel}"))
+    entries: list[tuple[str, str]] = [(manifest_rel, manifest_rel)]
+    for rel in _read_component_manifest(root / component / "MANIFEST"):
+        entries.append((f"{component}/{rel}", f"{component}/{rel}"))
     return entries
+
+
+def _dashboard_copies(root: Path) -> list[tuple[str, str]]:
+    """Dashboard server+reader unit."""
+    return _component_copies(root, "dashboard", _DASHBOARD_MANIFEST_REL)
+
+
+def _chat_node_copies(root: Path) -> list[tuple[str, str]]:
+    """Agent chat node. Carries no third-party dependency, so vendoring it leaves this
+    package's dependency list empty, which is a requirement rather than a coincidence."""
+    return _component_copies(root, "chat-node", _CHAT_NODE_MANIFEST_REL)
 
 
 def vendor(repo_root: Path = _REPO_ROOT, vendor_dir: Path = _VENDOR_DIR) -> bool:
@@ -81,7 +98,7 @@ def vendor(repo_root: Path = _REPO_ROOT, vendor_dir: Path = _VENDOR_DIR) -> bool
     # CLI's .update-check cache, or files from an older version) never ship in the wheel.
     shutil.rmtree(str(vendor_dir), ignore_errors=True)
 
-    copies = _BASE_COPIES + _dashboard_copies(repo_root)
+    copies = _BASE_COPIES + _dashboard_copies(repo_root) + _chat_node_copies(repo_root)
     ok = True
     for src_rel, dst_rel in copies:
         src = repo_root / src_rel
@@ -121,7 +138,8 @@ try:
             # sources_present: check a representative subset (bin/aid + one dashboard file).
             # If the repo root is available the full file set will be vendored.
             sources_present = (repo_root / "bin" / "aid").exists() and \
-                              (repo_root / "dashboard" / "index.html").exists()
+                              (repo_root / "dashboard" / "index.html").exists() and \
+                              (repo_root / "chat-node" / "MANIFEST").exists()
             if sources_present:
                 if not vendor(repo_root=repo_root, vendor_dir=vendor_dir):
                     raise RuntimeError("vendor.py: failed to vendor aid-cli files; aborting build.")
@@ -129,18 +147,30 @@ try:
                 # Building from an sdist: the payload must already be bundled. Re-derive the
                 # expected file set from the vendored MANIFEST (self-describing payload) so
                 # the completeness check stays in lockstep with the single source.
-                payload_manifest = vendor_dir / "dashboard" / "MANIFEST"
+                dash_manifest = vendor_dir / "dashboard" / "MANIFEST"
+                node_manifest = vendor_dir / "chat-node" / "MANIFEST"
                 expected = [dst for _, dst in _BASE_COPIES]
                 expected.append(_DASHBOARD_MANIFEST_REL)
-                if payload_manifest.exists():
-                    for rel in _read_dashboard_manifest(payload_manifest):
+                expected.append(_CHAT_NODE_MANIFEST_REL)
+                if dash_manifest.exists():
+                    for rel in _read_component_manifest(dash_manifest):
                         expected.append(f"dashboard/{rel}")
+                if node_manifest.exists():
+                    for rel in _read_component_manifest(node_manifest):
+                        expected.append(f"chat-node/{rel}")
+                absent_manifests = [
+                    rel for rel, pth in (
+                        (_DASHBOARD_MANIFEST_REL, dash_manifest),
+                        (_CHAT_NODE_MANIFEST_REL, node_manifest),
+                    ) if not pth.exists()
+                ]
                 missing = [dst for dst in expected if not (vendor_dir / dst).exists()]
-                if missing or not payload_manifest.exists():
+                if missing or absent_manifests:
                     raise RuntimeError(
                         "vendor.py: aid-cli sources not found and the bundled _vendor payload is "
                         "incomplete (missing: %s). The sdist must include aid_installer/_vendor/ "
-                        "with dashboard/MANIFEST." % ", ".join(missing or ["dashboard/MANIFEST"])
+                        "with both dashboard/MANIFEST and chat-node/MANIFEST."
+                        % ", ".join(missing or absent_manifests)
                     )
                 # Payload already present (came in via the sdist); nothing to do.
 

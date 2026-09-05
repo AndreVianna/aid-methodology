@@ -235,6 +235,65 @@ done
 # ---------------------------------------------------------------------------
 
 # ---------------------------------------------------------------------------
+# WS21: work-state-template declares a `features:` key, and declares it as
+# AUTHORED rather than DERIVED.
+#
+# This is not cosmetic. The key was absent and the section was documented as
+# DERIVED, which is false -- aid-define creates a row per feature and
+# aid-specify updates it, so nothing derives it. The mislabel made the
+# STATE.md -> STATE.yml converter read a real Features State row as proof that
+# a work predated the per-unit hierarchy, so it refused to convert EVERY work
+# that had been through /aid-define and named a remedy that cannot run on a
+# work with no tasks/. Declaring the key is what closes that, so the
+# declaration is asserted here rather than left to the converter's own gate.
+# ---------------------------------------------------------------------------
+assert_file_contains \
+    "$WORK_STATE" \
+    "features: []" \
+    "WS21 work-state-template declares an instantiated features: key"
+assert_file_contains \
+    "$WORK_STATE" \
+    "state:    Pending | In Discussion | Spike Needed | Blocked | Ready" \
+    "WS21 work-state-template declares the closed feature-state enum"
+if grep -qE '^#[[:space:]]*\[A\][[:space:]]*one entry per feature' "$WORK_STATE" 2>/dev/null; then
+    pass "WS21 features: carries the [A] AUTHORED writer legend"
+else
+    fail "WS21 features: is missing the [A] AUTHORED writer legend -- a DERIVED marker here is the defect"
+fi
+# The zone comment must no longer list Features State as DERIVED, or the next
+# reader re-derives the same wrong conclusion the converter did.
+if grep -qE 'DERIVED \(read-only, assembled at read time\) -- Features State' "$WORK_STATE" 2>/dev/null; then
+    fail "WS21 the zone comment still lists Features State as DERIVED"
+else
+    pass "WS21 the zone comment no longer lists Features State as DERIVED"
+fi
+
+# ---------------------------------------------------------------------------
+# WS22: work-state-template declares a `review_history:` key.
+#
+# The interview's Review History lived under a `### Review History` heading
+# inside the markdown `## Interview State` section with no key of its own. That
+# made it invisible to the schema and mergeable into `interview.sections` by
+# anything reading tables from that range -- and once the merge was fixed, it
+# would have been dropped on conversion instead. It is neither
+# `interview.sections` (its rows are interview events, not the ten §-sections)
+# nor `lifecycle_history` (which records phase transitions), so it needs its own.
+# ---------------------------------------------------------------------------
+assert_file_contains \
+    "$WORK_STATE" \
+    "review_history: []" \
+    "WS22 work-state-template declares an instantiated review_history: key"
+assert_file_contains \
+    "$WORK_STATE" \
+    "date / event / outcome / notes" \
+    "WS22 review_history declares its per-entry field set"
+if grep -qE 'Distinct from' "$WORK_STATE" 2>/dev/null; then
+    pass "WS22 review_history states how it differs from lifecycle_history"
+else
+    fail "WS22 review_history does not distinguish itself from lifecycle_history -- the two are easily conflated"
+fi
+
+# ---------------------------------------------------------------------------
 # WS12: delivery-state-template has a `qa:` key (content-breaking retarget:
 # `## Cross-phase Q&A` is a markdown heading FR-2b retires; the SD-5
 # per-delivery Q&A partition survives inside the `qa:` key's own comment).

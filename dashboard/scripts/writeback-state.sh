@@ -665,8 +665,19 @@ WB_SET_KV_AWK='
         l1_matched = 0
         t2_found = 0
         swallowing = 0
+        swallow_block = 0
         swallow_min_indent = 0
         pending_n = 0
+    }
+
+    # See the identical guard in canonical/aid/scripts/execute/writeback-state.sh. This file is a
+    # DELIBERATE FORK of that one -- it additionally accepts `Deploy` as a Phase value -- so it is
+    # never resynced wholesale. A defect in the shared logic still has to be fixed in both, and this
+    # is that fix applied narrowly rather than by overwriting: replacing only the key line of a block
+    # scalar orphans its indented body, and an orphaned line containing a colon makes the file
+    # unparseable.
+    function is_block_header(line) {
+        return (line ~ /:[ \t]*[|>][-+0-9]*[ \t]*$/)
     }
 
     # Swallow: consume old sequence-item continuation lines left over from the
@@ -679,12 +690,20 @@ WB_SET_KV_AWK='
         line_indent = 0
         if (match($0, /^[ \t]*/)) line_indent = RLENGTH
         rest = substr($0, line_indent + 1)
-        if (line_indent >= swallow_min_indent && rest ~ /^-( |$)/) next
-        swallowing = 0
+        if (swallow_block) {
+            if (rest == "") { buffer_pending(); next }
+            if (line_indent >= swallow_min_indent) { pending_n = 0; next }
+            swallowing = 0
+            swallow_block = 0
+        } else {
+            if (line_indent >= swallow_min_indent && rest ~ /^-( |$)/) next
+            swallowing = 0
+        }
     }
 
     # ---------------- n == 1 : flat top-level scalar ----------------
     n==1 && !done && $0 ~ ("^" t1 ":") {
+        if (is_block_header($0)) { swallowing = 1; swallow_block = 1; swallow_min_indent = length(indent) + 2 }
         emit_leaf()
         next
     }
@@ -711,6 +730,7 @@ WB_SET_KV_AWK='
     n==2 && l0_matched && !done && $0 ~ ("^  " t2 ":") {
         flush_pending()
         if (kind == "seq") { swallowing = 1; swallow_min_indent = length(indent) + 2 }
+        else if (is_block_header($0)) { swallowing = 1; swallow_block = 1; swallow_min_indent = length(indent) + 2 }
         emit_leaf()
         next
     }

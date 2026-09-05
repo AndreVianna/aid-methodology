@@ -823,8 +823,18 @@ WB_SET_KV_AWK='
         l1_matched = 0
         t2_found = 0
         swallowing = 0
+        swallow_block = 0
         swallow_min_indent = 0
         pending_n = 0
+    }
+
+    # Is the line we are about to replace the HEADER of a block scalar -- `key: >-`, `key: |`, and the
+    # rest? If so its value is the indented lines beneath it, and replacing only this line orphans
+    # them: the body stays behind under a key that no longer describes it, and the first orphaned line
+    # containing a colon becomes a mapping key at the wrong indentation. That is unparseable YAML, and
+    # it is what this guard exists to prevent.
+    function is_block_header(line) {
+        return (line ~ /:[ \t]*[|>][-+0-9]*[ \t]*$/)
     }
 
     # Swallow: consume old sequence-item continuation lines left over from the
@@ -837,12 +847,24 @@ WB_SET_KV_AWK='
         line_indent = 0
         if (match($0, /^[ \t]*/)) line_indent = RLENGTH
         rest = substr($0, line_indent + 1)
-        if (line_indent >= swallow_min_indent && rest ~ /^-( |$)/) next
-        swallowing = 0
+        if (swallow_block) {
+            # A block scalar body is every line indented deeper than its key, and a BLANK line inside
+            # one belongs to it. So a blank is buffered rather than emitted or dropped: if the block
+            # continues, the buffer is discarded with the rest of the body; if it has ended, the blank
+            # is a real separator and the normal rules flush it.
+            if (rest == "") { buffer_pending(); next }
+            if (line_indent >= swallow_min_indent) { pending_n = 0; next }
+            swallowing = 0
+            swallow_block = 0
+        } else {
+            if (line_indent >= swallow_min_indent && rest ~ /^-( |$)/) next
+            swallowing = 0
+        }
     }
 
     # ---------------- n == 1 : flat top-level scalar ----------------
     n==1 && !done && $0 ~ ("^" t1 ":") {
+        if (is_block_header($0)) { swallowing = 1; swallow_block = 1; swallow_min_indent = length(indent) + 2 }
         emit_leaf()
         next
     }
@@ -869,6 +891,7 @@ WB_SET_KV_AWK='
     n==2 && l0_matched && !done && $0 ~ ("^  " t2 ":") {
         flush_pending()
         if (kind == "seq") { swallowing = 1; swallow_min_indent = length(indent) + 2 }
+        else if (is_block_header($0)) { swallowing = 1; swallow_block = 1; swallow_min_indent = length(indent) + 2 }
         emit_leaf()
         next
     }
