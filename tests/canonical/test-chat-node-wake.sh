@@ -658,6 +658,58 @@ assert_output_contains "$absent" "aid chat hook --tool cursor" "WK34 and names t
 nohost="$(_hook --tool codex 2>&1 || true)"
 assert_output_contains "$nohost" "no adapter ships" "WK34 a host with no adapter is refused, not given a broken block"
 
+# --- WK36-WK38: the woken turn is told WHO IT IS. -------------------------------------------------
+#
+# A woken turn is a FRESH CONTEXT. It never ran `register`, never saw the name that printed, and has no
+# memory of the channel -- so whatever it needs has to be in the wake text. The name is not decoration:
+# every chat verb requires --name, and a turn that guesses addresses a session that is not itself.
+#
+# This was a real gap. A `connect` wake -- the FIRST thing a session ever hears -- carried no name and
+# no command at all, because the hint was built only when a message had already been delivered. It said
+# "you are now a member of that channel" and stopped, which is a dead end dressed as a notification.
+wake_text() {
+    node --input-type=module -e "
+import { renderWakeText, wakeHints } from '${REPO_ROOT}/chat-node/adapters/common.mjs';
+const h = wakeHints({ name: 'bob', seq: ${2}, quoteStyle: 'posix' });
+process.stdout.write(renderWakeText({
+    kind: '${1}',
+    channel: 'pair',
+    messages: ${1:+$([ "$1" = message ] && echo "[{from:'alice',body:'ping'}]" || echo "[]")},
+    name: 'bob', replyHint: h.reply, ackHint: h.ack, inboxHint: h.inbox,
+}));
+"
+}
+
+conn="$(wake_text connect 0)"
+assert_output_contains "$conn" 'You are "bob"' "WK36 a connect wake states the name the session goes by"
+assert_output_contains "$conn" 'chat send --name bob' "WK36 and gives a reply command already carrying it"
+assert_output_contains "$conn" 'chat inbox --name bob' "WK36 and a read command, since a connect may follow a backlog"
+# Reading and acknowledging are different verbs. The connect wake once offered `ack` under the words
+# "to see what is said", which is an instruction that does not do what it says.
+assert_output_not_contains "$conn" 'To see anything already said: '"${REPO_ROOT}"'/bin/aid chat ack' \
+    "WK36 and does not offer ack as the way to READ"
+
+msg="$(wake_text message 1)"
+assert_output_contains "$msg" 'You are "bob"' "WK37 a message wake states the name too"
+assert_output_contains "$msg" 'Reply with: ' "WK37 and gives the reply command it just told the agent to use"
+assert_output_contains "$msg" 'chat ack --name bob --cursor 1' "WK37 and the ack command with the delivered position"
+
+# Both adapters, driven as their hosts drive them, because the hint builder was duplicated per adapter
+# and differed only by quote style -- the shape that already caused two one-copy fixes in this work.
+for pair in "claude-code:reason" "cursor:followup_message"; do
+    ad="${pair%%:*}"; field="${pair##*:}"
+    _drain bob
+    $AID chat send --name alice --body "who am i" >/dev/null
+    payload='{"conversation_id":"cv-wk38","loop_count":0}'
+    got="$(cd "$REPO_ROOT" && printf '%s' "$payload" | timeout 40 node "chat-node/adapters/${ad}.mjs" \
+        --name bob --host-timeout 20 2>/dev/null || true)"
+    # The name is inside a JSON string, so it arrives escaped. Asserting the bare form passed nothing
+    # and failed while the product was correct -- the pattern was wrong, not the payload.
+    assert_output_contains "$got" 'You are ' "WK38 the ${ad} adapter states who the woken turn is"
+    assert_output_contains "$got" '\"bob\"' "WK38 naming it inside its ${field} payload"
+    assert_output_contains "$got" "chat send --name bob" "WK38 and a reply command carrying that name"
+done
+
 # The document has to lead with the generator, or an operator does by hand what a command does better.
 assert_file_contains "$DOC" "aid chat hook --tool cursor" "WK35 the install document names the generator"
 assert_file_contains "$DOC" "Do not do this by hand" "WK35 and says up front not to assemble the block manually"

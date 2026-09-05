@@ -20,7 +20,8 @@
 
 import {
     adapterGuardMs, armOnce, defaultSessionName, clearOwnCount, hostTimeoutFromArgs,
-    readHostPayload, readOwnCount, renderWakeText, shellSafePath, writeOwnCount,
+    readHostPayload, readOwnCount, renderWakeText,
+    wakeHints, writeOwnCount,
 } from './common.mjs';
 
 // This host offers no cap of its own, so the adapter's own ceiling is the only one there is. Two
@@ -42,14 +43,6 @@ function argValue(argv, flag) {
 // the host watches unrelated to the one that blocks. The script carries its own shebang, so the
 // path alone is the command. Where an adapter does need to name a Node interpreter it uses
 // `ownInterpreter()`, which reads the running process rather than the environment.
-function ackHintFor(name, seq) {
-    const aid = shellSafePath(
-        new URL('../../bin/aid', import.meta.url).pathname,
-        { quoteStyle: 'posix' },
-    );
-    return `${aid} chat ack --name ${name} --cursor ${seq}`;
-}
-
 async function main() {
     const argv = process.argv.slice(2);
     const name = argValue(argv, '--name') || defaultSessionName();
@@ -94,11 +87,15 @@ async function main() {
         return 0;
     }
 
+    const hints = wakeHints({ name, seq: outcome.delivered_seq, quoteStyle: 'posix' });
     const text = renderWakeText({
         kind: outcome.kind,
         messages: outcome.messages,
         channel: outcome.channel,
-        ackHint: outcome.delivered_seq ? ackHintFor(name, outcome.delivered_seq) : null,
+        name,
+        ackHint: hints.ack,
+        replyHint: hints.reply,
+        inboxHint: hints.inbox,
     });
     if (!text) {
         process.stdout.write('{}\n');
@@ -115,7 +112,7 @@ async function main() {
 // a helper would execute a whole wake attempt as a side effect of the import.
 const invokedDirectly = process.argv[1] && process.argv[1].endsWith('claude-code.mjs');
 
-export { ackHintFor, main };
+export { main };
 
 if (invokedDirectly) main().then((code) => process.exit(code)).catch(() => {
     // A crash here would surface inside the user's own session as a hook failure. Exit quietly and

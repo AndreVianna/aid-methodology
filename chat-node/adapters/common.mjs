@@ -283,12 +283,39 @@ function getJson(url, timeoutMs) {
 
 // The text a woken session reads. Shared, because it is the canonical message rendered for a human
 // or a model to read -- the HOST-SPECIFIC part is only the envelope it gets wrapped in.
-export function renderWakeText({ kind, messages = [], channel = null, ackHint = null }) {
+// The commands a woken turn needs, built once for both adapters.
+//
+// This lived in each adapter as a near-identical `ackHintFor`, differing only in quote style -- the
+// shape that produced two defects in this work where a fix landed in one copy and not the other.
+//
+// It returns REPLY as well as ack, because a wake that says "reply if it does" while handing over only
+// an ack command is telling the agent to do something it has not been given the means to do.
+export function wakeHints({ name, seq = null, quoteStyle = 'none' }) {
+    const aid = shellSafePath(new URL('../../bin/aid', import.meta.url).pathname, { quoteStyle });
+    return {
+        reply: `${aid} chat send --name ${name} --body '<your reply>'`,
+        // Reading and acknowledging are DIFFERENT verbs, and the connect wake used to offer `ack`
+        // under the words "to see what is said" -- an instruction that does not do what it says.
+        inbox: `${aid} chat inbox --name ${name}`,
+        ack: seq ? `${aid} chat ack --name ${name} --cursor ${seq}` : null,
+    };
+}
+
+// The woken turn is a FRESH CONTEXT. It did not run `register`, it did not see the name that printed,
+// and it has no memory of this channel -- so anything it needs must be in this text. That includes the
+// name it goes by, which is not cosmetic: every chat command requires --name, and a turn that guesses
+// wrong addresses a session that is not itself.
+export function renderWakeText({ kind, messages = [], channel = null, ackHint = null, name = null, replyHint = null, inboxHint = null }) {
+    // Stated in both kinds, because a connect is the FIRST thing a session ever hears and previously
+    // arrived with no name and no command whatsoever -- a dead end dressed as a notification.
+    const youAre = name ? `You are "${name}" on the agent chat channel.` : '';
     if (kind === 'connect') {
         return [
             `You have been connected to the chat channel "${channel}".`,
             'Another agent asked to talk with you. You are now a member of that channel.',
-            ackHint ? `To see what is said and reply: ${ackHint}` : '',
+            youAre,
+            inboxHint ? `To see anything already said: ${inboxHint}` : '',
+
         ].filter(Boolean).join('\n');
     }
     if (!messages.length) return '';
@@ -298,7 +325,9 @@ export function renderWakeText({ kind, messages = [], channel = null, ackHint = 
         '',
         ...lines,
         '',
+        youAre,
         'Do not stop yet. Consider whether this needs a reply, and reply if it does.',
+
         ackHint ? `Acknowledge with: ${ackHint}` : '',
     ].filter(Boolean).join('\n');
 }

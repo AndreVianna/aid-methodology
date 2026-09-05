@@ -26,7 +26,8 @@
 //   node <this file> --name <session> --host-timeout <seconds>
 
 import {
-    adapterGuardMs, armOnce, defaultSessionName, hostTimeoutFromArgs, readHostPayload, renderWakeText, shellSafePath,
+    adapterGuardMs, armOnce, defaultSessionName, hostTimeoutFromArgs, readHostPayload, renderWakeText,
+    wakeHints, shellSafePath,
 } from './common.mjs';
 
 // This host documents its own cap, defaulting to 5. The adapter reads the count rather than keeping
@@ -57,14 +58,6 @@ function argValue(argv, flag) {
 // thing rule 5 forbids: a `PATH` entry may be a shim, and which `bash` answers on a Windows machine
 // with several installed is not something this adapter can know. The script carries its own shebang,
 // so the path alone is the command.
-function ackHintFor(name, seq) {
-    const aid = shellSafePath(
-        new URL('../../bin/aid', import.meta.url).pathname,
-        { quoteStyle: 'powershell' },
-    );
-    return `${aid} chat ack --name ${name} --cursor ${seq}`;
-}
-
 async function main() {
     const argv = process.argv.slice(2);
     const name = argValue(argv, '--name') || defaultSessionName();
@@ -96,11 +89,15 @@ async function main() {
         return 0;
     }
 
+    const hints = wakeHints({ name, seq: outcome.delivered_seq, quoteStyle: 'powershell' });
     const text = renderWakeText({
         kind: outcome.kind,
         messages: outcome.messages,
         channel: outcome.channel,
-        ackHint: outcome.delivered_seq ? ackHintFor(name, outcome.delivered_seq) : null,
+        name,
+        ackHint: hints.ack,
+        replyHint: hints.reply,
+        inboxHint: hints.inbox,
     });
     if (!text) {
         process.stdout.write('{}\n');
@@ -116,7 +113,7 @@ async function main() {
 // a helper would execute a whole wake attempt as a side effect of the import.
 const invokedDirectly = process.argv[1] && process.argv[1].endsWith('cursor.mjs');
 
-export { ackHintFor, main };
+export { main };
 
 if (invokedDirectly) main().then((code) => process.exit(code)).catch(() => {
     process.stdout.write('{}\n');
