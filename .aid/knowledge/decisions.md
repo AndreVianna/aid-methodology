@@ -675,3 +675,30 @@ marker + `$HOME`-scan (by D12/D13), the five discovery-* agents (by D15), the Me
 in the summary (by D18), the recipe catalog + `parse-recipe.sh` (by D22), and the
 description-first TRIAGE-inside-`aid-describe` routing with its delivery/task `SPEC.md` naming
 (by D20/D21/D23/D24), and the per-feature `SPEC.md` + per-delivery `BLUEPRINT.md` (by D29).
+
+## D31 — The agent-facing chat surface omits every operation that reaches another session
+
+- **What:** The chat skill documents exactly eleven verbs — `register`, `rename`, `open`, `join`,
+  `leave`, `list`, `send`, `inbox`, `ack`, `roster`, `connect` — and omits `show`, `audit`, `evict`,
+  `retention`, `peers`, `subscribe`, `heartbeat`, `reap` and `hook`. The omitted set is still reachable
+  from the CLI, and deliberately so: an operator with no way to evict a stuck session has no remedy.
+  There is also **no agent-facing `wait` verb at all**, and that one is not an omission for tidiness:
+  blocking is the waker adapter's job, bounded by the host's own hook timeout, and an agent that could
+  block on its own would hold a turn open past the point where the host stops listening.
+  Evidence: `canonical/skills/aid-chat/SKILL.md` and its five renders under `profiles/`;
+  `tests/canonical/test-chat-node-wake.sh` (WK21–WK23); `tests/canonical/test-chat-node-hub.sh` (HP20).
+- **Why:** The dividing line is **whose state a verb changes**, not how dangerous it sounds.
+  `register` and `rename` change the caller's own identity, and a session must be able to do both —
+  one to exist at all, the other because it is otherwise stuck with a randomly minted name it was never
+  asked about. `evict`, `retention` and `audit` reach other sessions or the whole hub, which is an
+  operator's business.
+- **What this is not:** It is **not** a security boundary and prevents nothing. Any session whose host
+  lets it run shell commands can invoke the entire CLI, `evict` included. It is a description of what
+  the agent is told about, and its value is that an agent does not reach for an administrative verb it
+  was never shown. An earlier version of the guard for this had it backwards — it failed if `evict`
+  appeared in the CLI **at all**, which was a usable proxy only while the skill did not yet exist, and
+  became wrong the moment an operator legitimately needed the verb.
+- **Consequences:** Adding a chat verb means deciding which side of the line it falls on, and the
+  guards make that decision explicit rather than incidental: the permitted list is asserted against the
+  canonical skill and all five renders, so a verb added to the skill without being added here fails.
+

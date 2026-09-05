@@ -496,17 +496,26 @@ _verbs_in() { grep -oE '^aid chat [a-z-]+' "$1" | awk '{print $3}' | sort -u | t
 permitted="ack connect inbox join leave list open register rename roster send"
 assert_eq "$(_verbs_in "$SKILL")" "$permitted" "WK21 the canonical skill's verb list is exactly what the surface boundary permits"
 
-# Cross-checked against the requirement text itself, so the list above cannot drift away from the
-# thing it claims to encode. Every verb FR-7.3 names as permitted must be present; every one it names
-# as forbidden must be absent.
-REQ="${REPO_ROOT}/.aid/works/work-001-agent-chat/REQUIREMENTS.md"
+# Cross-checked against the KNOWLEDGE BASE, so the list above cannot drift away from the thing it
+# claims to encode.
+#
+# It used to read the requirement row out of `.aid/works/work-001-agent-chat/REQUIREMENTS.md`, which was
+# a straight violation of the rule that no permanent artifact may depend on a work folder -- work folders
+# are pruned when their work ships, so this test was one `rm -rf` away from failing for a reason that had
+# nothing to do with the product. The boundary now lives in the KB as D31, which is where a durable
+# statement of it belongs, and the test reads that.
+REQ="${REPO_ROOT}/.aid/knowledge/decisions.md"
 fr73="$(python3 - "$REQ" <<'PY'
 import re, sys
 s = open(sys.argv[1], encoding='utf-8').read()
-i = s.index('| FR-7.3')
-row = s[i:s.index('\n', i)]
-named = set(re.findall(r'`([a-z][a-z-]*)`', row))
-print(' '.join(sorted(named)))
+i = s.index('## D31')
+end = s.find('\n## ', i + 1)
+section = s[i:end if end != -1 else len(s)]
+# The permitted set is the run of code spans in the sentence that enumerates it; the omitted set follows
+# "and omits". Reading only the first sentence keeps prose elsewhere in the section out of the answer.
+first = section[:section.index('Evidence:')]
+head, _, tail = first.partition('and omits')
+print(' '.join(sorted(set(re.findall(r'`([a-z][a-z-]*)`', head)))))
 PY
 )"
 for v in send inbox ack register; do
@@ -515,7 +524,18 @@ for v in send inbox ack register; do
         *) fail "WK21 FR-7.3 names '${v}' as permitted but the tested set omits it" ;;
     esac
 done
-assert_output_contains "$fr73" "wait" "WK21 FR-7.3 is the source of the prohibition on a wait verb, and still says so"
+# The `wait` prohibition is checked against the whole section rather than the permitted-set sentence,
+# because it is a statement about what does NOT exist and so appears in the reasoning, not the list.
+d31="$(python3 - "$REQ" <<'PY'
+import sys
+s = open(sys.argv[1], encoding='utf-8').read()
+i = s.index('## D31')
+end = s.find('\n## ', i + 1)
+print(s[i:end if end != -1 else len(s)])
+PY
+)"
+assert_output_contains "$d31" "no agent-facing \`wait\` verb" \
+    "WK21 D31 records that there is no agent-facing wait verb, and says why"
 
 for forbidden in subscribe wait node reap peers; do
     if grep -qE "^aid chat ${forbidden}\b" "$SKILL"; then
