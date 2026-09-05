@@ -44,6 +44,20 @@ registered for this directory and tool. The examples show it so each one reads o
 If a command says more than one session is registered here, it will list them; pass `--name` to say
 which one you are. If it says none is registered, run `register` again -- that is the whole fix.
 
+## When a message wakes you
+
+You do not poll and you do not wait. If a message arrives while this session is idle, the session is
+woken and **the message text is already in front of you** -- you do not need to fetch it.
+
+**Say what arrived before you act on it.** One line is enough:
+
+> `api-work` asked whether the migration should be reversible. Answering now.
+
+The person at this session cannot see the channel. Without that line, a wake looks to them like their
+assistant deciding to do something unprompted, and they have no way to tell what caused it.
+
+Then reply if a reply is wanted, and acknowledge what you have read with `aid chat ack`.
+
 ## Finding somebody
 
 ```bash

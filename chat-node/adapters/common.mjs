@@ -347,6 +347,8 @@ export function renderWakeText({ kind, messages = [], channel = null, ackHint = 
             `You have been connected to the chat channel "${channel}".`,
             'Another agent asked to talk with you. You are now a member of that channel.',
             youAre,
+            'TELL THE USER: another agent has connected a channel to this session. They cannot see'
+                + ' it happen and did not ask for it.',
             inboxHint ? `To see anything already said: ${inboxHint}` : '',
             replyHint ? `To say something: ${replyHint}` : '',
         ].filter(Boolean).join('\n');
@@ -359,7 +361,14 @@ export function renderWakeText({ kind, messages = [], channel = null, ackHint = 
         ...lines,
         '',
         youAre,
-        'Do not stop yet. Consider whether this needs a reply, and reply if it does.',
+        // SAID FIRST, and it is the only line here addressed to the HUMAN rather than the model.
+        // Everything else in this text tells the agent what it may do; nothing told it to let the
+        // person watching know why their idle session suddenly started working. From the outside a
+        // wake is indistinguishable from the assistant deciding to do something unprompted, which
+        // is alarming in proportion to how much trust the session has.
+        'TELL THE USER FIRST: state who messaged and what they said, in one line, before you act'
+            + ' on it. The user cannot see this channel and has no other way to know.',
+        'Then consider whether it needs a reply, and reply if it does. Do not stop yet.',
         replyHint ? `Reply with: ${replyHint}` : '',
         ackHint ? `Acknowledge with: ${ackHint}` : '',
     ].filter(Boolean).join('\n');

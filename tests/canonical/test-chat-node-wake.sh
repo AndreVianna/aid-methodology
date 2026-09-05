@@ -715,6 +715,45 @@ for pair in "claude-code:reason" "cursor:followup_message"; do
     assert_output_contains "$got" "chat send --name bob" "WK38 and a reply command carrying that name"
 done
 
+# --- WK39-WK40: the human watching is told too. ---------------------------------------------------
+#
+# Every other line of a wake speaks to the MODEL. Nothing spoke to the person sitting at the session,
+# and from where they sit a wake is indistinguishable from the assistant deciding to do something
+# unprompted -- their idle session starts working, and there is no channel visible anywhere to explain
+# why. The instruction to say what arrived, before acting on it, is the only part of this text with a
+# human audience, so it is asserted separately from everything else.
+for kind in message connect; do
+    txt="$(wake_text "$kind" 1)"
+    assert_output_contains "$txt" 'TELL THE USER' "WK39 a ${kind} wake instructs the agent to tell the user"
+    assert_output_contains "$txt" 'cannot see' "WK39 and says why: the user has no view of this channel"
+done
+# Ordering is the substance of it: told AFTER the reply has been sent, the user learns what happened
+# from a transcript rather than being kept in the loop.
+msgtxt="$(wake_text message 1)"
+pos_tell="$(printf '%s' "$msgtxt" | grep -n 'TELL THE USER' | cut -d: -f1)"
+pos_reply="$(printf '%s' "$msgtxt" | grep -n 'Reply with:' | cut -d: -f1)"
+if [[ -n "$pos_tell" && -n "$pos_reply" && "$pos_tell" -lt "$pos_reply" ]]; then
+    pass "WK39 and says it BEFORE handing over the reply command"
+else
+    fail "WK39 and says it BEFORE handing over the reply command (tell=${pos_tell} reply=${pos_reply})"
+fi
+
+# End to end through a real adapter, because the instruction is worth nothing if it does not survive
+# into the payload the host actually injects.
+_drain bob
+$AID chat send --name alice --body 'is the migration reversible?' >/dev/null
+got="$(cd "$REPO_ROOT" && printf '%s' '{"conversation_id":"cv-wk40","loop_count":0}' \
+    | timeout 40 node chat-node/adapters/cursor.mjs --name bob --host-timeout 20 2>/dev/null || true)"
+assert_output_contains "$got" 'TELL THE USER' "WK40 the instruction reaches the host payload, not just the renderer"
+assert_output_contains "$got" 'is the migration reversible?' "WK40 alongside the message body itself"
+
+# The skill has to say the same thing, because a session woken in a tool whose hook is not installed
+# reads the skill and nothing else.
+assert_file_contains "${REPO_ROOT}/canonical/skills/aid-chat/SKILL.md" "When a message wakes you" \
+    "WK40 the skill documents the woken turn"
+assert_file_contains "${REPO_ROOT}/canonical/skills/aid-chat/SKILL.md" "cannot see the channel" \
+    "WK40 and tells the agent to surface what arrived"
+
 # The document has to lead with the generator, or an operator does by hand what a command does better.
 assert_file_contains "$DOC" "aid chat hook --tool cursor" "WK35 the install document names the generator"
 assert_file_contains "$DOC" "Do not do this by hand" "WK35 and says up front not to assemble the block manually"
