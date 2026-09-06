@@ -2243,10 +2243,79 @@ open(sys.argv[2], 'w', encoding='utf-8').write(
     '#!/usr/bin/env bash\nset -uo pipefail\n' + awk + fn + '\nwb_set_kv "$1" "$2" scalar "$3"\n')
 PY
 
+# PyYAML is OPTIONAL here, and making it optional is the point.
+#
+# This helper used to open with `python3 -c "import yaml; yaml.safe_load(...)"` and, on a non-zero exit,
+# report "the result does not parse as YAML". That conflates two unrelated failures and reports the
+# wrong one: a MISSING PARSER is indistinguishable from MALFORMED OUTPUT, so an environment without
+# PyYAML fails every case -- including the deliberate single-line control, which is the tell.
+#
+# It cost a release. `test.yml` runs this suite under the runner's system Python, which ships PyYAML, so
+# the suite was green on every PR. `release.yml`'s gate installs a clean Python 3.11, which does not, so
+# the release workflow failed on the four W1-18 cases and blocked the tag while asserting something
+# untrue about the product. The product itself imports no yaml anywhere -- this was a test-only
+# dependency that happened to be satisfied in one environment and not the other.
+#
+# So the structural check below runs ALWAYS and needs no parser: it is specific to the corruption W1-18
+# was about -- a block scalar's body left orphaned when its key line was replaced -- and is a sharper
+# statement than "parses as YAML" anyway. The parse check still runs WHERE A PARSER EXISTS, and where
+# one does not the suite says so once rather than silently dropping a guarantee or inventing a failure.
+_WB_HAVE_YAML=0
+python3 -c 'import yaml' 2>/dev/null && _WB_HAVE_YAML=1
+if [[ "$_WB_HAVE_YAML" -eq 0 ]]; then
+    echo "  NOTE: PyYAML absent -- W1-18's full-parse check is skipped; its structural check still runs." >&2
+fi
+
 _wb_block_case() {  # _wb_block_case <label> <key> <before-yaml> <expected-value>
     local label="$1" key="$2" before="$3" want="$4"
     printf '%s' "$before" > "${TMPDIR_BASE}/blk.yml"
     bash "$_WB_HARNESS" "${TMPDIR_BASE}/blk.yml" "$key" "$want" > "${TMPDIR_BASE}/blk.out" 2>/dev/null
+
+    # ALWAYS: the structural check, on the exact shape of the W1-18 corruption. A block scalar's body is
+    # indented under its key; replacing the key line with a plain scalar has to consume that body, or the
+    # body's lines are left indented under nothing -- and one containing a colon makes the file
+    # unparseable, which is how this first surfaced.
+    local struct
+    struct="$(python3 - "${TMPDIR_BASE}/blk.out" "$key" <<'PY'
+import sys
+lines = open(sys.argv[1], encoding='utf-8').read().split('\n')
+key = sys.argv[2]
+nested = '.' in key
+problems = []
+# An orphan is an indented line that follows a line which is NOT a mapping key opening a block, and
+# which is indented deeper than any enclosing key. Checked positionally so no YAML parser is needed.
+depth_of = lambda l: len(l) - len(l.lstrip(' '))
+for i, line in enumerate(lines):
+    if not line.strip() or line.lstrip().startswith('#'):
+        continue
+    d = depth_of(line)
+    if d == 0:
+        continue
+    # Find the nearest shallower non-blank line above.
+    j = i - 1
+    while j >= 0 and (not lines[j].strip() or depth_of(lines[j]) >= d):
+        j -= 1
+    if j < 0:
+        problems.append(f'line {i+1} is indented under nothing: {line.strip()[:50]!r}')
+        continue
+    parent = lines[j].strip()
+    # A legitimate parent either opens a block scalar or is a bare mapping key.
+    if not (parent.endswith(':') or parent.endswith('|') or parent.endswith('>')
+            or parent.endswith('|-') or parent.endswith('>-')
+            or parent.endswith('|+') or parent.endswith('>+')):
+        problems.append(f'line {i+1} is orphaned under {parent[:40]!r}: {line.strip()[:50]!r}')
+print('; '.join(problems) if problems else 'clean')
+PY
+)"
+    if [[ "$struct" != "clean" ]]; then
+        fail "W1-18 ${label}: orphaned body lines remain -- ${struct}"
+        return
+    fi
+
+    if [[ "$_WB_HAVE_YAML" -eq 0 ]]; then
+        pass "W1-18 ${label}: the body is consumed and nothing is orphaned (full parse skipped: no PyYAML)"
+        return
+    fi
 
     if ! python3 -c "import yaml,sys; yaml.safe_load(open('${TMPDIR_BASE}/blk.out'))" 2>/dev/null; then
         fail "W1-18 ${label}: the result does not parse as YAML"

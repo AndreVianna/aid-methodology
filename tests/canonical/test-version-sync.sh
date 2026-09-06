@@ -196,6 +196,50 @@ assert_output_contains "$OUT" "all carriers in sync" "VS08b CI-path invocation f
 # Requires python3 AND the PyYAML module. A clean setup-python (e.g. the release.yml
 # gate runner) has no PyYAML, so skip rather than fail there; test.yml validates the
 # YAML on the runner's system python, and GitHub itself rejects an invalid workflow.
+# WF00 -- NO CANONICAL SUITE MAY DEPEND ON PyYAML WITHOUT GUARDING FOR IT.
+#
+# The convention is stated in the comment just below and was already followed by two suites, but
+# nothing enforced it, so a third arrived that did not: `test-writeback-state.sh`'s W1-18 cases called
+# `python3 -c "import yaml; ..."` and, on a non-zero exit, reported "the result does not parse as YAML".
+# That conflates a MISSING PARSER with MALFORMED OUTPUT and reports the wrong one.
+#
+# It cost a release. `test.yml` runs the corpus under the runner's system Python, which ships PyYAML, so
+# the suite was green on every PR; `release.yml`'s gate installs a clean Python 3.11, which does not, so
+# the release workflow failed there and blocked the tag while asserting something untrue about the
+# product. A documented convention with no guard is the same shape as the dogfood resync that was
+# "required" by a comment nothing executed.
+#
+# The check is textual and deliberately simple: every `import yaml` in a canonical suite must sit within
+# a few lines of an ImportError guard or an `import yaml` availability test.
+yaml_unguarded="$(python3 - "$(dirname "${BASH_SOURCE[0]}")" <<'PY'
+import pathlib, re, sys
+root = pathlib.Path(sys.argv[1])
+bad = []
+for f in sorted(root.glob('test-*.sh')):
+    lines = f.read_text(encoding='utf-8').split('\n')
+    for n, line in enumerate(lines):
+        # A COMMENT mentioning the pattern is not a dependency on it. Prose explaining why the guard
+        # exists necessarily quotes the thing it forbids, and the first version flagged exactly that --
+        # two explanatory comments, in this file and the one it was written about.
+        if line.lstrip().startswith('#'):
+            continue
+        # Built from parts so this detector does not match ITSELF: the literal spelling in a scanner is
+        # indistinguishable from the thing being scanned for.
+        if not re.search(r'\bimport' + ' yaml' + r'\b', line):
+            continue
+        window = '\n'.join(lines[max(0, n - 6):n + 4])
+        guarded = ('ImportError' in window
+                   or 'ModuleNotFoundError' in window
+                   or re.search('import' + r' yaml["\x27] *>/dev/null', window)
+                   or '_HAVE_YAML' in window)
+        if not guarded:
+            bad.append(f'{f.name}:{n + 1}')
+print(' '.join(bad) if bad else 'all-guarded')
+PY
+)"
+assert_eq "$yaml_unguarded" "all-guarded" \
+    "WF00 every canonical suite's PyYAML use is guarded, so a clean setup-python cannot invent failures"
+
 if command -v python3 >/dev/null 2>&1 && python3 -c "import yaml" >/dev/null 2>&1; then
     WF_PARSE_OUT="$(python3 -c "import yaml,sys; yaml.safe_load(open('${RELEASE_YML}')); print('OK')" 2>&1)"
     WF_PARSE_RC=$?
