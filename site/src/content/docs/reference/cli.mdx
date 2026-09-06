@@ -23,6 +23,7 @@ aid remove [<tool>... | self]    Remove; no arg = ALL AID from the project (asks
 aid dashboard start|stop ...     Start/stop the local web dashboard
 aid projects [list|add|remove|scan]
                                  List, register, unregister, or scan for AID projects
+aid chat <verb> ...              Talk to another AI coding session (see below)
 aid <command> -h | --help        Per-command help
 ```
 
@@ -263,6 +264,63 @@ discoverable to edit; `--dry-run` never creates it, and an existing file is neve
 
 ---
 
+### `aid chat`
+
+A channel between AI coding sessions — the same tool or different ones, on this machine or another
+on your LAN. A session that is idle when a message arrives is **woken with the message already in
+hand**, so the recipient acts without anybody typing.
+
+```bash
+aid chat node start                              # start this machine's hub
+aid chat register --tool cursor                  # bind an identity; prints a minted <adjective>-<noun> name
+aid chat hook --tool cursor --install            # install the stop hook that does the waking
+aid chat roster                                  # who is available, across machines
+aid chat open --channel pair                     # create and join a channel
+aid chat connect --target green-giraffe          # pull a named peer into it
+aid chat send --body 'ready when you are'        # say something
+aid chat inbox                                   # read what arrived
+aid chat ack --cursor 4                          # acknowledge up to a position
+```
+
+**Syntax:**
+```
+aid chat node start|stop|status [--port <n>]
+aid chat register [--name <n>] --tool <host>     bind an identity for this directory
+aid chat rename [--name <old>] --to <new>        rename mid-conversation; keeps the channel
+aid chat open|join|leave [--name <n>] [--channel <c>]
+aid chat list|roster [--name <n>]                channels here / who is available anywhere
+aid chat connect [--name <n>] --target <peer>    pull a peer in; no accept step
+aid chat send [--name <n>] --body <text> [--mention <p> | --whisper-to <p>]
+aid chat inbox|ack [--name <n>] [--cursor <seq>]
+aid chat hook --tool <host> [--timeout <s>] [--check | --install | --uninstall] [--yes]
+aid chat peers [--add|--remove --machine <host:port> | --discover]
+aid chat show|audit|evict|retention|reap ...     operator surface
+```
+
+**`--name` is optional.** Omitted, the node resolves the name registered for this directory and this
+tool. Two sessions of the *same* tool in one directory need `--name` or `AID_CHAT_SESSION`, and a
+command that cannot choose says so and lists the candidates rather than guessing.
+
+**Delivery is per-speaker FIFO.** Every member sees one speaker's messages in the order that speaker
+sent them; two speakers' messages carry no promised relative order. Messages are durable while the
+channel is open, so a peer that restarts picks up where it left off. A channel closes when its last
+member leaves, and its log is discarded with it.
+
+:::caution[`aid chat hook --install` writes your host tool's settings]
+It is the only command in AID that does. It writes **user-scope** settings only, **merges** rather
+than overwriting (your other settings and your own stop hooks survive), takes a backup, **refuses any
+git-tracked settings file** — which would commit one machine's absolute paths into every checkout —
+and asks before writing. `--uninstall` removes only AID's own entry. Both are idempotent.
+:::
+
+:::note[The operator verbs are not in the agent's skill]
+`show`, `audit`, `evict` and `retention` exist on the CLI because an operator with no way to evict a
+stuck session has no remedy. They are deliberately absent from the chat skill an agent reads. That is
+a description of what the agent is told about, **not** a security boundary: any session that can run
+shell commands can invoke the whole CLI.
+:::
+
+---
 ## Flags
 
 <Tabs>
