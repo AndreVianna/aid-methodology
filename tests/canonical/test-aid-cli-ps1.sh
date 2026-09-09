@@ -573,6 +573,10 @@ assert_output_not_contains "$OUT" "Exit codes:" "PS028-N04 PS1 general help: no 
 # General help must contain the short flags hint.
 assert_output_contains "$OUT" "Flags:" "PS028-N05 PS1 general help: has 'Flags:' line"
 assert_output_contains "$OUT" "aid <command> -h" "PS028-N06 PS1 general help: has per-command hint"
+for _cmd in status add update remove version dashboard projects chat; do
+    assert_output_contains "$OUT" "aid ${_cmd}" "PS028-N06b PS1 general help lists 'aid ${_cmd}'"
+done
+assert_output_not_contains "$OUT" "__migrate-repo" "PS028-N06c PS1 general help omits the hidden migrate command"
 
 # Per-subcommand -h prints focused help and exits 0.
 run_aid_ps1 "${PS028N_HOME}" add -h
@@ -586,6 +590,11 @@ assert_output_contains "$OUT" "aid remove" "PS028-N10 aid.ps1 remove -h shows 'a
 run_aid_ps1 "${PS028N_HOME}" update -h
 assert_exit_eq "$RC" 0 "PS028-N11 aid.ps1 update -h → exit 0"
 assert_output_contains "$OUT" "aid update" "PS028-N12 aid.ps1 update -h shows 'aid update'"
+
+run_aid_ps1 "${PS028N_HOME}" chat -h
+assert_exit_eq "$RC" 0 "PS028-N13 aid.ps1 chat -h → exit 0"
+assert_output_contains "$OUT" "aid chat register" "PS028-N14 aid.ps1 chat -h shows register"
+assert_output_contains "$OUT" "aid chat heartbeat" "PS028-N15 aid.ps1 chat -h shows heartbeat"
 
 # ===========================================================================
 # PS028-O: unknown subcommand → exit 2
@@ -1101,6 +1110,8 @@ pwsh_session_call "${PS029J_HOME_PS}/bin/aid.ps1" "$PWD" \
 PS1_HELP=$(printf '%s' "$PWSH_CALL_OUT" | sed 's/\x1b\[[0-9;]*m//g')
 assert_output_contains "$SH_HELP"  "Flags:" "PS029-J01 Bash general help: 'Flags:' line"
 assert_output_contains "$PS1_HELP" "Flags:" "PS029-J02 PS1 general help: 'Flags:' line"
+assert_output_contains "$SH_HELP"  "aid chat" "PS029-J01b Bash general help lists chat"
+assert_output_contains "$PS1_HELP" "aid chat" "PS029-J02b PS1 general help lists chat"
 assert_output_not_contains "$SH_HELP"  "Env vars:" "PS029-J03 Bash general help: no 'Env vars:'"
 assert_output_not_contains "$PS1_HELP" "Env vars:" "PS029-J04 PS1 general help: no 'Env vars:'"
 

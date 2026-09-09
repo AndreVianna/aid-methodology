@@ -17,10 +17,12 @@
 #   aid update [self|all]            Update to latest; inside repo = CLI + all tools; 'self' = CLI only;
 #                                    'all' = bulk-update every registered project (see 'aid update -h')
 #   aid remove [<tool>... | self]    Remove; no arg = ALL AID from project; 'self' = the aid CLI
+#   aid dashboard start|stop ...     Start/stop the local dashboard
 #   aid projects [list|add|remove|scan|help] [path|N] [--local|--shared] [--verbose]
 #                                    List (numbered from 1), register, unregister, or scan;
 #                                    remove accepts a list number (<N>) or a <path>
 #                                    scan: 'aid projects scan -h' for its own flags
+#   aid chat <verb> ...              Talk to another AI coding session (see 'aid chat -h')
 #   aid <command> -h | --help        Per-command help
 #
 # Flags (shared across subcommands where applicable):
@@ -253,6 +255,7 @@ function script:Show-AidUsage {
             Write-Host '                 [--reply-to <key>] [--correlation-id <id>]'
             Write-Host 'aid chat inbox   --name <n> [--cursor <c>]    messages after your position'
             Write-Host 'aid chat ack     --name <n> --cursor <c>      advance your acknowledged position'
+            Write-Host 'aid chat heartbeat --name <n>                 keep this session from being reaped'
             Write-Host 'aid chat roster  --name <n>                   who else is on this hub, and who is free'
             Write-Host 'aid chat connect --name <n> --target <t>      pull one named agent into YOUR channel'
             Write-Host 'aid chat subscribe --name <n> [--host-timeout <s>] [--follow]'
@@ -366,6 +369,7 @@ function script:Show-AidUsage {
             Write-Host '  aid remove [<tool>... | self]    Remove; no arg = ALL AID from project'
             Write-Host '  aid dashboard start|stop ...     Start/stop the local dashboard'
             Write-Host '  aid projects [list|add|remove|scan]  List/register/unregister/scan AID projects'
+            Write-Host '  aid chat <verb> ...              Talk to another AI coding session'
             Write-Host "  aid <command> -h | --help        Per-command help"
             Write-Host ''
             Write-Host 'Flags: -FromBundle, -Version <v> (add/remove/update only -- pins a release), -Force, -DryRun, -Target, -Verbose'

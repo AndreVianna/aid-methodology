@@ -383,6 +383,26 @@ expected="$(printf '%s\n' ack audit connect evict heartbeat inbox join leave lis
     rename reap retention roster send show subscribe | sort -u | paste -sd'|' -)"
 assert_eq "$verbs" "$expected" \
     "HP19 the plane-verb set is exactly the expected one -- a new verb must be added here deliberately"
+# HP19b -- every dispatched plane verb (plus hook / node) is named in `aid chat -h`.
+# Top-level `aid -h` once shipped without chat at all; this is the same class of miss one layer down.
+chat_help="$(AID_NO_UPDATE_CHECK=1 bash "${REPO_ROOT}/bin/aid" chat -h 2>&1)" || true
+_help_missing=""
+IFS='|' read -r -a _plane_verbs <<< "$verbs"
+for _v in "${_plane_verbs[@]}" hook; do
+    if ! grep -qE "aid chat ${_v}( |$)" <<<"$chat_help"; then
+        _help_missing="${_help_missing} ${_v}"
+    fi
+done
+for _v in "node start" "node stop" "node status"; do
+    if ! grep -qF "aid chat ${_v}" <<<"$chat_help"; then
+        _help_missing="${_help_missing} ${_v}"
+    fi
+done
+if [[ -z "${_help_missing}" ]]; then
+    pass "HP19b every dispatched chat verb is named in aid chat -h"
+else
+    fail "HP19b aid chat -h is missing:${_help_missing}"
+fi
 # HP20 -- THE BOUNDARY IS THE SKILL, NOT THE CLI, and this assertion used to have that backwards.
 #
 # It listed `evict` and `retention` as sentinels for "administrative" and failed if either appeared in
