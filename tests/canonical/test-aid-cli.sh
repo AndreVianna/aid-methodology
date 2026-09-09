@@ -464,6 +464,11 @@ assert_output_not_contains "$OUT" "Exit codes:" "CLI027-N05 general help: no 'Ex
 # General help must contain the short flags hint.
 assert_output_contains "$OUT" "Flags:" "CLI027-N06 general help: has 'Flags:' line"
 assert_output_contains "$OUT" "aid <command> -h" "CLI027-N07 general help: has per-command hint"
+# Public subcommands must appear in general help (chat shipped without this line once).
+for _cmd in status add update remove version dashboard projects chat; do
+    assert_output_contains "$OUT" "aid ${_cmd}" "CLI027-N07b general help lists 'aid ${_cmd}'"
+done
+assert_output_not_contains "$OUT" "__migrate-repo" "CLI027-N07c general help omits the hidden migrate command"
 
 # Per-subcommand -h prints focused help and exits 0.
 run_aid "${CLI027N_HOME}" add -h
@@ -481,6 +486,12 @@ assert_output_contains "$OUT" "aid update" "CLI027-N13 aid update -h shows 'aid 
 run_aid "${CLI027N_HOME}" status -h
 assert_exit_eq "$RC" 0 "CLI027-N14 aid status -h → exit 0"
 assert_output_contains "$OUT" "aid status" "CLI027-N15 aid status -h shows 'aid status'"
+
+run_aid "${CLI027N_HOME}" chat -h
+assert_exit_eq "$RC" 0 "CLI027-N16 aid chat -h → exit 0"
+assert_output_contains "$OUT" "aid chat register" "CLI027-N17 aid chat -h shows register"
+assert_output_contains "$OUT" "aid chat heartbeat" "CLI027-N18 aid chat -h shows heartbeat"
+assert_output_contains "$OUT" "aid chat node start" "CLI027-N19 aid chat -h shows node start"
 
 # ===========================================================================
 # CLI027-O: unknown subcommand → exit 2

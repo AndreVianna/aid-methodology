@@ -17,10 +17,12 @@
 #   aid update [self|all]            Update to latest; inside repo = CLI + all tools; 'self' = CLI only;
 #                                    'all' = bulk-update every registered project (see 'aid update -h')
 #   aid remove [<tool>... | self]    Remove; no arg = ALL AID from project; 'self' = the aid CLI
+#   aid dashboard start|stop ...     Start/stop the local dashboard
 #   aid projects [list|add|remove|scan|help] [path|N] [--local|--shared] [--verbose]
 #                                    List (numbered from 1), register, unregister, or scan;
 #                                    remove accepts a list number (<N>) or a <path>
 #                                    scan: 'aid projects scan -h' for its own flags
+#   aid chat <verb> ...              Talk to another AI coding session (see 'aid chat -h')
 #   aid <command> -h | --help        Per-command help
 #
 # Flags (shared across subcommands where applicable):
@@ -200,6 +202,7 @@ _aid_usage() {
             printf '                 [--reply-to <key>] [--correlation-id <id>]\n'
             printf 'aid chat inbox   --name <n> [--cursor <c>]    messages after your position\n'
             printf 'aid chat ack     --name <n> --cursor <c>      advance your acknowledged position\n'
+            printf 'aid chat heartbeat --name <n>                 keep this session from being reaped\n'
             printf 'aid chat roster  --name <n>                   who else is on this hub, and who is free\n'
             printf 'aid chat connect --name <n> --target <t>      pull one named agent into YOUR channel\n'
             printf 'aid chat subscribe --name <n> [--host-timeout <s>] [--follow]\n'
@@ -315,6 +318,7 @@ _aid_usage() {
             printf '  aid remove [<tool>... | self]    Remove; no arg = ALL AID from project\n'
             printf '  aid dashboard start|stop ...     Start/stop the local dashboard\n'
             printf '  aid projects [list|add|remove|scan]  List/register/unregister/scan AID projects\n'
+            printf '  aid chat <verb> ...              Talk to another AI coding session\n'
             printf '  aid <command> -h | --help        Per-command help\n'
             printf '\n'
             printf 'Flags: --from-bundle, --version <v> (add/remove/update only -- pins a release), --force, --dry-run, --target, --verbose\n'
