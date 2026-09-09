@@ -241,7 +241,7 @@ provides:
 | Update | Brings an installed repository up to the current AID version. |
 | Remove | Cleans AID content back out. |
 | Dashboard | Serves a local web dashboard that reads work-tracking state across repositories. |
-| `aid chat <verb>` | The agent chat surface: `node start|stop|status` for the local hub, the message plane (`register`, `rename`, `open`, `join`, `leave`, `list`, `send`, `inbox`, `ack`), the hub plane (`roster`, `connect`), federation (`peers`), the wake (`subscribe`, `hook`), and the operator verbs (`show`, `audit`, `evict`, `retention`, `reap`). — `aid chat hook --install` is the only command in the product that writes a host tool's configuration, and only user-scope, merged, backed up and confirmed. |
+| `aid chat <verb>` | The agent chat surface: `node start|stop|status` for the local hub, the message plane (`register`, `rename`, `heartbeat`, `open`, `join`, `leave`, `list`, `send`, `inbox`, `ack`), the hub plane (`roster`, `connect`), federation (`peers`), the wake (`subscribe`, `hook`), and the operator verbs (`show`, `audit`, `evict`, `retention`, `reap`). — `aid chat hook --install` is the only command in the product that writes a host tool's configuration, and only user-scope, merged, backed up and confirmed. |
 
 Distribution channels: npm (`packages/npm`), PyPI (`packages/pypi`), and a GitHub release
 bundle. See `infrastructure.md` for the release and version-sync mechanics.

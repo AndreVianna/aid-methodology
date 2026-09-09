@@ -29,6 +29,13 @@ review-criteria:
 > items drained out of `backlog.md` § `Next Release`. `[NEW]` items lead with a feature
 > name; `[CHANGE]` / `[FIX]` are description-only.
 
+## v3.1.1 - 2026-09-09
+
+> **Patch release.** Nothing breaks. `aid -h` now lists `chat`, and `aid chat -h` lists
+> `heartbeat`. Tests fail if a public command or chat verb drops out of help again.
+
+- [FIX] Top-level `aid -h` omitted the `chat` subcommand after it shipped, and `aid chat -h` omitted the `heartbeat` verb. Both are listed now, and tests fail if a public command or chat verb is missing from help.
+
 ## v3.1.0 - 2026-09-05
 
 > **Minor release.** Nothing breaks. It ships **agent chat** — a channel two AI coding sessions can
