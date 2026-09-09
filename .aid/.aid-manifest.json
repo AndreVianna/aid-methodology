@@ -1,10 +1,10 @@
 {
   "format_version": 2,
-  "aid_version": "3.0.0",
+  "aid_version": "3.1.0",
   "installed_at": "2026-06-06T20:01:03Z",
   "tools": {
     "claude-code": {
-      "version": "3.0.0",
+      "version": "3.1.0",
       "installed_at": "2026-06-06T20:01:03Z",
       "paths": [
         ".claude/agents/aid-architect.md",
@@ -576,7 +576,8 @@
         ".claude/skills/aid-update-mvp/SKILL.md",
         ".claude/skills/aid-update-roadmap/SKILL.md",
         ".claude/skills/aid-update-stack/SKILL.md",
-        ".claude/skills/aid-update-testing-strategy/SKILL.md"
+        ".claude/skills/aid-update-testing-strategy/SKILL.md",
+        ".claude/skills/aid-chat/SKILL.md"
       ],
       "root_agent_files": [
         {
@@ -587,7 +588,7 @@
       ]
     },
     "cursor": {
-      "version": "3.0.0",
+      "version": "3.1.0",
       "installed_at": "2026-07-26T17:19:24Z",
       "paths": [
         ".cursor/agents/aid-architect.md",
@@ -953,7 +954,8 @@
         ".cursor/skills/aid-update-mvp/SKILL.md",
         ".cursor/skills/aid-update-roadmap/SKILL.md",
         ".cursor/skills/aid-update-stack/SKILL.md",
-        ".cursor/skills/aid-update-testing-strategy/SKILL.md"
+        ".cursor/skills/aid-update-testing-strategy/SKILL.md",
+        ".cursor/skills/aid-chat/SKILL.md"
       ],
       "root_agent_files": [
         {
