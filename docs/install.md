@@ -713,6 +713,7 @@ aid projects [list|add|remove|scan]
                                  skips a built-in set of heavy/cache/build/IDE/AI-tool/OS directories by
                                  exact basename (case-insensitive), extendable via a user-editable
                                  scan-config.yml seeded beside registry.yml
+aid chat <verb> ...              Talk to another AI coding session (see 'aid chat -h')
 aid <command> -h | --help        Per-command help
 ```
 
