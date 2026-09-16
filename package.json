@@ -13,6 +13,6 @@
     "devDependencies": "Playwright drives the aid-summarize visual-fidelity gate (validate-visuals.mjs). Run `npm run install-browsers` to fetch the browser after `npm install`. See canonical/aid/scripts/summarize/playwright-provisioning.md."
   },
   "devDependencies": {
-    "playwright": "1.62.1"
+    "playwright": "1.63.0"
   }
 }
