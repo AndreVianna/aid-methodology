@@ -100,8 +100,9 @@ a new worktree — creation belongs to the work-starting skills only.
 
 ## State Detection
 
-WARNING: **FILESYSTEM IS THE ONLY SOURCE OF TRUTH.**
-Do NOT rely on memory from previous runs. ALWAYS read the actual files on disk.
+State detection reads the files on disk, every run. Nothing remembered from an
+earlier run or from this conversation counts as state, because the files may
+have changed since.
 
 - No PLAN.md → **FIRST-RUN**
 - PLAN.md exists, grade below minimum or not yet graded → **REVIEW**

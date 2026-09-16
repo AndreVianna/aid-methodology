@@ -21,9 +21,8 @@ Please review .aid/knowledge/ and let us know if there is anything else to consi
 ### Step 3: Process Response
 
 - **[1] Approved:** Add `**User Approved:** yes` to `.aid/knowledge/STATE.md` (the
-  header-blockquote doc-set-level approval line -- untouched by
-  work-003-state-schema; distinct from the KB summary's own `summary_approved`
-  frontmatter scalar, set separately by `/aid-summarize`'s own APPROVAL state).
+  header-blockquote doc-set-level approval line; distinct from the KB summary's own
+  `summary_approved` frontmatter scalar, set separately by `/aid-summarize`'s own APPROVAL state).
   Also set the KB status scalar in the run-state frontmatter (relocated from the
   old header-blockquote `**Status:**` line by task-001/004):
   ```bash

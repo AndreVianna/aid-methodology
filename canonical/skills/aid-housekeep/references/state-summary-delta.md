@@ -6,8 +6,8 @@ It is entered after KB-DELTA CHAINs forward (resume rows 4) when `**KB Stage:**`
 is `passed` or `skipped`. All staleness detection and grading logic belongs to
 `/aid-summarize` — this state adds only a three-way result classification.
 
-⚠️ **FILESYSTEM IS THE ONLY SOURCE OF TRUTH.** Do NOT rely on memory from a
-previous run. Always read actual files on disk.
+State detection reads the files on disk, every run; nothing remembered from an earlier
+run counts as state.
 
 ---
 

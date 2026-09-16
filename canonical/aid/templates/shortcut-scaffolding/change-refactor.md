@@ -3,8 +3,7 @@
 Per-family scaffolding reference for the **`update`** verb (bare `aid-update`
 plus fourteen artifact-suffixed forms -- `create`'s fifteen minus `diagram`,
 which has no `update` counterpart), the **`refactor`**
-verb (bare `aid-refactor` only -- no artifact suffixes; feature-007,
-work-001-lite-aid-skills), and, as a v2.1.0 coverage-gap follow-on, the bare
+verb (bare `aid-refactor` only -- no artifact suffixes), and the bare
 **`remove`** (`aid-remove`), **`deprecate`**
 (`aid-deprecate`), and **`migrate`** (`aid-migrate`) verbs -- none of the three
 takes an artifact suffix. Consulted by the shared engine
@@ -110,7 +109,7 @@ the "unchanged" default on those two sections.
 
 ## `aid-remove` -- CAPTURE
 
-Bare verb, no artifact parameter (v2.1.0 coverage-gap follow-on):
+Bare verb, no artifact parameter:
 
 | Slot | Notes |
 |---|---|
@@ -145,7 +144,7 @@ dependents (genuinely dead code) -- state that explicitly in the delivery stanza
 
 ## `aid-deprecate` -- CAPTURE
 
-Bare verb, no artifact parameter (v2.1.0 coverage-gap follow-on):
+Bare verb, no artifact parameter:
 
 | Slot | Notes |
 |---|---|
@@ -175,7 +174,7 @@ arrives).
 
 ## `aid-migrate` -- CAPTURE
 
-Bare verb, no artifact parameter (v2.1.0 coverage-gap follow-on):
+Bare verb, no artifact parameter:
 
 | Slot | Notes |
 |---|---|

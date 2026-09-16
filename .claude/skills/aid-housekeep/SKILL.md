@@ -56,7 +56,7 @@ Mechanical states auto-chain; only PAUSE-FOR-USER-ACTION and HALT stop the run.*
 
 ---
 
-## Dispatch Protocol (L1+L2+L3 subagent visibility, subagent-visibility-patch)
+## Dispatch Protocol (L1+L2+L3 subagent visibility)
 
 Every subagent dispatch in this skill MUST follow this protocol so the user
 sees mid-wait progress instead of going silent for 10–25+ minutes. The full
@@ -69,14 +69,15 @@ protocol lives in two reference docs; this section is a checklist citing them.
 2. **Read heartbeat config** via
    `bash .claude/aid/scripts/config/read-setting.sh --path traceability.heartbeat_interval --default 1`
    (resolves from `.aid/settings.yml`; default 1; `0` = disabled).
-3. **Pre-create heartbeat file** (always — unconditional, per work-003 traceability):
+3. **Pre-create heartbeat file** (always — unconditional):
    - Pre-create `.aid/.heartbeat/<agent-name>-<unix-ts>.txt`
    - Include `HEARTBEAT_FILE=<path>` + `HEARTBEAT_INTERVAL=Nm` in dispatch prompt with explicit instruction to update during long phases
    - SKIP only if `traceability.heartbeat_interval: 0` (user-explicit opt-out in `.aid/settings.yml`)
 4. **Arm 3 L2 timers as SEPARATE background dispatches** (always — even for short ETAs use minimums 60s/120s/180s; never gate on ETA). Each timer is its OWN `Bash(..., run_in_background=true)` call:
-   - Call A: `sleep <LOW/2 in s> && echo "... <agent> still running (Xm elapsed of ~LOW–HIGH)"` — own background dispatch
-   - Call B: `sleep <LOW in s> && echo "... <agent> at estimated time (LOWm elapsed)"` — own background dispatch
-   - Call C: `sleep <1.5×LOW in s> && echo "⚠️ <agent> EXCEEDED estimate (1.5×LOWm elapsed); consider checking on it or cancelling"` — own background dispatch
+   - Call A: `sleep <min(LOW/2, 270) in s> && echo "... <agent> still running (Xm elapsed of ~LOW–HIGH)"` — own background dispatch
+   - Call B: `sleep <min(LOW, 540) in s> && echo "... <agent> at estimated time (LOWm elapsed)"` — own background dispatch
+   - Call C: `sleep <min(1.5×LOW, 810) in s> && echo "⚠️ <agent> EXCEEDED estimate (1.5×LOWm elapsed); consider checking on it or cancelling"` — own background dispatch
+   - **Keep-warm re-arm:** when the last timer fires and the sub-agent is still running, arm one more `sleep 270 && echo "... <agent> still running (Xm elapsed)"` (own background dispatch), and again on each fire, until the completion notification arrives. Every fire is a request that re-reads the cached context and refreshes its 5-minute prompt-cache TTL; a silent gap over 5 minutes re-writes the whole context at full price.
    - ⚠️ **DO NOT chain timers with `&` inside a single wrapper Bash call.** If you do, the wrapper exits when the last `&` is queued, orphaning the sleeps — their stdout is silently lost and you'll never see the timer fire. Each timer needs its own `run_in_background: true` task so the harness can track and notify on completion.
 
 **During dispatch:**
@@ -90,13 +91,13 @@ protocol lives in two reference docs; this section is a checklist citing them.
 - **Success:** emit `✓ <agent> done in <actual>` with measured time. When the dispatch is
   for a real `task-NNN`, append a `dispatch_log` entry to that task's own state (full
   path: its `STATE.yml`; flat path: `tasks_lifecycle.task-NNN.dispatch_log`) with
-  fields `date`/`agent`/`eta_band`/`actual`/`outcome` -- this is what the work-level
-  Calibration Log / Dispatches views are now DERIVED from at read time
-  (`work-state-template.yml`); there is no longer an independent work-root section to
-  append to directly. When the dispatch is NOT task-scoped (a housekeep-internal
+  fields `date`/`agent`/`eta_band`/`actual`/`outcome` -- the work-level Calibration
+  Log / Dispatches views are derived at read time from these entries
+  (`work-state-template.yml`); there is no work-level section to write. When the
+  dispatch is NOT task-scoped (a housekeep-internal
   cycle, not a `task-NNN`), there is no persisted target at all -- the console
-  narration above is the sole record. Mandatory per work-003 traceability wherever a
-  target exists (never optional, never "if tracked"). Delete heartbeat file.
+  narration above is the sole record. Mandatory wherever a target exists (never
+  optional, never "if tracked"). Delete heartbeat file.
 - **Failure:** emit `✗ <agent> FAILED after <elapsed> (reason: <one-line>)`.
   Decide whether to re-dispatch, fall back, or surface to user. Delete
   heartbeat file.
@@ -112,8 +113,9 @@ protocol lives in two reference docs; this section is a checklist citing them.
 
 ## State Detection
 
-⚠️ **FILESYSTEM IS THE ONLY SOURCE OF TRUTH.**
-Do NOT rely on memory from previous runs. ALWAYS read actual files on disk.
+State detection reads the files on disk, every run. Nothing remembered from an
+earlier run or from this conversation counts as state, because the files may
+have changed since.
 
 Resolve `<STATE_FILE>` to the **project-level housekeep run-state file** under
 `.aid/.temp/` — `/aid-housekeep` is project maintenance, so its run-state does NOT

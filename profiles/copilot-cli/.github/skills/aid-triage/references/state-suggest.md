@@ -56,7 +56,7 @@ with a one-line disclaimer that none confidently matched.
 
 ---
 
-## Case D -- QUESTION (v2.1.0 coverage-gap follow-on; `state-classify.md` Step 0
+## Case D -- QUESTION (`state-classify.md` Step 0
 short-circuited -- `{description}` asks for information, not a change)
 
 Case D hard-routes to `/aid-ask`, the canonical Q&A row. The "canonical names

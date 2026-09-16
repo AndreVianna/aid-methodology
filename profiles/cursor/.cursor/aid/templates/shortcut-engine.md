@@ -158,9 +158,9 @@ always its own catalog row's `default_type` field, not a re-derivation from this
 | create-test / update-test (test authoring) | TEST | each test traces to an acceptance criterion |
 | experiment | RESEARCH | hypothesis -> analyze -> recommend |
 | create-dashboard / update-dashboard (BI view) | IMPLEMENT | source -> visualization -> publish/refresh; a durable BI view is code/config |
-| remove | REFACTOR | delete without changing surviving behavior; dependents/tests/docs updated (structural, not a defect fix; v2.1.0 coverage-gap follow-on) |
-| deprecate | IMPLEMENT | add a warning + migration path; artifact still functions (v2.1.0 coverage-gap follow-on) |
-| migrate | MIGRATE | data/dependency/framework/platform move + rollback plan (non-schema; schema migrations stay create/update-data-model; v2.1.0 coverage-gap follow-on) |
+| remove | REFACTOR | delete without changing surviving behavior; dependents/tests/docs updated (structural, not a defect fix) |
+| deprecate | IMPLEMENT | add a warning + migration path; artifact still functions |
+| migrate | MIGRATE | data/dependency/framework/platform move + rollback plan (non-schema; schema migrations stay create/update-data-model) |
 
 Multi-task shortcuts (e.g. create-data-model -> MIGRATE + IMPLEMENT + TEST) emit
 several tasks at DETAIL, each with one Type (never mixed --
@@ -186,7 +186,7 @@ the grouping in its own file header, the same incremental-growth precedent
 | `update`, `refactor` | `shortcut-scaffolding/change-refactor.md` |
 | `fix` | `shortcut-scaffolding/fix.md` |
 | `experiment` | `shortcut-scaffolding/test-experiment.md` (test AUTHORING -> create.md/change-refactor.md `test` artifact; test RUNNING -> hand-authored aid-test + kind-siblings, work-005) |
-| `remove`, `deprecate`, `migrate` | `shortcut-scaffolding/change-refactor.md` (v2.1.0 coverage-gap follow-on) |
+| `remove`, `deprecate`, `migrate` | `shortcut-scaffolding/change-refactor.md` |
 
 `query` (the `aid-ask` `repurpose: true` row) is deliberately absent from this table
 -- that row never enters this engine at all (its doorway is the hand-authored,
@@ -643,7 +643,7 @@ description, scoped to the full §9 Acceptance Criteria set. Multi-task shortcut
   State-write mandate, binding whoever later executes the task) carries through
   automatically -- it is seeded from `task-detail-template.md` verbatim, not
   re-authored here; no extra step is needed for a shortcut-scaffolded task to
-  carry it (work-003-state-schema task-009).
+  carry it.
 
 **c. Writes NO execution graph.** Each DETAIL's `**Depends on:**` field IS the graph,
 so there is nothing left to author -- and a stored copy could disagree with the fields

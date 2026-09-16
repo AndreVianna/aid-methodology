@@ -1,11 +1,11 @@
 # Shortcut Scaffolding: document
 
-**Genre-structures reference for the document family (work-005 reframe of feature-010).**
-`document` is now a create/update **artifact**, not an engine verb: it is served by the
+**Genre-structures reference for the document family.**
+`document` is a create/update **artifact**, not an engine verb: it is served by the
 hand-authored collapse skills `aid-create-document` / `aid-update-document` (plus the
 genre kind-siblings `aid-document-decision`/`-architecture`/`-guideline`/`-standard`/
 `-runbook`/`-tutorial`/`-changelog`, and the `aid-create-diagram` format sibling). This
-file is **no longer consulted by the shared engine** -- instead the hand-authored
+file is **not read by the shared engine**; the hand-authored
 `aid-create-document`/`aid-update-document` bodies read it for the per-genre
 document **structure** (ADR, C4/arc42, runbook, tutorial, changelog, Diataxis, ...) they
 produce. Free-form prose, like any other `state-*.md` reference doc -- read for judgment,
@@ -39,8 +39,7 @@ the KB, so those are never capture slots.
 | `aid-document-changelog` | version; headline changes; breaking changes |
 
 **Escalation.** Same minimal-escalation discipline the engine's Capture-Minimization
-Rules define (the hand-authored collapse body applies it -- the engine no longer runs
-this family): escalate to the one combined CAPTURE question only when the subject or the
+Rules define (applied by the hand-authored collapse body, not the engine): escalate to the one combined CAPTURE question only when the subject or the
 archetype-specific fields above cannot be made concrete from `{description}` + KB context -- for `aid-document` this most often
 means which shape (Diataxis type vs. status report) is genuinely ambiguous.
 
@@ -91,7 +90,6 @@ stays here, as the bare `aid-document` shape.
 
 - `.claude/skills/aid-create-document/SKILL.md` (+ `aid-update-document`) -- the
   hand-authored collapse bodies that read this file for per-genre document structure
-  (work-005; `document` is no longer engine-consulted)
 - `.claude/aid/templates/shortcut-scaffolding/analyze-report.md § Ownership
   boundary` -- where an analytical report routes instead
 - `.claude/skills/aid-execute/references/task-type-rules.md ## DOCUMENT` -- the

@@ -364,10 +364,9 @@ Write initial fields to `.aid/knowledge/STATE.md` `## Knowledge Summary Status`:
 **Writeback Status:** pending
 ```
 
-Also default the approval scalar in the frontmatter block (relocated by
-work-003-state-schema task-001/004 -- `summary_approved` replaces the OLD
-`**User Approved:** no` bold line that used to live in this same block; a fresh
-GENERATE is never pre-approved):
+Also default the approval scalar (`summary_approved`) in the frontmatter block -- the summary's
+approval lives there, never as a `**User Approved:**` bold line in the body (that literal is the
+doc-set-level approval signal, which `/aid-discover` owns). A fresh GENERATE is never pre-approved:
 
 ```bash
 bash .claude/aid/scripts/summarize/writeback-state.sh --set summary_approved no

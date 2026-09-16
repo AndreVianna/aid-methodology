@@ -50,7 +50,7 @@ the real helper. Never create a new worktree — creation belongs to the work-st
 
 ## State Detection
 
-⚠️ **FILESYSTEM IS THE ONLY SOURCE OF TRUTH.** Always read actual files on disk.
+State detection reads the files on disk, every run; nothing remembered from an earlier run counts as state.
 
 - No `deliveries/delivery-NNN/tasks/task-NNN/DETAIL.md` exists under `.aid/works/{work}/` → **FIRST-RUN**
 - At least one `deliveries/delivery-NNN/tasks/task-NNN/DETAIL.md` exists → **REVIEW**

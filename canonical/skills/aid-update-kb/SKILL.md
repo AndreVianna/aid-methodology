@@ -287,13 +287,16 @@ protocol lives in two reference docs; this section is a checklist citing them.
 2. **Read heartbeat config** via
    `bash canonical/aid/scripts/config/read-setting.sh --path traceability.heartbeat_interval --default 1`
    (resolves from `.aid/settings.yml`; default 1; `0` = disabled).
-3. **Pre-create heartbeat file** (always -- unconditional, per work-003 traceability):
+3. **Pre-create heartbeat file** (always -- unconditional):
    - Pre-create `.aid/.heartbeat/<agent-name>-<unix-ts>.txt`
    - Include `HEARTBEAT_FILE=<path>` + `HEARTBEAT_INTERVAL=Nm` in dispatch prompt
    - SKIP only if `traceability.heartbeat_interval: 0` (user-explicit opt-out)
 4. **Arm 3 L2 timers as SEPARATE background dispatches** (always -- even for short
    ETAs use minimums 60s/120s/180s; never gate on ETA). Each timer is its OWN
    `Bash(..., run_in_background=true)` call.
+   Intervals are capped at 270 s / 540 s / 810 s, and a further 270 s timer is re-armed on
+   each fire while the sub-agent still runs -- every fire refreshes the orchestrator's 5-minute
+   prompt-cache TTL; a silent gap over 5 minutes re-writes the whole context at full price.
 
 **References:**
 
@@ -305,8 +308,9 @@ protocol lives in two reference docs; this section is a checklist citing them.
 
 ## State Detection
 
-**FILESYSTEM IS THE ONLY SOURCE OF TRUTH.**
-Do NOT rely on memory from previous runs. ALWAYS read actual files on disk.
+State detection reads the files on disk, every run. Nothing remembered from an
+earlier run or from this conversation counts as state, because the files may
+have changed since.
 
 Resolve `<STATE_FILE>` to the project-level update-kb run-state file under
 `.aid/.temp/` (inside the worktree Pre-flight entered). The file is

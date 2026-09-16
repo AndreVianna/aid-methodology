@@ -187,8 +187,7 @@ See schema doc for: severity enum, status enum, status lifecycle across cycles, 
 
 ## File Writing
 
-**Do NOT use the Write tool to create the ledger — it has a known bug in background subagents**
-(and this agent is not granted Write). Use Bash with a heredoc instead.
+Write the ledger with Bash (a heredoc). This agent has no Write tool.
 
 **`cat >` overwrites the whole file, so the heredoc body MUST be the COMPLETE ledger** — the
 header row, plus EVERY prior row (with its Status updated for this cycle), plus the new rows.

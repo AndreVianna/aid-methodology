@@ -4,8 +4,7 @@ The engine driver for the seasoned-analyst interview: one fixed opener (D1) plus
 deterministic five-step next-move selector that runs every subsequent turn (D2). This
 is NOT a question list -- it is an adaptive analyst. Three parameters supplied by the
 caller let feature-003 (greenfield seed authoring) CONSUME this engine without
-re-implementing it (D3). The standalone `/aid-triage` router (feature-014,
-work-001-lite-aid-skills) reuses the D1 opener's reflect-back-turn UX shape as a
+re-implementing it (D3). The standalone `/aid-triage` router reuses the D1 opener's reflect-back-turn UX shape as a
 precedent, not as a live three-parameter consumer -- see "Consumption Contract" below.
 
 **Audience.** Two readers at once: a junior maintainer learning how the interview
@@ -314,10 +313,8 @@ seed-to-requirements coherence mechanism -- those are feature-003's scope. The e
 only surfaces a coherence conflict it notices (gap rank 1) and routes it to
 capture-and-defer via Move 9.
 
-**The in-skill guided-triage consumer has been removed.** `aid-describe` no longer hosts
-a TRIAGE state (work-001-lite-aid-skills feature-013) -- full-vs-lite routing has left this
-skill entirely; `aid-describe` now runs the full-path interview only. The standalone
-`/aid-triage` router (feature-014, work-001-lite-aid-skills) is the engine's external
+**`aid-describe` runs the full-path interview only**; full-vs-lite routing belongs to the
+standalone `/aid-triage` router. That router is the engine's external
 reusability precedent for the reflect-back turn: it reuses the D1 opener's UX shape (one
 fixed "what + why" example-anchored capture, `Suggested:`/`Why:` non-optional) as a
 one-shot single-turn capture, but it does NOT run the adaptive loop -- it has no gap

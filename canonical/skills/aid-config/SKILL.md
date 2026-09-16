@@ -54,7 +54,7 @@ If any value matches a `<placeholder>` pattern (e.g., `<project-name>`), append 
 
 ### Step 3: Suggest commands for unset values + the general update form
 
-After the table, ALWAYS print the line:
+After the table, print the line:
 ```
 Run /aid-config <key> to update any value.
 ```

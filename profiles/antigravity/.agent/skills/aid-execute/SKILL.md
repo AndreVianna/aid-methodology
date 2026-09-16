@@ -158,8 +158,8 @@ aid-execute  ▸ you are here
 
 ## State Detection
 
-⚠️ **FILESYSTEM IS THE ONLY SOURCE OF TRUTH.** Never assume or infer state from
-conversation history. Read the task's `State` from
+State detection reads the files on disk, every run; nothing inferred from conversation
+history counts as state. Read the task's `State` from
 `deliveries/delivery-NNN/tasks/task-NNN/STATE.yml`'s top-level `state` key (full path) —
 or, on the flat path, the work-root `STATE.yml`'s `tasks_lifecycle` entry for `task-NNN`:
 
@@ -229,8 +229,8 @@ When a state completes, route by its `**Advance:**` type (per [`state-machine-ch
 
 ## Dispatch Protocol
 
-This skill follows the L1+L2+L3 subagent-visibility protocol (work-003 traceability —
-heartbeats, ETA timers, calibration). The full checklist lives in
+This skill follows the L1+L2+L3 subagent-visibility protocol (heartbeats, ETA timers,
+calibration). The full checklist lives in
 `.agent/aid/templates/dispatch-protocol-checklist.md`; read it before any subagent
 dispatch in this skill.
 

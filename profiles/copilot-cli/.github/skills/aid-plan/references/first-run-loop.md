@@ -146,7 +146,7 @@ silent (no output) if no issue-tracker connector is catalogued.
 - `{{ARTIFACTS}}` = the deliverable section just appended to `PLAN.md` + the SPECs of the features it assigns
 - `{{CONTEXT}}` = `delivery-NNN of work-NNN just written; preceding deliveries: delivery-NNN..MMM (titles).`
 
-Include in the prompt:
+Include in the brief file (not in the dispatch prompt — `reviewer-dispatch.md` § Dispatch by path):
 - **Ledger lifecycle:** "Append new findings as rows with Status: Pending to
   `{{LEDGER}}`. Read the existing file first if it exists.
   Output per `.github/aid/templates/reviewer-ledger-schema.md` — ONE table, no narrative."

@@ -30,10 +30,8 @@ Use `AskUserQuestion` to ask:
 > - **Changes needed** — describe what to change, transition to FIX
 
 The summary's approval scalar (`summary_approved`) and its last-run date (`last_summary`)
-live in `.aid/knowledge/STATE.md`'s leading YAML frontmatter block (relocated by
-work-003-state-schema task-001/004 from the old `## Knowledge Summary Status` ad hoc
-`**User Approved:** yes (date)` bold line -- the exact table-row-vs-bold-line misparse
-this delivery exists to fix). Write via the surgical frontmatter helper (never hand-edit
+live in `.aid/knowledge/STATE.md`'s leading YAML frontmatter block. Write via the
+surgical frontmatter helper (never hand-edit
 the bold line again):
 
 On approval:

@@ -19,7 +19,7 @@ last_summary: "{YYYY-MM-DD or --}"
 > **Source:** aid-config (creates) · aid-discover + aid-summarize (update)
 > **User Approved:** yes | no
 
-This is the single state file for the **Discovery area** — persistent project knowledge: the Knowledge Base + the visual summary. One STATE.md per project's `.aid/knowledge/` directory. Absorbs what used to be `DISCOVERY-STATE.md` + `SUMMARY-STATE.md`.
+This is the single state file for the **Discovery area** — persistent project knowledge: the Knowledge Base + the visual summary. One STATE.md per project's `.aid/knowledge/` directory.
 
 > **Project-level settings** (minimum grade, heartbeat interval, max parallel tasks,
 > etc.) live in `.aid/settings.yml`, not here. STATE.md is for run-state only —
@@ -49,8 +49,8 @@ This is the single state file for the **Discovery area** — persistent project 
 
 <!-- The summary's approval scalar (`summary_approved`) and its last-run date
      (`last_summary`) live in the YAML frontmatter block at the top of this file --
-     the single scalar there replaces the table-row-vs-bold-line dual representation
-     that used to cause a silent misparse. The remaining fields below are non-approval
+     the single scalar there is the only representation of approval state. The
+     remaining fields below are non-approval
      run-state (profile/theme/grades/output) and stay here as markdown body. -->
 
 | Field | Value |

@@ -2,8 +2,7 @@
 
 Per-family scaffolding reference for the **`test`** verb (bare `aid-test` plus
 the three test-kind forms `-security`, `-performance`, `-data-quality`) and the
-**`experiment`** verb (bare `aid-experiment` only; feature-009,
-work-001-lite-aid-skills). Consulted by the shared engine
+**`experiment`** verb (bare `aid-experiment` only). Consulted by the shared engine
 (`.claude/aid/templates/shortcut-engine.md § Family Scaffolding Consult`) at
 CAPTURE, SPEC, and DETAIL for every `{verb, artifact}` whose `verb` field
 resolves to `test` or `experiment`. No `aid-test-*`/`aid-experiment` row carries

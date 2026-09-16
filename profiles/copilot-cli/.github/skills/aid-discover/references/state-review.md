@@ -126,6 +126,15 @@ Update the brief's `DELIVERABLES` block so the ledger path reads:
 (each mandate writes to its own scratch ledger; the brief is rendered once and the
 mandate-specific ledger path is substituted per dispatch).
 
+**Package to a file, dispatch by path.** Write each mandate's package — the rendered brief plus
+that mandate's `reviewer-prompt-<mandate>.md` body — to
+`.aid/.temp/review-pending/briefs/{{SCOPE}}-<mandate>.md` (discovery has no work folder, so the
+brief lives beside its scratch ledger), and dispatch with the pointer shape from
+`.github/aid/templates/reviewer-dispatch.md` § Dispatch by path: the `Agent` prompt carries the
+brief path, the mandate's ledger path and the heartbeat parameters only. Inlining the four
+packages was measured on this repository's KB at ~35k output tokens and five minutes of
+sequential streaming, with the reviewers launching 80 seconds apart; by path they launch together.
+
 **Branch on `review.panel`**
 
 Read the `review.panel` parameter supplied by the orchestrator from
@@ -557,9 +566,8 @@ Update `.aid/knowledge/STATE.md` `## Review History` with the new entry. Record 
 grade computed by `grade.sh`, not any grade mentioned in the mandate reviewers' prose.
 
 Also record this cycle's grade + review date in the KB run-state frontmatter (the
-`kb_grade`/`last_kb_review` scalars, relocated from the old header-blockquote
-`**Current Grade:**`/`**Last KB Review:**` lines by work-003-state-schema task-001/004
-— surgical frontmatter rewrite, `## Review History` and the rest of the body untouched):
+`kb_grade`/`last_kb_review` scalars — surgical frontmatter rewrite, `## Review History`
+and the rest of the body untouched):
 
 ```bash
 bash .github/aid/scripts/summarize/writeback-state.sh --set kb_grade "{grade}" --set last_kb_review "$(date -u +%Y-%m-%d)"

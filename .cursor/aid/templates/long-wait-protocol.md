@@ -5,8 +5,8 @@ MUST follow this protocol so the user sees steady progress signal instead of
 going silent for 10–25 minutes between the
 opening `▶` and the completion notification.
 
-This protocol is the L2 layer of the subagent-visibility scheme introduced in
-the `subagent-visibility-patch`. L1 = honest ETAs (see `rough-time-hints.md`);
+This protocol is the L2 layer of the subagent-visibility scheme.
+L1 = honest ETAs (see `rough-time-hints.md`);
 L2 = this doc (orchestrator-side check-in timers); L3 = subagent self-reporting
 via heartbeat file (see `subagent-heartbeat-protocol.md`).
 
@@ -37,21 +37,29 @@ use the HIGHEST ETA from the parallel set (tail latency).
 ### Step 2 — Emit opening bracket + arm 3 timers
 
 ```
-▶ <agent-name> starting (~<low>–<high>) — arming check-ins at <low/2>, <low>, <1.5×low>
+▶ <agent-name> starting (~<low>–<high>) — arming check-ins at <a>, <b>, <c> (each gap ≤ 4.5 min)
 ```
 
 Then arm THREE backgrounded shell timers (using `run_in_background: true`):
 
 ```bash
-sleep <low/2 in seconds> && echo "... <agent-name> still running (<low/2>m elapsed of ~<low>–<high>)"
-sleep <low in seconds>   && echo "... <agent-name> at estimated time (<low>m elapsed of ~<low>–<high>; awaiting completion)"
-sleep <1.5×low in seconds> && echo "⚠️  <agent-name> EXCEEDED estimate (<1.5×low>m elapsed of ~<low>–<high>); consider checking on it or cancelling"
+sleep <a = min(low/2, 4.5 min) in seconds>    && echo "... <agent-name> still running (<a>m elapsed of ~<low>–<high>)"
+sleep <b = min(low, 9 min) in seconds>        && echo "... <agent-name> at estimated time (<b>m elapsed of ~<low>–<high>; awaiting completion)"
+sleep <c = min(1.5×low, 13.5 min) in seconds> && echo "⚠️  <agent-name> EXCEEDED estimate (<c>m elapsed of ~<low>–<high>); consider checking on it or cancelling"
 ```
 
 Each timer fires independently of the others and of the subagent. If the
 subagent completes BEFORE a timer fires, the timer fires harmlessly and the
 orchestrator includes it in narration as historical context ("subagent
 completed at 4m; the 5m check-in fired afterward").
+
+**Keep-warm re-arm.** When the last timer fires and the subagent is still running, arm one
+more 4.5-minute timer (`sleep 270 && echo "... <agent-name> still running (<elapsed>m)"`), and
+again on each fire, until the completion notification arrives. Every fire is a request that
+re-reads the orchestrator's cached context and refreshes its 5-minute prompt-cache TTL; a silent
+gap over 5 minutes re-writes the whole context at full price (measured on a 175k-token
+context: $2.18 for the re-write versus about $0.04 for a cache-read wake-up). The 4.5-minute cap
+on every interval exists for the same reason.
 
 ### Step 3 — Dispatch the subagent
 
@@ -80,10 +88,10 @@ Emit the closing bracket with ACTUAL elapsed time and log it for L1 calibration:
 When the dispatch is for a real `task-NNN`, append a `dispatch_log` entry to
 that task's own state (full path: its `STATE.yml`; flat path:
 `tasks_lifecycle.task-NNN.dispatch_log`) so the next refresh of
-`rough-time-hints.md` has a data point -- this is what the work-level
-Calibration Log / Dispatches views are now DERIVED from at read time
-(`work-state-template.yml`); there is no longer an independent work-root
-section to add a row to directly. When the dispatch is NOT task-scoped,
+`rough-time-hints.md` has a data point -- the work-level Calibration Log /
+Dispatches views are derived at read time from these entries
+(`work-state-template.yml`); there is no work-level section to write. When
+the dispatch is NOT task-scoped,
 there is no persisted target at all -- the actual-elapsed line above is the
 sole record.
 
@@ -99,7 +107,7 @@ explicit failure), emit:
 …and decide based on context whether to re-dispatch, fall back to manual work,
 or surface to the user.
 
-## Example (from work-003 cycle-12 aid-reviewer dispatch)
+## Example (aid-reviewer dispatch)
 
 ```
 [Look up: aid-reviewer ETA = 18–25 min from rough-time-hints.md]
@@ -124,6 +132,7 @@ the subagent runs LONGER than expected. The three-tier ladder (ETA/2, ETA,
 - ETA/2 = "I haven't gone silent on you"
 - ETA = "the estimate is exhausted; subagent should be wrapping up"
 - 1.5×ETA = "something is wrong; investigate"
+- every gap ≤ 4.5 min = "the cached context is still warm" (see Keep-warm re-arm above)
 
 This catches runaway / hung subagents without requiring the orchestrator to
 actively poll (which is hard in a pure-skill-body design).
@@ -132,7 +141,7 @@ actively poll (which is hard in a pure-skill-body design).
 
 - **Always arm timers, regardless of ETA.** Use sensible minimums for short
   ETAs (e.g., 60s / 120s / 180s for a < 3min dispatch). Mid-wait check-ins
-  are unconditional per the work-003 traceability rule — never gate on ETA
+  are unconditional — never gate on ETA
   threshold.
 - **Always emit `✗` on failure.** A silent failure (no `✓`, no `✗`) is worse
   than the original silent wait — it suggests the subagent is still running.

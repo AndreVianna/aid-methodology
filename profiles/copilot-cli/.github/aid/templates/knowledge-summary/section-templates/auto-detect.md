@@ -9,13 +9,9 @@ notes: "Retired as project-type profile selector. Kept as a kb-category renderin
 
 # `kb-category` Rendering Hints
 
-> **Status:** Project-type profile auto-detection is **retired** (feature-015, Change 1).
-> This file previously held scoring rules for detecting `web-app`, `cli`, `library`,
-> `microservices`, `data-pipeline`, and `agentic-pipeline` project types. Those rules
-> are replaced by the doc-set/domain-driven section derivation in `state-profile.md`.
->
-> What remains is **`kb-category`-keyed rendering guidance** for the GENERATE step —
-> how to format each section by its tier, not by project type.
+> This file holds **`kb-category`-keyed rendering guidance** for the GENERATE step —
+> how to format each section by its tier. Section derivation is doc-set/domain-driven
+> (`state-profile.md`); there is no project-type detection.
 
 ---
 

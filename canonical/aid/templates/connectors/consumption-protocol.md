@@ -76,8 +76,7 @@ that exactly like "no relevant MCP connector found" (Step 2 of the seam recipe a
 silently, no error. Readers/dashboard ignore the field entirely when absent (backward-compatible;
 no required-field semantics change anywhere it is added).
 
-**Where it lives, per level** (coordinate with the in-flight `work-003-state-schema` frontmatter
-conventions — these are the same frontmatter blocks that work touches):
+**Where it lives, per level**:
 
 | Level | Carrier | Field |
 |---|---|---|

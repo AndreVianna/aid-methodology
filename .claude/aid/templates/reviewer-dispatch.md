@@ -120,6 +120,8 @@ column, in full. Only the HUNT half gains regions, because only the HUNT half wa
 expensive one.
 
 The reviewer MUST NOT open any file not listed here, except to:
+- Read its own brief file — the path named in the dispatch prompt is the dispatch package, not an
+  artifact under review
 - Resolve a citation reference (e.g., a docfile cites `path/to/foo.sh:42` — the
   reviewer may open `foo.sh` to verify the citation but does not grade `foo.sh`)
 - Look up a named rubric definition
@@ -399,12 +401,30 @@ fi
 
 <render the brief into $brief>
 bash tests/review-cost-meter.sh record --task <task-or-scope> --cycle <N> --brief "$brief"
-<dispatch the reviewer with the contents of $brief>
+<dispatch the reviewer with a POINTER to $brief — see § Dispatch by path below>
 ```
 
 **The preflight is an addition, not a substitution.** It runs *ahead of* the render and the
 metering; it replaces neither. All three components of the mandate above — render to a file, record
 from that same file, dispatch from that same file — still stand exactly as written.
+
+**Dispatch by path, not by content.** The `Agent` prompt names the brief file; it does not
+carry the brief's text. The reviewer's first action is to read that file. The pointer shape:
+
+```
+Read your brief at <brief path> before doing anything else — it is the complete dispatch
+package for this review (scope, artifacts, criteria pointers, ledger rules, deliverables).
+Scope: <scope>, cycle <N>. Ledger: <ledger path>.
+HEARTBEAT_FILE=<path> HEARTBEAT_INTERVAL=<N>m
+```
+
+The reason is cost and parallelism, measured on a four-mandate panel over this repository's own
+KB: inlining the four briefs made the dispatch turn emit ~35k output tokens (about $1.77 at the
+orchestrator's rates) and stream for five minutes, so the four reviewers launched 80 seconds apart
+instead of together — and the orchestrator's prompt cache lapsed during that turn, re-writing a
+175k-token context for $2.18. Read by the reviewer from disk, the same brief costs a fraction of a
+cent. The file the reviewer reads is still the file the meter recorded, so inspectability is
+unchanged.
 
 **It fails, it does not warn.** A warning on the cycle-1 case would leave the leak open, because a
 warning is satisfiable by ignoring it and the leftover file is still there for the reviewer to
@@ -439,7 +459,7 @@ doing nothing will be satisfied by doing nothing; binding the write to the artif
 already produces is what closes it.
 
 **Inspectability requirement:** the rendered brief is logged with the dispatch
-record so it can be inspected after the fact (per work-003 traceability) — satisfied by the
+record so it can be inspected after the fact — satisfied by the
 same file, rather than by a second artifact that could drift from it.
 
 ## One-off reviews

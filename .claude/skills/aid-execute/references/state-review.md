@@ -24,8 +24,7 @@ runs — this is a fast filter only.
 
 **Before dispatching, print:** `[Step 1.5] Dispatching aid-reviewer (quick-check, Small tier) for quick-check → subagent_type=aid-reviewer`.
 
-Dispatch metadata is narrated via the closing `✓ ... done` bracket below (per work-003
-traceability rule); this task's own `dispatch_log` entry (full path: this task's
+Dispatch metadata is narrated via the closing `✓ ... done` bracket below (always); this task's own `dispatch_log` entry (full path: this task's
 `STATE.yml`; flat path: `tasks_lifecycle.task-NNN.dispatch_log`) is what the work-level
 Calibration Log / Dispatches views derive from at read time.
 
@@ -42,8 +41,10 @@ Dispatch the `aid-reviewer` agent with `subagent_type: aid-reviewer` at **Small 
 Then append the quick-check-specific prompt below.
 
 The brief carries the universal rubric pointer (`.claude/aid/templates/grading-rubric.md`)
-and the OOS policy. Pass the rendered brief + the quick-check prompt as a single
-dispatch.
+and the OOS policy. Write the rendered brief + the quick-check prompt below into the brief FILE
+(`reviewer-dispatch.md` § Render the brief TO A FILE) and dispatch with the pointer shape from
+`reviewer-dispatch.md` § Dispatch by path — the `Agent` prompt names the brief path, the ledger
+path and the heartbeat parameters, never the brief's contents.
 
 **Reviewer prompt (quick-check mode):**
 
@@ -189,6 +190,4 @@ must not skip its own write on the assumption "the orchestrator will do it.")
 > dispatches the full reviewer, computes the grade via `grade.sh`, and runs
 > the FIX loop. This separation is the entire point of FR2.
 >
-> The historical per-task grade loop (REVIEW Grade → Present/Route → FIX → back
-> to REVIEW) was removed in the work-001 recovery; its function moved to
-> `state-delivery-gate.md`.
+> Per-task grading and the FIX loop live in `state-delivery-gate.md`, not here.
