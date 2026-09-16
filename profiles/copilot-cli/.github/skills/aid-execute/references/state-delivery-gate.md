@@ -158,8 +158,7 @@ Large). Clean context — reviewer must NOT inherit any executor working notes.
 **Before dispatching, print:**
 `[DELIVERY-GATE Step 2] Dispatching aid-reviewer (gate, {tier} tier) → subagent_type=aid-reviewer`
 
-Dispatch metadata is narrated via the closing `✓ ... done` bracket (per work-003
-traceability rule — never optional); a delivery-level gate reviewer dispatch has no
+Dispatch metadata is narrated via the closing `✓ ... done` bracket (never optional); a delivery-level gate reviewer dispatch has no
 `task-NNN` of its own, so unlike a per-task dispatch there is no `dispatch_log` entry
 for it to land in — the work-level Calibration Log / Dispatches views are DERIVED
 solely from per-task `dispatch_log` entries (`work-state-template.yml`).
@@ -382,7 +381,7 @@ delivery Done.
 ### 6a: Build the Delivery Gate Issue List
 
 Reviewer Tier / Grade / Timestamp are frontmatter-zone top-level scalars
-(`gate_tier`/`gate_grade`/`gate_timestamp`, work-003-state-schema task-001/004).
+(`gate_tier`/`gate_grade`/`gate_timestamp`).
 Complexity Score and Cycles are **not persisted** to `STATE.yml` at all -- they were
 console-only values from Step 1 (SCORE) and this loop's own cycle counter, and the
 current writer (`writeback-state.sh --block`) parses and stores only the Issue List
@@ -446,8 +445,7 @@ the per-delivery `delivery_state` key. Since we already advanced `delivery_state
 to Done in step 6b-2, the dashboard reader will reflect `Done`
 in the work-level view automatically. No additional writeback is needed here.
 
-_(Previously this step wrote a "Status: Done" row to the work STATE.md; under the
-hierarchical layout, the delivery's own `delivery_state` key is the authoritative source.)_
+The delivery's own `delivery_state` key is the authoritative source; no work-level row is written.
 
 ### 6e: Delete Ledger
 

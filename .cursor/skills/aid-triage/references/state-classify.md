@@ -10,7 +10,7 @@ target).
 
 ---
 
-## Step 0: QUESTION short-circuit (v2.1.0 coverage-gap follow-on)
+## Step 0: QUESTION short-circuit
 
 Before inferring `workType` (Step 1), check whether `{description}` is itself
 **a question about the project** rather than a request to change something --
@@ -99,11 +99,11 @@ concluding "no match"):
 | `workType` | Groups to check first |
 |------------|------------------------|
 | `bug-fix` | G6 (`aid-fix`) |
-| `refactor` | G5 (`aid-update[-artifact]`, `aid-refactor`), plus (v2.1.0 coverage-gap follow-on) G5's `aid-remove`, `aid-deprecate`, `aid-migrate`; G11 (`aid-review`, `aid-research`) |
+| `refactor` | G5 (`aid-update[-artifact]`, `aid-refactor`, `aid-remove`, `aid-deprecate`, `aid-migrate`); G11 (`aid-review`, `aid-research`) |
 | `new-feature` | G4 (`aid-create[-artifact]`), G3 (`aid-prototype[-ui]`), G7 (`aid-test*`, `aid-experiment`), G8 (`aid-document[-artifact]`), G11 (`aid-report`, `aid-review`, `aid-research`) |
 
 (`aid-remove`/`aid-deprecate`/`aid-migrate` and `aid-review`/`aid-research` are
-the v2.1.0 coverage-gap follow-on rows -- G5 and G11 per
+G5 and G11 rows per
 `shortcut-catalog.yml`; widening these two narrow-first hints is the only
 change this follow-on makes here. The intent-match itself already reads every
 canonical catalog row regardless of this table -- narrowing only decides which

@@ -287,7 +287,7 @@ protocol lives in two reference docs; this section is a checklist citing them.
 2. **Read heartbeat config** via
    `bash .codex/aid/scripts/config/read-setting.sh --path traceability.heartbeat_interval --default 1`
    (resolves from `.aid/settings.yml`; default 1; `0` = disabled).
-3. **Pre-create heartbeat file** (always -- unconditional, per work-003 traceability):
+3. **Pre-create heartbeat file** (always -- unconditional):
    - Pre-create `.aid/.heartbeat/<agent-name>-<unix-ts>.txt`
    - Include `HEARTBEAT_FILE=<path>` + `HEARTBEAT_INTERVAL=Nm` in dispatch prompt
    - SKIP only if `traceability.heartbeat_interval: 0` (user-explicit opt-out)
@@ -305,8 +305,9 @@ protocol lives in two reference docs; this section is a checklist citing them.
 
 ## State Detection
 
-**FILESYSTEM IS THE ONLY SOURCE OF TRUTH.**
-Do NOT rely on memory from previous runs. ALWAYS read actual files on disk.
+State detection reads the files on disk, every run. Nothing remembered from an
+earlier run or from this conversation counts as state, because the files may
+have changed since.
 
 Resolve `<STATE_FILE>` to the project-level update-kb run-state file under
 `.aid/.temp/` (inside the worktree Pre-flight entered). The file is

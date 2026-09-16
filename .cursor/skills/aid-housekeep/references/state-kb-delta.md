@@ -23,8 +23,8 @@ runs Steps 5-6 (read-back + gate). Resume is disk-driven: read
 `.aid/knowledge/STATE.md` for the synthesized entry's `**Status:**` and for a
 fresh `**User Approved:**` to know which half to run.
 
-WARN **FILESYSTEM IS THE ONLY SOURCE OF TRUTH.** Do NOT rely on memory from a
-previous run. Always read the actual files on disk.
+State detection reads the files on disk, every run; nothing remembered from an earlier
+run counts as state.
 
 ---
 
@@ -712,9 +712,8 @@ On re-entry, re-read `.aid/knowledge/STATE.md` (filesystem = source of truth):
 
 - `/aid-discover`'s targeted re-entry flips the synthesized entry's
   `**Status:**` to `Answered` and resets the `kb_grade` frontmatter scalar to
-  `Pending` (`bash .cursor/aid/scripts/summarize/writeback-state.sh --set kb_grade Pending`
-  -- relocated from the old header-blockquote `**Current Grade:**` line by
-  work-003-state-schema task-001/004), so a fresh REVIEW runs; on APPROVAL it
+  `Pending` (`bash .cursor/aid/scripts/summarize/writeback-state.sh --set kb_grade Pending`),
+  so a fresh REVIEW runs; on APPROVAL it
   writes `**User Approved:** yes` with a fresh date
   (`aid-discover/references/state-approval.md`).
 - Check that `**User Approved:** yes` carries a date **newer than this run's

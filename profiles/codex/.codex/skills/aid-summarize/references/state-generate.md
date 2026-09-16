@@ -364,9 +364,7 @@ Write initial fields to `.aid/knowledge/STATE.md` `## Knowledge Summary Status`:
 **Writeback Status:** pending
 ```
 
-Also default the approval scalar in the frontmatter block (relocated by
-work-003-state-schema task-001/004 -- `summary_approved` replaces the OLD
-`**User Approved:** no` bold line that used to live in this same block; a fresh
+Also default the approval scalar (`summary_approved`) in the frontmatter block (a fresh
 GENERATE is never pre-approved):
 
 ```bash

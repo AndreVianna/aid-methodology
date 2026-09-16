@@ -6,13 +6,11 @@
 > - **Bulk mode** — reconciles the *whole* declared set `D` (this cycle's tool declarations)
 >   against the *whole* persisted set `P` (what is on disk): `REMOVE = P \ D`. Called by
 >   `.codex/skills/aid-discover/references/state-elicit.md` Step E2, once per ELICIT cycle,
->   after that step resolves `D`. This is `aid-discover`'s pre-existing reconcile logic
->   (feature-006-idempotent-reconcile, work-002-external_sources), relocated here verbatim.
+>   after that step resolves `D`. This is `aid-discover`'s reconcile logic.
 > - **Single-stem mode** — operates on **exactly one** named stem, never diffs against the rest
 >   of the registry, and so never classifies any *other* connector REMOVE. Called by the net-new
 >   `.codex/skills/aid-set-connector/SKILL.md` (upsert) and
->   `.codex/skills/aid-unset-connector/SKILL.md` (remove) — work-004-connector-consumption's
->   only net-new reconcile behavior.
+>   `.codex/skills/aid-unset-connector/SKILL.md` (remove).
 >
 > Both modes share the same descriptor-write mechanics ("Write one descriptor", under Bulk mode
 > below) and the same REMOVE mechanics (purge-then-delete) and finish by handing off to the same
@@ -201,8 +199,8 @@ On completion, ELICIT proceeds to its own Step E3 (`state-elicit.md`).
 
 ## Single-stem mode (set/unset)
 
-Called by `aid-set-connector <tool> <type>` (upsert) and `aid-unset-connector <tool>` (remove) —
-work-004-connector-consumption's only net-new reconcile behavior. Unlike bulk mode, single-stem
+Called by `aid-set-connector <tool> <type>` (upsert) and `aid-unset-connector <tool>` (remove).
+Unlike bulk mode, single-stem
 mode never enumerates the persisted set `P`, never computes a `D`/`P` diff, and never touches any
 stem other than the one the caller names — there is no `persisted ∖ declared` computation here to
 fall into, so no *other* connector can ever end up classified REMOVE as a side effect of a

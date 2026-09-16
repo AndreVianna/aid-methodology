@@ -1,8 +1,8 @@
 # Shortcut Scaffolding: create
 
 Per-family scaffolding reference for the **`create`** verb (bare `aid-create` --
-internal code, no artifact suffix -- plus the eleven artifact-suffixed forms;
-feature-006, work-001-lite-aid-skills). Consulted by the shared engine
+internal code, no artifact suffix -- plus the eleven artifact-suffixed forms).
+Consulted by the shared engine
 (`.cursor/aid/templates/shortcut-engine.md § Family Scaffolding Consult`) at
 CAPTURE, SPEC, and DETAIL for every `{verb, artifact}` whose `verb` field
 resolves to `create`. Free-form prose, like any other `state-*.md` reference doc -- the

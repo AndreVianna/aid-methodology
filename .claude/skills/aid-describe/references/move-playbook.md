@@ -185,9 +185,8 @@ Why: events reveal hidden states and decision points that noun-first description
 **What it is.** Ask the user to outline all the high-level activities in the user journey
 from start to finish (the backbone), then ask which subset is essential for the first
 version (the walking skeleton -- the thinnest possible end-to-end slice). This is the
-primary full-path scope-sizing move (full-vs-lite routing has left `aid-describe`
-entirely -- work-001-lite-aid-skills feature-013; this move now sizes the backbone for
-the full-path interview itself, not a path decision).
+primary full-path scope-sizing move: it sizes the backbone for the full-path interview
+itself, not a path decision.
 
 **When it fires.** Gap type: **unknown scope size** -- the backbone/skeleton sizing
 signal for the full-path interview.

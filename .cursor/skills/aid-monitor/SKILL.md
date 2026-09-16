@@ -157,7 +157,7 @@ APM/performance metrics, test trends, user feedback, support tickets, log files.
 Read `.aid/knowledge/INDEX.md`, pull relevant docs (typically architecture, module-map,
 infrastructure, test-landscape) for baseline context and root cause analysis.
 
-## Dispatch Protocol (L1+L2+L3 subagent visibility, subagent-visibility-patch)
+## Dispatch Protocol (L1+L2+L3 subagent visibility)
 
 Every subagent dispatch in this skill MUST follow this protocol so the user
 sees mid-wait progress instead of going silent for 10–25+ minutes. The full
@@ -170,7 +170,7 @@ protocol lives in two reference docs; this section is a checklist citing them.
 2. **Read heartbeat config** via
    `bash .cursor/aid/scripts/config/read-setting.sh --path traceability.heartbeat_interval --default 1`
    (resolves from `.aid/settings.yml`; default 1; `0` = disabled).
-3. **Pre-create heartbeat file** (always — unconditional, per work-003 traceability):
+3. **Pre-create heartbeat file** (always — unconditional):
    - Pre-create `.aid/.heartbeat/<agent-name>-<unix-ts>.txt`
    - Include `HEARTBEAT_FILE=<path>` + `HEARTBEAT_INTERVAL=Nm` in dispatch prompt with explicit instruction to update during long phases
    - SKIP only if `traceability.heartbeat_interval: 0` (user-explicit opt-out in `.aid/settings.yml`)
@@ -190,13 +190,12 @@ protocol lives in two reference docs; this section is a checklist citing them.
 - **Success:** emit `✓ <agent> done in <actual>` with measured time. When the dispatch is
   for a real `task-NNN`, append a `dispatch_log` entry to that task's own state (full
   path: its `STATE.yml`; flat path: `tasks_lifecycle.task-NNN.dispatch_log`) with
-  fields `date`/`agent`/`eta_band`/`actual`/`outcome` -- this is what the work-level
-  Calibration Log / Dispatches views are now DERIVED from at read time
-  (`work-state-template.yml`); there is no longer an independent work-root section to
-  append to directly. When the dispatch is NOT task-scoped, there is no persisted
-  target at all -- the console narration above is the sole record. Mandatory per
-  work-003 traceability wherever a target exists (never optional, never "if tracked").
-  Delete heartbeat file.
+  fields `date`/`agent`/`eta_band`/`actual`/`outcome` -- the work-level Calibration
+  Log / Dispatches views are derived at read time from these entries
+  (`work-state-template.yml`); there is no work-level section to write. When the
+  dispatch is NOT task-scoped, there is no persisted
+  target at all -- the console narration above is the sole record. Mandatory
+  wherever a target exists (never optional, never "if tracked"). Delete heartbeat file.
 - **Failure:** emit `✗ <agent> FAILED after <elapsed> (reason: <one-line>)`.
   Decide whether to re-dispatch, fall back, or surface to user. Delete
   heartbeat file.

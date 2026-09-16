@@ -142,4 +142,4 @@ Is there anything else we should consider, or are the requirements ready?
   - Update STATE.md `## Interview State` section statuses if needed
   - Return to Interview Loop for any new gaps
 
-**Advance:** **PAUSE-FOR-USER-DECISION** (contracted checkpoint per feature-002 SPEC IQ9 resolution 2026-05-24) — on approval, print the pause reason + resume command and exit. Run `/aid-define {work}` to decompose approved requirements into features. Do NOT chain — this is the only explicit no-auto-advance contract in the AID methodology.
+**Advance:** **PAUSE-FOR-USER-DECISION** — on approval, print the pause reason + resume command and exit. Run `/aid-define {work}` to decompose approved requirements into features. Do not chain into it: this checkpoint needs an explicit user decision.

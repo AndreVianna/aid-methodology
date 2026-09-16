@@ -45,13 +45,10 @@ approve requirements.
                           folders and no files of their own.
 ```
 
-> **Accuracy note.** `interview.state`/`interview.grade`/`interview.sections[]` are real
-> keys in `work-state-template.yml`, and so is **`features[]`** -- this skill creates one
-> entry there per `### Feature NNN` section it appends to `REQUIREMENTS.md § 11`, and
-> `/aid-specify` updates it as each feature advances. Features State was previously
-> described here as "a DERIVED view with no key at all"; that was wrong, and it was not a
-> harmless wrong -- the `STATE.md` -> `STATE.yml` converter believed it and refused to
-> convert any work that had reached this phase. A per-feature "Cross-Reference" status and a
+> **State keys.** `interview.state`/`interview.grade`/`interview.sections[]` and
+> **`features[]`** are real keys in `work-state-template.yml` -- this skill creates one
+> `features[]` entry per `### Feature NNN` section it appends to `REQUIREMENTS.md § 11`,
+> and `/aid-specify` updates it as each feature advances. A per-feature "Cross-Reference" status and a
 > Q&A-adjacent "Review History" list, as used below, do still carry no dedicated key -- they
 > describe this skill's aspirational tracking design rather than a writable structure, and
 > that remains an open schema gap. The **Review History** list now has a real target of its own,
@@ -179,8 +176,9 @@ a new worktree — creation belongs to the work-starting skills only.
 
 ## State Detection
 
-⚠️ **FILESYSTEM IS THE ONLY SOURCE OF TRUTH.**
-Do NOT rely on memory from previous runs. ALWAYS read the actual files on disk.
+State detection reads the files on disk, every run. Nothing remembered from an
+earlier run or from this conversation counts as state, because the files may
+have changed since.
 
 All paths below are relative to `.aid/works/{work}/`.
 

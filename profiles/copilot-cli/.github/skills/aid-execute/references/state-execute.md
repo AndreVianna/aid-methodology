@@ -738,8 +738,7 @@ Dispatch with the Task tool, setting `subagent_type` explicitly to the chosen ex
 
 **Before dispatching, print:** `[Step 1] Dispatching {executor} for {Type} task -> subagent_type={executor}` (substituting actual values).
 
-Dispatch metadata is narrated via the closing `✓ ... done` bracket (per work-003
-traceability rule -- always, not conditional); this task's own `dispatch_log` entry
+Dispatch metadata is narrated via the closing `✓ ... done` bracket (always, not conditional); this task's own `dispatch_log` entry
 (full path: this task's `STATE.yml`; flat path: `tasks_lifecycle.task-{NNN}.dispatch_log`)
 is what the work-level Calibration Log / Dispatches views derive from at read time.
 

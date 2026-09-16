@@ -105,7 +105,7 @@ If Check 2 fails: Tell user to press `Shift+Tab` to exit Plan Mode, then re-run.
 
 ---
 
-## Dispatch Protocol (L1+L2+L3 subagent visibility, subagent-visibility-patch)
+## Dispatch Protocol (L1+L2+L3 subagent visibility)
 
 Every subagent dispatch in this skill MUST follow this protocol so the user
 sees mid-wait progress instead of going silent for 10–25+ minutes. The full
@@ -118,7 +118,7 @@ protocol lives in two reference docs; this section is a checklist citing them.
 2. **Read heartbeat config** via
    `bash .claude/aid/scripts/config/read-setting.sh --path traceability.heartbeat_interval --default 1`
    (resolves from `.aid/settings.yml`; default 1; `0` = disabled).
-3. **Pre-create heartbeat file** (always — unconditional, per work-003 traceability):
+3. **Pre-create heartbeat file** (always — unconditional):
    - Pre-create `.aid/.heartbeat/<agent-name>-<unix-ts>.txt`
    - Include `HEARTBEAT_FILE=<path>` + `HEARTBEAT_INTERVAL=Nm` in dispatch prompt with explicit instruction to update during long phases
    - SKIP only if `traceability.heartbeat_interval: 0` (user-explicit opt-out in `.aid/settings.yml`)
@@ -137,12 +137,11 @@ protocol lives in two reference docs; this section is a checklist citing them.
 **On completion / failure:**
 
 - **Success:** emit `✓ <agent> done in <actual>` with measured time. This skill's own
-  dispatches are not task-scoped, so there is no persisted target for them any more --
-  the work-level Calibration Log / Dispatches views are now DERIVED solely from per-task
-  `dispatch_log` entries (`work-state-template.yml`), which discovery's own dispatches
-  never populate; the console line above is the sole record. Mandatory per work-003
-  traceability wherever a target exists (never optional, never "if tracked"). Delete
-  heartbeat file.
+  dispatches are not task-scoped, so they have no persisted target: the work-level
+  Calibration Log / Dispatches views are derived solely from per-task `dispatch_log`
+  entries (`work-state-template.yml`), which discovery's dispatches never populate.
+  The console line above is the sole record. Mandatory wherever a target exists
+  (never optional, never "if tracked"). Delete heartbeat file.
 - **Failure:** emit `✗ <agent> FAILED after <elapsed> (reason: <one-line>)`.
   Decide whether to re-dispatch, fall back, or surface to user. Delete
   heartbeat file.
@@ -162,8 +161,9 @@ them more informative by adding mid-wait check-ins + structured progress.
 
 ## State Detection
 
-⚠️ **FILESYSTEM IS THE ONLY SOURCE OF TRUTH.**
-Do NOT rely on memory from previous runs. ALWAYS read actual files on disk.
+State detection reads the files on disk, every run. Nothing remembered from an
+earlier run or from this conversation counts as state, because the files may
+have changed since.
 
 Read the filesystem to determine which mode to enter:
 

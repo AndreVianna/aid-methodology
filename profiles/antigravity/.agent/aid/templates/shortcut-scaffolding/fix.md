@@ -1,7 +1,7 @@
 # Shortcut Scaffolding: fix
 
 Per-family scaffolding reference for the **`fix`** verb (bare -- `aid-fix`, no
-artifact suffix; feature-008, work-001-lite-aid-skills). Consulted by the
+artifact suffix). Consulted by the
 shared engine (`.agent/aid/templates/shortcut-engine.md § Family
 Scaffolding Consult`) at CAPTURE, SPEC, and DETAIL for every `{verb, artifact}`
 whose `verb` field resolves to `fix`. Free-form prose, like any other

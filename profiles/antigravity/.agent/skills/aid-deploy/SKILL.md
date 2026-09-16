@@ -165,8 +165,8 @@ aid-deploy  ▸ you are here
 
 ## Dispatch Protocol
 
-This skill follows the L1+L2+L3 subagent-visibility protocol (work-003 traceability —
-heartbeats, ETA timers, calibration). The full checklist lives in
+This skill follows the L1+L2+L3 subagent-visibility protocol (heartbeats, ETA timers,
+calibration). The full checklist lives in
 `.agent/aid/templates/dispatch-protocol-checklist.md`; read it before any subagent
 dispatch in this skill.
 

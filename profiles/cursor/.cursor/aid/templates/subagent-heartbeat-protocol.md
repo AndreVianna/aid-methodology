@@ -207,7 +207,7 @@ Easy to scan; easy to parse (`head -1`, `awk -F'|'`).
   nothing — no behavior change for hosts/tools that haven't been updated.
 - **Single-line text:** human-readable AND machine-parseable via `head -1` / `awk -F'|'`. Compact enough to fit one terminal line.
 - **Overwrite-not-append:** unbounded file growth is not a concern.
-- **1-minute default:** the user (work-003 PR #9 review) flagged the
+- **1-minute default:** the user flagged the
   visibility gap; 1 minute gives the user a strong signal that the subagent
   is alive without overwhelming the narration. Users can override per-project
   via `.aid/settings.yml` `traceability.heartbeat_interval` (set with

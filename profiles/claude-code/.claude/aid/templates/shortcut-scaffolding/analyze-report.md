@@ -2,7 +2,7 @@
 
 Per-family scaffolding reference for the **`report`** verb (bare `aid-report` only),
 the **`review`** verb (bare `aid-review` only), and the **`research`** verb (bare
-`aid-research` only; a v2.1.0 coverage-gap follow-on to work-001-lite-aid-skills).
+`aid-research` only).
 Consulted by the shared engine
 (`.claude/aid/templates/shortcut-engine.md § Family Scaffolding Consult`) at
 CAPTURE, SPEC, and DETAIL for every `{verb, artifact}` whose `verb` field resolves to
@@ -50,7 +50,7 @@ the same finding:
 
 ## `aid-review` -- CAPTURE
 
-Bare verb, no artifact parameter (v2.1.0 coverage-gap follow-on):
+Bare verb, no artifact parameter:
 
 | Slot | Notes |
 |---|---|
@@ -80,7 +80,7 @@ Same `task-type-rules.md ## RESEARCH` mapping as `aid-report`:
 
 ## `aid-research` -- CAPTURE
 
-Bare verb, no artifact parameter (v2.1.0 coverage-gap follow-on):
+Bare verb, no artifact parameter:
 
 | Slot | Notes |
 |---|---|

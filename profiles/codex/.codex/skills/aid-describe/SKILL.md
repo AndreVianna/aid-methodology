@@ -187,8 +187,9 @@ Wait for the response, then act per the gate:
 
 ## State Detection
 
-⚠️ **FILESYSTEM IS THE ONLY SOURCE OF TRUTH.**
-Do NOT rely on memory from previous runs. ALWAYS read the actual files on disk.
+State detection reads the files on disk, every run. Nothing remembered from an
+earlier run or from this conversation counts as state, because the files may
+have changed since.
 
 All paths below are relative to `.aid/works/{work}/`.
 

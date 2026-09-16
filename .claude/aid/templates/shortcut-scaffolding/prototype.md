@@ -1,9 +1,9 @@
 # Shortcut Scaffolding: prototype
 
 Scaffolding reference for the **`prototype`** family (bare `aid-prototype` plus the
-`ui` kind-sibling `aid-prototype-ui`; work-005 reframe of feature-005). `prototype` is now
-a hand-authored collapse skill, **no longer consulted by the shared engine** -- instead the
-hand-authored `aid-prototype` body reads this file for the per-slot capture / detail
+`ui` kind-sibling `aid-prototype-ui`). `prototype` is a hand-authored collapse skill;
+this file is **not read by the shared engine** -- the hand-authored `aid-prototype`
+body reads it for the per-slot capture / detail
 guidance below. Neither row carries an alias (feature-005 SPEC "Catalog rows owned" -- 2
 canonical, no aliases). Free-form prose, like any other `state-*.md` reference doc --
 the dispatched `aid-architect` reads this for judgment; it is not machine-parsed.
@@ -25,8 +25,7 @@ Bare verb, no artifact parameter:
 | Scope boundary | what the prototype does **not** attempt (explicit -- keeps the model throwaway) |
 
 **Escalation.** Same minimal-escalation discipline the engine's Capture-Minimization
-Rules define (the hand-authored collapse body applies it -- the engine no longer runs
-this family): escalate to the one combined CAPTURE question only when the
+Rules define (applied by the hand-authored collapse body, not the engine): escalate to the one combined CAPTURE question only when the
 direction/hypothesis or the success signal cannot be made concrete and testable from
 `{description}` + KB context -- for a prototype this most
 often means the validation question itself is missing, not merely terse. Fidelity

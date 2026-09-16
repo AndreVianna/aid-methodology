@@ -65,8 +65,8 @@ Compare to minimum grade from `bash canonical/aid/scripts/config/read-setting.sh
 <!-- A delivery-definition review step once sat here and is retired, for two independent
      reasons either of which is sufficient.
 
-     First, the artifact is gone: a delivery definition is now a `### delivery-NNN` stanza in
-     PLAN.md, and the per-delivery file it used to live in is retired.
+     First, a delivery definition is a `### delivery-NNN` stanza in PLAN.md; there is no
+     per-delivery file.
 
      Second, and this held even before that: `/aid-specify` runs BEFORE any delivery exists
      (Specify precedes Plan -- SKILL.md states it in as many words). There is no delivery for a

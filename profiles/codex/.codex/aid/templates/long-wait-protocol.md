@@ -5,8 +5,8 @@ MUST follow this protocol so the user sees steady progress signal instead of
 going silent for 10–25 minutes between the
 opening `▶` and the completion notification.
 
-This protocol is the L2 layer of the subagent-visibility scheme introduced in
-the `subagent-visibility-patch`. L1 = honest ETAs (see `rough-time-hints.md`);
+This protocol is the L2 layer of the subagent-visibility scheme.
+L1 = honest ETAs (see `rough-time-hints.md`);
 L2 = this doc (orchestrator-side check-in timers); L3 = subagent self-reporting
 via heartbeat file (see `subagent-heartbeat-protocol.md`).
 
@@ -80,10 +80,10 @@ Emit the closing bracket with ACTUAL elapsed time and log it for L1 calibration:
 When the dispatch is for a real `task-NNN`, append a `dispatch_log` entry to
 that task's own state (full path: its `STATE.yml`; flat path:
 `tasks_lifecycle.task-NNN.dispatch_log`) so the next refresh of
-`rough-time-hints.md` has a data point -- this is what the work-level
-Calibration Log / Dispatches views are now DERIVED from at read time
-(`work-state-template.yml`); there is no longer an independent work-root
-section to add a row to directly. When the dispatch is NOT task-scoped,
+`rough-time-hints.md` has a data point -- the work-level Calibration Log /
+Dispatches views are derived at read time from these entries
+(`work-state-template.yml`); there is no work-level section to write. When
+the dispatch is NOT task-scoped,
 there is no persisted target at all -- the actual-elapsed line above is the
 sole record.
 
@@ -99,7 +99,7 @@ explicit failure), emit:
 …and decide based on context whether to re-dispatch, fall back to manual work,
 or surface to the user.
 
-## Example (from work-003 cycle-12 aid-reviewer dispatch)
+## Example (aid-reviewer dispatch)
 
 ```
 [Look up: aid-reviewer ETA = 18–25 min from rough-time-hints.md]
@@ -132,7 +132,7 @@ actively poll (which is hard in a pure-skill-body design).
 
 - **Always arm timers, regardless of ETA.** Use sensible minimums for short
   ETAs (e.g., 60s / 120s / 180s for a < 3min dispatch). Mid-wait check-ins
-  are unconditional per the work-003 traceability rule — never gate on ETA
+  are unconditional — never gate on ETA
   threshold.
 - **Always emit `✗` on failure.** A silent failure (no `✓`, no `✗`) is worse
   than the original silent wait — it suggests the subagent is still running.

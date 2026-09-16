@@ -91,7 +91,7 @@ for the full protocol.
 - Execute MIGRATE-typed tasks: design DB schemas, write migrations, optimize queries, design ETL pipelines
 - Execute CONFIGURE-typed tasks: configure CI/CD, write Dockerfiles and IaC, set up monitoring, design deployment strategies
 - Regenerate generated files during KB FIX cycles when the generator output needs updating
-- Consult `.aid/connectors/INDEX.md` and, for a relevant `connection_type: mcp` connector, use the host tool's MCP to pull additional context (e.g. a linked ticket's latest description/comments) before implementing, following the same connector-resolution ladder + MCP-first read recipe `/aid-read-ticket` embodies (`.agent/aid/templates/connectors/ticket-resolution.md` § Connector-Resolution Ladder) rather than a divergent inline re-implementation — a dispatched agent cannot itself issue that host slash command, so this references the one shared recipe instead; optional, read-only enrichment; never a substitute for the TASK file's own Scope/Acceptance Criteria
+- Before implementing, consult `.aid/connectors/INDEX.md`; for a relevant `connection_type: mcp` connector, pull extra context (e.g. a linked ticket's latest description/comments) through the host tool's MCP, following the connector-resolution ladder and MCP-first read recipe in `.agent/aid/templates/connectors/ticket-resolution.md` § Connector-Resolution Ladder. This is optional, read-only enrichment and never replaces the TASK file's own Scope / Acceptance Criteria.
 
 ## What You Don't Do
 - Design architecture (that's the Architect)

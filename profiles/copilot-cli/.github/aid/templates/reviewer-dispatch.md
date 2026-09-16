@@ -439,7 +439,7 @@ doing nothing will be satisfied by doing nothing; binding the write to the artif
 already produces is what closes it.
 
 **Inspectability requirement:** the rendered brief is logged with the dispatch
-record so it can be inspected after the fact (per work-003 traceability) — satisfied by the
+record so it can be inspected after the fact — satisfied by the
 same file, rather than by a second artifact that could drift from it.
 
 ## One-off reviews
