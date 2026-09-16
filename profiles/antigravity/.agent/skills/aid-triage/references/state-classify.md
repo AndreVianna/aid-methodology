@@ -99,7 +99,7 @@ concluding "no match"):
 | `workType` | Groups to check first |
 |------------|------------------------|
 | `bug-fix` | G6 (`aid-fix`) |
-| `refactor` | G5 (`aid-update[-artifact]`, `aid-refactor`, `aid-remove`, `aid-deprecate`, `aid-migrate`); G11 (`aid-review`, `aid-research`) |
+| `refactor` | G5 (`aid-update[-artifact]`, `aid-refactor`), plus G5's `aid-remove`, `aid-deprecate`, `aid-migrate`; G11 (`aid-review`, `aid-research`) |
 | `new-feature` | G4 (`aid-create[-artifact]`), G3 (`aid-prototype[-ui]`), G7 (`aid-test*`, `aid-experiment`), G8 (`aid-document[-artifact]`), G11 (`aid-report`, `aid-review`, `aid-research`) |
 
 (`aid-remove`/`aid-deprecate`/`aid-migrate` and `aid-review`/`aid-research` are

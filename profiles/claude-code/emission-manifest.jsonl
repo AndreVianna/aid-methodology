@@ -1,11 +1,11 @@
 {"_manifest_version": 1}
 {"dst": ".claude/agents/aid-architect.md", "profile": "claude-code", "sha256": "63a74fbe8f3f2abba6de4b951ece6ed4fc5a3404b465c704fb5cbdf6a03d3e86", "src": "canonical/agents/aid-architect/AGENT.md"}
 {"dst": ".claude/agents/aid-clerk.md", "profile": "claude-code", "sha256": "ef266804b4a920f9385d5a2b16041159e57f2d3579fe701a2792712849c7e4b7", "src": "canonical/agents/aid-clerk/AGENT.md"}
-{"dst": ".claude/agents/aid-developer.md", "profile": "claude-code", "sha256": "1af2b72f62dde35b1891d6b46b33a3e7ca473d23abd659468c43497f5d2c1330", "src": "canonical/agents/aid-developer/AGENT.md"}
+{"dst": ".claude/agents/aid-developer.md", "profile": "claude-code", "sha256": "78fe3373cd464ef6ce2cbb2fbf7018a1fc8f9e8bfbdeaf11823c3ebf5c99379d", "src": "canonical/agents/aid-developer/AGENT.md"}
 {"dst": ".claude/agents/aid-interviewer.md", "profile": "claude-code", "sha256": "c43fb8f6d00f7ada7777185f26920d8c5214e3857800798d16e6847750755f35", "src": "canonical/agents/aid-interviewer/AGENT.md"}
 {"dst": ".claude/agents/aid-operator.md", "profile": "claude-code", "sha256": "799c877f660990dbb49f94c61fc9a7517b5cfa313cb44cc82494beea6025adb1", "src": "canonical/agents/aid-operator/AGENT.md"}
 {"dst": ".claude/agents/aid-orchestrator.md", "profile": "claude-code", "sha256": "666ff3c24dbb2f5f86db9794fe11dab28be851312a20e41f9f5549bedd4126be", "src": "canonical/agents/aid-orchestrator/AGENT.md"}
-{"dst": ".claude/agents/aid-researcher.md", "profile": "claude-code", "sha256": "ba61f1d2d53b89a3f52642becb518a50ebca91dee4cb00a162132d913889dfb1", "src": "canonical/agents/aid-researcher/AGENT.md"}
+{"dst": ".claude/agents/aid-researcher.md", "profile": "claude-code", "sha256": "256601366a508be49d7f5e97a808c84d6b70acd8be577fc07499f5de1cf1536c", "src": "canonical/agents/aid-researcher/AGENT.md"}
 {"dst": ".claude/agents/aid-reviewer.md", "profile": "claude-code", "sha256": "61c33b4966dcbc88e2d082bde54ec6e37dbf3cfdd9db134aba5b18e6867e347c", "src": "canonical/agents/aid-reviewer/AGENT.md"}
 {"dst": ".claude/agents/aid-tech-writer.md", "profile": "claude-code", "sha256": "6b853ea64982ca4231876144c4c10dc3c2df287a3b3bdd6c1728706decc32021", "src": "canonical/agents/aid-tech-writer/AGENT.md"}
 {"dst": ".claude/aid/scripts/config/read-setting.sh", "profile": "claude-code", "sha256": "b8519db9d466949e7162584866a20818148af78205f1ce14d28c19178e011fba", "src": "canonical/scripts/config/read-setting.sh"}
@@ -308,7 +308,7 @@
 {"dst": ".claude/skills/aid-summarize/references/state-approval.md", "profile": "claude-code", "sha256": "6ee834b3b969388c3df0efc2723fe7e7f9f7058292b12c9f0df095b1ad7def77", "src": "canonical/skills/aid-summarize/references/state-approval.md"}
 {"dst": ".claude/skills/aid-summarize/references/state-done.md", "profile": "claude-code", "sha256": "12e154952f95c60e4a502ac80e38936b0ffb86cee7428f0df131c89136ee7c7f", "src": "canonical/skills/aid-summarize/references/state-done.md"}
 {"dst": ".claude/skills/aid-summarize/references/state-fix.md", "profile": "claude-code", "sha256": "838d499caf98afedfb768a52e289578a4a7440d3341463f6e423fd1f296772b5", "src": "canonical/skills/aid-summarize/references/state-fix.md"}
-{"dst": ".claude/skills/aid-summarize/references/state-generate.md", "profile": "claude-code", "sha256": "f296535131924251d59c5a495f3261b3adad20c55472ee5bd5bda2f2743ce555", "src": "canonical/skills/aid-summarize/references/state-generate.md"}
+{"dst": ".claude/skills/aid-summarize/references/state-generate.md", "profile": "claude-code", "sha256": "f0ea63d7f00c4f9a6c85d5f9e66abcda0dce6389a3a881de771710150229d53f", "src": "canonical/skills/aid-summarize/references/state-generate.md"}
 {"dst": ".claude/skills/aid-summarize/references/state-manual-checklist.md", "profile": "claude-code", "sha256": "225368a9eea78ee19998893003a71c49e316b92ad67b292032fe092a77712d3c", "src": "canonical/skills/aid-summarize/references/state-manual-checklist.md"}
 {"dst": ".claude/skills/aid-summarize/references/state-preflight.md", "profile": "claude-code", "sha256": "0561dd0a5d23ef7561f732c4a16d73e025abeda8c2f701e7b867bf061f62758f", "src": "canonical/skills/aid-summarize/references/state-preflight.md"}
 {"dst": ".claude/skills/aid-summarize/references/state-profile.md", "profile": "claude-code", "sha256": "17abe7779176f35cb2532a2eaaceaeeb5be7dd38e1fce32d4db402998404b767", "src": "canonical/skills/aid-summarize/references/state-profile.md"}
@@ -320,7 +320,7 @@
 {"dst": ".claude/skills/aid-test-security/SKILL.md", "profile": "claude-code", "sha256": "63f5964e15e44d133908123a5a4edf7e1715e86e29500f4b52121fe92dd986f8", "src": "canonical/skills/aid-test-security/SKILL.md"}
 {"dst": ".claude/skills/aid-test/SKILL.md", "profile": "claude-code", "sha256": "f3b39a622a7ba24a303b007b6445833b1aff869ad71343d87b0a75e88f1e95c9", "src": "canonical/skills/aid-test/SKILL.md"}
 {"dst": ".claude/skills/aid-triage/SKILL.md", "profile": "claude-code", "sha256": "cd87effff35685aa58e214312c64deb3120206b6618ea0f930f68fa67d89ff64", "src": "canonical/skills/aid-triage/SKILL.md"}
-{"dst": ".claude/skills/aid-triage/references/state-classify.md", "profile": "claude-code", "sha256": "b6d7b7a72fde8f8db1e0bf4c0b292935cc5b5d724e8f5268c81535acc93a3349", "src": "canonical/skills/aid-triage/references/state-classify.md"}
+{"dst": ".claude/skills/aid-triage/references/state-classify.md", "profile": "claude-code", "sha256": "37ddcb876457de646b736b4c527cadc73b2bc3ad3e6cf3292a75cd4a8441f0f1", "src": "canonical/skills/aid-triage/references/state-classify.md"}
 {"dst": ".claude/skills/aid-triage/references/state-suggest.md", "profile": "claude-code", "sha256": "956ef869392cc13ad2bcaea989d2724ab70d918312c61e0a781da705416eb322", "src": "canonical/skills/aid-triage/references/state-suggest.md"}
 {"dst": ".claude/skills/aid-unset-connector/SKILL.md", "profile": "claude-code", "sha256": "48edc3895be1585315f75e6dfcc2603d81467c0961853bc110af28cc82e4e3cd", "src": "canonical/skills/aid-unset-connector/SKILL.md"}
 {"dst": ".claude/skills/aid-update-api/SKILL.md", "profile": "claude-code", "sha256": "2ea6b52f3b4955df1a9ca5459024325a211e73c3186139cb7c74eca531fa0737", "src": "canonical/skills/aid-update-api/SKILL.md"}

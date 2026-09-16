@@ -1,11 +1,11 @@
 {"_manifest_version": 1}
 {"dst": ".github/agents/aid-architect.md", "profile": "copilot-cli", "sha256": "0c7d873eae8b6e0b94d4048a6af35e616558f705ab55c36467ab676cffe904ef", "src": "canonical/agents/aid-architect/AGENT.md"}
 {"dst": ".github/agents/aid-clerk.md", "profile": "copilot-cli", "sha256": "391bbddfa166d5f742753a92576c7f1732713cbea145d6ad88d7541d9ccbe654", "src": "canonical/agents/aid-clerk/AGENT.md"}
-{"dst": ".github/agents/aid-developer.md", "profile": "copilot-cli", "sha256": "810d80b3192140b44c27f1194af34a2408e01ce5d1ac680fd6ad7339d3ebbb5d", "src": "canonical/agents/aid-developer/AGENT.md"}
+{"dst": ".github/agents/aid-developer.md", "profile": "copilot-cli", "sha256": "d26cb73ef78f1e5a50a3a558d5a2237519188fcd1cce807adf50b39755925412", "src": "canonical/agents/aid-developer/AGENT.md"}
 {"dst": ".github/agents/aid-interviewer.md", "profile": "copilot-cli", "sha256": "84ea59c9ffb5bee95aa9a584896fe373cac52cccbd968e036cf8d876408367db", "src": "canonical/agents/aid-interviewer/AGENT.md"}
 {"dst": ".github/agents/aid-operator.md", "profile": "copilot-cli", "sha256": "9bf4a9b6c7d374b00c8cea6efd167555aa5acf8ffef159bd7aa8b45cc0e8ccbf", "src": "canonical/agents/aid-operator/AGENT.md"}
 {"dst": ".github/agents/aid-orchestrator.md", "profile": "copilot-cli", "sha256": "7d96a823e95ac49bb1374b299780deff80ab4d5699bfbf79ad5fc23b59969414", "src": "canonical/agents/aid-orchestrator/AGENT.md"}
-{"dst": ".github/agents/aid-researcher.md", "profile": "copilot-cli", "sha256": "990650104bd9bd557ffbad7795fdaef68f7eabb03cdf3f5fa65bddb78b3e5a29", "src": "canonical/agents/aid-researcher/AGENT.md"}
+{"dst": ".github/agents/aid-researcher.md", "profile": "copilot-cli", "sha256": "73d58175f038c52d98636d6306d8f9b64f53f895111df860a03c9cb1e7462d6c", "src": "canonical/agents/aid-researcher/AGENT.md"}
 {"dst": ".github/agents/aid-reviewer.md", "profile": "copilot-cli", "sha256": "af0ffc455c08ccbe322a01c836025de9a2900da59793a010cec828eb84c83137", "src": "canonical/agents/aid-reviewer/AGENT.md"}
 {"dst": ".github/agents/aid-tech-writer.md", "profile": "copilot-cli", "sha256": "c15db2a1cab1cad5f524c8c3cead42f6efdb0742ca338723327357cd37be8c77", "src": "canonical/agents/aid-tech-writer/AGENT.md"}
 {"dst": ".github/aid/scripts/config/read-setting.sh", "profile": "copilot-cli", "sha256": "b8519db9d466949e7162584866a20818148af78205f1ce14d28c19178e011fba", "src": "canonical/scripts/config/read-setting.sh"}
@@ -308,7 +308,7 @@
 {"dst": ".github/skills/aid-summarize/references/state-approval.md", "profile": "copilot-cli", "sha256": "6ee8547ef90ae71a86e2a4edbb779eba7694eec7f1edc54f9b535a1f19018da3", "src": "canonical/skills/aid-summarize/references/state-approval.md"}
 {"dst": ".github/skills/aid-summarize/references/state-done.md", "profile": "copilot-cli", "sha256": "12e154952f95c60e4a502ac80e38936b0ffb86cee7428f0df131c89136ee7c7f", "src": "canonical/skills/aid-summarize/references/state-done.md"}
 {"dst": ".github/skills/aid-summarize/references/state-fix.md", "profile": "copilot-cli", "sha256": "8757599aba676e76e7a8dcdc2373339842485270e20903529828232b6836ccf7", "src": "canonical/skills/aid-summarize/references/state-fix.md"}
-{"dst": ".github/skills/aid-summarize/references/state-generate.md", "profile": "copilot-cli", "sha256": "fb9ef027267cb0f66312a2beeff61c3c36b31794a613f504c21cb3d3d5f69f21", "src": "canonical/skills/aid-summarize/references/state-generate.md"}
+{"dst": ".github/skills/aid-summarize/references/state-generate.md", "profile": "copilot-cli", "sha256": "322b278a61ef4789f8b0b015d00043a5a03b5908e6baed310035ad0119452d60", "src": "canonical/skills/aid-summarize/references/state-generate.md"}
 {"dst": ".github/skills/aid-summarize/references/state-manual-checklist.md", "profile": "copilot-cli", "sha256": "dd500b2b6e01ab87547213cb8dc7abbbe145da8f357d931f87e1f56664f4a90c", "src": "canonical/skills/aid-summarize/references/state-manual-checklist.md"}
 {"dst": ".github/skills/aid-summarize/references/state-preflight.md", "profile": "copilot-cli", "sha256": "d6840dc6ae93b75ac84c5086fa2c40f236d2ec6d7baed758c8cd0948b8f4bfac", "src": "canonical/skills/aid-summarize/references/state-preflight.md"}
 {"dst": ".github/skills/aid-summarize/references/state-profile.md", "profile": "copilot-cli", "sha256": "17abe7779176f35cb2532a2eaaceaeeb5be7dd38e1fce32d4db402998404b767", "src": "canonical/skills/aid-summarize/references/state-profile.md"}
@@ -320,7 +320,7 @@
 {"dst": ".github/skills/aid-test-security/SKILL.md", "profile": "copilot-cli", "sha256": "77bdc7927d45208ed50e1b0390e6275d8aba2a13c7a7c67fda810e9ba5f2ecc6", "src": "canonical/skills/aid-test-security/SKILL.md"}
 {"dst": ".github/skills/aid-test/SKILL.md", "profile": "copilot-cli", "sha256": "e34f53321fa2c8279c386aac25e3bfcbae41e4300f0c3d8dfe0e2e446a8b6853", "src": "canonical/skills/aid-test/SKILL.md"}
 {"dst": ".github/skills/aid-triage/SKILL.md", "profile": "copilot-cli", "sha256": "ba701eca5308b92ec8acd15ac1786d4e4b2b6d1042b6f1a629f81892f149a7b8", "src": "canonical/skills/aid-triage/SKILL.md"}
-{"dst": ".github/skills/aid-triage/references/state-classify.md", "profile": "copilot-cli", "sha256": "505e172d358a565f79da323c8ac868119289ac37ecead1cec168b4cd85c58a16", "src": "canonical/skills/aid-triage/references/state-classify.md"}
+{"dst": ".github/skills/aid-triage/references/state-classify.md", "profile": "copilot-cli", "sha256": "49891dfa05167df1f5b5f74e5b12d337491b1ecd1c632f7680adae449e54b9da", "src": "canonical/skills/aid-triage/references/state-classify.md"}
 {"dst": ".github/skills/aid-triage/references/state-suggest.md", "profile": "copilot-cli", "sha256": "956ef869392cc13ad2bcaea989d2724ab70d918312c61e0a781da705416eb322", "src": "canonical/skills/aid-triage/references/state-suggest.md"}
 {"dst": ".github/skills/aid-unset-connector/SKILL.md", "profile": "copilot-cli", "sha256": "f7ee0cdd1e89541f0f363bfad5aede6522833611bf7166243cff65ea645281df", "src": "canonical/skills/aid-unset-connector/SKILL.md"}
 {"dst": ".github/skills/aid-update-api/SKILL.md", "profile": "copilot-cli", "sha256": "6e3562cff6392e6df13896b3f0c9f57a9307eb430d0a5e723e379c6188f35031", "src": "canonical/skills/aid-update-api/SKILL.md"}
