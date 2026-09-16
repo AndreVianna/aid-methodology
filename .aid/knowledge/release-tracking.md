@@ -29,6 +29,18 @@ review-criteria:
 > items drained out of `backlog.md` § `Next Release`. `[NEW]` items lead with a feature
 > name; `[CHANGE]` / `[FIX]` are description-only.
 
+## v3.1.2 - 2026-09-16
+
+> **Patch release.** Nothing breaks and no file format changes. The sub-agent dispatch
+> protocol keeps its shape -- three check-in timers, the heartbeat file, the bracket pair --
+> but long dispatches now cost less and start their reviewers together instead of 80 seconds
+> apart. Prompt text across the skills, agents and templates drops phrasing written as a diff
+> against earlier versions.
+
+- [CHANGE] Dispatch check-in timers keep the orchestrator's context cached. Timer intervals are capped at 270 / 540 / 810 seconds and a further 270-second timer is re-armed on each fire while a sub-agent runs. The previous ETA-scaled gaps of 7.5 and 15 minutes exceeded the 5-minute prompt-cache lifetime, so a long wait silently re-sent the orchestrator's whole context at full price -- measured at $2.18 for one 175k-token turn on a four-reviewer panel. Check-ins land more often during long waits, which is what the visibility protocol wanted anyway.
+- [CHANGE] Reviewer dispatches name their brief instead of carrying it. The brief was already written to a file for inspectability and metering; its full text was then copied into the dispatch prompt as well. The prompt now carries the brief path, the ledger path and the heartbeat parameters, and the reviewer reads the brief as its first action. On a four-mandate panel that removed roughly 35,000 output tokens from a single turn and let all four reviewers launch together rather than sequentially over five minutes. Same brief, same file the meter records, same clean-context rule; the reviewer's allowed-reads list gains its own brief so reading it is not an out-of-scope open.
+- [CHANGE] Prompt text across the skills, agents and templates states its rules in the present tense. Around forty lines said "no longer", "previously" or "used to", or cited a work id, feature id or release version as the authority for a rule -- a diff against a version the reader never saw. Each rule is unchanged; only the archaeology is gone. Six copies of an all-caps filesystem-is-truth warning became one sentence carrying its reason.
+
 ## v3.1.1 - 2026-09-09
 
 > **Patch release.** Nothing breaks. `aid -h` now lists `chat`, and `aid chat -h` lists
