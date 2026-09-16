@@ -405,15 +405,19 @@ not a join — the pool reacts to each completion independently.
 > Skip directly to PD-4.
 
 While waiting, service L2 timers (per the Dispatch Protocol in `SKILL.md`):
-- Fire timer 1 at ETA/2 — read heartbeat files for each in-flight task and emit
+- Fire timer 1 at min(ETA/2, 4.5 min) — read heartbeat files for each in-flight task and emit
   `[from heartbeat] task-{NNN}: <state> · <progress> · <activity>`. **Same tick, no separate
   timer (feature-008; full mandate: `§ MANDATORY: Executor-side Cooperative Poll` above):**
   re-read the work `lifecycle` (Pipeline Finish) and `stat` each in-flight task's `.stop`
   control file (Task Stop/Resume) -- non-`Running` lifecycle -> stop dispatching new work/new
   reviewer cycles from here on; a present `.stop` file -> decline that task's next reviewer/fix
   cycle until it is removed again.
-- Fire timer 2 at ETA — same.
-- Fire timer 3 at 1.5×ETA — emit `⚠️ task-{NNN} EXCEEDED estimate`.
+- Fire timer 2 at min(ETA, 9 min) — same.
+- Fire timer 3 at min(1.5×ETA, 13.5 min) — emit `⚠️ task-{NNN} EXCEEDED estimate`.
+- **Keep-warm:** when timer 3 has fired and a task is still in flight, re-arm a 4.5-minute timer
+  (same tick duties as timer 1) until the completion notification arrives. Every fire re-reads the
+  cached context and refreshes its 5-minute prompt-cache TTL; a silent gap over 5 minutes re-writes
+  the whole context at full price.
 
 When a completion notification arrives for `task-{NNN}` → proceed to **PD-4**.
 

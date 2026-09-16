@@ -126,6 +126,15 @@ Update the brief's `DELIVERABLES` block so the ledger path reads:
 (each mandate writes to its own scratch ledger; the brief is rendered once and the
 mandate-specific ledger path is substituted per dispatch).
 
+**Package to a file, dispatch by path.** Write each mandate's package — the rendered brief plus
+that mandate's `reviewer-prompt-<mandate>.md` body — to
+`.aid/.temp/review-pending/briefs/{{SCOPE}}-<mandate>.md` (discovery has no work folder, so the
+brief lives beside its scratch ledger), and dispatch with the pointer shape from
+`canonical/aid/templates/reviewer-dispatch.md` § Dispatch by path: the `Agent` prompt carries the
+brief path, the mandate's ledger path and the heartbeat parameters only. Inlining the four
+packages was measured on this repository's KB at ~35k output tokens and five minutes of
+sequential streaming, with the reviewers launching 80 seconds apart; by path they launch together.
+
 **Branch on `review.panel`**
 
 Read the `review.panel` parameter supplied by the orchestrator from

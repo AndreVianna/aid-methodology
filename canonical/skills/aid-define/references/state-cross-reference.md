@@ -8,7 +8,7 @@ Requirements are approved and features exist but cross-reference validation has 
 - `{{ARTIFACTS}}` = `.aid/works/{work}/REQUIREMENTS.md` (including `§11 Features`, one subsection per feature)
 - `{{CONTEXT}}` = `REQUIREMENTS.md was just approved and N features were decomposed from §5 Functional Requirements. This is the cross-reference pass that validates requirements + feature boundaries against the KB and codebase before any feature reaches /aid-specify.`
 
-Include in the prompt:
+Include in the brief file (not in the dispatch prompt — `reviewer-dispatch.md` § Dispatch by path):
 - **Ledger lifecycle:** "Append new findings as rows with Status: Pending to
   `.aid/.temp/review-pending/interview-<work>-cross-ref.md`. Read the existing file
   first if it exists. Output per `canonical/aid/templates/reviewer-ledger-schema.md` —

@@ -41,8 +41,10 @@ Dispatch the `aid-reviewer` agent with `subagent_type: aid-reviewer` at **Small 
 Then append the quick-check-specific prompt below.
 
 The brief carries the universal rubric pointer (`.cursor/aid/templates/grading-rubric.md`)
-and the OOS policy. Pass the rendered brief + the quick-check prompt as a single
-dispatch.
+and the OOS policy. Write the rendered brief + the quick-check prompt below into the brief FILE
+(`reviewer-dispatch.md` § Render the brief TO A FILE) and dispatch with the pointer shape from
+`reviewer-dispatch.md` § Dispatch by path — the `Agent` prompt names the brief path, the ledger
+path and the heartbeat parameters, never the brief's contents.
 
 **Reviewer prompt (quick-check mode):**
 

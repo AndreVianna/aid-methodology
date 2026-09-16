@@ -176,7 +176,7 @@ of per-task reviews. The package wrapper is the universal brief at
 - `{{ARTIFACTS}}` = the full delivery branch diff + every task's STATE.yml state + the delivery's criteria (its `PLAN.md` stanza on the full path; `REQUIREMENTS.md § 9` on the flat/Lite path)
 - `{{CONTEXT}}` = `delivery-NNN aggregates tasks {NNN..MMM}; this is the post-execution quality gate before merge to main.`
 
-Include in the prompt:
+Include in the brief file (not in the dispatch prompt — `reviewer-dispatch.md` § Dispatch by path):
 - **Ledger lifecycle:** "Read the existing `.aid/.temp/review-pending/execute-delivery-NNN.md`
   if it exists. For each existing row: verify on disk, update Status if needed
   (Pending→Fixed if resolved; Fixed→Recurred if regressed). Append new findings

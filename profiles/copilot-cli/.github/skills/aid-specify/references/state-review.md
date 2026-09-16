@@ -35,7 +35,7 @@ Render `references/reviewer-brief.md` with:
 - `{{ARTIFACTS}}` = `REQUIREMENTS.md` + the `§11 / Feature NNN` subsection under review, naming the technical sections in scope (or "the whole feature section")
 - `{{CONTEXT}}` = `REQUIREMENTS.md §11 / Feature NNN in work-NNN-{name}. Every section of this feature's `features:` entry is Complete in the work STATE.yml. This is the final review pass before the feature is marked Ready.`
 
-Include in the prompt:
+Include in the brief file (not in the dispatch prompt — `reviewer-dispatch.md` § Dispatch by path):
 - **Ledger lifecycle:** "Read `.aid/.temp/review-pending/specify-<feature>.md` if it
   exists. For each existing row: verify on disk, update Status (Pending→Fixed if
   resolved; Fixed→Recurred if regressed). Append new findings with Status: Pending."
@@ -44,7 +44,8 @@ Include in the prompt:
 
 Dispatch the `aid-reviewer` subagent **at Large tier** (the executor is the Large
 `aid-architect`; reviewer tier >= executor tier per
-`.github/aid/templates/agent-dispatch-tiering.md`) with the rendered brief.
+`.github/aid/templates/agent-dispatch-tiering.md`) with a pointer to the rendered brief file
+(`reviewer-dispatch.md` § Dispatch by path).
 
 ### Grade Overall
 

@@ -38,7 +38,7 @@ Render `references/reviewer-brief.md` with:
   `.aid/works/{work}/REQUIREMENTS.md § 11`
 - `{{CONTEXT}}` = `PLAN.md for work-NNN with N deliveries; re-review against the current feature sections.`
 
-Include in the prompt:
+Include in the brief file (not in the dispatch prompt — `reviewer-dispatch.md` § Dispatch by path):
 - **Ledger lifecycle:** "Read `{{LEDGER}}` if it exists.
   For each existing row: verify on disk, update Status (Pending→Fixed if resolved;
   Fixed→Recurred if regressed). Append new findings with Status: Pending.
@@ -46,7 +46,8 @@ Include in the prompt:
 
 Dispatch the `aid-reviewer` subagent **at Large tier** (the executor is the Large
 `aid-architect`; reviewer tier >= executor tier per
-`.agent/aid/templates/agent-dispatch-tiering.md`) with the rendered brief.
+`.agent/aid/templates/agent-dispatch-tiering.md`) with a pointer to the rendered brief file
+(`reviewer-dispatch.md` § Dispatch by path).
 
 ### Grade Overall
 

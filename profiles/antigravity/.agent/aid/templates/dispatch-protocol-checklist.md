@@ -16,10 +16,11 @@ protocol lives in two reference docs; this section is a checklist citing them.
 3. **Pre-create heartbeat file** (always — unconditional):
    - Pre-create `.aid/.heartbeat/<agent-name>-<unix-ts>.txt`
    - Include `HEARTBEAT_FILE=<path>` + `HEARTBEAT_INTERVAL=Nm` in dispatch prompt
-4. **Arm 3 L2 timers** (via `run_in_background: true`):
-   - `sleep <LOW/2 in s> && echo "... <agent> still running (Xm elapsed of ~LOW–HIGH)"`
-   - `sleep <LOW in s> && echo "... <agent> at estimated time (LOWm elapsed)"`
-   - `sleep <1.5×LOW in s> && echo "⚠️ <agent> EXCEEDED estimate (1.5×LOWm elapsed); consider checking on it or cancelling"`
+4. **Arm 3 L2 timers** (via `run_in_background: true`), each interval capped at 4.5 min:
+   - `sleep <min(LOW/2, 270) in s> && echo "... <agent> still running (Xm elapsed of ~LOW–HIGH)"`
+   - `sleep <min(LOW, 540) in s> && echo "... <agent> at estimated time (LOWm elapsed)"`
+   - `sleep <min(1.5×LOW, 810) in s> && echo "⚠️ <agent> EXCEEDED estimate (1.5×LOWm elapsed); consider checking on it or cancelling"`
+   - **Keep-warm re-arm:** when the last timer fires and the sub-agent is still running, arm one more `sleep 270 && echo "... <agent> still running (Xm elapsed)"`, and again on each fire, until the completion notification arrives. Every fire is a request that re-reads the cached context and refreshes its 5-minute prompt-cache TTL; a silent gap over 5 minutes re-writes the whole context at full price (measured: $2.18 for a 175k-token orchestrator context).
 
 **During dispatch:**
 

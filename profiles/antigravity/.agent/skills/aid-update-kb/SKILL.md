@@ -294,6 +294,9 @@ protocol lives in two reference docs; this section is a checklist citing them.
 4. **Arm 3 L2 timers as SEPARATE background dispatches** (always -- even for short
    ETAs use minimums 60s/120s/180s; never gate on ETA). Each timer is its OWN
    `Bash(..., run_in_background=true)` call.
+   Intervals are capped at 270 s / 540 s / 810 s, and a further 270 s timer is re-armed on
+   each fire while the sub-agent still runs -- every fire refreshes the orchestrator's 5-minute
+   prompt-cache TTL; a silent gap over 5 minutes re-writes the whole context at full price.
 
 **References:**
 

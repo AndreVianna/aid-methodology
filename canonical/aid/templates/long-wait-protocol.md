@@ -37,21 +37,29 @@ use the HIGHEST ETA from the parallel set (tail latency).
 ### Step 2 — Emit opening bracket + arm 3 timers
 
 ```
-▶ <agent-name> starting (~<low>–<high>) — arming check-ins at <low/2>, <low>, <1.5×low>
+▶ <agent-name> starting (~<low>–<high>) — arming check-ins at <a>, <b>, <c> (each gap ≤ 4.5 min)
 ```
 
 Then arm THREE backgrounded shell timers (using `run_in_background: true`):
 
 ```bash
-sleep <low/2 in seconds> && echo "... <agent-name> still running (<low/2>m elapsed of ~<low>–<high>)"
-sleep <low in seconds>   && echo "... <agent-name> at estimated time (<low>m elapsed of ~<low>–<high>; awaiting completion)"
-sleep <1.5×low in seconds> && echo "⚠️  <agent-name> EXCEEDED estimate (<1.5×low>m elapsed of ~<low>–<high>); consider checking on it or cancelling"
+sleep <a = min(low/2, 4.5 min) in seconds>    && echo "... <agent-name> still running (<a>m elapsed of ~<low>–<high>)"
+sleep <b = min(low, 9 min) in seconds>        && echo "... <agent-name> at estimated time (<b>m elapsed of ~<low>–<high>; awaiting completion)"
+sleep <c = min(1.5×low, 13.5 min) in seconds> && echo "⚠️  <agent-name> EXCEEDED estimate (<c>m elapsed of ~<low>–<high>); consider checking on it or cancelling"
 ```
 
 Each timer fires independently of the others and of the subagent. If the
 subagent completes BEFORE a timer fires, the timer fires harmlessly and the
 orchestrator includes it in narration as historical context ("subagent
 completed at 4m; the 5m check-in fired afterward").
+
+**Keep-warm re-arm.** When the last timer fires and the subagent is still running, arm one
+more 4.5-minute timer (`sleep 270 && echo "... <agent-name> still running (<elapsed>m)"`), and
+again on each fire, until the completion notification arrives. Every fire is a request that
+re-reads the orchestrator's cached context and refreshes its 5-minute prompt-cache TTL; a silent
+gap over 5 minutes re-writes the whole context at full price (measured on a 175k-token
+context: $2.18 for the re-write versus about $0.04 for a cache-read wake-up). The 4.5-minute cap
+on every interval exists for the same reason.
 
 ### Step 3 — Dispatch the subagent
 
@@ -124,6 +132,7 @@ the subagent runs LONGER than expected. The three-tier ladder (ETA/2, ETA,
 - ETA/2 = "I haven't gone silent on you"
 - ETA = "the estimate is exhausted; subagent should be wrapping up"
 - 1.5×ETA = "something is wrong; investigate"
+- every gap ≤ 4.5 min = "the cached context is still warm" (see Keep-warm re-arm above)
 
 This catches runaway / hung subagents without requiring the orchestrator to
 actively poll (which is hard in a pure-skill-body design).
