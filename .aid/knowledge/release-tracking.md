@@ -29,6 +29,14 @@ review-criteria:
 > items drained out of `backlog.md` § `Next Release`. `[NEW]` items lead with a feature
 > name; `[CHANGE]` / `[FIX]` are description-only.
 
+## v3.1.3 - 2026-09-21
+
+> **Patch release.** Nothing breaks. `aid add` / `aid update` on Windows PowerShell 7 no
+> longer crash when the project manifest still has an empty `tools` object (the shape
+> `aid init` writes).
+
+- [FIX] Windows PowerShell 7 installer crashed on `aid add` / `aid update` when `.aid/.aid-manifest.json` had `"tools": {}`. StrictMode treated `.PSObject.Properties.Name` as member enumeration and threw `The property 'Name' cannot be found`; the manifest write aborted and the tool was never recorded. The lookup now indexes the property bag, and a preserved tool with a single path is no longer flattened to a string.
+
 ## v3.1.2 - 2026-09-16
 
 > **Patch release.** Nothing breaks and no file format changes. The sub-agent dispatch

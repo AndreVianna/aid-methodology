@@ -803,7 +803,7 @@ function Read-ManifestToolPaths {
     if (-not (Test-Path $ManifestPath -PathType Leaf)) { return @() }
     try {
         $data = Get-Content -LiteralPath $ManifestPath -Raw | ConvertFrom-Json
-        $toolData = if ($data.tools -and ($data.tools.PSObject.Properties.Name -contains $Tool)) { $data.tools.$Tool } else { $null }
+        $toolData = if ($data.tools -and $data.tools.PSObject.Properties[$Tool]) { $data.tools.$Tool } else { $null }
         if ($toolData -and $toolData.PSObject.Properties['paths'] -and $toolData.paths) {
             return @($toolData.paths)
         }
@@ -818,7 +818,7 @@ function Read-ManifestToolVersion {
     if (-not (Test-Path $ManifestPath -PathType Leaf)) { return '' }
     try {
         $data = Get-Content -LiteralPath $ManifestPath -Raw | ConvertFrom-Json
-        $toolData = if ($data.tools -and ($data.tools.PSObject.Properties.Name -contains $Tool)) { $data.tools.$Tool } else { $null }
+        $toolData = if ($data.tools -and $data.tools.PSObject.Properties[$Tool]) { $data.tools.$Tool } else { $null }
         if ($toolData -and $toolData.PSObject.Properties['version'] -and $toolData.version) { return [string]$toolData.version }
     } catch {}
     return ''
@@ -831,7 +831,7 @@ function Read-ManifestRootAgent {
     if (-not (Test-Path $ManifestPath -PathType Leaf)) { return '' }
     try {
         $data = Get-Content -LiteralPath $ManifestPath -Raw | ConvertFrom-Json
-        $toolData = if ($data.tools -and ($data.tools.PSObject.Properties.Name -contains $Tool)) { $data.tools.$Tool } else { $null }
+        $toolData = if ($data.tools -and $data.tools.PSObject.Properties[$Tool]) { $data.tools.$Tool } else { $null }
         # Guard root_agent_files: absent on old-format manifests; PSObject.Properties['key'] is
         # safe under Set-StrictMode -Version Latest unlike direct property access.
         $raf = if ($toolData -and $toolData.PSObject.Properties['root_agent_files']) { $toolData.root_agent_files } else { $null }
@@ -854,7 +854,7 @@ function Read-ManifestRootAgentStatus {
     if (-not (Test-Path $ManifestPath -PathType Leaf)) { return '' }
     try {
         $data = Get-Content -LiteralPath $ManifestPath -Raw | ConvertFrom-Json
-        $toolData = if ($data.tools -and ($data.tools.PSObject.Properties.Name -contains $Tool)) { $data.tools.$Tool } else { $null }
+        $toolData = if ($data.tools -and $data.tools.PSObject.Properties[$Tool]) { $data.tools.$Tool } else { $null }
         $raf = if ($toolData -and $toolData.PSObject.Properties['root_agent_files']) { $toolData.root_agent_files } else { $null }
         if ($raf) {
             foreach ($entry in $raf) {
@@ -879,7 +879,9 @@ function Read-ManifestTools {
     try {
         $data = Get-Content -LiteralPath $ManifestPath -Raw | ConvertFrom-Json
         if ($data.tools) {
-            $keys = @($data.tools.PSObject.Properties.Name)
+            # Enumerate explicitly: `.PSObject.Properties.Name` is member enumeration, which
+            # throws under Set-StrictMode -Version Latest when "tools" is an empty object.
+            $keys = @(foreach ($p in $data.tools.PSObject.Properties) { $p.Name })
             if ($keys.Count -gt 0) { return $keys }
         }
     } catch {}
@@ -1067,14 +1069,21 @@ function Write-AidManifest {
     $toolsMap = [System.Collections.Specialized.OrderedDictionary]::new()
 
     # Preserve existing tools (other than the current one).
-    if ($existingData -and $existingData.tools) {
-        $existingData.tools.PSObject.Properties | ForEach-Object {
+    $existingTools = if ($existingData -and $existingData.PSObject.Properties['tools']) { $existingData.tools } else { $null }
+    if ($existingTools) {
+        $existingTools.PSObject.Properties | ForEach-Object {
             $tid = $_.Name
             if ($tid -ne $Tool) {
                 $t   = $_.Value
                 # Guard per-tool properties: old manifests lack root_agent_files; use
                 # PSObject.Properties['key'] check before direct access (StrictMode-safe).
-                $tP  = if ($t.PSObject.Properties['paths'] -and $t.paths) { [System.Collections.Generic.List[string]]($t.paths) } else { [System.Collections.Generic.List[string]]::new() }
+                # Fill the list with Add(): `$tP = if (...) { $list }` sends the list through
+                # the pipeline, which unrolls it -- a single-path tool would come back as a
+                # bare [string] and blow up on .Count in script:Build-ManifestJson.
+                $tP  = [System.Collections.Generic.List[string]]::new()
+                if ($t.PSObject.Properties['paths'] -and $t.paths) {
+                    foreach ($tPath in $t.paths) { $tP.Add([string]$tPath) }
+                }
                 $tR  = [System.Collections.Generic.List[hashtable]]::new()
                 $tRaf = if ($t.PSObject.Properties['root_agent_files']) { $t.root_agent_files } else { $null }
                 if ($tRaf) {
@@ -1098,8 +1107,10 @@ function Write-AidManifest {
 
     # Existing data for the current tool.
     $existingTool = $null
-    if ($existingData -and $existingData.tools -and ($existingData.tools.PSObject.Properties.Name -contains $Tool)) {
-        $existingTool = $existingData.tools.$Tool
+    # Indexer lookup, not `.PSObject.Properties.Name -contains`: the latter is member
+    # enumeration and throws under Set-StrictMode -Version Latest when "tools" is `{}`.
+    if ($existingTools -and $existingTools.PSObject.Properties[$Tool]) {
+        $existingTool = $existingTools.$Tool
     }
 
     # tool installed_at: preserve existing.
