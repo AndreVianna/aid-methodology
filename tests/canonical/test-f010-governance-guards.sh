@@ -141,9 +141,9 @@ if [[ -z "${closure_line}" ]]; then
 elif [[ -z "${commit_line}" ]]; then
     fail "G08 state-kb-delta.md: branch-commit.sh --commit invocation not found"
 elif [[ "${closure_line}" -lt "${commit_line}" ]]; then
-    pass "G08 state-kb-delta.md: closure re-verify (line ${closure_line}) precedes commit (line ${commit_line})"
+    pass "G08 state-kb-delta.md: closure re-verify precedes commit"
 else
-    fail "G08 state-kb-delta.md: closure re-verify (line ${closure_line}) does NOT precede commit (line ${commit_line})"
+    fail "G08 state-kb-delta.md: closure re-verify does NOT precede commit"
 fi
 
 # G09: state-done.md (aid-update-kb) references closure-check.sh (update-kb before-commit path).

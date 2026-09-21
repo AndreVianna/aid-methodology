@@ -612,6 +612,37 @@ $env:AID_NO_UPDATE_CHECK = $savedNoUpdT48
 Write-Host ""
 
 # ===========================================================================
+# T54: manifest merge over a bootstrap manifest with an empty "tools" object.
+# `aid init` / `aid projects add` writes "tools": {}; the first `aid add <tool>`
+# must merge into it. Under Set-StrictMode -Version Latest, member enumeration
+# over an empty property bag throws, which aborted the manifest write entirely.
+# T54c covers the sibling case: a preserved tool holding exactly one path.
+# ===========================================================================
+Write-Host "=== T54: manifest merge over empty/one-path tools object ==="
+
+$ProjT54 = Join-Path $TmpRoot 'project-t54'
+New-Item -ItemType Directory -Path (Join-Path $ProjT54 '.aid') -Force | Out-Null
+$mPathT54 = Join-Path (Join-Path $ProjT54 '.aid') '.aid-manifest.json'
+[System.IO.File]::WriteAllText($mPathT54,
+    "{`n  `"format_version`": 2,`n  `"aid_version`": `"$Ver`",`n  `"installed_at`": `"2026-01-01T00:00:00Z`",`n  `"tools`": {}`n}`n")
+
+Run-AidPs1 -AidHome $AidHomeT08 -AidArgs @('add', 'claude-code', '-FromBundle', $FixClaudeCode, '-Target', $ProjT54)
+Assert-Eq "$($script:_LastRC)" '0' 'T54a aid add over empty tools object -> exit 0'
+$m54 = Get-Content -LiteralPath $mPathT54 -Raw | ConvertFrom-Json
+Assert ($null -ne $m54.tools.PSObject.Properties['claude-code']) `
+    'T54b claude-code merged into the empty tools object' 'tools.claude-code must exist'
+
+# T54c: preserved tool with exactly one path must survive a second add.
+[System.IO.File]::WriteAllText($mPathT54,
+    '{"format_version":2,"aid_version":"1.0.0","installed_at":"2026-01-01T00:00:00Z","tools":{"claude-code":{"version":"1.0.0","installed_at":"2026-01-01T00:00:00Z","paths":["CLAUDE.md"],"root_agent_files":[]}}}')
+Run-AidPs1 -AidHome $AidHomeT08 -AidArgs @('add', 'codex', '-FromBundle', $FixCodex, '-Target', $ProjT54)
+Assert-Eq "$($script:_LastRC)" '0' 'T54c aid add beside a single-path tool -> exit 0'
+$m54c = Get-Content -LiteralPath $mPathT54 -Raw | ConvertFrom-Json
+Assert-Eq "$(@($m54c.tools.'claude-code'.paths) -join ',')" 'CLAUDE.md' `
+    'T54d preserved single-path tool keeps its paths array'
+Write-Host ""
+
+# ===========================================================================
 # T45: prune - stale aid-prefixed file removed on update; user file untouched
 # ===========================================================================
 Write-Host "=== T45: prune (stale aid-prefixed file removed, user file kept) ==="
