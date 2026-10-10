@@ -114,11 +114,11 @@ user_approved: 'no'
 # [W] Running | Paused-Awaiting-Input | Blocked | Completed | Canceled
 lifecycle: Running
 # [W] Describe | Define | Specify | Plan | Detail | Execute
-phase: Describe
+phase: Specify
 # [W] aid-{skill} | none
 active_skill: aid-update
 # [W]
-updated: '2026-10-10T14:30:00Z'
+updated: '2026-10-10T15:00:00Z'
 # [W] set only when lifecycle = Paused-Awaiting-Input
 pause_reason: --
 # [W] set only when lifecycle = Blocked
@@ -238,6 +238,10 @@ lifecycle_history:
     event: 'Work created'
     grade: --
     notes: '/aid-update INTAKE -- worktree work-001 off master'
+  - date: '2026-10-10'
+    event: 'CAPTURE complete -- REQUIREMENTS.md written'
+    grade: --
+    notes: '/aid-update CAPTURE'
 
 # [A] aid-deploy only; one entry per delivery (never derived from child
 #     files; aid-deploy is the sole author):
