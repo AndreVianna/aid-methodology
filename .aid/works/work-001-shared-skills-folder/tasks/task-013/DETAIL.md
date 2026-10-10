@@ -25,7 +25,8 @@ Bash and PowerShell twins together, per REQUIREMENTS.md § 11 Feature 001 › Fe
   `Get-AidDriftReport` (new; called by `Get-AidStatus` in `lib/AidInstallCore.psm1`).
 - Checked: every file of `shared.skills`; each mirror against the `shared.skills` hashes (read
   relative to the mirror); `shared.runtime` (including `host.conf`); the `AGENTS.md` region against
-  `region_sha256`; each tool's `files`. An extra is an `aid-*` entry in `.agents/skills/` or a mirror
+  `shared.agents_md.region_sha256`; the `CLAUDE.md` import region against
+  `shared.claude_md.region_sha256` when that entry exists; each tool's `files`. An extra is an `aid-*` entry in `.agents/skills/` or a mirror
   that the manifest does not list, or an unrecorded file in `.aid/runtime/`.
 - Output: after the existing header and tools block, a `Shared files` block listing each
   `modified:`, `missing:` or `extra:` path, then
@@ -42,7 +43,7 @@ Bash and PowerShell twins together, per REQUIREMENTS.md § 11 Feature 001 › Fe
 **Acceptance Criteria:**
 - [ ] After `aid add claude-code`, appending one byte to `.claude/skills/aid-ask/SKILL.md`, deleting `.claude/skills/aid-fix/SKILL.md` and appending one byte to `.agents/skills/aid-plan/SKILL.md`, `aid status` exits `0` and its output names all three paths (as `modified:`, `missing:`, `modified:`) and contains `aid update`.
 - [ ] Adding `.agents/skills/aid-zzz/SKILL.md` and `.aid/runtime/stray.txt` makes `aid status` list both as `extra:`; adding `.agents/skills/my-skill/SKILL.md` adds no line.
-- [ ] Editing a line inside the `AGENTS.md` region is reported as `modified: AGENTS.md`; editing outside the region is not reported.
+- [ ] Editing a line inside the `AGENTS.md` region is reported as `modified: AGENTS.md`, and editing inside the `CLAUDE.md` import region as `modified: CLAUDE.md`; editing outside either region is not reported.
 - [ ] On a clean install `aid status` prints `Shared files: clean`; on a format-2 manifest fixture it prints `Layout: format 4 (pre-shared). Run: aid update` and exits `0`; with no manifest it exits `7`.
 - [ ] The bare `aid` dashboard output on the drifted fixture contains no `Shared files` line.
 - [ ] `bin/aid.ps1 status` on the same fixtures prints the same lines and exit codes where `pwsh` exists; `bash tests/canonical/test-ps51-compat.sh` and `bash tests/canonical/test-ascii-only.sh` exit `0`.

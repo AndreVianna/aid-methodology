@@ -15,7 +15,7 @@
 
 **Type:** IMPLEMENT
 
-**Source:** work-001-shared-skills-folder -> delivery-001 -> AC-10, AC-11
+**Source:** work-001-shared-skills-folder -> delivery-001 -> AC-10, AC-11, AC-14
 
 **Depends on:** task-010
 
@@ -27,8 +27,9 @@ need), per REQUIREMENTS.md § 11 Feature 001 › Feature Flow › 4.
   widened, and the CLI prints a notice listing the tools it added. A subset can no longer advance the
   shared files ahead of the other tools.
 - Stage everything (Flow 2) before any write, then run the Flow 3 commit steps for all tools
-  (shared skills, mirrors, runtime + `host.conf`, agents, `AGENTS.md` region, manifest, `prune_shared`,
-  settings seed, `update_gitignore`). Every tool `version` and every `shared.*.version` ends equal to
+  (shared skills, mirrors, runtime + `host.conf`, agents, `AGENTS.md` region, the `CLAUDE.md`
+  import region while `claude-code` is installed, manifest, `prune_shared`, settings seed,
+  `update_gitignore`). Every tool `version` and every `shared.*.version` ends equal to
   `aid_version`.
 - A format-2 manifest is the migration's branch: this task leaves a single, clearly named dispatch
   point that task-015 fills with `migrate_layout_v2`; until then `aid update` on a format-2 manifest
@@ -45,6 +46,7 @@ need), per REQUIREMENTS.md § 11 Feature 001 › Feature Flow › 4.
 - [ ] With the AC-10 drift applied (one byte appended to `.claude/skills/aid-ask/SKILL.md`, `.claude/skills/aid-fix/SKILL.md` deleted, one byte appended to `.agents/skills/aid-plan/SKILL.md`), `aid update --from-bundle "$S"` restores all three to canonical bytes; the two modified files exist byte-for-byte at `.aid/.trash/.claude/skills/aid-ask/SKILL.md` and `.aid/.trash/.agents/skills/aid-plan/SKILL.md`; a following `aid status` prints `Shared files: clean`.
 - [ ] A stray `.aid/runtime/stray.txt` is absent from `.aid/runtime/` after the next `aid update`.
 - [ ] A second `aid update --from-bundle "$S"` prints `up to date` in the `shared` block and every tool block, and the sha256 snapshot of `.aid/.trash/` and of the whole fixture is unchanged.
+- [ ] In a fixture whose user `CLAUDE.md` (no markers, LF-terminated) received the import region on `aid add claude-code`, a following `aid update --from-bundle "$S"` leaves `CLAUDE.md`'s sha256 unchanged.
 - [ ] `aid update --dry-run --from-bundle "$S"` on a drifted fixture lists the shared copies, the trash moves and the prune list, and the fixture snapshot is unchanged.
 - [ ] The same cases under `bin/aid.ps1` give the same output lines, exit codes and manifest bytes (masked timestamps) where `pwsh` exists; `bash tests/canonical/test-ps51-compat.sh` and `bash tests/canonical/test-ascii-only.sh` exit `0`.
 - [ ] All section-6 quality gates pass.

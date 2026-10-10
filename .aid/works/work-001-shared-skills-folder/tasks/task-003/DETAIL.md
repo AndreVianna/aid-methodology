@@ -31,16 +31,17 @@
   agent still carries a `canonical/` token. Update `--self-test`.
 - `aid-tool.conf` format and content exactly per REQUIREMENTS.md § 11 Feature 001 › Data Model ›
   Descriptor format and Per-profile placement data: ASCII, LF, `key=value`; `tool=<id>`;
-  `skill_mirror=<dir>` (0..n); `worktree_root=<dir>` (0..1).
+  `skill_mirror=<dir>` (0..n); `worktree_root=<dir>` (0..1); and the context-import declaration of
+  FR-6 (0..1; Claude Code declares `CLAUDE.md`), using the key name § 11 Data Model gives it.
 - `render_lib.py`: delete `rewrite_install_paths` and `substitute_filenames` and their call sites
   and self-test cases.
 - `aid_profile.py`: validate the new TOML keys `skill_mirrors` (list; each matches
   `^\.[a-z]+/skills$`, is not `.agents/skills`, and sits under the profile's own root) and
-  `worktree_root` (`.aid/.worktrees` or `<root_dir>/worktrees`, relative, no `..`); `root_file`
-  must be `"AGENTS.md"`.
+  `worktree_root` (`.aid/.worktrees` or `<root_dir>/worktrees`, relative, no `..`) and the
+  context-import key (only `CLAUDE.md` is accepted); `root_file` must be `"AGENTS.md"`.
 - `profiles/*.toml`: `root_file = "AGENTS.md"` in all five; `claude-code.toml` gains
-  `skill_mirrors = [".claude/skills"]` and `worktree_root = ".claude/worktrees"`; the other four
-  declare neither. Header comments stop saying the profile emits a skills/runtime tree.
+  `skill_mirrors = [".claude/skills"]`, `worktree_root = ".claude/worktrees"` and the
+  context-import declaration of `CLAUDE.md`; the other four declare none of them. Header comments stop saying the profile emits a skills/runtime tree.
 - `verify_deterministic.py`, `verify_advisory.py` (and `test_manifest_safety.py` where affected):
   scope cut to agents plus `aid-tool.conf`.
 - `run_generator.py`: stays the single full-render command; its pure-mirror deletion removes
@@ -64,7 +65,7 @@
 - [ ] `python .claude/skills/generate-profile/scripts/run_generator.py` exits `0` and prints `VERIFY (deterministic): PASS`.
 - [ ] `grep -cE '"dst": *"[^"]*/(skills|aid)/' profiles/*/emission-manifest.jsonl` prints `0` for all five manifests.
 - [ ] `find profiles -type d \( -name skills -o -name aid \)` prints nothing.
-- [ ] `profiles/claude-code/aid-tool.conf` holds exactly the lines `tool=claude-code`, `skill_mirror=.claude/skills`, `worktree_root=.claude/worktrees`; each other profile's `aid-tool.conf` holds exactly `tool=<id>`; each file is listed in its profile's `emission-manifest.jsonl`.
+- [ ] `profiles/claude-code/aid-tool.conf` holds exactly the lines `tool=claude-code`, `skill_mirror=.claude/skills`, `worktree_root=.claude/worktrees` and the context-import line naming `CLAUDE.md`; each other profile's `aid-tool.conf` holds exactly `tool=<id>`; each file is listed in its profile's `emission-manifest.jsonl`.
 - [ ] `grep -L 'root_file *= *"AGENTS.md"' profiles/*.toml` prints nothing.
 - [ ] `grep -rlE '(^|[^A-Za-z0-9_])canonical/(aid/)?(scripts|templates|skills|agents|recipes)/' canonical/agents profiles | wc -l` prints `0`.
 - [ ] `grep -nE 'def (rewrite_install_paths|substitute_filenames|_rewrite_skill_frontmatter)' .claude/skills/generate-profile/scripts/*.py` prints nothing.

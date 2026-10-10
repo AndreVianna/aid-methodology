@@ -15,7 +15,7 @@
 
 **Type:** IMPLEMENT
 
-**Source:** work-001-shared-skills-folder -> delivery-001 -> AC-9
+**Source:** work-001-shared-skills-folder -> delivery-001 -> AC-9, AC-14
 
 **Depends on:** task-010
 
@@ -29,7 +29,10 @@ Feature Flow › 5.
   becomes empty has its files removed under the same sha rule and its emptied directories pruned
   (never `<root>`); a mirror goes when no remaining user declares it; when `agents_md` loses its last
   user, delete `AGENTS.md` if it still has `file_sha256`, otherwise print
-  `Left in place (modified or not AID-owned): AGENTS.md`; rewrite `host.conf` (via
+  `Left in place (modified or not AID-owned): AGENTS.md`; when `claude-code` is removed, its
+  `shared.claude_md` entry goes with it: task-005's remove function takes the import region out of
+  `CLAUDE.md` (deleting the file only when nothing but the region remained) and the manifest drops
+  `shared.claude_md`; rewrite `host.conf` (via
   `write_host_conf`) when the runtime remains; delete the manifest and `.aid/settings.yml` when no
   tools remain (existing behaviour).
 - Non-`aid-*` entries in `.agents/skills/` or a mirror are never read or touched; user `.aid/`
@@ -41,6 +44,7 @@ Feature Flow › 5.
 - [ ] A following `aid remove codex` leaves `.agents/skills/aid-*`, `.claude/skills/aid-*`, `.aid/runtime/` and `AGENTS.md` present.
 - [ ] A following `aid remove claude-code` leaves no `.agents/skills/aid-*`, no `.claude/skills/aid-*` and no `.aid/runtime/`; the manifest and `.aid/settings.yml` are gone; an unedited `AGENTS.md` is deleted, while an `AGENTS.md` edited outside the region is left in place with the exact `Left in place` line printed.
 - [ ] Both `my-skill/SKILL.md` files, and pre-seeded `.aid/knowledge/x.md`, `.aid/works/w/STATE.yml` and `.aid/design/d.md`, keep their sha256 through the whole sequence.
+- [ ] AC-14 (d): in a fixture with no prior `CLAUDE.md` and in one whose user `CLAUDE.md` had no markers, after `aid add claude-code,cursor` then `aid remove claude-code`, `CLAUDE.md` is absent in the first and equals its pre-add bytes in the second; in both, `AGENTS.md` has exactly one `<!-- AID:BEGIN -->` line, `shared.agents_md.users` is `["cursor"]`, and the manifest has no `shared.claude_md`.
 - [ ] Removing `claude-code` while `cursor` stays installed rewrites `host.conf` to `worktree_root=.aid/.worktrees` and drops `.claude/skills` from `mirrors`.
 - [ ] An agent file edited before its tool's removal ends up at `.aid/.trash/<its path>`, not deleted.
 - [ ] Each case gives the same tree, output lines and exit codes under `bin/aid.ps1` where `pwsh` exists; `bash tests/canonical/test-ps51-compat.sh` and `bash tests/canonical/test-ascii-only.sh` exit `0`.
