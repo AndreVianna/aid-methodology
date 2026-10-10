@@ -375,11 +375,12 @@ CLI. The Claude Code docs (skills, settings reference, changelog) were checked o
   is moot.
 - **A-2: Copilot CLI reads `.agents/skills`.** Discovery is verified by the 2026-10-10 probe:
   Copilot CLI listed the probe's duplicate skill once, with the `.agents` copy's description. No
-  Copilot skill mirror is needed. Running a skill is not yet verified, because every model call
-  failed with an account-level authorization error unrelated to AID.
-  - *Verify:* skill execution, AC-20, once account access is available.
-  - *Fallback:* if a discovered skill cannot run from `.agents/skills`, a Copilot mirror under
-    FR-6.
+  Copilot skill mirror is needed. Running a skill could not be probed, because every model call
+  failed with an account-level authorization error unrelated to AID; the maintainer accepts
+  execution as behaving like the other `.agents/skills` hosts (Cursor, Antigravity, Codex).
+  - *Verify:* none required; accepted by the maintainer on 2026-10-10.
+  - *Fallback:* if a later report shows a discovered skill cannot run from `.agents/skills`, a
+    Copilot mirror under FR-6.
 - **A-3: Claude Code loads the project-root `AGENTS.md` as context.** The probe evidence above
   did not test this.
   - *Verify:* AC-20.
@@ -542,10 +543,10 @@ CLI. The Claude Code docs (skills, settings reference, changelog) were checked o
     criteria `G-10` and `G-11` in `.aid/knowledge/authoring-conventions.md` state the
     `.aid/runtime/` and `.agents/skills/aid-*` placement rules.
 - **AC-20:** Host assumptions are verified. A maintainer repeats the §8 manual probe method and
-  records a pass or fail as a `lifecycle_history` entry in this work's `STATE.yml` for three
-  checks: Copilot CLI skill execution (A-2), Claude Code loading the project-root `AGENTS.md`
-  (A-3), and the `Bash Shell Terminal` alias list (A-4). A-1 and A-2 discovery are already
-  verified, and A-5 is settled by its adopted fallback (§8).
+  records a pass or fail as a `lifecycle_history` entry in this work's `STATE.yml` for two
+  checks: Claude Code loading the project-root `AGENTS.md` (A-3), and the `Bash Shell Terminal`
+  alias list (A-4). A-1 is verified, A-2 is verified for discovery and accepted by the
+  maintainer for execution, and A-5 is settled by its adopted fallback (§8).
   Each failed assumption has its §8 fallback implemented and covered by an added criterion before
   the work is marked Done.
 - **AC-21:** The existing suites stay green.
@@ -675,7 +676,7 @@ with a message that names the file and key.
 | claude-code | `.claude/agents` | `[".claude/skills"]` | `.claude/worktrees` |
 | codex | `.codex/agents` | none (A-1 verified) | default (`.aid/.worktrees`) |
 | cursor | `.cursor/agents` | none (probe-verified) | default |
-| copilot-cli | `.github/agents` | none (A-2 discovery verified; the fallback `.github/skills` is used only if AC-20 fails execution) | default |
+| copilot-cli | `.github/agents` | none (A-2 discovery verified, execution accepted by the maintainer; the fallback `.github/skills` is used only if a later report shows execution failing) | default |
 | antigravity | `.agent/agents` | none (probe-verified) | default |
 
 Two TOML keys, `skill_mirrors` (a list) and `worktree_root` (a string), are new.
