@@ -31,8 +31,9 @@ Per REQUIREMENTS.md § 11 Feature 001 › Feature Flow › 7 and Migration Plan 
   forward migration: it writes `.agents/skills/aid-*`, rewrites `.claude/skills/aid-*` as the
   mirror, writes `.aid/runtime/` (with `host.conf` = `worktree_root=.claude/worktrees`), the agents
   and the `AGENTS.md` region; moves `.claude/aid/`, `.cursor/aid/` and `.cursor/skills/aid-*` to
-  `.aid/.trash/`; migrates the root `CLAUDE.md` (its full AID region becomes the CLI-owned
-  `@AGENTS.md` import region, the `## Project` content outside it is kept); keeps
+  `.aid/.trash/`; migrates the root `CLAUDE.md` through `_ensure_claude_md_region` (its full AID
+  region becomes the `@AGENTS.md` import region, the `## Project` section outside the markers is
+  kept byte for byte, and the pre-resync file goes to `.aid/.trash/CLAUDE.md`); keeps
   `.claude/skills/generate-profile/`, `.claude/skills/release-aid/`, `.claude/settings.json`,
   `.claude/output-styles/` and `.cursor/rules/`.
 - Commit the results: `.aid/.aid-manifest.json`, `.aid/settings.yml`, `.agents/skills/`,
@@ -53,8 +54,8 @@ Per REQUIREMENTS.md § 11 Feature 001 › Feature Flow › 7 and Migration Plan 
 **Acceptance Criteria:**
 - [ ] For every file `canonical/skills/<rel>`, `cmp canonical/skills/<rel> .agents/skills/<rel>` and `cmp canonical/skills/<rel> .claude/skills/<rel>` succeed; `diff -r canonical/aid/scripts .aid/runtime/scripts` and `diff -r canonical/aid/templates .aid/runtime/templates` print nothing.
 - [ ] `.claude/aid/`, `.cursor/aid/` and every `.cursor/skills/aid-*` are absent; `.claude/skills/generate-profile/SKILL.md`, `.claude/skills/release-aid/SKILL.md` and `.cursor/rules/output-style.mdc` are present and unchanged.
-- [ ] `.aid/.aid-manifest.json` has `"format_version": 3` and records `shared.skills`, `shared.runtime`, `shared.agents_md` and the `.claude/skills` mirror with users `claude-code` and `cursor` as applicable; `.aid/settings.yml` has `format_version: 5`.
-- [ ] `grep -c '^<!-- AID:BEGIN -->$' AGENTS.md` prints `1`; the root `CLAUDE.md` keeps its pre-resync content outside the AID markers byte-for-byte, and its AID region holds only the `@AGENTS.md` import.
+- [ ] `.aid/.aid-manifest.json` has `"format_version": 3` and records `shared.skills`, `shared.runtime`, `shared.agents_md` (users `claude-code`, `cursor`), the `.claude/skills` mirror and `shared.claude_md` (users `claude-code` for both); `.aid/settings.yml` has `format_version: 5`.
+- [ ] `grep -c '^<!-- AID:BEGIN -->$' AGENTS.md` prints `1`; the root `CLAUDE.md` keeps its `## Project` section (all pre-resync content outside the AID markers) byte for byte, and its AID region holds only `@AGENTS.md` (exactly one `@AGENTS.md` line in the file).
 - [ ] Running `python .claude/skills/generate-profile/scripts/sync_dogfood.py` a second time prints `up to date` for `shared` and both tools, and `git status --porcelain` is empty afterwards.
 - [ ] `python .claude/skills/generate-profile/scripts/run_generator.py` exits `0` and leaves `git status --porcelain` empty.
 - [ ] All section-6 quality gates pass.

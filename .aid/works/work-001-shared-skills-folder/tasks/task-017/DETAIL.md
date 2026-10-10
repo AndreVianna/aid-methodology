@@ -15,7 +15,7 @@
 
 **Type:** TEST
 
-**Source:** work-001-shared-skills-folder -> delivery-001 -> AC-3, AC-7
+**Source:** work-001-shared-skills-folder -> delivery-001 -> AC-3, AC-7, AC-14
 
 **Depends on:** task-012, task-014
 
@@ -33,9 +33,17 @@
   `.cursor`, `.github` or `.agent`; pre-seeded `.aid/knowledge/x.md`, `.aid/works/w/STATE.yml` and
   `.aid/design/d.md` keep identical sha256 across `aid add`, `aid update` and `aid remove`; a stray
   file placed in `.aid/runtime/` is gone after the next `aid update`.
+- AC-14 cases (a) and (b), as worded in REQUIREMENTS.md § 9 (the § 11 test plan places them
+  here): (a) `aid add claude-code` into a fixture with no `CLAUDE.md` creates one whose bytes equal
+  the import region (`<!-- AID:BEGIN -->`, `@AGENTS.md`, `<!-- AID:END -->`, each LF-terminated),
+  and `aid add cursor` into a second such fixture creates no `CLAUDE.md`; (b) with a no-marker,
+  LF-terminated user `CLAUDE.md`, the pre-add bytes are a byte-exact prefix and only the import
+  region follows, and a following `aid update` leaves its sha256 unchanged. In each, while Claude
+  Code is installed, `CLAUDE.md` has exactly one `@AGENTS.md` line and `AGENTS.md` exactly one
+  `<!-- AID:BEGIN -->` line.
 
 **Acceptance Criteria:**
-- [ ] `HOME=$(mktemp -d) bash tests/canonical/test-shared-install.sh --verbose` exits `0`, with a `PASS:` line per tool for the AC-3 byte comparison, the AC-3 file count, each AC-7 clause, and one for the negative control.
+- [ ] `HOME=$(mktemp -d) bash tests/canonical/test-shared-install.sh --verbose` exits `0`, with a `PASS:` line per tool for the AC-3 byte comparison, the AC-3 file count, each AC-7 clause, one for the negative control, and one per AC-14 (a)/(b) clause.
 - [ ] Reverting the payload mutation guard (forcing the negative control to install unmutated bytes) in a scratch copy makes the negative-control assertion fail, proving the control is live.
 - [ ] The suite reads no file under `.aid/works/` of this repository and leaves the real repo's `git status --porcelain` unchanged.
 - [ ] All section-6 quality gates pass.

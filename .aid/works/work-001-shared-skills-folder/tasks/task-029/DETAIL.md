@@ -32,8 +32,9 @@
     the `.claude/skills` mirror, `.aid/runtime/`, the `AGENTS.md` region and the Claude Code
     `CLAUDE.md` `@AGENTS.md` import region; reference counting; drift; one version per repo),
     § Invariants (content isolation now reads: skills use the `aid-` prefix under `.agents/skills/`
-    and each mirror, the runtime lives under `.aid/runtime/`, root files are updated only between the
-    AID markers), § Gotchas (the INDEX-path gotcha is dissolved; the dogfood resync is a CLI install),
+    and each mirror, the runtime lives under `.aid/runtime/`, and the root files are updated only
+    between their markers -- the `AGENTS.md` region for every tool and, while Claude Code is
+    installed, the `CLAUDE.md` region, which holds only `@AGENTS.md`), § Gotchas (the INDEX-path gotcha is dissolved; the dogfood resync is a CLI install),
     § Doc-vs-Code Discrepancies (the closed three-profile `EMISSION-MANIFEST.md` gap is removed);
   - `authoring-conventions.md`: `G-10` and `G-11` state the `.aid/runtime/` and `.agents/skills/aid-*`
     placement rules; `G-13` no longer names a `.codex/aid/` namespace; § Content Isolation matches;

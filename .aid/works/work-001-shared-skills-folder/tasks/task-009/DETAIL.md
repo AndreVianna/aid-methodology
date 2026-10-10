@@ -27,18 +27,20 @@ Bash and PowerShell twins together, per REQUIREMENTS.md § 11 Feature 001 › Fe
   (a newly added `claude-code` creates `.claude/skills/aid-*`); the staged runtime to
   `.aid/runtime/`; the `AGENTS.md` region through `_copy_root_agent_file` branches A, B and C2, with
   the whole file copied to the trash first when its region differs from what is being written and
-  either has no recorded `region_sha256` or no longer matches it; and, while `claude-code` is
-  installed (its `aid-tool.conf` declares the `CLAUDE.md` context import), the `CLAUDE.md` import
-  region through task-005's write function, recorded as the `shared.claude_md` entry (users
-  `["claude-code"]`, region and file sha256).
+  either has no recorded `region_sha256` or no longer matches it; then, when any user's
+  `aid-tool.conf` declares `context_import` (Claude Code: `CLAUDE.md`), the `CLAUDE.md` import
+  region through `_ensure_claude_md_region` / `Invoke-EnsureClaudeMdRegion` (task-005), recorded
+  as the `shared.claude_md` entry (`path`, `version`, `users` = the declaring tools,
+  `region_sha256`).
 - `install_tool` / `Install-AidTool` rewritten: places only the tool's `<root>/agents/` files.
 - `aid add` commit order exactly as Flow 3 step 6: shared skills, mirrors, runtime, each new tool's
   agents, the `AGENTS.md` region (then the `CLAUDE.md` import region when `claude-code` is
   installed); any copy failure aborts before the manifest write; then the format-3 manifest is
   written atomically (each new tool joins every shared `users` list it uses; every file recorded
-  with the sha256 of its staged bytes; `region_sha256` and `file_sha256` for `agents_md` and
-  `claude_md`). The CLI never writes the full AID region into `CLAUDE.md`, and never reads or
-  writes `CLAUDE.md` while `claude-code` is not installed.
+  with the sha256 of its staged bytes; `region_sha256` and `file_sha256` for `agents_md`;
+  `region_sha256` for `claude_md`; an entry whose user list would be empty is absent). The CLI
+  never writes the full AID region into `CLAUDE.md`, and never reads or writes `CLAUDE.md` while no
+  installed tool declares `context_import`.
 - Never read, write or prune a non-`aid-*` entry in `.agents/skills/` or in a mirror.
 - Output: one summary block for `shared` and one per tool, in the existing counter format; a block
   with nothing to change prints `up to date (N files)`.

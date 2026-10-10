@@ -52,8 +52,7 @@ file.
     matches `region_sha256`, copy the whole file to the trash first; remove the region, marker
     lines included, keeping every other byte; delete the file when the remainder is empty or
     whitespace-only; leave a file that has lost its markers byte-unchanged.
-  - The former `_migrate_claude_md` / `Invoke-MigrateClaudeMd` rows are not built. Neither new
-    function runs while no installed tool declares `context_import`; the wiring into add, update,
+  - Neither function runs while no installed tool declares `context_import`; the wiring into add, update,
     remove and migration is tasks 009, 014, 012 and 015.
 - Retire `tests/canonical/test-agents-md-invariant.sh` (its subject, the per-profile copies, is
   gone) with one `tests/coverage-accepted-removals.tsv` row per removed key; re-key the

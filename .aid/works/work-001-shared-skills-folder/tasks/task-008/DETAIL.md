@@ -33,7 +33,7 @@ Data Model › Validation.
 - `extract_payload` / `Expand-AidPayload` (new): first member is the wrapper, every member under it,
   no absolute path and no `..` segment; returns `<dest>/<wrapper>` as the staging root.
 - Descriptor validation before any write, via `read_kv_conf` / `Read-AidKvConf`: `skill_mirror`,
-  `worktree_root`, the context-import key (only `CLAUDE.md` accepted), `layout_format` (must equal `AID_SUPPORTED_FORMAT`; higher prints
+  `worktree_root`, `context_import` (must be `CLAUDE.md`), `layout_format` (must equal `AID_SUPPORTED_FORMAT`; higher prints
   `This release needs a newer aid CLI. Run: aid update self`), `aid_version` (must equal the artifact
   name's version). A violation exits 1 naming the file and key.
 - Per-tool allowlist: a tool artifact may contain only `aid-tool.conf` and `<that tool's root>/agents/`.

@@ -27,7 +27,7 @@
   - agents: `.claude/agents/aid-*` and `.cursor/agents/aid-*` equal their profile emission-manifest
     rows;
   - the manifest records the shared entries (`shared.skills`, `shared.runtime`, `shared.agents_md`,
-    the `.claude/skills` mirror);
+    `shared.claude_md`, the `.claude/skills` mirror);
   - root context: the repo-root `CLAUDE.md` AID region holds only `@AGENTS.md` and its
     `## Project` section is present; `AGENTS.md` has exactly one `<!-- AID:BEGIN -->` line;
   - absences: `.claude/aid/`, `.cursor/aid/`, `.cursor/skills/aid-*`;

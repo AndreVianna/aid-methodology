@@ -15,7 +15,7 @@
 
 **Type:** TEST
 
-**Source:** work-001-shared-skills-folder -> delivery-001 -> AC-9, AC-10
+**Source:** work-001-shared-skills-folder -> delivery-001 -> AC-9, AC-10, AC-14
 
 **Depends on:** task-012, task-013, task-014
 
@@ -33,11 +33,16 @@
   `aid update --from-bundle <same staging>` restores canonical bytes; the two modified files exist
   byte-for-byte under `.aid/.trash/` at their original relative paths; a second `aid status` reports
   no drift.
+- AC-14 case (d), as worded (the § 11 test plan places it here): in a fixture with no prior
+  `CLAUDE.md` and in one whose user `CLAUDE.md` has no markers, run `aid add claude-code,cursor`
+  then `aid remove claude-code`; `CLAUDE.md` is then absent in the first and equal to its pre-add
+  bytes in the second; in both, `AGENTS.md` has exactly one `<!-- AID:BEGIN -->` line,
+  `shared.agents_md.users` is `["cursor"]` and the manifest has no `shared.claude_md`.
 - Every removed or renamed assertion key gets a row in `tests/coverage-accepted-removals.tsv`
   (or the re-home allowlist when it moved to another suite).
 
 **Acceptance Criteria:**
-- [ ] `HOME=$(mktemp -d) bash tests/canonical/test-multitool-isolation.sh --verbose` exits `0` with a `PASS:` line for every clause of AC-9 and AC-10 listed in Scope.
+- [ ] `HOME=$(mktemp -d) bash tests/canonical/test-multitool-isolation.sh --verbose` exits `0` with a `PASS:` line for every clause of AC-9, AC-10 and AC-14 (d) listed in Scope.
 - [ ] `grep -c 'profiles/' tests/canonical/test-multitool-isolation.sh` prints `0`.
 - [ ] The coverage-parity gate (`bash tests/coverage-parity.sh diff --baseline tests/coverage-baseline.tsv --collect --accept tests/coverage-accepted-removals.tsv --allow tests/coverage-rehome-allowlist.tsv`, run where `pwsh`, `node` and `python3` are on PATH) reports no un-excused removal for this suite.
 - [ ] All section-6 quality gates pass.

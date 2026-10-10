@@ -29,10 +29,11 @@ Feature Flow › 5.
   becomes empty has its files removed under the same sha rule and its emptied directories pruned
   (never `<root>`); a mirror goes when no remaining user declares it; when `agents_md` loses its last
   user, delete `AGENTS.md` if it still has `file_sha256`, otherwise print
-  `Left in place (modified or not AID-owned): AGENTS.md`; when `claude-code` is removed, its
-  `shared.claude_md` entry goes with it: task-005's remove function takes the import region out of
-  `CLAUDE.md` (deleting the file only when nothing but the region remained) and the manifest drops
-  `shared.claude_md`; rewrite `host.conf` (via
+  `Left in place (modified or not AID-owned): AGENTS.md`; when `shared.claude_md` loses its last
+  user, run `_remove_claude_md_region` / `Invoke-RemoveClaudeMdRegion` (task-005: trash first if
+  the region drifted, remove the region, delete the file only when nothing but whitespace
+  remains) and drop `shared.claude_md` from the manifest, leaving the `AGENTS.md` region in place
+  for the remaining tools; rewrite `host.conf` (via
   `write_host_conf`) when the runtime remains; delete the manifest and `.aid/settings.yml` when no
   tools remain (existing behaviour).
 - Non-`aid-*` entries in `.agents/skills/` or a mirror are never read or touched; user `.aid/`

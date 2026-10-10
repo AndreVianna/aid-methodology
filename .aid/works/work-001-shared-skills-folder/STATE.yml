@@ -118,7 +118,7 @@ phase: Detail
 # [W] aid-{skill} | none
 active_skill: aid-update
 # [W]
-updated: '2026-10-10T15:00:00Z'
+updated: '2026-10-10T18:00:00Z'
 # [W] set only when lifecycle = Paused-Awaiting-Input
 pause_reason: --
 # [W] set only when lifecycle = Blocked
@@ -130,7 +130,7 @@ ticket_ref: --
 
 # Flattened single-delivery works only -- omit these 4 keys for full works.
 # [W] Pending-Spec | Specified | Executing | Gated | Done | Blocked
-delivery_state: Pending-Spec
+delivery_state: Specified
 # [W] Small | Medium | Large
 gate_tier: Small
 # [W]
@@ -250,6 +250,10 @@ lifecycle_history:
     event: 'PLAN complete -- one delivery, nothing to sequence; no artifact'
     grade: --
     notes: '/aid-update PLAN'
+  - date: '2026-10-10'
+    event: 'DETAIL complete -- 32 task(s) written'
+    grade: --
+    notes: '/aid-update DETAIL'
 
 # [A] aid-deploy only; one entry per delivery (never derived from child
 #     files; aid-deploy is the sole author):
@@ -261,7 +265,7 @@ deploy: []
 #     synthesized delivery-001. Never derived from task rollup. `updated` is
 #     a writer-targeted child key (L-2).
 delivery_lifecycle:
-  updated: '2026-10-10T14:30:00Z'
+  updated: '2026-10-10T18:00:00Z'
   block_reason: --
   block_artifact: --
 
@@ -273,7 +277,199 @@ delivery_lifecycle:
 #     Mirrors the fields of task-state-template.yml (state/review/elapsed/
 #     notes/display_name), one entry per task-NNN.
 #   state: Pending | In Progress | In Review | Blocked | Done | Failed | Canceled
-tasks_lifecycle: {}
+tasks_lifecycle:
+  task-001:
+    state: Pending
+    review: --
+    elapsed: --
+    notes: --
+    display_name: --
+  task-002:
+    state: Pending
+    review: --
+    elapsed: --
+    notes: --
+    display_name: --
+  task-003:
+    state: Pending
+    review: --
+    elapsed: --
+    notes: --
+    display_name: --
+  task-004:
+    state: Pending
+    review: --
+    elapsed: --
+    notes: --
+    display_name: --
+  task-005:
+    state: Pending
+    review: --
+    elapsed: --
+    notes: --
+    display_name: --
+  task-006:
+    state: Pending
+    review: --
+    elapsed: --
+    notes: --
+    display_name: --
+  task-007:
+    state: Pending
+    review: --
+    elapsed: --
+    notes: --
+    display_name: --
+  task-008:
+    state: Pending
+    review: --
+    elapsed: --
+    notes: --
+    display_name: --
+  task-009:
+    state: Pending
+    review: --
+    elapsed: --
+    notes: --
+    display_name: --
+  task-010:
+    state: Pending
+    review: --
+    elapsed: --
+    notes: --
+    display_name: --
+  task-011:
+    state: Pending
+    review: --
+    elapsed: --
+    notes: --
+    display_name: --
+  task-012:
+    state: Pending
+    review: --
+    elapsed: --
+    notes: --
+    display_name: --
+  task-013:
+    state: Pending
+    review: --
+    elapsed: --
+    notes: --
+    display_name: --
+  task-014:
+    state: Pending
+    review: --
+    elapsed: --
+    notes: --
+    display_name: --
+  task-015:
+    state: Pending
+    review: --
+    elapsed: --
+    notes: --
+    display_name: --
+  task-016:
+    state: Pending
+    review: --
+    elapsed: --
+    notes: --
+    display_name: --
+  task-017:
+    state: Pending
+    review: --
+    elapsed: --
+    notes: --
+    display_name: --
+  task-018:
+    state: Pending
+    review: --
+    elapsed: --
+    notes: --
+    display_name: --
+  task-019:
+    state: Pending
+    review: --
+    elapsed: --
+    notes: --
+    display_name: --
+  task-020:
+    state: Pending
+    review: --
+    elapsed: --
+    notes: --
+    display_name: --
+  task-021:
+    state: Pending
+    review: --
+    elapsed: --
+    notes: --
+    display_name: --
+  task-022:
+    state: Pending
+    review: --
+    elapsed: --
+    notes: --
+    display_name: --
+  task-023:
+    state: Pending
+    review: --
+    elapsed: --
+    notes: --
+    display_name: --
+  task-024:
+    state: Pending
+    review: --
+    elapsed: --
+    notes: --
+    display_name: --
+  task-025:
+    state: Pending
+    review: --
+    elapsed: --
+    notes: --
+    display_name: --
+  task-026:
+    state: Pending
+    review: --
+    elapsed: --
+    notes: --
+    display_name: --
+  task-027:
+    state: Pending
+    review: --
+    elapsed: --
+    notes: --
+    display_name: --
+  task-028:
+    state: Pending
+    review: --
+    elapsed: --
+    notes: --
+    display_name: --
+  task-029:
+    state: Pending
+    review: --
+    elapsed: --
+    notes: --
+    display_name: --
+  task-030:
+    state: Pending
+    review: --
+    elapsed: --
+    notes: --
+    display_name: --
+  task-031:
+    state: Pending
+    review: --
+    elapsed: --
+    notes: --
+    display_name: --
+  task-032:
+    state: Pending
+    review: --
+    elapsed: --
+    notes: --
+    display_name: --
 
 # [A] flattened only; single writer: the delivery-gate closing step of
 #     aid-execute on this work's active branch, written via
