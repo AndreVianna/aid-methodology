@@ -114,7 +114,7 @@ user_approved: 'no'
 # [W] Running | Paused-Awaiting-Input | Blocked | Completed | Canceled
 lifecycle: Running
 # [W] Describe | Define | Specify | Plan | Detail | Execute
-phase: Specify
+phase: Detail
 # [W] aid-{skill} | none
 active_skill: aid-update
 # [W]
@@ -242,6 +242,14 @@ lifecycle_history:
     event: 'CAPTURE complete -- REQUIREMENTS.md written'
     grade: --
     notes: '/aid-update CAPTURE'
+  - date: '2026-10-10'
+    event: 'SPEC complete -- REQUIREMENTS.md § 11 feature section written'
+    grade: --
+    notes: '/aid-update SPEC'
+  - date: '2026-10-10'
+    event: 'PLAN complete -- one delivery, nothing to sequence; no artifact'
+    grade: --
+    notes: '/aid-update PLAN'
 
 # [A] aid-deploy only; one entry per delivery (never derived from child
 #     files; aid-deploy is the sole author):
