@@ -2462,7 +2462,7 @@ function Install-AidShared {
     $records.Add("aid_version`t$Version"); $records.Add("installed_at`t$(if ($old -and $old.installed_at) { $old.installed_at } else { (Get-Date).ToUniversalTime().ToString('yyyy-MM-ddTHH:mm:ssZ') })")
     $worktree=(@($allTools | Where-Object { $toolMeta[$_].worktree }) | Select-Object -First 1)
     if ($worktree) { $records.Add("host.worktree_root`t$($toolMeta[$worktree].worktree)") }
-    else { $records.Add('host.worktree_root`t.aid/.worktrees') }
+    else { $records.Add("host.worktree_root`t.aid/.worktrees") }
     $sharedRoots = @(
         @{ Name='skills'; Root='.agents/skills' },
         @{ Name='runtime'; Root='.aid/runtime' }
@@ -2478,7 +2478,7 @@ function Install-AidShared {
     }
     $records.Add("shared.agents_md.path`tAGENTS.md"); $records.Add("shared.agents_md.version`t$Version"); $records.Add("shared.agents_md.users`t$($allTools -join ',')"); $records.Add("shared.agents_md.region_sha256`t$regionSha"); $records.Add("shared.agents_md.file_sha256`t$agentsSha")
     foreach ($mirror in @($mirrorUsers.Keys | Sort-Object)) { $users=@($script:AID_TOOLS | Where-Object { $mirrorUsers[$mirror] -contains $_ }); $records.Add("shared.mirror`t$mirror`t$Version`t$($users -join ',')") }
-    if ($claudeSha) { $records.Add('shared.claude_md.path`tCLAUDE.md'); $records.Add("shared.claude_md.version`t$Version"); $records.Add("shared.claude_md.users`t$($claudeUsers -join ',')"); $records.Add("shared.claude_md.region_sha256`t$claudeSha") }
+    if ($claudeSha) { $records.Add("shared.claude_md.path`tCLAUDE.md"); $records.Add("shared.claude_md.version`t$Version"); $records.Add("shared.claude_md.users`t$($claudeUsers -join ',')"); $records.Add("shared.claude_md.region_sha256`t$claudeSha") }
     $toolObjects=script:Get-AidJsonProp $old 'tools'
     foreach ($tool in $allTools) {
         $obj=script:Get-AidJsonProp $toolObjects $tool
