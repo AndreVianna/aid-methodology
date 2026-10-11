@@ -33,16 +33,19 @@ Feature Flow › 3 (steps 2 to 4).
   fresh `aid add` seeds the stamp the layout gate accepts.
 - Stamp cap in `_aid_migrate_repo` and `Invoke-AidMigrateRepo` (PowerShell): write `format_version: 5` only when the
   manifest records `format_version` 3, or when no manifest, recovery record or v3 legacy evidence
-  exists (proven fresh install); otherwise write `4`. "v3 legacy evidence" is the list in
-  REQUIREMENTS.md § 5 FR-11 (manifest `format_version` <= 2, `<root>/aid/`, or `<root>/skills/aid-*`
+  exists (proven fresh install), or when the manifest records no tools and no other v3 legacy evidence
+  exists (bare project); otherwise write `4`. "v3 legacy evidence" is the list in
+  REQUIREMENTS.md § 5 FR-11 (manifest `format_version` <= 2 that records at least one tool, `<root>/aid/`, or `<root>/skills/aid-*`
   for the five tool roots; v4 agents `<root>/agents/aid-*` never count; a valid format-3 manifest
   exempts the v4 Claude mirror; user directory-only evidence never triggers refusal). Manifest-less
   legacy remains stamp 4 after `aid projects add` / `aid update self`, so `aid add` directs users to
   `aid update`.
 - `_aid_layout_gate` (new) and `Test-AidLayoutGate` (new, PowerShell), run by `aid add` after the writability pre-check: a
-  manifest exists and records `format_version` < 3, an existing settings stamp is < 5, a recovery
-  record exists, or v3 legacy evidence (FR-11 list) exists -> exit 2. A fresh repo with no such
-  evidence passes, including when settings are absent, print
+  manifest exists, records at least one tool and records `format_version` < 3, an existing settings
+  stamp is < 5 while the manifest records at least one tool, a recovery record exists, or v3 legacy
+  evidence (FR-11 list) exists -> exit 2. A fresh repo with no such evidence passes, including when
+  settings are absent; a bare project (manifest with no tools, no other legacy evidence) passes
+  whatever its manifest format and stamp, and that add writes the format-3 manifest and stamp 5. On refusal print
   `This project uses the v3 AID layout. Run: aid update (it upgrades every installed tool), then retry aid add.`,
   write nothing.
 - Skew gate inside the `FR11: aid add version selection` block and the same-named block in `bin/aid.ps1`: a `tools.*.version` or
@@ -68,7 +71,7 @@ Feature Flow › 3 (steps 2 to 4).
 - [ ] In a fixture holding a format-2 manifest that records at least one tool (e.g. `tools.codex`) and `format_version: 4` settings, `aid add cursor` exits `2`, prints the layout-gate message (`This project uses the v3 AID layout. Run: aid update ...`), and a sha256 snapshot of the fixture tree (`find . -type f -exec sha256sum {} +`, sorted) is unchanged.
 - [ ] In a fixture whose format-3 manifest records `tools.codex.version` different from `aid_version`, `aid add cursor` exits `2` and its output contains `aid update`; the fixture snapshot is unchanged.
 - [ ] `_aid_migrate_repo` on a format-2 manifest that records a tool writes `format_version: 4`; on a manifest with no tools and no other v3 legacy evidence (bare project) writes `5`; on a format-3 manifest writes `5`; on proven-fresh state (no manifest, recovery record or v3 legacy evidence) writes `5`; with no manifest and a recovery record or v3 legacy evidence it writes `4`; v4 agent files `<root>/agents/aid-*` alone leave it at `5`. Exercise both shells.
-- [ ] In a fixture holding a format-3 manifest and a settings stamp of `4` (the state left by `aid update self`), `aid add cursor` exits `2`, prints the layout-gate message, and the fixture snapshot is unchanged.
+- [ ] In a fixture holding a format-3 manifest that records at least one tool (e.g. `tools.codex`) and a settings stamp of `4` (the state left by `aid update self`), `aid add cursor` exits `2`, prints the layout-gate message, and the fixture snapshot is unchanged.
 - [ ] `grep -n '^format_version:' canonical/aid/templates/settings.yml` prints `format_version: 5` (the two-add end-to-end check lives in tasks 009, 010 and 020, which run after the install path exists).
 - [ ] A manifest with `"format_version": 4` makes `aid status` refuse with a message containing `Run: aid update self`.
 - [ ] Each case above gives the same exit code and output lines under `bin/aid.ps1` where `pwsh` exists.

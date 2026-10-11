@@ -46,5 +46,5 @@
 - [ ] `grep -cE 'profiles/[a-z-]+/' tests/canonical/test-aid-cli.sh tests/canonical/test-aid-cli-ps1.sh` prints `0` for both.
 - [ ] The coverage-parity gate (run where `pwsh`, `node` and `python3` are on PATH) reports no un-excused removal for these two suites.
 - [ ] `test-aid-cli.sh` prints a `PASS:` line for the bare-project regression (`aid projects add <dir>` then `aid add cursor --target <dir> --from-bundle <stage>` exits `0`; the v3-style bare fixture with stamp-4 settings also exits `0` and ends with `format_version: 5`), and `test-aid-cli-ps1.sh` the same where `pwsh` exists.
-- [ ] Existing format-3 manifest with settings stamp 4 refuses `aid add` unchanged; a manifest-less legacy tree continues refusing after projects-add/update-self settings migration; future formats remain read-only refused.
+- [ ] Existing format-3 manifest that records at least one tool, with settings stamp 4, refuses `aid add` unchanged; a manifest-less legacy tree continues refusing after projects-add/update-self settings migration; future formats remain read-only refused.
 - [ ] All section-6 quality gates pass.
