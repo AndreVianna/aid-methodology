@@ -73,6 +73,10 @@ $script:_CopyCountUpdated  = 0
 $script:_CopyCountSkipped  = 0
 $script:_CopyCountFailed   = 0
 
+# v3-upgrade flag read by Install-AidShared. bin/aid.ps1 (dot-sourced) re-assigns it per run;
+# initialised here so an Import-Module caller (install.ps1) never reads an unset variable.
+$script:_AidV3Upgrade = $false
+
 # Module-level prune counter for shared-layout prune accounting.
 $script:_PruneRemoved = 0
 
@@ -1642,8 +1646,8 @@ function Remove-ManifestTool {
         $remainingRoots = @($data.tools.PSObject.Properties | ForEach-Object {
             $p = $_.Value.PSObject.Properties['worktree_root']; if ($p -and $p.Value) { [string]$p.Value }
         } | Where-Object { $_ })
-        $host = script:Get-AidJsonProp $data 'host'
-        if ($null -ne $host) { $host.worktree_root = if ($remainingRoots.Count -gt 0) { $remainingRoots[0] } else { '.aid/.worktrees' } }
+        $hostObj = script:Get-AidJsonProp $data 'host'
+        if ($null -ne $hostObj) { $hostObj.worktree_root = if ($remainingRoots.Count -gt 0) { $remainingRoots[0] } else { '.aid/.worktrees' } }
         $json = ConvertTo-Json -InputObject $data -Depth 30
         [System.IO.File]::WriteAllText($ManifestPath, $json + "`n", (New-Object System.Text.UTF8Encoding($false)))
         return
@@ -2641,7 +2645,7 @@ function Install-AidShared {
     }
     $model=Join-Path $Target ('.manifest-model.'+[System.IO.Path]::GetRandomFileName())
     $records=New-Object System.Collections.Generic.List[string]
-    $records.Add("aid_version`t$Version"); $records.Add("installed_at`t$(if ($old -and $old.installed_at) { $old.installed_at } else { (Get-Date).ToUniversalTime().ToString('yyyy-MM-ddTHH:mm:ssZ') })")
+    $records.Add("aid_version`t$Version"); $records.Add("installed_at`t$(if ($old -and (script:Get-AidJsonProp $old 'installed_at')) { script:Get-AidJsonProp $old 'installed_at' } else { (Get-Date).ToUniversalTime().ToString('yyyy-MM-ddTHH:mm:ssZ') })")
     $records.Add("host.worktree_root`t$hostWorktree")
     $sharedRoots = @(
         @{ Name='skills'; Root='.agents/skills' },
@@ -2807,10 +2811,12 @@ function script:Uninstall-AidToolV3 {
     $shared=script:Get-AidJsonProp $data 'shared'
     $toolObj=script:Get-AidJsonProp (script:Get-AidJsonProp $data 'tools') $Tool
     if ($null -eq $toolObj) { return 0 }
+    $toolRelPaths=@()
     foreach ($row in (Read-AidManifestToolFiles -ManifestPath $ManifestPath -Tool $Tool)) {
         $parts=$row.Split("`t"); if ($parts.Count -lt 3 -or $parts[0] -cne "tools.$Tool.file") { continue }
         $rel=$parts[1] -replace '/', [System.IO.Path]::DirectorySeparatorChar
         if ([System.IO.Path]::IsPathRooted($rel) -or $rel.Split([System.IO.Path]::DirectorySeparatorChar) -contains '..') { continue }
+        $toolRelPaths+=$rel
         $full=Join-Path $Target $rel
         if (-not (Test-Path -LiteralPath $full -PathType Leaf)) { continue }
         if ($parts[2] -and (Get-Sha256File -FilePath $full) -ceq $parts[2]) { Remove-Item -LiteralPath $full -Force }
@@ -2818,6 +2824,18 @@ function script:Uninstall-AidToolV3 {
     }
     $toolRoot=script:Get-RootDir -Tool $Tool
     script:Prune-AidEmptyDirs -Path (Join-Path $Target (Join-Path $toolRoot 'agents')) -AidEntriesOnly
+    # Like bash: walk each removed file's directory chain up to and including the tool root,
+    # removing every directory that is now empty (rmdir semantics: a non-empty one stays).
+    $rootFull=Join-Path $Target $toolRoot
+    foreach ($rel in $toolRelPaths) {
+        $pdir=Split-Path -Parent (Join-Path $Target $rel)
+        while ($pdir -and $pdir -ne $Target -and ($pdir -eq $rootFull -or $pdir.StartsWith($rootFull + [System.IO.Path]::DirectorySeparatorChar))) {
+            if ((Test-Path -LiteralPath $pdir -PathType Container) -and -not (Get-ChildItem -LiteralPath $pdir -Force -ErrorAction SilentlyContinue | Select-Object -First 1)) {
+                Remove-Item -LiteralPath $pdir -Force -ErrorAction SilentlyContinue
+            }
+            $pdir=Split-Path -Parent $pdir
+        }
+    }
     $agents=script:Get-AidJsonProp $shared 'agents_md'
     $agentsUsers=@(); if ($agents) { $agentsUsers=@($agents.users) }
     $agentsLeft=@($agentsUsers | Where-Object { $_ -ne $Tool })
