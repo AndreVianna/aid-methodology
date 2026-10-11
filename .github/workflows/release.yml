@@ -175,17 +175,19 @@ jobs:
           python .claude/skills/generate-profile/scripts/verify_advisory.py --self-test --canonical-root .
 
   # --------------------------------------------------------------------------
-  # github-release — build the 5 profile tarballs + CLI bundle + SHA256SUMS
+# github-release — build the shared payload, 5 agents-only tool artifacts, CLI bundle, and SHA256SUMS
   # and create the GitHub Release via release.sh.  Runs first (before npm/PyPI)
   # so the authoritative artifact channel is established before the package
   # registries are hit.
   # --------------------------------------------------------------------------
   github-release:
-    name: github-release (tarballs + SHA256SUMS)
+    name: github-release (shared + tool artifacts + CLI + SHA256SUMS)
     needs: [gate]
     # Runs for BOTH stable and pre-release. On a pre-release the Release is marked
     # --prerelease (see the release.sh step below): it carries the beta skill
     # tarballs for testers but is excluded from /releases/latest, so a normal
+    # --prerelease (see the release.sh step below): it carries the shared payload
+    # and tool artifacts for testers but is excluded from /releases/latest, so a normal
     # `aid update` still resolves the stable release.
     runs-on: ubuntu-24.04
     env:
@@ -200,14 +202,13 @@ jobs:
         with:
           python-version: '3.11'
 
-      - name: Build tarballs + SHA256SUMS + GitHub Release (feature-002 release.sh)
+      - name: Build release artifacts + SHA256SUMS + GitHub Release (release.sh)
         shell: bash
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
           set -euo pipefail
-          # On a pre-release, mark the GitHub Release --prerelease: it carries the
-          # beta skill tarballs but stays out of /releases/latest.
+          # On a pre-release, mark the GitHub Release --prerelease so it stays out of /releases/latest.
           PRE=""
           [ "${{ needs.gate.outputs.is_prerelease }}" = "true" ] && PRE="--prerelease"
           if [ "${{ inputs.dry_run }}" = "true" ]; then
