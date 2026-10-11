@@ -6,14 +6,14 @@ maintainer approved execution. Current phase `Execute`, lifecycle `Running`.
 
 ## Current execution checkpoint
 
-Wave8 Sol final independent recheck PASS A+: all five task012 findings Fixed. Fresh actual CLI fixture verifies exact inline rules/markers/region+whole+host hashes, mirror cleanup and final ownedroot/host deletion without false drift. Task012 Done, task022 already Done; waves1-8 complete,14/32 Done. Next task013 shared drift status. PS runtime deferred.
+Task013 In Progress for Luna execution: read-only shared/tool drift reporting in aid status with one batch hash pass, mirrors against canonical recorded hashes, managed-region canonical hashes, extras outside protected runtime node_modules, format2 guidance and no-manifest exit7; bare dashboard avoids drift scan. 14/32 Done; Sol wave9 review follows commit; PS runtime deferred.
 
 - Done (14/32): task-001, task-002, task-003, task-004, task-005, task-006, task-007, task-008, task-009, task-010, task-011, task-012, task-016, task-022.
-- In Progress: none.
+- In Progress: task-013.
 - In Review: none.
 - Failed/Blocked: none.
-- Pending: task-013, task-014, task-015, task-017, task-018, task-019, task-020, task-021, task-023, task-024, task-025, task-026, task-027, task-028, task-029, task-030, task-031, task-032.
-- Current wave: 8 of 15. Derive authoritative waves from task dependency headers.
+- Pending: task-014, task-015, task-017, task-018, task-019, task-020, task-021, task-023, task-024, task-025, task-026, task-027, task-028, task-029, task-030, task-031, task-032.
+- Current wave: 9 of 15. Derive authoritative waves from task dependency headers.
 - Execution commits are on the delivery branch; `work-001` holds pre-execution planning.
 - Wave ledgers: `review-ledgers/execute-wave-N.md`; each preserves unresolved/Accepted findings.
 - Wave-1 Accepted item: Bash `_v3_quote` versus Python `json.dump` non-ASCII escaping; recheck at final review.

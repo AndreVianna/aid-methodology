@@ -118,7 +118,7 @@ phase: Execute
 # [W] aid-{skill} | none
 active_skill: aid-execute
 # [W]
-updated: '2026-10-11T14:51:12Z'
+updated: '2026-10-11T14:51:13Z'
 # [W] set only when lifecycle = Paused-Awaiting-Input
 pause_reason: --
 # [W] set only when lifecycle = Blocked
@@ -715,6 +715,11 @@ lifecycle_history:
     grade: --
     notes: '/aid-execute Codex'
 
+  - date: '2026-10-11'
+    event: 'Task013 In Progress for Luna execution: read-only shared/tool drift reporting in aid status with one batch hash pass, mirrors against canonical recorded hashes, managed-region canonical hashes, extras outside protected runtime node_modules, format2 guidance and no-manifest exit7; bare dashboard avoids drift scan. 14/32 Done; Sol wave9 review follows commit; PS runtime deferred.'
+    grade: --
+    notes: '/aid-execute Codex'
+
 deploy: []
 
 # [A] flattened only; single writer: this work's active branch. Written by
@@ -937,7 +942,7 @@ tasks_lifecycle:
         outcome: 'Task012 separate Sol correction09eaf2ba6 committed: Bash remaining-inline region now preserves terminalLF matching existing add helpers. Stronger regression asserts exact rules/standalone markers/actual manifest hashes and clean final owned-root removal without false drift. Focused46/46, syntax/diff/ASCII29 pass. In Review for original Sol reviewer final wave8 recheck; PS terminalLF static only, runtime deferred.'
 
   task-013:
-    state: Pending
+    state: 'In Progress'
     review: --
     elapsed: --
     notes: --
