@@ -255,6 +255,60 @@ and the current install trees (using `diff -r`).
 
 ---
 
+## Dogfood Resync (this repo's install trees)
+
+This repo installs AID into itself. Its tracked install trees are `aid update` output, not hand-copied
+files: `.agents/skills/aid-*`, the `.claude/skills/aid-*` mirror, `.aid/runtime/`, `.claude/agents/`,
+`.cursor/agents/`, the managed regions of `AGENTS.md` and `CLAUDE.md`, the managed blocks of
+`.gitignore` and `.gitattributes`, `.aid/.aid-manifest.json` and `.aid/settings.yml`. A resync writes
+them, and they are committed with the change that produced them. Maintainer-owned paths are never
+written by a resync: `.claude/skills/generate-profile/`, `.claude/skills/release-aid/`,
+`.claude/settings.json`, `.claude/output-styles/` and `.cursor/rules/`.
+
+**Shortcut: `sync_dogfood.py`.** `run_generator.py` runs it after every regeneration. Run it directly to
+resync without regenerating:
+
+```bash
+python .claude/skills/generate-profile/scripts/sync_dogfood.py                 # resync this repo
+python .claude/skills/generate-profile/scripts/sync_dogfood.py --check         # report drift, write nothing
+python .claude/skills/generate-profile/scripts/sync_dogfood.py --target <dir>  # another project root
+```
+
+It runs `bash release.sh --stage-only --out <tmp>`, then `bin/aid update --from-bundle <tmp> --target <root>`
+with `AID_HOME=<tmp-home>` and `AID_NO_UPDATE_CHECK=1`, so the maintainer's registry and the network are
+never touched. `--check` runs `bin/aid status --target <root>` and reads its `Shared files` block; a
+`Layout:` line (manifest not yet format 3) counts as drift. `--stage-only` never runs the generator, so the
+chain `run_generator.py` -> `sync_dogfood.py` -> `release.sh --stage-only` ends without recursing.
+
+**Release-faithful procedure.** Use this when the staged release artifacts must be exercised, as at release time:
+
+```bash
+bash release.sh --dry-run                                   # clean tree required; stages .aid/.temp/release-<V>
+AID_HOME=<tmp-home> AID_NO_UPDATE_CHECK=1 \
+  bin/aid update --from-bundle .aid/.temp/release-<V> --target .
+```
+
+`--dry-run` runs the render check, which runs `run_generator.py` and therefore the dogfood resync, so the
+working tree can be dirty when the command returns. Review the changes under the install trees and commit
+them with the change, or revert them. The `AID_HOME` and `AID_NO_UPDATE_CHECK` prefix keeps the
+maintainer's registry and the network out of the run, as the shortcut does.
+
+**Idempotency.** A second resync prints `up to date` for `shared` and for every tool, and
+`git status --porcelain` is empty afterwards.
+
+**Testing a resync.** Do not test a resync against this repo, because the first run deletes `.claude/aid/`,
+which the running pipeline may still use. Test on a scratch copy instead: `git archive HEAD | tar -x -C <scratch>/copy`,
+then `git init` and commit inside the copy, then `sync_dogfood.py --target <scratch>/copy`.
+
+**Rollback.** Run from the repo root, with `<pre-resync>` the commit before the resync:
+
+```bash
+git checkout <pre-resync> -- .claude .cursor CLAUDE.md AGENTS.md .aid/.aid-manifest.json .aid/settings.yml .gitignore .gitattributes
+rm -rf .agents/skills/aid-* .aid/runtime
+```
+
+Then commit the result. The originals that the resync moved aside remain under `.aid/.trash/` (gitignored).
+
 ## Quality Checklist
 
 Before calling the run complete, confirm:
@@ -270,3 +324,4 @@ Before calling the run complete, confirm:
 - [ ] VERIFY (advisory): `skipped_count` surfaced in REPORT (currently 8 — all URLs pending fetch)
 - [ ] REPORT printed to stdout
 - [ ] In live mode: `git diff --stat` shows only install-tree paths (no canonical/ changes)
+- [ ] Dogfood resync done: `sync_dogfood.py --check` reports clean, and the resynced install trees are committed (see Dogfood Resync)

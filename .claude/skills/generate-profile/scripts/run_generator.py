@@ -45,8 +45,8 @@ def main() -> int:
     report = run_advisory(repo)
     print(f"VERIFY (advisory): checked={report['checked_count']} warnings={report['warning_count']}")
 
-    # Task-027 will repoint this dogfood sync after the profile manifest retirement.
-    print("\nResyncing dogfood trees (.claude/ and .cursor/)...")
+    # Dogfood resync: stage the release and run this repo's own `aid update --from-bundle`.
+    print("\nResyncing dogfood install (aid update --from-bundle)...")
     sync = Path(__file__).resolve().parent / "sync_dogfood.py"
     result = subprocess.run([sys.executable, str(sync)], cwd=str(repo), text=True, capture_output=True)
     sys.stdout.write(result.stdout)

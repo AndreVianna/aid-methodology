@@ -1,111 +1,132 @@
 #!/usr/bin/env python3
-# sync_dogfood.py -- resync the repo-root dogfood trees from the rendered profiles.
+# sync_dogfood.py -- resync this repo's installed AID trees from a local release staging.
 #
 # Why this exists:
-#   `run_generator.py` writes the five `profiles/<tool>/...` trees. It does NOT
-#   write the two TRACKED dogfood trees at the repo root (`.claude/`, `.cursor/`)
-#   -- this repo installs AID into itself, so those trees are copies of the
-#   corresponding profile output. `tests/canonical/test-dogfood-byte-identity.sh`
-#   asserts they match their profile's emission manifest byte-for-byte, so a
-#   render that is not followed by a resync leaves CI red.
+#   This repo installs AID into itself. Its tracked install trees (`.agents/skills/`,
+#   `.claude/skills/aid-*`, `.aid/runtime/`, `.claude/agents/`, `.cursor/agents/`,
+#   `AGENTS.md`, `CLAUDE.md`, and the rest of the managed set recorded in
+#   `.aid/.aid-manifest.json`) are the output of `aid update`, not hand-copied files.
+#   Running that install path by hand is easy to get wrong, so this script runs it.
 #
-#   That step was previously undocumented and done by hand. Doing it by hand is
-#   how you end up copying a file the manifest does not own.
+# What a resync does (release-faithful, offline):
+#   1. `bash release.sh --stage-only --out <tmp>/stage` stages the shared payload, the
+#      tool artifacts and the CLI bundle from the working tree. `--stage-only` skips the
+#      clean-tree, tag, render, render-drift and network checks, and never runs the
+#      generator, so this script cannot recurse into `run_generator.py`.
+#   2. `bin/aid update --from-bundle <tmp>/stage --target <target>`, run with
+#      `AID_HOME=<tmp>/home` and `AID_NO_UPDATE_CHECK=1`. The maintainer's registry
+#      (`~/.aid`) and the network are never touched. `<target>` defaults to this repo.
 #
-# What it copies, and what it must never touch:
-#   ONLY the `dst` paths listed in each profile's `emission-manifest.jsonl`. Files
-#   that live in a dogfood tree WITHOUT a manifest entry are hand-authored
-#   maintainer content -- `.claude/settings.json`, `.claude/output-styles/**`,
-#   `.claude/skills/generate-profile/**` (this script included),
-#   `.cursor/rules/**` -- and are deliberately left alone. The dogfood suite's
-#   Direction-3 allowlists are the authority on which of those are legitimate.
-#
-#   Deletion is bounded the same way `run_generator.py` bounds its own: a path is
-#   removed only if the PREVIOUS manifest listed it and the current one does not.
-#   An unmanifested file can therefore never be swept, whatever its path.
+# `--check` runs `bin/aid status --target <target>` (same AID_HOME / AID_NO_UPDATE_CHECK)
+# instead and reports drift from the `Shared files` block. It writes nothing to the target.
+# A target whose manifest is not yet format 3 prints a `Layout:` line instead of the
+# `Shared files` block; that counts as drift, because the resync has not run yet.
 #
 # Usage:
-#   sync_dogfood.py                Resync both trees; print a per-tree summary.
-#   sync_dogfood.py --check        Report drift and exit 1 if any; write nothing.
+#   sync_dogfood.py                       Resync this repo; print the aid update summary.
+#   sync_dogfood.py --check               Report drift and exit 1 if any; write nothing.
+#   sync_dogfood.py --target <dir>        Operate on <dir> instead of the repo root
+#                                         (used to test the resync on a scratch copy).
+#
+# Exit codes: 0 done / clean; 1 drift (--check) or a failed stage / update / status;
+#             2 usage error.
 #
 # Python 3.11+ stdlib only. Zero third-party deps.
 
 from __future__ import annotations
 
-import json
+import argparse
+import os
 import shutil
+import subprocess
 import sys
+import tempfile
 from pathlib import Path
 
 REPO_ROOT = Path(__file__).resolve().parents[4]
 
-# (profile dir, dst prefix the profile owns inside the repo root)
-PAIRS = (("profiles/claude-code", ".claude/"), ("profiles/cursor", ".cursor/"))
+
+def _run(cmd: list[str], env: dict[str, str] | None = None) -> subprocess.CompletedProcess[str]:
+    return subprocess.run(cmd, cwd=str(REPO_ROOT), env=env, text=True,
+                          capture_output=True)
 
 
-def manifest_entries(profile_dir: Path, prefix: str) -> dict[str, str]:
-    """Return {dst: sha256} for the manifest rows this tree owns.
-
-    The manifest's first row is a `{"_manifest_version": N}` header with no `dst`;
-    rows without `dst` are skipped rather than assumed absent.
-    """
-    path = profile_dir / "emission-manifest.jsonl"
-    if not path.is_file():
-        return {}
-    out: dict[str, str] = {}
-    for line in path.read_text(encoding="utf-8").splitlines():
-        if not line.strip():
-            continue
-        row = json.loads(line)
-        dst = row.get("dst")
-        if dst and dst.startswith(prefix):
-            out[dst] = row.get("sha256", "")
-    return out
+def _env(home: Path) -> dict[str, str]:
+    env = dict(os.environ)
+    env["AID_HOME"] = str(home)
+    env["AID_NO_UPDATE_CHECK"] = "1"
+    return env
 
 
-def sync(check_only: bool) -> int:
-    drift = 0
-    for rel_profile, prefix in PAIRS:
-        profile_dir = REPO_ROOT / rel_profile
-        owned = manifest_entries(profile_dir, prefix)
-        if not owned:
-            print(f"  {prefix:10} no manifest entries -- is {rel_profile} rendered?")
-            drift += 1
-            continue
+def resync(target: Path, scratch: Path) -> int:
+    stage = scratch / "stage"
+    home = scratch / "home"
+    home.mkdir()
 
-        copied = identical = missing_src = 0
-        for dst_rel in sorted(owned):
-            src = profile_dir / dst_rel
-            dst = REPO_ROOT / dst_rel
-            if not src.is_file():
-                print(f"  MISSING SOURCE {src.relative_to(REPO_ROOT)}")
-                missing_src += 1
-                continue
-            if dst.is_file() and dst.read_bytes() == src.read_bytes():
-                identical += 1
-                continue
-            if check_only:
-                copied += 1
-                continue
-            dst.parent.mkdir(parents=True, exist_ok=True)
-            shutil.copyfile(src, dst)
-            copied += 1
+    print(f"sync_dogfood: staging release from {REPO_ROOT} (release.sh --stage-only)")
+    staged = _run(["bash", "release.sh", "--stage-only", "--out", str(stage)])
+    sys.stdout.write(staged.stdout)
+    if staged.returncode:
+        sys.stderr.write(staged.stderr)
+        print("sync_dogfood: staging FAILED", file=sys.stderr)
+        return 1
 
-        verb = "would resync" if check_only else "resynced"
-        print(f"  {prefix:10} owned={len(owned):4}  {verb}={copied:4}  "
-              f"identical={identical:4}" + (f"  MISSING-SRC={missing_src}" if missing_src else ""))
-        drift += copied + missing_src
-
-    if check_only:
-        print("\nsync_dogfood: " + ("DRIFT -- run without --check" if drift else "clean"))
-        return 1 if drift else 0
+    print(f"sync_dogfood: aid update --from-bundle -> {target}")
+    updated = subprocess.run(
+        ["bash", str(REPO_ROOT / "bin" / "aid"), "update",
+         "--from-bundle", str(stage), "--target", str(target)],
+        cwd=str(REPO_ROOT), env=_env(home), text=True, capture_output=True)
+    sys.stdout.write(updated.stdout)
+    if updated.returncode:
+        sys.stderr.write(updated.stderr)
+        print("sync_dogfood: aid update FAILED", file=sys.stderr)
+        return 1
     print("\nsync_dogfood: done")
     return 0
 
 
+def check(target: Path, scratch: Path) -> int:
+    home = scratch / "home"
+    home.mkdir()
+    status = subprocess.run(
+        ["bash", str(REPO_ROOT / "bin" / "aid"), "status", "--target", str(target)],
+        cwd=str(REPO_ROOT), env=_env(home), text=True, capture_output=True)
+    sys.stdout.write(status.stdout)
+    if status.returncode:
+        sys.stderr.write(status.stderr)
+        print("sync_dogfood: aid status FAILED", file=sys.stderr)
+        return 1
+
+    lines = [line.strip() for line in status.stdout.splitlines()]
+    if "Shared files: clean" in lines and not any(line.startswith("Layout:") for line in lines):
+        print("\nsync_dogfood: clean")
+        return 0
+    print("\nsync_dogfood: DRIFT -- run without --check", file=sys.stderr)
+    return 1
+
+
+def main(argv: list[str]) -> int:
+    parser = argparse.ArgumentParser(
+        description="Resync this repo's installed AID trees from a local release staging.")
+    parser.add_argument("--check", action="store_true",
+                        help="report drift via 'aid status' and exit 1 if any; write nothing")
+    parser.add_argument("--target", metavar="DIR", default=str(REPO_ROOT),
+                        help="project root to resync (default: this repo's root)")
+    args = parser.parse_args(argv)
+
+    target = Path(args.target).resolve()
+    if not target.is_dir():
+        print(f"sync_dogfood: --target is not a directory: {target}", file=sys.stderr)
+        return 2
+
+    scratch = Path(tempfile.mkdtemp(prefix="aid-sync-dogfood-"))
+    try:
+        if args.check:
+            return check(target, scratch)
+        return resync(target, scratch)
+    finally:
+        shutil.rmtree(scratch, ignore_errors=True)
+
+
 if __name__ == "__main__":
-    args = sys.argv[1:]
-    if args and args != ["--check"]:
-        print("usage: sync_dogfood.py [--check]", file=sys.stderr)
-        sys.exit(2)
-    sys.exit(sync(check_only=bool(args)))
+    sys.exit(main(sys.argv[1:]))
