@@ -35,13 +35,13 @@
 
 # Project file inventory — read by discovery sub-agents as a pre-pass.
 # Depends on: the entire project file tree.
-.aid/generated/project-index.md|bash canonical/scripts/kb/build-project-index.sh --root . --output .aid/generated/project-index.md
+.aid/generated/project-index.md|bash .aid/runtime/scripts/kb/build-project-index.sh --root . --output .aid/generated/project-index.md
 
 # Numeric metrics (T3 facts) — line counts, file counts, term counts, severity tallies.
 # Depends on: KB doc disk state + frontmatter contracts.
-.aid/generated/metrics.md|bash canonical/scripts/kb/build-metrics.sh --root . --output .aid/generated/metrics.md
+.aid/generated/metrics.md|bash .aid/runtime/scripts/kb/build-metrics.sh --root . --output .aid/generated/metrics.md
 
 # KB index — agent-facing 2-3 line summary per KB doc, composed from frontmatter intent:.
 # Depends on: every KB doc's frontmatter (changes to intent: fields).
 # MUST run AFTER hand-edits to KB docs and BEFORE final commit.
-.aid/knowledge/INDEX.md|bash canonical/scripts/kb/build-kb-index.sh --root .aid/knowledge --output .aid/knowledge/INDEX.md
+.aid/knowledge/INDEX.md|bash .aid/runtime/scripts/kb/build-kb-index.sh --root .aid/knowledge --output .aid/knowledge/INDEX.md

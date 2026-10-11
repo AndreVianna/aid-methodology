@@ -30,7 +30,7 @@ So every criterion must name an **observable**:
 |------|---------|
 | A command and its expected result | `aid --version` prints the value in `VERSION` |
 | A file and its expected content | `.aid/settings.yml` contains `minimum_grade` |
-| A count derived from disk | every `canonical/skills/*/SKILL.md` has a `description` |
+| A count derived from disk | every `.agents/skills/*/SKILL.md` has a `description` |
 | A measurable threshold | first paint under 200 ms on the reference fixture |
 | A user-visible behaviour + how to reproduce it | submitting an empty form shows an inline error naming the empty field |
 
@@ -128,7 +128,7 @@ and every §9 criterion is owned by exactly one feature, so both are checkable.}
      tracker item. Omit the line entirely when the feature has no linked tracker item
      (readers and the dashboard ignore its absence). Nearest-ancestor resolution and the
      MCP-first consumption contract:
-     `canonical/aid/templates/connectors/consumption-protocol.md`. This is a body line,
+     `.aid/runtime/templates/connectors/consumption-protocol.md`. This is a body line,
      not frontmatter. `ticket_ref` is a lifecycle-unit field only -- the connector
      descriptor schema is unchanged. -->
 

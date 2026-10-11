@@ -14,7 +14,7 @@
 #
 # Two consumers:
 #   1. The maintainer build helper
-#      (`.claude/skills/generate-profile/scripts/build-shortcut-skills.py`) -- reads this
+#      (`generate-profile/scripts/build-shortcut-skills.py`) -- reads this
 #      file and emits/refreshes the thin-doorway `canonical/skills/aid-<name>/SKILL.md`
 #      directories, one per non-`repurpose` row. After any edit to this file the
 #      maintainer runs that helper, then the FULL `run_generator.py` (never a partial

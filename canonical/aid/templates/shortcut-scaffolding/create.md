@@ -3,7 +3,7 @@
 Per-family scaffolding reference for the **`create`** verb (bare `aid-create` --
 internal code, no artifact suffix -- plus the eleven artifact-suffixed forms).
 Consulted by the shared engine
-(`canonical/aid/templates/shortcut-engine.md § Family Scaffolding Consult`) at
+(`.aid/runtime/templates/shortcut-engine.md § Family Scaffolding Consult`) at
 CAPTURE, SPEC, and DETAIL for every `{verb, artifact}` whose `verb` field
 resolves to `create`. Free-form prose, like any other `state-*.md` reference doc -- the
 dispatched `aid-architect` reads this for judgment; it is not machine-parsed.
@@ -114,9 +114,9 @@ standalone test-authoring request). Modifying an **existing** artifact is
 
 ## See also
 
-- `canonical/aid/templates/shortcut-engine.md § Family Scaffolding Consult` --
+- `.aid/runtime/templates/shortcut-engine.md § Family Scaffolding Consult` --
   how this file is looked up and what happens when it is absent
-- `canonical/aid/templates/shortcut-scaffolding/change-refactor.md` -- inherits
+- `.aid/runtime/templates/shortcut-scaffolding/change-refactor.md` -- inherits
   this file's artifact matrix, modify-framed
 - `.aid/knowledge/artifact-schemas.md § Task DETAIL.md` -- the one-type-per-task
   contract

@@ -196,7 +196,7 @@ the component assigned by the manifest:
 #### Bespoke components (the three well-known docs)
 
 Follow the templates in
-`canonical/aid/templates/knowledge-summary/section-templates/bespoke-components.md`:
+`.aid/runtime/templates/knowledge-summary/section-templates/bespoke-components.md`:
 - `domain-glossary.md` → `§1` Glossary / definition component (`.gloss-grid`)
 - `decisions.md` → `§2` Decision / ADR card component (`.adr-list`)
 - `capability-inventory.md` → `§3` Capability entry component (`.cap-grid`)
@@ -304,7 +304,7 @@ code-styled filename so it reads as a link in both themes.
 ### Step 7 — Start from the skeleton
 
 Open `references/html-skeleton.html`. Replace placeholders:
-- `{{LANG}}` — `en` (or read from `{project_context_file}` if specified).
+- `{{LANG}}` — `en` (or read from `AGENTS.md` if specified).
 - `{{PROJECT_NAME}}` — from `.aid/knowledge/STATE.md` or build files.
 - `{{INLINE_CSS}}` — full content of `references/component-css.css`.
 - `{{BODY_CONTENT}}` — all sections from Steps 4–6, in order.
@@ -325,7 +325,7 @@ each section becomes `sections/NN-{slug}.html`; closing shell becomes
 
 ```bash
 mkdir -p .aid/knowledge
-bash canonical/aid/scripts/summarize/assemble.sh --output .aid/knowledge/kb.html
+bash .aid/runtime/scripts/summarize/assemble.sh --output .aid/knowledge/kb.html
 ```
 
 The assembled `kb.html` is the single self-contained deliverable (all CSS/JS inlined).

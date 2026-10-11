@@ -125,7 +125,7 @@ The reference row. Its **required** docs reproduce the 14-doc `synth_default_see
 entries and **none** is part of the byte-stable seed: `decisions.md` and `roadmap.md` are both
 conditional realizations of the 11th dimension (D), `backlog.md` realizes C7, and
 `release-tracking.md` realizes C8. Each is created on first use by its own skill, and none has
-a template under `canonical/aid/templates/knowledge-base/` -- which is the mechanism that keeps
+a template under `.aid/runtime/templates/knowledge-base/` -- which is the mechanism that keeps
 the seed at 14.
 
 `provenance: curated`
@@ -455,7 +455,7 @@ same 14 owners**:
   never a matrix row.
 
 **Single source of truth.** `synth_default_seed`'s ownership map in
-`canonical/skills/aid-discover/references/doc-set-resolve.md` remains the **machine** source
+`.agents/skills/aid-discover/references/doc-set-resolve.md` remains the **machine** source
 of the software seed; this matrix's software rows are a curated *view* that MUST stay
 byte-consistent with it. If the seed changes, both software rows here change in lockstep
 (and `concern-model.md`'s seed-coverage check). The seed is the contract; the matrix mirrors.
@@ -467,5 +467,5 @@ byte-consistent with it. If the seed changes, both software rows here change in 
 - [concern-model.md](concern-model.md) -- the 11-dimension spine + coverage invariant + the conditional `D` (Decisions) dimension (the authority for the spine-dimension column)
 - [README.md](README.md) -- index of all kb-authoring docs
 - [principles.md](principles.md) -- the three-force boundary rule (used by the dedupe-by-dimension step of composition)
-- `canonical/skills/aid-discover/references/doc-set-resolve.md` -- `synth_default_seed` ownership map (the machine source of truth the software rows mirror) + the `discovery.doc_set` schema rows land in
-- `canonical/skills/aid-discover/references/document-expectations.md` -- per-doc research expectations (open-question form, keyed by `### <filename>`) + `## Spine-Dimension Depth Standards` (one `### C<N>` block per dimension; the `spine-dimension` column of each matrix row keys into this section as the doc's MUST-floor depth contract)
+- `.agents/skills/aid-discover/references/doc-set-resolve.md` -- `synth_default_seed` ownership map (the machine source of truth the software rows mirror) + the `discovery.doc_set` schema rows land in
+- `.agents/skills/aid-discover/references/document-expectations.md` -- per-doc research expectations (open-question form, keyed by `### <filename>`) + `## Spine-Dimension Depth Standards` (one `### C<N>` block per dimension; the `spine-dimension` column of each matrix row keys into this section as the doc's MUST-floor depth contract)

@@ -37,7 +37,7 @@ against, so the reviewer checks a named list rather than improvising one.
    (`.aid/knowledge/authoring-conventions.md`).
 
    The registry's selectors are exhaustive **over the in-scope corpus** — the markdown under
-   `canonical/skills/`, `canonical/agents/`, `canonical/aid/templates/` and `.aid/knowledge/`.
+   `.agents/skills/`, the agent definitions, `.aid/runtime/templates/` and `.aid/knowledge/`.
    For a file in that corpus this always resolves, and one resolving to no type, or to two, is
    itself a finding.
 
@@ -76,7 +76,7 @@ cell.** No column is added: the ledger keeps its 7-column shape
 parse.
 
 ```
-| 3 | [HIGH] | Pending | canonical/skills/aid-plan/SKILL.md | 42 | SK-01 — dispatch table names a non-existent agent | ls canonical/agents/ |
+| 3 | [HIGH] | Pending | .agents/skills/aid-plan/SKILL.md | 42 | SK-01 — dispatch table names a non-existent agent | list the agent definitions |
 ```
 
 - A **scope-prefixed** id (`G-`, `KB-`, `SK-`, …) resolves in the criteria table.
@@ -138,7 +138,7 @@ The bulk of the review effort.
     `STATE.md` (Q-IDs) or `tech-debt.md` (H-IDs). Dangling reference = MEDIUM.
 
 **Severity scale.** The five levels are defined once, in
-`canonical/aid/templates/grading-rubric.md § Issue Severities`; classify against that document
+`.aid/runtime/templates/grading-rubric.md § Issue Severities`; classify against that document
 rather than against a copy here. Worst issue dominates the grade
 (`grading-rubric.md § Grade Calculation`).
 
@@ -283,7 +283,7 @@ The Status lifecycle drives this state's own exit: FIX completes when no row is 
 
 ## Grade computation
 
-Per `canonical/aid/templates/grading-rubric.md`, the grade is COMPUTED from the severity
+Per `.aid/runtime/templates/grading-rubric.md`, the grade is COMPUTED from the severity
 distribution, not judged. Worst issue dominates. Auto-generated and meta files do not
 contribute findings to the grade (they appear in the summary but are filtered out
 of the grade calculation).

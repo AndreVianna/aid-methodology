@@ -82,7 +82,7 @@ The `.aid/.temp/review-pending/` directory is gitignored (per `.gitignore` `.aid
 | 1 | `#` | yes | Row counter (1, 2, 3...) for cross-reference in commit messages and fix-agent dispatches. Sequential within the file; never renumbered. |
 | 2 | `Severity` | yes | Bracketed severity tag (`[CRITICAL]`, `[HIGH]`, `[MEDIUM]`, `[LOW]`, `[MINOR]`). Brackets ensure the tag doesn't collide with bare numbers anywhere else in markdown. Drives grade computation. |
 | 3 | `Status` | yes | Plain word (no brackets): `Pending`, `Fixed`, `Recurred`, `Accepted`, `OOS`, or `Invalid`. See **Status values** below. Drives grade computation. |
-| 4 | `Doc` | yes | Affected file path (relative to repo root). Examples: `foo.md`, `canonical/aid/scripts/bar.sh`, `tests/canonical/baz.sh`. For doc-wide issues with no specific file, use `—`. |
+| 4 | `Doc` | yes | Affected file path (relative to repo root). Examples: `foo.md`, `.aid/runtime/scripts/bar.sh`, `tests/canonical/baz.sh`. For doc-wide issues with no specific file, use `—`. |
 | 5 | `Line` | yes | Affected line number, or a line range like `42-45`, or `—` for doc-wide. |
 | 6 | `Description` | yes | The criterion `id` violated, then ONE sentence stating what's wrong, then a **why-line**: a short clause naming the consequence. Form: "`SK-01` — dispatch table names a non-existent agent, so a dispatch resolves to nothing at run time." The consequence clause is the one explanation this column admits, and it is required: a severity asserted without one cannot be argued with, because there is nothing to disagree about except the reviewer's judgement. Everything else that would explain rather than state still goes in Evidence, and hedging goes nowhere. See **Citing the criterion** below. |
 | 7 | `Evidence` | yes | The disk-truth that contradicts the doc's claim, AND/OR the source-of-truth command. Form: "`wc -l foo = 1070` (doc claims 1071)" or "`grep -c X bar = 5` (doc claims 6)". For Status=Fixed/Recurred/Accepted/OOS/Invalid, include enough context to justify the status (e.g., "Fixed in commit abc123" or "Accepted: user decision cycle-1 Q5"). When the severity came from a file-level **override** of a declared criterion, record the resolved severity and the overriding file's `why` here. **Severity provenance** is recorded with one of three tokens, so a band can be traced without re-reading the cascade: `severity: declared` — taken unchanged from the cited criterion's `severity:`; `severity: override <level>` — the criterion declares one band and a more specific level declares another; `<level>` names **where the winning band came from** (`file`, `file-class`, or `type`), not the band itself, which is already in the Severity column; `severity: judged` — no criterion declares a severity for this, so the reviewer set it. A row whose band differs from its cited criterion's declared `severity:` and carries no token is a defect in the review: the divergence is the interesting part and it has been silently dropped. |
@@ -109,7 +109,7 @@ cell.** No eighth column: the shape stays 7 columns and `grade.sh` keeps its pos
 (it reads `cols[3]` and `cols[4]` from the left and ignores `cols[5..8]`).
 
 ```markdown
-| 3 | [HIGH] | Pending | canonical/skills/aid-plan/SKILL.md | 42 | SK-01 — dispatch table names a non-existent agent | ls canonical/agents/ |
+| 3 | [HIGH] | Pending | .agents/skills/aid-plan/SKILL.md | 42 | SK-01 — dispatch table names a non-existent agent | list the agent definitions |
 ```
 
 - A **scope-prefixed** id (`G-`, `KB-`, `SK-`, ...) resolves in the project's criteria table
@@ -119,7 +119,7 @@ cell.** No eighth column: the shape stays 7 columns and `grade.sh` keeps its pos
   reviewer invented a criterion.
 
 How criteria resolve (global → type → file, most specific wins) is defined in
-`canonical/aid/templates/kb-authoring/review-rubric.md § Resolving review criteria`; this schema
+`.aid/runtime/templates/kb-authoring/review-rubric.md § Resolving review criteria`; this schema
 does not restate it.
 
 **Overrides are recorded in `Evidence`.** When the severity used came from a file-level override
@@ -127,7 +127,7 @@ rather than the global or type level, the `Evidence` cell carries the resolved s
 overriding file's `why`, so a reader can see which level won and on what grounds:
 
 ```markdown
-| 7 | [LOW] | Pending | canonical/aid/templates/foo.md | 12 | G-01 — inline count not measured at authoring time | resolved LOW via file-level override of G-01 (MINOR global); why: "this count gates a downstream parse" |
+| 7 | [LOW] | Pending | .aid/runtime/templates/foo.md | 12 | G-01 — inline count not measured at authoring time | resolved LOW via file-level override of G-01 (MINOR global); why: "this count gates a downstream parse" |
 ```
 
 The `Evidence` cell is inert to grading, so an override is visible without any change to the
@@ -139,7 +139,7 @@ The enum is `[CRITICAL]` | `[HIGH]` | `[MEDIUM]` | `[LOW]` | `[MINOR]`, always i
 all-caps form — that is the form `grade.sh` counts.
 
 **What each level means, and the severity-to-letter-grade mapping, are defined once in
-`canonical/aid/templates/grading-rubric.md`** (`§ Issue Severities` and `§ Grade Calculation`).
+`.aid/runtime/templates/grading-rubric.md`** (`§ Issue Severities` and `§ Grade Calculation`).
 This schema owns the ledger's *shape*, not the scale: a level restated here becomes a second
 definition that drifts from the one the grade is computed against, which is what happened to the
 per-level "grade impact" notes this section used to carry.
@@ -224,7 +224,7 @@ one of them.
 
 ## grade.sh integration
 
-`canonical/aid/scripts/grade.sh` reads the ledger as a markdown table and counts findings by Severity, filtered to Status ∈ {`Pending`, `Recurred`}.
+`.aid/runtime/scripts/grade.sh` reads the ledger as a markdown table and counts findings by Severity, filtered to Status ∈ {`Pending`, `Recurred`}.
 
 ```bash
 # Conceptual algorithm — actual implementation in grade.sh
@@ -333,8 +333,8 @@ The `CLAUDE.md` / `AGENTS.md` short rule (always loaded) is the trigger for ad-h
 
 ## See also
 
-- `canonical/aid/scripts/grade.sh` — the grader that parses this ledger
-- `canonical/agents/aid-reviewer/AGENT.md` — sub-agent output contract (references this schema)
-- `canonical/aid/templates/reviewer-dispatch.md` — universal reviewer dispatch brief (references this schema)
+- `.aid/runtime/scripts/grade.sh` — the grader that parses this ledger
+- The `aid-reviewer` agent definition — sub-agent output contract (references this schema)
+- `.aid/runtime/templates/reviewer-dispatch.md` — universal reviewer dispatch brief (references this schema)
 - `CLAUDE.md` / `AGENTS.md` — global short rule (points at this schema)
 - Per-skill `references/state-review.md` and `state-done.md` — lifecycle hooks

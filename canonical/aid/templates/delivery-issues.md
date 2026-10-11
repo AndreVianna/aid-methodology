@@ -15,7 +15,7 @@ is the input to the delivery gate reviewer
 to `Resolved` or `Accepted`.
 
 Instances live at `.aid/works/work-NNN/delivery-NNN-issues.md`. Template source:
-`canonical/aid/templates/delivery-issues.md`.
+`.aid/runtime/templates/delivery-issues.md`.
 
 ## Deferred [HIGH] Issues
 

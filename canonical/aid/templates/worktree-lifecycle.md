@@ -1,7 +1,7 @@
 # Worktree Lifecycle Helper
 
 The single shared agent contract every worktree-consuming skill binds to **after** it calls
-`canonical/aid/scripts/works/worktree-lifecycle.sh`. The script is pure git mechanics -- it
+`.aid/runtime/scripts/works/worktree-lifecycle.sh`. The script is pure git mechanics -- it
 creates or resolves a work's isolated worktree and prints a path; it **never** switches a
 session. This document specifies what the executing agent does with that path: which
 host-native session-switch to invoke, the fallback for a host that exposes none, and the
@@ -22,8 +22,8 @@ references THIS file at its enter step rather than re-implementing the switch lo
 Run the shared lifecycle script for the desired operation:
 
 ```bash
-bash canonical/aid/scripts/works/worktree-lifecycle.sh create <work-id> <name> [--base <ref>]
-bash canonical/aid/scripts/works/worktree-lifecycle.sh locate <work-id> [--name <slug>]
+bash .aid/runtime/scripts/works/worktree-lifecycle.sh create <work-id> <name> [--base <ref>]
+bash .aid/runtime/scripts/works/worktree-lifecycle.sh locate <work-id> [--name <slug>]
 ```
 
 - **`create`** -- on success or no-op (idempotent, keyed on the `<work-id>` branch), stdout is

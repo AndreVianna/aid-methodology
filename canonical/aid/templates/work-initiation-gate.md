@@ -7,7 +7,7 @@ branch. This is the Concern B counterpart to Concern A's `.aid/works/` container
 (the enumeration target below).
 
 Consulted by: the direct-entry shortcut engine's INTAKE
-(`canonical/aid/templates/shortcut-engine.md`), `aid-describe`, and the
+(`.aid/runtime/templates/shortcut-engine.md`), `aid-describe`, and the
 collapse/standalone starters `aid-review`, `aid-research`, `aid-design`,
 `aid-report`, `aid-test`, `aid-prototype`, `aid-create-document`,
 `aid-update-document`. Each references THIS file at its allocation step rather
@@ -32,7 +32,7 @@ git-toplevel-guarded, 2s-bounded `git worktree list --porcelain`, degrading to
 main-tree-only on any git failure):
 
 ```bash
-bash canonical/aid/scripts/works/enumerate-works.sh
+bash .aid/runtime/scripts/works/enumerate-works.sh
 ```
 
 (Add `--root <repo-root>` only if the starter is not already running from the
@@ -99,7 +99,7 @@ The gate hands back to the starter, which now performs, in this order:
 2. **Create and enter the worktree, BEFORE authoring anything:**
 
    ```bash
-   bash canonical/aid/scripts/works/worktree-lifecycle.sh create <work-id> <name>
+   bash .aid/runtime/scripts/works/worktree-lifecycle.sh create <work-id> <name>
    ```
 
    Idempotent (a no-op re-print if the worktree already exists, keyed on the
@@ -109,7 +109,7 @@ The gate hands back to the starter, which now performs, in this order:
    this branch):** if the exit code is non-zero **or** the printed path is
    empty, surface the error and **STOP** -- do **not** fall through to allocate
    the new work on the current (possibly `master`) tree. On success, **enter**
-   the resolved path per `canonical/aid/templates/worktree-lifecycle.md § Step
+   the resolved path per `.aid/runtime/templates/worktree-lifecycle.md § Step
    2`: the executing agent invokes the host-native `EnterWorktree` tool where
    available, else treats the resolved path as the working directory for all
    subsequent file operations and surfaces it to the user (`Working in
@@ -157,7 +157,7 @@ isolated worktree before resuming:
 2. **Locate:**
 
    ```bash
-   bash canonical/aid/scripts/works/worktree-lifecycle.sh locate <work-id>
+   bash .aid/runtime/scripts/works/worktree-lifecycle.sh locate <work-id>
    ```
 
    `locate` resolves via its 4-rung "most-intact-state-first" ladder and
@@ -183,7 +183,7 @@ isolated worktree before resuming:
 4. **Enter** (rungs 1-3 -- `registered | recreated | created`), unless
    `<status>` is `current` (the rung-4 already-inside no-op, or the
    git-broken degrade -- both mean stay put, skip the enter): per
-   `canonical/aid/templates/worktree-lifecycle.md § Step 2`, invoke the
+   `.aid/runtime/templates/worktree-lifecycle.md § Step 2`, invoke the
    host-native `EnterWorktree` tool where available, else treat the resolved
    path as the working directory and surface it (FR4 fallback).
 

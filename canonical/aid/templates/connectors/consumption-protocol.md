@@ -23,7 +23,7 @@
 > aid-managed consumption is deferred.
 >
 > This is a `canonical/` artifact: it ships and installs byte-identically into every profile's
-> `.claude/aid/templates/connectors/` (or equivalent per-tool) install tree, alongside
+> `.aid/runtime/templates/connectors/` install tree, alongside
 > [`reconcile.md`](reconcile.md) and [`preset-catalog.md`](preset-catalog.md).
 
 ## The seam recipe (generic shape)

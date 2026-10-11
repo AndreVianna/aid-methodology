@@ -5,12 +5,12 @@
 >
 > - **Bulk mode** — reconciles the *whole* declared set `D` (this cycle's tool declarations)
 >   against the *whole* persisted set `P` (what is on disk): `REMOVE = P \ D`. Called by
->   `canonical/skills/aid-discover/references/state-elicit.md` Step E2, once per ELICIT cycle,
+>   `.agents/skills/aid-discover/references/state-elicit.md` Step E2, once per ELICIT cycle,
 >   after that step resolves `D`. This is `aid-discover`'s reconcile logic.
 > - **Single-stem mode** — operates on **exactly one** named stem, never diffs against the rest
 >   of the registry, and so never classifies any *other* connector REMOVE. Called by the net-new
->   `canonical/skills/aid-set-connector/SKILL.md` (upsert) and
->   `canonical/skills/aid-unset-connector/SKILL.md` (remove).
+>   `.agents/skills/aid-set-connector/SKILL.md` (upsert) and
+>   `.agents/skills/aid-unset-connector/SKILL.md` (remove).
 >
 > Both modes share the same descriptor-write mechanics ("Write one descriptor", under Bulk mode
 > below) and the same REMOVE mechanics (purge-then-delete) and finish by handing off to the same
@@ -18,7 +18,7 @@
 > regardless of which mode produced it.
 >
 > This is a `canonical/` artifact: it ships and installs byte-identically into every profile's
-> `.claude/aid/templates/connectors/` (or equivalent per-tool) install tree, alongside
+> `.aid/runtime/templates/connectors/` install tree, alongside
 > [`preset-catalog.md`](preset-catalog.md) — a curated reference read directly from disk, not
 > per-project templated at render time.
 
@@ -49,7 +49,7 @@ P_STEMS=""
 while IFS= read -r stem; do
   [ -z "$stem" ] && continue
   P_STEMS="${P_STEMS:+$P_STEMS }$stem"
-done < <(bash canonical/aid/scripts/connectors/connector-registry.sh list --root .aid/connectors)
+done < <(bash .aid/runtime/scripts/connectors/connector-registry.sh list --root .aid/connectors)
 ```
 
 (PowerShell twin: `connector-registry.ps1`.) `P` is the sorted set of `.aid/connectors/*.md`
@@ -74,7 +74,7 @@ values against the on-disk descriptor, field by field — `name`, `connection_ty
 not source of truth):
 
 ```bash
-bash canonical/aid/scripts/connectors/connector-registry.sh read <stem> <field> --root .aid/connectors
+bash .aid/runtime/scripts/connectors/connector-registry.sh read <stem> <field> --root .aid/connectors
 ```
 
 Any field difference (including a field's presence/absence — e.g. an `auth_method` downgrade to
@@ -110,7 +110,7 @@ classify it NO-OP.
   the descriptor deletes). The reverse order could drop the stem from `P` on an interrupt while
   its secret survives, stranding it.
   ```bash
-  bash canonical/aid/scripts/connectors/connector-secret.sh purge <stem> --root .aid/connectors
+  bash .aid/runtime/scripts/connectors/connector-secret.sh purge <stem> --root .aid/connectors
   rm -f -- ".aid/connectors/<stem>.md"
   ```
   (PowerShell twin: `connector-secret.ps1`.) The purge op deletes `.aid/connectors/.secrets/<stem>`
@@ -160,7 +160,7 @@ Step S2 below):
    this cycle, **hand the secret VALUE to feature-003's twin — never capture it here.**
    When `secret_reference` uses the `file:` form (the default), invoke:
    ```bash
-   bash canonical/aid/scripts/connectors/connector-secret.sh write <stem> --root .aid/connectors
+   bash .aid/runtime/scripts/connectors/connector-secret.sh write <stem> --root .aid/connectors
    ```
    (PowerShell twin: `connector-secret.ps1`.) The script owns the no-echo capture and the
    exact-bytes, owner-only write to `.aid/connectors/.secrets/<stem>`; the caller never reads,
@@ -178,7 +178,7 @@ Step S2 below):
 applied (never per-tool):
 
 ```bash
-bash canonical/aid/scripts/connectors/build-connectors-index.sh \
+bash .aid/runtime/scripts/connectors/build-connectors-index.sh \
   --root .aid/connectors --output .aid/connectors/INDEX.md
 ```
 
@@ -237,7 +237,7 @@ No stem other than the one named is enumerated, read, or classified.
 **Step S3 — regenerate `INDEX.md`.** Same builder, same invocation, as bulk mode's Step R4 above:
 
 ```bash
-bash canonical/aid/scripts/connectors/build-connectors-index.sh \
+bash .aid/runtime/scripts/connectors/build-connectors-index.sh \
   --root .aid/connectors --output .aid/connectors/INDEX.md
 ```
 

@@ -7,7 +7,7 @@ verb (bare `aid-refactor` only -- no artifact suffixes), and the bare
 **`remove`** (`aid-remove`), **`deprecate`**
 (`aid-deprecate`), and **`migrate`** (`aid-migrate`) verbs -- none of the three
 takes an artifact suffix. Consulted by the shared engine
-(`canonical/aid/templates/shortcut-engine.md § Family Scaffolding Consult`) at
+(`.aid/runtime/templates/shortcut-engine.md § Family Scaffolding Consult`) at
 CAPTURE, SPEC, and DETAIL for every `{verb, artifact}` whose `verb` field
 resolves to `update`, `refactor`, `remove`, `deprecate`, or `migrate`.
 Free-form prose, like any other `state-*.md` reference doc -- the dispatched
@@ -226,17 +226,17 @@ assume the decision to act has already been made.
 
 ## See also
 
-- `canonical/aid/templates/shortcut-scaffolding/create.md` -- the artifact
+- `.aid/runtime/templates/shortcut-scaffolding/create.md` -- the artifact
   matrix (SPEC sections + task breakdown) this file inherits by reference
-- `canonical/aid/templates/shortcut-scaffolding/analyze-report.md § aid-review /
+- `.aid/runtime/templates/shortcut-scaffolding/analyze-report.md § aid-review /
   § aid-research` -- where the decision to remove/deprecate/migrate gets
   assessed before this file's verbs act on it
-- `canonical/aid/templates/shortcut-engine.md § Family Scaffolding Consult` --
+- `.aid/runtime/templates/shortcut-engine.md § Family Scaffolding Consult` --
   how this file is looked up and what happens when it is absent
-- `canonical/skills/aid-execute/references/task-type-rules.md ## MIGRATE /
+- `.agents/skills/aid-execute/references/task-type-rules.md ## MIGRATE /
   ## REFACTOR / ## IMPLEMENT` -- the per-type execution rules
   `aid-remove`/`aid-deprecate`/`aid-migrate` map onto
 - `.aid/knowledge/artifact-schemas.md § Task DETAIL.md` -- the one-type-per-task
   contract
-- `canonical/skills/aid-execute/references/task-type-rules.md ## REFACTOR` --
+- `.agents/skills/aid-execute/references/task-type-rules.md ## REFACTOR` --
   the behavior-preservation execution rule

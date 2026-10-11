@@ -122,7 +122,7 @@ is not yet authored; do not omit the section.
 ## Common visuals content
 
 For Figure 2 (Pipeline DAG), author an inline SVG using the flow-diagram pattern from
-`canonical/aid/templates/knowledge-summary/authored-visual-catalog.md` (Pattern 1 --
+`.aid/runtime/templates/knowledge-summary/authored-visual-catalog.md` (Pattern 1 --
 left-to-right flow). Use `var(--bg-elev)` fills and `var(--accent)` borders for source/
 transform nodes; `var(--bg-sunken)` for sink nodes. Typical node layout:
 

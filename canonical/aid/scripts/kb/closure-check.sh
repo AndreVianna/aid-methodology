@@ -121,8 +121,8 @@ else
   SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
   if [[ -f "${SCRIPT_DIR}/coined-term-denylist.txt" ]]; then
     DENYLIST="${SCRIPT_DIR}/coined-term-denylist.txt"
-  elif [[ -f "${ROOT}/canonical/aid/scripts/kb/coined-term-denylist.txt" ]]; then
-    DENYLIST="${ROOT}/canonical/aid/scripts/kb/coined-term-denylist.txt"
+  elif [[ -f "${ROOT}/.aid/runtime/scripts/kb/coined-term-denylist.txt" ]]; then
+    DENYLIST="${ROOT}/.aid/runtime/scripts/kb/coined-term-denylist.txt"
   else
     DENYLIST=""
   fi

@@ -49,7 +49,7 @@ Issues must be tagged with the bracketed all-caps form so the grading script cou
 | High                             | `[HIGH]`                              |
 | Critical                         | `[CRITICAL]`                          |
 
-The script (`canonical/aid/scripts/grade.sh`) counts occurrences of `[CRITICAL]`, `[HIGH]`, `[MEDIUM]`, `[LOW]`, `[MINOR]` in the issue list — not their sentence-case names. An issue written `Minor: missing comment` will be counted as zero issues, producing a silent A+.
+The script (`.aid/runtime/scripts/grade.sh`) counts occurrences of `[CRITICAL]`, `[HIGH]`, `[MEDIUM]`, `[LOW]`, `[MINOR]` in the issue list — not their sentence-case names. An issue written `Minor: missing comment` will be counted as zero issues, producing a silent A+.
 
 Always tag with brackets:
 - ✅ Correct: `[MINOR] missing JSDoc on public helper | utils.ts:42`
@@ -94,7 +94,7 @@ Defined during `/aid-config` and stored in `.aid/settings.yml` under
 their threshold via:
 
 ```
-bash canonical/aid/scripts/config/read-setting.sh --skill <name> --key minimum_grade --default A
+bash .aid/runtime/scripts/config/read-setting.sh --skill <name> --key minimum_grade --default A
 ```
 
 The three-tier resolution is: per-skill override → global `review.minimum_grade` →

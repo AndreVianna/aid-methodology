@@ -42,7 +42,7 @@ multiple syntactic forms. List every match. Address every match — do not leave
 siblings for the reviewer to surface.
 
 Example: "this skill body uses bare `bash scripts/...` instead of
-`bash canonical/aid/scripts/...`." Don't just fix the cited file. Grep:
+`bash .aid/runtime/scripts/...`." Don't just fix the cited file. Grep:
 `grep -rn "bash scripts/" canonical/` and fix every site. Then grep
 `grep -rn "\`scripts/" canonical/` for backtick-quoted siblings. Then grep
 `.aid/scripts/` for misrooted variants. Enumerate the class, not the instance.
@@ -124,8 +124,8 @@ the dispatcher's.
 
 ## See also
 
-- `canonical/aid/templates/reviewer-dispatch.md` — the reviewer's protocol; the
+- `.aid/runtime/templates/reviewer-dispatch.md` — the reviewer's protocol; the
   flip-side of this one (what the reviewer is dispatched to do; this doc is
   what the agent should have done before reviewer dispatch was needed).
-- `canonical/aid/templates/subagent-heartbeat-protocol.md` — the heartbeat
+- `.aid/runtime/templates/subagent-heartbeat-protocol.md` — the heartbeat
   protocol; same authoring pattern (canonical source + per-agent reference).

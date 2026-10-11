@@ -2,7 +2,7 @@
 
 > Shared reference for the three dedicated ticket-tracker skills — `aid-read-ticket`,
 > `aid-create-ticket`, and `aid-update-ticket`, each at
-> `canonical/skills/aid-<name>/SKILL.md`. Each skill's `SKILL.md`
+> `.agents/skills/aid-<name>/SKILL.md`. Each skill's `SKILL.md`
 > implements this reference by a **short, additive pointer** — none of the three
 > re-describe the connector-resolution ladder, the grammar-parse rules, or the write
 > preview/confirm-gate convention inline. This is the single, DRY home for all three — the
@@ -18,7 +18,7 @@
 > job).
 >
 > This is a `canonical/` artifact: it ships and installs byte-identically into every
-> profile's `.claude/aid/templates/connectors/` (or equivalent per-tool) install tree,
+> profile's `.aid/runtime/templates/connectors/` install tree,
 > alongside [`consumption-protocol.md`](consumption-protocol.md),
 > [`reconcile.md`](reconcile.md), and [`preset-catalog.md`](preset-catalog.md).
 

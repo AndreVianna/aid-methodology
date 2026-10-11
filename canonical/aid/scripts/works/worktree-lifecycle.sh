@@ -8,7 +8,7 @@
 #   <work-id>, directory <install-root>/worktrees/<work-id>-<name>, off master) and
 #   resolve-and-enter an existing one via the 4-rung "most-intact-state-first"
 #   fallback ladder. This script is PURE GIT MECHANICS -- it never switches a
-#   session; see canonical/aid/templates/worktree-lifecycle.md for the agent
+#   session; see .aid/runtime/templates/worktree-lifecycle.md for the agent
 #   host-switch contract that follows a call to this script.
 #
 # Usage:
@@ -88,7 +88,7 @@ malformed <work-id> / <name> / --base value, before any git verb runs.
 
 Entering the resolved worktree is an AGENT action (the claude-code
 EnterWorktree tool, or a cwd-fallback with the path surfaced on hosts
-without one) -- see canonical/aid/templates/worktree-lifecycle.md. This
+without one) -- see .aid/runtime/templates/worktree-lifecycle.md. This
 script only prints the path; it never switches a session.
 HELP
 }

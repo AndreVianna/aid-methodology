@@ -21,18 +21,16 @@ restating a shared rule is how its boundary quietly moves.
 a project, no more — is responsible for this, before it writes anything:
 
 > Before writing a seed, ensure `.aid/design/` exists. If `README.md` is absent from it,
-> copy `canonical/aid/templates/design-folder-readme.md` into it as `README.md`. Never
+> copy `.aid/runtime/templates/design-folder-readme.md` into it as `README.md`. Never
 > overwrite an existing `README.md` — it is user data the moment it is written. If the
 > template is missing from the installed bundle, write the seed anyway and warn once; a
 > missing convention document must never block the user's actual work.
 
 A project that never runs a `design`-stage skill acquires neither the folder nor the
-README. The path in the rule above is written in exactly the **canonical** form the
-render-time `rewrite_install_paths` idiom resolves per profile
-(`canonical/aid/templates/…` → `<install_root>/aid/templates/…`) — there is no per-tool
-root to choose among and no five-way runtime decision for the agent to make. Writing that
-path in any other form (a variable, an `<agent-root>` placeholder, a relative path) defeats
-the rewriter and ships a dangling reference on every profile but one.
+README. The path in the rule above is written in one fixed form, `.aid/runtime/templates/…`, which
+every project installs verbatim -- there is no per-tool root to choose among and no five-way
+runtime decision for the agent to make. Writing that path in any other form (a variable, an
+`<agent-root>` placeholder, a relative path) ships a dangling reference.
 
 ---
 
@@ -172,7 +170,7 @@ what this contract wants.
 
 ## Skill shape
 
-Modeled on `canonical/skills/aid-design/SKILL.md`. Binds class 1's 21 skills, class 2's 14
+Modeled on `.agents/skills/aid-design/SKILL.md`. Binds class 1's 21 skills, class 2's 14
 new `design` rows, and `/aid-brainstorm` — with one carve-out: the `create`/`update` verify
 depth, which class 2 and `/aid-brainstorm` have no site for (The two classes, above).
 
@@ -188,16 +186,16 @@ here and not restated.
 **States:** INTAKE → (DESIGN | CREATE | UPDATE) → VERIFY → PRESENT → DONE.
 
 **Allocation.** Consult the Work Initiation Gate
-(`canonical/aid/templates/work-initiation-gate.md`) by running
-`bash canonical/aid/scripts/works/enumerate-works.sh`; on new work, run
-`bash canonical/aid/scripts/works/worktree-lifecycle.sh create <work-id> <name>`, stop on a
+(`.aid/runtime/templates/work-initiation-gate.md`) by running
+`bash .aid/runtime/scripts/works/enumerate-works.sh`; on new work, run
+`bash .aid/runtime/scripts/works/worktree-lifecycle.sh create <work-id> <name>`, stop on a
 non-zero exit or an empty path, otherwise enter the resolved path; then allocate
 `pipeline.path: lite`, `initiator: aid-<verb>-<artifact>`, `lifecycle: Running`,
 `active_skill: <name>`. **`phase` is not driven** by any of the 36 — that is what keeps
 NFR-3 and AC-10 true without touching the enum.
 
 **Dispatch:** `aid-architect`, tiered by complexity
-(`canonical/aid/templates/agent-dispatch-tiering.md`); verifier tier is always at least the
+(`.aid/runtime/templates/agent-dispatch-tiering.md`); verifier tier is always at least the
 producer's tier.
 
 **"Full verify" — defined, not merely named.** Wherever this contract requires full verify
@@ -208,7 +206,7 @@ on `design` (Skill shape's own carve-out excuses class 2 and `/aid-brainstorm` o
    they build on.
 2. Adversarial verification by a clean-context `aid-reviewer` dispatch, writing a
    review-quality ledger to `.aid/.temp/review-pending/<work>-verify.md`.
-3. `bash canonical/aid/scripts/grade.sh --explain <ledger>`; not clean → loop back to the
+3. `bash .aid/runtime/scripts/grade.sh --explain <ledger>`; not clean → loop back to the
    producing state; a 3-cycle circuit breaker → IMPEDIMENT + `lifecycle: Blocked`.
 
 Contrast, so the term carries information: `/aid-prototype`'s **light** check is a single
@@ -264,7 +262,7 @@ consumed without an explicit override. A section with only blank lines, only the
 
 **The placeholder convention this rule depends on.** Unfilled content in a shipped seed is
 written brace-delimited, `{like this}` — the convention already used throughout
-`canonical/aid/templates/` (`work-state-template.md`'s `{phase}`, `{skill}`;
+`.aid/runtime/templates/` (`work-state-template.md`'s `{phase}`, `{skill}`;
 `knowledge-base/architecture.md`'s `{project}`, `{ModuleA}`).
 
 **No `changelog:` and no `## Change Log`.** Not because a seed is transient — class-2 seeds

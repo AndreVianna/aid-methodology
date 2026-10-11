@@ -127,8 +127,8 @@ Production mode.
 
 ### `generator:` (required iff `source: generated`)
 
-Name of the build script (relative to `canonical/aid/scripts/` or as a
-project-relative path). Listed in `canonical/aid/templates/generated-files.txt` registry.
+Name of the build script (relative to `.aid/runtime/scripts/` or as a
+project-relative path). Listed in `.aid/runtime/templates/generated-files.txt` registry.
 
 Examples: `build-kb-index.sh`, `build-metrics.sh`, `build-project-index.sh`.
 
@@ -191,8 +191,8 @@ coverage (f005).
 **Well-formedness rules:**
 - A YAML list (possibly empty: `sources: []`)
 - Each entry is one of:
-  - A **repo-relative path** (`src/foo.ts`, `canonical/aid/scripts/kb/`)
-  - A **glob** (`src/parsers/*.py`, `canonical/aid/templates/*.md`)
+  - A **repo-relative path** (`src/foo.ts`, `.aid/runtime/scripts/kb/`)
+  - A **glob** (`src/parsers/*.py`, `.aid/runtime/templates/*.md`)
   - A **URL** (`https://vendor.example/spec`)
 - Path/glob/URL *resolution* is NOT checked by this lint (that is f007 freshness); the lint checks *shape* only
 - A doc with genuinely no sources (e.g. a pure synthesis/glossary) MUST declare `sources: []` explicitly — absence is a lint error
@@ -204,8 +204,8 @@ coverage (f005).
 **Good (repo-relative path):**
 ```yaml
 sources:
-  - canonical/aid/templates/knowledge-base/
-  - canonical/aid/scripts/kb/build-kb-index.sh
+  - .aid/runtime/templates/knowledge-base/
+  - .aid/runtime/scripts/kb/build-kb-index.sh
 ```
 
 **Good (external URL):**

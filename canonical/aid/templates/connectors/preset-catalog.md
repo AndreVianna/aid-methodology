@@ -24,7 +24,7 @@
 > `—`, same as `mcp`.
 >
 > This is a `canonical/` artifact: it ships and installs byte-identically into every profile's
-> `.claude/aid/templates/connectors/` (or equivalent per-tool) install tree, alongside
+> `.aid/runtime/templates/connectors/` install tree, alongside
 > [`kb-authoring/domain-doc-matrix.md`](../kb-authoring/domain-doc-matrix.md), which it mirrors
 > in shape — a curated, LLM-read lookup table a discovery gate consults directly from disk (no
 > per-project templating at render time; the render is a plain copy).

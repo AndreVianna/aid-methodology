@@ -7,7 +7,7 @@
 >
 > The feature section's own skeleton -- title, Priority, Requirements, Criteria,
 > Description, User Stories -- is defined by
-> `canonical/aid/templates/requirements/requirements-template.md § 11`, which is where
+> `.aid/runtime/templates/requirements/requirements-template.md § 11`, which is where
 > `/aid-define` creates it. This template covers only what `/aid-specify` adds, which is
 > the part `/aid-define` leaves as a placeholder.
 

@@ -88,11 +88,11 @@ stays here, as the bare `aid-document` shape.
 
 ## See also
 
-- `canonical/skills/aid-create-document/SKILL.md` (+ `aid-update-document`) -- the
+- `.agents/skills/aid-create-document/SKILL.md` (+ `aid-update-document`) -- the
   hand-authored collapse bodies that read this file for per-genre document structure
-- `canonical/aid/templates/shortcut-scaffolding/analyze-report.md § Ownership
+- `.aid/runtime/templates/shortcut-scaffolding/analyze-report.md § Ownership
   boundary` -- where an analytical report routes instead
-- `canonical/skills/aid-execute/references/task-type-rules.md ## DOCUMENT` -- the
+- `.agents/skills/aid-execute/references/task-type-rules.md ## DOCUMENT` -- the
   per-type execution rule this breakdown maps onto
 - `.aid/knowledge/artifact-schemas.md § Task DETAIL.md` -- the one-type-per-task
   contract

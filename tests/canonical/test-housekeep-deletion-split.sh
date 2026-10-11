@@ -56,10 +56,10 @@ make_aid_dir() {
     mkdir -p "${repo}/.aid/generated"
     mkdir -p "${repo}/.aid/knowledge"
     printf 'project:\n  name: test\n' > "${repo}/.aid/settings.yml"
-    mkdir -p "${repo}/canonical/aid/templates"
-    cat > "${repo}/canonical/aid/templates/generated-files.txt" <<'REGEOF'
+    mkdir -p "${repo}/.aid/runtime/templates"
+    cat > "${repo}/.aid/runtime/templates/generated-files.txt" <<'REGEOF'
 # Generated Files Registry
-.aid/generated/project-index.md|bash canonical/aid/scripts/kb/build-project-index.sh
+.aid/generated/project-index.md|bash .aid/runtime/scripts/kb/build-project-index.sh
 REGEOF
 }
 

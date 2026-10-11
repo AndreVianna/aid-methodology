@@ -3,7 +3,7 @@
 Per-family scaffolding reference for the **`test`** verb (bare `aid-test` plus
 the three test-kind forms `-security`, `-performance`, `-data-quality`) and the
 **`experiment`** verb (bare `aid-experiment` only). Consulted by the shared engine
-(`canonical/aid/templates/shortcut-engine.md § Family Scaffolding Consult`) at
+(`.aid/runtime/templates/shortcut-engine.md § Family Scaffolding Consult`) at
 CAPTURE, SPEC, and DETAIL for every `{verb, artifact}` whose `verb` field
 resolves to `test` or `experiment`. No `aid-test-*`/`aid-experiment` row carries
 an alias (feature-009 SPEC "Catalog rows owned" -- 5 canonical, no aliases).
@@ -163,9 +163,9 @@ Analytical insight from usage data (as opposed to a controlled experiment) is
 
 ## See also
 
-- `canonical/aid/templates/shortcut-engine.md § Family Scaffolding Consult` --
+- `.aid/runtime/templates/shortcut-engine.md § Family Scaffolding Consult` --
   how this file is looked up and what happens when it is absent
-- `canonical/aid/templates/shortcut-scaffolding/fix.md § Ownership boundary` --
+- `.aid/runtime/templates/shortcut-scaffolding/fix.md § Ownership boundary` --
   where a security finding's remediation routes
-- `canonical/skills/aid-execute/references/task-type-rules.md ## TEST / ## RESEARCH`
+- `.agents/skills/aid-execute/references/task-type-rules.md ## TEST / ## RESEARCH`
   -- the per-type execution rules this breakdown maps onto
