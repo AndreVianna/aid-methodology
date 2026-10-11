@@ -112,15 +112,15 @@ minimum_grade: A
 # [W] 'yes' | 'no' -- quoted, see NFR-2 / D-5
 user_approved: 'no'
 # [W] Running | Paused-Awaiting-Input | Blocked | Completed | Canceled
-lifecycle: Running
+lifecycle: Paused-Awaiting-Input
 # [W] Describe | Define | Specify | Plan | Detail | Execute
 phase: Detail
 # [W] aid-{skill} | none
 active_skill: aid-update
 # [W]
-updated: '2026-10-11T01:40:54Z'
+updated: '2026-10-11T01:43:02Z'
 # [W] set only when lifecycle = Paused-Awaiting-Input
-pause_reason: --
+pause_reason: 'Codex cycle 1 reviewed: definition C+ and tasks C+ below floor A; awaiting maintainer decision before fixing definition rows 41-42 and task row 15'
 # [W] set only when lifecycle = Blocked
 block_reason: --
 # [W] e.g. IMPEDIMENT-task-NNN.md, or the failed gate
@@ -306,6 +306,10 @@ lifecycle_history:
     event: 'Codex cycle 1 definition re-review complete; rows 38-40 verified Fixed; new rows 41-42 Pending'
     grade: 'C+'
     notes: 'Below floor A: profile README output contradiction and manifest-less interrupted upgrade recovery. Scoped task verification follows as requested by the handoff; no gate cleared and no new FIX loop begun'
+  - date: '2026-10-10'
+    event: 'Codex cycle 1 task verification complete; rows 1-14 verified Fixed; new task row 15 Pending'
+    grade: 'C+'
+    notes: 'Task-003 profile wipe can precede task-005 rules extraction. Cycle 1 ended: definition C+, tasks C+, floor A; no gates cleared; no implementation task started. Pending manual pointer/alias probes remain unverified'
 
 # [A] aid-deploy only; one entry per delivery (never derived from child
 #     files; aid-deploy is the sole author):
