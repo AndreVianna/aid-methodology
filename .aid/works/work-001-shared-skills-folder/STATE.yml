@@ -118,7 +118,7 @@ phase: Detail
 # [W] aid-{skill} | none
 active_skill: aid-update
 # [W]
-updated: '2026-10-11T02:29:57Z'
+updated: '2026-10-11T02:32:58Z'
 # [W] set only when lifecycle = Paused-Awaiting-Input
 pause_reason: --
 # [W] set only when lifecycle = Blocked
@@ -379,6 +379,11 @@ lifecycle_history:
     event: 'Luna fix draft complete for definition rows 43-47 and task rows 16-18; independent verification started'
     grade: --
     notes: 'REQUIREMENTS and 15 affected task artifacts aligned; diff whitespace check passes. Findings remain Pending until verified. gpt-6.1-sol checks the eight findings, historical Fixed claims and changed contracts/references; orchestrator final review follows'
+
+  - date: '2026-10-10'
+    event: 'Independent Sol verification complete; eight original findings Fixed, four residual contract findings Pending'
+    grade: --
+    notes: 'Definition C+ (row 48); tasks C (rows 19-21); no historical Fixed findings recurred. Final integrated review supplied two of the confirmed residual gaps. One authorized Luna correction round now starts: fresh stamp fixture, early gate ordering, LF separator restoration wording, and separate semantic-review gate'
 
 # [A] aid-deploy only; one entry per delivery (never derived from child
 #     files; aid-deploy is the sole author):
