@@ -264,9 +264,12 @@ Any byte difference between copies therefore produces mixed, unpredictable behav
   - `.agent/aid/` and `.agent/skills/aid-*` (Antigravity), which move to `.agents/skills`.
 
   Every retired AID-owned file is moved to `.aid/.trash/<original-path>` and never deleted. The
-  ownership markers are the same as in `_migrate_retired_layout`: an `aid-` prefix, or a location
-  inside an `aid/` subtree. Files without a marker are never touched. The migration is
-  idempotent, so a second `aid update` changes nothing.
+  ownership rule is path-based. An old-layout file is AID-owned if it lies under
+  `<root>/skills/aid-*/` at any depth (so every `references/*.md` counts), or under `<root>/aid/`,
+  or its basename starts with `aid-`. `_is_aid_owned_file` in `_migrate_retired_layout` tests only
+  the basename and ancestors named `aid`, so the migration uses a new path-based helper
+  (`_is_aid_owned_path`, with a PowerShell twin) instead. Files without a marker are never
+  touched. The migration is idempotent and resumable, so a second `aid update` changes nothing.
 
   `.agents/` stops being a retired root. `detect_tool` and `Detect-Tool` stop treating it as a
   Codex marker. The manifest-seam retired-roots list and `_migrate_retired_layout` are updated so
@@ -333,7 +336,8 @@ Any byte difference between copies therefore produces mixed, unpredictable behav
   installed result is the same on Windows, macOS and Linux.
 - **Safety of user content.** No install, update, migration, repair or uninstall path deletes a
   file without an AID ownership marker. Every AID-owned file that is replaced or retired while it
-  differs from the bytes AID is writing is preserved under `.aid/.trash/`.
+  differs from the bytes AID is writing is preserved under `.aid/.trash/`. A root context file
+  without markers keeps every byte of user content (Layers & Components, *Root context file*).
 - **Atomicity and idempotency.** The existing stage-all-first behaviour is kept: every payload is
   fetched and checksum-verified before any destination write. A repeated `aid update` at the same
   version reports nothing changed.
@@ -550,6 +554,8 @@ CLI. The Claude Code docs (skills, settings reference, memory, changelog) were c
   - `.aid/settings.yml` `format_version` equals the new value.
 
   A second `aid update` prints `up to date` for every tool and leaves `.aid/.trash/` unchanged.
+  A migration killed after the manifest write (Migration Plan step 3) completes on the next
+  `aid update`, leaving no `aid-*` entry under the old roots and no `migration` key in the manifest.
 - **AC-14:** `CLAUDE.md` holds the `@AGENTS.md` import region exactly while Claude Code is
   installed. The *import region* is the three LF-terminated lines `<!-- AID:BEGIN -->`,
   `@AGENTS.md` and `<!-- AID:END -->`.
@@ -574,6 +580,10 @@ CLI. The Claude Code docs (skills, settings reference, memory, changelog) were c
     fixture. In both,
     `AGENTS.md` still contains exactly one `<!-- AID:BEGIN -->` line, the manifest's
     `shared.agents_md.users` is `["cursor"]`, and the manifest has no `shared.claude_md` entry.
+  - (e) **User `AGENTS.md` without markers.** In a fixture whose user `AGENTS.md` has no markers
+    and holds a `## Workflow` section, after `aid add claude-code` that section is present
+    byte-for-byte, the pre-add bytes of the file are a byte-exact prefix of it, a full copy of the
+    pre-add file exists at `.aid/.trash/AGENTS.md`, and the run prints a WARN naming `Workflow`.
   - In every one of these fixtures, while Claude Code is installed, `CLAUDE.md` contains exactly
     one `@AGENTS.md` line and `AGENTS.md` contains exactly one `<!-- AID:BEGIN -->` line.
 - **AC-15:** Tool detection is fixed. `detect_tool` on a fixture holding only `.agents/` exits `2`
@@ -823,8 +833,10 @@ other. It lies outside `runtime/{scripts,templates}`, so AC-7's byte check does 
 
   The parity tests rely on this (they mask `installed_at` and then diff the bytes).
 - **Format detection.** A reader treats `format_version` 2 as the pre-shared layout, which
-  triggers migration in `aid update` and refusal in `aid add`. It treats a value above 3 as
-  "newer than this CLI", and refuses with `Run: aid update self`.
+  triggers migration in `aid update` and refusal in `aid add`. It treats `format_version` 3 with
+  a top-level `"migration": "pending"` key (written after `layout_format` while a migration is in
+  progress, absent otherwise) the same way, resuming the Migration Plan at step 4. It treats a
+  value above 3 as "newer than this CLI", and refuses with `Run: aid update self`.
 
 **Format stamp.** `AID_SUPPORTED_FORMAT` goes from 4 to 5 in its three carriers: `bin/aid`,
 `AidSupportedFormat` in `bin/aid.ps1`, and `$script:_AidSupportedFormat` in
@@ -834,7 +846,8 @@ line: `format 5 (was 4): shared skills under .agents/skills (+ CLI-owned mirrors
 claude-code is installed; manifest format_version 3`. `release.sh`
 gains `PAYLOAD_LAYOUT_FORMAT=5`, and a test keeps all four values in lockstep. The settings stamp
 is capped as follows: `_aid_migrate_repo` (and its PowerShell twin) writes `format_version: 5`
-only when the manifest is absent or records `format_version` 3. Otherwise it writes `4`. The
+only when the manifest is absent or records `format_version` 3 with no pending `migration` key.
+Otherwise it writes `4`. The
 reason is that `aid update self` and `aid projects add` run `_aid_migrate_repo` without
 installing anything. Without the cap they would stamp a format-4-layout repo as format 5, and the
 format gate would stop telling the user to run `aid update`.
@@ -909,8 +922,8 @@ trash copy. That is replaced by this policy.
 **3. `aid add <t1>[,<t2>...]`** (1..N new tools; FR-10):
 
 1. Run the writability pre-check (unchanged).
-2. **Layout gate** (new `_aid_layout_gate`). A manifest exists and either records
-   `format_version` < 3 or the settings stamp is < 5. Exit 2, print `This project uses the
+2. **Layout gate** (new `_aid_layout_gate`). A manifest exists and records `format_version` < 3,
+   or records a pending `migration` key, or the settings stamp is < 5. Exit 2, print `This project uses the
    pre-shared AID layout (format 4). Run: aid update (it migrates every installed tool), then
    retry aid add.`, and write nothing (AC-12).
 3. **Skew gate.** The manifest records a `tools.*.version` or a `shared.*.version` that differs
@@ -928,8 +941,10 @@ trash copy. That is replaced by this policy.
    3. The runtime goes to `.aid/runtime/`, then `host.conf` is written.
    4. Each new tool's agents go to `<root>/agents/`.
    5. The `AGENTS.md` region is updated through the existing `_copy_root_agent_file` branches
-      A, B and C2. The whole file is copied to the trash first when its region differs from what
-      is being written and either has no recorded `region_sha256` or no longer matches it. Then,
+      A, B, C1 and C2. The whole file is copied to the trash first when its region differs from
+      what is being written and either has no recorded `region_sha256` or no longer matches it. A
+      file without markers follows the marker-less rule (see [Layers & Components](#layers--components),
+      *Root context file*). Then,
       when any user declares `context_import`, `_ensure_claude_md_region` writes the `CLAUDE.md`
       import region under the same trash rule (see [Layers & Components](#layers--components),
       *Root context file*).
@@ -951,7 +966,8 @@ trash copy. That is replaced by this policy.
    tool-subset can no longer advance the shared files ahead of the other tools. When the subset
    is widened, the CLI prints a notice listing the tools it added.
 3. Stage everything (flow 2).
-4. If the manifest has `format_version` 2, run the [Migration Plan](#migration-plan). Otherwise
+4. If the manifest has `format_version` 2, or `format_version` 3 with `"migration": "pending"`,
+   run the [Migration Plan](#migration-plan); a pending manifest resumes at its step 4. Otherwise
    run the flow 3 commit steps for all tools.
 5. Run `_aid_migrate_repo`, which now stamps 5.
 
@@ -1144,7 +1160,7 @@ implemented twice. The parity suite names every row (AC-16).
 
 **On the C2 stem list.** The C2 heading-stem list in `_copy_root_agent_file` must cover every
 `## ` heading in the region. Today it lacks `Review criteria`, which the shipped region contains
-(`## Review criteria (before you write)`), so a C2 migration duplicates that section. A test
+(`## Review criteria (before you write)`), so the C2 WARN would omit that section. A test
 asserts that every region heading in `canonical/AGENTS.md` is a C2 stem.
 
 **Parity rules.**
@@ -1183,6 +1199,20 @@ asserts that every region heading in `canonical/AGENTS.md` is a C2 stem.
 
   After the write, the CLI records `shared.claude_md.region_sha256`. A second run finds the
   region identical and changes nothing.
+- **`AGENTS.md` without markers (the marker-less rule).** It applies in every flow that writes
+  `AGENTS.md` through `_copy_root_agent_file` (flow 3 commit step 5, flow 4, the migration).
+  - **Recognised as AID-written (branch C1).** Its sha256 equals the root-file sha recorded in the
+    manifest. The file is rewritten to the full marked source, with a trash copy first like every
+    replaced AID file that differs.
+  - **Anything else (branch C2).** The whole original is first copied to
+    `.aid/.trash/AGENTS.md`, under the collision policy of every other trash move. The marked
+    region is then appended at the end of the file, preceded by one LF when the file is non-empty
+    and does not end in LF, and every other byte is kept. No section is excised, whatever its
+    heading. When the file holds a heading that matches a C2 stem, the CLI prints `WARN: aid:
+    AGENTS.md has AID-like sections outside its managed region (<the C2 stems found>); remove
+    them by hand if they are stale AID content`.
+  - The same guarantee holds for `CLAUDE.md` through its append-only case above: no content of a
+    marker-less root file is lost.
 - **`_remove_claude_md_region`.** It runs when `shared.claude_md` loses its last user (flow 5).
   If the region no longer matches `region_sha256`, the whole file is copied to the trash first.
   Then the region is removed, marker lines included, and every other byte is kept, so a user
@@ -1258,25 +1288,37 @@ and the `.cursor/` tuple of the dogfood suite. Each gets a row in
 
 **Scope:** platform (the installed tree in each adopter repo, plus this repo's dogfood).
 
-**Trigger.** `aid update` sees a manifest with `format_version` 2 and runs `migrate_layout_v2`.
-`aid add` never migrates; it refuses (flow 3).
+**Trigger.** `aid update` sees a manifest with `format_version` 2, or with `format_version` 3 and
+`"migration": "pending"`, and runs `migrate_layout_v2` (a pending manifest resumes at step 4).
+`aid add` never migrates; it refuses both manifests (flow 3).
 
 **Forward steps, in order.** Each step is idempotent.
 
 1. Stage and validate everything (flow 2). A failure here means no write at all.
-2. Write the new layout first, with `copy_file_guarded`, so that an interruption never leaves a
-   tool without skills:
-   1. `.agents/skills/aid-*`;
-   2. the mirrors (for `claude-code`, `.claude/skills/aid-*` is written over in place);
-   3. `.aid/runtime/` and `host.conf`;
-   4. every tool's agents;
+2. Write the new layout first, with `copy_file_guarded` (trash-before-overwrite). The runtime
+   comes first, so that no interruption leaves a skill whose `.aid/runtime/` is missing, and the
+   old layout stays in place until step 4, so every tool keeps working skills:
+   1. `.aid/runtime/` and `host.conf`;
+   2. `.agents/skills/aid-*`;
+   3. the mirrors (for `claude-code`, `.claude/skills/aid-*` is written over in place);
+   4. every tool's agents (rewritten in place);
    5. the `AGENTS.md` region;
    6. the `CLAUDE.md` import region, when `claude-code` is installed (`_ensure_claude_md_region`).
-3. Write the format-3 manifest. From here a re-run is a normal update.
-4. Retire the old layout, per tool, under the existing ownership markers (`aid-` prefix, or
-   inside an `aid/` subtree). Retired files are moved to the trash, never deleted. Files without
-   a marker are never touched. The table below lists each old path.
-5. Prune (flow 6). Then `update_gitignore` and `_aid_migrate_repo`, which stamps 5.
+
+   Before writing, each path that does not yet exist is appended to the creation journal
+   `.aid/.trash/migration-created.list`. A path that exists is never listed.
+3. Write the format-3 manifest with `"migration": "pending"`, a top-level key placed after
+   `layout_format` and absent in a completed migration. From here a re-run resumes at step 4.
+4. Retire the old layout, per tool, using the path-based ownership rule of FR-11 (new helper
+   `_is_aid_owned_path`, not `_is_aid_owned_file`). Retired files are moved to the trash, never
+   deleted. Files without a marker are never touched. The table below lists each old path.
+5. Clear the marker by rewriting the manifest without `migration`. Then prune (flow 6), run
+   `update_gitignore` and `_aid_migrate_repo`. `_aid_migrate_repo` stamps 5 only once the marker
+   is clear, so the settings stamp stays 4 and the format gate keeps directing to `aid update`
+   until step 4 has completed.
+
+Steps 4 and 5 are idempotent and are resumed by the next `aid update`, whatever interrupted
+them. A resumed run skips steps 2 and 3.
 
 | Old path (format 4) | Treatment |
 |---|---|
@@ -1291,7 +1333,7 @@ and the `.cursor/` tuple of the dogfood suite. Each gets a row in
 | `.cursor/skills/aid-*`, `.cursor/aid/**` | trash; `.cursor/rules/aid-*` keeps its existing sweep |
 | `.github/skills/aid-*`, `.github/aid/**` | trash; never the `.github` root (G-12) |
 | `.agent/skills/aid-*`, `.agent/aid/**` | trash; `.agent/rules/` keeps its existing sweep |
-| `AGENTS.md` (any tool) | region updated by branch B or C2; created by branch A if absent |
+| `AGENTS.md` (any tool) | region updated by branch B, C1 or C2; created by branch A if absent. A file without markers follows the marker-less rule (*Root context file*) |
 
 **Why everything retired goes to the trash.** A format-2 manifest records paths but no per-file
 sha256, so a user edit cannot be told apart from an older release's bytes. Every retired file and
@@ -1299,29 +1341,43 @@ every differing overwritten file therefore goes to `.aid/.trash/`. The run print
 file(s) moved to .aid/.trash/ (safe to delete once you have checked them)`. Once a directory under
 `<root>/skills/` or `<root>/aid/` is empty, it is removed. The `<root>` itself is never removed.
 
-**Interruption and idempotency.** The new layout is written before the old one is retired, and
-the format-3 manifest is written only after every copy succeeds. An interrupted run therefore
-leaves the old layout intact apart from the `AGENTS.md` and `CLAUDE.md` regions (the pre-update
-`CLAUDE.md` is in the trash), plus some new files, and a format-2 manifest. Re-running
-`aid update` finishes the job. A second run on a migrated repo changes nothing, prints `up to
-date` for `shared` and for every tool, and leaves `.aid/.trash/` unchanged (AC-13).
+**Interruption and idempotency.** Step 2 modifies these existing paths in place, each trashed
+first when its bytes differ: legacy `.agents/skills/aid-*`, `.claude/skills/aid-*` (claude-code),
+every tool's `<root>/agents/aid-*`, the `AGENTS.md` region and the `CLAUDE.md` region. It
+creates every other new path, listed in the creation journal. Steps 1 and 3 write nothing in
+place, and step 4 only moves files to the trash. The outcomes by interruption point:
+
+- **Before step 3:** the format-2 manifest is unchanged and the old layout is still complete.
+  Re-running `aid update` redoes steps 2 onward.
+- **After step 3, inside step 4 or 5:** the manifest is format 3 with `migration: pending`. The
+  new layout is complete, and some old `aid-*` and `aid/` entries may remain. Re-running
+  `aid update` resumes at step 4 and finishes the retirement.
+
+A second run on a migrated repo changes nothing, prints `up to date` for `shared` and for every
+tool, and leaves `.aid/.trash/` unchanged (AC-13).
 
 **Rollback.** There is no reverse migration. This is the same hard-cutover stance as the format-4
 conversion runbook in `bin/aid` (search: `RUNBOOK -- ROLLBACK`).
 
-- **A failure before step 3:** delete `.agents/skills/aid-*`, any new mirror files and
-  `.aid/runtime/`, and restore `CLAUDE.md` from `.aid/.trash/CLAUDE.md` if step 2 already
-  rewrote its region. The rest of the old layout and the format-2 manifest are untouched, so the
-  old CLI works again.
-- **After a completed migration:** restore from version control, then use a format-4 CLI. For
+- **A failure before step 3:**
+  1. Restore every in-place-modified path from `.aid/.trash/<original-path>`: the `.claude/skills`
+     copies, every tool's agents, the legacy `.agents/skills/aid-*` files, `CLAUDE.md` and
+     `AGENTS.md`. Only a path whose bytes differed was trashed, and an identical path needs no
+     restore.
+  2. Delete exactly the paths listed in `.aid/.trash/migration-created.list`. A pre-existing
+     legacy `.agents/skills` file is never listed, so it is never deleted.
+
+  The rest of the old layout and the format-2 manifest are untouched, so the old CLI works again.
+- **After step 3, or after a completed migration:** `aid update` finishes a pending migration.
+  To abandon it instead, restore from version control, then use a format-4 CLI. For
   example:
 
   ```
   git checkout <pre-update> -- <each installed tool root> CLAUDE.md AGENTS.md .aid/.aid-manifest.json .aid/settings.yml
   ```
 
-  Then remove `.agents/skills/aid-*` (unless it existed before the update) and `.aid/runtime/`.
-  Any uncommitted edit to a retired or overwritten file is recovered
+  Then delete the paths listed in `.aid/.trash/migration-created.list` (this spares a legacy
+  `.agents/skills` file that existed before the update). Any uncommitted edit to a retired or overwritten file is recovered
   from `.aid/.trash/<original-path>`, where the newest copy sits at the original path and older
   copies carry a timestamp suffix.
 
