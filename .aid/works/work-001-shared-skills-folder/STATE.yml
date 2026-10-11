@@ -118,7 +118,7 @@ phase: Execute
 # [W] aid-{skill} | none
 active_skill: aid-execute
 # [W]
-updated: '2026-10-11T06:47:47Z'
+updated: '2026-10-11T06:49:08Z'
 # [W] set only when lifecycle = Paused-Awaiting-Input
 pause_reason: --
 # [W] set only when lifecycle = Blocked
@@ -605,6 +605,11 @@ lifecycle_history:
     grade: --
     notes: '/aid-execute Codex'
 
+  - date: '2026-10-11'
+    event: 'Task008 separate Sol executor correction5ede6bddc committed: empty parsed records skipped, four empty/comment-only shared/tool descriptor regressions require proper filename/key diagnostics and unchanged targets. Focused suite37pass, syntax/diffpass. In Review for original Sol reviewer independent wave5 final recheck; task009 pending.'
+    grade: --
+    notes: '/aid-execute Codex'
+
 deploy: []
 
 # [A] flattened only; single writer: this work's active branch. Written by
@@ -726,7 +731,7 @@ tasks_lifecycle:
         outcome: 'committed cfadd72d4; retained release coverage restored,76 assertions pass'
 
   task-008:
-    state: 'In Progress'
+    state: 'In Review'
     review: --
     elapsed: --
     notes: --
@@ -743,6 +748,12 @@ tasks_lifecycle:
         eta_band: '3-8 min'
         actual: '4m21s'
         outcome: 'Task008 Luna correction 26fc45308 committed; parser now propagates read_kv_conf failures and uses parsed required-key counts. Descriptor regression 21/21, valid bundle add, Bash syntax and ASCII29 pass. Task008 In Review for independent Sol wave5 recheck. Task009 pending; PS runtime deferred.'
+
+      - date: '2026-10-11T06:49:08.058817+00:00'
+        agent: 'gpt-6.1-sol'
+        eta_band: '3-8 min'
+        actual: '1m11s'
+        outcome: 'Task008 separate Sol executor correction5ede6bddc committed: empty parsed records skipped, four empty/comment-only shared/tool descriptor regressions require proper filename/key diagnostics and unchanged targets. Focused suite37pass, syntax/diffpass. In Review for original Sol reviewer independent wave5 final recheck; task009 pending.'
 
   task-009:
     state: Pending
