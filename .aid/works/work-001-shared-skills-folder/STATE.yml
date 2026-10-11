@@ -485,6 +485,11 @@ lifecycle_history:
     grade: --
     notes: '/aid-execute resumed'
 
+  - date: '2026-10-11'
+    event: 'Task-005 c1952f13b committed; focused checks 90/90 primitives, 43/43 connector, 29/29 ASCII; PowerShell deferred. Rules extraction preceded profile removal in execution but both were committed together (recorded sequencing deviation). Interrupted post-report history split restored parent checkpoint via merge; no pushed history rewritten. Task-006 In Progress.'
+    grade: --
+    notes: '/aid-execute Codex'
+
 deploy: []
 
 # [A] flattened only; single writer: this work's active branch. Written by
