@@ -3116,6 +3116,7 @@ function Get-AidDriftReport {
     foreach ($mirror in $mirrors.Keys) { foreach ($item in $skills) { if ($item.path) { $expected[($mirror + '/' + $item.path)] = [string]$item.sha256 } } }
     $issues = New-Object 'System.Collections.Generic.List[string]'
     foreach ($path in $expected.Keys) {
+        if ($path -match '^\.aid/runtime/(?:.*/)?node_modules(?:/|$)') { continue }
         $full = Join-Path $Target ($path -replace '/', [IO.Path]::DirectorySeparatorChar)
         if (-not (Test-Path -LiteralPath $full -PathType Leaf)) { $issues.Add(('missing:' + $path)); continue }
         if ($expected[$path]) {
@@ -3141,9 +3142,18 @@ function Get-AidDriftReport {
     foreach ($base in @('.agents/skills') + @($mirrors.Keys | Sort-Object)) {
         $folder = Join-Path $Target $base
         if (-not (Test-Path -LiteralPath $folder -PathType Container)) { continue }
-        foreach ($dir in Get-ChildItem -LiteralPath $folder -Directory -Filter 'aid-*') {
-            foreach ($file in Get-ChildItem -LiteralPath $dir.FullName -File -Recurse) {
-                $rel = $base + '/' + $file.FullName.Substring($folder.Length + 1).Replace('\', '/')
+        foreach ($entry in Get-ChildItem -LiteralPath $folder -Force | Where-Object { $_.Name -like 'aid-*' }) {
+            $entryRel = $entry.Name
+            if ($entry.PSIsContainer) {
+                $prefix = $base + '/' + $entryRel + '/'
+                $recorded = @($expected.Keys | Where-Object { $_.StartsWith($prefix, [StringComparison]::OrdinalIgnoreCase) })
+                if ($recorded.Count -eq 0) { $issues.Add(('extra:' + $base + '/' + $entryRel)) }
+                foreach ($file in Get-ChildItem -LiteralPath $entry.FullName -File -Recurse -Force) {
+                    $rel = $base + '/' + $file.FullName.Substring($folder.Length + 1).Replace('\', '/')
+                    if (-not $expected.ContainsKey($rel)) { $issues.Add(('extra:' + $rel)) }
+                }
+            } else {
+                $rel = $base + '/' + $entryRel
                 if (-not $expected.ContainsKey($rel)) { $issues.Add(('extra:' + $rel)) }
             }
         }
@@ -3159,6 +3169,7 @@ function Get-AidDriftReport {
     }
     if ($issues.Count -eq 0) { Write-Host 'Shared files: clean'; return }
     $sorted = @($issues | Sort-Object { if ($_ -like 'modified:*') { '0' + $_.Substring(9) } elseif ($_ -like 'missing:*') { '1' + $_.Substring(8) } else { '2' + $_.Substring(6) } } -Unique)
+    Write-Host 'Shared files'
     foreach ($line in $sorted) { $separator = $line.IndexOf(':'); Write-Host ($line.Substring(0, $separator) + ': ' + $line.Substring($separator + 1)) }
     Write-Host 'Run: aid update (drifted files are moved to .aid/.trash/ first)'
 }

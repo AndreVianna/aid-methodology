@@ -2501,7 +2501,9 @@ for section, filename in (('agents_md', 'AGENTS.md'), ('claude_md', 'CLAUDE.md')
     region=b''.join(lines[starts[0]:ends[0]+1])
     regions.append(('region', filename, (hashlib.sha256(region).hexdigest(), entry.get('region_sha256', ''))))
 paths = {}
-for (base, rel), sha in expected.items(): paths[str(root / base / rel) if base else str(root / rel)] = sha
+for (base, rel), sha in expected.items():
+    if (base == '.aid/runtime' or (not base and rel.startswith('.aid/runtime/'))) and 'node_modules' in pathlib.PurePosixPath(rel).parts: continue
+    paths[str(root / base / rel) if base else str(root / rel)] = sha
 hashes = {}
 for name in paths:
     try:
@@ -2519,10 +2521,16 @@ for base in ['.agents/skills'] + sorted(mirrors):
     folder=root/base
     if folder.is_dir():
         for child in folder.iterdir():
-            if child.name.startswith('aid-') and child.is_dir():
+            if not child.name.startswith('aid-'): continue
+            rel=child.relative_to(folder).as_posix()
+            recorded={x for b,x in expected if b == base}
+            if child.is_file():
+                if rel not in recorded: issues.append(('extra', base+'/'+rel))
+            elif child.is_dir():
+                if not any(x == rel or x.startswith(rel+'/') for x in recorded): issues.append(('extra', base+'/'+rel))
                 for p in child.rglob('*'):
-                    rel=p.relative_to(folder).as_posix()
-                    if p.is_file() and rel not in {x for b,x in expected if b == base}: issues.append(('extra', base+'/'+rel))
+                    item_rel=p.relative_to(folder).as_posix()
+                    if p.is_file() and item_rel not in recorded: issues.append(('extra', base+'/'+item_rel))
 folder=root/'.aid/runtime'
 if folder.is_dir():
     for p in folder.rglob('*'):
@@ -2532,6 +2540,7 @@ if folder.is_dir():
 if not issues: print('Shared files: clean')
 else:
     order={'modified':0,'missing':1,'extra':2}
+    print('Shared files')
     for kind,path in sorted(set(issues), key=lambda x:(order[x[0]],x[1])): print(kind+': '+path)
     print('Run: aid update (drifted files are moved to .aid/.trash/ first)')
 PY
