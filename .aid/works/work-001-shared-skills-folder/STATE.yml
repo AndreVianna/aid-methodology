@@ -118,7 +118,7 @@ phase: Detail
 # [W] aid-{skill} | none
 active_skill: aid-update
 # [W]
-updated: '2026-10-11T01:54:52Z'
+updated: '2026-10-11T01:55:57Z'
 # [W] set only when lifecycle = Paused-Awaiting-Input
 pause_reason: --
 # [W] set only when lifecycle = Blocked
@@ -318,6 +318,10 @@ lifecycle_history:
     event: 'Codex cycle 2 FIX complete; scoped definition review started'
     grade: --
     notes: 'README preservation exception removed and referenced task criteria aligned; task-003 now depends on task-005; bounded recovery record stores exact target tools and retirement-complete flag, with gates, atomic transitions, cleanup and interruption criteria in both shells'
+  - date: '2026-10-10'
+    event: 'Codex cycle 2 definition review complete; rows 41-42 verified Fixed; no new findings'
+    grade: 'A+'
+    notes: 'Definition exceeds floor A; scoped task review begins. No implementation has started; Accepted definition findings retained as authorized'
 
 # [A] aid-deploy only; one entry per delivery (never derived from child
 #     files; aid-deploy is the sole author):
