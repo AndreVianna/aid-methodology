@@ -118,7 +118,7 @@ phase: Execute
 # [W] aid-{skill} | none
 active_skill: aid-execute
 # [W]
-updated: '2026-10-11T14:44:52Z'
+updated: '2026-10-11T14:47:05Z'
 # [W] set only when lifecycle = Paused-Awaiting-Input
 pause_reason: --
 # [W] set only when lifecycle = Blocked
@@ -700,6 +700,11 @@ lifecycle_history:
     grade: --
     notes: '/aid-execute Codex'
 
+  - date: '2026-10-11'
+    event: 'Wave8 independent Sol recheck: original four task012 findings Fixed with mirror/user-byte and owned/edited pointer/hash probes. New HIGH Pending row5: Bash remaining-inline region loses terminal LF through command substitution, joins final rule line to END marker, prevents baseline refresh and leaves owned AGENTS on last removal. Task012 In Progress for allowed separate Sol executor correction; task022 Done. PS runtime deferred.'
+    grade: --
+    notes: '/aid-execute Codex'
+
 deploy: []
 
 # [A] flattened only; single writer: this work's active branch. Written by
@@ -897,7 +902,7 @@ tasks_lifecycle:
         outcome: 'committed 0acf5d926; 130 focused worktree assertions passed'
 
   task-012:
-    state: 'In Review'
+    state: 'In Progress'
     review: --
     elapsed: --
     notes: --
