@@ -118,7 +118,7 @@ phase: Execute
 # [W] aid-{skill} | none
 active_skill: aid-execute
 # [W]
-updated: '2026-10-11T16:06:59Z'
+updated: '2026-10-11T16:07:16Z'
 # [W] set only when lifecycle = Paused-Awaiting-Input
 pause_reason: --
 # [W] set only when lifecycle = Blocked
@@ -805,6 +805,11 @@ lifecycle_history:
     grade: --
     notes: '/aid-execute Codex'
 
+  - date: '2026-10-11'
+    event: 'Reopened task012 for new wave11 AC-9 finding from task018: shared files are removed but empty aid-* directories and runtime placement root remain. Task018 committed f36fc5e58 In Review; Luna source correction next, then focused rerun and Sol wave11 verification of012/015/017/018.'
+    grade: --
+    notes: '/aid-execute Codex'
+
 deploy: []
 
 # [A] flattened only; single writer: this work's active branch. Written by
@@ -1002,7 +1007,7 @@ tasks_lifecycle:
         outcome: 'committed 0acf5d926; 130 focused worktree assertions passed'
 
   task-012:
-    state: Done
+    state: 'In Progress'
     review: --
     elapsed: --
     notes: --
