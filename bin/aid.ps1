@@ -1643,7 +1643,7 @@ function script:Test-AidV3LegacyEvidence {
     if (Test-Path $manifestPath -PathType Leaf) {
         try { $manifest = Get-Content -LiteralPath $manifestPath -Raw | ConvertFrom-Json } catch { $manifest = $null }
         if ($manifest -and $manifest.PSObject.Properties['format_version']) { $format = [int]$manifest.format_version }
-        $tools = if ($manifest -and $manifest.PSObject.Properties['tools']) { @($manifest.tools.PSObject.Properties) } else { @() }
+        $tools = @(if ($manifest -and $manifest.PSObject.Properties['tools']) { @($manifest.tools.PSObject.Properties) } else { @() })
         if ($format -le 2 -and $tools.Count -gt 0) { return $true }
     }
     foreach ($rootName in @('.claude', '.codex', '.cursor', '.github', '.agent')) {
@@ -1658,7 +1658,7 @@ function script:Test-AidV3LegacyEvidence {
                     $mirrors = $manifest.shared.PSObject.Properties['mirrors']
                     if ($mirrors -and $mirrors.Value.PSObject.Properties['.claude/skills']) {
                         $mirrorEntry = $mirrors.Value.PSObject.Properties['.claude/skills'].Value
-                        $users = if ($mirrorEntry.PSObject.Properties['users']) { @($mirrorEntry.users) } else { @() }
+                        $users = @(if ($mirrorEntry.PSObject.Properties['users']) { @($mirrorEntry.users) } else { @() })
                         $mirrorValid = ($users -contains 'claude-code')
                     }
                 }
@@ -1690,7 +1690,7 @@ function script:Test-AidLayoutGate {
     if (Test-Path $manifestPath -PathType Leaf) {
         try { $manifest = Get-Content -LiteralPath $manifestPath -Raw | ConvertFrom-Json } catch { $manifest = $null }
     }
-    $tools = if ($manifest -and $manifest.PSObject.Properties['tools']) { @($manifest.tools.PSObject.Properties) } else { @() }
+    $tools = @(if ($manifest -and $manifest.PSObject.Properties['tools']) { @($manifest.tools.PSObject.Properties) } else { @() })
     $manifestFormat = if ($manifest -and $manifest.PSObject.Properties['format_version']) { [int]$manifest.format_version } else { 0 }
     $refuse = (Test-Path (Join-Path $aidDir '.temp/v3-upgrade-tools.json'))
     if ($tools.Count -gt 0 -and $manifestFormat -lt 3) { $refuse = $true }
@@ -1709,7 +1709,7 @@ function script:Get-AidMigrationStamp {
     $manifestPath = Join-Path $aidDir '.aid-manifest.json'
     if (Test-Path $manifestPath -PathType Leaf) {
         try { $manifest = Get-Content -LiteralPath $manifestPath -Raw | ConvertFrom-Json } catch { $manifest = $null }
-        $tools = if ($manifest -and $manifest.PSObject.Properties['tools']) { @($manifest.tools.PSObject.Properties) } else { @() }
+        $tools = @(if ($manifest -and $manifest.PSObject.Properties['tools']) { @($manifest.tools.PSObject.Properties) } else { @() })
         if ($manifest -and $manifest.PSObject.Properties['format_version'] -and [int]$manifest.format_version -eq 3) { return 5 }
         if ((Test-Path (Join-Path $aidDir '.temp/v3-upgrade-tools.json')) -or (script:Test-AidV3LegacyEvidence -Repo $Repo) -or $tools.Count -gt 0) { return 4 }
         return 5
@@ -1724,7 +1724,7 @@ function script:Test-AidManifestVersionSkew {
     try { $manifest = Get-Content -LiteralPath $ManifestPath -Raw | ConvertFrom-Json } catch { return $false }
     $projectVersion = if ($manifest.PSObject.Properties['aid_version']) { [string]$manifest.aid_version } else { '' }
     if (-not $projectVersion) { return $false }
-    $toolEntries = if ($manifest.PSObject.Properties['tools']) { @($manifest.tools.PSObject.Properties) } else { @() }
+    $toolEntries = @(if ($manifest.PSObject.Properties['tools']) { @($manifest.tools.PSObject.Properties) } else { @() })
     foreach ($tool in $toolEntries) {
         if ($tool.Value.PSObject.Properties['version'] -and [string]$tool.Value.version -and [string]$tool.Value.version -ne $projectVersion) { return $true }
     }

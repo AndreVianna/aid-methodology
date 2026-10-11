@@ -2139,7 +2139,7 @@ function script:Update-AidGitattributes {
     param([string]$Target)
     $path = Join-Path $Target '.gitattributes'
     $block = [System.Text.Encoding]::ASCII.GetBytes((script:Get-AidGitattributesBlock) + "`n")
-    $old = if (Test-Path -LiteralPath $path -PathType Leaf) { [System.IO.File]::ReadAllBytes($path) } else { [byte[]]@() }
+    [byte[]]$old = [byte[]]@(); if (Test-Path -LiteralPath $path -PathType Leaf) { $old = [System.IO.File]::ReadAllBytes($path) }
     $begin = [System.Text.Encoding]::ASCII.GetBytes($script:_AidGaBegin)
     $end = [System.Text.Encoding]::ASCII.GetBytes($script:_AidGaEnd)
     $startAt = -1; $endAt = -1
