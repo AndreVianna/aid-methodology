@@ -2,7 +2,7 @@
 
 Loaded by `/aid-plan` REVIEW state (per-deliverable in Step 4 of The Loop; whole-plan
 on re-run). Renders the brief passed to the `aid-reviewer` sub-agent. Follows
-`.claude/aid/templates/reviewer-dispatch.md`.
+`.aid/runtime/templates/reviewer-dispatch.md`.
 
 `{{ARTIFACTS}}`, `{{CONTEXT}}`, `{{SCOPE}}` are filled at dispatch time.
 
@@ -32,7 +32,7 @@ SCOPE: {{SCOPE}}   # one of: per-deliverable | whole-plan
                    deliveries only if this one introduces a sequencing conflict.
   whole-plan:      Re-grade all deliveries against the current REQUIREMENTS.md.
 
-RUBRIC: .claude/aid/templates/grading-rubric.md (universal severity → grade table)
+RUBRIC: .aid/runtime/templates/grading-rubric.md (universal severity → grade table)
   Grade PLAN.md deliverables for:
     - Each delivery is functional on its own (independently usable + testable)
     - Dependencies flow one direction (no cycles)
@@ -48,7 +48,7 @@ DECLARED REVIEW CRITERIA (resolve; do not invent):
   `review-criteria:` frontmatter; most specific wins on an id collision. An artifact outside
   the registry's corpus (a work artifact under `.aid/works/`) resolves to NO type, which is
   correct and not a finding -- the file-class rows are what reach it.
-  Resolution is defined in .claude/aid/templates/kb-authoring/review-rubric.md
+  Resolution is defined in .aid/runtime/templates/kb-authoring/review-rubric.md
   (section: Resolving review criteria); the type registry and the criteria table live in
   .aid/knowledge/authoring-conventions.md. This brief deliberately does NOT restate them.
   - Cite the criterion `id` as a prefix in the ledger's Description cell (7 columns, no
@@ -94,8 +94,8 @@ DELIVERABLES:
   - Findings format: severity-tagged + source-tagged (PLAN | SPEC | KB | REQUIREMENTS)
   - Output location: `{{LEDGER}}`
   - Severity scale: CRITICAL | HIGH | MEDIUM | LOW | MINOR (per grading-rubric.md)
-  - Grade: per .claude/aid/scripts/grade.sh; minimum resolved via
-    `bash .claude/aid/scripts/config/read-setting.sh --skill plan --key minimum_grade --default A`
+  - Grade: per .aid/runtime/scripts/grade.sh; minimum resolved via
+    `bash .aid/runtime/scripts/config/read-setting.sh --skill plan --key minimum_grade --default A`
   - The aid-reviewer NEVER edits PLAN.md — only grades and lists issues
 ```
 

@@ -9,7 +9,7 @@ description: >
   every run which previously created outputs to update alongside it -- no stored list, no
   tracking metadata written. Everything outside ## MVP belongs to `/aid-update-roadmap`.
   When roadmap.md is absent, routes to `/aid-create-roadmap` without writing anything.
-allowed-tools: Read, Glob, Grep, Bash, Write, Edit, Agent
+allowed-tools: Read Glob Grep Bash Shell Terminal Write Edit Agent
 argument-hint: "[<slice>] -- what to revise in the MVP section (contents, line, cuts, status)"
 ---
 
@@ -17,7 +17,7 @@ argument-hint: "[<slice>] -- what to revise in the MVP section (contents, line, 
 
 `/aid-update-mvp` revises the `## MVP` section of `.aid/knowledge/roadmap.md`. It is
 an `update`-stage skill under the shared contract in
-`.claude/aid/templates/design-lifecycle.md` (class 1), reading and consuming a seed
+`.aid/runtime/templates/design-lifecycle.md` (class 1), reading and consuming a seed
 from `.aid/design/mvp.md` when one is present, and never requiring one.
 
 - **Boundary vs `/aid-update-roadmap`:** this skill owns only the `## MVP` byte range.

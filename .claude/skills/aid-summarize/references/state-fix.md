@@ -11,7 +11,7 @@ Read `{{LEDGER}}`. Filter rows where Status ∈ {`Pending`, `Recurred`} — thes
 For each Pending/Recurred row, apply the corresponding repair autonomously:
 
 - **COV (resolved-doc-set coverage < 60%)** — the summary is missing sections for resolved KB docs. Add the missing sections (one per unrepresented resolved doc from `discovery.doc_set`) so that `grade-summary.sh` finds references to each doc in the HTML.
-- **D1 (Mermaid parse)** — trivially passed in D-012; no Mermaid blocks are generated. If this row somehow appears, it indicates a legacy Mermaid block was authored by mistake — remove the `<pre class="mermaid">` block and replace it with an inline SVG visual (see `.claude/aid/templates/knowledge-summary/authored-visual-catalog.md`).
+- **D1 (Mermaid parse)** — trivially passed in D-012; no Mermaid blocks are generated. If this row somehow appears, it indicates a legacy Mermaid block was authored by mistake — remove the `<pre class="mermaid">` block and replace it with an inline SVG visual (see `.aid/runtime/templates/knowledge-summary/authored-visual-catalog.md`).
 - **D2 (Mermaid render)** — trivially passed in D-012; same as D1 above.
 - **L1 (anchor links)** — fix the `href` or add the missing `id`.
 - **L2 (md links)** — correct the relative path.

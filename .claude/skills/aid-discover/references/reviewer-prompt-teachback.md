@@ -49,7 +49,7 @@ you were left uncertain -- that gap is Stage 1's finding, and Stage 2 will class
 ### The essence probe set
 
 The orchestrator inlines the derived essence probe set (output of
-`.claude/aid/scripts/kb/kb-dual-intent-probes.sh essence`) below. The probes are seeded
+`.aid/runtime/scripts/kb/kb-dual-intent-probes.sh essence`) below. The probes are seeded
 from the project's own C4 vocabulary doc, C9 capability doc, and D decisions doc -- they
 are deterministic and fixed for this review cycle.
 

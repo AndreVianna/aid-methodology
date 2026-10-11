@@ -8,7 +8,7 @@ description: >
   you have said so far. The first run builds the document incrementally; a later run resumes
   wherever it is still incomplete. It ends by presenting the finished requirements for your
   approval and handing off to `/aid-define`.
-allowed-tools: Read, Glob, Grep, Bash, Write, Edit
+allowed-tools: Read Glob Grep Bash Shell Terminal Write Edit
 argument-hint: "[work-001] resume work  [--reset work-001] clear and restart"
 ---
 
@@ -92,7 +92,7 @@ Detection reads `.aid/works/{work}/STATE.md`:
    `[[ "$work" =~ ^(work-[0-9]+) ]] && work_id="${BASH_REMATCH[1]}"` (idempotent if already
    bare -- identical normalization to the gate's `§ 3b` step 1 / feature-003 § 3.3).
 2. **Locate and enter:**
-   `bash .claude/aid/scripts/works/worktree-lifecycle.sh locate <work_id>` -- resolves via
+   `bash .aid/runtime/scripts/works/worktree-lifecycle.sh locate <work_id>` -- resolves via
    the 4-rung ladder and **exits 0 always**, printing `<abs_path>\t<status>` (split on the
    TAB); on an unrecoverable git state it degrades to a non-empty `<cwd-abs>\tcurrent` --
    it never fails the caller. Keep the **defensive** non-zero-exit/empty-path backstop guard
@@ -109,12 +109,12 @@ Detection reads `.aid/works/{work}/STATE.md`:
 ## Task Routing
 
 When no work ID is provided, consult the shared **Work Initiation Gate**
-(`.claude/aid/templates/work-initiation-gate.md`) before doing anything else. Run its
+(`.aid/runtime/templates/work-initiation-gate.md`) before doing anything else. Run its
 enumeration helper (which scans `.aid/works/*` across the main tree **and every git
 worktree**):
 
 ```bash
-bash .claude/aid/scripts/works/enumerate-works.sh
+bash .aid/runtime/scripts/works/enumerate-works.sh
 ```
 
 ### No works exist (empty output) -> NEW, no prompt
@@ -124,7 +124,7 @@ bash .claude/aid/scripts/works/enumerate-works.sh
    What's a short name for this work? (e.g., "user-auth", "reporting", "api-v2")
    ```
 2. **Create and enter the worktree, before authoring anything** (gate `§ 3a` step 2):
-   `bash .claude/aid/scripts/works/worktree-lifecycle.sh create work-001 {name}` --
+   `bash .aid/runtime/scripts/works/worktree-lifecycle.sh create work-001 {name}` --
    idempotent; prints the worktree's absolute path on success/no-op; on a non-zero exit or
    an empty path, surface the error and **STOP** (do not create the work folder on the
    current, possibly `master`, tree); on success, enter the resolved path (host-native
@@ -159,7 +159,7 @@ Wait for the response, then act per the gate:
   returned (cross-worktree by construction -- never re-scan a local `.aid/works/` glob;
   gate `§ 3a` step 1; `work-001` if the enumeration returned no records). **Create and
   enter the worktree, before authoring anything** (gate `§ 3a` step 2):
-  `bash .claude/aid/scripts/works/worktree-lifecycle.sh create <work-id> {name}` -- STOP
+  `bash .aid/runtime/scripts/works/worktree-lifecycle.sh create <work-id> {name}` -- STOP
   on a non-zero exit or empty path (do not create the work folder on the current tree),
   else enter the resolved path. **Only then** create `.aid/works/<work-id>-{name}/` and
   proceed to State Detection.

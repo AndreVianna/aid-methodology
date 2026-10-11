@@ -18,7 +18,7 @@ All three must pass. Record results in the package file (Verification section).
 ### Log failures to schema ledger
 
 For each failing check, append a row to `{{LEDGER}}` per
-`.claude/aid/templates/reviewer-ledger-schema.md`:
+`.aid/runtime/templates/reviewer-ledger-schema.md`:
 
 | Check type | Severity |
 |---|---|
@@ -34,7 +34,7 @@ One row per distinct failing check/test/warning. Example row:
 After logging failures, run grade.sh on the ledger:
 
 ```bash
-bash .claude/aid/scripts/grade.sh --explain {{LEDGER}}
+bash .aid/runtime/scripts/grade.sh --explain {{LEDGER}}
 ```
 
 If any failures logged (grade below A+):

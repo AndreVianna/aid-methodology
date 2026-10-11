@@ -9,7 +9,7 @@ description: >
   and leaves the seed in place. Routes to `/aid-update-mvp` when ## MVP already carries
   committed content. Writes no document and no registration entry -- it owns a section, not
   a file.
-allowed-tools: Read, Glob, Grep, Bash, Write, Edit, Agent
+allowed-tools: Read Glob Grep Bash Shell Terminal Write Edit Agent
 argument-hint: "[<slice>] -- what to realize into the ## MVP section (fills the section from the seed)"
 ---
 
@@ -17,7 +17,7 @@ argument-hint: "[<slice>] -- what to realize into the ## MVP section (fills the 
 
 `/aid-create-mvp` realizes a ready MVP seed at `.aid/design/mvp.md` into the
 `## MVP` section of `.aid/knowledge/roadmap.md`. It is a `create`-stage skill
-under the shared contract in `.claude/aid/templates/design-lifecycle.md` (class 1),
+under the shared contract in `.aid/runtime/templates/design-lifecycle.md` (class 1),
 consuming the seed `/aid-design-mvp` produces and never touching `.aid/design/` for
 any other purpose.
 

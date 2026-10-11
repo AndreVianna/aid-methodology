@@ -10,7 +10,7 @@ description: >
   correctness matters. It resolves nothing: it presents the design, you decide, and building
   it is a separate `/aid-create` step. For a throwaway model that only validates a
   direction, use `/aid-prototype` instead.
-allowed-tools: Read, Glob, Grep, Bash, Write, Edit, Agent
+allowed-tools: Read Glob Grep Bash Shell Terminal Write Edit Agent
 argument-hint: "<subject> -- what to design (a flow, a component/interface, a UI; use a dedicated /aid-design-<artifact> row when one exists)"
 ---
 
@@ -43,8 +43,8 @@ DONE**. Print the `[State: NAME] -- {purpose}` entry line on each state.
    at **sonnet / medium**; complex (a system architecture, a multi-screen flow) -> **opus /
    high**. Verifier tier >= producer tier.
 4. **Consult the Work Initiation Gate, then allocate the work folder + STATE.** First run
-   the gate (`.claude/aid/templates/work-initiation-gate.md`):
-   `bash .claude/aid/scripts/works/enumerate-works.sh` (main tree + every git worktree).
+   the gate (`.aid/runtime/templates/work-initiation-gate.md`):
+   `bash .aid/runtime/scripts/works/enumerate-works.sh` (main tree + every git worktree).
    Empty -> allocate, no prompt. Works exist -> ask new-vs-continuation; on **continuation**
    route to the chosen work's resume door and STOP (allocate nothing); on **new work**:
    create and enter the worktree per the gate's `§ 3a` step 2
@@ -75,7 +75,7 @@ kept record).
 2. **Adversarial verification** -- clean-context **`aid-reviewer`** checks `DESIGN.md`:
    grounded, complete, internally consistent, consistent with KB conventions + a11y, and
    buildable. Writes a review-quality ledger to `.aid/.temp/review-pending/<work>-verify.md`.
-3. **Grade:** `bash .claude/aid/scripts/grade.sh --explain <ledger>`. Not clean -> loop
+3. **Grade:** `bash .aid/runtime/scripts/grade.sh --explain <ledger>`. Not clean -> loop
    to DESIGN. Circuit-breaker: 3 cycles -> IMPEDIMENT + `lifecycle: Blocked`.
 
 **Advance:** PRESENT.

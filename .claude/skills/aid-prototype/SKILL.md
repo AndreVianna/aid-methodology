@@ -9,7 +9,7 @@ description: >
   reports whether the direction holds and what was learned, and you decide. For a kept
   design meant to inform the build rather than a throwaway, use `/aid-design` instead; the
   real build is a separate `/aid-create` step.
-allowed-tools: Read, Glob, Grep, Bash, Write, Edit, Agent
+allowed-tools: Read Glob Grep Bash Shell Terminal Write Edit Agent
 argument-hint: "<direction> -- the direction/hypothesis to validate (optionally: fidelity paper|low-fi|runnable-spike)"
 ---
 
@@ -18,7 +18,7 @@ argument-hint: "<direction> -- the direction/hypothesis to validate (optionally:
 `/aid-prototype` builds a **throwaway** model **now** to de-risk a direction, captures the
 validation signal, presents it, and hands the real build off. It **resolves nothing** and
 its output is **not** production. For a design you intend to **keep and build**, use
-`/aid-design`. Deeper per-slot guidance: `.claude/aid/templates/shortcut-scaffolding/prototype.md`.
+`/aid-design`. Deeper per-slot guidance: `.aid/runtime/templates/shortcut-scaffolding/prototype.md`.
 
 - **Not a numbered pipeline phase**; does not route to `/aid-execute`.
 
@@ -40,8 +40,8 @@ DONE**. Print the `[State: NAME] -- {purpose}` entry line on each state.
 4. **Classify complexity (model + effort):** simple -> `aid-architect` at **sonnet /
    medium**; complex (a runnable spike, a rich flow) -> **opus / high**.
 5. **Consult the Work Initiation Gate, then allocate the work folder + STATE.** First run
-   the gate (`.claude/aid/templates/work-initiation-gate.md`):
-   `bash .claude/aid/scripts/works/enumerate-works.sh` (main tree + every git worktree).
+   the gate (`.aid/runtime/templates/work-initiation-gate.md`):
+   `bash .aid/runtime/scripts/works/enumerate-works.sh` (main tree + every git worktree).
    Empty -> allocate, no prompt. Works exist -> ask new-vs-continuation; on **continuation**
    route to the chosen work's resume door and STOP (allocate nothing); on **new work**:
    create and enter the worktree per the gate's `§ 3a` step 2

@@ -40,7 +40,7 @@ what I found, here is what I am unsure of, **you** decide" — IS the product. *
 ## Authoring Standard (applies to ALL generation agents)
 
 Every KB document you produce MUST comply with the **dual-audience authoring standard**
-(`.claude/aid/templates/kb-authoring/principles.md` P10). The rules are:
+(`.aid/runtime/templates/kb-authoring/principles.md` P10). The rules are:
 
 **Granularity**
 - One concern per document. Do not mix concerns in a single document.
@@ -91,7 +91,7 @@ bare `file.ext:LINE` (line numbers drift). Before reporting, RUN the lint on you
 every violation it lists:
 
 ```bash
-bash .claude/aid/scripts/kb/kb-citation-lint.sh --root .aid/knowledge
+bash .aid/runtime/scripts/kb/kb-citation-lint.sh --root .aid/knowledge
 ```
 
 Convert each flagged `file.ext:LINE` to `file.ext:<symbol or heading at that location>`. The
@@ -105,7 +105,7 @@ you — a self-reported "durable anchors only" is not accepted; the script is th
 When an agent's target list (computed from the declared doc-set via the `owns-<agent>`
 accessor — see `references/doc-set-resolve.md`) contains a **custom doc** (a filename with
 no canonical template, i.e., not in the default seed synthesized from
-`.claude/aid/templates/knowledge-base/*.md`), the orchestrator **extends that agent's base
+`.aid/runtime/templates/knowledge-base/*.md`), the orchestrator **extends that agent's base
 prompt at runtime** by appending the following line after the base prompt text:
 
 > Also produce `{output_root}/<filename>`. Resolve its depth contract as follows:

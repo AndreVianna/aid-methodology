@@ -67,8 +67,8 @@ do not supplement from general knowledge.
 ### The derived work-probe set + operational-structure presence check
 
 The orchestrator inlines the derived work-probe set (output of
-`.claude/aid/scripts/kb/kb-dual-intent-probes.sh work`) and the operational-structure
-presence check (output of `.claude/aid/scripts/kb/kb-actback-task.sh check`) below. The
+`.aid/runtime/scripts/kb/kb-dual-intent-probes.sh work`) and the operational-structure
+presence check (output of `.aid/runtime/scripts/kb/kb-actback-task.sh check`) below. The
 probes are keyed to this project's KB shape (derived from its C9 capability/what-it-does doc
 + load-bearing spine dimensions) and are fixed and reproducible for this review cycle.
 

@@ -12,7 +12,7 @@ description: >
   rather than the stack itself, use `/aid-create-config` or `/aid-update-config`. Produced
   by the aid-architect agent and independently verified by aid-reviewer (full verify).
   Allocates a work-NNN folder.
-allowed-tools: Read, Glob, Grep, Bash, Write, Edit, Agent
+allowed-tools: Read Glob Grep Bash Shell Terminal Write Edit Agent
 argument-hint: "[<direction>] -- which parts of the stack seed to realize"
 ---
 
@@ -20,7 +20,7 @@ argument-hint: "[<direction>] -- which parts of the stack seed to realize"
 
 Bind **VERB=`create`**, **ARTIFACT=`stack`** -- the `create` *stage* in the contract's
 vocabulary -- then follow the shared contract at
-`.claude/aid/templates/design-lifecycle.md`. This skill binds that contract and restates
+`.aid/runtime/templates/design-lifecycle.md`. This skill binds that contract and restates
 none of its rules. It consumes the seed `/aid-design-stack` produces and touches
 `.aid/design/` for no other purpose.
 
@@ -39,14 +39,14 @@ line on each state.
 ## State: INTAKE
 
 1. **Allocate** through the Work Initiation Gate exactly as the contract's Allocation rule
-   requires (`.claude/skills/aid-design/SKILL.md` INTAKE step 4 is the shape), with
+   requires (`.agents/skills/aid-design/SKILL.md` INTAKE step 4 is the shape), with
    `initiator: aid-create-stack`. `phase` is not driven.
 2. **Read the seed** at `.aid/design/stack.md`.
 3. **Resolve the destination by concern, not filename.** This skill binds concern **C0**
-   (technology, `.claude/aid/templates/kb-authoring/concern-model.md`). The seed's
+   (technology, `.aid/runtime/templates/kb-authoring/concern-model.md`). The seed's
    `## Destination` names the resolved path; where it does not, resolve C0 against
    `.aid/settings.yml` `knowledge.doc_set`, falling back to the C0 row of
-   `.claude/aid/templates/kb-authoring/domain-doc-matrix.md`, and confirm with the user.
+   `.aid/runtime/templates/kb-authoring/domain-doc-matrix.md`, and confirm with the user.
    An ambiguous realization is **asked**, never picked silently. The seed also names a
    **second** destination -- the project's D document, for the rejected alternatives.
 4. **Read the whole destination** if it exists, and note its `source:` field.

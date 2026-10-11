@@ -30,3 +30,9 @@ canonical/aid/templates/generated-files.txt  text eol=lf
 # blanket *.json rule: .claude/settings.json has been CRLF since before this policy and
 # renormalising it is a separate change.
 .aid/.aid-manifest.json text eol=lf
+
+# >>> AID managed -- do not edit (aid add/update maintains this block) >>>
+.agents/skills/aid-*/** text eol=lf
+.claude/skills/aid-*/** text eol=lf
+.aid/runtime/** text eol=lf
+# <<< AID managed <<<

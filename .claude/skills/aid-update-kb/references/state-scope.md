@@ -7,7 +7,7 @@ is selected when the run-state file records `**State:** SCOPE`.
 
 **Clean-context dispatch (HL-8/AC-9).** SCOPE runs as a dispatch to
 `aid-architect` (large tier / medium effort per
-`.claude/aid/templates/agent-dispatch-tiering.md`). The sub-agent receives
+`.aid/runtime/templates/agent-dispatch-tiering.md`). The sub-agent receives
 ONLY the verbatim instruction + the Impact Map + (on a re-plan loop-back)
 the recorded `**Adjustments:**`/`**Consideration:**` field + KB/codebase
 read access -- **never** the ambient session transcript, and never anything

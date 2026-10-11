@@ -164,7 +164,7 @@ silent side effect. Before any of the four Change-type actions below can
 apply, create the file itself with the `Write` tool (not `Edit` -- there is
 nothing to edit yet), following the KB's f001 authoring schema (the same
 dual-audience standard `aid-discover`'s M2 Authoring Standard Checks
-enforce, `.claude/skills/aid-discover/references/state-review.md § M2
+enforce, `.agents/skills/aid-discover/references/state-review.md § M2
 Authoring Standard Checks`):
 - Frontmatter as the first block, before any content, with the core fields
   (`objective:`, `summary:`, `sources:`) and classification fields
@@ -242,7 +242,7 @@ For docs whose content requires domain depth beyond the Scope Plan's
 description (e.g. a deep architecture doc), dispatch an `aid-architect` or
 `aid-researcher` sub-agent to author the edit **at Medium tier with low/medium
 effort** -- authoring/editing a KB doc is Retrieval-heavy work
-(`.claude/aid/templates/agent-dispatch-tiering.md`), and Medium keeps the author
+(`.aid/runtime/templates/agent-dispatch-tiering.md`), and Medium keeps the author
 at or below this skill's REVIEW panel reviewer (reviewer tier >= executor tier). Only
 a genuinely hard/deep doc justifies escalating the author to Large -- and then the
 REVIEW panel reviewer must escalate to Large to match. The sub-agent receives:

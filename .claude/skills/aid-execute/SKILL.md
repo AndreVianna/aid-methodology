@@ -6,7 +6,7 @@ description: >
   its type -- RESEARCH, DESIGN, IMPLEMENT, TEST, DOCUMENT, MIGRATE, REFACTOR or CONFIGURE --
   then loops through review and fixes until the result meets the configured minimum grade.
   Each delivery runs on its own branch, so deliveries stay isolated from each other.
-allowed-tools: Read, Glob, Grep, Write, Edit, Bash
+allowed-tools: Read Glob Grep Write Edit Bash Shell Terminal
 argument-hint: "work-001 (required if multiple works)  task-001 (required)"
 ---
 
@@ -34,7 +34,7 @@ Read the type. Do the work. Review it. Fix it. Ship it.
 
 1. Read first arg: if it starts with `work-` → use that work directory; if it starts with `task-` → treat as shorthand (single-work auto-select below)
 2. If work arg not provided (or shorthand): enumerate works **cross-worktree**: run
-   `bash .claude/aid/scripts/works/enumerate-works.sh` (main tree + every git
+   `bash .aid/runtime/scripts/works/enumerate-works.sh` (main tree + every git
    worktree; never the local `.aid/works/` glob, which is empty on `master`), taking
    each record's field-1 `work_id` — single record → auto-select; multiple records →
    list them, ask user to choose; zero records on any worktree → **STOP.** "No works
@@ -43,7 +43,7 @@ Read the type. Do the work. Review it. Fix it. Ship it.
 
    **Locate + enter the work's worktree.** Now that the work id is resolved (steps 1-3 above) and
    **before** step 4 below reads anything under `.aid/works/{work}/…`, follow
-   `.claude/aid/templates/downstream-worktree-entry.md` to normalize the work id to its bare
+   `.aid/runtime/templates/downstream-worktree-entry.md` to normalize the work id to its bare
    `work-NNN` branch name, `locate` the worktree (which **always exits 0** and returns
    `<path>\t<status>`), and enter the returned path. Keep the defensive empty-path/non-zero
    backstop that stops rather than operate blindly — it should not fire against the real helper.
@@ -84,7 +84,7 @@ If any dependency is not Done → **STOP.** List which dependencies are pending.
 
 ### Check 3: Read Minimum Grade
 
-Run `bash .claude/aid/scripts/config/read-setting.sh --skill execute --key minimum_grade --default A` to resolve the minimum grade for this skill (`.aid/settings.yml` is the source).
+Run `bash .aid/runtime/scripts/config/read-setting.sh --skill execute --key minimum_grade --default A` to resolve the minimum grade for this skill (`.aid/settings.yml` is the source).
 This is the exit criterion for the review loop.
 
 ### Check 4: Verify Not in Plan Mode
@@ -185,7 +185,7 @@ KB docs are relevant to this task, then load them. Let the INDEX guide you.
   - **The requirements SLICE this task traces to — not the whole document:**
 
     ```
-    bash .claude/aid/scripts/execute/slice-requirements.sh .aid/works/{work} task-NNN
+    bash .aid/runtime/scripts/execute/slice-requirements.sh .aid/works/{work} task-NNN
     ```
 
     Prints the task's own `§ 11` feature section (the technical specification it builds
@@ -231,7 +231,7 @@ When a state completes, route by its `**Advance:**` type (per [`state-machine-ch
 
 This skill follows the L1+L2+L3 subagent-visibility protocol (heartbeats, ETA timers,
 calibration). The full checklist lives in
-`.claude/aid/templates/dispatch-protocol-checklist.md`; read it before any subagent
+`.aid/runtime/templates/dispatch-protocol-checklist.md`; read it before any subagent
 dispatch in this skill.
 
 ## Workspace
@@ -300,9 +300,9 @@ parallel-branch mechanism visible to the dashboard.
 **Nesting with the work-level worktree:** Check 1 step 3's locate+enter paragraph above already
 entered this work's persistent worktree before any of the above runs, so these per-task ephemeral
 worktrees are provisioned **nested, unchanged, inside** that entered work-level worktree —
-different root (`.aid/.worktrees/task-NNN/` vs. the work-level `.claude/worktrees/work-NNN-{name}`),
+different root (`.aid/.worktrees/task-NNN/` vs. the work-level worktree root that `worktree-lifecycle.sh root` prints),
 different branch, different purpose; the two compose without conflict
-(`.claude/aid/templates/downstream-worktree-entry.md § Composition with aid-execute's per-task
+(`.aid/runtime/templates/downstream-worktree-entry.md § Composition with aid-execute's per-task
 worktrees`).
 
 ## Delivery Lifecycle
@@ -370,7 +370,7 @@ leave the task showing `In Progress`/`In Review` while an unresolved
 impediment sits unaddressed -- that is exactly the "invisible/misleading task"
 state the protocol exists to prevent:
 ```bash
-bash .claude/aid/scripts/execute/writeback-state.sh \
+bash .aid/runtime/scripts/execute/writeback-state.sh \
     --delivery-id DDD --task-id NNN --field State --value "Failed"
 ```
 
@@ -400,7 +400,7 @@ into EXECUTE, not a continuation that can skip it); retry from Step 1.
 ## Output
 
 - Artifacts appropriate to the task type (code, tests, docs, configs, research, designs)
-- Grade >= minimum grade (from `bash .claude/aid/scripts/config/read-setting.sh --skill execute --key minimum_grade --default A`)
+- Grade >= minimum grade (from `bash .aid/runtime/scripts/config/read-setting.sh --skill execute --key minimum_grade --default A`)
 - Commit messages reference task-NNN (for types that produce commits)
 - `deliveries/delivery-NNN/tasks/task-NNN/STATE.yml`'s `state`/`review` keys updated with full review history
   (flat path: the work-root `STATE.yml`'s `tasks_lifecycle` entry for `task-NNN`)

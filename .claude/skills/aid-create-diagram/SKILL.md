@@ -9,20 +9,20 @@ description: >
   aid-reviewer verifies it. It resolves nothing: it drafts, you approve, and only then is
   the diagram placed. It never writes into `.aid/knowledge/`. A thin kind-sibling of
   `/aid-create-document` with the output format bound to a diagram.
-allowed-tools: Read, Glob, Grep, Bash, Write, Edit, Agent
+allowed-tools: Read Glob Grep Bash Shell Terminal Write Edit Agent
 argument-hint: "<subject> -- what to diagram"
 ---
 
 # Create Diagram (kind-sibling of /aid-create-document)
 
 `/aid-create-diagram` is a thin **kind-sibling** of **`/aid-create-document`**
-(`.claude/skills/aid-create-document/SKILL.md`) -- not an alias: it is its own catalog
+(`.agents/skills/aid-create-document/SKILL.md`) -- not an alias: it is its own catalog
 row (`alias_of: null`, its own `{verb: create, artifact: diagram}`), `repurpose: true`
 (skipped by `build-shortcut-skills.py`; hand-authored). It carries **no logic of its own.**
 
-Execute `.claude/skills/aid-create-document/SKILL.md` exactly as written, with the
+Execute `.agents/skills/aid-create-document/SKILL.md` exactly as written, with the
 output **format bound to diagram** (mermaid/graphviz; pick the diagram type -- flowchart,
 sequence, ER, C4, state, ... -- that fits the subject). Substitute only the invocation
 name in any printed usage example (`/aid-create-diagram` instead of
 `/aid-create-document`). Deeper genre/format structures:
-`.claude/aid/templates/shortcut-scaffolding/document.md`.
+`.aid/runtime/templates/shortcut-scaffolding/document.md`.

@@ -9,7 +9,7 @@ on a fresh run (no run-state file yet) or when the run-state file records
 
 **Clean-context dispatch (HL-8/AC-9).** ANALYZE runs as a dispatch to
 `aid-researcher` (medium tier / low effort per
-`.claude/aid/templates/agent-dispatch-tiering.md` -- Retrieval-heavy work).
+`.aid/runtime/templates/agent-dispatch-tiering.md` -- Retrieval-heavy work).
 The sub-agent receives ONLY the verbatim instruction + (on a re-plan
 loop-back) the recorded `**Adjustments:**` field + KB/codebase read access
 -- **never** the ambient session transcript, and never anything discussed
@@ -123,7 +123,7 @@ Before dispatch, run the freshness check to have advisory verdicts ready to
 hand the researcher (never a substitute for the researcher's own reading):
 
 ```bash
-bash .claude/aid/scripts/kb/kb-freshness-check.sh \
+bash .aid/runtime/scripts/kb/kb-freshness-check.sh \
   --root .aid/knowledge --format tsv
 ```
 

@@ -1,7 +1,7 @@
 # /aid-execute — Reviewer Dispatch Brief Template
 
 Loaded by `/aid-execute` REVIEW + DELIVERY-GATE states. Renders the brief passed
-to the `aid-reviewer` sub-agent. Follows `.claude/aid/templates/reviewer-dispatch.md`.
+to the `aid-reviewer` sub-agent. Follows `.aid/runtime/templates/reviewer-dispatch.md`.
 
 Two dispatch points share this template (`{{MODE}}` distinguishes them):
 
@@ -38,8 +38,8 @@ MODE: {{MODE}}   # one of: per-task | per-delivery
   per-delivery:  Full quality gate. Aggregate across all tasks in the delivery.
                  The delivery as a whole must reach the minimum grade.
 
-RUBRIC: .claude/aid/templates/grading-rubric.md (universal severity → grade table)
-  - Grade is COMPUTED by .claude/aid/scripts/grade.sh, not judged
+RUBRIC: .aid/runtime/templates/grading-rubric.md (universal severity → grade table)
+  - Grade is COMPUTED by .aid/runtime/scripts/grade.sh, not judged
   - Worst issue dominates per the rubric
   - Task-Type-specific checks: see references/reviewer-guide.md for per-Type checklists
     (RESEARCH / DESIGN / IMPLEMENT / TEST / DOCUMENT / MIGRATE / REFACTOR / CONFIGURE)
@@ -51,7 +51,7 @@ DECLARED REVIEW CRITERIA (resolve; do not invent):
   `review-criteria:` frontmatter; most specific wins on an id collision. An artifact outside
   the registry's corpus (a work artifact under `.aid/works/`) resolves to NO type, which is
   correct and not a finding -- the file-class rows are what reach it.
-  Resolution is defined in .claude/aid/templates/kb-authoring/review-rubric.md
+  Resolution is defined in .aid/runtime/templates/kb-authoring/review-rubric.md
   (section: Resolving review criteria); the type registry and the criteria table live in
   .aid/knowledge/authoring-conventions.md. This brief deliberately does NOT restate them.
   - Cite the criterion `id` as a prefix in the ledger's Description cell (7 columns, no
@@ -101,8 +101,8 @@ DELIVERABLES:
                      `## Tasks State` view
       per-delivery: `{{LEDGER}}` then aggregated
   - Severity scale: CRITICAL | HIGH | MEDIUM | LOW | MINOR (per grading-rubric.md)
-  - Grade: per .claude/aid/scripts/grade.sh; minimum resolved via
-    `bash .claude/aid/scripts/config/read-setting.sh --skill execute --key minimum_grade --default A`
+  - Grade: per .aid/runtime/scripts/grade.sh; minimum resolved via
+    `bash .aid/runtime/scripts/config/read-setting.sh --skill execute --key minimum_grade --default A`
   - The reviewer NEVER fixes anything — only grades and lists issues
 ```
 

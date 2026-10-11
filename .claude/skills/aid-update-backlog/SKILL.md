@@ -8,14 +8,14 @@ description: >
   one is present in `.aid/design/`; never requires one. Asks every run which previously
   created outputs to update alongside it -- no stored list, no tracking metadata written.
   When backlog.md is absent, routes to `/aid-create-backlog` without writing anything.
-allowed-tools: Read, Glob, Grep, Bash, Write, Edit, Agent
+allowed-tools: Read Glob Grep Bash Shell Terminal Write Edit Agent
 argument-hint: "[<change>] -- what to revise (items to add, re-prioritize, promote, or move)"
 ---
 
 # Update Backlog (revise backlog.md)
 
 `/aid-update-backlog` revises `.aid/knowledge/backlog.md`. It is an `update`-stage skill
-under the shared contract in `.claude/aid/templates/design-lifecycle.md` (class 1),
+under the shared contract in `.aid/runtime/templates/design-lifecycle.md` (class 1),
 reading and consuming a seed from `.aid/design/backlog.md` when one is present, and never
 requiring one.
 

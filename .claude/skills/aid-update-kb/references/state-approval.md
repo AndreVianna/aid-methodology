@@ -9,7 +9,7 @@ No auto-apply path exists -- DONE is unreachable from this state without a
 human `[1] Approved`.
 
 **Pattern reuse.** This state reuses `aid-discover`'s approval-gate pattern
-(`.claude/skills/aid-discover/references/state-approval.md`: `[1]`/`[2]`
+(`.agents/skills/aid-discover/references/state-approval.md`: `[1]`/`[2]`
 prompt, consideration loop), scoped to the `aid-update-kb` context -- with one
 deliberate deviation: `[2]` here re-scopes back to CONFIRM/SCOPE, not APPLY
 (see Step 3).
