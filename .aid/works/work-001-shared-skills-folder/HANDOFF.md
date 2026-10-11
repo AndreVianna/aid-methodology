@@ -6,14 +6,14 @@ maintainer approved execution. Current phase `Execute`, lifecycle `Running`.
 
 ## Current execution checkpoint
 
-Wave6 Sol quick verification PASS A+: sole MEDIUM Fixed after independent static TSV recheck, no matching quoting residue. Task009 Done, waves1-6 complete (11/32 tasks). Focused shared placement checks passed; PS runtime deferred. Next task010 pruning, host.conf, ignore/attributes blocks and runtime settings seed.
+Task010 In Progress for sequential Luna execution: shared pruning with drift trash and runtime node_modules preservation, host.conf and manifest hash, managed ignore/attributes blocks and runtime settings seed. Tasks001-009 relevant completed; 11/32 Done. Sol wave7 review after commit, PowerShell runtime deferred.
 
 - Done (11/32): task-001, task-002, task-003, task-004, task-005, task-006, task-007, task-008, task-009, task-011, task-016.
-- In Progress: none.
+- In Progress: task-010.
 - In Review: none.
 - Failed/Blocked: none.
-- Pending: task-010, task-012, task-013, task-014, task-015, task-017, task-018, task-019, task-020, task-021, task-022, task-023, task-024, task-025, task-026, task-027, task-028, task-029, task-030, task-031, task-032.
-- Current wave: 6 of 15. Derive authoritative waves from task dependency headers.
+- Pending: task-012, task-013, task-014, task-015, task-017, task-018, task-019, task-020, task-021, task-022, task-023, task-024, task-025, task-026, task-027, task-028, task-029, task-030, task-031, task-032.
+- Current wave: 7 of 15. Derive authoritative waves from task dependency headers.
 - Execution commits are on the delivery branch; `work-001` holds pre-execution planning.
 - Wave ledgers: `review-ledgers/execute-wave-N.md`; each preserves unresolved/Accepted findings.
 - Wave-1 Accepted item: Bash `_v3_quote` versus Python `json.dump` non-ASCII escaping; recheck at final review.

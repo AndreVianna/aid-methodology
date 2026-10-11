@@ -118,7 +118,7 @@ phase: Execute
 # [W] aid-{skill} | none
 active_skill: aid-execute
 # [W]
-updated: '2026-10-11T07:11:28Z'
+updated: '2026-10-11T07:11:30Z'
 # [W] set only when lifecycle = Paused-Awaiting-Input
 pause_reason: --
 # [W] set only when lifecycle = Blocked
@@ -640,6 +640,11 @@ lifecycle_history:
     grade: --
     notes: '/aid-execute Codex'
 
+  - date: '2026-10-11'
+    event: 'Task010 In Progress for sequential Luna execution: shared pruning with drift trash and runtime node_modules preservation, host.conf and manifest hash, managed ignore/attributes blocks and runtime settings seed. Tasks001-009 relevant completed; 11/32 Done. Sol wave7 review after commit, PowerShell runtime deferred.'
+    grade: --
+    notes: '/aid-execute Codex'
+
 deploy: []
 
 # [A] flattened only; single writer: this work's active branch. Written by
@@ -805,7 +810,7 @@ tasks_lifecycle:
         outcome: 'Task009 Luna correction e43e8416b committed: PowerShell Claude import path and fallback host metadata now use interpolated TSV tabs; adjacent new records inspected with no remaining single-quoted tab escapes. ASCII29 and diff pass. In Review for independent Sol wave6 recheck; PS runtime deferred.'
 
   task-010:
-    state: Pending
+    state: 'In Progress'
     review: --
     elapsed: --
     notes: --
