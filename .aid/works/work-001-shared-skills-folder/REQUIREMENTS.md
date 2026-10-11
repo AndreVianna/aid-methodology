@@ -208,12 +208,17 @@ Any byte difference between copies therefore produces mixed, unpredictable behav
   declare a context import. Claude Code declares `CLAUDE.md`, for which the CLI keeps the import
   region of FR-12. The CLI never creates symlinks. It never reads, writes or prunes a
   non-`aid-*` entry in `.agents/skills/` or in a mirror; this repo's `.claude/skills/generate-profile/` and `.claude/skills/release-aid/` are
-  examples that must survive. `.aid/runtime/` is wholly CLI-owned, so a file there that the
-  manifest does not record is pruned, as `<root>/aid/` is today. Install and uninstall never
+  examples that must survive. `.aid/runtime/` is CLI-owned, so a file there that the
+  manifest does not record is pruned, as `<root>/aid/` is today, except under the
+  **runtime-local paths**: user-provisioned paths that the CLI never prunes, never trashes, never
+  reports as `extra:` and never compares byte-for-byte with `canonical/aid/`. The list is
+  explicit and grows only by amending this sentence: any `node_modules/` directory under
+  `.aid/runtime/` (`canonical/aid/scripts/summarize/playwright-provisioning.md` has adopters run `npm ci`
+  in the installed summarize scripts directory). Install and uninstall never
   modify user-owned `.aid/` state. That means `.aid/knowledge/`, `.aid/works/`, `.aid/design/`
   and `.aid/connectors/` are untouched, and `.aid/settings.yml` keeps its existing seed-on-install
   and remove-on-last-uninstall behaviour. `.aid/runtime/` is not added to the `.gitignore`
-  managed block, matching how `<root>/aid/` is treated today.
+  managed block, matching how `<root>/aid/` is treated today; only its runtime-local paths are.
 - **FR-7: Manifest records shared entries.** The install manifest records three things for every
   shared entry (the files under `.agents/skills/aid-*`, each mirror, `.aid/runtime/`, the
   `AGENTS.md` region, and the `CLAUDE.md` import region):
@@ -243,11 +248,15 @@ Any byte difference between copies therefore produces mixed, unpredictable behav
   - `aid update` stages every installed tool plus the shared payload first, then commits them all
     at one version.
 
-  Two refusals are added:
+  Three refusals are added:
   - `aid add` refuses, naming `aid update`, when the manifest already records tools at differing
     versions.
   - `aid add` refuses, naming `aid update`, when the project's layout format is older than the
     CLI's.
+  - `aid add` resolves its version from the staged payload's `aid_version` (whatever the source:
+    download, `--version` or `--from-bundle`) and, when it differs from the project version,
+    exits 2 and writes nothing, with the same mixed-version refusal text and its hint to run
+    `aid update`.
 
   *Justification.* Shared files can hold only one version's bytes. If `add` upgraded them
   silently, it would change the skills another tool's user depends on without being asked.
@@ -494,11 +503,13 @@ CLI. The Claude Code docs (skills, settings reference, memory, changelog) were c
   - `grep -lE '^(context|agent):' canonical/skills/*/SKILL.md | wc -l` prints `0`.
 - **AC-7:** The runtime layout holds after `aid add` for each tool in a fixture repo.
   - Every file in `.aid/runtime/{scripts,templates}/` equals its `canonical/aid/{scripts,templates}/`
-    source byte-for-byte.
+    source byte-for-byte, ignoring the FR-6 runtime-local paths.
   - No `aid/` directory exists under `.claude`, `.codex`, `.cursor`, `.github` or `.agent`.
   - The fixture's pre-seeded `.aid/knowledge/x.md`, `.aid/works/w/STATE.yml` and `.aid/design/d.md`
     keep identical sha256 before and after `aid add`, `aid update` and `aid remove`.
   - A stray file placed in `.aid/runtime/` is pruned by the next `aid update`.
+  - A fixture file `.aid/runtime/scripts/summarize/node_modules/x.js` survives `aid update`,
+    nothing from it lands in `.aid/.trash/`, and `aid status` prints no `extra:` line for it.
 - **AC-8:** The work-level worktree root is neutral.
   - In a fixture repo, `worktree-lifecycle.sh create work-001 x` prints a path under the FR-13
     root, and that root appears in the `.gitignore` AID managed block.
@@ -526,6 +537,8 @@ CLI. The Claude Code docs (skills, settings reference, memory, changelog) were c
   - In a fixture at project version X, `aid add cursor --version Y` with Y different from X exits
     `2`, and a sha256 snapshot of the whole fixture tree is unchanged.
   - `aid add cursor` installs cursor at X.
+  - `aid add cursor --from-bundle <dir staged at a different version>` into a project at another
+    version exits non-zero, and the whole-tree sha256 snapshot is unchanged.
   - With a manifest whose tools record differing versions, `aid add` exits non-zero and its
     message names `aid update`.
   - `aid update --from-bundle <staging>` leaves every tool `version` and every shared-entry version
@@ -539,6 +552,10 @@ CLI. The Claude Code docs (skills, settings reference, memory, changelog) were c
   - A test proves the FR-5 guarantee: a format-4 install core given the new release artifacts
     either finds no artifact under its expected name or aborts non-zero, and in both cases writes
     no partial install.
+  - After the frozen format-4 core removes the last tool of a migrated fixture, the new CLI's
+    `aid status` reports the orphaned shared layout (exit 7), and `aid remove --orphans` then
+    leaves no `aid-*` under `.agents/skills` or a mirror, no `.aid/runtime/` and no AID region in
+    `AGENTS.md` or `CLAUDE.md`, with the removed bytes under `.aid/.trash/`.
 - **AC-13:** Migration works from every old layout. A fixture is built for each of the five tools
   in its format-4 layout, including Antigravity `.agent/skills` and the legacy Codex
   `.agents/aid/`. Each fixture contains:
@@ -854,7 +871,8 @@ format gate would stop telling the user to run `aid update`.
 
 **`.gitignore` managed block** (`_aid_gitignore_block`): `.aid/.worktrees/` is added to the
 existing entries. When `host.worktree_root` is not under `.aid/`, the block also lists that root
-(`.claude/worktrees/`). The block stays a pure function of the manifest, so it is still
+(`.claude/worktrees/`). The block also lists each FR-6 runtime-local path
+(`.aid/runtime/**/node_modules/`). The block stays a pure function of the manifest, so it is still
 idempotent.
 
 **`.aid/.trash/` collision policy** (used by every trash move in this feature):
@@ -931,7 +949,13 @@ trash copy. That is replaced by this policy.
 4. **Version selection** (unchanged `FR11` block): use the project version, or the CLI version
    for the first tool. `--version <v>` different from the project version exits 2 and writes
    nothing.
-5. **Stage** (flow 2): the shared payload once, plus each named tool.
+5. **Stage** (flow 2): the shared payload once, plus each named tool. After staging validation
+   and before any write, the **staged-version check** (new, in the `add` path) compares the staged
+   payload's `aid_version` with the project version. The `FR11` block only pins `--version`;
+   `_prepare_tool_staging_aid` takes the version from the bundle file name for `--from-bundle`,
+   so the staged `aid_version` is the authoritative source. On a mismatch it exits 2, writes
+   nothing, and prints the `FR11` mixed-version refusal text with the hint to run `aid update`
+   (AC-11).
 6. **Commit**, in a fixed order:
    1. Shared skills go to `.agents/skills/` with `copy_file_guarded`. An absent file is copied,
       an identical file is left alone, and a differing file is trashed first and then copied
@@ -998,7 +1022,8 @@ the trash moves and the prune list.
 
 - **Candidates:**
   - `aid-*` children of `.agents/skills/` and of each mirror that are not in `shared.skills`;
-  - any file under `.aid/runtime/` that is not in `shared.runtime`;
+  - any file under `.aid/runtime/` that is not in `shared.runtime` and not under an FR-6
+    runtime-local path (those are never candidates);
   - `aid-*` children of each tool's `<root>/agents/` that are not in that tool's `files`.
 - **What happens to a candidate:**
   - A candidate whose bytes match a sha256 recorded in the previous manifest is deleted.
@@ -1036,13 +1061,16 @@ the agents, `AGENTS.md` and `CLAUDE.md` are committed (AC-18).
   - each tool's `files`.
 
   An extra is an `aid-*` entry in `.agents/skills/` or a mirror that the manifest does not list,
-  or an unrecorded file in `.aid/runtime/`.
+  or an unrecorded file in `.aid/runtime/` outside the FR-6 runtime-local paths.
 - **Hashing.** Hashes are computed in one batch: a single python3 `hashlib` pass, or a single
   `sha256sum`/`shasum` call over the file list. PowerShell calls `Get-FileHash` per file.
 - **Exit code.** It stays 0 (drift is informational), or 7 when there is no manifest. For a
   format-2 manifest, status prints `Layout: format 4 (pre-shared). Run: aid update` and skips the
   drift check. The bare `aid` dashboard (`aid_status_body`) does not run the drift check, which
   keeps it fast.
+- **Orphaned layout.** With no manifest and an orphan present (flow 10), status prints
+  `Orphaned shared layout (no manifest): <paths>. Run: aid remove --orphans (or aid add <tool> to re-adopt)`.
+  The exit code stays 7.
 
 **9. Work-level worktree root (runtime).**
 
@@ -1068,9 +1096,24 @@ the agents, `AGENTS.md` and `CLAUDE.md` are committed (AC-18).
   staging phase, so the project is untouched.
 - **`status`, `update` and the dashboard on a migrated repo.** The old format gate refuses them,
   because the repo's stamp (5) is above the old CLI's supported format (4).
-- **`aid remove` on a migrated repo.** It reads `tools.<t>.paths` and deletes only that tool's
-  agents. It never deletes shared files. The next new-CLI run drops the stale `users` entry, or
-  re-migrates idempotently if the old pure-bash writer rewrote the manifest as format 2.
+- **`aid remove` on a migrated repo.** It is not format-gated (the gate runs only for `status`,
+  `update` and the dashboard), and the old code reads no field the new manifest could set to stop
+  it, so the new design cannot make it refuse. It reads `tools.<t>.paths` and deletes only that
+  tool's agents.
+  - **Not the last tool.** No shared file is deleted. The next new-CLI run drops the stale `users`
+    entry, or re-migrates idempotently if the old pure-bash writer rewrote the manifest as format 2.
+  - **The last tool.** `manifest_remove_tool` deletes the whole manifest and `uninstall_tool`
+    deletes `.aid/settings.yml`. `.agents/skills/aid-*`, any mirror, `.aid/runtime/` and both root
+    regions are orphaned, with no manifest to drive their removal.
+- **Recovery: `aid remove --orphans`** (new; both shells). With no manifest, the layout counts as
+  orphaned when `.agents/skills/aid-*`, a mirror's `aid-*`, `.aid/runtime/` or an AID marker region
+  in `AGENTS.md` or `CLAUDE.md` is present. No recorded sha256 exists, so every orphan is moved to
+  `.aid/.trash/` (collision policy as usual) rather than deleted. FR-6 runtime-local paths and
+  non-`aid-*` entries are untouched. Each root file with a region is trashed whole, its region is
+  removed, and the file is deleted only when nothing else remains (FR-12). Emptied directories are
+  pruned. With a manifest present the flag exits 2 and names `aid remove <tool>`. `aid add` needs
+  no change: with no manifest it already writes every file with `copy_file_guarded` and records
+  the new shas, so it adopts the orphans.
 
 ##### Layers & Components
 
@@ -1257,7 +1300,7 @@ work.
 | AC-8 | `tests/canonical/test-worktree-lifecycle.sh` | a cursor-only fixture creates under `.aid/.worktrees/`, which is in the block; `.claude/worktrees/work-002-y` is located as `registered`; extra: a claude-code fixture's root is `.claude/worktrees/` |
 | AC-9, AC-10 | `tests/canonical/test-multitool-isolation.sh` (rewritten for the shared layout) | the ref-count sequence and the drift sequence exactly as worded |
 | AC-11 | `tests/canonical/test-aid-cli.sh` (FR11 cases extended) | skew refusals; the whole-tree sha snapshot is unchanged; versions are equal after `update` |
-| AC-12 | `tests/canonical/test-layout-format-guard.sh` (new), with a frozen format-4 core at `tests/canonical/fixtures/format4-core/` (new; byte copies of today's `lib/aid-install-core.sh` and `lib/AidInstallCore.psm1`) | carrier equality (four values); the new `aid add` on a format-4 fixture; the frozen core given new artifacts exits non-zero and the target tree sha is unchanged (bash always; PowerShell when `pwsh` is present) |
+| AC-12 | `tests/canonical/test-layout-format-guard.sh` (new), with a frozen format-4 core at `tests/canonical/fixtures/format4-core/` (new; byte copies of today's `lib/aid-install-core.sh` and `lib/AidInstallCore.psm1`) | carrier equality (four values); the new `aid add` on a format-4 fixture; the frozen core given new artifacts exits non-zero and the target tree sha is unchanged (bash always; PowerShell when `pwsh` is present); the frozen core's `aid remove` of the last tool, then the new `aid status` (orphan report, exit 7) and `aid remove --orphans` (nothing left, bytes in the trash) |
 | AC-13 | `tests/canonical/test-aid-migrate.sh` (new fixtures for all five tools plus legacy `.agents/aid/`) | as worded, including the second-run `up to date` and the unchanged trash |
 | AC-14 | `test-shared-install.sh` (cases a and b), `test-aid-migrate.sh` (case c: the user-edited, unedited and no-marker `CLAUDE.md` fixtures), `test-multitool-isolation.sh` (case d) | as worded; plus function-level cases for `_ensure_claude_md_region` and `_remove_claude_md_region`, including a non-LF-terminated file and a drifted region that is trashed before removal |
 | AC-15 | `test-aid-cli.sh`, `test-aid-cli-ps1.sh` | `detect_tool` and `Detect-Tool` |
