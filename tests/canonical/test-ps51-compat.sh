@@ -28,10 +28,71 @@ source "$(dirname "${BASH_SOURCE[0]}")/../lib/pwsh.sh"
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 CHECK="$(dirname "${BASH_SOURCE[0]}")/ps51-compat-check.ps1"
 
+# ---------------------------------------------------------------------------
+# STATIC per-function check (task-023) -- runs BEFORE the pwsh gate, so the
+# install-core PowerShell functions added by the shared layout are checked on
+# every host. Each name below is a PowerShell twin from the install-core table in
+# REQUIREMENTS.md section 11 Feature 001 > Layers & Components. For each one the body is
+# extracted (definition line through its column-0 closing brace) from
+# lib/AidInstallCore.psm1 or bin/aid.ps1, and the check fails on: the `??`
+# operator, a ternary (a `?` outside strings and comments), `-AsHashtable`, or any
+# non-ASCII byte. The AST lint below remains the authority; this is the host-independent
+# guard that names the offending function.
+# ---------------------------------------------------------------------------
+PS51_LIB="${REPO_ROOT}/lib/AidInstallCore.psm1"
+PS51_BIN="${REPO_ROOT}/bin/aid.ps1"
+PS51_NEW_FUNCTIONS=(
+    Read-AidKvConf Fetch-AidArtifact Expand-AidPayload Prepare-AidReleaseStaging
+    Copy-AidFileGuarded Move-AidToTrash Install-AidShared Install-AidTool
+    Write-AidHostConf Write-AidManifestV3 Read-AidManifestShared Read-AidManifestToolFiles
+    Read-AidManifestHost Read-AidUpgradeRecovery Write-AidUpgradeRecovery Clear-AidUpgradeRecovery
+    Invoke-RetireV3Layout Invoke-MigrateRetiredLayout Test-AidOwnedPath Repair-AidRootRegion
+    Invoke-EnsureClaudeMdRegion Invoke-RemoveClaudeMdRegion Invoke-PruneShared Get-AidDriftReport
+    Uninstall-AidTool Detect-Tool Get-RootAgentFile Copy-RootAgentFile Get-AidGitignoreBlock
+    Get-AidGitattributesBlock Update-AidGitattributes Remove-AidGitattributesBlock
+    Initialize-AidSettingsFile Test-AidLayoutGate Test-StagedVersion Invoke-AidScaffoldBareProject
+)
+
+# ps51_fn_body <name>: one function's source, from its definition to the first column-0 "}".
+ps51_fn_body() {
+    local f b body=""
+    for f in "$PS51_LIB" "$PS51_BIN"; do
+        b="$(awk -v name="$1" '
+            on == 0 && $0 ~ ("^[[:space:]]*function[[:space:]]+((script|global):)?" name "[[:space:]]*\\{") { on = 1 }
+            on == 1 { print; if ($0 ~ /^}/) exit }
+        ' "$f")"
+        [[ -n "$b" ]] && body="$b"
+    done
+    printf '%s\n' "$body"
+}
+
+# ps51_code_only: drop quoted strings and comments so only code remains.
+ps51_code_only() { sed -e "s/'[^']*'//g" -e 's/"[^"]*"//g' -e 's/#.*$//'; }
+
+for _ps51_name in "${PS51_NEW_FUNCTIONS[@]}"; do
+    _ps51_body="$(ps51_fn_body "$_ps51_name")"
+    if [[ -z "$_ps51_body" ]]; then
+        fail "PS51 ${_ps51_name}: PowerShell function not found in lib/AidInstallCore.psm1 or bin/aid.ps1"
+        continue
+    fi
+    _ps51_bad=""
+    grep -q -- '??' <<< "$_ps51_body" && _ps51_bad+=" '??' operator;"
+    grep -q -- '-AsHashtable' <<< "$_ps51_body" && _ps51_bad+=" -AsHashtable;"
+    ps51_code_only <<< "$_ps51_body" | grep -q '?' && _ps51_bad+=" ternary (a '?' outside strings and comments);"
+    grep -qP '[^\x00-\x7F]' <<< "$_ps51_body" && _ps51_bad+=" non-ASCII byte;"
+    if [[ -z "$_ps51_bad" ]]; then
+        pass "PS51 ${_ps51_name}: no ?? operator, no ternary, no -AsHashtable, ASCII-only"
+    else
+        fail "PS51 ${_ps51_name}:${_ps51_bad}"
+    fi
+done
+
 # Gate: skip when pwsh is absent (CI always has it; see the runtime-assert step).
 PWSH="$(detect_pwsh || true)"
 if [[ -z "$PWSH" ]]; then
     echo "SKIP: pwsh not found on PATH - skipping WinPS 5.1 compatibility lint (needs PowerShell)."
+    # The per-function static check above is host-independent: a failure there is a real failure.
+    if [[ $FAIL -gt 0 ]]; then test_summary; exit 1; fi
     exit 0
 fi
 

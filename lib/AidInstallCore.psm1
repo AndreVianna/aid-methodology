@@ -90,6 +90,12 @@ $script:_AidSupportedFormat = 5  # format 5: shared skills and runtime layout
 $script:AID_REPO_SLUG    = "AndreVianna/aid-methodology"
 $script:AID_API_BASE     = "https://api.github.com/repos/$($script:AID_REPO_SLUG)"
 $script:AID_DOWNLOAD_BASE = "https://github.com/$($script:AID_REPO_SLUG)/releases/download"
+# Endpoint overrides (tests / local fixture server) are honored ONLY when
+# AID_ALLOW_ENDPOINT_OVERRIDE is 1 or true -- same gate as the bash twin.
+if ($env:AID_ALLOW_ENDPOINT_OVERRIDE -eq '1' -or $env:AID_ALLOW_ENDPOINT_OVERRIDE -eq 'true') {
+    if ($env:AID_API_BASE) { $script:AID_API_BASE = $env:AID_API_BASE }
+    if ($env:AID_DOWNLOAD_BASE) { $script:AID_DOWNLOAD_BASE = $env:AID_DOWNLOAD_BASE }
+}
 
 $script:AID_TOOLS = @('claude-code', 'codex', 'cursor', 'copilot-cli', 'antigravity')
 

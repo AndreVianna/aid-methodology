@@ -8,8 +8,15 @@
 #   - Identical `status` output and exit codes.
 #   - Convenience-chain first-action parity (install.sh vs install.ps1 CONVENIENCE mode).
 #   - Same exit codes for all failure paths (exit 2, 5, 6, 7).
+#   - (task-023) Shared-layout parity for Feature Flows 3 to 8, the bare-project
+#     scenario, update all, upgrade-recovery records and the trash clock, on twin
+#     fixtures built from tests/lib/bundle.sh (see the task-023 block near the end).
+#   - (task-023) STATIC TWIN CHECK, run before the pwsh gate on every host: every
+#     bash/PowerShell twin pair of the REQUIREMENTS.md install-core table is defined
+#     in its file.
 #
-# SKIP (exit 0) when pwsh is absent — CI asserts pwsh IS present.
+# SKIP (exit 0) when pwsh is absent, after the static twin check has run (exit 1
+# if that check failed) -- CI asserts pwsh IS present.
 #
 # Usage:
 #   bash test-aid-cli-parity.sh [--verbose]
@@ -25,6 +32,7 @@ source "$(dirname "${BASH_SOURCE[0]}")/../lib/net.sh"
 source "$(dirname "${BASH_SOURCE[0]}")/../lib/pwsh.sh"
 source "$(dirname "${BASH_SOURCE[0]}")/../lib/pwsh-batch.sh"
 source "$(dirname "${BASH_SOURCE[0]}")/../lib/sandbox.sh"
+source "$(dirname "${BASH_SOURCE[0]}")/../lib/bundle.sh"
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd "${SCRIPT_DIR}/../.." && pwd)"
@@ -43,12 +51,95 @@ PROFILES_DIR="${REPO_ROOT}/profiles"
 [[ -f "$BIN_AID_PS1" ]] || { echo "ERROR: bin/aid.ps1 not found at $BIN_AID_PS1" >&2; exit 1; }
 
 # ---------------------------------------------------------------------------
+# STATIC TWIN CHECK (task-023, AC-16) -- runs BEFORE the pwsh gate. It reads
+# source text only, so it needs no PowerShell and runs on every host.
+#
+# Every bash/PowerShell twin pair named in REQUIREMENTS.md section 11 Feature 001 >
+# Layers & Components > "Install core: bash and PowerShell twins" must be DEFINED
+# in its file (bash: lib/aid-install-core.sh or bin/aid; PowerShell:
+# lib/AidInstallCore.psm1 or bin/aid.ps1), and each pair is named by one scenario
+# line below. The pair list lives in this file, not in a work folder.
+#
+# Table rows with no named counterpart on the other side are left out on purpose:
+# fetch_tarball (thin wrapper of fetch_artifact), manifest_format (bash column
+# only), _manifest_write_v3_python / _manifest_write_v3_bash (internal helpers
+# behind manifest_write_v3) and _aid_migrate_repo (stamp cap inside the CLI).
+# ---------------------------------------------------------------------------
+_TWIN_PAIRS=(
+    "read_kv_conf Read-AidKvConf"
+    "fetch_artifact Fetch-AidArtifact"
+    "extract_payload Expand-AidPayload"
+    "_prepare_release_staging_aid Prepare-AidReleaseStaging"
+    "copy_file_guarded Copy-AidFileGuarded"
+    "trash_file Move-AidToTrash"
+    "install_shared Install-AidShared"
+    "install_tool Install-AidTool"
+    "write_host_conf Write-AidHostConf"
+    "manifest_write_v3 Write-AidManifestV3"
+    "manifest_read_shared Read-AidManifestShared"
+    "manifest_read_tool_files Read-AidManifestToolFiles"
+    "manifest_read_host Read-AidManifestHost"
+    "read_upgrade_recovery Read-AidUpgradeRecovery"
+    "write_upgrade_recovery Write-AidUpgradeRecovery"
+    "clear_upgrade_recovery Clear-AidUpgradeRecovery"
+    "retire_v3_layout Invoke-RetireV3Layout"
+    "_migrate_retired_layout Invoke-MigrateRetiredLayout"
+    "_is_aid_owned_path Test-AidOwnedPath"
+    "_repair_root_region Repair-AidRootRegion"
+    "_ensure_claude_md_region Invoke-EnsureClaudeMdRegion"
+    "_remove_claude_md_region Invoke-RemoveClaudeMdRegion"
+    "prune_shared Invoke-PruneShared"
+    "drift_report Get-AidDriftReport"
+    "uninstall_tool Uninstall-AidTool"
+    "detect_tool Detect-Tool"
+    "_root_agent_file Get-RootAgentFile"
+    "_copy_root_agent_file Copy-RootAgentFile"
+    "_aid_gitignore_block Get-AidGitignoreBlock"
+    "_aid_gitattributes_block Get-AidGitattributesBlock"
+    "update_gitattributes Update-AidGitattributes"
+    "_remove_gitattributes_block Remove-AidGitattributesBlock"
+    "seed_settings_yml Initialize-AidSettingsFile"
+    "_aid_layout_gate Test-AidLayoutGate"
+    "_check_staged_version Test-StagedVersion"
+    "_aid_scaffold_bare_project Invoke-AidScaffoldBareProject"
+)
+
+# Always-printing outcome helpers (pass() is silent without --verbose; the
+# static and bare-project scenarios must name themselves in the default output).
+_par_pass() { PASS=$((PASS + 1)); echo "PASS: $*"; }
+_par_fail() { fail "$*"; }
+
+# twin_bash_defined <name> / twin_ps_defined <name>: definition lines only.
+twin_bash_defined() { grep -Eq "^[[:space:]]*${1}[[:space:]]*\(\)" "$LIB_SH" "$BIN_AID_SH"; }
+twin_ps_defined()   { grep -Eq "^[[:space:]]*function[[:space:]]+((script|global):)?${1}[[:space:]]*\{" "$LIB_PS1" "$BIN_AID_PS1"; }
+
+static_twin_check() {
+    local row bash_name ps_name bash_ok ps_ok
+    for row in "${_TWIN_PAIRS[@]}"; do
+        read -r bash_name ps_name <<< "$row"
+        bash_ok=0; ps_ok=0
+        twin_bash_defined "$bash_name" && bash_ok=1
+        twin_ps_defined "$ps_name" && ps_ok=1
+        if [[ $bash_ok -eq 1 && $ps_ok -eq 1 ]]; then
+            _par_pass "STATIC-TWIN ${bash_name} <-> ${ps_name}: both defined in their files"
+        else
+            [[ $bash_ok -eq 1 ]] || _par_fail "STATIC-TWIN ${bash_name} <-> ${ps_name}: bash twin '${bash_name}' is not defined in lib/aid-install-core.sh or bin/aid"
+            [[ $ps_ok -eq 1 ]]   || _par_fail "STATIC-TWIN ${bash_name} <-> ${ps_name}: PowerShell twin '${ps_name}' is not defined in lib/AidInstallCore.psm1 or bin/aid.ps1"
+        fi
+    done
+}
+static_twin_check
+
+# ---------------------------------------------------------------------------
 # Gate: skip when pwsh is absent.
 # ---------------------------------------------------------------------------
 PWSH="$(detect_pwsh || true)"
 
 if [[ -z "$PWSH" ]]; then
     echo "SKIP: pwsh not found on PATH — skipping cross-platform parity suite (needs PowerShell)."
+    echo "      The static twin check above ran; PowerShell-run scenarios were not executed."
+    # The static check is host-independent: a failure there is a real failure even on a pwsh-less host.
+    if [[ $FAIL -gt 0 ]]; then test_summary; exit 1; fi
     exit 0
 fi
 
@@ -5688,6 +5779,328 @@ if [[ -n "$PWSH" ]]; then
 else
     for _n in 03 04 05; do pass "PAR022-G${_n} [SKIPPED: pwsh absent]"; done
 fi
+
+# ===========================================================================
+# task-023: shared-layout Bash<->PowerShell parity (Feature Flows 3 to 8, bare
+# project, update all, upgrade recovery, trash clock). Runs only past the pwsh
+# gate. A "twin" scenario drives the SAME step list on two fresh fixtures, one
+# through bin/aid (Bash) and one through bin/aid.ps1 (PowerShell), and compares:
+# every step's exit code, its normalized output lines, the resulting tree
+# (sha256 per file; installed_at masked; trash stamps masked), the masked
+# manifest bytes, and the trash-stamp format. Step syntax (see t23_twin):
+#   "<rc>|<words>"        CLI call; @T = target dir, @S = staged bundle dir
+#   "-|!<snippet>"        identical in-place mutation on both twins (@T = target)
+#   "contains|<needle>"   needle must appear in the previous step's output, both shells
+# ===========================================================================
+T23_VERSION="$(tr -d '[:space:]' < "${REPO_ROOT}/VERSION")"
+T23_STAGE="${TMP}/t23-stage"
+mkdir -p "${T23_STAGE}"
+if ! aid_test_stage_bundle "${T23_STAGE}" >"${TMP}/t23-stage.log" 2>&1; then
+    fail "task-023 setup: could not stage the release bundle (see ${TMP}/t23-stage.log)"
+fi
+
+# Normalize one CLI output: strip ANSI and CRs, mask the twin's own target and home.
+t23_norm() {  # <text> <target> <home>
+    printf '%s\n' "$1" | sed -e 's/\x1b\[[0-9;]*m//g' -e 's/\r$//' -e "s#$2#<T>#g" -e "s#$3#<H>#g"
+}
+
+# Manifest bytes with installed_at masked ("<absent>" when the manifest is missing).
+t23_manifest() {  # <manifest-path>
+    if [[ -f "$1" ]]; then sed -E 's/("installed_at"[[:space:]]*:[[:space:]]*")[^"]*"/\1<TS>"/' "$1"; else printf '<absent>\n'; fi
+}
+
+# Tree fingerprint: "relpath sha256" per file. Trash stamps in names are masked;
+# the manifest is hashed in its masked form.
+t23_tree() {  # <dir>
+    local dir="$1" rel shown
+    while IFS= read -r rel; do
+        rel="${rel#./}"
+        shown="$(printf '%s' "$rel" | sed -E 's/[0-9]{8}T[0-9]{6}Z/<TS>/g')"
+        if [[ "$rel" == .aid/.aid-manifest.json ]]; then
+            printf '%s manifest:%s\n' "$shown" "$(t23_manifest "${dir}/${rel}" | sha256sum | awk '{print $1}')"
+        else
+            printf '%s %s\n' "$shown" "$(sha256sum "${dir}/${rel}" | awk '{print $1}')"
+        fi
+    done < <(cd "$dir" && find . -type f | LC_ALL=C sort)
+}
+
+# Trash entries whose name carries a date-like stamp that is not yyyyMMddTHHmmssZ
+# (optionally followed by .N). Empty output == every trash stamp is well-formed.
+t23_stamp_violations() {  # <dir>
+    local f re='\.[0-9]{8}T[0-9]{6}Z(\.[0-9]+)?$' pat='[0-9]{8}T'
+    while IFS= read -r f; do
+        if [[ "$f" =~ $pat ]] && ! [[ "$f" =~ $re ]]; then printf '%s\n' "$f"; fi
+    done < <(find "$1/.aid/.trash" -type f 2>/dev/null | LC_ALL=C sort)
+}
+
+t23_absent() {  # <path> <label>
+    if [[ ! -e "$1" && ! -L "$1" ]]; then pass "$2"; else fail "$2 -- still present: $1"; fi
+}
+
+# Setup helpers (run once per twin, on its own target directory).
+t23_setup_mixed() {  # <dir>: user bytes outside every AID region, CRLF and LF mixed
+    local d="$1"
+    mkdir -p "$d/.aid/knowledge" "$d/.aid/works/w"
+    printf 'user one\r\nuser two\n' > "$d/AGENTS.md"
+    printf 'claude user\r\n' > "$d/CLAUDE.md"
+    printf 'user-attribute: preserve\n' > "$d/.gitattributes"
+    printf 'knowledge seed\n' > "$d/.aid/knowledge/x.md"
+    printf 'state seed\n' > "$d/.aid/works/w/STATE.yml"
+}
+t23_setup_bad_record() {  # <dir>: an invalid v3 upgrade record
+    mkdir -p "$1/.aid/.temp"; printf '{"format_version":2}\n' > "$1/.aid/.temp/v3-upgrade-tools.json"
+}
+t23_setup_valid_record() {  # <dir>: a valid pending record, cursor, not yet retired
+    mkdir -p "$1/.aid/.temp"; printf '{"format_version":1,"tools":["cursor"],"retired":false}\n' > "$1/.aid/.temp/v3-upgrade-tools.json"
+}
+t23_setup_retired_record() {  # <dir>: a valid record whose retirement phase already ran
+    mkdir -p "$1/.aid/.temp"; printf '{"format_version":1,"tools":["cursor"],"retired":true}\n' > "$1/.aid/.temp/v3-upgrade-tools.json"
+}
+
+# Post checks (run on each twin after the steps; $2 is the label prefix).
+t23_post_mixed() {
+    assert_file_contains "$1/AGENTS.md" "$(printf 'user one\r')" "$2 AGENTS.md keeps the user CRLF line"
+    assert_file_contains "$1/AGENTS.md" "user two" "$2 AGENTS.md keeps the user LF line"
+    assert_file_contains "$1/CLAUDE.md" "$(printf 'claude user\r')" "$2 CLAUDE.md keeps the user CRLF line"
+    assert_file_contains "$1/.gitattributes" "user-attribute: preserve" "$2 .gitattributes keeps the user line"
+    assert_file_contains "$1/.aid/knowledge/x.md" "knowledge seed" "$2 user .aid/knowledge untouched"
+    assert_file_contains "$1/.aid/works/w/STATE.yml" "state seed" "$2 user .aid/works untouched"
+}
+t23_post_drift() {
+    assert_file_exists "$1/.aid/.trash/.agents/skills/aid-ask/SKILL.md" "$2 drifted shared skill moved to .aid/.trash/"
+}
+t23_post_prune() {
+    assert_file_exists "$1/.aid/.trash/.aid/runtime/stray-task023" "$2 stray runtime file moved to trash (not in manifest)"
+    t23_absent "$1/.aid/runtime/stray-task023" "$2 stray runtime file left .aid/runtime/"
+    t23_absent "$1/.agents/skills/aid-zzz/SKILL.md" "$2 stray aid-* skill left .agents/skills/"
+}
+t23_post_bad_record() {
+    assert_file_contains "$1/.aid/.temp/v3-upgrade-tools.json" '{"format_version":2}' "$2 invalid record kept byte-for-byte"
+}
+t23_post_record_kept() {
+    assert_file_exists "$1/.aid/.temp/v3-upgrade-tools.json" "$2 pending record kept after the refused add/remove"
+}
+t23_post_record_cleared() {
+    t23_absent "$1/.aid/.temp/v3-upgrade-tools.json" "$2 recovery record removed after the successful update"
+}
+t23_post_bare() {
+    assert_file_exists "$1/.aid/.aid-manifest.json" "$2 manifest written by add into the bare project"
+}
+
+# t23_twin <id> <label> <setup|-[:post]> <step>...
+t23_twin() {
+    local id="$1" label="$2" hooks="$3"; shift 3
+    local setup="${hooks%%:*}" post=""
+    [[ "$hooks" == *:* ]] && post="${hooks#*:}"
+    local fails_before="$FAIL" h_sh h_ps t_sh t_ps step exp body n=0 w snip
+    local last_sh="" last_ps="" rcs_sh="" rcs_ps="" out_sh="" out_ps=""
+    local -a sh_args ps_args
+    h_sh="$(newhome)"; setup_sh_home "$h_sh"; printf '%s\n' "$T23_VERSION" > "$h_sh/VERSION"
+    h_ps="$(newhome)"; setup_ps1_home "$h_ps"; printf '%s\n' "$T23_VERSION" > "$h_ps/VERSION"
+    t_sh="$(newtarget)"; t_ps="$(newtarget)"
+    if [[ "$setup" != - ]]; then "$setup" "$t_sh"; "$setup" "$t_ps"; fi
+    for step in "$@"; do
+        n=$((n + 1)); exp="${step%%|*}"; body="${step#*|}"
+        if [[ "$exp" == "-" ]]; then
+            snip="${body#!}"
+            eval "${snip//@T/$t_sh}"
+            eval "${snip//@T/$t_ps}"
+        elif [[ "$exp" == "contains" ]]; then
+            assert_output_contains "$last_sh" "$body" "${id} step ${n} Bash output contains '${body}'"
+            assert_output_contains "$last_ps" "$body" "${id} step ${n} PS1 output contains '${body}'"
+        else
+            sh_args=(); ps_args=()
+            for w in $body; do
+                case "$w" in
+                    @T) sh_args+=("$t_sh"); ps_args+=("$t_ps") ;;
+                    @S) sh_args+=("$T23_STAGE"); ps_args+=("$T23_STAGE") ;;
+                    --from-bundle) sh_args+=("$w"); ps_args+=("-FromBundle") ;;
+                    --target) sh_args+=("$w"); ps_args+=("-Target") ;;
+                    *) sh_args+=("$w"); ps_args+=("$w") ;;
+                esac
+            done
+            run_sh "$h_sh" "${sh_args[@]}"; last_sh="$OUT_SH"
+            run_ps1 "$h_ps" "${ps_args[@]}"; last_ps="$OUT_PS1"
+            rcs_sh+="${RC_SH} "; rcs_ps+="${RC_PS1} "
+            assert_exit_eq "$RC_SH" "$exp" "${id} step ${n} Bash exit (${body})"
+            assert_exit_eq "$RC_PS1" "$exp" "${id} step ${n} PS1 exit (${body})"
+            out_sh+="$(t23_norm "$last_sh" "$t_sh" "$h_sh")"$'\n'
+            out_ps+="$(t23_norm "$last_ps" "$t_ps" "$h_ps")"$'\n'
+        fi
+    done
+    assert_eq "$rcs_ps" "$rcs_sh" "${id} exit codes identical across shells"
+    assert_eq "$out_ps" "$out_sh" "${id} output lines identical across shells"
+    assert_eq "$(t23_tree "$t_ps")" "$(t23_tree "$t_sh")" "${id} resulting tree identical (installed_at masked)"
+    assert_eq "$(t23_manifest "$t_ps/.aid/.aid-manifest.json")" "$(t23_manifest "$t_sh/.aid/.aid-manifest.json")" "${id} manifest bytes identical (installed_at masked)"
+    assert_eq "$(t23_stamp_violations "$t_sh")" "" "${id} Bash trash stamps are yyyyMMddTHHmmssZ"
+    assert_eq "$(t23_stamp_violations "$t_ps")" "" "${id} PS1 trash stamps are yyyyMMddTHHmmssZ"
+    if [[ -n "$post" ]]; then "$post" "$t_sh" "${id} Bash"; "$post" "$t_ps" "${id} PS1"; fi
+    if [[ "$FAIL" -eq "$fails_before" ]]; then _par_pass "${id} ${label}"; fi
+}
+
+# --- Flow 3: aid add (CRLF/mixed root content, idempotent retry) -----------
+t23_twin "TASK023-F3A" "Flow 3 add: CRLF/mixed root content, outside bytes kept, idempotent retry" \
+    "t23_setup_mixed:t23_post_mixed" \
+    "0|add cursor --target @T --from-bundle @S" \
+    "0|update --target @T --from-bundle @S" \
+    "contains|up to date"
+t23_twin "TASK023-F3B" "Flow 3 add: second tool joins the shared layout, CLAUDE.md region keeps user bytes" \
+    "t23_setup_mixed:t23_post_mixed" \
+    "0|add claude-code --target @T --from-bundle @S" \
+    "0|add cursor --target @T --from-bundle @S"
+
+# --- Flow 4: aid update with a real edit (drift is trashed) ----------------
+t23_twin "TASK023-F4A" "Flow 4 update: real shared-file edit is moved to trash, not deleted" \
+    "-:t23_post_drift" \
+    "0|add cursor --target @T --from-bundle @S" \
+    "-|!echo drift >> @T/.agents/skills/aid-ask/SKILL.md" \
+    "0|update --target @T --from-bundle @S" \
+    "contains|1 updated"
+
+# --- Flow 5: aid remove (outside bytes survive) -----------------------------
+t23_twin "TASK023-F5A" "Flow 5 remove: user bytes outside the managed regions survive" \
+    "t23_setup_mixed:t23_post_mixed" \
+    "0|add cursor --target @T --from-bundle @S" \
+    "0|remove cursor --target @T"
+
+# --- Flow 6: prune after an update (strays never survive) -------------------
+t23_twin "TASK023-F6A" "Flow 6 prune: stray runtime file and stray aid-* skill leave the tree" \
+    "-:t23_post_prune" \
+    "0|add cursor --target @T --from-bundle @S" \
+    "-|!echo stray > @T/.aid/runtime/stray-task023" \
+    "-|!mkdir -p @T/.agents/skills/aid-zzz && echo x > @T/.agents/skills/aid-zzz/SKILL.md" \
+    "0|update --target @T --from-bundle @S"
+
+# --- Flow 7: dogfood resync form (update --from-bundle --target, no tool list)
+t23_twin "TASK023-F7A" "Flow 7 dogfood: update --from-bundle --target without a tool list" \
+    "t23_setup_mixed:t23_post_mixed" \
+    "0|add cursor --target @T --from-bundle @S" \
+    "-|!echo drift >> @T/.agents/skills/aid-define/SKILL.md" \
+    "0|update --from-bundle @S --target @T" \
+    "contains|1 updated"
+
+# --- Flow 8: aid status drift report ----------------------------------------
+t23_twin "TASK023-F8A" "Flow 8 status: shared-file drift reported identically, exit 0" \
+    "-" \
+    "0|add cursor --target @T --from-bundle @S" \
+    "-|!echo drift >> @T/.agents/skills/aid-ask/SKILL.md" \
+    "0|status --target @T" \
+    "contains|Shared files" \
+    "contains|modified: .agents/skills/aid-ask/SKILL.md"
+
+# --- Bare project: aid projects add, then aid add cursor ---------------------
+t23_twin "TASK023-BARE" "bare project: aid projects add then aid add cursor exits 0 with identical output, manifest and tree" \
+    "-:t23_post_bare" \
+    "0|projects add @T" \
+    "0|add cursor --target @T --from-bundle @S" \
+    "contains|installed into"
+
+# --- Upgrade recovery: invalid record, add/remove gates, retirement retry ----
+t23_twin "TASK023-REC-B" "recovery: invalid record refused by add and remove, record bytes untouched" \
+    "t23_setup_bad_record:t23_post_bad_record" \
+    "2|add codex --target @T --from-bundle @S" \
+    "2|remove cursor --target @T"
+t23_twin "TASK023-REC-C" "recovery: valid pending record gates add and remove (exit 2), record kept" \
+    "t23_setup_valid_record:t23_post_record_kept" \
+    "2|add codex --target @T --from-bundle @S" \
+    "2|remove cursor --target @T" \
+    "contains|aid update"
+t23_twin "TASK023-REC-D" "recovery: retirement-phase retry finishes the update and clears the record" \
+    "t23_setup_retired_record:t23_post_record_cleared" \
+    "0|update --target @T --from-bundle @S"
+
+# --- Recovery record helpers, called directly under each shell ---------------
+t23_record_direct() {
+    local id="TASK023-REC-A" fails_before="$FAIL" d_sh d_ps out_sh out_ps rc_sh rc_ps
+    d_sh="$(newtarget)"; d_ps="$(newtarget)"
+    out_sh="$(bash -c 'source "$1"; write_upgrade_recovery "$2" false claude-code cursor && read_upgrade_recovery "$2" && printf "%s|%s\n" "$_AID_UPGRADE_RETIRED" "${_AID_UPGRADE_TOOLS[*]}"' _ "$LIB_SH" "$d_sh" 2>&1)"; rc_sh=$?
+    out_ps="$("$PWSH" -NoProfile -Command "Import-Module -Force -Name '${LIB_PS1}'; Write-AidUpgradeRecovery -Target '${d_ps}' -Tools @('claude-code','cursor') -Retired \$false; \$r = Read-AidUpgradeRecovery -Target '${d_ps}'; \$rt = if (\$r.retired) { 'true' } else { 'false' }; Write-Output (\$rt + '|' + (\$r.tools -join ' '))" 2>&1)"; rc_ps=$?
+    assert_exit_eq "$rc_sh" 0 "${id} Bash write+read of the recovery record -> exit 0"
+    assert_exit_eq "$rc_ps" 0 "${id} PS1 write+read of the recovery record -> exit 0"
+    assert_eq "$(tr -d '\r' <<< "$out_ps" | tail -1)" "$(tail -1 <<< "$out_sh")" "${id} validated read-back identical (retired|tools in order)"
+    assert_eq "$(cat "$d_ps/.aid/.temp/v3-upgrade-tools.json")" "$(cat "$d_sh/.aid/.temp/v3-upgrade-tools.json")" "${id} record bytes identical"
+    assert_eq "$(cat "$d_sh/.aid/.temp/v3-upgrade-tools.json")" '{"format_version":1,"tools":["claude-code","cursor"],"retired":false}' "${id} Bash record bytes are the format-1 shape"
+    if [[ "$FAIL" -eq "$fails_before" ]]; then _par_pass "${id} recovery record helpers: bytes and validated read-back identical across shells"; fi
+}
+t23_record_direct
+
+# --- Trash clock: frozen stamp with preoccupied names -----------------------
+t23_trash_clock() {
+    local id="TASK023-TRASH" stamp="20260101T000000Z" fails_before="$FAIL" d_sh d_ps d rc_sh rc_ps
+    d_sh="$(newtarget)"; d_ps="$(newtarget)"
+    for d in "$d_sh" "$d_ps"; do
+        mkdir -p "$d/a" "$d/.aid/.trash/a"
+        printf 'new\n' > "$d/a/x.txt"
+        printf 'occupant\n' > "$d/.aid/.trash/a/x.txt"
+        printf 'older\n' > "$d/.aid/.trash/a/x.txt.${stamp}"
+    done
+    bash -c 'source "$1"; trash_file "$2" "$2/a/x.txt" "$3"' _ "$LIB_SH" "$d_sh" "$stamp" >/dev/null 2>&1; rc_sh=$?
+    "$PWSH" -NoProfile -Command "Import-Module -Force -Name '${LIB_PS1}'; Move-AidToTrash -Root '${d_ps}' -File '${d_ps}/a/x.txt' -UtcStamp '${stamp}'" >/dev/null 2>&1; rc_ps=$?
+    assert_exit_eq "$rc_sh" 0 "${id} Bash trash_file with a frozen stamp -> exit 0"
+    assert_exit_eq "$rc_ps" 0 "${id} PS1 Move-AidToTrash with a frozen stamp -> exit 0"
+    local side dir
+    for side in sh ps; do
+        dir="$d_sh"; [[ "$side" == ps ]] && dir="$d_ps"
+        assert_eq "$(cat "$dir/.aid/.trash/a/x.txt" 2>/dev/null)" "new" "${id} ${side}: moved file lands at the plain trash name"
+        assert_eq "$(cat "$dir/.aid/.trash/a/x.txt.${stamp}" 2>/dev/null)" "older" "${id} ${side}: preoccupied <stamp> entry is never overwritten"
+        assert_eq "$(cat "$dir/.aid/.trash/a/x.txt.${stamp}.1" 2>/dev/null)" "occupant" "${id} ${side}: displaced occupant rotates to <stamp>.1"
+        t23_absent "$dir/a/x.txt" "${id} ${side}: source removed from the project"
+    done
+    assert_eq "$(t23_tree "$d_ps")" "$(t23_tree "$d_sh")" "${id} trash tree identical across shells"
+    assert_eq "$(t23_stamp_violations "$d_sh")" "" "${id} Bash trash stamps are yyyyMMddTHHmmssZ"
+    assert_eq "$(t23_stamp_violations "$d_ps")" "" "${id} PS1 trash stamps are yyyyMMddTHHmmssZ"
+    if [[ "$FAIL" -eq "$fails_before" ]]; then _par_pass "${id} trash clock: frozen-stamp collision suffix ordering identical across shells"; fi
+}
+t23_trash_clock
+
+# --- update all: one registered cursor project, shared + cursor caches -------
+run_ps1_ua() {
+    local home_dir="$1" dl_base="$2"; shift 2
+    local dl_url; dl_url="$(ua_file_url "${dl_base}")"
+    pwsh_session_call "${home_dir}/bin/aid.ps1" "$PWD" \
+        "AID_HOME=${home_dir}" "AID_LIB_PATH=${home_dir}/lib/AidInstallCore.psm1" \
+        "AID_NO_UPDATE_CHECK=1" "AID_SKIP_SELF_INSTALL=1" \
+        "AID_ALLOW_ENDPOINT_OVERRIDE=1" "AID_DOWNLOAD_BASE=${dl_url}" \
+        -- "$@"
+    OUT_PS1=$(printf '%s' "$PWSH_CALL_OUT" | sed 's/\x1b\[[0-9;]*m//g'); RC_PS1=$PWSH_CALL_RC
+}
+t23_update_all() {
+    local id="TASK023-UPDATE-ALL" v="$T23_VERSION" dl="${TMP}/t23-ua-dl" fails_before="$FAIL"
+    local h_sh h_ps p_sh p_ps ps_hook=0
+    mkdir -p "${dl}/v${v}"
+    cp "${T23_STAGE}/aid-cursor-v${v}.tar.gz" "${T23_STAGE}/aid-shared-v${v}.tar.gz" "${dl}/v${v}/"
+    (cd "${dl}/v${v}" && sha256sum --text "aid-cursor-v${v}.tar.gz" "aid-shared-v${v}.tar.gz" > SHA256SUMS)
+    h_sh="$(newhome)"; setup_sh_home "$h_sh"; printf '%s\n' "$T23_VERSION" > "$h_sh/VERSION"
+    h_ps="$(newhome)"; setup_ps1_home "$h_ps"; printf '%s\n' "$T23_VERSION" > "$h_ps/VERSION"
+    p_sh="$(newtarget)"; p_ps="$(newtarget)"
+    run_sh "$h_sh" add cursor --from-bundle "$T23_STAGE" --target "$p_sh"
+    assert_exit_eq "$RC_SH" 0 "${id} Bash seed: cursor project registered -> exit 0"
+    run_ps1 "$h_ps" add cursor -FromBundle "$T23_STAGE" -Target "$p_ps"
+    assert_exit_eq "$RC_PS1" 0 "${id} PS1 seed: cursor project registered -> exit 0"
+
+    run_sh_ua "$h_sh" "$dl" update all --version "$v"
+    local out_sh="$OUT_SH" rc_sh="$RC_SH"
+    assert_exit_eq "$rc_sh" 0 "${id} Bash update all (one registered cursor project) -> exit 0"
+    assert_output_contains "$out_sh" "1 updated, 0 skipped, 0 failed" "${id} Bash update all summary"
+    assert_file_contains "$p_sh/.aid/.aid-manifest.json" "\"${v}\"" "${id} Bash child project updated to v${v}"
+
+    # The PowerShell twin has no local download-base hook: Fetch-AidArtifact hardcodes the
+    # GitHub base (lib/AidInstallCore.psm1:92, :304). Without that hook the PS run cannot be
+    # made offline, so it is reported as a gap instead of reaching the network.
+    if grep -q 'AID_ALLOW_ENDPOINT_OVERRIDE' "$LIB_PS1" "$BIN_AID_PS1"; then ps_hook=1; fi
+    if [[ $ps_hook -eq 1 ]]; then
+        run_ps1_ua "$h_ps" "$dl" update all --version "$v"
+        local out_ps="$OUT_PS1" rc_ps="$RC_PS1"
+        assert_exit_eq "$rc_ps" 0 "${id} PS1 update all (one registered cursor project) -> exit 0"
+        assert_eq "$(grep -F 'Fetching ' <<< "$out_ps" | sed 's/ \.\.\.$//')" "$(grep -F 'Fetching ' <<< "$out_sh" | sed 's/ \.\.\.$//')" "${id} same artifact listing fetched (cursor, shared, SHA256SUMS)"
+        assert_output_contains "$out_ps" "1 updated, 0 skipped, 0 failed" "${id} PS1 update all summary"
+        assert_eq "$(t23_tree "$p_ps")" "$(t23_tree "$p_sh")" "${id} child trees identical after update all"
+    else
+        fail "${id} PS1 update all cannot run offline: no AID_ALLOW_ENDPOINT_OVERRIDE / AID_DOWNLOAD_BASE hook in lib/AidInstallCore.psm1 or bin/aid.ps1 (Fetch-AidArtifact is hardcoded to the GitHub base at lib/AidInstallCore.psm1:92 and :304)"
+    fi
+    if [[ "$FAIL" -eq "$fails_before" ]]; then _par_pass "${id} update all: cache listing (aid-cursor-v${v}.tar.gz, aid-shared-v${v}.tar.gz, SHA256SUMS) and child updates identical across shells"; fi
+}
+t23_update_all
 
 # ===========================================================================
 # End-of-suite: real-HOME blast-surface canary

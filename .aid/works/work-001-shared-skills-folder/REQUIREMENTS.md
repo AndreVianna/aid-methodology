@@ -1020,7 +1020,7 @@ idempotent.
 
 `update_gitattributes` creates the file when missing; otherwise it replaces only the block and
 keeps every byte outside it, as `update_gitignore` does. The block is a constant, so it is
-idempotent. `remove_gitattributes_block` removes the block, marker lines included, keeps every
+idempotent. `_remove_gitattributes_block` removes the block, marker lines included, keeps every
 other byte, and deletes the file when only whitespace remains.
 
 **`.aid/.trash/` collision policy** (used by every trash move in this feature):
@@ -1175,7 +1175,7 @@ the trash moves and the prune list.
      `worktree_root`; re-write the `AGENTS.md` region (pointer or inline) from their recorded
      `rules_inline` while any user remains.
   7. Delete the manifest and `.aid/settings.yml` when no tools remain (existing behaviour), and
-     run `remove_gitattributes_block` (the `.gitignore` block stays, as today).
+     run `_remove_gitattributes_block` (the `.gitignore` block stays, as today).
 
   Non-`aid-*` entries in `.agents/skills/` or in a mirror are never read or touched (AC-9).
 
@@ -1336,7 +1336,7 @@ implemented twice. The parity suite names every row (AC-16).
 | tool detection | `detect_tool` (`.agents` no longer marks Codex) | `Detect-Tool` |
 | root file | `_root_agent_file` (`AGENTS.md` for every tool); `_copy_root_agent_file` (calls `_repair_root_region` with the pointer region) | `Get-RootAgentFile`; `Copy-RootAgentFile` |
 | gitignore block | `_aid_gitignore_block` (adds the worktree roots) | `Get-AidGitignoreBlock` |
-| gitattributes block | `_aid_gitattributes_block`, `update_gitattributes`, `remove_gitattributes_block` (new) | `Get-AidGitattributesBlock`, `Update-AidGitattributes`, `Remove-AidGitattributesBlock` (new) |
+| gitattributes block | `_aid_gitattributes_block`, `update_gitattributes`, `_remove_gitattributes_block` (new) | `Get-AidGitattributesBlock`, `Update-AidGitattributes`, `Remove-AidGitattributesBlock` (new) |
 | settings seed | `seed_settings_yml` (template from `.aid/runtime/templates/`) | `Initialize-AidSettingsFile` |
 | CLI gates and stamp | `_aid_layout_gate` (new), the skew gate in the `FR11` block, the stamp cap in `_aid_migrate_repo` | `Test-AidLayoutGate` (new); the skew gate inline in the `FR11: aid add version selection` block of `bin/aid.ps1`; the stamp cap in `Invoke-AidMigrateRepo` |
 | staged-version check (`aid add`, flow 3 step 5) | `_check_staged_version` (new) | `Test-StagedVersion` (new) |
