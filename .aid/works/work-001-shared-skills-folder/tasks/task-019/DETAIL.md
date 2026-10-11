@@ -34,6 +34,7 @@
 - AC-15: `detect_tool` on a fixture holding only `.agents/` exits `2` and prints no `codex`; on a
   fixture holding `.codex/` prints `codex`; the `Detect-Tool` twin in `test-aid-cli-ps1.sh` (guarded
   by `pwsh` presence as that suite already does).
+- Bare-project regression: in a fixture, `aid projects add <dir>` then `aid add cursor --target <dir> --from-bundle <stage>` exits `0`; a hand-made format-2 manifest with no tools also accepts `aid add cursor`.
 - Removed or renamed keys get rows in `tests/coverage-accepted-removals.tsv` or the re-home
   allowlist.
 
@@ -44,5 +45,6 @@
 - [ ] `HOME=$(mktemp -d) bash tests/canonical/test-aid-cli-ps1.sh` exits `0` where `pwsh` exists, including the `Detect-Tool` cases.
 - [ ] `grep -cE 'profiles/[a-z-]+/' tests/canonical/test-aid-cli.sh tests/canonical/test-aid-cli-ps1.sh` prints `0` for both.
 - [ ] The coverage-parity gate (run where `pwsh`, `node` and `python3` are on PATH) reports no un-excused removal for these two suites.
+- [ ] `test-aid-cli.sh` prints a `PASS:` line for the bare-project regression (`aid projects add <dir>` then `aid add cursor --target <dir> --from-bundle <stage>` exits `0`; a format-2 manifest with no tools also exits `0`), and `test-aid-cli-ps1.sh` the same where `pwsh` exists.
 - [ ] Existing format-3 manifest with settings stamp 4 refuses `aid add` unchanged; a manifest-less legacy tree continues refusing after projects-add/update-self settings migration; future formats remain read-only refused.
 - [ ] All section-6 quality gates pass.

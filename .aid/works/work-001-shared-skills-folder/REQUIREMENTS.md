@@ -298,13 +298,19 @@ Any byte difference between copies therefore produces mixed, unpredictable behav
   **v3 legacy evidence** is defined here once; the `aid add` layout gate, the settings-stamp cap
   and the Upgrade from v3 trigger all use exactly this list. It exists when any of these holds for
   any of the five tool roots (`.claude`, `.codex`, `.cursor`, `.github`, `.agent`):
-  - the manifest records `format_version` 2 or lower;
+  - the manifest records `format_version` 2 or lower and at least one tool (a manifest recording no
+    tools is never legacy evidence);
   - the directory `<root>/aid/` exists (for Codex, also the legacy `.agents/aid/`);
   - a directory `<root>/skills/aid-*` exists, except the v4 Claude mirror `.claude/skills/aid-*`
     when a valid format-3 manifest records it under `shared.mirrors`.
 
   v4 per-tool agent files (`<root>/agents/aid-*`), the `AGENTS.md` pointer region, the `CLAUDE.md`
   import region and user directories holding no AID-owned path are NOT legacy evidence.
+
+  The bare-project scaffolder behind `aid projects add` and the dashboard (`_aid_scaffold_bare_project`
+  / `Invoke-AidScaffoldBareProject`) writes the v4 manifest format (`format_version` 3, no tools) and
+  the v4 settings stamp, so `aid add <tool>` into a freshly onboarded bare project is accepted; bare
+  projects a v3 CLI created (format-2 manifest, no tools) are accepted by the no-tools exemption above.
 
   Nothing is deleted: every moved file lands at `.aid/.trash/<original-path>`, and user files are
   never touched. The ownership rule is path-based. An old-layout file is AID-owned if it lies under
@@ -636,6 +642,9 @@ CLI. The Claude Code docs (skills, settings reference, memory, changelog) were c
     `aid update`.
   - A manifest whose `format_version` is above 3 makes the CLI exit non-zero with
     `Run: aid update self` and write nothing.
+  - In a fixture, `aid projects add <dir>` then `aid add cursor --target <dir> --from-bundle <stage>`
+    exits 0 (the scaffolded manifest records `format_version` 3 and no tools); a hand-made format-2
+    manifest with no tools also accepts `aid add cursor`.
 - **AC-13:** The clean-slate upgrade works from every v3 layout. A fixture is built for each of
   the five tools in its v3 layout, including Antigravity `.agent/skills` and the legacy Codex
   `.agents/aid/`. Each fixture contains:
@@ -1071,7 +1080,7 @@ copy. That is replaced by this policy.
 **3. `aid add <t1>[,<t2>...]`** (1..N new tools; FR-10):
 
 1. Run the writability pre-check (unchanged).
-2. **Layout gate** (new `_aid_layout_gate`). A manifest exists and records `format_version` < 3,
+2. **Layout gate** (new `_aid_layout_gate`). A manifest exists, records at least one tool and records `format_version` < 3,
    an existing settings stamp is < 5, an upgrade recovery record exists, or v3 legacy evidence (FR-11)
    exists -> exit 2. A fresh repo with none of these signals passes, including when
    settings are absent. Legacy evidence is the FR-11 list only; v4 agents at `<root>/agents/aid-*` never
@@ -1324,6 +1333,7 @@ implemented twice. The parity suite names every row (AC-16).
 | settings seed | `seed_settings_yml` (template from `.aid/runtime/templates/`) | `Initialize-AidSettingsFile` |
 | CLI gates and stamp | `_aid_layout_gate` (new), the skew gate in the `FR11` block, the stamp cap in `_aid_migrate_repo` | `Test-AidLayoutGate` (new); the skew gate inline in the `FR11: aid add version selection` block of `bin/aid.ps1`; the stamp cap in `Invoke-AidMigrateRepo` |
 | staged-version check (`aid add`, flow 3 step 5) | `_check_staged_version` (new) | `Test-StagedVersion` (new) |
+| bare-project scaffold (`aid projects add`, dashboard) | `_aid_scaffold_bare_project` (writes manifest `format_version` 3, no tools, v4 stamp) | `Invoke-AidScaffoldBareProject` |
 
 
 **Parity rules.**

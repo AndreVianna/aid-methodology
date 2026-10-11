@@ -34,6 +34,8 @@
 - Record the result as one `lifecycle_history` entry in this work's `STATE.yml` (event, date,
   pass/fail, per-host notes), written through the work-state writer the pipeline uses.
 - If A-4 fails, record the § 8 alias fallback as a Q&A and require its added criterion. If A-6 fails for a host, activate the existing `rules_inline` mechanism, add a host-specific criterion, and re-run affected generation/install checks plus task-031 final regression before acceptance. Unknown or inaccessible hosts remain unknown/blocked under existing criteria; record them without inventing success.
+- Deferred review note (definition-gate ledger row 56): if the A-2 fallback enables a Copilot mirror (`.github/skills/aid-*`), add that mirror path to FR-11's "not v3 legacy evidence" exemption alongside `.claude/skills/aid-*` in the same change, or every later `aid add` treats it as v3 evidence.
+- Deferred review note (definition-gate ledger row 57): if the A-6 fallback sets `rules_inline` for any tool, define the inline-to-pointer region transition when the last `rules_inline` tool leaves (`_repair_root_region` must recognise the inline region as AID-owned and replace it, trashing a full copy first) and add a fixture for it, before relying on the fallback.
 
 **Acceptance Criteria:**
 - [ ] This work's `STATE.yml` `lifecycle_history` holds one entry for the A-4 and A-6 probe results for each required host, each recorded as pass/fail/unknown, including Claude Code default-mode pre-approval.

@@ -27,7 +27,7 @@
   file tree, trash timestamps' format, collision suffix ordering under a frozen clock with preoccupied names, and manifest bytes (masked `installed_at`).
 - A static check in the same suite: every twin pair in REQUIREMENTS.md § 11 Feature 001 › Layers &
   Components › Install core table (`read_kv_conf`/`Read-AidKvConf` through the staged-version check
-  `_check_staged_version`/`Test-StagedVersion`, including `_is_aid_owned_path`/`Test-AidOwnedPath`,
+  `_check_staged_version`/`Test-StagedVersion` and `_aid_scaffold_bare_project`/`Invoke-AidScaffoldBareProject`, including `_is_aid_owned_path`/`Test-AidOwnedPath`,
   `retire_v3_layout`/`Invoke-RetireV3Layout`, the three upgrade-recovery record helper pairs,
   and `_repair_root_region`/`Repair-AidRootRegion`, canonical-LF region hashing and CRLF-aware byte preservation) is
   defined in its file, and the suite names each pair in at least one scenario. The
@@ -35,6 +35,7 @@
 - `tests/canonical/test-install-parity.sh` and `tests/canonical/test-ps51-compat.sh`: extend to
   the new functions (the PS 5.1 check covers every new PowerShell function: no `??`, no ternary, no
   `-AsHashtable`, ASCII-only).
+- Bare-project scenario: on twin fixtures `aid projects add <dir>` then `aid add cursor --target <dir> --from-bundle <stage>` gives exit `0`, identical output lines, manifest bytes (masked `installed_at`) and tree under both shells.
 - Recovery scenarios compare record bytes, validated target selection, retirement-phase retry,
   invalid-record refusal, add/remove gates and successful cleanup in both shells (task-015).
 - PowerShell-dependent scenarios stay guarded by `pwsh` presence exactly as the suite guards them
@@ -42,6 +43,7 @@
 
 **Acceptance Criteria:**
 - [ ] `HOME=$(mktemp -d) bash tests/canonical/test-aid-cli-parity.sh` exits `0` on a host with `pwsh`, with a `PASS:` line per Flow 3 to 8 scenario (identical exit codes, output lines and resulting tree under both shells), with CRLF/mixed root content, real edits, idempotent retry and outside-byte preservation; and one per twin pair of the static check.
+- [ ] `test-aid-cli-parity.sh` prints a `PASS:` line for the bare-project scenario (`aid projects add` then `aid add cursor` exits `0` with identical output, manifest bytes and tree under `bin/aid` and `bin/aid.ps1`).
 - [ ] `test-aid-cli-parity.sh` prints a `PASS:` line for the update-all scenario: on twin fixtures with one registered cursor project, `bin/aid` and `bin/aid.ps1` (`_cmd_update_all` / `Invoke-AidUpdateAll`) build update-all caches with the same listing (`aid-cursor-v<V>.tar.gz`, `aid-shared-v<V>.tar.gz`, `SHA256SUMS`), and the child updates exit `0` with identical output lines and resulting trees.
 - [ ] Deleting one PowerShell twin (e.g. `Get-AidDriftReport`) in a scratch copy makes the static check fail and name it.
 - [ ] `bash tests/canonical/test-install-parity.sh` and `bash tests/canonical/test-ps51-compat.sh` exit `0`.
