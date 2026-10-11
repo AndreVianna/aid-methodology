@@ -1271,13 +1271,13 @@ tasks_lifecycle:
         outcome: 'Task019 CLI suites committed079ce7029 with scoped coverage rehomes. Focused Bash250 pass/1 known source006 failure M07; natural manifestless legacy mini-probe passes. All other valid skew/cache/detection/future cases pass; PS execution skipped/deferred. Task019 In Review pending source correction and independent verification.'
 
   task-020:
-    state: 'In Progress'
+    state: 'In Review'
     review: --
     elapsed: --
     notes: --
     display_name: --
   task-021:
-    state: Pending
+    state: 'In Progress'
     review: --
     elapsed: --
     notes: --
