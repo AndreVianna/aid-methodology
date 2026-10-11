@@ -501,7 +501,7 @@ delivery_lifecycle:
 #   state: Pending | In Progress | In Review | Blocked | Done | Failed | Canceled
 tasks_lifecycle:
   task-001:
-    state: 'In Progress'
+    state: 'In Review'
     review: --
     elapsed: --
     notes: --
