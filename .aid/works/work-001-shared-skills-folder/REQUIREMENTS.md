@@ -136,7 +136,7 @@ Any byte difference between copies therefore produces mixed, unpredictable behav
   - a layout format bump with migration from every old layout;
   - migration of the full `CLAUDE.md` AID region to the import region.
 - Bash and PowerShell parity, with tests.
-- A tool-neutral work-level worktree root.
+- A work-level worktree root resolved per host at runtime (FR-13), never named in a skill.
 - Resync this repo's dogfood trees by CLI install.
 - Update the KB, root context files, `docs/` and CI references that state the old layout.
 
@@ -166,8 +166,8 @@ Any byte difference between copies therefore produces mixed, unpredictable behav
   - References to agents name the agent (for example `aid-architect`), not a per-tool path.
   - `{project_context_file}` is written as `AGENTS.md`, and the other filename placeholders are
     written as their resolved values.
-  - No host-specific path remains. `.claude/worktrees` is replaced by the neutral root from
-    FR-13, and `.claude/aid/...` by `.aid/runtime/...`.
+  - No host-specific path remains. No skill names a worktree root; the runtime resolves it per
+    host (FR-13). `.claude/aid/...` is replaced by `.aid/runtime/...`.
   - The generated-doorway provenance comment names no host install root.
 
   `build-shortcut-skills.py` emits this form, so a regeneration cannot reintroduce the old one.
@@ -349,8 +349,9 @@ Any byte difference between copies therefore produces mixed, unpredictable behav
   installed result is the same on Windows, macOS and Linux.
 - **Safety of user content.** No install, update, migration, repair or uninstall path deletes a
   file without an AID ownership marker. Every AID-owned file that is replaced or retired while it
-  differs from the bytes AID is writing is preserved under `.aid/.trash/`. A root context file
-  without markers keeps every byte of user content (Layers & Components, *Root context file*).
+  is drifted (its bytes differ from its manifest-recorded sha256, or no sha256 is recorded for it
+  and its bytes differ from the bytes AID is writing) is preserved under `.aid/.trash/`. A root
+  context file without markers keeps every byte of user content (Layers & Components, *Root context file*).
 - **Atomicity and idempotency.** The existing stage-all-first behaviour is kept: every payload is
   fetched and checksum-verified before any destination write. A repeated `aid update` at the same
   version reports nothing changed.
@@ -516,7 +517,7 @@ CLI. The Claude Code docs (skills, settings reference, memory, changelog) were c
   - A stray file placed in `.aid/runtime/` is pruned by the next `aid update`.
   - A fixture file `.aid/runtime/scripts/summarize/node_modules/x.js` survives `aid update`,
     nothing from it lands in `.aid/.trash/`, and `aid status` prints no `extra:` line for it.
-- **AC-8:** The work-level worktree root is neutral.
+- **AC-8:** The work-level worktree root is resolved per host.
   - In a fixture repo, `worktree-lifecycle.sh create work-001 x` prints a path under the FR-13
     root, and that root appears in the `.gitignore` AID managed block.
   - A fixture worktree pre-registered at `.claude/worktrees/work-002-y` (branch `work-002`) is
@@ -622,7 +623,8 @@ CLI. The Claude Code docs (skills, settings reference, memory, changelog) were c
   `lib/AidInstallCore.psm1` match `lib/` by sha256.
 - **AC-18:** The dogfood trees are resynced. In this repo:
   - every `canonical/skills/<rel>` equals `.agents/skills/<rel>` and `.claude/skills/<rel>`;
-  - `.aid/runtime/` equals `canonical/aid/`;
+  - `.aid/runtime/{scripts,templates}` equals `canonical/aid/{scripts,templates}`, ignoring the
+    FR-6 runtime-local paths; `.aid/runtime/host.conf` exists and is the only other file;
   - `.claude/aid/`, `.cursor/aid/` and `.cursor/skills/aid-*` are absent;
   - the repo-root `CLAUDE.md` keeps its `## Project` section byte for byte, and its AID region
     holds only `@AGENTS.md`;
@@ -966,8 +968,9 @@ trash copy. That is replaced by this policy.
    (AC-11).
 6. **Commit**, in a fixed order:
    1. Shared skills go to `.agents/skills/` with `copy_file_guarded`. An absent file is copied,
-      an identical file is left alone, and a differing file is trashed first and then copied
-      (FR-9).
+      an identical file is left alone, and a differing file is overwritten. It is trashed first
+      only when drifted: its bytes differ from its manifest-recorded sha256, or no sha256 is
+      recorded for it (FR-9).
    2. Each mirror declared by any user is written the same way. A newly added `claude-code`
       creates `.claude/skills/aid-*`.
    3. The runtime goes to `.aid/runtime/`, then `host.conf` is written.
