@@ -6,11 +6,11 @@ maintainer approved execution. Current phase `Execute`, lifecycle `Running`.
 
 ## Current execution checkpoint
 
-Wave 2 in progress: tasks 005 (c1952f13b) and 006 (cdc95d6c1) committed with focused checks passing, awaiting Sol wave review. Task-011 is In Progress. Required PowerShell execution checks remain deferred.
+All wave-2 task implementations are committed and pushed: 005 c1952f13b, 006 cdc95d6c1, 011 0acf5d926. Focused developer checks pass (task011: 130 assertions). Tasks remain In Review pending Sol quick verification; do not begin wave 3 until resolved.
 
 - Done (3/32): task-001, task-002, task-004.
-- In Progress: task-011.
-- In Review: task-005, task-006.
+- In Progress: none.
+- In Review: task-005, task-006, task-011.
 - Failed/Blocked: none.
 - Pending: task-003, task-007, task-008, task-009, task-010, task-012, task-013, task-014, task-015, task-016, task-017, task-018, task-019, task-020, task-021, task-022, task-023, task-024, task-025, task-026, task-027, task-028, task-029, task-030, task-031, task-032.
 - Current wave: 2 of 15. Derive authoritative waves from task dependency headers.
