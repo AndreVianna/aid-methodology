@@ -112,15 +112,15 @@ minimum_grade: A
 # [W] 'yes' | 'no' -- quoted, see NFR-2 / D-5
 user_approved: 'no'
 # [W] Running | Paused-Awaiting-Input | Blocked | Completed | Canceled
-lifecycle: Paused-Awaiting-Input
+lifecycle: Running
 # [W] Describe | Define | Specify | Plan | Detail | Execute
 phase: Detail
 # [W] aid-{skill} | none
 active_skill: aid-update
 # [W]
-updated: '2026-10-11T01:43:02Z'
+updated: '2026-10-11T01:54:52Z'
 # [W] set only when lifecycle = Paused-Awaiting-Input
-pause_reason: 'Codex cycle 1 reviewed: definition C+ and tasks C+ below floor A; awaiting maintainer decision before fixing definition rows 41-42 and task row 15'
+pause_reason: --
 # [W] set only when lifecycle = Blocked
 block_reason: --
 # [W] e.g. IMPEDIMENT-task-NNN.md, or the failed gate
@@ -310,6 +310,14 @@ lifecycle_history:
     event: 'Codex cycle 1 task verification complete; rows 1-14 verified Fixed; new task row 15 Pending'
     grade: 'C+'
     notes: 'Task-003 profile wipe can precede task-005 rules extraction. Cycle 1 ended: definition C+, tasks C+, floor A; no gates cleared; no implementation task started. Pending manual pointer/alias probes remain unverified'
+  - date: '2026-10-10'
+    event: 'Codex cycle 2 FIX started; maintainer approved plan for definition rows 41-42 and task row 15'
+    grade: --
+    notes: 'Full-profile output contract; bounded durable upgrade recovery state; rules extraction before profile wipe. Independent scoped review follows; implementation remains unapproved'
+  - date: '2026-10-10'
+    event: 'Codex cycle 2 FIX complete; scoped definition review started'
+    grade: --
+    notes: 'README preservation exception removed and referenced task criteria aligned; task-003 now depends on task-005; bounded recovery record stores exact target tools and retirement-complete flag, with gates, atomic transitions, cleanup and interruption criteria in both shells'
 
 # [A] aid-deploy only; one entry per delivery (never derived from child
 #     files; aid-deploy is the sole author):

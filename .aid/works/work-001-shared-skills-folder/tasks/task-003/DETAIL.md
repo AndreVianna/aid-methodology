@@ -17,9 +17,11 @@
 
 **Source:** work-001-shared-skills-folder -> delivery-001 -> AC-1, AC-21
 
-**Depends on:** task-002
+**Depends on:** task-002, task-005
 
 **Scope:**
+- Before the full profile wipe, task-005 must have committed `canonical/aid/rules.md` extracted
+  from the old profile regions; this task depends on it so those source files cannot be lost.
 - `canonical/agents/**`: apply the task-001 token mapping so the generator applies no text
   transform (task-002 already neutralised the `{{include:agent-boilerplate}}` source in
   `canonical/aid/templates/agent-boilerplate.md`, which is why this task depends on it).
@@ -48,11 +50,11 @@
   and `test_manifest_safety.py` with it) is retired (FR-4); anything of it that remains is cut to
   what is still used.
 - `run_generator.py`: stays the single full-render command. It wipes each `profiles/<tool>/`
-  (everything except its hand-kept `README.md`) and regenerates it in full on every run, so the tree
+  with no preservation exception and regenerates it in full on every run, so the tree
   holds exactly the generated agents and `aid-tool.conf`; the pure-mirror deletion is retired. It
   keeps chaining the dogfood resync script (task-027 re-points that script).
-- Delete `canonical/EMISSION-MANIFEST.md` (FR-4). `profiles/*/README.md`: no longer describe a
-  skills or runtime tree.
+- Delete `canonical/EMISSION-MANIFEST.md` (FR-4) and all profile README files; retained layout
+  documentation is in the root README, `docs/` and `site/`, not in generated profile trees.
 - `canonical/agents/aid-reviewer/AGENT.md` § Content isolation (FR-17): the checks that flag an
   AID-own dir "not nested under `<assets-root>/aid/`" and the Codex `.codex/aid/` rule are replaced
   so they accept the new placement: skills use the `aid-` prefix under `.agents/skills/` and each
@@ -73,15 +75,15 @@
 
 **Acceptance Criteria:**
 - [ ] `python .claude/skills/generate-profile/scripts/run_generator.py` exits `0` and prints `VERIFY (deterministic): PASS`.
-- [ ] After `run_generator.py`, a stray file planted beforehand in the generated part of a `profiles/<tool>/` tree (everything except its hand-kept `README.md`) is gone, and each tree holds only the agents and `aid-tool.conf` (checked with `find profiles/<tool> -type f ! -name README.md` against the expected list).
+- [ ] After `run_generator.py`, a stray file and a `README.md` planted beforehand anywhere in a `profiles/<tool>/` tree are gone, and each complete tree holds only agents and `aid-tool.conf` (checked with `find profiles/<tool> -type f` against the expected list).
 - [ ] `test ! -e canonical/EMISSION-MANIFEST.md` succeeds, and `find profiles -name '*.jsonl'` prints nothing.
 - [ ] `find profiles -type d \( -name skills -o -name aid \)` prints nothing.
 - [ ] `profiles/claude-code/aid-tool.conf` holds exactly the lines `tool=claude-code`, `skill_mirror=.claude/skills`, `worktree_root=.claude/worktrees` and `context_import=CLAUDE.md`; each other profile's `aid-tool.conf` holds exactly `tool=<id>`; none holds a `rules_inline` line.
 - [ ] `grep -L 'root_file *= *"AGENTS.md"' profiles/*.toml` prints nothing.
-- [ ] `grep -rlE '(^|[^A-Za-z0-9_])canonical/(aid/)?(scripts|templates|skills|agents|recipes)/' canonical/agents $(find profiles -type f \( -path '*/agents/*' -o -name aid-tool.conf \)) | wc -l` prints `0` (it reads only the agent sources, the rendered agents and `aid-tool.conf`; hand-kept `profiles/*/README.md` files are outside it).
+- [ ] `grep -rlE '(^|[^A-Za-z0-9_])canonical/(aid/)?(scripts|templates|skills|agents|recipes)/' canonical/agents $(find profiles -type f \( -path '*/agents/*' -o -name aid-tool.conf \)) | wc -l` prints `0` (it reads only the agent sources, the rendered agents and `aid-tool.conf`; no other profile files exist).
 - [ ] `grep -nE 'def (rewrite_install_paths|substitute_filenames|_rewrite_skill_frontmatter)' .claude/skills/generate-profile/scripts/*.py` prints nothing.
 - [ ] `python .claude/skills/generate-profile/scripts/render_lib.py --self-test`, `render.py --self-test --canonical-root .`, `verify_deterministic.py --self-test --canonical-root .` and `verify_advisory.py --self-test --canonical-root .` all exit `0`; the `aid_profile.py` validation rejects a profile whose `skill_mirrors` contains `.agents/skills` and one whose `rules_inline` is not a boolean (a self-test case shows each).
-- [ ] `git grep -nE '\.(claude|codex|cursor|agent)/aid/|\.github/aid/' -- 'profiles/*/README.md'` prints no lines.
+- [ ] `find profiles -name README.md` prints nothing, and `test -s canonical/aid/rules.md` succeeds after regeneration.
 - [ ] `grep -nE '\.aid/runtime|\.agents/skills' canonical/agents/aid-reviewer/AGENT.md` prints a line inside § Content isolation, and `grep -nE 'un-nested path|\.codex/aid/ is the correct' canonical/agents/aid-reviewer/AGENT.md` prints nothing.
 - [ ] `bash tests/canonical/test-chat-node-wake.sh`, `test-cutover-no-dangling.sh` and `test-doc-counts.sh` exit `0`.
 - [ ] `git diff --name-only` for this task's commit lists no path under `.claude/` outside `.claude/skills/generate-profile/`, and none under `.cursor/`.

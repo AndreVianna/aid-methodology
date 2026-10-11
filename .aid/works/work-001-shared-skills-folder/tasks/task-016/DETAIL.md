@@ -25,8 +25,8 @@
   fixtures, never reads a work folder). One keyed assertion per clause:
   - AC-1: run `python .claude/skills/generate-profile/scripts/run_generator.py` in a throwaway
     clone (as `test-release.sh` clones), assert it prints `VERIFY (deterministic): PASS`, a stray
-    file planted beforehand in the generated part of a
-    `profiles/<tool>/` tree (everything except its hand-kept `README.md`) is gone and the tree holds
+    file and a `README.md` planted beforehand anywhere in a
+    `profiles/<tool>/` tree are gone and the complete file list holds
     only the agents and `aid-tool.conf`, no `.jsonl` manifest exists, and
     `find profiles -type d \( -name skills -o -name aid \)` is empty.
   - AC-4: the five greps of REQUIREMENTS.md § 9 AC-4, each expecting `0`.

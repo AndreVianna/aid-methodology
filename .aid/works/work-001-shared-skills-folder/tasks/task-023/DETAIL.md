@@ -28,12 +28,15 @@
 - A static check in the same suite: every twin pair in REQUIREMENTS.md § 11 Feature 001 › Layers &
   Components › Install core table (`read_kv_conf`/`Read-AidKvConf` through the staged-version check
   `_check_staged_version`/`Test-StagedVersion`, including `_is_aid_owned_path`/`Test-AidOwnedPath`,
-  `retire_v3_layout`/`Invoke-RetireV3Layout` and `_repair_root_region`/`Repair-AidRootRegion`) is
+  `retire_v3_layout`/`Invoke-RetireV3Layout`, the three upgrade-recovery record helper pairs,
+  and `_repair_root_region`/`Repair-AidRootRegion`) is
   defined in its file, and the suite names each pair in at least one scenario. The
   pair list lives in the suite itself, not in a work folder.
 - `tests/canonical/test-install-parity.sh` and `tests/canonical/test-ps51-compat.sh`: extend to
   the new functions (the PS 5.1 check covers every new PowerShell function: no `??`, no ternary, no
   `-AsHashtable`, ASCII-only).
+- Recovery scenarios compare record bytes, validated target selection, retirement-phase retry,
+  invalid-record refusal, add/remove gates and successful cleanup in both shells (task-015).
 - PowerShell-dependent scenarios stay guarded by `pwsh` presence exactly as the suite guards them
   today. Removed or renamed keys get coverage rows.
 

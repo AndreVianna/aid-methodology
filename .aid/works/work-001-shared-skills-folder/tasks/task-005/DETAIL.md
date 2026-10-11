@@ -30,7 +30,9 @@ context file.
   and "Read" lines (no `@` imports). It is part of `canonical/aid/`, so it installs verbatim at
   `.aid/runtime/rules.md`; it lies outside the review-criteria registry's corpus
   (`canonical/aid/templates/` only), so no registry row is owed.
-- Delete the five profile root files listed above.
+- Commit `canonical/aid/rules.md` before deleting the old profile root files. Task-003 depends
+  on this task and performs the subsequent full profile wipe; no generator run may destroy the
+  extraction source first. Delete the five old root context files listed above after extraction.
 - `_root_agent_file` / `Get-RootAgentFile`: return `AGENTS.md` for every tool.
 - Region constants, fixed in both cores (never payload files; every line ends in LF). The
   `AGENTS.md` pointer region is exactly these five lines:

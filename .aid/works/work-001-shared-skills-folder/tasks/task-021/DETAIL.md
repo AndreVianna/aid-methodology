@@ -30,9 +30,14 @@
   `.agent/skills`; no `<root>/aid/`; every old AID-owned file, modified or not, byte-for-byte at
   `.aid/.trash/<original-path>`; non-AID files unchanged; `.aid/settings.yml` `format_version` = 5.
   A second `aid update` prints `up to date` for every tool and leaves `.aid/.trash/` unchanged.
-  Interrupted run: an `aid update` killed after the trash step and before the manifest write
-  (simulated by failing the run at the start of the fresh-install step) and then re-run ends in the
-  same state, with the AC-3 and AC-7 checks passing and no non-AID file lost.
+  Cover both manifest-backed and manifest-less variants, including two tools and legacy Codex.
+  Inject failure during retirement, after `retired=true` but before the manifest write (including
+  after one v4 copy), and after the manifest/stamp but before record cleanup. On retry, the exact
+  recorded tool set is restored, AC-3 and AC-7 pass, non-AID shas are unchanged, and the record
+  is removed after success. `retired=true` skips retirement of newly copied v4 files; post-stamp
+  recovery leaves the trash snapshot unchanged. Also cover invalid record schemas, future
+  formats, staging failure, dry-run, atomic-record-write failures, add/remove gates, and a named
+  update tool outside the pending record set, per task-015's observable criteria.
 - AC-14 case (c), as worded (the § 11 test plan places (a), (b), (e) and (f) in
   `test-shared-install.sh`, task-017, and (d) in `test-multitool-isolation.sh`, task-018): v3
   claude-code fixtures -- a user-edited `CLAUDE.md` with user content above and below the full old
@@ -47,7 +52,8 @@
 
 **Acceptance Criteria:**
 - [ ] `HOME=$(mktemp -d) bash tests/canonical/test-aid-migrate.sh --verbose` exits `0`, with `PASS:` lines for each AC-13 clause per tool fixture (five plus the legacy `.agents/aid/` case) and the second-run checks.
-- [ ] The same run prints a `PASS:` line for the interrupted-run clause: after the simulated kill and the next `aid update`, the AC-3 and AC-7 checks pass, `grep -c '"migration"' .aid/.aid-manifest.json` prints `0`, and every non-AID user file keeps its sha256.
+- [ ] The same run prints a `PASS:` line for the interrupted-run clause: for each interruption point and both manifest-backed and manifest-less fixtures, the next `aid update` restores exactly the recorded tools, AC-3 and AC-7 pass, `grep -c '"migration"' .aid/.aid-manifest.json` prints `0`, the recovery record is absent, and every non-AID user file keeps its sha256; post-stamp recovery keeps the trash snapshot unchanged.
+- [ ] The same run prints `PASS:` lines for invalid-record/future-format refusals, staging failure, dry-run, atomic-write failure, pending-record add/remove gates and out-of-set named tools, each with the expected unchanged snapshot or prevention of the next destructive step.
 - [ ] The same run prints `PASS:` lines for AC-14 (c) in its variants (user-edited `CLAUDE.md` with trash copy, no-marker `CLAUDE.md`, v3 `AGENTS.md` with the pointer region) and the one-`@AGENTS.md` / one-`AID:BEGIN` invariant in each.
 - [ ] `grep -cE 'profiles/[a-z-]+/' tests/canonical/test-aid-migrate.sh` prints `0`.
 - [ ] The coverage-parity gate (run where `pwsh`, `node` and `python3` are on PATH) reports no un-excused removal for this suite.

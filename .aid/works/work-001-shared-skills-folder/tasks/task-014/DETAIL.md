@@ -22,8 +22,10 @@
 **Scope:**
 Bash and PowerShell twins together (`bin/aid` and `bin/aid.ps1`, plus any core helper they
 need), per REQUIREMENTS.md § 11 Feature 001 › Feature Flow › 4.
-- The self-update preamble and the format gate run unchanged first.
-- The commit set is every installed tool plus any named tool, all at one version; a named subset is
+- Read-only format checks still refuse unsupported future formats first. The task-015 recovery
+  dispatch reads and validates any recovery record before repository mutation or the self-update
+  preamble; ordinary updates without a record keep the existing preamble and format gate.
+- Without a pending recovery record, the commit set is every installed tool plus any named tool, all at one version; a named subset is
   widened, and the CLI prints a notice listing the tools it added. A subset can no longer advance the
   shared files ahead of the other tools.
 - Stage everything (Flow 2) before any write, then run the Flow 3 commit steps for all tools
@@ -34,10 +36,12 @@ need), per REQUIREMENTS.md § 11 Feature 001 › Feature Flow › 4.
   unedited file of the previous version is overwritten with no trash entry and only a DRIFTED file
   is trashed first (FR-9; task-004). Every tool `version` and every `shared.*.version` ends equal to
   `aid_version`.
-- A v3 layout (a format-2 manifest, or the old `<root>/aid/` and `<root>/skills/aid-*` paths) is
-  the clean-slate upgrade's branch: this task leaves a single, clearly named dispatch point that
-  task-015 fills with `retire_v3_layout` followed by the fresh install; until then `aid update` on
-  such a layout exits non-zero naming the missing upgrade and writes nothing.
+- A v3 layout (a format-2 manifest or old AID-owned paths), or the presence of
+  `.aid/.temp/v3-upgrade-tools.json`, selects the clean-slate recovery dispatch point owned by
+  task-015. Its recorded tool set overrides discovery and a partial manifest; new named tools
+  outside it are refused until recovery finishes. Task-015 supplies record validation, staging,
+  retirement gating and cleanup. Until then this branch exits non-zero naming the missing
+  upgrade and writes nothing. Do not stamp or clean up the record after a failed dispatch.
 - Runtime-local paths (FR-6: any `node_modules/` under `.aid/runtime/`) survive every update; they
   reach neither the prune list nor the trash (the exclusion lives in `prune_shared`, task-010).
 - Run `_aid_migrate_repo` afterwards (it stamps 5 on a format-3 manifest, per task-006's cap).

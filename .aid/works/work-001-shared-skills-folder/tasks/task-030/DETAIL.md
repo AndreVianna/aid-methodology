@@ -38,7 +38,7 @@
 
 **Acceptance Criteria:**
 - [ ] `git grep -nE '\.(claude|codex|cursor|agent)/aid/|\.github/aid/' -- CLAUDE.md AGENTS.md README.md docs .github/workflows` prints no lines.
-- [ ] `git grep -nE '\.(claude|codex|cursor|agent)/aid/|\.github/aid/' -- site 'profiles/*/README.md'` prints no lines.
+- [ ] `git grep -nE '\.(claude|codex|cursor|agent)/aid/|\.github/aid/' -- site` prints no lines.
 - [ ] `grep -n '\.agents/skills' README.md docs/install.md` and `grep -n '\.aid/runtime' README.md docs/install.md` each print at least one line per file.
 - [ ] `grep -cE 'work-[0-9]{3}|\.aid/works/' README.md docs/install.md docs/aid-methodology.md` prints `0` for each file.
 - [ ] `python3 -c "import yaml; yaml.safe_load(open('.github/workflows/test.yml'))"` exits `0` (the workflow still parses).

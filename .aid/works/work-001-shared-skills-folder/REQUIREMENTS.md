@@ -293,9 +293,11 @@ Any byte difference between copies therefore produces mixed, unpredictable behav
   `<root>/skills/aid-*/` at any depth (so every `references/*.md` counts), or under `<root>/aid/`,
   or its basename starts with `aid-`. `_is_aid_owned_file` in `_migrate_retired_layout` tests only
   the basename and ancestors named `aid`, so the upgrade uses a new path-based helper
-  (`_is_aid_owned_path`, with a PowerShell twin) instead. There is no resume key, no journal and
-  no step ordering: an interrupted run is fixed by re-running `aid update`, and a rollback is a
-  restore from `.aid/.trash/`. A v3 CLI cannot drive a v4 layout (release notes: `v4 requires CLI
+  (`_is_aid_owned_path`, with a PowerShell twin) instead. Before retirement, the CLI durably
+  records the target tools and whether retirement has finished in the separate recovery record
+  specified in §11 *Upgrade from v3*. This bounded record supports interrupted retries without
+  a per-file journal or a `migration` key in the install manifest. A rollback restores from
+  `.aid/.trash/` and removes the recovery record after restoring the v3 tree. A v3 CLI cannot drive a v4 layout (release notes: `v4 requires CLI
   v4`). A newer layout is refused by one check: a manifest `format_version` above 3 exits with
   `Run: aid update self`; no `layout_format` field is carried.
 
@@ -349,8 +351,10 @@ Any byte difference between copies therefore produces mixed, unpredictable behav
   - the root `CLAUDE.md` and `AGENTS.md` regions and their sources;
   - `README.md`, `docs/install.md` and `docs/aid-methodology.md`;
   - `.github/workflows/test.yml`;
-  - the five `profiles/*/README.md`, the `site/` docs, and the content-isolation checks in
-    `canonical/agents/aid-reviewer/AGENT.md`, which must accept the new placement;
+  - removal of the five profile README files with the full profile wipe; retained layout
+    documentation lives in the root README, `docs/` and `site/`;
+  - the `site/` docs and the content-isolation checks in `canonical/agents/aid-reviewer/AGENT.md`,
+    which must accept the new placement;
   - the KB docs that state the layout, including the content-isolation invariant in
     `.aid/knowledge/architecture.md` § Invariants, `G-10`, `G-11` and `G-13` in
     `.aid/knowledge/authoring-conventions.md`, and `quality-gates.md`, `artifact-schemas.md`,
@@ -502,9 +506,9 @@ CLI. The Claude Code docs (skills, settings reference, memory, changelog) were c
 
 - **AC-1:** Skills and runtime are no longer rendered.
   - After `python .claude/skills/generate-profile/scripts/run_generator.py`, which prints
-    `VERIFY (deterministic): PASS`, a stray file planted beforehand in the generated part of a
-    `profiles/<tool>/` tree (everything except its hand-kept `README.md`) is gone, and the tree
-    holds only the agents and `aid-tool.conf`, checked directly on the regenerated tree.
+    `VERIFY (deterministic): PASS`, a stray file and a `README.md` planted beforehand anywhere
+    in a `profiles/<tool>/` tree are gone. The complete file list of the regenerated tree holds
+    only the agents and `aid-tool.conf`, with no preservation exception.
   - `find profiles -type d \( -name skills -o -name aid \)` prints nothing.
 - **AC-2:** The release ships one skill set.
   - After `bash release.sh --dry-run`, the staging directory holds exactly one shared payload
@@ -611,8 +615,15 @@ CLI. The Claude Code docs (skills, settings reference, memory, changelog) were c
   - `.aid/settings.yml` `format_version` equals the new value.
 
   A second `aid update` prints `up to date` for every tool and leaves `.aid/.trash/` unchanged.
-  An `aid update` killed after the trash step and before the manifest write, then re-run, ends in
-  the same state (the AC-3 and AC-7 checks pass) and loses no non-AID file.
+  For both manifest-backed and manifest-less fixtures (including a two-tool fixture), an
+  `aid update` interrupted during retirement or after retirement but before the manifest write,
+  then re-run, reinstalls exactly the recorded target tools, passes AC-3 and AC-7, and loses no
+  non-AID file. The recovery record survives each failure and is absent after success. A retry
+  after retirement is recorded as complete never retires newly copied v4 files. An interruption
+  after the manifest and stamp are written but before record cleanup also recovers, without
+  changing the trash snapshot. Invalid recovery data, failed staging, and `--dry-run` leave the
+  repository snapshot unchanged; `aid add` and `aid remove` with a pending record exit 2, name
+  `aid update`, and write nothing.
 - **AC-14:** `CLAUDE.md` holds the `@AGENTS.md` import region exactly while Claude Code is
   installed, and `AGENTS.md` holds the pointer region. The *import region* is the three
   LF-terminated lines `<!-- AID:BEGIN -->`, `@AGENTS.md` and `<!-- AID:END -->`. The *pointer
@@ -677,7 +688,7 @@ CLI. The Claude Code docs (skills, settings reference, memory, changelog) were c
 
   The re-keyed `tests/canonical/test-dogfood-byte-identity.sh` passes.
 - **AC-19:** Docs and KB no longer state the old layout.
-  - `git grep -nE '\.(claude|codex|cursor|agent)/aid/|\.github/aid/' -- CLAUDE.md AGENTS.md README.md docs .github/workflows .aid/knowledge 'profiles/*/README.md' site ':!.aid/knowledge/release-tracking.md' ':!.aid/knowledge/kb.html'`
+  - `git grep -nE '\.(claude|codex|cursor|agent)/aid/|\.github/aid/' -- CLAUDE.md AGENTS.md README.md docs .github/workflows .aid/knowledge site ':!.aid/knowledge/release-tracking.md' ':!.aid/knowledge/kb.html'`
     prints no lines.
   - A reviewer confirms that `.aid/knowledge/architecture.md` § Invariants (content isolation) and
     criteria `G-10` and `G-11` in `.aid/knowledge/authoring-conventions.md` state the
@@ -905,7 +916,9 @@ line: `format 5 (was 4): shared skills under .agents/skills (+ CLI-owned mirrors
 .aid/runtime/, one AGENTS.md pointer region for every tool, a CLAUDE.md @AGENTS.md import region
 while claude-code is installed; manifest format_version 3`. A test keeps the three values in
 lockstep. The settings stamp is capped as follows: `_aid_migrate_repo` (and its PowerShell twin)
-writes `format_version: 5` only when the manifest is absent or records `format_version` 3.
+writes `format_version: 5` only when the manifest records `format_version` 3, or both the
+manifest and upgrade recovery record are absent. A manifest-less interrupted upgrade keeps
+stamp 4 until the fresh-install manifest is committed.
 Otherwise it writes `4`. The reason is that `aid update self` and `aid projects add` run
 `_aid_migrate_repo` without installing anything. Without the cap they would stamp a v3-layout repo
 as format 5, and the format gate would stop telling the user to run `aid update`.
@@ -988,8 +1001,8 @@ trash copy. That is replaced by this policy.
 **3. `aid add <t1>[,<t2>...]`** (1..N new tools; FR-10):
 
 1. Run the writability pre-check (unchanged).
-2. **Layout gate** (new `_aid_layout_gate`). A manifest exists and records `format_version` < 3, or
-   the settings stamp is < 5. Exit 2, print `This project uses the v3 AID layout. Run: aid update
+2. **Layout gate** (new `_aid_layout_gate`). A manifest exists and records `format_version` < 3,
+   the settings stamp is < 5, or the upgrade recovery record exists. Exit 2, print `This project uses the v3 AID layout. Run: aid update
    (it upgrades every installed tool), then retry aid add.`, and write nothing (AC-12).
 3. **Skew gate.** The manifest records a `tools.*.version` or a `shared.*.version` that differs
    from `aid_version`. Exit 2 and name `aid update` (AC-11).
@@ -1029,20 +1042,28 @@ trash copy. That is replaced by this policy.
 
 **4. `aid update [<tool>...]`.**
 
-1. Run the self-update preamble and the format gate (both unchanged). `repo > 5` is refused.
-2. The commit set is every installed tool plus any named tool, all at one version. A named
+1. Read-only format checks still refuse `repo > 5` or a manifest format above 3. Read and
+   validate an existing upgrade recovery record before any repository mutation; then run the
+   self-update preamble and format gate.
+2. A pending recovery record makes its target list authoritative, even if the install manifest
+   is absent or already format 3; a newly named tool outside that list is refused with a hint to
+   finish `aid update` first. Without a record, the commit set is every installed tool plus any
+   named tool, all at one version. A named
    tool-subset can no longer advance the shared files ahead of the other tools. When the subset
    is widened, the CLI prints a notice listing the tools it added.
 3. Stage everything (flow 2).
-4. If the CLI finds a v3 layout (a format-2 manifest, or the old `<root>/aid/` and
-   `<root>/skills/aid-*` paths), run steps 2 and 3 of [Upgrade from v3](#upgrade-from-v3-clean-slate)
-   (`retire_v3_layout`, then the fresh install). Otherwise run the flow 3 commit steps for all tools.
-5. Run `_aid_migrate_repo`, which now stamps 5.
+4. If the CLI finds a v3 layout or a pending recovery record, follow
+   [Upgrade from v3](#upgrade-from-v3-clean-slate), including durable tool selection before
+   retirement and skipping retirement when the record says it is complete. Otherwise run the
+   flow 3 commit steps for all tools.
+5. Run `_aid_migrate_repo`, which now stamps 5. Remove any recovery record only after every
+   install, prune and settings operation succeeds.
 
 `--dry-run` stops after staging. In addition to today's copy list, it prints the shared copies,
 the trash moves and the prune list.
 
-**5. `aid remove [<tool>...]`** (FR-8). This runs `uninstall_tool`, which dispatches on
+**5. `aid remove [<tool>...]`** (FR-8). While an upgrade recovery record exists, exit 2, name
+`aid update`, and write nothing. Otherwise run `uninstall_tool`, which dispatches on
 `format_version`.
 
 - **Format 2.** The existing legacy path, unchanged.
@@ -1184,7 +1205,9 @@ the agents, `AGENTS.md` and `CLAUDE.md` are committed (AC-18).
 - **`run_generator.py`.** Still the single full-render command. It wipes each `profiles/<tool>/`
   and regenerates it in full on every run, so the tree holds exactly the generated agents and
   `aid-tool.conf` (AC-1).
-- **`profiles/*/AGENTS.md` and `profiles/claude-code/CLAUDE.md`** are deleted.
+- **Profile root files**, including README files, `AGENTS.md` and `CLAUDE.md`, are deleted.
+  Task-005 first extracts the existing rules into `canonical/aid/rules.md`; task-003 depends on
+  that extraction before its full profile wipe.
 - **Profile trees.** Each `profiles/<tool>/` holds agents and `aid-tool.conf` only (FR-4).
 
 **Release (`release.sh`; FR-5).** Adds `build_shared_payload`, `build_tool_artifact` (replacing
@@ -1206,6 +1229,7 @@ implemented twice. The parity suite names every row (AC-16).
 | per-tool commit (agents) | `install_tool` (rewritten) | `Install-AidTool` (rewritten) |
 | host file | `write_host_conf` (new) | `Write-AidHostConf` (new) |
 | manifest v3 write and read | `manifest_write` and `_manifest_write_python` / `_manifest_write_bash` (v3); `manifest_format`, `manifest_read_shared`, `manifest_read_tool_files`, `manifest_read_host` (new) | `Write-AidManifest`, `Build-ManifestJson` (v3); `Read-AidManifestShared`, `Read-AidManifestToolFiles`, `Read-AidManifestHost` (new) |
+| upgrade recovery record | `read_upgrade_recovery`, `write_upgrade_recovery`, `clear_upgrade_recovery` (new) | `Read-AidUpgradeRecovery`, `Write-AidUpgradeRecovery`, `Clear-AidUpgradeRecovery` (new) |
 | clean-slate retire of the v3 layout | `retire_v3_layout` (new); `_migrate_retired_layout` (no longer sweeps `.agents/`) | `Invoke-RetireV3Layout` (new); `Invoke-MigrateRetiredLayout` |
 | path-based ownership | `_is_aid_owned_path` (new) | `Test-AidOwnedPath` (new) |
 | content-based root-region repair (`AGENTS.md`, `CLAUDE.md`) | `_repair_root_region` (new) | `Repair-AidRootRegion` (new) |
@@ -1312,7 +1336,7 @@ work.
 | AC-9, AC-10 | `tests/canonical/test-multitool-isolation.sh` (rewritten for the shared layout) | the ref-count sequence (including the `.gitattributes` block gone after the last remove) and the drift sequence exactly as worded |
 | AC-11 | `tests/canonical/test-aid-cli.sh` (FR11 cases extended) | skew refusals; the whole-tree sha snapshot is unchanged; versions are equal after `update` |
 | AC-12 | `tests/canonical/test-layout-format-guard.sh` (new) | carrier equality (three values); the new `aid add` on a v3-layout fixture exits 2, writes nothing and names `aid update`; a manifest with `format_version` above 3 is refused with `Run: aid update self` and writes nothing |
-| AC-13 | `tests/canonical/test-aid-migrate.sh` (new fixtures for all five tools plus legacy `.agents/aid/`) | as worded, including the interrupted-run re-run, the second-run `up to date` and the unchanged trash |
+| AC-13 | `tests/canonical/test-aid-migrate.sh` (new fixtures for all five tools plus legacy `.agents/aid/`) | as worded; manifest-less two-tool recovery, partial retirement, post-retirement and post-stamp interruptions, invalid-record refusal, staging failure, dry-run, add/remove gates, cleanup, and unchanged second-run trash |
 | AC-14 | `test-shared-install.sh` (cases a, b, e and f), `test-aid-migrate.sh` (case c: the user-edited and no-marker v3 fixtures), `test-multitool-isolation.sh` (case d) | as worded; plus function-level cases for `_repair_root_region`, `_ensure_claude_md_region` and `_remove_claude_md_region`, including a non-LF-terminated file, a duplicated or partial region, and a drifted region that is trashed before removal |
 | AC-15 | `test-aid-cli.sh`, `test-aid-cli-ps1.sh` | `detect_tool` and `Detect-Tool` |
 | AC-16 | `test-aid-cli-parity.sh` (scenarios for flows 3 to 8, plus a static check naming every twin row above), `test-install-parity.sh`, `test-ps51-compat.sh`; `tests/windows/Test-AidInstaller.ps1` (AC-9, AC-10 and AC-13 scenarios) | parity |
@@ -1339,31 +1363,58 @@ and the `.cursor/` tuple of the dogfood suite. Each gets a row in
 
 ##### Upgrade from v3 (clean slate)
 
-**Trigger.** `aid update` finds a v3 layout: a manifest with `format_version` 2, or the old paths
-`<root>/aid/` and `<root>/skills/aid-*`. `aid add` never upgrades; it refuses (flow 3).
+**Trigger.** `aid update` finds a v3 layout (a format-2 manifest or old AID-owned paths),
+or `.aid/.temp/v3-upgrade-tools.json` exists. `aid add` never upgrades; `aid add` and `aid remove`
+refuse while that record exists. Read-only format checks for unsupported future formats still
+win over recovery. Ordinary `aid update` without either trigger is unchanged.
+
+**Recovery record.** `.aid/.temp/v3-upgrade-tools.json` is reserved CLI recovery state, outside
+`.aid/runtime/` and the install manifest. It holds exactly
+`{"format_version":1,"tools":["claude-code","cursor"],"retired":false}` for the illustrated target
+set. `tools` is a non-empty, unique list of supported tool IDs in `AID_TOOLS` order; `retired` is a
+boolean. No paths, per-file progress, version stamps, or `migration` key are stored. Reject
+unsupported record formats, unknown/duplicate tools, missing or extra fields, malformed JSON,
+and symlinks or non-regular record files before any repository write; leave the record untouched and exit 2
+with a recovery-data diagnostic. Do not overwrite an existing invalid file at the reserved path.
+Both record writes use a same-directory temporary file and atomic rename; failure aborts before
+the next destructive step. Bash and PowerShell emit the same record bytes.
 
 **Steps.**
 
-1. Stage and validate everything (flow 2). A failure here means no write at all.
-2. `retire_v3_layout` moves every old AID-owned path into `.aid/.trash/<original-path>` (collision
-   policy as usual), using the path-based `_is_aid_owned_path` rule (FR-11). For `AGENTS.md` and
-   `CLAUDE.md` it copies the whole file to the trash and removes the old AID region, marker lines
-   included; a file left empty or whitespace-only is deleted, and a file with no well-formed
-   region stays unchanged. Emptied directories are removed, never `<root>`. User files are never
-   moved or deleted.
-3. A normal fresh v4 install of the same tools (the manifest's tools, or the tools whose old roots
-   held AID-owned paths): the flow 3 commit steps, the flow 6 prune, then `_aid_migrate_repo`,
-   which stamps 5.
+1. Resolve the target set before retirement: the valid format-2 manifest's tools, or, without
+   one, the tools whose old roots still hold AID-owned paths (legacy `.agents/aid/` maps to Codex),
+   plus any tools named in the update. An existing valid record overrides this discovery and any
+   partial install manifest. A newly named tool outside a pending record's set is refused until
+   recovery finishes. Stage and validate the shared payload and every recorded target's artifact
+   (flow 2). Staging failure and `--dry-run` create, change, and remove no record or other
+   repository file. Dry-run only reports the target set and the planned operations.
+2. If no record exists, write the resolved set with `retired=false` atomically before moving any
+   old path. With `retired=false`, `retire_v3_layout` moves every remaining old AID-owned path
+   into `.aid/.trash/<original-path>` (collision policy), using `_is_aid_owned_path` (FR-11).
+   For `AGENTS.md` and `CLAUDE.md`, copy the whole file to the trash and remove its old AID
+   region, marker lines included; delete a file left empty or whitespace-only, and leave a file
+   with no well-formed region unchanged. Remove emptied directories, never `<root>`. User files
+   are never moved or deleted. After every retirement operation succeeds, atomically set
+   `retired=true` before writing any v4 file. With `retired=true`, skip retirement entirely.
+3. Run the normal fresh v4 install for exactly the recorded tools: the flow 3 commit steps,
+   flow 6 prune and `_aid_migrate_repo` (stamp 5). The manifest lists the full recorded target
+   set. Keep the record on any error, including copy, manifest, prune, or settings failures.
+4. Remove the record only after every operation in step 3 succeeds. If cleanup fails, return
+   non-zero and leave the record for another `aid update`; do not claim completion.
 
 The run prints `N old AID file(s) moved to .aid/.trash/ (safe to delete once you have checked
 them)`.
 
-**Interruption and recovery.** There is no resume key, no journal and no step ordering. An
-interrupted run is fixed by re-running `aid update`: step 2 only moves files, so a re-run finds
-fewer old paths, and step 3 is the idempotent fresh install. To undo, restore from
-`.aid/.trash/<original-path>` (the newest copy sits at the original path, older copies carry a
-timestamp suffix) or from version control. A v3 CLI cannot drive a v4 layout (release notes: `v4
-requires CLI v4`).
+**Interruption and recovery.** Re-running `aid update` stages the whole recorded tool set again.
+If `retired=false`, only the remaining v3 paths are retired; v4 copying has not started. If
+`retired=true`, no retirement runs, even when the manifest is absent or already format 3, so
+newly copied v4 files are not mistaken for old files. The fresh-install steps are idempotent;
+a retry after the manifest and stamp but before cleanup leaves the trash unchanged and removes
+the record after success. This bounded tool-set/retirement record replaces the blanket
+"no resume key" rule; no per-file journal or recovery for a v3 CLI is introduced. To undo,
+restore `.aid/.trash/<original-path>` (the newest copy is at the original path, older copies
+carry a timestamp suffix) or version control, then remove the record only after restoring the
+v3 tree. A v3 CLI cannot drive a v4 layout (`v4 requires CLI v4`).
 
 A second run on an upgraded repo prints `up to date` for `shared` and for every tool and leaves
 `.aid/.trash/` unchanged (AC-13).
