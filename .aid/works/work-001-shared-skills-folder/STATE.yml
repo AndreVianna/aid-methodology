@@ -118,7 +118,7 @@ phase: Execute
 # [W] aid-{skill} | none
 active_skill: aid-execute
 # [W]
-updated: '2026-10-11T15:00:28Z'
+updated: '2026-10-11T15:00:29Z'
 # [W] set only when lifecycle = Paused-Awaiting-Input
 pause_reason: --
 # [W] set only when lifecycle = Blocked
@@ -740,6 +740,11 @@ lifecycle_history:
     grade: --
     notes: '/aid-execute Codex'
 
+  - date: '2026-10-11'
+    event: 'Task014 In Progress for Luna execution: stage all installed plus named tools at one version, shared/tool commit order and drift-safe copy, update-all shared cache, read-only dry-run copy/trash/prune plans, idempotence and legacy/recovery dispatch placeholder until task015. 15/32 Done; Sol wave10 review follows; PS runtime deferred.'
+    grade: --
+    notes: '/aid-execute Codex'
+
 deploy: []
 
 # [A] flattened only; single writer: this work's active branch. Written by
@@ -981,7 +986,7 @@ tasks_lifecycle:
         outcome: 'Task013 Luna correctiondff0c7d9a committed: recorded runtime node_modules excluded before existence/hash checks in both twins; extras include plain aid-* files and unrecorded/empty namespaces; drift block includes Shared files heading. Expanded offline fixture/syntax/diff/ASCII29 pass. In Review for independent Sol wave9 recheck; PS runtime deferred.'
 
   task-014:
-    state: Pending
+    state: 'In Progress'
     review: --
     elapsed: --
     notes: --

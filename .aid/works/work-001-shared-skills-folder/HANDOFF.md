@@ -6,14 +6,14 @@ maintainer approved execution. Current phase `Execute`, lifecycle `Running`.
 
 ## Current execution checkpoint
 
-Wave9 Sol independent recheck PASS A+: all three findings Fixed in both twins. Present/missing recorded node_modules ignored, loose/empty owned extras reported, heading correct and target bytes unchanged; syntax/diff pass. Task013 Done, waves1-9 complete,15/32 Done. Next task014 all-tool shared update; PS runtime/AST deferred.
+Task014 In Progress for Luna execution: stage all installed plus named tools at one version, shared/tool commit order and drift-safe copy, update-all shared cache, read-only dry-run copy/trash/prune plans, idempotence and legacy/recovery dispatch placeholder until task015. 15/32 Done; Sol wave10 review follows; PS runtime deferred.
 
 - Done (15/32): task-001, task-002, task-003, task-004, task-005, task-006, task-007, task-008, task-009, task-010, task-011, task-012, task-013, task-016, task-022.
-- In Progress: none.
+- In Progress: task-014.
 - In Review: none.
 - Failed/Blocked: none.
-- Pending: task-014, task-015, task-017, task-018, task-019, task-020, task-021, task-023, task-024, task-025, task-026, task-027, task-028, task-029, task-030, task-031, task-032.
-- Current wave: 9 of 15. Derive authoritative waves from task dependency headers.
+- Pending: task-015, task-017, task-018, task-019, task-020, task-021, task-023, task-024, task-025, task-026, task-027, task-028, task-029, task-030, task-031, task-032.
+- Current wave: 10 of 15. Derive authoritative waves from task dependency headers.
 - Execution commits are on the delivery branch; `work-001` holds pre-execution planning.
 - Wave ledgers: `review-ledgers/execute-wave-N.md`; each preserves unresolved/Accepted findings.
 - Wave-1 Accepted item: Bash `_v3_quote` versus Python `json.dump` non-ASCII escaping; recheck at final review.
