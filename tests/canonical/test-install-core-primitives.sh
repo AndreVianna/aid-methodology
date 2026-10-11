@@ -166,12 +166,13 @@ if command -v pwsh >/dev/null 2>&1; then
             $hash = script:Invoke-EnsureClaudeMdRegion -File $claude -Root $root
             Assert-Bytes $claude $script:_AidClaudeImportRegion "missing CLAUDE.md"
             script:Invoke-RemoveClaudeMdRegion -File $claude -RecordedSha256 $hash -Root $root
-            if (Test-Path -LiteralPath $claude) { throw "Claude created-only removal" }
-            $user = "user`r`n"
-            [System.IO.File]::WriteAllText($claude, $user, (New-Object System.Text.UTF8Encoding($false)))
-            $hash = script:Invoke-EnsureClaudeMdRegion -File $claude -Root $root
-            script:Invoke-RemoveClaudeMdRegion -File $claude -RecordedSha256 $hash -Root $root
-            Assert-Bytes $claude $user "Claude add/remove preservation"
+            if (Test-Path -LiteralPath $claude) { throw "Claude LF-only import removal" }
+            foreach ($user in @("user`n", "user`r`n")) {
+                [System.IO.File]::WriteAllText($claude, $user, (New-Object System.Text.UTF8Encoding($false)))
+                $hash = script:Invoke-EnsureClaudeMdRegion -File $claude -Root $root
+                script:Invoke-RemoveClaudeMdRegion -File $claude -RecordedSha256 $hash -Root $root
+                Assert-Bytes $claude $user "Claude LF/CRLF add/remove preservation"
+            }
             $conf = Join-Path $root "aid-tool.conf"
             [System.IO.File]::WriteAllText($conf, "rules_inline=true`n", [System.Text.Encoding]::ASCII)
             $runtime = Join-Path (Join-Path $root ".aid") "runtime"
@@ -180,8 +181,10 @@ if command -v pwsh >/dev/null 2>&1; then
             script:Copy-RootAgentFile -Src $agents -Dst $agents -Tool "codex"
             if (-not ([System.IO.File]::ReadAllText($agents).Contains("inline rule"))) { throw "rules_inline fallback" }
             $manifest = Join-Path $root "manifest.json"
-            [System.IO.File]::WriteAllText($manifest, '{"tools":{"claude-code":{"rules_inline":true},"codex":{"rules_inline":false}}}', [System.Text.Encoding]::ASCII)
-            Remove-Item -LiteralPath $conf -Force
+            # Missing optional fields must not stop scanning before a later true entry.
+            $manifestJson = "{`"tools`":{`"codex`":{},`"claude-code`":{`"rules_inline`":true}}}"
+            [System.IO.File]::WriteAllText($manifest, $manifestJson, [System.Text.Encoding]::ASCII)
+            [System.IO.File]::WriteAllText($conf, "tool=codex`n", [System.Text.Encoding]::ASCII)
             [System.IO.File]::WriteAllText($agents, "before`r`n<!-- AID:BEGIN -->`r`nold span`r`n<!-- AID:END -->`r`nafter`n", (New-Object System.Text.UTF8Encoding($false)))
             script:Copy-RootAgentFile -Src $agents -Dst $agents -Tool "codex" -Manifest $manifest
             $repaired = [System.IO.File]::ReadAllBytes($agents)

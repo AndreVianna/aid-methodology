@@ -750,7 +750,7 @@ function script:Invoke-RemoveClaudeMdRegion {
     $begin = $begins[0]; $end = $ends[0]
     $start = $begin.Index
     $finish = $end.Index + $end.Length
-    if ($finish -lt $text.Length -and $text.Substring($finish, 2) -ceq "`r`n") { $finish += 2 }
+    if ($finish + 2 -le $text.Length -and $text.Substring($finish, 2) -ceq "`r`n") { $finish += 2 }
     elseif ($finish -lt $text.Length -and $text.Substring($finish, 1) -ceq "`n") { $finish++ }
     $matchText = $text.Substring($start, $finish - $start)
     $canonical = $matchText.Replace("`r`n", "`n")
@@ -794,11 +794,14 @@ function script:Copy-RootAgentFile {
     $beforeSha = if ($hadDst) { Get-Sha256File -FilePath $Dst } else { '' }
     $inline = $false
     $conf = Join-Path ([System.IO.Path]::GetDirectoryName($Src)) 'aid-tool.conf'
-    if (Test-Path -LiteralPath $conf -PathType Leaf) { $inline = [bool](Get-Content -LiteralPath $conf | Where-Object { $_ -ceq 'rules_inline=true' }) }
+    if (Test-Path -LiteralPath $conf -PathType Leaf) { $inline = @(Get-Content -LiteralPath $conf | Where-Object { $_ -ceq 'rules_inline=true' }).Count -gt 0 }
     if ($Manifest -and (Test-Path -LiteralPath $Manifest -PathType Leaf)) {
         try {
             $manifestData = Get-Content -LiteralPath $Manifest -Raw | ConvertFrom-Json
-            foreach ($entry in $manifestData.tools.PSObject.Properties) { if ($entry.Value.rules_inline -eq $true) { $inline = $true; break } }
+            foreach ($entry in $manifestData.tools.PSObject.Properties) {
+                $inlineProperty = $entry.Value.PSObject.Properties['rules_inline']
+                if ($inlineProperty -and $inlineProperty.Value -eq $true) { $inline = $true; break }
+            }
         } catch {}
     }
     if ($inline) {
