@@ -6,11 +6,11 @@ maintainer approved execution. Current phase `Execute`, lifecycle `Running`.
 
 ## Current execution checkpoint
 
-Task015 In Progress for sequential Luna v3 clean-slate retirement/recovery execution. Validate authoritative reserved recovery record before mutations, stage all targettools, durable retired=false/true atomic boundaries, path-owned legacy trash with user-content preservation, fresh shared install and record cleanup only after success.16/32 Done; task017/018 tests follow before Sol wave11 review. PS runtime deferred.
+Task015 committed7ce93d34b: v3 path retirement, strict authoritative atomic recovery records, gated retries/fresh install and pending add/remove refusal in Bash/PS. Focused ownership/schema/symlink/dryrun fixtures, real upgrade, retiredtrue exact two-tool retry, staging/future/gate snapshots pass; syntax/diff/ASCII29 pass. In Review pending wave11 Sol after tasks017/018; PS runtime deferred, broader upgrade suite task021.
 
 - Done (16/32): task-001, task-002, task-003, task-004, task-005, task-006, task-007, task-008, task-009, task-010, task-011, task-012, task-013, task-014, task-016, task-022.
-- In Progress: task-015.
-- In Review: none.
+- In Progress: none.
+- In Review: task-015.
 - Failed/Blocked: none.
 - Pending: task-017, task-018, task-019, task-020, task-021, task-023, task-024, task-025, task-026, task-027, task-028, task-029, task-030, task-031, task-032.
 - Current wave: 11 of 15. Derive authoritative waves from task dependency headers.
