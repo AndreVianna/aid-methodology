@@ -6,11 +6,11 @@ maintainer approved execution. Current phase `Execute`, lifecycle `Running`.
 
 ## Current execution checkpoint
 
-Wave10 independent Sol recheck: original HIGH/MEDIUM Fixed; focused dry-run regression passes. New MEDIUM Pending row3: PS planner excludes nested runtime files named host.conf by basename although real prune trashes them; only root runtime/host.conf is generated. Task014 In Progress for allowed separate Sol executor correction; PS runtime deferred and cache verification already passed.
+Task014 separate Sol correctionf43787731 committed: PS dry-run protects only root runtime host.conf, nested scripts/host.conf planned/trash regression added plus optional PS fixture. Focused fixture/syntax/diff/ASCII pass, dryrun immutable and root retained. In Review for original Sol reviewer final wave10 recheck; PS runtime deferred.
 
 - Done (15/32): task-001, task-002, task-003, task-004, task-005, task-006, task-007, task-008, task-009, task-010, task-011, task-012, task-013, task-016, task-022.
-- In Progress: task-014.
-- In Review: none.
+- In Progress: none.
+- In Review: task-014.
 - Failed/Blocked: none.
 - Pending: task-015, task-017, task-018, task-019, task-020, task-021, task-023, task-024, task-025, task-026, task-027, task-028, task-029, task-030, task-031, task-032.
 - Current wave: 10 of 15. Derive authoritative waves from task dependency headers.
