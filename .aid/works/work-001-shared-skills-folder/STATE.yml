@@ -118,7 +118,7 @@ phase: Execute
 # [W] aid-{skill} | none
 active_skill: aid-execute
 # [W]
-updated: '2026-10-11T07:09:54Z'
+updated: '2026-10-11T07:10:54Z'
 # [W] set only when lifecycle = Paused-Awaiting-Input
 pause_reason: --
 # [W] set only when lifecycle = Blocked
@@ -630,6 +630,11 @@ lifecycle_history:
     grade: --
     notes: '/aid-execute Codex'
 
+  - date: '2026-10-11'
+    event: 'Task009 Luna correction e43e8416b committed: PowerShell Claude import path and fallback host metadata now use interpolated TSV tabs; adjacent new records inspected with no remaining single-quoted tab escapes. ASCII29 and diff pass. In Review for independent Sol wave6 recheck; PS runtime deferred.'
+    grade: --
+    notes: '/aid-execute Codex'
+
 deploy: []
 
 # [A] flattened only; single writer: this work's active branch. Written by
@@ -776,7 +781,7 @@ tasks_lifecycle:
         outcome: 'Task008 separate Sol executor correction5ede6bddc committed: empty parsed records skipped, four empty/comment-only shared/tool descriptor regressions require proper filename/key diagnostics and unchanged targets. Focused suite37pass, syntax/diffpass. In Review for original Sol reviewer independent wave5 final recheck; task009 pending.'
 
   task-009:
-    state: 'In Progress'
+    state: 'In Review'
     review: --
     elapsed: --
     notes: --
@@ -787,6 +792,12 @@ tasks_lifecycle:
         eta_band: '3-8 min'
         actual: '16m55s'
         outcome: 'Task009 committed f1dd5ac29: shared payload placement, agents-only tool installs and atomic format3 manifest. Five fresh Bash tools, Cursor-to-Claude refcounts/import/user bytes, non-AID preservation, drift trash/repair, CRLF canonical region hash, inline rules and preserved metadata pass; primitives93, ASCII29, syntax/diff pass. In Review for Sol wave6; PowerShell runtime parity deferred.'
+
+      - date: '2026-10-11T07:10:54.021102+00:00'
+        agent: 'gpt-6-luna'
+        eta_band: '3-8 min'
+        actual: '0m49s'
+        outcome: 'Task009 Luna correction e43e8416b committed: PowerShell Claude import path and fallback host metadata now use interpolated TSV tabs; adjacent new records inspected with no remaining single-quoted tab escapes. ASCII29 and diff pass. In Review for independent Sol wave6 recheck; PS runtime deferred.'
 
   task-010:
     state: Pending
