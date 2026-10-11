@@ -6,11 +6,11 @@ maintainer approved execution. Current phase `Execute`, lifecycle `Running`.
 
 ## Current execution checkpoint
 
-Task009 Luna correction e43e8416b committed: PowerShell Claude import path and fallback host metadata now use interpolated TSV tabs; adjacent new records inspected with no remaining single-quoted tab escapes. ASCII29 and diff pass. In Review for independent Sol wave6 recheck; PS runtime deferred.
+Wave6 Sol quick verification PASS A+: sole MEDIUM Fixed after independent static TSV recheck, no matching quoting residue. Task009 Done, waves1-6 complete (11/32 tasks). Focused shared placement checks passed; PS runtime deferred. Next task010 pruning, host.conf, ignore/attributes blocks and runtime settings seed.
 
-- Done (10/32): task-001, task-002, task-003, task-004, task-005, task-006, task-007, task-008, task-011, task-016.
+- Done (11/32): task-001, task-002, task-003, task-004, task-005, task-006, task-007, task-008, task-009, task-011, task-016.
 - In Progress: none.
-- In Review: task-009.
+- In Review: none.
 - Failed/Blocked: none.
 - Pending: task-010, task-012, task-013, task-014, task-015, task-017, task-018, task-019, task-020, task-021, task-022, task-023, task-024, task-025, task-026, task-027, task-028, task-029, task-030, task-031, task-032.
 - Current wave: 6 of 15. Derive authoritative waves from task dependency headers.

@@ -118,7 +118,7 @@ phase: Execute
 # [W] aid-{skill} | none
 active_skill: aid-execute
 # [W]
-updated: '2026-10-11T07:10:54Z'
+updated: '2026-10-11T07:11:28Z'
 # [W] set only when lifecycle = Paused-Awaiting-Input
 pause_reason: --
 # [W] set only when lifecycle = Blocked
@@ -635,6 +635,11 @@ lifecycle_history:
     grade: --
     notes: '/aid-execute Codex'
 
+  - date: '2026-10-11'
+    event: 'Wave6 Sol quick verification PASS A+: sole MEDIUM Fixed after independent static TSV recheck, no matching quoting residue. Task009 Done, waves1-6 complete (11/32 tasks). Focused shared placement checks passed; PS runtime deferred. Next task010 pruning, host.conf, ignore/attributes blocks and runtime settings seed.'
+    grade: --
+    notes: '/aid-execute Codex'
+
 deploy: []
 
 # [A] flattened only; single writer: this work's active branch. Written by
@@ -781,7 +786,7 @@ tasks_lifecycle:
         outcome: 'Task008 separate Sol executor correction5ede6bddc committed: empty parsed records skipped, four empty/comment-only shared/tool descriptor regressions require proper filename/key diagnostics and unchanged targets. Focused suite37pass, syntax/diffpass. In Review for original Sol reviewer independent wave5 final recheck; task009 pending.'
 
   task-009:
-    state: 'In Review'
+    state: Done
     review: --
     elapsed: --
     notes: --
