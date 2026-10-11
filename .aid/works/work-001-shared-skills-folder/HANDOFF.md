@@ -6,7 +6,7 @@ maintainer approved execution. Current phase `Execute`, lifecycle `Running`.
 
 ## Current execution checkpoint
 
-Task012 In Progress for sequential Luna execution of reference-counted format3 removal, last-user root-region behavior, metadata-derived host/inline rewrite and attributes cleanup; format2 legacy dispatch preserved. 12/32 Done; task022 follows sequentially in wave8 before Sol quick review. PowerShell runtime deferred.
+Task012 In Progress with uncommitted Bash/PowerShell removal cores and tests/canonical/test-shared-remove.sh. Luna reported26 focused checks pass and manual inline-to-pointer pass; final verification/commit not reported. Agent manager shows pending_init, no check process running; continuation requested. Waves1-7 verified, 12/32 Done, task022 not started. No usage-meter capability; PS runtime deferred.
 
 - Done (12/32): task-001, task-002, task-003, task-004, task-005, task-006, task-007, task-008, task-009, task-010, task-011, task-016.
 - In Progress: task-012.
