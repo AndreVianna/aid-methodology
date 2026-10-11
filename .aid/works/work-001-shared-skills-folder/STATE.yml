@@ -118,7 +118,7 @@ phase: Execute
 # [W] aid-{skill} | none
 active_skill: aid-execute
 # [W]
-updated: '2026-10-11T16:43:28Z'
+updated: '2026-10-11T16:47:52Z'
 # [W] set only when lifecycle = Paused-Awaiting-Input
 pause_reason: --
 # [W] set only when lifecycle = Blocked
@@ -870,6 +870,11 @@ lifecycle_history:
     grade: --
     notes: '/aid-execute Codex'
 
+  - date: '2026-10-11'
+    event: 'Task006 new bare-project stamp correction53ad2967c committed in core twins. Focused CLI suite251/251 now passes including019 M07. ASCII29/29, syntax/diff and CRLF/UTF8/future-stamp preservation probes pass; PS execution deferred. Tasks006/019 In Review for scoped Sol quick verification before dependent020.'
+    grade: --
+    notes: '/aid-execute Codex'
+
 deploy: []
 
 # [A] flattened only; single writer: this work's active branch. Written by
@@ -953,7 +958,7 @@ tasks_lifecycle:
         outcome: 'committed 3b3680e1a; primitives93 and ASCII29 passed; PS static-only'
 
   task-006:
-    state: 'In Progress'
+    state: 'In Review'
     review: --
     elapsed: --
     notes: --
@@ -970,6 +975,12 @@ tasks_lifecycle:
         eta_band: '3-8 min'
         actual: '1m39s'
         outcome: 'committed ed2db382e; 2 recovery-stamp fixtures and ASCII passed'
+
+      - date: '2026-10-11T16:47:52.265672+00:00'
+        agent: 'gpt-6-luna'
+        eta_band: '3-8 min'
+        actual: '4m13s'
+        outcome: 'Task006 new bare-project stamp correction53ad2967c committed in core twins. Focused CLI suite251/251 now passes including019 M07. ASCII29/29, syntax/diff and CRLF/UTF8/future-stamp preservation probes pass; PS execution deferred. Tasks006/019 In Review for scoped Sol quick verification before dependent020.'
 
   task-007:
     state: Done

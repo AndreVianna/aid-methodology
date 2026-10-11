@@ -6,11 +6,11 @@ maintainer approved execution. Current phase `Execute`, lifecycle `Running`.
 
 ## Current execution checkpoint
 
-Reopened task006 for new wave12 bare-project source finding M07: valid add against empty format2 manifest and stamp4 installs format3 payload but leaves stamp4. Separate Luna correction followed by focused CLI rerun and Sol quick verification before task020; task019 remains In Review. Source repro retained, no unrelated files to change.
+Task006 new bare-project stamp correction53ad2967c committed in core twins. Focused CLI suite251/251 now passes including019 M07. ASCII29/29, syntax/diff and CRLF/UTF8/future-stamp preservation probes pass; PS execution deferred. Tasks006/019 In Review for scoped Sol quick verification before dependent020.
 
 - Done (18/32): task-001, task-002, task-003, task-004, task-005, task-007, task-008, task-009, task-010, task-011, task-012, task-013, task-014, task-015, task-016, task-017, task-018, task-022.
-- In Progress: task-006.
-- In Review: task-019.
+- In Progress: none.
+- In Review: task-006, task-019.
 - Failed/Blocked: none.
 - Pending: task-020, task-021, task-023, task-024, task-025, task-026, task-027, task-028, task-029, task-030, task-031, task-032.
 - Current wave: 12 of 15. Derive authoritative waves from task dependency headers.
