@@ -118,7 +118,7 @@ phase: Execute
 # [W] aid-{skill} | none
 active_skill: aid-execute
 # [W]
-updated: '2026-10-11T14:33:18Z'
+updated: '2026-10-11T14:33:20Z'
 # [W] set only when lifecycle = Paused-Awaiting-Input
 pause_reason: --
 # [W] set only when lifecycle = Blocked
@@ -680,6 +680,11 @@ lifecycle_history:
     grade: --
     notes: '/aid-execute Codex'
 
+  - date: '2026-10-11'
+    event: 'Task012 committed and In Review with focused28/28; task022 now In Progress for sequential Luna CLI-backed worktree tests using installed runtime host.conf and managed ignores. Wave8 Sol quick review follows both task commits. 12/32 Done, no Failed/Blocked; PowerShell runtime deferred.'
+    grade: --
+    notes: '/aid-execute Codex'
+
 deploy: []
 
 # [A] flattened only; single writer: this work's active branch. Written by
@@ -957,7 +962,7 @@ tasks_lifecycle:
     notes: --
     display_name: --
   task-022:
-    state: Pending
+    state: 'In Progress'
     review: --
     elapsed: --
     notes: --

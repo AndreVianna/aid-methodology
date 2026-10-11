@@ -6,13 +6,13 @@ maintainer approved execution. Current phase `Execute`, lifecycle `Running`.
 
 ## Current execution checkpoint
 
-Task012 resumed and committed c07a0fe9a: reference-counted format3 removal, last-user root/import/attributes cleanup, host/inline rewrites and legacyformat2 dispatch. Focused offline regression28/28, Bash syntax, ASCII29 and diff pass. In Review pending wave8 Sol check after sequential task022. Execution-agent pending initialization cleared; PS runtime/AST checks deferred.
+Task012 committed and In Review with focused28/28; task022 now In Progress for sequential Luna CLI-backed worktree tests using installed runtime host.conf and managed ignores. Wave8 Sol quick review follows both task commits. 12/32 Done, no Failed/Blocked; PowerShell runtime deferred.
 
 - Done (12/32): task-001, task-002, task-003, task-004, task-005, task-006, task-007, task-008, task-009, task-010, task-011, task-016.
-- In Progress: none.
+- In Progress: task-022.
 - In Review: task-012.
 - Failed/Blocked: none.
-- Pending: task-013, task-014, task-015, task-017, task-018, task-019, task-020, task-021, task-022, task-023, task-024, task-025, task-026, task-027, task-028, task-029, task-030, task-031, task-032.
+- Pending: task-013, task-014, task-015, task-017, task-018, task-019, task-020, task-021, task-023, task-024, task-025, task-026, task-027, task-028, task-029, task-030, task-031, task-032.
 - Current wave: 8 of 15. Derive authoritative waves from task dependency headers.
 - Execution commits are on the delivery branch; `work-001` holds pre-execution planning.
 - Wave ledgers: `review-ledgers/execute-wave-N.md`; each preserves unresolved/Accepted findings.
