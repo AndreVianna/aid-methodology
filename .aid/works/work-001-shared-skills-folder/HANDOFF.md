@@ -6,7 +6,7 @@ maintainer approved execution. Current phase `Execute`, lifecycle `Running`.
 
 ## Current execution checkpoint
 
-Wave12 begins sequential Luna task019 CLI suite rekey plus skew/detection/bare-project/cache regressions. Wave11 complete A+;19/32 Done. Focused checks only, PS runtime/full gates deferred.
+Task019 focused CLI rekey in progress; corrected fixture paths/commands and valid runs confirm source006 bare-project defect: add on empty format2 manifest+settings stamp4 writes format3 manifest but leaves stamp4. Preserved repro .local/tmp/tmp.5cPXEoKX0u and /tmp/task019-m07.out. Other version/detection/cache/future guard cases pass. Finish valid test artifact commit, then reopen006 for Luna source correction and independent Sol verification before advancing. Full gates031 and PS runtime deferred.
 
 - Done (19/32): task-001, task-002, task-003, task-004, task-005, task-006, task-007, task-008, task-009, task-010, task-011, task-012, task-013, task-014, task-015, task-016, task-017, task-018, task-022.
 - In Progress: task-019.

@@ -118,7 +118,7 @@ phase: Execute
 # [W] aid-{skill} | none
 active_skill: aid-execute
 # [W]
-updated: '2026-10-11T16:23:41Z'
+updated: '2026-10-11T16:42:23Z'
 # [W] set only when lifecycle = Paused-Awaiting-Input
 pause_reason: --
 # [W] set only when lifecycle = Blocked
@@ -852,6 +852,11 @@ lifecycle_history:
 
   - date: '2026-10-11'
     event: 'Wave12 begins sequential Luna task019 CLI suite rekey plus skew/detection/bare-project/cache regressions. Wave11 complete A+;19/32 Done. Focused checks only, PS runtime/full gates deferred.'
+    grade: --
+    notes: '/aid-execute Codex'
+
+  - date: '2026-10-11'
+    event: 'Task019 focused CLI rekey in progress; corrected fixture paths/commands and valid runs confirm source006 bare-project defect: add on empty format2 manifest+settings stamp4 writes format3 manifest but leaves stamp4. Preserved repro .local/tmp/tmp.5cPXEoKX0u and /tmp/task019-m07.out. Other version/detection/cache/future guard cases pass. Finish valid test artifact commit, then reopen006 for Luna source correction and independent Sol verification before advancing. Full gates031 and PS runtime deferred.'
     grade: --
     notes: '/aid-execute Codex'
 
