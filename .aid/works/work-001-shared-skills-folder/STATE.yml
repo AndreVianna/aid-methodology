@@ -112,15 +112,15 @@ minimum_grade: A
 # [W] 'yes' | 'no' -- quoted, see NFR-2 / D-5
 user_approved: 'no'
 # [W] Running | Paused-Awaiting-Input | Blocked | Completed | Canceled
-lifecycle: Running
+lifecycle: Paused-Awaiting-Input
 # [W] Describe | Define | Specify | Plan | Detail | Execute
 phase: Detail
 # [W] aid-{skill} | none
 active_skill: aid-update
 # [W]
-updated: '2026-10-10T22:20:00Z'
+updated: '2026-10-11T00:30:00Z'
 # [W] set only when lifecycle = Paused-Awaiting-Input
-pause_reason: --
+pause_reason: 'GATE pass 1 cycle 2 graded C+ (11 fixed; 1 MEDIUM + 6 LOW new; 18 MINOR parked); awaiting maintainer decision'
 # [W] set only when lifecycle = Blocked
 block_reason: --
 # [W] e.g. IMPEDIMENT-task-NNN.md, or the failed gate
@@ -261,6 +261,10 @@ lifecycle_history:
   - date: '2026-10-11'
     event: 'GATE Pass 1 FIX cycle 1 started -- maintainer scoped the fix to ledger rows 1-4, 6, 10, 12-16; 14 other rows reclassified MINOR; one agent per fix, sequential; Opus re-review then pause'
     grade: --
+    notes: '/aid-update GATE defn'
+  - date: '2026-10-11'
+    event: 'GATE Pass 1 cycle 2 reviewed (Opus, scoped) -- 11 scoped rows Fixed; 7 new (1 MEDIUM, 6 LOW); 18 MINOR parked; paused for maintainer decision'
+    grade: 'C+'
     notes: '/aid-update GATE defn'
 
 # [A] aid-deploy only; one entry per delivery (never derived from child
