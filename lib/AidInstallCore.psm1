@@ -1306,7 +1306,7 @@ function script:Sort-AidOrdinal {
 function script:Build-AidV3Files {
     param($Records)
     $out = New-Object System.Collections.Generic.List[object]
-    foreach ($r in @(script:Sort-AidOrdinal $Records)) {
+    foreach ($r in (script:Sort-AidOrdinal $Records)) {
         $p = $r.Split("`t")
         $od = [System.Collections.Specialized.OrderedDictionary]::new()
         $od['path'] = $p[0]
@@ -1416,7 +1416,7 @@ function Write-AidManifestV3 {
         $shared[$e] = $ent
     }
 
-    $mrecs = @(script:Sort-AidOrdinal ($lists['shared.mirror']))
+    $mrecs = (script:Sort-AidOrdinal ($lists['shared.mirror']))
     $seenDirs = New-Object System.Collections.Generic.HashSet[string]
     foreach ($r in $mrecs) {
         $d = $r.Split("`t")[0]
@@ -1788,7 +1788,7 @@ function Invoke-PruneShared {
             }
         }
     }
-    $sharedRows = @(Read-AidManifestShared -ManifestPath $manifest)
+    $sharedRows = (Read-AidManifestShared -ManifestPath $manifest)
     foreach ($row in $sharedRows) { $p=$row.Split("`t"); if ($p[0] -eq 'shared.mirror' -and $p.Count -ge 2) { [void]$roots.Add($p[1]) } }
     foreach ($row in $sharedRows) {
         $p=$row.Split("`t")
@@ -2102,7 +2102,7 @@ function script:Get-AidGitignoreBlock {
     $worktree = '.aid/.worktrees'
     $manifest = Join-Path $Target '.aid/.aid-manifest.json'
     if (Test-Path -LiteralPath $manifest -PathType Leaf) {
-        $hostRows = @(Read-AidManifestHost -ManifestPath $manifest)
+        $hostRows = (Read-AidManifestHost -ManifestPath $manifest)
         foreach ($row in $hostRows) { $p=$row.Split("`t"); if ($p.Count -ge 2 -and $p[0] -eq 'host.worktree_root') { $worktree=$p[1]; break } }
     }
     $lines = @(
@@ -2595,9 +2595,9 @@ function Install-AidShared {
         Copy-AidFileGuarded -Src $f.FullName -Dst $dst -RecordedSha256 $oldHashes["shared.runtime.file:$rel"] -Root $Target -AidVerbose $AidVerbose
     } }
     if ($script:_CopyCountFailed -gt 0) { throw "AidInstallCore: $($script:_CopyCountFailed) shared file(s) failed to copy." }
-    if ($Phase -ne 'finalize') {
+    if ($Phase -notin @('finalize','update-finalize')) {
         $copyTotal=$script:_CopyCountCopied+$script:_CopyCountUpToDate+$script:_CopyCountUpdated+$script:_CopyCountSkipped
-        if ($copyTotal -gt 0) { if ($script:_CopyCountUpToDate -eq $copyTotal) { Write-Host "  up to date ($copyTotal files)" } else { Write-Host "  $($script:_CopyCountCopied) copied, $($script:_CopyCountUpdated) updated, $($script:_CopyCountUpToDate) unchanged" } }
+        if ($copyTotal -gt 0 -and $script:_CopyCountUpToDate -eq $copyTotal) { Write-Host "  up to date ($copyTotal files)" } else { Write-Host "  $($script:_CopyCountCopied) copied, $($script:_CopyCountUpdated) updated, $($script:_CopyCountUpToDate) unchanged" }
         if ($Phase -eq 'payload') { return }
         if ($Phase -eq 'update-payload') {
             $worktreeTool = @($allTools | Where-Object { $toolMeta[$_].worktree } | Select-Object -First 1)
@@ -2680,10 +2680,6 @@ function Install-AidShared {
             script:Update-AidGitattributes -Target $Target
             script:Invoke-MigrateTermExclusions -Target $Target
         } finally { Remove-Item -LiteralPath $previousManifest -Force -ErrorAction SilentlyContinue }
-    }
-    if ($Phase -eq 'all') {
-        $total=$script:_CopyCountCopied+$script:_CopyCountUpToDate+$script:_CopyCountUpdated+$script:_CopyCountSkipped
-        if ($total -gt 0) { if ($script:_CopyCountUpToDate -eq $total) { Write-Host "  up to date ($total files)" } else { Write-Host "  $($script:_CopyCountCopied) copied, $($script:_CopyCountUpdated) updated, $($script:_CopyCountUpToDate) unchanged" } }
     }
 }
 

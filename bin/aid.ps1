@@ -4765,12 +4765,12 @@ if ($SUBCMD -eq 'update') {
                         switch -Regex ($usAnswer) {
                             '^[Aa](ll|LL)?$' {
                                 $usMigrateAll = $true
-                                try { script:Invoke-AidMigrateRepo -Repo $usRepo } catch {
+                                try { $null = script:Invoke-AidMigrateRepo -Repo $usRepo } catch {
                                     [Console]::Error.WriteLine("WARN: aid: migration failed for ${usRepo}: $_")
                                 }
                             }
                             '^[Yy](es|ES)?$' {
-                                try { script:Invoke-AidMigrateRepo -Repo $usRepo } catch {
+                                try { $null = script:Invoke-AidMigrateRepo -Repo $usRepo } catch {
                                     [Console]::Error.WriteLine("WARN: aid: migration failed for ${usRepo}: $_")
                                 }
                             }
@@ -5616,7 +5616,7 @@ if ($SUBCMD -eq '__migrate-repo') {
         script:Exit-Aid 2
     }
     $_MigTarget = (Resolve-Path -LiteralPath $_MigTarget).Path
-    script:Invoke-AidMigrateRepo -Repo $_MigTarget
+    $null = script:Invoke-AidMigrateRepo -Repo $_MigTarget
     script:Exit-Aid 0
 }
 
@@ -6326,6 +6326,7 @@ try {
                 }
             }
             if ($SUBCMD -eq 'add') {
+                Write-Host ""
                 Install-AidShared -SharedStagingDir $script:_DispSharedStagingDir -Target $_AidTarget `
                     -Version $stageVersion -NewTools $_AidTools -StageMap $stageMap -Force ([bool]$_AidForce) `
                     -AidVerbose $script:_AidVerbose -Phase 'finalize'
@@ -6355,7 +6356,7 @@ try {
             # idempotent no-op; steps 1-3 run per FF-1.  WARN-not-fail (NFR12):
             # migration never changes the tool-update exit code.
             if ($SUBCMD -eq 'update') {
-                script:Invoke-AidMigrateRepo -Repo $_AidTarget
+                $null = script:Invoke-AidMigrateRepo -Repo $_AidTarget
                 if ($script:_AidV3Upgrade) {
                     if ((script:Get-AidRepoFormat -Repo $_AidTarget) -lt 5) {
                         [Console]::Error.WriteLine('ERROR: aid update: upgrade settings stamp was not written; recovery record retained. Rerun aid update to recover.')
