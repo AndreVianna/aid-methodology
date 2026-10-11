@@ -17,7 +17,7 @@
 
 **Source:** work-001-shared-skills-folder -> delivery-001 -> AC-16
 
-**Depends on:** task-012, task-013, task-015
+**Depends on:** task-012, task-013, task-014, task-015
 
 **Scope:**
 - `tests/canonical/test-aid-cli-parity.sh`: build bundles with `tests/lib/bundle.sh`; re-key the
@@ -42,6 +42,7 @@
 
 **Acceptance Criteria:**
 - [ ] `HOME=$(mktemp -d) bash tests/canonical/test-aid-cli-parity.sh` exits `0` on a host with `pwsh`, with a `PASS:` line per Flow 3 to 8 scenario (identical exit codes, output lines and resulting tree under both shells), with CRLF/mixed root content, real edits, idempotent retry and outside-byte preservation; and one per twin pair of the static check.
+- [ ] `test-aid-cli-parity.sh` prints a `PASS:` line for the update-all scenario: on twin fixtures with one registered cursor project, `bin/aid` and `bin/aid.ps1` (`_cmd_update_all` / `Invoke-AidUpdateAll`) build update-all caches with the same listing (`aid-cursor-v<V>.tar.gz`, `aid-shared-v<V>.tar.gz`, `SHA256SUMS`), and the child updates exit `0` with identical output lines and resulting trees.
 - [ ] Deleting one PowerShell twin (e.g. `Get-AidDriftReport`) in a scratch copy makes the static check fail and name it.
 - [ ] `bash tests/canonical/test-install-parity.sh` and `bash tests/canonical/test-ps51-compat.sh` exit `0`.
 - [ ] The coverage-parity gate (run where `pwsh`, `node` and `python3` are on PATH) reports no un-excused removal for these suites.

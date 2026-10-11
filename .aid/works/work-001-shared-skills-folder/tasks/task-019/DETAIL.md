@@ -17,7 +17,7 @@
 
 **Source:** work-001-shared-skills-folder -> delivery-001 -> AC-11, AC-15
 
-**Depends on:** task-012, task-013, task-015
+**Depends on:** task-012, task-013, task-014, task-015
 
 **Scope:**
 - `tests/canonical/test-aid-cli.sh` and `tests/canonical/test-aid-cli-ps1.sh`: build bundles with
@@ -40,6 +40,7 @@
 **Acceptance Criteria:**
 - [ ] `HOME=$(mktemp -d) bash tests/canonical/test-aid-cli.sh --verbose` exits `0`, with `PASS:` lines for each AC-11 clause and both AC-15 detect cases.
 - [ ] The same `test-aid-cli.sh` run prints a `PASS:` line for the `--from-bundle` version-mismatch refusal (non-zero exit, unchanged snapshot, `aid update` in the message), and `test-aid-cli-ps1.sh` the same where `pwsh` exists.
+- [ ] The `test-aid-cli.sh` run prints a `PASS:` line for the update-all regression: after the `_cmd_update_all` cache is built for a registered cursor project it holds `aid-cursor-v<V>.tar.gz`, `aid-shared-v<V>.tar.gz` and `SHA256SUMS`, and the child `update --from-bundle <cache>` exits `0`.
 - [ ] `HOME=$(mktemp -d) bash tests/canonical/test-aid-cli-ps1.sh` exits `0` where `pwsh` exists, including the `Detect-Tool` cases.
 - [ ] `grep -cE 'profiles/[a-z-]+/' tests/canonical/test-aid-cli.sh tests/canonical/test-aid-cli-ps1.sh` prints `0` for both.
 - [ ] The coverage-parity gate (run where `pwsh`, `node` and `python3` are on PATH) reports no un-excused removal for these two suites.

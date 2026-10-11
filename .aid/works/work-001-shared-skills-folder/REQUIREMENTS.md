@@ -207,6 +207,8 @@ Any byte difference between copies therefore produces mixed, unpredictable behav
   - Every artifact is listed in `SHA256SUMS`, and the CLI verifies it fail-closed exactly as
     `fetch_tarball` and `verify_bundle_checksum` do today.
   - The v4.0.0 release notes state `v4 requires CLI v4`; no old-CLI guard artifact is shipped.
+  - The `aid update` cache that serves every registered project holds the shared payload
+    alongside the per-tool artifacts, so each project's update finds both in its bundle directory.
 - **FR-6: CLI placement.** For every tool, `aid add` and `aid update` place:
   - the shared skills at `.agents/skills/aid-*/`;
   - the runtime at `.aid/runtime/`;

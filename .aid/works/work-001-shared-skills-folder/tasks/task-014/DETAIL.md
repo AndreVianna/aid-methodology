@@ -15,7 +15,7 @@
 
 **Type:** IMPLEMENT
 
-**Source:** work-001-shared-skills-folder -> delivery-001 -> AC-10, AC-11, AC-14
+**Source:** work-001-shared-skills-folder -> delivery-001 -> AC-2, AC-10, AC-11, AC-14
 
 **Depends on:** task-010, task-013
 
@@ -49,6 +49,12 @@ need), per REQUIREMENTS.md § 11 Feature 001 › Feature Flow › 4.
   the trash moves and the prune list.
 - Idempotency: a second `aid update` at the same version prints `up to date (N files)` for `shared`
   and for every tool and changes nothing, `.aid/.trash/` included.
+- Update-all cache: `_cmd_update_all` (bash) and `Invoke-AidUpdateAll` (PowerShell), twins together,
+  also fetch the shared payload `aid-shared-v<V>.tar.gz` once into the update-all cache at the
+  selected version, beside the per-tool `fetch_tarball` / `Fetch-Tarball` calls, through the
+  generic artifact fetch `fetch_artifact` / `Fetch-AidArtifact` from the REQUIREMENTS.md § 11
+  twin table (task-008 owns those helpers; no further fetch helper is added). Staging validation (exactly one `aid-shared-v<V>.tar.gz` per
+  bundle directory) and one-version-per-project behaviour are unchanged.
 - Fixture recipe as in task-008. Known red: the CLI suites listed in task-006.
 
 **Acceptance Criteria:**
@@ -61,4 +67,5 @@ need), per REQUIREMENTS.md § 11 Feature 001 › Feature Flow › 4.
 - [ ] In a fixture whose user `CLAUDE.md` (no markers, LF-terminated) received the import region on `aid add claude-code`, a following `aid update --from-bundle "$S"` leaves `CLAUDE.md`'s sha256 unchanged.
 - [ ] `aid update --dry-run --from-bundle "$S"` on a drifted fixture lists the shared copies, the trash moves and the prune list, and the fixture snapshot is unchanged.
 - [ ] The same cases under `bin/aid.ps1` give the same output lines, exit codes and manifest bytes (masked timestamps) where `pwsh` exists; `bash tests/canonical/test-ps51-compat.sh` and `bash tests/canonical/test-ascii-only.sh` exit `0`.
+- [ ] After the update-all cache is built for a registered cursor project, the cache directory holds `aid-cursor-v<V>.tar.gz`, `aid-shared-v<V>.tar.gz` and `SHA256SUMS`, and the child `update --target <repo> --from-bundle <cache>` exits `0` (bash and PowerShell give the same listing and exit code where `pwsh` exists).
 - [ ] All section-6 quality gates pass.
