@@ -32,8 +32,19 @@ file.
 - Delete the five profile root files listed above.
 - `_root_agent_file` / `Get-RootAgentFile`: return `AGENTS.md` for every tool.
 - The C2 heading-stem list in `_copy_root_agent_file` and `Test-AidHeadingStem` gains
-  `Review criteria`, and any other `## ` heading of the region that the list lacks, so a C2
-  migration never duplicates a section.
+  `Review criteria`, and any other `## ` heading of the region that the list lacks, so the C2
+  WARN names every section of the region.
+- Marker-less `AGENTS.md` rule (FR-12; § 11 › Root context file, *`AGENTS.md` without markers*),
+  in `_copy_root_agent_file` / `Copy-RootAgentFile`, applying in every flow that writes `AGENTS.md`
+  through it (add, update, migration):
+  - Branch C1: the file's sha256 equals the root-file sha recorded in the manifest
+    (`shared.agents_md.file_sha256`) -> rewrite to the full marked source, with a trash copy first
+    when it differs.
+  - Branch C2 (anything else without markers): copy the whole original to `.aid/.trash/AGENTS.md`
+    under the collision policy, then append the marked region at the end, preceded by one LF when
+    the file is non-empty and does not end in LF; every other byte is kept and no section is
+    excised, whatever its heading. When the file holds a heading that matches a C2 stem, print
+    `WARN: aid: AGENTS.md has AID-like sections outside its managed region (<the C2 stems found>); remove them by hand if they are stale AID content`.
 - `CLAUDE.md` import region (FR-12; § 11 › Root context file): the *import region* is a fixed
   constant in both cores, never a payload file -- the three lines `<!-- AID:BEGIN -->`,
   `@AGENTS.md`, `<!-- AID:END -->`, each ending in LF.
@@ -71,6 +82,7 @@ file.
 - [ ] `ls profiles/*/AGENTS.md profiles/claude-code/CLAUDE.md` reports every path as missing.
 - [ ] With the core sourced, `_root_agent_file <tool>` prints `AGENTS.md` for each of the five tools; `Get-RootAgentFile` does the same where `pwsh` exists.
 - [ ] For every `## ` heading inside the region of `canonical/AGENTS.md`, the C2 stem test of both shells returns true (a loop over the headings shows no miss).
+- [ ] `_copy_root_agent_file` on a no-marker `AGENTS.md` whose sha256 differs from the recorded `shared.agents_md.file_sha256` and which holds a `## Workflow` section: the pre-write bytes are a byte-exact prefix of the result, the marked region follows (one LF first when the file did not end in LF), a full copy of the pre-write file exists at `.aid/.trash/AGENTS.md`, the exact WARN line naming `Workflow` is printed, and a second call leaves the sha256 unchanged. On a no-marker file whose sha256 equals the recorded `file_sha256` (C1), the result is the full marked source and no excision or WARN occurs. `Copy-RootAgentFile` gives byte-identical results and output where `pwsh` exists.
 - [ ] `_ensure_claude_md_region`: on an absent file, the result's bytes equal the import region exactly; on a no-marker file ending in LF, the pre-write bytes are a byte-exact prefix and the only bytes after them are the import region, and a second call leaves the sha256 unchanged; on a non-empty no-marker file NOT ending in LF, the result is the pre-write bytes, one LF, then the import region; on a file with user content above and below a full AID region and no recorded `region_sha256`, the result equals the pre-write content with the marked region (marker lines included) replaced by the import region, and the pre-write bytes exist at `.aid/.trash/CLAUDE.md`; on a no-marker file holding a C2-stem heading in migration mode, the exact WARN line is printed.
 - [ ] `_remove_claude_md_region`: on the created-from-absent file the file is gone; on the appended-to-LF-terminated-user-file case the file equals its pre-add bytes; with a drifted region the whole file is first at `.aid/.trash/CLAUDE.md`; a file whose markers were deleted is byte-unchanged.
 - [ ] The `Invoke-EnsureClaudeMdRegion` / `Invoke-RemoveClaudeMdRegion` twins give byte-identical results and output lines for every case above where `pwsh` exists.

@@ -30,12 +30,15 @@ and › 6.
 - `prune_shared` / `Invoke-PruneShared` (replace `_prune_tool_dirs` / `Invoke-PruneToolDirs`), run
   after every add commit (task-014 adds the update call): candidates are `aid-*` children of
   `.agents/skills/` and of each mirror not in `shared.skills`, files under `.aid/runtime/` not in
-  `shared.runtime`, and `aid-*` children of each tool's `<root>/agents/` not in that tool's `files`.
+  `shared.runtime` and not under an FR-6 runtime-local path, and `aid-*` children of each tool's
+  `<root>/agents/` not in that tool's `files`. Runtime-local paths (any `node_modules/` directory
+  under `.aid/runtime/`) are user-provisioned: never candidates, so never pruned, never trashed.
   A candidate whose bytes match a sha256 in the previous manifest is deleted; every other candidate
   is moved to the trash with `trash_file`. Emptied directories are removed, never `<root>` itself.
 - `_aid_gitignore_block` / `Get-AidGitignoreBlock`: add `.aid/.worktrees/`; when
   `host.worktree_root` is not under `.aid/`, also list that root (e.g. `.claude/worktrees/`). The
-  block stays a pure function of the manifest and idempotent. `.aid/runtime/` is NOT added.
+  block stays a pure function of the manifest and idempotent. The block also lists each FR-6
+  runtime-local path (`.aid/runtime/**/node_modules/`). `.aid/runtime/` itself is NOT added.
 - `seed_settings_yml` / `Initialize-AidSettingsFile`: read the template from
   `.aid/runtime/templates/settings.yml`. `update_gitignore` and `_migrate_term_exclusions` run after,
   as today.
@@ -43,7 +46,8 @@ and › 6.
 
 **Acceptance Criteria:**
 - [ ] After `aid add cursor`, `.aid/runtime/host.conf` is exactly `worktree_root=.aid/.worktrees`; after `aid add claude-code` in a fresh fixture it is `worktree_root=.claude/worktrees`; after `aid add cursor` then `aid add claude-code` it is `worktree_root=.claude/worktrees`. In each case the manifest `host.worktree_root` matches and `shared.runtime.files` lists `host.conf` with its current sha256.
-- [ ] The `.gitignore` AID block contains `.aid/.worktrees/` in every fixture, contains `.claude/worktrees/` only when `claude-code` is installed, and never contains `.aid/runtime/`.
+- [ ] The `.gitignore` AID block contains `.aid/.worktrees/` in every fixture, contains `.claude/worktrees/` only when `claude-code` is installed, contains `.aid/runtime/**/node_modules/`, and never contains a line equal to `.aid/runtime/`.
+- [ ] A fixture file `.aid/runtime/scripts/summarize/node_modules/x.js` survives the next `aid add <another tool>` with unchanged sha256, and nothing from it lands in `.aid/.trash/`.
 - [ ] A stray `.aid/runtime/stray.txt` and a stray `.agents/skills/aid-zzz/SKILL.md` placed before the next `aid add <another tool>` are gone from their places afterwards and present byte-for-byte at `.aid/.trash/.aid/runtime/stray.txt` and `.aid/.trash/.agents/skills/aid-zzz/SKILL.md`; `.agents/skills/my-skill/SKILL.md` keeps its sha256.
 - [ ] `.aid/settings.yml` exists after a first add, and `grep -rn 'aid/templates/settings.yml' lib/ bin/` shows only the `.aid/runtime/templates/settings.yml` form.
 - [ ] `grep -rn '_prune_tool_dirs\|Invoke-PruneToolDirs' lib/ bin/` prints nothing.

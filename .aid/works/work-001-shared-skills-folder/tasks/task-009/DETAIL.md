@@ -25,9 +25,11 @@ Bash and PowerShell twins together, per REQUIREMENTS.md § 11 Feature 001 › Fe
 - `install_shared` / `Install-AidShared` (new): `.agents/skills/aid-*` via `copy_file_guarded`;
   every mirror declared by any installed or newly added tool's `aid-tool.conf` written the same way
   (a newly added `claude-code` creates `.claude/skills/aid-*`); the staged runtime to
-  `.aid/runtime/`; the `AGENTS.md` region through `_copy_root_agent_file` branches A, B and C2, with
+  `.aid/runtime/`; the `AGENTS.md` region through `_copy_root_agent_file` branches A, B, C1 and C2, with
   the whole file copied to the trash first when its region differs from what is being written and
-  either has no recorded `region_sha256` or no longer matches it; then, when any user's
+  either has no recorded `region_sha256` or no longer matches it; a file without markers follows
+  the marker-less rule implemented in task-005 (C1 rewrites only an AID-written file, C2 = trash
+  copy, append the region, WARN; no excision); then, when any user's
   `aid-tool.conf` declares `context_import` (Claude Code: `CLAUDE.md`), the `CLAUDE.md` import
   region through `_ensure_claude_md_region` / `Invoke-EnsureClaudeMdRegion` (task-005), recorded
   as the `shared.claude_md` entry (`path`, `version`, `users` = the declaring tools,
@@ -54,6 +56,7 @@ Bash and PowerShell twins together, per REQUIREMENTS.md § 11 Feature 001 › Fe
 - [ ] `diff -r canonical/aid/scripts "$F/.aid/runtime/scripts"` and `diff -r canonical/aid/templates "$F/.aid/runtime/templates"` print nothing; no `aid/` directory exists under `.claude`, `.codex`, `.cursor`, `.github` or `.agent`.
 - [ ] `grep -c '^<!-- AID:BEGIN -->$' "$F/AGENTS.md"` prints `1` for every tool. After `aid add claude-code` into a fixture with no `CLAUDE.md`, `CLAUDE.md`'s bytes equal the import region (`<!-- AID:BEGIN -->`, `@AGENTS.md`, `<!-- AID:END -->`, each LF-terminated); after `aid add cursor` into a fixture with no `CLAUDE.md`, none exists.
 - [ ] After `aid add claude-code` into a fixture whose user `CLAUDE.md` has no markers and ends in LF, the pre-add bytes are a byte-exact prefix of `CLAUDE.md` and the only bytes after them are the import region; the manifest's `shared.claude_md` has users `["claude-code"]` and a `region_sha256` equal to the sha256 of the import region.
+- [ ] In a fixture whose user `AGENTS.md` has no markers and holds a `## Workflow` section, after `aid add claude-code` that section is present byte-for-byte, the pre-add bytes of the file are a byte-exact prefix of `AGENTS.md`, a full copy of the pre-add file exists at `.aid/.trash/AGENTS.md`, and the run prints a WARN naming `Workflow`.
 - [ ] `.aid/.aid-manifest.json` has `"format_version": 3`, the key order of the Data Model example, `users` equal to the installed tool for `shared.skills`, `shared.runtime` and `shared.agents_md`, and a `sha256` per file that equals `sha256sum` of the installed file.
 - [ ] `aid add cursor` followed by `aid add claude-code` leaves `users` as `["claude-code", "cursor"]` (`AID_TOOLS` order) on the three shared entries and `mirrors` holding `.claude/skills` with users `["claude-code"]`.
 - [ ] Pre-seeded `.agents/skills/my-skill/SKILL.md` and `.claude/skills/my-skill/SKILL.md` keep their sha256 through both adds.

@@ -46,6 +46,12 @@
   in this same change (the CI "INDEX.md is fresh" step regenerates and diffs it).
 - `canonical/aid/scripts/works/worktree-lifecycle.sh`: neutralise its comment/usage tokens, but
   leave the `_worktrees_root_from` body (its `.claude/worktrees` line) to task-011.
+- Install-tree skip lists: `canonical/aid/scripts/kb/build-project-index.sh` and
+  `canonical/aid/scripts/kb/harvest-coined-terms.sh` (today `.claude .cursor .codex .agent`) gain
+  `.agents`, so discovery never scans the installed skills as project source.
+- Runtime-local paths (FR-6): no script or template in `canonical/aid/` may prune, trash or
+  byte-compare a `node_modules/` directory under `.aid/runtime/`; the CLI-side handling is
+  tasks 010 and 013.
 - The deliberate forks under `dashboard/scripts/` (e.g. `writeback-state.sh`, whose banner says
   "THIS IS A DELIBERATE FORK, NOT A RENDER") re-track any canonical line this task changes, so the
   fork-parity suites stay green.
@@ -60,6 +66,7 @@
 - [ ] Every allowlist row has a non-empty `why`, and every row's `pattern` matches at least one line of its `path` (no stale row).
 - [ ] `grep -rlE '\{(project_context_file|reviewer_output_file|open_questions_file)\}' canonical/aid | wc -l` prints `0`.
 - [ ] `.aid/knowledge/INDEX.md` contains `.aid/runtime/scripts/kb/build-kb-index.sh` and no `canonical/aid/scripts/kb/build-kb-index.sh`; regenerating it to a temp file and diffing with the timestamp lines filtered (as the `.github/workflows/test.yml` step "INDEX.md is fresh" does) prints nothing.
+- [ ] `grep -nE '^\s+\.claude .*\.agents( |$)' canonical/aid/scripts/kb/build-project-index.sh canonical/aid/scripts/kb/harvest-coined-terms.sh` prints one skip-list line per file, and a scratch repo holding `.agents/skills/aid-x/SKILL.md` makes neither script list that path.
 - [ ] `bash tests/canonical/test-build-kb-index.sh`, `bash tests/canonical/test-worktree-lifecycle.sh`, `bash tests/canonical/test-writeback-state.sh` and every suite this task edited exit `0`.
 - [ ] `git diff --name-only` for this task's commit lists no path under `profiles/`, `canonical/skills/`, `canonical/agents/`, `.claude/` or `.cursor/`.
 - [ ] All section-6 quality gates pass.

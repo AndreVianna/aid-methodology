@@ -15,7 +15,7 @@
 
 **Type:** IMPLEMENT
 
-**Source:** work-001-shared-skills-folder -> delivery-001 -> AC-3, AC-12
+**Source:** work-001-shared-skills-folder -> delivery-001 -> AC-3, AC-11, AC-12
 
 **Depends on:** task-004, task-006, task-007
 
@@ -42,6 +42,13 @@ Data Model › Validation.
 - `_prepare_release_staging_aid` in `bin/aid` (replaces `_prepare_tool_staging_aid`) and its
   `bin/aid.ps1` twin (replaces `Prepare-AidToolStaging`): stage the shared payload once plus each
   named tool, all before any destination write.
+- `_check_staged_version` / `Test-StagedVersion` (new, in the `aid add` path; flow 3 Stage step):
+  after staging validation and before any destination write, compare the staged shared payload's
+  `aid_version` (the authoritative source for download, `--version` and `--from-bundle`, because
+  `_prepare_tool_staging_aid` takes the version from the bundle file name) with the project
+  version. On a mismatch: exit 2, write nothing, print the `FR11` mixed-version refusal text with
+  its hint to run `aid update`. A first add into a project with no manifest has no project version
+  and passes.
 - Fixture recipe for the criteria: `S=$(mktemp -d); bash release.sh --stage-only --out "$S"`;
   `F=$(mktemp -d); git -C "$F" init -q`; run
   `AID_HOME=$(mktemp -d) AID_NO_UPDATE_CHECK=1 bash bin/aid add <tool> --from-bundle <dir> --target "$F"`.
@@ -53,6 +60,7 @@ Data Model › Validation.
 - [ ] A bundle whose shared payload bytes no longer match `SHA256SUMS` makes `aid add cursor` exit non-zero, and the fixture snapshot is unchanged.
 - [ ] A shared payload whose `aid-payload.conf` says `layout_format=6` exits `1` with `This release needs a newer aid CLI. Run: aid update self`; an `aid-tool.conf` with `skill_mirror=.agents/skills` exits `1` naming `aid-tool.conf` and `skill_mirror`; a member path containing `..` exits `1`; a tool artifact holding a file outside its `<root>/agents/` exits `1` naming that member. The fixture snapshot is unchanged in every case.
 - [ ] A tool artifact at version Y beside a shared payload at version X (X != Y) exits `2`.
+- [ ] In a fixture at project version X, `aid add cursor --from-bundle <dir staged at a different version Y>` exits `2`, its output contains `aid update`, and the whole-tree sha256 snapshot is unchanged; the same bundle at version X stages normally.
 - [ ] `--from-bundle "$S/aid-cursor-v<V>.tar.gz"` stages exactly as `--from-bundle "$S"` does.
 - [ ] With the endpoint override pointing at a local server that serves no `aid-shared-v<V>.tar.gz`, `aid add cursor` exits `3` with the exact missing-payload message (a `python3 -m http.server` on a port from `find_free_port` in `tests/lib/net.sh`, with `AID_ALLOW_ENDPOINT_OVERRIDE` set as the existing CLI suites set it).
 - [ ] `grep -n '_retired_roots\|_prepare_tool_staging_aid\|Prepare-AidToolStaging' lib/ bin/ -r` prints nothing.

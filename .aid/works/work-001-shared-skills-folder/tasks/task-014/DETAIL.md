@@ -31,9 +31,12 @@ need), per REQUIREMENTS.md § 11 Feature 001 › Feature Flow › 4.
   import region while `claude-code` is installed, manifest, `prune_shared`, settings seed,
   `update_gitignore`). Every tool `version` and every `shared.*.version` ends equal to
   `aid_version`.
-- A format-2 manifest is the migration's branch: this task leaves a single, clearly named dispatch
-  point that task-015 fills with `migrate_layout_v2`; until then `aid update` on a format-2 manifest
-  exits non-zero naming the missing migration and writes nothing.
+- A format-2 manifest, or a `format_version` 3 manifest with `"migration": "pending"`, is the
+  migration's branch (a pending manifest resumes the Migration Plan at its step 4): this task leaves
+  a single, clearly named dispatch point that task-015 fills with `migrate_layout_v2`; until then
+  `aid update` on either manifest exits non-zero naming the missing migration and writes nothing.
+- Runtime-local paths (FR-6: any `node_modules/` under `.aid/runtime/`) survive every update; they
+  reach neither the prune list nor the trash (the exclusion lives in `prune_shared`, task-010).
 - Run `_aid_migrate_repo` afterwards (it stamps 5 on a format-3 manifest, per task-006's cap).
 - `--dry-run` stops after staging and prints, in addition to today's copy list, the shared copies,
   the trash moves and the prune list.
@@ -44,7 +47,8 @@ need), per REQUIREMENTS.md § 11 Feature 001 › Feature Flow › 4.
 **Acceptance Criteria:**
 - [ ] After `aid add claude-code,cursor`, `aid update cursor --from-bundle "$S"` prints a notice naming `claude-code` as added to the commit set, and afterwards every `tools.*.version` and `shared.*.version` in the manifest equals `aid_version`.
 - [ ] With the AC-10 drift applied (one byte appended to `.claude/skills/aid-ask/SKILL.md`, `.claude/skills/aid-fix/SKILL.md` deleted, one byte appended to `.agents/skills/aid-plan/SKILL.md`), `aid update --from-bundle "$S"` restores all three to canonical bytes; the two modified files exist byte-for-byte at `.aid/.trash/.claude/skills/aid-ask/SKILL.md` and `.aid/.trash/.agents/skills/aid-plan/SKILL.md`; a following `aid status` prints `Shared files: clean`.
-- [ ] A stray `.aid/runtime/stray.txt` is absent from `.aid/runtime/` after the next `aid update`.
+- [ ] A stray `.aid/runtime/stray.txt` is absent from `.aid/runtime/` after the next `aid update`, while a fixture file `.aid/runtime/scripts/summarize/node_modules/x.js` survives it with unchanged sha256, nothing from it lands in `.aid/.trash/`, and `aid status` prints no `extra:` line for it.
+- [ ] `aid update` on a fixture holding a format-3 manifest with `"migration": "pending"` reaches the migration dispatch point, not the normal commit path (until task-015: exits non-zero naming the missing migration and writes nothing; the fixture snapshot is unchanged).
 - [ ] A second `aid update --from-bundle "$S"` prints `up to date` in the `shared` block and every tool block, and the sha256 snapshot of `.aid/.trash/` and of the whole fixture is unchanged.
 - [ ] In a fixture whose user `CLAUDE.md` (no markers, LF-terminated) received the import region on `aid add claude-code`, a following `aid update --from-bundle "$S"` leaves `CLAUDE.md`'s sha256 unchanged.
 - [ ] `aid update --dry-run --from-bundle "$S"` on a drifted fixture lists the shared copies, the trash moves and the prune list, and the fixture snapshot is unchanged.
