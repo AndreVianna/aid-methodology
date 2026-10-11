@@ -112,15 +112,15 @@ minimum_grade: A
 # [W] 'yes' | 'no' -- quoted, see NFR-2 / D-5
 user_approved: 'no'
 # [W] Running | Paused-Awaiting-Input | Blocked | Completed | Canceled
-lifecycle: Paused-Awaiting-Input
+lifecycle: Running
 # [W] Describe | Define | Specify | Plan | Detail | Execute
 phase: Detail
 # [W] aid-{skill} | none
 active_skill: aid-update
 # [W]
-updated: '2026-10-11T02:35:45Z'
+updated: '2026-10-11T02:39:23Z'
 # [W] set only when lifecycle = Paused-Awaiting-Input
-pause_reason: 'GATE cleared; awaiting user approval before /aid-execute'
+pause_reason: --
 # [W] set only when lifecycle = Blocked
 block_reason: --
 # [W] e.g. IMPEDIMENT-task-NNN.md, or the failed gate
@@ -406,6 +406,11 @@ lifecycle_history:
     event: 'GATE Pass 2 (task set) cleared'
     grade: 'A+'
     notes: '21 Fixed; zero Pending/Recurred. Review snapshots retained; active ledgers removed. APPROVAL-HALT before /aid-execute; all 32 tasks remain Pending; A-4/A-6 manual host probes remain unverified'
+
+  - date: '2026-10-10'
+    event: 'Maintainer requested a new full independent review after the bounded fix cycle'
+    grade: --
+    notes: 'Fresh gpt-6.1-sol reviewer, full definition then all 32 task artifacts; one reviewer retains definition context for task pass to avoid duplicate reads. All Fixed claims reverified; Accepted decisions preserved. No fixes or implementation; both passes run as requested even if new definition findings are discovered'
 
 # [A] aid-deploy only; one entry per delivery (never derived from child
 #     files; aid-deploy is the sole author):
