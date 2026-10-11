@@ -30,7 +30,7 @@ Feature Flow › 3 (steps 2 to 4).
 - The shipped seed `canonical/aid/templates/settings.yml` (the file both shells copy into a fresh
   `.aid/settings.yml`) carries `format_version: 5` in the same commit as the three carriers, so a
   fresh `aid add` seeds the stamp the layout gate accepts.
-- Stamp cap in `_aid_migrate_repo` and its PowerShell twin: write `format_version: 5` only when the
+- Stamp cap in `_aid_migrate_repo` and `Invoke-AidMigrateRepo` (PowerShell): write `format_version: 5` only when the
   manifest records `format_version` 3, or when no manifest, recovery record or v3 legacy evidence
   exists (proven fresh install); otherwise write `4`. "v3 legacy evidence" is the list in
   REQUIREMENTS.md § 5 FR-11 (manifest `format_version` <= 2, `<root>/aid/`, or `<root>/skills/aid-*`
@@ -38,13 +38,13 @@ Feature Flow › 3 (steps 2 to 4).
   exempts the v4 Claude mirror; user directory-only evidence never triggers refusal). Manifest-less
   legacy remains stamp 4 after `aid projects add` / `aid update self`, so `aid add` directs users to
   `aid update`.
-- `_aid_layout_gate` (new) and its twin, run by `aid add` after the writability pre-check: a
+- `_aid_layout_gate` (new) and `Test-AidLayoutGate` (new, PowerShell), run by `aid add` after the writability pre-check: a
   manifest exists and records `format_version` < 3, an existing settings stamp is < 5, a recovery
   record exists, or v3 legacy evidence (FR-11 list) exists -> exit 2. A fresh repo with no such
   evidence passes, including when settings are absent, print
   `This project uses the v3 AID layout. Run: aid update (it upgrades every installed tool), then retry aid add.`,
   write nothing.
-- Skew gate inside the `FR11: aid add version selection` block and its twin: a `tools.*.version` or
+- Skew gate inside the `FR11: aid add version selection` block and the same-named block in `bin/aid.ps1`: a `tools.*.version` or
   `shared.*.version` differing from `aid_version` -> exit 2, message names `aid update`. The existing
   `--version <v>` != project version -> exit 2 rule is unchanged.
 - Manifest `format_version` above 3 -> refuse with `Run: aid update self` (readers from task-004); no

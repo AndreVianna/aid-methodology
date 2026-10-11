@@ -40,8 +40,8 @@ Data Model › Validation.
 - Per-tool allowlist: a tool artifact may contain only `aid-tool.conf` and `<that tool's root>/agents/`.
   This replaces the post-copy manifest-seam gate: delete `_retired_roots` in `install_tool` and its
   PowerShell counterpart.
-- `_prepare_release_staging_aid` in `bin/aid` (replaces `_prepare_tool_staging_aid`) and its
-  `bin/aid.ps1` twin (replaces `Prepare-AidToolStaging`): stage the shared payload once plus each
+- `_prepare_release_staging_aid` in `bin/aid` (replaces `_prepare_tool_staging_aid`) and
+  `Prepare-AidReleaseStaging` in `bin/aid.ps1` (new; replaces `Prepare-AidToolStaging`): stage the shared payload once plus each
   named tool, all before any destination write.
 - `_check_staged_version` / `Test-StagedVersion` (new, in the `aid add` path; flow 3 Stage step):
   after staging validation and before any destination write, compare the staged shared payload's

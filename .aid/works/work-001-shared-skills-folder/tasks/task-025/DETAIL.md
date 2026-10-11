@@ -28,6 +28,10 @@
 - Any other suite still failing because of the layout change and not owned by another task
   (find them with `HOME=$(mktemp -d) bash tests/run-all.sh`) is re-keyed here too, and named in
   this task's hand-off.
+- `tests/canonical/test-artifact-discipline.sh` (AD13): add `.agents/` and `.aid/runtime/` to the
+  counter's `EXCLUDE` tuple (`.claude/` is already there), so the installed copies of
+  `canonical/skills` and `canonical/aid` are not counted twice; ceilings stay unchanged. The
+  exclusion holds before and after the task-027 resync, so no dependency is added.
 - Removed or renamed keys get rows in `tests/coverage-accepted-removals.tsv` or the re-home
   allowlist.
 
@@ -35,4 +39,5 @@
 - [ ] `HOME=$(mktemp -d) bash tests/canonical/<suite>.sh` exits `0` for each of the four suites named in Scope (on a host with the runtimes each suite already requires).
 - [ ] `grep -cE 'profiles/[a-z-]+/' tests/canonical/test-registry.sh tests/canonical/test-self-commands.sh tests/canonical/test-release-install-e2e.sh tests/canonical/test-release-migrate-smoke.sh` prints `0` for every file.
 - [ ] The coverage-parity gate (run where `pwsh`, `node` and `python3` are on PATH) reports no un-excused removal for these suites.
+- [ ] `bash tests/canonical/test-artifact-discipline.sh` prints a `PASS:` AD13 line for every class and exits `0`, both before and after the task-027 dogfood resync (with `.agents/` and `.aid/runtime/` populated).
 - [ ] All section-6 quality gates pass.

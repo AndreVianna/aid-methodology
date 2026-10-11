@@ -1299,7 +1299,7 @@ implemented twice. The parity suite names every row (AC-16).
 | descriptor reader | `read_kv_conf` (new) | `Read-AidKvConf` (new) |
 | artifact fetch | `fetch_artifact` (new; `fetch_tarball` becomes a thin wrapper) | `Fetch-AidArtifact` (new) |
 | wrapped extract plus member checks | `extract_payload` (new) | `Expand-AidPayload` (new) |
-| staging of shared and tools | `_prepare_release_staging_aid` (replaces `_prepare_tool_staging_aid`) | its `bin/aid.ps1` twin |
+| staging of shared and tools | `_prepare_release_staging_aid` (replaces `_prepare_tool_staging_aid`) | `Prepare-AidReleaseStaging` (new; replaces `Prepare-AidToolStaging`) |
 | guarded copy | `copy_file_guarded` (new) | `Copy-AidFileGuarded` (new) |
 | trash move with collision policy | `trash_file` (new; `_retire_file` delegates to it) | `Move-AidToTrash` (new) |
 | shared commit | `install_shared` (new) | `Install-AidShared` (new) |
@@ -1319,7 +1319,7 @@ implemented twice. The parity suite names every row (AC-16).
 | gitignore block | `_aid_gitignore_block` (adds the worktree roots) | `Get-AidGitignoreBlock` |
 | gitattributes block | `_aid_gitattributes_block`, `update_gitattributes`, `remove_gitattributes_block` (new) | `Get-AidGitattributesBlock`, `Update-AidGitattributes`, `Remove-AidGitattributesBlock` (new) |
 | settings seed | `seed_settings_yml` (template from `.aid/runtime/templates/`) | `Initialize-AidSettingsFile` |
-| CLI gates and stamp | `_aid_layout_gate` (new), the skew gate in the `FR11` block, the stamp cap in `_aid_migrate_repo` | twins in `bin/aid.ps1` |
+| CLI gates and stamp | `_aid_layout_gate` (new), the skew gate in the `FR11` block, the stamp cap in `_aid_migrate_repo` | `Test-AidLayoutGate` (new); the skew gate inline in the `FR11: aid add version selection` block of `bin/aid.ps1`; the stamp cap in `Invoke-AidMigrateRepo` |
 | staged-version check (`aid add`, flow 3 step 5) | `_check_staged_version` (new) | `Test-StagedVersion` (new) |
 
 
