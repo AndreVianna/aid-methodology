@@ -178,36 +178,45 @@ mkdir -p "${FIXTURE_DIR}"
 VERSION="0.7.0"
 
 # ---------------------------------------------------------------------------
-# build_fixture_tarball <tool>
+# Fixture bundles (v4 shared layout). `aid add <tool> --from-bundle <path>` needs
+# a bundle DIRECTORY holding exactly one aid-shared-v<V>.tar.gz plus the
+# aid-<tool>-v<V>.tar.gz files and a SHA256SUMS. The real release bundle is
+# staged ONCE (tests/lib/bundle.sh -> release.sh --stage-only) and re-tagged to
+# the suite's fixed legacy version, so every scenario keeps its stable version
+# literals: retag_bundle rewrites aid_version in aid-payload.conf / aid-tool.conf
+# of each artifact, repacks without a "./" member prefix, and re-sums.
 # ---------------------------------------------------------------------------
-build_fixture_tarball() {
-    local tool="$1"
-    local profile_dir="${PROFILES_DIR}/${tool}"
-    local tarball="${FIXTURE_DIR}/aid-${tool}-v${VERSION}.tar.gz"
+T23_VERSION="$(tr -d '[:space:]' < "${REPO_ROOT}/VERSION")"
+T23_STAGE="${TMP}/t23-stage"
+mkdir -p "${T23_STAGE}"
+if ! aid_test_stage_bundle "${T23_STAGE}" >"${TMP}/t23-stage.log" 2>&1; then
+    fail "task-023 setup: could not stage the release bundle (see ${TMP}/t23-stage.log)"
+fi
 
-    [[ -d "$profile_dir" ]] || { echo "ERROR: profile dir not found: $profile_dir" >&2; return 1; }
-
-    local filelist
-    filelist="$(mktemp "${TMP}/filelist-${tool}.XXXXXX")"
-    while IFS= read -r f; do
-        local fname; fname="$(basename "$f")"
-        [[ "$fname" == "README.md" ]] && continue
-        [[ "$fname" == "emission-manifest.jsonl" ]] && continue
-        local rel="${f#${profile_dir}/}"
-        printf './%s\n' "$rel"
-    done < <(find "${profile_dir}" -type f | sort) > "$filelist"
-
-    (cd "${profile_dir}" && tar -czf "${tarball}" --no-recursion -T "${filelist}") || {
-        echo "ERROR: failed to build fixture tarball for ${tool}" >&2
-        rm -f "$filelist"
-        return 1
-    }
-    rm -f "$filelist"
+# retag_bundle <src-stage> <dst-dir> <new-version> <tool...>
+# Writes <dst-dir>/aid-shared-v<new>.tar.gz, aid-<tool>-v<new>.tar.gz per tool and SHA256SUMS.
+retag_bundle() {
+    local src="$1" dst="$2" ver="$3" art name work
+    shift 3
+    mkdir -p "$dst"
+    for art in shared "$@"; do
+        work="$(mktemp -d "${TMP}/retag.XXXXXX")"
+        tar -xzf "${src}/aid-${art}-v${T23_VERSION}.tar.gz" -C "$work" || return 1
+        for name in aid-payload.conf aid-tool.conf; do
+            if [[ -f "${work}/${name}" ]]; then
+                sed -i "s/^aid_version=.*/aid_version=${ver}/" "${work}/${name}"
+            fi
+        done
+        tar -tzf "${src}/aid-${art}-v${T23_VERSION}.tar.gz" > "${work}.list" || return 1
+        tar -czf "${dst}/aid-${art}-v${ver}.tar.gz" -C "$work" --no-recursion -T "${work}.list" || return 1
+        rm -f "${work}.list"
+        rm -rf "$work"
+    done
+    (cd "$dst" && sha256sum --text aid-*.tar.gz > SHA256SUMS)
 }
 
-for _tool in claude-code codex cursor copilot-cli antigravity; do
-    build_fixture_tarball "$_tool" || { echo "ERROR: fixture build failed for ${_tool}" >&2; exit 1; }
-done
+retag_bundle "${T23_STAGE}" "${FIXTURE_DIR}" "${VERSION}" claude-code codex cursor copilot-cli antigravity \
+    || { echo "ERROR: fixture bundle build failed" >&2; exit 1; }
 
 newtarget() { mktemp -d "${TMP}/tgt.XXXXXX"; }
 newhome()   { mktemp -d "${TMP}/home.XXXXXX"; }
@@ -500,13 +509,19 @@ assert_exit_eq "$RC_PS1" 0 "PAR029-F03 PS1 add for remove parity → exit 0"
 run_ps1 "${PS_HOME_F}" remove -Force -Target "${T_PS1_F}"
 assert_exit_eq "$RC_PS1" 0 "PAR029-F04 PS1 remove -Force → exit 0"
 
-# Both targets must be clean after remove.
-for _chk in .codex AGENTS.md .aid; do
+# Both targets must be clean after remove. v4 shared layout: the tool root and
+# AGENTS.md are gone; .aid keeps no AID file (the manifest and settings are deleted;
+# the now-empty directory itself and the empty .agents/skills placement root stay).
+for _chk in .codex AGENTS.md; do
     assert_eq "$([[ -e "${T_SH_F}/${_chk}" ]] && echo exists || echo gone)" "gone" \
         "PAR029-F05 Bash: ${_chk} gone after remove"
     assert_eq "$([[ -e "${T_PS1_F}/${_chk}" ]] && echo exists || echo gone)" "gone" \
         "PAR029-F06 PS1: ${_chk} gone after remove"
 done
+assert_eq "$(find "${T_SH_F}/.aid" -type f 2>/dev/null | wc -l | tr -d ' ')" "0" \
+    "PAR029-F05 Bash: no AID file left under .aid after remove"
+assert_eq "$(find "${T_PS1_F}/.aid" -type f 2>/dev/null | wc -l | tr -d ' ')" "0" \
+    "PAR029-F06 PS1: no AID file left under .aid after remove"
 
 # Both report "Uninstall complete."
 assert_output_contains "$OUT_SH"  "Uninstall complete." "PAR029-F07 Bash remove message"
@@ -527,16 +542,19 @@ run_ps1 "${PS_HOME_G}" add cursor \
 assert_exit_eq "$RC_SH"  0 "PAR029-G01 Bash add cursor → exit 0"
 assert_exit_eq "$RC_PS1" 0 "PAR029-G02 PS1 add cursor → exit 0"
 
-# FR10: per-tool positional on 'update' is now a usage error (exit 2) in both twins.
+# v4 shared layout: 'aid update <tool>' names a tool for the one-version commit set
+# (every installed tool plus any named tool). Naming an already-installed tool is not an
+# error: both twins exit 0 and report the blocks as up to date.
 run_sh  "${SH_HOME_G}" update cursor \
     --from-bundle "${FIXTURE_DIR}/aid-cursor-v${VERSION}.tar.gz" --target "${T_SH_G}"
 run_ps1 "${PS_HOME_G}" update cursor \
     -FromBundle "${FIXTURE_DIR}/aid-cursor-v${VERSION}.tar.gz" -Target "${T_PS1_G}"
 
-assert_exit_eq "$RC_SH"  2 "PAR029-G03 Bash update <tool> positional → exit 2 (usage error)"
-assert_exit_eq "$RC_PS1" 2 "PAR029-G04 PS1 update <tool> positional → exit 2 (usage error)"
+assert_exit_eq "$RC_SH"  0 "PAR029-G03 Bash update <tool> (installed tool named) → exit 0"
+assert_exit_eq "$RC_PS1" 0 "PAR029-G04 PS1 update <tool> (installed tool named) → exit 0"
 assert_eq "$RC_SH" "$RC_PS1" "PAR029-G05 Bash/PS1 update-positional exit code parity"
-assert_output_contains "$OUT_SH"  "unexpected argument" "PAR029-G06 Bash update <tool>: error message"
+assert_output_contains "$OUT_SH"  "up to date (" "PAR029-G06 Bash update <tool>: up-to-date summary"
+assert_output_contains "$OUT_PS1" "up to date (" "PAR029-G07 PS1 update <tool>: up-to-date summary"
 
 # ===========================================================================
 # PAR029-H: Convenience-chain first-action parity
@@ -1863,16 +1881,16 @@ fi
 # Asserts:
 #   C01: Bash __migrate-repo on a fully-valid settings.yml WITH inline comments
 #        + alignment on every required scalar exits 0.
-#   C02: Bash: format_version: 4 stamped at the top of the rewritten flat file.
+#   C02: Bash: format_version: 5 stamped at the top of the rewritten flat file.
 #   C03: Bash: type: is flattened to a top-level line with the comment dropped.
 #   C04: Bash: max_parallel_tasks: is dropped (execution: block removed).
 #   C05: Bash: heartbeat_interval: is flattened to top level, comment dropped.
 #   C06: Bash: name: value is flattened to top level, comment dropped.
 #   C07: Bash: bare name: with a trailing comment is still repaired (empty-detect).
-#   C08: PS1 parity: same fixture -> flat format-3 rewrite, format_version: 4
+#   C08: PS1 parity: same fixture -> flat format-3 rewrite, format_version: 5
 #        stamped (task-015 addendum, SP-16/AC-10 -- promoted from an
 #        unconditional pass()-stub to a real PWSH invocation now that bin/aid.ps1
-#        carries its own Sc-ConvertRepo / $AidSupportedFormat=4 twin; see
+#        carries its own Sc-ConvertRepo / $AidSupportedFormat=5 twin; see
 #        known-issues.md KI-011).
 # ===========================================================================
 
@@ -1918,12 +1936,12 @@ _TC_RC=$?
 
 assert_exit_eq "$_TC_RC" 0 "PAR077-C01 Bash __migrate-repo valid+commented fixture -> exit 0"
 
-# format_version: 4 stamped at the top of the rewritten flat file.
+# format_version: 5 stamped at the top of the rewritten flat file.
 # task-015 addendum (SP-16/AC-10): was "3" -- stale since task-008 bumped
 # AID_SUPPORTED_FORMAT 3 -> 4 for the STATE.md -> STATE.yml conversion.
 _TC_FMT_LINE=$(grep '^format_version:' "${_TC_REPO_SH}/.aid/settings.yml" | head -1)
-assert_eq "$_TC_FMT_LINE" "format_version: 4" \
-    "PAR077-C02 Bash: format_version: 4 stamped on the rewritten flat file"
+assert_eq "$_TC_FMT_LINE" "format_version: 5" \
+    "PAR077-C02 Bash: format_version: 5 stamped on the rewritten flat file"
 
 # Spot-check individual lines: flattened to top level, comments dropped (full rewrite).
 _TC_TYPE_LINE=$(grep '^type:' "${_TC_REPO_SH}/.aid/settings.yml")
@@ -1981,7 +1999,7 @@ assert_eq "$_TC_BARE_NAME" "$_TC_BARE_EXPECTED_NAME" \
 # idempotency contract (2nd run = byte-identical) is in Gate 6 of
 # test-aid-migrate.sh. This assertion is scoped to stamp + flatten parity only.
 # task-015 addendum (SP-16/AC-10): promoted from an unconditional pass()-stub --
-# bin/aid.ps1 now carries its own Sc-ConvertRepo / $AidSupportedFormat=4 twin
+# bin/aid.ps1 now carries its own Sc-ConvertRepo / $AidSupportedFormat=5 twin
 # (see known-issues.md KI-011), so the real PWSH invocation is exercised here
 # rather than assumed.
 if [[ -n "$PWSH" ]]; then
@@ -1998,14 +2016,14 @@ if [[ -n "$PWSH" ]]; then
     assert_exit_eq "$_TC_PS_RC" 0 "PAR077-C08a PS1 __migrate-repo valid+commented fixture -> exit 0"
 
     _TC_PS_FMT_LINE=$(grep '^format_version:' "${_TC_REPO_PS}/.aid/settings.yml" | head -1)
-    assert_eq "$_TC_PS_FMT_LINE" "format_version: 4" \
-        "PAR077-C08 PS1: format_version: 4 stamped on the rewritten flat file"
+    assert_eq "$_TC_PS_FMT_LINE" "format_version: 5" \
+        "PAR077-C08 PS1: format_version: 5 stamped on the rewritten flat file"
 
     assert_file_not_contains "${_TC_REPO_PS}/.aid/settings.yml" "max_parallel_tasks" \
         "PAR077-C08b PS1: max_parallel_tasks dropped (execution: block removed)"
 else
     pass "PAR077-C08a PS1 __migrate-repo valid+commented fixture -> exit 0 [SKIPPED: pwsh absent]"
-    pass "PAR077-C08 PS1: format_version: 4 stamped, flat schema written (comments dropped, full rewrite) [SKIPPED: pwsh absent]"
+    pass "PAR077-C08 PS1: format_version: 5 stamped, flat schema written (comments dropped, full rewrite) [SKIPPED: pwsh absent]"
     pass "PAR077-C08b PS1: max_parallel_tasks dropped (execution: block removed) [SKIPPED: pwsh absent]"
 fi
 
@@ -2163,7 +2181,7 @@ echo "=== PAR080-S: format-gate / lazy-stamp encounter parity ==="
 # CODE_HOME: a copy of bin/aid self-located for these tests.
 # STATE_HOME: throwaway AID_HOME (registry, no code).
 # S_REPO: a stamp-less repo (era-a settings.yml, no format_version line).
-# S_REPO_STAMPED: a format-current repo (settings.yml with format_version: 4).
+# S_REPO_STAMPED: a format-current repo (settings.yml with format_version: 5).
 # task-015 addendum (SP-16/AC-10): this fixture literally read "format_version: 3"
 # before -- since task-008 bumped AID_SUPPORTED_FORMAT 3 -> 4, that value no
 # longer means "format-current"; it means "one version stale," which would make
@@ -2201,7 +2219,7 @@ printf '%s\n' '{"manifest_version":1,"aid_version":"1.0.0","tools":{"claude-code
 _S_REPO_STAMPED="$(mktemp -d "${TMP}/s080repo_stamped.XXXXXX")"
 mkdir -p "${_S_REPO_STAMPED}/.aid"
 cat > "${_S_REPO_STAMPED}/.aid/settings.yml" << 'S080STAMPEOF'
-format_version: 4
+format_version: 5
 project:
   name: stamped-test
   description: format-current repo with format_version stamp
@@ -2345,18 +2363,20 @@ fi
 #
 # AC1: Constant-parity drift check.
 #   V01: AID_SUPPORTED_FORMAT integer in bin/aid EQUALS $AidSupportedFormat
-#        in bin/aid.ps1 (grep both; compare). Both must equal 4.
+#        in bin/aid.ps1 (grep both; compare). Both must equal 5.
 #        CI fails if either constant drifts.
 #        task-015 addendum (SP-16/AC-10): was "3" -- stale since task-008
 #        bumped AID_SUPPORTED_FORMAT 3 -> 4 for the STATE.md -> STATE.yml
 #        conversion. See known-issues.md KI-011.
+#        Shared-layout bump: the supported repo format is now 5 (the stamp the
+#        v4 add/update commit writes); the "newer" fixtures below moved 5 -> 6.
 #
-# AC2: Refuse-on-newer (format_version: 5) + byte/mtime identity of settings.yml.
+# AC2: Refuse-on-newer (format_version: 6) + byte/mtime identity of settings.yml.
 #   task-015 addendum: the "newer than supported" fixture value must stay ONE
 #   PAST whatever AID_SUPPORTED_FORMAT currently is -- it was 4 (newer than the
 #   old supported=3); now that supported=4, the same fixture value would be
 #   CURRENT (not newer), so it moves to 5 to keep testing the refuse path at all.
-#   V02: Bash 'aid status' in a format_version: 5 repo -> non-zero exit.
+#   V02: Bash 'aid status' in a format_version: 6 repo -> non-zero exit.
 #   V03: Bash refuse: settings.yml byte-identical after the call (no mutation).
 #   V04: Bash refuse: mtime of settings.yml unchanged after the call.
 #   V05: PS1 parity (skipped when pwsh absent): exit non-zero on newer-format repo.
@@ -2400,14 +2420,14 @@ if [[ -n "${_V01_BASH_CONST}" && -n "${_V01_PS1_CONST}" ]]; then
     assert_eq "${_V01_BASH_CONST}" "${_V01_PS1_CONST}" \
         "PAR009-V01 Bash<->PS1 format-constant parity: AID_SUPPORTED_FORMAT == AidSupportedFormat (both=${_V01_BASH_CONST})"
 fi
-# Both must equal 4 specifically (not just each other).
-assert_eq "${_V01_BASH_CONST}" "4" \
-    "PAR009-V01c bin/aid: AID_SUPPORTED_FORMAT == 4 (expected supported format)"
-assert_eq "${_V01_PS1_CONST}" "4" \
-    "PAR009-V01d bin/aid.ps1: AidSupportedFormat == 4 (expected supported format)"
+# Both must equal 5 specifically (not just each other).
+assert_eq "${_V01_BASH_CONST}" "5" \
+    "PAR009-V01c bin/aid: AID_SUPPORTED_FORMAT == 5 (expected supported format)"
+assert_eq "${_V01_PS1_CONST}" "5" \
+    "PAR009-V01d bin/aid.ps1: AidSupportedFormat == 5 (expected supported format)"
 
 # ---------------------------------------------------------------------------
-# V02-V04: Refuse-on-newer (format_version: 5) + byte/mtime identity (Bash).
+# V02-V04: Refuse-on-newer (format_version: 6) + byte/mtime identity (Bash).
 # ---------------------------------------------------------------------------
 _V_CODE_HOME=$(newhome); setup_sh_home "${_V_CODE_HOME}"
 _V_STATE_HOME="$(mktemp -d "${TMP}/v009state.XXXXXX")"
@@ -2415,7 +2435,7 @@ _V_STATE_HOME="$(mktemp -d "${TMP}/v009state.XXXXXX")"
 _V_REPO_NEWER="$(mktemp -d "${TMP}/v009newer.XXXXXX")"
 mkdir -p "${_V_REPO_NEWER}/.aid"
 cat > "${_V_REPO_NEWER}/.aid/settings.yml" << 'V009NEWEREOF'
-format_version: 5
+format_version: 6
 project:
   name: newer-format-test
   description: repo with format newer than CLI supports
@@ -2447,7 +2467,7 @@ rm -f "${_V02_TMP_OUT}"
 
 # V02: non-zero exit on newer-format repo.
 assert_exit_nonzero "${_V02_RC}" \
-    "PAR009-V02 Bash refuse-on-newer: aid status format_version:5 -> non-zero exit"
+    "PAR009-V02 Bash refuse-on-newer: aid status format_version:6 -> non-zero exit"
 
 # V03: byte-identical settings.yml after refuse (no mutation).
 _V02_SHA_AFTER=$(sha256sum "${_V_REPO_NEWER}/.aid/settings.yml" | cut -d' ' -f1)
@@ -2476,7 +2496,7 @@ if [[ -n "$PWSH" ]]; then
     _V_REPO_NEWER_PS="$(mktemp -d "${TMP}/v009newerps.XXXXXX")"
     mkdir -p "${_V_REPO_NEWER_PS}/.aid"
     cat > "${_V_REPO_NEWER_PS}/.aid/settings.yml" << 'V009NEWERPEOF'
-format_version: 5
+format_version: 6
 project:
   name: newer-format-ps1-test
   description: repo with format newer than CLI supports (PS1 fixture)
@@ -2502,7 +2522,7 @@ V009NEWERPEOF
     rm -f "${_V05_TMP_OUT}"
 
     assert_exit_nonzero "${_V05_RC}" \
-        "PAR009-V05 PS1 refuse-on-newer: aid.ps1 status format_version:5 -> non-zero exit"
+        "PAR009-V05 PS1 refuse-on-newer: aid.ps1 status format_version:6 -> non-zero exit"
 
     _V05_SHA_AFTER_PS=$(sha256sum "${_V_REPO_NEWER_PS}/.aid/settings.yml" | cut -d' ' -f1)
     assert_eq "${_V05_SHA_BEFORE_PS}" "${_V05_SHA_AFTER_PS}" \
@@ -2664,7 +2684,7 @@ assert_exit_eq "$RC_PS1" 0 "PAR029-W07 PS1 aid-update no-.aid/ dir -> exit 0 (CL
 assert_eq "$RC_SH" "$RC_PS1" "PAR029-W08 Bash/PS1 aid-update no-.aid/ exit code parity"
 
 # W11/W12: format-gate refuse message parity — refuse text identical across runtimes.
-# Run aid status in a repo with format_version: 5 (newer than supported).
+# Run aid status in a repo with format_version: 6 (newer than supported).
 # task-015 addendum (SP-16/AC-10): was format_version: 4 -- that WAS "newer than
 # supported" while AID_SUPPORTED_FORMAT was 3; now that it is 4, the fixture
 # moves to 5 to keep exercising the refuse path (see the PAR009-V02 note above).
@@ -2674,7 +2694,7 @@ PS_HOME_W2=$(newhome); setup_ps1_home "${PS_HOME_W2}"
 T_W2=$(newtarget)
 mkdir -p "${T_W2}/.aid"
 cat > "${T_W2}/.aid/settings.yml" << 'PAR029W2EOF'
-format_version: 5
+format_version: 6
 project:
   name: newer-format-par029w
   description: newer-than-supported format for refuse parity check
@@ -2698,7 +2718,7 @@ _W11_RC=$?
 _W11_OUT="$(cat "${_W11_TMP}")"; rm -f "${_W11_TMP}"
 
 assert_exit_nonzero "${_W11_RC}" \
-    "PAR029-W11 Bash aid-status format_version:5 -> non-zero exit (refuse)"
+    "PAR029-W11 Bash aid-status format_version:6 -> non-zero exit (refuse)"
 
 if [[ -n "$PWSH" ]]; then
     (cd "${T_W2}" && AID_HOME="${PS_HOME_W2}" AID_LIB_PATH="${PS_HOME_W2}/lib/AidInstallCore.psm1" \
@@ -2709,7 +2729,7 @@ if [[ -n "$PWSH" ]]; then
     _W12_OUT="$(cat "${_W12_TMP}" | sed 's/\x1b\[[0-9;]*m//g')"; rm -f "${_W12_TMP}"
 
     assert_exit_nonzero "${_W12_RC}" \
-        "PAR029-W12 PS1 aid-status format_version:5 -> non-zero exit (refuse)"
+        "PAR029-W12 PS1 aid-status format_version:6 -> non-zero exit (refuse)"
     # Refuse message text must appear in both runtimes (parity of the refuse surface).
     assert_output_contains "$_W11_OUT" "newer than this CLI supports" \
         "PAR029-W13 Bash refuse: 'newer than this CLI supports' in output"
@@ -2717,7 +2737,7 @@ if [[ -n "$PWSH" ]]; then
         "PAR029-W14 PS1 refuse: 'newer than this CLI supports' in output"
     # Parity: both refuse (non-zero) with same message pattern.
     assert_eq "${_W11_RC}" "${_W12_RC}" \
-        "PAR029-W15 Bash↔PS1 format-gate refuse exit code parity (format_version:5)"
+        "PAR029-W15 Bash↔PS1 format-gate refuse exit code parity (format_version:6)"
 else
     pass "PAR029-W12 PS1 format-gate refuse: exit non-zero [SKIPPED: pwsh absent]"
     pass "PAR029-W13 Bash format-gate refuse message check [SKIPPED: pwsh absent]"
@@ -3810,9 +3830,18 @@ run_pardw_sh ""
 assert_output_not_contains "$OUT_SH" "could not write to state home" \
     "PAR-DW01a Bash degrade WARN silent by default"
 
+# The degrade path needs a non-writable state home; chmod -w is a no-op for uid 0
+# (same guard as PAR002-X62..X86), so the shown-under-verbose halves cannot be
+# triggered when the suite runs as root.
+_PAR_DW_ROOT=0; [[ "$(id -u)" -eq 0 ]] && _PAR_DW_ROOT=1
+
 run_pardw_sh "--verbose"
-assert_output_contains "$OUT_SH" "could not write to state home" \
-    "PAR-DW01b Bash degrade WARN shown under --verbose"
+if [[ "$_PAR_DW_ROOT" -eq 1 ]]; then
+    pass "PAR-DW01b Bash degrade WARN shown under --verbose [SKIPPED: uid 0 -- chmod -w no-op]"
+else
+    assert_output_contains "$OUT_SH" "could not write to state home" \
+        "PAR-DW01b Bash degrade WARN shown under --verbose"
+fi
 
 if [[ -n "$PWSH" ]]; then
     chmod 555 "${_PAR_DW_PS_HOME}" 2>/dev/null
@@ -3834,8 +3863,12 @@ if [[ -n "$PWSH" ]]; then
         "$PWSH" -NoProfile -File "${_PAR_DW_PS_HOME}/bin/aid.ps1" \
             projects add "${_PAR_DW_PROJ}" --local --verbose 2>&1 | sed 's/\x1b\[[0-9;]*m//g')
     chmod 755 "${_PAR_DW_PS_HOME}" "${_PAR_DW_SHARED}" 2>/dev/null
-    assert_output_contains "$_PAR_DW_PS_OUT_VRB" "could not write to state home" \
-        "PAR-DW02b PS1 degrade WARN shown under --verbose"
+    if [[ "$_PAR_DW_ROOT" -eq 1 ]]; then
+        pass "PAR-DW02b PS1 degrade WARN shown under --verbose [SKIPPED: uid 0 -- chmod -w no-op]"
+    else
+        assert_output_contains "$_PAR_DW_PS_OUT_VRB" "could not write to state home" \
+            "PAR-DW02b PS1 degrade WARN shown under --verbose"
+    fi
 else
     pass "PAR-DW02a [SKIPPED: pwsh absent]"
     pass "PAR-DW02b [SKIPPED: pwsh absent]"
@@ -3896,49 +3929,15 @@ ua_file_url() {
     fi
 }
 
-# build_ua_tarball <tool> <version> <out_tarball>
-# Parameterized twin of build_fixture_tarball (arbitrary <version> stamp, arbitrary
-# output path) -- same content/exclusions, for the 'aid update all' download fixture.
-build_ua_tarball() {
-    local tool="$1" version="$2" tarball="$3"
-    local profile_dir="${PROFILES_DIR}/${tool}"
-    [[ -d "$profile_dir" ]] || { echo "ERROR: profile dir not found: $profile_dir" >&2; return 1; }
-    local filelist
-    filelist="$(mktemp "${TMP}/ua-filelist-${tool}.XXXXXX")"
-    while IFS= read -r f; do
-        local fname; fname="$(basename "$f")"
-        [[ "$fname" == "README.md" ]] && continue
-        [[ "$fname" == "emission-manifest.jsonl" ]] && continue
-        local rel="${f#${profile_dir}/}"
-        printf './%s\n' "$rel"
-    done < <(find "${profile_dir}" -type f | sort) > "$filelist"
-    (cd "${profile_dir}" && tar -czf "${tarball}" --no-recursion -T "${filelist}") || {
-        echo "ERROR: failed to build UA fixture tarball for ${tool}" >&2
-        rm -f "$filelist"
-        return 1
-    }
-    rm -f "$filelist"
-}
-
 # build_ua_download_fixture <dl_base_dir> <version> <tool...>
-# Populates <dl_base_dir>/v<version>/aid-<tool>-v<version>.tar.gz per tool plus a
-# sibling SHA256SUMS -- the exact shape fetch_tarball expects at
-# AID_DOWNLOAD_BASE/v<version>/... (lib/aid-install-core.sh:222-223).
+# Populates <dl_base_dir>/v<version>/ with aid-shared-v<version>.tar.gz, one
+# aid-<tool>-v<version>.tar.gz per tool and a sibling SHA256SUMS -- the shape the
+# endpoint-override fetch expects at AID_DOWNLOAD_BASE/v<version>/... Built by
+# re-tagging the staged real bundle (retag_bundle), so the artifacts are genuine
+# v4 shared-layout artifacts at an arbitrary version stamp.
 build_ua_download_fixture() {
     local dl_base="$1" version="$2"; shift 2
-    local vdir="${dl_base}/v${version}"
-    mkdir -p "$vdir"
-    local tool
-    for tool in "$@"; do
-        build_ua_tarball "$tool" "$version" "${vdir}/aid-${tool}-v${version}.tar.gz" || return 1
-    done
-    # --text: force the ' filename' (no '*' binary-mode marker) line shape that
-    # _verify_checksum's grep "[[:space:]]${filename}$" expects. Without it, this
-    # host's mingw64 sha256sum defaults to binary mode ('*filename'), which that
-    # grep does NOT match (the '*' sits between the space and the filename) --
-    # confirmed empirically on this Windows host; --text is a harmless no-op on
-    # Linux (GNU coreutils: "no difference between binary mode and text mode").
-    (cd "$vdir" && sha256sum --text aid-*.tar.gz > SHA256SUMS)
+    retag_bundle "${T23_STAGE}" "${dl_base}/v${version}" "${version}" "$@"
 }
 
 # Bash 'aid update all' runner: run_sh's base env + the REAL AID_ALLOW_ENDPOINT_OVERRIDE
@@ -5792,13 +5791,6 @@ fi
 #   "-|!<snippet>"        identical in-place mutation on both twins (@T = target)
 #   "contains|<needle>"   needle must appear in the previous step's output, both shells
 # ===========================================================================
-T23_VERSION="$(tr -d '[:space:]' < "${REPO_ROOT}/VERSION")"
-T23_STAGE="${TMP}/t23-stage"
-mkdir -p "${T23_STAGE}"
-if ! aid_test_stage_bundle "${T23_STAGE}" >"${TMP}/t23-stage.log" 2>&1; then
-    fail "task-023 setup: could not stage the release bundle (see ${TMP}/t23-stage.log)"
-fi
-
 # Normalize one CLI output: strip ANSI and CRs, mask the twin's own target and home.
 t23_norm() {  # <text> <target> <home>
     printf '%s\n' "$1" | sed -e 's/\x1b\[[0-9;]*m//g' -e 's/\r$//' -e "s#$2#<T>#g" -e "s#$3#<H>#g"
