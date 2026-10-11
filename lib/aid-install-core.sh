@@ -89,12 +89,7 @@ fi
 AID_TOOLS=(claude-code codex cursor copilot-cli antigravity)
 
 # Root agent file per tool.
-_root_agent_file() {
-    case "$1" in
-        claude-code)  echo "CLAUDE.md" ;;
-        codex|cursor|copilot-cli|antigravity) echo "AGENTS.md" ;;
-    esac
-}
+_root_agent_file() { echo "AGENTS.md"; }
 
 # _root_dir <tool> - print the tool's install-tree root dir name (relative to the
 # project root). The AID-own subtree lives at <root>/aid/ (e.g. .claude/aid/).
@@ -618,237 +613,6 @@ copy_file_guarded() {
 # Root agent file region update (Pillar 3)
 # ---------------------------------------------------------------------------
 
-# _copy_root_agent_file <src> <dst> <tool> <force> <manifest>
-#
-# Updates the root agent file (CLAUDE.md / AGENTS.md) using in-place region
-# semantics.  Never writes a backup/sidecar file under any branch.
-#
-# Algorithm:
-#   A. Dst absent              -> write full source (markers included).
-#   B. Dst has AID:BEGIN/END   -> replace only the marked region; preserve all
-#                                 content outside the markers verbatim.
-#   C. Dst has no markers      -> migrate:
-#      C1. Sha matches recorded manifest sha -> clean rewrite to full marked source.
-#      C2. Sha mismatch        -> excise known AID-managed sections by stem match
-#                                 (## Tracking discipline, ## Knowledge Base,
-#                                 ## Connectors, ## Workflow, ## Review output format,
-#                                 ## Permissions -- tolerating trailing parenthetical
-#                                 suffix on the heading) and re-insert them wrapped
-#                                 in AID:BEGIN/END markers in place; preserve
-#                                 ## Project / ## Project Overview and all other
-#                                 user content.  No backup file is ever written.
-#
-# Returns:
-#   0 - success (copied/up-to-date/updated)
-#
-# Sets _CORE_ROOT_AGENT_STATUS="owned" always (the .aid-new / pending-merge path
-# is eliminated; all divergence is resolved in-place).
-_copy_root_agent_file() {
-    local src="$1" dst="$2" tool="$3" force="${4:-0}" manifest="${5:-}"
-
-    _CORE_ROOT_AGENT_STATUS="owned"
-    local src_sha
-    src_sha="$(sha256_file "$src")"
-    local dst_dir
-    dst_dir="$(dirname "$dst")"
-
-    # ------------------------------------------------------------------
-    # Branch A: destination absent -> write full source.
-    # ------------------------------------------------------------------
-    if [[ ! -e "$dst" ]]; then
-        mkdir -p "$dst_dir"
-        cp "$src" "$dst"
-        _COPY_COUNT_COPIED=$((_COPY_COUNT_COPIED + 1))
-        [[ "${AID_VERBOSE:-0}" -eq 1 ]] && echo "Copied: ${dst}"
-        return 0
-    fi
-
-    local disk_sha
-    disk_sha="$(sha256_file "$dst")"
-
-    # Identical on disk -> nothing to do.
-    if [[ "$disk_sha" == "$src_sha" ]]; then
-        _COPY_COUNT_UPTODATE=$((_COPY_COUNT_UPTODATE + 1))
-        [[ "${AID_VERBOSE:-0}" -eq 1 ]] && echo "Up to date: ${dst}"
-        return 0
-    fi
-
-    # ------------------------------------------------------------------
-    # Branch B: destination already has AID:BEGIN/END markers.
-    # Replace only the marked region; preserve everything outside verbatim.
-    # ------------------------------------------------------------------
-    if grep -qF '<!-- AID:BEGIN -->' "$dst" 2>/dev/null; then
-        # Extract the marked region from the source (inclusive of marker lines).
-        local src_region
-        src_region="$(awk '/^<!-- AID:BEGIN -->/{found=1} found{print} /^<!-- AID:END -->/{if(found){exit}}' "$src")"
-
-        # Rebuild dst: output lines before the marker, then the new region,
-        # then lines after the closing marker.
-        local tmp
-        tmp="$(mktemp "${dst_dir}/.aid-root-agent.XXXXXX")"
-        # awk -v applies C-escape processing to the value; double every backslash
-        # so a region containing "\" (or "\n"-like text) passes through literally
-        # (work-007 C7). No-op for the current backslash-free region.
-        local src_region_esc="${src_region//\\/\\\\}"
-        awk -v region="$src_region_esc" '
-        BEGIN { in_aid=0; printed_region=0 }
-        /^<!-- AID:BEGIN -->/ {
-            if (!printed_region) {
-                print region
-                printed_region=1
-            }
-            in_aid=1
-            next
-        }
-        in_aid && /^<!-- AID:END -->/ { in_aid=0; next }
-        in_aid { next }
-        { print }
-        ' "$dst" > "$tmp"
-        mv "$tmp" "$dst"
-
-        _COPY_COUNT_UPDATED=$((_COPY_COUNT_UPDATED + 1))
-        [[ "${AID_VERBOSE:-0}" -eq 1 ]] && echo "Updated: ${dst} (region replaced)"
-        return 0
-    fi
-
-    # ------------------------------------------------------------------
-    # Branch C: destination has no markers -- migration path.
-    # ------------------------------------------------------------------
-
-    # Read recorded sha from manifest (the sha AID last wrote to this file).
-    local recorded_sha=""
-    if [[ -n "$manifest" && -f "$manifest" ]]; then
-        recorded_sha="$(manifest_read_root_agent "$manifest" "$tool" "$(basename "$dst")")"
-    fi
-
-    # C1: sha still matches the AID-recorded value -> clean rewrite.
-    if [[ -n "$recorded_sha" && "$disk_sha" == "$recorded_sha" ]]; then
-        cp "$src" "$dst"
-        _COPY_COUNT_UPDATED=$((_COPY_COUNT_UPDATED + 1))
-        [[ "${AID_VERBOSE:-0}" -eq 1 ]] && echo "Updated: ${dst} (migrated: clean rewrite)"
-        return 0
-    fi
-
-    # C2: sha mismatch (user has edited the file) -> excise AID sections by
-    # stem match and re-insert as a marked region.
-    #
-    # AID section stems to excise (exact heading stem; tolerate trailing
-    # parenthetical like " (global)" or " (IMPERATIVE)") -- MUST match every
-    # "## " heading in the region (see is_aid_heading):
-    #   ## Tracking discipline
-    #   ## Knowledge Base
-    #   ## Connectors
-    #   ## Workflow
-    #   ## Review output format
-    #   ## Permissions
-    #
-    # A section runs from its "## Stem..." heading line until the next "## "
-    # heading (exclusive) or end-of-file.
-    #
-    # The new marked region (from the source) is inserted at the position of
-    # the first excised section.  All other content (## Project, user sections)
-    # is preserved verbatim.
-
-    # Extract the new marked region from source.
-    local new_region
-    new_region="$(awk '/^<!-- AID:BEGIN -->/{found=1} found{print} /^<!-- AID:END -->/{if(found){exit}}' "$src")"
-    # awk -v applies C-escape processing; double backslashes so the region passes
-    # through literally (work-007 C7). No-op for the current backslash-free region.
-    local new_region_esc="${new_region//\\/\\\\}"
-
-    local tmp
-    tmp="$(mktemp "${dst_dir}/.aid-root-agent.XXXXXX")"
-
-    # Use awk to perform the excise-and-reinsert in one pass (region passed
-    # backslash-doubled via new_region_esc -- see C7 note above).
-    # The awk script:
-    #   - Identifies AID-managed section headings by stem prefix match.
-    #   - Suppresses those sections (and their body lines).
-    #   - At the position of the first suppressed section, emits the new region.
-    #   - All other lines are emitted verbatim.
-    awk -v new_region="$new_region_esc" '
-    function is_aid_heading(line,    stem) {
-        # Match "## StemText" optionally followed by " (anything)".
-        # Stems must cover EVERY "## " heading inside the shipped AID:BEGIN/END
-        # region (Tracking discipline, Knowledge Base, Connectors, Workflow,
-        # Review output format, Permissions) -- a stem missing here causes a
-        # duplicate section on the C2 (no-marker) migration path (work-007:
-        # Workflow was omitted).
-        if (line !~ /^## /) return 0
-        stem = line
-        gsub(/^## /, "", stem)
-        # Strip trailing parenthetical suffix: " (..." -> ""
-        gsub(/ \([^)]*\)$/, "", stem)
-        if (stem == "Knowledge Base") return 1
-        if (stem == "Connectors") return 1
-        if (stem == "Workflow") return 1
-        if (stem == "Review output format") return 1
-        if (stem == "Permissions") return 1
-        if (stem == "Tracking discipline") return 1
-        return 0
-    }
-    BEGIN {
-        in_aid_section=0
-        region_inserted=0
-    }
-    /^## / {
-        if (is_aid_heading($0)) {
-            # Start suppressing this AID section.
-            in_aid_section=1
-            # Insert the new marked region at the first AID section position.
-            if (!region_inserted) {
-                print new_region
-                region_inserted=1
-            }
-            next
-        } else {
-            # A non-AID heading ends any current AID section suppression.
-            in_aid_section=0
-        }
-    }
-    in_aid_section { next }
-    { print }
-    END {
-        # No AID section existed to anchor the region (a brownfield file with no
-        # prior AID content) -> append the marked region at end of file. Without
-        # this the AID block would be silently dropped and the file never gains
-        # AID instructions.
-        if (!region_inserted) {
-            print ""
-            print new_region
-        }
-    }
-    ' "$dst" > "$tmp"
-
-    mv "$tmp" "$dst"
-
-    _COPY_COUNT_UPDATED=$((_COPY_COUNT_UPDATED + 1))
-    [[ "${AID_VERBOSE:-0}" -eq 1 ]] && echo "Updated: ${dst} (migrated: AID sections re-wrapped in markers)"
-    return 0
-}
-
-# ---------------------------------------------------------------------------
-# Manifest - pure-Bash reader (no jq/python required)
-# ---------------------------------------------------------------------------
-#
-# The manifest has this shape (2-space indent, \n newlines):
-# {
-#   "format_version": 2,
-#   "aid_version": "0.7.0",
-#   "installed_at": "...",
-#   "tools": {
-#     "claude-code": {
-#       "version": "0.7.0",
-#       "installed_at": "...",
-#       "paths": ["..."],
-#       "root_agent_files": [{"path": "...", "sha256": "...", "status": "owned"}]
-#     }
-#   }
-# }
-#
-# Readers use grep/sed/awk to extract what they need - sufficient because the
-# schema is flat enough.
-
 # manifest_read_tool_paths <manifest> <tool>
 # Prints one path per line (from the "paths" array of the named tool section).
 manifest_read_tool_paths() {
@@ -910,6 +674,145 @@ PY
         print s; exit
     }
     ' "$manifest"
+}
+
+
+# Fixed root context regions. Keep these LF-only constants in both install cores.
+_AID_AGENTS_POINTER_REGION=$'<!-- AID:BEGIN -->\n<!-- Managed by the AID CLI. Do not edit between the AID markers. -->\n@.aid/runtime/rules.md\nBefore acting, read and follow `.aid/runtime/rules.md` (AID rules).\n<!-- AID:END -->\n'
+_AID_CLAUDE_IMPORT_REGION=$'<!-- AID:BEGIN -->\n@AGENTS.md\n<!-- AID:END -->\n'
+
+# _repair_root_region <file> <region> [project-root]
+# Preserve bytes outside exact managed lines; malformed regions are backed up first.
+_repair_root_region() {
+    local file="$1" region="$2" root="${3:-$(dirname "$1")}" core="${BASH_SOURCE[0]}"
+    python3 - "$file" "$region" "$root" "$core" <<'PY'
+import os, pathlib, subprocess, sys
+path, region, root, core = sys.argv[1], sys.argv[2].encode(), sys.argv[3], sys.argv[4]
+expected = region.splitlines()
+def content(line): return line[:-2] if line.endswith(b"\r\n") else line[:-1] if line.endswith(b"\n") else line
+if not os.path.exists(path):
+    os.makedirs(os.path.dirname(path) or ".", exist_ok=True)
+    pathlib.Path(path).write_bytes(region)
+    raise SystemExit(0)
+data = pathlib.Path(path).read_bytes()
+lines = data.splitlines(keepends=True)
+contents = [content(line) for line in lines]
+managed = set(expected)
+positions = [i for i, line in enumerate(contents) if line in managed]
+if not positions:
+    pathlib.Path(path).write_bytes(data + (b"" if not data or data.endswith(b"\n") else b"\n") + region)
+    raise SystemExit(0)
+starts = [i for i in range(len(lines)-len(expected)+1) if contents[i:i+len(expected)] == expected]
+if len(starts) == 1 and len(positions) == len(expected): raise SystemExit(0)
+subprocess.run(["bash", "-c", 'source "$1"; trash_file "$2" "$3"', "_", core, root, path], check=True)
+out = bytearray(); inserted = False
+for line, value in zip(lines, contents):
+    if value in managed:
+        if not inserted: out.extend(region); inserted = True
+    else: out.extend(line)
+if not inserted: out.extend(region)
+pathlib.Path(path).write_bytes(out)
+PY
+}
+
+# Repair and print the canonical import-region hash.
+_ensure_claude_md_region() {
+    local file="${1:-$PWD/CLAUDE.md}" root="${2:-$(dirname "${1:-$PWD/CLAUDE.md}")}"
+    _repair_root_region "$file" "$_AID_CLAUDE_IMPORT_REGION" "$root" || return 1
+    printf '%s\n' "$(printf '%s' "$_AID_CLAUDE_IMPORT_REGION" | sha256sum | awk '{print $1}')"
+}
+
+# Remove the exact Claude import region, backing up drift before the surgical edit.
+_remove_claude_md_region() {
+    local file="$1" recorded="${2:-}" root="${3:-$(dirname "$1")}" core="${BASH_SOURCE[0]}"
+    [[ -f "$file" ]] || return 0
+    python3 - "$file" "$recorded" "$root" "$core" <<'PY'
+import hashlib, os, pathlib, subprocess, sys
+path, recorded, root, core = sys.argv[1:]
+data=pathlib.Path(path).read_bytes(); lines=data.splitlines(keepends=True)
+def content(line): return line[:-2] if line.endswith(b"\r\n") else line[:-1] if line.endswith(b"\n") else line
+values=[content(x) for x in lines]
+begin=b"<!-- AID:BEGIN -->"; end=b"<!-- AID:END -->"
+starts=[i for i,x in enumerate(values) if x==begin]; ends=[i for i,x in enumerate(values) if x==end]
+if len(starts)!=1 or len(ends)!=1 or starts[0]>=ends[0]: raise SystemExit(0)
+start,finish=starts[0],ends[0]
+canonical=b"".join(values[i]+b"\n" for i in range(start,finish+1))
+if hashlib.sha256(canonical).hexdigest()!=recorded:
+    subprocess.run(["bash", "-c", 'source "$1"; trash_file "$2" "$3"', "_", core, root, path], check=True)
+out=b"".join(lines[:start]+lines[finish+1:])
+if not out.strip(): os.remove(path)
+else: pathlib.Path(path).write_bytes(out)
+PY
+}
+# Writes the shared AGENTS.md pointer region and records its hashes for the caller.
+_repair_inline_root_region() {
+    local file="$1" region="$2" root="${3:-$(dirname "$1")}" core="${BASH_SOURCE[0]}"
+    python3 - "$file" "$region" "$root" "$core" <<'PY'
+import os, pathlib, subprocess, sys
+path, region, root, core = sys.argv[1], sys.argv[2].encode(), sys.argv[3], sys.argv[4]
+begin=b"<!-- AID:BEGIN -->"; end=b"<!-- AID:END -->"
+if not os.path.exists(path):
+    os.makedirs(os.path.dirname(path) or ".", exist_ok=True); pathlib.Path(path).write_bytes(region); raise SystemExit(0)
+data=pathlib.Path(path).read_bytes()
+lines=data.splitlines(keepends=True)
+def value(x): return x[:-2] if x.endswith(b"\r\n") else x[:-1] if x.endswith(b"\n") else x
+starts=[i for i,x in enumerate(lines) if value(x)==begin]; ends=[i for i,x in enumerate(lines) if value(x)==end]
+if len(starts)==1 and len(ends)==1 and starts[0]<ends[0]:
+    start,endline=starts[0],ends[0]
+    # Preserve marker terminators and all bytes outside the marked span.
+    prefix=b"".join(lines[:start+1]); suffix=b"".join(lines[endline:])
+    replacement=region[len(begin)+1:-(len(end)+1)]
+    if not lines[start].endswith(b"\n"): prefix += b"\n"
+    pathlib.Path(path).write_bytes(prefix+replacement+suffix); raise SystemExit(0)
+if not starts and not ends:
+    pathlib.Path(path).write_bytes(data+(b"" if not data or data.endswith(b"\n") else b"\n")+region); raise SystemExit(0)
+subprocess.run(["bash","-c",'source "$1"; trash_file "$2" "$3"',"_",core,root,path],check=True)
+# Malformed marker spans are replaced in place; unrelated lines stay byte-identical.
+out=bytearray(); inserted=False
+for line in lines:
+    v=value(line)
+    if v in (begin,end):
+        if not inserted: out.extend(region); inserted=True
+    else: out.extend(line)
+if not inserted: out.extend(region)
+pathlib.Path(path).write_bytes(out)
+PY
+}
+
+_copy_root_agent_file() {
+    local src="$1" dst="$2" tool="$3" force="${4:-0}" manifest="${5:-}" root="$(dirname "$2")" inline=0 rules region
+    local had_dst=0 before_sha=""
+    if [[ -f "$dst" ]]; then had_dst=1; before_sha="$(sha256_file "$dst")"; fi
+    _CORE_ROOT_AGENT_STATUS="owned"
+    if [[ -f "$(dirname "$src")/aid-tool.conf" ]] && grep -qx 'rules_inline=true' "$(dirname "$src")/aid-tool.conf"; then inline=1; fi
+    if [[ -n "$manifest" && -f "$manifest" ]] && command -v python3 >/dev/null 2>&1; then
+        python3 - "$manifest" "$tool" <<'PY' | grep -qx true && inline=1
+import json,sys
+try: print(str(bool(json.load(open(sys.argv[1])).get('tools',{}).get(sys.argv[2],{}).get('rules_inline',False))).lower())
+except Exception: pass
+PY
+    fi
+    if [[ "$inline" -eq 1 ]]; then
+        rules="$root/.aid/runtime/rules.md"
+        [[ -f "$rules" ]] || return 1
+        region="$(printf '<!-- AID:BEGIN -->\n<!-- Managed by the AID CLI. Do not edit between the AID markers. -->\n'; cat "$rules"; printf '<!-- AID:END -->\n')"$'\n'
+        _repair_inline_root_region "$dst" "$region" "$root" || return 1
+    else
+        region="$_AID_AGENTS_POINTER_REGION"
+        _repair_root_region "$dst" "$region" "$root" || return 1
+    fi
+    _CORE_ROOT_AGENT_REGION_SHA="$(printf '%s' "$region" | sha256sum | awk '{print $1}')"
+    _CORE_ROOT_AGENT_FILE_SHA="$(sha256_file "$dst")"
+    if [[ "$had_dst" -eq 0 ]]; then
+        _COPY_COUNT_COPIED=$((${_COPY_COUNT_COPIED:-0} + 1))
+        [[ "${AID_VERBOSE:-0}" -eq 1 ]] && echo "Copied: $dst"
+    elif [[ "$before_sha" == "$_CORE_ROOT_AGENT_FILE_SHA" ]]; then
+        _COPY_COUNT_UPTODATE=$((${_COPY_COUNT_UPTODATE:-0} + 1))
+        [[ "${AID_VERBOSE:-0}" -eq 1 ]] && echo "Up to date: $dst"
+    else
+        _COPY_COUNT_UPDATED=$((${_COPY_COUNT_UPDATED:-0} + 1))
+        [[ "${AID_VERBOSE:-0}" -eq 1 ]] && echo "Updated: $dst"
+    fi
 }
 
 # manifest_read_root_agent <manifest> <tool> <filename>

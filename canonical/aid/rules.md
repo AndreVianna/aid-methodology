@@ -1,10 +1,3 @@
-# AGENTS.md
-
-## Project Overview
-<!-- AID-DISCOVER — Replace with project name, purpose, tech stack, and target platform -->
-(pending discovery)
-
-<!-- AID:BEGIN -->
 ## Tracking discipline (IMPERATIVE)
 
 Every project, task, and deliverable is tracked in a state file — the work's
@@ -32,7 +25,7 @@ cross-phase process state). Keeping it current is **not optional**:
   straight to `Done` is exactly the failure mode this rule exists to prevent.
 - **Work folders are transient.** `.aid/works/work-NNN-*/` holds disposable
   per-work pipeline state and may be pruned once the work ships. No permanent
-  artifact — product code, `canonical/` content (or its `profiles/` render),
+  artifact — product code, shared source content (or its host render),
   tests, docs, the Knowledge Base, or these context files — may depend on the
   contents of a specific work folder: tests build their own fixtures, and the
   KB never cites a work folder as a source. Pipeline skills/scripts that
@@ -62,7 +55,7 @@ Read `.aid/connectors/INDEX.md`.
 
 - Connectors are catalogued via `aid-discover` (ELICIT) and can be added, updated, or removed on
   demand — without re-running discovery — with `aid-set-connector` / `aid-unset-connector`.
-- Consumption is MCP-first (`aid/templates/connectors/consumption-protocol.md`, under this tool's
+- Consumption is MCP-first (`.aid/runtime/templates/connectors/consumption-protocol.md`, under this tool's
   install root): scan the index, and for a `connection_type: mcp` connector, request the connection
   from your host tool's own MCP/plugin — AID resolves nothing and stores no credential for it.
 - aid-managed consumption (`api` / `ssh` / `url` / `cli`) remains deferred; those descriptors exist
@@ -95,7 +88,7 @@ not the enforcer:
 
 Any review output you produce — dispatched sub-agent, script validator, or
 ad-hoc user-prompted — uses the schema at
-`aid/templates/reviewer-ledger-schema.md` (under this tool's install root). Write the ledger as a single
+`.aid/runtime/templates/reviewer-ledger-schema.md` (under this tool's install root). Write the ledger as a single
 markdown table at `.aid/.temp/review-pending/<scope>.md`. Use the 7-column
 shape: `# | Severity | Status | Doc | Line | Description | Evidence`.
 Severity tags bracketed; Status enum: Pending/Fixed/Recurred/Accepted/OOS/Invalid.
@@ -107,4 +100,3 @@ No narrative or summary sections in the ledger.
 - Write only within the project directory
 - Run build and test commands (Python, Bash, PowerShell)
 - Do NOT modify files outside the project root
-<!-- AID:END -->

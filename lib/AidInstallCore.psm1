@@ -91,10 +91,7 @@ $script:AID_TOOLS = @('claude-code', 'codex', 'cursor', 'copilot-cli', 'antigrav
 # Root agent file per tool.
 function script:Get-RootAgentFile {
     param([string]$Tool)
-    switch ($Tool) {
-        'claude-code' { return 'CLAUDE.md' }
-        default       { return 'AGENTS.md' }
-    }
+    return 'AGENTS.md'
 }
 
 # Get-RootDir <tool> - return the tool's install-tree root dir name (relative to
@@ -687,263 +684,124 @@ function Copy-AidFileGuarded {
     if ($AidVerbose) { Write-Host "Updated: $Dst" }
 }
 
-# ---------------------------------------------------------------------------
-# Root agent file region update (Pillar 3)
-# ---------------------------------------------------------------------------
+# Fixed LF root-context regions. These are install-core constants, never payload files.
+$script:_AidAgentsPointerRegion = "<!-- AID:BEGIN -->`n<!-- Managed by the AID CLI. Do not edit between the AID markers. -->`n@.aid/runtime/rules.md`nBefore acting, read and follow ``.aid/runtime/rules.md`` (AID rules).`n<!-- AID:END -->`n"
+$script:_AidClaudeImportRegion = "<!-- AID:BEGIN -->`n@AGENTS.md`n<!-- AID:END -->`n"
 
-# script:Test-AidHeadingStem <line>
-# Returns $true when the line is an AID-managed section heading (by stem match).
-# Stems matched: Tracking discipline, Knowledge Base, Connectors, Workflow,
-#                Review output format, Permissions.
-# Tolerates a trailing parenthetical suffix e.g. " (global)" or " (IMPERATIVE)".
-# Identical logic to the bash is_aid_heading awk function.
-function script:Test-AidHeadingStem {
-    param([string]$Line)
-    if (-not $Line.StartsWith('## ')) { return $false }
-    $stem = $Line.Substring(3)  # strip "## "
-    # Strip trailing parenthetical: " (anything)"
-    $stem = $stem -replace ' \([^)]*\)$', ''
-    # Stems must cover EVERY "## " heading in the shipped AID:BEGIN/END region
-    # (Tracking discipline, Knowledge Base, Connectors, Workflow, Review output
-    # format, Permissions). A missing stem duplicates that section on C2
-    # migration (work-007: Workflow was omitted). Parity with bash is_aid_heading.
-    switch ($stem) {
-        'Knowledge Base'       { return $true }
-        'Connectors'           { return $true }
-        'Workflow'             { return $true }
-        'Review output format' { return $true }
-        'Permissions'          { return $true }
-        'Tracking discipline'  { return $true }
-        default                { return $false }
+# Repairs one fixed root region while preserving all bytes outside it.
+function script:Repair-AidRootRegion {
+    param([string]$File, [string]$Region, [string]$Root = '')
+    if ($Root -eq '') { $Root = [System.IO.Path]::GetDirectoryName([System.IO.Path]::GetFullPath($File)) }
+    $encoding = New-Object System.Text.UTF8Encoding($false)
+    $regionBytes = $encoding.GetBytes($Region)
+    if (-not (Test-Path -LiteralPath $File -PathType Leaf)) {
+        $dir = [System.IO.Path]::GetDirectoryName($File)
+        if ($dir -and -not (Test-Path -LiteralPath $dir -PathType Container)) { New-Item -ItemType Directory -Path $dir -Force | Out-Null }
+        [System.IO.File]::WriteAllBytes($File, $regionBytes)
+        return
     }
+    $text = $encoding.GetString([System.IO.File]::ReadAllBytes($File))
+    $chunks = [regex]::Matches($text, '[^\n]*\n|[^\n]+$') | ForEach-Object { $_.Value }
+    $expected = $Region.Split("`n") | Where-Object { $_ -ne '' }
+    $values = @($chunks | ForEach-Object { $_.TrimEnd("`n").TrimEnd("`r") })
+    $managed = @{}
+    foreach ($line in $expected) { $managed[$line] = $true }
+    $positions = @(); for ($i=0; $i -lt $values.Count; $i++) { if ($managed.ContainsKey($values[$i])) { $positions += $i } }
+    if ($positions.Count -eq 0) {
+        $suffix = if ($text.Length -gt 0 -and -not $text.EndsWith("`n")) { "`n" } else { '' }
+        [System.IO.File]::WriteAllBytes($File, $encoding.GetBytes($text + $suffix + $Region)); return
+    }
+    $startCount = 0
+    for ($i=0; $i -le $values.Count-$expected.Count; $i++) {
+        $match = $true
+        for ($j=0; $j -lt $expected.Count; $j++) { if ($values[$i+$j] -cne $expected[$j]) { $match=$false; break } }
+        if ($match) { $startCount++ }
+    }
+    if ($startCount -eq 1 -and $positions.Count -eq $expected.Count) { return }
+    Move-AidToTrash -Root $Root -File $File
+    $sb = New-Object System.Text.StringBuilder
+    $inserted = $false
+    foreach ($i in 0..($chunks.Count-1)) {
+        if ($managed.ContainsKey($values[$i])) {
+            if (-not $inserted) { [void]$sb.Append($Region); $inserted=$true }
+        } else { [void]$sb.Append($chunks[$i]) }
+    }
+    if (-not $inserted) { [void]$sb.Append($Region) }
+    [System.IO.File]::WriteAllBytes($File, $encoding.GetBytes($sb.ToString()))
 }
 
-# script:Get-AidMarkedRegion <filePath>
-# Extracts the AID:BEGIN..AID:END region (inclusive of marker lines) from a file.
-# Returns a single string with LF line endings (matching bash awk extraction).
-function script:Get-AidMarkedRegion {
-    param([string]$FilePath)
-    $lines = [System.IO.File]::ReadAllLines($FilePath)
-    $found = $false
-    $region = [System.Text.StringBuilder]::new()
-    foreach ($line in $lines) {
-        if (-not $found -and $line -eq '<!-- AID:BEGIN -->') {
-            $found = $true
-        }
-        if ($found) {
-            [void]$region.Append($line)
-            [void]$region.Append("`n")
-            if ($line -eq '<!-- AID:END -->') { break }
-        }
-    }
-    return $region.ToString()
+function script:Invoke-EnsureClaudeMdRegion {
+    param([string]$File = (Join-Path $PWD.Path 'CLAUDE.md'), [string]$Root = '')
+    script:Repair-AidRootRegion -File $File -Region $script:_AidClaudeImportRegion -Root $Root
+    return ([System.BitConverter]::ToString([System.Security.Cryptography.SHA256]::Create().ComputeHash([System.Text.Encoding]::UTF8.GetBytes($script:_AidClaudeImportRegion))).Replace('-', '').ToLowerInvariant())
 }
 
-# script:Copy-RootAgentFile <src> <dst> <tool> <force> [manifest] [aidVerbose]
-#
-# Updates the root agent file (CLAUDE.md / AGENTS.md) using in-place region
-# semantics.  Never writes a backup/sidecar file under any branch.
-#
-# Algorithm:
-#   A. Dst absent              -> write full source (markers included).
-#   B. Dst has AID:BEGIN/END   -> replace only the marked region; preserve all
-#                                 content outside the markers verbatim.
-#   C. Dst has no markers      -> migrate:
-#      C1. Sha matches recorded manifest sha -> clean rewrite to full marked source.
-#      C2. Sha mismatch        -> excise known AID-managed sections by stem match
-#                                 (Tracking discipline, Knowledge Base, Connectors,
-#                                 Workflow, Review output format, Permissions -- tolerating
-#                                 trailing parenthetical suffix on the heading)
-#                                 and re-insert them wrapped in AID:BEGIN/END
-#                                 markers in place; preserve ## Project /
-#                                 ## Project Overview and all other user content.
-#                                 No backup file is ever written.
-#
-# Sets $script:_CORE_ROOT_AGENT_STATUS = 'owned' always (the .aid-new /
-# pending-merge path is eliminated; all divergence is resolved in-place).
-# Increments module-level counters $script:_CopyCount* just like Copy-AidFile.
+function script:Invoke-RemoveClaudeMdRegion {
+    param([string]$File, [string]$RecordedSha256, [string]$Root = '')
+    if (-not (Test-Path -LiteralPath $File -PathType Leaf)) { return }
+    if ($Root -eq '') { $Root = [System.IO.Path]::GetDirectoryName([System.IO.Path]::GetFullPath($File)) }
+    $encoding = New-Object System.Text.UTF8Encoding($false)
+    $text = $encoding.GetString([System.IO.File]::ReadAllBytes($File))
+    $pattern = '(?ms)^<!-- AID:BEGIN -->\r?\n.*?^<!-- AID:END -->(?:\r?\n|$)'
+    $matches = [regex]::Matches($text, $pattern)
+    if ($matches.Count -ne 1) { return }
+    $match = $matches[0]
+    $canonical = $match.Value.Replace("`r`n", "`n")
+    $regionSha = (Get-FileHash -InputStream ([System.IO.MemoryStream]::new($encoding.GetBytes($canonical))) -Algorithm SHA256).Hash.ToLowerInvariant()
+    if ($regionSha -ne $RecordedSha256) { Move-AidToTrash -Root $Root -File $File }
+    $rest = $text.Remove($match.Index, $match.Length)
+    if ($rest.Trim().Length -eq 0) { Remove-Item -LiteralPath $File -Force -ErrorAction SilentlyContinue }
+    else { [System.IO.File]::WriteAllBytes($File, $encoding.GetBytes($rest)) }
+}
+
+function script:Repair-AidInlineRootRegion {
+    param([string]$File, [string]$Region, [string]$Root)
+    $encoding = New-Object System.Text.UTF8Encoding($false)
+    if (-not (Test-Path -LiteralPath $File -PathType Leaf)) {
+        [System.IO.File]::WriteAllBytes($File, $encoding.GetBytes($Region)); return
+    }
+    $text = $encoding.GetString([System.IO.File]::ReadAllBytes($File))
+    $begin = '<!-- AID:BEGIN -->'; $end = '<!-- AID:END -->'
+    $pattern = '(?ms)^' + [regex]::Escape($begin) + '\r?\n.*?^' + [regex]::Escape($end) + '(?:\r?\n|$)'
+    $matches = [regex]::Matches($text, $pattern)
+    if ($matches.Count -eq 1) {
+        $replacement = $Region.Substring($Region.IndexOf("`n") + 1)
+        $replacement = $replacement.Substring(0, $replacement.LastIndexOf($end))
+        $match = $matches[0]
+        $updated = $text.Substring(0, $match.Index) + $begin + "`n" + $replacement + $end + "`n" + $text.Substring($match.Index + $match.Length)
+        [System.IO.File]::WriteAllBytes($File, $encoding.GetBytes($updated)); return
+    }
+    script:Repair-AidRootRegion -File $File -Region $Region -Root $Root
+}
+
 function script:Copy-RootAgentFile {
-    param(
-        [string]$Src,
-        [string]$Dst,
-        [string]$Tool,
-        [bool]$Force = $false,
-        [string]$Manifest = '',
-        [bool]$AidVerbose = $false
-    )
-
+    param([string]$Src, [string]$Dst, [string]$Tool, [bool]$Force=$false, [string]$Manifest='', [bool]$AidVerbose=$false)
+    $root = [System.IO.Path]::GetDirectoryName([System.IO.Path]::GetFullPath($Dst))
+    $hadDst = Test-Path -LiteralPath $Dst -PathType Leaf
+    $beforeSha = if ($hadDst) { Get-Sha256File -FilePath $Dst } else { '' }
+    $inline = $false
+    $conf = Join-Path ([System.IO.Path]::GetDirectoryName($Src)) 'aid-tool.conf'
+    if (Test-Path -LiteralPath $conf -PathType Leaf) { $inline = [bool](Get-Content -LiteralPath $conf | Where-Object { $_ -ceq 'rules_inline=true' }) }
+    if ($Manifest -and (Test-Path -LiteralPath $Manifest -PathType Leaf)) {
+        try { $manifestData = Get-Content -LiteralPath $Manifest -Raw | ConvertFrom-Json; if ($manifestData.tools.$Tool.rules_inline -eq $true) { $inline = $true } } catch {}
+    }
+    if ($inline) {
+        $rulesPath = Join-Path (Join-Path $root '.aid') 'runtime/rules.md'
+        if (-not (Test-Path -LiteralPath $rulesPath -PathType Leaf)) { throw "AidInstallCore: rules_inline requested but runtime rules are missing: $rulesPath" }
+        $rules = [System.IO.File]::ReadAllText($rulesPath, (New-Object System.Text.UTF8Encoding($false)))
+        $region = "<!-- AID:BEGIN -->`n<!-- Managed by the AID CLI. Do not edit between the AID markers. -->`n" + $rules + "<!-- AID:END -->`n"
+        script:Repair-AidInlineRootRegion -File $Dst -Region $region -Root $root
+    } else { script:Repair-AidRootRegion -File $Dst -Region $script:_AidAgentsPointerRegion -Root $root }
     $script:_CORE_ROOT_AGENT_STATUS = 'owned'
-    $srcSha = Get-Sha256File -FilePath $Src
-    $dstDir = [System.IO.Path]::GetDirectoryName($Dst)
-
-    # ------------------------------------------------------------------
-    # Branch A: destination absent -> write full source.
-    # ------------------------------------------------------------------
-    if (-not (Test-Path $Dst -PathType Leaf)) {
-        if ($dstDir -and -not (Test-Path $dstDir -PathType Container)) {
-            New-Item -ItemType Directory -Path $dstDir -Force | Out-Null
-        }
-        Copy-Item -LiteralPath $Src -Destination $Dst -Force
-        $script:_CopyCountCopied++
-        if ($AidVerbose) { Write-Host "Copied: $Dst" }
-        return 0
-    }
-
-    $diskSha = Get-Sha256File -FilePath $Dst
-
-    # Identical on disk -> nothing to do.
-    if ($diskSha -eq $srcSha) {
-        $script:_CopyCountUpToDate++
-        if ($AidVerbose) { Write-Host "Up to date: $Dst" }
-        return 0
-    }
-
-    # ------------------------------------------------------------------
-    # Branch B: destination already has AID:BEGIN/END markers.
-    # Replace only the marked region; preserve everything outside verbatim.
-    # ------------------------------------------------------------------
-    $dstLines = [System.IO.File]::ReadAllLines($Dst)
-    $hasMarkers = $false
-    foreach ($line in $dstLines) {
-        if ($line -eq '<!-- AID:BEGIN -->') { $hasMarkers = $true; break }
-    }
-
-    if ($hasMarkers) {
-        # Extract the marked region from source (inclusive of marker lines).
-        $srcRegion = script:Get-AidMarkedRegion -FilePath $Src
-
-        # Rebuild dst: lines before the marker, then new region, then lines after.
-        $tmpPath = Join-Path $dstDir (".aid-root-agent." + [System.IO.Path]::GetRandomFileName())
-        try {
-            $sb = [System.Text.StringBuilder]::new()
-            $inAid = $false
-            $printedRegion = $false
-            foreach ($line in $dstLines) {
-                if ($line -eq '<!-- AID:BEGIN -->') {
-                    if (-not $printedRegion) {
-                        [void]$sb.Append($srcRegion)
-                        $printedRegion = $true
-                    }
-                    $inAid = $true
-                    continue
-                }
-                if ($inAid -and $line -eq '<!-- AID:END -->') {
-                    $inAid = $false
-                    continue
-                }
-                if ($inAid) { continue }
-                [void]$sb.Append($line)
-                [void]$sb.Append("`n")
-            }
-            $bytes = [System.Text.Encoding]::UTF8.GetBytes($sb.ToString())
-            [System.IO.File]::WriteAllBytes($tmpPath, $bytes)
-            Move-Item -LiteralPath $tmpPath -Destination $Dst -Force
-        } catch {
-            if (Test-Path $tmpPath -PathType Leaf) {
-                Remove-Item -LiteralPath $tmpPath -Force -ErrorAction SilentlyContinue
-            }
-            throw
-        }
-
-        $script:_CopyCountUpdated++
-        if ($AidVerbose) { Write-Host "Updated: $Dst (region replaced)" }
-        return 0
-    }
-
-    # ------------------------------------------------------------------
-    # Branch C: destination has no markers -- migration path.
-    # ------------------------------------------------------------------
-
-    # Read recorded sha from manifest (the sha AID last wrote to this file).
-    $recordedSha = ''
-    if ($Manifest -and (Test-Path $Manifest -PathType Leaf)) {
-        $fname = [System.IO.Path]::GetFileName($Dst)
-        $recordedSha = Read-ManifestRootAgent -ManifestPath $Manifest -Tool $Tool -FileName $fname
-    }
-
-    # C1: sha still matches the AID-recorded value -> clean rewrite.
-    if ($recordedSha -and ($diskSha -eq $recordedSha)) {
-        Copy-Item -LiteralPath $Src -Destination $Dst -Force
-        $script:_CopyCountUpdated++
-        if ($AidVerbose) { Write-Host "Updated: $Dst (migrated: clean rewrite)" }
-        return 0
-    }
-
-    # C2: sha mismatch (user has edited the file) -> excise AID sections by
-    # stem match and re-insert as a marked region.
-    #
-    # AID section stems to excise (exact heading stem; tolerate trailing
-    # parenthetical like " (global)" or " (IMPERATIVE)"):
-    #   ## Tracking discipline
-    #   ## Knowledge Base
-    #   ## Connectors
-    #   ## Workflow
-    #   ## Review output format
-    #   ## Permissions
-    #
-    # A section runs from its "## Stem..." heading line until the next "## "
-    # heading (exclusive) or end-of-file.
-    #
-    # The new marked region (from the source) is inserted at the position of
-    # the first excised section.  All other content (## Project, user sections)
-    # is preserved verbatim.
-
-    # Extract the new marked region from source.
-    $newRegion = script:Get-AidMarkedRegion -FilePath $Src
-
-    $tmpPath = Join-Path $dstDir (".aid-root-agent." + [System.IO.Path]::GetRandomFileName())
-    try {
-        $sb = [System.Text.StringBuilder]::new()
-        $inAidSection = $false
-        $regionInserted = $false
-
-        foreach ($line in $dstLines) {
-            if ($line.StartsWith('## ')) {
-                if (script:Test-AidHeadingStem -Line $line) {
-                    # Start suppressing this AID section.
-                    $inAidSection = $true
-                    # Insert the new marked region at the first AID section position.
-                    if (-not $regionInserted) {
-                        [void]$sb.Append($newRegion)
-                        $regionInserted = $true
-                    }
-                    continue
-                } else {
-                    # A non-AID heading ends any current AID section suppression.
-                    $inAidSection = $false
-                }
-            }
-            if ($inAidSection) { continue }
-            [void]$sb.Append($line)
-            [void]$sb.Append("`n")
-        }
-
-        # No AID section existed to anchor the region (a brownfield file with no
-        # prior AID content) -> append the marked region at end of file. Without
-        # this the AID block would be silently dropped and the file never gains
-        # AID instructions. Mirrors the END block in bin/aid (aid-install-core.sh).
-        if (-not $regionInserted) {
-            [void]$sb.Append("`n")
-            [void]$sb.Append($newRegion)
-            $regionInserted = $true
-        }
-
-        $bytes = [System.Text.Encoding]::UTF8.GetBytes($sb.ToString())
-        [System.IO.File]::WriteAllBytes($tmpPath, $bytes)
-        Move-Item -LiteralPath $tmpPath -Destination $Dst -Force
-    } catch {
-        if (Test-Path $tmpPath -PathType Leaf) {
-            Remove-Item -LiteralPath $tmpPath -Force -ErrorAction SilentlyContinue
-        }
-        throw
-    }
-
-    $script:_CopyCountUpdated++
-    if ($AidVerbose) { Write-Host "Updated: $Dst (migrated: AID sections re-wrapped in markers)" }
+    if ($inline) { $managedRegion = $region } else { $managedRegion = $script:_AidAgentsPointerRegion }
+    $script:_CORE_ROOT_AGENT_REGION_SHA = (Get-FileHash -InputStream ([System.IO.MemoryStream]::new([System.Text.Encoding]::UTF8.GetBytes($managedRegion))) -Algorithm SHA256).Hash.ToLowerInvariant()
+    $script:_CORE_ROOT_AGENT_FILE_SHA = Get-Sha256File -FilePath $Dst
+    if (-not $hadDst) { $script:_CopyCountCopied++; if ($AidVerbose) { Write-Host "Copied: $Dst" } }
+    elseif ($beforeSha -eq $script:_CORE_ROOT_AGENT_FILE_SHA) { $script:_CopyCountUpToDate++; if ($AidVerbose) { Write-Host "Up to date: $Dst" } }
+    else { $script:_CopyCountUpdated++; if ($AidVerbose) { Write-Host "Updated: $Dst" } }
     return 0
 }
 
-# ---------------------------------------------------------------------------
 # Manifest - JSON reader/writer
 # ---------------------------------------------------------------------------
 

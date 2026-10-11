@@ -199,27 +199,15 @@ assert_file_contains "$RECONCILE" "adds no new twin, builder, or wiring code" \
     "ST30 reconcile.md itself states it adds no new twin/builder/wiring code"
 
 # ===========================================================================
-# ST31-ST38  AC8 -- `## Connectors` present + substantively wired in all 5
-# shipped profile context files, plus the dogfood root CLAUDE.md. Byte-
-# identity across the four AGENTS.md is asserted elsewhere
-# (test-agents-md-invariant.sh AG02) -- NOT re-checked here.
+# ST31-ST35  AC8 -- the shared AID rules document retains the connector guidance.
 # ===========================================================================
-PROFILE_CONTEXT_FILES=(
-    "profiles/claude-code/CLAUDE.md"
-    "profiles/codex/AGENTS.md"
-    "profiles/cursor/AGENTS.md"
-    "profiles/copilot-cli/AGENTS.md"
-    "profiles/antigravity/AGENTS.md"
-)
-
-for rel in "${PROFILE_CONTEXT_FILES[@]}"; do
-    f="${REPO_ROOT}/${rel}"
-    assert_file_contains "$f" "## Connectors" "ST31 ${rel} has a ## Connectors section"
-    assert_file_contains "$f" "aid-set-connector" "ST32 ${rel} ## Connectors mentions aid-set-connector"
-    assert_file_contains "$f" "aid-unset-connector" "ST33 ${rel} ## Connectors mentions aid-unset-connector"
-    assert_file_contains "$f" "MCP-first" "ST34 ${rel} ## Connectors documents MCP-first consumption"
-    assert_file_contains "$f" "consumption-protocol.md" "ST35 ${rel} ## Connectors points to consumption-protocol.md"
-done
+RULES_FILE="${REPO_ROOT}/canonical/aid/rules.md"
+assert_file_contains "$RULES_FILE" "## Connectors" "ST31 canonical/aid/rules.md has a ## Connectors section"
+assert_file_contains "$RULES_FILE" "aid-set-connector" "ST32 canonical/aid/rules.md mentions aid-set-connector"
+assert_file_contains "$RULES_FILE" "aid-unset-connector" "ST33 canonical/aid/rules.md mentions aid-unset-connector"
+assert_file_contains "$RULES_FILE" "MCP-first" "ST34 canonical/aid/rules.md documents MCP-first consumption"
+assert_file_contains "$RULES_FILE" ".aid/runtime/templates/connectors/consumption-protocol.md" \
+    "ST35 canonical/aid/rules.md points to the shared runtime consumption protocol"
 
 DOGFOOD_CLAUDE_MD="${REPO_ROOT}/CLAUDE.md"
 assert_file_exists "$DOGFOOD_CLAUDE_MD" "ST36 dogfood root CLAUDE.md exists"
