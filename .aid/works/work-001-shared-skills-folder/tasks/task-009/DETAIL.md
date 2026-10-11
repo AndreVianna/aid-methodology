@@ -41,6 +41,9 @@ Bash and PowerShell twins together, per REQUIREMENTS.md § 11 Feature 001 › Fe
   `region_sha256` for `claude_md`; an entry whose user list would be empty is absent). The CLI
   never writes the full AID region into `CLAUDE.md`, and never reads or writes `CLAUDE.md` while no
   installed tool declares `context_import`.
+- Manifest `tools.<t>` entries record the tool's `worktree_root` and `rules_inline` copied from its
+  `aid-tool.conf` (key only when declared); the `AGENTS.md` inline-rules choice reads `rules_inline`
+  from the manifest entries of every installed tool plus the `aid-tool.conf` of the new ones.
 - Every `copy_file_guarded` call passes the file's sha256 recorded in the previous manifest (none on a
   first add), so only a DRIFTED file is trashed before it is overwritten (FR-9; task-004).
 - Never read, write or prune a non-`aid-*` entry in `.agents/skills/` or in a mirror.
@@ -58,7 +61,8 @@ Bash and PowerShell twins together, per REQUIREMENTS.md § 11 Feature 001 › Fe
 - [ ] After `aid add claude-code` into a fixture whose user `CLAUDE.md` has no markers and ends in LF, the pre-add bytes are a byte-exact prefix of `CLAUDE.md` and the only bytes after them are the import region; the manifest's `shared.claude_md` has users `["claude-code"]` and a `region_sha256` equal to the sha256 of the import region.
 - [ ] In a fixture whose user `AGENTS.md` has no markers and holds a `## Workflow` section, after `aid add claude-code` that section is present byte-for-byte and the pre-add bytes of the file are a byte-exact prefix of `AGENTS.md`, followed by the pointer region; no `.aid/.trash/AGENTS.md` exists. In a fixture whose `AGENTS.md` holds two copies of the pointer region around user text, after `aid add cursor` it holds one well-formed region, every user line unchanged and in order, and the pre-add file at `.aid/.trash/AGENTS.md`.
 - [ ] `.aid/.aid-manifest.json` has `"format_version": 3`, the key order of the Data Model example, `users` equal to the installed tool for `shared.skills`, `shared.runtime` and `shared.agents_md`, and a `sha256` per file that equals `sha256sum` of the installed file.
-- [ ] `aid add cursor` followed by `aid add claude-code` leaves `users` as `["claude-code", "cursor"]` (`AID_TOOLS` order) on the three shared entries and `mirrors` holding `.claude/skills` with users `["claude-code"]`.
+- [ ] `aid add cursor` followed by `aid add claude-code` (the second exits `0`, not refused by the layout gate) leaves `users` as `["claude-code", "cursor"]` (`AID_TOOLS` order) on the three shared entries and `mirrors` holding `.claude/skills` with users `["claude-code"]`.
+- [ ] In a fixture holding `claude-code` and a tool with `rules_inline=true`, `aid add <another tool>` records `rules_inline` and `worktree_root` in the existing tools' manifest entries unchanged and leaves the `AGENTS.md` region as the inline (full `rules.md`) region.
 - [ ] Pre-seeded `.agents/skills/my-skill/SKILL.md` and `.claude/skills/my-skill/SKILL.md` keep their sha256 through both adds.
 - [ ] After appending one byte to `.agents/skills/aid-plan/SKILL.md`, `aid add codex` restores canonical bytes there and the modified bytes exist at `.aid/.trash/.agents/skills/aid-plan/SKILL.md`.
 - [ ] Function-level root-region tests and `aid add` fixtures with LF, CRLF (`core.autocrlf=true`)

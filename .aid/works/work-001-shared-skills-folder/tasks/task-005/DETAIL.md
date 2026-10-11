@@ -61,7 +61,7 @@ line endings, without normalizing the whole file:
     changes nothing and adds no trash entry.
 - `_copy_root_agent_file` / `Copy-RootAgentFile`: writes `AGENTS.md` by calling
   `_repair_root_region` with the pointer region, and records `shared.agents_md.region_sha256` and
-  `file_sha256`. Fallback (A-6): when any installed or newly added tool's `aid-tool.conf` carries
+  `file_sha256`. Fallback (A-6): when any installed tool's manifest entry (`rules_inline`) or newly added tool's `aid-tool.conf` carries
   `rules_inline=true`, the region written is the BEGIN line, the managed-by comment line, the full
   bytes of `.aid/runtime/rules.md` and the END line instead of the two pointer lines; repair then
   replaces only the span between the BEGIN and END lines and removes no other line.

@@ -35,7 +35,9 @@ Feature Flow › 5.
   the region drifted, remove the region, delete the file only when nothing but whitespace
   remains) and drop `shared.claude_md` from the manifest, leaving the `AGENTS.md` region in place
   for the remaining tools; rewrite `host.conf` (via
-  `write_host_conf`) when the runtime remains; delete the manifest and `.aid/settings.yml` when no
+  `write_host_conf`) when the runtime remains, from the remaining tools' manifest-recorded
+  `worktree_root`, and rewrite the `AGENTS.md` region (pointer or inline) from their recorded
+  `rules_inline` while a user remains; delete the manifest and `.aid/settings.yml` when no
   tools remain (existing behaviour).
 - With the last tool, also remove the `.gitattributes` managed block: `remove_gitattributes_block` /
   `Remove-AidGitattributesBlock` (task-010 writes it) drops the block, marker lines included, keeps
@@ -52,6 +54,7 @@ Feature Flow › 5.
 - [ ] AC-14 (d): in a fixture with no prior `CLAUDE.md` and in one whose user `CLAUDE.md` had no markers, after `aid add claude-code,cursor` then `aid remove claude-code`, `CLAUDE.md` is absent in the first and equals its pre-add bytes in the second; in both, `AGENTS.md` has exactly one `<!-- AID:BEGIN -->` line, `shared.agents_md.users` is `["cursor"]`, and the manifest has no `shared.claude_md`.
 - [ ] Removing `claude-code` while `cursor` stays installed rewrites `host.conf` to `worktree_root=.aid/.worktrees` and drops `.claude/skills` from `mirrors`.
 - [ ] After `aid remove` of the last tool, the `.gitattributes` managed block is gone, a pre-existing user line in `.gitattributes` is byte-unchanged, and a `.gitattributes` the CLI created holding only the block is deleted; while another tool remains the block is still present.
+- [ ] In a fixture with `claude-code` and a `rules_inline=true` tool installed, `aid remove claude-code` leaves `host.conf` at `worktree_root=.aid/.worktrees` and the `AGENTS.md` region as the inline (full `rules.md`) region; removing the `rules_inline` tool instead restores the pointer region.
 - [ ] An agent file edited before its tool's removal ends up at `.aid/.trash/<its path>`, not deleted.
 - [ ] Each case gives the same tree, output lines and exit codes under `bin/aid.ps1` where `pwsh` exists; `bash tests/canonical/test-ps51-compat.sh` and `bash tests/canonical/test-ascii-only.sh` exit `0`.
 - [ ] All section-6 quality gates pass.

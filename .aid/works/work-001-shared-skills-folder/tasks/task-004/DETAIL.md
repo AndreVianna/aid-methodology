@@ -41,7 +41,10 @@ Every item is one behaviour implemented twice, in `lib/aid-install-core.sh` and
 - Manifest format 3: `manifest_write`, `_manifest_write_python`, `_manifest_write_bash`,
   `Write-AidManifest`, `Build-ManifestJson` emit the § Data Model › Install manifest shape exactly
   (key order as shown, 2-space indent, LF, trailing newline, `files` sorted by `path` in byte order,
-  `users` in `AID_TOOLS` order, `tools.<t>.paths` a plain copy of that tool's `files[].path`).
+  `users` in `AID_TOOLS` order, `tools.<t>.paths` a plain copy of that tool's `files[].path`;
+  `tools.<t>` carries optional `worktree_root` and `rules_inline` (key present only when given, in
+  the order `mirrors`, `worktree_root`, `rules_inline`, `files`, `paths`), and the readers return
+  them per tool, which the host-conf recompute in task-010 and task-012 relies on).
   Readers `manifest_format`, `manifest_read_shared`, `manifest_read_tool_files`, `manifest_read_host`
   and `Read-AidManifestShared`, `Read-AidManifestToolFiles`, `Read-AidManifestHost` (new). The
   format-2 read path stays, because uninstall and the clean-slate upgrade still read old manifests.
@@ -57,6 +60,7 @@ Every item is one behaviour implemented twice, in `lib/aid-install-core.sh` and
 - [ ] Frozen-clock repeated differing backups and preoccupied timestamp suffixes preserve every byte, place newest bytes at `.aid/.trash/<rel>`, and use the first unused `.N` suffix; identical retry is idempotent and Bash/PowerShell names and ordering match.
 - [ ] `copy_file_guarded` on an absent, an identical, a differing-but-unedited (destination sha256 equals the recorded one) and a drifted destination (a recorded sha256 that the bytes no longer match; and, with no recorded sha256, differing bytes) produces copied, unchanged, overwritten-with-no-trash and trashed-then-copied outcomes respectively, and only the two drifted cases write under `.aid/.trash/`.
 - [ ] For one fixed input, the python3 writer, the pure-bash writer and (where `pwsh` exists) the PowerShell writer produce JSON that is byte-identical after masking `installed_at`, and it equals a committed golden file whose key order matches § Data Model.
+- [ ] A fixed input with `tools.claude-code.worktree_root=.claude/worktrees` and `tools.codex.rules_inline=true` yields the same bytes from all three writers, with those keys inside the matching `tools.<t>` entries in the order above; the manifest readers return both values per tool and no key for a tool that declares neither.
 - [ ] `HOME=$(mktemp -d) bash tests/canonical/test-install-core-primitives.sh` exits `0`.
 - [ ] `bash tests/canonical/test-ps51-compat.sh` and `bash tests/canonical/test-ascii-only.sh` exit `0`; `bash tests/canonical/test-aid-cli.sh` and `bash tests/canonical/test-multitool-isolation.sh` give the same per-assertion PASS/FAIL result as on this task's base commit (no caller is switched yet).
 - [ ] All section-6 quality gates pass.

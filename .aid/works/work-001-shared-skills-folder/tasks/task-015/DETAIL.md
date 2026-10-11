@@ -23,10 +23,12 @@
 Bash and PowerShell twins together, per REQUIREMENTS.md § 5 FR-11 and § 11 Feature 001 › Upgrade
 from v3 (clean slate) (Trigger, Steps, Interruption and recovery).
 - `retire_v3_layout` / `Invoke-RetireV3Layout` (new), wired into task-014's v3-layout dispatch
-  point (a format-2 manifest, old AID-owned paths, or an existing recovery record). Before any
+  point (v3 legacy evidence, or an existing recovery record). Before any
   repository mutation, validate an existing record; unsupported future manifest/settings
   formats still refuse first. Resolve the target tool set from it, or from the old manifest or
-  old AID-owned paths (legacy `.agents/aid/` means Codex; use the same path-based legacy-evidence predicate as add’s layout gate, excluding legitimate format-3 Claude mirrors and user directory-only signals), plus initially named tools. A record's
+  the v3 legacy evidence list in REQUIREMENTS.md § 5 FR-11 (legacy `.agents/aid/` means Codex; v4
+  agents `<root>/agents/aid-*`, legitimate format-3 Claude mirrors and user directory-only signals
+  are not evidence), plus initially named tools. A record's
   target set is authoritative; newly named tools outside it are refused until recovery finishes.
   Stage and validate every target artifact (flow 2), so staging failure and dry-run write nothing.
   Before retirement, atomically persist that set with `retired=false` if no record exists.
@@ -34,7 +36,8 @@ from v3 (clean slate) (Trigger, Steps, Interruption and recovery).
   (collision policy as usual), under the path-based ownership rule of FR-11 (the new helper
   `_is_aid_owned_path` / `Test-AidOwnedPath`, not `_is_aid_owned_file`): a file is AID-owned when
   it lies under `<root>/skills/aid-*/` at any depth (every `references/*.md` counts), or under
-  `<root>/aid/`, or its basename starts with `aid-`; never touching a user file and never the
+  `<root>/aid/`, or its basename starts with `aid-` while inside one of those legacy paths (or a
+  path the format-2 manifest records), so `<root>/agents/aid-*` is never retired; never touching a user file and never the
   `.github` root (G-12). For `AGENTS.md` and `CLAUDE.md` it copies the whole file to the trash and
   removes the old AID region, marker lines included; a file left empty or whitespace-only is
   deleted, and a file with no well-formed region stays unchanged. Emptied directories are removed,

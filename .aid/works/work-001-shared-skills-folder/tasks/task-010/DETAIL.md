@@ -17,14 +17,16 @@
 
 **Source:** work-001-shared-skills-folder -> delivery-001 -> AC-7, AC-8
 
-**Depends on:** task-009
+**Depends on:** task-006, task-009
 
 **Scope:**
 Bash and PowerShell twins together, per REQUIREMENTS.md § 11 Feature 001 › Data Model (The
 `host.conf` value; `.gitignore` managed block) and Feature Flow › 3 (step 6, sub-steps 3, 8, 9)
 and › 6.
 - `write_host_conf` / `Write-AidHostConf` (new): `.aid/runtime/host.conf` holds
-  `worktree_root=<the worktree_root of the first installed tool, in AID_TOOLS order, that declares one; otherwise .aid/.worktrees>`;
+  `worktree_root=<the worktree_root of the first installed tool, in AID_TOOLS order, that declares one; otherwise .aid/.worktrees>`,
+  where each installed tool's value is read from its manifest entry (`tools.<t>.worktree_root`,
+  task-004) and each newly added tool's from its `aid-tool.conf` (add stages only the new tools);
   written on every add after the runtime copy, recorded in `shared.runtime.files` with its sha256 and
   in the manifest `host` key. (Rewriting it on remove is task-012.)
 - `prune_shared` / `Invoke-PruneShared` (replace `_prune_tool_dirs` / `Invoke-PruneToolDirs`), run
@@ -52,6 +54,7 @@ and › 6.
 
 **Acceptance Criteria:**
 - [ ] After `aid add cursor`, `.aid/runtime/host.conf` is exactly `worktree_root=.aid/.worktrees`; after `aid add claude-code` in a fresh fixture it is `worktree_root=.claude/worktrees`; after `aid add cursor` then `aid add claude-code` it is `worktree_root=.claude/worktrees`. In each case the manifest `host.worktree_root` matches and `shared.runtime.files` lists `host.conf` with its current sha256.
+- [ ] In a fixture installed with `claude-code` then `aid add cursor` (only `cursor` staged), `host.conf` stays `worktree_root=.claude/worktrees`, computed from the manifest's recorded `tools.claude-code.worktree_root`.
 - [ ] The `.gitignore` AID block contains `.aid/.worktrees/` in every fixture, contains `.claude/worktrees/` only when `claude-code` is installed, contains `.aid/runtime/**/node_modules/`, and never contains a line equal to `.aid/runtime/`.
 - [ ] After `aid add cursor` in a fixture with a pre-existing `.gitattributes` user line, `.gitattributes` contains the managed block with the three `text eol=lf` lines and the user line is unchanged; with no prior `.gitattributes` the file is created holding only the block; a second `aid add`/`aid update` leaves its sha256 unchanged.
 - [ ] A fixture file `.aid/runtime/scripts/summarize/node_modules/x.js` survives the next `aid add <another tool>` with unchanged sha256, and nothing from it lands in `.aid/.trash/`.

@@ -36,7 +36,7 @@ need), per REQUIREMENTS.md § 11 Feature 001 › Feature Flow › 4.
   unedited file of the previous version is overwritten with no trash entry and only a DRIFTED file
   is trashed first (FR-9; task-004). Every tool `version` and every `shared.*.version` ends equal to
   `aid_version`.
-- A v3 layout (a format-2 manifest or old AID-owned paths), or the presence of
+- A v3 layout (v3 legacy evidence, REQUIREMENTS.md § 5 FR-11 list), or the presence of
   `.aid/.temp/v3-upgrade-tools.json`, selects the clean-slate recovery dispatch point owned by
   task-015. Its recorded tool set overrides discovery and a partial manifest; new named tools
   outside it are refused until recovery finishes. Task-015 supplies record validation, staging,
