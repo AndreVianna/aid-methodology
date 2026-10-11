@@ -17,7 +17,7 @@
 
 **Source:** work-001-shared-skills-folder -> delivery-001 -> AC-10, AC-11, AC-14
 
-**Depends on:** task-010
+**Depends on:** task-010, task-013
 
 **Scope:**
 Bash and PowerShell twins together (`bin/aid` and `bin/aid.ps1`, plus any core helper they

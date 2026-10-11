@@ -17,7 +17,7 @@
 
 **Source:** work-001-shared-skills-folder -> delivery-001 -> AC-10
 
-**Depends on:** task-010
+**Depends on:** task-010, task-012
 
 **Scope:**
 Bash and PowerShell twins together, per REQUIREMENTS.md § 11 Feature 001 › Feature Flow › 8.

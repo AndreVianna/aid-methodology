@@ -112,15 +112,15 @@ minimum_grade: A
 # [W] 'yes' | 'no' -- quoted, see NFR-2 / D-5
 user_approved: 'no'
 # [W] Running | Paused-Awaiting-Input | Blocked | Completed | Canceled
-lifecycle: Running
+lifecycle: Paused-Awaiting-Input
 # [W] Describe | Define | Specify | Plan | Detail | Execute
 phase: Detail
 # [W] aid-{skill} | none
 active_skill: aid-update
 # [W]
-updated: '2026-10-11T01:15:00Z'
+updated: '2026-10-11T03:00:00Z'
 # [W] set only when lifecycle = Paused-Awaiting-Input
-pause_reason: --
+pause_reason: 'Handoff to Codex: next is the scoped GATE re-review of the v4.0.0 revision; see HANDOFF.md'
 # [W] set only when lifecycle = Blocked
 block_reason: --
 # [W] e.g. IMPEDIMENT-task-NNN.md, or the failed gate
@@ -286,6 +286,14 @@ lifecycle_history:
     event: 'Maintainer decision: this work ships as AID v4.0.0 (breaking). Scope reset -- (A) profiles/ fully regenerated, no emission-manifest diff deletion; (B) no protection or recovery for v3 CLIs; clean-slate upgrade (trash old AID-owned paths, fresh install) replaces the Migration Plan. Pointer region + .aid/runtime/rules.md folded into the same revision (probe pending). Requirements revision started'
     grade: --
     notes: 'design decision'
+  - date: '2026-10-11'
+    event: 'REQUIREMENTS.md revised for v4.0.0 scope (Sonnet); tasks aligned + task-ledger rows 1, 2, 4-13 addressed (Sonnet); rows 3 and 14 fixed by coordinator (task-013 depends on task-012, task-014 on task-013; 14 waves). Not yet re-reviewed'
+    grade: --
+    notes: '/aid-update GATE fix'
+  - date: '2026-10-11'
+    event: 'Handoff to Codex: see HANDOFF.md in this work folder; ledgers copied to review-ledgers/, probe kits to probe-kits/'
+    grade: --
+    notes: 'handoff'
 
 # [A] aid-deploy only; one entry per delivery (never derived from child
 #     files; aid-deploy is the sole author):
