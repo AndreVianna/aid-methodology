@@ -500,6 +500,11 @@ lifecycle_history:
     grade: --
     notes: '/aid-execute Codex'
 
+  - date: '2026-10-11'
+    event: 'Sol wave-2 quick check: five Pending findings (task005 quiet return, installed inline fallback, PS marker-ending preservation, PS nested-marker removal; task006 recovery stamp cap). Task011 verified Done. Luna fix attempt 1 begins for task005; task006 fix follows sequentially; no next wave yet.'
+    grade: --
+    notes: '/aid-execute Codex'
+
 deploy: []
 
 # [A] flattened only; single writer: this work's active branch. Written by
@@ -545,7 +550,7 @@ tasks_lifecycle:
     notes: --
     display_name: --
   task-005:
-    state: 'In Review'
+    state: 'In Progress'
     review: --
     elapsed: --
     notes: --
@@ -595,7 +600,7 @@ tasks_lifecycle:
     notes: --
     display_name: --
   task-011:
-    state: 'In Review'
+    state: Done
     review: --
     elapsed: --
     notes: --
