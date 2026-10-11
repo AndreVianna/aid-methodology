@@ -118,7 +118,7 @@ phase: Execute
 # [W] aid-{skill} | none
 active_skill: aid-execute
 # [W]
-updated: '2026-10-11T14:35:25Z'
+updated: '2026-10-11T14:38:47Z'
 # [W] set only when lifecycle = Paused-Awaiting-Input
 pause_reason: --
 # [W] set only when lifecycle = Blocked
@@ -690,6 +690,11 @@ lifecycle_history:
     grade: --
     notes: '/aid-execute Codex'
 
+  - date: '2026-10-11'
+    event: 'Wave8 Sol review: task022 verified A+ with independent installed-runtime Group R10/10, now Done (13/32). Four task012 Pending findings: HIGH inline selection parses JSON as TSV, HIGH rewritten host/root hashes stale in both twins, MEDIUM retired Claude mirror files remain, MEDIUM PowerShell prunes protected node_modules descendants. Task012 In Progress for first Luna correction; exact ledger execute-wave-8.md. PS runtime deferred.'
+    grade: --
+    notes: '/aid-execute Codex'
+
 deploy: []
 
 # [A] flattened only; single writer: this work's active branch. Written by
@@ -887,7 +892,7 @@ tasks_lifecycle:
         outcome: 'committed 0acf5d926; 130 focused worktree assertions passed'
 
   task-012:
-    state: 'In Review'
+    state: 'In Progress'
     review: --
     elapsed: --
     notes: --
@@ -967,7 +972,7 @@ tasks_lifecycle:
     notes: --
     display_name: --
   task-022:
-    state: 'In Review'
+    state: Done
     review: --
     elapsed: --
     notes: --
