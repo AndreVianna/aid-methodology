@@ -6,11 +6,11 @@ maintainer approved execution. Current phase `Execute`, lifecycle `Running`.
 
 ## Current execution checkpoint
 
-Task015 committed and In Review. Task017 In Progress for sequential Luna shared-install suite: five-tool payload equality, live mutation negative control, runtime exclusions/userstate/node_modules/attributes and root/import repair/line-ending/collision fixtures.16/32 Done; task018 follows before Sol wave11 quick verification. PS runtime deferred.
+Task017 committed2d3ce67fa: shared-install suite covers five-tool canonical/runtime equality, userstate/protected runtime/attributes, exact pointer/import and line-ending/repair outside bytes. Focused verbose148/148; self-mutate151/151 proves unmutated negative assertion liveness and collision controls, primitives93/93. Syntax/diff pass and repo status unchanged by runs. In Review with task015; task018 follows before Sol wave11 check. PS and broad gates deferred.
 
 - Done (16/32): task-001, task-002, task-003, task-004, task-005, task-006, task-007, task-008, task-009, task-010, task-011, task-012, task-013, task-014, task-016, task-022.
-- In Progress: task-017.
-- In Review: task-015.
+- In Progress: none.
+- In Review: task-015, task-017.
 - Failed/Blocked: none.
 - Pending: task-018, task-019, task-020, task-021, task-023, task-024, task-025, task-026, task-027, task-028, task-029, task-030, task-031, task-032.
 - Current wave: 11 of 15. Derive authoritative waves from task dependency headers.
