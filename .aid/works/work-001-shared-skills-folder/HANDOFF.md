@@ -6,11 +6,11 @@ maintainer approved execution. Current phase `Execute`, lifecycle `Running`.
 
 ## Current execution checkpoint
 
-Task013 Luna correctiondff0c7d9a committed: recorded runtime node_modules excluded before existence/hash checks in both twins; extras include plain aid-* files and unrecorded/empty namespaces; drift block includes Shared files heading. Expanded offline fixture/syntax/diff/ASCII29 pass. In Review for independent Sol wave9 recheck; PS runtime deferred.
+Wave9 Sol independent recheck PASS A+: all three findings Fixed in both twins. Present/missing recorded node_modules ignored, loose/empty owned extras reported, heading correct and target bytes unchanged; syntax/diff pass. Task013 Done, waves1-9 complete,15/32 Done. Next task014 all-tool shared update; PS runtime/AST deferred.
 
-- Done (14/32): task-001, task-002, task-003, task-004, task-005, task-006, task-007, task-008, task-009, task-010, task-011, task-012, task-016, task-022.
+- Done (15/32): task-001, task-002, task-003, task-004, task-005, task-006, task-007, task-008, task-009, task-010, task-011, task-012, task-013, task-016, task-022.
 - In Progress: none.
-- In Review: task-013.
+- In Review: none.
 - Failed/Blocked: none.
 - Pending: task-014, task-015, task-017, task-018, task-019, task-020, task-021, task-023, task-024, task-025, task-026, task-027, task-028, task-029, task-030, task-031, task-032.
 - Current wave: 9 of 15. Derive authoritative waves from task dependency headers.

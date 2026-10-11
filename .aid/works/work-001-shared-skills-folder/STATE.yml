@@ -118,7 +118,7 @@ phase: Execute
 # [W] aid-{skill} | none
 active_skill: aid-execute
 # [W]
-updated: '2026-10-11T14:59:36Z'
+updated: '2026-10-11T15:00:28Z'
 # [W] set only when lifecycle = Paused-Awaiting-Input
 pause_reason: --
 # [W] set only when lifecycle = Blocked
@@ -735,6 +735,11 @@ lifecycle_history:
     grade: --
     notes: '/aid-execute Codex'
 
+  - date: '2026-10-11'
+    event: 'Wave9 Sol independent recheck PASS A+: all three findings Fixed in both twins. Present/missing recorded node_modules ignored, loose/empty owned extras reported, heading correct and target bytes unchanged; syntax/diff pass. Task013 Done, waves1-9 complete,15/32 Done. Next task014 all-tool shared update; PS runtime/AST deferred.'
+    grade: --
+    notes: '/aid-execute Codex'
+
 deploy: []
 
 # [A] flattened only; single writer: this work's active branch. Written by
@@ -957,7 +962,7 @@ tasks_lifecycle:
         outcome: 'Task012 separate Sol correction09eaf2ba6 committed: Bash remaining-inline region now preserves terminalLF matching existing add helpers. Stronger regression asserts exact rules/standalone markers/actual manifest hashes and clean final owned-root removal without false drift. Focused46/46, syntax/diff/ASCII29 pass. In Review for original Sol reviewer final wave8 recheck; PS terminalLF static only, runtime deferred.'
 
   task-013:
-    state: 'In Review'
+    state: Done
     review: --
     elapsed: --
     notes: --
