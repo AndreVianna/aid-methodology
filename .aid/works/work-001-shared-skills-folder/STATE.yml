@@ -118,7 +118,7 @@ phase: Execute
 # [W] aid-{skill} | none
 active_skill: aid-execute
 # [W]
-updated: '2026-10-11T16:42:23Z'
+updated: '2026-10-11T16:43:27Z'
 # [W] set only when lifecycle = Paused-Awaiting-Input
 pause_reason: --
 # [W] set only when lifecycle = Blocked
@@ -860,6 +860,11 @@ lifecycle_history:
     grade: --
     notes: '/aid-execute Codex'
 
+  - date: '2026-10-11'
+    event: 'Task019 CLI suites committed079ce7029 with scoped coverage rehomes. Focused Bash250 pass/1 known source006 failure M07; natural manifestless legacy mini-probe passes. All other valid skew/cache/detection/future cases pass; PS execution skipped/deferred. Task019 In Review pending source correction and independent verification.'
+    grade: --
+    notes: '/aid-execute Codex'
+
 deploy: []
 
 # [A] flattened only; single writer: this work's active branch. Written by
@@ -1208,11 +1213,18 @@ tasks_lifecycle:
         outcome: 'Task018 row5/6 correction29f1d1ae6 declares durable COVERS sources and asserts actual readable manifest. Selector1/1 and absent/present controls pass; syntax/diff pass. All wave11 corrections committed and pushed, ready for original Sol recheck.'
 
   task-019:
-    state: 'In Progress'
+    state: 'In Review'
     review: --
     elapsed: --
     notes: --
     display_name: --
+    dispatch_log:
+      - date: '2026-10-11T16:43:27.083323+00:00'
+        agent: 'gpt-6-luna'
+        eta_band: '3-8 min'
+        actual: '19m27s'
+        outcome: 'Task019 CLI suites committed079ce7029 with scoped coverage rehomes. Focused Bash250 pass/1 known source006 failure M07; natural manifestless legacy mini-probe passes. All other valid skew/cache/detection/future cases pass; PS execution skipped/deferred. Task019 In Review pending source correction and independent verification.'
+
   task-020:
     state: Pending
     review: --

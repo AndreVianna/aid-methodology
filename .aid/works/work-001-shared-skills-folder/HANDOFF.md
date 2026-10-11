@@ -6,11 +6,11 @@ maintainer approved execution. Current phase `Execute`, lifecycle `Running`.
 
 ## Current execution checkpoint
 
-Task019 focused CLI rekey in progress; corrected fixture paths/commands and valid runs confirm source006 bare-project defect: add on empty format2 manifest+settings stamp4 writes format3 manifest but leaves stamp4. Preserved repro .local/tmp/tmp.5cPXEoKX0u and /tmp/task019-m07.out. Other version/detection/cache/future guard cases pass. Finish valid test artifact commit, then reopen006 for Luna source correction and independent Sol verification before advancing. Full gates031 and PS runtime deferred.
+Task019 CLI suites committed079ce7029 with scoped coverage rehomes. Focused Bash250 pass/1 known source006 failure M07; natural manifestless legacy mini-probe passes. All other valid skew/cache/detection/future cases pass; PS execution skipped/deferred. Task019 In Review pending source correction and independent verification.
 
 - Done (19/32): task-001, task-002, task-003, task-004, task-005, task-006, task-007, task-008, task-009, task-010, task-011, task-012, task-013, task-014, task-015, task-016, task-017, task-018, task-022.
-- In Progress: task-019.
-- In Review: none.
+- In Progress: none.
+- In Review: task-019.
 - Failed/Blocked: none.
 - Pending: task-020, task-021, task-023, task-024, task-025, task-026, task-027, task-028, task-029, task-030, task-031, task-032.
 - Current wave: 12 of 15. Derive authoritative waves from task dependency headers.
