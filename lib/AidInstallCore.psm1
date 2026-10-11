@@ -2015,6 +2015,10 @@ function Test-AidOwnedPath {
     param([string]$Target, [string]$Path)
     $rel = [System.IO.Path]::GetFullPath($Path).Substring(([System.IO.Path]::GetFullPath($Target).TrimEnd('\','/') + [System.IO.Path]::DirectorySeparatorChar).Length) -replace '\\','/'
     if ($rel -match '^\.agents/aid/.+' -or $rel -match '^\.(claude|codex|cursor|github|agent)/aid/.+' -or $rel -match '^\.(claude|codex|cursor|github|agent)/skills/aid-[^/]+/.+') { return $true }
+    $base = $rel.Substring($rel.LastIndexOf('/') + 1)
+    if ($base -like 'aid-*' -and ($rel -match '^\.(claude|codex|cursor|github|agent)/(skills|aid)/' -or $rel -match '^\.agents/aid/')) { return $true }
+    # Retired v3 rules dirs (cursor, antigravity): aid-* files are AID-owned (marker 1).
+    if ($base -like 'aid-*' -and $rel -match '^\.(cursor|agent)/rules/') { return $true }
     return $false
 }
 

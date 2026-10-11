@@ -2075,7 +2075,8 @@ _aid_v3_legacy_evidence() {
     local _repo="$1" _manifest="${1}/.aid/.aid-manifest.json" _fmt _tool _mirror_ok=0 _line _record
     if [[ -f "$_manifest" ]]; then
         _fmt="$(manifest_format "$_manifest")"
-        if [[ "$_fmt" =~ ^[0-9]+$ ]] && [[ "$_fmt" -le 2 ]] \
+        # A manifest with no format_version predates format 3 (same as the PowerShell twin's 0).
+        if { [[ -z "$_fmt" ]] || { [[ "$_fmt" =~ ^[0-9]+$ ]] && [[ "$_fmt" -le 2 ]]; }; } \
           && [[ -n "$(manifest_list_tools "$_manifest" | head -1)" ]]; then
             return 0
         fi

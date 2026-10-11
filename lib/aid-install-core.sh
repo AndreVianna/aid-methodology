@@ -206,6 +206,8 @@ _is_aid_owned_path() {
     [[ "$rel" == .agents/aid/* || "$rel" =~ ^\.(claude|codex|cursor|github|agent)/aid/ ]] && return 0
     [[ "$rel" =~ ^\.(claude|codex|cursor|github|agent)/skills/aid-[^/]+/ ]] && return 0
     [[ "$base" == aid-* && ( "$rel" =~ ^\.(claude|codex|cursor|github|agent)/(skills|aid)/ || "$rel" == .agents/aid/* ) ]] && return 0
+    # Retired v3 rules dirs (cursor, antigravity): aid-* files are AID-owned (marker 1).
+    [[ "$base" == aid-* && "$rel" =~ ^\.(cursor|agent)/rules/ ]] && return 0
     return 1
 }
 
