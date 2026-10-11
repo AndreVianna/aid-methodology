@@ -112,7 +112,7 @@ minimum_grade: A
 # [W] 'yes' | 'no' -- quoted, see NFR-2 / D-5
 user_approved: 'no'
 # [W] Running | Paused-Awaiting-Input | Blocked | Completed | Canceled
-lifecycle: Running
+lifecycle: Paused-Awaiting-Input
 # [W] Describe | Define | Specify | Plan | Detail | Execute
 phase: Detail
 # [W] aid-{skill} | none
@@ -120,7 +120,7 @@ active_skill: aid-update
 # [W]
 updated: '2026-10-11T04:00:00Z'
 # [W] set only when lifecycle = Paused-Awaiting-Input
-pause_reason: --
+pause_reason: 'Scoped check: tasks clear; definition row 55 still Pending (v3-created bare projects keep settings stamp 4); awaiting maintainer'
 # [W] set only when lifecycle = Blocked
 block_reason: --
 # [W] e.g. IMPEDIMENT-task-NNN.md, or the failed gate
@@ -450,6 +450,11 @@ lifecycle_history:
     event: 'Fix cycle applied (Sonnet x2 + coordinator): definition 50-54 and tasks 23-28 all verified Fixed. Final full review cycle 2 (Opus): YES-WITH-GAPS -- new definition 55 [HIGH] (bare project from aid projects add has a format-2 manifest, so aid add is refused and aid update exits 6), 56-57 [LOW] (fallback-only); tasks 29 [HIGH] (no task owns _aid_scaffold_bare_project), task row 20 Recurred (task-006 two-add check cannot pass in wave 2). Paused'
     grade: 'D+ (definition) / D+ (tasks)'
     notes: '/aid-update GATE final'
+
+  - date: '2026-10-11'
+    event: 'Fixes: D55/T29 (Sonnet), T20 and D56/D57 accepted into task-032 (coordinator). Scoped Opus check: tasks 29 and 20 Fixed; definition 55 still Pending -- bare projects created by a v3 CLI carry settings stamp 4, so the stamp-<5 layout-gate refusal still blocks aid add; fixtures lack the stamp-4 settings file. Paused'
+    grade: 'D+ (definition) / A+ (tasks)'
+    notes: '/aid-update GATE'
 
 # [A] aid-deploy only; one entry per delivery (never derived from child
 #     files; aid-deploy is the sole author):
