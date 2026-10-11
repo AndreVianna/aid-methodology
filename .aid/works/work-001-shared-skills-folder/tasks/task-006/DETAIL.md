@@ -59,13 +59,13 @@ Feature Flow › 3 (steps 2 to 4).
 
 **Acceptance Criteria:**
 - [ ] `grep -E 'readonly AID_SUPPORTED_FORMAT=' bin/aid`, the `AidSupportedFormat` assignment in `bin/aid.ps1` and the `$script:_AidSupportedFormat` assignment in `lib/AidInstallCore.psm1` all carry the value `5`, and the new comment line is present above the bash constant, containing both `one AGENTS.md pointer region for every tool` and `a CLAUDE.md @AGENTS.md import region while claude-code is installed`.
-- [ ] A fresh fixture with no manifest, recovery record, legacy AID-owned paths or old AID root
-  region and no settings passes the layout gate and `aid add` succeeds; a format-3 manifest plus
-  stamp 4 refuses unchanged, and manifest-less legacy still refuses after `aid projects add` or
-  `aid update self` migrates settings. A user directory alone is not legacy evidence.
+- [ ] In layout-gate isolation fixtures, a fresh repo with absent settings, no manifest, recovery
+  record or legacy AID-owned paths passes; an incompatible stamp/manifest, recovery record or
+  legacy owned path refuses with exit 2 and leaves the tree unchanged. A user directory alone is
+  not legacy evidence. Complete fresh `aid add` is verified downstream in task-020.
 - [ ] In a fixture holding a format-2 manifest and `format_version: 4` settings, `aid add cursor` exits `2`, prints the layout-gate message (`This project uses the v3 AID layout. Run: aid update ...`), and a sha256 snapshot of the fixture tree (`find . -type f -exec sha256sum {} +`, sorted) is unchanged.
 - [ ] In a fixture whose format-3 manifest records `tools.codex.version` different from `aid_version`, `aid add cursor` exits `2` and its output contains `aid update`; the fixture snapshot is unchanged.
-- [ ] `_aid_migrate_repo` on a fixture with a format-2 manifest writes `format_version: 4`; on a fixture with neither manifest nor recovery record, or a format-3 manifest, writes `format_version: 5`; with no manifest and an upgrade recovery record, it keeps `format_version: 4`.
+- [ ] `_aid_migrate_repo` on a format-2 manifest writes `format_version: 4`; on a format-3 manifest writes `5`; on proven-fresh state (no manifest, recovery record, legacy AID-owned paths or old AID root-region evidence) writes `5`; with no manifest and a recovery record or legacy owned paths/root-region evidence it writes `4`. Exercise both shells.
 - [ ] In a fixture holding a format-3 manifest and a settings stamp of `4` (the state left by `aid update self`), `aid add cursor` exits `2`, prints the layout-gate message, and the fixture snapshot is unchanged.
 - [ ] A manifest with `"format_version": 4` makes `aid status` refuse with a message containing `Run: aid update self`.
 - [ ] Each case above gives the same exit code and output lines under `bin/aid.ps1` where `pwsh` exists.

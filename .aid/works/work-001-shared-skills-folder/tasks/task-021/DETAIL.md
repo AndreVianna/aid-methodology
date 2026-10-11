@@ -56,7 +56,6 @@
 - [ ] The same run prints `PASS:` lines for invalid-record/future-format refusals, staging failure, dry-run, atomic-write failure, pending-record add/remove gates and out-of-set named tools, each with the expected unchanged snapshot or prevention of the next destructive step.
 - [ ] The same run prints `PASS:` lines for AC-14 (c) in its variants (user-edited `CLAUDE.md` with trash copy, no-marker `CLAUDE.md`, v3 `AGENTS.md` with the pointer region) and the one-`@AGENTS.md` / one-`AID:BEGIN` invariant in each.
 - [ ] Frozen-clock repeated retirement collisions and preoccupied `.N` suffixes preserve all backup bytes with identical Bash/PowerShell names and ordering.
-- [ ] Frozen-clock repeated retirement collisions and preoccupied `.N` suffixes preserve all backup bytes with identical Bash/PowerShell names and ordering.
 - [ ] `grep -cE 'profiles/[a-z-]+/' tests/canonical/test-aid-migrate.sh` prints `0`.
 - [ ] The coverage-parity gate (run where `pwsh`, `node` and `python3` are on PATH) reports no un-excused removal for this suite.
 - [ ] All section-6 quality gates pass.

@@ -118,7 +118,7 @@ phase: Detail
 # [W] aid-{skill} | none
 active_skill: aid-update
 # [W]
-updated: '2026-10-11T02:32:58Z'
+updated: '2026-10-11T02:34:01Z'
 # [W] set only when lifecycle = Paused-Awaiting-Input
 pause_reason: --
 # [W] set only when lifecycle = Blocked
@@ -384,6 +384,11 @@ lifecycle_history:
     event: 'Independent Sol verification complete; eight original findings Fixed, four residual contract findings Pending'
     grade: --
     notes: 'Definition C+ (row 48); tasks C (rows 19-21); no historical Fixed findings recurred. Final integrated review supplied two of the confirmed residual gaps. One authorized Luna correction round now starts: fresh stamp fixture, early gate ordering, LF separator restoration wording, and separate semantic-review gate'
+
+  - date: '2026-10-10'
+    event: 'One Luna correction round complete; Sol delta verification started'
+    grade: --
+    notes: 'Corrected definition row 48 and task rows 19-21 contracts; early task gates limited to available behavior, fresh-versus-legacy stamp cases qualified, non-LF separator behavior explicit, semantic reviewer gate separate. Duplicate collision checkbox removed. No further correction round planned; orchestrator final consistency checks follow'
 
 # [A] aid-deploy only; one entry per delivery (never derived from child
 #     files; aid-deploy is the sole author):

@@ -61,6 +61,10 @@ Bash and PowerShell twins together, per REQUIREMENTS.md § 11 Feature 001 › Fe
 - [ ] `aid add cursor` followed by `aid add claude-code` leaves `users` as `["claude-code", "cursor"]` (`AID_TOOLS` order) on the three shared entries and `mirrors` holding `.claude/skills` with users `["claude-code"]`.
 - [ ] Pre-seeded `.agents/skills/my-skill/SKILL.md` and `.claude/skills/my-skill/SKILL.md` keep their sha256 through both adds.
 - [ ] After appending one byte to `.agents/skills/aid-plan/SKILL.md`, `aid add codex` restores canonical bytes there and the modified bytes exist at `.aid/.trash/.agents/skills/aid-plan/SKILL.md`.
-- [ ] LF, CRLF (`core.autocrlf=true`) and mixed-line-ending root fixtures pass add, status and update without false drift or repair in both shells; real region edits are reported and CRLF repair retries idempotently while outside bytes stay exact.
+- [ ] Function-level root-region tests and `aid add` fixtures with LF, CRLF (`core.autocrlf=true`)
+  and mixed user content recognize/hash the managed region without false drift or repair in both
+  shells; real edits to the region are distinguished from line-ending changes, CRLF repair is
+  idempotent, and every outside byte stays exact. Status/update drift and repair are covered by
+  downstream tasks 018/023.
 - [ ] The same fixtures built with `bin/aid.ps1` (where `pwsh` exists) give an identical file tree and identical manifest bytes after masking `installed_at`; `bash tests/canonical/test-ps51-compat.sh` and `bash tests/canonical/test-ascii-only.sh` exit `0`.
 - [ ] All section-6 quality gates pass.

@@ -1333,8 +1333,10 @@ implemented twice. The parity suite names every row (AC-16).
 - **`_remove_claude_md_region`.** It runs when `shared.claude_md` loses its last user (flow 5).
   If the canonical-LF region hash differs from `region_sha256`, the whole file is copied to trash
   first. Then the exact region is removed with CRLF-aware parsing and every other byte is kept, so
-  a user file returns to its pre-add bytes. If the remainder is empty or whitespace-only, the file
-  is deleted. A `CLAUDE.md` that has lost its
+  a user file that ended in LF and received an appended region returns to its pre-add bytes. For
+  a non-empty original without a final LF, the separator LF inserted before the region remains
+  after removal, leaving the original user bytes unchanged followed by that LF. If the remainder is
+  empty or whitespace-only, the file is deleted. A `CLAUDE.md` that has lost its
   markers, or holds malformed ones, is left byte-unchanged.
 - **Scope.** While no installed tool declares `context_import`, the CLI never reads or writes
   `CLAUDE.md`. `AGENTS.md` keeps its region for the other tools whatever happens to

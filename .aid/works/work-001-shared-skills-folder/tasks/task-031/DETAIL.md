@@ -20,7 +20,12 @@
 **Depends on:** task-016, task-017, task-018, task-019, task-020, task-021, task-022, task-023, task-024, task-025, task-026, task-028, task-029, task-030
 
 **Scope:**
-- Replace the blanket work-ID grep with a scoped review of docs/repository-structure.md, docs/glossary.md, docs/release.md, README/docs/site and related claims: semantically verify profiles contain agents plus configuration, the shared release payload, per-tool agents-only artifacts, CLI dogfood method, and channel/version claims; generic `.aid/works/{work}` schemas and illustrative IDs are permitted, while KB remains covered by task-029.
+- Replace the blanket work-ID grep with a scoped reviewer check of docs/repository-structure.md,
+  docs/glossary.md, docs/release.md, README/docs/site and related claims: semantically verify
+  profiles contain agents plus configuration, the shared release payload, per-tool agents-only
+  artifacts, CLI dogfood method, and channel/version/layout claims; generic `.aid/works/{work}`
+  schemas and illustrative IDs are permitted, while KB remains covered by task-029. The reviewer
+  records the result through the existing pipeline review result/STATE entry.
 - Add the AC-19 grep to `tests/canonical/test-shared-layout-sources.sh` as a keyed assertion:
   `git grep -nE '\.(claude|codex|cursor|agent)/aid/|\.github/aid/' -- CLAUDE.md AGENTS.md README.md docs .github/workflows .aid/knowledge site ':!.aid/knowledge/release-tracking.md' ':!.aid/knowledge/kb.html'`
   prints no lines.
@@ -37,6 +42,9 @@
 **Acceptance Criteria:**
 - [ ] `HOME=$(mktemp -d) bash tests/run-all.sh` exits `0`, including the coverage-parity gate.
 - [ ] `python .claude/skills/generate-profile/scripts/render.py --self-test --canonical-root .` exits `0`, and `python .claude/skills/generate-profile/scripts/run_generator.py && git diff --exit-code -- profiles/` exits `0` (no render drift).
-- [ ] `bash tests/canonical/test-shared-layout-sources.sh --verbose` prints a `PASS:` line for the AC-19 grep and records the scoped semantic review of all named docs and channel/version claims; it permits generic work schemas.
+- [ ] `bash tests/canonical/test-shared-layout-sources.sh --verbose` prints a `PASS:` line for the AC-19 grep; it permits generic work schemas.
+- [ ] The normal task review records whether the named documentation accurately describes profile
+  contents, shared and per-tool release artifacts, dogfood procedure, and channel/version/layout
+  claims, in line with task-030 AC-4.
 - [ ] `git status --porcelain` is empty after the run (no suite wrote into the real repo).
 - [ ] All section-6 quality gates pass.
