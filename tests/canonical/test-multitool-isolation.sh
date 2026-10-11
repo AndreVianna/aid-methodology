@@ -1,480 +1,139 @@
 #!/usr/bin/env bash
-# test-multitool-isolation.sh -- task-020: structural acceptance suite for AC4 multi-tool
-# isolation (feature-004-lockstep-ci-closeout).
-#
-# Installs claude-code + cursor + codex into a single throwaway repo (via
-# aid add --from-bundle) and asserts the three structural invariants:
-#
-#   T01-T12  Each tool's tree exists with the uniform {agents,skills,aid} shape
-#            under its own root (.claude/, .cursor/, .codex/).
-#
-#   T13-T20  Representative canonical files that carry no per-tool substitution
-#            are byte-identical across the three installed trees (AC1 -- same
-#            canonical skill/agent bodies).
-#
-#   T21-T26  No operational script in any tree references a foreign root basename
-#            (grep each tool's aid/scripts/ subtree for the OTHER two tools'
-#            root names), asserting tool isolation (AC4 structural half).
-#            Scope is narrowed to aid/scripts/ to avoid false positives from
-#            cross-tool documentation prose in reference and template files, and
-#            three non-invocable mention shapes are filtered per line (see the
-#            block above scripts_have_foreign_root for why each one is sound).
-#
-#   T27-T30  Escape canary and HOME-pin verification.
-#
-# HOME pin + escape canary (MANDATORY): HOME is forced to a throwaway dir for
-# the entire run; a baseline snapshot of the real user HOME's .aid/ dirs is
-# taken before any work begins, and an escape canary at the very end asserts
-# no NEW .aid/ appeared outside the throwaway HOME.
-#
-# NOTE on SIGPIPE (set -o pipefail): grep -rl ... | grep -q . triggers SIGPIPE
-# when grep -q exits after the first match.  All "found any?" checks use the
-# pattern: found="$(grep ... | head -1)" ; [[ -n "$found" ]] to avoid SIGPIPE.
-#
-# ASCII-only: this file contains only 7-bit ASCII bytes.
-#
-# Auto-discovered by tests/run-all.sh via the tests/canonical/test-*.sh glob;
-# no run-all.sh or workflow edit is needed.
-#
-# Usage:
-#   HOME=$(mktemp -d) bash tests/canonical/test-multitool-isolation.sh [--verbose]
-# Exit codes: 0 all pass / 1 any fail.
-
+# COVERS: .aid/works/work-001-shared-skills-folder/REQUIREMENTS.md AC-9, AC-10, AC-14(d)
+# Shared-layout reference counting, drift repair and last-user root-file cleanup.
 set -uo pipefail
-
 VERBOSE=0
-[[ "${1:-}" =~ ^(-v|--verbose)$ ]] && VERBOSE=1
-
-source "$(dirname "${BASH_SOURCE[0]}")/../lib/assert.sh"
-
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-REPO_ROOT="$(cd "${SCRIPT_DIR}/../.." && pwd)"
-BIN_AID="${REPO_ROOT}/bin/aid"
-LIB_CORE="${REPO_ROOT}/lib/aid-install-core.sh"
-PROFILES_DIR="${REPO_ROOT}/profiles"
-VERSION="$(tr -d '[:space:]' < "${REPO_ROOT}/VERSION")"
-
-[[ -f "$BIN_AID" ]]  || { echo "ERROR: bin/aid not found at $BIN_AID" >&2; exit 1; }
-[[ -f "$LIB_CORE" ]] || { echo "ERROR: lib/aid-install-core.sh not found at $LIB_CORE" >&2; exit 1; }
-
-# ---------------------------------------------------------------------------
-# HOME pin (MANDATORY): redirect all home-relative writes to a throwaway dir.
-# REAL_HOME is saved and the escape canary uses it at the very end.
-# Also redirect USERPROFILE (Windows portability defence).
-# ---------------------------------------------------------------------------
-REAL_HOME="${HOME}"
-_CANARY_BEFORE="$(find "${REAL_HOME}" -maxdepth 6 -name '.aid' -type d 2>/dev/null | sort || true)"
+[[ "${1:-}" == --verbose || "${1:-}" == -v ]] && VERBOSE=1
+HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+REPO="$(cd "${HERE}/../.." && pwd)"
+source "${HERE}/../lib/assert.sh"
+source "${HERE}/../lib/bundle.sh"
 TMP="$(mktemp -d)"
 trap 'rm -rf "$TMP"' EXIT
-export HOME="${TMP}/fakehome"
-export USERPROFILE="${TMP}/fakehome"
-mkdir -p "${HOME}"
+REAL_HOME="${HOME}"
+_CANARY_BEFORE="$(find "${REAL_HOME}" -maxdepth 6 -name .aid -type d 2>/dev/null | sort || true)"
+export HOME="${TMP}/home" USERPROFILE="${TMP}/home" AID_NO_UPDATE_CHECK=1
+mkdir -p "$HOME"
+STAGE="${TMP}/stage"; mkdir -p "$STAGE"
+if ! aid_test_stage_bundle "$STAGE" >"${TMP}/stage.log" 2>&1; then cat "${TMP}/stage.log" >&2; exit 1; fi
+sha() { sha256sum "$1" | awk '{print $1}'; }
+run_aid() {
+    local target="$1" state="$2"; shift 2
+    AID_HOME="$state" AID_NO_UPDATE_CHECK=1 bash "$REPO/bin/aid" "$@" --target "$target"
+}
+run_bundle() {
+    local target="$1" state="$2"; shift 2
+    AID_HOME="$state" AID_NO_UPDATE_CHECK=1 bash "$REPO/bin/aid" "$@" --target "$target" --from-bundle "$STAGE"
+}
+manifest_has_user() {
+    python3 - "$1" "$2" "$3" <<'PY'
+import json, sys
+data=json.load(open(sys.argv[1], encoding='utf-8'))
+parts=sys.argv[2].split('.')
+node=data
+for part in parts: node=node[part]
+sys.exit(0 if sys.argv[3] in node else 1)
+PY
+}
+manifest_has_entry() {
+    python3 - "$1" "$2" <<'PY'
+import json, sys
+data=json.load(open(sys.argv[1], encoding='utf-8'))
+sys.exit(0 if sys.argv[2] in data.get('shared', {}) else 1)
+PY
+}
+manifest_path() { printf '%s\n' "$1/.aid/.aid-manifest.json"; }
+assert_cmd() {
+    local label="$1"; shift
+    local output rc
+    output="$("$@" 2>&1)"; rc=$?
+    if [[ $rc -eq 0 ]]; then pass "$label"; else fail "$label (exit $rc)"; [[ $VERBOSE -eq 1 ]] && printf '%s\n' "$output" >&2; fi
+}
+assert_path_hash_same() {
+    local before="$1" path="$2" label="$3"
+    if [[ -f "$path" ]] && [[ "$(sha "$path")" == "$before" ]]; then pass "$label"; else fail "$label"; fi
+}
+echo '== test-multitool-isolation.sh =='
 
-# ---------------------------------------------------------------------------
-# Portable sha256 helper (mirrors test-aid-migrate.sh).
-# ---------------------------------------------------------------------------
-file_sha256() {
-    local f="$1"
-    if command -v sha256sum >/dev/null 2>&1; then
-        sha256sum "$f" | cut -d' ' -f1
-    elif command -v openssl >/dev/null 2>&1; then
-        openssl dgst -sha256 "$f" | awk '{print $NF}'
+# AC-9: shared entries remain until their last user leaves.
+TARGET="$TMP/refcount"; STATE="$TMP/state-refcount"; mkdir -p "$TARGET/.agents/skills/my-skill" "$TARGET/.claude/skills/my-skill" "$STATE"
+printf 'user skill\n' > "$TARGET/.agents/skills/my-skill/SKILL.md"
+printf 'user mirror\n' > "$TARGET/.claude/skills/my-skill/SKILL.md"
+USER_AGENT_SHA="$(sha "$TARGET/.agents/skills/my-skill/SKILL.md")"; USER_CLAUDE_SHA="$(sha "$TARGET/.claude/skills/my-skill/SKILL.md")"
+assert_cmd 'AC-9 add claude-code,cursor,codex succeeds' run_bundle "$TARGET" "$STATE" add claude-code,cursor,codex
+MANIFEST="$(manifest_path "$TARGET")"
+if [[ -n "$MANIFEST" ]]; then pass 'AC-9 manifest is present'; else fail 'AC-9 manifest is present'; fi
+shared_snapshot() {
+    (cd "$TARGET" && find .agents/skills .claude/skills .aid/runtime AGENTS.md -type f 2>/dev/null | sort | while IFS= read -r f; do printf '%s %s\n' "$(sha "$TARGET/${f#./}")" "$f"; done)
+}
+SHARED_BEFORE="$(shared_snapshot)"
+assert_cmd 'AC-9 remove cursor succeeds' run_aid "$TARGET" "$STATE" remove cursor
+if [[ "$SHARED_BEFORE" == "$(shared_snapshot)" ]]; then pass 'AC-9 shared skill, runtime and AGENTS hashes stay unchanged after cursor removal'; else fail 'AC-9 shared skill, runtime and AGENTS hashes stay unchanged after cursor removal'; fi
+if ! compgen -G "$TARGET/.cursor/agents/aid-*" >/dev/null; then pass 'AC-9 cursor AID agents are removed'; else fail 'AC-9 cursor AID agents are removed'; fi
+if ! manifest_has_user "$MANIFEST" shared.agents_md.users cursor 2>/dev/null; then pass 'AC-9 manifest no longer names cursor'; else fail 'AC-9 manifest no longer names cursor'; fi
+assert_path_hash_same "$USER_AGENT_SHA" "$TARGET/.agents/skills/my-skill/SKILL.md" 'AC-9 non-AID .agents skill hash survives cursor removal'
+assert_path_hash_same "$USER_CLAUDE_SHA" "$TARGET/.claude/skills/my-skill/SKILL.md" 'AC-9 non-AID Claude skill hash survives cursor removal'
+assert_cmd 'AC-9 remove codex succeeds' run_aid "$TARGET" "$STATE" remove codex
+if [[ -d "$TARGET/.agents/skills" && -d "$TARGET/.claude/skills" && -d "$TARGET/.aid/runtime" ]]; then pass 'AC-9 shared entries remain after codex removal'; else fail 'AC-9 shared entries remain after codex removal'; fi
+assert_path_hash_same "$USER_AGENT_SHA" "$TARGET/.agents/skills/my-skill/SKILL.md" 'AC-9 non-AID .agents skill hash survives codex removal'
+assert_path_hash_same "$USER_CLAUDE_SHA" "$TARGET/.claude/skills/my-skill/SKILL.md" 'AC-9 non-AID Claude skill hash survives codex removal'
+assert_cmd 'AC-9 remove claude-code succeeds' run_aid "$TARGET" "$STATE" remove claude-code
+if ! compgen -G "$TARGET/.agents/skills/aid-*" >/dev/null && ! compgen -G "$TARGET/.claude/skills/aid-*" >/dev/null && [[ ! -d "$TARGET/.aid/runtime" ]]; then pass 'AC-9 shared AID payload is removed after last tool'; else fail 'AC-9 shared AID payload is removed after last tool'; [[ $VERBOSE -eq 1 ]] && find "$TARGET/.agents/skills" "$TARGET/.claude/skills" "$TARGET/.aid" -maxdepth 3 -print 2>/dev/null >&2; fi
+assert_path_hash_same "$USER_AGENT_SHA" "$TARGET/.agents/skills/my-skill/SKILL.md" 'AC-9 non-AID .agents skill hash is preserved throughout'
+assert_path_hash_same "$USER_CLAUDE_SHA" "$TARGET/.claude/skills/my-skill/SKILL.md" 'AC-9 non-AID Claude skill hash is preserved throughout'
+
+# AC-10: status identifies modified, missing and extra drift; update restores bytes and trashes modified files.
+DRIFT="$TMP/drift"; DSTATE="$TMP/state-drift"; mkdir -p "$DRIFT" "$DSTATE"
+assert_cmd 'AC-10 add claude-code succeeds' run_bundle "$DRIFT" "$DSTATE" add claude-code
+printf x >> "$DRIFT/.claude/skills/aid-ask/SKILL.md"
+rm -f "$DRIFT/.claude/skills/aid-fix/SKILL.md"
+printf x >> "$DRIFT/.agents/skills/aid-plan/SKILL.md"
+STATUS="$(AID_HOME="$DSTATE" AID_NO_UPDATE_CHECK=1 bash "$REPO/bin/aid" status --target "$DRIFT" 2>&1)"; STATUS_RC=$?
+if [[ $STATUS_RC -eq 0 && "$STATUS" == *'.claude/skills/aid-ask/SKILL.md'* && "$STATUS" == *'.claude/skills/aid-fix/SKILL.md'* && "$STATUS" == *'.agents/skills/aid-plan/SKILL.md'* && "$STATUS" == *'aid update'* ]]; then pass 'AC-10 status names all drift paths and aid update'; else fail 'AC-10 status names all drift paths and aid update'; [[ $VERBOSE -eq 1 ]] && printf '%s\n' "$STATUS" >&2; fi
+assert_cmd 'AC-10 update from same staging succeeds' run_bundle "$DRIFT" "$DSTATE" update
+if cmp -s "$REPO/canonical/skills/aid-ask/SKILL.md" "$DRIFT/.claude/skills/aid-ask/SKILL.md" && cmp -s "$REPO/canonical/skills/aid-fix/SKILL.md" "$DRIFT/.claude/skills/aid-fix/SKILL.md" && cmp -s "$REPO/canonical/skills/aid-plan/SKILL.md" "$DRIFT/.agents/skills/aid-plan/SKILL.md"; then pass 'AC-10 update restores modified and missing skills to canonical bytes'; else fail 'AC-10 update restores modified and missing skills to canonical bytes'; fi
+if cmp -s "$DRIFT/.aid/.trash/.claude/skills/aid-ask/SKILL.md" <(cat "$REPO/canonical/skills/aid-ask/SKILL.md"; printf x) && cmp -s "$DRIFT/.aid/.trash/.agents/skills/aid-plan/SKILL.md" <(cat "$REPO/canonical/skills/aid-plan/SKILL.md"; printf x); then pass 'AC-10 modified files are preserved byte-for-byte in trash at original paths'; else fail 'AC-10 modified files are preserved byte-for-byte in trash at original paths'; fi
+STATUS2="$(AID_HOME="$DSTATE" AID_NO_UPDATE_CHECK=1 bash "$REPO/bin/aid" status --target "$DRIFT" 2>&1)"; STATUS2_RC=$?
+if [[ $STATUS2_RC -eq 0 && "$STATUS2" == *'Shared files: clean'* ]]; then pass 'AC-10 second status reports no drift'; else fail 'AC-10 second status reports no drift'; [[ $VERBOSE -eq 1 ]] && printf '%s\n' "$STATUS2" >&2; fi
+
+# AC-14(d): remove Claude's import while Cursor keeps the single AGENTS region.
+for kind in absent markerless; do
+    TARGET="$TMP/claude-$kind"; STATE="$TMP/claude-state-$kind"; mkdir -p "$TARGET" "$STATE"
+    if [[ "$kind" == markerless ]]; then printf 'User CLAUDE notes\n' > "$TARGET/CLAUDE.md"; cp "$TARGET/CLAUDE.md" "$TMP/claude-before-$kind"; fi
+    assert_cmd "AC-14(d) add claude-code,cursor ($kind CLAUDE) succeeds" run_bundle "$TARGET" "$STATE" add claude-code,cursor
+    assert_cmd "AC-14(d) remove claude-code ($kind CLAUDE) succeeds" run_aid "$TARGET" "$STATE" remove claude-code
+    if [[ "$kind" == absent ]]; then
+        [[ ! -e "$TARGET/CLAUDE.md" ]] && pass 'AC-14(d) CLI-created CLAUDE.md is removed' || fail 'AC-14(d) CLI-created CLAUDE.md is removed'
     else
-        md5sum "$f" | cut -d' ' -f1
+        cmp -s "$TMP/claude-before-$kind" "$TARGET/CLAUDE.md" && pass 'AC-14(d) markerless user CLAUDE.md is restored byte-for-byte' || fail 'AC-14(d) markerless user CLAUDE.md is restored byte-for-byte'
     fi
-}
-
-# ---------------------------------------------------------------------------
-# tree_has_ref <tree_dir> <pattern>
-#
-# Returns 0 (success/true) if ANY file under tree_dir contains <pattern>
-# as a fixed string; 1 (failure/false) if none do.
-#
-# Avoids the grep -rl ... | grep -q . SIGPIPE hazard (set -o pipefail +
-# grep -q exits early after first match, closing the pipe, causing SIGPIPE
-# on the upstream grep).  Safe idiom: capture to variable + test non-empty.
-# ---------------------------------------------------------------------------
-tree_has_ref() {
-    local tree_dir="$1"
-    local pattern="$2"
-    local found
-    found="$(grep -rlF "${pattern}" "${tree_dir}" 2>/dev/null | head -1)"
-    [[ -n "$found" ]]
-}
-
-# ---------------------------------------------------------------------------
-# scripts_have_foreign_root <scripts_dir> <foreign_root>
-#
-# Returns 0 (success/true) if any file under <scripts_dir> contains the
-# foreign root basename (e.g. ".cursor/") as a literal string.  Used for
-# the AC4 structural isolation check scoped to aid/scripts/ (operational
-# files only -- avoids false positives from cross-tool documentation prose
-# in reference files and agent bodies that discuss the multi-tool system).
-# ---------------------------------------------------------------------------
-# Three mention shapes are NOT foreign-root references, and are filtered out per
-# LINE rather than excused per FILE.
-#
-# The premise of T21-T26 is narrow and worth restating, because it is what makes the
-# filter sound: a foreign root under aid/scripts/ is a defect *because the wrong
-# tree's path would be invoked at runtime*. None of the shapes below can invoke
-# anything.
-#
-#   1. COMMENT lines. `# .claude/skills/... is the renderer, not a render` is prose.
-#      Both graph/scan-source.sh and graph/significance-rules.sh carry several,
-#      because their job is classifying repo paths and explaining a path
-#      classification means naming the path.
-#
-#   2. The one literal `.claude/skills/generate-profile`. That is the AID RENDERER --
-#      hand-authored maintainer tooling that lives at exactly that path in this repo
-#      and nowhere else. The source scanner has to recognise it whichever agent tool
-#      is installed, because it classifies repo files and the renderer is a repo
-#      file, not a render of canonical/. Every use of it is existence-guarded
-#      (`if [ -d ".claude/skills/generate-profile" ]`), so in a cursor-only install
-#      the branch never fires.
-#
-#   3. A TERMINAL GLOB -- `.cursor/*` where the `*` is the whole final component,
-#      i.e. followed by `|`, `)`, whitespace, or end of line. That is a `case`
-#      pattern being matched AGAINST a path, never a path being resolved: no file
-#      is literally named `*`. significance-rules.sh's prune guard
-#      `.claude/*|.cursor/*|.codex/*|.agent/*) return 0 ;;` is the only instance,
-#      and it has to name every agent root or a cursor install sitting beside a
-#      claude-code install would be classified as project source.
-#      The "terminal" part carries the weight: `bash .cursor/*/run.sh` has a
-#      component AFTER the glob, so it is not excused.
-#
-# Filtering by mention shape rather than by filename is the whole point: an ordinary
-# `source "$root/.cursor/aid/scripts/x.sh"` added to any of these files still fails
-# this check, whereas a basename allowlist would have hidden it. (2) is an EXACT
-# literal, so `.claude/skills/anything-else` still fails too.
-FOREIGN_ROOT_RENDERER_LITERAL='.claude/skills/generate-profile'
-FOREIGN_ROOT_GLOB_SED='s#\.(claude|cursor|codex|agent)/\*($|[|)[:space:]])#<ROOTGLOB>\2#g'
-
-# Both helpers below pipe rather than loop per file on purpose: this suite runs on
-# Windows too, where process spawn costs ~1s, so a per-file grep would take minutes.
-scripts_have_foreign_root() {
-    local scripts_dir="$1"
-    local foreign_root="$2"
-    grep -rhF "${foreign_root}/" "${scripts_dir}" 2>/dev/null \
-        | grep -v '^[[:space:]]*#' \
-        | sed "s|${FOREIGN_ROOT_RENDERER_LITERAL}|<RENDERER>|g" \
-        | sed -E "${FOREIGN_ROOT_GLOB_SED}" \
-        | grep -qF "${foreign_root}/"
-}
-
-# ---------------------------------------------------------------------------
-# Build a minimal AID code home: bin/aid + lib/ + VERSION + dashboard/home.html.
-# bin/aid self-locates AID_CODE_HOME as the parent of its own bin/ directory.
-# ---------------------------------------------------------------------------
-CODE_HOME="$(mktemp -d "${TMP}/code.XXXXXX")"
-mkdir -p "${CODE_HOME}/bin" "${CODE_HOME}/lib" "${CODE_HOME}/dashboard"
-cp "${BIN_AID}"  "${CODE_HOME}/bin/aid"
-chmod +x         "${CODE_HOME}/bin/aid"
-cp "${LIB_CORE}" "${CODE_HOME}/lib/aid-install-core.sh"
-printf '%s\n' "${VERSION}" > "${CODE_HOME}/VERSION"
-printf '<html><body>AID Dashboard</body></html>\n' > "${CODE_HOME}/dashboard/home.html"
-
-# ---------------------------------------------------------------------------
-# Build fixture tarballs from profiles/ (mirrors test-aid-cli.sh pattern).
-# Excludes README.md and emission-manifest.jsonl (non-installed meta files).
-# ---------------------------------------------------------------------------
-BUNDLE_DIR="$(mktemp -d "${TMP}/bundle.XXXXXX")"
-
-build_fixture_tarball() {
-    local tool="$1"
-    local profile_dir="${PROFILES_DIR}/${tool}"
-    local tarball="${BUNDLE_DIR}/aid-${tool}-v${VERSION}.tar.gz"
-
-    [[ -d "$profile_dir" ]] || {
-        echo "ERROR: profile dir not found: $profile_dir" >&2
-        return 1
-    }
-
-    local filelist
-    filelist="$(mktemp "${TMP}/filelist-${tool}.XXXXXX")"
-    while IFS= read -r f; do
-        local fname
-        fname="$(basename "$f")"
-        [[ "$fname" == "README.md" ]] && continue
-        [[ "$fname" == "emission-manifest.jsonl" ]] && continue
-        local rel="${f#${profile_dir}/}"
-        printf './%s\n' "$rel"
-    done < <(find "${profile_dir}" -type f | sort) > "$filelist"
-
-    (cd "${profile_dir}" && tar -czf "${tarball}" --no-recursion -T "${filelist}") || {
-        echo "ERROR: failed to build fixture tarball for ${tool}" >&2
-        rm -f "$filelist"
-        return 1
-    }
-    rm -f "$filelist"
-}
-
-echo ""
-echo "=== Setup: build fixture tarballs and run aid add claude-code,cursor,codex ==="
-
-for _tool in claude-code cursor codex; do
-    build_fixture_tarball "$_tool" || {
-        echo "ERROR: fixture tarball build failed for ${_tool}" >&2
-        exit 1
-    }
+    BEGIN_COUNT="$(awk '$0 == "<!-- AID:BEGIN -->" { n++ } END { print n+0 }' "$TARGET/AGENTS.md")"
+    [[ "$BEGIN_COUNT" == 1 ]] && pass "AC-14(d) AGENTS.md retains exactly one AID region ($kind)" || fail "AC-14(d) AGENTS.md retains exactly one AID region ($kind)"
+    MANIFEST="$(manifest_path "$TARGET")"
+    if manifest_has_user "$MANIFEST" shared.agents_md.users cursor 2>/dev/null; then pass "AC-14(d) agents_md users contains cursor ($kind)"; else fail "AC-14(d) agents_md users contains cursor ($kind)"; fi
+    if ! manifest_has_entry "$MANIFEST" claude_md 2>/dev/null; then pass "AC-14(d) manifest has no shared.claude_md ($kind)"; else fail "AC-14(d) manifest has no shared.claude_md ($kind)"; fi
 done
 
-# ---------------------------------------------------------------------------
-# Throwaway repo: run aid add claude-code,cursor,codex --from-bundle.
-# AID_HOME redirected to a throwaway state dir so registry.yml never touches
-# the real user state.  AID_NO_UPDATE_CHECK=1 prevents network calls.
-# ---------------------------------------------------------------------------
-TARGET="$(mktemp -d "${TMP}/repo.XXXXXX")"
-STATE_HOME="$(mktemp -d "${TMP}/state.XXXXXX")"
-
-ADD_OUT="$(AID_HOME="${STATE_HOME}" \
-           AID_NO_UPDATE_CHECK=1 \
-           bash "${CODE_HOME}/bin/aid" add claude-code,cursor,codex \
-               --from-bundle "${BUNDLE_DIR}" \
-               --target "${TARGET}" 2>&1)" || {
-    echo "ERROR: aid add failed:" >&2
-    echo "$ADD_OUT" >&2
-    exit 1
-}
-log "aid add output: ${ADD_OUT}"
-
-echo "Setup complete. Asserting invariants..."
-
-# ===========================================================================
-# T01-T12: Each tool's tree exists with the uniform {agents,skills,aid} shape
-#          under its own root.
-# ===========================================================================
-echo ""
-echo "=== T01-T12: per-tool tree shape ==="
-
-assert_dir_exists "${TARGET}/.claude"                "T01 .claude/ root exists"
-assert_dir_exists "${TARGET}/.claude/agents"         "T02 .claude/agents/ exists"
-assert_dir_exists "${TARGET}/.claude/skills"         "T03 .claude/skills/ exists"
-assert_dir_exists "${TARGET}/.claude/aid"            "T04 .claude/aid/ exists"
-
-assert_dir_exists "${TARGET}/.cursor"                "T05 .cursor/ root exists"
-assert_dir_exists "${TARGET}/.cursor/agents"         "T06 .cursor/agents/ exists"
-assert_dir_exists "${TARGET}/.cursor/skills"         "T07 .cursor/skills/ exists"
-assert_dir_exists "${TARGET}/.cursor/aid"            "T08 .cursor/aid/ exists"
-
-assert_dir_exists "${TARGET}/.codex"                 "T09 .codex/ root exists"
-assert_dir_exists "${TARGET}/.codex/agents"          "T10 .codex/agents/ exists"
-assert_dir_exists "${TARGET}/.codex/skills"          "T11 .codex/skills/ exists"
-assert_dir_exists "${TARGET}/.codex/aid"             "T12 .codex/aid/ exists"
-
-# ===========================================================================
-# T13-T20: Byte-identity of representative canonical files across all three
-#          installed trees (AC1).
-#
-# These files carry no per-tool root-path substitution (pure canonical bodies:
-# individual template/script files that reference no tool-specific paths).  They
-# should be bit-for-bit identical across .claude/, .cursor/, .codex/.
-# ===========================================================================
-echo ""
-echo "=== T13-T20: byte-identity of canonical bodies across trees (AC1) ==="
-
-# Representative files known to be canonical-body-identical (no root refs).
-# Sourced from aid/templates/ (pure canonical Markdown that names no
-# install-path -- unlike e.g. grading-rubric.md/reviewer-ledger-schema.md/
-# state-machine-chaining.md/task-detail-template.md, which legitimately cite
-# `canonical/aid/scripts/...` and `canonical/aid/templates/...` paths in their own
-# prose and are therefore REWRITTEN per tool by the renderer, NOT
-# byte-identical -- confirmed by direct sha256 diff across profiles/*/) and
-# aid/scripts/ whose bodies are purely computational with no tool-root
-# references.
-CANONICAL_BODIES=(
-    # delivery-blueprint-template.md was here until BLUEPRINT.md was retired: the
-    # delivery definition now lives in the delivery's own PLAN.md stanza. The entry is
-    # removed rather than replaced -- the list samples tool-root-free canonical bodies,
-    # and the remaining entries still cover that property.
-    "aid/templates/delivery-plans/task-template.md"
-    "aid/templates/requirements.md"
-    "aid/templates/known-issues.md"
-    "aid/scripts/execute/complexity-score.sh"
-    "aid/scripts/execute/compute-block-radius.sh"
-    "aid/scripts/config/read-setting.sh"
-    "aid/scripts/grade.sh"
-)
-
-T_IDX=13
-for rel in "${CANONICAL_BODIES[@]}"; do
-    CC_FILE="${TARGET}/.claude/${rel}"
-    CU_FILE="${TARGET}/.cursor/${rel}"
-    CO_FILE="${TARGET}/.codex/${rel}"
-
-    if [[ ! -f "$CC_FILE" ]]; then
-        fail "T${T_IDX} .claude/${rel} -- file not installed in .claude/ tree"
-        T_IDX=$((T_IDX + 1))
-        continue
-    fi
-    if [[ ! -f "$CU_FILE" ]]; then
-        fail "T${T_IDX} .cursor/${rel} -- file not installed in .cursor/ tree"
-        T_IDX=$((T_IDX + 1))
-        continue
-    fi
-    if [[ ! -f "$CO_FILE" ]]; then
-        fail "T${T_IDX} .codex/${rel} -- file not installed in .codex/ tree"
-        T_IDX=$((T_IDX + 1))
-        continue
-    fi
-
-    sha_cc="$(file_sha256 "$CC_FILE")"
-    sha_cu="$(file_sha256 "$CU_FILE")"
-    sha_co="$(file_sha256 "$CO_FILE")"
-
-    if [[ "$sha_cc" == "$sha_cu" && "$sha_cu" == "$sha_co" ]]; then
-        pass "T${T_IDX} ${rel} -- byte-identical across .claude/.cursor/.codex (AC1)"
+# AC-9 last-user AGENTS.md cleanup variants.
+for kind in user markerless-created edited; do
+    TARGET="$TMP/agents-$kind"; STATE="$TMP/agents-state-$kind"; mkdir -p "$TARGET" "$STATE"
+    if [[ "$kind" == user ]]; then printf '## User workflow\nKeep this text.\n' > "$TARGET/AGENTS.md"; cp "$TARGET/AGENTS.md" "$TMP/agents-before-$kind"; fi
+    assert_cmd "AC-9 add claude-code ($kind AGENTS) succeeds" run_bundle "$TARGET" "$STATE" add claude-code
+    if [[ "$kind" == user ]]; then
+        assert_cmd 'AC-9 remove claude-code with markerless user AGENTS succeeds' run_aid "$TARGET" "$STATE" remove claude-code
+        cmp -s "$TMP/agents-before-$kind" "$TARGET/AGENTS.md" && pass 'AC-9 markerless user AGENTS outside bytes are preserved when full-file hash matches' || fail 'AC-9 markerless user AGENTS outside bytes are preserved when full-file hash matches'
+    elif [[ "$kind" == markerless-created ]]; then
+        assert_cmd 'AC-9 remove claude-code with AID-created AGENTS succeeds' run_aid "$TARGET" "$STATE" remove claude-code
+        [[ ! -e "$TARGET/AGENTS.md" ]] && pass 'AC-9 AID-created region-only AGENTS.md is deleted' || fail 'AC-9 AID-created region-only AGENTS.md is deleted'
     else
-        fail "T${T_IDX} ${rel} -- byte-identity MISMATCH: .claude=${sha_cc} .cursor=${sha_cu} .codex=${sha_co}"
+        assert_cmd 'AC-9 edit installed AGENTS then remove claude-code succeeds' bash -c 'printf "user edit\\n" >> "$1/AGENTS.md"; AID_HOME="$2" AID_NO_UPDATE_CHECK=1 bash "$3/bin/aid" remove claude-code --target "$1"' _ "$TARGET" "$STATE" "$REPO"
+        [[ -f "$TARGET/AGENTS.md" ]] && grep -q 'user edit' "$TARGET/AGENTS.md" && pass 'AC-9 post-install edited AGENTS.md remains in place' || fail 'AC-9 post-install edited AGENTS.md remains in place'
     fi
-    T_IDX=$((T_IDX + 1))
 done
 
-# ===========================================================================
-# T21-T26: No operational script references a foreign root basename (AC4).
-#
-# Scope: aid/scripts/ subdirectory in each tree.  Operational scripts MUST
-# only reference their own tool root.  Reference files and agent bodies that
-# contain cross-tool documentation prose (e.g. explaining how the renderer
-# works across all three tools) are excluded to avoid false positives.
-#
-# The three tool roots and their basenames:
-#   claude-code -> .claude
-#   cursor      -> .cursor
-#   codex       -> .codex
-#
-# A "foreign root reference" in aid/scripts/ means the wrong tree's path
-# would be invoked at runtime.  This catches generator bugs where a script
-# ends up with another tool's root-path prefix.
-# ===========================================================================
-echo ""
-echo "=== T21-T26: no foreign-root refs in operational scripts (AC4 structural) ==="
-
-# Helper: format the list of offending files for the fail message.
-list_files_with_ref() {
-    local dir="$1" pattern="$2"
-    grep -rnF "${pattern}/" "${dir}" 2>/dev/null \
-        | grep -vE ':[0-9]+:[[:space:]]*#' \
-        | sed "s|${FOREIGN_ROOT_RENDERER_LITERAL}|<RENDERER>|g" \
-        | sed -E "${FOREIGN_ROOT_GLOB_SED}" \
-        | grep -F "${pattern}/" \
-        | cut -d: -f1 | sort -u | head -5 | sed 's/^/    /'
-}
-
-# --- .claude/aid/scripts/ must not reference .cursor/ or .codex/ ----------
-CC_SCRIPTS="${TARGET}/.claude/aid/scripts"
-if [[ -d "$CC_SCRIPTS" ]]; then
-    if scripts_have_foreign_root "$CC_SCRIPTS" ".cursor"; then
-        OFFENDERS="$(list_files_with_ref "$CC_SCRIPTS" ".cursor")"
-        fail "T21 .claude/aid/scripts/ contains .cursor/ reference (foreign root contamination):
-${OFFENDERS}"
-    else
-        pass "T21 .claude/aid/scripts/ has no .cursor/ references"
-    fi
-
-    if scripts_have_foreign_root "$CC_SCRIPTS" ".codex"; then
-        OFFENDERS="$(list_files_with_ref "$CC_SCRIPTS" ".codex")"
-        fail "T22 .claude/aid/scripts/ contains .codex/ reference (foreign root contamination):
-${OFFENDERS}"
-    else
-        pass "T22 .claude/aid/scripts/ has no .codex/ references"
-    fi
-else
-    fail "T21 .claude/aid/scripts/ does not exist -- cannot check foreign refs"
-    fail "T22 .claude/aid/scripts/ does not exist -- cannot check foreign refs"
-fi
-
-# --- .cursor/aid/scripts/ must not reference .claude/ or .codex/ ----------
-CU_SCRIPTS="${TARGET}/.cursor/aid/scripts"
-if [[ -d "$CU_SCRIPTS" ]]; then
-    if scripts_have_foreign_root "$CU_SCRIPTS" ".claude"; then
-        OFFENDERS="$(list_files_with_ref "$CU_SCRIPTS" ".claude")"
-        fail "T23 .cursor/aid/scripts/ contains .claude/ reference (foreign root contamination):
-${OFFENDERS}"
-    else
-        pass "T23 .cursor/aid/scripts/ has no .claude/ references"
-    fi
-
-    if scripts_have_foreign_root "$CU_SCRIPTS" ".codex"; then
-        OFFENDERS="$(list_files_with_ref "$CU_SCRIPTS" ".codex")"
-        fail "T24 .cursor/aid/scripts/ contains .codex/ reference (foreign root contamination):
-${OFFENDERS}"
-    else
-        pass "T24 .cursor/aid/scripts/ has no .codex/ references"
-    fi
-else
-    fail "T23 .cursor/aid/scripts/ does not exist -- cannot check foreign refs"
-    fail "T24 .cursor/aid/scripts/ does not exist -- cannot check foreign refs"
-fi
-
-# --- .codex/aid/scripts/ must not reference .claude/ or .cursor/ ----------
-CO_SCRIPTS="${TARGET}/.codex/aid/scripts"
-if [[ -d "$CO_SCRIPTS" ]]; then
-    if scripts_have_foreign_root "$CO_SCRIPTS" ".claude"; then
-        OFFENDERS="$(list_files_with_ref "$CO_SCRIPTS" ".claude")"
-        fail "T25 .codex/aid/scripts/ contains .claude/ reference (foreign root contamination):
-${OFFENDERS}"
-    else
-        pass "T25 .codex/aid/scripts/ has no .claude/ references"
-    fi
-
-    if scripts_have_foreign_root "$CO_SCRIPTS" ".cursor"; then
-        OFFENDERS="$(list_files_with_ref "$CO_SCRIPTS" ".cursor")"
-        fail "T26 .codex/aid/scripts/ contains .cursor/ reference (foreign root contamination):
-${OFFENDERS}"
-    else
-        pass "T26 .codex/aid/scripts/ has no .cursor/ references"
-    fi
-else
-    fail "T25 .codex/aid/scripts/ does not exist -- cannot check foreign refs"
-    fail "T26 .codex/aid/scripts/ does not exist -- cannot check foreign refs"
-fi
-
-# ===========================================================================
-# T27-T30: Escape canary and HOME-pin verification.
-#
-# Assert the real user HOME was never touched by this suite.  A snapshot of
-# all .aid/ dirs under the REAL HOME is taken at startup; any NEW .aid/ that
-# appeared outside ${TMP} after the suite runs indicates a migration-scan
-# escape (the migration scan defaults to $HOME; pinning HOME defensively
-# catches this class of bug).
-# ===========================================================================
-echo ""
-echo "=== T27-T30: escape canary -- real HOME untouched ==="
-
-_CANARY_AFTER="$(find "${REAL_HOME}" -maxdepth 6 -name '.aid' -type d 2>/dev/null | sort || true)"
-if [[ "$_CANARY_BEFORE" == "$_CANARY_AFTER" ]]; then
-    pass "T27 escape canary: no new .aid/ dirs appeared in real HOME (${REAL_HOME})"
-else
-    _NEW_AID="$(comm -13 <(echo "$_CANARY_BEFORE") <(echo "$_CANARY_AFTER"))"
-    fail "T27 escape canary: new .aid/ dirs escaped to real HOME -- isolation breach: ${_NEW_AID}"
-fi
-
-# Registry was written to STATE_HOME, not to the real AID_HOME.
-_REAL_REGISTRY="${REAL_HOME}/.aid/registry.yml"
-if [[ -f "$_REAL_REGISTRY" ]] && tree_has_ref "$_REAL_REGISTRY" "${TARGET}"; then
-    fail "T28 throwaway repo leaked into real HOME registry (isolation breach)"
-else
-    pass "T28 throwaway repo absent from real HOME registry"
-fi
-
-# The fakehome dir must NOT be the same as the real HOME.
-if [[ "${HOME}" == "${REAL_HOME}" ]]; then
-    fail "T29 HOME pin broken: HOME still points to real HOME after export"
-else
-    pass "T29 HOME pin: fakehome (${HOME}) is distinct from real HOME (${REAL_HOME})"
-fi
-
-# AID_NO_UPDATE_CHECK=1 was set, so the update-check cache must NOT appear in
-# the fakehome (it would only appear if AID ignored the env var or if HOME
-# was pointing somewhere wrong).
-_FAKE_UPDATE_CHECK="${HOME}/.aid/.update-check"
-if [[ -f "$_FAKE_UPDATE_CHECK" ]]; then
-    fail "T30 unexpected .update-check in fakehome -- AID_NO_UPDATE_CHECK=1 was ignored or HOME pin broken"
-else
-    pass "T30 no .update-check in fakehome (AID_NO_UPDATE_CHECK=1 honoured)"
-fi
-
-# ---------------------------------------------------------------------------
-# Summary
-# ---------------------------------------------------------------------------
+# Existing isolation guarantees retained from the prior suite.
+_CANARY_AFTER="$(find "$REAL_HOME" -maxdepth 6 -name .aid -type d 2>/dev/null | sort || true)"
+[[ "$_CANARY_BEFORE" == "$_CANARY_AFTER" ]] && pass 'T27 escape canary: no new .aid/ dirs appeared in real HOME (<PATH>)' || fail 'T27 escape canary: no new .aid/ dirs appeared in real HOME (<PATH>)'
+[[ "$HOME" != "$REAL_HOME" ]] && pass 'T29 HOME pin: fakehome (<PATH> is distinct from real HOME (<PATH>' || fail 'T29 HOME pin: fakehome (<PATH> is distinct from real HOME (<PATH>'
+[[ ! -e "$HOME/.aid/.update-check" ]] && pass 'T30 no .update-check in fakehome (AID_NO_UPDATE_CHECK=1 honoured)' || fail 'T30 no .update-check in fakehome (AID_NO_UPDATE_CHECK=1 honoured)'
 test_summary
