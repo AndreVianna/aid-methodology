@@ -8,7 +8,7 @@ description: >
   change, and pauses for your confirmation before any edit. Only the confirmed scope is
   applied, it is reviewed against the four-mandate panel, and it commits only after you
   approve a second time.
-allowed-tools: Read, Glob, Grep, Bash, Write, Edit, Agent
+allowed-tools: Read Glob Grep Bash Shell Terminal Write Edit Agent
 argument-hint: "<what changed / what to update in the KB>"
 ---
 
@@ -50,7 +50,7 @@ human `[1] Approved` at APPROVAL. No auto-apply path exists at either gate.
 
 **State machine -- each `/aid-update-kb` invocation drives the state machine
 until it hits a natural pause point per
-`canonical/aid/templates/state-machine-chaining.md`.
+`.aid/runtime/templates/state-machine-chaining.md`.
 Mechanical states auto-chain; only PAUSE-FOR-USER-ACTION and HALT stop the
 run. Two human gates by design: CONFIRM guards scope/understanding BEFORE
 any edit; APPROVAL guards the specific edits before commit -- but a gate
@@ -101,11 +101,11 @@ Then exit without entering the state machine.
 Before any state runs, self-isolate in the skill's OWN worktree -- mirroring
 the isolation `/aid-fix` gets at its INTAKE, adapted to this off-pipeline
 skill's timestamp-keyed identity. It allocates no `work-NNN`, so it does
-**not** use `canonical/aid/scripts/works/worktree-lifecycle.sh` or
-`canonical/aid/templates/work-initiation-gate.md` -- both hard-validate a
+**not** use `.aid/runtime/scripts/works/worktree-lifecycle.sh` or
+`.aid/runtime/templates/work-initiation-gate.md` -- both hard-validate a
 `^work-[0-9]+$` id and would reject an `aid/update-kb-<ts>` branch. This is
 **plain git worktree mechanics**, entered via the **generic enter contract**
-of `canonical/aid/templates/worktree-lifecycle.md § Step 2` only.
+of `.aid/runtime/templates/worktree-lifecycle.md § Step 2` only.
 
 **2a. Detect an already-live run (resume), before creating anything new:**
 
@@ -282,10 +282,10 @@ protocol lives in two reference docs; this section is a checklist citing them.
 
 **Before each dispatch:**
 
-1. **Look up ETA** in `canonical/aid/templates/rough-time-hints.md` for the
+1. **Look up ETA** in `.aid/runtime/templates/rough-time-hints.md` for the
    subagent's operation class. Capture LOW-HIGH band.
 2. **Read heartbeat config** via
-   `bash canonical/aid/scripts/config/read-setting.sh --path traceability.heartbeat_interval --default 1`
+   `bash .aid/runtime/scripts/config/read-setting.sh --path traceability.heartbeat_interval --default 1`
    (resolves from `.aid/settings.yml`; default 1; `0` = disabled).
 3. **Pre-create heartbeat file** (always -- unconditional):
    - Pre-create `.aid/.heartbeat/<agent-name>-<unix-ts>.txt`
@@ -300,9 +300,9 @@ protocol lives in two reference docs; this section is a checklist citing them.
 
 **References:**
 
-- `canonical/aid/templates/long-wait-protocol.md` -- full L2 spec
-- `canonical/aid/templates/subagent-heartbeat-protocol.md` -- full L3 spec
-- `canonical/aid/templates/rough-time-hints.md` -- current measured ETAs
+- `.aid/runtime/templates/long-wait-protocol.md` -- full L2 spec
+- `.aid/runtime/templates/subagent-heartbeat-protocol.md` -- full L3 spec
+- `.aid/runtime/templates/rough-time-hints.md` -- current measured ETAs
 
 ---
 
@@ -461,7 +461,7 @@ aid-update-kb  > you are here
 > (PAUSE-FOR-USER-ACTION -> CONFIRM) instead of expanding scope -- see
 > `references/state-review.md § Step 4` for the full 4-outcome routing.
 > The minimum grade resolves via:
-> `bash canonical/aid/scripts/config/read-setting.sh --skill update-kb --key minimum_grade --default A`
+> `bash .aid/runtime/scripts/config/read-setting.sh --skill update-kb --key minimum_grade --default A`
 
 > **Clean-context dispatch (ANALYZE/SCOPE, HL-8/AC-9).** Both dispatches
 > receive ONLY the verbatim `/aid-update-kb` instruction (the `**Prompt:**`
@@ -506,7 +506,7 @@ aid-update-kb  > you are here
 
 On state entry, print `[State: NAME]` + the "you are here" banner from State
 Detection above. When a state completes, route by its `**Advance:**` type per
-`canonical/aid/templates/state-machine-chaining.md`:
+`.aid/runtime/templates/state-machine-chaining.md`:
 
 - **CHAIN** -> begin the next state's reference doc within the same invocation; no exit.
 - **PAUSE-FOR-USER-ACTION** -> print the pause reason + resume command and exit.
@@ -514,7 +514,7 @@ Detection above. When a state completes, route by its `**Advance:**` type per
 
 > **State-machine chaining:** Each `/aid-update-kb` invocation drives the state
 > machine until it hits a natural pause point per
-> `canonical/aid/templates/state-machine-chaining.md`. Mechanical states
+> `.aid/runtime/templates/state-machine-chaining.md`. Mechanical states
 > auto-chain; only PAUSE-FOR-USER-ACTION and HALT stop the run.
 
 ---

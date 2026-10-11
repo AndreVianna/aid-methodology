@@ -1,7 +1,7 @@
 # /aid-specify — Reviewer Dispatch Brief Template
 
 Loaded by `/aid-specify` REVIEW state. Renders the brief passed to the
-`aid-reviewer` sub-agent. Follows `canonical/aid/templates/reviewer-dispatch.md`.
+`aid-reviewer` sub-agent. Follows `.aid/runtime/templates/reviewer-dispatch.md`.
 
 `{{ARTIFACTS}}` and `{{CONTEXT}}` are filled at dispatch time.
 
@@ -25,7 +25,7 @@ CONTEXT:
   task breakdown, execution), flag it as an OOS observation and bound your
   review to the feature-section subsections listed in ARTIFACTS.
 
-RUBRIC: canonical/aid/templates/grading-rubric.md (universal severity → grade table)
+RUBRIC: .aid/runtime/templates/grading-rubric.md (universal severity → grade table)
   Grade ONE feature's `#### Technical Specification` for:
     - Consistency with the KB (architecture, module-map, coding-standards, schemas)
     - Internal coherence (schemas ↔ feature flow ↔ layers ↔ acceptance criteria)
@@ -40,7 +40,7 @@ DECLARED REVIEW CRITERIA (resolve; do not invent):
   `review-criteria:` frontmatter; most specific wins on an id collision. An artifact outside
   the registry's corpus (a work artifact under `.aid/works/`) resolves to NO type, which is
   correct and not a finding -- the file-class rows are what reach it.
-  Resolution is defined in canonical/aid/templates/kb-authoring/review-rubric.md
+  Resolution is defined in .aid/runtime/templates/kb-authoring/review-rubric.md
   (section: Resolving review criteria); the type registry and the criteria table live in
   .aid/knowledge/authoring-conventions.md. This brief deliberately does NOT restate them.
   - Cite the criterion `id` as a prefix in the ledger's Description cell (7 columns, no
@@ -91,8 +91,8 @@ DELIVERABLES:
   - Findings format: severity-tagged + source-tagged (CODE | SPEC | KB | REQUIREMENTS)
   - Output location: `{{LEDGER}}`
   - Severity scale: CRITICAL | HIGH | MEDIUM | LOW | MINOR (per grading-rubric.md)
-  - Grade: per canonical/aid/scripts/grade.sh; minimum resolved via
-    `bash canonical/aid/scripts/config/read-setting.sh --skill specify --key minimum_grade --default A`
+  - Grade: per .aid/runtime/scripts/grade.sh; minimum resolved via
+    `bash .aid/runtime/scripts/config/read-setting.sh --skill specify --key minimum_grade --default A`
   - The aid-reviewer NEVER edits the SPEC — only grades and lists issues
 ```
 

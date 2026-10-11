@@ -25,7 +25,7 @@ oracle, is run by the GENERATE closure loop; the panel does not re-run it as a m
 concept self-containment is mechanically gated there.)
 
 ```bash
-bash canonical/aid/scripts/kb/closure-check.sh \
+bash .aid/runtime/scripts/kb/closure-check.sh \
   --output-a .aid/.temp/review-pending/{{SCOPE}}-oracle-a.md \
   --output-b .aid/.temp/review-pending/{{SCOPE}}-oracle-b.md
 ```
@@ -39,7 +39,7 @@ Also run `kb-dual-intent-probes.sh essence` to produce the M3 essence probe set
 (Intent 2 — Blind Reconstruction + Source Confrontation):
 
 ```bash
-bash canonical/aid/scripts/kb/kb-dual-intent-probes.sh essence \
+bash .aid/runtime/scripts/kb/kb-dual-intent-probes.sh essence \
   --doc-set .aid/generated/doc-set.tsv \
   --kb-dir .aid/knowledge \
   --output .aid/.temp/review-pending/{{SCOPE}}-teachback-questions.txt
@@ -54,7 +54,7 @@ Also run `kb-dual-intent-probes.sh work` to produce the M4 derived work-probe se
 (Intent 1 — Blind Work-Simulation / assertiveness gate):
 
 ```bash
-bash canonical/aid/scripts/kb/kb-dual-intent-probes.sh work \
+bash .aid/runtime/scripts/kb/kb-dual-intent-probes.sh work \
   --doc-set .aid/generated/doc-set.tsv \
   --kb-dir .aid/knowledge \
   --output .aid/.temp/review-pending/{{SCOPE}}-actback-task.md
@@ -69,7 +69,7 @@ Also run `kb-actback-task.sh check` to produce the operational-structure presenc
 reads):
 
 ```bash
-bash canonical/aid/scripts/kb/kb-actback-task.sh check \
+bash .aid/runtime/scripts/kb/kb-actback-task.sh check \
   --doc-set .aid/generated/doc-set.tsv \
   --kb-dir .aid/knowledge \
   --output .aid/.temp/review-pending/{{SCOPE}}-actback-presence.md
@@ -130,7 +130,7 @@ mandate-specific ledger path is substituted per dispatch).
 that mandate's `reviewer-prompt-<mandate>.md` body — to
 `.aid/.temp/review-pending/briefs/{{SCOPE}}-<mandate>.md` (discovery has no work folder, so the
 brief lives beside its scratch ledger), and dispatch with the pointer shape from
-`canonical/aid/templates/reviewer-dispatch.md` § Dispatch by path: the `Agent` prompt carries the
+`.aid/runtime/templates/reviewer-dispatch.md` § Dispatch by path: the `Agent` prompt carries the
 brief path, the mandate's ledger path and the heartbeat parameters only. Inlining the four
 packages was measured on this repository's KB at ~35k output tokens and five minutes of
 sequential streaming, with the reviewers launching 80 seconds apart; by path they launch together.
@@ -442,7 +442,7 @@ ledger, 7-column schema).
 **2b. Run the existing grade.sh unchanged**
 
 ```bash
-bash canonical/aid/scripts/grade.sh --explain .aid/.temp/review-pending/{{SCOPE}}.md
+bash .aid/runtime/scripts/grade.sh --explain .aid/.temp/review-pending/{{SCOPE}}.md
 ```
 
 `grade.sh` counts worst-severity over Status in {Pending, Recurred} across ALL rows,
@@ -552,7 +552,7 @@ Print: `[Review 3/3] Review complete.`
 Resolve the minimum grade:
 
 ```bash
-bash canonical/aid/scripts/config/read-setting.sh --skill discover --key minimum_grade --default A
+bash .aid/runtime/scripts/config/read-setting.sh --skill discover --key minimum_grade --default A
 ```
 
 Compute:
@@ -570,7 +570,7 @@ Also record this cycle's grade + review date in the KB run-state frontmatter (th
 and the rest of the body untouched):
 
 ```bash
-bash canonical/aid/scripts/summarize/writeback-state.sh --set kb_grade "{grade}" --set last_kb_review "$(date -u +%Y-%m-%d)"
+bash .aid/runtime/scripts/summarize/writeback-state.sh --set kb_grade "{grade}" --set last_kb_review "$(date -u +%Y-%m-%d)"
 ```
 
 If `--grade` provided, update `.aid/settings.yml` `discover.minimum_grade` (via

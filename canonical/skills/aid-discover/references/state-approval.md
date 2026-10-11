@@ -26,7 +26,7 @@ Please review .aid/knowledge/ and let us know if there is anything else to consi
   Also set the KB status scalar in the run-state frontmatter (relocated from the
   old header-blockquote `**Status:**` line by task-001/004):
   ```bash
-  bash canonical/aid/scripts/summarize/writeback-state.sh --set kb_status Approved
+  bash .aid/runtime/scripts/summarize/writeback-state.sh --set kb_status Approved
   ```
   Add Review History entry under `## Review History`.
   Print: `✅ Discovery complete. Grade: {grade}. KB approved and ready for the Interview phase.`

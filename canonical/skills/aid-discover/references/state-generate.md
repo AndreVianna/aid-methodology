@@ -25,7 +25,7 @@ the user must always know what is being done and what is decided where). Print t
 
 Resolve the declared doc-set (see `references/doc-set-resolve.md`):
 ```bash
-raw="$(bash canonical/aid/scripts/config/read-setting.sh \
+raw="$(bash .aid/runtime/scripts/config/read-setting.sh \
         --path discovery.doc_set 2>/dev/null || true)"
 # N = number of declared docs (default seed when section unset)
 declared_filenames="$(resolve_doc_set "$raw" | cut -f1)"
@@ -104,11 +104,11 @@ of `Accessible`) as the external-docs input for the Scout prompt (Step 1).
 
 Run the lightweight file-index pre-pass before dispatching sub-agents. This produces a structured inventory consumed by all 5 sub-agents, eliminating duplicated `find`/`wc` work across parallel agents.
 
-> **Working directory assumption:** All bash commands in this skill assume the current working directory is the project root (the directory containing `.aid/`). Scripts are written in `canonical/aid/scripts` form in the source; the renderer rewrites them to the profile's install-tree nested path at render time (`.claude/aid/scripts/...` for Claude Code, `.codex/aid/scripts/...` for Codex, `.cursor/aid/scripts/...` for Cursor). No runtime resolution needed.
+> **Working directory assumption:** All bash commands in this skill assume the current working directory is the project root (the directory containing `.aid/`). Scripts are written in `canonical/aid/scripts` form in the source; the renderer rewrites them to the profile's install-tree nested path at render time (`.aid/runtime/scripts/...` for Claude Code, `.codex/aid/scripts/...` for Codex, `.cursor/aid/scripts/...` for Cursor). No runtime resolution needed.
 
 ▶ build-project-index starting (~30 s)
 ```bash
-bash canonical/aid/scripts/kb/build-project-index.sh \
+bash .aid/runtime/scripts/kb/build-project-index.sh \
   --root . \
   --output .aid/generated/project-index.md
 ```
@@ -287,7 +287,7 @@ Step 0f path-triage **stays in discovery** (a resolved boundary). Do not re-deci
 ### Step 0d: Propose & Confirm Doc-Set (matrix-or-research)
 
 **PAUSE-FOR-USER-DECISION** (contracted checkpoint per SPEC feature-004 §3.1 and
-`canonical/aid/templates/state-machine-chaining.md`).
+`.aid/runtime/templates/state-machine-chaining.md`).
 
 Uses the **confirmed domain** from Step 0cx as the anchor. Do not enter Step 0d until the
 `## Discovery Domain` block in `.aid/knowledge/STATE.md` carries `**Confirmed:** yes`.
@@ -297,7 +297,7 @@ Uses the **confirmed domain** from Step 0cx as the anchor. Do not enter Step 0d 
 Check whether `.aid/settings.yml` already carries a `discovery.doc_set` section from a prior run:
 
 ```bash
-raw="$(bash canonical/aid/scripts/config/read-setting.sh \
+raw="$(bash .aid/runtime/scripts/config/read-setting.sh \
         --path discovery.doc_set 2>/dev/null || true)"
 ```
 
@@ -319,7 +319,7 @@ Then resolve the doc-set by the following ordered decision branches.
 
 **Branch A — Matrix hit (fast path)**
 
-Look up `canonical/aid/templates/kb-authoring/domain-doc-matrix.md` for a row matching
+Look up `.aid/runtime/templates/kb-authoring/domain-doc-matrix.md` for a row matching
 `confirmed_domain`. The matrix contains curated rows for:
 `software-cli`, `software-web`, `data-ml`, `content`, `research`, `design`, `ops`,
 `methodology-tooling`.
@@ -355,7 +355,7 @@ doc-set. This is a judgment step (not a script):
    in this domain conventionally produce to describe their work. For each synthesized doc:
    - assign a `filename` (descriptive `.md` basename under `.aid/knowledge/`),
    - map it to exactly one spine dimension (C0–C9, D, or meta) from
-     `canonical/aid/templates/kb-authoring/domain-doc-matrix.md` §"The dimension spine",
+     `.aid/runtime/templates/kb-authoring/domain-doc-matrix.md` §"The dimension spine",
    - assign the nearest-fit `owner` from the `aid-researcher` enum,
    - assign `presence` (`required` or `conditional[:<when>]`).
    Record provenance `auto-researched`.
@@ -430,7 +430,7 @@ Then ask the user to confirm or edit:
 **This is a genuine PAUSE-FOR-USER-DECISION.** Stop here after presenting the proposal.
 
 **Advance:** Stop here (contracted checkpoint per SPEC feature-004 §3.1 and
-`canonical/aid/templates/state-machine-chaining.md`). Re-run `/aid-discover` after confirming the
+`.aid/runtime/templates/state-machine-chaining.md`). Re-run `/aid-discover` after confirming the
 proposed doc-set to continue to [State: GENERATE — Step 1].
 
 #### On confirm (resume path)
@@ -457,7 +457,7 @@ When the user re-runs `/aid-discover` and the session resumes after the pause:
 3. Re-resolve `raw` from the (now-updated) `.aid/settings.yml`:
 
    ```bash
-   raw="$(bash canonical/aid/scripts/config/read-setting.sh \
+   raw="$(bash .aid/runtime/scripts/config/read-setting.sh \
            --path discovery.doc_set 2>/dev/null || true)"
    declared_filenames="$(resolve_doc_set "$raw" | cut -f1)"
    N="$(echo "$declared_filenames" | grep -c .)"
@@ -476,7 +476,7 @@ When the user re-runs `/aid-discover` and the session resumes after the pause:
    # Domain doc-set candidate: <confirmed_domain>
 
    > Auto-generated by /aid-discover on <date>. Provenance: auto-researched.
-   > Review and submit as a PR to canonical/aid/templates/kb-authoring/domain-doc-matrix.md
+   > Review and submit as a PR to .aid/runtime/templates/kb-authoring/domain-doc-matrix.md
    > if proven useful. There is NO automatic install->canonical feedback; this file is a
    > manual contribution aid only.
 
@@ -503,10 +503,10 @@ researcher fan-out. This step has zero LLM cost and produces the
 Print: `[0e] Harvesting coined terms...`
 
 ```bash
-bash canonical/aid/scripts/kb/harvest-coined-terms.sh \
+bash .aid/runtime/scripts/kb/harvest-coined-terms.sh \
   --root . \
   --output .aid/generated/candidate-concepts.md \
-  --denylist canonical/aid/scripts/kb/coined-term-denylist.txt \
+  --denylist .aid/runtime/scripts/kb/coined-term-denylist.txt \
   --top 60
 ```
 
@@ -534,7 +534,7 @@ Run the deterministic recon pre-pass after Step 0e (RM4 is now available) and be
 Print: `[0f] Recon: measuring project shape...`
 
 ```bash
-bash canonical/aid/scripts/kb/recon-classify.sh \
+bash .aid/runtime/scripts/kb/recon-classify.sh \
   --index .aid/generated/project-index.md \
   --candidates .aid/generated/candidate-concepts.md \
   --settings .aid/settings.yml \
@@ -683,7 +683,7 @@ only ever run for the two brownfield paths.
 
 Dispatch every discovery `aid-researcher` (fan-out or single-pass) at its default Medium
 tier and **`low` reasoning effort** -- discovery is retrieval / cataloguing, and depth does
-not aid retrieval (`canonical/aid/templates/agent-dispatch-tiering.md`, Retrieval-heavy row).
+not aid retrieval (`.aid/runtime/templates/agent-dispatch-tiering.md`, Retrieval-heavy row).
 Escalate only a lane that hits genuinely hard analysis.
 
 For **brownfield-large** (full fan-out) -- compute each agent's target list from the declared
@@ -722,7 +722,7 @@ done
 
 **Custom-doc prompt extension (§2.6):** After computing each agent's target list, identify any
 **custom docs** — filenames that are in the target list but do NOT appear in the default seed
-(i.e., not synthesized from `canonical/aid/templates/knowledge-base/*.md` by `synth_default_seed`).
+(i.e., not synthesized from `.aid/runtime/templates/knowledge-base/*.md` by `synth_default_seed`).
 For each such custom doc, **append** the following line to that agent's base prompt (from
 `references/agent-prompts.md`) before dispatching:
 
@@ -852,8 +852,8 @@ have shipped bare line citations while self-reporting "durable anchors only". Th
 both mechanically: trust the scripts, not the agent's word.
 
 ```bash
-bash .claude/aid/scripts/kb/kb-citation-lint.sh --root .aid/knowledge
-bash .claude/aid/scripts/kb/lint-frontmatter.sh --root .aid/knowledge
+bash .aid/runtime/scripts/kb/kb-citation-lint.sh --root .aid/knowledge
+bash .aid/runtime/scripts/kb/lint-frontmatter.sh --root .aid/knowledge
 ```
 
 Run both, even if the first fails, so one round reports every defect rather than uncovering the
@@ -1032,8 +1032,8 @@ table, so it MUST reflect the confirmed set, never the default seed.
 2. Read all KB documents for flagged questions/uncertainties/TODOs
 3. Consolidate into `## Q&A (Pending)` section with sequential IDs (Q1, Q2, ...)
 4. Delete `.scout-questions.tmp`
-5. Set the KB run-state frontmatter: `bash canonical/aid/scripts/summarize/writeback-state.sh --set kb_status "In Progress" --set kb_grade Pending` (the `kb_status`/`kb_grade` scalars in `.aid/knowledge/STATE.md`'s leading YAML block — surgical frontmatter rewrite, markdown body untouched)
-6. **Preserve** `## External Documentation` (unaffected by this step; the `**Minimum Grade:**` field lives in `.aid/settings.yml` — read it via `bash canonical/aid/scripts/config/read-setting.sh --skill discover --key minimum_grade --default A`; the doc-set-level `**User Approved:**` header-blockquote line is a distinct, untouched concept — see `state-approval.md`)
+5. Set the KB run-state frontmatter: `bash .aid/runtime/scripts/summarize/writeback-state.sh --set kb_status "In Progress" --set kb_grade Pending` (the `kb_status`/`kb_grade` scalars in `.aid/knowledge/STATE.md`'s leading YAML block — surgical frontmatter rewrite, markdown body untouched)
+6. **Preserve** `## External Documentation` (unaffected by this step; the `**Minimum Grade:**` field lives in `.aid/settings.yml` — read it via `bash .aid/runtime/scripts/config/read-setting.sh --skill discover --key minimum_grade --default A`; the doc-set-level `**User Approved:**` header-blockquote line is a distinct, untouched concept — see `state-approval.md`)
 7. If `--grade` provided, update `.aid/settings.yml` via `/aid-config` (NOT STATE.md)
 
 **Q&A entry format:**
@@ -1054,7 +1054,7 @@ Print: `[STATE.md] Updated with {N} Q&A questions. Grade: Pending.`
 
 ### Step 7: Update Project Config Files
 
-Scan for `{project_context_file}`. Replace `<!-- AID-DISCOVER ... -->` placeholders with real data:
+Scan for `AGENTS.md`. Replace `<!-- AID-DISCOVER ... -->` placeholders with real data:
 project description, overview, build/test commands, conventions, architecture summary.
 Keep the comment markers for future re-discoveries.
 

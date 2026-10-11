@@ -8,7 +8,7 @@ description: >
   reviews them, asks you what it could not infer, fixes what it finds, and takes your
   approval. It advances one step per run, so you can stop and resume. Run `/aid-config`
   first to scaffold the KB.
-allowed-tools: Read, Glob, Grep, Bash, Write, Edit, Agent
+allowed-tools: Read Glob Grep Bash Shell Terminal Write Edit Agent
 argument-hint: "[--grade A] minimum acceptable grade (default: A)  [--reset] clear KB and restart"
 ---
 
@@ -18,7 +18,7 @@ Analyze an existing project repository — all code, configuration, and document
 produce a structured `.aid/knowledge/` directory by orchestrating 5 specialized discovery subagents.
 Includes a built-in quality gate that reviews, grades, and fixes KB documents.
 
-**State machine — each `/aid-discover` invocation drives the state machine until it hits a natural pause point per [`canonical/aid/templates/state-machine-chaining.md`](../../aid/templates/state-machine-chaining.md). Mechanical states and inline-question states auto-chain; only PAUSE-FOR-USER-ACTION, PAUSE-FOR-USER-DECISION, and HALT stop the run.**
+**State machine — each `/aid-discover` invocation drives the state machine until it hits a natural pause point per [`.aid/runtime/templates/state-machine-chaining.md`](../../aid/templates/state-machine-chaining.md). Mechanical states and inline-question states auto-chain; only PAUSE-FOR-USER-ACTION, PAUSE-FOR-USER-DECISION, and HALT stop the run.**
 
 ---
 
@@ -53,7 +53,7 @@ what I am unsure of, **you** decide" — IS the product. **When in doubt, ASK.**
 
 ## ⚠️ Pre-flight Checks
 
-Run `bash canonical/aid/scripts/kb/discover-preflight.sh .aid/knowledge/` to verify:
+Run `bash .aid/runtime/scripts/kb/discover-preflight.sh .aid/knowledge/` to verify:
 1. `.aid/knowledge/STATE.md` is present and non-empty (self-created from template if absent)
 2. Not in Plan Mode (subagents need write access)
 
@@ -73,7 +73,7 @@ If Check 2 fails: Tell user to press `Shift+Tab` to exit Plan Mode, then re-run.
 
 - **Volatile-citation drift** — replace any bare `file:LINE` citation or inline line-count with a durable anchor (file path + grep-recoverable symbol/heading), per kb-authoring P1(d). Durable anchors don't rot, so this sweep shrinks every cycle.
 - **Aggregate counts** — per-skill or per-tree file/script/reference totals computed from current disk state (`find ... | wc -l`).
-- **Path & citation hygiene** — bare citations missing skill prefix (`SKILL.md` → `canonical/skills/<skill>/SKILL.md`); references to files that no longer exist.
+- **Path & citation hygiene** — bare citations missing skill prefix (`SKILL.md` → `.agents/skills/<skill>/SKILL.md`); references to files that no longer exist.
 - **Math** — verify any `%` calculations using real values (e.g., "X% over Y" assertions). If the underlying numbers changed, recompute.
 - **Ghost references** — once confirmed a file/feature was removed, delete references to it (don't leave "(retired)" or "(see below)" stubs in current-state docs; historical change-log entries are fine).
 - **Meta-doc counting** — `INDEX.md` / `README.md` feature counts and file-type tallies (line counts are not stored — see Volatile-citation drift above).
@@ -113,10 +113,10 @@ protocol lives in two reference docs; this section is a checklist citing them.
 
 **Before each dispatch:**
 
-1. **Look up ETA** in `canonical/aid/templates/rough-time-hints.md` for the
+1. **Look up ETA** in `.aid/runtime/templates/rough-time-hints.md` for the
    subagent's operation class. Capture LOW–HIGH band.
 2. **Read heartbeat config** via
-   `bash canonical/aid/scripts/config/read-setting.sh --path traceability.heartbeat_interval --default 1`
+   `bash .aid/runtime/scripts/config/read-setting.sh --path traceability.heartbeat_interval --default 1`
    (resolves from `.aid/settings.yml`; default 1; `0` = disabled).
 3. **Pre-create heartbeat file** (always — unconditional):
    - Pre-create `.aid/.heartbeat/<agent-name>-<unix-ts>.txt`
@@ -149,10 +149,10 @@ protocol lives in two reference docs; this section is a checklist citing them.
 
 **References:**
 
-- `canonical/aid/templates/long-wait-protocol.md` — full L2 spec
-- `canonical/aid/templates/subagent-heartbeat-protocol.md` — full L3 spec
-- `canonical/aid/templates/rough-time-hints.md` — current measured ETAs
-- `canonical/agents/*/AGENT.md ## Heartbeat protocol` — subagent-side contract
+- `.aid/runtime/templates/long-wait-protocol.md` — full L2 spec
+- `.aid/runtime/templates/subagent-heartbeat-protocol.md` — full L3 spec
+- `.aid/runtime/templates/rough-time-hints.md` — current measured ETAs
+- `aid-*` agent definitions, `## Heartbeat protocol` section — subagent-side contract
 
 The existing `▶ <agent> starting (~<ETA>)` and `✓ <agent> done` bracket-pair
 lines elsewhere in this skill body remain in place; this protocol just makes
@@ -319,7 +319,7 @@ When a Q&A entry in `.aid/knowledge/STATE.md` or an IMPEDIMENT triggers re-disco
    from the project's declared doc-set (`references/doc-set-resolve.md` §2.1):
 
    ```bash
-   raw="$(bash canonical/aid/scripts/config/read-setting.sh \
+   raw="$(bash .aid/runtime/scripts/config/read-setting.sh \
            --path discovery.doc_set 2>/dev/null || true)"
    # owns-<agent>: which files does a given agent own in THIS project?
    resolve_doc_set "$raw" | awk -F'\t' -v a="<agent-name>" '$2==a{print $1}'
@@ -341,7 +341,7 @@ When a Q&A entry in `.aid/knowledge/STATE.md` or an IMPEDIMENT triggers re-disco
 3. Dispatch ONLY the relevant subagent
 4. Regenerate README.md and INDEX.md
 5. Update README.md revision history
-6. Reset the `kb_grade` frontmatter scalar in STATE.md to `Pending` (`bash canonical/aid/scripts/summarize/writeback-state.sh --set kb_grade Pending`) so next run re-reviews
+6. Reset the `kb_grade` frontmatter scalar in STATE.md to `Pending` (`bash .aid/runtime/scripts/summarize/writeback-state.sh --set kb_grade Pending`) so next run re-reviews
 7. Report completion
 
 ---
@@ -356,7 +356,7 @@ When a Q&A entry in `.aid/knowledge/STATE.md` or an IMPEDIMENT triggers re-disco
 - [ ] README.md reflects completeness and revision history
 - [ ] INDEX.md has 2-3 line summaries per document
 - [ ] the declared C9 capability/feature doc exists (e.g., feature-inventory.md, or capability-inventory.md / content-inventory.md per the domain doc-set) (template or populated)
-- [ ] {project_context_file} placeholders filled with discovered data
+- [ ] AGENTS.md placeholders filled with discovered data
 - [ ] All issues have severity: [CRITICAL], [HIGH], or [MEDIUM]
 - [ ] Minimum 10 spot-checks in `.aid/knowledge/STATE.md` `## Verification Spot-Checks`
 

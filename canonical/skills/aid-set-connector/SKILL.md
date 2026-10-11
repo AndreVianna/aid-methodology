@@ -9,7 +9,7 @@ description: >
   the preset catalog when the tool is a known preset, and you confirm or edit. It reconciles
   that connector's secret and touches only that one stem: every other catalogued connector
   is left byte-for-byte untouched. It never invokes `/aid-discover`.
-allowed-tools: Read, Glob, Grep, Bash, Write, Edit, AskUserQuestion
+allowed-tools: Read Glob Grep Bash Shell Terminal Write Edit AskUserQuestion
 argument-hint: "<tool> <type> [--rotate-secret]  -- e.g. aid-set-connector Jira mcp   (type: mcp|api|ssh|cli)"
 ---
 
@@ -18,7 +18,7 @@ argument-hint: "<tool> <type> [--rotate-secret]  -- e.g. aid-set-connector Jira 
 `aid-set-connector <tool> <type>` upserts **one** connector into `.aid/connectors/` without
 touching any other catalogued connector and without requiring — or triggering — an
 `/aid-discover` cycle. It is the incremental, single-tool counterpart to `aid-discover`'s ELICIT
-step (`canonical/skills/aid-discover/references/state-elicit.md` Step E2): use it to add a
+step (`.agents/skills/aid-discover/references/state-elicit.md` Step E2): use it to add a
 connector between discovery cycles, or to change an existing one's type or fields.
 
 **Absent from the mandatory pipeline flow.** Like `/aid-config` and `/aid-housekeep`, this is an
@@ -74,7 +74,7 @@ runs collapsed to `-`, no leading/trailing `-`:
 STEM=$(echo "$TOOL" | tr '[:upper:]' '[:lower:]' | sed -E 's/[^a-z0-9]+/-/g; s/^-+|-+$//g')
 ```
 
-Read `canonical/aid/templates/connectors/preset-catalog.md` (LLM-read from disk, same as ELICIT's
+Read `.aid/runtime/templates/connectors/preset-catalog.md` (LLM-read from disk, same as ELICIT's
 "Preset vs. custom declaration") and look for the row whose `preset-id` equals `$STEM`:
 
 - **Match found → preset declaration.** Prefill `name` from the row's `name` column, `tags` from
@@ -116,8 +116,8 @@ Hold the resolved `auth_method` in `$NEW_AUTH` (forced `none` for `mcp`/`ssh`/`c
 ```bash
 if [ -f ".aid/connectors/${STEM}.md" ]; then
   CLASS=UPDATE
-  OLD_TYPE=$(bash canonical/aid/scripts/connectors/connector-registry.sh read "$STEM" connection_type --root .aid/connectors)
-  OLD_AUTH=$(bash canonical/aid/scripts/connectors/connector-registry.sh read "$STEM" auth_method --root .aid/connectors)
+  OLD_TYPE=$(bash .aid/runtime/scripts/connectors/connector-registry.sh read "$STEM" connection_type --root .aid/connectors)
+  OLD_AUTH=$(bash .aid/runtime/scripts/connectors/connector-registry.sh read "$STEM" auth_method --root .aid/connectors)
 else
   CLASS=ADD
   OLD_TYPE=""
@@ -125,7 +125,7 @@ else
 fi
 ```
 
-Per [`canonical/aid/templates/connectors/reconcile.md`](../../aid/templates/connectors/reconcile.md)
+Per [`.aid/runtime/templates/connectors/reconcile.md`](../../aid/templates/connectors/reconcile.md)
 § "Single-stem mode" Step S1: **UPDATE includes a type change** — `$STEM` already existing with a
 *different* on-disk `connection_type` than this run's `<type>` is still one UPDATE, never a
 REMOVE-then-ADD pair. No stem other than `$STEM` is enumerated, read, or touched anywhere in this
@@ -206,7 +206,7 @@ Step S3 — the same deterministic builder invocation as bulk mode, over whateve
 disk:
 
 ```bash
-bash canonical/aid/scripts/connectors/build-connectors-index.sh \
+bash .aid/runtime/scripts/connectors/build-connectors-index.sh \
   --root .aid/connectors --output .aid/connectors/INDEX.md
 ```
 
@@ -227,7 +227,7 @@ Exit 0.
 ## Write-zone
 
 This skill writes **only** within `.aid/connectors/` — the same P7 exemption ELICIT uses
-(`canonical/aid/templates/kb-authoring/principles.md` P7 "Exception (connector sub-phase)"):
+(`.aid/runtime/templates/kb-authoring/principles.md` P7 "Exception (connector sub-phase)"):
 `.aid/connectors/.gitignore`, `.aid/connectors/<stem>.md`, and, via `connector-secret.sh`,
 `.aid/connectors/.secrets/<stem>`. It never touches `.aid/knowledge/`, never invokes
 `/aid-discover`, and never writes any host tool's MCP configuration (STATE.md Q10 — AID is a

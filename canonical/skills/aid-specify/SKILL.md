@@ -7,7 +7,7 @@ description: >
   and the codebase, proposes a technical approach, and refines it with you, writing the
   result into that feature's `#### Technical Specification` subsection in REQUIREMENTS.md
   § 11. One feature at a time.
-allowed-tools: Read, Glob, Grep, Bash, Write, Edit
+allowed-tools: Read Glob Grep Bash Shell Terminal Write Edit
 argument-hint: "work-001/feature-001 (required)  [--reset] clear technical spec for this feature"
 ---
 
@@ -74,7 +74,7 @@ work's own worktree, so they cannot be listed from the main checkout until one i
 entered — the feature glob below runs only after that.
 
 1. Enumerate works **cross-worktree**: run
-   `bash canonical/aid/scripts/works/enumerate-works.sh` (main tree + every git
+   `bash .aid/runtime/scripts/works/enumerate-works.sh` (main tree + every git
    worktree; never the local `.aid/works/` glob, which is empty on `master`), taking
    each record's field-1 `work_id`.
 2. **Zero works** → **STOP.**
@@ -83,7 +83,7 @@ entered — the feature glob below runs only after that.
    ```
    Exit.
 3. **Single work** → normalize its `work_id` to the bare `work-NNN` branch name and
-   `locate`+enter it (`canonical/aid/templates/downstream-worktree-entry.md` — the
+   `locate`+enter it (`.aid/runtime/templates/downstream-worktree-entry.md` — the
    same mechanics as "Locate + Enter the Work's Worktree" below), then list *that*
    work's features locally, now visible inside the entered tree:
    ```
@@ -119,7 +119,7 @@ before the feature glob runs.
 
 **As soon as the `work-NNN` prefix is parsed / auto-selected** (right after Check 1) and
 **before** Check 2 resolves the feature in `REQUIREMENTS.md §11`, follow
-`canonical/aid/templates/downstream-worktree-entry.md` to normalize `<work-id>` to its bare
+`.aid/runtime/templates/downstream-worktree-entry.md` to normalize `<work-id>` to its bare
 `work-NNN` branch name, `locate` the worktree (which **always exits 0** and returns
 `<path>\t<status>`), and enter the returned path. Keep the defensive empty-path/non-zero backstop
 that stops rather than operate blindly — it should not fire against the real helper. Never create

@@ -2,7 +2,7 @@
 
 The ten elicitation moves the seasoned-analyst engine draws on, plus the gap-type -> move
 firing table that Step 3 of the next-move selector (see
-`canonical/skills/aid-describe/references/elicitation-engine.md`) keys on.
+`.agents/skills/aid-describe/references/elicitation-engine.md`) keys on.
 
 **Audience.** Two readers at once: a junior maintainer who has never run an elicitation
 workshop, and the engine driver that selects a move each turn.
@@ -12,9 +12,9 @@ the FR-2 seasoned-analyst playbook"), each sourced from one of the eight surveye
 elicitation / domain-discovery families.
 
 **Cross-references.**
-- `canonical/skills/aid-describe/references/elicitation-engine.md` -- the engine driver
+- `.agents/skills/aid-describe/references/elicitation-engine.md` -- the engine driver
   that runs the five-step next-move selector; the firing table below is its Step 3 input.
-- `canonical/skills/aid-describe/references/advisor-stance.md` -- the NFR-7
+- `.agents/skills/aid-describe/references/advisor-stance.md` -- the NFR-7
   question-envelope template and expert-advisor behaviors; straw-man-first and
   mediate-then-defer & scribe (the delivery envelope) are fully specified there.
 
@@ -35,7 +35,7 @@ Moves 1 and 10 are **not** standalone gap responses. They are the **delivery env
 that every other move is emitted through: Move 1 opens the question; Move 10 closes the
 decision and writes it to the record. Every turn uses both. The NFR-7 question-envelope
 template (the `Suggested:` / `Why:` / `[1] Accept` block) is specified in
-`canonical/skills/aid-describe/references/advisor-stance.md`.
+`.agents/skills/aid-describe/references/advisor-stance.md`.
 
 ---
 
@@ -313,7 +313,7 @@ inventory on the next turn and picks the next highest-priority open gap.
 ## Gap-Type to Move Firing Table
 
 Step 3 of the next-move selector in
-`canonical/skills/aid-describe/references/elicitation-engine.md` reads this table. The
+`.agents/skills/aid-describe/references/elicitation-engine.md` reads this table. The
 selected gap's type determines the move drawn from the playbook. The delivery envelope
 (Moves 1 and 10) always wraps the chosen gap-response move.
 
@@ -351,5 +351,5 @@ sections or the Rec-A seed doc-set), not from a preset move order. NFR-1
 ("latitude in dialogue, discipline in process") is the reason: the analyst follows the
 conversation, not a questionnaire.
 
-See `canonical/skills/aid-describe/references/elicitation-engine.md` for the full
+See `.agents/skills/aid-describe/references/elicitation-engine.md` for the full
 five-step next-move selector and the stop check.

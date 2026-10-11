@@ -22,11 +22,11 @@ Write through `housekeep-state.sh` (never hand-edit `## Housekeep Status`
 directly):
 
 ```bash
-bash canonical/aid/scripts/housekeep/housekeep-state.sh \
+bash .aid/runtime/scripts/housekeep/housekeep-state.sh \
     --state <STATE_FILE> --write --field "State" --value "CLEANUP"
-bash canonical/aid/scripts/housekeep/housekeep-state.sh \
+bash .aid/runtime/scripts/housekeep/housekeep-state.sh \
     --state <STATE_FILE> --write --field "Stage Status" --value "running"
-bash canonical/aid/scripts/housekeep/housekeep-state.sh \
+bash .aid/runtime/scripts/housekeep/housekeep-state.sh \
     --state <STATE_FILE> --write --field "Last Run" \
     --value "$(date -u +%Y-%m-%dT%H:%M:%SZ)"
 ```
@@ -63,7 +63,7 @@ the last word — no folder is silently hidden):
 ```bash
 REPO_ROOT="$(git rev-parse --show-toplevel)"
 
-CANDIDATES=$(bash canonical/aid/scripts/housekeep/cleanup-classify.sh \
+CANDIDATES=$(bash .aid/runtime/scripts/housekeep/cleanup-classify.sh \
     --root "$REPO_ROOT")
 CLASSIFY_EXIT=$?
 ```
@@ -103,9 +103,9 @@ output records as defined above.
 If `$CANDIDATES` is empty (the scan found nothing stale):
 
 ```bash
-bash canonical/aid/scripts/housekeep/housekeep-state.sh \
+bash .aid/runtime/scripts/housekeep/housekeep-state.sh \
     --state <STATE_FILE> --write --field "Cleanup Stage" --value "passed"
-bash canonical/aid/scripts/housekeep/housekeep-state.sh \
+bash .aid/runtime/scripts/housekeep/housekeep-state.sh \
     --state <STATE_FILE> --write --field "Stage Status" --value "passed"
 ```
 
@@ -234,9 +234,9 @@ If `CONFIRMED_ALL` is empty (user unchecked everything, cancelled, or no items
 were confirmed in either pool):
 
 ```bash
-bash canonical/aid/scripts/housekeep/housekeep-state.sh \
+bash .aid/runtime/scripts/housekeep/housekeep-state.sh \
     --state <STATE_FILE> --write --field "Cleanup Stage" --value "passed"
-bash canonical/aid/scripts/housekeep/housekeep-state.sh \
+bash .aid/runtime/scripts/housekeep/housekeep-state.sh \
     --state <STATE_FILE> --write --field "Stage Status" --value "passed"
 ```
 
@@ -291,7 +291,7 @@ for path in "${CONFIRMED_ALL[@]}"; do
     fi
 
     # Resolve the path via the feature-001 helper (no fabrication: pre-check proved existence).
-    LOC=$(bash canonical/aid/scripts/works/worktree-lifecycle.sh locate "$work_id") \
+    LOC=$(bash .aid/runtime/scripts/works/worktree-lifecycle.sh locate "$work_id") \
         || { echo "  • ${work_id}: locate failed — skipping teardown (folder deletion still applies)."; continue; }
     IFS=$'\t' read -r WT_PATH WT_STATUS <<< "$LOC"   # TAB-separated: <path>\t<status> (feature-001 contract)
 
@@ -385,9 +385,9 @@ destructive step below:
 
 ```bash
 # Reuse the existing housekeep branch (full sequence) or create it (cleanup-only).
-SLUG=$(bash canonical/aid/scripts/housekeep/housekeep-state.sh --state "$STATE_FILE" --read --field "Branch" | sed 's#^aid/housekeep-##')
+SLUG=$(bash .aid/runtime/scripts/housekeep/housekeep-state.sh --state "$STATE_FILE" --read --field "Branch" | sed 's#^aid/housekeep-##')
 [ -z "$SLUG" ] && SLUG="$(date +%Y%m%d)"
-bash canonical/aid/scripts/housekeep/branch-commit.sh --ensure-branch --slug "$SLUG"
+bash .aid/runtime/scripts/housekeep/branch-commit.sh --ensure-branch --slug "$SLUG"
 ```
 
 Only after the branch is ensured, apply deletions:
@@ -479,7 +479,7 @@ Make exactly **one** commit via `branch-commit.sh` for the staged deletions.
 Never push. Never commit to `master`.
 
 ```bash
-bash canonical/aid/scripts/housekeep/branch-commit.sh \
+bash .aid/runtime/scripts/housekeep/branch-commit.sh \
     --commit \
     --message "chore(housekeep): cleanup stale .aid artifacts [feature-004]" \
     --add-all
@@ -493,9 +493,9 @@ branch and contains no `git push` (safety self-check in the script).
 Then write the gate field:
 
 ```bash
-bash canonical/aid/scripts/housekeep/housekeep-state.sh \
+bash .aid/runtime/scripts/housekeep/housekeep-state.sh \
     --state <STATE_FILE> --write --field "Cleanup Stage" --value "passed"
-bash canonical/aid/scripts/housekeep/housekeep-state.sh \
+bash .aid/runtime/scripts/housekeep/housekeep-state.sh \
     --state <STATE_FILE> --write --field "Stage Status" --value "passed"
 ```
 

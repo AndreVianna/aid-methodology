@@ -137,7 +137,7 @@ worse than no guard, because a noisy check trains readers to ignore it.
 A fix is an edit, so it is bound by the same criteria as the authoring was. **After editing,
 resolve the edited file's review criteria and confirm the file still satisfies them** -- global,
 then its document type, then its own `review-criteria:` frontmatter, most specific winning
-(resolution: `canonical/aid/templates/kb-authoring/review-rubric.md § Resolving review criteria`).
+(resolution: `.aid/runtime/templates/kb-authoring/review-rubric.md § Resolving review criteria`).
 
 This is not the same check as F6. F6 asks whether the edit broke its immediate surroundings; F7
 asks whether the file still holds to what it declares about itself. A fix that closes the reported

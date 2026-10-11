@@ -22,7 +22,7 @@ top-level keys, replacing every placeholder value the template ships with the ac
 values. Resolve this work's own minimum grade first:
 
 ```bash
-bash canonical/aid/scripts/config/read-setting.sh --skill describe --key minimum_grade --default A
+bash .aid/runtime/scripts/config/read-setting.sh --skill describe --key minimum_grade --default A
 ```
 
 then write the whole block:

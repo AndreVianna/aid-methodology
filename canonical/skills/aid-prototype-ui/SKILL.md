@@ -7,20 +7,20 @@ description: >
   the mock shows rather than deciding anything for you. For a kept UI design meant to inform
   the real build rather than a throwaway that validates a direction, use `/aid-design-ui`
   instead. A thin kind-sibling of `/aid-prototype`, which defines its full behavior.
-allowed-tools: Read, Glob, Grep, Bash, Write, Edit, Agent
+allowed-tools: Read Glob Grep Bash Shell Terminal Write Edit Agent
 argument-hint: "<screen/flow> -- the UI screen(s)/flow whose direction to validate"
 ---
 
 # Prototype UI (ui kind-sibling of /aid-prototype)
 
 `/aid-prototype-ui` is a thin **ui kind-sibling** of `/aid-prototype`
-(`canonical/skills/aid-prototype/SKILL.md`) -- not an alias: it is its own catalog row
+(`.agents/skills/aid-prototype/SKILL.md`) -- not an alias: it is its own catalog row
 (`alias_of: null`, its own `{verb: prototype, artifact: ui}`), `repurpose: true`
 (hand-authored; skipped by `build-shortcut-skills.py`). Historically its own generated
 skill; its behavior folded into generic `aid-prototype` in work-005 because a UI is just
 one prototype target.
 
-**This file has no logic of its own.** Execute `canonical/skills/aid-prototype/SKILL.md`
+**This file has no logic of its own.** Execute `.agents/skills/aid-prototype/SKILL.md`
 exactly as written, with the prototype **target bound to `ui`** -- so INTAKE captures the
 target screen(s)/flow, key interactions and states (loading/empty/error/success), and
 navigation context, and the model is a UI wireframe/mock + interaction flow with

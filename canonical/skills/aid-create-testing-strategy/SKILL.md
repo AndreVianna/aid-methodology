@@ -12,7 +12,7 @@ description: >
   `/aid-update-testing-strategy`; to author or revise test CODE rather than the strategy,
   use `/aid-create-test` or `/aid-update-test`. Produced by the aid-architect agent and
   independently verified by aid-reviewer (full verify). Allocates a work-NNN folder.
-allowed-tools: Read, Glob, Grep, Bash, Write, Edit, Agent
+allowed-tools: Read Glob Grep Bash Shell Terminal Write Edit Agent
 argument-hint: "[<direction>] -- which parts of the testing-strategy seed to realize"
 ---
 
@@ -20,7 +20,7 @@ argument-hint: "[<direction>] -- which parts of the testing-strategy seed to rea
 
 Bind **VERB=`create`**, **ARTIFACT=`testing-strategy`** -- the `create` *stage* in the
 contract's vocabulary -- then follow the shared contract at
-`canonical/aid/templates/design-lifecycle.md`. This skill binds that contract and restates
+`.aid/runtime/templates/design-lifecycle.md`. This skill binds that contract and restates
 none of its rules. It consumes the seed `/aid-design-testing-strategy` produces and touches
 `.aid/design/` for no other purpose.
 
@@ -39,14 +39,14 @@ line on each state.
 ## State: INTAKE
 
 1. **Allocate** through the Work Initiation Gate exactly as the contract's Allocation rule
-   requires (`canonical/skills/aid-design/SKILL.md` INTAKE step 4 is the shape), with
+   requires (`.agents/skills/aid-design/SKILL.md` INTAKE step 4 is the shape), with
    `initiator: aid-create-testing-strategy`. `phase` is not driven.
 2. **Read the seed** at `.aid/design/testing-strategy.md`.
 3. **Resolve the destinations by concern, not filename.** This skill binds concern **C6**
-   (quality & testing, `canonical/aid/templates/kb-authoring/concern-model.md`) and owns
+   (quality & testing, `.aid/runtime/templates/kb-authoring/concern-model.md`) and owns
    **two** documents. The seed's `## Destination` names both halves; where it does not,
    resolve C6 against `.aid/settings.yml` `knowledge.doc_set`, falling back to the C6 row of
-   `canonical/aid/templates/kb-authoring/domain-doc-matrix.md`, and confirm with the user. An
+   `.aid/runtime/templates/kb-authoring/domain-doc-matrix.md`, and confirm with the user. An
    ambiguous realization is **asked**, never picked silently.
 4. **Read both destinations** whole where they exist, and note each one's `source:` field.
 5. **Classify complexity** for the `aid-architect` dispatch (verifier tier >= producer).

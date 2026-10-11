@@ -10,7 +10,7 @@ or `**State:** FIX`.
 **Cross-delivery reuse (task-014 / f005 seam).** This state does NOT redefine
 the review gate. Once the scope-diff guard (Step 0) passes, it invokes
 `aid-discover`'s REVIEW state machine
-(`canonical/skills/aid-discover/references/state-review.md`) with the f005
+(`.agents/skills/aid-discover/references/state-review.md`) with the f005
 injectable parameters set to the `aid-update-kb` scope:
 
 - `{{SCOPE}}` = `update-kb`
@@ -129,7 +129,7 @@ the four base mandates are individually satisfied.
 
 ## Step 1: Invoke f005's REVIEW with update-kb scope
 
-Follow `canonical/skills/aid-discover/references/state-review.md` verbatim,
+Follow `.agents/skills/aid-discover/references/state-review.md` verbatim,
 substituting:
 
 ```
@@ -179,7 +179,7 @@ Then delete the scratch ledgers per f005's Step 2e (the `rm -f` block with
 Run the unchanged `grade.sh`:
 
 ```bash
-bash canonical/aid/scripts/grade.sh --explain {{LEDGER}}
+bash .aid/runtime/scripts/grade.sh --explain {{LEDGER}}
 ```
 
 Derive `teach_back_verdict` and `act_back_verdict` per f005's Step 2c and 2d
@@ -192,7 +192,7 @@ Derive `teach_back_verdict` and `act_back_verdict` per f005's Step 2c and 2d
 Resolve the minimum grade for `aid-update-kb`:
 
 ```bash
-bash canonical/aid/scripts/config/read-setting.sh \
+bash .aid/runtime/scripts/config/read-setting.sh \
   --skill update-kb --key minimum_grade --default A
 ```
 

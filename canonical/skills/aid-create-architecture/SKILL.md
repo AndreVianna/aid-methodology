@@ -12,7 +12,7 @@ description: >
   ABOUT an architecture rather than realize a design seed, use `/aid-document-architecture`.
   Produced by the aid-architect agent and independently verified by aid-reviewer (full
   verify). Allocates a work-NNN folder.
-allowed-tools: Read, Glob, Grep, Bash, Write, Edit, Agent
+allowed-tools: Read Glob Grep Bash Shell Terminal Write Edit Agent
 argument-hint: "[<direction>] -- which parts of the architecture seed to realize"
 ---
 
@@ -20,7 +20,7 @@ argument-hint: "[<direction>] -- which parts of the architecture seed to realize
 
 Bind **VERB=`create`**, **ARTIFACT=`architecture`** -- the `create` *stage* in the
 contract's vocabulary -- then follow the shared contract at
-`canonical/aid/templates/design-lifecycle.md`. This skill binds that contract and restates
+`.aid/runtime/templates/design-lifecycle.md`. This skill binds that contract and restates
 none of its rules. It consumes the seed `/aid-design-architecture` produces and touches
 `.aid/design/` for no other purpose.
 
@@ -39,14 +39,14 @@ line on each state.
 ## State: INTAKE
 
 1. **Allocate** through the Work Initiation Gate exactly as the contract's Allocation rule
-   requires (`canonical/skills/aid-design/SKILL.md` INTAKE step 4 is the shape), with
+   requires (`.agents/skills/aid-design/SKILL.md` INTAKE step 4 is the shape), with
    `initiator: aid-create-architecture`. `phase` is not driven.
 2. **Read the seed** at `.aid/design/architecture.md`.
 3. **Resolve the destination by concern, not filename.** This skill binds concern **C1**
-   (build & shape, `canonical/aid/templates/kb-authoring/concern-model.md`). The seed's
+   (build & shape, `.aid/runtime/templates/kb-authoring/concern-model.md`). The seed's
    `## Destination` names the resolved path; where it does not, resolve C1 against
    `.aid/settings.yml` `knowledge.doc_set`, falling back to the C1 row of
-   `canonical/aid/templates/kb-authoring/domain-doc-matrix.md`, and confirm with the user.
+   `.aid/runtime/templates/kb-authoring/domain-doc-matrix.md`, and confirm with the user.
    C1's default set holds both `project-structure.md` and `architecture.md`; this skill
    targets the document describing the system's shape and **never**
    `project-structure.md`. An ambiguous realization is **asked**, never picked silently.

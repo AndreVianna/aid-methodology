@@ -7,7 +7,7 @@ description: >
   SPEC's own signals -- RESEARCH, DESIGN, IMPLEMENT, TEST, DOCUMENT, MIGRATE, REFACTOR,
   CONFIGURE -- gives every task exactly one type, and builds the delivery's execution graph
   with explicit dependencies and the parallelism they allow.
-allowed-tools: Read, Glob, Grep, Write, Edit, Bash
+allowed-tools: Read Glob Grep Write Edit Bash Shell Terminal
 argument-hint: "work-001 (required if multiple works)  [--reset] clear deliveries/delivery-NNN/tasks/"
 ---
 
@@ -22,7 +22,7 @@ Each task = one agent session = one reviewable unit = one human review.
 
 1. If arg provided → use that work directory
 2. If no arg → enumerate works **cross-worktree**: run
-   `bash canonical/aid/scripts/works/enumerate-works.sh` (main tree + every git
+   `bash .aid/runtime/scripts/works/enumerate-works.sh` (main tree + every git
    worktree; never the local `.aid/works/` glob, which is empty on `master`), taking
    each record's field-1 `work_id`
 3. Single record → auto-select it
@@ -32,7 +32,7 @@ Each task = one agent session = one reviewable unit = one human review.
 ### Locate + Enter the Work's Worktree
 
 **As soon as Check 1 resolves the work id** and **before** Check 2 checks for
-`.aid/works/{work}/PLAN.md`, follow `canonical/aid/templates/downstream-worktree-entry.md` to
+`.aid/works/{work}/PLAN.md`, follow `.aid/runtime/templates/downstream-worktree-entry.md` to
 normalize `<work-id>` to its bare `work-NNN` branch name, `locate` the worktree (which **always
 exits 0** and returns `<path>\t<status>`), and enter the returned path. Keep the defensive
 empty-path/non-zero backstop that stops rather than operate blindly — it should not fire against

@@ -10,7 +10,7 @@ description: >
   overwrites the design itself. Each stage commits on its own branch and nothing is pushed;
   a stalled run resumes where it stopped. This is the source-driven global reconcile -- for
   a targeted, prompt-named delta use `/aid-update-kb`.
-allowed-tools: Read, Glob, Grep, Bash, Write, Edit, Agent
+allowed-tools: Read Glob Grep Bash Shell Terminal Write Edit Agent
 argument-hint: "[--cleanup-only] [--grade X] jump to cleanup stage, or set minimum summary grade"
 ---
 
@@ -31,7 +31,7 @@ pipeline mapping and no phase gate references it.
 
 **State machine — each `/aid-housekeep` invocation drives the state machine until
 it hits a natural pause point per
-[`canonical/aid/templates/state-machine-chaining.md`](../../aid/templates/state-machine-chaining.md).
+[`.aid/runtime/templates/state-machine-chaining.md`](../../aid/templates/state-machine-chaining.md).
 Mechanical states auto-chain; only PAUSE-FOR-USER-ACTION and HALT stop the run.**
 
 > ```
@@ -47,7 +47,7 @@ Mechanical states auto-chain; only PAUSE-FOR-USER-ACTION and HALT stop the run.*
 |----------|--------|
 | *(none)* | Full gated sequence: `KB-DELTA → SUMMARY-DELTA → CLEANUP` (FR7 default). |
 | `--cleanup-only` | Jump straight to CLEANUP, skipping KB and summary (AC10). Sets `**Mode:** cleanup-only`. KB/Summary stage rows are left `—` (a deliberate cleanup-only run does not violate C1 — REQUIREMENTS.md FR7). `--grade X` is ignored under `--cleanup-only` (SUMMARY-DELTA is bypassed). |
-| `--grade X` | Pass-through to the SUMMARY-DELTA delegation to `/aid-summarize`. Format: `[A-F][-+]?` (e.g., `A`, `A-`, `B+`). Without this, resolved via `bash canonical/aid/scripts/config/read-setting.sh --skill summary --key minimum_grade --default A`. Ignored when `--cleanup-only` is also given. |
+| `--grade X` | Pass-through to the SUMMARY-DELTA delegation to `/aid-summarize`. Format: `[A-F][-+]?` (e.g., `A`, `A-`, `B+`). Without this, resolved via `bash .aid/runtime/scripts/config/read-setting.sh --skill summary --key minimum_grade --default A`. Ignored when `--cleanup-only` is also given. |
 
 > **`--fetch` / offline:** The online-first / permissioned-offline gate
 > (REQUIREMENTS.md C2, AC3) is feature-002's concern. The skeleton does not parse
@@ -64,10 +64,10 @@ protocol lives in two reference docs; this section is a checklist citing them.
 
 **Before each dispatch:**
 
-1. **Look up ETA** in `canonical/aid/templates/rough-time-hints.md` for the
+1. **Look up ETA** in `.aid/runtime/templates/rough-time-hints.md` for the
    subagent's operation class. Capture LOW–HIGH band.
 2. **Read heartbeat config** via
-   `bash canonical/aid/scripts/config/read-setting.sh --path traceability.heartbeat_interval --default 1`
+   `bash .aid/runtime/scripts/config/read-setting.sh --path traceability.heartbeat_interval --default 1`
    (resolves from `.aid/settings.yml`; default 1; `0` = disabled).
 3. **Pre-create heartbeat file** (always — unconditional):
    - Pre-create `.aid/.heartbeat/<agent-name>-<unix-ts>.txt`
@@ -104,10 +104,10 @@ protocol lives in two reference docs; this section is a checklist citing them.
 
 **References:**
 
-- `canonical/aid/templates/long-wait-protocol.md` — full L2 spec
-- `canonical/aid/templates/subagent-heartbeat-protocol.md` — full L3 spec
-- `canonical/aid/templates/rough-time-hints.md` — current measured ETAs
-- `canonical/agents/*/AGENT.md ## Heartbeat protocol` — subagent-side contract
+- `.aid/runtime/templates/long-wait-protocol.md` — full L2 spec
+- `.aid/runtime/templates/subagent-heartbeat-protocol.md` — full L3 spec
+- `.aid/runtime/templates/rough-time-hints.md` — current measured ETAs
+- `aid-*` agent definitions, `## Heartbeat protocol` section — subagent-side contract
 
 ---
 
@@ -128,7 +128,7 @@ mkdir -p .aid/.temp
 # Reuse the most recent in-progress run-state file; otherwise start a fresh one.
 STATE_FILE=$(ls -1 .aid/.temp/HOUSEKEEP_STATE_*.md 2>/dev/null | sort | tail -1)
 if [ -n "$STATE_FILE" ] && \
-   [ "$(bash canonical/aid/scripts/housekeep/housekeep-state.sh --state "$STATE_FILE" --read --field State)" = "DONE" ]; then
+   [ "$(bash .aid/runtime/scripts/housekeep/housekeep-state.sh --state "$STATE_FILE" --read --field State)" = "DONE" ]; then
     STATE_FILE=""   # a leftover DONE file is stale (DONE-cleanup missed it) — start fresh
 fi
 [ -z "$STATE_FILE" ] && STATE_FILE=".aid/.temp/HOUSEKEEP_STATE_$(date +%Y%m%d%H%M).md"
@@ -137,7 +137,7 @@ fi
 Then resolve the resume target from the `## Housekeep Status` block:
 
 ```bash
-bash canonical/aid/scripts/housekeep/housekeep-state.sh --state "$STATE_FILE" --resume
+bash .aid/runtime/scripts/housekeep/housekeep-state.sh --state "$STATE_FILE" --resume
 ```
 
 (On a fresh run `$STATE_FILE` does not exist yet; `housekeep-state.sh` creates it on
@@ -146,7 +146,7 @@ the first `--write`, and `--resume`/`--read` treat an absent file as "no section
 **Argument pre-check (before resume detection):**
 
 1. If `--cleanup-only` was passed → set `**Mode:** cleanup-only` via
-   `bash canonical/aid/scripts/housekeep/housekeep-state.sh --state <STATE_FILE> --write --field "Mode" --value "cleanup-only"`.
+   `bash .aid/runtime/scripts/housekeep/housekeep-state.sh --state <STATE_FILE> --write --field "Mode" --value "cleanup-only"`.
    Route PREFLIGHT → CLEANUP directly (row 2 of the resume table). Any `--grade X` value is
    noted but ignored (SUMMARY-DELTA is bypassed in cleanup-only mode).
 2. If `--grade X` was passed (without `--cleanup-only`) → validate format `[A-F][-+]?`; if
@@ -246,5 +246,5 @@ When a state completes, route by its `**Advance:**` type (per [`state-machine-ch
 
 > **State-machine chaining:** Each `/aid-housekeep` invocation drives the state
 > machine until it hits a natural pause point per
-> `canonical/aid/templates/state-machine-chaining.md`. Mechanical and inline-question
+> `.aid/runtime/templates/state-machine-chaining.md`. Mechanical and inline-question
 > states auto-chain; only PAUSE-FOR-USER-ACTION / HALT stop the run.

@@ -12,10 +12,10 @@ Load `references/task-decomposition.md` for task type rules, file format, and qu
 
 Emit pipeline phase (silent state-write only — no output, no gate):
 ```
-bash canonical/aid/scripts/execute/writeback-state.sh --pipeline --field Lifecycle --value Running
-bash canonical/aid/scripts/execute/writeback-state.sh --pipeline --field Phase --value Detail
-bash canonical/aid/scripts/execute/writeback-state.sh --pipeline --field "Active Skill" --value aid-detail
-bash canonical/aid/scripts/execute/writeback-state.sh --pipeline --field Updated --value "$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+bash .aid/runtime/scripts/execute/writeback-state.sh --pipeline --field Lifecycle --value Running
+bash .aid/runtime/scripts/execute/writeback-state.sh --pipeline --field Phase --value Detail
+bash .aid/runtime/scripts/execute/writeback-state.sh --pipeline --field "Active Skill" --value aid-detail
+bash .aid/runtime/scripts/execute/writeback-state.sh --pipeline --field Updated --value "$(date -u +%Y-%m-%dT%H:%M:%SZ)"
 ```
 
 ### Step 1: Propose Tasks for First Deliverable
@@ -72,10 +72,10 @@ Respond to each concern, re-present affected tasks. Loop until approved.
 Once approved:
 1. For each task in this delivery, create the nested task folder and seed both files:
    - `.aid/works/{work}/deliveries/delivery-NNN/tasks/task-NNN/DETAIL.md` -- the 6-section task
-     definition, seeded from `canonical/aid/templates/task-detail-template.md` (the former flat
+     definition, seeded from `.aid/runtime/templates/task-detail-template.md` (the former flat
      `tasks/task-NNN.md`; same schema, now lives in the task folder).
    - `.aid/works/{work}/deliveries/delivery-NNN/tasks/task-NNN/STATE.yml` -- seeded from
-     `canonical/aid/templates/task-state-template.yml`, replacing the placeholder
+     `.aid/runtime/templates/task-state-template.yml`, replacing the placeholder
      top-level scalars with the real opening values (`state: Pending`,
      `review: --`, `elapsed: --`, `notes: --` -- task-001/004; direct field edit;
      every key in this file is top-level, no separate frontmatter/body split), and the

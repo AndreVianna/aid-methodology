@@ -10,7 +10,7 @@ description: >
   grounding; external baselines are supplementary and cited with a URL and access date. It
   reads data read-only. For a durable dashboard rather than a one-off report, use
   `/aid-create-dashboard`.
-allowed-tools: Read, Glob, Grep, Bash, Write, Edit, Agent
+allowed-tools: Read Glob Grep Bash Shell Terminal Write Edit Agent
 argument-hint: "<subject> -- the data/usage to analyze (a dataset, logs, metrics, an A/B result)"
 ---
 
@@ -43,8 +43,8 @@ State machine: **INTAKE -> ANALYZE -> VERIFY (loop) -> PRESENT [user resolves] -
    `aid-researcher` at **sonnet / medium**; standard/complex (large data, A/B significance,
    deep telemetry) -> **opus / high**. Verifier tier >= producer tier.
 4. **Consult the Work Initiation Gate, then allocate the work folder + STATE.** First run
-   the gate (`canonical/aid/templates/work-initiation-gate.md`):
-   `bash canonical/aid/scripts/works/enumerate-works.sh` (main tree + every git worktree).
+   the gate (`.aid/runtime/templates/work-initiation-gate.md`):
+   `bash .aid/runtime/scripts/works/enumerate-works.sh` (main tree + every git worktree).
    Empty -> allocate, no prompt. Works exist -> ask new-vs-continuation; on **continuation**
    route to the chosen work's resume door and STOP (allocate nothing); on **new work**:
    create and enter the worktree per the gate's `§ 3a` step 2
@@ -85,7 +85,7 @@ analyze + consolidate:
    (sampling, significance, denominator, confounders); conflicts surfaced with reasons;
    conclusions not overstated into resolutions. Writes a review-quality ledger to
    `.aid/.temp/review-pending/<work>-verify.md`.
-3. **Grade:** `bash canonical/aid/scripts/grade.sh --explain <ledger>`. Not clean -> loop
+3. **Grade:** `bash .aid/runtime/scripts/grade.sh --explain <ledger>`. Not clean -> loop
    to ANALYZE. Circuit-breaker: 3 cycles -> IMPEDIMENT + `lifecycle: Blocked`.
 
 **Advance:** PRESENT.

@@ -8,7 +8,7 @@ description: >
   via `/aid-describe` for broad or ambiguous work. It reads the shortcut catalog to resolve
   its suggestion to a canonical, non-alias name. It suggests only: no interview, no
   scaffold, no work folder, and nothing written.
-allowed-tools: Read, Glob, Grep
+allowed-tools: Read Glob Grep
 argument-hint: "[description]  -- what you want to do; I'll point you at the right entry"
 ---
 
@@ -66,7 +66,7 @@ fresh at INTAKE and runs straight through to HALT in one pass.
 
 > **State-machine chaining:** Each `/aid-triage` invocation drives the state
 > machine until it hits a natural pause point per
-> `canonical/aid/templates/state-machine-chaining.md`. Every state here is
+> `.aid/runtime/templates/state-machine-chaining.md`. Every state here is
 > either mechanical or an inline question; only HALT stops the run.
 
 ## Dispatch

@@ -8,7 +8,7 @@ description: >
   turns each functional requirement into a feature, then validates the requirements and
   the feature boundaries against the Knowledge Base and the codebase, and halts ready
   for `/aid-specify`.
-allowed-tools: Read, Glob, Grep, Bash, Write, Edit
+allowed-tools: Read Glob Grep Bash Shell Terminal Write Edit
 argument-hint: "[work-001] decompose approved requirements  [--features work-001] re-run feature decomposition"
 ---
 
@@ -94,7 +94,7 @@ enumerate record carries no Interview-State field.
 ### Layer 1 — cross-worktree candidate set
 
 Enumerate works **cross-worktree**: run
-`bash canonical/aid/scripts/works/enumerate-works.sh` (main tree + every git worktree;
+`bash .aid/runtime/scripts/works/enumerate-works.sh` (main tree + every git worktree;
 never the local `.aid/works/` glob, which is empty on `master`), taking each record's
 field-1 `work_id` and field-4 `branch_label`.
 
@@ -166,7 +166,7 @@ Wait for response and proceed to State Detection for that work.
 
 **As soon as `<work-id>` is known** — from the `work-NNN` argument, or from Task Routing above —
 and **before** State Detection reads `.aid/works/{work}/STATE.md`, follow
-`canonical/aid/templates/downstream-worktree-entry.md` to normalize `<work-id>` to its bare
+`.aid/runtime/templates/downstream-worktree-entry.md` to normalize `<work-id>` to its bare
 `work-NNN` branch name, `locate` the worktree (which **always exits 0** and returns
 `<path>\t<status>`), and enter the returned path. Keep the defensive empty-path/non-zero backstop
 that stops rather than operate blindly — it should not fire against the real helper. Never create

@@ -47,7 +47,7 @@ can silently disagree with the table it came from.
 Write the derived blocks into `PLAN.md`:
 
 ```bash
-bash canonical/aid/scripts/execute/derive-waves.sh <path-to-PLAN.md> --write
+bash .aid/runtime/scripts/execute/derive-waves.sh <path-to-PLAN.md> --write
 ```
 
 `--write` is **idempotent** and splices each block into its own delivery section:
@@ -58,7 +58,7 @@ no-op. **Never redirect the output with `>>`** — that duplicates every block.
 Then confirm the file agrees with itself:
 
 ```bash
-bash canonical/aid/scripts/execute/derive-waves.sh <path-to-PLAN.md> --check
+bash .aid/runtime/scripts/execute/derive-waves.sh <path-to-PLAN.md> --check
 ```
 
 `--check` exits 0 when every block matches its table, 1 on a disagreement (printing both), and 2

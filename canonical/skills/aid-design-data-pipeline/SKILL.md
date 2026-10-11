@@ -8,7 +8,7 @@ description: >
   code and NO KB document -- realize the seed into the built pipeline with
   `/aid-create-data-pipeline` once it is ready. Produced by the aid-architect agent and
   independently verified by aid-reviewer (full verify). Allocates a work-NNN folder.
-allowed-tools: Read, Glob, Grep, Bash, Write, Edit, Agent
+allowed-tools: Read Glob Grep Bash Shell Terminal Write Edit Agent
 argument-hint: "<subject> -- the data pipeline to design (source, transform, sink, schedule)"
 ---
 
@@ -16,7 +16,7 @@ argument-hint: "<subject> -- the data pipeline to design (source, transform, sin
 
 Bind **VERB=`design`**, **ARTIFACT=`data-pipeline`** -- the `design` *stage* in the
 contract's vocabulary -- then follow the shared contract at
-`canonical/aid/templates/design-lifecycle.md`. This skill binds that contract and
+`.aid/runtime/templates/design-lifecycle.md`. This skill binds that contract and
 restates none of its rules. The seed it writes is `.aid/design/data-pipeline.md`; realizing
 it into the built pipeline is `/aid-create-data-pipeline`'s job, not this one's.
 
@@ -36,7 +36,7 @@ entry line on each state.
 1. **Require a subject.** Empty argument -> ask one bootstrapping question ("What data
    pipeline do you want to design -- its source, transform, sink, and schedule?") and wait.
 2. **Allocate** through the Work Initiation Gate exactly as the contract's Allocation rule
-   requires (`canonical/skills/aid-design/SKILL.md` INTAKE step 4 is the shape), with
+   requires (`.agents/skills/aid-design/SKILL.md` INTAKE step 4 is the shape), with
    `initiator: aid-design-data-pipeline`. `phase` is not driven.
 3. **Acquire `.aid/design/`** per the contract, then read `.aid/design/data-pipeline.md` if
    a prior seed exists -- re-invocation iterates it rather than starting over.
