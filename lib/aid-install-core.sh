@@ -28,6 +28,14 @@
 #                               -> recursive copy via copy_file
 #   install_tool <staging> <tool> <target> <version> [force]
 #                               -> run the full install for one tool (copy + manifest + root-agent region update)
+#   read_upgrade_recovery <target>
+#                               -> validates the v3 recovery record; sets ordered tool set + retired state
+#   write_upgrade_recovery <target> <retired> <tools...>
+#                               -> atomically persists the bounded v3 recovery record
+#   clear_upgrade_recovery <target>
+#                               -> removes a completed v3 recovery record
+#   retire_v3_layout <target> <list-only> <tools...>
+#                               -> archives v3-owned paths and strips old root regions
 #   manifest_read_tool_paths <manifest> <tool>
 #                               -> newline-delimited paths from tools.<tool>.paths (stdout)
 #   manifest_read_tool_version <manifest> <tool>
@@ -91,6 +99,149 @@ AID_TOOLS=(claude-code codex cursor copilot-cli antigravity)
 # Root agent file per tool.
 _root_agent_file() { echo "AGENTS.md"; }
 
+# read_upgrade_recovery <target> - validate the durable v3 upgrade record.
+# Sets _AID_UPGRADE_TOOLS and _AID_UPGRADE_RETIRED; invalid data returns 2.
+read_upgrade_recovery() {
+    local target="$1" record="${1}/.aid/.temp/v3-upgrade-tools.json" parsed rc
+    _AID_UPGRADE_TOOLS=(); _AID_UPGRADE_RETIRED=""
+    [[ -e "$record" || -L "$record" ]] || return 1
+    if [[ -L "$record" || ! -f "$record" ]]; then
+        echo "ERROR: aid update: invalid recovery data at ${record} (must be a regular file)" >&2; return 2
+    fi
+    parsed="$(python3 - "$record" "${AID_TOOLS[@]}" <<'PY'
+import json, pathlib, sys
+def unique(pairs):
+    out={}
+    for key,value in pairs:
+        if key in out: raise ValueError('duplicate key')
+        out[key]=value
+    return out
+try:
+    value=json.loads(pathlib.Path(sys.argv[1]).read_text(encoding='utf-8'), object_pairs_hook=unique)
+    allowed=sys.argv[2:]
+    if type(value) is not dict or set(value) != {'format_version','tools','retired'}: raise ValueError()
+    tools=value['tools']
+    if type(value['format_version']) is not int or value['format_version'] != 1: raise ValueError()
+    if type(value['retired']) is not bool or type(tools) is not list or not tools: raise ValueError()
+    if any(type(x) is not str or x not in allowed for x in tools) or len(set(tools)) != len(tools): raise ValueError()
+    if tools != [x for x in allowed if x in tools]: raise ValueError()
+    print(('true' if value['retired'] else 'false') + '\t' + '\t'.join(tools))
+except Exception:
+    raise SystemExit(2)
+PY
+)" || { echo "ERROR: aid update: invalid recovery data at ${record}" >&2; return 2; }
+    IFS=$'\t' read -r _AID_UPGRADE_RETIRED _ <<< "$parsed"
+    local rest="${parsed#*$'\t'}" tool
+    while [[ -n "$rest" ]]; do tool="${rest%%$'\t'*}"; _AID_UPGRADE_TOOLS+=("$tool"); [[ "$rest" == *$'\t'* ]] || break; rest="${rest#*$'\t'}"; done
+    return 0
+}
+
+# write_upgrade_recovery <target> <retired:true|false> <ordered tools...>
+write_upgrade_recovery() {
+    local target="$1" retired="$2" record="${1}/.aid/.temp/v3-upgrade-tools.json" tmp tool comma=""
+    shift 2
+    [[ "$retired" == true || "$retired" == false ]] || return 2
+    [[ $# -gt 0 ]] || return 2
+    mkdir -p "$(dirname "$record")" || return 1
+    tmp="$(mktemp "$(dirname "$record")/.v3-upgrade-tools.XXXXXX")" || return 1
+    { printf '{"format_version":1,"tools":['; for tool in "$@"; do printf '%s"%s"' "$comma" "$tool"; comma=,; done; printf '],"retired":%s}\n' "$retired"; } > "$tmp" || { rm -f "$tmp"; return 1; }
+    mv -f "$tmp" "$record" || { rm -f "$tmp"; return 1; }
+}
+
+clear_upgrade_recovery() {
+    local record="${1}/.aid/.temp/v3-upgrade-tools.json"
+    [[ -e "$record" || -L "$record" ]] || return 0
+    [[ ! -L "$record" && -f "$record" ]] || { echo "ERROR: aid update: cannot clear invalid recovery data at ${record}" >&2; return 1; }
+    rm -f "$record"
+}
+
+_copy_to_trash() {
+    local root="${1%/}" src="$2" stamp dest cand n tmp
+    [[ -f "$src" && ! -L "$src" ]] || return 1
+    dest="${root}/.aid/.trash/${src#"$root"/}"; stamp="$(_aid_utc_stamp)"
+    mkdir -p "$(dirname "$dest")" || return 1
+    [[ ! -d "$dest" ]] || return 1
+    tmp="$(mktemp "$(dirname "$dest")/.trash-copy.XXXXXX")" || return 1
+    cp -p "$src" "$tmp" || { rm -f "$tmp"; return 1; }
+    if [[ -e "$dest" || -L "$dest" ]]; then
+        if cmp -s "$src" "$dest"; then rm -f "$tmp"; return 0; fi
+        cand="${dest}.${stamp}"; n=0
+        while [[ -e "$cand" || -L "$cand" ]]; do n=$((n+1)); cand="${dest}.${stamp}.${n}"; done
+        mv "$dest" "$cand" || { rm -f "$tmp"; return 1; }
+    fi
+    mv "$tmp" "$dest" || { rm -f "$tmp"; return 1; }
+}
+
+_retire_root_agent_region() {
+    local target="$1" file="$2" path="${1}/${2}" temp
+    _AID_V3_ROOT_REGION_RETIRED=0
+    [[ -f "$path" && ! -L "$path" ]] || return 0
+    if ! python3 - "$path" <<'PY'
+import pathlib, sys
+p=pathlib.Path(sys.argv[1]); data=p.read_bytes(); lines=data.splitlines(keepends=True)
+def v(x): return x[:-2] if x.endswith(b'\r\n') else x[:-1] if x.endswith(b'\n') else x
+beg=[i for i,x in enumerate(lines) if v(x)==b'<!-- AID:BEGIN -->']; end=[i for i,x in enumerate(lines) if v(x)==b'<!-- AID:END -->']
+raise SystemExit(0 if len(beg)==1 and len(end)==1 and beg[0]<end[0] else 1)
+PY
+    then return 0; fi
+    _copy_to_trash "$target" "$path" || return 1
+    _AID_V3_ROOT_REGION_RETIRED=1
+    temp="$(mktemp "${path}.aid-region.XXXXXX")" || return 1
+    python3 - "$path" "$temp" <<'PY' || { rm -f "$temp"; return 1; }
+import pathlib, sys
+src,dst=map(pathlib.Path,sys.argv[1:]); lines=src.read_bytes().splitlines(keepends=True)
+def v(x): return x[:-2] if x.endswith(b'\r\n') else x[:-1] if x.endswith(b'\n') else x
+b=[i for i,x in enumerate(lines) if v(x)==b'<!-- AID:BEGIN -->']; e=[i for i,x in enumerate(lines) if v(x)==b'<!-- AID:END -->']
+out=b''.join(lines[:b[0]]+lines[e[0]+1:])
+if out.strip(): dst.write_bytes(out)
+else: dst.write_bytes(b'')
+PY
+    if [[ ! -s "$temp" ]]; then rm -f "$path" "$temp"; else mv "$temp" "$path" || return 1; fi
+}
+
+_is_aid_owned_path() {
+    local target="${1%/}" path="$2" rel base
+    [[ "$path" == "$target/"* ]] || return 1
+    rel="${path#"$target"/}"; base="${rel##*/}"
+    [[ "$rel" == .agents/aid/* || "$rel" =~ ^\.(claude|codex|cursor|github|agent)/aid/ ]] && return 0
+    [[ "$rel" =~ ^\.(claude|codex|cursor|github|agent)/skills/aid-[^/]+/ ]] && return 0
+    [[ "$base" == aid-* && ( "$rel" =~ ^\.(claude|codex|cursor|github|agent)/(skills|aid)/ || "$rel" == .agents/aid/* ) ]] && return 0
+    return 1
+}
+
+# retire_v3_layout <target> <tool...> - preserves old AID paths under .aid/.trash.
+retire_v3_layout() {
+    local target="$1" tool root path rel count=0 list_only="${2:-0}"; shift 2
+    local -a roots=()
+    for tool in "$@"; do roots+=("$(_root_dir "$tool")"); done
+    for root in "${roots[@]}"; do
+        [[ -d "${target}/${root}" ]] || continue
+        while IFS= read -r -d '' path; do
+            if _is_aid_owned_path "$target" "$path"; then
+                if [[ "$list_only" == 1 ]]; then echo "  move to trash: ${path#"$target"/}"; else trash_file "$target" "$path" || return 1; fi
+                count=$((count+1))
+            fi
+        done < <(find "${target}/${root}" -type f -print0 | sort -z)
+        if [[ "$list_only" != 1 ]]; then
+            while IFS= read -r path; do [[ -d "$path" ]] && rmdir "$path" 2>/dev/null || true; done < <(find "${target}/${root}" -mindepth 1 -depth -type d | sort -r)
+        fi
+    done
+    if printf '%s\n' "$@" | grep -qx codex; then
+        root="${target}/.agents/aid"
+        if [[ -d "$root" ]]; then
+            while IFS= read -r -d '' path; do
+                if [[ "$list_only" == 1 ]]; then echo "  move to trash: ${path#"$target"/}"; else trash_file "$target" "$path" || return 1; fi
+                count=$((count+1))
+            done < <(find "$root" -type f -print0 | sort -z)
+            if [[ "$list_only" != 1 ]]; then find "$root" -mindepth 1 -depth -type d -exec rmdir {} \; 2>/dev/null || true; rmdir "$root" 2>/dev/null || true; fi
+        fi
+    fi
+    for rootfile in AGENTS.md CLAUDE.md; do
+        if [[ "$list_only" == 1 ]]; then [[ -f "${target}/${rootfile}" ]] && grep -q '<!-- AID:BEGIN -->' "${target}/${rootfile}" && echo "  preserve root file: ${rootfile}"; else _retire_root_agent_region "$target" "$rootfile" || return 1; count=$((count + _AID_V3_ROOT_REGION_RETIRED)); fi
+    done
+    if [[ "$list_only" != 1 && "$count" -gt 0 ]]; then echo "${count} old AID file(s) moved to .aid/.trash/ (safe to delete once you have checked them)"; fi
+}
+
 # _root_dir <tool> - print the tool's install-tree root dir name (relative to the
 # project root). The AID-own subtree lives at <root>/aid/ (e.g. .claude/aid/).
 # Mirrors the per-tool dispatch in install_tool.
@@ -149,8 +300,8 @@ detect_tool() {
     local found=()
 
     [[ -d "${target}/.claude" ]] && found+=("claude-code")
-    # codex: .codex or .agents dir
-    if [[ -d "${target}/.codex" || -d "${target}/.agents" ]]; then
+    # codex: .codex only; legacy .agents/aid is handled by clean-slate update.
+    if [[ -d "${target}/.codex" ]]; then
         found+=("codex")
     fi
     [[ -d "${target}/.cursor" ]] && found+=("cursor")
@@ -2836,10 +2987,7 @@ _migrate_retired_layout() {
     }
 
     case "$tool" in
-        codex)
-            # Retired root: .agents/ (old split layout -- skills/ + aid/ lived here).
-            _sweep_retired_root "${target}/.agents"
-            ;;
+        codex) ;;
         cursor)
             # Retired root: .cursor/rules/ (rules dir no longer in new layout).
             _sweep_retired_root "${target}/.cursor/rules"
@@ -3424,7 +3572,7 @@ for line in pathlib.Path(new_file).read_text().splitlines():
     if '\t' in line:
         t,p=line.split('\t',1); new[t]=p
 tools={}
-tools.update(old.get('tools',{}))
+if os.environ.get('AID_UPGRADE_EXACT') != '1': tools.update(old.get('tools',{}))
 for t in (old.get('shared',{}).get('claude_md',{}).get('users',[]) or []):
     tools.setdefault(t,{})['context_import']='CLAUDE.md'
 for tool, stage in new.items():

@@ -29,6 +29,11 @@
 #                                                - sha256 from root_agent_files entry (or empty)
 #   Read-ManifestRootAgentStatus <manifest> <tool> <fname>
 #                                                - status field from root_agent_files entry
+#   Read-AidUpgradeRecovery <target>              - validates and reads v3 upgrade recovery state
+#   Write-AidUpgradeRecovery <target> <tools> <retired> - atomically writes v3 recovery state
+#   Clear-AidUpgradeRecovery <target>              - removes completed v3 recovery state
+#   Test-AidOwnedPath <target> <path>              - path-based v3 legacy ownership predicate
+#   Invoke-RetireV3Layout <target> <tools>         - archives v3-owned paths before fresh install
 #   Read-ManifestTools <manifest>                - [string[]] tool ids (keys of tools object)
 #   Write-AidManifest <manifest> <tool> <version> <paths> <rootEntries>
 #                                                - atomic write/merge of manifest JSON
@@ -158,9 +163,8 @@ function Detect-Tool {
     if (Test-Path (Join-Path $TargetPath '.claude') -PathType Container) {
         $found.Add('claude-code')
     }
-    # codex: .codex or .agents dir
-    if ((Test-Path (Join-Path $TargetPath '.codex') -PathType Container) -or
-        (Test-Path (Join-Path $TargetPath '.agents') -PathType Container)) {
+    # codex: .codex only; legacy .agents/aid is handled by clean-slate update.
+    if (Test-Path (Join-Path $TargetPath '.codex') -PathType Container) {
         $found.Add('codex')
     }
     if (Test-Path (Join-Path $TargetPath '.cursor') -PathType Container) {
@@ -1939,10 +1943,7 @@ function Invoke-MigrateRetiredLayout {
     }
 
     switch ($Tool) {
-        'codex' {
-            # Retired root: .agents\ (old split layout -- skills\ + aid\ lived here).
-            & $sweepRetiredRoot (Join-Path $Target '.agents')
-        }
+        'codex' { }
         'cursor' {
             # Retired root: .cursor\rules\ (rules dir no longer in new layout).
             & $sweepRetiredRoot (Join-Path $Target '.cursor\rules')
@@ -1957,6 +1958,121 @@ function Invoke-MigrateRetiredLayout {
     if (-not $ListOnly -and $script:_MigrateRetiredCount -gt 0) {
         Write-Host "  $($script:_MigrateRetiredCount) retired AID file(s) moved to .aid/.trash/"
     }
+}
+
+# Read-AidUpgradeRecovery <target> - strict reader for the v3 upgrade record.
+function Read-AidUpgradeRecovery {
+    param([string]$Target)
+    $path = Join-Path $Target '.aid/.temp/v3-upgrade-tools.json'
+    $item = Get-Item -LiteralPath $path -Force -ErrorAction SilentlyContinue
+    if (-not $item) {
+        $parent=Split-Path -Parent $path; $leaf=Split-Path -Leaf $path
+        $entry=if (Test-Path -LiteralPath $parent -PathType Container) { Get-ChildItem -LiteralPath $parent -Force -ErrorAction SilentlyContinue | Where-Object { $_.Name -ceq $leaf } | Select-Object -First 1 } else { $null }
+        if (-not $entry) { return $null }
+        throw "invalid recovery data at $path (must be a regular file)"
+    }
+    if (-not $item -or $item.PSIsContainer -or ($item.Attributes -band [System.IO.FileAttributes]::ReparsePoint)) {
+        throw "invalid recovery data at $path (must be a regular file)"
+    }
+    try {
+        $raw = [System.IO.File]::ReadAllText($path, [System.Text.Encoding]::UTF8)
+        $value = $raw | ConvertFrom-Json -ErrorAction Stop
+        $props = @($value.PSObject.Properties | ForEach-Object { $_.Name })
+        if ($props.Count -ne 3 -or @($props | Where-Object { $_ -notin @('format_version','tools','retired') }).Count -gt 0) { throw 'schema' }
+        if ([regex]::Matches($raw, '"format_version"').Count -ne 1 -or [regex]::Matches($raw, '"tools"').Count -ne 1 -or [regex]::Matches($raw, '"retired"').Count -ne 1) { throw 'duplicate fields' }
+        if ($value.format_version -isnot [int] -or $value.format_version -ne 1 -or $value.retired -isnot [bool]) { throw 'types' }
+        $tools = @($value.tools)
+        if ($tools.Count -eq 0 -or @($tools | Where-Object { $_ -isnot [string] -or $script:AID_TOOLS -cnotcontains $_ }).Count -gt 0) { throw 'tools' }
+        if (@($tools | Select-Object -Unique).Count -ne $tools.Count) { throw 'duplicate tools' }
+        $ordered = @($script:AID_TOOLS | Where-Object { $tools -ccontains $_ })
+        if (($ordered -join "`t") -cne ($tools -join "`t")) { throw 'tool order' }
+        return [pscustomobject]@{ tools=$tools; retired=$value.retired }
+    } catch { throw "invalid recovery data at $path" }
+}
+
+function Write-AidUpgradeRecovery {
+    param([string]$Target, [string[]]$Tools, [bool]$Retired)
+    $path = Join-Path $Target '.aid/.temp/v3-upgrade-tools.json'
+    $dir = Split-Path -Parent $path
+    if (-not (Test-Path -LiteralPath $dir -PathType Container)) { New-Item -ItemType Directory -Path $dir -Force | Out-Null }
+    $ordered = @($script:AID_TOOLS | Where-Object { $Tools -ccontains $_ })
+    if ($ordered.Count -eq 0 -or ($ordered -join "`t") -cne ($Tools -join "`t")) { throw 'invalid recovery tools' }
+    $json = '{"format_version":1,"tools":[' + (($ordered | ForEach-Object { '"' + $_ + '"' }) -join ',') + '],"retired":' + $Retired.ToString().ToLowerInvariant() + "}`n"
+    $tmp = Join-Path $dir ('.v3-upgrade-tools.' + [System.IO.Path]::GetRandomFileName())
+    [System.IO.File]::WriteAllBytes($tmp, [System.Text.Encoding]::ASCII.GetBytes($json))
+    if (Test-Path -LiteralPath $path -PathType Leaf) { [System.IO.File]::Replace($tmp, $path, $null) }
+    else { [System.IO.File]::Move($tmp, $path) }
+}
+
+function Clear-AidUpgradeRecovery {
+    param([string]$Target)
+    $path = Join-Path $Target '.aid/.temp/v3-upgrade-tools.json'
+    if (Test-Path -LiteralPath $path -PathType Leaf) { Remove-Item -LiteralPath $path -Force -ErrorAction Stop }
+}
+
+function Test-AidOwnedPath {
+    param([string]$Target, [string]$Path)
+    $rel = [System.IO.Path]::GetFullPath($Path).Substring(([System.IO.Path]::GetFullPath($Target).TrimEnd('\','/') + [System.IO.Path]::DirectorySeparatorChar).Length) -replace '\\','/'
+    if ($rel -match '^\.agents/aid/.+' -or $rel -match '^\.(claude|codex|cursor|github|agent)/aid/.+' -or $rel -match '^\.(claude|codex|cursor|github|agent)/skills/aid-[^/]+/.+') { return $true }
+    return $false
+}
+
+function Save-AidToTrash {
+    param([string]$Root, [string]$File)
+    $rootFull=[System.IO.Path]::GetFullPath($Root).TrimEnd('\','/'); $src=[System.IO.Path]::GetFullPath($File)
+    $rel=$src.Substring($rootFull.Length).TrimStart('\','/'); $dest=Join-Path (Join-Path $rootFull '.aid/.trash') $rel
+    $dir=Split-Path -Parent $dest; if (-not (Test-Path -LiteralPath $dir -PathType Container)) { New-Item -ItemType Directory -Path $dir -Force | Out-Null }
+    if (Test-Path -LiteralPath $dest -PathType Container) { throw "trash destination is a directory: $dest" }
+    $tmp=Join-Path $dir ('.trash-copy.'+[System.IO.Path]::GetRandomFileName()); [System.IO.File]::Copy($src,$tmp,$false)
+    if (Test-Path -LiteralPath $dest -PathType Leaf) {
+        if ((Get-Sha256File -FilePath $src) -eq (Get-Sha256File -FilePath $dest)) { Remove-Item -LiteralPath $tmp -Force; return }
+        $stamp=[System.DateTime]::UtcNow.ToString('yyyyMMdd\THHmmss\Z',[System.Globalization.CultureInfo]::InvariantCulture); $candidate="$dest.$stamp"; $n=0
+        while (Test-Path -LiteralPath $candidate) { $n++; $candidate="$dest.$stamp.$n" }
+        [System.IO.File]::Move($dest,$candidate)
+    }
+    [System.IO.File]::Move($tmp,$dest)
+}
+
+function Remove-AidLegacyRootRegion {
+    param([string]$Target, [string]$Name)
+    $path=Join-Path $Target $Name
+    if (-not (Test-Path -LiteralPath $path -PathType Leaf)) { return $false }
+    $data=[System.IO.File]::ReadAllBytes($path); $begin=[System.Text.Encoding]::ASCII.GetBytes('<!-- AID:BEGIN -->'); $end=[System.Text.Encoding]::ASCII.GetBytes('<!-- AID:END -->')
+    $begins=New-Object 'System.Collections.Generic.List[int]'; $ends=New-Object 'System.Collections.Generic.List[int]'
+    for ($i=0; $i -lt $data.Length; $i++) {
+        $matches=$i+$begin.Length -le $data.Length
+        for ($j=0; $matches -and $j -lt $begin.Length; $j++) { if ($data[$i+$j] -ne $begin[$j]) { $matches=$false } }
+        if ($matches -and ($i -eq 0 -or $data[$i-1] -eq 10) -and ($i+$begin.Length -eq $data.Length -or $data[$i+$begin.Length] -eq 10 -or $data[$i+$begin.Length] -eq 13)) { $begins.Add($i) }
+        $matches=$i+$end.Length -le $data.Length
+        for ($j=0; $matches -and $j -lt $end.Length; $j++) { if ($data[$i+$j] -ne $end[$j]) { $matches=$false } }
+        if ($matches -and ($i -eq 0 -or $data[$i-1] -eq 10) -and ($i+$end.Length -eq $data.Length -or $data[$i+$end.Length] -eq 10 -or $data[$i+$end.Length] -eq 13)) { $ends.Add($i) }
+    }
+    if ($begins.Count -ne 1 -or $ends.Count -ne 1 -or $begins[0] -ge $ends[0]) { return $false }
+    Save-AidToTrash -Root $Target -File $path
+    $finish=$ends[0]+$end.Length
+    if ($finish -lt $data.Length -and $data[$finish] -eq 13) { $finish++; if ($finish -lt $data.Length -and $data[$finish] -eq 10) { $finish++ } }
+    elseif ($finish -lt $data.Length -and $data[$finish] -eq 10) { $finish++ }
+    $rest=New-Object byte[] ($begins[0]+$data.Length-$finish)
+    [Array]::Copy($data,0,$rest,0,$begins[0]); [Array]::Copy($data,$finish,$rest,$begins[0],$data.Length-$finish)
+    if ([System.Text.Encoding]::UTF8.GetString($rest).Trim().Length -eq 0) { Remove-Item -LiteralPath $path -Force } else { [System.IO.File]::WriteAllBytes($path,$rest) }
+    return $true
+}
+
+function Invoke-RetireV3Layout {
+    param([string]$Target, [string[]]$Tools, [bool]$ListOnly = $false)
+    $roots = @($Tools | ForEach-Object { switch ($_) { 'claude-code' { '.claude' } 'codex' { '.codex' } 'cursor' { '.cursor' } 'copilot-cli' { '.github' } 'antigravity' { '.agent' } } })
+    $count = 0
+    foreach ($root in $roots) {
+        $dir = Join-Path $Target $root
+        if (-not (Test-Path -LiteralPath $dir -PathType Container)) { continue }
+        $files = @(Get-ChildItem -LiteralPath $dir -Recurse -File -ErrorAction Stop | Sort-Object FullName)
+        foreach ($file in $files) { if (Test-AidOwnedPath -Target $Target -Path $file.FullName) { if ($ListOnly) { Write-Output "  move to trash: $($file.FullName.Substring($Target.Length + 1) -replace '\\','/')" } else { Move-AidToTrash -Root $Target -File $file.FullName }; $count++ } }
+        if (-not $ListOnly) { Get-ChildItem -LiteralPath $dir -Recurse -Directory -ErrorAction SilentlyContinue | Sort-Object { $_.FullName.Length } -Descending | ForEach-Object { if (@(Get-ChildItem -LiteralPath $_.FullName -Force -ErrorAction SilentlyContinue).Count -eq 0) { Remove-Item -LiteralPath $_.FullName -Force -ErrorAction Stop } } }
+    }
+    if ($Tools -ccontains 'codex') { $dir=Join-Path $Target '.agents/aid'; if (Test-Path -LiteralPath $dir -PathType Container) { foreach ($file in @(Get-ChildItem -LiteralPath $dir -Recurse -File | Sort-Object FullName)) { if ($ListOnly) { Write-Output "  move to trash: $($file.FullName.Substring($Target.Length + 1) -replace '\\','/')" } else { Move-AidToTrash -Root $Target -File $file.FullName }; $count++ }; if (-not $ListOnly) { Remove-Item -LiteralPath $dir -Recurse -Force -ErrorAction Stop } } }
+    if (-not $ListOnly) { if (Remove-AidLegacyRootRegion -Target $Target -Name 'AGENTS.md') { $count++ }; if (Remove-AidLegacyRootRegion -Target $Target -Name 'CLAUDE.md') { $count++ } }
+    elseif ((Test-Path (Join-Path $Target 'AGENTS.md') -PathType Leaf) -or (Test-Path (Join-Path $Target 'CLAUDE.md') -PathType Leaf)) { Write-Output '  inspect root AID region: AGENTS.md / CLAUDE.md' }
+    if (-not $ListOnly -and $count -gt 0) { Write-Host "$count old AID file(s) moved to .aid/.trash/ (safe to delete once you have checked them)" }
 }
 
 # ---------------------------------------------------------------------------
@@ -2389,7 +2505,7 @@ function Install-AidShared {
         if ($p.Count -ge 3 -and $p[0] -in @('shared.skills.file','shared.runtime.file')) { $oldHashes[$p[0] + ':' + $p[1]] = $p[2] }
     }
     $allToolsSet = New-Object System.Collections.Generic.HashSet[string] ([System.StringComparer]::Ordinal)
-    foreach ($t in (Read-ManifestTools -ManifestPath $manifest)) { [void]$allToolsSet.Add($t) }
+    if (-not $script:_AidV3Upgrade) { foreach ($t in (Read-ManifestTools -ManifestPath $manifest)) { [void]$allToolsSet.Add($t) } }
     foreach ($t in $NewTools) { [void]$allToolsSet.Add($t) }
     $allTools = @($script:AID_TOOLS | Where-Object { $allToolsSet.Contains($_) })
     if ($Phase -notin @('finalize','update-finalize')) { $script:_CopyCountCopied=0; $script:_CopyCountUpToDate=0; $script:_CopyCountUpdated=0; $script:_CopyCountSkipped=0; $script:_CopyCountFailed=0 }
@@ -3209,6 +3325,11 @@ Export-ModuleMember -Function @(
     'Read-AidManifestShared',
     'Read-AidManifestToolFiles',
     'Read-AidManifestHost',
+    'Read-AidUpgradeRecovery',
+    'Write-AidUpgradeRecovery',
+    'Clear-AidUpgradeRecovery',
+    'Test-AidOwnedPath',
+    'Invoke-RetireV3Layout',
     'Write-AidManifest',
     'Remove-ManifestTool',
     'Test-ManifestExists',

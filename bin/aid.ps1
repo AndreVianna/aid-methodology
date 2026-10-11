@@ -5783,15 +5783,21 @@ if ($SUBCMD -eq 'update') {
 
 # C6': format gate for the update repo path (only when target is a real project;
 # an add to a fresh repo with no .aid/ falls through normally).
+$script:_AidV3Upgrade = $false
 if ($SUBCMD -eq 'update' -and (script:Test-AidIsProjectDir -Dir $_AidTarget)) {
     $gateRc = script:Invoke-AidFormatGate -Repo $_AidTarget
     if ($gateRc -ne 0) { script:Exit-Aid $gateRc }
     if (-not (script:Test-AidManifestFormatGate -Repo $_AidTarget)) { script:Exit-Aid 2 }
     if ((Test-Path (Join-Path $_AidTarget '.aid/.temp/v3-upgrade-tools.json')) -or
-        (script:Test-AidV3LegacyEvidence -Repo $_AidTarget)) {
-        [Console]::Error.WriteLine('ERROR: aid update: v3 clean-slate upgrade dispatch is not available yet; install the missing upgrade support and retry.')
-        script:Exit-Aid 2
-    }
+        (script:Test-AidV3LegacyEvidence -Repo $_AidTarget)) { $script:_AidV3Upgrade = $true }
+}
+
+if ($SUBCMD -in @('add','remove')) {
+    $gateRc = script:Invoke-AidFormatGate -Repo $_AidTarget
+    if ($gateRc -ne 0) { script:Exit-Aid $gateRc }
+    if (-not (script:Test-AidManifestFormatGate -Repo $_AidTarget)) { script:Exit-Aid 2 }
+    try { $pending = Read-AidUpgradeRecovery -Target $_AidTarget } catch { [Console]::Error.WriteLine("ERROR: aid $SUBCMD: $($_.Exception.Message)"); script:Exit-Aid 2 }
+    if ($null -ne $pending) { [Console]::Error.WriteLine("ERROR: aid $SUBCMD: a v3 upgrade is pending; run: aid update"); script:Exit-Aid 2 }
 }
 
 # ---- Self-update-if-needed preamble (FF-3 / CLI-2 / task-079) --------------
@@ -5888,7 +5894,32 @@ if (-not $_AidToolsOk.Value) {
 
 $_AidTools = $_AidToolsList
 
-if ($SUBCMD -eq 'update') {
+if ($SUBCMD -eq 'update' -and $script:_AidV3Upgrade) {
+    try { $script:_AidUpgradeRecord = Read-AidUpgradeRecovery -Target $_AidTarget } catch { [Console]::Error.WriteLine("ERROR: aid update: $($_.Exception.Message)"); script:Exit-Aid 2 }
+    if ($null -ne $script:_AidUpgradeRecord) {
+        foreach ($requested in @($_AidToolArg -split ',' | Where-Object { $_ })) {
+            $canonical = Normalize-Tool -Raw $requested.Trim()
+            if ($null -eq $canonical -or $script:_AidUpgradeRecord.tools -cnotcontains $canonical) { [Console]::Error.WriteLine("ERROR: aid update: tool '$requested' is outside the pending recovery set; retry recovery without naming it"); script:Exit-Aid 2 }
+        }
+        $_AidTools = @($script:_AidUpgradeRecord.tools)
+    } else {
+        $legacy = New-Object 'System.Collections.Generic.List[string]'
+        $manifestObj = $null
+        if (Test-Path -LiteralPath $_AidManifest -PathType Leaf) { try { $manifestObj = Get-Content -LiteralPath $_AidManifest -Raw | ConvertFrom-Json } catch {} }
+        if ($manifestObj -and $manifestObj.format_version -eq 2) { foreach ($p in @($manifestObj.tools.PSObject.Properties)) { if ($script:AID_TOOLS -ccontains $p.Name) { $legacy.Add($p.Name) } } }
+        if ($legacy.Count -eq 0) {
+            foreach ($tool in $script:AID_TOOLS) {
+                $root = switch ($tool) { 'claude-code' { '.claude' } 'codex' { '.codex' } 'cursor' { '.cursor' } 'copilot-cli' { '.github' } 'antigravity' { '.agent' } }
+                if ((Test-Path (Join-Path $_AidTarget (Join-Path $root 'aid')) -PathType Container) -or (Get-ChildItem -LiteralPath (Join-Path $_AidTarget (Join-Path $root 'skills')) -Directory -Filter 'aid-*' -ErrorAction SilentlyContinue | Select-Object -First 1) -or ($tool -eq 'codex' -and (Test-Path (Join-Path $_AidTarget '.agents/aid') -PathType Container))) { $legacy.Add($tool) }
+            }
+        }
+        foreach ($requested in @($_AidToolArg -split ',' | Where-Object { $_ })) { $canonical = Normalize-Tool -Raw $requested.Trim(); if ($null -ne $canonical -and -not $legacy.Contains($canonical)) { $legacy.Add($canonical) } }
+        $_AidTools = @($script:AID_TOOLS | Where-Object { $legacy.Contains($_) })
+        if ($_AidTools.Count -eq 0) { [Console]::Error.WriteLine('ERROR: aid update: no tools found for v3 upgrade'); script:Exit-Aid 2 }
+    }
+}
+
+if ($SUBCMD -eq 'update' -and -not $script:_AidV3Upgrade) {
     $requestedTools = @($_AidTools)
     $allToolSet = New-Object 'System.Collections.Generic.HashSet[string]' ([System.StringComparer]::Ordinal)
     foreach ($t in $_AidTools) { [void]$allToolSet.Add($t) }
@@ -6133,6 +6164,7 @@ try {
             # ---------------------------------------------------------------------------
             if ($_AidDryRun) {
                 Write-Host "--- aid $SUBCMD -DryRun plan (no writes) ---"
+                if ($script:_AidV3Upgrade) { foreach ($line in @(Invoke-RetireV3Layout -Target $_AidTarget -Tools $_AidTools -ListOnly $true)) { Write-Host $line } }
                 Write-Host "Target: $_AidTarget"
                 Write-Host "Version: $(if ($stageVersion) { $stageVersion } else { '<current>' })"
                 Write-Host 'Shared copies:'
@@ -6250,6 +6282,20 @@ try {
                 script:Exit-Aid 0
             }
 
+            if ($SUBCMD -eq 'update' -and $script:_AidV3Upgrade) {
+                try {
+                    if ($null -eq $script:_AidUpgradeRecord) {
+                        Write-AidUpgradeRecovery -Target $_AidTarget -Tools ([string[]]$_AidTools) -Retired $false
+                        $script:_AidUpgradeRecord = [pscustomobject]@{ tools=@($_AidTools); retired=$false }
+                    }
+                    if (-not $script:_AidUpgradeRecord.retired) {
+                        Invoke-RetireV3Layout -Target $_AidTarget -Tools ([string[]]$_AidTools)
+                        Write-AidUpgradeRecovery -Target $_AidTarget -Tools ([string[]]$_AidTools) -Retired $true
+                        $script:_AidUpgradeRecord.retired = $true
+                    }
+                } catch { [Console]::Error.WriteLine("ERROR: aid update: v3 retirement failed: $($_.Exception.Message); rerun aid update to recover."); script:Exit-Aid 1 }
+            }
+
             # ---------------------------------------------------------------------------
             # PHASE 2: Commit all staged tools.
             # If any commit fails, exit non-zero with a re-run-to-heal message.
@@ -6308,6 +6354,9 @@ try {
             # migration never changes the tool-update exit code.
             if ($SUBCMD -eq 'update') {
                 script:Invoke-AidMigrateRepo -Repo $_AidTarget
+                if ($script:_AidV3Upgrade) {
+                    try { Clear-AidUpgradeRecovery -Target $_AidTarget } catch { [Console]::Error.WriteLine("ERROR: aid update: upgrade installed but recovery cleanup failed; rerun aid update. $_"); script:Exit-Aid 1 }
+                }
             }
             script:Exit-Aid 0
         }

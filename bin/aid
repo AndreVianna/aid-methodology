@@ -2330,6 +2330,12 @@ _aid_migrate_repo() {
 # section holds real data" hard-error case below (SP-3): the remedy that
 # error names is "run migrate-work-hierarchy, then re-run aid update".
 #
+# RUNBOOK -- V3 UPGRADE RECOVERY. If an upgrade is interrupted, rerun `aid update`.
+# To roll back, restore `.aid/.trash/<original-path>` (the newest copy is at
+# the original path; older copies carry a timestamp suffix) or restore from
+# version control, then remove the recovery record only after the v3 tree is
+# restored. A v3 CLI cannot drive a v4 layout (`v4 requires CLI v4`).
+#
 # RUNBOOK -- ROLLBACK. No reverse (yml -> md) converter exists, and none is
 # ever added -- that would reopen the dual-format window SPEC.md SS L-6
 # rejects (a hard cutover, not a dual-read compatibility window).
@@ -6291,6 +6297,7 @@ fi
 
 # Unsupported future manifests/stamps are a read-only refusal and must happen
 # before the self-update preamble can mutate the CLI installation.
+_AID_V3_UPGRADE=0
 if [[ "$SUBCMD" == "update" ]] && _aid_is_project_dir "${_AID_TARGET}"; then
     _aid_manifest_format_gate "${_AID_TARGET}" || exit $?
     _AID_REPO_FMT="$(_aid_repo_format "${_AID_TARGET}")"
@@ -6298,9 +6305,18 @@ if [[ "$SUBCMD" == "update" ]] && _aid_is_project_dir "${_AID_TARGET}"; then
         printf 'ERROR: aid: project format %s is newer than this CLI supports (%s). Upgrade the aid CLI to operate on this project.\n' "$_AID_REPO_FMT" "$AID_SUPPORTED_FORMAT" >&2
         exit 1
     fi
-    if [[ -e "${_AID_TARGET}/.aid/.temp/v3-upgrade-tools.json" ]] || _aid_v3_legacy_evidence "${_AID_TARGET}"; then
-        printf 'ERROR: aid update: v3 clean-slate upgrade dispatch is not available yet; install the missing upgrade support and retry.\n' >&2
-        exit 2
+    if [[ -e "${_AID_TARGET}/.aid/.temp/v3-upgrade-tools.json" || -L "${_AID_TARGET}/.aid/.temp/v3-upgrade-tools.json" ]] || _aid_v3_legacy_evidence "${_AID_TARGET}"; then _AID_V3_UPGRADE=1; fi
+fi
+
+# A pending recovery record owns the upgrade tool set and gates mutations.
+if [[ "$SUBCMD" == add || "$SUBCMD" == remove ]]; then
+    _aid_manifest_format_gate "${_AID_TARGET}" || exit $?
+    _aid_format_gate "${_AID_TARGET}" || exit $?
+    if read_upgrade_recovery "${_AID_TARGET}" >/dev/null 2>&1; then
+        printf 'ERROR: aid %s: a v3 upgrade is pending; run: aid update\n' "$SUBCMD" >&2; exit 2
+    else
+        _RECOVERY_RC=$?
+        [[ "$_RECOVERY_RC" -eq 1 ]] || { read_upgrade_recovery "${_AID_TARGET}"; exit 2; }
     fi
 fi
 
@@ -6412,9 +6428,42 @@ fi
 
 mapfile -t _AID_TOOLS < "$_TOOLS_TMP"
 
+if [[ "$SUBCMD" == update && "${_AID_V3_UPGRADE:-0}" -eq 1 ]]; then
+    _RECOVERY_RC=1
+    read_upgrade_recovery "${_AID_TARGET}"; _RECOVERY_RC=$?
+    if [[ "$_RECOVERY_RC" -eq 2 ]]; then rm -rf "$_AID_STAGING_BASE"; exit 2; fi
+    if [[ "$_RECOVERY_RC" -eq 0 ]]; then
+        _RECOVERY_REQUESTED=()
+        if [[ -n "$_AID_TOOL_ARG" ]]; then IFS=',' read -ra _RECOVERY_REQUESTED <<< "$_AID_TOOL_ARG"; fi
+        for _RECOVERY_NAME in "${_RECOVERY_REQUESTED[@]+${_RECOVERY_REQUESTED[@]}}"; do
+            _RECOVERY_NAME="$(echo "$_RECOVERY_NAME" | tr -d '[:space:]')"
+            _RECOVERY_NAME="$(normalize_tool "$_RECOVERY_NAME")" || { rm -rf "$_AID_STAGING_BASE"; exit 2; }
+            [[ " ${_AID_UPGRADE_TOOLS[*]} " == *" $_RECOVERY_NAME "* ]] || { echo "ERROR: aid update: tool '${_RECOVERY_NAME}' is outside the pending recovery set; retry recovery without naming it" >&2; rm -rf "$_AID_STAGING_BASE"; exit 2; }
+        done
+        _AID_TOOLS=("${_AID_UPGRADE_TOOLS[@]}")
+    else
+        _AID_UPGRADE_TOOLS=()
+        _LEGACY_TOOLS=()
+        [[ -f "$_AID_MANIFEST" ]] && { [[ "$(manifest_format "$_AID_MANIFEST")" == 2 ]] && mapfile -t _LEGACY_TOOLS < <(manifest_list_tools "$_AID_MANIFEST"); }
+        if [[ "${#_LEGACY_TOOLS[@]}" -eq 0 ]]; then
+            for _LEGACY_TOOL in "${AID_TOOLS[@]}"; do
+                _LEGACY_ROOT="$(_root_dir "$_LEGACY_TOOL")"
+                if [[ -d "${_AID_TARGET}/${_LEGACY_ROOT}/aid" ]] || { [[ -d "${_AID_TARGET}/${_LEGACY_ROOT}/skills" ]] && find "${_AID_TARGET}/${_LEGACY_ROOT}/skills" -mindepth 1 -maxdepth 1 -type d -name 'aid-*' -print -quit | grep -q .; } || { [[ "$_LEGACY_TOOL" == codex ]] && [[ -d "${_AID_TARGET}/.agents/aid" ]]; }; then
+                    _LEGACY_TOOLS+=("$_LEGACY_TOOL")
+                fi
+            done
+        fi
+        if [[ -n "$_AID_TOOL_ARG" ]]; then IFS=',' read -ra _REQUESTED_LEGACY <<< "$_AID_TOOL_ARG"; for _RT in "${_REQUESTED_LEGACY[@]}"; do _RT="$(echo "$_RT" | tr -d '[:space:]')"; _LEGACY_TOOLS+=("$(normalize_tool "$_RT")"); done; fi
+        for _LEGACY_TOOL in "${AID_TOOLS[@]}"; do for _CAND in "${_LEGACY_TOOLS[@]+${_LEGACY_TOOLS[@]}}"; do [[ "$_LEGACY_TOOL" == "$_CAND" ]] && { _AID_UPGRADE_TOOLS+=("$_LEGACY_TOOL"); break; }; done; done
+        [[ "${#_AID_UPGRADE_TOOLS[@]}" -gt 0 ]] || { echo "ERROR: aid update: no tools found for v3 upgrade" >&2; rm -rf "$_AID_STAGING_BASE"; exit 2; }
+        _AID_TOOLS=("${_AID_UPGRADE_TOOLS[@]}")
+    fi
+    _TOOLS_TMP="${_AID_STAGING_BASE}/upgrade-tools.tsv"; printf '%s\n' "${_AID_TOOLS[@]}" > "$_TOOLS_TMP"
+fi
+
 # A named update is a request for at least those tools. Shared files have one
 # version, so include every installed tool in the same staged commit set.
-if [[ "$SUBCMD" == "update" ]]; then
+if [[ "$SUBCMD" == "update" && "${_AID_V3_UPGRADE:-0}" -eq 0 ]]; then
     _AID_REQUESTED_TOOLS=("${_AID_TOOLS[@]}")
     _AID_INSTALLED_TMP="${_AID_STAGING_BASE}/installed-tools.tsv"
     : > "$_AID_INSTALLED_TMP"
@@ -6643,6 +6692,7 @@ case "$SUBCMD" in
         # ---------------------------------------------------------------------------
         if [[ "${_AID_DRY_RUN:-0}" -eq 1 ]]; then
             echo "--- aid ${SUBCMD} --dry-run plan (no writes) ---"
+            if [[ "${_AID_V3_UPGRADE:-0}" -eq 1 ]]; then retire_v3_layout "${_AID_TARGET}" 1 "${_AID_TOOLS[@]}"; fi
             echo "Target: ${_AID_TARGET}"
             echo "Version: ${_STAGE_VERSION:-<current>}"
             echo "Shared copies:"
@@ -6783,11 +6833,24 @@ case "$SUBCMD" in
             exit 0
         fi
 
+        if [[ "$SUBCMD" == update && "${_AID_V3_UPGRADE:-0}" -eq 1 ]]; then
+            if [[ -z "${_AID_UPGRADE_RETIRED:-}" ]]; then
+                write_upgrade_recovery "${_AID_TARGET}" false "${_AID_TOOLS[@]}" || { echo 'ERROR: aid update: could not write recovery record; no old files were retired.' >&2; exit 1; }
+                _AID_UPGRADE_RETIRED=false
+            fi
+            if [[ "$_AID_UPGRADE_RETIRED" == false ]]; then
+                retire_v3_layout "${_AID_TARGET}" 0 "${_AID_TOOLS[@]}" || { echo 'ERROR: aid update: v3 retirement failed; rerun aid update to recover.' >&2; exit 1; }
+                write_upgrade_recovery "${_AID_TARGET}" true "${_AID_TOOLS[@]}" || { echo 'ERROR: aid update: could not mark retirement complete; v4 files were not copied.' >&2; exit 1; }
+                _AID_UPGRADE_RETIRED=true
+            fi
+        fi
+
         # ---------------------------------------------------------------------------
         # PHASE 2: Commit all staged tools.
         # If any commit fails, exit non-zero with a re-run-to-heal message.
         # aid update is idempotent: re-running drives every tool to the target version.
         # ---------------------------------------------------------------------------
+        [[ "${_AID_V3_UPGRADE:-0}" -eq 1 ]] && export AID_UPGRADE_EXACT=1
         if [[ "$SUBCMD" == add ]]; then
             _NEW_TOOL_FILE="${_AID_STAGING_BASE}/new-tools.tsv"
             : > "$_NEW_TOOL_FILE"
@@ -6872,6 +6935,8 @@ case "$SUBCMD" in
         # migration never changes the tool-update exit code.
         if [[ "$SUBCMD" == "update" ]]; then
             _aid_migrate_repo "$_AID_TARGET"
+            if [[ "${_AID_V3_UPGRADE:-0}" -eq 1 ]]; then clear_upgrade_recovery "${_AID_TARGET}" || { echo 'ERROR: aid update: upgrade installed but recovery cleanup failed; rerun aid update.' >&2; exit 1; }; fi
+            unset AID_UPGRADE_EXACT
         fi
         exit 0
         ;;
