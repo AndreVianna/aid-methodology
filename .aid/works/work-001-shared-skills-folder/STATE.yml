@@ -112,15 +112,15 @@ minimum_grade: A
 # [W] 'yes' | 'no' -- quoted, see NFR-2 / D-5
 user_approved: 'no'
 # [W] Running | Paused-Awaiting-Input | Blocked | Completed | Canceled
-lifecycle: Running
+lifecycle: Paused-Awaiting-Input
 # [W] Describe | Define | Specify | Plan | Detail | Execute
 phase: Detail
 # [W] aid-{skill} | none
 active_skill: aid-update
 # [W]
-updated: '2026-10-11T02:06:43Z'
+updated: '2026-10-11T02:11:55Z'
 # [W] set only when lifecycle = Paused-Awaiting-Input
-pause_reason: --
+pause_reason: 'Full review below floor A; awaiting maintainer decision before fixes'
 # [W] set only when lifecycle = Blocked
 block_reason: --
 # [W] e.g. IMPEDIMENT-task-NNN.md, or the failed gate
@@ -350,6 +350,15 @@ lifecycle_history:
     event: 'Full independent task review started across all 32 DETAIL artifacts'
     grade: --
     notes: 'Fresh reviewer context; full task coverage, cross-task consistency, dependency ordering and verification. Definition findings remain upstream; no fixes or implementation'
+
+  - date: '2026-10-11'
+    event: 'Full independent task review complete; new Pending rows 16-18; no Fixed findings recurred'
+    grade: 'C'
+    notes: 'All 32 tasks reviewed, including cross-document consistency and semantic ordering; 3 MEDIUM findings: missing A-6 probe, invalid documentation path gate, and unassigned outdated documentation'
+  - date: '2026-10-11'
+    event: 'Full review completed; paused before fixes for maintainer decision'
+    grade: --
+    notes: 'Definition D, tasks C, floor A; 8 new Pending findings total (2 HIGH, 6 MEDIUM). Both full passes below floor; no approval or implementation clearance. Active ledgers retained and archived snapshots updated; all 32 implementation tasks remain Pending; manual host/Windows probes remain unverified'
 
 # [A] aid-deploy only; one entry per delivery (never derived from child
 #     files; aid-deploy is the sole author):
