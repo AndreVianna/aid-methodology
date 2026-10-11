@@ -71,11 +71,16 @@ then pass 'Manifest drops cursor from every shared user list'; else fail 'Manife
 OUT="$(run_aid remove codex --target "$TARGET" 2>&1)" || { echo "$OUT" >&2; exit 1; }
 assert_file_exists "$TARGET/.agents/skills/aid-define/SKILL.md" 'Shared skill remains while claude-code is installed'
 assert_file_exists "$TARGET/AGENTS.md" 'Root rules remain while claude-code is installed'
+mkdir -p "$TARGET/.agents/skills/aid-define/references/empty/deep" \
+    "$TARGET/.claude/skills/aid-define/references/empty/deep" \
+    "$TARGET/.aid/runtime/scripts/empty/deep"
 printf 'user edit to shared file\n' >> "$TARGET/.agents/skills/aid-define/SKILL.md"
 OUT="$(run_aid remove claude-code --target "$TARGET" 2>&1)" || { echo "$OUT" >&2; exit 1; }
 assert_file_absent "$TARGET/.agents/skills/aid-define/SKILL.md" 'Last shared user removes canonical skill'
 assert_file_exists "$TARGET/.aid/.trash/.agents/skills/aid-define/SKILL.md" 'Changed shared skill is preserved in trash'
 assert_file_absent "$TARGET/.aid/runtime/rules.md" 'Last shared user removes runtime payload'
+assert_file_absent "$TARGET/.aid/runtime" 'Last shared user removes the empty runtime root'
+if find "$TARGET/.agents/skills" "$TARGET/.claude/skills" -mindepth 1 -type d -name 'aid-*' -print -quit | rg -q .; then fail 'Empty AID skill directories remain after last-user removal'; else pass 'Empty AID skill directories are pruned'; fi
 assert_file_absent "$TARGET/.aid/.aid-manifest.json" 'Last tool removes manifest'
 assert_file_absent "$TARGET/AGENTS.md" 'Last unchanged AGENTS region is removed'
 assert_file_absent "$TARGET/.gitattributes" 'Last tool removes a gitattributes file containing only the managed block'
@@ -91,12 +96,18 @@ THIRD="${TMP}/changed-root"; mkdir -p "$THIRD"
 printf 'user attributes\r\n' > "$THIRD/.gitattributes"
 cp "$THIRD/.gitattributes" "$TMP/attributes.before"
 run_aid add claude-code --from-bundle "$BUNDLE" --target "$THIRD" >/dev/null 2>&1 || exit 1
+mkdir -p "$THIRD/.aid/runtime/scripts/summarize/node_modules/pkg/empty"
+printf 'user cache\n' > "$THIRD/.aid/runtime/scripts/summarize/node_modules/pkg/cache.txt"
+NODE_CACHE_SHA="$(sha256sum "$THIRD/.aid/runtime/scripts/summarize/node_modules/pkg/cache.txt" | awk '{print $1}')"
 printf 'user edit after install\n' >> "$THIRD/AGENTS.md"
 OUT="$(run_aid remove claude-code --target "$THIRD" 2>&1)" || { echo "$OUT" >&2; exit 1; }
 assert_output_contains "$OUT" 'Left in place (modified or not AID-owned): AGENTS.md' 'Edited AGENTS.md prints the exact preservation notice'
 assert_file_exists "$THIRD/AGENTS.md" 'Edited AGENTS.md stays in place'
 if head -c "$(wc -c < "$TMP/attributes.before")" "$THIRD/.gitattributes" | cmp -s - "$TMP/attributes.before"; then pass 'Removing managed gitattributes bytes preserves the original user line bytes'; else fail 'Removing managed gitattributes bytes preserves the original user line bytes'; fi
 assert_output_contains "$(cat "$THIRD/AGENTS.md")" 'user edit after install' 'Edited AGENTS.md user bytes remain'
+assert_eq "$(sha256sum "$THIRD/.aid/runtime/scripts/summarize/node_modules/pkg/cache.txt" | awk '{print $1}')" "$NODE_CACHE_SHA" 'Runtime-local node_modules file remains unchanged after last removal'
+assert_dir_exists "$THIRD/.aid/runtime/scripts/summarize/node_modules/pkg/empty" 'Runtime-local node_modules empty descendants are preserved'
+assert_dir_exists "$THIRD/.aid/runtime" 'Runtime root remains while protected node_modules content remains'
 
 # A pre-existing markerless CLAUDE.md survives the last Claude import user.
 SECOND="${TMP}/claude-region"; mkdir -p "$SECOND/.claude/skills/my-skill"

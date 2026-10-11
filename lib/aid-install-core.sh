@@ -2874,8 +2874,9 @@ prune_shared() {
                 [[ "$child" == aid-* ]] || continue
             fi
             rmdir "$dpath" 2>/dev/null || true
-        done < <(find "$root" -depth -type d -empty 2>/dev/null)
+        done < <(find "$root" -depth -type d 2>/dev/null)
     done
+    if [[ ! -f "$current" ]]; then rmdir "${target}/.aid/runtime" 2>/dev/null || true; fi
 }
 
 # ---------------------------------------------------------------------------

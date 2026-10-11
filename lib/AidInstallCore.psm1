@@ -2729,7 +2729,7 @@ function script:Update-AidRemoveManifestHashes {
 }
 
 function script:Prune-AidEmptyDirs {
-    param([string]$Path,[switch]$AidEntriesOnly)
+    param([string]$Path,[switch]$AidEntriesOnly,[switch]$RemoveRootIfEmpty)
     if (-not (Test-Path -LiteralPath $Path -PathType Container)) { return }
     $dirs=@(Get-ChildItem -LiteralPath $Path -Recurse -Directory -ErrorAction SilentlyContinue | Sort-Object { $_.FullName.Length } -Descending)
     foreach ($dir in $dirs) {
@@ -2742,6 +2742,10 @@ function script:Prune-AidEmptyDirs {
         if ($relative -match '(^|[\\/])node_modules([\\/]|$)') { continue }
         $child=Get-ChildItem -LiteralPath $dir.FullName -Force -ErrorAction SilentlyContinue | Select-Object -First 1
         if (-not $child) { Remove-Item -LiteralPath $dir.FullName -Force -ErrorAction SilentlyContinue }
+    }
+    if ($RemoveRootIfEmpty) {
+        $child=Get-ChildItem -LiteralPath $Path -Force -ErrorAction SilentlyContinue | Select-Object -First 1
+        if (-not $child) { Remove-Item -LiteralPath $Path -Force -ErrorAction SilentlyContinue }
     }
 }
 
@@ -2824,6 +2828,7 @@ function script:Uninstall-AidToolV3 {
         $settings=Join-Path (Split-Path -Parent $ManifestPath) 'settings.yml'
         if (Test-Path -LiteralPath $settings -PathType Leaf) { Remove-Item -LiteralPath $settings -Force }
         script:Remove-AidGitattributesBlock -Target $Target
+        script:Prune-AidEmptyDirs -Path (Join-Path $Target '.aid/runtime') -RemoveRootIfEmpty
     }
     $toolDir = switch ($Tool) {
         'claude-code' { '.claude' }
