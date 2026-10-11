@@ -118,7 +118,7 @@ phase: Execute
 # [W] aid-{skill} | none
 active_skill: aid-execute
 # [W]
-updated: '2026-10-11T06:37:00Z'
+updated: '2026-10-11T06:41:31Z'
 # [W] set only when lifecycle = Paused-Awaiting-Input
 pause_reason: --
 # [W] set only when lifecycle = Blocked
@@ -585,6 +585,16 @@ lifecycle_history:
     grade: --
     notes: '/aid-execute Codex'
 
+  - date: '2026-10-11'
+    event: 'Maintainer sleeping; continue authorized sequential Luna execution and Sol wave/final verification. Keep branch and HANDOFF current at each checkpoint; no usage-meter capability available. Wave5 Sol quick review dispatched.'
+    grade: --
+    notes: '/aid-execute Codex'
+
+  - date: '2026-10-11'
+    event: 'Wave5 Sol quick review found one HIGH: task008 validate_release_descriptor ignores read_kv_conf process-substitution failure, letting malformed descriptors bypass validation and write target. Task008 In Progress for first Luna correction; ordinary staging refusals pass. PS execution deferred.'
+    grade: --
+    notes: '/aid-execute Codex'
+
 deploy: []
 
 # [A] flattened only; single writer: this work's active branch. Written by
@@ -706,7 +716,7 @@ tasks_lifecycle:
         outcome: 'committed cfadd72d4; retained release coverage restored,76 assertions pass'
 
   task-008:
-    state: 'In Review'
+    state: 'In Progress'
     review: --
     elapsed: --
     notes: --
