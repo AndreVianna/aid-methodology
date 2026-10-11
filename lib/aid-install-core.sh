@@ -2512,167 +2512,105 @@ _provision_shared_state_home() {
 }
 
 # ---------------------------------------------------------------------------
-# Orphan prune (Pillar 2 - R7)
+# Shared-layout prune (format 3)
 # ---------------------------------------------------------------------------
 
-# _prune_tool_dirs <target> <tool> <manifest_set_var>
-#
-# Removes stale AID-owned files from the tool's scoped directories AFTER a
-# fresh install/update.  Prune basis = aid- prefix + new-manifest membership.
-# Reads NO previous manifest; compares against the path set just written.
-#
-# Arguments:
-#   target           - the repo root (absolute path)
-#   tool             - canonical tool id
-#   manifest_set_var - name of an associative array (declared by the caller)
-#                      mapping each manifest path -> 1 (for O(1) lookup)
-#
-# Tool-native dirs (agents/, skills/, rules/):
-#   (a) aid-prefixed FILE not in the manifest set -> remove
-#   (b) aid-prefixed DIRECTORY with NO files in the manifest set -> remove dir
-#       (kept when ANY of its files appear in the set)
-#   Non-aid-prefixed entries are never touched (user content).
-#
-# AID-own subtree (aid/ inside the tool root):
-#   (c) any FILE under aid/ not in the manifest set -> remove
-#   (d) now-empty aid/ subdirs pruned after file removals
-#
-# Scoping (R1): copilot-cli walks only .github/{agents,skills,aid}, never .github root.
-# Never removes directories outside the tool's scoped AID directories.
-_prune_tool_dirs() {
-    local target="$1"
-    local tool="$2"
-    local manifest_set_var="$3"
-
-    # _in_set <path> - return 0 when path is in the manifest set
-    _in_set() {
-        local _p="$1"
-        eval "local _v=\"\${${manifest_set_var}[\$_p]+x}\""
-        [[ -n "$_v" ]]
-    }
-
-    local _prune_removed=0
-
-    # ------------------------------------------------------------------
-    # _prune_native_dir <native_dir_abs>
-    # Walk one tool-native directory; apply rules (a) and (b).
-    # <native_dir_abs> is absolute (e.g. /path/to/repo/.claude/agents).
-    # ------------------------------------------------------------------
-    _prune_native_dir() {
-        local ndir="$1"
-        [[ -d "$ndir" ]] || return 0
-
-        # Enumerate immediate children of the native dir.
-        local child child_rel
-        for child in "$ndir"/aid-*; do
-            [[ -e "$child" ]] || continue
-            child_rel="${child#${target}/}"
-
-            if [[ -f "$child" ]]; then
-                # Rule (a): aid-prefixed file not in manifest -> remove.
-                if ! _in_set "$child_rel"; then
-                    rm -f "$child"
-                    _prune_removed=$((_prune_removed + 1))
-                    [[ "${AID_VERBOSE:-0}" -eq 1 ]] && echo "Pruned: ${child}"
-                fi
-            elif [[ -d "$child" ]]; then
-                # Rule (b): aid-prefixed dir -> keep only if any file inside is in manifest.
-                local has_live=0
-                local member
-                while IFS= read -r -d '' member; do
-                    local member_rel="${member#${target}/}"
-                    if _in_set "$member_rel"; then
-                        has_live=1
-                        break
-                    fi
-                done < <(find "$child" -type f -print0 2>/dev/null)
-                if [[ "$has_live" -eq 0 ]]; then
-                    rm -rf "$child"
-                    _prune_removed=$((_prune_removed + 1))
-                    [[ "${AID_VERBOSE:-0}" -eq 1 ]] && echo "Pruned dir: ${child}"
-                fi
-            fi
-        done
-    }
-
-    # ------------------------------------------------------------------
-    # _prune_aid_subtree <aid_root_abs>
-    # Walk the aid/ subtree; apply rule (c) and prune empty subdirs (d).
-    # <aid_root_abs> is absolute (e.g. /path/to/repo/.claude/aid).
-    # ------------------------------------------------------------------
-    _prune_aid_subtree() {
-        local adir="$1"
-        [[ -d "$adir" ]] || return 0
-
-        # Rule (c): remove files not in manifest.
-        local fpath fpath_rel
-        while IFS= read -r -d '' fpath; do
-            fpath_rel="${fpath#${target}/}"
-            if ! _in_set "$fpath_rel"; then
-                rm -f "$fpath"
-                _prune_removed=$((_prune_removed + 1))
-                [[ "${AID_VERBOSE:-0}" -eq 1 ]] && echo "Pruned: ${fpath}"
-            fi
-        done < <(find "$adir" -type f -print0 2>/dev/null)
-
-        # Rule (d): prune now-empty subdirs (deepest first, skip the root itself).
-        local dpath
-        while IFS= read -r dpath; do
-            [[ "$dpath" == "$adir" ]] && continue
-            if [[ -d "$dpath" ]]; then
-                local rem
-                rem="$(find "$dpath" -mindepth 1 2>/dev/null | head -1)"
-                if [[ -z "$rem" ]]; then
-                    rmdir "$dpath" 2>/dev/null || true
-                    [[ "${AID_VERBOSE:-0}" -eq 1 ]] && echo "Pruned dir: ${dpath}"
-                fi
-            fi
-        done < <(find "$adir" -mindepth 1 -type d 2>/dev/null | sort -r)
-    }
-
-    # ------------------------------------------------------------------
-    # Per-tool scoping: which native dirs + which aid/ root to walk.
-    # New layout (work-005/delivery-001): codex is unified under .codex/;
-    # cursor and antigravity no longer ship rules/ dirs.
-    # ------------------------------------------------------------------
-    case "$tool" in
-        claude-code)
-            _prune_native_dir "${target}/.claude/agents"
-            _prune_native_dir "${target}/.claude/skills"
-            _prune_aid_subtree "${target}/.claude/aid"
-            ;;
-        codex)
-            # New unified layout: everything under .codex/ (agents, skills, aid).
-            _prune_native_dir "${target}/.codex/agents"
-            _prune_native_dir "${target}/.codex/skills"
-            _prune_aid_subtree "${target}/.codex/aid"
-            ;;
-        cursor)
-            # rules/ dir removed from new layout; agents/skills/aid remain.
-            _prune_native_dir "${target}/.cursor/agents"
-            _prune_native_dir "${target}/.cursor/skills"
-            _prune_aid_subtree "${target}/.cursor/aid"
-            ;;
-        copilot-cli)
-            # R1: scope to .github/{agents,skills,aid} ONLY -- never .github root.
-            _prune_native_dir "${target}/.github/agents"
-            _prune_native_dir "${target}/.github/skills"
-            _prune_aid_subtree "${target}/.github/aid"
-            ;;
-        antigravity)
-            # rules/ dir removed from new layout; agents/skills/aid remain.
-            _prune_native_dir "${target}/.agent/agents"
-            _prune_native_dir "${target}/.agent/skills"
-            _prune_aid_subtree "${target}/.agent/aid"
-            ;;
-    esac
-
-    if [[ "$_prune_removed" -gt 0 ]]; then
-        [[ "${AID_VERBOSE:-0}" -eq 1 ]] || echo "  ${_prune_removed} stale AID file(s) pruned"
+# prune_shared <target> <previous-manifest>
+# Prune only AID-owned candidates after a shared install has written its new
+# manifest. Files matching the previous manifest are deleted; all other bytes
+# are preserved in .aid/.trash before their source paths are removed.
+prune_shared() {
+    local target="$1" previous="$2" current="${target}/.aid/.aid-manifest.json"
+    local manifest="$current" line rel sha path root tool child dpath
+    local -A wanted=() old=() roots=() previous_roots=()
+    local -a candidates=() directories=()
+    [[ -f "$previous" ]] || previous=""
+    if [[ -n "$previous" ]]; then
+        while IFS= read -r line; do
+            case "$line" in
+                shared.skills.file$'\t'*) rel="${line#*$'\t'}"; rel="${rel%%$'\t'*}"; sha="${line##*$'\t'}"; old["${target}/.agents/skills/${rel}"]="$sha" ;;
+                shared.runtime.file$'\t'*) rel="${line#*$'\t'}"; rel="${rel%%$'\t'*}"; sha="${line##*$'\t'}"; old["${target}/.aid/runtime/${rel}"]="$sha" ;;
+                shared.mirror$'\t'*) IFS=$'\t' read -r _ root _ _ <<< "$line"; roots["$root"]=1; previous_roots["$root"]=1 ;;
+            esac
+        done < <(manifest_read_shared "$previous")
+        while IFS= read -r line; do
+            [[ "$line" == shared.skills.file$'\t'* ]] || continue
+            rel="${line#*$'\t'}"; rel="${rel%%$'\t'*}"; sha="${line##*$'\t'}"
+            for root in "${!previous_roots[@]}"; do old["${target}/${root}/${rel}"]="$sha"; done
+        done < <(manifest_read_shared "$previous")
+        while IFS= read -r tool; do
+            while IFS= read -r line; do
+                [[ "$line" == "tools.${tool}.file"$'\t'* ]] || continue
+                IFS=$'\t' read -r _ rel sha <<< "$line"; old["${target}/${rel}"]="$sha"
+            done < <(manifest_read_tool_files "$previous" "$tool")
+        done < <(manifest_list_tools "$previous")
     fi
-
-    # Unset nested helpers to avoid polluting caller's scope.
-    unset -f _in_set _prune_native_dir _prune_aid_subtree
+    while IFS= read -r line; do
+        case "$line" in
+            shared.skills.file$'\t'*) rel="${line#*$'\t'}"; wanted["${target}/.agents/skills/${rel%%$'\t'*}"]=1 ;;
+            shared.runtime.file$'\t'*) rel="${line#*$'\t'}"; wanted["${target}/.aid/runtime/${rel%%$'\t'*}"]=1 ;;
+            shared.mirror$'\t'*) IFS=$'\t' read -r _ root _ _ <<< "$line"; roots["$root"]=1 ;;
+        esac
+    done < <(manifest_read_shared "$manifest")
+    while IFS= read -r line; do
+        [[ "$line" == shared.skills.file$'\t'* ]] || continue
+        rel="${line#*$'\t'}"; rel="${rel%%$'\t'*}"
+        for root in "${!roots[@]}"; do [[ "$root" == .agents/skills ]] || wanted["${target}/${root}/${rel}"]=1; done
+    done < <(manifest_read_shared "$manifest")
+    [[ -d "${target}/.agents/skills" ]] && while IFS= read -r -d '' path; do
+        rel="${path#${target}/.agents/skills/}"; [[ "$rel" == aid-* || "$rel" == aid-*/* ]] && wanted["$path"]=1
+    done < <(find "${target}/.agents/skills" -type f -print0 2>/dev/null)
+    if [[ -d "${target}/.aid/runtime" ]]; then
+        while IFS= read -r -d '' path; do
+            [[ "$path" == */node_modules/* ]] && continue
+            candidates+=("$path")
+        done < <(find "${target}/.aid/runtime" -type f -print0 2>/dev/null)
+    fi
+    while IFS= read -r tool; do
+        while IFS= read -r line; do
+            [[ "$line" == "tools.${tool}.file"$'\t'* ]] || continue
+            IFS=$'\t' read -r _ rel _ <<< "$line"; wanted["${target}/${rel}"]=1
+        done < <(manifest_read_tool_files "$current" "$tool")
+    done < <(manifest_list_tools "$current")
+    # Collect candidates from the controlled roots, then remove every unrecorded path.
+    for root in .agents/skills "${!roots[@]}" .aid/runtime; do
+        [[ -d "${target}/${root}" ]] || continue
+        if [[ "$root" == .aid/runtime ]]; then
+            while IFS= read -r -d '' path; do [[ "$path" == */node_modules/* ]] || candidates+=("$path"); done < <(find "${target}/${root}" -type f -print0 2>/dev/null)
+        else
+            while IFS= read -r -d '' path; do rel="${path#${target}/${root}/}"; [[ "$rel" == aid-* || "$rel" == aid-*/* ]] && candidates+=("$path"); done < <(find "${target}/${root}" -type f -print0 2>/dev/null)
+        fi
+    done
+    while IFS= read -r tool; do
+        root="$(_root_dir "$tool")/agents"; [[ -d "${target}/${root}" ]] || continue
+        while IFS= read -r -d '' path; do rel="${path#${target}/${root}/}"; [[ "$rel" == aid-* || "$rel" == aid-*/* ]] && candidates+=("$path"); done < <(find "${target}/${root}" -type f -print0 2>/dev/null)
+    done < <(manifest_list_tools "$current")
+    for path in "${candidates[@]}"; do
+        [[ -f "$path" ]] || continue
+        rel="${path#${target}/}"
+        case "$path" in */node_modules/*) continue;; esac
+        if [[ -n "${wanted[$path]+x}" ]]; then continue; fi
+        sha="$(sha256_file "$path")"
+        if [[ -n "${old[$path]:-}" && "${old[$path]}" == "$sha" ]]; then rm -f "$path" || return 1
+        else trash_file "$target" "$path" || return 1; fi
+    done
+    # Remove empty AID directories, but never a placement root.
+    for root in .agents/skills .aid/runtime "${!roots[@]}"; do [[ -d "${target}/${root}" ]] && directories+=("${target}/${root}"); done
+    while IFS= read -r tool; do root="$(_root_dir "$tool")/agents"; [[ -d "${target}/${root}" ]] && directories+=("${target}/${root}"); done < <(manifest_list_tools "$current")
+    for root in "${directories[@]}"; do
+        [[ -d "$root" ]] || continue
+        while IFS= read -r dpath; do
+            [[ "$dpath" == "$root" ]] && continue
+            rel="${dpath#${root}/}"
+            if [[ "$root" == "${target}/.aid/runtime" ]]; then
+                [[ "$dpath" == */node_modules || "$dpath" == */node_modules/* ]] && continue
+            else
+                child="${rel%%/*}"
+                [[ "$child" == aid-* ]] || continue
+            fi
+            rmdir "$dpath" 2>/dev/null || true
+        done < <(find "$root" -depth -type d -empty 2>/dev/null)
+    done
 }
 
 # ---------------------------------------------------------------------------
@@ -2683,7 +2621,7 @@ _prune_tool_dirs() {
 #
 # Complete-replacement migration: removes AID-owned content from the static
 # list of retired AID roots that no longer exist in the new bundle layout.
-# Called from install_tool BEFORE _prune_tool_dirs (same aid update pass).
+# Called by the shared-layout commit path after its manifest write.
 #
 # Retired roots swept per tool:
 #   codex:       .agents/                     (split layout retired)
@@ -2882,14 +2820,12 @@ _migrate_term_exclusions() {
 # engine. Sets _CORE_SEEDED_SETTINGS=1 when a file was created, else 0.
 seed_settings_yml() {
     local target="$1" tool="$2"
-    local root dst tmpl
+    local dst tmpl
     _CORE_SEEDED_SETTINGS=0
-    root="$(_root_dir "$tool")"
-    [[ -z "$root" ]] && return 0
     dst="${target}/.aid/settings.yml"
-    tmpl="${target}/${root}/aid/templates/settings.yml"
+    tmpl="${target}/.aid/runtime/templates/settings.yml"
     [[ -f "$dst" ]] && return 0        # never clobber user config
-    # Template absent -> a tool bundle shipped without aid/templates/settings.yml.
+    # Template absent -> a bundle shipped without the shared runtime template.
     # Surface it (work-007 C5): a silent skip re-triggers the "no settings.yml"
     # class this seed exists to fix, and the format gate would then warn forever.
     if [[ ! -f "$tmpl" ]]; then
@@ -2931,6 +2867,12 @@ _AID_GI_END="# <<< AID managed <<<"
 # inclusive). The exclusion set is the single source of truth for transient
 # .aid/ artifacts that must never be committed.
 _aid_gitignore_block() {
+    local manifest="${_AID_PROJECT_TARGET:-$PWD}/.aid/.aid-manifest.json" worktree=".aid/.worktrees"
+    if [[ -f "$manifest" ]]; then
+        local record
+        record="$(manifest_read_host "$manifest" | awk -F '\t' '$1=="host.worktree_root" {print $2; exit}')"
+        [[ -n "$record" ]] && worktree="$record"
+    fi
     printf '%s\n' "$_AID_GI_BEGIN"
     printf '%s\n' \
         ".aid/.temp/" \
@@ -2938,7 +2880,10 @@ _aid_gitignore_block() {
         ".aid/.heartbeat/" \
         ".aid/.control/" \
         ".aid/generated/" \
-        ".aid/knowledge/.cache/"
+        ".aid/knowledge/.cache/" \
+        ".aid/.worktrees/"
+    [[ "$worktree" == .aid/* ]] || printf '%s\n' "${worktree%/}/"
+    printf '%s\n' ".aid/runtime/**/node_modules/"
     printf '%s' "$_AID_GI_END"
 }
 
@@ -2950,6 +2895,7 @@ _aid_gitignore_block() {
 # byte-identical file. Sets _CORE_GITIGNORE_ACTION to created|updated|unchanged.
 update_gitignore() {
     local target="$1"
+    _AID_PROJECT_TARGET="$target"
     local gi="${target}/.gitignore"
     local block tmp
     _CORE_GITIGNORE_ACTION="unchanged"
@@ -2993,6 +2939,62 @@ update_gitignore() {
         _CORE_GITIGNORE_ACTION="updated"
     fi
     return 0
+}
+
+# write_host_conf <target> <worktree_root>
+write_host_conf() {
+    local target="$1" worktree="${2:-.aid/.worktrees}" path="${1}/.aid/runtime/host.conf"
+    mkdir -p "$(dirname "$path")" || return 1
+    printf 'worktree_root=%s\n' "$worktree" > "$path"
+}
+
+_AID_GA_BEGIN="$_AID_GI_BEGIN"
+_AID_GA_END="$_AID_GI_END"
+_aid_gitattributes_block() {
+    printf '%s\n' "$_AID_GA_BEGIN" \
+        '.agents/skills/aid-*/** text eol=lf' \
+        '.claude/skills/aid-*/** text eol=lf' \
+        '.aid/runtime/** text eol=lf' "$_AID_GA_END"
+}
+
+# update_gitattributes <target>; bytes outside the managed span are retained.
+update_gitattributes() {
+    local target="$1" path="${1}/.gitattributes" block tmp
+    block="$(_aid_gitattributes_block)"
+    python3 - "$path" "$block" "$_AID_GA_BEGIN" "$_AID_GA_END" <<'PY'
+import os, pathlib, sys, tempfile
+path, block, begin, end = sys.argv[1:]
+old = pathlib.Path(path).read_bytes() if os.path.isfile(path) else b''
+marker_b, marker_e = begin.encode(), end.encode()
+def span(data):
+    start = data.find(marker_b)
+    if start < 0: return None
+    # Markers are complete standalone lines; include the end marker's line break.
+    line_start = data.rfind(b'\n', 0, start) + 1
+    if data[line_start:start].strip(b'\r'): return None
+    end_start = data.find(marker_e, start)
+    if end_start < 0: return None
+    line_end = end_start + len(marker_e)
+    if data[line_end:line_end+2] == b'\r\n': line_end += 2
+    elif data[line_end:line_end+1] in (b'\n', b'\r'): line_end += 1
+    return line_start, line_end
+blk = (block + '\n').encode('ascii')
+where = span(old)
+if where:
+    new = old[:where[0]] + blk + old[where[1]:]
+else:
+    sep = b'' if not old or old.endswith((b'\n', b'\r')) else b'\n'
+    if old and not old.endswith((b'\n\n', b'\r\n\r\n')): sep += b'\n'
+    new = old + sep + blk
+if new != old:
+    os.makedirs(os.path.dirname(path), exist_ok=True)
+    fd, tmp = tempfile.mkstemp(prefix='.gitattributes.aid-', dir=os.path.dirname(path) or '.')
+    try:
+        with os.fdopen(fd, 'wb') as f: f.write(new)
+        os.replace(tmp, path)
+    finally:
+        if os.path.exists(tmp): os.unlink(tmp)
+PY
 }
 
 # ---------------------------------------------------------------------------
@@ -3143,20 +3145,11 @@ install_tool() {
     # prints the "re-run to heal" message); this function returns 0 (WARN-not-fail).
     _migrate_retired_layout "$target" "$tool"
 
-    # Prune stale AID-owned files (Pillar 2, R7).
-    # Build an associative array from the new manifest path set for O(1) lookup.
-    declare -A _prune_manifest_set=()
-    local _p
-    for _p in "${install_paths[@]+"${install_paths[@]}"}"; do
-        _prune_manifest_set["$_p"]=1
-    done
-    _prune_tool_dirs "$target" "$tool" "_prune_manifest_set"
-    unset _prune_manifest_set
-
     # Project-level provisioning (work-007): seed the required settings.yml and
     # maintain the .gitignore AID region. Both idempotent; safe per-tool.
     seed_settings_yml "$target" "$tool"
     update_gitignore "$target"
+    update_gitattributes "$target"
     _migrate_term_exclusions "$target"
 
     # Print concise summary (always shown; per-file lines only when AID_VERBOSE=1).
@@ -3198,7 +3191,7 @@ install_shared() {
     local shared="$1" target="$2" version="$3" new_file="$4" force="${5:-0}" phase="${6:-all}"
     local manifest="${target}/.aid/.aid-manifest.json" now old_shared old_host old_tools
     local skills_src="${shared}/skills" runtime_src="${shared}/runtime" f rel old_sha tool stage root conf key value
-    local inline=0 claude_users=0 region region_sha agents_sha claude_sha line
+    local inline=0 claude_users=0 region region_sha agents_sha claude_sha line host_worktree=".aid/.worktrees" previous_manifest=""
     local -A old_hash=() mirrors=() mirror_users=() tool_mirror=() tool_wr=() tool_inline=() tool_context=() tool_stage=()
     local -a all_tools=() new_tools=()
 
@@ -3272,6 +3265,10 @@ install_shared() {
         [[ -n "${tool_inline[$tool]:-}" ]] && inline=1
         [[ -n "${tool_context[$tool]:-}" ]] && claude_users=1
     done
+    for tool in "${all_tools[@]}"; do
+        if [[ -n "${tool_wr[$tool]:-}" ]]; then host_worktree="${tool_wr[$tool]}"; break; fi
+    done
+    write_host_conf "$target" "$host_worktree" || return 1
 
     region="$_AID_AGENTS_POINTER_REGION"
     if [[ "$inline" -eq 1 ]]; then region="$(printf '<!-- AID:BEGIN -->\n<!-- Managed by the AID CLI. Do not edit between the AID markers. -->\n'; cat "${target}/.aid/runtime/rules.md"; printf '<!-- AID:END -->\n')"$'\n'; fi
@@ -3335,6 +3332,10 @@ for name, root in [('skills','.agents/skills'),('runtime','.aid/runtime')]:
             files.append({'path':rel,'sha256':hashlib.sha256(p.read_bytes()).hexdigest()})
     files.sort(key=lambda x:x['path'])
     shared_entries[name]={'root':root,'version':version,'users':all_tools,'files':files}
+if name == 'runtime':
+    host = pathlib.Path(target,'.aid/runtime/host.conf')
+    if host.is_file(): files.append({'path':'host.conf','sha256':hashlib.sha256(host.read_bytes()).hexdigest()})
+    files.sort(key=lambda x:x['path'])
 shared_entries['agents_md']={'path':'AGENTS.md','version':version,'users':all_tools,'region_sha256':region_sha,'file_sha256':agents_sha}
 mirrors={}
 for t in all_tools:
@@ -3364,8 +3365,15 @@ for t in all_tools:
     lines += [pre+f'file\t{f["path"]}\t{f["sha256"]}' for f in x.get('files',[])]
 pathlib.Path(model).write_text('\n'.join(lines)+'\n',encoding='ascii')
 PY
-    if ! manifest_write_v3 "$manifest" "$model"; then rm -f "$model"; return 1; fi
+    if [[ -f "$manifest" ]]; then previous_manifest="$(mktemp "${target}/.aid/.manifest-before-prune.XXXXXX")" || { rm -f "$model"; return 1; }; cp "$manifest" "$previous_manifest" || { rm -f "$model" "$previous_manifest"; return 1; }; fi
+    if ! manifest_write_v3 "$manifest" "$model"; then rm -f "$model" "${previous_manifest:-}"; return 1; fi
     rm -f "$model"
+    prune_shared "$target" "$previous_manifest" || { rm -f "${previous_manifest:-}"; return 1; }
+    rm -f "${previous_manifest:-}"
+    seed_settings_yml "$target" "${new_tools[0]:-}" || return 1
+    update_gitignore "$target" || return 1
+    update_gitattributes "$target" || return 1
+    _migrate_term_exclusions "$target" || return 1
 }
 
 # ---------------------------------------------------------------------------

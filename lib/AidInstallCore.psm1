@@ -68,7 +68,7 @@ $script:_CopyCountUpdated  = 0
 $script:_CopyCountSkipped  = 0
 $script:_CopyCountFailed   = 0
 
-# Module-level prune counter. Reset by Invoke-PruneToolDirs before each prune pass.
+# Module-level prune counter for shared-layout prune accounting.
 $script:_PruneRemoved = 0
 
 # Module-level project-provisioning state (work-007). Reset by Install-AidTool.
@@ -1714,168 +1714,81 @@ function Invoke-AidProvisionSharedStateHome {
 }
 
 # ---------------------------------------------------------------------------
-# Orphan prune (Pillar 2 - R7)
+# Shared-layout prune (format 3)
 # ---------------------------------------------------------------------------
 
-# Invoke-PruneToolDirs <target> <tool> <manifestPathSet>
-#
-# Removes stale AID-owned files from the tool's scoped directories AFTER a
-# fresh install/update.  Prune basis = aid- prefix + new-manifest membership.
-# Reads NO previous manifest; compares against the path set just written.
-#
-# Parameters:
-#   Target          - the repo root (absolute path)
-#   Tool            - canonical tool id
-#   ManifestPathSet - HashSet[string] of new-manifest paths (for O(1) lookup)
-#
-# Tool-native dirs (agents/, skills/, rules/):
-#   (a) aid-prefixed FILE not in the manifest set -> remove
-#   (b) aid-prefixed DIRECTORY with NO files in the manifest set -> remove dir
-#       (kept when ANY of its files appear in the set)
-#   Non-aid-prefixed entries are never touched (user content).
-#
-# AID-own subtree (aid/ inside the tool root):
-#   (c) any FILE under aid/ not in the manifest set -> remove
-#   (d) now-empty aid/ subdirs pruned after file removals
-#
-# Scoping (R1): copilot-cli walks only .github/{agents,skills,aid}, never .github root.
-# Never removes directories outside the tool's scoped AID directories.
-function Invoke-PruneToolDirs {
-    param(
-        [string]$Target,
-        [string]$Tool,
-        [System.Collections.Generic.HashSet[string]]$ManifestPathSet,
-        [bool]$AidVerbose = $false
-    )
-
-    $script:_PruneRemoved = 0
-
-    # -----------------------------------------------------------------------
-    # Helper: Invoke-PruneNativeDir <nativeDirAbs>
-    # Walk one tool-native directory; apply rules (a) and (b).
-    # <nativeDirAbs> is absolute (e.g. C:\repo\.claude\agents).
-    # -----------------------------------------------------------------------
-    $pruneNativeDir = {
-        param([string]$NDir)
-        if (-not (Test-Path $NDir -PathType Container)) { return }
-
-        # Enumerate immediate aid-prefixed children of the native dir.
-        $children = @(Get-ChildItem -LiteralPath $NDir -ErrorAction SilentlyContinue |
-                      Where-Object { $_.Name -like 'aid-*' })
-        foreach ($child in $children) {
-            $childRel = $child.FullName.Substring($Target.Length).TrimStart([char]'\', [char]'/') -replace '\\', '/'
-
-            if ($child -is [System.IO.FileInfo]) {
-                # Rule (a): aid-prefixed file not in manifest -> remove.
-                if (-not $ManifestPathSet.Contains($childRel)) {
-                    Remove-Item -LiteralPath $child.FullName -Force
-                    $script:_PruneRemoved++
-                    if ($AidVerbose) { Write-Host "Pruned: $($child.FullName)" }
-                }
-            } elseif ($child -is [System.IO.DirectoryInfo]) {
-                # Rule (b): aid-prefixed dir -> keep only if any file inside is in manifest.
-                $hasLive = $false
-                $members = @(Get-ChildItem -LiteralPath $child.FullName -Recurse -File -ErrorAction SilentlyContinue)
-                foreach ($m in $members) {
-                    $mRel = $m.FullName.Substring($Target.Length).TrimStart([char]'\', [char]'/') -replace '\\', '/'
-                    if ($ManifestPathSet.Contains($mRel)) {
-                        $hasLive = $true
-                        break
-                    }
-                }
-                if (-not $hasLive) {
-                    Remove-Item -LiteralPath $child.FullName -Recurse -Force
-                    $script:_PruneRemoved++
-                    if ($AidVerbose) { Write-Host "Pruned dir: $($child.FullName)" }
-                }
+function Invoke-PruneShared {
+    param([string]$Target, [string]$PreviousManifest)
+    $manifest = Join-Path $Target '.aid/.aid-manifest.json'
+    $wanted = New-Object 'System.Collections.Generic.HashSet[string]' ([System.StringComparer]::OrdinalIgnoreCase)
+    $oldHashes = @{}
+    $roots = New-Object 'System.Collections.Generic.HashSet[string]' ([System.StringComparer]::Ordinal)
+    $previousRoots = New-Object 'System.Collections.Generic.HashSet[string]' ([System.StringComparer]::Ordinal)
+    if (Test-Path -LiteralPath $PreviousManifest -PathType Leaf) {
+        foreach ($row in (Read-AidManifestShared -ManifestPath $PreviousManifest)) {
+            $p = $row.Split("`t")
+            if ($p[0] -eq 'shared.skills.file' -and $p.Count -ge 3) { $oldHashes[(Join-Path $Target ('.agents/skills/' + $p[1]))] = $p[2] }
+            elseif ($p[0] -eq 'shared.runtime.file' -and $p.Count -ge 3) { $oldHashes[(Join-Path $Target ('.aid/runtime/' + $p[1]))] = $p[2] }
+            elseif ($p[0] -eq 'shared.mirror' -and $p.Count -ge 2) { [void]$roots.Add($p[1]); [void]$previousRoots.Add($p[1]) }
+        }
+        foreach ($row in (Read-AidManifestShared -ManifestPath $PreviousManifest)) {
+            $p=$row.Split("`t"); if ($p[0] -eq 'shared.skills.file' -and $p.Count -ge 3) {
+                foreach ($mirror in $previousRoots) { $oldHashes[(Join-Path $Target (Join-Path $mirror ($p[1] -replace '/', [System.IO.Path]::DirectorySeparatorChar)))] = $p[2] }
+            }
+        }
+        foreach ($tool in (Read-ManifestTools -ManifestPath $PreviousManifest)) {
+            foreach ($row in (Read-AidManifestToolFiles -ManifestPath $PreviousManifest -Tool $tool)) {
+                $p = $row.Split("`t")
+                if ($p.Count -ge 3 -and $p[0] -eq "tools.$tool.file") { $oldHashes[(Join-Path $Target ($p[1] -replace '/', [System.IO.Path]::DirectorySeparatorChar))] = $p[2] }
             }
         }
     }
-
-    # -----------------------------------------------------------------------
-    # Helper: Invoke-PruneAidSubtree <aidRootAbs>
-    # Walk the aid/ subtree; apply rule (c) and prune empty subdirs (d).
-    # <aidRootAbs> is absolute (e.g. C:\repo\.claude\aid).
-    # -----------------------------------------------------------------------
-    $pruneAidSubtree = {
-        param([string]$ADir)
-        if (-not (Test-Path $ADir -PathType Container)) { return }
-
-        # Rule (c): remove files not in manifest.
-        $files = @(Get-ChildItem -LiteralPath $ADir -Recurse -File -ErrorAction SilentlyContinue)
-        foreach ($f in $files) {
-            $fRel = $f.FullName.Substring($Target.Length).TrimStart([char]'\', [char]'/') -replace '\\', '/'
-            if (-not $ManifestPathSet.Contains($fRel)) {
-                Remove-Item -LiteralPath $f.FullName -Force
-                $script:_PruneRemoved++
-                if ($AidVerbose) { Write-Host "Pruned: $($f.FullName)" }
-            }
-        }
-
-        # Rule (d): prune now-empty subdirs (deepest first, skip the root itself).
-        $subdirs = @(Get-ChildItem -LiteralPath $ADir -Recurse -Directory -ErrorAction SilentlyContinue)
-        # Sort deepest first (longest path first by ordinal).
-        # Guard: pipeline over an empty @() returns $null on PowerShell; [System.Array]::Sort($null)
-        # throws "Value cannot be null" (reproduces on pwsh when the dir has no subdirectories,
-        # e.g. cursor/antigravity idempotent re-run after retired roots are already gone).
-        if ($subdirs.Count -gt 0) {
-            $subdirPaths = [string[]]($subdirs | ForEach-Object { $_.FullName })
-            [System.Array]::Sort($subdirPaths, [System.StringComparer]::Ordinal)
-            [System.Array]::Reverse($subdirPaths)
-            foreach ($dp in $subdirPaths) {
-                if (Test-Path $dp -PathType Container) {
-                    $rem = @(Get-ChildItem -LiteralPath $dp -ErrorAction SilentlyContinue) | Select-Object -First 1
-                    if (-not $rem) {
-                        Remove-Item -LiteralPath $dp -Force
-                        if ($AidVerbose) { Write-Host "Pruned dir: $dp" }
-                    }
-                }
-            }
+    $sharedRows = @(Read-AidManifestShared -ManifestPath $manifest)
+    foreach ($row in $sharedRows) { $p=$row.Split("`t"); if ($p[0] -eq 'shared.mirror' -and $p.Count -ge 2) { [void]$roots.Add($p[1]) } }
+    foreach ($row in $sharedRows) {
+        $p=$row.Split("`t")
+        if ($p[0] -eq 'shared.skills.file' -and $p.Count -ge 2) {
+            $rel=$p[1] -replace '/', [System.IO.Path]::DirectorySeparatorChar
+            [void]$wanted.Add((Join-Path $Target (Join-Path '.agents/skills' $rel)))
+            foreach ($mirror in $roots) { [void]$wanted.Add((Join-Path $Target (Join-Path $mirror $rel))) }
+        } elseif ($p[0] -eq 'shared.runtime.file' -and $p.Count -ge 2) {
+            [void]$wanted.Add((Join-Path $Target (Join-Path '.aid/runtime' ($p[1] -replace '/', [System.IO.Path]::DirectorySeparatorChar))))
         }
     }
-
-    # -----------------------------------------------------------------------
-    # Per-tool scoping: which native dirs + which aid/ root to walk.
-    # NOTE: Do NOT use the Uninstall-AidTool $aidDirs map (~line 1314) here --
-    #       that map points copilot-cli at the .github ROOT (forbidden by R1).
-    #       Scope is the R1-compliant set: .github/{agents,skills,aid} only.
-    # -----------------------------------------------------------------------
-    # Per-tool scoping: new layout (work-005/delivery-001).
-    # Codex unified under .codex/; cursor and antigravity no longer ship rules/.
-    switch ($Tool) {
-        'claude-code' {
-            & $pruneNativeDir (Join-Path $Target '.claude\agents')
-            & $pruneNativeDir (Join-Path $Target '.claude\skills')
-            & $pruneAidSubtree (Join-Path $Target '.claude\aid')
-        }
-        'codex' {
-            # New unified layout: everything under .codex/ (agents, skills, aid).
-            & $pruneNativeDir (Join-Path $Target '.codex\agents')
-            & $pruneNativeDir (Join-Path $Target '.codex\skills')
-            & $pruneAidSubtree (Join-Path $Target '.codex\aid')
-        }
-        'cursor' {
-            # rules/ dir removed from new layout; agents/skills/aid remain.
-            & $pruneNativeDir (Join-Path $Target '.cursor\agents')
-            & $pruneNativeDir (Join-Path $Target '.cursor\skills')
-            & $pruneAidSubtree (Join-Path $Target '.cursor\aid')
-        }
-        'copilot-cli' {
-            # R1: scope to .github/{agents,skills,aid} ONLY -- never .github root.
-            & $pruneNativeDir (Join-Path $Target '.github\agents')
-            & $pruneNativeDir (Join-Path $Target '.github\skills')
-            & $pruneAidSubtree (Join-Path $Target '.github\aid')
-        }
-        'antigravity' {
-            # rules/ dir removed from new layout; agents/skills/aid remain.
-            & $pruneNativeDir (Join-Path $Target '.agent\agents')
-            & $pruneNativeDir (Join-Path $Target '.agent\skills')
-            & $pruneAidSubtree (Join-Path $Target '.agent\aid')
+    $scanRoots = @('.agents/skills', '.aid/runtime') + @($roots)
+    foreach ($tool in (Read-ManifestTools -ManifestPath $manifest)) {
+        $scanRoots += (script:Get-RootDir -Tool $tool) + '/agents'
+        foreach ($row in (Read-AidManifestToolFiles -ManifestPath $manifest -Tool $tool)) {
+            $p=$row.Split("`t"); if ($p.Count -ge 3 -and $p[0] -eq "tools.$tool.file") { [void]$wanted.Add((Join-Path $Target ($p[1] -replace '/', [System.IO.Path]::DirectorySeparatorChar))) }
         }
     }
-
-    if ($script:_PruneRemoved -gt 0) {
-        if (-not $AidVerbose) { Write-Host "  $($script:_PruneRemoved) stale AID file(s) pruned" }
+    $candidates = New-Object 'System.Collections.Generic.List[string]'
+    foreach ($root in $scanRoots | Select-Object -Unique) {
+        $abs=Join-Path $Target ($root -replace '/', [System.IO.Path]::DirectorySeparatorChar)
+        if (-not (Test-Path -LiteralPath $abs -PathType Container)) { continue }
+        foreach ($f in (Get-ChildItem -LiteralPath $abs -Recurse -File -ErrorAction SilentlyContinue)) {
+            if ($root -eq '.aid/runtime' -and $f.FullName -match '[/\\]node_modules[/\\]') { continue }
+            $rel=$f.FullName.Substring($abs.Length).TrimStart([char]'\',[char]'/')
+            $first=$rel.Split([char[]]@('/', '\'))[0]
+            if ($root -eq '.aid/runtime' -or $first -like 'aid-*') { $candidates.Add($f.FullName) }
+        }
+    }
+    foreach ($path in $candidates) {
+        if ($wanted.Contains($path)) { continue }
+        $hash=Get-Sha256File -FilePath $path
+        if ($oldHashes.ContainsKey($path) -and $oldHashes[$path] -eq $hash) { Remove-Item -LiteralPath $path -Force }
+        else { Move-AidToTrash -Root $Target -File $path }
+    }
+    foreach ($root in $scanRoots | Select-Object -Unique) {
+        $abs=Join-Path $Target ($root -replace '/', [System.IO.Path]::DirectorySeparatorChar)
+        if (-not (Test-Path -LiteralPath $abs -PathType Container)) { continue }
+        $dirs=@(Get-ChildItem -LiteralPath $abs -Recurse -Directory | Sort-Object { $_.FullName.Length } -Descending)
+        foreach ($d in $dirs) {
+            $rel=$d.FullName.Substring($abs.Length).TrimStart([char]'\',[char]'/')
+            if ($root -eq '.aid/runtime') { if ($d.FullName -match '[/\\]node_modules(?:[/\\]|$)') { continue } }
+            else { $first=$rel.Split([char[]]@('/', '\'))[0]; if ($first -notlike 'aid-*') { continue } }
+            if (-not (Get-ChildItem -LiteralPath $d.FullName -Force | Select-Object -First 1)) { Remove-Item -LiteralPath $d.FullName -Force -ErrorAction SilentlyContinue }
+        }
     }
 }
 
@@ -1887,7 +1800,7 @@ function Invoke-PruneToolDirs {
 #
 # Complete-replacement migration: removes AID-owned content from the static
 # list of retired AID roots that no longer exist in the new bundle layout.
-# Called from Install-AidTool BEFORE Invoke-PruneToolDirs (same aid update pass).
+# Called from Install-AidTool as part of the retired-layout migration sweep.
 #
 # Retired roots swept per tool:
 #   codex:       .agents\                     (split layout retired)
@@ -2023,6 +1936,13 @@ $script:_AidGiEnd   = "# <<< AID managed <<<"
 # Get-AidGitignoreBlock - return the AID-managed block as a single LF-joined
 # string (markers inclusive), NO trailing newline (matches bash contract).
 function script:Get-AidGitignoreBlock {
+    param([string]$Target = (Get-Location).Path)
+    $worktree = '.aid/.worktrees'
+    $manifest = Join-Path $Target '.aid/.aid-manifest.json'
+    if (Test-Path -LiteralPath $manifest -PathType Leaf) {
+        $hostRows = @(Read-AidManifestHost -ManifestPath $manifest)
+        foreach ($row in $hostRows) { $p=$row.Split("`t"); if ($p.Count -ge 2 -and $p[0] -eq 'host.worktree_root') { $worktree=$p[1]; break } }
+    }
     $lines = @(
         $script:_AidGiBegin,
         ".aid/.temp/",
@@ -2031,9 +1951,61 @@ function script:Get-AidGitignoreBlock {
         ".aid/.control/",
         ".aid/generated/",
         ".aid/knowledge/.cache/",
-        $script:_AidGiEnd
+        ".aid/.worktrees/",
+        ".aid/runtime/**/node_modules/"
     )
+    if (-not $worktree.StartsWith('.aid/', [System.StringComparison]::Ordinal)) { $lines += ($worktree.TrimEnd('/') + '/') }
+    $lines += $script:_AidGiEnd
     return ($lines -join "`n")
+}
+
+function script:Write-AidHostConf {
+    param([string]$Target, [string]$WorktreeRoot = '.aid/.worktrees')
+    $path = Join-Path $Target '.aid/runtime/host.conf'
+    $dir = [System.IO.Path]::GetDirectoryName($path)
+    if (-not (Test-Path -LiteralPath $dir -PathType Container)) { New-Item -ItemType Directory -Path $dir -Force | Out-Null }
+    [System.IO.File]::WriteAllText($path, "worktree_root=$WorktreeRoot`n", [System.Text.Encoding]::ASCII)
+}
+
+$script:_AidGaBegin = $script:_AidGiBegin
+$script:_AidGaEnd = $script:_AidGiEnd
+function script:Get-AidGitattributesBlock {
+    return (@($script:_AidGaBegin, '.agents/skills/aid-*/** text eol=lf', '.claude/skills/aid-*/** text eol=lf', '.aid/runtime/** text eol=lf', $script:_AidGaEnd) -join "`n")
+}
+
+function script:Update-AidGitattributes {
+    param([string]$Target)
+    $path = Join-Path $Target '.gitattributes'
+    $block = [System.Text.Encoding]::ASCII.GetBytes((script:Get-AidGitattributesBlock) + "`n")
+    $old = if (Test-Path -LiteralPath $path -PathType Leaf) { [System.IO.File]::ReadAllBytes($path) } else { [byte[]]@() }
+    $begin = [System.Text.Encoding]::ASCII.GetBytes($script:_AidGaBegin)
+    $end = [System.Text.Encoding]::ASCII.GetBytes($script:_AidGaEnd)
+    $startAt = -1; $endAt = -1
+    for ($i=0; $i -le $old.Length-$begin.Length; $i++) {
+        $same=$true; for ($j=0; $j -lt $begin.Length; $j++) { if ($old[$i+$j] -ne $begin[$j]) { $same=$false; break } }
+        if ($same -and ($i -eq 0 -or $old[$i-1] -eq 10 -or $old[$i-1] -eq 13)) { $startAt=$i; break }
+    }
+    if ($startAt -ge 0) {
+        for ($i=$startAt; $i -le $old.Length-$end.Length; $i++) {
+            $same=$true; for ($j=0; $j -lt $end.Length; $j++) { if ($old[$i+$j] -ne $end[$j]) { $same=$false; break } }
+            if ($same) { $endAt=$i+$end.Length; break }
+        }
+        if ($endAt -ge 0 -and $endAt -lt $old.Length -and $old[$endAt] -eq 13) { $endAt++; if ($endAt -lt $old.Length -and $old[$endAt] -eq 10) { $endAt++ } }
+        elseif ($endAt -ge 0 -and $endAt -lt $old.Length -and $old[$endAt] -eq 10) { $endAt++ }
+    }
+    if ($startAt -ge 0 -and $endAt -ge 0) {
+        $new = New-Object byte[] ($startAt + $block.Length + $old.Length - $endAt)
+        [Array]::Copy($old,0,$new,0,$startAt); [Array]::Copy($block,0,$new,$startAt,$block.Length); [Array]::Copy($old,$endAt,$new,$startAt+$block.Length,$old.Length-$endAt)
+    } else {
+        $sep = [System.Collections.Generic.List[byte]]::new()
+        if ($old.Length -gt 0 -and $old[$old.Length-1] -ne 10 -and $old[$old.Length-1] -ne 13) { $sep.Add(10) }
+        if ($old.Length -gt 0 -and ($old.Length -lt 2 -or $old[$old.Length-2] -ne 10)) { $sep.Add(10) }
+        $new = New-Object byte[] ($old.Length + $sep.Count + $block.Length)
+        [Array]::Copy($old,0,$new,0,$old.Length); if ($sep.Count -gt 0) { [Array]::Copy($sep.ToArray(),0,$new,$old.Length,$sep.Count) }; [Array]::Copy($block,0,$new,$old.Length+$sep.Count,$block.Length)
+    }
+    $sameBytes = ($old.Length -eq $new.Length)
+    if ($sameBytes) { for ($i=0; $i -lt $old.Length; $i++) { if ($old[$i] -ne $new[$i]) { $sameBytes=$false; break } } }
+    if (-not $sameBytes) { [System.IO.File]::WriteAllBytes($path,$new) }
 }
 
 # Initialize-AidSettingsFile <target> <tool>
@@ -2047,7 +2019,7 @@ function script:Initialize-AidSettingsFile {
     if (-not $root) { return }
     $aidDir = Join-Path $Target '.aid'
     $dst  = Join-Path $aidDir 'settings.yml'
-    $tmpl = Join-Path (Join-Path (Join-Path (Join-Path $Target $root) 'aid') 'templates') 'settings.yml'
+    $tmpl = Join-Path $Target '.aid/runtime/templates/settings.yml'
     if (Test-Path $dst -PathType Leaf) { return }          # never clobber user config
     # Template absent -> surface it (work-007 C5): a silent skip re-triggers the
     # "no settings.yml" class and the format gate would then warn forever.
@@ -2082,7 +2054,7 @@ function script:Update-AidGitignore {
     param([string]$Target)
     $script:_GitignoreAction = 'unchanged'
     $gi = Join-Path $Target '.gitignore'
-    $block = script:Get-AidGitignoreBlock
+    $block = script:Get-AidGitignoreBlock -Target $Target
 
     if (-not (Test-Path $gi -PathType Leaf)) {
         [System.IO.File]::WriteAllText($gi, $block + "`n", [System.Text.UTF8Encoding]::new($false))
@@ -2337,16 +2309,11 @@ function Install-AidTool {
     # prints the "re-run to heal" message); this function returns 0 (WARN-not-fail).
     Invoke-MigrateRetiredLayout -Target $Target -Tool $Tool -AidVerbose $AidVerbose
 
-    # Prune stale AID-owned files (Pillar 2, R7).
-    # Build a HashSet from the new manifest path set for O(1) lookup.
-    $pruneSet = [System.Collections.Generic.HashSet[string]]::new([System.StringComparer]::Ordinal)
-    foreach ($p in $installPaths) { $pruneSet.Add($p) | Out-Null }
-    Invoke-PruneToolDirs -Target $Target -Tool $Tool -ManifestPathSet $pruneSet -AidVerbose $AidVerbose
-
     # Project-level provisioning (work-007): seed required settings.yml and
     # maintain the .gitignore AID region. Both idempotent; safe per-tool.
     script:Initialize-AidSettingsFile -Target $Target -Tool $Tool
     script:Update-AidGitignore -Target $Target
+    script:Update-AidGitattributes -Target $Target
     script:Invoke-MigrateTermExclusions -Target $Target
 
     # Print concise install summary (always shown; per-file lines only when AidVerbose).
@@ -2442,6 +2409,9 @@ function Install-AidShared {
         if ($Phase -eq 'payload') { return }
     }
     $region=$script:_AidAgentsPointerRegion
+    $worktree=(@($allTools | Where-Object { $toolMeta[$_].worktree }) | Select-Object -First 1)
+    if ($worktree) { $hostWorktree=[string]$toolMeta[$worktree].worktree } else { $hostWorktree='.aid/.worktrees' }
+    script:Write-AidHostConf -Target $Target -WorktreeRoot $hostWorktree
     if ($inline) {
         $rulesText=[System.IO.File]::ReadAllText((Join-Path $Target '.aid/runtime/rules.md'),[System.Text.Encoding]::UTF8)
         $region="<!-- AID:BEGIN -->`n<!-- Managed by the AID CLI. Do not edit between the AID markers. -->`n$rulesText<!-- AID:END -->`n"
@@ -2460,9 +2430,7 @@ function Install-AidShared {
     $model=Join-Path $Target ('.manifest-model.'+[System.IO.Path]::GetRandomFileName())
     $records=New-Object System.Collections.Generic.List[string]
     $records.Add("aid_version`t$Version"); $records.Add("installed_at`t$(if ($old -and $old.installed_at) { $old.installed_at } else { (Get-Date).ToUniversalTime().ToString('yyyy-MM-ddTHH:mm:ssZ') })")
-    $worktree=(@($allTools | Where-Object { $toolMeta[$_].worktree }) | Select-Object -First 1)
-    if ($worktree) { $records.Add("host.worktree_root`t$($toolMeta[$worktree].worktree)") }
-    else { $records.Add("host.worktree_root`t.aid/.worktrees") }
+    $records.Add("host.worktree_root`t$hostWorktree")
     $sharedRoots = @(
         @{ Name='skills'; Root='.agents/skills' },
         @{ Name='runtime'; Root='.aid/runtime' }
@@ -2475,6 +2443,7 @@ function Install-AidShared {
             if ($name -eq 'skills' -and -not $rel.StartsWith('aid-',[System.StringComparison]::Ordinal)) { continue }
             $records.Add("shared.$name.file`t$rel`t$(Get-Sha256File -FilePath $f.FullName)")
         }
+        if ($name -eq 'runtime') { $records.Add("shared.runtime.file`thost.conf`t$(Get-Sha256File -FilePath (Join-Path $Target '.aid/runtime/host.conf'))") }
     }
     $records.Add("shared.agents_md.path`tAGENTS.md"); $records.Add("shared.agents_md.version`t$Version"); $records.Add("shared.agents_md.users`t$($allTools -join ',')"); $records.Add("shared.agents_md.region_sha256`t$regionSha"); $records.Add("shared.agents_md.file_sha256`t$agentsSha")
     foreach ($mirror in @($mirrorUsers.Keys | Sort-Object)) { $users=@($script:AID_TOOLS | Where-Object { $mirrorUsers[$mirror] -contains $_ }); $records.Add("shared.mirror`t$mirror`t$Version`t$($users -join ',')") }
@@ -2501,7 +2470,18 @@ function Install-AidShared {
         }
     }
     [System.IO.File]::WriteAllLines($model,$records.ToArray(),[System.Text.Encoding]::ASCII)
+    $previousManifest = Join-Path $Target ('.aid/.manifest-before-prune.' + [System.IO.Path]::GetRandomFileName())
+    if ($Phase -eq 'finalize' -and (Test-Path -LiteralPath $manifest -PathType Leaf)) { Copy-Item -LiteralPath $manifest -Destination $previousManifest -Force }
     try { Write-AidManifestV3 -ManifestPath $manifest -ModelPath $model } finally { Remove-Item -LiteralPath $model -Force -ErrorAction SilentlyContinue }
+    if ($Phase -eq 'finalize') {
+        try {
+            Invoke-PruneShared -Target $Target -PreviousManifest $previousManifest
+            script:Initialize-AidSettingsFile -Target $Target -Tool $NewTools[0]
+            script:Update-AidGitignore -Target $Target
+            script:Update-AidGitattributes -Target $Target
+            script:Invoke-MigrateTermExclusions -Target $Target
+        } finally { Remove-Item -LiteralPath $previousManifest -Force -ErrorAction SilentlyContinue }
+    }
     if ($Phase -eq 'all') {
         $total=$script:_CopyCountCopied+$script:_CopyCountUpToDate+$script:_CopyCountUpdated+$script:_CopyCountSkipped
         if ($total -gt 0) { if ($script:_CopyCountUpToDate -eq $total) { Write-Host "  up to date ($total files)" } else { Write-Host "  $($script:_CopyCountCopied) copied, $($script:_CopyCountUpdated) updated, $($script:_CopyCountUpToDate) unchanged" } }
@@ -2916,5 +2896,5 @@ Export-ModuleMember -Function @(
     'Get-AidStatusBody',
     'Get-AidStatus',
     'Invoke-AidProvisionSharedStateHome',
-    'Invoke-PruneToolDirs'
+    'Invoke-PruneShared'
 )

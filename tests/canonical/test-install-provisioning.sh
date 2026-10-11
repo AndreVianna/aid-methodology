@@ -65,23 +65,23 @@ assert_eq "$_COPY_COUNT_UPDATED" "0" "CP3b identical dst not rewritten"
 
 # helper: build a fake installed tree with the settings template present
 mk_target_with_template() {
-    local t="$1" root="$2"
-    mkdir -p "${t}/${root}/aid/templates"
-    printf 'project:\n  name: <project-name>\n' > "${t}/${root}/aid/templates/settings.yml"
+    local t="$1"
+    mkdir -p "${t}/.aid/runtime/templates"
+    printf 'project:\n  name: <project-name>\n' > "${t}/.aid/runtime/templates/settings.yml"
 }
 
 # SE1 — missing settings.yml → seeded from template
-t=$(newdir); mk_target_with_template "$t" ".claude"
+t=$(newdir); mk_target_with_template "$t"
 _CORE_SEEDED_SETTINGS=0
 seed_settings_yml "$t" "claude-code"
 assert_file_exists "${t}/.aid/settings.yml" "SE1 settings.yml seeded when missing"
 assert_eq "$_CORE_SEEDED_SETTINGS" "1" "SE1b seeded flag set"
 assert_file_contains "${t}/.aid/settings.yml" "<project-name>" "SE1c seeded from template"
 assert_file_contains "${t}/.aid/settings.yml" "format_version:" "SE1d format_version stamped (format gate)"
-assert_eq "$(head -1 "${t}/.aid/settings.yml")" "format_version: 4" "SE1e format_version is the first line"
+assert_eq "$(head -1 "${t}/.aid/settings.yml")" "format_version: 5" "SE1e format_version is the first line"
 
 # SE2 — existing settings.yml → NEVER overwritten
-t=$(newdir); mk_target_with_template "$t" ".claude"
+t=$(newdir); mk_target_with_template "$t"
 mkdir -p "${t}/.aid"; printf 'project:\n  name: MyRealProject\n' > "${t}/.aid/settings.yml"
 _CORE_SEEDED_SETTINGS=0
 seed_settings_yml "$t" "claude-code"
@@ -90,7 +90,7 @@ assert_file_not_contains "${t}/.aid/settings.yml" "<project-name>" "SE2b templat
 assert_eq "$_CORE_SEEDED_SETTINGS" "0" "SE2c seeded flag NOT set (no-op)"
 
 # SE3 — no template present → no-op, no crash
-t=$(newdir); mkdir -p "${t}/.cursor/aid/templates"   # dir but no settings.yml
+t=$(newdir); mkdir -p "${t}/.aid/runtime/templates"   # dir but no settings.yml
 _CORE_SEEDED_SETTINGS=0
 seed_settings_yml "$t" "cursor"
 assert_eq "$([[ -f "${t}/.aid/settings.yml" ]] && echo yes || echo no)" "no" "SE3 no seed when template absent"
@@ -109,7 +109,10 @@ assert_eq "$_CORE_GITIGNORE_ACTION" "created" "GI1b action=created"
 assert_file_contains "${t}/.gitignore" ".aid/.temp/" "GI1c has .aid/.temp/"
 assert_file_contains "${t}/.gitignore" ".aid/.trash/" "GI1d has .aid/.trash/"
 assert_file_contains "${t}/.gitignore" ".aid/knowledge/.cache/" "GI1e has knowledge/.cache/"
-assert_file_contains "${t}/.gitignore" "AID managed" "GI1f has region markers"
+assert_file_contains "${t}/.gitignore" ".aid/.worktrees/" "GI1f has shared worktree root"
+assert_file_contains "${t}/.gitignore" ".aid/runtime/**/node_modules/" "GI1g has runtime-local exclusion"
+assert_eq "$(grep -Fx '.aid/runtime/' "${t}/.gitignore" || true)" "" "GI1h does not ignore the whole runtime"
+assert_file_contains "${t}/.gitignore" "AID managed" "GI1i has region markers"
 
 # GI2 — second run → idempotent (unchanged, byte-identical)
 cp "${t}/.gitignore" "${TMP}/gi-snapshot"
@@ -118,6 +121,24 @@ update_gitignore "$t"
 assert_eq "$_CORE_GITIGNORE_ACTION" "unchanged" "GI2 second run action=unchanged"
 assert_eq "$(cmp -s "${t}/.gitignore" "${TMP}/gi-snapshot" && echo same || echo diff)" \
     "same" "GI2b .gitignore byte-identical on re-run (idempotent)"
+
+# GA1 — managed attributes block preserves the user's bytes and is idempotent.
+t=$(newdir)
+printf '# user attributes\n*.dat binary\n' > "${t}/.gitattributes"
+update_gitattributes "$t"
+assert_file_contains "${t}/.gitattributes" "*.dat binary" "GA1 user attributes preserved"
+assert_file_contains "${t}/.gitattributes" ".agents/skills/aid-*/** text eol=lf" "GA1 AID skills use LF"
+assert_file_contains "${t}/.gitattributes" ".claude/skills/aid-*/** text eol=lf" "GA1 Claude mirror uses LF"
+assert_file_contains "${t}/.gitattributes" ".aid/runtime/** text eol=lf" "GA1 runtime uses LF"
+cp "${t}/.gitattributes" "${TMP}/ga-snapshot"
+update_gitattributes "$t"
+assert_eq "$(cmp -s "${t}/.gitattributes" "${TMP}/ga-snapshot" && echo same || echo diff)" \
+    "same" "GA2 second update preserves the file hash"
+
+# GA3 — absent file is created with only the managed region.
+t=$(newdir)
+update_gitattributes "$t"
+assert_eq "$(grep -vc '^#' "${t}/.gitattributes")" "3" "GA3 new file contains three attribute rules"
 
 # GI3 — existing user .gitignore → user content preserved, region appended
 t=$(newdir)
