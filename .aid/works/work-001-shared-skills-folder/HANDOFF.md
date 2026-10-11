@@ -6,11 +6,11 @@ maintainer approved execution. Current phase `Execute`, lifecycle `Running`.
 
 ## Current execution checkpoint
 
-Waves1-5 verified; task008 Done. Task009 In Progress for sequential Luna execution: shared skills/mirrors/runtime and per-tool agents placement, pointer/import regions and format3manifest commit order. 10/32Done; wave6 Sol quick verification follows taskcommit; PSruntime deferred.
+Task009 committed f1dd5ac29: shared payload placement, agents-only tool installs and atomic format3 manifest. Five fresh Bash tools, Cursor-to-Claude refcounts/import/user bytes, non-AID preservation, drift trash/repair, CRLF canonical region hash, inline rules and preserved metadata pass; primitives93, ASCII29, syntax/diff pass. In Review for Sol wave6; PowerShell runtime parity deferred.
 
 - Done (10/32): task-001, task-002, task-003, task-004, task-005, task-006, task-007, task-008, task-011, task-016.
-- In Progress: task-009.
-- In Review: none.
+- In Progress: none.
+- In Review: task-009.
 - Failed/Blocked: none.
 - Pending: task-010, task-012, task-013, task-014, task-015, task-017, task-018, task-019, task-020, task-021, task-022, task-023, task-024, task-025, task-026, task-027, task-028, task-029, task-030, task-031, task-032.
 - Current wave: 6 of 15. Derive authoritative waves from task dependency headers.
