@@ -118,7 +118,7 @@ phase: Execute
 # [W] aid-{skill} | none
 active_skill: aid-execute
 # [W]
-updated: '2026-10-11T07:21:34Z'
+updated: '2026-10-11T07:24:28Z'
 # [W] set only when lifecycle = Paused-Awaiting-Input
 pause_reason: --
 # [W] set only when lifecycle = Blocked
@@ -650,6 +650,11 @@ lifecycle_history:
     grade: --
     notes: '/aid-execute Codex'
 
+  - date: '2026-10-11'
+    event: 'Wave7 Sol found two MEDIUM Pending: canonical aid-* strays are incorrectly marked wanted and survive pruning; Bash/PS ignore block ordering differs for external worktree roots. Real offline Cursor-to-Claude-to-Codex fixture confirms stray defect; host/hash, runtime/mirror stray trash, three node_modules locations, non-AID skills, CRLF attributes and idempotence pass. Task010 In Progress for first Luna correction; task012 pending.'
+    grade: --
+    notes: '/aid-execute Codex'
+
 deploy: []
 
 # [A] flattened only; single writer: this work's active branch. Written by
@@ -815,7 +820,7 @@ tasks_lifecycle:
         outcome: 'Task009 Luna correction e43e8416b committed: PowerShell Claude import path and fallback host metadata now use interpolated TSV tabs; adjacent new records inspected with no remaining single-quoted tab escapes. ASCII29 and diff pass. In Review for independent Sol wave6 recheck; PS runtime deferred.'
 
   task-010:
-    state: 'In Review'
+    state: 'In Progress'
     review: --
     elapsed: --
     notes: --
