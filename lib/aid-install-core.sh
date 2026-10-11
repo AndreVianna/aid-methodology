@@ -354,7 +354,11 @@ validate_release_descriptor() {
     local root
     root="$(_root_dir "$tool")"
     local -A counts=()
+    local descriptor_lines=""
     [[ -f "$file" ]] || { echo "ERROR: aid: descriptor $(basename "$file") missing required descriptor" >&2; return 1; }
+    if ! descriptor_lines="$(read_kv_conf "$file")"; then
+        return 1
+    fi
     while IFS= read -r line; do
         key="${line%%=*}"; value="${line#*=}"
         counts["$key"]=$(( ${counts["$key"]:-0} + 1 ))
@@ -375,11 +379,11 @@ validate_release_descriptor() {
             rules_inline)
                 [[ "$kind" == tool && "$value" == "true" ]] || { echo "ERROR: aid: $(basename "$file"): rules_inline must be true" >&2; return 1; } ;;
         esac
-    done < <(read_kv_conf "$file")
-    if [[ "$kind" == shared ]] && ! grep -q '^aid_version=' "$file"; then
+    done <<< "$descriptor_lines"
+    if [[ "$kind" == shared && -z "${counts[aid_version]:-}" ]]; then
         echo "ERROR: aid: $(basename "$file"): missing aid_version" >&2; return 1
     fi
-    if [[ "$kind" == tool ]] && ! grep -q '^tool=' "$file"; then
+    if [[ "$kind" == tool && -z "${counts[tool]:-}" ]]; then
         echo "ERROR: aid: $(basename "$file"): missing tool" >&2; return 1
     fi
 }
