@@ -3,7 +3,7 @@
 # The AID version + installed tools are recorded in the manifest
 # (.aid/.aid-manifest.json), not here.
 
-format_version: 4                  # schema stamp — machine-written, do not hand-edit.
+format_version: 5                  # schema stamp — machine-written, do not hand-edit.
                                    # `aid` reads it to decide whether this file
                                    # needs migrating to a newer layout.
 

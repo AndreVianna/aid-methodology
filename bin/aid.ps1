@@ -161,7 +161,9 @@ function script:Test-AidIsProjectDir {
 # deliveries/*/STATE.md and deliveries/*/tasks/*/STATE.md) is rewritten in place
 # and the .md deleted. Performed by the STATE.md -> STATE.yml FORMAT-4
 # CONVERSION step in _aid_migrate_repo (task-008 / SPEC.md SS L-6 step 2).
-Set-Variable -Name AidSupportedFormat -Value 4 -Option Constant -Scope Script
+Set-Variable -Name AidSupportedFormat -Value 5 -Option Constant -Scope Script
+
+# format 5 (was 4): shared skills under .agents/skills (+ CLI-owned mirrors), runtime under .aid/runtime/, one AGENTS.md pointer region for every tool, a CLAUDE.md @AGENTS.md import region while claude-code is installed; manifest format_version 3.
 
 # ---------------------------------------------------------------------------
 # Import the shared install core from AID_CODE_HOME\lib\.
@@ -1622,6 +1624,112 @@ function script:Invoke-AidFormatGate {
     return 0
 }
 
+function script:Test-AidV3LegacyEvidence {
+    param([string]$Repo)
+    $manifestPath = Join-Path $Repo (Join-Path '.aid' '.aid-manifest.json')
+    $manifest = $null
+    $format = 0
+    if (Test-Path $manifestPath -PathType Leaf) {
+        try { $manifest = Get-Content -LiteralPath $manifestPath -Raw | ConvertFrom-Json } catch { $manifest = $null }
+        if ($manifest -and $manifest.PSObject.Properties['format_version']) { $format = [int]$manifest.format_version }
+        $tools = if ($manifest -and $manifest.PSObject.Properties['tools']) { @($manifest.tools.PSObject.Properties) } else { @() }
+        if ($format -le 2 -and $tools.Count -gt 0) { return $true }
+    }
+    foreach ($rootName in @('.claude', '.codex', '.cursor', '.github', '.agent')) {
+        if (Test-Path (Join-Path $Repo (Join-Path $rootName 'aid')) -PathType Container) { return $true }
+        if ($rootName -eq '.codex' -and (Test-Path (Join-Path $Repo '.agents/aid') -PathType Container)) { return $true }
+        $skillsDir = Join-Path $Repo (Join-Path $rootName 'skills')
+        if (Test-Path $skillsDir -PathType Container) {
+            $skillDirs = @(Get-ChildItem -LiteralPath $skillsDir -Directory -Filter 'aid-*' -ErrorAction SilentlyContinue)
+            if ($skillDirs.Count -gt 0) {
+                $mirrorValid = $false
+                if ($rootName -eq '.claude' -and $format -eq 3 -and $manifest -and $manifest.PSObject.Properties['shared']) {
+                    $mirrors = $manifest.shared.PSObject.Properties['mirrors']
+                    if ($mirrors -and $mirrors.Value.PSObject.Properties['.claude/skills']) {
+                        $mirrorEntry = $mirrors.Value.PSObject.Properties['.claude/skills'].Value
+                        $users = if ($mirrorEntry.PSObject.Properties['users']) { @($mirrorEntry.users) } else { @() }
+                        $mirrorValid = ($users -contains 'claude-code')
+                    }
+                }
+                if (-not $mirrorValid) { return $true }
+            }
+        }
+    }
+    return $false
+}
+
+function script:Test-AidManifestFormatGate {
+    param([string]$Repo)
+    $manifestPath = Join-Path $Repo (Join-Path '.aid' '.aid-manifest.json')
+    if (-not (Test-Path $manifestPath -PathType Leaf)) { return $true }
+    try { $manifest = Get-Content -LiteralPath $manifestPath -Raw | ConvertFrom-Json } catch { return $true }
+    if ($manifest.PSObject.Properties['format_version'] -and [int]$manifest.format_version -gt 3) {
+        [Console]::Error.WriteLine("ERROR: aid: manifest format $($manifest.format_version) is newer than this CLI supports. Run: aid update self")
+        return $false
+    }
+    return $true
+}
+
+function script:Test-AidLayoutGate {
+    param([string]$Repo)
+    $aidDir = Join-Path $Repo '.aid'
+    $manifestPath = Join-Path $aidDir '.aid-manifest.json'
+    $settingsPath = Join-Path $aidDir 'settings.yml'
+    $manifest = $null
+    if (Test-Path $manifestPath -PathType Leaf) {
+        try { $manifest = Get-Content -LiteralPath $manifestPath -Raw | ConvertFrom-Json } catch { $manifest = $null }
+    }
+    $tools = if ($manifest -and $manifest.PSObject.Properties['tools']) { @($manifest.tools.PSObject.Properties) } else { @() }
+    $manifestFormat = if ($manifest -and $manifest.PSObject.Properties['format_version']) { [int]$manifest.format_version } else { 0 }
+    $refuse = (Test-Path (Join-Path $aidDir '.temp/v3-upgrade-tools.json'))
+    if ($tools.Count -gt 0 -and $manifestFormat -lt 3) { $refuse = $true }
+    if ($tools.Count -gt 0 -and (Test-Path $settingsPath -PathType Leaf) -and (script:Get-AidRepoFormat -Repo $Repo) -lt 5) { $refuse = $true }
+    if (script:Test-AidV3LegacyEvidence -Repo $Repo) { $refuse = $true }
+    if ($refuse) {
+        [Console]::Error.WriteLine('This project uses the v3 AID layout. Run: aid update (it upgrades every installed tool), then retry aid add.')
+        return $false
+    }
+    return $true
+}
+
+function script:Get-AidMigrationStamp {
+    param([string]$Repo)
+    $aidDir = Join-Path $Repo '.aid'
+    $manifestPath = Join-Path $aidDir '.aid-manifest.json'
+    if (Test-Path $manifestPath -PathType Leaf) {
+        try { $manifest = Get-Content -LiteralPath $manifestPath -Raw | ConvertFrom-Json } catch { $manifest = $null }
+        $tools = if ($manifest -and $manifest.PSObject.Properties['tools']) { @($manifest.tools.PSObject.Properties) } else { @() }
+        if (($manifest -and $manifest.PSObject.Properties['format_version'] -and [int]$manifest.format_version -eq 3) -or ($tools.Count -eq 0 -and -not (script:Test-AidV3LegacyEvidence -Repo $Repo))) { return 5 }
+        return 4
+    }
+    if ((Test-Path (Join-Path $aidDir '.temp/v3-upgrade-tools.json')) -or (script:Test-AidV3LegacyEvidence -Repo $Repo)) { return 4 }
+    return 5
+}
+
+function script:Test-AidManifestVersionSkew {
+    param([string]$ManifestPath)
+    if (-not (Test-Path $ManifestPath -PathType Leaf)) { return $false }
+    try { $manifest = Get-Content -LiteralPath $ManifestPath -Raw | ConvertFrom-Json } catch { return $false }
+    $projectVersion = if ($manifest.PSObject.Properties['aid_version']) { [string]$manifest.aid_version } else { '' }
+    if (-not $projectVersion) { return $false }
+    $toolEntries = if ($manifest.PSObject.Properties['tools']) { @($manifest.tools.PSObject.Properties) } else { @() }
+    foreach ($tool in $toolEntries) {
+        if ($tool.Value.PSObject.Properties['version'] -and [string]$tool.Value.version -and [string]$tool.Value.version -ne $projectVersion) { return $true }
+    }
+    if ($manifest.PSObject.Properties['shared']) {
+        foreach ($entry in @('skills', 'runtime', 'agents_md', 'claude_md')) {
+            $sharedEntry = $manifest.shared.PSObject.Properties[$entry]
+            if ($sharedEntry -and $sharedEntry.Value.PSObject.Properties['version'] -and [string]$sharedEntry.Value.version -and [string]$sharedEntry.Value.version -ne $projectVersion) { return $true }
+        }
+        if ($manifest.shared.PSObject.Properties['mirrors']) {
+            foreach ($mirror in $manifest.shared.mirrors.PSObject.Properties) {
+                if ($mirror.Value.PSObject.Properties['version'] -and [string]$mirror.Value.version -and [string]$mirror.Value.version -ne $projectVersion) { return $true }
+            }
+        }
+    }
+    return $false
+}
+
 # ---------------------------------------------------------------------------
 # Registry helpers (DR-1 / FF-1 / FR29 -- PS twin of Bash registry_register /
 # registry_unregister).  Implements DM-1 schema, DD-3 Move-Item -Force atomic
@@ -1999,7 +2107,7 @@ function script:Invoke-AidScaffoldBareProject {
         $now = [System.DateTime]::UtcNow.ToString('yyyy-MM-ddTHH:mm:ssZ')
         $mlines = [System.Collections.Generic.List[string]]::new()
         [void]$mlines.Add('{')
-        [void]$mlines.Add('  "format_version": 2,')
+        [void]$mlines.Add('  "format_version": 3,')
         if ($ver) { [void]$mlines.Add("  `"aid_version`": `"$ver`",") }
         [void]$mlines.Add("  `"installed_at`": `"$now`",")
         [void]$mlines.Add('  "tools": {}')
@@ -3219,6 +3327,7 @@ if ($SUBCMD -eq 'status') {
     }
     # C-table register-on-encounter (best-effort, never blocks status).
     script:Invoke-AidCwdClassify -Target $statusTarget
+    if (-not (script:Test-AidManifestFormatGate -Repo $statusTarget)) { script:Exit-Aid 2 }
     # C6': format gate for status target (only when target is a real project).
     $gateRc = script:Invoke-AidFormatGate -Repo $statusTarget
     if ($gateRc -ne 0) { script:Exit-Aid $gateRc }
@@ -3238,6 +3347,7 @@ if ($SUBCMD -eq 'status') {
 # ---------------------------------------------------------------------------
 function script:Invoke-AidMigrateRepo {
     param([string]$Repo)
+    $migrationStamp = script:Get-AidMigrationStamp -Repo $Repo
 
     # ------------------------------------------------------------------
     # STEP 0 -- DETECT / QUALIFY (DD-6 / SEC-1) -- read-only.
@@ -3273,13 +3383,13 @@ function script:Invoke-AidMigrateRepo {
     # ------------------------------------------------------------------
     if ($era -eq 'a') {
         try {
-            script:Invoke-AidRepairSettingsEraA -SettingsFile $settingsPath -RepoName $repoName
+            script:Invoke-AidRepairSettingsEraA -SettingsFile $settingsPath -RepoName $repoName -FormatVersion $migrationStamp
         } catch {
             [Console]::Error.WriteLine("WARN: aid migrate: settings repair failed for ${settingsPath}: $_")
         }
     } else {
         try {
-            script:Invoke-AidSynthesizeSettingsEraB -SettingsFile $settingsPath -RepoName $repoName -ManifestPath $manifest
+            script:Invoke-AidSynthesizeSettingsEraB -SettingsFile $settingsPath -RepoName $repoName -ManifestPath $manifest -FormatVersion $migrationStamp
         } catch {
             [Console]::Error.WriteLine("WARN: aid migrate: settings synthesis failed for ${settingsPath}: $_")
         }
@@ -4296,7 +4406,7 @@ function script:Sc-ConvertRepo {
 # write entirely when the rebuilt content equals the original (re-normalized
 # to LF) content.
 function script:Invoke-AidRepairSettingsEraA {
-    param([string]$SettingsFile, [string]$RepoName)
+    param([string]$SettingsFile, [string]$RepoName, [int]$FormatVersion = 5)
     if (-not (Test-Path $SettingsFile -PathType Leaf)) { throw "settings file not found" }
 
     $lines = [System.Collections.Generic.List[string]](Get-Content -LiteralPath $SettingsFile -Encoding utf8 -ErrorAction Stop)
@@ -4500,7 +4610,7 @@ function script:Invoke-AidRepairSettingsEraA {
     # original (re-normalized) content.
     # ------------------------------------------------------------------
     $out = [System.Collections.Generic.List[string]]::new()
-    [void]$out.Add("format_version: $($script:AidSupportedFormat)")
+    [void]$out.Add("format_version: $FormatVersion")
     [void]$out.Add("name: ${name}")
     if ([string]::IsNullOrEmpty($description)) {
         [void]$out.Add('description: ""')
@@ -4550,13 +4660,13 @@ function script:Invoke-AidRepairSettingsEraA {
 # only in the manifest -- never written into settings) but is otherwise
 # unused here. Crash-safe: same-directory temp + Move-Item -Force.
 function script:Invoke-AidSynthesizeSettingsEraB {
-    param([string]$SettingsFile, [string]$RepoName, [string]$ManifestPath)
+    param([string]$SettingsFile, [string]$RepoName, [string]$ManifestPath, [int]$FormatVersion = 5)
 
     $repoDir = Split-Path (Split-Path $SettingsFile -Parent) -Parent
     $sourceControl = if (Test-Path (Join-Path $repoDir '.git') -PathType Container) { 'git' } else { 'none' }
 
     $sb = [System.Text.StringBuilder]::new()
-    [void]$sb.Append("format_version: $($script:AidSupportedFormat)`n")
+    [void]$sb.Append("format_version: $FormatVersion`n")
     [void]$sb.Append("name: ${RepoName}`n")
     [void]$sb.Append("description: `"`"`n")
     [void]$sb.Append("type: brownfield`n")
@@ -5859,6 +5969,12 @@ try {
                     [Console]::Error.WriteLine("ERROR: aid: add: target directory is not writable: $_AidTarget")
                     [Console]::Error.WriteLine("ERROR: aid: add: AID will not create a root-owned .aid/ -- fix folder permissions and retry.")
                     script:Exit-Aid 1
+                }
+                if (-not (script:Test-AidManifestFormatGate -Repo $_AidTarget)) { script:Exit-Aid 2 }
+                if (-not (script:Test-AidLayoutGate -Repo $_AidTarget)) { script:Exit-Aid 2 }
+                if (script:Test-AidManifestVersionSkew -ManifestPath $_AidManifest) {
+                    [Console]::Error.WriteLine('ERROR: aid add: project manifest contains version skew. Run: aid update before adding tools.')
+                    script:Exit-Aid 2
                 }
             }
 

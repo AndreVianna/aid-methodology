@@ -108,7 +108,7 @@ _aid_is_project_dir() {
 # NOTE (work-007 C6): the install-time settings seed also stamps this value.
 # On a bump, update ALL carriers together: this line, bin/aid.ps1
 # AidSupportedFormat, and lib/AidInstallCore.psm1 $script:_AidSupportedFormat.
-# (lib/aid-install-core.sh reads THIS var via ${AID_SUPPORTED_FORMAT:-4}.)
+# (lib/aid-install-core.sh reads THIS var via ${AID_SUPPORTED_FORMAT:-5}.)
 # ---------------------------------------------------------------------------
 # format 2 (was 1): eliminated the per-repo .aid/dashboard/ folder -- home.html is now
 # served from the CLI, and kb.html moved to .aid/knowledge/kb.html (aid migrate relocates).
@@ -120,7 +120,8 @@ _aid_is_project_dir() {
 # deliveries/*/STATE.md and deliveries/*/tasks/*/STATE.md) is rewritten in place
 # and the .md deleted. Performed by the STATE.md -> STATE.yml FORMAT-4
 # CONVERSION step in _aid_migrate_repo (task-008 / SPEC.md SS L-6 step 2).
-readonly AID_SUPPORTED_FORMAT=4
+# format 5 (was 4): shared skills under .agents/skills (+ CLI-owned mirrors), runtime under .aid/runtime/, one AGENTS.md pointer region for every tool, a CLAUDE.md @AGENTS.md import region while claude-code is installed; manifest format_version 3.
+readonly AID_SUPPORTED_FORMAT=5
 
 # ---------------------------------------------------------------------------
 # Source the shared install core from AID_CODE_HOME/lib/.
@@ -2069,6 +2070,118 @@ _aid_format_gate() {
     return 0
 }
 
+# _aid_v3_legacy_evidence <repo> - FR-11's path and manifest evidence predicate.
+_aid_v3_legacy_evidence() {
+    local _repo="$1" _manifest="${1}/.aid/.aid-manifest.json" _fmt _tool _mirror_ok=0 _line _record
+    if [[ -f "$_manifest" ]]; then
+        _fmt="$(manifest_format "$_manifest")"
+        if [[ "$_fmt" =~ ^[0-9]+$ ]] && [[ "$_fmt" -le 2 ]] \
+          && [[ -n "$(manifest_list_tools "$_manifest" | head -1)" ]]; then
+            return 0
+        fi
+    fi
+    for _line in .claude .codex .cursor .github .agent; do
+        [[ -d "${_repo}/${_line}/aid" ]] && return 0
+        if [[ "$_line" == ".codex" && -d "${_repo}/.agents/aid" ]]; then return 0; fi
+        if [[ -d "${_repo}/${_line}/skills" ]]; then
+            while IFS= read -r _tool; do
+                [[ -n "$_tool" ]] || continue
+                _mirror_ok=0
+                if [[ "$_line" == ".claude" && -f "$_manifest" && "${_fmt:-}" == 3 ]]; then
+                    while IFS= read -r _record; do
+                        if [[ "$_record" == $'shared.mirror\t.claude/skills\t'* && "$_record" == *$'\tclaude-code'* ]]; then
+                            _mirror_ok=1
+                            break
+                        fi
+                    done < <(manifest_read_shared "$_manifest")
+                fi
+                [[ "$_mirror_ok" -eq 1 ]] || return 0
+            done < <(find "${_repo}/${_line}/skills" -mindepth 1 -maxdepth 1 -type d -name 'aid-*' -print 2>/dev/null)
+        fi
+    done
+    return 1
+}
+
+# _aid_manifest_format_gate <repo> - refuse manifest formats newer than this CLI.
+_aid_manifest_format_gate() {
+    local _manifest="${1}/.aid/.aid-manifest.json" _fmt
+    [[ -f "$_manifest" ]] || return 0
+    _fmt="$(manifest_format "$_manifest")"
+    if [[ "$_fmt" =~ ^[0-9]+$ ]] && [[ "$_fmt" -gt 3 ]]; then
+        printf 'ERROR: aid: manifest format %s is newer than this CLI supports. Run: aid update self\n' "$_fmt" >&2
+        return 2
+    fi
+    return 0
+}
+
+# _aid_layout_gate <repo> - fail before writes when an installed v3 layout remains.
+_aid_layout_gate() {
+    local _repo="$1" _manifest="${1}/.aid/.aid-manifest.json" _settings="${1}/.aid/settings.yml"
+    local _fmt="" _has_tools=0 _stamp
+    if [[ -f "$_manifest" ]]; then
+        _fmt="$(manifest_format "$_manifest")"
+        [[ -n "$(manifest_list_tools "$_manifest" | head -1)" ]] && _has_tools=1
+    fi
+    if [[ -e "${_repo}/.aid/.temp/v3-upgrade-tools.json" ]] \
+      || { [[ "$_has_tools" -eq 1 ]] && [[ "$_fmt" =~ ^[0-9]+$ ]] && [[ "$_fmt" -lt 3 ]]; } \
+      || { [[ "$_has_tools" -eq 1 ]] && [[ -f "$_settings" ]] && _stamp="$(_aid_repo_format "$_repo")" && [[ "$_stamp" -lt 5 ]]; } \
+      || _aid_v3_legacy_evidence "$_repo"; then
+        printf 'This project uses the v3 AID layout. Run: aid update (it upgrades every installed tool), then retry aid add.\n' >&2
+        return 2
+    fi
+    return 0
+}
+
+# _aid_migration_stamp <repo> - preserve legacy/recovery stamp 4; otherwise 5.
+_aid_migration_stamp() {
+    local _repo="$1" _manifest="${1}/.aid/.aid-manifest.json" _fmt _has_tools=0
+    if [[ -f "$_manifest" ]]; then
+        _fmt="$(manifest_format "$_manifest")"
+        [[ -n "$(manifest_list_tools "$_manifest" | head -1)" ]] && _has_tools=1
+        if [[ "$_fmt" == 3 ]] || { [[ "$_has_tools" -eq 0 ]] && ! _aid_v3_legacy_evidence "$_repo"; }; then
+            printf '5\n'
+            return 0
+        fi
+        printf '4\n'
+        return 0
+    fi
+    if [[ -e "${_repo}/.aid/.temp/v3-upgrade-tools.json" ]] || _aid_v3_legacy_evidence "$_repo"; then
+        printf '4\n'
+    else
+        printf '5\n'
+    fi
+}
+
+# _aid_manifest_version_skew <manifest> - true when any recorded version differs.
+_aid_manifest_version_skew() {
+    local _manifest="$1" _project _tool _version
+    [[ -f "$_manifest" ]] || return 1
+    if command -v python3 >/dev/null 2>&1; then
+        _project="$(python3 - "$_manifest" <<'PY'
+import json, sys
+try:
+    with open(sys.argv[1], encoding="utf-8") as fh:
+        print(json.load(fh).get("aid_version", ""))
+except Exception:
+    pass
+PY
+)"
+    else
+        _project="$(sed -n 's/^[[:space:]]*"aid_version"[[:space:]]*:[[:space:]]*"\([^"]*\)".*/\1/p' "$_manifest" | head -1)"
+    fi
+    [[ -n "$_project" ]] || return 1
+    while IFS= read -r _tool; do
+        [[ -n "$_tool" ]] || continue
+        _version="$(manifest_read_tool_version "$_manifest" "$_tool")"
+        [[ -z "$_version" || "$_version" == "$_project" ]] || return 0
+    done < <(manifest_list_tools "$_manifest")
+    while IFS=$'\t' read -r _key _value _shared_version _users; do
+        if [[ "$_key" == shared.*.version && -n "$_value" && "$_value" != "$_project" ]]; then return 0; fi
+        if [[ "$_key" == shared.mirror && -n "$_shared_version" && "$_shared_version" != "$_project" ]]; then return 0; fi
+    done < <(manifest_read_shared "$_manifest")
+    return 1
+}
+
 # ---------------------------------------------------------------------------
 # _aid_migrate_repo <repo>  (FF-1 / LC-MIG / task-077)
 # Per-repo migration core.  Runs
@@ -2080,6 +2193,7 @@ _aid_format_gate() {
 # ---------------------------------------------------------------------------
 _aid_migrate_repo() {
     local repo="$1"
+    local _migration_stamp; _migration_stamp="$(_aid_migration_stamp "$repo")"
 
     # ------------------------------------------------------------------
     # STEP 0 -- DETECT / QUALIFY (DD-6 / SEC-1) -- read-only, no write.
@@ -2119,11 +2233,11 @@ _aid_migrate_repo() {
         # Era-a: validate and targeted-repair REQUIRED keys only.
         # Preserves every present kb_baseline.* line and <skill>.minimum_grade
         # line byte-intact (IDIOM-A single-line replace / IDIOM-B append-block).
-        _aid_migrate_repair_settings_era_a "${_settings}" "${_repo_name}" || \
+        _aid_migrate_repair_settings_era_a "${_settings}" "${_repo_name}" "${_migration_stamp}" || \
             echo "WARN: aid migrate: settings repair failed for ${repo}/.aid/settings.yml (continuing)" >&2
     else
         # Era-b: synthesize a fresh settings.yml from the template defaults.
-        _aid_migrate_synthesize_settings_era_b "${_settings}" "${_repo_name}" "${_manifest}" || \
+        _aid_migrate_synthesize_settings_era_b "${_settings}" "${_repo_name}" "${_manifest}" "${_migration_stamp}" || \
             echo "WARN: aid migrate: settings synthesis failed for ${repo}/.aid/settings.yml (continuing)" >&2
     fi
 
@@ -3480,7 +3594,7 @@ _aid_sc_convert_repo() {
 # single pass. Crash-safe: same-directory temp + mv -f; skips the write
 # entirely when the rebuilt content is byte-identical to the original.
 _aid_migrate_repair_settings_era_a() {
-    local _sf="$1" _rname="$2"
+    local _sf="$1" _rname="$2" _format="${3:-${AID_SUPPORTED_FORMAT}}"
     [[ -f "${_sf}" ]] || return 1
 
     # Read file into an array (preserves byte content per line).
@@ -3734,7 +3848,7 @@ _aid_migrate_repair_settings_era_a() {
     # original file content (idempotent: no change -> no write).
     # ------------------------------------------------------------------
     local -a _out=()
-    _out+=("format_version: ${AID_SUPPORTED_FORMAT}")
+    _out+=("format_version: ${_format}")
     _out+=("name: ${_name}")
     if [[ -z "${_description}" ]]; then
         _out+=('description: ""')
@@ -3789,7 +3903,7 @@ _aid_migrate_repair_settings_era_a() {
 # only in the manifest -- never written into settings) but is otherwise
 # unused here. Crash-safe: same-directory temp + mv -f.
 _aid_migrate_synthesize_settings_era_b() {
-    local _sf="$1" _rname="$2" _manifest="$3"
+    local _sf="$1" _rname="$2" _manifest="$3" _format="${4:-${AID_SUPPORTED_FORMAT}}"
 
     local _repo_dir; _repo_dir="$(dirname "$(dirname "${_sf}")")"
     local _source_control="none"
@@ -3799,7 +3913,7 @@ _aid_migrate_synthesize_settings_era_b() {
     _tmp="$(mktemp "${_sf}.aid-tmp.XXXXXX")" || return 1
 
     {
-        printf 'format_version: %s\n' "${AID_SUPPORTED_FORMAT}"
+        printf 'format_version: %s\n' "${_format}"
         printf 'name: %s\n' "${_rname}"
         printf 'description: ""\n'
         printf 'type: brownfield\n'
@@ -4067,7 +4181,7 @@ _aid_scaffold_bare_project() {
     local _canon="$1"
     local _name _fmt _ver _sc _now
     _name="$(basename "$_canon")"
-    _fmt="${AID_SUPPORTED_FORMAT:-4}"
+    _fmt="${AID_SUPPORTED_FORMAT:-5}"
     _ver=""
     [[ -f "${AID_CODE_HOME}/VERSION" ]] && \
         _ver="$(tr -d '[:space:]' < "${AID_CODE_HOME}/VERSION" 2>/dev/null)"
@@ -4101,7 +4215,7 @@ _aid_scaffold_bare_project() {
         _now="$(date -u +%Y-%m-%dT%H:%M:%SZ 2>/dev/null)"
         {
             printf '{\n'
-            printf '  "format_version": 2,\n'
+            printf '  "format_version": 3,\n'
             [[ -n "$_ver" ]] && printf '  "aid_version": "%s",\n' "$_ver"
             printf '  "installed_at": "%s",\n' "$_now"
             printf '  "tools": {}\n'
@@ -4153,7 +4267,7 @@ _cmd_projects_add() {
         # registry unit-test harness's extract range) AND the project actually
         # has a settings.yml to migrate (a bare .aid/ has nothing to migrate);
         # AID_SUPPORTED_FORMAT defaults so the harness never hits an unbound var.
-        local _sup="${AID_SUPPORTED_FORMAT:-4}"
+        local _sup="${AID_SUPPORTED_FORMAT:-5}"
         if declare -F _aid_repo_format >/dev/null 2>&1; then
             local _repo_fmt
             _repo_fmt="$(_aid_repo_format "${_canon}")"
@@ -5146,6 +5260,7 @@ if [[ "$SUBCMD" == "status" ]]; then
     fi
     # C-table register-on-encounter (best-effort, never blocks status).
     _aid_cwd_classify "${_AID_TARGET}"
+    _aid_manifest_format_gate "${_AID_TARGET}" || exit $?
     # C6: format gate for status target (only when target is a real project).
     _aid_format_gate "${_AID_TARGET}" || exit $?
     aid_status "$_AID_TARGET"
@@ -6371,6 +6486,13 @@ case "$SUBCMD" in
                 echo "ERROR: aid: add: AID will not create a root-owned .aid/ -- fix folder permissions and retry." >&2
                 rm -rf "$_AID_STAGING_BASE"
                 exit 1
+            fi
+            _aid_manifest_format_gate "${_AID_TARGET}" || { _gate_rc=$?; rm -rf "$_AID_STAGING_BASE"; exit "$_gate_rc"; }
+            _aid_layout_gate "${_AID_TARGET}" || { _gate_rc=$?; rm -rf "$_AID_STAGING_BASE"; exit "$_gate_rc"; }
+            if _aid_manifest_version_skew "$_AID_MANIFEST"; then
+                echo "ERROR: aid add: project manifest contains version skew. Run: aid update before adding tools." >&2
+                rm -rf "$_AID_STAGING_BASE"
+                exit 2
             fi
         fi
 
