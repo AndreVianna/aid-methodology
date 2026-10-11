@@ -118,7 +118,7 @@ phase: Execute
 # [W] aid-{skill} | none
 active_skill: aid-execute
 # [W]
-updated: '2026-10-11T15:45:23Z'
+updated: '2026-10-11T15:45:25Z'
 # [W] set only when lifecycle = Paused-Awaiting-Input
 pause_reason: --
 # [W] set only when lifecycle = Blocked
@@ -785,6 +785,11 @@ lifecycle_history:
     grade: --
     notes: '/aid-execute Codex'
 
+  - date: '2026-10-11'
+    event: 'Task015 committed and In Review. Task017 In Progress for sequential Luna shared-install suite: five-tool payload equality, live mutation negative control, runtime exclusions/userstate/node_modules/attributes and root/import repair/line-ending/collision fixtures.16/32 Done; task018 follows before Sol wave11 quick verification. PS runtime deferred.'
+    grade: --
+    notes: '/aid-execute Codex'
+
 deploy: []
 
 # [A] flattened only; single writer: this work's active branch. Written by
@@ -1083,7 +1088,7 @@ tasks_lifecycle:
         outcome: 'committed711ce6273; source24/scanner9 pass using GNUawk'
 
   task-017:
-    state: Pending
+    state: 'In Progress'
     review: --
     elapsed: --
     notes: --
