@@ -6,13 +6,13 @@ maintainer approved execution. Current phase `Execute`, lifecycle `Running`.
 
 ## Current execution checkpoint
 
-Execution resumed in Codex under maintainer authorization. Wave 1 is Done; task-005 is In Progress. Continue wave 2 sequentially (005, 006, 011), then Sol quick verification.
+Wave 2 in progress: task-005 committed (c1952f13b), focused checks passed (90 primitives, 43 connector, 29 ASCII), awaiting wave review. Task-006 is In Progress; task-011 follows. Rules extraction and profile removal were committed together rather than in separate commits; extraction occurred first and precedes generator wipe. Preserve pushed history.
 
 - Done (3/32): task-001, task-002, task-004.
-- In Progress: task-005.
-- In Review: none.
+- In Progress: task-006.
+- In Review: task-005.
 - Failed/Blocked: none.
-- Pending: task-003, task-006, task-007, task-008, task-009, task-010, task-011, task-012, task-013, task-014, task-015, task-016, task-017, task-018, task-019, task-020, task-021, task-022, task-023, task-024, task-025, task-026, task-027, task-028, task-029, task-030, task-031, task-032.
+- Pending: task-003, task-007, task-008, task-009, task-010, task-011, task-012, task-013, task-014, task-015, task-016, task-017, task-018, task-019, task-020, task-021, task-022, task-023, task-024, task-025, task-026, task-027, task-028, task-029, task-030, task-031, task-032.
 - Current wave: 2 of 15. Derive authoritative waves from task dependency headers.
 - Execution commits are on the delivery branch; `work-001` holds pre-execution planning.
 - Wave ledgers: `review-ledgers/execute-wave-N.md`; each preserves unresolved/Accepted findings.
