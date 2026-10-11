@@ -3090,7 +3090,77 @@ function Get-AidStatus {
     script:Invoke-RenderToolsBlock -ManifestPath $manifest -RefVersion $refVersion `
         -HeaderPrefix "Installed tools"
 
+    if ($data.format_version -eq 2) {
+        Write-Host 'Layout: format 4 (pre-shared). Run: aid update'
+        return 0
+    }
+    Get-AidDriftReport -Target $targetPath -ManifestPath $manifest
+
     return 0
+}
+
+# Get-AidDriftReport <target> <manifest> - report shared and tool-file drift without writes.
+function Get-AidDriftReport {
+    param([string]$Target, [string]$ManifestPath)
+    $data = Get-Content -LiteralPath $ManifestPath -Raw | ConvertFrom-Json
+    $expected = @{}
+    $skills = @($data.shared.skills.files)
+    foreach ($item in $skills) { if ($item.path) { $expected[('.agents/skills/' + $item.path)] = [string]$item.sha256 } }
+    foreach ($item in @($data.shared.runtime.files)) { if ($item.path) { $expected[('.aid/runtime/' + $item.path)] = [string]$item.sha256 } }
+    $mirrors = @{}
+    if ($data.shared.mirrors) { foreach ($name in $data.shared.mirrors.PSObject.Properties.Name) { $mirrors[$name] = $true } }
+    foreach ($tool in $data.tools.PSObject.Properties) {
+        foreach ($name in @($tool.Value.mirrors)) { if ($name) { $mirrors[$name] = $true } }
+        foreach ($item in @($tool.Value.files)) { if ($item.path) { $expected[[string]$item.path] = [string]$item.sha256 } }
+    }
+    foreach ($mirror in $mirrors.Keys) { foreach ($item in $skills) { if ($item.path) { $expected[($mirror + '/' + $item.path)] = [string]$item.sha256 } } }
+    $issues = New-Object 'System.Collections.Generic.List[string]'
+    foreach ($path in $expected.Keys) {
+        $full = Join-Path $Target ($path -replace '/', [IO.Path]::DirectorySeparatorChar)
+        if (-not (Test-Path -LiteralPath $full -PathType Leaf)) { $issues.Add(('missing:' + $path)); continue }
+        if ($expected[$path]) {
+            $actual = (Get-FileHash -LiteralPath $full -Algorithm SHA256).Hash.ToLowerInvariant()
+            if ($actual -ne $expected[$path].ToLowerInvariant()) { $issues.Add(('modified:' + $path)) }
+        }
+    }
+    foreach ($pair in @(@('agents_md', 'AGENTS.md'), @('claude_md', 'CLAUDE.md'))) {
+        $property = $data.shared.PSObject.Properties[$pair[0]]
+        if (-not $property) { continue }
+        $entry = $property.Value
+        if (-not $entry) { continue }
+        $full = Join-Path $Target $pair[1]
+        if (-not (Test-Path -LiteralPath $full -PathType Leaf)) { $issues.Add(('missing:' + $pair[1])); continue }
+        $text = [IO.File]::ReadAllText($full)
+        $match = [regex]::Match($text, '(?ms)^<!-- AID:BEGIN -->\r?\n.*?^<!-- AID:END -->(?:\r?\n|$)')
+        if (-not $match.Success) { $issues.Add(('missing:' + $pair[1])); continue }
+        $region = $match.Value -replace "`r`n", "`n" -replace "`r", "`n"
+        $bytes = [Text.Encoding]::UTF8.GetBytes($region)
+        $sha = [BitConverter]::ToString(([Security.Cryptography.SHA256]::Create()).ComputeHash($bytes)).Replace('-', '').ToLowerInvariant()
+        if ($sha -ne [string]$entry.region_sha256) { $issues.Add(('modified:' + $pair[1])) }
+    }
+    foreach ($base in @('.agents/skills') + @($mirrors.Keys | Sort-Object)) {
+        $folder = Join-Path $Target $base
+        if (-not (Test-Path -LiteralPath $folder -PathType Container)) { continue }
+        foreach ($dir in Get-ChildItem -LiteralPath $folder -Directory -Filter 'aid-*') {
+            foreach ($file in Get-ChildItem -LiteralPath $dir.FullName -File -Recurse) {
+                $rel = $base + '/' + $file.FullName.Substring($folder.Length + 1).Replace('\', '/')
+                if (-not $expected.ContainsKey($rel)) { $issues.Add(('extra:' + $rel)) }
+            }
+        }
+    }
+    $runtime = Join-Path $Target '.aid/runtime'
+    if (Test-Path -LiteralPath $runtime -PathType Container) {
+        foreach ($file in Get-ChildItem -LiteralPath $runtime -File -Recurse) {
+            $relLocal = $file.FullName.Substring($runtime.Length + 1).Replace('\', '/')
+            if ($relLocal -match '(^|/)node_modules(/|$)') { continue }
+            $rel = '.aid/runtime/' + $relLocal
+            if (-not $expected.ContainsKey($rel)) { $issues.Add(('extra:' + $rel)) }
+        }
+    }
+    if ($issues.Count -eq 0) { Write-Host 'Shared files: clean'; return }
+    $sorted = @($issues | Sort-Object { if ($_ -like 'modified:*') { '0' + $_.Substring(9) } elseif ($_ -like 'missing:*') { '1' + $_.Substring(8) } else { '2' + $_.Substring(6) } } -Unique)
+    foreach ($line in $sorted) { $separator = $line.IndexOf(':'); Write-Host ($line.Substring(0, $separator) + ': ' + $line.Substring($separator + 1)) }
+    Write-Host 'Run: aid update (drifted files are moved to .aid/.trash/ first)'
 }
 
 # Export only public functions (not script-scoped helpers).
@@ -3128,6 +3198,7 @@ Export-ModuleMember -Function @(
     'Get-ManifestToolList',
     'Get-AidStatusBody',
     'Get-AidStatus',
+    'Get-AidDriftReport',
     'Invoke-AidProvisionSharedStateHome',
     'Invoke-PruneShared'
 )

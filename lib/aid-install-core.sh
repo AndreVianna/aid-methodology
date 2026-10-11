@@ -2450,7 +2450,91 @@ PY
 
     _render_tools_block "$manifest" "$ref_version" "Installed tools"
 
+    local fmt
+    fmt="$(manifest_format "$manifest")"
+    if [[ "$fmt" == 2 ]]; then
+        printf 'Layout: format 4 (pre-shared). Run: aid update\n'
+        return 0
+    fi
+    drift_report "$target" "$manifest"
     return 0
+}
+
+# drift_report <target> <manifest> - report shared and tool-file drift without writes.
+drift_report() {
+    local target="$1" manifest="$2"
+    python3 - "$target" "$manifest" <<'PY'
+import hashlib, json, os, pathlib, sys
+root = pathlib.Path(sys.argv[1]); data = json.loads(pathlib.Path(sys.argv[2]).read_text())
+shared = data.get('shared', {})
+if data.get('format_version') == 2:
+    print('Layout: format 4 (pre-shared). Run: aid update'); raise SystemExit
+expected = {}
+for area, base in (('skills', '.agents/skills'), ('runtime', '.aid/runtime')):
+    for item in shared.get(area, {}).get('files', []):
+        rel = item.get('path', '')
+        if rel: expected[(base, rel)] = item.get('sha256', '')
+mirrors = set(shared.get('mirrors', {}))
+for tool in data.get('tools', {}).values():
+    mirrors.update(tool.get('mirrors', []))
+for mirror in sorted(mirrors):
+    for item in shared.get('skills', {}).get('files', []):
+        rel = item.get('path', '')
+        if rel: expected[(mirror, rel)] = item.get('sha256', '')
+for tool in data.get('tools', {}).values():
+    for item in tool.get('files', []):
+        rel = item.get('path', '')
+        if rel: expected[('', rel)] = item.get('sha256', '')
+regions = []
+for section, filename in (('agents_md', 'AGENTS.md'), ('claude_md', 'CLAUDE.md')):
+    entry = shared.get(section)
+    if not entry: continue
+    path = root / filename
+    if not path.is_file():
+        regions.append(('missing', filename, None)); continue
+    raw = path.read_bytes().replace(b'\r\n', b'\n').replace(b'\r', b'\n')
+    begin=b'<!-- AID:BEGIN -->'; end=b'<!-- AID:END -->'
+    starts=[i for i,line in enumerate(raw.splitlines(keepends=True)) if line.rstrip(b'\n') == begin]
+    lines=raw.splitlines(keepends=True); ends=[i for i,line in enumerate(lines) if line.rstrip(b'\n') == end]
+    if len(starts)!=1 or len(ends)!=1 or ends[0] < starts[0]:
+        regions.append(('missing', filename, None)); continue
+    region=b''.join(lines[starts[0]:ends[0]+1])
+    regions.append(('region', filename, (hashlib.sha256(region).hexdigest(), entry.get('region_sha256', ''))))
+paths = {}
+for (base, rel), sha in expected.items(): paths[str(root / base / rel) if base else str(root / rel)] = sha
+hashes = {}
+for name in paths:
+    try:
+        with open(name, 'rb') as stream: hashes[name] = hashlib.sha256(stream.read()).hexdigest()
+    except OSError: hashes[name] = None
+issues=[]
+for name, wanted in paths.items():
+    label=os.path.relpath(name, root)
+    if hashes[name] is None: issues.append(('missing', label))
+    elif wanted and hashes[name] != wanted: issues.append(('modified', label))
+for kind, filename, values in regions:
+    if kind == 'missing': issues.append((kind, filename))
+    elif values[0] != values[1]: issues.append(('modified', filename))
+for base in ['.agents/skills'] + sorted(mirrors):
+    folder=root/base
+    if folder.is_dir():
+        for child in folder.iterdir():
+            if child.name.startswith('aid-') and child.is_dir():
+                for p in child.rglob('*'):
+                    rel=p.relative_to(folder).as_posix()
+                    if p.is_file() and rel not in {x for b,x in expected if b == base}: issues.append(('extra', base+'/'+rel))
+folder=root/'.aid/runtime'
+if folder.is_dir():
+    for p in folder.rglob('*'):
+        if not p.is_file() or 'node_modules' in p.relative_to(folder).parts: continue
+        rel=p.relative_to(folder).as_posix()
+        if ('.aid/runtime', rel) not in expected: issues.append(('extra', '.aid/runtime/'+rel))
+if not issues: print('Shared files: clean')
+else:
+    order={'modified':0,'missing':1,'extra':2}
+    for kind,path in sorted(set(issues), key=lambda x:(order[x[0]],x[1])): print(kind+': '+path)
+    print('Run: aid update (drifted files are moved to .aid/.trash/ first)')
+PY
 }
 
 # manifest_exists <manifest> - exits 0 when manifest exists and is parseable; 6 otherwise.
