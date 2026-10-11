@@ -583,6 +583,72 @@ run_sut "$REPO_Q" "" create work-001 x
 assert_exit_zero "$_CODE" "Q5: create uses configured default root"
 assert_output_contains "$_OUT" "${REPO_Q_ABS}/.aid/.worktrees/work-001-x" "Q5: create target is under configured root"
 
+# ===========================================================================
+echo ""
+echo "=== Group R: CLI-installed host roots, ignore entries, and registered lookup ==="
+
+# Stage once and install through the real CLI so host.conf and its managed
+# .gitignore block come from the supported install path.
+source "${SCRIPT_DIR}/../lib/bundle.sh"
+R_TMP=$(mktemp -d); CLEANUP_DIRS+=("$R_TMP")
+R_BUNDLE="${R_TMP}/bundle"; R_HOME="${R_TMP}/home"; R_AID_HOME="${R_TMP}/aid-home"
+mkdir -p "$R_HOME" "$R_AID_HOME"
+aid_test_stage_bundle "$R_BUNDLE" >/dev/null || {
+    echo "ERROR: could not stage offline release bundle for Group R" >&2
+    exit 1
+}
+run_aid_r() {
+    HOME="$R_HOME" USERPROFILE="$R_HOME" AID_HOME="$R_AID_HOME" AID_NO_UPDATE_CHECK=1 \
+        bash "${REPO_ROOT}/bin/aid" "$@"
+}
+run_installed_r() {
+    local dir="$1"; shift
+    local runtime="${dir}/.aid/runtime/scripts/works/worktree-lifecycle.sh"
+    local errf; errf=$(mktemp)
+    _OUT=$(cd "$dir" && bash "$runtime" "$@" 2>"$errf"); _CODE=$?
+    _ERR=$(cat "$errf"); rm -f "$errf"
+}
+gitignore_has_aid_entry() {
+    local file="$1" entry="$2"
+    awk -v wanted="$entry" '
+        /^# >>> AID managed/ { in_block=1; next }
+        /^# <<< AID managed/{ in_block=0 }
+        in_block && $0 == wanted { found=1 }
+        END { exit !found }
+    ' "$file"
+}
+
+REPO_R_CURSOR=$(make_git_repo); CLEANUP_DIRS+=("$REPO_R_CURSOR")
+REPO_R_CURSOR_ABS="$(cd "$REPO_R_CURSOR" && pwd -P)"
+OUT=$(run_aid_r add cursor --from-bundle "$R_BUNDLE" --target "$REPO_R_CURSOR_ABS" 2>&1); RC=$?
+assert_exit_zero "$RC" "R1: CLI installs cursor-only runtime from offline bundle"
+run_installed_r "$REPO_R_CURSOR_ABS" create work-001 x
+assert_exit_zero "$_CODE" "R2: installed cursor runtime create succeeds"
+assert_output_contains "$_OUT" "${REPO_R_CURSOR_ABS}/.aid/.worktrees/work-001-x" "R2: cursor-only create path is under .aid/.worktrees"
+if gitignore_has_aid_entry "${REPO_R_CURSOR_ABS}/.gitignore" '.aid/.worktrees/'; then
+    pass "R3: cursor-only .gitignore AID block contains .aid/.worktrees/"
+else
+    fail "R3: cursor-only .gitignore AID block contains .aid/.worktrees/"
+fi
+mkdir -p "${REPO_R_CURSOR_ABS}/.claude/worktrees"
+git -C "$REPO_R_CURSOR_ABS" worktree add -q "${REPO_R_CURSOR_ABS}/.claude/worktrees/work-002-y" -b work-002 master
+run_installed_r "$REPO_R_CURSOR_ABS" locate work-002
+assert_exit_zero "$_CODE" "R4: installed cursor runtime locates the registered worktree"
+assert_eq "$_OUT" "${REPO_R_CURSOR_ABS}/.claude/worktrees/work-002-y$(printf '\tregistered')" "R4: locate returns pre-registered work-002 path with registered status"
+
+REPO_R_CLAUDE=$(make_git_repo); CLEANUP_DIRS+=("$REPO_R_CLAUDE")
+REPO_R_CLAUDE_ABS="$(cd "$REPO_R_CLAUDE" && pwd -P)"
+OUT=$(run_aid_r add claude-code --from-bundle "$R_BUNDLE" --target "$REPO_R_CLAUDE_ABS" 2>&1); RC=$?
+assert_exit_zero "$RC" "R5: CLI installs claude-code runtime from offline bundle"
+run_installed_r "$REPO_R_CLAUDE_ABS" root
+assert_exit_zero "$_CODE" "R6: installed claude-code runtime root succeeds"
+assert_eq "$_OUT" "${REPO_R_CLAUDE_ABS}/.claude/worktrees" "R6: claude-code root selects .claude/worktrees"
+if gitignore_has_aid_entry "${REPO_R_CLAUDE_ABS}/.gitignore" '.claude/worktrees/'; then
+    pass "R7: claude-code .gitignore AID block contains .claude/worktrees/"
+else
+    fail "R7: claude-code .gitignore AID block contains .claude/worktrees/"
+fi
+
 # ---------------------------------------------------------------------------
 echo ""
 test_summary
