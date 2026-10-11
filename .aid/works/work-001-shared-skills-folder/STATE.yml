@@ -118,7 +118,7 @@ phase: Execute
 # [W] aid-{skill} | none
 active_skill: aid-execute
 # [W]
-updated: '2026-10-11T06:15:29Z'
+updated: '2026-10-11T06:18:40Z'
 # [W] set only when lifecycle = Paused-Awaiting-Input
 pause_reason: --
 # [W] set only when lifecycle = Blocked
@@ -560,6 +560,11 @@ lifecycle_history:
     grade: --
     notes: '/aid-execute Codex'
 
+  - date: '2026-10-11'
+    event: 'Sol wave4 quick check: two Medium Pending findings (task016 accepts nested TOML; task007 missing removal accounting/replaced renderdrift assertion). Task007 Luna fix1 starts, task016 follows sequentially. Scanner9/9 passes using existing localGNUawk5.2.1 via .local/bin PATH; S04 baseline/toolchain issue resolved without source edit.'
+    grade: --
+    notes: '/aid-execute Codex'
+
 deploy: []
 
 # [A] flattened only; single writer: this work's active branch. Written by
@@ -662,7 +667,7 @@ tasks_lifecycle:
         outcome: 'committed ed2db382e; 2 recovery-stamp fixtures and ASCII passed'
 
   task-007:
-    state: 'In Review'
+    state: 'In Progress'
     review: --
     elapsed: --
     notes: --

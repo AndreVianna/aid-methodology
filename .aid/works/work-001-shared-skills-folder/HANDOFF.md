@@ -6,11 +6,11 @@ maintainer approved execution. Current phase `Execute`, lifecycle `Running`.
 
 ## Current execution checkpoint
 
-Wave4 implementations committed/pushed: 007 67c3360d5 (packaging51 pass), 016 656a5806a (source-invariants23 pass). Both In Review for Sol. Full scanner suite S04 fails coined-term preservation despite new scanner controls passing; baseline/ownership not yet independently verified, do not claim task016 clear. Wave5 not started.
+Wave4 review found two Medium Pending issues in execute-wave-4.md: task007 reduced/changed release-test assertions lack removal accounting; task016 inventory wrongly accepts nested TOML. Task007 In Progress for Luna fix1, task016 remains In Review then gets its own fix. Scanner S04 resolved: existing local GNU awk makes full scanner9/9 pass; explicitly prepend .local/bin to PATH. Wave5 not started.
 
 - Done (7/32): task-001, task-002, task-003, task-004, task-005, task-006, task-011.
-- In Progress: none.
-- In Review: task-007, task-016.
+- In Progress: task-007.
+- In Review: task-016.
 - Failed/Blocked: none.
 - Pending: task-008, task-009, task-010, task-012, task-013, task-014, task-015, task-017, task-018, task-019, task-020, task-021, task-022, task-023, task-024, task-025, task-026, task-027, task-028, task-029, task-030, task-031, task-032.
 - Current wave: 4 of 15. Derive authoritative waves from task dependency headers.
@@ -33,7 +33,9 @@ Wave4 implementations committed/pushed: 007 67c3360d5 (packaging51 pass), 016 65
    After task-027 use `.aid/runtime/scripts/execute/writeback-state.sh` and reload `aid-execute`.
 4. No long developer checks: coverage-parity, tests/run-all.sh, full regressions,
    render.py --self-test deferred to task-031. Focused task checks only. No chmod/mode changes.
-   Host awk is mawk; distinguish the known DBI01 issue from real byte drift. Defer pwsh checks.
+   Default awk is mawk; the cloud already has GNU awk5.2.1 via `.local/bin/awk` (untracked).
+   Prefix shell checks with `PATH="$PWD/.local/bin:$PATH"`; scanner S04 and DBI01 pass with GNU awk.
+   In a different checkout provision GNU awk4+ before checks. Defer pwsh checks.
 5. Wave quick check records an exact seven-column ledger. One Luna fix attempt, then one Sol
    fix attempt, then Failed/block dependents. Final full Sol review after all tasks, then pause/report.
 6. Read only requirement slices and relevant KB/contracts. Commit exact task files and push
