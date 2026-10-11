@@ -30,16 +30,35 @@ assert_output_contains "$GEN_OUT" "VERIFY (deterministic): PASS" "AC-1 generator
 [[ ! -e "$CLONE/profiles/claude-code/stray.txt" && ! -e "$CLONE/profiles/claude-code/stray-dir/README.md" ]] \
   && pass "AC-1 generator removes planted stray file and README" \
   || fail "AC-1 generator removes planted stray file and README"
-BAD=0
-while IFS= read -r -d '' f; do
-  rel="${f#"$CLONE/"}"
-  # profiles/<tool>.toml are generator inputs; generated trees live below
-  # profiles/<tool>/ and contain only agents plus aid-tool.conf.
-  case "$rel" in profiles/*.toml) ;; profiles/*/agents/*|profiles/*/aid-tool.conf) ;; *) BAD=1; [[ "$VERBOSE" -eq 1 ]] && echo "unexpected: $rel";; esac
-done < <(find "$CLONE/profiles" -type f -print0)
-[[ $BAD -eq 0 ]] && pass "AC-1 regenerated profiles contain only agents and aid-tool.conf" || fail "AC-1 regenerated profiles contain only agents and aid-tool.conf"
+profile_inventory_ok() {
+  local profiles="$1" bad=0 current_bad f rel
+  while IFS= read -r -d '' f; do
+    rel="${f#"$profiles/"}"
+    current_bad=0
+    # Only top-level profiles/<tool>.toml files are generator inputs. Generated
+    # per-tool trees may contain agents and aid-tool.conf only.
+    case "$rel" in
+      */agents/*|*/aid-tool.conf) ;;
+      *.toml) [[ "$rel" == */* ]] && current_bad=1 ;;
+      *) current_bad=1 ;;
+    esac
+    [[ $current_bad -eq 0 ]] || bad=1
+    [[ $current_bad -eq 0 || "$VERBOSE" -ne 1 ]] || echo "unexpected: $rel"
+  done < <(find "$profiles" -type f -print0)
+  [[ $bad -eq 0 ]]
+}
+profile_inventory_ok "$CLONE/profiles" \
+  && pass "AC-1 regenerated profiles contain only agents and aid-tool.conf" \
+  || fail "AC-1 regenerated profiles contain only agents and aid-tool.conf"
 if find "$CLONE/profiles" -type f -name '*.jsonl' -print -quit | grep -q .; then fail "AC-1 regenerated profiles contain no .jsonl manifest"; else pass "AC-1 regenerated profiles contain no .jsonl manifest"; fi
 if find "$CLONE/profiles" -type d \( -name skills -o -name aid \) -print -quit | grep -q .; then fail "AC-1 profiles have no skills or aid directories"; else pass "AC-1 profiles have no skills or aid directories"; fi
+# Negative control: a nested TOML is a stray generated file, not an input.
+echo nested > "$CLONE/profiles/claude-code/stray.toml"
+if profile_inventory_ok "$CLONE/profiles"; then
+  fail "negative control AC-1 detects nested stray TOML"
+else
+  pass "negative control AC-1 detects nested stray TOML"
+fi
 
 # AC-4: execute the five documented checks, recording each independently.
 ac4_check() { local name="$1" pattern="$2" root="${3:-$REPO/canonical/skills}" count; count="$(grep -rlE "$pattern" "$root" 2>/dev/null | wc -l | tr -d ' ')"; assert_eq "$count" 0 "$name"; }
