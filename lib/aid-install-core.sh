@@ -467,6 +467,154 @@ copy_dir() {
 }
 
 # ---------------------------------------------------------------------------
+# Descriptor reader (aid-payload.conf, aid-tool.conf, host.conf)
+# ---------------------------------------------------------------------------
+
+# read_kv_conf <file>
+# Prints one "key=value" line per descriptor entry, in file order. A repeated key
+# is a list (one line per occurrence). Split at the FIRST '='; '#' lines, blank
+# lines and lines without '=' are ignored. Keys are not interpreted, and the file
+# is never sourced or evaluated.
+# Exit 1, naming the file, on a non-ASCII byte, a CR, or an unreadable file.
+read_kv_conf() {
+    local f="$1" line key
+    if [[ ! -r "$f" ]]; then
+        echo "ERROR: aid-install-core: descriptor not readable: ${f}" >&2
+        return 1
+    fi
+    if LC_ALL=C tr -d '\000-\177' < "$f" | LC_ALL=C grep -q . || LC_ALL=C grep -q $'\r' "$f"; then
+        echo "ERROR: aid-install-core: descriptor must be ASCII with LF line endings only: ${f}" >&2
+        return 1
+    fi
+    while IFS= read -r line || [[ -n "$line" ]]; do
+        [[ -z "$line" || "$line" == \#* ]] && continue
+        [[ "$line" == *=* ]] || continue
+        key="${line%%=*}"
+        [[ -z "$key" ]] && continue
+        printf '%s\n' "$line"
+    done < "$f"
+    return 0
+}
+
+# ---------------------------------------------------------------------------
+# .aid/.trash/ moves and guarded copy (FR-9)
+# ---------------------------------------------------------------------------
+
+# _aid_utc_stamp - print the current UTC time as yyyyMMddTHHmmssZ.
+_aid_utc_stamp() { date -u +%Y%m%dT%H%M%SZ; }
+
+# trash_file <root> <file> [<utc-stamp>]
+# Moves <file> (which must sit under <root>) to <root>/.aid/.trash/<relative path>.
+# Collision policy (REQUIREMENTS.md section 11, Feature 001, Data Model):
+#   - destination absent                  -> move the file there;
+#   - destination holds identical bytes   -> no new copy; the source is removed;
+#   - destination holds different bytes   -> rename it to <dest>.<stamp>, or to the
+#     first unused <dest>.<stamp>.N (N = 1, 2, ...), then move the source into place.
+#     No occupied candidate is ever overwritten.
+# <utc-stamp> defaults to the current UTC time; an explicit stamp freezes the clock.
+# Rotation happens before the source is touched, so a failed rotation loses nothing.
+# Exit 1 (source untouched) when <file> is outside <root> or a step fails.
+trash_file() {
+    local root="${1%/}" src="$2" stamp="${3:-}"
+    local rel dest cand n
+    if [[ -z "$stamp" ]]; then stamp="$(_aid_utc_stamp)"; fi
+    case "$src" in
+        "$root"/*) rel="${src#"$root"/}" ;;
+        *)
+            echo "ERROR: aid-install-core: trash source is outside the project root: ${src}" >&2
+            return 1 ;;
+    esac
+    if [[ ! -f "$src" ]]; then
+        echo "ERROR: aid-install-core: trash source is not a regular file: ${src}" >&2
+        return 1
+    fi
+    dest="${root}/.aid/.trash/${rel}"
+    if ! mkdir -p "$(dirname "$dest")"; then
+        echo "ERROR: aid-install-core: cannot create trash directory for: ${dest}" >&2
+        return 1
+    fi
+    if [[ -d "$dest" ]]; then
+        echo "ERROR: aid-install-core: trash destination is a directory: ${dest}" >&2
+        return 1
+    fi
+    if [[ -e "$dest" || -L "$dest" ]]; then
+        if cmp -s "$src" "$dest"; then
+            rm -f "$src" || return 1
+            return 0
+        fi
+        cand="${dest}.${stamp}"
+        n=0
+        while [[ -e "$cand" || -L "$cand" ]]; do
+            n=$((n + 1))
+            cand="${dest}.${stamp}.${n}"
+        done
+        if ! mv "$dest" "$cand"; then
+            echo "ERROR: aid-install-core: could not rotate trash entry ${dest}; source kept: ${src}" >&2
+            return 1
+        fi
+    fi
+    if ! mv "$src" "$dest"; then
+        echo "ERROR: aid-install-core: could not move ${src} to ${dest}" >&2
+        return 1
+    fi
+    return 0
+}
+
+# copy_file_guarded <src> <dst> [<recorded-sha256>] [<root>]
+# Shared-placement copy with drift protection (FR-9). Reports the copy_file counters.
+#   destination absent                     -> copy                       (copied)
+#   destination bytes identical to <src>   -> leave                      (up to date)
+#   differing, destination not drifted     -> overwrite, no trash entry  (updated)
+#   differing, destination drifted         -> trash_file <dst>, then copy (updated)
+# The destination is DRIFTED when its sha256 differs from <recorded-sha256>; when no
+# sha256 is recorded (empty), it is drifted because its bytes differ from <src>.
+# <dst> must sit under <root> (default: $PWD) for the trash entry to be placed.
+# A failed trash leaves the destination in place and counts as a failure.
+copy_file_guarded() {
+    local src="$1" dst="$2" recorded="${3:-}" root="${4:-$PWD}"
+    local drifted=0 dst_sha
+    mkdir -p "$(dirname "$dst")"
+
+    if [[ ! -e "$dst" ]]; then
+        if ! cp "$src" "$dst"; then
+            echo "ERROR: aid-install-core: copy failed: ${dst}" >&2
+            _COPY_COUNT_FAILED=$((_COPY_COUNT_FAILED + 1))
+            return 0
+        fi
+        _COPY_COUNT_COPIED=$((_COPY_COUNT_COPIED + 1))
+        [[ "${AID_VERBOSE:-0}" -eq 1 ]] && echo "Copied: ${dst}"
+        return 0
+    fi
+
+    if cmp -s "$src" "$dst"; then
+        _COPY_COUNT_UPTODATE=$((_COPY_COUNT_UPTODATE + 1))
+        [[ "${AID_VERBOSE:-0}" -eq 1 ]] && echo "Up to date: ${dst}"
+        return 0
+    fi
+
+    dst_sha="$(sha256_file "$dst" 2>/dev/null)"
+    if [[ -z "$recorded" || "$dst_sha" != "$recorded" ]]; then
+        drifted=1
+    fi
+    if [[ "$drifted" -eq 1 ]]; then
+        if ! trash_file "$root" "$dst"; then
+            echo "ERROR: aid-install-core: drifted file left in place, not overwritten: ${dst}" >&2
+            _COPY_COUNT_FAILED=$((_COPY_COUNT_FAILED + 1))
+            return 0
+        fi
+        [[ "${AID_VERBOSE:-0}" -eq 1 ]] && echo "Trashed: ${dst}"
+    fi
+    if ! cp "$src" "$dst"; then
+        echo "ERROR: aid-install-core: copy failed: ${dst}" >&2
+        _COPY_COUNT_FAILED=$((_COPY_COUNT_FAILED + 1))
+        return 0
+    fi
+    _COPY_COUNT_UPDATED=$((_COPY_COUNT_UPDATED + 1))
+    [[ "${AID_VERBOSE:-0}" -eq 1 ]] && echo "Updated: ${dst}"
+    return 0
+}
+
+# ---------------------------------------------------------------------------
 # Root agent file region update (Pillar 3)
 # ---------------------------------------------------------------------------
 
@@ -1424,6 +1572,647 @@ PY
 }
 
 # ---------------------------------------------------------------------------
+# Format-3 manifest (.aid/.aid-manifest.json, format_version 3)
+# ---------------------------------------------------------------------------
+#
+# Writers take a MODEL file: one record per line, TAB-separated, LF-terminated.
+#   aid_version<TAB>V
+#   installed_at<TAB>TS
+#   host.worktree_root<TAB>DIR                      (absent: .aid/.worktrees)
+#   shared.<skills|runtime|agents_md|claude_md>.<root|path|version|users|region_sha256|file_sha256><TAB>VALUE
+#       users = comma-separated tool ids, in any order
+#   shared.<skills|runtime>.file<TAB>PATH<TAB>SHA256       (repeatable)
+#   shared.mirror<TAB>DIR<TAB>VERSION<TAB>USERS            (repeatable)
+#   tools.<tool>.<version|installed_at|worktree_root|rules_inline><TAB>VALUE
+#   tools.<tool>.mirror<TAB>DIR                            (repeatable)
+#   tools.<tool>.file<TAB>PATH<TAB>SHA256                  (repeatable)
+# An entry whose users list is empty is absent. rules_inline is only "true".
+#
+# The python3 and pure-bash writers emit byte-identical JSON: 2-space indent, LF,
+# trailing LF, the key order of REQUIREMENTS.md section 11, Feature 001, Data Model,
+# files sorted by path (byte order), users and tools in AID_TOOLS order.
+#
+# Readers print the same record grammar (key<TAB>value, one record per line; record
+# order is unspecified). manifest_format prints the bare format_version value.
+
+# _aid_v3_known_tool <id> - exit 0 when <id> is in AID_TOOLS.
+_aid_v3_known_tool() {
+    local t
+    for t in "${AID_TOOLS[@]}"; do
+        [[ "$t" == "$1" ]] && return 0
+    done
+    return 1
+}
+
+# _aid_v3_users <csv> <where> - sets _AID_V3_USERS to the named tools in AID_TOOLS order.
+# Exit 1 on an unknown tool id.
+_aid_v3_users() {
+    local rest="$1" where="$2" u t
+    local -a named=()
+    _AID_V3_USERS=()
+    while [[ -n "$rest" ]]; do
+        u="${rest%%,*}"
+        if [[ "$rest" == *,* ]]; then rest="${rest#*,}"; else rest=""; fi
+        [[ -z "$u" ]] && continue
+        if ! _aid_v3_known_tool "$u"; then
+            echo "ERROR: aid-install-core: manifest model: unknown tool '${u}' in ${where}" >&2
+            return 1
+        fi
+        named+=("$u")
+    done
+    for t in "${AID_TOOLS[@]}"; do
+        for u in "${named[@]+"${named[@]}"}"; do
+            if [[ "$u" == "$t" ]]; then
+                _AID_V3_USERS+=("$t")
+                break
+            fi
+        done
+    done
+    return 0
+}
+
+# Writer helpers. Every helper that renders JSON takes an output variable name first.
+_v3_pad() { printf -v "$1" '%*s' "$2" ''; }
+
+# _v3_quote <outvar> <string> - JSON string literal (escapes backslash, quote, LF, CR, TAB).
+_v3_quote() {
+    local s="$2"
+    s="${s//\\/\\\\}"
+    s="${s//\"/\\\"}"
+    s="${s//$'\n'/\\n}"
+    s="${s//$'\r'/\\r}"
+    s="${s//$'\t'/\\t}"
+    printf -v "$1" '"%s"' "$s"
+}
+
+# _v3_join <outvar> <piece> - append <piece> to a member list, comma + LF separated.
+_v3_join() {
+    if [[ -n "${!1}" ]]; then
+        printf -v "$1" '%s,\n%s' "${!1}" "$2"
+    else
+        printf -v "$1" '%s' "$2"
+    fi
+}
+
+# _v3_member <outvar> <indent> <key> <json-value> - one "key": value member line.
+_v3_member() {
+    local __pad __kq
+    _v3_pad __pad "$2"
+    _v3_quote __kq "$3"
+    printf -v "$1" '%s%s: %s' "$__pad" "$__kq" "$4"
+}
+
+# _v3_obj <outvar> <indent> <members> - object whose members already sit at indent+2.
+_v3_obj() {
+    local __pad
+    if [[ -z "$3" ]]; then
+        printf -v "$1" '%s' '{}'
+        return 0
+    fi
+    _v3_pad __pad "$2"
+    printf -v "$1" '{\n%s\n%s}' "$3" "$__pad"
+}
+
+# _v3_strarr <outvar> <indent> <newline-separated items> - array of strings; empty -> [].
+_v3_strarr() {
+    local __pad __pad2 __line __q __body=""
+    _v3_pad __pad $(($2 + 2))
+    while IFS= read -r __line; do
+        [[ -z "$__line" ]] && continue
+        _v3_quote __q "$__line"
+        _v3_join __body "${__pad}${__q}"
+    done <<< "$3"
+    if [[ -z "$__body" ]]; then
+        printf -v "$1" '%s' '[]'
+        return 0
+    fi
+    _v3_pad __pad2 "$2"
+    printf -v "$1" '[\n%s\n%s]' "$__body" "$__pad2"
+}
+
+# _v3_filesarr <outvar> <indent> <newline-separated "path<TAB>sha256" records, sorted>
+# Array of {"path", "sha256"} objects; empty -> [].
+_v3_filesarr() {
+    local __pad __pad2 __line __p __s __qp __qs __m __om __obj __body=""
+    _v3_pad __pad $(($2 + 2))
+    while IFS= read -r __line; do
+        [[ -z "$__line" ]] && continue
+        __p="${__line%%$'\t'*}"
+        __s="${__line#*$'\t'}"
+        _v3_quote __qp "$__p"
+        _v3_quote __qs "$__s"
+        __om=""
+        _v3_member __m $(($2 + 4)) path "$__qp"
+        _v3_join __om "$__m"
+        _v3_member __m $(($2 + 4)) sha256 "$__qs"
+        _v3_join __om "$__m"
+        _v3_obj __obj $(($2 + 2)) "$__om"
+        _v3_join __body "${__pad}${__obj}"
+    done <<< "$3"
+    if [[ -z "$__body" ]]; then
+        printf -v "$1" '%s' '[]'
+        return 0
+    fi
+    _v3_pad __pad2 "$2"
+    printf -v "$1" '[\n%s\n%s]' "$__body" "$__pad2"
+}
+
+# _v3_sorted <outvar> <newline-separated records> - LC_ALL=C sorted copy, empty lines dropped.
+_v3_sorted() {
+    local __s
+    __s="$(printf '%s\n' "$2" | LC_ALL=C sort | LC_ALL=C grep -v '^$')"
+    printf -v "$1" '%s' "$__s"
+}
+
+# _manifest_write_v3_bash <manifest> <model> - pure-bash format-3 writer.
+_manifest_write_v3_bash() {
+    local manifest="$1" model="$2"
+    local -A sc=() lst=()
+    local line rest key k t e u dir ver csv pre out tmp mdir present
+    local -a f=()
+    local keys items recs sorted_recs frecs mirs paths qv m mm mval arr piece
+    local ent_members="" shared_members="" tools_members="" top="" tv sv hv hm
+
+    if [[ ! -r "$model" ]]; then
+        echo "ERROR: aid-install-core: manifest model not readable: ${model}" >&2
+        return 1
+    fi
+    while IFS= read -r line || [[ -n "$line" ]]; do
+        [[ -z "$line" ]] && continue
+        f=()
+        rest="$line"
+        while [[ "$rest" == *$'\t'* ]]; do
+            f+=("${rest%%$'\t'*}")
+            rest="${rest#*$'\t'}"
+        done
+        f+=("$rest")
+        key="${f[0]}"
+        case "$key" in
+            shared.skills.file|shared.runtime.file|tools.*.file)
+                lst[$key]+="${f[1]:-}"$'\t'"${f[2]:-}"$'\n' ;;
+            shared.mirror)
+                lst[$key]+="${f[1]:-}"$'\t'"${f[2]:-}"$'\t'"${f[3]:-}"$'\n' ;;
+            tools.*.mirror)
+                lst[$key]+="${f[1]:-}"$'\n' ;;
+            *)
+                sc[$key]="${f[1]:-}" ;;
+        esac
+    done < "$model"
+
+    for key in "${!sc[@]}" "${!lst[@]}"; do
+        case "$key" in
+            tools.*)
+                t="${key#tools.}"
+                t="${t%%.*}"
+                if ! _aid_v3_known_tool "$t"; then
+                    echo "ERROR: aid-install-core: manifest model ${model}: unknown tool '${t}'" >&2
+                    return 1
+                fi ;;
+        esac
+    done
+
+    # shared entries: skills, runtime, agents_md, claude_md (absent when no users).
+    for e in skills runtime agents_md claude_md; do
+        _aid_v3_users "${sc[shared.${e}.users]:-}" "shared.${e}" || return 1
+        [[ "${#_AID_V3_USERS[@]}" -eq 0 ]] && continue
+        case "$e" in
+            skills|runtime) keys="root version users files" ;;
+            agents_md)      keys="path version users region_sha256 file_sha256" ;;
+            claude_md)      keys="path version users region_sha256" ;;
+        esac
+        ent_members=""
+        for k in $keys; do
+            case "$k" in
+                users)
+                    printf -v items '%s\n' "${_AID_V3_USERS[@]}"
+                    _v3_strarr arr 6 "$items"
+                    _v3_member piece 6 users "$arr"
+                    _v3_join ent_members "$piece" ;;
+                files)
+                    _v3_sorted sorted_recs "${lst[shared.${e}.file]:-}"
+                    _v3_filesarr arr 6 "$sorted_recs"
+                    _v3_member piece 6 files "$arr"
+                    _v3_join ent_members "$piece" ;;
+                *)
+                    if [[ -n "${sc[shared.${e}.${k}]+set}" ]]; then
+                        _v3_quote qv "${sc[shared.${e}.${k}]}"
+                        _v3_member piece 6 "$k" "$qv"
+                        _v3_join ent_members "$piece"
+                    fi ;;
+            esac
+        done
+        _v3_obj mval 4 "$ent_members"
+        _v3_member piece 4 "$e" "$mval"
+        _v3_join shared_members "$piece"
+    done
+
+    # shared.mirrors: one object per mirror dir that has users.
+    recs="${lst[shared.mirror]:-}"
+    if [[ -n "$(printf '%s\n' "$recs" | cut -f1 | LC_ALL=C sort | uniq -d)" ]]; then
+        echo "ERROR: aid-install-core: manifest model ${model}: duplicate shared.mirror directory" >&2
+        return 1
+    fi
+    _v3_sorted sorted_recs "$recs"
+    ent_members=""
+    while IFS= read -r line; do
+        [[ -z "$line" ]] && continue
+        dir="${line%%$'\t'*}"
+        rest="${line#*$'\t'}"
+        ver="${rest%%$'\t'*}"
+        csv="${rest#*$'\t'}"
+        _aid_v3_users "$csv" "shared.mirror ${dir}" || return 1
+        [[ "${#_AID_V3_USERS[@]}" -eq 0 ]] && continue
+        printf -v items '%s\n' "${_AID_V3_USERS[@]}"
+        _v3_strarr arr 8 "$items"
+        _v3_quote qv "$ver"
+        mm=""
+        _v3_member m 8 version "$qv"
+        _v3_join mm "$m"
+        _v3_member m 8 users "$arr"
+        _v3_join mm "$m"
+        _v3_obj mval 6 "$mm"
+        _v3_member m 6 "$dir" "$mval"
+        _v3_join ent_members "$m"
+    done <<< "$sorted_recs"
+    if [[ -n "$ent_members" ]]; then
+        _v3_obj mval 4 "$ent_members"
+        _v3_member piece 4 mirrors "$mval"
+        _v3_join shared_members "$piece"
+    fi
+    _v3_obj sv 2 "$shared_members"
+
+    # tools: AID_TOOLS order; a tool is present when any of its records exists.
+    for t in "${AID_TOOLS[@]}"; do
+        pre="tools.${t}."
+        present=0
+        for key in "${!sc[@]}" "${!lst[@]}"; do
+            [[ "$key" == "$pre"* ]] && present=1
+        done
+        [[ "$present" -eq 1 ]] || continue
+        mm=""
+        _v3_quote qv "${sc[${pre}version]:-}"
+        _v3_member m 6 version "$qv"
+        _v3_join mm "$m"
+        _v3_quote qv "${sc[${pre}installed_at]:-}"
+        _v3_member m 6 installed_at "$qv"
+        _v3_join mm "$m"
+        _v3_sorted mirs "${lst[${pre}mirror]:-}"
+        _v3_strarr arr 6 "$mirs"
+        _v3_member m 6 mirrors "$arr"
+        _v3_join mm "$m"
+        if [[ -n "${sc[${pre}worktree_root]+set}" ]]; then
+            _v3_quote qv "${sc[${pre}worktree_root]}"
+            _v3_member m 6 worktree_root "$qv"
+            _v3_join mm "$m"
+        fi
+        if [[ -n "${sc[${pre}rules_inline]+set}" ]]; then
+            if [[ "${sc[${pre}rules_inline]}" != "true" ]]; then
+                echo "ERROR: aid-install-core: manifest model ${model}: rules_inline must be true (${t})" >&2
+                return 1
+            fi
+            _v3_member m 6 rules_inline true
+            _v3_join mm "$m"
+        fi
+        _v3_sorted frecs "${lst[${pre}file]:-}"
+        _v3_filesarr arr 6 "$frecs"
+        _v3_member m 6 files "$arr"
+        _v3_join mm "$m"
+        paths="$(printf '%s\n' "$frecs" | cut -f1 | LC_ALL=C grep -v '^$')"
+        _v3_strarr arr 6 "$paths"
+        _v3_member m 6 paths "$arr"
+        _v3_join mm "$m"
+        _v3_obj tv 4 "$mm"
+        _v3_member m 4 "$t" "$tv"
+        _v3_join tools_members "$m"
+    done
+    _v3_obj tv 2 "$tools_members"
+
+    _v3_member m 2 format_version 3
+    _v3_join top "$m"
+    _v3_quote qv "${sc[aid_version]:-}"
+    _v3_member m 2 aid_version "$qv"
+    _v3_join top "$m"
+    _v3_quote qv "${sc[installed_at]:-}"
+    _v3_member m 2 installed_at "$qv"
+    _v3_join top "$m"
+    _v3_quote qv "${sc[host.worktree_root]:-.aid/.worktrees}"
+    _v3_member hm 4 worktree_root "$qv"
+    _v3_obj hv 2 "$hm"
+    _v3_member m 2 host "$hv"
+    _v3_join top "$m"
+    _v3_member m 2 shared "$sv"
+    _v3_join top "$m"
+    _v3_member m 2 tools "$tv"
+    _v3_join top "$m"
+    printf -v out '{\n%s\n}\n' "$top"
+
+    mdir="$(dirname "$manifest")"
+    mkdir -p "$mdir" || return 1
+    tmp="$(mktemp "${mdir}/.manifest.tmp.XXXXXX")" || return 1
+    if ! printf '%s' "$out" > "$tmp"; then
+        rm -f "$tmp"
+        return 1
+    fi
+    if ! mv "$tmp" "$manifest"; then
+        rm -f "$tmp"
+        return 1
+    fi
+    return 0
+}
+
+# _manifest_write_v3_python <manifest> <model> - python3 format-3 writer (fast path).
+_manifest_write_v3_python() {
+    python3 - "$1" "$2" "${AID_TOOLS[@]}" <<'PY'
+import json, os, sys, tempfile
+
+manifest, model = sys.argv[1], sys.argv[2]
+tools_order = sys.argv[3:]
+
+def fail(msg):
+    sys.stderr.write("ERROR: aid-install-core: manifest model %s: %s\n" % (model, msg))
+    sys.exit(1)
+
+def users_of(csv, where):
+    names = [u for u in csv.split(",") if u != ""]
+    for u in names:
+        if u not in tools_order:
+            fail("unknown tool '%s' in %s" % (u, where))
+    return [t for t in tools_order if t in names]
+
+try:
+    with open(model, encoding="utf-8", newline="") as fh:
+        text = fh.read()
+except Exception as e:
+    fail("not readable (%s)" % e)
+
+S, L = {}, {}
+for raw in text.split("\n"):
+    if raw == "":
+        continue
+    f = raw.split("\t")
+    def fld(i):
+        return f[i] if len(f) > i else ""
+    key = f[0]
+    if key == "shared.mirror":
+        L.setdefault(key, []).append((fld(1), fld(2), fld(3)))
+    elif key.startswith("tools.") and key.endswith(".mirror"):
+        L.setdefault(key, []).append(fld(1))
+    elif key.endswith(".file") and (key.startswith("tools.") or key in ("shared.skills.file", "shared.runtime.file")):
+        L.setdefault(key, []).append((fld(1), fld(2)))
+    else:
+        S[key] = fld(1)
+
+for key in list(S.keys()) + list(L.keys()):
+    if key.startswith("tools."):
+        t = key.split(".")[1]
+        if t not in tools_order:
+            fail("unknown tool '%s'" % t)
+
+ORDER = {
+    "skills": ["root", "version", "users", "files"],
+    "runtime": ["root", "version", "users", "files"],
+    "agents_md": ["path", "version", "users", "region_sha256", "file_sha256"],
+    "claude_md": ["path", "version", "users", "region_sha256"],
+}
+shared = {}
+for e in ["skills", "runtime", "agents_md", "claude_md"]:
+    users = users_of(S.get("shared.%s.users" % e, ""), "shared.%s" % e)
+    if not users:
+        continue
+    ent = {}
+    for k in ORDER[e]:
+        if k == "users":
+            ent[k] = users
+        elif k == "files":
+            ent[k] = [{"path": p, "sha256": s} for (p, s) in sorted(L.get("shared.%s.file" % e, []))]
+        elif ("shared.%s.%s" % (e, k)) in S:
+            ent[k] = S["shared.%s.%s" % (e, k)]
+    shared[e] = ent
+
+mrecs = sorted(L.get("shared.mirror", []))
+dirs = [d for (d, v, c) in mrecs]
+if len(set(dirs)) != len(dirs):
+    fail("duplicate shared.mirror directory")
+mirrors = {}
+for (d, v, c) in mrecs:
+    us = users_of(c, "shared.mirror %s" % d)
+    if us:
+        mirrors[d] = {"version": v, "users": us}
+if mirrors:
+    shared["mirrors"] = mirrors
+
+tools = {}
+for t in tools_order:
+    pre = "tools.%s." % t
+    if not any(k.startswith(pre) for k in list(S.keys()) + list(L.keys())):
+        continue
+    ent = {"version": S.get(pre + "version", ""), "installed_at": S.get(pre + "installed_at", "")}
+    ent["mirrors"] = sorted(L.get(pre + "mirror", []))
+    if (pre + "worktree_root") in S:
+        ent["worktree_root"] = S[pre + "worktree_root"]
+    if (pre + "rules_inline") in S:
+        if S[pre + "rules_inline"] != "true":
+            fail("rules_inline must be true (%s)" % t)
+        ent["rules_inline"] = True
+    files = sorted(L.get(pre + "file", []))
+    ent["files"] = [{"path": p, "sha256": s} for (p, s) in files]
+    ent["paths"] = [p for (p, s) in files]
+    tools[t] = ent
+
+out = {
+    "format_version": 3,
+    "aid_version": S.get("aid_version", ""),
+    "installed_at": S.get("installed_at", ""),
+    "host": {"worktree_root": S.get("host.worktree_root") or ".aid/.worktrees"},
+    "shared": shared,
+    "tools": tools,
+}
+
+d = os.path.dirname(manifest) or "."
+try:
+    os.makedirs(d, exist_ok=True)
+    fd, tmp = tempfile.mkstemp(dir=d, suffix=".tmp")
+except Exception as e:
+    sys.stderr.write("ERROR: aid-install-core: manifest write failed: %s\n" % e)
+    sys.exit(1)
+try:
+    with os.fdopen(fd, "w", encoding="utf-8", newline="\n") as fh:
+        json.dump(out, fh, indent=2)
+        fh.write("\n")
+    os.replace(tmp, manifest)
+except Exception as e:
+    try:
+        os.unlink(tmp)
+    except OSError:
+        pass
+    sys.stderr.write("ERROR: aid-install-core: manifest write failed: %s\n" % e)
+    sys.exit(1)
+PY
+}
+
+# manifest_write_v3 <manifest> <model> - write a format-3 manifest atomically.
+# Uses python3 when available, else the pure-bash writer (byte-identical output).
+manifest_write_v3() {
+    if command -v python3 >/dev/null 2>&1; then
+        _manifest_write_v3_python "$1" "$2"
+    else
+        _manifest_write_v3_bash "$1" "$2"
+    fi
+}
+
+# Readers. _aid_v3_flatten prints each scalar and array element of a pretty-printed
+# JSON manifest as TAB-separated path segments followed by the value. Array elements
+# are numbered from 0. Only the layout the writers emit is supported.
+_aid_v3_flatten() {
+    awk '
+    function jn(a, b) { return (a == "") ? b : a "\t" b }
+    {
+        if (match($0, /[^ ]/) == 0) next
+        lvl = (RSTART - 1) / 2
+        body = substr($0, RSTART)
+        sub(/,$/, "", body)
+        if (lvl == 0) { P[1] = ""; next }
+        if (body == "{" || body == "[") {
+            n = cnt[P[lvl]]++
+            P[lvl + 1] = jn(P[lvl], n)
+            next
+        }
+        if (body ~ /^[]}]/) next
+        if (body ~ /^"[^"]*"$/) {
+            n = cnt[P[lvl]]++
+            print jn(P[lvl], n) "\t" substr(body, 2, length(body) - 2)
+            next
+        }
+        rest = substr(body, 2)
+        q = index(rest, "\"")
+        key = substr(rest, 1, q - 1)
+        val = substr(rest, q + 3)
+        if (val == "{" || val == "[") { P[lvl + 1] = jn(P[lvl], key); next }
+        if (val == "{}" || val == "[]") next
+        if (substr(val, 1, 1) == "\"") val = substr(val, 2, length(val) - 2)
+        print jn(P[lvl], key) "\t" val
+    }' "$1"
+}
+
+# _aid_v3_read_awk <manifest> <mode> [tool] - pure-bash reader (mode: format|host|shared|tool).
+_aid_v3_read_awk() {
+    _aid_v3_flatten "$1" | awk -v mode="$2" -v tool="${3:-}" '
+    BEGIN { FS = "\t"; E[1] = "skills"; E[2] = "runtime"; E[3] = "agents_md"; E[4] = "claude_md" }
+    mode == "format" && NF == 2 && $1 == "format_version" { print $2; next }
+    mode == "host" && NF == 3 && $1 == "host" && $2 == "worktree_root" { print "host.worktree_root\t" $3; next }
+    mode == "shared" {
+        if (NF == 4 && $1 == "shared" && $2 ~ /^(skills|runtime|agents_md|claude_md)$/ && $3 ~ /^(root|path|version|region_sha256|file_sha256)$/) {
+            print "shared." $2 "." $3 "\t" $4
+        } else if (NF == 5 && $1 == "shared" && $2 ~ /^(skills|runtime|agents_md|claude_md)$/ && $3 == "users") {
+            if (ucsv[$2] != "") ucsv[$2] = ucsv[$2] ","
+            ucsv[$2] = ucsv[$2] $5
+        } else if (NF == 6 && $1 == "shared" && $2 ~ /^(skills|runtime)$/ && $3 == "files") {
+            if ($5 == "path") pend[$2] = $6
+            else if ($5 == "sha256") print "shared." $2 ".file\t" pend[$2] "\t" $6
+        } else if (NF == 5 && $1 == "shared" && $2 == "mirrors" && $4 == "version") {
+            if (!($3 in mseen)) { mseen[$3] = 1; mord[++nm] = $3 }
+            mver[$3] = $5
+        } else if (NF == 6 && $1 == "shared" && $2 == "mirrors" && $4 == "users") {
+            if (!($3 in mseen)) { mseen[$3] = 1; mord[++nm] = $3 }
+            if (mcsv[$3] != "") mcsv[$3] = mcsv[$3] ","
+            mcsv[$3] = mcsv[$3] $6
+        }
+    }
+    mode == "tool" && $1 == "tools" && $2 == tool {
+        if (NF == 5 && $3 == "mirrors") print "tools." tool ".mirror\t" $5
+        else if (NF == 4 && ($3 == "worktree_root" || $3 == "rules_inline")) print "tools." tool "." $3 "\t" $4
+        else if (NF == 6 && $3 == "files") {
+            if ($5 == "path") tpend = $6
+            else if ($5 == "sha256") print "tools." tool ".file\t" tpend "\t" $6
+        }
+    }
+    END {
+        if (mode == "shared") {
+            for (i = 1; i <= 4; i++) if (E[i] in ucsv) print "shared." E[i] ".users\t" ucsv[E[i]]
+            for (i = 1; i <= nm; i++) print "shared.mirror\t" mord[i] "\t" mver[mord[i]] "\t" mcsv[mord[i]]
+        }
+    }'
+}
+
+# _manifest_v3_read_python <manifest> <mode> [tool] - python3 reader (same records as the awk reader).
+_manifest_v3_read_python() {
+    python3 - "$1" "$2" "${3:-}" <<'PY'
+import json, sys
+
+manifest, mode, tool = sys.argv[1], sys.argv[2], sys.argv[3]
+try:
+    with open(manifest, encoding="utf-8") as fh:
+        data = json.load(fh)
+except Exception:
+    sys.exit(0)
+if not isinstance(data, dict):
+    sys.exit(0)
+out = []
+if mode == "format":
+    if "format_version" in data:
+        out.append(str(data["format_version"]))
+elif mode == "host":
+    host = data.get("host")
+    if isinstance(host, dict) and "worktree_root" in host:
+        out.append("host.worktree_root\t" + str(host["worktree_root"]))
+elif mode == "shared":
+    shared = data.get("shared") if isinstance(data.get("shared"), dict) else {}
+    for e in ["skills", "runtime", "agents_md", "claude_md"]:
+        ent = shared.get(e)
+        if not isinstance(ent, dict):
+            continue
+        for k, v in ent.items():
+            if k == "users":
+                out.append("shared.%s.users\t%s" % (e, ",".join(v)))
+            elif k == "files":
+                for f in v:
+                    out.append("shared.%s.file\t%s\t%s" % (e, f["path"], f["sha256"]))
+            else:
+                out.append("shared.%s.%s\t%s" % (e, k, v))
+    mirrors = shared.get("mirrors") if isinstance(shared.get("mirrors"), dict) else {}
+    for d, m in mirrors.items():
+        out.append("shared.mirror\t%s\t%s\t%s" % (d, m.get("version", ""), ",".join(m.get("users", []))))
+elif mode == "tool":
+    tools = data.get("tools") if isinstance(data.get("tools"), dict) else {}
+    t = tools.get(tool)
+    if isinstance(t, dict):
+        for m in t.get("mirrors", []):
+            out.append("tools.%s.mirror\t%s" % (tool, m))
+        if "worktree_root" in t:
+            out.append("tools.%s.worktree_root\t%s" % (tool, t["worktree_root"]))
+        if t.get("rules_inline") is True:
+            out.append("tools.%s.rules_inline\ttrue" % tool)
+        for f in t.get("files", []):
+            out.append("tools.%s.file\t%s\t%s" % (tool, f["path"], f["sha256"]))
+for line in out:
+    sys.stdout.write(line + "\n")
+PY
+}
+
+# _manifest_v3_read <manifest> <mode> [tool] - dispatch: python3 when available, else awk.
+_manifest_v3_read() {
+    [[ -f "$1" ]] || return 0
+    if command -v python3 >/dev/null 2>&1; then
+        _manifest_v3_read_python "$1" "$2" "${3:-}"
+    else
+        _aid_v3_read_awk "$1" "$2" "${3:-}"
+    fi
+}
+
+# manifest_format <manifest> - print the format_version value (empty when absent).
+manifest_format() { _manifest_v3_read "$1" format; }
+
+# manifest_read_shared <manifest> - shared.* records (skills, runtime, agents_md, claude_md, mirrors).
+manifest_read_shared() { _manifest_v3_read "$1" shared; }
+
+# manifest_read_tool_files <manifest> <tool> - tools.<tool>.* records: mirror, worktree_root,
+# rules_inline (only when declared) and file.
+manifest_read_tool_files() { _manifest_v3_read "$1" tool "$2"; }
+
+# manifest_read_host <manifest> - host.worktree_root record.
+manifest_read_host() { _manifest_v3_read "$1" host; }
+
+# ---------------------------------------------------------------------------
 # Semver comparison helpers
 # ---------------------------------------------------------------------------
 
@@ -1953,12 +2742,11 @@ _migrate_retired_layout() {
                 echo "  move to trash: ${f}"
                 _MIGRATE_RETIRED_COUNT=$((_MIGRATE_RETIRED_COUNT + 1))
             else
-                # Compute path relative to $target and move to the trash dir.
+                # Move to <target>/.aid/.trash/<rel> under the shared collision policy.
                 local rel dest
                 rel="${f#${target}/}"
                 dest="${target}/.aid/.trash/${rel}"
-                mkdir -p "$(dirname "$dest")"
-                mv -f "$f" "$dest"
+                trash_file "$target" "$f" || return 1
                 _MIGRATE_RETIRED_COUNT=$((_MIGRATE_RETIRED_COUNT + 1))
                 if [[ "${AID_VERBOSE:-0}" -eq 1 ]]; then echo "Trashed: ${f} -> ${dest}"; fi
             fi

@@ -1,0 +1,35 @@
+aid_version	0.9.0
+installed_at	2026-10-11T12:00:00Z
+host.worktree_root	.claude/worktrees
+shared.skills.root	.agents/skills
+shared.skills.version	0.9.0
+shared.skills.users	cursor,claude-code
+shared.skills.file	aid-ask/SKILL.md	1111111111111111111111111111111111111111111111111111111111111111
+shared.skills.file	aid-architect/SKILL.md	2222222222222222222222222222222222222222222222222222222222222222
+shared.runtime.root	.aid/runtime
+shared.runtime.version	0.9.0
+shared.runtime.users	cursor,codex,claude-code
+shared.runtime.file	scripts/kb/build-kb-index.sh	3333333333333333333333333333333333333333333333333333333333333333
+shared.runtime.file	host.conf	4444444444444444444444444444444444444444444444444444444444444444
+shared.agents_md.path	AGENTS.md
+shared.agents_md.version	0.9.0
+shared.agents_md.users	cursor,codex,claude-code
+shared.agents_md.region_sha256	5555555555555555555555555555555555555555555555555555555555555555
+shared.agents_md.file_sha256	6666666666666666666666666666666666666666666666666666666666666666
+shared.claude_md.path	CLAUDE.md
+shared.claude_md.version	0.9.0
+shared.claude_md.users	claude-code
+shared.claude_md.region_sha256	7777777777777777777777777777777777777777777777777777777777777777
+shared.mirror	.claude/skills	0.9.0	claude-code
+tools.claude-code.version	0.9.0
+tools.claude-code.installed_at	2026-10-11T12:00:00Z
+tools.claude-code.mirror	.claude/skills
+tools.claude-code.worktree_root	.claude/worktrees
+tools.claude-code.file	.claude/agents/aid-architect.md	8888888888888888888888888888888888888888888888888888888888888888
+tools.codex.version	0.9.0
+tools.codex.installed_at	2026-10-11T12:00:00Z
+tools.codex.rules_inline	true
+tools.codex.file	.codex/agents/aid-architect.toml	9999999999999999999999999999999999999999999999999999999999999999
+tools.cursor.version	0.9.0
+tools.cursor.installed_at	2026-10-11T12:00:00Z
+tools.cursor.file	.cursor/agents/aid-architect.md	aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
