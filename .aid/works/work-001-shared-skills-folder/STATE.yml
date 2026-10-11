@@ -112,15 +112,15 @@ minimum_grade: A
 # [W] 'yes' | 'no' -- quoted, see NFR-2 / D-5
 user_approved: 'no'
 # [W] Running | Paused-Awaiting-Input | Blocked | Completed | Canceled
-lifecycle: Running
+lifecycle: Paused-Awaiting-Input
 # [W] Describe | Define | Specify | Plan | Detail | Execute
 phase: Detail
 # [W] aid-{skill} | none
 active_skill: aid-update
 # [W]
-updated: '2026-10-11T04:00:00Z'
+updated: '2026-10-11T06:00:00Z'
 # [W] set only when lifecycle = Paused-Awaiting-Input
-pause_reason: --
+pause_reason: 'GATE cleared (definition A+, tasks A+); awaiting user approval before /aid-execute'
 # [W] set only when lifecycle = Blocked
 block_reason: --
 # [W] e.g. IMPEDIMENT-task-NNN.md, or the failed gate
@@ -455,6 +455,23 @@ lifecycle_history:
     event: 'Fixes: D55/T29 (Sonnet), T20 and D56/D57 accepted into task-032 (coordinator). Scoped Opus check: tasks 29 and 20 Fixed; definition 55 still Pending -- bare projects created by a v3 CLI carry settings stamp 4, so the stamp-<5 layout-gate refusal still blocks aid add; fixtures lack the stamp-4 settings file. Paused'
     grade: 'D+ (definition) / A+ (tasks)'
     notes: '/aid-update GATE'
+
+  - date: '2026-10-11'
+    event: 'Definition 55 residue fixed by coordinator (v3 bare projects); tiny Opus check found 58-59 (task-006 scope / refusal fixtures), fixed by coordinator and re-verified Fixed; no Pending rows remain'
+    grade: --
+    notes: '/aid-update GATE'
+  - date: '2026-10-11'
+    event: 'GATE Pass 1 (definition docs) cleared'
+    grade: 'A+'
+    notes: '/aid-update GATE defn'
+  - date: '2026-10-11'
+    event: 'GATE Pass 2 (task set) cleared'
+    grade: 'A+'
+    notes: '/aid-update GATE tasks'
+  - date: '2026-10-11'
+    event: 'APPROVAL-HALT -- work ready for maintainer approval; nothing has executed. Active ledgers removed; final snapshots kept in review-ledgers/'
+    grade: --
+    notes: '/aid-update APPROVAL-HALT'
 
 # [A] aid-deploy only; one entry per delivery (never derived from child
 #     files; aid-deploy is the sole author):
