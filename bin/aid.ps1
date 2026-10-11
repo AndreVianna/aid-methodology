@@ -5796,8 +5796,8 @@ if ($SUBCMD -in @('add','remove')) {
     $gateRc = script:Invoke-AidFormatGate -Repo $_AidTarget
     if ($gateRc -ne 0) { script:Exit-Aid $gateRc }
     if (-not (script:Test-AidManifestFormatGate -Repo $_AidTarget)) { script:Exit-Aid 2 }
-    try { $pending = Read-AidUpgradeRecovery -Target $_AidTarget } catch { [Console]::Error.WriteLine("ERROR: aid $SUBCMD: $($_.Exception.Message)"); script:Exit-Aid 2 }
-    if ($null -ne $pending) { [Console]::Error.WriteLine("ERROR: aid $SUBCMD: a v3 upgrade is pending; run: aid update"); script:Exit-Aid 2 }
+    try { $pending = Read-AidUpgradeRecovery -Target $_AidTarget } catch { [Console]::Error.WriteLine("ERROR: aid ${SUBCMD}: $($_.Exception.Message)"); script:Exit-Aid 2 }
+    if ($null -ne $pending) { [Console]::Error.WriteLine("ERROR: aid ${SUBCMD}: a v3 upgrade is pending; run: aid update"); script:Exit-Aid 2 }
 }
 
 # ---- Self-update-if-needed preamble (FF-3 / CLI-2 / task-079) --------------
