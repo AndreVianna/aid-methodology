@@ -118,7 +118,7 @@ phase: Execute
 # [W] aid-{skill} | none
 active_skill: aid-execute
 # [W]
-updated: '2026-10-11T06:00:00Z'
+updated: '2026-10-11T05:49:29Z'
 # [W] set only when lifecycle = Paused-Awaiting-Input
 pause_reason: --
 # [W] set only when lifecycle = Blocked
@@ -525,6 +525,11 @@ lifecycle_history:
     grade: --
     notes: '/aid-execute Codex'
 
+  - date: '2026-10-11'
+    event: 'Sol independent final scoped wave2 check PASS; all six findings Fixed (A+ ledger). Tasks005/006/011 Done, PowerShell runtime still deferred. Wave3 task003 In Progress; required canonical rules extraction is committed before profile generator wipe.'
+    grade: --
+    notes: '/aid-execute Codex'
+
 deploy: []
 
 # [A] flattened only; single writer: this work's active branch. Written by
@@ -558,7 +563,7 @@ tasks_lifecycle:
     notes: --
     display_name: --
   task-003:
-    state: Pending
+    state: 'In Progress'
     review: --
     elapsed: --
     notes: --
@@ -570,7 +575,7 @@ tasks_lifecycle:
     notes: --
     display_name: --
   task-005:
-    state: 'In Review'
+    state: Done
     review: --
     elapsed: --
     notes: --
