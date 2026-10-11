@@ -1,27 +1,29 @@
 ---
 name: generate-profile
 description: >
-  Regenerates the five install trees (claude-code, codex, cursor, copilot-cli, antigravity) from canonical/ + profiles/.
+  Regenerates the agents-only profile trees (profiles/<tool>/: agents + aid-tool.conf) from canonical/, then resyncs this repo's dogfood install.
   Maintainer-only tooling; never shipped to end users.
   State machine: LOAD -> VALIDATE -> RENDER -> VERIFY -> REPORT.
 allowed-tools: Read, Glob, Grep, Bash, Write, Edit
-argument-hint: "[--tool claude-code|codex|cursor|copilot-cli|antigravity] regenerate only one tree (default: all five, derived from ls profiles/*.toml)  [--dry-run] render to scratch + diff, don't write to install trees"
+argument-hint: "no arguments: regenerates every profile listed in profiles/*.toml, then resyncs the dogfood install"
 ---
 
 # AID Install-Tree Generator
 
-> **Maintainer-only skill — outside `canonical/`.** This is the lone exception to the canonical-source pattern. It lives at `.claude/skills/generate-profile/` only and is NOT in `canonical/skills/`. Edits to this skill are made directly to its files. Reason: it generates the install trees, so it cannot itself be generated from canonical without a chicken-and-egg deployment problem.
+> **Maintainer-only skill — outside `canonical/`.** This is the lone exception to the canonical-source pattern. It lives at `.claude/skills/generate-profile/` only and is NOT in `canonical/skills/`. Edits to this skill are made directly to its files. Reason: it generates the profile trees, so it cannot itself be generated from canonical without a chicken-and-egg deployment problem.
 
-This skill regenerates the five install trees (`claude-code/`, `codex/`, `cursor/`, `copilot-cli/`, `antigravity/`) from
-the single canonical source (`canonical/`) and the per-tool profiles (`profiles/`).
+This skill regenerates the per-tool profile trees (`profiles/claude-code/`, `profiles/codex/`, `profiles/cursor/`,
+`profiles/copilot-cli/`, `profiles/antigravity/`) from the canonical agents (`canonical/agents/`) and the per-tool
+profile TOMLs (`profiles/*.toml`). Skills and the runtime are never rendered: `release.sh` copies them byte-for-byte
+from `canonical/` into the shared payload.
 
-**When to run:** any time a canonical skill, agent, or template is edited, and before
-committing changes to the install trees. Also run to verify the install trees are in sync
-with canonical after any manual edits.
+**When to run:** any time canonical content is edited (agents and templates are rendered; skills and the runtime
+reach this repo's install through the dogfood resync that the run ends with), and before committing those changes.
+Also run after any manual edit to a profile tree to check it against canonical. The run overwrites manual edits.
 
-**Safety boundary:** the generator only writes to and deletes files it previously emitted
-(recorded in `profiles/{tool}/emission-manifest.jsonl`). User-created files inside install trees
-are never touched.
+**Safety boundary:** the generator deletes each `profiles/<tool>/` directory in full and renders it again. It
+touches nothing else in the render step, and no manifest is written or read. Never hand-edit a profile tree: the next
+run overwrites it, and the CI `render-drift` job fails when a profile tree differs from a fresh render.
 
 ---
 
@@ -37,7 +39,7 @@ Before executing any state, verify:
 
 2. `canonical/` directory exists at the repo root:
    ```bash
-   ls canonical/agents/ canonical/skills/ canonical/aid/templates/ canonical/rules/
+   ls canonical/agents/ canonical/skills/ canonical/aid/templates/
    ```
 
 3. At least one profile TOML exists:
@@ -56,13 +58,9 @@ If any pre-flight check fails, print an error and stop.
 
 ## State Detection
 
-Parse arguments from the invocation context:
-
-- `--tool {claude-code|codex|cursor|copilot-cli|antigravity}` → set `SELECTED_PROFILES` to the single named profile.
-  If not provided, `SELECTED_PROFILES = [claude-code, codex, cursor, copilot-cli, antigravity]` (all profiles found via `ls profiles/*.toml`).
-- `--dry-run` → set `DRY_RUN=true`. In dry-run mode, renderers write to a temporary
-  scratch directory; no changes are made to the install trees. A diff report is printed at
-  the end instead of a live manifest write.
+The generator takes no arguments. It always regenerates every profile TOML in `profiles/*.toml`
+(`SELECTED_PROFILES` = all of them). There is no per-tool flag and no dry-run mode. For a check that writes nothing,
+run `python .claude/skills/generate-profile/scripts/render.py --self-test --canonical-root .`.
 
 Print: `[State: LOAD]`
 
@@ -70,7 +68,7 @@ Print: `[State: LOAD]`
 
 ## Mode: LOAD
 
-For each profile in `SELECTED_PROFILES`, load and validate the profile TOML:
+For each profile TOML in `profiles/*.toml`, load and validate it:
 
 ```bash
 python .claude/skills/generate-profile/scripts/aid_profile.py --profile profiles/{tool}.toml
@@ -79,15 +77,6 @@ python .claude/skills/generate-profile/scripts/aid_profile.py --profile profiles
 Expected output: `OK: profiles/{tool}.toml — profile '{tool}' is valid`
 
 If any profile fails validation, abort.
-
-Also load the **previous** emission manifest (if it exists) for each selected profile:
-
-```
-profiles/{tool}/emission-manifest.jsonl   (e.g. profiles/claude-code/emission-manifest.jsonl)
-```
-
-The previous manifest is used in RENDER to compute `diff(prev, curr)` and identify
-files to delete.
 
 Print: `[1/{N}] Loaded profile: {tool}` for each profile.
 Print: `[State: VALIDATE]`
@@ -152,25 +141,23 @@ Print: `[State: RENDER]`
 
 ## Mode: RENDER
 
-1. **Output roots:** each profile's `output_root` in its TOML resolves under the
-   repo root to `profiles/<tool>/...` (`profiles/claude-code/.claude/`,
-   `profiles/codex/.codex/`, `profiles/cursor/.cursor/`,
-   `profiles/copilot-cli/.github/`, `profiles/antigravity/.agent/`). The generator
-   writes there directly; there is no separate dry-run scratch mode.
+1. **Output:** each profile is written to `profiles/<tool>/` and holds exactly two things: the rendered agents
+   under `profiles/<tool>/<root>/agents/` (`profiles/claude-code/.claude/agents/`,
+   `profiles/codex/.codex/agents/`, `profiles/cursor/.cursor/agents/`,
+   `profiles/copilot-cli/.github/agents/`, `profiles/antigravity/.agent/agents/`) and
+   `profiles/<tool>/aid-tool.conf`, the descriptor the release packages with the agents.
 
-2. **Run the live generator** (renders ALL profiles in one pass):
+2. **Run the generator** (renders ALL profiles in one pass; no flags):
 
    ```bash
    python .claude/skills/generate-profile/scripts/run_generator.py
    ```
 
-   `run_generator.py` iterates every `profiles/*.toml`, calls the copy-based
-   `render_profile` core (`render.py`) for each, writes each profile's
-   `emission-manifest.jsonl`, and runs the manifest diff/deletion pass
-   internally (paths removed since the previous manifest are deleted and empty
-   generator-owned dirs pruned), then runs the deterministic + advisory verify
-   spine. There is no per-tool or dry-run flag — it always regenerates all five
-   trees; use `render.py --self-test` (below) for a non-writing correctness check.
+   For each `profiles/*.toml`, `run_generator.py` validates the profile, deletes its `profiles/<tool>/`
+   directory, and calls `render_profile` (`render.py`) to write the agents and `aid-tool.conf` again. After
+   all profiles are rendered it runs the deterministic and advisory verify checks (below), then runs
+   `sync_dogfood.py` to resync this repo's own install (see Dogfood Resync). A failure at any step stops the
+   run with a non-zero exit code.
 
 Print: `[State: VERIFY]`
 
@@ -185,23 +172,23 @@ Run the deterministic gate:
 ```bash
 python .claude/skills/generate-profile/scripts/verify_deterministic.py \
   --canonical-root . \
-  --report-path .aid/works/work-001-agents-review/verify-deterministic-report.json
+  --report-path .aid/.temp/generate-profile/verify-deterministic-report.json
 ```
 
 If the exit code is non-zero: **abort**. Print the verify-deterministic-report.json offenders.
 Do not proceed to REPORT.
 
-In dry-run mode: skip the in-tree write of the manifest and run verify against the
-scratch directory instead of the live install trees.
-
 ### VERIFY (advisory) (advisory)
+
+`run_generator.py` already runs the deterministic check, and the advisory check too. The standalone commands
+below also write the JSON reports.
 
 Run the advisory conformance check:
 
 ```bash
 python .claude/skills/generate-profile/scripts/verify_advisory.py \
   --canonical-root . \
-  --report-path .aid/works/work-001-agents-review/verify-advisory-report.json
+  --report-path .aid/.temp/generate-profile/verify-advisory-report.json
 ```
 
 Always exits 0. Capture `skipped_count` and `warning_count` from the JSON report for REPORT.
@@ -216,42 +203,30 @@ Print a concise summary of the run:
 
 ```
 === generate-profile REPORT ===
-Mode: [LIVE | DRY-RUN]
 Profiles rendered: {tool1}, {tool2}, ..., {toolN}
 
 Per-profile summary:
   claude-code:
-    Files emitted: {n}
-    Files deleted: {n}
-    Manifest:      profiles/claude-code/emission-manifest.jsonl
+    Files emitted: {n}     (profiles/claude-code/: agents + aid-tool.conf)
   codex:
-    Files emitted: {n}
-    Files deleted: {n}
-    Manifest:      profiles/codex/emission-manifest.jsonl
+    Files emitted: {n}     (profiles/codex/)
   cursor:
-    Files emitted: {n}
-    Files deleted: {n}
-    Manifest:      profiles/cursor/emission-manifest.jsonl
+    Files emitted: {n}     (profiles/cursor/)
   copilot-cli:
-    Files emitted: {n}
-    Files deleted: {n}
-    Manifest:      profiles/copilot-cli/emission-manifest.jsonl
+    Files emitted: {n}     (profiles/copilot-cli/)
   antigravity:
-    Files emitted: {n}
-    Files deleted: {n}
-    Manifest:      profiles/antigravity/emission-manifest.jsonl
+    Files emitted: {n}     (profiles/antigravity/)
 
 VERIFY (deterministic): PASS
 VERIFY (advisory): skipped_count={n} (URLs pending fetch) | warning_count={n}
+Dogfood resync: [summary printed by sync_dogfood.py]
 
 Git diff:
-[output of: git diff --stat -- profiles/claude-code/ profiles/codex/ profiles/cursor/ profiles/copilot-cli/ profiles/antigravity/]
+[output of: git diff --stat -- profiles/]
+[dogfood paths changed by the resync: git status --short]
 
 === END REPORT ===
 ```
-
-In dry-run mode, the "Git diff" section shows the diff between the scratch directories
-and the current install trees (using `diff -r`).
 
 ---
 
@@ -314,14 +289,14 @@ Then commit the result. The originals that the resync moved aside remain under `
 Before calling the run complete, confirm:
 
 - [ ] Python 3.11+ available (`python --version` shows 3.11 or higher)
-- [ ] All selected profiles parsed without errors (`validate()` returned `[]`)
+- [ ] All profile TOMLs parsed without errors (`validate()` returned `[]`)
 - [ ] `canonical/` completeness verified against the derivation above, and the decomposition
       SUMS: directories = curatedOnly + catalogRows, and catalogRows = shortcuts + repurposed.
       Also: 9 agents, non-empty templates.
 - [ ] All renderers completed without errors
-- [ ] `profiles/{tool}/emission-manifest.jsonl` written for each rendered profile
+- [ ] Each `profiles/<tool>/` holds only `aid-tool.conf` and the `<root>/agents/` folder
 - [ ] VERIFY (deterministic): byte-identical re-render PASS, presence audit PASS, frontmatter parse PASS
 - [ ] VERIFY (advisory): `skipped_count` surfaced in REPORT (currently 8 — all URLs pending fetch)
 - [ ] REPORT printed to stdout
-- [ ] In live mode: `git diff --stat` shows only install-tree paths (no canonical/ changes)
+- [ ] `git diff --stat -- profiles/` shows only profile-tree paths (no canonical/ changes)
 - [ ] Dogfood resync done: `sync_dogfood.py --check` reports clean, and the resynced install trees are committed (see Dogfood Resync)

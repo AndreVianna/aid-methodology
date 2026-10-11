@@ -38,7 +38,7 @@ AID ships install bundles for five host tools:
 4. **GitHub Copilot CLI** — installs to `.github/`
 5. **Antigravity** — installs to `.agent/`
 
-All five install trees are byte-identical in skill and agent content; only the wrapper format differs per tool.
+Skills and the runtime are shared, not per tool: every tool gets the same `aid-*` skill set in `.agents/skills/` and the same runtime in `.aid/runtime/`. Claude Code also gets a byte-identical mirror of the skills in `.claude/skills/`. Only the agents differ per tool: each tool has its own agents folder, and Codex writes its agents as TOML while the other tools use Markdown.
 
 ### How do I install AID into my project?
 
@@ -67,7 +67,7 @@ aid add claude-code      # or: codex  cursor  copilot-cli  antigravity
 aid add codex,cursor     # multiple tools at once
 ```
 
-Re-running `aid add` is safe — identical files are skipped. Root agent files you edited yourself are protected (see [docs/install.md](https://github.com/AndreVianna/aid-methodology/blob/master/docs/install.md#protect-on-diff-for-root-agent-files)). See the [full install guide](https://github.com/AndreVianna/aid-methodology/blob/master/docs/install.md) for offline installs, version pinning, and the complete subcommand reference.
+Re-running `aid add` is safe — identical files are skipped. Root agent files you edited yourself are protected (see [docs/install.md](https://github.com/AndreVianna/aid-methodology/blob/master/docs/install.md#root-agent-files-and-the-aid-region)). See the [full install guide](https://github.com/AndreVianna/aid-methodology/blob/master/docs/install.md) for offline installs, version pinning, and the complete subcommand reference.
 
 ### How do I update AID?
 

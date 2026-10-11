@@ -84,15 +84,16 @@ HTTP) and reading the `<text>`/`<tspan>` labels.
 
 ### D2 — Render-and-distribute
 - **Location:** `03-capability-inventory.html`, `aria-label="AID render-and-distribute pipeline diagram"`.
-- **Must show:** `canonical/` (single source) → render → **5 byte-identical profiles**
-  (`claude-code`, `codex`, `cursor`, `copilot-cli`, `antigravity`) → bundle → publish to
+- **Must show:** `canonical/` (single source) → render → **per-tool profiles** holding agents + `aid-tool.conf`
+  (`claude-code`, `codex`, `cursor`, `copilot-cli`, `antigravity`) → release bundle: **one shared payload**
+  (skills + runtime) plus one agents-only artifact per tool and the CLI bundle → publish to
   **3 channels** (`npm`, `PyPI`, `GitHub Release`) → install into a user repo; plus the VERIFY byte-gate.
 - **Source of truth:** `.aid/knowledge/architecture.md` (Build & Distribute) · `profiles/*.toml` (the 5 profiles) · `release.yml` (channels).
 - **Update when:** a profile is added/removed (the **5**) or the profile names change; a publish channel changes (the **3**).
 
 ### D3 — Dual-face architecture (product vs dogfood)
 - **Location:** `05-architecture.html`, `aria-label="AID dual-face architecture: product face and dogfood face"`.
-- **Must show:** **Product Face** = `canonical/` (source of truth) → `profiles/` (5 rendered trees) →
+- **Must show:** **Product Face** = `canonical/` (source of truth) → `profiles/` (agents-only trees, one per tool) →
   `packages/` (npm + PyPI + tar), plus `bin/`, `lib/`, `dashboard/`, `tests/`, `site/`; **Dogfood Install** =
   `.claude/` (claude-code profile) + `.aid/` (pipeline state + KB).
 - **Source of truth:** `.aid/knowledge/architecture.md` (The Two Faces) · `.aid/knowledge/project-structure.md`.
