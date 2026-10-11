@@ -328,9 +328,13 @@ Any byte difference between copies therefore produces mixed, unpredictable behav
   - the root `CLAUDE.md` and `AGENTS.md` regions and their sources;
   - `README.md`, `docs/install.md` and `docs/aid-methodology.md`;
   - `.github/workflows/test.yml`;
+  - the five `profiles/*/README.md`, the `site/` docs, and the content-isolation checks in
+    `canonical/agents/aid-reviewer/AGENT.md`, which must accept the new placement;
   - the KB docs that state the layout, including the content-isolation invariant in
-    `.aid/knowledge/architecture.md` § Invariants and `G-10`, `G-11` in
-    `.aid/knowledge/authoring-conventions.md`.
+    `.aid/knowledge/architecture.md` § Invariants, `G-10`, `G-11` and `G-13` in
+    `.aid/knowledge/authoring-conventions.md`, and `quality-gates.md`, `artifact-schemas.md`,
+    `coding-standards.md`, `decisions.md`, `tech-debt.md`, `technology-stack.md` and `STATE.md`
+    under `.aid/knowledge/`.
 
   Shipped history in `.aid/knowledge/release-tracking.md` is left as history. A
   `release-tracking.md` / `backlog.md` entry for this change follows the project's normal
@@ -458,7 +462,9 @@ CLI. The Claude Code docs (skills, settings reference, memory, changelog) were c
 - The format gate `_aid_format_gate` and `_aid_migrate_repo` in `bin/aid`.
 - `release.sh` and the release workflow.
 - The KB docs `architecture.md`, `project-structure.md`, `module-map.md`, `integration-map.md`,
-  `infrastructure.md`, `test-landscape.md` and `authoring-conventions.md`.
+  `infrastructure.md`, `test-landscape.md`, `authoring-conventions.md`, `quality-gates.md`,
+  `artifact-schemas.md`, `coding-standards.md`, `decisions.md`, `tech-debt.md`,
+  `technology-stack.md` and `STATE.md`.
 
 ## 9. Acceptance Criteria
 
@@ -625,11 +631,12 @@ CLI. The Claude Code docs (skills, settings reference, memory, changelog) were c
 
   The re-keyed `tests/canonical/test-dogfood-byte-identity.sh` passes.
 - **AC-19:** Docs and KB no longer state the old layout.
-  - `git grep -nE '\.(claude|codex|cursor|agent)/aid/|\.github/aid/' -- CLAUDE.md AGENTS.md README.md docs .github/workflows .aid/knowledge ':!.aid/knowledge/release-tracking.md' ':!.aid/knowledge/kb.html'`
+  - `git grep -nE '\.(claude|codex|cursor|agent)/aid/|\.github/aid/' -- CLAUDE.md AGENTS.md README.md docs .github/workflows .aid/knowledge 'profiles/*/README.md' site ':!.aid/knowledge/release-tracking.md' ':!.aid/knowledge/kb.html'`
     prints no lines.
   - A reviewer confirms that `.aid/knowledge/architecture.md` § Invariants (content isolation) and
     criteria `G-10` and `G-11` in `.aid/knowledge/authoring-conventions.md` state the
-    `.aid/runtime/` and `.agents/skills/aid-*` placement rules.
+    `.aid/runtime/` and `.agents/skills/aid-*` placement rules, and that the content-isolation
+    checks in `canonical/agents/aid-reviewer/AGENT.md` accept that placement.
 - **AC-20:** The remaining host assumption is verified. A maintainer repeats the §8 manual probe
   method for one check, the `Bash Shell Terminal` alias list (A-4), and records a pass or fail as
   a `lifecycle_history` entry in this work's `STATE.yml`. No other assumption needs a probe: A-1
@@ -1139,7 +1146,9 @@ the agents, `AGENTS.md` and `CLAUDE.md` are committed (AC-18).
   INDEX-path gotcha in `architecture.md` § Gotchas. Lines that must resolve only in the AID source
   repo stay as they are and are listed in `tests/canonical/fixtures/runtime-source-path-allowlist.tsv`
   (new; columns `path`, `pattern`, `why`). An example is the `run_generator.py` row in
-  `canonical/aid/templates/rough-time-hints.md` (AC-5).
+  `canonical/aid/templates/rough-time-hints.md` (AC-5). The install-tree skip lists in
+  `build-project-index.sh` and `harvest-coined-terms.sh` (today `.claude .cursor .codex .agent`)
+  gain `.agents`, so discovery never scans the installed skills as project source.
 - **`canonical/agents/**`.** These are neutralized the same way, so the generator applies no text
   transform.
 - **`canonical/AGENTS.md` (new).** This is the single root-context source and replaces
@@ -1315,7 +1324,11 @@ work.
 to `tests/lib/bundle.sh` (new). These are `test-aid-cli.sh`, `test-multitool-isolation.sh`,
 `test-aid-migrate.sh`, `test-registry.sh`, the parity and package suites, and
 `test-release-install-e2e.sh`. The helper runs `release.sh --stage-only --out <dir>`, so the tests
-exercise the release code itself.
+exercise the release code itself. Suites and CI steps that read rendered profile skills, runtime
+or root files are re-pointed in the same change: `tests/canonical/test-chat-node-wake.sh`,
+`test-cutover-no-dangling.sh`, `test-connector-skills-structural.sh`, `test-doc-counts.sh` and
+`test-work-state-template.sh`, and the codex-tarball steps of `.github/workflows/installer-tests.yml`,
+which build from `profiles/codex` today and switch to `release.sh --stage-only`.
 
 **Removed or renamed assertion keys.** These come mainly from `test-agents-md-invariant.sh`
 (retired, because its subject is gone), the per-root T-cases in `test-multitool-isolation.sh`,
