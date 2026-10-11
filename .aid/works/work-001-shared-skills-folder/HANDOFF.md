@@ -6,11 +6,11 @@ maintainer approved execution. Current phase `Execute`, lifecycle `Running`.
 
 ## Current execution checkpoint
 
-Waves1-2 complete (6/32 tasks Done). Wave2 Sol quick check cleared after prescribed Luna/Sol corrections; all six findings Fixed, ledger A+ (targeted check, not final full review). Task003 now In Progress for wave3: agents-only profile generator and aid-tool.conf. Required rules extraction is committed. Long checks and PS runtime remain deferred.
+Task003 committed/pushed 941b6cb43 and In Review for Sol wave3 check. Generator exits0 with deterministic PASS; wipe probe and focused suites pass (chat153, cutover29, docs21). Chained dogfood sync is a documented no-op after manifest retirement; task027 owns rewrite. Waves1-2 complete; wave4 not started.
 
 - Done (6/32): task-001, task-002, task-004, task-005, task-006, task-011.
-- In Progress: task-003.
-- In Review: none.
+- In Progress: none.
+- In Review: task-003.
 - Failed/Blocked: none.
 - Pending: task-007, task-008, task-009, task-010, task-012, task-013, task-014, task-015, task-016, task-017, task-018, task-019, task-020, task-021, task-022, task-023, task-024, task-025, task-026, task-027, task-028, task-029, task-030, task-031, task-032.
 - Current wave: 3 of 15. Derive authoritative waves from task dependency headers.
