@@ -318,7 +318,8 @@ Any byte difference between copies therefore produces mixed, unpredictable behav
   never touched. The ownership rule is path-based. An old-layout file is AID-owned if it lies under
   `<root>/skills/aid-*/` at any depth (so every `references/*.md` counts), or under `<root>/aid/`,
   or its basename starts with `aid-` while it lies inside one of those legacy paths (or a path a
-  format-2 manifest records); `<root>/agents/aid-*` is never retired. `_is_aid_owned_file` in `_migrate_retired_layout` tests only
+  format-2 manifest records), or its basename starts with `aid-` while it lies inside the
+  retired rules dirs `.cursor/rules/` or `.agent/rules/`; `<root>/agents/aid-*` is never retired. `_is_aid_owned_file` in `_migrate_retired_layout` tests only
   the basename and ancestors named `aid`, so the upgrade uses a new path-based helper
   (`_is_aid_owned_path`, with a PowerShell twin) instead. Before retirement, the CLI durably
   records the target tools and whether retirement has finished in the separate recovery record
