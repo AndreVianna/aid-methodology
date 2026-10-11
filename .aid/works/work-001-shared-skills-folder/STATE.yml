@@ -118,7 +118,7 @@ phase: Execute
 # [W] aid-{skill} | none
 active_skill: aid-execute
 # [W]
-updated: '2026-10-11T06:49:08Z'
+updated: '2026-10-11T06:49:52Z'
 # [W] set only when lifecycle = Paused-Awaiting-Input
 pause_reason: --
 # [W] set only when lifecycle = Blocked
@@ -610,6 +610,11 @@ lifecycle_history:
     grade: --
     notes: '/aid-execute Codex'
 
+  - date: '2026-10-11'
+    event: 'Wave5 Sol independent verification PASS A+: both findings Fixed, descriptor regression37/37 plus independent malformed/empty/comment-only refusals unchangedtargets and validstagingpass; Bashsyntaxpass. Task008 Done, waves1-5complete (10/32tasks). Next task009 shared-placement commit wiring; PSruntime deferred.'
+    grade: --
+    notes: '/aid-execute Codex'
+
 deploy: []
 
 # [A] flattened only; single writer: this work's active branch. Written by
@@ -731,7 +736,7 @@ tasks_lifecycle:
         outcome: 'committed cfadd72d4; retained release coverage restored,76 assertions pass'
 
   task-008:
-    state: 'In Review'
+    state: Done
     review: --
     elapsed: --
     notes: --

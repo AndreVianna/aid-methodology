@@ -6,11 +6,11 @@ maintainer approved execution. Current phase `Execute`, lifecycle `Running`.
 
 ## Current execution checkpoint
 
-Task008 separate Sol executor correction5ede6bddc committed: empty parsed records skipped, four empty/comment-only shared/tool descriptor regressions require proper filename/key diagnostics and unchanged targets. Focused suite37pass, syntax/diffpass. In Review for original Sol reviewer independent wave5 final recheck; task009 pending.
+Wave5 Sol independent verification PASS A+: both findings Fixed, descriptor regression37/37 plus independent malformed/empty/comment-only refusals unchangedtargets and validstagingpass; Bashsyntaxpass. Task008 Done, waves1-5complete (10/32tasks). Next task009 shared-placement commit wiring; PSruntime deferred.
 
-- Done (9/32): task-001, task-002, task-003, task-004, task-005, task-006, task-007, task-011, task-016.
+- Done (10/32): task-001, task-002, task-003, task-004, task-005, task-006, task-007, task-008, task-011, task-016.
 - In Progress: none.
-- In Review: task-008.
+- In Review: none.
 - Failed/Blocked: none.
 - Pending: task-009, task-010, task-012, task-013, task-014, task-015, task-017, task-018, task-019, task-020, task-021, task-022, task-023, task-024, task-025, task-026, task-027, task-028, task-029, task-030, task-031, task-032.
 - Current wave: 5 of 15. Derive authoritative waves from task dependency headers.
