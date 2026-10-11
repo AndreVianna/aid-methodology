@@ -44,7 +44,7 @@
   LF-terminated) and the fixture's `AGENTS.md` equals the five-line pointer region, and
   `aid add cursor` into a second such fixture creates no `CLAUDE.md`; (b) with a no-marker,
   LF-terminated user `CLAUDE.md`, the pre-add bytes are a byte-exact prefix and only the import
-  region follows, and a following `aid update` leaves its sha256 unchanged; (e) a user `AGENTS.md`
+  region follows, and a following `aid update` leaves its bytes unchanged under LF, CRLF and mixed-line-ending checkout; no false drift/repair occurs, while real region edits drift, CRLF repair is idempotent, and outside bytes remain unchanged; (e) a user `AGENTS.md`
   with no markers holding a `## Workflow` section keeps that section byte-for-byte, with the pre-add
   bytes as a byte-exact prefix followed by the pointer region; (f) repair by content, three
   fixtures -- a user `CLAUDE.md` holding `<!-- AID:BEGIN -->` with no `<!-- AID:END -->` followed by
@@ -61,4 +61,5 @@
 - [ ] `HOME=$(mktemp -d) bash tests/canonical/test-shared-install.sh --verbose` exits `0`, with a `PASS:` line per tool for the AC-3 byte comparison, the AC-3 file count, each AC-7 clause (including the `rules.md` equality and the `node_modules/` survival), one for the negative control, one per AC-14 (a)/(b) clause, one for AC-14 (e), one per AC-14 (f) fixture, and one for the AC-7 `.gitattributes` block with its preserved user line.
 - [ ] Reverting the payload mutation guard (forcing the negative control to install unmutated bytes) in a scratch copy makes the negative-control assertion fail, proving the control is live.
 - [ ] The suite reads no file under `.aid/works/` of this repository and leaves the real repo's `git status --porcelain` unchanged.
+- [ ] Frozen-clock repeat collisions and preoccupied `.N` suffixes preserve every backup byte and match Bash/PowerShell naming order.
 - [ ] All section-6 quality gates pass.

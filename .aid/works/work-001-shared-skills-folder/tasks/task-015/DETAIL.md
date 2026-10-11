@@ -26,7 +26,7 @@ from v3 (clean slate) (Trigger, Steps, Interruption and recovery).
   point (a format-2 manifest, old AID-owned paths, or an existing recovery record). Before any
   repository mutation, validate an existing record; unsupported future manifest/settings
   formats still refuse first. Resolve the target tool set from it, or from the old manifest or
-  old owned roots (legacy `.agents/aid/` means Codex), plus initially named tools. A record's
+  old AID-owned paths (legacy `.agents/aid/` means Codex; use the same path-based legacy-evidence predicate as add’s layout gate, excluding legitimate format-3 Claude mirrors and user directory-only signals), plus initially named tools. A record's
   target set is authoritative; newly named tools outside it are refused until recovery finishes.
   Stage and validate every target artifact (flow 2), so staging failure and dry-run write nothing.
   Before retirement, atomically persist that set with `retired=false` if no record exists.
@@ -39,7 +39,7 @@ from v3 (clean slate) (Trigger, Steps, Interruption and recovery).
   removes the old AID region, marker lines included; a file left empty or whitespace-only is
   deleted, and a file with no well-formed region stays unchanged. Emptied directories are removed,
   never `<root>`. Once every retirement operation succeeds, atomically write `retired=true`
-  before any v4 copy. With `retired=true`, skip retirement entirely. Run a normal fresh v4
+  before any v4 copy. If rotation fails, abort before source loss. With `retired=true`, skip retirement entirely. Run a normal fresh v4
   install for exactly the recorded tools: flow 3 commit steps, flow 6 prune, then
   `_aid_migrate_repo` (stamp 5). Remove the record only after every operation succeeds; preserve
   it on any error, including failed cleanup, and return non-zero. Print
@@ -81,7 +81,7 @@ from v3 (clean slate) (Trigger, Steps, Interruption and recovery).
 
 **Acceptance Criteria:**
 - [ ] For each of the five tools (plus a Codex fixture holding a legacy `.agents/aid/`), a v3 fixture with one user-modified AID file in the old `skills/aid-*`, one in the old `aid/` subtree, and one non-AID user file in each old directory, after `aid update --from-bundle "$S"`: every `canonical/skills/<rel>` equals `.agents/skills/<rel>` (and `.claude/skills/<rel>` for claude-code); `diff -r -x node_modules -x '.*' canonical/aid/scripts .aid/runtime/scripts` and the same for `templates` print nothing and `cmp canonical/aid/rules.md .aid/runtime/rules.md` succeeds; no `aid-*` entry remains under `.codex/skills`, `.cursor/skills`, `.github/skills` or `.agent/skills`; no `<root>/aid/` remains.
-- [ ] Every old AID-owned file, modified or not, exists byte-for-byte at `.aid/.trash/<original-path>`; each non-AID file keeps its sha256; `.aid/settings.yml` has `format_version: 5`; the manifest has `"format_version": 3` and `grep -c '"migration"' .aid/.aid-manifest.json` prints `0`.
+- [ ] Every old AID-owned file, modified or not, exists byte-for-byte at `.aid/.trash/<original-path>`; frozen-clock repeated collisions and preoccupied suffixes preserve all prior bytes with bash/PowerShell identical ordering; each non-AID file keeps its sha256; `.aid/settings.yml` has `format_version: 5`; the manifest has `"format_version": 3` and `grep -c '"migration"' .aid/.aid-manifest.json` prints `0`.
 - [ ] A second `aid update --from-bundle "$S"` prints `up to date` for `shared` and every tool and leaves the sha256 snapshot of `.aid/.trash/` unchanged.
 - [ ] For manifest-backed and manifest-less fixtures, including one with two tools, interruptions during retirement and after `retired=true` but before the manifest write recover exactly the recorded tools on the next update; AC-3 and AC-7 pass, non-AID shas are unchanged, and the record is absent after success. No copied v4 file is retired on the `retired=true` retry.
 - [ ] Failure after the manifest and stamp but before cleanup preserves a valid `retired=true` record; the retry removes it, leaves the trash snapshot unchanged, and a following update changes nothing.

@@ -43,4 +43,5 @@
 - [ ] `HOME=$(mktemp -d) bash tests/canonical/test-aid-cli-ps1.sh` exits `0` where `pwsh` exists, including the `Detect-Tool` cases.
 - [ ] `grep -cE 'profiles/[a-z-]+/' tests/canonical/test-aid-cli.sh tests/canonical/test-aid-cli-ps1.sh` prints `0` for both.
 - [ ] The coverage-parity gate (run where `pwsh`, `node` and `python3` are on PATH) reports no un-excused removal for these two suites.
+- [ ] Existing format-3 manifest with settings stamp 4 refuses `aid add` unchanged; a manifest-less legacy tree continues refusing after projects-add/update-self settings migration; future formats remain read-only refused.
 - [ ] All section-6 quality gates pass.

@@ -37,7 +37,7 @@ Bash and PowerShell twins together, per REQUIREMENTS.md § 11 Feature 001 › Fe
   agents, the `AGENTS.md` pointer region (then the `CLAUDE.md` import region when `claude-code` is
   installed); any copy failure aborts before the manifest write; then the format-3 manifest is
   written atomically (each new tool joins every shared `users` list it uses; every file recorded
-  with the sha256 of its staged bytes; `region_sha256` and `file_sha256` for `agents_md`;
+  with the sha256 of its staged bytes; canonical-LF `region_sha256` and whole-file `file_sha256` for `agents_md`;
   `region_sha256` for `claude_md`; an entry whose user list would be empty is absent). The CLI
   never writes the full AID region into `CLAUDE.md`, and never reads or writes `CLAUDE.md` while no
   installed tool declares `context_import`.
@@ -61,5 +61,6 @@ Bash and PowerShell twins together, per REQUIREMENTS.md § 11 Feature 001 › Fe
 - [ ] `aid add cursor` followed by `aid add claude-code` leaves `users` as `["claude-code", "cursor"]` (`AID_TOOLS` order) on the three shared entries and `mirrors` holding `.claude/skills` with users `["claude-code"]`.
 - [ ] Pre-seeded `.agents/skills/my-skill/SKILL.md` and `.claude/skills/my-skill/SKILL.md` keep their sha256 through both adds.
 - [ ] After appending one byte to `.agents/skills/aid-plan/SKILL.md`, `aid add codex` restores canonical bytes there and the modified bytes exist at `.aid/.trash/.agents/skills/aid-plan/SKILL.md`.
+- [ ] LF, CRLF (`core.autocrlf=true`) and mixed-line-ending root fixtures pass add, status and update without false drift or repair in both shells; real region edits are reported and CRLF repair retries idempotently while outside bytes stay exact.
 - [ ] The same fixtures built with `bin/aid.ps1` (where `pwsh` exists) give an identical file tree and identical manifest bytes after masking `installed_at`; `bash tests/canonical/test-ps51-compat.sh` and `bash tests/canonical/test-ascii-only.sh` exit `0`.
 - [ ] All section-6 quality gates pass.

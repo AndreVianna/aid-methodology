@@ -24,12 +24,12 @@
   existing scenarios to the shared layout; add parity scenarios for Feature Flows 3 to 8 (add,
   update, remove, prune, dogfood-style `update --from-bundle --target`, status drift), each running
   `bin/aid` and `bin/aid.ps1` on twin fixtures and comparing exit codes, output lines, the resulting
-  file tree, trash timestamps' format and manifest bytes (masked `installed_at`).
+  file tree, trash timestamps' format, collision suffix ordering under a frozen clock with preoccupied names, and manifest bytes (masked `installed_at`).
 - A static check in the same suite: every twin pair in REQUIREMENTS.md § 11 Feature 001 › Layers &
   Components › Install core table (`read_kv_conf`/`Read-AidKvConf` through the staged-version check
   `_check_staged_version`/`Test-StagedVersion`, including `_is_aid_owned_path`/`Test-AidOwnedPath`,
   `retire_v3_layout`/`Invoke-RetireV3Layout`, the three upgrade-recovery record helper pairs,
-  and `_repair_root_region`/`Repair-AidRootRegion`) is
+  and `_repair_root_region`/`Repair-AidRootRegion`, canonical-LF region hashing and CRLF-aware byte preservation) is
   defined in its file, and the suite names each pair in at least one scenario. The
   pair list lives in the suite itself, not in a work folder.
 - `tests/canonical/test-install-parity.sh` and `tests/canonical/test-ps51-compat.sh`: extend to
@@ -41,7 +41,7 @@
   today. Removed or renamed keys get coverage rows.
 
 **Acceptance Criteria:**
-- [ ] `HOME=$(mktemp -d) bash tests/canonical/test-aid-cli-parity.sh` exits `0` on a host with `pwsh`, with a `PASS:` line per Flow 3 to 8 scenario (identical exit codes, output lines and resulting tree under both shells), and one per twin pair of the static check.
+- [ ] `HOME=$(mktemp -d) bash tests/canonical/test-aid-cli-parity.sh` exits `0` on a host with `pwsh`, with a `PASS:` line per Flow 3 to 8 scenario (identical exit codes, output lines and resulting tree under both shells), with CRLF/mixed root content, real edits, idempotent retry and outside-byte preservation; and one per twin pair of the static check.
 - [ ] Deleting one PowerShell twin (e.g. `Get-AidDriftReport`) in a scratch copy makes the static check fail and name it.
 - [ ] `bash tests/canonical/test-install-parity.sh` and `bash tests/canonical/test-ps51-compat.sh` exit `0`.
 - [ ] The coverage-parity gate (run where `pwsh`, `node` and `python3` are on PATH) reports no un-excused removal for these suites.

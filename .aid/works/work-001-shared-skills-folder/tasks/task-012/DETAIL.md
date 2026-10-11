@@ -28,8 +28,9 @@ Feature Flow › 5.
   moved to the trash, not deleted); take the tool off every `users` list; a shared entry whose list
   becomes empty has its files removed under the same sha rule and its emptied directories pruned
   (never `<root>`); a mirror goes when no remaining user declares it; when `agents_md` loses its last
-  user, delete `AGENTS.md` if it still has `file_sha256`, otherwise print
-  `Left in place (modified or not AID-owned): AGENTS.md`; when `shared.claude_md` loses its last
+  user, compare the whole-file `file_sha256`: if different, leave it in place and print
+  `Left in place (modified or not AID-owned): AGENTS.md`; if equal, remove only the unchanged
+  managed region, preserve outside bytes, and delete only when the remainder is empty/whitespace; when `shared.claude_md` loses its last
   user, run `_remove_claude_md_region` / `Invoke-RemoveClaudeMdRegion` (task-005: trash first if
   the region drifted, remove the region, delete the file only when nothing but whitespace
   remains) and drop `shared.claude_md` from the manifest, leaving the `AGENTS.md` region in place
@@ -46,7 +47,7 @@ Feature Flow › 5.
 **Acceptance Criteria:**
 - [ ] In a fixture after `aid add claude-code,cursor,codex` (with pre-seeded `.agents/skills/my-skill/SKILL.md` and `.claude/skills/my-skill/SKILL.md`), `aid remove cursor` leaves the sha256 of every file under `.agents/skills/aid-*`, `.claude/skills/aid-*`, `.aid/runtime/` and of `AGENTS.md` unchanged, removes every `.cursor/agents/aid-*`, and no `users` list in the manifest names `cursor`.
 - [ ] A following `aid remove codex` leaves `.agents/skills/aid-*`, `.claude/skills/aid-*`, `.aid/runtime/` and `AGENTS.md` present.
-- [ ] A following `aid remove claude-code` leaves no `.agents/skills/aid-*`, no `.claude/skills/aid-*` and no `.aid/runtime/`; the manifest and `.aid/settings.yml` are gone; an unedited `AGENTS.md` is deleted, while an `AGENTS.md` edited outside the region is left in place with the exact `Left in place` line printed.
+- [ ] Last-user removal fixtures cover pre-existing markerless user content, an AID-created region-only file, and edits after install: preserve outside bytes when whole hash matches, delete only the region-only file, and leave the file in place with the exact `Left in place` line when edited.
 - [ ] Both `my-skill/SKILL.md` files, and pre-seeded `.aid/knowledge/x.md`, `.aid/works/w/STATE.yml` and `.aid/design/d.md`, keep their sha256 through the whole sequence.
 - [ ] AC-14 (d): in a fixture with no prior `CLAUDE.md` and in one whose user `CLAUDE.md` had no markers, after `aid add claude-code,cursor` then `aid remove claude-code`, `CLAUDE.md` is absent in the first and equals its pre-add bytes in the second; in both, `AGENTS.md` has exactly one `<!-- AID:BEGIN -->` line, `shared.agents_md.users` is `["cursor"]`, and the manifest has no `shared.claude_md`.
 - [ ] Removing `claude-code` while `cursor` stays installed rewrites `host.conf` to `worktree_root=.aid/.worktrees` and drops `.claude/skills` from `mirrors`.

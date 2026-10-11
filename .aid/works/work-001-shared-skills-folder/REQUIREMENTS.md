@@ -244,8 +244,11 @@ Any byte difference between copies therefore produces mixed, unpredictable behav
 - **FR-8: Reference-counted uninstall.** `aid remove <tool>` removes the tool's own files and
   takes the tool off every shared entry's user list. A shared entry is removed only when its user
   list becomes empty. A mirror is removed when the tool that declared it is removed, and so is the
-  `CLAUDE.md` import region (FR-12). The existing rule that a modified `AGENTS.md` is left in
-  place still holds.
+  `CLAUDE.md` import region (FR-12). When the last user leaves `AGENTS.md`, delete it only if
+  its contents consist solely of the unchanged AID region (an empty/whitespace-only remainder
+  under the existing convention). If the whole-file hash still matches but outside-region user
+  content exists, remove only the managed region and preserve every outside byte. If the whole-file
+  hash differs, leave the file in place as modified.
 - **FR-9: Drift detection and repair.**
   - `aid status` compares every file of every shared entry with its manifest-recorded sha256, and
     compares each mirror with `.agents/skills`. It reports each modified, missing or extra
@@ -264,8 +267,9 @@ Any byte difference between copies therefore produces mixed, unpredictable behav
   Three refusals are added:
   - `aid add` refuses, naming `aid update`, when the manifest already records tools at differing
     versions.
-  - `aid add` refuses, naming `aid update`, when the project's layout format is older than the
-    CLI's.
+  - `aid add` refuses, naming `aid update`, when legacy layout evidence exists or an existing
+    settings stamp is below 5. A fresh repository with no manifest, recovery record, legacy
+    AID-owned paths or old AID-owned root-region evidence passes even when settings are absent.
   - `aid add` resolves its version from the staged payload's `aid_version` (whatever the source:
     download, `--version` or `--from-bundle`) and, when it differs from the project version,
     exits 2 and writes nothing, with the same mixed-version refusal text and its hint to run
@@ -277,8 +281,7 @@ Any byte difference between copies therefore produces mixed, unpredictable behav
   explicit, atomic upgrade path.
 - **FR-11: Layout format bump and clean-slate upgrade.** The repo layout stamp
   `AID_SUPPORTED_FORMAT` is bumped in all three carriers (`bin/aid`, `bin/aid.ps1`,
-  `lib/AidInstallCore.psm1`), so the existing `_aid_format_gate` directs a v3-layout repo to
-  `aid update`. `aid update` on a v3 layout (a format-2 manifest, or the old `<root>/aid/` and
+  `lib/AidInstallCore.psm1`). `aid update` on a v3 layout (a format-2 manifest, or the old `<root>/aid/` and
   `<root>/skills/aid-*` paths) moves every old AID-owned path, and the old AID region of the root
   files, into `.aid/.trash/`, then runs a normal fresh v4 install of the same tools (§11 Upgrade
   from v3). The old layouts are:
@@ -328,6 +331,8 @@ Any byte difference between copies therefore produces mixed, unpredictable behav
   Claude Code install. When Claude Code is uninstalled, the region is removed, and the file is
   deleted only if nothing but the region remained. User content outside the markers is never
   touched, and while Claude Code is not installed the CLI never reads or writes `CLAUDE.md`.
+  On last-user removal of `AGENTS.md`, FR-8 governs cleanup: preserve outside bytes even when the
+  whole-file hash matches, and delete only a region-only or whitespace-only remainder.
 - **FR-13: Host-resolved work-level worktree root.** No skill names a worktree root. The runtime
   resolves it from a per-host value the CLI records at install: `.claude/worktrees/` while Claude
   Code is installed (its worktree tool only switches between worktrees under that folder, §8 A-5),
@@ -569,6 +574,9 @@ CLI. The Claude Code docs (skills, settings reference, memory, changelog) were c
   - After `aid remove codex`, the shared entries are still present.
   - After `aid remove claude-code`, `.agents/skills/aid-*`, `.claude/skills/aid-*` and
     `.aid/runtime/` are absent.
+  - Last-user removal preserves a markerless pre-existing user file's outside bytes when its
+    whole-file hash matches, deletes an AID-created region-only `AGENTS.md`, and leaves an
+    `AGENTS.md` with post-install edits in place.
   - After the last tool is removed, `.gitattributes` holds no AID block (the file is deleted when
     only the block remained), and a pre-existing user line in it is unchanged.
   - Throughout, the fixture's non-AID `.agents/skills/my-skill/SKILL.md` and
@@ -595,6 +603,12 @@ CLI. The Claude Code docs (skills, settings reference, memory, changelog) were c
   - `AID_SUPPORTED_FORMAT` in `bin/aid`, `AidSupportedFormat` in `bin/aid.ps1` and
     `$script:_AidSupportedFormat` in `lib/AidInstallCore.psm1` hold the same value, one above the
     pre-change value of `4`.
+  - A fresh fixture with no manifest, recovery record or legacy AID-owned layout evidence passes
+    the layout gate and `aid add` succeeds even when settings are absent.
+  - Existing incompatible settings or manifest formats, including a format-3 manifest with stamp
+    4, refuse writes and name `aid update`. Manifest-less legacy still refuses after `aid projects
+    add` or `aid update self` migrates its settings. Future formats remain read-only refused with
+    `Run: aid update self`.
   - The new CLI's `aid add` into a v3-layout fixture exits non-zero, writes nothing, and names
     `aid update`.
   - A manifest whose `format_version` is above 3 makes the CLI exit non-zero with
@@ -662,8 +676,11 @@ CLI. The Claude Code docs (skills, settings reference, memory, changelog) were c
     well-formed region, every other line is present unchanged and in its original order, and a
     full copy of the pre-add file exists at `.aid/.trash/<file>`. A following `aid update` leaves
     each file's sha256 unchanged and adds no trash entry.
-  - In every one of these fixtures, while Claude Code is installed, `CLAUDE.md` contains exactly
-    one `@AGENTS.md` line and `AGENTS.md` contains exactly one `<!-- AID:BEGIN -->` line.
+  - LF, CRLF (`core.autocrlf=true`) and mixed-line-ending fixtures for both root files recognize
+    unchanged managed regions without drift or repair and preserve outside bytes exactly. A real
+    region edit reports drift; exact-fixed-lines repair handles CRLF, is idempotent on retry, and
+    preserves outside bytes. Exercise both shells. In every fixture, while Claude Code is installed,
+    `CLAUDE.md` contains exactly one `@AGENTS.md` line and `AGENTS.md` exactly one begin marker.
 - **AC-15:** Tool detection is fixed. `detect_tool` on a fixture holding only `.agents/` exits `2`
   (undetectable) and does not print `codex`. On a fixture holding `.codex/` it prints `codex`.
   `Detect-Tool` behaves the same way.
@@ -885,12 +902,16 @@ other. It lies outside `runtime/{scripts,templates}`, so AC-7's byte check does 
   recorded hashes is the same comparison as checking it against `.agents/skills`, without the
   blind spot of both copies drifting identically (FR-9).
 - **`agents_md`.**
-  - `region_sha256` is the sha256 of the marked region, marker lines included, as AID wrote it.
-    It is the drift baseline.
-  - `file_sha256` is the sha256 of the whole file after the write. It drives the existing
-    "modified root file is left in place" rule on the last uninstall (FR-8).
-- **`claude_md`.** `region_sha256` is the sha256 of the import region, marker lines included, as
-  AID wrote it. It is the drift baseline. There is no `file_sha256`: on the last uninstall the
+  - `region_sha256` is the sha256 of the marked region after canonical-LF normalization (line
+    terminators only; all other bytes are preserved), marker lines included. It is the drift
+    baseline for LF, CRLF and mixed-line-ending checkouts.
+  - `file_sha256` is the sha256 of the whole file after the write. It detects outside edits on the
+    last uninstall. A matching whole-file hash never authorizes deletion of outside-region content;
+    if it matches, remove only the managed region and delete the file only when the remainder is
+    empty or whitespace-only (FR-8).
+- **`claude_md`.** `region_sha256` is the sha256 of the import region after canonical-LF
+  normalization (line terminators only; all other bytes are preserved), marker lines included.
+  It is the drift baseline. There is no `file_sha256`: on the last uninstall the
   region is removed whatever the rest of the file holds, and the file is deleted only when
   nothing else remains (FR-12).
 - **`tools.<t>.paths`.** This is a plain copy of `files[].path` (the tool's own files only),
@@ -916,12 +937,14 @@ line: `format 5 (was 4): shared skills under .agents/skills (+ CLI-owned mirrors
 .aid/runtime/, one AGENTS.md pointer region for every tool, a CLAUDE.md @AGENTS.md import region
 while claude-code is installed; manifest format_version 3`. A test keeps the three values in
 lockstep. The settings stamp is capped as follows: `_aid_migrate_repo` (and its PowerShell twin)
-writes `format_version: 5` only when the manifest records `format_version` 3, or both the
-manifest and upgrade recovery record are absent. A manifest-less interrupted upgrade keeps
-stamp 4 until the fresh-install manifest is committed.
-Otherwise it writes `4`. The reason is that `aid update self` and `aid projects add` run
-`_aid_migrate_repo` without installing anything. Without the cap they would stamp a v3-layout repo
-as format 5, and the format gate would stop telling the user to run `aid update`.
+writes `format_version: 5` only when the manifest records `format_version` 3, or when no manifest,
+recovery record, legacy AID-owned paths or old AID-owned root-region evidence exists (proven fresh
+install). Manifest-less legacy layouts keep stamp 4, including after `aid projects add` or `aid
+update self` migrates settings; `aid add` refuses writes and directs the user to `aid update`. A
+pending recovery record also keeps stamp 4 until the format-3 manifest is committed. Otherwise it
+writes `4`. Use the same path-based evidence as the Upgrade from v3 trigger. A valid format-3
+manifest recognizes the legitimate v4 Claude mirror; do not classify it as legacy. User
+directory-only evidence never triggers refusal.
 
 **`.gitignore` managed block** (`_aid_gitignore_block`): `.aid/.worktrees/` is added to the
 existing entries. When `host.worktree_root` is not under `.aid/`, the block also lists that root
@@ -930,7 +953,8 @@ existing entries. When `host.worktree_root` is not under `.aid/`, the block also
 idempotent.
 
 **`.gitattributes` managed block** (`_aid_gitattributes_block`): the same marker lines as the
-`.gitignore` block, wrapping three lines:
+`.gitignore` block, wrapping three lines. It does not add attributes for `AGENTS.md` or
+`CLAUDE.md`; their checkout line endings remain part of the preserved whole-file bytes:
 
 ```
 .agents/skills/aid-*/** text eol=lf
@@ -948,11 +972,15 @@ other byte, and deletes the file when only whitespace remains.
 - The destination is `.aid/.trash/<original-relative-path>`.
 - If that path already holds identical bytes, no new copy is made.
 - If it holds different bytes, the existing entry is first renamed to
-  `<path>.<UTC yyyyMMddTHHmmssZ>`.
+  `<path>.<UTC yyyyMMddTHHmmssZ>`. If occupied, use the first unused `<path>.<UTC timestamp>.N`
+  for N = 1, 2, ...; never overwrite an occupied candidate. Then write new bytes at the unsuffixed
+  path. Identical bytes there are idempotent and cause no rotation. Bash and PowerShell use the same
+  order and names. If rotation fails, fail before moving or overwriting the incoming source.
 
 The newest copy therefore always sits at the original path, as AC-10 and AC-13 require, and no
-earlier copy is overwritten. Today `_retire_file` uses `mv -f`, which silently replaces an earlier
-trash copy. That is replaced by this policy.
+earlier copy is overwritten. Frozen-clock repeated differing backups and preoccupied suffixes must
+preserve all bytes. Today `_retire_file` uses `mv -f`, which silently replaces an earlier trash
+copy. That is replaced by this policy.
 
 ##### Feature Flow
 
@@ -1002,7 +1030,11 @@ trash copy. That is replaced by this policy.
 
 1. Run the writability pre-check (unchanged).
 2. **Layout gate** (new `_aid_layout_gate`). A manifest exists and records `format_version` < 3,
-   the settings stamp is < 5, or the upgrade recovery record exists. Exit 2, print `This project uses the v3 AID layout. Run: aid update
+   an existing settings stamp is < 5, an upgrade recovery record exists, or legacy AID-owned layout
+   evidence exists -> exit 2. A fresh repo with none of these signals passes, including when
+   settings are absent. Legacy evidence uses the same path-based checks as Upgrade from v3; a valid
+   format-3 manifest recognizes a legitimate v4 Claude mirror. User directory names alone are not
+   evidence. Print `This project uses the v3 AID layout. Run: aid update
    (it upgrades every installed tool), then retry aid add.`, and write nothing (AC-12).
 3. **Skew gate.** The manifest records a `tools.*.version` or a `shared.*.version` that differs
    from `aid_version`. Exit 2 and name `aid update` (AC-11).
@@ -1073,8 +1105,10 @@ the trash moves and the prune list.
   2. Remove the tool from every `users` list.
   3. A shared entry whose list becomes empty has its files removed under the same sha rule, and
      then its emptied directories are pruned. A mirror goes when no remaining user declares it.
-  4. If `agents_md` loses its last user, apply the existing rule: delete the file when it still
-     has `file_sha256`; otherwise print `Left in place (modified or not AID-owned): AGENTS.md`.
+  4. If `agents_md` loses its last user, use `file_sha256` to detect whole-file edits. If it
+     differs, leave the file in place and print `Left in place (modified or not AID-owned):
+     AGENTS.md`. If it matches, remove only the unchanged managed region; preserve outside bytes,
+     and delete the file only when the remainder is empty or whitespace-only.
   5. If `claude_md` loses its last user, run `_remove_claude_md_region`. Removing `claude-code`
      while another tool remains therefore takes the region out of `CLAUDE.md` and leaves the
      `AGENTS.md` region in place for the other tools.
@@ -1121,8 +1155,9 @@ the agents, `AGENTS.md` and `CLAUDE.md` are committed (AC-18).
   - every file of `shared.skills`;
   - each mirror, against the `shared.skills` hashes;
   - `shared.runtime`;
-  - the `AGENTS.md` region, against `region_sha256`;
-  - the `CLAUDE.md` import region, against `shared.claude_md.region_sha256`, when that entry
+  - the `AGENTS.md` region, against `region_sha256` after canonical-LF normalization;
+  - the `CLAUDE.md` import region, against `shared.claude_md.region_sha256` after canonical-LF
+    normalization, when that entry
     exists; a `CLAUDE.md` that is absent or has lost its markers is reported `missing:`;
   - each tool's `files`.
 
@@ -1258,8 +1293,8 @@ implemented twice. The parity suite names every row (AC-16).
 
 - **What `_root_agent_file` returns.** It returns `AGENTS.md` for every tool. `agents_md` is a
   shared entry.
-- **The regions.** Both are fixed constants in both install cores, never payload files, and every
-  line ends in LF. The AID rules live in `.aid/runtime/rules.md` (source `canonical/aid/rules.md`,
+- **The regions.** Both are fixed constants in both install cores, never payload files, and their
+  canonical bytes use LF line endings. The AID rules live in `.aid/runtime/rules.md` (source `canonical/aid/rules.md`,
   part of the runtime payload). The `AGENTS.md` region only points at them and is exactly:
 
   ```
@@ -1273,8 +1308,11 @@ implemented twice. The parity suite names every row (AC-16).
   The `CLAUDE.md` import region is the three lines `<!-- AID:BEGIN -->`, `@AGENTS.md` and
   `<!-- AID:END -->`, written only while Claude Code is installed (Gap 1). Skills, including
   `/aid-discover`, never write inside either region.
-- **`_repair_root_region <file> <region>`** (one function for both files). Every region line is
-  fixed and known, so the CLI repairs by content, not by marker shape:
+- **`_repair_root_region <file> <region>`** (one function for both files). Parsing and recognition
+  are CRLF-aware. Compare managed-region hashes over canonical-LF bytes (normalize line
+  terminators only; do not trim or otherwise change content). New constants remain LF. Repair
+  exact fixed lines with LF or CRLF terminators while preserving every outside-region byte,
+  including mixed line endings; never normalize the whole file:
   - **The file is missing:** it is created holding only the region.
   - **The file holds exactly the well-formed region** (each region line once, in order, adjacent):
     nothing changes.
@@ -1282,20 +1320,21 @@ implemented twice. The parity suite names every row (AC-16).
     when the file is non-empty and does not end in LF. Every pre-existing byte is kept, so no trash
     copy is made.
   - **Anything else** (an orphan or duplicated marker, a partial or repeated region): the whole
-    file is copied to `.aid/.trash/<file>` (collision policy), every line that exactly equals a
-    region line of that file's region is removed wherever it sits, and one well-formed region is
-    written at the position of the first removed line. Every other byte is kept. A second run
-    finds the file well-formed and changes nothing.
+    file is copied to `.aid/.trash/<file>` (collision policy), every line whose content exactly
+    equals a region line, allowing LF or CRLF terminators, is removed wherever it sits, and one
+    well-formed LF region is written at the position of the first removed line. Every other byte
+    is kept. A second run finds the file well-formed and changes nothing.
 - **`_ensure_claude_md_region`** runs in every add and update commit (flow 3, commit step 5)
   whenever an installed tool declares `context_import`, and calls `_repair_root_region` with the
   import region. `_copy_root_agent_file` does the same for `AGENTS.md` with the pointer region.
   After the write, the CLI records `agents_md.region_sha256` and `file_sha256`, or
-  `claude_md.region_sha256`.
+  `claude_md.region_sha256`; region hashes use canonical-LF bytes, while whole-file baselines use
+  actual file bytes.
 - **`_remove_claude_md_region`.** It runs when `shared.claude_md` loses its last user (flow 5).
-  If the region no longer matches `region_sha256`, the whole file is copied to the trash first.
-  Then the region is removed, marker lines included, and every other byte is kept, so a user
-  file that ended in LF and received an appended region returns to its pre-add bytes. If the
-  remainder is empty or whitespace-only, the file is deleted. A `CLAUDE.md` that has lost its
+  If the canonical-LF region hash differs from `region_sha256`, the whole file is copied to trash
+  first. Then the exact region is removed with CRLF-aware parsing and every other byte is kept, so
+  a user file returns to its pre-add bytes. If the remainder is empty or whitespace-only, the file
+  is deleted. A `CLAUDE.md` that has lost its
   markers, or holds malformed ones, is left byte-unchanged.
 - **Scope.** While no installed tool declares `context_import`, the CLI never reads or writes
   `CLAUDE.md`. `AGENTS.md` keeps its region for the other tools whatever happens to
@@ -1335,15 +1374,15 @@ work.
 | AC-8 | `tests/canonical/test-worktree-lifecycle.sh` | a cursor-only fixture creates under `.aid/.worktrees/`, which is in the block; `.claude/worktrees/work-002-y` is located as `registered`; extra: a claude-code fixture's root is `.claude/worktrees/` |
 | AC-9, AC-10 | `tests/canonical/test-multitool-isolation.sh` (rewritten for the shared layout) | the ref-count sequence (including the `.gitattributes` block gone after the last remove) and the drift sequence exactly as worded |
 | AC-11 | `tests/canonical/test-aid-cli.sh` (FR11 cases extended) | skew refusals; the whole-tree sha snapshot is unchanged; versions are equal after `update` |
-| AC-12 | `tests/canonical/test-layout-format-guard.sh` (new) | carrier equality (three values); the new `aid add` on a v3-layout fixture exits 2, writes nothing and names `aid update`; a manifest with `format_version` above 3 is refused with `Run: aid update self` and writes nothing |
+| AC-12 | `tests/canonical/test-layout-format-guard.sh` (new) | carrier equality; fresh missing-settings add; incompatible format-3/stamp-4 and manifest-less legacy-after-migration refusals; recovery gates; future-format read-only checks |
 | AC-13 | `tests/canonical/test-aid-migrate.sh` (new fixtures for all five tools plus legacy `.agents/aid/`) | as worded; manifest-less two-tool recovery, partial retirement, post-retirement and post-stamp interruptions, invalid-record refusal, staging failure, dry-run, add/remove gates, cleanup, and unchanged second-run trash |
-| AC-14 | `test-shared-install.sh` (cases a, b, e and f), `test-aid-migrate.sh` (case c: the user-edited and no-marker v3 fixtures), `test-multitool-isolation.sh` (case d) | as worded; plus function-level cases for `_repair_root_region`, `_ensure_claude_md_region` and `_remove_claude_md_region`, including a non-LF-terminated file, a duplicated or partial region, and a drifted region that is trashed before removal |
+| AC-14 | `test-shared-install.sh` (cases a, b, e and f), `test-aid-migrate.sh` (case c), `test-multitool-isolation.sh` (case d) | as worded; last-user AGENTS cases for markerless pre-existing content, AID-created region-only file and post-install edit; LF/CRLF/mixed `core.autocrlf=true` parsing, canonical-LF region hashes, real edits, idempotent repair and exact outside-byte preservation in both shells |
 | AC-15 | `test-aid-cli.sh`, `test-aid-cli-ps1.sh` | `detect_tool` and `Detect-Tool` |
 | AC-16 | `test-aid-cli-parity.sh` (scenarios for flows 3 to 8, plus a static check naming every twin row above), `test-install-parity.sh`, `test-ps51-compat.sh`; `tests/windows/Test-AidInstaller.ps1` (AC-9, AC-10 and AC-13 scenarios) | parity |
 | AC-17 | `test-npm-installer.sh`, `test-pypi-installer.sh` | vendored libs match by sha256 |
 | AC-18 | `tests/canonical/test-dogfood-byte-identity.sh` (re-keyed: canonical ↔ `.agents/skills`, `.claude/skills`, `.aid/runtime/`; the manifest records the shared entries; agents ↔ the regenerated profile trees; the absences) | as worded |
-| AC-19 | `test-shared-layout-sources.sh` (the grep) plus GATE reviewer | as worded |
-| AC-20 | manual probes of the A-4 alias list and the A-6 pointer, recorded in `STATE.yml` | as worded |
+| AC-19 | `test-shared-layout-sources.sh` plus scoped review by task-030/031 | old-layout token grep plus semantic review of profile contents, shared release payload, per-tool agents-only artifacts, dogfood method, and channel/version claims |
+| AC-20 | task-032 probes the A-4 alias and A-6 pointer on every required host, records pass/fail/unknown, activates host-specific `rules_inline` on confirmed A-6 failure, then re-runs affected checks and final regression gates | as worded |
 | AC-21 | `tests/run-all.sh`, `render.py --self-test` | green |
 
 **Shared fixture helper.** Every suite that builds bundles from `profiles/<tool>/` today switches

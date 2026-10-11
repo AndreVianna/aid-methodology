@@ -29,8 +29,9 @@ Every item is one behaviour implemented twice, in `lib/aid-install-core.sh` and
   A non-ASCII byte or a CR exits non-zero naming the file.
 - Trash move `trash_file` / `Move-AidToTrash` (new) with the § Data Model › `.aid/.trash/`
   collision policy: destination `.aid/.trash/<original-relative-path>`; identical bytes already there
-  -> no new copy; different bytes -> the existing entry is renamed to `<path>.<UTC yyyyMMddTHHmmssZ>`
-  first. `_retire_file` (inside `_migrate_retired_layout`) delegates to it instead of `mv -f`.
+  -> no new copy; different bytes -> rotate to `<path>.<UTC timestamp>`, then the first unused
+  `<path>.<UTC timestamp>.N` for N=1,2,...; never overwrite occupied candidates. Fail before
+  source loss if rotation fails. Bash and PowerShell use identical candidate ordering and names. `_retire_file` (inside `_migrate_retired_layout`) delegates to it instead of `mv -f`.
 - Guarded copy `copy_file_guarded <src> <dst> [<recorded-sha256>]` / `Copy-AidFileGuarded` (new):
   absent -> copy; identical -> leave; differing -> overwrite, and trash the destination first
   (`trash_file`) only when it is DRIFTED: its bytes differ from the recorded sha256 the caller
@@ -53,7 +54,7 @@ Every item is one behaviour implemented twice, in `lib/aid-install-core.sh` and
 
 **Acceptance Criteria:**
 - [ ] `read_kv_conf` on a fixture holding a comment, a blank line, `a=b=c` and two `skill_mirror=` lines yields `a` = `b=c` and a two-item `skill_mirror` list; the same file with CRLF endings makes it exit non-zero with the file path in the message. `Read-AidKvConf` gives the same results where `pwsh` exists.
-- [ ] Three `trash_file` calls for one relative path with three different contents leave the newest bytes at `.aid/.trash/<rel>` and exactly two siblings named `<rel>.<yyyyMMddTHHmmssZ>`; a fourth call with bytes identical to `.aid/.trash/<rel>` adds no file.
+- [ ] Frozen-clock repeated differing backups and preoccupied timestamp suffixes preserve every byte, place newest bytes at `.aid/.trash/<rel>`, and use the first unused `.N` suffix; identical retry is idempotent and Bash/PowerShell names and ordering match.
 - [ ] `copy_file_guarded` on an absent, an identical, a differing-but-unedited (destination sha256 equals the recorded one) and a drifted destination (a recorded sha256 that the bytes no longer match; and, with no recorded sha256, differing bytes) produces copied, unchanged, overwritten-with-no-trash and trashed-then-copied outcomes respectively, and only the two drifted cases write under `.aid/.trash/`.
 - [ ] For one fixed input, the python3 writer, the pure-bash writer and (where `pwsh` exists) the PowerShell writer produce JSON that is byte-identical after masking `installed_at`, and it equals a committed golden file whose key order matches § Data Model.
 - [ ] `HOME=$(mktemp -d) bash tests/canonical/test-install-core-primitives.sh` exits `0`.

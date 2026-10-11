@@ -42,7 +42,7 @@
   (or the re-home allowlist when it moved to another suite).
 
 **Acceptance Criteria:**
-- [ ] `HOME=$(mktemp -d) bash tests/canonical/test-multitool-isolation.sh --verbose` exits `0` with a `PASS:` line for every clause of AC-9, AC-10 and AC-14 (d) listed in Scope.
+- [ ] `HOME=$(mktemp -d) bash tests/canonical/test-multitool-isolation.sh --verbose` exits `0` with a `PASS:` line for every clause of AC-9, AC-10 and AC-14 (d); last-user AGENTS fixtures preserve pre-existing outside content when the whole hash matches, delete an AID-created region-only file, and leave a post-install edited file in place.
 - [ ] `grep -c 'profiles/' tests/canonical/test-multitool-isolation.sh` prints `0`.
 - [ ] The coverage-parity gate (`bash tests/coverage-parity.sh diff --baseline tests/coverage-baseline.tsv --collect --accept tests/coverage-accepted-removals.tsv --allow tests/coverage-rehome-allowlist.tsv`, run where `pwsh`, `node` and `python3` are on PATH) reports no un-excused removal for this suite.
 - [ ] All section-6 quality gates pass.

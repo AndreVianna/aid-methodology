@@ -20,7 +20,7 @@
 **Depends on:** task-026, task-027
 
 **Scope:**
-- `README.md`, `docs/install.md` and `docs/aid-methodology.md`: describe what `aid add` places for
+- `README.md`, `docs/install.md`, `docs/aid-methodology.md`, `docs/repository-structure.md`, `docs/glossary.md` and `docs/release.md`: describe what `aid add` places for
   every tool (`.agents/skills/aid-*`, `.aid/runtime/`, the `AGENTS.md` region, each tool's agents),
   the Claude Code `.claude/skills` mirror and `CLAUDE.md` `@AGENTS.md` import region, running
   several tools on one repo (reference counting, one version per repo, `aid update` to upgrade,
@@ -34,12 +34,13 @@
   `.aid/runtime/` / `.agents/skills/aid-*` layout.
 - The repo-root `CLAUDE.md` and `AGENTS.md` are NOT hand-edited here: they come out of the dogfood
   resync (task-027), sourced from the `AGENTS.md` pointer region and `canonical/aid/rules.md`.
-- Match each doc's existing style; no work id or work-folder path appears in any of these files.
+- Generic `.aid/works/{work}` schemas and illustrative IDs are allowed in methodology docs; do not make production docs depend on this specific transient work. The KB-only absolute work-ID/path ban remains task-029.
+- Match each doc's existing style.
 
 **Acceptance Criteria:**
 - [ ] `git grep -nE '\.(claude|codex|cursor|agent)/aid/|\.github/aid/' -- CLAUDE.md AGENTS.md README.md docs .github/workflows` prints no lines.
 - [ ] `git grep -nE '\.(claude|codex|cursor|agent)/aid/|\.github/aid/' -- site` prints no lines.
 - [ ] `grep -n '\.agents/skills' README.md docs/install.md` and `grep -n '\.aid/runtime' README.md docs/install.md` each print at least one line per file.
-- [ ] `grep -cE 'work-[0-9]{3}|\.aid/works/' README.md docs/install.md docs/aid-methodology.md` prints `0` for each file.
+- [ ] Scoped review confirms docs describe profiles as agents plus `aid-tool.conf`, the shared release payload and per-tool agents-only artifacts, the CLI dogfood method, and channel/version claims; generic work schemas and illustrative IDs remain valid, with no dependency on this specific work.
 - [ ] `python3 -c "import yaml; yaml.safe_load(open('.github/workflows/test.yml'))"` exits `0` (the workflow still parses).
 - [ ] All section-6 quality gates pass.

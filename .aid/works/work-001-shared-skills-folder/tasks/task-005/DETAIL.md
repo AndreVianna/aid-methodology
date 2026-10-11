@@ -46,7 +46,9 @@ context file.
   The `CLAUDE.md` import region is the three lines `<!-- AID:BEGIN -->`, `@AGENTS.md`,
   `<!-- AID:END -->`. Skills never write inside either region.
 - `_repair_root_region <file> <region>` / `Repair-AidRootRegion` (new; one function for both
-  files; § 11 › Root context file). It repairs by content, not by marker shape:
+  files; § 11 › Root context file). Parsing/recognition is CRLF-aware; region hashes use canonical-LF bytes (normalize terminators
+only), constants stay LF, and exact fixed-line repair preserves all outside bytes, including mixed
+line endings, without normalizing the whole file:
   - file missing -> create it holding only the region;
   - file holds exactly the well-formed region (each region line once, in order, adjacent) -> change
     nothing;
@@ -89,7 +91,7 @@ context file.
 - [ ] With the core sourced, `_root_agent_file <tool>` prints `AGENTS.md` for each of the five tools; `Get-RootAgentFile` does the same where `pwsh` exists.
 - [ ] `_repair_root_region`: a missing file ends with bytes equal to the region; a file holding exactly the well-formed region plus user text before and after is byte-unchanged (sha256) with no trash entry; a LF-terminated no-region file keeps its pre-write bytes as a byte-exact prefix followed only by the region, a non-LF-terminated one gets one LF first, and neither writes a trash entry.
 - [ ] `_repair_root_region` on three malformed fixtures -- an `AGENTS.md` or `CLAUDE.md` holding `<!-- AID:BEGIN -->` with no `<!-- AID:END -->` followed by user text; an `AGENTS.md` holding two copies of the pointer region around user text; a `CLAUDE.md` holding a lone `@AGENTS.md` line -- leaves exactly one well-formed region, every other line present unchanged and in its original order, a full copy of the pre-write file at `.aid/.trash/<file>`, and a second call leaves the sha256 unchanged and adds no trash entry.
-- [ ] `_copy_root_agent_file` on an absent `AGENTS.md` produces exactly the five pointer-region lines and records `agents_md.region_sha256` and `file_sha256`; with a staged `aid-tool.conf` carrying `rules_inline=true`, the file holds the BEGIN line, the comment line, the bytes of `canonical/aid/rules.md` and the END line, and after one in-span byte is edited a repair restores that span while a user line outside the markers is untouched.
+- [ ] `_copy_root_agent_file` on an absent `AGENTS.md` produces exactly the five pointer-region lines and records canonical-LF `agents_md.region_sha256` plus whole-file `file_sha256`; LF, CRLF and mixed user content pass both shells without false drift, real edits drift, CRLF repair is idempotent, and every outside byte is preserved; with a staged `aid-tool.conf` carrying `rules_inline=true`, the file holds the BEGIN line, the comment line, the bytes of `canonical/aid/rules.md` and the END line, and after one in-span byte is edited a repair restores that span while a user line outside the markers is untouched.
 - [ ] `_ensure_claude_md_region`: on an absent file the result's bytes equal the import region exactly; on a no-region file ending in LF the pre-write bytes are a byte-exact prefix and the only bytes after them are the import region, and a second call leaves the sha256 unchanged; on a non-empty file NOT ending in LF the result is the pre-write bytes, one LF, then the import region.
 - [ ] `_remove_claude_md_region`: on the created-from-absent file the file is gone; on the appended-to-LF-terminated-user-file case the file equals its pre-add bytes; with a drifted region the whole file is first at `.aid/.trash/CLAUDE.md`; a file whose markers were deleted is byte-unchanged.
 - [ ] The `Repair-AidRootRegion`, `Copy-RootAgentFile`, `Invoke-EnsureClaudeMdRegion` and `Invoke-RemoveClaudeMdRegion` twins give byte-identical results and output lines for every case above where `pwsh` exists.
