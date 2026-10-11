@@ -219,6 +219,10 @@ Any byte difference between copies therefore produces mixed, unpredictable behav
   and `.aid/connectors/` are untouched, and `.aid/settings.yml` keeps its existing seed-on-install
   and remove-on-last-uninstall behaviour. `.aid/runtime/` is not added to the `.gitignore`
   managed block, matching how `<root>/aid/` is treated today; only its runtime-local paths are.
+  The CLI also keeps a managed block in the project-root `.gitattributes` (created when missing,
+  same markers and ownership rules as the `.gitignore` block) that forces LF for the AID-owned
+  paths, so a `core.autocrlf=true` checkout does not turn every file modified or break the `.sh`
+  runtime; the block is reference-counted with the shared entries and removed with the last tool.
 - **FR-7: Manifest records shared entries.** The install manifest records three things for every
   shared entry (the files under `.agents/skills/aid-*`, each mirror, `.aid/runtime/`, the
   `AGENTS.md` region, and the `CLAUDE.md` import region):
@@ -517,6 +521,9 @@ CLI. The Claude Code docs (skills, settings reference, memory, changelog) were c
   - A stray file placed in `.aid/runtime/` is pruned by the next `aid update`.
   - A fixture file `.aid/runtime/scripts/summarize/node_modules/x.js` survives `aid update`,
     nothing from it lands in `.aid/.trash/`, and `aid status` prints no `extra:` line for it.
+  - After `aid add cursor` in a fixture, `.gitattributes` contains the managed block with the
+    three `text eol=lf` lines of the `.gitattributes` managed block, and a pre-existing user line
+    in `.gitattributes` is unchanged.
 - **AC-8:** The work-level worktree root is resolved per host.
   - In a fixture repo, `worktree-lifecycle.sh create work-001 x` prints a path under the FR-13
     root, and that root appears in the `.gitignore` AID managed block.
@@ -608,6 +615,10 @@ CLI. The Claude Code docs (skills, settings reference, memory, changelog) were c
     and holds a `## Workflow` section, after `aid add claude-code` that section is present
     byte-for-byte, the pre-add bytes of the file are a byte-exact prefix of it, a full copy of the
     pre-add file exists at `.aid/.trash/AGENTS.md`, and the run prints a WARN naming `Workflow`.
+  - (f) **Malformed markers.** In a fixture whose user `CLAUDE.md` holds `<!-- AID:BEGIN -->` with
+    no `<!-- AID:END -->`, followed by user text, after `aid add claude-code` the pre-add bytes
+    are a byte-exact prefix of the file (the user text kept), a full copy of the pre-add file
+    exists at `.aid/.trash/CLAUDE.md`, and the run prints a WARN naming `CLAUDE.md`.
   - In every one of these fixtures, while Claude Code is installed, `CLAUDE.md` contains exactly
     one `@AGENTS.md` line and `AGENTS.md` contains exactly one `<!-- AID:BEGIN -->` line.
 - **AC-15:** Tool detection is fixed. `detect_tool` on a fixture holding only `.agents/` exits `2`
@@ -885,6 +896,20 @@ existing entries. When `host.worktree_root` is not under `.aid/`, the block also
 (`.aid/runtime/**/node_modules/`). The block stays a pure function of the manifest, so it is still
 idempotent.
 
+**`.gitattributes` managed block** (`_aid_gitattributes_block`): the same marker lines as the
+`.gitignore` block, wrapping three lines:
+
+```
+.agents/skills/aid-*/** text eol=lf
+.claude/skills/aid-*/** text eol=lf
+.aid/runtime/** text eol=lf
+```
+
+`update_gitattributes` creates the file when missing; otherwise it replaces only the block and
+keeps every byte outside it, as `update_gitignore` does. The block is a constant, so it is
+idempotent. `remove_gitattributes_block` removes the block, marker lines included, keeps every
+other byte, and deletes the file when only whitespace remains.
+
 **`.aid/.trash/` collision policy** (used by every trash move in this feature):
 
 - The destination is `.aid/.trash/<original-relative-path>`.
@@ -988,7 +1013,7 @@ trash copy. That is replaced by this policy.
       file is recorded with the sha256 of its staged bytes.
    8. Prune (flow 6).
    9. `seed_settings_yml` now reads its template from `.aid/runtime/templates/settings.yml`.
-      Then run `update_gitignore` and `_migrate_term_exclusions`.
+      Then run `update_gitignore`, `update_gitattributes` and `_migrate_term_exclusions`.
 7. **Output.** The commit prints one summary block for `shared` and one per tool, in the existing
    counter format. A run that changes nothing prints `up to date (N files)` in every block.
    Because `add` rewrites differing shared files from the verified payload, it also repairs drift
@@ -1025,7 +1050,8 @@ the trash moves and the prune list.
      while another tool remains therefore takes the region out of `CLAUDE.md` and leaves the
      `AGENTS.md` region in place for the other tools.
   6. Rewrite `host.conf` if the runtime remains.
-  7. Delete the manifest and `.aid/settings.yml` when no tools remain (existing behaviour).
+  7. Delete the manifest and `.aid/settings.yml` when no tools remain (existing behaviour), and
+     run `remove_gitattributes_block` (the `.gitignore` block stays, as today).
 
   Non-`aid-*` entries in `.agents/skills/` or in a mirror are never read or touched (AC-9).
 
@@ -1215,6 +1241,7 @@ implemented twice. The parity suite names every row (AC-16).
 | tool detection | `detect_tool` (`.agents` no longer marks Codex) | `Detect-Tool` |
 | root file | `_root_agent_file` (`AGENTS.md` for every tool); `_copy_root_agent_file` branch C2 (trash copy, append the region, WARN; no excision unless C1); C2 stem list gains `Review criteria` | `Get-RootAgentFile`; `Copy-RootAgentFile` branch C2; `Test-AidHeadingStem` |
 | gitignore block | `_aid_gitignore_block` (adds the worktree roots) | `Get-AidGitignoreBlock` |
+| gitattributes block | `_aid_gitattributes_block`, `update_gitattributes`, `remove_gitattributes_block` (new) | `Get-AidGitattributesBlock`, `Update-AidGitattributes`, `Remove-AidGitattributesBlock` (new) |
 | settings seed | `seed_settings_yml` (template from `.aid/runtime/templates/`) | `Initialize-AidSettingsFile` |
 | CLI gates and stamp | `_aid_layout_gate` (new), the skew gate in the `FR11` block, the stamp cap in `_aid_migrate_repo` | twins in `bin/aid.ps1` |
 | staged-version check (`aid add`, flow 3 step 5) | `_check_staged_version` (new) | `Test-StagedVersion` (new) |
@@ -1239,6 +1266,15 @@ asserts that every region heading in `canonical/AGENTS.md` is a C2 stem.
 - **The import region.** Its bytes are a fixed constant in both install cores, never a payload
   file: the three lines `<!-- AID:BEGIN -->`, `@AGENTS.md` and `<!-- AID:END -->`, each ending
   in LF. It is the primary design for Claude Code (Gap 1), and the same in every repo.
+- **Marker well-formedness (`AGENTS.md` and `CLAUDE.md`).** A root file counts as *with markers*
+  only when it holds exactly one `AID:BEGIN` line followed later by exactly one `AID:END` line.
+  Any other shape (orphan BEGIN, orphan END, duplicates, wrong order) is treated as marker-less:
+  branch B never runs, so nothing is replaced or dropped. The marker-less rule below applies: the
+  whole file is copied to `.aid/.trash/<file>` first, a fresh region is appended, no section is
+  excised, and the CLI prints `WARN: aid: <file> has malformed AID markers; left unchanged, a
+  fresh AID region was appended` (in addition to any C2-stem WARN). A file that already ends with
+  the region being written is left unchanged, so a second run appends nothing; the WARN repeats
+  until the user repairs the markers.
 - **`_ensure_claude_md_region`.** It runs in every add and update commit (flow 3, commit
   step 5) and in the migration (Migration Plan step 2), whenever an installed tool declares
   `context_import`. It follows the three FR-12 cases:
@@ -1279,7 +1315,7 @@ asserts that every region heading in `canonical/AGENTS.md` is a C2 stem.
   Then the region is removed, marker lines included, and every other byte is kept, so a user
   file that ended in LF and received an appended region returns to its pre-add bytes. If the
   remainder is empty or whitespace-only, the file is deleted. A `CLAUDE.md` that has lost its
-  markers is left byte-unchanged.
+  markers, or holds malformed ones, is left byte-unchanged.
 - **Scope.** While no installed tool declares `context_import`, the CLI never reads or writes
   `CLAUDE.md`. `AGENTS.md` keeps its region for the other tools whatever happens to
   `CLAUDE.md`.
@@ -1314,13 +1350,13 @@ work.
 | AC-2 | `tests/canonical/test-release.sh` (new RL cases) | the `--dry-run` artifact set; shared `skills/` and `runtime/` match canonical exactly; per-tool artifacts hold only `aid-tool.conf` and `<root>/agents/`; the wrapper is the first member; `SHA256SUMS` covers all |
 | AC-3 | `tests/canonical/test-shared-install.sh` (new) | per tool, `aid add --from-bundle <stage-only dir>`; canonical equals `.agents/skills` (and `.claude/skills` for claude-code); file counts; negative control: mutate one staged byte, the check must fail |
 | AC-4, AC-5, AC-6 | `test-shared-layout-sources.sh` | the AC greps; the AC-5 allowlist must have a `why` per row and no row may be stale |
-| AC-7 | `test-shared-install.sh` | runtime bytes; no `<root>/aid/`; user `.aid/` shas unchanged across add, update and remove; a stray file in the runtime is pruned |
+| AC-7 | `test-shared-install.sh` | runtime bytes; no `<root>/aid/`; user `.aid/` shas unchanged across add, update and remove; a stray file in the runtime is pruned; the `.gitattributes` block and a user line kept |
 | AC-8 | `tests/canonical/test-worktree-lifecycle.sh` | a cursor-only fixture creates under `.aid/.worktrees/`, which is in the block; `.claude/worktrees/work-002-y` is located as `registered`; extra: a claude-code fixture's root is `.claude/worktrees/` |
 | AC-9, AC-10 | `tests/canonical/test-multitool-isolation.sh` (rewritten for the shared layout) | the ref-count sequence and the drift sequence exactly as worded |
 | AC-11 | `tests/canonical/test-aid-cli.sh` (FR11 cases extended) | skew refusals; the whole-tree sha snapshot is unchanged; versions are equal after `update` |
 | AC-12 | `tests/canonical/test-layout-format-guard.sh` (new), with a frozen format-4 core at `tests/canonical/fixtures/format4-core/` (new; byte copies of today's `lib/aid-install-core.sh` and `lib/AidInstallCore.psm1`) | carrier equality (four values); the new `aid add` on a format-4 fixture; the frozen core given new artifacts exits non-zero and the target tree sha is unchanged (bash always; PowerShell when `pwsh` is present); the frozen core's `aid remove` of the last tool, then the new `aid status` (orphan report, exit 7) and `aid remove --orphans` (nothing left, bytes in the trash) |
 | AC-13 | `tests/canonical/test-aid-migrate.sh` (new fixtures for all five tools plus legacy `.agents/aid/`) | as worded, including the second-run `up to date` and the unchanged trash |
-| AC-14 | `test-shared-install.sh` (cases a and b), `test-aid-migrate.sh` (case c: the user-edited, unedited and no-marker `CLAUDE.md` fixtures), `test-multitool-isolation.sh` (case d) | as worded; plus function-level cases for `_ensure_claude_md_region` and `_remove_claude_md_region`, including a non-LF-terminated file and a drifted region that is trashed before removal |
+| AC-14 | `test-shared-install.sh` (cases a, b and f), `test-aid-migrate.sh` (case c: the user-edited, unedited and no-marker `CLAUDE.md` fixtures), `test-multitool-isolation.sh` (case d) | as worded; plus function-level cases for `_ensure_claude_md_region` and `_remove_claude_md_region`, including a non-LF-terminated file and a drifted region that is trashed before removal |
 | AC-15 | `test-aid-cli.sh`, `test-aid-cli-ps1.sh` | `detect_tool` and `Detect-Tool` |
 | AC-16 | `test-aid-cli-parity.sh` (scenarios for flows 3 to 8 and the flow 10 orphans recovery, plus a static check naming every twin row above), `test-install-parity.sh`, `test-ps51-compat.sh`; `tests/windows/Test-AidInstaller.ps1` (AC-9, AC-10 and AC-13 scenarios) | parity |
 | AC-17 | `test-npm-installer.sh`, `test-pypi-installer.sh` | vendored libs match by sha256 |

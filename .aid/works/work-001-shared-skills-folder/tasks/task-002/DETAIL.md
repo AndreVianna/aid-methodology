@@ -60,6 +60,8 @@
 - Out of scope: `canonical/skills/**` (task-001), `canonical/agents/**` (task-003). Do NOT run
   `run_generator.py` and do NOT commit changes under `profiles/`, `.claude/` or `.cursor/`
   (same reason as task-001).
+- Deferred review note (definition-gate ledger row 9): Make the AC-5 check falsifiable: anchor the install-root pattern so `.agent/` never matches `.agents/`, define "non-comment line" per file type (shell, markdown, `.mjs`, `.json`), and size the allowlist against today's count (about 217 lines carry `canonical/` tokens).
+- Deferred review note (definition-gate ledger row 21): `canonical/aid/templates/knowledge-summary/prompt.md` carries a `{project_context_file}` placeholder that the deleted `substitute_filenames` used to resolve; write it as `AGENTS.md` and make the AC-5 check cover placeholders under `canonical/aid/`.
 
 **Acceptance Criteria:**
 - [ ] `grep -rnE '(^|[^A-Za-z0-9_])canonical/(aid/)?(scripts|templates|skills|agents|recipes)/|\.(claude|codex|cursor|agent)/' canonical/aid | grep -vE '^[^:]+\.(sh|py|ps1|ya?ml):[0-9]+:[[:space:]]*#'` prints only lines matched by a row of `runtime-source-path-allowlist.tsv`, plus the single `_worktrees_root_from` line left to task-011.

@@ -44,6 +44,7 @@
   `build-project-index.sh` and `harvest-coined-terms.sh` contain `.agents` (change made in task-002),
   keyed per script.
 - Deferred review note (definition-gate ledger row 37): Add a test for the `.agents` entry in the install-tree skip lists of `build-project-index.sh` and `harvest-coined-terms.sh`, in `tests/canonical/test-kb-scanner-scope.sh`.
+- Deferred review note (definition-gate ledger row 9): AC-5 test design: see the task-002 note for the same row (anchored pattern, per-file-type comment rules, sized allowlist).
 
 **Acceptance Criteria:**
 - [ ] `HOME=$(mktemp -d) bash tests/canonical/test-shared-layout-sources.sh --verbose` exits `0` and prints one `PASS:` line per clause listed in Scope (AC-1, each AC-4 grep, AC-5 check, allowlist `why`, allowlist staleness, each AC-6 clause, C2 coverage).

@@ -39,6 +39,12 @@ and › 6.
   `host.worktree_root` is not under `.aid/`, also list that root (e.g. `.claude/worktrees/`). The
   block stays a pure function of the manifest and idempotent. The block also lists each FR-6
   runtime-local path (`.aid/runtime/**/node_modules/`). `.aid/runtime/` itself is NOT added.
+- `.gitattributes` managed block (§ 11 › Data Model, *`.gitattributes` managed block*; FR-6):
+  `_aid_gitattributes_block` / `Get-AidGitattributesBlock` (constant: the `.gitignore` marker lines
+  around `.agents/skills/aid-*/** text eol=lf`, `.claude/skills/aid-*/** text eol=lf`,
+  `.aid/runtime/** text eol=lf`) and `update_gitattributes` / `Update-AidGitattributes` (create
+  when missing, replace only the block, keep every byte outside it, idempotent), run right after
+  `update_gitignore`.
 - `seed_settings_yml` / `Initialize-AidSettingsFile`: read the template from
   `.aid/runtime/templates/settings.yml`. `update_gitignore` and `_migrate_term_exclusions` run after,
   as today.
@@ -47,6 +53,7 @@ and › 6.
 **Acceptance Criteria:**
 - [ ] After `aid add cursor`, `.aid/runtime/host.conf` is exactly `worktree_root=.aid/.worktrees`; after `aid add claude-code` in a fresh fixture it is `worktree_root=.claude/worktrees`; after `aid add cursor` then `aid add claude-code` it is `worktree_root=.claude/worktrees`. In each case the manifest `host.worktree_root` matches and `shared.runtime.files` lists `host.conf` with its current sha256.
 - [ ] The `.gitignore` AID block contains `.aid/.worktrees/` in every fixture, contains `.claude/worktrees/` only when `claude-code` is installed, contains `.aid/runtime/**/node_modules/`, and never contains a line equal to `.aid/runtime/`.
+- [ ] After `aid add cursor` in a fixture with a pre-existing `.gitattributes` user line, `.gitattributes` contains the managed block with the three `text eol=lf` lines and the user line is unchanged; with no prior `.gitattributes` the file is created holding only the block; a second `aid add`/`aid update` leaves its sha256 unchanged.
 - [ ] A fixture file `.aid/runtime/scripts/summarize/node_modules/x.js` survives the next `aid add <another tool>` with unchanged sha256, and nothing from it lands in `.aid/.trash/`.
 - [ ] A stray `.aid/runtime/stray.txt` and a stray `.agents/skills/aid-zzz/SKILL.md` placed before the next `aid add <another tool>` are gone from their places afterwards and present byte-for-byte at `.aid/.trash/.aid/runtime/stray.txt` and `.aid/.trash/.agents/skills/aid-zzz/SKILL.md`; `.agents/skills/my-skill/SKILL.md` keeps its sha256.
 - [ ] `.aid/settings.yml` exists after a first add, and `grep -rn 'aid/templates/settings.yml' lib/ bin/` shows only the `.aid/runtime/templates/settings.yml` form.

@@ -35,7 +35,9 @@
   file placed in `.aid/runtime/` is gone after the next `aid update`; a fixture file
   `.aid/runtime/scripts/summarize/node_modules/x.js` survives `aid update`, nothing from it lands
   in `.aid/.trash/`, and `aid status` prints no `extra:` line for it. The byte-for-byte comparison
-  with `canonical/aid/{scripts,templates}` ignores the FR-6 runtime-local paths.
+  with `canonical/aid/{scripts,templates}` ignores the FR-6 runtime-local paths. After
+  `aid add cursor` in a fixture holding a user `.gitattributes` line, `.gitattributes` contains
+  the managed block with the three `text eol=lf` lines and the user line is unchanged.
 - AC-14 cases (a) and (b), as worded in REQUIREMENTS.md § 9 (the § 11 test plan places them
   here): (a) `aid add claude-code` into a fixture with no `CLAUDE.md` creates one whose bytes equal
   the import region (`<!-- AID:BEGIN -->`, `@AGENTS.md`, `<!-- AID:END -->`, each LF-terminated),
@@ -48,9 +50,14 @@
   markers and holds a `## Workflow` section, after `aid add claude-code` that section is present
   byte-for-byte, the pre-add bytes are a byte-exact prefix of the file, a full copy of the pre-add
   file exists at `.aid/.trash/AGENTS.md`, and the run prints a WARN naming `Workflow`.
+- AC-14 case (f), as worded in REQUIREMENTS.md § 9: a fixture `CLAUDE.md` holding
+  `<!-- AID:BEGIN -->` with no `<!-- AID:END -->`, followed by user text, keeps the pre-add bytes
+  as a byte-exact prefix after `aid add claude-code`, a full copy of the pre-add file exists at
+  `.aid/.trash/CLAUDE.md`, and the WARN names `CLAUDE.md`.
+- Deferred review note (definition-gate ledger row 22): Tree-walk equality checks against `canonical/aid/` must apply the payload exclusions (dot-files, `node_modules/`, `.git/`), since CI runs `npm ci` inside `canonical/aid/scripts/summarize/`.
 
 **Acceptance Criteria:**
-- [ ] `HOME=$(mktemp -d) bash tests/canonical/test-shared-install.sh --verbose` exits `0`, with a `PASS:` line per tool for the AC-3 byte comparison, the AC-3 file count, each AC-7 clause (including the `node_modules/` survival), one for the negative control, one per AC-14 (a)/(b) clause, and one for AC-14 (e).
+- [ ] `HOME=$(mktemp -d) bash tests/canonical/test-shared-install.sh --verbose` exits `0`, with a `PASS:` line per tool for the AC-3 byte comparison, the AC-3 file count, each AC-7 clause (including the `node_modules/` survival), one for the negative control, one per AC-14 (a)/(b) clause, and one for AC-14 (e), one for AC-14 (f), and one for the AC-7 `.gitattributes` block with its preserved user line.
 - [ ] Reverting the payload mutation guard (forcing the negative control to install unmutated bytes) in a scratch copy makes the negative-control assertion fail, proving the control is live.
 - [ ] The suite reads no file under `.aid/works/` of this repository and leaves the real repo's `git status --porcelain` unchanged.
 - [ ] All section-6 quality gates pass.

@@ -40,6 +40,7 @@
   `tests/coverage-accepted-removals.tsv`.
 - A negative control: on a scratch copy, one changed byte in `.agents/skills/aid-ask/SKILL.md` makes
   the canonical comparison fail.
+- Deferred review note (definition-gate ledger row 22): Tree-walk equality checks against `canonical/aid/` must apply the payload exclusions (dot-files, `node_modules/`, `.git/`), since CI runs `npm ci` inside `canonical/aid/scripts/summarize/`.
 
 **Acceptance Criteria:**
 - [ ] `HOME=$(mktemp -d) bash tests/canonical/test-dogfood-byte-identity.sh --verbose` exits `0`, with `PASS:` lines for each comparison, the manifest shared-entry check, the root-context checks, each absence and each survivor.

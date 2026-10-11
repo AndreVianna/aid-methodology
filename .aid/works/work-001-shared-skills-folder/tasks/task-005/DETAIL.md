@@ -45,6 +45,16 @@ file.
     the file is non-empty and does not end in LF; every other byte is kept and no section is
     excised, whatever its heading. When the file holds a heading that matches a C2 stem, print
     `WARN: aid: AGENTS.md has AID-like sections outside its managed region (<the C2 stems found>); remove them by hand if they are stale AID content`.
+- Marker well-formedness (§ 11 › Root context file, *Marker well-formedness*), in
+  `_copy_root_agent_file` / `Copy-RootAgentFile` and `_ensure_claude_md_region` /
+  `Invoke-EnsureClaudeMdRegion`: a root file is *with markers* only when it holds exactly one
+  `AID:BEGIN` line followed later by exactly one `AID:END` line (count both; do not detect on
+  BEGIN alone). Any other shape routes to the marker-less rule, never to branch B: whole-file trash
+  copy at `.aid/.trash/<file>`, a fresh region appended (one LF first when needed), nothing
+  excised, and `WARN: aid: <file> has malformed AID markers; left unchanged, a fresh AID region was appended`
+  (plus any C2-stem WARN). A file already ending with the region is left unchanged.
+  `_remove_claude_md_region` / `Invoke-RemoveClaudeMdRegion` also leaves a file with malformed
+  markers byte-unchanged.
 - `CLAUDE.md` import region (FR-12; § 11 › Root context file): the *import region* is a fixed
   constant in both cores, never a payload file -- the three lines `<!-- AID:BEGIN -->`,
   `@AGENTS.md`, `<!-- AID:END -->`, each ending in LF.
@@ -85,6 +95,7 @@ file.
 - [ ] `_copy_root_agent_file` on a no-marker `AGENTS.md` whose sha256 differs from the recorded `shared.agents_md.file_sha256` and which holds a `## Workflow` section: the pre-write bytes are a byte-exact prefix of the result, the marked region follows (one LF first when the file did not end in LF), a full copy of the pre-write file exists at `.aid/.trash/AGENTS.md`, the exact WARN line naming `Workflow` is printed, and a second call leaves the sha256 unchanged. On a no-marker file whose sha256 equals the recorded `file_sha256` (C1), the result is the full marked source and no excision or WARN occurs. `Copy-RootAgentFile` gives byte-identical results and output where `pwsh` exists.
 - [ ] `_ensure_claude_md_region`: on an absent file, the result's bytes equal the import region exactly; on a no-marker file ending in LF, the pre-write bytes are a byte-exact prefix and the only bytes after them are the import region, and a second call leaves the sha256 unchanged; on a non-empty no-marker file NOT ending in LF, the result is the pre-write bytes, one LF, then the import region; on a file with user content above and below a full AID region and no recorded `region_sha256`, the result equals the pre-write content with the marked region (marker lines included) replaced by the import region, and the pre-write bytes exist at `.aid/.trash/CLAUDE.md`; on a no-marker file holding a C2-stem heading in migration mode, the exact WARN line is printed.
 - [ ] `_remove_claude_md_region`: on the created-from-absent file the file is gone; on the appended-to-LF-terminated-user-file case the file equals its pre-add bytes; with a drifted region the whole file is first at `.aid/.trash/CLAUDE.md`; a file whose markers were deleted is byte-unchanged.
+- [ ] Malformed markers: a `CLAUDE.md` and an `AGENTS.md` each holding `<!-- AID:BEGIN -->` with no `<!-- AID:END -->` (and, separately, an orphan END, duplicate BEGINs, and END before BEGIN) followed by user text keep the pre-write bytes as a byte-exact prefix after `_ensure_claude_md_region` / `_copy_root_agent_file`, a full copy of the pre-write file exists at `.aid/.trash/<file>`, the exact malformed-markers WARN line naming the file is printed, and a second call leaves the sha256 unchanged; `_remove_claude_md_region` leaves such a `CLAUDE.md` byte-unchanged.
 - [ ] The `Invoke-EnsureClaudeMdRegion` / `Invoke-RemoveClaudeMdRegion` twins give byte-identical results and output lines for every case above where `pwsh` exists.
 - [ ] `HOME=$(mktemp -d) bash tests/canonical/test-install-core-primitives.sh` and `bash tests/canonical/test-connector-skills-structural.sh` exit `0`; `tests/canonical/test-agents-md-invariant.sh` no longer exists.
 - [ ] `bash tests/canonical/test-ps51-compat.sh` and `bash tests/canonical/test-ascii-only.sh` exit `0`.

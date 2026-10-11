@@ -58,6 +58,7 @@
   `.claude/skills/generate-profile/**`) or `.cursor/`: task-003 runs the full render after the
   generator stops rendering skills, and task-027 resyncs the dogfood trees, so the installed tree
   that is executing this work stays self-consistent until then.
+- Deferred review note (definition-gate ledger row 17): AC-4's host-path grep also matches prose about the retired render pipeline in `aid-discover/SKILL.md` (the "4-tree" byte-identity statement) and `aid-execute/references/state-fix.md` (the canonical to profiles to dogfood chain); rewrite those passages, not just their tokens.
 
 **Acceptance Criteria:**
 - [ ] `grep -rlE '(^|[^A-Za-z0-9_])canonical/(aid/)?(scripts|templates|skills|agents|recipes)/' canonical/skills | wc -l` prints `0`.

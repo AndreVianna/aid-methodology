@@ -48,6 +48,7 @@ Feature Flow › 3 (steps 2 to 4).
   on a format-2 manifest (`test-aid-cli.sh`/`test-aid-cli-ps1.sh` -> task-019, `test-aid-migrate.sh`
   -> task-021, `test-aid-cli-parity.sh` -> task-023, `test-registry.sh`/`test-self-commands.sh`/
   `test-release-migrate-smoke.sh` -> task-025).
+- Deferred review note (definition-gate ledger row 18): Literal fallbacks of the format number 4 also live in `lib/aid-install-core.sh` and twice in `bin/aid` (search `SUPPORTED_FORMAT:-`); bump them with the three carriers, or a library consumer seeds `format_version: 4` into a layout-5 project.
 
 **Acceptance Criteria:**
 - [ ] `grep -E 'readonly AID_SUPPORTED_FORMAT=' bin/aid`, the `AidSupportedFormat` assignment in `bin/aid.ps1` and the `$script:_AidSupportedFormat` assignment in `lib/AidInstallCore.psm1` all carry the value `5`, and the new comment line is present above the bash constant.

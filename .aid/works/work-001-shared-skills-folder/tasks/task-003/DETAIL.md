@@ -65,6 +65,7 @@
   agents executing this work must keep resolving their templates.
 - Known red until later tasks: `test-release.sh` (task-007) and `test-dogfood-byte-identity.sh`
   (task-028).
+- Deferred review note (definition-gate ledger row 19): Keep `root_dir` meaning the tool's own root (e.g. `.claude`, as in `profiles/*.toml` today), not `.claude/agents`; profiles no longer select a root file (always `AGENTS.md`), and FR-4's key list must include `worktree_root` and `context_import`.
 
 **Acceptance Criteria:**
 - [ ] `python .claude/skills/generate-profile/scripts/run_generator.py` exits `0` and prints `VERIFY (deterministic): PASS`.

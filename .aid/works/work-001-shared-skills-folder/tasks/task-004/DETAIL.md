@@ -45,6 +45,7 @@ Every item is one behaviour implemented twice, in `lib/aid-install-core.sh` and
 - Unit suite `tests/canonical/test-install-core-primitives.sh` (new; pins `HOME`; builds its own
   fixtures): descriptor parsing, trash collision policy, guarded copy, and writer byte-identity
   (bash python3 writer, bash pure-bash writer, PowerShell writer when `pwsh` is present).
+- Deferred review note (definition-gate ledger row 25): The manifest JSON sample in REQUIREMENTS.md § 11 prints arrays inline, but the python writer (`json.dump(..., indent=2)`) puts each array element on its own line; the three writers must match the python writer's bytes, not the sample's layout.
 
 **Acceptance Criteria:**
 - [ ] `read_kv_conf` on a fixture holding a comment, a blank line, `a=b=c` and two `skill_mirror=` lines yields `a` = `b=c` and a two-item `skill_mirror` list; the same file with CRLF endings makes it exit non-zero with the file path in the message. `Read-AidKvConf` gives the same results where `pwsh` exists.

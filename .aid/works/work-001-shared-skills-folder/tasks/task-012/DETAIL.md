@@ -36,6 +36,9 @@ Feature Flow › 5.
   for the remaining tools; rewrite `host.conf` (via
   `write_host_conf`) when the runtime remains; delete the manifest and `.aid/settings.yml` when no
   tools remain (existing behaviour).
+- With the last tool, also remove the `.gitattributes` managed block: `remove_gitattributes_block` /
+  `Remove-AidGitattributesBlock` (task-010 writes it) drops the block, marker lines included, keeps
+  every other byte, and deletes the file only when whitespace alone remains; the `.gitignore` block stays.
 - Non-`aid-*` entries in `.agents/skills/` or a mirror are never read or touched; user `.aid/`
   state (`knowledge/`, `works/`, `design/`, `connectors/`) is never touched.
 - `aid remove --orphans` (new flag; `_remove_orphans` / `Invoke-RemoveOrphans`, wired into
@@ -58,6 +61,7 @@ Feature Flow › 5.
 - [ ] Both `my-skill/SKILL.md` files, and pre-seeded `.aid/knowledge/x.md`, `.aid/works/w/STATE.yml` and `.aid/design/d.md`, keep their sha256 through the whole sequence.
 - [ ] AC-14 (d): in a fixture with no prior `CLAUDE.md` and in one whose user `CLAUDE.md` had no markers, after `aid add claude-code,cursor` then `aid remove claude-code`, `CLAUDE.md` is absent in the first and equals its pre-add bytes in the second; in both, `AGENTS.md` has exactly one `<!-- AID:BEGIN -->` line, `shared.agents_md.users` is `["cursor"]`, and the manifest has no `shared.claude_md`.
 - [ ] Removing `claude-code` while `cursor` stays installed rewrites `host.conf` to `worktree_root=.aid/.worktrees` and drops `.claude/skills` from `mirrors`.
+- [ ] After `aid remove` of the last tool, the `.gitattributes` managed block is gone, a pre-existing user line in `.gitattributes` is byte-unchanged, and a `.gitattributes` the CLI created holding only the block is deleted; while another tool remains the block is still present.
 - [ ] An agent file edited before its tool's removal ends up at `.aid/.trash/<its path>`, not deleted.
 - [ ] In a fixture holding the shared layout with no manifest (as left by the frozen format-4 core removing the last tool), `aid remove --orphans` exits `0`, leaves no `aid-*` under `.agents/skills` or a mirror, no `.aid/runtime/` and no AID region in `AGENTS.md` or `CLAUDE.md`, and every removed byte exists under `.aid/.trash/` (each region-bearing root file whole at `.aid/.trash/<its name>`); `.agents/skills/my-skill/SKILL.md` and a fixture `.aid/runtime/scripts/summarize/node_modules/x.js` keep their sha256 (and the latter leaves no trash entry); a root file with user content outside the region keeps those bytes.
 - [ ] `aid remove --orphans` in a fixture with a manifest exits `2`, names `aid remove <tool>`, and the fixture snapshot is unchanged; after the orphans are removed, `aid add cursor` into the same fixture succeeds.
