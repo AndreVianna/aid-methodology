@@ -112,15 +112,15 @@ minimum_grade: A
 # [W] 'yes' | 'no' -- quoted, see NFR-2 / D-5
 user_approved: 'no'
 # [W] Running | Paused-Awaiting-Input | Blocked | Completed | Canceled
-lifecycle: Running
+lifecycle: Paused-Awaiting-Input
 # [W] Describe | Define | Specify | Plan | Detail | Execute
 phase: Detail
 # [W] aid-{skill} | none
 active_skill: aid-update
 # [W]
-updated: '2026-10-11T00:30:00Z'
+updated: '2026-10-11T01:15:00Z'
 # [W] set only when lifecycle = Paused-Awaiting-Input
-pause_reason: --
+pause_reason: 'GATE Pass 1 cleared A+; awaiting go-ahead for task realignment and Pass 2'
 # [W] set only when lifecycle = Blocked
 block_reason: --
 # [W] e.g. IMPEDIMENT-task-NNN.md, or the failed gate
@@ -265,6 +265,10 @@ lifecycle_history:
   - date: '2026-10-11'
     event: 'GATE Pass 1 cycle 2 reviewed (Opus, scoped) -- 11 scoped rows Fixed; 7 new (1 MEDIUM, 6 LOW); 18 MINOR parked; paused for maintainer decision'
     grade: 'C+'
+    notes: '/aid-update GATE defn'
+  - date: '2026-10-11'
+    event: 'GATE Pass 1 (definition docs) cleared -- row 31 fixed (Sonnet), cycle-3 narrow Opus re-check Fixed with no new rows; 6 LOW accepted and carried into tasks 005/012/013/015/016; 18 MINOR accepted as parked'
+    grade: 'A+'
     notes: '/aid-update GATE defn'
 
 # [A] aid-deploy only; one entry per delivery (never derived from child
