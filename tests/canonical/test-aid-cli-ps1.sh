@@ -1198,6 +1198,16 @@ else
     assert_eq "divergent" "uniform" "PS019-V08 update leaves all shared and tool versions equal"
 fi
 
+PS019_MISMATCH="$TMP/mismatch-ps"; mkdir -p "$PS019_MISMATCH"
+task019_make_version_bundle "$PS019_MISMATCH" cursor "$PS019_BAD_VERSION" "$VERSION"
+PS019_MHOME=$(newhome); setup_aid_home_ps1 "$PS019_MHOME"; PS019_MT=$(newtarget)
+run_aid_ps1 "$PS019_MHOME" add codex -FromBundle "$FIXTURE_DIR" -Target "$PS019_MT"
+PS019_MBEFORE=$(tree_snapshot "$PS019_MT")
+run_aid_ps1 "$PS019_MHOME" add cursor -FromBundle "$PS019_MISMATCH" -Target "$PS019_MT"
+assert_exit_ne "$RC" 0 "PS019-V09 staging bundle version mismatch refuses install"
+assert_output_contains "$OUT" "aid update" "PS019-V09b staging bundle mismatch directs user to aid update"
+assert_eq "$(tree_snapshot "$PS019_MT")" "$PS019_MBEFORE" "PS019-V10 bundle mismatch preserves whole target tree"
+
 PS019_BARE=$(newtarget); PS019_BHOME=$(newhome); setup_aid_home_ps1 "$PS019_BHOME"
 run_aid_ps1 "$PS019_BHOME" projects add "$PS019_BARE"
 assert_exit_eq "$RC" 0 "PS019-M01 projects add initializes bare project"
@@ -1206,6 +1216,14 @@ run_aid_ps1 "$PS019_BHOME" add cursor -FromBundle "$FIXTURE_DIR" -Target "$PS019
 assert_exit_eq "$RC" 0 "PS019-M02 bare project accepts first tool"
 assert_file_contains "$PS019_BARE/.aid/.aid-manifest.json" '"format_version": 3' "PS019-M03 bare project writes manifest format 3"
 assert_file_contains "$PS019_BARE/.aid/settings.yml" 'format_version: 5' "PS019-M04 bare project writes settings format 5"
+
+PS019_V2=$(newtarget); PS019_V2HOME=$(newhome); setup_aid_home_ps1 "$PS019_V2HOME"
+mkdir -p "$PS019_V2/.aid"; printf '{"format_version":2,"aid_version":"%s","tools":{}}\n' "$VERSION" > "$PS019_V2/.aid/.aid-manifest.json"
+printf 'format_version: 4\n' > "$PS019_V2/.aid/settings.yml"
+run_aid_ps1 "$PS019_V2HOME" add cursor -FromBundle "$FIXTURE_DIR" -Target "$PS019_V2"
+assert_exit_eq "$RC" 0 "PS019-M04b empty format-2 manifest with stamp-4 settings accepts first add"
+assert_file_contains "$PS019_V2/.aid/.aid-manifest.json" '"format_version": 3' "PS019-M04c empty format-2 manifest upgraded to format 3"
+assert_file_contains "$PS019_V2/.aid/settings.yml" 'format_version: 5' "PS019-M04d empty legacy settings stamp upgraded to 5"
 
 PS019_INST=$(newtarget); PS019_IHOME=$(newhome); setup_aid_home_ps1 "$PS019_IHOME"
 run_aid_ps1 "$PS019_IHOME" add codex -FromBundle "$FIXTURE_DIR" -Target "$PS019_INST"
@@ -1234,11 +1252,11 @@ assert_exit_ne "$RC" 0 "PS019-M10 manifestless legacy refuses tool add"
 assert_eq "$(tree_snapshot "$PS019_LEGACY")" "$PS019_LB" "PS019-M11 manifestless legacy refusal preserves tree"
 
 PS019_D="$TMP/detect"; mkdir -p "$PS019_D/.agents"
-OUT=$("$PWSH" -NoProfile -Command "Import-Module '$LIB_CORE_PS1' -Force; Detect-Tool '$PS019_D'" 2>&1); RC=$?
-assert_exit_ne "$RC" 0 "PS019-D01 .agents-only target is not detected as Codex"
+OUT=$("$PWSH" -NoProfile -Command "Import-Module '$LIB_CORE_PS1' -Force; \$d = Detect-Tool '$PS019_D'; if (\$null -eq \$d) { exit 2 }; \$d" 2>&1); RC=$?
+assert_exit_eq "$RC" 2 "PS019-D01 .agents-only target is undetectable (exit 2, not Codex)"
 assert_output_not_contains "$OUT" codex "PS019-D02 .agents-only detection emits no codex"
 rm -rf "$PS019_D/.agents"; mkdir -p "$PS019_D/.codex"
-OUT=$("$PWSH" -NoProfile -Command "Import-Module '$LIB_CORE_PS1' -Force; Detect-Tool '$PS019_D'" 2>&1); RC=$?
+OUT=$("$PWSH" -NoProfile -Command "Import-Module '$LIB_CORE_PS1' -Force; \$d = Detect-Tool '$PS019_D'; if (\$null -eq \$d) { exit 2 }; \$d" 2>&1); RC=$?
 assert_exit_eq "$RC" 0 "PS019-D03 .codex target is detected"
 assert_output_contains "$OUT" codex "PS019-D04 .codex detection names codex"
 

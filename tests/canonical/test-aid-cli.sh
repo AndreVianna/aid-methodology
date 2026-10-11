@@ -1259,6 +1259,7 @@ run_aid "$TASK019_MHOME" add codex --from-bundle "$FIXTURE_DIR" --target "$TASK0
 TASK019_MBEFORE=$(tree_snapshot "$TASK019_MT")
 run_aid "$TASK019_MHOME" add cursor --from-bundle "$TASK019_MISMATCH" --target "$TASK019_MT"
 assert_exit_ne "$RC" 0 "CLI019-V09 staging bundle version mismatch refuses install"
+assert_output_contains "$OUT" "aid update" "CLI019-V09b staging bundle mismatch directs user to aid update"
 assert_eq "$(tree_snapshot "$TASK019_MT")" "$TASK019_MBEFORE" "CLI019-V10 bundle mismatch preserves whole target tree"
 
 # Empty/bare project migrations accept supported legacy forms and write current formats.
