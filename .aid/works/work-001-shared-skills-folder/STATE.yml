@@ -118,7 +118,7 @@ phase: Execute
 # [W] aid-{skill} | none
 active_skill: aid-execute
 # [W]
-updated: '2026-10-11T06:49:52Z'
+updated: '2026-10-11T06:49:54Z'
 # [W] set only when lifecycle = Paused-Awaiting-Input
 pause_reason: --
 # [W] set only when lifecycle = Blocked
@@ -615,6 +615,11 @@ lifecycle_history:
     grade: --
     notes: '/aid-execute Codex'
 
+  - date: '2026-10-11'
+    event: 'Waves1-5 verified; task008 Done. Task009 In Progress for sequential Luna execution: shared skills/mirrors/runtime and per-tool agents placement, pointer/import regions and format3manifest commit order. 10/32Done; wave6 Sol quick verification follows taskcommit; PSruntime deferred.'
+    grade: --
+    notes: '/aid-execute Codex'
+
 deploy: []
 
 # [A] flattened only; single writer: this work's active branch. Written by
@@ -761,7 +766,7 @@ tasks_lifecycle:
         outcome: 'Task008 separate Sol executor correction5ede6bddc committed: empty parsed records skipped, four empty/comment-only shared/tool descriptor regressions require proper filename/key diagnostics and unchanged targets. Focused suite37pass, syntax/diffpass. In Review for original Sol reviewer independent wave5 final recheck; task009 pending.'
 
   task-009:
-    state: Pending
+    state: 'In Progress'
     review: --
     elapsed: --
     notes: --
