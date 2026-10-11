@@ -6,11 +6,11 @@ maintainer approved execution. Current phase `Execute`, lifecycle `Running`.
 
 ## Current execution checkpoint
 
-Task017 reopened for first Luna correction of wave11 row5 durable COVERS metadata. Task018 row5/6 follows sequentially before Sol recheck.
+Task017 row5 correction82c51b39f uses durable COVERS subjects; focused selector selects1/1, syntax/diff pass. In Review for Sol recheck after018 correction.
 
 - Done (16/32): task-001, task-002, task-003, task-004, task-005, task-006, task-007, task-008, task-009, task-010, task-011, task-012, task-013, task-014, task-016, task-022.
-- In Progress: task-017.
-- In Review: task-015, task-018.
+- In Progress: none.
+- In Review: task-015, task-017, task-018.
 - Failed/Blocked: none.
 - Pending: task-019, task-020, task-021, task-023, task-024, task-025, task-026, task-027, task-028, task-029, task-030, task-031, task-032.
 - Current wave: 11 of 15. Derive authoritative waves from task dependency headers.
