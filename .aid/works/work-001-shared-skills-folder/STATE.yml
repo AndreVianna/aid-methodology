@@ -110,17 +110,17 @@ started: '2026-10-10'
 # [W] resolved at runtime by `bash canonical/aid/scripts/config/read-setting.sh --skill {phase} --key minimum_grade --default A`; source is `.aid/settings.yml`
 minimum_grade: A
 # [W] 'yes' | 'no' -- quoted, see NFR-2 / D-5
-user_approved: 'no'
+user_approved: 'yes'
 # [W] Running | Paused-Awaiting-Input | Blocked | Completed | Canceled
-lifecycle: Paused-Awaiting-Input
+lifecycle: Running
 # [W] Describe | Define | Specify | Plan | Detail | Execute
-phase: Detail
+phase: Execute
 # [W] aid-{skill} | none
-active_skill: aid-update
+active_skill: aid-execute
 # [W]
 updated: '2026-10-11T06:00:00Z'
 # [W] set only when lifecycle = Paused-Awaiting-Input
-pause_reason: 'GATE cleared (definition A+, tasks A+); awaiting user approval before /aid-execute'
+pause_reason: --
 # [W] set only when lifecycle = Blocked
 block_reason: --
 # [W] e.g. IMPEDIMENT-task-NNN.md, or the failed gate
@@ -130,7 +130,7 @@ ticket_ref: --
 
 # Flattened single-delivery works only -- omit these 4 keys for full works.
 # [W] Pending-Spec | Specified | Executing | Gated | Done | Blocked
-delivery_state: Specified
+delivery_state: Executing
 # [W] Small | Medium | Large
 gate_tier: Small
 # [W]
@@ -472,6 +472,10 @@ lifecycle_history:
     event: 'APPROVAL-HALT -- work ready for maintainer approval; nothing has executed. Active ledgers removed; final snapshots kept in review-ledgers/'
     grade: --
     notes: '/aid-update APPROVAL-HALT'
+  - date: '2026-10-11'
+    event: 'Maintainer approved execution. /aid-execute started on branch aid/work-001-shared-skills-folder-delivery-001: waves in derived order, tasks run one at a time by Haiku developers, Sonnet quick check per wave, Opus full review at the end, then pause'
+    grade: --
+    notes: '/aid-execute start'
 
 # [A] aid-deploy only; one entry per delivery (never derived from child
 #     files; aid-deploy is the sole author):
@@ -497,7 +501,7 @@ delivery_lifecycle:
 #   state: Pending | In Progress | In Review | Blocked | Done | Failed | Canceled
 tasks_lifecycle:
   task-001:
-    state: Pending
+    state: 'In Progress'
     review: --
     elapsed: --
     notes: --
