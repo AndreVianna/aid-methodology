@@ -438,7 +438,7 @@ _aid_check_update() {
         latest_version="${tag#v}"
 
         # Update cache.
-        printf '%s\n%s\n' "$now" "$latest_version" > "$cache_file" 2>/dev/null || true
+        { printf '%s\n%s\n' "$now" "$latest_version" > "$cache_file"; } 2>/dev/null || true
     fi
 
     [[ -z "$latest_version" ]] && return 0

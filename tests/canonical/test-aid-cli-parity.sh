@@ -264,7 +264,7 @@ setup_ps1_home() {
 # Bash aid runner.
 run_sh() {
     local home_dir="$1"; shift
-    OUT_SH=$(AID_HOME="$home_dir" AID_LIB_PATH="${home_dir}/lib/aid-install-core.sh" \
+    OUT_SH=$(AID_HOME="$home_dir" AID_LIB_PATH="${home_dir}/lib/aid-install-core.sh" AID_NO_UPDATE_CHECK=1 \
              bash "${home_dir}/bin/aid" "$@" 2>&1); RC_SH=$?
 }
 
@@ -272,7 +272,7 @@ run_sh() {
 run_ps1() {
     local home_dir="$1"; shift
     pwsh_session_call "${home_dir}/bin/aid.ps1" "$PWD" \
-        "AID_HOME=${home_dir}" "AID_LIB_PATH=${home_dir}/lib/AidInstallCore.psm1" \
+        "AID_HOME=${home_dir}" "AID_LIB_PATH=${home_dir}/lib/AidInstallCore.psm1" "AID_NO_UPDATE_CHECK=1" \
         -- "$@"
     OUT_PS1=$(printf '%s' "$PWSH_CALL_OUT" | sed 's/\x1b\[[0-9;]*m//g'); RC_PS1=$PWSH_CALL_RC
 }
@@ -3949,7 +3949,7 @@ build_ua_download_fixture() {
 run_sh_ua() {
     local home_dir="$1" dl_base="$2"; shift 2
     local dl_url; dl_url="$(ua_file_url "${dl_base}")"
-    OUT_SH=$(AID_HOME="$home_dir" AID_LIB_PATH="${home_dir}/lib/aid-install-core.sh" \
+    OUT_SH=$(AID_HOME="$home_dir" AID_LIB_PATH="${home_dir}/lib/aid-install-core.sh" AID_NO_UPDATE_CHECK=1 \
              AID_NO_UPDATE_CHECK=1 AID_SKIP_SELF_INSTALL=1 \
              AID_ALLOW_ENDPOINT_OVERRIDE=1 AID_DOWNLOAD_BASE="${dl_url}" \
              bash "${home_dir}/bin/aid" "$@" 2>&1); RC_SH=$?
@@ -3959,14 +3959,14 @@ run_sh_ua() {
 # (bare projects, missing-.aid/ projects, zero registered projects, usage errors).
 run_sh_ua_nf() {
     local home_dir="$1"; shift
-    OUT_SH=$(AID_HOME="$home_dir" AID_LIB_PATH="${home_dir}/lib/aid-install-core.sh" \
+    OUT_SH=$(AID_HOME="$home_dir" AID_LIB_PATH="${home_dir}/lib/aid-install-core.sh" AID_NO_UPDATE_CHECK=1 \
              AID_NO_UPDATE_CHECK=1 AID_SKIP_SELF_INSTALL=1 \
              bash "${home_dir}/bin/aid" "$@" 2>&1); RC_SH=$?
 }
 run_ps1_ua_nf() {
     local home_dir="$1"; shift
     pwsh_session_call "${home_dir}/bin/aid.ps1" "$PWD" \
-        "AID_HOME=${home_dir}" "AID_LIB_PATH=${home_dir}/lib/AidInstallCore.psm1" \
+        "AID_HOME=${home_dir}" "AID_LIB_PATH=${home_dir}/lib/AidInstallCore.psm1" "AID_NO_UPDATE_CHECK=1" \
         "AID_NO_UPDATE_CHECK=1" "AID_SKIP_SELF_INSTALL=1" \
         -- "$@"
     OUT_PS1=$(printf '%s' "$PWSH_CALL_OUT" | sed 's/\x1b\[[0-9;]*m//g'); RC_PS1=$PWSH_CALL_RC
@@ -5897,7 +5897,8 @@ t23_twin() {
     local -a sh_args ps_args
     h_sh="$(newhome)"; setup_sh_home "$h_sh"; printf '%s\n' "$T23_VERSION" > "$h_sh/VERSION"
     h_ps="$(newhome)"; setup_ps1_home "$h_ps"; printf '%s\n' "$T23_VERSION" > "$h_ps/VERSION"
-    t_sh="$(newtarget)"; t_ps="$(newtarget)"
+    # Same basename in both twins: the project name in .aid/settings.yml comes from it.
+    t_sh="$(newtarget)/proj"; t_ps="$(newtarget)/proj"; mkdir -p "$t_sh" "$t_ps"
     if [[ "$setup" != - ]]; then "$setup" "$t_sh"; "$setup" "$t_ps"; fi
     for step in "$@"; do
         n=$((n + 1)); exp="${step%%|*}"; body="${step#*|}"
@@ -6058,7 +6059,7 @@ run_ps1_ua() {
     local home_dir="$1" dl_base="$2"; shift 2
     local dl_url; dl_url="$(ua_file_url "${dl_base}")"
     pwsh_session_call "${home_dir}/bin/aid.ps1" "$PWD" \
-        "AID_HOME=${home_dir}" "AID_LIB_PATH=${home_dir}/lib/AidInstallCore.psm1" \
+        "AID_HOME=${home_dir}" "AID_LIB_PATH=${home_dir}/lib/AidInstallCore.psm1" "AID_NO_UPDATE_CHECK=1" \
         "AID_NO_UPDATE_CHECK=1" "AID_SKIP_SELF_INSTALL=1" \
         "AID_ALLOW_ENDPOINT_OVERRIDE=1" "AID_DOWNLOAD_BASE=${dl_url}" \
         -- "$@"
