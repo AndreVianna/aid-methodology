@@ -24,7 +24,7 @@
   every tool (`.agents/skills/aid-*`, `.aid/runtime/`, the `AGENTS.md` region, each tool's agents),
   the Claude Code `.claude/skills` mirror and `CLAUDE.md` `@AGENTS.md` import region, running
   several tools on one repo (reference counting, one version per repo, `aid update` to upgrade,
-  `aid status` drift report), the release artifact set, and the format-4 -> 5 migration on
+  `aid status` drift report), the release artifact set, and the clean-slate upgrade from the v3 layout on
   `aid update` (with `.aid/.trash/`). `--from-bundle` takes a staging directory.
 - `.github/workflows/test.yml`: the header comment (search: "the shippable product is the rendered
   install trees") and the `render-drift` job text describe agents-only renders plus the shared
@@ -33,7 +33,7 @@
   pathspec `site`; e.g. `site/src/data/skill-flows/aid-discover.flow.json`) is updated to the
   `.aid/runtime/` / `.agents/skills/aid-*` layout.
 - The repo-root `CLAUDE.md` and `AGENTS.md` are NOT hand-edited here: they come out of the dogfood
-  resync (task-027), sourced from `canonical/AGENTS.md`.
+  resync (task-027), sourced from the `AGENTS.md` pointer region and `canonical/aid/rules.md`.
 - Match each doc's existing style; no work id or work-folder path appears in any of these files.
 
 **Acceptance Criteria:**

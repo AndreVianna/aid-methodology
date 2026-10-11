@@ -31,15 +31,19 @@ Every item is one behaviour implemented twice, in `lib/aid-install-core.sh` and
   collision policy: destination `.aid/.trash/<original-relative-path>`; identical bytes already there
   -> no new copy; different bytes -> the existing entry is renamed to `<path>.<UTC yyyyMMddTHHmmssZ>`
   first. `_retire_file` (inside `_migrate_retired_layout`) delegates to it instead of `mv -f`.
-- Guarded copy `copy_file_guarded` / `Copy-AidFileGuarded` (new): absent -> copy; identical ->
-  leave; differing -> `trash_file` then copy. Reports the same counters `copy_file` reports.
+- Guarded copy `copy_file_guarded <src> <dst> [<recorded-sha256>]` / `Copy-AidFileGuarded` (new):
+  absent -> copy; identical -> leave; differing -> overwrite, and trash the destination first
+  (`trash_file`) only when it is DRIFTED: its bytes differ from the recorded sha256 the caller
+  passes, or no sha256 is recorded and its bytes differ from the bytes being written. A differing
+  destination whose bytes equal the recorded sha256 (an unedited file of the previous version) is
+  overwritten with no trash entry. Reports the same counters `copy_file` reports.
 - Manifest format 3: `manifest_write`, `_manifest_write_python`, `_manifest_write_bash`,
   `Write-AidManifest`, `Build-ManifestJson` emit the § Data Model › Install manifest shape exactly
   (key order as shown, 2-space indent, LF, trailing newline, `files` sorted by `path` in byte order,
   `users` in `AID_TOOLS` order, `tools.<t>.paths` a plain copy of that tool's `files[].path`).
   Readers `manifest_format`, `manifest_read_shared`, `manifest_read_tool_files`, `manifest_read_host`
   and `Read-AidManifestShared`, `Read-AidManifestToolFiles`, `Read-AidManifestHost` (new). The
-  format-2 read path stays, because uninstall and migration still read old manifests.
+  format-2 read path stays, because uninstall and the clean-slate upgrade still read old manifests.
 - This task adds the primitives only. The install path keeps writing format 2 until task-009
   switches it; existing suites therefore stay green here.
 - Unit suite `tests/canonical/test-install-core-primitives.sh` (new; pins `HOME`; builds its own
@@ -50,7 +54,7 @@ Every item is one behaviour implemented twice, in `lib/aid-install-core.sh` and
 **Acceptance Criteria:**
 - [ ] `read_kv_conf` on a fixture holding a comment, a blank line, `a=b=c` and two `skill_mirror=` lines yields `a` = `b=c` and a two-item `skill_mirror` list; the same file with CRLF endings makes it exit non-zero with the file path in the message. `Read-AidKvConf` gives the same results where `pwsh` exists.
 - [ ] Three `trash_file` calls for one relative path with three different contents leave the newest bytes at `.aid/.trash/<rel>` and exactly two siblings named `<rel>.<yyyyMMddTHHmmssZ>`; a fourth call with bytes identical to `.aid/.trash/<rel>` adds no file.
-- [ ] `copy_file_guarded` on an absent, an identical and a differing destination produces copied/unchanged/trashed-then-copied outcomes respectively, and only the differing case writes under `.aid/.trash/`.
+- [ ] `copy_file_guarded` on an absent, an identical, a differing-but-unedited (destination sha256 equals the recorded one) and a drifted destination (a recorded sha256 that the bytes no longer match; and, with no recorded sha256, differing bytes) produces copied, unchanged, overwritten-with-no-trash and trashed-then-copied outcomes respectively, and only the two drifted cases write under `.aid/.trash/`.
 - [ ] For one fixed input, the python3 writer, the pure-bash writer and (where `pwsh` exists) the PowerShell writer produce JSON that is byte-identical after masking `installed_at`, and it equals a committed golden file whose key order matches § Data Model.
 - [ ] `HOME=$(mktemp -d) bash tests/canonical/test-install-core-primitives.sh` exits `0`.
 - [ ] `bash tests/canonical/test-ps51-compat.sh` and `bash tests/canonical/test-ascii-only.sh` exit `0`; `bash tests/canonical/test-aid-cli.sh` and `bash tests/canonical/test-multitool-isolation.sh` give the same per-assertion PASS/FAIL result as on this task's base commit (no caller is switched yet).

@@ -24,31 +24,35 @@
   transform (task-002 already neutralised the `{{include:agent-boilerplate}}` source in
   `canonical/aid/templates/agent-boilerplate.md`, which is why this task depends on it).
 - `.claude/skills/generate-profile/scripts/render.py`: `render_profile` renders only
-  `canonical/agents/` and writes `profiles/<tool>/aid-tool.conf` (recorded in that profile's
-  emission manifest). Delete `copy_tree`'s `skills` and `none` branches and
+  `canonical/agents/` and writes `profiles/<tool>/aid-tool.conf`. Delete `copy_tree`'s `skills` and `none` branches and
   `_rewrite_skill_frontmatter`. Keep `_translate_agent` (the `[tool_names]` remap on `tools:`, model
   resolution, the Codex TOML branch) and `{{include:...}}` expansion. VERIFY fails when a rendered
   agent still carries a `canonical/` token. Update `--self-test`.
 - `aid-tool.conf` format and content exactly per REQUIREMENTS.md § 11 Feature 001 › Data Model ›
   Descriptor format and Per-profile placement data: ASCII, LF, `key=value`; `tool=<id>`;
   `skill_mirror=<dir>` (0..n); `worktree_root=<dir>` (0..1); `context_import=<file>` (0..1; Claude
-  Code declares `CLAUDE.md`).
+  Code declares `CLAUDE.md`); `rules_inline=true` (0..1; written only for a profile whose TOML sets
+  `rules_inline = true`, A-6 fallback; none does today).
 - `render_lib.py`: delete `rewrite_install_paths` and `substitute_filenames` and their call sites
   and self-test cases.
 - `aid_profile.py`: validate the new TOML keys `skill_mirrors` (list; each matches
   `^\.[a-z]+/skills$`, is not `.agents/skills`, and sits under the profile's own root) and
-  `worktree_root` (`.aid/.worktrees` or `<root_dir>/worktrees`, relative, no `..`) and the
-  `context_import` (a string; only `CLAUDE.md` is accepted); `root_file` must be `"AGENTS.md"`.
+  `worktree_root` (`.aid/.worktrees` or `<root_dir>/worktrees`, relative, no `..`), `context_import`
+  (a string; only `CLAUDE.md` is accepted) and `rules_inline` (a boolean, default false); `root_file`
+  must be `"AGENTS.md"`.
 - `profiles/*.toml`: `root_file = "AGENTS.md"` in all five; `claude-code.toml` gains
   `skill_mirrors = [".claude/skills"]`, `worktree_root = ".claude/worktrees"` and
   `context_import = "CLAUDE.md"`; the other four declare none of them. Header comments stop saying the profile emits a skills/runtime tree.
-- `verify_deterministic.py`, `verify_advisory.py` (and `test_manifest_safety.py` where affected):
-  scope cut to agents plus `aid-tool.conf`.
-- `run_generator.py`: stays the single full-render command; its pure-mirror deletion removes
-  every former `skills/` and `aid/` row and file. It keeps chaining the dogfood resync script
-  (task-027 re-points that script).
-- `canonical/EMISSION-MANIFEST.md` § Asset Kinds: agents and `aid-tool.conf` only, for all five
-  profiles. `profiles/*/README.md`: no longer describe a skills or runtime tree.
+- `verify_deterministic.py`, `verify_advisory.py`: scope cut to agents plus `aid-tool.conf`. The
+  profile manifest machinery (the writers, readers and checks of the per-profile `.jsonl` manifests,
+  and `test_manifest_safety.py` with it) is retired (FR-4); anything of it that remains is cut to
+  what is still used.
+- `run_generator.py`: stays the single full-render command. It wipes each `profiles/<tool>/`
+  (everything except its hand-kept `README.md`) and regenerates it in full on every run, so the tree
+  holds exactly the generated agents and `aid-tool.conf`; the pure-mirror deletion is retired. It
+  keeps chaining the dogfood resync script (task-027 re-points that script).
+- Delete `canonical/EMISSION-MANIFEST.md` (FR-4). `profiles/*/README.md`: no longer describe a
+  skills or runtime tree.
 - `canonical/agents/aid-reviewer/AGENT.md` § Content isolation (FR-17): the checks that flag an
   AID-own dir "not nested under `<assets-root>/aid/`" and the Codex `.codex/aid/` rule are replaced
   so they accept the new placement: skills use the `aid-` prefix under `.agents/skills/` and each
@@ -58,7 +62,7 @@
   `test-chat-node-wake.sh` (WK23), `test-cutover-no-dangling.sh` (Part 2 mirror-deletion), and the
   profile-README rows of `test-doc-counts.sh`. Removed or renamed keys get rows in
   `tests/coverage-accepted-removals.tsv`.
-- Commit `profiles/`, `canonical/agents/`, `canonical/EMISSION-MANIFEST.md`, the generator scripts
+- Commit `profiles/`, `canonical/agents/`, the deletion of `canonical/EMISSION-MANIFEST.md`, the generator scripts
   and the re-keyed suites only. The chained dogfood sync will also rewrite `.claude/agents/` and
   `.cursor/agents/`: discard those changes (`git checkout -- .claude/agents .cursor/agents`). The
   re-rendered agents point at `.aid/runtime/`, which this repo does not have until task-027, and the
@@ -69,13 +73,14 @@
 
 **Acceptance Criteria:**
 - [ ] `python .claude/skills/generate-profile/scripts/run_generator.py` exits `0` and prints `VERIFY (deterministic): PASS`.
-- [ ] `grep -cE '"dst": *"[^"]*/(skills|aid)/' profiles/*/emission-manifest.jsonl` prints `0` for all five manifests.
+- [ ] After `run_generator.py`, a stray file planted beforehand in the generated part of a `profiles/<tool>/` tree (everything except its hand-kept `README.md`) is gone, and each tree holds only the agents and `aid-tool.conf` (checked with `find profiles/<tool> -type f ! -name README.md` against the expected list).
+- [ ] `test ! -e canonical/EMISSION-MANIFEST.md` succeeds, and `find profiles -name '*.jsonl'` prints nothing.
 - [ ] `find profiles -type d \( -name skills -o -name aid \)` prints nothing.
-- [ ] `profiles/claude-code/aid-tool.conf` holds exactly the lines `tool=claude-code`, `skill_mirror=.claude/skills`, `worktree_root=.claude/worktrees` and `context_import=CLAUDE.md`; each other profile's `aid-tool.conf` holds exactly `tool=<id>`; each file is listed in its profile's `emission-manifest.jsonl`.
+- [ ] `profiles/claude-code/aid-tool.conf` holds exactly the lines `tool=claude-code`, `skill_mirror=.claude/skills`, `worktree_root=.claude/worktrees` and `context_import=CLAUDE.md`; each other profile's `aid-tool.conf` holds exactly `tool=<id>`; none holds a `rules_inline` line.
 - [ ] `grep -L 'root_file *= *"AGENTS.md"' profiles/*.toml` prints nothing.
-- [ ] `grep -rlE '(^|[^A-Za-z0-9_])canonical/(aid/)?(scripts|templates|skills|agents|recipes)/' canonical/agents profiles | wc -l` prints `0`.
+- [ ] `grep -rlE '(^|[^A-Za-z0-9_])canonical/(aid/)?(scripts|templates|skills|agents|recipes)/' canonical/agents $(find profiles -type f \( -path '*/agents/*' -o -name aid-tool.conf \)) | wc -l` prints `0` (it reads only the agent sources, the rendered agents and `aid-tool.conf`; hand-kept `profiles/*/README.md` files are outside it).
 - [ ] `grep -nE 'def (rewrite_install_paths|substitute_filenames|_rewrite_skill_frontmatter)' .claude/skills/generate-profile/scripts/*.py` prints nothing.
-- [ ] `python .claude/skills/generate-profile/scripts/render_lib.py --self-test`, `test_manifest_safety.py --self-test`, `render.py --self-test --canonical-root .`, `verify_deterministic.py --self-test --canonical-root .` and `verify_advisory.py --self-test --canonical-root .` all exit `0`; the `aid_profile.py` validation rejects a profile whose `skill_mirrors` contains `.agents/skills` (a self-test case shows it).
+- [ ] `python .claude/skills/generate-profile/scripts/render_lib.py --self-test`, `render.py --self-test --canonical-root .`, `verify_deterministic.py --self-test --canonical-root .` and `verify_advisory.py --self-test --canonical-root .` all exit `0`; the `aid_profile.py` validation rejects a profile whose `skill_mirrors` contains `.agents/skills` and one whose `rules_inline` is not a boolean (a self-test case shows each).
 - [ ] `git grep -nE '\.(claude|codex|cursor|agent)/aid/|\.github/aid/' -- 'profiles/*/README.md'` prints no lines.
 - [ ] `grep -nE '\.aid/runtime|\.agents/skills' canonical/agents/aid-reviewer/AGENT.md` prints a line inside § Content isolation, and `grep -nE 'un-nested path|\.codex/aid/ is the correct' canonical/agents/aid-reviewer/AGENT.md` prints nothing.
 - [ ] `bash tests/canonical/test-chat-node-wake.sh`, `test-cutover-no-dangling.sh` and `test-doc-counts.sh` exit `0`.

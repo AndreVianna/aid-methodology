@@ -1,4 +1,4 @@
-# task-020: Layout-format guard suite with a frozen format-4 install core
+# task-020: Layout-format guard suite for the v3 layout and newer manifests
 
 > **Execution protocol (binding on whoever executes this task -- no
 > exceptions):** the moment this task's `State` changes, write it --
@@ -20,30 +20,19 @@
 **Depends on:** task-006, task-007, task-012, task-013
 
 **Scope:**
-- `tests/canonical/fixtures/format4-core/` (new): byte copies of the pre-change
-  `lib/aid-install-core.sh` and `lib/AidInstallCore.psm1`, taken from the work's base commit with
-  `git show <base>:lib/aid-install-core.sh` (the base is the merge-base of this branch with
-  `master`), plus a short `README.md` stating what they are and that they must never be edited.
-- `tests/canonical/test-layout-format-guard.sh` (new; S1 to S5, `HOME` pinned):
-  - carrier equality: `AID_SUPPORTED_FORMAT` in `bin/aid`, `AidSupportedFormat` in `bin/aid.ps1`,
-    `$script:_AidSupportedFormat` in `lib/AidInstallCore.psm1` and `PAYLOAD_LAYOUT_FORMAT` in
-    `release.sh` all equal `5` (one above the pre-change `4`);
-  - the new CLI's `aid add` into a format-4-layout fixture exits non-zero, names `aid update`, and
-    the fixture's sha256 snapshot is unchanged;
-  - FR-5 guarantee: the frozen format-4 core, given each new artifact from `tests/lib/bundle.sh`
-    staging (`aid-<tool>-v<V>.tar.gz` and `aid-shared-v<V>.tar.gz`), exits non-zero (its
-    `extract_tarball` wrapping-directory check) and the target tree's sha256 snapshot is unchanged;
-    the same through the frozen `AidInstallCore.psm1` when `pwsh` is present;
-  - old-CLI last-tool removal: on a fixture holding the migrated shared layout, the frozen core's
-    `aid remove` of the last tool leaves the shared layout orphaned (no manifest); the new CLI's
-    `aid status` then reports the orphaned layout and exits `7`, and `aid remove --orphans` leaves
-    no `aid-*` under `.agents/skills` or a mirror, no `.aid/runtime/` and no AID region in
-    `AGENTS.md` or `CLAUDE.md`, with the removed bytes under `.aid/.trash/` (bash always; PowerShell
-    when `pwsh` is present).
+- `tests/canonical/test-layout-format-guard.sh` (new; S1 to S5, `HOME` pinned; fixtures built per
+  run, no frozen v3 core and no guard artifact -- v4 requires CLI v4, so v3 CLI behaviour is not
+  tested):
+  - carrier equality: `AID_SUPPORTED_FORMAT` in `bin/aid`, `AidSupportedFormat` in `bin/aid.ps1` and
+    `$script:_AidSupportedFormat` in `lib/AidInstallCore.psm1` all equal `5` (one above the
+    pre-change `4`);
+  - the new CLI's `aid add` into a v3-layout fixture (a format-2 manifest) exits `2`, writes
+    nothing, names `aid update`, and the fixture's sha256 snapshot is unchanged;
+  - a manifest whose `format_version` is above 3 makes the CLI exit non-zero with
+    `Run: aid update self` and write nothing (sha256 snapshot unchanged), for `aid add`,
+    `aid update` and `aid status` (bash always; PowerShell when `pwsh` is present).
 
 **Acceptance Criteria:**
-- [ ] `cmp tests/canonical/fixtures/format4-core/aid-install-core.sh <(git show "$(git merge-base HEAD master)":lib/aid-install-core.sh)` succeeds, and likewise for `AidInstallCore.psm1`.
-- [ ] `HOME=$(mktemp -d) bash tests/canonical/test-layout-format-guard.sh --verbose` exits `0` with `PASS:` lines for carrier equality, the format-4 refusal (exit, message, unchanged snapshot) and the frozen-core refusal for every new artifact.
-- [ ] The same run prints `PASS:` lines for the orphans recovery: `aid status` exit `7` with a line starting `Orphaned shared layout (no manifest):`, then after `aid remove --orphans` the absence of every `aid-*` under `.agents/skills` and mirrors, of `.aid/runtime/` and of the AID regions, and the removed bytes present under `.aid/.trash/`.
-- [ ] Changing `PAYLOAD_LAYOUT_FORMAT` to `6` in a scratch copy of `release.sh` makes the carrier-equality assertion fail.
+- [ ] `HOME=$(mktemp -d) bash tests/canonical/test-layout-format-guard.sh --verbose` exits `0` with `PASS:` lines for carrier equality (three values), the v3-layout `aid add` refusal (exit `2`, message naming `aid update`, unchanged snapshot) and the `format_version` above 3 refusal (exit, `Run: aid update self`, unchanged snapshot).
+- [ ] Changing the value in one carrier to `6` in a scratch copy makes the carrier-equality assertion fail.
 - [ ] All section-6 quality gates pass.

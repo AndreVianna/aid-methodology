@@ -24,7 +24,7 @@
   `<root>/skills/`, `CLAUDE.md`, manifest format 2, settings stamp 4) in:
   `tests/canonical/test-registry.sh`, `tests/canonical/test-self-commands.sh`,
   `tests/canonical/test-release-install-e2e.sh` and `tests/canonical/test-release-migrate-smoke.sh`
-  (its seeded "old" repo now migrates to format 5 through the channels).
+  (its seeded "old" repo now takes the clean-slate upgrade to format 5 through the channels).
 - Any other suite still failing because of the layout change and not owned by another task
   (find them with `HOME=$(mktemp -d) bash tests/run-all.sh`) is re-keyed here too, and named in
   this task's hand-off.

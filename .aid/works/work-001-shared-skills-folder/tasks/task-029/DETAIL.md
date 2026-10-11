@@ -27,21 +27,23 @@
   with the AC-19 grep (`git grep -nE '\.(claude|codex|cursor|agent)/aid/|\.github/aid/' -- .aid/knowledge ':!.aid/knowledge/release-tracking.md' ':!.aid/knowledge/kb.html'`)
   and by reading for prose statements of per-tool skill trees or rendered runtimes. At minimum:
   - `architecture.md`: § Build & Distribute Architecture (render output is agents and
-    `aid-tool.conf`; release = one shared payload plus per-tool agents artifacts; the wrapper
-    directory and `layout_format`), § Data Flow / Install flow (CLI places `.agents/skills/aid-*`,
+    `aid-tool.conf`, the generator wipes and regenerates each profile tree, and the profile
+    emission manifests are gone; release = one shared payload plus per-tool agents artifacts, with
+    no wrapper directory), § Data Flow / Install flow (CLI places `.agents/skills/aid-*`,
     the `.claude/skills` mirror, `.aid/runtime/`, the `AGENTS.md` region and the Claude Code
     `CLAUDE.md` `@AGENTS.md` import region; reference counting; drift; one version per repo),
     § Invariants (content isolation now reads: skills use the `aid-` prefix under `.agents/skills/`
     and each mirror, the runtime lives under `.aid/runtime/`, and the root files are updated only
-    between their markers -- the `AGENTS.md` region for every tool and, while Claude Code is
+    between their markers -- the `AGENTS.md` pointer region (the rules live in
+    `.aid/runtime/rules.md`) for every tool and, while Claude Code is
     installed, the `CLAUDE.md` region, which holds only `@AGENTS.md`), § Gotchas (the INDEX-path gotcha is dissolved; the dogfood resync is a CLI install),
-    § Doc-vs-Code Discrepancies (the closed three-profile `EMISSION-MANIFEST.md` gap is removed);
+    § Doc-vs-Code Discrepancies (the `EMISSION-MANIFEST.md` gap is removed with the file);
   - `authoring-conventions.md`: `G-10` and `G-11` state the `.aid/runtime/` and `.agents/skills/aid-*`
     placement rules; `G-13` no longer names a `.codex/aid/` namespace; § Content Isolation matches;
   - `artifact-schemas.md`: settings `format_version` current value `5`; the install manifest is
     format 3 with shared entries;
   - `project-structure.md`, `module-map.md`, `integration-map.md`, `infrastructure.md`,
-    `test-landscape.md` (new suites, `tests/lib/bundle.sh`, the frozen format-4 core),
+    `test-landscape.md` (new suites, `tests/lib/bundle.sh`),
     `technology-stack.md`, `coding-standards.md`, `quality-gates.md`, `decisions.md`, `tech-debt.md`
     and `.aid/knowledge/STATE.md` wherever the grep or a read finds the old layout.
 - `.aid/knowledge/release-tracking.md`: shipped history stays as history; add the entry for this

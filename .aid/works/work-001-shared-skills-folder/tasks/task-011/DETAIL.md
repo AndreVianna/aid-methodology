@@ -41,7 +41,7 @@ PowerShell twin.
   fixtures (the CLI-written `host.conf` and `.gitignore` checks are task-022).
 
 **Acceptance Criteria:**
-- [ ] `grep -rn '\.claude/worktrees' canonical | wc -l` prints `0`.
+- [ ] `grep -rn '\.claude/worktrees' canonical/aid | wc -l` prints `0` (the `canonical/skills/` occurrences belong to task-001).
 - [ ] In a fixture git repo with no `.aid/runtime/host.conf`, `bash canonical/aid/scripts/works/worktree-lifecycle.sh root` prints `<repo>/.aid/.worktrees` (absolute), creates it, and writes one diagnostic line to stderr.
 - [ ] With `host.conf` = `worktree_root=.claude/worktrees`, `root` prints `<repo>/.claude/worktrees`; with `worktree_root=../escape`, it prints `<repo>/.aid/.worktrees` plus one stderr diagnostic.
 - [ ] With `host.conf` = `worktree_root=.aid/.worktrees`, `create work-001 x` prints a path under `<repo>/.aid/.worktrees/`, and a worktree pre-registered at `.claude/worktrees/work-002-y` on branch `work-002` is returned by `locate work-002` with status `registered`.

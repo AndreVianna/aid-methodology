@@ -23,7 +23,7 @@
 - `tests/windows/Test-AidInstaller.ps1`: stop building tool tarballs from `profiles/<tool>/`; take
   a release staging directory produced by `release.sh --stage-only` (passed in by the workflow);
   re-key layout assertions; add the AC-9 (reference-counted remove), AC-10 (drift detected and
-  repaired) and AC-13 (migration from a format-4 layout for every tool) scenarios as worded in
+  repaired) and AC-13 (clean-slate upgrade from a v3 layout for every tool) scenarios as worded in
   REQUIREMENTS.md § 9.
 - `.github/workflows/installer-tests.yml`: replace the inline codex fixture-tarball builds (search:
   "build codex fixture tarball") with a `bash release.sh --stage-only --out <dir>` step whose output

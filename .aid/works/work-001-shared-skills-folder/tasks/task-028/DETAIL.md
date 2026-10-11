@@ -23,9 +23,12 @@
 - `tests/canonical/test-dogfood-byte-identity.sh`, re-keyed per REQUIREMENTS.md § 11 Feature 001 ›
   Test plan (AC-18 row):
   - canonical <-> installed: every `canonical/skills/<rel>` equals `.agents/skills/<rel>` and
-    `.claude/skills/<rel>`; `canonical/aid/` equals `.aid/runtime/` (excluding `host.conf`);
-  - agents: `.claude/agents/aid-*` and `.cursor/agents/aid-*` equal their profile emission-manifest
-    rows;
+    `.claude/skills/<rel>`; `canonical/aid/` equals `.aid/runtime/` under the payload exclusions
+    (dot-files, `node_modules/`, `.git/`), including `rules.md`, and `.aid/runtime/host.conf` exists
+    holding exactly `worktree_root=.claude/worktrees` and is the only other file under
+    `.aid/runtime/` (AC-18);
+  - agents: `.claude/agents/aid-*` and `.cursor/agents/aid-*` equal the agent files of the
+    regenerated `profiles/claude-code/` and `profiles/cursor/` trees;
   - the manifest records the shared entries (`shared.skills`, `shared.runtime`, `shared.agents_md`,
     `shared.claude_md`, the `.claude/skills` mirror);
   - root context: the repo-root `CLAUDE.md` AID region holds only `@AGENTS.md` and its
@@ -38,13 +41,14 @@
   runtime copy `.aid/runtime/templates/work-state-template.yml`.
 - The `.cursor/` skills/runtime tuple keys that no longer exist get rows in
   `tests/coverage-accepted-removals.tsv`.
-- A negative control: on a scratch copy, one changed byte in `.agents/skills/aid-ask/SKILL.md` makes
-  the canonical comparison fail.
+- Negative controls: on a scratch copy, one changed byte in `.agents/skills/aid-ask/SKILL.md`
+  makes the canonical comparison fail, and deleting `.aid/runtime/host.conf` makes the runtime
+  check fail.
 - Deferred review note (definition-gate ledger row 22): Tree-walk equality checks against `canonical/aid/` must apply the payload exclusions (dot-files, `node_modules/`, `.git/`), since CI runs `npm ci` inside `canonical/aid/scripts/summarize/`.
 
 **Acceptance Criteria:**
 - [ ] `HOME=$(mktemp -d) bash tests/canonical/test-dogfood-byte-identity.sh --verbose` exits `0`, with `PASS:` lines for each comparison, the manifest shared-entry check, the root-context checks, each absence and each survivor.
 - [ ] `bash tests/canonical/test-work-state-template.sh` exits `0` with `grep -c '\.claude/aid/' tests/canonical/test-work-state-template.sh` printing `0`.
-- [ ] The negative control prints a `PASS:` line asserting the planted byte was detected.
+- [ ] The negative controls print `PASS:` lines asserting the planted byte and the missing `host.conf` were detected.
 - [ ] The coverage-parity gate (run where `pwsh`, `node` and `python3` are on PATH) reports no un-excused removal for this suite.
 - [ ] All section-6 quality gates pass.

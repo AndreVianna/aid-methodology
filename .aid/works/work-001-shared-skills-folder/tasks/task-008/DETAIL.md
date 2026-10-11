@@ -30,12 +30,13 @@ Data Model › Validation.
   what was found); each tool artifact's version equals the shared payload's; each artifact checked by
   `verify_bundle_checksum` (unchanged). `--from-bundle <file>` naming a release artifact uses that
   file's directory.
-- `extract_payload` / `Expand-AidPayload` (new): first member is the wrapper, every member under it,
-  no absolute path and no `..` segment; returns `<dest>/<wrapper>` as the staging root.
+- `extract_payload` / `Expand-AidPayload` (new): no member with an absolute path or a `..` segment;
+  returns the extraction directory as the staging root (no wrapper directory).
 - Descriptor validation before any write, via `read_kv_conf` / `Read-AidKvConf`: `skill_mirror`,
-  `worktree_root`, `context_import` (must be `CLAUDE.md`), `layout_format` (must equal `AID_SUPPORTED_FORMAT`; higher prints
-  `This release needs a newer aid CLI. Run: aid update self`), `aid_version` (must equal the artifact
-  name's version). A violation exits 1 naming the file and key.
+  `worktree_root`, `context_import` (must be `CLAUDE.md`), `rules_inline` (must be `true` when
+  present), `aid_version` (must equal the artifact name's version). A violation exits 1 naming the
+  file and key. No layout-format key exists; a manifest `format_version` above 3 is the only
+  newer-layout check (task-006).
 - Per-tool allowlist: a tool artifact may contain only `aid-tool.conf` and `<that tool's root>/agents/`.
   This replaces the post-copy manifest-seam gate: delete `_retired_roots` in `install_tool` and its
   PowerShell counterpart.
@@ -58,7 +59,7 @@ Data Model › Validation.
 **Acceptance Criteria:**
 - [ ] A bundle dir with no `aid-shared-v*.tar.gz`, and one with two, each make `aid add cursor` exit `2` with the found names in the output; the fixture's sha256 snapshot is unchanged.
 - [ ] A bundle whose shared payload bytes no longer match `SHA256SUMS` makes `aid add cursor` exit non-zero, and the fixture snapshot is unchanged.
-- [ ] A shared payload whose `aid-payload.conf` says `layout_format=6` exits `1` with `This release needs a newer aid CLI. Run: aid update self`; an `aid-tool.conf` with `skill_mirror=.agents/skills` exits `1` naming `aid-tool.conf` and `skill_mirror`; a member path containing `..` exits `1`; a tool artifact holding a file outside its `<root>/agents/` exits `1` naming that member. The fixture snapshot is unchanged in every case.
+- [ ] A shared payload whose `aid-payload.conf` carries an `aid_version` that differs from the artifact name's version exits `1` naming `aid-payload.conf` and `aid_version`; an `aid-tool.conf` with `skill_mirror=.agents/skills` exits `1` naming `aid-tool.conf` and `skill_mirror`; an `aid-tool.conf` with `rules_inline=false` exits `1` naming `rules_inline`; a member path containing `..` exits `1`; a tool artifact holding a file outside its `<root>/agents/` exits `1` naming that member. The fixture snapshot is unchanged in every case.
 - [ ] A tool artifact at version Y beside a shared payload at version X (X != Y) exits `2`.
 - [ ] In a fixture at project version X, `aid add cursor --from-bundle <dir staged at a different version Y>` exits `2`, its output contains `aid update`, and the whole-tree sha256 snapshot is unchanged; the same bundle at version X stages normally.
 - [ ] `--from-bundle "$S/aid-cursor-v<V>.tar.gz"` stages exactly as `--from-bundle "$S"` does.
