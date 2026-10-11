@@ -80,41 +80,91 @@ done
 
 # RL04: SHA256SUMS covers all seven artifacts and both libraries.
 SUMS="${STAGE}/SHA256SUMS"
+assert_file_exists "${SUMS}" "RL04 SHA256SUMS file exists"
 assert_line_count "${SUMS}" 9 "RL04 SHA256SUMS contains seven tarballs and two libraries"
+FORMAT_OK=1
+while IFS= read -r line; do
+    if ! [[ "$line" =~ ^[0-9a-f]{64}\ \ [^[:space:]]+$ ]]; then FORMAT_OK=0; break; fi
+done < "${SUMS}"
+assert_eq "$FORMAT_OK" "1" "RL04 SHA256SUMS lines retain the two-space digest format"
+assert_file_contains "${SUMS}" "aid-install-core.sh" "RL04 SHA256SUMS includes Bash library"
+assert_file_contains "${SUMS}" "AidInstallCore.psm1" "RL04 SHA256SUMS includes PowerShell library"
+assert_file_not_contains "${SUMS}" "SHA256SUMS" "RL04 SHA256SUMS does not hash itself"
+SORT_STATUS=0
+awk '{print $2}' "${SUMS}" | sort -c >/dev/null 2>&1 || SORT_STATUS=$?
+assert_eq "$SORT_STATUS" "0" "RL04 SHA256SUMS entries are sorted by filename"
 VERIFY=$(cd "${STAGE}" && sha256sum -c SHA256SUMS 2>&1); VERIFY_RC=$?
 assert_exit_zero "$VERIFY_RC" "RL04 sha256sum -c passes for every staged artifact"
 
 # RL05: the unchanged CLI bundle and library assets remain staged.
 CLI="${STAGE}/aid-cli-v${VERSION}.tar.gz"
 CLI_LIST="$(tar -tzf "${CLI}")"
-assert_output_contains "${CLI_LIST}" "./bin/aid" "RL05 CLI bundle retains its existing member layout"
-assert_file_exists "${STAGE}/aid-install-core.sh" "RL05b Bash installer library remains staged"
-assert_file_exists "${STAGE}/AidInstallCore.psm1" "RL05c PowerShell installer library remains staged"
-assert_file_contains "${SUMS}" "aid-cli-v${VERSION}.tar.gz" "RL05d SHA256SUMS includes CLI bundle"
-assert_file_contains "${SUMS}" "aid-install-core.sh" "RL05e SHA256SUMS includes Bash library"
-assert_file_contains "${SUMS}" "AidInstallCore.psm1" "RL05f SHA256SUMS includes PowerShell library"
+for artifact in "${STAGE}"/aid-*.tar.gz; do
+    name="$(basename "$artifact")"
+    recorded="$(awk -v name="$name" '$2 == name {print $1}' "${SUMS}")"
+    actual="$(sha256sum "$artifact" | awk '{print $1}')"
+    assert_eq "$recorded" "$actual" "RL05 checksum matches for ${name}"
+done
+assert_output_contains "$CLI_LIST" "./bin/aid" "RL05b CLI bundle contains ./bin/aid"
+assert_output_contains "$CLI_LIST" "./bin/aid.ps1" "RL05c CLI bundle contains ./bin/aid.ps1"
+assert_output_contains "$CLI_LIST" "./bin/aid.cmd" "RL05d CLI bundle contains ./bin/aid.cmd"
+assert_output_contains "$CLI_LIST" "./lib/aid-install-core.sh" "RL05e CLI bundle contains Bash library"
+assert_output_contains "$CLI_LIST" "./lib/AidInstallCore.psm1" "RL05f CLI bundle contains PowerShell library"
+assert_output_contains "$CLI_LIST" "./VERSION" "RL05g CLI bundle contains VERSION"
+for libname in aid-install-core.sh AidInstallCore.psm1; do
+    libfile="${STAGE}/${libname}"
+    assert_file_exists "${libfile}" "RL05b staged installer library exists: ${libname}"
+    actual="$(sha256sum "${libfile}" | awk '{print $1}')"
+    recorded="$(awk -v name="${libname}" '$2 == name {print $1}' "${SUMS}")"
+    assert_eq "$recorded" "$actual" "RL05b installer library checksum matches: ${libname}"
+done
 assert_file_contains "${STAGE}/release-notes-stub.md" "v4 requires CLI v4" \
-    "RL05g staged release notes state v4 requires CLI v4"
+    "RL10a staged release notes state v4 requires CLI v4"
 
-# RL06: ordinary dry-run still enforces the clean-worktree precondition.
+# RL06: render drift is rejected after regeneration, even when the mismatched
+#       generated profile change is committed.
+DRIFT_CLONE="${TMP}/clone-render-drift"
+git clone --no-hardlinks --quiet "${REPO_ROOT}" "${DRIFT_CLONE}"
+cp "${SUT}" "${DRIFT_CLONE}/release.sh"
+git -C "${DRIFT_CLONE}" update-index --assume-unchanged release.sh
+git -C "${DRIFT_CLONE}" config user.email "test@example.com"
+git -C "${DRIFT_CLONE}" config user.name "Test"
+DRIFT_FILE="${DRIFT_CLONE}/profiles/claude-code/.claude/agents/aid-reviewer.md"
+printf '\n<!-- committed render drift probe -->\n' >> "${DRIFT_FILE}"
+git -C "${DRIFT_CLONE}" add "${DRIFT_FILE}"
+git -C "${DRIFT_CLONE}" commit --quiet -m "test: introduce generated render drift"
+OUT=$(cd "${DRIFT_CLONE}" && bash ./release.sh --dry-run 2>&1); RC=$?
+assert_exit_nonzero "$RC" "RL06 --dry-run rejects committed generated-profile drift"
+assert_output_contains "$OUT" "out of sync" "RL06 render-drift failure explains profile mismatch"
+DRIFT_VERSION="$(tr -d '[:space:]' < "${DRIFT_CLONE}/VERSION")"
+DRIFT_STAGE="${DRIFT_CLONE}/.aid/.temp/release-${DRIFT_VERSION}"
+DRIFT_TARBALL_COUNT=$(find "${DRIFT_STAGE}" -maxdepth 1 -type f -name 'aid-*.tar.gz' 2>/dev/null | wc -l | tr -d ' ')
+assert_eq "$DRIFT_TARBALL_COUNT" "0" "RL06 render-drift rejection occurs before packaging"
+
+# RL06a: ordinary dry-run still enforces the clean-worktree precondition.
 DRY_CLONE="${TMP}/clone-dry-run"
 git clone --no-hardlinks --quiet "${REPO_ROOT}" "${DRY_CLONE}"
 cp "${SUT}" "${DRY_CLONE}/release.sh"
 printf '%s\n' '<!-- dirty precondition probe -->' >> "${DRY_CLONE}/README.md"
 OUT=$(cd "${DRY_CLONE}" && bash ./release.sh --dry-run 2>&1); RC=$?
-assert_exit_nonzero "$RC" "RL06 --dry-run still rejects this dirty worktree"
-assert_output_contains "$OUT" "uncommitted changes" "RL06 dry-run explains its clean-tree precondition"
+assert_exit_nonzero "$RC" "RL06a --dry-run still rejects this dirty worktree"
+assert_output_contains "$OUT" "uncommitted changes" "RL06a dry-run explains its clean-tree precondition"
 
 # RL07: explicit version mismatch remains a usage precondition.
-OUT=$(cd "${REPO_ROOT}" && bash ./release.sh --version 9.9.9 --stage-only --out "${TMP}/bad" 2>&1); RC=$?
+OUT=$(cd "${REPO_ROOT}" && bash ./release.sh --version 9.9.9 --dry-run 2>&1); RC=$?
 assert_exit_eq "$RC" 3 "RL07 mismatched --version exits 3"
+assert_output_contains "$OUT" "9.9.9" "RL07 mismatch reports passed version"
 assert_output_contains "$OUT" "${VERSION}" "RL07 mismatch reports VERSION-file value"
 
-# RL08: help describes both staging modes and artifact set.
+# RL08: help continues to document existing behavior and describes the new
+#       shared payload and stage-only mode.
 OUT=$(bash "${SUT}" --help 2>&1); RC=$?
 assert_exit_zero "$RC" "RL08a --help exits 0"
-assert_output_contains "$OUT" "--stage-only" "RL08 help describes stage-only"
-assert_output_contains "$OUT" "shared payload" "RL08 help describes shared payload"
+assert_output_contains "$OUT" "dry-run" "RL08a help mentions dry-run"
+assert_output_contains "$OUT" "version X.Y.Z" "RL08a help mentions version X.Y.Z"
+assert_output_contains "$OUT" "No network I/O" "RL08a help describes dry-run network behavior"
+assert_output_contains "$OUT" "--stage-only" "RL08a help describes stage-only"
+assert_output_contains "$OUT" "shared payload" "RL08a help describes shared payload"
 
 # RL09: stage-only includes uncommitted canonical files, omits excluded paths,
 #       and ignores a conflicting local tag.
@@ -152,5 +202,6 @@ assert_file_contains "${CLONE_STAGE}/release-notes-stub.md" "v4 requires CLI v4"
 # Unknown flag remains exit 2.
 OUT=$(bash "${SUT}" --unknown-flag-xyz 2>&1); RC=$?
 assert_exit_eq "$RC" 2 "RL08b unknown flag exits 2"
+assert_output_contains "$OUT" "unknown flag" "RL08b error identifies the unknown flag"
 
 test_summary
