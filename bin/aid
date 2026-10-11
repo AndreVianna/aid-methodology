@@ -2138,11 +2138,15 @@ _aid_migration_stamp() {
     if [[ -f "$_manifest" ]]; then
         _fmt="$(manifest_format "$_manifest")"
         [[ -n "$(manifest_list_tools "$_manifest" | head -1)" ]] && _has_tools=1
-        if [[ "$_fmt" == 3 ]] || { [[ "$_has_tools" -eq 0 ]] && ! _aid_v3_legacy_evidence "$_repo"; }; then
+        if [[ "$_fmt" == 3 ]]; then
             printf '5\n'
             return 0
         fi
-        printf '4\n'
+        if [[ -e "${_repo}/.aid/.temp/v3-upgrade-tools.json" ]] || _aid_v3_legacy_evidence "$_repo" || [[ "$_has_tools" -eq 1 ]]; then
+            printf '4\n'
+            return 0
+        fi
+        printf '5\n'
         return 0
     fi
     if [[ -e "${_repo}/.aid/.temp/v3-upgrade-tools.json" ]] || _aid_v3_legacy_evidence "$_repo"; then

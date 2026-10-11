@@ -1699,8 +1699,9 @@ function script:Get-AidMigrationStamp {
     if (Test-Path $manifestPath -PathType Leaf) {
         try { $manifest = Get-Content -LiteralPath $manifestPath -Raw | ConvertFrom-Json } catch { $manifest = $null }
         $tools = if ($manifest -and $manifest.PSObject.Properties['tools']) { @($manifest.tools.PSObject.Properties) } else { @() }
-        if (($manifest -and $manifest.PSObject.Properties['format_version'] -and [int]$manifest.format_version -eq 3) -or ($tools.Count -eq 0 -and -not (script:Test-AidV3LegacyEvidence -Repo $Repo))) { return 5 }
-        return 4
+        if ($manifest -and $manifest.PSObject.Properties['format_version'] -and [int]$manifest.format_version -eq 3) { return 5 }
+        if ((Test-Path (Join-Path $aidDir '.temp/v3-upgrade-tools.json')) -or (script:Test-AidV3LegacyEvidence -Repo $Repo) -or $tools.Count -gt 0) { return 4 }
+        return 5
     }
     if ((Test-Path (Join-Path $aidDir '.temp/v3-upgrade-tools.json')) -or (script:Test-AidV3LegacyEvidence -Repo $Repo)) { return 4 }
     return 5
