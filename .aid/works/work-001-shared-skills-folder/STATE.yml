@@ -118,7 +118,7 @@ phase: Execute
 # [W] aid-{skill} | none
 active_skill: aid-execute
 # [W]
-updated: '2026-10-11T16:20:56Z'
+updated: '2026-10-11T16:20:58Z'
 # [W] set only when lifecycle = Paused-Awaiting-Input
 pause_reason: --
 # [W] set only when lifecycle = Blocked
@@ -835,6 +835,11 @@ lifecycle_history:
     grade: --
     notes: '/aid-execute Codex'
 
+  - date: '2026-10-11'
+    event: 'Task018 reopened for first Luna wave11 rows5/6: durable COVERS headers and live manifest-present assertion. Other wave11 tasks In Review awaiting recheck.'
+    grade: --
+    notes: '/aid-execute Codex'
+
 deploy: []
 
 # [A] flattened only; single writer: this work's active branch. Written by
@@ -1164,7 +1169,7 @@ tasks_lifecycle:
         outcome: 'Task017 row5 correction82c51b39f uses durable COVERS subjects; focused selector selects1/1, syntax/diff pass. In Review for Sol recheck after018 correction.'
 
   task-018:
-    state: 'In Review'
+    state: 'In Progress'
     review: --
     elapsed: --
     notes: --
