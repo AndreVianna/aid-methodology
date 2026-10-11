@@ -1,7 +1,12 @@
 #!/usr/bin/env bash
 # test-shared-install.sh -- task-017 shared install contract.
 #
-# COVERS: .aid/works/work-001-shared-skills-folder/REQUIREMENTS.md AC-3, AC-7, AC-14(a,b,e,f)
+# COVERS: bin/aid
+# COVERS: lib/aid-install-core.sh
+# COVERS: release.sh
+# COVERS: tests/lib/bundle.sh
+# COVERS: canonical/skills
+# COVERS: canonical/aid
 #
 # One stage-only subject bundle is shared by fresh per-tool fixture repos (S1).
 # HOME and USERPROFILE are pinned; every install target, mutated bundle and fixture
