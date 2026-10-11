@@ -1302,13 +1302,13 @@ tasks_lifecycle:
     notes: --
     display_name: --
   task-024:
-    state: 'In Progress'
+    state: 'In Review'
     review: --
     elapsed: --
     notes: --
     display_name: --
   task-025:
-    state: Pending
+    state: 'In Progress'
     review: --
     elapsed: --
     notes: --
