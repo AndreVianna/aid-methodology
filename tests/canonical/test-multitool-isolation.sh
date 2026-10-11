@@ -1,5 +1,8 @@
 #!/usr/bin/env bash
-# COVERS: .aid/works/work-001-shared-skills-folder/REQUIREMENTS.md AC-9, AC-10, AC-14(d)
+# COVERS: bin/aid
+# COVERS: lib/aid-install-core.sh
+# COVERS: tests/lib/bundle.sh
+# COVERS: canonical/skills/
 # Shared-layout reference counting, drift repair and last-user root-file cleanup.
 set -uo pipefail
 VERBOSE=0
@@ -62,7 +65,7 @@ printf 'user mirror\n' > "$TARGET/.claude/skills/my-skill/SKILL.md"
 USER_AGENT_SHA="$(sha "$TARGET/.agents/skills/my-skill/SKILL.md")"; USER_CLAUDE_SHA="$(sha "$TARGET/.claude/skills/my-skill/SKILL.md")"
 assert_cmd 'AC-9 add claude-code,cursor,codex succeeds' run_bundle "$TARGET" "$STATE" add claude-code,cursor,codex
 MANIFEST="$(manifest_path "$TARGET")"
-if [[ -n "$MANIFEST" ]]; then pass 'AC-9 manifest is present'; else fail 'AC-9 manifest is present'; fi
+if [[ -f "$MANIFEST" && -r "$MANIFEST" ]]; then pass 'AC-9 manifest is present and readable'; else fail 'AC-9 manifest is present and readable'; fi
 shared_snapshot() {
     (cd "$TARGET" && find .agents/skills .claude/skills .aid/runtime AGENTS.md -type f 2>/dev/null | sort | while IFS= read -r f; do printf '%s %s\n' "$(sha "$TARGET/${f#./}")" "$f"; done)
 }
