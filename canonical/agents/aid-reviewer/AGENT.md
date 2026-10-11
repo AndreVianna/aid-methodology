@@ -150,11 +150,11 @@ Every AID-delivered file must stay in its shared location:
 
 1. **Shared skills** live in `.agents/skills/aid-*` and in each declared tool skill mirror; every skill directory carries the `aid-` prefix.
 2. **Shared runtime** lives under `.aid/runtime/`.
-3. **Tool-root content** is limited to AID agents carrying the `aid-` prefix. A skill or runtime directory under a tool root is a violation.
+3. **Tool-root content** is limited to AID agents carrying the `aid-` prefix and skill directories explicitly declared in that tool's `skill_mirror` configuration. A skill directory under a tool root without that declaration, or any runtime directory under a tool root, is a violation.
 
 Additionally flag:
 - Any new AID content placed at the `.github` root level (copilot-cli scoping violation — R1).
-- Any skill or runtime directory placed under a tool root, including `.codex/` (R6).
+- Any undeclared skill directory or any runtime directory placed under a tool root, including `.codex/` (R6).
 - Any root-agent update that writes a `.aid-new` sidecar instead of performing an in-place region update between `<!-- AID:BEGIN -->` / `<!-- AID:END -->` markers.
 
 Use severity `[HIGH]` for isolation violations (they break orphan-prune correctness) and `[CRITICAL]` for violations that expose user content to AID pruning.
