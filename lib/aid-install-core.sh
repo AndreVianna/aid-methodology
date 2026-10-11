@@ -3323,7 +3323,7 @@ install_shared() {
     local ordered=(); for tool in "${AID_TOOLS[@]}"; do for rel in "${all_tools[@]}"; do [[ "$rel" == "$tool" ]] && ordered+=("$tool"); done; done
     all_tools=("${ordered[@]}")
 
-    if [[ "$phase" != finalize ]]; then
+    if [[ "$phase" != finalize && "$phase" != update-finalize ]]; then
     _COPY_COUNT_COPIED=0; _COPY_COUNT_UPTODATE=0; _COPY_COUNT_UPDATED=0; _COPY_COUNT_SKIPPED=0; _COPY_COUNT_FAILED=0
     while IFS= read -r -d '' f; do
         rel="${f#${skills_src}/}"
@@ -3361,6 +3361,18 @@ install_shared() {
     local total=$((_COPY_COUNT_COPIED + _COPY_COUNT_UPTODATE + _COPY_COUNT_UPDATED + _COPY_COUNT_SKIPPED))
     if [[ "$total" -gt 0 && "$_COPY_COUNT_UPTODATE" -eq "$total" ]]; then echo "  up to date (${total} files)"; else echo "  ${_COPY_COUNT_COPIED} copied, ${_COPY_COUNT_UPDATED} updated, ${_COPY_COUNT_UPTODATE} unchanged"; fi
     [[ "$phase" == payload ]] && return 0
+    if [[ "$phase" == update-payload ]]; then
+        for tool in "${all_tools[@]}"; do
+            conf="${tool_stage[$tool]:-}/aid-tool.conf"
+            if [[ -r "$conf" ]]; then
+                while IFS= read -r line; do [[ "$line" == worktree_root=* ]] && { host_worktree="${line#worktree_root=}"; break 2; }; done < <(read_kv_conf "$conf")
+            elif [[ -f "$manifest" ]]; then
+                while IFS=$'\t' read -r key value; do [[ "$key" == "tools.${tool}.worktree_root" ]] && { host_worktree="$value"; break 2; }; done < <(manifest_read_tool_files "$manifest" "$tool")
+            fi
+        done
+        write_host_conf "$target" "$host_worktree" || return 1
+        return 0
+    fi
     fi
 
     # Record per-tool placement metadata, preserving existing installed choices.
@@ -3382,7 +3394,7 @@ install_shared() {
     for tool in "${all_tools[@]}"; do
         if [[ -n "${tool_wr[$tool]:-}" ]]; then host_worktree="${tool_wr[$tool]}"; break; fi
     done
-    write_host_conf "$target" "$host_worktree" || return 1
+    [[ "$phase" == update-finalize ]] || write_host_conf "$target" "$host_worktree" || return 1
 
     region="$_AID_AGENTS_POINTER_REGION"
     if [[ "$inline" -eq 1 ]]; then region="$(printf '<!-- AID:BEGIN -->\n<!-- Managed by the AID CLI. Do not edit between the AID markers. -->\n'; cat "${target}/.aid/runtime/rules.md"; printf '<!-- AID:END -->\n')"$'\n'; fi
@@ -3427,7 +3439,8 @@ for tool, stage in new.items():
             rel=(pathlib.Path(root,'agents')/p.relative_to(pathlib.Path(stage,root,'agents'))).as_posix()
             files.append({'path':rel,'sha256':hashlib.sha256(p.read_bytes()).hexdigest()})
     files.sort(key=lambda x:x['path'])
-    ent={'version':version,'installed_at':now,'mirrors':sorted(conf.get('skill_mirror',[]))}
+    prior=old.get('tools',{}).get(tool,{})
+    ent={'version':version,'installed_at':prior.get('installed_at',now),'mirrors':sorted(conf.get('skill_mirror',[]))}
     if conf.get('worktree_root'): ent['worktree_root']=conf['worktree_root'][0]
     if conf.get('rules_inline')==['true']: ent['rules_inline']=True
     if conf.get('context_import'): ent['context_import']=conf['context_import'][0]

@@ -169,7 +169,7 @@ _aid_usage() {
             printf '  --dry-run: print the exact command(s) it would run, then exit (no changes).\n'
             ;;
         update)
-            printf 'aid update [--version <v>] [--from-bundle <path>] [--force] [--dry-run] [--target <dir>]\n'
+            printf 'aid update [<tool>[,...]] [--version <v>] [--from-bundle <path>] [--force] [--dry-run] [--target <dir>]\n'
             printf 'aid update self [--from-bundle <path>] [--dry-run]\n'
             printf 'aid update all [--version <v>] [--dry-run] [--force]\n'
             printf '  Update to latest.\n'
@@ -5079,8 +5079,19 @@ _cmd_update_all() {
                 [[ -n "$_ua_t" ]] && _ua_tools+=("$_ua_t")
             done < <(manifest_list_tools "$_ua_manifest")
 
+            # The shared artifact is version-scoped, so fetch it once into the
+            # same cache as the tool artifacts. fetch_artifact owns checksum
+            # retrieval and verification.
+            if [[ "${#_ua_tools[@]}" -gt 0 && ! -f "${_ua_cache}/aid-shared-v${_ua_run_version}.tar.gz" ]]; then
+                if ! fetch_artifact shared '' "$_ua_run_version" "$_ua_cache"; then
+                    echo "ERROR: aid update all: failed to download shared payload v${_ua_run_version} (continuing)" >&2
+                    _ua_fetch_failed[shared]=1
+                fi
+            fi
+
             # Populate the shared cache download-once per distinct tool (AC1).
             local _ua_repo_fetch_failed=0
+            [[ -n "${_ua_fetch_failed[shared]:-}" ]] && _ua_repo_fetch_failed=1
             if [[ "${#_ua_tools[@]}" -gt 0 ]]; then
                 for _ua_tool in "${_ua_tools[@]}"; do
                     if [[ -n "${_ua_fetch_failed[$_ua_tool]:-}" ]]; then
@@ -6248,16 +6259,6 @@ if [[ "$_AID_FORCE" -eq 0 && ( "${AID_FORCE:-0}" == "1" || "${AID_FORCE:-0}" == 
 fi
 export AID_VERBOSE="$_AID_VERBOSE"
 
-# FR10: 'update' no longer accepts a per-tool positional (other than 'self' which
-# was already consumed above).  Any non-flag positional on 'aid update' is a usage error.
-if [[ "$SUBCMD" == "update" && -n "$_AID_TOOL_ARG" ]]; then
-    echo "ERROR: aid update: unexpected argument: '${_AID_TOOL_ARG}'" >&2
-    echo "       'aid update' updates all installed tools -- no per-tool selection." >&2
-    echo "       Use 'aid update self' to update the CLI only." >&2
-    echo "       See 'aid update -h' for usage." >&2
-    exit 2
-fi
-
 _AID_TARGET="${_AID_TARGET:-.}"
 # Validate target dir.
 if [[ ! -d "$_AID_TARGET" ]]; then
@@ -6285,6 +6286,21 @@ if [[ "$SUBCMD" == "update" ]]; then
         fi
         _aid_update_self_if_stale
         exit 0
+    fi
+fi
+
+# Unsupported future manifests/stamps are a read-only refusal and must happen
+# before the self-update preamble can mutate the CLI installation.
+if [[ "$SUBCMD" == "update" ]] && _aid_is_project_dir "${_AID_TARGET}"; then
+    _aid_manifest_format_gate "${_AID_TARGET}" || exit $?
+    _AID_REPO_FMT="$(_aid_repo_format "${_AID_TARGET}")"
+    if [[ "$_AID_REPO_FMT" -gt "$AID_SUPPORTED_FORMAT" ]]; then
+        printf 'ERROR: aid: project format %s is newer than this CLI supports (%s). Upgrade the aid CLI to operate on this project.\n' "$_AID_REPO_FMT" "$AID_SUPPORTED_FORMAT" >&2
+        exit 1
+    fi
+    if [[ -e "${_AID_TARGET}/.aid/.temp/v3-upgrade-tools.json" ]] || _aid_v3_legacy_evidence "${_AID_TARGET}"; then
+        printf 'ERROR: aid update: v3 clean-slate upgrade dispatch is not available yet; install the missing upgrade support and retry.\n' >&2
+        exit 2
     fi
 fi
 
@@ -6395,6 +6411,33 @@ if [[ "$_RESOLVE_RC" -ne 0 ]]; then
 fi
 
 mapfile -t _AID_TOOLS < "$_TOOLS_TMP"
+
+# A named update is a request for at least those tools. Shared files have one
+# version, so include every installed tool in the same staged commit set.
+if [[ "$SUBCMD" == "update" ]]; then
+    _AID_REQUESTED_TOOLS=("${_AID_TOOLS[@]}")
+    _AID_INSTALLED_TMP="${_AID_STAGING_BASE}/installed-tools.tsv"
+    : > "$_AID_INSTALLED_TMP"
+    [[ -f "$_AID_MANIFEST" ]] && manifest_list_tools "$_AID_MANIFEST" > "$_AID_INSTALLED_TMP"
+    _AID_ALL_TMP="${_AID_STAGING_BASE}/all-tools.tsv"
+    cat "$_AID_INSTALLED_TMP" "$_TOOLS_TMP" | sort -u > "$_AID_ALL_TMP"
+    _AID_TOOLS=()
+    while IFS= read -r _AID_ORDER_TOOL; do
+        [[ -z "$_AID_ORDER_TOOL" ]] && continue
+        while IFS= read -r _AID_TOOL_CANDIDATE; do
+            [[ "$_AID_ORDER_TOOL" == "$_AID_TOOL_CANDIDATE" ]] && _AID_TOOLS+=("$_AID_ORDER_TOOL")
+        done < "$_AID_ALL_TMP"
+    done < <(printf '%s\n' "${AID_TOOLS[@]}")
+    _AID_ADDED_TO_COMMIT=()
+    for _AID_INSTALLED in "${_AID_TOOLS[@]}"; do
+        _AID_WAS_REQUESTED=0
+        for _AID_REQUESTED in "${_AID_REQUESTED_TOOLS[@]}"; do [[ "$_AID_REQUESTED" == "$_AID_INSTALLED" ]] && _AID_WAS_REQUESTED=1; done
+        [[ "$_AID_WAS_REQUESTED" -eq 1 ]] || _AID_ADDED_TO_COMMIT+=("$_AID_INSTALLED")
+    done
+    if [[ "${#_AID_ADDED_TO_COMMIT[@]}" -gt 0 ]]; then
+        printf 'aid update: added to commit set: %s\n' "$(IFS=', '; echo "${_AID_ADDED_TO_COMMIT[*]}")"
+    fi
+fi
 
 if [[ "${#_AID_TOOLS[@]}" -eq 0 ]]; then
     case "$SUBCMD" in
@@ -6602,6 +6645,56 @@ case "$SUBCMD" in
             echo "--- aid ${SUBCMD} --dry-run plan (no writes) ---"
             echo "Target: ${_AID_TARGET}"
             echo "Version: ${_STAGE_VERSION:-<current>}"
+            echo "Shared copies:"
+            _DRY_TRASH_MOVES=()
+            while IFS= read -r -d '' _dry_f; do
+                _dry_rel="${_dry_f#${_AID_SHARED_STAGING_DIR}/skills/}"
+                [[ "$_dry_rel" == aid-*/* ]] || continue
+                _dry_dst="${_AID_TARGET}/.agents/skills/${_dry_rel}"
+                echo "  copy: skills/${_dry_rel} -> ${_dry_dst}"
+                if [[ -f "$_dry_dst" ]] && ! cmp -s "$_dry_f" "$_dry_dst"; then
+                    _dry_prev="$(manifest_read_shared "$_AID_MANIFEST" | awk -F '\t' -v p="$_dry_rel" '$1=="shared.skills.file" && $2==p {print $3; exit}')"
+                    _dry_actual="$(sha256_file "$_dry_dst")"
+                    [[ -n "$_dry_prev" && "$_dry_actual" == "$_dry_prev" ]] || _DRY_TRASH_MOVES+=("${_dry_dst#${_AID_TARGET}/}")
+                fi
+            done < <(find "${_AID_SHARED_STAGING_DIR}/skills" -type f -print0 2>/dev/null | sort -z)
+            for _dry_tool in "${_AID_TOOLS[@]}"; do
+                while IFS= read -r _dry_conf_line; do
+                    [[ "$_dry_conf_line" == skill_mirror=* ]] || continue
+                    _dry_mirror="${_dry_conf_line#skill_mirror=}"
+                    while IFS= read -r -d '' _dry_f; do
+                        _dry_rel="${_dry_f#${_AID_SHARED_STAGING_DIR}/skills/}"
+                        [[ "$_dry_rel" == aid-*/* ]] || continue
+                        _dry_dst="${_AID_TARGET}/${_dry_mirror}/${_dry_rel}"
+                        echo "  copy: mirror/${_dry_rel} -> ${_dry_dst}"
+                        if [[ -f "$_dry_dst" ]] && ! cmp -s "$_dry_f" "$_dry_dst"; then
+                            _dry_prev="$(manifest_read_shared "$_AID_MANIFEST" | awk -F '\t' -v p="$_dry_rel" '$1=="shared.skills.file" && $2==p {print $3; exit}')"
+                            _dry_actual="$(sha256_file "$_dry_dst")"
+                            [[ -n "$_dry_prev" && "$_dry_actual" == "$_dry_prev" ]] || _DRY_TRASH_MOVES+=("${_dry_dst#${_AID_TARGET}/}")
+                        fi
+                    done < <(find "${_AID_SHARED_STAGING_DIR}/skills" -type f -print0 2>/dev/null | sort -z)
+                done < <(read_kv_conf "${_STAGE_MAP[$_dry_tool]}/aid-tool.conf")
+            done
+            while IFS= read -r -d '' _dry_f; do
+                _dry_rel="${_dry_f#${_AID_SHARED_STAGING_DIR}/runtime/}"
+                _dry_dst="${_AID_TARGET}/.aid/runtime/${_dry_rel}"
+                echo "  copy: runtime/${_dry_rel} -> ${_dry_dst}"
+                if [[ -f "$_dry_dst" ]] && ! cmp -s "$_dry_f" "$_dry_dst"; then
+                    _dry_prev="$(manifest_read_shared "$_AID_MANIFEST" | awk -F '\t' -v p="$_dry_rel" '$1=="shared.runtime.file" && $2==p {print $3; exit}')"
+                    _dry_actual="$(sha256_file "$_dry_dst")"
+                    [[ -n "$_dry_prev" && "$_dry_actual" == "$_dry_prev" ]] || _DRY_TRASH_MOVES+=("${_dry_dst#${_AID_TARGET}/}")
+                fi
+            done < <(find "${_AID_SHARED_STAGING_DIR}/runtime" -type f -print0 2>/dev/null | sort -z)
+            echo "Trash moves:"
+            for _dry_trash in "${_DRY_TRASH_MOVES[@]}"; do echo "  move to trash: ${_dry_trash}"; done
+            echo "Prune list:"
+            if [[ -d "${_AID_TARGET}/.aid/runtime" ]]; then
+                while IFS= read -r -d '' _dry_f; do
+                    [[ "$_dry_f" == */node_modules/* ]] && continue
+                    _dry_rel="${_dry_f#${_AID_TARGET}/.aid/runtime/}"
+                    [[ -f "${_AID_SHARED_STAGING_DIR}/runtime/${_dry_rel}" ]] || echo "  prune: ${_dry_f#${_AID_TARGET}/}"
+                done < <(find "${_AID_TARGET}/.aid/runtime" -type f -print0 2>/dev/null)
+            fi
             for _tool in "${_AID_TOOLS[@]}"; do
                 echo ""
                 echo "Tool: ${_tool}"
@@ -6662,10 +6755,19 @@ case "$SUBCMD" in
                 exit "${_COMMIT_RC}"
             }
         else
+            _NEW_TOOL_FILE="${_AID_STAGING_BASE}/new-tools.tsv"
+            : > "$_NEW_TOOL_FILE"
+            for _tool in "${_AID_TOOLS[@]}"; do printf '%s\t%s\n' "$_tool" "${_STAGE_MAP[$_tool]}" >> "$_NEW_TOOL_FILE"; done
+            install_shared "$_AID_SHARED_STAGING_DIR" "$_AID_TARGET" "$_STAGE_VERSION" "$_NEW_TOOL_FILE" "$_AID_FORCE" update-payload || {
+                _COMMIT_RC=$?
+                echo "ERROR: aid update failed while committing shared payload (rc=${_COMMIT_RC})." >&2
+                rm -rf "$_AID_STAGING_BASE"
+                exit "${_COMMIT_RC}"
+            }
             for _tool in "${_AID_TOOLS[@]}"; do
                 echo ""
                 echo "Installing ${_tool} v${_STAGE_VERSION} -> ${_AID_TARGET}"
-                install_tool "${_STAGE_MAP[$_tool]}" "$_tool" "$_AID_TARGET" "$_STAGE_VERSION" "$_AID_FORCE" || {
+                install_tool "${_STAGE_MAP[$_tool]}" "$_tool" "$_AID_TARGET" "$_STAGE_VERSION" "$_AID_FORCE" 1 || {
                     _COMMIT_RC=$?
                     echo "" >&2
                     echo "ERROR: aid ${SUBCMD} failed mid-commit for tool '${_tool}' (rc=${_COMMIT_RC})." >&2
@@ -6674,6 +6776,12 @@ case "$SUBCMD" in
                     exit "${_COMMIT_RC}"
                 }
             done
+            install_shared "$_AID_SHARED_STAGING_DIR" "$_AID_TARGET" "$_STAGE_VERSION" "$_NEW_TOOL_FILE" "$_AID_FORCE" update-finalize || {
+                _COMMIT_RC=$?
+                echo "ERROR: aid update failed while committing shared files (rc=${_COMMIT_RC}). Re-run 'aid update' to heal." >&2
+                rm -rf "$_AID_STAGING_BASE"
+                exit "${_COMMIT_RC}"
+            }
         fi
 
         echo ""

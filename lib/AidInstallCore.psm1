@@ -2392,11 +2392,11 @@ function Install-AidShared {
     foreach ($t in (Read-ManifestTools -ManifestPath $manifest)) { [void]$allToolsSet.Add($t) }
     foreach ($t in $NewTools) { [void]$allToolsSet.Add($t) }
     $allTools = @($script:AID_TOOLS | Where-Object { $allToolsSet.Contains($_) })
-    if ($Phase -ne 'finalize') { $script:_CopyCountCopied=0; $script:_CopyCountUpToDate=0; $script:_CopyCountUpdated=0; $script:_CopyCountSkipped=0; $script:_CopyCountFailed=0 }
+    if ($Phase -notin @('finalize','update-finalize')) { $script:_CopyCountCopied=0; $script:_CopyCountUpToDate=0; $script:_CopyCountUpdated=0; $script:_CopyCountSkipped=0; $script:_CopyCountFailed=0 }
     $skillsRoot = Join-Path $SharedStagingDir 'skills'
     $runtimeRoot = Join-Path $SharedStagingDir 'runtime'
     $skills = @(Get-ChildItem -LiteralPath $skillsRoot -Recurse -File | Sort-Object FullName)
-    if ($Phase -ne 'finalize') { foreach ($f in $skills) {
+    if ($Phase -notin @('finalize','update-finalize')) { foreach ($f in $skills) {
         $rel = $f.FullName.Substring($skillsRoot.Length).TrimStart([char]'\',[char]'/') -replace '\\','/'
         if (-not $rel.StartsWith('aid-', [System.StringComparison]::Ordinal)) { continue }
         $dst = Join-Path $Target (Join-Path '.agents/skills' ($rel -replace '/', [System.IO.Path]::DirectorySeparatorChar))
@@ -2424,7 +2424,7 @@ function Install-AidShared {
         foreach ($mirror in $mirrors) {
             if (-not $mirrorUsers.ContainsKey($mirror)) { $mirrorUsers[$mirror]=@() }
             $mirrorUsers[$mirror] += $tool
-            if ($Phase -ne 'finalize') { foreach ($f in $skills) {
+            if ($Phase -notin @('finalize','update-finalize')) { foreach ($f in $skills) {
                 $rel = $f.FullName.Substring($skillsRoot.Length).TrimStart([char]'\',[char]'/') -replace '\\','/'
                 if (-not $rel.StartsWith('aid-', [System.StringComparison]::Ordinal)) { continue }
                 $dst = Join-Path $Target (Join-Path ($mirror -replace '/', [System.IO.Path]::DirectorySeparatorChar) ($rel -replace '/', [System.IO.Path]::DirectorySeparatorChar))
@@ -2432,7 +2432,7 @@ function Install-AidShared {
             } }
         }
     }
-    if ($Phase -ne 'finalize') { foreach ($f in @(Get-ChildItem -LiteralPath $runtimeRoot -Recurse -File | Sort-Object FullName)) {
+    if ($Phase -notin @('finalize','update-finalize')) { foreach ($f in @(Get-ChildItem -LiteralPath $runtimeRoot -Recurse -File | Sort-Object FullName)) {
         $rel=$f.FullName.Substring($runtimeRoot.Length).TrimStart([char]'\',[char]'/') -replace '\\','/'
         $dst=Join-Path $Target (Join-Path '.aid/runtime' ($rel -replace '/', [System.IO.Path]::DirectorySeparatorChar))
         Copy-AidFileGuarded -Src $f.FullName -Dst $dst -RecordedSha256 $oldHashes["shared.runtime.file:$rel"] -Root $Target -AidVerbose $AidVerbose
@@ -2442,11 +2442,17 @@ function Install-AidShared {
         $copyTotal=$script:_CopyCountCopied+$script:_CopyCountUpToDate+$script:_CopyCountUpdated+$script:_CopyCountSkipped
         if ($copyTotal -gt 0) { if ($script:_CopyCountUpToDate -eq $copyTotal) { Write-Host "  up to date ($copyTotal files)" } else { Write-Host "  $($script:_CopyCountCopied) copied, $($script:_CopyCountUpdated) updated, $($script:_CopyCountUpToDate) unchanged" } }
         if ($Phase -eq 'payload') { return }
+        if ($Phase -eq 'update-payload') {
+            $worktreeTool = @($allTools | Where-Object { $toolMeta[$_].worktree } | Select-Object -First 1)
+            $hostWorktree = if ($worktreeTool.Count -gt 0) { [string]$toolMeta[$worktreeTool[0]].worktree } else { '.aid/.worktrees' }
+            script:Write-AidHostConf -Target $Target -WorktreeRoot $hostWorktree
+            return
+        }
     }
     $region=$script:_AidAgentsPointerRegion
     $worktree=(@($allTools | Where-Object { $toolMeta[$_].worktree }) | Select-Object -First 1)
     if ($worktree) { $hostWorktree=[string]$toolMeta[$worktree].worktree } else { $hostWorktree='.aid/.worktrees' }
-    script:Write-AidHostConf -Target $Target -WorktreeRoot $hostWorktree
+    if ($Phase -ne 'update-finalize') { script:Write-AidHostConf -Target $Target -WorktreeRoot $hostWorktree }
     if ($inline) {
         $rulesText=[System.IO.File]::ReadAllText((Join-Path $Target '.aid/runtime/rules.md'),[System.Text.Encoding]::UTF8)
         $region="<!-- AID:BEGIN -->`n<!-- Managed by the AID CLI. Do not edit between the AID markers. -->`n$rulesText<!-- AID:END -->`n"
@@ -2488,7 +2494,8 @@ function Install-AidShared {
         $obj=script:Get-AidJsonProp $toolObjects $tool
         $entry=$toolMeta[$tool]
         $toolVersion=if ($NewTools -contains $tool) { $Version } else { [string](script:Get-AidJsonProp $obj 'version') }
-        $installedAt=if ($NewTools -contains $tool) { (Get-Date).ToUniversalTime().ToString('yyyy-MM-ddTHH:mm:ssZ') } else { [string](script:Get-AidJsonProp $obj 'installed_at') }
+        $installedAt=[string](script:Get-AidJsonProp $obj 'installed_at')
+        if (-not $installedAt) { $installedAt=(Get-Date).ToUniversalTime().ToString('yyyy-MM-ddTHH:mm:ssZ') }
         $records.Add("tools.$tool.version`t$toolVersion"); $records.Add("tools.$tool.installed_at`t$installedAt")
         foreach ($m in $entry.mirrors) { $records.Add("tools.$tool.mirror`t$m") }
         if ($entry.worktree) { $records.Add("tools.$tool.worktree_root`t$($entry.worktree)") }; if ($entry.rules) { $records.Add("tools.$tool.rules_inline`ttrue") }

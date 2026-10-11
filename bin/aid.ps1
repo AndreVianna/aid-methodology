@@ -223,7 +223,7 @@ function script:Show-AidUsage {
             Write-Host '  -DryRun: print the exact command(s) it would run, then exit (no changes).'
         }
         'update' {
-            Write-Host 'aid update [-Version <v>] [-FromBundle <path>] [-Force] [-DryRun] [-Target <dir>]'
+            Write-Host 'aid update [<tool>[,...]] [-Version <v>] [-FromBundle <path>] [-Force] [-DryRun] [-Target <dir>]'
             Write-Host 'aid update self [-FromBundle <path>] [-DryRun]'
             Write-Host 'aid update all [-Version <v>] [-DryRun] [-Force]'
             Write-Host '  Update to latest.'
@@ -749,6 +749,8 @@ function script:Invoke-AidUpdateAll {
         Write-Host "aid update all: $($uaRepos.Count) registered project(s), target version $uaRunVersion"
 
         $uaFetchFailed = @{}   # tool -> $true once its download has failed this run
+        $uaSharedFetched = $false
+        $uaSharedFailed = $false
         $uaUpdated = [System.Collections.Generic.List[string]]::new()
         $uaSkipped = [System.Collections.Generic.List[string]]::new()
         $uaFailed  = [System.Collections.Generic.List[string]]::new()
@@ -769,8 +771,17 @@ function script:Invoke-AidUpdateAll {
             $uaManifest = Join-Path $uaAidDir '.aid-manifest.json'
             $uaTools = @(Get-ManifestToolList -ManifestPath $uaManifest | ForEach-Object { $_.Id })
 
+            if ($uaTools.Count -gt 0 -and -not $uaSharedFetched -and -not $uaSharedFailed) {
+                if (Fetch-AidArtifact -Kind shared -Tool '' -Version $uaRunVersion -DestDir $uaCache) {
+                    $uaSharedFetched = $true
+                } else {
+                    $uaSharedFailed = $true
+                }
+            }
+
             # Populate the shared cache download-once per distinct tool (AC1).
             $uaRepoFetchFailed = $false
+            if ($uaSharedFailed) { $uaRepoFetchFailed = $true }
             foreach ($uaTool in $uaTools) {
                 if ($uaFetchFailed.ContainsKey($uaTool)) {
                     $uaRepoFetchFailed = $true
@@ -5734,16 +5745,6 @@ if (-not $_AidForce -and ($env:AID_FORCE -eq '1' -or $env:AID_FORCE -eq 'true'))
 }
 if ($script:_AidVerbose) { $env:AID_VERBOSE = '1' }
 
-# FR10: 'update' no longer accepts a per-tool positional (other than 'self' which
-# was already consumed above).  Any non-flag positional on 'aid update' is a usage error.
-if ($SUBCMD -eq 'update' -and $_AidToolArg) {
-    [Console]::Error.WriteLine("ERROR: aid update: unexpected argument: '$_AidToolArg'")
-    [Console]::Error.WriteLine("       'aid update' updates all installed tools -- no per-tool selection.")
-    [Console]::Error.WriteLine("       Use 'aid update self' to update the CLI only.")
-    [Console]::Error.WriteLine("       See 'aid update -h' for usage.")
-    script:Exit-Aid 2
-}
-
 if (-not $_AidTarget) { $_AidTarget = '.' }
 
 # Validate target directory.
@@ -5785,6 +5786,12 @@ if ($SUBCMD -eq 'update') {
 if ($SUBCMD -eq 'update' -and (script:Test-AidIsProjectDir -Dir $_AidTarget)) {
     $gateRc = script:Invoke-AidFormatGate -Repo $_AidTarget
     if ($gateRc -ne 0) { script:Exit-Aid $gateRc }
+    if (-not (script:Test-AidManifestFormatGate -Repo $_AidTarget)) { script:Exit-Aid 2 }
+    if ((Test-Path (Join-Path $_AidTarget '.aid/.temp/v3-upgrade-tools.json')) -or
+        (script:Test-AidV3LegacyEvidence -Repo $_AidTarget)) {
+        [Console]::Error.WriteLine('ERROR: aid update: v3 clean-slate upgrade dispatch is not available yet; install the missing upgrade support and retry.')
+        script:Exit-Aid 2
+    }
 }
 
 # ---- Self-update-if-needed preamble (FF-3 / CLI-2 / task-079) --------------
@@ -5880,6 +5887,16 @@ if (-not $_AidToolsOk.Value) {
 }
 
 $_AidTools = $_AidToolsList
+
+if ($SUBCMD -eq 'update') {
+    $requestedTools = @($_AidTools)
+    $allToolSet = New-Object 'System.Collections.Generic.HashSet[string]' ([System.StringComparer]::Ordinal)
+    foreach ($t in $_AidTools) { [void]$allToolSet.Add($t) }
+    foreach ($t in (Get-ManifestToolList -ManifestPath $_AidManifest)) { [void]$allToolSet.Add($t.Id) }
+    $addedTools = @($script:AID_TOOLS | Where-Object { $allToolSet.Contains($_) -and $requestedTools -notcontains $_ })
+    $_AidTools = @($script:AID_TOOLS | Where-Object { $allToolSet.Contains($_) })
+    if ($addedTools.Count -gt 0) { Write-Host "aid update: added to commit set: $($addedTools -join ', ')" }
+}
 
 if ($_AidTools.Count -eq 0) {
     switch ($SUBCMD) {
@@ -6118,6 +6135,60 @@ try {
                 Write-Host "--- aid $SUBCMD -DryRun plan (no writes) ---"
                 Write-Host "Target: $_AidTarget"
                 Write-Host "Version: $(if ($stageVersion) { $stageVersion } else { '<current>' })"
+                Write-Host 'Shared copies:'
+                $dryTrashMoves = [System.Collections.Generic.List[string]]::new()
+                $drySharedSkills = Join-Path $script:_DispSharedStagingDir 'skills'
+                foreach ($df in @(Get-ChildItem -LiteralPath $drySharedSkills -Recurse -File -ErrorAction SilentlyContinue | Sort-Object FullName)) {
+                    $rel = $df.FullName.Substring($drySharedSkills.Length).TrimStart([char]'\', [char]'/') -replace '\\','/'
+                    if (-not $rel.StartsWith('aid-', [System.StringComparison]::Ordinal)) { continue }
+                    $dst = Join-Path $_AidTarget (Join-Path '.agents/skills' ($rel -replace '/', [System.IO.Path]::DirectorySeparatorChar))
+                    Write-Host "  copy: skills/$rel -> $dst"
+                    if ((Test-Path -LiteralPath $dst -PathType Leaf) -and (Get-Sha256File -FilePath $dst) -ne (Get-Sha256File -FilePath $df.FullName)) {
+                        $oldSha = ''
+                        foreach ($row in (Read-AidManifestShared -ManifestPath $_AidManifest)) { $p = $row.Split("`t"); if ($p.Count -ge 3 -and $p[0] -eq 'shared.skills.file' -and $p[1] -eq $rel) { $oldSha=$p[2]; break } }
+                        if (-not $oldSha -or (Get-Sha256File -FilePath $dst) -ne $oldSha) { $dryTrashMoves.Add($dst.Substring($_AidTarget.Length).TrimStart([char]'\', [char]'/')) }
+                    }
+                }
+                foreach ($t in $_AidTools) {
+                    $toolConf = Join-Path $stageMap[$t] 'aid-tool.conf'
+                    foreach ($line in (Read-AidKvConf -Path $toolConf)) {
+                        if (-not $line.StartsWith('skill_mirror=', [System.StringComparison]::Ordinal)) { continue }
+                        $mirror = $line.Substring('skill_mirror='.Length)
+                        foreach ($df in @(Get-ChildItem -LiteralPath $drySharedSkills -Recurse -File -ErrorAction SilentlyContinue | Sort-Object FullName)) {
+                            $rel = $df.FullName.Substring($drySharedSkills.Length).TrimStart([char]'\', [char]'/') -replace '\\','/'
+                            if (-not $rel.StartsWith('aid-', [System.StringComparison]::Ordinal)) { continue }
+                            $dst = Join-Path $_AidTarget (Join-Path ($mirror -replace '/', [System.IO.Path]::DirectorySeparatorChar) ($rel -replace '/', [System.IO.Path]::DirectorySeparatorChar))
+                            Write-Host "  copy: mirror/$rel -> $dst"
+                            if ((Test-Path -LiteralPath $dst -PathType Leaf) -and (Get-Sha256File -FilePath $dst) -ne (Get-Sha256File -FilePath $df.FullName)) {
+                                $oldSha = ''
+                                foreach ($row in (Read-AidManifestShared -ManifestPath $_AidManifest)) { $p = $row.Split("`t"); if ($p.Count -ge 3 -and $p[0] -eq 'shared.skills.file' -and $p[1] -eq $rel) { $oldSha=$p[2]; break } }
+                                if (-not $oldSha -or (Get-Sha256File -FilePath $dst) -ne $oldSha) { $dryTrashMoves.Add($dst.Substring($_AidTarget.Length).TrimStart([char]'\', [char]'/')) }
+                            }
+                        }
+                    }
+                }
+                $drySharedRuntime = Join-Path $script:_DispSharedStagingDir 'runtime'
+                foreach ($df in @(Get-ChildItem -LiteralPath $drySharedRuntime -Recurse -File -ErrorAction SilentlyContinue | Sort-Object FullName)) {
+                    $rel = $df.FullName.Substring($drySharedRuntime.Length).TrimStart([char]'\', [char]'/') -replace '\\','/'
+                    $dst = Join-Path $_AidTarget (Join-Path '.aid/runtime' ($rel -replace '/', [System.IO.Path]::DirectorySeparatorChar))
+                    Write-Host "  copy: runtime/$rel -> $dst"
+                    if ((Test-Path -LiteralPath $dst -PathType Leaf) -and (Get-Sha256File -FilePath $dst) -ne (Get-Sha256File -FilePath $df.FullName)) {
+                        $oldSha = ''
+                        foreach ($row in (Read-AidManifestShared -ManifestPath $_AidManifest)) { $p = $row.Split("`t"); if ($p.Count -ge 3 -and $p[0] -eq 'shared.runtime.file' -and $p[1] -eq $rel) { $oldSha=$p[2]; break } }
+                        if (-not $oldSha -or (Get-Sha256File -FilePath $dst) -ne $oldSha) { $dryTrashMoves.Add($dst.Substring($_AidTarget.Length).TrimStart([char]'\', [char]'/')) }
+                    }
+                }
+                Write-Host 'Trash moves:'
+                foreach ($path in $dryTrashMoves) { Write-Host "  move to trash: $path" }
+                Write-Host 'Prune list:'
+                $runtimeTarget = Join-Path $_AidTarget '.aid/runtime'
+                if (Test-Path -LiteralPath $runtimeTarget -PathType Container) {
+                    foreach ($rf in @(Get-ChildItem -LiteralPath $runtimeTarget -Recurse -File -ErrorAction SilentlyContinue)) {
+                        if ($rf.FullName -match '[\\/]node_modules[\\/]') { continue }
+                        $rel = $rf.FullName.Substring($runtimeTarget.Length).TrimStart([char]'\', [char]'/') -replace '\\','/'
+                        if (-not (Test-Path -LiteralPath (Join-Path $drySharedRuntime ($rel -replace '/', [System.IO.Path]::DirectorySeparatorChar)) -PathType Leaf)) { Write-Host "  prune: $($rf.FullName.Substring($_AidTarget.Length).TrimStart([char]'\', [char]'/'))" }
+                    }
+                }
                 foreach ($t in $_AidTools) {
                     Write-Host ""
                     Write-Host "Tool: $t"
@@ -6154,13 +6225,17 @@ try {
                 Install-AidShared -SharedStagingDir $script:_DispSharedStagingDir -Target $_AidTarget `
                     -Version $stageVersion -NewTools $_AidTools -StageMap $stageMap -Force ([bool]$_AidForce) `
                     -AidVerbose $script:_AidVerbose -Phase 'payload'
+            } else {
+                Install-AidShared -SharedStagingDir $script:_DispSharedStagingDir -Target $_AidTarget `
+                    -Version $stageVersion -NewTools $_AidTools -StageMap $stageMap -Force ([bool]$_AidForce) `
+                    -AidVerbose $script:_AidVerbose -Phase 'update-payload'
             }
             foreach ($t in $_AidTools) {
                 Write-Host ""
                 Write-Host "Installing $t v$stageVersion -> $_AidTarget"
                 $rc = Install-AidTool -StagingDir $stageMap[$t] -Tool $t -Target $_AidTarget `
                          -Version $stageVersion -Force ([bool]$_AidForce) `
-                         -AidVerbose $script:_AidVerbose -AddOnly ($SUBCMD -eq 'add')
+                         -AidVerbose $script:_AidVerbose -AddOnly ($SUBCMD -in @('add', 'update'))
                 if ($rc -ne 0) {
                     Write-Host ""
                     [Console]::Error.WriteLine("ERROR: aid $SUBCMD failed mid-commit for tool '$t' (rc=$rc).")
@@ -6172,6 +6247,10 @@ try {
                 Install-AidShared -SharedStagingDir $script:_DispSharedStagingDir -Target $_AidTarget `
                     -Version $stageVersion -NewTools $_AidTools -StageMap $stageMap -Force ([bool]$_AidForce) `
                     -AidVerbose $script:_AidVerbose -Phase 'finalize'
+            } else {
+                Install-AidShared -SharedStagingDir $script:_DispSharedStagingDir -Target $_AidTarget `
+                    -Version $stageVersion -NewTools $_AidTools -StageMap $stageMap -Force ([bool]$_AidForce) `
+                    -AidVerbose $script:_AidVerbose -Phase 'update-finalize'
             }
             Write-Host ""
             Write-Host "Done. AID $stageVersion installed into: $_AidTarget"
