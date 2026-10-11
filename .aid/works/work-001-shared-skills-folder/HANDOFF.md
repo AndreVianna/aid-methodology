@@ -6,11 +6,11 @@ maintainer approved execution. Current phase `Execute`, lifecycle `Running`.
 
 ## Current execution checkpoint
 
-Task014 correctionc8a3438fb committed: both PS final phases snapshot old manifest and run required cleanup/config; both dry-run plans include guarded agents and canonical/mirror/agent/runtime prune, classify delete vs trash, keep host.conf/protected runtime. New valid format3 Claude+Cursor regression confirms immutable plan and real update actions; syntax/ASCII29/diff pass. In Review for Sol wave10 recheck; update-all cache previously independently verified, PS runtime deferred.
+Wave10 independent Sol recheck: original HIGH/MEDIUM Fixed; focused dry-run regression passes. New MEDIUM Pending row3: PS planner excludes nested runtime files named host.conf by basename although real prune trashes them; only root runtime/host.conf is generated. Task014 In Progress for allowed separate Sol executor correction; PS runtime deferred and cache verification already passed.
 
 - Done (15/32): task-001, task-002, task-003, task-004, task-005, task-006, task-007, task-008, task-009, task-010, task-011, task-012, task-013, task-016, task-022.
-- In Progress: none.
-- In Review: task-014.
+- In Progress: task-014.
+- In Review: none.
 - Failed/Blocked: none.
 - Pending: task-015, task-017, task-018, task-019, task-020, task-021, task-023, task-024, task-025, task-026, task-027, task-028, task-029, task-030, task-031, task-032.
 - Current wave: 10 of 15. Derive authoritative waves from task dependency headers.

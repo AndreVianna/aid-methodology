@@ -118,7 +118,7 @@ phase: Execute
 # [W] aid-{skill} | none
 active_skill: aid-execute
 # [W]
-updated: '2026-10-11T15:26:11Z'
+updated: '2026-10-11T15:27:46Z'
 # [W] set only when lifecycle = Paused-Awaiting-Input
 pause_reason: --
 # [W] set only when lifecycle = Blocked
@@ -760,6 +760,11 @@ lifecycle_history:
     grade: --
     notes: '/aid-execute Codex'
 
+  - date: '2026-10-11'
+    event: 'Wave10 independent Sol recheck: original HIGH/MEDIUM Fixed; focused dry-run regression passes. New MEDIUM Pending row3: PS planner excludes nested runtime files named host.conf by basename although real prune trashes them; only root runtime/host.conf is generated. Task014 In Progress for allowed separate Sol executor correction; PS runtime deferred and cache verification already passed.'
+    grade: --
+    notes: '/aid-execute Codex'
+
 deploy: []
 
 # [A] flattened only; single writer: this work's active branch. Written by
@@ -1001,7 +1006,7 @@ tasks_lifecycle:
         outcome: 'Task013 Luna correctiondff0c7d9a committed: recorded runtime node_modules excluded before existence/hash checks in both twins; extras include plain aid-* files and unrecorded/empty namespaces; drift block includes Shared files heading. Expanded offline fixture/syntax/diff/ASCII29 pass. In Review for independent Sol wave9 recheck; PS runtime deferred.'
 
   task-014:
-    state: 'In Review'
+    state: 'In Progress'
     review: --
     elapsed: --
     notes: --
