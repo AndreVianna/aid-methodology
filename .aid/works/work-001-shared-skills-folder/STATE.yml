@@ -112,15 +112,15 @@ minimum_grade: A
 # [W] 'yes' | 'no' -- quoted, see NFR-2 / D-5
 user_approved: 'no'
 # [W] Running | Paused-Awaiting-Input | Blocked | Completed | Canceled
-lifecycle: Running
+lifecycle: Paused-Awaiting-Input
 # [W] Describe | Define | Specify | Plan | Detail | Execute
 phase: Detail
 # [W] aid-{skill} | none
 active_skill: aid-update
 # [W]
-updated: '2026-10-11T02:41:37Z'
+updated: '2026-10-11T02:44:25Z'
 # [W] set only when lifecycle = Paused-Awaiting-Input
-pause_reason: --
+pause_reason: 'Full review below floor A; awaiting maintainer decision before fixes'
 # [W] set only when lifecycle = Blocked
 block_reason: --
 # [W] e.g. IMPEDIMENT-task-NNN.md, or the failed gate
@@ -416,6 +416,15 @@ lifecycle_history:
     event: 'Fresh full definition review complete; new row 49 Pending; no Fixed regressions'
     grade: 'C+'
     notes: 'One MEDIUM contradiction between AC-13 user-file fixture and path-based ownership under old aid/ subtrees. Full sections 1-11 reviewed; 28 Fixed, 19 Accepted and 1 OOS preserved. Full task pass starts using retained definition context; no fixes or implementation'
+
+  - date: '2026-10-10'
+    event: 'Fresh full 32-task review complete; new row 22 Pending; no Fixed regressions'
+    grade: 'C+'
+    notes: 'One MEDIUM omission: aid update all cache producer lacks assigned shared-payload fetch for child update --from-bundle. All 32 task bodies, AC traceability, dependency order and cross-document consistency reviewed; 21 prior Fixed findings preserved'
+  - date: '2026-10-10'
+    event: 'Fresh full review complete; paused before fixes for maintainer decision'
+    grade: --
+    notes: 'Definition C+, tasks C+, floor A; two new Pending MEDIUM findings (definition 49, task 22), no Recurred findings. Full definition context reused for task review to conserve usage. Active ledgers retained and archived snapshots updated; no application edits or implementation. All 32 tasks remain Pending; manual A-4/A-6 probes remain unverified'
 
 # [A] aid-deploy only; one entry per delivery (never derived from child
 #     files; aid-deploy is the sole author):
