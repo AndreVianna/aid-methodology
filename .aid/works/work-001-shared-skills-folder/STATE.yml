@@ -118,7 +118,7 @@ phase: Execute
 # [W] aid-{skill} | none
 active_skill: aid-execute
 # [W]
-updated: '2026-10-11T06:41:31Z'
+updated: '2026-10-11T06:45:59Z'
 # [W] set only when lifecycle = Paused-Awaiting-Input
 pause_reason: --
 # [W] set only when lifecycle = Blocked
@@ -595,6 +595,11 @@ lifecycle_history:
     grade: --
     notes: '/aid-execute Codex'
 
+  - date: '2026-10-11'
+    event: 'Task008 Luna correction 26fc45308 committed; parser now propagates read_kv_conf failures and uses parsed required-key counts. Descriptor regression 21/21, valid bundle add, Bash syntax and ASCII29 pass. Task008 In Review for independent Sol wave5 recheck. Task009 pending; PS runtime deferred.'
+    grade: --
+    notes: '/aid-execute Codex'
+
 deploy: []
 
 # [A] flattened only; single writer: this work's active branch. Written by
@@ -716,7 +721,7 @@ tasks_lifecycle:
         outcome: 'committed cfadd72d4; retained release coverage restored,76 assertions pass'
 
   task-008:
-    state: 'In Progress'
+    state: 'In Review'
     review: --
     elapsed: --
     notes: --
@@ -727,6 +732,12 @@ tasks_lifecycle:
         eta_band: '3-8 min'
         actual: '7m14s'
         outcome: 'committed54f1aee8c; focused bundle/archive/version/no-write/HTTP refusal probes passed; pwsh deferred'
+
+      - date: '2026-10-11T06:45:59.836210+00:00'
+        agent: 'gpt-6-luna'
+        eta_band: '3-8 min'
+        actual: '4m21s'
+        outcome: 'Task008 Luna correction 26fc45308 committed; parser now propagates read_kv_conf failures and uses parsed required-key counts. Descriptor regression 21/21, valid bundle add, Bash syntax and ASCII29 pass. Task008 In Review for independent Sol wave5 recheck. Task009 pending; PS runtime deferred.'
 
   task-009:
     state: Pending
