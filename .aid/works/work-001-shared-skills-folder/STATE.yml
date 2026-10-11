@@ -118,7 +118,7 @@ phase: Execute
 # [W] aid-{skill} | none
 active_skill: aid-execute
 # [W]
-updated: '2026-10-11T07:11:30Z'
+updated: '2026-10-11T07:21:34Z'
 # [W] set only when lifecycle = Paused-Awaiting-Input
 pause_reason: --
 # [W] set only when lifecycle = Blocked
@@ -645,6 +645,11 @@ lifecycle_history:
     grade: --
     notes: '/aid-execute Codex'
 
+  - date: '2026-10-11'
+    event: 'Task010 committed93aa95c90: shared prune, host.conf/hash/manifest, managed ignore/attributes and runtime settings seed in Bash/PS cores plus provisioning tests. Focused provisioning53/53, ASCII29, syntax and direct shared metadata/prune probes pass. Legacy multitool suite stops on absent shared artifact and is explicitly known red pending task018 fixture rekey. In Review for Sol wave7; PS runtime deferred.'
+    grade: --
+    notes: '/aid-execute Codex'
+
 deploy: []
 
 # [A] flattened only; single writer: this work's active branch. Written by
@@ -810,11 +815,18 @@ tasks_lifecycle:
         outcome: 'Task009 Luna correction e43e8416b committed: PowerShell Claude import path and fallback host metadata now use interpolated TSV tabs; adjacent new records inspected with no remaining single-quoted tab escapes. ASCII29 and diff pass. In Review for independent Sol wave6 recheck; PS runtime deferred.'
 
   task-010:
-    state: 'In Progress'
+    state: 'In Review'
     review: --
     elapsed: --
     notes: --
     display_name: --
+    dispatch_log:
+      - date: '2026-10-11T07:21:34.622201+00:00'
+        agent: 'gpt-6-luna'
+        eta_band: '3-8 min'
+        actual: '9m48s'
+        outcome: 'Task010 committed93aa95c90: shared prune, host.conf/hash/manifest, managed ignore/attributes and runtime settings seed in Bash/PS cores plus provisioning tests. Focused provisioning53/53, ASCII29, syntax and direct shared metadata/prune probes pass. Legacy multitool suite stops on absent shared artifact and is explicitly known red pending task018 fixture rekey. In Review for Sol wave7; PS runtime deferred.'
+
   task-011:
     state: Done
     review: --
