@@ -211,8 +211,10 @@ assert_file_contains "$RULES_FILE" ".aid/runtime/templates/connectors/consumptio
 
 DOGFOOD_CLAUDE_MD="${REPO_ROOT}/CLAUDE.md"
 assert_file_exists "$DOGFOOD_CLAUDE_MD" "ST36 dogfood root CLAUDE.md exists"
-assert_file_contains "$DOGFOOD_CLAUDE_MD" "## Connectors" "ST37 dogfood root CLAUDE.md has a ## Connectors section"
-assert_file_contains "$DOGFOOD_CLAUDE_MD" "aid-set-connector" "ST38 dogfood root CLAUDE.md ## Connectors mentions aid-set-connector"
+# v4: the root rules live in the installed runtime (CLAUDE.md imports them via AGENTS.md).
+DOGFOOD_RULES_MD="${REPO_ROOT}/.aid/runtime/rules.md"
+assert_file_contains "$DOGFOOD_RULES_MD" "## Connectors" "ST37 dogfood installed rules.md has a ## Connectors section"
+assert_file_contains "$DOGFOOD_RULES_MD" "aid-set-connector" "ST38 dogfood installed rules.md ## Connectors mentions aid-set-connector"
 
 # ===========================================================================
 test_summary
