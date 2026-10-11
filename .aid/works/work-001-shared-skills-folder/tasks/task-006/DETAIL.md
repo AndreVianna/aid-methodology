@@ -27,16 +27,20 @@ Feature Flow › 3 (steps 2 to 4).
   `bin/aid`, `AidSupportedFormat` in `bin/aid.ps1`, `$script:_AidSupportedFormat` in
   `lib/AidInstallCore.psm1`. The comment block above `readonly AID_SUPPORTED_FORMAT` gains the line
   `format 5 (was 4): shared skills under .agents/skills (+ CLI-owned mirrors), runtime under .aid/runtime/, one AGENTS.md pointer region for every tool, a CLAUDE.md @AGENTS.md import region while claude-code is installed; manifest format_version 3`.
+- The shipped seed `canonical/aid/templates/settings.yml` (the file both shells copy into a fresh
+  `.aid/settings.yml`) carries `format_version: 5` in the same commit as the three carriers, so a
+  fresh `aid add` seeds the stamp the layout gate accepts.
 - Stamp cap in `_aid_migrate_repo` and its PowerShell twin: write `format_version: 5` only when the
-  manifest records `format_version` 3, or when no manifest, recovery record, legacy AID-owned paths
-  or old AID-owned root-region evidence exists (proven fresh install); otherwise write `4`. Use the
-  same path-based evidence as the Upgrade from v3 trigger. A valid format-3 manifest recognizes a
-  legitimate v4 Claude mirror; user directory-only evidence never triggers refusal. Manifest-less
+  manifest records `format_version` 3, or when no manifest, recovery record or v3 legacy evidence
+  exists (proven fresh install); otherwise write `4`. "v3 legacy evidence" is the list in
+  REQUIREMENTS.md § 5 FR-11 (manifest `format_version` <= 2, `<root>/aid/`, or `<root>/skills/aid-*`
+  for the five tool roots; v4 agents `<root>/agents/aid-*` never count; a valid format-3 manifest
+  exempts the v4 Claude mirror; user directory-only evidence never triggers refusal). Manifest-less
   legacy remains stamp 4 after `aid projects add` / `aid update self`, so `aid add` directs users to
   `aid update`.
 - `_aid_layout_gate` (new) and its twin, run by `aid add` after the writability pre-check: a
   manifest exists and records `format_version` < 3, an existing settings stamp is < 5, a recovery
-  record exists, or legacy AID-owned layout evidence exists -> exit 2. A fresh repo with no such
+  record exists, or v3 legacy evidence (FR-11 list) exists -> exit 2. A fresh repo with no such
   evidence passes, including when settings are absent, print
   `This project uses the v3 AID layout. Run: aid update (it upgrades every installed tool), then retry aid add.`,
   write nothing.
@@ -51,22 +55,19 @@ Feature Flow › 3 (steps 2 to 4).
   on a format-2 manifest (`test-aid-cli.sh`/`test-aid-cli-ps1.sh` -> task-019, `test-aid-migrate.sh`
   -> task-021, `test-aid-cli-parity.sh` -> task-023, `test-registry.sh`/`test-self-commands.sh`/
   `test-release-migrate-smoke.sh` -> task-025).
-- Known red from here until their re-key tasks: suites asserting stamp `4` or exercising `aid add`
-  on a format-2 manifest (`test-aid-cli.sh`/`test-aid-cli-ps1.sh` -> task-019, `test-aid-migrate.sh`
-  -> task-021, `test-aid-cli-parity.sh` -> task-023, `test-registry.sh`/`test-self-commands.sh`/
-  `test-release-migrate-smoke.sh` -> task-025).
 - Deferred review note (definition-gate ledger row 18): Literal fallbacks of the format number 4 also live in `lib/aid-install-core.sh` and twice in `bin/aid` (search `SUPPORTED_FORMAT:-`); bump them with the three carriers, or a library consumer seeds `format_version: 4` into a layout-5 project.
 
 **Acceptance Criteria:**
 - [ ] `grep -E 'readonly AID_SUPPORTED_FORMAT=' bin/aid`, the `AidSupportedFormat` assignment in `bin/aid.ps1` and the `$script:_AidSupportedFormat` assignment in `lib/AidInstallCore.psm1` all carry the value `5`, and the new comment line is present above the bash constant, containing both `one AGENTS.md pointer region for every tool` and `a CLAUDE.md @AGENTS.md import region while claude-code is installed`.
 - [ ] In layout-gate isolation fixtures, a fresh repo with absent settings, no manifest, recovery
-  record or legacy AID-owned paths passes; an incompatible stamp/manifest, recovery record or
-  legacy owned path refuses with exit 2 and leaves the tree unchanged. A user directory alone is
-  not legacy evidence. Complete fresh `aid add` is verified downstream in task-020.
+  record or v3 legacy evidence passes; an incompatible stamp/manifest, recovery record or
+  v3 legacy evidence refuses with exit 2 and leaves the tree unchanged. A user directory alone is
+  not legacy evidence, and neither is a v4 agent file `<root>/agents/aid-*`. Complete fresh `aid add` is verified downstream in task-020.
 - [ ] In a fixture holding a format-2 manifest and `format_version: 4` settings, `aid add cursor` exits `2`, prints the layout-gate message (`This project uses the v3 AID layout. Run: aid update ...`), and a sha256 snapshot of the fixture tree (`find . -type f -exec sha256sum {} +`, sorted) is unchanged.
 - [ ] In a fixture whose format-3 manifest records `tools.codex.version` different from `aid_version`, `aid add cursor` exits `2` and its output contains `aid update`; the fixture snapshot is unchanged.
-- [ ] `_aid_migrate_repo` on a format-2 manifest writes `format_version: 4`; on a format-3 manifest writes `5`; on proven-fresh state (no manifest, recovery record, legacy AID-owned paths or old AID root-region evidence) writes `5`; with no manifest and a recovery record or legacy owned paths/root-region evidence it writes `4`. Exercise both shells.
+- [ ] `_aid_migrate_repo` on a format-2 manifest writes `format_version: 4`; on a format-3 manifest writes `5`; on proven-fresh state (no manifest, recovery record or v3 legacy evidence) writes `5`; with no manifest and a recovery record or v3 legacy evidence it writes `4`; v4 agent files `<root>/agents/aid-*` alone leave it at `5`. Exercise both shells.
 - [ ] In a fixture holding a format-3 manifest and a settings stamp of `4` (the state left by `aid update self`), `aid add cursor` exits `2`, prints the layout-gate message, and the fixture snapshot is unchanged.
+- [ ] `grep -n '^format_version:' canonical/aid/templates/settings.yml` prints `format_version: 5`; in a fresh fixture, `aid add cursor` then `aid add claude-code` both exit `0` (the second is not refused by the layout gate) and `.aid/settings.yml` shows `format_version: 5`.
 - [ ] A manifest with `"format_version": 4` makes `aid status` refuse with a message containing `Run: aid update self`.
 - [ ] Each case above gives the same exit code and output lines under `bin/aid.ps1` where `pwsh` exists.
 - [ ] `bash tests/canonical/test-ps51-compat.sh` and `bash tests/canonical/test-ascii-only.sh` exit `0`.

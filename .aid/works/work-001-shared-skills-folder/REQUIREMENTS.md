@@ -269,9 +269,9 @@ Any byte difference between copies therefore produces mixed, unpredictable behav
   Three refusals are added:
   - `aid add` refuses, naming `aid update`, when the manifest already records tools at differing
     versions.
-  - `aid add` refuses, naming `aid update`, when legacy layout evidence exists or an existing
-    settings stamp is below 5. A fresh repository with no manifest, recovery record, legacy
-    AID-owned paths or old AID-owned root-region evidence passes even when settings are absent.
+  - `aid add` refuses, naming `aid update`, when v3 legacy evidence (FR-11) exists or an existing
+    settings stamp is below 5. A fresh repository with no manifest, recovery record or v3 legacy
+    evidence passes even when settings are absent.
   - `aid add` resolves its version from the staged payload's `aid_version` (whatever the source:
     download, `--version` or `--from-bundle`) and, when it differs from the project version,
     exits 2 and writes nothing, with the same mixed-version refusal text and its hint to run
@@ -283,7 +283,9 @@ Any byte difference between copies therefore produces mixed, unpredictable behav
   explicit, atomic upgrade path.
 - **FR-11: Layout format bump and clean-slate upgrade.** The repo layout stamp
   `AID_SUPPORTED_FORMAT` is bumped in all three carriers (`bin/aid`, `bin/aid.ps1`,
-  `lib/AidInstallCore.psm1`). `aid update` on a v3 layout (a format-2 manifest, or the old `<root>/aid/` and
+  `lib/AidInstallCore.psm1`), and the shipped settings seed `canonical/aid/templates/settings.yml`
+  carries the same value as its `format_version` line (the fourth stamp carrier, so a fresh install
+  seeds the current stamp). `aid update` on a v3 layout (a format-2 manifest, or the old `<root>/aid/` and
   `<root>/skills/aid-*` paths) moves every old AID-owned path, and the old AID region of the root
   files, into `.aid/.trash/`, then runs a normal fresh v4 install of the same tools (§11 Upgrade
   from v3). The old layouts are:
@@ -293,10 +295,22 @@ Any byte difference between copies therefore produces mixed, unpredictable behav
   - `.github/aid/` and `.github/skills/aid-*`;
   - `.agent/aid/` and `.agent/skills/aid-*` (Antigravity).
 
+  **v3 legacy evidence** is defined here once; the `aid add` layout gate, the settings-stamp cap
+  and the Upgrade from v3 trigger all use exactly this list. It exists when any of these holds for
+  any of the five tool roots (`.claude`, `.codex`, `.cursor`, `.github`, `.agent`):
+  - the manifest records `format_version` 2 or lower;
+  - the directory `<root>/aid/` exists (for Codex, also the legacy `.agents/aid/`);
+  - a directory `<root>/skills/aid-*` exists, except the v4 Claude mirror `.claude/skills/aid-*`
+    when a valid format-3 manifest records it under `shared.mirrors`.
+
+  v4 per-tool agent files (`<root>/agents/aid-*`), the `AGENTS.md` pointer region, the `CLAUDE.md`
+  import region and user directories holding no AID-owned path are NOT legacy evidence.
+
   Nothing is deleted: every moved file lands at `.aid/.trash/<original-path>`, and user files are
   never touched. The ownership rule is path-based. An old-layout file is AID-owned if it lies under
   `<root>/skills/aid-*/` at any depth (so every `references/*.md` counts), or under `<root>/aid/`,
-  or its basename starts with `aid-`. `_is_aid_owned_file` in `_migrate_retired_layout` tests only
+  or its basename starts with `aid-` while it lies inside one of those legacy paths (or a path a
+  format-2 manifest records); `<root>/agents/aid-*` is never retired. `_is_aid_owned_file` in `_migrate_retired_layout` tests only
   the basename and ancestors named `aid`, so the upgrade uses a new path-based helper
   (`_is_aid_owned_path`, with a PowerShell twin) instead. Before retirement, the CLI durably
   records the target tools and whether retirement has finished in the separate recovery record
@@ -493,7 +507,8 @@ CLI. The Claude Code docs (skills, settings reference, memory, changelog) were c
   tools follow the read-first line.
   - *Verify:* AC-20, the maintainer's pointer probe.
   - *Fallback:* when an installed tool is listed as not following pointers (its profile TOML sets
-    `rules_inline = true`, emitted as `rules_inline=true` in `aid-tool.conf`), the CLI writes the
+    `rules_inline = true`, emitted as `rules_inline=true` in `aid-tool.conf` and recorded in its
+    manifest entry), the CLI writes the
     full `rules.md` bytes between the markers of the `AGENTS.md` region instead of the two pointer
     lines; repair then replaces the span between the BEGIN and END lines and removes no other
     line.
@@ -525,6 +540,9 @@ CLI. The Claude Code docs (skills, settings reference, memory, changelog) were c
     a byte-identical counterpart at the same relative path, and there are no extra or missing
     files.
   - No per-tool artifact contains a skills or runtime path.
+  - After `aid update` for all registered projects, the update-all cache holds
+    `aid-shared-v<V>.tar.gz`, the per-tool tarballs and `SHA256SUMS`, and each child update
+    exits 0.
   - These checks are asserted by `tests/canonical/test-release.sh`.
 - **AC-3:** Installed skills are byte-identical to canonical.
   - A `tests/canonical/` suite runs `aid add <tool> --from-bundle <staging>` into a fresh fixture
@@ -605,8 +623,11 @@ CLI. The Claude Code docs (skills, settings reference, memory, changelog) were c
   - `AID_SUPPORTED_FORMAT` in `bin/aid`, `AidSupportedFormat` in `bin/aid.ps1` and
     `$script:_AidSupportedFormat` in `lib/AidInstallCore.psm1` hold the same value, one above the
     pre-change value of `4`.
-  - A fresh fixture with no manifest, recovery record or legacy AID-owned layout evidence passes
+  - A fresh fixture with no manifest, recovery record or v3 legacy evidence passes
     the layout gate and `aid add` succeeds even when settings are absent.
+  - `canonical/aid/templates/settings.yml` carries the same `format_version` value; in a fresh
+    fixture `aid add cursor` then `aid add claude-code` both exit 0 and `.aid/settings.yml` shows
+    the current stamp.
   - Existing incompatible settings or manifest formats, including a format-3 manifest with stamp
     4, refuse writes and name `aid update`. Manifest-less legacy still refuses after `aid projects
     add` or `aid update self` migrates its settings. Future formats remain read-only refused with
@@ -870,7 +891,9 @@ fails if any profile names another root file.
 
 **The `host.conf` value.** The CLI computes `worktree_root` from the installed tool set. It is the
 `worktree_root` of the first installed tool, in `AID_TOOLS` order, that declares one; otherwise it
-is `.aid/.worktrees`. The file is rewritten whenever the tool set changes, so it returns to the
+is `.aid/.worktrees`. Each tool's `worktree_root` and `rules_inline` come from its manifest entry
+(`tools.<t>`), not from staging, so `aid add` (which stages only the new tools) and `aid remove`
+(which stages nothing) recompute `host.conf` and the inline-rules choice from the full recorded set. The file is rewritten whenever the tool set changes, so it returns to the
 default when `claude-code` is removed. It is a runtime file recorded with its sha256 like any
 other. It lies outside `runtime/{scripts,templates}`, so AC-7's byte check does not cover it.
 
@@ -896,6 +919,7 @@ other. It lies outside `runtime/{scripts,templates}`, so AC-7's byte check does 
   },
   "tools": {
     "claude-code": { "version": "<V>", "installed_at": "<ts>", "mirrors": [".claude/skills"],
+                     "worktree_root": ".claude/worktrees",
                      "files": [ { "path": ".claude/agents/aid-architect.md", "sha256": "<hex>" } ],
                      "paths": [".claude/agents/aid-architect.md"] }
   }
@@ -923,6 +947,12 @@ other. It lies outside `runtime/{scripts,templates}`, so AC-7's byte check does 
   It is the drift baseline. There is no `file_sha256`: on the last uninstall the
   region is removed whatever the rest of the file holds, and the file is deleted only when
   nothing else remains (FR-12).
+- **`tools.<t>.worktree_root` and `tools.<t>.rules_inline`.** Copies of the tool's
+  `aid-tool.conf` `worktree_root` and `rules_inline` values, written at add and update. Each key
+  is present only when the tool declares it (`rules_inline` only as `true`), so a tool declaring
+  neither carries neither key. Order within the entry: `mirrors`, `worktree_root`, `rules_inline`,
+  `files`, `paths`. They are the sole source for recomputing `host.conf` and the inline
+  `AGENTS.md` region when only part of the tool set is staged.
 - **`tools.<t>.paths`.** This is a plain copy of `files[].path` (the tool's own files only),
   written for format-2 readers. Format-3 code never reads it. It makes an old CLI's `aid remove`
   delete the right agents and nothing shared.
@@ -941,19 +971,19 @@ other. It lies outside `runtime/{scripts,templates}`, so AC-7's byte check does 
 
 **Format stamp.** `AID_SUPPORTED_FORMAT` goes from 4 to 5 in its three carriers: `bin/aid`,
 `AidSupportedFormat` in `bin/aid.ps1`, and `$script:_AidSupportedFormat` in
-`lib/AidInstallCore.psm1`. The comment block above `readonly AID_SUPPORTED_FORMAT` gains this
+`lib/AidInstallCore.psm1`. The `format_version` line of `canonical/aid/templates/settings.yml`
+(the seed both shells copy) goes to 5 in the same commit. The comment block above `readonly AID_SUPPORTED_FORMAT` gains this
 line: `format 5 (was 4): shared skills under .agents/skills (+ CLI-owned mirrors), runtime under
 .aid/runtime/, one AGENTS.md pointer region for every tool, a CLAUDE.md @AGENTS.md import region
-while claude-code is installed; manifest format_version 3`. A test keeps the three values in
-lockstep. The settings stamp is capped as follows: `_aid_migrate_repo` (and its PowerShell twin)
+while claude-code is installed; manifest format_version 3`. A test keeps the three values and the
+template line in lockstep. The settings stamp is capped as follows: `_aid_migrate_repo` (and its PowerShell twin)
 writes `format_version: 5` only when the manifest records `format_version` 3, or when no manifest,
-recovery record, legacy AID-owned paths or old AID-owned root-region evidence exists (proven fresh
-install). Manifest-less legacy layouts keep stamp 4, including after `aid projects add` or `aid
+recovery record or v3 legacy evidence (FR-11) exists (proven fresh install). Manifest-less legacy layouts keep stamp 4, including after `aid projects add` or `aid
 update self` migrates settings; `aid add` refuses writes and directs the user to `aid update`. A
 pending recovery record also keeps stamp 4 until the format-3 manifest is committed. Otherwise it
-writes `4`. Use the same path-based evidence as the Upgrade from v3 trigger. A valid format-3
-manifest recognizes the legitimate v4 Claude mirror; do not classify it as legacy. User
-directory-only evidence never triggers refusal.
+writes `4`. The evidence is the FR-11 list: v4 agents and root regions never count, and a valid format-3
+manifest recognizes the legitimate v4 Claude mirror. User directory-only evidence never triggers
+refusal.
 
 **`.gitignore` managed block** (`_aid_gitignore_block`): `.aid/.worktrees/` is added to the
 existing entries. When `host.worktree_root` is not under `.aid/`, the block also lists that root
@@ -1039,11 +1069,10 @@ copy. That is replaced by this policy.
 
 1. Run the writability pre-check (unchanged).
 2. **Layout gate** (new `_aid_layout_gate`). A manifest exists and records `format_version` < 3,
-   an existing settings stamp is < 5, an upgrade recovery record exists, or legacy AID-owned layout
-   evidence exists -> exit 2. A fresh repo with none of these signals passes, including when
-   settings are absent. Legacy evidence uses the same path-based checks as Upgrade from v3; a valid
-   format-3 manifest recognizes a legitimate v4 Claude mirror. User directory names alone are not
-   evidence. Print `This project uses the v3 AID layout. Run: aid update
+   an existing settings stamp is < 5, an upgrade recovery record exists, or v3 legacy evidence (FR-11)
+   exists -> exit 2. A fresh repo with none of these signals passes, including when
+   settings are absent. Legacy evidence is the FR-11 list only; v4 agents at `<root>/agents/aid-*` never
+   count. User directory names alone are not evidence. Print `This project uses the v3 AID layout. Run: aid update
    (it upgrades every installed tool), then retry aid add.`, and write nothing (AC-12).
 3. **Skew gate.** The manifest records a `tools.*.version` or a `shared.*.version` that differs
    from `aid_version`. Exit 2 and name `aid update` (AC-11).
@@ -1064,11 +1093,13 @@ copy. That is replaced by this policy.
       recorded for it (FR-9).
    2. Each mirror declared by any user is written the same way. A newly added `claude-code`
       creates `.claude/skills/aid-*`.
-   3. The runtime goes to `.aid/runtime/`, then `host.conf` is written.
+   3. The runtime goes to `.aid/runtime/`, then `host.conf` is written from the `worktree_root`
+      recorded for every installed tool plus the new tools' `aid-tool.conf`.
    4. Each new tool's agents go to `<root>/agents/`.
    5. The `AGENTS.md` region is written through `_copy_root_agent_file`, which calls
-      `_repair_root_region` with the pointer region (see [Layers & Components](#layers--components),
-      *Root context file*). Then, when any user declares `context_import`,
+      `_repair_root_region` with the pointer region, or with the full `rules.md` bytes when any
+      installed tool's manifest entry (or a newly added tool's `aid-tool.conf`) has `rules_inline`
+      (see [Layers & Components](#layers--components), *Root context file*). Then, when any user declares `context_import`,
       `_ensure_claude_md_region` writes the `CLAUDE.md` import region the same way.
    6. If any copy failed, abort before the manifest write (the existing work-007 C4 rule).
    7. Write the manifest atomically. Each new tool joins every shared `users` list, and each
@@ -1121,7 +1152,9 @@ the trash moves and the prune list.
   5. If `claude_md` loses its last user, run `_remove_claude_md_region`. Removing `claude-code`
      while another tool remains therefore takes the region out of `CLAUDE.md` and leaves the
      `AGENTS.md` region in place for the other tools.
-  6. Rewrite `host.conf` if the runtime remains.
+  6. Rewrite `host.conf` if the runtime remains, from the remaining tools' recorded
+     `worktree_root`; re-write the `AGENTS.md` region (pointer or inline) from their recorded
+     `rules_inline` while any user remains.
   7. Delete the manifest and `.aid/settings.yml` when no tools remain (existing behaviour), and
      run `remove_gitattributes_block` (the `.gitignore` block stays, as today).
 
@@ -1413,7 +1446,7 @@ and the `.cursor/` tuple of the dogfood suite. Each gets a row in
 
 ##### Upgrade from v3 (clean slate)
 
-**Trigger.** `aid update` finds a v3 layout (a format-2 manifest or old AID-owned paths),
+**Trigger.** `aid update` finds v3 legacy evidence (FR-11),
 or `.aid/.temp/v3-upgrade-tools.json` exists. `aid add` never upgrades; `aid add` and `aid remove`
 refuse while that record exists. Read-only format checks for unsupported future formats still
 win over recovery. Ordinary `aid update` without either trigger is unchanged.
@@ -1432,7 +1465,7 @@ the next destructive step. Bash and PowerShell emit the same record bytes.
 **Steps.**
 
 1. Resolve the target set before retirement: the valid format-2 manifest's tools, or, without
-   one, the tools whose old roots still hold AID-owned paths (legacy `.agents/aid/` maps to Codex),
+   one, the tools whose old roots hold v3 legacy evidence (FR-11; `.agents/aid/` maps to Codex),
    plus any tools named in the update. An existing valid record overrides this discovery and any
    partial install manifest. A newly named tool outside a pending record's set is refused until
    recovery finishes. Stage and validate the shared payload and every recorded target's artifact

@@ -23,11 +23,11 @@
 - `tests/canonical/test-layout-format-guard.sh` (new; S1 to S5, `HOME` pinned; fixtures built per
   run, no frozen v3 core and no guard artifact -- v4 requires CLI v4, so v3 CLI behaviour is not
   tested):
-  - carrier equality: `AID_SUPPORTED_FORMAT` in `bin/aid`, `AidSupportedFormat` in `bin/aid.ps1` and
-    `$script:_AidSupportedFormat` in `lib/AidInstallCore.psm1` all equal `5` (one above the
-    pre-change `4`);
-  - a fresh fixture with no manifest, recovery record, legacy AID-owned paths or old AID root
-    region and no settings successfully adds a tool; a format-3 manifest with stamp 4 is refused
+  - carrier equality: `AID_SUPPORTED_FORMAT` in `bin/aid`, `AidSupportedFormat` in `bin/aid.ps1`,
+    `$script:_AidSupportedFormat` in `lib/AidInstallCore.psm1` and the `format_version` line of
+    `canonical/aid/templates/settings.yml` all equal `5` (one above the pre-change `4`);
+  - a fresh fixture with no manifest, recovery record or v3 legacy evidence (FR-11) and no settings
+    successfully adds a tool, then a second `aid add` of another tool exits 0; a format-3 manifest with stamp 4 is refused
     unchanged;
   - a pending upgrade recovery record, with no manifest or with a format-3 manifest, makes
     `aid add` and `aid remove` exit 2, name `aid update`, and leave the fixture snapshot unchanged;
@@ -37,5 +37,5 @@
 
 **Acceptance Criteria:**
 - [ ] `HOME=$(mktemp -d) bash tests/canonical/test-layout-format-guard.sh --verbose` exits `0` with `PASS:` lines for carrier equality, fresh missing-settings add, format-3/stamp-4 refusal, manifest-less legacy after projects-add migration, recovery add/remove gates, and future-format read-only refusal (including when a recovery record exists); every refusal preserves the fixture snapshot.
-- [ ] Changing the value in one carrier to `6` in a scratch copy makes the carrier-equality assertion fail.
+- [ ] Changing the value in one carrier, including the template line, to `6` in a scratch copy makes the carrier-equality assertion fail.
 - [ ] All section-6 quality gates pass.
