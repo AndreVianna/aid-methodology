@@ -113,7 +113,7 @@ This is the architecture that makes AID a *product*. It is a SYNTHESIS concept �
 
 **The flow:**
 
-1. `canonical/` holds the single source: `skills/` (111 skill directories), `agents/` (9 agent
+1. `canonical/` holds the single source: `skills/` (112 skill directories), `agents/` (9 agent
    directories) and `aid/{scripts,templates,rules.md}`. CONFIRMED via directory listing.
 2. `python .claude/skills/generate-profile/scripts/run_generator.py` renders the agents into the five
    `profiles/<tool>/` trees, one per `profiles/*.toml`. Each tree is wiped and regenerated in full on
@@ -186,8 +186,8 @@ not a running order (the numbered phases carry the sequence). Phase 2 (Describe 
 Describe → Define Phase" below); every other numbered phase is one skill. Several lifecycle labels
 from everyday SDLC talk — Init, Implement, Review, Test, Track, Triage — are **not numbered
 phases**; the table below maps each label to what it really is (CONFIRMED in
-`docs/aid-methodology.md` "Skill Inventory" and the `canonical/skills/` listing — **111 skill
-directories**: 17 curated pipeline / on-demand / router skills (the standalone `/aid-triage`
+`docs/aid-methodology.md` "Skill Inventory" and the `canonical/skills/` listing — **112 skill
+directories**: 18 curated pipeline / on-demand / router skills (the standalone `/aid-triage`
 router among them) and the 94-row shortcut catalog's skills — 34 verb-first direct-entry
 shortcut doorways plus 60 hand-authored `repurpose` skills):
 
@@ -448,7 +448,7 @@ CONFIRMED in `project-structure.md` "Entry Points" and file headers:
 
 Documented as reality + flagged; NOT silently reconciled (see `.scout-questions.tmp`):
 
-1. **Skill count (reconciled).** `canonical/skills/` has **111** directories — 17 curated
+1. **Skill count (reconciled).** `canonical/skills/` has **112** directories — 18 curated
    pipeline / on-demand / router skills plus the 94-row shortcut catalog's skills (34 verb-first
    direct-entry shortcut doorways + 60 hand-authored `repurpose` skills). `README.md`,
    `docs/aid-methodology.md`, `docs/repository-structure.md` and `docs/glossary.md` all state this
@@ -546,7 +546,7 @@ Non-obvious traps a change will trip (cannot be inferred from the code alone):
   the shared layout cannot drive the shared layout, so the release notes name the CLI version each release
   requires.
 - **`generate-profile` is maintainer-only** and lives only in `.claude/skills/` — do not look
-  for it in `canonical/skills/` (the 111 shipped skills).
+  for it in `canonical/skills/` (the 112 shipped skills).
 - **Heavy CI gates run only on `master`** (tests/run-all.sh + the Astro site build); feature
   branches skip them. Run `tests/run-all.sh` (HOME-pinned) + the site build locally before
   claiming green. (Project memory: master-ci-only-on-master.)

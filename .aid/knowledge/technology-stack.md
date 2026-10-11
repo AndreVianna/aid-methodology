@@ -154,7 +154,7 @@ bash release.sh            # packages the shared payload, the five tool artifact
 ```
 
 CONFIRMED: command (1) in `run_generator.py` and `.github/workflows/test.yml` (search:
-"Regenerate install trees from canonical/"); (3) in `packages/npm/package.json` (search:
+"Regenerate agent trees from canonical/"); (3) in `packages/npm/package.json` (search:
 "prepack"); (4) in `site/package.json` (search: `"build": "astro build"`); (5) in
 `docs/repository-structure.md` / `release.sh` header.
 

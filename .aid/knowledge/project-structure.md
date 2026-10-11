@@ -98,7 +98,7 @@ AID/
 ├── release.sh                # maintainer release-packaging runbook script
 ├── VERSION                   # single-line canonical version string
 ├── canonical/                # SOURCE OF TRUTH for the AID toolkit
-│   ├── skills/               # 111 skill definitions (17 curated + 94 catalog skills)
+│   ├── skills/               # 112 skill definitions (18 curated + 94 catalog skills)
 │   ├── agents/               # agent role definitions (one AGENT.md each)
 │   └── aid/                  # runtime payload, installed at .aid/runtime/
 │       ├── scripts/          # helper scripts grouped by phase (kb, execute, ...)

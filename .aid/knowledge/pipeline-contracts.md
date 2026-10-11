@@ -433,7 +433,7 @@ Load-bearing keys: `project.{name,description,type}`, `tools.installed`,
   `delivery-state-template.yml` / `task-state-template.yml`,
   `canonical/aid/scripts/execute/writeback-state.sh`) are the current source of truth and name it
   `STATE.yml`.
-- The skill taxonomy is **111 skill directories** under `canonical/skills/`: 17 curated
+- The skill taxonomy is **112 skill directories** under `canonical/skills/`: 18 curated
   pipeline/on-demand/router skills (including `aid-read-ticket`, `aid-create-ticket`,
   `aid-update-ticket`) + the 94-row shortcut catalog's skills, every row a canonical
   name — 34 verb-first direct-entry shortcut doorways (generated from

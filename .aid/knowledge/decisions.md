@@ -390,9 +390,9 @@ review-criteria:
   <!-- count-history: the two clauses above record D20's shipped state and its v2.1.0 growth;
        both were true when written. The CURRENT figures are on the next line and are the only
        ones a reader should act on. -->
-  **Currently: 34 shortcut doorways generated from a 58-row catalog (58 canonical names, no
-  aliases; 24 `repurpose` rows carry their own hand-authored directories, so 58 rows -> 34
-  generated doorways + 24 hand-authored).** Every shortcut is a thin doorway that binds a `{verb, artifact}` pair and delegates to one
+  **Currently: 34 shortcut doorways generated from a 94-row catalog (94 canonical names, no
+  aliases; 60 `repurpose` rows carry their own hand-authored directories, so 94 rows -> 34
+  generated doorways + 60 hand-authored).** Every shortcut is a thin doorway that binds a `{verb, artifact}` pair and delegates to one
   shared engine (`canonical/aid/templates/shortcut-engine.md`) running
   `INTAKE -> CAPTURE -> SPEC -> PLAN -> DETAIL -> GATE -> APPROVAL-HALT`, which collapses the five
   definition phases (Describe -> Detail) into one fast, mostly-autonomous run and produces the
