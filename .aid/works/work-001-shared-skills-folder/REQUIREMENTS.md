@@ -614,7 +614,8 @@ CLI. The Claude Code docs (skills, settings reference, memory, changelog) were c
   `Detect-Tool` behaves the same way.
 - **AC-16:** Bash and PowerShell stay in parity. `tests/canonical/test-aid-cli-parity.sh`,
   `tests/canonical/test-install-parity.sh` and `tests/canonical/test-ps51-compat.sh` pass. The
-  parity suite names every function added or changed for FR-6 to FR-12. On Windows,
+  parity suite names every function added or changed for FR-6 to FR-12, and its scenarios cover
+  flows 3 to 8 and the flow 10 orphans recovery. On Windows,
   `tests/windows/Test-AidInstaller.ps1` passes with the AC-9, AC-10 and AC-13 scenarios added.
 - **AC-17:** The packages are updated. `tests/canonical/test-npm-installer.sh` and
   `tests/canonical/test-pypi-installer.sh` pass, and the vendored `lib/aid-install-core.sh` and
@@ -971,8 +972,8 @@ trash copy. That is replaced by this policy.
       creates `.claude/skills/aid-*`.
    3. The runtime goes to `.aid/runtime/`, then `host.conf` is written.
    4. Each new tool's agents go to `<root>/agents/`.
-   5. The `AGENTS.md` region is updated through the existing `_copy_root_agent_file` branches
-      A, B, C1 and C2. The whole file is copied to the trash first when its region differs from
+   5. The `AGENTS.md` region is updated through `_copy_root_agent_file`
+      (branches A, B, C1 and C2). The whole file is copied to the trash first when its region differs from
       what is being written and either has no recorded `region_sha256` or no longer matches it. A
       file without markers follows the marker-less rule (see [Layers & Components](#layers--components),
       *Root context file*). Then,
@@ -1200,15 +1201,20 @@ implemented twice. The parity suite names every row (AC-16).
 | host file | `write_host_conf` (new) | `Write-AidHostConf` (new) |
 | manifest v3 write and read | `manifest_write` and `_manifest_write_python` / `_manifest_write_bash` (v3); `manifest_format`, `manifest_read_shared`, `manifest_read_tool_files`, `manifest_read_host` (new) | `Write-AidManifest`, `Build-ManifestJson` (v3); `Read-AidManifestShared`, `Read-AidManifestToolFiles`, `Read-AidManifestHost` (new) |
 | layout migration | `migrate_layout_v2` (new); `_migrate_retired_layout` (Codex sweep narrowed to `.agents/aid/`) | `Invoke-MigrateLayoutV2` (new); `Invoke-MigrateRetiredLayout` |
+| path-based ownership | `_is_aid_owned_path` (new) | `Test-AidOwnedPath` (new) |
+| migration creation journal (write and read) | `_journal_created_path` and `_read_created_journal` (new) | `Add-MigrationCreatedPath` and `Read-MigrationCreatedJournal` (new) |
 | `CLAUDE.md` import region | `_ensure_claude_md_region` and `_remove_claude_md_region` (new) | `Invoke-EnsureClaudeMdRegion` and `Invoke-RemoveClaudeMdRegion` (new) |
 | prune | `prune_shared` (replaces `_prune_tool_dirs`) | `Invoke-PruneShared` (replaces `Invoke-PruneToolDirs`) |
 | drift report | `drift_report` (new; called by `aid_status`) | `Get-AidDriftReport` (new; called by `Get-AidStatus`) |
+| orphan report (`aid status`) | `_report_orphans` (new) | `Get-AidOrphans` (new) |
+| orphan recovery (`aid remove --orphans`) | `_remove_orphans` (new) | `Invoke-RemoveOrphans` (new) |
 | uninstall | `uninstall_tool` (v3 ref-counted branch) | `Uninstall-AidTool` |
 | tool detection | `detect_tool` (`.agents` no longer marks Codex) | `Detect-Tool` |
-| root file | `_root_agent_file` (`AGENTS.md` for every tool); C2 stem list gains `Review criteria` | `Get-RootAgentFile`; `Test-AidHeadingStem` |
+| root file | `_root_agent_file` (`AGENTS.md` for every tool); `_copy_root_agent_file` branch C2 (trash copy, append the region, WARN; no excision unless C1); C2 stem list gains `Review criteria` | `Get-RootAgentFile`; `Copy-RootAgentFile` branch C2; `Test-AidHeadingStem` |
 | gitignore block | `_aid_gitignore_block` (adds the worktree roots) | `Get-AidGitignoreBlock` |
 | settings seed | `seed_settings_yml` (template from `.aid/runtime/templates/`) | `Initialize-AidSettingsFile` |
 | CLI gates and stamp | `_aid_layout_gate` (new), the skew gate in the `FR11` block, the stamp cap in `_aid_migrate_repo` | twins in `bin/aid.ps1` |
+| staged-version check (`aid add`, flow 3 step 5) | `_check_staged_version` (new) | `Test-StagedVersion` (new) |
 
 **On the C2 stem list.** The C2 heading-stem list in `_copy_root_agent_file` must cover every
 `## ` heading in the region. Today it lacks `Review criteria`, which the shipped region contains
@@ -1313,7 +1319,7 @@ work.
 | AC-13 | `tests/canonical/test-aid-migrate.sh` (new fixtures for all five tools plus legacy `.agents/aid/`) | as worded, including the second-run `up to date` and the unchanged trash |
 | AC-14 | `test-shared-install.sh` (cases a and b), `test-aid-migrate.sh` (case c: the user-edited, unedited and no-marker `CLAUDE.md` fixtures), `test-multitool-isolation.sh` (case d) | as worded; plus function-level cases for `_ensure_claude_md_region` and `_remove_claude_md_region`, including a non-LF-terminated file and a drifted region that is trashed before removal |
 | AC-15 | `test-aid-cli.sh`, `test-aid-cli-ps1.sh` | `detect_tool` and `Detect-Tool` |
-| AC-16 | `test-aid-cli-parity.sh` (scenarios for flows 3 to 8, plus a static check naming every twin row above), `test-install-parity.sh`, `test-ps51-compat.sh`; `tests/windows/Test-AidInstaller.ps1` (AC-9, AC-10 and AC-13 scenarios) | parity |
+| AC-16 | `test-aid-cli-parity.sh` (scenarios for flows 3 to 8 and the flow 10 orphans recovery, plus a static check naming every twin row above), `test-install-parity.sh`, `test-ps51-compat.sh`; `tests/windows/Test-AidInstaller.ps1` (AC-9, AC-10 and AC-13 scenarios) | parity |
 | AC-17 | `test-npm-installer.sh`, `test-pypi-installer.sh` | vendored libs match by sha256 |
 | AC-18 | `tests/canonical/test-dogfood-byte-identity.sh` (re-keyed: canonical ↔ `.agents/skills`, `.claude/skills`, `.aid/runtime/`; the manifest records the shared entries; agents ↔ profile emission manifests; the absences) | as worded |
 | AC-19 | `test-shared-layout-sources.sh` (the grep) plus GATE reviewer | as worded |

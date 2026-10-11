@@ -40,6 +40,7 @@
   `canonical/aid/scripts/` token in a skill, an unlisted `.claude/` path in a runtime template, a
   comma-separated `allowed-tools`) makes the corresponding check fail.
 - The AC-19 doc grep is NOT in this suite; task-031 owns it after the docs land.
+- Deferred review note (definition-gate ledger row 37): Add a test for the `.agents` entry in the install-tree skip lists of `build-project-index.sh` and `harvest-coined-terms.sh`, in `tests/canonical/test-kb-scanner-scope.sh`.
 
 **Acceptance Criteria:**
 - [ ] `HOME=$(mktemp -d) bash tests/canonical/test-shared-layout-sources.sh --verbose` exits `0` and prints one `PASS:` line per clause listed in Scope (AC-1, each AC-4 grep, AC-5 check, allowlist `why`, allowlist staleness, each AC-6 clause, C2 coverage).

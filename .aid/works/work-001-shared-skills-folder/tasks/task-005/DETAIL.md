@@ -64,6 +64,7 @@ file.
   `tests/windows/Test-AidInstaller.ps1` -> task-024).
 - Function-level cases for both functions in both shells (PowerShell when `pwsh` exists), added to
   `tests/canonical/test-install-core-primitives.sh`.
+- Deferred review note (definition-gate ledger row 36): C1's "root-file sha recorded in the manifest" must name its field: the format-3 manifest has no per-tool root record for the shared `AGENTS.md` write, so record the region/file sha under the shared root-file entry and read it from there.
 
 **Acceptance Criteria:**
 - [ ] `grep -c '^<!-- AID:BEGIN -->$' canonical/AGENTS.md` and `grep -c '^<!-- AID:END -->$' canonical/AGENTS.md` each print `1`; `grep -cE '\.(claude|codex|cursor|agent)/|\.github/aid/|canonical/|^@' canonical/AGENTS.md` prints `0`.

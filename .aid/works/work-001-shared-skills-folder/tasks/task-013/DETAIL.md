@@ -39,6 +39,7 @@ Bash and PowerShell twins together, per REQUIREMENTS.md § 11 Feature 001 › Fe
 - Non-`aid-*` entries are never read. The repair side of FR-9 (rewrite after trashing) is
   `copy_file_guarded` on add (task-009) and update (task-014).
 - Fixture recipe as in task-008. Known red: the CLI suites listed in task-006.
+- Deferred review note (definition-gate ledger row 32): The orphan report line ignores runtime-local paths (FR-6), so a leftover `node_modules/` alone never reports the repo as orphaned.
 
 **Acceptance Criteria:**
 - [ ] After `aid add claude-code`, appending one byte to `.claude/skills/aid-ask/SKILL.md`, deleting `.claude/skills/aid-fix/SKILL.md` and appending one byte to `.agents/skills/aid-plan/SKILL.md`, `aid status` exits `0` and its output names all three paths (as `modified:`, `missing:`, `modified:`) and contains `aid update`.

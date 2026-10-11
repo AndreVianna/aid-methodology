@@ -56,6 +56,8 @@ To, Trigger, Forward steps, the old-path treatment table, Interruption and idemp
 - Fixture recipe as in task-008; format-4 fixtures are built with the frozen format-4 core
   (`git show <base-commit>:lib/aid-install-core.sh`) or by hand. Known red: the CLI suites listed in
   task-006.
+- Deferred review note (definition-gate ledger row 34): Rollback after step 3 must not depend on files only in the gitignored, "safe to delete" `.aid/.trash/`, and step 3 must trash a copy of the format-2 manifest before overwriting it ("Steps 1 and 3 write nothing in place" must hold).
+- Deferred review note (definition-gate ledger row 35): While `migration: pending`, the settings stamp stays 4, which lets an old format-4 CLI into a half-migrated repo: make the old-CLI path refuse or be harmless in that state (e.g. write the stamp to a value the format-4 gate refuses, or document the bounded risk in the rollback runbook).
 
 **Acceptance Criteria:**
 - [ ] For each of the five tools (plus a Codex fixture holding a legacy `.agents/aid/`), a format-4 fixture with one user-modified AID file in the old `skills/aid-*`, one in the old `aid/` subtree, and one non-AID user file in each old directory, after `aid update --from-bundle "$S"`: every `canonical/skills/<rel>` equals `.agents/skills/<rel>` (and `.claude/skills/<rel>` for claude-code); `.aid/runtime/{scripts,templates}` equals `canonical/aid/{scripts,templates}`; no `aid-*` entry remains under `.codex/skills`, `.cursor/skills`, `.github/skills` or `.agent/skills`; no `<root>/aid/` remains.

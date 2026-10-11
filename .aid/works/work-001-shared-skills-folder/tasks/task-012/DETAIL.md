@@ -39,6 +39,8 @@ Feature Flow › 5.
 - Non-`aid-*` entries in `.agents/skills/` or a mirror are never read or touched; user `.aid/`
   state (`knowledge/`, `works/`, `design/`, `connectors/`) is never touched.
 - Fixture recipe as in task-008. Known red: the CLI suites listed in task-006.
+- Deferred review note (definition-gate ledger row 32): A runtime-local `node_modules/` under `.aid/runtime/` must not make a fully uninstalled repo report "orphaned" forever: orphan detection ignores runtime-local paths (FR-6), and `--orphans` leaves them alone.
+- Deferred review note (definition-gate ledger row 33): Without a manifest, `--orphans` cannot know a tool's mirror directories: derive them from the known profile mirror list compiled into the CLI (e.g. `.claude/skills/aid-*`), not from a manifest or staged `aid-tool.conf`.
 
 **Acceptance Criteria:**
 - [ ] In a fixture after `aid add claude-code,cursor,codex` (with pre-seeded `.agents/skills/my-skill/SKILL.md` and `.claude/skills/my-skill/SKILL.md`), `aid remove cursor` leaves the sha256 of every file under `.agents/skills/aid-*`, `.claude/skills/aid-*`, `.aid/runtime/` and of `AGENTS.md` unchanged, removes every `.cursor/agents/aid-*`, and no `users` list in the manifest names `cursor`.
