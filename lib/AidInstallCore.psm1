@@ -103,6 +103,13 @@ if ($env:AID_ALLOW_ENDPOINT_OVERRIDE -eq '1' -or $env:AID_ALLOW_ENDPOINT_OVERRID
 
 $script:AID_TOOLS = @('claude-code', 'codex', 'cursor', 'copilot-cli', 'antigravity')
 
+# Get-AidToolIds - the supported tool ids in canonical order. Callers outside this
+# file (bin/aid.ps1) must use this accessor: $script:AID_TOOLS is scoped to the
+# module/lib scope and is not visible in the caller's script scope.
+function Get-AidToolIds {
+    return @($script:AID_TOOLS)
+}
+
 # Root agent file per tool.
 function script:Get-RootAgentFile {
     param([string]$Tool)
@@ -1781,7 +1788,7 @@ function Invoke-AidProvisionSharedStateHome {
 # ---------------------------------------------------------------------------
 
 function Invoke-PruneShared {
-    param([string]$Target, [string]$PreviousManifest)
+    param([string]$Target, [string]$PreviousManifest, [bool]$AidVerbose = $false)
     $manifest = Join-Path $Target '.aid/.aid-manifest.json'
     $wanted = New-Object 'System.Collections.Generic.HashSet[string]' ([System.StringComparer]::OrdinalIgnoreCase)
     $oldHashes = @{}
@@ -1792,7 +1799,7 @@ function Invoke-PruneShared {
             $p = $row.Split("`t")
             if ($p[0] -eq 'shared.skills.file' -and $p.Count -ge 3) { $oldHashes[(Join-Path $Target ('.agents/skills/' + $p[1]))] = $p[2] }
             elseif ($p[0] -eq 'shared.runtime.file' -and $p.Count -ge 3) { $oldHashes[(Join-Path $Target ('.aid/runtime/' + $p[1]))] = $p[2] }
-            elseif ($p[0] -eq 'shared.mirror' -and $p.Count -ge 2) { [void]$roots.Add($p[1]); [void]$previousRoots.Add($p[1]) }
+            elseif ($p[0] -eq 'shared.mirror' -and $p.Count -ge 2) { [void]$previousRoots.Add($p[1]) }
         }
         foreach ($row in (Read-AidManifestShared -ManifestPath $PreviousManifest)) {
             $p=$row.Split("`t"); if ($p[0] -eq 'shared.skills.file' -and $p.Count -ge 3) {
@@ -1818,7 +1825,7 @@ function Invoke-PruneShared {
             [void]$wanted.Add((Join-Path $Target (Join-Path '.aid/runtime' ($p[1] -replace '/', [System.IO.Path]::DirectorySeparatorChar))))
         }
     }
-    $scanRoots = @('.agents/skills', '.aid/runtime') + @($roots)
+    $scanRoots = @('.agents/skills', '.aid/runtime') + @($roots) + @($previousRoots)
     foreach ($tool in (Read-ManifestTools -ManifestPath $manifest)) {
         $scanRoots += (script:Get-RootDir -Tool $tool) + '/agents'
         foreach ($row in (Read-AidManifestToolFiles -ManifestPath $manifest -Tool $tool)) {
@@ -1839,7 +1846,10 @@ function Invoke-PruneShared {
     foreach ($path in $candidates) {
         if ($wanted.Contains($path)) { continue }
         $hash=Get-Sha256File -FilePath $path
-        if ($oldHashes.ContainsKey($path) -and $oldHashes[$path] -eq $hash) { Remove-Item -LiteralPath $path -Force }
+        if ($oldHashes.ContainsKey($path) -and $oldHashes[$path] -eq $hash) {
+            Remove-Item -LiteralPath $path -Force
+            if ($AidVerbose) { Write-Host "Removed: $path" }
+        }
         else { Move-AidToTrash -Root $Target -File $path }
     }
     foreach ($root in $scanRoots | Select-Object -Unique) {
@@ -1852,6 +1862,12 @@ function Invoke-PruneShared {
             else { $first=$rel.Split([char[]]@('/', '\'))[0]; if ($first -notlike 'aid-*') { continue } }
             if (-not (Get-ChildItem -LiteralPath $d.FullName -Force | Select-Object -First 1)) { Remove-Item -LiteralPath $d.FullName -Force -ErrorAction SilentlyContinue }
         }
+    }
+    # A mirror root that no remaining tool declares goes once it is empty (never a non-empty one).
+    foreach ($mr in @($previousRoots)) {
+        if ($roots.Contains($mr) -or $mr -eq '.agents/skills') { continue }
+        $mabs=Join-Path $Target ($mr -replace '/', [System.IO.Path]::DirectorySeparatorChar)
+        if ((Test-Path -LiteralPath $mabs -PathType Container) -and -not (Get-ChildItem -LiteralPath $mabs -Force -ErrorAction SilentlyContinue | Select-Object -First 1)) { Remove-Item -LiteralPath $mabs -Force -ErrorAction SilentlyContinue }
     }
 }
 
@@ -2692,7 +2708,7 @@ function Install-AidShared {
     try { Write-AidManifestV3 -ManifestPath $manifest -ModelPath $model } finally { Remove-Item -LiteralPath $model -Force -ErrorAction SilentlyContinue }
     if ($Phase -in @('finalize', 'update-finalize')) {
         try {
-            Invoke-PruneShared -Target $Target -PreviousManifest $previousManifest
+            Invoke-PruneShared -Target $Target -PreviousManifest $previousManifest -AidVerbose $AidVerbose
             script:Initialize-AidSettingsFile -Target $Target -Tool $NewTools[0]
             script:Update-AidGitignore -Target $Target
             script:Update-AidGitattributes -Target $Target
@@ -2819,7 +2835,10 @@ function script:Uninstall-AidToolV3 {
         $toolRelPaths+=$rel
         $full=Join-Path $Target $rel
         if (-not (Test-Path -LiteralPath $full -PathType Leaf)) { continue }
-        if ($parts[2] -and (Get-Sha256File -FilePath $full) -ceq $parts[2]) { Remove-Item -LiteralPath $full -Force }
+        if ($parts[2] -and (Get-Sha256File -FilePath $full) -ceq $parts[2]) {
+            Remove-Item -LiteralPath $full -Force
+            if ($AidVerbose) { Write-Host "Removed: $full" }
+        }
         else { Move-AidToTrash -Root $Target -File $full }
     }
     $toolRoot=script:Get-RootDir -Tool $Tool
@@ -2859,7 +2878,10 @@ function script:Uninstall-AidToolV3 {
             if ([System.IO.Path]::IsPathRooted($rel) -or $rel.Split([System.IO.Path]::DirectorySeparatorChar) -contains '..') { continue }
             $full=Join-Path (Join-Path $Target $root) $rel
             if (-not (Test-Path -LiteralPath $full -PathType Leaf)) { continue }
-            if ($f.sha256 -and (Get-Sha256File -FilePath $full) -ceq [string]$f.sha256) { Remove-Item -LiteralPath $full -Force }
+            if ($f.sha256 -and (Get-Sha256File -FilePath $full) -ceq [string]$f.sha256) {
+                Remove-Item -LiteralPath $full -Force
+                if ($AidVerbose) { Write-Host "Removed: $full" }
+            }
             else { Move-AidToTrash -Root $Target -File $full }
         }
         script:Prune-AidEmptyDirs -Path (Join-Path $Target $root) -AidEntriesOnly:($name -eq 'skills')
@@ -2873,10 +2895,13 @@ function script:Uninstall-AidToolV3 {
                 $rel=([string]$f.path) -replace '/', [System.IO.Path]::DirectorySeparatorChar
                 $full=Join-Path (Join-Path $Target $mirror) $rel
                 if (-not (Test-Path -LiteralPath $full -PathType Leaf)) { continue }
-                if ($f.sha256 -and (Get-Sha256File -FilePath $full) -ceq [string]$f.sha256) { Remove-Item -LiteralPath $full -Force }
+                if ($f.sha256 -and (Get-Sha256File -FilePath $full) -ceq [string]$f.sha256) {
+                    Remove-Item -LiteralPath $full -Force
+                    if ($AidVerbose) { Write-Host "Removed: $full" }
+                }
                 else { Move-AidToTrash -Root $Target -File $full }
             }
-            script:Prune-AidEmptyDirs -Path (Join-Path $Target $mirror) -AidEntriesOnly
+            script:Prune-AidEmptyDirs -Path (Join-Path $Target $mirror) -AidEntriesOnly -RemoveRootIfEmpty
         }
     }
     Remove-ManifestTool -ManifestPath $ManifestPath -Tool $Tool
@@ -3416,5 +3441,6 @@ Export-ModuleMember -Function @(
     'Get-AidStatus',
     'Get-AidDriftReport',
     'Invoke-AidProvisionSharedStateHome',
-    'Invoke-PruneShared'
+    'Invoke-PruneShared',
+    'Get-AidToolIds'
 )

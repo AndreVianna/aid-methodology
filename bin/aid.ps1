@@ -5908,15 +5908,15 @@ if ($SUBCMD -eq 'update' -and $script:_AidV3Upgrade) {
         if (Test-Path -LiteralPath $_AidManifest -PathType Leaf) { try { $manifestObj = Get-Content -LiteralPath $_AidManifest -Raw | ConvertFrom-Json } catch {} }
         # Format 2, 1 or no format_version (pre-format-3 manifests) list the tools to upgrade.
         $legacyFormat = 0; if ($manifestObj -and $manifestObj.PSObject.Properties['format_version']) { $legacyFormat = [int]$manifestObj.format_version }
-        if ($manifestObj -and $legacyFormat -le 2 -and $manifestObj.PSObject.Properties['tools']) { foreach ($p in @($manifestObj.tools.PSObject.Properties)) { if ($script:AID_TOOLS -ccontains $p.Name) { $legacy.Add($p.Name) } } }
+        if ($manifestObj -and $legacyFormat -le 2 -and $manifestObj.PSObject.Properties['tools']) { foreach ($p in @($manifestObj.tools.PSObject.Properties)) { if ((Get-AidToolIds) -ccontains $p.Name) { $legacy.Add($p.Name) } } }
         if ($legacy.Count -eq 0) {
-            foreach ($tool in $script:AID_TOOLS) {
+            foreach ($tool in (Get-AidToolIds)) {
                 $root = switch ($tool) { 'claude-code' { '.claude' } 'codex' { '.codex' } 'cursor' { '.cursor' } 'copilot-cli' { '.github' } 'antigravity' { '.agent' } }
                 if ((Test-Path (Join-Path $_AidTarget (Join-Path $root 'aid')) -PathType Container) -or (Get-ChildItem -LiteralPath (Join-Path $_AidTarget (Join-Path $root 'skills')) -Directory -Filter 'aid-*' -ErrorAction SilentlyContinue | Select-Object -First 1) -or ($tool -eq 'codex' -and (Test-Path (Join-Path $_AidTarget '.agents/aid') -PathType Container))) { $legacy.Add($tool) }
             }
         }
         foreach ($requested in @($_AidToolArg -split ',' | Where-Object { $_ })) { $canonical = Normalize-Tool -Raw $requested.Trim(); if ($null -ne $canonical -and -not $legacy.Contains($canonical)) { $legacy.Add($canonical) } }
-        $_AidTools = @($script:AID_TOOLS | Where-Object { $legacy.Contains($_) })
+        $_AidTools = @((Get-AidToolIds) | Where-Object { $legacy.Contains($_) })
         if ($_AidTools.Count -eq 0) { [Console]::Error.WriteLine('ERROR: aid update: no tools found for v3 upgrade'); script:Exit-Aid 2 }
     }
 }
@@ -5926,8 +5926,8 @@ if ($SUBCMD -eq 'update' -and -not $script:_AidV3Upgrade) {
     $allToolSet = New-Object 'System.Collections.Generic.HashSet[string]' ([System.StringComparer]::Ordinal)
     foreach ($t in $_AidTools) { [void]$allToolSet.Add($t) }
     foreach ($t in (Get-ManifestToolList -ManifestPath $_AidManifest)) { [void]$allToolSet.Add($t.Id) }
-    $addedTools = @($script:AID_TOOLS | Where-Object { $allToolSet.Contains($_) -and $requestedTools -notcontains $_ })
-    $_AidTools = @($script:AID_TOOLS | Where-Object { $allToolSet.Contains($_) })
+    $addedTools = @((Get-AidToolIds) | Where-Object { $allToolSet.Contains($_) -and $requestedTools -notcontains $_ })
+    $_AidTools = @((Get-AidToolIds) | Where-Object { $allToolSet.Contains($_) })
     if ($addedTools.Count -gt 0) { Write-Host "aid update: added to commit set: $($addedTools -join ', ')" }
 }
 
