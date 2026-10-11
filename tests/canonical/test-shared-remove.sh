@@ -17,6 +17,20 @@ run_aid() {
     HOME="$HOME_DIR" USERPROFILE="$HOME_DIR" AID_HOME="$AID_HOME_DIR" AID_NO_UPDATE_CHECK=1 \
         bash "${REPO_ROOT}/bin/aid" "$@"
 }
+set_inline_tool() {
+    python3 - "$1" "$2" <<'PY'
+import hashlib,json,pathlib,sys
+root=pathlib.Path(sys.argv[1]); tool=sys.argv[2]; manifest=root/'.aid/.aid-manifest.json'; data=json.loads(manifest.read_text())
+data['tools'][tool]['rules_inline']=True
+path=root/'AGENTS.md'; text=path.read_text(encoding='utf-8')
+start=text.index('<!-- AID:BEGIN -->'); end=text.index('<!-- AID:END -->')+len('<!-- AID:END -->\n')
+rules=(root/'.aid/runtime/rules.md').read_text(encoding='utf-8')
+region='<!-- AID:BEGIN -->\n<!-- Managed by the AID CLI. Do not edit between the AID markers. -->\n'+rules+'<!-- AID:END -->\n'
+path.write_text(text[:start]+region+text[end:],encoding='utf-8')
+data['shared']['agents_md']['file_sha256']=hashlib.sha256(path.read_bytes()).hexdigest()
+manifest.write_text(json.dumps(data,indent=2)+'\n',encoding='utf-8')
+PY
+}
 tree_sha() {
     local root="$1"
     if [[ ! -d "$root" ]]; then printf absent; return; fi
@@ -85,7 +99,9 @@ if head -c "$(wc -c < "$TMP/attributes.before")" "$THIRD/.gitattributes" | cmp -
 assert_output_contains "$(cat "$THIRD/AGENTS.md")" 'user edit after install' 'Edited AGENTS.md user bytes remain'
 
 # A pre-existing markerless CLAUDE.md survives the last Claude import user.
-SECOND="${TMP}/claude-region"; mkdir -p "$SECOND"
+SECOND="${TMP}/claude-region"; mkdir -p "$SECOND/.claude/skills/my-skill"
+printf 'user Claude skill\n' > "$SECOND/.claude/skills/my-skill/SKILL.md"
+SECOND_USER_MIRROR="$(sha256sum "$SECOND/.claude/skills/my-skill/SKILL.md" | awk '{print $1}')"
 printf 'User CLAUDE bytes\r\nSecond line\n' > "$SECOND/CLAUDE.md"
 cp "$SECOND/CLAUDE.md" "$TMP/claude.before"
 run_aid add claude-code,cursor --from-bundle "$BUNDLE" --target "$SECOND" >/dev/null 2>&1 || exit 1
@@ -99,25 +115,65 @@ x=json.load(open(sys.argv[1])); assert 'claude_md' not in x['shared']; assert x[
 assert '.claude/skills' not in x['shared'].get('mirrors',{})
 PY
 then pass 'Claude shared record and mirror disappear while AGENTS user remains'; else fail 'Claude shared record and mirror disappear while AGENTS user remains'; fi
+assert_file_absent "$SECOND/.claude/skills/aid-define/SKILL.md" 'Last mirror user removes AID Claude skill files'
+assert_eq "$(sha256sum "$SECOND/.claude/skills/my-skill/SKILL.md" | awk '{print $1}')" "$SECOND_USER_MIRROR" 'Removing mirror preserves non-AID user skills'
+if python3 - "$SECOND" <<'PY'
+import hashlib,json,pathlib,sys
+r=pathlib.Path(sys.argv[1]); d=json.loads((r/'.aid/.aid-manifest.json').read_text())
+agents=(r/'AGENTS.md').read_bytes(); entry=d['shared']['agents_md']
+assert entry['file_sha256']==hashlib.sha256(agents).hexdigest()
+lines=agents.splitlines(); a=lines.index(b'<!-- AID:BEGIN -->'); z=lines.index(b'<!-- AID:END -->')
+region=b''.join(line+b'\n' for line in lines[a:z+1])
+assert entry['region_sha256']==hashlib.sha256(region).hexdigest()
+host=(r/'.aid/runtime/host.conf').read_bytes()
+host_entry=next(f for f in d['shared']['runtime']['files'] if f['path']=='host.conf')
+assert host_entry['sha256']==hashlib.sha256(host).hexdigest()
+PY
+then pass 'Partial removal refreshes owned AGENTS and host.conf hashes'; else fail 'Partial removal refreshes owned AGENTS and host.conf hashes'; fi
+OUT="$(run_aid remove cursor --target "$SECOND" 2>&1)" || { echo "$OUT" >&2; exit 1; }
+assert_output_not_contains "$OUT" 'Left in place (modified or not AID-owned)' 'Final removal recognizes the rewritten AGENTS region as AID-owned'
+assert_file_absent "$SECOND/AGENTS.md" 'Final removal deletes the rewritten owned AGENTS file'
+assert_file_absent "$SECOND/.aid/runtime/host.conf" 'Final removal deletes the rewritten owned host.conf'
+assert_file_absent "$SECOND/.aid/.trash/.aid/runtime/host.conf" 'Final removal does not misclassify unchanged host.conf as drift'
 
 # A remaining tool whose rules_inline flag is false restores the pointer region
 # when the inline tool leaves.
 FOURTH="${TMP}/inline-transition"; mkdir -p "$FOURTH"
 run_aid add claude-code,cursor --from-bundle "$BUNDLE" --target "$FOURTH" >/dev/null 2>&1 || exit 1
-python3 - "$FOURTH" <<'PY'
-import hashlib,json,pathlib,sys
-root=pathlib.Path(sys.argv[1]); manifest=root/'.aid/.aid-manifest.json'; data=json.loads(manifest.read_text())
-data['tools']['cursor']['rules_inline']=True
-path=root/'AGENTS.md'; text=path.read_text(encoding='utf-8')
-start=text.index('<!-- AID:BEGIN -->'); end=text.index('<!-- AID:END -->')+len('<!-- AID:END -->\n')
-rules=(root/'.aid/runtime/rules.md').read_text(encoding='utf-8')
-region='<!-- AID:BEGIN -->\n<!-- Managed by the AID CLI. Do not edit between the AID markers. -->\n'+rules+'<!-- AID:END -->\n'
-path.write_text(text[:start]+region+text[end:],encoding='utf-8')
-data['shared']['agents_md']['file_sha256']=hashlib.sha256(path.read_bytes()).hexdigest()
-manifest.write_text(json.dumps(data,indent=2)+'\n',encoding='utf-8')
-PY
+set_inline_tool "$FOURTH" cursor
 run_aid remove cursor --target "$FOURTH" >/dev/null 2>&1 || exit 1
 assert_file_contains "$FOURTH/AGENTS.md" '@.aid/runtime/rules.md' 'Removing the last inline-rules tool restores the pointer region'
 assert_file_not_contains "$FOURTH/AGENTS.md" 'The AID rules' 'Pointer rewrite removes the previous inline body'
+
+FIFTH="${TMP}/inline-remains"; mkdir -p "$FIFTH"
+run_aid add claude-code,cursor --from-bundle "$BUNDLE" --target "$FIFTH" >/dev/null 2>&1 || exit 1
+set_inline_tool "$FIFTH" cursor
+run_aid remove claude-code --target "$FIFTH" >/dev/null 2>&1 || exit 1
+assert_file_contains "$FIFTH/AGENTS.md" 'ANY and ALL' 'Removing Claude preserves the remaining inline-rules region'
+assert_file_not_contains "$FIFTH/AGENTS.md" '@.aid/runtime/rules.md' 'Remaining inline-rules tool does not receive a pointer region'
+if python3 - "$FIFTH/.aid/.aid-manifest.json" <<'PY'
+import json,sys
+d=json.load(open(sys.argv[1])); assert d['tools']['cursor']['rules_inline'] is True
+PY
+then pass 'Remaining tool inline choice is read from its manifest record'; else fail 'Remaining tool inline choice is read from its manifest record'; fi
+
+SIXTH="${TMP}/outside-edit"; mkdir -p "$SIXTH"
+run_aid add claude-code,cursor --from-bundle "$BUNDLE" --target "$SIXTH" >/dev/null 2>&1 || exit 1
+set_inline_tool "$SIXTH" claude-code
+printf 'user outside-region edit\n' >> "$SIXTH/AGENTS.md"
+run_aid remove claude-code --target "$SIXTH" >/dev/null 2>&1 || exit 1
+assert_file_contains "$SIXTH/AGENTS.md" '@.aid/runtime/rules.md' 'Partial removal updates the managed region to the remaining tool choice'
+if python3 - "$SIXTH" <<'PY'
+import hashlib,json,pathlib,sys
+r=pathlib.Path(sys.argv[1]); d=json.loads((r/'.aid/.aid-manifest.json').read_text()); b=(r/'AGENTS.md').read_bytes()
+entry=d['shared']['agents_md']; lines=b.splitlines(); a=lines.index(b'<!-- AID:BEGIN -->'); z=lines.index(b'<!-- AID:END -->')
+region=b''.join(line+b'\n' for line in lines[a:z+1])
+assert entry['file_sha256'] != hashlib.sha256(b).hexdigest()
+assert entry['region_sha256'] == hashlib.sha256(region).hexdigest()
+PY
+then pass 'Outside edits stay outside the refreshed whole-file ownership baseline'; else fail 'Outside edits stay outside the refreshed whole-file ownership baseline'; fi
+OUT="$(run_aid remove cursor --target "$SIXTH" 2>&1)" || { echo "$OUT" >&2; exit 1; }
+assert_output_contains "$OUT" 'Left in place (modified or not AID-owned): AGENTS.md' 'Last removal still detects the pre-existing outside edit'
+assert_file_contains "$SIXTH/AGENTS.md" 'user outside-region edit' 'Last removal preserves content outside the managed region'
 
 test_summary

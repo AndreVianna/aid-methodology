@@ -2554,7 +2554,7 @@ prune_shared() {
             case "$line" in
                 shared.skills.file$'\t'*) rel="${line#*$'\t'}"; rel="${rel%%$'\t'*}"; sha="${line##*$'\t'}"; old["${target}/.agents/skills/${rel}"]="$sha" ;;
                 shared.runtime.file$'\t'*) rel="${line#*$'\t'}"; rel="${rel%%$'\t'*}"; sha="${line##*$'\t'}"; old["${target}/.aid/runtime/${rel}"]="$sha" ;;
-                shared.mirror$'\t'*) IFS=$'\t' read -r _ root _ _ <<< "$line"; roots["$root"]=1; previous_roots["$root"]=1 ;;
+                shared.mirror$'\t'*) IFS=$'\t' read -r _ root _ _ <<< "$line"; previous_roots["$root"]=1 ;;
             esac
         done < <(manifest_read_shared "$previous")
         while IFS= read -r line; do
@@ -2594,7 +2594,7 @@ prune_shared() {
         done < <(manifest_read_tool_files "$current" "$tool")
     done < <(manifest_list_tools "$current")
     # Collect candidates from the controlled roots, then remove every unrecorded path.
-    for root in .agents/skills "${!roots[@]}" .aid/runtime; do
+    for root in .agents/skills "${!roots[@]}" "${!previous_roots[@]}" .aid/runtime; do
         [[ -d "${target}/${root}" ]] || continue
         if [[ "$root" == .aid/runtime ]]; then
             while IFS= read -r -d '' path; do [[ "$path" == */node_modules/* ]] || candidates+=("$path"); done < <(find "${target}/${root}" -type f -print0 2>/dev/null)
@@ -2616,7 +2616,7 @@ prune_shared() {
         else trash_file "$target" "$path" || return 1; fi
     done
     # Remove empty AID directories, but never a placement root.
-    for root in .agents/skills .aid/runtime "${!roots[@]}"; do [[ -d "${target}/${root}" ]] && directories+=("${target}/${root}"); done
+    for root in .agents/skills .aid/runtime "${!roots[@]}" "${!previous_roots[@]}"; do [[ -d "${target}/${root}" ]] && directories+=("${target}/${root}"); done
     while IFS= read -r tool; do root="$(_root_dir "$tool")/agents"; [[ -d "${target}/${root}" ]] && directories+=("${target}/${root}"); done < <(manifest_list_tools "$current")
     for root in "${directories[@]}"; do
         [[ -d "$root" ]] || continue
@@ -3440,6 +3440,35 @@ elif out!=data: p.write_bytes(out)
 PY
 }
 
+_refresh_remove_manifest_hashes() {
+    local manifest="$1" target="$2" refresh_file_sha="${3:-0}"
+    python3 - "$manifest" "$target" "$refresh_file_sha" <<'PY'
+import hashlib, json, pathlib, sys
+manifest, target, refresh_file_sha = sys.argv[1:]
+root=pathlib.Path(target); data=json.loads(pathlib.Path(manifest).read_text(encoding='utf-8'))
+agents=root/'AGENTS.md'
+if agents.is_file():
+    raw=agents.read_bytes(); lines=raw.splitlines(keepends=True)
+    def content(line):
+        return line[:-2] if line.endswith(b'\r\n') else line[:-1] if line.endswith((b'\n',b'\r')) else line
+    vals=[content(x) for x in lines]
+    starts=[i for i,x in enumerate(vals) if x==b'<!-- AID:BEGIN -->']
+    ends=[i for i,x in enumerate(vals) if x==b'<!-- AID:END -->']
+    entry=data.get('shared',{}).get('agents_md')
+    if entry and len(starts)==1 and len(ends)==1 and starts[0]<ends[0]:
+        region=b''.join(vals[i]+b'\n' for i in range(starts[0],ends[0]+1))
+        entry['region_sha256']=hashlib.sha256(region).hexdigest()
+        if refresh_file_sha == '1': entry['file_sha256']=hashlib.sha256(raw).hexdigest()
+runtime=data.get('shared',{}).get('runtime',{})
+host=root/'.aid/runtime/host.conf'
+if runtime and host.is_file():
+    for item in runtime.get('files',[]):
+        if item.get('path')=='host.conf': item['sha256']=hashlib.sha256(host.read_bytes()).hexdigest()
+        if item.get('path')=='host.conf': break
+pathlib.Path(manifest).write_text(json.dumps(data,indent=2)+'\n',encoding='utf-8')
+PY
+}
+
 _uninstall_tool_v3() {
     local manifest="$1" tool="$2" target="$3" format line rel sha full previous pdir root
     local -a paths=()
@@ -3473,9 +3502,14 @@ _uninstall_tool_v3() {
     agents_sha="$(manifest_read_shared "$manifest" | awk -F '\t' '$1=="shared.agents_md.file_sha256" {print $2}')"
     claude_users="$(manifest_read_shared "$manifest" | awk -F '\t' '$1=="shared.claude_md.users" {print $2}')"
     claude_sha="$(manifest_read_shared "$manifest" | awk -F '\t' '$1=="shared.claude_md.region_sha256" {print $2}')"
-    local agents_left= claude_left= u
+    local agents_left= claude_left= u agents_file_refresh=0 agents_recorded_sha agents_current_sha
     IFS=',' read -r -a users <<< "$agents_users"
     for u in "${users[@]}"; do [[ -n "$u" && "$u" != "$tool" ]] && agents_left+="${agents_left:+,}${u}"; done
+    if [[ -n "$agents_left" ]]; then
+        agents_recorded_sha="$(manifest_read_shared "$manifest" | awk -F '\t' '$1=="shared.agents_md.file_sha256" {print $2}')"
+        agents_current_sha="$(sha256_file "${target}/AGENTS.md" 2>/dev/null || true)"
+        [[ -n "$agents_recorded_sha" && "$agents_recorded_sha" == "$agents_current_sha" ]] && agents_file_refresh=1
+    fi
     IFS=',' read -r -a users <<< "$claude_users"
     for u in "${users[@]}"; do [[ -n "$u" && "$u" != "$tool" ]] && claude_left+="${claude_left:+,}${u}"; done
     if [[ -n "$agents_users" && -z "$agents_left" ]]; then _remove_agents_md_region "$target" "$agents_sha" || { rm -f "$previous"; return 1; }; fi
@@ -3491,7 +3525,7 @@ _uninstall_tool_v3() {
         [[ -n "$worktree" ]] || worktree='.aid/.worktrees'
         write_host_conf "$target" "$worktree" || return 1
         while IFS= read -r t; do
-            if awk -F '\t' -v t="$t" '$1=="tools." t ".rules_inline" && $2=="true" {found=1} END{exit !found}' "$manifest"; then inline=1; break; fi
+            if manifest_read_tool_files "$manifest" "$t" | awk -F '\t' -v t="$t" '$1=="tools." t ".rules_inline" && $2=="true" {found=1} END{exit !found}'; then inline=1; break; fi
         done < <(manifest_list_tools "$manifest")
         if [[ "$inline" == 1 ]]; then
             region="$(python3 - "$target/.aid/runtime/rules.md" <<'PY'
@@ -3503,6 +3537,7 @@ PY
         else
             _repair_inline_root_region "${target}/AGENTS.md" "$_AID_AGENTS_POINTER_REGION" "$target" || return 1
         fi
+        _refresh_remove_manifest_hashes "$manifest" "$target" "$agents_file_refresh" || return 1
     else
         rm -f "$(dirname "$manifest")/settings.yml"
         _remove_gitattributes_block "$target" || return 1

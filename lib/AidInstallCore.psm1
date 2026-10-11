@@ -2578,6 +2578,33 @@ function script:Remove-AidAgentsRegion {
     else { [System.IO.File]::WriteAllBytes($path,$encoding.GetBytes($rest)) }
 }
 
+function script:Update-AidRemoveManifestHashes {
+    param([string]$ManifestPath,[string]$Target,[bool]$RefreshAgentsFileSha=$true)
+    $data=script:Read-AidManifestObject -Path $ManifestPath
+    if ($null -eq $data) { return }
+    $agents=script:Get-AidJsonProp (script:Get-AidJsonProp $data 'shared') 'agents_md'
+    $agentsPath=Join-Path $Target 'AGENTS.md'
+    if ($agents -and (Test-Path -LiteralPath $agentsPath -PathType Leaf)) {
+        $text=[System.IO.File]::ReadAllText($agentsPath,(New-Object System.Text.UTF8Encoding($false)))
+        $match=[regex]::Match($text,'(?ms)^<!-- AID:BEGIN -->\r?\n.*?^<!-- AID:END -->(?:\r?\n|$)')
+        if ($match.Success) {
+            $canonical=$match.Value.Replace("`r`n","`n").Replace("`r","`n")
+            $bytes=[System.Text.Encoding]::UTF8.GetBytes($canonical)
+            $agents.region_sha256=(Get-FileHash -InputStream ([System.IO.MemoryStream]::new($bytes)) -Algorithm SHA256).Hash.ToLowerInvariant()
+            if ($RefreshAgentsFileSha) { $agents.file_sha256=Get-Sha256File -FilePath $agentsPath }
+        }
+    }
+    $runtime=script:Get-AidJsonProp (script:Get-AidJsonProp $data 'shared') 'runtime'
+    $hostPath=Join-Path $Target '.aid/runtime/host.conf'
+    if ($runtime -and (Test-Path -LiteralPath $hostPath -PathType Leaf)) {
+        foreach ($f in @($runtime.files)) {
+            if ($f.path -ceq 'host.conf') { $f.sha256=Get-Sha256File -FilePath $hostPath; break }
+        }
+    }
+    $json=ConvertTo-Json -InputObject $data -Depth 30
+    [System.IO.File]::WriteAllText($ManifestPath,$json+"`n",(New-Object System.Text.UTF8Encoding($false)))
+}
+
 function script:Prune-AidEmptyDirs {
     param([string]$Path,[switch]$AidEntriesOnly)
     if (-not (Test-Path -LiteralPath $Path -PathType Container)) { return }
@@ -2588,7 +2615,8 @@ function script:Prune-AidEmptyDirs {
             $first=$rel.Split([char]'\',[char]'/')[0]
             if (-not $first.StartsWith('aid-', [System.StringComparison]::Ordinal)) { continue }
         }
-        if ($dir.Name -eq 'node_modules') { continue }
+        $relative=$dir.FullName.Substring($Path.Length).TrimStart([char]'\',[char]'/')
+        if ($relative -match '(^|[\\/])node_modules([\\/]|$)') { continue }
         $child=Get-ChildItem -LiteralPath $dir.FullName -Force -ErrorAction SilentlyContinue | Select-Object -First 1
         if (-not $child) { Remove-Item -LiteralPath $dir.FullName -Force -ErrorAction SilentlyContinue }
     }
@@ -2615,6 +2643,11 @@ function script:Uninstall-AidToolV3 {
     $agents=script:Get-AidJsonProp $shared 'agents_md'
     $agentsUsers=@(); if ($agents) { $agentsUsers=@($agents.users) }
     $agentsLeft=@($agentsUsers | Where-Object { $_ -ne $Tool })
+    $agentsFileRefresh=$false
+    $agentsPath=Join-Path $Target 'AGENTS.md'
+    if ($agentsLeft.Count -gt 0 -and $agents -and (Test-Path -LiteralPath $agentsPath -PathType Leaf)) {
+        $agentsFileRefresh=([string]$agents.file_sha256 -and (Get-Sha256File -FilePath $agentsPath) -ceq [string]$agents.file_sha256)
+    }
     if ($agentsUsers.Count -gt 0 -and $agentsLeft.Count -eq 0) { script:Remove-AidAgentsRegion -Target $Target -RecordedSha256 ([string]$agents.file_sha256) }
     $claude=script:Get-AidJsonProp $shared 'claude_md'
     $claudeUsers=@(); if ($claude) { $claudeUsers=@($claude.users) }
@@ -2663,6 +2696,7 @@ function script:Uninstall-AidToolV3 {
             $region="<!-- AID:BEGIN -->`n<!-- Managed by the AID CLI. Do not edit between the AID markers. -->`n$rules<!-- AID:END -->`n"
             script:Repair-AidInlineRootRegion -File (Join-Path $Target 'AGENTS.md') -Region $region -Root $Target
         } else { script:Repair-AidInlineRootRegion -File (Join-Path $Target 'AGENTS.md') -Region $script:_AidAgentsPointerRegion -Root $Target }
+        script:Update-AidRemoveManifestHashes -ManifestPath $ManifestPath -Target $Target -RefreshAgentsFileSha $agentsFileRefresh
     } else {
         $settings=Join-Path (Split-Path -Parent $ManifestPath) 'settings.yml'
         if (Test-Path -LiteralPath $settings -PathType Leaf) { Remove-Item -LiteralPath $settings -Force }
