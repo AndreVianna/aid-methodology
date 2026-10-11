@@ -6,11 +6,11 @@ maintainer approved execution. Current phase `Execute`, lifecycle `Running`.
 
 ## Current execution checkpoint
 
-Sol wave-2 check found five Pending defects in review-ledgers/execute-wave-2.md: four task005 root-region/caller/PowerShell defects and one task006 recovery-stamp cap. Task011 passed and is Done. Task005 is In Progress for Luna fix attempt 1; task006 remains In Review and is next for a separate sequential fix. Wave 3 has not begun.
+Wave-2 Luna correction: task005 commit 777eea9b6 addresses rows1/2/3/5; 93 primitives and ASCII pass, awaiting independent verification. Task006 is In Progress for row4 recovery-stamp cap fix. Task011 Done. Wave 3 not started.
 
 - Done (4/32): task-001, task-002, task-004, task-011.
-- In Progress: task-005.
-- In Review: task-006.
+- In Progress: task-006.
+- In Review: task-005.
 - Failed/Blocked: none.
 - Pending: task-003, task-007, task-008, task-009, task-010, task-012, task-013, task-014, task-015, task-016, task-017, task-018, task-019, task-020, task-021, task-022, task-023, task-024, task-025, task-026, task-027, task-028, task-029, task-030, task-031, task-032.
 - Current wave: 2 of 15. Derive authoritative waves from task dependency headers.

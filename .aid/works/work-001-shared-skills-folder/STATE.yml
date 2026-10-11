@@ -505,6 +505,11 @@ lifecycle_history:
     grade: --
     notes: '/aid-execute Codex'
 
+  - date: '2026-10-11'
+    event: 'Task005 Luna fix1 committed 777eea9b6; 93 primitives and 29 ASCII assertions pass; rows1/2/3/5 remain Pending until Sol verifies. Task005 In Review; task006 In Progress for Luna fix1 row4.'
+    grade: --
+    notes: '/aid-execute Codex'
+
 deploy: []
 
 # [A] flattened only; single writer: this work's active branch. Written by
@@ -550,7 +555,7 @@ tasks_lifecycle:
     notes: --
     display_name: --
   task-005:
-    state: 'In Progress'
+    state: 'In Review'
     review: --
     elapsed: --
     notes: --
@@ -562,8 +567,14 @@ tasks_lifecycle:
         actual: '13m09s (start-checkpoint to commit)'
         outcome: 'committed c1952f13b; focused checks passed; pwsh deferred'
 
+      - date: '2026-10-11T05:43:03.538462+00:00'
+        agent: 'gpt-6-luna fix1'
+        eta_band: '3-8 min'
+        actual: '1m28s'
+        outcome: 'committed 777eea9b6; 93 focused primitive assertions and ASCII passed'
+
   task-006:
-    state: 'In Review'
+    state: 'In Progress'
     review: --
     elapsed: --
     notes: --
