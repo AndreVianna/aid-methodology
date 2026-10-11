@@ -6,11 +6,11 @@ maintainer approved execution. Current phase `Execute`, lifecycle `Running`.
 
 ## Current execution checkpoint
 
-Task013 committed6f51b67c0: Bash/PS shared drift reports wired into explicit status only. Focused offline Bash fixture passes clean/modified/missing/extra/mirror/root CRLF/outside-region/CLAUDE markers/format2/no-manifest/protected runtime and non-AID cases; syntax/diff/ASCII29 pass. In Review for Sol wave9 quick check. Bare dashboard remains unchanged; PS runtime/AST lint deferred.
+Wave9 Sol independent review found three Pending task013 gaps: manifest-recorded runtime node_modules files must never be compared, extra plain aid-* files under skills roots are missed, and drifted output lacks Shared files heading. Independent fixture confirms; batch hashing/read-only source inspected. Task013 In Progress for first Luna correction, task014 pending; PowerShell runtime/AST and broad suites deferred.
 
 - Done (14/32): task-001, task-002, task-003, task-004, task-005, task-006, task-007, task-008, task-009, task-010, task-011, task-012, task-016, task-022.
-- In Progress: none.
-- In Review: task-013.
+- In Progress: task-013.
+- In Review: none.
 - Failed/Blocked: none.
 - Pending: task-014, task-015, task-017, task-018, task-019, task-020, task-021, task-023, task-024, task-025, task-026, task-027, task-028, task-029, task-030, task-031, task-032.
 - Current wave: 9 of 15. Derive authoritative waves from task dependency headers.
