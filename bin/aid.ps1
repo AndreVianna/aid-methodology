@@ -6205,8 +6205,8 @@ try {
                     if (-not (Test-Path -LiteralPath $abs -PathType Container)) { continue }
                     foreach ($rf in @(Get-ChildItem -LiteralPath $abs -Recurse -File -ErrorAction SilentlyContinue)) {
                         if ($scanRoot -eq '.aid/runtime' -and $rf.FullName -match '[/\\]node_modules[/\\]') { continue }
-                        if ($scanRoot -eq '.aid/runtime' -and $rf.Name -eq 'host.conf') { continue }
                         $rel=$rf.FullName.Substring($abs.Length).TrimStart([char]'\',[char]'/')
+                        if ($scanRoot -eq '.aid/runtime' -and $rel -eq 'host.conf') { continue }
                         if ($scanRoot -ne '.aid/runtime' -and ($rel.Split([char[]]@('/', '\'))[0] -notlike 'aid-*')) { continue }
                         $keep=$false
                         if ($scanRoot -eq '.aid/runtime') { $keep=Test-Path -LiteralPath (Join-Path $drySharedRuntime $rel) -PathType Leaf }
