@@ -6,11 +6,11 @@ maintainer approved execution. Current phase `Execute`, lifecycle `Running`.
 
 ## Current execution checkpoint
 
-Waves1-4 complete (9/32 Done). Wave4 both findings independently verified Fixed; release76/source24/scanner9 pass usingGNUawk; accounting matchesbaseline, waveledgerA+. Task008 now In Progress: release staging/validation before destination writes. Subsequent task009 owns install commit wiring; long gates031, sync027, PowerShell runtime deferred.
+Task008 committed/pushed54f1aee8c, In Review for Sol wave5 check. Focused Bash bundle/descriptor/archive/version refusal probes pass with unchanged target snapshots, plus exact HTTP404 exit3 message; syntax/ASCII pass. Task009 install commit wiring not started, waves1-4Done, PSruntime deferred.
 
 - Done (9/32): task-001, task-002, task-003, task-004, task-005, task-006, task-007, task-011, task-016.
-- In Progress: task-008.
-- In Review: none.
+- In Progress: none.
+- In Review: task-008.
 - Failed/Blocked: none.
 - Pending: task-009, task-010, task-012, task-013, task-014, task-015, task-017, task-018, task-019, task-020, task-021, task-022, task-023, task-024, task-025, task-026, task-027, task-028, task-029, task-030, task-031, task-032.
 - Current wave: 5 of 15. Derive authoritative waves from task dependency headers.

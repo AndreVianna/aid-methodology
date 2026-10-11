@@ -118,7 +118,7 @@ phase: Execute
 # [W] aid-{skill} | none
 active_skill: aid-execute
 # [W]
-updated: '2026-10-11T06:29:00Z'
+updated: '2026-10-11T06:37:00Z'
 # [W] set only when lifecycle = Paused-Awaiting-Input
 pause_reason: --
 # [W] set only when lifecycle = Blocked
@@ -580,6 +580,11 @@ lifecycle_history:
     grade: --
     notes: '/aid-execute Codex'
 
+  - date: '2026-10-11'
+    event: 'Task008 54f1aee8c In Review; focused Bash validbundlefile, no/multiple shared, descriptor/checksum/archive allowlist/traversal/version skew refusals and no-write snapshots, exact HTTP404 missingpayload exit3 passed; syntax/ASCII pass. PSruntime deferred; Sol wave5 quick check starts.'
+    grade: --
+    notes: '/aid-execute Codex'
+
 deploy: []
 
 # [A] flattened only; single writer: this work's active branch. Written by
@@ -701,11 +706,18 @@ tasks_lifecycle:
         outcome: 'committed cfadd72d4; retained release coverage restored,76 assertions pass'
 
   task-008:
-    state: 'In Progress'
+    state: 'In Review'
     review: --
     elapsed: --
     notes: --
     display_name: --
+    dispatch_log:
+      - date: '2026-10-11T06:37:00.763078+00:00'
+        agent: 'gpt-6-luna'
+        eta_band: '3-8 min'
+        actual: '7m14s'
+        outcome: 'committed54f1aee8c; focused bundle/archive/version/no-write/HTTP refusal probes passed; pwsh deferred'
+
   task-009:
     state: Pending
     review: --
