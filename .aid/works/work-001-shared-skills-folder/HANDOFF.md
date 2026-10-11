@@ -6,11 +6,11 @@ maintainer approved execution. Current phase `Execute`, lifecycle `Running`.
 
 ## Current execution checkpoint
 
-Wave8 independent Sol recheck: original four task012 findings Fixed with mirror/user-byte and owned/edited pointer/hash probes. New HIGH Pending row5: Bash remaining-inline region loses terminal LF through command substitution, joins final rule line to END marker, prevents baseline refresh and leaves owned AGENTS on last removal. Task012 In Progress for allowed separate Sol executor correction; task022 Done. PS runtime deferred.
+Task012 separate Sol correction09eaf2ba6 committed: Bash remaining-inline region now preserves terminalLF matching existing add helpers. Stronger regression asserts exact rules/standalone markers/actual manifest hashes and clean final owned-root removal without false drift. Focused46/46, syntax/diff/ASCII29 pass. In Review for original Sol reviewer final wave8 recheck; PS terminalLF static only, runtime deferred.
 
 - Done (13/32): task-001, task-002, task-003, task-004, task-005, task-006, task-007, task-008, task-009, task-010, task-011, task-016, task-022.
-- In Progress: task-012.
-- In Review: none.
+- In Progress: none.
+- In Review: task-012.
 - Failed/Blocked: none.
 - Pending: task-013, task-014, task-015, task-017, task-018, task-019, task-020, task-021, task-023, task-024, task-025, task-026, task-027, task-028, task-029, task-030, task-031, task-032.
 - Current wave: 8 of 15. Derive authoritative waves from task dependency headers.

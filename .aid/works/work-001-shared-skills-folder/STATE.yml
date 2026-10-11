@@ -118,7 +118,7 @@ phase: Execute
 # [W] aid-{skill} | none
 active_skill: aid-execute
 # [W]
-updated: '2026-10-11T14:47:05Z'
+updated: '2026-10-11T14:49:44Z'
 # [W] set only when lifecycle = Paused-Awaiting-Input
 pause_reason: --
 # [W] set only when lifecycle = Blocked
@@ -705,6 +705,11 @@ lifecycle_history:
     grade: --
     notes: '/aid-execute Codex'
 
+  - date: '2026-10-11'
+    event: 'Task012 separate Sol correction09eaf2ba6 committed: Bash remaining-inline region now preserves terminalLF matching existing add helpers. Stronger regression asserts exact rules/standalone markers/actual manifest hashes and clean final owned-root removal without false drift. Focused46/46, syntax/diff/ASCII29 pass. In Review for original Sol reviewer final wave8 recheck; PS terminalLF static only, runtime deferred.'
+    grade: --
+    notes: '/aid-execute Codex'
+
 deploy: []
 
 # [A] flattened only; single writer: this work's active branch. Written by
@@ -902,7 +907,7 @@ tasks_lifecycle:
         outcome: 'committed 0acf5d926; 130 focused worktree assertions passed'
 
   task-012:
-    state: 'In Progress'
+    state: 'In Review'
     review: --
     elapsed: --
     notes: --
@@ -919,6 +924,12 @@ tasks_lifecycle:
         eta_band: '3-8 min'
         actual: '5m54s'
         outcome: 'Task012 Luna correction6c07da4f3 committed for four wave8 findings: manifest inline flags read correctly, retired mirror AID files removed, host/region hashes refreshed while preserving outside-edit ownership baseline, PS node_modules descendant guard. Expanded offline suite42/42, Bash syntax, ASCII29 and diff pass. In Review for independent Sol wave8 recheck; task022 already Done, PS runtime deferred.'
+
+      - date: '2026-10-11T14:49:44.132954+00:00'
+        agent: 'gpt-6.1-sol'
+        eta_band: '3-8 min'
+        actual: '2m26s'
+        outcome: 'Task012 separate Sol correction09eaf2ba6 committed: Bash remaining-inline region now preserves terminalLF matching existing add helpers. Stronger regression asserts exact rules/standalone markers/actual manifest hashes and clean final owned-root removal without false drift. Focused46/46, syntax/diff/ASCII29 pass. In Review for original Sol reviewer final wave8 recheck; PS terminalLF static only, runtime deferred.'
 
   task-013:
     state: Pending
