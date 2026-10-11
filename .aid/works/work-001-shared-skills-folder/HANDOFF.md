@@ -6,11 +6,11 @@ maintainer approved execution. Current phase `Execute`, lifecycle `Running`.
 
 ## Current execution checkpoint
 
-Wave8 Sol review: task022 verified A+ with independent installed-runtime Group R10/10, now Done (13/32). Four task012 Pending findings: HIGH inline selection parses JSON as TSV, HIGH rewritten host/root hashes stale in both twins, MEDIUM retired Claude mirror files remain, MEDIUM PowerShell prunes protected node_modules descendants. Task012 In Progress for first Luna correction; exact ledger execute-wave-8.md. PS runtime deferred.
+Task012 Luna correction6c07da4f3 committed for four wave8 findings: manifest inline flags read correctly, retired mirror AID files removed, host/region hashes refreshed while preserving outside-edit ownership baseline, PS node_modules descendant guard. Expanded offline suite42/42, Bash syntax, ASCII29 and diff pass. In Review for independent Sol wave8 recheck; task022 already Done, PS runtime deferred.
 
 - Done (13/32): task-001, task-002, task-003, task-004, task-005, task-006, task-007, task-008, task-009, task-010, task-011, task-016, task-022.
-- In Progress: task-012.
-- In Review: none.
+- In Progress: none.
+- In Review: task-012.
 - Failed/Blocked: none.
 - Pending: task-013, task-014, task-015, task-017, task-018, task-019, task-020, task-021, task-023, task-024, task-025, task-026, task-027, task-028, task-029, task-030, task-031, task-032.
 - Current wave: 8 of 15. Derive authoritative waves from task dependency headers.
