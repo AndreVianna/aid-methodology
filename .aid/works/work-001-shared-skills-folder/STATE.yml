@@ -118,7 +118,7 @@ phase: Execute
 # [W] aid-{skill} | none
 active_skill: aid-execute
 # [W]
-updated: '2026-10-11T15:58:42Z'
+updated: '2026-10-11T16:06:59Z'
 # [W] set only when lifecycle = Paused-Awaiting-Input
 pause_reason: --
 # [W] set only when lifecycle = Blocked
@@ -800,6 +800,11 @@ lifecycle_history:
     grade: --
     notes: '/aid-execute Codex'
 
+  - date: '2026-10-11'
+    event: 'Task018 test suite committed f36fc5e58; focused AC-9 exposed last-user shared-payload cleanup failure, so test remains In Review pending source correction and independent verification. Tasks015/017 also In Review. Full gates deferred to031; PS execution deferred.'
+    grade: --
+    notes: '/aid-execute Codex'
+
 deploy: []
 
 # [A] flattened only; single writer: this work's active branch. Written by
@@ -1111,11 +1116,18 @@ tasks_lifecycle:
         outcome: 'Task017 committed2d3ce67fa: shared-install suite covers five-tool canonical/runtime equality, userstate/protected runtime/attributes, exact pointer/import and line-ending/repair outside bytes. Focused verbose148/148; self-mutate151/151 proves unmutated negative assertion liveness and collision controls, primitives93/93. Syntax/diff pass and repo status unchanged by runs. In Review with task015; task018 follows before Sol wave11 check. PS and broad gates deferred.'
 
   task-018:
-    state: 'In Progress'
+    state: 'In Review'
     review: --
     elapsed: --
     notes: --
     display_name: --
+    dispatch_log:
+      - date: '2026-10-11T16:06:59.377539+00:00'
+        agent: 'gpt-6-luna'
+        eta_band: '3-8 min'
+        actual: '5m36s'
+        outcome: 'Task018 test suite committed f36fc5e58; focused AC-9 exposed last-user shared-payload cleanup failure, so test remains In Review pending source correction and independent verification. Tasks015/017 also In Review. Full gates deferred to031; PS execution deferred.'
+
   task-019:
     state: Pending
     review: --
