@@ -1271,13 +1271,13 @@ tasks_lifecycle:
         outcome: 'Task019 CLI suites committed079ce7029 with scoped coverage rehomes. Focused Bash250 pass/1 known source006 failure M07; natural manifestless legacy mini-probe passes. All other valid skew/cache/detection/future cases pass; PS execution skipped/deferred. Task019 In Review pending source correction and independent verification.'
 
   task-020:
-    state: 'In Review'
+    state: Done
     review: --
     elapsed: --
     notes: --
     display_name: --
   task-021:
-    state: 'In Review'
+    state: Done
     review: --
     elapsed: --
     notes: --
@@ -1296,31 +1296,31 @@ tasks_lifecycle:
         outcome: 'Task022 committed196a11761: CLI-installed worktree lifecycle fixtures invoke installed runtime and verify Cursor default create/ignore, registered nondefault lookup, Claude root/ignore. Focused lifecycle140/140, syntax/diff pass. Task012 and022 In Review for Sol wave8 quick verification; 12/32 Done. PS runtime deferred, long regression/coverage gates remain task031.'
 
   task-023:
-    state: 'In Review'
+    state: Done
     review: --
     elapsed: --
     notes: --
     display_name: --
   task-024:
-    state: 'In Review'
+    state: Done
     review: --
     elapsed: --
     notes: --
     display_name: --
   task-025:
-    state: 'In Review'
+    state: Done
     review: --
     elapsed: --
     notes: --
     display_name: --
   task-026:
-    state: 'In Review'
+    state: Done
     review: --
     elapsed: --
     notes: --
     display_name: --
   task-027:
-    state: 'In Review'
+    state: Done
     review: --
     elapsed: --
     notes: --
