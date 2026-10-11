@@ -6,11 +6,11 @@ maintainer approved execution. Current phase `Execute`, lifecycle `Running`.
 
 ## Current execution checkpoint
 
-Wave7 Sol found two MEDIUM Pending: canonical aid-* strays are incorrectly marked wanted and survive pruning; Bash/PS ignore block ordering differs for external worktree roots. Real offline Cursor-to-Claude-to-Codex fixture confirms stray defect; host/hash, runtime/mirror stray trash, three node_modules locations, non-AID skills, CRLF attributes and idempotence pass. Task010 In Progress for first Luna correction; task012 pending.
+Task010 Luna correction cb70f1b9d committed: canonical/mirror pruning keep paths derive only from current manifest; Bash/PS ignore ordering aligned. New real offline regression9/9 checks clean prior-SHA stale deletion, unrecorded skill trash bytes and user skill preservation. Syntax, ASCII29 and diff pass. In Review for independent Sol wave7 recheck; PS runtime deferred.
 
 - Done (11/32): task-001, task-002, task-003, task-004, task-005, task-006, task-007, task-008, task-009, task-011, task-016.
-- In Progress: task-010.
-- In Review: none.
+- In Progress: none.
+- In Review: task-010.
 - Failed/Blocked: none.
 - Pending: task-012, task-013, task-014, task-015, task-017, task-018, task-019, task-020, task-021, task-022, task-023, task-024, task-025, task-026, task-027, task-028, task-029, task-030, task-031, task-032.
 - Current wave: 7 of 15. Derive authoritative waves from task dependency headers.
