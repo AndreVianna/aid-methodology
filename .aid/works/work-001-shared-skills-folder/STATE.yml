@@ -507,7 +507,7 @@ tasks_lifecycle:
     notes: --
     display_name: --
   task-002:
-    state: 'In Progress'
+    state: 'In Review'
     review: --
     elapsed: --
     notes: --
@@ -519,7 +519,7 @@ tasks_lifecycle:
     notes: --
     display_name: --
   task-004:
-    state: Pending
+    state: 'In Progress'
     review: --
     elapsed: --
     notes: --
