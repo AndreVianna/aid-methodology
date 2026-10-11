@@ -112,15 +112,15 @@ minimum_grade: A
 # [W] 'yes' | 'no' -- quoted, see NFR-2 / D-5
 user_approved: 'no'
 # [W] Running | Paused-Awaiting-Input | Blocked | Completed | Canceled
-lifecycle: Running
+lifecycle: Paused-Awaiting-Input
 # [W] Describe | Define | Specify | Plan | Detail | Execute
 phase: Detail
 # [W] aid-{skill} | none
 active_skill: aid-update
 # [W]
-updated: '2026-10-11T02:46:17Z'
+updated: '2026-10-11T04:00:00Z'
 # [W] set only when lifecycle = Paused-Awaiting-Input
-pause_reason: --
+pause_reason: 'Bounded fix cycle verified: definition A, tasks A+; final full review still required before APPROVAL-HALT; awaiting maintainer'
 # [W] set only when lifecycle = Blocked
 block_reason: --
 # [W] e.g. IMPEDIMENT-task-NNN.md, or the failed gate
@@ -435,6 +435,11 @@ lifecycle_history:
     event: 'Resumed in Claude Code; maintainer approved bounded fix cycle: definition 49 (Sonnet fixer), then task 22 (Sonnet fixer), then scoped Opus verification; pause after grading'
     grade: --
     notes: '/aid-update GATE fix'
+
+  - date: '2026-10-11'
+    event: 'Bounded fix cycle verified (scoped Opus): definition 49 Fixed, task 22 Fixed; new definition 50 [MINOR] (FR-5 update-all cache clause has no own AC); coordinator pointed task-014 at fetch_artifact/Fetch-AidArtifact instead of a new helper. Final full review still required before APPROVAL-HALT'
+    grade: 'A (definition) / A+ (tasks)'
+    notes: '/aid-update GATE'
 
 # [A] aid-deploy only; one entry per delivery (never derived from child
 #     files; aid-deploy is the sole author):
