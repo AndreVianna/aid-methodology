@@ -112,7 +112,7 @@ minimum_grade: A
 # [W] 'yes' | 'no' -- quoted, see NFR-2 / D-5
 user_approved: 'no'
 # [W] Running | Paused-Awaiting-Input | Blocked | Completed | Canceled
-lifecycle: Paused-Awaiting-Input
+lifecycle: Running
 # [W] Describe | Define | Specify | Plan | Detail | Execute
 phase: Detail
 # [W] aid-{skill} | none
@@ -120,7 +120,7 @@ active_skill: aid-update
 # [W]
 updated: '2026-10-11T01:15:00Z'
 # [W] set only when lifecycle = Paused-Awaiting-Input
-pause_reason: 'GATE Pass 2 cycle 1 graded D+ (1 H, 3 M, 10 L); defn ledger C+ (3 new); awaiting pointer probe results and fix decision'
+pause_reason: --
 # [W] set only when lifecycle = Blocked
 block_reason: --
 # [W] e.g. IMPEDIMENT-task-NNN.md, or the failed gate
@@ -282,6 +282,10 @@ lifecycle_history:
     event: 'GATE Pass 2 (task set) cycle 1 reviewed (Opus) -- 14 findings (1 H, 3 M, 10 L); definition rows 5/7/8/11/24 verified Fixed, 3 new definition rows (1 M, 2 L); paused for maintainer decision'
     grade: 'D+'
     notes: '/aid-update GATE tasks'
+  - date: '2026-10-11'
+    event: 'Maintainer decision: this work ships as AID v4.0.0 (breaking). Scope reset -- (A) profiles/ fully regenerated, no emission-manifest diff deletion; (B) no protection or recovery for v3 CLIs; clean-slate upgrade (trash old AID-owned paths, fresh install) replaces the Migration Plan. Pointer region + .aid/runtime/rules.md folded into the same revision (probe pending). Requirements revision started'
+    grade: --
+    notes: 'design decision'
 
 # [A] aid-deploy only; one entry per delivery (never derived from child
 #     files; aid-deploy is the sole author):
