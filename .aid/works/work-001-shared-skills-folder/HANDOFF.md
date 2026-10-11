@@ -6,11 +6,11 @@ maintainer approved execution. Current phase `Execute`, lifecycle `Running`.
 
 ## Current execution checkpoint
 
-Task008 Luna correction 26fc45308 committed; parser now propagates read_kv_conf failures and uses parsed required-key counts. Descriptor regression 21/21, valid bundle add, Bash syntax and ASCII29 pass. Task008 In Review for independent Sol wave5 recheck. Task009 pending; PS runtime deferred.
+Wave5 independent Sol recheck: original HIGH Fixed; malformed CRLF/nonASCII descriptors refuse exit1 unchanged and focused suite21/21 passes. New LOW Pending: empty/comment-only descriptors cause counts bad array subscript without required filename/key diagnostic. Task008 In Progress for the allowed separate Sol executor correction; original reviewer will recheck. Task009 pending.
 
 - Done (9/32): task-001, task-002, task-003, task-004, task-005, task-006, task-007, task-011, task-016.
-- In Progress: none.
-- In Review: task-008.
+- In Progress: task-008.
+- In Review: none.
 - Failed/Blocked: none.
 - Pending: task-009, task-010, task-012, task-013, task-014, task-015, task-017, task-018, task-019, task-020, task-021, task-022, task-023, task-024, task-025, task-026, task-027, task-028, task-029, task-030, task-031, task-032.
 - Current wave: 5 of 15. Derive authoritative waves from task dependency headers.

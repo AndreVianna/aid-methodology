@@ -118,7 +118,7 @@ phase: Execute
 # [W] aid-{skill} | none
 active_skill: aid-execute
 # [W]
-updated: '2026-10-11T06:45:59Z'
+updated: '2026-10-11T06:47:47Z'
 # [W] set only when lifecycle = Paused-Awaiting-Input
 pause_reason: --
 # [W] set only when lifecycle = Blocked
@@ -600,6 +600,11 @@ lifecycle_history:
     grade: --
     notes: '/aid-execute Codex'
 
+  - date: '2026-10-11'
+    event: 'Wave5 independent Sol recheck: original HIGH Fixed; malformed CRLF/nonASCII descriptors refuse exit1 unchanged and focused suite21/21 passes. New LOW Pending: empty/comment-only descriptors cause counts bad array subscript without required filename/key diagnostic. Task008 In Progress for the allowed separate Sol executor correction; original reviewer will recheck. Task009 pending.'
+    grade: --
+    notes: '/aid-execute Codex'
+
 deploy: []
 
 # [A] flattened only; single writer: this work's active branch. Written by
@@ -721,7 +726,7 @@ tasks_lifecycle:
         outcome: 'committed cfadd72d4; retained release coverage restored,76 assertions pass'
 
   task-008:
-    state: 'In Review'
+    state: 'In Progress'
     review: --
     elapsed: --
     notes: --
