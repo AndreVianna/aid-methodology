@@ -118,7 +118,7 @@ phase: Detail
 # [W] aid-{skill} | none
 active_skill: aid-update
 # [W]
-updated: '2026-10-11T02:00:45Z'
+updated: '2026-10-11T02:06:04Z'
 # [W] set only when lifecycle = Paused-Awaiting-Input
 pause_reason: --
 # [W] set only when lifecycle = Blocked
@@ -340,6 +340,11 @@ lifecycle_history:
     event: 'Maintainer requested a new full independent review at increased effort'
     grade: --
     notes: 'Full definition and all 32 task artifacts are in scope, including cross-document consistency and verification of Fixed findings; Accepted decisions remain authorized. No fixes or implementation authorized by this review request'
+
+  - date: '2026-10-11'
+    event: 'Full independent definition review complete; new Pending rows 43-47; no Fixed findings recurred'
+    grade: 'D'
+    notes: 'Entire definition reviewed: 2 HIGH and 3 MEDIUM findings; below floor A. Prior scoped A+ did not establish a full-pass clearance. Maintainer requested both full passes, so full task review follows despite definition findings; no fixes or implementation'
 
 # [A] aid-deploy only; one entry per delivery (never derived from child
 #     files; aid-deploy is the sole author):
