@@ -2009,7 +2009,7 @@ function script:Invoke-AidProjectsList {
     param([bool]$Verbose = $false)
 
     # Canonical cwd.
-    $cwd = (Resolve-Path -LiteralPath '.' -ErrorAction SilentlyContinue).Path
+    $cwd = try { (Resolve-Path -LiteralPath '.' -ErrorAction Stop).Path } catch { $null }
     if (-not $cwd) { $cwd = (Get-Location).Path }
 
     $paths = @(script:Get-RegistryRawUnion)
@@ -2183,7 +2183,7 @@ function script:Invoke-AidProjectsAdd {
         # has nothing to migrate -- just register it).
         if ($repoFmt -lt $script:AidSupportedFormat -and (Test-Path (Join-Path (Join-Path $canon '.aid') 'settings.yml') -PathType Leaf)) {
             Write-Host "aid projects: '$canon' uses an older AID format (v$repoFmt); migrating to v$($script:AidSupportedFormat)..."
-            try { $null = script:Invoke-AidMigrateRepo -Repo $canon 6>$null } catch {
+            try { & { function Write-Host { }; $null = script:Invoke-AidMigrateRepo -Repo $canon } } catch {
                 [Console]::Error.WriteLine("WARN: aid projects add: migration reported an issue for '$canon' (continuing)")
             }
         }
@@ -2194,7 +2194,7 @@ function script:Invoke-AidProjectsAdd {
 
     # Register (idempotent). Suppress Registry-Register's own Write-Host output so we
     # emit a single consolidated message instead; stderr (WARN lines) flows through.
-    script:Registry-Register -Repo $canon -Tier $tier 6>$null
+    & { function Write-Host { }; script:Registry-Register -Repo $canon -Tier $tier }
     Write-Host ("aid projects: '$canon' registered in $tier tier.")
     if ($Verbose) {
         $primaryNorm = [System.IO.Path]::GetFullPath($script:_AidStateHome)
@@ -2803,7 +2803,7 @@ function script:Invoke-AidProjectsScan {
                 $action = 'would-register'
                 $nNew++
             } else {
-                script:Registry-Register -Repo $cand -Tier $tier 6>$null
+                & { function Write-Host { }; script:Registry-Register -Repo $cand -Tier $tier }
                 $action = 'registered'
                 $nNew++
             }
@@ -2935,7 +2935,7 @@ function script:Invoke-AidProjects {
 function script:Invoke-AidCwdClassify {
     param([string]$Target)
 
-    $canonTarget = (Resolve-Path -LiteralPath $Target -ErrorAction SilentlyContinue).Path
+    $canonTarget = try { (Resolve-Path -LiteralPath $Target -ErrorAction Stop).Path } catch { $null }
     if (-not $canonTarget) { $canonTarget = $Target }
 
     # Check if already registered in the union.
@@ -2958,7 +2958,7 @@ function script:Invoke-AidCwdClassify {
 function script:Invoke-AidCwdNoAidOffer {
     param([string]$Target)
 
-    $canon = (Resolve-Path -LiteralPath $Target -ErrorAction SilentlyContinue).Path
+    $canon = try { (Resolve-Path -LiteralPath $Target -ErrorAction Stop).Path } catch { $null }
     if (-not $canon) { $canon = $Target }
 
     Write-Host 'no AID project here -- set it up? (aid add)'
@@ -5796,7 +5796,7 @@ if ($SUBCMD -in @('add','remove')) {
     $gateRc = script:Invoke-AidFormatGate -Repo $_AidTarget
     if ($gateRc -ne 0) { script:Exit-Aid $gateRc }
     if (-not (script:Test-AidManifestFormatGate -Repo $_AidTarget)) { script:Exit-Aid 2 }
-    try { $pending = Read-AidUpgradeRecovery -Target $_AidTarget } catch { [Console]::Error.WriteLine("ERROR: aid ${SUBCMD}: $($_.Exception.Message)"); script:Exit-Aid 2 }
+    try { $pending = Read-AidUpgradeRecovery -Target $_AidTarget } catch { [Console]::Error.WriteLine("ERROR: aid update: $($_.Exception.Message)"); script:Exit-Aid 2 }
     if ($null -ne $pending) { [Console]::Error.WriteLine("ERROR: aid ${SUBCMD}: a v3 upgrade is pending; run: aid update"); script:Exit-Aid 2 }
 }
 

@@ -296,6 +296,20 @@ function Resolve-AidVersion {
 # Fetch + extract (online mode)
 # ---------------------------------------------------------------------------
 
+# script:Get-AidRemoteFile <uri> <outFile> <headers> - download one file. file:// URIs
+# (the endpoint-override fixture form; curl reads them in the bash twin) are copied
+# from the local path because Invoke-WebRequest rejects the 'file' scheme.
+function script:Get-AidRemoteFile {
+    param([string]$Uri, [string]$OutFile, $Headers)
+    if ($Uri.StartsWith('file://', [System.StringComparison]::OrdinalIgnoreCase)) {
+        $local = ([System.Uri]$Uri).LocalPath
+        if (-not (Test-Path -LiteralPath $local -PathType Leaf)) { throw "file not found: $local" }
+        Copy-Item -LiteralPath $local -Destination $OutFile -Force -ErrorAction Stop
+        return
+    }
+    Invoke-WebRequest -Uri $Uri -OutFile $OutFile -Headers $Headers -UseBasicParsing -ErrorAction Stop
+}
+
 # Fetch-Tarball <tool> <version> <destDir>
 # Downloads the tarball + SHA256SUMS into destDir and verifies.
 # Returns $true on success, $false on failure.
@@ -320,7 +334,7 @@ function Fetch-AidArtifact {
 
     if ($Kind -eq 'tool') { [Console]::Error.WriteLine("Fetching $filename ...") }
     try {
-        Invoke-WebRequest -Uri $url -OutFile $tarball -Headers $headers -UseBasicParsing -ErrorAction Stop
+        script:Get-AidRemoteFile -Uri $url -OutFile $tarball -Headers $headers
     } catch {
         $statusCode = 0
         try { $statusCode = [int]$_.Exception.Response.StatusCode } catch {}
@@ -339,7 +353,7 @@ function Fetch-AidArtifact {
     # release without SHA256SUMS". Refuse to install an unverified tarball
     # rather than warn-and-proceed.
     try {
-        Invoke-WebRequest -Uri $sumsUrl -OutFile $sumsFile -Headers $headers -UseBasicParsing -ErrorAction Stop
+        script:Get-AidRemoteFile -Uri $sumsUrl -OutFile $sumsFile -Headers $headers
     } catch {
         [Console]::Error.WriteLine("ERROR: AidInstallCore: could not fetch SHA256SUMS from $sumsUrl; refusing to install unverified tarball (fail-closed)")
         return $false
@@ -1986,7 +2000,7 @@ function Read-AidUpgradeRecovery {
         $props = @($value.PSObject.Properties | ForEach-Object { $_.Name })
         if ($props.Count -ne 3 -or @($props | Where-Object { $_ -notin @('format_version','tools','retired') }).Count -gt 0) { throw 'schema' }
         if ([regex]::Matches($raw, '"format_version"').Count -ne 1 -or [regex]::Matches($raw, '"tools"').Count -ne 1 -or [regex]::Matches($raw, '"retired"').Count -ne 1) { throw 'duplicate fields' }
-        if ($value.format_version -isnot [int] -or $value.format_version -ne 1 -or $value.retired -isnot [bool]) { throw 'types' }
+        if (($value.format_version -isnot [int] -and $value.format_version -isnot [long]) -or $value.format_version -ne 1 -or $value.retired -isnot [bool]) { throw 'types' }
         if ($value.tools -isnot [System.Array]) { throw 'tools must be an array' }
         $tools = @($value.tools)
         if ($tools.Count -eq 0 -or @($tools | Where-Object { $_ -isnot [string] -or $script:AID_TOOLS -cnotcontains $_ }).Count -gt 0) { throw 'tools' }
@@ -3255,7 +3269,7 @@ function Get-AidStatus {
     script:Invoke-RenderToolsBlock -ManifestPath $manifest -RefVersion $refVersion `
         -HeaderPrefix "Installed tools"
 
-    if ($data.format_version -eq 2) {
+    if ((script:Get-AidJsonProp $data 'format_version') -eq 2) {
         Write-Host 'Layout: format 4 (pre-shared). Run: aid update'
         return 0
     }
@@ -3268,15 +3282,20 @@ function Get-AidStatus {
 function Get-AidDriftReport {
     param([string]$Target, [string]$ManifestPath)
     $data = Get-Content -LiteralPath $ManifestPath -Raw | ConvertFrom-Json
+    $dShared = script:Get-AidJsonProp $data 'shared'
     $expected = @{}
-    $skills = @($data.shared.skills.files)
+    $skills = @(script:Get-AidJsonProp (script:Get-AidJsonProp $dShared 'skills') 'files')
     foreach ($item in $skills) { if ($item.path) { $expected[('.agents/skills/' + $item.path)] = [string]$item.sha256 } }
-    foreach ($item in @($data.shared.runtime.files)) { if ($item.path) { $expected[('.aid/runtime/' + $item.path)] = [string]$item.sha256 } }
+    foreach ($item in @(script:Get-AidJsonProp (script:Get-AidJsonProp $dShared 'runtime') 'files')) { if ($item.path) { $expected[('.aid/runtime/' + $item.path)] = [string]$item.sha256 } }
     $mirrors = @{}
-    if ($data.shared.mirrors) { foreach ($name in $data.shared.mirrors.PSObject.Properties.Name) { $mirrors[$name] = $true } }
-    foreach ($tool in $data.tools.PSObject.Properties) {
-        foreach ($name in @($tool.Value.mirrors)) { if ($name) { $mirrors[$name] = $true } }
-        foreach ($item in @($tool.Value.files)) { if ($item.path) { $expected[[string]$item.path] = [string]$item.sha256 } }
+    $dMirrors = script:Get-AidJsonProp $dShared 'mirrors'
+    if ($dMirrors) { foreach ($name in @($dMirrors.PSObject.Properties.Name)) { $mirrors[$name] = $true } }
+    $dTools = script:Get-AidJsonProp $data 'tools'
+    if ($dTools) {
+        foreach ($tool in $dTools.PSObject.Properties) {
+            foreach ($name in @(script:Get-AidJsonProp $tool.Value 'mirrors')) { if ($name) { $mirrors[$name] = $true } }
+            foreach ($item in @(script:Get-AidJsonProp $tool.Value 'files')) { if ($item.path) { $expected[[string]$item.path] = [string]$item.sha256 } }
+        }
     }
     foreach ($mirror in $mirrors.Keys) { foreach ($item in $skills) { if ($item.path) { $expected[($mirror + '/' + $item.path)] = [string]$item.sha256 } } }
     $issues = New-Object 'System.Collections.Generic.List[string]'
@@ -3290,9 +3309,7 @@ function Get-AidDriftReport {
         }
     }
     foreach ($pair in @(@('agents_md', 'AGENTS.md'), @('claude_md', 'CLAUDE.md'))) {
-        $property = $data.shared.PSObject.Properties[$pair[0]]
-        if (-not $property) { continue }
-        $entry = $property.Value
+        $entry = script:Get-AidJsonProp $dShared $pair[0]
         if (-not $entry) { continue }
         $full = Join-Path $Target $pair[1]
         if (-not (Test-Path -LiteralPath $full -PathType Leaf)) { $issues.Add(('missing:' + $pair[1])); continue }
