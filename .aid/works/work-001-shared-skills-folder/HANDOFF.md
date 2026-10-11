@@ -6,11 +6,11 @@ maintainer approved execution. Current phase `Execute`, lifecycle `Running`.
 
 ## Current execution checkpoint
 
-Wave-2 Luna correction: task005 commit 777eea9b6 addresses rows1/2/3/5; 93 primitives and ASCII pass, awaiting independent verification. Task006 is In Progress for row4 recovery-stamp cap fix. Task011 Done. Wave 3 not started.
+Wave-2 corrections committed/pushed: task005 777eea9b6 (93 focused assertions); task006 ed2db382e (2 stamp regressions). Five findings remain Pending until Sol targeted recheck; tasks005/006 In Review, task011 Done. No wave3 execution yet.
 
 - Done (4/32): task-001, task-002, task-004, task-011.
-- In Progress: task-006.
-- In Review: task-005.
+- In Progress: none.
+- In Review: task-005, task-006.
 - Failed/Blocked: none.
 - Pending: task-003, task-007, task-008, task-009, task-010, task-012, task-013, task-014, task-015, task-016, task-017, task-018, task-019, task-020, task-021, task-022, task-023, task-024, task-025, task-026, task-027, task-028, task-029, task-030, task-031, task-032.
 - Current wave: 2 of 15. Derive authoritative waves from task dependency headers.

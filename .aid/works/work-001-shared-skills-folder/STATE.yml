@@ -510,6 +510,11 @@ lifecycle_history:
     grade: --
     notes: '/aid-execute Codex'
 
+  - date: '2026-10-11'
+    event: 'Task006 Luna fix1 committed ed2db382e; two focused migration-stamp regression fixtures pass, Bash syntax and ASCII pass. Both task005/task006 corrections In Review; Sol targeted wave recheck starts.'
+    grade: --
+    notes: '/aid-execute Codex'
+
 deploy: []
 
 # [A] flattened only; single writer: this work's active branch. Written by
@@ -574,7 +579,7 @@ tasks_lifecycle:
         outcome: 'committed 777eea9b6; 93 focused primitive assertions and ASCII passed'
 
   task-006:
-    state: 'In Progress'
+    state: 'In Review'
     review: --
     elapsed: --
     notes: --
@@ -585,6 +590,12 @@ tasks_lifecycle:
         eta_band: '3-8 min'
         actual: '9m01s (start-checkpoint to commit)'
         outcome: 'committed cdc95d6c1; focused Bash probes passed; pwsh deferred'
+
+      - date: '2026-10-11T05:45:00.677438+00:00'
+        agent: 'gpt-6-luna fix1'
+        eta_band: '3-8 min'
+        actual: '1m39s'
+        outcome: 'committed ed2db382e; 2 recovery-stamp fixtures and ASCII passed'
 
   task-007:
     state: Pending
