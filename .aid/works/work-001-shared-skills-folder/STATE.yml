@@ -530,13 +530,20 @@ tasks_lifecycle:
     notes: --
     display_name: --
   task-005:
-    state: 'In Progress'
+    state: 'In Review'
     review: --
     elapsed: --
     notes: --
     display_name: --
+    dispatch_log:
+      - date: '2026-10-11T05:23:26.814056+00:00'
+        agent: 'gpt-6-luna'
+        eta_band: '3-8 min'
+        actual: '15 min'
+        outcome: 'committed c1952f13b; focused checks passed; pwsh deferred'
+
   task-006:
-    state: Pending
+    state: 'In Progress'
     review: --
     elapsed: --
     notes: --
