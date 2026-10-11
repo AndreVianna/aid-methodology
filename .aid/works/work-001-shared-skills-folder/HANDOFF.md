@@ -6,14 +6,14 @@ maintainer approved execution. Current phase `Execute`, lifecycle `Running`.
 
 ## Current execution checkpoint
 
-Wave10 Sol final independent recheck PASS A+: all three findings Fixed, expanded dryrun regression/syntax/diff pass and PS exact root exclusion verified statically. Update-all cache execution previously passed. Task014 Done, waves1-10 complete,16/32 Done. Next wave11 sequential task015 v3 retirement/recovery, then017 shared-install and018 multitool suites; PS runtime deferred.
+Task015 In Progress for sequential Luna v3 clean-slate retirement/recovery execution. Validate authoritative reserved recovery record before mutations, stage all targettools, durable retired=false/true atomic boundaries, path-owned legacy trash with user-content preservation, fresh shared install and record cleanup only after success.16/32 Done; task017/018 tests follow before Sol wave11 review. PS runtime deferred.
 
 - Done (16/32): task-001, task-002, task-003, task-004, task-005, task-006, task-007, task-008, task-009, task-010, task-011, task-012, task-013, task-014, task-016, task-022.
-- In Progress: none.
+- In Progress: task-015.
 - In Review: none.
 - Failed/Blocked: none.
-- Pending: task-015, task-017, task-018, task-019, task-020, task-021, task-023, task-024, task-025, task-026, task-027, task-028, task-029, task-030, task-031, task-032.
-- Current wave: 10 of 15. Derive authoritative waves from task dependency headers.
+- Pending: task-017, task-018, task-019, task-020, task-021, task-023, task-024, task-025, task-026, task-027, task-028, task-029, task-030, task-031, task-032.
+- Current wave: 11 of 15. Derive authoritative waves from task dependency headers.
 - Execution commits are on the delivery branch; `work-001` holds pre-execution planning.
 - Wave ledgers: `review-ledgers/execute-wave-N.md`; each preserves unresolved/Accepted findings.
 - Wave-1 Accepted item: Bash `_v3_quote` versus Python `json.dump` non-ASCII escaping; recheck at final review.

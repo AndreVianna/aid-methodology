@@ -118,7 +118,7 @@ phase: Execute
 # [W] aid-{skill} | none
 active_skill: aid-execute
 # [W]
-updated: '2026-10-11T15:31:06Z'
+updated: '2026-10-11T15:31:08Z'
 # [W] set only when lifecycle = Paused-Awaiting-Input
 pause_reason: --
 # [W] set only when lifecycle = Blocked
@@ -775,6 +775,11 @@ lifecycle_history:
     grade: --
     notes: '/aid-execute Codex'
 
+  - date: '2026-10-11'
+    event: 'Task015 In Progress for sequential Luna v3 clean-slate retirement/recovery execution. Validate authoritative reserved recovery record before mutations, stage all targettools, durable retired=false/true atomic boundaries, path-owned legacy trash with user-content preservation, fresh shared install and record cleanup only after success.16/32 Done; task017/018 tests follow before Sol wave11 review. PS runtime deferred.'
+    grade: --
+    notes: '/aid-execute Codex'
+
 deploy: []
 
 # [A] flattened only; single writer: this work's active branch. Written by
@@ -1041,7 +1046,7 @@ tasks_lifecycle:
         outcome: 'Task014 separate Sol correctionf43787731 committed: PS dry-run protects only root runtime host.conf, nested scripts/host.conf planned/trash regression added plus optional PS fixture. Focused fixture/syntax/diff/ASCII pass, dryrun immutable and root retained. In Review for original Sol reviewer final wave10 recheck; PS runtime deferred.'
 
   task-015:
-    state: Pending
+    state: 'In Progress'
     review: --
     elapsed: --
     notes: --
