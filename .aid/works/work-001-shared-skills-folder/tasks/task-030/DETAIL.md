@@ -29,12 +29,16 @@
 - `.github/workflows/test.yml`: the header comment (search: "the shippable product is the rendered
   install trees") and the `render-drift` job text describe agents-only renders plus the shared
   payload; any step that still assumes rendered skills or a per-tool runtime is corrected.
+- `site/`: every doc or data file that states the old layout (find them with the AC-19 grep
+  pathspec `site`; e.g. `site/src/data/skill-flows/aid-discover.flow.json`) is updated to the
+  `.aid/runtime/` / `.agents/skills/aid-*` layout.
 - The repo-root `CLAUDE.md` and `AGENTS.md` are NOT hand-edited here: they come out of the dogfood
   resync (task-027), sourced from `canonical/AGENTS.md`.
 - Match each doc's existing style; no work id or work-folder path appears in any of these files.
 
 **Acceptance Criteria:**
 - [ ] `git grep -nE '\.(claude|codex|cursor|agent)/aid/|\.github/aid/' -- CLAUDE.md AGENTS.md README.md docs .github/workflows` prints no lines.
+- [ ] `git grep -nE '\.(claude|codex|cursor|agent)/aid/|\.github/aid/' -- site 'profiles/*/README.md'` prints no lines.
 - [ ] `grep -n '\.agents/skills' README.md docs/install.md` and `grep -n '\.aid/runtime' README.md docs/install.md` each print at least one line per file.
 - [ ] `grep -cE 'work-[0-9]{3}|\.aid/works/' README.md docs/install.md docs/aid-methodology.md` prints `0` for each file.
 - [ ] `python3 -c "import yaml; yaml.safe_load(open('.github/workflows/test.yml'))"` exits `0` (the workflow still parses).

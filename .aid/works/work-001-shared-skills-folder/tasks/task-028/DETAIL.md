@@ -33,6 +33,9 @@
   - absences: `.claude/aid/`, `.cursor/aid/`, `.cursor/skills/aid-*`;
   - survivors: `.claude/skills/generate-profile/SKILL.md`, `.claude/skills/release-aid/SKILL.md`
     (the Direction-3 allowlists keep their role for hand-authored repo-local content).
+- `tests/canonical/test-work-state-template.sh`: WS07 (reads `.claude/aid/templates/work-state-template.yml`)
+  and WS08 (reads the rendered profile copies, which no longer exist) are re-pointed to the installed
+  runtime copy `.aid/runtime/templates/work-state-template.yml`.
 - The `.cursor/` skills/runtime tuple keys that no longer exist get rows in
   `tests/coverage-accepted-removals.tsv`.
 - A negative control: on a scratch copy, one changed byte in `.agents/skills/aid-ask/SKILL.md` makes
@@ -40,6 +43,7 @@
 
 **Acceptance Criteria:**
 - [ ] `HOME=$(mktemp -d) bash tests/canonical/test-dogfood-byte-identity.sh --verbose` exits `0`, with `PASS:` lines for each comparison, the manifest shared-entry check, the root-context checks, each absence and each survivor.
+- [ ] `bash tests/canonical/test-work-state-template.sh` exits `0` with `grep -c '\.claude/aid/' tests/canonical/test-work-state-template.sh` printing `0`.
 - [ ] The negative control prints a `PASS:` line asserting the planted byte was detected.
 - [ ] The coverage-parity gate (run where `pwsh`, `node` and `python3` are on PATH) reports no un-excused removal for this suite.
 - [ ] All section-6 quality gates pass.

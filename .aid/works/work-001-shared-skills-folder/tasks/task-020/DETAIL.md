@@ -17,7 +17,7 @@
 
 **Source:** work-001-shared-skills-folder -> delivery-001 -> AC-12
 
-**Depends on:** task-006, task-007
+**Depends on:** task-006, task-007, task-012, task-013
 
 **Scope:**
 - `tests/canonical/fixtures/format4-core/` (new): byte copies of the pre-change
@@ -33,10 +33,17 @@
   - FR-5 guarantee: the frozen format-4 core, given each new artifact from `tests/lib/bundle.sh`
     staging (`aid-<tool>-v<V>.tar.gz` and `aid-shared-v<V>.tar.gz`), exits non-zero (its
     `extract_tarball` wrapping-directory check) and the target tree's sha256 snapshot is unchanged;
-    the same through the frozen `AidInstallCore.psm1` when `pwsh` is present.
+    the same through the frozen `AidInstallCore.psm1` when `pwsh` is present;
+  - old-CLI last-tool removal: on a fixture holding the migrated shared layout, the frozen core's
+    `aid remove` of the last tool leaves the shared layout orphaned (no manifest); the new CLI's
+    `aid status` then reports the orphaned layout and exits `7`, and `aid remove --orphans` leaves
+    no `aid-*` under `.agents/skills` or a mirror, no `.aid/runtime/` and no AID region in
+    `AGENTS.md` or `CLAUDE.md`, with the removed bytes under `.aid/.trash/` (bash always; PowerShell
+    when `pwsh` is present).
 
 **Acceptance Criteria:**
 - [ ] `cmp tests/canonical/fixtures/format4-core/aid-install-core.sh <(git show "$(git merge-base HEAD master)":lib/aid-install-core.sh)` succeeds, and likewise for `AidInstallCore.psm1`.
 - [ ] `HOME=$(mktemp -d) bash tests/canonical/test-layout-format-guard.sh --verbose` exits `0` with `PASS:` lines for carrier equality, the format-4 refusal (exit, message, unchanged snapshot) and the frozen-core refusal for every new artifact.
+- [ ] The same run prints `PASS:` lines for the orphans recovery: `aid status` exit `7` with a line starting `Orphaned shared layout (no manifest):`, then after `aid remove --orphans` the absence of every `aid-*` under `.agents/skills` and mirrors, of `.aid/runtime/` and of the AID regions, and the removed bytes present under `.aid/.trash/`.
 - [ ] Changing `PAYLOAD_LAYOUT_FORMAT` to `6` in a scratch copy of `release.sh` makes the carrier-equality assertion fail.
 - [ ] All section-6 quality gates pass.

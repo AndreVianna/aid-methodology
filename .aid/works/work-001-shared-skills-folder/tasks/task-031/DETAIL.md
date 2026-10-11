@@ -21,7 +21,7 @@
 
 **Scope:**
 - Add the AC-19 grep to `tests/canonical/test-shared-layout-sources.sh` as a keyed assertion:
-  `git grep -nE '\.(claude|codex|cursor|agent)/aid/|\.github/aid/' -- CLAUDE.md AGENTS.md README.md docs .github/workflows .aid/knowledge ':!.aid/knowledge/release-tracking.md' ':!.aid/knowledge/kb.html'`
+  `git grep -nE '\.(claude|codex|cursor|agent)/aid/|\.github/aid/' -- CLAUDE.md AGENTS.md README.md docs .github/workflows .aid/knowledge 'profiles/*/README.md' site ':!.aid/knowledge/release-tracking.md' ':!.aid/knowledge/kb.html'`
   prints no lines.
 - Run the whole regression on a host with `pwsh`, `node` and `python3` (the coverage-parity
   gate's runtime precondition): `HOME=$(mktemp -d) bash tests/run-all.sh`, the generator self-tests,

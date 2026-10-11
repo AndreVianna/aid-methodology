@@ -57,7 +57,7 @@
 
 **Acceptance Criteria:**
 - [ ] `git grep -nE '\.(claude|codex|cursor|agent)/aid/|\.github/aid/' -- .aid/knowledge ':!.aid/knowledge/release-tracking.md' ':!.aid/knowledge/kb.html'` prints no lines.
-- [ ] A reviewer confirms that `architecture.md` § Invariants (content isolation) and `G-10` and `G-11` in `authoring-conventions.md` state the `.aid/runtime/` and `.agents/skills/aid-*` placement rules.
+- [ ] A reviewer confirms that `architecture.md` § Invariants (content isolation) and `G-10` and `G-11` in `authoring-conventions.md` state the `.aid/runtime/` and `.agents/skills/aid-*` placement rules, and that the content-isolation checks in `canonical/agents/aid-reviewer/AGENT.md` (edited in task-003) accept that placement.
 - [ ] `bash tests/canonical/test-kb-no-work-ids.sh` exits `0`, and `git diff -U0 -- .aid/knowledge | grep -E '^\+.*(work-[0-9]{3}|\.aid/works/)'` prints nothing.
 - [ ] `bash canonical/aid/scripts/kb/lint-frontmatter.sh --root .aid/knowledge` and `bash canonical/aid/scripts/kb/kb-citation-lint.sh --root .aid/knowledge` exit `0`; the CI "INDEX.md is fresh" regenerate-and-diff (timestamp lines filtered) prints nothing.
 - [ ] `bash tests/canonical/test-doc-counts.sh` exits `0` (any KB count it checks still matches disk).

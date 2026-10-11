@@ -27,7 +27,10 @@
   (Y != X) exits `2` and a sha256 snapshot of the whole fixture tree is unchanged; `aid add cursor`
   installs cursor at X; a manifest whose tools record differing versions makes `aid add` exit
   non-zero with `aid update` in the message; `aid update --from-bundle <staging>` leaves every tool
-  `version` and every shared-entry `version` equal to `aid_version`.
+  `version` and every shared-entry `version` equal to `aid_version`; `aid add cursor --from-bundle
+  <dir staged at a different version>` into a project at another version exits non-zero and the
+  whole-tree sha256 snapshot is unchanged (the `_check_staged_version` / `Test-StagedVersion`
+  check).
 - AC-15: `detect_tool` on a fixture holding only `.agents/` exits `2` and prints no `codex`; on a
   fixture holding `.codex/` prints `codex`; the `Detect-Tool` twin in `test-aid-cli-ps1.sh` (guarded
   by `pwsh` presence as that suite already does).
@@ -36,6 +39,7 @@
 
 **Acceptance Criteria:**
 - [ ] `HOME=$(mktemp -d) bash tests/canonical/test-aid-cli.sh --verbose` exits `0`, with `PASS:` lines for each AC-11 clause and both AC-15 detect cases.
+- [ ] The same `test-aid-cli.sh` run prints a `PASS:` line for the `--from-bundle` version-mismatch refusal (non-zero exit, unchanged snapshot, `aid update` in the message), and `test-aid-cli-ps1.sh` the same where `pwsh` exists.
 - [ ] `HOME=$(mktemp -d) bash tests/canonical/test-aid-cli-ps1.sh` exits `0` where `pwsh` exists, including the `Detect-Tool` cases.
 - [ ] `grep -cE 'profiles/[a-z-]+/' tests/canonical/test-aid-cli.sh tests/canonical/test-aid-cli-ps1.sh` prints `0` for both.
 - [ ] The coverage-parity gate (run where `pwsh`, `node` and `python3` are on PATH) reports no un-excused removal for these two suites.

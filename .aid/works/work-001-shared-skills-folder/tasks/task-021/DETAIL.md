@@ -29,7 +29,10 @@
   AC-7 checks; no `aid-*` under `.codex/skills`, `.cursor/skills`, `.github/skills`,
   `.agent/skills`; no `<root>/aid/`; modified files byte-for-byte at `.aid/.trash/<original-path>`;
   non-AID files unchanged; `.aid/settings.yml` `format_version` = 5. A second `aid update` prints
-  `up to date` for every tool and leaves `.aid/.trash/` unchanged.
+  `up to date` for every tool and leaves `.aid/.trash/` unchanged. AC-13 resume: a migration
+  killed after the manifest write (Migration Plan step 3), simulated by failing the run at the start
+  of step 4, is completed by the next `aid update --from-bundle <staging>`: no `aid-*` entry
+  remains under the old roots and the manifest has no `migration` key.
 - AC-14 case (c), as worded (the § 11 test plan places (a) and (b) in `test-shared-install.sh`,
   task-017, and (d) in `test-multitool-isolation.sh`, task-018): three format-4 claude-code
   fixtures -- a user-edited `CLAUDE.md` with user content above and below the full AID region (the
@@ -43,6 +46,7 @@
 
 **Acceptance Criteria:**
 - [ ] `HOME=$(mktemp -d) bash tests/canonical/test-aid-migrate.sh --verbose` exits `0`, with `PASS:` lines for each AC-13 clause per tool fixture (five plus the legacy `.agents/aid/` case) and the second-run checks.
+- [ ] The same run prints a `PASS:` line for the AC-13 resume clause: after the simulated kill the manifest holds `"migration": "pending"`, and after the next `aid update` no `aid-*` entry remains under the old roots and `grep -c '"migration"' .aid/.aid-manifest.json` prints `0`.
 - [ ] The same run prints `PASS:` lines for AC-14 (c) in its three variants (user-edited with trash copy, unedited and still present, no-marker with WARN) and the one-`@AGENTS.md` / one-`AID:BEGIN` invariant in each.
 - [ ] `grep -cE 'profiles/[a-z-]+/' tests/canonical/test-aid-migrate.sh` prints `0`.
 - [ ] The coverage-parity gate (run where `pwsh`, `node` and `python3` are on PATH) reports no un-excused removal for this suite.

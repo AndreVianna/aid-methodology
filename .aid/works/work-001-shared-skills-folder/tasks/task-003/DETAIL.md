@@ -49,6 +49,11 @@
   (task-027 re-points that script).
 - `canonical/EMISSION-MANIFEST.md` § Asset Kinds: agents and `aid-tool.conf` only, for all five
   profiles. `profiles/*/README.md`: no longer describe a skills or runtime tree.
+- `canonical/agents/aid-reviewer/AGENT.md` § Content isolation (FR-17): the checks that flag an
+  AID-own dir "not nested under `<assets-root>/aid/`" and the Codex `.codex/aid/` rule are replaced
+  so they accept the new placement: skills use the `aid-` prefix under `.agents/skills/` and each
+  mirror, the runtime lives under `.aid/runtime/`, and a skill or runtime dir under a tool root is a
+  violation. Severity wording is kept. The agent is re-rendered by the generator run above.
 - Re-key the existing suites that read rendered skill/runtime trees under `profiles/`:
   `test-chat-node-wake.sh` (WK23), `test-cutover-no-dangling.sh` (Part 2 mirror-deletion), and the
   profile-README rows of `test-doc-counts.sh`. Removed or renamed keys get rows in
@@ -70,6 +75,8 @@
 - [ ] `grep -rlE '(^|[^A-Za-z0-9_])canonical/(aid/)?(scripts|templates|skills|agents|recipes)/' canonical/agents profiles | wc -l` prints `0`.
 - [ ] `grep -nE 'def (rewrite_install_paths|substitute_filenames|_rewrite_skill_frontmatter)' .claude/skills/generate-profile/scripts/*.py` prints nothing.
 - [ ] `python .claude/skills/generate-profile/scripts/render_lib.py --self-test`, `test_manifest_safety.py --self-test`, `render.py --self-test --canonical-root .`, `verify_deterministic.py --self-test --canonical-root .` and `verify_advisory.py --self-test --canonical-root .` all exit `0`; the `aid_profile.py` validation rejects a profile whose `skill_mirrors` contains `.agents/skills` (a self-test case shows it).
+- [ ] `git grep -nE '\.(claude|codex|cursor|agent)/aid/|\.github/aid/' -- 'profiles/*/README.md'` prints no lines.
+- [ ] `grep -nE '\.aid/runtime|\.agents/skills' canonical/agents/aid-reviewer/AGENT.md` prints a line inside § Content isolation, and `grep -nE 'un-nested path|\.codex/aid/ is the correct' canonical/agents/aid-reviewer/AGENT.md` prints nothing.
 - [ ] `bash tests/canonical/test-chat-node-wake.sh`, `test-cutover-no-dangling.sh` and `test-doc-counts.sh` exit `0`.
 - [ ] `git diff --name-only` for this task's commit lists no path under `.claude/` outside `.claude/skills/generate-profile/`, and none under `.cursor/`.
 - [ ] All section-6 quality gates pass.
