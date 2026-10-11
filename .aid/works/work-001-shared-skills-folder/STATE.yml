@@ -520,6 +520,11 @@ lifecycle_history:
     grade: --
     notes: '/aid-execute Codex'
 
+  - date: '2026-10-11'
+    event: 'Task005 allowed Sol fix2 committed 3b3680e1a (guard optional PS rules_inline and finalLF substring bounds, pwsh-gated coverage); primitives93/93 and ASCII29/29 pass. In Review for original Sol independent targeted check.'
+    grade: --
+    notes: '/aid-execute Codex'
+
 deploy: []
 
 # [A] flattened only; single writer: this work's active branch. Written by
@@ -565,7 +570,7 @@ tasks_lifecycle:
     notes: --
     display_name: --
   task-005:
-    state: 'In Progress'
+    state: 'In Review'
     review: --
     elapsed: --
     notes: --
@@ -582,6 +587,12 @@ tasks_lifecycle:
         eta_band: '3-8 min'
         actual: '1m28s'
         outcome: 'committed 777eea9b6; 93 focused primitive assertions and ASCII passed'
+
+      - date: '2026-10-11T05:48:10.573388+00:00'
+        agent: 'gpt-6.1-sol fix2'
+        eta_band: '3-8 min'
+        actual: '1m24s'
+        outcome: 'committed 3b3680e1a; primitives93 and ASCII29 passed; PS static-only'
 
   task-006:
     state: Done

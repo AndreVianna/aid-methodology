@@ -6,11 +6,11 @@ maintainer approved execution. Current phase `Execute`, lifecycle `Running`.
 
 ## Current execution checkpoint
 
-Wave-2 Sol recheck verified rows1/3/4/5 Fixed. Task006 and task011 Done. Task005 is In Progress for allowed second fix attempt (Sol executor): row2 optional PS rules_inline access under StrictMode, new row6 final-LF removal bounds. Pending rows2/6 in execute-wave-2.md. Reviewer remains separate; wave3 has not started.
+Task005 second correction committed/pushed 3b3680e1a. Sol executor addressed Pending rows2/6; focused primitives93 and ASCII29 pass. Original Sol reviewer independently rechecks next. Task005 In Review; tasks006/011 Done. Wave3 not yet started; PS execution deferred.
 
 - Done (5/32): task-001, task-002, task-004, task-006, task-011.
-- In Progress: task-005.
-- In Review: none.
+- In Progress: none.
+- In Review: task-005.
 - Failed/Blocked: none.
 - Pending: task-003, task-007, task-008, task-009, task-010, task-012, task-013, task-014, task-015, task-016, task-017, task-018, task-019, task-020, task-021, task-022, task-023, task-024, task-025, task-026, task-027, task-028, task-029, task-030, task-031, task-032.
 - Current wave: 2 of 15. Derive authoritative waves from task dependency headers.
