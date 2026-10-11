@@ -515,6 +515,11 @@ lifecycle_history:
     grade: --
     notes: '/aid-execute Codex'
 
+  - date: '2026-10-11'
+    event: 'Sol scoped recheck: rows1/3/4/5 Fixed; row2 Pending (PS optional rules_inline StrictMode) and new row6 Pending (PS END plus one LF substring overrun). Task006 Done. Task005 enters allowed second fix attempt with separate Sol executor; original Sol reviewer stays independent.'
+    grade: --
+    notes: '/aid-execute Codex'
+
 deploy: []
 
 # [A] flattened only; single writer: this work's active branch. Written by
@@ -560,7 +565,7 @@ tasks_lifecycle:
     notes: --
     display_name: --
   task-005:
-    state: 'In Review'
+    state: 'In Progress'
     review: --
     elapsed: --
     notes: --
@@ -579,7 +584,7 @@ tasks_lifecycle:
         outcome: 'committed 777eea9b6; 93 focused primitive assertions and ASCII passed'
 
   task-006:
-    state: 'In Review'
+    state: Done
     review: --
     elapsed: --
     notes: --
