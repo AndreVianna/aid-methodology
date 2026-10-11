@@ -118,7 +118,7 @@ phase: Execute
 # [W] aid-{skill} | none
 active_skill: aid-execute
 # [W]
-updated: '2026-10-11T06:18:40Z'
+updated: '2026-10-11T06:26:23Z'
 # [W] set only when lifecycle = Paused-Awaiting-Input
 pause_reason: --
 # [W] set only when lifecycle = Blocked
@@ -565,6 +565,11 @@ lifecycle_history:
     grade: --
     notes: '/aid-execute Codex'
 
+  - date: '2026-10-11'
+    event: 'Task007 Luna fix1 cfadd72d4 In Review: retained renderdrift/help/version/unknownflag checks restored, obsolete assertion accounting added; release76/76 usingGNUawk. Task016 In Progress for Luna fix1 inventory nestedTOML gap; Sol recheck follows both.'
+    grade: --
+    notes: '/aid-execute Codex'
+
 deploy: []
 
 # [A] flattened only; single writer: this work's active branch. Written by
@@ -667,7 +672,7 @@ tasks_lifecycle:
         outcome: 'committed ed2db382e; 2 recovery-stamp fixtures and ASCII passed'
 
   task-007:
-    state: 'In Progress'
+    state: 'In Review'
     review: --
     elapsed: --
     notes: --
@@ -678,6 +683,12 @@ tasks_lifecycle:
         eta_band: '3-8 min'
         actual: '7m17s'
         outcome: 'committed 67c3360d5; 51 packaging assertions, syntax, version-sync passed'
+
+      - date: '2026-10-11T06:26:23.486460+00:00'
+        agent: 'gpt-6-luna fix1'
+        eta_band: '3-8 min'
+        actual: '7m16s'
+        outcome: 'committed cfadd72d4; retained release coverage restored,76 assertions pass'
 
   task-008:
     state: Pending
@@ -735,7 +746,7 @@ tasks_lifecycle:
     notes: --
     display_name: --
   task-016:
-    state: 'In Review'
+    state: 'In Progress'
     review: --
     elapsed: --
     notes: --
