@@ -36,10 +36,11 @@
 - AC-14 case (c), as worded (the § 11 test plan places (a), (b), (e) and (f) in
   `test-shared-install.sh`, task-017, and (d) in `test-multitool-isolation.sh`, task-018): v3
   claude-code fixtures -- a user-edited `CLAUDE.md` with user content above and below the full old
-  AID region (every pre-update line outside the old region is present unchanged and in order, one
-  import region, and the pre-update file is at `.aid/.trash/CLAUDE.md`); a no-marker `CLAUDE.md`
+  AID region (every byte outside the old region is preserved in its original order, with one
+  import region appended at the end; one LF is inserted only when the remaining non-empty user
+  content does not end in LF, and the pre-update file is at `.aid/.trash/CLAUDE.md`); a no-marker `CLAUDE.md`
   (the (b) prefix check passes); a v3 `AGENTS.md` holding the full region (it ends holding the
-  pointer region, with its pre-update file at `.aid/.trash/AGENTS.md`). In each, exactly one
+  pointer region appended by the same LF rule, with its pre-update file at `.aid/.trash/AGENTS.md`). In each, exactly one
   `@AGENTS.md` line in `CLAUDE.md` and one `<!-- AID:BEGIN -->` line in `AGENTS.md`.
 - v3 fixtures are built by hand; the suite never reads a work folder. Removed or renamed keys get
   coverage rows.

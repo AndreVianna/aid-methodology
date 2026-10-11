@@ -626,10 +626,14 @@ CLI. The Claude Code docs (skills, settings reference, memory, changelog) were c
     sha256 unchanged.
   - (c) **Upgraded from the v3 full region.** In a v3 claude-code fixture whose user-edited
     `CLAUDE.md` holds user content above and below the full AID region, `aid update` leaves the
-    file equal, byte-for-byte, to its pre-update content with the marked region (marker lines
-    included) replaced by the import region. The pre-update file exists byte-for-byte at
-    `.aid/.trash/CLAUDE.md`. A v3 fixture whose `CLAUDE.md` has no markers passes the (b) prefix
-    check. A v3 `AGENTS.md` holding the full region gets the pointer region the same way.
+    file equal, byte-for-byte, to its pre-update content with the old marked region (marker
+    lines included) removed, followed by the import region at the end. Every byte outside the
+    old region is preserved in its original order; if the remaining user content is non-empty
+    and does not end in LF, one LF is inserted before the import region. Exactly one import
+    region remains. The pre-update file exists byte-for-byte at `.aid/.trash/CLAUDE.md`. A v3
+    fixture whose `CLAUDE.md` has no markers passes the (b) prefix check. A v3 `AGENTS.md`
+    holding the full region gets the pointer region at the end by the same rule, with its
+    pre-update file preserved at `.aid/.trash/AGENTS.md`.
   - (d) **Removed on Claude Code uninstall.** In a fresh fixture of the (a) kind and one of the
     (b) kind, run `aid add claude-code,cursor` and then `aid remove claude-code`. Afterwards
     `CLAUDE.md` is absent in the (a)-kind fixture and equals its pre-add bytes in the (b)-kind

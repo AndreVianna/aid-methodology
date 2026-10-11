@@ -112,15 +112,15 @@ minimum_grade: A
 # [W] 'yes' | 'no' -- quoted, see NFR-2 / D-5
 user_approved: 'no'
 # [W] Running | Paused-Awaiting-Input | Blocked | Completed | Canceled
-lifecycle: Paused-Awaiting-Input
+lifecycle: Running
 # [W] Describe | Define | Specify | Plan | Detail | Execute
 phase: Detail
 # [W] aid-{skill} | none
 active_skill: aid-update
 # [W]
-updated: '2026-10-11T03:00:00Z'
+updated: '2026-10-11T01:38:58Z'
 # [W] set only when lifecycle = Paused-Awaiting-Input
-pause_reason: 'Handoff to Codex: next is the scoped GATE re-review of the v4.0.0 revision; see HANDOFF.md'
+pause_reason: --
 # [W] set only when lifecycle = Blocked
 block_reason: --
 # [W] e.g. IMPEDIMENT-task-NNN.md, or the failed gate
@@ -294,6 +294,14 @@ lifecycle_history:
     event: 'Handoff to Codex: see HANDOFF.md in this work folder; ledgers copied to review-ledgers/, probe kits to probe-kits/'
     grade: --
     notes: 'handoff'
+  - date: '2026-10-10'
+    event: 'Codex fix/review cycle 1 started; maintainer accepted the issue plan and confirmed the v4 intent'
+    grade: --
+    notes: 'Align AC-14(c) and task criteria with clean-slate append behavior; independently re-verify pending ledger findings and scoped v4 changes; implementation remains unapproved'
+  - date: '2026-10-10'
+    event: 'Codex cycle 1 FIX complete; definition verification started'
+    grade: --
+    notes: 'AC-14(c) and tasks 015/021 now require append-at-end with user-byte preservation, LF rule, and backup; canonical rules source and constant root regions remain as agreed'
 
 # [A] aid-deploy only; one entry per delivery (never derived from child
 #     files; aid-deploy is the sole author):
