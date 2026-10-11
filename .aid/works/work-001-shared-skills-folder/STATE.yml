@@ -118,7 +118,7 @@ phase: Execute
 # [W] aid-{skill} | none
 active_skill: aid-execute
 # [W]
-updated: '2026-10-11T16:43:27Z'
+updated: '2026-10-11T16:43:28Z'
 # [W] set only when lifecycle = Paused-Awaiting-Input
 pause_reason: --
 # [W] set only when lifecycle = Blocked
@@ -865,6 +865,11 @@ lifecycle_history:
     grade: --
     notes: '/aid-execute Codex'
 
+  - date: '2026-10-11'
+    event: 'Reopened task006 for new wave12 bare-project source finding M07: valid add against empty format2 manifest and stamp4 installs format3 payload but leaves stamp4. Separate Luna correction followed by focused CLI rerun and Sol quick verification before task020; task019 remains In Review. Source repro retained, no unrelated files to change.'
+    grade: --
+    notes: '/aid-execute Codex'
+
 deploy: []
 
 # [A] flattened only; single writer: this work's active branch. Written by
@@ -948,7 +953,7 @@ tasks_lifecycle:
         outcome: 'committed 3b3680e1a; primitives93 and ASCII29 passed; PS static-only'
 
   task-006:
-    state: Done
+    state: 'In Progress'
     review: --
     elapsed: --
     notes: --

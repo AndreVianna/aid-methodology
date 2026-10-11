@@ -6,10 +6,10 @@ maintainer approved execution. Current phase `Execute`, lifecycle `Running`.
 
 ## Current execution checkpoint
 
-Task019 CLI suites committed079ce7029 with scoped coverage rehomes. Focused Bash250 pass/1 known source006 failure M07; natural manifestless legacy mini-probe passes. All other valid skew/cache/detection/future cases pass; PS execution skipped/deferred. Task019 In Review pending source correction and independent verification.
+Reopened task006 for new wave12 bare-project source finding M07: valid add against empty format2 manifest and stamp4 installs format3 payload but leaves stamp4. Separate Luna correction followed by focused CLI rerun and Sol quick verification before task020; task019 remains In Review. Source repro retained, no unrelated files to change.
 
-- Done (19/32): task-001, task-002, task-003, task-004, task-005, task-006, task-007, task-008, task-009, task-010, task-011, task-012, task-013, task-014, task-015, task-016, task-017, task-018, task-022.
-- In Progress: none.
+- Done (18/32): task-001, task-002, task-003, task-004, task-005, task-007, task-008, task-009, task-010, task-011, task-012, task-013, task-014, task-015, task-016, task-017, task-018, task-022.
+- In Progress: task-006.
 - In Review: task-019.
 - Failed/Blocked: none.
 - Pending: task-020, task-021, task-023, task-024, task-025, task-026, task-027, task-028, task-029, task-030, task-031, task-032.
