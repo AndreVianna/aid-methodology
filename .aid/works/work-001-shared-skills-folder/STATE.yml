@@ -118,7 +118,7 @@ phase: Execute
 # [W] aid-{skill} | none
 active_skill: aid-execute
 # [W]
-updated: '2026-10-11T16:20:58Z'
+updated: '2026-10-11T16:22:03Z'
 # [W] set only when lifecycle = Paused-Awaiting-Input
 pause_reason: --
 # [W] set only when lifecycle = Blocked
@@ -840,6 +840,11 @@ lifecycle_history:
     grade: --
     notes: '/aid-execute Codex'
 
+  - date: '2026-10-11'
+    event: 'Task018 row5/6 correction29f1d1ae6 declares durable COVERS sources and asserts actual readable manifest. Selector1/1 and absent/present controls pass; syntax/diff pass. All wave11 corrections committed and pushed, ready for original Sol recheck.'
+    grade: --
+    notes: '/aid-execute Codex'
+
 deploy: []
 
 # [A] flattened only; single writer: this work's active branch. Written by
@@ -1169,7 +1174,7 @@ tasks_lifecycle:
         outcome: 'Task017 row5 correction82c51b39f uses durable COVERS subjects; focused selector selects1/1, syntax/diff pass. In Review for Sol recheck after018 correction.'
 
   task-018:
-    state: 'In Progress'
+    state: 'In Review'
     review: --
     elapsed: --
     notes: --
@@ -1180,6 +1185,12 @@ tasks_lifecycle:
         eta_band: '3-8 min'
         actual: '5m36s'
         outcome: 'Task018 test suite committed f36fc5e58; focused AC-9 exposed last-user shared-payload cleanup failure, so test remains In Review pending source correction and independent verification. Tasks015/017 also In Review. Full gates deferred to031; PS execution deferred.'
+
+      - date: '2026-10-11T16:22:03.021509+00:00'
+        agent: 'gpt-6-luna'
+        eta_band: '3-8 min'
+        actual: '0m54s'
+        outcome: 'Task018 row5/6 correction29f1d1ae6 declares durable COVERS sources and asserts actual readable manifest. Selector1/1 and absent/present controls pass; syntax/diff pass. All wave11 corrections committed and pushed, ready for original Sol recheck.'
 
   task-019:
     state: Pending
