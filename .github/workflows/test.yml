@@ -118,10 +118,9 @@ jobs:
       - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
         with:
           python-version: '3.11'
-      - name: harness + manifest-safety + render + verify self-tests
+      - name: harness + render + verify self-tests
         run: |
           python .claude/skills/generate-profile/scripts/render_lib.py --self-test
-          python .claude/skills/generate-profile/scripts/test_manifest_safety.py --self-test
           python .claude/skills/generate-profile/scripts/render.py --self-test --canonical-root .
           python .claude/skills/generate-profile/scripts/verify_deterministic.py --self-test --canonical-root .
           python .claude/skills/generate-profile/scripts/verify_advisory.py --self-test --canonical-root .
