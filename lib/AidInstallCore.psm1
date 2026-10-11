@@ -1981,6 +1981,7 @@ function Read-AidUpgradeRecovery {
         if ($props.Count -ne 3 -or @($props | Where-Object { $_ -notin @('format_version','tools','retired') }).Count -gt 0) { throw 'schema' }
         if ([regex]::Matches($raw, '"format_version"').Count -ne 1 -or [regex]::Matches($raw, '"tools"').Count -ne 1 -or [regex]::Matches($raw, '"retired"').Count -ne 1) { throw 'duplicate fields' }
         if ($value.format_version -isnot [int] -or $value.format_version -ne 1 -or $value.retired -isnot [bool]) { throw 'types' }
+        if ($value.tools -isnot [System.Array]) { throw 'tools must be an array' }
         $tools = @($value.tools)
         if ($tools.Count -eq 0 -or @($tools | Where-Object { $_ -isnot [string] -or $script:AID_TOOLS -cnotcontains $_ }).Count -gt 0) { throw 'tools' }
         if (@($tools | Select-Object -Unique).Count -ne $tools.Count) { throw 'duplicate tools' }
@@ -2065,11 +2066,11 @@ function Invoke-RetireV3Layout {
     foreach ($root in $roots) {
         $dir = Join-Path $Target $root
         if (-not (Test-Path -LiteralPath $dir -PathType Container)) { continue }
-        $files = @(Get-ChildItem -LiteralPath $dir -Recurse -File -ErrorAction Stop | Sort-Object FullName)
+        $files = @(Get-ChildItem -LiteralPath $dir -Recurse -File -Force -ErrorAction Stop | Sort-Object FullName)
         foreach ($file in $files) { if (Test-AidOwnedPath -Target $Target -Path $file.FullName) { if ($ListOnly) { Write-Output "  move to trash: $($file.FullName.Substring($Target.Length + 1) -replace '\\','/')" } else { Move-AidToTrash -Root $Target -File $file.FullName }; $count++ } }
-        if (-not $ListOnly) { Get-ChildItem -LiteralPath $dir -Recurse -Directory -ErrorAction SilentlyContinue | Sort-Object { $_.FullName.Length } -Descending | ForEach-Object { if (@(Get-ChildItem -LiteralPath $_.FullName -Force -ErrorAction SilentlyContinue).Count -eq 0) { Remove-Item -LiteralPath $_.FullName -Force -ErrorAction Stop } } }
+        if (-not $ListOnly) { Get-ChildItem -LiteralPath $dir -Recurse -Directory -Force -ErrorAction Stop | Sort-Object { $_.FullName.Length } -Descending | ForEach-Object { if (@(Get-ChildItem -LiteralPath $_.FullName -Force -ErrorAction Stop).Count -eq 0) { Remove-Item -LiteralPath $_.FullName -Force -ErrorAction Stop } } }
     }
-    if ($Tools -ccontains 'codex') { $dir=Join-Path $Target '.agents/aid'; if (Test-Path -LiteralPath $dir -PathType Container) { foreach ($file in @(Get-ChildItem -LiteralPath $dir -Recurse -File | Sort-Object FullName)) { if ($ListOnly) { Write-Output "  move to trash: $($file.FullName.Substring($Target.Length + 1) -replace '\\','/')" } else { Move-AidToTrash -Root $Target -File $file.FullName }; $count++ }; if (-not $ListOnly) { Remove-Item -LiteralPath $dir -Recurse -Force -ErrorAction Stop } } }
+    if ($Tools -ccontains 'codex') { $dir=Join-Path $Target '.agents/aid'; if (Test-Path -LiteralPath $dir -PathType Container) { foreach ($file in @(Get-ChildItem -LiteralPath $dir -Recurse -File -Force -ErrorAction Stop | Sort-Object FullName)) { if ($ListOnly) { Write-Output "  move to trash: $($file.FullName.Substring($Target.Length + 1) -replace '\\','/')" } else { Move-AidToTrash -Root $Target -File $file.FullName }; $count++ }; if (-not $ListOnly) { Get-ChildItem -LiteralPath $dir -Recurse -Directory -Force -ErrorAction Stop | Sort-Object { $_.FullName.Length } -Descending | ForEach-Object { if (@(Get-ChildItem -LiteralPath $_.FullName -Force -ErrorAction Stop).Count -eq 0) { Remove-Item -LiteralPath $_.FullName -Force -ErrorAction Stop } }; if (@(Get-ChildItem -LiteralPath $dir -Force -ErrorAction Stop).Count -eq 0) { Remove-Item -LiteralPath $dir -Force -ErrorAction Stop } } } }
     if (-not $ListOnly) { if (Remove-AidLegacyRootRegion -Target $Target -Name 'AGENTS.md') { $count++ }; if (Remove-AidLegacyRootRegion -Target $Target -Name 'CLAUDE.md') { $count++ } }
     elseif ((Test-Path (Join-Path $Target 'AGENTS.md') -PathType Leaf) -or (Test-Path (Join-Path $Target 'CLAUDE.md') -PathType Leaf)) { Write-Output '  inspect root AID region: AGENTS.md / CLAUDE.md' }
     if (-not $ListOnly -and $count -gt 0) { Write-Host "$count old AID file(s) moved to .aid/.trash/ (safe to delete once you have checked them)" }
@@ -2580,8 +2581,8 @@ function Install-AidShared {
     $regionSha=(Get-FileHash -InputStream ([System.IO.MemoryStream]::new($utf8.GetBytes($region))) -Algorithm SHA256).Hash.ToLowerInvariant()
     $agentsSha=Get-Sha256File -FilePath $agentsPath
     $claudeSha=''
-    if ($claudeUsers.Count -gt 0 -or (script:Get-AidJsonProp (script:Get-AidJsonProp $old 'shared') 'claude_md')) {
-        $claudeUsers=@($script:AID_TOOLS | Where-Object { $claudeUsers -contains $_ -or @((script:Get-AidJsonProp (script:Get-AidJsonProp (script:Get-AidJsonProp $old 'shared') 'claude_md') 'users')) -contains $_ })
+    if ($claudeUsers.Count -gt 0 -or (-not $script:_AidV3Upgrade -and (script:Get-AidJsonProp (script:Get-AidJsonProp $old 'shared') 'claude_md'))) {
+        if (-not $script:_AidV3Upgrade) { $claudeUsers=@($script:AID_TOOLS | Where-Object { $claudeUsers -contains $_ -or @((script:Get-AidJsonProp (script:Get-AidJsonProp (script:Get-AidJsonProp $old 'shared') 'claude_md') 'users')) -contains $_ }) }
         $claudeSha=script:Invoke-EnsureClaudeMdRegion -File (Join-Path $Target 'CLAUDE.md') -Root $Target
     }
     $model=Join-Path $Target ('.manifest-model.'+[System.IO.Path]::GetRandomFileName())

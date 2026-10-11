@@ -6935,7 +6935,10 @@ case "$SUBCMD" in
         # migration never changes the tool-update exit code.
         if [[ "$SUBCMD" == "update" ]]; then
             _aid_migrate_repo "$_AID_TARGET"
-            if [[ "${_AID_V3_UPGRADE:-0}" -eq 1 ]]; then clear_upgrade_recovery "${_AID_TARGET}" || { echo 'ERROR: aid update: upgrade installed but recovery cleanup failed; rerun aid update.' >&2; exit 1; }; fi
+            if [[ "${_AID_V3_UPGRADE:-0}" -eq 1 ]]; then
+                if [[ "$(_aid_repo_format "$_AID_TARGET")" -lt 5 ]]; then echo 'ERROR: aid update: upgrade settings stamp was not written; recovery record retained. Rerun aid update to recover.' >&2; exit 1; fi
+                clear_upgrade_recovery "${_AID_TARGET}" || { echo 'ERROR: aid update: upgrade installed but recovery cleanup failed; rerun aid update.' >&2; exit 1; }
+            fi
             unset AID_UPGRADE_EXACT
         fi
         exit 0

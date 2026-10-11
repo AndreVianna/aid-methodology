@@ -3462,12 +3462,16 @@ install_shared() {
         case "$line" in
             shared.skills.file$'\t'*) rel="${line#*$'\t'}"; old_hash["skills:${rel%%$'\t'*}"]="${rel#*$'\t'}" ;;
             shared.runtime.file$'\t'*) rel="${line#*$'\t'}"; old_hash["runtime:${rel%%$'\t'*}"]="${rel#*$'\t'}" ;;
-            shared.claude_md.users$'\t'*) claude_users=1 ;;
+            shared.claude_md.users$'\t'*) [[ "${AID_UPGRADE_EXACT:-0}" == 1 ]] || claude_users=1 ;;
         esac
     done < <(manifest_read_shared "$manifest")
 
     while IFS=$'\t' read -r tool stage; do [[ -n "$tool" ]] && tool_stage["$tool"]="$stage" && new_tools+=("$tool"); done < "$new_file"
-    while IFS= read -r tool; do [[ -n "$tool" ]] && all_tools+=("$tool"); done < <({ [[ -f "$manifest" ]] && manifest_list_tools "$manifest"; printf '%s\n' "${new_tools[@]}"; } | sort -u)
+    if [[ "${AID_UPGRADE_EXACT:-0}" == 1 ]]; then
+        all_tools=("${new_tools[@]}")
+    else
+        while IFS= read -r tool; do [[ -n "$tool" ]] && all_tools+=("$tool"); done < <({ [[ -f "$manifest" ]] && manifest_list_tools "$manifest"; printf '%s\n' "${new_tools[@]}"; } | sort -u)
+    fi
     # Restore the product's declared tool order.
     local ordered=(); for tool in "${AID_TOOLS[@]}"; do for rel in "${all_tools[@]}"; do [[ "$rel" == "$tool" ]] && ordered+=("$tool"); done; done
     all_tools=("${ordered[@]}")
@@ -3574,8 +3578,9 @@ for line in pathlib.Path(new_file).read_text().splitlines():
         t,p=line.split('\t',1); new[t]=p
 tools={}
 if os.environ.get('AID_UPGRADE_EXACT') != '1': tools.update(old.get('tools',{}))
-for t in (old.get('shared',{}).get('claude_md',{}).get('users',[]) or []):
-    tools.setdefault(t,{})['context_import']='CLAUDE.md'
+if os.environ.get('AID_UPGRADE_EXACT') != '1':
+    for t in (old.get('shared',{}).get('claude_md',{}).get('users',[]) or []):
+        tools.setdefault(t,{})['context_import']='CLAUDE.md'
 for tool, stage in new.items():
     conf={}
     for line in pathlib.Path(stage,'aid-tool.conf').read_text().splitlines():

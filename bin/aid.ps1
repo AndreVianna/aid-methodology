@@ -6355,6 +6355,10 @@ try {
             if ($SUBCMD -eq 'update') {
                 script:Invoke-AidMigrateRepo -Repo $_AidTarget
                 if ($script:_AidV3Upgrade) {
+                    if ((script:Get-AidRepoFormat -Repo $_AidTarget) -lt 5) {
+                        [Console]::Error.WriteLine('ERROR: aid update: upgrade settings stamp was not written; recovery record retained. Rerun aid update to recover.')
+                        script:Exit-Aid 1
+                    }
                     try { Clear-AidUpgradeRecovery -Target $_AidTarget } catch { [Console]::Error.WriteLine("ERROR: aid update: upgrade installed but recovery cleanup failed; rerun aid update. $_"); script:Exit-Aid 1 }
                 }
             }
