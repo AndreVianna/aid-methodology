@@ -118,7 +118,7 @@ phase: Execute
 # [W] aid-{skill} | none
 active_skill: aid-execute
 # [W]
-updated: '2026-10-11T06:02:37Z'
+updated: '2026-10-11T06:03:34Z'
 # [W] set only when lifecycle = Paused-Awaiting-Input
 pause_reason: --
 # [W] set only when lifecycle = Blocked
@@ -540,6 +540,11 @@ lifecycle_history:
     grade: --
     notes: '/aid-execute Codex'
 
+  - date: '2026-10-11'
+    event: 'Task003 Luna fix1 37bf911f8 committed, declared mirrors exempted from tool-root skills prohibition; undeclared skills/runtime remain violations, severity unchanged. Deterministic generator PASS; In Review for Sol scoped check.'
+    grade: --
+    notes: '/aid-execute Codex'
+
 deploy: []
 
 # [A] flattened only; single writer: this work's active branch. Written by
@@ -573,7 +578,7 @@ tasks_lifecycle:
     notes: --
     display_name: --
   task-003:
-    state: 'In Progress'
+    state: 'In Review'
     review: --
     elapsed: --
     notes: --
@@ -584,6 +589,12 @@ tasks_lifecycle:
         eta_band: '3-8 min'
         actual: '10m36s'
         outcome: 'committed 941b6cb43; generator/wipe probes and focused suites passed; sync no-op until027'
+
+      - date: '2026-10-11T06:03:34.052321+00:00'
+        agent: 'gpt-6-luna fix1'
+        eta_band: '3-8 min'
+        actual: '0m39s'
+        outcome: 'committed 37bf911f8; six mirror-rule source/render files; deterministic PASS'
 
   task-004:
     state: Done

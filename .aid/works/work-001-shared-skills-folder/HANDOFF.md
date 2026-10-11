@@ -6,11 +6,11 @@ maintainer approved execution. Current phase `Execute`, lifecycle `Running`.
 
 ## Current execution checkpoint
 
-Task003 wave3 quick check found one Pending Medium FR17 mirror-exception contradiction in canonical reviewer content isolation; recorded execute-wave-3.md. Exact inventories, translations, descriptors/verifiers passed. Task003 In Progress for Luna fix1, no wave4 yet. Sync remains task027-owned no-op.
+Task003 mirror exception corrected and pushed in 37bf911f8 (canonical reviewer + five renders); deterministic generator PASS. In Review for Sol scoped recheck of execute-wave-3 row1. Wave4 not started; sync rewrite still task027.
 
 - Done (6/32): task-001, task-002, task-004, task-005, task-006, task-011.
-- In Progress: task-003.
-- In Review: none.
+- In Progress: none.
+- In Review: task-003.
 - Failed/Blocked: none.
 - Pending: task-007, task-008, task-009, task-010, task-012, task-013, task-014, task-015, task-016, task-017, task-018, task-019, task-020, task-021, task-022, task-023, task-024, task-025, task-026, task-027, task-028, task-029, task-030, task-031, task-032.
 - Current wave: 3 of 15. Derive authoritative waves from task dependency headers.
