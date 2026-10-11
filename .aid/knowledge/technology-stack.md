@@ -31,7 +31,6 @@ review-criteria:
 
 > **Source:** aid-discover (Phase 1)
 > **Status:** Complete
-> **Last Updated:** 2026-07-09
 
 ## Contents
 
@@ -124,7 +123,7 @@ independent build from the CLI/toolkit.
 |---------|----------|-----------|-----------|
 | **npm** | `packages/npm/package.json` | (summarize: `package-lock.json`) | `aid-installer` (Node >=18). |
 | **pip / pipx** | `packages/pypi/pyproject.toml` | — | `aid-installer` (Python >=3.8). |
-| **GitHub Releases** | `release.sh` | `SHA256SUMS` | Five per-profile `aid-<tool>-v<VERSION>.tar.gz` bundles for offline/air-gapped install. |
+| **GitHub Releases** | `release.sh` | `SHA256SUMS` | The shared payload `aid-shared-v<VERSION>.tar.gz`, five per-tool `aid-<tool>-v<VERSION>.tar.gz` artifacts and the CLI bundle, for offline/air-gapped install. |
 | **curl \| bash / irm \| iex** | `install.sh` / `install.ps1` | — | Direct bootstrap of the `aid` CLI. |
 
 All four channels deliver the same `aid` CLI. CONFIRMED `README.md` "Install" (search: "All
@@ -138,7 +137,7 @@ AID has several distinct "builds". The authoritative commands are what CI runs
 (`.github/workflows/test.yml`):
 
 ```bash
-# 1. Render the product: canonical/ -> profiles/ (the core build). Run from repo root.
+# 1. Render the agents: canonical/agents/ -> profiles/ (the core build). Run from repo root.
 python .claude/skills/generate-profile/scripts/run_generator.py
 
 # 2. Build the PyPI distribution (wheel + sdist) — from packages/pypi/
@@ -151,7 +150,7 @@ npm pack                   # or: npm publish
 npm ci && npm run build    # 'build' = 'astro build'; prebuild syncs docs+reference+release data
 
 # 5. Cut a release (maintainer) — from repo root
-bash release.sh            # packages the five per-profile tarballs + GitHub Release
+bash release.sh            # packages the shared payload, the five tool artifacts and the CLI bundle, then creates the GitHub Release
 ```
 
 CONFIRMED: command (1) in `run_generator.py` and `.github/workflows/test.yml` (search:
@@ -171,7 +170,7 @@ is **KB hygiene + generator/parity self-checks + render determinism**:
 bash canonical/aid/scripts/kb/lint-frontmatter.sh --root .aid/knowledge
 
 # KB citation lint (every claim must carry a durable anchor)
-bash .claude/aid/scripts/kb/kb-citation-lint.sh --root .aid/knowledge
+bash .aid/runtime/scripts/kb/kb-citation-lint.sh --root .aid/knowledge
 
 # INDEX freshness (regenerate + diff)
 bash canonical/aid/scripts/kb/build-kb-index.sh --root .aid/knowledge --output /tmp/INDEX.regen.md
@@ -201,7 +200,6 @@ bash tests/run-all.sh -v          # verbose
 
 # Generator unit self-tests (Python)
 python .claude/skills/generate-profile/scripts/render_lib.py --self-test
-python .claude/skills/generate-profile/scripts/test_manifest_safety.py --self-test
 python .claude/skills/generate-profile/scripts/render.py --self-test --canonical-root .
 python .claude/skills/generate-profile/scripts/verify_deterministic.py --self-test --canonical-root .
 python .claude/skills/generate-profile/scripts/verify_advisory.py --self-test --canonical-root .
@@ -242,7 +240,7 @@ discovered by glob (`tests/canonical/test-*.sh`), each run under `timeout 300`. 
 
 The Python renderer and dashboard reader use **only the standard library** (no third-party
 imports needed at runtime) — CONFIRMED by the empty PyPI dependency set and
-`canonical/EMISSION-MANIFEST.md` (search: "Zero runtime dependency").
+`.claude/skills/generate-profile/scripts/run_generator.py` (its imports are standard-library only).
 
 ---
 

@@ -9,7 +9,6 @@ sources:
   - tests/canonical/test-dashboard-manifest.sh
   - lib/aid-install-core.sh
   - docs/repository-structure.md
-  - canonical/EMISSION-MANIFEST.md
   - canonical/aid/scripts/execute/writeback-state.sh
   - .claude/skills/generate-profile/SKILL.md
   - .github/workflows/release.yml
@@ -166,10 +165,8 @@ not, which is what says the fix consumes only what it should.
 
 `W1-20` is absent by resolution: it recorded a surface-boundary criterion checked against the CLI's
 verb list because the artifact it was really about -- the rendered agent skill -- did not exist yet.
-The skill exists now, and the check reads all five rendered copies directly: each one's verb list
-against the permitted set, each one against the forbidden set, and each one's body against the
-canonical source rather than against the other renders. That last part closed a real gap, since
-comparing the renders only to each other would pass a generator that mangled all five the same way.
+The skill exists now, and the check reads the canonical skill directly, its verb list against the permitted set and
+against the forbidden set.
 Verified by falsification in both shapes. `tests/canonical/test-chat-node-wake.sh` WK21-WK23.
 
 `W1-4` is absent by resolution, not by oversight: it recorded the `docs.yml` CI-lane row teaching
@@ -431,7 +428,7 @@ No CVE-flagged or end-of-life dependency was identified. AID's runtime payload i
 markdown with near-zero third-party runtime dependencies (the npm package advertises zero
 runtime deps). Heavier dependency trees are confined to the **separate** `site/` Astro build
 (`site/package-lock.json`) and the summarize Playwright tooling
-(`.claude/aid/scripts/summarize/package.json`); `.github/dependabot.yml` is configured to
+(`canonical/aid/scripts/summarize/package.json`); `.github/dependabot.yml` is configured to
 track updates. No action item beyond letting Dependabot run. CONFIRMED via project-index
 (manifests list) + `dependabot.yml` presence.
 
@@ -447,7 +444,7 @@ track updates. No action item beyond letting Dependabot run. CONFIRMED via proje
 | `reader.mjs` | `dashboard/`, `packages/npm/dashboard/`, `packages/pypi/aid_installer/_vendor/dashboard/` | Dashboard behaves differently per install channel |
 | `parsers.py` | same three locations | Same |
 | `aid-install-core.sh` | `lib/`, `packages/npm/lib/`, `packages/pypi/aid_installer/_vendor/lib/` | Install logic diverges per channel |
-| `canonical/` toolkit | rendered into 5 `profiles/` + `.claude/` | Caught by the render-drift gate (CI) |
+| `canonical/` agent bodies | rendered into 5 `profiles/` trees and copied into the dogfood install | Caught by the render-drift gate (CI) and `test-dogfood-byte-identity.sh` |
 
 The `canonical/ → profiles/` duplication is machine-guarded (render-drift). The
 `dashboard`/`lib` vendored copies are guarded by the channel install suites; the vendoring is
@@ -506,8 +503,8 @@ model.
   under `$HOME`, so isolation canaries must snapshot `REAL_HOME` before/after.
 - **Render-drift needs the FULL generator:** after editing `canonical/`, run
   `python .claude/skills/generate-profile/scripts/run_generator.py` (the full generator), not
-  a per-script renderer — otherwise the render-drift gate fails on stale `profiles/`
-  emission manifests.
+  a per-script renderer — otherwise the render-drift gate fails on a stale `profiles/`
+  tree.
 - **One dashboard manifest, five consumers:** the dashboard server+reader file set lives in
   `dashboard/MANIFEST` (one path per line). `install.sh`, `install.ps1`, `vendor.js`,
   `vendor.py`, and `release.sh`'s CLI bundle all DERIVE their file set from it — never re-list

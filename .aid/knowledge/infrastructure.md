@@ -12,7 +12,7 @@ sources:
   - .github/workflows/coverage-parity.yml
   - install.sh
   - install.ps1
-  - .claude/aid/scripts/release/check-version-sync.sh
+  - canonical/aid/scripts/release/check-version-sync.sh
   - .claude/skills/generate-profile/SKILL.md
   - bin/aid
 tags: [C8, infrastructure, ci-cd, release, distribution, versioning, dashboard]
@@ -85,16 +85,17 @@ CONFIRMED via the workflow files + `.gitattributes` + the `kb-hygiene` CRLF chec
 
 ## The Build: Multi-Profile Render
 
-AID's "build" is a render, not a compile. The single source of truth is `canonical/`; a
-Python generator renders it into five per-tool install trees under `profiles/`.
+AID's "build" is a render plus a packaging step, not a compile. The single source of truth is `canonical/`;
+a Python generator renders its agents into five per-tool agent trees under `profiles/`, and `release.sh` copies the
+skills and the runtime from `canonical/` into one shared payload.
 
 - **Generator:** `python .claude/skills/generate-profile/scripts/run_generator.py` (the
   `generate-profile` skill; maintainer-only, the lone skill outside `canonical/`).
 - **Profiles produced:** `claude-code`, `codex`, `cursor`, `copilot-cli`, `antigravity`
   (derived from `ls profiles/*.toml`).
-- **Safety boundary:** the generator only writes/deletes files it previously emitted, recorded
-  per profile in `profiles/{tool}/emission-manifest.jsonl`; user-created files inside install
-  trees are never touched.
+- **Wipe boundary:** the generator wipes each `profiles/{tool}/` tree and regenerates it in full, so a profile
+  tree holds only generated agents and its `aid-tool.conf`. The generator never touches an installed user repo;
+  install and uninstall prune only the files the install manifest records.
 - **Drift gate:** CI (`test.yml` `render-drift`) and the release `gate` re-run the generator
   and `git diff --exit-code -- profiles/`; any uncommitted drift fails the build. So
   `profiles/` is treated as committed build output that must always equal a fresh render.
@@ -157,8 +158,8 @@ Job order and dependencies:
    idempotent on re-run (npm `npm view` pre-check; PyPI `skip-existing`).
 
 `release.sh` itself (the maintainer runbook script): asserts a clean worktree, re-verifies
-render state (render-drift), stages `.aid/.temp/release-<VERSION>/`, packages **five
-per-profile tarballs + one CLI bundle (`aid-cli-v<VERSION>.tar.gz`) + the two installer libs +
+render state (render-drift), stages `.aid/.temp/release-<VERSION>/`, packages **one
+shared payload (`aid-shared-v<VERSION>.tar.gz`), five per-tool agent artifacts, one CLI bundle (`aid-cli-v<VERSION>.tar.gz`), the two installer libs +
 `SHA256SUMS`**, then `gh release create` (or `gh release upload --clobber` for idempotent
 recovery re-runs). `--dry-run` stages artifacts and stops before any network I/O; `--sign` is
 deferred (exits non-zero). Exit codes: 0 ok, 1 general, 2 usage, 3 version mismatch, 4 tag
@@ -172,7 +173,7 @@ Three channels, all from the same tag:
 
 | Channel | Artifact(s) | How built | Auth |
 |---|---|---|---|
-| GitHub Releases | 5 profile tarballs + `aid-cli-v*.tar.gz` + `aid-install-core.sh` + `AidInstallCore.psm1` + `SHA256SUMS` | `release.sh` via `gh release create` | built-in `GITHUB_TOKEN` (`contents: write`) |
+| GitHub Releases | shared payload `aid-shared-v*.tar.gz` + 5 tool artifacts `aid-<tool>-v*.tar.gz` + `aid-cli-v*.tar.gz` + `aid-install-core.sh` + `AidInstallCore.psm1` + `SHA256SUMS` | `release.sh` via `gh release create` | built-in `GITHUB_TOKEN` (`contents: write`) |
 | npm (`aid-installer`) | npm package vendoring the aid-cli payload | `packages/npm/scripts/vendor.js` runs at `prepack`; `npm publish --provenance` | OIDC Trusted Publishing (token-less; optional classic `NPM_TOKEN` fallback) |
 | PyPI (`aid-installer`) | sdist + wheel vendoring the aid-cli payload | hatchling build hook `packages/pypi/scripts/vendor.py`; `python -m build` | OIDC Trusted Publishing via `pypa/gh-action-pypi-publish` (PEP 740 attestations) |
 

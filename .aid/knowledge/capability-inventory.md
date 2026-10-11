@@ -4,7 +4,7 @@ source: generated
 objective: Inventory of what AID does for its users — the methodology capabilities (pipeline phases and on-demand skills) plus the CLI installer and multi-tool distribution.
 summary: The catalogue of AID's user-facing capabilities. AID is a methodology delivered as a multi-profile CLI installer, so its "features" are the workflow skills its users invoke — both the full pipeline and the direct-entry shortcut Lite path — the CLI that installs and maintains it, and the distribution that ships it to five host agent tools. Populated by Discovery; refined during Q&A + FIX.
 sources:
-  - .claude/skills/
+  - canonical/skills/
   - CLAUDE.md
   - bin/
   - profiles/
@@ -248,8 +248,9 @@ bundle. See `infrastructure.md` for the release and version-sync mechanics.
 
 ## Multi-tool distribution
 
-The same capabilities are authored once in `canonical/` and rendered into five host-agent
-install profiles, so a user on any of these tools gets the identical methodology:
+The same capabilities are authored once in `canonical/`. Skills and runtime are shipped once and installed for
+every tool; agents are rendered into five host-agent profiles. A user on any of these tools gets the identical
+methodology:
 
 | Profile | Host agent tool |
 |---------|-----------------|
@@ -289,13 +290,13 @@ Each capability maps to the parts that implement it (full anatomy in `module-map
 
 | Capability group | Parts / modules it touches |
 |------------------|----------------------------|
-| Pipeline + on-demand skills | `.claude/skills/<skill>/` (SKILL.md + references) backed by per-area helper scripts under `canonical/aid/scripts/` (`config/`, `connectors/`, `execute/`, `housekeep/`, `kb/`, `migrate/`, `release/`, `summarize/`); each skill dispatches `canonical/agents/*` sub-agents. See module-map.md "toolkit plane" + per-area script table. |
+| Pipeline + on-demand skills | `canonical/skills/<skill>/` (SKILL.md + references; installed as `.agents/skills/aid-*`) backed by per-area helper scripts under `canonical/aid/scripts/` (`config/`, `connectors/`, `execute/`, `housekeep/`, `kb/`, `migrate/`, `release/`, `summarize/`); each skill dispatches `canonical/agents/*` sub-agents. See module-map.md "toolkit plane" + per-area script table. |
 | Requirements-gathering deep dive | `/aid-describe`'s `references/` engine corpus (`elicitation-engine.md`, `move-playbook.md`, `calibration.md`, `advisor-stance.md`, `coherence-check.md`, `state-describe-seed.md`) + the `aid-housekeep` Conformance Lane. See module-map.md "aid-describe elicitation engine" + "Conformance Lane". |
 | Direct-entry shortcuts & Lite path | 34 thin `canonical/skills/aid-<verb>[-<artifact>]/SKILL.md` doorways + the `/aid-triage` router, all delegating to `canonical/aid/templates/shortcut-engine.md`; family scaffolding in `canonical/aid/templates/shortcut-scaffolding/<family>.md`; invocation catalog `canonical/aid/templates/shortcut-catalog.yml` (built into skill dirs by `generate-profile/scripts/build-shortcut-skills.py`). |
 | External connections & tool integrations | `.aid/connectors/` (descriptors + generated `INDEX.md` + git-ignored `.secrets/`), populated by `/aid-discover` ELICIT; backed by `canonical/aid/scripts/connectors/` (`connector-registry`, `build-connectors-index`, `connector-secret` bash+PowerShell twins) and the `canonical/aid/templates/connectors/preset-catalog.md` presets. See module-map.md "connectors". |
 | CLI installer (install/update/remove) | `bin/` entry point + `lib/aid-install-core.sh`; `install.sh` / `install.ps1`; the 5 install manifests. See module-map.md "distribution plane". |
 | Dashboard | `dashboard/server/` (multi-repo server) + `dashboard/reader/` (STATE.md parser). See module-map.md "observation plane". |
-| Multi-tool distribution | `canonical/` → `profiles/*` rendered by the `generate-profile` skill (`run_generator.py`) → `packages/npm` + `packages/pypi`. See module-map.md "render plane". |
+| Multi-tool distribution | `canonical/agents/` → `profiles/*` rendered by the `generate-profile` skill (`run_generator.py`); `canonical/skills/` and `canonical/aid/` shipped as one shared payload by `release.sh`; → `packages/npm` + `packages/pypi`. See module-map.md "render plane". |
 
 ## What AID does NOT do
 

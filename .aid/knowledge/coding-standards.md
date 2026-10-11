@@ -4,15 +4,15 @@ source: hand-authored
 objective: AID's own source-code conventions -- shell, PowerShell, Python, and JS/Node rules mined from the actual scripts, with project examples and the security conventions a contributor must honor.
 summary: Read this before writing or reviewing any AID script (Bash, PowerShell, Python, Node) to follow the project's real conventions for headers, error handling, naming, exit codes, cross-platform compatibility, and download integrity.
 sources:
-  - .claude/aid/scripts/config/read-setting.sh
-  - .claude/aid/scripts/execute/writeback-state.sh
-  - .claude/aid/scripts/kb/kb-citation-lint.sh
+  - canonical/aid/scripts/config/read-setting.sh
+  - canonical/aid/scripts/execute/writeback-state.sh
+  - canonical/aid/scripts/kb/kb-citation-lint.sh
   - lib/aid-install-core.sh
   - lib/AidInstallCore.psm1
   - .claude/skills/generate-profile/scripts/aid_profile.py
-  - .claude/aid/scripts/summarize/contrast-check.mjs
+  - canonical/aid/scripts/summarize/contrast-check.mjs
   - tests/canonical/ps51-compat-check.ps1
-  - .claude/aid/scripts/connectors/connector-secret.sh
+  - canonical/aid/scripts/connectors/connector-secret.sh
 tags: [C3, conventions, shell, powershell, python, javascript, security, exit-codes]
 see_also: [authoring-conventions.md, module-map.md, test-landscape.md]
 owner: architect

@@ -40,7 +40,6 @@ review-criteria:
 
 > **Source:** aid-discover (brownfield deep-dive — Integrator)
 > **Status:** Complete
-> **Last Updated:** 2026-07-09
 
 AID is a methodology delivered as a multi-profile CLI installer. It has no application
 backend and almost no network surface. Its integrations are of three kinds: **developer-side
@@ -75,7 +74,7 @@ loopback only.
 |-------------|------|-----------|-------------|-------|
 | git | version control | outbound (invokes) | Critical | branch isolation per delivery; release tagging; render-drift check |
 | GitHub `gh` CLI | release tooling | outbound | High | `release.sh` cuts/uploads releases; site fetches release data |
-| GitHub Releases | distribution | both | High | offline profile tarballs + `SHA256SUMS` |
+| GitHub Releases | distribution | both | High | offline shared payload, per-tool agent artifacts, CLI bundle + `SHA256SUMS` |
 | GitHub Actions | CI/CD | inbound (triggers) | High | five workflows: test, installer-tests, docs, release, coverage-parity |
 | npm registry | distribution | outbound (publish) | High | `aid-installer` package; `npm i -g` channel |
 | PyPI | distribution | outbound (publish) | High | `aid-installer` package; `pipx install` channel |
@@ -110,13 +109,13 @@ and PR-only rules — direct/force pushes to `master` are blocked.
 ## GitHub (gh CLI, Releases, Actions)
 
 **`gh` CLI (outbound).** `release.sh` uses `gh release view` (idempotency check),
-`gh release create`, and `gh release upload --clobber` to publish the five per-profile
-tarballs and `SHA256SUMS`. The site's `gen-reference.mjs` also shells out to `gh`. CONFIRMED:
+`gh release create`, and `gh release upload --clobber` to publish the release
+artifacts and `SHA256SUMS`. The site's `gen-reference.mjs` also shells out to `gh`. CONFIRMED:
 `release.sh` (`gh release create "${GH_ARGS[@]}"`); `site/scripts/gen-reference.mjs`.
 
-**GitHub Releases (distribution surface).** Profile tarballs (`aid-cli-v*.tar.gz` /
-per-profile bundles) plus a `SHA256SUMS` file are published per tag; the offline install path
-(`aid add <tool> --from-bundle <file.tar.gz>`) consumes them with no network after download.
+**GitHub Releases (distribution surface).** The shared payload (`aid-shared-v*.tar.gz`),
+the per-tool agent artifacts (`aid-<tool>-v*.tar.gz`), the CLI bundle (`aid-cli-v*.tar.gz`) and a `SHA256SUMS`
+file are published per tag; the offline install path (`aid add <tool> --from-bundle <path>`) consumes them with no network after download.
 CONFIRMED: `docs/aid-methodology.md` ("Offline / air-gapped environments");
 `docs/glossary.md` ("--from-bundle").
 
@@ -162,24 +161,27 @@ All four deliver an identical CLI; only the PATH-wiring method differs. CONFIRME
 
 ## Host AI-Tool Harnesses (the five profiles)
 
-AID's primary integration target is the host AI coding tool. The single canonical toolkit is
-rendered into five format-adapted install trees, one per host. Bodies are byte-identical
-across profiles; only the install root, context-file name, and agent format differ.
+AID's primary integration target is the host AI coding tool. The canonical agents are rendered into
+five format-adapted agent trees, one per host. Agent bodies are byte-identical across profiles; only the
+agent directory, the agent file format and the model names differ.
 
-| Profile | Install root | Context file | Agent format |
-|---------|--------------|--------------|--------------|
-| Claude Code | `.claude/` | `CLAUDE.md` | markdown |
-| Codex CLI | `.codex/` | `AGENTS.md` | TOML |
-| Cursor | `.cursor/` | `AGENTS.md` | markdown |
-| GitHub Copilot CLI | `.github/` | `AGENTS.md` | markdown |
-| Antigravity | `.agent/` | `AGENTS.md` | markdown |
+| Profile | Agent directory | Root context file | Agent format |
+|---------|-----------------|-------------------|--------------|
+| Claude Code | `.claude/agents/` (plus the `.claude/skills/` mirror) | `AGENTS.md` + `CLAUDE.md` import region | markdown |
+| Codex CLI | `.codex/agents/` | `AGENTS.md` | TOML |
+| Cursor | `.cursor/agents/` | `AGENTS.md` | markdown |
+| GitHub Copilot CLI | `.github/agents/` | `AGENTS.md` | markdown |
+| Antigravity | `.agent/agents/` | `AGENTS.md` | markdown |
+
+Every tool also installs the same shared skills under `.agents/skills/aid-*` and the same runtime under
+`.aid/runtime/`; neither is per-tool.
 
 CONFIRMED: `docs/aid-methodology.md` ("The Five Profiles"); `profiles/` (five subtrees +
 `<profile>.toml`); `docs/glossary.md` ("Install Profiles").
 
 Integration mechanics: `aid add <tool>` installs one profile per invocation
-(tool name given explicitly, or auto-detected when omitted). Root-agent files (`CLAUDE.md` for Claude Code; `AGENTS.md`
-for the other four) are updated **in place** inside the `AID:BEGIN/END` region — the installer
+(tool name given explicitly, or auto-detected when omitted). Root context: `AGENTS.md` carries the AID pointer region for every tool, and while
+Claude Code is installed `CLAUDE.md` carries the import region (`@AGENTS.md`). Both are updated **in place** inside the `AID:BEGIN/END` region — the installer
 replaces only the AID-managed region and preserves everything the user (or another tool)
 authored outside it, so multiple `AGENTS.md`-writing tools coexist in one file. There is no
 `.aid-new` sidecar and no protect-on-diff exit: the old `.aid-new` / exit-5 path was removed in
@@ -289,17 +291,16 @@ the interpreter on `127.0.0.1`. CONFIRMED: `bin/aid`
 This is the internal integration chain that turns the source of truth into shippable
 artifacts. Each arrow is a hard, verified hand-off.
 
-- **Render:** `run_generator.py` reads `canonical/` and `canonical/EMISSION-MANIFEST.md` and
-  renders the five `profiles/` trees per `profiles/*.toml`. CONFIRMED:
-  `.claude/skills/generate-profile/scripts/run_generator.py`;
-  `.claude/skills/generate-profile/scripts/render.py` (imports `EmissionManifest`).
+- **Render:** `run_generator.py` reads `canonical/agents/` and the `profiles/*.toml` files, and wipes and
+  regenerates the five `profiles/<tool>/` agent trees. Skills and runtime are not rendered. CONFIRMED:
+  `.claude/skills/generate-profile/scripts/run_generator.py`; `.claude/skills/generate-profile/scripts/render.py`.
 - **Verify:** a deterministic VERIFY gate re-renders into a scratch dir and byte-compares
   against the committed `profiles/`; any mismatch is a hard failure (also enforced as CI
   render-drift). CONFIRMED: `docs/aid-methodology.md` ("A VERIFY (deterministic) gate");
   `release.sh` ("render drift (git diff -- profiles/)").
 - **Vendor + publish:** `packages/npm/` and `packages/pypi/` vendor `bin/`, `lib/`, and
-  `dashboard/` and publish `aid-installer`; `release.sh` packages per-profile tarballs +
-  `SHA256SUMS` to GitHub Releases. CONFIRMED: `packages/npm/package.json` (`prepack` vendor);
+  `dashboard/` and publish `aid-installer`; `release.sh` packages the shared payload,
+  the per-tool agent artifacts and the CLI bundle with `SHA256SUMS` to GitHub Releases. CONFIRMED: `packages/npm/package.json` (`prepack` vendor);
   `release.sh`.
 - **Install:** `install.sh`/`install.ps1` (or the registry shims) put the persistent `aid`
   CLI on PATH; `aid add <tool>` copies a profile into the user project. CONFIRMED:
@@ -326,8 +327,8 @@ CONFIRMED by the cited sources above and the project release/install memory note
 
 > The structural shapes a change MUST satisfy at an integration boundary.
 
-- **Profile render contract:** for all five profiles the skill/agent *bodies* are
-  byte-identical; only install root, context-file name, and agent format vary. Any change must
+- **Profile render contract:** for all five profiles the agent *bodies* are
+  byte-identical; only the agent directory, the agent file format and the model names vary. Any change must
   go through `canonical/` + re-render; the VERIFY gate binds every profile consumer.
 - **Install-manifest contract:** the npm `files` list, the PyPI `artifacts`/wheel include, the
   `release.sh` tarball set, and `install.sh`/`install.ps1` must agree on the shipped file set
@@ -349,8 +350,9 @@ CONFIRMED by the cited sources above and the project release/install memory note
   (git, gh, npm, PyPI, GitHub Actions, the five host AI tools) is a CLI/library AID invokes;
   there is no inbound network surface except the loopback dashboard.
 - **Host tools are integrated by render, not adapter.** AID targets each of the five host AI
-  harnesses by rendering byte-identical skill/agent bodies into that tool's install tree (its
-  install root + context-file name + agent format); there is no per-tool runtime branching.
+  harnesses by rendering byte-identical agent bodies into that tool's agent directory, and by installing
+  the same shared skills and runtime for every tool. The only per-tool extras are the Claude Code skill
+  mirror and the `CLAUDE.md` import region.
 
 ---
 

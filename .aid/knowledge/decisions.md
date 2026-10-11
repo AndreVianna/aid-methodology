@@ -5,9 +5,9 @@ objective: The load-bearing design, process, and tooling decisions that shaped A
 summary: Read this to understand WHY AID is shaped the way it is — the deliberate trade-offs behind Discovery-first, deterministic grading, RAG-by-convention, the single-canonical-source render, the install-scope model, the direct-entry shortcut system, and more.
 sources:
   - docs/aid-methodology.md
-  - canonical/EMISSION-MANIFEST.md
+  - lib/aid-install-core.sh
   - bin/aid
-  - .claude/aid/templates/grading-rubric.md
+  - canonical/aid/templates/grading-rubric.md
   - README.md
 tags: [D, decisions, rationale, trade-offs, adr]
 see_also: [architecture.md, technology-stack.md, infrastructure.md]
@@ -29,7 +29,6 @@ review-criteria:
 
 > **Source:** aid-discover (Phase 1)
 > **Status:** Complete
-> **Last Updated:** 2026-07-09
 >
 > Each entry records: **what** was decided, **why**, the **rejected** alternatives (with
 > the reason), **status**, and **evidence**. Decisions grounded in design notes / the
@@ -45,8 +44,8 @@ review-criteria:
 - [D5 — Deterministic computed grade (not LLM-judged)](#d5--deterministic-computed-grade-not-llm-judged)
 - [D6 — Adversarial review separation (reviewer tier >= executor)](#d6--adversarial-review-separation-reviewer-tier--executor)
 - [D7 — Single canonical source rendered to five profiles + VERIFY gate](#d7--single-canonical-source-rendered-to-five-profiles--verify-gate)
-- [D8 — Emission-manifest format = JSON Lines](#d8--emission-manifest-format--json-lines)
-- [D9 — Pure-mirror deletion bounded by the manifest](#d9--pure-mirror-deletion-bounded-by-the-manifest)
+- [D8 — Install manifest records each shared entry once, with its users](#d8--install-manifest-records-each-shared-entry-once-with-its-users)
+- [D9 — Deletion bounded by the install manifest](#d9--deletion-bounded-by-the-install-manifest)
 - [D10 — Polyglot, dual-channel, zero-dependency distribution](#d10--polyglot-dual-channel-zero-dependency-distribution)
 - [D11 — Content isolation + in-place root-file markers](#d11--content-isolation--in-place-root-file-markers)
 - [D12 — CLI install scope: cwd-driven, no scan, CODE/STATE split](#d12--cli-install-scope-cwd-driven-no-scan-codestate-split)
@@ -79,11 +78,11 @@ review-criteria:
 | D2 | Discovery-first (knowledge before spec) | Accepted | `docs/aid-methodology.md` §2/§3 |
 | D3 | Spec-as-hypothesis + 11 feedback loops | Accepted | `docs/aid-methodology.md` §6 |
 | D4 | RAG by convention, no vector DB | Accepted | `docs/aid-methodology.md` §3 |
-| D5 | Deterministic computed grade | Accepted | `.claude/aid/templates/grading-rubric.md` |
+| D5 | Deterministic computed grade | Accepted | `canonical/aid/templates/grading-rubric.md` |
 | D6 | Reviewer tier >= executor, clean context | Accepted | `docs/aid-methodology.md` §5 |
-| D7 | One canonical source -> 5 profiles + VERIFY | Accepted | `canonical/EMISSION-MANIFEST.md` |
-| D8 | Emission manifest = JSONL | Accepted | `canonical/EMISSION-MANIFEST.md` |
-| D9 | Pure-mirror manifest-bounded deletion | Accepted | `canonical/EMISSION-MANIFEST.md` |
+| D7 | One canonical source -> 5 agent profiles + VERIFY; skills and runtime shipped verbatim | Accepted | `run_generator.py`, `release.sh` |
+| D8 | Install manifest records each shared entry once, with its users | Accepted | `lib/aid-install-core.sh` |
+| D9 | Deletion bounded by the install manifest | Accepted | `lib/aid-install-core.sh` |
 | D10 | Polyglot, dual-channel, zero-dep distribution | Accepted | `packages/*` manifests |
 | D11 | Content isolation + AID:BEGIN/END markers | Accepted (supersedes .aid-new) | `README.md` |
 | D12 | cwd-driven CLI, no scan, CODE/STATE split | Settled, partial impl | `bin/aid` (`AID_CODE_HOME` / `AID_STATE_HOME`) |
@@ -159,7 +158,7 @@ review-criteria:
   detection (same grade 3 cycles = systemic), and applies one rubric everywhere.
 - **Rejected:** Reviewer-assigned letter grade — rejected because it is non-reproducible and
   gameable; sentence-case (un-bracketed) tags are explicitly counted as zero to force the
-  machine-readable form. CONFIRMED `.claude/aid/templates/grading-rubric.md` (search: "Why
+  machine-readable form. CONFIRMED `canonical/aid/templates/grading-rubric.md` (search: "Why
   This Scale" and "producing a silent A+").
 - **Status:** Accepted.
 
@@ -176,36 +175,37 @@ review-criteria:
 
 ## D7 — Single canonical source rendered to five profiles + VERIFY gate
 
-- **What:** Author once in `canonical/`, render to five tool-specific `profiles/` trees with
-  byte-identical bodies (only model names + agent format differ), guarded by a deterministic
-  byte-compare VERIFY gate and a CI render-drift check.
-- **Why:** Five host tools must stay in lockstep; one source eliminates five-way divergence.
-- **Rejected:** Hand-maintaining per-tool copies — rejected implicitly by the "never edit
-  profiles/ directly" rule. CONFIRMED `docs/aid-methodology.md` (search: "single source of
-  truth — never edit profiles/ directly") + `run_generator.py`.
+- **What:** Author once in `canonical/`. The agents render to five tool-specific `profiles/<tool>/` trees with
+  byte-identical bodies (only model names and agent format differ), guarded by a deterministic byte-compare
+  VERIFY gate and a CI render-drift check. Skills and the runtime are never rendered: `release.sh` copies them
+  byte-for-byte from `canonical/` into one shared payload.
+- **Why:** Five host tools must stay in lockstep; one source eliminates five-way divergence. One shared skills
+  payload keeps the skills identical across tools without a per-tool copy.
+- **Rejected:** Hand-maintaining per-tool copies — rejected implicitly by the "never edit profiles/ directly"
+  rule. CONFIRMED `docs/aid-methodology.md` (search: "single source of truth — never edit profiles/ directly")
+  + `run_generator.py` + `release.sh` (`build_shared_payload`).
 - **Status:** Accepted.
 
-## D8 — Emission-manifest format = JSON Lines
+## D8 — Install manifest records each shared entry once, with its users
 
-- **What:** Record every emitted file (profile/src/dst/sha256) one-per-line in a `.jsonl`
-  manifest, sorted by `dst`, LF-only, with a `{"_manifest_version": 1}` sentinel.
-- **Why:** Streamable, greppable, diff-friendly, deterministic, and zero runtime dependency
-  (Python stdlib `json`).
-- **Rejected — with reasons stated in the doc:** **TOML** (verbose, no streaming, hard to
-  diff multi-line records); **YAML** (ordering/quoting ambiguity hurts determinism, anchors
-  add complexity); **SQLite** (binary, not diff-friendly, adds a runtime dependency, overkill).
-  CONFIRMED `canonical/EMISSION-MANIFEST.md` (search: "Rejected alternatives").
-- **Status:** Accepted.
+- **What:** The install manifest (`.aid/.aid-manifest.json`, format 3) records every shared entry (the
+  `.agents/skills/aid-*` skills, `.aid/runtime/`, each skill mirror, the `AGENTS.md` region and the `CLAUDE.md`
+  region) once, with the tools that use it, the AID version it was written at and the sha256 of each file.
+- **Why:** A shared entry is owned by no single tool, so one record with a `users` list is the only way uninstall
+  can remove it exactly once, after the last user leaves. Per-tool copies of the same skill tree would multiply
+  drift and size.
+- **Rejected:** A full manifest copy per tool — rejected because a skill shared by two tools would be removed
+  (or kept) by whichever tool is uninstalled first.
+- **Status:** Accepted. CONFIRMED `lib/aid-install-core.sh` (`install_shared`, `manifest_remove_tool`).
 
-## D9 — Pure-mirror deletion bounded by the manifest
+## D9 — Deletion bounded by the install manifest
 
-- **What:** On re-render, the generator deletes only paths in the previous manifest but absent
-  from the current (`removed_dst`); files outside any manifest are never touched.
-- **Why:** Self-cleaning installs/updates must prune renamed/dropped AID files without ever
-  risking user-authored files — the manifest is the authoritative safety boundary.
-- **Rejected:** Unbounded directory prune / "delete whatever isn't re-emitted" — rejected
-  because it could delete user content. CONFIRMED `canonical/EMISSION-MANIFEST.md` (search:
-  "Files outside any manifest").
+- **What:** The CLI deletes only files the install manifest records, plus unrecorded files under `.aid/runtime/`,
+  which the CLI owns. Non-`aid-*` entries in `.agents/skills/` and in each mirror are never read, written or pruned.
+- **Why:** Self-cleaning installs and updates must prune renamed or dropped AID files without ever risking
+  user-authored files — the manifest is the authoritative safety boundary.
+- **Rejected:** Unbounded directory prune / "delete whatever isn't re-emitted" — rejected because it could delete
+  user content. CONFIRMED `lib/aid-install-core.sh` (`prune_shared`, `drift_report`).
 - **Status:** Accepted.
 
 ## D10 — Polyglot, dual-channel, zero-dependency distribution
@@ -221,8 +221,8 @@ review-criteria:
 
 ## D11 — Content isolation + in-place root-file markers
 
-- **What:** Namespace all AID content (skills/agents carry `aid-` prefix; scripts/templates
-  live under an `aid/` subtree); update root context files (`CLAUDE.md`/`AGENTS.md`)
+- **What:** Namespace all AID content (skills and agents carry the `aid-` prefix; the runtime lives under
+  `.aid/runtime/`); update root context files (`CLAUDE.md`/`AGENTS.md`)
   in place only between `<!-- AID:BEGIN -->` / `<!-- AID:END -->` markers.
 - **Why:** AID content and user content must never collide, and `aid update` must be able to
   prune AID's own stale files in place with no risk to user files.
@@ -685,7 +685,7 @@ description-first TRIAGE-inside-`aid-describe` routing with its delivery/task `S
   There is also **no agent-facing `wait` verb at all**, and that one is not an omission for tidiness:
   blocking is the waker adapter's job, bounded by the host's own hook timeout, and an agent that could
   block on its own would hold a turn open past the point where the host stops listening.
-  Evidence: `canonical/skills/aid-chat/SKILL.md` and its five renders under `profiles/`;
+  Evidence: `canonical/skills/aid-chat/SKILL.md` (the one copy every tool installs from the shared payload);
   `tests/canonical/test-chat-node-wake.sh` (WK21–WK23); `tests/canonical/test-chat-node-hub.sh` (HP20).
 - **Why:** The dividing line is **whose state a verb changes**, not how dangerous it sounds.
   `register` and `rename` change the caller's own identity, and a session must be able to do both —
@@ -700,5 +700,5 @@ description-first TRIAGE-inside-`aid-describe` routing with its delivery/task `S
   became wrong the moment an operator legitimately needed the verb.
 - **Consequences:** Adding a chat verb means deciding which side of the line it falls on, and the
   guards make that decision explicit rather than incidental: the permitted list is asserted against the
-  canonical skill and all five renders, so a verb added to the skill without being added here fails.
+  canonical skill, so a verb added to the skill without being added here fails.
 

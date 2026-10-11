@@ -1,14 +1,15 @@
 ---
 kb-category: primary
 source: hand-authored
-objective: How the AID system is built and why it is shaped this way — its dual product/dogfood anatomy, the canonical→profiles→packages render-and-distribute architecture, and the six-phase gated process architecture (pipeline, skill state machines, agent dispatch).
+objective: How the AID system is built and why it is shaped this way — its dual product/dogfood anatomy, the canonical→profiles→release render-and-distribute architecture, and the six-phase gated process architecture (pipeline, skill state machines, agent dispatch).
 summary: Read this to understand HOW AID hangs together as both a runnable CLI installer and a process methodology — the boundaries, the source-of-truth flow, the pipeline, and the invariants a change must never break.
 sources:
   - docs/aid-methodology.md
   - canonical/
   - profiles/
   - .claude/skills/generate-profile/scripts/run_generator.py
-  - canonical/EMISSION-MANIFEST.md
+  - release.sh
+  - lib/aid-install-core.sh
   - README.md
 tags: [C1, architecture, pipeline, render-pipeline, state-machine, agent-dispatch, dogfood]
 see_also: [project-structure.md, technology-stack.md, decisions.md, module-map.md]
@@ -24,7 +25,6 @@ review-criteria: []  # nothing is true of this doc alone -- the global level and
 
 > **Source:** aid-discover (Phase 1)
 > **Status:** Complete
-> **Last Updated:** 2026-07-09
 
 ## Contents
 
@@ -73,17 +73,13 @@ no single coined token names it; it is the load-bearing shape of the whole repo.
 | Face | Where it lives | What it is |
 |------|----------------|-----------|
 | **Product** | `canonical/`, `profiles/`, `packages/`, `bin/`, `lib/`, `install.sh`, `install.ps1` | The installable AID toolkit + the CLI that installs it. |
-| **Dogfood** | `.claude/` (a rendered claude-code profile) + `.cursor/` (a rendered cursor profile) + `.aid/` (pipeline state + this Knowledge Base) | AID *installed into AID* — the maintainers use AID to build AID. |
+| **Dogfood** | The CLI-installed trees `.agents/skills/`, the `.claude/skills/` mirror, `.aid/runtime/`, `.claude/agents/` and `.cursor/agents/`, plus `.aid/` (pipeline state + this Knowledge Base) | AID *installed into AID* — the maintainers use AID to build AID. |
 
 CONFIRMED. `project-structure.md` (search: "The repo dogfoods itself") and
 `docs/aid-methodology.md` describe the dual nature; `.aid/settings.yml` records
 `project.type: brownfield`.
 
-**Consequence for any change:** the same logical file frequently exists in many physical
-copies — `canonical/` (the source) → five `profiles/` (rendered) → `.claude/` and `.cursor/` (the
-two dogfood renders) → `packages/npm/` and `packages/pypi/.../_vendor/` (vendored for publish). Editing
-a rendered or vendored copy is a defect; edit `canonical/` and re-render. CONFIRMED via
-`project-structure.md` (search: "Heavy, deliberate file duplication").
+**Consequence for any change:** the same logical file frequently exists in many physical copies -- `canonical/` (the source) → the release payload and the five `profiles/<tool>/` agent trees (rendered) → the dogfood installed trees (`.agents/skills/`, `.claude/skills/`, `.aid/runtime/`, `.claude/agents/`, `.cursor/agents/`) → `packages/npm/` and `packages/pypi/.../_vendor/` (vendored for publish). Editing an installed or vendored copy is a defect; edit `canonical/`, re-render, and resync the dogfood install. CONFIRMED via `project-structure.md` (search: "Heavy, deliberate file duplication").
 
 ---
 
@@ -94,11 +90,11 @@ The boundaries are not class/layer boundaries (this is not an OO app). They are
 
 | Boundary | Rule | Why it falls here |
 |----------|------|-------------------|
-| `canonical/` vs `profiles/` | `canonical/` is the only editable source; `profiles/` is generated build output. | One source compiled to five tool dialects keeps the five host tools in lockstep. |
+| `canonical/` vs `profiles/` | `canonical/` is the only editable source; `profiles/<tool>/` holds generated agent trees only. | One agent source rendered to five tool dialects keeps the five host tools in lockstep. Skills and runtime are never rendered; release.sh copies them verbatim. |
 | `profiles/` vs `packages/` | `packages/` vendors `bin/`, `lib/`, `dashboard/` for publication; it does not author logic. | Publication channels (npm/PyPI) wrap, never fork, the engine. |
-| Product (`canonical/`,`bin/`,`lib/`) vs Dogfood (`.aid/`,`.claude/`,`.cursor/`) | Dogfood state is real working state, never product source. | The repo eats its own cooking without contaminating the shipped artifact. |
+| Product (`canonical/`,`bin/`,`lib/`) vs Dogfood (`.aid/`,`.agents/`,`.claude/`,`.cursor/`) | Dogfood state is real working state, never product source. | The repo eats its own cooking without contaminating the shipped artifact. |
 | Executor agent vs Reviewer agent | The agent that writes never grades its own work; reviewer tier >= executor tier. | Adversarial separation is the quality mechanism (see Agent Dispatch). |
-| `.aid/knowledge/` (KB) vs `.aid/works/work-NNN-*/` (works) | The KB is shared, cross-work, living; a work is one scoped unit. | One KB, many works — institutional memory outlives any single work. |
+| `.aid/knowledge/` (KB) vs the tracked work folders (works) | The KB is shared, cross-work, living; a work is one scoped unit. | One KB, many works — institutional memory outlives any single work. |
 | `.aid/connectors/` (registry) vs host-tool config | The connectors registry is a CATALOG — it lists the connections available to a repo's agents and how to use them; it is not a connection manager and does not wire any host tool's config. | Host tools (Claude Code, Codex, Cursor, …) already own their own MCP servers and auth for what they provide; AID records only what it itself manages. |
 
 CONFIRMED. The canonical/profiles rule is stated in `docs/aid-methodology.md` (search:
@@ -110,55 +106,67 @@ connectors catalog model in `canonical/skills/aid-discover/references/state-elic
 
 ---
 
-## Build & Distribute Architecture (canonical -> profiles -> packages)
+## Build & Distribute Architecture (canonical -> payload -> profiles -> release)
 
 This is the architecture that makes AID a *product*. It is a SYNTHESIS concept — a
-"render-and-vendor compile pipeline" — spread across several files with no single token.
+"render-and-release pipeline" — spread across several files with no single token.
 
 **The flow:**
 
-1. `canonical/` holds the single source: `skills/` (111), `agents/` (9),
-   `aid/{scripts,templates}`. CONFIRMED via directory listing.
-2. `python .claude/skills/generate-profile/scripts/run_generator.py` renders the source
-   into the five `profiles/*` install trees, one per `profiles/*.toml`. CONFIRMED in
-   `run_generator.py` (search: "render all profiles from canonical, then verify").
-3. Each render is bounded by a per-profile **emission manifest**
-   (`<profile>/emission-manifest.jsonl`) — a JSONL list of every emitted file with its
-   sha256. The diff of the previous vs current manifest is the *only* set of paths the
-   generator may delete (pure-mirror deletion). CONFIRMED in `canonical/EMISSION-MANIFEST.md`
-   (search: "authoritative safety boundary").
-4. A **VERIFY (deterministic)** gate re-renders into scratch and byte-compares against the
-   committed trees; any mismatch is a hard failure. CONFIRMED in `run_generator.py`
-   (search: "VERIFY (deterministic): PASS") and `docs/aid-methodology.md` (search: "A
-   VERIFY (deterministic) gate re-renders all five profiles").
-5. CI enforces the boundary: the `render-drift` job re-runs the generator and fails if
-   `profiles/` has uncommitted drift. CONFIRMED in `.github/workflows/test.yml` (search:
-   "profiles/ is out of sync with canonical/").
-6. `packages/npm/` and `packages/pypi/` vendor `bin/`, `lib/`, `dashboard/` (via
-   `scripts/vendor.js` / `scripts/vendor.py`) and publish the same `aid` CLI. CONFIRMED in
-   `packages/npm/package.json` (search: "prepack") and `packages/pypi/pyproject.toml`
-   (search: "tool.hatch.build.hooks.custom").
+1. `canonical/` holds the single source: `skills/` (111 skill directories), `agents/` (9 agent
+   directories) and `aid/{scripts,templates,rules.md}`. CONFIRMED via directory listing.
+2. `python .claude/skills/generate-profile/scripts/run_generator.py` renders the agents into the five
+   `profiles/<tool>/` trees, one per `profiles/*.toml`. Each tree is wiped and regenerated in full on
+   every run; the generator renders agents only. A profile TOML keeps only per-tool data: the agent
+   root directory, the root-file selection, agent tool names, `[model_tiers]`, `[capabilities]` and the
+   skill-mirror list. CONFIRMED in `run_generator.py` (`shutil.rmtree` of each profile output, then
+   `render_profile`).
+3. The same run then executes VERIFY (deterministic), a byte-compare re-render, and VERIFY (advisory),
+   and resyncs this repo's own install through the CLI (`sync_dogfood.py`). CONFIRMED in
+   `run_generator.py`.
+4. `bash release.sh` packages the release, with `SHA256SUMS` covering every artifact:
+   - `aid-shared-v<V>.tar.gz`: `skills/` (copied from `canonical/skills/`) and `runtime/` (copied from
+     `canonical/aid/`, `rules.md` included), plus `aid-payload.conf`. One payload serves every tool.
+   - `aid-<tool>-v<V>.tar.gz`, one per tool (five): `aid-tool.conf` and the `<root>/agents/` tree of that
+     profile. No per-tool artifact holds skills or runtime.
+   - `aid-cli-v<V>.tar.gz`: the CLI (`bin/`, `lib/`).
+   Artifacts keep plain names with no wrapper directory. CONFIRMED in `release.sh`
+   (`build_shared_payload`, `build_tool_artifact`).
+5. `release.sh --stage-only --out <dir>` stages the same artifacts from the working tree, skipping the
+   clean-tree, tag, render, render-drift and network checks. `tests/lib/bundle.sh`
+   (`aid_test_stage_bundle`) uses it to build hermetic test bundles, and the dogfood resync installs
+   from the same staging. CONFIRMED in the `release.sh` header and `sync_dogfood.py` header.
+6. CI enforces the boundary: the `render-drift` job re-runs the generator and fails if `profiles/` has
+   uncommitted drift. CONFIRMED in `.github/workflows/test.yml` (search: "profiles/ is out of sync with canonical/").
+7. `packages/npm/` and `packages/pypi/` vendor `bin/`, `lib/`, `dashboard/` (via `packages/npm/scripts/vendor.js` /
+   `packages/pypi/scripts/vendor.py`) and publish the same `aid` CLI. CONFIRMED in `packages/npm/package.json` (search:
+   "prepack") and `packages/pypi/pyproject.toml` (search: "tool.hatch.build.hooks.custom").
 
-**Render output shape** (per `canonical/EMISSION-MANIFEST.md`, "Asset Kinds"):
+**Installed shape.** This is what `aid add` places in a user repo. This repo's dogfood install has the
+same shape, and `.aid/.aid-manifest.json` (format 3) records every entry.
 
-| Canonical source | Rendered destination (per profile root) |
-|------------------|-----------------------------------------|
-| `canonical/agents/<a>/AGENT.md` | `<root>/agents/aid-<a>.md` (markdown) OR `<root>/agents/*.toml` (Codex) |
-| `canonical/skills/` | `<root>/skills/` |
-| `canonical/aid/scripts/` | `<root>/aid/scripts/` |
-| `canonical/aid/templates/` | `<root>/aid/templates/` |
+| Installed path | Comes from | Placed for |
+|----------------|------------|------------|
+| `.agents/skills/aid-*/` | `aid-shared` `skills/` | every tool |
+| `canonical/skills/aid-*/` (byte-identical mirror) | `aid-shared` `skills/` | Claude Code, whose profile declares the mirror |
+| `.aid/runtime/scripts/`, `.aid/runtime/templates/`, `.aid/runtime/rules.md` | `aid-shared` `runtime/` | every tool |
+| `.aid/runtime/host.conf` | written by the CLI (worktree root for this host) | every tool |
+| `aid-*` agent files under the tool root (`.claude/agents/`, `.codex/agents/`, `.cursor/agents/`, `.github/agents/`, `.agent/agents/`) | that tool's artifact | that tool |
+| `AGENTS.md`: `AID:BEGIN`/`AID:END` region whose body points at `.aid/runtime/rules.md` | CLI | every tool |
+| `CLAUDE.md`: `AID:BEGIN`/`AID:END` region whose only content is `@AGENTS.md` | CLI | Claude Code only |
 
-The five profile roots: `.claude/` (Claude Code), `.codex/` (Codex), `.cursor/` (Cursor),
-`.github/` (Copilot CLI), `.agent/` (Antigravity). CONFIRMED in `docs/aid-methodology.md`
-(search: "The Five Profiles") and `profiles/*.toml`.
+**Lifecycle rules** (implemented in `lib/aid-install-core.sh`: `install_shared`, `manifest_remove_tool`,
+`prune_shared`, `drift_report`):
 
-**Note:** the generator/`generate-profile` skill is **maintainer-only** — it lives in
-`.claude/skills/generate-profile/` and is NOT one of the 111 shipped user-facing skills in
-`canonical/skills/`. CONFIRMED: `canonical/skills/` contains 111 dirs, none named
-`generate-profile`.
-
----
-
+- **Shared entries are reference-counted.** Each shared entry (the skills, the runtime, each mirror, the
+  `AGENTS.md` region, the `CLAUDE.md` region) records the tools that use it, the AID version it was written
+  at and the sha256 of each file. `aid remove <tool>` removes that tool's own files and its name from every
+  entry's user list; an entry is removed only when that list is empty.
+- **Drift is detected and repaired.** `aid status` reports each modified, missing or extra `aid-*` file by
+  path, and compares each mirror with `.agents/skills/`. `aid add` and `aid update` repair drift by moving
+  the drifted file to `.aid/.trash/<original path>` and rewriting it from the verified payload.
+- **One AID version per repo.** The manifest carries one top-level `aid_version`, and `aid update` moves
+  every installed tool to it together.
 ## Process Architecture: The Six-Phase Pipeline
 
 AID's other architecture is a **process**: a linear, human-gated pipeline of phases with
@@ -304,7 +312,7 @@ concept, "human-gated phase advancement"; see Invariants).
   `canonical/skills/aid-discover/SKILL.md` (search: "State-machine: ELICIT → GENERATE → REVIEW
   → Q-AND-A → FIX → APPROVAL → DONE").
 - State machines are *chained* across skills (a DONE state hands off to the next skill).
-  CONFIRMED via `.claude/aid/templates/state-machine-chaining.md`.
+  CONFIRMED via `canonical/aid/templates/state-machine-chaining.md`.
 - Trivial state/arg work is done in SKILL.md prose, not bash. Only non-trivial,
   reused, deterministic operations are extracted to `canonical/aid/scripts/` (grouped by
   phase: `kb/`, `execute/`, `housekeep/`, `connectors/`, `summarize/`, `release/`,
@@ -383,22 +391,24 @@ There is no single request flow. The three load-bearing flows are:
 **1. Render flow (build the product):**
 ```
 canonical/ (edit here)
-  -> run_generator.py  (render per profiles/*.toml)
-  -> profiles/<tool>/  (+ emission-manifest.jsonl per profile)
+  -> run_generator.py  (wipe and regenerate profiles/<tool>/ agent trees, per profiles/*.toml)
   -> VERIFY (deterministic) byte-compare gate
+  -> release.sh  (aid-shared: skills/ + runtime/; aid-<tool>: agents; aid-cli; SHA256SUMS)
   -> packages/{npm,pypi} vendor + publish
 ```
-CONFIRMED in `run_generator.py` and `docs/aid-methodology.md` "The build pipeline".
+CONFIRMED in `run_generator.py`, `release.sh` and `docs/aid-methodology.md` "The build pipeline".
 
 **2. Install flow (get AID into a user repo):**
 ```
-curl|bash install.sh  (or irm|iex install.ps1, or npm i -g, or pipx install)
+curl|bash install.sh  (or irm|iex install.ps1, npm i -g, or pipx install)
   -> bootstraps the persistent `aid` CLI (~/.aid or %LOCALAPPDATA%\aid)
   -> `aid add <tool>` in a repo
-  -> lib/aid-install-core.sh copies the rendered profile into .claude/ | .codex/ | .cursor/ | .github/ | .agent/
-  -> writes/updates the root context file (CLAUDE.md or AGENTS.md, in-place between AID:BEGIN/END markers)
+  -> fetches aid-shared-v<V> and aid-<tool>-v<V>, verified against SHA256SUMS
+  -> lib/aid-install-core.sh places .agents/skills/aid-*, the Claude Code .claude/skills mirror,
+     .aid/runtime/, the tool's agents, the AGENTS.md region and (Claude Code only) the CLAUDE.md region
+  -> records the install in .aid/.aid-manifest.json (format 3, shared entries with users and sha256)
 ```
-CONFIRMED in `README.md` "Install" and `docs/aid-methodology.md` §10.
+CONFIRMED in `README.md` "Install", `docs/aid-methodology.md` §10 and `lib/aid-install-core.sh`.
 
 **3. Pipeline flow (use AID on a project):**
 ```
@@ -408,7 +418,7 @@ CONFIRMED in `README.md` "Install" and `docs/aid-methodology.md` §10.
        lite  : /aid-<verb>[-<artifact>] shortcut -> shortcut engine
                  (INTAKE -> CAPTURE -> SPEC -> PLAN -> DETAIL -> GATE -> APPROVAL-HALT)
        unsure: /aid-triage -> suggests one of the two above (runs nothing itself)
-  -> work in .aid/works/work-NNN-*/  -> approval halt -> /aid-execute   (numbered sequence ends here)
+  -> work in its tracked work folder  -> approval halt -> /aid-execute   (numbered sequence ends here)
   separate on-demand paths (own entry, not sequential): /aid-deploy, /aid-monitor
        (Monitor: bug -> /aid-fix; change request -> /aid-triage)
   (any phase -> Q&A entry in a STATE.md -> targeted re-discovery)
@@ -446,25 +456,22 @@ Documented as reality + flagged; NOT silently reconciled (see `.scout-questions.
    `tests/canonical/test-doc-counts.sh` re-derives the figures from `canonical/skills/`,
    `canonical/agents/` and `canonical/aid/templates/shortcut-catalog.yml`, then asserts every
    public-facing surface against them on each CI run. The prior 12-/13-/14-skill drift is resolved.
-2. **EMISSION-MANIFEST.md lists 3 profiles, reality is 5.** `canonical/EMISSION-MANIFEST.md`
-   tables enumerate only claude-code/codex/cursor; the live generator globs all five
-   `profiles/*.toml` (copilot-cli and antigravity were added later). The doc predates two
-   profiles. Logged as Q6. UNCERTAIN whether the design spec should be refreshed (a
-   tech-writer task, out of scope for discovery).
-
 ---
 
 ## Invariants
 
 What a change must never break (each stated as a hard rule + where enforced):
 
-- **Single source of truth:** AID content MUST be edited in `canonical/` only; `profiles/`
-  is generated. Enforced by the `render-drift` CI job (`.github/workflows/test.yml`, search:
+- **Single source of truth:** AID content MUST be edited in `canonical/` only. The `profiles/<tool>/` agent
+  trees are generated, and the installed skills, runtime and mirrors are copies of `canonical/` that only
+  the CLI writes. Enforced by the `render-drift` CI job (`.github/workflows/test.yml`, search:
   "profiles/ is out of sync with canonical/") and the VERIFY byte-compare gate.
-- **Pure-mirror deletion boundary:** the generator MUST delete only paths present in the
-  previous emission manifest but absent from the current one; files outside any manifest are
-  never touched. Enforced in `run_generator.py` + `canonical/EMISSION-MANIFEST.md` (search:
-  "Files outside any manifest").
+- **Deletion boundary:** the generator wipes only the `profiles/<tool>/` trees it renders, and the CLI
+  prunes only files its install manifest records (`.aid/.aid-manifest.json`). Non-`aid-*` entries in
+  `.agents/skills/` and in each mirror are never read, written or pruned. The one exception is
+  `.aid/runtime/`, which the CLI owns: an unrecorded file there is pruned, except the runtime-local paths
+  (`node_modules/` under `.aid/runtime/`). Enforced in `run_generator.py` and `lib/aid-install-core.sh`
+  (`prune_shared`).
 - **Reviewer tier >= executor tier; writer never grades own work.** Enforced by skill
   dispatch and stated in `docs/aid-methodology.md` (search: "never grades its own work").
 - **Human-gated advancement:** the pipeline MUST NOT auto-advance; the human approves every
@@ -472,21 +479,24 @@ What a change must never break (each stated as a hard rule + where enforced):
   `docs/aid-methodology.md` (search: "The pipeline never auto-advances").
 - **Deterministic grade:** the letter grade MUST be computed by `grade.sh` from bracketed
   severity tags, never hand-picked by the reviewer. Enforced in
-  `.claude/aid/scripts/grade.sh` + `.claude/aid/templates/grading-rubric.md`.
+  `canonical/aid/scripts/grade.sh` + `canonical/aid/templates/grading-rubric.md`.
 - **Forward-authored design is never auto-overwritten:** a greenfield `source: forward-authored`
   KB doc is the design contract; the `/aid-housekeep` Conformance Lane FLAGS code↔design
   divergence for human reconciliation but never rewrites the doc from as-built code (authority
   stays design -> code). Enforced in
   `canonical/skills/aid-housekeep/references/state-kb-delta.md` (search: "flag, never overwrite").
-- **Content isolation:** all AID-delivered content MUST be namespaced (skills/agents carry
-  the `aid-` prefix; scripts/templates live under an `aid/` subtree); root context
-  files are updated in-place only between `<!-- AID:BEGIN -->` / `<!-- AID:END -->` markers.
-  Enforced by the installer + manifests. `README.md` (search: "Content isolation").
+- **Content isolation:** all AID-delivered content MUST be namespaced. Skills are `aid-*` directories under
+  `.agents/skills/` and under each declared skill mirror (`.claude/skills/`); the runtime lives under
+  `.aid/runtime/`; agent files carry the `aid-` prefix inside each tool's agents directory. Root files are
+  updated in place only between `<!-- AID:BEGIN -->` / `<!-- AID:END -->` markers: the `AGENTS.md` pointer
+  region for every tool (the rules live in `.aid/runtime/rules.md`) and, while Claude Code is installed,
+  the `CLAUDE.md` region, which holds only `@AGENTS.md`. Enforced by the installer and manifests, by the
+  content-isolation checks in `canonical/agents/aid-reviewer/AGENT.md`, and by `tests/canonical/test-multitool-isolation.sh`.
 - **Version lockstep:** the single `VERSION` string MUST stay in sync across
   `packages/npm/package.json`, `packages/pypi/pyproject.toml`, and the `aid_version` key in
   `.aid/.aid-manifest.json` (see `VERSION` for the current value; the standalone
   `.aid/.aid-version` marker file is retired). Enforced by
-  `.claude/aid/scripts/release/check-version-sync.sh`.
+  `canonical/aid/scripts/release/check-version-sync.sh`.
 - **Polyglot parity:** behavior implemented in Bash (`lib/aid-install-core.sh`) MUST match
   the PowerShell equivalent (`lib/AidInstallCore.psm1`). Enforced by
   `tests/canonical/test-aid-cli-parity.sh`. The same parity rule binds the dashboard's
@@ -508,20 +518,33 @@ What a change must never break (each stated as a hard rule + where enforced):
 
 Non-obvious traps a change will trip (cannot be inferred from the code alone):
 
-- **Editing a rendered/vendored copy does nothing.** The same file exists in `canonical/`,
-  five `profiles/`, the two dogfood trees `.claude/` and `.cursor/`, and both
-  `packages/.../_vendor/`. Edit `canonical/` then run
-  `run_generator.py`; otherwise CI `render-drift` fails or your change is silently
-  overwritten on next render. CONFIRMED `project-structure.md` "Heavy, deliberate file
-  duplication".
+- **Editing an installed or vendored copy does nothing.** The same file exists in `canonical/`, in the
+  release payload, in `profiles/<tool>/` (agents only), in the dogfood installed trees (`.agents/skills/`,
+  `.claude/skills/`, `.aid/runtime/`, `.claude/agents/`, `.cursor/agents/`) and in `packages/.../_vendor/`.
+  Edit `canonical/`, run `run_generator.py` for any agent change, and resync the dogfood install. An edit
+  made directly in an installed copy is moved to `.aid/.trash/` by the next `aid update`, and an edit made
+  in a profile tree is overwritten by the next generator run and fails CI `render-drift`. CONFIRMED
+  `project-structure.md` "Heavy, deliberate file duplication".
 - **After any `canonical/` edit, run the FULL `run_generator.py`** — not a per-script
-  renderer — or CI render-drift fails on stale emission manifests. (Project memory:
+  renderer — or CI render-drift fails on a stale profile tree. (Project memory:
   render-drift-full-generator.)
-- **INDEX.md is generated.** Never hand-edit `.aid/knowledge/INDEX.md`; regenerate via
-  `canonical/aid/scripts/kb/build-kb-index.sh` (not the `.claude/` copy) or the KB-hygiene CI
-  check fails on the embedded script path.
+- **INDEX.md is generated.** Never hand-edit `.aid/knowledge/INDEX.md`; regenerate it with
+  `bash .aid/runtime/scripts/kb/build-kb-index.sh --root .aid/knowledge --output .aid/knowledge/INDEX.md`.
+  The `canonical/aid/scripts/kb/` copy embeds the same path, so either copy regenerates the same file. The
+  KB-hygiene CI check fails when the committed INDEX.md is stale.
 - **The 5 install manifests must move in lockstep on the dashboard file set** — npm, pypi,
   and the three vendored copies; dropping one file from one manifest ships a broken install.
+- **Worktree root is per host.** No skill names a worktree root. `worktree-lifecycle.sh` reads
+  `worktree_root` from `.aid/runtime/host.conf`: `.claude/worktrees/` while Claude Code is installed (its
+  worktree tool only switches between worktrees under that folder), otherwise `.aid/.worktrees/`. The
+  neutral root is covered by the `.gitignore` managed block.
+- **Installed skills and runtime need LF.** The CLI keeps a managed `.gitattributes` block that forces LF on
+  `.agents/skills/aid-*/**` and `.aid/runtime/**`. Without it, a `core.autocrlf=true` checkout turns every
+  installed file modified and breaks the `.sh` runtime.
+- **Old layouts do not mix.** `aid add` refuses a repo that holds v3 legacy evidence and points to
+  `aid update`, which runs a clean-slate upgrade: the old AID paths move to `.aid/.trash/`. A CLI from before
+  the shared layout cannot drive the shared layout, so the release notes name the CLI version each release
+  requires.
 - **`generate-profile` is maintainer-only** and lives only in `.claude/skills/` — do not look
   for it in `canonical/skills/` (the 111 shipped skills).
 - **Heavy CI gates run only on `master`** (tests/run-all.sh + the Astro site build); feature
