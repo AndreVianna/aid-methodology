@@ -118,7 +118,7 @@ phase: Execute
 # [W] aid-{skill} | none
 active_skill: aid-execute
 # [W]
-updated: '2026-10-11T07:26:08Z'
+updated: '2026-10-11T07:26:57Z'
 # [W] set only when lifecycle = Paused-Awaiting-Input
 pause_reason: --
 # [W] set only when lifecycle = Blocked
@@ -660,6 +660,11 @@ lifecycle_history:
     grade: --
     notes: '/aid-execute Codex'
 
+  - date: '2026-10-11'
+    event: 'Wave7 Sol independent recheck PASS A+: both MEDIUM findings Fixed. Prune9/9 plus original offline fixture now trashes canonical stray; host, node_modules/user skills and managed-block idempotence remain correct. Task010 Done, waves1-7 complete (12/32). Next wave8 sequential task012 removal then task022 CLI worktree tests; PS runtime deferred.'
+    grade: --
+    notes: '/aid-execute Codex'
+
 deploy: []
 
 # [A] flattened only; single writer: this work's active branch. Written by
@@ -825,7 +830,7 @@ tasks_lifecycle:
         outcome: 'Task009 Luna correction e43e8416b committed: PowerShell Claude import path and fallback host metadata now use interpolated TSV tabs; adjacent new records inspected with no remaining single-quoted tab escapes. ASCII29 and diff pass. In Review for independent Sol wave6 recheck; PS runtime deferred.'
 
   task-010:
-    state: 'In Review'
+    state: Done
     review: --
     elapsed: --
     notes: --
