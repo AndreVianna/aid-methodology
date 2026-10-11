@@ -6,14 +6,14 @@ maintainer approved execution. Current phase `Execute`, lifecycle `Running`.
 
 ## Current execution checkpoint
 
-Wave11 complete: Sol independently marked all six findings Fixed with original cells preserved, no new scoped findings, grade A+. Recovery failed-stamp retry and exact cursor set pass; suite selectors and live manifest control pass. Tasks015/017/018 Done,19/32 total. PS runtime/full gates remain deferred.
+Wave12 begins sequential Luna task019 CLI suite rekey plus skew/detection/bare-project/cache regressions. Wave11 complete A+;19/32 Done. Focused checks only, PS runtime/full gates deferred.
 
 - Done (19/32): task-001, task-002, task-003, task-004, task-005, task-006, task-007, task-008, task-009, task-010, task-011, task-012, task-013, task-014, task-015, task-016, task-017, task-018, task-022.
-- In Progress: none.
+- In Progress: task-019.
 - In Review: none.
 - Failed/Blocked: none.
-- Pending: task-019, task-020, task-021, task-023, task-024, task-025, task-026, task-027, task-028, task-029, task-030, task-031, task-032.
-- Current wave: 11 of 15. Derive authoritative waves from task dependency headers.
+- Pending: task-020, task-021, task-023, task-024, task-025, task-026, task-027, task-028, task-029, task-030, task-031, task-032.
+- Current wave: 12 of 15. Derive authoritative waves from task dependency headers.
 - Execution commits are on the delivery branch; `work-001` holds pre-execution planning.
 - Wave ledgers: `review-ledgers/execute-wave-N.md`; each preserves unresolved/Accepted findings.
 - Wave-1 Accepted item: Bash `_v3_quote` versus Python `json.dump` non-ASCII escaping; recheck at final review.

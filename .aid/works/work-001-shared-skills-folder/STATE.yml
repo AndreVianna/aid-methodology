@@ -118,7 +118,7 @@ phase: Execute
 # [W] aid-{skill} | none
 active_skill: aid-execute
 # [W]
-updated: '2026-10-11T16:23:39Z'
+updated: '2026-10-11T16:23:41Z'
 # [W] set only when lifecycle = Paused-Awaiting-Input
 pause_reason: --
 # [W] set only when lifecycle = Blocked
@@ -850,6 +850,11 @@ lifecycle_history:
     grade: --
     notes: '/aid-execute Codex'
 
+  - date: '2026-10-11'
+    event: 'Wave12 begins sequential Luna task019 CLI suite rekey plus skew/detection/bare-project/cache regressions. Wave11 complete A+;19/32 Done. Focused checks only, PS runtime/full gates deferred.'
+    grade: --
+    notes: '/aid-execute Codex'
+
 deploy: []
 
 # [A] flattened only; single writer: this work's active branch. Written by
@@ -1198,7 +1203,7 @@ tasks_lifecycle:
         outcome: 'Task018 row5/6 correction29f1d1ae6 declares durable COVERS sources and asserts actual readable manifest. Selector1/1 and absent/present controls pass; syntax/diff pass. All wave11 corrections committed and pushed, ready for original Sol recheck.'
 
   task-019:
-    state: Pending
+    state: 'In Progress'
     review: --
     elapsed: --
     notes: --
