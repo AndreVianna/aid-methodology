@@ -118,7 +118,7 @@ phase: Execute
 # [W] aid-{skill} | none
 active_skill: aid-execute
 # [W]
-updated: '2026-10-11T06:03:34Z'
+updated: '2026-10-11T06:04:11Z'
 # [W] set only when lifecycle = Paused-Awaiting-Input
 pause_reason: --
 # [W] set only when lifecycle = Blocked
@@ -545,6 +545,11 @@ lifecycle_history:
     grade: --
     notes: '/aid-execute Codex'
 
+  - date: '2026-10-11'
+    event: 'Sol wave3 scoped verification PASS; mirror-rule row1 Fixed, ledgerA+. Task003 Done. Wave4 begins sequential task007 release artifacts then task016 source invariants; wave4 Sol check follows both.'
+    grade: --
+    notes: '/aid-execute Codex'
+
 deploy: []
 
 # [A] flattened only; single writer: this work's active branch. Written by
@@ -578,7 +583,7 @@ tasks_lifecycle:
     notes: --
     display_name: --
   task-003:
-    state: 'In Review'
+    state: Done
     review: --
     elapsed: --
     notes: --
@@ -647,7 +652,7 @@ tasks_lifecycle:
         outcome: 'committed ed2db382e; 2 recovery-stamp fixtures and ASCII passed'
 
   task-007:
-    state: Pending
+    state: 'In Progress'
     review: --
     elapsed: --
     notes: --

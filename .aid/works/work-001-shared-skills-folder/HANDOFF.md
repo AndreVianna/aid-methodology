@@ -6,14 +6,14 @@ maintainer approved execution. Current phase `Execute`, lifecycle `Running`.
 
 ## Current execution checkpoint
 
-Task003 mirror exception corrected and pushed in 37bf911f8 (canonical reviewer + five renders); deterministic generator PASS. In Review for Sol scoped recheck of execute-wave-3 row1. Wave4 not started; sync rewrite still task027.
+Waves1-3 complete: 7/32 tasks Done. Wave3 mirror exception independently verified Fixed (A+ wave ledger). Task007 now In Progress, packaging shared payload + five agents-only artifacts; task016 follows for source-invariant tests. Full checks remain deferred031, dogfood sync rewrite027, PowerShell runtime deferred.
 
-- Done (6/32): task-001, task-002, task-004, task-005, task-006, task-011.
-- In Progress: none.
-- In Review: task-003.
+- Done (7/32): task-001, task-002, task-003, task-004, task-005, task-006, task-011.
+- In Progress: task-007.
+- In Review: none.
 - Failed/Blocked: none.
-- Pending: task-007, task-008, task-009, task-010, task-012, task-013, task-014, task-015, task-016, task-017, task-018, task-019, task-020, task-021, task-022, task-023, task-024, task-025, task-026, task-027, task-028, task-029, task-030, task-031, task-032.
-- Current wave: 3 of 15. Derive authoritative waves from task dependency headers.
+- Pending: task-008, task-009, task-010, task-012, task-013, task-014, task-015, task-016, task-017, task-018, task-019, task-020, task-021, task-022, task-023, task-024, task-025, task-026, task-027, task-028, task-029, task-030, task-031, task-032.
+- Current wave: 4 of 15. Derive authoritative waves from task dependency headers.
 - Execution commits are on the delivery branch; `work-001` holds pre-execution planning.
 - Wave ledgers: `review-ledgers/execute-wave-N.md`; each preserves unresolved/Accepted findings.
 - Wave-1 Accepted item: Bash `_v3_quote` versus Python `json.dump` non-ASCII escaping; recheck at final review.
