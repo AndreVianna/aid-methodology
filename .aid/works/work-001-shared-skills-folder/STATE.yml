@@ -118,7 +118,7 @@ phase: Execute
 # [W] aid-{skill} | none
 active_skill: aid-execute
 # [W]
-updated: '2026-10-11T15:11:49Z'
+updated: '2026-10-11T15:16:24Z'
 # [W] set only when lifecycle = Paused-Awaiting-Input
 pause_reason: --
 # [W] set only when lifecycle = Blocked
@@ -750,6 +750,11 @@ lifecycle_history:
     grade: --
     notes: '/aid-execute Codex'
 
+  - date: '2026-10-11'
+    event: 'Wave10 Sol review: HIGH Pending PowerShell update-finalize omits required post-manifest cleanup/config; MEDIUM Pending both dry-run plans omit agent trash and skill/agent prune while falsely pruning generated host.conf. Bash immutable dryrun probe confirms planning defect. Update-all cache AC independently PASS with two Cursor projects, shared/tool fetched once and child fromcache exit0. Task014 In Progress for first Luna correction; task015 pending, PS runtime deferred.'
+    grade: --
+    notes: '/aid-execute Codex'
+
 deploy: []
 
 # [A] flattened only; single writer: this work's active branch. Written by
@@ -991,7 +996,7 @@ tasks_lifecycle:
         outcome: 'Task013 Luna correctiondff0c7d9a committed: recorded runtime node_modules excluded before existence/hash checks in both twins; extras include plain aid-* files and unrecorded/empty namespaces; drift block includes Shared files heading. Expanded offline fixture/syntax/diff/ASCII29 pass. In Review for independent Sol wave9 recheck; PS runtime deferred.'
 
   task-014:
-    state: 'In Review'
+    state: 'In Progress'
     review: --
     elapsed: --
     notes: --

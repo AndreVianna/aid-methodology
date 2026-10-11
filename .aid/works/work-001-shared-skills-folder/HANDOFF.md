@@ -6,11 +6,11 @@ maintainer approved execution. Current phase `Execute`, lifecycle `Running`.
 
 ## Current execution checkpoint
 
-Task014 committedd7555101c: staged all-tool shared updates, recovery placeholder/refusals and update-all shared cache fetch. Focused Bash fixtures pass union/version, clean upgrade/drift repair+trash, protected runtime/prune/status, user import, full-tree/trash idempotence, dry-run copy/trash/prune read-only and future/legacy refusals; syntax/ASCII29/diff pass. In Review for Sol wave10; update-all cache execution still unverified and needs focused check. PS runtime and broad gates deferred.
+Wave10 Sol review: HIGH Pending PowerShell update-finalize omits required post-manifest cleanup/config; MEDIUM Pending both dry-run plans omit agent trash and skill/agent prune while falsely pruning generated host.conf. Bash immutable dryrun probe confirms planning defect. Update-all cache AC independently PASS with two Cursor projects, shared/tool fetched once and child fromcache exit0. Task014 In Progress for first Luna correction; task015 pending, PS runtime deferred.
 
 - Done (15/32): task-001, task-002, task-003, task-004, task-005, task-006, task-007, task-008, task-009, task-010, task-011, task-012, task-013, task-016, task-022.
-- In Progress: none.
-- In Review: task-014.
+- In Progress: task-014.
+- In Review: none.
 - Failed/Blocked: none.
 - Pending: task-015, task-017, task-018, task-019, task-020, task-021, task-023, task-024, task-025, task-026, task-027, task-028, task-029, task-030, task-031, task-032.
 - Current wave: 10 of 15. Derive authoritative waves from task dependency headers.
