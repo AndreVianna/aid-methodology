@@ -480,6 +480,11 @@ lifecycle_history:
 # [A] aid-deploy only; one entry per delivery (never derived from child
 #     files; aid-deploy is the sole author):
 #   - delivery / state / pr / kb_updated / tag / notes
+  - date: '2026-10-11'
+    event: 'Execution resumed in Codex at wave 2; maintainer authorizes remaining tasks, sequential Luna execution, Sol wave checks and final review; PowerShell deferred; preserve usage and hand off if limit approaches'
+    grade: --
+    notes: '/aid-execute resumed'
+
 deploy: []
 
 # [A] flattened only; single writer: this work's active branch. Written by
@@ -525,7 +530,7 @@ tasks_lifecycle:
     notes: --
     display_name: --
   task-005:
-    state: Pending
+    state: 'In Progress'
     review: --
     elapsed: --
     notes: --
