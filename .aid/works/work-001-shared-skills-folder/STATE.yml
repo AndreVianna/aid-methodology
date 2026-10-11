@@ -118,7 +118,7 @@ phase: Execute
 # [W] aid-{skill} | none
 active_skill: aid-execute
 # [W]
-updated: '2026-10-11T16:20:11Z'
+updated: '2026-10-11T16:20:13Z'
 # [W] set only when lifecycle = Paused-Awaiting-Input
 pause_reason: --
 # [W] set only when lifecycle = Blocked
@@ -825,6 +825,11 @@ lifecycle_history:
     grade: --
     notes: '/aid-execute Codex'
 
+  - date: '2026-10-11'
+    event: 'Task017 reopened for first Luna correction of wave11 row5 durable COVERS metadata. Task018 row5/6 follows sequentially before Sol recheck.'
+    grade: --
+    notes: '/aid-execute Codex'
+
 deploy: []
 
 # [A] flattened only; single writer: this work's active branch. Written by
@@ -1135,7 +1140,7 @@ tasks_lifecycle:
         outcome: 'committed711ce6273; source24/scanner9 pass using GNUawk'
 
   task-017:
-    state: 'In Review'
+    state: 'In Progress'
     review: --
     elapsed: --
     notes: --
