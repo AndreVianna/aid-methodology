@@ -452,6 +452,9 @@ skip = re.compile(
 )
 EXCLUDE = (
     "profiles/", ".claude/", ".cursor/", ".codex/", ".agent/",   # generated renders
+    # Installed copies of canonical/skills and canonical/aid (dogfood trees). Counting them
+    # too would count every shared-layout reference twice.
+    ".agents/", ".aid/runtime/",
     ".aid/works/",                                              # transient work state
     # A rule that quotes the string it governs is not an offence against itself;
     # counting this file would make the ceiling track its own prose.

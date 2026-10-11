@@ -20,54 +20,37 @@ VERBOSE=0
 [[ "${1:-}" =~ ^(-v|--verbose)$ ]] && VERBOSE=1
 
 source "$(dirname "${BASH_SOURCE[0]}")/../lib/assert.sh"
+source "$(dirname "${BASH_SOURCE[0]}")/../lib/bundle.sh"
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd "${SCRIPT_DIR}/../.." && pwd)"
 BIN_AID="${REPO_ROOT}/bin/aid"
 LIB_CORE="${REPO_ROOT}/lib/aid-install-core.sh"
-PROFILES_DIR="${REPO_ROOT}/profiles"
-
 [[ -f "$BIN_AID" ]]    || { echo "ERROR: bin/aid not found at $BIN_AID" >&2; exit 1; }
 [[ -f "$LIB_CORE" ]]   || { echo "ERROR: lib/aid-install-core.sh not found at $LIB_CORE" >&2; exit 1; }
 
 TMP=$(mktemp -d)
 trap 'rm -rf "$TMP"' EXIT
 
-FIXTURE_DIR="${TMP}/fixtures"
-mkdir -p "${FIXTURE_DIR}"
-
 VERSION="$(tr -d '[:space:]' < "${REPO_ROOT}/VERSION")"
+
+# Release bundle (shared layout): one aid-shared-v<V>.tar.gz plus one aid-<tool>-v<V>.tar.gz
+# per tool, staged by release.sh --stage-only through tests/lib/bundle.sh. `aid add --from-bundle`
+# reads the directory, so every add below passes BUNDLE_DIR (the real artifacts, no retag).
+BUNDLE_DIR="${TMP}/bundle"
+mkdir -p "${BUNDLE_DIR}"
+if ! aid_test_stage_bundle "${BUNDLE_DIR}" >"${TMP}/bundle-stage.log" 2>&1; then
+    echo "ERROR: could not stage the release bundle (see ${TMP}/bundle-stage.log)" >&2
+    exit 1
+fi
+
+# uid 0 ignores chmod -w, so the degrade WARN cases that need an unwritable directory
+# cannot be triggered as root. They are reported SKIPPED (as the parity suite does), not failed.
+REG_ROOT=0; [[ "$(id -u)" -eq 0 ]] && REG_ROOT=1
 
 # ---------------------------------------------------------------------------
 # Helpers
 # ---------------------------------------------------------------------------
-
-build_fixture_tarball() {
-    local tool="$1"
-    local profile_dir="${PROFILES_DIR}/${tool}"
-    local tarball="${FIXTURE_DIR}/aid-${tool}-v${VERSION}.tar.gz"
-    [[ -d "$profile_dir" ]] || { echo "ERROR: profile dir not found: $profile_dir" >&2; return 1; }
-    local filelist
-    filelist="$(mktemp "${TMP}/filelist-${tool}.XXXXXX")"
-    while IFS= read -r f; do
-        local fname
-        fname="$(basename "$f")"
-        [[ "$fname" == "README.md" ]] && continue
-        [[ "$fname" == "emission-manifest.jsonl" ]] && continue
-        local rel="${f#${profile_dir}/}"
-        printf './%s\n' "$rel"
-    done < <(find "${profile_dir}" -type f | sort) > "$filelist"
-    (cd "${profile_dir}" && tar -czf "${tarball}" --no-recursion -T "${filelist}") || {
-        echo "ERROR: failed to build fixture tarball for ${tool}" >&2
-        rm -f "$filelist"
-        return 1
-    }
-    rm -f "$filelist"
-}
-
-for _tool in claude-code codex; do
-    build_fixture_tarball "$_tool" || { echo "ERROR: fixture build failed for ${_tool}" >&2; exit 1; }
-done
 
 newtarget() { mktemp -d "${TMP}/tgt.XXXXXX"; }
 newhome()   { mktemp -d "${TMP}/home.XXXXXX"; }
@@ -279,7 +262,7 @@ setup_aid_home "$REG_C01_HOME"
 REG_C01_TGT=$(newtarget)
 
 run_aid "$REG_C01_HOME" add codex \
-    --from-bundle "${FIXTURE_DIR}/aid-codex-v${VERSION}.tar.gz" \
+    --from-bundle "${BUNDLE_DIR}" \
     --target "$REG_C01_TGT"
 assert_exit_eq "$RC" 0 "REG-C01a aid add codex -> exit 0"
 assert_file_exists "${REG_C01_HOME}/registry.yml" "REG-C01b registry.yml created after add"
@@ -288,7 +271,7 @@ assert_output_contains "$OUT" "Registered ${REG_C01_TGT}" "REG-C01d Registered l
 
 # REG-C02: aid add same tool again (--force) -> registry NO-OP (no duplicate).
 run_aid "$REG_C01_HOME" add codex --force \
-    --from-bundle "${FIXTURE_DIR}/aid-codex-v${VERSION}.tar.gz" \
+    --from-bundle "${BUNDLE_DIR}" \
     --target "$REG_C01_TGT"
 assert_exit_eq "$RC" 0 "REG-C02a re-add codex (force) -> exit 0"
 _repo_count=$(grep -c '  - ' "${REG_C01_HOME}/registry.yml" || echo 0)
@@ -297,7 +280,7 @@ assert_output_not_contains "$OUT" "Registered" "REG-C02c no Registered line on r
 
 # REG-C03: add a second tool to same repo -> still one registry entry (repo already registered).
 run_aid "$REG_C01_HOME" add claude-code \
-    --from-bundle "${FIXTURE_DIR}/aid-claude-code-v${VERSION}.tar.gz" \
+    --from-bundle "${BUNDLE_DIR}" \
     --target "$REG_C01_TGT"
 assert_exit_eq "$RC" 0 "REG-C03a aid add second tool -> exit 0"
 _repo_count=$(grep -c '  - ' "${REG_C01_HOME}/registry.yml" || echo 0)
@@ -324,7 +307,7 @@ REG_C06_HOME=$(newhome)
 setup_aid_home "$REG_C06_HOME"
 REG_C06_TGT=$(newtarget)
 run_aid "$REG_C06_HOME" add codex \
-    --from-bundle "${FIXTURE_DIR}/aid-codex-v${VERSION}.tar.gz" \
+    --from-bundle "${BUNDLE_DIR}" \
     --target "$REG_C06_TGT"
 assert_exit_eq "$RC" 0 "REG-C06a add for remove-all test -> exit 0"
 run_aid "$REG_C06_HOME" remove --force --target "$REG_C06_TGT"
@@ -338,11 +321,11 @@ setup_aid_home "$REG_C07_HOME"
 REG_C07_TGT1=$(newtarget)
 REG_C07_TGT2=$(newtarget)
 run_aid "$REG_C07_HOME" add codex \
-    --from-bundle "${FIXTURE_DIR}/aid-codex-v${VERSION}.tar.gz" \
+    --from-bundle "${BUNDLE_DIR}" \
     --target "$REG_C07_TGT1"
 assert_exit_eq "$RC" 0 "REG-C07a add to repo1 -> exit 0"
 run_aid "$REG_C07_HOME" add codex \
-    --from-bundle "${FIXTURE_DIR}/aid-codex-v${VERSION}.tar.gz" \
+    --from-bundle "${BUNDLE_DIR}" \
     --target "$REG_C07_TGT2"
 assert_exit_eq "$RC" 0 "REG-C07b add to repo2 -> exit 0"
 _repo_count=$(grep -c '  - ' "${REG_C07_HOME}/registry.yml" || echo 0)
@@ -359,7 +342,7 @@ REG_C08_HOME=$(newhome)
 setup_aid_home "$REG_C08_HOME"
 REG_C08_TGT=$(newtarget)
 run_aid "$REG_C08_HOME" add codex \
-    --from-bundle "${FIXTURE_DIR}/aid-codex-v${VERSION}.tar.gz" \
+    --from-bundle "${BUNDLE_DIR}" \
     --target "$REG_C08_TGT"
 assert_exit_eq "$RC" 0 "REG-C08a add exits 0 (NFR10 host-tool result unchanged)"
 assert_output_contains "$OUT" "Done. AID" "REG-C08b Done message present"
@@ -390,7 +373,7 @@ REG_C09_HOME=$(newhome)
 setup_aid_home "$REG_C09_HOME"
 REG_C09_TGT=$(newtarget)
 run_aid "$REG_C09_HOME" add codex \
-    --from-bundle "${FIXTURE_DIR}/aid-codex-v${VERSION}.tar.gz" \
+    --from-bundle "${BUNDLE_DIR}" \
     --target "$REG_C09_TGT"
 assert_exit_eq "$RC" 0 "REG-C09a add for remove-self test -> exit 0"
 _registry_before="${REG_C09_HOME}/registry.yml"
@@ -413,7 +396,7 @@ REG_F01_HOME=$(newhome)
 setup_aid_home "$REG_F01_HOME"
 REG_F01_TGT=$(newtarget)
 run_aid "$REG_F01_HOME" add codex \
-    --from-bundle "${FIXTURE_DIR}/aid-codex-v${VERSION}.tar.gz" \
+    --from-bundle "${BUNDLE_DIR}" \
     --target "$REG_F01_TGT"
 assert_exit_eq "$RC" 0 "REG-F01a add for format test -> exit 0"
 # Check the header lines + schema + projects: are ASCII-only.
@@ -600,8 +583,12 @@ _V03_VERBOSE_OUT=$(bash -c '
     eval "$(sed -n "${START},${END}p" "$BIN_AID")"
     registry_register "'"${_V03_REPO}"'"
 ' 2>&1)
-assert_output_contains "$_V03_VERBOSE_OUT" "WARN:" \
-    "REG-V03b2 degrade: WARN emitted under _AID_VERBOSE=1"
+if [[ "$REG_ROOT" -eq 1 ]]; then
+    pass "REG-V03b2 degrade: WARN emitted under _AID_VERBOSE=1 [SKIPPED: uid 0 -- chmod -w no-op]"
+else
+    assert_output_contains "$_V03_VERBOSE_OUT" "WARN:" \
+        "REG-V03b2 degrade: WARN emitted under _AID_VERBOSE=1"
+fi
 
 # Host (caller) completed; entry lands in fallback ($HOME/.aid).
 _V03_FALLBACK_REG="${_V03_HOME}/.aid/registry.yml"
@@ -674,7 +661,8 @@ assert_eq "${_V05_MTIME_BEFORE}" "${_V05_MTIME_AFTER}" \
 # REG-V06: update-self migrates exactly registered repos.
 #          Register A and B; leave C unregistered.
 #          Run update self (AID_SKIP_SELF_INSTALL=1 + AID_MIGRATE_YES=1).
-#          -> A and B get format_version: 4; C untouched.
+#          -> A and B get format_version: 5 (no manifest, no v3 evidence: a fresh-stamp
+#             case, see _aid_migration_stamp); C untouched.
 echo "--- REG-V06: update-self migrates exactly registered ---"
 _V06_AID_HOME=$(newhome)
 setup_aid_home "${_V06_AID_HOME}"
@@ -707,11 +695,11 @@ OUT=$(HOME="${_V06_HOME}" \
       bash "${_V06_AID_HOME}/bin/aid" update self 2>&1); RC=$?
 assert_exit_eq "$RC" 0 "REG-V06a update self with registered A+B -> exit 0"
 
-# A and B: format_version should now be 4.
+# A and B: format_version should now be 5.
 _V06_FV_A=$(grep '^format_version:' "${_V06_REPO_A}/.aid/settings.yml" 2>/dev/null | head -1 | sed 's/format_version:[[:space:]]*//')
 _V06_FV_B=$(grep '^format_version:' "${_V06_REPO_B}/.aid/settings.yml" 2>/dev/null | head -1 | sed 's/format_version:[[:space:]]*//')
-assert_eq "${_V06_FV_A}" "4" "REG-V06b registered repo A gets format_version: 4 after migrate"
-assert_eq "${_V06_FV_B}" "4" "REG-V06c registered repo B gets format_version: 4 after migrate"
+assert_eq "${_V06_FV_A}" "5" "REG-V06b registered repo A gets format_version: 5 after migrate"
+assert_eq "${_V06_FV_B}" "5" "REG-V06c registered repo B gets format_version: 5 after migrate"
 
 # C: must still have format_version: 0 (unregistered, not touched).
 _V06_FV_C=$(grep '^format_version:' "${_V06_REPO_C}/.aid/settings.yml" 2>/dev/null | head -1 | sed 's/format_version:[[:space:]]*//')
@@ -1218,11 +1206,11 @@ assert_exit_eq "$RC" 0 "REG-P03b aid projects add non-.aid/ path -> initialized 
 assert_output_contains "$OUT" "initialized a bare AID project" "REG-P03b-02 output announces bare-project init"
 assert_file_exists "${_P03b_NOAID}/.aid/settings.yml" "REG-P03b-03 bare .aid/settings.yml scaffolded"
 # config-schema redesign: the scaffold writes a FLAT settings.yml (top-level name:
-# + format_version: 4, no tools: block -- tools live in the manifest instead).
+# + format_version: 5, no tools: block -- tools live in the manifest instead).
 assert_file_contains "${_P03b_NOAID}/.aid/settings.yml" "name: $(basename "${_P03b_NOAID}")" \
     "REG-P03b-04a scaffolded settings.yml has top-level name:"
-assert_file_contains "${_P03b_NOAID}/.aid/settings.yml" "format_version: 4" \
-    "REG-P03b-04b scaffolded settings.yml stamped format_version: 4"
+assert_file_contains "${_P03b_NOAID}/.aid/settings.yml" "format_version: 5" \
+    "REG-P03b-04b scaffolded settings.yml stamped format_version: 5"
 assert_file_not_contains "${_P03b_NOAID}/.aid/settings.yml" "tools:" \
     "REG-P03b-04c scaffolded settings.yml has NO tools: block (tools live in the manifest)"
 assert_file_exists "${_P03b_NOAID}/.aid/.aid-manifest.json" "REG-P03b-04d minimal .aid-manifest.json scaffolded"
@@ -1402,8 +1390,12 @@ _P05f_RC=$?
 chmod 755 "${_P05f_SHARED}" 2>/dev/null || true
 assert_exit_eq "$_P05f_RC" 0 \
     "REG-P05f shared-write degrade: register returns 0 even when AID_STATE_HOME not writable"
-assert_output_contains "$_P05f_OUT" "WARN:" \
-    "REG-P05f-02 shared-write degrade: WARN emitted when shared dir not writable"
+if [[ "$REG_ROOT" -eq 1 ]]; then
+    pass "REG-P05f-02 shared-write degrade: WARN emitted when shared dir not writable [SKIPPED: uid 0 -- chmod -w no-op]"
+else
+    assert_output_contains "$_P05f_OUT" "WARN:" \
+        "REG-P05f-02 shared-write degrade: WARN emitted when shared dir not writable"
+fi
 
 # ===========================================================================
 # REG-P06: FR7 reconcile.
@@ -1439,7 +1431,7 @@ _P06a_TGT=$(newtarget)
 # run_projects_global makes AID_CODE_HOME non-writable -> _AID_SCOPE=global.
 run_projects_global "${_P06a_AID_INST}" "${_P06a_SHARED_STATE}" "${_P06a_HOME}" \
     add codex \
-    --from-bundle "${FIXTURE_DIR}/aid-codex-v${VERSION}.tar.gz" \
+    --from-bundle "${BUNDLE_DIR}" \
     --target "${_P06a_TGT}"
 assert_exit_eq "$RC" 0 "REG-P06a FR7 aid add on global outside-HOME -> exit 0"
 # No interactive prompt text (FR7: _aid_resolve_tier is non-interactive).
@@ -2017,8 +2009,12 @@ assert_output_not_contains "$_DW01_OUT" "could not write to state home" \
 
 # REG-DW02: degrade WARN shown under _AID_VERBOSE=1.
 _DW02_OUT=$(run_register_degrade "1")
-assert_output_contains "$_DW02_OUT" "could not write to state home" \
-    "REG-DW02 degrade WARN shown under verbose (_AID_VERBOSE=1)"
+if [[ "$REG_ROOT" -eq 1 ]]; then
+    pass "REG-DW02 degrade WARN shown under verbose (_AID_VERBOSE=1) [SKIPPED: uid 0 -- chmod -w no-op]"
+else
+    assert_output_contains "$_DW02_OUT" "could not write to state home" \
+        "REG-DW02 degrade WARN shown under verbose (_AID_VERBOSE=1)"
+fi
 
 # REG-DW03: functionality unchanged -- entry still lands in fallback $HOME/.aid.
 _DW_FALLBACK_REG="${_DW_HOME}/.aid/registry.yml"

@@ -13,7 +13,7 @@
 # 'install.sh add/update/remove <tool> ...' (CONVENIENCE mode).
 #
 # Cases:
-#   E2E01 — release.sh --dry-run produces 5 tarballs + SHA256SUMS.
+#   E2E01 — release.sh --dry-run produces 7 tarballs (shared + 5 tool + CLI bundle) + SHA256SUMS.
 #   E2E02 — Independent sha256sum -c passes against the staged SHA256SUMS.
 #   E2E03 — install.sh add <tool> --from-bundle <staged-tarball> (claude-code):
 #            byte-fidelity + manifest (aid_version).
@@ -130,6 +130,13 @@ fi
 STAGE_VERSION="$(tr -d '[:space:]' < "${CLONE}/VERSION")"
 STAGE_DIR="${CLONE}/.aid/.temp/release-${STAGE_VERSION}"
 
+# The project-root CLAUDE.md that `aid add claude-code` writes is not a payload file: it is the
+# fixed three-line @AGENTS.md import region (spec §8 A-3). Its bytes are a CLI constant, so the
+# installed file is compared against that text, not against a profile source.
+CLAUDE_REGION_EXPECT="${TMP}/claude-region.expected"
+printf '%s\n' '<!-- AID:BEGIN -->' '@AGENTS.md' '<!-- AID:END -->' > "${CLAUDE_REGION_EXPECT}"
+claude_region_matches() { cmp -s "$1" "${CLAUDE_REGION_EXPECT}" && echo same || echo diff; }
+
 # ---------------------------------------------------------------------------
 # E2E01 — release.sh --dry-run produces 5 tarballs + SHA256SUMS.
 # ---------------------------------------------------------------------------
@@ -140,7 +147,8 @@ assert_exit_zero "$DRY_RC" "E2E01 release.sh --dry-run exits 0"
 
 TOOLS=(claude-code codex cursor copilot-cli antigravity)
 TARBALL_COUNT=$(ls "${STAGE_DIR}"/aid-*.tar.gz 2>/dev/null | wc -l | tr -d ' ')
-assert_eq "${TARBALL_COUNT}" "6" "E2E01b staging dir contains exactly 6 tarballs (5 profile + 1 CLI bundle)"
+assert_eq "${TARBALL_COUNT}" "7" "E2E01b staging dir contains exactly 7 tarballs (1 shared + 5 tool + 1 CLI bundle)"
+assert_file_exists "${STAGE_DIR}/aid-shared-v${STAGE_VERSION}.tar.gz" "E2E01b-shared aid-shared-v${STAGE_VERSION}.tar.gz staged"
 
 for _t in "${TOOLS[@]}"; do
     assert_file_exists "${STAGE_DIR}/aid-${_t}-v${STAGE_VERSION}.tar.gz" \
@@ -157,9 +165,9 @@ assert_file_exists "${STAGE_DIR}/AidInstallCore.psm1"  "E2E01e AidInstallCore.ps
 SUMS_FILE="${STAGE_DIR}/SHA256SUMS"
 assert_file_exists "${SUMS_FILE}" "E2E01f SHA256SUMS staged"
 
-# SHA256SUMS must cover all 8 assets (5 profile tarballs + 1 CLI bundle + 2 libs).
+# SHA256SUMS must cover all 9 assets (1 shared + 5 tool tarballs + 1 CLI bundle + 2 libs).
 SUMS_LINE_COUNT=$(wc -l < "${SUMS_FILE}" | tr -d ' ')
-assert_eq "${SUMS_LINE_COUNT}" "8" "E2E01g SHA256SUMS has 8 entries (5 profile tarballs + 1 CLI bundle + 2 libs)"
+assert_eq "${SUMS_LINE_COUNT}" "9" "E2E01g SHA256SUMS has 9 entries (1 shared + 5 tool tarballs + 1 CLI bundle + 2 libs)"
 
 # ---------------------------------------------------------------------------
 # E2E02 — Independent sha256sum -c verification.
@@ -214,9 +222,8 @@ assert_output_contains "$INST_OUT" "Done."     "E2E03c install reports Done."
 assert_dir_exists    "${PRIMARY_TARGET}/.claude"     "E2E03d .claude/ created"
 assert_file_exists   "${PRIMARY_TARGET}/CLAUDE.md"   "E2E03e CLAUDE.md created"
 
-CMP_RESULT=$(cmp -s "${PRIMARY_TARGET}/CLAUDE.md" "${CLONE}/profiles/claude-code/CLAUDE.md" \
-             && echo same || echo diff)
-assert_eq "${CMP_RESULT}" "same" "E2E03f installed CLAUDE.md byte-identical to clone profile"
+CMP_RESULT="$(claude_region_matches "${PRIMARY_TARGET}/CLAUDE.md")"
+assert_eq "${CMP_RESULT}" "same" "E2E03f installed CLAUDE.md is exactly the @AGENTS.md import region"
 
 # Manifest assertions.
 E2E_MANIFEST="${PRIMARY_TARGET}/.aid/.aid-manifest.json"
@@ -224,9 +231,11 @@ assert_file_exists "${E2E_MANIFEST}"   "E2E03g manifest created"
 assert_file_contains "${E2E_MANIFEST}" '"claude-code"'     "E2E03h manifest lists claude-code"
 assert_file_contains "${E2E_MANIFEST}" '"aid_version"'     "E2E03i manifest has aid_version"
 assert_file_contains "${E2E_MANIFEST}" '"format_version"' "E2E03j manifest has format_version"
-assert_file_contains "${E2E_MANIFEST}" '"CLAUDE.md"'       "E2E03k manifest lists CLAUDE.md path"
-assert_file_contains "${E2E_MANIFEST}" '"sha256"'          "E2E03l manifest records root_agent sha256"
-assert_file_contains "${E2E_MANIFEST}" '"status": "owned"' "E2E03m root_agent status is owned"
+assert_file_contains "${E2E_MANIFEST}" '"claude_md"'       "E2E03k manifest records the claude_md entry"
+assert_file_contains "${E2E_MANIFEST}" '"region_sha256"'    "E2E03l manifest records the claude_md region_sha256"
+_E03_CLAUDE_SHA="$(sha256sum "${PRIMARY_TARGET}/CLAUDE.md" | cut -d' ' -f1)"
+assert_file_contains "${E2E_MANIFEST}" "\"region_sha256\": \"${_E03_CLAUDE_SHA}\"" \
+    "E2E03m manifest claude_md region_sha256 matches the installed CLAUDE.md"
 
 # Version marker: the standalone .aid/.aid-version file is retired — the installed
 # AID release version lives in the manifest's aid_version key instead.
@@ -249,8 +258,9 @@ TAMPER_DIR=$(mktemp -d "${TMP}/tamper.XXXXXX")
 TAMPER_TARBALL="${TAMPER_DIR}/aid-${PRIMARY_TOOL}-v${STAGE_VERSION}.tar.gz"
 TAMPER_TARGET=$(mktemp -d "${TMP}/target-tamper.XXXXXX")
 
-# Copy staged tarball + SHA256SUMS into the tamper staging dir.
-cp "${PRIMARY_TARBALL}" "${TAMPER_TARBALL}"
+# Copy the whole staged bundle (shared + tool tarballs, CLI bundle, SHA256SUMS) into the tamper
+# dir: `aid add --from-bundle` needs the shared tarball beside the tool tarball.
+cp "${STAGE_DIR}"/aid-*.tar.gz "${TAMPER_DIR}/"
 cp "${SUMS_FILE}" "${TAMPER_DIR}/SHA256SUMS"
 
 # Corrupt the tarball by appending junk bytes — this changes its sha256.
@@ -284,9 +294,8 @@ assert_output_contains "$UPDATE_OUT" "Up to date:" "E2E05b --verbose update same
 assert_output_not_contains "$UPDATE_OUT" "Copied:" "E2E05c --verbose update does not re-copy identical files"
 
 # Verify the installed state is unchanged after update.
-CMP_AFTER=$(cmp -s "${PRIMARY_TARGET}/CLAUDE.md" "${CLONE}/profiles/claude-code/CLAUDE.md" \
-            && echo same || echo diff)
-assert_eq "${CMP_AFTER}" "same" "E2E05d CLAUDE.md unchanged after update"
+CMP_AFTER="$(claude_region_matches "${PRIMARY_TARGET}/CLAUDE.md")"
+assert_eq "${CMP_AFTER}" "same" "E2E05d CLAUDE.md still the @AGENTS.md import region after update"
 
 # ---------------------------------------------------------------------------
 # E2E06 — Uninstall → exit 0, dirs removed.
@@ -304,12 +313,22 @@ assert_output_contains "$UNINST_OUT" "Removed:"          "E2E06b --verbose unins
 assert_output_contains "$UNINST_OUT" "Uninstall complete." "E2E06c uninstall complete banner"
 
 # Installed dirs/files must be gone.
-assert_eq "$([[ -d "${PRIMARY_TARGET}/.claude" ]]  && echo exists || echo gone)" "gone" \
-    "E2E06d .claude/ removed after uninstall"
+# .claude/ is the claude-code tool root: spec flow 6 never prunes <root>, so only its AID
+# contents are asserted (agents, and the skills mirror that no remaining tool declares).
+assert_eq "$([[ -e "${PRIMARY_TARGET}/.claude/agents" ]] && echo exists || echo gone)" "gone" \
+    "E2E06d .claude/agents/ removed after uninstall"
+assert_eq "$([[ -e "${PRIMARY_TARGET}/.claude/skills" ]] && echo exists || echo gone)" "gone" \
+    "E2E06d2 .claude/skills mirror removed after uninstall (no remaining user declares it)"
 assert_eq "$([[ -f "${PRIMARY_TARGET}/CLAUDE.md" ]] && echo exists || echo gone)" "gone" \
     "E2E06e CLAUDE.md removed after uninstall"
-assert_eq "$([[ -d "${PRIMARY_TARGET}/.aid" ]]     && echo exists || echo gone)" "gone" \
-    "E2E06f .aid/ dir removed after full uninstall"
+# .aid/ is the user's project directory (knowledge, settings they own): only the AID-owned
+# records are asserted gone, not the directory itself.
+assert_eq "$([[ -e "${PRIMARY_TARGET}/.aid/.aid-manifest.json" ]] && echo exists || echo gone)" "gone" \
+    "E2E06f manifest removed after full uninstall"
+assert_eq "$([[ -e "${PRIMARY_TARGET}/.aid/settings.yml" ]] && echo exists || echo gone)" "gone" \
+    "E2E06f2 .aid/settings.yml removed after full uninstall"
+assert_eq "$([[ -e "${PRIMARY_TARGET}/.aid/runtime" ]] && echo exists || echo gone)" "gone" \
+    "E2E06f3 .aid/runtime removed after full uninstall"
 
 # Second uninstall → exit 6 (no manifest).
 UNINST2_OUT=$(AID_HOME="${E2E_AID_HOME}" bash "${INSTALL_SH}" \
@@ -478,9 +497,8 @@ else
     assert_dir_exists  "${PS1_TARGET}/.claude"   "E2E08d .claude/ created by install.ps1"
     assert_file_exists "${PS1_TARGET}/CLAUDE.md" "E2E08e CLAUDE.md created by install.ps1"
 
-    PS1_CMP=$(cmp -s "${PS1_TARGET}/CLAUDE.md" "${CLONE}/profiles/claude-code/CLAUDE.md" \
-              && echo same || echo diff)
-    assert_eq "${PS1_CMP}" "same" "E2E08f ps1-installed CLAUDE.md byte-identical to clone profile"
+    PS1_CMP="$(claude_region_matches "${PS1_TARGET}/CLAUDE.md")"
+    assert_eq "${PS1_CMP}" "same" "E2E08f ps1-installed CLAUDE.md is exactly the @AGENTS.md import region"
 
     # Manifest + version: the standalone .aid/.aid-version file is retired — the
     # installed AID release version lives in the manifest's aid_version key instead.
@@ -517,12 +535,16 @@ else
     assert_output_contains "$PS1_UNI_OUT" "Uninstall complete." \
         "E2E08o install.ps1 uninstall complete banner"
 
-    assert_eq "$([[ -d "${PS1_TARGET}/.claude" ]]  && echo exists || echo gone)" "gone" \
-        "E2E08p ps1 .claude/ removed after uninstall"
+    assert_eq "$([[ -e "${PS1_TARGET}/.claude/agents" ]] && echo exists || echo gone)" "gone" \
+        "E2E08p ps1 .claude/agents/ removed after uninstall"
+    assert_eq "$([[ -e "${PS1_TARGET}/.claude/skills" ]] && echo exists || echo gone)" "gone" \
+        "E2E08p2 ps1 .claude/skills mirror removed after uninstall"
     assert_eq "$([[ -f "${PS1_TARGET}/CLAUDE.md" ]] && echo exists || echo gone)" "gone" \
         "E2E08q ps1 CLAUDE.md removed after uninstall"
-    assert_eq "$([[ -d "${PS1_TARGET}/.aid" ]]     && echo exists || echo gone)" "gone" \
-        "E2E08r ps1 .aid/ removed after full uninstall"
+    assert_eq "$([[ -e "${PS1_TARGET}/.aid/.aid-manifest.json" ]] && echo exists || echo gone)" "gone" \
+        "E2E08r ps1 manifest removed after full uninstall"
+    assert_eq "$([[ -e "${PS1_TARGET}/.aid/settings.yml" ]] && echo exists || echo gone)" "gone" \
+        "E2E08r2 ps1 .aid/settings.yml removed after full uninstall"
 
     # Second uninstall → exit 6 (no manifest).
     run_ps1 remove "${PRIMARY_TOOL}" \
@@ -811,7 +833,8 @@ _E2E11_SERVE_OK="${TMP}/e2e11-serve-ok"
 mkdir -p "${_E2E11_SERVE_OK}/v${STAGE_VERSION}"
 cp "${STAGE_DIR}/aid-${_E2E11_TOOL}-v${STAGE_VERSION}.tar.gz" \
    "${_E2E11_SERVE_OK}/v${STAGE_VERSION}/aid-${_E2E11_TOOL}-v${STAGE_VERSION}.tar.gz"
-grep "[[:space:]]aid-${_E2E11_TOOL}-v${STAGE_VERSION}.tar.gz$" "${SUMS_FILE}" \
+cp "${STAGE_DIR}/aid-shared-v${STAGE_VERSION}.tar.gz" "${_E2E11_SERVE_OK}/v${STAGE_VERSION}/"
+grep -E "[[:space:]]aid-(shared|${_E2E11_TOOL})-v${STAGE_VERSION}\.tar\.gz$" "${SUMS_FILE}" \
     > "${_E2E11_SERVE_OK}/v${STAGE_VERSION}/SHA256SUMS"
 
 _E2E11_TARGET_A="${TMP}/e2e11-target-a"
@@ -830,6 +853,7 @@ _E2E11_SERVE_NOSUMS="${TMP}/e2e11-serve-nosums"
 mkdir -p "${_E2E11_SERVE_NOSUMS}/v${STAGE_VERSION}"
 cp "${STAGE_DIR}/aid-${_E2E11_TOOL}-v${STAGE_VERSION}.tar.gz" \
    "${_E2E11_SERVE_NOSUMS}/v${STAGE_VERSION}/aid-${_E2E11_TOOL}-v${STAGE_VERSION}.tar.gz"
+cp "${STAGE_DIR}/aid-shared-v${STAGE_VERSION}.tar.gz" "${_E2E11_SERVE_NOSUMS}/v${STAGE_VERSION}/"
 # Deliberately do NOT create SHA256SUMS.
 
 _E2E11_TARGET_D="${TMP}/e2e11-target-d"
@@ -851,7 +875,8 @@ mkdir -p "${_E2E11_SERVE_TAMPER}/v${STAGE_VERSION}"
 cp "${STAGE_DIR}/aid-${_E2E11_TOOL}-v${STAGE_VERSION}.tar.gz" \
    "${_E2E11_SERVE_TAMPER}/v${STAGE_VERSION}/aid-${_E2E11_TOOL}-v${STAGE_VERSION}.tar.gz"
 printf 'TAMPER' >> "${_E2E11_SERVE_TAMPER}/v${STAGE_VERSION}/aid-${_E2E11_TOOL}-v${STAGE_VERSION}.tar.gz"
-grep "[[:space:]]aid-${_E2E11_TOOL}-v${STAGE_VERSION}.tar.gz$" "${SUMS_FILE}" \
+cp "${STAGE_DIR}/aid-shared-v${STAGE_VERSION}.tar.gz" "${_E2E11_SERVE_TAMPER}/v${STAGE_VERSION}/"
+grep -E "[[:space:]]aid-(shared|${_E2E11_TOOL})-v${STAGE_VERSION}\.tar\.gz$" "${SUMS_FILE}" \
     > "${_E2E11_SERVE_TAMPER}/v${STAGE_VERSION}/SHA256SUMS"
 
 _E2E11_TARGET_G="${TMP}/e2e11-target-g"
