@@ -24,11 +24,12 @@
   existing format-upgrade cases whose expectations change (settings stamp 5, manifest format 3).
 - AC-13, exactly as worded in REQUIREMENTS.md § 9: one v3 fixture per tool (Antigravity
   `.agent/skills`, and a Codex fixture with the legacy `.agents/aid/`), each holding one
-  user-modified AID file in the old `skills/aid-*` and one in the old `aid/` subtree, plus one
-  non-AID user file in each old directory. After `aid update --from-bundle <staging>`: the AC-3 and
+  user-modified AID file in the old `skills/aid-*` and one in the old `aid/` subtree, plus non-AID
+  user files at `<root>/user-notes.txt` and as a non-`aid-` file under `<root>/skills/`, and one
+  user-created file under the old `<root>/aid/` subtree. After `aid update --from-bundle <staging>`: the AC-3 and
   AC-7 checks; no `aid-*` under `.codex/skills`, `.cursor/skills`, `.github/skills`,
   `.agent/skills`; no `<root>/aid/`; every old AID-owned file, modified or not, byte-for-byte at
-  `.aid/.trash/<original-path>`; non-AID files unchanged; `.aid/settings.yml` `format_version` = 5.
+  `.aid/.trash/<original-path>`; non-AID files unchanged at their original paths; every file under an old `<root>/aid/` (user-created one included) sha256-identical under `.aid/.trash/` at its mirrored path with nothing left under `<root>/aid/`; `.aid/settings.yml` `format_version` = 5.
   A second `aid update` prints `up to date` for every tool and leaves `.aid/.trash/` unchanged.
   Cover both manifest-backed and manifest-less variants, including two tools and legacy Codex.
   Inject failure during retirement, after `retired=true` but before the manifest write (including
@@ -52,7 +53,7 @@
 
 **Acceptance Criteria:**
 - [ ] `HOME=$(mktemp -d) bash tests/canonical/test-aid-migrate.sh --verbose` exits `0`, with `PASS:` lines for each AC-13 clause per tool fixture (five plus the legacy `.agents/aid/` case) and the second-run checks.
-- [ ] The same run prints a `PASS:` line for the interrupted-run clause: for each interruption point and both manifest-backed and manifest-less fixtures, the next `aid update` restores exactly the recorded tools, AC-3 and AC-7 pass, `grep -c '"migration"' .aid/.aid-manifest.json` prints `0`, the recovery record is absent, and every non-AID user file keeps its sha256; post-stamp recovery keeps the trash snapshot unchanged.
+- [ ] The same run prints a `PASS:` line for the interrupted-run clause: for each interruption point and both manifest-backed and manifest-less fixtures, the next `aid update` restores exactly the recorded tools, AC-3 and AC-7 pass, `grep -c '"migration"' .aid/.aid-manifest.json` prints `0`, the recovery record is absent, and every non-AID user file (outside `<root>/aid/` and `skills/aid-*`) keeps its sha256; post-stamp recovery keeps the trash snapshot unchanged.
 - [ ] The same run prints `PASS:` lines for invalid-record/future-format refusals, staging failure, dry-run, atomic-write failure, pending-record add/remove gates and out-of-set named tools, each with the expected unchanged snapshot or prevention of the next destructive step.
 - [ ] The same run prints `PASS:` lines for AC-14 (c) in its variants (user-edited `CLAUDE.md` with trash copy, no-marker `CLAUDE.md`, v3 `AGENTS.md` with the pointer region) and the one-`@AGENTS.md` / one-`AID:BEGIN` invariant in each.
 - [ ] Frozen-clock repeated retirement collisions and preoccupied `.N` suffixes preserve all backup bytes with identical Bash/PowerShell names and ordering.

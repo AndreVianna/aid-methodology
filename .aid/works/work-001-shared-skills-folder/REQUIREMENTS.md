@@ -617,7 +617,10 @@ CLI. The Claude Code docs (skills, settings reference, memory, changelog) were c
   the five tools in its v3 layout, including Antigravity `.agent/skills` and the legacy Codex
   `.agents/aid/`. Each fixture contains:
   - one user-modified AID file in the old `skills/aid-*` and in the old `aid/` subtree;
-  - one non-AID user file in each old directory.
+  - non-AID user files outside AID-owned paths: `<root>/user-notes.txt` directly under each old
+    tool root and a non-`aid-` file under `<root>/skills/`;
+  - one user-created file under the old `<root>/aid/` subtree (for example
+    `.cursor/aid/user-notes.txt`), which is AID-owned by path.
 
   After `aid update --from-bundle <staging>`:
   - The AC-3 and AC-7 checks pass.
@@ -625,7 +628,11 @@ CLI. The Claude Code docs (skills, settings reference, memory, changelog) were c
     `.agent/skills`, and no `<root>/aid/` remains.
   - Every old AID-owned file, modified or not, exists byte-for-byte under
     `.aid/.trash/<original-path>`.
-  - Each non-AID file keeps identical sha256.
+  - Each non-AID file (`<root>/user-notes.txt` and the non-`aid-` file under `<root>/skills/`)
+    keeps identical sha256 at its original path.
+  - Every file that was under an old `<root>/aid/` subtree, including the user-created file, exists
+    with identical sha256 under `.aid/.trash/` at its mirrored path, and nothing remains under the
+    old `<root>/aid/`.
   - `.aid/settings.yml` `format_version` equals the new value.
 
   A second `aid update` prints `up to date` for every tool and leaves `.aid/.trash/` unchanged.
