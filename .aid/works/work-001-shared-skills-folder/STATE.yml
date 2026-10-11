@@ -112,7 +112,7 @@ minimum_grade: A
 # [W] 'yes' | 'no' -- quoted, see NFR-2 / D-5
 user_approved: 'no'
 # [W] Running | Paused-Awaiting-Input | Blocked | Completed | Canceled
-lifecycle: Paused-Awaiting-Input
+lifecycle: Running
 # [W] Describe | Define | Specify | Plan | Detail | Execute
 phase: Detail
 # [W] aid-{skill} | none
@@ -120,7 +120,7 @@ active_skill: aid-update
 # [W]
 updated: '2026-10-11T04:00:00Z'
 # [W] set only when lifecycle = Paused-Awaiting-Input
-pause_reason: 'Scoped check: tasks clear; definition row 55 still Pending (v3-created bare projects keep settings stamp 4); awaiting maintainer'
+pause_reason: --
 # [W] set only when lifecycle = Blocked
 block_reason: --
 # [W] e.g. IMPEDIMENT-task-NNN.md, or the failed gate

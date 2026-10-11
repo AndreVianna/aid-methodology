@@ -310,7 +310,9 @@ Any byte difference between copies therefore produces mixed, unpredictable behav
   The bare-project scaffolder behind `aid projects add` and the dashboard (`_aid_scaffold_bare_project`
   / `Invoke-AidScaffoldBareProject`) writes the v4 manifest format (`format_version` 3, no tools) and
   the v4 settings stamp, so `aid add <tool>` into a freshly onboarded bare project is accepted; bare
-  projects a v3 CLI created (format-2 manifest, no tools) are accepted by the no-tools exemption above.
+  projects a v3 CLI created (format-2 manifest, no tools, settings stamp 4) are accepted too: with no
+  tools recorded and no other v3 legacy evidence, the layout gate ignores the manifest format and
+  the stamp, and that first `aid add` writes the format-3 manifest and stamp 5.
 
   Nothing is deleted: every moved file lands at `.aid/.trash/<original-path>`, and user files are
   never touched. The ownership rule is path-based. An old-layout file is AID-owned if it lies under
@@ -643,8 +645,10 @@ CLI. The Claude Code docs (skills, settings reference, memory, changelog) were c
   - A manifest whose `format_version` is above 3 makes the CLI exit non-zero with
     `Run: aid update self` and write nothing.
   - In a fixture, `aid projects add <dir>` then `aid add cursor --target <dir> --from-bundle <stage>`
-    exits 0 (the scaffolded manifest records `format_version` 3 and no tools); a hand-made format-2
-    manifest with no tools also accepts `aid add cursor`.
+    exits 0 (the scaffolded manifest records `format_version` 3 and no tools); a v3-style bare
+    fixture (hand-made format-2 manifest with no tools plus `.aid/settings.yml` holding
+    `format_version: 4`) also accepts `aid add cursor`, after which the manifest records
+    `format_version` 3 and `.aid/settings.yml` shows `format_version: 5`.
 - **AC-13:** The clean-slate upgrade works from every v3 layout. A fixture is built for each of
   the five tools in its v3 layout, including Antigravity `.agent/skills` and the legacy Codex
   `.agents/aid/`. Each fixture contains:
@@ -990,7 +994,8 @@ line: `format 5 (was 4): shared skills under .agents/skills (+ CLI-owned mirrors
 while claude-code is installed; manifest format_version 3`. A test keeps the three values and the
 template line in lockstep. The settings stamp is capped as follows: `_aid_migrate_repo` (and its PowerShell twin)
 writes `format_version: 5` only when the manifest records `format_version` 3, or when no manifest,
-recovery record or v3 legacy evidence (FR-11) exists (proven fresh install). Manifest-less legacy layouts keep stamp 4, including after `aid projects add` or `aid
+recovery record or v3 legacy evidence (FR-11) exists (proven fresh install), or when the manifest
+records no tools and no other v3 legacy evidence exists (bare project). Manifest-less legacy layouts keep stamp 4, including after `aid projects add` or `aid
 update self` migrates settings; `aid add` refuses writes and directs the user to `aid update`. A
 pending recovery record also keeps stamp 4 until the format-3 manifest is committed. Otherwise it
 writes `4`. The evidence is the FR-11 list: v4 agents and root regions never count, and a valid format-3
@@ -1081,8 +1086,10 @@ copy. That is replaced by this policy.
 
 1. Run the writability pre-check (unchanged).
 2. **Layout gate** (new `_aid_layout_gate`). A manifest exists, records at least one tool and records `format_version` < 3,
-   an existing settings stamp is < 5, an upgrade recovery record exists, or v3 legacy evidence (FR-11)
-   exists -> exit 2. A fresh repo with none of these signals passes, including when
+   an existing settings stamp is < 5 while the manifest records at least one tool, an upgrade recovery
+   record exists, or v3 legacy evidence (FR-11) exists -> exit 2. A bare project (manifest with no
+   tools, no other legacy evidence) passes whatever its manifest format and stamp, and this add
+   writes the format-3 manifest and stamp 5. A fresh repo with none of these signals passes, including when
    settings are absent. Legacy evidence is the FR-11 list only; v4 agents at `<root>/agents/aid-*` never
    count. User directory names alone are not evidence. Print `This project uses the v3 AID layout. Run: aid update
    (it upgrades every installed tool), then retry aid add.`, and write nothing (AC-12).
