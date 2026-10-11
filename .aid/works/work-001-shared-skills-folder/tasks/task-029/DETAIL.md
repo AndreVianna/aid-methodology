@@ -56,6 +56,7 @@
   phrasing such as "added in"/"specified by" a work; cite the durable artifacts instead (scripts,
   tests, `canonical/` files). No `## Change Log` / `## Revision History` section and no `changelog:`
   field is added.
+- Next release (definition review row 54): the release-tracking / backlog entry for this change names the next release as `4.0.0`, a major (breaking) bump, and states `v4 requires CLI v4`.
 
 **Acceptance Criteria:**
 - [ ] `git grep -nE '\.(claude|codex|cursor|agent)/aid/|\.github/aid/' -- .aid/knowledge ':!.aid/knowledge/release-tracking.md' ':!.aid/knowledge/kb.html'` prints no lines.
@@ -63,4 +64,5 @@
 - [ ] `bash tests/canonical/test-kb-no-work-ids.sh` exits `0`, and `git diff -U0 -- .aid/knowledge | grep -E '^\+.*(work-[0-9]{3}|\.aid/works/)'` prints nothing.
 - [ ] `bash canonical/aid/scripts/kb/lint-frontmatter.sh --root .aid/knowledge` and `bash canonical/aid/scripts/kb/kb-citation-lint.sh --root .aid/knowledge` exit `0`; the CI "INDEX.md is fresh" regenerate-and-diff (timestamp lines filtered) prints nothing.
 - [ ] `bash tests/canonical/test-doc-counts.sh` exits `0` (any KB count it checks still matches disk).
+- [ ] `grep -n '4\.0\.0' .aid/knowledge/release-tracking.md .aid/knowledge/backlog.md` shows the entry for this change naming `4.0.0` as a major release with the line `v4 requires CLI v4`.
 - [ ] All section-6 quality gates pass.

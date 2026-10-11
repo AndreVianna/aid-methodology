@@ -741,6 +741,9 @@ CLI. The Claude Code docs (skills, settings reference, memory, changelog) were c
     criteria `G-10` and `G-11` in `.aid/knowledge/authoring-conventions.md` state the
     `.aid/runtime/` and `.agents/skills/aid-*` placement rules, and that the content-isolation
     checks in `canonical/agents/aid-reviewer/AGENT.md` accept that placement.
+  - `grep -n '4\.0\.0' .aid/knowledge/release-tracking.md .aid/knowledge/backlog.md` shows the
+    entry for this change naming `4.0.0` as the next release, a major (breaking) bump, with the
+    line `v4 requires CLI v4`.
 - **AC-20:** The remaining host assumptions are verified. A maintainer repeats the §8 manual probe
   method for two checks and records a pass or fail for each as a `lifecycle_history` entry in this
   work's `STATE.yml`:

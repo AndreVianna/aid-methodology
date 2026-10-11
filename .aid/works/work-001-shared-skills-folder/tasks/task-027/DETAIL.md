@@ -53,6 +53,7 @@ Per REQUIREMENTS.md § 11 Feature 001 › Feature Flow › 7 and Upgrade from v3
   pipeline resolve their runtime under `.aid/runtime/`; finish this task in one step and confirm the
   pipeline's own scripts resolve (for example, `bash .aid/runtime/scripts/execute/derive-waves.sh --from-tasks <this work's folder>`
   prints the same wave map it printed before the resync).
+- Bootstrap switch (task-set review row 25): this resync removes `.claude/aid/`, which the running pipeline uses for state writes. Run the resync as the last step of this task, after this task's `In Review` state write. From then on every state write (this task's terminal state and tasks 028-032) calls `.aid/runtime/scripts/execute/writeback-state.sh` with the same arguments and `AID_STATE_FILE`, and the orchestrator re-reads `.claude/skills/aid-execute/SKILL.md` from the resynced mirror before dispatching the next task.
 
 **Acceptance Criteria:**
 - [ ] For every file `canonical/skills/<rel>`, `cmp canonical/skills/<rel> .agents/skills/<rel>` and `cmp canonical/skills/<rel> .claude/skills/<rel>` succeed; `diff -r -x node_modules -x '.*' canonical/aid .aid/runtime` prints only `Only in .aid/runtime: host.conf` (so `scripts`, `templates` and `rules.md` equal their canonical sources under the payload exclusions); `cat .aid/runtime/host.conf` prints exactly `worktree_root=.claude/worktrees`.
@@ -61,4 +62,5 @@ Per REQUIREMENTS.md § 11 Feature 001 › Feature Flow › 7 and Upgrade from v3
 - [ ] `AGENTS.md` equals the five-line pointer region plus any user content it held, with exactly one `<!-- AID:BEGIN -->` line; the root `CLAUDE.md` keeps its `## Project` section (all pre-resync content outside the old AID region) byte for byte, and its AID region holds only `@AGENTS.md` (exactly one `@AGENTS.md` line in the file); `.gitattributes` holds the AID managed block and every pre-resync line of it is unchanged.
 - [ ] Running `python .claude/skills/generate-profile/scripts/sync_dogfood.py` a second time prints `up to date` for `shared` and both tools, and `git status --porcelain` is empty afterwards (the first resync's commit already includes `.gitattributes`).
 - [ ] `python .claude/skills/generate-profile/scripts/run_generator.py` exits `0` and leaves `git status --porcelain` empty.
+- [ ] After the resync, `AID_STATE_FILE=.aid/works/work-001-shared-skills-folder/STATE.yml bash .aid/runtime/scripts/execute/writeback-state.sh --pipeline --field Updated --value <timestamp>` exits 0, and `grep -rl '.claude/aid/scripts' .claude/skills/aid-execute/` prints nothing.
 - [ ] All section-6 quality gates pass.
