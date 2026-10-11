@@ -118,7 +118,7 @@ phase: Detail
 # [W] aid-{skill} | none
 active_skill: aid-update
 # [W]
-updated: '2026-10-11T02:11:55Z'
+updated: '2026-10-11T02:17:07Z'
 # [W] set only when lifecycle = Paused-Awaiting-Input
 pause_reason: 'Full review below floor A; awaiting maintainer decision before fixes'
 # [W] set only when lifecycle = Blocked
@@ -359,6 +359,11 @@ lifecycle_history:
     event: 'Full review completed; paused before fixes for maintainer decision'
     grade: --
     notes: 'Definition D, tasks C, floor A; 8 new Pending findings total (2 HIGH, 6 MEDIUM). Both full passes below floor; no approval or implementation clearance. Active ledgers retained and archived snapshots updated; all 32 implementation tasks remain Pending; manual host/Windows probes remain unverified'
+
+  - date: '2026-10-11'
+    event: 'Bounded fix and verification plan prepared at maintainer request'
+    grade: --
+    notes: 'Proposed batches: definition 43/46 fresh-versus-v3 detection and stamp/gate consistency; definition 44/47 safe root removal and CRLF-aware managed-region comparison; definition 45 collision-free trash rotation; tasks 16-18 pointer-probe ownership and documentation scope/gates. Align affected task criteria and twin/test references. One gpt-6-luna fixer, one verifier (requested Terra is unavailable; model clarification pending), then orchestrator final integrated review. One correction round only if verification requires it; no repeated full agent scans or application implementation. Plan only; all eight ledger findings remain Pending and execution remains unapproved'
 
 # [A] aid-deploy only; one entry per delivery (never derived from child
 #     files; aid-deploy is the sole author):
