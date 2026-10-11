@@ -118,7 +118,7 @@ phase: Detail
 # [W] aid-{skill} | none
 active_skill: aid-update
 # [W]
-updated: '2026-10-11T02:39:23Z'
+updated: '2026-10-11T02:41:37Z'
 # [W] set only when lifecycle = Paused-Awaiting-Input
 pause_reason: --
 # [W] set only when lifecycle = Blocked
@@ -411,6 +411,11 @@ lifecycle_history:
     event: 'Maintainer requested a new full independent review after the bounded fix cycle'
     grade: --
     notes: 'Fresh gpt-6.1-sol reviewer, full definition then all 32 task artifacts; one reviewer retains definition context for task pass to avoid duplicate reads. All Fixed claims reverified; Accepted decisions preserved. No fixes or implementation; both passes run as requested even if new definition findings are discovered'
+
+  - date: '2026-10-10'
+    event: 'Fresh full definition review complete; new row 49 Pending; no Fixed regressions'
+    grade: 'C+'
+    notes: 'One MEDIUM contradiction between AC-13 user-file fixture and path-based ownership under old aid/ subtrees. Full sections 1-11 reviewed; 28 Fixed, 19 Accepted and 1 OOS preserved. Full task pass starts using retained definition context; no fixes or implementation'
 
 # [A] aid-deploy only; one entry per delivery (never derived from child
 #     files; aid-deploy is the sole author):
