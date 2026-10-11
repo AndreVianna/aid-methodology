@@ -6,13 +6,13 @@ maintainer approved execution. Current phase `Execute`, lifecycle `Running`.
 
 ## Current execution checkpoint
 
-Task017 committed2d3ce67fa: shared-install suite covers five-tool canonical/runtime equality, userstate/protected runtime/attributes, exact pointer/import and line-ending/repair outside bytes. Focused verbose148/148; self-mutate151/151 proves unmutated negative assertion liveness and collision controls, primitives93/93. Syntax/diff pass and repo status unchanged by runs. In Review with task015; task018 follows before Sol wave11 check. PS and broad gates deferred.
+Task018 In Progress for sequential Luna multitool suite rekey to shared refcounts/drift repair/import-lastuser and AGENTS ownership cases, using release bundlehelper and accounting every removed/renamed key. Tasks015/017 In Review;16/32 Done. Sol wave11 verifies all three after task018 commit; coverage-parity/full gates task031 and PS runtime deferred.
 
 - Done (16/32): task-001, task-002, task-003, task-004, task-005, task-006, task-007, task-008, task-009, task-010, task-011, task-012, task-013, task-014, task-016, task-022.
-- In Progress: none.
+- In Progress: task-018.
 - In Review: task-015, task-017.
 - Failed/Blocked: none.
-- Pending: task-018, task-019, task-020, task-021, task-023, task-024, task-025, task-026, task-027, task-028, task-029, task-030, task-031, task-032.
+- Pending: task-019, task-020, task-021, task-023, task-024, task-025, task-026, task-027, task-028, task-029, task-030, task-031, task-032.
 - Current wave: 11 of 15. Derive authoritative waves from task dependency headers.
 - Execution commits are on the delivery branch; `work-001` holds pre-execution planning.
 - Wave ledgers: `review-ledgers/execute-wave-N.md`; each preserves unresolved/Accepted findings.
