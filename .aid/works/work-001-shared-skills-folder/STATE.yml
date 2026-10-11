@@ -118,7 +118,7 @@ phase: Execute
 # [W] aid-{skill} | none
 active_skill: aid-execute
 # [W]
-updated: '2026-10-11T07:26:57Z'
+updated: '2026-10-11T07:26:59Z'
 # [W] set only when lifecycle = Paused-Awaiting-Input
 pause_reason: --
 # [W] set only when lifecycle = Blocked
@@ -665,6 +665,11 @@ lifecycle_history:
     grade: --
     notes: '/aid-execute Codex'
 
+  - date: '2026-10-11'
+    event: 'Task012 In Progress for sequential Luna execution of reference-counted format3 removal, last-user root-region behavior, metadata-derived host/inline rewrite and attributes cleanup; format2 legacy dispatch preserved. 12/32 Done; task022 follows sequentially in wave8 before Sol quick review. PowerShell runtime deferred.'
+    grade: --
+    notes: '/aid-execute Codex'
+
 deploy: []
 
 # [A] flattened only; single writer: this work's active branch. Written by
@@ -862,7 +867,7 @@ tasks_lifecycle:
         outcome: 'committed 0acf5d926; 130 focused worktree assertions passed'
 
   task-012:
-    state: Pending
+    state: 'In Progress'
     review: --
     elapsed: --
     notes: --
