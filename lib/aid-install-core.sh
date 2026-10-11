@@ -360,6 +360,7 @@ validate_release_descriptor() {
         return 1
     fi
     while IFS= read -r line; do
+        [[ -z "$line" ]] && continue
         key="${line%%=*}"; value="${line#*=}"
         counts["$key"]=$(( ${counts["$key"]:-0} + 1 ))
         if [[ "$key" != skill_mirror && "${counts[$key]}" -gt 1 ]]; then

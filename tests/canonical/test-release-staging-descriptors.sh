@@ -85,4 +85,22 @@ cp -a "${STAGE}/." "$NONASCII_TOOL"
 rewrite_descriptor "$NONASCII_TOOL" tool "$(printf 'tool=cursor\n# invalid byte: \303\251\nskill_mirror=.agents/skills\n')"
 run_refusal RSD06 "$NONASCII_TOOL" aid-tool.conf 'ASCII with LF line endings only'
 
+# Empty reader output still produces a blank here-string record. Both empty and
+# comment-only descriptors must reach the required-key diagnostic safely.
+EMPTY_SHARED="${TMP}/empty-shared"
+cp -a "${STAGE}/." "$EMPTY_SHARED"; rewrite_descriptor "$EMPTY_SHARED" shared ''
+run_refusal RSD07 "$EMPTY_SHARED" aid-payload.conf 'missing aid_version'
+
+COMMENT_SHARED="${TMP}/comment-shared"
+cp -a "${STAGE}/." "$COMMENT_SHARED"; rewrite_descriptor "$COMMENT_SHARED" shared $'# no descriptor entries\n'
+run_refusal RSD08 "$COMMENT_SHARED" aid-payload.conf 'missing aid_version'
+
+EMPTY_TOOL="${TMP}/empty-tool"
+cp -a "${STAGE}/." "$EMPTY_TOOL"; rewrite_descriptor "$EMPTY_TOOL" tool ''
+run_refusal RSD09 "$EMPTY_TOOL" aid-tool.conf 'missing tool'
+
+COMMENT_TOOL="${TMP}/comment-tool"
+cp -a "${STAGE}/." "$COMMENT_TOOL"; rewrite_descriptor "$COMMENT_TOOL" tool $'# no descriptor entries\n'
+run_refusal RSD10 "$COMMENT_TOOL" aid-tool.conf 'missing tool'
+
 test_summary
