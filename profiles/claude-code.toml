@@ -1,10 +1,13 @@
 # Profile: Claude Code (Anthropic Claude Code)
 # Encodes the Claude Code host tool's install conventions.
-# Consumed by render.py to emit the profiles/claude-code/.claude/ tree.
+# Consumed by the profile renderer; agents and placement data are emitted.
 
 root_dir     = ".claude"
-root_file    = "CLAUDE.md"
+root_file    = "AGENTS.md"
 agent_format = "markdown"
+skill_mirrors = [".claude/skills"]
+worktree_root = ".claude/worktrees"
+context_import = "CLAUDE.md"
 
 [tool_names]
 # Identity map: abstract tool names pass through unchanged for Claude Code.

@@ -1,6 +1,6 @@
 # Profile: Cursor (Cursor IDE)
 # Encodes the Cursor IDE host tool's install conventions.
-# Consumed by render.py to emit the profiles/cursor/.cursor/ tree.
+# Consumed by the profile renderer; agents and placement data are emitted.
 
 root_dir     = ".cursor"
 root_file    = "AGENTS.md"

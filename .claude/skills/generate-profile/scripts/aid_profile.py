@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-# aid_profile.py -- AID canonical-generator profile parser (shrunk schema, task-005)
+# aid_profile.py -- AID canonical-generator profile parser
 #
 # Purpose:
 #   Load a per-tool profile TOML and expose it as a typed Profile dataclass.
@@ -7,15 +7,17 @@
 #
 #   Schema (shrunk from work-005 feature-002):
 #     root_dir     = ".claude"   # host-required root basename
-#     root_file    = "CLAUDE.md" # AGENTS.md for non-claude tools (install lib uses it)
+#     root_file    = "AGENTS.md" # shared agent-context entry point
+#     skill_mirrors = [".claude/skills"] # optional tool-owned skill mirror
+#     worktree_root = ".claude/worktrees" # optional per-tool worktree location
+#     context_import = "CLAUDE.md" # optional host context import
+#     rules_inline = false # optional host inline-rules fallback
 #     agent_format = "markdown"  # "markdown" for 4 tools; "toml" dormant for Codex (E-CODEX-1)
 #     [tool_names]               # surviving translation: Bash->Terminal (cursor), Bash->shell (copilot)
 #     [model_tiers]              # feeds agent execution-metadata translation
 #     [capabilities]             # 4 flags consumed by skills graceful-degradation
 #
-#   Dropped: [layout] (*_dir/*_root/rules_dir/[extras]), [skill], [agent.frontmatter],
-#            filename_map, LayoutConfig split-root, ExtrasConfig, RuleEntry.
-#   Kept dormant: agent_format="toml" validator value (E-CODEX-1 gated).
+#   Generator emits only agents plus aid-tool.conf.
 #
 # Usage:
 #   python aid_profile.py --profile profiles/claude-code.toml
@@ -24,7 +26,9 @@
 from __future__ import annotations
 
 import argparse
+import copy
 import json
+import re
 import sys
 import tomllib
 from dataclasses import dataclass, field
@@ -66,36 +70,32 @@ class Profile:
     Fields:
       name          -- derived from the filename stem (e.g. "claude-code")
       root_dir      -- host-required root basename (e.g. ".claude", ".cursor")
-      root_file     -- root context filename (e.g. "CLAUDE.md", "AGENTS.md")
+      root_file     -- shared root context filename (always "AGENTS.md")
       agent_format  -- "markdown" for 4 tools; "toml" dormant for Codex
       tool_names    -- the one surviving translate step (Bash->Terminal, Bash->shell)
       model_tiers   -- tier aliases to model strings (feeds frontmatter translate)
       capabilities  -- 4 capability flags (consumed by skills graceful-degradation)
+      skill_mirrors -- optional tool-owned skill mirror paths
+      worktree_root -- optional worktree directory
+      context_import -- optional host context import
+      rules_inline  -- whether to inline rules in root context
     """
     name: str
     root_dir: str = ".claude"
-    root_file: str = "CLAUDE.md"
+    root_file: str = "AGENTS.md"
     agent_format: str = "markdown"
     tool_names: dict[str, str] = field(default_factory=dict)
     model_tiers: dict[str, ModelTierSimple | ModelTierDetailed] = field(default_factory=dict)
     capabilities: CapabilitiesConfig = field(default_factory=CapabilitiesConfig)
+    skill_mirrors: list[str] = field(default_factory=list)
+    worktree_root: str | None = None
+    context_import: str | None = None
+    rules_inline: bool = False
     # Raw TOML dict preserved for lossless round-trip checks
     _raw: dict[str, Any] = field(default_factory=dict, repr=False, compare=False)
 
-    # -----------------------------------------------------------------------
-    # Compatibility shim: install_root() used by rewrite_install_paths callers
-    # -----------------------------------------------------------------------
-    def install_root(self) -> str:
-        """Return the root basename (e.g. '.claude') -- same as root_dir."""
-        return self.root_dir
-
     def common_parent(self) -> str:
-        """
-        Return the common parent directory for this profile's output.
-
-        Format: profiles/<name>
-        This is where the emission-manifest.jsonl is placed.
-        """
+        """Return this profile's output directory."""
         return f"profiles/{self.name}"
 
 
@@ -162,11 +162,15 @@ def load_profile(path: str) -> "Profile":
     return Profile(
         name=name,
         root_dir=raw.get("root_dir", ".claude"),
-        root_file=raw.get("root_file", "CLAUDE.md"),
+        root_file=raw.get("root_file", "AGENTS.md"),
         agent_format=raw.get("agent_format", "markdown"),
         tool_names=raw.get("tool_names", {}),
         model_tiers=_parse_model_tiers(raw.get("model_tiers", {})),
         capabilities=_parse_capabilities(raw.get("capabilities", {})),
+        skill_mirrors=raw.get("skill_mirrors", []),
+        worktree_root=raw.get("worktree_root"),
+        context_import=raw.get("context_import"),
+        rules_inline=raw.get("rules_inline", False),
         _raw=raw,
     )
 
@@ -196,9 +200,32 @@ def validate(profile: "Profile") -> list[str]:
     elif profile.root_dir.startswith("/") or profile.root_dir.startswith("\\"):
         errors.append(f"[{name}] root_dir must be a relative basename, got: {profile.root_dir!r}")
 
-    # root_file must be set
-    if not profile.root_file:
-        errors.append(f"[{name}] root_file is missing or empty")
+    if profile.root_file != "AGENTS.md":
+        errors.append(f'[{name}] root_file must be "AGENTS.md"')
+
+    # Optional descriptor values have a deliberately small, portable grammar.
+    if not isinstance(profile.skill_mirrors, list):
+        errors.append(f"[{name}] skill_mirrors must be a list")
+    else:
+        for mirror in profile.skill_mirrors:
+            if not isinstance(mirror, str) or not re.fullmatch(r"\.[a-z]+/skills", mirror):
+                errors.append(f"[{name}] skill_mirrors entry must match ^\\.[a-z]+/skills$: {mirror!r}")
+            elif mirror == ".agents/skills":
+                errors.append(f"[{name}] skill_mirrors must not include .agents/skills")
+            elif not mirror.startswith(profile.root_dir.rstrip("/") + "/"):
+                errors.append(f"[{name}] skill_mirrors entry must sit under {profile.root_dir}: {mirror!r}")
+
+    if profile.worktree_root is not None:
+        value = profile.worktree_root
+        valid = value == ".aid/.worktrees" or value == f"{profile.root_dir.rstrip('/')}/worktrees"
+        if not isinstance(value, str) or not value or value.startswith("/") or ".." in value.split("/") or not valid:
+            errors.append(f"[{name}] worktree_root must be .aid/.worktrees or <root_dir>/worktrees, relative and without ..: {value!r}")
+
+    if profile.context_import is not None and profile.context_import != "CLAUDE.md":
+        errors.append(f"[{name}] context_import accepts only CLAUDE.md")
+
+    if not isinstance(profile.rules_inline, bool):
+        errors.append(f"[{name}] rules_inline must be a boolean")
 
     # agent_format check
     if profile.agent_format not in _KNOWN_AGENT_FORMATS:
@@ -245,10 +272,10 @@ def main() -> int:
     )
     parser.add_argument(
         "--profile",
-        required=True,
         metavar="PATH",
         help="Path to the profile TOML file (e.g. profiles/claude-code.toml)",
     )
+    parser.add_argument("--self-test", action="store_true", help="Run focused validation checks")
     parser.add_argument(
         "--json",
         dest="as_json",
@@ -256,6 +283,24 @@ def main() -> int:
         help="Print the parsed profile as JSON and exit",
     )
     args = parser.parse_args()
+
+    if args.self_test:
+        profile = Profile(name="self-test", root_dir=".claude", model_tiers={"medium": ModelTierSimple("test")})
+        invalid_mirror = copy.deepcopy(profile)
+        invalid_mirror.skill_mirrors = [".agents/skills"]
+        if not any("must not include .agents/skills" in error for error in validate(invalid_mirror)):
+            print("FAIL: skill_mirrors accepted .agents/skills", file=sys.stderr)
+            return 1
+        invalid_inline = copy.deepcopy(profile)
+        invalid_inline.rules_inline = "true"
+        if not any("rules_inline must be a boolean" in error for error in validate(invalid_inline)):
+            print("FAIL: rules_inline accepted a string", file=sys.stderr)
+            return 1
+        print("OK: aid_profile validation self-tests passed (2 checks)")
+        return 0
+
+    if not args.profile:
+        parser.error("--profile is required unless --self-test is used")
 
     try:
         profile = load_profile(args.profile)

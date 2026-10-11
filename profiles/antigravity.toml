@@ -1,6 +1,6 @@
 # Profile: Google Antigravity (Windsurf lineage; VS Code-fork)
 # Encodes the Antigravity host tool's install conventions.
-# Consumed by render.py to emit the profiles/antigravity/.agent/ tree.
+# Consumed by the profile renderer; agents and placement data are emitted.
 
 root_dir     = ".agent"
 root_file    = "AGENTS.md"

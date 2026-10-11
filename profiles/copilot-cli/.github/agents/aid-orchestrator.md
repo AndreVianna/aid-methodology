@@ -28,7 +28,7 @@ between updates — repeating the same activity twice signals "stuck" to the
 orchestrator. Use `unknown` if you can't predict eta-remaining.
 
 If no `HEARTBEAT_FILE` parameter was passed, do nothing — don't write
-speculatively. See `.github/aid/templates/subagent-heartbeat-protocol.md` for
+speculatively. See `.aid/runtime/templates/subagent-heartbeat-protocol.md` for
 the full contract.
 
 If your dispatcher ALSO passed `STOP_FILE=...` (opt-in, independent of
@@ -38,7 +38,7 @@ next safe checkpoint — finish your current atomic unit of work, then end
 your turn — rather than starting further scoped work. Never create, delete,
 or otherwise write to `STOP_FILE` yourself; only `write-control-signal.sh`
 does. If no `STOP_FILE` was passed, do nothing. See
-`.github/aid/templates/subagent-heartbeat-protocol.md` §Cooperative
+`.aid/runtime/templates/subagent-heartbeat-protocol.md` §Cooperative
 stop-poll for the full contract.
 
 ## Self-review discipline
@@ -79,7 +79,7 @@ issue you should have caught, that is a self-review gap.
    removing its row. Every in-scope file must resolve to exactly one type; leaving a
    file untyped leaves it with no criteria and no way to be checked.
 
-Apply regardless of task size. See `.github/aid/templates/self-review-protocol.md`
+Apply regardless of task size. See `.aid/runtime/templates/self-review-protocol.md`
 for the full protocol.
 
 
