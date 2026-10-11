@@ -1,0 +1,3 @@
+| # | Severity | Status | Doc | Line | Description | Evidence |
+|---|---|---|---|---|---|---|
+| 1 | [MEDIUM] | Pending | canonical/agents/aid-reviewer/AGENT.md | 153 | FR-17 — Content isolation must accept the new placement, but the blanket tool-root skill prohibition also rejects declared skill mirrors; reviewers following it can file false HIGH isolation findings against valid Claude installations. | Lines 151 and 153/157 conflict: profiles/claude-code.toml declares .claude/skills and profiles/claude-code/aid-tool.conf emits skill_mirror=.claude/skills. Severity: judged against grading-rubric.md § Issue Severities (incorrect non-critical behavior). |

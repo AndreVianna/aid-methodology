@@ -118,7 +118,7 @@ phase: Execute
 # [W] aid-{skill} | none
 active_skill: aid-execute
 # [W]
-updated: '2026-10-11T06:00:34Z'
+updated: '2026-10-11T06:02:37Z'
 # [W] set only when lifecycle = Paused-Awaiting-Input
 pause_reason: --
 # [W] set only when lifecycle = Blocked
@@ -535,6 +535,11 @@ lifecycle_history:
     grade: --
     notes: '/aid-execute Codex'
 
+  - date: '2026-10-11'
+    event: 'Sol wave3 quick check found one Medium Pending FR17 contradiction: blanket tool-root skill prohibition also rejects declared mirrors. Inventory, translations, descriptors and validators pass. Task003 enters Luna fix1 (mirror exception); no wave4 yet.'
+    grade: --
+    notes: '/aid-execute Codex'
+
 deploy: []
 
 # [A] flattened only; single writer: this work's active branch. Written by
@@ -568,7 +573,7 @@ tasks_lifecycle:
     notes: --
     display_name: --
   task-003:
-    state: 'In Review'
+    state: 'In Progress'
     review: --
     elapsed: --
     notes: --
