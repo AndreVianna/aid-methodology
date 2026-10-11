@@ -3528,11 +3528,7 @@ _uninstall_tool_v3() {
             if manifest_read_tool_files "$manifest" "$t" | awk -F '\t' -v t="$t" '$1=="tools." t ".rules_inline" && $2=="true" {found=1} END{exit !found}'; then inline=1; break; fi
         done < <(manifest_list_tools "$manifest")
         if [[ "$inline" == 1 ]]; then
-            region="$(python3 - "$target/.aid/runtime/rules.md" <<'PY'
-import pathlib,sys
-print('<!-- AID:BEGIN -->\n<!-- Managed by the AID CLI. Do not edit between the AID markers. -->\n'+pathlib.Path(sys.argv[1]).read_text(encoding='utf-8')+'<!-- AID:END -->', end='')
-PY
-)"
+            region="$(printf '<!-- AID:BEGIN -->\n<!-- Managed by the AID CLI. Do not edit between the AID markers. -->\n'; cat "${target}/.aid/runtime/rules.md"; printf '<!-- AID:END -->\n')"$'\n'
             _repair_inline_root_region "${target}/AGENTS.md" "$region" "$target" || return 1
         else
             _repair_inline_root_region "${target}/AGENTS.md" "$_AID_AGENTS_POINTER_REGION" "$target" || return 1

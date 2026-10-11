@@ -149,13 +149,32 @@ FIFTH="${TMP}/inline-remains"; mkdir -p "$FIFTH"
 run_aid add claude-code,cursor --from-bundle "$BUNDLE" --target "$FIFTH" >/dev/null 2>&1 || exit 1
 set_inline_tool "$FIFTH" cursor
 run_aid remove claude-code --target "$FIFTH" >/dev/null 2>&1 || exit 1
-assert_file_contains "$FIFTH/AGENTS.md" 'ANY and ALL' 'Removing Claude preserves the remaining inline-rules region'
 assert_file_not_contains "$FIFTH/AGENTS.md" '@.aid/runtime/rules.md' 'Remaining inline-rules tool does not receive a pointer region'
-if python3 - "$FIFTH/.aid/.aid-manifest.json" <<'PY'
-import json,sys
-d=json.load(open(sys.argv[1])); assert d['tools']['cursor']['rules_inline'] is True
+if python3 - "$FIFTH" <<'PY'
+import hashlib,json,pathlib,sys
+r=pathlib.Path(sys.argv[1]); d=json.loads((r/'.aid/.aid-manifest.json').read_text())
+assert d['tools']['cursor']['rules_inline'] is True
+agents=(r/'AGENTS.md').read_bytes(); lines=agents.splitlines(keepends=True)
+assert lines.count(b'<!-- AID:BEGIN -->\n') == 1
+assert lines.count(b'<!-- AID:END -->\n') == 1
+a=lines.index(b'<!-- AID:BEGIN -->\n'); z=lines.index(b'<!-- AID:END -->\n')
+assert a < z
+region=b''.join(lines[a:z+1])
+expected=(b'<!-- AID:BEGIN -->\n'
+          b'<!-- Managed by the AID CLI. Do not edit between the AID markers. -->\n'
+          +(r/'.aid/runtime/rules.md').read_bytes()+b'<!-- AID:END -->\n')
+assert region == expected
+entry=d['shared']['agents_md']
+assert entry['file_sha256'] == hashlib.sha256(agents).hexdigest()
+assert entry['region_sha256'] == hashlib.sha256(region).hexdigest()
 PY
-then pass 'Remaining tool inline choice is read from its manifest record'; else fail 'Remaining tool inline choice is read from its manifest record'; fi
+then pass 'Remaining inline tool keeps standalone markers, full rules bytes, and actual manifest hashes'; else fail 'Remaining inline tool keeps standalone markers, full rules bytes, and actual manifest hashes'; fi
+OUT="$(run_aid remove cursor --target "$FIFTH" 2>&1)" || { echo "$OUT" >&2; exit 1; }
+assert_output_not_contains "$OUT" 'Left in place (modified or not AID-owned)' 'Final inline removal recognizes the rewritten AGENTS file as AID-owned'
+assert_file_absent "$FIFTH/AGENTS.md" 'Final inline removal deletes the rewritten owned AGENTS file'
+assert_file_absent "$FIFTH/.aid/.trash/AGENTS.md" 'Final inline removal does not misclassify unchanged AGENTS as drift'
+assert_file_absent "$FIFTH/.aid/runtime/host.conf" 'Final inline removal deletes the rewritten owned host.conf'
+assert_file_absent "$FIFTH/.aid/.trash/.aid/runtime/host.conf" 'Final inline removal does not misclassify unchanged host.conf as drift'
 
 SIXTH="${TMP}/outside-edit"; mkdir -p "$SIXTH"
 run_aid add claude-code,cursor --from-bundle "$BUNDLE" --target "$SIXTH" >/dev/null 2>&1 || exit 1
