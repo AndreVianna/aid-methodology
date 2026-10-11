@@ -118,7 +118,7 @@ phase: Execute
 # [W] aid-{skill} | none
 active_skill: aid-execute
 # [W]
-updated: '2026-10-11T16:07:16Z'
+updated: '2026-10-11T16:11:31Z'
 # [W] set only when lifecycle = Paused-Awaiting-Input
 pause_reason: --
 # [W] set only when lifecycle = Blocked
@@ -810,6 +810,11 @@ lifecycle_history:
     grade: --
     notes: '/aid-execute Codex'
 
+  - date: '2026-10-11'
+    event: 'Wave11 task012 correction da046e672 removes empty final shared directories and runtime root while preserving node_modules. Focused shared-remove51/51, multitool46/46, ASCII29/29 pass. Tasks012/015/017/018 In Review, ready for independent Sol wave11 quick verification. Full gates031 and PS runtime deferred.'
+    grade: --
+    notes: '/aid-execute Codex'
+
 deploy: []
 
 # [A] flattened only; single writer: this work's active branch. Written by
@@ -1007,7 +1012,7 @@ tasks_lifecycle:
         outcome: 'committed 0acf5d926; 130 focused worktree assertions passed'
 
   task-012:
-    state: 'In Progress'
+    state: 'In Review'
     review: --
     elapsed: --
     notes: --
@@ -1030,6 +1035,12 @@ tasks_lifecycle:
         eta_band: '3-8 min'
         actual: '2m26s'
         outcome: 'Task012 separate Sol correction09eaf2ba6 committed: Bash remaining-inline region now preserves terminalLF matching existing add helpers. Stronger regression asserts exact rules/standalone markers/actual manifest hashes and clean final owned-root removal without false drift. Focused46/46, syntax/diff/ASCII29 pass. In Review for original Sol reviewer final wave8 recheck; PS terminalLF static only, runtime deferred.'
+
+      - date: '2026-10-11T16:11:30.937881+00:00'
+        agent: 'gpt-6-luna'
+        eta_band: '3-8 min'
+        actual: '4m03s'
+        outcome: 'Wave11 task012 correction da046e672 removes empty final shared directories and runtime root while preserving node_modules. Focused shared-remove51/51, multitool46/46, ASCII29/29 pass. Tasks012/015/017/018 In Review, ready for independent Sol wave11 quick verification. Full gates031 and PS runtime deferred.'
 
   task-013:
     state: Done
