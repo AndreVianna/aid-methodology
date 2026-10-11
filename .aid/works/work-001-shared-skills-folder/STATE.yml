@@ -118,7 +118,7 @@ phase: Execute
 # [W] aid-{skill} | none
 active_skill: aid-execute
 # [W]
-updated: '2026-10-11T14:33:20Z'
+updated: '2026-10-11T14:35:25Z'
 # [W] set only when lifecycle = Paused-Awaiting-Input
 pause_reason: --
 # [W] set only when lifecycle = Blocked
@@ -685,6 +685,11 @@ lifecycle_history:
     grade: --
     notes: '/aid-execute Codex'
 
+  - date: '2026-10-11'
+    event: 'Task022 committed196a11761: CLI-installed worktree lifecycle fixtures invoke installed runtime and verify Cursor default create/ignore, registered nondefault lookup, Claude root/ignore. Focused lifecycle140/140, syntax/diff pass. Task012 and022 In Review for Sol wave8 quick verification; 12/32 Done. PS runtime deferred, long regression/coverage gates remain task031.'
+    grade: --
+    notes: '/aid-execute Codex'
+
 deploy: []
 
 # [A] flattened only; single writer: this work's active branch. Written by
@@ -962,11 +967,18 @@ tasks_lifecycle:
     notes: --
     display_name: --
   task-022:
-    state: 'In Progress'
+    state: 'In Review'
     review: --
     elapsed: --
     notes: --
     display_name: --
+    dispatch_log:
+      - date: '2026-10-11T14:35:25.899695+00:00'
+        agent: 'gpt-6-luna'
+        eta_band: '3-8 min'
+        actual: '1m52s'
+        outcome: 'Task022 committed196a11761: CLI-installed worktree lifecycle fixtures invoke installed runtime and verify Cursor default create/ignore, registered nondefault lookup, Claude root/ignore. Focused lifecycle140/140, syntax/diff pass. Task012 and022 In Review for Sol wave8 quick verification; 12/32 Done. PS runtime deferred, long regression/coverage gates remain task031.'
+
   task-023:
     state: Pending
     review: --
