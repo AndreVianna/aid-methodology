@@ -3823,6 +3823,8 @@ _uninstall_tool_v3() {
     manifest_remove_tool "$manifest" "$tool" || { rm -f "$previous"; return 1; }
     prune_shared "$target" "$previous" || { rm -f "$previous"; return 1; }
     rm -f "$previous"
+    # The tool root can become empty only once its mirror is pruned (e.g. .claude/skills).
+    rmdir "$root" 2>/dev/null || true
 
     if [[ -f "$manifest" ]]; then
         local worktree inline=0 region t

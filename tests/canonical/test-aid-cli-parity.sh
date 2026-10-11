@@ -5956,6 +5956,11 @@ t23_twin "TASK023-F5A" "Flow 5 remove: user bytes outside the managed regions su
     "0|add cursor --target @T --from-bundle @S" \
     "0|remove cursor --target @T"
 
+t23_twin "TASK023-F5B" "Flow 5 remove: removing claude-code drops its mirror and empty tool root in both shells" \
+    "-" \
+    "0|add claude-code,cursor --target @T --from-bundle @S" \
+    "0|remove claude-code --target @T"
+
 # --- Flow 6: prune after an update (strays never survive) -------------------
 t23_twin "TASK023-F6A" "Flow 6 prune: stray runtime file and stray aid-* skill leave the tree" \
     "-:t23_post_prune" \
