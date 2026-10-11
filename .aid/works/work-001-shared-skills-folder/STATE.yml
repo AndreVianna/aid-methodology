@@ -118,7 +118,7 @@ phase: Execute
 # [W] aid-{skill} | none
 active_skill: aid-execute
 # [W]
-updated: '2026-10-11T14:51:13Z'
+updated: '2026-10-11T14:55:53Z'
 # [W] set only when lifecycle = Paused-Awaiting-Input
 pause_reason: --
 # [W] set only when lifecycle = Blocked
@@ -720,6 +720,11 @@ lifecycle_history:
     grade: --
     notes: '/aid-execute Codex'
 
+  - date: '2026-10-11'
+    event: 'Task013 committed6f51b67c0: Bash/PS shared drift reports wired into explicit status only. Focused offline Bash fixture passes clean/modified/missing/extra/mirror/root CRLF/outside-region/CLAUDE markers/format2/no-manifest/protected runtime and non-AID cases; syntax/diff/ASCII29 pass. In Review for Sol wave9 quick check. Bare dashboard remains unchanged; PS runtime/AST lint deferred.'
+    grade: --
+    notes: '/aid-execute Codex'
+
 deploy: []
 
 # [A] flattened only; single writer: this work's active branch. Written by
@@ -942,11 +947,18 @@ tasks_lifecycle:
         outcome: 'Task012 separate Sol correction09eaf2ba6 committed: Bash remaining-inline region now preserves terminalLF matching existing add helpers. Stronger regression asserts exact rules/standalone markers/actual manifest hashes and clean final owned-root removal without false drift. Focused46/46, syntax/diff/ASCII29 pass. In Review for original Sol reviewer final wave8 recheck; PS terminalLF static only, runtime deferred.'
 
   task-013:
-    state: 'In Progress'
+    state: 'In Review'
     review: --
     elapsed: --
     notes: --
     display_name: --
+    dispatch_log:
+      - date: '2026-10-11T14:55:53.856799+00:00'
+        agent: 'gpt-6-luna'
+        eta_band: '3-8 min'
+        actual: '4m19s'
+        outcome: 'Task013 committed6f51b67c0: Bash/PS shared drift reports wired into explicit status only. Focused offline Bash fixture passes clean/modified/missing/extra/mirror/root CRLF/outside-region/CLAUDE markers/format2/no-manifest/protected runtime and non-AID cases; syntax/diff/ASCII29 pass. In Review for Sol wave9 quick check. Bare dashboard remains unchanged; PS runtime/AST lint deferred.'
+
   task-014:
     state: Pending
     review: --
