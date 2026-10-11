@@ -2858,7 +2858,9 @@ prune_shared() {
         case "$path" in */node_modules/*) continue;; esac
         if [[ -n "${wanted[$path]+x}" ]]; then continue; fi
         sha="$(sha256_file "$path")"
-        if [[ -n "${old[$path]:-}" && "${old[$path]}" == "$sha" ]]; then rm -f "$path" || return 1
+        if [[ -n "${old[$path]:-}" && "${old[$path]}" == "$sha" ]]; then
+            rm -f "$path" || return 1
+            [[ "${AID_VERBOSE:-0}" -eq 1 ]] && echo "Removed: ${path}"
         else trash_file "$target" "$path" || return 1; fi
     done
     # Remove empty AID directories, but never a placement root.
@@ -2877,6 +2879,13 @@ prune_shared() {
             fi
             rmdir "$dpath" 2>/dev/null || true
         done < <(find "$root" -depth -type d 2>/dev/null)
+    done
+    # A mirror root that no remaining tool declares goes once it is empty (rmdir never
+    # removes a non-empty directory, so user content under it is preserved). The tool
+    # root that holds it (e.g. .claude/) is never touched.
+    for root in "${!previous_roots[@]}"; do
+        [[ -n "${roots[$root]+x}" || "$root" == .agents/skills ]] && continue
+        rmdir "${target}/${root}" 2>/dev/null || true
     done
     if [[ ! -f "$current" ]]; then rmdir "${target}/.aid/runtime" 2>/dev/null || true; fi
 }
@@ -3778,7 +3787,9 @@ _uninstall_tool_v3() {
         paths+=("$rel")
         full="${target}/${rel}"
         [[ -f "$full" ]] || continue
-        if [[ -n "$sha" && "$(sha256_file "$full")" == "$sha" ]]; then rm -f "$full"
+        if [[ -n "$sha" && "$(sha256_file "$full")" == "$sha" ]]; then
+            rm -f "$full"
+            [[ "${AID_VERBOSE:-0}" -eq 1 ]] && echo "Removed: ${full}"
         else trash_file "$target" "$full" || { rm -f "$previous"; return 1; }
         fi
     done < <(manifest_read_tool_files "$manifest" "$tool")
