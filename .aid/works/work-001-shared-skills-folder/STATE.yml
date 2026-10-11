@@ -112,15 +112,15 @@ minimum_grade: A
 # [W] 'yes' | 'no' -- quoted, see NFR-2 / D-5
 user_approved: 'no'
 # [W] Running | Paused-Awaiting-Input | Blocked | Completed | Canceled
-lifecycle: Running
+lifecycle: Paused-Awaiting-Input
 # [W] Describe | Define | Specify | Plan | Detail | Execute
 phase: Detail
 # [W] aid-{skill} | none
 active_skill: aid-update
 # [W]
-updated: '2026-10-11T02:34:01Z'
+updated: '2026-10-11T02:35:45Z'
 # [W] set only when lifecycle = Paused-Awaiting-Input
-pause_reason: --
+pause_reason: 'GATE cleared; awaiting user approval before /aid-execute'
 # [W] set only when lifecycle = Blocked
 block_reason: --
 # [W] e.g. IMPEDIMENT-task-NNN.md, or the failed gate
@@ -389,6 +389,23 @@ lifecycle_history:
     event: 'One Luna correction round complete; Sol delta verification started'
     grade: --
     notes: 'Corrected definition row 48 and task rows 19-21 contracts; early task gates limited to available behavior, fresh-versus-legacy stamp cases qualified, non-LF separator behavior explicit, semantic reviewer gate separate. Duplicate collision checkbox removed. No further correction round planned; orchestrator final consistency checks follow'
+
+  - date: '2026-10-10'
+    event: 'Sol delta verification complete; definition row 48 and task rows 19-21 verified Fixed'
+    grade: 'A+'
+    notes: 'Definition A+, tasks A+, floor A; all eight original findings and four residual findings Fixed; no new findings or historical Fixed regressions. One correction round used as planned'
+  - date: '2026-10-10'
+    event: 'Orchestrator final integrated review complete; no additional findings'
+    grade: 'A+'
+    notes: 'Reviewed consolidated contract changes and corrected references against v4 intent; task source/AC/shape checks pass across all 32 tasks, dependency graph remains 15 waves, and corrected gates follow their implementations. Ledger schemas and historical evidence/severity/Accepted decisions preserved. Application behavior and manual host probes are not executed in this planning cycle'
+  - date: '2026-10-10'
+    event: 'GATE Pass 1 (definition docs) cleared'
+    grade: 'A+'
+    notes: 'Bounded Luna fixes, independent Sol verification, orchestrator integrated review; 28 Fixed, 19 Accepted, 1 OOS; zero Pending/Recurred'
+  - date: '2026-10-10'
+    event: 'GATE Pass 2 (task set) cleared'
+    grade: 'A+'
+    notes: '21 Fixed; zero Pending/Recurred. Review snapshots retained; active ledgers removed. APPROVAL-HALT before /aid-execute; all 32 tasks remain Pending; A-4/A-6 manual host probes remain unverified'
 
 # [A] aid-deploy only; one entry per delivery (never derived from child
 #     files; aid-deploy is the sole author):
