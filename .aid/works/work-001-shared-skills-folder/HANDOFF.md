@@ -2,15 +2,23 @@
 
 Updated 2026-10-11 by Codex. Resume branch: **`aid/work-001-shared-skills-folder-delivery-001`**.
 Read `STATE.yml` for the complete append-only history. Specification GATE cleared A+/A+;
-maintainer approved execution. Current phase `Execute`, lifecycle `Running`.
+maintainer approved execution. Current phase `Execute`, lifecycle `Paused-Awaiting-Input`.
 
 ## Current execution checkpoint
 
-Task006 separate Sol fallback21c8f6069 handles quoted numeric older stamps;144 Bash byte fixtures and PS static equivalent/failure probes pass. Source006 In Review for final scoped recheck;019 four test findings remain Pending. User reports7% remaining and requests quota pause/resume at15:30 EST. Finish source recheck, push current ledger/state/handoff, then pause before further executors.
+Paused at the maintainer request after reporting 7% of the 5-hour quota remaining. Requested resumption: 15:30 EST. No scheduling/automation tool is available in this session, so an automatic resume hook could not be installed; send a new resume message after reset or use this handoff in Claude Code. No executor remains active.
 
-- Done (18/32): task-001, task-002, task-003, task-004, task-005, task-007, task-008, task-009, task-010, task-011, task-012, task-013, task-014, task-015, task-016, task-017, task-018, task-022.
+Wave11 completed A+: task015 recovery, task017 shared-install coverage, task018 multitool coverage, and the task012 final-directory cleanup correction are Done. All six wave11 findings were independently marked Fixed. Wave12 has started.
+
+Task019 committed079ce7029 rekeys CLI suites and coverage rehomes. It exposed task006 bare-project stamp completion. Source fixes53ad2967c and21c8f6069 now advance older stamps including quoted values, preserving other settings bytes. Sol independently verified the final correction; task006 Done. Focused Bash CLI251/251 passed before quote-only followup; followup passed144 executor byte fixtures and12 independent probes. PowerShell runtime remains deferred, not passed.
+
+NEXT: reopen019 In Progress; ONE first Luna correction attempt for wave12 ledger rows2-5: explicit PowerShell Detect-Tool null-to-exit2 wrapper; PowerShell staged-version mismatch refusal/snapshot/aid-update guidance; PowerShell empty-format2+stamp4 bare first-add regression; Bash staged-mismatch aid-update guidance assertion. Task019 In Review. Original Sol reviewer rechecks; row1 Fixed, rows2-5 Pending. Preserve ledger cells except reviewer-owned Status. After019 Done, execute020,021,023,024,025,026,027 sequentially, then Sol quick review of remaining wave12 tasks. Keep one Luna correction then one separate Sol executor fallback policy.
+
+Full regression/coverage-parity/render self-test deferred to031. Task027: parent In Review write before final dogfood resync; switch writer to .aid/runtime and reread resynced aid-execute afterward. Task032 manual probes required; unknown never passes. Preserve unrelated dirty generated site and local artifacts. All task changes and this checkpoint are pushed to the delivery branch; never stage unrelated files.
+
+- Done (19/32): task-001, task-002, task-003, task-004, task-005, task-006, task-007, task-008, task-009, task-010, task-011, task-012, task-013, task-014, task-015, task-016, task-017, task-018, task-022.
 - In Progress: none.
-- In Review: task-006, task-019.
+- In Review: task-019.
 - Failed/Blocked: none.
 - Pending: task-020, task-021, task-023, task-024, task-025, task-026, task-027, task-028, task-029, task-030, task-031, task-032.
 - Current wave: 12 of 15. Derive authoritative waves from task dependency headers.
