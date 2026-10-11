@@ -1326,13 +1326,13 @@ tasks_lifecycle:
     notes: --
     display_name: --
   task-028:
-    state: 'In Progress'
+    state: 'In Review'
     review: --
     elapsed: --
     notes: --
     display_name: --
   task-029:
-    state: Pending
+    state: 'In Progress'
     review: --
     elapsed: --
     notes: --
