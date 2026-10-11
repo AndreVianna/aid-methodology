@@ -2557,9 +2557,6 @@ prune_shared() {
         rel="${line#*$'\t'}"; rel="${rel%%$'\t'*}"
         for root in "${!roots[@]}"; do [[ "$root" == .agents/skills ]] || wanted["${target}/${root}/${rel}"]=1; done
     done < <(manifest_read_shared "$manifest")
-    [[ -d "${target}/.agents/skills" ]] && while IFS= read -r -d '' path; do
-        rel="${path#${target}/.agents/skills/}"; [[ "$rel" == aid-* || "$rel" == aid-*/* ]] && wanted["$path"]=1
-    done < <(find "${target}/.agents/skills" -type f -print0 2>/dev/null)
     if [[ -d "${target}/.aid/runtime" ]]; then
         while IFS= read -r -d '' path; do
             [[ "$path" == */node_modules/* ]] && continue

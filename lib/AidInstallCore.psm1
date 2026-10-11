@@ -1951,10 +1951,10 @@ function script:Get-AidGitignoreBlock {
         ".aid/.control/",
         ".aid/generated/",
         ".aid/knowledge/.cache/",
-        ".aid/.worktrees/",
-        ".aid/runtime/**/node_modules/"
+        ".aid/.worktrees/"
     )
     if (-not $worktree.StartsWith('.aid/', [System.StringComparison]::Ordinal)) { $lines += ($worktree.TrimEnd('/') + '/') }
+    $lines += '.aid/runtime/**/node_modules/'
     $lines += $script:_AidGiEnd
     return ($lines -join "`n")
 }
