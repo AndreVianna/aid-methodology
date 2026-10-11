@@ -6,11 +6,11 @@ maintainer approved execution. Current phase `Execute`, lifecycle `Running`.
 
 ## Current execution checkpoint
 
-Wave4: task007 committed/pushed67c3360d5 and In Review (51 focused packaging assertions, version sync and syntax pass); offline staging implemented, no release publication. Task016 is In Progress for source-invariant tests; Sol wave4 review follows both. Waves1-3 Done.
+Wave4 implementations committed/pushed: 007 67c3360d5 (packaging51 pass), 016 656a5806a (source-invariants23 pass). Both In Review for Sol. Full scanner suite S04 fails coined-term preservation despite new scanner controls passing; baseline/ownership not yet independently verified, do not claim task016 clear. Wave5 not started.
 
 - Done (7/32): task-001, task-002, task-003, task-004, task-005, task-006, task-011.
-- In Progress: task-016.
-- In Review: task-007.
+- In Progress: none.
+- In Review: task-007, task-016.
 - Failed/Blocked: none.
 - Pending: task-008, task-009, task-010, task-012, task-013, task-014, task-015, task-017, task-018, task-019, task-020, task-021, task-022, task-023, task-024, task-025, task-026, task-027, task-028, task-029, task-030, task-031, task-032.
 - Current wave: 4 of 15. Derive authoritative waves from task dependency headers.

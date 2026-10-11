@@ -118,7 +118,7 @@ phase: Execute
 # [W] aid-{skill} | none
 active_skill: aid-execute
 # [W]
-updated: '2026-10-11T06:12:05Z'
+updated: '2026-10-11T06:15:29Z'
 # [W] set only when lifecycle = Paused-Awaiting-Input
 pause_reason: --
 # [W] set only when lifecycle = Blocked
@@ -555,6 +555,11 @@ lifecycle_history:
     grade: --
     notes: '/aid-execute Codex'
 
+  - date: '2026-10-11'
+    event: 'Task016 656a5806a In Review; source invariant23/23 and new scanner .agents/negativecontrols pass, but full scanner suite fails S04 coined terms. Developer reports pre-existing; Sol must verify baseline/ownership before clearance. Wave4 tasks007/016 enter Sol quick check.'
+    grade: --
+    notes: '/aid-execute Codex'
+
 deploy: []
 
 # [A] flattened only; single writer: this work's active branch. Written by
@@ -725,11 +730,18 @@ tasks_lifecycle:
     notes: --
     display_name: --
   task-016:
-    state: 'In Progress'
+    state: 'In Review'
     review: --
     elapsed: --
     notes: --
     display_name: --
+    dispatch_log:
+      - date: '2026-10-11T06:15:29.102766+00:00'
+        agent: 'gpt-6-luna'
+        eta_band: '3-8 min'
+        actual: '2m38s'
+        outcome: 'committed 656a5806a; source assertions23 pass; scanner controls pass; full scanner S04 fails'
+
   task-017:
     state: Pending
     review: --
