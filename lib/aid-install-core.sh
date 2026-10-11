@@ -278,12 +278,13 @@ resolve_version() {
 # Fetch + extract (online mode)
 # ---------------------------------------------------------------------------
 
-# fetch_tarball <tool> <version> <dest_dir>
-# Downloads the tarball + SHA256SUMS into dest_dir and verifies.
-# Exits 3 on fetch failure, 4 on checksum mismatch.
-fetch_tarball() {
-    local tool="$1" version="$2" dest_dir="$3"
-    local filename="aid-${tool}-v${version}.tar.gz"
+# fetch_artifact <kind> <tool> <version> <dest_dir>
+# Fetches one release artifact and its SHA256SUMS. kind is shared or tool.
+# A missing shared artifact is the explicit legacy-layout refusal (exit 3).
+fetch_artifact() {
+    local kind="$1" tool="$2" version="$3" dest_dir="$4"
+    local filename
+    if [[ "$kind" == shared ]]; then filename="aid-shared-v${version}.tar.gz"; else filename="aid-${tool}-v${version}.tar.gz"; fi
     local url="${AID_DOWNLOAD_BASE}/v${version}/${filename}"
     local sums_url="${AID_DOWNLOAD_BASE}/v${version}/SHA256SUMS"
     local tarball="${dest_dir}/${filename}"
@@ -295,11 +296,18 @@ fetch_tarball() {
         curl_args+=(-H "Authorization: Bearer ${token}")
     fi
 
-    echo "Fetching ${filename} ..." >&2
-    curl "${curl_args[@]}" -o "$tarball" "$url" || {
+    [[ "$kind" == tool ]] && echo "Fetching ${filename} ..." >&2
+    local fetch_status=""
+    if fetch_status="$(curl "${curl_args[@]}" -w '%{http_code}' -o "$tarball" "$url" 2>/dev/null)"; then
+        :
+    else
+        if [[ "$kind" == shared && "$fetch_status" == 404 ]]; then
+            echo "release v${version} has no shared payload -- it predates the shared layout and cannot be installed by this CLI; omit --version or use an older aid CLI" >&2
+            return 3
+        fi
         echo "ERROR: aid-install-core: failed to download ${url}" >&2
         return 3
-    }
+    fi
 
     # Fetch SHA256SUMS -- fail-closed. Every published release (release.sh Step 6:
     # "Emit SHA256SUMS") ships a SHA256SUMS asset alongside every tarball, so a
@@ -312,6 +320,82 @@ fetch_tarball() {
         return 3
     fi
     _verify_checksum "$tarball" "$sums_file" || return 4
+}
+
+# Backwards-compatible per-tool fetch wrapper.
+fetch_tarball() { fetch_artifact tool "$1" "$2" "$3"; }
+
+# extract_payload <tarball> <dest_dir> validates all archive member names before extraction.
+# It rejects absolute paths, parent segments, and links, then extracts at the staging root.
+extract_payload() {
+    local tarball="$1" dest_dir="$2" member normalized
+    local list_file
+    list_file="$(mktemp)"
+    if ! tar -tzf "$tarball" >"$list_file" 2>/dev/null; then
+        rm -f "$list_file"; echo "ERROR: aid-install-core: failed to list payload: $tarball" >&2; return 1
+    fi
+    while IFS= read -r member; do
+        normalized="${member%/}"
+        if [[ "$normalized" == /* || "$normalized" =~ ^[A-Za-z]: || "$normalized" == *$'\\'* || "/$normalized/" == *"/../"* ]]; then
+            rm -f "$list_file"; echo "ERROR: aid-install-core: unsafe payload member: ${member}" >&2; return 1
+        fi
+    done < "$list_file"
+    rm -f "$list_file"
+    if tar -tvzf "$tarball" | awk 'substr($0,1,1)=="l" || substr($0,1,1)=="h" { found=1 } END { exit !found }'; then
+        echo "ERROR: aid-install-core: payload links are not allowed: $tarball" >&2; return 1
+    fi
+    mkdir -p "$dest_dir"
+    tar -xzf "$tarball" -C "$dest_dir" || { echo "ERROR: aid-install-core: failed to extract $tarball" >&2; return 1; }
+}
+
+# validate_release_descriptor <descriptor> <kind> <artifact-version> <tool>
+validate_release_descriptor() {
+    local file="$1" kind="$2" artifact_version="$3" tool="${4:-}" line key value
+    local root
+    root="$(_root_dir "$tool")"
+    local -A counts=()
+    [[ -f "$file" ]] || { echo "ERROR: aid: descriptor $(basename "$file") missing required descriptor" >&2; return 1; }
+    while IFS= read -r line; do
+        key="${line%%=*}"; value="${line#*=}"
+        counts["$key"]=$(( ${counts["$key"]:-0} + 1 ))
+        if [[ "$key" != skill_mirror && "${counts[$key]}" -gt 1 ]]; then
+            echo "ERROR: aid: $(basename "$file"): ${key} may appear only once" >&2; return 1
+        fi
+        case "$key" in
+            aid_version)
+                [[ "$value" == "$artifact_version" ]] || { echo "ERROR: aid: $(basename "$file"): aid_version must match artifact version ${artifact_version}" >&2; return 1; } ;;
+            tool)
+                [[ "$kind" == tool && "$value" == "$tool" ]] || { echo "ERROR: aid: $(basename "$file"): invalid tool '${value}'" >&2; return 1; } ;;
+            skill_mirror)
+                [[ "$kind" == tool && "$value" =~ ^\.[a-z]+/skills$ && "$value" != ".agents/skills" && "$value" == "$root"/* ]] || { echo "ERROR: aid: $(basename "$file"): invalid skill_mirror '${value}'" >&2; return 1; } ;;
+            worktree_root)
+                [[ "$kind" == tool && ( "$value" == ".aid/.worktrees" || "$value" == "$root/worktrees" ) ]] || { echo "ERROR: aid: $(basename "$file"): invalid worktree_root '${value}'" >&2; return 1; } ;;
+            context_import)
+                [[ "$kind" == tool && "$value" == "CLAUDE.md" ]] || { echo "ERROR: aid: $(basename "$file"): invalid context_import '${value}'" >&2; return 1; } ;;
+            rules_inline)
+                [[ "$kind" == tool && "$value" == "true" ]] || { echo "ERROR: aid: $(basename "$file"): rules_inline must be true" >&2; return 1; } ;;
+        esac
+    done < <(read_kv_conf "$file")
+    if [[ "$kind" == shared ]] && ! grep -q '^aid_version=' "$file"; then
+        echo "ERROR: aid: $(basename "$file"): missing aid_version" >&2; return 1
+    fi
+    if [[ "$kind" == tool ]] && ! grep -q '^tool=' "$file"; then
+        echo "ERROR: aid: $(basename "$file"): missing tool" >&2; return 1
+    fi
+}
+
+_validate_artifact_members() {
+    local tarball="$1" kind="$2" tool="${3:-}" member normalized root
+    root="$(_root_dir "$tool")"
+    local list_file; list_file="$(mktemp)"
+    tar -tzf "$tarball" > "$list_file" 2>/dev/null || { rm -f "$list_file"; return 1; }
+    while IFS= read -r member; do
+        normalized="${member%/}"
+        if [[ "$kind" == tool && "$normalized" != aid-tool.conf && "$normalized" != "$root/agents" && "$normalized" != "$root/agents/"* ]]; then
+            rm -f "$list_file"; echo "ERROR: aid: tool artifact contains disallowed member: ${normalized}" >&2; return 1
+        fi
+    done < "$list_file"
+    rm -f "$list_file"
 }
 
 # _verify_checksum <tarball> <sums_file>
@@ -3013,27 +3097,6 @@ install_tool() {
             install_paths+=("$root_agent")
         fi
     fi
-
-    # Manifest-seam entry gate (PLAN risk #3, delivery-001->002 seam).
-    # Runs BEFORE manifest_write so a contaminated bundle never writes to disk.
-    # Assert that the new bundle's path set does NOT contain any retired roots.
-    # If a retired path leaked into the new manifest, fail loudly -- do not prune
-    # against a contaminated manifest (content-isolation cornerstone).
-    local _retired_roots=(".agents/" ".cursor/rules/" ".agent/rules/")
-    local _rr _leaked
-    for _rr in "${_retired_roots[@]}"; do
-        for _p in "${install_paths[@]+"${install_paths[@]}"}"; do
-            if [[ "$_p" == "${_rr}"* ]]; then
-                _leaked="$_p"
-                break
-            fi
-        done
-        if [[ -n "${_leaked:-}" ]]; then
-            echo "ERROR: aid-install-core: manifest-seam violation: retired root '${_rr}' leaked into the new bundle manifest (path: ${_leaked}). Aborting install to protect user content." >&2
-            return 1
-        fi
-    done
-    unset _rr _leaked
 
     # Write manifest (merge). A failure here MUST abort loudly (parity with PS
     # Write-AidManifest, which throws) -- otherwise a failed manifest write is a

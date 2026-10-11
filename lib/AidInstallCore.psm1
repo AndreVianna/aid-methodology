@@ -289,13 +289,14 @@ function Resolve-AidVersion {
 # Fetch-Tarball <tool> <version> <destDir>
 # Downloads the tarball + SHA256SUMS into destDir and verifies.
 # Returns $true on success, $false on failure.
-function Fetch-Tarball {
+function Fetch-AidArtifact {
     param(
+        [ValidateSet('shared','tool')][string]$Kind,
         [string]$Tool,
         [string]$Version,
         [string]$DestDir
     )
-    $filename  = "aid-$Tool-v$Version.tar.gz"
+    $filename  = if ($Kind -eq 'shared') { "aid-shared-v$Version.tar.gz" } else { "aid-$Tool-v$Version.tar.gz" }
     $url       = "$($script:AID_DOWNLOAD_BASE)/v$Version/$filename"
     $sumsUrl   = "$($script:AID_DOWNLOAD_BASE)/v$Version/SHA256SUMS"
     $tarball   = Join-Path $DestDir $filename
@@ -307,10 +308,16 @@ function Fetch-Tarball {
         $headers['Authorization'] = "Bearer $token"
     }
 
-    [Console]::Error.WriteLine("Fetching $filename ...")
+    if ($Kind -eq 'tool') { [Console]::Error.WriteLine("Fetching $filename ...") }
     try {
         Invoke-WebRequest -Uri $url -OutFile $tarball -Headers $headers -UseBasicParsing -ErrorAction Stop
     } catch {
+        $statusCode = 0
+        try { $statusCode = [int]$_.Exception.Response.StatusCode } catch {}
+        if ($Kind -eq 'shared' -and $statusCode -eq 404) {
+            [Console]::Error.WriteLine("release v$Version has no shared payload -- it predates the shared layout and cannot be installed by this CLI; omit --version or use an older aid CLI")
+            return $false
+        }
         [Console]::Error.WriteLine("ERROR: AidInstallCore: failed to download $url : $_")
         return $false
     }
@@ -336,6 +343,11 @@ function Fetch-Tarball {
     }
 
     return $true
+}
+
+function Fetch-Tarball {
+    param([string]$Tool, [string]$Version, [string]$DestDir)
+    return (Fetch-AidArtifact -Kind tool -Tool $Tool -Version $Version -DestDir $DestDir)
 }
 
 # Invoke-VerifyChecksum <tarball> <sumsFile>
@@ -435,6 +447,30 @@ function Extract-Tarball {
         [Console]::Error.WriteLine("ERROR: AidInstallCore: Expand-Archive fallback failed: $_")
         return $false
     }
+}
+
+function Expand-AidPayload {
+    param([string]$Tarball, [string]$DestDir)
+    $tarExe = Get-Command 'tar' -ErrorAction SilentlyContinue
+    if (-not $tarExe) { [Console]::Error.WriteLine('ERROR: AidInstallCore: tar is required to safely extract payloads'); return $false }
+    try {
+        $members = @(& tar -tzf $Tarball 2>$null)
+        if ($LASTEXITCODE -ne 0) { [Console]::Error.WriteLine("ERROR: AidInstallCore: failed to list payload: $Tarball"); return $false }
+        foreach ($member in $members) {
+            $name = [string]$member
+            if ([System.IO.Path]::IsPathRooted($name) -or $name -match '^[A-Za-z]:' -or $name -match '(^|[/\\])\.\.([/\\]|$)' -or $name -match '\\') {
+                [Console]::Error.WriteLine("ERROR: AidInstallCore: unsafe payload member: $name"); return $false
+            }
+        }
+        $verbose = @(& tar -tvzf $Tarball 2>$null)
+        if ($LASTEXITCODE -ne 0 -or @($verbose | Where-Object { $_ -match '^[lh]' }).Count -gt 0) {
+            [Console]::Error.WriteLine("ERROR: AidInstallCore: payload links are not allowed: $Tarball"); return $false
+        }
+        if (-not (Test-Path -LiteralPath $DestDir -PathType Container)) { New-Item -ItemType Directory -Path $DestDir -Force | Out-Null }
+        & tar -xzf $Tarball -C $DestDir 2>$null | Out-Null
+        if ($LASTEXITCODE -ne 0) { [Console]::Error.WriteLine("ERROR: AidInstallCore: failed to extract payload: $Tarball"); return $false }
+        return $true
+    } catch { [Console]::Error.WriteLine("ERROR: AidInstallCore: payload extraction failed: $_"); return $false }
 }
 
 # ---------------------------------------------------------------------------
@@ -2265,22 +2301,6 @@ function Install-AidTool {
         $installPaths.Add($rootAgentFile)
     }
 
-    # Manifest-seam entry gate (PLAN risk #3, delivery-001->002 seam).
-    # Runs BEFORE Write-AidManifest so a contaminated bundle never writes to disk.
-    # Assert that the new bundle's path set does NOT contain any retired roots.
-    # If a retired path leaked into the new manifest, fail loudly -- do not prune
-    # against a contaminated manifest (content-isolation cornerstone).
-    $retiredRoots = @('.agents/', '.cursor/rules/', '.agent/rules/')
-    foreach ($rr in $retiredRoots) {
-        foreach ($p in $installPaths) {
-            $pNorm = $p -replace '\\', '/'
-            if ($pNorm.StartsWith($rr, [System.StringComparison]::Ordinal)) {
-                [Console]::Error.WriteLine("ERROR: aid-install-core: manifest-seam violation: retired root '$rr' leaked into the new bundle manifest (path: $p). Aborting install to protect user content.")
-                return 1
-            }
-        }
-    }
-
     # Write manifest (merge).
     Write-AidManifest -ManifestPath $manifest -Tool $Tool -Version $Version `
         -Paths @($installPaths) -RootEntries @($rootEntries)
@@ -2710,7 +2730,9 @@ Export-ModuleMember -Function @(
     'Resolve-AidVersion',
     'Test-AidPrerelease',
     'Fetch-Tarball',
+    'Fetch-AidArtifact',
     'Extract-Tarball',
+    'Expand-AidPayload',
     'Verify-BundleChecksum',
     'Copy-AidFile',
     'Copy-AidDir',

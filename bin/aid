@@ -6421,60 +6421,85 @@ fi
 # ---------------------------------------------------------------------------
 _AID_RESOLVED_VERSION=""
 _AID_STAGING_DIR=""
+_AID_SHARED_STAGING_DIR=""
+declare -A _AID_RELEASE_TOOL_STAGING=()
 
-_prepare_tool_staging_aid() {
-    local tool="$1" version="$2" from_bundle="$3"
-
-    local tool_staging
-    tool_staging="$(mktemp -d "${_AID_STAGING_BASE}/staging-${tool}-XXXXXX")"
-
+_prepare_release_staging_aid() {
+    local version="$1" from_bundle="$2" tool shared_tar shared_base shared_version bundle_dir dl_dir tool_tar tool_base tool_version stage candidate
+    shift 2
     if [[ -n "$from_bundle" ]]; then
-        local tarball="$from_bundle"
-        if [[ -d "$from_bundle" ]]; then
-            tarball="$(ls "${from_bundle}"/aid-${tool}-v*.tar.gz 2>/dev/null | head -1)"
-            if [[ -z "$tarball" ]]; then
-                echo "ERROR: aid: no tarball found for tool '${tool}' in bundle directory: ${from_bundle}" >&2
-                exit 1
-            fi
-        fi
-        if [[ ! -f "$tarball" ]]; then
-            echo "ERROR: aid: bundle file not found: ${tarball}" >&2
-            exit 1
-        fi
-        verify_bundle_checksum "$tarball" || exit $?
-        local tbase
-        tbase="$(basename "$tarball")"
-        # Derive the version STRICTLY from the canonical tool-bundle name
-        # (aid-<tool>-v<semver>.tar.gz). Never stamp a raw filename: a name that
-        # does not match this shape is the wrong artifact (e.g. the CLI installer
-        # package aid-installer-<ver>.tgz), not a tool bundle. Fall back to an
-        # explicit --version, else fail loudly rather than recording garbage.
-        if [[ "$tbase" =~ ^aid-${tool}-v([0-9]+\.[0-9]+\.[0-9]+([.+-][0-9A-Za-z.+-]+)?)\.tar\.gz$ ]]; then
-            _AID_RESOLVED_VERSION="${BASH_REMATCH[1]}"
-        elif [[ -n "${version:-}" ]]; then
-            _AID_RESOLVED_VERSION="$version"
-        else
-            echo "ERROR: aid: '${tbase}' is not a valid AID tool bundle for '${tool}'." >&2
-            echo "       Expected a tarball named 'aid-${tool}-v<version>.tar.gz'." >&2
-            echo "       (Did you pass the CLI installer package instead of a tool bundle?" >&2
-            echo "        Point --from-bundle at a release staging dir or an aid-${tool}-v*.tar.gz file.)" >&2
+        if [[ -d "$from_bundle" ]]; then bundle_dir="$from_bundle"; else bundle_dir="$(dirname "$from_bundle")"; fi
+        local -a shared_files=()
+        while IFS= read -r -d '' f; do shared_files+=("$f"); done < <(find "$bundle_dir" -maxdepth 1 -type f -name 'aid-shared-v*.tar.gz' -print0 | sort -z)
+        if [[ "${#shared_files[@]}" -ne 1 ]]; then
+            local found="(none)"
+            if [[ "${#shared_files[@]}" -gt 0 ]]; then found="$(printf '%s ' "${shared_files[@]##*/}")"; fi
+            echo "ERROR: aid: expected exactly one aid-shared-v*.tar.gz in bundle directory; found: ${found}" >&2
             exit 2
         fi
-        extract_tarball "$tarball" "$tool_staging" || exit $?
+        shared_tar="${shared_files[0]}"
+        shared_base="$(basename "$shared_tar")"
+        [[ "$shared_base" =~ ^aid-shared-v([0-9]+\.[0-9]+\.[0-9]+([.+-][0-9A-Za-z.+-]+)?)\.tar\.gz$ ]] || { echo "ERROR: aid: invalid shared artifact name: ${shared_base}" >&2; exit 2; }
+        shared_version="${BASH_REMATCH[1]}"
     else
-        if [[ -z "$version" ]]; then
-            _AID_RESOLVED_VERSION="$(resolve_version)" || exit $?
-        else
-            _AID_RESOLVED_VERSION="$version"
-        fi
-        local dl_dir
-        dl_dir="$(mktemp -d "${_AID_STAGING_BASE}/download-${tool}-XXXXXX")"
-        fetch_tarball "$tool" "$_AID_RESOLVED_VERSION" "$dl_dir" || exit $?
-        local tarball="${dl_dir}/aid-${tool}-v${_AID_RESOLVED_VERSION}.tar.gz"
-        extract_tarball "$tarball" "$tool_staging" || exit $?
+        if [[ -z "$version" ]]; then version="$(resolve_version)" || exit $?; fi
+        shared_version="$version"
+        dl_dir="$(mktemp -d "${_AID_STAGING_BASE}/download-release-XXXXXX")"
+        fetch_artifact shared '' "$shared_version" "$dl_dir" || exit $?
+        shared_tar="${dl_dir}/aid-shared-v${shared_version}.tar.gz"
+        bundle_dir="$dl_dir"
     fi
+    verify_bundle_checksum "$shared_tar" || exit $?
+    _validate_artifact_members "$shared_tar" shared || exit 1
+    _AID_SHARED_STAGING_DIR="$(mktemp -d "${_AID_STAGING_BASE}/shared-XXXXXX")"
+    extract_payload "$shared_tar" "$_AID_SHARED_STAGING_DIR" || exit 1
+    validate_release_descriptor "${_AID_SHARED_STAGING_DIR}/aid-payload.conf" shared "$shared_version" || exit 1
+    _AID_RESOLVED_VERSION="$shared_version"
+    _AID_RELEASE_TOOL_STAGING=()
+    for tool in "$@"; do
+        if [[ -z "$from_bundle" ]]; then
+            fetch_artifact tool "$tool" "$shared_version" "$bundle_dir" || exit $?
+            tool_tar="${bundle_dir}/aid-${tool}-v${shared_version}.tar.gz"
+        else
+            local -a tool_files=()
+            while IFS= read -r -d '' candidate; do tool_files+=("$candidate"); done < <(find "$bundle_dir" -maxdepth 1 -type f -name "aid-${tool}-v*.tar.gz" -print0 | sort -z)
+            if [[ "${#tool_files[@]}" -ne 1 ]]; then
+                local tool_found="(none)"; [[ "${#tool_files[@]}" -gt 0 ]] && tool_found="$(printf '%s ' "${tool_files[@]##*/}")"
+                echo "ERROR: aid: expected exactly one aid-${tool}-v*.tar.gz; found: ${tool_found}" >&2; exit 2
+            fi
+            tool_tar="${tool_files[0]}"
+        fi
+        tool_base="$(basename "$tool_tar")"
+        [[ "$tool_base" =~ ^aid-${tool}-v([0-9]+\.[0-9]+\.[0-9]+([.+-][0-9A-Za-z.+-]+)?)\.tar\.gz$ ]] || { echo "ERROR: aid: invalid tool artifact name: ${tool_base}" >&2; exit 2; }
+        tool_version="${BASH_REMATCH[1]}"
+        verify_bundle_checksum "$tool_tar" || exit $?
+        [[ "$tool_version" == "$shared_version" ]] || { echo "ERROR: aid: tool artifact ${tool_base} does not match shared payload version ${shared_version}" >&2; exit 2; }
+        _validate_artifact_members "$tool_tar" tool "$tool" || exit 1
+        stage="$(mktemp -d "${_AID_STAGING_BASE}/staging-${tool}-XXXXXX")"
+        extract_payload "$tool_tar" "$stage" || exit 1
+        validate_release_descriptor "${stage}/aid-tool.conf" tool "$tool_version" "$tool" || exit 1
+        _AID_RELEASE_TOOL_STAGING["$tool"]="$stage"
+    done
+}
 
-    _AID_STAGING_DIR="$tool_staging"
+_check_staged_version() {
+    local staged="$1" manifest="$2" project_version=""
+    [[ -f "$manifest" ]] || return 0
+    if command -v python3 >/dev/null 2>&1; then
+        project_version="$(python3 - "$manifest" <<'PY'
+import json, sys
+try:
+    print(json.load(open(sys.argv[1], encoding="utf-8")).get("aid_version", ""))
+except Exception:
+    pass
+PY
+)"
+    else
+        project_version="$(sed -n 's/^[[:space:]]*"aid_version"[[:space:]]*:[[:space:]]*"\([^"]*\)".*/\1/p' "$manifest" | head -1)"
+    fi
+    [[ -z "$project_version" || "$staged" == "$project_version" ]] && return 0
+    echo "ERROR: aid add: staged version v${staged} would create a mixed-version project at v${project_version}. Run 'aid update' before adding tools." >&2
+    return 2
 }
 
 # ---------------------------------------------------------------------------
@@ -6485,12 +6510,6 @@ case "$SUBCMD" in
         # B-table (for 'add'): writability pre-check BEFORE any .aid/ is created.
         # Decision #3: never elevate .aid/ creation -- error if folder is not writable.
         if [[ "$SUBCMD" == "add" ]]; then
-            if [[ ! -w "$_AID_TARGET" ]]; then
-                echo "ERROR: aid: add: target directory is not writable: ${_AID_TARGET}" >&2
-                echo "ERROR: aid: add: AID will not create a root-owned .aid/ -- fix folder permissions and retry." >&2
-                rm -rf "$_AID_STAGING_BASE"
-                exit 1
-            fi
             _aid_manifest_format_gate "${_AID_TARGET}" || { _gate_rc=$?; rm -rf "$_AID_STAGING_BASE"; exit "$_gate_rc"; }
             _aid_layout_gate "${_AID_TARGET}" || { _gate_rc=$?; rm -rf "$_AID_STAGING_BASE"; exit "$_gate_rc"; }
             if _aid_manifest_version_skew "$_AID_MANIFEST"; then
@@ -6564,15 +6583,17 @@ case "$SUBCMD" in
         declare -A _STAGE_MAP=()   # tool -> staging_dir
         _STAGE_VERSION=""          # single resolved version for all tools
 
-        for _tool in "${_AID_TOOLS[@]}"; do
-            _prepare_tool_staging_aid "$_tool" "$_AID_VERSION_ARG" "$_AID_FROM_BUNDLE"
-            _STAGE_MAP["$_tool"]="$_AID_STAGING_DIR"
-            # All tools must be at the same version (the first resolved wins, the rest
-            # confirm by the same --version / bundle arg).
-            if [[ -z "$_STAGE_VERSION" ]]; then
-                _STAGE_VERSION="$_AID_RESOLVED_VERSION"
+        _prepare_release_staging_aid "$_AID_VERSION_ARG" "$_AID_FROM_BUNDLE" "${_AID_TOOLS[@]}"
+        _STAGE_VERSION="$_AID_RESOLVED_VERSION"
+        for _tool in "${_AID_TOOLS[@]}"; do _STAGE_MAP["$_tool"]="${_AID_RELEASE_TOOL_STAGING[$_tool]}"; done
+        if [[ "$SUBCMD" == add ]]; then
+            _check_staged_version "$_STAGE_VERSION" "$_AID_MANIFEST" || { _gate_rc=$?; rm -rf "$_AID_STAGING_BASE"; exit "$_gate_rc"; }
+            if [[ ! -w "$_AID_TARGET" ]]; then
+                echo "ERROR: aid: add: target directory is not writable: ${_AID_TARGET}" >&2
+                echo "ERROR: aid: add: AID will not create a root-owned .aid/ -- fix folder permissions and retry." >&2
+                rm -rf "$_AID_STAGING_BASE"; exit 1
             fi
-        done
+        fi
 
         # ---------------------------------------------------------------------------
         # FR10 --dry-run: print the plan and exit with no writes.

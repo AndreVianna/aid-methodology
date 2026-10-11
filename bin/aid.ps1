@@ -5907,51 +5907,101 @@ New-Item -ItemType Directory -Path $_AidStagingBase -Force | Out-Null
 $script:_DispResolvedVersion = ''
 $script:_DispStagingDir      = ''
 
-function script:Prepare-AidToolStaging {
-    param([string]$Tool, [string]$Version, [string]$Bundle)
-
-    $toolStaging = Join-Path $_AidStagingBase ("staging-$Tool-" + [System.IO.Path]::GetRandomFileName())
-    New-Item -ItemType Directory -Path $toolStaging -Force | Out-Null
-
-    if ($Bundle) {
-        $tarball = $Bundle
-        if (Test-Path $Bundle -PathType Container) {
-            $pattern = Join-Path $Bundle "aid-$Tool-v*.tar.gz"
-            $found = Get-ChildItem -Path $pattern -ErrorAction SilentlyContinue | Select-Object -First 1
-            if (-not $found) {
-                [Console]::Error.WriteLine("ERROR: aid: no tarball found for tool '$Tool' in bundle directory: $Bundle")
-                script:Exit-Aid 1
-            }
-            $tarball = $found.FullName
+function script:Test-AidReleaseDescriptor {
+    param([string]$Path, [string]$Kind, [string]$Version, [string]$Tool='')
+    try { $entries = Read-AidKvConf -Path $Path } catch { [Console]::Error.WriteLine("ERROR: aid: $($_.Exception.Message)"); return $false }
+    if (-not (Test-Path -LiteralPath $Path -PathType Leaf)) { [Console]::Error.WriteLine("ERROR: aid: $(Split-Path $Path -Leaf): missing descriptor"); return $false }
+    $root = switch ($Tool) { 'claude-code' { '.claude' } 'codex' { '.codex' } 'cursor' { '.cursor' } 'copilot-cli' { '.github' } 'antigravity' { '.agent' } default { '' } }
+    $counts = @{}
+    foreach ($entry in $entries) {
+        $splitAt = $entry.IndexOf('='); $key = $entry.Substring(0, $splitAt); $value = $entry.Substring($splitAt + 1)
+        if (-not $counts.ContainsKey($key)) { $counts[$key] = 0 }; $counts[$key]++
+        if ($key -cne 'skill_mirror' -and $counts[$key] -gt 1) { [Console]::Error.WriteLine("ERROR: aid: $(Split-Path $Path -Leaf): $key may appear only once"); return $false }
+        $valid = $true
+        switch -CaseSensitive ($key) {
+            'aid_version' { $valid = ($value -ceq $Version) }
+            'skill_mirror' { $valid = ($Kind -eq 'tool' -and $value -match '^\.[a-z]+/skills$' -and $value -cne '.agents/skills' -and $value.StartsWith("$root/", [System.StringComparison]::Ordinal)) }
+            'worktree_root' { $valid = ($Kind -eq 'tool' -and ($value -ceq '.aid/.worktrees' -or $value -ceq "$root/worktrees")) }
+            'context_import' { $valid = ($Kind -eq 'tool' -and $value -ceq 'CLAUDE.md') }
+            'rules_inline' { $valid = ($Kind -eq 'tool' -and $value -ceq 'true') }
+            'tool' { $valid = ($Kind -eq 'tool' -and $value -ceq $Tool) }
         }
-        if (-not (Test-Path $tarball -PathType Leaf)) {
-            [Console]::Error.WriteLine("ERROR: aid: bundle file not found: $tarball")
-            script:Exit-Aid 1
-        }
-        if (-not (Verify-BundleChecksum -Tarball $tarball)) { script:Exit-Aid 4 }
-        $tbase = [System.IO.Path]::GetFileName($tarball)
-        $script:_DispResolvedVersion = $tbase -replace "^aid-$Tool-v", '' -replace '\.tar\.gz$', ''
-        if (-not $script:_DispResolvedVersion) {
-            $script:_DispResolvedVersion = if ($Version) { $Version } else { 'unknown' }
-        }
-        if (-not (Extract-Tarball -Tarball $tarball -DestDir $toolStaging)) { script:Exit-Aid 1 }
-    } else {
-        if (-not $Version) {
-            $script:_DispResolvedVersion = Resolve-AidVersion
-            if (-not $script:_DispResolvedVersion) { script:Exit-Aid 3 }
-        } else {
-            $script:_DispResolvedVersion = $Version
-        }
-        $dlDir = Join-Path $_AidStagingBase ("download-$Tool-" + [System.IO.Path]::GetRandomFileName())
-        New-Item -ItemType Directory -Path $dlDir -Force | Out-Null
-        if (-not (Fetch-Tarball -Tool $Tool -Version $script:_DispResolvedVersion -DestDir $dlDir)) {
-            script:Exit-Aid 3
-        }
-        $tarball = Join-Path $dlDir "aid-$Tool-v$($script:_DispResolvedVersion).tar.gz"
-        if (-not (Extract-Tarball -Tarball $tarball -DestDir $toolStaging)) { script:Exit-Aid 1 }
+        if (-not $valid) { [Console]::Error.WriteLine("ERROR: aid: $(Split-Path $Path -Leaf): invalid $key"); return $false }
     }
+    if ($Kind -eq 'shared' -and @($entries | Where-Object { $_ -match '^aid_version=' }).Count -eq 0) { [Console]::Error.WriteLine("ERROR: aid: $(Split-Path $Path -Leaf): missing aid_version"); return $false }
+    if ($Kind -eq 'tool' -and @($entries | Where-Object { $_ -match '^tool=' }).Count -eq 0) { [Console]::Error.WriteLine("ERROR: aid: $(Split-Path $Path -Leaf): missing tool"); return $false }
+    return $true
+}
 
-    $script:_DispStagingDir = $toolStaging
+function script:Prepare-AidReleaseStaging {
+    param([string]$Version, [string]$Bundle, [string[]]$Tools)
+    $bundleDir = ''
+    if ($Bundle) {
+        if (Test-Path -LiteralPath $Bundle -PathType Container) { $bundleDir = $Bundle }
+        else { $bundleDir = Split-Path -Parent $Bundle; if (-not $bundleDir) { $bundleDir = (Get-Location).Path } }
+    }
+    else {
+        if (-not $Version) { $Version = Resolve-AidVersion; if (-not $Version) { script:Exit-Aid 3 } }
+        $bundleDir = Join-Path $_AidStagingBase ("download-release-" + [System.IO.Path]::GetRandomFileName())
+        New-Item -ItemType Directory -Path $bundleDir -Force | Out-Null
+        if (-not (Fetch-AidArtifact -Kind shared -Version $Version -DestDir $bundleDir)) { script:Exit-Aid 3 }
+    }
+    $sharedFiles = @(Get-ChildItem -LiteralPath $bundleDir -Filter 'aid-shared-v*.tar.gz' -File -ErrorAction SilentlyContinue | Sort-Object Name)
+    if ($sharedFiles.Count -ne 1) {
+        $found = if ($sharedFiles.Count) { ($sharedFiles | ForEach-Object { $_.Name }) -join ', ' } else { '(none)' }
+        [Console]::Error.WriteLine("ERROR: aid: expected exactly one aid-shared-v*.tar.gz in bundle directory; found: $found")
+        script:Exit-Aid 2
+    }
+    $sharedTar = $sharedFiles[0].FullName
+    if ([System.IO.Path]::GetFileName($sharedTar) -notmatch '^aid-shared-v([0-9]+\.[0-9]+\.[0-9]+([.+-][0-9A-Za-z.+-]+)?)\.tar\.gz$') { [Console]::Error.WriteLine('ERROR: aid: invalid shared artifact name'); script:Exit-Aid 2 }
+    $sharedVersion = $Matches[1]
+    if (-not (Verify-BundleChecksum -Tarball $sharedTar)) { script:Exit-Aid 4 }
+    $script:_DispSharedStagingDir = Join-Path $_AidStagingBase ("shared-" + [System.IO.Path]::GetRandomFileName())
+    if (-not (Expand-AidPayload -Tarball $sharedTar -DestDir $script:_DispSharedStagingDir)) { script:Exit-Aid 1 }
+    if (-not (script:Test-AidReleaseDescriptor -Path (Join-Path $script:_DispSharedStagingDir 'aid-payload.conf') -Kind shared -Version $sharedVersion)) { script:Exit-Aid 1 }
+    $script:_DispResolvedVersion = $sharedVersion
+    $script:_DispReleaseToolStaging = @{}
+    foreach ($tool in $Tools) {
+        if (-not $Bundle) {
+            if (-not (Fetch-AidArtifact -Kind tool -Tool $tool -Version $sharedVersion -DestDir $bundleDir)) { script:Exit-Aid 3 }
+            $toolTar = Join-Path $bundleDir "aid-$tool-v$sharedVersion.tar.gz"
+        } else {
+            $toolFiles = @(Get-ChildItem -LiteralPath $bundleDir -Filter "aid-$tool-v*.tar.gz" -File -ErrorAction SilentlyContinue | Sort-Object Name)
+            if ($toolFiles.Count -ne 1) {
+                $toolFound = if ($toolFiles.Count) { ($toolFiles | ForEach-Object { $_.Name }) -join ', ' } else { '(none)' }
+                [Console]::Error.WriteLine("ERROR: aid: expected exactly one aid-$tool-v*.tar.gz; found: $toolFound"); script:Exit-Aid 2
+            }
+            $toolTar = $toolFiles[0].FullName
+        }
+        if (-not (Test-Path -LiteralPath $toolTar -PathType Leaf)) { [Console]::Error.WriteLine("ERROR: aid: bundle artifact missing: $(Split-Path $toolTar -Leaf)"); script:Exit-Aid 2 }
+        if (-not (Verify-BundleChecksum -Tarball $toolTar)) { script:Exit-Aid 4 }
+        if ([System.IO.Path]::GetFileName($toolTar) -notmatch "^aid-$([regex]::Escape($tool))-v([0-9]+\.[0-9]+\.[0-9]+([.+-][0-9A-Za-z.+-]+)?)\.tar\.gz$") { [Console]::Error.WriteLine('ERROR: aid: invalid tool artifact name'); script:Exit-Aid 2 }
+        if ($Matches[1] -cne $sharedVersion) { [Console]::Error.WriteLine("ERROR: aid: tool artifact $(Split-Path $toolTar -Leaf) does not match shared payload version $sharedVersion"); script:Exit-Aid 2 }
+        $members = @(& tar -tzf $toolTar 2>$null)
+        if ($LASTEXITCODE -ne 0) { script:Exit-Aid 1 }
+        $root = switch ($tool) { 'claude-code' { '.claude' } 'codex' { '.codex' } 'cursor' { '.cursor' } 'copilot-cli' { '.github' } 'antigravity' { '.agent' } }
+        foreach ($member in $members) {
+            $name = ([string]$member).TrimEnd('/')
+            if ($name -cne 'aid-tool.conf' -and $name -cne "$root/agents" -and -not $name.StartsWith("$root/agents/", [System.StringComparison]::Ordinal)) {
+                [Console]::Error.WriteLine("ERROR: aid: tool artifact contains disallowed member: $name"); script:Exit-Aid 1
+            }
+        }
+        $stage = Join-Path $_AidStagingBase ("staging-$tool-" + [System.IO.Path]::GetRandomFileName())
+        if (-not (Expand-AidPayload -Tarball $toolTar -DestDir $stage)) { script:Exit-Aid 1 }
+        if (-not (script:Test-AidReleaseDescriptor -Path (Join-Path $stage 'aid-tool.conf') -Kind tool -Version $sharedVersion -Tool $tool)) { script:Exit-Aid 1 }
+        $script:_DispReleaseToolStaging[$tool] = $stage
+    }
+    if ($Tools.Count -gt 0) { $script:_DispStagingDir = $script:_DispReleaseToolStaging[$Tools[0]] }
+}
+
+function script:Test-StagedVersion {
+    param([string]$StagedVersion, [string]$ManifestPath)
+    if (-not (Test-Path -LiteralPath $ManifestPath -PathType Leaf)) { return $true }
+    try { $data = Get-Content -LiteralPath $ManifestPath -Raw | ConvertFrom-Json } catch { return $true }
+    $projectVersion = if ($data.PSObject.Properties['aid_version']) { [string]$data.aid_version } else { '' }
+    if (-not $projectVersion -or $projectVersion -ceq $StagedVersion) { return $true }
+    [Console]::Error.WriteLine("ERROR: aid add: staged version v$StagedVersion would create a mixed-version project at v$projectVersion. Run 'aid update' before adding tools.")
+    return $false
 }
 
 # ---------------------------------------------------------------------------
@@ -5963,14 +6013,6 @@ try {
             # B-table (for 'add'): writability pre-check BEFORE any .aid/ is created.
             # Decision #3: never elevate .aid/ creation -- error if folder is not writable.
             if ($SUBCMD -eq 'add') {
-                $_aidTargetWritable = $false
-                $_wProbe = Join-Path $_AidTarget ('.aid-write-probe.' + [System.IO.Path]::GetRandomFileName())
-                try { [System.IO.File]::WriteAllText($_wProbe, ''); Remove-Item -LiteralPath $_wProbe -Force -ErrorAction SilentlyContinue; $_aidTargetWritable = $true } catch {}
-                if (-not $_aidTargetWritable) {
-                    [Console]::Error.WriteLine("ERROR: aid: add: target directory is not writable: $_AidTarget")
-                    [Console]::Error.WriteLine("ERROR: aid: add: AID will not create a root-owned .aid/ -- fix folder permissions and retry.")
-                    script:Exit-Aid 1
-                }
                 if (-not (script:Test-AidManifestFormatGate -Repo $_AidTarget)) { script:Exit-Aid 2 }
                 if (-not (script:Test-AidLayoutGate -Repo $_AidTarget)) { script:Exit-Aid 2 }
                 if (script:Test-AidManifestVersionSkew -ManifestPath $_AidManifest) {
@@ -6054,10 +6096,19 @@ try {
             $stageMap     = [System.Collections.Generic.Dictionary[string,string]]::new()
             $stageVersion = ''
 
-            foreach ($t in $_AidTools) {
-                script:Prepare-AidToolStaging -Tool $t -Version $_AidVersionArg -Bundle $_AidFromBundle
-                $stageMap[$t] = $script:_DispStagingDir
-                if (-not $stageVersion) { $stageVersion = $script:_DispResolvedVersion }
+            script:Prepare-AidReleaseStaging -Version $_AidVersionArg -Bundle $_AidFromBundle -Tools $_AidTools
+            $stageVersion = $script:_DispResolvedVersion
+            foreach ($t in $_AidTools) { $stageMap[$t] = $script:_DispReleaseToolStaging[$t] }
+            if ($SUBCMD -eq 'add') {
+                if (-not (script:Test-StagedVersion -StagedVersion $stageVersion -ManifestPath $_AidManifest)) { script:Exit-Aid 2 }
+                $_aidTargetWritable = $false
+                $_wProbe = Join-Path $_AidTarget ('.aid-write-probe.' + [System.IO.Path]::GetRandomFileName())
+                try { [System.IO.File]::WriteAllText($_wProbe, ''); Remove-Item -LiteralPath $_wProbe -Force -ErrorAction SilentlyContinue; $_aidTargetWritable = $true } catch {}
+                if (-not $_aidTargetWritable) {
+                    [Console]::Error.WriteLine("ERROR: aid: add: target directory is not writable: $_AidTarget")
+                    [Console]::Error.WriteLine("ERROR: aid: add: AID will not create a root-owned .aid/ -- fix folder permissions and retry.")
+                    script:Exit-Aid 1
+                }
             }
 
             # ---------------------------------------------------------------------------
