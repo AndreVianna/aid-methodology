@@ -118,7 +118,7 @@ phase: Execute
 # [W] aid-{skill} | none
 active_skill: aid-execute
 # [W]
-updated: '2026-10-11T06:27:47Z'
+updated: '2026-10-11T06:29:00Z'
 # [W] set only when lifecycle = Paused-Awaiting-Input
 pause_reason: --
 # [W] set only when lifecycle = Blocked
@@ -575,6 +575,11 @@ lifecycle_history:
     grade: --
     notes: '/aid-execute Codex'
 
+  - date: '2026-10-11'
+    event: 'Sol wave4 scoped checkPASS alltwo findingsFixed A+; release76/source24/scanner9 pass usingGNUawk, removalcounts matchbaseline. Tasks007/016 Done (9/32); wave5 task008 staging/validation In Progress.'
+    grade: --
+    notes: '/aid-execute Codex'
+
 deploy: []
 
 # [A] flattened only; single writer: this work's active branch. Written by
@@ -677,7 +682,7 @@ tasks_lifecycle:
         outcome: 'committed ed2db382e; 2 recovery-stamp fixtures and ASCII passed'
 
   task-007:
-    state: 'In Review'
+    state: Done
     review: --
     elapsed: --
     notes: --
@@ -696,7 +701,7 @@ tasks_lifecycle:
         outcome: 'committed cfadd72d4; retained release coverage restored,76 assertions pass'
 
   task-008:
-    state: Pending
+    state: 'In Progress'
     review: --
     elapsed: --
     notes: --
@@ -751,7 +756,7 @@ tasks_lifecycle:
     notes: --
     display_name: --
   task-016:
-    state: 'In Review'
+    state: Done
     review: --
     elapsed: --
     notes: --
