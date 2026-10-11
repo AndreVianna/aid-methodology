@@ -118,7 +118,7 @@ phase: Detail
 # [W] aid-{skill} | none
 active_skill: aid-update
 # [W]
-updated: '2026-10-11T01:38:58Z'
+updated: '2026-10-11T01:40:54Z'
 # [W] set only when lifecycle = Paused-Awaiting-Input
 pause_reason: --
 # [W] set only when lifecycle = Blocked
@@ -302,6 +302,10 @@ lifecycle_history:
     event: 'Codex cycle 1 FIX complete; definition verification started'
     grade: --
     notes: 'AC-14(c) and tasks 015/021 now require append-at-end with user-byte preservation, LF rule, and backup; canonical rules source and constant root regions remain as agreed'
+  - date: '2026-10-10'
+    event: 'Codex cycle 1 definition re-review complete; rows 38-40 verified Fixed; new rows 41-42 Pending'
+    grade: 'C+'
+    notes: 'Below floor A: profile README output contradiction and manifest-less interrupted upgrade recovery. Scoped task verification follows as requested by the handoff; no gate cleared and no new FIX loop begun'
 
 # [A] aid-deploy only; one entry per delivery (never derived from child
 #     files; aid-deploy is the sole author):
