@@ -37,6 +37,32 @@ for f in "$BPI" "$HARVEST"; do
   [[ -f "$f" ]] || { echo "FATAL: scanner not found at $f" >&2; exit 2; }
 done
 
+# task-016: installed shared skills must be pruned as well as the legacy tool
+# trees. Inspect the actual skip-list block in each source independently.
+skip_has_agents() {
+  awk '/^SKIP_DIRS=\(/{p=1} p{if ($0 ~ /(^|[[:space:]])\.agents([[:space:]]|$)/) found=1} /^\)/{if(p)exit} END{exit !found}' "$1"
+}
+for f in "$BPI" "$HARVEST"; do
+  if skip_has_agents "$f"; then
+    pass "task-016 ${f##*/} install-tree skip list contains .agents"
+    [[ "$VERBOSE" -eq 1 ]] || echo "  PASS: task-016 ${f##*/} install-tree skip list contains .agents"
+  else
+    fail "task-016 ${f##*/} install-tree skip list contains .agents"
+  fi
+done
+NEG_TMP="$(mktemp -d)"
+trap 'rm -rf "$NEG_TMP"' EXIT
+for f in "$BPI" "$HARVEST"; do
+  scratch="$NEG_TMP/${f##*/}"
+  sed 's/\.agents//g' "$f" > "$scratch"
+  if skip_has_agents "$scratch"; then
+    fail "task-016 negative control rejects ${f##*/} without .agents"
+  else
+    pass "task-016 negative control detects .agents removed from ${f##*/}"
+    [[ "$VERBOSE" -eq 1 ]] || echo "  PASS: task-016 negative control detects .agents removed from ${f##*/}"
+  fi
+done
+
 # ---------------------------------------------------------------------------
 # Build a target project that ALSO contains repo-root AID tool-install trees.
 # The tool trees carry unique tokens so any leakage is unmistakable.
