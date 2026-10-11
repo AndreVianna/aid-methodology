@@ -53,15 +53,35 @@
 #        user file still byte-identical; HOME/USERPROFILE pinned
 #   T53  Escape canary: real USERPROFILE/HOME was never touched by any T49-T52 fixture run
 #
+# Shared-layout acceptance (REQUIREMENTS section 9, Feature 001; v4 layout):
+#   AC-9   reference-counted shared entries: add/remove sequence, AGENTS.md and .gitattributes cleanup
+#   AC-10  drift is reported by status, repaired by update, and the modified files stay in .aid/.trash/
+#   AC-13  clean-slate upgrade from a v3 layout for claude-code, codex, cursor, copilot-cli and
+#          antigravity: AC-3 and AC-7 hold, AID-owned files are trashed, user files keep their bytes
+#
+# Staging: -StageDir <dir> is the output of `bash release.sh --stage-only --out <dir>`.
+# Linux smoke note: the v3 upgrade path (T48, T49-T52, AC-13) needs
+# [System.IO.File]::Replace with a backup path; a null backup throws on pwsh-on-Linux
+# (lib/AidInstallCore.psm1, Write-AidUpgradeRecovery). Windows is unaffected.
+#
 # Windows-only guards:
 #   Assertions involving $env:LOCALAPPDATA (AID_HOME default) are skipped when
 #   that variable is absent (i.e. on pwsh-on-Linux smoke runs) but are active
 #   on real Windows runners in CI.
 #
 # Usage:
-#   pwsh -NoProfile -File tests/windows/Test-AidInstaller.ps1
+#   pwsh -NoProfile -File tests/windows/Test-AidInstaller.ps1 -StageDir <dir>
+#
+# -StageDir is the release staging directory produced by
+#   bash release.sh --stage-only --out <dir>
+# (the installer-tests workflow runs that step first). This suite never builds
+# tool tarballs itself: every -FromBundle call passes the staging directory.
 #
 # REPO_ROOT is inferred from this file's location: tests/windows/ -> two levels up.
+
+param(
+    [string]$StageDir = ''
+)
 
 Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Continue'
@@ -221,44 +241,6 @@ if (-not (Test-Path $InstallPs1 -PathType Leaf)) {
 }
 
 # ---------------------------------------------------------------------------
-# Helper: build a flat-root fixture tarball for one tool from profiles/<tool>/.
-# Excludes README.md + emission-manifest.jsonl.
-# Output: $DestDir/aid-<tool>-v<ver>.tar.gz
-# ---------------------------------------------------------------------------
-function Build-FixtureTarball {
-    param([string]$Tool, [string]$DestDir)
-    $profileDir = Join-Path (Join-Path $RepoRoot 'profiles') $Tool
-    if (-not (Test-Path $profileDir -PathType Container)) {
-        [Console]::Error.WriteLine("ERROR: profile dir not found: $profileDir")
-        exit 1
-    }
-    $tarball = Join-Path $DestDir "aid-$Tool-v$Ver.tar.gz"
-
-    # Collect files, excluding README.md and emission-manifest.jsonl.
-    $filePaths = [System.Collections.Generic.List[string]]::new()
-    $items = @(Get-ChildItem -LiteralPath $profileDir -Recurse -File -Force -ErrorAction SilentlyContinue)
-    foreach ($item in $items) {
-        if ($item.Name -eq 'README.md' -or $item.Name -eq 'emission-manifest.jsonl') { continue }
-        $rel = $item.FullName.Substring($profileDir.Length).TrimStart([char]'\', [char]'/')
-        $filePaths.Add("./$($rel -replace '\\', '/')")
-    }
-
-    # Write file list (LF-separated, UTF-8 no-BOM).
-    $filelistPath = Join-Path $DestDir "filelist-$Tool.txt"
-    $listBytes    = [System.Text.Encoding]::UTF8.GetBytes(($filePaths -join "`n"))
-    [System.IO.File]::WriteAllBytes($filelistPath, $listBytes)
-
-    $tarArgs = @('-czf', $tarball, '--no-recursion', '-C', $profileDir, '-T', $filelistPath)
-    & tar @tarArgs 2>&1 | Out-Null
-    if ($LASTEXITCODE -ne 0) {
-        [Console]::Error.WriteLine("ERROR: failed to build fixture tarball for $Tool (tar exit $LASTEXITCODE)")
-        exit 1
-    }
-    Remove-Item -LiteralPath $filelistPath -Force -ErrorAction SilentlyContinue
-    return $tarball
-}
-
-# ---------------------------------------------------------------------------
 # Helper: invoke aid.ps1 as a sub-process.
 # Output (stdout+stderr merged) -> $script:_LastOut (ANSI stripped).
 # Exit code                     -> $script:_LastRC.
@@ -294,6 +276,20 @@ function Run-AidPs1 {
     $env:AID_LIB_PATH = $savedLib
 }
 
+# Set-PosixSafeHomeDrive: split HOMEDRIVE/HOMEPATH from a fake home only when it
+# carries a drive qualifier (Windows). On a pwsh-on-Linux smoke run the fake home is a
+# POSIX path with no qualifier, so HOMEDRIVE is cleared and HOMEPATH carries the path.
+function Set-PosixSafeHomeDrive {
+    param([string]$FakeRoot)
+    if ($FakeRoot -match '^([A-Za-z]:)(.*)$') {
+        $env:HOMEDRIVE = $Matches[1]
+        $env:HOMEPATH  = $Matches[2]
+    } else {
+        $env:HOMEDRIVE = ''
+        $env:HOMEPATH  = $FakeRoot
+    }
+}
+
 # Run-AidPs1Home: like Run-AidPs1 but forces $HOME inside the child pwsh so the
 # per-user .update-check cache read ($HOME/.aid/.update-check, FR10) is hermetic
 # and never touches the real user home. Used by the self-update-preamble tests (T46).
@@ -317,8 +313,7 @@ function Run-AidPs1Home {
     # code home from $PSCommandPath correctly.
     $env:HOME        = $FakeHome
     $env:USERPROFILE = $FakeHome
-    $env:HOMEDRIVE   = (Split-Path -Qualifier $FakeHome)
-    $env:HOMEPATH    = (Split-Path -NoQualifier $FakeHome)
+    Set-PosixSafeHomeDrive -FakeRoot $FakeHome
     $outLines = & $PwshExe -NoProfile -File $aidPs1Path @AidArgs 2>&1
     $script:_LastRC  = $LASTEXITCODE
     $script:_LastOut = ($outLines | ForEach-Object { [string]$_ }) -join "`n"
@@ -332,16 +327,138 @@ function Run-AidPs1Home {
 }
 
 # ---------------------------------------------------------------------------
-# Build fixture tarballs for the tools used in tests.
+# Shared-layout helpers (AC-3, AC-7, AC-9, AC-10 and AC-13 checks).
 # ---------------------------------------------------------------------------
-$FixtureDir = Join-Path $TmpRoot 'fixtures'
-New-Item -ItemType Directory -Path $FixtureDir -Force | Out-Null
 
-Write-Host "Building fixture tarballs..."
-$FixClaudeCode = Build-FixtureTarball 'claude-code' $FixtureDir
-$FixCodex      = Build-FixtureTarball 'codex'       $FixtureDir
-Write-Host "  claude-code: $FixClaudeCode"
-Write-Host "  codex      : $FixCodex"
+# Get-FileSha: SHA256 hex of a file, or '' when the file is absent.
+function Get-FileSha {
+    param([string]$Path)
+    if (-not (Test-Path -LiteralPath $Path -PathType Leaf)) { return '' }
+    return (Get-FileHash -LiteralPath $Path -Algorithm SHA256).Hash
+}
+
+# Get-DirShaRows: sorted "<sha256> <relpath>" rows for every file under $Dir.
+function Get-DirShaRows {
+    param([string]$Dir)
+    if (-not (Test-Path -LiteralPath $Dir -PathType Container)) { return @() }
+    $rows = New-Object System.Collections.Generic.List[string]
+    foreach ($f in @(Get-ChildItem -LiteralPath $Dir -Recurse -File -Force)) {
+        $rel = $f.FullName.Substring($Dir.Length).TrimStart([char]'\', [char]'/').Replace('\', '/')
+        $rows.Add((Get-FileSha -Path $f.FullName) + ' ' + $rel)
+    }
+    return @($rows | Sort-Object)
+}
+
+# Get-AidSharedSnapshot: sorted sha256 rows for the shared entries that AC-9 and AC-10
+# hold identical: .agents/skills/aid-*, .claude/skills/aid-*, .aid/runtime/ and AGENTS.md.
+function Get-AidSharedSnapshot {
+    param([string]$Target)
+    $files = New-Object System.Collections.Generic.List[string]
+    foreach ($skillRoot in @('.agents/skills', '.claude/skills')) {
+        $sr = Join-Path $Target $skillRoot
+        if (-not (Test-Path -LiteralPath $sr -PathType Container)) { continue }
+        foreach ($entry in @(Get-ChildItem -LiteralPath $sr -Filter 'aid-*' -Force -ErrorAction SilentlyContinue)) {
+            if ($entry.PSIsContainer) {
+                foreach ($f in @(Get-ChildItem -LiteralPath $entry.FullName -Recurse -File -Force)) { $files.Add($f.FullName) }
+            } else { $files.Add($entry.FullName) }
+        }
+    }
+    $rt = Join-Path $Target '.aid/runtime'
+    if (Test-Path -LiteralPath $rt -PathType Container) {
+        foreach ($f in @(Get-ChildItem -LiteralPath $rt -Recurse -File -Force)) { $files.Add($f.FullName) }
+    }
+    $agents = Join-Path $Target 'AGENTS.md'
+    if (Test-Path -LiteralPath $agents -PathType Leaf) { $files.Add($agents) }
+    $rows = New-Object System.Collections.Generic.List[string]
+    foreach ($full in $files) {
+        $rel = $full.Substring($Target.Length).TrimStart([char]'\', [char]'/').Replace('\', '/')
+        $rows.Add((Get-FileSha -Path $full) + ' ' + $rel)
+    }
+    return @($rows | Sort-Object)
+}
+
+# Count-AidEntries: number of aid-* entries directly inside $Dir (0 when absent).
+function Count-AidEntries {
+    param([string]$Dir)
+    if (-not (Test-Path -LiteralPath $Dir -PathType Container)) { return 0 }
+    return @(Get-ChildItem -LiteralPath $Dir -Filter 'aid-*' -Force -ErrorAction SilentlyContinue).Count
+}
+
+# Get-AidNamedFiles: files under $Dir that AID owns by name -- a file or directory
+# segment starting with aid-, measured relative to $Dir so the temp-root name is ignored.
+function Get-AidNamedFiles {
+    param([string]$Dir)
+    if (-not (Test-Path -LiteralPath $Dir -PathType Container)) { return @() }
+    $base = $Dir
+    return @(Get-ChildItem -LiteralPath $Dir -Recurse -File -Force -ErrorAction SilentlyContinue |
+        Where-Object { ($_.FullName.Substring($base.Length)) -match '[\\/]aid-' })
+}
+
+# Get-TreeMismatch: number of files under $Src (skipping node_modules and dot-named
+# entries, as the bash suites do) that are missing under $Dst or differ by sha256.
+function Get-TreeMismatch {
+    param([string]$Src, [string]$Dst)
+    $bad = 0
+    foreach ($f in @(Get-ChildItem -LiteralPath $Src -Recurse -File -Force)) {
+        $rel = $f.FullName.Substring($Src.Length).TrimStart([char]'\', [char]'/')
+        $skip = $false
+        foreach ($part in @($rel -split '[\\/]')) {
+            if ($part -eq 'node_modules' -or $part.StartsWith('.')) { $skip = $true }
+        }
+        if ($skip) { continue }
+        if ((Get-FileSha -Path (Join-Path $Dst $rel)) -ne (Get-FileSha -Path $f.FullName)) { $bad++ }
+    }
+    return $bad
+}
+
+# Get-ManifestUserNames: every tool name listed in a shared entry's users (or a mirror's users).
+function Get-ManifestUserNames {
+    param($Manifest)
+    $names = New-Object System.Collections.Generic.List[string]
+    if (-not $Manifest.PSObject.Properties['shared']) { return @() }
+    foreach ($entry in @($Manifest.shared.PSObject.Properties)) {
+        $v = $entry.Value
+        if ($v.PSObject.Properties['users']) { foreach ($u in @($v.users)) { $names.Add([string]$u) } }
+        if ($v.PSObject.Properties['mirrors']) {
+            foreach ($mir in @($v.mirrors.PSObject.Properties)) {
+                if ($mir.Value.PSObject.Properties['users']) { foreach ($u in @($mir.Value.users)) { $names.Add([string]$u) } }
+            }
+        }
+    }
+    return @($names)
+}
+
+# Write-V3File: create the parent directory and write one LF-terminated text file.
+function Write-V3File {
+    param([string]$Path, [string]$Text)
+    $parent = Split-Path -Parent $Path
+    if (-not (Test-Path -LiteralPath $parent -PathType Container)) { New-Item -ItemType Directory -Path $parent -Force | Out-Null }
+    [System.IO.File]::WriteAllText($Path, $Text)
+}
+
+# ---------------------------------------------------------------------------
+# Release staging directory. Every -FromBundle below passes $BundleDir, which
+# must hold the v4 artifacts for this VERSION: aid-shared-v<ver>.tar.gz (exactly
+# one, required by the bundle-dir contract) plus one aid-<tool>-v<ver>.tar.gz per
+# tool. The staging step runs before this suite (installer-tests.yml).
+# ---------------------------------------------------------------------------
+if (-not $StageDir) {
+    [Console]::Error.WriteLine("ERROR: -StageDir <dir> is required (output of: bash release.sh --stage-only --out <dir>)")
+    exit 1
+}
+if (-not (Test-Path -LiteralPath $StageDir -PathType Container)) {
+    [Console]::Error.WriteLine("ERROR: staging directory not found: $StageDir")
+    exit 1
+}
+$BundleDir = (Resolve-Path -LiteralPath $StageDir).Path
+foreach ($req in @("aid-shared-v$Ver.tar.gz", "aid-claude-code-v$Ver.tar.gz", "aid-codex-v$Ver.tar.gz",
+                   "aid-cursor-v$Ver.tar.gz", "aid-antigravity-v$Ver.tar.gz")) {
+    if (-not (Test-Path -LiteralPath (Join-Path $BundleDir $req) -PathType Leaf)) {
+        [Console]::Error.WriteLine("ERROR: staging directory is missing $req (expected VERSION $Ver)")
+        exit 1
+    }
+}
+Write-Host "Staging dir: $BundleDir"
 Write-Host ""
 
 # ===========================================================================
@@ -362,7 +479,7 @@ $ProjectAidHome = Join-Path $TmpRoot 'aid-home-project'
 $ProjT01 = Join-Path $TmpRoot 'project-t01'
 New-Item -ItemType Directory -Path $ProjT01 -Force | Out-Null
 
-Run-AidPs1 -AidHome $ProjectAidHome -AidArgs @('add', 'claude-code', '-FromBundle', $FixClaudeCode, '-Target', $ProjT01)
+Run-AidPs1 -AidHome $ProjectAidHome -AidArgs @('add', 'claude-code', '-FromBundle', $BundleDir, '-Target', $ProjT01)
 Assert-Eq "$($script:_LastRC)" '0' 'T01 install claude-code -> exit 0'
 
 # T02: Install tree exists.
@@ -391,7 +508,7 @@ if (Test-Path $mPathT05 -PathType Leaf) {
         $mObj = $mRaw | ConvertFrom-Json
         Assert ($mObj.tools.PSObject.Properties.Name -contains 'claude-code') `
             'T05a manifest contains claude-code' 'claude-code not in manifest.tools'
-        Assert-Contains $mRaw '"status": "owned"' 'T05b manifest status:owned'
+        Assert-Contains $mRaw '.claude/agents/aid-architect.md' 'T05b manifest records the claude-code files (v4 manifest has no status key)'
         Assert-Contains $mRaw '"format_version"' 'T05c manifest has format_version'
     } catch {
         script:RecordFail 'T05 manifest JSON parse' "exception: $_"
@@ -401,7 +518,7 @@ if (Test-Path $mPathT05 -PathType Leaf) {
 }
 
 # T06: Idempotent re-install -> exit 0 + "up to date".
-Run-AidPs1 -AidHome $ProjectAidHome -AidArgs @('add', 'claude-code', '-FromBundle', $FixClaudeCode, '-Target', $ProjT01)
+Run-AidPs1 -AidHome $ProjectAidHome -AidArgs @('add', 'claude-code', '-FromBundle', $BundleDir, '-Target', $ProjT01)
 Assert-Eq    "$($script:_LastRC)" '0' 'T06a idempotent re-install -> exit 0'
 Assert-Contains $script:_LastOut 'up to date' 'T06b idempotent shows "up to date"'
 
@@ -458,7 +575,7 @@ if (Test-Path (Join-Path (Join-Path $RepoRoot 'bin') 'aid.cmd') -PathType Leaf) 
 $ProjT09 = Join-Path $TmpRoot 'project-t09'
 New-Item -ItemType Directory -Path $ProjT09 -Force | Out-Null
 
-Run-AidPs1 -AidHome $AidHomeT08 -AidArgs @('add', 'codex', '-FromBundle', $FixCodex, '-Target', $ProjT09)
+Run-AidPs1 -AidHome $AidHomeT08 -AidArgs @('add', 'codex', '-FromBundle', $BundleDir, '-Target', $ProjT09)
 Assert-Eq "$($script:_LastRC)" '0' 'T09a aid add codex -> exit 0'
 Assert-DirExists  (Join-Path $ProjT09 '.codex')                   'T09b .codex/ created'
 Assert-FileExists (Join-Path $ProjT09 'AGENTS.md')                'T09c AGENTS.md created'
@@ -475,7 +592,7 @@ Assert-Eq      "$($script:_LastRC)" '0' 'T11a aid remove codex -> exit 0'
 Assert-DirGone (Join-Path $ProjT09 '.codex') 'T11b .codex/ removed'
 
 # Re-add codex for the remove (all) test.
-Run-AidPs1 -AidHome $AidHomeT08 -AidArgs @('add', 'codex', '-FromBundle', $FixCodex, '-Target', $ProjT09)
+Run-AidPs1 -AidHome $AidHomeT08 -AidArgs @('add', 'codex', '-FromBundle', $BundleDir, '-Target', $ProjT09)
 
 # T12: aid remove (no arg) with -Force to skip prompt.
 Run-AidPs1 -AidHome $AidHomeT08 -AidArgs @('remove', '-Force', '-Target', $ProjT09)
@@ -487,7 +604,7 @@ Assert-DirGone (Join-Path $ProjT09 '.codex') 'T12c .codex/ gone after remove'
 # retired .aid/.aid-version marker must still not exist.
 $ProjT13 = Join-Path $TmpRoot 'project-t13'
 New-Item -ItemType Directory -Path $ProjT13 -Force | Out-Null
-Run-AidPs1 -AidHome $AidHomeT08 -AidArgs @('add', 'claude-code', '-FromBundle', $FixClaudeCode, '-Target', $ProjT13)
+Run-AidPs1 -AidHome $AidHomeT08 -AidArgs @('add', 'claude-code', '-FromBundle', $BundleDir, '-Target', $ProjT13)
 Assert-FileLF (Join-Path (Join-Path $ProjT13 '.aid') '.aid-manifest.json') 'T13a manifest after aid add'
 Assert-FileGone (Join-Path (Join-Path $ProjT13 '.aid') '.aid-version')     'T13b .aid-version NOT created after aid add (retired)'
 Assert-FileLF (Join-Path $AidHomeT08 'VERSION')                'T13c AID_HOME/VERSION'
@@ -511,7 +628,7 @@ $userClaudeContent = "# CLAUDE.md`n`n## Project`nMy project description.`n`n## T
 $userClaudeBytes = [System.Text.Encoding]::UTF8.GetBytes($userClaudeContent)
 [System.IO.File]::WriteAllBytes((Join-Path $ProjT14 'CLAUDE.md'), $userClaudeBytes)
 
-Run-AidPs1 -AidHome $ProjectAidHome -AidArgs @('add', 'claude-code', '-FromBundle', $FixClaudeCode, '-Target', $ProjT14)
+Run-AidPs1 -AidHome $ProjectAidHome -AidArgs @('add', 'claude-code', '-FromBundle', $BundleDir, '-Target', $ProjT14)
 Assert-Eq "$($script:_LastRC)" '0' 'T14a root-agent in-place update (C2) -> exit 0'
 
 # No .aid-new must exist under any branch.
@@ -527,7 +644,8 @@ Assert-Contains $updatedContent14 'My project description.' 'T14e user ## Projec
 
 # Manifest status must be 'owned' (pending-merge path eliminated).
 $m14 = Get-Content -LiteralPath (Join-Path (Join-Path $ProjT14 '.aid') '.aid-manifest.json') -Raw
-Assert-Contains $m14 '"owned"' 'T14f manifest status is owned (not pending-merge)'
+Assert-NotContains $m14 '"pending-merge"' 'T14f manifest has no pending-merge state'
+Assert-Contains $m14 '"claude-code"' 'T14f manifest records the claude-code tool'
 
 # T15: Branch B - destination already has AID:BEGIN/END markers.
 # Install into a project where CLAUDE.md already has AID markers + user content outside them.
@@ -540,7 +658,7 @@ $markedClaudeContent = "# CLAUDE.md`n`n## Project`nUser project section.`n`n<!--
 $markedClaudeBytes = [System.Text.Encoding]::UTF8.GetBytes($markedClaudeContent)
 [System.IO.File]::WriteAllBytes((Join-Path $ProjT15 'CLAUDE.md'), $markedClaudeBytes)
 
-Run-AidPs1 -AidHome $ProjectAidHome -AidArgs @('add', 'claude-code', '-FromBundle', $FixClaudeCode, '-Target', $ProjT15)
+Run-AidPs1 -AidHome $ProjectAidHome -AidArgs @('add', 'claude-code', '-FromBundle', $BundleDir, '-Target', $ProjT15)
 Assert-Eq "$($script:_LastRC)" '0' 'T15a root-agent in-place update (B) -> exit 0'
 
 # No .aid-new must exist.
@@ -554,9 +672,13 @@ Assert-Contains $updatedContent15 '<!-- AID:END -->'   'T15d AID:END marker pres
 # Content outside the marked region must be preserved.
 Assert-Contains $updatedContent15 'User project section.'  'T15e user content before region preserved'
 Assert-Contains $updatedContent15 'User-added content after the AID region.' 'T15f user content after region preserved'
-# The OLD AID content inside the region must have been replaced by the new profile content.
-Assert (-not ($updatedContent15 -like '*OLD tracking content that will be replaced.*')) `
-    'T15g old AID region content replaced' 'old region content must be gone after update'
+# v4 region repair (spec: a region that is not exactly the import region is repaired by
+# content): exactly one AID:BEGIN marker and one @AGENTS.md import remain, and the user
+# text around the old region is kept byte-for-byte.
+$t15Begins = ([regex]::Matches($updatedContent15, '<!-- AID:BEGIN -->')).Count
+Assert ($t15Begins -eq 1 -and $updatedContent15 -match '(?m)^@AGENTS\.md$') `
+    'T15g exactly one import region after repair' "expected one AID:BEGIN and @AGENTS.md, got $t15Begins BEGIN marker(s)"
+Assert-Contains $updatedContent15 'User-added content after the AID region.' 'T15h user text after the old region kept'
 Write-Host ""
 
 # ===========================================================================
@@ -574,7 +696,7 @@ $userOnlyContent = "# CLAUDE.md`n`n## My Project`nMy own instructions, nothing f
 [System.IO.File]::WriteAllBytes((Join-Path $ProjT47 'CLAUDE.md'),
     [System.Text.Encoding]::UTF8.GetBytes($userOnlyContent))
 
-Run-AidPs1 -AidHome $ProjectAidHome -AidArgs @('add', 'claude-code', '-FromBundle', $FixClaudeCode, '-Target', $ProjT47)
+Run-AidPs1 -AidHome $ProjectAidHome -AidArgs @('add', 'claude-code', '-FromBundle', $BundleDir, '-Target', $ProjT47)
 Assert-Eq "$($script:_LastRC)" '0' 'T47a install into pure-user CLAUDE.md -> exit 0'
 $updatedContent47 = Get-Content -LiteralPath (Join-Path $ProjT47 'CLAUDE.md') -Raw
 Assert-Contains $updatedContent47 '<!-- AID:BEGIN -->' 'T47b AID region injected (BEGIN) - not dropped'
@@ -601,12 +723,12 @@ Assert (-not (Test-Path (Join-Path (Join-Path $ProjT48 '.aid') 'settings.yml')))
 
 $savedNoUpdT48 = $env:AID_NO_UPDATE_CHECK
 $env:AID_NO_UPDATE_CHECK = '1'
-Run-AidPs1 -AidHome $AidHomeT08 -AidArgs @('update', '-FromBundle', $FixClaudeCode, '-Target', $ProjT48)
+Run-AidPs1 -AidHome $AidHomeT08 -AidArgs @('update', '-FromBundle', $BundleDir, '-Target', $ProjT48)
 Assert-FileExists (Join-Path (Join-Path $ProjT48 '.aid') 'settings.yml') 'T48b settings.yml synthesized by update (era-b via manifest)'
 $s48 = Get-Content -LiteralPath (Join-Path (Join-Path $ProjT48 '.aid') 'settings.yml') -Raw
-Assert-Contains $s48 'format_version: 4' 'T48c format_version: 4 stamped'
+Assert-Contains $s48 'format_version: 5' 'T48c format_version: 5 stamped'
 # Second update: the gate must no longer warn (stamp current now).
-Run-AidPs1 -AidHome $AidHomeT08 -AidArgs @('update', '-FromBundle', $FixClaudeCode, '-Target', $ProjT48)
+Run-AidPs1 -AidHome $AidHomeT08 -AidArgs @('update', '-FromBundle', $BundleDir, '-Target', $ProjT48)
 Assert-NotContains $script:_LastOut 'older format' 'T48d no recurring older-format WARN after stamp'
 $env:AID_NO_UPDATE_CHECK = $savedNoUpdT48
 Write-Host ""
@@ -616,7 +738,7 @@ Write-Host ""
 # `aid init` / `aid projects add` writes "tools": {}; the first `aid add <tool>`
 # must merge into it. Under Set-StrictMode -Version Latest, member enumeration
 # over an empty property bag throws, which aborted the manifest write entirely.
-# T54c covers the sibling case: a preserved tool holding exactly one path.
+# T54c covers the sibling case: a preserved tool holding exactly one file.
 # ===========================================================================
 Write-Host "=== T54: manifest merge over empty/one-path tools object ==="
 
@@ -626,20 +748,27 @@ $mPathT54 = Join-Path (Join-Path $ProjT54 '.aid') '.aid-manifest.json'
 [System.IO.File]::WriteAllText($mPathT54,
     "{`n  `"format_version`": 2,`n  `"aid_version`": `"$Ver`",`n  `"installed_at`": `"2026-01-01T00:00:00Z`",`n  `"tools`": {}`n}`n")
 
-Run-AidPs1 -AidHome $AidHomeT08 -AidArgs @('add', 'claude-code', '-FromBundle', $FixClaudeCode, '-Target', $ProjT54)
+Run-AidPs1 -AidHome $AidHomeT08 -AidArgs @('add', 'claude-code', '-FromBundle', $BundleDir, '-Target', $ProjT54)
 Assert-Eq "$($script:_LastRC)" '0' 'T54a aid add over empty tools object -> exit 0'
 $m54 = Get-Content -LiteralPath $mPathT54 -Raw | ConvertFrom-Json
 Assert ($null -ne $m54.tools.PSObject.Properties['claude-code']) `
     'T54b claude-code merged into the empty tools object' 'tools.claude-code must exist'
 
-# T54c: preserved tool with exactly one path must survive a second add.
-[System.IO.File]::WriteAllText($mPathT54,
-    '{"format_version":2,"aid_version":"1.0.0","installed_at":"2026-01-01T00:00:00Z","tools":{"claude-code":{"version":"1.0.0","installed_at":"2026-01-01T00:00:00Z","paths":["CLAUDE.md"],"root_agent_files":[]}}}')
-Run-AidPs1 -AidHome $AidHomeT08 -AidArgs @('add', 'codex', '-FromBundle', $FixCodex, '-Target', $ProjT54)
-Assert-Eq "$($script:_LastRC)" '0' 'T54c aid add beside a single-path tool -> exit 0'
-$m54c = Get-Content -LiteralPath $mPathT54 -Raw | ConvertFrom-Json
-Assert-Eq "$(@($m54c.tools.'claude-code'.paths) -join ',')" 'CLAUDE.md' `
-    'T54d preserved single-path tool keeps its paths array'
+# T54c: a tool holding exactly one file must survive a second add (single-element
+# arrays must not unroll). A v4 format-3 manifest is the v4 shape; a manifest that names
+# tools at format 2 is the v3 layout and is refused (AC-12), so this fixture is fresh.
+$ProjT54c = Join-Path $TmpRoot 'project-t54c'
+New-Item -ItemType Directory -Path (Join-Path $ProjT54c '.aid') -Force | Out-Null
+$mPathT54c = Join-Path (Join-Path $ProjT54c '.aid') '.aid-manifest.json'
+$jsonT54c = '{"format_version": 3, "aid_version": "' + $Ver + '", "installed_at": "2026-01-01T00:00:00Z", ' +
+    '"tools": {"claude-code": {"version": "' + $Ver + '", "installed_at": "2026-01-01T00:00:00Z", ' +
+    '"files": [{"path": ".claude/agents/aid-architect.md", "sha256": "00"}]}}}'
+[System.IO.File]::WriteAllText($mPathT54c, $jsonT54c + "`n")
+Run-AidPs1 -AidHome $AidHomeT08 -AidArgs @('add', 'codex', '-FromBundle', $BundleDir, '-Target', $ProjT54c)
+Assert-Eq "$($script:_LastRC)" '0' 'T54c aid add codex beside a one-file tool -> exit 0'
+$m54c = Get-Content -LiteralPath $mPathT54c -Raw | ConvertFrom-Json
+Assert-Eq "$(@($m54c.tools.'claude-code'.files).Count)" '1' `
+    'T54d preserved one-file tool keeps its files array'
 Write-Host ""
 
 # ===========================================================================
@@ -651,7 +780,7 @@ $ProjT45 = Join-Path $TmpRoot 'project-t45'
 New-Item -ItemType Directory -Path $ProjT45 -Force | Out-Null
 
 # First install to get a proper baseline manifest.
-Run-AidPs1 -AidHome $ProjectAidHome -AidArgs @('add', 'claude-code', '-FromBundle', $FixClaudeCode, '-Target', $ProjT45)
+Run-AidPs1 -AidHome $ProjectAidHome -AidArgs @('add', 'claude-code', '-FromBundle', $BundleDir, '-Target', $ProjT45)
 Assert-Eq "$($script:_LastRC)" '0' 'T45-pre install claude-code -> exit 0'
 
 # Plant a stale aid-prefixed file in .claude/skills/ (simulating a file from an older profile
@@ -667,7 +796,7 @@ $userBytes45 = [System.Text.Encoding]::UTF8.GetBytes("# user custom skill`n")
 
 # Re-run install (update) - the new profile does not include aid-stale-old-skill.md,
 # so prune must remove it; my-custom-skill.md has no aid- prefix so it must survive.
-Run-AidPs1 -AidHome $ProjectAidHome -AidArgs @('add', 'claude-code', '-FromBundle', $FixClaudeCode, '-Target', $ProjT45)
+Run-AidPs1 -AidHome $ProjectAidHome -AidArgs @('add', 'claude-code', '-FromBundle', $BundleDir, '-Target', $ProjT45)
 Assert-Eq "$($script:_LastRC)" '0' 'T45a update install -> exit 0'
 
 Assert (-not (Test-Path $stalePath45 -PathType Leaf)) `
@@ -683,15 +812,16 @@ Write-Host "=== T16: Uninstall removes dirs ==="
 
 $ProjT16 = Join-Path $TmpRoot 'project-t16'
 New-Item -ItemType Directory -Path $ProjT16 -Force | Out-Null
-Run-AidPs1 -AidHome $ProjectAidHome -AidArgs @('add', 'claude-code', '-FromBundle', $FixClaudeCode, '-Target', $ProjT16)
+Run-AidPs1 -AidHome $ProjectAidHome -AidArgs @('add', 'claude-code', '-FromBundle', $BundleDir, '-Target', $ProjT16)
 Assert-DirExists (Join-Path $ProjT16 '.claude') 'T16-pre .claude/ present before uninstall'
 
 Run-AidPs1 -AidHome $ProjectAidHome -AidArgs @('remove', 'claude-code', '-Target', $ProjT16)
 Assert-Eq "$($script:_LastRC)" '0' 'T16a uninstall -> exit 0'
-Assert-DirGone (Join-Path $ProjT16 '.claude') 'T16b .claude/ gone after uninstall'
+Assert (@(Get-AidNamedFiles -Dir (Join-Path $ProjT16 '.claude')).Count -eq 0) `
+    'T16b no aid-* file left under .claude/ after uninstall' 'AID-owned files must be removed'
 # .aid/ removed on full uninstall: the install-time-seeded settings.yml is
 # removed symmetrically (Uninstall-AidTool), so nothing keeps .aid/ alive.
-Assert-DirGone (Join-Path $ProjT16 '.aid') 'T16c .aid/ gone after full uninstall'
+Assert-DirGone (Join-Path (Join-Path $ProjT16 '.aid') 'runtime') 'T16c .aid/runtime/ gone after full uninstall'
 Assert (-not (Test-Path (Join-Path (Join-Path $ProjT16 '.aid') 'settings.yml'))) 'T16c2 seeded settings.yml removed on full uninstall' 'settings.yml must be gone'
 Write-Host ""
 
@@ -768,7 +898,7 @@ $ProjT19 = Join-Path $TmpRoot 'project-t19'
 New-Item -ItemType Directory -Path $ProjT19 -Force | Out-Null
 
 # Install codex into ProjT19 first.
-Run-AidPs1 -AidHome $AidHomeT19 -AidArgs @('add', 'codex', '-FromBundle', $FixCodex, '-Target', $ProjT19)
+Run-AidPs1 -AidHome $AidHomeT19 -AidArgs @('add', 'codex', '-FromBundle', $BundleDir, '-Target', $ProjT19)
 Assert-Eq "$($script:_LastRC)" '0' 'T19-pre add codex -> exit 0'
 
 # Now run bare aid.ps1 (no args) with ProjT19 as current working directory.
@@ -813,9 +943,9 @@ Copy-Item -LiteralPath $LocalLibPath `
 $ProjT20 = Join-Path $TmpRoot 'project-t20'
 New-Item -ItemType Directory -Path $ProjT20 -Force | Out-Null
 
-Run-AidPs1 -AidHome $AidHomeT20 -AidArgs @('add', 'claude-code', '-FromBundle', $FixClaudeCode, '-Target', $ProjT20)
+Run-AidPs1 -AidHome $AidHomeT20 -AidArgs @('add', 'claude-code', '-FromBundle', $BundleDir, '-Target', $ProjT20)
 Assert-Eq  "$($script:_LastRC)" '0' 'T20-pre1 add claude-code -> exit 0'
-Run-AidPs1 -AidHome $AidHomeT20 -AidArgs @('add', 'codex', '-FromBundle', $FixCodex, '-Target', $ProjT20)
+Run-AidPs1 -AidHome $AidHomeT20 -AidArgs @('add', 'codex', '-FromBundle', $BundleDir, '-Target', $ProjT20)
 Assert-Eq  "$($script:_LastRC)" '0' 'T20-pre2 add codex -> exit 0'
 
 Run-AidPs1 -AidHome $AidHomeT20 -AidArgs @('status', '-Target', $ProjT20)
@@ -837,7 +967,7 @@ Write-Host ""
 # Patch manifest so both tools appear at v0.0.1.
 $ProjT21 = Join-Path $TmpRoot 'project-t21'
 New-Item -ItemType Directory -Path $ProjT21 -Force | Out-Null
-Run-AidPs1 -AidHome $AidHomeT20 -AidArgs @('add', 'codex', '-FromBundle', $FixCodex, '-Target', $ProjT21)
+Run-AidPs1 -AidHome $AidHomeT20 -AidArgs @('add', 'codex', '-FromBundle', $BundleDir, '-Target', $ProjT21)
 
 $mPathT21 = Join-Path (Join-Path $ProjT21 '.aid') '.aid-manifest.json'
 $mDataT21 = Get-Content -LiteralPath $mPathT21 -Raw | ConvertFrom-Json
@@ -856,8 +986,8 @@ Write-Host ""
 # T22: divergent case -- two tools at different versions.
 $ProjT22 = Join-Path $TmpRoot 'project-t22'
 New-Item -ItemType Directory -Path $ProjT22 -Force | Out-Null
-Run-AidPs1 -AidHome $AidHomeT20 -AidArgs @('add', 'claude-code', '-FromBundle', $FixClaudeCode, '-Target', $ProjT22)
-Run-AidPs1 -AidHome $AidHomeT20 -AidArgs @('add', 'codex',       '-FromBundle', $FixCodex,      '-Target', $ProjT22)
+Run-AidPs1 -AidHome $AidHomeT20 -AidArgs @('add', 'claude-code', '-FromBundle', $BundleDir, '-Target', $ProjT22)
+Run-AidPs1 -AidHome $AidHomeT20 -AidArgs @('add', 'codex',       '-FromBundle', $BundleDir,      '-Target', $ProjT22)
 
 # Patch claude-code to an older version.
 $mPathT22 = Join-Path (Join-Path $ProjT22 '.aid') '.aid-manifest.json'
@@ -903,7 +1033,7 @@ Copy-Item -LiteralPath $LocalLibPath `
 
 $ProjT24 = Join-Path $TmpRoot 'project-t24'
 New-Item -ItemType Directory -Path $ProjT24 -Force | Out-Null
-Run-AidPs1 -AidHome $AidHomeT24 -AidArgs @('add', 'codex', '-FromBundle', $FixCodex, '-Target', $ProjT24)
+Run-AidPs1 -AidHome $AidHomeT24 -AidArgs @('add', 'codex', '-FromBundle', $BundleDir, '-Target', $ProjT24)
 Assert-Eq "$($script:_LastRC)" '0' 'T24-pre PS1 add codex -> exit 0'
 
 Run-AidPs1 -AidHome $AidHomeT24 -AidArgs @('status', '-Target', $ProjT24)
@@ -1092,7 +1222,7 @@ $checkUrlT29 = New-FakeReleaseJson -Dir $JsonDirT29 -Version '9.9.9'
 $ProjT29 = Join-Path $TmpRoot 'project-t29'
 New-Item -ItemType Directory -Path $ProjT29 -Force | Out-Null
 # Install codex so status exits 0.
-Run-AidPs1 -AidHome $AidHomeT29 -AidArgs @('add', 'codex', '-FromBundle', $FixCodex, '-Target', $ProjT29)
+Run-AidPs1 -AidHome $AidHomeT29 -AidArgs @('add', 'codex', '-FromBundle', $BundleDir, '-Target', $ProjT29)
 Assert-Eq "$($script:_LastRC)" '0' 'T29-pre add codex -> exit 0'
 
 $savedHome29 = $env:AID_HOME; $savedLib29 = $env:AID_LIB_PATH
@@ -1525,8 +1655,7 @@ function Run-AidProjects {
     $env:AID_NO_UPDATE_CHECK = '1'
     $env:HOME        = $FakeHome
     $env:USERPROFILE = $FakeHome
-    $env:HOMEDRIVE   = (Split-Path -Qualifier $FakeHome)
-    $env:HOMEPATH    = (Split-Path -NoQualifier $FakeHome)
+    Set-PosixSafeHomeDrive -FakeRoot $FakeHome
     $aidPs1Path = Join-Path (Join-Path $AidHome 'bin') 'aid.ps1'
     if (-not (Test-Path $aidPs1Path -PathType Leaf)) {
         $aidPs1Path = Join-Path (Join-Path $RepoRoot 'bin') 'aid.ps1'
@@ -2017,22 +2146,6 @@ if ($_T49_REAL_UP -and (Test-Path $_T49_REAL_UP -PathType Container)) {
     } catch { $_T49_CANARY_BEFORE = '' }
 }
 
-# ---------------------------------------------------------------------------
-# Build fixture tarballs for codex, cursor, antigravity (offline bundles).
-# Reuse the existing Build-FixtureTarball helper (already defined above).
-# ---------------------------------------------------------------------------
-$MigFixtureDir = Join-Path $TmpRoot 'mig-fixtures'
-New-Item -ItemType Directory -Path $MigFixtureDir -Force | Out-Null
-
-Write-Host "Building migration fixture tarballs..."
-$MigFixCodex      = Build-FixtureTarball 'codex'      $MigFixtureDir
-$MigFixCursor     = Build-FixtureTarball 'cursor'     $MigFixtureDir
-$MigFixAntigrav   = Build-FixtureTarball 'antigravity' $MigFixtureDir
-Write-Host "  codex      : $MigFixCodex"
-Write-Host "  cursor     : $MigFixCursor"
-Write-Host "  antigravity: $MigFixAntigrav"
-Write-Host ""
-
 # Shared AID_HOME for all migration tests (reuse AidHomeT08 pattern).
 $MigAidHome = Join-Path $TmpRoot 'aid-home-mig'
 New-Item -ItemType Directory -Path (Join-Path $MigAidHome 'bin') -Force | Out-Null
@@ -2066,11 +2179,9 @@ function Write-OldSettings {
 # with $HOME / $env:USERPROFILE pinned to a throwaway (migration-scan safety).
 # Captures output in $script:_LastOut and exit code in $script:_LastRC.
 function Run-MigUpdate {
-    param([string]$BundleFile, [string]$TargetRepo)
-    # Derive the bundle directory from the tarball path (aid update takes a dir).
-    $bundleDir = Split-Path -Parent $BundleFile
+    param([string]$BundleDirArg, [string]$TargetRepo)
     Run-AidPs1Home -AidHome $MigAidHome -FakeHome $MigFakeHome `
-        -AidArgs @('update', '-FromBundle', $bundleDir, '-Target', $TargetRepo)
+        -AidArgs @('update', '-FromBundle', $BundleDirArg, '-Target', $TargetRepo)
 }
 
 # ===========================================================================
@@ -2086,9 +2197,9 @@ function Run-MigUpdate {
 # Asserts (AC5):
 #   T49-02  .agents\skills\aid-orchestrator.md GONE
 #   T49-03  .agents\aid\shared.md GONE
-#   T49-04  No remaining aid-owned content under .agents\
+#   T49-04  No AID-owned content under .agents\ outside .agents\skills\ (v4)
 #   T49-05  New .codex\agents\ present
-#   T49-06  New .codex\aid\ present
+#   T49-06  No .codex\aid\, and .aid\runtime\ present (v4)
 #   T49-07  .codex\agents\ contains aid-*.toml files
 #   T49-08  user-file.txt byte-identical (SHA256)
 # Asserts (AC8):
@@ -2122,7 +2233,7 @@ $T49UserHashBefore = (Get-FileHash -LiteralPath (Join-Path (Join-Path $ProjT49 '
 Write-OldManifest -ManifestPath (Join-Path (Join-Path $ProjT49 '.aid') '.aid-manifest.json') -Tool 'codex'
 Write-OldSettings -SettingsPath (Join-Path (Join-Path $ProjT49 '.aid') 'settings.yml') -Tool 'codex'
 
-Run-MigUpdate -BundleFile $MigFixCodex -TargetRepo $ProjT49
+Run-MigUpdate -BundleDirArg $BundleDir -TargetRepo $ProjT49
 Assert-Eq "$($script:_LastRC)" '0' 'T49-01 aid update on codex old-layout -> exit 0'
 
 # AC5-a: retired .agents\ AID-owned content GONE from original location.
@@ -2132,16 +2243,19 @@ Assert (-not (Test-Path (Join-Path (Join-Path (Join-Path $ProjT49 '.agents') 'sk
 Assert (-not (Test-Path (Join-Path (Join-Path (Join-Path $ProjT49 '.agents') 'aid') 'shared.md') -PathType Leaf)) `
     'T49-03 (AC5) .agents\aid\shared.md moved out (AID-owned, marker 2)' `
     'shared.md must be moved out of retired root by sweep'
+# v4: .agents\skills\aid-* is the shared skills root and is AID-owned by design; only
+# leftovers outside that root (the retired .agents\aid\ subtree or aid-* names) count.
 $T49AidRemains = @(Get-ChildItem -LiteralPath (Join-Path $ProjT49 '.agents') -Recurse -ErrorAction SilentlyContinue |
-    Where-Object { $_.Name -like 'aid-*' -or ($_.FullName -match '[\\/]aid[\\/]') })
+    Where-Object { ($_.FullName -match '[\\/]aid[\\/]') -or ($_.Name -like 'aid-*' -and $_.FullName -notmatch '[\\/]skills[\\/]') })
 Assert ($T49AidRemains.Count -eq 0) `
-    'T49-04 (AC5) .agents\ has no remaining AID-owned content' `
-    "found $($T49AidRemains.Count) AID-owned item(s) still under .agents\"
+    'T49-04 (AC5, v4) no AID-owned content under .agents\ outside the shared skills root' `
+    "found $($T49AidRemains.Count) AID-owned item(s) outside .agents\skills\"
 
 # AC5-b: new .codex\ unified layout present.
 Assert-DirExists (Join-Path (Join-Path $ProjT49 '.codex') 'agents') 'T49-05 (AC5) new .codex\agents\ present'
-Assert-DirExists (Join-Path (Join-Path $ProjT49 '.codex') 'aid')    'T49-06 (AC5) new .codex\aid\ present'
-Assert-DirExists (Join-Path (Join-Path $ProjT49 '.codex') 'skills') 'T49-06b (AC5) new .codex\skills\ present'
+Assert (-not (Test-Path (Join-Path (Join-Path $ProjT49 '.codex') 'aid'))) 'T49-06 (AC5, v4) no .codex\aid\ (runtime lives in .aid\runtime\)' 'retired .codex\aid\ must be gone'
+Assert-DirExists (Join-Path (Join-Path $ProjT49 '.aid') 'runtime') 'T49-06c (AC5, v4) .aid\runtime\ present'
+Assert-DirExists (Join-Path (Join-Path $ProjT49 '.agents') 'skills') 'T49-06b (AC5, v4) shared .agents\skills\ present'
 $T49NewAgents = @(Get-ChildItem -LiteralPath (Join-Path (Join-Path $ProjT49 '.codex') 'agents') `
     -Filter 'aid-*.toml' -File -ErrorAction SilentlyContinue)
 Assert ($T49NewAgents.Count -gt 0) `
@@ -2189,7 +2303,7 @@ Write-Host ""
 #   T50-02  .cursor\rules\aid-architect.mdc GONE
 #   T50-03  .cursor\rules\aid-clerk.mdc GONE
 #   T50-04  New .cursor\agents\ present
-#   T50-05  New .cursor\aid\ present
+#   T50-05  No .cursor\aid\, and .aid\runtime\ present (v4)
 #   T50-06  .cursor\agents\ contains aid-*.md files
 #   T50-07  .cursor\rules\my.mdc exists
 #   T50-08  .cursor\rules\my.mdc SHA256 byte-identical
@@ -2226,7 +2340,7 @@ $T50AgentsContent = "# AGENTS.md`n`n## My Project Notes`nUSER-LINE-BEFORE-REGION
 Write-OldManifest -ManifestPath (Join-Path (Join-Path $ProjT50 '.aid') '.aid-manifest.json') -Tool 'cursor'
 Write-OldSettings -SettingsPath (Join-Path (Join-Path $ProjT50 '.aid') 'settings.yml') -Tool 'cursor'
 
-Run-MigUpdate -BundleFile $MigFixCursor -TargetRepo $ProjT50
+Run-MigUpdate -BundleDirArg $BundleDir -TargetRepo $ProjT50
 Assert-Eq "$($script:_LastRC)" '0' 'T50-01 aid update on cursor old-layout -> exit 0'
 
 # AC5-a: retired .cursor\rules\ AID-owned files GONE from original location.
@@ -2239,8 +2353,9 @@ Assert (-not (Test-Path (Join-Path (Join-Path (Join-Path $ProjT50 '.cursor') 'ru
 
 # AC5-b: new .cursor\ unified layout present.
 Assert-DirExists (Join-Path (Join-Path $ProjT50 '.cursor') 'agents') 'T50-04 (AC5) new .cursor\agents\ present'
-Assert-DirExists (Join-Path (Join-Path $ProjT50 '.cursor') 'aid')    'T50-05 (AC5) new .cursor\aid\ present'
-Assert-DirExists (Join-Path (Join-Path $ProjT50 '.cursor') 'skills') 'T50-05b (AC5) new .cursor\skills\ present'
+Assert (-not (Test-Path (Join-Path (Join-Path $ProjT50 '.cursor') 'aid'))) 'T50-05 (AC5, v4) no .cursor\aid\ (runtime lives in .aid\runtime\)' 'retired .cursor\aid\ must be gone'
+Assert-DirExists (Join-Path (Join-Path $ProjT50 '.aid') 'runtime') 'T50-05c (AC5, v4) .aid\runtime\ present'
+Assert-DirExists (Join-Path (Join-Path $ProjT50 '.agents') 'skills') 'T50-05b (AC5, v4) shared .agents\skills\ present'
 $T50NewAgents = @(Get-ChildItem -LiteralPath (Join-Path (Join-Path $ProjT50 '.cursor') 'agents') `
     -Filter 'aid-*.md' -File -ErrorAction SilentlyContinue)
 Assert ($T50NewAgents.Count -gt 0) `
@@ -2296,7 +2411,7 @@ Write-Host ""
 #   T51-02  .agent\rules\aid-architect.md GONE
 #   T51-03  .agent\rules\aid-clerk.md GONE
 #   T51-04  New .agent\agents\ present
-#   T51-05  New .agent\aid\ present
+#   T51-05  No .agent\aid\, and .aid\runtime\ present (v4)
 #   T51-06  .agent\agents\ contains aid-*.md files
 #   T51-07  .agent\rules\my-team-rules.md exists
 #   T51-08  .agent\rules\my-team-rules.md SHA256 byte-identical
@@ -2332,7 +2447,7 @@ $T51AgentsContent = "# AGENTS.md`n`nUSER-ANTIGRAVITY-LINE-BEFORE`n`n<!-- AID:BEG
 Write-OldManifest -ManifestPath (Join-Path (Join-Path $ProjT51 '.aid') '.aid-manifest.json') -Tool 'antigravity'
 Write-OldSettings -SettingsPath (Join-Path (Join-Path $ProjT51 '.aid') 'settings.yml') -Tool 'antigravity'
 
-Run-MigUpdate -BundleFile $MigFixAntigrav -TargetRepo $ProjT51
+Run-MigUpdate -BundleDirArg $BundleDir -TargetRepo $ProjT51
 Assert-Eq "$($script:_LastRC)" '0' 'T51-01 aid update on antigravity old-layout -> exit 0'
 
 # AC5-a: retired .agent\rules\ AID-owned files GONE from original location.
@@ -2345,8 +2460,9 @@ Assert (-not (Test-Path (Join-Path (Join-Path (Join-Path $ProjT51 '.agent') 'rul
 
 # AC5-b: new .agent\ unified layout present.
 Assert-DirExists (Join-Path (Join-Path $ProjT51 '.agent') 'agents') 'T51-04 (AC5) new .agent\agents\ present'
-Assert-DirExists (Join-Path (Join-Path $ProjT51 '.agent') 'aid')    'T51-05 (AC5) new .agent\aid\ present'
-Assert-DirExists (Join-Path (Join-Path $ProjT51 '.agent') 'skills') 'T51-05b (AC5) new .agent\skills\ present'
+Assert (-not (Test-Path (Join-Path (Join-Path $ProjT51 '.agent') 'aid'))) 'T51-05 (AC5, v4) no .agent\aid\ (runtime lives in .aid\runtime\)' 'retired .agent\aid\ must be gone'
+Assert-DirExists (Join-Path (Join-Path $ProjT51 '.aid') 'runtime') 'T51-05c (AC5, v4) .aid\runtime\ present'
+Assert-DirExists (Join-Path (Join-Path $ProjT51 '.agents') 'skills') 'T51-05b (AC5, v4) shared .agents\skills\ present'
 $T51NewAgents = @(Get-ChildItem -LiteralPath (Join-Path (Join-Path $ProjT51 '.agent') 'agents') `
     -Filter 'aid-*.md' -File -ErrorAction SilentlyContinue)
 Assert ($T51NewAgents.Count -gt 0) `
@@ -2396,7 +2512,7 @@ Write-Host ""
 #
 # Asserts:
 #   T52-01  second aid update -> exit 0
-#   T52-02  .agents\skills\ remains absent (no resurrection)
+#   T52-02  retired .agents\skills\aid-orchestrator.md not resurrected
 #   T52-03  tools.codex.version still == $Ver
 #   T52-04  new-layout witness file sha256 unchanged
 #   T52-05  user-file.txt SHA256 still byte-identical
@@ -2418,13 +2534,13 @@ if ($T52CandidateAgents.Count -gt 0) {
 }
 
 # Run second aid update (same bundle, same target).
-Run-MigUpdate -BundleFile $MigFixCodex -TargetRepo $ProjT49
+Run-MigUpdate -BundleDirArg $BundleDir -TargetRepo $ProjT49
 Assert-Eq "$($script:_LastRC)" '0' 'T52-01 second aid update on migrated codex repo -> exit 0'
 
-# .agents\skills\ must remain absent (no resurrection).
-Assert (-not (Test-Path (Join-Path (Join-Path $ProjT49 '.agents') 'skills') -PathType Container)) `
-    'T52-02 .agents\skills\ remains absent after second update (idempotent, no resurrection)' `
-    '.agents\skills\ must not reappear after second update'
+# The retired v3 file must not be resurrected (.agents\skills\ itself is the v4 shared root).
+Assert (-not (Test-Path (Join-Path (Join-Path (Join-Path $ProjT49 '.agents') 'skills') 'aid-orchestrator.md') -PathType Leaf)) `
+    'T52-02 retired .agents\skills\aid-orchestrator.md not resurrected after second update' `
+    'the retired v3 file reappeared after second update'
 
 # tools.codex.version still == $Ver.
 if (Test-Path (Join-Path (Join-Path $ProjT49 '.aid') '.aid-manifest.json') -PathType Leaf) {
@@ -2482,6 +2598,221 @@ Assert ($_T53_CANARY_AFTER -eq $_T49_CANARY_BEFORE) `
     'T53 escape canary: real USERPROFILE/HOME gained no .aid dirs during T49-T52 fixture runs' `
     "real HOME blast surface: new .aid dirs appeared under $_T49_REAL_UP during migration test runs"
 
+Write-Host ""
+
+# ===========================================================================
+# AC-9, AC-10, AC-13: shared-layout scenarios (REQUIREMENTS section 9, Feature 001).
+# Every fixture is built under $TmpRoot; the staged bundle is $BundleDir.
+# ===========================================================================
+Write-Host "=== AC-9, AC-10, AC-13: shared layout (refcount, drift, v3 clean-slate) ==="
+
+$savedNoUpdAC = $env:AID_NO_UPDATE_CHECK
+$env:AID_NO_UPDATE_CHECK = '1'
+$AcFakeHome = Join-Path $TmpRoot 'ac-fake-home'
+New-Item -ItemType Directory -Path $AcFakeHome -Force | Out-Null
+
+# --- AC-9: reference-counted shared entries -----------------------------------
+$Ac9 = Join-Path $TmpRoot 'ac9-refcount'
+New-Item -ItemType Directory -Path $Ac9 -Force | Out-Null
+$Ac9AgentUser  = Join-Path $Ac9 '.agents/skills/my-skill/SKILL.md'
+$Ac9ClaudeUser = Join-Path $Ac9 '.claude/skills/my-skill/SKILL.md'
+Write-V3File -Path $Ac9AgentUser  -Text "user skill`n"
+Write-V3File -Path $Ac9ClaudeUser -Text "user mirror`n"
+$Ac9AgentUserSha  = Get-FileSha -Path $Ac9AgentUser
+$Ac9ClaudeUserSha = Get-FileSha -Path $Ac9ClaudeUser
+
+Run-AidPs1Home -AidHome $ProjectAidHome -FakeHome $AcFakeHome -AidArgs @('add', 'claude-code,cursor,codex', '-FromBundle', $BundleDir, '-Target', $Ac9)
+Assert-Eq "$($script:_LastRC)" '0' 'AC-9 add claude-code,cursor,codex -> exit 0'
+$Ac9Before = @(Get-AidSharedSnapshot -Target $Ac9)
+Assert ($Ac9Before.Count -gt 0) 'AC-9 shared entries present after add' 'no aid-* shared entries found after add'
+
+Run-AidPs1Home -AidHome $ProjectAidHome -FakeHome $AcFakeHome -AidArgs @('remove', 'cursor', '-Target', $Ac9)
+Assert-Eq "$($script:_LastRC)" '0' 'AC-9 remove cursor -> exit 0'
+Assert ((@(Get-AidSharedSnapshot -Target $Ac9) -join "`n") -ceq ($Ac9Before -join "`n")) `
+    'AC-9 shared skills, runtime and AGENTS.md keep identical sha256 after remove cursor' `
+    'a shared entry changed sha256 when cursor was removed'
+Assert ((Count-AidEntries -Dir (Join-Path $Ac9 '.cursor/agents')) -eq 0) `
+    'AC-9 .cursor/agents/aid-* gone after remove cursor' 'cursor AID agents remain'
+$Ac9Manifest1 = Get-Content -LiteralPath (Join-Path (Join-Path $Ac9 '.aid') '.aid-manifest.json') -Raw | ConvertFrom-Json
+Assert (-not (@(Get-ManifestUserNames -Manifest $Ac9Manifest1) -contains 'cursor')) `
+    'AC-9 manifest user lists no longer name cursor' 'cursor still listed as a shared-entry user'
+
+Run-AidPs1Home -AidHome $ProjectAidHome -FakeHome $AcFakeHome -AidArgs @('remove', 'codex', '-Target', $Ac9)
+Assert-Eq "$($script:_LastRC)" '0' 'AC-9 remove codex -> exit 0'
+Assert ((Count-AidEntries -Dir (Join-Path $Ac9 '.agents/skills')) -gt 0 -and (Count-AidEntries -Dir (Join-Path $Ac9 '.claude/skills')) -gt 0 -and (Test-Path -LiteralPath (Join-Path $Ac9 '.aid/runtime') -PathType Container)) `
+    'AC-9 shared entries remain after remove codex (claude-code still installed)' 'a shared entry was removed while claude-code remains'
+
+Run-AidPs1Home -AidHome $ProjectAidHome -FakeHome $AcFakeHome -AidArgs @('remove', 'claude-code', '-Target', $Ac9)
+Assert-Eq "$($script:_LastRC)" '0' 'AC-9 remove claude-code (last tool) -> exit 0'
+Assert ((Count-AidEntries -Dir (Join-Path $Ac9 '.agents/skills')) -eq 0 -and (Count-AidEntries -Dir (Join-Path $Ac9 '.claude/skills')) -eq 0) `
+    'AC-9 .agents/skills/aid-* and .claude/skills/aid-* absent after last tool removed' 'AID skill entries remain after the last tool was removed'
+Assert-DirGone (Join-Path $Ac9 '.aid/runtime') 'AC-9 .aid/runtime/ absent after last tool removed'
+Assert ((Get-FileSha -Path $Ac9AgentUser) -eq $Ac9AgentUserSha -and (Get-FileSha -Path $Ac9ClaudeUser) -eq $Ac9ClaudeUserSha) `
+    'AC-9 non-AID my-skill SKILL.md files keep identical sha256 throughout' 'a user skill file changed'
+
+# AC-9: AGENTS.md last-user cleanup -- markerless user file, AID-created file, edited file.
+$Ac9AgentsUser = Join-Path $TmpRoot 'ac9-agents-user'
+New-Item -ItemType Directory -Path $Ac9AgentsUser -Force | Out-Null
+Write-V3File -Path (Join-Path $Ac9AgentsUser 'AGENTS.md') -Text "## User workflow`nKeep this text.`n"
+$Ac9AgentsUserSha = Get-FileSha -Path (Join-Path $Ac9AgentsUser 'AGENTS.md')
+Run-AidPs1Home -AidHome $ProjectAidHome -FakeHome $AcFakeHome -AidArgs @('add', 'claude-code', '-FromBundle', $BundleDir, '-Target', $Ac9AgentsUser)
+Run-AidPs1Home -AidHome $ProjectAidHome -FakeHome $AcFakeHome -AidArgs @('remove', 'claude-code', '-Target', $Ac9AgentsUser)
+Assert-Eq "$($script:_LastRC)" '0' 'AC-9 remove claude-code over markerless user AGENTS.md -> exit 0'
+Assert ((Get-FileSha -Path (Join-Path $Ac9AgentsUser 'AGENTS.md')) -eq $Ac9AgentsUserSha) `
+    'AC-9 markerless user AGENTS.md outside bytes preserved when its whole-file hash matches' 'user AGENTS.md bytes changed'
+
+$Ac9AgentsNew = Join-Path $TmpRoot 'ac9-agents-created'
+New-Item -ItemType Directory -Path $Ac9AgentsNew -Force | Out-Null
+Run-AidPs1Home -AidHome $ProjectAidHome -FakeHome $AcFakeHome -AidArgs @('add', 'claude-code', '-FromBundle', $BundleDir, '-Target', $Ac9AgentsNew)
+Run-AidPs1Home -AidHome $ProjectAidHome -FakeHome $AcFakeHome -AidArgs @('remove', 'claude-code', '-Target', $Ac9AgentsNew)
+Assert (-not (Test-Path -LiteralPath (Join-Path $Ac9AgentsNew 'AGENTS.md'))) `
+    'AC-9 AID-created region-only AGENTS.md deleted on last-user removal' 'AGENTS.md remains'
+
+$Ac9AgentsEdit = Join-Path $TmpRoot 'ac9-agents-edited'
+New-Item -ItemType Directory -Path $Ac9AgentsEdit -Force | Out-Null
+Run-AidPs1Home -AidHome $ProjectAidHome -FakeHome $AcFakeHome -AidArgs @('add', 'claude-code', '-FromBundle', $BundleDir, '-Target', $Ac9AgentsEdit)
+[System.IO.File]::AppendAllText((Join-Path $Ac9AgentsEdit 'AGENTS.md'), "user edit`n")
+Run-AidPs1Home -AidHome $ProjectAidHome -FakeHome $AcFakeHome -AidArgs @('remove', 'claude-code', '-Target', $Ac9AgentsEdit)
+$Ac9EditedText = Get-Content -LiteralPath (Join-Path $Ac9AgentsEdit 'AGENTS.md') -Raw -ErrorAction SilentlyContinue
+Assert ($Ac9EditedText -match 'user edit') 'AC-9 post-install edited AGENTS.md remains in place' 'edited AGENTS.md was removed or lost its edit'
+
+# AC-9: .gitattributes -- a pre-existing user line survives the AID block's removal.
+$Ac9Git = Join-Path $TmpRoot 'ac9-gitattributes'
+New-Item -ItemType Directory -Path $Ac9Git -Force | Out-Null
+Write-V3File -Path (Join-Path $Ac9Git '.gitattributes') -Text "*.png binary`n"
+$Ac9GitSha = Get-FileSha -Path (Join-Path $Ac9Git '.gitattributes')
+Run-AidPs1Home -AidHome $ProjectAidHome -FakeHome $AcFakeHome -AidArgs @('add', 'claude-code', '-FromBundle', $BundleDir, '-Target', $Ac9Git)
+Run-AidPs1Home -AidHome $ProjectAidHome -FakeHome $AcFakeHome -AidArgs @('remove', 'claude-code', '-Target', $Ac9Git)
+$Ac9GitText = Get-Content -LiteralPath (Join-Path $Ac9Git '.gitattributes') -Raw -ErrorAction SilentlyContinue
+Assert (($Ac9GitText -notmatch 'AID managed') -and (@($Ac9GitText -split "`n" | Where-Object { $_ -eq '*.png binary' }).Count -eq 1)) `
+    'AC-9 .gitattributes after last removal holds no AID block and its user line is unchanged' 'AID block remains or the user line changed'
+Write-Host ""
+
+# --- AC-10: drift is detected and repaired ----------------------------------
+$Ac10 = Join-Path $TmpRoot 'ac10-drift'
+New-Item -ItemType Directory -Path $Ac10 -Force | Out-Null
+Run-AidPs1Home -AidHome $ProjectAidHome -FakeHome $AcFakeHome -AidArgs @('add', 'claude-code', '-FromBundle', $BundleDir, '-Target', $Ac10)
+Assert-Eq "$($script:_LastRC)" '0' 'AC-10 add claude-code -> exit 0'
+$Ac10Ask  = Join-Path $Ac10 '.claude/skills/aid-ask/SKILL.md'
+$Ac10Fix  = Join-Path $Ac10 '.claude/skills/aid-fix/SKILL.md'
+$Ac10Plan = Join-Path $Ac10 '.agents/skills/aid-plan/SKILL.md'
+$Ac10AskCanon  = Get-FileSha -Path $Ac10Ask
+$Ac10FixCanon  = Get-FileSha -Path $Ac10Fix
+$Ac10PlanCanon = Get-FileSha -Path $Ac10Plan
+
+[System.IO.File]::AppendAllText($Ac10Ask, 'x')
+Remove-Item -LiteralPath $Ac10Fix -Force
+[System.IO.File]::AppendAllText($Ac10Plan, 'x')
+$Ac10AskDrift  = Get-FileSha -Path $Ac10Ask
+$Ac10PlanDrift = Get-FileSha -Path $Ac10Plan
+
+Run-AidPs1Home -AidHome $ProjectAidHome -FakeHome $AcFakeHome -AidArgs @('status', '-Target', $Ac10)
+Assert ($script:_LastOut -match '\.claude/skills/aid-ask/SKILL\.md' -and $script:_LastOut -match '\.claude/skills/aid-fix/SKILL\.md' -and $script:_LastOut -match '\.agents/skills/aid-plan/SKILL\.md' -and $script:_LastOut -match 'aid update') `
+    'AC-10 status names all three drifted paths and aid update' "status output: $($script:_LastOut)"
+
+Run-AidPs1Home -AidHome $ProjectAidHome -FakeHome $AcFakeHome -AidArgs @('update', '-FromBundle', $BundleDir, '-Target', $Ac10)
+Assert-Eq "$($script:_LastRC)" '0' 'AC-10 update from the same staging -> exit 0'
+Assert ((Get-FileSha -Path $Ac10Ask) -eq $Ac10AskCanon -and (Get-FileSha -Path $Ac10Fix) -eq $Ac10FixCanon -and (Get-FileSha -Path $Ac10Plan) -eq $Ac10PlanCanon) `
+    'AC-10 update restores the modified and the missing file to canonical bytes' 'a drifted file was not restored'
+Assert ((Get-FileSha -Path (Join-Path $Ac10 '.aid/.trash/.claude/skills/aid-ask/SKILL.md')) -eq $Ac10AskDrift -and (Get-FileSha -Path (Join-Path $Ac10 '.aid/.trash/.agents/skills/aid-plan/SKILL.md')) -eq $Ac10PlanDrift) `
+    'AC-10 both modified files preserved byte-for-byte in .aid/.trash/ at their original paths' 'a modified file is missing from trash or differs'
+
+Run-AidPs1Home -AidHome $ProjectAidHome -FakeHome $AcFakeHome -AidArgs @('status', '-Target', $Ac10)
+Assert-Eq "$($script:_LastRC)" '0' 'AC-10 second aid status -> exit 0'
+Assert ($script:_LastOut -match 'Shared files: clean') 'AC-10 second aid status reports no drift' "status output: $($script:_LastOut)"
+Write-Host ""
+
+# --- AC-13: clean-slate upgrade from every v3 layout ------------------------
+# v3 roots per tool (the layout before the shared skills folder).
+$V3Roots = @{ 'claude-code' = '.claude'; 'codex' = '.codex'; 'cursor' = '.cursor'; 'copilot-cli' = '.github'; 'antigravity' = '.agent' }
+
+# New-V3Fixture: a manifest-backed v3 layout for one tool. Returns Owned (AID-owned,
+# user-modified, including the old <root>/aid/ subtree) and User (non-AID) absolute paths.
+function New-V3Fixture {
+    param([string]$Dir, [string]$Tool)
+    $root = $V3Roots[$Tool]
+    New-Item -ItemType Directory -Path $Dir -Force | Out-Null
+    Write-V3File -Path (Join-Path $Dir '.aid/settings.yml') -Text "format_version: 4`nproject:`n  name: V3Fixture`n  type: brownfield`n"
+    $manifestBody = '{"format_version":2,"tools":{"' + $Tool + '":{"version":"2.0.0","status":"active","installed_at":"2026-01-01T00:00:00Z","paths":[]}}}'
+    Write-V3File -Path (Join-Path $Dir '.aid/.aid-manifest.json') -Text ($manifestBody + "`n")
+    $ownedRels = @("$root/skills/aid-plan/SKILL.md", "$root/skills/aid-plan/references/x.md", "$root/aid/rules.md", "$root/aid/scripts/untouched.sh", "$root/aid/user-created.txt")
+    $userRels  = @("$root/user-notes.txt", "$root/skills/my-skill/SKILL.md")
+    if ($Tool -eq 'codex') {
+        $ownedRels += @('.agents/aid/shared.md', '.agents/aid/user-created.txt')
+        $userRels  += @('.agents/user-notes.txt', '.agents/skills/my-skill/SKILL.md')
+    }
+    $owned = New-Object System.Collections.Generic.List[string]
+    $user  = New-Object System.Collections.Generic.List[string]
+    foreach ($rel in $ownedRels) {
+        $p = Join-Path $Dir $rel
+        Write-V3File -Path $p -Text "USER-EDITED v3 AID file: $rel`n"
+        $owned.Add($p)
+    }
+    foreach ($rel in $userRels) {
+        $p = Join-Path $Dir $rel
+        Write-V3File -Path $p -Text "NON-AID user file: $rel`n"
+        $user.Add($p)
+    }
+    return [pscustomobject]@{ Owned = @($owned); User = @($user) }
+}
+
+# Test-AC13Tool: build the v3 fixture for one tool, upgrade it, and check AC-3, AC-7 and
+# the AC-13 clauses (trash, no leftover roots, user files, stamp, second run).
+function Test-AC13Tool {
+    param([string]$Tool)
+    $tag = "AC-13 $Tool"
+    $fx  = Join-Path $TmpRoot ('ac13-' + $Tool)
+    $fxV = New-V3Fixture -Dir $fx -Tool $Tool
+    $pre = @{}
+    foreach ($p in @($fxV.Owned) + @($fxV.User)) { $pre[$p] = Get-FileSha -Path $p }
+
+    Run-AidPs1Home -AidHome $ProjectAidHome -FakeHome $AcFakeHome -AidArgs @('update', '-FromBundle', $BundleDir, '-Target', $fx)
+    Assert-Eq "$($script:_LastRC)" '0' "$tag aid update --from-bundle exits 0"
+
+    $skillBad = Get-TreeMismatch -Src (Join-Path $RepoRoot 'canonical/skills') -Dst (Join-Path $fx '.agents/skills')
+    if ($Tool -eq 'claude-code') {
+        $skillBad += Get-TreeMismatch -Src (Join-Path $RepoRoot 'canonical/skills') -Dst (Join-Path $fx '.claude/skills')
+    }
+    Assert ($skillBad -eq 0) "$tag AC-3 installed skills byte-identical to canonical" "$skillBad mismatch(es)"
+
+    $rtBad = (Get-TreeMismatch -Src (Join-Path $RepoRoot 'canonical/aid/scripts') -Dst (Join-Path $fx '.aid/runtime/scripts')) +
+             (Get-TreeMismatch -Src (Join-Path $RepoRoot 'canonical/aid/templates') -Dst (Join-Path $fx '.aid/runtime/templates'))
+    if ((Get-FileSha -Path (Join-Path $fx '.aid/runtime/rules.md')) -ne (Get-FileSha -Path (Join-Path $RepoRoot 'canonical/aid/rules.md'))) { $rtBad++ }
+    Assert ($rtBad -eq 0) "$tag AC-7 runtime scripts, templates and rules.md equal canonical" "$rtBad mismatch(es)"
+
+    $leftover = 0
+    foreach ($r in @('.codex', '.cursor', '.github', '.agent')) { $leftover += Count-AidEntries -Dir (Join-Path $fx "$r/skills") }
+    foreach ($r in @('.claude', '.codex', '.cursor', '.github', '.agent', '.agents')) {
+        if (Test-Path -LiteralPath (Join-Path $fx "$r/aid")) { $leftover++ }
+    }
+    Assert ($leftover -eq 0) "$tag no aid-* under the old skills roots and no <root>/aid/ remains" "$leftover leftover entr(ies)"
+
+    $trashBad = 0
+    foreach ($p in @($fxV.Owned)) {
+        $rel = $p.Substring($fx.Length).TrimStart([char]'\', [char]'/')
+        if ((Get-FileSha -Path (Join-Path (Join-Path $fx '.aid/.trash') $rel)) -ne $pre[$p]) { $trashBad++ }
+    }
+    Assert ($trashBad -eq 0) "$tag every old AID-owned file (modified or not) byte-identical at .aid/.trash/<path> ($(@($fxV.Owned).Count) files)" "$trashBad file(s) differ or are missing"
+
+    $userBad = 0
+    foreach ($p in @($fxV.User)) { if ((Get-FileSha -Path $p) -ne $pre[$p]) { $userBad++ } }
+    Assert ($userBad -eq 0) "$tag non-AID user files keep identical sha256 at their original paths" "$userBad user file(s) changed"
+
+    $settingsText = Get-Content -LiteralPath (Join-Path $fx '.aid/settings.yml') -Raw
+    $manifestText = Get-Content -LiteralPath (Join-Path $fx '.aid/.aid-manifest.json') -Raw
+    Assert (($settingsText -match '(?m)^format_version: 5') -and ($manifestText -match '"format_version":\s*3')) `
+        "$tag .aid/settings.yml format_version 5 and manifest format_version 3" 'stamp not upgraded'
+
+    $trashBefore = @(Get-DirShaRows -Dir (Join-Path $fx '.aid/.trash'))
+    Run-AidPs1Home -AidHome $ProjectAidHome -FakeHome $AcFakeHome -AidArgs @('update', '-FromBundle', $BundleDir, '-Target', $fx)
+    Assert-Eq "$($script:_LastRC)" '0' "$tag second aid update exits 0"
+    Assert ((@(Get-DirShaRows -Dir (Join-Path $fx '.aid/.trash')) -join "`n") -ceq ($trashBefore -join "`n")) `
+        "$tag second aid update leaves .aid/.trash/ unchanged" '.aid/.trash changed on the second run'
+}
+
+foreach ($tool13 in @('claude-code', 'codex', 'cursor', 'copilot-cli', 'antigravity')) { Test-AC13Tool -Tool $tool13 }
+
+$env:AID_NO_UPDATE_CHECK = $savedNoUpdAC
 Write-Host ""
 
 # ===========================================================================

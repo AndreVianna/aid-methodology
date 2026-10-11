@@ -2025,7 +2025,7 @@ function Write-AidUpgradeRecovery {
     $json = '{"format_version":1,"tools":[' + (($ordered | ForEach-Object { '"' + $_ + '"' }) -join ',') + '],"retired":' + $Retired.ToString().ToLowerInvariant() + "}`n"
     $tmp = Join-Path $dir ('.v3-upgrade-tools.' + [System.IO.Path]::GetRandomFileName())
     [System.IO.File]::WriteAllBytes($tmp, [System.Text.Encoding]::ASCII.GetBytes($json))
-    if (Test-Path -LiteralPath $path -PathType Leaf) { [System.IO.File]::Replace($tmp, $path, $null) }
+    if (Test-Path -LiteralPath $path -PathType Leaf) { [System.IO.File]::Replace($tmp, $path, [NullString]::Value) }
     else { [System.IO.File]::Move($tmp, $path) }
 }
 
