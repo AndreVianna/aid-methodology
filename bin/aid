@@ -6685,16 +6685,81 @@ case "$SUBCMD" in
                     [[ -n "$_dry_prev" && "$_dry_actual" == "$_dry_prev" ]] || _DRY_TRASH_MOVES+=("${_dry_dst#${_AID_TARGET}/}")
                 fi
             done < <(find "${_AID_SHARED_STAGING_DIR}/runtime" -type f -print0 2>/dev/null | sort -z)
+            echo "  generated: .aid/runtime/host.conf (retained; generated during commit)"
+            # Tool agent files use the same guarded replacement rule as shared files.
+            _dry_roots=(claude-code:.claude codex:.codex cursor:.cursor copilot-cli:.github antigravity:.agent)
+            for _dry_tool in "${_AID_TOOLS[@]}"; do
+                _dry_root=""
+                for _dry_pair in "${_dry_roots[@]}"; do [[ "${_dry_pair%%:*}" == "$_dry_tool" ]] && _dry_root="${_dry_pair#*:}"; done
+                [[ -n "$_dry_root" ]] || continue
+                _dry_agents="${_STAGE_MAP[$_dry_tool]}/${_dry_root}/agents"
+                while IFS= read -r -d '' _dry_f; do
+                    _dry_rel="${_dry_f#${_dry_agents}/}"
+                    _dry_dst="${_AID_TARGET}/${_dry_root}/agents/${_dry_rel}"
+                    echo "  copy: ${_dry_root}/agents/${_dry_rel} -> ${_dry_dst}"
+                    if [[ -f "$_dry_dst" ]] && ! cmp -s "$_dry_f" "$_dry_dst"; then
+                        _dry_path="${_dry_root}/agents/${_dry_rel}"
+                        _dry_prev="$(manifest_read_tool_files "$_AID_MANIFEST" "$_dry_tool" | awk -F '\t' -v p="$_dry_path" '$1=="tools.'"$_dry_tool"'.file" && $2==p {print $3; exit}')"
+                        _dry_actual="$(sha256_file "$_dry_dst")"
+                        [[ -n "$_dry_prev" && "$_dry_actual" == "$_dry_prev" ]] || _DRY_TRASH_MOVES+=("${_dry_dst#${_AID_TARGET}/}")
+                    fi
+                done < <(find "$_dry_agents" -type f -print0 2>/dev/null | sort -z)
+            done
             echo "Trash moves:"
             for _dry_trash in "${_DRY_TRASH_MOVES[@]}"; do echo "  move to trash: ${_dry_trash}"; done
             echo "Prune list:"
-            if [[ -d "${_AID_TARGET}/.aid/runtime" ]]; then
-                while IFS= read -r -d '' _dry_f; do
-                    [[ "$_dry_f" == */node_modules/* ]] && continue
-                    _dry_rel="${_dry_f#${_AID_TARGET}/.aid/runtime/}"
-                    [[ -f "${_AID_SHARED_STAGING_DIR}/runtime/${_dry_rel}" ]] || echo "  prune: ${_dry_f#${_AID_TARGET}/}"
-                done < <(find "${_AID_TARGET}/.aid/runtime" -type f -print0 2>/dev/null)
-            fi
+            _dry_scan_roots=(.agents/skills .aid/runtime)
+            for _dry_tool in "${_AID_TOOLS[@]}"; do
+                _dry_conf="${_STAGE_MAP[$_dry_tool]}/aid-tool.conf"
+                while IFS= read -r _dry_conf_line; do [[ "$_dry_conf_line" == skill_mirror=* ]] && _dry_scan_roots+=("${_dry_conf_line#skill_mirror=}"); done < <(read_kv_conf "$_dry_conf")
+                for _dry_pair in "${_dry_roots[@]}"; do [[ "${_dry_pair%%:*}" == "$_dry_tool" ]] && _dry_scan_roots+=("${_dry_pair#*:}/agents"); done
+            done
+            while IFS=$'\t' read -r _dry_key _dry_mirror _; do [[ "$_dry_key" == shared.mirror ]] && _dry_scan_roots+=("$_dry_mirror"); done < <(manifest_read_shared "$_AID_MANIFEST")
+            while IFS= read -r _dry_f; do
+                [[ -f "${_AID_TARGET}/${_dry_f}" ]] || continue
+                if [[ "$_dry_f" != .aid/runtime/* ]]; then
+                    _dry_is_aid=0
+                    for _dry_root in "${_dry_scan_roots[@]}"; do
+                        if [[ "$_dry_f" == "${_dry_root}/"* ]]; then _dry_rel="${_dry_f#${_dry_root}/}"; _dry_first="${_dry_rel%%/*}"; [[ "$_dry_first" == aid-* ]] && { _dry_is_aid=1; _dry_root_for_file="$_dry_root"; }; fi
+                    done
+                    [[ "$_dry_is_aid" -eq 1 ]] || continue
+                fi
+                [[ "$_dry_f" == .aid/runtime/* ]] && { [[ "$_dry_f" == */node_modules/* ]] && continue; [[ "$_dry_f" == .aid/runtime/host.conf ]] && continue; _dry_rel="${_dry_f#.aid/runtime/}"; [[ -f "${_AID_SHARED_STAGING_DIR}/runtime/${_dry_rel}" ]] && continue; }
+                if [[ "$_dry_f" == .agents/skills/* ]]; then _dry_rel="${_dry_f#.agents/skills/}"; [[ -f "${_AID_SHARED_STAGING_DIR}/skills/${_dry_rel}" ]] && continue; fi
+                _dry_keep=0
+                for _dry_tool in "${_AID_TOOLS[@]}"; do
+                    _dry_conf="${_STAGE_MAP[$_dry_tool]}/aid-tool.conf"
+                    while IFS= read -r _dry_conf_line; do
+                        [[ "$_dry_conf_line" == skill_mirror=* ]] || continue
+                        _dry_mirror="${_dry_conf_line#skill_mirror=}"
+                        if [[ "$_dry_f" == "${_dry_mirror}/"* ]]; then _dry_rel="${_dry_f#${_dry_mirror}/}"; [[ -f "${_AID_SHARED_STAGING_DIR}/skills/${_dry_rel}" ]] && _dry_keep=1; fi
+                    done < <(read_kv_conf "$_dry_conf")
+                    for _dry_pair in "${_dry_roots[@]}"; do
+                        [[ "${_dry_pair%%:*}" == "$_dry_tool" ]] || continue
+                        _dry_agent_root="${_dry_pair#*:}/agents"
+                        if [[ "$_dry_f" == "${_dry_agent_root}/"* ]]; then _dry_rel="${_dry_f#${_dry_agent_root}/}"; [[ -f "${_STAGE_MAP[$_dry_tool]}/${_dry_agent_root}/${_dry_rel}" ]] && _dry_keep=1; fi
+                    done
+                done
+                if [[ "$_dry_keep" -eq 0 ]]; then
+                    _dry_old_sha=""
+                    if [[ "$_dry_f" == .aid/runtime/* ]]; then
+                        _dry_rel="${_dry_f#.aid/runtime/}"
+                        _dry_old_sha="$(manifest_read_shared "$_AID_MANIFEST" | awk -F '\t' -v p="$_dry_rel" '$1=="shared.runtime.file" && $2==p {print $3; exit}')"
+                    elif [[ "$_dry_f" == .agents/skills/* || ( -n "${_dry_root_for_file:-}" && "$_dry_root_for_file" != */agents ) ]]; then
+                        _dry_rel="${_dry_f#${_dry_root_for_file:-.agents/skills}/}"
+                        _dry_old_sha="$(manifest_read_shared "$_AID_MANIFEST" | awk -F '\t' -v p="$_dry_rel" '$1=="shared.skills.file" && $2==p {print $3; exit}')"
+                    else
+                        for _dry_pair in "${_dry_roots[@]}"; do
+                            _dry_tool="${_dry_pair%%:*}"; _dry_agent_root="${_dry_pair#*:}/agents"
+                            [[ "$_dry_f" == "${_dry_agent_root}/"* ]] || continue
+                            _dry_rel="${_dry_f#${_dry_agent_root}/}"; _dry_path="${_dry_agent_root}/${_dry_rel}"
+                            _dry_old_sha="$(manifest_read_tool_files "$_AID_MANIFEST" "$_dry_tool" | awk -F '\t' -v p="$_dry_path" '$1=="tools.'"$_dry_tool"'.file" && $2==p {print $3; exit}')"
+                        done
+                    fi
+                    _dry_actual="$(sha256_file "${_AID_TARGET}/${_dry_f}")"
+                    if [[ -n "$_dry_old_sha" && "$_dry_actual" == "$_dry_old_sha" ]]; then echo "  prune: ${_dry_f} (delete; matches prior AID hash)"; else echo "  prune: ${_dry_f} (move to trash; modified or untracked)"; fi
+                fi
+            done < <(for _dry_root in "${_dry_scan_roots[@]}"; do [[ -d "${_AID_TARGET}/${_dry_root}" ]] && find "${_AID_TARGET}/${_dry_root}" -type f -printf '%P\n' | sed "s#^#${_dry_root}/#"; done | sort -u)
             for _tool in "${_AID_TOOLS[@]}"; do
                 echo ""
                 echo "Tool: ${_tool}"

@@ -2513,9 +2513,9 @@ function Install-AidShared {
     }
     [System.IO.File]::WriteAllLines($model,$records.ToArray(),[System.Text.Encoding]::ASCII)
     $previousManifest = Join-Path $Target ('.aid/.manifest-before-prune.' + [System.IO.Path]::GetRandomFileName())
-    if ($Phase -eq 'finalize' -and (Test-Path -LiteralPath $manifest -PathType Leaf)) { Copy-Item -LiteralPath $manifest -Destination $previousManifest -Force }
+    if ($Phase -in @('finalize', 'update-finalize') -and (Test-Path -LiteralPath $manifest -PathType Leaf)) { Copy-Item -LiteralPath $manifest -Destination $previousManifest -Force }
     try { Write-AidManifestV3 -ManifestPath $manifest -ModelPath $model } finally { Remove-Item -LiteralPath $model -Force -ErrorAction SilentlyContinue }
-    if ($Phase -eq 'finalize') {
+    if ($Phase -in @('finalize', 'update-finalize')) {
         try {
             Invoke-PruneShared -Target $Target -PreviousManifest $previousManifest
             script:Initialize-AidSettingsFile -Target $Target -Tool $NewTools[0]

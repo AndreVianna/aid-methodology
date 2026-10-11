@@ -6178,15 +6178,49 @@ try {
                         if (-not $oldSha -or (Get-Sha256File -FilePath $dst) -ne $oldSha) { $dryTrashMoves.Add($dst.Substring($_AidTarget.Length).TrimStart([char]'\', [char]'/')) }
                     }
                 }
+                Write-Host '  generated: .aid/runtime/host.conf (retained; generated during commit)'
+                $dryToolRoots = @{ 'claude-code'='.claude'; codex='.codex'; cursor='.cursor'; 'copilot-cli'='.github'; antigravity='.agent' }
+                foreach ($t in $_AidTools) {
+                    $root = $dryToolRoots[$t]; if (-not $root) { continue }
+                    $agents = Join-Path $stageMap[$t] (Join-Path $root 'agents')
+                    foreach ($df in @(Get-ChildItem -LiteralPath $agents -Recurse -File -ErrorAction SilentlyContinue | Sort-Object FullName)) {
+                        $rel = $df.FullName.Substring($agents.Length).TrimStart([char]'\', [char]'/') -replace '\\','/'
+                        $dst = Join-Path $_AidTarget (Join-Path $root (Join-Path 'agents' ($rel -replace '/', [System.IO.Path]::DirectorySeparatorChar)))
+                        Write-Host "  copy: $root/agents/$rel -> $dst"
+                        if ((Test-Path -LiteralPath $dst -PathType Leaf) -and (Get-Sha256File -FilePath $dst) -ne (Get-Sha256File -FilePath $df.FullName)) {
+                            $path = "$root/agents/$rel"; $oldSha = ''
+                            foreach ($row in (Read-AidManifestToolFiles -ManifestPath $_AidManifest -Tool $t)) { $p=$row.Split("`t"); if ($p.Count -ge 3 -and $p[0] -eq "tools.$t.file" -and $p[1] -eq $path) { $oldSha=$p[2]; break } }
+                            if (-not $oldSha -or (Get-Sha256File -FilePath $dst) -ne $oldSha) { $dryTrashMoves.Add($dst.Substring($_AidTarget.Length).TrimStart([char]'\', [char]'/')) }
+                        }
+                    }
+                }
                 Write-Host 'Trash moves:'
                 foreach ($path in $dryTrashMoves) { Write-Host "  move to trash: $path" }
                 Write-Host 'Prune list:'
-                $runtimeTarget = Join-Path $_AidTarget '.aid/runtime'
-                if (Test-Path -LiteralPath $runtimeTarget -PathType Container) {
-                    foreach ($rf in @(Get-ChildItem -LiteralPath $runtimeTarget -Recurse -File -ErrorAction SilentlyContinue)) {
-                        if ($rf.FullName -match '[\\/]node_modules[\\/]') { continue }
-                        $rel = $rf.FullName.Substring($runtimeTarget.Length).TrimStart([char]'\', [char]'/') -replace '\\','/'
-                        if (-not (Test-Path -LiteralPath (Join-Path $drySharedRuntime ($rel -replace '/', [System.IO.Path]::DirectorySeparatorChar)) -PathType Leaf)) { Write-Host "  prune: $($rf.FullName.Substring($_AidTarget.Length).TrimStart([char]'\', [char]'/'))" }
+                $scanRoots = @('.agents/skills', '.aid/runtime')
+                foreach ($t in $_AidTools) { $conf=Join-Path $stageMap[$t] 'aid-tool.conf'; foreach ($line in (Read-AidKvConf -Path $conf)) { if ($line.StartsWith('skill_mirror=',[System.StringComparison]::Ordinal)) { $scanRoots += $line.Substring('skill_mirror='.Length) } }; if ($dryToolRoots[$t]) { $scanRoots += $dryToolRoots[$t] + '/agents' } }
+                foreach ($row in (Read-AidManifestShared -ManifestPath $_AidManifest)) { $p=$row.Split("`t"); if ($p.Count -ge 2 -and $p[0] -eq 'shared.mirror') { $scanRoots += $p[1] } }
+                foreach ($scanRoot in ($scanRoots | Select-Object -Unique)) {
+                    $abs=Join-Path $_AidTarget ($scanRoot -replace '/', [System.IO.Path]::DirectorySeparatorChar)
+                    if (-not (Test-Path -LiteralPath $abs -PathType Container)) { continue }
+                    foreach ($rf in @(Get-ChildItem -LiteralPath $abs -Recurse -File -ErrorAction SilentlyContinue)) {
+                        if ($scanRoot -eq '.aid/runtime' -and $rf.FullName -match '[/\\]node_modules[/\\]') { continue }
+                        if ($scanRoot -eq '.aid/runtime' -and $rf.Name -eq 'host.conf') { continue }
+                        $rel=$rf.FullName.Substring($abs.Length).TrimStart([char]'\',[char]'/')
+                        if ($scanRoot -ne '.aid/runtime' -and ($rel.Split([char[]]@('/', '\'))[0] -notlike 'aid-*')) { continue }
+                        $keep=$false
+                        if ($scanRoot -eq '.aid/runtime') { $keep=Test-Path -LiteralPath (Join-Path $drySharedRuntime $rel) -PathType Leaf }
+                        elseif ($scanRoot -eq '.agents/skills') { $keep=Test-Path -LiteralPath (Join-Path $drySharedSkills $rel) -PathType Leaf }
+                        else { foreach ($t in $_AidTools) { $conf=Join-Path $stageMap[$t] 'aid-tool.conf'; foreach ($line in (Read-AidKvConf -Path $conf)) { if ($line.StartsWith('skill_mirror=',[System.StringComparison]::Ordinal) -and $scanRoot -eq $line.Substring('skill_mirror='.Length)) { $keep=Test-Path -LiteralPath (Join-Path $drySharedSkills $rel) -PathType Leaf } }; if ($dryToolRoots[$t] -and $scanRoot -eq ($dryToolRoots[$t]+'/agents')) { $keep=Test-Path -LiteralPath (Join-Path (Join-Path $stageMap[$t] $scanRoot) $rel) -PathType Leaf } } }
+                        if (-not $keep) {
+                            $oldSha=''
+                            if ($scanRoot -eq '.aid/runtime') { foreach ($row in (Read-AidManifestShared -ManifestPath $_AidManifest)) { $p=$row.Split("`t"); if ($p.Count -ge 3 -and $p[0] -eq 'shared.runtime.file' -and $p[1] -eq ($rel -replace '\\','/')) { $oldSha=$p[2]; break } } }
+                            elseif ($scanRoot -eq '.agents/skills' -or $scanRoot -notmatch '/agents$') { foreach ($row in (Read-AidManifestShared -ManifestPath $_AidManifest)) { $p=$row.Split("`t"); if ($p.Count -ge 3 -and $p[0] -eq 'shared.skills.file' -and $p[1] -eq ($rel -replace '\\','/')) { $oldSha=$p[2]; break } } }
+                            else { foreach ($t in $_AidTools) { if ($dryToolRoots[$t] -and $scanRoot -eq ($dryToolRoots[$t]+'/agents')) { foreach ($row in (Read-AidManifestToolFiles -ManifestPath $_AidManifest -Tool $t)) { $p=$row.Split("`t"); $path=($scanRoot+'/'+($rel -replace '\\','/')); if ($p.Count -ge 3 -and $p[0] -eq "tools.$t.file" -and $p[1] -eq $path) { $oldSha=$p[2]; break } } } } }
+                            $actualSha=Get-Sha256File -FilePath $rf.FullName
+                            $label=$rf.FullName.Substring($_AidTarget.Length).TrimStart([char]'\',[char]'/')
+                            if ($oldSha -and $actualSha -eq $oldSha) { Write-Host "  prune: $label (delete; matches prior AID hash)" } else { Write-Host "  prune: $label (move to trash; modified or untracked)" }
+                        }
                     }
                 }
                 foreach ($t in $_AidTools) {
