@@ -274,6 +274,10 @@ lifecycle_history:
     event: 'Tasks aligned to definition fixes (21 tasks); rows 5, 7, 8, 11, 24 fixed and reopened for verification; 7 deferred notes carried into tasks; GATE Pass 2 (task set) cycle 1 started (Opus)'
     grade: --
     notes: '/aid-update GATE tasks'
+  - date: '2026-10-11'
+    event: 'Maintainer decision: root-file region becomes a pointer -- AID rules move to .aid/runtime/rules.md; AGENTS.md keeps a 2-3 line managed region (do-not-edit line, @.aid/runtime/rules.md, read-first line). Pointer probe kit sent; spec/task update deferred until GATE Pass 2 review returns'
+    grade: --
+    notes: 'design decision'
 
 # [A] aid-deploy only; one entry per delivery (never derived from child
 #     files; aid-deploy is the sole author):
