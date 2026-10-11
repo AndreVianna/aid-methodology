@@ -3077,8 +3077,8 @@ _migrate_term_exclusions() {
 
 # seed_settings_yml <target> <tool>
 # Seed <target>/.aid/settings.yml from the tool's just-installed template when it
-# does not already exist. NEVER overwrites an existing settings.yml -- it holds
-# user config (project identity, grades). Not recorded in the manifest: it is
+# does not already exist. When a format-3 manifest has just been committed, advance
+# only an older format stamp; the remaining bytes are user config. Not recorded in the manifest: it is
 # user data and must survive `aid remove`/prune and never flow through the copy
 # engine. Sets _CORE_SEEDED_SETTINGS=1 when a file was created, else 0.
 seed_settings_yml() {
@@ -3087,7 +3087,34 @@ seed_settings_yml() {
     _CORE_SEEDED_SETTINGS=0
     dst="${target}/.aid/settings.yml"
     tmpl="${target}/.aid/runtime/templates/settings.yml"
-    [[ -f "$dst" ]] && return 0        # never clobber user config
+    if [[ -f "$dst" ]]; then
+        local manifest="${target}/.aid/.aid-manifest.json" raw stamp tmp updated=0 line read_rc
+        if [[ -f "$manifest" ]] && [[ "$(manifest_format "$manifest")" == 3 ]]; then
+            raw="$(grep -m1 '^format_version:' "$dst" 2>/dev/null)" || true
+            stamp="${raw#format_version:}"
+            stamp="${stamp%%#*}"
+            stamp="${stamp//[[:space:]]/}"
+            if [[ "$stamp" =~ ^[0-4]$ ]]; then
+                tmp="$(mktemp "${dst}.aid-tmp.XXXXXX")" || return 1
+                while :; do
+                    line=""
+                    if IFS= read -r line; then read_rc=0; else read_rc=$?; fi
+                    [[ $read_rc -ne 0 && -z "$line" ]] && break
+                    if [[ $updated -eq 0 && "$line" =~ ^(format_version:[[:space:]]*)[0-9]+(.*)$ ]]; then
+                        line="${BASH_REMATCH[1]}5${BASH_REMATCH[2]}"
+                        updated=1
+                    fi
+                    printf '%s' "$line" >> "$tmp" || { rm -f "$tmp"; return 1; }
+                    if [[ $read_rc -eq 0 ]]; then printf '\n' >> "$tmp" || { rm -f "$tmp"; return 1; }; fi
+                done < "$dst"
+                if [[ $updated -eq 1 ]]; then
+                    cat "$tmp" > "$dst" || { rm -f "$tmp"; return 1; }
+                fi
+                rm -f "$tmp" || return 1
+            fi
+        fi
+        return 0
+    fi
     # Template absent -> a bundle shipped without the shared runtime template.
     # Surface it (work-007 C5): a silent skip re-triggers the "no settings.yml"
     # class this seed exists to fix, and the format gate would then warn forever.

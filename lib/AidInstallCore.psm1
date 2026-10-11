@@ -2162,7 +2162,8 @@ function script:Update-AidGitattributes {
 
 # Initialize-AidSettingsFile <target> <tool>
 # Seed <target>\.aid\settings.yml from the tool's just-installed template when it
-# does not already exist. NEVER overwrites existing settings.yml (user config).
+# does not already exist. After a format-3 manifest commits, advance only an older
+# format stamp while preserving every other settings byte.
 # Not manifest-tracked. Sets $script:_SeededSettings.
 function script:Initialize-AidSettingsFile {
     param([string]$Target, [string]$Tool)
@@ -2172,7 +2173,36 @@ function script:Initialize-AidSettingsFile {
     $aidDir = Join-Path $Target '.aid'
     $dst  = Join-Path $aidDir 'settings.yml'
     $tmpl = Join-Path $Target '.aid/runtime/templates/settings.yml'
-    if (Test-Path $dst -PathType Leaf) { return }          # never clobber user config
+    if (Test-Path $dst -PathType Leaf) {
+        $manifestPath = Join-Path $aidDir '.aid-manifest.json'
+        if (Test-Path $manifestPath -PathType Leaf) {
+            try { $manifestObject = Get-Content -LiteralPath $manifestPath -Raw | ConvertFrom-Json } catch { $manifestObject = $null }
+            if ($manifestObject -and $manifestObject.PSObject.Properties['format_version'] -and [int]$manifestObject.format_version -eq 3) {
+                $bytes = [System.IO.File]::ReadAllBytes($dst)
+                $start = if ($bytes.Length -ge 3 -and $bytes[0] -eq 239 -and $bytes[1] -eq 187 -and $bytes[2] -eq 191) { 3 } else { 0 }
+                while ($start -lt $bytes.Length) {
+                    $end = $start
+                    while ($end -lt $bytes.Length -and $bytes[$end] -ne 10) { $end++ }
+                    $contentEnd = $end
+                    if ($contentEnd -gt $start -and $bytes[$contentEnd - 1] -eq 13) { $contentEnd-- }
+                    $line = [System.Text.Encoding]::ASCII.GetString($bytes, $start, $contentEnd - $start)
+                    $match = [System.Text.RegularExpressions.Regex]::Match($line, '^(format_version:[ \t]*)([0-9]+)')
+                    if ($match.Success -and [int]$match.Groups[2].Value -lt 5) {
+                        $stampOffset = $start + $match.Groups[1].Length
+                        $digitsEnd = $stampOffset + $match.Groups[2].Length
+                        $patched = New-Object 'System.Collections.Generic.List[byte]'
+                        for ($i = 0; $i -lt $stampOffset; $i++) { $patched.Add($bytes[$i]) }
+                        $patched.Add([byte]53)
+                        for ($i = $digitsEnd; $i -lt $bytes.Length; $i++) { $patched.Add($bytes[$i]) }
+                        [System.IO.File]::WriteAllBytes($dst, $patched.ToArray())
+                        break
+                    }
+                    $start = $end + 1
+                }
+            }
+        }
+        return
+    }
     # Template absent -> surface it (work-007 C5): a silent skip re-triggers the
     # "no settings.yml" class and the format gate would then warn forever.
     if (-not (Test-Path $tmpl -PathType Leaf)) {
