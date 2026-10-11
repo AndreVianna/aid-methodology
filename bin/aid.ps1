@@ -5906,7 +5906,9 @@ if ($SUBCMD -eq 'update' -and $script:_AidV3Upgrade) {
         $legacy = New-Object 'System.Collections.Generic.List[string]'
         $manifestObj = $null
         if (Test-Path -LiteralPath $_AidManifest -PathType Leaf) { try { $manifestObj = Get-Content -LiteralPath $_AidManifest -Raw | ConvertFrom-Json } catch {} }
-        if ($manifestObj -and $manifestObj.format_version -eq 2) { foreach ($p in @($manifestObj.tools.PSObject.Properties)) { if ($script:AID_TOOLS -ccontains $p.Name) { $legacy.Add($p.Name) } } }
+        # Format 2, 1 or no format_version (pre-format-3 manifests) list the tools to upgrade.
+        $legacyFormat = 0; if ($manifestObj -and $manifestObj.PSObject.Properties['format_version']) { $legacyFormat = [int]$manifestObj.format_version }
+        if ($manifestObj -and $legacyFormat -le 2 -and $manifestObj.PSObject.Properties['tools']) { foreach ($p in @($manifestObj.tools.PSObject.Properties)) { if ($script:AID_TOOLS -ccontains $p.Name) { $legacy.Add($p.Name) } } }
         if ($legacy.Count -eq 0) {
             foreach ($tool in $script:AID_TOOLS) {
                 $root = switch ($tool) { 'claude-code' { '.claude' } 'codex' { '.codex' } 'cursor' { '.cursor' } 'copilot-cli' { '.github' } 'antigravity' { '.agent' } }

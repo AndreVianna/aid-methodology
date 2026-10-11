@@ -6445,7 +6445,8 @@ if [[ "$SUBCMD" == update && "${_AID_V3_UPGRADE:-0}" -eq 1 ]]; then
     else
         _AID_UPGRADE_TOOLS=()
         _LEGACY_TOOLS=()
-        [[ -f "$_AID_MANIFEST" ]] && { [[ "$(manifest_format "$_AID_MANIFEST")" == 2 ]] && mapfile -t _LEGACY_TOOLS < <(manifest_list_tools "$_AID_MANIFEST"); }
+        # Format 2, 1 or no format_version (pre-format-3 manifests) list the tools to upgrade.
+        [[ -f "$_AID_MANIFEST" ]] && { [[ "$(manifest_format "$_AID_MANIFEST")" =~ ^[0-2]?$ ]] && mapfile -t _LEGACY_TOOLS < <(manifest_list_tools "$_AID_MANIFEST"); }
         if [[ "${#_LEGACY_TOOLS[@]}" -eq 0 ]]; then
             for _LEGACY_TOOL in "${AID_TOOLS[@]}"; do
                 _LEGACY_ROOT="$(_root_dir "$_LEGACY_TOOL")"
