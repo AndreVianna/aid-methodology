@@ -490,6 +490,11 @@ lifecycle_history:
     grade: --
     notes: '/aid-execute Codex'
 
+  - date: '2026-10-11'
+    event: 'Task-006 cdc95d6c1 In Review; Bash syntax/ASCII and isolated layout/skew no-write gates, future manifest, scaffold, migration-stamp probes passed; pwsh deferred. Task-011 In Progress.'
+    grade: --
+    notes: '/aid-execute Codex'
+
 deploy: []
 
 # [A] flattened only; single writer: this work's active branch. Written by
@@ -544,15 +549,22 @@ tasks_lifecycle:
       - date: '2026-10-11T05:23:26.814056+00:00'
         agent: 'gpt-6-luna'
         eta_band: '3-8 min'
-        actual: '15 min'
+        actual: '13m09s (start-checkpoint to commit)'
         outcome: 'committed c1952f13b; focused checks passed; pwsh deferred'
 
   task-006:
-    state: 'In Progress'
+    state: 'In Review'
     review: --
     elapsed: --
     notes: --
     display_name: --
+    dispatch_log:
+      - date: '2026-10-11T05:32:54.753867+00:00'
+        agent: 'gpt-6-luna'
+        eta_band: '3-8 min'
+        actual: '9m01s (start-checkpoint to commit)'
+        outcome: 'committed cdc95d6c1; focused Bash probes passed; pwsh deferred'
+
   task-007:
     state: Pending
     review: --
@@ -578,7 +590,7 @@ tasks_lifecycle:
     notes: --
     display_name: --
   task-011:
-    state: Pending
+    state: 'In Progress'
     review: --
     elapsed: --
     notes: --
