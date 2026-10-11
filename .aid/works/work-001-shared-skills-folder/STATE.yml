@@ -118,7 +118,7 @@ phase: Execute
 # [W] aid-{skill} | none
 active_skill: aid-execute
 # [W]
-updated: '2026-10-11T16:16:44Z'
+updated: '2026-10-11T16:20:11Z'
 # [W] set only when lifecycle = Paused-Awaiting-Input
 pause_reason: --
 # [W] set only when lifecycle = Blocked
@@ -820,6 +820,11 @@ lifecycle_history:
     grade: --
     notes: '/aid-execute Codex'
 
+  - date: '2026-10-11'
+    event: 'Task015 first Luna correction533df330c addresses wave11 recovery rows1-4. Exact cursor retry and failed-stamp record-retention probes pass; Bash syntax/ASCII and PS static assertions pass, runtime deferred. Task015 In Review; sequential test-header/assertion corrections next.'
+    grade: --
+    notes: '/aid-execute Codex'
+
 deploy: []
 
 # [A] flattened only; single writer: this work's active branch. Written by
@@ -1092,7 +1097,7 @@ tasks_lifecycle:
         outcome: 'Task014 separate Sol correctionf43787731 committed: PS dry-run protects only root runtime host.conf, nested scripts/host.conf planned/trash regression added plus optional PS fixture. Focused fixture/syntax/diff/ASCII pass, dryrun immutable and root retained. In Review for original Sol reviewer final wave10 recheck; PS runtime deferred.'
 
   task-015:
-    state: 'In Progress'
+    state: 'In Review'
     review: --
     elapsed: --
     notes: --
@@ -1103,6 +1108,12 @@ tasks_lifecycle:
         eta_band: '3-8 min'
         actual: '13m55s'
         outcome: 'Task015 committed7ce93d34b: v3 path retirement, strict authoritative atomic recovery records, gated retries/fresh install and pending add/remove refusal in Bash/PS. Focused ownership/schema/symlink/dryrun fixtures, real upgrade, retiredtrue exact two-tool retry, staging/future/gate snapshots pass; syntax/diff/ASCII29 pass. In Review pending wave11 Sol after tasks017/018; PS runtime deferred, broader upgrade suite task021.'
+
+      - date: '2026-10-11T16:20:11.907298+00:00'
+        agent: 'gpt-6-luna'
+        eta_band: '3-8 min'
+        actual: '3m14s'
+        outcome: 'Task015 first Luna correction533df330c addresses wave11 recovery rows1-4. Exact cursor retry and failed-stamp record-retention probes pass; Bash syntax/ASCII and PS static assertions pass, runtime deferred. Task015 In Review; sequential test-header/assertion corrections next.'
 
   task-016:
     state: Done
