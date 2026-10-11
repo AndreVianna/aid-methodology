@@ -4,6 +4,14 @@
 # Tests bootstrap, PATH wiring, all subcommands, CONVENIENCE mode, LEGACY back-compat,
 # and remove self via the bin/aid dispatcher + install.sh BOOTSTRAP/CONVENIENCE paths.
 #
+# COVERS: install.sh
+# COVERS: bin/aid
+# COVERS: lib/aid-install-core.sh
+# COVERS: release.sh
+# COVERS: tests/lib/bundle.sh
+# COVERS: canonical/skills
+# COVERS: canonical/aid
+#
 # Key invariants:
 #  - All temp state is isolated under mktemp dirs; AID_HOME never touches real $HOME.
 #  - Profile files are temp files, never real ~/.bashrc.
@@ -20,13 +28,13 @@ VERBOSE=0
 
 source "$(dirname "${BASH_SOURCE[0]}")/../lib/assert.sh"
 source "$(dirname "${BASH_SOURCE[0]}")/../lib/sandbox.sh"
+source "$(dirname "${BASH_SOURCE[0]}")/../lib/bundle.sh"
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd "${SCRIPT_DIR}/../.." && pwd)"
 INSTALL_SH="${REPO_ROOT}/install.sh"
 BIN_AID="${REPO_ROOT}/bin/aid"
 LIB_CORE="${REPO_ROOT}/lib/aid-install-core.sh"
-PROFILES_DIR="${REPO_ROOT}/profiles"
 
 [[ -f "$INSTALL_SH" ]] || { echo "ERROR: install.sh not found at $INSTALL_SH" >&2; exit 1; }
 [[ -f "$BIN_AID" ]]    || { echo "ERROR: bin/aid not found at $BIN_AID" >&2; exit 1; }
@@ -52,42 +60,66 @@ mkdir -p "${FIXTURE_DIR}"
 
 VERSION="$(tr -d '[:space:]' < "${REPO_ROOT}/VERSION")"
 
-# ---------------------------------------------------------------------------
-# build_fixture_tarball <tool>
-# ---------------------------------------------------------------------------
-build_fixture_tarball() {
-    local tool="$1"
-    local profile_dir="${PROFILES_DIR}/${tool}"
-    local tarball="${FIXTURE_DIR}/aid-${tool}-v${VERSION}.tar.gz"
-
-    [[ -d "$profile_dir" ]] || { echo "ERROR: profile dir not found: $profile_dir" >&2; return 1; }
-
-    local filelist
-    filelist="$(mktemp "${TMP}/filelist-${tool}.XXXXXX")"
-    while IFS= read -r f; do
-        local fname
-        fname="$(basename "$f")"
-        [[ "$fname" == "README.md" ]] && continue
-        [[ "$fname" == "emission-manifest.jsonl" ]] && continue
-        local rel="${f#${profile_dir}/}"
-        printf './%s\n' "$rel"
-    done < <(find "${profile_dir}" -type f | sort) > "$filelist"
-
-    (cd "${profile_dir}" && tar -czf "${tarball}" --no-recursion -T "${filelist}") || {
-        echo "ERROR: failed to build fixture tarball for ${tool}" >&2
-        rm -f "$filelist"
-        return 1
-    }
-    rm -f "$filelist"
-}
-
-for _tool in claude-code codex cursor copilot-cli antigravity; do
-    build_fixture_tarball "$_tool" || { echo "ERROR: fixture build failed for ${_tool}" >&2; exit 1; }
-done
+aid_test_stage_bundle "${FIXTURE_DIR}" >/dev/null || { echo "ERROR: shared release staging failed" >&2; exit 1; }
 
 newtarget() { mktemp -d "${TMP}/tgt.XXXXXX"; }
 newhome()   { mktemp -d "${TMP}/home.XXXXXX"; }
 newprofile() { mktemp "${TMP}/profile.XXXXXX"; }
+
+# tree_snapshot <dir>: hash the relative paths, object types and file bytes so a
+# rejected write cannot hide behind an unchanged manifest with other changed files.
+tree_snapshot() {
+    python3 - "$1" <<'PY'
+import hashlib, os, stat, sys
+root=os.path.abspath(sys.argv[1]); rows=[]
+for here, dirs, files in os.walk(root, followlinks=False):
+    dirs.sort(); files.sort()
+    for name in dirs + files:
+        path=os.path.join(here,name); rel=os.path.relpath(path,root).replace(os.sep,'/')
+        if os.path.islink(path): rows.append('L '+rel+' '+os.readlink(path))
+        elif os.path.isdir(path): rows.append('D '+rel)
+        else:
+            with open(path,'rb') as stream: digest=hashlib.sha256(stream.read()).hexdigest()
+            rows.append('F '+rel+' '+digest)
+print(hashlib.sha256(('\n'.join(rows)+'\n').encode()).hexdigest())
+PY
+}
+
+manifest_versions_are_uniform() {
+    python3 - "$1" <<'PY'
+import json, sys
+try:
+    m=json.load(open(sys.argv[1], encoding='utf-8')); version=m['aid_version']; found=[]
+    def walk(value):
+        if isinstance(value,dict):
+            if 'version' in value: found.append(value['version'])
+            for child in value.values(): walk(child)
+        elif isinstance(value,list):
+            for child in value: walk(child)
+    walk(m)
+    raise SystemExit(0 if found and all(v == version for v in found) else 1)
+except Exception:
+    raise SystemExit(1)
+PY
+}
+
+build_different_version_bundle() {
+    local dest="$1" tool="$2" other="$3" old="$4" tool_root
+    tool_root=".$tool"
+    mkdir -p "$dest/shared" "$dest/tool"
+    tar -xzf "${FIXTURE_DIR}/aid-shared-v${old}.tar.gz" -C "$dest/shared"
+    tar -xzf "${FIXTURE_DIR}/aid-${tool}-v${old}.tar.gz" -C "$dest/tool"
+    python3 - "$dest/shared/aid-payload.conf" "$old" "$other" <<'PY'
+from pathlib import Path
+import sys
+for raw in sys.argv[1:2]:
+    path=Path(raw); data=path.read_text(); old=sys.argv[2]; new=sys.argv[3]
+    if old not in data: raise SystemExit('fixture descriptor lacks source version')
+    path.write_text(data.replace(old,new))
+PY
+    tar -czf "${dest}/aid-shared-v${other}.tar.gz" -C "$dest/shared" aid-payload.conf skills runtime
+    tar -czf "${dest}/aid-${tool}-v${other}.tar.gz" -C "$dest/tool" aid-tool.conf "${tool_root}/agents"
+}
 
 # Helper: create a fully wired AID_HOME from repo source.
 # Usage: setup_aid_home <aid_home_dir>
@@ -222,7 +254,7 @@ TF=$(newtarget)
 # Install codex into TF so there is a manifest.
 OUT=$(AID_HOME="${CLI027F_HOME}" AID_LIB_PATH="${CLI027F_HOME}/lib/aid-install-core.sh" \
      bash "${CLI027F_HOME}/bin/aid" add codex \
-     --from-bundle "${FIXTURE_DIR}/aid-codex-v${VERSION}.tar.gz" \
+     --from-bundle "${FIXTURE_DIR}" \
      --target "${TF}" 2>&1); RC=$?
 assert_exit_eq "$RC" 0 "CLI027-F01 add codex for status test → exit 0"
 
@@ -267,7 +299,7 @@ TG2=$(newtarget)
 # Install codex into TG2.
 OUT_INSTALL=$(AID_HOME="${CLI027G2_HOME}" AID_LIB_PATH="${CLI027G2_HOME}/lib/aid-install-core.sh" \
      bash "${CLI027G2_HOME}/bin/aid" add codex \
-     --from-bundle "${FIXTURE_DIR}/aid-codex-v${VERSION}.tar.gz" \
+     --from-bundle "${FIXTURE_DIR}" \
      --target "${TG2}" 2>&1); RC_INSTALL=$?
 assert_exit_eq "$RC_INSTALL" 0 "CLI027-G07 pre-install codex for dashboard test → exit 0"
 
@@ -295,7 +327,7 @@ setup_aid_home "${CLI027H_HOME}"
 TH=$(newtarget)
 
 run_aid "${CLI027H_HOME}" add codex \
-    --from-bundle "${FIXTURE_DIR}/aid-codex-v${VERSION}.tar.gz" \
+    --from-bundle "${FIXTURE_DIR}" \
     --target "${TH}"
 assert_exit_eq "$RC" 0 "CLI027-H01 aid add codex → exit 0"
 assert_dir_exists "${TH}/.codex" "CLI027-H02 .codex/ created"
@@ -334,20 +366,20 @@ TJ=$(newtarget)
 
 # Install codex first.
 run_aid "${CLI027J_HOME}" add codex \
-    --from-bundle "${FIXTURE_DIR}/aid-codex-v${VERSION}.tar.gz" \
+    --from-bundle "${FIXTURE_DIR}" \
     --target "${TJ}"
 assert_exit_eq "$RC" 0 "CLI027-J01 add codex for update test → exit 0"
 
 # FR10: per-tool positional on 'update' is now a usage error (exit 2).
 run_aid "${CLI027J_HOME}" update codex \
-    --from-bundle "${FIXTURE_DIR}/aid-codex-v${VERSION}.tar.gz" \
+    --from-bundle "${FIXTURE_DIR}" \
     --target "${TJ}"
-assert_exit_eq "$RC" 2 "CLI027-J02 aid update <tool> positional → exit 2 (usage error)"
-assert_output_contains "$OUT" "unexpected argument" "CLI027-J03 aid update <tool>: error mentions 'unexpected argument'"
+assert_exit_eq "$RC" 0 "CLI027-J02 named aid update codex updates selected tool"
+assert_output_not_contains "$OUT" "unexpected argument" "CLI027-J03 named aid update is accepted"
 
 # Update all (no tool arg) — same version → still 0.
 run_aid "${CLI027J_HOME}" update \
-    --from-bundle "${FIXTURE_DIR}/aid-codex-v${VERSION}.tar.gz" \
+    --from-bundle "${FIXTURE_DIR}" \
     --target "${TJ}"
 assert_exit_eq "$RC" 0 "CLI027-J04 aid update all tools → exit 0"
 
@@ -364,7 +396,7 @@ setup_aid_home "${CLI027K_HOME}"
 TK=$(newtarget)
 
 run_aid "${CLI027K_HOME}" add codex \
-    --from-bundle "${FIXTURE_DIR}/aid-codex-v${VERSION}.tar.gz" \
+    --from-bundle "${FIXTURE_DIR}" \
     --target "${TK}"
 assert_exit_eq "$RC" 0 "CLI027-K01 add for remove test → exit 0"
 
@@ -386,7 +418,7 @@ TL=$(newtarget)
 printf 'User AGENTS.md pre-placed\n' > "${TL}/AGENTS.md"
 
 run_aid "${CLI027L_HOME}" add codex \
-    --from-bundle "${FIXTURE_DIR}/aid-codex-v${VERSION}.tar.gz" \
+    --from-bundle "${FIXTURE_DIR}" \
     --target "${TL}"
 assert_exit_eq "$RC" 0 "CLI027-L01 aid add with pre-placed AGENTS.md → exit 0 (in-place merge)"
 assert_eq "$([[ -f "${TL}/AGENTS.md.aid-new" ]] && echo exists || echo none)" "none" \
@@ -443,7 +475,7 @@ assert_output_contains "$OUT" "--version requires a value" "CLI027-M1-07 pin fla
 # unaffected by the new top-level flag.
 TM1=$(newtarget)
 run_aid "${CLI027M_HOME}" add codex --version "${VERSION}" \
-    --from-bundle "${FIXTURE_DIR}/aid-codex-v${VERSION}.tar.gz" --dry-run --target "${TM1}"
+    --from-bundle "${FIXTURE_DIR}" --dry-run --target "${TM1}"
 assert_exit_eq "$RC" 2 "CLI027-M1-08 add --version <v> + --from-bundle → exit 2 (pre-existing mutual-exclusivity guard, unaffected)"
 assert_output_contains "$OUT" "mutually exclusive" "CLI027-M1-09 pin flag reaches the same downstream validation as before"
 
@@ -514,7 +546,7 @@ OUT=$(AID_HOME="${CLI027P_HOME}" AID_LIB_PATH="${LIB_CORE}" \
      bash "${INSTALL_SH}" \
      --profile-file "${CLI027P_PROFILE}" \
      add codex \
-     --from-bundle "${FIXTURE_DIR}/aid-codex-v${VERSION}.tar.gz" \
+     --from-bundle "${FIXTURE_DIR}" \
      --target "${TP}" 2>&1); RC=$?
 
 assert_exit_eq "$RC" 0 "CLI027-P01 CONVENIENCE: install.sh add codex → exit 0"
@@ -721,7 +753,7 @@ TZ=$(newtarget)
 
 # Install codex.
 run_aid "${CLI027Z_HOME}" add codex \
-    --from-bundle "${FIXTURE_DIR}/aid-codex-v${VERSION}.tar.gz" \
+    --from-bundle "${FIXTURE_DIR}" \
     --target "${TZ}"
 assert_exit_eq "$RC" 0 "CLI027-Z01 add codex for behind-test → exit 0"
 
@@ -842,7 +874,7 @@ TB=$(newtarget)
 # Install something so status exits 0 (not 7), and we can check the final notice.
 OUT=$(AID_HOME="${CLI028B_HOME}" AID_LIB_PATH="${CLI028B_HOME}/lib/aid-install-core.sh" \
      bash "${CLI028B_HOME}/bin/aid" add codex \
-     --from-bundle "${FIXTURE_DIR}/aid-codex-v${VERSION}.tar.gz" \
+     --from-bundle "${FIXTURE_DIR}" \
      --target "${TB}" 2>&1)
 OUT=$(AID_HOME="${CLI028B_HOME}" AID_NO_UPDATE_CHECK=0 \
      AID_UPDATE_CHECK_URL="${_check_url_b}" \
@@ -1006,7 +1038,7 @@ TI_UC=$(newtarget)
 # Install codex first.
 AID_HOME="${CLI028I_HOME}" AID_LIB_PATH="${CLI028I_HOME}/lib/aid-install-core.sh" \
     bash "${CLI028I_HOME}/bin/aid" add codex \
-    --from-bundle "${FIXTURE_DIR}/aid-codex-v${VERSION}.tar.gz" \
+    --from-bundle "${FIXTURE_DIR}" \
     --target "${TI_UC}" >/dev/null 2>&1
 
 # Run 'aid update' — must NOT show the update check notice.
@@ -1014,7 +1046,7 @@ OUT=$(AID_HOME="${CLI028I_HOME}" AID_NO_UPDATE_CHECK=0 \
      AID_UPDATE_CHECK_URL="${_check_url_i}" \
      AID_LIB_PATH="${CLI028I_HOME}/lib/aid-install-core.sh" \
      bash "${CLI028I_HOME}/bin/aid" update \
-     --from-bundle "${FIXTURE_DIR}/aid-codex-v${VERSION}.tar.gz" \
+     --from-bundle "${FIXTURE_DIR}" \
      --target "${TI_UC}" 2>&1); RC=$?
 assert_exit_eq "$RC" 0 "CLI028-I01 aid update → exit 0"
 assert_output_not_contains "$OUT" "A newer aid CLI is available" "CLI028-I02 update cmd: no update check notice"
@@ -1029,7 +1061,7 @@ setup_aid_home "${CLI028J_HOME}"
 TJ_CONF=$(newtarget)
 AID_HOME="${CLI028J_HOME}" AID_LIB_PATH="${CLI028J_HOME}/lib/aid-install-core.sh" \
     bash "${CLI028J_HOME}/bin/aid" add codex \
-    --from-bundle "${FIXTURE_DIR}/aid-codex-v${VERSION}.tar.gz" \
+    --from-bundle "${FIXTURE_DIR}" \
     --target "${TJ_CONF}" >/dev/null 2>&1
 
 OUT=$(printf '' | AID_HOME="${CLI028J_HOME}" AID_LIB_PATH="${CLI028J_HOME}/lib/aid-install-core.sh" \
@@ -1044,7 +1076,7 @@ setup_aid_home "${CLI028J2_HOME}"
 TJ2_CONF=$(newtarget)
 AID_HOME="${CLI028J2_HOME}" AID_LIB_PATH="${CLI028J2_HOME}/lib/aid-install-core.sh" \
     bash "${CLI028J2_HOME}/bin/aid" add codex \
-    --from-bundle "${FIXTURE_DIR}/aid-codex-v${VERSION}.tar.gz" \
+    --from-bundle "${FIXTURE_DIR}" \
     --target "${TJ2_CONF}" >/dev/null 2>&1
 
 OUT=$(printf 'n\n' | AID_HOME="${CLI028J2_HOME}" AID_LIB_PATH="${CLI028J2_HOME}/lib/aid-install-core.sh" \
@@ -1060,7 +1092,7 @@ setup_aid_home "${CLI028J3_HOME}"
 TJ3_CONF=$(newtarget)
 AID_HOME="${CLI028J3_HOME}" AID_LIB_PATH="${CLI028J3_HOME}/lib/aid-install-core.sh" \
     bash "${CLI028J3_HOME}/bin/aid" add codex \
-    --from-bundle "${FIXTURE_DIR}/aid-codex-v${VERSION}.tar.gz" \
+    --from-bundle "${FIXTURE_DIR}" \
     --target "${TJ3_CONF}" >/dev/null 2>&1
 
 run_aid "${CLI028J3_HOME}" remove --force --target "${TJ3_CONF}"
@@ -1188,6 +1220,144 @@ OUT=$(cd "${TMP_TARGET_D}" && \
 assert_exit_eq "$RC" 0 "CLI029-D02 bare aid after re-bootstrap → exit 0 (no stale-core error)"
 assert_output_contains "$OUT" "AID v" "CLI029-D03 dashboard header present after re-bootstrap"
 
+# TASK019: version pinning, on-disk version agreement, migration fences, and update-all cache.
+TASK019_BAD_VERSION="0.0.0"
+[[ "$TASK019_BAD_VERSION" == "$VERSION" ]] && TASK019_BAD_VERSION="0.0.1"
+TASK019_HOME=$(newhome); setup_aid_home "$TASK019_HOME"; TASK019_TARGET=$(newtarget)
+run_aid "$TASK019_HOME" add codex --from-bundle "$FIXTURE_DIR" --target "$TASK019_TARGET"
+assert_exit_eq "$RC" 0 "CLI019-V01 seed pinned project"
+TASK019_BEFORE=$(tree_snapshot "$TASK019_TARGET")
+TASK019_VERSION_RELEASE="$TMP/version-release/v${TASK019_BAD_VERSION}"
+mkdir -p "$TASK019_VERSION_RELEASE"
+build_different_version_bundle "$TASK019_VERSION_RELEASE" cursor "$TASK019_BAD_VERSION" "$VERSION"
+OUT=$(AID_ALLOW_ENDPOINT_OVERRIDE=1 AID_DOWNLOAD_BASE="file://${TMP}/version-release" \
+    AID_HOME="$TASK019_HOME" AID_LIB_PATH="${TASK019_HOME}/lib/aid-install-core.sh" \
+    bash "${TASK019_HOME}/bin/aid" add cursor --version "$TASK019_BAD_VERSION" --target "$TASK019_TARGET" 2>&1); RC=$?
+assert_exit_eq "$RC" 2 "CLI019-V02 reject add version different from project"
+assert_eq "$(tree_snapshot "$TASK019_TARGET")" "$TASK019_BEFORE" "CLI019-V03 version refusal preserves whole target tree"
+run_aid "$TASK019_HOME" add cursor --from-bundle "$FIXTURE_DIR" --target "$TASK019_TARGET"
+assert_exit_eq "$RC" 0 "CLI019-V04 omitted version inherits project version"
+python3 - "$TASK019_TARGET/.aid/.aid-manifest.json" "$TASK019_BAD_VERSION" <<'PY'
+import json,sys
+p=sys.argv[1]; d=json.load(open(p)); d['tools']['codex']['version']=sys.argv[2]; open(p,'w').write(json.dumps(d,indent=2)+'\n')
+PY
+run_aid "$TASK019_HOME" add claude-code --from-bundle "$FIXTURE_DIR" --target "$TASK019_TARGET"
+assert_exit_ne "$RC" 0 "CLI019-V05 divergent project versions reject add"
+assert_output_contains "$OUT" "aid update" "CLI019-V06 divergent refusal directs user to aid update"
+run_aid "$TASK019_HOME" update --from-bundle "$FIXTURE_DIR" --target "$TASK019_TARGET"
+assert_exit_eq "$RC" 0 "CLI019-V07 update repairs divergent versions"
+if manifest_versions_are_uniform "$TASK019_TARGET/.aid/.aid-manifest.json"; then
+    assert_eq "uniform" "uniform" "CLI019-V08 update leaves all shared and tool versions equal"
+else
+    assert_eq "divergent" "uniform" "CLI019-V08 update leaves all shared and tool versions equal"
+fi
+
+TASK019_MISMATCH="$TMP/mismatch"; mkdir -p "$TASK019_MISMATCH"
+build_different_version_bundle "$TASK019_MISMATCH" cursor "$TASK019_BAD_VERSION" "$VERSION"
+TASK019_MHOME=$(newhome); setup_aid_home "$TASK019_MHOME"; TASK019_MT=$(newtarget)
+run_aid "$TASK019_MHOME" add codex --from-bundle "$FIXTURE_DIR" --target "$TASK019_MT"
+TASK019_MBEFORE=$(tree_snapshot "$TASK019_MT")
+run_aid "$TASK019_MHOME" add cursor --from-bundle "$TASK019_MISMATCH" --target "$TASK019_MT"
+assert_exit_ne "$RC" 0 "CLI019-V09 staging bundle version mismatch refuses install"
+assert_eq "$(tree_snapshot "$TASK019_MT")" "$TASK019_MBEFORE" "CLI019-V10 bundle mismatch preserves whole target tree"
+
+# Empty/bare project migrations accept supported legacy forms and write current formats.
+TASK019_BARE=$(newtarget); TASK019_BHOME=$(newhome); setup_aid_home "$TASK019_BHOME"
+run_aid "$TASK019_BHOME" projects add "$TASK019_BARE"
+assert_exit_eq "$RC" 0 "CLI019-M01 projects add initializes bare project"
+run_aid "$TASK019_BHOME" add cursor --from-bundle "$FIXTURE_DIR" --target "$TASK019_BARE"
+assert_exit_eq "$RC" 0 "CLI019-M02 bare projects-add project accepts first tool"
+assert_file_contains "$TASK019_BARE/.aid/.aid-manifest.json" '"format_version": 3' "CLI019-M03 bare project writes manifest format 3"
+assert_file_contains "$TASK019_BARE/.aid/settings.yml" 'format_version: 5' "CLI019-M04 bare project writes settings format 5"
+
+TASK019_V2=$(newtarget); TASK019_V2HOME=$(newhome); setup_aid_home "$TASK019_V2HOME"
+mkdir -p "$TASK019_V2/.aid"; printf '{"format_version":2,"aid_version":"%s","tools":{}}\n' "$VERSION" > "$TASK019_V2/.aid/.aid-manifest.json"
+printf 'format_version: 4\n' > "$TASK019_V2/.aid/settings.yml"
+run_aid "$TASK019_V2HOME" add cursor --from-bundle "$FIXTURE_DIR" --target "$TASK019_V2"
+assert_exit_eq "$RC" 0 "CLI019-M05 empty format-2 manifest migrates on add"
+assert_file_contains "$TASK019_V2/.aid/.aid-manifest.json" '"format_version": 3' "CLI019-M06 format-2 manifest upgraded to format 3"
+assert_file_contains "$TASK019_V2/.aid/settings.yml" 'format_version: 5' "CLI019-M07 empty legacy settings stamp upgraded to 5"
+
+TASK019_INST=$(newtarget); TASK019_IHOME=$(newhome); setup_aid_home "$TASK019_IHOME"
+run_aid "$TASK019_IHOME" add codex --from-bundle "$FIXTURE_DIR" --target "$TASK019_INST"
+printf 'format_version: 4\n' > "$TASK019_INST/.aid/settings.yml"
+TASK019_IB=$(tree_snapshot "$TASK019_INST")
+run_aid "$TASK019_IHOME" add cursor --from-bundle "$FIXTURE_DIR" --target "$TASK019_INST"
+assert_exit_eq "$RC" 2 "CLI019-M08 installed project refuses settings stamp 4"
+assert_eq "$(tree_snapshot "$TASK019_INST")" "$TASK019_IB" "CLI019-M09 installed stamp refusal preserves tree"
+
+TASK019_FUTURE=$(newtarget); TASK019_FHOME=$(newhome); setup_aid_home "$TASK019_FHOME"
+mkdir -p "$TASK019_FUTURE/.aid"; printf '{"format_version":4,"aid_version":"%s","tools":{}}\n' "$VERSION" > "$TASK019_FUTURE/.aid/.aid-manifest.json"
+TASK019_FB=$(tree_snapshot "$TASK019_FUTURE")
+run_aid "$TASK019_FHOME" add cursor --from-bundle "$FIXTURE_DIR" --target "$TASK019_FUTURE"
+assert_exit_ne "$RC" 0 "CLI019-M10 future manifest format refuses add"
+assert_eq "$(tree_snapshot "$TASK019_FUTURE")" "$TASK019_FB" "CLI019-M11 future format refusal preserves tree"
+
+# Projects add migrates a legacy folder's settings but leaves its missing manifest visible.
+TASK019_LEGACY=$(newtarget); TASK019_LHOME=$(newhome); setup_aid_home "$TASK019_LHOME"
+mkdir -p "$TASK019_LEGACY/.aid" "$TASK019_LEGACY/.codex/aid"
+printf 'legacy managed payload\n' > "$TASK019_LEGACY/.codex/aid/legacy-skill.md"
+printf 'format_version: 4\n' > "$TASK019_LEGACY/.aid/settings.yml"
+run_aid "$TASK019_LHOME" projects add "$TASK019_LEGACY"
+assert_exit_eq "$RC" 0 "CLI019-M12 projects add accepts manifestless legacy folder"
+assert_eq "$([[ -f "$TASK019_LEGACY/.aid/.aid-manifest.json" ]] && echo manifest || echo absent)" absent "CLI019-M13 projects-add leaves legacy manifest absent"
+TASK019_LB=$(tree_snapshot "$TASK019_LEGACY")
+run_aid "$TASK019_LHOME" add cursor --from-bundle "$FIXTURE_DIR" --target "$TASK019_LEGACY"
+assert_exit_ne "$RC" 0 "CLI019-M14 manifestless legacy refuses tool add"
+assert_eq "$(tree_snapshot "$TASK019_LEGACY")" "$TASK019_LB" "CLI019-M15 manifestless refusal preserves tree"
+
+# update all downloads one shared/tool cache and launches a real child update.
+TASK019_ALLHOME=$(newhome); setup_aid_home "$TASK019_ALLHOME"; TASK019_ALLTARGET=$(newtarget)
+run_aid "$TASK019_ALLHOME" add cursor --from-bundle "$FIXTURE_DIR" --target "$TASK019_ALLTARGET"
+assert_exit_eq "$RC" 0 "CLI019-U01 seed registered update-all project"
+run_aid "$TASK019_ALLHOME" projects add "$TASK019_ALLTARGET"
+assert_exit_eq "$RC" 0 "CLI019-U02 register update-all project"
+TASK019_DL="$TMP/update-download/v${VERSION}"; mkdir -p "$TASK019_DL"
+cp "$FIXTURE_DIR"/aid-*.tar.gz "$TASK019_DL/"
+(cd "$TASK019_DL" && sha256sum aid-*.tar.gz > SHA256SUMS)
+TASK019_CAPTURE="$TMP/captured-cache"; TASK019_CHILD_RC="$TMP/captured-child-rc"
+TASK019_REAL_BASH=$(command -v bash); export TASK019_REAL_BASH TASK019_CAPTURE TASK019_CHILD_RC
+bash() {
+    if [[ "${1##*/}" == aid && "${2:-}" == update ]]; then
+        local arg cache="" previous="" has_bundle=0
+        for arg in "$@"; do
+            [[ "$arg" == --from-bundle ]] && has_bundle=1
+            [[ "$previous" == --from-bundle ]] && cache="$arg"
+            previous="$arg"
+        done
+        if [[ "$has_bundle" == 1 && -n "$cache" ]]; then
+            cp -a "$cache" "$TASK019_CAPTURE"
+            "$TASK019_REAL_BASH" "$@"; local child_rc=$?
+            printf '%s\n' "$child_rc" > "$TASK019_CHILD_RC"
+            return "$child_rc"
+        fi
+    fi
+    "$TASK019_REAL_BASH" "$@"
+}
+export -f bash
+OUT=$(AID_SKIP_SELF_INSTALL=1 AID_ALLOW_ENDPOINT_OVERRIDE=1 AID_DOWNLOAD_BASE="file://${TMP}/update-download" \
+    AID_HOME="$TASK019_ALLHOME" AID_LIB_PATH="${TASK019_ALLHOME}/lib/aid-install-core.sh" \
+    bash "${TASK019_ALLHOME}/bin/aid" update all --version "$VERSION" 2>&1); RC=$?
+unset -f bash
+assert_exit_eq "$RC" 0 "CLI019-U03 update all succeeds using local release"
+assert_file_exists "$TASK019_CAPTURE/aid-cursor-v${VERSION}.tar.gz" "CLI019-U04 update-all cache contains cursor artifact"
+assert_file_exists "$TASK019_CAPTURE/aid-shared-v${VERSION}.tar.gz" "CLI019-U05 update-all cache contains shared artifact"
+assert_file_exists "$TASK019_CAPTURE/SHA256SUMS" "CLI019-U06 update-all cache contains verified checksums"
+assert_eq "$(cat "$TASK019_CHILD_RC")" 0 "CLI019-U07 update-all child update exits successfully"
+assert_output_contains "$OUT" "1 updated" "CLI019-U08 update-all reports project updated"
+unset TASK019_REAL_BASH TASK019_CAPTURE TASK019_CHILD_RC
+
+# AC15 detector must not interpret a generic .agents directory as Codex.
+TASK019_D="$TMP/detect"; mkdir -p "$TASK019_D/.agents"
+OUT=$(bash -c 'source "$1"; detect_tool "$2"' _ "$LIB_CORE" "$TASK019_D" 2>&1); RC=$?
+assert_exit_eq "$RC" 2 "CLI019-D01 .agents-only target is ambiguous and not Codex"
+assert_output_not_contains "$OUT" codex "CLI019-D02 .agents-only detection emits no codex"
+rm -rf "$TASK019_D/.agents"; mkdir -p "$TASK019_D/.codex"
+OUT=$(bash -c 'source "$1"; detect_tool "$2"' _ "$LIB_CORE" "$TASK019_D" 2>&1); RC=$?
+assert_exit_eq "$RC" 0 "CLI019-D03 .codex target is detected"
+assert_output_contains "$OUT" codex "CLI019-D04 .codex detection names codex"
+
+# ISOLATION CANARY: the real HOME's .aid subtree must be byte-unchanged by this suite
 # ISOLATION CANARY: the real HOME's .aid subtree must be byte-unchanged by this suite
 # (superset check via sandbox.sh, still asserted under the suite's original label). A
 # mismatch means an invocation escaped the throwaway HOME and wrote to the real one.
