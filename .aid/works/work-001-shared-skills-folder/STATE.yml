@@ -118,7 +118,7 @@ phase: Execute
 # [W] aid-{skill} | none
 active_skill: aid-execute
 # [W]
-updated: '2026-10-11T16:47:52Z'
+updated: '2026-10-11T16:50:20Z'
 # [W] set only when lifecycle = Paused-Awaiting-Input
 pause_reason: --
 # [W] set only when lifecycle = Blocked
@@ -875,6 +875,11 @@ lifecycle_history:
     grade: --
     notes: '/aid-execute Codex'
 
+  - date: '2026-10-11'
+    event: 'Wave12 dependency review006/019 found5 items: quoted numeric settings stamps fail006 advancement;019 PS detector wrapper exit assertion, missing PS staged-mismatch+legacy bare migration cases, missing Bash mismatch guidance assertion. Source006 first Luna correction already used; separate Sol executor correction now, then first Luna019 test fixes, original reviewer rechecks. Both ledgers preserved, PS runtime deferred.'
+    grade: --
+    notes: '/aid-execute Codex'
+
 deploy: []
 
 # [A] flattened only; single writer: this work's active branch. Written by
@@ -958,7 +963,7 @@ tasks_lifecycle:
         outcome: 'committed 3b3680e1a; primitives93 and ASCII29 passed; PS static-only'
 
   task-006:
-    state: 'In Review'
+    state: 'In Progress'
     review: --
     elapsed: --
     notes: --

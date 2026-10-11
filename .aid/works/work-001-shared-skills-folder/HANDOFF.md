@@ -6,11 +6,11 @@ maintainer approved execution. Current phase `Execute`, lifecycle `Running`.
 
 ## Current execution checkpoint
 
-Task006 new bare-project stamp correction53ad2967c committed in core twins. Focused CLI suite251/251 now passes including019 M07. ASCII29/29, syntax/diff and CRLF/UTF8/future-stamp preservation probes pass; PS execution deferred. Tasks006/019 In Review for scoped Sol quick verification before dependent020.
+Wave12 dependency review006/019 found5 items: quoted numeric settings stamps fail006 advancement;019 PS detector wrapper exit assertion, missing PS staged-mismatch+legacy bare migration cases, missing Bash mismatch guidance assertion. Source006 first Luna correction already used; separate Sol executor correction now, then first Luna019 test fixes, original reviewer rechecks. Both ledgers preserved, PS runtime deferred.
 
 - Done (18/32): task-001, task-002, task-003, task-004, task-005, task-007, task-008, task-009, task-010, task-011, task-012, task-013, task-014, task-015, task-016, task-017, task-018, task-022.
-- In Progress: none.
-- In Review: task-006, task-019.
+- In Progress: task-006.
+- In Review: task-019.
 - Failed/Blocked: none.
 - Pending: task-020, task-021, task-023, task-024, task-025, task-026, task-027, task-028, task-029, task-030, task-031, task-032.
 - Current wave: 12 of 15. Derive authoritative waves from task dependency headers.
