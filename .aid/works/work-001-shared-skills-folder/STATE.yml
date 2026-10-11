@@ -118,7 +118,7 @@ phase: Execute
 # [W] aid-{skill} | none
 active_skill: aid-execute
 # [W]
-updated: '2026-10-11T06:04:11Z'
+updated: '2026-10-11T06:12:05Z'
 # [W] set only when lifecycle = Paused-Awaiting-Input
 pause_reason: --
 # [W] set only when lifecycle = Blocked
@@ -550,6 +550,11 @@ lifecycle_history:
     grade: --
     notes: '/aid-execute Codex'
 
+  - date: '2026-10-11'
+    event: 'Task007 67c3360d5 In Review; release stage-only tests51 assertions, syntax/version-sync/diff checks pass. No publication or clean-tree dryrun executed. Task016 source-invariant suite In Progress; wave4 Sol review follows.'
+    grade: --
+    notes: '/aid-execute Codex'
+
 deploy: []
 
 # [A] flattened only; single writer: this work's active branch. Written by
@@ -652,11 +657,18 @@ tasks_lifecycle:
         outcome: 'committed ed2db382e; 2 recovery-stamp fixtures and ASCII passed'
 
   task-007:
-    state: 'In Progress'
+    state: 'In Review'
     review: --
     elapsed: --
     notes: --
     display_name: --
+    dispatch_log:
+      - date: '2026-10-11T06:12:05.185578+00:00'
+        agent: 'gpt-6-luna'
+        eta_band: '3-8 min'
+        actual: '7m17s'
+        outcome: 'committed 67c3360d5; 51 packaging assertions, syntax, version-sync passed'
+
   task-008:
     state: Pending
     review: --
@@ -713,7 +725,7 @@ tasks_lifecycle:
     notes: --
     display_name: --
   task-016:
-    state: Pending
+    state: 'In Progress'
     review: --
     elapsed: --
     notes: --
