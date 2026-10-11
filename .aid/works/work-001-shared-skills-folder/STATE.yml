@@ -118,7 +118,7 @@ phase: Execute
 # [W] aid-{skill} | none
 active_skill: aid-execute
 # [W]
-updated: '2026-10-11T16:22:03Z'
+updated: '2026-10-11T16:23:39Z'
 # [W] set only when lifecycle = Paused-Awaiting-Input
 pause_reason: --
 # [W] set only when lifecycle = Blocked
@@ -845,6 +845,11 @@ lifecycle_history:
     grade: --
     notes: '/aid-execute Codex'
 
+  - date: '2026-10-11'
+    event: 'Wave11 complete: Sol independently marked all six findings Fixed with original cells preserved, no new scoped findings, grade A+. Recovery failed-stamp retry and exact cursor set pass; suite selectors and live manifest control pass. Tasks015/017/018 Done,19/32 total. PS runtime/full gates remain deferred.'
+    grade: --
+    notes: '/aid-execute Codex'
+
 deploy: []
 
 # [A] flattened only; single writer: this work's active branch. Written by
@@ -1117,7 +1122,7 @@ tasks_lifecycle:
         outcome: 'Task014 separate Sol correctionf43787731 committed: PS dry-run protects only root runtime host.conf, nested scripts/host.conf planned/trash regression added plus optional PS fixture. Focused fixture/syntax/diff/ASCII pass, dryrun immutable and root retained. In Review for original Sol reviewer final wave10 recheck; PS runtime deferred.'
 
   task-015:
-    state: 'In Review'
+    state: Done
     review: --
     elapsed: --
     notes: --
@@ -1155,7 +1160,7 @@ tasks_lifecycle:
         outcome: 'committed711ce6273; source24/scanner9 pass using GNUawk'
 
   task-017:
-    state: 'In Review'
+    state: Done
     review: --
     elapsed: --
     notes: --
@@ -1174,7 +1179,7 @@ tasks_lifecycle:
         outcome: 'Task017 row5 correction82c51b39f uses durable COVERS subjects; focused selector selects1/1, syntax/diff pass. In Review for Sol recheck after018 correction.'
 
   task-018:
-    state: 'In Review'
+    state: Done
     review: --
     elapsed: --
     notes: --
