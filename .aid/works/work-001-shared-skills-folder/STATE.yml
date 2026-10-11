@@ -1258,7 +1258,7 @@ tasks_lifecycle:
         outcome: 'Task018 row5/6 correction29f1d1ae6 declares durable COVERS sources and asserts actual readable manifest. Selector1/1 and absent/present controls pass; syntax/diff pass. All wave11 corrections committed and pushed, ready for original Sol recheck.'
 
   task-019:
-    state: 'In Review'
+    state: 'In Progress'
     review: --
     elapsed: --
     notes: --
