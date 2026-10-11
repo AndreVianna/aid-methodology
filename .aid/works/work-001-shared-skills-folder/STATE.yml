@@ -112,15 +112,15 @@ minimum_grade: A
 # [W] 'yes' | 'no' -- quoted, see NFR-2 / D-5
 user_approved: 'no'
 # [W] Running | Paused-Awaiting-Input | Blocked | Completed | Canceled
-lifecycle: Paused-Awaiting-Input
+lifecycle: Running
 # [W] Describe | Define | Specify | Plan | Detail | Execute
 phase: Detail
 # [W] aid-{skill} | none
 active_skill: aid-update
 # [W]
-updated: '2026-10-11T01:59:08Z'
+updated: '2026-10-11T02:00:45Z'
 # [W] set only when lifecycle = Paused-Awaiting-Input
-pause_reason: 'GATE cleared; awaiting user approval before /aid-execute'
+pause_reason: --
 # [W] set only when lifecycle = Blocked
 block_reason: --
 # [W] e.g. IMPEDIMENT-task-NNN.md, or the failed gate
@@ -335,6 +335,11 @@ lifecycle_history:
     event: 'GATE Pass 2 (task set) cleared'
     grade: 'A+'
     notes: 'Cycle 2 independent review; floor A; active review ledgers removed and archived snapshots retained. APPROVAL-HALT before /aid-execute; manual pointer/alias probes remain unverified'
+
+  - date: '2026-10-11'
+    event: 'Maintainer requested a new full independent review at increased effort'
+    grade: --
+    notes: 'Full definition and all 32 task artifacts are in scope, including cross-document consistency and verification of Fixed findings; Accepted decisions remain authorized. No fixes or implementation authorized by this review request'
 
 # [A] aid-deploy only; one entry per delivery (never derived from child
 #     files; aid-deploy is the sole author):
