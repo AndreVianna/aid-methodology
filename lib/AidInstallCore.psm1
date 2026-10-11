@@ -2205,7 +2205,8 @@ function Install-AidTool {
         [string]$Target,
         [string]$Version,
         [bool]$Force = $false,
-        [bool]$AidVerbose = $false
+        [bool]$AidVerbose = $false,
+        [bool]$AddOnly = $false
     )
 
     $manifest = Join-Path $Target (Join-Path '.aid' '.aid-manifest.json')
@@ -2223,6 +2224,30 @@ function Install-AidTool {
     $script:_GitignoreAction = 'unchanged'
 
     $rootAgentFile = script:Get-RootAgentFile -Tool $Tool
+
+    if ($AddOnly) {
+        $agentRoot = Join-Path $StagingDir (Join-Path (script:Get-RootDir -Tool $Tool) 'agents')
+        if (Test-Path -LiteralPath $agentRoot -PathType Container) {
+            $files = @(Get-ChildItem -LiteralPath $agentRoot -Recurse -File | Sort-Object FullName)
+            foreach ($f in $files) {
+                $rel = ((script:Get-RootDir -Tool $Tool) + '/agents/' + $f.FullName.Substring($agentRoot.Length).TrimStart([char]'\',[char]'/')) -replace '\\','/'
+                $recorded = ''
+                foreach ($row in (Read-AidManifestToolFiles -ManifestPath $manifest -Tool $Tool)) {
+                    $parts = $row.Split("`t")
+                    if ($parts.Count -ge 3 -and $parts[0] -ceq "tools.$Tool.file" -and $parts[1] -ceq $rel) { $recorded = $parts[2]; break }
+                }
+                Copy-AidFileGuarded -Src $f.FullName -Dst (Join-Path $Target ($rel -replace '/', [System.IO.Path]::DirectorySeparatorChar)) `
+                    -RecordedSha256 $recorded -Root $Target -AidVerbose $AidVerbose
+            }
+        }
+        if ($script:_CopyCountFailed -gt 0) { throw "AidInstallCore: $($script:_CopyCountFailed) file(s) failed to copy for '$Tool'. Install aborted (incomplete)." }
+        $addTotal = $script:_CopyCountCopied + $script:_CopyCountUpToDate + $script:_CopyCountUpdated + $script:_CopyCountSkipped
+        if ($addTotal -gt 0) {
+            if ($script:_CopyCountUpToDate -eq $addTotal) { Write-Host "  up to date ($addTotal files)" }
+            else { Write-Host "  $($script:_CopyCountCopied) installed, $($script:_CopyCountUpdated) updated, $($script:_CopyCountUpToDate) unchanged" }
+        }
+        return 0
+    }
 
     # Helper: collect file paths from a directory, ordinal-sorted (matching Bash `find | sort -z`).
     $collectPaths = {
@@ -2348,6 +2373,139 @@ function Install-AidTool {
     }
 
     return 0
+}
+
+# Install-AidShared <shared staging> <target> <version> <tools> <stage map>
+# Writes the shared placement, root context and one atomic format-3 manifest.
+function Install-AidShared {
+    param([string]$SharedStagingDir,[string]$Target,[string]$Version,[string[]]$NewTools,$StageMap,[bool]$Force=$false,[bool]$AidVerbose=$false,[string]$Phase='all')
+    $manifest = Join-Path $Target (Join-Path '.aid' '.aid-manifest.json')
+    $old = script:Read-AidManifestObject -Path $manifest
+    $oldHashes = @{}
+    foreach ($row in (Read-AidManifestShared -ManifestPath $manifest)) {
+        $p = $row.Split("`t")
+        if ($p.Count -ge 3 -and $p[0] -in @('shared.skills.file','shared.runtime.file')) { $oldHashes[$p[0] + ':' + $p[1]] = $p[2] }
+    }
+    $allToolsSet = New-Object System.Collections.Generic.HashSet[string] ([System.StringComparer]::Ordinal)
+    foreach ($t in (Read-ManifestTools -ManifestPath $manifest)) { [void]$allToolsSet.Add($t) }
+    foreach ($t in $NewTools) { [void]$allToolsSet.Add($t) }
+    $allTools = @($script:AID_TOOLS | Where-Object { $allToolsSet.Contains($_) })
+    if ($Phase -ne 'finalize') { $script:_CopyCountCopied=0; $script:_CopyCountUpToDate=0; $script:_CopyCountUpdated=0; $script:_CopyCountSkipped=0; $script:_CopyCountFailed=0 }
+    $skillsRoot = Join-Path $SharedStagingDir 'skills'
+    $runtimeRoot = Join-Path $SharedStagingDir 'runtime'
+    $skills = @(Get-ChildItem -LiteralPath $skillsRoot -Recurse -File | Sort-Object FullName)
+    if ($Phase -ne 'finalize') { foreach ($f in $skills) {
+        $rel = $f.FullName.Substring($skillsRoot.Length).TrimStart([char]'\',[char]'/') -replace '\\','/'
+        if (-not $rel.StartsWith('aid-', [System.StringComparison]::Ordinal)) { continue }
+        $dst = Join-Path $Target (Join-Path '.agents/skills' ($rel -replace '/', [System.IO.Path]::DirectorySeparatorChar))
+        Copy-AidFileGuarded -Src $f.FullName -Dst $dst -RecordedSha256 $oldHashes["shared.skills.file:$rel"] -Root $Target -AidVerbose $AidVerbose
+    } }
+    $toolMeta=@{}; $mirrorUsers=@{}; $inline=$false; $claudeUsers=@()
+    foreach ($tool in $allTools) {
+        $mirrors=@(); $worktree=''; $rules=$false; $context=''
+        if ($NewTools -contains $tool) {
+            $conf=Join-Path $StageMap[$tool] 'aid-tool.conf'
+            foreach ($line in (Read-AidKvConf -Path $conf)) {
+                $k=$line.Substring(0,$line.IndexOf('=')); $v=$line.Substring($line.IndexOf('=')+1)
+                switch ($k) { 'skill_mirror' { $mirrors += $v } 'worktree_root' { $worktree=$v } 'rules_inline' { if ($v -eq 'true') { $rules=$true } } 'context_import' { $context=$v } }
+            }
+        } else {
+            $obj=script:Get-AidJsonProp (script:Get-AidJsonProp $old 'tools') $tool
+            $mirrorValue=script:Get-AidJsonProp $obj 'mirrors'
+            $mirrors=@(); if ($null -ne $mirrorValue) { $mirrors=@($mirrorValue) }
+            $worktree=[string](script:Get-AidJsonProp $obj 'worktree_root')
+            $rules=(script:Get-AidJsonProp $obj 'rules_inline') -eq $true
+        }
+        $toolMeta[$tool]=@{ mirrors=@($mirrors | Sort-Object -Unique); worktree=$worktree; rules=$rules; context=$context }
+        if ($rules) { $inline=$true }
+        if ($context -eq 'CLAUDE.md') { $claudeUsers += $tool }
+        foreach ($mirror in $mirrors) {
+            if (-not $mirrorUsers.ContainsKey($mirror)) { $mirrorUsers[$mirror]=@() }
+            $mirrorUsers[$mirror] += $tool
+            if ($Phase -ne 'finalize') { foreach ($f in $skills) {
+                $rel = $f.FullName.Substring($skillsRoot.Length).TrimStart([char]'\',[char]'/') -replace '\\','/'
+                if (-not $rel.StartsWith('aid-', [System.StringComparison]::Ordinal)) { continue }
+                $dst = Join-Path $Target (Join-Path ($mirror -replace '/', [System.IO.Path]::DirectorySeparatorChar) ($rel -replace '/', [System.IO.Path]::DirectorySeparatorChar))
+                Copy-AidFileGuarded -Src $f.FullName -Dst $dst -RecordedSha256 $oldHashes["shared.skills.file:$rel"] -Root $Target -AidVerbose $AidVerbose
+            } }
+        }
+    }
+    if ($Phase -ne 'finalize') { foreach ($f in @(Get-ChildItem -LiteralPath $runtimeRoot -Recurse -File | Sort-Object FullName)) {
+        $rel=$f.FullName.Substring($runtimeRoot.Length).TrimStart([char]'\',[char]'/') -replace '\\','/'
+        $dst=Join-Path $Target (Join-Path '.aid/runtime' ($rel -replace '/', [System.IO.Path]::DirectorySeparatorChar))
+        Copy-AidFileGuarded -Src $f.FullName -Dst $dst -RecordedSha256 $oldHashes["shared.runtime.file:$rel"] -Root $Target -AidVerbose $AidVerbose
+    } }
+    if ($script:_CopyCountFailed -gt 0) { throw "AidInstallCore: $($script:_CopyCountFailed) shared file(s) failed to copy." }
+    if ($Phase -ne 'finalize') {
+        $copyTotal=$script:_CopyCountCopied+$script:_CopyCountUpToDate+$script:_CopyCountUpdated+$script:_CopyCountSkipped
+        if ($copyTotal -gt 0) { if ($script:_CopyCountUpToDate -eq $copyTotal) { Write-Host "  up to date ($copyTotal files)" } else { Write-Host "  $($script:_CopyCountCopied) copied, $($script:_CopyCountUpdated) updated, $($script:_CopyCountUpToDate) unchanged" } }
+        if ($Phase -eq 'payload') { return }
+    }
+    $region=$script:_AidAgentsPointerRegion
+    if ($inline) {
+        $rulesText=[System.IO.File]::ReadAllText((Join-Path $Target '.aid/runtime/rules.md'),[System.Text.Encoding]::UTF8)
+        $region="<!-- AID:BEGIN -->`n<!-- Managed by the AID CLI. Do not edit between the AID markers. -->`n$rulesText<!-- AID:END -->`n"
+    }
+    $agentsPath=Join-Path $Target 'AGENTS.md'
+    if ($inline) { script:Repair-AidInlineRootRegion -File $agentsPath -Region $region -Root $Target }
+    else { script:Repair-AidRootRegion -File $agentsPath -Region $region -Root $Target }
+    $utf8=New-Object System.Text.UTF8Encoding($false)
+    $regionSha=(Get-FileHash -InputStream ([System.IO.MemoryStream]::new($utf8.GetBytes($region))) -Algorithm SHA256).Hash.ToLowerInvariant()
+    $agentsSha=Get-Sha256File -FilePath $agentsPath
+    $claudeSha=''
+    if ($claudeUsers.Count -gt 0 -or (script:Get-AidJsonProp (script:Get-AidJsonProp $old 'shared') 'claude_md')) {
+        $claudeUsers=@($script:AID_TOOLS | Where-Object { $claudeUsers -contains $_ -or @((script:Get-AidJsonProp (script:Get-AidJsonProp (script:Get-AidJsonProp $old 'shared') 'claude_md') 'users')) -contains $_ })
+        $claudeSha=script:Invoke-EnsureClaudeMdRegion -File (Join-Path $Target 'CLAUDE.md') -Root $Target
+    }
+    $model=Join-Path $Target ('.manifest-model.'+[System.IO.Path]::GetRandomFileName())
+    $records=New-Object System.Collections.Generic.List[string]
+    $records.Add("aid_version`t$Version"); $records.Add("installed_at`t$(if ($old -and $old.installed_at) { $old.installed_at } else { (Get-Date).ToUniversalTime().ToString('yyyy-MM-ddTHH:mm:ssZ') })")
+    $worktree=(@($allTools | Where-Object { $toolMeta[$_].worktree }) | Select-Object -First 1)
+    if ($worktree) { $records.Add("host.worktree_root`t$($toolMeta[$worktree].worktree)") }
+    else { $records.Add('host.worktree_root`t.aid/.worktrees') }
+    $sharedRoots = @(
+        @{ Name='skills'; Root='.agents/skills' },
+        @{ Name='runtime'; Root='.aid/runtime' }
+    )
+    foreach ($entry in $sharedRoots) {
+        $name=$entry.Name; $root=$entry.Root; $payload=Join-Path $SharedStagingDir $name
+        $records.Add("shared.$name.root`t$root"); $records.Add("shared.$name.version`t$Version"); $records.Add("shared.$name.users`t$($allTools -join ',')")
+        foreach ($f in @(Get-ChildItem -LiteralPath $payload -Recurse -File | Sort-Object FullName)) {
+            $rel=$f.FullName.Substring($payload.Length).TrimStart([char]'\',[char]'/') -replace '\\','/'
+            if ($name -eq 'skills' -and -not $rel.StartsWith('aid-',[System.StringComparison]::Ordinal)) { continue }
+            $records.Add("shared.$name.file`t$rel`t$(Get-Sha256File -FilePath $f.FullName)")
+        }
+    }
+    $records.Add("shared.agents_md.path`tAGENTS.md"); $records.Add("shared.agents_md.version`t$Version"); $records.Add("shared.agents_md.users`t$($allTools -join ',')"); $records.Add("shared.agents_md.region_sha256`t$regionSha"); $records.Add("shared.agents_md.file_sha256`t$agentsSha")
+    foreach ($mirror in @($mirrorUsers.Keys | Sort-Object)) { $users=@($script:AID_TOOLS | Where-Object { $mirrorUsers[$mirror] -contains $_ }); $records.Add("shared.mirror`t$mirror`t$Version`t$($users -join ',')") }
+    if ($claudeSha) { $records.Add('shared.claude_md.path`tCLAUDE.md'); $records.Add("shared.claude_md.version`t$Version"); $records.Add("shared.claude_md.users`t$($claudeUsers -join ',')"); $records.Add("shared.claude_md.region_sha256`t$claudeSha") }
+    $toolObjects=script:Get-AidJsonProp $old 'tools'
+    foreach ($tool in $allTools) {
+        $obj=script:Get-AidJsonProp $toolObjects $tool
+        $entry=$toolMeta[$tool]
+        $toolVersion=if ($NewTools -contains $tool) { $Version } else { [string](script:Get-AidJsonProp $obj 'version') }
+        $installedAt=if ($NewTools -contains $tool) { (Get-Date).ToUniversalTime().ToString('yyyy-MM-ddTHH:mm:ssZ') } else { [string](script:Get-AidJsonProp $obj 'installed_at') }
+        $records.Add("tools.$tool.version`t$toolVersion"); $records.Add("tools.$tool.installed_at`t$installedAt")
+        foreach ($m in $entry.mirrors) { $records.Add("tools.$tool.mirror`t$m") }
+        if ($entry.worktree) { $records.Add("tools.$tool.worktree_root`t$($entry.worktree)") }; if ($entry.rules) { $records.Add("tools.$tool.rules_inline`ttrue") }
+        if ($NewTools -contains $tool) {
+            $root=script:Get-RootDir -Tool $tool; $agents=Join-Path $StageMap[$tool] (Join-Path $root 'agents')
+            foreach ($f in @(Get-ChildItem -LiteralPath $agents -Recurse -File | Sort-Object FullName)) {
+                $rel=$root+'/agents/'+$f.FullName.Substring($agents.Length).TrimStart([char]'\',[char]'/') -replace '\\','/'
+                $records.Add("tools.$tool.file`t$rel`t$(Get-Sha256File -FilePath $f.FullName)")
+            }
+        } else {
+            foreach ($row in (Read-AidManifestToolFiles -ManifestPath $manifest -Tool $tool)) {
+                $p=$row.Split("`t"); if ($p.Count -ge 3 -and $p[0] -eq "tools.$tool.file") { $records.Add("tools.$tool.file`t$($p[1])`t$($p[2])") }
+            }
+        }
+    }
+    [System.IO.File]::WriteAllLines($model,$records.ToArray(),[System.Text.Encoding]::ASCII)
+    try { Write-AidManifestV3 -ManifestPath $manifest -ModelPath $model } finally { Remove-Item -LiteralPath $model -Force -ErrorAction SilentlyContinue }
+    if ($Phase -eq 'all') {
+        $total=$script:_CopyCountCopied+$script:_CopyCountUpToDate+$script:_CopyCountUpdated+$script:_CopyCountSkipped
+        if ($total -gt 0) { if ($script:_CopyCountUpToDate -eq $total) { Write-Host "  up to date ($total files)" } else { Write-Host "  $($script:_CopyCountCopied) copied, $($script:_CopyCountUpdated) updated, $($script:_CopyCountUpToDate) unchanged" } }
+    }
 }
 
 # ---------------------------------------------------------------------------
@@ -2737,6 +2895,7 @@ Export-ModuleMember -Function @(
     'Copy-AidFile',
     'Copy-AidDir',
     'Install-AidTool',
+    'Install-AidShared',
     'Read-ManifestToolPaths',
     'Read-ManifestToolVersion',
     'Read-ManifestRootAgent',

@@ -6150,20 +6150,29 @@ try {
             # If any commit fails, exit non-zero with a re-run-to-heal message.
             # aid update is idempotent: re-running drives every tool to the target version.
             # ---------------------------------------------------------------------------
+            if ($SUBCMD -eq 'add') {
+                Install-AidShared -SharedStagingDir $script:_DispSharedStagingDir -Target $_AidTarget `
+                    -Version $stageVersion -NewTools $_AidTools -StageMap $stageMap -Force ([bool]$_AidForce) `
+                    -AidVerbose $script:_AidVerbose -Phase 'payload'
+            }
             foreach ($t in $_AidTools) {
                 Write-Host ""
                 Write-Host "Installing $t v$stageVersion -> $_AidTarget"
                 $rc = Install-AidTool -StagingDir $stageMap[$t] -Tool $t -Target $_AidTarget `
                          -Version $stageVersion -Force ([bool]$_AidForce) `
-                         -AidVerbose $script:_AidVerbose
+                         -AidVerbose $script:_AidVerbose -AddOnly ($SUBCMD -eq 'add')
                 if ($rc -ne 0) {
                     Write-Host ""
                     [Console]::Error.WriteLine("ERROR: aid $SUBCMD failed mid-commit for tool '$t' (rc=$rc).")
-                    [Console]::Error.WriteLine("       The project may be at mixed versions. Re-run 'aid update' to heal.")
+                    [Console]::Error.WriteLine("       Re-run 'aid update' to heal.")
                     script:Exit-Aid $rc
                 }
             }
-
+            if ($SUBCMD -eq 'add') {
+                Install-AidShared -SharedStagingDir $script:_DispSharedStagingDir -Target $_AidTarget `
+                    -Version $stageVersion -NewTools $_AidTools -StageMap $stageMap -Force ([bool]$_AidForce) `
+                    -AidVerbose $script:_AidVerbose -Phase 'finalize'
+            }
             Write-Host ""
             Write-Host "Done. AID $stageVersion installed into: $_AidTarget"
 

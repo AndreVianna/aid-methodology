@@ -6630,18 +6630,51 @@ case "$SUBCMD" in
         # If any commit fails, exit non-zero with a re-run-to-heal message.
         # aid update is idempotent: re-running drives every tool to the target version.
         # ---------------------------------------------------------------------------
-        for _tool in "${_AID_TOOLS[@]}"; do
-            echo ""
-            echo "Installing ${_tool} v${_STAGE_VERSION} -> ${_AID_TARGET}"
-            install_tool "${_STAGE_MAP[$_tool]}" "$_tool" "$_AID_TARGET" "$_STAGE_VERSION" "$_AID_FORCE" || {
+        if [[ "$SUBCMD" == add ]]; then
+            _NEW_TOOL_FILE="${_AID_STAGING_BASE}/new-tools.tsv"
+            : > "$_NEW_TOOL_FILE"
+            for _tool in "${_AID_TOOLS[@]}"; do printf '%s\t%s\n' "$_tool" "${_STAGE_MAP[$_tool]}" >> "$_NEW_TOOL_FILE"; done
+            install_shared "$_AID_SHARED_STAGING_DIR" "$_AID_TARGET" "$_STAGE_VERSION" "$_NEW_TOOL_FILE" "$_AID_FORCE" payload || {
                 _COMMIT_RC=$?
-                echo "" >&2
-                echo "ERROR: aid ${SUBCMD} failed mid-commit for tool '${_tool}' (rc=${_COMMIT_RC})." >&2
-                echo "       The project may be at mixed versions. Re-run 'aid update' to heal." >&2
+                echo "ERROR: aid ${SUBCMD} failed while committing shared payload (rc=${_COMMIT_RC})." >&2
                 rm -rf "$_AID_STAGING_BASE"
                 exit "${_COMMIT_RC}"
             }
-        done
+            for _tool in "${_AID_TOOLS[@]}"; do
+                echo ""
+                echo "Installing ${_tool} v${_STAGE_VERSION} -> ${_AID_TARGET}"
+                install_tool "${_STAGE_MAP[$_tool]}" "$_tool" "$_AID_TARGET" "$_STAGE_VERSION" "$_AID_FORCE" 1 || {
+                    _COMMIT_RC=$?
+                    echo "" >&2
+                    echo "ERROR: aid ${SUBCMD} failed mid-commit for tool '${_tool}' (rc=${_COMMIT_RC})." >&2
+                    echo "       Re-run 'aid update' to heal." >&2
+                    rm -rf "$_AID_STAGING_BASE"
+                    exit "${_COMMIT_RC}"
+                }
+            done
+            echo ""
+            install_shared "$_AID_SHARED_STAGING_DIR" "$_AID_TARGET" "$_STAGE_VERSION" "$_NEW_TOOL_FILE" "$_AID_FORCE" finalize || {
+                _COMMIT_RC=$?
+                echo "" >&2
+                echo "ERROR: aid ${SUBCMD} failed while committing shared files (rc=${_COMMIT_RC})." >&2
+                echo "       Re-run 'aid update' to heal." >&2
+                rm -rf "$_AID_STAGING_BASE"
+                exit "${_COMMIT_RC}"
+            }
+        else
+            for _tool in "${_AID_TOOLS[@]}"; do
+                echo ""
+                echo "Installing ${_tool} v${_STAGE_VERSION} -> ${_AID_TARGET}"
+                install_tool "${_STAGE_MAP[$_tool]}" "$_tool" "$_AID_TARGET" "$_STAGE_VERSION" "$_AID_FORCE" || {
+                    _COMMIT_RC=$?
+                    echo "" >&2
+                    echo "ERROR: aid ${SUBCMD} failed mid-commit for tool '${_tool}' (rc=${_COMMIT_RC})." >&2
+                    echo "       The project may be at mixed versions. Re-run 'aid update' to heal." >&2
+                    rm -rf "$_AID_STAGING_BASE"
+                    exit "${_COMMIT_RC}"
+                }
+            done
+        fi
 
         echo ""
         echo "Done. AID ${_STAGE_VERSION:-} installed into: ${_AID_TARGET}"

@@ -3006,7 +3006,7 @@ update_gitignore() {
 #
 # Side effects: writes <target>/.aid/.aid-manifest.json.
 install_tool() {
-    local staging="$1" tool="$2" target="$3" version="$4" force="${5:-0}"
+    local staging="$1" tool="$2" target="$3" version="$4" force="${5:-0}" add_only="${6:-0}"
     local manifest="${target}/.aid/.aid-manifest.json"
 
     local -a install_paths=()
@@ -3021,6 +3021,31 @@ install_tool() {
 
     local root_agent
     root_agent="$(_root_agent_file "$tool")"
+
+    # Task 009 add commits install only the staged agents. Shared skills, runtime
+    # and root context are committed once by install_shared after every tool.
+    if [[ "$add_only" == 1 ]]; then
+        local agents_src="${staging}/$( _root_dir "$tool" )/agents"
+        if [[ -d "$agents_src" ]]; then
+            while IFS= read -r -d '' f; do
+                local rel="${f#${staging}/}"
+                local old_sha=""
+                if [[ -f "$manifest" ]]; then
+                    old_sha="$(manifest_read_tool_files "$manifest" "$tool" | awk -F '\t' -v p="$rel" '$2==p {print $3; exit}')"
+                fi
+                copy_file_guarded "$f" "${target}/${rel}" "$old_sha" "$target"
+                install_paths+=("$rel")
+            done < <(find "$agents_src" -type f -print0 2>/dev/null | sort -z)
+        fi
+        [[ "${_COPY_COUNT_FAILED:-0}" -eq 0 ]] || return 1
+        local add_total=$((_COPY_COUNT_COPIED + _COPY_COUNT_UPTODATE + _COPY_COUNT_UPDATED + _COPY_COUNT_SKIPPED))
+        if [[ "$add_total" -gt 0 && "$_COPY_COUNT_UPTODATE" -eq "$add_total" ]]; then
+            echo "  up to date (${add_total} files)"
+        elif [[ "$add_total" -gt 0 ]]; then
+            echo "  ${_COPY_COUNT_COPIED} installed, ${_COPY_COUNT_UPDATED} updated, ${_COPY_COUNT_UPTODATE} unchanged"
+        fi
+        return 0
+    fi
 
     # Determine which dirs/files this tool installs (mirrors install.sh per-tool dispatch).
     case "$tool" in
@@ -3164,6 +3189,183 @@ install_tool() {
     esac
 
     return 0
+}
+
+# install_shared <shared-stage> <target> <version> <new-tools-file> [force]
+# Commits the shared payload and every newly staged agents tree, repairs root
+# context once, then records the complete format-3 install atomically.
+install_shared() {
+    local shared="$1" target="$2" version="$3" new_file="$4" force="${5:-0}" phase="${6:-all}"
+    local manifest="${target}/.aid/.aid-manifest.json" now old_shared old_host old_tools
+    local skills_src="${shared}/skills" runtime_src="${shared}/runtime" f rel old_sha tool stage root conf key value
+    local inline=0 claude_users=0 region region_sha agents_sha claude_sha line
+    local -A old_hash=() mirrors=() mirror_users=() tool_mirror=() tool_wr=() tool_inline=() tool_context=() tool_stage=()
+    local -a all_tools=() new_tools=()
+
+    [[ -f "$manifest" ]] && while IFS= read -r line; do
+        case "$line" in
+            shared.skills.file$'\t'*) rel="${line#*$'\t'}"; old_hash["skills:${rel%%$'\t'*}"]="${rel#*$'\t'}" ;;
+            shared.runtime.file$'\t'*) rel="${line#*$'\t'}"; old_hash["runtime:${rel%%$'\t'*}"]="${rel#*$'\t'}" ;;
+            shared.claude_md.users$'\t'*) claude_users=1 ;;
+        esac
+    done < <(manifest_read_shared "$manifest")
+
+    while IFS=$'\t' read -r tool stage; do [[ -n "$tool" ]] && tool_stage["$tool"]="$stage" && new_tools+=("$tool"); done < "$new_file"
+    while IFS= read -r tool; do [[ -n "$tool" ]] && all_tools+=("$tool"); done < <({ [[ -f "$manifest" ]] && manifest_list_tools "$manifest"; printf '%s\n' "${new_tools[@]}"; } | sort -u)
+    # Restore the product's declared tool order.
+    local ordered=(); for tool in "${AID_TOOLS[@]}"; do for rel in "${all_tools[@]}"; do [[ "$rel" == "$tool" ]] && ordered+=("$tool"); done; done
+    all_tools=("${ordered[@]}")
+
+    if [[ "$phase" != finalize ]]; then
+    _COPY_COUNT_COPIED=0; _COPY_COUNT_UPTODATE=0; _COPY_COUNT_UPDATED=0; _COPY_COUNT_SKIPPED=0; _COPY_COUNT_FAILED=0
+    while IFS= read -r -d '' f; do
+        rel="${f#${skills_src}/}"
+        [[ "$rel" == aid-*/* ]] || continue
+        copy_file_guarded "$f" "${target}/.agents/skills/${rel}" "${old_hash[skills:$rel]:-}" "$target"
+    done < <(find "$skills_src" -type f -print0 2>/dev/null | sort -z)
+
+    # Every mirror is declared by the full installed/new tool set. Never touch
+    # user-owned names outside the aid-* namespace.
+    for tool in "${all_tools[@]}"; do
+        local -a declared=()
+        if [[ -n "${tool_stage[$tool]:-}" ]]; then conf="${tool_stage[$tool]}/aid-tool.conf"; else conf=""; fi
+        if [[ -n "$conf" && -r "$conf" ]]; then
+            while IFS= read -r line; do [[ "$line" == skill_mirror=* ]] && declared+=("${line#skill_mirror=}"); done < <(read_kv_conf "$conf")
+        elif [[ -f "$manifest" ]]; then
+            while IFS= read -r line; do [[ "$line" == "tools.${tool}.mirror"$'\t'* ]] && declared+=("${line#*$'\t'}"); done < <(manifest_read_tool_files "$manifest" "$tool")
+        fi
+        tool_mirror[$tool]="$(IFS=,; echo "${declared[*]}")"
+        for root in "${declared[@]}"; do
+            mirror_users[$root]+=" $tool"
+            while IFS= read -r -d '' f; do
+                rel="${f#${skills_src}/}"; [[ "$rel" == aid-*/* ]] || continue
+                old_sha=""
+                old_sha="${old_hash[skills:$rel]:-}"
+                copy_file_guarded "$f" "${target}/${root}/${rel}" "$old_sha" "$target"
+            done < <(find "$skills_src" -type f -print0 2>/dev/null | sort -z)
+        done
+    done
+
+    while IFS= read -r -d '' f; do
+        rel="${f#${runtime_src}/}"
+        copy_file_guarded "$f" "${target}/.aid/runtime/${rel}" "${old_hash[runtime:$rel]:-}" "$target"
+    done < <(find "$runtime_src" -type f -print0 2>/dev/null | sort -z)
+    [[ "${_COPY_COUNT_FAILED:-0}" -eq 0 ]] || return 1
+    local total=$((_COPY_COUNT_COPIED + _COPY_COUNT_UPTODATE + _COPY_COUNT_UPDATED + _COPY_COUNT_SKIPPED))
+    if [[ "$total" -gt 0 && "$_COPY_COUNT_UPTODATE" -eq "$total" ]]; then echo "  up to date (${total} files)"; else echo "  ${_COPY_COUNT_COPIED} copied, ${_COPY_COUNT_UPDATED} updated, ${_COPY_COUNT_UPTODATE} unchanged"; fi
+    [[ "$phase" == payload ]] && return 0
+    fi
+
+    # Record per-tool placement metadata, preserving existing installed choices.
+    for tool in "${all_tools[@]}"; do
+        if [[ -n "${tool_stage[$tool]:-}" ]]; then
+            conf="${tool_stage[$tool]}/aid-tool.conf"
+            while IFS= read -r line; do
+                key="${line%%=*}"; value="${line#*=}"
+                case "$key" in worktree_root) tool_wr[$tool]="$value";; rules_inline) [[ "$value" == true ]] && tool_inline[$tool]=true;; context_import) [[ "$value" == CLAUDE.md ]] && tool_context[$tool]=CLAUDE.md;; esac
+            done < <(read_kv_conf "$conf")
+        else
+            while IFS=$'\t' read -r key value; do
+                case "$key" in "tools.${tool}.worktree_root") tool_wr[$tool]="$value";; "tools.${tool}.rules_inline") tool_inline[$tool]=true;; esac
+            done < <(manifest_read_tool_files "$manifest" "$tool")
+        fi
+        [[ -n "${tool_inline[$tool]:-}" ]] && inline=1
+        [[ -n "${tool_context[$tool]:-}" ]] && claude_users=1
+    done
+
+    region="$_AID_AGENTS_POINTER_REGION"
+    if [[ "$inline" -eq 1 ]]; then region="$(printf '<!-- AID:BEGIN -->\n<!-- Managed by the AID CLI. Do not edit between the AID markers. -->\n'; cat "${target}/.aid/runtime/rules.md"; printf '<!-- AID:END -->\n')"$'\n'; fi
+    if [[ "$inline" -eq 1 ]]; then
+        _repair_inline_root_region "${target}/AGENTS.md" "$region" "$target" || return 1
+    else
+        _repair_root_region "${target}/AGENTS.md" "$region" "$target" || return 1
+    fi
+    region_sha="$(printf '%s' "$region" | sha256sum | awk '{print $1}')"
+    agents_sha="$(sha256_file "${target}/AGENTS.md")"
+    if [[ "$claude_users" -eq 1 ]]; then
+        claude_sha="$(_ensure_claude_md_region "${target}/CLAUDE.md" "$target")" || return 1
+    else claude_sha=""; fi
+    [[ "${_COPY_COUNT_FAILED:-0}" -eq 0 ]] || return 1
+
+    now="$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+    local model; model="$(mktemp "${target}/.aid/.manifest-model.XXXXXX")" || return 1
+python3 - "$manifest" "$model" "$shared" "$target" "$version" "$now" "$new_file" "$region_sha" "$agents_sha" "$claude_sha" <<'PY' || { rm -f "$model"; return 1; }
+import hashlib, json, os, pathlib, sys
+manifest, model, shared_dir, target, version, now, new_file, region_sha, agents_sha, claude_sha = sys.argv[1:]
+old={}
+try:
+    with open(manifest, encoding='utf-8') as f: old=json.load(f)
+except Exception: pass
+new={}
+for line in pathlib.Path(new_file).read_text().splitlines():
+    if '\t' in line:
+        t,p=line.split('\t',1); new[t]=p
+tools={}
+tools.update(old.get('tools',{}))
+for t in (old.get('shared',{}).get('claude_md',{}).get('users',[]) or []):
+    tools.setdefault(t,{})['context_import']='CLAUDE.md'
+for tool, stage in new.items():
+    conf={}
+    for line in pathlib.Path(stage,'aid-tool.conf').read_text().splitlines():
+        if '=' in line and not line.startswith('#'):
+            k,v=line.split('=',1); conf.setdefault(k,[]).append(v)
+    root={'claude-code':'.claude','codex':'.codex','cursor':'.cursor','copilot-cli':'.github','antigravity':'.agent'}[tool]
+    files=[]
+    for p in pathlib.Path(stage,root,'agents').rglob('*'):
+        if p.is_file():
+            rel=(pathlib.Path(root,'agents')/p.relative_to(pathlib.Path(stage,root,'agents'))).as_posix()
+            files.append({'path':rel,'sha256':hashlib.sha256(p.read_bytes()).hexdigest()})
+    files.sort(key=lambda x:x['path'])
+    ent={'version':version,'installed_at':now,'mirrors':sorted(conf.get('skill_mirror',[]))}
+    if conf.get('worktree_root'): ent['worktree_root']=conf['worktree_root'][0]
+    if conf.get('rules_inline')==['true']: ent['rules_inline']=True
+    if conf.get('context_import'): ent['context_import']=conf['context_import'][0]
+    ent['files']=files; ent['paths']=[x['path'] for x in files]
+    tools[tool]=ent
+order=['claude-code','codex','cursor','copilot-cli','antigravity']
+all_tools=[t for t in order if t in tools]
+shared_entries={}
+for name, root in [('skills','.agents/skills'),('runtime','.aid/runtime')]:
+    payload=pathlib.Path(shared_dir,name)
+    files=[]
+    for p in payload.rglob('*'):
+        if p.is_file():
+            rel=p.relative_to(payload).as_posix()
+            if name=='skills' and not rel.startswith('aid-'): continue
+            files.append({'path':rel,'sha256':hashlib.sha256(p.read_bytes()).hexdigest()})
+    files.sort(key=lambda x:x['path'])
+    shared_entries[name]={'root':root,'version':version,'users':all_tools,'files':files}
+shared_entries['agents_md']={'path':'AGENTS.md','version':version,'users':all_tools,'region_sha256':region_sha,'file_sha256':agents_sha}
+mirrors={}
+for t in all_tools:
+    for d in tools[t].get('mirrors',[]): mirrors.setdefault(d,[]).append(t)
+if mirrors: shared_entries['mirrors']={d:{'version':version,'users':[t for t in order if t in us]} for d,us in sorted(mirrors.items())}
+if claude_sha:
+    users=[t for t in all_tools if tools[t].get('context_import')=='CLAUDE.md']
+    shared_entries['claude_md']={'path':'CLAUDE.md','version':version,'users':users,'region_sha256':claude_sha}
+wr=next((tools[t]['worktree_root'] for t in all_tools if tools[t].get('worktree_root')),'.aid/.worktrees')
+data={'format_version':3,'aid_version':version,'installed_at':old.get('installed_at',now),'host':{'worktree_root':wr},'shared':shared_entries,'tools':{t:tools[t] for t in all_tools}}
+lines=[f'aid_version\t{version}',f'installed_at\t{data["installed_at"]}',f'host.worktree_root\t{wr}']
+for e in ('skills','runtime'):
+    x=shared_entries[e]; lines += [f'shared.{e}.root\t{x["root"]}',f'shared.{e}.version\t{x["version"]}',f'shared.{e}.users\t{",".join(x["users"])}']
+    lines += [f'shared.{e}.file\t{f["path"]}\t{f["sha256"]}' for f in x['files']]
+for e,x in shared_entries.items():
+    if e in ('skills','runtime'): continue
+    for k,v in x.items():
+        if k=='users': v=','.join(v)
+        lines.append(f'shared.{e}.{k}\t{v}')
+for d,x in shared_entries.get('mirrors',{}).items(): lines.append(f'shared.mirror\t{d}\t{x["version"]}\t{",".join(x["users"])}')
+for t in all_tools:
+    x=tools[t]; pre=f'tools.{t}.'
+    lines += [pre+f'version\t{x["version"]}',pre+f'installed_at\t{x.get("installed_at",now)}']
+    lines += [pre+'mirror\t'+m for m in x.get('mirrors',[])]
+    for k in ('worktree_root','rules_inline'):
+        if k in x: lines.append(pre+k+'\t'+('true' if x[k] is True else x[k]))
+    lines += [pre+f'file\t{f["path"]}\t{f["sha256"]}' for f in x.get('files',[])]
+pathlib.Path(model).write_text('\n'.join(lines)+'\n',encoding='ascii')
+PY
+    if ! manifest_write_v3 "$manifest" "$model"; then rm -f "$model"; return 1; fi
+    rm -f "$model"
 }
 
 # ---------------------------------------------------------------------------
