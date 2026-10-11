@@ -1590,6 +1590,41 @@ function Remove-ManifestTool {
         return
     }
 
+    if ($data.PSObject.Properties['format_version'] -and $data.format_version -eq 3) {
+        $toolProps = @($data.tools.PSObject.Properties | Where-Object { $_.Name -ne $Tool })
+        if ($toolProps.Count -eq 0) { Remove-Item -LiteralPath $ManifestPath -Force; return }
+        $data.tools.PSObject.Properties.Remove($Tool)
+        $shared = script:Get-AidJsonProp $data 'shared'
+        foreach ($name in @('skills','runtime','agents_md','claude_md')) {
+            $entry = script:Get-AidJsonProp $shared $name
+            if ($null -eq $entry) { continue }
+            $usersProp = $entry.PSObject.Properties['users']
+            if ($null -ne $usersProp) {
+                $usersProp.Value = @($usersProp.Value | Where-Object { $_ -ne $Tool })
+                if (@($usersProp.Value).Count -eq 0) {
+                    if ($name -eq 'claude_md') { $shared.PSObject.Properties.Remove($name) }
+                    else { $shared.PSObject.Properties.Remove($name) }
+                }
+            }
+        }
+        $mirrors = script:Get-AidJsonProp $shared 'mirrors'
+        if ($null -ne $mirrors) {
+            foreach ($p in @($mirrors.PSObject.Properties)) {
+                $p.Value.users = @($p.Value.users | Where-Object { $_ -ne $Tool })
+                if (@($p.Value.users).Count -eq 0) { $mirrors.PSObject.Properties.Remove($p.Name) }
+            }
+            if (@($mirrors.PSObject.Properties).Count -eq 0) { $shared.PSObject.Properties.Remove('mirrors') }
+        }
+        $remainingRoots = @($data.tools.PSObject.Properties | ForEach-Object {
+            $p = $_.Value.PSObject.Properties['worktree_root']; if ($p -and $p.Value) { [string]$p.Value }
+        } | Where-Object { $_ })
+        $host = script:Get-AidJsonProp $data 'host'
+        if ($null -ne $host) { $host.worktree_root = if ($remainingRoots.Count -gt 0) { $remainingRoots[0] } else { '.aid/.worktrees' } }
+        $json = ConvertTo-Json -InputObject $data -Depth 30
+        [System.IO.File]::WriteAllText($ManifestPath, $json + "`n", (New-Object System.Text.UTF8Encoding($false)))
+        return
+    }
+
     # Build tools map without the target tool.
     # Guard all per-tool property accesses via PSObject.Properties['key'] (StrictMode-safe).
     $toolsMap = [System.Collections.Specialized.OrderedDictionary]::new()
@@ -2492,6 +2527,165 @@ function Install-AidShared {
 # Uninstall
 # ---------------------------------------------------------------------------
 
+function script:Remove-AidGitattributesBlock {
+    param([string]$Target)
+    $path = Join-Path $Target '.gitattributes'
+    if (-not (Test-Path -LiteralPath $path -PathType Leaf)) { return }
+    $bytes = [System.IO.File]::ReadAllBytes($path)
+    $begin = [System.Text.Encoding]::ASCII.GetBytes($script:_AidGaBegin)
+    $end = [System.Text.Encoding]::ASCII.GetBytes($script:_AidGaEnd)
+    $startAt = -1; $endAt = -1
+    for ($i=0; $i -le $bytes.Length-$begin.Length; $i++) {
+        $same=$true; for ($j=0; $j -lt $begin.Length; $j++) { if ($bytes[$i+$j] -ne $begin[$j]) { $same=$false; break } }
+        if ($same -and ($i -eq 0 -or $bytes[$i-1] -eq 10 -or $bytes[$i-1] -eq 13)) { $startAt=$i; break }
+    }
+    if ($startAt -lt 0) { return }
+    for ($i=$startAt; $i -le $bytes.Length-$end.Length; $i++) {
+        $same=$true; for ($j=0; $j -lt $end.Length; $j++) { if ($bytes[$i+$j] -ne $end[$j]) { $same=$false; break } }
+        if ($same) { $endAt=$i+$end.Length; break }
+    }
+    if ($endAt -lt 0) { return }
+    if ($endAt -lt $bytes.Length -and $bytes[$endAt] -eq 13) { $endAt++; if ($endAt -lt $bytes.Length -and $bytes[$endAt] -eq 10) { $endAt++ } }
+    elseif ($endAt -lt $bytes.Length -and $bytes[$endAt] -eq 10) { $endAt++ }
+    $out = New-Object 'System.Collections.Generic.List[byte]'
+    for ($i=0; $i -lt $startAt; $i++) { $out.Add($bytes[$i]) }
+    for ($i=$endAt; $i -lt $bytes.Length; $i++) { $out.Add($bytes[$i]) }
+    $onlyWhitespace = $true
+    foreach ($b in $out) { if ($b -notin @(9,10,13,32)) { $onlyWhitespace=$false; break } }
+    if ($onlyWhitespace) { Remove-Item -LiteralPath $path -Force }
+    else { [System.IO.File]::WriteAllBytes($path, $out.ToArray()) }
+}
+
+function script:Remove-AidAgentsRegion {
+    param([string]$Target, [string]$RecordedSha256)
+    $path = Join-Path $Target 'AGENTS.md'
+    if (-not (Test-Path -LiteralPath $path -PathType Leaf)) { return }
+    if ((Get-Sha256File -FilePath $path) -cne $RecordedSha256) {
+        Write-Host 'Left in place (modified or not AID-owned): AGENTS.md'
+        return
+    }
+    $encoding = New-Object System.Text.UTF8Encoding($false)
+    $text = $encoding.GetString([System.IO.File]::ReadAllBytes($path))
+    $markers = [regex]::Matches($text, '(?m)^<!-- AID:(?:BEGIN|END) -->(?=\r?$)')
+    $begins = @($markers | Where-Object { $_.Value -ceq '<!-- AID:BEGIN -->' })
+    $ends = @($markers | Where-Object { $_.Value -ceq '<!-- AID:END -->' })
+    if ($begins.Count -ne 1 -or $ends.Count -ne 1 -or $begins[0].Index -ge $ends[0].Index) { return }
+    $start=$begins[0].Index; $finish=$ends[0].Index+$ends[0].Length
+    if ($finish+2 -le $text.Length -and $text.Substring($finish,2) -ceq "`r`n") { $finish+=2 }
+    elseif ($finish -lt $text.Length -and $text.Substring($finish,1) -ceq "`n") { $finish++ }
+    $rest=$text.Remove($start,$finish-$start)
+    if ($rest.Trim().Length -eq 0) { Remove-Item -LiteralPath $path -Force }
+    else { [System.IO.File]::WriteAllBytes($path,$encoding.GetBytes($rest)) }
+}
+
+function script:Prune-AidEmptyDirs {
+    param([string]$Path,[switch]$AidEntriesOnly)
+    if (-not (Test-Path -LiteralPath $Path -PathType Container)) { return }
+    $dirs=@(Get-ChildItem -LiteralPath $Path -Recurse -Directory -ErrorAction SilentlyContinue | Sort-Object { $_.FullName.Length } -Descending)
+    foreach ($dir in $dirs) {
+        if ($AidEntriesOnly) {
+            $rel=$dir.FullName.Substring($Path.Length).TrimStart([char]'\',[char]'/')
+            $first=$rel.Split([char]'\',[char]'/')[0]
+            if (-not $first.StartsWith('aid-', [System.StringComparison]::Ordinal)) { continue }
+        }
+        if ($dir.Name -eq 'node_modules') { continue }
+        $child=Get-ChildItem -LiteralPath $dir.FullName -Force -ErrorAction SilentlyContinue | Select-Object -First 1
+        if (-not $child) { Remove-Item -LiteralPath $dir.FullName -Force -ErrorAction SilentlyContinue }
+    }
+}
+
+function script:Uninstall-AidToolV3 {
+    param([string]$ManifestPath,[string]$Tool,[string]$Target,[bool]$AidVerbose=$false)
+    $data=script:Read-AidManifestObject -Path $ManifestPath
+    if ($null -eq $data) { return 6 }
+    $shared=script:Get-AidJsonProp $data 'shared'
+    $toolObj=script:Get-AidJsonProp (script:Get-AidJsonProp $data 'tools') $Tool
+    if ($null -eq $toolObj) { return 0 }
+    foreach ($row in (Read-AidManifestToolFiles -ManifestPath $ManifestPath -Tool $Tool)) {
+        $parts=$row.Split("`t"); if ($parts.Count -lt 3 -or $parts[0] -cne "tools.$Tool.file") { continue }
+        $rel=$parts[1] -replace '/', [System.IO.Path]::DirectorySeparatorChar
+        if ([System.IO.Path]::IsPathRooted($rel) -or $rel.Split([System.IO.Path]::DirectorySeparatorChar) -contains '..') { continue }
+        $full=Join-Path $Target $rel
+        if (-not (Test-Path -LiteralPath $full -PathType Leaf)) { continue }
+        if ($parts[2] -and (Get-Sha256File -FilePath $full) -ceq $parts[2]) { Remove-Item -LiteralPath $full -Force }
+        else { Move-AidToTrash -Root $Target -File $full }
+    }
+    $toolRoot=script:Get-RootDir -Tool $Tool
+    script:Prune-AidEmptyDirs -Path (Join-Path $Target (Join-Path $toolRoot 'agents')) -AidEntriesOnly
+    $agents=script:Get-AidJsonProp $shared 'agents_md'
+    $agentsUsers=@(); if ($agents) { $agentsUsers=@($agents.users) }
+    $agentsLeft=@($agentsUsers | Where-Object { $_ -ne $Tool })
+    if ($agentsUsers.Count -gt 0 -and $agentsLeft.Count -eq 0) { script:Remove-AidAgentsRegion -Target $Target -RecordedSha256 ([string]$agents.file_sha256) }
+    $claude=script:Get-AidJsonProp $shared 'claude_md'
+    $claudeUsers=@(); if ($claude) { $claudeUsers=@($claude.users) }
+    $claudeLeft=@($claudeUsers | Where-Object { $_ -ne $Tool })
+    if ($claudeUsers.Count -gt 0 -and $claudeLeft.Count -eq 0) { script:Invoke-RemoveClaudeMdRegion -File (Join-Path $Target 'CLAUDE.md') -RecordedSha256 ([string]$claude.region_sha256) -Root $Target }
+
+    foreach ($name in @('skills','runtime')) {
+        $entry=script:Get-AidJsonProp $shared $name
+        if ($null -eq $entry -or @($entry.users | Where-Object { $_ -ne $Tool }).Count -gt 0) { continue }
+        $root=if ($name -eq 'skills') { '.agents/skills' } else { '.aid/runtime' }
+        foreach ($f in @($entry.files)) {
+            $rel=([string]$f.path) -replace '/', [System.IO.Path]::DirectorySeparatorChar
+            if ([System.IO.Path]::IsPathRooted($rel) -or $rel.Split([System.IO.Path]::DirectorySeparatorChar) -contains '..') { continue }
+            $full=Join-Path (Join-Path $Target $root) $rel
+            if (-not (Test-Path -LiteralPath $full -PathType Leaf)) { continue }
+            if ($f.sha256 -and (Get-Sha256File -FilePath $full) -ceq [string]$f.sha256) { Remove-Item -LiteralPath $full -Force }
+            else { Move-AidToTrash -Root $Target -File $full }
+        }
+        script:Prune-AidEmptyDirs -Path (Join-Path $Target $root) -AidEntriesOnly:($name -eq 'skills')
+    }
+    $mirrors=script:Get-AidJsonProp $shared 'mirrors'
+    if ($null -ne $mirrors) {
+        foreach ($mp in @($mirrors.PSObject.Properties)) {
+            if (@($mp.Value.users | Where-Object { $_ -ne $Tool }).Count -gt 0) { continue }
+            $mirror=$mp.Name -replace '/', [System.IO.Path]::DirectorySeparatorChar
+            foreach ($f in @((script:Get-AidJsonProp $shared 'skills').files)) {
+                $rel=([string]$f.path) -replace '/', [System.IO.Path]::DirectorySeparatorChar
+                $full=Join-Path (Join-Path $Target $mirror) $rel
+                if (-not (Test-Path -LiteralPath $full -PathType Leaf)) { continue }
+                if ($f.sha256 -and (Get-Sha256File -FilePath $full) -ceq [string]$f.sha256) { Remove-Item -LiteralPath $full -Force }
+                else { Move-AidToTrash -Root $Target -File $full }
+            }
+            script:Prune-AidEmptyDirs -Path (Join-Path $Target $mirror) -AidEntriesOnly
+        }
+    }
+    Remove-ManifestTool -ManifestPath $ManifestPath -Tool $Tool
+    if (Test-Path -LiteralPath $ManifestPath -PathType Leaf) {
+        $left=script:Read-AidManifestObject -Path $ManifestPath
+        $wr=[string](script:Get-AidJsonProp (script:Get-AidJsonProp $left 'host') 'worktree_root')
+        if (-not $wr) { $wr='.aid/.worktrees' }
+        script:Write-AidHostConf -Target $Target -WorktreeRoot $wr
+        $inline=$false
+        foreach ($p in $left.tools.PSObject.Properties) { if ((script:Get-AidJsonProp $p.Value 'rules_inline') -eq $true) { $inline=$true; break } }
+        if ($inline) {
+            $rules=[System.IO.File]::ReadAllText((Join-Path $Target '.aid/runtime/rules.md'),[System.Text.Encoding]::UTF8)
+            $region="<!-- AID:BEGIN -->`n<!-- Managed by the AID CLI. Do not edit between the AID markers. -->`n$rules<!-- AID:END -->`n"
+            script:Repair-AidInlineRootRegion -File (Join-Path $Target 'AGENTS.md') -Region $region -Root $Target
+        } else { script:Repair-AidInlineRootRegion -File (Join-Path $Target 'AGENTS.md') -Region $script:_AidAgentsPointerRegion -Root $Target }
+    } else {
+        $settings=Join-Path (Split-Path -Parent $ManifestPath) 'settings.yml'
+        if (Test-Path -LiteralPath $settings -PathType Leaf) { Remove-Item -LiteralPath $settings -Force }
+        script:Remove-AidGitattributesBlock -Target $Target
+    }
+    $toolDir = switch ($Tool) {
+        'claude-code' { '.claude' }
+        'codex' { '.codex' }
+        'cursor' { '.cursor' }
+        'copilot-cli' { '.github' }
+        'antigravity' { '.agent' }
+        default { '' }
+    }
+    if ($toolDir) {
+        $fullToolDir=Join-Path $Target $toolDir
+        if (Test-Path -LiteralPath $fullToolDir -PathType Container) {
+            $remaining=Get-ChildItem -LiteralPath $fullToolDir -Force -Recurse -ErrorAction SilentlyContinue | Select-Object -First 1
+            if (-not $remaining) { Remove-Item -LiteralPath $fullToolDir -Recurse -Force }
+        }
+    }
+    return 0
+}
+
 # Uninstall-AidTool <manifest> <tool> <target> [aidVerbose]
 # Removes all files recorded under tools.<tool>.paths.
 # Root agent files removed only when sha256 still matches.
@@ -2505,6 +2699,11 @@ function Uninstall-AidTool {
     )
 
     if (-not (Test-ManifestExists -ManifestPath $ManifestPath)) { return 6 }
+
+    $manifestObject = script:Read-AidManifestObject -Path $ManifestPath
+    if ((script:Get-AidJsonProp $manifestObject 'format_version') -eq 3) {
+        return (script:Uninstall-AidToolV3 -ManifestPath $ManifestPath -Tool $Tool -Target $Target -AidVerbose $AidVerbose)
+    }
 
     $paths = Read-ManifestToolPaths -ManifestPath $ManifestPath -Tool $Tool
 

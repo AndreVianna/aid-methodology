@@ -1408,6 +1408,30 @@ tools = data.get("tools", {})
 tools.pop(tool, None)
 data["tools"] = tools
 
+if data.get("format_version") == 3:
+    shared = data.get("shared", {})
+    for name in ("skills", "runtime", "agents_md", "claude_md"):
+        entry = shared.get(name)
+        if not isinstance(entry, dict): continue
+        if "users" in entry:
+            entry["users"] = [u for u in entry["users"] if u != tool]
+        if name == "claude_md" and not entry.get("users"):
+            shared.pop(name, None)
+        elif "users" in entry and not entry["users"]:
+            shared.pop(name, None)
+    mirrors = shared.get("mirrors", {})
+    for root in list(mirrors):
+        mirrors[root]["users"] = [u for u in mirrors[root].get("users", []) if u != tool]
+        if not mirrors[root]["users"]: del mirrors[root]
+    if not mirrors: shared.pop("mirrors", None)
+    data["shared"] = shared
+    remaining = data["tools"]
+    roots = [v.get("worktree_root") for v in remaining.values() if v.get("worktree_root")]
+    if roots:
+        data.setdefault("host", {})["worktree_root"] = roots[0]
+    elif remaining:
+        data.setdefault("host", {})["worktree_root"] = ".aid/.worktrees"
+
 if not tools:
     os.remove(manifest_path)
     sys.exit(0)
@@ -3377,6 +3401,115 @@ PY
 # Uninstall
 # ---------------------------------------------------------------------------
 
+_remove_gitattributes_block() {
+    local target="$1" path="${1}/.gitattributes" begin="${_AID_GA_BEGIN}" end="${_AID_GA_END}"
+    [[ -f "$path" ]] || return 0
+    python3 - "$path" "$begin" "$end" <<'PY'
+import os, pathlib, sys
+path, begin, end = sys.argv[1:]
+data=pathlib.Path(path).read_bytes(); lines=data.splitlines(keepends=True)
+def content(line): return line[:-2] if line.endswith(b'\r\n') else line[:-1] if line.endswith((b'\n',b'\r')) else line
+values=[content(x) for x in lines]; b=begin.encode(); e=end.encode()
+starts=[i for i,x in enumerate(values) if x==b]; ends=[i for i,x in enumerate(values) if x==e]
+if len(starts)!=1 or len(ends)!=1 or starts[0]>=ends[0]: raise SystemExit(0)
+out=b''.join(lines[:starts[0]]+lines[ends[0]+1:])
+if not out.strip(): os.remove(path)
+elif out!=data: pathlib.Path(path).write_bytes(out)
+PY
+}
+
+_remove_agents_md_region() {
+    local target="$1" recorded="$2" path="${1}/AGENTS.md"
+    [[ -f "$path" ]] || return 0
+    local actual
+    actual="$(sha256_file "$path")"
+    if [[ "$actual" != "$recorded" ]]; then
+        echo "Left in place (modified or not AID-owned): AGENTS.md"
+        return 0
+    fi
+    python3 - "$path" <<'PY'
+import os, pathlib, sys
+p=pathlib.Path(sys.argv[1]); data=p.read_bytes(); lines=data.splitlines(keepends=True)
+def content(x): return x[:-2] if x.endswith(b'\r\n') else x[:-1] if x.endswith((b'\n',b'\r')) else x
+v=[content(x) for x in lines]; b=b'<!-- AID:BEGIN -->'; e=b'<!-- AID:END -->'
+s=[i for i,x in enumerate(v) if x==b]; z=[i for i,x in enumerate(v) if x==e]
+if len(s)!=1 or len(z)!=1 or s[0]>=z[0]: raise SystemExit(0)
+out=b''.join(lines[:s[0]]+lines[z[0]+1:])
+if not out.strip(): p.unlink()
+elif out!=data: p.write_bytes(out)
+PY
+}
+
+_uninstall_tool_v3() {
+    local manifest="$1" tool="$2" target="$3" format line rel sha full previous pdir root
+    local -a paths=()
+    format="$(manifest_format "$manifest")"
+    [[ "$format" == 3 ]] || return 2
+    previous="$(mktemp "${target}/.aid/.manifest-remove.XXXXXX")" || return 1
+    cp "$manifest" "$previous" || { rm -f "$previous"; return 1; }
+
+    while IFS= read -r line; do
+        [[ "$line" == "tools.${tool}.file"$'\t'* ]] || continue
+        IFS=$'\t' read -r _ rel sha <<< "$line"
+        [[ "$rel" == /* || "$rel" == *'..'* ]] && continue
+        paths+=("$rel")
+        full="${target}/${rel}"
+        [[ -f "$full" ]] || continue
+        if [[ -n "$sha" && "$(sha256_file "$full")" == "$sha" ]]; then rm -f "$full"
+        else trash_file "$target" "$full" || { rm -f "$previous"; return 1; }
+        fi
+    done < <(manifest_read_tool_files "$manifest" "$tool")
+    root="${target}/$(_root_dir "$tool")"
+    for p in "${paths[@]}"; do
+        pdir="${target}/$(dirname "$p")"
+        while [[ "$pdir" != "$target" && ( "$pdir" == "$root" || "$pdir" == "$root/"* ) ]]; do
+            rmdir "$pdir" 2>/dev/null || true
+            pdir="$(dirname "$pdir")"
+        done
+    done
+
+    local agents_users agents_sha claude_users claude_sha
+    agents_users="$(manifest_read_shared "$manifest" | awk -F '\t' '$1=="shared.agents_md.users" {print $2}')"
+    agents_sha="$(manifest_read_shared "$manifest" | awk -F '\t' '$1=="shared.agents_md.file_sha256" {print $2}')"
+    claude_users="$(manifest_read_shared "$manifest" | awk -F '\t' '$1=="shared.claude_md.users" {print $2}')"
+    claude_sha="$(manifest_read_shared "$manifest" | awk -F '\t' '$1=="shared.claude_md.region_sha256" {print $2}')"
+    local agents_left= claude_left= u
+    IFS=',' read -r -a users <<< "$agents_users"
+    for u in "${users[@]}"; do [[ -n "$u" && "$u" != "$tool" ]] && agents_left+="${agents_left:+,}${u}"; done
+    IFS=',' read -r -a users <<< "$claude_users"
+    for u in "${users[@]}"; do [[ -n "$u" && "$u" != "$tool" ]] && claude_left+="${claude_left:+,}${u}"; done
+    if [[ -n "$agents_users" && -z "$agents_left" ]]; then _remove_agents_md_region "$target" "$agents_sha" || { rm -f "$previous"; return 1; }; fi
+    if [[ -n "$claude_users" && -z "$claude_left" ]]; then _remove_claude_md_region "${target}/CLAUDE.md" "$claude_sha" "$target" || { rm -f "$previous"; return 1; }; fi
+
+    manifest_remove_tool "$manifest" "$tool" || { rm -f "$previous"; return 1; }
+    prune_shared "$target" "$previous" || { rm -f "$previous"; return 1; }
+    rm -f "$previous"
+
+    if [[ -f "$manifest" ]]; then
+        local worktree inline=0 region t
+        worktree="$(manifest_list_tools "$manifest" | while IFS= read -r t; do manifest_read_tool_files "$manifest" "$t" | awk -F '\t' -v t="$t" '$1=="tools." t ".worktree_root" {print $2; exit}'; done | head -1)"
+        [[ -n "$worktree" ]] || worktree='.aid/.worktrees'
+        write_host_conf "$target" "$worktree" || return 1
+        while IFS= read -r t; do
+            if awk -F '\t' -v t="$t" '$1=="tools." t ".rules_inline" && $2=="true" {found=1} END{exit !found}' "$manifest"; then inline=1; break; fi
+        done < <(manifest_list_tools "$manifest")
+        if [[ "$inline" == 1 ]]; then
+            region="$(python3 - "$target/.aid/runtime/rules.md" <<'PY'
+import pathlib,sys
+print('<!-- AID:BEGIN -->\n<!-- Managed by the AID CLI. Do not edit between the AID markers. -->\n'+pathlib.Path(sys.argv[1]).read_text(encoding='utf-8')+'<!-- AID:END -->', end='')
+PY
+)"
+            _repair_inline_root_region "${target}/AGENTS.md" "$region" "$target" || return 1
+        else
+            _repair_inline_root_region "${target}/AGENTS.md" "$_AID_AGENTS_POINTER_REGION" "$target" || return 1
+        fi
+    else
+        rm -f "$(dirname "$manifest")/settings.yml"
+        _remove_gitattributes_block "$target" || return 1
+    fi
+    return 0
+}
+
 # uninstall_tool <manifest> <tool> <target>
 # Removes all files recorded under tools.<tool>.paths that still exist.
 # For root agent files: removes only when sha256 still matches recorded value.
@@ -3385,6 +3518,11 @@ uninstall_tool() {
     local manifest="$1" tool="$2" target="$3"
 
     manifest_exists "$manifest" || return 6
+
+    if [[ "$(manifest_format "$manifest")" == 3 ]]; then
+        _uninstall_tool_v3 "$manifest" "$tool" "$target"
+        return $?
+    fi
 
     # Read all paths for this tool.
     local -a paths=()
