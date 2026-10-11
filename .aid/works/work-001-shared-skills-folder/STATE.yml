@@ -270,6 +270,10 @@ lifecycle_history:
     event: 'GATE Pass 1 (definition docs) cleared -- row 31 fixed (Sonnet), cycle-3 narrow Opus re-check Fixed with no new rows; 6 LOW accepted and carried into tasks 005/012/013/015/016; 18 MINOR accepted as parked'
     grade: 'A+'
     notes: '/aid-update GATE defn'
+  - date: '2026-10-11'
+    event: 'Tasks aligned to definition fixes (21 tasks); rows 5, 7, 8, 11, 24 fixed and reopened for verification; 7 deferred notes carried into tasks; GATE Pass 2 (task set) cycle 1 started (Opus)'
+    grade: --
+    notes: '/aid-update GATE tasks'
 
 # [A] aid-deploy only; one entry per delivery (never derived from child
 #     files; aid-deploy is the sole author):
