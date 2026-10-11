@@ -118,7 +118,7 @@ phase: Execute
 # [W] aid-{skill} | none
 active_skill: aid-execute
 # [W]
-updated: '2026-10-11T14:49:44Z'
+updated: '2026-10-11T14:51:12Z'
 # [W] set only when lifecycle = Paused-Awaiting-Input
 pause_reason: --
 # [W] set only when lifecycle = Blocked
@@ -710,6 +710,11 @@ lifecycle_history:
     grade: --
     notes: '/aid-execute Codex'
 
+  - date: '2026-10-11'
+    event: 'Wave8 Sol final independent recheck PASS A+: all five task012 findings Fixed. Fresh actual CLI fixture verifies exact inline rules/markers/region+whole+host hashes, mirror cleanup and final ownedroot/host deletion without false drift. Task012 Done, task022 already Done; waves1-8 complete,14/32 Done. Next task013 shared drift status. PS runtime deferred.'
+    grade: --
+    notes: '/aid-execute Codex'
+
 deploy: []
 
 # [A] flattened only; single writer: this work's active branch. Written by
@@ -907,7 +912,7 @@ tasks_lifecycle:
         outcome: 'committed 0acf5d926; 130 focused worktree assertions passed'
 
   task-012:
-    state: 'In Review'
+    state: Done
     review: --
     elapsed: --
     notes: --

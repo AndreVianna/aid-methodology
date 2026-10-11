@@ -6,11 +6,11 @@ maintainer approved execution. Current phase `Execute`, lifecycle `Running`.
 
 ## Current execution checkpoint
 
-Task012 separate Sol correction09eaf2ba6 committed: Bash remaining-inline region now preserves terminalLF matching existing add helpers. Stronger regression asserts exact rules/standalone markers/actual manifest hashes and clean final owned-root removal without false drift. Focused46/46, syntax/diff/ASCII29 pass. In Review for original Sol reviewer final wave8 recheck; PS terminalLF static only, runtime deferred.
+Wave8 Sol final independent recheck PASS A+: all five task012 findings Fixed. Fresh actual CLI fixture verifies exact inline rules/markers/region+whole+host hashes, mirror cleanup and final ownedroot/host deletion without false drift. Task012 Done, task022 already Done; waves1-8 complete,14/32 Done. Next task013 shared drift status. PS runtime deferred.
 
-- Done (13/32): task-001, task-002, task-003, task-004, task-005, task-006, task-007, task-008, task-009, task-010, task-011, task-016, task-022.
+- Done (14/32): task-001, task-002, task-003, task-004, task-005, task-006, task-007, task-008, task-009, task-010, task-011, task-012, task-016, task-022.
 - In Progress: none.
-- In Review: task-012.
+- In Review: none.
 - Failed/Blocked: none.
 - Pending: task-013, task-014, task-015, task-017, task-018, task-019, task-020, task-021, task-023, task-024, task-025, task-026, task-027, task-028, task-029, task-030, task-031, task-032.
 - Current wave: 8 of 15. Derive authoritative waves from task dependency headers.
