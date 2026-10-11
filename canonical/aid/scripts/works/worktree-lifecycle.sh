@@ -5,7 +5,7 @@
 #   The single shared implementation of the git-worktree mechanics every
 #   worktree-consuming feature binds to (work-starting automation, downstream
 #   locate-and-enter, housekeep teardown): create a work's worktree (branch
-#   <work-id>, directory <install-root>/worktrees/<work-id>-<name>, off master) and
+#   <work-id>, directory <host-resolved-root>/<work-id>-<name>, off master) and
 #   resolve-and-enter an existing one via the 4-rung "most-intact-state-first"
 #   fallback ladder. This script is PURE GIT MECHANICS -- it never switches a
 #   session; see .aid/runtime/templates/worktree-lifecycle.md for the agent
@@ -18,9 +18,12 @@
 #       --base <ref>  base ref for a fresh branch (default: master)
 #   worktree-lifecycle.sh locate <work-id> [--name <slug>]
 #       --name <slug>  directory-slug override (default: auto-derived)
+#   worktree-lifecycle.sh root
+#       prints and creates the container resolved from .aid/runtime/host.conf
 #   worktree-lifecycle.sh -h | --help
 #
 # Output (stdout):
+#   root     -- exactly the absolute worktree-container path, one line
 #   create   -- on success/no-op: exactly the worktree's absolute path, one
 #                line, nothing else. On failure: EMPTY stdout.
 #   locate   -- exactly one TAB-separated line: <absolute-path>\t<status>
@@ -72,6 +75,7 @@ worktree-lifecycle.sh -- create/locate a work's isolated git worktree.
 Usage:
   worktree-lifecycle.sh create <work-id> <name> [--base <ref>]
   worktree-lifecycle.sh locate <work-id> [--name <slug>]
+  worktree-lifecycle.sh root
   worktree-lifecycle.sh -h | --help
 
 create: prints the worktree's absolute path on stdout (nothing else) and
@@ -82,6 +86,10 @@ locate: prints one TAB-separated line "<abs-path>\t<status>" where <status>
 is registered|recreated|created|current, and exits 0 on EVERY resolution,
 including a git-broken degrade to "<cwd-abs>\tcurrent" -- locate never fails
 the caller.
+
+root: reads worktree_root from .aid/runtime/host.conf, creates the selected
+container, and prints its absolute path. Missing or invalid values use
+.aid/.worktrees with one stderr diagnostic.
 
 Both operations exit 2 on an argument error, or on a traversal-bearing /
 malformed <work-id> / <name> / --base value, before any git verb runs.
@@ -165,13 +173,45 @@ _main_root() {
 }
 
 # _worktrees_root_from <main-root> -> the realpath-canonicalized, created
-# <install-root>/worktrees/ container under <main-root>. Empty + non-zero on
+# descriptor-selected worktree container under <main-root>. Empty + non-zero on
 # failure (e.g. cannot create the directory).
 _worktrees_root_from() {
-    local main_root="$1" wt_root
-    wt_root="${main_root}/.claude/worktrees"
+    local main_root="$1" wt_root conf value="" seen=0 line key parsed
+    local fallback="${main_root}/.aid/.worktrees"
+    conf="${main_root}/.aid/runtime/host.conf"
+    [[ -f "$conf" ]] || conf="${PWD}/.aid/runtime/host.conf"
+    if [[ -f "$conf" ]]; then
+        while IFS= read -r line || [[ -n "$line" ]]; do
+            line="${line%$'\r'}"
+            [[ -z "$line" || "$line" == \#* ]] && continue
+            [[ "$line" == *=* ]] || continue
+            key="${line%%=*}"
+            [[ "$key" == worktree_root ]] || continue
+            parsed="${line#*=}"
+            if [[ "$seen" -eq 1 ]]; then
+                value=""
+                seen=2
+                break
+            fi
+            value="$parsed"
+            seen=1
+        done < "$conf"
+    fi
+    if [[ "$seen" -ne 1 || ( "$value" != ".aid/.worktrees" && ! "$value" =~ ^\.[a-z]+/worktrees$ ) || "$value" == *..* ]]; then
+        echo "${SCRIPT_NAME}: missing or invalid worktree_root in host.conf; using .aid/.worktrees" >&2
+        wt_root="$fallback"
+    else
+        wt_root="${main_root}/${value}"
+    fi
     mkdir -p "$wt_root" 2>/dev/null || return 1
     _abs_path "$wt_root"
+}
+
+op_root() {
+    local main_root worktrees_root
+    main_root="$(_main_root)" || { echo "${SCRIPT_NAME}: cannot resolve repository root" >&2; exit 1; }
+    worktrees_root="$(_worktrees_root_from "$main_root")" || { echo "${SCRIPT_NAME}: cannot create worktrees container" >&2; exit 1; }
+    printf '%s\n' "$worktrees_root"
 }
 
 # _worktree_path_for_branch <porcelain> <work-id> -> the absolute path of the
@@ -474,7 +514,7 @@ op_locate() {
 # Argument parsing (validate before any git verb runs -- Security).
 # ---------------------------------------------------------------------------
 if [[ $# -eq 0 ]]; then
-    echo "${SCRIPT_NAME}: missing operation (create|locate); see --help" >&2
+    echo "${SCRIPT_NAME}: missing operation (root|create|locate); see --help" >&2
     exit 2
 fi
 
@@ -485,6 +525,10 @@ esac
 OP="$1"; shift
 
 case "$OP" in
+    root)
+        [[ $# -eq 0 ]] || { echo "${SCRIPT_NAME}: root takes no arguments" >&2; exit 2; }
+        op_root
+        ;;
     create)
         [[ $# -ge 1 ]] || { echo "${SCRIPT_NAME}: create requires <work-id> <name>" >&2; exit 2; }
         WORK_ID="$1"; shift

@@ -24,6 +24,7 @@ Run the shared lifecycle script for the desired operation:
 ```bash
 bash .aid/runtime/scripts/works/worktree-lifecycle.sh create <work-id> <name> [--base <ref>]
 bash .aid/runtime/scripts/works/worktree-lifecycle.sh locate <work-id> [--name <slug>]
+bash .aid/runtime/scripts/works/worktree-lifecycle.sh root
 ```
 
 - **`create`** -- on success or no-op (idempotent, keyed on the `<work-id>` branch), stdout is
@@ -35,10 +36,12 @@ bash .aid/runtime/scripts/works/worktree-lifecycle.sh locate <work-id> [--name <
   space** -- a worktree path can legitimately contain spaces. `locate` **never fails the
   caller**: an unrecoverable git state degrades to `<cwd-abs>\tcurrent` and still exits `0`.
 
-The full script contract -- arguments, exit codes, the 4-rung "most-intact-state-first" ladder,
-and input validation -- lives in the script's own header and in feature-001's Technical
-Specification. **This document never re-implements that ladder**; it specifies only what happens
-after the script returns.
+The work-level container is selected from the `worktree_root` descriptor in `.aid/runtime/host.conf`;
+when it is absent or invalid, the helper uses `.aid/.worktrees` and emits one diagnostic. The
+`root` operation prints that absolute container path and creates it. The full script contract --
+arguments, exit codes, the 4-rung "most-intact-state-first" ladder, and input validation -- lives
+in the script's own header and in feature-001's Technical Specification. **This document never
+re-implements that ladder**; it specifies only what happens after the script returns.
 
 ## Step 2 -- Enter it (agent action, never a script call)
 
