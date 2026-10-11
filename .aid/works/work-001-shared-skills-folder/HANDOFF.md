@@ -6,11 +6,11 @@ maintainer approved execution. Current phase `Execute`, lifecycle `Running`.
 
 ## Current execution checkpoint
 
-Task009 committed f1dd5ac29: shared payload placement, agents-only tool installs and atomic format3 manifest. Five fresh Bash tools, Cursor-to-Claude refcounts/import/user bytes, non-AID preservation, drift trash/repair, CRLF canonical region hash, inline rules and preserved metadata pass; primitives93, ASCII29, syntax/diff pass. In Review for Sol wave6; PowerShell runtime parity deferred.
+Wave6 Sol quick review: one MEDIUM Pending in PowerShell metadata TSV; literal backtick-t in single-quoted shared.claude_md.path leaves required path absent in format3manifest. Related host default record also needs proper tabs. Bash existing-mirror repair/user metadata/prefix preservation and forced copy-failure abort before rootregions/manifest pass. Task009 In Progress for first Luna correction; task010 pending; PS runtime deferred.
 
 - Done (10/32): task-001, task-002, task-003, task-004, task-005, task-006, task-007, task-008, task-011, task-016.
-- In Progress: none.
-- In Review: task-009.
+- In Progress: task-009.
+- In Review: none.
 - Failed/Blocked: none.
 - Pending: task-010, task-012, task-013, task-014, task-015, task-017, task-018, task-019, task-020, task-021, task-022, task-023, task-024, task-025, task-026, task-027, task-028, task-029, task-030, task-031, task-032.
 - Current wave: 6 of 15. Derive authoritative waves from task dependency headers.
