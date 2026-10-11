@@ -3094,13 +3094,18 @@ seed_settings_yml() {
             stamp="${raw#format_version:}"
             stamp="${stamp%%#*}"
             stamp="${stamp//[[:space:]]/}"
+            stamp="${stamp%\"}"
+            stamp="${stamp#\"}"
+            stamp="${stamp%\'}"
+            stamp="${stamp#\'}"
             if [[ "$stamp" =~ ^[0-4]$ ]]; then
+                local stamp_pattern="^(format_version:[[:space:]]*[\"']?)[0-9]+(.*)$"
                 tmp="$(mktemp "${dst}.aid-tmp.XXXXXX")" || return 1
                 while :; do
                     line=""
                     if IFS= read -r line; then read_rc=0; else read_rc=$?; fi
                     [[ $read_rc -ne 0 && -z "$line" ]] && break
-                    if [[ $updated -eq 0 && "$line" =~ ^(format_version:[[:space:]]*)[0-9]+(.*)$ ]]; then
+                    if [[ $updated -eq 0 && "$line" =~ $stamp_pattern ]]; then
                         line="${BASH_REMATCH[1]}5${BASH_REMATCH[2]}"
                         updated=1
                     fi

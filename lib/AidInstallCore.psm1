@@ -2186,7 +2186,7 @@ function script:Initialize-AidSettingsFile {
                     $contentEnd = $end
                     if ($contentEnd -gt $start -and $bytes[$contentEnd - 1] -eq 13) { $contentEnd-- }
                     $line = [System.Text.Encoding]::ASCII.GetString($bytes, $start, $contentEnd - $start)
-                    $match = [System.Text.RegularExpressions.Regex]::Match($line, '^(format_version:[ \t]*)([0-9]+)')
+                    $match = [System.Text.RegularExpressions.Regex]::Match($line, '^(format_version:[ \t]*["'']?)([0-9]+)')
                     if ($match.Success -and [int]$match.Groups[2].Value -lt 5) {
                         $stampOffset = $start + $match.Groups[1].Length
                         $digitsEnd = $stampOffset + $match.Groups[2].Length
