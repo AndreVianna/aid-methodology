@@ -501,13 +501,13 @@ delivery_lifecycle:
 #   state: Pending | In Progress | In Review | Blocked | Done | Failed | Canceled
 tasks_lifecycle:
   task-001:
-    state: 'In Review'
+    state: Done
     review: --
     elapsed: --
     notes: --
     display_name: --
   task-002:
-    state: 'In Review'
+    state: Done
     review: --
     elapsed: --
     notes: --
@@ -519,7 +519,7 @@ tasks_lifecycle:
     notes: --
     display_name: --
   task-004:
-    state: 'In Review'
+    state: Done
     review: --
     elapsed: --
     notes: --

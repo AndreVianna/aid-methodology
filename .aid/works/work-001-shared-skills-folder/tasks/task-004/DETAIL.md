@@ -38,8 +38,8 @@ Every item is one behaviour implemented twice, in `lib/aid-install-core.sh` and
   passes, or no sha256 is recorded and its bytes differ from the bytes being written. A differing
   destination whose bytes equal the recorded sha256 (an unedited file of the previous version) is
   overwritten with no trash entry. Reports the same counters `copy_file` reports.
-- Manifest format 3: `manifest_write`, `_manifest_write_python`, `_manifest_write_bash`,
-  `Write-AidManifest`, `Build-ManifestJson` emit the § Data Model › Install manifest shape exactly
+- Manifest format 3: `manifest_write_v3`, `_manifest_write_v3_python`, `_manifest_write_v3_bash`,
+  `Write-AidManifestV3` (new names; the format-2 writers stay for the old install path) emit the § Data Model › Install manifest shape exactly
   (key order as shown, 2-space indent, LF, trailing newline, `files` sorted by `path` in byte order,
   `users` in `AID_TOOLS` order, `tools.<t>.paths` a plain copy of that tool's `files[].path`;
   `tools.<t>` carries optional `worktree_root` and `rules_inline` (key present only when given, in

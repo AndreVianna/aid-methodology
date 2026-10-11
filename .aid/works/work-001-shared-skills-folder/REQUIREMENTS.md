@@ -1324,7 +1324,7 @@ implemented twice. The parity suite names every row (AC-16).
 | shared commit | `install_shared` (new) | `Install-AidShared` (new) |
 | per-tool commit (agents) | `install_tool` (rewritten) | `Install-AidTool` (rewritten) |
 | host file | `write_host_conf` (new) | `Write-AidHostConf` (new) |
-| manifest v3 write and read | `manifest_write` and `_manifest_write_python` / `_manifest_write_bash` (v3); `manifest_format`, `manifest_read_shared`, `manifest_read_tool_files`, `manifest_read_host` (new) | `Write-AidManifest`, `Build-ManifestJson` (v3); `Read-AidManifestShared`, `Read-AidManifestToolFiles`, `Read-AidManifestHost` (new) |
+| manifest v3 write and read | `manifest_write_v3` and `_manifest_write_v3_python` / `_manifest_write_v3_bash` (new; the format-2 `manifest_write` stays until the install path switches, then retires); `manifest_format`, `manifest_read_shared`, `manifest_read_tool_files`, `manifest_read_host` (new) | `Write-AidManifestV3` (new; the format-2 `Write-AidManifest` / `Build-ManifestJson` stay until the install path switches, then retire); `Read-AidManifestShared`, `Read-AidManifestToolFiles`, `Read-AidManifestHost` (new) |
 | upgrade recovery record | `read_upgrade_recovery`, `write_upgrade_recovery`, `clear_upgrade_recovery` (new) | `Read-AidUpgradeRecovery`, `Write-AidUpgradeRecovery`, `Clear-AidUpgradeRecovery` (new) |
 | clean-slate retire of the v3 layout | `retire_v3_layout` (new); `_migrate_retired_layout` (no longer sweeps `.agents/`) | `Invoke-RetireV3Layout` (new); `Invoke-MigrateRetiredLayout` |
 | path-based ownership | `_is_aid_owned_path` (new) | `Test-AidOwnedPath` (new) |

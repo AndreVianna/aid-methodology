@@ -151,7 +151,7 @@ the whole run is State 3's single read.
 
 - **Non-destructive, always.** No `Write`/`Edit` tool is declared or ever needed — this skill
   persists nothing in the repo and performs no external write of any kind.
-  `allowed-tools: Read, Glob, Grep, AskUserQuestion` is the complete set; the host-MCP fetch tool
+  `allowed-tools: Read Glob Grep AskUserQuestion` is the complete set; the host-MCP fetch tool
   itself is requested at runtime per `consumption-protocol.md`, never statically declared here.
 - **No confirmation prompt, ever.** `AskUserQuestion` fires only for the 2+-connector "which
   connector" branch in State 2; it never gates the fetch — there is nothing to confirm, because

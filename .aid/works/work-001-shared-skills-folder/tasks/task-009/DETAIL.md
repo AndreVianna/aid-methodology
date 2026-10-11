@@ -36,7 +36,7 @@ Bash and PowerShell twins together, per REQUIREMENTS.md § 11 Feature 001 › Fe
 - `aid add` commit order exactly as Flow 3 step 6: shared skills, mirrors, runtime, each new tool's
   agents, the `AGENTS.md` pointer region (then the `CLAUDE.md` import region when `claude-code` is
   installed); any copy failure aborts before the manifest write; then the format-3 manifest is
-  written atomically (each new tool joins every shared `users` list it uses; every file recorded
+  written atomically by `manifest_write_v3` / `Write-AidManifestV3` (not the format-2 `manifest_write` / `Write-AidManifest`) (each new tool joins every shared `users` list it uses; every file recorded
   with the sha256 of its staged bytes; canonical-LF `region_sha256` and whole-file `file_sha256` for `agents_md`;
   `region_sha256` for `claude_md`; an entry whose user list would be empty is absent). The CLI
   never writes the full AID region into `CLAUDE.md`, and never reads or writes `CLAUDE.md` while no

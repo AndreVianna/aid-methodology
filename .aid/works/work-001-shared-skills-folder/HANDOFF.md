@@ -1,11 +1,53 @@
 # Handoff — work-001 Shared Skills Folder (AID v4.0.0)
 
-Updated 2026-10-10 (America/Toronto) by Codex for the maintainer to resume in **Claude Code**.
+Updated 2026-10-11 by Claude Code (after execution wave 1). Originally written 2026-10-10 by Codex.
 This is the current handoff; `STATE.yml` contains the append-only session history.
-**Latest result (2026-10-11, Claude Code): GATE cleared — definition A+, tasks A+, no Pending
-findings; work is at APPROVAL-HALT awaiting the maintainer's approval before `/aid-execute`. No
-implementation has started. Sections 5–6 below describe the earlier state; `STATE.yml`
-`lifecycle_history` carries the full record of the fix cycles since.**
+**Latest result (2026-10-11, Claude Code): EXECUTION IN PROGRESS — wave 1 of 15 Done; paused by
+the maintainer after wave 1.** The GATE was cleared (definition A+, tasks A+) and the maintainer
+approved execution. Sections 5–6 below describe the pre-execution state; `STATE.yml`
+`lifecycle_history` carries the full record.
+
+### Execution status (read this first)
+
+- **Delivery branch:** `aid/work-001-shared-skills-folder-delivery-001` (pushed). All execution
+  commits live there, not on `work-001`.
+- **State file:** `STATE.yml` → `phase: Execute`, `active_skill: aid-execute`; per-task states in
+  `tasks_lifecycle`.
+- **Done (wave 1):** task-001 (canonical skills neutralized), task-002 (canonical/aid sources point
+  at `.aid/runtime` paths), task-004 (install-core primitives: descriptor reader, trash move,
+  guarded copy, format-3 manifest writers/readers).
+- **Next (wave 2):** task-005, task-006, task-011 (all their dependencies are Done). Re-run
+  `bash .claude/aid/scripts/execute/derive-waves.sh --from-tasks .aid/works/work-001-shared-skills-folder`
+  for the authoritative graph.
+- **Wave-1 review ledger:** `review-ledgers/execute-wave-1.md` (3 rows: 2 Fixed, 1 Accepted —
+  bash `_v3_quote` vs python `json.dump` escaping of non-ASCII; re-check in the final review).
+- **Spec deviation recorded:** the format-3 manifest writers are `manifest_write_v3` /
+  `_manifest_write_v3_python` / `_manifest_write_v3_bash` / `Write-AidManifestV3`; the format-2
+  `manifest_write` / `Write-AidManifest` stay until the install path switches (task-009).
+  REQUIREMENTS.md § 11 reuse table and the task-004 / task-009 DETAILs were updated to match.
+- **Notes for later tasks:** task-009 must pass the root explicitly to `copy_file_guarded <src>
+  <dst> [sha] [root]` (the `$PWD` default is a fallback). `trash_file <root> <file> [utc-stamp]`.
+  In this source repo `cleanup-classify.sh` finds no registry under `.aid/runtime/` until the
+  dogfood resync (task-027) — expected.
+- **PowerShell twins are unverified** (no `pwsh` in the cloud container). Run the PS criteria on
+  Windows before release.
+
+**How execution runs (maintainer's rules):**
+1. One task at a time, Haiku `aid-developer` per task, sequential (never two agents on the same
+   files).
+2. Orchestrator writes the task state: `In Progress` before dispatch, `In Review` after the
+   developer's commit, `Done`/`Failed` after the wave check. Command:
+   `AID_STATE_FILE=.aid/works/work-001-shared-skills-folder/STATE.yml bash .claude/aid/scripts/execute/writeback-state.sh --task-id NNN --field state --value "<State>"`
+   (after task-027's resync use `.aid/runtime/scripts/execute/writeback-state.sh`).
+3. Developers: NO long checks (coverage-parity, `tests/run-all.sh`, full regressions,
+   `render.py --self-test`) — those criteria are DEFERRED to the final verification (task-031).
+   `pwsh` criteria are NOT-RUNNABLE here. Host awk is mawk (DBI01 in
+   `test-dogfood-byte-identity.sh` fails for that reason only). No chmod / mode changes.
+4. End of each wave: Sonnet `aid-reviewer` quick check → ledger
+   `.aid/.temp/review-pending/work-001-wave-N.md`, copied to `review-ledgers/execute-wave-N.md`.
+   Failure policy: 1 Haiku fix → 1 Sonnet fix → mark `Failed`, block dependents.
+5. After the last wave: Opus full review, then PAUSE and report to the maintainer.
+6. Manual probes A-4 (Cursor alias list) and A-6 (pointer probe) are owned by task-032.
 
 ---
 

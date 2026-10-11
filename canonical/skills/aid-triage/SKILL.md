@@ -137,7 +137,7 @@ Run that command to start the full requirements interview.
 
 - **Suggest-only (FR-13).** No interview, no scaffold, no work folder, no
   `STATE.md` is ever created by this skill.
-- **Write-free.** `allowed-tools` is `Read, Glob, Grep` only -- no `Write`,
+- **Write-free.** `allowed-tools` is `Read Glob Grep` only -- no `Write`,
   no `Edit`. This skill cannot write anything even if instructed to.
 - **Canonical names only (Step 3 catalog match).** When the suggestion comes
   from Step 3's shortcut-catalog semantic match (Cases A/B/C), it is always a
