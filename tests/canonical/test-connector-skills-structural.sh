@@ -140,8 +140,8 @@ assert_wrapped_contains "$RECONCILE" "never diffs against the rest of the regist
 # marker spelling is absent (work-004 SPEC GATE cycle-1 fix: "task-001 ELICIT
 # marker RESOLVED -> ENGAGED").
 # ===========================================================================
-assert_file_contains "$ELICIT" "canonical/aid/templates/connectors/reconcile.md" \
-    "ST19 state-elicit.md points to canonical/aid/templates/connectors/reconcile.md"
+assert_file_contains "$ELICIT" ".aid/runtime/templates/connectors/reconcile.md" \
+    "ST19 state-elicit.md points to .aid/runtime/templates/connectors/reconcile.md"
 assert_file_contains "$ELICIT" 'Bulk mode (ELICIT)' \
     "ST20 state-elicit.md's pointer names reconcile.md's Bulk mode (ELICIT) section"
 assert_wrapped_contains "$ELICIT" "relocated so it can also be reused by the net-new single-stem" \

@@ -79,12 +79,12 @@ Two limits, so this stays a record and not a new authority:
 ### F2. Trace the impact chain BEFORE editing
 
 Ask every time: *is this file a source, or something derived from one?* Editing a derived
-file is a defect even when the edit is correct -- the next render erases it, and the copies
-diverge meanwhile.
+file is a defect even when the edit is correct -- the next release build erases it, and the
+copies diverge meanwhile.
 
 | Chain | Edit here | Then run |
 |---|---|---|
-| `canonical/` -> `profiles/*` -> `.claude/`, `.cursor/` | `canonical/` | the profile generator, then resync both dogfood trees |
+| `canonical/` -> release payload -> CLI install into `.agents/skills/` and `.aid/runtime/` | `canonical/` | the release build, then re-run the CLI install into the installed tree |
 | repo-root `docs/*.md` -> synced `site/src/content/docs/*` | `docs/` | the site's `sync:docs` |
 | KB doc `summary:` frontmatter -> `.aid/knowledge/INDEX.md` | the frontmatter | the KB index builder |
 | a generator -> its generated pages | the generator | that generator |

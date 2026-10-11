@@ -80,7 +80,7 @@ If Check 2 fails: Tell user to press `Shift+Tab` to exit Plan Mode, then re-run.
 
 **Out of KB scope — never check, never claim:**
 
-- **`.claude/` at the repo root** — this is the **dogfood install** (AID applied to AID itself), conceptually identical to any user's `.claude/` after running `install.sh`. The KB makes **no claims** about it. Byte-identity comparisons are scoped to **4-tree** (canonical + 3 profile trees), NOT 5-tree.
+- **The installed tree at the repo root** (`.aid/runtime/` and the skill mirror under `.agents/skills/`, placed by the CLI install) — this is the **dogfood install** (AID applied to AID itself), conceptually identical to any user's install after the CLI install. The KB makes **no claims** about it. Byte-identity comparisons are scoped to the **canonical sources and the release payload built from them**, NOT the installed copies.
 
 **Why pre-flight cleanup matters:**
 - Reviewer focus should be **semantic** quality (missing post-merge content, internal contradictions, factually wrong claims that mislead downstream phases) — not arithmetic drift.

@@ -237,7 +237,7 @@ if [ -z "$GCD" ]; then
   exit 1   # never fall back to the caller's own tree
 fi
 MAIN_ROOT="$(cd "$(dirname "$GCD")" && pwd -P)"
-WT_ROOT="${MAIN_ROOT}/.claude/worktrees"
+WT_ROOT="$(bash .aid/runtime/scripts/works/worktree-lifecycle.sh root)"
 mkdir -p "$WT_ROOT"
 UPDATEKB_WT="${WT_ROOT}/update-kb-${TS}"
 

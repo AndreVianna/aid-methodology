@@ -5,7 +5,7 @@ description: >
   scoped, specified, and broken into reviewable tasks in a single pass, with no
   requirements interview. You approve the resulting plan before anything is built: this
   skill plans and stops, so run `/aid-execute` to carry the plan out.
-allowed-tools: Read Glob Grep Bash Shell Terminal Shell Terminal Write Edit Agent
+allowed-tools: Read Glob Grep Bash Shell Terminal Write Edit Agent
 argument-hint: "[description]  -- what to create; runs straight to a graded flattened Lite work"
 ---
 
