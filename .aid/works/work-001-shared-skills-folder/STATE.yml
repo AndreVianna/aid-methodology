@@ -323,6 +323,19 @@ lifecycle_history:
     grade: 'A+'
     notes: 'Definition exceeds floor A; scoped task review begins. No implementation has started; Accepted definition findings retained as authorized'
 
+  - date: '2026-10-10'
+    event: 'Codex cycle 2 task review complete; row 15 verified Fixed; no new findings'
+    grade: 'A+'
+    notes: 'Independent scoped task review clears the extraction ordering and recovery criteria; all implementation tasks remain Pending'
+  - date: '2026-10-10'
+    event: 'GATE Pass 1 (definition docs) cleared'
+    grade: 'A+'
+    notes: 'Cycle 2 independent review; floor A; Accepted findings retained as authorized'
+  - date: '2026-10-10'
+    event: 'GATE Pass 2 (task set) cleared'
+    grade: 'A+'
+    notes: 'Cycle 2 independent review; floor A; active review ledgers removed and archived snapshots retained. APPROVAL-HALT before /aid-execute; manual pointer/alias probes remain unverified'
+
 # [A] aid-deploy only; one entry per delivery (never derived from child
 #     files; aid-deploy is the sole author):
 #   - delivery / state / pr / kb_updated / tag / notes
