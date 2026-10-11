@@ -1296,13 +1296,13 @@ tasks_lifecycle:
         outcome: 'Task022 committed196a11761: CLI-installed worktree lifecycle fixtures invoke installed runtime and verify Cursor default create/ignore, registered nondefault lookup, Claude root/ignore. Focused lifecycle140/140, syntax/diff pass. Task012 and022 In Review for Sol wave8 quick verification; 12/32 Done. PS runtime deferred, long regression/coverage gates remain task031.'
 
   task-023:
-    state: 'In Progress'
+    state: 'In Review'
     review: --
     elapsed: --
     notes: --
     display_name: --
   task-024:
-    state: Pending
+    state: 'In Progress'
     review: --
     elapsed: --
     notes: --
