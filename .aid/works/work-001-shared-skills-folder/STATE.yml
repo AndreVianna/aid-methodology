@@ -112,7 +112,7 @@ minimum_grade: A
 # [W] 'yes' | 'no' -- quoted, see NFR-2 / D-5
 user_approved: 'no'
 # [W] Running | Paused-Awaiting-Input | Blocked | Completed | Canceled
-lifecycle: Running
+lifecycle: Paused-Awaiting-Input
 # [W] Describe | Define | Specify | Plan | Detail | Execute
 phase: Detail
 # [W] aid-{skill} | none
@@ -120,7 +120,7 @@ active_skill: aid-update
 # [W]
 updated: '2026-10-11T04:00:00Z'
 # [W] set only when lifecycle = Paused-Awaiting-Input
-pause_reason: --
+pause_reason: 'Final full review cycle 2: YES-WITH-GAPS (bare-project add HIGH, task-006 recurred); D+/D+; awaiting maintainer'
 # [W] set only when lifecycle = Blocked
 block_reason: --
 # [W] e.g. IMPEDIMENT-task-NNN.md, or the failed gate
@@ -444,6 +444,11 @@ lifecycle_history:
   - date: '2026-10-11'
     event: 'Final full GATE review (Opus, intent-focused): verdict YES-WITH-GAPS. New definition rows 51-54 (1 H, 2 M, 1 L), task rows 23-28 (5 M, 1 L); no Recurred; row 50 still Pending. Paused for maintainer decision'
     grade: 'D+ (definition) / C (tasks)'
+    notes: '/aid-update GATE final'
+
+  - date: '2026-10-11'
+    event: 'Fix cycle applied (Sonnet x2 + coordinator): definition 50-54 and tasks 23-28 all verified Fixed. Final full review cycle 2 (Opus): YES-WITH-GAPS -- new definition 55 [HIGH] (bare project from aid projects add has a format-2 manifest, so aid add is refused and aid update exits 6), 56-57 [LOW] (fallback-only); tasks 29 [HIGH] (no task owns _aid_scaffold_bare_project), task row 20 Recurred (task-006 two-add check cannot pass in wave 2). Paused'
+    grade: 'D+ (definition) / D+ (tasks)'
     notes: '/aid-update GATE final'
 
 # [A] aid-deploy only; one entry per delivery (never derived from child
