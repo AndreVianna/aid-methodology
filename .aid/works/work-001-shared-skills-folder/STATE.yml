@@ -1320,7 +1320,7 @@ tasks_lifecycle:
     notes: --
     display_name: --
   task-027:
-    state: Pending
+    state: 'In Progress'
     review: --
     elapsed: --
     notes: --
