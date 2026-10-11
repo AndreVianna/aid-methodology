@@ -118,7 +118,7 @@ phase: Detail
 # [W] aid-{skill} | none
 active_skill: aid-update
 # [W]
-updated: '2026-10-11T02:44:25Z'
+updated: '2026-10-11T02:46:17Z'
 # [W] set only when lifecycle = Paused-Awaiting-Input
 pause_reason: 'Full review below floor A; awaiting maintainer decision before fixes'
 # [W] set only when lifecycle = Blocked
@@ -425,6 +425,11 @@ lifecycle_history:
     event: 'Fresh full review complete; paused before fixes for maintainer decision'
     grade: --
     notes: 'Definition C+, tasks C+, floor A; two new Pending MEDIUM findings (definition 49, task 22), no Recurred findings. Full definition context reused for task review to conserve usage. Active ledgers retained and archived snapshots updated; no application edits or implementation. All 32 tasks remain Pending; manual A-4/A-6 probes remain unverified'
+
+  - date: '2026-10-10'
+    event: 'Handoff updated for resuming in Claude Code; maintainer requested session close and push'
+    grade: --
+    notes: 'HANDOFF.md now records completed Codex fix/review cycles, current C+/C+ grades, Pending definition 49 and task 22, preserved decisions, exact ledger restore commands and next steps. No new fixes or implementation; pause and all 32 Pending tasks retained'
 
 # [A] aid-deploy only; one entry per delivery (never derived from child
 #     files; aid-deploy is the sole author):

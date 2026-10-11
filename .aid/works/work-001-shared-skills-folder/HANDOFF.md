@@ -1,29 +1,34 @@
 # Handoff — work-001 Shared Skills Folder (AID v4.0.0)
 
-Written 2026-10-11 by the Claude Code session that ran this work up to here, for the maintainer
-to continue in **Codex**. Read this file top to bottom once; it is self-contained.
+Updated 2026-10-10 (America/Toronto) by Codex for the maintainer to resume in **Claude Code**.
+This is the current handoff; `STATE.yml` contains the append-only session history.
+**Latest result: definition C+, tasks C+, two Pending Medium findings. No implementation has started.**
 
 ---
 
-## 1. Quick start (Codex)
+## 1. Quick start (Claude Code)
 
-1. Check out the branch: `git fetch origin work-001 && git checkout work-001`
-   (the same commits are also on `claude/youthful-curie-aqfdvp`).
-2. Restore the two review ledgers (they live in a git-ignored folder, so they were copied here):
+1. Open the existing `work-001` checkout/worktree (switch to that branch first if using another
+   checkout). Preserve unrelated local changes. Fetch and fast-forward:
+   ```bash
+   git fetch origin work-001
+   git merge --ff-only FETCH_HEAD
+   ```
+   `origin/work-001` is the resume branch. The historical
+   `claude/youthful-curie-aqfdvp` branch was not updated by Codex.
+2. Restore exactly the two current GATE ledgers from their tracked snapshots:
    ```bash
    mkdir -p .aid/.temp/review-pending
-   cp .aid/works/work-001-shared-skills-folder/review-ledgers/*.md .aid/.temp/review-pending/
+   cp .aid/works/work-001-shared-skills-folder/review-ledgers/shortcut-work-001-shared-skills-folder-defn.md .aid/.temp/review-pending/
+   cp .aid/works/work-001-shared-skills-folder/review-ledgers/shortcut-work-001-shared-skills-folder-tasks.md .aid/.temp/review-pending/
    ```
-3. Read, in this order: this file → `REQUIREMENTS.md` (§1–§11) → `STATE.yml` (`lifecycle_history`
-   at the bottom) → the two ledgers.
-4. Continue at **§6 Next steps**.
+3. Read this handoff, the two Pending rows, and `STATE.yml` › `lifecycle_history`. Read the
+   relevant `REQUIREMENTS.md` sections and task details before editing; avoid another broad
+   reread just to resume. Continue at **§6 Next steps**.
 
-**AID skills in Codex:** this repo has no `.codex/` or `.agents/` install, so Codex does not
-auto-discover AID skills. Open the skill file and follow it by hand:
-- shortcut engine (this work's pipeline): `.claude/aid/templates/shortcut-engine.md`
-  (entered from `.claude/skills/aid-update/SKILL.md`);
-- later, execution: `.claude/skills/aid-execute/SKILL.md`.
-Their scripts run fine from bash at `.claude/aid/scripts/...` (project root as working directory).
+The pipeline is `.claude/skills/aid-update/SKILL.md` and
+`.claude/aid/templates/shortcut-engine.md` › GATE. Execution later is
+`.claude/skills/aid-execute/SKILL.md`; it is not approved yet. Run scripts from the repository root.
 
 ---
 
@@ -94,77 +99,107 @@ Raw probe results: `probe-kits/ide-probe-RESULTS.md`. Kits: `probe-kits/*.zip`.
 
 ## 5. Where the work stands
 
-- Worktree/branch: `work-001` (created by AID's `worktree-lifecycle.sh`), work folder
-  `.aid/works/work-001-shared-skills-folder/`.
-- Pipeline: `/aid-update` shortcut engine, flattened Lite work, `phase: Detail`,
-  `delivery_state: Specified`, `lifecycle: Paused-Awaiting-Input`.
-- `REQUIREMENTS.md`: 17 FR, 21 AC (AC-1..AC-21), assumptions A-1..A-6, §11 Feature 001 spec.
-  **Just revised for the v4.0.0 scope — not yet re-reviewed.**
-- Tasks: 32 (`tasks/task-001..032/DETAIL.md`), all `Pending`, 14 waves
-  (`bash .claude/aid/scripts/execute/derive-waves.sh --from-tasks .aid/works/work-001-shared-skills-folder`).
-  **Just aligned to the v4.0.0 revision — not yet re-reviewed.**
-- GATE history (grades in `STATE.yml` `lifecycle_history`): Pass 1 (definition) went D+ → C+ →
-  A+; then D8 changed the requirements, so they need a scoped re-check. Pass 2 (tasks) cycle 1
-  graded D+; its findings were addressed but not re-verified.
-- Minimum grade for this work: `A` (`read-setting.sh --skill aid-update --key minimum_grade` → A).
+- Branch: `work-001`; work folder: `.aid/works/work-001-shared-skills-folder/`.
+- Pipeline: `/aid-update`, flattened Lite, `phase: Detail`, `delivery_state: Specified`,
+  `lifecycle: Paused-Awaiting-Input`, `user_approved: 'no'`.
+- Pause reason: `Full review below floor A; awaiting maintainer decision before fixes`.
+- All 32 implementation tasks remain Pending. The dependency graph resolves to 15 waves;
+  derive it with `derive-waves.sh --from-tasks .aid/works/work-001-shared-skills-folder`.
+- Current grades: **definition C+, tasks C+; minimum A**. Earlier A+ entries are historical,
+  preceding the latest full review, and must not be treated as current clearance.
 
-### Ledger status
+### Completed in the Codex session
 
-`shortcut-work-001-shared-skills-folder-defn.md` (definition):
-- Rows 1–37: Fixed or Accepted (18 MINOR rows parked by the maintainer as Accepted; 6 LOW rows
-  accepted and carried into tasks as "Deferred review note" bullets).
-- Rows **38, 39, 40: Pending** — believed resolved by the v4.0.0 revision (fresh install writes
-  `.gitattributes`; `--orphans` gone and last-tool remove clears the block; content-based region
-  repair). Need verification.
+1. Confirmed the complete v4 intent in §2–§3. Settled the root-source decision:
+   `canonical/aid/rules.md` replaces the old canonical root-context source; the release ships
+   no root-context file; install cores own the constant pointer/import regions.
+2. Aligned AC-14(c) and tasks 015/021: clean-slate upgrade removes the old region, preserves
+   outside bytes/order, appends the new region at the end, adds one separating LF only when
+   required, and backs up the whole original.
+3. Independently verified definition rows 38–40 and task rows 1–14 as Fixed. Subsequent fixes
+   resolved definition 41–42 and task 15: no profile README preservation exception; task-005
+   extracts canonical rules before task-003 wipes profiles; interrupted upgrades retain the
+   exact tool set and retirement-complete flag in `.aid/.temp/v3-upgrade-tools.json`.
+   See REQUIREMENTS › Upgrade from v3 › Recovery record for the bounded atomic protocol.
+4. A full review found definition 43–47 and tasks 16–18. The maintainer approved a bounded
+   fix cycle: `gpt-6-luna` fixes, `gpt-6.1-sol` verification (Terra was unavailable), Codex
+   orchestration/final integrated review. Fixed fresh-install/legacy stamp gates, preservation
+   of pre-existing AGENTS content on final uninstall, collision-free trash suffixes,
+   CRLF-aware region recognition and canonical-LF region hashes, A-6 probe ownership/fallback,
+   documentation scope and valid generic work-path examples.
+5. Used one targeted correction round for definition 48 and tasks 19–21: qualified the fresh
+   stamp fixture; removed premature full-command gates; clarified that removing a region from
+   an originally non-LF-terminated user file retains the inserted separator LF; separated
+   scripted path greps from semantic reviewer checks. Removed a duplicated task-021 checkbox.
+   Sol verified all these findings Fixed; both ledgers graded A+ at that point.
+6. The maintainer requested another **fresh full review**. A new Sol reviewer read the entire
+   definition and all 32 task bodies, rechecked every Fixed claim, and checked cross-task
+   consistency/dependency order. It found the two issues below, with no Fixed regressions.
+   **These two issues have not been fixed.**
 
-`shortcut-work-001-shared-skills-folder-tasks.md` (task set, cycle 1):
-- Rows **1–14: Pending** — all addressed (rows 1, 2, 4–13 by the alignment pass; rows 3 and 14 by
-  making task-013 depend on task-012 and task-014 on task-013). Need verification.
+Useful commits: `936f9e2fe` (Luna draft), `4ce9d5a89` (corrections), `26ed49f51` (prior A+
+review close), `9027b77f5` (latest full definition review), `b966346df` (latest full task
+review/pause). All work changes are pushed to `work-001`; git and STATE history carry the detail.
+Only work artifacts were edited for these fixes. Unrelated generated site changes, local npm
+configuration and node_modules artifacts in the Codex workspace were not included in these commits.
 
-### Open items that need the maintainer
+### Current ledger status — source of truth for remaining fixes
 
-1. **Pointer probe** (A-6): run `probe-kits/aid-pointer-probe.zip` in each tool (P1/P2/P3 in its
-   `PROMPTS.md`). A tool passes if P1 or P2 shows the rules. A failing tool gets `rules_inline` in
-   its profile (the fallback already specified in REQUIREMENTS.md).
-2. **Alias list check** (A-4, AC-20): in Cursor with fresh permissions, a skill with
-   `allowed-tools: Read Shell Bash Terminal` runs `git init x` without a permission prompt.
-   (Claude Code already verified: `Bash` pre-approves.)
-3. **Confirm:** `canonical/AGENTS.md` is replaced by `canonical/aid/rules.md`; the release no
-   longer ships an `AGENTS.md`; both root regions are constants in the install cores.
-4. **Wording conflict to settle:** the clean-slate upgrade writes the fresh import region at the
-   end of `CLAUDE.md`, while AC-14(c) says the old region is replaced in place. Tasks 015/021 use
-   "lines outside the old region unchanged and in order, one import region, pre-update copy in
-   `.aid/.trash/`". Pick one and align AC-14(c) or the tasks.
+| Ledger | Fixed | Accepted | OOS | Pending | Recurred |
+|---|---|---|---|---|---|
+| `shortcut-work-001-shared-skills-folder-defn.md` | 28 | 19 | 1 | 1 (#49) | 0 |
+| `shortcut-work-001-shared-skills-folder-tasks.md` | 21 | 0 | 0 | 1 (#22) | 0 |
+
+Preserve the maintainer's Accepted decisions; do not reopen or duplicate them. The extra
+`review-ledgers/adhoc-work-001-final.md` is an empty historical orchestrator-review snapshot
+from the preceding cycle, not the current GATE ledger.
+
+**Definition #49 — Medium, REQUIREMENTS §9 AC-13 / §5 FR-11.** The fixture seeds a non-AID
+user file in each old directory and promises preservation at its original path. But every file
+under an old `<root>/aid/` subtree is AID-owned by the authorized path predicate and must move
+to trash. For example, `.cursor/aid/user-notes.txt` cannot remain at its old path while that
+subtree is retired. Recommended fix: retain path-based ownership; put non-AID preservation
+fixtures outside AID-owned subtrees, and separately assert byte-identical trash backups for
+all files under old `aid/`. Align AC-13 and tasks 015/021 plus direct references/test plan.
+
+**Task #22 — Medium, task-014 / FR-5.** `bin/aid::_cmd_update_all` and
+`bin/aid.ps1::Invoke-AidUpdateAll` cache only per-tool tarballs and SHA256SUMS, then run child
+`update --from-bundle <cache>`. New staging requires one `aid-shared-v*.tar.gz`, so that child
+fails with the incomplete cache. No task currently owns the producer change. Recommended fix:
+assign both cache producers a shared-payload fetch at the selected version, reuse the staging
+helpers, and add an update-all cache/child regression criterion in the relevant CLI/parity
+suite tasks. Keep staging validation and one-version-per-project behavior.
+
+### Remaining manual validation
+
+A-4 alias and A-6 pointer probes are still unverified, with kits in `probe-kits/`.
+Task-032 now owns both for the required hosts, records pass/fail/unknown, and applies the
+existing fallback plus affected checks/final regression on confirmed failure. Unknown is not
+success. The evidence in §4 remains the original Windows probe evidence, not a new Codex run.
 
 ---
 
 ## 6. Next steps (exact order)
 
-1. **Scoped re-review** (strong model, one pass, read-only except ledgers). Brief:
-   - Definition ledger: re-verify rows 38–40; look for regressions ONLY in
-     `git diff c6f61084 acaf9b9b -- .aid/works/work-001-shared-skills-folder/REQUIREMENTS.md`;
-     append new rows (Status Pending). Do not touch Accepted rows.
-   - Task ledger: re-verify rows 1–14; look for regressions ONLY in
-     `git diff 4a8d3e36 HEAD -- .aid/works/work-001-shared-skills-folder/tasks/`; append new rows.
-   - Ledger schema: `.claude/aid/templates/reviewer-ledger-schema.md` (7 columns, no narrative).
-   - Do not compute grades.
-2. **Grade** each ledger: `bash .claude/aid/scripts/grade.sh --explain <ledger>`. Both must reach
-   `A` or better. **Pause and show the maintainer the result before fixing.**
-3. **Fix loop** (if needed): smallest edits; mechanical fixes with a small model and exact
-   find/replace text; design fixes with a mid model; then a narrow strong-model re-check of the
-   changed text only. Circuit breaker: stop after 3 cycles without improvement
-   (`shortcut-engine.md § Step 4`).
-4. When both passes clear: append the two "GATE Pass N cleared" entries to `lifecycle_history`,
-   delete the ledgers (`rm -f .aid/.temp/review-pending/shortcut-work-001-*`; the copies in
-   `review-ledgers/` can be deleted too), then **APPROVAL-HALT** (`shortcut-engine.md § State:
-   APPROVAL-HALT`) — the maintainer approves before anything is built.
-5. Execution later: `.claude/skills/aid-execute/SKILL.md` on this work. Notes for that phase:
-   - Each task's `State` must be written the moment it changes (`In Progress` → `In Review` →
-     `Done`/`Failed`) — project `CLAUDE.md` § Tracking discipline.
-   - Some legacy CLI test suites are **expected red** mid-delivery; each task lists them and the
-     task that re-keys them. task-031 must end fully green.
-   - PowerShell twin criteria need `pwsh` (Windows or a CI runner with it).
-   - task-032 / AC-20 are manual maintainer probes.
+1. Show the maintainer the two Pending findings/current C+ grades and agree the next bounded
+   fix cycle when asked to resume. This handoff request authorized saving/pushing, not fixing
+   these newly discovered issues or starting implementation.
+2. Fix definition #49 and task #22 with the smallest aligned changes. Read the ledger rows and
+   affected contracts, preserve Accepted decisions, and do not mark rows Fixed yourself.
+3. Independent verification: recheck Pending/Fixed evidence and hunt changes plus direct
+   references. Reviewer alone marks resolved rows Fixed or real regressions Recurred; exact
+   7-column schema in `.claude/aid/templates/reviewer-ledger-schema.md`, no narrative in ledgers.
+4. Grade both with `bash .claude/aid/scripts/grade.sh --explain <ledger>`. Floor is A.
+   **Pause and show results before another fix loop.** Commit/push artifacts, STATE and tracked
+   ledger snapshots. Respect remaining usage: one fixer, one verifier, targeted correction;
+   avoid repeated broad scans. A scoped check is not a new full review: follow the final-full-
+   pass requirement before approval (`reviewer-ledger-schema.md` › Two sets from cycle 2).
+5. Once both full passes clear, append separate GATE Pass 1/2 cleared entries, remove active
+   ledgers, retain tracked snapshots for handoff, and enter APPROVAL-HALT. Explicit maintainer
+   approval is required before `/aid-execute`; do not infer it from approved specification fixes.
+6. During later execution, write task state changes immediately. Legacy suites may be red only
+   where a task explicitly documents its re-key owner; task-031 must finish fully green.
+   PowerShell parity requires pwsh/Windows support. Task-032 owns the manual host probes.
 
 ---
 
@@ -172,8 +207,9 @@ Raw probe results: `probe-kits/ide-probe-RESULTS.md`. Kits: `probe-kits/*.zip`.
 
 - **Be careful with usage.** One agent at a time on the same file; one pass, no self-review
   loops; agents read only the passages they change; pause and report after every review.
-- Model tiers (Codex mapping from `profiles/codex.toml`): small `gpt-5.4-mini` for exact
-  find/replace edits, medium `gpt-5.4` for design edits, large `gpt-5.5` for reviews.
+- The last authorized Codex cycle used Luna fixes and Sol verification; in Claude Code use
+  available economical models appropriate to the maintainer's next instruction. Do not claim
+  unavailable model names were used. Minimize duplicated context and keep one writer per file.
 - Every state change goes to `STATE.yml` immediately (project `CLAUDE.md` § Tracking discipline).
   **Gotcha:** `writeback-state.sh` defaults to a wrong path — always call it as
   `AID_STATE_FILE=.aid/works/work-001-shared-skills-folder/STATE.yml bash .claude/aid/scripts/execute/writeback-state.sh --pipeline --field <Field> --value <value>`.
