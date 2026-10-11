@@ -118,7 +118,7 @@ phase: Execute
 # [W] aid-{skill} | none
 active_skill: aid-execute
 # [W]
-updated: '2026-10-11T16:11:31Z'
+updated: '2026-10-11T16:16:44Z'
 # [W] set only when lifecycle = Paused-Awaiting-Input
 pause_reason: --
 # [W] set only when lifecycle = Blocked
@@ -815,6 +815,11 @@ lifecycle_history:
     grade: --
     notes: '/aid-execute Codex'
 
+  - date: '2026-10-11'
+    event: 'Sol wave11 found six items:015 failed stamp cleanup, stale Claude exact-set recovery, hidden PS retirement files, strict PS tools-array schema;017/018 COVERS selection metadata;018 tautological manifest-present check. Task012 pruning correction independently clear and Done. Task015 reopened for first Luna correction;017/018 remain In Review until sequential fixes. Evidence in execute-wave-11 ledger.'
+    grade: --
+    notes: '/aid-execute Codex'
+
 deploy: []
 
 # [A] flattened only; single writer: this work's active branch. Written by
@@ -1012,7 +1017,7 @@ tasks_lifecycle:
         outcome: 'committed 0acf5d926; 130 focused worktree assertions passed'
 
   task-012:
-    state: 'In Review'
+    state: Done
     review: --
     elapsed: --
     notes: --
@@ -1087,7 +1092,7 @@ tasks_lifecycle:
         outcome: 'Task014 separate Sol correctionf43787731 committed: PS dry-run protects only root runtime host.conf, nested scripts/host.conf planned/trash regression added plus optional PS fixture. Focused fixture/syntax/diff/ASCII pass, dryrun immutable and root retained. In Review for original Sol reviewer final wave10 recheck; PS runtime deferred.'
 
   task-015:
-    state: 'In Review'
+    state: 'In Progress'
     review: --
     elapsed: --
     notes: --

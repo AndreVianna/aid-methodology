@@ -6,11 +6,11 @@ maintainer approved execution. Current phase `Execute`, lifecycle `Running`.
 
 ## Current execution checkpoint
 
-Wave11 task012 correction da046e672 removes empty final shared directories and runtime root while preserving node_modules. Focused shared-remove51/51, multitool46/46, ASCII29/29 pass. Tasks012/015/017/018 In Review, ready for independent Sol wave11 quick verification. Full gates031 and PS runtime deferred.
+Sol wave11 found six items:015 failed stamp cleanup, stale Claude exact-set recovery, hidden PS retirement files, strict PS tools-array schema;017/018 COVERS selection metadata;018 tautological manifest-present check. Task012 pruning correction independently clear and Done. Task015 reopened for first Luna correction;017/018 remain In Review until sequential fixes. Evidence in execute-wave-11 ledger.
 
-- Done (15/32): task-001, task-002, task-003, task-004, task-005, task-006, task-007, task-008, task-009, task-010, task-011, task-013, task-014, task-016, task-022.
-- In Progress: none.
-- In Review: task-012, task-015, task-017, task-018.
+- Done (16/32): task-001, task-002, task-003, task-004, task-005, task-006, task-007, task-008, task-009, task-010, task-011, task-012, task-013, task-014, task-016, task-022.
+- In Progress: task-015.
+- In Review: task-017, task-018.
 - Failed/Blocked: none.
 - Pending: task-019, task-020, task-021, task-023, task-024, task-025, task-026, task-027, task-028, task-029, task-030, task-031, task-032.
 - Current wave: 11 of 15. Derive authoritative waves from task dependency headers.
