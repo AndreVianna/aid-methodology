@@ -112,7 +112,7 @@ minimum_grade: A
 # [W] 'yes' | 'no' -- quoted, see NFR-2 / D-5
 user_approved: 'no'
 # [W] Running | Paused-Awaiting-Input | Blocked | Completed | Canceled
-lifecycle: Paused-Awaiting-Input
+lifecycle: Running
 # [W] Describe | Define | Specify | Plan | Detail | Execute
 phase: Detail
 # [W] aid-{skill} | none
@@ -120,7 +120,7 @@ active_skill: aid-update
 # [W]
 updated: '2026-10-11T02:46:17Z'
 # [W] set only when lifecycle = Paused-Awaiting-Input
-pause_reason: 'Full review below floor A; awaiting maintainer decision before fixes'
+pause_reason: --
 # [W] set only when lifecycle = Blocked
 block_reason: --
 # [W] e.g. IMPEDIMENT-task-NNN.md, or the failed gate
@@ -430,6 +430,11 @@ lifecycle_history:
     event: 'Handoff updated for resuming in Claude Code; maintainer requested session close and push'
     grade: --
     notes: 'HANDOFF.md now records completed Codex fix/review cycles, current C+/C+ grades, Pending definition 49 and task 22, preserved decisions, exact ledger restore commands and next steps. No new fixes or implementation; pause and all 32 Pending tasks retained'
+
+  - date: '2026-10-11'
+    event: 'Resumed in Claude Code; maintainer approved bounded fix cycle: definition 49 (Sonnet fixer), then task 22 (Sonnet fixer), then scoped Opus verification; pause after grading'
+    grade: --
+    notes: '/aid-update GATE fix'
 
 # [A] aid-deploy only; one entry per delivery (never derived from child
 #     files; aid-deploy is the sole author):
