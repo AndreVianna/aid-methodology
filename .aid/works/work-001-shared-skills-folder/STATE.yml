@@ -118,7 +118,7 @@ phase: Execute
 # [W] aid-{skill} | none
 active_skill: aid-execute
 # [W]
-updated: '2026-10-11T06:26:23Z'
+updated: '2026-10-11T06:27:47Z'
 # [W] set only when lifecycle = Paused-Awaiting-Input
 pause_reason: --
 # [W] set only when lifecycle = Blocked
@@ -570,6 +570,11 @@ lifecycle_history:
     grade: --
     notes: '/aid-execute Codex'
 
+  - date: '2026-10-11'
+    event: 'Task016 Luna fix1 711ce6273 committed, strict top-levelTOML input exception plus nestedTOML negativecontrol. Source24/24 and scanner9/9 usingGNUawk pass; In Review. Sol scoped wave4 recheck starts for task007+016 corrections.'
+    grade: --
+    notes: '/aid-execute Codex'
+
 deploy: []
 
 # [A] flattened only; single writer: this work's active branch. Written by
@@ -746,7 +751,7 @@ tasks_lifecycle:
     notes: --
     display_name: --
   task-016:
-    state: 'In Progress'
+    state: 'In Review'
     review: --
     elapsed: --
     notes: --
@@ -757,6 +762,12 @@ tasks_lifecycle:
         eta_band: '3-8 min'
         actual: '2m38s'
         outcome: 'committed 656a5806a; source assertions23 pass; scanner controls pass; full scanner S04 fails'
+
+      - date: '2026-10-11T06:27:46.945244+00:00'
+        agent: 'gpt-6-luna fix1'
+        eta_band: '3-8 min'
+        actual: '1m06s'
+        outcome: 'committed711ce6273; source24/scanner9 pass using GNUawk'
 
   task-017:
     state: Pending
