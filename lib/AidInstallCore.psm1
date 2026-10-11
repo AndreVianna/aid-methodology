@@ -742,14 +742,21 @@ function script:Invoke-RemoveClaudeMdRegion {
     if ($Root -eq '') { $Root = [System.IO.Path]::GetDirectoryName([System.IO.Path]::GetFullPath($File)) }
     $encoding = New-Object System.Text.UTF8Encoding($false)
     $text = $encoding.GetString([System.IO.File]::ReadAllBytes($File))
-    $pattern = '(?ms)^<!-- AID:BEGIN -->\r?\n.*?^<!-- AID:END -->(?:\r?\n|$)'
-    $matches = [regex]::Matches($text, $pattern)
-    if ($matches.Count -ne 1) { return }
-    $match = $matches[0]
-    $canonical = $match.Value.Replace("`r`n", "`n")
+    $linePattern = '(?m)^<!-- AID:(?:BEGIN|END) -->(?=\r?$)'
+    $markers = [regex]::Matches($text, $linePattern)
+    $begins = @($markers | Where-Object { $_.Value -ceq '<!-- AID:BEGIN -->' })
+    $ends = @($markers | Where-Object { $_.Value -ceq '<!-- AID:END -->' })
+    if ($begins.Count -ne 1 -or $ends.Count -ne 1 -or $begins[0].Index -ge $ends[0].Index) { return }
+    $begin = $begins[0]; $end = $ends[0]
+    $start = $begin.Index
+    $finish = $end.Index + $end.Length
+    if ($finish -lt $text.Length -and $text.Substring($finish, 2) -ceq "`r`n") { $finish += 2 }
+    elseif ($finish -lt $text.Length -and $text.Substring($finish, 1) -ceq "`n") { $finish++ }
+    $matchText = $text.Substring($start, $finish - $start)
+    $canonical = $matchText.Replace("`r`n", "`n")
     $regionSha = (Get-FileHash -InputStream ([System.IO.MemoryStream]::new($encoding.GetBytes($canonical))) -Algorithm SHA256).Hash.ToLowerInvariant()
     if ($regionSha -ne $RecordedSha256) { Move-AidToTrash -Root $Root -File $File }
-    $rest = $text.Remove($match.Index, $match.Length)
+    $rest = $text.Remove($start, $finish - $start)
     if ($rest.Trim().Length -eq 0) { Remove-Item -LiteralPath $File -Force -ErrorAction SilentlyContinue }
     else { [System.IO.File]::WriteAllBytes($File, $encoding.GetBytes($rest)) }
 }
@@ -762,13 +769,19 @@ function script:Repair-AidInlineRootRegion {
     }
     $text = $encoding.GetString([System.IO.File]::ReadAllBytes($File))
     $begin = '<!-- AID:BEGIN -->'; $end = '<!-- AID:END -->'
-    $pattern = '(?ms)^' + [regex]::Escape($begin) + '\r?\n.*?^' + [regex]::Escape($end) + '(?:\r?\n|$)'
-    $matches = [regex]::Matches($text, $pattern)
-    if ($matches.Count -eq 1) {
+    $linePattern = '(?m)^<!-- AID:(?:BEGIN|END) -->(?=\r?$)'
+    $markers = [regex]::Matches($text, $linePattern)
+    $begins = @($markers | Where-Object { $_.Value -ceq $begin })
+    $ends = @($markers | Where-Object { $_.Value -ceq $end })
+    if ($begins.Count -eq 1 -and $ends.Count -eq 1 -and $begins[0].Index -lt $ends[0].Index) {
+        $beginMarker = $begins[0]; $endMarker = $ends[0]
+        $beginLineEnd = $beginMarker.Index + $beginMarker.Length
+        if ($text.Substring($beginLineEnd, 2) -ceq "`r`n") { $innerStart = $beginLineEnd + 2 }
+        elseif ($text.Substring($beginLineEnd, 1) -ceq "`n") { $innerStart = $beginLineEnd + 1 }
+        else { script:Repair-AidRootRegion -File $File -Region $Region -Root $Root; return }
         $replacement = $Region.Substring($Region.IndexOf("`n") + 1)
         $replacement = $replacement.Substring(0, $replacement.LastIndexOf($end))
-        $match = $matches[0]
-        $updated = $text.Substring(0, $match.Index) + $begin + "`n" + $replacement + $end + "`n" + $text.Substring($match.Index + $match.Length)
+        $updated = $text.Substring(0, $innerStart) + $replacement + $text.Substring($endMarker.Index)
         [System.IO.File]::WriteAllBytes($File, $encoding.GetBytes($updated)); return
     }
     script:Repair-AidRootRegion -File $File -Region $Region -Root $Root
@@ -783,7 +796,10 @@ function script:Copy-RootAgentFile {
     $conf = Join-Path ([System.IO.Path]::GetDirectoryName($Src)) 'aid-tool.conf'
     if (Test-Path -LiteralPath $conf -PathType Leaf) { $inline = [bool](Get-Content -LiteralPath $conf | Where-Object { $_ -ceq 'rules_inline=true' }) }
     if ($Manifest -and (Test-Path -LiteralPath $Manifest -PathType Leaf)) {
-        try { $manifestData = Get-Content -LiteralPath $Manifest -Raw | ConvertFrom-Json; if ($manifestData.tools.$Tool.rules_inline -eq $true) { $inline = $true } } catch {}
+        try {
+            $manifestData = Get-Content -LiteralPath $Manifest -Raw | ConvertFrom-Json
+            foreach ($entry in $manifestData.tools.PSObject.Properties) { if ($entry.Value.rules_inline -eq $true) { $inline = $true; break } }
+        } catch {}
     }
     if ($inline) {
         $rulesPath = Join-Path (Join-Path $root '.aid') 'runtime/rules.md'

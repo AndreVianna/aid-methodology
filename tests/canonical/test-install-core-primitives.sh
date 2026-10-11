@@ -63,10 +63,15 @@ COPY_ROOT="$WORK/root-copy"
 mkdir -p "$COPY_ROOT/.aid/runtime"
 cp "${REPO_ROOT}/canonical/aid/rules.md" "$COPY_ROOT/.aid/runtime/rules.md"
 printf source > "$COPY_ROOT/source.md"
-_copy_root_agent_file "$COPY_ROOT/source.md" "$COPY_ROOT/AGENTS.md" codex 0 ""
+copy_rc=0
+_copy_root_agent_file "$COPY_ROOT/source.md" "$COPY_ROOT/AGENTS.md" codex 0 "" || copy_rc=$?
+assert_eq "$copy_rc" "0" "root region: quiet first copy returns success"
 if cmp -s "$COPY_ROOT/AGENTS.md" <(printf '%s' "$_AID_AGENTS_POINTER_REGION"); then pass "root region: copy writes pointer region on absent file"; else fail "root region: copy writes pointer region on absent file"; fi
 assert_eq "$_CORE_ROOT_AGENT_REGION_SHA" "$(printf '%s' "$_AID_AGENTS_POINTER_REGION" | sha256sum | awk '{print $1}')" "root region: copy records canonical-LF region hash"
 assert_eq "$_CORE_ROOT_AGENT_FILE_SHA" "$(sha256_file "$COPY_ROOT/AGENTS.md")" "root region: copy records actual file hash"
+copy_rc=0
+_copy_root_agent_file "$COPY_ROOT/source.md" "$COPY_ROOT/AGENTS.md" codex 0 "" || copy_rc=$?
+assert_eq "$copy_rc" "0" "root region: quiet up-to-date copy returns success"
 
 printf 'user-without-final-lf' > "$ROOT_FIX/AGENTS.md"
 _repair_root_region "$ROOT_FIX/AGENTS.md" "$_AID_AGENTS_POINTER_REGION" "$ROOT_FIX"
@@ -130,6 +135,13 @@ assert_file_contains "$ROOT_FIX/AGENTS.md" "inline rules" "root region: rules_in
 assert_file_contains "$ROOT_FIX/AGENTS.md" "user-before" "root region: inline repair preserves user text before the span"
 assert_file_contains "$ROOT_FIX/AGENTS.md" "user-after" "root region: inline repair preserves user text after the span"
 
+# An inline requirement from any installed tool applies while copying another tool.
+rm "$ROOT_FIX/aid-tool.conf"
+printf '{"tools":{"claude-code":{"rules_inline":true},"codex":{"rules_inline":false}}}\n' > "$ROOT_FIX/manifest.json"
+printf 'user-before\n<!-- AID:BEGIN -->\nold span\n<!-- AID:END -->\nuser-after\n' > "$ROOT_FIX/AGENTS.md"
+_copy_root_agent_file "$ROOT_FIX/AGENTS.md" "$ROOT_FIX/AGENTS.md" codex 0 "$ROOT_FIX/manifest.json"
+assert_file_contains "$ROOT_FIX/AGENTS.md" "inline rules" "root region: another installed tool triggers inline rules"
+
 if command -v pwsh >/dev/null 2>&1; then
     AID_CORE_MODULE="${REPO_ROOT}/lib/AidInstallCore.psm1" AID_ROOT_FIX="$ROOT_FIX" pwsh -NoProfile -NonInteractive -Command '
         $ErrorActionPreference = "Stop"
@@ -167,6 +179,21 @@ if command -v pwsh >/dev/null 2>&1; then
             [System.IO.File]::WriteAllText((Join-Path $runtime "rules.md"), "inline rule`n", (New-Object System.Text.UTF8Encoding($false)))
             script:Copy-RootAgentFile -Src $agents -Dst $agents -Tool "codex"
             if (-not ([System.IO.File]::ReadAllText($agents).Contains("inline rule"))) { throw "rules_inline fallback" }
+            $manifest = Join-Path $root "manifest.json"
+            [System.IO.File]::WriteAllText($manifest, '{"tools":{"claude-code":{"rules_inline":true},"codex":{"rules_inline":false}}}', [System.Text.Encoding]::ASCII)
+            Remove-Item -LiteralPath $conf -Force
+            [System.IO.File]::WriteAllText($agents, "before`r`n<!-- AID:BEGIN -->`r`nold span`r`n<!-- AID:END -->`r`nafter`n", (New-Object System.Text.UTF8Encoding($false)))
+            script:Copy-RootAgentFile -Src $agents -Dst $agents -Tool "codex" -Manifest $manifest
+            $repaired = [System.IO.File]::ReadAllBytes($agents)
+            $repairedText = [System.Text.Encoding]::UTF8.GetString($repaired)
+            if (-not $repairedText.Contains("<!-- AID:BEGIN -->`r`n<!-- Managed by the AID CLI.")) { throw "inline repair changed BEGIN marker terminator" }
+            if (-not $repairedText.Contains("<!-- AID:END -->`r`nafter`n")) { throw "inline repair changed END marker terminator or outside bytes" }
+            if (-not $repairedText.Contains("inline rule")) { throw "manifest multi-tool rules_inline fallback" }
+            $nested = Join-Path $root "nested-CLAUDE.md"
+            $nestedBytes = [System.Text.Encoding]::UTF8.GetBytes("before`n<!-- AID:BEGIN -->`nuser between orphan and real marker`n<!-- AID:BEGIN -->`n@AGENTS.md`n<!-- AID:END -->`nafter`n")
+            [System.IO.File]::WriteAllBytes($nested, $nestedBytes)
+            script:Invoke-RemoveClaudeMdRegion -File $nested -RecordedSha256 "ignored" -Root $root
+            if ([Convert]::ToBase64String([System.IO.File]::ReadAllBytes($nested)) -ne [Convert]::ToBase64String($nestedBytes)) { throw "nested Claude markers changed file bytes" }
         }
     '
     if [[ "$?" -eq 0 ]]; then pass "PowerShell root-region functions pass gated cases"; else fail "PowerShell root-region functions pass gated cases"; fi

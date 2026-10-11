@@ -786,9 +786,9 @@ _copy_root_agent_file() {
     _CORE_ROOT_AGENT_STATUS="owned"
     if [[ -f "$(dirname "$src")/aid-tool.conf" ]] && grep -qx 'rules_inline=true' "$(dirname "$src")/aid-tool.conf"; then inline=1; fi
     if [[ -n "$manifest" && -f "$manifest" ]] && command -v python3 >/dev/null 2>&1; then
-        python3 - "$manifest" "$tool" <<'PY' | grep -qx true && inline=1
+        python3 - "$manifest" <<'PY' | grep -qx true && inline=1
 import json,sys
-try: print(str(bool(json.load(open(sys.argv[1])).get('tools',{}).get(sys.argv[2],{}).get('rules_inline',False))).lower())
+try: print(str(any(t.get('rules_inline') is True for t in json.load(open(sys.argv[1])).get('tools',{}).values())).lower())
 except Exception: pass
 PY
     fi
@@ -813,6 +813,7 @@ PY
         _COPY_COUNT_UPDATED=$((${_COPY_COUNT_UPDATED:-0} + 1))
         [[ "${AID_VERBOSE:-0}" -eq 1 ]] && echo "Updated: $dst"
     fi
+    return 0
 }
 
 # manifest_read_root_agent <manifest> <tool> <filename>
