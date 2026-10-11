@@ -425,7 +425,7 @@ AID organizes its skills into four groups — **Support**, **Knowledge Base Main
 
 **Purpose:** Initialize the AID workspace. Run once per project before the pipeline begins.
 
-`aid-config` collects project metadata (greenfield or brownfield, project name, description, minimum grade threshold), scaffolds `.aid/knowledge/` with the KB document templates (14 standard templates from the default seed plus the meta-documents), creates the host-tool context file (`CLAUDE.md` for Claude Code; `AGENTS.md` for Codex, Cursor, Copilot CLI, and Antigravity), and asks whether the `.aid/` workspace should be committed to Git.
+`aid-config` collects project metadata (greenfield or brownfield, project name, description, minimum grade threshold), scaffolds `.aid/knowledge/` with the KB document templates (14 standard templates from the default seed plus the meta-documents), and asks whether the `.aid/` workspace should be committed to Git.
 
 The scaffold is the blank canvas. After `aid-config`, the KB directory exists with empty placeholders; Discovery fills it.
 
@@ -836,9 +836,9 @@ These are **default** tiers, not fixed ceilings. Each dispatch site picks the mo
 
 The tier colors in the diagram intentionally echo pipeline group colors — Large tier uses the Knowledge Base Maintenance navy (`#1E3A8A`) because Large agents handle high-stakes judgment (like Discovery); Medium uses the teal (`#0F766E`) shared by Plan and Detail in the Definition group because Medium agents handle operational execution (like Plan, Detail, and Execute). This is semantic overlap by design.
 
-### Tier Mapping per Profile
+### Tier Mapping per Tool
 
-All five host-tool profiles map the same three tiers to their respective models:
+All five host tools map the same three tiers to their respective models:
 
 | **Tier** | Claude Code | Codex CLI | Cursor | Copilot CLI | Antigravity |
 |---------|------------|-----------|--------|-------------|-------------|
@@ -846,53 +846,69 @@ All five host-tool profiles map the same three tiers to their respective models:
 | **Medium** | Claude Sonnet | GPT-5.4 medium reasoning | Claude Sonnet (alias) | Medium slug | Gemini-3 Pro low reasoning |
 | **Small** | Claude Haiku | GPT-5.4-mini low reasoning | Claude Haiku (alias) | Small slug | Gemini-3 Flash |
 
-The tier→model mapping is declared per profile in `profiles/{tool}.toml` and rendered into each install tree. Byte-identical skill and agent bodies are emitted for all five profiles; only the model names and agent format differ.
+The tier→model mapping is declared per tool in `profiles/{tool}.toml` and rendered into that tool's agents folder. The skills are not rendered per tool: one shared copy serves every tool. Only the agents differ per tool, in model names and file format.
 
 ### Agent Formats
 
 The two agent formats emitted by the generator correspond to the ways host tools represent sub-agents:
 
-- **markdown** — Claude Code, Cursor, GitHub Copilot CLI, and Antigravity: the canonical source is `AGENT.md`, rendered into the install tree as `aid-`-prefixed files (`aid-developer.md`, `aid-architect.md`, etc.) with markdown frontmatter.
+- **markdown** — Claude Code, Cursor, GitHub Copilot CLI, and Antigravity: the canonical source is `AGENT.md`, rendered into the tool's agents folder as `aid-`-prefixed files (`aid-developer.md`, `aid-architect.md`, etc.) with markdown frontmatter.
 - **toml** — Codex: `.codex/agents/*.toml` files.
 
-### The Five Profiles
+### The Five Tools
 
-AID ships as five rendered install trees. The single canonical source (`canonical/`) is compiled into five byte-identical-body, format-adapted outputs:
+AID ships one shared payload and five agent renders. `canonical/` is copied byte-for-byte into the
+shared payload (skills and runtime), and its agents are rendered once per tool:
 
-| **#** | Profile | Install root | Context file | Agent format |
-|------|---------|-------------|--------------|-------------|
-| 1 | Claude Code | `.claude/` | `CLAUDE.md` | markdown |
-| 2 | Codex CLI | `.codex/` | `AGENTS.md` | TOML |
-| 3 | Cursor | `.cursor/` | `AGENTS.md` | markdown |
-| 4 | GitHub Copilot CLI | `.github/` | `AGENTS.md` | markdown |
-| 5 | Antigravity | `.agent/` | `AGENTS.md` | markdown |
+| **#** | Tool | Agents folder | Root instruction files | Agent format |
+|------|------|---------------|------------------------|-------------|
+| 1 | Claude Code | `.claude/agents/` | `AGENTS.md`, and `CLAUDE.md` (imports `AGENTS.md`) | markdown |
+| 2 | Codex CLI | `.codex/agents/` | `AGENTS.md` | TOML |
+| 3 | Cursor | `.cursor/agents/` | `AGENTS.md` | markdown |
+| 4 | GitHub Copilot CLI | `.github/agents/` | `AGENTS.md` | markdown |
+| 5 | Antigravity | `.agent/agents/` | `AGENTS.md` | markdown |
+
+Every tool also reads the shared skills at `.agents/skills/` and the runtime at `.aid/runtime/`.
+Claude Code additionally gets a `.claude/skills/` mirror of the shared skills.
 
 **The build pipeline:**
 
 ```
-canonical/  (single source of truth — never edit profiles/ directly)
-  ├── skills/        (112 skill directories — 18 curated + 94 catalog skills)
-  ├── agents/        (9 agents)
+canonical/  (single source of truth — never edit profiles/ or an installed tree directly)
+  ├── skills/        (skill directories: the shared skills payload)
+  ├── agents/        (9 agents: rendered once per tool)
   └── aid/
         ├── templates/     (KB templates, document templates, shortcut-catalog.yml, shortcut-scaffolding/)
-        └── scripts/       (helper scripts by phase)
+        ├── scripts/       (helper scripts by phase)
+        └── rules.md       (the AID rules, shipped as .aid/runtime/rules.md)
         │
         ▼  python run_generator.py
-        │  (renders per profiles/*.toml — 5 profiles)
+        │  (renders each tool's agents and aid-tool.conf, then resyncs this repo's own install)
         │
 profiles/{claude-code,codex,cursor,copilot-cli,antigravity}/
-  (byte-identical install trees, format-adapted per profile)
+  (agents and aid-tool.conf only, one tree per tool)
         │
-        ▼  install.sh / install.ps1  (end-user installer)
-        │  (aid add <tool> or auto-detect; diff-aware copy; protect-on-diff)
+        ▼  release.sh  (one shared payload, plus one agents-only artifact per tool)
+        │
+        ▼  aid add <tool>  (end-user CLI: shared files once per repo, the tool's agents, root regions)
         │
 /path/to/user-project/
-  {.claude/ | .codex/ | .cursor/ | .github/ | .agent/}
+  .agents/skills/   .aid/runtime/   AGENTS.md
+  .claude/agents/   .claude/skills/   CLAUDE.md
+  .codex/agents/   .cursor/agents/   .github/agents/   .agent/agents/
 ```
 
-A VERIFY (deterministic) gate re-renders all five profiles into a scratch directory and byte-compares them against the committed install trees after every `run_generator.py` execution. Any byte mismatch is a hard failure. This ensures `canonical/` is always the source of truth.
+A VERIFY (deterministic) gate runs after every `run_generator.py` execution. It checks stable
+re-rendering, exact output contents, frontmatter and TOML syntax, canonical-token neutralization,
+and descriptor placement data. Any failure stops the run. The shared skills and runtime are not rendered: `release.sh` copies them
+byte-for-byte from `canonical/`, and the dogfood byte-identity test checks this repo's installed
+copies against `canonical/`.
 
-**Per-tool installs:** `aid add <tool>` installs one tool per invocation (auto-detect when omitted). Codex, Cursor, Copilot CLI, and Antigravity all write a root `AGENTS.md` context file. When a second AGENTS.md-writing tool is installed into a project, the installer uses **protect-on-diff**: if `AGENTS.md` was not written by AID (or was modified since), the installer writes the incoming version as `AGENTS.md.aid-new` rather than overwriting, and exits with a warning to review and merge. Claude Code uses `CLAUDE.md` and is exempt from the `AGENTS.md` collision. Pass `--force` to overwrite unconditionally.
+**Per-tool installs:** `aid add <tool>` installs the shared skills and runtime once per repo, the
+tool's agents, and the root instruction regions. Several tools can share one repo, and they all run
+one AID version. AID changes only the text between its `AID:BEGIN` and `AID:END` markers in
+`AGENTS.md` and `CLAUDE.md`, so text you wrote outside those markers is kept. See the
+[install guide](https://github.com/AndreVianna/aid-methodology/blob/master/docs/install.md) for the file list and the offline artifact set.
 
 ### Skill → Agent Dispatch
 
@@ -1421,8 +1437,8 @@ npm i -g aid-installer
 pipx install aid-installer
 ```
 
-Offline / air-gapped environments can download a profile tarball from the GitHub
-Releases page and install with `aid add <tool> --from-bundle <file.tar.gz>` — no
+Offline / air-gapped environments can download the shared payload and the tool's artifact from the
+GitHub Releases page into one directory, then install with `aid add <tool> --from-bundle <dir>` — no
 network required after the initial download. All channels deliver the same persistent
 `aid` CLI; once bootstrapped, use `aid add <tool>` inside any project.
 

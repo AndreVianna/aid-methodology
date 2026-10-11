@@ -29,15 +29,15 @@ A single pushed `v*` tag triggers `release.yml`, which:
 
 1. **Gates** — re-runs the full correctness suite (render-drift + canonical helper
    suites + generator self-tests + FR10 version-sync) on the tagged commit.
-2. **GitHub Release** — builds five per-profile tarballs, the `aid-cli` bundle, two
-   install-core library files, and `SHA256SUMS`; creates the GitHub Release with all
-   assets via `release.sh`.
+2. **GitHub Release** — builds the shared payload, five agents-only tool artifacts, the
+   `aid-cli` bundle, two install-core library files, and `SHA256SUMS`; creates the GitHub
+   Release with all assets via `release.sh`.
 3. **npm** — publishes `aid-installer` to npm with OIDC provenance (gated by the
    `NPM_ENABLED` repo variable).
 4. **PyPI** — publishes `aid-installer` to PyPI via Trusted Publishing (OIDC; gated
    by the `PYPI_ENABLED` repo variable).
 
-All four channels — GitHub tarballs, npm, PyPI, and the offline bundle — are produced
+All four channels — GitHub Release artifacts, npm, PyPI, and the offline bundle — are produced
 from the same tag in one workflow run.
 
 ---
@@ -52,7 +52,9 @@ from the same tag in one workflow run.
 - **Clean, passing CI on master.** Push the tag only from a commit where `test.yml`
   is green.
 - **Render-drift clean.** `profiles/` must be in sync with `canonical/`. The gate
-  re-runs the check and fails the workflow if they diverge.
+  re-runs the check and fails the workflow if they diverge. The generator also refreshes
+  this repo's own install (see [Refresh this repo's own install](#refresh-this-repos-own-install)),
+  so commit anything it changes.
 - **No existing tag `v<VERSION>`.** The gate fails early on a collision.
 
 ### Step 1 — Verify preconditions
@@ -105,9 +107,9 @@ cut a **pre-release**. It ships to **two** channels:
   so PEP 440 `2.2.3b1` (no separator) would be rejected by `aid add`/`update`. PyPI
   **normalizes** `2.2.3-beta.1` → `2.2.3b1` on publish, and `pip`/`pipx` hide
   pre-releases from a plain install/upgrade, so a tester opts in explicitly.
-- **Skills → a GitHub Release marked `--prerelease`** (the `v2.2.3-beta.1` profile
-  tarballs). GitHub excludes pre-releases from `/releases/latest`, so a normal
-  `aid update` (which resolves latest) still gets the **stable** skills — untouched.
+- **Shared payload and tool artifacts → a GitHub Release marked `--prerelease`** (the
+  `v2.2.3-beta.1` release). GitHub excludes pre-releases from `/releases/latest`, so a normal
+  `aid update` (which resolves latest) still gets the **stable** release — untouched.
 
 **npm is not involved** in betas (it ships no pre-releases).
 
@@ -135,7 +137,7 @@ git push origin "v2.2.3-beta.1"        # triggers release.yml
 ```
 
 On a pre-release tag `release.yml` runs: gate → **github-release** (Release marked
-`--prerelease`, carries the skill tarballs) + **pypi-publish** (the CLI beta);
+`--prerelease`, carries the shared payload and the tool artifacts) + **pypi-publish** (the CLI beta);
 **npm-publish is skipped**. Confirm on the run that npm-publish shows *skipped*,
 github-release created a **pre-release**, and pypi-publish is green.
 
@@ -146,9 +148,9 @@ pipx install "aid-installer==2.2.3b1"     # the beta CLI (PyPI's normalized form
 ```
 
 Then, inside a project, a plain **`aid update`** — no flags — automatically installs
-the **beta skills**: because the running CLI is itself a pre-release, version
-resolution first looks for the newest **pre-release** skills Release and uses it,
-**falling back to the latest stable** if none exists. (An explicit `aid update
+the **beta release**: because the running CLI is itself a pre-release, version
+resolution first looks for the newest **pre-release** GitHub Release and uses its shared
+payload and tool artifacts, **falling back to the latest stable** if none exists. (An explicit `aid update
 --version 2.2.3-beta.1` also works.)
 
 For everyone else, nothing changes: a **stable** CLI's `aid update` always resolves
@@ -168,12 +170,18 @@ picks up the beta.
 `release.sh` (invoked by the CI workflow) stages artifacts under
 `.aid/.temp/release-<VERSION>/` and uploads them to the GitHub Release:
 
-- **Five per-profile tarballs:**
+- **One shared payload:** `aid-shared-v<VERSION>.tar.gz`. It holds `aid-payload.conf`
+  (the version), `skills/` (byte-for-byte copy of `canonical/skills/`) and `runtime/`
+  (byte-for-byte copy of `canonical/aid/`, `rules.md` included).
+- **Five tool artifacts**, one per tool, agents only:
   - `aid-claude-code-v<VERSION>.tar.gz`
   - `aid-codex-v<VERSION>.tar.gz`
   - `aid-cursor-v<VERSION>.tar.gz`
   - `aid-copilot-cli-v<VERSION>.tar.gz`
   - `aid-antigravity-v<VERSION>.tar.gz`
+
+  Each holds `aid-tool.conf` and that tool's agents folder (for example `.claude/agents/`
+  for claude-code). Nothing else.
 - **`aid-cli-v<VERSION>.tar.gz`** — the `aid` CLI bundle (bootstrapped by
   `install.sh` / `install.ps1` and by `aid update self`).
 - **Two install-core library files:**
@@ -181,10 +189,9 @@ picks up the beta.
   - `AidInstallCore.psm1` — PowerShell install-core module imported by `install.ps1`.
 - **`SHA256SUMS`** — one `<64-hex>  <filename>` line per asset, sorted by filename.
 
-Each tarball contains exactly the install-relevant files for that tool (dot directory
-tree + root agent file). The layout is flat/root-relative — `tar -xzf` into a temp
-directory yields the files as they land in the target project, with no wrapping
-directory to strip.
+Archive members have no leading `./` and no wrapping directory. A user needs the shared
+payload plus the artifact of each tool they install, and all of them must carry the same
+version (see [Offline install](install.md#offline--air-gapped-install)).
 
 ### npm
 
@@ -247,30 +254,33 @@ Run `--dry-run` to validate without creating a tag or release:
 bash release.sh --dry-run
 ```
 
-Expected output:
+Expected output (abbreviated; the messages come from `release.sh`):
 
 ```
-[release.sh] version: 1.1.0  tag: v1.1.0
-[release.sh] checking worktree is clean...  ok
-[release.sh] checking tag v1.1.0 does not exist...  ok
-[release.sh] verifying render-drift gate...  ok
-[release.sh] staging dir: .aid/.temp/release-1.1.0/
-[release.sh] packaging aid-antigravity-v1.1.0.tar.gz...  ok
-[release.sh] packaging aid-claude-code-v1.1.0.tar.gz...  ok
-[release.sh] packaging aid-codex-v1.1.0.tar.gz...  ok
-[release.sh] packaging aid-copilot-cli-v1.1.0.tar.gz...  ok
-[release.sh] packaging aid-cursor-v1.1.0.tar.gz...  ok
-[release.sh] packaging aid-cli-v1.1.0.tar.gz...  ok
-[release.sh] writing SHA256SUMS...  ok
-[release.sh] --dry-run: staging complete. Run without --dry-run to create the GitHub Release.
+release.sh: version=1.1.0  tag=v1.1.0
+release.sh: verifying render state (python3 .claude/skills/generate-profile/scripts/run_generator.py) ...
+release.sh: checking for render drift (git diff -- profiles/) ...
+release.sh: render state is clean.
+release.sh: staging dir: .aid/.temp/release-1.1.0
+release.sh:   done: aid-shared-v1.1.0.tar.gz
+release.sh:   done: aid-claude-code-v1.1.0.tar.gz
+  ...
+release.sh:   done: aid-cli-v1.1.0.tar.gz
+release.sh: SHA256SUMS written:
+release.sh: --dry-run: staging complete. Tarballs and SHA256SUMS are in:
+  .aid/.temp/release-1.1.0
 ```
+
+`--dry-run` runs the generator first, which regenerates `profiles/` and refreshes this repo's own
+install. Those files can change in the working tree, so review and commit them (or discard them)
+before you go on.
 
 Common failures and fixes:
 
 | Failure | Message | Fix |
 |---------|---------|-----|
 | Dirty worktree | `working tree has uncommitted changes` | `git stash` or commit the changes |
-| Render drift | `profiles/ is out of sync with canonical/` | `python .claude/skills/generate-profile/scripts/run_generator.py && git add profiles/ && git commit -m "..."` |
+| Render drift | `profiles/ is out of sync with canonical/` | `python .claude/skills/generate-profile/scripts/run_generator.py`, then commit the changed files (`profiles/` and the refreshed install) |
 | Version mismatch | `--version X does not match VERSION file (Y)` | Drop `--version` or update `./VERSION` |
 | Tag already exists | `tag v1.1.0 already exists` | The release was already cut; see [Recovery](#recovery-and-idempotency) |
 
@@ -371,8 +381,8 @@ After a successful dry run:
 ls -lh ".aid/.temp/release-$(cat VERSION)/"
 ```
 
-Verify the five profile tarballs, the `aid-cli` bundle, two lib files, and `SHA256SUMS`
-are present. Spot-check a tarball:
+Verify the shared payload, the five tool artifacts, the `aid-cli` bundle, two lib files, and
+`SHA256SUMS` are present. Spot-check an artifact:
 
 ```bash
 tar -tzf ".aid/.temp/release-$(cat VERSION)/aid-claude-code-v$(cat VERSION).tar.gz" | head -20
@@ -381,12 +391,9 @@ sha256sum --check SHA256SUMS        # Linux
 shasum -a 256 -c SHA256SUMS         # macOS
 ```
 
-Expected tarball contents for `claude-code`:
-- `./CLAUDE.md`
-- `./.claude/skills/...`
-- `./.claude/agents/...`
-
-No tarball should contain `README.md` or `emission-manifest.jsonl`.
+Expected contents of the `claude-code` artifact: `aid-tool.conf` and `.claude/agents/aid-*.md`,
+and nothing else. The shared payload holds `aid-payload.conf`, `skills/...` and `runtime/...`.
+No artifact should contain any other member.
 
 ### Step 4 — Create a draft release
 
@@ -397,6 +404,21 @@ bash release.sh --draft
 This calls `gh release create "v<VERSION>" --title "AID v<VERSION>" --draft` with all
 assets attached. Open the draft URL on the GitHub web UI, verify all assets and release
 notes, then publish.
+
+### Refresh this repo's own install
+
+This repo installs AID into itself: `.agents/skills/`, `.claude/skills/aid-*`, `.aid/runtime/`, the
+agents, and the `AGENTS.md` and `CLAUDE.md` regions. The generator refreshes that install through
+`sync_dogfood.py`, which runs two steps:
+
+```bash
+bash release.sh --stage-only --out <tmp>/stage
+AID_HOME=<tmp>/home AID_NO_UPDATE_CHECK=1 bash bin/aid update --from-bundle <tmp>/stage --target .
+```
+
+Use `--stage-only` rather than `--dry-run` for a plain refresh: it skips the generator and the
+network. The release-faithful method is `bash release.sh --dry-run`, then
+`bash bin/aid update --from-bundle .aid/.temp/release-<VERSION> --target .`.
 
 ### Optional: supply release notes
 
@@ -412,8 +434,8 @@ GitHub draft release page before publishing.
 ## Flag reference (release.sh)
 
 ```bash
-bash release.sh [--version X.Y.Z] [--sign] [--draft] [--dry-run]
-                [--notes-file FILE] [-h|--help]
+bash release.sh [--version X.Y.Z] [--sign] [--draft] [--prerelease]
+                [--dry-run | --stage-only [--out DIR]] [--notes-file FILE] [-h|--help]
 ```
 
 | Flag | Default | Description |
@@ -421,7 +443,10 @@ bash release.sh [--version X.Y.Z] [--sign] [--draft] [--dry-run]
 | `--version X.Y.Z` | content of `VERSION` file | Release version. Must match `VERSION` file; fails on mismatch (exit 3). |
 | `--sign` | off | Emit a detached signature over `SHA256SUMS`. Currently exits non-zero — signing is deferred. Do not use. |
 | `--draft` | off | Create the GitHub Release as a draft. Recommended: always draft first, review, then publish. |
-| `--dry-run` | off | Assemble tarballs and `SHA256SUMS`, stop before `gh release create`. No network I/O; no tag created. |
+| `--dry-run` | off | Assemble the artifacts and `SHA256SUMS`, stop before `gh release create`. Runs the generator first (see Step 1). No network I/O; no tag created. |
+| `--stage-only` | off | Stage the artifacts from the working tree as it is. Skips the clean-tree, tag, render and network checks. Used by tests and by this repo's own install refresh. |
+| `--out DIR` | `.aid/.temp/release-<VERSION>` | Staging directory for `--stage-only`. Must be empty. |
+| `--prerelease` | off | Mark the GitHub Release as a pre-release, so `/releases/latest` skips it. |
 | `--notes-file FILE` | generated stub | Release notes body passed to `gh release create`. |
 | `-h`, `--help` | — | Print help and exit 0. |
 

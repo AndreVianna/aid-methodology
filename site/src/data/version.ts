@@ -31,7 +31,7 @@ export const installCommands: Record<InstallChannel, string> = {
   pypi:
     `pipx install aid-installer==${VERSION}`,
   offline:
-    `curl -LO https://github.com/AndreVianna/aid-methodology/releases/download/${VERSION_TAG}/aid-claude-code-${VERSION_TAG}.tar.gz`,
+    `curl -LO https://github.com/AndreVianna/aid-methodology/releases/download/${VERSION_TAG}/aid-shared-${VERSION_TAG}.tar.gz\ncurl -LO https://github.com/AndreVianna/aid-methodology/releases/download/${VERSION_TAG}/aid-claude-code-${VERSION_TAG}.tar.gz`,
 };
 
 /** Human label per channel, for tab/heading reuse by 004. */

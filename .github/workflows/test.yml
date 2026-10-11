@@ -1,7 +1,8 @@
 name: CI
 
-# AID is not a typical app: the shippable product is the rendered install trees
-# under profiles/{claude-code,codex,cursor}/, generated from canonical/ by
+# AID is not a typical app: the shippable product is one shared payload (canonical/skills and
+# canonical/aid, shipped byte-for-byte) plus an agents-only render per tool under
+# profiles/<tool>/ (agents and aid-tool.conf), generated from canonical/ by
 # .claude/skills/generate-profile/scripts/run_generator.py. CI therefore protects, in priority order:
 #   1. that committed profiles/ stays in sync with canonical/  (the core invariant)
 #   2. the runtime helper scripts adopters depend on            (the bash + node suites)
@@ -52,7 +53,11 @@ jobs:
           python-version: '3.11'
       - name: Ignore exec-bit changes (repo is maintained with core.fileMode=false)
         run: git config core.fileMode false
-      - name: Regenerate install trees from canonical/
+      # run_generator.py regenerates the per-tool agent trees and then refreshes this repo's own
+      # install (release.sh --stage-only, then aid update --from-bundle). Only profiles/ is
+      # asserted below. The shared skills and runtime are checked byte-for-byte against canonical/
+      # by tests/canonical/test-dogfood-byte-identity.sh in the canonical-tests job.
+      - name: Regenerate agent trees from canonical/ (and refresh the dogfood install)
         run: python .claude/skills/generate-profile/scripts/run_generator.py
       - name: Assert profiles/ has no uncommitted render drift
         shell: bash

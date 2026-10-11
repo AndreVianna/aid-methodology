@@ -81,10 +81,10 @@ These files are written by the `aid add` command into the target project.
 
 | Artifact | Path | Produced by | Description |
 |----------|------|-------------|-------------|
-| AID manifest | `.aid/.aid-manifest.json` | `aid add` | Records every file installed by `aid add`, the tool version, the top-level `aid_version` (the installed AID release), and checksum-based ownership records for root agent files. Drives `aid update` and `aid remove`. |
-| Settings version (tool-less) | `.aid/settings.yml` (`aid_version:` key) | `aid projects add` | Records the installed AID release version for a bare, tool-less project (no manifest). The standalone `.aid/.aid-version` marker file is retired. |
-| `CLAUDE.md` | `CLAUDE.md` (project root) | `aid add claude-code` | Claude Code project-context file. AID's root agent file for the Claude Code host tool. Protected from silent overwrites by the protect-on-diff mechanism. |
-| `AGENTS.md` | `AGENTS.md` (project root) | `aid add {codex,cursor,copilot-cli,antigravity}` | Root agent file for Codex, Cursor, Copilot CLI, and Antigravity host tools. |
+| AID manifest | `.aid/.aid-manifest.json` | `aid add` | Records the top-level `aid_version` (the installed AID release), the shared files (skills, runtime, root regions, mirrors) with their owners and checksums, and each tool's own agent files. Drives `aid update`, `aid status` and `aid remove`. |
+| Settings | `.aid/settings.yml` | `aid add` | Project settings. Created when missing. The standalone `.aid/.aid-version` marker file is retired: the installed version is recorded in the manifest. |
+| `CLAUDE.md` | `CLAUDE.md` (project root) | `aid add claude-code` | Root instruction file for Claude Code. AID writes one region into it, holding only `@AGENTS.md`, so Claude Code loads the same instructions. Text outside the AID markers is yours and is kept. |
+| `AGENTS.md` | `AGENTS.md` (project root) | `aid add <tool>` (every tool) | Root instruction file for every tool. AID writes one region into it, pointing at `.aid/runtime/rules.md`. Text outside the AID markers is yours and is kept. |
 
 ## Pipeline-scoped delivery artifacts
 

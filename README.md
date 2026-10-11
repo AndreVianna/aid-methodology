@@ -89,7 +89,7 @@ flowchart TD
 
 ## Install
 
-AID uses a persistent global `aid` CLI installed once per machine. After bootstrap, use `aid add <tool>` inside any repo to install the AID profile for that tool.
+AID uses a persistent global `aid` CLI installed once per machine. After bootstrap, use `aid add <tool>` inside any repo to install AID for that tool.
 
 ### Bootstrap the `aid` CLI (once per machine)
 
@@ -127,20 +127,24 @@ pip install --user aid-installer
 
 **Offline / air-gapped:**
 
-Download a profile tarball from the [GitHub Releases page](https://github.com/AndreVianna/aid-methodology/releases), verify it, then install without network access:
+Download the release artifacts from the [GitHub Releases page](https://github.com/AndreVianna/aid-methodology/releases) into one empty directory, verify them, then install without network access. A tool needs the shared payload plus its own artifact (example: claude-code):
 
 ```bash
 # Resolve the latest release tag (or set VERSION manually from the Releases page above)
 VERSION="$(curl -fsSL https://api.github.com/repos/AndreVianna/aid-methodology/releases/latest | grep -oP '"tag_name":\s*"v\K[^"]+')"
 
-# Download and verify (example: claude-code)
-curl -LO "https://github.com/AndreVianna/aid-methodology/releases/download/v${VERSION}/aid-claude-code-v${VERSION}.tar.gz"
-curl -LO "https://github.com/AndreVianna/aid-methodology/releases/download/v${VERSION}/SHA256SUMS"
+# Download and verify into a staging directory
+mkdir -p aid-bundle && cd aid-bundle
+BASE="https://github.com/AndreVianna/aid-methodology/releases/download/v${VERSION}"
+curl -LO "${BASE}/aid-shared-v${VERSION}.tar.gz"
+curl -LO "${BASE}/aid-claude-code-v${VERSION}.tar.gz"
+curl -LO "${BASE}/SHA256SUMS"
 sha256sum --check --ignore-missing SHA256SUMS     # Linux
 shasum -a 256 -c SHA256SUMS                       # macOS
+cd ..
 
-# Install from the local bundle (after bootstrapping the CLI)
-aid add claude-code --from-bundle "aid-claude-code-v${VERSION}.tar.gz"
+# Install from the staging directory (after bootstrapping the CLI)
+aid add claude-code --from-bundle aid-bundle
 ```
 
 All four channels deliver the same `aid` CLI. See [Full install guide →](docs/install.md) for the channel comparison and `aid update self` behavior per channel.
@@ -161,7 +165,19 @@ aid remove self            # remove the aid CLI itself (asks to confirm)
 
 Re-running `aid add` is safe: identical files are skipped. Root agent files (`CLAUDE.md` / `AGENTS.md`) are updated in-place and losslessly: AID rewrites only the region between its own markers and leaves everything you authored outside those markers untouched.
 
-[Full install guide — all channels, offline bundles, version pinning, protect-on-diff, reference →](docs/install.md)
+What `aid add` places in a repo:
+
+| Placed | Location |
+|--------|----------|
+| Skills, one copy shared by every tool | `.agents/skills/aid-*/` |
+| Claude Code skill mirror (claude-code only) | `.claude/skills/aid-*/`, byte-identical to the shared copy |
+| Runtime: scripts, templates, `rules.md` | `.aid/runtime/` |
+| Agents, per tool | `.claude/agents/`, `.codex/agents/`, `.cursor/agents/`, `.github/agents/`, `.agent/agents/` (`aid-*` files only) |
+| Root instructions | `AGENTS.md` region for every tool, pointing at `.aid/runtime/rules.md`; `CLAUDE.md` region holding only `@AGENTS.md` while Claude Code is installed |
+
+Several tools can share one repo. The shared files are installed once and kept while any installed tool still uses them, so `aid remove` of one tool leaves the others working. All installed tools in a repo run one version: `aid update` upgrades them together, and `aid status` reports any shared file that has drifted. A repo still on the v3 layout is upgraded by `aid update`, which moves the old AID-owned files to `.aid/.trash/`; `aid add` refuses until that upgrade has run. Details: [docs/install.md](docs/install.md#what-gets-installed-per-tool).
+
+[Full install guide — all channels, offline bundles, version pinning, root-file regions, reference →](docs/install.md)
 
 ---
 
@@ -190,7 +206,7 @@ Open your AI coding tool in your project and run the skills as slash commands:
 /aid-unset-connector  # on-demand — remove a connector descriptor and purge its secret
 ```
 
-**Brownfield** projects run `/aid-config` → `/aid-discover` → `/aid-describe` → `/aid-define`. **Greenfield** projects skip Discovery and start at `/aid-describe`. For a small, well-scoped change, skip straight to a shortcut instead — or run `/aid-triage` if you're not sure which one fits. Just have a question, not a change? Run `/aid-ask`. Every phase is gated — nothing advances without your approval. The block above is the pipeline and the on-demand skills; the rest of AID's 112 skills are the verb-first shortcut doorways and the hand-authored task skills behind them, all rendered from one canonical source into 5 tool profiles.
+**Brownfield** projects run `/aid-config` → `/aid-discover` → `/aid-describe` → `/aid-define`. **Greenfield** projects skip Discovery and start at `/aid-describe`. For a small, well-scoped change, skip straight to a shortcut instead — or run `/aid-triage` if you're not sure which one fits. Just have a question, not a change? Run `/aid-ask`. Every phase is gated — nothing advances without your approval. The block above is the pipeline and the on-demand skills; the rest of AID's 112 skills are the verb-first shortcut doorways and the hand-authored task skills behind them, all built from one canonical source and installed as one shared skill set that every tool reads.
 
 [See it applied step by step →](examples/)
 
