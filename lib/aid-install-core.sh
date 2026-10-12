@@ -1157,10 +1157,13 @@ _aid_root_region() {
     printf '<!-- AID:END -->\n'
 }
 
-# _repair_root_region <file> <region> [project-root]
-# Preserve bytes outside exact managed lines; malformed regions are backed up first.
+# _repair_root_region <file> <region> [project-root] [recorded-region-sha]
+# A well-formed marked span is CLI-owned: it is replaced in place (a stale or edited body, e.g. an
+# older rules summary, never leaves orphan lines behind) after a trash copy unless it still matches
+# the recorded region hash. Otherwise preserve bytes outside exact managed lines (repair by
+# content); malformed regions are backed up first.
 _repair_root_region() {
-    local file="$1" region="$2" root="${3:-$(dirname "$1")}" tmp decision
+    local file="$1" region="$2" root="${3:-$(dirname "$1")}" tmp decision span_canon
     if [[ ! -e "$file" ]]; then
         mkdir -p "$(dirname "$file")" || return 1
         printf '%s' "$region" > "$file"
@@ -1168,6 +1171,14 @@ _repair_root_region() {
     fi
     [[ -f "$file" ]] || return 1
     _aid_root_file_guard "$file" || return 1
+    span_canon="$(mktemp)" || return 1
+    if AID_CANON_OUT="$span_canon" _aid_marker_span "$file" >/dev/null 2>&1; then
+        if cmp -s "$span_canon" <(printf '%s' "$region"); then rm -f "$span_canon"; return 0; fi
+        rm -f "$span_canon"
+        _repair_inline_root_region "$file" "$region" "$root" "${4:-}"
+        return
+    fi
+    rm -f "$span_canon"
     tmp="$(mktemp)" || return 1
     decision="$(_aid_region_decide "$file" "$region" 0 "$tmp")" || { rm -f "$tmp"; return 1; }
     case "$decision" in
@@ -1182,14 +1193,14 @@ _repair_root_region() {
 }
 
 # _ensure_claude_md_region <file> <root> <inline:0|1> [recorded-region-sha] - repair the CLAUDE.md
-# region from the installed rules and print its sha256. A fourth argument (the remove path) replaces a
-# well-formed span in place, trashing a copy first when it differs from the recorded hash.
+# region from the installed rules and print its sha256. A well-formed span is replaced in place, with
+# a trash copy first unless it still matches the recorded region hash.
 _ensure_claude_md_region() {
     local file="${1:-$PWD/CLAUDE.md}" root="${2:-$(dirname "${1:-$PWD/CLAUDE.md}")}" inline="${3:-0}" region
     region="$(_aid_root_region "${root}/.aid/runtime/rules.md" "$inline" claude)" || return 1
     region+=$'\n'
-    if [[ "$inline" == 1 || $# -ge 4 ]]; then _repair_inline_root_region "$file" "$region" "$root" "${@:4}" || return 1
-    else _repair_root_region "$file" "$region" "$root" || return 1; fi
+    if [[ "$inline" == 1 ]]; then _repair_inline_root_region "$file" "$region" "$root" "${@:4}" || return 1
+    else _repair_root_region "$file" "$region" "$root" "${4:-}" || return 1; fi
     printf '%s\n' "$(printf '%s' "$region" | _aid_sha256_stdin)"
 }
 
@@ -3650,7 +3661,7 @@ install_shared() {
     local manifest="${target}/.aid/.aid-manifest.json" now old_shared old_host old_tools
     _aid_mc_prime "$manifest"
     local skills_src="${shared}/skills" runtime_src="${shared}/runtime" f rel old_sha tool stage root conf key value
-    local inline=0 claude_users=0 region region_sha agents_sha claude_sha line host_worktree=".aid/.worktrees" previous_manifest=""
+    local inline=0 claude_users=0 region region_sha agents_sha claude_sha old_agents_region_sha="" old_claude_region_sha="" line host_worktree=".aid/.worktrees" previous_manifest=""
     local -A old_hash=() mirrors=() mirror_users=() tool_mirror=() tool_wr=() tool_inline=() tool_context=() tool_stage=()
     local -a all_tools=() new_tools=()
 
@@ -3658,6 +3669,8 @@ install_shared() {
         case "$line" in
             shared.skills.file$'\t'*) rel="${line#*$'\t'}"; old_hash["skills:${rel%%$'\t'*}"]="${rel#*$'\t'}" ;;
             shared.runtime.file$'\t'*) rel="${line#*$'\t'}"; old_hash["runtime:${rel%%$'\t'*}"]="${rel#*$'\t'}" ;;
+            shared.agents_md.region_sha256$'\t'*) old_agents_region_sha="${line#*$'\t'}" ;;
+            shared.claude_md.region_sha256$'\t'*) old_claude_region_sha="${line#*$'\t'}" ;;
             shared.claude_md.users$'\t'*) [[ "${AID_UPGRADE_EXACT:-0}" == 1 ]] || claude_users=1 ;;
         esac
     done < <(manifest_read_shared "$manifest")
@@ -3756,12 +3769,12 @@ install_shared() {
     if [[ "$inline" -eq 1 ]]; then
         _repair_inline_root_region "${target}/AGENTS.md" "$region" "$target" || return 1
     else
-        _repair_root_region "${target}/AGENTS.md" "$region" "$target" || return 1
+        _repair_root_region "${target}/AGENTS.md" "$region" "$target" "$old_agents_region_sha" || return 1
     fi
     region_sha="$(printf '%s' "$region" | _aid_sha256_stdin)"
     agents_sha="$(sha256_file "${target}/AGENTS.md")"
     if [[ "$claude_users" -eq 1 ]]; then
-        claude_sha="$(_ensure_claude_md_region "${target}/CLAUDE.md" "$target" "$inline")" || return 1
+        claude_sha="$(_ensure_claude_md_region "${target}/CLAUDE.md" "$target" "$inline" "$old_claude_region_sha")" || return 1
     else claude_sha=""; fi
     [[ "${_COPY_COUNT_FAILED:-0}" -eq 0 ]] || return 1
 
