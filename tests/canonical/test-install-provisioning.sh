@@ -141,7 +141,7 @@ assert_eq "$(cmp -s "${t}/.gitattributes" "${TMP}/ga-snapshot" && echo same || e
 # GA3 — absent file is created with only the managed region.
 t=$(newdir)
 update_gitattributes "$t"
-assert_eq "$(grep -vc '^#' "${t}/.gitattributes")" "3" "GA3 new file contains three attribute rules"
+assert_eq "$(grep -vc '^#' "${t}/.gitattributes")" "8" "GA3 new file contains the eight managed attribute rules (skills, Claude mirror, runtime + 5 per-tool agent globs)"
 
 # GI3 — existing user .gitignore → user content preserved, region appended
 t=$(newdir)
