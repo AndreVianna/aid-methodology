@@ -489,16 +489,16 @@ content.**
   `.aid/runtime/scripts/` and `.aid/runtime/templates/`, with `rules.md` beside them. The CLI owns that tree
   and records it in the install manifest.
 - **Root agent files use an AID:BEGIN/END boundary.** `AGENTS.md` carries an AID-managed region
-  (a read/priority instruction for `.aid/runtime/rules.md` plus the rules summary bullets, with no `@` line) for every tool. While Claude Code is installed, `CLAUDE.md` carries a region
+  (a SESSION START block plus the rules summary bullets, with no `@` line) for every tool. While Claude Code is installed, `CLAUDE.md` carries a region
   with the same body plus an `@.aid/runtime/rules.md` import line (the inline rules text under `rules_inline`). Both are between `<!-- AID:BEGIN -->` and `<!-- AID:END -->`. The
   installer updates only the content **in place** inside that region; content outside it (the user's own
   instructions) is never touched, and there is no `.aid-new` side file. Two layers produce this: the
   **mechanism** is the install-core region replacement (`lib/aid-install-core.sh` `_copy_root_agent_file`,
   and its PowerShell twin `lib/AidInstallCore.psm1` `Copy-RootAgentFile`), and the **content** is the
-  region body: the fixed read instruction in the install core (`_AID_AGENTS_REGION_HEAD` in `lib/aid-install-core.sh`, and the
+  region body: the fixed SESSION START block in the install core (`_AID_AGENTS_REGION_HEAD` in `lib/aid-install-core.sh`, and the
   matching `$script:` constants in `lib/AidInstallCore.psm1`) plus the summary bullets, which have one source, the
   `AID:SUMMARY` block at the top of `canonical/aid/rules.md`. So to change HOW the region is written, edit
-  the install-core libs; to change the summary, edit that block; to change the instruction, edit the constants -- never the user's host file.
+  the install-core libs; to change the summary, edit that block; to change the instruction, edit the constants -- never the user's host file. The block names the first action (a Read of `.aid/runtime/rules.md`) explicitly, forbids any answer before that Read returns and pre-empts "do not read files" prompts, because a written "read first" instruction is advisory; repair by content treats the block's one blank line as no one's, so only its non-blank lines are managed lines.
 - **Red flag:** an AID file without the `aid-` prefix; AID content at a tool root outside that tool's
   `agents/` or `skills/` subtree; writing outside the AID:BEGIN/END region in a host file; an uninstall that
   deletes by directory rather than by manifest; a skill mirror that differs byte-wise from `.agents/skills/`.

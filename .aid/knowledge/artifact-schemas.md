@@ -491,7 +491,7 @@ Shape:
   empty, which is the reference-counted uninstall.
 - `agents_md.region_sha256` and `claude_md.region_sha256` let the installer detect a changed AID region.
   The region bodies are built by the install core (`_aid_root_region` in `lib/aid-install-core.sh`, `Get-AidRootRegion` in
-  `lib/AidInstallCore.psm1`) from a fixed read instruction and the `AID:SUMMARY` block of the installed `.aid/runtime/rules.md`.
+  `lib/AidInstallCore.psm1`) from the fixed SESSION START block and the `AID:SUMMARY` block of the installed `.aid/runtime/rules.md`.
 - Producers are the install and update paths, through `manifest_write_v3`. Consumers are `manifest_remove_tool`
   and `uninstall_tool` (removal), `drift_report` (`aid status`) and `prune_shared`.
 

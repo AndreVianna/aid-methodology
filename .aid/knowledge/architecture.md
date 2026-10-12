@@ -152,7 +152,7 @@ same shape, and `.aid/.aid-manifest.json` (format 3) records every entry.
 | `.aid/runtime/scripts/`, `.aid/runtime/templates/`, `.aid/runtime/rules.md` | `aid-shared` `runtime/` | every tool |
 | `.aid/runtime/host.conf` | written by the CLI (worktree root for this host) | every tool |
 | `aid-*` agent files under the tool root (`.claude/agents/`, `.codex/agents/`, `.cursor/agents/`, `.github/agents/`, `.agent/agents/`) | that tool's artifact | that tool |
-| `AGENTS.md`: `AID:BEGIN`/`AID:END` region whose body is a read/priority instruction for `.aid/runtime/rules.md` plus the rules summary bullets lifted from the `AID:SUMMARY` block of the installed rules (no `@` line) | CLI | every tool |
+| `AGENTS.md`: `AID:BEGIN`/`AID:END` region whose body is a SESSION START block (the first action is a Read of `.aid/runtime/rules.md`) plus the rules summary bullets lifted from the `AID:SUMMARY` block of the installed rules (no `@` line) | CLI | every tool |
 | `CLAUDE.md`: `AID:BEGIN`/`AID:END` region with the same body as the `AGENTS.md` region plus one `@.aid/runtime/rules.md` import line (the same inline rules text as `AGENTS.md`, no `@` line, under `rules_inline`); no `@AGENTS.md`, so each root file carries the rules alone | CLI | Claude Code only |
 
 **Lifecycle rules** (implemented in `lib/aid-install-core.sh`: `install_shared`, `manifest_remove_tool`,
@@ -489,7 +489,7 @@ What a change must never break (each stated as a hard rule + where enforced):
   `.agents/skills/` and under each declared skill mirror (`.claude/skills/`); the runtime lives under
   `.aid/runtime/`; agent files carry the `aid-` prefix inside each tool's agents directory. Root files are
   updated in place only between `<!-- AID:BEGIN -->` / `<!-- AID:END -->` markers: the `AGENTS.md`
-  region for every tool (a read instruction plus the rules summary; the rules live in `.aid/runtime/rules.md`) and, while Claude Code is installed,
+  region for every tool (a SESSION START block plus the rules summary; the rules live in `.aid/runtime/rules.md`) and, while Claude Code is installed,
   the `CLAUDE.md` region (the same body plus the `@.aid/runtime/rules.md` import; the inline rules text under `rules_inline`). Enforced by the installer and manifests, by the
   content-isolation checks in `canonical/agents/aid-reviewer/AGENT.md`, and by `tests/canonical/test-multitool-isolation.sh`.
 - **Version lockstep:** the single `VERSION` string MUST stay in sync across

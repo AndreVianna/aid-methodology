@@ -180,7 +180,7 @@ CONFIRMED: `docs/aid-methodology.md` ("The Five Profiles"); `profiles/` (five su
 `<profile>.toml`); `docs/glossary.md` ("Install Profiles").
 
 Integration mechanics: `aid add <tool>` installs one profile per invocation
-(tool name given explicitly, or auto-detected when omitted). Root context: `AGENTS.md` carries the AID region for every tool (a read instruction plus the rules summary), and while
+(tool name given explicitly, or auto-detected when omitted). Root context: `AGENTS.md` carries the AID region for every tool (a SESSION START block plus the rules summary), and while
 Claude Code is installed `CLAUDE.md` carries the same body plus an `@.aid/runtime/rules.md` import line (only Claude Code expands `@` imports, so the `AGENTS.md` region has no `@` line; neither file imports the other, so each carries the rules alone). Both are updated **in place** inside the `AID:BEGIN/END` region — the installer
 replaces only the AID-managed region and preserves everything the user (or another tool)
 authored outside it, so multiple `AGENTS.md`-writing tools coexist in one file. There is no
