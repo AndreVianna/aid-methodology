@@ -1,62 +1,66 @@
 # Handoff — work-001 Shared Skills Folder (AID v4.0.0)
 
-Updated 2026-10-12 by Claude Code. Resume branch: **`work-001`** (the delivery branch and the old
-session branch were deleted on GitHub by the maintainer; `work-001` holds everything). Read
-`STATE.yml` for the append-only history. Phase `Execute`. **Paused, awaiting the maintainer's
-task-032 probe results.**
+Updated 2026-10-12 by Claude Code. Branch: **`work-001`** (holds everything; the old delivery and
+session branches were deleted). Read `STATE.yml` for the append-only history.
+**Execute is complete:** 32/32 tasks Done, delivery gate A+, pipeline `lifecycle: Completed`.
+What remains is outside the numbered pipeline: merge, CI, release.
 
-## Current execution checkpoint
+## Final state
 
-- **Done (31/32):** task-001 … task-031. Wave ledgers: `review-ledgers/execute-wave-*.md`.
-- **In Progress:** task-032 — maintainer's manual A-4 / A-6 probes. Kit:
-  `probe-kits/aid-v4-probe.zip` (a real `aid add` of all five tools from `release.sh --stage-only`;
-  token `TEAL-PANGOLIN-77` in `.aid/runtime/rules.md`; `PROMPTS.md` P1–P3 + S1 `/aid-config`;
-  `RESULTS.md`). Rebuild: `bash release.sh --stage-only --out <stage>`, then
-  `bin/aid add claude-code,codex,cursor,copilot-cli,antigravity --from-bundle <stage> --target <dir>`,
-  then append the probe section (token + `probe:` rule) to `<dir>/.aid/runtime/rules.md`.
-  Record results as ONE `lifecycle_history` entry (pass/fail/unknown per host; unknown ≠ pass) via
-  `.aid/runtime/scripts/execute/writeback-state.sh`; apply task-032's fallbacks if anything fails
-  (rules_inline for an A-6 failure, alias Q&A for A-4); then task-032 Done → close Execute.
+- **Tasks:** task-001 … task-032 all Done. Wave ledgers: `review-ledgers/execute-wave-*.md`.
 - **Final Opus review + fix cycle:** `review-ledgers/execute-final-review.md` — first pass
   YES-WITH-GAPS / grade D (13 rows); after the bounded fix cycle and a Sonnet re-review: **14/14
-  Fixed, grade A+**. Fixed: a format-3 repo never takes the v3 path (strays only warned); bash works
-  without python3 (byte-identical output); PowerShell root files byte-preserved, UTF-16 refused;
-  v4.0.0 entry moved to backlog § Next Release; `shasum` fallback; trash copy on non-last remove;
-  `.gitattributes` covers `<root>/agents/aid-*`; rules_inline parity; honest dry-run; docs (CLI v4
-  first, upgrade only from v3.x).
+  Fixed, grade A+** (recorded as the delivery gate grade). Fixed: a format-3 repo never takes the
+  v3 path (strays only warned); bash works without python3 (byte-identical output); PowerShell root
+  files byte-preserved, UTF-16 refused; v4.0.0 entry moved to backlog § Next Release; `shasum`
+  fallback; trash copy on non-last remove; `.gitattributes` covers `<root>/agents/aid-*`;
+  rules_inline parity; honest dry-run; docs (CLI v4 first, upgrade only from v3.x).
+- **task-032 probes (AC-20), Windows, all five tools — PASS:**
+  - A-6 (rules loaded): PASS in Claude Code, Codex, Cursor (Grok 4.6 medium), Antigravity, Copilot
+    CLI. A plain read-pointer region failed in Codex and Cursor (they obeyed a later "do not read
+    files" prompt); the final region is a SESSION START first-action block (Cursor-proposed
+    wording, verified by the maintainer) — see D6/D7 and `REQUIREMENTS.md` FR-12.
+  - A-4 (`allowed-tools: ... Bash Shell Terminal`): `/aid-config` loads and runs in all five tools;
+    Claude Code pre-approves `Bash` (section 4). No fallback needed: `rules_inline` stays off by
+    default, no alias Q&A.
+  - Kit: `probe-kits/aid-v4-probe.zip`. Rebuild: `bash release.sh --stage-only --out <stage>`, then
+    `bin/aid add claude-code,codex,cursor,copilot-cli,antigravity --from-bundle <stage> --target <dir>`,
+    then append the probe section (token `TEAL-PANGOLIN-77` + `probe:` rule) to
+    `<dir>/.aid/runtime/rules.md`.
+- **Root regions (final):** `AGENTS.md` = SESSION START block + rules summary (generated from the
+  `AID:SUMMARY` block of `canonical/aid/rules.md`), no `@` line. `CLAUDE.md` = the same body plus
+  `@.aid/runtime/rules.md`; no `@AGENTS.md` (each file carries the rules alone). Accepted
+  consequence: Claude Code reads `CLAUDE.md`, not `AGENTS.md`, so user text outside the AGENTS.md
+  markers is not seen by Claude Code.
 - **Verification (this container):** `tests/run-all.sh` ~6 min; the only failing suites fail the
   same way on the pre-change commit here (root user, no en_US.UTF-8, no pypi `build`, no `rg`,
   browser/timing); `test-chat-node-endtoend` can flake under parallel load (passes alone).
-  Coverage-parity gate: all 29 remaining keys are the same host-environment gaps. **CI on GitHub
-  (Linux + Windows lanes) must confirm before tagging 4.0.0** (AC-16, AC-21).
-- **Release:** VERSION stays 3.1.3 until release-aid bumps it to 4.0.0 (major, breaking; "v4 requires
-  CLI v4"; v4 upgrades only from v3.x).
+  Coverage-parity gate: all 29 remaining keys are the same host-environment gaps.
 - **Performance:** bash add ~1.6 s, no-op update ~1.4 s, status ~1.1 s; PowerShell add/update ~4.5 s.
 
-## Resume and execution constraints
+## Next steps (maintainer)
 
-1. Preserve unrelated changes. Fetch and fast-forward **`work-001`**, then read this
-   handoff, STATE and the next task DETAIL. Do not restore old specification ledgers or redo GATE.
-2. Sequential tasks, one writer at a time. In Codex use **gpt-6-luna** for task execution and
-   **gpt-6.1-sol** for the quick check at each wave and final full review. Claude Code should use
-   economical available equivalents; the prior IDE session used Haiku/Sonnet/Opus.
-3. Orchestrator immediately writes In Progress before dispatch, In Review after the task commit,
-   and Done/Failed after wave review. Use:
-   `AID_STATE_FILE=.aid/works/work-001-shared-skills-folder/STATE.yml bash .claude/aid/scripts/execute/writeback-state.sh --task-id NNN --field state --value '<State>'`.
-   Since task-027 the writer is `.aid/runtime/scripts/execute/writeback-state.sh` (same arguments).
-4. Long checks (run-all, coverage-parity gate) are now fast: run-all ~6 min, coverage collect ~6 min
-   (parallel). Needs pwsh, node, python3 and GNU awk on PATH. In a fresh cloud container install
-   them first (`apt-get install -y gawk`; pwsh tarball from the PowerShell GitHub releases). No
-   chmod/mode changes (all tests/canonical/*.sh are tracked executable).
-5. Wave quick check records an exact seven-column ledger. One Luna fix attempt, then one Sol
-   fix attempt, then Failed/block dependents. Final full Sol review after all tasks, then pause/report.
-6. Read only requirement slices and relevant KB/contracts. Commit exact task files and push
-   checkpoints; preserve unrelated generated site changes, local config and node_modules artifacts.
-   Keep usage small. Codex cannot read the user's 5-hour usage meter; stop and hand off when signaled.
-7. Manifest writers are `manifest_write_v3` / `Write-AidManifestV3` (format-2 writers deleted).
+1. Open a PR from `work-001` to `master`.
+2. Get GitHub CI green on the Linux **and** Windows lanes (AC-16, AC-21). This container could not
+   run the Windows lane; the host-environment failures above must pass there.
+3. Merge.
+4. Release with `release-aid`: it bumps VERSION 3.1.3 → **4.0.0** (major, breaking; "v4 requires
+   CLI v4"; v4 upgrades only from v3.x) and writes the dated release section from backlog § Next
+   Release.
+
+## Constraints for any follow-up session
+
+1. Fetch and fast-forward **`work-001`** first; preserve unrelated changes.
+2. One writer at a time on the same files; keep usage small (cheap models for mechanical work).
+3. State writes go through `.aid/runtime/scripts/execute/writeback-state.sh` with
+   `AID_STATE_FILE=.aid/works/work-001-shared-skills-folder/STATE.yml`, at the moment a state changes.
+4. Long checks (run-all, coverage-parity) need pwsh, node, python3 and GNU awk on PATH. No
+   chmod/mode changes (all `tests/canonical/*.sh` are tracked executable).
+5. Manifest writers are `manifest_write_v3` / `Write-AidManifestV3` (format-2 writers deleted).
    `copy_file_guarded <src> <dst> [sha] [root]`: pass root explicitly; `trash_file <root> <file> [stamp]`.
-8. Every state/artifact outcome is tracked immediately; reviewer alone marks findings Fixed.
-   KB content never names a work id/path. Resolve authoring criteria before writing.
+6. Reviewer alone marks findings Fixed. KB content never names a work id/path. Resolve authoring
+   criteria before writing.
+
 
 ---
 
@@ -182,4 +186,4 @@ Raw probe results: `probe-kits/ide-probe-RESULTS.md`. Kits: `probe-kits/*.zip`.
 - `PLAN.md`: execution graph/delivery gates.
 - `review-ledgers/`: persistent wave and specification review snapshots.
 - `probe-kits/`: manual host probe kits/evidence.
-- `.claude/skills/aid-execute/SKILL.md`: execution workflow until task-027 resync.
+- `.claude/skills/aid-execute/SKILL.md`: execution workflow (resynced mirror of `.agents/skills`).

@@ -112,13 +112,13 @@ minimum_grade: A
 # [W] 'yes' | 'no' -- quoted, see NFR-2 / D-5
 user_approved: 'yes'
 # [W] Running | Paused-Awaiting-Input | Blocked | Completed | Canceled
-lifecycle: Running
+lifecycle: Completed
 # [W] Describe | Define | Specify | Plan | Detail | Execute
 phase: Execute
 # [W] aid-{skill} | none
 active_skill: aid-execute
 # [W]
-updated: '2026-10-11T22:19:55Z'
+updated: '2026-10-12T19:20:41Z'
 # [W] set only when lifecycle = Paused-Awaiting-Input
 pause_reason: --
 # [W] set only when lifecycle = Blocked
@@ -130,13 +130,13 @@ ticket_ref: --
 
 # Flattened single-delivery works only -- omit these 4 keys for full works.
 # [W] Pending-Spec | Specified | Executing | Gated | Done | Blocked
-delivery_state: Executing
+delivery_state: Done
 # [W] Small | Medium | Large
 gate_tier: Small
 # [W]
-gate_grade: Pending
+gate_grade: A+
 # [W]
-gate_timestamp: --
+gate_timestamp: '2026-10-12T19:20:41Z'
 
 # [A] updated by aid-describe as each section is completed.
 #   state: In Progress | Complete | Approved
@@ -897,6 +897,10 @@ NEXT: reopen019 In Progress; ONE first Luna correction attempt for wave12 ledger
 Full regression/coverage-parity/render self-test deferred to031. Task027: parent In Review write before final dogfood resync; switch writer to .aid/runtime and reread resynced aid-execute afterward. Task032 manual probes required; unknown never passes. Preserve unrelated dirty generated site and local artifacts. All task changes and this checkpoint are pushed to the delivery branch; never stage unrelated files.'
     grade: --
     notes: '/aid-execute Codex'
+  - date: '2026-10-12'
+    event: 'task-032 maintainer probes (AC-20, A-4 and A-6) on Windows with probe-kits/aid-v4-probe.zip (a real aid add of all five tools from release.sh --stage-only; token TEAL-PANGOLIN-77 appended to .aid/runtime/rules.md; PROMPTS.md P1-P3 + S1 /aid-config). A-6 (rules loaded): PASS for Claude Code, Codex, Cursor (Grok 4.6 medium), Antigravity and Copilot CLI with the final SESSION START region. History: with a plain read-pointer region Codex and Cursor answered P1 without reading rules.md (they obey a later "do not read files" prompt); the region was changed to a SESSION START first-action block (Cursor-proposed wording), after which P1 passed in all five tools. A-4 (allowed-tools Bash Shell Terminal): PASS in all five tools (/aid-config loads with no frontmatter error and runs); Claude Code default mode pre-approves Bash from allowed-tools (2026-10-10 probe evidence, HANDOFF section 4). No fallback needed: rules_inline stays off, no alias Q&A.'
+    grade: --
+    notes: 'Rebuild the kit: bash release.sh --stage-only --out <stage>; bin/aid add claude-code,codex,cursor,copilot-cli,antigravity --from-bundle <stage> --target <dir>; append the probe section to <dir>/.aid/runtime/rules.md. Reported by the maintainer.'
 
 deploy: []
 
@@ -1350,7 +1354,7 @@ tasks_lifecycle:
     notes: --
     display_name: --
   task-032:
-    state: 'In Progress'
+    state: Done
     review: --
     elapsed: --
     notes: --
