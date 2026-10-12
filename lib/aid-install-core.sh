@@ -1030,6 +1030,9 @@ _copy_root_agent_file() {
     if [[ -n "$manifest" && -f "$manifest" ]] && command -v python3 >/dev/null 2>&1; then
         python3 - "$manifest" <<'PY' | grep -qx true && inline=1
 import json,sys
+import signal
+if hasattr(signal, "SIGPIPE"):
+    signal.signal(signal.SIGPIPE, signal.SIG_DFL)  # a reader that stops early (head, awk exit) is not an error
 try: print(str(any(t.get('rules_inline') is True for t in json.load(open(sys.argv[1])).get('tools',{}).values())).lower())
 except Exception: pass
 PY
@@ -2308,6 +2311,9 @@ _aid_v3_read_awk() {
 _manifest_v3_read_python() {
     python3 - "$1" "$2" "${3:-}" <<'PY'
 import json, sys
+import signal
+if hasattr(signal, "SIGPIPE"):
+    signal.signal(signal.SIGPIPE, signal.SIG_DFL)  # a reader that stops early (head, awk exit) is not an error
 
 manifest, mode, tool = sys.argv[1], sys.argv[2], sys.argv[3]
 try:
