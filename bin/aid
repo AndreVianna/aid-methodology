@@ -120,7 +120,7 @@ _aid_is_project_dir() {
 # deliveries/*/STATE.md and deliveries/*/tasks/*/STATE.md) is rewritten in place
 # and the .md deleted. Performed by the STATE.md -> STATE.yml FORMAT-4
 # CONVERSION step in _aid_migrate_repo (task-008 / SPEC.md SS L-6 step 2).
-# format 5 (was 4): shared skills under .agents/skills (+ CLI-owned mirrors), runtime under .aid/runtime/, one AGENTS.md pointer region for every tool, a CLAUDE.md import region (@AGENTS.md and the rules) while claude-code is installed; manifest format_version 3.
+# format 5 (was 4): shared skills under .agents/skills (+ CLI-owned mirrors), runtime under .aid/runtime/, one AGENTS.md pointer region (read instruction + rules summary) for every tool, a CLAUDE.md region (the same body plus an @.aid/runtime/rules.md import line) while claude-code is installed; manifest format_version 3.
 readonly AID_SUPPORTED_FORMAT=5
 
 # ---------------------------------------------------------------------------

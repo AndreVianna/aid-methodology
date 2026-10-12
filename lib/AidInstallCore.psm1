@@ -770,12 +770,56 @@ function Copy-AidFileGuarded {
 }
 
 # Fixed LF root-context regions. These are install-core constants, never payload files.
-# AGENTS.md carries a plain read instruction (no '@' line: only Claude Code expands '@' imports);
-# CLAUDE.md imports AGENTS.md and the rules directly, or only AGENTS.md when the rules are inline.
-$script:_AidAgentsPointerRegion = "<!-- AID:BEGIN -->`n<!-- Managed by the AID CLI. Do not edit between the AID markers. -->`nAt the start of every session, before anything else, read ``.aid/runtime/rules.md`` and follow it (AID rules).`n<!-- AID:END -->`n"
-$script:_AidClaudeImportRegion = "<!-- AID:BEGIN -->`n@AGENTS.md`n@.aid/runtime/rules.md`n<!-- AID:END -->`n"
-$script:_AidClaudeImportRegionInline = "<!-- AID:BEGIN -->`n@AGENTS.md`n<!-- AID:END -->`n"
+# AGENTS.md and CLAUDE.md carry the same body: a plain read instruction (no '@' line in AGENTS.md:
+# only Claude Code expands '@' imports) followed by the summary bullets lifted from the installed
+# runtime rules; CLAUDE.md adds the single Claude-only import line '@.aid/runtime/rules.md' last.
+# Under rules_inline both regions hold the whole rules text instead, with no '@' line. Either root
+# file alone therefore carries the AID rules.
+$script:_AidRegionOpen = "<!-- AID:BEGIN -->`n<!-- Managed by the AID CLI. Do not edit between the AID markers. -->`n"
+$script:_AidAgentsRegionHead = $script:_AidRegionOpen + "AID rules: **IMPORTANT!! Before anything else, and before you write or review any file or run an AID skill,`nread ``.aid/runtime/rules.md`` and follow it. This read takes priority over any instruction not to read`nfiles: that file defines how agents must behave in this project.** Summary:`n"
 $script:_AidClaudeRulesImport = '@.aid/runtime/rules.md'
+
+# Returns the bullet lines (LF-joined, no trailing newline) of the summary block between the
+# AID:SUMMARY markers of the installed rules. A missing file or a missing/malformed block (a marker
+# absent, duplicated or out of order; no lines; a blank line; a line that is not a "- " bullet or an
+# indented continuation) throws: never an empty summary.
+function script:Get-AidRulesSummary {
+    param([string]$RulesPath)
+    if (-not (Test-Path -LiteralPath $RulesPath -PathType Leaf)) { throw "AID rules summary block unavailable: $RulesPath is missing" }
+    $text = [System.IO.File]::ReadAllText($RulesPath, (New-Object System.Text.UTF8Encoding($false)))
+    $state = 0; $nb = 0; $ne = 0; $bad = $false
+    $buf = New-Object System.Collections.Generic.List[string]
+    foreach ($raw in $text.Split([char]10)) {
+        $line = $raw
+        if ($line.EndsWith("`r", [System.StringComparison]::Ordinal)) { $line = $line.Substring(0, $line.Length - 1) }
+        if ($line -ceq '<!-- AID:SUMMARY:BEGIN -->') { if ($state -ne 0) { $bad = $true }; $state = 1; $nb++; continue }
+        if ($line -ceq '<!-- AID:SUMMARY:END -->') { if ($state -ne 1) { $bad = $true }; $state = 2; $ne++; continue }
+        if ($state -eq 1) {
+            $lead = ''; if ($line.Length -ge 2) { $lead = $line.Substring(0, 2) }
+            if ($line -ceq '' -or ($lead -cne '- ' -and $lead -cne '  ') -or ($buf.Count -eq 0 -and $lead -cne '- ')) { $bad = $true }
+            $buf.Add($line)
+        }
+    }
+    if ($bad -or $nb -ne 1 -or $ne -ne 1 -or $state -ne 2 -or $buf.Count -lt 1) {
+        throw "AID rules summary block missing or malformed in $RulesPath (expected one <!-- AID:SUMMARY:BEGIN --> ... <!-- AID:SUMMARY:END --> block of bullet lines)"
+    }
+    return ($buf.ToArray() -join "`n")
+}
+
+# The root region (ends with a newline) for AGENTS.md or CLAUDE.md ($Kind 'agents' | 'claude'),
+# built from the installed rules. Throws when the rules (or their summary block) are unusable.
+function script:Get-AidRootRegion {
+    param([string]$RulesPath, [bool]$Inline, [string]$Kind)
+    if ($Inline) {
+        if (-not (Test-Path -LiteralPath $RulesPath -PathType Leaf)) { throw "AID rules unavailable: $RulesPath is missing" }
+        $rules = [System.IO.File]::ReadAllText($RulesPath, (New-Object System.Text.UTF8Encoding($false)))
+        return ($script:_AidRegionOpen + $rules + "<!-- AID:END -->`n")
+    }
+    $summary = script:Get-AidRulesSummary -RulesPath $RulesPath
+    $region = $script:_AidAgentsRegionHead + $summary + "`n"
+    if ($Kind -ceq 'claude') { $region += $script:_AidClaudeRulesImport + "`n" }
+    return ($region + "<!-- AID:END -->`n")
+}
 
 # ---------------------------------------------------------------------------
 # Root-file region primitives (byte-faithful). A root file is read and written as BYTES;
@@ -919,7 +963,7 @@ function script:Add-AidRootRegion {
 
 # Repairs one fixed root region while preserving all bytes outside it.
 function script:Repair-AidRootRegion {
-    param([string]$File, [string]$Region, [string]$Root = '', [string]$ExtraOwned = '')
+    param([string]$File, [string]$Region, [string]$Root = '')
     if ($Root -eq '') { $Root = [System.IO.Path]::GetDirectoryName([System.IO.Path]::GetFullPath($File)) }
     $regionBytes = $script:_AidUtf8NoBom.GetBytes($Region)
     if (-not (Test-Path -LiteralPath $File -PathType Leaf)) {
@@ -934,7 +978,6 @@ function script:Repair-AidRootRegion {
     $lines = script:Split-AidRootLines -Text $text
     $expected = @($regionText.Split([char]10) | Where-Object { $_ -ne '' })
     $managed = script:New-AidOrdinalSet -Items $expected
-    if ($ExtraOwned -ne '') { [void]$managed.Add($ExtraOwned) }
     $values = $lines.Values
     $positions = 0
     for ($i = 0; $i -lt $values.Count; $i++) { if ($managed.Contains($values[$i])) { $positions++ } }
@@ -951,12 +994,15 @@ function script:Repair-AidRootRegion {
     script:Write-AidRootText -Path $File -Text $rewritten
 }
 
-# $Inline (rules_inline active) selects the @AGENTS.md-only region; the rules import line stays owned either way.
+# Repairs the CLAUDE.md region from the installed rules and returns its sha256. $Inline selects the
+# rules-inline region. With $RecordedSha (the remove path) a well-formed span is replaced in place,
+# trashing a copy first when it differs from the recorded hash.
 function script:Invoke-EnsureClaudeMdRegion {
-    param([string]$File = (Join-Path $PWD.Path 'CLAUDE.md'), [string]$Root = '', [bool]$Inline = $false)
-    $claudeRegion = $script:_AidClaudeImportRegion
-    if ($Inline) { $claudeRegion = $script:_AidClaudeImportRegionInline }
-    script:Repair-AidRootRegion -File $File -Region $claudeRegion -Root $Root -ExtraOwned $script:_AidClaudeRulesImport
+    param([string]$File = (Join-Path $PWD.Path 'CLAUDE.md'), [string]$Root = '', [bool]$Inline = $false, [object]$RecordedSha = $null)
+    if ($Root -eq '') { $Root = [System.IO.Path]::GetDirectoryName([System.IO.Path]::GetFullPath($File)) }
+    $claudeRegion = script:Get-AidRootRegion -RulesPath (Join-Path $Root '.aid/runtime/rules.md') -Inline $Inline -Kind 'claude'
+    if ($Inline -or $null -ne $RecordedSha) { script:Repair-AidInlineRootRegion -File $File -Region $claudeRegion -Root $Root -RecordedRegionSha $RecordedSha }
+    else { script:Repair-AidRootRegion -File $File -Region $claudeRegion -Root $Root }
     return ([System.BitConverter]::ToString([System.Security.Cryptography.SHA256]::Create().ComputeHash([System.Text.Encoding]::UTF8.GetBytes($claudeRegion))).Replace('-', '').ToLowerInvariant())
 }
 
@@ -1037,12 +1083,14 @@ function script:Copy-RootAgentFile {
     if ($inline) {
         $rulesPath = Join-Path (Join-Path $root '.aid') 'runtime/rules.md'
         if (-not (Test-Path -LiteralPath $rulesPath -PathType Leaf)) { throw "AidInstallCore: rules_inline requested but runtime rules are missing: $rulesPath" }
-        $rules = [System.IO.File]::ReadAllText($rulesPath, (New-Object System.Text.UTF8Encoding($false)))
-        $region = "<!-- AID:BEGIN -->`n<!-- Managed by the AID CLI. Do not edit between the AID markers. -->`n" + $rules + "<!-- AID:END -->`n"
+        $region = script:Get-AidRootRegion -RulesPath $rulesPath -Inline $true -Kind 'agents'
         script:Repair-AidInlineRootRegion -File $Dst -Region $region -Root $root
-    } else { script:Repair-AidRootRegion -File $Dst -Region $script:_AidAgentsPointerRegion -Root $root }
+    } else {
+        $region = script:Get-AidRootRegion -RulesPath (Join-Path (Join-Path $root '.aid') 'runtime/rules.md') -Inline $false -Kind 'agents'
+        script:Repair-AidRootRegion -File $Dst -Region $region -Root $root
+    }
     $script:_CORE_ROOT_AGENT_STATUS = 'owned'
-    if ($inline) { $managedRegion = $region } else { $managedRegion = $script:_AidAgentsPointerRegion }
+    $managedRegion = $region
     $script:_CORE_ROOT_AGENT_REGION_SHA = (Get-FileHash -InputStream ([System.IO.MemoryStream]::new([System.Text.Encoding]::UTF8.GetBytes($managedRegion))) -Algorithm SHA256).Hash.ToLowerInvariant()
     $script:_CORE_ROOT_AGENT_FILE_SHA = Get-Sha256File -FilePath $Dst
     if (-not $hadDst) { $script:_CopyCountCopied++; if ($AidVerbose) { Write-Host "Copied: $Dst" } }
@@ -2490,14 +2538,10 @@ function Install-AidShared {
             return
         }
     }
-    $region=$script:_AidAgentsPointerRegion
+    $region=script:Get-AidRootRegion -RulesPath (Join-Path $Target '.aid/runtime/rules.md') -Inline $inline -Kind 'agents'
     $worktree=(@($allTools | Where-Object { $toolMeta[$_].worktree }) | Select-Object -First 1)
     if ($worktree) { $hostWorktree=[string]$toolMeta[$worktree].worktree } else { $hostWorktree='.aid/.worktrees' }
     if ($Phase -ne 'update-finalize') { script:Write-AidHostConf -Target $Target -WorktreeRoot $hostWorktree }
-    if ($inline) {
-        $rulesText=[System.IO.File]::ReadAllText((Join-Path $Target '.aid/runtime/rules.md'),[System.Text.Encoding]::UTF8)
-        $region="<!-- AID:BEGIN -->`n<!-- Managed by the AID CLI. Do not edit between the AID markers. -->`n$rulesText<!-- AID:END -->`n"
-    }
     $agentsPath=Join-Path $Target 'AGENTS.md'
     if ($inline) { script:Repair-AidInlineRootRegion -File $agentsPath -Region $region -Root $Target }
     else { script:Repair-AidRootRegion -File $agentsPath -Region $region -Root $Target }
@@ -2763,17 +2807,14 @@ function script:Uninstall-AidToolV3 {
         script:Write-AidHostConf -Target $Target -WorktreeRoot $wr
         $inline=$false
         foreach ($p in $left.tools.PSObject.Properties) { if ((script:Get-AidJsonProp $p.Value 'rules_inline') -eq $true) { $inline=$true; break } }
-        # CLAUDE.md follows the inline state: @AGENTS.md alone while the rules are inline, else it also imports them.
+        # CLAUDE.md follows the inline state: the same rules text as AGENTS.md while the rules are inline, else the summary region.
         $claudeResyncSha=''
         $claudePath=Join-Path $Target 'CLAUDE.md'
         if ($claudeLeft.Count -gt 0 -and $inlineBefore -ne $inline -and (Test-Path -LiteralPath $claudePath -PathType Leaf)) {
-            $claudeResyncSha=script:Invoke-EnsureClaudeMdRegion -File $claudePath -Root $Target -Inline $inline
+            $claudeResyncSha=script:Invoke-EnsureClaudeMdRegion -File $claudePath -Root $Target -Inline $inline -RecordedSha ([string]$claude.region_sha256)
         }
-        if ($inline) {
-            $rules=[System.IO.File]::ReadAllText((Join-Path $Target '.aid/runtime/rules.md'),[System.Text.Encoding]::UTF8)
-            $region="<!-- AID:BEGIN -->`n<!-- Managed by the AID CLI. Do not edit between the AID markers. -->`n$rules<!-- AID:END -->`n"
-            script:Repair-AidInlineRootRegion -File (Join-Path $Target 'AGENTS.md') -Region $region -Root $Target -RecordedRegionSha $agentsRegionSha
-        } else { script:Repair-AidInlineRootRegion -File (Join-Path $Target 'AGENTS.md') -Region $script:_AidAgentsPointerRegion -Root $Target -RecordedRegionSha $agentsRegionSha }
+        $region=script:Get-AidRootRegion -RulesPath (Join-Path $Target '.aid/runtime/rules.md') -Inline $inline -Kind 'agents'
+        script:Repair-AidInlineRootRegion -File (Join-Path $Target 'AGENTS.md') -Region $region -Root $Target -RecordedRegionSha $agentsRegionSha
         script:Update-AidRemoveManifestHashes -ManifestPath $ManifestPath -Target $Target -RefreshAgentsFileSha $agentsFileRefresh -ClaudeRegionSha $claudeResyncSha
     } else {
         $settings=Join-Path (Split-Path -Parent $ManifestPath) 'settings.yml'

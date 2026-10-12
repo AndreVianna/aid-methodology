@@ -163,7 +163,7 @@ function script:Test-AidIsProjectDir {
 # CONVERSION step in _aid_migrate_repo (task-008 / SPEC.md SS L-6 step 2).
 Set-Variable -Name AidSupportedFormat -Value 5 -Option Constant -Scope Script
 
-# format 5 (was 4): shared skills under .agents/skills (+ CLI-owned mirrors), runtime under .aid/runtime/, one AGENTS.md pointer region for every tool, a CLAUDE.md import region (@AGENTS.md and the rules) while claude-code is installed; manifest format_version 3.
+# format 5 (was 4): shared skills under .agents/skills (+ CLI-owned mirrors), runtime under .aid/runtime/, one AGENTS.md pointer region (read instruction + rules summary) for every tool, a CLAUDE.md region (the same body plus an @.aid/runtime/rules.md import line) while claude-code is installed; manifest format_version 3.
 
 # ---------------------------------------------------------------------------
 # Import the shared install core from AID_CODE_HOME\lib\.
