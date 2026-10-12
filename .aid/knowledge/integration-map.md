@@ -181,7 +181,7 @@ CONFIRMED: `docs/aid-methodology.md` ("The Five Profiles"); `profiles/` (five su
 
 Integration mechanics: `aid add <tool>` installs one profile per invocation
 (tool name given explicitly, or auto-detected when omitted). Root context: `AGENTS.md` carries the AID pointer region for every tool, and while
-Claude Code is installed `CLAUDE.md` carries the import region (`@AGENTS.md`). Both are updated **in place** inside the `AID:BEGIN/END` region — the installer
+Claude Code is installed `CLAUDE.md` carries the import region (`@AGENTS.md` and `@.aid/runtime/rules.md`; only Claude Code expands `@` imports, so the `AGENTS.md` region is a plain read instruction). Both are updated **in place** inside the `AID:BEGIN/END` region — the installer
 replaces only the AID-managed region and preserves everything the user (or another tool)
 authored outside it, so multiple `AGENTS.md`-writing tools coexist in one file. There is no
 `.aid-new` sidecar and no protect-on-diff exit: the old `.aid-new` / exit-5 path was removed in

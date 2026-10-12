@@ -477,14 +477,25 @@ Every tool gets the same 9 `aid-`-prefixed agent files, each named `aid-<name>`.
 ```
 <!-- AID:BEGIN -->
 <!-- Managed by the AID CLI. Do not edit between the AID markers. -->
-@.aid/runtime/rules.md
-Before acting, read and follow `.aid/runtime/rules.md` (AID rules).
+At the start of every session, before anything else, read `.aid/runtime/rules.md` and follow it (AID rules).
 <!-- AID:END -->
 ```
 
-While Claude Code is installed, `CLAUDE.md` also gets a region whose only content is `@AGENTS.md`,
-so Claude Code loads the same instructions. AID creates the file if it is missing. Text outside
-the markers is yours. See [Root agent files and the AID region](#root-agent-files-and-the-aid-region).
+Only Claude Code expands `@` imports, so this region is a plain read instruction that every tool can follow.
+
+While Claude Code is installed, `CLAUDE.md` also gets a region that imports `@AGENTS.md` and
+`@.aid/runtime/rules.md`, so Claude Code loads the same instructions and the rules directly:
+
+```
+<!-- AID:BEGIN -->
+@AGENTS.md
+@.aid/runtime/rules.md
+<!-- AID:END -->
+```
+
+If a tool is set to receive the rules inline (the rules are written between the markers in `AGENTS.md`),
+the `CLAUDE.md` region holds only `@AGENTS.md`, so the rules are not imported twice. AID creates the
+file if it is missing. Text outside the markers is yours. See [Root agent files and the AID region](#root-agent-files-and-the-aid-region).
 
 ### Git files
 

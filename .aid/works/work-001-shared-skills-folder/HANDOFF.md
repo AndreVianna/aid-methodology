@@ -73,16 +73,24 @@ from several IDEs at once. Ships as **AID v4.0.0** (breaking).
 | Claude Code mirror (byte-identical, CLI-owned, sha-checked, no symlinks) | `.claude/skills/aid-*/` — only while Claude Code is installed |
 | Shared runtime (scripts, templates, rules) | `.aid/runtime/` (`rules.md` holds the AID rules) |
 | Agents | per tool, as today (`.claude/agents`, `.codex/agents` TOML, …) |
-| Root file | `AGENTS.md` with a 5-line pointer region; `CLAUDE.md` gets a 1-line `@AGENTS.md` region while Claude Code is installed |
+| Root file | `AGENTS.md` with a 4-line pointer region (plain read instruction, no `@` line); `CLAUDE.md` gets a 4-line import region (`@AGENTS.md`, `@.aid/runtime/rules.md`) while Claude Code is installed |
 
-The pointer region (exact text, decided):
+The AGENTS.md pointer region (exact text, decided; only Claude Code expands `@` imports, so the other tools need a plain read instruction):
 ```
 <!-- AID:BEGIN -->
 <!-- Managed by the AID CLI. Do not edit between the AID markers. -->
-@.aid/runtime/rules.md
-Before acting, read and follow `.aid/runtime/rules.md` (AID rules).
+At the start of every session, before anything else, read `.aid/runtime/rules.md` and follow it (AID rules).
 <!-- AID:END -->
 ```
+
+The CLAUDE.md import region (exact text, decided; only while Claude Code is installed):
+```
+<!-- AID:BEGIN -->
+@AGENTS.md
+@.aid/runtime/rules.md
+<!-- AID:END -->
+```
+When `rules_inline` is active (the rules are written inline in the AGENTS.md region) the CLAUDE.md region holds only `@AGENTS.md`.
 
 **Repo side:** only canonical sources live in the repo (`canonical/skills`, `canonical/aid` incl. the
 new `canonical/aid/rules.md`, `canonical/agents`). The generator wipes and regenerates each
@@ -100,8 +108,8 @@ per-tool agent artifacts; the **CLI** decides placement at install time.
 | D3 | Shared runtime in `.aid/runtime/` (tool-neutral, fixed path; skills run from project root) |
 | D4 | Multiple tools per repo; shared files ref-counted in the install manifest; one AID version per repo (refuse skew; only `aid update` upgrades all) |
 | D5 | `allowed-tools` space-separated, shell listed as aliases `Bash Shell Terminal` |
-| D6 | `AGENTS.md` is the one root file; when Claude Code is installed the CLI **always** ensures `CLAUDE.md` has an `@AGENTS.md` import region (create the file if missing) |
-| D7 | AID rules move to `.aid/runtime/rules.md`; the root-file region is the 5-line pointer above; the CLI repairs a damaged region by **content** (its lines are known) |
+| D6 | `AGENTS.md` is the one root file; when Claude Code is installed the CLI **always** ensures `CLAUDE.md` has an import region of `@AGENTS.md` and `@.aid/runtime/rules.md` (only `@AGENTS.md` under `rules_inline`; create the file if missing) |
+| D7 | AID rules move to `.aid/runtime/rules.md`; the AGENTS.md region is the 4-line pointer above (a plain read instruction, no `@` line) and Claude Code imports the rules directly from `CLAUDE.md`; the CLI repairs a damaged region by **content** (its lines are known) |
 | D8 | Release is **AID v4.0.0**: profiles wiped and regenerated (no emission manifests); **no** protection/recovery for v3 CLIs; **clean-slate upgrade** (`retire_v3_layout`: move old AID-owned paths to `.aid/.trash/`, then fresh install) replaces the migration plan |
 | D9 | Out of scope (future works): agents stay per tool; model-tier settings map with per-tier fallback lists (Option B, discussed); hooks |
 | D10 | Copilot CLI skill execution accepted as working like the other `.agents/skills` hosts (account 403 blocked the probe) |

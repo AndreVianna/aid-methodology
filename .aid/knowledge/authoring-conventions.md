@@ -489,8 +489,8 @@ content.**
   `.aid/runtime/scripts/` and `.aid/runtime/templates/`, with `rules.md` beside them. The CLI owns that tree
   and records it in the install manifest.
 - **Root agent files use an AID:BEGIN/END boundary.** `AGENTS.md` carries an AID-managed pointer region
-  to `.aid/runtime/rules.md` for every tool. While Claude Code is installed, `CLAUDE.md` carries a region
-  whose only content is `@AGENTS.md`. Both are between `<!-- AID:BEGIN -->` and `<!-- AID:END -->`. The
+  (a plain instruction to read `.aid/runtime/rules.md`, with no `@` line) for every tool. While Claude Code is installed, `CLAUDE.md` carries a region
+  that imports `@AGENTS.md` and `@.aid/runtime/rules.md` (only `@AGENTS.md` under `rules_inline`). Both are between `<!-- AID:BEGIN -->` and `<!-- AID:END -->`. The
   installer updates only the content **in place** inside that region; content outside it (the user's own
   instructions) is never touched, and there is no `.aid-new` side file. Two layers produce this: the
   **mechanism** is the install-core region replacement (`lib/aid-install-core.sh` `_copy_root_agent_file`,

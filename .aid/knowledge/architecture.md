@@ -152,8 +152,8 @@ same shape, and `.aid/.aid-manifest.json` (format 3) records every entry.
 | `.aid/runtime/scripts/`, `.aid/runtime/templates/`, `.aid/runtime/rules.md` | `aid-shared` `runtime/` | every tool |
 | `.aid/runtime/host.conf` | written by the CLI (worktree root for this host) | every tool |
 | `aid-*` agent files under the tool root (`.claude/agents/`, `.codex/agents/`, `.cursor/agents/`, `.github/agents/`, `.agent/agents/`) | that tool's artifact | that tool |
-| `AGENTS.md`: `AID:BEGIN`/`AID:END` region whose body points at `.aid/runtime/rules.md` | CLI | every tool |
-| `CLAUDE.md`: `AID:BEGIN`/`AID:END` region whose only content is `@AGENTS.md` | CLI | Claude Code only |
+| `AGENTS.md`: `AID:BEGIN`/`AID:END` region whose body is a plain instruction to read `.aid/runtime/rules.md` (no `@` line) | CLI | every tool |
+| `CLAUDE.md`: `AID:BEGIN`/`AID:END` region importing `@AGENTS.md` and `@.aid/runtime/rules.md` (only `@AGENTS.md` under `rules_inline`) | CLI | Claude Code only |
 
 **Lifecycle rules** (implemented in `lib/aid-install-core.sh`: `install_shared`, `manifest_remove_tool`,
 `prune_shared`, `drift_report`):
@@ -490,7 +490,7 @@ What a change must never break (each stated as a hard rule + where enforced):
   `.aid/runtime/`; agent files carry the `aid-` prefix inside each tool's agents directory. Root files are
   updated in place only between `<!-- AID:BEGIN -->` / `<!-- AID:END -->` markers: the `AGENTS.md` pointer
   region for every tool (the rules live in `.aid/runtime/rules.md`) and, while Claude Code is installed,
-  the `CLAUDE.md` region, which holds only `@AGENTS.md`. Enforced by the installer and manifests, by the
+  the `CLAUDE.md` region, which imports `@AGENTS.md` and `@.aid/runtime/rules.md` (only `@AGENTS.md` under `rules_inline`). Enforced by the installer and manifests, by the
   content-isolation checks in `canonical/agents/aid-reviewer/AGENT.md`, and by `tests/canonical/test-multitool-isolation.sh`.
 - **Version lockstep:** the single `VERSION` string MUST stay in sync across
   `packages/npm/package.json`, `packages/pypi/pyproject.toml`, and the `aid_version` key in
