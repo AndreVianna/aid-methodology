@@ -85,6 +85,20 @@ These phases and their artifacts have several problems (not an exhaustive list):
 
 ## 5. Functional Requirements
 
+### FR-1 Phase model
+
+AID adopts the community's six phases as its phase model, replacing today's seven. Users rarely
+see phase names; the phases are the backbone the orchestrator tracks.
+
+| Phase | Produces | Absorbs today's | Notes |
+|---|---|---|---|
+| Preparation | the KB | Discover | |
+| Ideation | a seed | Describe, Brainstorm | Describe and Brainstorm overlap. |
+| Specification | a PRD | Define, Specify | The "feature" concept must be revisited: the current skill almost always proposes more features than are actually necessary, and its notion of a feature is not what a feature represents in a business model. |
+| Planning | the tasks | Plan, Detail | Deliveries and waves are only groupings of tasks; the atomic tasks and their dependencies are the most important information. |
+| Building | the outcome | Execute | Building is executing **and testing**. |
+| CI | a merge-ready result | Deploy, Monitor (to confirm) | Hardening, security and quality reviews that prepare the result for a merge. |
+
 ## 6. Non-Functional Requirements
 
 - **NFR-Q (how questions are asked).** Every question put to the user carries a
