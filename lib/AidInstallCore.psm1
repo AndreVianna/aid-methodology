@@ -716,6 +716,24 @@ function Move-AidToTrash {
     }
 }
 
+# Test-AidFullPath <path> - true for a fully qualified filesystem path ("/x" on Unix;
+# "C:\x", "C:/x" or a UNC "\\server\share" on Windows), the only shape .NET resolves
+# the same way PowerShell does regardless of the current location.
+function script:Test-AidFullPath {
+    param([string]$Path)
+    if ([System.IO.Path]::DirectorySeparatorChar -eq '/') { return $Path.StartsWith('/') }
+    return ($Path -match '^[A-Za-z]:[\\/]' -or $Path.StartsWith('\\'))
+}
+
+# Copy-AidFileDirect <src> <dst> - File.Copy with overwrite; $false on any failure, so the
+# caller retries through Copy-Item (which overwrites whatever was left) and reports that
+# error.
+function script:Copy-AidFileDirect {
+    param([string]$Src, [string]$Dst)
+    if (-not (script:Test-AidFullPath $Src)) { return $false }
+    try { [System.IO.File]::Copy($Src, $Dst, $true); return $true } catch { return $false }
+}
+
 # Copy-AidFileGuarded <src> <dst> [<recordedSha256>] [<root>] [<aidVerbose>]
 # Twin of copy_file_guarded. Counters match Copy-AidFile.
 #   absent -> copy (copied); identical -> leave (up to date);
@@ -731,14 +749,22 @@ function Copy-AidFileGuarded {
         [bool]$AidVerbose = $false
     )
     if ($Root -eq '') { $Root = $PWD.Path }
+    # Fully qualified paths (the install loops always pass them) take .NET fast paths for
+    # the existence checks and the copy; anything else, and any .NET failure, goes through
+    # the cmdlets exactly as before.
+    $direct = script:Test-AidFullPath $Dst
     $dstDir = [System.IO.Path]::GetDirectoryName($Dst)
-    if ($dstDir -and -not (Test-Path -LiteralPath $dstDir -PathType Container)) {
-        New-Item -ItemType Directory -Path $dstDir -Force | Out-Null
+    if ($dstDir) {
+        $dirOk = if ($direct) { [System.IO.Directory]::Exists($dstDir) } else { Test-Path -LiteralPath $dstDir -PathType Container }
+        if (-not $dirOk) { New-Item -ItemType Directory -Path $dstDir -Force | Out-Null }
     }
 
-    if (-not (Test-Path -LiteralPath $Dst -PathType Leaf)) {
+    $dstFile = if ($direct) { [System.IO.File]::Exists($Dst) } else { Test-Path -LiteralPath $Dst -PathType Leaf }
+    if (-not $dstFile) {
         try {
-            Copy-Item -LiteralPath $Src -Destination $Dst -Force -ErrorAction Stop
+            if (-not ($direct -and (script:Copy-AidFileDirect -Src $Src -Dst $Dst))) {
+                Copy-Item -LiteralPath $Src -Destination $Dst -Force -ErrorAction Stop
+            }
         } catch {
             [Console]::Error.WriteLine("ERROR: AidInstallCore: copy failed: $Dst -- $_")
             $script:_CopyCountFailed++
