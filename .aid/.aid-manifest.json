@@ -1425,8 +1425,8 @@
         "claude-code",
         "cursor"
       ],
-      "region_sha256": "33874ba676ae003685d8c36fa0489049a4ffb31fd45d41ca317b94a3b08d44bd",
-      "file_sha256": "928bb3721929613ccd0140ce6ee27451882c1f74fe03820baa212003e520f843"
+      "region_sha256": "2310a3ccc12cb259ce363eb6bf805588d02d3283b07b63d96288e6e3a8ba5ec4",
+      "file_sha256": "304037b9020d5c070d31a4067d132777aa9b9c4378b5602cca5d3af9f008170e"
     },
     "claude_md": {
       "path": "CLAUDE.md",
@@ -1434,7 +1434,7 @@
       "users": [
         "claude-code"
       ],
-      "region_sha256": "f55d03ed2c6ff47a0f12ef2134679fbc9bafbe4826c35d2ab41989ed92d35d18"
+      "region_sha256": "0c404f67705f575b873a017eb528b262ef147badef7317548c5594149f9cdf55"
     },
     "mirrors": {
       ".claude/skills": {
