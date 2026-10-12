@@ -367,44 +367,6 @@ assert_eq "$(manifest_bad_stamps "${_A05_CTL}")" "06/06/2026 20:01:03" \
 rm -f "${_A05_CTL}"
 
 # ===========================================================================
-# PAR029-B: status output parity after identical install
-# ===========================================================================
-SH_HOME_B=$(newhome); setup_sh_home "${SH_HOME_B}"
-PS_HOME_B=$(newhome); setup_ps1_home "${PS_HOME_B}"
-T_B=$(newtarget)
-
-# Install via Bash.
-run_sh "${SH_HOME_B}" add claude-code \
-    --from-bundle "${FIXTURE_DIR}/aid-claude-code-v${VERSION}.tar.gz" \
-    --target "${T_B}"
-assert_exit_eq "$RC_SH" 0 "PAR029-B01 Bash add claude-code for status parity → exit 0"
-
-# Get Bash status.
-run_sh "${SH_HOME_B}" status --target "${T_B}"
-SH_STATUS_B="$OUT_SH"
-RC_SH_STATUS_B=$RC_SH
-
-# PS1 also needs the lib to read the Bash-written manifest.
-# Since the manifest is tool-format agnostic, PS1 can read it.
-# Install the PS1 core too.
-run_ps1 "${PS_HOME_B}" status -Target "${T_B}"
-PS1_STATUS_B="$OUT_PS1"
-RC_PS1_STATUS_B=$RC_PS1
-
-# Both must exit 0.
-assert_exit_eq "$RC_SH_STATUS_B" 0 "PAR029-B02 Bash status → exit 0"
-assert_exit_eq "$RC_PS1_STATUS_B" 0 "PAR029-B03 PS1 status → exit 0"
-
-# Both must contain the same key fields.
-assert_output_contains "$SH_STATUS_B"  "AID ${VERSION}"    "PAR029-B04 Bash status: AID version"
-assert_output_contains "$PS1_STATUS_B" "AID ${VERSION}"    "PAR029-B05 PS1 status: AID version"
-assert_output_contains "$SH_STATUS_B"  "claude-code"       "PAR029-B06 Bash status: claude-code"
-assert_output_contains "$PS1_STATUS_B" "claude-code"       "PAR029-B07 PS1 status: claude-code"
-# (Root-agent file name is intentionally omitted from status for "owned" tools by the
-#  collapse-when-uniform display; B06/B07 cover the tool-name parity. Bash↔PS1 byte-parity
-#  of the full status output is asserted elsewhere in this suite.)
-
-# ===========================================================================
 # PAR029-C: Exit code parity — status empty dir (no .aid/) → exit 0 + offer
 #
 # NEW BEHAVIOR (decision #5 / task-011 bash + task-012 ps1):
