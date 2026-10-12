@@ -1,52 +1,41 @@
 # Handoff — work-001 Shared Skills Folder (AID v4.0.0)
 
-Updated 2026-10-12 by Claude Code. Resume branch: **`aid/work-001-shared-skills-folder-delivery-001`**.
-Read `STATE.yml` for the complete append-only history. Phase `Execute`. **Paused after the final
-Opus full review, awaiting the maintainer** (decision on the review findings + task-032 probe results).
+Updated 2026-10-12 by Claude Code. Resume branch: **`work-001`** (the delivery branch and the old
+session branch were deleted on GitHub by the maintainer; `work-001` holds everything). Read
+`STATE.yml` for the append-only history. Phase `Execute`. **Paused, awaiting the maintainer's
+task-032 probe results.**
 
 ## Current execution checkpoint
 
-- **Done (31/32):** task-001 … task-031. Waves 1–14 closed; wave ledgers in `review-ledgers/execute-wave-*.md`.
-- **In Progress:** task-032 — the maintainer's manual A-4 / A-6 probes. Kit:
-  `probe-kits/aid-v4-probe.zip` (real `aid add` of all five tools from `release.sh --stage-only`,
-  token `TEAL-PANGOLIN-77` in `.aid/runtime/rules.md`, `PROMPTS.md` P1–P3 + S1 `/aid-config`,
+- **Done (31/32):** task-001 … task-031. Wave ledgers: `review-ledgers/execute-wave-*.md`.
+- **In Progress:** task-032 — maintainer's manual A-4 / A-6 probes. Kit:
+  `probe-kits/aid-v4-probe.zip` (a real `aid add` of all five tools from `release.sh --stage-only`;
+  token `TEAL-PANGOLIN-77` in `.aid/runtime/rules.md`; `PROMPTS.md` P1–P3 + S1 `/aid-config`;
   `RESULTS.md`). Rebuild: `bash release.sh --stage-only --out <stage>`, then
   `bin/aid add claude-code,codex,cursor,copilot-cli,antigravity --from-bundle <stage> --target <dir>`,
   then append the probe section (token + `probe:` rule) to `<dir>/.aid/runtime/rules.md`.
-  Record results as ONE `lifecycle_history` entry (pass/fail/unknown per host; unknown ≠ pass), then
-  apply task-032's fallbacks if anything fails (rules_inline for an A-6 failure, alias Q&A for A-4).
-- **Final Opus review:** `review-ledgers/execute-final-review.md` — verdict **YES-WITH-GAPS**, grade
-  **D**, 13 rows Pending (4 HIGH, 4 MEDIUM, 3 LOW, 2 MINOR). Release call: not ready for 4.0.0 until:
-  1. HIGH 1 — `aid update` on a v4 (format-3) repo flips into the v3 upgrade when a legacy path
-     appears (e.g. `.cursor/aid/` restored by a branch switch, a user `.codex/skills/aid-*`), and then
-     drops installed tools / trashes the mirror (`bin/aid:6458`, both shells).
-  2. HIGH 2 — bash now hard-requires python3 (manifest readers) with no up-front check; without it
-     `aid add` writes files then dies before the manifest. Docs say curl/bundle channels need only Bash.
-  3. HIGH 3 — PowerShell re-reads `CLAUDE.md` / `AGENTS.md` as UTF-8 and corrupts non-UTF-8 bytes
-     with no trash copy (PS 5.1 writes cp1252/UTF-16 by default).
-  4. HIGH 4 — `release-tracking.md` has `## v4.0.0 - unreleased` while `backlog.md` § Next Release is
-     empty; move the entry to backlog § Next Release (release-aid writes the dated section at tag time).
-  MEDIUM: bare `sha256sum` (no `shasum` fallback) in region hashing; `aid remove` of a non-last tool
-  rewrites the AGENTS.md region without a trash copy; `.gitattributes` block omits `<root>/agents/aid-*`
-  (spec gap; Windows autocrlf); PowerShell `rules_inline` repair not in parity (untested).
-  LOW/MINOR: dry-run trash list, upgrade docs (update CLI first; pre-v3 → v3 first), rules.md wording,
-  two stale comments. Plus: green CI on master for AC-21 and the Windows lane (AC-16).
-- **Verification state (this container):** `tests/run-all.sh` 161/170 in 344 s; coverage-parity gate
-  clean except 29 keys; the 9 failing suites and all 29 keys fail/miss identically on the pre-change
-  commit here (root user, no en_US.UTF-8, no pypi `build`, no `rg`, browser/timing) → host-environment.
-  CI must confirm.
-- **Execution-time changes beyond task scopes (all pushed):** ~20 PowerShell runtime fixes found
-  once pwsh was installed (incl. a parse error that broke every PS command); v3-upgrade fixes
-  (`.cursor/rules` / `.agent/rules` ownership, format-less manifests); performance pass (bash add
-  7.1→2.0 s, no-op update 12.8→1.8 s; PS 5.7→4.4 s; migrate suite 540→144 s, parity 500→224 s;
-  coverage collect now parallel); maintainer decision **v4 upgrades only from v3.x** (spec updated;
-  pre-v3 migration gates removed from the suites); dead format-2 install code deleted (~980 lines).
-- **Next (when the maintainer decides):** fix HIGH 1–4 (and the MEDIUMs worth it) as a bounded fix
-  cycle → focused suites + parity → re-review → record task-032 → task-032 Done → close Execute.
+  Record results as ONE `lifecycle_history` entry (pass/fail/unknown per host; unknown ≠ pass) via
+  `.aid/runtime/scripts/execute/writeback-state.sh`; apply task-032's fallbacks if anything fails
+  (rules_inline for an A-6 failure, alias Q&A for A-4); then task-032 Done → close Execute.
+- **Final Opus review + fix cycle:** `review-ledgers/execute-final-review.md` — first pass
+  YES-WITH-GAPS / grade D (13 rows); after the bounded fix cycle and a Sonnet re-review: **14/14
+  Fixed, grade A+**. Fixed: a format-3 repo never takes the v3 path (strays only warned); bash works
+  without python3 (byte-identical output); PowerShell root files byte-preserved, UTF-16 refused;
+  v4.0.0 entry moved to backlog § Next Release; `shasum` fallback; trash copy on non-last remove;
+  `.gitattributes` covers `<root>/agents/aid-*`; rules_inline parity; honest dry-run; docs (CLI v4
+  first, upgrade only from v3.x).
+- **Verification (this container):** `tests/run-all.sh` ~6 min; the only failing suites fail the
+  same way on the pre-change commit here (root user, no en_US.UTF-8, no pypi `build`, no `rg`,
+  browser/timing); `test-chat-node-endtoend` can flake under parallel load (passes alone).
+  Coverage-parity gate: all 29 remaining keys are the same host-environment gaps. **CI on GitHub
+  (Linux + Windows lanes) must confirm before tagging 4.0.0** (AC-16, AC-21).
+- **Release:** VERSION stays 3.1.3 until release-aid bumps it to 4.0.0 (major, breaking; "v4 requires
+  CLI v4"; v4 upgrades only from v3.x).
+- **Performance:** bash add ~1.6 s, no-op update ~1.4 s, status ~1.1 s; PowerShell add/update ~4.5 s.
 
 ## Resume and execution constraints
 
-1. Preserve unrelated changes. Fetch and fast-forward the **delivery branch**, then read this
+1. Preserve unrelated changes. Fetch and fast-forward **`work-001`**, then read this
    handoff, STATE and the next task DETAIL. Do not restore old specification ledgers or redo GATE.
 2. Sequential tasks, one writer at a time. In Codex use **gpt-6-luna** for task execution and
    **gpt-6.1-sol** for the quick check at each wave and final full review. Claude Code should use
