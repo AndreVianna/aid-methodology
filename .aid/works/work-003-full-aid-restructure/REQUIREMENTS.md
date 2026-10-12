@@ -16,7 +16,24 @@ natural conversation leads the way to the conclusion. The whole process reads as
 with phases, skills and artifacts handled underneath. (Differs from today's `/aid-triage`, which
 only suggests a skill for the user to invoke.)
 
-*(Outcomes for the information-overload and skill-count problems: to be confirmed.)*
+**State-aware guidance.** The orchestrator understands at what point of the process the work is,
+and guides it from there:
+
+- *Rich input* -- e.g. "I want to work on Jira ticket XYZ", where the ticket already carries enough
+  to generate the full PRD and break it into tasks: the orchestrator produces them, presents the
+  result to the user in a digestible way, and on the user's approval the process moves to Building.
+- *Thin input* -- the user has only an idea: the orchestrator discusses more topics, asks more
+  questions, proposes a PRD, discusses it, proposes a task breakdown, executes part of it, reviews
+  with the user, and so on.
+
+All of it runs as one process in which the user deals with the information they can, but stays in
+control through the final approvals.
+
+**The skill set underneath.** Skills are shrunk and renamed so each has one clear job, because the
+orchestrator (and maintainers) need a clean, unambiguous set to route to. The user never *needs* to
+know them; power users can still invoke a skill directly.
+
+*(Outcome for the information-overload problem: to be confirmed.)*
 
 ## 2. Problem Statement
 
