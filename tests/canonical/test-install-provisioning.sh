@@ -130,6 +130,9 @@ assert_file_contains "${t}/.gitattributes" "*.dat binary" "GA1 user attributes p
 assert_file_contains "${t}/.gitattributes" ".agents/skills/aid-*/** text eol=lf" "GA1 AID skills use LF"
 assert_file_contains "${t}/.gitattributes" ".claude/skills/aid-*/** text eol=lf" "GA1 Claude mirror uses LF"
 assert_file_contains "${t}/.gitattributes" ".aid/runtime/** text eol=lf" "GA1 runtime uses LF"
+for _ga_root in .claude .codex .cursor .github .agent; do
+    assert_file_contains "${t}/.gitattributes" "${_ga_root}/agents/aid-* text eol=lf" "GA1 ${_ga_root} agents use LF"
+done
 cp "${t}/.gitattributes" "${TMP}/ga-snapshot"
 update_gitattributes "$t"
 assert_eq "$(cmp -s "${t}/.gitattributes" "${TMP}/ga-snapshot" && echo same || echo diff)" \

@@ -81,7 +81,7 @@ for tool in "${TOOLS[@]}"; do
     if [[ "$tool" == cursor ]]; then
         assert_file_contains "$target/.gitattributes" 'user-attribute: preserve' 'AC-7 cursor attributes preserve user line'
         assert_file_contains "$target/.gitattributes" '# >>> AID managed' 'AC-7 cursor attributes contain managed block'
-        for x in '.agents/skills/aid-*/** text eol=lf' '.claude/skills/aid-*/** text eol=lf' '.aid/runtime/** text eol=lf'; do
+        for x in '.agents/skills/aid-*/** text eol=lf' '.claude/skills/aid-*/** text eol=lf' '.aid/runtime/** text eol=lf' '.claude/agents/aid-* text eol=lf' '.codex/agents/aid-* text eol=lf' '.cursor/agents/aid-* text eol=lf' '.github/agents/aid-* text eol=lf' '.agent/agents/aid-* text eol=lf'; do
             assert_file_contains "$target/.gitattributes" "$x" "AC-7 cursor attributes include $x"
         done
     fi
@@ -265,8 +265,30 @@ np_run() {  # <label> <path-or-empty>; writes $TMP/np-<label>.{out,snap}
     step "$v3" update
     step "$v3" status
 }
+# SHA: a host with shasum but no sha256sum (macOS-like). Every region hash must use the same
+# sha256 fallback as sha256_file, so the whole sequence is byte-identical to the normal run.
+SHAONLY="$TMP/shaonly-bin"; mkdir -p "$SHAONLY"
+for c in bash sh awk gawk mawk sed grep egrep find xargs sort uniq cut tr head tail cat cp mv rm mkdir rmdir mktemp date tar gzip gunzip cmp diff od dirname basename wc ls ln chmod touch env uname stat readlink realpath tee printf true false sleep id git tput getconf expr seq python3 pwsh; do
+    src="$(command -v "$c" 2>/dev/null)" && [[ "$src" == /* ]] && ln -sf "$src" "$SHAONLY/$c"
+done
+REAL_SHA256SUM="$(command -v sha256sum)"
+printf '#!/bin/sh\n[ "$1" = -a ] && [ "$2" = 256 ] && shift 2\nexec "%s" "$@"\n' "$REAL_SHA256SUM" > "$SHAONLY/shasum"; chmod +x "$SHAONLY/shasum"
+if PATH="$SHAONLY" command -v sha256sum >/dev/null 2>&1; then fail 'SHA shasum-only PATH really lacks sha256sum'; else pass 'SHA shasum-only PATH really lacks sha256sum'; fi
 np_run py ""
 np_run nopy "$NOPY"
+np_run sha "$SHAONLY"
+assert_eq "$(cat "$TMP/np-sha.out")" "$(cat "$TMP/np-py.out")" 'SHA add/update/status/remove/v3-upgrade output identical on a shasum-only host'
+assert_eq "$(cat "$TMP/np-sha.snap")" "$(cat "$TMP/np-py.snap")" 'SHA trees and manifest bytes identical on a shasum-only host after every step'
+assert_eq "$(grep -c '^rc=0$' "$TMP/np-sha.out")" "$(grep -c '^== ' "$TMP/np-sha.out")" 'SHA every shasum-only step exits 0'
+t="$TMP/sha-direct"; st="$TMP/sha-direct-state"; mkdir -p "$t" "$st"
+out="$(PATH="$SHAONLY" AID_HOME="$st" AID_NO_UPDATE_CHECK=1 bash "$REPO/bin/aid" add claude-code --target "$t" --from-bundle "$STAGE" 2>&1)"; rc=$?
+assert_exit_zero "$rc" 'SHA add claude-code on a shasum-only host succeeds'
+if grep -Eq '"region_sha256": "[0-9a-f]{64}"' "$t/.aid/.aid-manifest.json" && [[ "$(grep -Ec '"region_sha256": "[0-9a-f]{64}"' "$t/.aid/.aid-manifest.json")" == 2 ]]; then pass 'SHA agents_md and claude_md region_sha256 are both recorded (64 hex)'; else fail 'SHA agents_md and claude_md region_sha256 are both recorded (64 hex)'; fi
+assert_file_contains "$t/.aid/.aid-manifest.json" '"claude_md"' 'SHA shared.claude_md is recorded'
+out="$(PATH="$SHAONLY" AID_HOME="$st" AID_NO_UPDATE_CHECK=1 bash "$REPO/bin/aid" status --target "$t" 2>&1)"
+assert_output_not_contains "$out" 'modified:' 'SHA status reports nothing modified right after add'
+out="$(PATH="$SHAONLY" AID_HOME="$st" AID_NO_UPDATE_CHECK=1 bash "$REPO/bin/aid" remove claude-code --target "$t" 2>&1)"
+[[ ! -e "$t/CLAUDE.md" && ! -e "$t/AGENTS.md" ]] && pass 'SHA remove claude-code removes both import regions' || fail 'SHA remove claude-code removes both import regions'
 assert_eq "$(cat "$TMP/np-nopy.out")" "$(cat "$TMP/np-py.out")" 'NP add/update/status/remove/v3-upgrade output identical without python3'
 assert_eq "$(cat "$TMP/np-nopy.snap")" "$(cat "$TMP/np-py.snap")" 'NP trees and manifest bytes (installed_at masked) identical without python3 after every step'
 assert_eq "$(grep -c '^rc=0$' "$TMP/np-nopy.out")" "$(grep -c '^== ' "$TMP/np-nopy.out")" 'NP every no-python step exits 0'

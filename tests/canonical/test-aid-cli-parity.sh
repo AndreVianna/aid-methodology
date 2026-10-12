@@ -6084,8 +6084,8 @@ t23_update_all
 # ===========================================================================
 tfx_aid() {  # <sh|ps> <home> <target> <args...> -> OUT / RC (add and update)
     local shell="$1" home="$2" tgt="$3"; shift 3
-    if [[ "$shell" == sh ]]; then run_sh "$home" "$@" --from-bundle "$T23_STAGE" --target "$tgt"; OUT="$OUT_SH"; RC="$RC_SH"
-    else run_ps1 "$home" "$@" -FromBundle "$T23_STAGE" -Target "$tgt"; OUT="$OUT_PS1"; RC="$RC_PS1"; fi
+    if [[ "$shell" == sh ]]; then run_sh "$home" "$@" --from-bundle "${TFX_STAGE:-$T23_STAGE}" --target "$tgt"; OUT="$OUT_SH"; RC="$RC_SH"
+    else run_ps1 "$home" "$@" -FromBundle "${TFX_STAGE:-$T23_STAGE}" -Target "$tgt"; OUT="$OUT_PS1"; RC="$RC_PS1"; fi
 }
 tfx_remove() {  # <sh|ps> <home> <target> <tool> -> OUT / RC
     local shell="$1" home="$2" tgt="$3" tool="$4"
@@ -6175,6 +6175,109 @@ tfx_row3() {
     assert_eq "$FIXC_REFUSAL_PS" "$FIXC_REFUSAL_SH" "${id} refusal message identical across shells"
 }
 tfx_row3
+
+# ===========================================================================
+# FIX-D (rows 6, 7, 8, 9), both shells, identical bytes.
+#   FIX-D6  remove of a non-last tool trashes a full copy of AGENTS.md when its region
+#           was edited (nothing is trashed when the region is intact).
+#   FIX-D7  the .gitattributes managed block carries the per-tool agent paths.
+#   FIX-D8  rules_inline: with a malformed inline region, user lines that coincide with
+#           rules.md lines (## Workflow) stay in both shells; the files are byte-equal.
+#   FIX-D9  --dry-run lists exactly the files the real run moves to .aid/.trash/.
+# ===========================================================================
+tfx_inline_stage() {  # <out-dir>: T23_STAGE with rules_inline=true added to the cursor artifact
+    local dst="$1" work
+    mkdir -p "$dst"; cp "$T23_STAGE"/* "$dst"/
+    work="$(mktemp -d "${TMP}/inl.XXXXXX")"
+    tar -xzf "${T23_STAGE}/aid-cursor-v${T23_VERSION}.tar.gz" -C "$work" || return 1
+    printf 'rules_inline=true\n' >> "${work}/aid-tool.conf"
+    tar -tzf "${T23_STAGE}/aid-cursor-v${T23_VERSION}.tar.gz" > "${work}.list" || return 1
+    tar -czf "${dst}/aid-cursor-v${T23_VERSION}.tar.gz" -C "$work" --no-recursion -T "${work}.list" || return 1
+    (cd "$dst" && sha256sum --text aid-*.tar.gz > SHA256SUMS)
+    rm -rf "$work" "${work}.list"
+}
+tfx_dry_set() {  # <output> -> sorted relative paths the plan says move to trash
+    {
+        sed -n 's/^  move to trash: //p' <<< "$1"
+        sed -n 's/^  prune: \(.*\) (move to trash; modified or untracked)$/\1/p' <<< "$1"
+    } | LC_ALL=C sort -u
+}
+tfx_trash_set() {  # <target> -> sorted relative paths under .aid/.trash
+    [[ -d "$1/.aid/.trash" ]] && (cd "$1/.aid/.trash" && find . -type f | sed 's#^\./##' | LC_ALL=C sort) || true
+}
+
+tfx_row6to9() {
+    local id="FIX-D" shell home tgt note before_rm gi dry real f
+    local -A seen_trash=() seen_live=() seen_ga=() seen_inl=() seen_inl2=() seen_dry=()
+    local inl_stage="${TMP}/tfx-inline-stage"
+    tfx_inline_stage "$inl_stage" || fail "${id} setup: could not build the rules_inline bundle"
+    for shell in sh ps; do
+        # --- row 6: non-last remove trashes an edited AGENTS.md region -------------------
+        home="$(tfx_home "$shell")"; tgt="$(newtarget)"
+        tfx_aid "$shell" "$home" "$tgt" add cursor,codex
+        assert_exit_eq "$RC" 0 "${id}6 ${shell} add cursor,codex -> exit 0"
+        gi="$(cat "$tgt/.gitattributes")"; seen_ga[$shell]="$gi"
+        for f in '.claude/agents/aid-* text eol=lf' '.codex/agents/aid-* text eol=lf' '.cursor/agents/aid-* text eol=lf' '.github/agents/aid-* text eol=lf' '.agent/agents/aid-* text eol=lf'; do
+            assert_output_contains "$gi" "$f" "${id}7 ${shell} .gitattributes block lists: $f"
+        done
+        tfx_remove "$shell" "$home" "$tgt" codex
+        [[ ! -e "$tgt/.aid/.trash/AGENTS.md" ]] && pass "${id}6 ${shell} remove codex with an intact region trashes nothing" || fail "${id}6 ${shell} remove codex with an intact region trashes nothing"
+        tfx_aid "$shell" "$home" "$tgt" add codex
+        awk '{print} /^<!-- Managed by the AID CLI/ {print "MY IMPORTANT NOTE"}' "$tgt/AGENTS.md" > "$tgt/AGENTS.md.new" && mv "$tgt/AGENTS.md.new" "$tgt/AGENTS.md"
+        before_rm="$(cat "$tgt/AGENTS.md")"
+        tfx_remove "$shell" "$home" "$tgt" codex
+        assert_exit_eq "$RC" 0 "${id}6 ${shell} remove codex (non-last, region edited) -> exit 0"
+        [[ -f "$tgt/.aid/.trash/AGENTS.md" ]] && pass "${id}6 ${shell} the edited AGENTS.md is trashed before the rewrite" || fail "${id}6 ${shell} the edited AGENTS.md is trashed before the rewrite"
+        assert_eq "$(cat "$tgt/.aid/.trash/AGENTS.md" 2>/dev/null)" "$before_rm" "${id}6 ${shell} the trash copy is the full edited file"
+        if grep -qF 'MY IMPORTANT NOTE' "$tgt/AGENTS.md"; then fail "${id}6 ${shell} the live region is back to the managed bytes"; else pass "${id}6 ${shell} the live region is back to the managed bytes"; fi
+        seen_trash[$shell]="$(cat "$tgt/.aid/.trash/AGENTS.md" 2>/dev/null)"; seen_live[$shell]="$(cat "$tgt/AGENTS.md")"
+
+        # --- row 8: rules_inline fallback with a malformed region --------------------------
+        home="$(tfx_home "$shell")"; tgt="$(newtarget)"
+        printf '# Mine\n<!-- AID:BEGIN -->\n## Workflow\nmy own workflow text\n' > "$tgt/AGENTS.md"
+        TFX_STAGE="$inl_stage" tfx_aid "$shell" "$home" "$tgt" add cursor
+        assert_exit_eq "$RC" 0 "${id}8 ${shell} add cursor (rules_inline) over a malformed inline region -> exit 0"
+        assert_eq "$(grep -c '^## Workflow$' "$tgt/AGENTS.md")" "2" "${id}8 ${shell} the user's ## Workflow line is kept next to the rules.md one"
+        assert_file_contains "$tgt/AGENTS.md" 'my own workflow text' "${id}8 ${shell} the user's own text is kept"
+        assert_file_contains "$tgt/AGENTS.md" '# Mine' "${id}8 ${shell} the user's heading is kept"
+        [[ -f "$tgt/.aid/.trash/AGENTS.md" ]] && pass "${id}8 ${shell} the malformed file was trashed first" || fail "${id}8 ${shell} the malformed file was trashed first"
+        seen_inl[$shell]="$(cat "$tgt/AGENTS.md")"
+        TFX_STAGE="$inl_stage" tfx_aid "$shell" "$home" "$tgt" update
+        assert_exit_eq "$RC" 0 "${id}8 ${shell} update (rules_inline) -> exit 0"
+        seen_inl2[$shell]="$(cat "$tgt/AGENTS.md")"
+
+        # --- row 9: dry-run plan == the real run's trash ----------------------------------
+        home="$(tfx_home "$shell")"; tgt="$(newtarget)"
+        tfx_aid "$shell" "$home" "$tgt" add claude-code,cursor
+        tfx_aid "$shell" "$home" "$tgt" update
+        printf 'drift\n' >> "$tgt/.agents/skills/aid-ask/SKILL.md"
+        printf 'drift\n' >> "$tgt/.claude/skills/aid-ask/SKILL.md"
+        printf 'drift\n' >> "$tgt/.cursor/agents/aid-clerk.md"
+        printf 'drift\n' >> "$tgt/.aid/runtime/rules.md"
+        mkdir -p "$tgt/.agents/skills/aid-stray" "$tgt/.cursor/rules"
+        printf 'stray\n' > "$tgt/.agents/skills/aid-stray/x.md"
+        printf 'old rule\n' > "$tgt/.cursor/rules/aid-old.mdc"
+        if [[ "$shell" == sh ]]; then tfx_aid sh "$home" "$tgt" update --dry-run; else tfx_aid ps "$home" "$tgt" update -DryRun; fi
+        assert_exit_eq "$RC" 0 "${id}9 ${shell} update --dry-run -> exit 0"
+        dry="$(tfx_dry_set "$OUT")"
+        assert_output_not_contains "$OUT" "retired-layout" "${id}9 ${shell} the plan has no retired-layout trash section"
+        assert_output_not_contains "$dry" "aid-old.mdc" "${id}9 ${shell} the plan does not announce the .cursor/rules file the update never moves"
+        [[ -z "$(tfx_trash_set "$tgt")" ]] && pass "${id}9 ${shell} dry-run writes no trash" || fail "${id}9 ${shell} dry-run writes no trash"
+        seen_dry[$shell]="$dry"
+        tfx_aid "$shell" "$home" "$tgt" update
+        assert_exit_eq "$RC" 0 "${id}9 ${shell} the real update -> exit 0"
+        real="$(tfx_trash_set "$tgt")"
+        assert_eq "$dry" "$real" "${id}9 ${shell} dry-run list equals the real run's trash contents"
+        [[ -n "$real" && -f "$tgt/.cursor/rules/aid-old.mdc" ]] && pass "${id}9 ${shell} trash is non-empty and the .cursor/rules file stayed" || fail "${id}9 ${shell} trash is non-empty and the .cursor/rules file stayed"
+    done
+    assert_eq "${seen_ga[ps]}" "${seen_ga[sh]}" "${id}7 .gitattributes bytes identical across shells"
+    assert_eq "${seen_trash[ps]}" "${seen_trash[sh]}" "${id}6 trash copy identical across shells"
+    assert_eq "${seen_live[ps]}" "${seen_live[sh]}" "${id}6 live AGENTS.md identical across shells"
+    assert_eq "${seen_inl[ps]}" "${seen_inl[sh]}" "${id}8 rules_inline AGENTS.md after add identical across shells"
+    assert_eq "${seen_inl2[ps]}" "${seen_inl2[sh]}" "${id}8 rules_inline AGENTS.md after update identical across shells"
+    assert_eq "${seen_dry[ps]}" "${seen_dry[sh]}" "${id}9 dry-run trash list identical across shells"
+}
+tfx_row6to9
 
 # ===========================================================================
 # End-of-suite: real-HOME blast-surface canary

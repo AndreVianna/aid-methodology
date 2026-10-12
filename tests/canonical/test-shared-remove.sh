@@ -206,4 +206,21 @@ OUT="$(run_aid remove cursor --target "$SIXTH" 2>&1)" || { echo "$OUT" >&2; exit
 assert_output_contains "$OUT" 'Left in place (modified or not AID-owned): AGENTS.md' 'Last removal still detects the pre-existing outside edit'
 assert_file_contains "$SIXTH/AGENTS.md" 'user outside-region edit' 'Last removal preserves content outside the managed region'
 
+# Non-last remove: a drifted AGENTS.md region is trashed (full copy) before it is rewritten.
+SEVENTH="${TMP}/region-drift"; mkdir -p "$SEVENTH"
+run_aid add cursor,codex --from-bundle "$BUNDLE" --target "$SEVENTH" >/dev/null 2>&1 || exit 1
+run_aid remove codex --target "$SEVENTH" >/dev/null 2>&1 || exit 1
+assert_file_absent "$SEVENTH/.aid/.trash/AGENTS.md" 'Non-last remove of an undrifted region trashes nothing'
+run_aid add codex --from-bundle "$BUNDLE" --target "$SEVENTH" >/dev/null 2>&1 || exit 1
+sed -i 's/^\(<!-- Managed by the AID CLI.*\)$/\1\nMY IMPORTANT NOTE/' "$SEVENTH/AGENTS.md"
+before_rm="$(cat "$SEVENTH/AGENTS.md")"
+OUT="$(run_aid status --target "$SEVENTH" 2>&1)"
+assert_output_contains "$OUT" 'modified: AGENTS.md' 'The region edit is reported by status as modified: AGENTS.md'
+run_aid remove codex --target "$SEVENTH" >/dev/null 2>&1 || exit 1
+assert_file_exists "$SEVENTH/.aid/.trash/AGENTS.md" 'Non-last remove trashes AGENTS.md when its region was edited'
+assert_eq "$(cat "$SEVENTH/.aid/.trash/AGENTS.md" 2>/dev/null)" "$before_rm" 'The trash copy is the full edited AGENTS.md'
+assert_file_contains "$SEVENTH/.aid/.trash/AGENTS.md" 'MY IMPORTANT NOTE' 'The edited region text survives in the trash copy'
+if grep -qF 'MY IMPORTANT NOTE' "$SEVENTH/AGENTS.md"; then fail 'The live AGENTS.md region is rewritten to the managed bytes'; else pass 'The live AGENTS.md region is rewritten to the managed bytes'; fi
+assert_file_contains "$SEVENTH/AGENTS.md" '@.aid/runtime/rules.md' 'The remaining tool keeps its managed region'
+
 test_summary
