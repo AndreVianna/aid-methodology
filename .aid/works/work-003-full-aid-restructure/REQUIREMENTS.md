@@ -87,6 +87,11 @@ These phases and their artifacts have several problems (not an exhaustive list):
 
 ## 6. Non-Functional Requirements
 
+- **NFR-Q (how questions are asked).** Every question put to the user carries a
+  **recommendation**. More than one option is offered only when the options are equally valid or
+  mark a clear fork in the path; a bad option is never presented. The user can always give an
+  alternative answer that is not in the list.
+
 ## 7. Constraints
 
 ## 8. Assumptions & Dependencies

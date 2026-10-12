@@ -118,7 +118,7 @@ phase: Describe
 # [W] aid-{skill} | none
 active_skill: aid-describe
 # [W]
-updated: '2026-10-12T23:35:43Z'
+updated: '2026-10-12T23:39:30Z'
 # [W] set only when lifecycle = Paused-Awaiting-Input
 pause_reason: --
 # [W] set only when lifecycle = Blocked
@@ -168,8 +168,8 @@ interview:
       updated: --
     - id: 6
       name: 'Non-Functional Requirements'
-      state: Pending
-      updated: --
+      state: Partial
+      updated: '2026-10-12T23:39:30Z'
     - id: 7
       name: Constraints
       state: Pending
