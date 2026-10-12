@@ -488,16 +488,17 @@ content.**
 - **Runtime under `.aid/runtime/`.** Scripts and templates live in the shared runtime at
   `.aid/runtime/scripts/` and `.aid/runtime/templates/`, with `rules.md` beside them. The CLI owns that tree
   and records it in the install manifest.
-- **Root agent files use an AID:BEGIN/END boundary.** `AGENTS.md` carries an AID-managed pointer region
-  (a plain instruction to read `.aid/runtime/rules.md`, with no `@` line) for every tool. While Claude Code is installed, `CLAUDE.md` carries a region
-  that imports `@AGENTS.md` and `@.aid/runtime/rules.md` (only `@AGENTS.md` under `rules_inline`). Both are between `<!-- AID:BEGIN -->` and `<!-- AID:END -->`. The
+- **Root agent files use an AID:BEGIN/END boundary.** `AGENTS.md` carries an AID-managed region
+  (a read/priority instruction for `.aid/runtime/rules.md` plus the rules summary bullets, with no `@` line) for every tool. While Claude Code is installed, `CLAUDE.md` carries a region
+  with the same body plus an `@.aid/runtime/rules.md` import line (the inline rules text under `rules_inline`). Both are between `<!-- AID:BEGIN -->` and `<!-- AID:END -->`. The
   installer updates only the content **in place** inside that region; content outside it (the user's own
   instructions) is never touched, and there is no `.aid-new` side file. Two layers produce this: the
   **mechanism** is the install-core region replacement (`lib/aid-install-core.sh` `_copy_root_agent_file`,
   and its PowerShell twin `lib/AidInstallCore.psm1` `Copy-RootAgentFile`), and the **content** is the
-  region body fixed in the install core (`_AID_AGENTS_POINTER_REGION` in `lib/aid-install-core.sh`, and the
-  matching `$script:` constants in `lib/AidInstallCore.psm1`). So to change HOW the region is written, edit
-  the install-core libs; to change WHAT AID writes into it, edit those constants -- never the user's host file.
+  region body: the fixed read instruction in the install core (`_AID_AGENTS_REGION_HEAD` in `lib/aid-install-core.sh`, and the
+  matching `$script:` constants in `lib/AidInstallCore.psm1`) plus the summary bullets, which have one source, the
+  `AID:SUMMARY` block at the top of `canonical/aid/rules.md`. So to change HOW the region is written, edit
+  the install-core libs; to change the summary, edit that block; to change the instruction, edit the constants -- never the user's host file.
 - **Red flag:** an AID file without the `aid-` prefix; AID content at a tool root outside that tool's
   `agents/` or `skills/` subtree; writing outside the AID:BEGIN/END region in a host file; an uninstall that
   deletes by directory rather than by manifest; a skill mirror that differs byte-wise from `.agents/skills/`.

@@ -132,10 +132,12 @@ Any byte difference between copies therefore produces mixed, unpredictable behav
   - `.agents/skills/aid-*` for every tool;
   - a CLI-owned `.claude/skills/aid-*` mirror for Claude Code;
   - `.aid/runtime/` for the runtime;
-  - an `AGENTS.md` managed pointer region (a plain read instruction naming
-    `.aid/runtime/rules.md`, with no `@` import) for every tool;
-  - while Claude Code is installed, a `CLAUDE.md` managed region that imports `@AGENTS.md` and
-    `@.aid/runtime/rules.md` (only `@AGENTS.md` while a tool's `rules_inline` is active).
+  - an `AGENTS.md` managed region (a read-and-follow instruction naming `.aid/runtime/rules.md`
+    plus the rules summary bullets, with no `@` import) for every tool;
+  - while Claude Code is installed, a `CLAUDE.md` managed region with the same body plus one
+    Claude-only `@.aid/runtime/rules.md` import line (the same inline rules text as `AGENTS.md`,
+    with no `@` line, while a tool's `rules_inline` is active), so either root file alone carries
+    the AID rules.
 - CLI multi-tool support:
   - reference-counted shared entries in the manifest;
   - drift detection and repair;
@@ -213,7 +215,7 @@ Any byte difference between copies therefore produces mixed, unpredictable behav
 - **FR-6: CLI placement.** For every tool, `aid add` and `aid update` place:
   - the shared skills at `.agents/skills/aid-*/`;
   - the runtime at `.aid/runtime/`;
-  - the `AGENTS.md` managed pointer region (FR-12).
+  - the `AGENTS.md` managed region (FR-12).
 
   A profile may declare skill-mirror directories. Claude Code declares `.claude/skills`. For each
   mirror the CLI writes a byte-identical copy of every `aid-*` skill file. A profile may also
@@ -237,7 +239,7 @@ Any byte difference between copies therefore produces mixed, unpredictable behav
   runtime; the block is reference-counted with the shared entries and removed with the last tool.
 - **FR-7: Manifest records shared entries.** The install manifest records three things for every
   shared entry (the files under `.agents/skills/aid-*`, each mirror, `.aid/runtime/`, the
-  `AGENTS.md` region, and the `CLAUDE.md` import region):
+  `AGENTS.md` region, and the `CLAUDE.md` region):
   - the installed tools that use it;
   - the AID version it was written at;
   - for each file, its sha256.
@@ -247,7 +249,7 @@ Any byte difference between copies therefore produces mixed, unpredictable behav
 - **FR-8: Reference-counted uninstall.** `aid remove <tool>` removes the tool's own files and
   takes the tool off every shared entry's user list. A shared entry is removed only when its user
   list becomes empty. A mirror is removed when the tool that declared it is removed, and so is the
-  `CLAUDE.md` import region (FR-12). When the last user leaves `AGENTS.md`, delete it only if
+  `CLAUDE.md` region (FR-12). When the last user leaves `AGENTS.md`, delete it only if
   its contents consist solely of the unchanged AID region (an empty/whitespace-only remainder
   under the existing convention). If the whole-file hash still matches but outside-region user
   content exists, remove only the managed region and preserve every outside byte. If the whole-file
@@ -318,8 +320,8 @@ Any byte difference between copies therefore produces mixed, unpredictable behav
   them by hand if unwanted. `aid add` accepts such a project (its layout gate ignores them) and
   stays silent about them. Bash and PowerShell print the same bytes.
 
-  v4 per-tool agent files (`<root>/agents/aid-*`), the `AGENTS.md` pointer region, the `CLAUDE.md`
-  import region and user directories holding no AID-owned path are NOT legacy evidence.
+  v4 per-tool agent files (`<root>/agents/aid-*`), the `AGENTS.md` region, the `CLAUDE.md`
+  region and user directories holding no AID-owned path are NOT legacy evidence.
 
   The bare-project scaffolder behind `aid projects add` and the dashboard (`_aid_scaffold_bare_project`
   / `Invoke-AidScaffoldBareProject`) writes the v4 manifest format (`format_version` 3, no tools) and
@@ -347,20 +349,28 @@ Any byte difference between copies therefore produces mixed, unpredictable behav
   Codex marker. The manifest-seam retired-roots list and `_migrate_retired_layout` are updated so
   they never sweep or reject `.agents/skills/`.
 - **FR-12: One root context file, imported by Claude Code.** Every tool, Claude Code included,
-  gets the AID instructions through the `AGENTS.md` managed region, a pointer to
-  `.aid/runtime/rules.md` (A-6). That region is a single, reference-counted shared entry under FR-7
+  gets the AID instructions through the `AGENTS.md` managed region, a read instruction for
+  `.aid/runtime/rules.md` plus a summary of the rules (A-6). That region is a single, reference-counted shared entry under FR-7
   and FR-8, and its lines are fixed and known (§11 *Root context file*).
 
   While Claude Code is installed, the CLI always keeps a small AID managed region in the
   project-root `CLAUDE.md` as well. The region sits between `AID:BEGIN`/`AID:END` markers, and its
-  content is the import lines `@AGENTS.md` and `@.aid/runtime/rules.md` (only `@AGENTS.md` while a
-  tool's `rules_inline` is active, because the rules are then already inline in `AGENTS.md`). Only
-  Claude Code expands `@` imports, so `AGENTS.md` itself carries a plain read instruction and no
-  `@` line. §8 A-3 explains why it is always written. On
-  every `aid add` and `aid update`, for each of the two files, the CLI repairs the region by
-  content:
+  content is the same body as the `AGENTS.md` region (header comment, read instruction, summary
+  bullets) plus one Claude-only import line, `@.aid/runtime/rules.md`, as its last line before the
+  end marker. While a tool's `rules_inline` is active the rules text is inline in `AGENTS.md`, and
+  the `CLAUDE.md` region carries that same inline text with no `@` line. The two regions are
+  deliberately self-sufficient (no `@AGENTS.md` import): if a user deletes either root file, the AID
+  rules are still in the other, and `aid update` restores the deleted one. Only Claude Code expands
+  `@` imports, so `AGENTS.md` itself carries no `@` line. Claude Code reads `CLAUDE.md` instead of
+  `AGENTS.md` by default, so user content outside the `AGENTS.md` markers is not seen by Claude
+  Code; the maintainer accepts that. §8 A-3 explains why `CLAUDE.md` is always written. On
+  every `aid add` and `aid update`, for each of the two files, the CLI repairs the region:
   - If the file does not exist, it is created holding only the region.
   - If the file holds exactly the well-formed region, it is unchanged.
+  - If the file holds one well-formed marked span whose body differs (for example a summary from
+    an older release), the span is replaced in place and every byte outside it is kept; a full
+    copy of the file goes to `.aid/.trash/<file>` first only when the span no longer matches the
+    recorded region hash (a user edit). Nothing from the old body is left behind.
   - If the file holds no AID region line, the region is appended at its end and every existing
     byte is kept.
   - Otherwise (a malformed, duplicated or partial region), the CLI copies the whole file to
@@ -510,11 +520,15 @@ CLI. The Claude Code docs (skills, settings reference, memory, changelog) were c
     from v2.1.276 or earlier, and, before v2.1.281, some sessions such as those on Amazon Bedrock
     or with telemetry disabled.
 
-  Therefore the always-import design loads the AID instructions under `claude-md-or-agents-md`,
-  `claude-md-and-agents-md` and `claude-md`, and on older Claude Code releases. Only
-  `managed-only` leaves them out, which is intended: it is an organization's choice to exclude
-  project instructions. An `AGENTS.md`-only design would fail under the default whenever any
-  `CLAUDE.md` sits in the working directory or above it.
+  Therefore the always-written `CLAUDE.md` region, which carries the read instruction, the summary
+  and the `@.aid/runtime/rules.md` import itself, loads the AID instructions under
+  `claude-md-or-agents-md`, `claude-md-and-agents-md` and `claude-md`, and on older Claude Code
+  releases, without depending on `AGENTS.md` being loaded. Only `managed-only` leaves them out,
+  which is intended: it is an organization's choice to exclude project instructions. An
+  `AGENTS.md`-only design would fail under the default whenever any `CLAUDE.md` sits in the
+  working directory or above it. Because the default hides `AGENTS.md` once a `CLAUDE.md` exists,
+  Claude Code reads `CLAUDE.md` instead of `AGENTS.md`, so user content outside the `AGENTS.md`
+  markers is not seen by Claude Code (accepted by the maintainer).
   - *Verify:* none required; settled by the documentation above.
 - **A-4: `allowed-tools: ... Bash Shell Terminal ...` is accepted by every host.** Unknown names
   must be ignored without error, and Claude Code must still pre-approve `Bash`. Copilot CLI's
@@ -528,8 +542,8 @@ CLI. The Claude Code docs (skills, settings reference, memory, changelog) were c
     path into a skill. The root choice lives only in the runtime script, from a per-host value
     the CLI records (§11 Feature 001). No probe is needed.
 - **A-6: Every tool follows the pointer in `AGENTS.md`.** The region holds a plain read-first
-  instruction naming `.aid/runtime/rules.md`, not the rules and no `@` line. The other four tools
-  follow that instruction; Claude Code imports the rules directly through the `@.aid/runtime/rules.md`
+  instruction naming `.aid/runtime/rules.md` plus the rules summary, not the full rules and no `@`
+  line. The other four tools follow that instruction; Claude Code imports the rules directly through the `@.aid/runtime/rules.md`
   line of its `CLAUDE.md` region (A-3), because only Claude Code expands `@` imports.
   - *Verify:* AC-20, the maintainer's pointer probe.
   - *Fallback:* when an installed tool is listed as not following pointers (its profile TOML sets
@@ -537,8 +551,8 @@ CLI. The Claude Code docs (skills, settings reference, memory, changelog) were c
     manifest entry), the CLI writes the
     full `rules.md` bytes between the markers of the `AGENTS.md` region instead of the read
     instruction; repair then replaces the span between the BEGIN and END lines and removes no other
-    line. While `rules_inline` is active the `CLAUDE.md` region holds only `@AGENTS.md` (the rules
-    are already in `AGENTS.md`, so they are not imported twice).
+    line. While `rules_inline` is active the `CLAUDE.md` region carries the same inline rules text
+    as `AGENTS.md` (no `@` line, so the rules are not imported twice).
 
 **Dependencies.**
 
@@ -701,29 +715,33 @@ CLI. The Claude Code docs (skills, settings reference, memory, changelog) were c
   changing the trash snapshot. Invalid recovery data, failed staging, and `--dry-run` leave the
   repository snapshot unchanged; `aid add` and `aid remove` with a pending record exit 2, name
   `aid update`, and write nothing.
-- **AC-14:** `CLAUDE.md` holds the import region exactly while Claude Code is
-  installed, and `AGENTS.md` holds the pointer region. The *import region* is the four
-  LF-terminated lines `<!-- AID:BEGIN -->`, `@AGENTS.md`, `@.aid/runtime/rules.md` and
-  `<!-- AID:END -->`; while a tool's `rules_inline` is active it is the three lines
-  `<!-- AID:BEGIN -->`, `@AGENTS.md` and `<!-- AID:END -->`. The *pointer
-  region* is the four LF-terminated lines given in §11 *Root context file*; it contains no `@`
-  line.
+- **AC-14:** `CLAUDE.md` holds the CLAUDE.md region exactly while Claude Code is
+  installed, and `AGENTS.md` holds the AGENTS.md region. The *AGENTS.md region* is the LF-terminated
+  text given in §11 *Root context file*: the two fixed header lines, the three-line read/priority
+  sentence, the summary bullet lines of the installed `.aid/runtime/rules.md` between its
+  `<!-- AID:SUMMARY:BEGIN -->` and `<!-- AID:SUMMARY:END -->` markers (byte for byte), and
+  `<!-- AID:END -->`; it contains no `@` line. The *CLAUDE.md region* is the same lines with one
+  more line, `@.aid/runtime/rules.md`, directly before `<!-- AID:END -->` (so exactly one `@`
+  line and no `@AGENTS.md`); while a tool's `rules_inline` is active both regions instead hold the
+  two header lines, the whole `rules.md` text and the end marker, with no `@` line. A `rules.md`
+  with a missing or malformed summary block makes `aid add` and `aid update` fail with a clear
+  message (no empty summary is written).
   - (a) **Created when missing.** `aid add claude-code` into a fixture with no `CLAUDE.md`
-    creates one whose bytes equal the import region, and the fixture's `AGENTS.md` equals the
-    pointer region. `aid add cursor` into a second such fixture creates no `CLAUDE.md`.
+    creates one whose bytes equal the CLAUDE.md region, and the fixture's `AGENTS.md` equals the
+    AGENTS.md region. `aid add cursor` into a second such fixture creates no `CLAUDE.md`.
   - (b) **Added to a user file.** In a fixture whose user `CLAUDE.md` has no markers and ends in
     LF, after `aid add claude-code` the pre-add bytes are a byte-exact prefix of the file, and the
-    only bytes after them are the import region. A following `aid update` leaves the file's
+    only bytes after them are the CLAUDE.md region. A following `aid update` leaves the file's
     sha256 unchanged.
   - (c) **Upgraded from the v3 full region.** In a v3 claude-code fixture whose user-edited
     `CLAUDE.md` holds user content above and below the full AID region, `aid update` leaves the
     file equal, byte-for-byte, to its pre-update content with the old marked region (marker
-    lines included) removed, followed by the import region at the end. Every byte outside the
+    lines included) removed, followed by the CLAUDE.md region at the end. Every byte outside the
     old region is preserved in its original order; if the remaining user content is non-empty
-    and does not end in LF, one LF is inserted before the import region. Exactly one import
+    and does not end in LF, one LF is inserted before the CLAUDE.md region. Exactly one
     region remains. The pre-update file exists byte-for-byte at `.aid/.trash/CLAUDE.md`. A v3
     fixture whose `CLAUDE.md` has no markers passes the (b) prefix check. A v3 `AGENTS.md`
-    holding the full region gets the pointer region at the end by the same rule, with its
+    holding the full region gets the AGENTS.md region at the end by the same rule, with its
     pre-update file preserved at `.aid/.trash/AGENTS.md`.
   - (d) **Removed on Claude Code uninstall.** In a fresh fixture of the (a) kind and one of the
     (b) kind, run `aid add claude-code,cursor` and then `aid remove claude-code`. Afterwards
@@ -734,11 +752,11 @@ CLI. The Claude Code docs (skills, settings reference, memory, changelog) were c
   - (e) **User `AGENTS.md` without markers.** In a fixture whose user `AGENTS.md` has no markers
     and holds a `## Workflow` section, after `aid add claude-code` that section is present
     byte-for-byte, and the pre-add bytes of the file are a byte-exact prefix of it, followed by
-    the pointer region.
+    the AGENTS.md region.
   - (f) **Malformed, duplicated or partial region (repair by content).** Three fixtures: a user
     `CLAUDE.md` holding `<!-- AID:BEGIN -->` with no `<!-- AID:END -->`, followed by user text; a
-    user `AGENTS.md` holding two copies of the pointer region around user text; a user `CLAUDE.md`
-    holding a lone `@AGENTS.md` line. After `aid add claude-code`, each file holds exactly one
+    user `AGENTS.md` holding two copies of the AGENTS.md region around user text; a user `CLAUDE.md`
+    holding a lone `@.aid/runtime/rules.md` line. After `aid add claude-code`, each file holds exactly one
     well-formed region, every other line is present unchanged and in its original order, and a
     full copy of the pre-add file exists at `.aid/.trash/<file>`. A following `aid update` leaves
     each file's sha256 unchanged and adds no trash entry.
@@ -746,10 +764,16 @@ CLI. The Claude Code docs (skills, settings reference, memory, changelog) were c
     unchanged managed regions without drift or repair and preserve outside bytes exactly. A real
     region edit reports drift; exact-fixed-lines repair handles CRLF, is idempotent on retry, and
     preserves outside bytes. Exercise both shells. In every fixture, while Claude Code is installed,
-    `CLAUDE.md` contains exactly one `@AGENTS.md` line and (unless `rules_inline` is active, then
-    none) exactly one `@.aid/runtime/rules.md` line, `AGENTS.md` contains exactly one begin marker
-    and no `@` line, and a `rules_inline` toggle (add or remove of a `rules_inline` tool) rewrites
-    the `CLAUDE.md` region to match.
+    `CLAUDE.md` contains no `@AGENTS.md` line and (unless `rules_inline` is active, then no `@`
+    line at all) exactly one `@` line, `@.aid/runtime/rules.md`; `AGENTS.md` contains exactly one
+    begin marker and no `@` line; the two regions share the same body; and a `rules_inline` toggle
+    (add or remove of a `rules_inline` tool) rewrites the `CLAUDE.md` region to match.
+  - (g) **Summary single source.** The bullet lines of the `AGENTS.md` region equal the lines
+    between the `<!-- AID:SUMMARY:BEGIN -->` and `<!-- AID:SUMMARY:END -->` markers of the
+    installed `.aid/runtime/rules.md` byte for byte (the source is `canonical/aid/rules.md`).
+    Editing that block in a staged bundle changes both regions on `aid update`, with no old bullet
+    left behind. Deleting either root file and running `aid update` restores it. A bundle whose
+    block is missing or malformed fails clearly in both shells.
 - **AC-15:** Tool detection is fixed. `detect_tool` on a fixture holding only `.agents/` exits `2`
   (undetectable) and does not print `codex`. On a fixture holding `.codex/` it prints `codex`.
   `Detect-Tool` behaves the same way.
@@ -767,7 +791,8 @@ CLI. The Claude Code docs (skills, settings reference, memory, changelog) were c
     FR-6 runtime-local paths; `.aid/runtime/rules.md` equals `canonical/aid/rules.md`, and `.aid/runtime/host.conf` exists and is the only other file;
   - `.claude/aid/`, `.cursor/aid/` and `.cursor/skills/aid-*` are absent;
   - the repo-root `CLAUDE.md` keeps its `## Project` section byte for byte, and its AID region
-    holds `@AGENTS.md` and `@.aid/runtime/rules.md`;
+    is the `AGENTS.md` region body plus `@.aid/runtime/rules.md`, and its `AGENTS.md` region equals
+    that body;
   - `.claude/skills/generate-profile/SKILL.md` and `.claude/skills/release-aid/SKILL.md` are
     present;
   - `.aid/.aid-manifest.json` records the shared entries.
@@ -788,7 +813,7 @@ CLI. The Claude Code docs (skills, settings reference, memory, changelog) were c
   work's `STATE.yml`:
   - the `Bash Shell Terminal` alias list (A-4);
   - the pointer probe (A-6): in each of the five tools, a fixture whose `AGENTS.md` holds the
-    pointer region (and, for Claude Code, a `CLAUDE.md` holding the import region), with a unique
+    AGENTS.md region (and, for Claude Code, a `CLAUDE.md` holding the CLAUDE.md region), with a unique
     token in `.aid/runtime/rules.md`, makes the tool report the token when asked what its AID
     rules say.
 
@@ -827,10 +852,14 @@ Architecture, § Data Flow, § Invariants), `.aid/knowledge/test-landscape.md` a
 names. Three gaps that the requirements left open are decided here.
 
 - **Gap 1, A-3 (how Claude Code gets the AID instructions).** *Decision:* `AGENTS.md` holds the
-  AID managed pointer region for every tool (the rules live in `.aid/runtime/rules.md`). While Claude Code is installed, the CLI also always keeps a
-  CLI-owned region in the project-root `CLAUDE.md` that imports `@AGENTS.md` and
-  `@.aid/runtime/rules.md` (only `@AGENTS.md` under `rules_inline`), and it
-  creates the file when it is missing. This import region is the primary design, not a fallback.
+  AID managed region for every tool (the rules live in `.aid/runtime/rules.md`; the region carries a
+  read instruction and the rules summary). While Claude Code is installed, the CLI also always keeps a
+  CLI-owned region in the project-root `CLAUDE.md` with the same body plus an
+  `@.aid/runtime/rules.md` import (the inline rules text, no `@` line, under `rules_inline`), and it
+  creates the file when it is missing. This region is the primary design, not a fallback. It
+  deliberately does not import `@AGENTS.md`, so deleting either root file leaves the rules in the
+  other. The cost, accepted by the maintainer: Claude Code reads `CLAUDE.md` instead of `AGENTS.md`
+  by default, so user content outside the `AGENTS.md` markers is not seen by Claude Code.
   *Rationale:* the Claude Code memory docs (https://code.claude.com/docs/en/memory, read
   2026-10-10; quoted in §8 A-3) settle the question without a probe.
   - Under the default **Project instructions** value, `claude-md-or-agents-md`, any `CLAUDE.md`
@@ -985,7 +1014,7 @@ other. It lies outside `runtime/{scripts,templates}`, so AC-7's byte check does 
     last uninstall. A matching whole-file hash never authorizes deletion of outside-region content;
     if it matches, remove only the managed region and delete the file only when the remainder is
     empty or whitespace-only (FR-8).
-- **`claude_md`.** `region_sha256` is the sha256 of the import region after canonical-LF
+- **`claude_md`.** `region_sha256` is the sha256 of the CLAUDE.md region after canonical-LF
   normalization (line terminators only; all other bytes are preserved), marker lines included.
   It is the drift baseline. There is no `file_sha256`: on the last uninstall the
   region is removed whatever the rest of the file holds, and the file is deleted only when
@@ -1030,8 +1059,8 @@ other. It lies outside `runtime/{scripts,templates}`, so AC-7's byte check does 
 `lib/AidInstallCore.psm1`. The `format_version` line of `canonical/aid/templates/settings.yml`
 (the seed both shells copy) goes to 5 in the same commit. The comment block above `readonly AID_SUPPORTED_FORMAT` gains this
 line: `format 5 (was 4): shared skills under .agents/skills (+ CLI-owned mirrors), runtime under
-.aid/runtime/, one AGENTS.md pointer region for every tool, a CLAUDE.md import region (@AGENTS.md and
-the rules) while claude-code is installed; manifest format_version 3`. A test keeps the three values and the
+.aid/runtime/, one AGENTS.md region (read instruction + rules summary) for every tool, a CLAUDE.md region
+(the same body plus an @.aid/runtime/rules.md import line) while claude-code is installed; manifest format_version 3`. A test keeps the three values and the
 template line in lockstep. The settings stamp is capped as follows: `_aid_migrate_repo` (and its PowerShell twin)
 writes `format_version: 5` only when the manifest records `format_version` 3, or when no manifest,
 recovery record or v3 legacy evidence (FR-11) exists (proven fresh install), or when the manifest
@@ -1166,11 +1195,11 @@ copy. That is replaced by this policy.
       recorded for every installed tool plus the new tools' `aid-tool.conf`.
    4. Each new tool's agents go to `<root>/agents/`.
    5. The `AGENTS.md` region is written through `_copy_root_agent_file`, which calls
-      `_repair_root_region` with the pointer region, or with the full `rules.md` bytes when any
+      `_repair_root_region` with the AGENTS.md region, or with the full `rules.md` bytes when any
       installed tool's manifest entry (or a newly added tool's `aid-tool.conf`) has `rules_inline`
       (see [Layers & Components](#layers--components), *Root context file*). Then, when any user declares `context_import`,
-      `_ensure_claude_md_region` writes the `CLAUDE.md` import region the same way (the
-      `@AGENTS.md`-only variant when `rules_inline` is active).
+      `_ensure_claude_md_region` writes the `CLAUDE.md` region the same way (the inline rules text,
+      identical to the `AGENTS.md` region, when `rules_inline` is active).
    6. If any copy failed, abort before the manifest write (the existing work-007 C4 rule).
    7. Write the manifest atomically. Each new tool joins every shared `users` list, and each
       file is recorded with the sha256 of its staged bytes.
@@ -1223,7 +1252,7 @@ the trash moves and the prune list.
      while another tool remains therefore takes the region out of `CLAUDE.md` and leaves the
      `AGENTS.md` region in place for the other tools.
   6. Rewrite `host.conf` if the runtime remains, from the remaining tools' recorded
-     `worktree_root`; re-write the `AGENTS.md` region (pointer or inline) from their recorded
+     `worktree_root`; re-write the `AGENTS.md` region (summary or inline) from their recorded
      `rules_inline` while any user remains.
   7. Delete the manifest and `.aid/settings.yml` when no tools remain (existing behaviour), and
      run `_remove_gitattributes_block` (the `.gitignore` block stays, as today).
@@ -1268,7 +1297,7 @@ the agents, `AGENTS.md` and `CLAUDE.md` are committed (AC-18).
   - each mirror, against the `shared.skills` hashes;
   - `shared.runtime`;
   - the `AGENTS.md` region, against `region_sha256` after canonical-LF normalization;
-  - the `CLAUDE.md` import region, against `shared.claude_md.region_sha256` after canonical-LF
+  - the `CLAUDE.md` region, against `shared.claude_md.region_sha256` after canonical-LF
     normalization, when that entry
     exists; a `CLAUDE.md` that is absent or has lost its markers is reported `missing:`;
   - each tool's `files`.
@@ -1380,12 +1409,13 @@ implemented twice. The parity suite names every row (AC-16).
 | clean-slate retire of the v3 layout | `retire_v3_layout` (new); `_migrate_retired_layout` (no longer sweeps `.agents/`) | `Invoke-RetireV3Layout` (new); `Invoke-MigrateRetiredLayout` |
 | path-based ownership | `_is_aid_owned_path` (new) | `Test-AidOwnedPath` (new) |
 | content-based root-region repair (`AGENTS.md`, `CLAUDE.md`) | `_repair_root_region` (new) | `Repair-AidRootRegion` (new) |
-| `CLAUDE.md` import region | `_ensure_claude_md_region` and `_remove_claude_md_region` (new) | `Invoke-EnsureClaudeMdRegion` and `Invoke-RemoveClaudeMdRegion` (new) |
+| `CLAUDE.md` region | `_ensure_claude_md_region` and `_remove_claude_md_region` (new) | `Invoke-EnsureClaudeMdRegion` and `Invoke-RemoveClaudeMdRegion` (new) |
 | prune | `prune_shared` (replaces `_prune_tool_dirs`) | `Invoke-PruneShared` (replaces `Invoke-PruneToolDirs`) |
 | drift report | `drift_report` (new; called by `aid_status`) | `Get-AidDriftReport` (new; called by `Get-AidStatus`) |
 | uninstall | `uninstall_tool` (v3 ref-counted branch) | `Uninstall-AidTool` |
 | tool detection | `detect_tool` (`.agents` no longer marks Codex) | `Detect-Tool` |
-| root file | `_root_agent_file` (`AGENTS.md` for every tool); `_copy_root_agent_file` (calls `_repair_root_region` with the pointer region) | `Get-RootAgentFile`; `Copy-RootAgentFile` |
+| root region text | `_aid_rules_summary`, `_aid_root_region` (the region builders; read the summary block of the installed rules) | `Get-AidRulesSummary`, `Get-AidRootRegion` |
+| root file | `_root_agent_file` (`AGENTS.md` for every tool); `_copy_root_agent_file` (calls `_repair_root_region` with the AGENTS.md region) | `Get-RootAgentFile`; `Copy-RootAgentFile` |
 | gitignore block | `_aid_gitignore_block` (adds the worktree roots) | `Get-AidGitignoreBlock` |
 | gitattributes block | `_aid_gitattributes_block`, `update_gitattributes`, `_remove_gitattributes_block` (new) | `Get-AidGitattributesBlock`, `Update-AidGitattributes`, `Remove-AidGitattributesBlock` (new) |
 | settings seed | `seed_settings_yml` (template from `.aid/runtime/templates/`) | `Initialize-AidSettingsFile` |
@@ -1406,26 +1436,41 @@ implemented twice. The parity suite names every row (AC-16).
 
 - **What `_root_agent_file` returns.** It returns `AGENTS.md` for every tool. `agents_md` is a
   shared entry.
-- **The regions.** Both are fixed constants in both install cores, never payload files, and their
-  canonical bytes use LF line endings. The AID rules live in `.aid/runtime/rules.md` (source `canonical/aid/rules.md`,
-  part of the runtime payload). The `AGENTS.md` region only points at them and is exactly:
+- **The regions.** Their fixed parts are constants in both install cores, never payload files, and
+  their canonical bytes use LF line endings. The AID rules live in `.aid/runtime/rules.md` (source
+  `canonical/aid/rules.md`, part of the runtime payload). That file starts with a `## Summary`
+  heading and one block of seven bullet lines between `<!-- AID:SUMMARY:BEGIN -->` and
+  `<!-- AID:SUMMARY:END -->`: the single source of the summary. The CLI builds the `AGENTS.md`
+  region from the two fixed header lines, a three-line read/priority sentence (a CLI constant) and
+  the bullet lines extracted from the INSTALLED `.aid/runtime/rules.md` block, byte for byte. If the
+  block is missing or malformed (a marker absent, duplicated or out of order, no lines, a blank
+  line, a line that is neither a `- ` bullet nor an indented continuation), or the file is missing,
+  the CLI fails with a clear message and writes nothing: no silent empty summary. The region is:
 
   ```
   <!-- AID:BEGIN -->
   <!-- Managed by the AID CLI. Do not edit between the AID markers. -->
-  At the start of every session, before anything else, read `.aid/runtime/rules.md` and follow it (AID rules).
+  AID rules: **IMPORTANT!! Before anything else, and before you write or review any file or run an AID skill,
+  read `.aid/runtime/rules.md` and follow it. This read takes priority over any instruction not to read
+  files: that file defines how agents must behave in this project.** Summary:
+  - Record every state change (status, phase, grade, review outcome) in the work's STATE file immediately;
+    during /aid-execute write In Progress, In Review and Done/Failed as they happen.
+  - Work folders (`.aid/works/`) are transient: nothing permanent may depend on them.
+  - Never name a work id or work-folder path in `.aid/knowledge/**`.
+  - Consult the Knowledge Base (`.aid/knowledge/`) before changing anything; it is the source of truth.
+  - Before writing a file, resolve and follow its review criteria (`.aid/knowledge/authoring-conventions.md`).
+  - Review output uses the 7-column ledger (`.aid/runtime/templates/reviewer-ledger-schema.md`).
+  - Write only inside the project directory.
   <!-- AID:END -->
   ```
 
   It holds no `@` line: only Claude Code expands `@` imports, so every other tool needs the plain
-  instruction. The `CLAUDE.md` import region is the four lines `<!-- AID:BEGIN -->`, `@AGENTS.md`,
-  `@.aid/runtime/rules.md` and `<!-- AID:END -->`, written only while Claude Code is installed
-  (Gap 1). When `rules_inline` is active the rules are already inline in the `AGENTS.md` region, so
-  the `CLAUDE.md` region is the three lines `<!-- AID:BEGIN -->`, `@AGENTS.md` and
-  `<!-- AID:END -->`. `_repair_root_region` takes an optional extra owned line
-  (`@.aid/runtime/rules.md` for `CLAUDE.md`) so a stale copy outside the region is absorbed when
-  the region switches between the two shapes. Skills, including
-  `/aid-discover`, never write inside either region.
+  instruction. The `CLAUDE.md` region is the same lines with one more, `@.aid/runtime/rules.md`,
+  directly before `<!-- AID:END -->`, written only while Claude Code is installed (Gap 1). It does
+  not import `@AGENTS.md`, so each root file carries the rules on its own. When `rules_inline` is
+  active both regions instead hold the two header lines, the whole `rules.md` text and the end
+  marker (no `@` line anywhere). Skills, including `/aid-discover`, never write inside either
+  region.
 - **`_repair_root_region <file> <region>`** (one function for both files). Parsing and recognition
   are CRLF-aware. Compare managed-region hashes over canonical-LF bytes (normalize line
   terminators only; do not trim or otherwise change content). New constants remain LF. Repair
@@ -1437,6 +1482,10 @@ implemented twice. The parity suite names every row (AC-16).
   - **The file holds no AID region line:** the region is appended at its end, preceded by one LF
     when the file is non-empty and does not end in LF. Every pre-existing byte is kept, so no trash
     copy is made.
+  - **One well-formed marked span with a different body** (for example the summary of an older
+    release, or a user edit): the span is replaced in place, every byte outside it is kept, and the
+    whole file is copied to `.aid/.trash/<file>` first only when the span no longer matches the
+    recorded region hash. No line of the old body survives outside the new region.
   - **Anything else** (an orphan or duplicated marker, a partial or repeated region): the whole
     file is copied to `.aid/.trash/<file>` (collision policy), every line whose content exactly
     equals a region line, allowing LF or CRLF terminators, is removed wherever it sits, and one
@@ -1459,7 +1508,7 @@ implemented twice. The parity suite names every row (AC-16).
   in both shells; a UTF-16 root file is refused identically.
 - **`_ensure_claude_md_region`** runs in every add and update commit (flow 3, commit step 5)
   whenever an installed tool declares `context_import`, and calls `_repair_root_region` with the
-  import region. `_copy_root_agent_file` does the same for `AGENTS.md` with the pointer region.
+  CLAUDE.md region. `_copy_root_agent_file` does the same for `AGENTS.md` with the AGENTS.md region.
   After the write, the CLI records `agents_md.region_sha256` and `file_sha256`, or
   `claude_md.region_sha256`; region hashes use canonical-LF bytes, while whole-file baselines use
   actual file bytes.
@@ -1491,8 +1540,8 @@ unchanged in shape. They vendor the updated `lib/` and `bin/` (AC-17). `install.
 - the content-isolation invariant, which now reads: skills use the `aid-` prefix under
   `.agents/skills/` and each mirror, the runtime lives under `.aid/runtime/`, and the root files
   are updated only between their markers: the `AGENTS.md` region for every tool, and, while
-  Claude Code is installed, the `CLAUDE.md` region, which imports `@AGENTS.md` and
-  `@.aid/runtime/rules.md` (only `@AGENTS.md` under `rules_inline`);
+  Claude Code is installed, the `CLAUDE.md` region (the `AGENTS.md` body plus the
+  `@.aid/runtime/rules.md` import; the inline rules text under `rules_inline`);
 - `G-10` and `G-11` in `authoring-conventions.md`, with the same placement rule.
 
 The repo-root `CLAUDE.md` and `AGENTS.md` come out of the dogfood resync. No KB edit names this

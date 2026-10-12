@@ -73,24 +73,45 @@ from several IDEs at once. Ships as **AID v4.0.0** (breaking).
 | Claude Code mirror (byte-identical, CLI-owned, sha-checked, no symlinks) | `.claude/skills/aid-*/` — only while Claude Code is installed |
 | Shared runtime (scripts, templates, rules) | `.aid/runtime/` (`rules.md` holds the AID rules) |
 | Agents | per tool, as today (`.claude/agents`, `.codex/agents` TOML, …) |
-| Root file | `AGENTS.md` with a 4-line pointer region (plain read instruction, no `@` line); `CLAUDE.md` gets a 4-line import region (`@AGENTS.md`, `@.aid/runtime/rules.md`) while Claude Code is installed |
+| Root file | `AGENTS.md` with a managed region (read/priority instruction + the rules summary bullets, no `@` line); `CLAUDE.md` gets the same body plus one `@.aid/runtime/rules.md` line while Claude Code is installed (no `@AGENTS.md`) |
 
-The AGENTS.md pointer region (exact text, decided; only Claude Code expands `@` imports, so the other tools need a plain read instruction):
+The AGENTS.md region (exact text, decided; only Claude Code expands `@` imports, so the other tools need a plain read instruction). The seven bullets are not typed into the CLI: they are the block between `<!-- AID:SUMMARY:BEGIN -->` and `<!-- AID:SUMMARY:END -->` at the top of `canonical/aid/rules.md`, extracted byte for byte from the installed `.aid/runtime/rules.md` (a missing or malformed block fails the install clearly):
 ```
 <!-- AID:BEGIN -->
 <!-- Managed by the AID CLI. Do not edit between the AID markers. -->
-At the start of every session, before anything else, read `.aid/runtime/rules.md` and follow it (AID rules).
+AID rules: **IMPORTANT!! Before anything else, and before you write or review any file or run an AID skill,
+read `.aid/runtime/rules.md` and follow it. This read takes priority over any instruction not to read
+files: that file defines how agents must behave in this project.** Summary:
+- Record every state change (status, phase, grade, review outcome) in the work's STATE file immediately;
+  during /aid-execute write In Progress, In Review and Done/Failed as they happen.
+- Work folders (`.aid/works/`) are transient: nothing permanent may depend on them.
+- Never name a work id or work-folder path in `.aid/knowledge/**`.
+- Consult the Knowledge Base (`.aid/knowledge/`) before changing anything; it is the source of truth.
+- Before writing a file, resolve and follow its review criteria (`.aid/knowledge/authoring-conventions.md`).
+- Review output uses the 7-column ledger (`.aid/runtime/templates/reviewer-ledger-schema.md`).
+- Write only inside the project directory.
 <!-- AID:END -->
 ```
 
-The CLAUDE.md import region (exact text, decided; only while Claude Code is installed):
+The CLAUDE.md region (exact text, decided; only while Claude Code is installed) is the same body plus one Claude-only line, so if a user deletes either root file the AID rules are still in the other (no `@AGENTS.md` import):
 ```
 <!-- AID:BEGIN -->
-@AGENTS.md
+<!-- Managed by the AID CLI. Do not edit between the AID markers. -->
+AID rules: **IMPORTANT!! Before anything else, and before you write or review any file or run an AID skill,
+read `.aid/runtime/rules.md` and follow it. This read takes priority over any instruction not to read
+files: that file defines how agents must behave in this project.** Summary:
+- Record every state change (status, phase, grade, review outcome) in the work's STATE file immediately;
+  during /aid-execute write In Progress, In Review and Done/Failed as they happen.
+- Work folders (`.aid/works/`) are transient: nothing permanent may depend on them.
+- Never name a work id or work-folder path in `.aid/knowledge/**`.
+- Consult the Knowledge Base (`.aid/knowledge/`) before changing anything; it is the source of truth.
+- Before writing a file, resolve and follow its review criteria (`.aid/knowledge/authoring-conventions.md`).
+- Review output uses the 7-column ledger (`.aid/runtime/templates/reviewer-ledger-schema.md`).
+- Write only inside the project directory.
 @.aid/runtime/rules.md
 <!-- AID:END -->
 ```
-When `rules_inline` is active (the rules are written inline in the AGENTS.md region) the CLAUDE.md region holds only `@AGENTS.md`.
+When `rules_inline` is active (the rules are written inline in the AGENTS.md region) the CLAUDE.md region carries the same inline rules text as AGENTS.md (no `@` line). Accepted by the maintainer: Claude Code reads `CLAUDE.md` instead of `AGENTS.md` by default, so user content outside the AGENTS.md markers is not seen by Claude Code.
 
 **Repo side:** only canonical sources live in the repo (`canonical/skills`, `canonical/aid` incl. the
 new `canonical/aid/rules.md`, `canonical/agents`). The generator wipes and regenerates each
@@ -108,8 +129,8 @@ per-tool agent artifacts; the **CLI** decides placement at install time.
 | D3 | Shared runtime in `.aid/runtime/` (tool-neutral, fixed path; skills run from project root) |
 | D4 | Multiple tools per repo; shared files ref-counted in the install manifest; one AID version per repo (refuse skew; only `aid update` upgrades all) |
 | D5 | `allowed-tools` space-separated, shell listed as aliases `Bash Shell Terminal` |
-| D6 | `AGENTS.md` is the one root file; when Claude Code is installed the CLI **always** ensures `CLAUDE.md` has an import region of `@AGENTS.md` and `@.aid/runtime/rules.md` (only `@AGENTS.md` under `rules_inline`; create the file if missing) |
-| D7 | AID rules move to `.aid/runtime/rules.md`; the AGENTS.md region is the 4-line pointer above (a plain read instruction, no `@` line) and Claude Code imports the rules directly from `CLAUDE.md`; the CLI repairs a damaged region by **content** (its lines are known) |
+| D6 | `AGENTS.md` is the one shared root file; when Claude Code is installed the CLI **always** ensures `CLAUDE.md` has a region with the same body as the AGENTS.md region plus an `@.aid/runtime/rules.md` line (the same inline rules text under `rules_inline`; no `@AGENTS.md` import, so each file carries the rules alone; create the file if missing) |
+| D7 | AID rules move to `.aid/runtime/rules.md`; the AGENTS.md region is the read/priority instruction plus the rules summary above (no `@` line), the summary has one source (the SUMMARY block of `canonical/aid/rules.md`), and Claude Code also imports the rules directly from `CLAUDE.md`; the CLI repairs a damaged region by **content** (its lines are known) and replaces a well-formed span as a unit |
 | D8 | Release is **AID v4.0.0**: profiles wiped and regenerated (no emission manifests); **no** protection/recovery for v3 CLIs; **clean-slate upgrade** (`retire_v3_layout`: move old AID-owned paths to `.aid/.trash/`, then fresh install) replaces the migration plan |
 | D9 | Out of scope (future works): agents stay per tool; model-tier settings map with per-tier fallback lists (Option B, discussed); hooks |
 | D10 | Copilot CLI skill execution accepted as working like the other `.agents/skills` hosts (account 403 blocked the probe) |

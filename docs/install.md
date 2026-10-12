@@ -477,24 +477,56 @@ Every tool gets the same 9 `aid-`-prefixed agent files, each named `aid-<name>`.
 ```
 <!-- AID:BEGIN -->
 <!-- Managed by the AID CLI. Do not edit between the AID markers. -->
-At the start of every session, before anything else, read `.aid/runtime/rules.md` and follow it (AID rules).
+AID rules: **IMPORTANT!! Before anything else, and before you write or review any file or run an AID skill,
+read `.aid/runtime/rules.md` and follow it. This read takes priority over any instruction not to read
+files: that file defines how agents must behave in this project.** Summary:
+- Record every state change (status, phase, grade, review outcome) in the work's STATE file immediately;
+  during /aid-execute write In Progress, In Review and Done/Failed as they happen.
+- Work folders (`.aid/works/`) are transient: nothing permanent may depend on them.
+- Never name a work id or work-folder path in `.aid/knowledge/**`.
+- Consult the Knowledge Base (`.aid/knowledge/`) before changing anything; it is the source of truth.
+- Before writing a file, resolve and follow its review criteria (`.aid/knowledge/authoring-conventions.md`).
+- Review output uses the 7-column ledger (`.aid/runtime/templates/reviewer-ledger-schema.md`).
+- Write only inside the project directory.
 <!-- AID:END -->
 ```
 
+The seven summary bullets are not typed into the CLI. They are the block between
+`<!-- AID:SUMMARY:BEGIN -->` and `<!-- AID:SUMMARY:END -->` at the top of `.aid/runtime/rules.md`
+(source: `canonical/aid/rules.md`), copied into the region byte for byte on every `aid add` and
+`aid update`. Edit that block and the next `aid update` changes the region. If the block is missing or
+malformed, the command fails with a clear message instead of writing an empty summary.
+
 Only Claude Code expands `@` imports, so this region is a plain read instruction that every tool can follow.
 
-While Claude Code is installed, `CLAUDE.md` also gets a region that imports `@AGENTS.md` and
-`@.aid/runtime/rules.md`, so Claude Code loads the same instructions and the rules directly:
+While Claude Code is installed, `CLAUDE.md` also gets a region: the same body, plus one Claude-only
+line that imports the rules directly:
 
 ```
 <!-- AID:BEGIN -->
-@AGENTS.md
+<!-- Managed by the AID CLI. Do not edit between the AID markers. -->
+AID rules: **IMPORTANT!! Before anything else, and before you write or review any file or run an AID skill,
+read `.aid/runtime/rules.md` and follow it. This read takes priority over any instruction not to read
+files: that file defines how agents must behave in this project.** Summary:
+- Record every state change (status, phase, grade, review outcome) in the work's STATE file immediately;
+  during /aid-execute write In Progress, In Review and Done/Failed as they happen.
+- Work folders (`.aid/works/`) are transient: nothing permanent may depend on them.
+- Never name a work id or work-folder path in `.aid/knowledge/**`.
+- Consult the Knowledge Base (`.aid/knowledge/`) before changing anything; it is the source of truth.
+- Before writing a file, resolve and follow its review criteria (`.aid/knowledge/authoring-conventions.md`).
+- Review output uses the 7-column ledger (`.aid/runtime/templates/reviewer-ledger-schema.md`).
+- Write only inside the project directory.
 @.aid/runtime/rules.md
 <!-- AID:END -->
 ```
 
-If a tool is set to receive the rules inline (the rules are written between the markers in `AGENTS.md`),
-the `CLAUDE.md` region holds only `@AGENTS.md`, so the rules are not imported twice. AID creates the
+`CLAUDE.md` does not import `AGENTS.md`, so each file carries the AID rules by itself: if you delete
+either root file, the rules are still in the other, and `aid update` restores the deleted one. Claude
+Code reads `CLAUDE.md` instead of `AGENTS.md` by default, so text you keep outside the `AGENTS.md`
+markers is not seen by Claude Code.
+
+If a tool is set to receive the rules inline (the whole rules text is written between the markers in
+`AGENTS.md`), the `CLAUDE.md` region carries that same inline text, with no `@` line. AID creates the
 file if it is missing. Text outside the markers is yours. See [Root agent files and the AID region](#root-agent-files-and-the-aid-region).
 
 ### Git files
@@ -657,7 +689,9 @@ When `aid add` or `aid update` writes a root file `F`:
 
 1. `F` does not exist: AID creates it holding only the AID region.
 2. `F` exists and has no AID region: AID appends the region at the end. Your text is kept.
-3. `F` has one well-formed AID region: AID replaces the text inside the markers when it differs.
+3. `F` has one well-formed AID region: AID replaces the text inside the markers when it differs (for
+   example after the rules summary changed), keeping every byte outside them. If you had edited the
+   text inside the markers, AID first copies the whole file to `.aid/.trash/<F>`.
 4. `F` has a damaged region, such as an orphan marker or a repeated region: AID copies the whole
    file to `.aid/.trash/<F>`, removes every line that matches a region line, and writes one
    well-formed region where the first of them was. Every other byte is kept.
@@ -846,7 +880,7 @@ PowerShell flags use the same words; the `-` prefix is accepted alongside `--`:
 
 | Tool id | Agents folder | Root instruction files |
 |---------|---------------|------------------------|
-| `claude-code` | `.claude/agents/` | `AGENTS.md`, and `CLAUDE.md` (import region) |
+| `claude-code` | `.claude/agents/` | `AGENTS.md`, and `CLAUDE.md` (region) |
 | `codex` | `.codex/agents/` | `AGENTS.md` |
 | `cursor` | `.cursor/agents/` | `AGENTS.md` |
 | `copilot-cli` | `.github/agents/` | `AGENTS.md` |
