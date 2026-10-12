@@ -33,7 +33,15 @@ control through the final approvals.
 orchestrator (and maintainers) need a clean, unambiguous set to route to. The user never *needs* to
 know them; power users can still invoke a skill directly.
 
-*(Outcome for the information-overload problem: to be confirmed.)*
+**Digestible review.** Digestible means **one topic at a time**. A PRD may hold several sections of
+related, interdependent items, all crucial to the task -- too much to absorb and decide at once.
+Humans need to focus on one decision item or topic at a time. At the same time, many disconnected
+decisions in rapid sequence are overwhelming, confusing and tiresome. So:
+
+- Information is delivered in **logical chunks** that make sense together, with **time to rest** in
+  between.
+- The **most important decisions come first**, and each question states **how important** it is.
+- **Trivial decisions** create noise: the AI makes them and the user **confirms them at the end**.
 
 ## 2. Problem Statement
 
