@@ -492,7 +492,7 @@ AID keeps two managed blocks, each wrapped in marker comments:
 
 - `.gitignore` ignores transient AID paths, such as `.aid/.temp/`, `.aid/.trash/`, `.aid/generated/`
   and the worktree root. It does not ignore the Knowledge Base.
-- `.gitattributes` sets `eol=lf` on the AID skills and the runtime, so checkouts keep LF line endings.
+- `.gitattributes` sets `eol=lf` on the AID skills, the runtime and the AID agent files, so checkouts keep LF line endings.
 
 ## Several tools in one repo
 

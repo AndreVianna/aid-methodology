@@ -539,7 +539,8 @@ Non-obvious traps a change will trip (cannot be inferred from the code alone):
   worktree tool only switches between worktrees under that folder), otherwise `.aid/.worktrees/`. The
   neutral root is covered by the `.gitignore` managed block.
 - **Installed skills and runtime need LF.** The CLI keeps a managed `.gitattributes` block that forces LF on
-  `.agents/skills/aid-*/**` and `.aid/runtime/**`. Without it, a `core.autocrlf=true` checkout turns every
+  `.agents/skills/aid-*/**`, the Claude mirror, `.aid/runtime/**` and every tool's `<root>/agents/aid-*`
+  agent files. Without it, a `core.autocrlf=true` checkout turns every
   installed file modified and breaks the `.sh` runtime.
 - **Old layouts do not mix.** `aid add` refuses a repo that holds v3 legacy evidence and points to
   `aid update`, which runs a clean-slate upgrade: the old AID paths move to `.aid/.trash/`. A project whose
