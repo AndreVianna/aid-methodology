@@ -520,7 +520,9 @@ assert_eq "$ps_unbounded" "all-bounded" "E2E16 and every chat request in the Pow
 # --- E2E15 ------------------------------------------------------------------
 _cleanup
 trap - EXIT
-sleep 0.3
+# A signalled hub still runs its graceful shutdown. Wait for it, bounded, rather than a fixed
+# sleep: on a loaded runner a hub that is still exiting was read as one left behind.
+for _w in $(seq 1 50); do [[ "$(_own_hubs)" == "0" ]] && break; sleep 0.1; done
 assert_eq "$(_own_hubs)" "0" "E2E15 nothing is left running on either machine"
 
 test_summary

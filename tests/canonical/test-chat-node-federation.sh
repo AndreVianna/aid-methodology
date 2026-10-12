@@ -70,7 +70,10 @@ export AID_CODE_HOME="$REPO_ROOT"
 
 # Link ports are picked from an ephemeral-ish band and derived from this run's own pid, so two
 # concurrent runs of this suite -- which run-all makes possible -- cannot collide on a listener.
-LINK_A=$(( 18000 + (BASHPID % 2000) * 2 ))
+# Three link ports per run (A, B, and the third hub FD25 adds), in a range no other chat suite
+# uses: with two per run, hub C took LINK_B + 1, which is the next PID's LINK_A, and the old
+# 18000-21999 range overlapped test-chat-node-endtoend.sh's 21000+.
+LINK_A=$(( 18000 + (BASHPID % 1000) * 3 ))
 LINK_B=$(( LINK_A + 1 ))
 
 A_RT="${_TMPD}/A"; B_RT="${_TMPD}/B"
@@ -521,7 +524,9 @@ done
 # Tear down FIRST, then measure, since the EXIT trap runs after this line.
 _cleanup
 trap - EXIT
-sleep 0.3
+# A signalled hub still runs its graceful shutdown. Wait for it, bounded, rather than a fixed
+# sleep: on a loaded runner a hub that is still exiting was read as one left behind.
+for _w in $(seq 1 50); do [[ "$(_own_hubs)" == "0" ]] && break; sleep 0.1; done
 assert_eq "$(_own_hubs)" "0" "the suite leaves none of its own hub processes behind"
 
 test_summary
