@@ -169,14 +169,18 @@ normalize_key() {
 
 # ---------------------------------------------------------------------------
 # run_one_suite SUITE -> the suite's combined stdout+stderr (verbose run).
-# Uses `timeout 300` when available (mirrors run-all.sh:47), tolerating any
+# Uses `timeout 300` (1500 for the heavy suites) when available (mirrors run-all.sh), tolerating any
 # non-zero exit -- a failing suite still executed its assertions.
 # ---------------------------------------------------------------------------
 TIMEOUT_BIN="$(command -v timeout 2>/dev/null || true)"
 run_one_suite() {
-    local suite="$1"
+    local suite="$1" budget=300
+    # Same budget as run-all.sh: the heavy parity/migrate suites get 1500 s.
+    case "$(basename "$suite")" in
+        test-aid-cli-parity.sh | test-aid-migrate.sh) budget=1500 ;;
+    esac
     if [[ -n "$TIMEOUT_BIN" ]]; then
-        "$TIMEOUT_BIN" 300 bash "$suite" --verbose 2>&1
+        "$TIMEOUT_BIN" "$budget" bash "$suite" --verbose 2>&1
     else
         bash "$suite" --verbose 2>&1
     fi
