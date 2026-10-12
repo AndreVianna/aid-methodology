@@ -117,7 +117,13 @@ function Assert {
 function Assert-Eq {
     param([string]$Actual, [string]$Expected, [string]$Label)
     if ($Actual -eq $Expected) { script:RecordPass $Label }
-    else { script:RecordFail $Label "expected '$Expected' got '$Actual'" }
+    else {
+        script:RecordFail $Label "expected '$Expected' got '$Actual'"
+        # An unexpected exit code says nothing about why: show the tail of the CLI output.
+        if ($Label -match '-> exit' -and $script:_LastOut) {
+            ($script:_LastOut -split "`n" | Select-Object -Last 8) | ForEach-Object { Write-Host "      | $_" }
+        }
+    }
 }
 
 function Assert-Contains {
