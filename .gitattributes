@@ -35,4 +35,9 @@ canonical/aid/templates/generated-files.txt  text eol=lf
 .agents/skills/aid-*/** text eol=lf
 .claude/skills/aid-*/** text eol=lf
 .aid/runtime/** text eol=lf
+.claude/agents/aid-* text eol=lf
+.codex/agents/aid-* text eol=lf
+.cursor/agents/aid-* text eol=lf
+.github/agents/aid-* text eol=lf
+.agent/agents/aid-* text eol=lf
 # <<< AID managed <<<
