@@ -220,6 +220,7 @@ old workflow
 old perms
 EOF
 _COPY_COUNT_COPIED=0 _COPY_COUNT_UPTODATE=0 _COPY_COUNT_UPDATED=0 _COPY_COUNT_SKIPPED=0 _COPY_COUNT_FAILED=0
+mkdir -p "${d}/.aid/runtime" && cp "${REPO_ROOT}/canonical/aid/rules.md" "${d}/.aid/runtime/rules.md"
 _copy_root_agent_file "${d}/src.md" "${d}/dst.md" "claude-code" 0 ""
 assert_eq "$(grep -c '^## Workflow' "${d}/dst.md")" "1" "C1 exactly one ## Workflow after C2 migration (no duplicate)"
 assert_file_contains "${d}/dst.md" "my project" "C1b user ## Project content preserved"
@@ -260,6 +261,7 @@ old connectors
 old perms
 EOF
 _COPY_COUNT_COPIED=0 _COPY_COUNT_UPTODATE=0 _COPY_COUNT_UPDATED=0 _COPY_COUNT_SKIPPED=0 _COPY_COUNT_FAILED=0
+mkdir -p "${d}/.aid/runtime" && cp "${REPO_ROOT}/canonical/aid/rules.md" "${d}/.aid/runtime/rules.md"
 _copy_root_agent_file "${d}/src.md" "${d}/dst.md" "claude-code" 0 ""
 assert_eq "$(grep -c '^## Connectors' "${d}/dst.md")" "1" "CONN1 exactly one ## Connectors after C2 migration (no duplicate)"
 assert_file_contains "${d}/dst.md" "my project" "CONN1b user ## Project content preserved"

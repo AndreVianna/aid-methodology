@@ -127,7 +127,10 @@ assert_eq "$META_COUNT" 0 "AC-6 skills contain no context or agent key"
 # Rules source invariants.
 RULES="$REPO/canonical/aid/rules.md"
 assert_file_exists "$RULES" "rules source exists"
-if grep -qE '\.(claude|codex|cursor|agent)/|\.github/aid/|canonical/|^@|AID[- ](START|END)|<!--.*AID' "$RULES"; then fail "rules source contains no host path, canonical token, import, or AID marker"; else pass "rules source contains no host path, canonical token, import, or AID marker"; fi
+# The only markers allowed are the one summary block the install CLI lifts into the root regions.
+if grep -v -x -e '<!-- AID:SUMMARY:BEGIN -->' -e '<!-- AID:SUMMARY:END -->' "$RULES" | grep -qE '\.(claude|codex|cursor|agent)/|\.github/aid/|canonical/|^@|AID[- ](START|END)|<!--.*AID'; then fail "rules source contains no host path, canonical token, import, or AID marker"; else pass "rules source contains no host path, canonical token, import, or AID marker"; fi
+assert_eq "$(grep -c -x '<!-- AID:SUMMARY:BEGIN -->' "$RULES") $(grep -c -x '<!-- AID:SUMMARY:END -->' "$RULES")" "1 1" "rules source has exactly one summary block"
+assert_eq "$(sed -n '/^<!-- AID:SUMMARY:BEGIN -->$/,/^<!-- AID:SUMMARY:END -->$/p' "$RULES" | sed '1d;$d' | grep -c '^- ')" "7" "rules summary block carries the seven bullets"
 
 # Negative controls: run only the relevant invariant against private fixture copies.
 NEG="$TMP/negative"

@@ -130,11 +130,19 @@ fi
 STAGE_VERSION="$(tr -d '[:space:]' < "${CLONE}/VERSION")"
 STAGE_DIR="${CLONE}/.aid/.temp/release-${STAGE_VERSION}"
 
-# The project-root CLAUDE.md that `aid add claude-code` writes is not a payload file: it is the
-# fixed four-line import region (@AGENTS.md and @.aid/runtime/rules.md; spec §8 A-3). Its bytes are a CLI constant, so the
-# installed file is compared against that text, not against a profile source.
+# The project-root CLAUDE.md that `aid add claude-code` writes is not a payload file: it is the fixed
+# region (the AGENTS.md body -- read instruction plus the rules.md summary bullets -- and the single
+# @.aid/runtime/rules.md import line). It is built here independently from the cloned rules source and
+# compared byte for byte, not against a profile source.
 CLAUDE_REGION_EXPECT="${TMP}/claude-region.expected"
-printf '%s\n' '<!-- AID:BEGIN -->' '@AGENTS.md' '@.aid/runtime/rules.md' '<!-- AID:END -->' > "${CLAUDE_REGION_EXPECT}"
+{
+    printf '%s\n' '<!-- AID:BEGIN -->' '<!-- Managed by the AID CLI. Do not edit between the AID markers. -->' \
+        'AID rules: **IMPORTANT!! Before anything else, and before you write or review any file or run an AID skill,' \
+        'read `.aid/runtime/rules.md` and follow it. This read takes priority over any instruction not to read' \
+        'files: that file defines how agents must behave in this project.** Summary:'
+    sed -n '/^<!-- AID:SUMMARY:BEGIN -->$/,/^<!-- AID:SUMMARY:END -->$/p' "${CLONE}/canonical/aid/rules.md" | sed '1d;$d'
+    printf '%s\n' '@.aid/runtime/rules.md' '<!-- AID:END -->'
+} > "${CLAUDE_REGION_EXPECT}"
 claude_region_matches() { cmp -s "$1" "${CLAUDE_REGION_EXPECT}" && echo same || echo diff; }
 
 # ---------------------------------------------------------------------------
@@ -223,7 +231,7 @@ assert_dir_exists    "${PRIMARY_TARGET}/.claude"     "E2E03d .claude/ created"
 assert_file_exists   "${PRIMARY_TARGET}/CLAUDE.md"   "E2E03e CLAUDE.md created"
 
 CMP_RESULT="$(claude_region_matches "${PRIMARY_TARGET}/CLAUDE.md")"
-assert_eq "${CMP_RESULT}" "same" "E2E03f installed CLAUDE.md is exactly the @AGENTS.md import region"
+assert_eq "${CMP_RESULT}" "same" "E2E03f installed CLAUDE.md is exactly the fixed CLAUDE.md region"
 
 # Manifest assertions.
 E2E_MANIFEST="${PRIMARY_TARGET}/.aid/.aid-manifest.json"
@@ -295,7 +303,7 @@ assert_output_not_contains "$UPDATE_OUT" "Copied:" "E2E05c --verbose update does
 
 # Verify the installed state is unchanged after update.
 CMP_AFTER="$(claude_region_matches "${PRIMARY_TARGET}/CLAUDE.md")"
-assert_eq "${CMP_AFTER}" "same" "E2E05d CLAUDE.md still the @AGENTS.md import region after update"
+assert_eq "${CMP_AFTER}" "same" "E2E05d CLAUDE.md still the fixed CLAUDE.md region after update"
 
 # ---------------------------------------------------------------------------
 # E2E06 — Uninstall → exit 0, dirs removed.
@@ -498,7 +506,7 @@ else
     assert_file_exists "${PS1_TARGET}/CLAUDE.md" "E2E08e CLAUDE.md created by install.ps1"
 
     PS1_CMP="$(claude_region_matches "${PS1_TARGET}/CLAUDE.md")"
-    assert_eq "${PS1_CMP}" "same" "E2E08f ps1-installed CLAUDE.md is exactly the @AGENTS.md import region"
+    assert_eq "${PS1_CMP}" "same" "E2E08f ps1-installed CLAUDE.md is exactly the fixed CLAUDE.md region"
 
     # Manifest + version: the standalone .aid/.aid-version file is retired — the
     # installed AID release version lives in the manifest's aid_version key instead.

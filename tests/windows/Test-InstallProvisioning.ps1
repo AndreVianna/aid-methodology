@@ -32,7 +32,7 @@ function Check($name, $cond) {
 }
 
 $results = & $mod {
-    param($tmp)
+    param($tmp, $repoRoot)
     $out = [System.Collections.Generic.List[object]]::new()
     function rec($n, $c) { $out.Add([pscustomobject]@{ name = $n; cond = [bool]$c }) }
     $script:ci = 0
@@ -132,6 +132,8 @@ $results = & $mod {
     [System.IO.File]::WriteAllText("$d/src.md", $src)
     $dst = "# CLAUDE.md`n## Project`nmy project`n## Workflow`nold workflow`n## Permissions`nold perms`n"
     [System.IO.File]::WriteAllText("$d/dst.md", $dst)
+    [System.IO.Directory]::CreateDirectory("$d/.aid/runtime") | Out-Null
+    Copy-Item -LiteralPath (Join-Path $repoRoot "canonical/aid/rules.md") -Destination "$d/.aid/runtime/rules.md" -Force
     script:Copy-RootAgentFile -Src "$d/src.md" -Dst "$d/dst.md" -Tool 'claude-code' -Force $false | Out-Null
     $res = Get-Content -LiteralPath "$d/dst.md" -Raw
     rec "C1 exactly one ## Workflow (no duplicate)" ((([regex]::Matches($res, '(?m)^## Workflow')).Count) -eq 1)
@@ -146,6 +148,8 @@ $results = & $mod {
     [System.IO.File]::WriteAllText("$d/src.md", $srcConn)
     $dstConn = "# CLAUDE.md`n## Project`nmy project`n## Connectors`nold connectors`n## Permissions`nold perms`n"
     [System.IO.File]::WriteAllText("$d/dst.md", $dstConn)
+    [System.IO.Directory]::CreateDirectory("$d/.aid/runtime") | Out-Null
+    Copy-Item -LiteralPath (Join-Path $repoRoot "canonical/aid/rules.md") -Destination "$d/.aid/runtime/rules.md" -Force
     script:Copy-RootAgentFile -Src "$d/src.md" -Dst "$d/dst.md" -Tool 'claude-code' -Force $false | Out-Null
     $resConn = Get-Content -LiteralPath "$d/dst.md" -Raw
     rec "CONN1 exactly one ## Connectors (no duplicate)" ((([regex]::Matches($resConn, '(?m)^## Connectors')).Count) -eq 1)
@@ -153,7 +157,7 @@ $results = & $mod {
     rec "CONN1c region markers inserted" ($resConn -match '<!-- AID:BEGIN -->')
 
     return $out
-} $tmp
+} $tmp $repoRoot
 
 foreach ($r in $results) { Check $r.name $r.cond }
 Remove-Item -LiteralPath $tmp -Recurse -Force -ErrorAction SilentlyContinue

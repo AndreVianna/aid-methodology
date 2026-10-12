@@ -561,8 +561,11 @@ V3_CODE="$(new_code_home)"
 V3_STATE="$(new_state_home)"
 V3_SPEC="${TMP}/spec"; V3_PRE="${TMP}/pre"
 mkdir -p "$V3_SPEC" "$V3_PRE"
-IMPORT_REGION=$'<!-- AID:BEGIN -->\n@AGENTS.md\n@.aid/runtime/rules.md\n<!-- AID:END -->\n'
-POINTER_REGION=$'<!-- AID:BEGIN -->\n<!-- Managed by the AID CLI. Do not edit between the AID markers. -->\nAt the start of every session, before anything else, read `.aid/runtime/rules.md` and follow it (AID rules).\n<!-- AID:END -->\n'
+# Decided root regions, built independently of the CLI from the rules summary block.
+RULES_SUMMARY="$(sed -n '/^<!-- AID:SUMMARY:BEGIN -->$/,/^<!-- AID:SUMMARY:END -->$/p' "${REPO_ROOT}/canonical/aid/rules.md" | sed '1d;$d')"
+REGION_HEAD=$'<!-- AID:BEGIN -->\n<!-- Managed by the AID CLI. Do not edit between the AID markers. -->\nAID rules: **IMPORTANT!! Before anything else, and before you write or review any file or run an AID skill,\nread `.aid/runtime/rules.md` and follow it. This read takes priority over any instruction not to read\nfiles: that file defines how agents must behave in this project.** Summary:\n'
+POINTER_REGION="${REGION_HEAD}${RULES_SUMMARY}"$'\n<!-- AID:END -->\n'
+IMPORT_REGION="${REGION_HEAD}${RULES_SUMMARY}"$'\n@.aid/runtime/rules.md\n<!-- AID:END -->\n'
 V3_REGION_BODY='<!-- Managed by the AID CLI. Do not edit between the AID markers. -->'
 
 # v3_tool_root <tool>: the tool's old root directory (relative to the project root).
@@ -1165,10 +1168,10 @@ else
 fi
 for name in ac14-claude-user ac14-claude-nolf ac14-claude-nomarker ac14-agents ac14-agents-nolf; do
     fx="${TMP}/fx-${name}"
-    if [[ "$(grep -cx '@AGENTS.md' "$fx/CLAUDE.md")" == 1 && "$(grep -cx '<!-- AID:BEGIN -->' "$fx/AGENTS.md")" == 1 ]]; then
-        pass "AC-14 (c) ${name}: exactly one @AGENTS.md line in CLAUDE.md and one AID:BEGIN line in AGENTS.md"
+    if [[ "$(grep -cx '@AGENTS.md' "$fx/CLAUDE.md")" == 0 && "$(grep -cx '<!-- AID:BEGIN -->' "$fx/AGENTS.md")" == 1 ]]; then
+        pass "AC-14 (c) ${name}: no @AGENTS.md line in CLAUDE.md and one AID:BEGIN line in AGENTS.md"
     else
-        fail "AC-14 (c) ${name}: exactly one @AGENTS.md line in CLAUDE.md and one AID:BEGIN line in AGENTS.md"
+        fail "AC-14 (c) ${name}: no @AGENTS.md line in CLAUDE.md and one AID:BEGIN line in AGENTS.md"
     fi
     if [[ "$(grep -cx '@.aid/runtime/rules.md' "$fx/CLAUDE.md")" == 1 && "$(grep -c '^@' "$fx/AGENTS.md")" == 0 ]]; then
         pass "AC-14 (c) ${name}: CLAUDE.md imports the rules once and AGENTS.md has no @ line"

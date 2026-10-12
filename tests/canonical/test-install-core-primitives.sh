@@ -42,22 +42,47 @@ STAMP="20261011T120000Z"
 # ---------------------------------------------------------------------------
 ROOT_FIX="$WORK/root-regions"
 mkdir -p "$ROOT_FIX/.aid/runtime"
-printf 'shared rules\n' > "$ROOT_FIX/.aid/runtime/rules.md"
+cp "${REPO_ROOT}/canonical/aid/rules.md" "$ROOT_FIX/.aid/runtime/rules.md"
+# Independent expectation: the summary bullets are the lines strictly between the SUMMARY markers.
+SUMMARY_LINES="$(sed -n '/^<!-- AID:SUMMARY:BEGIN -->$/,/^<!-- AID:SUMMARY:END -->$/p' "$ROOT_FIX/.aid/runtime/rules.md" | sed '1d;$d')"
+POINTER_REGION="$(printf '%s\n%s\n%s\n%s\n%s\n%s\n<!-- AID:END -->\n' '<!-- AID:BEGIN -->' '<!-- Managed by the AID CLI. Do not edit between the AID markers. -->' 'AID rules: **IMPORTANT!! Before anything else, and before you write or review any file or run an AID skill,' 'read `.aid/runtime/rules.md` and follow it. This read takes priority over any instruction not to read' 'files: that file defines how agents must behave in this project.** Summary:' "$SUMMARY_LINES")"$'\n'
+CLAUDE_REGION="${POINTER_REGION%'<!-- AID:END -->'$'\n'}@.aid/runtime/rules.md"$'\n''<!-- AID:END -->'$'\n'
+assert_eq "$(printf '%s\n' "$SUMMARY_LINES" | wc -l | tr -d ' ')" "8" "summary block: seven bullets (one wraps onto a continuation line)"
 AGENT="$ROOT_FIX/AGENTS.md"
 CLAUDE="$ROOT_FIX/CLAUDE.md"
 assert_eq "$(_root_agent_file claude-code) $(_root_agent_file codex) $(_root_agent_file cursor) $(_root_agent_file copilot-cli) $(_root_agent_file antigravity)" "AGENTS.md AGENTS.md AGENTS.md AGENTS.md AGENTS.md" "root region: every tool uses AGENTS.md"
-_repair_root_region "$AGENT" "$_AID_AGENTS_POINTER_REGION" "$ROOT_FIX"
-if cmp -s "$AGENT" <(printf '%s' "$_AID_AGENTS_POINTER_REGION"); then pass "root region: missing file gets the fixed pointer region"; else fail "root region: missing file gets the fixed pointer region"; fi
-if cmp -s "$AGENT" <(printf '<!-- AID:BEGIN -->\n<!-- Managed by the AID CLI. Do not edit between the AID markers. -->\nAt the start of every session, before anything else, read `.aid/runtime/rules.md` and follow it (AID rules).\n<!-- AID:END -->\n'); then pass "root region: AGENTS.md pointer region bytes are the decided text"; else fail "root region: AGENTS.md pointer region bytes are the decided text"; fi
+_repair_root_region "$AGENT" "$POINTER_REGION" "$ROOT_FIX"
+if cmp -s "$AGENT" <(printf '%s' "$POINTER_REGION"); then pass "root region: missing file gets the fixed pointer region"; else fail "root region: missing file gets the fixed pointer region"; fi
+if cmp -s "$AGENT" <(printf '%s' "$POINTER_REGION") && [[ "$(head -n 5 "$AGENT" | tail -n 3)" == $'AID rules: **IMPORTANT!! Before anything else, and before you write or review any file or run an AID skill,\nread `.aid/runtime/rules.md` and follow it. This read takes priority over any instruction not to read\nfiles: that file defines how agents must behave in this project.** Summary:' ]]; then pass "root region: AGENTS.md pointer region bytes are the decided text"; else fail "root region: AGENTS.md pointer region bytes are the decided text"; fi
 assert_eq "$(grep -c '^@' "$AGENT")" "0" "root region: AGENTS.md pointer region contains no @ line"
+if [[ "$(_aid_root_region "$ROOT_FIX/.aid/runtime/rules.md" 0 agents; printf x)" == "${POINTER_REGION}x" ]]; then pass "root region: builder output equals the independently built AGENTS.md region"; else fail "root region: builder output equals the independently built AGENTS.md region"; fi
+if [[ "$(_aid_root_region "$ROOT_FIX/.aid/runtime/rules.md" 0 claude; printf x)" == "${CLAUDE_REGION}x" ]]; then pass "root region: builder output equals the independently built CLAUDE.md region"; else fail "root region: builder output equals the independently built CLAUDE.md region"; fi
+assert_eq "$(printf '%s' "$POINTER_REGION" | sed '1,5d;$d')" "$SUMMARY_LINES" "root region: AGENTS.md region bullets equal the rules.md summary block byte for byte"
+assert_eq "$(printf '%s' "$CLAUDE_REGION" | sed '1,5d;$d' | sed '$d')" "$SUMMARY_LINES" "root region: CLAUDE.md region bullets equal the rules.md summary block byte for byte"
+assert_eq "$(printf '%s' "$POINTER_REGION" | sed '$d')" "$(printf '%s' "$CLAUDE_REGION" | sed '$d' | sed '$d')" "root region: AGENTS.md and CLAUDE.md regions share the same body"
+assert_eq "$(printf '%s' "$CLAUDE_REGION" | grep -c '^@') $(printf '%s' "$CLAUDE_REGION" | grep -c '^@.aid/runtime/rules.md$')" "1 1" "root region: CLAUDE.md region has exactly one @ line, the rules import"
+assert_eq "$(printf '%s' "$CLAUDE_REGION" | tail -n 2 | head -n 1)" "@.aid/runtime/rules.md" "root region: the rules import is the last line before the end marker"
+# A missing or malformed summary block fails clearly: never an empty summary.
+BAD_RULES="$WORK/bad-rules.md"
+printf '## Summary\n' > "$BAD_RULES"
+bad_err="$(_aid_root_region "$BAD_RULES" 0 agents 2>&1 >/dev/null)"; bad_rc=$?
+assert_eq "$bad_rc" "1" "summary block: absent markers fail"
+assert_output_contains "$bad_err" "AID rules summary block missing or malformed" "summary block: absent markers name the problem"
+printf '<!-- AID:SUMMARY:BEGIN -->\n<!-- AID:SUMMARY:END -->\n' > "$BAD_RULES"
+_aid_root_region "$BAD_RULES" 0 agents >/dev/null 2>&1; assert_eq "$?" "1" "summary block: empty block fails"
+printf '<!-- AID:SUMMARY:BEGIN -->\n- a\n' > "$BAD_RULES"
+_aid_root_region "$BAD_RULES" 0 claude >/dev/null 2>&1; assert_eq "$?" "1" "summary block: missing end marker fails"
+printf '<!-- AID:SUMMARY:BEGIN -->\nnot a bullet\n<!-- AID:SUMMARY:END -->\n' > "$BAD_RULES"
+_aid_root_region "$BAD_RULES" 0 agents >/dev/null 2>&1; assert_eq "$?" "1" "summary block: a non-bullet line fails"
+_aid_root_region "$WORK/no-such-rules.md" 0 agents >/dev/null 2>&1; assert_eq "$?" "1" "summary block: missing rules file fails"
 agent_sha="$(sha256_file "$AGENT")"
-_repair_root_region "$AGENT" "$_AID_AGENTS_POINTER_REGION" "$ROOT_FIX"
+_repair_root_region "$AGENT" "$POINTER_REGION" "$ROOT_FIX"
 assert_eq "$(sha256_file "$AGENT")" "$agent_sha" "root region: exact region repair is idempotent"
 
 # A single CRLF-managed region with mixed outside bytes stays byte-identical.
-printf 'before\r\n<!-- AID:BEGIN -->\r\n<!-- Managed by the AID CLI. Do not edit between the AID markers. -->\r\nAt the start of every session, before anything else, read `.aid/runtime/rules.md` and follow it (AID rules).\r\n<!-- AID:END -->\r\nafter\n' > "$AGENT"
+{ printf 'before\r\n'; printf '%s' "$POINTER_REGION" | sed 's/$/\r/'; printf 'after\n'; } > "$AGENT"
 agent_sha="$(sha256_file "$AGENT")"
-_repair_root_region "$AGENT" "$_AID_AGENTS_POINTER_REGION" "$ROOT_FIX"
+_repair_root_region "$AGENT" "$POINTER_REGION" "$ROOT_FIX"
 assert_eq "$(sha256_file "$AGENT")" "$agent_sha" "root region: CRLF region and mixed outside endings are unchanged"
 
 # AGENTS copy records canonical region and actual whole-file hashes.
@@ -68,57 +93,62 @@ printf source > "$COPY_ROOT/source.md"
 copy_rc=0
 _copy_root_agent_file "$COPY_ROOT/source.md" "$COPY_ROOT/AGENTS.md" codex 0 "" || copy_rc=$?
 assert_eq "$copy_rc" "0" "root region: quiet first copy returns success"
-if cmp -s "$COPY_ROOT/AGENTS.md" <(printf '%s' "$_AID_AGENTS_POINTER_REGION"); then pass "root region: copy writes pointer region on absent file"; else fail "root region: copy writes pointer region on absent file"; fi
-assert_eq "$_CORE_ROOT_AGENT_REGION_SHA" "$(printf '%s' "$_AID_AGENTS_POINTER_REGION" | sha256sum | awk '{print $1}')" "root region: copy records canonical-LF region hash"
+if cmp -s "$COPY_ROOT/AGENTS.md" <(printf '%s' "$POINTER_REGION"); then pass "root region: copy writes pointer region on absent file"; else fail "root region: copy writes pointer region on absent file"; fi
+assert_eq "$_CORE_ROOT_AGENT_REGION_SHA" "$(printf '%s' "$POINTER_REGION" | sha256sum | awk '{print $1}')" "root region: copy records canonical-LF region hash"
 assert_eq "$_CORE_ROOT_AGENT_FILE_SHA" "$(sha256_file "$COPY_ROOT/AGENTS.md")" "root region: copy records actual file hash"
 copy_rc=0
 _copy_root_agent_file "$COPY_ROOT/source.md" "$COPY_ROOT/AGENTS.md" codex 0 "" || copy_rc=$?
 assert_eq "$copy_rc" "0" "root region: quiet up-to-date copy returns success"
 
 printf 'user-without-final-lf' > "$ROOT_FIX/AGENTS.md"
-_repair_root_region "$ROOT_FIX/AGENTS.md" "$_AID_AGENTS_POINTER_REGION" "$ROOT_FIX"
+_repair_root_region "$ROOT_FIX/AGENTS.md" "$POINTER_REGION" "$ROOT_FIX"
 assert_eq "$(head -c 22 "$ROOT_FIX/AGENTS.md")" "user-without-final-lf" "root region: append preserves non-LF user bytes"
 
 printf 'user line\r\n<!-- AID:BEGIN -->\r\nstray\r\n<!-- AID:END -->\r\nafter\r\n' > "$ROOT_FIX/AGENTS.md"
 cp "$ROOT_FIX/AGENTS.md" "$ROOT_FIX/before-malformed"
-_repair_root_region "$ROOT_FIX/AGENTS.md" "$_AID_AGENTS_POINTER_REGION" "$ROOT_FIX"
+_repair_root_region "$ROOT_FIX/AGENTS.md" "$POINTER_REGION" "$ROOT_FIX"
 assert_file_exists "$ROOT_FIX/.aid/.trash/AGENTS.md" "root region: malformed region is backed up"
-assert_eq "$(grep -c '^<!-- AID:BEGIN -->$' "$ROOT_FIX/AGENTS.md")" "1" "root region: orphan markers become one region"
+assert_eq "$(grep -c '^<!-- AID:BEGIN -->' "$ROOT_FIX/AGENTS.md")" "1" "root region: a stray-bodied marker span becomes one region (marker terminators kept)"
+assert_eq "$(grep -c '^stray' "$ROOT_FIX/AGENTS.md")" "0" "root region: the stray span body is replaced, not left behind"
+assert_eq "$(grep -c '^AID rules:' "$ROOT_FIX/AGENTS.md")" "1" "root region: the replaced span carries the managed body"
 malformed_sha="$(sha256_file "$ROOT_FIX/AGENTS.md")"
 trash_count="$(find "$ROOT_FIX/.aid/.trash" -type f | wc -l | tr -d ' ')"
-_repair_root_region "$ROOT_FIX/AGENTS.md" "$_AID_AGENTS_POINTER_REGION" "$ROOT_FIX"
+_repair_root_region "$ROOT_FIX/AGENTS.md" "$POINTER_REGION" "$ROOT_FIX"
 assert_eq "$(sha256_file "$ROOT_FIX/AGENTS.md")" "$malformed_sha" "root region: malformed repair is idempotent"
 assert_eq "$(find "$ROOT_FIX/.aid/.trash" -type f | wc -l | tr -d ' ')" "$trash_count" "root region: retry adds no backup"
 
 # A duplicated region is repaired at its first marker while user content stays in order.
-printf '%s\nuser-between\n%s\n' "$_AID_AGENTS_POINTER_REGION" "$_AID_AGENTS_POINTER_REGION" > "$ROOT_FIX/AGENTS.md"
-_repair_root_region "$ROOT_FIX/AGENTS.md" "$_AID_AGENTS_POINTER_REGION" "$ROOT_FIX"
+printf '%s\nuser-between\n%s\n' "$POINTER_REGION" "$POINTER_REGION" > "$ROOT_FIX/AGENTS.md"
+_repair_root_region "$ROOT_FIX/AGENTS.md" "$POINTER_REGION" "$ROOT_FIX"
 assert_eq "$(grep -c '^<!-- AID:BEGIN -->$' "$ROOT_FIX/AGENTS.md")" "1" "root region: duplicate regions collapse to one"
 assert_eq "$(grep -c '^user-between$' "$ROOT_FIX/AGENTS.md")" "1" "root region: duplicate repair keeps intervening user line"
 
-# A lone import line is malformed for CLAUDE.md and receives its fixed region.
-printf 'before\n@AGENTS.md\nafter\n' > "$CLAUDE"
-_repair_root_region "$CLAUDE" "$_AID_CLAUDE_IMPORT_REGION" "$ROOT_FIX"
+# A lone rules import line is a stray owned line for CLAUDE.md and is folded into its fixed region.
+printf 'before\n@.aid/runtime/rules.md\nafter\n' > "$CLAUDE"
+_repair_root_region "$CLAUDE" "$CLAUDE_REGION" "$ROOT_FIX"
 assert_eq "$(grep -c '^<!-- AID:BEGIN -->$' "$CLAUDE")" "1" "Claude region: orphan import becomes one region"
 assert_eq "$(grep -c '^before$' "$CLAUDE") $(grep -c '^after$' "$CLAUDE")" "1 1" "Claude region: orphan repair retains surrounding user lines"
+assert_eq "$(grep -c '^@' "$CLAUDE")" "1" "Claude region: orphan repair leaves a single @ line"
 rm "$CLAUDE"
 
 claude_hash="$(_ensure_claude_md_region "$CLAUDE" "$ROOT_FIX")"
-if cmp -s "$CLAUDE" <(printf '%s' "$_AID_CLAUDE_IMPORT_REGION"); then pass "Claude region: missing file gets import region"; else fail "Claude region: missing file gets import region"; fi
-if cmp -s "$CLAUDE" <(printf '<!-- AID:BEGIN -->\n@AGENTS.md\n@.aid/runtime/rules.md\n<!-- AID:END -->\n'); then pass "Claude region: import region bytes are the decided text"; else fail "Claude region: import region bytes are the decided text"; fi
-assert_eq "$(grep -cx '@AGENTS.md' "$CLAUDE") $(grep -cx '@.aid/runtime/rules.md' "$CLAUDE")" "1 1" "Claude region: CLAUDE.md imports both AGENTS.md and the rules"
-assert_eq "$claude_hash" "$(printf '%s' "$_AID_CLAUDE_IMPORT_REGION" | sha256sum | awk '{print $1}')" "Claude region: recorded hash is the import region hash"
-# rules_inline switch: the region shrinks to @AGENTS.md alone and absorbs the stale rules import line.
+if cmp -s "$CLAUDE" <(printf '%s' "$CLAUDE_REGION"); then pass "Claude region: missing file gets the CLAUDE.md region"; else fail "Claude region: missing file gets the CLAUDE.md region"; fi
+assert_eq "$(grep -c '^@' "$CLAUDE") $(grep -cx '@.aid/runtime/rules.md' "$CLAUDE") $(grep -c '^@AGENTS.md' "$CLAUDE")" "1 1 0" "Claude region: exactly one @ line, the rules import, and no @AGENTS.md"
+assert_eq "$claude_hash" "$(printf '%s' "$CLAUDE_REGION" | sha256sum | awk '{print $1}')" "Claude region: recorded hash is the CLAUDE.md region hash"
+# Either root file alone carries the rules: deleting one and repairing restores it.
+rm "$CLAUDE"; _ensure_claude_md_region "$CLAUDE" "$ROOT_FIX" >/dev/null
+if cmp -s "$CLAUDE" <(printf '%s' "$CLAUDE_REGION"); then pass "Claude region: a deleted CLAUDE.md is restored"; else fail "Claude region: a deleted CLAUDE.md is restored"; fi
+# rules_inline switch: both root files hold the same inline rules text (no @ line), and back.
 inline_hash="$(_ensure_claude_md_region "$CLAUDE" "$ROOT_FIX" 1)"
-if cmp -s "$CLAUDE" <(printf '%s' "$_AID_CLAUDE_IMPORT_REGION_INLINE"); then pass "Claude region: rules_inline holds only @AGENTS.md (no stray rules import)"; else fail "Claude region: rules_inline holds only @AGENTS.md (no stray rules import)"; fi
-assert_eq "$(grep -c '^@' "$CLAUDE")" "1" "Claude region: rules_inline CLAUDE.md has exactly one @ line"
-assert_eq "$inline_hash" "$(printf '<!-- AID:BEGIN -->\n@AGENTS.md\n<!-- AID:END -->\n' | sha256sum | awk '{print $1}')" "Claude region: rules_inline hash is the @AGENTS.md-only region hash"
+if cmp -s "$CLAUDE" <(printf '<!-- AID:BEGIN -->\n<!-- Managed by the AID CLI. Do not edit between the AID markers. -->\n'; cat "$ROOT_FIX/.aid/runtime/rules.md"; printf '<!-- AID:END -->\n'); then pass "Claude region: rules_inline holds the inline rules text"; else fail "Claude region: rules_inline holds the inline rules text"; fi
+assert_eq "$(grep -c '^@AGENTS.md$' "$CLAUDE") $(grep -c '^@.aid/runtime/rules.md$' "$CLAUDE")" "0 0" "Claude region: rules_inline CLAUDE.md has no import line"
+assert_eq "$inline_hash" "$(sha256_file <(_aid_root_region "$ROOT_FIX/.aid/runtime/rules.md" 1 agents))" "Claude region: rules_inline hash equals the AGENTS.md inline region hash"
 inline_sha="$(sha256_file "$CLAUDE")"
 _ensure_claude_md_region "$CLAUDE" "$ROOT_FIX" 1 >/dev/null
 assert_eq "$(sha256_file "$CLAUDE")" "$inline_sha" "Claude region: rules_inline repair is idempotent"
-# ... and back: leaving rules_inline restores the full import region in place.
-claude_hash="$(_ensure_claude_md_region "$CLAUDE" "$ROOT_FIX")"
-if cmp -s "$CLAUDE" <(printf '%s' "$_AID_CLAUDE_IMPORT_REGION"); then pass "Claude region: leaving rules_inline restores the full import region"; else fail "Claude region: leaving rules_inline restores the full import region"; fi
+# ... and back (the remove path passes the recorded region hash): the summary region is restored in place.
+claude_hash="$(_ensure_claude_md_region "$CLAUDE" "$ROOT_FIX" 0 "$inline_hash")"
+if cmp -s "$CLAUDE" <(printf '%s' "$CLAUDE_REGION"); then pass "Claude region: leaving rules_inline restores the summary region"; else fail "Claude region: leaving rules_inline restores the summary region"; fi
 _remove_claude_md_region "$CLAUDE" "$claude_hash" "$ROOT_FIX"
 if [[ ! -e "$CLAUDE" ]]; then pass "Claude region: add/remove deletes a created-only file"; else fail "Claude region: add/remove deletes a created-only file — still present"; fi
 printf 'user-content\n' > "$CLAUDE"
@@ -133,7 +163,7 @@ if cmp -s "$CLAUDE" <(printf 'no-final-newline\n'); then pass "Claude region: no
 
 printf 'edited user bytes\n' > "$CLAUDE"
 claude_hash="$(_ensure_claude_md_region "$CLAUDE" "$ROOT_FIX")"
-sed -i 's/@AGENTS.md/@edited/' "$CLAUDE"
+sed -i 's/^@\.aid\/runtime/@edited/' "$CLAUDE"
 _remove_claude_md_region "$CLAUDE" "stale-hash" "$ROOT_FIX"
 assert_file_exists "$ROOT_FIX/.aid/.trash/CLAUDE.md" "Claude region: drifted region is trashed"
 assert_eq "$(cat "$CLAUDE")" "edited user bytes" "Claude region: drift removal keeps outside content"
@@ -159,7 +189,7 @@ _copy_root_agent_file "$ROOT_FIX/AGENTS.md" "$ROOT_FIX/AGENTS.md" codex 0 "$ROOT
 assert_file_contains "$ROOT_FIX/AGENTS.md" "inline rules" "root region: another installed tool triggers inline rules"
 
 if command -v pwsh >/dev/null 2>&1; then
-    AID_CORE_MODULE="${REPO_ROOT}/lib/AidInstallCore.psm1" AID_ROOT_FIX="$ROOT_FIX" pwsh -NoProfile -NonInteractive -Command '
+    AID_CORE_MODULE="${REPO_ROOT}/lib/AidInstallCore.psm1" AID_ROOT_FIX="$ROOT_FIX" AID_RULES_SRC="${REPO_ROOT}/canonical/aid/rules.md" AID_EXPECT_AGENTS="$POINTER_REGION" AID_EXPECT_CLAUDE="$CLAUDE_REGION" pwsh -NoProfile -NonInteractive -Command '
         $ErrorActionPreference = "Stop"
         $module = Import-Module $env:AID_CORE_MODULE -Force -PassThru
         & $module {
@@ -170,22 +200,38 @@ if command -v pwsh >/dev/null 2>&1; then
                 if ([Convert]::ToBase64String($actual) -ne [Convert]::ToBase64String($want)) { throw "PowerShell root-region failure: $label" }
             }
             if ((script:Get-RootAgentFile -Tool "claude-code") -ne "AGENTS.md") { throw "Get-RootAgentFile" }
+            $psRules = Join-Path (Join-Path $root "ps-rules") "rules.md"
+            [System.IO.Directory]::CreateDirectory((Split-Path -Parent $psRules)) | Out-Null
+            Copy-Item -LiteralPath $env:AID_RULES_SRC -Destination $psRules -Force
+            $agentsRegion = script:Get-AidRootRegion -RulesPath $psRules -Inline $false -Kind "agents"
+            $claudeRegion = script:Get-AidRootRegion -RulesPath $psRules -Inline $false -Kind "claude"
+            if ($agentsRegion -cne ($env:AID_EXPECT_AGENTS -replace "`r", "")) { throw "PowerShell AGENTS.md region differs from the bash-built expectation" }
+            if ($claudeRegion -cne ($env:AID_EXPECT_CLAUDE -replace "`r", "")) { throw "PowerShell CLAUDE.md region differs from the bash-built expectation" }
+            $badRules = Join-Path $root "ps-bad-rules.md"
+            foreach ($bad in @("## Summary`n", "<!-- AID:SUMMARY:BEGIN -->`n<!-- AID:SUMMARY:END -->`n", "<!-- AID:SUMMARY:BEGIN -->`n- a`n", "<!-- AID:SUMMARY:BEGIN -->`nnot a bullet`n<!-- AID:SUMMARY:END -->`n")) {
+                [System.IO.File]::WriteAllText($badRules, $bad, (New-Object System.Text.UTF8Encoding($false)))
+                $threw = $false; try { script:Get-AidRootRegion -RulesPath $badRules -Inline $false -Kind "agents" | Out-Null } catch { $threw = $true }
+                if (-not $threw) { throw "PowerShell malformed summary block did not fail" }
+            }
             $agents = Join-Path $root "ps-AGENTS.md"
-            script:Repair-AidRootRegion -File $agents -Region $script:_AidAgentsPointerRegion -Root $root
-            Assert-Bytes $agents $script:_AidAgentsPointerRegion "missing AGENTS.md"
+            script:Repair-AidRootRegion -File $agents -Region $agentsRegion -Root $root
+            Assert-Bytes $agents $agentsRegion "missing AGENTS.md"
             $original = "before`r`nuser`n"
             [System.IO.File]::WriteAllText($agents, $original, (New-Object System.Text.UTF8Encoding($false)))
-            script:Repair-AidRootRegion -File $agents -Region $script:_AidAgentsPointerRegion -Root $root
-            $expected = $original + $script:_AidAgentsPointerRegion
+            script:Repair-AidRootRegion -File $agents -Region $agentsRegion -Root $root
+            $expected = $original + $agentsRegion
             Assert-Bytes $agents $expected "mixed-ending append"
             $claude = Join-Path $root "ps-CLAUDE.md"
-            $hash = script:Invoke-EnsureClaudeMdRegion -File $claude -Root $root
-            Assert-Bytes $claude $script:_AidClaudeImportRegion "missing CLAUDE.md"
+            $psProj = Join-Path $root "ps-proj"
+            [System.IO.Directory]::CreateDirectory((Join-Path $psProj ".aid/runtime")) | Out-Null
+            Copy-Item -LiteralPath $env:AID_RULES_SRC -Destination (Join-Path $psProj ".aid/runtime/rules.md") -Force
+            $hash = script:Invoke-EnsureClaudeMdRegion -File $claude -Root $psProj
+            Assert-Bytes $claude $claudeRegion "missing CLAUDE.md"
             script:Invoke-RemoveClaudeMdRegion -File $claude -RecordedSha256 $hash -Root $root
             if (Test-Path -LiteralPath $claude) { throw "Claude LF-only import removal" }
             foreach ($user in @("user`n", "user`r`n")) {
                 [System.IO.File]::WriteAllText($claude, $user, (New-Object System.Text.UTF8Encoding($false)))
-                $hash = script:Invoke-EnsureClaudeMdRegion -File $claude -Root $root
+                $hash = script:Invoke-EnsureClaudeMdRegion -File $claude -Root $psProj
                 script:Invoke-RemoveClaudeMdRegion -File $claude -RecordedSha256 $hash -Root $root
                 Assert-Bytes $claude $user "Claude LF/CRLF add/remove preservation"
             }

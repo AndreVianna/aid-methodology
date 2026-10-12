@@ -13,7 +13,7 @@ def put(path,data):
 skill=b'skill\n'; runtime=b'host\n'; agent=b'agent\n'
 recorded_dep=b'original package\n'; missing_dep=b'original missing package\n'
 agents=b'outside\n<!-- AID:BEGIN -->\nmanaged\n<!-- AID:END -->\nmore\n'
-claude=b'outside\n<!-- AID:BEGIN -->\n@AGENTS.md\n@.aid/runtime/rules.md\n<!-- AID:END -->\nmore\n'
+claude=b'outside\n<!-- AID:BEGIN -->\nmanaged\n@.aid/runtime/rules.md\n<!-- AID:END -->\nmore\n'
 put('.agents/skills/aid-one/SKILL.md',skill);put('.claude/skills/aid-one/SKILL.md',skill)
 put('.aid/runtime/host.conf',runtime);put('.tool/agents/aid-x',agent)
 recorded_dep_sha=put('.aid/runtime/pkg/node_modules/recorded.js',recorded_dep)
@@ -45,7 +45,7 @@ python3 - "$AID_STATUS_FIXTURE" <<'PY'
 import pathlib,sys
 r=pathlib.Path(sys.argv[1])
 for name in ('AGENTS.md','CLAUDE.md'):
-    p=r/name;p.write_bytes(p.read_bytes().replace(b'@AGENTS.md',b'@AGENTS.md changed').replace(b'managed\r\n',b'managed changed\r\n'))
+    p=r/name;p.write_bytes(p.read_bytes().replace(b'managed\r\n',b'managed changed\r\n'))
 PY
 mkdir -p "$AID_STATUS_FIXTURE/.agents/skills/aid-extra"
 printf x > "$AID_STATUS_FIXTURE/.agents/skills/aid-extra/SKILL.md"

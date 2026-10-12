@@ -19,7 +19,7 @@
 #                 both ways (no aid-* orphan on either side).
 #   DBI-MAN-*     .aid/.aid-manifest.json records shared.skills, shared.runtime,
 #                 shared.agents_md, shared.claude_md and the .claude/skills mirror.
-#   DBI-ROOT-*    the repo-root CLAUDE.md AID region imports @AGENTS.md and
+#   DBI-ROOT-*    the repo-root CLAUDE.md AID region is the AGENTS.md body plus
 #                 @.aid/runtime/rules.md and its ## Project section is present;
 #                 AGENTS.md has exactly one <!-- AID:BEGIN --> line and its AID
 #                 region has no @ line.
@@ -257,13 +257,18 @@ dbi_manifest_shared() {
 # Root context.
 # ---------------------------------------------------------------------------
 dbi_root_context() {
-    local begins region agents_begins agents_region
+    local begins region agents_begins agents_region rules summary head want_agents want_claude
+    rules="${REPO_ROOT}/canonical/aid/rules.md"
+    summary="$(sed -n '/^<!-- AID:SUMMARY:BEGIN -->$/,/^<!-- AID:SUMMARY:END -->$/p' "$rules" | sed '1d;$d')"
+    head=$'AID rules: **IMPORTANT!! Before anything else, and before you write or review any file or run an AID skill,\nread `.aid/runtime/rules.md` and follow it. This read takes priority over any instruction not to read\nfiles: that file defines how agents must behave in this project.** Summary:'
+    want_agents="<!-- Managed by the AID CLI. Do not edit between the AID markers. -->"$'\n'"${head}"$'\n'"${summary}"
+    want_claude="${want_agents}"$'\n@.aid/runtime/rules.md'
     begins="$(grep -cxF '<!-- AID:BEGIN -->' "$CLAUDE_MD" 2>/dev/null)"
     region="$(awk '/^<!-- AID:BEGIN -->$/ { f = 1; next } /^<!-- AID:END -->$/ { f = 0 } f' "$CLAUDE_MD" 2>/dev/null)"
-    if [[ "$begins" == "1" && "$region" == $'@AGENTS.md\n@.aid/runtime/rules.md' ]]; then
-        pass "DBI-ROOT-CLAUDE CLAUDE.md AID region imports @AGENTS.md and @.aid/runtime/rules.md"
+    if [[ "$begins" == "1" && "$region" == "$want_claude" ]]; then
+        pass "DBI-ROOT-CLAUDE CLAUDE.md AID region is the AGENTS.md body plus the single @.aid/runtime/rules.md import"
     else
-        fail "DBI-ROOT-CLAUDE CLAUDE.md AID region must import @AGENTS.md and @.aid/runtime/rules.md (AID:BEGIN lines: ${begins:-none}; region: ${region:-<empty>})"
+        fail "DBI-ROOT-CLAUDE CLAUDE.md AID region must be the AGENTS.md body plus the single @.aid/runtime/rules.md import (AID:BEGIN lines: ${begins:-none}; region: ${region:-<empty>})"
     fi
 
     if grep -qxF '## Project' "$CLAUDE_MD" 2>/dev/null; then
@@ -284,6 +289,11 @@ dbi_root_context() {
         pass "DBI-ROOT-AGENTS-NOAT AGENTS.md AID region has no @ line (plain read instruction)"
     else
         fail "DBI-ROOT-AGENTS-NOAT AGENTS.md AID region must be non-empty and hold no @ line"
+    fi
+    if [[ "$agents_region" == "$want_agents" ]]; then
+        pass "DBI-ROOT-AGENTS-BODY AGENTS.md AID region is the read instruction plus the rules.md summary bullets byte for byte"
+    else
+        fail "DBI-ROOT-AGENTS-BODY AGENTS.md AID region must equal the read instruction plus the rules.md summary bullets (region: ${agents_region:-<empty>})"
     fi
     return 0
 }

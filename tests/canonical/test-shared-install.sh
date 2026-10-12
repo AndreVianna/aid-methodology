@@ -54,13 +54,14 @@ skills_match() {
 count_line() { awk -v x="$2" 'index($0,x){n++} END{print n+0}' "$1"; }
 root_user_content() {
     local input="$1" output="$2"
-    awk '
-        $0 == "<!-- AID:BEGIN -->" || $0 == "<!-- AID:END -->" ||
-        $0 == "<!-- Managed by the AID CLI. Do not edit between the AID markers. -->" ||
-        $0 == "@AGENTS.md" || $0 == "@.aid/runtime/rules.md" ||
-        $0 == "At the start of every session, before anything else, read `.aid/runtime/rules.md` and follow it (AID rules)." { next }
-        { print }
-    ' "$input" > "$output"
+    awk 'FNR == NR { own[$0] = 1; next } !($0 in own)' "$TMP/owned-lines" "$input" > "$output"
+}
+# Independent builders of the decided root regions from a rules file (never the CLI's own code).
+summary_lines() { sed -n '/^<!-- AID:SUMMARY:BEGIN -->$/,/^<!-- AID:SUMMARY:END -->$/p' "$1" | sed '1d;$d'; }
+region_head() { printf '%s\n' '<!-- AID:BEGIN -->' '<!-- Managed by the AID CLI. Do not edit between the AID markers. -->' 'AID rules: **IMPORTANT!! Before anything else, and before you write or review any file or run an AID skill,' 'read `.aid/runtime/rules.md` and follow it. This read takes priority over any instruction not to read' 'files: that file defines how agents must behave in this project.** Summary:'; }
+write_regions() {  # <rules-file> <agents-region-out> <claude-region-out>
+    { region_head; summary_lines "$1"; printf '<!-- AID:END -->\n'; } > "$2"
+    { region_head; summary_lines "$1"; printf '%s\n<!-- AID:END -->\n' '@.aid/runtime/rules.md'; } > "$3"
 }
 no_aid_dirs() { local r="$1" d; for d in .claude .codex .cursor .github .agent; do [[ ! -d "$r/$d/aid" ]] || return 1; done; }
 echo '== test-shared-install.sh =='
@@ -134,12 +135,45 @@ if skills_match "$REPO/canonical/skills" "$target/.agents/skills"; then fail 'ne
 target="$TMP/root-a"; state="$TMP/state-a"; mkdir -p "$target" "$state"
 out="$(AID_HOME="$state" AID_NO_UPDATE_CHECK=1 bash "$REPO/bin/aid" add claude-code --target "$target" --from-bundle "$STAGE" 2>&1)"; rc=$?
 assert_exit_zero "$rc" 'AC-14(a) Claude add succeeds without CLAUDE.md'
-printf '<!-- AID:BEGIN -->\n@AGENTS.md\n@.aid/runtime/rules.md\n<!-- AID:END -->\n' > "$TMP/import-region"
-printf '<!-- AID:BEGIN -->\n<!-- Managed by the AID CLI. Do not edit between the AID markers. -->\nAt the start of every session, before anything else, read `.aid/runtime/rules.md` and follow it (AID rules).\n<!-- AID:END -->\n' > "$TMP/pointer-region"
-if cmp -s "$target/CLAUDE.md" "$TMP/import-region"; then pass 'AC-14(a) missing CLAUDE.md equals LF import region'; else fail 'AC-14(a) missing CLAUDE.md equals LF import region'; fi
-if cmp -s "$target/AGENTS.md" "$TMP/pointer-region"; then pass 'AC-14(a) missing AGENTS.md equals four-line pointer region'; else fail 'AC-14(a) missing AGENTS.md equals four-line pointer region'; fi
-assert_eq "$(grep -c '^@' "$target/AGENTS.md")" 0 'AC-14(a) AGENTS.md pointer region contains no @ line'
-assert_eq "$(grep -cx '@AGENTS.md' "$target/CLAUDE.md") $(grep -cx '@.aid/runtime/rules.md' "$target/CLAUDE.md")" '1 1' 'AC-14(a) CLAUDE.md imports both AGENTS.md and the rules'
+write_regions "$REPO/canonical/aid/rules.md" "$TMP/pointer-region" "$TMP/import-region"
+cat "$TMP/pointer-region" "$TMP/import-region" > "$TMP/owned-lines"
+if cmp -s "$target/CLAUDE.md" "$TMP/import-region"; then pass 'AC-14(a) missing CLAUDE.md equals the LF CLAUDE.md region'; else fail 'AC-14(a) missing CLAUDE.md equals the LF CLAUDE.md region'; fi
+if cmp -s "$target/AGENTS.md" "$TMP/pointer-region"; then pass 'AC-14(a) missing AGENTS.md equals the LF AGENTS.md region'; else fail 'AC-14(a) missing AGENTS.md equals the LF AGENTS.md region'; fi
+assert_eq "$(grep -c '^@' "$target/AGENTS.md")" 0 'AC-14(a) AGENTS.md region contains no @ line'
+assert_eq "$(grep -c '^@' "$target/CLAUDE.md") $(grep -cx '@.aid/runtime/rules.md' "$target/CLAUDE.md") $(grep -c '@AGENTS.md' "$target/CLAUDE.md")" '1 1 0' 'AC-14(a) CLAUDE.md has exactly one @ line (the rules import) and no @AGENTS.md'
+assert_eq "$(sed '1,5d;$d' "$target/AGENTS.md")" "$(summary_lines "$target/.aid/runtime/rules.md")" 'AC-14(a) AGENTS.md region bullets equal the installed rules.md summary block byte for byte'
+assert_eq "$(sed '$d' "$target/AGENTS.md")" "$(sed '$d' "$target/CLAUDE.md" | sed '$d')" 'AC-14(a) AGENTS.md and CLAUDE.md regions share the same body'
+# Either root file alone carries the rules: delete one, update restores it (and vice versa).
+state_a="$state"
+rm -f "$target/AGENTS.md"; out="$(run_aid "$target" "$state_a" update 2>&1)"; rc=$?
+assert_exit_zero "$rc" 'AC-14(a) update after deleting AGENTS.md succeeds'
+if cmp -s "$target/AGENTS.md" "$TMP/pointer-region"; then pass 'AC-14(a) deleted AGENTS.md is restored by update'; else fail 'AC-14(a) deleted AGENTS.md is restored by update'; fi
+rm -f "$target/CLAUDE.md"; out="$(run_aid "$target" "$state_a" update 2>&1)"; rc=$?
+assert_exit_zero "$rc" 'AC-14(a) update after deleting CLAUDE.md succeeds'
+if cmp -s "$target/CLAUDE.md" "$TMP/import-region"; then pass 'AC-14(a) deleted CLAUDE.md is restored by update'; else fail 'AC-14(a) deleted CLAUDE.md is restored by update'; fi
+status="$(AID_HOME="$state_a" AID_NO_UPDATE_CHECK=1 bash "$REPO/bin/aid" status --target "$target" 2>&1)"
+assert_output_contains "$status" 'Shared files: clean' 'AC-14(a) restored regions leave no drift'
+# Editing the summary block in a staged bundle changes both regions on update.
+SUMSTAGE="$TMP/summary-stage"; SUMUNPACK="$TMP/summary-unpacked"; mkdir -p "$SUMSTAGE" "$SUMUNPACK"
+tar -xzf "$SHARED" -C "$SUMUNPACK"
+sed -i 's/^- Write only inside the project directory\.$/- Write only inside the project directory (edited summary bullet)./' "$SUMUNPACK/runtime/rules.md"
+cp "$STAGE"/aid-*-v"$VERSION".tar.gz "$SUMSTAGE/"; cp "$STAGE/aid-install-core.sh" "$STAGE/AidInstallCore.psm1" "$SUMSTAGE/"
+tar -czf "$SUMSTAGE/aid-shared-v$VERSION.tar.gz" -C "$SUMUNPACK" .
+out="$(AID_HOME="$state_a" AID_NO_UPDATE_CHECK=1 bash "$REPO/bin/aid" update --target "$target" --from-bundle "$SUMSTAGE" 2>&1)"; rc=$?
+assert_exit_zero "$rc" 'AC-14(a) update from a bundle with an edited summary succeeds'
+assert_file_contains "$target/AGENTS.md" '- Write only inside the project directory (edited summary bullet).' 'AC-14(a) edited summary reaches the AGENTS.md region'
+assert_file_contains "$target/CLAUDE.md" '- Write only inside the project directory (edited summary bullet).' 'AC-14(a) edited summary reaches the CLAUDE.md region'
+assert_eq "$(sed '1,5d;$d' "$target/AGENTS.md")" "$(summary_lines "$target/.aid/runtime/rules.md")" 'AC-14(a) edited AGENTS.md bullets still equal the installed rules.md summary block'
+status="$(AID_HOME="$state_a" AID_NO_UPDATE_CHECK=1 bash "$REPO/bin/aid" status --target "$target" 2>&1)"
+assert_output_contains "$status" 'Shared files: clean' 'AC-14(a) edited-summary update leaves no drift'
+# A bundle whose rules lack a well-formed summary block fails clearly and writes no empty summary.
+sed -i '/^<!-- AID:SUMMARY:END -->$/d' "$SUMUNPACK/runtime/rules.md"
+tar -czf "$SUMSTAGE/aid-shared-v$VERSION.tar.gz" -C "$SUMUNPACK" .
+target_bad="$TMP/root-a-bad"; state_bad="$TMP/state-a-bad"; mkdir -p "$target_bad" "$state_bad"
+out="$(AID_HOME="$state_bad" AID_NO_UPDATE_CHECK=1 bash "$REPO/bin/aid" add codex --target "$target_bad" --from-bundle "$SUMSTAGE" 2>&1)"; rc=$?
+if [[ "$rc" -ne 0 ]]; then pass 'AC-14(a) malformed summary block fails the install'; else fail 'AC-14(a) malformed summary block fails the install'; fi
+assert_output_contains "$out" 'AID rules summary block missing or malformed' 'AC-14(a) malformed summary block is named in the error'
+[[ ! -e "$target_bad/AGENTS.md" ]] && pass 'AC-14(a) malformed summary block leaves no AGENTS.md region' || fail 'AC-14(a) malformed summary block leaves no AGENTS.md region'
 target="$TMP/root-a-cursor"; state="$TMP/state-a-cursor"; mkdir -p "$target" "$state"
 out="$(AID_HOME="$state" AID_NO_UPDATE_CHECK=1 bash "$REPO/bin/aid" add cursor --target "$target" --from-bundle "$STAGE" 2>&1)"; rc=$?
 assert_exit_zero "$rc" 'AC-14(a) cursor add succeeds'
@@ -167,7 +201,7 @@ printf 'outside-before\n' > "$target/CLAUDE.md"
 AID_HOME="$state" AID_NO_UPDATE_CHECK=1 bash "$REPO/bin/aid" add claude-code --target "$target" --from-bundle "$STAGE" >/dev/null 2>&1
 python3 - "$target/CLAUDE.md" <<'PY'
 import pathlib, sys
-p=pathlib.Path(sys.argv[1]); b=p.read_bytes().replace(b'@AGENTS.md\n',b'@BROKEN.md\n')
+p=pathlib.Path(sys.argv[1]); b=p.read_bytes().replace(b'@.aid/runtime/rules.md\n',b'@BROKEN.md\n')
 p.write_bytes(b.replace(b'<!-- AID:BEGIN -->\n',b'<!-- AID:BEGIN -->\r\n').replace(b'<!-- AID:END -->\n',b'<!-- AID:END -->\r\n'))
 PY
 status="$(AID_HOME="$state" AID_NO_UPDATE_CHECK=1 bash "$REPO/bin/aid" status --target "$target" 2>&1)"
@@ -197,19 +231,19 @@ for kind in malformed duplicate lone-import; do
     case "$kind" in
         malformed) printf 'before\n<!-- AID:BEGIN -->\nuser-after-orphan\n' > "$target/CLAUDE.md"; file=CLAUDE.md;;
         duplicate) { cat "$TMP/pointer-region"; printf 'user-between\n'; cat "$TMP/pointer-region"; } > "$target/AGENTS.md"; file=AGENTS.md;;
-        lone-import) printf 'before\n@AGENTS.md\nafter\n' > "$target/CLAUDE.md"; file=CLAUDE.md;;
+        lone-import) printf 'before\n@.aid/runtime/rules.md\nafter\n' > "$target/CLAUDE.md"; file=CLAUDE.md;;
     esac
     cp "$target/$file" "$TMP/f-before"
     out="$(AID_HOME="$state" AID_NO_UPDATE_CHECK=1 bash "$REPO/bin/aid" add claude-code --target "$target" --from-bundle "$STAGE" 2>&1)"; rc=$?
     assert_exit_zero "$rc" "AC-14(f) $kind fixture add succeeds"
     if cmp -s "$TMP/f-before" "$target/.aid/.trash/$file"; then pass "AC-14(f) $kind full pre-add backup exists"; else fail "AC-14(f) $kind full pre-add backup exists"; fi
     if [[ "$file" == CLAUDE.md ]]; then
-        assert_eq "$(count_line "$target/$file" '<!-- AID:BEGIN -->') $(count_line "$target/$file" '<!-- AID:END -->') $(count_line "$target/$file" '@AGENTS.md') $(count_line "$target/$file" '@.aid/runtime/rules.md')" '1 1 1 1' "AC-14(f) $kind has exactly one import region"
+        assert_eq "$(count_line "$target/$file" '<!-- AID:BEGIN -->') $(count_line "$target/$file" '<!-- AID:END -->') $(count_line "$target/$file" '@AGENTS.md') $(count_line "$target/$file" '@.aid/runtime/rules.md')" '1 1 0 1' "AC-14(f) $kind has exactly one CLAUDE.md region"
     else assert_eq "$(count_line "$target/$file" '<!-- AID:BEGIN -->') $(count_line "$target/$file" '<!-- AID:END -->')" '1 1' 'AC-14(f) duplicate has exactly one pointer region'; fi
     root_user_content "$TMP/f-before" "$TMP/f-user-before"
     root_user_content "$target/$file" "$TMP/f-user-after"
     if cmp -s "$TMP/f-user-before" "$TMP/f-user-after"; then pass "AC-14(f) $kind preserves every non-region line in order"; else fail "AC-14(f) $kind preserves every non-region line in order"; fi
-    assert_eq "$(count_line "$target/CLAUDE.md" '@AGENTS.md')" 1 "AC-14(f) $kind has one @AGENTS.md line"
+    if [[ "$file" == CLAUDE.md ]]; then assert_eq "$(count_line "$target/CLAUDE.md" '@AGENTS.md')" 0 "AC-14(f) $kind has no @AGENTS.md line"; fi
     assert_eq "$(count_line "$target/AGENTS.md" '<!-- AID:BEGIN -->')" 1 "AC-14(f) $kind has one AGENTS begin marker"
     [[ "$kind" != malformed ]] || assert_file_contains "$target/$file" 'user-after-orphan' 'AC-14(f) malformed repair preserves trailing user line'
     [[ "$kind" != duplicate ]] || assert_file_contains "$target/$file" 'user-between' 'AC-14(f) duplicate repair preserves intervening user line'

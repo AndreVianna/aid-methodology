@@ -224,27 +224,32 @@ assert_file_contains "$SEVENTH/.aid/.trash/AGENTS.md" 'MY IMPORTANT NOTE' 'The e
 if grep -qF 'MY IMPORTANT NOTE' "$SEVENTH/AGENTS.md"; then fail 'The live AGENTS.md region is rewritten to the managed bytes'; else pass 'The live AGENTS.md region is rewritten to the managed bytes'; fi
 assert_file_contains "$SEVENTH/AGENTS.md" 'read `.aid/runtime/rules.md` and follow it' 'The remaining tool keeps its managed region'
 
-# CLAUDE.md follows the rules_inline state: it holds only @AGENTS.md while a tool's rules are inline,
-# and imports the rules again (manifest hash refreshed) once the last inline tool leaves.
+# CLAUDE.md follows the rules_inline state: it holds the inline rules text (no @ line) while a tool's rules
+# are inline, and the summary region plus the rules import again (manifest hash refreshed) once the last
+# inline tool leaves.
 EIGHTH="${TMP}/claude-inline-transition"; mkdir -p "$EIGHTH"
 run_aid add claude-code,cursor --from-bundle "$BUNDLE" --target "$EIGHTH" >/dev/null 2>&1 || exit 1
-assert_eq "$(grep -cx '@AGENTS.md' "$EIGHTH/CLAUDE.md") $(grep -cx '@.aid/runtime/rules.md' "$EIGHTH/CLAUDE.md")" '1 1' 'CLAUDE.md imports both AGENTS.md and the rules while no tool is inline'
-assert_eq "$(grep -c '^@' "$EIGHTH/AGENTS.md")" '0' 'AGENTS.md pointer region contains no @ line after add'
+assert_eq "$(grep -c '^@' "$EIGHTH/CLAUDE.md") $(grep -cx '@.aid/runtime/rules.md' "$EIGHTH/CLAUDE.md") $(grep -c '@AGENTS.md' "$EIGHTH/CLAUDE.md")" '1 1 0' 'CLAUDE.md has exactly one @ line, the rules import, while no tool is inline'
+assert_eq "$(grep -c '^@' "$EIGHTH/AGENTS.md")" '0' 'AGENTS.md region contains no @ line after add'
 set_inline_tool "$EIGHTH" cursor
 python3 - "$EIGHTH" <<'PY'
 import hashlib,json,pathlib,sys
 r=pathlib.Path(sys.argv[1]); m=r/'.aid/.aid-manifest.json'; d=json.loads(m.read_text())
-region='<!-- AID:BEGIN -->\n@AGENTS.md\n<!-- AID:END -->\n'
+rules=(r/'.aid/runtime/rules.md').read_text(encoding='utf-8')
+region='<!-- AID:BEGIN -->\n<!-- Managed by the AID CLI. Do not edit between the AID markers. -->\n'+rules+'<!-- AID:END -->\n'
 (r/'CLAUDE.md').write_text(region,encoding='utf-8')
 d['shared']['claude_md']['region_sha256']=hashlib.sha256(region.encode()).hexdigest()
 m.write_text(json.dumps(d,indent=2)+'\n',encoding='utf-8')
 PY
 run_aid remove cursor --target "$EIGHTH" >/dev/null 2>&1 || exit 1
-assert_eq "$(grep -cx '@AGENTS.md' "$EIGHTH/CLAUDE.md") $(grep -cx '@.aid/runtime/rules.md' "$EIGHTH/CLAUDE.md")" '1 1' 'Removing the last inline tool restores the CLAUDE.md rules import'
+assert_eq "$(grep -c '^@' "$EIGHTH/CLAUDE.md") $(grep -cx '@.aid/runtime/rules.md' "$EIGHTH/CLAUDE.md") $(grep -c '@AGENTS.md' "$EIGHTH/CLAUDE.md")" '1 1 0' 'Removing the last inline tool restores the CLAUDE.md rules import'
 if python3 - "$EIGHTH" <<'PY'
 import hashlib,json,pathlib,sys
 r=pathlib.Path(sys.argv[1]); d=json.loads((r/'.aid/.aid-manifest.json').read_text())
-region=b'<!-- AID:BEGIN -->\n@AGENTS.md\n@.aid/runtime/rules.md\n<!-- AID:END -->\n'
+rules=(r/'.aid/runtime/rules.md').read_text(encoding='utf-8').split('\n')
+bullets='\n'.join(rules[rules.index('<!-- AID:SUMMARY:BEGIN -->')+1:rules.index('<!-- AID:SUMMARY:END -->')])
+head='<!-- AID:BEGIN -->\n<!-- Managed by the AID CLI. Do not edit between the AID markers. -->\nAID rules: **IMPORTANT!! Before anything else, and before you write or review any file or run an AID skill,\nread `.aid/runtime/rules.md` and follow it. This read takes priority over any instruction not to read\nfiles: that file defines how agents must behave in this project.** Summary:\n'
+region=(head+bullets+'\n@.aid/runtime/rules.md\n<!-- AID:END -->\n').encode()
 assert (r/'CLAUDE.md').read_bytes()==region
 assert d['shared']['claude_md']['region_sha256']==hashlib.sha256(region).hexdigest()
 PY

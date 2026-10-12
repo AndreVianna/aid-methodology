@@ -6143,12 +6143,19 @@ tfx_row1() {
 }
 tfx_row1
 
+# The decided root regions, built independently of the CLIs from the rules summary block:
+# AGENTS.md = header + read instruction + bullets; CLAUDE.md = the same body + the rules import line.
+tfx_regions() {  # -> TFX_REGION_A / TFX_REGION_C (each ends with a newline)
+    local summary
+    summary="$(sed -n '/^<!-- AID:SUMMARY:BEGIN -->$/,/^<!-- AID:SUMMARY:END -->$/p' "${REPO_ROOT}/canonical/aid/rules.md" | sed '1d;$d')"
+    TFX_REGION_A="$(printf '%s\n' '<!-- AID:BEGIN -->' '<!-- Managed by the AID CLI. Do not edit between the AID markers. -->' 'AID rules: **IMPORTANT!! Before anything else, and before you write or review any file or run an AID skill,' 'read `.aid/runtime/rules.md` and follow it. This read takes priority over any instruction not to read' 'files: that file defines how agents must behave in this project.** Summary:' "$summary" '<!-- AID:END -->')"$'\n'
+    TFX_REGION_C="${TFX_REGION_A%'<!-- AID:END -->'$'\n'}@.aid/runtime/rules.md"$'\n''<!-- AID:END -->'$'\n'
+}
 tfx_row3() {
     local id="FIX-C" shell home tgt pre post region_c region_a ex
     pre=$'\xef\xbb\xbf# Caf\xe9 \xc3\xa9 \xe2\x82\xac\r\nbefore\r\n'
     post=$'after \xe9\r\nlast line without newline'
-    region_c=$'<!-- AID:BEGIN -->\n@AGENTS.md\n@.aid/runtime/rules.md\n<!-- AID:END -->\n'
-    region_a=$'<!-- AID:BEGIN -->\n<!-- Managed by the AID CLI. Do not edit between the AID markers. -->\nAt the start of every session, before anything else, read `.aid/runtime/rules.md` and follow it (AID rules).\n<!-- AID:END -->\n'
+    tfx_regions; region_c="$TFX_REGION_C"; region_a="$TFX_REGION_A"
     ex="${TMP}/fixc-expected"; mkdir -p "$ex"
     printf '%s' "${pre}${region_c}" > "$ex/claude-added";   printf '%s' "${pre}${region_c}${post}" > "$ex/claude-user-tail"
     printf '%s' "${pre}${post}" > "$ex/claude-removed";     printf '%s' "${pre}${region_a}" > "$ex/agents-added"
@@ -6284,37 +6291,51 @@ tfx_row6to9() {
 }
 tfx_row6to9
 
-# FIX-E: the CLAUDE.md region follows rules_inline. Without an inline tool it imports @AGENTS.md and
-# the rules; while a tool's rules are inline in AGENTS.md it holds only @AGENTS.md; leaving rules_inline
-# restores the full import. AGENTS.md carries no @ line while it is the pointer region. Bytes equal in both shells.
+# FIX-E: both root files stay self-sufficient. Without an inline tool AGENTS.md holds the read instruction and
+# the rules summary (no @ line) and CLAUDE.md the same body plus the single @.aid/runtime/rules.md import;
+# while a tool's rules are inline both hold the same inline rules text (no @ line); leaving rules_inline
+# restores the summary regions; deleting either root file and running update restores it. Bytes equal in both shells.
 tfx_row_claude_inline() {
     local id="FIX-E" shell home tgt inl_stage="${TMP}/tfx-inline-stage-e"
-    local -A seen_a=() seen_b=() seen_c=() seen_m=()
-    local full=$'<!-- AID:BEGIN -->\n@AGENTS.md\n@.aid/runtime/rules.md\n<!-- AID:END -->\n'
-    local only=$'<!-- AID:BEGIN -->\n@AGENTS.md\n<!-- AID:END -->\n'
+    local -A seen_a=() seen_b=() seen_c=() seen_m=() seen_d=()
+    tfx_regions
     tfx_inline_stage "$inl_stage" || fail "${id} setup: could not build the rules_inline bundle"
     for shell in sh ps; do
         home="$(tfx_home "$shell")"; tgt="$(newtarget)"
         tfx_aid "$shell" "$home" "$tgt" add claude-code
         assert_exit_eq "$RC" 0 "${id} ${shell} add claude-code -> exit 0"
-        [[ "$(cat "$tgt/CLAUDE.md"; printf x)" == "${full}x" ]] && pass "${id} ${shell} CLAUDE.md imports AGENTS.md and the rules" || fail "${id} ${shell} CLAUDE.md imports AGENTS.md and the rules"
-        assert_eq "$(grep -c '^@' "$tgt/AGENTS.md")" "0" "${id} ${shell} AGENTS.md pointer region has no @ line"
+        [[ "$(cat "$tgt/CLAUDE.md"; printf x)" == "${TFX_REGION_C}x" ]] && pass "${id} ${shell} CLAUDE.md is the AGENTS.md body plus the rules import" || fail "${id} ${shell} CLAUDE.md is the AGENTS.md body plus the rules import"
+        [[ "$(cat "$tgt/AGENTS.md"; printf x)" == "${TFX_REGION_A}x" ]] && pass "${id} ${shell} AGENTS.md is the read instruction plus the rules summary" || fail "${id} ${shell} AGENTS.md is the read instruction plus the rules summary"
+        assert_eq "$(grep -c '^@' "$tgt/AGENTS.md")" "0" "${id} ${shell} AGENTS.md region has no @ line"
+        assert_eq "$(grep -c '^@' "$tgt/CLAUDE.md") $(grep -c '@AGENTS.md' "$tgt/CLAUDE.md")" "1 0" "${id} ${shell} CLAUDE.md has exactly one @ line and no @AGENTS.md"
+        assert_eq "$(sed '$d' "$tgt/AGENTS.md")" "$(sed '$d' "$tgt/CLAUDE.md" | sed '$d')" "${id} ${shell} both regions share the same body"
         seen_a[$shell]="$(cat "$tgt/CLAUDE.md")"
+        # Either root file alone carries the rules: delete one, update restores it.
+        rm -f "$tgt/AGENTS.md"; tfx_aid "$shell" "$home" "$tgt" update
+        assert_exit_eq "$RC" 0 "${id} ${shell} update after deleting AGENTS.md -> exit 0"
+        [[ "$(cat "$tgt/AGENTS.md"; printf x)" == "${TFX_REGION_A}x" ]] && pass "${id} ${shell} update restores a deleted AGENTS.md" || fail "${id} ${shell} update restores a deleted AGENTS.md"
+        rm -f "$tgt/CLAUDE.md"; tfx_aid "$shell" "$home" "$tgt" update
+        assert_exit_eq "$RC" 0 "${id} ${shell} update after deleting CLAUDE.md -> exit 0"
+        [[ "$(cat "$tgt/CLAUDE.md"; printf x)" == "${TFX_REGION_C}x" ]] && pass "${id} ${shell} update restores a deleted CLAUDE.md" || fail "${id} ${shell} update restores a deleted CLAUDE.md"
+        seen_d[$shell]="$(cat "$tgt/AGENTS.md" "$tgt/CLAUDE.md")"
         TFX_STAGE="$inl_stage" tfx_aid "$shell" "$home" "$tgt" add cursor
         assert_exit_eq "$RC" 0 "${id} ${shell} add cursor (rules_inline) -> exit 0"
-        [[ "$(cat "$tgt/CLAUDE.md"; printf x)" == "${only}x" ]] && pass "${id} ${shell} CLAUDE.md holds only @AGENTS.md under rules_inline" || fail "${id} ${shell} CLAUDE.md holds only @AGENTS.md under rules_inline"
+        cmp -s "$tgt/CLAUDE.md" "$tgt/AGENTS.md" && pass "${id} ${shell} CLAUDE.md carries the same inline rules text as AGENTS.md under rules_inline" || fail "${id} ${shell} CLAUDE.md carries the same inline rules text as AGENTS.md under rules_inline"
+        assert_eq "$(grep -c '^@' "$tgt/CLAUDE.md")" "0" "${id} ${shell} CLAUDE.md has no @ line under rules_inline"
         seen_b[$shell]="$(cat "$tgt/CLAUDE.md")"
         tfx_status "$shell" "$home" "$tgt"
         assert_output_not_contains "$OUT" "CLAUDE.md" "${id} ${shell} status reports no CLAUDE.md drift under rules_inline"
         tfx_remove "$shell" "$home" "$tgt" cursor
         assert_exit_eq "$RC" 0 "${id} ${shell} remove cursor -> exit 0"
-        [[ "$(cat "$tgt/CLAUDE.md"; printf x)" == "${full}x" ]] && pass "${id} ${shell} leaving rules_inline restores the CLAUDE.md rules import" || fail "${id} ${shell} leaving rules_inline restores the CLAUDE.md rules import"
+        [[ "$(cat "$tgt/CLAUDE.md"; printf x)" == "${TFX_REGION_C}x" ]] && pass "${id} ${shell} leaving rules_inline restores the CLAUDE.md summary region" || fail "${id} ${shell} leaving rules_inline restores the CLAUDE.md summary region"
+        [[ "$(cat "$tgt/AGENTS.md"; printf x)" == "${TFX_REGION_A}x" ]] && pass "${id} ${shell} leaving rules_inline restores the AGENTS.md summary region" || fail "${id} ${shell} leaving rules_inline restores the AGENTS.md summary region"
         seen_c[$shell]="$(cat "$tgt/CLAUDE.md")"
         tfx_status "$shell" "$home" "$tgt"
         assert_output_not_contains "$OUT" "CLAUDE.md" "${id} ${shell} status reports no CLAUDE.md drift after leaving rules_inline"
         seen_m[$shell]="$(grep -o '"region_sha256": "[0-9a-f]*"' "$tgt/.aid/.aid-manifest.json" | LC_ALL=C sort)"
     done
     assert_eq "${seen_a[ps]}" "${seen_a[sh]}" "${id} CLAUDE.md after add identical across shells"
+    assert_eq "${seen_d[ps]}" "${seen_d[sh]}" "${id} root files restored after deletion identical across shells"
     assert_eq "${seen_b[ps]}" "${seen_b[sh]}" "${id} CLAUDE.md under rules_inline identical across shells"
     assert_eq "${seen_c[ps]}" "${seen_c[sh]}" "${id} CLAUDE.md after leaving rules_inline identical across shells"
     assert_eq "${seen_m[ps]}" "${seen_m[sh]}" "${id} manifest region hashes identical across shells after the toggle"
