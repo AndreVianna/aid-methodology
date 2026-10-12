@@ -1344,7 +1344,7 @@ tasks_lifecycle:
     notes: --
     display_name: --
   task-031:
-    state: 'In Review'
+    state: Done
     review: --
     elapsed: --
     notes: --
