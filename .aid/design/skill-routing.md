@@ -1,7 +1,7 @@
 # Design seed — Intent → skill routing table in `rules.md`
 
-**Status:** not started · **Seeded:** 2026-10-11 · **Depends on:** work-001 (AID v4.0.0 shared
-skills folder), which introduces `.aid/runtime/rules.md` and the `AGENTS.md` pointer region.
+**Status:** not started · **Seeded:** 2026-10-11 · **Depends on:** AID v4.0.0 (shared skills
+folder), which introduces `.aid/runtime/rules.md` and the `AGENTS.md` pointer region.
 
 > Entry A (hand-written) seed. When the work ships, delete it: the design then lives in
 > `canonical/aid/rules.md` and its generator/test.
@@ -80,7 +80,7 @@ Options 1 + 2, with 3 documented as a user tip:
 - Should the routing table also list the agents (`aid-architect`, `aid-reviewer`, …) for hosts that
   dispatch sub-agents by name?
 - Is a probe needed to confirm each host honours the table over its own description matching
-  (same method as the work-001 pointer probe)?
+  (same method as the v4 `AGENTS.md` pointer probe)?
 
 ## Destination
 
