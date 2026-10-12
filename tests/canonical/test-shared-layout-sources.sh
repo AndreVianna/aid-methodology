@@ -148,4 +148,9 @@ if allowlist_ok "$NEG/tests/canonical/fixtures/empty-why.tsv"; then fail "negati
 SOURCE_AFTER="$(source_snapshot)"
 assert_eq "$SOURCE_AFTER" "$SOURCE_BEFORE" "negative controls leave source skills and runtime unchanged"
 
+# AC-19: no doc, KB page, site page or workflow states the retired per-tool AID trees
+# (shipped history in release-tracking.md and the generated kb.html are exempt).
+AC19_HITS="$(cd "$REPO" || { echo "cd-failed: $REPO"; exit 0; }; git grep -nE '\.(claude|codex|cursor|agent)/aid/|\.github/aid/' -- CLAUDE.md AGENTS.md README.md docs .github/workflows .aid/knowledge site ':!.aid/knowledge/release-tracking.md' ':!.aid/knowledge/kb.html' 2>/dev/null)"
+assert_eq "$AC19_HITS" "" "AC-19 docs, KB, site and workflows state no retired per-tool AID tree"
+
 test_summary
