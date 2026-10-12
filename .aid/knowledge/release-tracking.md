@@ -29,25 +29,6 @@ review-criteria:
 > items drained out of `backlog.md` § `Next Release`. `[NEW]` items lead with a feature
 > name; `[CHANGE]` / `[FIX]` are description-only.
 
-## v4.0.0 - unreleased
-
-> **4.0.0 is a major (breaking) release.** v4 requires CLI v4. A v3 CLI cannot drive the v4 layout, and no
-> old-CLI guard artifact ships. Each v3 repo upgrades with `aid update`.
-
-- [CHANGE] Shared cross-tool skills folder. Every tool installs the same `aid-*` skills to `.agents/skills/`.
-  Claude Code also gets a byte-identical mirror at `.claude/skills/`. Skills are no longer rendered into per-tool trees.
-- [CHANGE] Shared runtime at `.aid/runtime/` (scripts, templates, `rules.md`, and the CLI-written `host.conf`),
-  replacing the per-tool `aid/` subtrees. A managed `.gitattributes` block keeps the installed skills and runtime LF.
-- [CHANGE] Root context: `AGENTS.md` carries the AID pointer region for every tool and points at `.aid/runtime/rules.md`.
-  While Claude Code is installed, `CLAUDE.md` carries an import region holding only `@AGENTS.md`.
-- [CHANGE] Install manifest format 3 records each shared entry once, with its users and a sha256 per file. Uninstall
-  removes a shared entry only after its last user leaves.
-- [CHANGE] Per-tool artifacts hold agents and `aid-tool.conf` only. The release ships `aid-shared-v<V>.tar.gz`, five
-  `aid-<tool>-v<V>.tar.gz` artifacts, `aid-cli-v<V>.tar.gz` and `SHA256SUMS`, with no wrapper directory.
-- [CHANGE] The worktree root is per host: `.claude/worktrees/` while Claude Code is installed, otherwise `.aid/.worktrees/`.
-- [CHANGE] `aid update` upgrades a v3 repo by moving its old AID paths into `.aid/.trash/`. `aid add` refuses a v3 repo
-  and points to `aid update`.
-
 ## v3.1.3 - 2026-09-21
 
 > **Patch release.** Nothing breaks. `aid add` / `aid update` on Windows PowerShell 7 no

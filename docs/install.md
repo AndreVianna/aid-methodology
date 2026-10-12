@@ -509,6 +509,13 @@ Several tools can share one repo. The rules are:
 
 ## Upgrading from the v3 layout
 
+Two things come before the upgrade:
+
+- **Update the CLI to v4 first.** A v3 CLI cannot drive the v4 layout. Run `aid update self`, then
+  run `aid update` in the project.
+- **Start from a v3.x project.** v4 upgrades only from v3.x. A project older than v3 must be
+  upgraded to v3 first.
+
 A repo installed with the v3 layout keeps AID files per tool: a support folder named `aid/` under
 each tool's root, and per-tool skill folders such as `.cursor/skills/aid-*`. The shared layout
 cannot be added on top of it:

@@ -8,9 +8,9 @@
 # sets `skill_slug = skill_dir.name` and carries the frontmatter `name:` through
 # untouched (see the `name` field contract below for the full consequence).
 #
-# Renders as VERBATIM BYTES to `<root>/aid/templates/shortcut-catalog.yml` in all 5
-# profiles -- a `.yml` is not in render.py's `_TEXT_EXTENSIONS`, matching the shipped
-# `templates/settings.yml` precedent (render.py grep `_TEXT_EXTENSIONS`).
+# Installs as VERBATIM BYTES to `.aid/runtime/templates/shortcut-catalog.yml`, one copy
+# shared by every tool -- a `.yml` is not in render.py's `_TEXT_EXTENSIONS`, matching the
+# shipped `templates/settings.yml` precedent (render.py grep `_TEXT_EXTENSIONS`).
 #
 # Two consumers:
 #   1. The maintainer build helper
