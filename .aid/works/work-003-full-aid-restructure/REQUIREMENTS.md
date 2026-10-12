@@ -7,7 +7,16 @@
 
 Restructure AID -- what each skill does, what it produces, and how the skills are organized --
 around the phase model the community is consolidating on, while removing the friction that
-model carries today. *(Target outcome to be confirmed.)*
+model carries today.
+
+**Leading goal -- transparent skill use.** The use of skills becomes transparent to the user. The
+user states what they want in plain words ("I want to fix a bug", "I want to refactor this code",
+"I want to discuss a new feature"); the orchestrator identifies the proper process to start, and the
+natural conversation leads the way to the conclusion. The whole process reads as a conversation,
+with phases, skills and artifacts handled underneath. (Differs from today's `/aid-triage`, which
+only suggests a skill for the user to invoke.)
+
+*(Outcomes for the information-overload and skill-count problems: to be confirmed.)*
 
 ## 2. Problem Statement
 
