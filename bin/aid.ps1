@@ -6316,8 +6316,7 @@ try {
                 Write-Host ""
                 Write-Host "Installing $t v$stageVersion -> $_AidTarget"
                 $rc = Install-AidTool -StagingDir $stageMap[$t] -Tool $t -Target $_AidTarget `
-                         -Version $stageVersion -Force ([bool]$_AidForce) `
-                         -AidVerbose $script:_AidVerbose -AddOnly ($SUBCMD -in @('add', 'update'))
+                         -AidVerbose $script:_AidVerbose
                 if ($rc -ne 0) {
                     Write-Host ""
                     [Console]::Error.WriteLine("ERROR: aid $SUBCMD failed mid-commit for tool '$t' (rc=$rc).")

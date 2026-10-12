@@ -244,7 +244,7 @@ file; each tool records its own files. Uninstall, drift repair and pruning are b
 AidInstallCore (the writer and reader of the record).
 
 **sources:**
-- `lib/aid-install-core.sh` (`manifest_write`, `manifest_remove_tool`, `prune_shared`)
+- `lib/aid-install-core.sh` (`manifest_write_v3`, `manifest_remove_tool`, `prune_shared`)
 - `lib/AidInstallCore.psm1` (`Write-AidManifestV3`)
 
 ### Shared Payload

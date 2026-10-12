@@ -24,10 +24,8 @@
 #                               -> verifies sibling SHA256SUMS when present; exit 4 on mismatch
 #   copy_file <src> <dst> [force]
 #                               -> copy semantics (skip-identical/skip-on-diff/force)
-#   copy_dir <src_dir> <dst_dir> [force]
-#                               -> recursive copy via copy_file
-#   install_tool <staging> <tool> <target> <version> [force]
-#                               -> run the full install for one tool (copy + manifest + root-agent region update)
+#   install_tool <staging> <tool> <target>
+#                               -> install one tool's staged agents tree (shared payload and root context go through install_shared)
 #   read_upgrade_recovery <target>
 #                               -> validates the v3 recovery record; sets ordered tool set + retired state
 #   write_upgrade_recovery <target> <retired> <tools...>
@@ -44,8 +42,6 @@
 #                               -> sha256 from root_agent_files entry (stdout); empty if absent
 #   manifest_read_root_agent_status <manifest> <tool> <path>
 #                               -> status field from root_agent_files entry (stdout)
-#   manifest_write <manifest> <tool> <version> <paths_arr_name> <root_entries_arr_name>
-#                               -> atomically writes/merges the manifest JSON
 #   manifest_remove_tool <manifest> <tool>
 #                               -> removes a tool section from the manifest
 #   manifest_exists <manifest>  -> exit 0 when manifest exists and is parseable, else exit 6
@@ -723,9 +719,9 @@ extract_tarball() {
 # Returns 0 always (errors are logged).
 # Prints per-file lines only when AID_VERBOSE=1.
 # Increments counters: _COPY_COUNT_COPIED, _COPY_COUNT_UPTODATE, _COPY_COUNT_UPDATED,
-#   _COPY_COUNT_SKIPPED (caller initialises before iterating; install_tool reads them).
+#   _COPY_COUNT_SKIPPED (caller initialises before iterating; callers read them).
 # This function handles NON-root-agent files only.
-# Root agent files go through _copy_root_agent_file in install_tool.
+# Root agent files go through _copy_root_agent_file.
 copy_file() {
     local src="$1" dst="$2" force="${3:-0}"
     local dst_dir
@@ -764,25 +760,6 @@ copy_file() {
     fi
     _COPY_COUNT_UPDATED=$((_COPY_COUNT_UPDATED + 1))
     [[ "${AID_VERBOSE:-0}" -eq 1 ]] && echo "Updated: ${dst}"
-}
-
-# copy_dir <src_dir> <dst_dir> [force]
-# Recursively copies a directory tree, file by file (preserving empty dirs).
-# Root agent files in the source dir are skipped - caller handles them.
-copy_dir() {
-    local src="$1" dst="$2" force="${3:-0}"
-
-    # Create directory structure first.
-    while IFS= read -r -d '' dir; do
-        local rel="${dir#${src}/}"
-        mkdir -p "${dst}/${rel}"
-    done < <(find "$src" -mindepth 1 -type d -print0 2>/dev/null)
-
-    # Copy files.
-    while IFS= read -r -d '' file; do
-        local rel="${file#${src}/}"
-        copy_file "$file" "${dst}/${rel}" "$force"
-    done < <(find "$src" -type f -print0 2>/dev/null | sort -z)
 }
 
 # ---------------------------------------------------------------------------
@@ -1220,413 +1197,6 @@ PY
     }
     in_raf && /\]/ { exit }
     ' "$manifest"
-}
-
-# ---------------------------------------------------------------------------
-# Manifest writer (pure Bash + python3 fast-path)
-# ---------------------------------------------------------------------------
-
-# manifest_write <manifest_path> <tool> <version> <paths_varname> <root_entries_varname>
-#
-# <paths_varname>        - name of a Bash array variable holding relative POSIX paths.
-# <root_entries_varname> - name of a Bash array variable holding entries, each formatted as
-#                          "path|sha256|status" (pipe-delimited).
-#
-# Reads the existing manifest (if any), merges the tool's entry, writes back atomically
-# via a temp file.  Creates <target>/.aid/ as needed.
-manifest_write() {
-    local manifest="$1" tool="$2" version="$3"
-    local paths_var="$4"       # indirect reference to array
-    local root_var="$5"        # indirect reference to array
-
-    # Dereference array variables (Bash 4.3+ nameref or indirect via eval).
-    local -a paths_arr=()
-    local -a root_arr=()
-    eval "paths_arr=(\"\${${paths_var}[@]}\")"
-    eval "root_arr=(\"\${${root_var}[@]}\")"
-
-    local manifest_dir
-    manifest_dir="$(dirname "$manifest")"
-    mkdir -p "$manifest_dir"
-
-    local now
-    now="$(date -u +%Y-%m-%dT%H:%M:%SZ)"
-
-    if command -v python3 >/dev/null 2>&1; then
-        _manifest_write_python "$manifest" "$tool" "$version" "$now" "${paths_arr[@]+"${paths_arr[@]}"}" -- "${root_arr[@]+"${root_arr[@]}"}"
-    else
-        _manifest_write_bash "$manifest" "$tool" "$version" "$now" "${paths_arr[@]+"${paths_arr[@]}"}" -- "${root_arr[@]+"${root_arr[@]}"}"
-    fi
-}
-
-# _manifest_write_python - write manifest via python3 (fast path).
-# Signature: <manifest> <tool> <version> <now> [paths...] -- [root_entries...]
-_manifest_write_python() {
-    local manifest="$1" tool="$2" version="$3" now="$4"
-    shift 4
-
-    local -a paths_arr=()
-    local -a root_arr=()
-    local past_sep=0
-    for arg in "$@"; do
-        if [[ "$arg" == "--" ]]; then
-            past_sep=1
-            continue
-        fi
-        if [[ "$past_sep" -eq 0 ]]; then
-            paths_arr+=("$arg")
-        else
-            root_arr+=("$arg")
-        fi
-    done
-
-    # Large tool profiles (~350 paths) can push these lists past the OS
-    # command-line length limit (notably Windows' ~32K CreateProcess limit)
-    # when passed as argv to the python3 subprocess.  Write each list to its
-    # own temp file instead, and pass only the (small) temp-file paths as
-    # argv; clean up the temp files regardless of how this function exits.
-    local paths_file roots_file
-    paths_file="$(mktemp "${TMPDIR:-${TMP:-/tmp}}/aid-manifest-paths.XXXXXX")" || {
-        echo "ERROR: aid-install-core: mktemp failed for manifest paths file" >&2
-        return 1
-    }
-    roots_file="$(mktemp "${TMPDIR:-${TMP:-/tmp}}/aid-manifest-roots.XXXXXX")" || {
-        rm -f "$paths_file"
-        echo "ERROR: aid-install-core: mktemp failed for manifest roots file" >&2
-        return 1
-    }
-
-    printf '%s\n' "${paths_arr[@]+"${paths_arr[@]}"}" > "$paths_file"
-    printf '%s\n' "${root_arr[@]+"${root_arr[@]}"}" > "$roots_file"
-
-    python3 - "$manifest" "$tool" "$version" "$now" "$paths_file" "$roots_file" <<'PY'
-import json, sys, os, tempfile
-
-manifest_path = sys.argv[1]
-tool          = sys.argv[2]
-version       = sys.argv[3]
-now           = sys.argv[4]
-paths_file    = sys.argv[5]
-roots_file    = sys.argv[6]
-
-with open(paths_file, encoding="utf-8") as f:
-    paths_raw = f.read()
-with open(roots_file, encoding="utf-8") as f:
-    roots_raw = f.read()
-
-paths = [p for p in paths_raw.splitlines() if p]
-roots = []
-for line in roots_raw.splitlines():
-    if not line:
-        continue
-    parts = line.split("|", 2)
-    entry = {"path": parts[0], "sha256": parts[1] if len(parts) > 1 else "",
-             "status": parts[2] if len(parts) > 2 else "owned"}
-    roots.append(entry)
-
-# Load existing manifest.
-data = {}
-if os.path.isfile(manifest_path):
-    try:
-        with open(manifest_path) as f:
-            data = json.load(f)
-    except Exception:
-        data = {}
-
-if not isinstance(data.get("tools"), dict):
-    data["tools"] = {}
-
-# Merge: preserve existing installed_at for the tool if present.
-existing_tool = data["tools"].get(tool, {})
-tool_installed_at = existing_tool.get("installed_at", now)
-
-# De-duplicate paths (union).
-existing_paths = existing_tool.get("paths", [])
-merged_paths = list(dict.fromkeys(existing_paths + paths))
-
-# Merge root_agent_files: update or add per path.
-existing_raf = {e["path"]: e for e in existing_tool.get("root_agent_files", [])}
-for e in roots:
-    existing_raf[e["path"]] = e
-merged_raf = list(existing_raf.values())
-
-data["tools"][tool] = {
-    "version": version,
-    "installed_at": tool_installed_at,
-    "paths": merged_paths,
-    "root_agent_files": merged_raf,
-}
-
-# Build output with canonical key order.
-top_installed_at = data.get("installed_at", now)
-output = {
-    "format_version": 2,
-    "aid_version": version,
-    "installed_at": top_installed_at,
-    "tools": data["tools"],
-}
-data = output
-
-# Write atomically.
-manifest_dir = os.path.dirname(manifest_path)
-fd, tmp = tempfile.mkstemp(dir=manifest_dir, suffix=".tmp")
-try:
-    with os.fdopen(fd, "w", newline="\n") as f:
-        json.dump(data, f, indent=2)
-        f.write("\n")
-    os.replace(tmp, manifest_path)
-except Exception as e:
-    os.unlink(tmp)
-    print(f"ERROR: aid-install-core: manifest write failed: {e}", file=sys.stderr)
-    sys.exit(1)
-PY
-    local py_rc=$?
-    rm -f "$paths_file" "$roots_file"
-    return "$py_rc"
-}
-
-# _manifest_write_bash - pure-Bash fallback manifest writer.
-# Signature same as _manifest_write_python.
-_manifest_write_bash() {
-    local manifest="$1" tool="$2" version="$3" now="$4"
-    shift 4
-
-    local -a paths_arr=()
-    local -a root_arr=()
-    local past_sep=0
-    for arg in "$@"; do
-        if [[ "$arg" == "--" ]]; then
-            past_sep=1
-            continue
-        fi
-        if [[ "$past_sep" -eq 0 ]]; then
-            paths_arr+=("$arg")
-        else
-            root_arr+=("$arg")
-        fi
-    done
-
-    local manifest_dir
-    manifest_dir="$(dirname "$manifest")"
-
-    # Load existing manifest fields we need to preserve.
-    local top_installed_at="$now"
-    local tool_installed_at="$now"
-    local -a existing_paths=()
-    local existing_aid_version=""
-
-    if [[ -f "$manifest" ]]; then
-        top_installed_at="$(grep '"installed_at"' "$manifest" | head -1 | sed 's/.*"installed_at"[^:]*:[^"]*"\([^"]*\)".*/\1/')"
-        [[ -z "$top_installed_at" ]] && top_installed_at="$now"
-
-        # Collect existing paths for this tool.
-        while IFS= read -r p; do
-            [[ -n "$p" ]] && existing_paths+=("$p")
-        done < <(manifest_read_tool_paths "$manifest" "$tool")
-
-        local t_inst
-        t_inst="$(manifest_read_tool_version "$manifest" "$tool")"
-        # Read tool-specific installed_at (reuse existing or now).
-        tool_installed_at="$(awk -v tool="$tool" '
-        BEGIN{in_tool=0}
-        /"'"${tool}"'"/{in_tool=1}
-        in_tool && /"installed_at"/{
-            s=$0; gsub(/.*"installed_at"[^:]*:[^"]*"/,"",s); gsub(/".*$/,"",s); print s; exit
-        }' "$manifest")"
-        [[ -z "$tool_installed_at" ]] && tool_installed_at="$now"
-    fi
-
-    # Merge paths (de-duplicate).
-    local -a merged_paths=()
-    declare -A _seen_paths=()
-    for p in "${existing_paths[@]+"${existing_paths[@]}"}" "${paths_arr[@]+"${paths_arr[@]}"}"; do
-        if [[ -z "${_seen_paths[$p]+x}" ]]; then
-            _seen_paths[$p]=1
-            merged_paths+=("$p")
-        fi
-    done
-
-    # Assemble paths JSON array.
-    local paths_json="["
-    local first=1
-    for p in "${merged_paths[@]+"${merged_paths[@]}"}"; do
-        [[ "$first" -eq 0 ]] && paths_json+=","
-        paths_json+=$'\n        "'
-        paths_json+="$p"
-        paths_json+='"'
-        first=0
-    done
-    if [[ "${#merged_paths[@]}" -gt 0 ]]; then
-        paths_json+=$'\n      '
-    fi
-    paths_json+="]"
-
-    # Assemble root_agent_files JSON array.
-    # Merge with existing entries.
-    local -a all_root=()
-    if [[ -f "$manifest" ]]; then
-        # Read existing root_agent_files for this tool from manifest.
-        local _existing_raf_paths=()
-        while IFS= read -r _raf_line; do
-            [[ -n "$_raf_line" ]] && _existing_raf_paths+=("$_raf_line")
-        done < <(awk -v tool="$tool" '
-        BEGIN{in_tool=0;in_raf=0;in_entry=0}
-        /"'"${tool}"'"[[:space:]]*:/{in_tool=1}
-        in_tool && /"root_agent_files"/{in_raf=1}
-        in_raf && /\{/{in_entry=1; cur_path=""; cur_sha=""; cur_status="owned"}
-        in_raf && in_entry && /"path"/{
-            s=$0; gsub(/.*"path"[^:]*:[^"]*"/,"",s); gsub(/".*$/,"",s); cur_path=s
-        }
-        in_raf && in_entry && /"sha256"/{
-            s=$0; gsub(/.*"sha256"[^:]*:[^"]*"/,"",s); gsub(/".*$/,"",s); cur_sha=s
-        }
-        in_raf && in_entry && /"status"/{
-            s=$0; gsub(/.*"status"[^:]*:[^"]*"/,"",s); gsub(/".*$/,"",s); cur_status=s
-        }
-        in_raf && in_entry && /\}/ {
-            if (cur_path!="") print cur_path "|" cur_sha "|" cur_status
-            in_entry=0
-        }
-        in_raf && /\]/{exit}
-        ' "$manifest")
-
-        # Build map of existing entries.
-        declare -A _raf_map=()
-        for _entry in "${_existing_raf_paths[@]+"${_existing_raf_paths[@]}"}"; do
-            local _k="${_entry%%|*}"
-            _raf_map["$_k"]="$_entry"
-        done
-        # Override with incoming entries.
-        for _entry in "${root_arr[@]+"${root_arr[@]}"}"; do
-            local _k="${_entry%%|*}"
-            _raf_map["$_k"]="$_entry"
-        done
-        for _k in "${!_raf_map[@]}"; do
-            all_root+=("${_raf_map[$_k]}")
-        done
-    else
-        all_root=("${root_arr[@]+"${root_arr[@]}"}")
-    fi
-
-    local raf_json="["
-    local first=1
-    for entry in "${all_root[@]+"${all_root[@]}"}"; do
-        local rpath rsha rstatus
-        IFS='|' read -r rpath rsha rstatus <<< "$entry"
-        [[ "$first" -eq 0 ]] && raf_json+=","
-        raf_json+=$'\n        '
-        raf_json+='{ "path": "'"${rpath}"'", "sha256": "'"${rsha}"'", "status": "'"${rstatus}"'" }'
-        first=0
-    done
-    if [[ "${#all_root[@]}" -gt 0 ]]; then
-        raf_json+=$'\n      '
-    fi
-    raf_json+="]"
-
-    # Read all existing tools to preserve them.
-    local -a all_tool_ids=()
-    if [[ -f "$manifest" ]]; then
-        while IFS= read -r tid; do
-            [[ -n "$tid" && "$tid" != "$tool" ]] && all_tool_ids+=("$tid")
-        done < <(grep -o '"[a-z][a-zA-Z-]*"[[:space:]]*:' "$manifest" | \
-                 grep -v 'manifest_version\|format_version\|aid_version\|installed_at\|version\|paths\|root_agent_files\|sha256\|status\|path\|tools' | \
-                 sed 's/"//g' | sed 's/[[:space:]]*://g')
-    fi
-
-    # Assemble complete manifest JSON.
-    local tmp_file
-    tmp_file="$(mktemp "${manifest_dir}/.manifest.tmp.XXXXXX")"
-
-    {
-        printf '{\n'
-        printf '  "format_version": 2,\n'
-        printf '  "aid_version": "%s",\n' "$version"
-        printf '  "installed_at": "%s",\n' "$top_installed_at"
-        printf '  "tools": {\n'
-
-        # Write other tools first (preserve existing).
-        local need_comma=0
-        for tid in "${all_tool_ids[@]+"${all_tool_ids[@]}"}"; do
-            # Re-serialize existing tool block.
-            if [[ "$need_comma" -eq 1 ]]; then printf ',\n'; fi
-            local t_ver t_iat
-            t_ver="$(manifest_read_tool_version "$manifest" "$tid")"
-            t_iat="$(awk -v t="$tid" 'BEGIN{in_t=0} /"'"${tid}"'"/{in_t=1} in_t && /"installed_at"/{s=$0; gsub(/.*"installed_at"[^:]*:[^"]*"/,"",s); gsub(/".*$/,"",s); print s; exit}' "$manifest")"
-            [[ -z "$t_iat" ]] && t_iat="$now"
-            printf '    "%s": {\n' "$tid"
-            printf '      "version": "%s",\n' "$t_ver"
-            printf '      "installed_at": "%s",\n' "$t_iat"
-            # Re-read and emit paths for existing tool.
-            local t_paths_json="["
-            local tp_first=1
-            while IFS= read -r tp; do
-                [[ -z "$tp" ]] && continue
-                [[ "$tp_first" -eq 0 ]] && t_paths_json+=","
-                t_paths_json+=$'\n        "'
-                t_paths_json+="$tp"
-                t_paths_json+='"'
-                tp_first=0
-            done < <(manifest_read_tool_paths "$manifest" "$tid")
-            [[ "$tp_first" -eq 0 ]] && t_paths_json+=$'\n      '
-            t_paths_json+="]"
-            printf '      "paths": %s,\n' "$t_paths_json"
-            # Re-read root_agent_files for existing tool using the awk RAF parser.
-            local t_raf_json="["
-            local tr_first=1
-            local -a _t_raf_lines=()
-            while IFS= read -r _t_raf_line; do
-                [[ -n "$_t_raf_line" ]] && _t_raf_lines+=("$_t_raf_line")
-            done < <(awk -v tool="$tid" '
-            BEGIN{in_tool=0;in_raf=0;in_entry=0}
-            /"'"${tid}"'"[[:space:]]*:/{in_tool=1}
-            in_tool && /"root_agent_files"/{in_raf=1}
-            in_raf && /\{/{in_entry=1; cur_path=""; cur_sha=""; cur_status="owned"}
-            in_raf && in_entry && /"path"/{
-                s=$0; gsub(/.*"path"[^:]*:[^"]*"/,"",s); gsub(/".*$/,"",s); cur_path=s
-            }
-            in_raf && in_entry && /"sha256"/{
-                s=$0; gsub(/.*"sha256"[^:]*:[^"]*"/,"",s); gsub(/".*$/,"",s); cur_sha=s
-            }
-            in_raf && in_entry && /"status"/{
-                s=$0; gsub(/.*"status"[^:]*:[^"]*"/,"",s); gsub(/".*$/,"",s); cur_status=s
-            }
-            in_raf && in_entry && /\}/ {
-                if (cur_path!="") print cur_path "|" cur_sha "|" cur_status
-                in_entry=0
-            }
-            in_raf && /\]/{exit}
-            ' "$manifest")
-            for _t_entry in "${_t_raf_lines[@]+"${_t_raf_lines[@]}"}"; do
-                local _t_rpath _t_rsha _t_rstatus
-                IFS='|' read -r _t_rpath _t_rsha _t_rstatus <<< "$_t_entry"
-                [[ "$tr_first" -eq 0 ]] && t_raf_json+=","
-                t_raf_json+=$'\n        '
-                t_raf_json+='{ "path": "'"${_t_rpath}"'", "sha256": "'"${_t_rsha}"'", "status": "'"${_t_rstatus}"'" }'
-                tr_first=0
-            done
-            if [[ "${#_t_raf_lines[@]}" -gt 0 ]]; then
-                t_raf_json+=$'\n      '
-            fi
-            t_raf_json+="]"
-            printf '      "root_agent_files": %s\n' "$t_raf_json"
-            printf '    }'
-            need_comma=1
-        done
-
-        # Write the current tool.
-        if [[ "$need_comma" -eq 1 ]]; then printf ',\n'; fi
-        printf '    "%s": {\n' "$tool"
-        printf '      "version": "%s",\n' "$version"
-        printf '      "installed_at": "%s",\n' "$tool_installed_at"
-        printf '      "paths": %s,\n' "$paths_json"
-        printf '      "root_agent_files": %s\n' "$raf_json"
-        printf '    }\n'
-
-        printf '  }\n'
-        printf '}\n'
-    } > "$tmp_file"
-
-    mv "$tmp_file" "$manifest"
 }
 
 # manifest_remove_tool <manifest> <tool>
@@ -3564,195 +3134,51 @@ PY
 # High-level install_tool
 # ---------------------------------------------------------------------------
 
-# install_tool <staging_dir> <tool> <target> <version> <force>
+# install_tool <staging_dir> <tool> <target>
 # <staging_dir> - directory produced by extract_tarball (content of profiles/<tool>/)
+# Installs only the staged agents tree of <tool>: shared skills, runtime and root
+# context are committed once by install_shared after every tool.
 # Returns:
 #   0 - success (all files installed or up-to-date)
-#
-# Side effects: writes <target>/.aid/.aid-manifest.json.
+#   1 - a file failed to copy
 install_tool() {
-    local staging="$1" tool="$2" target="$3" version="$4" force="${5:-0}" add_only="${6:-0}"
+    local staging="$1" tool="$2" target="$3"
     local manifest="${target}/.aid/.aid-manifest.json"
     _aid_mc_prime "$manifest"
 
-    local -a install_paths=()
-    local -a root_entries=()
-
-    # Per-tool file counters (incremented by copy_file and _copy_root_agent_file).
+    # Per-tool file counters (incremented by copy_file_guarded).
     _COPY_COUNT_COPIED=0
     _COPY_COUNT_UPTODATE=0
     _COPY_COUNT_UPDATED=0
     _COPY_COUNT_SKIPPED=0
     _COPY_COUNT_FAILED=0
 
-    local root_agent
-    root_agent="$(_root_agent_file "$tool")"
-
-    # Task 009 add commits install only the staged agents. Shared skills, runtime
-    # and root context are committed once by install_shared after every tool.
-    if [[ "$add_only" == 1 ]]; then
-        local agents_src="${staging}/$( _root_dir "$tool" )/agents"
-        if [[ -d "$agents_src" ]]; then
-            # Read the tool's recorded hashes once (first record per path wins, as before).
-            local -A tool_sha=()
-            local rec rec_path
-            if [[ -f "$manifest" ]]; then
-                while IFS= read -r rec; do
-                    [[ "$rec" == *$'\t'* ]] || continue
-                    rec="${rec#*$'\t'}"; rec_path="${rec%%$'\t'*}"
-                    if [[ "$rec" == *$'\t'* ]]; then rec="${rec#*$'\t'}"; rec="${rec%%$'\t'*}"; else rec=""; fi
-                    [[ -n "${tool_sha[$rec_path]+x}" ]] || tool_sha["$rec_path"]="$rec"
-                done < <(manifest_read_tool_files "$manifest" "$tool")
-            fi
-            while IFS= read -r -d '' f; do
-                local rel="${f#${staging}/}"
-                local old_sha="${tool_sha[$rel]:-}"
-                copy_file_guarded "$f" "${target}/${rel}" "$old_sha" "$target"
-                install_paths+=("$rel")
-            done < <(find "$agents_src" -type f -print0 2>/dev/null | sort -z)
+    local agents_src="${staging}/$( _root_dir "$tool" )/agents"
+    if [[ -d "$agents_src" ]]; then
+        # Read the tool's recorded hashes once (first record per path wins, as before).
+        local -A tool_sha=()
+        local rec rec_path
+        if [[ -f "$manifest" ]]; then
+            while IFS= read -r rec; do
+                [[ "$rec" == *$'\t'* ]] || continue
+                rec="${rec#*$'\t'}"; rec_path="${rec%%$'\t'*}"
+                if [[ "$rec" == *$'\t'* ]]; then rec="${rec#*$'\t'}"; rec="${rec%%$'\t'*}"; else rec=""; fi
+                [[ -n "${tool_sha[$rec_path]+x}" ]] || tool_sha["$rec_path"]="$rec"
+            done < <(manifest_read_tool_files "$manifest" "$tool")
         fi
-        [[ "${_COPY_COUNT_FAILED:-0}" -eq 0 ]] || return 1
-        local add_total=$((_COPY_COUNT_COPIED + _COPY_COUNT_UPTODATE + _COPY_COUNT_UPDATED + _COPY_COUNT_SKIPPED))
-        if [[ "$add_total" -gt 0 && "$_COPY_COUNT_UPTODATE" -eq "$add_total" ]]; then
-            echo "  up to date (${add_total} files)"
-        elif [[ "$add_total" -gt 0 ]]; then
-            echo "  ${_COPY_COUNT_COPIED} installed, ${_COPY_COUNT_UPDATED} updated, ${_COPY_COUNT_UPTODATE} unchanged"
-        fi
-        return 0
+        while IFS= read -r -d '' f; do
+            local rel="${f#${staging}/}"
+            local old_sha="${tool_sha[$rel]:-}"
+            copy_file_guarded "$f" "${target}/${rel}" "$old_sha" "$target"
+        done < <(find "$agents_src" -type f -print0 2>/dev/null | sort -z)
     fi
-
-    # Determine which dirs/files this tool installs (mirrors install.sh per-tool dispatch).
-    case "$tool" in
-        claude-code)
-            # .claude/ tree + CLAUDE.md
-            if [[ -d "${staging}/.claude" ]]; then
-                copy_dir "${staging}/.claude" "${target}/.claude" "$force"
-                # Collect paths from .claude/
-                while IFS= read -r -d '' f; do
-                    local rel="${f#${staging}/}"
-                    install_paths+=("$rel")
-                done < <(find "${staging}/.claude" -type f -print0 2>/dev/null | sort -z)
-            fi
-            ;;
-        codex)
-            # New unified layout: .codex/ only (agents, skills, aid all under .codex/).
-            # .agents/ is the RETIRED split layout -- handled by _migrate_retired_layout.
-            if [[ -d "${staging}/.codex" ]]; then
-                copy_dir "${staging}/.codex" "${target}/.codex" "$force"
-                while IFS= read -r -d '' f; do
-                    local rel="${f#${staging}/}"
-                    install_paths+=("$rel")
-                done < <(find "${staging}/.codex" -type f -print0 2>/dev/null | sort -z)
-            fi
-            ;;
-        cursor)
-            # .cursor/ + AGENTS.md
-            if [[ -d "${staging}/.cursor" ]]; then
-                copy_dir "${staging}/.cursor" "${target}/.cursor" "$force"
-                while IFS= read -r -d '' f; do
-                    local rel="${f#${staging}/}"
-                    install_paths+=("$rel")
-                done < <(find "${staging}/.cursor" -type f -print0 2>/dev/null | sort -z)
-            fi
-            ;;
-        copilot-cli)
-            # .github/ + AGENTS.md
-            if [[ -d "${staging}/.github" ]]; then
-                copy_dir "${staging}/.github" "${target}/.github" "$force"
-                while IFS= read -r -d '' f; do
-                    local rel="${f#${staging}/}"
-                    install_paths+=("$rel")
-                done < <(find "${staging}/.github" -type f -print0 2>/dev/null | sort -z)
-            fi
-            ;;
-        antigravity)
-            # .agent/ + AGENTS.md
-            if [[ -d "${staging}/.agent" ]]; then
-                copy_dir "${staging}/.agent" "${target}/.agent" "$force"
-                while IFS= read -r -d '' f; do
-                    local rel="${f#${staging}/}"
-                    install_paths+=("$rel")
-                done < <(find "${staging}/.agent" -type f -print0 2>/dev/null | sort -z)
-            fi
-            ;;
-    esac
-
-    # Abort loudly if any AID-owned file failed to copy -- do NOT proceed to
-    # write a manifest that records a partial install as success (work-007 C4).
-    if [[ "${_COPY_COUNT_FAILED:-0}" -gt 0 ]]; then
-        echo "ERROR: aid-install-core: ${_COPY_COUNT_FAILED} file(s) failed to copy for '${tool}'. Install aborted (incomplete)." >&2
-        return 1
+    [[ "${_COPY_COUNT_FAILED:-0}" -eq 0 ]] || return 1
+    local add_total=$((_COPY_COUNT_COPIED + _COPY_COUNT_UPTODATE + _COPY_COUNT_UPDATED + _COPY_COUNT_SKIPPED))
+    if [[ "$add_total" -gt 0 && "$_COPY_COUNT_UPTODATE" -eq "$add_total" ]]; then
+        echo "  up to date (${add_total} files)"
+    elif [[ "$add_total" -gt 0 ]]; then
+        echo "  ${_COPY_COUNT_COPIED} installed, ${_COPY_COUNT_UPDATED} updated, ${_COPY_COUNT_UPTODATE} unchanged"
     fi
-
-    # Handle root agent file via in-place region update (Pillar 3).
-    local root_src="${staging}/${root_agent}"
-    local root_dst="${target}/${root_agent}"
-
-    if [[ -f "$root_src" ]]; then
-        _CORE_ROOT_AGENT_STATUS="owned"
-        _copy_root_agent_file "$root_src" "$root_dst" "$tool" "$force" "$manifest"
-
-        local inc_sha
-        inc_sha="$(sha256_file "$root_src")"
-        root_entries+=("${root_agent}|${inc_sha}|${_CORE_ROOT_AGENT_STATUS}")
-
-        # Include root agent path in paths list only when owned (not pending-merge).
-        if [[ "${_CORE_ROOT_AGENT_STATUS}" == "owned" ]]; then
-            install_paths+=("$root_agent")
-        fi
-    fi
-
-    # Write manifest (merge). A failure here MUST abort loudly (parity with PS
-    # Write-AidManifest, which throws) -- otherwise a failed manifest write is a
-    # silent success and later `aid status`/`aid remove`/prune won't see the tool.
-    if ! manifest_write "$manifest" "$tool" "$version" "install_paths" "root_entries"; then
-        echo "ERROR: aid-install-core: manifest write failed for ${manifest}. Install aborted (files copied but not recorded)." >&2
-        return 1
-    fi
-
-    # Retired-root migration sweep (FR7/FR7a).
-    # Remove AID-owned content from retired layout dirs BEFORE the normal prune,
-    # so that old .agents/, .cursor/rules/, .agent/rules/ trees are cleaned up.
-    # A non-zero rc from install_tool is treated as a mid-commit failure (caller
-    # prints the "re-run to heal" message); this function returns 0 (WARN-not-fail).
-    _migrate_retired_layout "$target" "$tool"
-
-    # Project-level provisioning (work-007): seed the required settings.yml and
-    # maintain the .gitignore AID region. Both idempotent; safe per-tool.
-    seed_settings_yml "$target" "$tool"
-    update_gitignore "$target"
-    update_gitattributes "$target"
-    _migrate_term_exclusions "$target"
-
-    # Print concise summary (always shown; per-file lines only when AID_VERBOSE=1).
-    local _total_files=$((_COPY_COUNT_COPIED + _COPY_COUNT_UPTODATE + _COPY_COUNT_UPDATED + _COPY_COUNT_SKIPPED))
-    if [[ "$_total_files" -gt 0 ]]; then
-        if [[ "$_COPY_COUNT_COPIED" -gt 0 && "$_COPY_COUNT_UPTODATE" -eq 0 && "$_COPY_COUNT_UPDATED" -eq 0 ]]; then
-            echo "  ${_COPY_COUNT_COPIED} files installed"
-        elif [[ "$_COPY_COUNT_UPTODATE" -gt 0 && "$_COPY_COUNT_COPIED" -eq 0 && "$_COPY_COUNT_UPDATED" -eq 0 ]]; then
-            echo "  up to date (${_COPY_COUNT_UPTODATE} files)"
-        else
-            local _parts=""
-            [[ "$_COPY_COUNT_UPDATED" -gt 0 ]] && _parts="${_COPY_COUNT_UPDATED} updated"
-            [[ "$_COPY_COUNT_COPIED" -gt 0 ]] && {
-                [[ -n "$_parts" ]] && _parts="${_parts}, "
-                _parts="${_parts}${_COPY_COUNT_COPIED} installed"
-            }
-            [[ "$_COPY_COUNT_UPTODATE" -gt 0 ]] && {
-                [[ -n "$_parts" ]] && _parts="${_parts}, "
-                _parts="${_parts}${_COPY_COUNT_UPTODATE} unchanged"
-            }
-            echo "  ${_parts}"
-        fi
-    fi
-
-    # Report project-level provisioning actions (work-007; always shown).
-    [[ "${_CORE_SEEDED_SETTINGS:-0}" -eq 1 ]] && echo "  Created .aid/settings.yml from template"
-    case "${_CORE_GITIGNORE_ACTION:-unchanged}" in
-        created) echo "  Created .gitignore with AID exclusions" ;;
-        updated) echo "  Updated .gitignore AID exclusions" ;;
-    esac
-
     return 0
 }
 

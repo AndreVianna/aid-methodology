@@ -454,7 +454,7 @@ Written by the install-core libraries to record what was installed, so that unin
 the shared-entry reference count touch only AID's own files. File: `.aid/.aid-manifest.json`. Current
 `format_version`: `3`.
 
-Writer: `manifest_write` in `lib/aid-install-core.sh` (the PowerShell twin is in `lib/AidInstallCore.psm1`).
+Writer: `manifest_write_v3` in `lib/aid-install-core.sh` (the PowerShell twin is `Write-AidManifestV3` in `lib/AidInstallCore.psm1`).
 Readers: `manifest_format`, `manifest_read_shared`, `manifest_read_tool_files`, `manifest_read_tool_paths`,
 `manifest_read_host`, `manifest_read_root_agent[_status]`.
 
@@ -492,7 +492,7 @@ Shape:
 - `agents_md.region_sha256` and `claude_md.region_sha256` let the installer detect a changed AID region.
   The region bodies are fixed in the install core: `_AID_AGENTS_POINTER_REGION` in `lib/aid-install-core.sh`
   and `$script:_AidAgentsPointerRegion` / `$script:_AidClaudeImportRegion` in `lib/AidInstallCore.psm1`.
-- Producers are the install and update paths, through `manifest_write`. Consumers are `manifest_remove_tool`
+- Producers are the install and update paths, through `manifest_write_v3`. Consumers are `manifest_remove_tool`
   and `uninstall_tool` (removal), `drift_report` (`aid status`) and `prune_shared`.
 
 ---

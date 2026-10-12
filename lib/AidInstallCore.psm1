@@ -20,9 +20,8 @@
 #   Extract-Tarball <tarball> <destDir>          - extract (flat root); throws on fail
 #   Verify-BundleChecksum <tarball>              - verify sibling SHA256SUMS if present
 #   Copy-AidFile <src> <dst> [force] [aidVerbose]  - copy semantics; per-file output when verbose
-#   Copy-AidDir <srcDir> <dstDir> [force] [aidVerbose] - recursive copy via Copy-AidFile
-#   Install-AidTool <staging> <tool> <target> <version> [force] [aidVerbose]
-#                                                - full install for one tool (copy + manifest)
+#   Install-AidTool <staging> <tool> <target> [aidVerbose]
+#                                                - install one tool's staged agents tree
 #   Read-ManifestToolPaths <manifest> <tool>     - array of paths from tools.<tool>.paths
 #   Read-ManifestToolVersion <manifest> <tool>   - version string for named tool
 #   Read-ManifestRootAgent <manifest> <tool> <fname>
@@ -35,15 +34,13 @@
 #   Test-AidOwnedPath <target> <path>              - path-based v3 legacy ownership predicate
 #   Invoke-RetireV3Layout <target> <tools>         - archives v3-owned paths before fresh install
 #   Read-ManifestTools <manifest>                - [string[]] tool ids (keys of tools object)
-#   Write-AidManifest <manifest> <tool> <version> <paths> <rootEntries>
-#                                                - atomic write/merge of manifest JSON
 #   Remove-ManifestTool <manifest> <tool>        - removes a tool section from manifest
 #   Test-ManifestExists <manifest>               - returns $true when manifest exists/parseable
 #   Uninstall-AidTool <manifest> <tool> <target> [aidVerbose] - manifest-driven removal
 #
 # Verbose mode:
-#   Pass -AidVerbose $true to Install-AidTool / Uninstall-AidTool / Copy-AidFile /
-#   Copy-AidDir to enable per-file Copied:/Up to date:/Updated:/Removed: lines.
+#   Pass -AidVerbose $true to Install-AidTool / Uninstall-AidTool / Copy-AidFile
+#   to enable per-file Copied:/Up to date:/Updated:/Removed: lines.
 #   Default (false): only per-tool summary line.  WARN lines always show.
 #
 # Exit codes (from install.ps1):
@@ -80,7 +77,7 @@ $script:_AidV3Upgrade = $false
 # Module-level prune counter for shared-layout prune accounting.
 $script:_PruneRemoved = 0
 
-# Module-level project-provisioning state (work-007). Reset by Install-AidTool.
+# Module-level project-provisioning state (work-007). Set by Initialize-AidSettingsFile / Update-AidGitignore.
 $script:_SeededSettings  = $false
 $script:_GitignoreAction = 'unchanged'
 # Settings format stamp. MUST equal bin/aid AID_SUPPORTED_FORMAT / bin/aid.ps1
@@ -593,40 +590,6 @@ function Copy-AidFile {
     }
     $script:_CopyCountUpdated++
     if ($AidVerbose) { Write-Host "Updated: $Dst" }
-}
-
-# Copy-AidDir <srcDir> <dstDir> [force] [aidVerbose]
-# Recursively copies a directory tree, file by file (preserving empty dirs).
-function Copy-AidDir {
-    param(
-        [string]$SrcDir,
-        [string]$DstDir,
-        [bool]$Force = $false,
-        [bool]$AidVerbose = $false
-    )
-
-    # Create directory structure first.
-    $dirs = Get-ChildItem -LiteralPath $SrcDir -Recurse -Directory -ErrorAction SilentlyContinue
-    foreach ($dir in $dirs) {
-        $rel = $dir.FullName.Substring($SrcDir.Length).TrimStart([char]'\', [char]'/')
-        $dstSub = Join-Path $DstDir $rel
-        if (-not (Test-Path $dstSub -PathType Container)) {
-            New-Item -ItemType Directory -Path $dstSub -Force | Out-Null
-        }
-    }
-
-    # Copy files in ordinal (byte-order) sorted order - matching Bash's `find | sort -z`.
-    # Use [System.Array]::Sort with StringComparer.Ordinal for byte-identical path ordering.
-    $fileItems = @(Get-ChildItem -LiteralPath $SrcDir -Recurse -File -ErrorAction SilentlyContinue)
-    if ($fileItems.Count -gt 0) {
-        $filePaths = [string[]]($fileItems | ForEach-Object { $_.FullName })
-        [System.Array]::Sort($filePaths, [System.StringComparer]::Ordinal)
-        foreach ($fp in $filePaths) {
-            $rel = $fp.Substring($SrcDir.Length).TrimStart([char]'\', [char]'/')
-            $dst = Join-Path $DstDir $rel
-            Copy-AidFile -Src $fp -Dst $dst -Force $Force -AidVerbose $AidVerbose
-        }
-    }
 }
 
 # ---------------------------------------------------------------------------
@@ -1161,172 +1124,6 @@ function script:Build-ManifestJson {
     [void]$sb.Append("}`n")
 
     return $sb.ToString()
-}
-
-# ---------------------------------------------------------------------------
-# Manifest writer
-# ---------------------------------------------------------------------------
-
-# Write-AidManifest <manifestPath> <tool> <version> <pathsArray> <rootEntriesArray>
-#
-# <pathsArray>       - array of relative POSIX paths.
-# <rootEntriesArray> - array of "path|sha256|status" strings.
-#
-# Reads the existing manifest (if any), merges the tool entry, writes back atomically
-# (via a temp file).  Creates <target>/.aid/ as needed.
-# Key order contract: format_version, aid_version, installed_at, tools;
-#   per-tool: version, installed_at, paths, root_agent_files;
-#   root_agent_files entry: path, sha256, status.
-# 2-space indent, LF newlines, trailing newline.
-function Write-AidManifest {
-    param(
-        [string]$ManifestPath,
-        [string]$Tool,
-        [string]$Version,
-        [string[]]$Paths,
-        [string[]]$RootEntries
-    )
-
-    $manifestDir = [System.IO.Path]::GetDirectoryName($ManifestPath)
-    if ($manifestDir -and -not (Test-Path $manifestDir -PathType Container)) {
-        New-Item -ItemType Directory -Path $manifestDir -Force | Out-Null
-    }
-
-    $now = ([System.DateTime]::UtcNow.ToString('yyyy-MM-ddTHH:mm:ssZ'))
-
-    # Load existing manifest.
-    $existingData = $null
-    if (Test-Path $ManifestPath -PathType Leaf) {
-        try {
-            $existingData = Get-Content -LiteralPath $ManifestPath -Raw | ConvertFrom-Json
-        } catch {
-            $existingData = $null
-        }
-    }
-
-    # Top-level installed_at: preserve existing.
-    # Guard via PSObject.Properties['key'] -- Set-StrictMode -Version Latest (active in this module)
-    # throws PropertyNotFoundException on direct access of absent properties.  Old-format manifests
-    # (schema:1) have no root-level installed_at; new-format ones (manifest_version:1) do.
-    $topInstalledAt = $now
-    if ($existingData -and $existingData.PSObject.Properties['installed_at'] -and $existingData.installed_at) {
-        # Re-render: ConvertFrom-Json handed back a [DateTime], not the JSON string (W4-4).
-        $topInstalledAt = script:Format-AidTimestamp $existingData.installed_at
-    }
-
-    # Build the tools map preserving existing tools, then adding/merging the current tool.
-    # Use ordered dictionary so key order is deterministic.
-    $toolsMap = [System.Collections.Specialized.OrderedDictionary]::new()
-
-    # Preserve existing tools (other than the current one).
-    $existingTools = if ($existingData -and $existingData.PSObject.Properties['tools']) { $existingData.tools } else { $null }
-    if ($existingTools) {
-        $existingTools.PSObject.Properties | ForEach-Object {
-            $tid = $_.Name
-            if ($tid -ne $Tool) {
-                $t   = $_.Value
-                # Guard per-tool properties: old manifests lack root_agent_files; use
-                # PSObject.Properties['key'] check before direct access (StrictMode-safe).
-                # Fill the list with Add(): `$tP = if (...) { $list }` sends the list through
-                # the pipeline, which unrolls it -- a single-path tool would come back as a
-                # bare [string] and blow up on .Count in script:Build-ManifestJson.
-                $tP  = [System.Collections.Generic.List[string]]::new()
-                if ($t.PSObject.Properties['paths'] -and $t.paths) {
-                    foreach ($tPath in $t.paths) { $tP.Add([string]$tPath) }
-                }
-                $tR  = [System.Collections.Generic.List[hashtable]]::new()
-                $tRaf = if ($t.PSObject.Properties['root_agent_files']) { $t.root_agent_files } else { $null }
-                if ($tRaf) {
-                    foreach ($e in $tRaf) {
-                        $ePath   = if ($e.PSObject.Properties['path'])   { $e.path }   else { '' }
-                        $eSha256 = if ($e.PSObject.Properties['sha256']) { $e.sha256 } else { '' }
-                        $st = if ($e.PSObject.Properties['status']) { $e.status } else { 'owned' }
-                        if ($ePath) { $tR.Add(@{ path = $ePath; sha256 = $eSha256; status = $st }) }
-                    }
-                }
-                $toolsMap[$tid] = @{
-                    Version       = if ($t.PSObject.Properties['version'] -and $t.version) { [string]$t.version } else { '' }
-                    # Re-render: ConvertFrom-Json handed back a [DateTime] (W4-4).
-                    InstalledAt   = if ($t.PSObject.Properties['installed_at'] -and $t.installed_at) { script:Format-AidTimestamp $t.installed_at } else { $now }
-                    Paths         = $tP
-                    RootAgentFiles = $tR
-                }
-            }
-        }
-    }
-
-    # Existing data for the current tool.
-    $existingTool = $null
-    # Indexer lookup, not `.PSObject.Properties.Name -contains`: the latter is member
-    # enumeration and throws under Set-StrictMode -Version Latest when "tools" is `{}`.
-    if ($existingTools -and $existingTools.PSObject.Properties[$Tool]) {
-        $existingTool = $existingTools.$Tool
-    }
-
-    # tool installed_at: preserve existing.
-    $toolInstalledAt = $now
-    if ($existingTool -and $existingTool.PSObject.Properties['installed_at'] -and $existingTool.installed_at) {
-        # Re-render: ConvertFrom-Json handed back a [DateTime] (W4-4).
-        $toolInstalledAt = script:Format-AidTimestamp $existingTool.installed_at
-    }
-
-    # De-duplicate paths (union, preserving order: existing first, then new).
-    $seenPaths   = [System.Collections.Generic.HashSet[string]]::new()
-    $mergedPaths = [System.Collections.Generic.List[string]]::new()
-    if ($existingTool -and $existingTool.PSObject.Properties['paths'] -and $existingTool.paths) {
-        foreach ($p in $existingTool.paths) {
-            if ($seenPaths.Add($p)) { $mergedPaths.Add($p) }
-        }
-    }
-    foreach ($p in $Paths) {
-        if ($p -and $seenPaths.Add($p)) { $mergedPaths.Add($p) }
-    }
-
-    # Merge root_agent_files: update or add per path.
-    $rafMap = [System.Collections.Specialized.OrderedDictionary]::new()
-    $existingRaf = if ($existingTool -and $existingTool.PSObject.Properties['root_agent_files']) { $existingTool.root_agent_files } else { $null }
-    if ($existingRaf) {
-        foreach ($e in $existingRaf) {
-            $ePath   = if ($e.PSObject.Properties['path'])   { $e.path }   else { '' }
-            $eSha256 = if ($e.PSObject.Properties['sha256']) { $e.sha256 } else { '' }
-            $st = if ($e.PSObject.Properties['status']) { $e.status } else { 'owned' }
-            if ($ePath) { $rafMap[$ePath] = @{ path = $ePath; sha256 = $eSha256; status = $st } }
-        }
-    }
-    foreach ($entry in $RootEntries) {
-        if (-not $entry) { continue }
-        $parts = $entry -split '\|', 3
-        $rpath = $parts[0]
-        $rsha  = if ($parts.Count -gt 1) { $parts[1] } else { '' }
-        $rst   = if ($parts.Count -gt 2) { $parts[2] } else { 'owned' }
-        $rafMap[$rpath] = @{ path = $rpath; sha256 = $rsha; status = $rst }
-    }
-    $mergedRaf = [System.Collections.Generic.List[hashtable]]::new()
-    foreach ($key in $rafMap.Keys) { $mergedRaf.Add($rafMap[$key]) }
-
-    # Add/overwrite current tool entry.
-    $toolsMap[$Tool] = @{
-        Version        = $Version
-        InstalledAt    = $toolInstalledAt
-        Paths          = $mergedPaths
-        RootAgentFiles = $mergedRaf
-    }
-
-    # Build JSON string with exact 2-space indent, LF newlines, trailing LF.
-    $json = script:Build-ManifestJson -TopInstalledAt $topInstalledAt -TopVersion $Version -ToolsMap $toolsMap
-
-    # Write atomically via temp file.
-    $tmpPath = Join-Path $manifestDir (".manifest.tmp." + [System.IO.Path]::GetRandomFileName())
-    try {
-        $bytes = [System.Text.Encoding]::UTF8.GetBytes($json)
-        [System.IO.File]::WriteAllBytes($tmpPath, $bytes)
-        if (Test-Path $ManifestPath -PathType Leaf) { Remove-Item -LiteralPath $ManifestPath -Force }
-        Move-Item -LiteralPath $tmpPath -Destination $ManifestPath -Force
-    } catch {
-        if (Test-Path $tmpPath -PathType Leaf) { Remove-Item -LiteralPath $tmpPath -Force -ErrorAction SilentlyContinue }
-        [Console]::Error.WriteLine("ERROR: AidInstallCore: manifest write failed: $_")
-        throw
-    }
 }
 
 # ---------------------------------------------------------------------------
@@ -2442,25 +2239,20 @@ function script:Invoke-MigrateTermExclusions {
 # High-level Install-AidTool
 # ---------------------------------------------------------------------------
 
-# Install-AidTool <stagingDir> <tool> <target> <version> [force] [aidVerbose]
+# Install-AidTool <stagingDir> <tool> <target> [aidVerbose]
+# Installs only the staged agents tree of <tool>: shared skills, runtime and root
+# context are committed once by Install-AidShared after every tool.
 # Returns:
-#   0 - success (all files installed or up-to-date)
-#
-# Side effects: writes <target>/.aid/.aid-manifest.json.
+#   0 - success (all files installed or up-to-date); throws when a file failed to copy.
 function Install-AidTool {
     param(
         [string]$StagingDir,
         [string]$Tool,
         [string]$Target,
-        [string]$Version,
-        [bool]$Force = $false,
-        [bool]$AidVerbose = $false,
-        [bool]$AddOnly = $false
+        [bool]$AidVerbose = $false
     )
 
     $manifest = Join-Path $Target (Join-Path '.aid' '.aid-manifest.json')
-    $installPaths  = [System.Collections.Generic.List[string]]::new()
-    $rootEntries   = [System.Collections.Generic.List[string]]::new()
 
     # Reset per-tool copy counters.
     $script:_CopyCountCopied   = 0
@@ -2468,154 +2260,27 @@ function Install-AidTool {
     $script:_CopyCountUpdated  = 0
     $script:_CopyCountSkipped  = 0
     $script:_CopyCountFailed   = 0
-    # Reset project-provisioning state (work-007).
-    $script:_SeededSettings  = $false
-    $script:_GitignoreAction = 'unchanged'
 
-    $rootAgentFile = script:Get-RootAgentFile -Tool $Tool
-
-    if ($AddOnly) {
-        $agentRoot = Join-Path $StagingDir (Join-Path (script:Get-RootDir -Tool $Tool) 'agents')
-        if (Test-Path -LiteralPath $agentRoot -PathType Container) {
-            $files = @(Get-ChildItem -LiteralPath $agentRoot -Recurse -File | Sort-Object FullName)
-            foreach ($f in $files) {
-                $rel = ((script:Get-RootDir -Tool $Tool) + '/agents/' + $f.FullName.Substring($agentRoot.Length).TrimStart([char]'\',[char]'/')) -replace '\\','/'
-                $recorded = ''
-                foreach ($row in (Read-AidManifestToolFiles -ManifestPath $manifest -Tool $Tool)) {
-                    $parts = $row.Split("`t")
-                    if ($parts.Count -ge 3 -and $parts[0] -ceq "tools.$Tool.file" -and $parts[1] -ceq $rel) { $recorded = $parts[2]; break }
-                }
-                Copy-AidFileGuarded -Src $f.FullName -Dst (Join-Path $Target ($rel -replace '/', [System.IO.Path]::DirectorySeparatorChar)) `
-                    -RecordedSha256 $recorded -Root $Target -AidVerbose $AidVerbose
+    $agentRoot = Join-Path $StagingDir (Join-Path (script:Get-RootDir -Tool $Tool) 'agents')
+    if (Test-Path -LiteralPath $agentRoot -PathType Container) {
+        $files = @(Get-ChildItem -LiteralPath $agentRoot -Recurse -File | Sort-Object FullName)
+        foreach ($f in $files) {
+            $rel = ((script:Get-RootDir -Tool $Tool) + '/agents/' + $f.FullName.Substring($agentRoot.Length).TrimStart([char]'\',[char]'/')) -replace '\\','/'
+            $recorded = ''
+            foreach ($row in (Read-AidManifestToolFiles -ManifestPath $manifest -Tool $Tool)) {
+                $parts = $row.Split("`t")
+                if ($parts.Count -ge 3 -and $parts[0] -ceq "tools.$Tool.file" -and $parts[1] -ceq $rel) { $recorded = $parts[2]; break }
             }
-        }
-        if ($script:_CopyCountFailed -gt 0) { throw "AidInstallCore: $($script:_CopyCountFailed) file(s) failed to copy for '$Tool'. Install aborted (incomplete)." }
-        $addTotal = $script:_CopyCountCopied + $script:_CopyCountUpToDate + $script:_CopyCountUpdated + $script:_CopyCountSkipped
-        if ($addTotal -gt 0) {
-            if ($script:_CopyCountUpToDate -eq $addTotal) { Write-Host "  up to date ($addTotal files)" }
-            else { Write-Host "  $($script:_CopyCountCopied) installed, $($script:_CopyCountUpdated) updated, $($script:_CopyCountUpToDate) unchanged" }
-        }
-        return 0
-    }
-
-    # Helper: collect file paths from a directory, ordinal-sorted (matching Bash `find | sort -z`).
-    $collectPaths = {
-        param([string]$Dir, [string]$StripPrefix, [System.Collections.Generic.List[string]]$OutList)
-        $items = @(Get-ChildItem -LiteralPath $Dir -Recurse -File -ErrorAction SilentlyContinue)
-        if ($items.Count -gt 0) {
-            $fps = [string[]]($items | ForEach-Object { $_.FullName })
-            [System.Array]::Sort($fps, [System.StringComparer]::Ordinal)
-            foreach ($fp in $fps) {
-                $rel = $fp.Substring($StripPrefix.Length).TrimStart([char]'\', [char]'/') -replace '\\', '/'
-                $OutList.Add($rel)
-            }
+            Copy-AidFileGuarded -Src $f.FullName -Dst (Join-Path $Target ($rel -replace '/', [System.IO.Path]::DirectorySeparatorChar)) `
+                -RecordedSha256 $recorded -Root $Target -AidVerbose $AidVerbose
         }
     }
-
-    # Copy tool-specific directories.
-    switch ($Tool) {
-        'claude-code' {
-            $claudeDir = Join-Path $StagingDir '.claude'
-            if (Test-Path $claudeDir -PathType Container) {
-                Copy-AidDir -SrcDir $claudeDir -DstDir (Join-Path $Target '.claude') -Force $Force -AidVerbose $AidVerbose
-                & $collectPaths $claudeDir $StagingDir $installPaths
-            }
-        }
-        'codex' {
-            # New unified layout: .codex\ only (agents, skills, aid all under .codex\).
-            # .agents\ is the RETIRED split layout -- handled by Invoke-MigrateRetiredLayout.
-            $codexDir  = Join-Path $StagingDir '.codex'
-            if (Test-Path $codexDir -PathType Container) {
-                Copy-AidDir -SrcDir $codexDir -DstDir (Join-Path $Target '.codex') -Force $Force -AidVerbose $AidVerbose
-                & $collectPaths $codexDir $StagingDir $installPaths
-            }
-        }
-        'cursor' {
-            $cursorDir = Join-Path $StagingDir '.cursor'
-            if (Test-Path $cursorDir -PathType Container) {
-                Copy-AidDir -SrcDir $cursorDir -DstDir (Join-Path $Target '.cursor') -Force $Force -AidVerbose $AidVerbose
-                & $collectPaths $cursorDir $StagingDir $installPaths
-            }
-        }
-        'copilot-cli' {
-            $githubDir = Join-Path $StagingDir '.github'
-            if (Test-Path $githubDir -PathType Container) {
-                Copy-AidDir -SrcDir $githubDir -DstDir (Join-Path $Target '.github') -Force $Force -AidVerbose $AidVerbose
-                & $collectPaths $githubDir $StagingDir $installPaths
-            }
-        }
-        'antigravity' {
-            $agentDir = Join-Path $StagingDir '.agent'
-            if (Test-Path $agentDir -PathType Container) {
-                Copy-AidDir -SrcDir $agentDir -DstDir (Join-Path $Target '.agent') -Force $Force -AidVerbose $AidVerbose
-                & $collectPaths $agentDir $StagingDir $installPaths
-            }
-        }
+    if ($script:_CopyCountFailed -gt 0) { throw "AidInstallCore: $($script:_CopyCountFailed) file(s) failed to copy for '$Tool'. Install aborted (incomplete)." }
+    $addTotal = $script:_CopyCountCopied + $script:_CopyCountUpToDate + $script:_CopyCountUpdated + $script:_CopyCountSkipped
+    if ($addTotal -gt 0) {
+        if ($script:_CopyCountUpToDate -eq $addTotal) { Write-Host "  up to date ($addTotal files)" }
+        else { Write-Host "  $($script:_CopyCountCopied) installed, $($script:_CopyCountUpdated) updated, $($script:_CopyCountUpToDate) unchanged" }
     }
-
-    # Abort loudly if any AID-owned file failed to copy -- do NOT proceed to
-    # write a manifest that records a partial install as success (work-007 C4).
-    if ($script:_CopyCountFailed -gt 0) {
-        throw "AidInstallCore: $($script:_CopyCountFailed) file(s) failed to copy for '$Tool'. Install aborted (incomplete)."
-    }
-
-    # Handle root agent file via in-place region update (Pillar 3).
-    $rootSrc = Join-Path $StagingDir $rootAgentFile
-    $rootDst = Join-Path $Target $rootAgentFile
-
-    if (Test-Path $rootSrc -PathType Leaf) {
-        $script:_CORE_ROOT_AGENT_STATUS = 'owned'
-        script:Copy-RootAgentFile -Src $rootSrc -Dst $rootDst -Tool $Tool -Force $Force `
-            -Manifest $manifest -AidVerbose $AidVerbose | Out-Null
-
-        $incSha = Get-Sha256File -FilePath $rootSrc
-        $rootEntries.Add("$rootAgentFile|$incSha|$($script:_CORE_ROOT_AGENT_STATUS)")
-
-        # Include root agent path in paths list (status is always 'owned' now).
-        $installPaths.Add($rootAgentFile)
-    }
-
-    # Write manifest (merge).
-    Write-AidManifest -ManifestPath $manifest -Tool $Tool -Version $Version `
-        -Paths @($installPaths) -RootEntries @($rootEntries)
-
-    # Retired-root migration sweep (FR7/FR7a).
-    # Remove AID-owned content from retired layout dirs BEFORE the normal prune,
-    # so that old .agents\, .cursor\rules\, .agent\rules\ trees are cleaned up.
-    # A non-zero rc from Install-AidTool is treated as a mid-commit failure (caller
-    # prints the "re-run to heal" message); this function returns 0 (WARN-not-fail).
-    Invoke-MigrateRetiredLayout -Target $Target -Tool $Tool -AidVerbose $AidVerbose
-
-    # Project-level provisioning (work-007): seed required settings.yml and
-    # maintain the .gitignore AID region. Both idempotent; safe per-tool.
-    script:Initialize-AidSettingsFile -Target $Target -Tool $Tool
-    script:Update-AidGitignore -Target $Target
-    script:Update-AidGitattributes -Target $Target
-    script:Invoke-MigrateTermExclusions -Target $Target
-
-    # Print concise install summary (always shown; per-file lines only when AidVerbose).
-    $totalFiles = $script:_CopyCountCopied + $script:_CopyCountUpToDate + $script:_CopyCountUpdated + $script:_CopyCountSkipped
-    if ($totalFiles -gt 0) {
-        if ($script:_CopyCountCopied -gt 0 -and $script:_CopyCountUpToDate -eq 0 -and $script:_CopyCountUpdated -eq 0) {
-            Write-Host "  $($script:_CopyCountCopied) files installed"
-        } elseif ($script:_CopyCountUpToDate -gt 0 -and $script:_CopyCountCopied -eq 0 -and $script:_CopyCountUpdated -eq 0) {
-            Write-Host "  up to date ($($script:_CopyCountUpToDate) files)"
-        } else {
-            $parts = [System.Collections.Generic.List[string]]::new()
-            if ($script:_CopyCountUpdated -gt 0) { $parts.Add("$($script:_CopyCountUpdated) updated") }
-            if ($script:_CopyCountCopied -gt 0)  { $parts.Add("$($script:_CopyCountCopied) installed") }
-            if ($script:_CopyCountUpToDate -gt 0) { $parts.Add("$($script:_CopyCountUpToDate) unchanged") }
-            Write-Host "  $($parts -join ', ')"
-        }
-    }
-
-    # Report project-level provisioning actions (work-007; always shown).
-    if ($script:_SeededSettings) { Write-Host "  Created .aid/settings.yml from template" }
-    switch ($script:_GitignoreAction) {
-        'created' { Write-Host "  Created .gitignore with AID exclusions" }
-        'updated' { Write-Host "  Updated .gitignore AID exclusions" }
-    }
-
     return 0
 }
 
@@ -3469,7 +3134,6 @@ Export-ModuleMember -Function @(
     'Expand-AidPayload',
     'Verify-BundleChecksum',
     'Copy-AidFile',
-    'Copy-AidDir',
     'Install-AidTool',
     'Install-AidShared',
     'Read-ManifestToolPaths',
@@ -3489,7 +3153,6 @@ Export-ModuleMember -Function @(
     'Clear-AidUpgradeRecovery',
     'Test-AidOwnedPath',
     'Invoke-RetireV3Layout',
-    'Write-AidManifest',
     'Remove-ManifestTool',
     'Test-ManifestExists',
     'Uninstall-AidTool',

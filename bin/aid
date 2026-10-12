@@ -6875,7 +6875,7 @@ case "$SUBCMD" in
             for _tool in "${_AID_TOOLS[@]}"; do
                 echo ""
                 echo "Installing ${_tool} v${_STAGE_VERSION} -> ${_AID_TARGET}"
-                install_tool "${_STAGE_MAP[$_tool]}" "$_tool" "$_AID_TARGET" "$_STAGE_VERSION" "$_AID_FORCE" 1 || {
+                install_tool "${_STAGE_MAP[$_tool]}" "$_tool" "$_AID_TARGET" || {
                     _COMMIT_RC=$?
                     echo "" >&2
                     echo "ERROR: aid ${SUBCMD} failed mid-commit for tool '${_tool}' (rc=${_COMMIT_RC})." >&2
@@ -6906,7 +6906,7 @@ case "$SUBCMD" in
             for _tool in "${_AID_TOOLS[@]}"; do
                 echo ""
                 echo "Installing ${_tool} v${_STAGE_VERSION} -> ${_AID_TARGET}"
-                install_tool "${_STAGE_MAP[$_tool]}" "$_tool" "$_AID_TARGET" "$_STAGE_VERSION" "$_AID_FORCE" 1 || {
+                install_tool "${_STAGE_MAP[$_tool]}" "$_tool" "$_AID_TARGET" || {
                     _COMMIT_RC=$?
                     echo "" >&2
                     echo "ERROR: aid ${SUBCMD} failed mid-commit for tool '${_tool}' (rc=${_COMMIT_RC})." >&2

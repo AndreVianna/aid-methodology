@@ -94,7 +94,7 @@ with a `Provides:` block listing every public function and its signature;
 | PowerShell modules | PascalCase + `.psm1` | `AidInstallCore.psm1` | `lib/` |
 | Bash functions | snake_case | `lookup_list`, `abs_path`, `fetch_tarball` | `read-setting.sh`, `aid-install-core.sh` |
 | Bash variables | UPPER_SNAKE (globals), lower (locals) | `SETTINGS_FILE`, `HAS_DEFAULT`; `local p`, `local file` | `read-setting.sh` |
-| PowerShell functions | `Verb-AidNoun` (approved verb) | `Get-Sha256File`, `Install-AidTool`, `Write-AidManifest` | `AidInstallCore.psm1` |
+| PowerShell functions | `Verb-AidNoun` (approved verb) | `Get-Sha256File`, `Install-AidTool`, `Write-AidManifestV3` | `AidInstallCore.psm1` |
 | Python functions | snake_case | `load_profile`, `validate`, `_parse_model_tiers` | `aid_profile.py` |
 | Python dataclasses | PascalCase | `Profile`, `CapabilitiesConfig`, `ModelTierSimple` | `aid_profile.py` |
 | Private Python helpers | leading underscore | `_parse_capabilities`, `_KNOWN_TIERS` | `aid_profile.py` |
