@@ -601,8 +601,9 @@ CLI. The Claude Code docs (skills, settings reference, memory, changelog) were c
   - A fixture file `.aid/runtime/scripts/summarize/node_modules/x.js` survives `aid update`,
     nothing from it lands in `.aid/.trash/`, and `aid status` prints no `extra:` line for it.
   - After `aid add cursor` in a fixture, `.gitattributes` contains the managed block with the
-    three `text eol=lf` lines of the `.gitattributes` managed block, and a pre-existing user line
-    in `.gitattributes` is unchanged.
+    eight `text eol=lf` lines of the `.gitattributes` managed block (three shared paths, one
+    `<root>/agents/aid-*` line per tool root), and a pre-existing user line in `.gitattributes`
+    is unchanged.
 - **AC-8:** The work-level worktree root is resolved per host.
   - In a fixture repo, `worktree-lifecycle.sh create work-001 x` prints a path under the FR-13
     root, and that root appears in the `.gitignore` AID managed block.
@@ -1036,13 +1037,22 @@ existing entries. When `host.worktree_root` is not under `.aid/`, the block also
 idempotent.
 
 **`.gitattributes` managed block** (`_aid_gitattributes_block`): the same marker lines as the
-`.gitignore` block, wrapping three lines. It does not add attributes for `AGENTS.md` or
-`CLAUDE.md`; their checkout line endings remain part of the preserved whole-file bytes:
+`.gitignore` block, wrapping eight lines: the three shared paths, then the per-tool agent files
+(`<root>/agents/aid-*`, sha-recorded in `tools.<t>.files` and drift-checked, so a CRLF checkout
+would list every agent as modified) for every tool root in fixed order. The agent lines are
+constant (all five roots, whichever tools are installed), so the block stays idempotent and
+deterministic. It does not add attributes for `AGENTS.md` or `CLAUDE.md`; their checkout line
+endings remain part of the preserved whole-file bytes:
 
 ```
 .agents/skills/aid-*/** text eol=lf
 .claude/skills/aid-*/** text eol=lf
 .aid/runtime/** text eol=lf
+.claude/agents/aid-* text eol=lf
+.codex/agents/aid-* text eol=lf
+.cursor/agents/aid-* text eol=lf
+.github/agents/aid-* text eol=lf
+.agent/agents/aid-* text eol=lf
 ```
 
 `update_gitattributes` creates the file when missing; otherwise it replaces only the block and

@@ -486,7 +486,8 @@ else
     GH_ARGS+=(--notes-file "${STUB_NOTES}")
 fi
 
-# Add assets: all tarballs (5 profile + 1 CLI bundle) + lib files + SHA256SUMS
+# Add assets: every aid-*.tar.gz in the stage dir (the shared payload, one agents-only
+# artifact per tool, and the CLI bundle) + lib files + SHA256SUMS
 # Use a glob array (not ls in command substitution) to avoid SC2046/SC2012.
 ASSETS=()
 _gh_tarballs=( "${STAGE_DIR}"/aid-*.tar.gz )

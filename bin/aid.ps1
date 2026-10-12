@@ -6332,17 +6332,6 @@ try {
                         $rel = $df.FullName.Substring($dryStaging.Length).TrimStart([char]'\', [char]'/')
                         Write-Host "  copy: $rel -> $_AidTarget"
                     }
-                    # List files that would be MOVED TO TRASH by the retired-root migration sweep
-                    # (marker 1: aid-* prefix; marker 2: inside an aid\ subtree).
-                    # Uses ListOnly=$true mode of Invoke-MigrateRetiredLayout (no writes).
-                    # The function emits paths via Write-Output; capture then display.
-                    $dryRemovePaths = @(Invoke-MigrateRetiredLayout -Target $_AidTarget -Tool $t -ListOnly $true)
-                    if ($dryRemovePaths.Count -gt 0) {
-                        Write-Host "  Would MOVE TO TRASH (retired-layout migration):"
-                        foreach ($rp in $dryRemovePaths) {
-                            Write-Host "  move to trash: $rp"
-                        }
-                    }
                 }
                 Write-Host ""
                 Write-Host "--- end dry-run plan ---"

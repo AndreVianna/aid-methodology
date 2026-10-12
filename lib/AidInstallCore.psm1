@@ -966,8 +966,11 @@ function script:Invoke-RemoveClaudeMdRegion {
     script:Remove-AidMarkedSpan -File $File -Lines $lines -Span $span
 }
 
+# $RecordedRegionSha (the remove path; may be empty): a rewrite of a well-formed marked span
+# that differs from that recorded region sha256 trashes a full copy of the file first, so
+# user text inside the region is never silently discarded. $null = no check (add/update).
 function script:Repair-AidInlineRootRegion {
-    param([string]$File, [string]$Region, [string]$Root)
+    param([string]$File, [string]$Region, [string]$Root, [object]$RecordedRegionSha = $null)
     $regionBytes = $script:_AidUtf8NoBom.GetBytes($Region)
     if (-not (Test-Path -LiteralPath $File -PathType Leaf)) {
         [System.IO.File]::WriteAllBytes($File, $regionBytes); return
@@ -987,7 +990,14 @@ function script:Repair-AidInlineRootRegion {
         [void]$sb.Append($replacement)
         for ($i = $span.End; $i -lt $lines.Chunks.Count; $i++) { [void]$sb.Append($lines.Chunks[$i]) }
         $updated = $sb.ToString()
-        if ($updated -cne $text) { script:Write-AidRootText -Path $File -Text $updated }
+        if ($updated -cne $text) {
+            if ($null -ne $RecordedRegionSha) {
+                $canonical = script:Get-AidCanonicalRegion -Lines $lines -Span $span
+                $regionSha = (Get-FileHash -InputStream ([System.IO.MemoryStream]::new($script:_AidLatin1.GetBytes($canonical))) -Algorithm SHA256).Hash.ToLowerInvariant()
+                if ($regionSha -cne [string]$RecordedRegionSha) { Move-AidToTrash -Root $Root -File $File }
+            }
+            script:Write-AidRootText -Path $File -Text $updated
+        }
         return
     }
     $markerLines = 0
@@ -1854,7 +1864,8 @@ function Invoke-PruneShared {
 #
 # Complete-replacement migration: removes AID-owned content from the static
 # list of retired AID roots that no longer exist in the new bundle layout.
-# Called from Install-AidTool as part of the retired-layout migration sweep.
+# No commit path calls this function (a v3 upgrade retires the old layout through
+# Invoke-RetireV3Layout, and --dry-run lists nothing from here); it stays as a tested primitive.
 #
 # Retired roots swept per tool:
 #   codex:       .agents\                     (split layout retired)
@@ -2129,7 +2140,7 @@ function script:Write-AidHostConf {
 $script:_AidGaBegin = $script:_AidGiBegin
 $script:_AidGaEnd = $script:_AidGiEnd
 function script:Get-AidGitattributesBlock {
-    return (@($script:_AidGaBegin, '.agents/skills/aid-*/** text eol=lf', '.claude/skills/aid-*/** text eol=lf', '.aid/runtime/** text eol=lf', $script:_AidGaEnd) -join "`n")
+    return (@($script:_AidGaBegin, '.agents/skills/aid-*/** text eol=lf', '.claude/skills/aid-*/** text eol=lf', '.aid/runtime/** text eol=lf', '.claude/agents/aid-* text eol=lf', '.codex/agents/aid-* text eol=lf', '.cursor/agents/aid-* text eol=lf', '.github/agents/aid-* text eol=lf', '.agent/agents/aid-* text eol=lf', $script:_AidGaEnd) -join "`n")
 }
 
 function script:Update-AidGitattributes {
@@ -2506,8 +2517,10 @@ function Install-AidShared {
             if ($name -eq 'skills' -and -not $rel.StartsWith('aid-',[System.StringComparison]::Ordinal)) { continue }
             $records.Add("shared.$name.file`t$rel`t$(Get-Sha256File -FilePath $f.FullName)")
         }
-        if ($name -eq 'runtime') { $records.Add("shared.runtime.file`thost.conf`t$(Get-Sha256File -FilePath (Join-Path $Target '.aid/runtime/host.conf'))") }
     }
+    # host.conf is a generated runtime file: recorded explicitly, after the payload files.
+    $hostConfPath = Join-Path $Target '.aid/runtime/host.conf'
+    if (Test-Path -LiteralPath $hostConfPath -PathType Leaf) { $records.Add("shared.runtime.file`thost.conf`t$(Get-Sha256File -FilePath $hostConfPath)") }
     $records.Add("shared.agents_md.path`tAGENTS.md"); $records.Add("shared.agents_md.version`t$Version"); $records.Add("shared.agents_md.users`t$($allTools -join ',')"); $records.Add("shared.agents_md.region_sha256`t$regionSha"); $records.Add("shared.agents_md.file_sha256`t$agentsSha")
     foreach ($mirror in @($mirrorUsers.Keys | Sort-Object)) { $users=@($script:AID_TOOLS | Where-Object { $mirrorUsers[$mirror] -contains $_ }); $records.Add("shared.mirror`t$mirror`t$Version`t$($users -join ',')") }
     if ($claudeSha) { $records.Add("shared.claude_md.path`tCLAUDE.md"); $records.Add("shared.claude_md.version`t$Version"); $records.Add("shared.claude_md.users`t$($claudeUsers -join ',')"); $records.Add("shared.claude_md.region_sha256`t$claudeSha") }
@@ -2682,6 +2695,7 @@ function script:Uninstall-AidToolV3 {
     $agentsUsers=@(); if ($agents) { $agentsUsers=@($agents.users) }
     $agentsLeft=@($agentsUsers | Where-Object { $_ -ne $Tool })
     $agentsFileRefresh=$false
+    $agentsRegionSha=''; if ($agents -and $agents.PSObject.Properties['region_sha256']) { $agentsRegionSha=[string]$agents.region_sha256 }
     $agentsPath=Join-Path $Target 'AGENTS.md'
     if ($agentsLeft.Count -gt 0 -and $agents -and (Test-Path -LiteralPath $agentsPath -PathType Leaf)) {
         $agentsFileRefresh=([string]$agents.file_sha256 -and (Get-Sha256File -FilePath $agentsPath) -ceq [string]$agents.file_sha256)
@@ -2738,8 +2752,8 @@ function script:Uninstall-AidToolV3 {
         if ($inline) {
             $rules=[System.IO.File]::ReadAllText((Join-Path $Target '.aid/runtime/rules.md'),[System.Text.Encoding]::UTF8)
             $region="<!-- AID:BEGIN -->`n<!-- Managed by the AID CLI. Do not edit between the AID markers. -->`n$rules<!-- AID:END -->`n"
-            script:Repair-AidInlineRootRegion -File (Join-Path $Target 'AGENTS.md') -Region $region -Root $Target
-        } else { script:Repair-AidInlineRootRegion -File (Join-Path $Target 'AGENTS.md') -Region $script:_AidAgentsPointerRegion -Root $Target }
+            script:Repair-AidInlineRootRegion -File (Join-Path $Target 'AGENTS.md') -Region $region -Root $Target -RecordedRegionSha $agentsRegionSha
+        } else { script:Repair-AidInlineRootRegion -File (Join-Path $Target 'AGENTS.md') -Region $script:_AidAgentsPointerRegion -Root $Target -RecordedRegionSha $agentsRegionSha }
         script:Update-AidRemoveManifestHashes -ManifestPath $ManifestPath -Target $Target -RefreshAgentsFileSha $agentsFileRefresh
     } else {
         $settings=Join-Path (Split-Path -Parent $ManifestPath) 'settings.yml'

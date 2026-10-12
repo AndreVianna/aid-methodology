@@ -402,6 +402,19 @@ sha256_file() {
     fi
 }
 
+# _aid_sha256_stdin - print the lower-case hex sha256 of stdin, through the same
+# sha256sum / shasum -a 256 fallback chain as sha256_file (region hashes use this).
+_aid_sha256_stdin() {
+    if command -v sha256sum >/dev/null 2>&1; then
+        sha256sum | awk '{print $1}'
+    elif command -v shasum >/dev/null 2>&1; then
+        shasum -a 256 | awk '{print $1}'
+    else
+        echo "ERROR: aid-install-core: no sha256 utility (need sha256sum or shasum)" >&2
+        return 1
+    fi
+}
+
 # _aid_sha256_batch - read NUL-terminated file paths on stdin and print one
 # "<sha256><TAB><path>" line per file hashed, using ONE hashing process for the whole
 # list instead of one per file. Files the utility cannot read, and names it would
@@ -1128,7 +1141,7 @@ _repair_root_region() {
 _ensure_claude_md_region() {
     local file="${1:-$PWD/CLAUDE.md}" root="${2:-$(dirname "${1:-$PWD/CLAUDE.md}")}"
     _repair_root_region "$file" "$_AID_CLAUDE_IMPORT_REGION" "$root" || return 1
-    printf '%s\n' "$(printf '%s' "$_AID_CLAUDE_IMPORT_REGION" | sha256sum | awk '{print $1}')"
+    printf '%s\n' "$(printf '%s' "$_AID_CLAUDE_IMPORT_REGION" | _aid_sha256_stdin)"
 }
 
 # Remove the exact Claude import region, backing up drift before the surgical edit.
@@ -1139,8 +1152,11 @@ _remove_claude_md_region() {
     _aid_cut_marker_region "$file" 1 "$root" "$recorded"
 }
 # Writes the shared AGENTS.md pointer region and records its hashes for the caller.
+# A 4th argument (the recorded region sha256, possibly empty) makes a rewrite of a
+# well-formed marked span that differs from that record trash a full copy of the file first
+# (the remove path: user text inside the region is never silently discarded).
 _repair_inline_root_region() {
-    local file="$1" region="$2" root="${3:-$(dirname "$1")}" tmp decision b e repl
+    local file="$1" region="$2" root="${3:-$(dirname "$1")}" tmp decision b e repl canon
     if [[ ! -e "$file" ]]; then
         mkdir -p "$(dirname "$file")" || return 1
         printf '%s' "$region" > "$file"
@@ -1156,7 +1172,17 @@ _repair_inline_root_region() {
             read -r _ b e <<< "$decision"
             repl="${region#*$'\n'}"; repl="${repl%'<!-- AID:END -->'$'\n'}"
             { head -n "$b" "$file"; printf '%s' "$repl"; tail -n "+$e" "$file"; } > "$tmp" || { rm -f "$tmp"; return 1; }
-            if ! cmp -s "$tmp" "$file"; then cat "$tmp" > "$file" || { rm -f "$tmp"; return 1; }; fi ;;
+            if ! cmp -s "$tmp" "$file"; then
+                if [[ $# -ge 4 ]]; then
+                    canon="$(mktemp)" || { rm -f "$tmp"; return 1; }
+                    AID_CANON_OUT="$canon" _aid_marker_span "$file" >/dev/null
+                    if [[ "$(sha256_file "$canon")" != "$4" ]]; then
+                        rm -f "$canon"
+                        trash_file "$root" "$file" || { rm -f "$tmp"; return 1; }
+                    else rm -f "$canon"; fi
+                fi
+                cat "$tmp" > "$file" || { rm -f "$tmp"; return 1; }
+            fi ;;
         append) _aid_append_region "$file" "$region" || { rm -f "$tmp"; return 1; } ;;
         rewrite)
             # Malformed marker spans are replaced in place; unrelated lines stay byte-identical.
@@ -1188,7 +1214,7 @@ _copy_root_agent_file() {
         region="$_AID_AGENTS_POINTER_REGION"
         _repair_root_region "$dst" "$region" "$root" || return 1
     fi
-    _CORE_ROOT_AGENT_REGION_SHA="$(printf '%s' "$region" | sha256sum | awk '{print $1}')"
+    _CORE_ROOT_AGENT_REGION_SHA="$(printf '%s' "$region" | _aid_sha256_stdin)"
     _CORE_ROOT_AGENT_FILE_SHA="$(sha256_file "$dst")"
     if [[ "$had_dst" -eq 0 ]]; then
         _COPY_COUNT_COPIED=$((${_COPY_COUNT_COPIED:-0} + 1))
@@ -3101,7 +3127,8 @@ prune_shared() {
 #
 # Complete-replacement migration: removes AID-owned content from the static
 # list of retired AID roots that no longer exist in the new bundle layout.
-# Called by the shared-layout commit path after its manifest write.
+# No commit path calls this function (a v3 upgrade retires the old layout through
+# retire_v3_layout, and --dry-run lists nothing from here); it stays as a tested primitive.
 #
 # Retired roots swept per tool:
 #   codex:       .agents/                     (split layout retired)
@@ -3463,7 +3490,12 @@ _aid_gitattributes_block() {
     printf '%s\n' "$_AID_GA_BEGIN" \
         '.agents/skills/aid-*/** text eol=lf' \
         '.claude/skills/aid-*/** text eol=lf' \
-        '.aid/runtime/** text eol=lf' "$_AID_GA_END"
+        '.aid/runtime/** text eol=lf' \
+        '.claude/agents/aid-* text eol=lf' \
+        '.codex/agents/aid-* text eol=lf' \
+        '.cursor/agents/aid-* text eol=lf' \
+        '.github/agents/aid-* text eol=lf' \
+        '.agent/agents/aid-* text eol=lf' "$_AID_GA_END"
 }
 
 # update_gitattributes <target>; bytes outside the managed span are retained.
@@ -3675,7 +3707,7 @@ install_shared() {
     else
         _repair_root_region "${target}/AGENTS.md" "$region" "$target" || return 1
     fi
-    region_sha="$(printf '%s' "$region" | sha256sum | awk '{print $1}')"
+    region_sha="$(printf '%s' "$region" | _aid_sha256_stdin)"
     agents_sha="$(sha256_file "${target}/AGENTS.md")"
     if [[ "$claude_users" -eq 1 ]]; then
         claude_sha="$(_ensure_claude_md_region "${target}/CLAUDE.md" "$target")" || return 1
@@ -3774,12 +3806,13 @@ _uninstall_tool_v3() {
         done
     done
 
-    local agents_users agents_sha claude_users claude_sha shared_records
+    local agents_users agents_sha claude_users claude_sha shared_records agents_region_sha
     shared_records="$(manifest_read_shared "$manifest")"
     agents_users="$(printf '%s\n' "$shared_records" | awk -F '\t' '$1=="shared.agents_md.users" {print $2}')"
     agents_sha="$(printf '%s\n' "$shared_records" | awk -F '\t' '$1=="shared.agents_md.file_sha256" {print $2}')"
     claude_users="$(printf '%s\n' "$shared_records" | awk -F '\t' '$1=="shared.claude_md.users" {print $2}')"
     claude_sha="$(printf '%s\n' "$shared_records" | awk -F '\t' '$1=="shared.claude_md.region_sha256" {print $2}')"
+    agents_region_sha="$(printf '%s\n' "$shared_records" | awk -F '\t' '$1=="shared.agents_md.region_sha256" {print $2}')"
     local agents_left= claude_left= u agents_file_refresh=0 agents_recorded_sha agents_current_sha
     IFS=',' read -r -a users <<< "$agents_users"
     for u in "${users[@]}"; do [[ -n "$u" && "$u" != "$tool" ]] && agents_left+="${agents_left:+,}${u}"; done
@@ -3809,9 +3842,9 @@ _uninstall_tool_v3() {
         done < <(manifest_list_tools "$manifest")
         if [[ "$inline" == 1 ]]; then
             region="$(printf '<!-- AID:BEGIN -->\n<!-- Managed by the AID CLI. Do not edit between the AID markers. -->\n'; cat "${target}/.aid/runtime/rules.md"; printf '<!-- AID:END -->\n')"$'\n'
-            _repair_inline_root_region "${target}/AGENTS.md" "$region" "$target" || return 1
+            _repair_inline_root_region "${target}/AGENTS.md" "$region" "$target" "$agents_region_sha" || return 1
         else
-            _repair_inline_root_region "${target}/AGENTS.md" "$_AID_AGENTS_POINTER_REGION" "$target" || return 1
+            _repair_inline_root_region "${target}/AGENTS.md" "$_AID_AGENTS_POINTER_REGION" "$target" "$agents_region_sha" || return 1
         fi
         _refresh_remove_manifest_hashes "$manifest" "$target" "$agents_file_refresh" || return 1
     else
