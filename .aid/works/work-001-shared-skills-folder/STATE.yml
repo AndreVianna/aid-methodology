@@ -112,7 +112,7 @@ minimum_grade: A
 # [W] 'yes' | 'no' -- quoted, see NFR-2 / D-5
 user_approved: 'yes'
 # [W] Running | Paused-Awaiting-Input | Blocked | Completed | Canceled
-lifecycle: Paused-Awaiting-Input
+lifecycle: Running
 # [W] Describe | Define | Specify | Plan | Detail | Execute
 phase: Execute
 # [W] aid-{skill} | none
@@ -120,7 +120,7 @@ active_skill: aid-execute
 # [W]
 updated: '2026-10-11T22:19:55Z'
 # [W] set only when lifecycle = Paused-Awaiting-Input
-pause_reason: 'Quota pause requested at 7% remaining; resume after the 15:30 EST reset. No automatic scheduling capability is available; awaiting a resume trigger.'
+pause_reason: --
 # [W] set only when lifecycle = Blocked
 block_reason: --
 # [W] e.g. IMPEDIMENT-task-NNN.md, or the failed gate
