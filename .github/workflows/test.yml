@@ -112,7 +112,7 @@ jobs:
       - name: Run all canonical suites
         shell: bash
         # Single entrypoint shared with local dev (`bash tests/run-all.sh`); discovers
-        # suites by glob, runs each under timeout 300, emits ::group::/::error:: under CI.
+        # suites by glob, runs each under timeout 300 (1500 for the parity and migrate suites), emits ::group::/::error:: under CI.
         run: bash tests/run-all.sh
 
   generator-selftests:
