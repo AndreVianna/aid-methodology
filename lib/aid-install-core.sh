@@ -247,7 +247,8 @@ END {
     if (out != "") { for (i = b; i <= e; i++) printf "%s\n", V[i] > out; close(out) }
 }'
 
-# Region repair: reads the region file, then the target. Prints noop | append | rewrite
+# Region repair: reads the region file, then the target. A blank region line is never a managed
+# line (the region holds one; user files are full of them). Prints noop | append | rewrite
 # (rewrite also writes the new content to AID_REWRITE_OUT) | span B E (inline mode only: one
 # well-formed marker pair).
 _AID_AWK_REPAIR='
@@ -257,7 +258,7 @@ END {
     out = ENVIRON["AID_REWRITE_OUT"]
     for (i = 1; i <= n; i++) { v = L[i]; if (!(i == n && !endnl)) sub(/\r$/, "", v); V[i] = v }
     if (inl) { M["<!-- AID:BEGIN -->"] = 1; M["<!-- AID:END -->"] = 1 }
-    else for (r = 1; r <= nR; r++) M[R[r]] = 1
+    else for (r = 1; r <= nR; r++) if (R[r] != "") { M[R[r]] = 1; nM++ }
     for (i = 1; i <= n; i++) {
         if (V[i] == "<!-- AID:BEGIN -->") { nb++; b = i } else if (V[i] == "<!-- AID:END -->") { ne++; e = i }
         if (V[i] in M) pos++
@@ -270,7 +271,7 @@ END {
             for (j = 1; j <= nR; j++) if (V[i + j - 1] != R[j]) { ok = 0; break }
             if (ok) starts++
         }
-        if (starts == 1 && pos == nR) { print "noop"; exit }
+        if (starts == 1 && pos == nM) { print "noop"; exit }
     }
     for (i = 1; i <= n; i++) {
         if (V[i] in M) {
