@@ -2619,7 +2619,8 @@ function Install-AidShared {
             }
         }
     }
-    [System.IO.File]::WriteAllLines($model,$records.ToArray(),[System.Text.Encoding]::ASCII)
+    # LF, not WriteAllLines: that writes CRLF on Windows and Write-AidManifestV3 splits on LF only.
+    [System.IO.File]::WriteAllText($model,(($records.ToArray() -join "`n") + "`n"),[System.Text.Encoding]::ASCII)
     $previousManifest = Join-Path $Target ('.aid/.manifest-before-prune.' + [System.IO.Path]::GetRandomFileName())
     if ($Phase -in @('finalize', 'update-finalize') -and (Test-Path -LiteralPath $manifest -PathType Leaf)) { Copy-Item -LiteralPath $manifest -Destination $previousManifest -Force }
     try { Write-AidManifestV3 -ManifestPath $manifest -ModelPath $model } finally { Remove-Item -LiteralPath $model -Force -ErrorAction SilentlyContinue }
