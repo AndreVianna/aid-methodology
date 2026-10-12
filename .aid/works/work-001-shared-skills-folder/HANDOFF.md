@@ -1,32 +1,48 @@
 # Handoff — work-001 Shared Skills Folder (AID v4.0.0)
 
-Updated 2026-10-11 by Codex. Resume branch: **`aid/work-001-shared-skills-folder-delivery-001`**.
-Read `STATE.yml` for the complete append-only history. Specification GATE cleared A+/A+;
-maintainer approved execution. Current phase `Execute`, lifecycle `Paused-Awaiting-Input`.
+Updated 2026-10-12 by Claude Code. Resume branch: **`aid/work-001-shared-skills-folder-delivery-001`**.
+Read `STATE.yml` for the complete append-only history. Phase `Execute`. **Paused after the final
+Opus full review, awaiting the maintainer** (decision on the review findings + task-032 probe results).
 
 ## Current execution checkpoint
 
-Paused at the maintainer request after reporting 7% of the 5-hour quota remaining. Requested resumption: 15:30 EST. No scheduling/automation tool is available in this session, so an automatic resume hook could not be installed; send a new resume message after reset or use this handoff in Claude Code. No executor remains active.
-
-Wave11 completed A+: task015 recovery, task017 shared-install coverage, task018 multitool coverage, and the task012 final-directory cleanup correction are Done. All six wave11 findings were independently marked Fixed. Wave12 has started.
-
-Task019 committed079ce7029 rekeys CLI suites and coverage rehomes. It exposed task006 bare-project stamp completion. Source fixes53ad2967c and21c8f6069 now advance older stamps including quoted values, preserving other settings bytes. Sol independently verified the final correction; task006 Done. Focused Bash CLI251/251 passed before quote-only followup; followup passed144 executor byte fixtures and12 independent probes. PowerShell runtime remains deferred, not passed.
-
-NEXT: reopen019 In Progress; ONE first Luna correction attempt for wave12 ledger rows2-5: explicit PowerShell Detect-Tool null-to-exit2 wrapper; PowerShell staged-version mismatch refusal/snapshot/aid-update guidance; PowerShell empty-format2+stamp4 bare first-add regression; Bash staged-mismatch aid-update guidance assertion. Task019 In Review. Original Sol reviewer rechecks; row1 Fixed, rows2-5 Pending. Preserve ledger cells except reviewer-owned Status. After019 Done, execute020,021,023,024,025,026,027 sequentially, then Sol quick review of remaining wave12 tasks. Keep one Luna correction then one separate Sol executor fallback policy.
-
-Full regression/coverage-parity/render self-test deferred to031. Task027: parent In Review write before final dogfood resync; switch writer to .aid/runtime and reread resynced aid-execute afterward. Task032 manual probes required; unknown never passes. Preserve unrelated dirty generated site and local artifacts. All task changes and this checkpoint are pushed to the delivery branch; never stage unrelated files.
-
-- Done (19/32): task-001, task-002, task-003, task-004, task-005, task-006, task-007, task-008, task-009, task-010, task-011, task-012, task-013, task-014, task-015, task-016, task-017, task-018, task-022.
-- In Progress: none.
-- In Review: task-019.
-- Failed/Blocked: none.
-- Pending: task-020, task-021, task-023, task-024, task-025, task-026, task-027, task-028, task-029, task-030, task-031, task-032.
-- Current wave: 12 of 15. Derive authoritative waves from task dependency headers.
-- Execution commits are on the delivery branch; `work-001` holds pre-execution planning.
-- Wave ledgers: `review-ledgers/execute-wave-N.md`; each preserves unresolved/Accepted findings.
-- Wave-1 Accepted item: Bash `_v3_quote` versus Python `json.dump` non-ASCII escaping; recheck at final review.
-- Required PowerShell twins are implemented; their execution checks are deferred at maintainer request.
-- Manual A-4/A-6 probes remain task-032; unknown is not pass.
+- **Done (31/32):** task-001 … task-031. Waves 1–14 closed; wave ledgers in `review-ledgers/execute-wave-*.md`.
+- **In Progress:** task-032 — the maintainer's manual A-4 / A-6 probes. Kit:
+  `probe-kits/aid-v4-probe.zip` (real `aid add` of all five tools from `release.sh --stage-only`,
+  token `TEAL-PANGOLIN-77` in `.aid/runtime/rules.md`, `PROMPTS.md` P1–P3 + S1 `/aid-config`,
+  `RESULTS.md`). Rebuild: `bash release.sh --stage-only --out <stage>`, then
+  `bin/aid add claude-code,codex,cursor,copilot-cli,antigravity --from-bundle <stage> --target <dir>`,
+  then append the probe section (token + `probe:` rule) to `<dir>/.aid/runtime/rules.md`.
+  Record results as ONE `lifecycle_history` entry (pass/fail/unknown per host; unknown ≠ pass), then
+  apply task-032's fallbacks if anything fails (rules_inline for an A-6 failure, alias Q&A for A-4).
+- **Final Opus review:** `review-ledgers/execute-final-review.md` — verdict **YES-WITH-GAPS**, grade
+  **D**, 13 rows Pending (4 HIGH, 4 MEDIUM, 3 LOW, 2 MINOR). Release call: not ready for 4.0.0 until:
+  1. HIGH 1 — `aid update` on a v4 (format-3) repo flips into the v3 upgrade when a legacy path
+     appears (e.g. `.cursor/aid/` restored by a branch switch, a user `.codex/skills/aid-*`), and then
+     drops installed tools / trashes the mirror (`bin/aid:6458`, both shells).
+  2. HIGH 2 — bash now hard-requires python3 (manifest readers) with no up-front check; without it
+     `aid add` writes files then dies before the manifest. Docs say curl/bundle channels need only Bash.
+  3. HIGH 3 — PowerShell re-reads `CLAUDE.md` / `AGENTS.md` as UTF-8 and corrupts non-UTF-8 bytes
+     with no trash copy (PS 5.1 writes cp1252/UTF-16 by default).
+  4. HIGH 4 — `release-tracking.md` has `## v4.0.0 - unreleased` while `backlog.md` § Next Release is
+     empty; move the entry to backlog § Next Release (release-aid writes the dated section at tag time).
+  MEDIUM: bare `sha256sum` (no `shasum` fallback) in region hashing; `aid remove` of a non-last tool
+  rewrites the AGENTS.md region without a trash copy; `.gitattributes` block omits `<root>/agents/aid-*`
+  (spec gap; Windows autocrlf); PowerShell `rules_inline` repair not in parity (untested).
+  LOW/MINOR: dry-run trash list, upgrade docs (update CLI first; pre-v3 → v3 first), rules.md wording,
+  two stale comments. Plus: green CI on master for AC-21 and the Windows lane (AC-16).
+- **Verification state (this container):** `tests/run-all.sh` 161/170 in 344 s; coverage-parity gate
+  clean except 29 keys; the 9 failing suites and all 29 keys fail/miss identically on the pre-change
+  commit here (root user, no en_US.UTF-8, no pypi `build`, no `rg`, browser/timing) → host-environment.
+  CI must confirm.
+- **Execution-time changes beyond task scopes (all pushed):** ~20 PowerShell runtime fixes found
+  once pwsh was installed (incl. a parse error that broke every PS command); v3-upgrade fixes
+  (`.cursor/rules` / `.agent/rules` ownership, format-less manifests); performance pass (bash add
+  7.1→2.0 s, no-op update 12.8→1.8 s; PS 5.7→4.4 s; migrate suite 540→144 s, parity 500→224 s;
+  coverage collect now parallel); maintainer decision **v4 upgrades only from v3.x** (spec updated;
+  pre-v3 migration gates removed from the suites); dead format-2 install code deleted (~980 lines).
+- **Next (when the maintainer decides):** fix HIGH 1–4 (and the MEDIUMs worth it) as a bounded fix
+  cycle → focused suites + parity → re-review → record task-032 → task-032 Done → close Execute.
 
 ## Resume and execution constraints
 
@@ -38,19 +54,17 @@ Full regression/coverage-parity/render self-test deferred to031. Task027: parent
 3. Orchestrator immediately writes In Progress before dispatch, In Review after the task commit,
    and Done/Failed after wave review. Use:
    `AID_STATE_FILE=.aid/works/work-001-shared-skills-folder/STATE.yml bash .claude/aid/scripts/execute/writeback-state.sh --task-id NNN --field state --value '<State>'`.
-   After task-027 use `.aid/runtime/scripts/execute/writeback-state.sh` and reload `aid-execute`.
-4. No long developer checks: coverage-parity, tests/run-all.sh, full regressions,
-   render.py --self-test deferred to task-031. Focused task checks only. No chmod/mode changes.
-   Default awk is mawk; the cloud already has GNU awk5.2.1 via `.local/bin/awk` (untracked).
-   Prefix shell checks with `PATH="$PWD/.local/bin:$PATH"`; scanner S04 and DBI01 pass with GNU awk.
-   In a different checkout provision GNU awk4+ before checks. Defer pwsh checks.
+   Since task-027 the writer is `.aid/runtime/scripts/execute/writeback-state.sh` (same arguments).
+4. Long checks (run-all, coverage-parity gate) are now fast: run-all ~6 min, coverage collect ~6 min
+   (parallel). Needs pwsh, node, python3 and GNU awk on PATH. In a fresh cloud container install
+   them first (`apt-get install -y gawk`; pwsh tarball from the PowerShell GitHub releases). No
+   chmod/mode changes (all tests/canonical/*.sh are tracked executable).
 5. Wave quick check records an exact seven-column ledger. One Luna fix attempt, then one Sol
    fix attempt, then Failed/block dependents. Final full Sol review after all tasks, then pause/report.
 6. Read only requirement slices and relevant KB/contracts. Commit exact task files and push
    checkpoints; preserve unrelated generated site changes, local config and node_modules artifacts.
    Keep usage small. Codex cannot read the user's 5-hour usage meter; stop and hand off when signaled.
-7. Format-3 writers are `manifest_write_v3` / `_manifest_write_v3_python` /
-   `_manifest_write_v3_bash` / `Write-AidManifestV3`; old format-2 writers remain until task-009.
+7. Manifest writers are `manifest_write_v3` / `Write-AidManifestV3` (format-2 writers deleted).
    `copy_file_guarded <src> <dst> [sha] [root]`: pass root explicitly; `trash_file <root> <file> [stamp]`.
 8. Every state/artifact outcome is tracked immediately; reviewer alone marks findings Fixed.
    KB content never names a work id/path. Resolve authoring criteria before writing.
