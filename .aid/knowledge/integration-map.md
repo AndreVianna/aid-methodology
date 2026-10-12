@@ -18,6 +18,8 @@ sources:
   - .gitguardian.yaml
   - canonical/aid/scripts/connectors/
   - canonical/aid/templates/connectors/preset-catalog.md
+  - lib/aid-install-core.sh
+  - canonical/skills/aid-config/SKILL.md
 tags: [C2, integrations, external-deps, git, github, npm, pypi, host-tools, dashboard, connectors]
 see_also: [pipeline-contracts.md, external-sources.md, infrastructure.md, architecture.md]
 owner: architect
@@ -188,6 +190,41 @@ authored outside it, so multiple `AGENTS.md`-writing tools coexist in one file. 
 v1.1.0 (superseded by in-place region replacement — see `decisions.md` D11). CONFIRMED:
 `lib/aid-install-core.sh` (`_copy_root_agent_file`); `decisions.md` D11. The tier→model mapping
 per host is declared in `profiles/{tool}.toml`.
+
+### Host behaviour that shaped the shared layout
+
+Manual probes on Windows (2026-10-10 for skill discovery, duplicates and `allowed-tools`; 2026-10-12 for the root-file
+rules and the `allowed-tools` aliases) fixed how the installer places files. Each row is what the host was observed to do.
+
+| Host | Reads `.agents/skills` | Same-named skill in `.claude/skills` and `.agents/skills` | `allowed-tools` |
+|------|------------------------|-----------------------------------------------------------|-----------------|
+| Claude Code | No. Its docs offer no setting to add a skills folder | Not applicable | Pre-approves `Bash`; an unknown name only prompts and the skill still runs |
+| Cursor | Yes | Listed once, but showed the `.agents` description and ran the `.claude` body | Inconclusive (prior grants hid any prompt) |
+| Antigravity | Yes (its default) | Listed once; the `.agents` copy was used | Ignored; it prompts for every shell call |
+| Codex | Yes | Behaves like Cursor and Antigravity: listed once | Skills that run the shell worked |
+| Copilot CLI | Yes (discovery) | Listed once with the `.agents` description | `/aid-config` loaded and ran on 2026-10-12 (the 2026-10-10 probe was blocked by an account-level 403) |
+
+What follows from the observations:
+
+- **The skill copies must be byte-identical.** Cursor mixed the description of one copy with the body of the other, so any byte
+  difference between `.agents/skills/aid-*` and the `.claude/skills/aid-*` mirror produces unpredictable behaviour. The mirror exists
+  only because Claude Code does not read `.agents/skills`; the CLI writes it as a plain copy and `aid status` compares it with `.agents/skills/`.
+- **No symlinks.** On Windows a symlink needs Developer Mode or admin rights plus git `core.symlinks`; otherwise it checks out
+  silently as a text file. Every placement is a file copy.
+- **`allowed-tools` lists the shell under three names.** Each host names its shell tool differently (`Bash`, `Shell`, `Terminal`),
+  the value is space-separated, and every skill that names `Bash` carries `Bash Shell Terminal`. This is accepted everywhere: unknown
+  names are ignored, Claude Code still pre-approves `Bash`, and Antigravity ignores the field. See `decisions.md` D7.
+- **`.aid/runtime/` resolves from the project root** in every probed host, so skills reference it by that fixed relative path.
+- **Claude Code reads `CLAUDE.md`, not `AGENTS.md`, by default.** Its "Project instructions" setting (default
+  `claude-md-or-agents-md`) loads `AGENTS.md` only when no `CLAUDE.md` exists in the working directory or above it. The setting is read
+  only from user-level or managed settings and is ignored in project settings, so the CLI can neither set it nor know it. Hence the
+  always-written `CLAUDE.md` region. The consequence is that user text outside the `AGENTS.md` markers is not seen by Claude Code.
+- **A plain "read the rules first" pointer is not enough; the region is a SESSION START block.** With a plain pointer, Codex and
+  Cursor answered a prompt that said "do not read any files" without opening `.aid/runtime/rules.md`: they obeyed the later prompt and
+  skipped the pointer. The block names the Read as the first action, forbids any answer before it returns and exempts only
+  `.aid/runtime/rules.md` from a "do not read files" prompt. With it the rules loaded in all five tools; Claude Code also imports
+  `@.aid/runtime/rules.md` from its `CLAUDE.md` region. A tool whose profile sets `rules_inline = true` (written to `aid-tool.conf`
+  and the manifest) gets the full rules text inline in the region instead; no shipped profile sets it.
 
 ---
 

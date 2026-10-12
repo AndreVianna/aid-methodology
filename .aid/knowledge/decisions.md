@@ -179,11 +179,23 @@ review-criteria:
   byte-identical bodies (only model names and agent format differ), guarded by a deterministic byte-compare
   VERIFY gate and a CI render-drift check. Skills and the runtime are never rendered: `release.sh` copies them
   byte-for-byte from `canonical/` into one shared payload.
+- **Placement:** The CLI, not the release, decides where the shared payload lands. Every tool gets the skills at
+  `.agents/skills/aid-*` and the runtime at `.aid/runtime/`; Claude Code, which does not read `.agents/skills`,
+  also gets a CLI-owned `.claude/skills/aid-*` copy, byte-identical and sha-checked. Agents stay per tool.
+- **`allowed-tools`:** The value is space-separated and lists the shell under three names, `Bash Shell Terminal`.
+  Each host names its shell tool differently, so the one skill text carries all names rather than being remapped
+  per tool. Claude Code pre-approves `Bash`, an unknown name only prompts, and Antigravity ignores the field.
 - **Why:** Five host tools must stay in lockstep; one source eliminates five-way divergence. One shared skills
-  payload keeps the skills identical across tools without a per-tool copy.
+  payload keeps the skills identical across tools without a per-tool copy. The copies must be byte-identical
+  because Cursor showed one copy's description and ran the other's body (host evidence in `integration-map.md`).
 - **Rejected:** Hand-maintaining per-tool copies — rejected implicitly by the "never edit profiles/ directly"
   rule. CONFIRMED `docs/aid-methodology.md` (search: "single source of truth — never edit profiles/ directly")
-  + `run_generator.py` + `release.sh` (`build_shared_payload`).
+  + `run_generator.py` + `release.sh` (`build_shared_payload`). Symlinks for the Claude Code mirror — rejected
+  because they need Developer Mode or admin rights on Windows and otherwise check out as text files. A Claude Code
+  plugin or marketplace route — rejected because it namespaces skills as `/aid:aid-ask` and needs an absolute
+  marketplace path. Per-tool remapping of `allowed-tools` — rejected in favour of the alias list.
+  CONFIRMED `canonical/skills/aid-config/SKILL.md` (`allowed-tools:`) and
+  `.claude/skills/generate-profile/scripts/build-shortcut-skills.py` (`_ALLOWED_TOOLS`).
 - **Status:** Accepted.
 
 ## D8 — Install manifest records each shared entry once, with its users
@@ -226,6 +238,14 @@ review-criteria:
   in place only between `<!-- AID:BEGIN -->` / `<!-- AID:END -->` markers.
 - **Why:** AID content and user content must never collide, and `aid update` must be able to
   prune AID's own stale files in place with no risk to user files.
+- **Root regions:** `AGENTS.md` carries the one region for every tool: a SESSION START block that makes a Read of
+  `.aid/runtime/rules.md` the first action, plus a short rules summary with a single source (the `AID:SUMMARY` block
+  of `canonical/aid/rules.md`). While Claude Code is installed, `CLAUDE.md` always carries the same body plus an
+  `@.aid/runtime/rules.md` line, with no `@AGENTS.md` import, so each file holds the rules alone and deleting one
+  leaves the other. The block is explicit because a plain read pointer is advisory: Codex and Cursor obeyed a
+  later "do not read any files" prompt and skipped it. `CLAUDE.md` is always written because Claude Code reads it in
+  place of `AGENTS.md` by a user-level setting a project cannot set. Accepted consequence: user text outside the
+  `AGENTS.md` markers is not seen by Claude Code. Host evidence is in `integration-map.md`.
 - **Rejected:** The old `.aid-new` sidecar file for root-file conflicts — **superseded** and
   removed in v1.1.0 in favor of in-place marker rewriting. CONFIRMED `README.md` (search:
   "The old .aid-new sidecar file is gone").

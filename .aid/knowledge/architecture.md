@@ -148,7 +148,7 @@ same shape, and `.aid/.aid-manifest.json` (format 3) records every entry.
 | Installed path | Comes from | Placed for |
 |----------------|------------|------------|
 | `.agents/skills/aid-*/` | `aid-shared` `skills/` | every tool |
-| `canonical/skills/aid-*/` (byte-identical mirror) | `aid-shared` `skills/` | Claude Code, whose profile declares the mirror |
+| `.claude/skills/aid-*/` (byte-identical mirror, CLI-owned, no symlinks) | `aid-shared` `skills/` | Claude Code, whose profile declares the mirror |
 | `.aid/runtime/scripts/`, `.aid/runtime/templates/`, `.aid/runtime/rules.md` | `aid-shared` `runtime/` | every tool |
 | `.aid/runtime/host.conf` | written by the CLI (worktree root for this host) | every tool |
 | `aid-*` agent files under the tool root (`.claude/agents/`, `.codex/agents/`, `.cursor/agents/`, `.github/agents/`, `.agent/agents/`) | that tool's artifact | that tool |
