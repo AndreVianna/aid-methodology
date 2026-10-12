@@ -99,6 +99,21 @@ see phase names; the phases are the backbone the orchestrator tracks.
 | Building | the outcome | Execute | Building is executing **and testing**. |
 | CI | a merge-ready result | Deploy, Monitor (to confirm) | Hardening, security and quality reviews that prepare the result for a merge. |
 
+### FR-2 Knowledge Base management
+
+The KB is managed through four operations, **always handled by the orchestrator**: it identifies
+when the KB should be updated, and when a piece of information about the project should be queried
+from the KB. The user does not trigger them.
+
+| Operation | Purpose | Absorbs today's |
+|---|---|---|
+| Build KB | Create the KB (Preparation phase) | `/aid-discover` |
+| Query KB | Answer project questions from the KB | `/aid-ask` |
+| Update KB | Keep the KB current as the project changes | `/aid-update-kb` |
+| Visualize KB | Expose the HTML view produced during Build and refreshed during Update | `/aid-summarize` |
+
+Summarize is no longer a separate skill: it is absorbed by Build KB and Update KB.
+
 ## 6. Non-Functional Requirements
 
 - **NFR-Q (how questions are asked).** Every question put to the user carries a
