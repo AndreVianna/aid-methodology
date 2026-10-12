@@ -53,8 +53,8 @@ import { GITHUB_BLOB_BASE, REPO_ROOT } from '../../skills/paths.mjs';
 /** Maximum sibling-chain hops before W3 fires. */
 const MAX_HOPS = 4;
 
-/** D3's canonical SKILL.md reference pattern (same regex source as classify.mjs). */
-const _SKILL_REF_SRC = 'canonical\\/skills\\/([^/\\s]+)\\/SKILL\\.md';
+/** D3's SKILL.md reference pattern, canonical/ or .agents/ (same regex source as classify.mjs). */
+const _SKILL_REF_SRC = '(?:canonical|\\.agents)\\/skills\\/([^/\\s]+)\\/SKILL\\.md';
 
 // ── Parent chart cache ────────────────────────────────────────────────────────
 

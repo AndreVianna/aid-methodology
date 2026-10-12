@@ -10,7 +10,7 @@ generatedFrom: 'canonical/skills/aid-create-ticket/SKILL.md'
 
 - **`name`** — aid-create-ticket
 - **`description`** — File one new ticket in the project's issue tracker. Use this skill when work needs recording where the team tracks it, rather than only inside AID. Describe the ticket in free text; flags let you name the connector, the level (epic, story or task) and a parent. It resolves which tracker to use, composes the payload, maps the level to that tracker's own issue type, and shows you the exact payload before anything is filed. One confirmation gates the write, and carries the level choice when you did not give one. It returns the new ticket's id only after you confirm; nothing is filed, and no local file is written, before that.
-- **`allowed-tools`** — Read, Glob, Grep, AskUserQuestion
+- **`allowed-tools`** — Read Glob Grep AskUserQuestion
 - **`argument-hint`** — [--connector &lt;stem>] [--level epic|story|task] [--parent &lt;ref>] &lt;description>
 
 [Definition: `canonical/skills/aid-create-ticket/SKILL.md`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-create-ticket/SKILL.md)

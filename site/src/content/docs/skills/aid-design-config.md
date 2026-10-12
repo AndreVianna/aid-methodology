@@ -10,7 +10,7 @@ generatedFrom: 'canonical/skills/aid-design-config/SKILL.md'
 
 - **`name`** — aid-design-config
 - **`description`** — Develop a configuration-option or feature-flag design as a DESIGN SEED in `.aid/design/config.md` -- the option or flag, its default and scope, and how it is read. Use this skill when a new option's shape, default and blast radius are still being worked out. Grounded in the Knowledge Base (`.aid/knowledge/`) and the project source. It WRITES NO production code and NO KB document -- realize the seed into the built option with `/aid-create-config` once it is ready. To design the technology stack itself rather than a configuration option within it, use `/aid-design-stack` instead. Produced by the aid-architect agent and independently verified by aid-reviewer (full verify). Allocates a work-NNN folder.
-- **`allowed-tools`** — Read, Glob, Grep, Bash, Write, Edit, Agent
+- **`allowed-tools`** — Read Glob Grep Bash Shell Terminal Write Edit Agent
 - **`argument-hint`** — &lt;subject> -- the config option/flag to design (default, scope, how it is read)
 
 [Definition: `canonical/skills/aid-design-config/SKILL.md`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-design-config/SKILL.md)
@@ -59,7 +59,7 @@ Every node in the chart above, in chart order, with the exact `canonical/` text 
    configuration option or flag do you want to design -- its default, scope, and how it is
    read?") and wait.
 2. **Allocate** through the Work Initiation Gate exactly as the contract's Allocation rule
-   requires (`canonical/skills/aid-design/SKILL.md` INTAKE step 4 is the shape), with
+   requires (`.agents/skills/aid-design/SKILL.md` INTAKE step 4 is the shape), with
    `initiator: aid-design-config`. `phase` is not driven.
 3. **Acquire `.aid/design/`** per the contract, then read `.aid/design/config.md` if a
    prior seed exists -- re-invocation iterates it rather than starting over.

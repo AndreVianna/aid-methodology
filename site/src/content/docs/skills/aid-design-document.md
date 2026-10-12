@@ -10,7 +10,7 @@ generatedFrom: 'canonical/skills/aid-design-document/SKILL.md'
 
 - **`name`** — aid-design-document
 - **`description`** — Develop a document design as a DESIGN SEED in `.aid/design/document.md` -- the document's kind and structure, its audience, and its placement. Use this skill when a document's angle, audience and shape are still being worked out, before it is drafted. Grounded in the Knowledge Base (`.aid/knowledge/`) and the project source. It WRITES NO production code and NO KB document -- realize the seed into the written document with `/aid-create-document` once it is ready. To write a general document now rather than develop its direction as a seed, use `/aid-document`. Produced by the aid-architect agent and independently verified by aid-reviewer (full verify). Allocates a work-NNN folder.
-- **`allowed-tools`** — Read, Glob, Grep, Bash, Write, Edit, Agent
+- **`allowed-tools`** — Read Glob Grep Bash Shell Terminal Write Edit Agent
 - **`argument-hint`** — &lt;subject> -- the document to design (kind, structure, audience, placement)
 
 [Definition: `canonical/skills/aid-design-document/SKILL.md`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-design-document/SKILL.md)
@@ -58,7 +58,7 @@ Every node in the chart above, in chart order, with the exact `canonical/` text 
 1. **Require a subject.** Empty argument -> ask one bootstrapping question ("What document
    do you want to design -- its kind, structure, audience, and placement?") and wait.
 2. **Allocate** through the Work Initiation Gate exactly as the contract's Allocation rule
-   requires (`canonical/skills/aid-design/SKILL.md` INTAKE step 4 is the shape), with
+   requires (`.agents/skills/aid-design/SKILL.md` INTAKE step 4 is the shape), with
    `initiator: aid-design-document`. `phase` is not driven.
 3. **Acquire `.aid/design/`** per the contract, then read `.aid/design/document.md` if a
    prior seed exists -- re-invocation iterates it rather than starting over.

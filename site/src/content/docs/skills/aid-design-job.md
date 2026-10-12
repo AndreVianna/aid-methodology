@@ -10,7 +10,7 @@ generatedFrom: 'canonical/skills/aid-design-job/SKILL.md'
 
 - **`name`** — aid-design-job
 - **`description`** — Develop a scheduled or background job design as a DESIGN SEED in `.aid/design/job.md` -- the trigger, the work it performs, and its idempotency and failure handling. Use this skill when a job's schedule, its work, and its retry behaviour are still being decided. Grounded in the Knowledge Base (`.aid/knowledge/`) and the project source. It WRITES NO production code and NO KB document -- realize the seed into the built job with `/aid-create-job` once it is ready. Produced by the aid-architect agent and independently verified by aid-reviewer (full verify). Allocates a work-NNN folder.
-- **`allowed-tools`** — Read, Glob, Grep, Bash, Write, Edit, Agent
+- **`allowed-tools`** — Read Glob Grep Bash Shell Terminal Write Edit Agent
 - **`argument-hint`** — &lt;subject> -- the job to design (trigger, work, idempotency/failure)
 
 [Definition: `canonical/skills/aid-design-job/SKILL.md`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-design-job/SKILL.md)
@@ -59,7 +59,7 @@ Every node in the chart above, in chart order, with the exact `canonical/` text 
    you want to design -- its trigger, the work it performs, and its failure handling?") and
    wait.
 2. **Allocate** through the Work Initiation Gate exactly as the contract's Allocation rule
-   requires (`canonical/skills/aid-design/SKILL.md` INTAKE step 4 is the shape), with
+   requires (`.agents/skills/aid-design/SKILL.md` INTAKE step 4 is the shape), with
    `initiator: aid-design-job`. `phase` is not driven.
 3. **Acquire `.aid/design/`** per the contract, then read `.aid/design/job.md` if a prior
    seed exists -- re-invocation iterates it rather than starting over.

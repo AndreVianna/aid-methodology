@@ -10,7 +10,7 @@ generatedFrom: 'canonical/skills/aid-deploy/SKILL.md'
 
 - **`name`** — aid-deploy
 - **`description`** — Package completed deliveries into a release. Use when deliveries are complete and ready to ship. It selects the eligible deliveries, verifies the combined build, packages according to the project's own infrastructure, generates the release notes, and updates each artifact's status.
-- **`allowed-tools`** — Read, Glob, Grep, Bash, Write
+- **`allowed-tools`** — Read Glob Grep Bash Shell Terminal Write
 
 [Definition: `canonical/skills/aid-deploy/SKILL.md`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-deploy/SKILL.md)
 

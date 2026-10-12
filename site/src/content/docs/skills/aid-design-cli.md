@@ -10,7 +10,7 @@ generatedFrom: 'canonical/skills/aid-design-cli/SKILL.md'
 
 - **`name`** — aid-design-cli
 - **`description`** — Develop a CLI design as a DESIGN SEED in `.aid/design/cli.md` -- the command and subcommand shape, its arguments and flags, and its output and error conventions. Use this skill when a command's signature and output are still being worked out. Grounded in the Knowledge Base (`.aid/knowledge/`) and the project source. It WRITES NO production code and NO KB document -- realize the seed into the built command with `/aid-create-cli` once it is ready. Produced by the aid-architect agent and independently verified by aid-reviewer (full verify). Allocates a work-NNN folder.
-- **`allowed-tools`** — Read, Glob, Grep, Bash, Write, Edit, Agent
+- **`allowed-tools`** — Read Glob Grep Bash Shell Terminal Write Edit Agent
 - **`argument-hint`** — &lt;subject> -- the CLI command(s) to design (command shape, flags, output/errors)
 
 [Definition: `canonical/skills/aid-design-cli/SKILL.md`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-design-cli/SKILL.md)
@@ -58,7 +58,7 @@ Every node in the chart above, in chart order, with the exact `canonical/` text 
 1. **Require a subject.** Empty argument -> ask one bootstrapping question ("What CLI
    command(s) do you want to design -- their shape, flags, and output?") and wait.
 2. **Allocate** through the Work Initiation Gate exactly as the contract's Allocation rule
-   requires (`canonical/skills/aid-design/SKILL.md` INTAKE step 4 is the shape), with
+   requires (`.agents/skills/aid-design/SKILL.md` INTAKE step 4 is the shape), with
    `initiator: aid-design-cli`. `phase` is not driven.
 3. **Acquire `.aid/design/`** per the contract, then read `.aid/design/cli.md` if a prior
    seed exists -- re-invocation iterates it rather than starting over.

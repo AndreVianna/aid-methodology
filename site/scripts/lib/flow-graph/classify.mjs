@@ -22,8 +22,9 @@ const D2_STATE_RE = /^## State:\s+\S/;
 // D3: phrase declaring no logic of its own (case-insensitive).
 const D3_NO_LOGIC_RE = /no logic of its own/i;
 
-// D3: a canonical/skills/<name>/SKILL.md reference; global copy created per call.
-const D3_SIBLING_PATTERN = /canonical\/skills\/([^/\s]+)\/SKILL\.md/g;
+// D3: a <name>/SKILL.md reference under canonical/skills/ (source) or .agents/skills/
+// (the installed shared folder a skill body names); global copy created per call.
+const D3_SIBLING_PATTERN = /(?:canonical|\.agents)\/skills\/([^/\s]+)\/SKILL\.md/g;
 
 // D4: GENERATED-by-build-shortcut-skills.py HTML comment.
 const D4_GENERATED_RE = /<!--\s*GENERATED\s+by\s+[^\n]*build-shortcut-skills\.py/;

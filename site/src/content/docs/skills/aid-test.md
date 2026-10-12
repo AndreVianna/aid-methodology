@@ -10,7 +10,7 @@ generatedFrom: 'canonical/skills/aid-test/SKILL.md'
 
 - **`name`** — aid-test
 - **`description`** — Run a test suite or verification and consolidate the results into findings, in one pass. Use this skill when you need to know the current state of something measurable -- unit, integration or end-to-end tests, a security scan, a performance benchmark, a data-quality check, or a model evaluation. It runs whatever the request implies and reports. It is read-only on the source and resolves nothing: findings hand off to `/aid-fix`, and it never fixes. To author test code rather than run it, use `/aid-create-test`.
-- **`allowed-tools`** — Read, Glob, Grep, Bash, Write, Edit, Agent
+- **`allowed-tools`** — Read Glob Grep Bash Shell Terminal Write Edit Agent
 - **`argument-hint`** — &lt;target> -- what to test/verify (a suite/module, or a kind: security, performance, data-quality, model-eval)
 
 [Definition: `canonical/skills/aid-test/SKILL.md`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-test/SKILL.md)
@@ -73,8 +73,8 @@ Every node in the chart above, in chart order, with the exact `canonical/` text 
 4. **Classify complexity (model + effort):** simple run -> `aid-reviewer` at **sonnet /
    medium**; deep security/perf analysis -> **opus / high**. Verifier tier >= producer.
 5. **Consult the Work Initiation Gate, then allocate the work folder + STATE.** First run
-   the gate (`canonical/aid/templates/work-initiation-gate.md`):
-   `bash canonical/aid/scripts/works/enumerate-works.sh` (main tree + every git worktree).
+   the gate (`.aid/runtime/templates/work-initiation-gate.md`):
+   `bash .aid/runtime/scripts/works/enumerate-works.sh` (main tree + every git worktree).
    Empty -> allocate, no prompt. Works exist -> ask new-vs-continuation; on **continuation**
    route to the chosen work's resume door and STOP (allocate nothing); on **new work**:
    create and enter the worktree per the gate's `§ 3a` step 2
@@ -114,7 +114,7 @@ pass/fail + failures; model-eval: metric vs threshold. Every finding cites its e
    findings real and grounded in the run output, correctly severity-tagged, no
    over/under-statement, and the run actually exercised the stated scope. Writes a
    review-quality ledger to `.aid/.temp/review-pending/<work>-verify.md`.
-3. **Grade:** `bash canonical/aid/scripts/grade.sh --explain <ledger>`. Not clean -> loop
+3. **Grade:** `bash .aid/runtime/scripts/grade.sh --explain <ledger>`. Not clean -> loop
    to RUN/consolidate. Circuit-breaker: 3 cycles -> IMPEDIMENT + `lifecycle: Blocked`.
 ~~~~
 

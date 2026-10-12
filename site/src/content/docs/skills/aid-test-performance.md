@@ -10,7 +10,7 @@ generatedFrom: 'canonical/skills/aid-test-performance/SKILL.md'
 
 - **`name`** — aid-test-performance
 - **`description`** — Run a performance verification against a threshold or SLO -- a benchmark, a load test, or a stress test -- and report measured against target. Use this skill when you need to know whether something is fast enough, and by how much. Read-only; it resolves nothing, and findings hand off to `/aid-fix`. A thin kind-sibling of `/aid-test`, which defines its full behavior.
-- **`allowed-tools`** — Read, Glob, Grep, Bash, Write, Edit, Agent
+- **`allowed-tools`** — Read Glob Grep Bash Shell Terminal Write Edit Agent
 - **`argument-hint`** — &lt;target + threshold> -- the hot path/endpoint and the SLO to measure against
 
 [Definition: `canonical/skills/aid-test-performance/SKILL.md`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-test-performance/SKILL.md)
@@ -85,8 +85,8 @@ Every node in the chart above, in chart order, with the exact `canonical/` text 
 4. **Classify complexity (model + effort):** simple run -> `aid-reviewer` at **sonnet /
    medium**; deep security/perf analysis -> **opus / high**. Verifier tier >= producer.
 5. **Consult the Work Initiation Gate, then allocate the work folder + STATE.** First run
-   the gate (`canonical/aid/templates/work-initiation-gate.md`):
-   `bash canonical/aid/scripts/works/enumerate-works.sh` (main tree + every git worktree).
+   the gate (`.aid/runtime/templates/work-initiation-gate.md`):
+   `bash .aid/runtime/scripts/works/enumerate-works.sh` (main tree + every git worktree).
    Empty -> allocate, no prompt. Works exist -> ask new-vs-continuation; on **continuation**
    route to the chosen work's resume door and STOP (allocate nothing); on **new work**:
    create and enter the worktree per the gate's `§ 3a` step 2
@@ -126,7 +126,7 @@ pass/fail + failures; model-eval: metric vs threshold. Every finding cites its e
    findings real and grounded in the run output, correctly severity-tagged, no
    over/under-statement, and the run actually exercised the stated scope. Writes a
    review-quality ledger to `.aid/.temp/review-pending/<work>-verify.md`.
-3. **Grade:** `bash canonical/aid/scripts/grade.sh --explain <ledger>`. Not clean -> loop
+3. **Grade:** `bash .aid/runtime/scripts/grade.sh --explain <ledger>`. Not clean -> loop
    to RUN/consolidate. Circuit-breaker: 3 cycles -> IMPEDIMENT + `lifecycle: Blocked`.
 ~~~~
 

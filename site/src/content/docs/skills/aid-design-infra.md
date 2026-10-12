@@ -10,7 +10,7 @@ generatedFrom: 'canonical/skills/aid-design-infra/SKILL.md'
 
 - **`name`** — aid-design-infra
 - **`description`** — Develop an infrastructure-resource design as a DESIGN SEED in `.aid/design/infra.md` -- the resource, its configuration, and its provisioning and teardown. Use this skill when a resource's shape and access policy are still being worked out, before anything is provisioned. Grounded in the Knowledge Base (`.aid/knowledge/`) and the project source. It WRITES NO production code and NO KB document -- realize the seed into the provisioned resource with `/aid-create-infra` once it is ready. To design the pipeline that ships to the resource rather than the resource itself, use `/aid-design-cicd` instead. Produced by the aid-architect agent and independently verified by aid-reviewer (full verify). Allocates a work-NNN folder.
-- **`allowed-tools`** — Read, Glob, Grep, Bash, Write, Edit, Agent
+- **`allowed-tools`** — Read Glob Grep Bash Shell Terminal Write Edit Agent
 - **`argument-hint`** — &lt;subject> -- the infrastructure resource to design (resource, config, provisioning)
 
 [Definition: `canonical/skills/aid-design-infra/SKILL.md`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-design-infra/SKILL.md)
@@ -59,7 +59,7 @@ Every node in the chart above, in chart order, with the exact `canonical/` text 
    infrastructure resource do you want to design -- the resource, its configuration, and
    its provisioning?") and wait.
 2. **Allocate** through the Work Initiation Gate exactly as the contract's Allocation rule
-   requires (`canonical/skills/aid-design/SKILL.md` INTAKE step 4 is the shape), with
+   requires (`.agents/skills/aid-design/SKILL.md` INTAKE step 4 is the shape), with
    `initiator: aid-design-infra`. `phase` is not driven.
 3. **Acquire `.aid/design/`** per the contract, then read `.aid/design/infra.md` if a prior
    seed exists -- re-invocation iterates it rather than starting over.

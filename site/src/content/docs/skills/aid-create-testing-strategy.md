@@ -10,7 +10,7 @@ generatedFrom: 'canonical/skills/aid-create-testing-strategy/SKILL.md'
 
 - **`name`** — aid-create-testing-strategy
 - **`description`** — Realize a ready testing-strategy seed from `.aid/design/testing-strategy.md` into the project's quality (C6) documents -- the test landscape (levels, coverage expectations, CI lane mapping, known gaps) and the gate policy (what blocks a merge, the thresholds, who may waive one). Use this skill when a testing-strategy seed is ready and the project has no record of its test lanes or merge gates yet. Creates the gate document on first use and registers it in `.aid/settings.yml` and `.aid/knowledge/README.md` in the same run, which opts that document into the Conformance Lane permanently -- a choice you are making by running this skill. To revise C6 content this lifecycle already committed, use `/aid-update-testing-strategy`; to author or revise test CODE rather than the strategy, use `/aid-create-test` or `/aid-update-test`. Produced by the aid-architect agent and independently verified by aid-reviewer (full verify). Allocates a work-NNN folder.
-- **`allowed-tools`** — Read, Glob, Grep, Bash, Write, Edit, Agent
+- **`allowed-tools`** — Read Glob Grep Bash Shell Terminal Write Edit Agent
 - **`argument-hint`** — [&lt;direction>] -- which parts of the testing-strategy seed to realize
 
 [Definition: `canonical/skills/aid-create-testing-strategy/SKILL.md`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-create-testing-strategy/SKILL.md)
@@ -56,14 +56,14 @@ Every node in the chart above, in chart order, with the exact `canonical/` text 
 ## State: INTAKE
 
 1. **Allocate** through the Work Initiation Gate exactly as the contract's Allocation rule
-   requires (`canonical/skills/aid-design/SKILL.md` INTAKE step 4 is the shape), with
+   requires (`.agents/skills/aid-design/SKILL.md` INTAKE step 4 is the shape), with
    `initiator: aid-create-testing-strategy`. `phase` is not driven.
 2. **Read the seed** at `.aid/design/testing-strategy.md`.
 3. **Resolve the destinations by concern, not filename.** This skill binds concern **C6**
-   (quality & testing, `canonical/aid/templates/kb-authoring/concern-model.md`) and owns
+   (quality & testing, `.aid/runtime/templates/kb-authoring/concern-model.md`) and owns
    **two** documents. The seed's `## Destination` names both halves; where it does not,
    resolve C6 against `.aid/settings.yml` `knowledge.doc_set`, falling back to the C6 row of
-   `canonical/aid/templates/kb-authoring/domain-doc-matrix.md`, and confirm with the user. An
+   `.aid/runtime/templates/kb-authoring/domain-doc-matrix.md`, and confirm with the user. An
    ambiguous realization is **asked**, never picked silently.
 4. **Read both destinations** whole where they exist, and note each one's `source:` field.
 5. **Classify complexity** for the `aid-architect` dispatch (verifier tier >= producer).

@@ -10,7 +10,7 @@ generatedFrom: 'canonical/skills/aid-specify/SKILL.md'
 
 - **`name`** — aid-specify
 - **`description`** — Turn one feature into a technical specification, collaboratively. Use this skill when a feature has been defined and how it will actually be built needs settling before any task is planned. The agent works as a tech lead: it reads the Knowledge Base, the requirements, and the codebase, proposes a technical approach, and refines it with you, writing the result into that feature's `#### Technical Specification` subsection in REQUIREMENTS.md § 11. One feature at a time.
-- **`allowed-tools`** — Read, Glob, Grep, Bash, Write, Edit
+- **`allowed-tools`** — Read Glob Grep Bash Shell Terminal Write Edit
 - **`argument-hint`** — work-001/feature-001 (required)  [--reset] clear technical spec for this feature
 
 [Definition: `canonical/skills/aid-specify/SKILL.md`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-specify/SKILL.md)
@@ -93,7 +93,7 @@ Every node in the chart above, in chart order, with the exact `canonical/` text 
 | REVIEW | `references/state-review.md` | `aid-reviewer` | → DONE |
 ~~~~
 
-[Source: `canonical/skills/aid-specify/SKILL.md#L224`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-specify/SKILL.md#L224) · [full step: `canonical/skills/aid-specify/references/state-review.md#L1-L90`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-specify/references/state-review.md#L1-L90)
+[Source: `canonical/skills/aid-specify/SKILL.md#L224`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-specify/SKILL.md#L224) · [full step: `canonical/skills/aid-specify/references/state-review.md#L1-L91`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-specify/references/state-review.md#L1-L91)
 
 <a id="fragment-n6"></a>**6 · `DONE`** — Spec is Ready and has met the minimum grade; this feature's… · _exit_ · HALT
 

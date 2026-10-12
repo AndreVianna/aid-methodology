@@ -10,7 +10,7 @@ generatedFrom: 'canonical/skills/aid-design-messaging/SKILL.md'
 
 - **`name`** — aid-design-messaging
 - **`description`** — Develop a messaging design as a DESIGN SEED in `.aid/design/messaging.md` -- the message/event schema, its channel, and its emission points. Use this skill when an event's schema and who consumes it are still being worked out. Grounded in the Knowledge Base (`.aid/knowledge/`) and the project source. It WRITES NO production code and NO KB document -- realize the seed into the built schema and emission with `/aid-create-messaging` once it is ready. Produced by the aid-architect agent and independently verified by aid-reviewer (full verify). Allocates a work-NNN folder.
-- **`allowed-tools`** — Read, Glob, Grep, Bash, Write, Edit, Agent
+- **`allowed-tools`** — Read Glob Grep Bash Shell Terminal Write Edit Agent
 - **`argument-hint`** — &lt;subject> -- the message/event to design (schema, channel, emission)
 
 [Definition: `canonical/skills/aid-design-messaging/SKILL.md`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-design-messaging/SKILL.md)
@@ -59,7 +59,7 @@ Every node in the chart above, in chart order, with the exact `canonical/` text 
    message/event do you want to design -- its schema, channel, and emission points?") and
    wait.
 2. **Allocate** through the Work Initiation Gate exactly as the contract's Allocation rule
-   requires (`canonical/skills/aid-design/SKILL.md` INTAKE step 4 is the shape), with
+   requires (`.agents/skills/aid-design/SKILL.md` INTAKE step 4 is the shape), with
    `initiator: aid-design-messaging`. `phase` is not driven.
 3. **Acquire `.aid/design/`** per the contract, then read `.aid/design/messaging.md` if a
    prior seed exists -- re-invocation iterates it rather than starting over.

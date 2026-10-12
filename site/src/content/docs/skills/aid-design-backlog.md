@@ -10,7 +10,7 @@ generatedFrom: 'canonical/skills/aid-design-backlog/SKILL.md'
 
 - **`name`** — aid-design-backlog
 - **`description`** — Develop the defined-and-prioritized item set as a DESIGN SEED in `.aid/design/backlog.md` -- item definitions, done-conditions, priorities, and which tech-debt.md rows the user is accepting into the plan. Use this skill when what belongs in the backlog is still being decided, and you want that thinking captured as a seed before the document is written. Grounded in the Knowledge Base (`.aid/knowledge/`, including tech-debt.md) and the project source. It WRITES NO KB DOCUMENT and NO production code -- realize the seed into backlog.md with `/aid-create-backlog` once it is ready. For direction rather than items, use `/aid-design-roadmap` instead. Produced by the aid-architect agent and independently verified by aid-reviewer (full verify). Allocates a work-NNN folder.
-- **`allowed-tools`** — Read, Glob, Grep, Bash, Write, Edit, Agent
+- **`allowed-tools`** — Read Glob Grep Bash Shell Terminal Write Edit Agent
 - **`argument-hint`** — &lt;items> -- the items to define and prioritize, and any tech-debt.md rows to accept
 
 [Definition: `canonical/skills/aid-design-backlog/SKILL.md`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-design-backlog/SKILL.md)

@@ -10,7 +10,7 @@ generatedFrom: 'canonical/skills/aid-create-architecture/SKILL.md'
 
 - **`name`** — aid-create-architecture
 - **`description`** — Realize a ready architecture seed from `.aid/design/architecture.md` into the project's build-and-shape (C1) Knowledge Base document -- components and their responsibilities, boundaries, interactions, and the invariants a change must not break. Use this skill when an architecture seed is ready and the project has no architecture document yet. When it creates the document it also registers it in `.aid/settings.yml` and `.aid/knowledge/README.md` in the same run, which opts that document into the Conformance Lane permanently -- a choice you are making by running this skill. To revise C1 content this lifecycle already committed, use `/aid-update-architecture`; to write documentation ABOUT an architecture rather than realize a design seed, use `/aid-document-architecture`. Produced by the aid-architect agent and independently verified by aid-reviewer (full verify). Allocates a work-NNN folder.
-- **`allowed-tools`** — Read, Glob, Grep, Bash, Write, Edit, Agent
+- **`allowed-tools`** — Read Glob Grep Bash Shell Terminal Write Edit Agent
 - **`argument-hint`** — [&lt;direction>] -- which parts of the architecture seed to realize
 
 [Definition: `canonical/skills/aid-create-architecture/SKILL.md`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-create-architecture/SKILL.md)
@@ -56,14 +56,14 @@ Every node in the chart above, in chart order, with the exact `canonical/` text 
 ## State: INTAKE
 
 1. **Allocate** through the Work Initiation Gate exactly as the contract's Allocation rule
-   requires (`canonical/skills/aid-design/SKILL.md` INTAKE step 4 is the shape), with
+   requires (`.agents/skills/aid-design/SKILL.md` INTAKE step 4 is the shape), with
    `initiator: aid-create-architecture`. `phase` is not driven.
 2. **Read the seed** at `.aid/design/architecture.md`.
 3. **Resolve the destination by concern, not filename.** This skill binds concern **C1**
-   (build & shape, `canonical/aid/templates/kb-authoring/concern-model.md`). The seed's
+   (build & shape, `.aid/runtime/templates/kb-authoring/concern-model.md`). The seed's
    `## Destination` names the resolved path; where it does not, resolve C1 against
    `.aid/settings.yml` `knowledge.doc_set`, falling back to the C1 row of
-   `canonical/aid/templates/kb-authoring/domain-doc-matrix.md`, and confirm with the user.
+   `.aid/runtime/templates/kb-authoring/domain-doc-matrix.md`, and confirm with the user.
    C1's default set holds both `project-structure.md` and `architecture.md`; this skill
    targets the document describing the system's shape and **never**
    `project-structure.md`. An ambiguous realization is **asked**, never picked silently.

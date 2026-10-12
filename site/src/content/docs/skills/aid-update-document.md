@@ -10,7 +10,7 @@ generatedFrom: 'canonical/skills/aid-update-document/SKILL.md'
 
 - **`name`** — aid-update-document
 - **`description`** — Revise or extend a document that already exists, in one pass. Use this skill when a document has drifted from the code, is missing a section, or needs a correction -- and you want the change drafted against the current source rather than written from memory. It reads the existing document first, then edits it, grounded in and accuracy-checked against the Knowledge Base (`.aid/knowledge/`) and the project source. It resolves nothing: it drafts the change and shows you a diff, and only after you approve is it written back. It never writes into `.aid/knowledge/` -- that is `/aid-update-kb`'s territory.
-- **`allowed-tools`** — Read, Glob, Grep, Bash, Write, Edit, Agent
+- **`allowed-tools`** — Read Glob Grep Bash Shell Terminal Write Edit Agent
 - **`argument-hint`** — &lt;document + change> -- which existing document to update, and how
 
 [Definition: `canonical/skills/aid-update-document/SKILL.md`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-update-document/SKILL.md)
@@ -67,8 +67,8 @@ Every node in the chart above, in chart order, with the exact `canonical/` text 
    **classify complexity** -> `aid-tech-writer` model/effort (sonnet/medium default; opus/high
    for a large rewrite). Verifier tier >= producer.
 4. **Consult the Work Initiation Gate, then allocate the work folder + STATE.** First run
-   the gate (`canonical/aid/templates/work-initiation-gate.md`):
-   `bash canonical/aid/scripts/works/enumerate-works.sh` (main tree + every git worktree).
+   the gate (`.aid/runtime/templates/work-initiation-gate.md`):
+   `bash .aid/runtime/scripts/works/enumerate-works.sh` (main tree + every git worktree).
    Empty -> allocate, no prompt. Works exist -> ask new-vs-continuation; on **continuation**
    route to the chosen work's resume door and STOP (allocate nothing); on **new work**:
    create and enter the worktree per the gate's `§ 3a` step 2

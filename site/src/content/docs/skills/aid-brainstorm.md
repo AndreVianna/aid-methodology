@@ -10,7 +10,7 @@ generatedFrom: 'canonical/skills/aid-brainstorm/SKILL.md'
 
 - **`name`** — aid-brainstorm
 - **`description`** — Diverge on a problem not yet formed into an answerable question, then converge it to a DESIGN SEED in `.aid/design/<slug>.md` -- exploration, framings, and the candidate directions worth pursuing. Use this skill when a problem space is still open and you want to explore it, rather than answer one specific question. Grounded in the Knowledge Base (`.aid/knowledge/`) and the project source. It WRITES NO production code and NO KB document, and it RESOLVES NOTHING -- you decide what to do with the seed. For an already-answerable technical question that wants a curated, verified answer, use `/aid-research` instead. Produced by the aid-architect agent and independently verified by aid-reviewer. Allocates a work-NNN folder.
-- **`allowed-tools`** — Read, Glob, Grep, Bash, Write, Edit, Agent
+- **`allowed-tools`** — Read Glob Grep Bash Shell Terminal Write Edit Agent
 - **`argument-hint`** — &lt;subject> -- a fuzzy problem or theme to explore (not yet a formed question)
 
 [Definition: `canonical/skills/aid-brainstorm/SKILL.md`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-brainstorm/SKILL.md)
@@ -63,7 +63,7 @@ Every node in the chart above, in chart order, with the exact `canonical/` text 
    `artifact` rule does not apply: derive a kebab-case `<slug>` from the subject and
    **confirm it with the user**, then the seed is `.aid/design/<slug>.md`.
 3. **Allocate** through the Work Initiation Gate exactly as the contract's Allocation rule
-   requires (`canonical/skills/aid-design/SKILL.md` INTAKE step 4 is the shape), with
+   requires (`.agents/skills/aid-design/SKILL.md` INTAKE step 4 is the shape), with
    `initiator: aid-brainstorm`. `phase` is not driven. The `work-NNN` folder is where
    `STATE.md` and the review gate live, even though the seed is the deliverable.
 4. **Classify complexity** for the `aid-architect` dispatch (verifier tier >= producer).

@@ -10,7 +10,7 @@ generatedFrom: 'canonical/skills/aid-create-mvp/SKILL.md'
 
 - **`name`** — aid-create-mvp
 - **`description`** — Realize a ready MVP seed into roadmap.md's ## MVP section only -- the first shippable slice: what it includes, why the line falls there, what was cut, and its current status. Use this skill when an MVP seed is ready and the roadmap's MVP section has not been written yet. The roadmap document itself is `/aid-create-roadmap`'s to create; when roadmap.md is absent this skill routes to `/aid-create-roadmap` without writing anything and leaves the seed in place. Routes to `/aid-update-mvp` when ## MVP already carries committed content. Writes no document and no registration entry -- it owns a section, not a file.
-- **`allowed-tools`** — Read, Glob, Grep, Bash, Write, Edit, Agent
+- **`allowed-tools`** — Read Glob Grep Bash Shell Terminal Write Edit Agent
 - **`argument-hint`** — [&lt;slice>] -- what to realize into the ## MVP section (fills the section from the seed)
 
 [Definition: `canonical/skills/aid-create-mvp/SKILL.md`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-create-mvp/SKILL.md)

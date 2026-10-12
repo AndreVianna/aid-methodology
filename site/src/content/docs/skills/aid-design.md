@@ -10,7 +10,7 @@ generatedFrom: 'canonical/skills/aid-design/SKILL.md'
 
 - **`name`** — aid-design
 - **`description`** — Produce a design artifact you intend to keep -- a UX or interaction flow, a component or interface design, with accessibility notes -- meant to inform the real build. Use this skill when the subject has no dedicated design row of its own; when a dedicated `/aid-design-`&lt;artifact> row exists, use that row instead. It is grounded in the Knowledge Base (`.aid/knowledge/`) and the project source, produced by aid-architect and independently verified by aid-reviewer, because a kept design drives a build and its correctness matters. It resolves nothing: it presents the design, you decide, and building it is a separate `/aid-create` step. For a throwaway model that only validates a direction, use `/aid-prototype` instead.
-- **`allowed-tools`** — Read, Glob, Grep, Bash, Write, Edit, Agent
+- **`allowed-tools`** — Read Glob Grep Bash Shell Terminal Write Edit Agent
 - **`argument-hint`** — &lt;subject> -- what to design (a flow, a component/interface, a UI; use a dedicated /aid-design-&lt;artifact> row when one exists)
 
 [Definition: `canonical/skills/aid-design/SKILL.md`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-design/SKILL.md)
@@ -69,8 +69,8 @@ Every node in the chart above, in chart order, with the exact `canonical/` text 
    at **sonnet / medium**; complex (a system architecture, a multi-screen flow) -> **opus /
    high**. Verifier tier >= producer tier.
 4. **Consult the Work Initiation Gate, then allocate the work folder + STATE.** First run
-   the gate (`canonical/aid/templates/work-initiation-gate.md`):
-   `bash canonical/aid/scripts/works/enumerate-works.sh` (main tree + every git worktree).
+   the gate (`.aid/runtime/templates/work-initiation-gate.md`):
+   `bash .aid/runtime/scripts/works/enumerate-works.sh` (main tree + every git worktree).
    Empty -> allocate, no prompt. Works exist -> ask new-vs-continuation; on **continuation**
    route to the chosen work's resume door and STOP (allocate nothing); on **new work**:
    create and enter the worktree per the gate's `§ 3a` step 2
@@ -105,7 +105,7 @@ kept record).
 2. **Adversarial verification** -- clean-context **`aid-reviewer`** checks `DESIGN.md`:
    grounded, complete, internally consistent, consistent with KB conventions + a11y, and
    buildable. Writes a review-quality ledger to `.aid/.temp/review-pending/<work>-verify.md`.
-3. **Grade:** `bash canonical/aid/scripts/grade.sh --explain <ledger>`. Not clean -> loop
+3. **Grade:** `bash .aid/runtime/scripts/grade.sh --explain <ledger>`. Not clean -> loop
    to DESIGN. Circuit-breaker: 3 cycles -> IMPEDIMENT + `lifecycle: Blocked`.
 ~~~~
 
