@@ -6,6 +6,11 @@ name: Docs
 # (push or manual re-deploy) — the github-pages environment permits master-ref
 # deploys only, so a tag/release ref is rejected.  After a release, refresh the
 # release-bound content with a workflow_dispatch on master.
+#
+# Pause switch: while the repository variable DOCS_DEPLOY_PAUSED is 'true', a
+# push to master builds and tests the site but does not publish it -- so docs for
+# unreleased work on master do not go live ahead of the release that installs it.
+# A manual workflow_dispatch always publishes.
 
 on:
   push:
@@ -104,7 +109,8 @@ jobs:
     name: deploy (Pages)
     needs: build
     # M2: build-validate on PRs, but only ever DEPLOY on a real push to master / a release.
-    if: github.event_name != 'pull_request'
+    # A push deploys unless DOCS_DEPLOY_PAUSED is 'true'; a manual dispatch always deploys.
+    if: github.event_name == 'workflow_dispatch' || (github.event_name == 'push' && vars.DOCS_DEPLOY_PAUSED != 'true')
     runs-on: ubuntu-24.04
     environment:
       name: github-pages

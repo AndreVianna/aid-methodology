@@ -114,7 +114,7 @@ release/deploy view:
 | `.github/workflows/test.yml` | push/PR to `master` | Correctness gate: render-drift, full canonical suite, visual-fidelity, generator self-tests, KB/repo hygiene |
 | `.github/workflows/installer-tests.yml` | push to any non-`master` branch | Cross-platform installer/CLI/release validation (ubuntu bash-harness + windows native-ps1) so feature branches are validated remotely |
 | `.github/workflows/release.yml` | push of a `v*` tag (or `workflow_dispatch`) | Gate → build → publish all channels |
-| `.github/workflows/docs.yml` | push **and PR** to `master`, path-filtered to `site/**`, `docs/**`, `canonical/**`, `VERSION` (or `workflow_dispatch`) | Test (site vitest) + build the Astro site on both; deploy to GitHub Pages on push only |
+| `.github/workflows/docs.yml` | push **and PR** to `master`, path-filtered to `site/**`, `docs/**`, `canonical/**`, `VERSION` (or `workflow_dispatch`) | Test (site vitest) + build the Astro site on both; deploy to GitHub Pages on push (unless `DOCS_DEPLOY_PAUSED` is `'true'`) or `workflow_dispatch` |
 | `.github/workflows/coverage-parity.yml` | PR + push to `master`, path-filtered to `tests/**` | Advisory coverage-regression gate: diffs the executed-assertion inventory against a committed baseline (enforces once bootstrapped) |
 
 CONFIRMED by each workflow's `on:` block.
@@ -222,6 +222,9 @@ A standalone Astro Starlight site under `site/` (separate build, own `package.js
 from `release.yml`. Pages deploys only from `master` (push or manual `workflow_dispatch`) —
 the `github-pages` environment permits master-ref deploys only, so a tag/release ref is
 rejected; after a release, refresh release-bound content with a `workflow_dispatch` on master.
+A push deploys only while the repository variable `DOCS_DEPLOY_PAUSED` is not `'true'`; setting it
+keeps docs for unreleased work on master from going live before the release that installs it, while
+the push still builds and tests the site. A manual `workflow_dispatch` always deploys.
 CONFIRMED in `.github/workflows/docs.yml`.
 
 ---
