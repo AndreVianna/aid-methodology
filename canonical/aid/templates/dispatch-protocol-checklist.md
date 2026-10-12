@@ -8,10 +8,10 @@ protocol lives in two reference docs; this section is a checklist citing them.
 
 **Before each dispatch:**
 
-1. **Look up ETA** in `canonical/aid/templates/rough-time-hints.md` for the
+1. **Look up ETA** in `.aid/runtime/templates/rough-time-hints.md` for the
    subagent's operation class. Capture LOW–HIGH band.
 2. **Read heartbeat config** via
-   `bash canonical/aid/scripts/config/read-setting.sh --path traceability.heartbeat_interval --default 1`
+   `bash .aid/runtime/scripts/config/read-setting.sh --path traceability.heartbeat_interval --default 1`
    (resolves from `.aid/settings.yml`; default 1; `0` = disabled).
 3. **Pre-create heartbeat file** (always — unconditional):
    - Pre-create `.aid/.heartbeat/<agent-name>-<unix-ts>.txt`
@@ -45,10 +45,10 @@ protocol lives in two reference docs; this section is a checklist citing them.
 
 **References:**
 
-- `canonical/aid/templates/long-wait-protocol.md` — full L2 spec
-- `canonical/aid/templates/subagent-heartbeat-protocol.md` — full L3 spec
-- `canonical/aid/templates/rough-time-hints.md` — current measured ETAs
-- `canonical/agents/*/AGENT.md ## Heartbeat protocol` — subagent-side contract
+- `.aid/runtime/templates/long-wait-protocol.md` — full L2 spec
+- `.aid/runtime/templates/subagent-heartbeat-protocol.md` — full L3 spec
+- `.aid/runtime/templates/rough-time-hints.md` — current measured ETAs
+- `aid-*` agent definitions, `## Heartbeat protocol` section — subagent-side contract
 
 The existing `▶ <agent> starting (~<ETA>)` and `✓ <agent> done` bracket-pair
 lines elsewhere in this skill body remain in place; this protocol just makes

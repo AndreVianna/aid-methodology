@@ -31,7 +31,6 @@ review-criteria:
 
 > **Source:** aid-discover (brownfield deep-dive — Integrator)
 > **Status:** Complete
-> **Last Updated:** 2026-07-09
 
 This project's "pipeline" is the AID methodology itself: a sequence of skills that hand
 typed markdown artifacts from one phase to the next, each phase gated by a human and a
@@ -434,7 +433,7 @@ Load-bearing keys: `project.{name,description,type}`, `tools.installed`,
   `delivery-state-template.yml` / `task-state-template.yml`,
   `canonical/aid/scripts/execute/writeback-state.sh`) are the current source of truth and name it
   `STATE.yml`.
-- The skill taxonomy is **111 skill directories** under `canonical/skills/`: 17 curated
+- The skill taxonomy is **112 skill directories** under `canonical/skills/`: 18 curated
   pipeline/on-demand/router skills (including `aid-read-ticket`, `aid-create-ticket`,
   `aid-update-ticket`) + the 94-row shortcut catalog's skills, every row a canonical
   name — 34 verb-first direct-entry shortcut doorways (generated from
@@ -453,8 +452,8 @@ Load-bearing keys: `project.{name,description,type}`, `tools.installed`,
 > How this project adds or changes a pipeline boundary.
 
 - **A new phase/skill** is authored once in `canonical/skills/<name>/SKILL.md` as a state
-  machine (states advance one invocation at a time), then rendered into the five profiles.
-  Never edit `profiles/` directly. A new verb-first shortcut is added as a row in
+  machine (states advance one invocation at a time), then shipped in the shared payload and installed to
+  `.agents/skills/aid-*` for every tool. Never edit an installed copy. A new verb-first shortcut is added as a row in
   `canonical/aid/templates/shortcut-catalog.yml` and regenerated — the shortcut doorway is a
   thin delegate to `shortcut-engine.md`, never a hand-authored state machine.
 - **A new artifact type** gets a template under `canonical/aid/templates/`, a fixed location
@@ -514,7 +513,7 @@ Load-bearing keys: `project.{name,description,type}`, `tools.installed`,
 - **Work folders are transient; no permanent artifact depends on a specific one.**
   `.aid/works/work-NNN-*/` holds disposable per-work pipeline state and may be pruned once
   the work ships (see the On-Disk Work Hierarchy above). No permanent artifact -- product
-  code, `canonical/` content (or its `profiles/` render), tests, docs/site, the Knowledge
+  code, `canonical/` content (or its host render), tests, docs/site, the Knowledge
   Base, settings/schemas, or the agent-context files -- may reference, assert against, embed,
   or otherwise depend on the contents of a specific work folder: tests build their own
   fixtures, and the KB never cites a work folder as a source. Pipeline skills and scripts

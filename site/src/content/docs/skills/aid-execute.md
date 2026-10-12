@@ -10,7 +10,7 @@ generatedFrom: 'canonical/skills/aid-execute/SKILL.md'
 
 - **`name`** — aid-execute
 - **`description`** — Carry out one planned task and review the result. Use this skill when tasks have been detailed and you are ready for the work to actually be done. It runs the task according to its type -- RESEARCH, DESIGN, IMPLEMENT, TEST, DOCUMENT, MIGRATE, REFACTOR or CONFIGURE -- then loops through review and fixes until the result meets the configured minimum grade. Each delivery runs on its own branch, so deliveries stay isolated from each other.
-- **`allowed-tools`** — Read, Glob, Grep, Write, Edit, Bash
+- **`allowed-tools`** — Read Glob Grep Write Edit Bash Shell Terminal
 - **`argument-hint`** — work-001 (required if multiple works)  task-001 (required)
 
 [Definition: `canonical/skills/aid-execute/SKILL.md`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-execute/SKILL.md)
@@ -62,7 +62,7 @@ Every node in the chart above, in chart order, with the exact `canonical/` text 
 | EXECUTE | `references/state-execute.md` | _(type-specific — see state file; delivery-mode uses pool dispatch PD-0→PD-6)_ | → REVIEW |
 ~~~~
 
-[Source: `canonical/skills/aid-execute/SKILL.md#L217`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-execute/SKILL.md#L217) · [full step: `canonical/skills/aid-execute/references/state-execute.md#L1-L780`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-execute/references/state-execute.md#L1-L780)
+[Source: `canonical/skills/aid-execute/SKILL.md#L217`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-execute/SKILL.md#L217) · [full step: `canonical/skills/aid-execute/references/state-execute.md#L1-L783`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-execute/references/state-execute.md#L1-L783)
 
 <a id="fragment-n2"></a>**2 · `REVIEW`** — Task output is graded by a lightweight quick-check pass… · _loop-back_
 
@@ -70,7 +70,7 @@ Every node in the chart above, in chart order, with the exact `canonical/` text 
 | REVIEW | `references/state-review.md` | `aid-reviewer` (Small tier, quick-check only — no grade loop per FR2) | → DONE |
 ~~~~
 
-[Source: `canonical/skills/aid-execute/SKILL.md#L218`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-execute/SKILL.md#L218) · [full step: `canonical/skills/aid-execute/references/state-review.md#L1-L195`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-execute/references/state-review.md#L1-L195)
+[Source: `canonical/skills/aid-execute/SKILL.md#L218`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-execute/SKILL.md#L218) · [full step: `canonical/skills/aid-execute/references/state-review.md#L1-L194`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-execute/references/state-review.md#L1-L194)
 
 <a id="fragment-n3"></a>**3 · `FIX`** — CODE-source issues from the most recent REVIEW cycle are… · _step_
 
@@ -102,4 +102,4 @@ Every node in the chart above, in chart order, with the exact `canonical/` text 
 | DELIVERY-GATE | `references/state-delivery-gate.md` | `aid-reviewer` (tier = complexity score) | → halt (grade ≥ min) / → FIX (grade < min) |
 ~~~~
 
-[Source: `canonical/skills/aid-execute/SKILL.md#L222`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-execute/SKILL.md#L222) · [full step: `canonical/skills/aid-execute/references/state-delivery-gate.md#L1-L504`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-execute/references/state-delivery-gate.md#L1-L504)
+[Source: `canonical/skills/aid-execute/SKILL.md#L222`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-execute/SKILL.md#L222) · [full step: `canonical/skills/aid-execute/references/state-delivery-gate.md#L1-L502`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-execute/references/state-delivery-gate.md#L1-L502)

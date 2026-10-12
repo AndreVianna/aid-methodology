@@ -3,10 +3,10 @@
 The single shared pre-flight step every downstream pipeline skill (`aid-define`, `aid-specify`,
 `aid-plan`, `aid-detail`, `aid-execute`, `aid-deploy`) follows once the work id it is operating on
 is known: **normalize -> `locate` -> enter -> never `create`.** It is the Concern D downstream
-counterpart to `canonical/aid/templates/work-initiation-gate.md` (Concern B, work-starting) and
+counterpart to `.aid/runtime/templates/work-initiation-gate.md` (Concern B, work-starting) and
 consumes -- without re-implementing -- the fixed contract in
-`canonical/aid/scripts/works/worktree-lifecycle.sh` and
-`canonical/aid/templates/worktree-lifecycle.md` (Concern C).
+`.aid/runtime/scripts/works/worktree-lifecycle.sh` and
+`.aid/runtime/templates/worktree-lifecycle.md` (Concern C).
 
 Consulted by: `aid-define`, `aid-specify`, `aid-plan`, `aid-detail`, `aid-execute`, `aid-deploy` --
 each references THIS file at its own pre-flight anchor (see each `SKILL.md`'s pointer for the
@@ -25,7 +25,7 @@ times.
 > here for completeness).** An argument-given work id is parsed straight from the argument string
 > -- no disk access. A **no-arg** resolution (single-work auto-select, a "which work?" prompt, or
 > `aid-define`'s Approved-work routing) **MUST** enumerate works **cross-worktree** via
-> `bash canonical/aid/scripts/works/enumerate-works.sh` (it parses `git worktree list --porcelain`
+> `bash .aid/runtime/scripts/works/enumerate-works.sh` (it parses `git worktree list --porcelain`
 > across every worktree) -- **never** a bare local `.aid/works/` glob, which is empty on `master`
 > (every work lives in its own worktree; `master` tracks no `.aid/works/` at all) and would abort
 > a main-checkout invocation with a false "no works found" before this document's Step 1 ever runs.
@@ -59,7 +59,7 @@ resolution ladder to its rung-3 fallback, and fabricate a wrongly-named duplicat
 Run the shared lifecycle script's `locate` operation with the normalized `work_id`:
 
 ```bash
-LOC=$(bash canonical/aid/scripts/works/worktree-lifecycle.sh locate "$work_id"); rc=$?
+LOC=$(bash .aid/runtime/scripts/works/worktree-lifecycle.sh locate "$work_id"); rc=$?
 IFS=$'\t' read -r WT_PATH WT_STATUS <<< "$LOC"   # field 1 = path (may contain spaces); field 2 = status
 ```
 
@@ -96,7 +96,7 @@ fi
 ## Step 3 -- Enter (agent action, never a script call)
 
 Read `WT_PATH` and enter it using the host's native session-switch, per
-`canonical/aid/templates/worktree-lifecycle.md § Step 2` (this document never re-describes that
+`.aid/runtime/templates/worktree-lifecycle.md § Step 2` (this document never re-describes that
 mechanics; it only names the contract every consumer follows):
 
 - **claude-code:** the executing agent invokes the **`EnterWorktree` agent tool** with `WT_PATH`.

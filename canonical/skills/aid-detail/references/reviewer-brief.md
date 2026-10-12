@@ -2,7 +2,7 @@
 
 Loaded by `/aid-detail` REVIEW state (per-deliverable in Step 3 of The Loop;
 whole-task-list on re-run). Renders the brief passed to the `aid-reviewer`
-sub-agent. Follows `canonical/aid/templates/reviewer-dispatch.md`.
+sub-agent. Follows `.aid/runtime/templates/reviewer-dispatch.md`.
 
 `{{ARTIFACTS}}`, `{{CONTEXT}}`, `{{SCOPE}}` are filled at dispatch time.
 
@@ -31,7 +31,7 @@ SCOPE: {{SCOPE}}   # one of: per-deliverable | whole-list
   per-deliverable: Grade the task list for ONE delivery just written.
   whole-list:      Re-grade all task files against current PLAN.md + feature sections.
 
-RUBRIC: canonical/aid/templates/grading-rubric.md (universal severity → grade table)
+RUBRIC: .aid/runtime/templates/grading-rubric.md (universal severity → grade table)
   Grade tasks for:
     - Each task has exactly ONE Type (no mixing)
     - Task size fits one agent session
@@ -49,7 +49,7 @@ DECLARED REVIEW CRITERIA (resolve; do not invent):
   `review-criteria:` frontmatter; most specific wins on an id collision. An artifact outside
   the registry's corpus (a work artifact under `.aid/works/`) resolves to NO type, which is
   correct and not a finding -- the file-class rows are what reach it.
-  Resolution is defined in canonical/aid/templates/kb-authoring/review-rubric.md
+  Resolution is defined in .aid/runtime/templates/kb-authoring/review-rubric.md
   (section: Resolving review criteria); the type registry and the criteria table live in
   .aid/knowledge/authoring-conventions.md. This brief deliberately does NOT restate them.
   - Cite the criterion `id` as a prefix in the ledger's Description cell (7 columns, no
@@ -94,8 +94,8 @@ DELIVERABLES:
   - Findings format: severity-tagged + source-tagged (TASK | PLAN | SPEC | KB)
   - Output location: `{{LEDGER}}`
   - Severity scale: CRITICAL | HIGH | MEDIUM | LOW | MINOR (per grading-rubric.md)
-  - Grade: per canonical/aid/scripts/grade.sh; minimum resolved via
-    `bash canonical/aid/scripts/config/read-setting.sh --skill detail --key minimum_grade --default A`
+  - Grade: per .aid/runtime/scripts/grade.sh; minimum resolved via
+    `bash .aid/runtime/scripts/config/read-setting.sh --skill detail --key minimum_grade --default A`
   - The aid-reviewer NEVER edits task files — only grades and lists issues
 ```
 

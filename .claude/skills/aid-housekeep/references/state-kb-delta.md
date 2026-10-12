@@ -35,11 +35,11 @@ Detection` (`.aid/.temp/HOUSEKEEP_STATE_<ts>.md`; created on first write). Write
 through `housekeep-state.sh` (never hand-edit `## Housekeep Status`):
 
 ```bash
-bash .claude/aid/scripts/housekeep/housekeep-state.sh \
+bash .aid/runtime/scripts/housekeep/housekeep-state.sh \
     --state <STATE_FILE> --write --field "State" --value "KB-DELTA"
-bash .claude/aid/scripts/housekeep/housekeep-state.sh \
+bash .aid/runtime/scripts/housekeep/housekeep-state.sh \
     --state <STATE_FILE> --write --field "Stage Status" --value "running"
-bash .claude/aid/scripts/housekeep/housekeep-state.sh \
+bash .aid/runtime/scripts/housekeep/housekeep-state.sh \
     --state <STATE_FILE> --write --field "Last Run" \
     --value "$(date -u +%Y-%m-%dT%H:%M:%SZ)"
 ```
@@ -48,10 +48,10 @@ KB-DELTA is the first stage to write, so ensure the `aid/housekeep-*` branch
 exists, then record it:
 
 ```bash
-bash .claude/aid/scripts/housekeep/branch-commit.sh \
+bash .aid/runtime/scripts/housekeep/branch-commit.sh \
     --ensure-branch --slug "$(date +%Y-%m-%d)"
 BRANCH=$(git rev-parse --abbrev-ref HEAD)
-bash .claude/aid/scripts/housekeep/housekeep-state.sh \
+bash .aid/runtime/scripts/housekeep/housekeep-state.sh \
     --state <STATE_FILE> --write --field "Branch" --value "$BRANCH"
 ```
 
@@ -78,7 +78,7 @@ exact set of drifted docs and their drifted sources:
 
 ```bash
 SUSPECT_TSV=".aid/.temp/kb-freshness-$$.tsv"
-bash .claude/aid/scripts/kb/kb-freshness-check.sh \
+bash .aid/runtime/scripts/kb/kb-freshness-check.sh \
     --root .aid/knowledge --format tsv > "$SUSPECT_TSV"
 # TSV columns (f007): doc-relpath | verdict | approved_at_commit |
 #                     n_current | n_suspect | n_unknown | suspect_sources_csv
@@ -250,7 +250,7 @@ enforced BY CONSTRUCTION via the `output_root` dispatch parameter (task-028):
 
     output_root=.aid/.temp/conformance/as-built/
 
-Every extraction subagent in `.claude/skills/aid-discover/references/agent-prompts.md`
+Every extraction subagent in `.agents/skills/aid-discover/references/agent-prompts.md`
 writes its KB documents only to the `output_root` it receives (see `## Dispatch Parameter:
 output_root`; default `.aid/knowledge/`). Passing a throwaway root makes `.aid/knowledge/`
 structurally unreachable from this step. No convention or discipline is needed to protect
@@ -289,7 +289,7 @@ concern bundle. Dispatch only the agents whose bundle intersects `FA_CONCERNS`:
 - **Quality** -- not dispatched; its bundle (C6, C7, C8) does not intersect the seed
   concern set (C0/C1/C3/C4/D).
 
-Read each dispatched agent's full prompt from `.claude/skills/aid-discover/references/
+Read each dispatched agent's full prompt from `.agents/skills/aid-discover/references/
 agent-prompts.md` (Scout / Architect / Analyst / Integrator sections). Pass the shadow
 root as the `output_root` parameter. Pass the foundation reference block as follows:
 `project-index` (`.aid/generated/project-index.md`) and `candidate-concepts`
@@ -329,7 +329,7 @@ harvest over the current codebase to produce the ranked as-built term list. The 
 value is the C4 altitude threshold (default 60; tunable at task-034 DoD V5):
 
 ```bash
-bash .claude/aid/scripts/kb/harvest-coined-terms.sh \
+bash .aid/runtime/scripts/kb/harvest-coined-terms.sh \
     --root . \
     --output .aid/.temp/conformance/as-built-terms.md \
     --top ${CONFORMANCE_C4_TOP:-60}
@@ -357,7 +357,7 @@ ranked list) and (b) the `closure-check.sh` output for the shadow as-built
 `domain-glossary.md`:
 
 ```bash
-bash .claude/aid/scripts/kb/closure-check.sh \
+bash .aid/runtime/scripts/kb/closure-check.sh \
     --output-a .aid/.temp/conformance/closure-a.md \
     --output-b .aid/.temp/conformance/closure-b.md
 ```
@@ -654,7 +654,7 @@ Proposed KB refresh scope:
 
 You do **not** duplicate the review/approval machinery -- you reuse
 `/aid-discover`'s **existing** Targeted Discovery re-entry
-(`.claude/skills/aid-discover/SKILL.md S Targeted Discovery (Re-entry)`),
+(`.agents/skills/aid-discover/SKILL.md S Targeted Discovery (Re-entry)`),
 which runs *only* the affected sub-agents when a Pending Q&A entry with
 `**Impact:** Required` names what needs refreshing (entered from `/aid-discover`'s
 State Detection State 3). Drive it by **writing exactly such an entry**.
@@ -687,7 +687,7 @@ the closure re-verify step after the KB edits land. Record the run start time
 so the closure step can verify the harvest is fresh:
 
 ```bash
-bash .claude/aid/scripts/housekeep/housekeep-state.sh \
+bash .aid/runtime/scripts/housekeep/housekeep-state.sh \
     --state <STATE_FILE> --write --field "KB-DELTA Run Start" \
     --value "$(date -u +%Y-%m-%dT%H:%M:%SZ)"
 ```
@@ -698,7 +698,7 @@ operates **under `SKILL.md S Dispatch Protocol (L1+L2+L3)`** (heartbeat
 pre-create via `read-setting.sh --path traceability.heartbeat_interval
 --default 1`, three armed L2 timers as separate background dispatches,
 Calibration-Log writeback). Inherit that protocol -- do not re-implement it. Take
-the ETA band from `.claude/aid/templates/rough-time-hints.md` for the
+the ETA band from `.aid/runtime/templates/rough-time-hints.md` for the
 discovery-subagent class.
 
 After invoking, the stage pauses for `/aid-discover` to settle; the re-entry
@@ -712,7 +712,7 @@ On re-entry, re-read `.aid/knowledge/STATE.md` (filesystem = source of truth):
 
 - `/aid-discover`'s targeted re-entry flips the synthesized entry's
   `**Status:**` to `Answered` and resets the `kb_grade` frontmatter scalar to
-  `Pending` (`bash .claude/aid/scripts/summarize/writeback-state.sh --set kb_grade Pending`),
+  `Pending` (`bash .aid/runtime/scripts/summarize/writeback-state.sh --set kb_grade Pending`),
   so a fresh REVIEW runs; on APPROVAL it
   writes `**User Approved:** yes` with a fresh date
   (`aid-discover/references/state-approval.md`).
@@ -751,7 +751,7 @@ verdict must never be computed against a stale or absent term universe:
 
 ```bash
 # Re-run harvest if candidate-concepts.md is stale or absent:
-bash .claude/aid/scripts/kb/harvest-coined-terms.sh \
+bash .aid/runtime/scripts/kb/harvest-coined-terms.sh \
     --root . \
     --output .aid/generated/candidate-concepts.md
 ```
@@ -763,7 +763,7 @@ No new script -- this reuses f004's harvest + `closure-check.sh` (task-008/f004)
 
 ```bash
 CLOSURE_OUT=".aid/.temp/closure-verify-a.md"
-bash .claude/aid/scripts/kb/closure-check.sh \
+bash .aid/runtime/scripts/kb/closure-check.sh \
     --output-a "$CLOSURE_OUT" \
     --output-b .aid/.temp/closure-verify-b.md
 ```
@@ -785,13 +785,13 @@ Closure is intact (output (a) is empty). Write the gate fields and commit the
 refreshed KB:
 
 ```bash
-bash .claude/aid/scripts/housekeep/housekeep-state.sh \
+bash .aid/runtime/scripts/housekeep/housekeep-state.sh \
     --state <STATE_FILE> --write --field "Closure" --value "verified"
-bash .claude/aid/scripts/housekeep/housekeep-state.sh \
+bash .aid/runtime/scripts/housekeep/housekeep-state.sh \
     --state <STATE_FILE> --write --field "KB Stage" --value "passed"
-bash .claude/aid/scripts/housekeep/housekeep-state.sh \
+bash .aid/runtime/scripts/housekeep/housekeep-state.sh \
     --state <STATE_FILE> --write --field "Stage Status" --value "passed"
-bash .claude/aid/scripts/housekeep/branch-commit.sh \
+bash .aid/runtime/scripts/housekeep/branch-commit.sh \
     --commit --message "chore(housekeep): KB delta refresh [feature-002]" \
     --add .aid/knowledge/
 ```
@@ -850,9 +850,9 @@ commit (NFR2 idempotent), and do NOT run the closure re-verify step (nothing
 changed):
 
 ```bash
-bash .claude/aid/scripts/housekeep/housekeep-state.sh \
+bash .aid/runtime/scripts/housekeep/housekeep-state.sh \
     --state <STATE_FILE> --write --field "KB Stage" --value "skipped"
-bash .claude/aid/scripts/housekeep/housekeep-state.sh \
+bash .aid/runtime/scripts/housekeep/housekeep-state.sh \
     --state <STATE_FILE> --write --field "Stage Status" --value "skipped"
 ```
 
@@ -865,11 +865,11 @@ Reached when Step 3 was cancelled (`[3]`), Step 5 found no fresh approval
 closure invariant break (refresh uncommitted):
 
 ```bash
-bash .claude/aid/scripts/housekeep/housekeep-state.sh \
+bash .aid/runtime/scripts/housekeep/housekeep-state.sh \
     --state <STATE_FILE> --write --field "KB Stage" --value "stalled"
-bash .claude/aid/scripts/housekeep/housekeep-state.sh \
+bash .aid/runtime/scripts/housekeep/housekeep-state.sh \
     --state <STATE_FILE> --write --field "Stage Status" --value "stalled"
-bash .claude/aid/scripts/housekeep/housekeep-state.sh \
+bash .aid/runtime/scripts/housekeep/housekeep-state.sh \
     --state <STATE_FILE> --write --field "Stall Reason" --value "<reason>"
 ```
 

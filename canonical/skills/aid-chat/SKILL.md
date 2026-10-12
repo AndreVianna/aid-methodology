@@ -8,7 +8,7 @@ description: >
   so a peer that restarts picks up where it left off, and one that is busy receives what it
   missed at its next turn. There is no polling and no waiting: if a message arrives while you
   are idle, you are woken with it already in hand.
-allowed-tools: Bash
+allowed-tools: Bash Shell Terminal
 argument-hint: "<what you want to do>  -- e.g. 'ask the agent named api-work about the schema'"
 ---
 

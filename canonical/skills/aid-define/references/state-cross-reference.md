@@ -2,7 +2,7 @@
 
 Requirements are approved and features exist but cross-reference validation has not yet been completed; validate REQUIREMENTS.md against KB documents and codebase, grade findings, and create Q&A entries for gaps.
 
-**Agent:** This is adversarial validation, not interview work. Dispatch with `subagent_type: aid-reviewer` (overriding the default `aid-interviewer`) **at Large tier** — the features were decomposed by the Large `aid-architect`, so reviewer tier >= executor tier (`canonical/aid/templates/agent-dispatch-tiering.md`).
+**Agent:** This is adversarial validation, not interview work. Dispatch with `subagent_type: aid-reviewer` (overriding the default `aid-interviewer`) **at Large tier** — the features were decomposed by the Large `aid-architect`, so reviewer tier >= executor tier (`.aid/runtime/templates/agent-dispatch-tiering.md`).
 
 **Dispatch package:** render `references/reviewer-brief.md` with:
 - `{{ARTIFACTS}}` = `.aid/works/{work}/REQUIREMENTS.md` (including `§11 Features`, one subsection per feature)
@@ -11,9 +11,9 @@ Requirements are approved and features exist but cross-reference validation has 
 Include in the brief file (not in the dispatch prompt — `reviewer-dispatch.md` § Dispatch by path):
 - **Ledger lifecycle:** "Append new findings as rows with Status: Pending to
   `.aid/.temp/review-pending/interview-<work>-cross-ref.md`. Read the existing file
-  first if it exists. Output per `canonical/aid/templates/reviewer-ledger-schema.md` —
+  first if it exists. Output per `.aid/runtime/templates/reviewer-ledger-schema.md` —
   ONE table, no narrative. After writing the ledger, run:
-  `bash canonical/aid/scripts/grade.sh .aid/.temp/review-pending/interview-<work>-cross-ref.md`
+  `bash .aid/runtime/scripts/grade.sh .aid/.temp/review-pending/interview-<work>-cross-ref.md`
   and include the grade in your return message."
 
 Then append the cross-reference process body from `references/cross-reference.md`
@@ -29,7 +29,7 @@ Wait for completion.
 After aid-reviewer returns, run grade.sh on the ledger to confirm the grade:
 
 ```bash
-bash canonical/aid/scripts/grade.sh --explain .aid/.temp/review-pending/interview-<work>-cross-ref.md
+bash .aid/runtime/scripts/grade.sh --explain .aid/.temp/review-pending/interview-<work>-cross-ref.md
 ```
 
 **Cycle 1 also runs the cross-document contradiction pass (Guard 2).** This review receives

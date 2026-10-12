@@ -76,9 +76,9 @@ Skip this step entirely if Step 2 judged the work **broad / multi-activity /
 ambiguous** -- go straight to SUGGEST with no candidate (full-path
 recommendation).
 
-Otherwise, read `.claude/aid/templates/shortcut-catalog.yml` (relative to
+Otherwise, read `.aid/runtime/templates/shortcut-catalog.yml` (relative to
 the AID installation root -- the same directory that contains
-`.claude/skills/`). This is a plain read of a shipped, static file -- no
+`.agents/skills/`). This is a plain read of a shipped, static file -- no
 script is invoked.
 
 **Candidate set** -- every row whose `alias_of` field is `null` (canonical

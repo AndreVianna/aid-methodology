@@ -118,7 +118,7 @@ Not rigid. Not all types appear in every delivery. The user adjusts during discu
 Each task is a **folder** containing two files:
 
 - **`deliveries/delivery-NNN/tasks/task-NNN/DETAIL.md`** — the immutable task definition (6-section
-  schema), seeded from `canonical/aid/templates/task-detail-template.md`:
+  schema), seeded from `.aid/runtime/templates/task-detail-template.md`:
 
 ```markdown
 # task-NNN: {Title}
@@ -156,7 +156,7 @@ upstream document.
 On the flattened Lite layout there is no `features/` folder, so cite the work:
 `work-NNN-{slug} -> delivery-001 -> AC-N`.
 
-- **`deliveries/delivery-NNN/tasks/task-NNN/STATE.md`** — seeded from `canonical/aid/templates/task-state-template.md`,
+- **`deliveries/delivery-NNN/tasks/task-NNN/STATE.md`** — seeded from `.aid/runtime/templates/task-state-template.md`,
   replacing the frontmatter block's placeholder lines with the real opening values
   (`state: Pending`, `review: --`, `elapsed: --`, `notes: --` — task-001/004; the
   leading YAML block is the sole home for these 4 scalars), and the correct

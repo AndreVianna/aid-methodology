@@ -17,6 +17,7 @@ VERBOSE=0
 [[ "${1:-}" =~ ^(-v|--verbose)$ ]] && VERBOSE=1
 
 source "$(dirname "${BASH_SOURCE[0]}")/../lib/assert.sh"
+source "$(dirname "${BASH_SOURCE[0]}")/../lib/bundle.sh"
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd "${SCRIPT_DIR}/../.." && pwd)"
@@ -24,7 +25,7 @@ PKG_DIR="${REPO_ROOT}/packages/pypi"
 SHIM="${PKG_DIR}/aid_installer/__main__.py"
 BIN_AID="${REPO_ROOT}/bin/aid"
 LIB_CORE="${REPO_ROOT}/lib/aid-install-core.sh"
-PROFILES_DIR="${REPO_ROOT}/profiles"
+LIB_PSM1="${REPO_ROOT}/lib/AidInstallCore.psm1"
 
 # Gate: skip when python3 is absent.
 if ! command -v python3 >/dev/null 2>&1; then
@@ -38,16 +39,39 @@ fi
 TMP=$(mktemp -d)
 trap 'rm -rf "$TMP"' EXIT
 
-# Run vendor.py to populate _vendor/ for tests that need the real CLI.
+# Re-vendor on every run: _vendor/ is gitignored and may be stale from an earlier build. PW05
+# compares it byte-for-byte and by sha256 against the CURRENT repo sources, so a stale payload
+# must never be accepted.
 VENDOR_DIR="${PKG_DIR}/aid_installer/_vendor"
-if [[ ! -f "${VENDOR_DIR}/bin/aid" ]]; then
-    python3 "${PKG_DIR}/scripts/vendor.py" >/dev/null 2>&1 || {
-        echo "ERROR: vendor.py failed; cannot continue" >&2
-        exit 1
-    }
-fi
+python3 "${PKG_DIR}/scripts/vendor.py" >/dev/null 2>&1 || {
+    echo "ERROR: vendor.py failed; cannot continue" >&2
+    exit 1
+}
 
 VERSION="$(tr -d '[:space:]' < "${REPO_ROOT}/VERSION")"
+
+# sha256 of one file (GNU sha256sum, or shasum on macOS). Prints the digest only.
+_sha256_of() {
+    if command -v sha256sum >/dev/null 2>&1; then
+        sha256sum "$1" | awk '{print $1}'
+    else
+        shasum -a 256 "$1" | awk '{print $1}'
+    fi
+}
+
+# assert_sha256_match <vendored-file> <repo-source-file> <label>
+# Emits an unconditional "PASS:" line (pass() prints only under --verbose).
+assert_sha256_match() {
+    local _got _want
+    _got="$(_sha256_of "$1" 2>/dev/null)"
+    _want="$(_sha256_of "$2" 2>/dev/null)"
+    if [[ -n "$_want" && "$_got" == "$_want" ]]; then
+        PASS=$((PASS + 1))
+        echo "PASS: $3 (sha256 ${_want})"
+    else
+        fail "$3 -- vendored sha256 '${_got:-missing}' != source '${_want:-missing}'"
+    fi
+}
 
 # ---------------------------------------------------------------------------
 # For stub tests we create a temporary Python shim + stub bin/aid tree so that
@@ -238,6 +262,12 @@ for _pair in "${_VENDOR_PAIRS[@]}"; do
     fi
 done
 
+# The two vendored libs are also gated by sha256 against lib/ (AC-17).
+assert_sha256_match "${VENDOR_DIR}/lib/aid-install-core.sh" "${LIB_CORE}" \
+    "PW05-sha256 _vendor/lib/aid-install-core.sh sha256 matches lib/aid-install-core.sh"
+assert_sha256_match "${VENDOR_DIR}/lib/AidInstallCore.psm1" "${LIB_PSM1}" \
+    "PW05-sha256 _vendor/lib/AidInstallCore.psm1 sha256 matches lib/AidInstallCore.psm1"
+
 # ---------------------------------------------------------------------------
 echo "=== PW06: pip wheel + pipx install smoke ==="
 # ---------------------------------------------------------------------------
@@ -324,30 +354,21 @@ else
                         assert_output_contains "$PW06_STATUS_OUT" "no AID project here" \
                             "PW06-06 installed aid status empty dir message"
 
-                        # Build codex fixture tarball.
-                        mkdir -p "${TMP}/fixtures"
-                        PW06_FIXTURE=""
-                        if [[ -d "${PROFILES_DIR}/codex" ]]; then
-                            _FL="$(mktemp "${TMP}/filelist-codex.XXXXXX")"
-                            while IFS= read -r f; do
-                                _fname="$(basename "$f")"
-                                [[ "$_fname" == "README.md" ]] && continue
-                                [[ "$_fname" == "emission-manifest.jsonl" ]] && continue
-                                _rel="${f#${PROFILES_DIR}/codex/}"
-                                printf './%s\n' "$_rel"
-                            done < <(find "${PROFILES_DIR}/codex" -type f | sort) > "$_FL"
-                            PW06_FIXTURE="${TMP}/fixtures/aid-codex-v${VERSION}.tar.gz"
-                            (cd "${PROFILES_DIR}/codex" && \
-                             tar -czf "${PW06_FIXTURE}" --no-recursion -T "$_FL") || PW06_FIXTURE=""
-                            rm -f "$_FL"
-                        fi
+                        # Release bundle (shared layout): release.sh --stage-only through
+                        # tests/lib/bundle.sh. `aid add --from-bundle` takes the staging directory.
+                        PW06_BUNDLE_DIR="${TMP}/pw06-bundle"
+                        mkdir -p "${PW06_BUNDLE_DIR}"
+                        if aid_test_stage_bundle "${PW06_BUNDLE_DIR}" >"${TMP}/pw06-stage.log" 2>&1; then
+                            assert_file_exists "${PW06_BUNDLE_DIR}/aid-shared-v${VERSION}.tar.gz" \
+                                "PW06-06a staged bundle holds aid-shared-v${VERSION}.tar.gz"
+                            assert_file_exists "${PW06_BUNDLE_DIR}/aid-codex-v${VERSION}.tar.gz" \
+                                "PW06-06b staged bundle holds aid-codex-v${VERSION}.tar.gz"
 
-                        if [[ -n "$PW06_FIXTURE" ]]; then
-                            # Smoke: aid add codex --from-bundle.
+                            # Smoke: aid add codex --from-bundle <staging dir>.
                             PW06_TARGET="$(mktemp -d "${TMP}/pw06-target.XXXXXX")"
                             PW06_ADD_OUT=$(AID_HOME="${PW06_AID_HOME}" AID_NO_UPDATE_CHECK=1 \
                                 "${PW06_AID_BIN}" add codex \
-                                --from-bundle "${PW06_FIXTURE}" \
+                                --from-bundle "${PW06_BUNDLE_DIR}" \
                                 --target "${PW06_TARGET}" 2>&1)
                             PW06_ADD_RC=$?
                             assert_exit_eq "$PW06_ADD_RC" 0 \
@@ -357,7 +378,7 @@ else
                             assert_file_exists "${PW06_TARGET}/AGENTS.md" \
                                 "PW06-09 installed aid add: AGENTS.md created"
                         else
-                            echo "SKIP (PW06-07..09): codex profile not found -- skipping add smoke."
+                            fail "PW06-07 could not stage the release bundle (see ${TMP}/pw06-stage.log)"
                         fi
                     fi
                 else
@@ -388,8 +409,14 @@ printf '%s\n' "${VERSION}" > "${PW07_HOME}/VERSION"
 # The shim at __main__.py calls _vendor/bin/aid (vendored copy), which is the
 # real bin/aid; the shim sets AID_INSTALL_CHANNEL=pypi. Use --dry-run so the
 # channel routing is asserted deterministically without touching the real pipx
-# ('update self' is now self-contained, not a printed hint).
-PW07_OUT=$(AID_HOME="${PW07_HOME}" AID_NO_UPDATE_CHECK=1 \
+# ('update self' is now self-contained, not a printed hint). The pypi branch of
+# _cmd_update_self requires a `pipx` on PATH before it reaches the dry-run print,
+# so a no-op stub pipx is put first on PATH for this invocation only; the real
+# pipx (absent on some runners) is never consulted.
+PW07_STUB_BIN="$(mktemp -d "${TMP}/pw07-stub-bin.XXXXXX")"
+printf '#!/usr/bin/env bash\nexit 0\n' > "${PW07_STUB_BIN}/pipx"
+chmod +x "${PW07_STUB_BIN}/pipx"
+PW07_OUT=$(PATH="${PW07_STUB_BIN}:${PATH}" AID_HOME="${PW07_HOME}" AID_NO_UPDATE_CHECK=1 \
            python3 "${SHIM}" update self --dry-run 2>&1); PW07_RC=$?
 assert_exit_eq "$PW07_RC" 0 "PW07-01 shim update self --dry-run with channel=pypi -> exit 0"
 assert_output_contains "$PW07_OUT" "pipx upgrade aid-installer" \

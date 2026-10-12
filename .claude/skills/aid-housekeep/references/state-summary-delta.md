@@ -16,7 +16,7 @@ run counts as state.
 Read `**KB Stage:**` from `## Housekeep Status` via `housekeep-state.sh`:
 
 ```bash
-KB_STAGE=$(bash .claude/aid/scripts/housekeep/housekeep-state.sh \
+KB_STAGE=$(bash .aid/runtime/scripts/housekeep/housekeep-state.sh \
     --state <STATE_FILE> --read --field "KB Stage")
 ```
 
@@ -47,11 +47,11 @@ Write the run-state fields and print the state-entry banner.
 Write through `housekeep-state.sh` (never hand-edit `## Housekeep Status`):
 
 ```bash
-bash .claude/aid/scripts/housekeep/housekeep-state.sh \
+bash .aid/runtime/scripts/housekeep/housekeep-state.sh \
     --state <STATE_FILE> --write --field "State" --value "SUMMARY-DELTA"
-bash .claude/aid/scripts/housekeep/housekeep-state.sh \
+bash .aid/runtime/scripts/housekeep/housekeep-state.sh \
     --state <STATE_FILE> --write --field "Stage Status" --value "running"
-bash .claude/aid/scripts/housekeep/housekeep-state.sh \
+bash .aid/runtime/scripts/housekeep/housekeep-state.sh \
     --state <STATE_FILE> --write --field "Last Run" \
     --value "$(date -u +%Y-%m-%dT%H:%M:%SZ)"
 ```
@@ -114,7 +114,7 @@ no flags at all:
 Do NOT pass `--reset` (that would force a needless rebuild when the KB stage
 was a no-op, violating NFR2 idempotency). Do NOT pass `--profile` or any other
 flag. The minimum-grade resolver inside `/aid-summarize` reads from
-`.claude/aid/scripts/config/read-setting.sh --skill summary --key minimum_grade
+`.aid/runtime/scripts/config/read-setting.sh --skill summary --key minimum_grade
 --default A`; a `--grade X` override from the user passes through verbatim.
 
 Let `/aid-summarize` run its own state machine verbatim:
@@ -125,7 +125,7 @@ PREFLIGHT → STALE-CHECK → (PROFILE → GENERATE → VALIDATE → MANUAL-CHEC
 ```
 
 or short-circuit via DONE-IDEMPOTENT if the summary is already current and
-approved. Do NOT edit anything in `.claude/skills/aid-summarize/` — the skill
+approved. Do NOT edit anything in `.agents/skills/aid-summarize/` — the skill
 runs unmodified.
 
 When `/aid-summarize` reaches MANUAL-CHECKLIST and asks the K1/K2/V1
@@ -138,7 +138,7 @@ delegated invocation, exactly as it would on a direct `/aid-summarize` run.
 
 After `/aid-summarize` returns, re-read the filesystem to determine which
 outcome occurred. The filesystem is the only source of truth
-(`.claude/skills/aid-summarize/SKILL.md:60`).
+(`.agents/skills/aid-summarize/SKILL.md:60`).
 
 Read the following signals from `.aid/knowledge/STATE.md`:
 
@@ -192,9 +192,9 @@ This covers two sub-paths:
 Write the gate field:
 
 ```bash
-bash .claude/aid/scripts/housekeep/housekeep-state.sh \
+bash .aid/runtime/scripts/housekeep/housekeep-state.sh \
     --state <STATE_FILE> --write --field "Summary Stage" --value "passed"
-bash .claude/aid/scripts/housekeep/housekeep-state.sh \
+bash .aid/runtime/scripts/housekeep/housekeep-state.sh \
     --state <STATE_FILE> --write --field "Stage Status" --value "passed"
 ```
 
@@ -202,7 +202,7 @@ Commit the regenerated HTML and the `STATE.md` history edit in a **single**
 `branch-commit.sh` call (one commit per stage — C3; never push):
 
 ```bash
-bash .claude/aid/scripts/housekeep/branch-commit.sh \
+bash .aid/runtime/scripts/housekeep/branch-commit.sh \
     --commit \
     --message "chore(housekeep): summary delta refresh [feature-003]" \
     --add .aid/knowledge/kb.html \
@@ -280,9 +280,9 @@ AND `## Knowledge Summary Status` shows `**User Approved:** yes` (which means
 Write the gate field:
 
 ```bash
-bash .claude/aid/scripts/housekeep/housekeep-state.sh \
+bash .aid/runtime/scripts/housekeep/housekeep-state.sh \
     --state <STATE_FILE> --write --field "Summary Stage" --value "skipped"
-bash .claude/aid/scripts/housekeep/housekeep-state.sh \
+bash .aid/runtime/scripts/housekeep/housekeep-state.sh \
     --state <STATE_FILE> --write --field "Stage Status" --value "skipped"
 ```
 
@@ -292,7 +292,7 @@ committed so the relocation is captured in VC even on the skip path:
 
 ```bash
 if [ "${MIGRATED_THIS_RUN:-0}" -eq 1 ]; then
-    bash .claude/aid/scripts/housekeep/branch-commit.sh \
+    bash .aid/runtime/scripts/housekeep/branch-commit.sh \
         --commit \
         --message "chore(housekeep): migrate kb.html path (FR31 relocation) [feature-007]" \
         --add .aid/knowledge/kb.html
@@ -333,11 +333,11 @@ printed state) and set a `<stall-reason>` string, for example:
 Write the stall fields:
 
 ```bash
-bash .claude/aid/scripts/housekeep/housekeep-state.sh \
+bash .aid/runtime/scripts/housekeep/housekeep-state.sh \
     --state <STATE_FILE> --write --field "Summary Stage" --value "stalled"
-bash .claude/aid/scripts/housekeep/housekeep-state.sh \
+bash .aid/runtime/scripts/housekeep/housekeep-state.sh \
     --state <STATE_FILE> --write --field "Stage Status" --value "stalled"
-bash .claude/aid/scripts/housekeep/housekeep-state.sh \
+bash .aid/runtime/scripts/housekeep/housekeep-state.sh \
     --state <STATE_FILE> --write --field "Stall Reason" --value "<stall-reason>"
 ```
 

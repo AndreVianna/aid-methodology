@@ -10,7 +10,7 @@ generatedFrom: 'canonical/skills/aid-design-dashboard/SKILL.md'
 
 - **`name`** — aid-design-dashboard
 - **`description`** — Develop a dashboard / BI-view design as a DESIGN SEED in `.aid/design/dashboard.md` -- the data source, the visualizations, and the refresh cadence. Use this skill when what a dashboard should show, and to whom, is still being decided. Grounded in the Knowledge Base (`.aid/knowledge/`) and the project source. It WRITES NO production code and NO KB document -- realize the seed into the built dashboard with `/aid-create-dashboard` once it is ready. Produced by the aid-architect agent and independently verified by aid-reviewer (full verify). Allocates a work-NNN folder.
-- **`allowed-tools`** — Read, Glob, Grep, Bash, Write, Edit, Agent
+- **`allowed-tools`** — Read Glob Grep Bash Shell Terminal Write Edit Agent
 - **`argument-hint`** — &lt;subject> -- the dashboard to design (source, visualizations, refresh cadence)
 
 [Definition: `canonical/skills/aid-design-dashboard/SKILL.md`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-design-dashboard/SKILL.md)
@@ -59,7 +59,7 @@ Every node in the chart above, in chart order, with the exact `canonical/` text 
    do you want to design -- its data source, visualizations, and refresh cadence?") and
    wait.
 2. **Allocate** through the Work Initiation Gate exactly as the contract's Allocation rule
-   requires (`canonical/skills/aid-design/SKILL.md` INTAKE step 4 is the shape), with
+   requires (`.agents/skills/aid-design/SKILL.md` INTAKE step 4 is the shape), with
    `initiator: aid-design-dashboard`. `phase` is not driven.
 3. **Acquire `.aid/design/`** per the contract, then read `.aid/design/dashboard.md` if a
    prior seed exists -- re-invocation iterates it rather than starting over.

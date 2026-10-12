@@ -8,10 +8,10 @@ No PLAN.md found; begin dependency mapping and deliverable sequencing.
 
 Emit pipeline phase (silent state-write only — no output, no gate):
 ```
-bash .claude/aid/scripts/execute/writeback-state.sh --pipeline --field Lifecycle --value Running
-bash .claude/aid/scripts/execute/writeback-state.sh --pipeline --field Phase --value Plan
-bash .claude/aid/scripts/execute/writeback-state.sh --pipeline --field "Active Skill" --value aid-plan
-bash .claude/aid/scripts/execute/writeback-state.sh --pipeline --field Updated --value "$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+bash .aid/runtime/scripts/execute/writeback-state.sh --pipeline --field Lifecycle --value Running
+bash .aid/runtime/scripts/execute/writeback-state.sh --pipeline --field Phase --value Plan
+bash .aid/runtime/scripts/execute/writeback-state.sh --pipeline --field "Active Skill" --value aid-plan
+bash .aid/runtime/scripts/execute/writeback-state.sh --pipeline --field Updated --value "$(date -u +%Y-%m-%dT%H:%M:%SZ)"
 ```
 
 ### Step 1: Map Dependencies
@@ -107,7 +107,7 @@ delivery, and neither depends on tasks existing.
 
 **Immediately after writing the PLAN.md stanza,** create the delivery folder:
 
-**4a. Create `deliveries/delivery-NNN/STATE.yml`** (seed from `.claude/aid/templates/delivery-state-template.yml`):
+**4a. Create `deliveries/delivery-NNN/STATE.yml`** (seed from `.aid/runtime/templates/delivery-state-template.yml`):
 
 `Delivery:` / `Work:` / `Branch:` are INFERRED from the folder path and git worktree --
 never authored here. Fill in the template's own keys:
@@ -139,7 +139,7 @@ print a suggestion: "to file a tracker item for this deliverable, run `/aid-crea
 re-record its ref," and continue without one. Optional, user-initiated, never auto-invoked;
 silent (no output) if no issue-tracker connector is catalogued.
 
-**Agent:** Dispatch with `subagent_type: aid-reviewer` (overriding the default `aid-architect`) **at Large tier** — the executor is the Large `aid-architect`, so reviewer tier >= executor tier (`.claude/aid/templates/agent-dispatch-tiering.md`). The aid-reviewer must run with clean context — it grades against KB/codebase reality without seeing the aid-architect's working notes.
+**Agent:** Dispatch with `subagent_type: aid-reviewer` (overriding the default `aid-architect`) **at Large tier** — the executor is the Large `aid-architect`, so reviewer tier >= executor tier (`.aid/runtime/templates/agent-dispatch-tiering.md`). The aid-reviewer must run with clean context — it grades against KB/codebase reality without seeing the aid-architect's working notes.
 
 **Dispatch package:** render `references/reviewer-brief.md` with:
 - `{{SCOPE}}` = `per-deliverable`
@@ -149,7 +149,7 @@ silent (no output) if no issue-tracker connector is catalogued.
 Include in the brief file (not in the dispatch prompt — `reviewer-dispatch.md` § Dispatch by path):
 - **Ledger lifecycle:** "Append new findings as rows with Status: Pending to
   `{{LEDGER}}`. Read the existing file first if it exists.
-  Output per `.claude/aid/templates/reviewer-ledger-schema.md` — ONE table, no narrative."
+  Output per `.aid/runtime/templates/reviewer-ledger-schema.md` — ONE table, no narrative."
 
 Print before dispatch: `[Review] Dispatching aid-reviewer for PLAN validation (per-deliverable scope).`
 
@@ -163,12 +163,12 @@ After writing, **review immediately:** Does it hold up?
 After aid-reviewer returns, run grade.sh:
 
 ```bash
-bash .claude/aid/scripts/grade.sh --explain {{LEDGER}}
+bash .aid/runtime/scripts/grade.sh --explain {{LEDGER}}
 ```
 
 | Condition | Action |
 |-----------|--------|
-| Grade ≥ minimum (from `bash .claude/aid/scripts/config/read-setting.sh --skill plan --key minimum_grade --default A`) | Move to next deliverable. |
+| Grade ≥ minimum (from `bash .aid/runtime/scripts/config/read-setting.sh --skill plan --key minimum_grade --default A`) | Move to next deliverable. |
 | Grade < minimum, fixable | Back to Propose with findings. |
 
 ```

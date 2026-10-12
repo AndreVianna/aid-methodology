@@ -121,12 +121,14 @@ assert_file_contains "$SKILL_MD" 'Fail-closed (FR-11 / AC-10)' \
 assert_file_contains "$SKILL_MD" 'fail-closed -- never run in the caller' \
   "UK04 SKILL.md Pre-flight worktree-creation failure never falls back to the caller's tree"
 
-assert_file_contains "$SKILL_MD" '**not** use `canonical/aid/scripts/works/worktree-lifecycle.sh`' \
+assert_file_contains "$SKILL_MD" '**not** use `.aid/runtime/scripts/works/worktree-lifecycle.sh`' \
   "UK05 SKILL.md Pre-flight explicitly does NOT use the work-NNN-keyed worktree-lifecycle.sh"
 
 SKILL_BASH="$(extract_bash_blocks "$SKILL_MD")"
-assert_output_not_contains "$SKILL_BASH" 'worktree-lifecycle.sh' \
-  "UK06 SKILL.md's executable bash blocks never invoke worktree-lifecycle.sh (mechanical, not just prose)"
+# The only permitted invocation is the `root` operation that prints the work-level worktree root.
+SKILL_BASH_NON_ROOT="$(grep -v 'worktree-lifecycle.sh root' <<<"$SKILL_BASH" || true)"
+assert_output_not_contains "$SKILL_BASH_NON_ROOT" 'worktree-lifecycle.sh' \
+  "UK06 SKILL.md's executable bash blocks invoke worktree-lifecycle.sh only for the root operation (mechanical, not just prose)"
 
 assert_file_contains "$SKILL_MD" 'worktree-lifecycle.md § Step 2' \
   "UK07 SKILL.md Pre-flight enters the worktree via the generic worktree-lifecycle.md § Step 2 contract"

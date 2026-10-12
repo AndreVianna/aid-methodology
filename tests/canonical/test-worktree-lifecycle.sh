@@ -5,7 +5,7 @@
 #   canonical/aid/scripts/works/worktree-lifecycle.sh -- the single shared
 #   implementation of the git-worktree mechanics every worktree-consuming
 #   feature binds to: `create <work-id> <name> [--base <ref>]` (branch
-#   <work-id>, dir .claude/worktrees/<work-id>-<name>, off master) and
+#   <work-id>, dir <host-resolved-root>/<work-id>-<name>, off master) and
 #   `locate <work-id> [--name <slug>]` (the 4-rung "most-intact-state-first"
 #   fallback ladder: registered -> branch-only recreate -> neither (create +
 #   relocate) -> already-inside). This script is PURE GIT MECHANICS -- it
@@ -132,8 +132,8 @@ REPO_A_ABS="$(cd "$REPO_A" && pwd -P)"
 
 run_sut "$REPO_A" "" create work-101 alpha
 assert_exit_zero "$_CODE" "A: fresh create exits 0"
-assert_dir_exists "${REPO_A_ABS}/.claude/worktrees/work-101-alpha" "A: worktree directory .claude/worktrees/work-101-alpha exists"
-EXPECTED_A="$(cd "${REPO_A_ABS}/.claude/worktrees/work-101-alpha" && pwd -P)"
+assert_dir_exists "${REPO_A_ABS}/.aid/.worktrees/work-101-alpha" "A: worktree directory .aid/.worktrees/work-101-alpha exists"
+EXPECTED_A="$(cd "${REPO_A_ABS}/.aid/.worktrees/work-101-alpha" && pwd -P)"
 assert_eq "$_OUT" "$EXPECTED_A" "A: stdout is exactly the worktree's absolute path, nothing else"
 assert_eq "$(git -C "$EXPECTED_A" symbolic-ref --short HEAD)" "work-101" "A: new worktree is on branch work-101"
 assert_eq "$(git -C "$EXPECTED_A" rev-parse HEAD)" "$(git -C "$REPO_A_ABS" rev-parse master)" "A: branch is based off master by default"
@@ -163,7 +163,7 @@ run_sut "$REPO_C" "" create work-970 beta
 assert_exit_zero "$_CODE" "C: re-run with a DIFFERENT name (beta) still exits 0 (no-op keyed on branch)"
 assert_eq "$_OUT" "$PATH_C_ALPHA" "C: re-run re-prints the ORIGINAL (alpha) path, not a beta path"
 assert_output_contains "$_ERR" "ignoring differing name" "C: a one-line stderr note flags the ignored differing name"
-if [[ -d "${REPO_C_ABS}/.claude/worktrees/work-970-beta" ]]; then
+if [[ -d "${REPO_C_ABS}/.aid/.worktrees/work-970-beta" ]]; then
     fail "C: no work-970-beta directory should be created (the original is never renamed)"
 else
     pass "C: no work-970-beta directory created (directory not renamed)"
@@ -312,7 +312,7 @@ run_sut "$REPO_I2" "" locate work-808
 assert_exit_eq "$_CODE" 2 "I2: traversal-bearing derived slug -> exit 2"
 assert_eq "$_OUT" "" "I2: rejected derivation emits no stdout"
 assert_output_contains "$_ERR" "path-confinement" "I2: stderr names the path-confinement rejection"
-if [[ -d "${REPO_I2_ABS}/.claude/worktrees" ]] && [[ -n "$(find "${REPO_I2_ABS}/.claude/worktrees" -mindepth 1 -maxdepth 1 2>/dev/null)" ]]; then
+if [[ -d "${REPO_I2_ABS}/.aid/.worktrees" ]] && [[ -n "$(find "${REPO_I2_ABS}/.aid/.worktrees" -mindepth 1 -maxdepth 1 2>/dev/null)" ]]; then
     fail "I2: no worktree should have been created for the rejected traversal derivation"
 else
     pass "I2: no worktree created (rejected before git worktree add)"
@@ -418,7 +418,7 @@ assert_exit_eq "$_CODE" 2 "L: create with a slash-bearing <work-id> -> exit 2"
 run_sut "$REPO_L" "" create work-984 "a/b"
 assert_exit_eq "$_CODE" 2 "L: create with a slash-bearing <name> -> exit 2"
 
-if [[ -d "${REPO_L_ABS}/.claude/worktrees" ]] && [[ -n "$(find "${REPO_L_ABS}/.claude/worktrees" -mindepth 1 -maxdepth 1 2>/dev/null)" ]]; then
+if [[ -d "${REPO_L_ABS}/.aid/.worktrees" ]] && [[ -n "$(find "${REPO_L_ABS}/.aid/.worktrees" -mindepth 1 -maxdepth 1 2>/dev/null)" ]]; then
     fail "L: no worktree should exist after any rejected traversal call"
 else
     pass "L: no worktree directory created by any rejected traversal call"
@@ -545,6 +545,109 @@ WT_COUNT_P_AFTER="$(git -C "$REPO_P_ABS" worktree list --porcelain | grep -c '^w
 assert_eq "$WT_COUNT_P_AFTER" "$WT_COUNT_P_BEFORE" "P: worktree count unchanged across every no-op re-run (no duplicate worktree)"
 BRANCH_COUNT_P_AFTER="$(git -C "$REPO_P_ABS" branch --list | wc -l | tr -d ' ')"
 assert_eq "$BRANCH_COUNT_P_AFTER" "$BRANCH_COUNT_P_BEFORE" "P: branch count unchanged across every no-op re-run (no duplicate branch)"
+
+
+# ===========================================================================
+echo ""
+echo "=== Group Q: host.conf root descriptor, fallback and branch-keyed lookup ==="
+
+REPO_Q=$(make_git_repo); CLEANUP_DIRS+=("$REPO_Q")
+REPO_Q_ABS="$(cd "$REPO_Q" && pwd -P)"
+run_sut "$REPO_Q" "" root
+assert_exit_zero "$_CODE" "Q1: root without host.conf succeeds"
+assert_eq "$_OUT" "${REPO_Q_ABS}/.aid/.worktrees" "Q1: absent descriptor selects absolute default root"
+assert_dir_exists "${REPO_Q_ABS}/.aid/.worktrees" "Q1: root creates default container"
+assert_eq "$(printf '%s\n' "$_ERR" | wc -l | tr -d ' ')" "1" "Q1: absent descriptor emits exactly one diagnostic"
+
+mkdir -p "${REPO_Q_ABS}/.aid/runtime"
+printf '# generated descriptor\nunknown=value=ignored\nworktree_root=.claude/worktrees\n' > "${REPO_Q_ABS}/.aid/runtime/host.conf"
+run_sut "$REPO_Q" "" root
+assert_exit_zero "$_CODE" "Q2: valid host root succeeds"
+assert_eq "$_OUT" "${REPO_Q_ABS}/.claude/worktrees" "Q2: parser accepts host-root descriptor without sourcing it"
+assert_eq "$_ERR" "" "Q2: valid descriptor is quiet"
+
+printf 'worktree_root=../escape\n' > "${REPO_Q_ABS}/.aid/runtime/host.conf"
+run_sut "$REPO_Q" "" root
+assert_exit_zero "$_CODE" "Q3: invalid host root falls back successfully"
+assert_eq "$_OUT" "${REPO_Q_ABS}/.aid/.worktrees" "Q3: traversal descriptor selects default"
+assert_eq "$(printf '%s\n' "$_ERR" | wc -l | tr -d ' ')" "1" "Q3: invalid descriptor emits exactly one diagnostic"
+
+# Register outside the currently configured root, then prove rung 1 wins.
+git -C "$REPO_Q_ABS" worktree add -q "${REPO_Q_ABS}/.claude/worktrees/work-002-y" -b work-002 master
+printf 'worktree_root=.aid/.worktrees\n' > "${REPO_Q_ABS}/.aid/runtime/host.conf"
+run_sut "$REPO_Q" "" locate work-002
+assert_exit_zero "$_CODE" "Q4: locate resolves registered worktree under previous host root"
+assert_eq "$_OUT" "${REPO_Q_ABS}/.claude/worktrees/work-002-y$(printf '\tregistered')" "Q4: branch-keyed rung 1 wins over configured root"
+
+run_sut "$REPO_Q" "" create work-001 x
+assert_exit_zero "$_CODE" "Q5: create uses configured default root"
+assert_output_contains "$_OUT" "${REPO_Q_ABS}/.aid/.worktrees/work-001-x" "Q5: create target is under configured root"
+
+# ===========================================================================
+echo ""
+echo "=== Group R: CLI-installed host roots, ignore entries, and registered lookup ==="
+
+# Stage once and install through the real CLI so host.conf and its managed
+# .gitignore block come from the supported install path.
+source "${SCRIPT_DIR}/../lib/bundle.sh"
+R_TMP=$(mktemp -d); CLEANUP_DIRS+=("$R_TMP")
+R_BUNDLE="${R_TMP}/bundle"; R_HOME="${R_TMP}/home"; R_AID_HOME="${R_TMP}/aid-home"
+mkdir -p "$R_HOME" "$R_AID_HOME"
+aid_test_stage_bundle "$R_BUNDLE" >/dev/null || {
+    echo "ERROR: could not stage offline release bundle for Group R" >&2
+    exit 1
+}
+run_aid_r() {
+    HOME="$R_HOME" USERPROFILE="$R_HOME" AID_HOME="$R_AID_HOME" AID_NO_UPDATE_CHECK=1 \
+        bash "${REPO_ROOT}/bin/aid" "$@"
+}
+run_installed_r() {
+    local dir="$1"; shift
+    local runtime="${dir}/.aid/runtime/scripts/works/worktree-lifecycle.sh"
+    local errf; errf=$(mktemp)
+    _OUT=$(cd "$dir" && bash "$runtime" "$@" 2>"$errf"); _CODE=$?
+    _ERR=$(cat "$errf"); rm -f "$errf"
+}
+gitignore_has_aid_entry() {
+    local file="$1" entry="$2"
+    awk -v wanted="$entry" '
+        /^# >>> AID managed/ { in_block=1; next }
+        /^# <<< AID managed/{ in_block=0 }
+        in_block && $0 == wanted { found=1 }
+        END { exit !found }
+    ' "$file"
+}
+
+REPO_R_CURSOR=$(make_git_repo); CLEANUP_DIRS+=("$REPO_R_CURSOR")
+REPO_R_CURSOR_ABS="$(cd "$REPO_R_CURSOR" && pwd -P)"
+OUT=$(run_aid_r add cursor --from-bundle "$R_BUNDLE" --target "$REPO_R_CURSOR_ABS" 2>&1); RC=$?
+assert_exit_zero "$RC" "R1: CLI installs cursor-only runtime from offline bundle"
+run_installed_r "$REPO_R_CURSOR_ABS" create work-001 x
+assert_exit_zero "$_CODE" "R2: installed cursor runtime create succeeds"
+assert_output_contains "$_OUT" "${REPO_R_CURSOR_ABS}/.aid/.worktrees/work-001-x" "R2: cursor-only create path is under .aid/.worktrees"
+if gitignore_has_aid_entry "${REPO_R_CURSOR_ABS}/.gitignore" '.aid/.worktrees/'; then
+    pass "R3: cursor-only .gitignore AID block contains .aid/.worktrees/"
+else
+    fail "R3: cursor-only .gitignore AID block contains .aid/.worktrees/"
+fi
+mkdir -p "${REPO_R_CURSOR_ABS}/.claude/worktrees"
+git -C "$REPO_R_CURSOR_ABS" worktree add -q "${REPO_R_CURSOR_ABS}/.claude/worktrees/work-002-y" -b work-002 master
+run_installed_r "$REPO_R_CURSOR_ABS" locate work-002
+assert_exit_zero "$_CODE" "R4: installed cursor runtime locates the registered worktree"
+assert_eq "$_OUT" "${REPO_R_CURSOR_ABS}/.claude/worktrees/work-002-y$(printf '\tregistered')" "R4: locate returns pre-registered work-002 path with registered status"
+
+REPO_R_CLAUDE=$(make_git_repo); CLEANUP_DIRS+=("$REPO_R_CLAUDE")
+REPO_R_CLAUDE_ABS="$(cd "$REPO_R_CLAUDE" && pwd -P)"
+OUT=$(run_aid_r add claude-code --from-bundle "$R_BUNDLE" --target "$REPO_R_CLAUDE_ABS" 2>&1); RC=$?
+assert_exit_zero "$RC" "R5: CLI installs claude-code runtime from offline bundle"
+run_installed_r "$REPO_R_CLAUDE_ABS" root
+assert_exit_zero "$_CODE" "R6: installed claude-code runtime root succeeds"
+assert_eq "$_OUT" "${REPO_R_CLAUDE_ABS}/.claude/worktrees" "R6: claude-code root selects .claude/worktrees"
+if gitignore_has_aid_entry "${REPO_R_CLAUDE_ABS}/.gitignore" '.claude/worktrees/'; then
+    pass "R7: claude-code .gitignore AID block contains .claude/worktrees/"
+else
+    fail "R7: claude-code .gitignore AID block contains .claude/worktrees/"
+fi
 
 # ---------------------------------------------------------------------------
 echo ""

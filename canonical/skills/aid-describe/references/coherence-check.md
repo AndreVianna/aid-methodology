@@ -10,13 +10,13 @@ requirements name. Both layers always run -- neither is optional. (FR-3 / AC-5)
 analyst running it to surface conflicts before the work proceeds.
 
 **Cross-references.**
-- `canonical/skills/aid-describe/references/move-playbook.md` -- Move 8
+- `.agents/skills/aid-describe/references/move-playbook.md` -- Move 8
   (concrete-example probe, Family 8: Example Mapping) is the conceptual technique
   Layer A draws on; Move 10 (mediate-then-defer & scribe) records each resolved
   conflict before the check advances.
-- `canonical/skills/aid-describe/references/advisor-stance.md` -- the NFR-7
+- `.agents/skills/aid-describe/references/advisor-stance.md` -- the NFR-7
   question-envelope template used to surface every mismatch and orphan to the user.
-- `canonical/skills/aid-describe/references/elicitation-engine.md` -- gap rank 1
+- `.agents/skills/aid-describe/references/elicitation-engine.md` -- gap rank 1
   (open coherence conflict) routes the adaptive loop back to conflict resolution if a
   mismatch surfaces during elicitation; this procedure is the structured gate that runs
   after elicitation completes.
@@ -164,7 +164,7 @@ of the sufficiency bar (see Sufficiency-Bar Output).
 **Every mismatch (Layer A) and every orphan (Layer B) is a conflict.** After both
 layers complete, the analyst surfaces each conflict to the user one at a time using the
 NFR-7 question-envelope template
-(`canonical/skills/aid-describe/references/advisor-stance.md`). Every surfaced conflict
+(`.agents/skills/aid-describe/references/advisor-stance.md`). Every surfaced conflict
 carries a suggested resolution and a rationale -- a bare statement of the problem
 without a suggestion is a malformed emission.
 

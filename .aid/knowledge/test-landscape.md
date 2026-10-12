@@ -83,11 +83,12 @@ live in `quality-gates.md`.
 ## How AID Is Tested
 
 AID is not a runtime application, so there is no "unit test the business logic" story. The
-shippable product is the **rendered install trees + the `aid` CLI installer + the
-dashboard + the marketing site**. Testing therefore protects four things, in priority
+shippable product is the **per-tool agent trees, the shared skills and runtime payload, the `aid` CLI
+installer, the dashboard and the marketing site**. Testing therefore protects four things, in priority
 order (stated in `.github/workflows/test.yml` header comment):
 
-1. that committed `profiles/` stays byte-in-sync with `canonical/` (the core invariant);
+1. that committed `profiles/` stays byte-in-sync with `canonical/` (the core invariant), and that the
+   installed dogfood trees match a release built from the working tree;
 2. the runtime helper scripts adopters depend on (the bash + node + Python suites);
 3. the generator/build system itself (the Python self-tests);
 4. cheap repo/KB hygiene (CRLF, gitignore, INDEX freshness, frontmatter).
@@ -109,8 +110,8 @@ because it must validate Bash, PowerShell, Python, and Node code paths.
 | Bespoke PowerShell test (`T<NN>` IDs) | Installer integration | `tests/windows/Test-AidInstaller.ps1` | Windows-only; not in `run-all.sh`. |
 | `pytest` | Unit | `dashboard/reader/tests/`, `dashboard/server/tests/` | Python reader/server parsers + fixtures. |
 | Node built-in test | Unit | `dashboard/server/tests/test_server_node.mjs` | Node `.mjs` server tests. |
-| Playwright (Chromium, headless) | Visual fidelity (E2E render) | `.claude/aid/scripts/summarize/validate-visuals.mjs` | Validates `kb.html` authored visuals; gated in CI. |
-| Generator `--self-test` harness | Self-test | `.claude/skills/generate-profile/scripts/*.py` | `render_lib`, `render`, `verify_deterministic`, `verify_advisory`, `test_manifest_safety`. |
+| Playwright (Chromium, headless) | Visual fidelity (E2E render) | `canonical/aid/scripts/summarize/validate-visuals.mjs` | Validates `kb.html` authored visuals; gated in CI. |
+| Generator `--self-test` harness | Self-test | `.claude/skills/generate-profile/scripts/*.py` | `render_lib`, `render`, `verify_deterministic`, `verify_advisory`. |
 | Astro / TypeScript tests | Unit | `site/src/data/__tests__/`, `site/scripts/__tests__/` | Site data + docs-sync tests (separate build). |
 
 **The `STATE.yml`-specific pytest suites, named.** Three are load-bearing for the state-file
@@ -183,6 +184,7 @@ Representative suite families (the full set covers far more than these):
 | Dashboard | `test-dashboard-reader.sh`, `test-dashboard-parity.sh`, `test-dashboard-parity-h.sh`, `test-aid-dashboard-cli.sh` | reader/server parity |
 | Connectors / reconcile | `test-connector-registry.sh`, `test-connectors-registry-integration.sh`, `test-build-connectors-index.sh`, `test-connector-secret.sh`, `test-connector-secret-ps1.sh`, `test-connector-secret-ac3-leak-sweep.sh` (security: no-leak sweep of AC-3), `test-connector-twins-ps1-parity.sh` (bash↔PowerShell twin parity), `test-reconcile-scenarios.sh` | the `.aid/connectors/` catalog + INDEX generation, registry accessor integration, no-echo/path-confined secret handling, and settings reconcile behavior |
 | Compat / hygiene | `test-ps51-compat.sh`, `test-ascii-only.sh`, `test-payload-size.sh`, `test-multitool-isolation.sh`, `test-dogfood-byte-identity.sh` | portability + content isolation |
+| Shared layout (install manifest format 3; repo layout stamp 5) | `test-shared-install.sh`, `test-shared-prune.sh`, `test-shared-remove.sh`, `test-shared-layout-sources.sh`, `test-install-core-primitives.sh`, `test-layout-format-guard.sh`, `test-release-staging-descriptors.sh` | placement under `.agents/skills/` and `.aid/runtime/`, reference-counted removal, manifest-bounded pruning, the layout-stamp guard, and release descriptor parsing. `test-dogfood-byte-identity.sh` re-checks the dogfood trees against a staged release. |
 
 CONFIRMED by direct listing of `tests/canonical/`.
 
@@ -286,9 +288,8 @@ trees are exactly what the generator produces from `canonical/`.
   `python .claude/skills/generate-profile/scripts/run_generator.py`, then
   `git diff --exit-code -- profiles/`. Any drift fails the build with a remediation message.
   It first sets `git config core.fileMode false` so spurious exec-bit diffs do not trip it.
-- **Generator self-tests** (`test.yml` `generator-selftests` job): five Python
-  `--self-test` invocations — `render_lib.py`, `test_manifest_safety.py`, `render.py`,
-  `verify_deterministic.py`, `verify_advisory.py`.
+- **Generator self-tests** (`test.yml` `generator-selftests` job): Python `--self-test`
+  invocations of `render_lib.py`, `render.py`, `verify_deterministic.py` and `verify_advisory.py`.
 - **Visual fidelity** (`test.yml` `visual-fidelity` job): installs Playwright + Chromium and
   runs `validate-visuals.mjs` against `.aid/knowledge/kb.html`. It **gracefully degrades** —
   exits 0 with a SKIP if `kb.html` or the validator is absent (the gate only fires once a
@@ -319,7 +320,7 @@ lands, suite-presence + dogfooding is the floor, not the target.
 |---|---|---|
 | `aid` CLI + installer (bash) | Strong | `test-aid-cli.sh`, `test-install.sh`, parity suites, release-install E2E |
 | `aid` CLI + installer (PowerShell) | Strong (Windows-CI only) | `Test-AidInstaller.ps1` under 5.1 + 7 |
-| Profile renderer / generator | Strong | render-drift + 5 self-tests + `test-assemble-determinism.sh` |
+| Profile renderer / generator | Strong | render-drift + 4 self-tests + `test-assemble-determinism.sh` |
 | Discovery / KB engine | Strong | ~20 `test-*` suites (closure, harvest, citation/frontmatter lint, dual-intent, spine-depth) |
 | Pipeline execute / state writeback | Strong | `test-writeback-state.sh`, `test-delivery-gate-aggregate.sh`, `test-complexity-score.sh` |
 | Shortcut engine / Lite path | Strong | catalog↔dirs parity, `/aid-triage` routing, the seven family-scaffold suites, `test-shortcut-engine-contract.sh` (`SEC00`–`SEC07`) engine/gate/halt contract, flat-plan execution graph, recipe-removal cutover, describe-full-only |
@@ -379,7 +380,6 @@ python .claude/skills/generate-profile/scripts/run_generator.py && git diff --ex
 
 # Generator unit self-tests (the generator-selftests CI job)
 python .claude/skills/generate-profile/scripts/render_lib.py --self-test
-python .claude/skills/generate-profile/scripts/test_manifest_safety.py --self-test
 python .claude/skills/generate-profile/scripts/render.py --self-test --canonical-root .
 python .claude/skills/generate-profile/scripts/verify_deterministic.py --self-test --canonical-root .
 python .claude/skills/generate-profile/scripts/verify_advisory.py --self-test --canonical-root .
@@ -402,8 +402,8 @@ cd site && npm ci && npm run build
 ```
 
 > Note: when editing `canonical/` and re-checking render-drift, run the FULL
-> `run_generator.py` (not a per-script renderer) or the drift check fails on stale emission
-> manifests. See `tech-debt.md` Gotchas.
+> `run_generator.py` (not a per-script renderer) or the drift check fails on a stale
+> profile tree. See `tech-debt.md` Gotchas.
 
 ---
 

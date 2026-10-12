@@ -9,7 +9,7 @@ description: >
   independently verified before you see it, and nothing is published to a pull request,
   ticket or document until you approve. It does not fix anything -- findings hand off to
   `/aid-fix`.
-allowed-tools: Read, Glob, Grep, Bash, Write, Edit, Agent
+allowed-tools: Read Glob Grep Bash Shell Terminal Write Edit Agent
 argument-hint: "[target] -- what to review (a file/dir, PR link, ticket id, work-NNN, 'my changes', or a described target)"
 ---
 
@@ -85,8 +85,8 @@ Fast path: implicit. Guided path: part of the plan the user confirms.
 ### Step 5 -- allocate the work folder + STATE
 
 **Consult the Work Initiation Gate first**
-(`canonical/aid/templates/work-initiation-gate.md`): run
-`bash canonical/aid/scripts/works/enumerate-works.sh` (main tree + every git worktree).
+(`.aid/runtime/templates/work-initiation-gate.md`): run
+`bash .aid/runtime/scripts/works/enumerate-works.sh` (main tree + every git worktree).
 Empty output -> proceed with the allocation below, no prompt. Works exist -> ask the
 gate's single new-vs-continuation question with the enumerated list; on **continuation**
 the gate routes to the chosen work's resume door and this skill **STOPs (allocates
@@ -98,14 +98,14 @@ construction -- never re-scan a local `.aid/works/` glob for this number; gate `
 1; `work-001` if none). Derive a short kebab-case slug from the target.
 
 **Create and enter the worktree, before authoring anything** (gate `§ 3a` step 2):
-`bash canonical/aid/scripts/works/worktree-lifecycle.sh create <work-id> <name>` --
+`bash .aid/runtime/scripts/works/worktree-lifecycle.sh create <work-id> <name>` --
 idempotent; prints the worktree's absolute path on success/no-op; on a non-zero exit or an
 empty path, surface the error and **STOP** (do not allocate on the current, possibly
 `master`, tree); on success, enter the resolved path (host-native `EnterWorktree` where
 available, else cwd + surface -- `worktree-lifecycle.md § Step 2`).
 
 **Only now**, inside the entered worktree, create `.aid/works/work-NNN-<slug>/` (reusing
-the `<work-id>` resolved above). Copy `canonical/aid/templates/work-state-template.yml` to
+the `<work-id>` resolved above). Copy `.aid/runtime/templates/work-state-template.yml` to
 `.aid/works/work-NNN-<slug>/STATE.yml` and write the opening frontmatter (direct edit):
 `pipeline.path: lite`, `initiator: aid-review`, `lifecycle: Running`, `active_skill:
 aid-review`, `started`/`updated` timestamps. Leave the 7-phase `phase` scalar at its
@@ -129,12 +129,12 @@ Purpose: gather evidence and produce the grounded findings ledger.
    matching connector is catalogued).
 2. **Dispatch `aid-reviewer` once, in a clean context** (model+effort from INTAKE Step
    4), with the standard one-off five-section brief per
-   `canonical/aid/templates/reviewer-dispatch.md` One-off reviews:
+   `.aid/runtime/templates/reviewer-dispatch.md` One-off reviews:
    `ARTIFACTS UNDER REVIEW` / `CONTEXT` / `RUBRIC` / `OUT OF SCOPE` / `OUT-OF-SCOPE
    FINDINGS POLICY`. The **RUBRIC MUST mandate** reading `.aid/knowledge/` + the relevant
    source and **citing a KB doc or a `file:line` in every finding's Evidence cell**.
    The reviewer writes the global 7-column ledger
-   (`canonical/aid/templates/reviewer-ledger-schema.md`:
+   (`.aid/runtime/templates/reviewer-ledger-schema.md`:
    `# | Severity | Status | Doc | Line | Description | Evidence`) to
    `.aid/.temp/review-pending/<work>-review.md`.
 
@@ -153,7 +153,7 @@ Purpose: ensure the review is grounded, correct, and complete before the human s
    against KB + source: flag ungrounded / hallucinated / mis-severity findings, and any
    material **gap** (a real issue the first pass missed). It writes a review-quality
    ledger to `.aid/.temp/review-pending/<work>-verify.md`.
-3. **Grade the review:** `bash canonical/aid/scripts/grade.sh --explain <verify-ledger>`.
+3. **Grade the review:** `bash .aid/runtime/scripts/grade.sh --explain <verify-ledger>`.
    If it is not clean, loop back to REVIEW so the first reviewer revises (drop ungrounded
    findings, add missed ones). **Circuit-breaker: 3 cycles** -> write
    `.aid/works/{work}/IMPEDIMENT-review.md`, set STATE `lifecycle: Blocked` with a block reason,

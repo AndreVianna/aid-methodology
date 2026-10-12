@@ -15,7 +15,7 @@
 #       'aid <subcommand> [args]' in the current directory.
 #       Subcommands: status add remove update version help
 #       Examples:
-#         bash install.sh add codex --from-bundle ./aid-codex-v0.7.0.tar.gz
+#         bash install.sh add codex --from-bundle ./release-v0.7.0
 #         bash install.sh status
 #
 #   bash install.sh --uninstall-cli [--force]

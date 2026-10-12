@@ -9,7 +9,7 @@ description: >
   A status target is checked against the tracker's available transitions when those can be
   listed, and a mismatch stops before the confirmation gate. It never writes silently, and a
   failed write never leaves a partial one.
-allowed-tools: Read, Glob, Grep, AskUserQuestion
+allowed-tools: Read Glob Grep AskUserQuestion
 argument-hint: "<part> [<connector>:]<ticket-id> <content>"
 ---
 
@@ -27,7 +27,7 @@ entry, no `work-NNN` scaffold, no per-skill `STATE.yml`; it is invoked directly 
 
 **Shared reference — implemented here, not restated.** The connector-resolution ladder, this
 skill's own grammar row, and the write preview/confirm-gate convention all live once in
-[`.claude/aid/templates/connectors/ticket-resolution.md`](../../aid/templates/connectors/ticket-resolution.md)
+[`.aid/runtime/templates/connectors/ticket-resolution.md`](../../aid/templates/connectors/ticket-resolution.md)
 (the same DRY home `aid-read-ticket` and `aid-create-ticket` point to). This file never
 re-describes the ladder or the generic confirm convention inline — it only spells out the parts of
 the contract that are specific to *this* skill: the `description | comment | status` mutation

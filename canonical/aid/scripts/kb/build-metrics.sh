@@ -31,7 +31,7 @@ while [[ $# -gt 0 ]]; do
 build-metrics.sh — generate .aid/generated/metrics.md from disk truth.
 
 Aggregates T3 numeric facts (line counts, file counts, term counts, severity tallies)
-into one auto-generated file. See canonical/aid/templates/kb-authoring/tier-model.md for
+into one auto-generated file. See .aid/runtime/templates/kb-authoring/tier-model.md for
 why T3 facts are banned inline in primary KB docs.
 
 Usage:
@@ -110,14 +110,14 @@ kb-category: meta
 source: generated
 generator: build-metrics.sh
 intent: |
-  Aggregated numeric facts (T3 Metric tier per canonical/aid/templates/kb-authoring/tier-model.md):
+  Aggregated numeric facts (T3 Metric tier per .aid/runtime/templates/kb-authoring/tier-model.md):
   line counts, file counts, term counts, severity tallies. Other KB docs reference this
   file instead of inlining the numbers. Regenerated on every /aid-discover cycle.
 review-criteria: []
 ---
 
-<!-- AUTO-GENERATED $TS by canonical/aid/scripts/kb/build-metrics.sh -->
-<!-- DO NOT EDIT — regenerate with: bash canonical/aid/scripts/kb/build-metrics.sh --root . --output .aid/generated/metrics.md -->
+<!-- AUTO-GENERATED $TS by .aid/runtime/scripts/kb/build-metrics.sh -->
+<!-- DO NOT EDIT — regenerate with: bash .aid/runtime/scripts/kb/build-metrics.sh --root . --output .aid/generated/metrics.md -->
 
 # KB Metrics
 
@@ -235,7 +235,7 @@ EOF
     echo "---"
     echo ""
     echo "*End of auto-generated metrics. To add a new metric to this report, edit"
-    echo "\`canonical/aid/scripts/kb/build-metrics.sh\`.*"
+    echo "\`.aid/runtime/scripts/kb/build-metrics.sh\`.*"
 
 } > "$OUTPUT"
 

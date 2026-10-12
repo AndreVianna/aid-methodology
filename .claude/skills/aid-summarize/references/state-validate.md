@@ -2,26 +2,26 @@
 
 VALIDATE runs the machine-verifiable quality checks (coverage, visual fidelity, links, HTML, contrast) to compute the Machine Grade; it is selected after GENERATE completes and again after FIX.
 
-▶ validation suite starting (~1.5 min total — 3 scripts × ~30 s each per `.claude/aid/templates/rough-time-hints.md`)
-Run `.claude/aid/scripts/summarize/grade-summary.sh .aid/knowledge/kb.html`. It orchestrates the AUTO_POOL (machine-verifiable) checks only:
+▶ validation suite starting (~1.5 min total — 3 scripts × ~30 s each per `.aid/runtime/templates/rough-time-hints.md`)
+Run `.aid/runtime/scripts/summarize/grade-summary.sh .aid/knowledge/kb.html`. It orchestrates the AUTO_POOL (machine-verifiable) checks only:
 
-1. **`.claude/aid/scripts/summarize/validate-visuals.mjs`** — **S7 visual-fidelity gate (FR-51):** Playwright-renders `kb.html` in a headless Chromium browser (offline, `file://` URL, no network) and asserts, for every authored visual (inline `<svg>` / `.diagram-box` / infographic container):
+1. **`.aid/runtime/scripts/summarize/validate-visuals.mjs`** — **S7 visual-fidelity gate (FR-51):** Playwright-renders `kb.html` in a headless Chromium browser (offline, `file://` URL, no network) and asserts, for every authored visual (inline `<svg>` / `.diagram-box` / infographic container):
    - **T1 — Readable text:** every visible text node inside the visual has a computed font-size >= 10 px and is NOT overflow-clipped to zero height.
    - **T2 — Minimal/zero overlap:** the bounding boxes of the visual's child elements do not materially overlap each other (tolerance: <= 20% of the smaller element's area).
    - **T3 — Correct basic layout:** the visual's own bounding rect has non-trivial dimensions (width > 0 AND height > 0) — the visual is rendered, not collapsed or empty.
    A visual that fails any of T1/T2/T3 is a **generation defect that blocks DONE** (same rigor as the old "no broken diagram" guarantee). Exit non-zero = defect; fix in GENERATE before continuing.
    **Visual-inspection fallback:** if Playwright is not installed, `validate-visuals.mjs` exits 0 with a SKIP message listing the visuals that require manual inspection. In this case, the **MANUAL-CHECKLIST V1 human visual gate is mandatory** — a reviewer must load `kb.html` in a browser and confirm that every visual is readable and correctly laid out. Reading or inspecting HTML/CSS source alone is NOT sufficient; it does not substitute for Playwright visual validation or a live browser inspection. Document any such skip in STATE.md before marking DONE.
    **Replaces:** the retired `validate-diagrams.mjs` (Mermaid D1/D2 JSDOM-based check — moot once the Mermaid engine is removed in D-012 Change 7 / FR-51).
-2. **`.claude/aid/scripts/summarize/validate-html-output.sh`** — single invocation that performs link-integrity AND HTML structural/a11y checks: L1/L2 (anchor and `./*.md` link integrity), H1 (tidy → html-validate → regex cascade — script picks the most rigorous tool available and prints which), A1/A2/A4/A5 (semantic landmarks, lightbox ARIA, reduced-motion, focus-visible), S2 (offline render — CDN-free assertion: no external CDN `<script src>` or `<link href>` in the output), NM (no-Mermaid-engine assertion: output contains no Mermaid runtime engine or init call). **A3 (focus trap)** is auto-detected via `grep` of the inlined `lightbox.js` for the markers `trapFocusOnTab`, `lastFocused.focus()`, `key === 'Escape'`.
-3. **`.claude/aid/scripts/summarize/contrast-check.mjs`** — C1/C2: WCAG ratios for both themes.
-4. **`.claude/aid/scripts/summarize/validate-diagram-content.mjs`** — **diagram-content gate (complement to S7):** where S7 checks a diagram *renders* well, this checks it *says the right thing*. If a content manifest exists at `.aid/.temp/summarize/summary-src/diagram-content-manifest.json`, it asserts every diagram contains its `requires` tokens and none of its `forbids`/stale tokens (phase names, skill/agent/profile counts). This catches label drift that text-grep and the rendering gate miss (e.g. a phase box still reading "Interview" after a skill rename). Run `node .claude/aid/scripts/summarize/validate-diagram-content.mjs .aid/knowledge/kb.html .aid/.temp/summarize/summary-src/diagram-content-manifest.json`; exit non-zero = stale/missing label, fix in GENERATE. **No manifest present → skip (backward-compatible).** The manifest is the machine-readable companion to a human-readable diagram reference (e.g. `docs/diagram-content-reference.md`); keep both in lockstep with the diagrams.
+2. **`.aid/runtime/scripts/summarize/validate-html-output.sh`** — single invocation that performs link-integrity AND HTML structural/a11y checks: L1/L2 (anchor and `./*.md` link integrity), H1 (tidy → html-validate → regex cascade — script picks the most rigorous tool available and prints which), A1/A2/A4/A5 (semantic landmarks, lightbox ARIA, reduced-motion, focus-visible), S2 (offline render — CDN-free assertion: no external CDN `<script src>` or `<link href>` in the output), NM (no-Mermaid-engine assertion: output contains no Mermaid runtime engine or init call). **A3 (focus trap)** is auto-detected via `grep` of the inlined `lightbox.js` for the markers `trapFocusOnTab`, `lastFocused.focus()`, `key === 'Escape'`.
+3. **`.aid/runtime/scripts/summarize/contrast-check.mjs`** — C1/C2: WCAG ratios for both themes.
+4. **`.aid/runtime/scripts/summarize/validate-diagram-content.mjs`** — **diagram-content gate (complement to S7):** where S7 checks a diagram *renders* well, this checks it *says the right thing*. If a content manifest exists at `.aid/.temp/summarize/summary-src/diagram-content-manifest.json`, it asserts every diagram contains its `requires` tokens and none of its `forbids`/stale tokens (phase names, skill/agent/profile counts). This catches label drift that text-grep and the rendering gate miss (e.g. a phase box still reading "Interview" after a skill rename). Run `node .aid/runtime/scripts/summarize/validate-diagram-content.mjs .aid/knowledge/kb.html .aid/.temp/summarize/summary-src/diagram-content-manifest.json`; exit non-zero = stale/missing label, fix in GENERATE. **No manifest present → skip (backward-compatible).** The manifest is the machine-readable companion to a human-readable diagram reference (e.g. `docs/diagram-content-reference.md`); keep both in lockstep with the diagrams.
 
 ✓ validation suite done (record actual time, per-script pass/fail summary) — or ✗ validation suite failed: {script, reason}
 
 ### Translate Script Output to Schema Rows
 
 After each script exits, the orchestrator translates failed checks into schema rows in
-`{{LEDGER}}` (per `.claude/aid/templates/reviewer-ledger-schema.md`):
+`{{LEDGER}}` (per `.aid/runtime/templates/reviewer-ledger-schema.md`):
 
 | Script check | Severity mapping |
 |---|---|
@@ -52,7 +52,7 @@ Passed checks are NOT added to the ledger (no row = no finding).
 Persist Machine Grade + per-check table to `.aid/knowledge/STATE.md` `## Knowledge Summary Status` `### Findings (last validation — Machine)`. Grade is computed by running:
 
 ```bash
-bash .claude/aid/scripts/grade.sh --explain {{LEDGER}}
+bash .aid/runtime/scripts/grade.sh --explain {{LEDGER}}
 ```
 
 If Machine Grade >= minimum → MANUAL-CHECKLIST. Otherwise → FIX.

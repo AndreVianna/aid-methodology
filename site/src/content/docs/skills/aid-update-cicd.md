@@ -10,7 +10,7 @@ generatedFrom: 'canonical/skills/aid-update-cicd/SKILL.md'
 
 - **`name`** — aid-update-cicd
 - **`description`** — Revise the project's shipping (C8) Knowledge Base document -- pipeline stages and their order, triggers, environments and promotion, and the release flow -- plus any previously created outputs you name. Use this skill when the pipeline record already exists and a stage, trigger, environment or promotion rule has changed. Requires no design seed: the change you state in the run is a sufficient input. Reads and consumes a CI/CD seed when one is present in `.aid/design/`. When the C8 document does not yet exist, routes to `/aid-create-cicd`. To provision or change a resource the pipeline ships to, use `/aid-create-infra` or `/aid-update-infra`; to change a DATA pipeline rather than a delivery one, use `/aid-create-data-pipeline` or `/aid-update-data-pipeline`; to ship a built artifact now, use `/aid-deploy`. Produced by the aid-architect agent and independently verified by aid-reviewer (full verify). Allocates a work-NNN folder.
-- **`allowed-tools`** — Read, Glob, Grep, Bash, Write, Edit, Agent
+- **`allowed-tools`** — Read Glob Grep Bash Shell Terminal Write Edit Agent
 - **`argument-hint`** — &lt;change> -- what to revise in the delivery-pipeline record
 
 [Definition: `canonical/skills/aid-update-cicd/SKILL.md`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-update-cicd/SKILL.md)
@@ -54,7 +54,7 @@ Every node in the chart above, in chart order, with the exact `canonical/` text 
 1. **Require a stated change.** Empty argument -> ask one bootstrapping question ("What should
    change in the delivery-pipeline record?") and wait.
 2. **Allocate** through the Work Initiation Gate exactly as the contract's Allocation rule
-   requires (`canonical/skills/aid-design/SKILL.md` INTAKE step 4 is the shape), with
+   requires (`.agents/skills/aid-design/SKILL.md` INTAKE step 4 is the shape), with
    `initiator: aid-update-cicd`. `phase` is not driven.
 3. **No seed is required.** The change stated in this run is a sufficient input, and this
    skill completes without a seed. **Read and consume one when present** at
@@ -63,7 +63,7 @@ Every node in the chart above, in chart order, with the exact `canonical/` text 
 4. **Resolve the destination by concern.** This skill binds concern **C8** (shipping &
    operation). Where a seed supplied a `## Destination`, use it; otherwise apply the concern
    rule here -- resolve C8 against `.aid/settings.yml` `knowledge.doc_set`, falling back to the
-   C8 row of `canonical/aid/templates/kb-authoring/domain-doc-matrix.md` -- and **confirm the
+   C8 row of `.aid/runtime/templates/kb-authoring/domain-doc-matrix.md` -- and **confirm the
    resolution with the user before writing**. Never resolve silently.
 5. **Read the whole destination**, and note its `source:` field. Absent destination -> route to
    `/aid-create-cicd` and write nothing.

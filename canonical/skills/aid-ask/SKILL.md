@@ -10,7 +10,7 @@ description: >
   it feeds back into improving the Knowledge Base. Trivial questions are answered inline;
   broad investigations are dispatched read-only. The only thing it ever writes is that
   recorded gap.
-allowed-tools: Read, Glob, Grep, Agent, Write, Edit
+allowed-tools: Read Glob Grep Agent Write Edit
 argument-hint: "<question>  — a free-form question about the project"
 ---
 
@@ -71,7 +71,7 @@ Read only the files needed to answer:
    check a script header, read a work STATE.md).
 4. Compose the answer with inline citations:
    - KB doc: cite as "`architecture.md` §Section" or `coding-standards.md §7b`.
-   - File path: cite as `canonical/skills/aid-ask/SKILL.md`.
+   - File path: cite as `.agents/skills/aid-ask/SKILL.md`.
    - Work state: cite as `work-001-kb-skills STATE.md` or `work-NNN STATE.md §Section`.
 
 ### Step 2b — Broad/expensive question: dispatch aid-researcher
@@ -121,7 +121,7 @@ Format the answer as:
 ## Sources
 
 - <citation 1>  (e.g., `architecture.md §Thin-Router state machine`)
-- <citation 2>  (e.g., `canonical/skills/aid-housekeep/SKILL.md`)
+- <citation 2>  (e.g., `.agents/skills/aid-housekeep/SKILL.md`)
 - <citation 3>  (e.g., `work-NNN STATE.md §Goal`)
 ```
 

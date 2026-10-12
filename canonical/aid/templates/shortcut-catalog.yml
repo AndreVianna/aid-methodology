@@ -8,13 +8,13 @@
 # sets `skill_slug = skill_dir.name` and carries the frontmatter `name:` through
 # untouched (see the `name` field contract below for the full consequence).
 #
-# Renders as VERBATIM BYTES to `<root>/aid/templates/shortcut-catalog.yml` in all 5
-# profiles -- a `.yml` is not in render.py's `_TEXT_EXTENSIONS`, matching the shipped
-# `templates/settings.yml` precedent (render.py grep `_TEXT_EXTENSIONS`).
+# Installs as VERBATIM BYTES to `.aid/runtime/templates/shortcut-catalog.yml`, one copy
+# shared by every tool -- a `.yml` is not in render.py's `_TEXT_EXTENSIONS`, matching the
+# shipped `templates/settings.yml` precedent (render.py grep `_TEXT_EXTENSIONS`).
 #
 # Two consumers:
 #   1. The maintainer build helper
-#      (`.claude/skills/generate-profile/scripts/build-shortcut-skills.py`) -- reads this
+#      (`generate-profile/scripts/build-shortcut-skills.py`) -- reads this
 #      file and emits/refreshes the thin-doorway `canonical/skills/aid-<name>/SKILL.md`
 #      directories, one per non-`repurpose` row. After any edit to this file the
 #      maintainer runs that helper, then the FULL `run_generator.py` (never a partial

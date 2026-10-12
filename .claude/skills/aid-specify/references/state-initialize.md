@@ -99,10 +99,10 @@ In the work's `.aid/works/{work}/STATE.yml`, update the `features:` sequence:
 
 Emit pipeline phase (silent state-write only — no output, no gate):
 ```
-bash .claude/aid/scripts/execute/writeback-state.sh --pipeline --field Lifecycle --value Running
-bash .claude/aid/scripts/execute/writeback-state.sh --pipeline --field Phase --value Specify
-bash .claude/aid/scripts/execute/writeback-state.sh --pipeline --field "Active Skill" --value aid-specify
-bash .claude/aid/scripts/execute/writeback-state.sh --pipeline --field Updated --value "$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+bash .aid/runtime/scripts/execute/writeback-state.sh --pipeline --field Lifecycle --value Running
+bash .aid/runtime/scripts/execute/writeback-state.sh --pipeline --field Phase --value Specify
+bash .aid/runtime/scripts/execute/writeback-state.sh --pipeline --field "Active Skill" --value aid-specify
+bash .aid/runtime/scripts/execute/writeback-state.sh --pipeline --field Updated --value "$(date -u +%Y-%m-%dT%H:%M:%SZ)"
 ```
 
 ### Step 3b: Connector awareness — record this feature's `ticket_ref` (optional)

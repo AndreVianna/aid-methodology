@@ -11,7 +11,7 @@ description: >
   `/aid-update-kb`'s territory. The genre skills such as `/aid-document-decision`, and
   `/aid-create-diagram`, all delegate here. To settle a document's direction as a reusable
   design seed first, use `/aid-design-document`.
-allowed-tools: Read, Glob, Grep, Bash, Write, Edit, Agent
+allowed-tools: Read Glob Grep Bash Shell Terminal Write Edit Agent
 argument-hint: "<subject> -- what to document (optionally a kind: adr, runbook, tutorial, changelog, diagram, ...)"
 ---
 
@@ -31,7 +31,7 @@ here binding a genre/format hint.
 - **Boundary vs `/aid-design`:** `aid-design` *produces a design* (`aid-architect`);
   `aid-create-document` *writes documentation about* something (`aid-tech-writer`).
 - **Not a numbered pipeline phase**; does not route to `/aid-execute`.
-- **Genre structures** (ADR / C4 / runbook / ...): `.claude/aid/templates/shortcut-scaffolding/document.md`.
+- **Genre structures** (ADR / C4 / runbook / ...): `.aid/runtime/templates/shortcut-scaffolding/document.md`.
 
 State machine: **INTAKE -> AUTHOR -> VERIFY (loop) -> PRESENT [human gate] -> PLACE (on
 approval) -> DONE**. Print the `[State: NAME] -- {purpose}` entry line on each state.
@@ -50,8 +50,8 @@ approval) -> DONE**. Print the `[State: NAME] -- {purpose}` entry line on each s
 4. **Classify complexity (model + effort):** most docs -> `aid-tech-writer` at **sonnet /
    medium**; a heavy architecture write-up -> **opus / high**. Verifier tier >= producer.
 5. **Consult the Work Initiation Gate, then allocate the work folder + STATE.** First run
-   the gate (`.claude/aid/templates/work-initiation-gate.md`):
-   `bash .claude/aid/scripts/works/enumerate-works.sh` (main tree + every git worktree).
+   the gate (`.aid/runtime/templates/work-initiation-gate.md`):
+   `bash .aid/runtime/scripts/works/enumerate-works.sh` (main tree + every git worktree).
    Empty -> allocate, no prompt. Works exist -> ask new-vs-continuation; on **continuation**
    route to the chosen work's resume door and STOP (allocate nothing); on **new work**:
    create and enter the worktree per the gate's `§ 3a` step 2
@@ -87,7 +87,7 @@ It drafts into the work folder (not yet placed). Text formats are produced nativ
 2. **Adversarial verification** -- clean-context **`aid-reviewer`** checks the draft:
    accurate against KB + codebase, complete for its genre, no fabricated content. Writes a
    review-quality ledger to `.aid/.temp/review-pending/<work>-verify.md`.
-3. **Grade:** `bash .claude/aid/scripts/grade.sh --explain <ledger>`. Not clean -> loop
+3. **Grade:** `bash .aid/runtime/scripts/grade.sh --explain <ledger>`. Not clean -> loop
    to AUTHOR. Circuit-breaker: 3 cycles -> IMPEDIMENT + `lifecycle: Blocked`.
 
 **Advance:** PRESENT.

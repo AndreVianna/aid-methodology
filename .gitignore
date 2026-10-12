@@ -75,4 +75,7 @@ desktop.ini
 .aid/.control/
 .aid/generated/
 .aid/knowledge/.cache/
+.aid/.worktrees/
+.claude/worktrees/
+.aid/runtime/**/node_modules/
 # <<< AID managed <<<

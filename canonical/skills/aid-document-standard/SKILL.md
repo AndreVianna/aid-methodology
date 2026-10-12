@@ -9,19 +9,19 @@ description: >
   drafts, you approve, and only then is the document placed. It never writes into
   `.aid/knowledge/`. A thin kind-sibling of `/aid-create-document`, which defines its full
   behavior.
-allowed-tools: Read, Glob, Grep, Bash, Write, Edit, Agent
+allowed-tools: Read Glob Grep Bash Shell Terminal Write Edit Agent
 argument-hint: "<rule> -- the standard"
 ---
 
 # Document Standard (standard kind-sibling of /aid-create-document)
 
 `/aid-document-standard` is a thin **kind-sibling** of **`/aid-create-document`**
-(`canonical/skills/aid-create-document/SKILL.md`) -- not an alias: it is its own catalog
+(`.agents/skills/aid-create-document/SKILL.md`) -- not an alias: it is its own catalog
 row (`alias_of: null`, its own `{verb: document, artifact: standard}`), `repurpose: true`
 (skipped by `build-shortcut-skills.py`; hand-authored). It carries **no logic of its own.**
 
-Execute `canonical/skills/aid-create-document/SKILL.md` exactly as written, with the
+Execute `.agents/skills/aid-create-document/SKILL.md` exactly as written, with the
 document **genre bound to standard** (structure: rule -> scope -> compliance/enforcement
 -> exceptions) and the **format = markdown**. Substitute only the invocation name in any
 printed usage example (`/aid-document-standard` instead of `/aid-create-document`).
-Deeper genre structures: `canonical/aid/templates/shortcut-scaffolding/document.md`.
+Deeper genre structures: `.aid/runtime/templates/shortcut-scaffolding/document.md`.

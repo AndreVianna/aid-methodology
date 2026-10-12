@@ -10,7 +10,7 @@ generatedFrom: 'canonical/skills/aid-create-stack/SKILL.md'
 
 - **`name`** — aid-create-stack
 - **`description`** — Realize a ready stack seed from `.aid/design/stack.md` into the project's technology (C0) Knowledge Base document -- languages, runtimes, frameworks, package managers, and build and test tooling, each with its version. Use this skill when a stack seed is ready and the project has no technology-stack document yet. When it creates the document it also registers it in `.aid/settings.yml` and `.aid/knowledge/README.md` in the same run, which opts that document into the Conformance Lane permanently -- a choice you are making by running this skill. To revise C0 content this lifecycle already committed, use `/aid-update-stack`; to create or revise a configuration option within a chosen stack rather than the stack itself, use `/aid-create-config` or `/aid-update-config`. Produced by the aid-architect agent and independently verified by aid-reviewer (full verify). Allocates a work-NNN folder.
-- **`allowed-tools`** — Read, Glob, Grep, Bash, Write, Edit, Agent
+- **`allowed-tools`** — Read Glob Grep Bash Shell Terminal Write Edit Agent
 - **`argument-hint`** — [&lt;direction>] -- which parts of the stack seed to realize
 
 [Definition: `canonical/skills/aid-create-stack/SKILL.md`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-create-stack/SKILL.md)
@@ -56,14 +56,14 @@ Every node in the chart above, in chart order, with the exact `canonical/` text 
 ## State: INTAKE
 
 1. **Allocate** through the Work Initiation Gate exactly as the contract's Allocation rule
-   requires (`canonical/skills/aid-design/SKILL.md` INTAKE step 4 is the shape), with
+   requires (`.agents/skills/aid-design/SKILL.md` INTAKE step 4 is the shape), with
    `initiator: aid-create-stack`. `phase` is not driven.
 2. **Read the seed** at `.aid/design/stack.md`.
 3. **Resolve the destination by concern, not filename.** This skill binds concern **C0**
-   (technology, `canonical/aid/templates/kb-authoring/concern-model.md`). The seed's
+   (technology, `.aid/runtime/templates/kb-authoring/concern-model.md`). The seed's
    `## Destination` names the resolved path; where it does not, resolve C0 against
    `.aid/settings.yml` `knowledge.doc_set`, falling back to the C0 row of
-   `canonical/aid/templates/kb-authoring/domain-doc-matrix.md`, and confirm with the user.
+   `.aid/runtime/templates/kb-authoring/domain-doc-matrix.md`, and confirm with the user.
    An ambiguous realization is **asked**, never picked silently. The seed also names a
    **second** destination -- the project's D document, for the rejected alternatives.
 4. **Read the whole destination** if it exists, and note its `source:` field.

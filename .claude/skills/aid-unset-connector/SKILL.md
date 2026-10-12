@@ -7,7 +7,7 @@ description: >
   remains on disk -- touching only that one stem, so every other catalogued connector is
   left byte-for-byte untouched. Idempotent: removing an already-absent tool is a clean no-
   op. It never invokes `/aid-discover`.
-allowed-tools: Read, Bash
+allowed-tools: Read Bash Shell Terminal
 argument-hint: "<tool>  -- e.g. aid-unset-connector Jira"
 ---
 
@@ -16,7 +16,7 @@ argument-hint: "<tool>  -- e.g. aid-unset-connector Jira"
 `aid-unset-connector <tool>` removes **one** connector from `.aid/connectors/` without touching any
 other catalogued connector and without requiring — or triggering — an `/aid-discover` cycle. It is
 the incremental, single-tool counterpart to `aid-set-connector`'s upsert
-(`.claude/skills/aid-set-connector/SKILL.md`), and shares its `reconcile.md` single-stem plumbing.
+(`.agents/skills/aid-set-connector/SKILL.md`), and shares its `reconcile.md` single-stem plumbing.
 
 **Absent from the mandatory pipeline flow.** Like `aid-set-connector`, `/aid-config`, and
 `/aid-housekeep`, this is an optional, on-demand skill — no phase gate references it, and it never
@@ -71,7 +71,7 @@ whole-registry diff, ever** (AC6).
 
 ## Step 2: Single-stem REMOVE (`reconcile.md`)
 
-Per [`.claude/aid/templates/connectors/reconcile.md`](../../aid/templates/connectors/reconcile.md)
+Per [`.aid/runtime/templates/connectors/reconcile.md`](../../aid/templates/connectors/reconcile.md)
 § "Single-stem mode (set/unset)" Step S1, classification for `aid-unset-connector` is
 **unconditional** — REMOVE, whether or not `.aid/connectors/${STEM}.md` currently exists. There is
 no existence check gating this step, no `list` over the registry, and no `read`/field comparison
@@ -80,7 +80,7 @@ disposes of them. Apply Step S2's REMOVE mechanics — the same purge-then-delet
 uses:
 
 ```bash
-bash .claude/aid/scripts/connectors/connector-secret.sh purge "$STEM" --root .aid/connectors
+bash .aid/runtime/scripts/connectors/connector-secret.sh purge "$STEM" --root .aid/connectors
 rm -f -- ".aid/connectors/${STEM}.md"
 ```
 
@@ -104,7 +104,7 @@ No stem other than `$STEM` is read, purged, or deleted (AC6).
 Same builder, same invocation, as `reconcile.md`'s Step S3 / R4:
 
 ```bash
-bash .claude/aid/scripts/connectors/build-connectors-index.sh \
+bash .aid/runtime/scripts/connectors/build-connectors-index.sh \
   --root .aid/connectors --output .aid/connectors/INDEX.md
 ```
 
@@ -127,7 +127,7 @@ Exit 0.
 ## Write-zone
 
 This skill writes (only to delete) **within** `.aid/connectors/` — the same P7 exemption ELICIT and
-`aid-set-connector` use (`.claude/aid/templates/kb-authoring/principles.md` P7 "Exception
+`aid-set-connector` use (`.aid/runtime/templates/kb-authoring/principles.md` P7 "Exception
 (connector sub-phase)"): it removes `.aid/connectors/<stem>.md` and, via `connector-secret.sh`,
 `.aid/connectors/.secrets/<stem>`, then regenerates `.aid/connectors/INDEX.md`. It never touches
 `.aid/knowledge/`, never invokes `/aid-discover`, and never writes or unwires any host tool's MCP

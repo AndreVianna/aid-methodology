@@ -1,6 +1,16 @@
 #!/usr/bin/env bash
 # test-aid-cli-ps1.sh — Task 028: Integration tests for the persistent PowerShell `aid` CLI.
 #
+# COVERS: install.ps1
+# COVERS: bin/aid.ps1
+# COVERS: lib/AidInstallCore.psm1
+# COVERS: bin/aid
+# COVERS: lib/aid-install-core.sh
+# COVERS: release.sh
+# COVERS: tests/lib/bundle.sh
+# COVERS: canonical/skills
+# COVERS: canonical/aid
+#
 # Mirrors every test-aid-cli.sh (Task 027) case via pwsh/aid.ps1.
 # Asserts:
 #   - Byte-identical `status` output to the Bash dispatcher for the same project state.
@@ -24,6 +34,7 @@ source "$(dirname "${BASH_SOURCE[0]}")/../lib/assert.sh"
 source "$(dirname "${BASH_SOURCE[0]}")/../lib/pwsh.sh"
 source "$(dirname "${BASH_SOURCE[0]}")/../lib/pwsh-batch.sh"
 source "$(dirname "${BASH_SOURCE[0]}")/../lib/sandbox.sh"
+source "$(dirname "${BASH_SOURCE[0]}")/../lib/bundle.sh"
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd "${SCRIPT_DIR}/../.." && pwd)"
@@ -33,7 +44,6 @@ BIN_AID_CMD="${REPO_ROOT}/bin/aid.cmd"
 BIN_AID_SH="${REPO_ROOT}/bin/aid"
 LIB_CORE_PS1="${REPO_ROOT}/lib/AidInstallCore.psm1"
 LIB_CORE_SH="${REPO_ROOT}/lib/aid-install-core.sh"
-PROFILES_DIR="${REPO_ROOT}/profiles"
 
 [[ -f "$INSTALL_PS1" ]]  || { echo "ERROR: install.ps1 not found at $INSTALL_PS1" >&2; exit 1; }
 [[ -f "$BIN_AID_PS1" ]]  || { echo "ERROR: bin/aid.ps1 not found at $BIN_AID_PS1" >&2; exit 1; }
@@ -81,41 +91,45 @@ mkdir -p "${FIXTURE_DIR}"
 
 VERSION="$(tr -d '[:space:]' < "${REPO_ROOT}/VERSION")"
 
-# ---------------------------------------------------------------------------
-# build_fixture_tarball <tool>
-# ---------------------------------------------------------------------------
-build_fixture_tarball() {
-    local tool="$1"
-    local profile_dir="${PROFILES_DIR}/${tool}"
-    local tarball="${FIXTURE_DIR}/aid-${tool}-v${VERSION}.tar.gz"
-
-    [[ -d "$profile_dir" ]] || { echo "ERROR: profile dir not found: $profile_dir" >&2; return 1; }
-
-    local filelist
-    filelist="$(mktemp "${TMP}/filelist-${tool}.XXXXXX")"
-    while IFS= read -r f; do
-        local fname
-        fname="$(basename "$f")"
-        [[ "$fname" == "README.md" ]] && continue
-        [[ "$fname" == "emission-manifest.jsonl" ]] && continue
-        local rel="${f#${profile_dir}/}"
-        printf './%s\n' "$rel"
-    done < <(find "${profile_dir}" -type f | sort) > "$filelist"
-
-    (cd "${profile_dir}" && tar -czf "${tarball}" --no-recursion -T "${filelist}") || {
-        echo "ERROR: failed to build fixture tarball for ${tool}" >&2
-        rm -f "$filelist"
-        return 1
-    }
-    rm -f "$filelist"
-}
-
-for _tool in claude-code codex cursor copilot-cli antigravity; do
-    build_fixture_tarball "$_tool" || { echo "ERROR: fixture build failed for ${_tool}" >&2; exit 1; }
-done
+aid_test_stage_bundle "${FIXTURE_DIR}" >/dev/null || { echo "ERROR: shared release staging failed" >&2; exit 1; }
 
 newtarget() { mktemp -d "${TMP}/tgt.XXXXXX"; }
 newhome()   { mktemp -d "${TMP}/home.XXXXXX"; }
+
+tree_snapshot() {
+    python3 - "$1" <<'PY'
+import hashlib, os, sys
+root=os.path.abspath(sys.argv[1]); rows=[]
+for here, dirs, files in os.walk(root, followlinks=False):
+    dirs.sort(); files.sort()
+    for name in dirs + files:
+        path=os.path.join(here,name); rel=os.path.relpath(path,root).replace(os.sep,'/')
+        if os.path.islink(path): rows.append('L '+rel+' '+os.readlink(path))
+        elif os.path.isdir(path): rows.append('D '+rel)
+        else:
+            with open(path,'rb') as stream: digest=hashlib.sha256(stream.read()).hexdigest()
+            rows.append('F '+rel+' '+digest)
+print(hashlib.sha256(('\n'.join(rows)+'\n').encode()).hexdigest())
+PY
+}
+
+manifest_versions_are_uniform() {
+    python3 - "$1" <<'PY'
+import json, sys
+try:
+    m=json.load(open(sys.argv[1], encoding='utf-8')); version=m['aid_version']; found=[]
+    def walk(value):
+        if isinstance(value,dict):
+            if 'version' in value: found.append(value['version'])
+            for child in value.values(): walk(child)
+        elif isinstance(value,list):
+            for child in value: walk(child)
+    walk(m)
+    raise SystemExit(0 if found and all(v == version for v in found) else 1)
+except Exception:
+    raise SystemExit(1)
+PY
+}
 
 # Helper: set up an AID_HOME with aid.ps1 + AidInstallCore.psm1 + VERSION from repo source.
 setup_aid_home_ps1() {
@@ -254,7 +268,7 @@ TF=$(newtarget)
 pwsh_session_call "${PS028F_HOME}/bin/aid.ps1" "$PWD" \
      "AID_HOME=${PS028F_HOME}" "AID_LIB_PATH=${PS028F_HOME}/lib/AidInstallCore.psm1" \
      -- add codex \
-     -FromBundle "${FIXTURE_DIR}/aid-codex-v${VERSION}.tar.gz" \
+     -FromBundle "${FIXTURE_DIR}" \
      -Target "${TF}"
 OUT=$(printf '%s' "$PWSH_CALL_OUT" | sed 's/\x1b\[[0-9;]*m//g'); RC=$PWSH_CALL_RC
 assert_exit_eq "$RC" 0 "PS028-F01 PS1 add codex for status test → exit 0"
@@ -279,7 +293,7 @@ TG=$(newtarget)
 # Install codex via Bash aid.
 OUT_INSTALL=$(AID_HOME="${PS028G_HOME}" AID_LIB_PATH="${PS028G_HOME}/lib/aid-install-core.sh" \
      bash "${PS028G_HOME}/bin/aid" add codex \
-     --from-bundle "${FIXTURE_DIR}/aid-codex-v${VERSION}.tar.gz" \
+     --from-bundle "${FIXTURE_DIR}" \
      --target "${TG}" 2>&1); RC_INSTALL=$?
 assert_exit_eq "$RC_INSTALL" 0 "PS028-G01 Bash install for parity test → exit 0"
 
@@ -337,7 +351,7 @@ TG3=$(newtarget)
 pwsh_session_call "${PS028G3_HOME}/bin/aid.ps1" "$PWD" \
      "AID_HOME=${PS028G3_HOME}" "AID_LIB_PATH=${PS028G3_HOME}/lib/AidInstallCore.psm1" \
      -- add codex \
-     -FromBundle "${FIXTURE_DIR}/aid-codex-v${VERSION}.tar.gz" \
+     -FromBundle "${FIXTURE_DIR}" \
      -Target "${TG3}"
 OUT_INSTALL=$(printf '%s' "$PWSH_CALL_OUT" | sed 's/\x1b\[[0-9;]*m//g'); RC_INSTALL=$PWSH_CALL_RC
 assert_exit_eq "$RC_INSTALL" 0 "PS028-G2-07 pre-install codex for PS1 dashboard test → exit 0"
@@ -360,7 +374,7 @@ TG4=$(newtarget)
 # Install codex via Bash.
 AID_HOME="${PS028G4_HOME}" AID_LIB_PATH="${PS028G4_HOME}/lib/aid-install-core.sh" \
     bash "${PS028G4_HOME}/bin/aid" add codex \
-    --from-bundle "${FIXTURE_DIR}/aid-codex-v${VERSION}.tar.gz" \
+    --from-bundle "${FIXTURE_DIR}" \
     --target "${TG4}" >/dev/null 2>&1
 
 # Bash bare-aid output.
@@ -390,7 +404,7 @@ TH=$(newtarget)
 pwsh_session_call "${PS028H_HOME}/bin/aid.ps1" "$PWD" \
      "AID_HOME=${PS028H_HOME}" "AID_LIB_PATH=${PS028H_HOME}/lib/AidInstallCore.psm1" \
      -- add codex \
-     -FromBundle "${FIXTURE_DIR}/aid-codex-v${VERSION}.tar.gz" \
+     -FromBundle "${FIXTURE_DIR}" \
      -Target "${TH}"
 OUT=$(printf '%s' "$PWSH_CALL_OUT" | sed 's/\x1b\[[0-9;]*m//g'); RC=$PWSH_CALL_RC
 assert_exit_eq "$RC" 0 "PS028-H01 PS1 add codex → exit 0"
@@ -438,7 +452,7 @@ TJ=$(newtarget)
 pwsh_session_call "${PS028J_HOME}/bin/aid.ps1" "$PWD" \
      "AID_HOME=${PS028J_HOME}" "AID_LIB_PATH=${PS028J_HOME}/lib/AidInstallCore.psm1" \
      -- add codex \
-     -FromBundle "${FIXTURE_DIR}/aid-codex-v${VERSION}.tar.gz" \
+     -FromBundle "${FIXTURE_DIR}" \
      -Target "${TJ}"
 OUT=$(printf '%s' "$PWSH_CALL_OUT" | sed 's/\x1b\[[0-9;]*m//g'); RC=$PWSH_CALL_RC
 assert_exit_eq "$RC" 0 "PS028-J01 PS1 add codex for update test → exit 0"
@@ -446,11 +460,11 @@ assert_exit_eq "$RC" 0 "PS028-J01 PS1 add codex for update test → exit 0"
 pwsh_session_call "${PS028J_HOME}/bin/aid.ps1" "$PWD" \
      "AID_HOME=${PS028J_HOME}" "AID_LIB_PATH=${PS028J_HOME}/lib/AidInstallCore.psm1" \
      -- update codex \
-     -FromBundle "${FIXTURE_DIR}/aid-codex-v${VERSION}.tar.gz" \
+     -FromBundle "${FIXTURE_DIR}" \
      -Target "${TJ}"
 OUT=$(printf '%s' "$PWSH_CALL_OUT" | sed 's/\x1b\[[0-9;]*m//g'); RC=$PWSH_CALL_RC
-assert_exit_eq "$RC" 2 "PS028-J02 PS1 update <tool> positional → exit 2 (usage error)"
-assert_output_contains "$OUT" "unexpected argument" "PS028-J03 PS1 update <tool>: error mentions 'unexpected argument'"
+assert_exit_eq "$RC" 0 "PS028-J02 named PS1 update codex updates selected tool"
+assert_output_not_contains "$OUT" "unexpected argument" "PS028-J03 named PS1 update codex is accepted"
 
 # FR10: Dir with no .aid/ → update CLI only (exit 0).
 TJ_EMPTY=$(newtarget)
@@ -471,7 +485,7 @@ TK=$(newtarget)
 pwsh_session_call "${PS028K_HOME}/bin/aid.ps1" "$PWD" \
      "AID_HOME=${PS028K_HOME}" "AID_LIB_PATH=${PS028K_HOME}/lib/AidInstallCore.psm1" \
      -- add codex \
-     -FromBundle "${FIXTURE_DIR}/aid-codex-v${VERSION}.tar.gz" \
+     -FromBundle "${FIXTURE_DIR}" \
      -Target "${TK}"
 OUT=$(printf '%s' "$PWSH_CALL_OUT" | sed 's/\x1b\[[0-9;]*m//g'); RC=$PWSH_CALL_RC
 assert_exit_eq "$RC" 0 "PS028-K01 PS1 add for remove test → exit 0"
@@ -498,7 +512,7 @@ printf 'User AGENTS.md pre-placed\n' > "${TL}/AGENTS.md"
 pwsh_session_call "${PS028L_HOME}/bin/aid.ps1" "$PWD" \
      "AID_HOME=${PS028L_HOME}" "AID_LIB_PATH=${PS028L_HOME}/lib/AidInstallCore.psm1" \
      -- add codex \
-     -FromBundle "${FIXTURE_DIR}/aid-codex-v${VERSION}.tar.gz" \
+     -FromBundle "${FIXTURE_DIR}" \
      -Target "${TL}"
 OUT=$(printf '%s' "$PWSH_CALL_OUT" | sed 's/\x1b\[[0-9;]*m//g'); RC=$PWSH_CALL_RC
 assert_exit_eq "$RC" 0 "PS028-L01 PS1 add with pre-placed AGENTS.md → exit 0 (in-place update)"
@@ -553,7 +567,7 @@ assert_output_contains "$OUT" "-Version requires a value" "PS028-M1-07 pin flag 
 # unaffected by the new top-level flag.
 PSM1_T=$(newtarget)
 run_aid_ps1 "${PS028M_HOME}" add codex -Version "${VERSION}" \
-    -FromBundle "${FIXTURE_DIR}/aid-codex-v${VERSION}.tar.gz" -DryRun -Target "${PSM1_T}"
+    -FromBundle "${FIXTURE_DIR}" -DryRun -Target "${PSM1_T}"
 assert_exit_eq "$RC" 2 "PS028-M1-08 add -Version <v> + -FromBundle → exit 2 (pre-existing mutual-exclusivity guard, unaffected)"
 assert_output_contains "$OUT" "mutually exclusive" "PS028-M1-09 pin flag reaches the same downstream validation as before"
 
@@ -616,7 +630,7 @@ OUT=$(AID_HOME="${PS028P_HOME}" AID_LIB_PATH="${LIB_CORE_PS1}" \
      "$PWSH" -NoProfile -File "${INSTALL_PS1}" \
      -NoPath \
      add codex \
-     -FromBundle "${FIXTURE_DIR}/aid-codex-v${VERSION}.tar.gz" \
+     -FromBundle "${FIXTURE_DIR}" \
      -Target "${TP}" 2>&1 | sed 's/\x1b\[[0-9;]*m//g'); RC=$?
 
 assert_exit_eq "$RC" 0 "PS028-P01 PS1 CONVENIENCE install.ps1 add codex → exit 0"
@@ -761,7 +775,7 @@ TW2=$(newtarget)
 pwsh_session_call "${PS028W2_HOME}/bin/aid.ps1" "$PWD" \
      "AID_HOME=${PS028W2_HOME}" "AID_LIB_PATH=${PS028W2_HOME}/lib/AidInstallCore.psm1" \
      -- add codex \
-     -FromBundle "${FIXTURE_DIR}/aid-codex-v${VERSION}.tar.gz" \
+     -FromBundle "${FIXTURE_DIR}" \
      -Target "${TW2}"
 OUT=$(printf '%s' "$PWSH_CALL_OUT" | sed 's/\x1b\[[0-9;]*m//g'); RC=$PWSH_CALL_RC
 assert_exit_eq "$RC" 0 "PS028-W2-01 PS1 add codex for behind-test → exit 0"
@@ -822,7 +836,7 @@ TY=$(newtarget)
 # Install codex via Bash.
 AID_HOME="${PS028Y_HOME}" AID_LIB_PATH="${PS028Y_HOME}/lib/aid-install-core.sh" \
     bash "${PS028Y_HOME}/bin/aid" add codex \
-    --from-bundle "${FIXTURE_DIR}/aid-codex-v${VERSION}.tar.gz" \
+    --from-bundle "${FIXTURE_DIR}" \
     --target "${TY}" >/dev/null 2>&1
 
 # Compare status output.
@@ -899,7 +913,7 @@ TB_PS=$(newtarget)
 pwsh_session_call "${PS029B_HOME}/bin/aid.ps1" "$PWD" \
      "AID_HOME=${PS029B_HOME}" "AID_LIB_PATH=${PS029B_HOME}/lib/AidInstallCore.psm1" \
      -- add codex \
-     -FromBundle "${FIXTURE_DIR}/aid-codex-v${VERSION}.tar.gz" \
+     -FromBundle "${FIXTURE_DIR}" \
      -Target "${TB_PS}"
 OUT=$(printf '%s' "$PWSH_CALL_OUT" | sed 's/\x1b\[[0-9;]*m//g')
 pwsh_session_call "${PS029B_HOME}/bin/aid.ps1" "$PWD" \
@@ -1034,7 +1048,7 @@ TH_PS=$(newtarget)
 pwsh_session_call "${PS029H_HOME}/bin/aid.ps1" "$PWD" \
     "AID_HOME=${PS029H_HOME}" "AID_LIB_PATH=${PS029H_HOME}/lib/AidInstallCore.psm1" \
     -- add codex \
-    -FromBundle "${FIXTURE_DIR}/aid-codex-v${VERSION}.tar.gz" \
+    -FromBundle "${FIXTURE_DIR}" \
     -Target "${TH_PS}"
 
 # Run 'aid update' — must NOT show the notice.
@@ -1043,7 +1057,7 @@ pwsh_session_call "${PS029H_HOME}/bin/aid.ps1" "$PWD" \
      "AID_UPDATE_CHECK_URL=${_ps_check_url_h}" \
      "AID_LIB_PATH=${PS029H_HOME}/lib/AidInstallCore.psm1" \
      -- update \
-     -FromBundle "${FIXTURE_DIR}/aid-codex-v${VERSION}.tar.gz" \
+     -FromBundle "${FIXTURE_DIR}" \
      -Target "${TH_PS}"
 OUT=$(printf '%s' "$PWSH_CALL_OUT" | sed 's/\x1b\[[0-9;]*m//g'); RC=$PWSH_CALL_RC
 assert_exit_eq "$RC" 0 "PS029-H01 aid.ps1 update → exit 0"
@@ -1060,7 +1074,7 @@ TI_CONF=$(newtarget)
 pwsh_session_call "${PS029I_HOME}/bin/aid.ps1" "$PWD" \
     "AID_HOME=${PS029I_HOME}" "AID_LIB_PATH=${PS029I_HOME}/lib/AidInstallCore.psm1" \
     -- add codex \
-    -FromBundle "${FIXTURE_DIR}/aid-codex-v${VERSION}.tar.gz" \
+    -FromBundle "${FIXTURE_DIR}" \
     -Target "${TI_CONF}"
 
 # Use -Force to guarantee no hang (non-interactive remove).
@@ -1134,6 +1148,117 @@ pwsh_session_call "${PS029J_HOME_PS}/bin/aid.ps1" "$PWD" \
 PS1_RM_H=$(printf '%s' "$PWSH_CALL_OUT" | sed 's/\x1b\[[0-9;]*m//g')
 assert_output_contains "$SH_RM_H"  "self" "PS029-J07 Bash remove -h: mentions 'self'"
 assert_output_contains "$PS1_RM_H" "self" "PS029-J08 PS1 remove -h: mentions 'self'"
+
+# TASK019 PowerShell counterparts for version pinning, format refusal/migration, and detection.
+task019_make_version_bundle() {
+    local dest="$1" tool="$2" version="$3" old="$4" root=".$2"
+    mkdir -p "$dest/shared" "$dest/tool"
+    tar -xzf "${FIXTURE_DIR}/aid-shared-v${old}.tar.gz" -C "$dest/shared"
+    tar -xzf "${FIXTURE_DIR}/aid-${tool}-v${old}.tar.gz" -C "$dest/tool"
+    python3 - "$dest/shared/aid-payload.conf" "$old" "$version" <<'PY'
+from pathlib import Path
+import sys
+p=Path(sys.argv[1]); s=p.read_text()
+if sys.argv[2] not in s: raise SystemExit('fixture shared descriptor lacks source version')
+p.write_text(s.replace(sys.argv[2],sys.argv[3]))
+PY
+    tar -czf "$dest/aid-shared-v${version}.tar.gz" -C "$dest/shared" aid-payload.conf skills runtime
+    tar -czf "$dest/aid-${tool}-v${version}.tar.gz" -C "$dest/tool" aid-tool.conf "$root/agents"
+}
+
+PS019_BAD_VERSION="0.0.0"
+[[ "$PS019_BAD_VERSION" == "$VERSION" ]] && PS019_BAD_VERSION="0.0.1"
+PS019_HOME=$(newhome); setup_aid_home_ps1 "$PS019_HOME"; PS019_TARGET=$(newtarget)
+run_aid_ps1 "$PS019_HOME" add codex -FromBundle "$FIXTURE_DIR" -Target "$PS019_TARGET"
+assert_exit_eq "$RC" 0 "PS019-V01 seed pinned project"
+PS019_BEFORE=$(tree_snapshot "$PS019_TARGET")
+PS019_RELEASE="$TMP/version-release/v${PS019_BAD_VERSION}"; mkdir -p "$PS019_RELEASE"
+task019_make_version_bundle "$PS019_RELEASE" cursor "$PS019_BAD_VERSION" "$VERSION"
+pwsh_session_call "${PS019_HOME}/bin/aid.ps1" "$PWD" \
+    "AID_HOME=${PS019_HOME}" "AID_LIB_PATH=${PS019_HOME}/lib/AidInstallCore.psm1" \
+    "AID_ALLOW_ENDPOINT_OVERRIDE=1" "AID_DOWNLOAD_BASE=file://${TMP}/version-release" \
+    -- add cursor -Version "$PS019_BAD_VERSION" -Target "$PS019_TARGET"
+OUT=$(printf '%s' "$PWSH_CALL_OUT" | sed 's/\x1b\[[0-9;]*m//g'); RC=$PWSH_CALL_RC
+assert_exit_eq "$RC" 2 "PS019-V02 reject add version different from project"
+assert_eq "$(tree_snapshot "$PS019_TARGET")" "$PS019_BEFORE" "PS019-V03 version refusal preserves whole target tree"
+run_aid_ps1 "$PS019_HOME" add cursor -FromBundle "$FIXTURE_DIR" -Target "$PS019_TARGET"
+assert_exit_eq "$RC" 0 "PS019-V04 omitted version inherits project version"
+python3 - "$PS019_TARGET/.aid/.aid-manifest.json" "$PS019_BAD_VERSION" <<'PY'
+import json,sys
+p=sys.argv[1]; d=json.load(open(p)); d['tools']['codex']['version']=sys.argv[2]; open(p,'w').write(json.dumps(d,indent=2)+'\n')
+PY
+run_aid_ps1 "$PS019_HOME" add claude-code -FromBundle "$FIXTURE_DIR" -Target "$PS019_TARGET"
+assert_exit_ne "$RC" 0 "PS019-V05 divergent project versions reject add"
+assert_output_contains "$OUT" "aid update" "PS019-V06 divergent refusal directs user to aid update"
+run_aid_ps1 "$PS019_HOME" update -FromBundle "$FIXTURE_DIR" -Target "$PS019_TARGET"
+assert_exit_eq "$RC" 0 "PS019-V07 update repairs divergent versions"
+if manifest_versions_are_uniform "$PS019_TARGET/.aid/.aid-manifest.json"; then
+    assert_eq "uniform" "uniform" "PS019-V08 update leaves all shared and tool versions equal"
+else
+    assert_eq "divergent" "uniform" "PS019-V08 update leaves all shared and tool versions equal"
+fi
+
+PS019_MISMATCH="$TMP/mismatch-ps"; mkdir -p "$PS019_MISMATCH"
+task019_make_version_bundle "$PS019_MISMATCH" cursor "$PS019_BAD_VERSION" "$VERSION"
+PS019_MHOME=$(newhome); setup_aid_home_ps1 "$PS019_MHOME"; PS019_MT=$(newtarget)
+run_aid_ps1 "$PS019_MHOME" add codex -FromBundle "$FIXTURE_DIR" -Target "$PS019_MT"
+PS019_MBEFORE=$(tree_snapshot "$PS019_MT")
+run_aid_ps1 "$PS019_MHOME" add cursor -FromBundle "$PS019_MISMATCH" -Target "$PS019_MT"
+assert_exit_ne "$RC" 0 "PS019-V09 staging bundle version mismatch refuses install"
+assert_output_contains "$OUT" "aid update" "PS019-V09b staging bundle mismatch directs user to aid update"
+assert_eq "$(tree_snapshot "$PS019_MT")" "$PS019_MBEFORE" "PS019-V10 bundle mismatch preserves whole target tree"
+
+PS019_BARE=$(newtarget); PS019_BHOME=$(newhome); setup_aid_home_ps1 "$PS019_BHOME"
+run_aid_ps1 "$PS019_BHOME" projects add "$PS019_BARE"
+assert_exit_eq "$RC" 0 "PS019-M01 projects add initializes bare project"
+assert_file_contains "$PS019_BARE/.aid/settings.yml" 'format_version: 5' "PS019-M01b bare projects-add writes settings format 5"
+run_aid_ps1 "$PS019_BHOME" add cursor -FromBundle "$FIXTURE_DIR" -Target "$PS019_BARE"
+assert_exit_eq "$RC" 0 "PS019-M02 bare project accepts first tool"
+assert_file_contains "$PS019_BARE/.aid/.aid-manifest.json" '"format_version": 3' "PS019-M03 bare project writes manifest format 3"
+assert_file_contains "$PS019_BARE/.aid/settings.yml" 'format_version: 5' "PS019-M04 bare project writes settings format 5"
+
+PS019_V2=$(newtarget); PS019_V2HOME=$(newhome); setup_aid_home_ps1 "$PS019_V2HOME"
+mkdir -p "$PS019_V2/.aid"; printf '{"format_version":2,"aid_version":"%s","tools":{}}\n' "$VERSION" > "$PS019_V2/.aid/.aid-manifest.json"
+printf 'format_version: 4\n' > "$PS019_V2/.aid/settings.yml"
+run_aid_ps1 "$PS019_V2HOME" add cursor -FromBundle "$FIXTURE_DIR" -Target "$PS019_V2"
+assert_exit_eq "$RC" 0 "PS019-M04b empty format-2 manifest with stamp-4 settings accepts first add"
+assert_file_contains "$PS019_V2/.aid/.aid-manifest.json" '"format_version": 3' "PS019-M04c empty format-2 manifest upgraded to format 3"
+assert_file_contains "$PS019_V2/.aid/settings.yml" 'format_version: 5' "PS019-M04d empty legacy settings stamp upgraded to 5"
+
+PS019_INST=$(newtarget); PS019_IHOME=$(newhome); setup_aid_home_ps1 "$PS019_IHOME"
+run_aid_ps1 "$PS019_IHOME" add codex -FromBundle "$FIXTURE_DIR" -Target "$PS019_INST"
+printf 'format_version: 4\n' > "$PS019_INST/.aid/settings.yml"
+PS019_IB=$(tree_snapshot "$PS019_INST")
+run_aid_ps1 "$PS019_IHOME" add cursor -FromBundle "$FIXTURE_DIR" -Target "$PS019_INST"
+assert_exit_eq "$RC" 2 "PS019-M05 installed project refuses settings stamp 4"
+assert_eq "$(tree_snapshot "$PS019_INST")" "$PS019_IB" "PS019-M06 installed stamp refusal preserves tree"
+
+PS019_FUTURE=$(newtarget); PS019_FHOME=$(newhome); setup_aid_home_ps1 "$PS019_FHOME"
+mkdir -p "$PS019_FUTURE/.aid"; printf '{"format_version":4,"aid_version":"%s","tools":{}}\n' "$VERSION" > "$PS019_FUTURE/.aid/.aid-manifest.json"
+PS019_FB=$(tree_snapshot "$PS019_FUTURE")
+run_aid_ps1 "$PS019_FHOME" add cursor -FromBundle "$FIXTURE_DIR" -Target "$PS019_FUTURE"
+assert_exit_ne "$RC" 0 "PS019-M07 future manifest format refuses add"
+assert_eq "$(tree_snapshot "$PS019_FUTURE")" "$PS019_FB" "PS019-M08 future format refusal preserves tree"
+
+PS019_LEGACY=$(newtarget); PS019_LHOME=$(newhome); setup_aid_home_ps1 "$PS019_LHOME"
+mkdir -p "$PS019_LEGACY/.aid" "$PS019_LEGACY/.codex/aid"
+printf 'legacy managed payload\n' > "$PS019_LEGACY/.codex/aid/legacy-skill.md"
+printf 'format_version: 4\n' > "$PS019_LEGACY/.aid/settings.yml"
+run_aid_ps1 "$PS019_LHOME" projects add "$PS019_LEGACY"
+assert_exit_eq "$RC" 0 "PS019-M09 projects add registers manifestless legacy folder"
+PS019_LB=$(tree_snapshot "$PS019_LEGACY")
+run_aid_ps1 "$PS019_LHOME" add cursor -FromBundle "$FIXTURE_DIR" -Target "$PS019_LEGACY"
+assert_exit_ne "$RC" 0 "PS019-M10 manifestless legacy refuses tool add"
+assert_eq "$(tree_snapshot "$PS019_LEGACY")" "$PS019_LB" "PS019-M11 manifestless legacy refusal preserves tree"
+
+PS019_D="$TMP/detect"; mkdir -p "$PS019_D/.agents"
+OUT=$("$PWSH" -NoProfile -Command "Import-Module '$LIB_CORE_PS1' -Force; \$d = Detect-Tool '$PS019_D'; if (\$null -eq \$d) { exit 2 }; \$d" 2>&1); RC=$?
+assert_exit_eq "$RC" 2 "PS019-D01 .agents-only target is undetectable (exit 2, not Codex)"
+assert_output_not_contains "$OUT" codex "PS019-D02 .agents-only detection emits no codex"
+rm -rf "$PS019_D/.agents"; mkdir -p "$PS019_D/.codex"
+OUT=$("$PWSH" -NoProfile -Command "Import-Module '$LIB_CORE_PS1' -Force; \$d = Detect-Tool '$PS019_D'; if (\$null -eq \$d) { exit 2 }; \$d" 2>&1); RC=$?
+assert_exit_eq "$RC" 0 "PS019-D03 .codex target is detected"
+assert_output_contains "$OUT" codex "PS019-D04 .codex detection names codex"
 
 # ISOLATION CANARY: the real HOME's .aid subtree must be byte-unchanged by this suite
 # (superset check via sandbox.sh, still asserted under the suite's original label).

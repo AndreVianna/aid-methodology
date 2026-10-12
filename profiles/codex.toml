@@ -1,9 +1,9 @@
 # Profile: Codex CLI (OpenAI Codex CLI)
 # Encodes the Codex CLI host tool's install conventions.
-# Consumed by render.py to emit the profiles/codex/.codex/ tree.
+# Consumed by the profile renderer; agents and placement data are emitted.
 #
 # agent_format: "toml" retained DORMANT (E-CODEX-1 not yet high-confidence).
-# Expected final state: "markdown" once E-CODEX-1 is confirmed.
+# The host TOML branch remains available for Codex agents.
 
 root_dir     = ".codex"
 root_file    = "AGENTS.md"

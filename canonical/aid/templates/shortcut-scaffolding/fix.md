@@ -2,7 +2,7 @@
 
 Per-family scaffolding reference for the **`fix`** verb (bare -- `aid-fix`, no
 artifact suffix). Consulted by the
-shared engine (`canonical/aid/templates/shortcut-engine.md § Family
+shared engine (`.aid/runtime/templates/shortcut-engine.md § Family
 Scaffolding Consult`) at CAPTURE, SPEC, and DETAIL for every `{verb, artifact}`
 whose `verb` field resolves to `fix`. Free-form prose, like any other
 `state-*.md` reference doc -- the dispatched `aid-architect` reads this for
@@ -102,7 +102,7 @@ deeper verification and the narrative documentation route away.
 
 ## See also
 
-- `canonical/aid/templates/shortcut-engine.md § Family Scaffolding Consult` --
+- `.aid/runtime/templates/shortcut-engine.md § Family Scaffolding Consult` --
   how this file is looked up and what happens when it is absent
 - `.aid/knowledge/artifact-schemas.md § Task DETAIL.md` -- the one-type-per-task
   contract

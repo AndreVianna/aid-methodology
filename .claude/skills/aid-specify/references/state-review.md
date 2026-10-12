@@ -39,12 +39,12 @@ Include in the brief file (not in the dispatch prompt — `reviewer-dispatch.md`
 - **Ledger lifecycle:** "Read `.aid/.temp/review-pending/specify-<feature>.md` if it
   exists. For each existing row: verify on disk, update Status (Pending→Fixed if
   resolved; Fixed→Recurred if regressed). Append new findings with Status: Pending."
-- **Schema reference:** "Output per `.claude/aid/templates/reviewer-ledger-schema.md`.
+- **Schema reference:** "Output per `.aid/runtime/templates/reviewer-ledger-schema.md`.
   The ledger is the entire file — ONE markdown table, no headers, no narrative."
 
 Dispatch the `aid-reviewer` subagent **at Large tier** (the executor is the Large
 `aid-architect`; reviewer tier >= executor tier per
-`.claude/aid/templates/agent-dispatch-tiering.md`) with a pointer to the rendered brief file
+`.aid/runtime/templates/agent-dispatch-tiering.md`) with a pointer to the rendered brief file
 (`reviewer-dispatch.md` § Dispatch by path).
 
 ### Grade Overall
@@ -52,10 +52,10 @@ Dispatch the `aid-reviewer` subagent **at Large tier** (the executor is the Larg
 After the aid-reviewer returns, run grade.sh on the ledger:
 
 ```bash
-bash .claude/aid/scripts/grade.sh --explain .aid/.temp/review-pending/specify-<feature>.md
+bash .aid/runtime/scripts/grade.sh --explain .aid/.temp/review-pending/specify-<feature>.md
 ```
 
-Compare to minimum grade from `bash .claude/aid/scripts/config/read-setting.sh --skill specify --key minimum_grade --default A`.
+Compare to minimum grade from `bash .aid/runtime/scripts/config/read-setting.sh --skill specify --key minimum_grade --default A`.
 
 | Condition | Action |
 |-----------|--------|

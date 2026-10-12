@@ -9,7 +9,7 @@ description: >
   document -- realize the seed into the built client/adapter with `/aid-create-integration`
   once it is ready. Produced by the aid-architect agent and independently verified by
   aid-reviewer (full verify). Allocates a work-NNN folder.
-allowed-tools: Read, Glob, Grep, Bash, Write, Edit, Agent
+allowed-tools: Read Glob Grep Bash Shell Terminal Write Edit Agent
 argument-hint: "<subject> -- the integration to design (service, client surface, auth/failure)"
 ---
 
@@ -17,7 +17,7 @@ argument-hint: "<subject> -- the integration to design (service, client surface,
 
 Bind **VERB=`design`**, **ARTIFACT=`integration`** -- the `design` *stage* in the
 contract's vocabulary -- then follow the shared contract at
-`.claude/aid/templates/design-lifecycle.md`. This skill binds that contract and
+`.aid/runtime/templates/design-lifecycle.md`. This skill binds that contract and
 restates none of its rules. The seed it writes is `.aid/design/integration.md`; realizing
 it into the built client/adapter is `/aid-create-integration`'s job, not this one's.
 
@@ -38,7 +38,7 @@ entry line on each state.
    integration do you want to design -- the service, its client surface, and its auth and
    failure modes?") and wait.
 2. **Allocate** through the Work Initiation Gate exactly as the contract's Allocation rule
-   requires (`.claude/skills/aid-design/SKILL.md` INTAKE step 4 is the shape), with
+   requires (`.agents/skills/aid-design/SKILL.md` INTAKE step 4 is the shape), with
    `initiator: aid-design-integration`. `phase` is not driven.
 3. **Acquire `.aid/design/`** per the contract, then read `.aid/design/integration.md` if a
    prior seed exists -- re-invocation iterates it rather than starting over.

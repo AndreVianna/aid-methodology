@@ -9,7 +9,7 @@ description: >
   verifiable checks score the machine grade, and an interactive checklist scores the human
   grade, including a mandatory visual review. Idempotent -- re-running on an unchanged
   Knowledge Base does nothing.
-allowed-tools: Read, Glob, Grep, Bash, Write, Edit
+allowed-tools: Read Glob Grep Bash Shell Terminal Write Edit
 argument-hint: "[--grade X] override minimum  [--theme default|brand-X]  [--reset]"
 ---
 
@@ -41,7 +41,7 @@ summarization.
 
 ## ⚠️ Pre-flight Checks
 
-Run `canonical/aid/scripts/summarize/summarize-preflight.sh` before any state. It verifies:
+Run `.aid/runtime/scripts/summarize/summarize-preflight.sh` before any state. It verifies:
 
 1. `.aid/knowledge/STATE.md` exists.
 2. `**User Approved:** yes` is present in `.aid/knowledge/STATE.md`.
@@ -56,8 +56,8 @@ proceed; do NOT create any state files.
 
 | Argument | Effect |
 |----------|--------|
-| `--grade X` | Override the minimum acceptable grade. Format: `[A-F][-+]?`. Without this, runs `bash canonical/aid/scripts/config/read-setting.sh --skill summary --key minimum_grade --default A` (resolves per-skill override → global `review.minimum_grade` → default `A`). When passed, persist to `.aid/settings.yml` `summary.minimum_grade` via `/aid-config`. |
-| `--theme palette=X` | Override color palette (e.g., `--theme palette=brand-acme`). Default uses the canonical palette in `canonical/aid/templates/knowledge-summary/design-tokens.md`. |
+| `--grade X` | Override the minimum acceptable grade. Format: `[A-F][-+]?`. Without this, runs `bash .aid/runtime/scripts/config/read-setting.sh --skill summary --key minimum_grade --default A` (resolves per-skill override → global `review.minimum_grade` → default `A`). When passed, persist to `.aid/settings.yml` `summary.minimum_grade` via `/aid-config`. |
+| `--theme palette=X` | Override color palette (e.g., `--theme palette=brand-acme`). Default uses the canonical palette in `.aid/runtime/templates/knowledge-summary/design-tokens.md`. |
 | `--reset` | Force regeneration regardless of staleness check; clears `## Knowledge Summary Status` in `.aid/knowledge/STATE.md`. |
 
 ---
@@ -213,24 +213,24 @@ human review. This includes:
 - **Accessibility baseline** (A1/A2/A3/A4/A5), **link correctness** (L1/L2), **HTML validity** (H1),
   and **contrast** (C1/C2, via `contrast-check.mjs`).
 
-See `canonical/aid/templates/knowledge-summary/grading-rubric.md` for the complete rubric and grade boundaries.
+See `.aid/runtime/templates/knowledge-summary/grading-rubric.md` for the complete rubric and grade boundaries.
 
 ---
 
 ## References
 
-- `canonical/aid/templates/knowledge-summary/prompt.md` — agent guidance for the GENERATE step (long-form)
-- `canonical/aid/templates/knowledge-summary/design-tokens.md` — color palette, typography, spacing
-- `canonical/aid/templates/knowledge-summary/component-css.css` — full reusable CSS (inlined)
-- `canonical/aid/templates/knowledge-summary/lightbox.js` — full reusable JS (theme, lightbox, scrollspy, a11y)
-- `canonical/aid/scripts/summarize/validate-visuals.mjs` — §7 visual-fidelity gate (Playwright-based): T1 readable text, T2 minimal overlap, T3 correct layout for every authored visual (inline `<svg>`, `.diagram-box`, infographic container)
-- `canonical/aid/templates/knowledge-summary/section-templates/` — `kb-category`-keyed rendering hints (retired as project-type profile selectors)
-- `canonical/aid/templates/knowledge-summary/accessibility-checklist.md` — WCAG AA targets, focus trap pattern
-- `canonical/aid/templates/knowledge-summary/grading-rubric.md` — two-grade rubric (Machine + Human), completeness-based grading
-- `canonical/aid/templates/knowledge-summary/html-skeleton.html` — doctype, head, semantic landmarks, noscript (with `{{NOSCRIPT_DOC_LIST}}` placeholder for derived doc list)
-- `canonical/aid/scripts/summarize/grade-summary.sh` — orchestrates AUTO_POOL checks, reads `.aid/.temp/summarize/manual-checklist.json` for MANUAL_POOL, prints Machine + Human + Overall grades
-- `canonical/aid/scripts/summarize/manual-checklist.sh` — validates / scores the MANUAL_POOL result file (`--input PATH` headless mode; `--interactive` for raw-terminal use)
-- `canonical/aid/scripts/summarize/spot-check-facts.sh` — extracts HTML claims, grep-matches against source KB, writes `.aid/.temp/summarize/spot-check-facts.txt` (aids the user's K2 judgment)
+- `.aid/runtime/templates/knowledge-summary/prompt.md` — agent guidance for the GENERATE step (long-form)
+- `.aid/runtime/templates/knowledge-summary/design-tokens.md` — color palette, typography, spacing
+- `.aid/runtime/templates/knowledge-summary/component-css.css` — full reusable CSS (inlined)
+- `.aid/runtime/templates/knowledge-summary/lightbox.js` — full reusable JS (theme, lightbox, scrollspy, a11y)
+- `.aid/runtime/scripts/summarize/validate-visuals.mjs` — §7 visual-fidelity gate (Playwright-based): T1 readable text, T2 minimal overlap, T3 correct layout for every authored visual (inline `<svg>`, `.diagram-box`, infographic container)
+- `.aid/runtime/templates/knowledge-summary/section-templates/` — `kb-category`-keyed rendering hints (retired as project-type profile selectors)
+- `.aid/runtime/templates/knowledge-summary/accessibility-checklist.md` — WCAG AA targets, focus trap pattern
+- `.aid/runtime/templates/knowledge-summary/grading-rubric.md` — two-grade rubric (Machine + Human), completeness-based grading
+- `.aid/runtime/templates/knowledge-summary/html-skeleton.html` — doctype, head, semantic landmarks, noscript (with `{{NOSCRIPT_DOC_LIST}}` placeholder for derived doc list)
+- `.aid/runtime/scripts/summarize/grade-summary.sh` — orchestrates AUTO_POOL checks, reads `.aid/.temp/summarize/manual-checklist.json` for MANUAL_POOL, prints Machine + Human + Overall grades
+- `.aid/runtime/scripts/summarize/manual-checklist.sh` — validates / scores the MANUAL_POOL result file (`--input PATH` headless mode; `--interactive` for raw-terminal use)
+- `.aid/runtime/scripts/summarize/spot-check-facts.sh` — extracts HTML claims, grep-matches against source KB, writes `.aid/.temp/summarize/spot-check-facts.txt` (aids the user's K2 judgment)
 
 ---
 

@@ -17,7 +17,7 @@
 #   T04  {{DOCUMENT_EXPECTATIONS}} placeholder present in reviewer-prompt.md
 #   T05  document-expectations.md named in state-review.md (REVIEW dispatch wiring)
 #   T06  document-expectations.md named in state-fix.md (FIX dispatch wiring)
-#   T07  document-expectations.md is superset: contains "### {reviewer_output_file}"
+#   T07  document-expectations.md is superset: contains "### STATE.md"
 #   T08  document-expectations.md retains "### project-structure.md"
 #   T09  document-expectations.md retains "### external-sources.md"
 #
@@ -85,8 +85,8 @@ assert_file_contains "${STATE_FIX}" "document-expectations.md" \
 # --- Merge-completeness: document-expectations.md is a superset ---
 
 # T07: ported block present
-assert_file_contains "${DOC_EXPECTATIONS}" "### {reviewer_output_file}" \
-    "T07 document-expectations.md contains '### {reviewer_output_file}' (ported from reviewer)"
+assert_file_contains "${DOC_EXPECTATIONS}" "### STATE.md" \
+    "T07 document-expectations.md contains '### STATE.md' (ported from reviewer)"
 
 # T08: retained block present
 assert_file_contains "${DOC_EXPECTATIONS}" "### project-structure.md" \

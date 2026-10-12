@@ -36,13 +36,13 @@ the bold line again):
 
 On approval:
 ```bash
-bash .claude/aid/scripts/summarize/writeback-state.sh --set summary_approved yes --set last_summary "$(date -u +%Y-%m-%d)"
+bash .aid/runtime/scripts/summarize/writeback-state.sh --set summary_approved yes --set last_summary "$(date -u +%Y-%m-%d)"
 ```
 then transition to WRITEBACK.
 
 On rejection:
 ```bash
-bash .claude/aid/scripts/summarize/writeback-state.sh --set summary_approved no
+bash .aid/runtime/scripts/summarize/writeback-state.sh --set summary_approved no
 ```
 exit. `## Summarization History` is NOT updated.
 

@@ -8,7 +8,7 @@ description: >
   deleted from tech-debt.md). Registers the document in `.aid/settings.yml` and
   `.aid/knowledge/README.md` on first creation. Routes to `/aid-update-backlog` when the
   item sections already carry committed content.
-allowed-tools: Read, Glob, Grep, Bash, Write, Edit, Agent
+allowed-tools: Read Glob Grep Bash Shell Terminal Write Edit Agent
 argument-hint: "[<direction>] -- which items to accept and how to prioritize them (fills item sections from the seed)"
 ---
 
@@ -16,7 +16,7 @@ argument-hint: "[<direction>] -- which items to accept and how to prioritize the
 
 `/aid-create-backlog` realizes a ready backlog seed at `.aid/design/backlog.md`
 into the committed KB document at `.aid/knowledge/backlog.md`. It is a `create`-stage
-skill under the shared contract in `.claude/aid/templates/design-lifecycle.md` (class 1),
+skill under the shared contract in `.aid/runtime/templates/design-lifecycle.md` (class 1),
 consuming the seed `/aid-design-backlog` produces and never touching `.aid/design/` for any
 other purpose.
 

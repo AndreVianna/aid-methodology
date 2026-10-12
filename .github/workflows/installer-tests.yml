@@ -108,10 +108,19 @@ jobs:
         with:
           node-version: '24'
 
+      # Release staging: the same `release.sh --stage-only` the release uses. Its output
+      # directory (aid-stage, relative to the workspace) is the only artifact source for the
+      # Windows suites and the channel smokes below; nothing in this workflow builds tool
+      # tarballs from the profile tree any more.
+      - name: Stage release artifacts (release.sh --stage-only)
+        if: matrix.mode == 'native-ps1'
+        shell: bash
+        run: bash release.sh --stage-only --out aid-stage
+
       - name: Run native PowerShell installer test
         if: matrix.mode == 'native-ps1'
         shell: pwsh
-        run: pwsh -NoProfile -File tests/windows/Test-AidInstaller.ps1
+        run: pwsh -NoProfile -File tests/windows/Test-AidInstaller.ps1 -StageDir aid-stage
 
       - name: Run PowerShell install-provisioning parity test
         if: matrix.mode == 'native-ps1'
@@ -127,7 +136,7 @@ jobs:
       - name: Run native PowerShell installer test (Windows PowerShell 5.1)
         if: matrix.mode == 'native-ps1'
         shell: powershell
-        run: powershell -NoProfile -ExecutionPolicy Bypass -File tests/windows/Test-AidInstaller.ps1
+        run: powershell -NoProfile -ExecutionPolicy Bypass -File tests/windows/Test-AidInstaller.ps1 -StageDir aid-stage
 
       - name: Run PowerShell install-provisioning parity test (Windows PowerShell 5.1)
         if: matrix.mode == 'native-ps1'
@@ -247,7 +256,6 @@ jobs:
 
           $repoRoot = (Get-Location).Path
           $pkgDir   = Join-Path $repoRoot 'packages' 'npm'
-          $profilesDir = Join-Path $repoRoot 'profiles'
           $version  = (Get-Content -LiteralPath (Join-Path $repoRoot 'VERSION') -Raw).Trim()
 
           # Vendor the 6 aid-cli files into the package directory.
@@ -291,23 +299,12 @@ jobs:
           }
           Write-Host "aid status no-.aid dir: exit 0 + offer (PASS)"
 
-          # Smoke: build codex fixture tarball.
-          $fixtureDir = New-TemporaryFile | ForEach-Object { Remove-Item $_ -Force; New-Item -ItemType Directory -Path $_.FullName }
-          $profileDir = Join-Path $profilesDir 'codex'
-          $tarball    = Join-Path $fixtureDir.FullName "aid-codex-v$version.tar.gz"
-          $filelist   = [System.IO.Path]::GetTempFileName()
-          Get-ChildItem -Recurse -File -LiteralPath $profileDir |
-              Where-Object { $_.Name -notin @('README.md', 'emission-manifest.jsonl') } |
-              ForEach-Object { "./$($_.FullName.Substring($profileDir.Length + 1).Replace('\','/'))" } |
-              Set-Content $filelist -Encoding utf8
-          Push-Location $profileDir
-          tar -czf $tarball --no-recursion -T $filelist
-          Pop-Location
-          Remove-Item $filelist -ErrorAction SilentlyContinue
+          # Smoke: the bundle directory staged by release.sh --stage-only (v4 contract).
+          $stageDir = Join-Path $repoRoot 'aid-stage'
 
           # Smoke: aid add codex --from-bundle.
           $targetDir = New-TemporaryFile | ForEach-Object { Remove-Item $_ -Force; New-Item -ItemType Directory -Path $_.FullName }
-          $out2 = & $aidCmd.FullName add codex --from-bundle $tarball --target $targetDir.FullName 2>&1
+          $out2 = & $aidCmd.FullName add codex --from-bundle $stageDir --target $targetDir.FullName 2>&1
           if ($LASTEXITCODE -ne 0) {
               Write-Error "aid add codex: expected exit 0, got $LASTEXITCODE`nOutput: $out2"
               exit 1
@@ -329,7 +326,6 @@ jobs:
 
           $repoRoot    = (Get-Location).Path
           $pkgDir      = Join-Path $repoRoot 'packages' 'pypi'
-          $profilesDir = Join-Path $repoRoot 'profiles'
           $version     = (Get-Content -LiteralPath (Join-Path $repoRoot 'VERSION') -Raw).Trim()
 
           # Vendor the 6 aid-cli files into the package directory.
@@ -386,23 +382,12 @@ jobs:
           }
           Write-Host "aid status no-.aid dir: exit 0 + offer (PASS)"
 
-          # Smoke: build codex fixture tarball.
-          $fixtureDir = New-TemporaryFile | ForEach-Object { Remove-Item $_ -Force; New-Item -ItemType Directory -Path $_.FullName }
-          $profileDir = Join-Path $profilesDir 'codex'
-          $tarball    = Join-Path $fixtureDir.FullName "aid-codex-v$version.tar.gz"
-          $filelist   = [System.IO.Path]::GetTempFileName()
-          Get-ChildItem -Recurse -File -LiteralPath $profileDir |
-              Where-Object { $_.Name -notin @('README.md', 'emission-manifest.jsonl') } |
-              ForEach-Object { "./$($_.FullName.Substring($profileDir.Length + 1).Replace('\','/'))" } |
-              Set-Content $filelist -Encoding utf8
-          Push-Location $profileDir
-          tar -czf $tarball --no-recursion -T $filelist
-          Pop-Location
-          Remove-Item $filelist -ErrorAction SilentlyContinue
+          # Smoke: the bundle directory staged by release.sh --stage-only (v4 contract).
+          $stageDir = Join-Path $repoRoot 'aid-stage'
 
           # Smoke: aid add codex --from-bundle.
           $targetDir = New-TemporaryFile | ForEach-Object { Remove-Item $_ -Force; New-Item -ItemType Directory -Path $_.FullName }
-          $out2 = & $aidEntry add codex --from-bundle $tarball --target $targetDir.FullName 2>&1
+          $out2 = & $aidEntry add codex --from-bundle $stageDir --target $targetDir.FullName 2>&1
           if ($LASTEXITCODE -ne 0) {
               Write-Error "aid add codex: expected exit 0, got $LASTEXITCODE`nOutput: $out2"
               exit 1

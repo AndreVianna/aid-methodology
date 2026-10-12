@@ -9,7 +9,7 @@ description: >
   `/aid-update-roadmap` when the horizon sections already carry committed content. The ##
   MVP section belongs entirely to `/aid-create-mvp` -- this skill writes only its ##
   Contents index entry.
-allowed-tools: Read, Glob, Grep, Bash, Write, Edit, Agent
+allowed-tools: Read Glob Grep Bash Shell Terminal Write Edit Agent
 argument-hint: "[<direction>] -- what to realize (fills horizon sections from the seed)"
 ---
 
@@ -17,7 +17,7 @@ argument-hint: "[<direction>] -- what to realize (fills horizon sections from th
 
 `/aid-create-roadmap` realizes a ready roadmap seed at `.aid/design/roadmap.md`
 into the committed KB document at `.aid/knowledge/roadmap.md`. It is a `create`-stage
-skill under the shared contract in `.claude/aid/templates/design-lifecycle.md` (class 1),
+skill under the shared contract in `.aid/runtime/templates/design-lifecycle.md` (class 1),
 consuming the seed `/aid-design-roadmap` produces and never touching `.aid/design/` for any
 other purpose.
 

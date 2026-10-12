@@ -45,11 +45,11 @@ Include in the brief file (not in the dispatch prompt — `reviewer-dispatch.md`
 - **Ledger lifecycle:** "Read `{{LEDGER}}` if it exists.
   For each existing row: verify on disk, update Status (Pending→Fixed if resolved;
   Fixed→Recurred if regressed). Append new findings with Status: Pending.
-  Output per `canonical/aid/templates/reviewer-ledger-schema.md` — ONE table, no narrative."
+  Output per `.aid/runtime/templates/reviewer-ledger-schema.md` — ONE table, no narrative."
 
 Dispatch the `aid-reviewer` subagent **at Large tier** (the executor is the Large
 `aid-architect`; reviewer tier >= executor tier per
-`canonical/aid/templates/agent-dispatch-tiering.md`) with a pointer to the rendered brief file
+`.aid/runtime/templates/agent-dispatch-tiering.md`) with a pointer to the rendered brief file
 (`reviewer-dispatch.md` § Dispatch by path).
 
 ### Grade Overall
@@ -57,10 +57,10 @@ Dispatch the `aid-reviewer` subagent **at Large tier** (the executor is the Larg
 After aid-reviewer returns, run grade.sh:
 
 ```bash
-bash canonical/aid/scripts/grade.sh --explain {{LEDGER}}
+bash .aid/runtime/scripts/grade.sh --explain {{LEDGER}}
 ```
 
-Compare to minimum grade from `bash canonical/aid/scripts/config/read-setting.sh --skill detail --key minimum_grade --default A`.
+Compare to minimum grade from `bash .aid/runtime/scripts/config/read-setting.sh --skill detail --key minimum_grade --default A`.
 
 | Condition | Action |
 |-----------|--------|

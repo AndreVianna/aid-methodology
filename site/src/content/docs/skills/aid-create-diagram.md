@@ -10,7 +10,7 @@ generatedFrom: 'canonical/skills/aid-create-diagram/SKILL.md'
 
 - **`name`** — aid-create-diagram
 - **`description`** — Create a diagram in one pass, choosing the diagram type that fits the subject -- flowchart, sequence, entity-relationship, C4, state, and so on, in Mermaid or Graphviz. Use this skill when a picture would explain something faster than prose and you do not want to pick the notation yourself. It is grounded in, and accuracy-checked against, the Knowledge Base (`.aid/knowledge/`) and the project source; aid-tech-writer produces it and aid-reviewer verifies it. It resolves nothing: it drafts, you approve, and only then is the diagram placed. It never writes into `.aid/knowledge/`. A thin kind-sibling of `/aid-create-document` with the output format bound to a diagram.
-- **`allowed-tools`** — Read, Glob, Grep, Bash, Write, Edit, Agent
+- **`allowed-tools`** — Read Glob Grep Bash Shell Terminal Write Edit Agent
 - **`argument-hint`** — &lt;subject> -- what to diagram
 
 [Definition: `canonical/skills/aid-create-diagram/SKILL.md`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-create-diagram/SKILL.md)
@@ -82,8 +82,8 @@ row (`alias_of: null`, its own `{verb: create, artifact: diagram}`), `repurpose:
 4. **Classify complexity (model + effort):** most docs -> `aid-tech-writer` at **sonnet /
    medium**; a heavy architecture write-up -> **opus / high**. Verifier tier >= producer.
 5. **Consult the Work Initiation Gate, then allocate the work folder + STATE.** First run
-   the gate (`canonical/aid/templates/work-initiation-gate.md`):
-   `bash canonical/aid/scripts/works/enumerate-works.sh` (main tree + every git worktree).
+   the gate (`.aid/runtime/templates/work-initiation-gate.md`):
+   `bash .aid/runtime/scripts/works/enumerate-works.sh` (main tree + every git worktree).
    Empty -> allocate, no prompt. Works exist -> ask new-vs-continuation; on **continuation**
    route to the chosen work's resume door and STOP (allocate nothing); on **new work**:
    create and enter the worktree per the gate's `§ 3a` step 2
@@ -123,7 +123,7 @@ It drafts into the work folder (not yet placed). Text formats are produced nativ
 2. **Adversarial verification** -- clean-context **`aid-reviewer`** checks the draft:
    accurate against KB + codebase, complete for its genre, no fabricated content. Writes a
    review-quality ledger to `.aid/.temp/review-pending/<work>-verify.md`.
-3. **Grade:** `bash canonical/aid/scripts/grade.sh --explain <ledger>`. Not clean -> loop
+3. **Grade:** `bash .aid/runtime/scripts/grade.sh --explain <ledger>`. Not clean -> loop
    to AUTHOR. Circuit-breaker: 3 cycles -> IMPEDIMENT + `lifecycle: Blocked`.
 ~~~~
 

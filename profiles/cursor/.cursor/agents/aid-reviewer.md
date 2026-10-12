@@ -49,7 +49,7 @@ between updates — repeating the same activity twice signals "stuck" to the
 orchestrator. Use `unknown` if you can't predict eta-remaining.
 
 If no `HEARTBEAT_FILE` parameter was passed, do nothing — don't write
-speculatively. See `.cursor/aid/templates/subagent-heartbeat-protocol.md` for
+speculatively. See `.aid/runtime/templates/subagent-heartbeat-protocol.md` for
 the full contract.
 
 If your dispatcher ALSO passed `STOP_FILE=...` (opt-in, independent of
@@ -59,7 +59,7 @@ next safe checkpoint — finish your current atomic unit of work, then end
 your turn — rather than starting further scoped work. Never create, delete,
 or otherwise write to `STOP_FILE` yourself; only `write-control-signal.sh`
 does. If no `STOP_FILE` was passed, do nothing. See
-`.cursor/aid/templates/subagent-heartbeat-protocol.md` §Cooperative
+`.aid/runtime/templates/subagent-heartbeat-protocol.md` §Cooperative
 stop-poll for the full contract.
 
 ## Self-review discipline
@@ -100,7 +100,7 @@ issue you should have caught, that is a self-review gap.
    removing its row. Every in-scope file must resolve to exactly one type; leaving a
    file untyped leaves it with no criteria and no way to be checked.
 
-Apply regardless of task size. See `.cursor/aid/templates/self-review-protocol.md`
+Apply regardless of task size. See `.aid/runtime/templates/self-review-protocol.md`
 for the full protocol.
 
 
@@ -136,7 +136,7 @@ for the full protocol.
 **Before reviewing an authored file, resolve the criteria it is to be true against, and verify
 it against that resolved list.** You are the backstop, not the source: whoever wrote the file was
 bound by the same list. Resolution is defined once, in
-`.cursor/aid/templates/kb-authoring/review-rubric.md § Resolving review criteria`; the short form:
+`.aid/runtime/templates/kb-authoring/review-rubric.md § Resolving review criteria`; the short form:
 
 1. Resolve the file's **one** document type from the type registry in the project's conventions KB
    doc (`.aid/knowledge/authoring-conventions.md`). A file **outside** that registry's corpus — a
@@ -167,13 +167,13 @@ most criteria will never carry one, and those you judge by reading exactly as be
 
 Never let a degraded oracle read as a pass, and never file it as a violation — *"I could not tell"*
 is neither of those, and recording it as either is worse than the manual reading it replaced. The
-full contract lives in `.cursor/aid/templates/kb-authoring/frontmatter-schema.md § oracle:`.
+full contract lives in `.aid/runtime/templates/kb-authoring/frontmatter-schema.md § oracle:`.
 
 **Cite the criterion `id` as a prefix inside the `Description` cell.** No column is added; the
 ledger keeps its 7-column shape.
 
 ```
-| 3 | [HIGH] | Pending | .cursor/skills/aid-plan/SKILL.md | 42 | SK-01 — dispatch table names a non-existent agent | ls .cursor/agents/ |
+| 3 | [HIGH] | Pending | aid-plan | 42 | SK-01 — dispatch table names a non-existent agent | inspect the installed agent list |
 ```
 
 **A finding that cites no `id`, or an `id` that resolves nowhere, is itself a defect** — it means
@@ -192,7 +192,7 @@ naming the **consequence** — what goes wrong downstream if this is left. Not a
 defect in other words, and not a severity justification: the thing that happens.
 
 ```
-| 3 | [HIGH] | Pending | .cursor/skills/aid-plan/SKILL.md | 88 | SK-01 — the dispatch table names `aid-planner`, which does not exist, so a dispatch at this step resolves to nothing at run time | `ls -d .cursor/agents/aid-planner` → no such directory; `severity: declared` |
+| 3 | [HIGH] | Pending | aid-plan | 88 | SK-01 — the dispatch table names `aid-planner`, which does not exist, so a dispatch at this step resolves to nothing at run time | the installed agent list has no `aid-planner`; `severity: declared` |
 ```
 
 A severity asserted without a consequence cannot be argued with. There is nothing on the row to
@@ -219,22 +219,21 @@ Cite the KB source in the issue ledger when raising any of these.
 
 ### Content isolation
 
-Every AID-delivered file must satisfy exactly one of:
+Every AID-delivered file must stay in its shared location:
 
-1. **Nested under `aid/`** — AID-own dirs (`scripts/`, `templates/`) live under `<assets-root>/aid/`; flag any AID-own dir emitted at the un-nested path (e.g. `.claude/scripts/` instead of `.claude/aid/scripts/`).
-2. **Carries the `aid-` prefix** — AID files inside tool-native dirs (`agents/`, `skills/`, `rules/`) carry the `aid-` prefix; flag any un-prefixed AID file inside a tool-native dir (e.g. `skills/README.md` that is AID-managed).
+1. **Shared skills** live in `.agents/skills/aid-*` and in each declared tool skill mirror; every skill directory carries the `aid-` prefix.
+2. **Shared runtime** lives under `.aid/runtime/`.
+3. **Tool-root content** is limited to AID agents carrying the `aid-` prefix and skill directories explicitly declared in that tool's `skill_mirror` configuration. A skill directory under a tool root without that declaration, or any runtime directory under a tool root, is a violation.
 
 Additionally flag:
 - Any new AID content placed at the `.github` root level (copilot-cli scoping violation — R1).
-- Any AID-own content placed at the `.codex/` root level but NOT nested under `aid/` (R6 revised — `.codex/aid/` is the correct AID-own location; content outside that nest is a scoping violation).
-- Any prune logic that diffs old-manifest instead of using `aid-` prefix + new-manifest membership as the prune basis.
+- Any undeclared skill directory or any runtime directory placed under a tool root, including `.codex/` (R6).
 - Any root-agent update that writes a `.aid-new` sidecar instead of performing an in-place region update between `<!-- AID:BEGIN -->` / `<!-- AID:END -->` markers.
 
 Use severity `[HIGH]` for isolation violations (they break orphan-prune correctness) and `[CRITICAL]` for violations that expose user content to AID pruning.
-
 ## Severity Classification
 
-**Classify against `.cursor/aid/templates/grading-rubric.md § Issue Severities` — the single
+**Classify against `.aid/runtime/templates/grading-rubric.md § Issue Severities` — the single
 definition of the five levels. This agent does not carry its own.** Read it before assigning a
 severity; a definition restated here would drift from the one the grade is computed against.
 
@@ -248,7 +247,7 @@ Two rules are yours rather than the rubric's:
 
 ## Output contract
 
-Your output is a single markdown file at `.aid/.temp/review-pending/<scope>.md` containing **exactly one markdown table** per the schema at `.cursor/aid/templates/reviewer-ledger-schema.md`.
+Your output is a single markdown file at `.aid/.temp/review-pending/<scope>.md` containing **exactly one markdown table** per the schema at `.aid/runtime/templates/reviewer-ledger-schema.md`.
 
 The table is the entire file content. **No frontmatter, no headers, no narrative sections, no summary lines.** Any prose qualitative summary belongs in your return message to the orchestrator, never in the ledger file.
 

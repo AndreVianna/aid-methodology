@@ -8,33 +8,25 @@ Understanding the structure is key to contributing in the right place:
 
 | Directory | Audience | Format | Purpose |
 |-----------|----------|--------|---------|
-| `skills/` | Humans | README.md | Rich documentation per phase (hand-maintained) |
-| `agents/` | Humans | README.md | Rich documentation per agent role (hand-maintained) |
-| `canonical/` | Generator | .md / .toml | Single source of truth for all install-tree content |
-| `profiles/` | Generator | .toml | Per-tool rendering conventions (one profile per tool) |
-| `profiles/claude-code/.claude/` | LLMs | .md (YAML frontmatter) | Generated — Claude Code install tree |
-| `profiles/codex/.codex/agents/` | LLMs | .toml | Generated — Codex CLI agent definitions |
-| `profiles/codex/.codex/skills/` | LLMs | SKILL.md | Generated — Codex CLI skill files |
-| `profiles/cursor/.cursor/` | LLMs | .md / .mdc | Generated — Cursor IDE install tree |
-| `templates/` | Both | Markdown | Fill-in templates (canonical source in `canonical/aid/templates/`) |
+| `canonical/` | Generator | .md / .toml | Single source of truth for all shipped content: skills (`canonical/skills/`), agents (`canonical/agents/`), runtime and templates (`canonical/aid/`) |
+| `profiles/*.toml` | Generator | .toml | Per-tool rendering conventions (one profile per tool) |
+| `profiles/<tool>/` | LLMs | .md / .toml | Generated — one tool's rendered agents plus its `aid-tool.conf` (`claude-code`, `codex`, `cursor`, `copilot-cli`, `antigravity`) |
 | `examples/` | Humans | Markdown | Real-world case studies |
 | `docs/` | Humans | Markdown | User-facing documentation, including the core methodology document |
 
 **Important:** To update a skill, agent, or template, edit the canonical source under
-`canonical/` and run `/generate-profile`. The five install trees (`profiles/claude-code/.claude/`,
-`profiles/codex/.codex/`, `profiles/cursor/.cursor/`,
-`profiles/copilot-cli/.github/`, `profiles/antigravity/.agent/`) are **generated artifacts** —
-do not hand-edit them directly. Your changes will be overwritten on the next generator run.
-See `canonical/EMISSION-MANIFEST.md` for the deletion safety boundary and
-`.claude/skills/generate-profile/SKILL.md` for the full generation pipeline.
-
-**Exception:** The human-readable `skills/` and `agents/` directories at the repo root
-are **not** generated — they remain hand-maintained READMEs and must be updated
-separately when methodology content changes.
+`canonical/` and run `/generate-profile`. The five `profiles/<tool>/` trees hold only generated
+agents and each tool's `aid-tool.conf`; they are **generated artifacts** — do not hand-edit them
+directly. Your changes will be overwritten on the next generator run. Skills and runtime are not
+in `profiles/`: they ship once, as one shared payload, installed to `.agents/skills/` and
+`.aid/runtime/`. See `.aid/knowledge/architecture.md` (Invariants, *Deletion boundary*) for the
+deletion safety boundary and `.claude/skills/generate-profile/SKILL.md` for the full generation
+pipeline.
 
 **End-user installation** (not generator): users install AID into their own projects via
 `install.sh` (Bash) or `install.ps1` (PowerShell) — not `/generate-profile`.
-`/generate-profile` is maintainer-only tooling for regenerating the install trees in this repo.
+`/generate-profile` is maintainer-only tooling for regenerating the agent trees under `profiles/`
+and refreshing this repo's dogfood install.
 
 ## What We Accept
 
@@ -43,7 +35,7 @@ separately when methodology content changes.
 - Specialized variants (e.g., aid-discover for monorepos or Python projects)
 - Skills for edge cases (multi-repo, microservices, data science)
 - **Remember:** Edit `canonical/skills/aid-{phase}/SKILL.md` (and `references/` files if any),
-  then run `/generate-profile`. Also update the human `skills/aid-{phase}/README.md` separately.
+  then run `/generate-profile`.
 - **Shortcuts are different:** the verb-first shortcut skills (`aid-fix`, `aid-create-api`, `aid-update-cli`, …)
   are not hand-authored. They are generated from the catalog at
   `canonical/aid/templates/shortcut-catalog.yml` via the maintainer helper
@@ -57,7 +49,6 @@ separately when methodology content changes.
 - Better system prompts, tool constraints, or role definitions
 - New agent roles for specialized workflows
 - **Remember:** Edit `canonical/agents/aid-{name}/AGENT.md`, then run `/generate-profile`.
-  Also update the human `agents/aid-{name}/README.md` separately.
 
 ### Improved Templates
 - Better KB document templates with more concrete guidance
@@ -90,7 +81,7 @@ separately when methodology content changes.
 
 1. **Fork the repo** and create a branch: `git checkout -b your-contribution`
 
-2. **For skill/agent improvements:** Edit `canonical/` (the single source of truth), run `/generate-profile` to regenerate all install trees, then update the human README in `skills/` or `agents/`. The human version should be rich and explanatory. The generated LLM versions are concise and structured.
+2. **For skill/agent improvements:** Edit `canonical/` (the single source of truth), then run `/generate-profile` to regenerate the `profiles/<tool>/` agent trees and refresh the dogfood install.
 
 3. **For new templates:** Add to the appropriate `templates/` subdirectory. Include guidance comments explaining *why* each section exists.
 
@@ -105,7 +96,7 @@ separately when methodology content changes.
 
 ## Style Guide
 
-### Human Documentation (`skills/`, `agents/`)
+### Human Documentation (`docs/`, `examples/`)
 - Rich explanations, rationale, examples
 - No YAML frontmatter
 - No token optimization — clarity over brevity
@@ -117,7 +108,7 @@ separately when methodology content changes.
 - Agent files: YAML frontmatter with `name`, `description`, `tools`, `tier` (abstract)
 - Under 500 lines per skill (AgentSkills best practice)
 - Strip verbose explanations — keep: purpose, inputs, process steps, outputs, checklist
-- Generated install trees (`profiles/claude-code/.claude/`, `profiles/codex/`, `profiles/cursor/.cursor/`, `profiles/copilot-cli/.github/`, `profiles/antigravity/.agent/`) are produced by `/generate-profile` — do not edit directly
+- Generated agent trees (`profiles/<tool>/`, one per tool) are produced by `/generate-profile` — do not edit directly
 
 ### General
 - **Tone:** Professional and practical. Opinionated. Methodology from someone who ships.

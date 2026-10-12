@@ -62,7 +62,7 @@ CATALOG_TXT=$(cat "$CATALOG")
 echo "--- Part 1: routes-only proof (FR-13) ---"
 
 FM_ALLOWED=$(awk '/^allowed-tools:/{print; exit}' "$SKILL_MD")
-assert_output_contains "$FM_ALLOWED" "Read, Glob, Grep" "TR01a allowed-tools is exactly Read, Glob, Grep"
+assert_output_contains "$FM_ALLOWED" "Read Glob Grep" "TR01a allowed-tools is exactly Read Glob Grep"
 if grep -qE 'Write|Edit' <<<"$FM_ALLOWED"; then
     fail "TR01b allowed-tools excludes Write/Edit -- found: ${FM_ALLOWED}"
 else

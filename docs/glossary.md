@@ -20,7 +20,7 @@ Terms and concepts used throughout the AID methodology.
 
 ## Setup
 
-**aid-config:** Bootstrapping step that runs before the pipeline begins. Asks greenfield or brownfield, collects project metadata, and scaffolds the `.aid/knowledge/` directory with 14 empty KB document templates. Also creates `AGENTS.md`, `CLAUDE.md`, `README.md`, `INDEX.md`, and `STATE.md` placeholders. Not a methodology phase — it prepares the project so Discovery (or Describe) can begin cleanly.
+**aid-config:** Bootstrapping step that runs before the pipeline begins. Asks greenfield or brownfield, collects project metadata, and scaffolds the `.aid/knowledge/` directory with 14 empty KB document templates. Also creates `README.md`, `INDEX.md`, and `STATE.md` placeholders. Not a methodology phase — it prepares the project so Discovery (or Describe) can begin cleanly.
 
 ---
 
@@ -104,17 +104,17 @@ Terms and concepts used throughout the AID methodology.
 
 ## Install Profiles
 
-AID ships install bundles for five host AI tools:
+AID supports five host AI tools. Each tool gets its own agents folder, and all of them share one set of skills and one runtime:
 
-| Profile | Install directory | Context file |
-|---------|-------------------|--------------|
-| **Claude Code** | `.claude/` | `CLAUDE.md` |
-| **Codex CLI** | `.codex/` | `AGENTS.md` |
-| **Cursor** | `.cursor/` | `AGENTS.md` |
-| **GitHub Copilot CLI** | `.github/` | `AGENTS.md` |
-| **Antigravity** | `.agent/` | `AGENTS.md` |
+| Tool | Agents folder | Root instruction files |
+|------|---------------|------------------------|
+| **Claude Code** | `.claude/agents/` | `AGENTS.md`, and `CLAUDE.md` (imports `AGENTS.md`) |
+| **Codex CLI** | `.codex/agents/` | `AGENTS.md` |
+| **Cursor** | `.cursor/agents/` | `AGENTS.md` |
+| **GitHub Copilot CLI** | `.github/agents/` | `AGENTS.md` |
+| **Antigravity** | `.agent/agents/` | `AGENTS.md` |
 
-All five profiles contain byte-identical skill and agent bodies — only the wrapper format differs per tool. The source of truth is `canonical/`; profiles are generated output (never hand-edit them).
+The five agent folders differ only in model names and file format. The skills and runtime are written once per repo, to `.agents/skills/` and `.aid/runtime/`. The source of truth is `canonical/`; profiles are generated output (never hand-edit them).
 
 ---
 
@@ -126,11 +126,19 @@ All five profiles contain byte-identical skill and agent bodies — only the wra
 
 **Install channel:** The method by which the `aid` CLI was bootstrapped onto a machine. AID supports four live channels: `curl`/`irm` script, npm, and PyPI. A fifth path — offline bundle — is also available for air-gapped environments. The channel is recorded in `AID_INSTALL_CHANNEL`; `aid update self` reads it and prints the correct upgrade command.
 
-**Profile:** The set of files `aid add <tool>` installs into a project. One profile per tool; profiles are generated from `canonical/` by the generator and stored in `profiles/<tool>/`.
+**Profile:** One tool's rendered agents: the agent files and the `aid-tool.conf` descriptor that `aid add <tool>` places for that tool. One profile per tool; profiles are generated from `canonical/` by the generator and stored in `profiles/<tool>/`. A profile does not include skills or runtime.
 
-**`--from-bundle` (offline bundle):** An installation mode that uses a locally-downloaded tarball instead of fetching from GitHub. Used for air-gapped or security-sensitive environments. Invoked as `aid add <tool> --from-bundle <path.tar.gz>`. Profile tarballs and `SHA256SUMS` are available on the [GitHub Releases page](https://github.com/AndreVianna/aid-methodology/releases).
+**Shared payload:** The release artifact that holds the skills and the runtime, identical for every tool. `release.sh` builds it from `canonical/skills/` and `canonical/aid/`. It is installed once per repo, whichever tools are installed.
 
-**Protect-on-diff:** The behavior `aid add` (and `aid update`) uses when a root agent file (`CLAUDE.md` or `AGENTS.md`) already exists and was not written by AID. Instead of overwriting silently, AID writes the incoming version as `<file>.aid-new` and exits with a warning (exit 5). The user reviews the diff and merges manually, or re-runs with `--force` to overwrite.
+**Shared skills (`.agents/skills/`):** The AID skill folders (`aid-*`) installed once per repo from the shared payload. Claude Code also reads a byte-identical mirror at `.claude/skills/`.
+
+**Runtime (`.aid/runtime/`):** The scripts, templates and `rules.md` that the skills run against, installed once per repo from the shared payload. The `aid` CLI owns this folder and records it in the install manifest.
+
+**AID region:** The text between `<!-- AID:BEGIN -->` and `<!-- AID:END -->` in a root instruction file (`AGENTS.md`, `CLAUDE.md`). AID writes only inside it. Text you wrote outside the markers is never changed.
+
+**`--from-bundle` (offline bundle):** An installation mode that reads release artifacts from a local staging directory instead of fetching from GitHub. Used for air-gapped or security-sensitive environments. Invoked as `aid add <tool> --from-bundle <dir>`; the directory holds the shared payload and each tool's artifact. Artifacts and `SHA256SUMS` are available on the [GitHub Releases page](https://github.com/AndreVianna/aid-methodology/releases).
+
+**Shared layout:** The current install layout, in which skills and runtime live once per repo under `.agents/skills/` and `.aid/runtime/`, and each tool keeps only its agents. It replaced the v3 layout, in which each tool had its own `aid/` and skill folders. `aid update` upgrades a v3 repo, moving the old files to `.aid/.trash/`.
 
 ---
 
@@ -158,4 +166,4 @@ Two consequences matter in practice. Criteria are a **writer's** contract first:
 
 **Determinism Test:** Can you write a complete set of rules to validate the outcome? If yes, automate fully. If no, keep a human in the loop. Used to decide automation depth per phase.
 
-**Canonical:** The `canonical/` directory — the single source of truth for all skill, agent, and template content. The generator (`run_generator.py`) renders `canonical/` into the five `profiles/` install trees. Never edit `profiles/` directly; edit `canonical/` and re-run the generator.
+**Canonical:** The `canonical/` directory — the single source of truth for all skill, agent, runtime, and template content. The generator (`run_generator.py`) renders the agents in `canonical/` into the five `profiles/` trees, and `release.sh` packages the skills and runtime from it. Never edit `profiles/` directly; edit `canonical/` and re-run the generator.

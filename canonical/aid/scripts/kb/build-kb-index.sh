@@ -56,7 +56,7 @@ build-kb-index.sh - generate .aid/knowledge/INDEX.md from KB doc frontmatter.
 Composes the RAG routing table from each KB doc's frontmatter fields.
 INDEX.md is the agent-facing self-service map; every task prompt loads it.
 
-Per canonical/aid/templates/kb-authoring/principles.md P3, this script runs LAST
+Per .aid/runtime/templates/kb-authoring/principles.md P3, this script runs LAST
 in any /aid-discover cycle so the index reflects final state.
 
 Usage:
@@ -452,8 +452,8 @@ review-criteria:
     why: "Every agent task prompt routes through this table; a missing or extra row misroutes the read"
 ---
 
-<!-- AUTO-GENERATED $TS by canonical/aid/scripts/kb/build-kb-index.sh -->
-<!-- DO NOT EDIT - regenerate with: bash canonical/aid/scripts/kb/build-kb-index.sh --root .aid/knowledge --output .aid/knowledge/INDEX.md -->
+<!-- AUTO-GENERATED $TS by .aid/runtime/scripts/kb/build-kb-index.sh -->
+<!-- DO NOT EDIT - regenerate with: bash .aid/runtime/scripts/kb/build-kb-index.sh --root .aid/knowledge --output .aid/knowledge/INDEX.md -->
 
 # Knowledge Base Index
 
@@ -534,7 +534,7 @@ EOF
 
     echo "---"
     echo ""
-    echo "*To regenerate this index, run \`bash canonical/aid/scripts/kb/build-kb-index.sh --root .aid/knowledge --output .aid/knowledge/INDEX.md\`.*"
+    echo "*To regenerate this index, run \`bash .aid/runtime/scripts/kb/build-kb-index.sh --root .aid/knowledge --output .aid/knowledge/INDEX.md\`.*"
 
 } > "$OUTPUT"
 

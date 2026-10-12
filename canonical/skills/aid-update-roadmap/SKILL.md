@@ -10,7 +10,7 @@ description: >
   `/aid-update-mvp` -- this skill never touches it and leaves the ## Contents MVP index
   entry in place whether or not the section exists. When roadmap.md is absent, routes to
   `/aid-create-roadmap` without writing anything.
-allowed-tools: Read, Glob, Grep, Bash, Write, Edit, Agent
+allowed-tools: Read Glob Grep Bash Shell Terminal Write Edit Agent
 argument-hint: "[<direction>] -- what to revise (entries to add, update, supersede, or move)"
 ---
 
@@ -18,7 +18,7 @@ argument-hint: "[<direction>] -- what to revise (entries to add, update, superse
 
 `/aid-update-roadmap` revises the direction entries of `.aid/knowledge/roadmap.md`
 outside the `## MVP` section. It is an `update`-stage skill under the shared contract in
-`canonical/aid/templates/design-lifecycle.md` (class 1), reading and consuming a seed
+`.aid/runtime/templates/design-lifecycle.md` (class 1), reading and consuming a seed
 from `.aid/design/roadmap.md` when one is present, and never requiring one.
 
 - **Boundary vs `/aid-update-mvp`:** this skill owns every byte of `roadmap.md` **except**

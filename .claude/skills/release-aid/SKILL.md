@@ -236,8 +236,9 @@ Confirm every channel published what it should:
   `/simple/` (the `/pypi/<pkg>/json` `info.version` lags a minute+ after upload). Beta normalizes
   `-beta.N`→`bN`.
 - **GitHub Release:** `gh release view "v<target>"` — beta must show `Pre-release: true` and NOT be
-  `/releases/latest`; stable must be latest. Assets = 5 profile tarballs + `aid-cli-v<target>.tar.gz`
-  + the 2 install-core libs + `SHA256SUMS`.
+  `/releases/latest`; stable must be latest. Assets = `aid-shared-v<target>.tar.gz`, five
+  agents-only `aid-<tool>-v<target>.tar.gz` artifacts, and `aid-cli-v<target>.tar.gz`, plus the
+  two installer libraries and `SHA256SUMS`.
 - **npm (stable only):** `npm view aid-installer@<target> version`.
 
 **⏸ PAUSE — present the confirmed-publish report to the user and await acknowledgment** before

@@ -14,10 +14,12 @@ installed per tool, offline install, and uninstall — across Linux, macOS, and 
 - [One-line first install (bootstrap + add in one command)](#one-line-first-install-bootstrap--add-in-one-command)
 - [Offline / air-gapped install](#offline--air-gapped-install)
 - [What gets installed per tool](#what-gets-installed-per-tool)
+- [Several tools in one repo](#several-tools-in-one-repo)
+- [Upgrading from the v3 layout](#upgrading-from-the-v3-layout)
 - [Removing AID](#removing-aid)
 - [Update check](#update-check)
 - [Trust model and checksum verification](#trust-model-and-checksum-verification)
-- [Protect-on-diff for root agent files](#protect-on-diff-for-root-agent-files)
+- [Root agent files and the AID region](#root-agent-files-and-the-aid-region)
 - [Version recording and the manifest](#version-recording-and-the-manifest)
 - [GitHub API rate limits and authentication](#github-api-rate-limits-and-authentication)
 - [Reference](#reference)
@@ -32,9 +34,11 @@ AID separates into two install layers:
    `~/.aid` (Unix) or `%LOCALAPPDATA%\aid` (Windows). It never changes when you add or
    remove AID from a project. Bootstrap it once with the one-liners below.
 
-2. **Per-project AID files** — the profile trees (`.claude/`, `.codex/`, `CLAUDE.md`,
-   `AGENTS.md`, etc.) that `aid add <tool>` installs into a repo. Each repo tracks what
-   was installed in its own `.aid/.aid-manifest.json`.
+2. **Per-project AID files** — the shared skills and runtime (`.agents/skills/`,
+   `.aid/runtime/`), each tool's agents (for example `.claude/agents/`), and the root
+   instruction regions (`AGENTS.md`, plus `CLAUDE.md` while Claude Code is installed) that
+   `aid add <tool>` installs into a repo. Each repo tracks what was installed in its own
+   `.aid/.aid-manifest.json`.
 
 ---
 
@@ -76,7 +80,7 @@ or CI.
 After either form, usage is identical:
 
 ```bash
-aid add <tool>          # install a tool profile into the current project
+aid add <tool>          # install a tool into the current project
 aid status              # show installed tools
 aid update [<tool>]     # update a tool (or all tools)
 aid remove [<tool>]     # remove a tool (or all AID from the project)
@@ -220,10 +224,17 @@ aid status
 ```
 
 ```
-AID 1.1.0  (project: /path/to/your/project)
-Installed tools:
-  claude-code   v1.1.0   root: CLAUDE.md (owned)
+AID 1.2.0  (project: /path/to/your/project)
+Installed tools - all at v1.2.0:
+  claude-code
+  cursor
+Shared files: clean
 ```
+
+The `Shared files` line checks the shared skills, the mirror, the runtime, and the root
+regions against the hashes in the manifest. When something has changed it lists each file as
+`modified:`, `missing:` or `extra:`, then prints `Run: aid update (drifted files are moved to
+.aid/.trash/ first)`. Status is informational: it never changes a file.
 
 Bare `aid` (no subcommand) shows a text status screen: the installed CLI version, the project
 status, the full command list, and any pending update notice. Exit 7 when no AID install
@@ -258,12 +269,17 @@ Without `--version` the installer resolves the latest GitHub Release
 # Update all installed tools to latest
 aid update
 
-# Update a specific tool
-aid update claude-code
-
 # Update to a pinned version
 aid update --version 0.8.0
 ```
+
+All installed tools in a repo move to one version together, because the shared files have
+one version. Naming a tool does not update only that tool: `aid update claude-code` also
+updates every other installed tool, and prints `aid update: added to commit set: <tools>` for
+the ones it added.
+
+`aid update` also upgrades a repo that still uses the v3 layout. See
+[Upgrading from the v3 layout](#upgrading-from-the-v3-layout).
 
 ### Update the aid CLI itself
 
@@ -286,6 +302,11 @@ upgrade instruction.
 aid remove codex
 ```
 
+Removes that tool's agents. Shared files stay while another installed tool still uses them,
+and are removed with the last tool that uses them. The `AGENTS.md` region is removed when no
+tool uses it, and the `CLAUDE.md` region when Claude Code is removed. Removing `claude-code`
+while another tool stays therefore leaves `AGENTS.md` in place for that tool.
+
 ### Remove AID entirely from this project
 
 ```bash
@@ -293,8 +314,8 @@ aid remove
 ```
 
 Removes all AID-installed files (manifest-driven — only what `aid add` wrote). Your own
-edits to `CLAUDE.md`/`AGENTS.md` are left in place (see
-[Protect-on-diff](#protect-on-diff-for-root-agent-files)).
+text in `CLAUDE.md`/`AGENTS.md`, outside the AID region, is left in place (see
+[Root agent files and the AID region](#root-agent-files-and-the-aid-region)).
 
 `aid remove` (no tool argument) prompts for confirmation before proceeding. The prompt is
 bypassed automatically when `--force` is given or when running non-interactively (CI /
@@ -352,116 +373,236 @@ This bootstraps the CLI and then runs `aid add claude-code` in the current direc
 
 ## Offline / air-gapped install
 
-Download the tarball and optional checksum file from the
-[GitHub Releases page](https://github.com/AndreVianna/aid-methodology/releases), then
-use `aid add --from-bundle` — no network required.
+Download the release artifacts from the [GitHub Releases page](https://github.com/AndreVianna/aid-methodology/releases),
+verify them, then use `aid add --from-bundle` with the directory that holds them. No network is
+required.
 
 ### Download and verify
+
+Each tool needs two artifacts: the shared payload, `aid-shared-v<V>.tar.gz`, and the tool's own
+artifact, `aid-<tool>-v<V>.tar.gz`. Put them in one empty directory with `SHA256SUMS`:
 
 ```bash
 # Resolve the latest release tag (or set VERSION manually from the Releases page)
 VERSION="$(curl -fsSL https://api.github.com/repos/AndreVianna/aid-methodology/releases/latest | grep -oP '"tag_name":\s*"v\K[^"]+')"
-# Download (example: claude-code)
-curl -LO "https://github.com/AndreVianna/aid-methodology/releases/download/v${VERSION}/aid-claude-code-v${VERSION}.tar.gz"
-curl -LO "https://github.com/AndreVianna/aid-methodology/releases/download/v${VERSION}/SHA256SUMS"
+
+# Download into one directory (example: claude-code)
+mkdir -p aid-bundle && cd aid-bundle
+BASE="https://github.com/AndreVianna/aid-methodology/releases/download/v${VERSION}"
+curl -LO "${BASE}/aid-shared-v${VERSION}.tar.gz"
+curl -LO "${BASE}/aid-claude-code-v${VERSION}.tar.gz"
+curl -LO "${BASE}/SHA256SUMS"
 
 # Verify (Linux)
 sha256sum --check --ignore-missing SHA256SUMS
 
 # Verify (macOS)
 shasum -a 256 -c SHA256SUMS
+cd ..
 ```
 
 ```powershell
-# Verify (Windows)
-$expected = (Get-Content SHA256SUMS | Where-Object { $_ -match 'aid-claude-code' }) -split '\s+' | Select-Object -First 1
-$actual   = (Get-FileHash .\aid-claude-code-v1.1.0.tar.gz -Algorithm SHA256).Hash.ToLower()
-if ($expected -ne $actual) { Write-Error "Checksum mismatch"; exit 4 }
+# Verify (Windows), run in the directory that holds the downloads
+Get-Content SHA256SUMS | ForEach-Object {
+  $expected, $name = $_ -split '\s+', 2
+  if ($name -and (Test-Path $name)) {
+    $actual = (Get-FileHash $name -Algorithm SHA256).Hash.ToLower()
+    if ($expected -ne $actual) { Write-Error "Checksum mismatch: $name"; exit 4 }
+  }
+}
 ```
 
 ### Install offline
 
 ```bash
 # After bootstrapping the CLI (see Step 1)
-aid add claude-code --from-bundle aid-claude-code-v1.1.0.tar.gz
+aid add claude-code --from-bundle aid-bundle
 ```
 
-For multiple tools, pass a directory containing the per-tool tarballs
-(`aid-<tool>-v<version>.tar.gz` naming):
+`--from-bundle <dir>` reads the artifacts from that directory. The directory must hold exactly one
+`aid-shared-v*.tar.gz`, and the artifact of every tool you name, all at the same version. For
+several tools, put each tool's artifact in the same directory:
 
 ```bash
 aid add codex,cursor --from-bundle ./bundles/
 ```
 
-`--from-bundle` and `--version` are mutually exclusive.
+Pointing `--from-bundle` at one artifact file uses that file's directory, so the shared artifact
+must sit beside it. `--from-bundle` and `--version` are mutually exclusive.
 
 ---
 
 ## What gets installed per tool
 
-`aid add <tool>` copies the AID profile for one tool into the current project directory.
-The files written depend on the tool.
+`aid add <tool>` writes content that is shared by every tool in the repo, the tool's own agents,
+the root instruction regions, and two managed blocks in the git ignore and attribute files.
 
-### Claude Code
+### Shared files (one copy per repo)
 
-Installs into `.claude/`:
+`.agents/skills/` holds 112 `aid-`-prefixed skill directories: 18 curated pipeline, on-demand and
+router skills, plus the 94-row shortcut catalog's skills (34 Lite-Path shortcut doorways and 60
+hand-authored repurpose skills).
 
-- `.claude/aid/scripts/` — helper scripts (phase-specific, e.g. interview, summarize)
-- `.claude/aid/templates/` — KB document templates, task templates, and the shortcut system (`shortcut-catalog.yml`, `shortcut-engine.md`, `shortcut-scaffolding/`)
-- `.claude/skills/` — 112 `aid-`-prefixed skill markdown files (18 curated pipeline / on-demand / router skills + the 94-row shortcut catalog's skills: 34 Lite-Path shortcut doorways + 60 hand-authored repurpose skills)
-- `.claude/agents/` — 9 `aid-`-prefixed agent markdown files
-- `CLAUDE.md` — project-context file at the project root (AID content fenced by `<!-- AID:BEGIN -->`/`<!-- AID:END -->`)
+| Path | Content |
+|------|---------|
+| `.agents/skills/aid-*/` | The AID skills: each `SKILL.md` and its `references/` folder. |
+| `.claude/skills/aid-*/` | A byte-identical mirror of `.agents/skills/aid-*/`. Written only while Claude Code is installed, because Claude Code reads its skills from `.claude/skills/`. |
+| `.aid/runtime/` | The runtime: `scripts/`, `templates/`, `rules.md` (the AID rules), and `host.conf`. |
 
-### Codex CLI
+`.aid/runtime/host.conf` holds one setting, `worktree_root`: the directory where work-level git
+worktrees are created. It is `.claude/worktrees` while Claude Code is installed and
+`.aid/.worktrees` otherwise.
 
-Installs into `.codex/`:
+The CLI also writes `.aid/.aid-manifest.json` (its install record) and creates `.aid/settings.yml`
+when it is missing. It never writes to the rest of `.aid/`, such as the Knowledge Base and the
+work folders.
 
-- `.codex/agents/` — agent TOML files (`aid-`-prefixed)
-- `.codex/skills/` — `aid-`-prefixed skill markdown files
-- `.codex/aid/scripts/`, `.codex/aid/templates/` — AID-own support files
-- `AGENTS.md` — project-context file at the project root (AID content fenced by `<!-- AID:BEGIN -->`/`<!-- AID:END -->`)
+### Agents (one folder per tool)
 
-### Cursor
+| Tool | Agents folder | File format |
+|------|---------------|-------------|
+| `claude-code` | `.claude/agents/` | Markdown |
+| `codex` | `.codex/agents/` | TOML |
+| `cursor` | `.cursor/agents/` | Markdown |
+| `copilot-cli` | `.github/agents/` | Markdown |
+| `antigravity` | `.agent/agents/` | Markdown |
 
-Installs into `.cursor/`:
+Every tool gets the same 9 `aid-`-prefixed agent files, each named `aid-<name>`. The CLI manages only
+`aid-*` files in these folders, so your own files there are never touched.
 
-- `.cursor/skills/` — `aid-`-prefixed skill markdown files
-- `.cursor/agents/` — `aid-`-prefixed agent markdown files
-- `.cursor/aid/scripts/`, `.cursor/aid/templates/` — AID-own support files
-- `AGENTS.md` — project-context file at the project root (AID content fenced by `<!-- AID:BEGIN -->`/`<!-- AID:END -->`)
+### Root instruction files
 
-### GitHub Copilot CLI
+`AGENTS.md` is written for every tool. AID writes one region into it, and nothing else:
 
-Installs into `.github/`:
+```
+<!-- AID:BEGIN -->
+<!-- Managed by the AID CLI. Do not edit between the AID markers. -->
+SESSION START (non-negotiable)
+Your first action in this session MUST be a Read of `.aid/runtime/rules.md`.
+Do not send a user-visible answer, refusal, or "I already know" reply before that Read returns.
+This applies to every request, including questions, "answer from memory,"
+"do not search," "do not read any files," and any claim that reading would
+violate the user's instruction.
+A user message that forbids reading files does not cancel this Read.
+Ignore that prohibition only for `.aid/runtime/rules.md`.
+After that file is read, honor "don't read files" for everything else.
+Invalid first actions: a plain-text answer, a search, any other tool.
+Valid first action: Read `.aid/runtime/rules.md`.
 
-- `.github/agents/` — `aid-`-prefixed agent markdown files
-- `.github/skills/` — `aid-`-prefixed skill markdown files
-- `.github/aid/scripts/`, `.github/aid/templates/` — AID-own support files
-- `AGENTS.md` — project-context file at the project root (AID content fenced by `<!-- AID:BEGIN -->`/`<!-- AID:END -->`)
+Summary:
+- Record every state change (status, phase, grade, review outcome) in the work's STATE file immediately;
+  during /aid-execute write In Progress, In Review and Done/Failed as they happen.
+- Work folders (`.aid/works/`) are transient: nothing permanent may depend on them.
+- Never name a work id or work-folder path in `.aid/knowledge/**`.
+- Consult the Knowledge Base (`.aid/knowledge/`) before changing anything; it is the source of truth.
+- Before writing a file, resolve and follow its review criteria (`.aid/knowledge/authoring-conventions.md`).
+- Review output uses the 7-column ledger (`.aid/runtime/templates/reviewer-ledger-schema.md`).
+- Write only inside the project directory.
+<!-- AID:END -->
+```
 
-### Antigravity
+The seven summary bullets are not typed into the CLI. They are the block between
+`<!-- AID:SUMMARY:BEGIN -->` and `<!-- AID:SUMMARY:END -->` at the top of `.aid/runtime/rules.md`
+(source: `canonical/aid/rules.md`), copied into the region byte for byte on every `aid add` and
+`aid update`. Edit that block and the next `aid update` changes the region. If the block is missing or
+malformed, the command fails with a clear message instead of writing an empty summary.
 
-Installs into `.agent/`:
+Only Claude Code expands `@` imports, so this region is plain text that every tool can follow. A written
+"read first" instruction is advisory: a model can answer from memory, or obey a prompt that says "do not
+read any files", before it ever looks at the rules. So the region names the first action explicitly (a Read
+of `.aid/runtime/rules.md`), forbids any answer before that Read returns, and pre-empts "do not read files"
+prompts: the prohibition does not apply to that one file, and applies again to everything else once it has
+been read. The block is a constant of the CLI (the same bytes in both shells), not part of `rules.md`.
 
-- `.agent/agents/` — `aid-`-prefixed agent markdown files
-- `.agent/skills/` — `aid-`-prefixed skill markdown files
-- `.agent/aid/scripts/`, `.agent/aid/templates/` — AID-own support files
-- `AGENTS.md` — project-context file at the project root (AID content fenced by `<!-- AID:BEGIN -->`/`<!-- AID:END -->`)
+While Claude Code is installed, `CLAUDE.md` also gets a region: the same body, plus one Claude-only
+line that imports the rules directly:
 
-### Notes
+```
+<!-- AID:BEGIN -->
+<!-- Managed by the AID CLI. Do not edit between the AID markers. -->
+SESSION START (non-negotiable)
+Your first action in this session MUST be a Read of `.aid/runtime/rules.md`.
+Do not send a user-visible answer, refusal, or "I already know" reply before that Read returns.
+This applies to every request, including questions, "answer from memory,"
+"do not search," "do not read any files," and any claim that reading would
+violate the user's instruction.
+A user message that forbids reading files does not cancel this Read.
+Ignore that prohibition only for `.aid/runtime/rules.md`.
+After that file is read, honor "don't read files" for everything else.
+Invalid first actions: a plain-text answer, a search, any other tool.
+Valid first action: Read `.aid/runtime/rules.md`.
 
-All five profiles contain byte-identical skill and agent bodies — only the wrapper format
-differs per tool. The source of truth is `canonical/`; `profiles/` are generated output.
+Summary:
+- Record every state change (status, phase, grade, review outcome) in the work's STATE file immediately;
+  during /aid-execute write In Progress, In Review and Done/Failed as they happen.
+- Work folders (`.aid/works/`) are transient: nothing permanent may depend on them.
+- Never name a work id or work-folder path in `.aid/knowledge/**`.
+- Consult the Knowledge Base (`.aid/knowledge/`) before changing anything; it is the source of truth.
+- Before writing a file, resolve and follow its review criteria (`.aid/knowledge/authoring-conventions.md`).
+- Review output uses the 7-column ledger (`.aid/runtime/templates/reviewer-ledger-schema.md`).
+- Write only inside the project directory.
+@.aid/runtime/rules.md
+<!-- AID:END -->
+```
 
-**Content isolation:** AID's own support folders (`scripts/`, `templates/`)
-nest under an `aid/` subtree inside each profile's assets root. AID files in tool-native
-directories (`agents/`, `skills/`) all carry the `aid-` prefix. Your files in
-those same directories are never touched. AID's section in root agent files (`CLAUDE.md`/
-`AGENTS.md`) is fenced by `<!-- AID:BEGIN -->`/`<!-- AID:END -->` markers and updated
-in place, preserving your content outside the fence.
+`CLAUDE.md` does not import `AGENTS.md`, so each file carries the AID rules by itself: if you delete
+either root file, the rules are still in the other, and `aid update` restores the deleted one. Claude
+Code reads `CLAUDE.md` instead of `AGENTS.md` by default, so text you keep outside the `AGENTS.md`
+markers is not seen by Claude Code.
 
-`.aid/` is appended to your `.gitignore` by default (the Knowledge Base stays out of git;
-remove the entry if you want to commit it).
+If a tool is set to receive the rules inline (the whole rules text is written between the markers in
+`AGENTS.md`), the `CLAUDE.md` region carries that same inline text, with no `@` line. AID creates the
+file if it is missing. Text outside the markers is yours. See [Root agent files and the AID region](#root-agent-files-and-the-aid-region).
+
+### Git files
+
+AID keeps two managed blocks, each wrapped in marker comments:
+
+- `.gitignore` ignores transient AID paths, such as `.aid/.temp/`, `.aid/.trash/`, `.aid/generated/`
+  and the worktree root. It does not ignore the Knowledge Base.
+- `.gitattributes` sets `eol=lf` on the AID skills, the runtime and the AID agent files, so checkouts keep LF line endings.
+
+## Several tools in one repo
+
+Several tools can share one repo. The rules are:
+
+- **Shared files are counted by tool.** `aid add codex,cursor` writes the shared files once. Each
+  shared entry records which installed tools use it. An entry is removed only when its last user
+  is removed.
+- **One version per repo.** Every installed tool in a repo runs the same AID version. `aid update`
+  upgrades them together. See [Update installed tools](#update-installed-tools).
+- **Drift is reported, then repaired.** `aid status` lists shared files that changed since the
+  install. The next `aid add` or `aid update` restores them, and moves each changed copy to
+  `.aid/.trash/` first.
+
+## Upgrading from the v3 layout
+
+Two things come before the upgrade:
+
+- **Update the CLI to v4 first.** A v3 CLI cannot drive the v4 layout. Run `aid update self`, then
+  run `aid update` in the project.
+- **Start from a v3.x project.** v4 upgrades only from v3.x. A project older than v3 must be
+  upgraded to v3 first.
+
+A repo installed with the v3 layout keeps AID files per tool: a support folder named `aid/` under
+each tool's root, and per-tool skill folders such as `.cursor/skills/aid-*`. The shared layout
+cannot be added on top of it:
+
+1. `aid add` refuses in such a repo and writes nothing. It prints `This project uses the v3 AID
+   layout. Run: aid update (it upgrades every installed tool), then retry aid add.`
+2. `aid update` upgrades the repo. It moves each old AID-owned file to `.aid/.trash/` at the same
+   relative path, then installs the shared layout for every tool the repo had. Your own files are
+   never moved or deleted. `AGENTS.md` and `CLAUDE.md` are copied in full to `.aid/.trash/`, and
+   their old AID region is removed. Text outside the region is kept, and a file left empty is
+   deleted.
+3. It prints `N old AID file(s) moved to .aid/.trash/ (safe to delete once you have checked them)`.
+   Check the trash, then delete `.aid/.trash/` yourself.
+
+An interrupted upgrade resumes when you run `aid update` again. While the upgrade is pending, the
+tool list it recorded is kept in `.aid/.temp/v3-upgrade-tools.json`, and `aid add` and `aid remove`
+refuse to run. A second `aid update` on an upgraded repo reports `up to date`.
+
+To get an old file back, copy it from `.aid/.trash/` to its original path.
 
 ---
 
@@ -482,8 +623,9 @@ aid remove
 Prompts for confirmation. Pass `--force` to skip the prompt, or run non-interactively
 (CI / piped stdin) and the prompt is bypassed automatically.
 
-Uninstall is manifest-driven: only files that `aid add` wrote are removed. Files you
-created or modified yourself are left in place.
+Uninstall is manifest-driven: only files that `aid add` wrote are removed. A file you edited
+since AID wrote it is moved to `.aid/.trash/` rather than deleted. Files AID never wrote are not
+touched.
 
 ### Remove the global `aid` CLI itself
 
@@ -546,73 +688,50 @@ When running the bootstrap via `curl | bash` or `irm | iex`:
    - Entry missing from `SHA256SUMS` → abort, exit 3; the library is **not** sourced.
    - Only a successful fetch **and** matching hash allows the install to proceed.
 
-3. **`--from-bundle` is the strongest path.** No network is used; you verify the tarball
+3. **`--from-bundle` is the strongest path.** No network is used; you verify the artifacts
    yourself. Recommended for air-gapped or security-sensitive environments.
 
 The only way to bypass verification is `AID_INSECURE_SKIP_LIB_VERIFY=1` — a deliberate
 override intended for restricted test environments only. Do not set it in production.
 
-For online `--from-bundle` (offline) installs: if a `SHA256SUMS` file is present beside
-the bundle in the same directory, the installer verifies automatically. A mismatch
-aborts with exit 4. If no `SHA256SUMS` is present, a warning is emitted and the install
-continues (you supplied the tarball yourself).
+For `--from-bundle` (offline) installs: if a `SHA256SUMS` file is present in the bundle
+directory, the installer verifies every artifact it uses automatically. A mismatch
+aborts with exit 4. If no `SHA256SUMS` is present, the check is skipped and the install
+continues (you supplied the artifacts yourself).
 
 ---
 
-## Protect-on-diff for root agent files
+## Root agent files and the AID region
 
-Root agent files — `CLAUDE.md` (claude-code) and `AGENTS.md` (codex, cursor, copilot-cli,
-antigravity) — sit at your project root and may contain your own customizations. `aid add`
-protects them from silent overwrites.
+`AGENTS.md` and `CLAUDE.md` sit at your project root and usually hold your own instructions. AID
+owns only the text between its markers, `<!-- AID:BEGIN -->` and `<!-- AID:END -->`. Everything
+outside those markers is yours, and AID keeps it byte for byte. There is no side file: AID never
+writes `AGENTS.md.aid-new` or similar, and no install step is blocked by a root file you edited.
 
 ### How it works
 
-When `aid add` (or `aid update`) writes a root agent file `F`:
+When `aid add` or `aid update` writes a root file `F`:
 
-1. `F` does not exist → installer writes it, records ownership in the manifest.
-2. `F` exists and is byte-identical to the incoming version → no-op; `Up to date: F`.
-3. `F` exists and the manifest shows AID wrote the current version → AID owns it;
-   installer updates it in place.
-4. `F` exists, differs from the incoming version, and is not recorded as AID-owned in
-   the manifest → **someone else owns it**:
-   - **Without `--force`:** installer does NOT overwrite. It writes the incoming version
-     beside it as `F.aid-new` (e.g. `AGENTS.md.aid-new`) and exits 5 so CI pipelines
-     notice:
-     > `AGENTS.md exists and was not written by AID; wrote incoming version to AGENTS.md.aid-new — review and merge, or re-run with --force to overwrite`
-   - **With `--force`:** installer overwrites `F` and takes ownership.
+1. `F` does not exist: AID creates it holding only the AID region.
+2. `F` exists and has no AID region: AID appends the region at the end. Your text is kept.
+3. `F` has one well-formed AID region: AID replaces the text inside the markers when it differs (for
+   example after the rules summary changed), keeping every byte outside them. If you had edited the
+   text inside the markers, AID first copies the whole file to `.aid/.trash/<F>`.
+4. `F` has a damaged region, such as an orphan marker or a repeated region: AID copies the whole
+   file to `.aid/.trash/<F>`, removes every line that matches a non-blank region line, and writes one
+   well-formed region where the first of them was. Every other byte is kept.
 
-### Resolving an `*.aid-new` file
+Running `aid update` again on a repaired file changes nothing.
 
-```bash
-# Review the diff
-diff AGENTS.md AGENTS.md.aid-new
+### Removing AID from a root file
 
-# Option A: keep your version, discard the incoming
-rm AGENTS.md.aid-new
-
-# Option B: accept the incoming version
-mv AGENTS.md.aid-new AGENTS.md
-aid add <tool> --force    # re-run so AID records ownership
-
-# Option C: merge manually, then let AID record ownership
-# (edit AGENTS.md to merge, then:)
-aid add <tool> --force
-```
-
-### Uninstall safety
-
-On `aid remove`, a root agent file is only removed if it still matches the checksum AID
-recorded at install time. If you have edited it since, the file is left in place:
-`Left in place (modified or not AID-owned): AGENTS.md`.
-
-### Pre-FR12 multi-tool note
-
-Installing a second `AGENTS.md`-writing tool (e.g. `codex` then `cursor`) triggers
-protect-on-diff because each tool's `AGENTS.md` currently differs by one line (the profile
-path). You will see `AGENTS.md.aid-new` created and exit 5. This is correct behavior —
-it prevents silent overwrites. Use `--force` to accept the second tool's version if that
-is your intent. This normalizes in delivery-005 (feature-006), which makes all `AGENTS.md`
-files byte-identical.
+- **`AGENTS.md`** is handled when its last user is removed. If the whole file still matches what
+  AID wrote, AID removes the region and deletes the file only when nothing else is left. If you
+  have changed the file since, AID leaves it in place and prints
+  `Left in place (modified or not AID-owned): AGENTS.md`.
+- **`CLAUDE.md`** loses its region when Claude Code is removed. If the region text was edited, AID
+  copies the whole file to `.aid/.trash/CLAUDE.md` first. The region is then removed, and the file is
+  deleted only when nothing else is left.
 
 ---
 
@@ -620,47 +739,57 @@ files byte-identical.
 
 After every `aid add` or `aid update`, AID records what it installed at
 `.aid/.aid-manifest.json` in the target repo. This manifest drives `aid update`,
-`aid remove` — do not delete it.
+`aid status` and `aid remove` — do not delete it.
 
 ### Manifest location
 
-`.aid/.aid-manifest.json` — one JSON file per repo, shared across all tools installed
-into that repo. The installed AID release version is recorded in the manifest's
-top-level `aid_version` key — there is no separate marker file (the standalone
-`.aid/.aid-version` file is retired). A bare, tool-less project (no manifest — a future
-`aid projects add` on a folder with no tool installed) instead records the version as a
-top-level `aid_version:` line in `.aid/settings.yml`.
+`.aid/.aid-manifest.json` — one JSON file per repo, shared across all tools installed into that
+repo. The installed AID release version is recorded in its top-level `aid_version` key. A project
+with no tools installed (for example one registered with `aid projects add`) keeps a manifest with
+an empty `tools` object.
 
 ### Manifest structure (abbreviated)
 
 ```json
 {
-  "manifest_version": 1,
-  "aid_version": "1.1.0",
+  "format_version": 3,
+  "aid_version": "1.2.0",
   "installed_at": "2026-06-04T12:00:00Z",
+  "host": { "worktree_root": ".claude/worktrees" },
+  "shared": {
+    "skills":    { "root": ".agents/skills", "version": "1.2.0", "users": ["claude-code", "cursor"],
+                   "files": [ { "path": "aid-ask/SKILL.md", "sha256": "<hex>" } ] },
+    "runtime":   { "root": ".aid/runtime", "version": "1.2.0", "users": ["claude-code", "cursor"],
+                   "files": [ { "path": "host.conf", "sha256": "<hex>" } ] },
+    "agents_md": { "path": "AGENTS.md", "version": "1.2.0", "users": ["claude-code", "cursor"],
+                   "region_sha256": "<hex>", "file_sha256": "<hex>" },
+    "claude_md": { "path": "CLAUDE.md", "version": "1.2.0", "users": ["claude-code"],
+                   "region_sha256": "<hex>" },
+    "mirrors":   { ".claude/skills": { "version": "1.2.0", "users": ["claude-code"] } }
+  },
   "tools": {
-    "claude-code": {
-      "version": "1.1.0",
-      "installed_at": "2026-06-04T12:00:00Z",
-      "paths": [".claude/skills/...", "CLAUDE.md"],
-      "root_agent_files": [
-        { "path": "CLAUDE.md", "sha256": "<hex>", "status": "owned" }
-      ]
-    }
+    "claude-code": { "version": "1.2.0", "installed_at": "2026-06-04T12:00:00Z",
+                     "mirrors": [".claude/skills"], "worktree_root": ".claude/worktrees",
+                     "files": [ { "path": ".claude/agents/aid-architect.md", "sha256": "<hex>" } ],
+                     "paths": [".claude/agents/aid-architect.md"] }
   }
 }
 ```
 
-- `tools.<id>.paths` — every file AID installed for that tool (relative, POSIX
-  separators). Uninstall removes exactly these.
-- `tools.<id>.root_agent_files[].sha256` — checksum AID recorded when it wrote the root
-  agent file. Used for ownership decisions on update and uninstall.
-- `status: "owned"` — AID owns this file. `status: "pending-merge"` — protect-on-diff
-  fired; a `.aid-new` sibling exists.
+- `shared.<entry>.users` lists the installed tools that use the entry. An entry with no users is
+  removed.
+- `shared.skills.files` and `shared.runtime.files` record each file with its sha256. `aid status`
+  and the next `aid update` compare against these hashes.
+- `agents_md` and `claude_md` record the hash of the AID region (`region_sha256`). `agents_md` also
+  records the hash of the whole file (`file_sha256`), so a later removal can tell whether you edited it.
+- `tools.<id>.files` lists the tool's own agent files with their sha256. `tools.<id>.paths` is a
+  plain list of those paths, kept so an older CLI can remove them.
+- `format_version` is 3. On a repo with an older format, commands print `Run: aid update`, and
+  `aid add` refuses to write. A CLI that finds a newer format refuses and says `Run: aid update self`.
 
-The manifest file itself is not listed in `paths`. The `.aid/` directory is not removed
-on uninstall — only the manifest and version files are removed, since `.aid/` may also
-contain your Knowledge Base and work-area files.
+The manifest file itself is not listed in `paths`. The `.aid/` directory is not removed on
+uninstall: only the manifest and `.aid/settings.yml` are removed, since `.aid/` may also contain
+your Knowledge Base and work-area files.
 
 ---
 
@@ -725,8 +854,8 @@ PowerShell flags use the same words; the `-` prefix is accepted alongside `--`:
 | Flag | Applies to | Default | Description |
 |------|-----------|---------|-------------|
 | `--version <v>` | `add`, `update` | latest release | Pin to a release version (`1.1.0` or `v1.1.0`). Mutually exclusive with `--from-bundle`. |
-| `--from-bundle <path>` | `add`, `update` | — | Offline install from a tarball (single tool) or a directory of tarballs. No network required. |
-| `--force` | `add`, `update`, `remove` | off | Overwrite differing files and skip confirmation prompts. |
+| `--from-bundle <path>` | `add`, `update` | — | Offline install from a staging directory that holds the shared artifact and each tool's artifact. A path to one artifact uses its directory. No network required. |
+| `--force` | `add`, `update`, `remove` | off | Skip confirmation prompts. Differing shared files are repaired by `add` and `update` without it. |
 | `--verbose` | all | off | Print per-file `Copied:` / `Up to date:` / `Updated:` / `Removed:` lines. Default: concise summary. |
 | `--target <dir>` | all | `.` (cwd) | Project root. Must exist; a missing target is a usage error (exit 2). |
 | `--no-path` | bootstrap, `update self` | off | Skip automatic PATH wiring. |
@@ -737,10 +866,9 @@ PowerShell flags use the same words; the `-` prefix is accepted alongside `--`:
 |------|---------|
 | `0` | Success. Install/update/remove completed. "Nothing to do" is success. |
 | `1` | Generic runtime failure (extract failed, write failed). |
-| `2` | Usage error: unknown subcommand, bad argument, ambiguous tool, undetectable tool, missing target directory, `--from-bundle` + `--version` together. |
+| `2` | Usage error: unknown subcommand, bad argument, ambiguous tool, undetectable tool, missing target directory, `--from-bundle` + `--version` together. Also `aid add` in a repo that still has the v3 layout (run `aid update` first), and `aid add` or `aid remove` while an upgrade is pending. |
 | `3` | Network / fetch failure: download or latest-release resolution failed and no `--from-bundle`. |
 | `4` | Checksum mismatch: SHA-256 of downloaded file did not match `SHA256SUMS`. |
-| `5` | Protect-on-diff: at least one root agent file was blocked. Other files were installed successfully. Review the `.aid-new` file and merge manually, or re-run with `--force`. |
 | `6` | No manifest: `remove` or `update` found no `.aid-manifest.json` (nothing installed — idempotent). |
 | `7` | `aid status` / bare `aid`: no AID install found in the current directory. |
 
@@ -775,13 +903,16 @@ PowerShell flags use the same words; the `-` prefix is accepted alongside `--`:
 
 ### Canonical tool ids
 
-| Tool id | Installs into | Root agent file |
-|---------|--------------|-----------------|
-| `claude-code` | `.claude/` | `CLAUDE.md` |
-| `codex` | `.codex/` | `AGENTS.md` |
-| `cursor` | `.cursor/` | `AGENTS.md` |
-| `copilot-cli` | `.github/` | `AGENTS.md` |
-| `antigravity` | `.agent/` | `AGENTS.md` |
+| Tool id | Agents folder | Root instruction files |
+|---------|---------------|------------------------|
+| `claude-code` | `.claude/agents/` | `AGENTS.md`, and `CLAUDE.md` (region) |
+| `codex` | `.codex/agents/` | `AGENTS.md` |
+| `cursor` | `.cursor/agents/` | `AGENTS.md` |
+| `copilot-cli` | `.github/agents/` | `AGENTS.md` |
+| `antigravity` | `.agent/agents/` | `AGENTS.md` |
+
+Every tool also uses the shared `.agents/skills/` and `.aid/runtime/` folders. See
+[What gets installed per tool](#what-gets-installed-per-tool).
 
 Tool ids are accepted case-insensitively. On Windows, PascalCase aliases are also
 accepted: `ClaudeCode`, `Codex`, `Cursor`, `CopilotCli`, `Antigravity`.
@@ -800,7 +931,8 @@ per-tool markers:
 | `.agent/` dir | `antigravity` |
 
 A plain `.github/` directory (without the AID copilot subtree) does **not** trigger
-`copilot-cli` detection.
+`copilot-cli` detection. The shared `.agents/` folder is not a marker for any tool, so a project
+that has only shared files and no tool folder must name the tool explicitly.
 
 - Exactly one marker found → that tool is used.
 - Zero markers found → error, exit 2: `cannot auto-detect host tool; pass tool name as argument`.
@@ -848,7 +980,7 @@ irm .../install.ps1 | iex
 |---------|----------|--------|---------|
 | `curl … \| bash` (online, Linux / macOS / git-bash) | Bash | Available | See [Step 1](#step-1--bootstrap-the-aid-cli-once-per-machine) |
 | `irm … \| iex` (online, Windows PowerShell) | PowerShell 5.1+ | Available | See [Step 1](#step-1--bootstrap-the-aid-cli-once-per-machine) |
-| `--from-bundle <path>` (offline tarball) | Bash or PowerShell 5.1+ | Available | See [Offline install](#offline--air-gapped-install) |
+| `--from-bundle <dir>` (offline artifacts) | Bash or PowerShell 5.1+ | Available | See [Offline install](#offline--air-gapped-install) |
 | `npm install -g aid-installer` → `aid` | Node >=22 | Published / live | See [npm channel](#npm-channel) |
 | `pipx install aid-installer` → `aid` | Python >=3.8 | Published / live | See [PyPI channel](#pypi-channel) |
 

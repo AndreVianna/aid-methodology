@@ -10,7 +10,7 @@ generatedFrom: 'canonical/skills/aid-update-stack/SKILL.md'
 
 - **`name`** — aid-update-stack
 - **`description`** — Revise the project's technology (C0) Knowledge Base document -- languages, runtimes, frameworks, package managers, and build and test tooling with their versions, dependencies and constraints -- plus any previously created outputs you name. Use this skill when the technology-stack document already exists and a choice in it has changed. Requires no design seed: the change you state in the run is a sufficient input. Reads and consumes a stack seed when one is present in `.aid/design/`. When the C0 document does not yet exist, routes to `/aid-create-stack`. To change a configuration option within a chosen stack rather than the stack record, use `/aid-create-config` or `/aid-update-config`. Produced by the aid-architect agent and independently verified by aid-reviewer (full verify). Allocates a work-NNN folder.
-- **`allowed-tools`** — Read, Glob, Grep, Bash, Write, Edit, Agent
+- **`allowed-tools`** — Read Glob Grep Bash Shell Terminal Write Edit Agent
 - **`argument-hint`** — &lt;change> -- what to revise in the technology-stack record
 
 [Definition: `canonical/skills/aid-update-stack/SKILL.md`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-update-stack/SKILL.md)
@@ -58,7 +58,7 @@ Every node in the chart above, in chart order, with the exact `canonical/` text 
 1. **Require a stated change.** Empty argument -> ask one bootstrapping question ("What
    should change in the technology-stack record?") and wait.
 2. **Allocate** through the Work Initiation Gate exactly as the contract's Allocation rule
-   requires (`canonical/skills/aid-design/SKILL.md` INTAKE step 4 is the shape), with
+   requires (`.agents/skills/aid-design/SKILL.md` INTAKE step 4 is the shape), with
    `initiator: aid-update-stack`. `phase` is not driven.
 3. **No seed is required.** The change stated in this run is a sufficient input, and this
    skill completes without a seed. **Read and consume one when present** at
@@ -67,7 +67,7 @@ Every node in the chart above, in chart order, with the exact `canonical/` text 
 4. **Resolve the destination by concern.** This skill binds concern **C0** (technology). Where
    a seed supplied a `## Destination`, use it; otherwise apply the concern rule here --
    resolve C0 against `.aid/settings.yml` `knowledge.doc_set`, falling back to the C0 row of
-   `canonical/aid/templates/kb-authoring/domain-doc-matrix.md` -- and **confirm the resolution
+   `.aid/runtime/templates/kb-authoring/domain-doc-matrix.md` -- and **confirm the resolution
    with the user before writing**. Never resolve silently.
 5. **Read the whole destination**, and note its `source:` field. Absent destination -> route
    to `/aid-create-stack` and write nothing.

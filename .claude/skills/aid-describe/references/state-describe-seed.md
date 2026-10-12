@@ -6,7 +6,7 @@ from a greenfield project and before REQUIREMENTS.md is approved. Consumes the e
 (`references/elicitation-engine.md`) with a seed-specific gap inventory, stop predicate, and
 record sink to elicit and author the 5-element KB seed, then invokes the layered coherence check
 (`references/coherence-check.md`) and the greenfield-mode review gate
-(`.claude/skills/aid-discover/references/state-review.md` with `greenfield: true`).
+(`.agents/skills/aid-discover/references/state-review.md` with `greenfield: true`).
 
 Feature-003 owns steps 3-5 of the forward-authoring flow; the engine (feature-002) provides the
 adaptive elicitation machinery (step 2). Do NOT re-implement the engine -- consume it.
@@ -18,15 +18,15 @@ adaptive elicitation machinery (step 2). Do NOT re-implement the engine -- consu
   the per-turn mechanics.
 - `references/coherence-check.md` -- the two-layer gate invoked at step 4 (both layers always
   run; [HUMAN GATE] blocks progress until all conflicts are resolved).
-- `.claude/skills/aid-discover/references/state-review.md` -- the review subsystem invoked at
+- `.agents/skills/aid-discover/references/state-review.md` -- the review subsystem invoked at
   step 5 with `greenfield: true`; the "Greenfield -- two distinct cases" block in state-review.md
   confirms this is a DISTINCT entry point from the discovery-triage greenfield path (Step 0f).
-- `.claude/skills/aid-discover/references/reviewer-brief.md` -- reviewer brief template; the
+- `.agents/skills/aid-discover/references/reviewer-brief.md` -- reviewer brief template; the
   `{{GREENFIELD_BLOCK}}` substitution ("`greenfield: true` case") must be populated.
-- `.claude/skills/aid-discover/references/document-expectations.md` -- `## Greenfield Mode`
+- `.agents/skills/aid-discover/references/document-expectations.md` -- `## Greenfield Mode`
   block applies when `greenfield: true` (evidence substitution + as-built red flags relaxed +
   dimension floors retained).
-- `.claude/aid/templates/kb-authoring/frontmatter-schema.md` -- `source: forward-authored` is
+- `.aid/runtime/templates/kb-authoring/frontmatter-schema.md` -- `source: forward-authored` is
   the third enum value (task-020 schema); `sources: []` is correct for a pure-intent doc;
   `sources: [<path>]` when the user cited external design notes.
 
@@ -457,9 +457,9 @@ Per NFR-3, the seed MUST traverse the FULL panel (`panel: full`): all four manda
 same dimension floors, intent-evidence substituted for code/config evidence, named as-built red
 flags relaxed.
 
-**Invoke `.claude/skills/aid-discover/references/state-review.md` with `greenfield: true`.**
+**Invoke `.agents/skills/aid-discover/references/state-review.md` with `greenfield: true`.**
 
-**Reviewer brief (`.claude/skills/aid-discover/references/reviewer-brief.md`):**
+**Reviewer brief (`.agents/skills/aid-discover/references/reviewer-brief.md`):**
 
 - `{{ARTIFACTS}}` -- the seed doc paths in `.aid/knowledge/`:
   - `.aid/knowledge/domain-glossary.md`
@@ -493,7 +493,7 @@ are empty and the panel degrades gracefully -- not an error.
 **Grade requirement:**
 
 ```bash
-bash .claude/aid/scripts/config/read-setting.sh --skill discover --key minimum_grade --default A
+bash .aid/runtime/scripts/config/read-setting.sh --skill discover --key minimum_grade --default A
 ```
 
 Compute `ready = (grade >= minimum_grade AND essence_verdict == PASS AND

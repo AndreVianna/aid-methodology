@@ -1,7 +1,7 @@
 # /aid-define — Reviewer Dispatch Brief Template
 
 Loaded by `/aid-define` CROSS-REFERENCE state (State 6). Renders the brief
-passed to the `aid-reviewer` sub-agent. Follows `.claude/aid/templates/reviewer-dispatch.md`.
+passed to the `aid-reviewer` sub-agent. Follows `.aid/runtime/templates/reviewer-dispatch.md`.
 
 `{{ARTIFACTS}}` and `{{CONTEXT}}` are filled at dispatch time.
 
@@ -25,7 +25,7 @@ CONTEXT:
   plan, detail, execute), flag it as an OOS observation and bound your review
   to the REQUIREMENTS.md sections listed in ARTIFACTS.
 
-RUBRIC: .claude/aid/templates/grading-rubric.md (universal severity → grade table)
+RUBRIC: .aid/runtime/templates/grading-rubric.md (universal severity → grade table)
   Grade REQUIREMENTS.md + feature decomposition for:
     - Internal consistency (objective ↔ functional requirements ↔ acceptance criteria)
     - Consistency with the KB (architecture, technology-stack, integration-map)
@@ -42,7 +42,7 @@ DECLARED REVIEW CRITERIA (resolve; do not invent):
   `review-criteria:` frontmatter; most specific wins on an id collision. An artifact outside
   the registry's corpus (a work artifact under `.aid/works/`) resolves to NO type, which is
   correct and not a finding -- the file-class rows are what reach it.
-  Resolution is defined in .claude/aid/templates/kb-authoring/review-rubric.md
+  Resolution is defined in .aid/runtime/templates/kb-authoring/review-rubric.md
   (section: Resolving review criteria); the type registry and the criteria table live in
   .aid/knowledge/authoring-conventions.md. This brief deliberately does NOT restate them.
   - Cite the criterion `id` as a prefix in the ledger's Description cell (7 columns, no
@@ -91,8 +91,8 @@ DELIVERABLES:
   - Findings format: severity-tagged + source-tagged (REQUIREMENTS | FEATURE | KB)
   - Output location: `{{LEDGER}}`
   - Severity scale: CRITICAL | HIGH | MEDIUM | LOW | MINOR (per grading-rubric.md)
-  - Grade: per .claude/aid/scripts/grade.sh; minimum resolved via
-    `bash .claude/aid/scripts/config/read-setting.sh --skill interview --key minimum_grade --default A`
+  - Grade: per .aid/runtime/scripts/grade.sh; minimum resolved via
+    `bash .aid/runtime/scripts/config/read-setting.sh --skill interview --key minimum_grade --default A`
   - Pending Q&A: write user-facing questions to the `qa` sequence in
     `.aid/works/{work}/STATE.yml` (entries with `state: Pending`) -- the consolidated
     work STATE.yml per FR2 area-STATE consolidation; the legacy `INTERVIEW-STATE.md`

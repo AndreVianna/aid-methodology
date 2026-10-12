@@ -1,0 +1,122 @@
+{
+  "format_version": 3,
+  "aid_version": "0.9.0",
+  "installed_at": "2026-10-11T12:00:00Z",
+  "host": {
+    "worktree_root": ".claude/worktrees"
+  },
+  "shared": {
+    "skills": {
+      "root": ".agents/skills",
+      "version": "0.9.0",
+      "users": [
+        "claude-code",
+        "cursor"
+      ],
+      "files": [
+        {
+          "path": "aid-architect/SKILL.md",
+          "sha256": "2222222222222222222222222222222222222222222222222222222222222222"
+        },
+        {
+          "path": "aid-ask/SKILL.md",
+          "sha256": "1111111111111111111111111111111111111111111111111111111111111111"
+        }
+      ]
+    },
+    "runtime": {
+      "root": ".aid/runtime",
+      "version": "0.9.0",
+      "users": [
+        "claude-code",
+        "codex",
+        "cursor"
+      ],
+      "files": [
+        {
+          "path": "host.conf",
+          "sha256": "4444444444444444444444444444444444444444444444444444444444444444"
+        },
+        {
+          "path": "scripts/kb/build-kb-index.sh",
+          "sha256": "3333333333333333333333333333333333333333333333333333333333333333"
+        }
+      ]
+    },
+    "agents_md": {
+      "path": "AGENTS.md",
+      "version": "0.9.0",
+      "users": [
+        "claude-code",
+        "codex",
+        "cursor"
+      ],
+      "region_sha256": "5555555555555555555555555555555555555555555555555555555555555555",
+      "file_sha256": "6666666666666666666666666666666666666666666666666666666666666666"
+    },
+    "claude_md": {
+      "path": "CLAUDE.md",
+      "version": "0.9.0",
+      "users": [
+        "claude-code"
+      ],
+      "region_sha256": "7777777777777777777777777777777777777777777777777777777777777777"
+    },
+    "mirrors": {
+      ".claude/skills": {
+        "version": "0.9.0",
+        "users": [
+          "claude-code"
+        ]
+      }
+    }
+  },
+  "tools": {
+    "claude-code": {
+      "version": "0.9.0",
+      "installed_at": "2026-10-11T12:00:00Z",
+      "mirrors": [
+        ".claude/skills"
+      ],
+      "worktree_root": ".claude/worktrees",
+      "files": [
+        {
+          "path": ".claude/agents/aid-architect.md",
+          "sha256": "8888888888888888888888888888888888888888888888888888888888888888"
+        }
+      ],
+      "paths": [
+        ".claude/agents/aid-architect.md"
+      ]
+    },
+    "codex": {
+      "version": "0.9.0",
+      "installed_at": "2026-10-11T12:00:00Z",
+      "mirrors": [],
+      "rules_inline": true,
+      "files": [
+        {
+          "path": ".codex/agents/aid-architect.toml",
+          "sha256": "9999999999999999999999999999999999999999999999999999999999999999"
+        }
+      ],
+      "paths": [
+        ".codex/agents/aid-architect.toml"
+      ]
+    },
+    "cursor": {
+      "version": "0.9.0",
+      "installed_at": "2026-10-11T12:00:00Z",
+      "mirrors": [],
+      "files": [
+        {
+          "path": ".cursor/agents/aid-architect.md",
+          "sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+        }
+      ],
+      "paths": [
+        ".cursor/agents/aid-architect.md"
+      ]
+    }
+  }
+}

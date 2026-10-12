@@ -1,7 +1,7 @@
 # /aid-discover — Reviewer Dispatch Brief Template
 
 Loaded by `/aid-discover` REVIEW state. Renders the brief that gets passed to
-the `aid-reviewer` sub-agent. Follows `.claude/aid/templates/reviewer-dispatch.md`.
+the `aid-reviewer` sub-agent. Follows `.aid/runtime/templates/reviewer-dispatch.md`.
 
 `{{ARTIFACTS}}`, `{{CONTEXT}}`, and `{{GREENFIELD_BLOCK}}` are filled at dispatch
 time. Other sections are static per skill.
@@ -43,7 +43,7 @@ DECLARED REVIEW CRITERIA (resolve; do not invent):
   `review-criteria:` frontmatter; most specific wins on an id collision. An artifact outside
   the registry's corpus (a work artifact under `.aid/works/`) resolves to NO type, which is
   correct and not a finding -- the file-class rows are what reach it.
-  Resolution is defined in .claude/aid/templates/kb-authoring/review-rubric.md
+  Resolution is defined in .aid/runtime/templates/kb-authoring/review-rubric.md
   (section: Resolving review criteria); the type registry and the criteria table live in
   .aid/knowledge/authoring-conventions.md. This brief deliberately does NOT restate them.
   - Cite the criterion `id` as a prefix in the ledger's Description cell (7 columns, no
@@ -84,11 +84,11 @@ DELIVERABLES:
     its absence is the signal that the step did not run. See
     `reviewer-dispatch.md` -- "Render the brief TO A FILE".
 
-  - Findings format: per .claude/aid/templates/kb-authoring/principles.md P3 temp-ledger
+  - Findings format: per .aid/runtime/templates/kb-authoring/principles.md P3 temp-ledger
   - Ledger location: `{{LEDGER}}`
   - Severity scale: per the routed rubric (CRITICAL / HIGH / MEDIUM / LOW / MINOR)
-  - Grade: computed per .claude/aid/scripts/grade.sh from the ledger; minimum is
-    resolved via `bash .claude/aid/scripts/config/read-setting.sh --skill discover --key minimum_grade --default A`
+  - Grade: computed per .aid/runtime/scripts/grade.sh from the ledger; minimum is
+    resolved via `bash .aid/runtime/scripts/config/read-setting.sh --skill discover --key minimum_grade --default A`
   - OOS observations excluded from grade per protocol
 ```
 

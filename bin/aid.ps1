@@ -161,7 +161,9 @@ function script:Test-AidIsProjectDir {
 # deliveries/*/STATE.md and deliveries/*/tasks/*/STATE.md) is rewritten in place
 # and the .md deleted. Performed by the STATE.md -> STATE.yml FORMAT-4
 # CONVERSION step in _aid_migrate_repo (task-008 / SPEC.md SS L-6 step 2).
-Set-Variable -Name AidSupportedFormat -Value 4 -Option Constant -Scope Script
+Set-Variable -Name AidSupportedFormat -Value 5 -Option Constant -Scope Script
+
+# format 5 (was 4): shared skills under .agents/skills (+ CLI-owned mirrors), runtime under .aid/runtime/, one AGENTS.md pointer region (read instruction + rules summary) for every tool, a CLAUDE.md region (the same body plus an @.aid/runtime/rules.md import line) while claude-code is installed; manifest format_version 3.
 
 # ---------------------------------------------------------------------------
 # Import the shared install core from AID_CODE_HOME\lib\.
@@ -221,7 +223,7 @@ function script:Show-AidUsage {
             Write-Host '  -DryRun: print the exact command(s) it would run, then exit (no changes).'
         }
         'update' {
-            Write-Host 'aid update [-Version <v>] [-FromBundle <path>] [-Force] [-DryRun] [-Target <dir>]'
+            Write-Host 'aid update [<tool>[,...]] [-Version <v>] [-FromBundle <path>] [-Force] [-DryRun] [-Target <dir>]'
             Write-Host 'aid update self [-FromBundle <path>] [-DryRun]'
             Write-Host 'aid update all [-Version <v>] [-DryRun] [-Force]'
             Write-Host '  Update to latest.'
@@ -747,6 +749,8 @@ function script:Invoke-AidUpdateAll {
         Write-Host "aid update all: $($uaRepos.Count) registered project(s), target version $uaRunVersion"
 
         $uaFetchFailed = @{}   # tool -> $true once its download has failed this run
+        $uaSharedFetched = $false
+        $uaSharedFailed = $false
         $uaUpdated = [System.Collections.Generic.List[string]]::new()
         $uaSkipped = [System.Collections.Generic.List[string]]::new()
         $uaFailed  = [System.Collections.Generic.List[string]]::new()
@@ -767,8 +771,17 @@ function script:Invoke-AidUpdateAll {
             $uaManifest = Join-Path $uaAidDir '.aid-manifest.json'
             $uaTools = @(Get-ManifestToolList -ManifestPath $uaManifest | ForEach-Object { $_.Id })
 
+            if ($uaTools.Count -gt 0 -and -not $uaSharedFetched -and -not $uaSharedFailed) {
+                if (Fetch-AidArtifact -Kind shared -Tool '' -Version $uaRunVersion -DestDir $uaCache) {
+                    $uaSharedFetched = $true
+                } else {
+                    $uaSharedFailed = $true
+                }
+            }
+
             # Populate the shared cache download-once per distinct tool (AC1).
             $uaRepoFetchFailed = $false
+            if ($uaSharedFailed) { $uaRepoFetchFailed = $true }
             foreach ($uaTool in $uaTools) {
                 if ($uaFetchFailed.ContainsKey($uaTool)) {
                     $uaRepoFetchFailed = $true
@@ -1622,6 +1635,169 @@ function script:Invoke-AidFormatGate {
     return 0
 }
 
+function script:Test-AidV3LegacyEvidence {
+    # A project whose manifest is a valid format 3 is a v4 project: legacy-looking paths
+    # (a v3 .cursor/aid/ restored by a branch switch, a user .codex/skills/aid-* folder)
+    # are NEVER evidence there -- see Get-AidV4StrayLegacyPaths, which reports them.
+    param([string]$Repo)
+    $manifestPath = Join-Path $Repo (Join-Path '.aid' '.aid-manifest.json')
+    $manifest = $null
+    $format = 0
+    if (Test-Path $manifestPath -PathType Leaf) {
+        try { $manifest = Get-Content -LiteralPath $manifestPath -Raw | ConvertFrom-Json } catch { $manifest = $null }
+        if ($manifest -and $manifest.PSObject.Properties['format_version']) { $format = [int]$manifest.format_version }
+        $tools = @(if ($manifest -and $manifest.PSObject.Properties['tools']) { @($manifest.tools.PSObject.Properties) } else { @() })
+        if ($format -le 2 -and $tools.Count -gt 0) { return $true }
+        if ($format -eq 3) { return $false }
+    }
+    foreach ($rootName in @('.claude', '.codex', '.cursor', '.github', '.agent')) {
+        if (Test-Path (Join-Path $Repo (Join-Path $rootName 'aid')) -PathType Container) { return $true }
+        if ($rootName -eq '.codex' -and (Test-Path (Join-Path $Repo '.agents/aid') -PathType Container)) { return $true }
+        $skillsDir = Join-Path $Repo (Join-Path $rootName 'skills')
+        if (Test-Path $skillsDir -PathType Container) {
+            $skillDirs = @(Get-ChildItem -LiteralPath $skillsDir -Directory -Filter 'aid-*' -ErrorAction SilentlyContinue)
+            if ($skillDirs.Count -gt 0) { return $true }
+        }
+    }
+    return $false
+}
+
+# Get-AidV4StrayLegacyPaths -Repo <dir> - the legacy-looking AID paths of a format-3
+# project, one string per path (fixed root order, then ordinal name order): <root>/aid,
+# .agents/aid and <root>/skills/aid-* folders under a skills dir the manifest does not
+# record as a mirror. Empty for any other project. Read-only.
+function script:Get-AidV4StrayLegacyPaths {
+    param([string]$Repo)
+    $manifestPath = Join-Path $Repo (Join-Path '.aid' '.aid-manifest.json')
+    $found = New-Object 'System.Collections.Generic.List[string]'
+    if (-not (Test-Path $manifestPath -PathType Leaf)) { return @() }
+    try { $manifest = Get-Content -LiteralPath $manifestPath -Raw | ConvertFrom-Json } catch { return @() }
+    if (-not ($manifest -and $manifest.PSObject.Properties['format_version'] -and [int]$manifest.format_version -eq 3)) { return @() }
+    $mirrorDirs = @()
+    if ($manifest.PSObject.Properties['shared'] -and $manifest.shared -and $manifest.shared.PSObject.Properties['mirrors'] -and $manifest.shared.mirrors) {
+        $mirrorDirs = @($manifest.shared.mirrors.PSObject.Properties | ForEach-Object { $_.Name })
+    }
+    foreach ($rootName in @('.claude', '.codex', '.cursor', '.github', '.agent')) {
+        if (Test-Path (Join-Path $Repo (Join-Path $rootName 'aid')) -PathType Container) { $found.Add("$rootName/aid") }
+        if ($rootName -eq '.codex' -and (Test-Path (Join-Path $Repo '.agents/aid') -PathType Container)) { $found.Add('.agents/aid') }
+        $skillsDir = Join-Path $Repo (Join-Path $rootName 'skills')
+        if ($mirrorDirs -contains "$rootName/skills" -or -not (Test-Path $skillsDir -PathType Container)) { continue }
+        $names = @(Get-ChildItem -LiteralPath $skillsDir -Directory -Filter 'aid-*' -ErrorAction SilentlyContinue | ForEach-Object { $_.Name })
+        [Array]::Sort($names, [StringComparer]::Ordinal)
+        foreach ($n in $names) { $found.Add("$rootName/skills/$n") }
+    }
+    return @($found)
+}
+
+# Write-AidV4StrayPathsWarning -Repo <dir> - one warning (stderr) naming the stray
+# legacy-looking paths of a v4 project; they are left untouched. Silent when none.
+function script:Write-AidV4StrayPathsWarning {
+    param([string]$Repo)
+    $strays = @(script:Get-AidV4StrayLegacyPaths -Repo $Repo)
+    if ($strays.Count -eq 0) { return }
+    [Console]::Error.WriteLine('WARN: aid: this v4 project has legacy-looking AID paths; they were left untouched:')
+    foreach ($p in $strays) { [Console]::Error.WriteLine("  $p") }
+    [Console]::Error.WriteLine('They are not part of the v4 layout. If you do not need them, delete them by hand (for example: rm -r <path>, or Remove-Item -Recurse <path> in PowerShell).')
+}
+
+function script:Test-AidManifestFormatGate {
+    param([string]$Repo)
+    $manifestPath = Join-Path $Repo (Join-Path '.aid' '.aid-manifest.json')
+    if (-not (Test-Path $manifestPath -PathType Leaf)) { return $true }
+    try { $manifest = Get-Content -LiteralPath $manifestPath -Raw | ConvertFrom-Json } catch { return $true }
+    if ($manifest.PSObject.Properties['format_version'] -and [int]$manifest.format_version -gt 3) {
+        [Console]::Error.WriteLine("ERROR: aid: manifest format $($manifest.format_version) is newer than this CLI supports. Run: aid update self")
+        return $false
+    }
+    return $true
+}
+
+function script:Test-AidLayoutGate {
+    param([string]$Repo)
+    $aidDir = Join-Path $Repo '.aid'
+    $manifestPath = Join-Path $aidDir '.aid-manifest.json'
+    $settingsPath = Join-Path $aidDir 'settings.yml'
+    $manifest = $null
+    if (Test-Path $manifestPath -PathType Leaf) {
+        try { $manifest = Get-Content -LiteralPath $manifestPath -Raw | ConvertFrom-Json } catch { $manifest = $null }
+    }
+    $tools = @(if ($manifest -and $manifest.PSObject.Properties['tools']) { @($manifest.tools.PSObject.Properties) } else { @() })
+    $manifestFormat = if ($manifest -and $manifest.PSObject.Properties['format_version']) { [int]$manifest.format_version } else { 0 }
+    $refuse = (Test-Path (Join-Path $aidDir '.temp/v3-upgrade-tools.json'))
+    if ($tools.Count -gt 0 -and $manifestFormat -lt 3) { $refuse = $true }
+    if ($tools.Count -gt 0 -and (Test-Path $settingsPath -PathType Leaf) -and (script:Get-AidRepoFormat -Repo $Repo) -lt 5) { $refuse = $true }
+    if (script:Test-AidV3LegacyEvidence -Repo $Repo) { $refuse = $true }
+    if ($refuse) {
+        [Console]::Error.WriteLine('This project uses the v3 AID layout. Run: aid update (it upgrades every installed tool), then retry aid add.')
+        return $false
+    }
+    return $true
+}
+
+# Test-AidRootFilesGate -Repo <dir> -Mode <0 add/update|1 v3 upgrade|2 remove> -Tools <ids> - refuse,
+# before any write, when a root file the command would edit cannot be edited byte-safely
+# (UTF-16/UTF-32 or NUL bytes): AGENTS.md always; CLAUDE.md when claude-code is named (add,
+# update, remove), installed (add, update) or when a v3 upgrade retires regions from both.
+# Prints the refusal (stderr) and returns $false. Bash twin: _aid_root_files_gate.
+function script:Test-AidRootFilesGate {
+    param([string]$Repo, [int]$Mode, [string[]]$Tools)
+    $claude = (@($Tools) -contains 'claude-code')
+    if ($Mode -eq 1) { $claude = $true }
+    elseif ($Mode -eq 0) {
+        $manifestPath = Join-Path $Repo (Join-Path '.aid' '.aid-manifest.json')
+        if ((Test-Path $manifestPath -PathType Leaf) -and (@(Get-ManifestToolList -ManifestPath $manifestPath | ForEach-Object { $_.Id }) -contains 'claude-code')) { $claude = $true }
+    }
+    $names = @('AGENTS.md'); if ($claude) { $names += 'CLAUDE.md' }
+    foreach ($name in $names) {
+        $path = Join-Path $Repo $name
+        $refusal = Get-AidRootFileRefusal -Path $path
+        if ($refusal) {
+            [Console]::Error.WriteLine('ERROR: aid: ' + $refusal)
+            return $false
+        }
+    }
+    return $true
+}
+
+function script:Get-AidMigrationStamp {
+    param([string]$Repo)
+    $aidDir = Join-Path $Repo '.aid'
+    $manifestPath = Join-Path $aidDir '.aid-manifest.json'
+    if (Test-Path $manifestPath -PathType Leaf) {
+        try { $manifest = Get-Content -LiteralPath $manifestPath -Raw | ConvertFrom-Json } catch { $manifest = $null }
+        $tools = @(if ($manifest -and $manifest.PSObject.Properties['tools']) { @($manifest.tools.PSObject.Properties) } else { @() })
+        if ($manifest -and $manifest.PSObject.Properties['format_version'] -and [int]$manifest.format_version -eq 3) { return 5 }
+        if ((Test-Path (Join-Path $aidDir '.temp/v3-upgrade-tools.json')) -or (script:Test-AidV3LegacyEvidence -Repo $Repo) -or $tools.Count -gt 0) { return 4 }
+        return 5
+    }
+    if ((Test-Path (Join-Path $aidDir '.temp/v3-upgrade-tools.json')) -or (script:Test-AidV3LegacyEvidence -Repo $Repo)) { return 4 }
+    return 5
+}
+
+function script:Test-AidManifestVersionSkew {
+    param([string]$ManifestPath)
+    if (-not (Test-Path $ManifestPath -PathType Leaf)) { return $false }
+    try { $manifest = Get-Content -LiteralPath $ManifestPath -Raw | ConvertFrom-Json } catch { return $false }
+    $projectVersion = if ($manifest.PSObject.Properties['aid_version']) { [string]$manifest.aid_version } else { '' }
+    if (-not $projectVersion) { return $false }
+    $toolEntries = @(if ($manifest.PSObject.Properties['tools']) { @($manifest.tools.PSObject.Properties) } else { @() })
+    foreach ($tool in $toolEntries) {
+        if ($tool.Value.PSObject.Properties['version'] -and [string]$tool.Value.version -and [string]$tool.Value.version -ne $projectVersion) { return $true }
+    }
+    if ($manifest.PSObject.Properties['shared']) {
+        foreach ($entry in @('skills', 'runtime', 'agents_md', 'claude_md')) {
+            $sharedEntry = $manifest.shared.PSObject.Properties[$entry]
+            if ($sharedEntry -and $sharedEntry.Value.PSObject.Properties['version'] -and [string]$sharedEntry.Value.version -and [string]$sharedEntry.Value.version -ne $projectVersion) { return $true }
+        }
+        if ($manifest.shared.PSObject.Properties['mirrors']) {
+            foreach ($mirror in $manifest.shared.mirrors.PSObject.Properties) {
+                if ($mirror.Value.PSObject.Properties['version'] -and [string]$mirror.Value.version -and [string]$mirror.Value.version -ne $projectVersion) { return $true }
+            }
+        }
+    }
+    return $false
+}
+
 # ---------------------------------------------------------------------------
 # Registry helpers (DR-1 / FF-1 / FR29 -- PS twin of Bash registry_register /
 # registry_unregister).  Implements DM-1 schema, DD-3 Move-Item -Force atomic
@@ -1889,7 +2065,7 @@ function script:Invoke-AidProjectsList {
     param([bool]$Verbose = $false)
 
     # Canonical cwd.
-    $cwd = (Resolve-Path -LiteralPath '.' -ErrorAction SilentlyContinue).Path
+    $cwd = try { (Resolve-Path -LiteralPath '.' -ErrorAction Stop).Path } catch { $null }
     if (-not $cwd) { $cwd = (Get-Location).Path }
 
     $paths = @(script:Get-RegistryRawUnion)
@@ -1999,7 +2175,7 @@ function script:Invoke-AidScaffoldBareProject {
         $now = [System.DateTime]::UtcNow.ToString('yyyy-MM-ddTHH:mm:ssZ')
         $mlines = [System.Collections.Generic.List[string]]::new()
         [void]$mlines.Add('{')
-        [void]$mlines.Add('  "format_version": 2,')
+        [void]$mlines.Add('  "format_version": 3,')
         if ($ver) { [void]$mlines.Add("  `"aid_version`": `"$ver`",") }
         [void]$mlines.Add("  `"installed_at`": `"$now`",")
         [void]$mlines.Add('  "tools": {}')
@@ -2063,7 +2239,7 @@ function script:Invoke-AidProjectsAdd {
         # has nothing to migrate -- just register it).
         if ($repoFmt -lt $script:AidSupportedFormat -and (Test-Path (Join-Path (Join-Path $canon '.aid') 'settings.yml') -PathType Leaf)) {
             Write-Host "aid projects: '$canon' uses an older AID format (v$repoFmt); migrating to v$($script:AidSupportedFormat)..."
-            try { $null = script:Invoke-AidMigrateRepo -Repo $canon 6>$null } catch {
+            try { & { function Write-Host { }; $null = script:Invoke-AidMigrateRepo -Repo $canon } } catch {
                 [Console]::Error.WriteLine("WARN: aid projects add: migration reported an issue for '$canon' (continuing)")
             }
         }
@@ -2074,7 +2250,7 @@ function script:Invoke-AidProjectsAdd {
 
     # Register (idempotent). Suppress Registry-Register's own Write-Host output so we
     # emit a single consolidated message instead; stderr (WARN lines) flows through.
-    script:Registry-Register -Repo $canon -Tier $tier 6>$null
+    & { function Write-Host { }; script:Registry-Register -Repo $canon -Tier $tier }
     Write-Host ("aid projects: '$canon' registered in $tier tier.")
     if ($Verbose) {
         $primaryNorm = [System.IO.Path]::GetFullPath($script:_AidStateHome)
@@ -2683,7 +2859,7 @@ function script:Invoke-AidProjectsScan {
                 $action = 'would-register'
                 $nNew++
             } else {
-                script:Registry-Register -Repo $cand -Tier $tier 6>$null
+                & { function Write-Host { }; script:Registry-Register -Repo $cand -Tier $tier }
                 $action = 'registered'
                 $nNew++
             }
@@ -2815,7 +2991,7 @@ function script:Invoke-AidProjects {
 function script:Invoke-AidCwdClassify {
     param([string]$Target)
 
-    $canonTarget = (Resolve-Path -LiteralPath $Target -ErrorAction SilentlyContinue).Path
+    $canonTarget = try { (Resolve-Path -LiteralPath $Target -ErrorAction Stop).Path } catch { $null }
     if (-not $canonTarget) { $canonTarget = $Target }
 
     # Check if already registered in the union.
@@ -2838,7 +3014,7 @@ function script:Invoke-AidCwdClassify {
 function script:Invoke-AidCwdNoAidOffer {
     param([string]$Target)
 
-    $canon = (Resolve-Path -LiteralPath $Target -ErrorAction SilentlyContinue).Path
+    $canon = try { (Resolve-Path -LiteralPath $Target -ErrorAction Stop).Path } catch { $null }
     if (-not $canon) { $canon = $Target }
 
     Write-Host 'no AID project here -- set it up? (aid add)'
@@ -3219,6 +3395,7 @@ if ($SUBCMD -eq 'status') {
     }
     # C-table register-on-encounter (best-effort, never blocks status).
     script:Invoke-AidCwdClassify -Target $statusTarget
+    if (-not (script:Test-AidManifestFormatGate -Repo $statusTarget)) { script:Exit-Aid 2 }
     # C6': format gate for status target (only when target is a real project).
     $gateRc = script:Invoke-AidFormatGate -Repo $statusTarget
     if ($gateRc -ne 0) { script:Exit-Aid $gateRc }
@@ -3238,6 +3415,7 @@ if ($SUBCMD -eq 'status') {
 # ---------------------------------------------------------------------------
 function script:Invoke-AidMigrateRepo {
     param([string]$Repo)
+    $migrationStamp = script:Get-AidMigrationStamp -Repo $Repo
 
     # ------------------------------------------------------------------
     # STEP 0 -- DETECT / QUALIFY (DD-6 / SEC-1) -- read-only.
@@ -3273,13 +3451,13 @@ function script:Invoke-AidMigrateRepo {
     # ------------------------------------------------------------------
     if ($era -eq 'a') {
         try {
-            script:Invoke-AidRepairSettingsEraA -SettingsFile $settingsPath -RepoName $repoName
+            script:Invoke-AidRepairSettingsEraA -SettingsFile $settingsPath -RepoName $repoName -FormatVersion $migrationStamp
         } catch {
             [Console]::Error.WriteLine("WARN: aid migrate: settings repair failed for ${settingsPath}: $_")
         }
     } else {
         try {
-            script:Invoke-AidSynthesizeSettingsEraB -SettingsFile $settingsPath -RepoName $repoName -ManifestPath $manifest
+            script:Invoke-AidSynthesizeSettingsEraB -SettingsFile $settingsPath -RepoName $repoName -ManifestPath $manifest -FormatVersion $migrationStamp
         } catch {
             [Console]::Error.WriteLine("WARN: aid migrate: settings synthesis failed for ${settingsPath}: $_")
         }
@@ -4296,7 +4474,7 @@ function script:Sc-ConvertRepo {
 # write entirely when the rebuilt content equals the original (re-normalized
 # to LF) content.
 function script:Invoke-AidRepairSettingsEraA {
-    param([string]$SettingsFile, [string]$RepoName)
+    param([string]$SettingsFile, [string]$RepoName, [int]$FormatVersion = 5)
     if (-not (Test-Path $SettingsFile -PathType Leaf)) { throw "settings file not found" }
 
     $lines = [System.Collections.Generic.List[string]](Get-Content -LiteralPath $SettingsFile -Encoding utf8 -ErrorAction Stop)
@@ -4500,7 +4678,7 @@ function script:Invoke-AidRepairSettingsEraA {
     # original (re-normalized) content.
     # ------------------------------------------------------------------
     $out = [System.Collections.Generic.List[string]]::new()
-    [void]$out.Add("format_version: $($script:AidSupportedFormat)")
+    [void]$out.Add("format_version: $FormatVersion")
     [void]$out.Add("name: ${name}")
     if ([string]::IsNullOrEmpty($description)) {
         [void]$out.Add('description: ""')
@@ -4550,13 +4728,13 @@ function script:Invoke-AidRepairSettingsEraA {
 # only in the manifest -- never written into settings) but is otherwise
 # unused here. Crash-safe: same-directory temp + Move-Item -Force.
 function script:Invoke-AidSynthesizeSettingsEraB {
-    param([string]$SettingsFile, [string]$RepoName, [string]$ManifestPath)
+    param([string]$SettingsFile, [string]$RepoName, [string]$ManifestPath, [int]$FormatVersion = 5)
 
     $repoDir = Split-Path (Split-Path $SettingsFile -Parent) -Parent
     $sourceControl = if (Test-Path (Join-Path $repoDir '.git') -PathType Container) { 'git' } else { 'none' }
 
     $sb = [System.Text.StringBuilder]::new()
-    [void]$sb.Append("format_version: $($script:AidSupportedFormat)`n")
+    [void]$sb.Append("format_version: $FormatVersion`n")
     [void]$sb.Append("name: ${RepoName}`n")
     [void]$sb.Append("description: `"`"`n")
     [void]$sb.Append("type: brownfield`n")
@@ -4643,12 +4821,12 @@ if ($SUBCMD -eq 'update') {
                         switch -Regex ($usAnswer) {
                             '^[Aa](ll|LL)?$' {
                                 $usMigrateAll = $true
-                                try { script:Invoke-AidMigrateRepo -Repo $usRepo } catch {
+                                try { $null = script:Invoke-AidMigrateRepo -Repo $usRepo } catch {
                                     [Console]::Error.WriteLine("WARN: aid: migration failed for ${usRepo}: $_")
                                 }
                             }
                             '^[Yy](es|ES)?$' {
-                                try { script:Invoke-AidMigrateRepo -Repo $usRepo } catch {
+                                try { $null = script:Invoke-AidMigrateRepo -Repo $usRepo } catch {
                                     [Console]::Error.WriteLine("WARN: aid: migration failed for ${usRepo}: $_")
                                 }
                             }
@@ -5494,7 +5672,7 @@ if ($SUBCMD -eq '__migrate-repo') {
         script:Exit-Aid 2
     }
     $_MigTarget = (Resolve-Path -LiteralPath $_MigTarget).Path
-    script:Invoke-AidMigrateRepo -Repo $_MigTarget
+    $null = script:Invoke-AidMigrateRepo -Repo $_MigTarget
     script:Exit-Aid 0
 }
 
@@ -5623,16 +5801,6 @@ if (-not $_AidForce -and ($env:AID_FORCE -eq '1' -or $env:AID_FORCE -eq 'true'))
 }
 if ($script:_AidVerbose) { $env:AID_VERBOSE = '1' }
 
-# FR10: 'update' no longer accepts a per-tool positional (other than 'self' which
-# was already consumed above).  Any non-flag positional on 'aid update' is a usage error.
-if ($SUBCMD -eq 'update' -and $_AidToolArg) {
-    [Console]::Error.WriteLine("ERROR: aid update: unexpected argument: '$_AidToolArg'")
-    [Console]::Error.WriteLine("       'aid update' updates all installed tools -- no per-tool selection.")
-    [Console]::Error.WriteLine("       Use 'aid update self' to update the CLI only.")
-    [Console]::Error.WriteLine("       See 'aid update -h' for usage.")
-    script:Exit-Aid 2
-}
-
 if (-not $_AidTarget) { $_AidTarget = '.' }
 
 # Validate target directory.
@@ -5671,9 +5839,21 @@ if ($SUBCMD -eq 'update') {
 
 # C6': format gate for the update repo path (only when target is a real project;
 # an add to a fresh repo with no .aid/ falls through normally).
+$script:_AidV3Upgrade = $false
 if ($SUBCMD -eq 'update' -and (script:Test-AidIsProjectDir -Dir $_AidTarget)) {
     $gateRc = script:Invoke-AidFormatGate -Repo $_AidTarget
     if ($gateRc -ne 0) { script:Exit-Aid $gateRc }
+    if (-not (script:Test-AidManifestFormatGate -Repo $_AidTarget)) { script:Exit-Aid 2 }
+    if ((Test-Path (Join-Path $_AidTarget '.aid/.temp/v3-upgrade-tools.json')) -or
+        (script:Test-AidV3LegacyEvidence -Repo $_AidTarget)) { $script:_AidV3Upgrade = $true }
+}
+
+if ($SUBCMD -in @('add','remove')) {
+    $gateRc = script:Invoke-AidFormatGate -Repo $_AidTarget
+    if ($gateRc -ne 0) { script:Exit-Aid $gateRc }
+    if (-not (script:Test-AidManifestFormatGate -Repo $_AidTarget)) { script:Exit-Aid 2 }
+    try { $pending = Read-AidUpgradeRecovery -Target $_AidTarget } catch { [Console]::Error.WriteLine("ERROR: aid update: $($_.Exception.Message)"); script:Exit-Aid 2 }
+    if ($null -ne $pending) { [Console]::Error.WriteLine("ERROR: aid ${SUBCMD}: a v3 upgrade is pending; run: aid update"); script:Exit-Aid 2 }
 }
 
 # ---- Self-update-if-needed preamble (FF-3 / CLI-2 / task-079) --------------
@@ -5681,6 +5861,12 @@ if ($SUBCMD -eq 'update' -and (script:Test-AidIsProjectDir -Dir $_AidTarget)) {
 # Ensures the CLI is current before the per-repo tool-update runs.  WARN-not-fail.
 if ($SUBCMD -eq 'update') {
     script:Invoke-AidUpdateSelfIfStale -FromBundle $_AidFromBundle
+}
+
+# A v4 (format 3) project is never a v3 upgrade, whatever legacy-looking paths a branch
+# switch or a user left behind: leave them untouched and report them once.
+if ($SUBCMD -eq 'update' -and -not $script:_AidV3Upgrade -and (script:Test-AidIsProjectDir -Dir $_AidTarget)) {
+    script:Write-AidV4StrayPathsWarning -Repo $_AidTarget
 }
 
 # Strip leading 'v' from version.
@@ -5770,6 +5956,43 @@ if (-not $_AidToolsOk.Value) {
 
 $_AidTools = $_AidToolsList
 
+if ($SUBCMD -eq 'update' -and $script:_AidV3Upgrade) {
+    try { $script:_AidUpgradeRecord = Read-AidUpgradeRecovery -Target $_AidTarget } catch { [Console]::Error.WriteLine("ERROR: aid update: $($_.Exception.Message)"); script:Exit-Aid 2 }
+    if ($null -ne $script:_AidUpgradeRecord) {
+        foreach ($requested in @($_AidToolArg -split ',' | Where-Object { $_ })) {
+            $canonical = Normalize-Tool -Raw $requested.Trim()
+            if ($null -eq $canonical -or $script:_AidUpgradeRecord.tools -cnotcontains $canonical) { [Console]::Error.WriteLine("ERROR: aid update: tool '$requested' is outside the pending recovery set; retry recovery without naming it"); script:Exit-Aid 2 }
+        }
+        $_AidTools = @($script:_AidUpgradeRecord.tools)
+    } else {
+        $legacy = New-Object 'System.Collections.Generic.List[string]'
+        $manifestObj = $null
+        if (Test-Path -LiteralPath $_AidManifest -PathType Leaf) { try { $manifestObj = Get-Content -LiteralPath $_AidManifest -Raw | ConvertFrom-Json } catch {} }
+        # Format 2, 1 or no format_version (pre-format-3 manifests) list the tools to upgrade.
+        $legacyFormat = 0; if ($manifestObj -and $manifestObj.PSObject.Properties['format_version']) { $legacyFormat = [int]$manifestObj.format_version }
+        if ($manifestObj -and $legacyFormat -le 2 -and $manifestObj.PSObject.Properties['tools']) { foreach ($p in @($manifestObj.tools.PSObject.Properties)) { if ((Get-AidToolIds) -ccontains $p.Name) { $legacy.Add($p.Name) } } }
+        if ($legacy.Count -eq 0) {
+            foreach ($tool in (Get-AidToolIds)) {
+                $root = switch ($tool) { 'claude-code' { '.claude' } 'codex' { '.codex' } 'cursor' { '.cursor' } 'copilot-cli' { '.github' } 'antigravity' { '.agent' } }
+                if ((Test-Path (Join-Path $_AidTarget (Join-Path $root 'aid')) -PathType Container) -or (Get-ChildItem -LiteralPath (Join-Path $_AidTarget (Join-Path $root 'skills')) -Directory -Filter 'aid-*' -ErrorAction SilentlyContinue | Select-Object -First 1) -or ($tool -eq 'codex' -and (Test-Path (Join-Path $_AidTarget '.agents/aid') -PathType Container))) { $legacy.Add($tool) }
+            }
+        }
+        foreach ($requested in @($_AidToolArg -split ',' | Where-Object { $_ })) { $canonical = Normalize-Tool -Raw $requested.Trim(); if ($null -ne $canonical -and -not $legacy.Contains($canonical)) { $legacy.Add($canonical) } }
+        $_AidTools = @((Get-AidToolIds) | Where-Object { $legacy.Contains($_) })
+        if ($_AidTools.Count -eq 0) { [Console]::Error.WriteLine('ERROR: aid update: no tools found for v3 upgrade'); script:Exit-Aid 2 }
+    }
+}
+
+if ($SUBCMD -eq 'update' -and -not $script:_AidV3Upgrade) {
+    $requestedTools = @($_AidTools)
+    $allToolSet = New-Object 'System.Collections.Generic.HashSet[string]' ([System.StringComparer]::Ordinal)
+    foreach ($t in $_AidTools) { [void]$allToolSet.Add($t) }
+    foreach ($t in (Get-ManifestToolList -ManifestPath $_AidManifest)) { [void]$allToolSet.Add($t.Id) }
+    $addedTools = @((Get-AidToolIds) | Where-Object { $allToolSet.Contains($_) -and $requestedTools -notcontains $_ })
+    $_AidTools = @((Get-AidToolIds) | Where-Object { $allToolSet.Contains($_) })
+    if ($addedTools.Count -gt 0) { Write-Host "aid update: added to commit set: $($addedTools -join ', ')" }
+}
+
 if ($_AidTools.Count -eq 0) {
     switch ($SUBCMD) {
         'remove' {
@@ -5796,51 +6019,101 @@ New-Item -ItemType Directory -Path $_AidStagingBase -Force | Out-Null
 $script:_DispResolvedVersion = ''
 $script:_DispStagingDir      = ''
 
-function script:Prepare-AidToolStaging {
-    param([string]$Tool, [string]$Version, [string]$Bundle)
-
-    $toolStaging = Join-Path $_AidStagingBase ("staging-$Tool-" + [System.IO.Path]::GetRandomFileName())
-    New-Item -ItemType Directory -Path $toolStaging -Force | Out-Null
-
-    if ($Bundle) {
-        $tarball = $Bundle
-        if (Test-Path $Bundle -PathType Container) {
-            $pattern = Join-Path $Bundle "aid-$Tool-v*.tar.gz"
-            $found = Get-ChildItem -Path $pattern -ErrorAction SilentlyContinue | Select-Object -First 1
-            if (-not $found) {
-                [Console]::Error.WriteLine("ERROR: aid: no tarball found for tool '$Tool' in bundle directory: $Bundle")
-                script:Exit-Aid 1
-            }
-            $tarball = $found.FullName
+function script:Test-AidReleaseDescriptor {
+    param([string]$Path, [string]$Kind, [string]$Version, [string]$Tool='')
+    try { $entries = Read-AidKvConf -Path $Path } catch { [Console]::Error.WriteLine("ERROR: aid: $($_.Exception.Message)"); return $false }
+    if (-not (Test-Path -LiteralPath $Path -PathType Leaf)) { [Console]::Error.WriteLine("ERROR: aid: $(Split-Path $Path -Leaf): missing descriptor"); return $false }
+    $root = switch ($Tool) { 'claude-code' { '.claude' } 'codex' { '.codex' } 'cursor' { '.cursor' } 'copilot-cli' { '.github' } 'antigravity' { '.agent' } default { '' } }
+    $counts = @{}
+    foreach ($entry in $entries) {
+        $splitAt = $entry.IndexOf('='); $key = $entry.Substring(0, $splitAt); $value = $entry.Substring($splitAt + 1)
+        if (-not $counts.ContainsKey($key)) { $counts[$key] = 0 }; $counts[$key]++
+        if ($key -cne 'skill_mirror' -and $counts[$key] -gt 1) { [Console]::Error.WriteLine("ERROR: aid: $(Split-Path $Path -Leaf): $key may appear only once"); return $false }
+        $valid = $true
+        switch -CaseSensitive ($key) {
+            'aid_version' { $valid = ($value -ceq $Version) }
+            'skill_mirror' { $valid = ($Kind -eq 'tool' -and $value -match '^\.[a-z]+/skills$' -and $value -cne '.agents/skills' -and $value.StartsWith("$root/", [System.StringComparison]::Ordinal)) }
+            'worktree_root' { $valid = ($Kind -eq 'tool' -and ($value -ceq '.aid/.worktrees' -or $value -ceq "$root/worktrees")) }
+            'context_import' { $valid = ($Kind -eq 'tool' -and $value -ceq 'CLAUDE.md') }
+            'rules_inline' { $valid = ($Kind -eq 'tool' -and $value -ceq 'true') }
+            'tool' { $valid = ($Kind -eq 'tool' -and $value -ceq $Tool) }
         }
-        if (-not (Test-Path $tarball -PathType Leaf)) {
-            [Console]::Error.WriteLine("ERROR: aid: bundle file not found: $tarball")
-            script:Exit-Aid 1
-        }
-        if (-not (Verify-BundleChecksum -Tarball $tarball)) { script:Exit-Aid 4 }
-        $tbase = [System.IO.Path]::GetFileName($tarball)
-        $script:_DispResolvedVersion = $tbase -replace "^aid-$Tool-v", '' -replace '\.tar\.gz$', ''
-        if (-not $script:_DispResolvedVersion) {
-            $script:_DispResolvedVersion = if ($Version) { $Version } else { 'unknown' }
-        }
-        if (-not (Extract-Tarball -Tarball $tarball -DestDir $toolStaging)) { script:Exit-Aid 1 }
-    } else {
-        if (-not $Version) {
-            $script:_DispResolvedVersion = Resolve-AidVersion
-            if (-not $script:_DispResolvedVersion) { script:Exit-Aid 3 }
-        } else {
-            $script:_DispResolvedVersion = $Version
-        }
-        $dlDir = Join-Path $_AidStagingBase ("download-$Tool-" + [System.IO.Path]::GetRandomFileName())
-        New-Item -ItemType Directory -Path $dlDir -Force | Out-Null
-        if (-not (Fetch-Tarball -Tool $Tool -Version $script:_DispResolvedVersion -DestDir $dlDir)) {
-            script:Exit-Aid 3
-        }
-        $tarball = Join-Path $dlDir "aid-$Tool-v$($script:_DispResolvedVersion).tar.gz"
-        if (-not (Extract-Tarball -Tarball $tarball -DestDir $toolStaging)) { script:Exit-Aid 1 }
+        if (-not $valid) { [Console]::Error.WriteLine("ERROR: aid: $(Split-Path $Path -Leaf): invalid $key"); return $false }
     }
+    if ($Kind -eq 'shared' -and @($entries | Where-Object { $_ -match '^aid_version=' }).Count -eq 0) { [Console]::Error.WriteLine("ERROR: aid: $(Split-Path $Path -Leaf): missing aid_version"); return $false }
+    if ($Kind -eq 'tool' -and @($entries | Where-Object { $_ -match '^tool=' }).Count -eq 0) { [Console]::Error.WriteLine("ERROR: aid: $(Split-Path $Path -Leaf): missing tool"); return $false }
+    return $true
+}
 
-    $script:_DispStagingDir = $toolStaging
+function script:Prepare-AidReleaseStaging {
+    param([string]$Version, [string]$Bundle, [string[]]$Tools)
+    $bundleDir = ''
+    if ($Bundle) {
+        if (Test-Path -LiteralPath $Bundle -PathType Container) { $bundleDir = $Bundle }
+        else { $bundleDir = Split-Path -Parent $Bundle; if (-not $bundleDir) { $bundleDir = (Get-Location).Path } }
+    }
+    else {
+        if (-not $Version) { $Version = Resolve-AidVersion; if (-not $Version) { script:Exit-Aid 3 } }
+        $bundleDir = Join-Path $_AidStagingBase ("download-release-" + [System.IO.Path]::GetRandomFileName())
+        New-Item -ItemType Directory -Path $bundleDir -Force | Out-Null
+        if (-not (Fetch-AidArtifact -Kind shared -Version $Version -DestDir $bundleDir)) { script:Exit-Aid 3 }
+    }
+    $sharedFiles = @(Get-ChildItem -LiteralPath $bundleDir -Filter 'aid-shared-v*.tar.gz' -File -ErrorAction SilentlyContinue | Sort-Object Name)
+    if ($sharedFiles.Count -ne 1) {
+        $found = if ($sharedFiles.Count) { ($sharedFiles | ForEach-Object { $_.Name }) -join ', ' } else { '(none)' }
+        [Console]::Error.WriteLine("ERROR: aid: expected exactly one aid-shared-v*.tar.gz in bundle directory; found: $found")
+        script:Exit-Aid 2
+    }
+    $sharedTar = $sharedFiles[0].FullName
+    if ([System.IO.Path]::GetFileName($sharedTar) -notmatch '^aid-shared-v([0-9]+\.[0-9]+\.[0-9]+([.+-][0-9A-Za-z.+-]+)?)\.tar\.gz$') { [Console]::Error.WriteLine('ERROR: aid: invalid shared artifact name'); script:Exit-Aid 2 }
+    $sharedVersion = $Matches[1]
+    if (-not (Verify-BundleChecksum -Tarball $sharedTar)) { script:Exit-Aid 4 }
+    $script:_DispSharedStagingDir = Join-Path $_AidStagingBase ("shared-" + [System.IO.Path]::GetRandomFileName())
+    if (-not (Expand-AidPayload -Tarball $sharedTar -DestDir $script:_DispSharedStagingDir)) { script:Exit-Aid 1 }
+    if (-not (script:Test-AidReleaseDescriptor -Path (Join-Path $script:_DispSharedStagingDir 'aid-payload.conf') -Kind shared -Version $sharedVersion)) { script:Exit-Aid 1 }
+    $script:_DispResolvedVersion = $sharedVersion
+    $script:_DispReleaseToolStaging = @{}
+    foreach ($tool in $Tools) {
+        if (-not $Bundle) {
+            if (-not (Fetch-AidArtifact -Kind tool -Tool $tool -Version $sharedVersion -DestDir $bundleDir)) { script:Exit-Aid 3 }
+            $toolTar = Join-Path $bundleDir "aid-$tool-v$sharedVersion.tar.gz"
+        } else {
+            $toolFiles = @(Get-ChildItem -LiteralPath $bundleDir -Filter "aid-$tool-v*.tar.gz" -File -ErrorAction SilentlyContinue | Sort-Object Name)
+            if ($toolFiles.Count -ne 1) {
+                $toolFound = if ($toolFiles.Count) { ($toolFiles | ForEach-Object { $_.Name }) -join ', ' } else { '(none)' }
+                [Console]::Error.WriteLine("ERROR: aid: expected exactly one aid-$tool-v*.tar.gz; found: $toolFound"); script:Exit-Aid 2
+            }
+            $toolTar = $toolFiles[0].FullName
+        }
+        if (-not (Test-Path -LiteralPath $toolTar -PathType Leaf)) { [Console]::Error.WriteLine("ERROR: aid: bundle artifact missing: $(Split-Path $toolTar -Leaf)"); script:Exit-Aid 2 }
+        if (-not (Verify-BundleChecksum -Tarball $toolTar)) { script:Exit-Aid 4 }
+        if ([System.IO.Path]::GetFileName($toolTar) -notmatch "^aid-$([regex]::Escape($tool))-v([0-9]+\.[0-9]+\.[0-9]+([.+-][0-9A-Za-z.+-]+)?)\.tar\.gz$") { [Console]::Error.WriteLine('ERROR: aid: invalid tool artifact name'); script:Exit-Aid 2 }
+        if ($Matches[1] -cne $sharedVersion) { [Console]::Error.WriteLine("ERROR: aid: tool artifact $(Split-Path $toolTar -Leaf) does not match shared payload version $sharedVersion"); script:Exit-Aid 2 }
+        $members = @(& tar -tzf $toolTar 2>$null)
+        if ($LASTEXITCODE -ne 0) { script:Exit-Aid 1 }
+        $root = switch ($tool) { 'claude-code' { '.claude' } 'codex' { '.codex' } 'cursor' { '.cursor' } 'copilot-cli' { '.github' } 'antigravity' { '.agent' } }
+        foreach ($member in $members) {
+            $name = ([string]$member).TrimEnd('/')
+            if ($name -cne 'aid-tool.conf' -and $name -cne "$root/agents" -and -not $name.StartsWith("$root/agents/", [System.StringComparison]::Ordinal)) {
+                [Console]::Error.WriteLine("ERROR: aid: tool artifact contains disallowed member: $name"); script:Exit-Aid 1
+            }
+        }
+        $stage = Join-Path $_AidStagingBase ("staging-$tool-" + [System.IO.Path]::GetRandomFileName())
+        if (-not (Expand-AidPayload -Tarball $toolTar -DestDir $stage)) { script:Exit-Aid 1 }
+        if (-not (script:Test-AidReleaseDescriptor -Path (Join-Path $stage 'aid-tool.conf') -Kind tool -Version $sharedVersion -Tool $tool)) { script:Exit-Aid 1 }
+        $script:_DispReleaseToolStaging[$tool] = $stage
+    }
+    if ($Tools.Count -gt 0) { $script:_DispStagingDir = $script:_DispReleaseToolStaging[$Tools[0]] }
+}
+
+function script:Test-StagedVersion {
+    param([string]$StagedVersion, [string]$ManifestPath)
+    if (-not (Test-Path -LiteralPath $ManifestPath -PathType Leaf)) { return $true }
+    try { $data = Get-Content -LiteralPath $ManifestPath -Raw | ConvertFrom-Json } catch { return $true }
+    $projectVersion = if ($data.PSObject.Properties['aid_version']) { [string]$data.aid_version } else { '' }
+    if (-not $projectVersion -or $projectVersion -ceq $StagedVersion) { return $true }
+    [Console]::Error.WriteLine("ERROR: aid add: staged version v$StagedVersion would create a mixed-version project at v$projectVersion. Run 'aid update' before adding tools.")
+    return $false
 }
 
 # ---------------------------------------------------------------------------
@@ -5852,13 +6125,11 @@ try {
             # B-table (for 'add'): writability pre-check BEFORE any .aid/ is created.
             # Decision #3: never elevate .aid/ creation -- error if folder is not writable.
             if ($SUBCMD -eq 'add') {
-                $_aidTargetWritable = $false
-                $_wProbe = Join-Path $_AidTarget ('.aid-write-probe.' + [System.IO.Path]::GetRandomFileName())
-                try { [System.IO.File]::WriteAllText($_wProbe, ''); Remove-Item -LiteralPath $_wProbe -Force -ErrorAction SilentlyContinue; $_aidTargetWritable = $true } catch {}
-                if (-not $_aidTargetWritable) {
-                    [Console]::Error.WriteLine("ERROR: aid: add: target directory is not writable: $_AidTarget")
-                    [Console]::Error.WriteLine("ERROR: aid: add: AID will not create a root-owned .aid/ -- fix folder permissions and retry.")
-                    script:Exit-Aid 1
+                if (-not (script:Test-AidManifestFormatGate -Repo $_AidTarget)) { script:Exit-Aid 2 }
+                if (-not (script:Test-AidLayoutGate -Repo $_AidTarget)) { script:Exit-Aid 2 }
+                if (script:Test-AidManifestVersionSkew -ManifestPath $_AidManifest) {
+                    [Console]::Error.WriteLine('ERROR: aid add: project manifest contains version skew. Run: aid update before adding tools.')
+                    script:Exit-Aid 2
                 }
             }
 
@@ -5928,6 +6199,9 @@ try {
                 script:Invoke-AidCwdClassify -Target $_AidTarget
             }
 
+            # Root-file gate: refuse before any write when AGENTS.md / CLAUDE.md cannot be edited safely.
+            if (-not (script:Test-AidRootFilesGate -Repo $_AidTarget -Mode ([int][bool]$script:_AidV3Upgrade) -Tools @($_AidTools))) { script:Exit-Aid 2 }
+
             # ---------------------------------------------------------------------------
             # FR10 Stage-all-first atomicity (task-009):
             # PHASE 1: Stage ALL tools (resolve version, fetch, checksum-verify, extract
@@ -5937,10 +6211,19 @@ try {
             $stageMap     = [System.Collections.Generic.Dictionary[string,string]]::new()
             $stageVersion = ''
 
-            foreach ($t in $_AidTools) {
-                script:Prepare-AidToolStaging -Tool $t -Version $_AidVersionArg -Bundle $_AidFromBundle
-                $stageMap[$t] = $script:_DispStagingDir
-                if (-not $stageVersion) { $stageVersion = $script:_DispResolvedVersion }
+            script:Prepare-AidReleaseStaging -Version $_AidVersionArg -Bundle $_AidFromBundle -Tools $_AidTools
+            $stageVersion = $script:_DispResolvedVersion
+            foreach ($t in $_AidTools) { $stageMap[$t] = $script:_DispReleaseToolStaging[$t] }
+            if ($SUBCMD -eq 'add') {
+                if (-not (script:Test-StagedVersion -StagedVersion $stageVersion -ManifestPath $_AidManifest)) { script:Exit-Aid 2 }
+                $_aidTargetWritable = $false
+                $_wProbe = Join-Path $_AidTarget ('.aid-write-probe.' + [System.IO.Path]::GetRandomFileName())
+                try { [System.IO.File]::WriteAllText($_wProbe, ''); Remove-Item -LiteralPath $_wProbe -Force -ErrorAction SilentlyContinue; $_aidTargetWritable = $true } catch {}
+                if (-not $_aidTargetWritable) {
+                    [Console]::Error.WriteLine("ERROR: aid: add: target directory is not writable: $_AidTarget")
+                    [Console]::Error.WriteLine("ERROR: aid: add: AID will not create a root-owned .aid/ -- fix folder permissions and retry.")
+                    script:Exit-Aid 1
+                }
             }
 
             # ---------------------------------------------------------------------------
@@ -5948,8 +6231,97 @@ try {
             # ---------------------------------------------------------------------------
             if ($_AidDryRun) {
                 Write-Host "--- aid $SUBCMD -DryRun plan (no writes) ---"
+                if ($script:_AidV3Upgrade) { foreach ($line in @(Invoke-RetireV3Layout -Target $_AidTarget -Tools $_AidTools -ListOnly $true)) { Write-Host $line } }
                 Write-Host "Target: $_AidTarget"
                 Write-Host "Version: $(if ($stageVersion) { $stageVersion } else { '<current>' })"
+                Write-Host 'Shared copies:'
+                $dryTrashMoves = [System.Collections.Generic.List[string]]::new()
+                $drySharedSkills = Join-Path $script:_DispSharedStagingDir 'skills'
+                foreach ($df in @(Get-ChildItem -LiteralPath $drySharedSkills -Recurse -File -ErrorAction SilentlyContinue | Sort-Object FullName)) {
+                    $rel = $df.FullName.Substring($drySharedSkills.Length).TrimStart([char]'\', [char]'/') -replace '\\','/'
+                    if (-not $rel.StartsWith('aid-', [System.StringComparison]::Ordinal)) { continue }
+                    $dst = Join-Path $_AidTarget (Join-Path '.agents/skills' ($rel -replace '/', [System.IO.Path]::DirectorySeparatorChar))
+                    Write-Host "  copy: skills/$rel -> $dst"
+                    if ((Test-Path -LiteralPath $dst -PathType Leaf) -and (Get-Sha256File -FilePath $dst) -ne (Get-Sha256File -FilePath $df.FullName)) {
+                        $oldSha = ''
+                        foreach ($row in (Read-AidManifestShared -ManifestPath $_AidManifest)) { $p = $row.Split("`t"); if ($p.Count -ge 3 -and $p[0] -eq 'shared.skills.file' -and $p[1] -eq $rel) { $oldSha=$p[2]; break } }
+                        if (-not $oldSha -or (Get-Sha256File -FilePath $dst) -ne $oldSha) { $dryTrashMoves.Add($dst.Substring($_AidTarget.Length).TrimStart([char]'\', [char]'/')) }
+                    }
+                }
+                foreach ($t in $_AidTools) {
+                    $toolConf = Join-Path $stageMap[$t] 'aid-tool.conf'
+                    foreach ($line in (Read-AidKvConf -Path $toolConf)) {
+                        if (-not $line.StartsWith('skill_mirror=', [System.StringComparison]::Ordinal)) { continue }
+                        $mirror = $line.Substring('skill_mirror='.Length)
+                        foreach ($df in @(Get-ChildItem -LiteralPath $drySharedSkills -Recurse -File -ErrorAction SilentlyContinue | Sort-Object FullName)) {
+                            $rel = $df.FullName.Substring($drySharedSkills.Length).TrimStart([char]'\', [char]'/') -replace '\\','/'
+                            if (-not $rel.StartsWith('aid-', [System.StringComparison]::Ordinal)) { continue }
+                            $dst = Join-Path $_AidTarget (Join-Path ($mirror -replace '/', [System.IO.Path]::DirectorySeparatorChar) ($rel -replace '/', [System.IO.Path]::DirectorySeparatorChar))
+                            Write-Host "  copy: mirror/$rel -> $dst"
+                            if ((Test-Path -LiteralPath $dst -PathType Leaf) -and (Get-Sha256File -FilePath $dst) -ne (Get-Sha256File -FilePath $df.FullName)) {
+                                $oldSha = ''
+                                foreach ($row in (Read-AidManifestShared -ManifestPath $_AidManifest)) { $p = $row.Split("`t"); if ($p.Count -ge 3 -and $p[0] -eq 'shared.skills.file' -and $p[1] -eq $rel) { $oldSha=$p[2]; break } }
+                                if (-not $oldSha -or (Get-Sha256File -FilePath $dst) -ne $oldSha) { $dryTrashMoves.Add($dst.Substring($_AidTarget.Length).TrimStart([char]'\', [char]'/')) }
+                            }
+                        }
+                    }
+                }
+                $drySharedRuntime = Join-Path $script:_DispSharedStagingDir 'runtime'
+                foreach ($df in @(Get-ChildItem -LiteralPath $drySharedRuntime -Recurse -File -ErrorAction SilentlyContinue | Sort-Object FullName)) {
+                    $rel = $df.FullName.Substring($drySharedRuntime.Length).TrimStart([char]'\', [char]'/') -replace '\\','/'
+                    $dst = Join-Path $_AidTarget (Join-Path '.aid/runtime' ($rel -replace '/', [System.IO.Path]::DirectorySeparatorChar))
+                    Write-Host "  copy: runtime/$rel -> $dst"
+                    if ((Test-Path -LiteralPath $dst -PathType Leaf) -and (Get-Sha256File -FilePath $dst) -ne (Get-Sha256File -FilePath $df.FullName)) {
+                        $oldSha = ''
+                        foreach ($row in (Read-AidManifestShared -ManifestPath $_AidManifest)) { $p = $row.Split("`t"); if ($p.Count -ge 3 -and $p[0] -eq 'shared.runtime.file' -and $p[1] -eq $rel) { $oldSha=$p[2]; break } }
+                        if (-not $oldSha -or (Get-Sha256File -FilePath $dst) -ne $oldSha) { $dryTrashMoves.Add($dst.Substring($_AidTarget.Length).TrimStart([char]'\', [char]'/')) }
+                    }
+                }
+                Write-Host '  generated: .aid/runtime/host.conf (retained; generated during commit)'
+                $dryToolRoots = @{ 'claude-code'='.claude'; codex='.codex'; cursor='.cursor'; 'copilot-cli'='.github'; antigravity='.agent' }
+                foreach ($t in $_AidTools) {
+                    $root = $dryToolRoots[$t]; if (-not $root) { continue }
+                    $agents = Join-Path $stageMap[$t] (Join-Path $root 'agents')
+                    foreach ($df in @(Get-ChildItem -LiteralPath $agents -Recurse -File -ErrorAction SilentlyContinue | Sort-Object FullName)) {
+                        $rel = $df.FullName.Substring($agents.Length).TrimStart([char]'\', [char]'/') -replace '\\','/'
+                        $dst = Join-Path $_AidTarget (Join-Path $root (Join-Path 'agents' ($rel -replace '/', [System.IO.Path]::DirectorySeparatorChar)))
+                        Write-Host "  copy: $root/agents/$rel -> $dst"
+                        if ((Test-Path -LiteralPath $dst -PathType Leaf) -and (Get-Sha256File -FilePath $dst) -ne (Get-Sha256File -FilePath $df.FullName)) {
+                            $path = "$root/agents/$rel"; $oldSha = ''
+                            foreach ($row in (Read-AidManifestToolFiles -ManifestPath $_AidManifest -Tool $t)) { $p=$row.Split("`t"); if ($p.Count -ge 3 -and $p[0] -eq "tools.$t.file" -and $p[1] -eq $path) { $oldSha=$p[2]; break } }
+                            if (-not $oldSha -or (Get-Sha256File -FilePath $dst) -ne $oldSha) { $dryTrashMoves.Add($dst.Substring($_AidTarget.Length).TrimStart([char]'\', [char]'/')) }
+                        }
+                    }
+                }
+                Write-Host 'Trash moves:'
+                foreach ($path in $dryTrashMoves) { Write-Host "  move to trash: $path" }
+                Write-Host 'Prune list:'
+                $scanRoots = @('.agents/skills', '.aid/runtime')
+                foreach ($t in $_AidTools) { $conf=Join-Path $stageMap[$t] 'aid-tool.conf'; foreach ($line in (Read-AidKvConf -Path $conf)) { if ($line.StartsWith('skill_mirror=',[System.StringComparison]::Ordinal)) { $scanRoots += $line.Substring('skill_mirror='.Length) } }; if ($dryToolRoots[$t]) { $scanRoots += $dryToolRoots[$t] + '/agents' } }
+                foreach ($row in (Read-AidManifestShared -ManifestPath $_AidManifest)) { $p=$row.Split("`t"); if ($p.Count -ge 2 -and $p[0] -eq 'shared.mirror') { $scanRoots += $p[1] } }
+                foreach ($scanRoot in ($scanRoots | Select-Object -Unique)) {
+                    $abs=Join-Path $_AidTarget ($scanRoot -replace '/', [System.IO.Path]::DirectorySeparatorChar)
+                    if (-not (Test-Path -LiteralPath $abs -PathType Container)) { continue }
+                    foreach ($rf in @(Get-ChildItem -LiteralPath $abs -Recurse -File -ErrorAction SilentlyContinue)) {
+                        if ($scanRoot -eq '.aid/runtime' -and $rf.FullName -match '[/\\]node_modules[/\\]') { continue }
+                        $rel=$rf.FullName.Substring($abs.Length).TrimStart([char]'\',[char]'/')
+                        if ($scanRoot -eq '.aid/runtime' -and $rel -eq 'host.conf') { continue }
+                        if ($scanRoot -ne '.aid/runtime' -and ($rel.Split([char[]]@('/', '\'))[0] -notlike 'aid-*')) { continue }
+                        $keep=$false
+                        if ($scanRoot -eq '.aid/runtime') { $keep=Test-Path -LiteralPath (Join-Path $drySharedRuntime $rel) -PathType Leaf }
+                        elseif ($scanRoot -eq '.agents/skills') { $keep=Test-Path -LiteralPath (Join-Path $drySharedSkills $rel) -PathType Leaf }
+                        else { foreach ($t in $_AidTools) { $conf=Join-Path $stageMap[$t] 'aid-tool.conf'; foreach ($line in (Read-AidKvConf -Path $conf)) { if ($line.StartsWith('skill_mirror=',[System.StringComparison]::Ordinal) -and $scanRoot -eq $line.Substring('skill_mirror='.Length)) { $keep=Test-Path -LiteralPath (Join-Path $drySharedSkills $rel) -PathType Leaf } }; if ($dryToolRoots[$t] -and $scanRoot -eq ($dryToolRoots[$t]+'/agents')) { $keep=Test-Path -LiteralPath (Join-Path (Join-Path $stageMap[$t] $scanRoot) $rel) -PathType Leaf } } }
+                        if (-not $keep) {
+                            $oldSha=''
+                            if ($scanRoot -eq '.aid/runtime') { foreach ($row in (Read-AidManifestShared -ManifestPath $_AidManifest)) { $p=$row.Split("`t"); if ($p.Count -ge 3 -and $p[0] -eq 'shared.runtime.file' -and $p[1] -eq ($rel -replace '\\','/')) { $oldSha=$p[2]; break } } }
+                            elseif ($scanRoot -eq '.agents/skills' -or $scanRoot -notmatch '/agents$') { foreach ($row in (Read-AidManifestShared -ManifestPath $_AidManifest)) { $p=$row.Split("`t"); if ($p.Count -ge 3 -and $p[0] -eq 'shared.skills.file' -and $p[1] -eq ($rel -replace '\\','/')) { $oldSha=$p[2]; break } } }
+                            else { foreach ($t in $_AidTools) { if ($dryToolRoots[$t] -and $scanRoot -eq ($dryToolRoots[$t]+'/agents')) { foreach ($row in (Read-AidManifestToolFiles -ManifestPath $_AidManifest -Tool $t)) { $p=$row.Split("`t"); $path=($scanRoot+'/'+($rel -replace '\\','/')); if ($p.Count -ge 3 -and $p[0] -eq "tools.$t.file" -and $p[1] -eq $path) { $oldSha=$p[2]; break } } } } }
+                            $actualSha=Get-Sha256File -FilePath $rf.FullName
+                            $label=$rf.FullName.Substring($_AidTarget.Length).TrimStart([char]'\',[char]'/')
+                            if ($oldSha -and $actualSha -eq $oldSha) { Write-Host "  prune: $label (delete; matches prior AID hash)" } else { Write-Host "  prune: $label (move to trash; modified or untracked)" }
+                        }
+                    }
+                }
                 foreach ($t in $_AidTools) {
                     Write-Host ""
                     Write-Host "Tool: $t"
@@ -5960,21 +6332,24 @@ try {
                         $rel = $df.FullName.Substring($dryStaging.Length).TrimStart([char]'\', [char]'/')
                         Write-Host "  copy: $rel -> $_AidTarget"
                     }
-                    # List files that would be MOVED TO TRASH by the retired-root migration sweep
-                    # (marker 1: aid-* prefix; marker 2: inside an aid\ subtree).
-                    # Uses ListOnly=$true mode of Invoke-MigrateRetiredLayout (no writes).
-                    # The function emits paths via Write-Output; capture then display.
-                    $dryRemovePaths = @(Invoke-MigrateRetiredLayout -Target $_AidTarget -Tool $t -ListOnly $true)
-                    if ($dryRemovePaths.Count -gt 0) {
-                        Write-Host "  Would MOVE TO TRASH (retired-layout migration):"
-                        foreach ($rp in $dryRemovePaths) {
-                            Write-Host "  move to trash: $rp"
-                        }
-                    }
                 }
                 Write-Host ""
                 Write-Host "--- end dry-run plan ---"
                 script:Exit-Aid 0
+            }
+
+            if ($SUBCMD -eq 'update' -and $script:_AidV3Upgrade) {
+                try {
+                    if ($null -eq $script:_AidUpgradeRecord) {
+                        Write-AidUpgradeRecovery -Target $_AidTarget -Tools ([string[]]$_AidTools) -Retired $false
+                        $script:_AidUpgradeRecord = [pscustomobject]@{ tools=@($_AidTools); retired=$false }
+                    }
+                    if (-not $script:_AidUpgradeRecord.retired) {
+                        Invoke-RetireV3Layout -Target $_AidTarget -Tools ([string[]]$_AidTools)
+                        Write-AidUpgradeRecovery -Target $_AidTarget -Tools ([string[]]$_AidTools) -Retired $true
+                        $script:_AidUpgradeRecord.retired = $true
+                    }
+                } catch { [Console]::Error.WriteLine("ERROR: aid update: v3 retirement failed: $($_.Exception.Message); rerun aid update to recover."); script:Exit-Aid 1 }
             }
 
             # ---------------------------------------------------------------------------
@@ -5982,20 +6357,37 @@ try {
             # If any commit fails, exit non-zero with a re-run-to-heal message.
             # aid update is idempotent: re-running drives every tool to the target version.
             # ---------------------------------------------------------------------------
+            if ($SUBCMD -eq 'add') {
+                Install-AidShared -SharedStagingDir $script:_DispSharedStagingDir -Target $_AidTarget `
+                    -Version $stageVersion -NewTools $_AidTools -StageMap $stageMap -Force ([bool]$_AidForce) `
+                    -AidVerbose $script:_AidVerbose -Phase 'payload'
+            } else {
+                Install-AidShared -SharedStagingDir $script:_DispSharedStagingDir -Target $_AidTarget `
+                    -Version $stageVersion -NewTools $_AidTools -StageMap $stageMap -Force ([bool]$_AidForce) `
+                    -AidVerbose $script:_AidVerbose -Phase 'update-payload'
+            }
             foreach ($t in $_AidTools) {
                 Write-Host ""
                 Write-Host "Installing $t v$stageVersion -> $_AidTarget"
                 $rc = Install-AidTool -StagingDir $stageMap[$t] -Tool $t -Target $_AidTarget `
-                         -Version $stageVersion -Force ([bool]$_AidForce) `
                          -AidVerbose $script:_AidVerbose
                 if ($rc -ne 0) {
                     Write-Host ""
                     [Console]::Error.WriteLine("ERROR: aid $SUBCMD failed mid-commit for tool '$t' (rc=$rc).")
-                    [Console]::Error.WriteLine("       The project may be at mixed versions. Re-run 'aid update' to heal.")
+                    [Console]::Error.WriteLine("       Re-run 'aid update' to heal.")
                     script:Exit-Aid $rc
                 }
             }
-
+            if ($SUBCMD -eq 'add') {
+                Write-Host ""
+                Install-AidShared -SharedStagingDir $script:_DispSharedStagingDir -Target $_AidTarget `
+                    -Version $stageVersion -NewTools $_AidTools -StageMap $stageMap -Force ([bool]$_AidForce) `
+                    -AidVerbose $script:_AidVerbose -Phase 'finalize'
+            } else {
+                Install-AidShared -SharedStagingDir $script:_DispSharedStagingDir -Target $_AidTarget `
+                    -Version $stageVersion -NewTools $_AidTools -StageMap $stageMap -Force ([bool]$_AidForce) `
+                    -AidVerbose $script:_AidVerbose -Phase 'update-finalize'
+            }
             Write-Host ""
             Write-Host "Done. AID $stageVersion installed into: $_AidTarget"
 
@@ -6017,7 +6409,14 @@ try {
             # idempotent no-op; steps 1-3 run per FF-1.  WARN-not-fail (NFR12):
             # migration never changes the tool-update exit code.
             if ($SUBCMD -eq 'update') {
-                script:Invoke-AidMigrateRepo -Repo $_AidTarget
+                $null = script:Invoke-AidMigrateRepo -Repo $_AidTarget
+                if ($script:_AidV3Upgrade) {
+                    if ((script:Get-AidRepoFormat -Repo $_AidTarget) -lt 5) {
+                        [Console]::Error.WriteLine('ERROR: aid update: upgrade settings stamp was not written; recovery record retained. Rerun aid update to recover.')
+                        script:Exit-Aid 1
+                    }
+                    try { Clear-AidUpgradeRecovery -Target $_AidTarget } catch { [Console]::Error.WriteLine("ERROR: aid update: upgrade installed but recovery cleanup failed; rerun aid update. $_"); script:Exit-Aid 1 }
+                }
             }
             script:Exit-Aid 0
         }
@@ -6027,6 +6426,7 @@ try {
                 [Console]::Error.WriteLine("ERROR: aid: no manifest at $_AidTarget\.aid\.aid-manifest.json; nothing to uninstall")
                 script:Exit-Aid 6
             }
+            if (-not (script:Test-AidRootFilesGate -Repo $_AidTarget -Mode 2 -Tools @($_AidTools))) { script:Exit-Aid 2 }
 
             foreach ($t in $_AidTools) {
                 Write-Host ""

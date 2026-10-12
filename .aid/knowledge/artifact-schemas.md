@@ -1,18 +1,17 @@
 ---
 kb-category: primary
 source: hand-authored
-objective: The structural schema of every artifact the AID methodology produces -- STATE files, REQUIREMENTS.md with its § 11 feature sections, PLAN.md with its delivery stanzas, task DETAIL files, settings, and the three manifest formats -- with required fields, closed enums, producers, consumers, and validation points.
-summary: Read this to learn the required shape of any AID artifact (work/delivery/task STATE.yml, discovery STATE.md, REQUIREMENTS.md and its § 11 feature sections, PLAN.md and its delivery stanzas, task DETAIL.md, settings.yml, install + emission + generated-files manifests) before producing or parsing one.
+objective: The structural schema of every artifact the AID methodology produces -- STATE files, REQUIREMENTS.md with its § 11 feature sections, PLAN.md with its delivery stanzas, task DETAIL files, settings, and the install manifest -- with required fields, closed enums, producers, consumers, and validation points.
+summary: Read this to learn the required shape of any AID artifact (work/delivery/task STATE.yml, discovery STATE.md, REQUIREMENTS.md and its § 11 feature sections, PLAN.md and its delivery stanzas, task DETAIL.md, settings.yml, install manifest + generated-files registry) before producing or parsing one.
 sources:
   - canonical/aid/templates/work-state-template.yml
   - canonical/aid/templates/delivery-state-template.yml
   - canonical/aid/templates/task-state-template.yml
-  - .claude/aid/templates/discovery-state-template.md
-  - .claude/aid/templates/requirements/requirements-template.md
-  - .claude/aid/templates/task-detail-template.md
-  - .claude/aid/templates/settings.yml
-  - canonical/EMISSION-MANIFEST.md
-  - .claude/aid/templates/generated-files.txt
+  - canonical/aid/templates/discovery-state-template.md
+  - canonical/aid/templates/requirements/requirements-template.md
+  - canonical/aid/templates/task-detail-template.md
+  - canonical/aid/templates/settings.yml
+  - canonical/aid/templates/generated-files.txt
   - lib/aid-install-core.sh
   - canonical/aid/templates/kb-authoring/frontmatter-schema.md
   - canonical/skills/aid-describe/references/state-describe-seed.md
@@ -32,17 +31,17 @@ review-criteria:
     why: "A closed enum is what a writer validates against; a value documented here but rejected by the writer, or accepted but undocumented, breaks a run at the write rather than here"
   - id: F-02
     kind: validate
-    criterion: "The emission-manifest record keys are exactly profile, src, dst, sha256, plus the _manifest_version sentinel"
+    criterion: "The install manifest is format_version 3: the shared entries (skills, runtime, agents_md, claude_md, mirrors) carry users and sha256 data, and each tool carries files and paths, exactly as lib/aid-install-core.sh writes them"
     severity: HIGH
-    why: "The installer and the prune logic both read these keys positionally by name; an undocumented key change orphans files at uninstall"
+    why: "The installer, uninstall and drift readers all read these keys by name; a key documented here but not written, or written but not documented, orphans files at uninstall"
 ---
 
 # Artifact Schemas
 
 AID has no database. Its "data model" is the set of **Markdown, YAML, and JSON
 artifacts** the pipeline reads and writes -- the state files that track a work, the
-requirement/spec/blueprint/task documents, the configuration, and the manifests that bound the
-installer and renderer. This document is the field-level schema for each one.
+requirement/spec/blueprint/task documents, the configuration, and the manifest that bounds the
+installer. This document is the field-level schema for each one.
 
 Per the signature-exception rule ([authoring-conventions.md](authoring-conventions.md)),
 every closed enum and required field below is stated **inline** -- an agent can plan
@@ -66,7 +65,6 @@ and act from this doc without reaching into the templates.
 - [Task DETAIL.md](#task-detailmd)
 - [settings.yml](#settingsyml)
 - [Install Manifest (JSON)](#install-manifest-json)
-- [Emission Manifest (JSONL)](#emission-manifest-jsonl)
 - [Generated-Files Registry](#generated-files-registry)
 - [Discovery Scratch Artifacts](#discovery-scratch-artifacts)
 - [Connector Registry Artifacts](#connector-registry-artifacts)
@@ -349,7 +347,7 @@ compatibility aliases, not as the schema. Write the flat key.
 
 | Key | Type | Default / values |
 |-----|------|------------------|
-| `format_version` | int | schema stamp; current value `4` (`AID_SUPPORTED_FORMAT` in `bin/aid`). Written by `bin/aid`; read to decide whether a settings file needs migrating. |
+| `format_version` | int | schema stamp; current value `5` (stamped by `canonical/aid/templates/settings.yml`). Written by `bin/aid`; read to decide whether a settings file needs migrating. |
 | `name` / `description` | string | set at INIT; description is the sole source (not duplicated in CLAUDE.md/AGENTS.md). |
 | `type` | enum | `brownfield \| greenfield`. |
 | `source_control` | enum | `none \| git \| svn \| mercurial`; default `git`. Ties to `knowledge.source`. |
@@ -452,55 +450,50 @@ override resolution. Path mode resolves a **2-level** path only.
 
 ## Install Manifest (JSON)
 
-Written by the install-core libraries to record what was installed per tool (so
-uninstall removes only AID's own files). Functions: `manifest_write` /
-`Write-AidManifest`; readers `manifest_read_tool_paths`, `manifest_read_tool_version`,
-`manifest_read_root_agent[_status]`.
+Written by the install-core libraries to record what was installed, so that uninstall, drift repair and
+the shared-entry reference count touch only AID's own files. File: `.aid/.aid-manifest.json`. Current
+`format_version`: `3`.
 
-Shape (per `lib/aid-install-core.sh` `Provides:` block):
+Writer: `manifest_write_v3` in `lib/aid-install-core.sh` (the PowerShell twin is `Write-AidManifestV3` in `lib/AidInstallCore.psm1`).
+Readers: `manifest_format`, `manifest_read_shared`, `manifest_read_tool_files`, `manifest_read_tool_paths`,
+`manifest_read_host`, `manifest_read_root_agent[_status]`.
+
+Shape:
 
 ```
 {
+  "format_version": 3,
+  "aid_version": "<x.y.z>",
+  "installed_at": "<UTC stamp>",
+  "host": { "worktree_root": "<.claude/worktrees | .aid/.worktrees>" },
+  "shared": {
+    "skills":    { "root": ".agents/skills", "version": "<x.y.z>", "users": ["<tool-id>", ...],
+                   "files": [ { "path": "<aid-*/relative path>", "sha256": "<hex>" } ] },
+    "runtime":   { "root": ".aid/runtime", "version": "<x.y.z>", "users": ["<tool-id>", ...],
+                   "files": [ { "path": "<relative path>", "sha256": "<hex>" } ] },
+    "agents_md": { "path": "AGENTS.md", "version": "<x.y.z>", "users": ["<tool-id>", ...],
+                   "region_sha256": "<hex>", "file_sha256": "<hex>" },
+    "claude_md": { "path": "CLAUDE.md", "version": "<x.y.z>", "users": ["claude-code"],
+                   "region_sha256": "<hex>" },
+    "mirrors":   { "<mirror dir>": { "version": "<x.y.z>", "users": ["<tool-id>", ...] } }
+  },
   "tools": {
     "<tool-id>": {
-      "version": "<x.y.z>",
-      "paths":   ["<installed path>", ...]
-    }
-  },
-  "root_agent_files": {
-    "<tool-id>": {
-      "<filename>": { "sha256": "<hex>", "status": "<status>" }
+      "version": "<x.y.z>", "installed_at": "<UTC stamp>", "mirrors": ["<mirror dir>", ...],
+      "files": [ { "path": "<installed path>", "sha256": "<hex>" } ],
+      "paths": ["<installed path>", ...]
     }
   }
 }
 ```
 
-Producer: `install_tool` / `Install-AidTool` (atomic write/merge). Consumer:
-`uninstall_tool` / `Uninstall-AidTool` (manifest-driven removal), update path. The
-`root_agent_files` sha256 lets the installer detect whether a host file's AID region
-changed. The in-place region replacement is performed by the install-core libs
-(`lib/aid-install-core.sh` + its PowerShell twin `lib/AidInstallCore.psm1`); the region's
-**content** is the `AID:BEGIN/END` body of the rendered root-agent file
-(`profiles/<tool>/{CLAUDE.md,AGENTS.md}`). See authoring-conventions.md § Content Isolation.
-
----
-
-## Emission Manifest (JSONL)
-
-Source: `canonical/EMISSION-MANIFEST.md`. One `emission-manifest.jsonl` per profile,
-at the profile's deepest common output parent. The **safety boundary** for the
-renderer's pure-mirror deletion.
-
-- **First line is a sentinel:** `{"_manifest_version": 1}`.
-- **Every other line** is a JSON object with exactly four keys:
-  `profile` (string), `src` (repo-relative `canonical/` path), `dst` (install-tree
-  path relative to the manifest dir), `sha256` (lowercase hex of rendered bytes).
-- **Ordering:** sorted lexicographically by `dst` (byte-stable re-runs).
-- **Line endings:** LF only, one trailing `\n` per record incl. the last; written in
-  binary mode.
-
-Deletion contract: on re-render, `diff(prev, curr)` -> only `removed_dst` paths are
-deleted; files outside any manifest are never touched.
+- `users` lists the installed tools that use a shared entry. The entry is removed only when that list is
+  empty, which is the reference-counted uninstall.
+- `agents_md.region_sha256` and `claude_md.region_sha256` let the installer detect a changed AID region.
+  The region bodies are built by the install core (`_aid_root_region` in `lib/aid-install-core.sh`, `Get-AidRootRegion` in
+  `lib/AidInstallCore.psm1`) from the fixed SESSION START block and the `AID:SUMMARY` block of the installed `.aid/runtime/rules.md`.
+- Producers are the install and update paths, through `manifest_write_v3`. Consumers are `manifest_remove_tool`
+  and `uninstall_tool` (removal), `drift_report` (`aid status`) and `prune_shared`.
 
 ---
 
@@ -515,8 +508,8 @@ Source: `templates/generated-files.txt`. One line per generated file:
 - `output-path` is relative to the target project root; `build-command` regenerates
   it from the project root. Comments (`#`) and blanks ignored. **Order matters** --
   dependencies first (run top-to-bottom).
-- Source-form paths are `canonical/`-rooted; the renderer rewrites them to each
-  profile's install root at render time.
+- Build commands name the installed runtime path (`.aid/runtime/scripts/...`); the
+  same file is copied verbatim into every installed tree.
 
 Consumers: `aid-discover` FIX (refresh-all at cycle end) and the `test -f` existence
 loop. Current entries: `project-index.md`, `metrics.md`, `INDEX.md`.
@@ -574,7 +567,7 @@ re-derived from `connection_type` to avoid drift.
 | `keychain:<name>` | Resolve an entry in the OS keychain. |
 
 **Preset catalog** (`canonical/aid/templates/connectors/preset-catalog.md`) -- a
-`canonical/` asset that ships byte-identically into every profile's install tree and
+`canonical/` asset that ships in the shared runtime (`.aid/runtime/templates/connectors/`) and
 pre-fills a descriptor for a curated set of known tools. Columns: `preset-id`, `name`,
 `connection_type`, `endpoint-template`, `auth_method`, `secret_reference-form` (form
 only, never a value; `--` for tool-managed presets), `notes`, `tags`. Consumed by
@@ -676,7 +669,8 @@ delivery lifecycle/gate  -> work STATE.yml `delivery_lifecycle` / `delivery_gate
 settings.yml       -> read by every skill via read-setting.sh
 candidate-concepts.md -> domain-glossary.md (ground) OR spine-todo.md (dismiss)
 greenfield intent  -> forward-authored KB seed (5 docs in .aid/knowledge/) -> read by aid-specify/plan/execute
-canonical/ files   -> emission-manifest.jsonl (one record each) -> profiles/<tool>/
+canonical/ agents  -> profiles/<tool>/ agent trees (rendered; wiped and regenerated each run)
+canonical/ skills, aid -> aid-shared release payload -> .agents/skills/, .aid/runtime/ (CLI install)
 install manifest   <- install-core; consumed by uninstall/update
 ```
 
@@ -689,7 +683,6 @@ Cardinality summary:
 | delivery | task | one-to-many |
 | task DETAIL.md | task STATE.yml | one-to-one, full path only (flattened Lite has no per-task STATE.yml) |
 | REQUIREMENTS.md | its own `§ 11` feature sections | one-to-many |
-| profile | emission-manifest record | one-to-many |
 | install manifest | tool entry | one-to-many |
 
 ---
@@ -721,8 +714,6 @@ Cardinality summary:
   directly in the work-root `STATE.yml`.)
 - **One writer per file.** Each `STATE.yml` level has a single writer (the owning
   branch); cross-writes break the merge model.
-- **Emission record = exactly 4 keys + sentinel.** Adding a key bumps
-  `_manifest_version`; a consumer reading a higher version uses a different parser.
 - **Required-section contract.** REQUIREMENTS.md keeps all 10 numbered sections
   (pending ones marked `*(pending)*`, not deleted); a task DETAIL.md carries exactly
   one `Type`.
@@ -747,7 +738,7 @@ Cardinality summary:
   override interface, it is not auto-readable.
 - **Adding a generated file:** append a `<output-path>|<build-command>` line to
   `generated-files.txt` (dependencies first).
-- **Adding an artifact type:** add a template under `.claude/aid/templates/`, name
+- **Adding an artifact type:** add a template under `canonical/aid/templates/`, name
   its producer/consumer skills, and document its required vs optional sections here.
 
 ---
@@ -765,7 +756,6 @@ Cardinality summary:
 | `STATE.yml` (read time, semantic) | dashboard reader (Python/Node twins) | reader degrades gracefully; an unknown enum value is not in the closed set and mis-reconciles -- caught by the reader test suites and parity tests. A `STATE.md` with no sibling `STATE.yml` is diagnosed (a `parse_warning` naming the migration command), never parsed. |
 | Frontmatter (on KB docs) | `lint-frontmatter.sh` | `[FM-MISSING]`/`[FM-INVALID]` HIGH findings; parse failure -> doc treated as primary/hand-authored + HIGH warning. Soft-skips a doc carrying none of the new fields, so an un-migrated doc passes. |
 | Reviewer ledger | `grade.sh` | only `[SEVERITY]`-tagged rows with Status `Pending`/`Recurred` count; a stray `## Summary` line would over-count (banned). |
-| emission-manifest.jsonl | renderer determinism checks (`verify_deterministic.py`, `test_manifest_safety.py`) | a non-byte-stable or mis-keyed manifest fails the render-drift CI gate. |
 | Install manifest | install-core (`manifest_exists`) | missing manifest on uninstall -> exit 6. |
 | task DETAIL.md `Type` | `aid-execute` task-type rules | a missing/mixed type blocks execution (one type per task). |
 | KB-doc citations | `kb-citation-lint.sh` | bare `file:LINE` -> exit 1, GENERATE blocked until fixed. No soft-skip: every doc under `--root` is checked. |

@@ -9,7 +9,7 @@ description: >
   `/aid-create-mvp` once it is ready. For direction beyond the first slice, use
   `/aid-design-roadmap` instead. Produced by the aid-architect agent and independently
   verified by aid-reviewer (full verify). Allocates a work-NNN folder.
-allowed-tools: Read, Glob, Grep, Bash, Write, Edit, Agent
+allowed-tools: Read Glob Grep Bash Shell Terminal Write Edit Agent
 argument-hint: "<slice> -- what belongs in the first shippable slice, and what to cut"
 ---
 
@@ -17,7 +17,7 @@ argument-hint: "<slice> -- what belongs in the first shippable slice, and what t
 
 `/aid-design-mvp` draws the line for the first shippable slice as a **design seed** in
 `.aid/design/mvp.md`. It is a `design`-stage skill under the shared contract in
-`.claude/aid/templates/design-lifecycle.md`, which this skill binds to and does not
+`.aid/runtime/templates/design-lifecycle.md`, which this skill binds to and does not
 restate. It never writes `.aid/knowledge/roadmap.md` and never writes production code
 (`design-lifecycle.md § The three stages` -- the `design` invariant); realizing a ready
 seed into `roadmap.md`'s `## MVP` section is `/aid-create-mvp`'s job, not this one's --

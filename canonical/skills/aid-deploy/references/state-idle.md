@@ -26,9 +26,9 @@ separate path, not a numbered phase, so this does NOT change the work's `Phase` 
 `Execute`); it only marks the Running lifecycle + active skill so the work-initiation gate can
 resume an interrupted deploy via `active_skill: aid-deploy`:
 ```
-bash canonical/aid/scripts/execute/writeback-state.sh --pipeline --field Lifecycle --value Running
-bash canonical/aid/scripts/execute/writeback-state.sh --pipeline --field "Active Skill" --value aid-deploy
-bash canonical/aid/scripts/execute/writeback-state.sh --pipeline --field Updated --value "$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+bash .aid/runtime/scripts/execute/writeback-state.sh --pipeline --field Lifecycle --value Running
+bash .aid/runtime/scripts/execute/writeback-state.sh --pipeline --field "Active Skill" --value aid-deploy
+bash .aid/runtime/scripts/execute/writeback-state.sh --pipeline --field Updated --value "$(date -u +%Y-%m-%dT%H:%M:%SZ)"
 ```
 
 **Advance:** **CHAIN** → [State: SELECTING] (continue inline).

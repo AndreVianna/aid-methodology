@@ -1,6 +1,6 @@
 ---
 title: Maintainer
-description: Runbooks for contributing to AID itself — cutting a release and regenerating the host-tool install trees.
+description: Runbooks for contributing to AID itself — cutting a release and regenerating the per-tool agent trees.
 sidebar:
   label: Maintainer
 ---
@@ -10,7 +10,7 @@ import { Steps, Tabs, TabItem, Aside, CardGrid, LinkCard } from '@astrojs/starli
 ## Who this is for
 
 This page is for **maintainers and contributors to AID itself** — people who cut releases
-or modify the canonical source and need to keep the five host-tool install trees in sync.
+or modify the canonical source and need to keep the five per-tool agent trees and the shared payload in sync.
 
 End users of AID (adopters running the pipeline in their own projects) do not need this
 page. See the [pipeline guide](/guides/pipeline) instead.
@@ -42,15 +42,15 @@ A single pushed `v*` tag triggers `release.yml`, which runs four sequential stag
 
 1. **Gate** — re-runs the full correctness suite (render-drift + canonical helper suites
    + generator self-tests + FR10 version-sync) on the tagged commit.
-2. **GitHub Release** — builds five per-profile tarballs, the `aid-cli` bundle, two
-   install-core library files, and `SHA256SUMS`; creates the GitHub Release with all
-   assets via `release.sh`.
+2. **GitHub Release** — builds the shared payload, five agents-only tool artifacts, the
+   `aid-cli` bundle, two install-core library files, and `SHA256SUMS`; creates the GitHub
+   Release with all assets via `release.sh`.
 3. **npm** — publishes `aid-installer` to npm with OIDC provenance (gated by the
    `NPM_ENABLED` repo variable).
 4. **PyPI** — publishes `aid-installer` to PyPI via Trusted Publishing (OIDC; gated by
    the `PYPI_ENABLED` repo variable).
 
-All four channels — GitHub tarballs, npm, PyPI, and the offline bundle — are produced
+All four channels — GitHub Release artifacts, npm, PyPI, and the offline bundle — are produced
 from the same tag in one workflow run.
 
 ```mermaid
@@ -158,19 +158,18 @@ publish to npm or PyPI.
    Expected output:
 
    ```
-   [release.sh] version: 1.0.0  tag: v1.0.0
-   [release.sh] checking worktree is clean...  ok
-   [release.sh] checking tag v1.0.0 does not exist...  ok
-   [release.sh] verifying render-drift gate...  ok
-   [release.sh] staging dir: .aid/.temp/release-1.0.0/
-   [release.sh] packaging aid-antigravity-v1.0.0.tar.gz...  ok
-   [release.sh] packaging aid-claude-code-v1.0.0.tar.gz...  ok
-   [release.sh] packaging aid-codex-v1.0.0.tar.gz...  ok
-   [release.sh] packaging aid-copilot-cli-v1.0.0.tar.gz...  ok
-   [release.sh] packaging aid-cursor-v1.0.0.tar.gz...  ok
-   [release.sh] packaging aid-cli-v1.0.0.tar.gz...  ok
-   [release.sh] writing SHA256SUMS...  ok
-   [release.sh] --dry-run: staging complete. Run without --dry-run to create the GitHub Release.
+   release.sh: version=1.0.0  tag=v1.0.0
+   release.sh: verifying render state (python3 .claude/skills/generate-profile/scripts/run_generator.py) ...
+   release.sh: checking for render drift (git diff -- profiles/) ...
+   release.sh: render state is clean.
+   release.sh: staging dir: .aid/.temp/release-1.0.0
+   release.sh:   done: aid-shared-v1.0.0.tar.gz
+   release.sh:   done: aid-claude-code-v1.0.0.tar.gz
+     ...
+   release.sh:   done: aid-cli-v1.0.0.tar.gz
+   release.sh: SHA256SUMS written:
+   release.sh: --dry-run: staging complete. Tarballs and SHA256SUMS are in:
+     .aid/.temp/release-1.0.0
    ```
 
    Common failures:
@@ -190,8 +189,8 @@ publish to npm or PyPI.
    ls -lh ".aid/.temp/release-$(cat VERSION)/"
    ```
 
-   Verify the five profile tarballs, the `aid-cli` bundle, two lib files, and
-   `SHA256SUMS` are present. Spot-check a tarball:
+   Verify the shared payload, the five tool artifacts, the `aid-cli` bundle, two lib files,
+   and `SHA256SUMS` are present. Spot-check an artifact:
 
    ```bash
    tar -tzf ".aid/.temp/release-$(cat VERSION)/aid-claude-code-v$(cat VERSION).tar.gz" | head -20
@@ -234,12 +233,18 @@ publish to npm or PyPI.
 `release.sh` (invoked by the CI workflow) stages artifacts under
 `.aid/.temp/release-<VERSION>/` and uploads them to the GitHub Release:
 
-**Five per-profile tarballs:**
+**One shared payload:** `aid-shared-v<VERSION>.tar.gz`. It holds `aid-payload.conf` (the version),
+`skills/` (a byte-for-byte copy of `canonical/skills/`, all 112 skills) and `runtime/` (a byte-for-byte copy of
+`canonical/aid/`, `rules.md` included).
+
+**Five tool artifacts, agents only:**
 - `aid-claude-code-v<VERSION>.tar.gz`
 - `aid-codex-v<VERSION>.tar.gz`
 - `aid-cursor-v<VERSION>.tar.gz`
 - `aid-copilot-cli-v<VERSION>.tar.gz`
 - `aid-antigravity-v<VERSION>.tar.gz`
+
+Each holds `aid-tool.conf` and that tool's agents folder, and nothing else.
 
 **`aid-cli-v<VERSION>.tar.gz`** — the `aid` CLI bundle (bootstrapped by `install.sh` /
 `install.ps1` and by `aid update self`).
@@ -250,10 +255,9 @@ publish to npm or PyPI.
 
 **`SHA256SUMS`** — one `<64-hex>  <filename>` line per asset, sorted by filename.
 
-Each tarball contains exactly the install-relevant files for that tool (dot directory
-tree + root agent file). The layout is flat/root-relative — `tar -xzf` into a temp
-directory yields the files as they land in the target project. No tarball should contain
-`README.md` or `emission-manifest.jsonl`.
+Archive members have no leading `./` and no wrapping directory. A user needs the shared payload
+plus the artifact of each tool they install, all at one version. No artifact should contain any
+other member.
 
 **npm:** `aid-installer` published at the version from `packages/npm/package.json`.
 
@@ -297,8 +301,8 @@ rm -rf ".aid/.temp/release-$(cat VERSION)/"
 ### Flag reference (release.sh)
 
 ```bash
-bash release.sh [--version X.Y.Z] [--sign] [--draft] [--dry-run]
-                [--notes-file FILE] [-h|--help]
+bash release.sh [--version X.Y.Z] [--sign] [--draft] [--prerelease]
+                [--dry-run | --stage-only [--out DIR]] [--notes-file FILE] [-h|--help]
 ```
 
 | Flag | Default | Description |
@@ -306,7 +310,10 @@ bash release.sh [--version X.Y.Z] [--sign] [--draft] [--dry-run]
 | `--version X.Y.Z` | content of `VERSION` file | Release version. Must match `VERSION` file; fails on mismatch (exit 3). |
 | `--sign` | off | Emit a detached signature over `SHA256SUMS`. Currently exits non-zero — signing is deferred. Do not use. |
 | `--draft` | off | Create the GitHub Release as a draft. Recommended: always draft first, review, then publish. |
-| `--dry-run` | off | Assemble tarballs and `SHA256SUMS`, stop before `gh release create`. No network I/O; no tag created. |
+| `--dry-run` | off | Assemble the artifacts and `SHA256SUMS`, stop before `gh release create`. Runs the generator first. No network I/O; no tag created. |
+| `--stage-only` | off | Stage the artifacts from the working tree as it is. Skips the clean-tree, tag, render and network checks. |
+| `--out DIR` | `.aid/.temp/release-<VERSION>` | Staging directory for `--stage-only`. Must be empty. |
+| `--prerelease` | off | Mark the GitHub Release as a pre-release, so `/releases/latest` skips it. |
 | `--notes-file FILE` | generated stub | Release notes body passed to `gh release create`. |
 | `-h`, `--help` | — | Print help and exit 0. |
 
@@ -324,142 +331,72 @@ bash release.sh [--version X.Y.Z] [--sign] [--draft] [--dry-run]
 
 ## Regenerate the host-tool trees/profiles
 
-AID maintains five host-tool install trees (`claude-code/`, `codex/`, `cursor/`,
-`copilot-cli/`, `antigravity/`) generated from a single canonical source
-(`canonical/`) and per-tool profiles (`profiles/*.toml`). This section explains how to
-keep them in sync.
+AID generates one agents-only tree per host tool (`profiles/claude-code/`, `profiles/codex/`,
+`profiles/cursor/`, `profiles/copilot-cli/`, `profiles/antigravity/`) from `canonical/agents/` and
+the per-tool descriptors (`profiles/*.toml`). Each tree holds the agents and `aid-tool.conf`, and
+nothing else. The skills and runtime are not rendered: `release.sh` copies them byte-for-byte from
+`canonical/` into the shared payload. This section explains how to keep the trees in sync.
 
 ### When to run
 
-Run the generator any time you edit a canonical skill, agent, or template — and before
-committing install-tree changes. Also run it to verify the trees are in sync after any
-manual edits.
+Run the generator any time you edit a canonical agent, skill, runtime file, or template, and before
+you commit. Also run it to confirm the trees are in sync after a manual edit.
 
-The render-drift CI convention requires that committed `profiles/` content matches a
-fresh render. The `release.yml` gate re-runs this check and fails the workflow if they
-diverge — so unclean profiles block releases. See the
-[Cut a release → Prerequisites](#prerequisites) section above.
+The render-drift CI convention requires committed `profiles/` content to match a fresh render. The
+`release.yml` gate re-runs this check and fails the workflow if they diverge, so unclean profiles
+block releases. See the [Cut a release → Prerequisites](#prerequisites) section above.
 
 ### What it does
 
-The generator reads `canonical/` and `profiles/*.toml`, then renders the five install
-trees. It runs through a five-state machine:
+`run_generator.py` runs these steps in order:
 
-```mermaid
-stateDiagram-v2
-    [*] --> LOAD
-    LOAD --> VALIDATE
-    VALIDATE --> RENDER
-    RENDER --> VERIFY
-    VERIFY --> REPORT
-    REPORT --> [*]
+| Step | What happens |
+|------|--------------|
+| **VALIDATE** | Reads each `profiles/*.toml` and checks its keys. A bad descriptor stops the run. |
+| **RENDER** | Wipes each `profiles/<tool>/` and renders that tool's agents and `aid-tool.conf` from `canonical/agents/`. |
+| **VERIFY** | The deterministic check covers stable re-rendering, exact output contents, frontmatter and TOML syntax, canonical-token neutralization, and descriptor placement data; any failure fails the run. The advisory check reports warnings without failing the run. |
+| **DOGFOOD RESYNC** | Runs `sync_dogfood.py`. It runs `release.sh --stage-only` to build the artifacts from the working tree, then `aid update --from-bundle` to refresh this repo's own install: `.agents/skills/`, `.claude/skills/aid-*`, `.aid/runtime/`, the agents, and the `AGENTS.md` and `CLAUDE.md` regions. |
+
+The dogfood resync can change files outside `profiles/`, so a run is not finished until you have
+reviewed and committed everything it changed.
+
+### Run it
+
+```bash
+python .claude/skills/generate-profile/scripts/run_generator.py
+git status
 ```
 
-| State | What happens |
-|-------|-------------|
-| **LOAD** | Parse each profile TOML; load the previous emission manifest (if any). |
-| **VALIDATE** | Confirm canonical completeness — the full skill and agent set (112 skills, 9 agents) and non-empty templates. |
-| **RENDER** | Run `run_generator.py`, which renders every profile from canonical via the `render.py` core, writes each emission manifest, and runs the deletion pass. |
-| **VERIFY** | Hard-gate: byte-identical re-render check + presence audit + frontmatter parse. Advisory: conformance check (always exits 0; surfaces warnings in REPORT). |
-| **REPORT** | Print a summary: profiles rendered, files emitted/deleted per profile, verify results, `git diff --stat`. |
+Commit the changes the run produced. CI checks only the profile trees, with:
 
-**Emission-manifest safety boundary:** the generator only writes to and deletes files it
-previously emitted (recorded in `profiles/{tool}/emission-manifest.jsonl`). User-created
-files inside install trees are never touched.
+```bash
+git diff --exit-code -- profiles/
+```
 
-### Prerequisites
-
-- **Python 3.11+** (required for `tomllib`, stdlib from 3.11):
-  ```bash
-  python --version
-  ```
-- **A git working tree** (for the REPORT `git diff --stat`):
-  ```bash
-  git rev-parse --git-dir
-  ```
-- **At least one profile TOML** under `profiles/`.
-- **`canonical/` directory** at the repo root with `agents/`, `skills/`, `templates/`,
-  and `rules/` subdirectories.
-
-### Regenerate all trees
-
-<Steps>
-1. **Run the full generator**
-
-   ```bash
-   python .claude/skills/generate-profile/scripts/run_generator.py
-   ```
-
-   The script takes no command-line arguments. It always runs the full LOAD → VALIDATE
-   → RENDER → VERIFY → REPORT state machine for all five profiles.
-
-2. **Assert no render drift**
-
-   ```bash
-   git diff --exit-code -- profiles/
-   ```
-
-   Exit 0 means the committed trees already matched the canonical source (no changes).
-   A non-zero exit means the generator produced a diff — review and commit the changes.
-
-3. **Commit any changes**
-
-   ```bash
-   git add profiles/
-   git commit -m "regen: sync install trees with canonical/"
-   ```
-</Steps>
-
-<Aside type="tip">
-**Always regenerate via `run_generator.py`.** It is the single entry point: it renders
-every profile through the `render.py` core, updates each emission manifest, and runs the
-deletion pass atomically. Calling the lower-level `render.py` directly (outside its
-`--self-test`) would leave the manifests stale and fail the render-drift CI check.
-</Aside>
-
-### Regenerate one tree or dry-run
-
-The `/generate-profile` skill (invoked inside your AI tool) exposes two flags for targeted
-and non-destructive runs. These flags are parsed by the **skill**, not by
-`run_generator.py` (which takes no arguments):
-
-**`--tool <name>`** — regenerate only one install tree. Valid values:
-`claude-code`, `codex`, `cursor`, `copilot-cli`, `antigravity`.
-
-Example: `/generate-profile --tool cursor` regenerates only the Cursor install tree.
-
-**`--dry-run`** — render to a temporary scratch directory and print a diff report
-without writing to the install trees or updating the emission manifest. Safe to run
-at any time.
-
-Example: `/generate-profile --dry-run` lets you preview what would change before committing.
-
-Combining both: `/generate-profile --tool claude-code --dry-run` previews changes for a
-single profile without touching the live install tree.
+The shared skills and runtime are checked byte-for-byte against `canonical/` by the
+dogfood byte-identity test in the canonical helper suites.
 
 ### Verify and report
 
-After `run_generator.py` completes, the VERIFY and REPORT states run automatically.
-Check the output for:
+When `run_generator.py` completes, check the output for:
 
-- **VERIFY (deterministic): PASS** — byte-identical re-render check passed. If this
-  fails, the generator output is non-deterministic; do not commit.
-- **VERIFY (advisory):** review `skipped_count` (URLs pending fetch) and `warning_count`.
-  Advisory failures do not block commits.
-- **Git diff section** — confirms only install-tree paths changed (no `canonical/`
-  modifications).
+- **VERIFY (deterministic): PASS.** The byte-identical re-render check passed. If this fails, the
+  generator output is non-deterministic; do not commit.
+- **VERIFY (advisory).** Review `skipped_count` (URLs pending fetch) and `warning_count`. Advisory
+  warnings do not block commits.
+- **`Done. Profile trees regenerated and dogfood trees resynced.`** This line ends a successful run.
 
-Confirm with:
+Confirm the scope of the change with:
 
 ```bash
-git diff --stat -- profiles/claude-code/ profiles/codex/ profiles/cursor/ profiles/copilot-cli/ profiles/antigravity/
+git diff --stat -- profiles/ .agents/ .claude/skills/ .aid/runtime/
 ```
 
-The stat output should show only paths under `profiles/` — never `canonical/` or
-`.claude/`.
+Only the profile trees and the dogfood install should change. Nothing under `canonical/` changes
+during a run, so a diff there means an edit was made by hand.
 
 <LinkCard
   title="Repository structure reference"
-  description="Full layout of the AID repository — canonical/, profiles/, and install tree conventions."
+  description="Full layout of the AID repository — canonical/, profiles/, the shared payload, and the install conventions."
   href="/reference/repository-structure"
 />

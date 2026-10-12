@@ -9,7 +9,7 @@ description: >
   gates the write, and carries the level choice when you did not give one. It returns the
   new ticket's id only after you confirm; nothing is filed, and no local file is written,
   before that.
-allowed-tools: Read, Glob, Grep, AskUserQuestion
+allowed-tools: Read Glob Grep AskUserQuestion
 argument-hint: "[--connector <stem>] [--level epic|story|task] [--parent <ref>] <description>"
 ---
 
@@ -34,7 +34,7 @@ directly by name.
 **State-machine chaining:** each `/aid-create-ticket` invocation drives the state machine —
 `PARSE-ARGS → RESOLVE-CONNECTOR → COMPOSE → LEVEL-RESOLVE → CONFIRM → FILE → RETURN-REF` — until
 it hits a natural pause point per
-[`.claude/aid/templates/state-machine-chaining.md`](../../aid/templates/state-machine-chaining.md).
+[`.aid/runtime/templates/state-machine-chaining.md`](../../aid/templates/state-machine-chaining.md).
 CONFIRM's `AskUserQuestion` exchange is fully inline, so it is a **CHAIN** advance, never
 `PAUSE-FOR-USER-DECISION` — a single invocation runs every state through to `RETURN-REF` (or an
 earlier stop/cancel) without exiting mid-run to collect an answer.

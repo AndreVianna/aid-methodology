@@ -134,7 +134,7 @@ if (!checkOnly) {
     console.log('SKIP -- Playwright is not installed in this environment.');
     console.log('');
     console.log('To install (one-time setup):');
-    console.log('  cd canonical/aid/scripts/summarize');
+    console.log('  cd .aid/runtime/scripts/summarize');
     console.log('  npm ci');
     console.log('  npx playwright install chromium');
     console.log('');

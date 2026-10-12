@@ -269,9 +269,9 @@ assert_file_not_contains "$DEPLOY_MD"  "worktree-lifecycle.sh create" "G4 aid-de
 
 # C1 itself: never invokes the actual create call (it only NAMES the term in
 # prose to explain it is NOT invoked); C1 DOES invoke locate.
-assert_file_not_contains "$SHARED_DOC" "bash canonical/aid/scripts/works/worktree-lifecycle.sh create" \
+assert_file_not_contains "$SHARED_DOC" "bash .aid/runtime/scripts/works/worktree-lifecycle.sh create" \
     "G4 C1 (shared doc) never INVOKES worktree-lifecycle.sh create"
-assert_file_contains "$SHARED_DOC" "bash canonical/aid/scripts/works/worktree-lifecycle.sh locate" \
+assert_file_contains "$SHARED_DOC" "bash .aid/runtime/scripts/works/worktree-lifecycle.sh locate" \
     "G4 C1 (shared doc) invokes worktree-lifecycle.sh locate"
 
 # ===========================================================================

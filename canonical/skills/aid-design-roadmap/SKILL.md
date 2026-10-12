@@ -10,7 +10,7 @@ description: >
   it is ready. For drawing the MVP line as its own act, use `/aid-design-mvp` instead.
   Produced by the aid-architect agent and independently verified by aid-reviewer (full
   verify). Allocates a work-NNN folder.
-allowed-tools: Read, Glob, Grep, Bash, Write, Edit, Agent
+allowed-tools: Read Glob Grep Bash Shell Terminal Write Edit Agent
 argument-hint: "<direction> -- what to develop (committed vs. wanted, sequencing, rejected alternatives)"
 ---
 
@@ -18,7 +18,7 @@ argument-hint: "<direction> -- what to develop (committed vs. wanted, sequencing
 
 `/aid-design-roadmap` develops the project's committed direction as a **design seed** in
 `.aid/design/roadmap.md`. It is a `design`-stage skill under the shared contract in
-`canonical/aid/templates/design-lifecycle.md`, which this skill binds to and does not
+`.aid/runtime/templates/design-lifecycle.md`, which this skill binds to and does not
 restate. It never writes `.aid/knowledge/roadmap.md` and never writes production code
 (`design-lifecycle.md § The three stages` -- the `design` invariant); realizing a ready
 seed into `roadmap.md` is `/aid-create-roadmap`'s job, not this one's.

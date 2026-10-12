@@ -11,7 +11,7 @@ description: >
   `/aid-design-data-pipeline`; to ship a built artifact now, use `/aid-deploy`. Produced by
   the aid-architect agent and independently verified by aid-reviewer (full verify).
   Allocates a work-NNN folder.
-allowed-tools: Read, Glob, Grep, Bash, Write, Edit, Agent
+allowed-tools: Read Glob Grep Bash Shell Terminal Write Edit Agent
 argument-hint: "<subject> -- the delivery pipeline to design (stages, triggers, environments, promotion)"
 ---
 
@@ -19,7 +19,7 @@ argument-hint: "<subject> -- the delivery pipeline to design (stages, triggers, 
 
 Bind **VERB=`design`**, **ARTIFACT=`cicd`** -- the `design` *stage* in the contract's
 vocabulary -- then follow the shared contract at
-`canonical/aid/templates/design-lifecycle.md`. This skill binds that contract and
+`.aid/runtime/templates/design-lifecycle.md`. This skill binds that contract and
 restates none of its rules. The seed it writes is `.aid/design/cicd.md`; realizing it into
 the project's C8 document is `/aid-create-cicd`'s job, not this one's.
 
@@ -42,7 +42,7 @@ entry line on each state.
    pipeline do you want to design -- its stages, triggers, environments, and promotion
    flow?") and wait.
 2. **Allocate** through the Work Initiation Gate exactly as the contract's Allocation rule
-   requires (`canonical/skills/aid-design/SKILL.md` INTAKE step 4 is the shape), with
+   requires (`.agents/skills/aid-design/SKILL.md` INTAKE step 4 is the shape), with
    `initiator: aid-design-cicd`. `phase` is not driven.
 3. **Acquire `.aid/design/`** per the contract, then read `.aid/design/cicd.md` if a prior
    seed exists -- re-invocation iterates it rather than starting over.
@@ -61,9 +61,9 @@ in INTAKE. What this artifact's seed must settle: **the pipeline stages, trigger
 environments, and promotion and release flow**.
 
 **Destination resolution (by concern, not filename).** This skill binds concern **C8**
-(shipping & operation, `canonical/aid/templates/kb-authoring/concern-model.md`), never a
+(shipping & operation, `.aid/runtime/templates/kb-authoring/concern-model.md`), never a
 hardcoded filename. Resolve C8 against `.aid/settings.yml` `knowledge.doc_set`, falling
-back to the C8 row of `canonical/aid/templates/kb-authoring/domain-doc-matrix.md`, and
+back to the C8 row of `.aid/runtime/templates/kb-authoring/domain-doc-matrix.md`, and
 **confirm the resolution with the user** before writing. Write the resolved path into the
 seed's **`## Destination`** section. Where a realization is genuinely ambiguous, **ask --
 never pick silently**.

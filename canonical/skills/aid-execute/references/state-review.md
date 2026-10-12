@@ -40,7 +40,7 @@ Dispatch the `aid-reviewer` agent with `subagent_type: aid-reviewer` at **Small 
 
 Then append the quick-check-specific prompt below.
 
-The brief carries the universal rubric pointer (`canonical/aid/templates/grading-rubric.md`)
+The brief carries the universal rubric pointer (`.aid/runtime/templates/grading-rubric.md`)
 and the OOS policy. Write the rendered brief + the quick-check prompt below into the brief FILE
 (`reviewer-dispatch.md` § Render the brief TO A FILE) and dispatch with the pointer shape from
 `reviewer-dispatch.md` § Dispatch by path — the `Agent` prompt names the brief path, the ledger
@@ -86,15 +86,15 @@ For each `[CRITICAL]` finding:
    signal below** (the task must not be left showing `In Progress`/`In
    Review` while blocked on an unresolved impediment):
    ```bash
-   bash canonical/aid/scripts/execute/writeback-state.sh --delivery-id DDD --task-id NNN --field State --value "Failed"
+   bash .aid/runtime/scripts/execute/writeback-state.sh --delivery-id DDD --task-id NNN --field State --value "Failed"
    ```
    Write the IMPEDIMENT to `.aid/works/{work}/IMPEDIMENT-task-{NNN}.md` and emit the pipeline block
    signal (silent state-write — no output, no gate):
    ```bash
-   bash canonical/aid/scripts/execute/writeback-state.sh --pipeline --field Lifecycle --value Blocked
-   bash canonical/aid/scripts/execute/writeback-state.sh --pipeline --field "Block Reason" --value "Critical finding persists after fix attempt — architecture-conflict impediment raised"
-   bash canonical/aid/scripts/execute/writeback-state.sh --pipeline --field "Block Artifact" --value ".aid/works/{work}/IMPEDIMENT-task-{NNN}.md"
-   bash canonical/aid/scripts/execute/writeback-state.sh --pipeline --field Updated --value "$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+   bash .aid/runtime/scripts/execute/writeback-state.sh --pipeline --field Lifecycle --value Blocked
+   bash .aid/runtime/scripts/execute/writeback-state.sh --pipeline --field "Block Reason" --value "Critical finding persists after fix attempt — architecture-conflict impediment raised"
+   bash .aid/runtime/scripts/execute/writeback-state.sh --pipeline --field "Block Artifact" --value ".aid/works/{work}/IMPEDIMENT-task-{NNN}.md"
+   bash .aid/runtime/scripts/execute/writeback-state.sh --pipeline --field Updated --value "$(date -u +%Y-%m-%dT%H:%M:%SZ)"
    ```
 4. Mark the finding as `Fixed-on-spot` in the quick-check findings block (see §
    Write Findings to STATE.yml below).
@@ -166,7 +166,7 @@ completes — not deferred, not left for whatever process happens to touch
 this task next:
 
 ```bash
-bash canonical/aid/scripts/execute/writeback-state.sh \
+bash .aid/runtime/scripts/execute/writeback-state.sh \
     --delivery-id DDD --task-id NNN --field State --value "Done"
 ```
 

@@ -10,7 +10,7 @@ description: >
   result. It never writes, locally or to the tracker, and never asks for confirmation; a
   failed, not-found, unauthorized or unavailable fetch surfaces the tracker's own error and
   exits without side effects.
-allowed-tools: Read, Glob, Grep, AskUserQuestion
+allowed-tools: Read Glob Grep AskUserQuestion
 argument-hint: "[<connector>:]<ticket-id>"
 ---
 
@@ -35,7 +35,7 @@ fires, is a resolution branch, never a write-confirmation gate.
 
 The connector-resolution ladder, the `[<connector>:]<ticket-id>` grammar-parse rule, and the
 write-preview/confirm conventions all live once, in
-[`canonical/aid/templates/connectors/ticket-resolution.md`](../../aid/templates/connectors/ticket-resolution.md)
+[`.aid/runtime/templates/connectors/ticket-resolution.md`](../../aid/templates/connectors/ticket-resolution.md)
 — the single shared home for all three ticket skills (`aid-read-ticket`, `aid-create-ticket`,
 `aid-update-ticket`). This `SKILL.md` implements that reference by pointer only; nothing below
 re-describes the ladder's own validation logic, the grammar's own tokenizing rule, or the confirm
@@ -151,7 +151,7 @@ the whole run is State 3's single read.
 
 - **Non-destructive, always.** No `Write`/`Edit` tool is declared or ever needed — this skill
   persists nothing in the repo and performs no external write of any kind.
-  `allowed-tools: Read, Glob, Grep, AskUserQuestion` is the complete set; the host-MCP fetch tool
+  `allowed-tools: Read Glob Grep AskUserQuestion` is the complete set; the host-MCP fetch tool
   itself is requested at runtime per `consumption-protocol.md`, never statically declared here.
 - **No confirmation prompt, ever.** `AskUserQuestion` fires only for the 2+-connector "which
   connector" branch in State 2; it never gates the fetch — there is nothing to confirm, because

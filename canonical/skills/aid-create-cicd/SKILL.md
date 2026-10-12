@@ -12,7 +12,7 @@ description: >
   `/aid-create-infra` or `/aid-update-infra`; for a data pipeline rather than a delivery
   one, `/aid-create-data-pipeline` or `/aid-update-data-pipeline`; to ship a built artifact
   now, `/aid-deploy`.
-allowed-tools: Read, Glob, Grep, Bash, Write, Edit, Agent
+allowed-tools: Read Glob Grep Bash Shell Terminal Write Edit Agent
 argument-hint: "[<direction>] -- which parts of the CI/CD seed to realize"
 ---
 
@@ -20,7 +20,7 @@ argument-hint: "[<direction>] -- which parts of the CI/CD seed to realize"
 
 Bind **VERB=`create`**, **ARTIFACT=`cicd`** -- the `create` *stage* in the contract's
 vocabulary -- then follow the shared contract at
-`canonical/aid/templates/design-lifecycle.md`. This skill binds that contract and restates
+`.aid/runtime/templates/design-lifecycle.md`. This skill binds that contract and restates
 none of its rules. It consumes the seed `/aid-design-cicd` produces and touches
 `.aid/design/` for no other purpose.
 
@@ -41,14 +41,14 @@ line on each state.
 ## State: INTAKE
 
 1. **Allocate** through the Work Initiation Gate exactly as the contract's Allocation rule
-   requires (`canonical/skills/aid-design/SKILL.md` INTAKE step 4 is the shape), with
+   requires (`.agents/skills/aid-design/SKILL.md` INTAKE step 4 is the shape), with
    `initiator: aid-create-cicd`. `phase` is not driven.
 2. **Read the seed** at `.aid/design/cicd.md`.
 3. **Resolve the destination by concern, not filename.** This skill binds concern **C8**
-   (shipping & operation, `canonical/aid/templates/kb-authoring/concern-model.md`). The seed's
+   (shipping & operation, `.aid/runtime/templates/kb-authoring/concern-model.md`). The seed's
    `## Destination` names the resolved path; where it does not, resolve C8 against
    `.aid/settings.yml` `knowledge.doc_set`, falling back to the C8 row of
-   `canonical/aid/templates/kb-authoring/domain-doc-matrix.md`, and confirm with the user. An
+   `.aid/runtime/templates/kb-authoring/domain-doc-matrix.md`, and confirm with the user. An
    ambiguous realization is **asked**, never picked silently.
 4. **Read the whole destination** if it exists, and note its `source:` field.
 5. **Ask whether the user also wants production config this run.** Emitting a workflow file

@@ -7,7 +7,7 @@ sources:
   - docs/aid-methodology.md
   - docs/glossary.md
   - canonical/
-  - canonical/EMISSION-MANIFEST.md
+  - release.sh
   - canonical/aid/templates/shortcut-engine.md
   - canonical/aid/templates/shortcut-catalog.yml
   - canonical/skills/aid-triage/SKILL.md
@@ -37,7 +37,6 @@ review-criteria:
 
 > **Source:** aid-discover (brownfield deep-dive — Integrator owns the Concept Spine)
 > **Status:** Complete
-> **Last Updated:** 2026-07-09
 
 AID's "domain" is software-development methodology and its installer tooling. This glossary
 documents what AID's own words mean *in this project* — not their generic industry sense. An
@@ -74,25 +73,24 @@ accounting for every harvested candidate concept lives in
 
 **Definition-as-used-here:** The `canonical/` directory — the single source of truth for every
 piece of content AID installs (skills, agents, templates, scripts). Content is
-authored once here and rendered into the five `profiles/` install trees; `profiles/` is build
-output and is never hand-edited. "Canonical" is the authority, not merely "standard."
+authored once here. Agents are rendered into the five `profiles/` agent trees, skills and runtime are copied into
+the Shared Payload; `profiles/` is build output and is never hand-edited. "Canonical" is the authority, not merely "standard."
 
-**Relates-to:** Profile (canonical is rendered into profiles), Emission Manifest (declares what
-canonical emits per profile), Knowledge Base (KB templates live under `canonical/aid/templates/`).
+**Relates-to:** Profile (canonical agents are rendered into profiles), Shared Payload (canonical skills and runtime
+are copied into it), Knowledge Base (KB templates live under `canonical/aid/templates/`).
 
 **sources:**
 - `docs/glossary.md` ("Canonical") — "the single source of truth … Never edit `profiles/` directly"
-- `canonical/EMISSION-MANIFEST.md` — declares the canonical→profile emission
 
 ### Profile
 
-**Definition-as-used-here:** One of the five rendered, host-tool-specific install trees AID
+**Definition-as-used-here:** One of the five rendered, host-tool-specific agent trees AID
 targets (Claude Code, Codex CLI, Cursor, GitHub Copilot CLI, Antigravity). All five carry
-byte-identical skill/agent *bodies*; only the install root, context-file name, and agent
-format differ. Not a user profile or a config profile.
+byte-identical agent *bodies*; only the agent directory, the agent file format and the model
+names differ. Not a user profile or a config profile.
 
-**Relates-to:** Canonical (the source profiles are rendered from), Emission Manifest (drives
-per-profile emission), AGENTS.md/CLAUDE.md (the per-profile context file).
+**Relates-to:** Canonical (the source profiles are rendered from), Shared Payload (the skills and runtime every
+profile's tool also installs), AGENTS.md/CLAUDE.md (the root context files).
 
 **sources:**
 - `docs/aid-methodology.md` ("The Five Profiles") — the five-row profile table
@@ -233,21 +231,36 @@ Seasoned-Analyst Engine (which elicits the declared spine).
 - `.aid/generated/candidate-concepts.md` — the harvested candidates the brownfield spine must close
 - `canonical/skills/aid-describe/references/state-describe-seed.md` ("Declared concept-spine / ubiquitous language … MANDATORY")
 
-### Emission Manifest
+### Install Manifest
 
-**Aliases:** EmissionManifest
+**Aliases:** install manifest, `.aid-manifest.json`
 
-**Definition-as-used-here:** The declaration (`canonical/EMISSION-MANIFEST.md`, modeled in the
-renderer as `EmissionManifest`) of exactly which files the profile renderer emits for each
-profile. It is the contract the VERIFY gate byte-checks the rendered `profiles/` against, so
-`canonical/` always remains the source of truth.
+**Definition-as-used-here:** The record the install-core libraries write to `.aid/.aid-manifest.json` of what AID
+installed in a repo (format 3). Each shared entry (the `.agents/skills/aid-*` skills, `.aid/runtime/`, each skill
+mirror, the `AGENTS.md` and `CLAUDE.md` regions) is recorded once, with the tools that use it and the sha256 of each
+file; each tool records its own files. Uninstall, drift repair and pruning are bounded by it.
 
-**Relates-to:** Canonical (what is emitted), Profile (emitted per profile), the render pipeline
-(`run_generator.py` / `render.py`).
+**Relates-to:** Shared Payload (the entries are copied from it), Canonical (the source of every recorded file),
+AidInstallCore (the writer and reader of the record).
 
 **sources:**
-- `canonical/EMISSION-MANIFEST.md` — the manifest itself
-- `.claude/skills/generate-profile/scripts/render.py` (imports `EmissionManifest`)
+- `lib/aid-install-core.sh` (`manifest_write_v3`, `manifest_remove_tool`, `prune_shared`)
+- `lib/AidInstallCore.psm1` (`Write-AidManifestV3`)
+
+### Shared Payload
+
+**Aliases:** aid-shared, release payload
+
+**Definition-as-used-here:** The one release artifact (`aid-shared-v<V>.tar.gz`) that carries every tool's skills and
+runtime: `skills/` copied from `canonical/skills/`, and `runtime/` copied from `canonical/aid/` (`rules.md` included).
+Every tool installs it into `.agents/skills/aid-*` and `.aid/runtime/`; no per-tool artifact carries either.
+
+**Relates-to:** Canonical (the source), Profile (the per-tool agent artifacts sit beside it), Install Manifest (records
+what was installed from it).
+
+**sources:**
+- `release.sh` (`build_shared_payload`)
+- `lib/aid-install-core.sh` (`install_shared`)
 
 ### AidInstallCore
 
@@ -289,21 +302,21 @@ it), Install channel (recorded alongside it).
 **Definition-as-used-here:** AID's defining build model: author once in `canonical/`, render to
 five byte-identical `profiles/` via `run_generator.py`, prove correctness with the VERIFY
 byte-compare gate, then vendor `bin/`/`lib/`/`dashboard/` into the npm and PyPI wrappers and
-tarball per-profile bundles for GitHub Releases. The chain runs from `canonical/` to the
-rendered `profiles/`, then into the `packages/` wrappers, then to the user install.
+release artifacts (the Shared Payload, the per-tool agent artifacts and the CLI bundle) for GitHub Releases. The
+chain runs from `canonical/` to the rendered `profiles/` and the Shared Payload, then into the `packages/` wrappers,
+then to the user install.
 
-**Relates-to:** Canonical (the source), Profile (the rendered targets), Emission Manifest (the
-emit contract), Polyglot Parity Obligation (why parity matters across the chain).
+**Relates-to:** Canonical (the source), Profile (the rendered targets), Install Manifest (what the install
+records), Polyglot Parity Obligation (why parity matters across the chain).
 
 **sources:**
 - `docs/aid-methodology.md` ("The build pipeline")
-- `canonical/EMISSION-MANIFEST.md` — the emit/safety boundary
 
 ### Dual-Face Dogfood Repository
 
 **Definition-as-used-here:** This repository has two faces: the *product*
-(`canonical/`->`profiles/`->`packages/`) and the *dogfood install* (`.claude/` rendered
-profile + `.aid/` pipeline state/KB) where AID is used to build AID. The `.aid/` content is
+(`canonical/`->`profiles/`->`packages/`) and the *dogfood install* (the CLI-installed `.agents/skills/`,
+`.claude/`, `.cursor/` and `.aid/runtime/` trees, plus `.aid/` pipeline state/KB) where AID is used to build AID. The `.aid/` content is
 real working state, not example data.
 
 **Relates-to:** Canonical (the product face), Profile (the rendered dogfood face), Knowledge
@@ -748,7 +761,7 @@ lives).
 | Term | Meaning here | Source |
 |------|--------------|--------|
 | VERIFY (deterministic) gate | Re-renders all five profiles to a scratch dir and byte-compares against committed `profiles/`; any mismatch is a hard failure | `docs/aid-methodology.md` ("A VERIFY (deterministic) gate"); `.claude/skills/generate-profile/scripts/verify_deterministic.py` |
-| pure-mirror deletion | The generator's deletion pass — remove files in the previous emission manifest but absent from the current one; the manifest is the safety boundary | `canonical/EMISSION-MANIFEST.md` ("authoritative safety boundary … pure-mirror"); `.claude/skills/generate-profile/scripts/run_generator.py` |
+| manifest-bounded deletion | The CLI's deletion rule — remove only files the install manifest records, plus unrecorded files under `.aid/runtime/`, which the CLI owns; the manifest is the safety boundary | `lib/aid-install-core.sh` (`prune_shared`) |
 | RAG by convention | AID's retrieval model: fixed-shape KB + `INDEX.md`, no vector DB — agents navigate three tiers: the always-loaded INDEX, then one KB document on demand, then a cited file-and-symbol anchor | `docs/aid-methodology.md` ("RAG by convention") |
 | format_version (per-repo stamp) | The schema-version stamp (in `settings.yml` + a per-repo migration marker) the CLI reads to migrate older installs | `bin/aid`; `.aid/settings.yml` (`format_version`) |
 | block-radius | The BFS-computed set of tasks transitively depending on a failed task; all are marked Blocked | `canonical/aid/scripts/execute/compute-block-radius.sh` |
@@ -843,7 +856,7 @@ lives).
 | Term | Industry meaning | Meaning here |
 |------|------------------|--------------|
 | Canonical | "standard / conventional" | the `canonical/` source-of-truth tree; the authority over `profiles/` |
-| Profile | a user/config profile | one of the five rendered host-tool install trees |
+| Profile | a user/config profile | one of the five rendered host-tool agent trees |
 | Delivery | a deployment/shipment | an ordered, independently shippable MVP grouping of features within a work |
 | Work | a generic job/effort | a self-contained pipeline scope unit at `.aid/works/work-NNN-*/` |
 | Wave | an ocean wave / release wave | a parallel batch of dependency-ready tasks in the Execution Graph |

@@ -10,7 +10,7 @@ generatedFrom: 'canonical/skills/aid-design-data-model/SKILL.md'
 
 - **`name`** — aid-design-data-model
 - **`description`** — Develop a data-model design as a DESIGN SEED in `.aid/design/data-model.md` -- its entities, their relationships, and the migration impact of introducing them. Use this skill when an entity's shape and its relationships are still being worked out, before any migration is written. Grounded in the Knowledge Base (`.aid/knowledge/`) and the project source. It WRITES NO production code and NO KB document -- realize the seed into the built model and its migration with `/aid-create-data-model` once it is ready. Produced by the aid-architect agent and independently verified by aid-reviewer (full verify). Allocates a work-NNN folder.
-- **`allowed-tools`** — Read, Glob, Grep, Bash, Write, Edit, Agent
+- **`allowed-tools`** — Read Glob Grep Bash Shell Terminal Write Edit Agent
 - **`argument-hint`** — &lt;subject> -- the data model to design (entities, relationships, migration impact)
 
 [Definition: `canonical/skills/aid-design-data-model/SKILL.md`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-design-data-model/SKILL.md)
@@ -59,7 +59,7 @@ Every node in the chart above, in chart order, with the exact `canonical/` text 
    model do you want to design -- its entities, relationships, and migration impact?") and
    wait.
 2. **Allocate** through the Work Initiation Gate exactly as the contract's Allocation rule
-   requires (`canonical/skills/aid-design/SKILL.md` INTAKE step 4 is the shape), with
+   requires (`.agents/skills/aid-design/SKILL.md` INTAKE step 4 is the shape), with
    `initiator: aid-design-data-model`. `phase` is not driven.
 3. **Acquire `.aid/design/`** per the contract, then read `.aid/design/data-model.md` if a
    prior seed exists -- re-invocation iterates it rather than starting over.

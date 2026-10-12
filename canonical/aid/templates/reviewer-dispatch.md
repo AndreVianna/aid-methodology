@@ -41,7 +41,7 @@ OUT-OF-SCOPE FINDINGS POLICY:
 
 DELIVERABLES:
   - Findings ledger at `.aid/.temp/review-pending/<scope>.md` per
-    `canonical/aid/templates/reviewer-ledger-schema.md`
+    `.aid/runtime/templates/reviewer-ledger-schema.md`
   - Output format: ONE markdown table only, no headers/narrative
   - Severity tags MUST be bracketed: [CRITICAL] / [HIGH] / [MEDIUM] / [LOW] / [MINOR]
   - Status enum: Pending / Fixed / Recurred / Accepted / OOS / Invalid
@@ -62,7 +62,7 @@ Each section is mandatory. Empty content is allowed (e.g.,
 ### ARTIFACTS UNDER REVIEW
 
 An **explicit file list**. The reviewer reads + grades exactly these files. No
-wildcards beyond the artifact set (e.g., `canonical/aid/templates/kb-authoring/*.md` is
+wildcards beyond the artifact set (e.g., `.aid/runtime/templates/kb-authoring/*.md` is
 fine if the entire directory is in scope; `canonical/**` is too broad).
 
 **From cycle 2 this section carries TWO labelled lists, not one.** Cycle 1 and the final
@@ -245,8 +245,8 @@ If multiple artifacts use different rubrics, the brief maps each to its rubric:
 
 ```
 RUBRIC:
-  canonical/aid/templates/kb-authoring/*.md   → kb-authoring/review-rubric.md#full-primary
-  canonical/aid/scripts/*.sh        → (none — script bugs / shell correctness)
+  .aid/runtime/templates/kb-authoring/*.md   → kb-authoring/review-rubric.md#full-primary
+  .aid/runtime/scripts/*.sh        → (none — script bugs / shell correctness)
 ```
 
 When no pre-defined rubric exists (one-off reviews like Phase A foundation),
@@ -306,7 +306,7 @@ grading. Common entries:
 
 - "Downstream phases (Phase B, Phase C, etc.)"
 - "Adjacent artifacts not in the ARTIFACTS list"
-- "Dogfood-specific facts (this project's KB count, `.claude/` contents)"
+- "Dogfood-specific facts (this project's KB count, the installed tree's contents)"
 - "Hypothetical future uses"
 - "Profile mirrors auto-regenerated from canonical (`profiles/*/`)"
 
@@ -334,13 +334,13 @@ The expected output. Always:
 - **Ledger format** per [kb-authoring/principles.md](kb-authoring/principles.md)
   P3 — temp-file ledger pattern at `.aid/.temp/review-pending/<dispatcher>.md`
 - **Severity scale** per the named RUBRIC (or inline if no rubric)
-- **Grade** computed per `canonical/aid/templates/grading-rubric.md`
+- **Grade** computed per `.aid/runtime/templates/grading-rubric.md`
 - **OOS rows** (Status: OOS, with routing destination) as defined in OOS POLICY above
 
 ## Brief generation
 
 Each skill that dispatches a reviewer ships a brief template at
-`canonical/skills/<skill>/references/reviewer-brief.md`. Six per-skill briefs
+`.agents/skills/<skill>/references/reviewer-brief.md`. Six per-skill briefs
 are shipped: `aid-discover`, `aid-execute`, `aid-specify`, `aid-plan`,
 `aid-detail`, `aid-define`. Each renders this protocol's 5-section structure
 with skill-specific RUBRIC + OUT OF SCOPE; the consumer state file fills the
@@ -475,16 +475,16 @@ The protocol applies; only the template-substitution mechanism is skipped.
 
 ```
 ARTIFACTS UNDER REVIEW:
-  - canonical/aid/templates/kb-authoring/README.md
-  - canonical/aid/templates/kb-authoring/principles.md
-  - canonical/aid/templates/kb-authoring/tier-model.md
-  - canonical/aid/templates/kb-authoring/frontmatter-schema.md
-  - canonical/aid/templates/kb-authoring/review-rubric.md
-  - canonical/aid/templates/reviewer-dispatch.md  (this doc, newly authored)
-  - canonical/aid/templates/generated-files.txt
-  - canonical/aid/scripts/kb/build-metrics.sh
-  - canonical/aid/scripts/kb/build-kb-index.sh
-  - canonical/aid/templates/knowledge-base/*.md  (17 templates with prepended frontmatter)
+  - .aid/runtime/templates/kb-authoring/README.md
+  - .aid/runtime/templates/kb-authoring/principles.md
+  - .aid/runtime/templates/kb-authoring/tier-model.md
+  - .aid/runtime/templates/kb-authoring/frontmatter-schema.md
+  - .aid/runtime/templates/kb-authoring/review-rubric.md
+  - .aid/runtime/templates/reviewer-dispatch.md  (this doc, newly authored)
+  - .aid/runtime/templates/generated-files.txt
+  - .aid/runtime/scripts/kb/build-metrics.sh
+  - .aid/runtime/scripts/kb/build-kb-index.sh
+  - .aid/runtime/templates/knowledge-base/*.md  (17 templates with prepended frontmatter)
 
 CONTEXT:
   These are canonical artifacts that define a KB Authoring discipline. They
@@ -510,7 +510,7 @@ RUBRIC: (one-off — no pre-defined rubric for canonical-spec review yet)
 
 OUT OF SCOPE (do not grade against):
   - Downstream phases (any "Phase B" or "Phase C" work)
-  - The dogfood project's .aid/ KB or .claude/ install in this repo
+  - The dogfood project's .aid/ KB or installed tree in this repo
   - Profile mirrors at profiles/{claude-code,codex,cursor}/ (regenerated from canonical)
   - Adjacent canonical files not in ARTIFACTS
   - Hypothetical future skill uses or adopter-project specifics
@@ -523,7 +523,7 @@ OUT-OF-SCOPE FINDINGS POLICY:
 
 DELIVERABLES:
   - Write findings to: .aid/.temp/review-pending/phase-a-foundation-v2.md
-  - Format: per canonical/aid/templates/reviewer-ledger-schema.md (ONE markdown table only)
+  - Format: per .aid/runtime/templates/reviewer-ledger-schema.md (ONE markdown table only)
   - Severity tags bracketed: [CRITICAL] / [HIGH] / [MEDIUM] / [LOW] / [MINOR]
   - Status enum: Pending / Fixed / Recurred / Accepted / OOS / Invalid
   - Grade computed by orchestrator via: grade.sh .aid/.temp/review-pending/phase-a-foundation-v2.md
@@ -540,18 +540,18 @@ Revisions should:
 
 ## Why this doc carries no frontmatter
 
-This doc lives in `canonical/aid/templates/` and is a **skill-bundle artifact**, not a KB
+This doc lives in `.aid/runtime/templates/` and is a **skill-bundle artifact**, not a KB
 document. The frontmatter schema defined in `kb-authoring/frontmatter-schema.md` applies
 to `.aid/knowledge/*.md` (KB docs in adopter projects), NOT to canonical skill-bundle
 docs. Therefore this doc carries no `kb-category:`/`source:` frontmatter.
 
 ## See also
 
-- `canonical/aid/templates/self-review-protocol.md` — the flip side of this protocol
+- `.aid/runtime/templates/self-review-protocol.md` — the flip side of this protocol
   (what every artifact-producing agent should have done BEFORE this dispatch
   was needed; the reviewer's role is verification, not discovery)
-- `canonical/aid/templates/kb-authoring/principles.md` — P3 temp-ledger pattern
-- `canonical/aid/templates/kb-authoring/review-rubric.md` — KB review rubric definitions
-- `canonical/aid/templates/grading-rubric.md` — severity → grade computation
-- `canonical/aid/templates/long-wait-protocol.md` — heartbeat / L2 timer dispatch protocol
-- `canonical/agents/aid-reviewer/` — the reviewer agent definition
+- `.aid/runtime/templates/kb-authoring/principles.md` — P3 temp-ledger pattern
+- `.aid/runtime/templates/kb-authoring/review-rubric.md` — KB review rubric definitions
+- `.aid/runtime/templates/grading-rubric.md` — severity → grade computation
+- `.aid/runtime/templates/long-wait-protocol.md` — heartbeat / L2 timer dispatch protocol
+- The `aid-reviewer` agent definition

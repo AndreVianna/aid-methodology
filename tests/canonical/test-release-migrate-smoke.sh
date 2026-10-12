@@ -27,6 +27,7 @@ set -uo pipefail
 [[ "${1:-}" =~ ^(-v|--verbose)$ ]] && VERBOSE=1 || VERBOSE=0
 
 source "$(dirname "${BASH_SOURCE[0]}")/../lib/assert.sh"
+source "$(dirname "${BASH_SOURCE[0]}")/../lib/bundle.sh"
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd "${SCRIPT_DIR}/../.." && pwd)"
 REF_SETTINGS="${REPO_ROOT}/.aid/settings.yml"
@@ -35,6 +36,15 @@ BASEPATH="/usr/local/bin:/usr/bin:/bin"
 
 TMP="$(mktemp -d)"
 trap 'rm -rf "$TMP"' EXIT
+
+# Release bundle (shared layout) for the clean-slate upgrade step: every channel's installed aid
+# runs `update --from-bundle` against the same staged artifacts, so the upgrade is the real
+# release code path. release.sh --stage-only runs from the checkout (tests/lib/bundle.sh).
+BUNDLE_DIR="${TMP}/bundle"; mkdir -p "${BUNDLE_DIR}"
+if ! aid_test_stage_bundle "${BUNDLE_DIR}" >"${TMP}/bundle-stage.log" 2>&1; then
+    echo "ERROR: could not stage the release bundle (see ${TMP}/bundle-stage.log)" >&2
+    exit 1
+fi
 
 # ---- escape canary: the real repo must be byte-stable across this suite -------
 REAL_GIT_BEFORE="$(git -C "${REPO_ROOT}" status --porcelain 2>/dev/null | wc -l)"
@@ -104,8 +114,10 @@ assert_migrated() {  # $1 = repo path  $2 = label  $3 = aid binary  $4 = aid_hom
     AID_HOME="${aid_home}" AID_NO_UPDATE_CHECK=1 \
         bash "${aid_bin}" __migrate-repo "${repo}" >/dev/null 2>&1 || true
     local _sf="${repo}/.aid/settings.yml"
+    # A manifest-bearing legacy repo keeps the legacy stamp 4 here (_aid_migration_stamp);
+    # it is the clean-slate upgrade in step E that moves it to the current layout.
     if grep -q '^format_version: 4' "${_sf}" 2>/dev/null; then
-        pass "${label}-B -- after __migrate-repo: settings.yml stamped format_version: 4"
+        pass "${label}-B -- after __migrate-repo: settings.yml keeps legacy stamp format_version: 4"
     else
         fail "${label}-B -- after __migrate-repo: format_version: 4 stamp missing at ${_sf}"
     fi
@@ -125,6 +137,26 @@ assert_migrated() {  # $1 = repo path  $2 = label  $3 = aid binary  $4 = aid_hom
         fail "${label}-D -- after __migrate-repo: legacy STATE.md still present (conversion did not run/verify)"
     else
         pass "${label}-D -- after __migrate-repo: legacy STATE.md deleted (verified conversion)"
+    fi
+    # Step 4 (E): the clean-slate upgrade, run through this channel's own aid. It moves the
+    # repo from the legacy stamp to the current layout: settings stamp 5, manifest format 3,
+    # and the older-format WARN is gone on the next encounter.
+    local _upg_log="${TMP}/${label}-upgrade.log" _upg_rc _post_out
+    AID_HOME="${aid_home}" AID_NO_UPDATE_CHECK=1 \
+        bash "${aid_bin}" update --from-bundle "${BUNDLE_DIR}" --target "${repo}" >"${_upg_log}" 2>&1
+    _upg_rc=$?
+    _post_out="$(cd "${repo}" && AID_HOME="${aid_home}" AID_NO_UPDATE_CHECK=1 \
+        bash "${aid_bin}" status 2>&1 || true)"
+    if [[ "${_upg_rc}" -eq 0 ]] && grep -q '^format_version: 5' "${_sf}" 2>/dev/null \
+       && grep -q '"format_version": 3' "${repo}/.aid/.aid-manifest.json" 2>/dev/null; then
+        pass "${label}-E -- clean-slate upgrade via channel: settings stamped format_version: 5, manifest format_version: 3"
+    else
+        fail "${label}-E -- clean-slate upgrade via channel: rc=${_upg_rc}, stamp/manifest not at 5/3 (see ${_upg_log})"
+    fi
+    if grep -q "older format" <<<"${_post_out}"; then
+        fail "${label}-F -- after the upgrade: older-format WARN still printed"
+    else
+        pass "${label}-F -- after the upgrade: no older-format WARN on encounter"
     fi
 }
 
@@ -162,7 +194,9 @@ else
             pass "RMS-NPM-01 npm pack + global install succeeded"
             # Locate the installed bin/aid (npm global install places it in ${NP}/bin or ${NP}/lib/node_modules).
             _NPM_AID_BIN="$(find "${NP}" -name aid -type f 2>/dev/null | head -1)"
-            if [[ -n "${_NPM_AID_BIN}" && -x "${_NPM_AID_BIN}" ]]; then
+            # The npm package ships bin/aid as a plain file (mode 0644; the launcher runs it with bash), so
+# test for a regular file, not the execute bit.
+if [[ -n "${_NPM_AID_BIN}" && -f "${_NPM_AID_BIN}" ]]; then
                 # CODE_HOME is grandparent of bin/aid: NP/lib/node_modules/aid-installer or NP/
                 _NPM_CODE_HOME="$(cd "$(dirname "${_NPM_AID_BIN}")/.." && pwd)"
                 NREPO="$(seed_old_repo "${_NPM_CODE_HOME}")"
@@ -208,7 +242,7 @@ else
             # vendored bash worker deterministically -- it is the real aid home
             # (_vendor/ has bin/ + lib/ + VERSION + dashboard) that the launcher execs.
             _PYPI_AID_BIN="$(find "${PV}" -path '*/_vendor/bin/aid' -type f 2>/dev/null | head -1)"
-            if [[ -n "${_PYPI_AID_BIN}" && -x "${_PYPI_AID_BIN}" ]]; then
+            if [[ -n "${_PYPI_AID_BIN}" && -f "${_PYPI_AID_BIN}" ]]; then
                 _PYPI_CODE_HOME="$(cd "$(dirname "${_PYPI_AID_BIN}")/.." && pwd)"
                 PREPO="$(seed_old_repo "${_PYPI_CODE_HOME}")"
                 assert_migrated "${PREPO}" "RMS-PYPI-02" "${_PYPI_AID_BIN}" "${_PYPI_CODE_HOME}"

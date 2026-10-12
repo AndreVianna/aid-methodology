@@ -373,7 +373,9 @@ assert_eq "$undeliverable" "1,departed,0" \
 # Tear down FIRST, then measure, since the EXIT trap runs after this line.
 _cleanup
 trap - EXIT
-sleep 0.3
+# A signalled hub still runs its graceful shutdown. Wait for it, bounded, rather than a fixed
+# sleep: on a loaded runner a hub that is still exiting was read as one left behind.
+for _w in $(seq 1 50); do [[ "$(_own_hubs)" == "0" ]] && break; sleep 0.1; done
 assert_eq "$(_own_hubs)" "0" "the suite leaves none of its own hub processes behind"
 
 test_summary

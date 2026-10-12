@@ -1,0 +1,17 @@
+# runtime-source-path-allowlist.tsv -- non-comment lines under canonical/aid/ that
+# are KEPT as source-repo references (AC-5 of work-001 delivery-001, task-002).
+#
+# Every non-comment line that still names a canonical/ source path or a host install
+# root (.claude/ .codex/ .cursor/ .agent/) must match a row here. A row is stale if its
+# pattern matches no line of its path; a row without a why is invalid.
+#
+# Schema (TAB-separated, 3 fields); '#'-comment and blank lines are ignored:
+#   <path>	<pattern>	<why>
+#   path     repo-relative file under canonical/aid/
+#   pattern  extended regex (grep -E) that matches the kept line
+#   why      non-empty reason the path must resolve in the AID source repo
+#
+canonical/aid/templates/rough-time-hints.md	run_generator\.py	AID source repo only: run_generator.py is the maintainer generator under the dogfood .claude/skills/generate-profile/; the row records the timing of that source-repo command, which no installed project can run.
+canonical/aid/scripts/summarize/playwright-provisioning.md	^1\. .npm ci. in .canonical/aid/scripts/summarize/	AID source-repo CI: the visual-fidelity job in .github/workflows/test.yml runs npm ci in the source checkout; the installed copy is documented on the adopter line instead.
+canonical/aid/scripts/summarize/playwright-provisioning.md	^3\. .node canonical/aid/scripts/summarize/validate-visuals\.mjs	AID source-repo CI: the visual-fidelity job in .github/workflows/test.yml runs the gate from the source checkout path; no installed project has that path.
+canonical/aid/scripts/summarize/playwright-provisioning.md	CI runs .npm ci. in .canonical/aid/scripts/summarize/	AID source-repo CI: the visual-fidelity job in .github/workflows/test.yml runs npm ci from the source checkout path, and the resulting node_modules is ephemeral to that job.

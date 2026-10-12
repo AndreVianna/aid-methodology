@@ -17,6 +17,11 @@
 # so a Windows autocrlf checkout can't inject CRLF that a consumer's parser mishandles
 # (a CRLF checkout made vendor.js leak comment lines as bogus file paths).
 dashboard/MANIFEST text eol=lf
+# The per-tool install descriptor is extensionless too, and release.sh copies it into
+# each tool artifact verbatim. The CLI refuses a descriptor that is not ASCII with LF
+# endings, so a Windows autocrlf checkout that stages a release made every `aid add`
+# from that stage fail.
+profiles/*/aid-tool.conf text eol=lf
 # Two registered files that sit outside every root above and that no extension rule
 # reaches: the settings template (verbatim class) and the generated-file registry
 # (transformed class).
@@ -30,3 +35,14 @@ canonical/aid/templates/generated-files.txt  text eol=lf
 # blanket *.json rule: .claude/settings.json has been CRLF since before this policy and
 # renormalising it is a separate change.
 .aid/.aid-manifest.json text eol=lf
+
+# >>> AID managed -- do not edit (aid add/update maintains this block) >>>
+.agents/skills/aid-*/** text eol=lf
+.claude/skills/aid-*/** text eol=lf
+.aid/runtime/** text eol=lf
+.claude/agents/aid-* text eol=lf
+.codex/agents/aid-* text eol=lf
+.cursor/agents/aid-* text eol=lf
+.github/agents/aid-* text eol=lf
+.agent/agents/aid-* text eol=lf
+# <<< AID managed <<<

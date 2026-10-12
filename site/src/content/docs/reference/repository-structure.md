@@ -25,11 +25,12 @@ aid-methodology/
 |-- canonical/                  <- single source of truth (never edit profiles/ directly)
 |   |-- skills/                 <- 112 skill definitions (18 curated + 94 catalog skills)
 |   |-- agents/                 <- 9 agent definitions
-|   `-- aid/                    <- AID toolkit root
+|   `-- aid/                    <- AID toolkit root (installed at .aid/runtime/)
+|       |-- rules.md            <- the AID rules every tool reads through AGENTS.md
 |       |-- templates/          <- KB templates, document templates, shortcut engine + catalog
 |       `-- scripts/            <- helper scripts by phase
-|-- profiles/                   <- rendered install trees (generated -- do not edit)
-|   |-- claude-code/
+|-- profiles/                   <- rendered per-tool agent trees (generated -- do not edit)
+|   |-- claude-code/            <- agents + aid-tool.conf
 |   |-- codex/
 |   |-- cursor/
 |   |-- copilot-cli/
@@ -46,6 +47,9 @@ aid-methodology/
 |   |-- greenfield/
 |   |-- brownfield-full-path/
 |   `-- brownfield-lite-path/
+|-- .agents/skills/             <- dogfood install: the shared skills (written by aid; do not edit)
+|-- .claude/skills/             <- dogfood install: Claude Code mirror of the shared skills (do not edit)
+|-- .aid/runtime/               <- dogfood install: the shared runtime (do not edit)
 |-- .github/workflows/          <- CI and release automation
 |   |-- test.yml                <- PR / push tests (render-drift, canonical suites, installer)
 |   |-- installer-tests.yml     <- cross-platform installer smoke tests
@@ -72,26 +76,27 @@ aid-methodology/
 
 ### `canonical/` — the source of truth
 
-All skill, agent, and template content lives here. The generator (`run_generator.py`) renders `canonical/` into the five `profiles/` install trees. **Never edit `profiles/` directly** — your changes will be overwritten on the next generator run.
+All skill, agent, runtime, and template content lives here. The generator (`run_generator.py`) renders the agents in `canonical/` into the five `profiles/` trees, and `release.sh` packages the skills and runtime byte-for-byte into the shared payload. **Never edit `profiles/` or the dogfood install directly** — your changes will be overwritten on the next generator run.
 
 - `canonical/skills/` — 112 skill definitions, one directory per skill: 18 curated skills — the 7 pipeline-phase skills implementing the six numbered phases (`aid-discover`, `aid-describe`, `aid-define`, `aid-specify`, `aid-plan`, `aid-detail`, `aid-execute` — Describe/Define are Phase 2a/2b of the one Describe→Define phase), the `aid-config` bootstrap, and the optional `aid-summarize` viewer, 7 off-pipeline on-demand skills (`aid-housekeep`, `aid-update-kb`, `aid-set-connector`, `aid-unset-connector`, `aid-read-ticket`, `aid-create-ticket`, `aid-update-ticket`), and the standalone `aid-triage` router — plus the 94-row shortcut catalog's skills: 34 verb-first Lite-Path shortcut doorways (`aid-fix`, `aid-create-api`, `aid-update-ui`, …) and 60 hand-authored `repurpose` skills (`aid-review`, `aid-research`, `aid-report`, `aid-document`, `aid-test`, `aid-prototype`, `aid-design`, plus the re-registered `aid-deploy` / `aid-monitor` / `aid-ask`)
 - `canonical/agents/` — 9 agent definitions
 - `canonical/aid/templates/` — KB document templates, grading rubric, task templates, `task-detail-template.md` (delivery/task definitions), plus the shortcut system: `shortcut-catalog.yml` (the 94-row catalog every shortcut and `aid-triage` resolve against), `shortcut-engine.md` (the shared state machine every shortcut delegates to), and `shortcut-scaffolding/` (family-specific SPEC/PLAN/DETAIL scaffolding)
 - `canonical/aid/scripts/` — helper scripts invoked by skills at runtime (interview, summarize, release, kb-hygiene)
+- `canonical/aid/rules.md` — the AID rules. It installs as `.aid/runtime/rules.md`, and the root `AGENTS.md` region points at it
 
-### `profiles/` — generated install trees
+### `profiles/` — generated agent trees
 
-Each subdirectory is one rendered tool profile. The layout inside mirrors what `aid add <tool>` copies into a project:
+Each subdirectory holds one tool's rendered agents and its `aid-tool.conf` descriptor, and nothing else. Skills and runtime are not in `profiles/`: they ship once, in the shared payload. The layout mirrors where `aid add <tool>` places that tool's agents:
 
-| Profile | Installs into | Root agent file |
-|---------|--------------|-----------------|
-| `claude-code/` | `.claude/` | `CLAUDE.md` |
-| `codex/` | `.codex/` | `AGENTS.md` |
-| `cursor/` | `.cursor/` | `AGENTS.md` |
-| `copilot-cli/` | `.github/` | `AGENTS.md` |
-| `antigravity/` | `.agent/` | `AGENTS.md` |
+| Profile | Agents folder | Root instruction files |
+|---------|---------------|------------------------|
+| `claude-code/` | `.claude/agents/` | `AGENTS.md`, and `CLAUDE.md` (imports `AGENTS.md`) |
+| `codex/` | `.codex/agents/` | `AGENTS.md` |
+| `cursor/` | `.cursor/agents/` | `AGENTS.md` |
+| `copilot-cli/` | `.github/agents/` | `AGENTS.md` |
+| `antigravity/` | `.agent/agents/` | `AGENTS.md` |
 
-All five profiles contain byte-identical skill and agent bodies — only the wrapper format differs per tool. A deterministic-verify gate enforces this after every generator run.
+The five agent folders differ only in model names and file format. A deterministic-verify gate checks them after every generator run.
 
 ### `docs/`
 
@@ -116,6 +121,7 @@ Three tutorial-style worked examples — greenfield full-path, brownfield full-p
 | Want to change... | Edit here |
 |---|---|
 | A skill or agent | `canonical/skills/` or `canonical/agents/` — then run the generator |
+| The AID rules every tool reads | `canonical/aid/rules.md` — then run the generator |
 | A KB template | `canonical/aid/templates/knowledge-base/` |
 | A shortcut (new/changed verb-artifact combo) | `canonical/aid/templates/shortcut-catalog.yml` + `canonical/aid/templates/shortcut-scaffolding/` — then run the generator |
 | The `aid` CLI or install logic | `bin/`, `lib/`, `install.sh`, `install.ps1` |

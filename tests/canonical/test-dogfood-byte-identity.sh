@@ -1,73 +1,41 @@
 #!/usr/bin/env bash
-# test-dogfood-byte-identity.sh -- SS7a / C2 (.claude/) + FR-26 (.cursor/) dogfood
-# byte-identity guard.
+# test-dogfood-byte-identity.sh -- AC-18 dogfood resync guard (shared layout).
 #
-# ONE implementation of THREE directions, driven TWICE over the tuple
-#   (manifest, profile tree, dogfood tree, dst prefix, key prefix, allowlist fn):
+# Asserts that this repo's installed dogfood trees are byte-identical to their
+# canonical sources after the v4 resync (REQUIREMENTS.md § 11 Feature 001 >
+# Test plan, AC-18 row). Each comparison runs in both directions its tree allows:
 #
-#   tuple 1 -- .claude/  profiles/claude-code/emission-manifest.jsonl
-#                        profiles/claude-code/.claude  <->  repo-root .claude
-#                        keys  DBI00 DBI00b DBI00c DBI01 DBI-FWD DBI-REV DBI-ORPHAN
-#   tuple 2 -- .cursor/  profiles/cursor/emission-manifest.jsonl
-#                        profiles/cursor/.cursor       <->  repo-root .cursor
-#                        keys  DBI-CUR00 DBI-CUR00b DBI-CUR00c DBI-CUR01
-#                              DBI-CUR-FWD DBI-CUR-REV DBI-CUR-ORPHAN
+#   DBI-SK-*      canonical/skills/<rel> == .agents/skills/<rel> and
+#                 canonical/skills/<rel> == .claude/skills/<rel>.
+#                 Orphan sweeps: .agents/skills holds nothing canonical does not
+#                 ship; .claude/skills holds nothing outside the hand-authored
+#                 survivor allowlist (generate-profile/*, release-aid/*).
+#   DBI-RT-*      canonical/aid/ == .aid/runtime/ under the payload exclusions
+#                 (dot-files, node_modules/, .git/), applied to both sides; rules.md
+#                 compared explicitly; .aid/runtime/host.conf is the ONLY other file
+#                 and holds exactly worktree_root=.claude/worktrees.
+#   DBI-AG-*      .claude/agents/aid-* == profiles/claude-code/.claude/agents/aid-*
+#                 and .cursor/agents/aid-* == profiles/cursor/.cursor/agents/aid-*,
+#                 both ways (no aid-* orphan on either side).
+#   DBI-MAN-*     .aid/.aid-manifest.json records shared.skills, shared.runtime,
+#                 shared.agents_md, shared.claude_md and the .claude/skills mirror.
+#   DBI-ROOT-*    the repo-root CLAUDE.md AID region is the AGENTS.md body plus
+#                 @.aid/runtime/rules.md and its ## Project section is present;
+#                 AGENTS.md has exactly one <!-- AID:BEGIN --> line and its AID
+#                 region has no @ line.
+#   DBI-ABS-*     .claude/aid/, .cursor/aid/ and .cursor/skills/aid-* are absent.
+#   DBI-SURV-*    .claude/skills/generate-profile/SKILL.md and
+#                 .claude/skills/release-aid/SKILL.md survive (hand-authored).
+#   DBI-NEG-*     negative controls on scratch copies: a one-byte change in
+#                 .agents/skills/aid-ask/SKILL.md is detected by the canonical
+#                 comparison, and a deleted .aid/runtime/host.conf by the runtime
+#                 check. The live trees are only read.
 #
-# The two key sets are deliberately DISJOINT so the two direction sets stay
-# separable in tests/coverage-baseline.tsv and in a failure report.
-#
-#   Direction 1 (forward):  for each dst entry in the emission manifest that
-#       starts with the tuple's prefix, assert the corresponding file under the
-#       repo-root dogfood tree exists AND its sha256 matches the manifest
-#       record -- and, for completeness, that the profile-tree copy matches too.
-#
-#   Direction 2 (reverse):  for each file present under the profile tree,
-#       assert it appears as a dst in the manifest (i.e. the manifest is
-#       complete -- no generator-produced file was silently omitted from it).
-#
-#   Direction 3 (repo-orphan sweep):  for each file present under the repo-root
-#       dogfood tree, assert it is EITHER a generator-owned manifest dst OR an
-#       explicitly DOCUMENTED non-generator file (the closed allowlist for that
-#       tuple) -- so a generator-shaped repo-side orphan that bypassed the
-#       manifest is caught (SS7a: the guard excludes nothing in the AID-owned
-#       tree; the only un-compared files are the documented ones).
-#
-# WHAT THESE DIRECTIONS PROVE -- AND WHAT THEY DO NOT
-# ---------------------------------------------------
-# Read this before citing a green run as evidence of anything.
-#
-# All three artifacts each tuple compares -- the emission manifest, the profile
-# tree and the dogfood tree -- are OUTPUTS of the same generator run.
-# `canonical/`, the generator's INPUT, is not among them. Therefore:
-#
-#   * every direction in BOTH tuples proves MUTUAL CONSISTENCY of one
-#     generator run's outputs;
-#   * NO direction in either tuple proves FRESHNESS. If all three artifacts are
-#     consistently stale, this suite is green.
-#
-# That is not hypothetical: this suite was green over the stale trees that
-# work-004 delivery-002's re-render existed to replace, both before and after
-# that re-render, and could not have detected the staleness either time.
-#
-#   consistency oracle (this suite) : manifest <-> profile tree <-> dogfood tree
-#   freshness oracle   (NOT here)   : re-run the generator, then
-#                                     `git diff --exit-code -- profiles/`
-#
-# The DBI-CUR-MUT-* controls at the end differ in kind but not in property:
-# they prove the .cursor/ directions CAN go red (they are not vacuous). That is
-# a statement about the check, still not about freshness.
-#
-# The manifest is the authoritative comparison set for both tuples -- read from
-# the file rather than re-derived by walking a tree, so a file the manifest
-# forgot cannot be silently excused by a walk that forgot it too.
-#
-# On any mismatch the suite fails loudly, naming the divergent path.
-#
-# Registered automatically: tests/run-all.sh discovers all
-# tests/canonical/test-*.sh by glob; no workflow YAML edit is needed.
+# The canonical sources are the INPUT of the resync, so these comparisons are a
+# freshness check: a stale installed copy fails here. The generator is not run.
 #
 # Usage:
-#   bash tests/canonical/test-dogfood-byte-identity.sh [--verbose]
+#   HOME=$(mktemp -d) bash tests/canonical/test-dogfood-byte-identity.sh [--verbose]
 # Exit codes: 0 all pass / 1 any fail.
 
 set -uo pipefail
@@ -77,38 +45,41 @@ VERBOSE=0
 
 source "$(dirname "${BASH_SOURCE[0]}")/../lib/assert.sh"
 
+# One collation for every sort and comm below, so the sorted lists agree.
+export LC_ALL=C
+
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 
-MANIFEST_CLAUDE="${REPO_ROOT}/profiles/claude-code/emission-manifest.jsonl"
-PROFILE_CLAUDE="${REPO_ROOT}/profiles/claude-code/.claude"
-DOGFOOD_CLAUDE="${REPO_ROOT}/.claude"
+CANON_SKILLS="${REPO_ROOT}/canonical/skills"
+CANON_AID="${REPO_ROOT}/canonical/aid"
+AGENTS_SKILLS="${REPO_ROOT}/.agents/skills"
+CLAUDE_SKILLS="${REPO_ROOT}/.claude/skills"
+RUNTIME="${REPO_ROOT}/.aid/runtime"
+CLAUDE_AGENTS="${REPO_ROOT}/.claude/agents"
+CURSOR_AGENTS="${REPO_ROOT}/.cursor/agents"
+PROFILE_CLAUDE_AGENTS="${REPO_ROOT}/profiles/claude-code/.claude/agents"
+PROFILE_CURSOR_AGENTS="${REPO_ROOT}/profiles/cursor/.cursor/agents"
+MANIFEST="${REPO_ROOT}/.aid/.aid-manifest.json"
+CLAUDE_MD="${REPO_ROOT}/CLAUDE.md"
+AGENTS_MD="${REPO_ROOT}/AGENTS.md"
 
-MANIFEST_CURSOR="${REPO_ROOT}/profiles/cursor/emission-manifest.jsonl"
-PROFILE_CURSOR="${REPO_ROOT}/profiles/cursor/.cursor"
-DOGFOOD_CURSOR="${REPO_ROOT}/.cursor"
-
-# Scratch root for the DBI-CUR-MUT-* negative controls. Nothing else writes.
-# Removed by the EXIT trap on every path, including failure and early bail.
+# Scratch root for the DBI-NEG-* controls. Nothing else writes here.
 DBI_SCRATCH="$(mktemp -d)"
 trap 'rm -rf "${DBI_SCRATCH}"' EXIT
 
-echo "=== dogfood byte-identity guard (SS7a / C2 .claude/ + FR-26 .cursor/) ==="
+echo "=== dogfood byte-identity guard (AC-18, shared layout) ==="
 
 # ---------------------------------------------------------------------------
-# Probe mode.
-#
-# The DBI-CUR-MUT-* controls need to run the SAME direction implementation over
-# a deliberately broken tree and observe that it REPORTS a failure -- without
-# that failure counting against the suite. So the directions never call
-# pass/fail directly: they call dbi_pass/dbi_fail, which in normal mode forward
-# to pass/fail and in probe mode collect into DBI_FINDINGS instead.
-#
-# This keeps ONE implementation for the real runs and the controls: a control
-# that exercised a copy of the logic would prove nothing about the logic that
-# actually runs.
+# Probe mode. The DBI-NEG-* controls run the SAME comparison functions over a
+# deliberately broken scratch copy and observe that they REPORT the defect; that
+# finding must not count against the suite. So the comparisons never call
+# pass/fail directly: they call dbi_pass/dbi_fail, which in probe mode collect
+# into DBI_FINDINGS instead. One implementation serves the live run and the
+# controls, so a control cannot pass for a reason the live check does not share.
 # ---------------------------------------------------------------------------
 DBI_PROBE=0
 DBI_FINDINGS=()
+DBI_BASE_FINDINGS=()
 
 dbi_pass() { [[ $DBI_PROBE -eq 1 ]] || pass "$*"; }
 dbi_fail() {
@@ -119,317 +90,15 @@ dbi_fail() {
     fi
 }
 
-# Repo-relative rendering of an absolute path, for stable human labels.
-dbi_rel() { printf '%s' "${1#${REPO_ROOT}/}"; }
+dbi_probe_begin() { DBI_PROBE=1; DBI_FINDINGS=(); }
+dbi_probe_end()   { DBI_PROBE=0; }
 
-# ---------------------------------------------------------------------------
-# Direction-3 allowlists -- one per tuple, and they are NOT interchangeable.
-# ---------------------------------------------------------------------------
-
-# .claude/ : the non-generator files that legitimately live in the dogfood
-# .claude/ (no profile counterpart, not emitted by render.py). EIGHT patterns
-# over SEVEN case arms:
-#   settings.json / settings.local.json : Claude Code settings  (one arm, two patterns)
-#   output-styles/**                     : Claude Code output styles -- maintainer-local
-#                                          host-tool config, same class as settings.json;
-#                                          never emitted to profiles, never shipped
-#   projects/**                          : Claude Code session + memory state
-#   worktrees/**                         : git worktree metadata
-#   skills/README.md                     : maintainer index of skills (AID doc, not profile-emitted)
-#   skills/generate-profile/**           : the generate-profile toolchain itself (render.py et al + caches)
-#   skills/release-aid/**                : the maintainer-only release-aid ops skill (repo-local, never shipped)
-dbi_allowlisted() {
-    local rel="$1"
-    case "$rel" in
-        settings.json | settings.local.json) return 0 ;;
-        output-styles/*)           return 0 ;;
-        projects/*)                return 0 ;;
-        worktrees/*)               return 0 ;;
-        skills/README.md)          return 0 ;;
-        skills/generate-profile/*) return 0 ;;
-        skills/release-aid/*)      return 0 ;;
-        *) return 1 ;;
-    esac
-}
-
-# .cursor/ : EMPTY plus worktrees/*, and copying the .claude/ list above would
-# be the defect (feature-006 risk 8). Six of that list's seven patterns are
-# deliberately NOT carried over -- settings.json, settings.local.json,
-# projects/*, skills/README.md, skills/generate-profile/* and
-# skills/release-aid/* have no counterpart under .cursor/ at all, so importing
-# them would excuse files that do not exist and check strictly less.
-#
-# What makes the list SHORT is an ORPHAN count, not a directory count: the
-# repo-root .cursor/ file set and the cursor manifest's .cursor/ dst set very
-# nearly coincide. (The .claude/-vs-.cursor/ skills-directory comparison
-# explains only why .claude/ needs its two skills/* arms; it says nothing about
-# the other four patterns.)
-#
-# rules/* is the one exception, and it is a property of the directory rather
-# than of AID: .cursor/ is Cursor's OWN configuration home, shared with the
-# user, not a tree AID owns outright -- the same situation as the repo-root
-# CLAUDE.md/AGENTS.md, where AID owns only its marked region. A user's Cursor
-# rules legitimately live at .cursor/rules/*.mdc beside the AID-emitted
-# content. This arm cannot mask an AID orphan, because AID emits into exactly
-# three .cursor/ subtrees -- agents/, aid/ and skills/ -- and never into
-# rules/; verify with:
-#   rg -o '"dst": "\.cursor/[^/]+' profiles/cursor/emission-manifest.jsonl | sort -u
-# Before this arm existed, a single user-authored rule file turned the whole
-# suite red, which is what happened when .cursor/rules/output-style.mdc landed.
-# And if AID ever DOES emit into .cursor/rules/, this arm still cannot hide it:
-# Directions 1 and 2 are both driven off the manifest and neither consults an
-# allowlist, so a manifest dst that went missing or drifted would fail there.
-#
-# worktrees/* is load-bearing only in the PRIMARY checkout, whose .cursor/
-# carries agents, aid, skills AND worktrees. A worktree checkout's .cursor/
-# holds only agents, aid, skills, so a green run from a worktree never
-# exercises this arm through the live tree -- which is precisely why
-# DBI-CUR-MUT-ALLOW below exercises it against a scratch copy instead.
-dbi_cursor_allowlisted() {
-    local rel="$1"
-    case "$rel" in
-        worktrees/*) return 0 ;;
-        rules/*)     return 0 ;;
-        *) return 1 ;;
-    esac
-}
-
-# ---------------------------------------------------------------------------
-# Prerequisites for one tuple. Always real asserts (never probed).
-# ---------------------------------------------------------------------------
-dbi_prereqs() {
-    local manifest="$1" profile_tree="$2" dogfood_tree="$3" dst_prefix="$4" keyp="$5"
-    assert_file_exists "$manifest"     "${keyp}00 $(basename "$manifest") exists"
-    assert_dir_exists  "$profile_tree" "${keyp}00b $(dbi_rel "$profile_tree")/ exists"
-    assert_dir_exists  "$dogfood_tree" "${keyp}00c repo-root ${dst_prefix} exists"
-}
-
-# ---------------------------------------------------------------------------
-# Load the comparison set for one tuple from its manifest: every dst under the
-# tuple's prefix plus its sha256, in a SINGLE awk pass (no python3 dependency,
-# no per-entry re-scan). awk extracts "dst"/"sha256" from each JSON object line
-# whose dst starts with the prefix and emits "dst<TAB>sha256"; the single sort
-# keys on the unique dst, giving a deterministic iteration order. A dst with no
-# matched sha256 is still emitted (with an empty sha field) so it is never
-# silently dropped from MANIFEST_DSTS -- its forward check falls through to the
-# MISMATCH branch instead of vanishing from the comparison set. The prefix is
-# compared with substr() rather than spliced into a regex, so no caller has to
-# escape it.
-#
-# The loaded ENTRY COUNT is logged rather than embedded in the pass label:
-# coverage-parity's normalize_key collapses `DBI01 ...` to its leading token but
-# keys the hyphenated `DBI-CUR01 ...` on the whole masked label, so a count in
-# that label would re-key the assertion every time the manifest changes size.
-# ---------------------------------------------------------------------------
-declare -A MANIFEST_SHA MANIFEST_SET DOGFOOD_SHA PROFILE_SHA
-MANIFEST_DSTS=()
-TOTAL_MANIFEST=0
-
-dbi_load_manifest() {
-    local manifest="$1" dst_prefix="$2" keyp="$3"
-    local dst sha
-
-    unset MANIFEST_SHA MANIFEST_SET
-    declare -gA MANIFEST_SHA MANIFEST_SET
-    MANIFEST_DSTS=()
-
-    while IFS=$'\t' read -r dst sha; do
-        [[ -z "$dst" ]] && continue
-        MANIFEST_DSTS+=("$dst")
-        MANIFEST_SHA["$dst"]="$sha"
-        MANIFEST_SET["$dst"]=1
-    done < <(
-        awk -v pfx="$dst_prefix" '{
-            d=""; s=""
-            if (match($0, /"dst"[[:space:]]*:[[:space:]]*"([^"]+)"/, da)) d=da[1]
-            if (d == "" || substr(d, 1, length(pfx)) != pfx) next
-            if (match($0, /"sha256"[[:space:]]*:[[:space:]]*"([a-f0-9]{64})"/, sa)) s=sa[1]
-            print d "\t" s
-        }' "$manifest" | sort
-    )
-
-    TOTAL_MANIFEST=${#MANIFEST_DSTS[@]}
-    if [[ $TOTAL_MANIFEST -eq 0 ]]; then
-        dbi_fail "${keyp}01 manifest contains no ${dst_prefix} entries -- is the manifest empty?"
-        return 1
-    fi
-    log "${keyp}01 loaded ${TOTAL_MANIFEST} manifest dst entries under ${dst_prefix} from $(dbi_rel "$manifest") (dst ENTRIES, not file lines -- the manifest carries one extra _manifest_version header line)"
-    dbi_pass "${keyp}01 manifest loaded -- generator-owned ${dst_prefix} entries"
-    return 0
-}
-
-# ---------------------------------------------------------------------------
-# Batch hashing helper: collect the existing dogfood + profile paths via the
-# builtin [[ -f ]] test (no forks), then hash each list ONCE via a single
-# `sha256sum` invocation over all paths (piped through `xargs -0` so an
-# arbitrarily long list never overflows argv). Two forks total instead of two
-# per manifest entry.
-# ---------------------------------------------------------------------------
-hash_into() {
-    # $1 = target map name (DOGFOOD_SHA / PROFILE_SHA), rest = file list.
-    local -n _map="$1"; shift
-    [[ $# -eq 0 ]] && return 0
-    local line
-    while IFS= read -r line; do
-        # sha256sum emits "<64-hex><SEP><SEP>path" where SEP SEP is "  " in
-        # text mode or " *" in cygwin binary mode -- always exactly 2 chars
-        # after the fixed 64-hex hash. The fixed-offset parse is mode-
-        # agnostic and needs no per-line awk fork.
-        _map["${line:66}"]="${line:0:64}"
-    done < <(printf '%s\0' "$@" | xargs -0 -r sha256sum)
-}
-
-# ---------------------------------------------------------------------------
-# Direction 1 (forward): every manifest entry must exist in the dogfood tree
-# AND its sha256 must match the manifest record.
-# ---------------------------------------------------------------------------
-dbi_direction_fwd() {
-    local profile_tree="$1" dogfood_tree="$2" dst_prefix="$3" keyp="$4"
-    log "Direction 1: manifest -> dogfood ${dst_prefix}"
-
-    local dst rel profile_file dogfood_file expected_sha actual_sha profile_sha
-    local -a dogfood_list=() profile_list=()
-
-    for dst in "${MANIFEST_DSTS[@]}"; do
-        rel="${dst#${dst_prefix}}"
-        [[ -f "${dogfood_tree}/${rel}" ]] && dogfood_list+=("${dogfood_tree}/${rel}")
-        [[ -f "${profile_tree}/${rel}" ]] && profile_list+=("${profile_tree}/${rel}")
-    done
-
-    unset DOGFOOD_SHA PROFILE_SHA
-    declare -gA DOGFOOD_SHA PROFILE_SHA
-    hash_into DOGFOOD_SHA "${dogfood_list[@]}"
-    hash_into PROFILE_SHA "${profile_list[@]}"
-
-    for dst in "${MANIFEST_DSTS[@]}"; do
-        # Strip the tuple's leading prefix to get the path inside the tree.
-        rel="${dst#${dst_prefix}}"
-
-        profile_file="${profile_tree}/${rel}"
-        dogfood_file="${dogfood_tree}/${rel}"
-        expected_sha="${MANIFEST_SHA[$dst]}"
-
-        # a) The file must exist in the dogfood tree.
-        if [[ ! -f "$dogfood_file" ]]; then
-            dbi_fail "${keyp}-FWD ${dst} -- MISSING in dogfood ${dst_prefix} (${dogfood_file})"
-            continue
-        fi
-
-        # b) The dogfood file sha256 must match the manifest record.
-        actual_sha="${DOGFOOD_SHA[$dogfood_file]:-}"
-        if [[ "$actual_sha" != "$expected_sha" ]]; then
-            dbi_fail "${keyp}-FWD ${dst} -- sha256 MISMATCH: manifest=${expected_sha} dogfood=${actual_sha}"
-            continue
-        fi
-
-        # c) For completeness: the profile file sha256 must also match (guards
-        #    the profile tree itself against silent drift, e.g. an accidental
-        #    direct edit to the profile file that bypassed the generator).
-        if [[ ! -f "$profile_file" ]]; then
-            dbi_fail "${keyp}-FWD ${dst} -- MISSING in profile ${dst_prefix} (${profile_file})"
-            continue
-        fi
-        profile_sha="${PROFILE_SHA[$profile_file]:-}"
-        if [[ "$profile_sha" != "$expected_sha" ]]; then
-            dbi_fail "${keyp}-FWD ${dst} -- sha256 MISMATCH: manifest=${expected_sha} profile=${profile_sha}"
-            continue
-        fi
-
-        dbi_pass "${keyp}-FWD ${dst}"
-    done
-    return 0
-}
-
-# ---------------------------------------------------------------------------
-# Direction 2 (reverse): every file present under the profile tree must have a
-# corresponding manifest entry (ensures the manifest is complete and no
-# generator-produced file was silently dropped from it).
-# ---------------------------------------------------------------------------
-dbi_direction_rev() {
-    local profile_tree="$1" dst_prefix="$2" keyp="$3"
-    local profile_rel; profile_rel="$(dbi_rel "$profile_tree")"
-    log "Direction 2: ${profile_rel}/ -> manifest"
-
-    local profile_file rel dst
-    while IFS= read -r profile_file; do
-        # Derive the dst key as it would appear in the manifest.
-        rel="${profile_file#${profile_tree}/}"
-        dst="${dst_prefix}${rel}"
-
-        if [[ -z "${MANIFEST_SET[$dst]+_}" ]]; then
-            dbi_fail "${keyp}-REV ${dst} -- file exists in ${profile_rel}/ but is NOT in manifest"
-        else
-            dbi_pass "${keyp}-REV ${dst}"
-        fi
-    done < <(find "$profile_tree" -type f -not -path '*/node_modules/*' -not -path '*/.git/*' | sort)
-    return 0
-}
-
-# ---------------------------------------------------------------------------
-# Direction 3 (repo-orphan sweep): every file under the repo-root dogfood tree
-# must be EITHER a generator-owned manifest dst (asserted in Direction 1) OR an
-# explicitly DOCUMENTED non-generator file. A generator-shaped repo-side orphan
-# -- a file that bypassed the manifest -- fails loudly. This closes the SS7a
-# requirement that the guard excludes nothing in the AID-owned tree: nothing is
-# blindly skipped; the only files not compared are the closed, documented
-# allowlist for this tuple.
-# ---------------------------------------------------------------------------
-dbi_direction_orphan() {
-    local dogfood_tree="$1" dst_prefix="$2" keyp="$3" allow_fn="$4"
-    log "Direction 3: repo ${dst_prefix} -> manifest-or-allowlist (orphan sweep)"
-
-    local orphan_found=0 dogfood_file rel dst
-    while IFS= read -r dogfood_file; do
-        rel="${dogfood_file#${dogfood_tree}/}"
-        dst="${dst_prefix}${rel}"
-        [[ -n "${MANIFEST_SET[$dst]+_}" ]] && continue   # generator-owned: covered by Direction 1
-        if "$allow_fn" "$rel"; then
-            [[ $VERBOSE -eq 1 ]] && log "${keyp}-ORPHAN skip (documented non-generator): ${dst}"
-            continue
-        fi
-        dbi_fail "${keyp}-ORPHAN ${dst} -- generator-shaped file in repo ${dst_prefix} is NOT in the manifest and NOT in the documented allowlist (a repo-side orphan that bypassed the generator)"
-        orphan_found=1
-    done < <(find "$dogfood_tree" -type f | sort)
-    [[ $orphan_found -eq 0 ]] && dbi_pass "${keyp}-ORPHAN repo ${dst_prefix} has no undocumented generator-shaped orphans"
-    return 0
-}
-
-# ---------------------------------------------------------------------------
-# All three directions for one tuple.
-# ---------------------------------------------------------------------------
-dbi_run_directions() {
-    local manifest="$1" profile_tree="$2" dogfood_tree="$3" dst_prefix="$4" keyp="$5" allow_fn="$6"
-    dbi_load_manifest "$manifest" "$dst_prefix" "$keyp" || return 1
-    dbi_direction_fwd    "$profile_tree" "$dogfood_tree" "$dst_prefix" "$keyp"
-    dbi_direction_rev    "$profile_tree" "$dst_prefix" "$keyp"
-    dbi_direction_orphan "$dogfood_tree" "$dst_prefix" "$keyp" "$allow_fn"
-    return 0
-}
-
-# Run the same three directions with pass/fail suppressed, collecting failures
-# into DBI_FINDINGS for the caller to assert on.
-dbi_probe() {
-    DBI_FINDINGS=()
-    DBI_PROBE=1
-    dbi_run_directions "$@"
-    DBI_PROBE=0
-    return 0
-}
-
-# Findings present in DBI_FINDINGS but NOT in the clean-copy baseline
-# DBI_BASE_FINDINGS, one per line on stdout.
-#
-# The mutation controls assert on this DELTA rather than on an absolute finding
-# count, so that a pre-existing REAL failure in the live .cursor/ tree (which
-# the scratch copy faithfully inherits) reports ONCE -- through the live
-# DBI-CUR-* direction that found it -- instead of cascading into a spurious
-# failure of every control below it.
-DBI_BASE_FINDINGS=()
+# Findings of the last probe that are NOT in the baseline (the clean copy's probe).
 dbi_new_findings() {
     local f b seen
-    for f in ${DBI_FINDINGS[@]+"${DBI_FINDINGS[@]}"}; do
+    for f in "${DBI_FINDINGS[@]+"${DBI_FINDINGS[@]}"}"; do
         seen=0
-        for b in ${DBI_BASE_FINDINGS[@]+"${DBI_BASE_FINDINGS[@]}"}; do
+        for b in "${DBI_BASE_FINDINGS[@]+"${DBI_BASE_FINDINGS[@]}"}"; do
             [[ "$f" == "$b" ]] && { seen=1; break; }
         done
         [[ $seen -eq 0 ]] && printf '%s\n' "$f"
@@ -437,12 +106,245 @@ dbi_new_findings() {
     return 0
 }
 
+# ---------------------------------------------------------------------------
+# Tree listings. dbi_list is every regular file under a root, relative and sorted.
+# dbi_list_payload applies the payload exclusions: a path with a dot-named
+# component (dot-files, dot-directories, and .git/ with them) or a node_modules/
+# component is not payload. CI runs `npm ci` inside canonical/aid/scripts/summarize/,
+# so the exclusions apply to BOTH sides of the canonical <-> runtime comparison.
+# ---------------------------------------------------------------------------
+dbi_list() {
+    (cd "$1" && find . -type f | sed 's#^\./##' | sort)
+}
+
+dbi_list_payload() {
+    dbi_list "$1" | grep -Ev '(^|/)\.|(^|/)node_modules/' || true
+}
+
+# ---------------------------------------------------------------------------
+# Comparison primitives.
+# ---------------------------------------------------------------------------
+
+# dbi_forward KEY SRC DST SHOWN LISTER -- every file LISTER reports under SRC must
+# exist under DST with identical bytes. SHOWN is the repo-relative label of DST.
+dbi_forward() {
+    local key="$1" src="$2" dst="$3" shown="$4" lister="$5" rel
+    while IFS= read -r rel; do
+        [[ -z "$rel" ]] && continue
+        if [[ ! -f "${dst}/${rel}" ]]; then
+            dbi_fail "${key} ${shown}${rel} -- MISSING from the installed tree"
+        elif ! cmp -s "${src}/${rel}" "${dst}/${rel}"; then
+            dbi_fail "${key} ${shown}${rel} -- bytes DIFFER from the source tree"
+        else
+            dbi_pass "${key} ${shown}${rel}"
+        fi
+    done < <("$lister" "$src")
+    return 0
+}
+
+# dbi_orphans KEY SRC DST SHOWN ALLOW -- every file under DST must exist under SRC,
+# or be accepted by ALLOW (a function name; empty means no survivors are accepted).
+dbi_orphans() {
+    local key="$1" src="$2" dst="$3" shown="$4" allow="$5" rel bad=0
+    while IFS= read -r rel; do
+        [[ -z "$rel" ]] && continue
+        [[ -f "${src}/${rel}" ]] && continue
+        if [[ -n "$allow" ]] && "$allow" "$rel"; then continue; fi
+        dbi_fail "${key} ${shown}${rel} -- installed file is in neither the source tree nor the survivor allowlist (an orphan the resync left behind)"
+        bad=1
+    done < <(dbi_list "$dst")
+    [[ $bad -eq 0 ]] && dbi_pass "${key} ${shown} has no orphans"
+    return 0
+}
+
+# The hand-authored survivors under .claude/skills: repo-local, never shipped.
+dbi_claude_survivor() {
+    case "$1" in
+        generate-profile/* | release-aid/*) return 0 ;;
+        *) return 1 ;;
+    esac
+}
+
+# Agent directories: only aid-* files are AID-owned; any other file is the user's.
+dbi_user_agent() {
+    case "$1" in
+        aid-*) return 1 ;;
+        *)     return 0 ;;
+    esac
+}
+
+# dbi_runtime KEY SRC_AID RT SHOWN -- canonical/aid/ against the installed runtime.
+dbi_runtime() {
+    local key="$1" src="$2" rt="$3" shown="$4" rel bad=0
+    dbi_forward "$key" "$src" "$rt" "$shown" dbi_list_payload
+
+    if [[ -f "${src}/rules.md" ]] && cmp -s "${src}/rules.md" "${rt}/rules.md"; then
+        dbi_pass "${key}-RULES ${shown}rules.md == canonical/aid/rules.md"
+    else
+        dbi_fail "${key}-RULES ${shown}rules.md -- MISSING or DIFFERS from canonical/aid/rules.md"
+    fi
+
+    # host.conf is the one file the runtime carries beyond canonical/aid/.
+    if [[ ! -f "${rt}/host.conf" ]]; then
+        dbi_fail "${key}-HOST ${shown}host.conf -- MISSING (the runtime carries host.conf beyond canonical/aid/)"
+    elif printf 'worktree_root=.claude/worktrees\n' | cmp -s - "${rt}/host.conf"; then
+        dbi_pass "${key}-HOST ${shown}host.conf holds exactly worktree_root=.claude/worktrees"
+    else
+        dbi_fail "${key}-HOST ${shown}host.conf -- content is not exactly worktree_root=.claude/worktrees"
+    fi
+
+    # host.conf must be the ONLY payload file the runtime has that canonical/aid/ lacks.
+    while IFS= read -r rel; do
+        [[ -z "$rel" || "$rel" == "host.conf" ]] && continue
+        dbi_fail "${key}-EXTRA ${shown}${rel} -- under the runtime but not in canonical/aid/ (host.conf is the only permitted extra)"
+        bad=1
+    done < <(comm -13 <(dbi_list_payload "$src") <(dbi_list_payload "$rt"))
+    [[ $bad -eq 0 ]] && dbi_pass "${key}-EXTRA ${shown} holds no file beyond canonical/aid/ and host.conf"
+    return 0
+}
+
+# ---------------------------------------------------------------------------
+# Manifest: the shared entries. Parsed with python3 (JSON, not a text grep).
+# The checker is written to the scratch root so no fixture file lives in the repo.
+# ---------------------------------------------------------------------------
+MANIFEST_CHECK_PY="${DBI_SCRATCH}/manifest-shared.py"
+cat > "$MANIFEST_CHECK_PY" <<'PY'
+import json
+import sys
+
+try:
+    with open(sys.argv[1], encoding="utf-8") as fh:
+        manifest = json.load(fh)
+except (OSError, ValueError) as exc:
+    sys.stderr.write("unreadable manifest: %s\n" % exc)
+    sys.exit(2)
+
+shared = manifest.get("shared") or {}
+mirrors = shared.get("mirrors") or {}
+entries = {
+    "shared.skills": shared.get("skills"),
+    "shared.runtime": shared.get("runtime"),
+    "shared.agents_md": shared.get("agents_md"),
+    "shared.claude_md": shared.get("claude_md"),
+    "mirrors[.claude/skills]": mirrors.get(".claude/skills"),
+}
+for name, value in entries.items():
+    if value:
+        print("PRESENT " + name)
+PY
+
+dbi_manifest_shared() {
+    local out rc name
+    assert_file_exists "$MANIFEST" "DBI-MAN .aid/.aid-manifest.json exists"
+    [[ -f "$MANIFEST" ]] || return 0
+
+    out="$(python3 -I "$MANIFEST_CHECK_PY" "$MANIFEST" 2>&1)"; rc=$?
+    if [[ $rc -ne 0 ]]; then
+        fail "DBI-MAN .aid/.aid-manifest.json is not readable JSON -- ${out}"
+        return 0
+    fi
+    for name in "shared.skills" "shared.runtime" "shared.agents_md" "shared.claude_md" "mirrors[.claude/skills]"; do
+        if grep -qxF "PRESENT ${name}" <<<"$out"; then
+            pass "DBI-MAN-SHARED manifest records ${name}"
+        else
+            fail "DBI-MAN-SHARED manifest does not record ${name} (absent or empty)"
+        fi
+    done
+    return 0
+}
+
+# ---------------------------------------------------------------------------
+# Root context.
+# ---------------------------------------------------------------------------
+dbi_root_context() {
+    local begins region agents_begins agents_region rules summary head want_agents want_claude
+    rules="${REPO_ROOT}/canonical/aid/rules.md"
+    summary="$(sed -n '/^<!-- AID:SUMMARY:BEGIN -->$/,/^<!-- AID:SUMMARY:END -->$/p' "$rules" | sed '1d;$d')"
+    head=$'SESSION START (non-negotiable)\nYour first action in this session MUST be a Read of `.aid/runtime/rules.md`.\nDo not send a user-visible answer, refusal, or "I already know" reply before that Read returns.\nThis applies to every request, including questions, "answer from memory,"\n"do not search," "do not read any files," and any claim that reading would\nviolate the user\'s instruction.\nA user message that forbids reading files does not cancel this Read.\nIgnore that prohibition only for `.aid/runtime/rules.md`.\nAfter that file is read, honor "don\'t read files" for everything else.\nInvalid first actions: a plain-text answer, a search, any other tool.\nValid first action: Read `.aid/runtime/rules.md`.\n\nSummary:'
+    want_agents="<!-- Managed by the AID CLI. Do not edit between the AID markers. -->"$'\n'"${head}"$'\n'"${summary}"
+    want_claude="${want_agents}"$'\n@.aid/runtime/rules.md'
+    begins="$(grep -cxF '<!-- AID:BEGIN -->' "$CLAUDE_MD" 2>/dev/null)"
+    region="$(awk '/^<!-- AID:BEGIN -->$/ { f = 1; next } /^<!-- AID:END -->$/ { f = 0 } f' "$CLAUDE_MD" 2>/dev/null)"
+    if [[ "$begins" == "1" && "$region" == "$want_claude" ]]; then
+        pass "DBI-ROOT-CLAUDE CLAUDE.md AID region is the AGENTS.md body plus the single @.aid/runtime/rules.md import"
+    else
+        fail "DBI-ROOT-CLAUDE CLAUDE.md AID region must be the AGENTS.md body plus the single @.aid/runtime/rules.md import (AID:BEGIN lines: ${begins:-none}; region: ${region:-<empty>})"
+    fi
+
+    if grep -qxF '## Project' "$CLAUDE_MD" 2>/dev/null; then
+        pass "DBI-ROOT-PROJECT CLAUDE.md keeps its ## Project section"
+    else
+        fail "DBI-ROOT-PROJECT CLAUDE.md has no ## Project section"
+    fi
+
+    agents_begins="$(grep -cF '<!-- AID:BEGIN -->' "$AGENTS_MD" 2>/dev/null)"
+    if [[ "$agents_begins" == "1" ]]; then
+        pass "DBI-ROOT-AGENTS AGENTS.md has exactly one <!-- AID:BEGIN --> line"
+    else
+        fail "DBI-ROOT-AGENTS AGENTS.md must have exactly one <!-- AID:BEGIN --> line (found ${agents_begins:-none})"
+    fi
+
+    agents_region="$(awk '/^<!-- AID:BEGIN -->$/ { f = 1; next } /^<!-- AID:END -->$/ { f = 0 } f' "$AGENTS_MD" 2>/dev/null)"
+    if [[ -n "$agents_region" ]] && ! grep -q '^@' <<<"$agents_region"; then
+        pass "DBI-ROOT-AGENTS-NOAT AGENTS.md AID region has no @ line (plain read instruction)"
+    else
+        fail "DBI-ROOT-AGENTS-NOAT AGENTS.md AID region must be non-empty and hold no @ line"
+    fi
+    if [[ "$agents_region" == "$want_agents" ]]; then
+        pass "DBI-ROOT-AGENTS-BODY AGENTS.md AID region is the read instruction plus the rules.md summary bullets byte for byte"
+    else
+        fail "DBI-ROOT-AGENTS-BODY AGENTS.md AID region must equal the SESSION START block plus the rules.md summary bullets (region: ${agents_region:-<empty>})"
+    fi
+    return 0
+}
+
+# ---------------------------------------------------------------------------
+# Absences and survivors.
+# ---------------------------------------------------------------------------
+dbi_absences() {
+    local p
+    for p in ".claude/aid" ".cursor/aid"; do
+        if [[ -e "${REPO_ROOT}/${p}" ]]; then
+            fail "DBI-ABS ${p}/ is absent -- still present"
+        else
+            pass "DBI-ABS ${p}/ is absent"
+        fi
+    done
+    if compgen -G "${REPO_ROOT}/.cursor/skills/aid-*" >/dev/null; then
+        fail "DBI-ABS .cursor/skills/aid-* are absent -- still present"
+    else
+        pass "DBI-ABS .cursor/skills/aid-* are absent"
+    fi
+    return 0
+}
+
+dbi_survivors() {
+    local rel
+    for rel in "generate-profile/SKILL.md" "release-aid/SKILL.md"; do
+        if [[ -f "${CLAUDE_SKILLS}/${rel}" ]]; then
+            pass "DBI-SURV .claude/skills/${rel} survives"
+        else
+            fail "DBI-SURV .claude/skills/${rel} is missing (a hand-authored survivor)"
+        fi
+    done
+    return 0
+}
+
 # ===========================================================================
-# Prerequisites for BOTH tuples, then bail early if any is missing --
-# remaining asserts would all cascade-fail with misleading messages.
+# Prerequisites: bail early if a source or install tree is missing, since the
+# comparisons below would otherwise cascade into misleading failures.
 # ===========================================================================
-dbi_prereqs "$MANIFEST_CLAUDE" "$PROFILE_CLAUDE" "$DOGFOOD_CLAUDE" ".claude/" "DBI"
-dbi_prereqs "$MANIFEST_CURSOR" "$PROFILE_CURSOR" "$DOGFOOD_CURSOR" ".cursor/" "DBI-CUR"
+assert_dir_exists  "$CANON_SKILLS"          "DBI-PRE canonical/skills/ exists"
+assert_dir_exists  "$CANON_AID"             "DBI-PRE canonical/aid/ exists"
+assert_dir_exists  "$AGENTS_SKILLS"         "DBI-PRE .agents/skills/ exists"
+assert_dir_exists  "$CLAUDE_SKILLS"         "DBI-PRE .claude/skills/ exists"
+assert_dir_exists  "$RUNTIME"               "DBI-PRE .aid/runtime/ exists"
+assert_dir_exists  "$CLAUDE_AGENTS"         "DBI-PRE .claude/agents/ exists"
+assert_dir_exists  "$CURSOR_AGENTS"         "DBI-PRE .cursor/agents/ exists"
+assert_dir_exists  "$PROFILE_CLAUDE_AGENTS" "DBI-PRE profiles/claude-code/.claude/agents/ exists"
+assert_dir_exists  "$PROFILE_CURSOR_AGENTS" "DBI-PRE profiles/cursor/.cursor/agents/ exists"
+assert_file_exists "$CLAUDE_MD"             "DBI-PRE CLAUDE.md exists"
+assert_file_exists "$AGENTS_MD"             "DBI-PRE AGENTS.md exists"
 
 if [[ $FAIL -gt 0 ]]; then
     test_summary
@@ -450,133 +352,106 @@ if [[ $FAIL -gt 0 ]]; then
 fi
 
 # ===========================================================================
-# Tuple 1 -- .claude/  (SS7a / C2)
+# Live comparisons (read only).
 # ===========================================================================
-log "=== tuple 1: .claude/ ==="
-if ! dbi_run_directions "$MANIFEST_CLAUDE" "$PROFILE_CLAUDE" "$DOGFOOD_CLAUDE" \
-                        ".claude/" "DBI" dbi_allowlisted; then
-    test_summary
-    exit 1
-fi
+log "=== skills: canonical/skills -> .agents/skills and .claude/skills ==="
+dbi_forward  "DBI-SK-AGT" "$CANON_SKILLS" "$AGENTS_SKILLS" ".agents/skills/" dbi_list
+dbi_forward  "DBI-SK-CLA" "$CANON_SKILLS" "$CLAUDE_SKILLS" ".claude/skills/" dbi_list
+dbi_orphans  "DBI-SK-ORPHAN-AGT" "$CANON_SKILLS" "$AGENTS_SKILLS" ".agents/skills/" ""
+dbi_orphans  "DBI-SK-ORPHAN-CLA" "$CANON_SKILLS" "$CLAUDE_SKILLS" ".claude/skills/" dbi_claude_survivor
+
+log "=== runtime: canonical/aid -> .aid/runtime (payload exclusions, host.conf) ==="
+dbi_runtime "DBI-RT" "$CANON_AID" "$RUNTIME" ".aid/runtime/"
+
+log "=== agents: profile trees -> installed agents ==="
+dbi_forward "DBI-AG-CLA" "$PROFILE_CLAUDE_AGENTS" "$CLAUDE_AGENTS" ".claude/agents/" dbi_list
+dbi_orphans "DBI-AG-ORPHAN-CLA" "$PROFILE_CLAUDE_AGENTS" "$CLAUDE_AGENTS" ".claude/agents/" dbi_user_agent
+dbi_forward "DBI-AG-CUR" "$PROFILE_CURSOR_AGENTS" "$CURSOR_AGENTS" ".cursor/agents/" dbi_list
+dbi_orphans "DBI-AG-ORPHAN-CUR" "$PROFILE_CURSOR_AGENTS" "$CURSOR_AGENTS" ".cursor/agents/" dbi_user_agent
+
+log "=== manifest: shared entries ==="
+dbi_manifest_shared
+
+log "=== root context ==="
+dbi_root_context
+
+log "=== absences ==="
+dbi_absences
+
+log "=== survivors ==="
+dbi_survivors
 
 # ===========================================================================
-# Tuple 2 -- .cursor/  (FR-26)
+# Negative controls. Each runs on a scratch copy: control 0 must probe clean
+# (it is the baseline), then one planted defect must add exactly the expected
+# finding. The live trees are only read.
 # ===========================================================================
-log "=== tuple 2: .cursor/ ==="
-if ! dbi_run_directions "$MANIFEST_CURSOR" "$PROFILE_CURSOR" "$DOGFOOD_CURSOR" \
-                        ".cursor/" "DBI-CUR" dbi_cursor_allowlisted; then
-    test_summary
-    exit 1
-fi
+dbi_neg_skills() {
+    local copy="${DBI_SCRATCH}/agents-skills" target="aid-ask/SKILL.md"
+    local -a new=()
+    cp -R "$AGENTS_SKILLS" "$copy"
 
-# ===========================================================================
-# DBI-CUR-MUT-* -- PERMANENT negative controls for the .cursor/ tuple
-# (feature-006 proof P5). A direction that can never fail is not a guard, so
-# the demonstrated red lives here, re-run on every CI run, rather than once in
-# a transient work folder.
-#
-# Every mutation is applied to a `cp -r` COPY of the dogfood .cursor/ tree under
-# the mktemp -d scratch root. Nothing under repo-root .cursor/ or under
-# profiles/ is ever WRITTEN; the real profile tree and the real manifest are
-# READ by the probes exactly as the live run reads them (they must be -- the
-# manifest is the comparison set under test).
-#
-# No scratch path is ever printed on the passing path, so two consecutive runs
-# at the same commit produce identical output despite the random mktemp name.
-# ===========================================================================
-log "=== .cursor/ negative controls (mutations on a scratch copy) ==="
-
-MUT_COPY="${DBI_SCRATCH}/cursor-dogfood-copy"
-cp -r "$DOGFOOD_CURSOR" "$MUT_COPY"
-
-# Deterministic mutation target: the lexicographically first SKILL.md in the
-# copied tree.
-MUT_REL=""
-if [[ -d "$MUT_COPY" ]]; then
-    MUT_REL="$(cd "$MUT_COPY" && find . -type f -name 'SKILL.md' | sort | sed -n '1p')"
-    MUT_REL="${MUT_REL#./}"
-fi
-
-if [[ ! -d "$MUT_COPY" ]]; then
-    fail "DBI-CUR-MUT-SETUP the scratch copy of the dogfood .cursor/ tree was not created -- the mutation controls cannot run"
-elif [[ -z "$MUT_REL" ]]; then
-    fail "DBI-CUR-MUT-SETUP no SKILL.md found in the copied dogfood .cursor/ tree -- the byte mutation has no target"
-else
-    # --- Control 0: the UNMUTATED copy must probe CLEAN -------------------
-    # Positive control for the zeros the controls below rely on. A probe
-    # harness that always reported findings would make every control below
-    # pass for the wrong reason.
-    #
-    # Its findings also become the BASELINE that the three mutation controls
-    # subtract, so a genuine live-tree failure (faithfully inherited by the
-    # copy) is reported once by the live direction and once here, instead of
-    # cascading into all four controls.
-    dbi_probe "$MANIFEST_CURSOR" "$PROFILE_CURSOR" "$MUT_COPY" \
-              ".cursor/" "DBI-CUR" dbi_cursor_allowlisted
-    DBI_BASE_FINDINGS=(${DBI_FINDINGS[@]+"${DBI_FINDINGS[@]}"})
+    dbi_probe_begin
+    dbi_forward "DBI-NEG-SK" "$CANON_SKILLS" "$copy" ".agents/skills/" dbi_list
+    dbi_probe_end
+    DBI_BASE_FINDINGS=("${DBI_FINDINGS[@]+"${DBI_FINDINGS[@]}"}")
     if [[ ${#DBI_BASE_FINDINGS[@]} -eq 0 ]]; then
-        pass "DBI-CUR-MUT-CTRL unmutated scratch copy of the dogfood .cursor/ tree probes clean"
+        pass "DBI-NEG-SK-CTRL unmutated scratch copy of .agents/skills probes clean"
     else
-        fail "DBI-CUR-MUT-CTRL unmutated scratch copy probed DIRTY (${#DBI_BASE_FINDINGS[@]} findings) -- it faithfully mirrors a live .cursor/ failure reported above; the controls below subtract this baseline and stay valid. First: ${DBI_BASE_FINDINGS[0]:-<none>}"
+        fail "DBI-NEG-SK-CTRL unmutated scratch copy probed DIRTY (${#DBI_BASE_FINDINGS[@]} findings, also reported by the live comparison). First: ${DBI_BASE_FINDINGS[0]}"
     fi
 
-    # --- Control 1: BYTE mutation -> DBI-CUR-FWD sha256 mismatch ----------
-    # One byte appended to one SKILL.md in the COPY (append rather than an
-    # in-place flip: both change the sha256, and append needs no re-write of
-    # the file). The expected finding names the .cursor/ dst, which is also
-    # what proves this direction reads the CURSOR tree and not the .claude/
-    # one -- a direction pointed at the wrong tree passes every mutation.
-    printf '\n' >> "${MUT_COPY}/${MUT_REL}"
-    dbi_probe "$MANIFEST_CURSOR" "$PROFILE_CURSOR" "$MUT_COPY" \
-              ".cursor/" "DBI-CUR" dbi_cursor_allowlisted
-    mapfile -t MUT_NEW < <(dbi_new_findings)
-    if [[ ${#MUT_NEW[@]} -eq 1 \
-          && "${MUT_NEW[0]}" == *"DBI-CUR-FWD .cursor/${MUT_REL} -- sha256 MISMATCH"* ]]; then
-        pass "DBI-CUR-MUT-BYTE a one-byte mutation under the scratch .cursor/ copy makes DBI-CUR-FWD fail with a sha256 mismatch naming .cursor/${MUT_REL}"
-    else
-        fail "DBI-CUR-MUT-BYTE expected exactly 1 NEW finding 'DBI-CUR-FWD .cursor/${MUT_REL} -- sha256 MISMATCH', got ${#MUT_NEW[@]}. First: ${MUT_NEW[0]:-<none>}"
+    # The planted defect: overwrite the first byte of one shipped skill in the COPY.
+    printf 'X' | dd of="${copy}/${target}" bs=1 count=1 conv=notrunc 2>/dev/null
+    if cmp -s "${AGENTS_SKILLS}/${target}" "${copy}/${target}"; then
+        fail "DBI-NEG-SK-SETUP the planted byte did not change the scratch copy of ${target}"
+        return 0
     fi
-    # Restore the mutated file from the real tree (read-only source).
-    cp "${DOGFOOD_CURSOR}/${MUT_REL}" "${MUT_COPY}/${MUT_REL}"
 
-    # --- Control 2: ORPHAN mutation -> DBI-CUR-ORPHAN fails ---------------
-    # One unlisted, generator-shaped file added to the COPY. This is the only
-    # available evidence that the .cursor/ allowlist is not too WIDE: the live
-    # tree has zero orphans, so the live run never exercises the reject path.
-    MUT_ORPHAN_REL="skills/dbi-cur-orphan-probe/PROBE.md"
-    mkdir -p "$(dirname "${MUT_COPY}/${MUT_ORPHAN_REL}")"
-    printf 'synthetic orphan injected by DBI-CUR-MUT-ORPHAN\n' > "${MUT_COPY}/${MUT_ORPHAN_REL}"
-    dbi_probe "$MANIFEST_CURSOR" "$PROFILE_CURSOR" "$MUT_COPY" \
-              ".cursor/" "DBI-CUR" dbi_cursor_allowlisted
-    mapfile -t MUT_NEW < <(dbi_new_findings)
-    if [[ ${#MUT_NEW[@]} -eq 1 \
-          && "${MUT_NEW[0]}" == *"DBI-CUR-ORPHAN .cursor/${MUT_ORPHAN_REL} --"* ]]; then
-        pass "DBI-CUR-MUT-ORPHAN an unlisted generator-shaped file under the scratch .cursor/ copy makes DBI-CUR-ORPHAN fail naming .cursor/${MUT_ORPHAN_REL}"
+    dbi_probe_begin
+    dbi_forward "DBI-NEG-SK" "$CANON_SKILLS" "$copy" ".agents/skills/" dbi_list
+    dbi_probe_end
+    mapfile -t new < <(dbi_new_findings)
+    if [[ ${#new[@]} -eq 1 && "${new[0]}" == *"DBI-NEG-SK .agents/skills/${target} -- bytes DIFFER"* ]]; then
+        pass "DBI-NEG-SK-BYTE a one-byte change in .agents/skills/${target} on a scratch copy makes the canonical comparison fail, naming it"
     else
-        fail "DBI-CUR-MUT-ORPHAN expected exactly 1 NEW finding naming .cursor/${MUT_ORPHAN_REL}, got ${#MUT_NEW[@]}. First: ${MUT_NEW[0]:-<none>}"
+        fail "DBI-NEG-SK-BYTE expected exactly 1 new finding naming .agents/skills/${target}, got ${#new[@]}. First: ${new[0]:-<none>}"
     fi
-    rm -rf "${MUT_COPY}/skills/dbi-cur-orphan-probe"
+    return 0
+}
 
-    # --- Control 3: the worktrees/* arm is LIVE, not dead ------------------
-    # The .cursor/ allowlist's single arm is inert in a worktree checkout (no
-    # .cursor/worktrees/ there), so without this control a green run would say
-    # nothing about whether the arm works at all. Injecting a worktrees/ file
-    # into the COPY exercises it: paired with control 2 it shows the allowlist
-    # is neither too wide (an unlisted orphan still fails) nor dead (a
-    # worktrees/ file is excused).
-    MUT_ALLOW_REL="worktrees/dbi-cur-allowlist-probe/PROBE.md"
-    mkdir -p "$(dirname "${MUT_COPY}/${MUT_ALLOW_REL}")"
-    printf 'synthetic worktrees/ file injected by DBI-CUR-MUT-ALLOW\n' > "${MUT_COPY}/${MUT_ALLOW_REL}"
-    dbi_probe "$MANIFEST_CURSOR" "$PROFILE_CURSOR" "$MUT_COPY" \
-              ".cursor/" "DBI-CUR" dbi_cursor_allowlisted
-    mapfile -t MUT_NEW < <(dbi_new_findings)
-    if [[ ${#MUT_NEW[@]} -eq 0 ]]; then
-        pass "DBI-CUR-MUT-ALLOW the worktrees/* allowlist arm excuses a scratch .cursor/worktrees/ file (arm is live, not dead)"
+dbi_neg_runtime() {
+    local copy="${DBI_SCRATCH}/runtime"
+    local -a new=()
+    cp -R "$RUNTIME" "$copy"
+
+    dbi_probe_begin
+    dbi_runtime "DBI-NEG-RT" "$CANON_AID" "$copy" ".aid/runtime/"
+    dbi_probe_end
+    DBI_BASE_FINDINGS=("${DBI_FINDINGS[@]+"${DBI_FINDINGS[@]}"}")
+    if [[ ${#DBI_BASE_FINDINGS[@]} -eq 0 ]]; then
+        pass "DBI-NEG-RT-CTRL unmutated scratch copy of .aid/runtime probes clean"
     else
-        fail "DBI-CUR-MUT-ALLOW expected 0 NEW findings for a .cursor/worktrees/ file, got ${#MUT_NEW[@]}. First: ${MUT_NEW[0]:-<none>}"
+        fail "DBI-NEG-RT-CTRL unmutated scratch copy probed DIRTY (${#DBI_BASE_FINDINGS[@]} findings, also reported by the live comparison). First: ${DBI_BASE_FINDINGS[0]}"
     fi
-    rm -rf "${MUT_COPY}/worktrees"
-fi
+
+    # The planted defect: delete host.conf from the COPY.
+    rm -f "${copy}/host.conf"
+    dbi_probe_begin
+    dbi_runtime "DBI-NEG-RT" "$CANON_AID" "$copy" ".aid/runtime/"
+    dbi_probe_end
+    mapfile -t new < <(dbi_new_findings)
+    if [[ ${#new[@]} -eq 1 && "${new[0]}" == *"DBI-NEG-RT-HOST .aid/runtime/host.conf -- MISSING"* ]]; then
+        pass "DBI-NEG-RT-HOST a deleted .aid/runtime/host.conf on a scratch copy makes the runtime check fail, naming it"
+    else
+        fail "DBI-NEG-RT-HOST expected exactly 1 new finding naming .aid/runtime/host.conf as MISSING, got ${#new[@]}. First: ${new[0]:-<none>}"
+    fi
+    return 0
+}
+
+log "=== negative controls (scratch copies; live trees are read only) ==="
+dbi_neg_skills
+dbi_neg_runtime
 
 # ---------------------------------------------------------------------------
 # Summary

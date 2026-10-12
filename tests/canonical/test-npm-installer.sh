@@ -17,6 +17,7 @@ VERBOSE=0
 [[ "${1:-}" =~ ^(-v|--verbose)$ ]] && VERBOSE=1
 
 source "$(dirname "${BASH_SOURCE[0]}")/../lib/assert.sh"
+source "$(dirname "${BASH_SOURCE[0]}")/../lib/bundle.sh"
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd "${SCRIPT_DIR}/../.." && pwd)"
@@ -24,7 +25,7 @@ PKG_DIR="${REPO_ROOT}/packages/npm"
 SHIM="${PKG_DIR}/bin/aid.js"
 BIN_AID="${REPO_ROOT}/bin/aid"
 LIB_CORE="${REPO_ROOT}/lib/aid-install-core.sh"
-PROFILES_DIR="${REPO_ROOT}/profiles"
+LIB_PSM1="${REPO_ROOT}/lib/AidInstallCore.psm1"
 
 # Gate: skip when node is absent.
 if ! command -v node >/dev/null 2>&1; then
@@ -38,13 +39,36 @@ fi
 TMP=$(mktemp -d)
 trap 'cleanup_test' EXIT
 
-# Ensure vendor.js has been run so packages/npm/bin/aid exists.
-if [[ ! -f "${PKG_DIR}/bin/aid" ]]; then
-    node "${PKG_DIR}/scripts/vendor.js" >/dev/null 2>&1 || {
-        echo "ERROR: vendor.js failed; cannot continue" >&2
-        exit 1
-    }
-fi
+# Re-vendor on every run: packages/npm/{bin,lib,dashboard,chat-node,VERSION} are gitignored and
+# may be stale from an earlier build. The NM11 sha256 gate must compare the CURRENT lib/ with the
+# payload that would ship, so a stale payload is never accepted.
+node "${PKG_DIR}/scripts/vendor.js" >/dev/null 2>&1 || {
+    echo "ERROR: vendor.js failed; cannot continue" >&2
+    exit 1
+}
+
+# sha256 of one file (GNU sha256sum, or shasum on macOS). Prints the digest only.
+_sha256_of() {
+    if command -v sha256sum >/dev/null 2>&1; then
+        sha256sum "$1" | awk '{print $1}'
+    else
+        shasum -a 256 "$1" | awk '{print $1}'
+    fi
+}
+
+# assert_sha256_match <vendored-file> <repo-source-file> <label>
+# Emits an unconditional "PASS:" line (pass() prints only under --verbose).
+assert_sha256_match() {
+    local _got _want
+    _got="$(_sha256_of "$1" 2>/dev/null)"
+    _want="$(_sha256_of "$2" 2>/dev/null)"
+    if [[ -n "$_want" && "$_got" == "$_want" ]]; then
+        PASS=$((PASS + 1))
+        echo "PASS: $3 (sha256 ${_want})"
+    else
+        fail "$3 -- vendored sha256 '${_got:-missing}' != source '${_want:-missing}'"
+    fi
+}
 
 # ---------------------------------------------------------------------------
 # The shim always calls `bash <pkgRoot>/bin/aid`.
@@ -290,32 +314,20 @@ fi
 
 echo "=== NM10: npm pack + global install smoke ==="
 
-# Build fixture tarball for codex.
-mkdir -p "${TMP}/fixtures"
-build_fixture_tarball() {
-    local tool="$1"
-    local profile_dir="${PROFILES_DIR}/${tool}"
-    local tarball="${TMP}/fixtures/aid-${tool}-v${VERSION}.tar.gz"
-    [[ -d "$profile_dir" ]] || { echo "WARN: profile dir not found: $profile_dir"; return 1; }
-    local filelist
-    filelist="$(mktemp "${TMP}/filelist-${tool}.XXXXXX")"
-    while IFS= read -r f; do
-        local fname
-        fname="$(basename "$f")"
-        [[ "$fname" == "README.md" ]] && continue
-        [[ "$fname" == "emission-manifest.jsonl" ]] && continue
-        local rel="${f#${profile_dir}/}"
-        printf './%s\n' "$rel"
-    done < <(find "${profile_dir}" -type f | sort) > "$filelist"
-    (cd "${profile_dir}" && tar -czf "${tarball}" --no-recursion -T "${filelist}") || return 1
-    rm -f "$filelist"
-}
-
-if ! build_fixture_tarball codex; then
-    fail "NM10 could not build codex fixture tarball"
+# Release bundle (shared layout): release.sh --stage-only through tests/lib/bundle.sh stages
+# aid-shared-v<V>.tar.gz, aid-<tool>-v<V>.tar.gz, the CLI bundle, the libs and SHA256SUMS in one
+# directory. `aid add --from-bundle` takes that directory.
+NM10_BUNDLE_DIR="${TMP}/bundle"
+mkdir -p "${NM10_BUNDLE_DIR}"
+if ! aid_test_stage_bundle "${NM10_BUNDLE_DIR}" >"${TMP}/nm10-stage.log" 2>&1; then
+    fail "NM10 could not stage the release bundle (see ${TMP}/nm10-stage.log)"
     test_summary
     exit $?
 fi
+assert_file_exists "${NM10_BUNDLE_DIR}/aid-shared-v${VERSION}.tar.gz" \
+    "NM10-00a staged bundle holds aid-shared-v${VERSION}.tar.gz"
+assert_file_exists "${NM10_BUNDLE_DIR}/aid-codex-v${VERSION}.tar.gz" \
+    "NM10-00b staged bundle holds aid-codex-v${VERSION}.tar.gz"
 
 # npm pack the package.
 NM10_PACK_DIR="$(mktemp -d "${TMP}/nm10-pack.XXXXXX")"
@@ -376,7 +388,7 @@ else
                 NM10_TARGET="$(mktemp -d "${TMP}/nm10-target.XXXXXX")"
                 NM10_ADD_OUT=$(AID_HOME="${NM10_AID_HOME}" AID_NO_UPDATE_CHECK=1 \
                     "${NM10_AID}" add codex \
-                    --from-bundle "${TMP}/fixtures/aid-codex-v${VERSION}.tar.gz" \
+                    --from-bundle "${NM10_BUNDLE_DIR}" \
                     --target "${NM10_TARGET}" 2>&1); NM10_ADD_RC=$?
                 assert_exit_eq "$NM10_ADD_RC" 0 \
                     "NM10-07 installed aid add codex --from-bundle -> exit 0"
@@ -391,6 +403,13 @@ else
         fi
     fi
 fi
+
+echo "=== NM11: vendored libs match the repo lib/ by sha256 ==="
+
+assert_sha256_match "${PKG_DIR}/lib/aid-install-core.sh" "${LIB_CORE}" \
+    "NM11-01 vendored lib/aid-install-core.sh sha256 matches lib/aid-install-core.sh"
+assert_sha256_match "${PKG_DIR}/lib/AidInstallCore.psm1" "${LIB_PSM1}" \
+    "NM11-02 vendored lib/AidInstallCore.psm1 sha256 matches lib/AidInstallCore.psm1"
 
 # ---------------------------------------------------------------------------
 # ASCII-only assert on the shim.

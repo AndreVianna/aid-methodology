@@ -101,11 +101,11 @@ jobs:
           esac
           echo "VERSION=${VERSION}" >> "$GITHUB_ENV"
           echo "version=${VERSION}" >> "$GITHUB_OUTPUT"
-          # Pre-release detection (PyPI-only beta channel): a PEP 440 (2.2.3b1 /
-          # 2.2.3rc1 / 2.2.3a1) or SemVer (2.2.3-beta.1) pre-release marker after
-          # the X.Y.Z triple. Betas publish to PyPI ONLY -- github-release and
-          # npm-publish are skipped for them (a beta bumps only VERSION +
-          # pyproject.toml + the tag; npm stays on the last stable). Regex mirrors
+          # Pre-release detection (beta channel): a PEP 440 (2.2.3b1 / 2.2.3rc1 /
+          # 2.2.3a1) or SemVer (2.2.3-beta.1) pre-release marker after the X.Y.Z
+          # triple. Betas publish to PyPI and to a GitHub Release marked
+          # --prerelease; npm-publish is skipped for them (package.json stays on
+          # the last stable). The regex mirrors
           # canonical/aid/scripts/release/check-version-sync.sh _is_prerelease().
           if [[ "$VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+([._-]?(alpha|beta|preview|pre|rc|a|b|c)[0-9]*|-[0-9A-Za-z.-]+)$ ]]; then
             echo "is_prerelease=true" >> "$GITHUB_OUTPUT"
@@ -169,24 +169,23 @@ jobs:
       - name: generator unit self-tests
         run: |
           python .claude/skills/generate-profile/scripts/render_lib.py --self-test
-          python .claude/skills/generate-profile/scripts/test_manifest_safety.py --self-test
           python .claude/skills/generate-profile/scripts/render.py --self-test --canonical-root .
           python .claude/skills/generate-profile/scripts/verify_deterministic.py --self-test --canonical-root .
           python .claude/skills/generate-profile/scripts/verify_advisory.py --self-test --canonical-root .
 
   # --------------------------------------------------------------------------
-  # github-release — build the 5 profile tarballs + CLI bundle + SHA256SUMS
-  # and create the GitHub Release via release.sh.  Runs first (before npm/PyPI)
-  # so the authoritative artifact channel is established before the package
-  # registries are hit.
+  # github-release — build the shared payload, one agents-only artifact per tool,
+  # the CLI bundle and SHA256SUMS, and create the GitHub Release via release.sh.
+  # Runs first (before npm/PyPI) so the authoritative artifact channel is
+  # established before the package registries are hit.
   # --------------------------------------------------------------------------
   github-release:
-    name: github-release (tarballs + SHA256SUMS)
+    name: github-release (shared + tool artifacts + CLI + SHA256SUMS)
     needs: [gate]
     # Runs for BOTH stable and pre-release. On a pre-release the Release is marked
-    # --prerelease (see the release.sh step below): it carries the beta skill
-    # tarballs for testers but is excluded from /releases/latest, so a normal
-    # `aid update` still resolves the stable release.
+    # --prerelease (see the release.sh step below): it carries the shared payload
+    # and tool artifacts for testers but is excluded from /releases/latest, so a
+    # normal `aid update` still resolves the stable release.
     runs-on: ubuntu-24.04
     env:
       VERSION: ${{ needs.gate.outputs.version }}
@@ -200,14 +199,13 @@ jobs:
         with:
           python-version: '3.11'
 
-      - name: Build tarballs + SHA256SUMS + GitHub Release (feature-002 release.sh)
+      - name: Build release artifacts + SHA256SUMS + GitHub Release (release.sh)
         shell: bash
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
           set -euo pipefail
-          # On a pre-release, mark the GitHub Release --prerelease: it carries the
-          # beta skill tarballs but stays out of /releases/latest.
+          # On a pre-release, mark the GitHub Release --prerelease so it stays out of /releases/latest.
           PRE=""
           [ "${{ needs.gate.outputs.is_prerelease }}" = "true" ] && PRE="--prerelease"
           if [ "${{ inputs.dry_run }}" = "true" ]; then
@@ -232,8 +230,8 @@ jobs:
   npm-publish:
     name: npm-publish (aid-installer)
     needs: [gate, github-release]
-    # Stable only: npm ships no pre-releases (github-release also skips on a
-    # pre-release, so this would auto-skip anyway; the explicit guard documents it).
+    # Stable only: npm ships no pre-releases. github-release does run on a
+    # pre-release, so this guard is what keeps a beta off npm.
     if: ${{ vars.NPM_ENABLED == 'true' && needs.gate.outputs.is_prerelease != 'true' }}
     runs-on: ubuntu-24.04
     env:
@@ -304,10 +302,10 @@ jobs:
   pypi-publish:
     name: pypi-publish (aid-installer)
     needs: [gate, github-release]
-    # Runs for BOTH stable and pre-release. On a pre-release github-release is
-    # skipped, so a plain `needs` would auto-skip pypi-publish too; `!cancelled()`
-    # lets this job evaluate its own condition instead. Guards: gate must have
-    # passed, and github-release must not have FAILED (skipped is fine = beta).
+    # Runs for BOTH stable and pre-release. Guards: gate must have passed, and
+    # github-release must not have FAILED. `!cancelled()` is used instead of a
+    # plain `needs` check, which would auto-skip this job whenever github-release
+    # is skipped, so this job's own guards decide.
     if: ${{ !cancelled() && needs.gate.result == 'success' && needs.github-release.result != 'failure' && vars.PYPI_ENABLED == 'true' }}
     runs-on: ubuntu-24.04
     env:

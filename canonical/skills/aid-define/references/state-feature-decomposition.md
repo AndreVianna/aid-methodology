@@ -4,10 +4,10 @@ Requirements are approved and `REQUIREMENTS.md § 11 Features` has no feature se
 
 Emit pipeline phase (silent state-write only — no output, no gate):
 ```
-bash canonical/aid/scripts/execute/writeback-state.sh --pipeline --field Lifecycle --value Running
-bash canonical/aid/scripts/execute/writeback-state.sh --pipeline --field Phase --value Define
-bash canonical/aid/scripts/execute/writeback-state.sh --pipeline --field "Active Skill" --value aid-define
-bash canonical/aid/scripts/execute/writeback-state.sh --pipeline --field Updated --value "$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+bash .aid/runtime/scripts/execute/writeback-state.sh --pipeline --field Lifecycle --value Running
+bash .aid/runtime/scripts/execute/writeback-state.sh --pipeline --field Phase --value Define
+bash .aid/runtime/scripts/execute/writeback-state.sh --pipeline --field "Active Skill" --value aid-define
+bash .aid/runtime/scripts/execute/writeback-state.sh --pipeline --field Updated --value "$(date -u +%Y-%m-%dT%H:%M:%SZ)"
 ```
 
 **Agent:** This is design work, not interview work. Dispatch with `subagent_type: aid-architect` (overriding the default `aid-interviewer`). Print before dispatch: `[State 5] Dispatching aid-architect for Feature Decomposition.`

@@ -11,7 +11,7 @@ Before presenting for approval, verify:
       behaviour plus how to reproduce it. A judgment criterion must state what is
       judged and against what standard. Anything nothing could falsify is not a
       criterion; send it back rather than approving it
-      (`canonical/aid/templates/requirements/requirements-template.md
+      (`.aid/runtime/templates/requirements/requirements-template.md
       § Verifiable Acceptance Criteria`)
 - [ ] No contradictions between sections
 - [ ] Scope (§4) is consistent with Functional Requirements (§5)
@@ -131,9 +131,9 @@ Is there anything else we should consider, or are the requirements ready?
   - Print: `✅ Requirements approved.`
   - Emit pipeline pause signal (silent state-write — no output, no gate):
     ```
-    bash canonical/aid/scripts/execute/writeback-state.sh --pipeline --field Lifecycle --value "Paused-Awaiting-Input"
-    bash canonical/aid/scripts/execute/writeback-state.sh --pipeline --field "Pause Reason" --value "Requirements approved — run /aid-define {work} to decompose into features"
-    bash canonical/aid/scripts/execute/writeback-state.sh --pipeline --field Updated --value "$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+    bash .aid/runtime/scripts/execute/writeback-state.sh --pipeline --field Lifecycle --value "Paused-Awaiting-Input"
+    bash .aid/runtime/scripts/execute/writeback-state.sh --pipeline --field "Pause Reason" --value "Requirements approved — run /aid-define {work} to decompose into features"
+    bash .aid/runtime/scripts/execute/writeback-state.sh --pipeline --field Updated --value "$(date -u +%Y-%m-%dT%H:%M:%SZ)"
     ```
   - Print the pause reason and resume command: `[Pause] Requirements approved. Run /aid-define {work} to decompose into features.` and exit (this state is **PAUSE-FOR-USER-DECISION** — does NOT auto-chain).
 

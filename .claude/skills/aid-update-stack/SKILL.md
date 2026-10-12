@@ -11,7 +11,7 @@ description: >
   rather than the stack record, use `/aid-create-config` or `/aid-update-config`. Produced
   by the aid-architect agent and independently verified by aid-reviewer (full verify).
   Allocates a work-NNN folder.
-allowed-tools: Read, Glob, Grep, Bash, Write, Edit, Agent
+allowed-tools: Read Glob Grep Bash Shell Terminal Write Edit Agent
 argument-hint: "<change> -- what to revise in the technology-stack record"
 ---
 
@@ -19,7 +19,7 @@ argument-hint: "<change> -- what to revise in the technology-stack record"
 
 Bind **VERB=`update`**, **ARTIFACT=`stack`** -- the `update` *stage* in the contract's
 vocabulary -- then follow the shared contract at
-`.claude/aid/templates/design-lifecycle.md`. This skill binds that contract and restates
+`.aid/runtime/templates/design-lifecycle.md`. This skill binds that contract and restates
 none of its rules.
 
 - **Boundary vs `/aid-create-stack`:** that skill realizes a seed and owns the creation path;
@@ -40,7 +40,7 @@ line on each state.
 1. **Require a stated change.** Empty argument -> ask one bootstrapping question ("What
    should change in the technology-stack record?") and wait.
 2. **Allocate** through the Work Initiation Gate exactly as the contract's Allocation rule
-   requires (`.claude/skills/aid-design/SKILL.md` INTAKE step 4 is the shape), with
+   requires (`.agents/skills/aid-design/SKILL.md` INTAKE step 4 is the shape), with
    `initiator: aid-update-stack`. `phase` is not driven.
 3. **No seed is required.** The change stated in this run is a sufficient input, and this
    skill completes without a seed. **Read and consume one when present** at
@@ -49,7 +49,7 @@ line on each state.
 4. **Resolve the destination by concern.** This skill binds concern **C0** (technology). Where
    a seed supplied a `## Destination`, use it; otherwise apply the concern rule here --
    resolve C0 against `.aid/settings.yml` `knowledge.doc_set`, falling back to the C0 row of
-   `.claude/aid/templates/kb-authoring/domain-doc-matrix.md` -- and **confirm the resolution
+   `.aid/runtime/templates/kb-authoring/domain-doc-matrix.md` -- and **confirm the resolution
    with the user before writing**. Never resolve silently.
 5. **Read the whole destination**, and note its `source:` field. Absent destination -> route
    to `/aid-create-stack` and write nothing.

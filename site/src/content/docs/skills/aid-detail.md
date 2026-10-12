@@ -10,7 +10,7 @@ generatedFrom: 'canonical/skills/aid-detail/SKILL.md'
 
 - **`name`** — aid-detail
 - **`description`** — Break deliverables into small, dependency-driven, typed tasks -- each one a reviewable unit. The ultimate breakdown. Use this skill when a delivery has been planned and the actual work items are needed before execution starts. It detects each task's type from the SPEC's own signals -- RESEARCH, DESIGN, IMPLEMENT, TEST, DOCUMENT, MIGRATE, REFACTOR, CONFIGURE -- gives every task exactly one type, and builds the delivery's execution graph with explicit dependencies and the parallelism they allow.
-- **`allowed-tools`** — Read, Glob, Grep, Write, Edit, Bash
+- **`allowed-tools`** — Read Glob Grep Write Edit Bash Shell Terminal
 - **`argument-hint`** — work-001 (required if multiple works)  [--reset] clear deliveries/delivery-NNN/tasks/
 
 [Definition: `canonical/skills/aid-detail/SKILL.md`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-detail/SKILL.md)
@@ -55,7 +55,7 @@ Every node in the chart above, in chart order, with the exact `canonical/` text 
 | REVIEW | `references/review.md` | `aid-reviewer` | `→ DONE` |
 ~~~~
 
-[Source: `canonical/skills/aid-detail/SKILL.md#L87`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-detail/SKILL.md#L87) · [full step: `canonical/skills/aid-detail/references/review.md#L1-L82`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-detail/references/review.md#L1-L82)
+[Source: `canonical/skills/aid-detail/SKILL.md#L87`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-detail/SKILL.md#L87) · [full step: `canonical/skills/aid-detail/references/review.md#L1-L83`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-detail/references/review.md#L1-L83)
 
 <a id="fragment-n3"></a>**3 · `DONE`** · _exit_ · HALT
 

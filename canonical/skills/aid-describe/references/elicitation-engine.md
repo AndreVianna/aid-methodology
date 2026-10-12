@@ -11,12 +11,12 @@ precedent, not as a live three-parameter consumer -- see "Consumption Contract" 
 works, and the feature implementations that invoke or extend the engine.
 
 **Cross-references.**
-- `canonical/skills/aid-describe/references/move-playbook.md` -- the ten moves and
+- `.agents/skills/aid-describe/references/move-playbook.md` -- the ten moves and
   the gap-type -> move firing table that Step 3 (MOVE SELECTION) reads each turn.
-- `canonical/skills/aid-describe/references/calibration.md` -- the continuous
+- `.agents/skills/aid-describe/references/calibration.md` -- the continuous
   read+ask design, the `Unknown | Expert | Mixed | Novice` state, and the
   depth-shaping rules that Step 4 (CALIBRATION SHAPING) applies.
-- `canonical/skills/aid-describe/references/advisor-stance.md` -- the NFR-7
+- `.agents/skills/aid-describe/references/advisor-stance.md` -- the NFR-7
   question-envelope template, the pre-emit self-check, and the five expert-advisor
   user-move handlers that Step 5 (ENVELOPE + EMIT) applies.
 
@@ -147,9 +147,9 @@ runs Steps 1-5 on every turn until the stop check fires.
 | Input | Source |
 |-------|--------|
 | Gap inventory | Supplied by the consumer at invocation time (see Consumption Contract) |
-| Move playbook | `canonical/skills/aid-describe/references/move-playbook.md` |
-| Calibration state | `canonical/skills/aid-describe/references/calibration.md` |
-| NFR-7 invariant | `canonical/skills/aid-describe/references/advisor-stance.md` |
+| Move playbook | `.agents/skills/aid-describe/references/move-playbook.md` |
+| Calibration state | `.agents/skills/aid-describe/references/calibration.md` |
+| NFR-7 invariant | `.agents/skills/aid-describe/references/advisor-stance.md` |
 
 ---
 
@@ -203,7 +203,7 @@ contents vary by consumer.
 
 **The selected gap's type determines the move.**
 
-Delegate to `canonical/skills/aid-describe/references/move-playbook.md`. Read the
+Delegate to `.agents/skills/aid-describe/references/move-playbook.md`. Read the
 gap-type -> move firing table in that doc's section "Gap-Type to Move Firing Table."
 The engine does not pick a move by position in a sequence; it reads the gap type and
 looks up the table every turn.
@@ -235,7 +235,7 @@ is. The sequence emerges from the gap inventory, not from a preset move order.
 
 **The chosen move's depth is shaped by calibration state before it is emitted.**
 
-Delegate to `canonical/skills/aid-describe/references/calibration.md`. Read the
+Delegate to `.agents/skills/aid-describe/references/calibration.md`. Read the
 Depth-Shaping Table in that doc. Apply depth shaping to the move chosen in Step 3
 before proceeding to Step 5.
 
@@ -259,7 +259,7 @@ conversations (the AC-4 divergence test in calibration.md).
 **Wrap the shaped question in the NFR-7 envelope, run the pre-emit self-check, then
 emit.**
 
-Delegate to `canonical/skills/aid-describe/references/advisor-stance.md`:
+Delegate to `.agents/skills/aid-describe/references/advisor-stance.md`:
 
 - **NFR-7 envelope template** (advisor-stance.md "The Envelope Template"): every
   emitted question carries context, the question itself, a concrete `Suggested:`
@@ -319,7 +319,7 @@ reusability precedent for the reflect-back turn: it reuses the D1 opener's UX sh
 fixed "what + why" example-anchored capture, `Suggested:`/`Why:` non-optional) as a
 one-shot single-turn capture, but it does NOT run the adaptive loop -- it has no gap
 inventory, no stop predicate, and no record sink of its own (it is suggest-only; see
-`canonical/skills/aid-triage/SKILL.md`). It is a UX-shape consumer, not a three-parameter
+`.agents/skills/aid-triage/SKILL.md`). It is a UX-shape consumer, not a three-parameter
 consumer of this Consumption Contract.
 
 **Opener de-dup.** The opener fires exactly once per work, at `state-continue.md`'s

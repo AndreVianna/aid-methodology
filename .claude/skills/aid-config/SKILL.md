@@ -6,7 +6,7 @@ description: >
   grade. A bare invocation prints every value in a table and, on the first run, creates
   `.aid/settings.yml` from the template. Passing a key -- `/aid-config` name -- views and
   updates that one setting interactively.
-allowed-tools: Read, Glob, Grep, Bash, Write, Edit, AskUserQuestion
+allowed-tools: Read Glob Grep Bash Shell Terminal Write Edit AskUserQuestion
 argument-hint: "(none) view all  |  <key> view+update one (e.g., name, minimum_grade)"
 ---
 
@@ -40,7 +40,7 @@ Examples: `/aid-config name`, `/aid-config minimum_grade`,
 
 If `.aid/settings.yml` is missing:
 - Create `.aid/` directory if absent (do NOT touch `.aid/knowledge/` or other subdirs).
-- Copy `.claude/aid/templates/settings.yml` → `.aid/settings.yml` verbatim.
+- Copy `.aid/runtime/templates/settings.yml` → `.aid/settings.yml` verbatim.
 - Print: `Created .aid/settings.yml from template.`
 
 ### Step 2: Render the table
@@ -93,7 +93,7 @@ Same as Mode 1 Step 1.
 
 Run:
 ```bash
-bash .claude/aid/scripts/config/read-setting.sh --path <key> --default '(unset)'
+bash .aid/runtime/scripts/config/read-setting.sh --path <key> --default '(unset)'
 ```
 
 Print: `Current value of <key>: <value>`.
@@ -184,17 +184,17 @@ Consumer skills (`/aid-discover`, `/aid-execute`, etc.) resolve `minimum_grade` 
 1. **`minimum_grade` in `.aid/settings.yml`** — use if present
 2. **Hardcoded skill default** — use only if `.aid/settings.yml` is missing entirely, or the key is unset
 
-The canonical resolution helper is `.claude/aid/scripts/config/read-setting.sh`. Consumer skills invoke:
+The canonical resolution helper is `.aid/runtime/scripts/config/read-setting.sh`. Consumer skills invoke:
 
 ```bash
-bash .claude/aid/scripts/config/read-setting.sh --key minimum_grade --default A
+bash .aid/runtime/scripts/config/read-setting.sh --key minimum_grade --default A
 ```
 
 ---
 
 ## Schema reference
 
-Canonical schema: `.claude/aid/templates/settings.yml`. Flat top-level scalar keys
+Canonical schema: `.aid/runtime/templates/settings.yml`. Flat top-level scalar keys
 (`name`, `description`, `type`, `source_control`, `minimum_grade`, `heartbeat_interval`) as
 described in the tables above. The `knowledge:` block is producer-written — see
 *Internal keys* above, not user-configurable via this skill.

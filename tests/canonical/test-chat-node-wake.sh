@@ -41,7 +41,7 @@
 # Skill (task-020, AC-15)
 #   WK21  the skill's verb list is exactly what the surface boundary permits
 #   WK22  the skill documents no `wait`, and no administrative operation
-#   WK23  it renders into all five profiles with a byte-identical body
+#   WK23  the shared source carries the tool-neutral allowed-tools contract
 #
 # WK20 is the regression test for a defect this suite found: the adapters waited for a message to
 # ARRIVE and never noticed one already pending, which broke the entire busy path.
@@ -544,29 +544,14 @@ for forbidden in subscribe wait node reap peers; do
 done
 pass "WK22 the canonical skill documents no wait, no node lifecycle, and no administrative verb"
 
-# Each RENDERED copy is checked ON ITS OWN, and against the CANONICAL body rather than against the
-# other renders. Comparing the renders only to each other would pass a generator that mangled all
-# five identically -- which is the failure a generator is most likely to have.
-canon_body="$(sed -n '/^---$/,/^---$/!p' "$SKILL" | md5sum | cut -d' ' -f1)"
-rendered=0
-for prof in "claude-code/.claude" "codex/.codex" "cursor/.cursor" "copilot-cli/.github" "antigravity/.agent"; do
-    f="${REPO_ROOT}/profiles/${prof}/skills/aid-chat/SKILL.md"
-    [[ -f "$f" ]] || continue
-    rendered=$((rendered+1))
-    if [[ "$(_verbs_in "$f")" != "$permitted" ]]; then
-        fail "WK23 the rendered skill at ${prof} has the wrong verb list: $(_verbs_in "$f")"
-    fi
-    for forbidden in subscribe wait node reap peers; do
-        if grep -qE "^aid chat ${forbidden}\b" "$f"; then
-            fail "WK23 the rendered skill at ${prof} documents the forbidden '${forbidden}'"
-        fi
-    done
-    if [[ "$(sed -n '/^---$/,/^---$/!p' "$f" | md5sum | cut -d' ' -f1)" != "$canon_body" ]]; then
-        fail "WK23 the rendered skill at ${prof} differs in body from the canonical source"
-    fi
-done
-assert_eq "$rendered" "5" "WK23 the skill renders into all five profiles"
-pass "WK23 every rendered copy carries the permitted verb list, none of the forbidden ones, and a body identical to the canonical source"
+# Skills are final shared content, not profile-rendered trees. Protect the canonical
+# source's cross-tool aliases; WK21/WK22 above cover the allowed verb surface.
+allowed_tools="$(sed -n 's/^allowed-tools:[[:space:]]*//p' "$SKILL" | head -1)"
+if [[ "$allowed_tools" == *Bash* && "$allowed_tools" == *Shell* && "$allowed_tools" == *Terminal* && "$allowed_tools" != *,* ]]; then
+    pass "WK23 the shared skill carries Bash, Shell, and Terminal aliases in its final source"
+else
+    fail "WK23 the shared skill lacks the tool-neutral allowed-tools contract: ${allowed_tools}"
+fi
 
 # --- the install document (task-022) ------------------------------------------
 # This document is part of SATISFYING AC-24 rather than commentary on it: where a host raises an

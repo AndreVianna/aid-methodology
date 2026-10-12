@@ -15,7 +15,6 @@ sources:
   - dashboard/
   - site/
   - tests/
-  - canonical/EMISSION-MANIFEST.md
 tags: [C2, modules, dependencies, components, wiring, test-coverage]
 see_also: [project-structure.md, architecture.md, artifact-schemas.md, integration-map.md]
 owner: architect
@@ -48,8 +47,8 @@ it produces. The modules fall into four planes:
    CLI, install-core, packages, release tooling).
 2. **Toolkit plane** -- the AID content itself, authored once in `canonical/`
    (skills, agents, scripts, templates).
-3. **Render plane** -- the profile renderer that mirrors `canonical/` into five
-   per-tool `profiles/` trees under an emission-manifest safety boundary.
+3. **Render plane** -- the profile renderer that renders `canonical/agents/` into five
+   per-tool `profiles/<tool>/` agent trees, each wiped and regenerated on every run.
 4. **Observation plane** -- read-only consumers of pipeline state (the dashboard)
    and the standalone marketing/docs website (`site/`).
 
@@ -82,13 +81,13 @@ it produces. The modules fall into four planes:
 | `lib/aid-install-core.sh` | Distribution | Sourceable Bash library of pure install/update/remove functions (copy, manifest, root-agent region update). | none (pure functions) | large | tested (parity + migrate suites) | Largest shell file; no side effects on source. See header `Provides:` block. |
 | `lib/AidInstallCore.psm1` | Distribution | PowerShell twin of the install-core library (`#Requires -Version 5.1`). | none | large | tested (`Test-AidInstaller.ps1`, `ps51-compat-check.ps1`) | Must stay WinPS-5.1 compatible (see coding-standards.md). |
 | `bin/aid`, `bin/aid.ps1`, `bin/aid.cmd` | Distribution | Persistent `aid` CLI dispatcher: parses subcommands (`update`, `remove`, `dashboard`, ...) and calls install-core. | install-core libs | medium | tested (cli-parity, registry) | `aid.cmd` is a thin cmd.exe shim over `aid.ps1`. |
-| `release.sh` | Distribution | Maintainer runbook: packages the five per-profile tarballs + checksums and cuts a GitHub Release. | `canonical/`, `profiles/`, `check-version-sync.sh` | medium | indirectly (release.yml CI) | Maintainer-only; rebuild bundle from clean HEAD. |
-| `canonical/skills/*` (111) | Toolkit | Slash-command definitions (`SKILL.md` + `references/*.md`) that drive the pipeline state machines. | `canonical/aid/scripts/*`, `templates/*` | large (collectively) | not machine-tested (by design) | The user-facing surface; one dir per skill (75 total: 17 curated pipeline / on-demand / router skills + the 94-row shortcut catalog's skills: 34 verb-first direct-entry shortcut doorways + 60 hand-authored `repurpose` skills). Phase 2 (Describe → Define) is two skills: `aid-describe` (2a) + `aid-define` (2b). Several `references/` clusters are tracked as modules -- see [Notable Skill Reference Modules](#notable-skill-reference-modules). Skill state machines are validated by dogfooding + AI/human review, NOT an automated harness (see test-landscape.md); only the helper scripts they call have suites. |
+| `release.sh` | Distribution | Maintainer runbook: packages the shared payload, the five per-tool agent artifacts, the CLI bundle and checksums, and cuts a GitHub Release. | `canonical/`, `profiles/`, `check-version-sync.sh` | medium | indirectly (release.yml CI) | Maintainer-only; rebuild bundle from clean HEAD. |
+| `canonical/skills/*` (112) | Toolkit | Slash-command definitions (`SKILL.md` + `references/*.md`) that drive the pipeline state machines. | `canonical/aid/scripts/*`, `templates/*` | large (collectively) | not machine-tested (by design) | The user-facing surface; one dir per skill (112 total: 18 curated pipeline / on-demand / router skills + the 94-row shortcut catalog's skills: 34 verb-first direct-entry shortcut doorways + 60 hand-authored `repurpose` skills). Phase 2 (Describe → Define) is two skills: `aid-describe` (2a) + `aid-define` (2b). Several `references/` clusters are tracked as modules -- see [Notable Skill Reference Modules](#notable-skill-reference-modules). Skill state machines are validated by dogfooding + AI/human review, NOT an automated harness (see test-landscape.md); only the helper scripts they call have suites. |
 | `canonical/agents/*` (9) | Toolkit | Sub-agent role definitions (one `AGENT.md` each); dispatched by skills. | `templates/agent-boilerplate.md` (include) | medium | n/a (prose) | Roles: architect, clerk, developer, interviewer, operator, orchestrator, researcher, reviewer, tech-writer. The `interviewer` agent is dispatched by `aid-describe`. |
 | `canonical/aid/scripts/*` | Toolkit | Helper scripts grouped by phase area (config, connectors, execute, housekeep, kb, migrate, release, summarize) + top-level `grade.sh`. | `config/read-setting.sh`, `grade.sh` | large | partial (per-area suites + fixtures) | See [Script Modules by Area](#script-modules-by-area). |
 | `canonical/aid/templates/*` | Toolkit | KB doc seeds, state-file templates, schemas, kb-authoring rules, the shortcut catalog + engine + scaffolding. | none (consumed by skills) | large | n/a (data) | The artifact-schema source of truth (see artifact-schemas.md). |
-| `generate-profile` renderer | Render | Python renderer that mirrors `canonical/` into each `profiles/<tool>/` tree under an emission manifest. | `canonical/`, `profiles/*.toml` | large | tested (`test_manifest_safety.py`, `verify_deterministic.py`, `verify_advisory.py`) | Lives at `.claude/skills/generate-profile/scripts/`. Also carries `build-shortcut-skills.py`, the maintainer helper that emits the shortcut doorways from `shortcut-catalog.yml`. |
-| `profiles/<tool>/` (5) | Render | Rendered, per-tool copies of the toolkit (claude-code, codex, cursor, copilot-cli, antigravity) + `<tool>.toml` config. | output of the renderer | large | render-drift CI | Build output -- never hand-edit; regenerate. |
+| `generate-profile` renderer | Render | Python renderer that renders `canonical/agents/` into each `profiles/<tool>/` agent tree, wiping the tree first. | `canonical/`, `profiles/*.toml` | large | tested by `--self-test` (`render_lib.py`, `render.py`, `verify_deterministic.py`, `verify_advisory.py`; run by the `test.yml` step "harness + render + verify self-tests") | Lives at `.claude/skills/generate-profile/scripts/`. Also carries `build-shortcut-skills.py`, the maintainer helper that emits the shortcut doorways from `shortcut-catalog.yml`. |
+| `profiles/<tool>/` (5) | Render | Rendered, per-tool agent trees (claude-code, codex, cursor, copilot-cli, antigravity), each with an `aid-tool.conf` descriptor; the `<tool>.toml` config sits beside them. | output of the renderer | large | render-drift CI | Build output -- never hand-edit; regenerate. |
 | `packages/npm` | Distribution | npm `aid-installer` wrapper; vendors `bin/`, `lib/`, `dashboard/`. | `bin/`, `lib/`, `dashboard/` | medium | release smoke | Vendored copies regenerate; edit the wrapper, not the vendor. |
 | `packages/pypi` | Distribution | PyPI `aid-installer` wrapper (`aid_installer/` + `_vendor/`). | `bin/`, `lib/`, `dashboard/` | medium | release smoke | `__main__.py` puts `aid` on PATH. |
 | `dashboard/reader/*` (Python) | Observation | Parses `.aid/` state (STATE.yml hierarchy -- work/delivery/task levels; the discovery-area `STATE.md` ledger stays markdown -- plus settings, KB) into typed models. | `.aid/` artifact schemas | large | tested (`dashboard/reader/tests/`) | `parsers.py` + `derivation.py` + `models.py` + `locator.py` + `reader.py` + `state_schema.py` (new: the single hand-rolled parser for the permitted YAML subset -- `parse_state_document` -- plus the KB ledger's original fenced-frontmatter scan, kept unchanged as an explicit opt-in for that one caller). |
@@ -124,9 +123,8 @@ packages/npm          -> bin/ , lib/ , dashboard/          (vendored)
 packages/pypi         -> bin/ , lib/ , dashboard/          (vendored under _vendor/)
 
 # Render plane (source-of-truth -> rendered copies)
-generate-profile      -> canonical/ , profiles/<tool>.toml
-profiles/<tool>/      -> generate-profile                  (emitted by)
-profiles/<tool>/emission-manifest.jsonl -> generate-profile (safety boundary)
+generate-profile      -> canonical/agents/ , profiles/<tool>.toml
+profiles/<tool>/      -> generate-profile                  (rendered by; tree wiped first)
 
 # Toolkit plane (internal wiring)
 canonical/skills/*    -> canonical/aid/scripts/* , canonical/aid/templates/*
@@ -198,9 +196,8 @@ grader).
 | `release/` | `check-version-sync.sh` | `release.sh`, CI | Verifies the version string is in lockstep across all manifests. |
 | `summarize/` | `assemble.sh`, `assemble-3part.sh`/`.ps1`, `build-md-export.sh`, `grade-summary.sh`, `manual-checklist.sh`, `spot-check-facts.sh`, `stale-check.sh`, `summarize-preflight.sh`, `validate-html-output.sh`, `validate-diagram-content.mjs`, `validate-visuals.mjs`, `contrast-check.mjs`, `writeback-state.sh` | `aid-summarize` | Builds + validates the `kb.html` visual summary (assembly, markdown export, fact/stale checks, HTML + diagram-content + visual + contrast validation via Playwright/Node). |
 
-> The installed copies under each profile (and the dogfood `.claude/aid/scripts/` and
-> `.cursor/aid/scripts/`) are rendered from these canonical sources. Edit `canonical/`,
-> never the rendered copy.
+> The installed copies (the dogfood `.aid/runtime/` tree, and the copies the release payload carries)
+> are taken from these canonical sources. Edit `canonical/`, never the copy.
 
 ---
 
@@ -220,7 +217,7 @@ interview split — are substantial enough to track as modules in their own righ
 
 ## Skill Structural Shapes
 
-The 111 skill directories share one **ownership** taxonomy (17 curated + 34 generated doorways
+The 112 skill directories share one **ownership** taxonomy (18 curated + 34 generated doorways
 + 60 hand-authored `repurpose`, per the contracts above) but four distinct **structural**
 shapes. The two taxonomies do not line up, and tooling that reads skill bodies must key off
 the shape, not the ownership flag.
@@ -274,7 +271,7 @@ need them. Ownership counts follow this document's own criteria and `project-str
 | `bin/aid` (+ `.ps1`/`.cmd`) | Distribution | CLI | Dispatches `aid <subcommand>` on PATH. |
 | `packages/pypi/aid_installer/__main__.py` | Distribution | CLI | `aid` on PATH after `pipx install`. |
 | `/aid-<skill>` slash commands | Toolkit | agent skill | Resolve to `canonical/skills/<name>/SKILL.md` (installed copy). |
-| `.claude/skills/generate-profile/scripts/run_generator.py` | Render | build | Full profile render of `canonical/` -> `profiles/`. |
+| `.claude/skills/generate-profile/scripts/run_generator.py` | Render | build | Full profile render of `canonical/agents/` -> `profiles/`. |
 | `dashboard/server/server.mjs` / `server.py` | Observation | HTTP server | Serves the local read-only dashboard. |
 | `site/` (Astro) | Observation | static build | Builds the marketing/docs website. |
 | `tests/run-all.sh` | Cross-cutting | test runner | Aggregates the canonical shell suites. |
@@ -331,8 +328,8 @@ need them. Ownership counts follow this document's own criteria and `project-str
   (`grade.sh`) or in `config/`. Read settings via `read-setting.sh`; do not parse
   `settings.yml` directly.
 - **How a new generated file is registered:** add a `<output-path>|<build-command>`
-  line to `canonical/aid/templates/generated-files.txt` (dependencies first); the
-  renderer rewrites the `canonical/` path to each profile's install root.
+  line to `canonical/aid/templates/generated-files.txt` (dependencies first); the build
+  command names the installed `.aid/runtime/` path.
 - **How a new shortcut goes:** add a row to
   `canonical/aid/templates/shortcut-catalog.yml`
   (`{name, verb, artifact, alias_of, default_type, group}`), then run the maintainer
@@ -343,7 +340,7 @@ need them. Ownership counts follow this document's own criteria and `project-str
   SPEC/PLAN/DETAIL scaffolding it consults lives in
   `canonical/aid/templates/shortcut-scaffolding/<family>.md`.
 - **Never edit a rendered copy.** Edit `canonical/` and regenerate; `profiles/*`,
-  `packages/*/_vendor/`, and the dogfood `.claude/` + `.cursor/` are build output.
+  `packages/*/_vendor/`, and the dogfood installed trees (`.agents/skills/`, `.claude/skills/`, `.aid/runtime/`, `.claude/agents/`, `.cursor/agents/`) are build output.
 
 ---
 
@@ -352,12 +349,11 @@ need them. Ownership counts follow this document's own criteria and `project-str
 > Hard MUST/MUST-NOT rules the module graph enforces silently.
 
 - **Single source of truth:** every shipped file originates in `canonical/`.
-  `profiles/`, `packages/*/_vendor/`, and the dogfood `.claude/` + `.cursor/` MUST be
-  regenerated, never hand-edited. Hand-editing a rendered copy is lost on the next render.
-- **Render is a pure mirror bounded by the emission manifest:** the renderer may
-  only delete install-tree paths present in the previous run's
-  `emission-manifest.jsonl` (`removed_dst`). Files outside any manifest are never
-  touched. (See `canonical/EMISSION-MANIFEST.md`.)
+  `profiles/`, `packages/*/_vendor/`, and the dogfood installed trees MUST be
+  regenerated or reinstalled, never hand-edited. Hand-editing a rendered copy is lost on the next render.
+- **Deletion is bounded by the install manifest:** the generator wipes only the `profiles/<tool>/` trees it
+  renders, and the CLI prunes only files the install manifest records (`prune_shared` in
+  `lib/aid-install-core.sh`). Non-`aid-*` entries in `.agents/skills/` and in each mirror are never touched.
 - **Language twins stay behavior-equal:** `aid-install-core.sh` <-> `AidInstallCore.psm1`,
   `bin/aid` <-> `bin/aid.ps1`, `dashboard/reader/*.py` <-> `dashboard/server/reader.mjs`
   (the whole Python reader, not only `parsers.py`), and the migrate `.sh`/`.ps1` twins MUST
@@ -392,11 +388,8 @@ need them. Ownership counts follow this document's own criteria and `project-str
 - **Agent contract:** `canonical/agents/aid-<role>/AGENT.md` MUST carry `name`,
   `description`, `tier`, `tools` frontmatter and define What You Do / Don't Do /
   Key Constraints / When to Escalate sections (see any `AGENT.md`).
-- **Emission-manifest record contract:** every rendered file is recorded as a JSONL
-  object with exactly `{profile, src, dst, sha256}`, sorted by `dst`, LF-only, with
-  a `{"_manifest_version": 1}` sentinel first line (see `canonical/EMISSION-MANIFEST.md`).
 - **Generated-file registry contract:** each line is `<output-path>|<build-command>`,
-  `canonical/`-rooted, ordered dependencies-first (see `generated-files.txt`).
+  ordered dependencies-first (see `generated-files.txt`).
 - **Reader-parity contract:** the Node reader and the Python reader MUST produce the
   same model from the same `.aid/` state (the dashboard parity test suites enforce this).
 
@@ -405,8 +398,8 @@ need them. Ownership counts follow this document's own criteria and `project-str
 ## Gotchas
 
 - **Heavy file duplication is intentional.** `reader.mjs`/`parsers.py` and the whole
-  toolkit appear many times (dashboard + npm + pypi `_vendor` + five profiles + the two
-  dogfood trees `.claude/` and `.cursor/`). Do NOT "deduplicate" -- they are
+  toolkit appear many times (dashboard + npm + pypi `_vendor` + five profiles + the dogfood
+  installed trees). Do NOT "deduplicate" -- they are
   rendered/vendored copies of `canonical/`.
 - **Shortcut doorways are generated, not hand-authored.** The 34 `aid-<verb>[-<artifact>]`
   skill directories under `canonical/skills/` are emitted by

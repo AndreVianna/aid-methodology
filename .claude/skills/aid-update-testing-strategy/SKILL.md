@@ -11,7 +11,7 @@ description: >
   CODE rather than the strategy, use `/aid-create-test` or `/aid-update-test`. Produced by
   the aid-architect agent and independently verified by aid-reviewer (full verify).
   Allocates a work-NNN folder.
-allowed-tools: Read, Glob, Grep, Bash, Write, Edit, Agent
+allowed-tools: Read Glob Grep Bash Shell Terminal Write Edit Agent
 argument-hint: "<change> -- what to revise in the testing strategy or the gate policy"
 ---
 
@@ -19,7 +19,7 @@ argument-hint: "<change> -- what to revise in the testing strategy or the gate p
 
 Bind **VERB=`update`**, **ARTIFACT=`testing-strategy`** -- the `update` *stage* in the
 contract's vocabulary -- then follow the shared contract at
-`.claude/aid/templates/design-lifecycle.md`. This skill binds that contract and restates
+`.aid/runtime/templates/design-lifecycle.md`. This skill binds that contract and restates
 none of its rules.
 
 - **Boundary vs `/aid-create-testing-strategy`:** that skill realizes a seed and owns the
@@ -40,7 +40,7 @@ line on each state.
 1. **Require a stated change.** Empty argument -> ask one bootstrapping question ("What should
    change in the testing strategy or the gate policy?") and wait.
 2. **Allocate** through the Work Initiation Gate exactly as the contract's Allocation rule
-   requires (`.claude/skills/aid-design/SKILL.md` INTAKE step 4 is the shape), with
+   requires (`.agents/skills/aid-design/SKILL.md` INTAKE step 4 is the shape), with
    `initiator: aid-update-testing-strategy`. `phase` is not driven.
 3. **No seed is required.** The change stated in this run is a sufficient input, and this
    skill completes without a seed. **Read and consume one when present** at
@@ -50,7 +50,7 @@ line on each state.
    testing) and owns **two** documents. Where a seed supplied a `## Destination`, use it;
    otherwise apply the concern rule here -- resolve C6 against `.aid/settings.yml`
    `knowledge.doc_set`, falling back to the C6 row of
-   `.claude/aid/templates/kb-authoring/domain-doc-matrix.md` -- and **confirm the resolution
+   `.aid/runtime/templates/kb-authoring/domain-doc-matrix.md` -- and **confirm the resolution
    with the user before writing**. Never resolve silently.
 5. **Read both destinations** whole, and note each one's `source:` field. An absent
    destination -> route to `/aid-create-testing-strategy` for that document and write nothing

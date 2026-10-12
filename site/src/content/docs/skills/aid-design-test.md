@@ -10,7 +10,7 @@ generatedFrom: 'canonical/skills/aid-design-test/SKILL.md'
 
 - **`name`** — aid-design-test
 - **`description`** — Develop a test design as a DESIGN SEED in `.aid/design/test.md` -- the units under test, the cases, and the framework and fixtures. Use this skill when what a test should actually assert is still being worked out. Grounded in the Knowledge Base (`.aid/knowledge/`) and the project source. It WRITES NO production code and NO KB document -- realize the seed into authored tests with `/aid-create-test` once it is ready. To design the testing policy rather than specific tests, use `/aid-design-testing-strategy`; to RUN existing suites rather than design them, use `/aid-test`. Produced by the aid-architect agent and independently verified by aid-reviewer (full verify). Allocates a work-NNN folder.
-- **`allowed-tools`** — Read, Glob, Grep, Bash, Write, Edit, Agent
+- **`allowed-tools`** — Read Glob Grep Bash Shell Terminal Write Edit Agent
 - **`argument-hint`** — &lt;subject> -- the tests to design (units under test, cases, framework/fixtures)
 
 [Definition: `canonical/skills/aid-design-test/SKILL.md`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-design-test/SKILL.md)
@@ -58,7 +58,7 @@ Every node in the chart above, in chart order, with the exact `canonical/` text 
 1. **Require a subject.** Empty argument -> ask one bootstrapping question ("What tests do
    you want to design -- the units under test, the cases, and the framework?") and wait.
 2. **Allocate** through the Work Initiation Gate exactly as the contract's Allocation rule
-   requires (`canonical/skills/aid-design/SKILL.md` INTAKE step 4 is the shape), with
+   requires (`.agents/skills/aid-design/SKILL.md` INTAKE step 4 is the shape), with
    `initiator: aid-design-test`. `phase` is not driven.
 3. **Acquire `.aid/design/`** per the contract, then read `.aid/design/test.md` if a prior
    seed exists -- re-invocation iterates it rather than starting over.

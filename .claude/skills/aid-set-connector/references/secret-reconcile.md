@@ -62,7 +62,7 @@ else `0`.
 
 - **`write`** — invoke, only when `secret_reference` resolves to the `file:` form (the default):
   ```bash
-  bash .claude/aid/scripts/connectors/connector-secret.sh write "$STEM" --root .aid/connectors
+  bash .aid/runtime/scripts/connectors/connector-secret.sh write "$STEM" --root .aid/connectors
   ```
   (PowerShell twin: `connector-secret.ps1`.) Never construct this with the literal secret text
   inlined anywhere (a bash command, `STATE.yml`, the KB, the conversation transcript) — the script's
@@ -71,7 +71,7 @@ else `0`.
   reference literal is written into the descriptor (Step 5a).
 - **`purge`** — invoke unconditionally (idempotent even if the file happens to already be absent):
   ```bash
-  bash .claude/aid/scripts/connectors/connector-secret.sh purge "$STEM" --root .aid/connectors
+  bash .aid/runtime/scripts/connectors/connector-secret.sh purge "$STEM" --root .aid/connectors
   ```
   (PowerShell twin: `connector-secret.ps1`.) This disposes exactly the ONE orphaned secret for
   `$STEM` — never any other stem's.

@@ -108,7 +108,7 @@ _aid_is_project_dir() {
 # NOTE (work-007 C6): the install-time settings seed also stamps this value.
 # On a bump, update ALL carriers together: this line, bin/aid.ps1
 # AidSupportedFormat, and lib/AidInstallCore.psm1 $script:_AidSupportedFormat.
-# (lib/aid-install-core.sh reads THIS var via ${AID_SUPPORTED_FORMAT:-4}.)
+# (lib/aid-install-core.sh reads THIS var via ${AID_SUPPORTED_FORMAT:-5}.)
 # ---------------------------------------------------------------------------
 # format 2 (was 1): eliminated the per-repo .aid/dashboard/ folder -- home.html is now
 # served from the CLI, and kb.html moved to .aid/knowledge/kb.html (aid migrate relocates).
@@ -120,7 +120,8 @@ _aid_is_project_dir() {
 # deliveries/*/STATE.md and deliveries/*/tasks/*/STATE.md) is rewritten in place
 # and the .md deleted. Performed by the STATE.md -> STATE.yml FORMAT-4
 # CONVERSION step in _aid_migrate_repo (task-008 / SPEC.md SS L-6 step 2).
-readonly AID_SUPPORTED_FORMAT=4
+# format 5 (was 4): shared skills under .agents/skills (+ CLI-owned mirrors), runtime under .aid/runtime/, one AGENTS.md pointer region (read instruction + rules summary) for every tool, a CLAUDE.md region (the same body plus an @.aid/runtime/rules.md import line) while claude-code is installed; manifest format_version 3.
+readonly AID_SUPPORTED_FORMAT=5
 
 # ---------------------------------------------------------------------------
 # Source the shared install core from AID_CODE_HOME/lib/.
@@ -132,6 +133,8 @@ if [[ ! -f "$_AID_CORE" ]]; then
 fi
 # shellcheck source=../lib/aid-install-core.sh
 source "$_AID_CORE"
+# Per-run manifest read cache (shell variables only; see _aid_mc_prime in the core).
+_AID_MC_ON=1
 
 # Defensive guard: verify the required core function was defined by the sourced lib.
 # This catches an upgrade that left a stale aid-install-core.sh (missing new functions).
@@ -168,7 +171,7 @@ _aid_usage() {
             printf '  --dry-run: print the exact command(s) it would run, then exit (no changes).\n'
             ;;
         update)
-            printf 'aid update [--version <v>] [--from-bundle <path>] [--force] [--dry-run] [--target <dir>]\n'
+            printf 'aid update [<tool>[,...]] [--version <v>] [--from-bundle <path>] [--force] [--dry-run] [--target <dir>]\n'
             printf 'aid update self [--from-bundle <path>] [--dry-run]\n'
             printf 'aid update all [--version <v>] [--dry-run] [--force]\n'
             printf '  Update to latest.\n'
@@ -437,7 +440,7 @@ _aid_check_update() {
         latest_version="${tag#v}"
 
         # Update cache.
-        printf '%s\n%s\n' "$now" "$latest_version" > "$cache_file" 2>/dev/null || true
+        { printf '%s\n%s\n' "$now" "$latest_version" > "$cache_file"; } 2>/dev/null || true
     fi
 
     [[ -z "$latest_version" ]] && return 0
@@ -2069,6 +2072,164 @@ _aid_format_gate() {
     return 0
 }
 
+# _aid_v3_legacy_evidence <repo> - FR-11's path and manifest evidence predicate.
+# A project whose manifest is a valid format 3 is a v4 project: legacy-looking paths
+# (a v3 .cursor/aid/ restored by a branch switch, a user .codex/skills/aid-* folder)
+# are NEVER evidence there -- see _aid_v4_stray_legacy_paths, which reports them.
+_aid_v3_legacy_evidence() {
+    local _repo="$1" _manifest="${1}/.aid/.aid-manifest.json" _fmt _line
+    if [[ -f "$_manifest" ]]; then
+        _fmt="$(manifest_format "$_manifest")"
+        # A manifest with no format_version predates format 3 (same as the PowerShell twin's 0).
+        if { [[ -z "$_fmt" ]] || { [[ "$_fmt" =~ ^[0-9]+$ ]] && [[ "$_fmt" -le 2 ]]; }; } \
+          && [[ -n "$(manifest_list_tools "$_manifest" | head -1)" ]]; then
+            return 0
+        fi
+        [[ "$_fmt" == 3 ]] && return 1
+    fi
+    for _line in .claude .codex .cursor .github .agent; do
+        [[ -d "${_repo}/${_line}/aid" ]] && return 0
+        if [[ "$_line" == ".codex" && -d "${_repo}/.agents/aid" ]]; then return 0; fi
+        if [[ -d "${_repo}/${_line}/skills" ]]; then
+            [[ -n "$(find "${_repo}/${_line}/skills" -mindepth 1 -maxdepth 1 -type d -name 'aid-*' -print -quit 2>/dev/null)" ]] && return 0
+        fi
+    done
+    return 1
+}
+
+# _aid_v4_stray_legacy_paths <repo> - print, one per line (fixed root order, then name
+# order), the legacy-looking AID paths of a format-3 project: <root>/aid, .agents/aid
+# and <root>/skills/aid-* folders under a skills dir the manifest does not record as a
+# mirror. Prints nothing for any other project. Read-only.
+_aid_v4_stray_legacy_paths() {
+    local _repo="$1" _manifest="${1}/.aid/.aid-manifest.json" _root _record _name
+    local -A _mirror=()
+    [[ -f "$_manifest" && "$(manifest_format "$_manifest")" == 3 ]] || return 0
+    while IFS= read -r _record; do
+        [[ "$_record" == $'shared.mirror\t'* ]] || continue
+        _record="${_record#*$'\t'}"; _mirror["${_record%%$'\t'*}"]=1
+    done < <(manifest_read_shared "$_manifest")
+    for _root in .claude .codex .cursor .github .agent; do
+        [[ -d "${_repo}/${_root}/aid" ]] && printf '%s\n' "${_root}/aid"
+        [[ "$_root" == .codex && -d "${_repo}/.agents/aid" ]] && printf '%s\n' ".agents/aid"
+        [[ -n "${_mirror[${_root}/skills]:-}" || ! -d "${_repo}/${_root}/skills" ]] && continue
+        while IFS= read -r _name; do
+            printf '%s\n' "${_root}/skills/${_name}"
+        done < <(find "${_repo}/${_root}/skills" -mindepth 1 -maxdepth 1 -type d -name 'aid-*' 2>/dev/null | sed 's|.*/||' | LC_ALL=C sort)
+    done
+}
+
+# _aid_warn_v4_stray_paths <repo> - one warning (stderr) naming the stray legacy-looking
+# paths of a v4 project; they are left untouched. Silent when there are none.
+_aid_warn_v4_stray_paths() {
+    local _strays _p
+    _strays="$(_aid_v4_stray_legacy_paths "$1")"
+    [[ -n "$_strays" ]] || return 0
+    {
+        printf 'WARN: aid: this v4 project has legacy-looking AID paths; they were left untouched:\n'
+        while IFS= read -r _p; do printf '  %s\n' "$_p"; done <<< "$_strays"
+        printf 'They are not part of the v4 layout. If you do not need them, delete them by hand (for example: rm -r <path>, or Remove-Item -Recurse <path> in PowerShell).\n'
+    } >&2
+}
+
+# _aid_manifest_format_gate <repo> - refuse manifest formats newer than this CLI.
+_aid_manifest_format_gate() {
+    local _manifest="${1}/.aid/.aid-manifest.json" _fmt
+    [[ -f "$_manifest" ]] || return 0
+    _fmt="$(manifest_format "$_manifest")"
+    if [[ "$_fmt" =~ ^[0-9]+$ ]] && [[ "$_fmt" -gt 3 ]]; then
+        printf 'ERROR: aid: manifest format %s is newer than this CLI supports. Run: aid update self\n' "$_fmt" >&2
+        return 2
+    fi
+    return 0
+}
+
+# _aid_layout_gate <repo> - fail before writes when an installed v3 layout remains.
+_aid_layout_gate() {
+    local _repo="$1" _manifest="${1}/.aid/.aid-manifest.json" _settings="${1}/.aid/settings.yml"
+    local _fmt="" _has_tools=0 _stamp
+    if [[ -f "$_manifest" ]]; then
+        _fmt="$(manifest_format "$_manifest")"
+        [[ -n "$(manifest_list_tools "$_manifest" | head -1)" ]] && _has_tools=1
+    fi
+    if [[ -e "${_repo}/.aid/.temp/v3-upgrade-tools.json" ]] \
+      || { [[ "$_has_tools" -eq 1 ]] && [[ "$_fmt" =~ ^[0-9]+$ ]] && [[ "$_fmt" -lt 3 ]]; } \
+      || { [[ "$_has_tools" -eq 1 ]] && [[ -f "$_settings" ]] && _stamp="$(_aid_repo_format "$_repo")" && [[ "$_stamp" -lt 5 ]]; } \
+      || _aid_v3_legacy_evidence "$_repo"; then
+        printf 'This project uses the v3 AID layout. Run: aid update (it upgrades every installed tool), then retry aid add.\n' >&2
+        return 2
+    fi
+    return 0
+}
+
+# _aid_root_files_gate <repo> <mode:0 add/update|1 v3 upgrade|2 remove> <tools...> - refuse,
+# before any write, when a root file the command would edit cannot be edited byte-safely
+# (UTF-16/UTF-32 or NUL bytes): AGENTS.md always; CLAUDE.md when claude-code is named (add,
+# update, remove), installed (add, update) or when a v3 upgrade retires regions from both. Prints the refusal and returns 2; the PowerShell twin does the same.
+_aid_root_files_gate() {
+    local _repo="$1" _mode="$2" _manifest="${1}/.aid/.aid-manifest.json" _claude=0 _t; shift 2
+    for _t in "$@"; do [[ "$_t" == claude-code ]] && _claude=1; done
+    if [[ "$_mode" == 1 ]]; then _claude=1
+    elif [[ "$_mode" == 0 && -f "$_manifest" ]] && manifest_list_tools "$_manifest" | grep -qx claude-code; then _claude=1; fi
+    _aid_root_file_guard "${_repo}/AGENTS.md" || return 2
+    if [[ "$_claude" -eq 1 ]]; then _aid_root_file_guard "${_repo}/CLAUDE.md" || return 2; fi
+    return 0
+}
+
+# _aid_migration_stamp <repo> - preserve legacy/recovery stamp 4; otherwise 5.
+_aid_migration_stamp() {
+    local _repo="$1" _manifest="${1}/.aid/.aid-manifest.json" _fmt _has_tools=0
+    if [[ -f "$_manifest" ]]; then
+        _fmt="$(manifest_format "$_manifest")"
+        [[ -n "$(manifest_list_tools "$_manifest" | head -1)" ]] && _has_tools=1
+        if [[ "$_fmt" == 3 ]]; then
+            printf '5\n'
+            return 0
+        fi
+        if [[ -e "${_repo}/.aid/.temp/v3-upgrade-tools.json" ]] || _aid_v3_legacy_evidence "$_repo" || [[ "$_has_tools" -eq 1 ]]; then
+            printf '4\n'
+            return 0
+        fi
+        printf '5\n'
+        return 0
+    fi
+    if [[ -e "${_repo}/.aid/.temp/v3-upgrade-tools.json" ]] || _aid_v3_legacy_evidence "$_repo"; then
+        printf '4\n'
+    else
+        printf '5\n'
+    fi
+}
+
+# _aid_manifest_version_skew <manifest> - true when any recorded version differs.
+_aid_manifest_version_skew() {
+    local _manifest="$1" _project _tool _version
+    [[ -f "$_manifest" ]] || return 1
+    if command -v python3 >/dev/null 2>&1; then
+        _project="$(python3 - "$_manifest" <<'PY'
+import json, sys
+try:
+    with open(sys.argv[1], encoding="utf-8") as fh:
+        print(json.load(fh).get("aid_version", ""))
+except Exception:
+    pass
+PY
+)"
+    else
+        _project="$(sed -n 's/^[[:space:]]*"aid_version"[[:space:]]*:[[:space:]]*"\([^"]*\)".*/\1/p' "$_manifest" | head -1)"
+    fi
+    [[ -n "$_project" ]] || return 1
+    while IFS= read -r _tool; do
+        [[ -n "$_tool" ]] || continue
+        _version="$(manifest_read_tool_version "$_manifest" "$_tool")"
+        [[ -z "$_version" || "$_version" == "$_project" ]] || return 0
+    done < <(manifest_list_tools "$_manifest")
+    while IFS=$'\t' read -r _key _value _shared_version _users; do
+        if [[ "$_key" == shared.*.version && -n "$_value" && "$_value" != "$_project" ]]; then return 0; fi
+        if [[ "$_key" == shared.mirror && -n "$_shared_version" && "$_shared_version" != "$_project" ]]; then return 0; fi
+    done < <(manifest_read_shared "$_manifest")
+    return 1
+}
+
 # ---------------------------------------------------------------------------
 # _aid_migrate_repo <repo>  (FF-1 / LC-MIG / task-077)
 # Per-repo migration core.  Runs
@@ -2080,6 +2241,7 @@ _aid_format_gate() {
 # ---------------------------------------------------------------------------
 _aid_migrate_repo() {
     local repo="$1"
+    local _migration_stamp; _migration_stamp="$(_aid_migration_stamp "$repo")"
 
     # ------------------------------------------------------------------
     # STEP 0 -- DETECT / QUALIFY (DD-6 / SEC-1) -- read-only, no write.
@@ -2119,11 +2281,11 @@ _aid_migrate_repo() {
         # Era-a: validate and targeted-repair REQUIRED keys only.
         # Preserves every present kb_baseline.* line and <skill>.minimum_grade
         # line byte-intact (IDIOM-A single-line replace / IDIOM-B append-block).
-        _aid_migrate_repair_settings_era_a "${_settings}" "${_repo_name}" || \
+        _aid_migrate_repair_settings_era_a "${_settings}" "${_repo_name}" "${_migration_stamp}" || \
             echo "WARN: aid migrate: settings repair failed for ${repo}/.aid/settings.yml (continuing)" >&2
     else
         # Era-b: synthesize a fresh settings.yml from the template defaults.
-        _aid_migrate_synthesize_settings_era_b "${_settings}" "${_repo_name}" "${_manifest}" || \
+        _aid_migrate_synthesize_settings_era_b "${_settings}" "${_repo_name}" "${_manifest}" "${_migration_stamp}" || \
             echo "WARN: aid migrate: settings synthesis failed for ${repo}/.aid/settings.yml (continuing)" >&2
     fi
 
@@ -2211,6 +2373,12 @@ _aid_migrate_repo() {
 # still needs the hierarchy migration is detected here as the "DERIVED
 # section holds real data" hard-error case below (SP-3): the remedy that
 # error names is "run migrate-work-hierarchy, then re-run aid update".
+#
+# RUNBOOK -- V3 UPGRADE RECOVERY. If an upgrade is interrupted, rerun `aid update`.
+# To roll back, restore `.aid/.trash/<original-path>` (the newest copy is at
+# the original path; older copies carry a timestamp suffix) or restore from
+# version control, then remove the recovery record only after the v3 tree is
+# restored. A v3 CLI cannot drive a v4 layout (`v4 requires CLI v4`).
 #
 # RUNBOOK -- ROLLBACK. No reverse (yml -> md) converter exists, and none is
 # ever added -- that would reopen the dual-format window SPEC.md SS L-6
@@ -3480,7 +3648,7 @@ _aid_sc_convert_repo() {
 # single pass. Crash-safe: same-directory temp + mv -f; skips the write
 # entirely when the rebuilt content is byte-identical to the original.
 _aid_migrate_repair_settings_era_a() {
-    local _sf="$1" _rname="$2"
+    local _sf="$1" _rname="$2" _format="${3:-${AID_SUPPORTED_FORMAT}}"
     [[ -f "${_sf}" ]] || return 1
 
     # Read file into an array (preserves byte content per line).
@@ -3734,7 +3902,7 @@ _aid_migrate_repair_settings_era_a() {
     # original file content (idempotent: no change -> no write).
     # ------------------------------------------------------------------
     local -a _out=()
-    _out+=("format_version: ${AID_SUPPORTED_FORMAT}")
+    _out+=("format_version: ${_format}")
     _out+=("name: ${_name}")
     if [[ -z "${_description}" ]]; then
         _out+=('description: ""')
@@ -3789,7 +3957,7 @@ _aid_migrate_repair_settings_era_a() {
 # only in the manifest -- never written into settings) but is otherwise
 # unused here. Crash-safe: same-directory temp + mv -f.
 _aid_migrate_synthesize_settings_era_b() {
-    local _sf="$1" _rname="$2" _manifest="$3"
+    local _sf="$1" _rname="$2" _manifest="$3" _format="${4:-${AID_SUPPORTED_FORMAT}}"
 
     local _repo_dir; _repo_dir="$(dirname "$(dirname "${_sf}")")"
     local _source_control="none"
@@ -3799,7 +3967,7 @@ _aid_migrate_synthesize_settings_era_b() {
     _tmp="$(mktemp "${_sf}.aid-tmp.XXXXXX")" || return 1
 
     {
-        printf 'format_version: %s\n' "${AID_SUPPORTED_FORMAT}"
+        printf 'format_version: %s\n' "${_format}"
         printf 'name: %s\n' "${_rname}"
         printf 'description: ""\n'
         printf 'type: brownfield\n'
@@ -4067,7 +4235,7 @@ _aid_scaffold_bare_project() {
     local _canon="$1"
     local _name _fmt _ver _sc _now
     _name="$(basename "$_canon")"
-    _fmt="${AID_SUPPORTED_FORMAT:-4}"
+    _fmt="${AID_SUPPORTED_FORMAT:-5}"
     _ver=""
     [[ -f "${AID_CODE_HOME}/VERSION" ]] && \
         _ver="$(tr -d '[:space:]' < "${AID_CODE_HOME}/VERSION" 2>/dev/null)"
@@ -4101,7 +4269,7 @@ _aid_scaffold_bare_project() {
         _now="$(date -u +%Y-%m-%dT%H:%M:%SZ 2>/dev/null)"
         {
             printf '{\n'
-            printf '  "format_version": 2,\n'
+            printf '  "format_version": 3,\n'
             [[ -n "$_ver" ]] && printf '  "aid_version": "%s",\n' "$_ver"
             printf '  "installed_at": "%s",\n' "$_now"
             printf '  "tools": {}\n'
@@ -4153,7 +4321,7 @@ _cmd_projects_add() {
         # registry unit-test harness's extract range) AND the project actually
         # has a settings.yml to migrate (a bare .aid/ has nothing to migrate);
         # AID_SUPPORTED_FORMAT defaults so the harness never hits an unbound var.
-        local _sup="${AID_SUPPORTED_FORMAT:-4}"
+        local _sup="${AID_SUPPORTED_FORMAT:-5}"
         if declare -F _aid_repo_format >/dev/null 2>&1; then
             local _repo_fmt
             _repo_fmt="$(_aid_repo_format "${_canon}")"
@@ -4961,8 +5129,19 @@ _cmd_update_all() {
                 [[ -n "$_ua_t" ]] && _ua_tools+=("$_ua_t")
             done < <(manifest_list_tools "$_ua_manifest")
 
+            # The shared artifact is version-scoped, so fetch it once into the
+            # same cache as the tool artifacts. fetch_artifact owns checksum
+            # retrieval and verification.
+            if [[ "${#_ua_tools[@]}" -gt 0 && ! -f "${_ua_cache}/aid-shared-v${_ua_run_version}.tar.gz" ]]; then
+                if ! fetch_artifact shared '' "$_ua_run_version" "$_ua_cache"; then
+                    echo "ERROR: aid update all: failed to download shared payload v${_ua_run_version} (continuing)" >&2
+                    _ua_fetch_failed[shared]=1
+                fi
+            fi
+
             # Populate the shared cache download-once per distinct tool (AC1).
             local _ua_repo_fetch_failed=0
+            [[ -n "${_ua_fetch_failed[shared]:-}" ]] && _ua_repo_fetch_failed=1
             if [[ "${#_ua_tools[@]}" -gt 0 ]]; then
                 for _ua_tool in "${_ua_tools[@]}"; do
                     if [[ -n "${_ua_fetch_failed[$_ua_tool]:-}" ]]; then
@@ -5146,6 +5325,7 @@ if [[ "$SUBCMD" == "status" ]]; then
     fi
     # C-table register-on-encounter (best-effort, never blocks status).
     _aid_cwd_classify "${_AID_TARGET}"
+    _aid_manifest_format_gate "${_AID_TARGET}" || exit $?
     # C6: format gate for status target (only when target is a real project).
     _aid_format_gate "${_AID_TARGET}" || exit $?
     aid_status "$_AID_TARGET"
@@ -6129,16 +6309,6 @@ if [[ "$_AID_FORCE" -eq 0 && ( "${AID_FORCE:-0}" == "1" || "${AID_FORCE:-0}" == 
 fi
 export AID_VERBOSE="$_AID_VERBOSE"
 
-# FR10: 'update' no longer accepts a per-tool positional (other than 'self' which
-# was already consumed above).  Any non-flag positional on 'aid update' is a usage error.
-if [[ "$SUBCMD" == "update" && -n "$_AID_TOOL_ARG" ]]; then
-    echo "ERROR: aid update: unexpected argument: '${_AID_TOOL_ARG}'" >&2
-    echo "       'aid update' updates all installed tools -- no per-tool selection." >&2
-    echo "       Use 'aid update self' to update the CLI only." >&2
-    echo "       See 'aid update -h' for usage." >&2
-    exit 2
-fi
-
 _AID_TARGET="${_AID_TARGET:-.}"
 # Validate target dir.
 if [[ ! -d "$_AID_TARGET" ]]; then
@@ -6169,11 +6339,43 @@ if [[ "$SUBCMD" == "update" ]]; then
     fi
 fi
 
+# Unsupported future manifests/stamps are a read-only refusal and must happen
+# before the self-update preamble can mutate the CLI installation.
+_AID_V3_UPGRADE=0
+[[ -n "${_AID_TARGET:-}" ]] && _aid_mc_prime "${_AID_TARGET}/.aid/.aid-manifest.json"
+if [[ "$SUBCMD" == "update" ]] && _aid_is_project_dir "${_AID_TARGET}"; then
+    _aid_manifest_format_gate "${_AID_TARGET}" || exit $?
+    _AID_REPO_FMT="$(_aid_repo_format "${_AID_TARGET}")"
+    if [[ "$_AID_REPO_FMT" -gt "$AID_SUPPORTED_FORMAT" ]]; then
+        printf 'ERROR: aid: project format %s is newer than this CLI supports (%s). Upgrade the aid CLI to operate on this project.\n' "$_AID_REPO_FMT" "$AID_SUPPORTED_FORMAT" >&2
+        exit 1
+    fi
+    if [[ -e "${_AID_TARGET}/.aid/.temp/v3-upgrade-tools.json" || -L "${_AID_TARGET}/.aid/.temp/v3-upgrade-tools.json" ]] || _aid_v3_legacy_evidence "${_AID_TARGET}"; then _AID_V3_UPGRADE=1; fi
+fi
+
+# A pending recovery record owns the upgrade tool set and gates mutations.
+if [[ "$SUBCMD" == add || "$SUBCMD" == remove ]]; then
+    _aid_manifest_format_gate "${_AID_TARGET}" || exit $?
+    _aid_format_gate "${_AID_TARGET}" || exit $?
+    if read_upgrade_recovery "${_AID_TARGET}" >/dev/null 2>&1; then
+        printf 'ERROR: aid %s: a v3 upgrade is pending; run: aid update\n' "$SUBCMD" >&2; exit 2
+    else
+        _RECOVERY_RC=$?
+        [[ "$_RECOVERY_RC" -eq 1 ]] || { read_upgrade_recovery "${_AID_TARGET}"; exit 2; }
+    fi
+fi
+
 # ---- Self-update-if-needed preamble (FF-3 / CLI-2 / task-079) --------------
 # For 'update' inside an AID repo only (not 'add', not 'update self').
 # Ensures the CLI is current before the per-repo tool-update runs.  WARN-not-fail.
 if [[ "$SUBCMD" == "update" ]]; then
     _aid_update_self_if_stale
+fi
+
+# A v4 (format 3) project is never a v3 upgrade, whatever legacy-looking paths a branch
+# switch or a user left behind: leave them untouched and report them once.
+if [[ "$SUBCMD" == "update" && "${_AID_V3_UPGRADE:-0}" -eq 0 ]] && _aid_is_project_dir "${_AID_TARGET}"; then
+    _aid_warn_v4_stray_paths "${_AID_TARGET}"
 fi
 
 # Strip leading 'v' from version.
@@ -6277,6 +6479,67 @@ fi
 
 mapfile -t _AID_TOOLS < "$_TOOLS_TMP"
 
+if [[ "$SUBCMD" == update && "${_AID_V3_UPGRADE:-0}" -eq 1 ]]; then
+    _RECOVERY_RC=1
+    read_upgrade_recovery "${_AID_TARGET}"; _RECOVERY_RC=$?
+    if [[ "$_RECOVERY_RC" -eq 2 ]]; then rm -rf "$_AID_STAGING_BASE"; exit 2; fi
+    if [[ "$_RECOVERY_RC" -eq 0 ]]; then
+        _RECOVERY_REQUESTED=()
+        if [[ -n "$_AID_TOOL_ARG" ]]; then IFS=',' read -ra _RECOVERY_REQUESTED <<< "$_AID_TOOL_ARG"; fi
+        for _RECOVERY_NAME in "${_RECOVERY_REQUESTED[@]+${_RECOVERY_REQUESTED[@]}}"; do
+            _RECOVERY_NAME="$(echo "$_RECOVERY_NAME" | tr -d '[:space:]')"
+            _RECOVERY_NAME="$(normalize_tool "$_RECOVERY_NAME")" || { rm -rf "$_AID_STAGING_BASE"; exit 2; }
+            [[ " ${_AID_UPGRADE_TOOLS[*]} " == *" $_RECOVERY_NAME "* ]] || { echo "ERROR: aid update: tool '${_RECOVERY_NAME}' is outside the pending recovery set; retry recovery without naming it" >&2; rm -rf "$_AID_STAGING_BASE"; exit 2; }
+        done
+        _AID_TOOLS=("${_AID_UPGRADE_TOOLS[@]}")
+    else
+        _AID_UPGRADE_TOOLS=()
+        _LEGACY_TOOLS=()
+        # Format 2, 1 or no format_version (pre-format-3 manifests) list the tools to upgrade.
+        [[ -f "$_AID_MANIFEST" ]] && { [[ "$(manifest_format "$_AID_MANIFEST")" =~ ^[0-2]?$ ]] && mapfile -t _LEGACY_TOOLS < <(manifest_list_tools "$_AID_MANIFEST"); }
+        if [[ "${#_LEGACY_TOOLS[@]}" -eq 0 ]]; then
+            for _LEGACY_TOOL in "${AID_TOOLS[@]}"; do
+                _LEGACY_ROOT="$(_root_dir "$_LEGACY_TOOL")"
+                if [[ -d "${_AID_TARGET}/${_LEGACY_ROOT}/aid" ]] || { [[ -d "${_AID_TARGET}/${_LEGACY_ROOT}/skills" ]] && find "${_AID_TARGET}/${_LEGACY_ROOT}/skills" -mindepth 1 -maxdepth 1 -type d -name 'aid-*' -print -quit | grep -q .; } || { [[ "$_LEGACY_TOOL" == codex ]] && [[ -d "${_AID_TARGET}/.agents/aid" ]]; }; then
+                    _LEGACY_TOOLS+=("$_LEGACY_TOOL")
+                fi
+            done
+        fi
+        if [[ -n "$_AID_TOOL_ARG" ]]; then IFS=',' read -ra _REQUESTED_LEGACY <<< "$_AID_TOOL_ARG"; for _RT in "${_REQUESTED_LEGACY[@]}"; do _RT="$(echo "$_RT" | tr -d '[:space:]')"; _LEGACY_TOOLS+=("$(normalize_tool "$_RT")"); done; fi
+        for _LEGACY_TOOL in "${AID_TOOLS[@]}"; do for _CAND in "${_LEGACY_TOOLS[@]+${_LEGACY_TOOLS[@]}}"; do [[ "$_LEGACY_TOOL" == "$_CAND" ]] && { _AID_UPGRADE_TOOLS+=("$_LEGACY_TOOL"); break; }; done; done
+        [[ "${#_AID_UPGRADE_TOOLS[@]}" -gt 0 ]] || { echo "ERROR: aid update: no tools found for v3 upgrade" >&2; rm -rf "$_AID_STAGING_BASE"; exit 2; }
+        _AID_TOOLS=("${_AID_UPGRADE_TOOLS[@]}")
+    fi
+    _TOOLS_TMP="${_AID_STAGING_BASE}/upgrade-tools.tsv"; printf '%s\n' "${_AID_TOOLS[@]}" > "$_TOOLS_TMP"
+fi
+
+# A named update is a request for at least those tools. Shared files have one
+# version, so include every installed tool in the same staged commit set.
+if [[ "$SUBCMD" == "update" && "${_AID_V3_UPGRADE:-0}" -eq 0 ]]; then
+    _AID_REQUESTED_TOOLS=("${_AID_TOOLS[@]}")
+    _AID_INSTALLED_TMP="${_AID_STAGING_BASE}/installed-tools.tsv"
+    : > "$_AID_INSTALLED_TMP"
+    [[ -f "$_AID_MANIFEST" ]] && manifest_list_tools "$_AID_MANIFEST" > "$_AID_INSTALLED_TMP"
+    _AID_ALL_TMP="${_AID_STAGING_BASE}/all-tools.tsv"
+    cat "$_AID_INSTALLED_TMP" "$_TOOLS_TMP" | sort -u > "$_AID_ALL_TMP"
+    _AID_TOOLS=()
+    while IFS= read -r _AID_ORDER_TOOL; do
+        [[ -z "$_AID_ORDER_TOOL" ]] && continue
+        while IFS= read -r _AID_TOOL_CANDIDATE; do
+            [[ "$_AID_ORDER_TOOL" == "$_AID_TOOL_CANDIDATE" ]] && _AID_TOOLS+=("$_AID_ORDER_TOOL")
+        done < "$_AID_ALL_TMP"
+    done < <(printf '%s\n' "${AID_TOOLS[@]}")
+    _AID_ADDED_TO_COMMIT=()
+    for _AID_INSTALLED in "${_AID_TOOLS[@]}"; do
+        _AID_WAS_REQUESTED=0
+        for _AID_REQUESTED in "${_AID_REQUESTED_TOOLS[@]}"; do [[ "$_AID_REQUESTED" == "$_AID_INSTALLED" ]] && _AID_WAS_REQUESTED=1; done
+        [[ "$_AID_WAS_REQUESTED" -eq 1 ]] || _AID_ADDED_TO_COMMIT+=("$_AID_INSTALLED")
+    done
+    if [[ "${#_AID_ADDED_TO_COMMIT[@]}" -gt 0 ]]; then
+        printf 'aid update: added to commit set: %s\n' "$(IFS=', '; echo "${_AID_ADDED_TO_COMMIT[*]}")"
+    fi
+fi
+
 if [[ "${#_AID_TOOLS[@]}" -eq 0 ]]; then
     case "$SUBCMD" in
         remove)
@@ -6302,60 +6565,85 @@ fi
 # ---------------------------------------------------------------------------
 _AID_RESOLVED_VERSION=""
 _AID_STAGING_DIR=""
+_AID_SHARED_STAGING_DIR=""
+declare -A _AID_RELEASE_TOOL_STAGING=()
 
-_prepare_tool_staging_aid() {
-    local tool="$1" version="$2" from_bundle="$3"
-
-    local tool_staging
-    tool_staging="$(mktemp -d "${_AID_STAGING_BASE}/staging-${tool}-XXXXXX")"
-
+_prepare_release_staging_aid() {
+    local version="$1" from_bundle="$2" tool shared_tar shared_base shared_version bundle_dir dl_dir tool_tar tool_base tool_version stage candidate
+    shift 2
     if [[ -n "$from_bundle" ]]; then
-        local tarball="$from_bundle"
-        if [[ -d "$from_bundle" ]]; then
-            tarball="$(ls "${from_bundle}"/aid-${tool}-v*.tar.gz 2>/dev/null | head -1)"
-            if [[ -z "$tarball" ]]; then
-                echo "ERROR: aid: no tarball found for tool '${tool}' in bundle directory: ${from_bundle}" >&2
-                exit 1
-            fi
-        fi
-        if [[ ! -f "$tarball" ]]; then
-            echo "ERROR: aid: bundle file not found: ${tarball}" >&2
-            exit 1
-        fi
-        verify_bundle_checksum "$tarball" || exit $?
-        local tbase
-        tbase="$(basename "$tarball")"
-        # Derive the version STRICTLY from the canonical tool-bundle name
-        # (aid-<tool>-v<semver>.tar.gz). Never stamp a raw filename: a name that
-        # does not match this shape is the wrong artifact (e.g. the CLI installer
-        # package aid-installer-<ver>.tgz), not a tool bundle. Fall back to an
-        # explicit --version, else fail loudly rather than recording garbage.
-        if [[ "$tbase" =~ ^aid-${tool}-v([0-9]+\.[0-9]+\.[0-9]+([.+-][0-9A-Za-z.+-]+)?)\.tar\.gz$ ]]; then
-            _AID_RESOLVED_VERSION="${BASH_REMATCH[1]}"
-        elif [[ -n "${version:-}" ]]; then
-            _AID_RESOLVED_VERSION="$version"
-        else
-            echo "ERROR: aid: '${tbase}' is not a valid AID tool bundle for '${tool}'." >&2
-            echo "       Expected a tarball named 'aid-${tool}-v<version>.tar.gz'." >&2
-            echo "       (Did you pass the CLI installer package instead of a tool bundle?" >&2
-            echo "        Point --from-bundle at a release staging dir or an aid-${tool}-v*.tar.gz file.)" >&2
+        if [[ -d "$from_bundle" ]]; then bundle_dir="$from_bundle"; else bundle_dir="$(dirname "$from_bundle")"; fi
+        local -a shared_files=()
+        while IFS= read -r -d '' f; do shared_files+=("$f"); done < <(find "$bundle_dir" -maxdepth 1 -type f -name 'aid-shared-v*.tar.gz' -print0 | sort -z)
+        if [[ "${#shared_files[@]}" -ne 1 ]]; then
+            local found="(none)"
+            if [[ "${#shared_files[@]}" -gt 0 ]]; then found="$(printf '%s ' "${shared_files[@]##*/}")"; fi
+            echo "ERROR: aid: expected exactly one aid-shared-v*.tar.gz in bundle directory; found: ${found}" >&2
             exit 2
         fi
-        extract_tarball "$tarball" "$tool_staging" || exit $?
+        shared_tar="${shared_files[0]}"
+        shared_base="$(basename "$shared_tar")"
+        [[ "$shared_base" =~ ^aid-shared-v([0-9]+\.[0-9]+\.[0-9]+([.+-][0-9A-Za-z.+-]+)?)\.tar\.gz$ ]] || { echo "ERROR: aid: invalid shared artifact name: ${shared_base}" >&2; exit 2; }
+        shared_version="${BASH_REMATCH[1]}"
     else
-        if [[ -z "$version" ]]; then
-            _AID_RESOLVED_VERSION="$(resolve_version)" || exit $?
-        else
-            _AID_RESOLVED_VERSION="$version"
-        fi
-        local dl_dir
-        dl_dir="$(mktemp -d "${_AID_STAGING_BASE}/download-${tool}-XXXXXX")"
-        fetch_tarball "$tool" "$_AID_RESOLVED_VERSION" "$dl_dir" || exit $?
-        local tarball="${dl_dir}/aid-${tool}-v${_AID_RESOLVED_VERSION}.tar.gz"
-        extract_tarball "$tarball" "$tool_staging" || exit $?
+        if [[ -z "$version" ]]; then version="$(resolve_version)" || exit $?; fi
+        shared_version="$version"
+        dl_dir="$(mktemp -d "${_AID_STAGING_BASE}/download-release-XXXXXX")"
+        fetch_artifact shared '' "$shared_version" "$dl_dir" || exit $?
+        shared_tar="${dl_dir}/aid-shared-v${shared_version}.tar.gz"
+        bundle_dir="$dl_dir"
     fi
+    verify_bundle_checksum "$shared_tar" || exit $?
+    _validate_artifact_members "$shared_tar" shared || exit 1
+    _AID_SHARED_STAGING_DIR="$(mktemp -d "${_AID_STAGING_BASE}/shared-XXXXXX")"
+    extract_payload "$shared_tar" "$_AID_SHARED_STAGING_DIR" || exit 1
+    validate_release_descriptor "${_AID_SHARED_STAGING_DIR}/aid-payload.conf" shared "$shared_version" || exit 1
+    _AID_RESOLVED_VERSION="$shared_version"
+    _AID_RELEASE_TOOL_STAGING=()
+    for tool in "$@"; do
+        if [[ -z "$from_bundle" ]]; then
+            fetch_artifact tool "$tool" "$shared_version" "$bundle_dir" || exit $?
+            tool_tar="${bundle_dir}/aid-${tool}-v${shared_version}.tar.gz"
+        else
+            local -a tool_files=()
+            while IFS= read -r -d '' candidate; do tool_files+=("$candidate"); done < <(find "$bundle_dir" -maxdepth 1 -type f -name "aid-${tool}-v*.tar.gz" -print0 | sort -z)
+            if [[ "${#tool_files[@]}" -ne 1 ]]; then
+                local tool_found="(none)"; [[ "${#tool_files[@]}" -gt 0 ]] && tool_found="$(printf '%s ' "${tool_files[@]##*/}")"
+                echo "ERROR: aid: expected exactly one aid-${tool}-v*.tar.gz; found: ${tool_found}" >&2; exit 2
+            fi
+            tool_tar="${tool_files[0]}"
+        fi
+        tool_base="$(basename "$tool_tar")"
+        [[ "$tool_base" =~ ^aid-${tool}-v([0-9]+\.[0-9]+\.[0-9]+([.+-][0-9A-Za-z.+-]+)?)\.tar\.gz$ ]] || { echo "ERROR: aid: invalid tool artifact name: ${tool_base}" >&2; exit 2; }
+        tool_version="${BASH_REMATCH[1]}"
+        verify_bundle_checksum "$tool_tar" || exit $?
+        [[ "$tool_version" == "$shared_version" ]] || { echo "ERROR: aid: tool artifact ${tool_base} does not match shared payload version ${shared_version}" >&2; exit 2; }
+        _validate_artifact_members "$tool_tar" tool "$tool" || exit 1
+        stage="$(mktemp -d "${_AID_STAGING_BASE}/staging-${tool}-XXXXXX")"
+        extract_payload "$tool_tar" "$stage" || exit 1
+        validate_release_descriptor "${stage}/aid-tool.conf" tool "$tool_version" "$tool" || exit 1
+        _AID_RELEASE_TOOL_STAGING["$tool"]="$stage"
+    done
+}
 
-    _AID_STAGING_DIR="$tool_staging"
+_check_staged_version() {
+    local staged="$1" manifest="$2" project_version=""
+    [[ -f "$manifest" ]] || return 0
+    if command -v python3 >/dev/null 2>&1; then
+        project_version="$(python3 - "$manifest" <<'PY'
+import json, sys
+try:
+    print(json.load(open(sys.argv[1], encoding="utf-8")).get("aid_version", ""))
+except Exception:
+    pass
+PY
+)"
+    else
+        project_version="$(sed -n 's/^[[:space:]]*"aid_version"[[:space:]]*:[[:space:]]*"\([^"]*\)".*/\1/p' "$manifest" | head -1)"
+    fi
+    [[ -z "$project_version" || "$staged" == "$project_version" ]] && return 0
+    echo "ERROR: aid add: staged version v${staged} would create a mixed-version project at v${project_version}. Run 'aid update' before adding tools." >&2
+    return 2
 }
 
 # ---------------------------------------------------------------------------
@@ -6366,11 +6654,12 @@ case "$SUBCMD" in
         # B-table (for 'add'): writability pre-check BEFORE any .aid/ is created.
         # Decision #3: never elevate .aid/ creation -- error if folder is not writable.
         if [[ "$SUBCMD" == "add" ]]; then
-            if [[ ! -w "$_AID_TARGET" ]]; then
-                echo "ERROR: aid: add: target directory is not writable: ${_AID_TARGET}" >&2
-                echo "ERROR: aid: add: AID will not create a root-owned .aid/ -- fix folder permissions and retry." >&2
+            _aid_manifest_format_gate "${_AID_TARGET}" || { _gate_rc=$?; rm -rf "$_AID_STAGING_BASE"; exit "$_gate_rc"; }
+            _aid_layout_gate "${_AID_TARGET}" || { _gate_rc=$?; rm -rf "$_AID_STAGING_BASE"; exit "$_gate_rc"; }
+            if _aid_manifest_version_skew "$_AID_MANIFEST"; then
+                echo "ERROR: aid add: project manifest contains version skew. Run: aid update before adding tools." >&2
                 rm -rf "$_AID_STAGING_BASE"
-                exit 1
+                exit 2
             fi
         fi
 
@@ -6429,6 +6718,9 @@ case "$SUBCMD" in
             _aid_format_gate "${_AID_TARGET}" || exit $?
         fi
 
+        # Root-file gate: refuse before any write when AGENTS.md / CLAUDE.md cannot be edited safely.
+        _aid_root_files_gate "${_AID_TARGET}" "${_AID_V3_UPGRADE:-0}" "${_AID_TOOLS[@]}" || { _gate_rc=$?; rm -rf "$_AID_STAGING_BASE"; exit "$_gate_rc"; }
+
         # ---------------------------------------------------------------------------
         # FR10 Stage-all-first atomicity (task-009):
         # PHASE 1: Stage ALL tools (resolve version, fetch, checksum-verify, extract
@@ -6438,23 +6730,141 @@ case "$SUBCMD" in
         declare -A _STAGE_MAP=()   # tool -> staging_dir
         _STAGE_VERSION=""          # single resolved version for all tools
 
-        for _tool in "${_AID_TOOLS[@]}"; do
-            _prepare_tool_staging_aid "$_tool" "$_AID_VERSION_ARG" "$_AID_FROM_BUNDLE"
-            _STAGE_MAP["$_tool"]="$_AID_STAGING_DIR"
-            # All tools must be at the same version (the first resolved wins, the rest
-            # confirm by the same --version / bundle arg).
-            if [[ -z "$_STAGE_VERSION" ]]; then
-                _STAGE_VERSION="$_AID_RESOLVED_VERSION"
+        _prepare_release_staging_aid "$_AID_VERSION_ARG" "$_AID_FROM_BUNDLE" "${_AID_TOOLS[@]}"
+        _STAGE_VERSION="$_AID_RESOLVED_VERSION"
+        for _tool in "${_AID_TOOLS[@]}"; do _STAGE_MAP["$_tool"]="${_AID_RELEASE_TOOL_STAGING[$_tool]}"; done
+        if [[ "$SUBCMD" == add ]]; then
+            _check_staged_version "$_STAGE_VERSION" "$_AID_MANIFEST" || { _gate_rc=$?; rm -rf "$_AID_STAGING_BASE"; exit "$_gate_rc"; }
+            if [[ ! -w "$_AID_TARGET" ]]; then
+                echo "ERROR: aid: add: target directory is not writable: ${_AID_TARGET}" >&2
+                echo "ERROR: aid: add: AID will not create a root-owned .aid/ -- fix folder permissions and retry." >&2
+                rm -rf "$_AID_STAGING_BASE"; exit 1
             fi
-        done
+        fi
 
         # ---------------------------------------------------------------------------
         # FR10 --dry-run: print the plan and exit with no writes.
         # ---------------------------------------------------------------------------
         if [[ "${_AID_DRY_RUN:-0}" -eq 1 ]]; then
             echo "--- aid ${SUBCMD} --dry-run plan (no writes) ---"
+            if [[ "${_AID_V3_UPGRADE:-0}" -eq 1 ]]; then retire_v3_layout "${_AID_TARGET}" 1 "${_AID_TOOLS[@]}"; fi
             echo "Target: ${_AID_TARGET}"
             echo "Version: ${_STAGE_VERSION:-<current>}"
+            echo "Shared copies:"
+            _DRY_TRASH_MOVES=()
+            while IFS= read -r -d '' _dry_f; do
+                _dry_rel="${_dry_f#${_AID_SHARED_STAGING_DIR}/skills/}"
+                [[ "$_dry_rel" == aid-*/* ]] || continue
+                _dry_dst="${_AID_TARGET}/.agents/skills/${_dry_rel}"
+                echo "  copy: skills/${_dry_rel} -> ${_dry_dst}"
+                if [[ -f "$_dry_dst" ]] && ! cmp -s "$_dry_f" "$_dry_dst"; then
+                    _dry_prev="$(manifest_read_shared "$_AID_MANIFEST" | awk -F '\t' -v p="$_dry_rel" '$1=="shared.skills.file" && $2==p {print $3; exit}')"
+                    _dry_actual="$(sha256_file "$_dry_dst")"
+                    [[ -n "$_dry_prev" && "$_dry_actual" == "$_dry_prev" ]] || _DRY_TRASH_MOVES+=("${_dry_dst#${_AID_TARGET}/}")
+                fi
+            done < <(find "${_AID_SHARED_STAGING_DIR}/skills" -type f -print0 2>/dev/null | sort -z)
+            for _dry_tool in "${_AID_TOOLS[@]}"; do
+                while IFS= read -r _dry_conf_line; do
+                    [[ "$_dry_conf_line" == skill_mirror=* ]] || continue
+                    _dry_mirror="${_dry_conf_line#skill_mirror=}"
+                    while IFS= read -r -d '' _dry_f; do
+                        _dry_rel="${_dry_f#${_AID_SHARED_STAGING_DIR}/skills/}"
+                        [[ "$_dry_rel" == aid-*/* ]] || continue
+                        _dry_dst="${_AID_TARGET}/${_dry_mirror}/${_dry_rel}"
+                        echo "  copy: mirror/${_dry_rel} -> ${_dry_dst}"
+                        if [[ -f "$_dry_dst" ]] && ! cmp -s "$_dry_f" "$_dry_dst"; then
+                            _dry_prev="$(manifest_read_shared "$_AID_MANIFEST" | awk -F '\t' -v p="$_dry_rel" '$1=="shared.skills.file" && $2==p {print $3; exit}')"
+                            _dry_actual="$(sha256_file "$_dry_dst")"
+                            [[ -n "$_dry_prev" && "$_dry_actual" == "$_dry_prev" ]] || _DRY_TRASH_MOVES+=("${_dry_dst#${_AID_TARGET}/}")
+                        fi
+                    done < <(find "${_AID_SHARED_STAGING_DIR}/skills" -type f -print0 2>/dev/null | sort -z)
+                done < <(read_kv_conf "${_STAGE_MAP[$_dry_tool]}/aid-tool.conf")
+            done
+            while IFS= read -r -d '' _dry_f; do
+                _dry_rel="${_dry_f#${_AID_SHARED_STAGING_DIR}/runtime/}"
+                _dry_dst="${_AID_TARGET}/.aid/runtime/${_dry_rel}"
+                echo "  copy: runtime/${_dry_rel} -> ${_dry_dst}"
+                if [[ -f "$_dry_dst" ]] && ! cmp -s "$_dry_f" "$_dry_dst"; then
+                    _dry_prev="$(manifest_read_shared "$_AID_MANIFEST" | awk -F '\t' -v p="$_dry_rel" '$1=="shared.runtime.file" && $2==p {print $3; exit}')"
+                    _dry_actual="$(sha256_file "$_dry_dst")"
+                    [[ -n "$_dry_prev" && "$_dry_actual" == "$_dry_prev" ]] || _DRY_TRASH_MOVES+=("${_dry_dst#${_AID_TARGET}/}")
+                fi
+            done < <(find "${_AID_SHARED_STAGING_DIR}/runtime" -type f -print0 2>/dev/null | sort -z)
+            echo "  generated: .aid/runtime/host.conf (retained; generated during commit)"
+            # Tool agent files use the same guarded replacement rule as shared files.
+            _dry_roots=(claude-code:.claude codex:.codex cursor:.cursor copilot-cli:.github antigravity:.agent)
+            for _dry_tool in "${_AID_TOOLS[@]}"; do
+                _dry_root=""
+                for _dry_pair in "${_dry_roots[@]}"; do [[ "${_dry_pair%%:*}" == "$_dry_tool" ]] && _dry_root="${_dry_pair#*:}"; done
+                [[ -n "$_dry_root" ]] || continue
+                _dry_agents="${_STAGE_MAP[$_dry_tool]}/${_dry_root}/agents"
+                while IFS= read -r -d '' _dry_f; do
+                    _dry_rel="${_dry_f#${_dry_agents}/}"
+                    _dry_dst="${_AID_TARGET}/${_dry_root}/agents/${_dry_rel}"
+                    echo "  copy: ${_dry_root}/agents/${_dry_rel} -> ${_dry_dst}"
+                    if [[ -f "$_dry_dst" ]] && ! cmp -s "$_dry_f" "$_dry_dst"; then
+                        _dry_path="${_dry_root}/agents/${_dry_rel}"
+                        _dry_prev="$(manifest_read_tool_files "$_AID_MANIFEST" "$_dry_tool" | awk -F '\t' -v p="$_dry_path" '$1=="tools.'"$_dry_tool"'.file" && $2==p {print $3; exit}')"
+                        _dry_actual="$(sha256_file "$_dry_dst")"
+                        [[ -n "$_dry_prev" && "$_dry_actual" == "$_dry_prev" ]] || _DRY_TRASH_MOVES+=("${_dry_dst#${_AID_TARGET}/}")
+                    fi
+                done < <(find "$_dry_agents" -type f -print0 2>/dev/null | sort -z)
+            done
+            echo "Trash moves:"
+            for _dry_trash in "${_DRY_TRASH_MOVES[@]}"; do echo "  move to trash: ${_dry_trash}"; done
+            echo "Prune list:"
+            _dry_scan_roots=(.agents/skills .aid/runtime)
+            for _dry_tool in "${_AID_TOOLS[@]}"; do
+                _dry_conf="${_STAGE_MAP[$_dry_tool]}/aid-tool.conf"
+                while IFS= read -r _dry_conf_line; do [[ "$_dry_conf_line" == skill_mirror=* ]] && _dry_scan_roots+=("${_dry_conf_line#skill_mirror=}"); done < <(read_kv_conf "$_dry_conf")
+                for _dry_pair in "${_dry_roots[@]}"; do [[ "${_dry_pair%%:*}" == "$_dry_tool" ]] && _dry_scan_roots+=("${_dry_pair#*:}/agents"); done
+            done
+            while IFS=$'\t' read -r _dry_key _dry_mirror _; do [[ "$_dry_key" == shared.mirror ]] && _dry_scan_roots+=("$_dry_mirror"); done < <(manifest_read_shared "$_AID_MANIFEST")
+            while IFS= read -r _dry_f; do
+                [[ -f "${_AID_TARGET}/${_dry_f}" ]] || continue
+                if [[ "$_dry_f" != .aid/runtime/* ]]; then
+                    _dry_is_aid=0
+                    for _dry_root in "${_dry_scan_roots[@]}"; do
+                        if [[ "$_dry_f" == "${_dry_root}/"* ]]; then _dry_rel="${_dry_f#${_dry_root}/}"; _dry_first="${_dry_rel%%/*}"; [[ "$_dry_first" == aid-* ]] && { _dry_is_aid=1; _dry_root_for_file="$_dry_root"; }; fi
+                    done
+                    [[ "$_dry_is_aid" -eq 1 ]] || continue
+                fi
+                [[ "$_dry_f" == .aid/runtime/* ]] && { [[ "$_dry_f" == */node_modules/* ]] && continue; [[ "$_dry_f" == .aid/runtime/host.conf ]] && continue; _dry_rel="${_dry_f#.aid/runtime/}"; [[ -f "${_AID_SHARED_STAGING_DIR}/runtime/${_dry_rel}" ]] && continue; }
+                if [[ "$_dry_f" == .agents/skills/* ]]; then _dry_rel="${_dry_f#.agents/skills/}"; [[ -f "${_AID_SHARED_STAGING_DIR}/skills/${_dry_rel}" ]] && continue; fi
+                _dry_keep=0
+                for _dry_tool in "${_AID_TOOLS[@]}"; do
+                    _dry_conf="${_STAGE_MAP[$_dry_tool]}/aid-tool.conf"
+                    while IFS= read -r _dry_conf_line; do
+                        [[ "$_dry_conf_line" == skill_mirror=* ]] || continue
+                        _dry_mirror="${_dry_conf_line#skill_mirror=}"
+                        if [[ "$_dry_f" == "${_dry_mirror}/"* ]]; then _dry_rel="${_dry_f#${_dry_mirror}/}"; [[ -f "${_AID_SHARED_STAGING_DIR}/skills/${_dry_rel}" ]] && _dry_keep=1; fi
+                    done < <(read_kv_conf "$_dry_conf")
+                    for _dry_pair in "${_dry_roots[@]}"; do
+                        [[ "${_dry_pair%%:*}" == "$_dry_tool" ]] || continue
+                        _dry_agent_root="${_dry_pair#*:}/agents"
+                        if [[ "$_dry_f" == "${_dry_agent_root}/"* ]]; then _dry_rel="${_dry_f#${_dry_agent_root}/}"; [[ -f "${_STAGE_MAP[$_dry_tool]}/${_dry_agent_root}/${_dry_rel}" ]] && _dry_keep=1; fi
+                    done
+                done
+                if [[ "$_dry_keep" -eq 0 ]]; then
+                    _dry_old_sha=""
+                    if [[ "$_dry_f" == .aid/runtime/* ]]; then
+                        _dry_rel="${_dry_f#.aid/runtime/}"
+                        _dry_old_sha="$(manifest_read_shared "$_AID_MANIFEST" | awk -F '\t' -v p="$_dry_rel" '$1=="shared.runtime.file" && $2==p {print $3; exit}')"
+                    elif [[ "$_dry_f" == .agents/skills/* || ( -n "${_dry_root_for_file:-}" && "$_dry_root_for_file" != */agents ) ]]; then
+                        _dry_rel="${_dry_f#${_dry_root_for_file:-.agents/skills}/}"
+                        _dry_old_sha="$(manifest_read_shared "$_AID_MANIFEST" | awk -F '\t' -v p="$_dry_rel" '$1=="shared.skills.file" && $2==p {print $3; exit}')"
+                    else
+                        for _dry_pair in "${_dry_roots[@]}"; do
+                            _dry_tool="${_dry_pair%%:*}"; _dry_agent_root="${_dry_pair#*:}/agents"
+                            [[ "$_dry_f" == "${_dry_agent_root}/"* ]] || continue
+                            _dry_rel="${_dry_f#${_dry_agent_root}/}"; _dry_path="${_dry_agent_root}/${_dry_rel}"
+                            _dry_old_sha="$(manifest_read_tool_files "$_AID_MANIFEST" "$_dry_tool" | awk -F '\t' -v p="$_dry_path" '$1=="tools.'"$_dry_tool"'.file" && $2==p {print $3; exit}')"
+                        done
+                    fi
+                    _dry_actual="$(sha256_file "${_AID_TARGET}/${_dry_f}")"
+                    if [[ -n "$_dry_old_sha" && "$_dry_actual" == "$_dry_old_sha" ]]; then echo "  prune: ${_dry_f} (delete; matches prior AID hash)"; else echo "  prune: ${_dry_f} (move to trash; modified or untracked)"; fi
+                fi
+            done < <(for _dry_root in "${_dry_scan_roots[@]}"; do [[ -d "${_AID_TARGET}/${_dry_root}" ]] && find "${_AID_TARGET}/${_dry_root}" -type f -printf '%P\n' | sed "s#^#${_dry_root}/#"; done | sort -u)
             for _tool in "${_AID_TOOLS[@]}"; do
                 echo ""
                 echo "Tool: ${_tool}"
@@ -6463,14 +6873,6 @@ case "$SUBCMD" in
                 while IFS= read -r -d '' _dry_f; do
                     echo "  copy: ${_dry_f#${_dry_staging}/} -> ${_AID_TARGET}"
                 done < <(find "${_dry_staging}" -type f -print0 2>/dev/null | sort -z)
-                # List files that would be MOVED TO TRASH by the retired-root migration sweep
-                # (marker 1: aid-* prefix; marker 2: inside an aid/ subtree).
-                # Uses list_only=1 mode of _migrate_retired_layout (no writes).
-                _dry_removed_out="$(_migrate_retired_layout "${_AID_TARGET}" "${_tool}" 1 2>/dev/null)"
-                if [[ -n "$_dry_removed_out" ]]; then
-                    echo "  Would MOVE TO TRASH (retired-layout migration):"
-                    printf '%s\n' "$_dry_removed_out"
-                fi
             done
             echo ""
             echo "--- end dry-run plan ---"
@@ -6478,23 +6880,84 @@ case "$SUBCMD" in
             exit 0
         fi
 
+        if [[ "$SUBCMD" == update && "${_AID_V3_UPGRADE:-0}" -eq 1 ]]; then
+            if [[ -z "${_AID_UPGRADE_RETIRED:-}" ]]; then
+                write_upgrade_recovery "${_AID_TARGET}" false "${_AID_TOOLS[@]}" || { echo 'ERROR: aid update: could not write recovery record; no old files were retired.' >&2; exit 1; }
+                _AID_UPGRADE_RETIRED=false
+            fi
+            if [[ "$_AID_UPGRADE_RETIRED" == false ]]; then
+                retire_v3_layout "${_AID_TARGET}" 0 "${_AID_TOOLS[@]}" || { echo 'ERROR: aid update: v3 retirement failed; rerun aid update to recover.' >&2; exit 1; }
+                write_upgrade_recovery "${_AID_TARGET}" true "${_AID_TOOLS[@]}" || { echo 'ERROR: aid update: could not mark retirement complete; v4 files were not copied.' >&2; exit 1; }
+                _AID_UPGRADE_RETIRED=true
+            fi
+        fi
+
         # ---------------------------------------------------------------------------
         # PHASE 2: Commit all staged tools.
         # If any commit fails, exit non-zero with a re-run-to-heal message.
         # aid update is idempotent: re-running drives every tool to the target version.
         # ---------------------------------------------------------------------------
-        for _tool in "${_AID_TOOLS[@]}"; do
-            echo ""
-            echo "Installing ${_tool} v${_STAGE_VERSION} -> ${_AID_TARGET}"
-            install_tool "${_STAGE_MAP[$_tool]}" "$_tool" "$_AID_TARGET" "$_STAGE_VERSION" "$_AID_FORCE" || {
+        [[ "${_AID_V3_UPGRADE:-0}" -eq 1 ]] && export AID_UPGRADE_EXACT=1
+        if [[ "$SUBCMD" == add ]]; then
+            _NEW_TOOL_FILE="${_AID_STAGING_BASE}/new-tools.tsv"
+            : > "$_NEW_TOOL_FILE"
+            for _tool in "${_AID_TOOLS[@]}"; do printf '%s\t%s\n' "$_tool" "${_STAGE_MAP[$_tool]}" >> "$_NEW_TOOL_FILE"; done
+            install_shared "$_AID_SHARED_STAGING_DIR" "$_AID_TARGET" "$_STAGE_VERSION" "$_NEW_TOOL_FILE" "$_AID_FORCE" payload || {
                 _COMMIT_RC=$?
-                echo "" >&2
-                echo "ERROR: aid ${SUBCMD} failed mid-commit for tool '${_tool}' (rc=${_COMMIT_RC})." >&2
-                echo "       The project may be at mixed versions. Re-run 'aid update' to heal." >&2
+                echo "ERROR: aid ${SUBCMD} failed while committing shared payload (rc=${_COMMIT_RC})." >&2
                 rm -rf "$_AID_STAGING_BASE"
                 exit "${_COMMIT_RC}"
             }
-        done
+            for _tool in "${_AID_TOOLS[@]}"; do
+                echo ""
+                echo "Installing ${_tool} v${_STAGE_VERSION} -> ${_AID_TARGET}"
+                install_tool "${_STAGE_MAP[$_tool]}" "$_tool" "$_AID_TARGET" || {
+                    _COMMIT_RC=$?
+                    echo "" >&2
+                    echo "ERROR: aid ${SUBCMD} failed mid-commit for tool '${_tool}' (rc=${_COMMIT_RC})." >&2
+                    echo "       Re-run 'aid update' to heal." >&2
+                    rm -rf "$_AID_STAGING_BASE"
+                    exit "${_COMMIT_RC}"
+                }
+            done
+            echo ""
+            install_shared "$_AID_SHARED_STAGING_DIR" "$_AID_TARGET" "$_STAGE_VERSION" "$_NEW_TOOL_FILE" "$_AID_FORCE" finalize || {
+                _COMMIT_RC=$?
+                echo "" >&2
+                echo "ERROR: aid ${SUBCMD} failed while committing shared files (rc=${_COMMIT_RC})." >&2
+                echo "       Re-run 'aid update' to heal." >&2
+                rm -rf "$_AID_STAGING_BASE"
+                exit "${_COMMIT_RC}"
+            }
+        else
+            _NEW_TOOL_FILE="${_AID_STAGING_BASE}/new-tools.tsv"
+            : > "$_NEW_TOOL_FILE"
+            for _tool in "${_AID_TOOLS[@]}"; do printf '%s\t%s\n' "$_tool" "${_STAGE_MAP[$_tool]}" >> "$_NEW_TOOL_FILE"; done
+            install_shared "$_AID_SHARED_STAGING_DIR" "$_AID_TARGET" "$_STAGE_VERSION" "$_NEW_TOOL_FILE" "$_AID_FORCE" update-payload || {
+                _COMMIT_RC=$?
+                echo "ERROR: aid update failed while committing shared payload (rc=${_COMMIT_RC})." >&2
+                rm -rf "$_AID_STAGING_BASE"
+                exit "${_COMMIT_RC}"
+            }
+            for _tool in "${_AID_TOOLS[@]}"; do
+                echo ""
+                echo "Installing ${_tool} v${_STAGE_VERSION} -> ${_AID_TARGET}"
+                install_tool "${_STAGE_MAP[$_tool]}" "$_tool" "$_AID_TARGET" || {
+                    _COMMIT_RC=$?
+                    echo "" >&2
+                    echo "ERROR: aid ${SUBCMD} failed mid-commit for tool '${_tool}' (rc=${_COMMIT_RC})." >&2
+                    echo "       The project may be at mixed versions. Re-run 'aid update' to heal." >&2
+                    rm -rf "$_AID_STAGING_BASE"
+                    exit "${_COMMIT_RC}"
+                }
+            done
+            install_shared "$_AID_SHARED_STAGING_DIR" "$_AID_TARGET" "$_STAGE_VERSION" "$_NEW_TOOL_FILE" "$_AID_FORCE" update-finalize || {
+                _COMMIT_RC=$?
+                echo "ERROR: aid update failed while committing shared files (rc=${_COMMIT_RC}). Re-run 'aid update' to heal." >&2
+                rm -rf "$_AID_STAGING_BASE"
+                exit "${_COMMIT_RC}"
+            }
+        fi
 
         echo ""
         echo "Done. AID ${_STAGE_VERSION:-} installed into: ${_AID_TARGET}"
@@ -6519,6 +6982,11 @@ case "$SUBCMD" in
         # migration never changes the tool-update exit code.
         if [[ "$SUBCMD" == "update" ]]; then
             _aid_migrate_repo "$_AID_TARGET"
+            if [[ "${_AID_V3_UPGRADE:-0}" -eq 1 ]]; then
+                if [[ "$(_aid_repo_format "$_AID_TARGET")" -lt 5 ]]; then echo 'ERROR: aid update: upgrade settings stamp was not written; recovery record retained. Rerun aid update to recover.' >&2; exit 1; fi
+                clear_upgrade_recovery "${_AID_TARGET}" || { echo 'ERROR: aid update: upgrade installed but recovery cleanup failed; rerun aid update.' >&2; exit 1; }
+            fi
+            unset AID_UPGRADE_EXACT
         fi
         exit 0
         ;;
@@ -6528,6 +6996,7 @@ case "$SUBCMD" in
             echo "ERROR: aid: no manifest at ${_AID_TARGET}/.aid/.aid-manifest.json; nothing to uninstall" >&2
             exit 6
         }
+        _aid_root_files_gate "${_AID_TARGET}" 2 "${_AID_TOOLS[@]}" || { _gate_rc=$?; exit "$_gate_rc"; }
 
         for _tool in "${_AID_TOOLS[@]}"; do
             echo ""

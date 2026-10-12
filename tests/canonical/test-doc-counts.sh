@@ -1,9 +1,9 @@
 #!/usr/bin/env bash
-# test-doc-counts.sh -- CI guard against skill/agent/profile/catalog count drift in the
+# test-doc-counts.sh -- CI guard against skill/agent/catalog count drift in the
 # user-facing docs (tech-debt M3).
 #
 # The problem: hand-written counts (92 skills, 9 agents, 76 shortcuts, 80-row catalog) are
-# repeated as prose across the README, docs/, and the profile READMEs, and drift whenever
+# repeated as prose across the README and docs, and drift whenever
 # the canonical inventory changes. Before this guard, drift was caught only by manual review
 # or /aid-housekeep -- so a newcomer could trust a stale count (this very cycle shipped
 # docs/install.md reading "82 skills / 67 shortcuts").
@@ -15,7 +15,7 @@
 # Only live headline surfaces are asserted (never changelog/history lines, which legitimately
 # cite superseded counts), so there are no false positives on history.
 #
-# SCOPE: the public-facing docs a reader trusts (README + docs/ + profile READMEs). The KB
+# SCOPE: the public-facing docs a reader trusts (README + docs/). The KB
 # under .aid/knowledge/ is intentionally NOT asserted here -- it carries heavy version-history
 # sections and is reconciled by /aid-housekeep; guarding it by prose-grep would false-positive.
 #
@@ -82,16 +82,6 @@ ASSERTIONS=(
     "docs/install.md|${SKILLS} \`aid-\`-prefixed skill"
     "docs/install.md|${AGENTS} \`aid-\`-prefixed agent"
     "docs/install.md|${SHORTCUTS} Lite-Path shortcut"
-    "profiles/claude-code/README.md|${SKILLS} skills"
-    "profiles/claude-code/README.md|${AGENTS} agents"
-    "profiles/codex/README.md|${SKILLS} skills"
-    "profiles/codex/README.md|${AGENTS} agents"
-    "profiles/cursor/README.md|${SKILLS} skills"
-    "profiles/cursor/README.md|${AGENTS} agents"
-    "profiles/copilot-cli/README.md|${SKILLS} skills"
-    "profiles/copilot-cli/README.md|${AGENTS} agents"
-    "profiles/antigravity/README.md|${SKILLS} skills"
-    "profiles/antigravity/README.md|${AGENTS} agents"
 )
 
 for _a in "${ASSERTIONS[@]}"; do

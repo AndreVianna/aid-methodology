@@ -15,7 +15,7 @@
 #       'aid <subcommand> [args]' in the current directory.
 #       Subcommands: status add remove update version help
 #       Examples:
-#         .\install.ps1 add codex -FromBundle .\aid-codex-v0.7.0.tar.gz
+#         .\install.ps1 add codex -FromBundle .\release-v0.7.0
 #         .\install.ps1 status
 #
 #   .\install.ps1 -UninstallCli [-Force]

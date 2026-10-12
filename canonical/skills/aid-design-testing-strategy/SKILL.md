@@ -10,7 +10,7 @@ description: >
   of tests rather than the policy, use `/aid-design-test`; to RUN existing suites, use
   `/aid-test`. Produced by the aid-architect agent and independently verified by
   aid-reviewer (full verify). Allocates a work-NNN folder.
-allowed-tools: Read, Glob, Grep, Bash, Write, Edit, Agent
+allowed-tools: Read Glob Grep Bash Shell Terminal Write Edit Agent
 argument-hint: "<subject> -- the testing policy to design (levels, coverage, merge-blocking gates, waivers)"
 ---
 
@@ -18,7 +18,7 @@ argument-hint: "<subject> -- the testing policy to design (levels, coverage, mer
 
 Bind **VERB=`design`**, **ARTIFACT=`testing-strategy`** -- the `design` *stage* in the
 contract's vocabulary -- then follow the shared contract at
-`canonical/aid/templates/design-lifecycle.md`. This skill binds that contract and
+`.aid/runtime/templates/design-lifecycle.md`. This skill binds that contract and
 restates none of its rules. The seed it writes is `.aid/design/testing-strategy.md`;
 realizing it into the project's C6 document(s) is `/aid-create-testing-strategy`'s job, not
 this one's.
@@ -41,7 +41,7 @@ entry line on each state.
    policy do you want to design -- its levels, coverage expectations, and merge-blocking
    gates?") and wait.
 2. **Allocate** through the Work Initiation Gate exactly as the contract's Allocation rule
-   requires (`canonical/skills/aid-design/SKILL.md` INTAKE step 4 is the shape), with
+   requires (`.agents/skills/aid-design/SKILL.md` INTAKE step 4 is the shape), with
    `initiator: aid-design-testing-strategy`. `phase` is not driven.
 3. **Acquire `.aid/design/`** per the contract, then read `.aid/design/testing-strategy.md`
    if a prior seed exists -- re-invocation iterates it rather than starting over.
@@ -60,9 +60,9 @@ in INTAKE. What this artifact's seed must settle: **the test levels, coverage ex
 which gates block a merge, and who may waive one**.
 
 **Destination resolution (by concern, not filename).** This skill binds concern **C6**
-(quality & testing, `canonical/aid/templates/kb-authoring/concern-model.md`), never a
+(quality & testing, `.aid/runtime/templates/kb-authoring/concern-model.md`), never a
 hardcoded filename. Resolve C6 against `.aid/settings.yml` `knowledge.doc_set`, falling
-back to the C6 row of `canonical/aid/templates/kb-authoring/domain-doc-matrix.md`, and
+back to the C6 row of `.aid/runtime/templates/kb-authoring/domain-doc-matrix.md`, and
 **confirm the resolution with the user** before writing. C6 can be realized by two
 documents; where it is, the seed's **`## Destination`** section records the **test-landscape
 half** (the levels/coverage record) and the **gate-policy half** (the merge-blocking gates

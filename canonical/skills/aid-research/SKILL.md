@@ -10,7 +10,7 @@ description: >
   a URL and access date, and a contradiction between them is surfaced rather than silently
   resolved. For open-ended exploration of a problem space rather than a specific question,
   use `/aid-brainstorm`.
-allowed-tools: Read, Glob, Grep, Bash, Write, Edit, Agent
+allowed-tools: Read Glob Grep Bash Shell Terminal Write Edit Agent
 argument-hint: "<question> -- an open technical question to investigate"
 ---
 
@@ -48,8 +48,8 @@ on each state.
    options analysis, deep traversal, many web sources, a spike) -> **opus / high**.
    Verifier tier is always >= producer tier.
 4. **Consult the Work Initiation Gate, then allocate the work folder + STATE.** First run
-   the gate (`canonical/aid/templates/work-initiation-gate.md`):
-   `bash canonical/aid/scripts/works/enumerate-works.sh` (main tree + every git worktree).
+   the gate (`.aid/runtime/templates/work-initiation-gate.md`):
+   `bash .aid/runtime/scripts/works/enumerate-works.sh` (main tree + every git worktree).
    Empty -> allocate below, no prompt. Works exist -> ask new-vs-continuation with the
    enumerated list; on **continuation** route to the chosen work's resume door and STOP
    (allocate nothing); on **new work**: resolve `<work-id>` as `work-{NNN+1}`, where `NNN`
@@ -59,7 +59,7 @@ on each state.
    (`worktree-lifecycle.sh create <work-id> <name>`, STOP on a non-zero exit or empty path,
    else enter the resolved path); **only then** allocate: `.aid/works/<work-id>-<slug>/`
    under `.aid/works/`; slug from the question. Copy
-   `canonical/aid/templates/work-state-template.yml` to
+   `.aid/runtime/templates/work-state-template.yml` to
    `.aid/works/work-NNN-<slug>/STATE.yml`; write opening frontmatter (`pipeline.path: lite`,
    `initiator: aid-research`, `lifecycle: Running`, `active_skill: aid-research`,
    `started`/`updated`). Do NOT drive the 7-phase `phase` scalar. Associate a git worktree
@@ -104,7 +104,7 @@ throwaway spike (isolated), fold the finding into `RESEARCH.md`, continue. On **
    reason; no material angle of the question left silently unaddressed. It writes a
    review-quality 7-column ledger (`reviewer-ledger-schema.md`) to
    `.aid/.temp/review-pending/<work>-verify.md`.
-3. **Grade the response:** `bash canonical/aid/scripts/grade.sh --explain <ledger>`. Not
+3. **Grade the response:** `bash .aid/runtime/scripts/grade.sh --explain <ledger>`. Not
    clean -> loop back to INVESTIGATE for the researcher to revise. **Circuit-breaker: 3
    cycles** -> write `.aid/works/{work}/IMPEDIMENT-research.md`, set STATE `lifecycle: Blocked`,
    surface it.

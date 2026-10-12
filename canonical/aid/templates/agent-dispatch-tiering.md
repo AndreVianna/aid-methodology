@@ -58,5 +58,5 @@ The agent's frontmatter `tier:` sets its default model; the dispatch site sets e
 
 - `.aid/knowledge/architecture.md § Agent / Sub-Agent Dispatch Model` — the tier
   roster and the reviewer ≥ executor invariant this rubric enforces.
-- `canonical/aid/templates/dispatch-protocol-checklist.md` — the dispatch *mechanics*
+- `.aid/runtime/templates/dispatch-protocol-checklist.md` — the dispatch *mechanics*
   (ETA lookup, heartbeat file, L2 timers) that run once the tier/effort is chosen.

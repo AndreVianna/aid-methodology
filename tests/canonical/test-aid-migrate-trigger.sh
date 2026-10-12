@@ -70,7 +70,8 @@ VENDOR_JS="${REPO_ROOT}/packages/npm/scripts/vendor.js"
 VENDOR_PY="${REPO_ROOT}/packages/pypi/scripts/vendor.py"
 RELEASE_SH="${REPO_ROOT}/release.sh"
 HOME_HTML_SRC="${REPO_ROOT}/dashboard/home.html"
-EMISSION_MANIFEST="${REPO_ROOT}/canonical/EMISSION-MANIFEST.md"
+EMISSION_MANIFEST="${REPO_ROOT}/canonical/EMISSION-MANIFEST.md"   # retired (FR-4): must be absent
+PROFILES_DIR="${REPO_ROOT}/profiles"                              # generator output (agents + aid-tool.conf)
 NPM_PKG="${REPO_ROOT}/packages/npm"
 PYPI_PKG="${REPO_ROOT}/packages/pypi"
 
@@ -428,6 +429,13 @@ _D_CODE="${_FIXTURE_CODE_HOME}"
 _D_STATE="${_FIXTURE_STATE_HOME}"
 _D_REPO="${_FIXTURE_REPO}"
 
+# Fixture re-key (v4 stamp rules): a pre-format-3 manifest with tools is legacy and
+# stamps 4 (CLI-owned, stays 4 until 'aid update'), so 'status' correctly warns. The
+# post-update shape records format_version 3 in the manifest; only then is the
+# settings stamp 5 (current) and status silent. Keep the D intent on that shape.
+printf '%s\n' '{"manifest_version":1,"aid_version":"1.0.0","format_version":3,"tools":{"claude-code":{"version":"1.0.0"}}}' \
+    > "${_D_REPO}/.aid/.aid-manifest.json"
+
 # First: migrate the repo (writes format_version stamp).
 _MIGRATE_OUT_D="$(env \
     AID_HOME="${_D_STATE}" \
@@ -495,13 +503,17 @@ _MO_FV="$(grep -m1 '^format_version:' "${_MO_REPO}/.aid/settings.yml" 2>/dev/nul
 # C1). See known-issues.md KI-011.
 assert_eq "${_MO_FV}" "4" "TRG-MO02 manifest-only: format_version: 4 stamped"
 
-# Idempotent: 'aid status' must NOT warn now (stamp current) -- the recurrence is gone.
+# Recurrence check (v4 stamp rules): this manifest has no format_version, so it is
+# manifest-less legacy and keeps stamp 4 by design (cleared only by 'aid update'); the
+# gate therefore still warns, correctly. The regression was the stamp-less path (v0)
+# recurring because settings.yml was never synthesized. After the fix the gate must
+# read the synthesized v4 stamp, not the v0 default.
 _MO_OUT2="$(cd "${_MO_REPO}" && env AID_HOME="${_MO_STATE}" AID_NO_UPDATE_CHECK=1 \
     bash "${_MO_CODE}/bin/aid" status 2>&1 </dev/null)" || true
-if grep -qE "older format" <<<"${_MO_OUT2}"; then
-    fail "TRG-MO03 manifest-only: gate STILL warns after migrate (recurrence not fixed)"
+if grep -qF "(v4; current: v5)" <<<"${_MO_OUT2}" && ! grep -qF "(v0;" <<<"${_MO_OUT2}"; then
+    pass "TRG-MO03 manifest-only: gate reads synthesized stamp v4 (no stamp-less v0 recurrence)"
 else
-    pass "TRG-MO03 manifest-only: gate silent after migrate (no recurring WARN)"
+    fail "TRG-MO03 manifest-only: gate does not read the synthesized v4 stamp (recurrence?): $(echo "${_MO_OUT2}" | head -1)"
 fi
 
 # ---------------------------------------------------------------------------
@@ -514,8 +526,9 @@ fi
 # unconditionally -- it is not itself gated behind the settings.yml
 # format_version check (that check only decides whether STEPS 1-4 warn/repair
 # settings; STEP 5 always walks .aid/works/*/STATE.md). This fixture proves
-# that property directly: settings.yml is ALREADY stamped format_version: 4
-# (so the format gate has nothing to warn about) yet a lingering pre-format-4
+# that property directly: settings.yml is ALREADY stamped format_version: 5 (the
+# current stamp; a format-3 manifest is what makes it current -- see the v4 stamp
+# rules) so the format gate has nothing to warn about, yet a lingering pre-format-4
 # STATE.md work tree still gets converted on the very next encounter.
 # ---------------------------------------------------------------------------
 _WS_BASE="$(mktemp -d "${TMP}/ws.XXXXXX")"
@@ -524,10 +537,10 @@ _make_code_home "${_WS_CODE}"
 _make_state_home "${_WS_STATE}"
 mkdir -p "${_WS_REPO}/.aid/knowledge"
 touch "${_WS_REPO}/.aid/knowledge/STATE.md"
-printf '%s\n' '{"manifest_version":1,"aid_version":"1.0.0","installed_at":"2026-01-01T00:00:00Z","tools":{"claude-code":{"version":"1.0.0","installed_at":"2026-01-01T00:00:00Z","paths":[],"root_agent_files":[]}}}' \
+printf '%s\n' '{"manifest_version":1,"aid_version":"1.0.0","format_version":3,"installed_at":"2026-01-01T00:00:00Z","tools":{"claude-code":{"version":"1.0.0","installed_at":"2026-01-01T00:00:00Z","paths":[],"root_agent_files":[]}}}' \
     > "${_WS_REPO}/.aid/.aid-manifest.json"
 cat > "${_WS_REPO}/.aid/settings.yml" << 'WSSETTEOF'
-format_version: 4
+format_version: 5
 name: ws-legacy-tree
 description: TRG-WS fixture -- already-current settings, legacy STATE.md work tree
 type: brownfield
@@ -561,7 +574,7 @@ _WS_STATUS_BEFORE="$(cd "${_WS_REPO}" && env AID_HOME="${_WS_STATE}" AID_NO_UPDA
 if grep -qE "older format|aid update" <<<"${_WS_STATUS_BEFORE}"; then
     fail "TRG-WS00 precondition: 'aid status' unexpectedly warns on an already-current settings.yml"
 else
-    pass "TRG-WS00 precondition: 'aid status' is silent (settings.yml already format_version: 4)"
+    pass "TRG-WS00 precondition: 'aid status' is silent (settings.yml already format_version: 5)"
 fi
 
 _WS_MIGRATE_OUT="$(env AID_HOME="${_WS_STATE}" AID_NO_UPDATE_CHECK=1 \
@@ -789,16 +802,20 @@ else
     fail "TRG-J02 carry-forward: format_version not 4 after second encounter (got: '${_J_FV_AFTER}')"
 fi
 
-# No re-prompt: 'aid status' on the stamped repo must not emit WARN / offer.
+# No re-prompt (v4 stamp rules): the F fixture's manifest has no format_version, so it
+# is manifest-less legacy and keeps stamp 4 (cleared only by 'aid update'); 'status'
+# keeps the stamp-4 notice. The carry-forward proof is that the gate reads the carried
+# stamp v4, not the stamp-less v0 default, and that the second encounter did not
+# re-bootstrap it.
 _J_STATUS_OUT="$(cd "${_F_REPO}" && env \
     AID_HOME="${_F_STATE}" \
     AID_NO_UPDATE_CHECK=1 \
     bash "${_F_CODE}/bin/aid" status \
     2>&1 </dev/null)" || true
-if grep -qE "older format|aid update" <<<"${_J_STATUS_OUT}"; then
-    fail "TRG-J03 carry-forward: 'aid status' still emits WARN after second encounter (stamp not current?)"
+if grep -qF "(v4; current: v5)" <<<"${_J_STATUS_OUT}" && ! grep -qF "(v0;" <<<"${_J_STATUS_OUT}"; then
+    pass "TRG-J03 carry-forward: 'aid status' reads the carried v4 stamp (no stamp-less re-bootstrap)"
 else
-    pass "TRG-J03 carry-forward: 'aid status' silent (stamp current -- no re-prompt)"
+    fail "TRG-J03 carry-forward: 'aid status' does not read the carried v4 stamp (stamp not carried?): $(echo "${_J_STATUS_OUT}" | head -1)"
 fi
 
 # ---------------------------------------------------------------------------
@@ -1019,21 +1036,24 @@ else
 fi
 
 # ---------------------------------------------------------------------------
-# VND-C: bin/aid, bin/aid.ps1, dashboard/home.html ABSENT from EMISSION-MANIFEST.md (C8).
-#   These are hand-maintained, not generated by run_generator.py.
+# VND-C: bin/aid, bin/aid.ps1, dashboard/home.html, postinstall.js are hand-maintained,
+#   never generator-emitted (C8). The emission manifest was retired by FR-4, so C01
+#   asserts that retirement; C02 asserts the C8 intent against the generator output
+#   (profiles/ holds agents + aid-tool.conf only, so no emitted file may sit at these paths).
 # ---------------------------------------------------------------------------
-if [[ ! -f "${EMISSION_MANIFEST}" ]]; then
-    fail "VND-C01 EMISSION-MANIFEST.md: file not found at ${EMISSION_MANIFEST}"
+if [[ ! -e "${EMISSION_MANIFEST}" ]]; then
+    pass "VND-C01 EMISSION-MANIFEST.md: retired (FR-4) -- absent, as required"
 else
-    pass "VND-C01 EMISSION-MANIFEST.md: file exists"
-    for _entry in "bin/aid" "bin/aid.ps1" "dashboard/home.html" "packages/npm/scripts/postinstall.js"; do
-        if grep -qF "${_entry}" "${EMISSION_MANIFEST}"; then
-            fail "VND-C02 EMISSION-MANIFEST.md: '${_entry}' present (must be ABSENT -- hand-maintained, C8)"
-        else
-            pass "VND-C02 EMISSION-MANIFEST.md: '${_entry}' correctly absent (not render-drift)"
-        fi
-    done
+    fail "VND-C01 EMISSION-MANIFEST.md: still present at ${EMISSION_MANIFEST} (FR-4 retires it)"
 fi
+for _entry in "bin/aid" "bin/aid.ps1" "dashboard/home.html" "packages/npm/scripts/postinstall.js"; do
+    _emitted="$(find "${PROFILES_DIR}" -path "*/${_entry}" -print 2>/dev/null | head -1 || true)"
+    if [[ -z "${_emitted}" ]]; then
+        pass "VND-C02 profiles/: '${_entry}' not generator-emitted (hand-maintained, C8)"
+    else
+        fail "VND-C02 profiles/: '${_entry}' emitted by generator at ${_emitted} (must be hand-maintained only, C8)"
+    fi
+done
 
 # ---------------------------------------------------------------------------
 # (VND-D removed: format 2 eliminated the per-repo .aid/dashboard/home.html, so the

@@ -10,7 +10,7 @@ generatedFrom: 'canonical/skills/aid-update-testing-strategy/SKILL.md'
 
 - **`name`** — aid-update-testing-strategy
 - **`description`** — Revise the project's quality (C6) documents -- the test landscape (levels, coverage expectations, CI lane mapping, known gaps) and the gate policy (what blocks a merge, the thresholds, who may waive one) -- plus any previously created outputs you name. Use this skill when the testing-strategy record already exists and a lane or a gate has changed. Requires no design seed: the change you state in the run is a sufficient input. Reads and consumes a testing-strategy seed when one is present in `.aid/design/`. When a C6 document does not yet exist, routes to `/aid-create-testing-strategy`. To author or revise test CODE rather than the strategy, use `/aid-create-test` or `/aid-update-test`. Produced by the aid-architect agent and independently verified by aid-reviewer (full verify). Allocates a work-NNN folder.
-- **`allowed-tools`** — Read, Glob, Grep, Bash, Write, Edit, Agent
+- **`allowed-tools`** — Read Glob Grep Bash Shell Terminal Write Edit Agent
 - **`argument-hint`** — &lt;change> -- what to revise in the testing strategy or the gate policy
 
 [Definition: `canonical/skills/aid-update-testing-strategy/SKILL.md`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-update-testing-strategy/SKILL.md)
@@ -54,7 +54,7 @@ Every node in the chart above, in chart order, with the exact `canonical/` text 
 1. **Require a stated change.** Empty argument -> ask one bootstrapping question ("What should
    change in the testing strategy or the gate policy?") and wait.
 2. **Allocate** through the Work Initiation Gate exactly as the contract's Allocation rule
-   requires (`canonical/skills/aid-design/SKILL.md` INTAKE step 4 is the shape), with
+   requires (`.agents/skills/aid-design/SKILL.md` INTAKE step 4 is the shape), with
    `initiator: aid-update-testing-strategy`. `phase` is not driven.
 3. **No seed is required.** The change stated in this run is a sufficient input, and this
    skill completes without a seed. **Read and consume one when present** at
@@ -64,7 +64,7 @@ Every node in the chart above, in chart order, with the exact `canonical/` text 
    testing) and owns **two** documents. Where a seed supplied a `## Destination`, use it;
    otherwise apply the concern rule here -- resolve C6 against `.aid/settings.yml`
    `knowledge.doc_set`, falling back to the C6 row of
-   `canonical/aid/templates/kb-authoring/domain-doc-matrix.md` -- and **confirm the resolution
+   `.aid/runtime/templates/kb-authoring/domain-doc-matrix.md` -- and **confirm the resolution
    with the user before writing**. Never resolve silently.
 5. **Read both destinations** whole, and note each one's `source:` field. An absent
    destination -> route to `/aid-create-testing-strategy` for that document and write nothing

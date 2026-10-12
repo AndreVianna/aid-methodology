@@ -50,6 +50,18 @@ HAS_PWSH=0
 TMP=$(mktemp -d)
 trap 'pwsh_session_stop; rm -rf "$TMP"' EXIT
 
+# pipx stub. The pypi-channel dry-run cases (bash and PowerShell) need `pipx` on PATH:
+# the CLI checks for it BEFORE it prints the plan, so a host without pipx fails the dry-run
+# with exit 3. --dry-run never executes pipx, so the stub only satisfies the presence check.
+# It fails loudly (exit 99) if anything DOES run it, so a real invocation cannot hide here.
+# Always prepended, so the result does not depend on whether the host has pipx installed.
+PIPX_STUB_DIR="${TMP}/pipx-stub"
+mkdir -p "${PIPX_STUB_DIR}"
+printf '%s\n' '#!/usr/bin/env bash' 'echo "pipx stub invoked unexpectedly: $*" >&2' 'exit 99' \
+    > "${PIPX_STUB_DIR}/pipx"
+chmod +x "${PIPX_STUB_DIR}/pipx"
+export PATH="${PIPX_STUB_DIR}:${PATH}"
+
 # Pin HOME so migration scan never touches real repos.
 export HOME="${TMP}/fakehome"
 mkdir -p "${HOME}"

@@ -5,7 +5,7 @@ description: >
   ship. It selects the eligible deliveries, verifies the combined build, packages according
   to the project's own infrastructure, generates the release notes, and updates each
   artifact's status.
-allowed-tools: Read, Glob, Grep, Bash, Write
+allowed-tools: Read Glob Grep Bash Shell Terminal Write
 ---
 
 # Package & Ship
@@ -35,7 +35,7 @@ Step 0):
 - **No `work-NNN`, a free-form description instead** -- the Lite-path direct-entry
   shortcut: binds `{name}=aid-deploy`, `{verb}=deploy`, `{artifact}=""` (bare verb),
   `{description}=<the given text>`, then delegates to the shared shortcut engine
-  (`.claude/aid/templates/shortcut-engine.md`, `INTAKE -> ... -> APPROVAL-HALT`),
+  (`.aid/runtime/templates/shortcut-engine.md`, `INTAKE -> ... -> APPROVAL-HALT`),
   scaffolding a flattened Lite work and running the grading gates. **Never executes** --
   it halts for approval; this shortcut entry does not replace the pipeline role below,
   it adds a second, independent entry point to the same skill directory.
@@ -77,7 +77,7 @@ Step 0):
 - **No `work-NNN` argument, but a free-form description was given instead** → the
   shortcut-scaffold path (see `## Argument-Hint` above): bind `{name}=aid-deploy`,
   `{verb}=deploy`, `{artifact}=""`, `{description}=<the given text>`, then delegate
-  directly to `.claude/aid/templates/shortcut-engine.md § State: INTAKE` — Steps 1–6
+  directly to `.aid/runtime/templates/shortcut-engine.md § State: INTAKE` — Steps 1–6
   below do not run for this path (that pre-flight belongs to the post-Execute pipeline
   role, not the shortcut entry).
 - **Neither `work-NNN` nor a description** → print the `## Argument-Hint` usage block
@@ -86,13 +86,13 @@ Step 0):
 1. Verify `.aid/` workspace exists.
 2. Resolve work directory: if the `work-NNN` argument was given, use that work
    directory; if not (single-work auto-select), enumerate works **cross-worktree**:
-   run `bash .claude/aid/scripts/works/enumerate-works.sh` (main tree + every git
+   run `bash .aid/runtime/scripts/works/enumerate-works.sh` (main tree + every git
    worktree; never the local `.aid/works/` glob, which is empty on `master`), taking
    each record's field-1 `work_id` — single record → auto-select; multiple records →
    list them, ask user to choose; zero records on any worktree → **STOP.** "No works
    found. Run `/aid-describe` first." **Then locate + enter the work's
    worktree**, before item 3 below reads work `STATE.yml`: follow
-   `.claude/aid/templates/downstream-worktree-entry.md` to normalize the work id to its bare
+   `.aid/runtime/templates/downstream-worktree-entry.md` to normalize the work id to its bare
    `work-NNN` branch name, `locate` the worktree (which **always exits 0** and returns
    `<path>\t<status>`), and enter the returned path. Keep the defensive empty-path/non-zero
    backstop that stops rather than operate blindly — it should not fire against the real helper.
@@ -167,7 +167,7 @@ aid-deploy  ▸ you are here
 
 This skill follows the L1+L2+L3 subagent-visibility protocol (heartbeats, ETA timers,
 calibration). The full checklist lives in
-`.claude/aid/templates/dispatch-protocol-checklist.md`; read it before any subagent
+`.aid/runtime/templates/dispatch-protocol-checklist.md`; read it before any subagent
 dispatch in this skill.
 
 ## Dispatch
@@ -190,7 +190,7 @@ When a state completes, route by its `**Advance:**` type (per [`state-machine-ch
 ## Quality Checklist
 
 - [ ] All selected deliveries have all tasks complete
-- [ ] All task grades meet minimum (from `bash .claude/aid/scripts/config/read-setting.sh --skill deploy --key minimum_grade --default A`)
+- [ ] All task grades meet minimum (from `bash .aid/runtime/scripts/config/read-setting.sh --skill deploy --key minimum_grade --default A`)
 - [ ] No Critical/High known-issues unresolved
 - [ ] Full build passes (not incremental)
 - [ ] Full test suite passes

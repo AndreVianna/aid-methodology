@@ -40,18 +40,18 @@ independent; starting the web dashboard does not affect the text status screen.
 
 ### `aid add`
 
-Install one or more AID tool profiles into the current project.
+Install one or more AID tools into the current project. Skills and runtime are installed once per repo; each tool gets its own agents.
 
 ```bash
 aid add claude-code
 aid add codex,cursor            # multiple tools at once
 aid add claude-code --version 1.1.0   # pin to a specific version
-aid add claude-code --from-bundle aid-claude-code-v1.1.0.tar.gz  # offline
+aid add claude-code --from-bundle ./aid-bundle  # offline: a directory with the shared and tool artifacts
 ```
 
 ### `aid update`
 
-Update installed tool profiles to the latest release, or update the `aid` CLI itself.
+Update the installed tools to the latest release, or update the `aid` CLI itself. All installed tools move to one version together.
 
 ```bash
 aid update                       # update all installed tools
@@ -70,7 +70,7 @@ aid update self                  # update the aid CLI (channel-aware)
 
 ### `aid remove`
 
-Remove tool profiles from the current project, or remove the `aid` CLI itself.
+Remove tools from the current project, or remove the `aid` CLI itself.
 
 ```bash
 aid remove                       # remove ALL AID from this project (asks to confirm)
@@ -90,12 +90,15 @@ aid status
 
 Output example:
 ```
-AID 1.1.0  (project: /path/to/your/project)
-Installed tools:
-  claude-code   v1.1.0   root: CLAUDE.md (owned)
+AID 1.2.0  (project: /path/to/your/project)
+Installed tools - all at v1.2.0:
+  claude-code
+  cursor
+Shared files: clean
 ```
 
-Exit 7 when no AID install is found in the current directory.
+`Shared files` lists each shared file that changed since install as `modified:`, `missing:` or
+`extra:`, then prints `Run: aid update`. Exit 7 when no AID install is found in the current directory.
 
 ### `aid version`
 
@@ -330,8 +333,8 @@ shell commands can invoke the whole CLI.
 | Flag | Applies to | Default | Description |
 |------|-----------|---------|-------------|
 | `--version <v>` | `add`, `update` | latest | Pin to a release version (`1.0.0` or `v1.0.0`). Mutually exclusive with `--from-bundle`. |
-| `--from-bundle <path>` | `add`, `update` | — | Offline install from a tarball (single tool) or directory of tarballs. No network required. |
-| `--force` | `add`, `update`, `remove` | off | Overwrite differing files; skip confirmation prompts. |
+| `--from-bundle <path>` | `add`, `update` | — | Offline install from a staging directory holding the shared artifact and each tool's artifact. A path to one artifact uses its directory. No network required. |
+| `--force` | `add`, `update`, `remove` | off | Skip confirmation prompts. |
 | `--verbose` | all | off | Print per-file `Copied:` / `Up to date:` / `Updated:` / `Removed:` lines. |
 | `--target <dir>` | all | `.` (cwd) | Project root. Must exist; missing target is a usage error (exit 2). |
 | `--no-path` | bootstrap, `update self` | off | Skip automatic PATH wiring during bootstrap. |
@@ -345,8 +348,8 @@ PowerShell flags use the same words; the `-` prefix is accepted alongside `--`:
 | Flag | Applies to | Default | Description |
 |------|-----------|---------|-------------|
 | `-Version <v>` | `Add`, `Update` | latest | Pin to a release version. Mutually exclusive with `-FromBundle`. |
-| `-FromBundle <path>` | `Add`, `Update` | — | Offline install from tarball or directory. |
-| `-Force` | `Add`, `Update`, `Remove` | off | Overwrite differing files; skip prompts. |
+| `-FromBundle <path>` | `Add`, `Update` | — | Offline install from a staging directory (same rules as `--from-bundle`). |
+| `-Force` | `Add`, `Update`, `Remove` | off | Skip prompts. |
 | `-Verbose` | all | off | Verbose per-file output. |
 | `-TargetDirectory <dir>` | all | `.` (cwd) | Project root. |
 | `-NoPath` | bootstrap, `Update self` | off | Skip PATH wiring. |
@@ -362,10 +365,9 @@ PowerShell flags use the same words; the `-` prefix is accepted alongside `--`:
 |------|---------|
 | `0` | Success. "Nothing to do" is also success. |
 | `1` | Generic runtime failure (extract failed, write failed). |
-| `2` | Usage error: unknown subcommand, bad argument, ambiguous tool, missing target directory, `--from-bundle` + `--version` together. |
+| `2` | Usage error: unknown subcommand, bad argument, ambiguous tool, missing target directory, `--from-bundle` + `--version` together. Also `aid add` on a repo that still has the v3 layout (run `aid update` first), and `aid add` or `aid remove` while an upgrade is pending. |
 | `3` | Network/fetch failure: download or latest-release resolution failed. |
 | `4` | Checksum mismatch: SHA-256 of downloaded file did not match `SHA256SUMS`. |
-| `5` | Protect-on-diff: at least one root agent file was blocked. Other files were installed. Review the `.aid-new` file and merge or re-run with `--force`. |
 | `6` | No manifest: `remove` or `update` found no `.aid-manifest.json` (nothing installed). |
 | `7` | `aid status` / bare `aid`: no AID install found in current directory. |
 
@@ -399,13 +401,15 @@ PowerShell flags use the same words; the `-` prefix is accepted alongside `--`:
 
 ## Canonical tool IDs
 
-| Tool ID | Installs into | Root agent file |
-|---------|--------------|-----------------|
-| `claude-code` | `.claude/` | `CLAUDE.md` |
-| `codex` | `.codex/` | `AGENTS.md` |
-| `cursor` | `.cursor/` | `AGENTS.md` |
-| `copilot-cli` | `.github/` | `AGENTS.md` |
-| `antigravity` | `.agent/` | `AGENTS.md` |
+| Tool ID | Agents folder | Root instruction files |
+|---------|---------------|------------------------|
+| `claude-code` | `.claude/agents/` | `AGENTS.md`, and `CLAUDE.md` (region) |
+| `codex` | `.codex/agents/` | `AGENTS.md` |
+| `cursor` | `.cursor/agents/` | `AGENTS.md` |
+| `copilot-cli` | `.github/agents/` | `AGENTS.md` |
+| `antigravity` | `.agent/agents/` | `AGENTS.md` |
+
+Every tool also uses the shared `.agents/skills/` and `.aid/runtime/` folders.
 
 Tool IDs are case-insensitive. On Windows, PascalCase aliases are also accepted: `ClaudeCode`, `Codex`, `Cursor`, `CopilotCli`, `Antigravity`.
 
@@ -439,4 +443,4 @@ For bootstrapping the `aid` CLI itself (once per machine), see the [Installation
 | `irm … \| iex` (Windows) | PowerShell 5.1+ |
 | `npm install -g aid-installer` | Node ≥18 |
 | `pipx install aid-installer` | Python ≥3.8 |
-| `--from-bundle` (offline) | Bash or PowerShell 5.1+ |
+| `--from-bundle` (offline, staging directory) | Bash or PowerShell 5.1+ |

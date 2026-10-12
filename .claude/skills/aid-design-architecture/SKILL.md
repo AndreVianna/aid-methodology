@@ -11,7 +11,7 @@ description: >
   use bare `/aid-design`; to write documentation about an existing architecture rather than
   design it, use `/aid-document-architecture`. Produced by the aid-architect agent and
   independently verified by aid-reviewer (full verify). Allocates a work-NNN folder.
-allowed-tools: Read, Glob, Grep, Bash, Write, Edit, Agent
+allowed-tools: Read Glob Grep Bash Shell Terminal Write Edit Agent
 argument-hint: "<subject> -- the system/subsystem to design (components, boundaries, interactions, invariants)"
 ---
 
@@ -19,7 +19,7 @@ argument-hint: "<subject> -- the system/subsystem to design (components, boundar
 
 Bind **VERB=`design`**, **ARTIFACT=`architecture`** -- the `design` *stage* in the
 contract's vocabulary -- then follow the shared contract at
-`.claude/aid/templates/design-lifecycle.md`. This skill binds that contract and
+`.aid/runtime/templates/design-lifecycle.md`. This skill binds that contract and
 restates none of its rules. The seed it writes is `.aid/design/architecture.md`; realizing
 it into the project's C1 document is `/aid-create-architecture`'s job, not this one's.
 
@@ -41,7 +41,7 @@ entry line on each state.
 1. **Require a subject.** Empty argument -> ask one bootstrapping question ("What system or
    subsystem do you want to design -- its components, boundaries, and invariants?") and wait.
 2. **Allocate** through the Work Initiation Gate exactly as the contract's Allocation rule
-   requires (`.claude/skills/aid-design/SKILL.md` INTAKE step 4 is the shape), with
+   requires (`.agents/skills/aid-design/SKILL.md` INTAKE step 4 is the shape), with
    `initiator: aid-design-architecture`. `phase` is not driven.
 3. **Acquire `.aid/design/`** per the contract, then read `.aid/design/architecture.md` if a
    prior seed exists -- re-invocation iterates it rather than starting over.
@@ -60,10 +60,10 @@ in INTAKE. What this artifact's seed must settle: **the components, their bounda
 interactions, the invariants, and what is deliberately NOT a component**.
 
 **Destination resolution (by concern, not filename).** This skill binds concern **C1**
-(build & shape, `.claude/aid/templates/kb-authoring/concern-model.md`), never a hardcoded
+(build & shape, `.aid/runtime/templates/kb-authoring/concern-model.md`), never a hardcoded
 filename. Resolve C1 against the project's declared doc-set (`.aid/settings.yml`
 `knowledge.doc_set`), falling back to the C1 row of
-`.claude/aid/templates/kb-authoring/domain-doc-matrix.md`, and **confirm the resolution
+`.aid/runtime/templates/kb-authoring/domain-doc-matrix.md`, and **confirm the resolution
 with the user** before writing. Write the resolved path into the seed's **`## Destination`**
 section (required for a class-1 seed). C1's default set holds both `project-structure.md`
 and `architecture.md`; this skill resolves to the document describing the system's shape

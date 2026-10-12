@@ -10,7 +10,7 @@ and the KB is stale.
 
 ```
 if --grade present: MIN_GRADE = flag value (and update .aid/settings.yml summary.minimum_grade via /aid-config)
-else: MIN_GRADE = bash .claude/aid/scripts/config/read-setting.sh --skill summary --key minimum_grade --default A
+else: MIN_GRADE = bash .aid/runtime/scripts/config/read-setting.sh --skill summary --key minimum_grade --default A
 ```
 
 Persist `--grade` overrides to `.aid/settings.yml` (via `/aid-config` or direct YAML edit). Do NOT write minimum_grade to STATE.md — STATE.md is for run-state (Q&A, Review History, Summarization History), not config.
@@ -64,7 +64,7 @@ The component-selection algorithm is applied in this order:
    `id="gloss-{slug}"` anchors). Render the Concept Spine terms as `.gloss-card` items
    inside a `.gloss-grid`. Draw from the "Definition-as-used-here" / "Relates-to" /
    "Aliases" fields in each `## {Term}` subsection of the doc body.
-   HTML template: `.claude/aid/templates/knowledge-summary/section-templates/bespoke-components.md §1`.
+   HTML template: `.aid/runtime/templates/knowledge-summary/section-templates/bespoke-components.md §1`.
    **Rendered as content, not linked.** A newcomer reads the definitions in the page;
    the only link to `domain-glossary.md` is the footer "Source:" citation.
 
@@ -73,7 +73,7 @@ The component-selection algorithm is applied in this order:
    `id="adr-d{N}"` anchors). Render each `## D{N} — {Title}` entry as an `.adr-card`
    inside an `.adr-list`. Draw from the Decision / Alternatives rejected / Constraint
    fields in each entry.
-   HTML template: `.claude/aid/templates/knowledge-summary/section-templates/bespoke-components.md §2`.
+   HTML template: `.aid/runtime/templates/knowledge-summary/section-templates/bespoke-components.md §2`.
    **Rendered as content, not linked.** A newcomer reads the ADR rationale in the page;
    the only link to `decisions.md` is the footer "Source:" citation.
 
@@ -81,12 +81,12 @@ The component-selection algorithm is applied in this order:
    **Capability entry component** (`id="capabilities"` on the section; per-capability
    `id="cap-{slug}"` anchors). Render each capability row as a `.cap-card` inside a
    `.cap-grid`, grouped by the source doc's section structure (pipeline / on-demand).
-   HTML template: `.claude/aid/templates/knowledge-summary/section-templates/bespoke-components.md §3`.
+   HTML template: `.aid/runtime/templates/knowledge-summary/section-templates/bespoke-components.md §3`.
    **Rendered as content, not linked.** A newcomer reads what the project can do in the
    page; the only link to `capability-inventory.md` is the footer "Source:" citation.
 
 Component styles are in
-`.claude/aid/templates/knowledge-summary/component-css.css` (the three
+`.aid/runtime/templates/knowledge-summary/component-css.css` (the three
 "Concept-first content components" sections: `.gloss-*`, `.adr-*`, `.cap-*`).
 These classes use the existing design tokens — do not restyle or override the page theme.
 
@@ -103,7 +103,7 @@ These classes use the existing design tokens — do not restyle or override the 
 
 **No resolved doc is ever skipped.** "No bespoke component" is never "no section" — the
 generic fallback guarantees coverage. Rendering hints by domain / tier are in
-`.claude/aid/templates/knowledge-summary/section-templates/auto-detect.md` (tier hints)
+`.aid/runtime/templates/knowledge-summary/section-templates/auto-detect.md` (tier hints)
 and the domain-specific `section-templates/{domain}.md` files (per-doc hints).
 
 **Stable anchor ID contract:** the three bespoke component sections use fixed anchor IDs
@@ -194,7 +194,7 @@ Number the filenames sequentially (`00-`, `01-`, etc.) matching the manifest ord
 filesystem listing is also ordered; the assembler reads the manifest, not the filesystem
 glob, for authoritative ordering.
 
-Use `.claude/aid/templates/knowledge-summary/html-skeleton.html` as the seed when
+Use `.aid/runtime/templates/knowledge-summary/html-skeleton.html` as the seed when
 scaffolding `skeleton-head.html` for the first time. The outer page shell (top bar, side
 panel, search, nav chrome) is kept consistent with `home.html` and the CLI `index.html`.
 Only the inner content area (the sections) is domain-specific.
@@ -206,17 +206,17 @@ The skeleton already includes the full export chrome in the `.controls` block:
   `details.accord`) before calling `window.print()` so closed accordions are captured;
   restores prior open states via the `afterprint` event.
 
-Both handlers are in `.claude/aid/templates/knowledge-summary/lightbox.js` (inlined by
+Both handlers are in `.aid/runtime/templates/knowledge-summary/lightbox.js` (inlined by
 `post-script.html`) and are wired into the existing `DOMContentLoaded` bootstrap via
 `initExportMarkdown()` and `initExportPDF()`. No additional wiring is required when
 scaffolding from the seed. Print CSS (`@media print`) in
-`.claude/aid/templates/knowledge-summary/component-css.css` hides nav/controls/lightbox,
+`.aid/runtime/templates/knowledge-summary/component-css.css` hides nav/controls/lightbox,
 forces light-theme rendering when the page is in dark mode, and inserts page breaks between
 top-level sections.
 
 Inject into the seed when scaffolding `skeleton-head.html`:
 - Hero with project name (read from `.aid/knowledge/STATE.md` or `pom.xml` / `package.json`).
-- Inlined CSS from `.claude/aid/templates/knowledge-summary/component-css.css`.
+- Inlined CSS from `.aid/runtime/templates/knowledge-summary/component-css.css`.
 - **noscript doc list** derived from the resolved doc-set (see §6 below) — not a hardcoded
   list.
 
@@ -224,13 +224,13 @@ Author each section file under `sections/` from KB content:
 - Section structure follows the manifest (§3 above): bespoke component for the three
   well-known docs; generic fallback for all others.
 - Per-section content drawn from KB (cite source via relative `./xxx.md` link).
-- Rendering hints are in `.claude/aid/templates/knowledge-summary/section-templates/`
+- Rendering hints are in `.aid/runtime/templates/knowledge-summary/section-templates/`
   (keyed by `kb-category`/spine-dimension — NOT by project-type profile).
 - **LLM scope per section file:** author the inner content HTML only (the `<section>` body).
   Do not write the outer shell (top bar, side panel, nav, footer) — those come from the
   skeleton templates and are assembled mechanically.
 
-`post-script.html` inlines `.claude/aid/templates/knowledge-summary/lightbox.js`.
+`post-script.html` inlines `.aid/runtime/templates/knowledge-summary/lightbox.js`.
 
 **Parallel-safe authoring** — different agents/passes can edit different `sections/NN.html`
 files concurrently without merge conflicts, since each section is its own file.
@@ -273,7 +273,7 @@ source documents. The payload is embedded in `kb.html` as a `<script type="text/
 block that client-side export buttons read to download a portable `.md` file.
 
 ```bash
-bash .claude/aid/scripts/summarize/build-md-export.sh \
+bash .aid/runtime/scripts/summarize/build-md-export.sh \
     --kb-dir .aid/knowledge \
     --manifest .aid/.temp/summarize/summary-src/section-manifest.txt \
     --output .aid/.temp/summarize/summary-src/md-export-payload.html
@@ -305,14 +305,14 @@ backward compatibility for runs that do not need the Markdown export.
 
 ### 8. Assemble the single-file distribution (deterministic)
 
-Run `.claude/aid/scripts/summarize/assemble.sh` with `--manifest` to concatenate the
+Run `.aid/runtime/scripts/summarize/assemble.sh` with `--manifest` to concatenate the
 multi-source layout into the final single-file `kb.html`. The `--manifest` flag is
 **required for deterministic assembly** (same manifest = same section order = same
 structural output, reproducible + auditable, FR-50):
 
 ```bash
 mkdir -p .aid/knowledge
-bash .claude/aid/scripts/summarize/assemble.sh \
+bash .aid/runtime/scripts/summarize/assemble.sh \
     --manifest .aid/.temp/summarize/summary-src/section-manifest.txt \
     --output .aid/knowledge/kb.html
 #   reads:  .aid/.temp/summarize/summary-src/{skeleton-head.html,
@@ -369,7 +369,7 @@ approval lives there, never as a `**User Approved:**` bold line in the body (tha
 doc-set-level approval signal, which `/aid-discover` owns). A fresh GENERATE is never pre-approved:
 
 ```bash
-bash .claude/aid/scripts/summarize/writeback-state.sh --set summary_approved no
+bash .aid/runtime/scripts/summarize/writeback-state.sh --set summary_approved no
 ```
 
 Print: `[State: GENERATE] complete.`

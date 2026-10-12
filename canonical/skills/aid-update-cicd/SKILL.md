@@ -12,7 +12,7 @@ description: >
   delivery one, use `/aid-create-data-pipeline` or `/aid-update-data-pipeline`; to ship a
   built artifact now, use `/aid-deploy`. Produced by the aid-architect agent and
   independently verified by aid-reviewer (full verify). Allocates a work-NNN folder.
-allowed-tools: Read, Glob, Grep, Bash, Write, Edit, Agent
+allowed-tools: Read Glob Grep Bash Shell Terminal Write Edit Agent
 argument-hint: "<change> -- what to revise in the delivery-pipeline record"
 ---
 
@@ -20,7 +20,7 @@ argument-hint: "<change> -- what to revise in the delivery-pipeline record"
 
 Bind **VERB=`update`**, **ARTIFACT=`cicd`** -- the `update` *stage* in the contract's
 vocabulary -- then follow the shared contract at
-`canonical/aid/templates/design-lifecycle.md`. This skill binds that contract and restates
+`.aid/runtime/templates/design-lifecycle.md`. This skill binds that contract and restates
 none of its rules.
 
 - **Boundary vs `/aid-create-cicd`:** that skill realizes a seed and owns the creation path;
@@ -43,7 +43,7 @@ line on each state.
 1. **Require a stated change.** Empty argument -> ask one bootstrapping question ("What should
    change in the delivery-pipeline record?") and wait.
 2. **Allocate** through the Work Initiation Gate exactly as the contract's Allocation rule
-   requires (`canonical/skills/aid-design/SKILL.md` INTAKE step 4 is the shape), with
+   requires (`.agents/skills/aid-design/SKILL.md` INTAKE step 4 is the shape), with
    `initiator: aid-update-cicd`. `phase` is not driven.
 3. **No seed is required.** The change stated in this run is a sufficient input, and this
    skill completes without a seed. **Read and consume one when present** at
@@ -52,7 +52,7 @@ line on each state.
 4. **Resolve the destination by concern.** This skill binds concern **C8** (shipping &
    operation). Where a seed supplied a `## Destination`, use it; otherwise apply the concern
    rule here -- resolve C8 against `.aid/settings.yml` `knowledge.doc_set`, falling back to the
-   C8 row of `canonical/aid/templates/kb-authoring/domain-doc-matrix.md` -- and **confirm the
+   C8 row of `.aid/runtime/templates/kb-authoring/domain-doc-matrix.md` -- and **confirm the
    resolution with the user before writing**. Never resolve silently.
 5. **Read the whole destination**, and note its `source:` field. Absent destination -> route to
    `/aid-create-cicd` and write nothing.

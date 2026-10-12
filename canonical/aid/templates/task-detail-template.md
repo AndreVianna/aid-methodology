@@ -4,7 +4,7 @@
 This is the TASK-LEVEL DETAIL.md template. It is the IMMUTABLE DEFINITION for this task.
 Written once by aid-detail; not a state file. State lives in task-NNN/STATE.yml (full path)
 or, on a flattened Lite work, the work-root STATE.yml's `tasks_lifecycle` mapping.
-Shape: 6 sections matching canonical/aid/templates/delivery-plans/task-template.md.
+Shape: 6 sections matching .aid/runtime/templates/delivery-plans/task-template.md.
 
 > **Execution protocol (binding on whoever executes this task -- no
 > exceptions):** the moment this task's `State` changes, write it --
@@ -38,7 +38,7 @@ Shape: 6 sections matching canonical/aid/templates/delivery-plans/task-template.
      and its expected content, a count derived from disk, a measurable threshold,
      or a user-visible behaviour plus how to reproduce it. Judgment criteria are
      allowed but must state what is judged and against what standard. Full rule:
-     canonical/aid/templates/requirements/requirements-template.md
+     .aid/runtime/templates/requirements/requirements-template.md
      § Verifiable Acceptance Criteria. -->
 - [ ] {Criterion 1 -- names an observable}
 - [ ] {Criterion 2 -- names an observable}

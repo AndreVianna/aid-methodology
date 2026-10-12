@@ -22,7 +22,7 @@ Print this state-entry banner before proceeding to Step 0.
 
 Advance delivery lifecycle to Gated (silent state-write -- no output, no gate):
 ```bash
-bash .claude/aid/scripts/execute/writeback-state.sh --delivery-id NNN --lifecycle Gated
+bash .aid/runtime/scripts/execute/writeback-state.sh --delivery-id NNN --lifecycle Gated
 ```
 
 ## DELIVERY-GATE State Machine
@@ -103,7 +103,7 @@ Read the delivery's Execution Graph from:
   `deliveries/` wrapper under it → there is NO stored graph. DERIVE it:
 
   ```
-  bash .claude/aid/scripts/execute/derive-waves.sh --from-tasks .aid/works/{work}
+  bash .aid/runtime/scripts/execute/derive-waves.sh --from-tasks .aid/works/{work}
   ```
 
   Each task's `**Depends on:**` field is the graph, so a single-delivery work has
@@ -181,7 +181,7 @@ Include in the brief file (not in the dispatch prompt — `reviewer-dispatch.md`
   if it exists. For each existing row: verify on disk, update Status if needed
   (Pending→Fixed if resolved; Fixed→Recurred if regressed). Append new findings
   as rows with Status: Pending."
-- **Schema reference:** "Output per `.claude/aid/templates/reviewer-ledger-schema.md`.
+- **Schema reference:** "Output per `.aid/runtime/templates/reviewer-ledger-schema.md`.
   The ledger is the entire file — ONE markdown table, no headers, no narrative."
 
 Then append the gate-specific prompt below. The reviewer reads directly from source:
@@ -246,7 +246,7 @@ Then append the gate-specific prompt below. The reviewer reads directly from sou
 Run `grade.sh` on the ledger file:
 
 ```bash
-bash .claude/aid/scripts/grade.sh --explain .aid/.temp/review-pending/execute-delivery-NNN.md
+bash .aid/runtime/scripts/grade.sh --explain .aid/.temp/review-pending/execute-delivery-NNN.md
 ```
 
 The script parses the Severity and Status columns from the markdown table, counts
@@ -314,10 +314,10 @@ Gate grade below minimum. Next steps:
 can be -- the problem is upstream. Present what needs to change and where.
 Emit delivery and pipeline pause signals (silent state-writes -- no output, no gate):
 ```bash
-bash .claude/aid/scripts/execute/writeback-state.sh --delivery-id NNN --lifecycle Blocked
-bash .claude/aid/scripts/execute/writeback-state.sh --pipeline --field Lifecycle --value "Paused-Awaiting-Input"
-bash .claude/aid/scripts/execute/writeback-state.sh --pipeline --field "Pause Reason" --value "Delivery gate blocked on non-CODE issues -- upstream fix required (SPEC/TASK/KB)"
-bash .claude/aid/scripts/execute/writeback-state.sh --pipeline --field Updated --value "$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+bash .aid/runtime/scripts/execute/writeback-state.sh --delivery-id NNN --lifecycle Blocked
+bash .aid/runtime/scripts/execute/writeback-state.sh --pipeline --field Lifecycle --value "Paused-Awaiting-Input"
+bash .aid/runtime/scripts/execute/writeback-state.sh --pipeline --field "Pause Reason" --value "Delivery gate blocked on non-CODE issues -- upstream fix required (SPEC/TASK/KB)"
+bash .aid/runtime/scripts/execute/writeback-state.sh --pipeline --field Updated --value "$(date -u +%Y-%m-%dT%H:%M:%SZ)"
 ```
 
 **Advance:** **CHAIN** → Step 5 (FIX) when grade < minimum; **CHAIN** → Step 6 (RECORD) when grade ≥ minimum.
@@ -362,11 +362,11 @@ Options:
 Write impediment to `.aid/works/{work}/IMPEDIMENT-delivery-NNN.md` if stopping. When the impediment
 is written, emit the delivery and pipeline block signals (silent state-writes -- no output, no gate):
 ```bash
-bash .claude/aid/scripts/execute/writeback-state.sh --delivery-id NNN --lifecycle Blocked
-bash .claude/aid/scripts/execute/writeback-state.sh --pipeline --field Lifecycle --value Blocked
-bash .claude/aid/scripts/execute/writeback-state.sh --pipeline --field "Block Reason" --value "Delivery gate circuit breaker triggered -- grade not improving after 3 cycles"
-bash .claude/aid/scripts/execute/writeback-state.sh --pipeline --field "Block Artifact" --value ".aid/works/{work}/IMPEDIMENT-delivery-{NNN}.md"
-bash .claude/aid/scripts/execute/writeback-state.sh --pipeline --field Updated --value "$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+bash .aid/runtime/scripts/execute/writeback-state.sh --delivery-id NNN --lifecycle Blocked
+bash .aid/runtime/scripts/execute/writeback-state.sh --pipeline --field Lifecycle --value Blocked
+bash .aid/runtime/scripts/execute/writeback-state.sh --pipeline --field "Block Reason" --value "Delivery gate circuit breaker triggered -- grade not improving after 3 cycles"
+bash .aid/runtime/scripts/execute/writeback-state.sh --pipeline --field "Block Artifact" --value ".aid/works/{work}/IMPEDIMENT-delivery-{NNN}.md"
+bash .aid/runtime/scripts/execute/writeback-state.sh --pipeline --field Updated --value "$(date -u +%Y-%m-%dT%H:%M:%SZ)"
 ```
 
 **Advance:** **CHAIN** → back to Step 2 (REVIEW) — fresh reviewer, clean context.
@@ -398,10 +398,10 @@ into `delivery_gate.issue_list`; there is no key for Complexity Score or Cycles 
 Set the 3 relocated frontmatter scalars, then write the issue list:
 
 ```bash
-bash .claude/aid/scripts/execute/writeback-state.sh --delivery-id NNN --gate-field Tier --gate-value "{Small|Medium|Large}"
-bash .claude/aid/scripts/execute/writeback-state.sh --delivery-id NNN --gate-field Grade --gate-value "{grade}"
-bash .claude/aid/scripts/execute/writeback-state.sh --delivery-id NNN --gate-field Timestamp --gate-value "$(date -u +%Y-%m-%dT%H:%M:%SZ)"
-bash .claude/aid/scripts/execute/writeback-state.sh --delivery-id NNN --block "BLOCK"
+bash .aid/runtime/scripts/execute/writeback-state.sh --delivery-id NNN --gate-field Tier --gate-value "{Small|Medium|Large}"
+bash .aid/runtime/scripts/execute/writeback-state.sh --delivery-id NNN --gate-field Grade --gate-value "{grade}"
+bash .aid/runtime/scripts/execute/writeback-state.sh --delivery-id NNN --gate-field Timestamp --gate-value "$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+bash .aid/runtime/scripts/execute/writeback-state.sh --delivery-id NNN --block "BLOCK"
 ```
 
 > **Helper target:** the `--gate-field`/`--gate-value` calls write the
@@ -425,7 +425,7 @@ bash .claude/aid/scripts/execute/writeback-state.sh --delivery-id NNN --block "B
 ### 6b-2: Advance delivery lifecycle to Done
 
 ```bash
-bash .claude/aid/scripts/execute/writeback-state.sh --delivery-id NNN --lifecycle Done
+bash .aid/runtime/scripts/execute/writeback-state.sh --delivery-id NNN --lifecycle Done
 ```
 
 ### 6c: Mark Deferred Issues Resolved/Accepted

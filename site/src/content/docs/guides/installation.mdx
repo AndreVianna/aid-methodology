@@ -16,9 +16,11 @@ AID separates into two install layers:
    `~/.aid` (Unix) or `%LOCALAPPDATA%\aid` (Windows). It never changes when you add or
    remove AID from a project. Bootstrap it once with the one-liners in Step 1 below.
 
-2. **Per-project AID files** — the profile trees (`.claude/`, `.codex/`, `CLAUDE.md`,
-   `AGENTS.md`, and so on) that `aid add <tool>` installs into a repo. Each repo tracks
-   what was installed in its own `.aid/.aid-manifest.json`.
+2. **Per-project AID files** — the shared skills and runtime (`.agents/skills/`,
+   `.aid/runtime/`), each tool's agents (for example `.claude/agents/`), and the root
+   instruction regions (`AGENTS.md`, plus `CLAUDE.md` while Claude Code is installed) that
+   `aid add <tool>` installs into a repo. Each repo tracks what was installed in its own
+   `.aid/.aid-manifest.json`.
 
 ## Choose your install channel
 
@@ -126,16 +128,17 @@ aid update self
 
 ### Offline / air-gapped install
 
-For machines without internet access. Download the tarball and `SHA256SUMS` from the
-[Releases page](/releases/changelog/), then install with `--from-bundle`.
+For machines without internet access. Download the shared payload, your tool's artifact and
+`SHA256SUMS` into one directory from the [Releases page](/releases/changelog/), then install with
+`--from-bundle` pointing at that directory.
 
 <Steps>
 
-1. **Download the bundle for your tool.**
+1. **Download the artifacts for your tool into one directory.**
 
    <InstallCommand channel="offline" />
 
-   Also download the checksum file:
+   Also download the checksum file into the same directory:
 
    ```bash
    curl -LO https://github.com/AndreVianna/aid-methodology/releases/download/$(aid version)/SHA256SUMS
@@ -166,11 +169,12 @@ For machines without internet access. Download the tarball and `SHA256SUMS` from
 3. **After bootstrapping the CLI (Step 1), add from the bundle.**
 
    ```bash
-   aid add claude-code --from-bundle aid-claude-code-vX.Y.Z.tar.gz
+   aid add claude-code --from-bundle ./aid-bundle
    ```
 
-   For multiple tools, pass a directory containing the per-tool tarballs
-   (`aid-<tool>-v<version>.tar.gz` naming):
+   The directory must hold exactly one `aid-shared-vX.Y.Z.tar.gz` and the artifact of every tool
+   you name (`aid-<tool>-vX.Y.Z.tar.gz`). For multiple tools, put each tool's artifact in the same
+   directory:
 
    ```bash
    aid add codex,cursor --from-bundle ./bundles/
@@ -192,9 +196,10 @@ No re-piping.
     ```
 
     **What gets installed:**
-    - `.claude/skills/` — skill markdown files
+    - `.agents/skills/` and `.claude/skills/` — the shared AID skills (and Claude Code's mirror)
+    - `.aid/runtime/` — the shared scripts, templates and `rules.md`
     - `.claude/agents/` — agent markdown files
-    - `CLAUDE.md` — project-context file at the project root
+    - `AGENTS.md` and `CLAUDE.md` — the AID regions in the root instruction files
   </TabItem>
   <TabItem label="Codex">
     ```bash
@@ -202,9 +207,10 @@ No re-piping.
     ```
 
     **What gets installed:**
+    - `.agents/skills/` — the shared AID skills
+    - `.aid/runtime/` — the shared scripts, templates and `rules.md`
     - `.codex/agents/` — agent TOML files
-    - `.codex/skills/` — skill markdown files
-    - `AGENTS.md` — project-context file at the project root
+    - `AGENTS.md` — the AID region in the root instruction file
   </TabItem>
   <TabItem label="Cursor">
     ```bash
@@ -212,9 +218,10 @@ No re-piping.
     ```
 
     **What gets installed:**
-    - `.cursor/skills/` — skill markdown files
+    - `.agents/skills/` — the shared AID skills
+    - `.aid/runtime/` — the shared scripts, templates and `rules.md`
     - `.cursor/agents/` — agent markdown files
-    - `AGENTS.md` — project-context file at the project root
+    - `AGENTS.md` — the AID region in the root instruction file
   </TabItem>
   <TabItem label="Copilot CLI">
     ```bash
@@ -222,9 +229,10 @@ No re-piping.
     ```
 
     **What gets installed:**
+    - `.agents/skills/` — the shared AID skills
+    - `.aid/runtime/` — the shared scripts, templates and `rules.md`
     - `.github/agents/` — agent markdown files
-    - `.github/skills/` — skill markdown files
-    - `AGENTS.md` — project-context file at the project root
+    - `AGENTS.md` — the AID region in the root instruction file
   </TabItem>
   <TabItem label="Antigravity">
     ```bash
@@ -232,9 +240,10 @@ No re-piping.
     ```
 
     **What gets installed:**
+    - `.agents/skills/` — the shared AID skills
+    - `.aid/runtime/` — the shared scripts, templates and `rules.md`
     - `.agent/agents/` — agent markdown files
-    - `.agent/skills/` — skill markdown files
-    - `AGENTS.md` — project-context file at the project root
+    - `AGENTS.md` — the AID region in the root instruction file
   </TabItem>
 </Tabs>
 
@@ -258,12 +267,10 @@ aid add claude-code --version X.Y.Z
 
 Without `--version`, the installer resolves the latest GitHub Release.
 
-<Aside type="caution">
-Root agent files — `CLAUDE.md` (claude-code) and `AGENTS.md` (codex, cursor, copilot-cli,
-antigravity) — may contain your own customizations. `aid add` protects them from silent overwrites.
-If the file already exists and differs from the incoming version, `aid add` writes the new content
-to `<filename>.aid-new` and exits with code 5. Review the diff and merge, or re-run with
-`--force` to overwrite.
+<Aside type="note">
+Root instruction files — `AGENTS.md`, and `CLAUDE.md` while Claude Code is installed — may hold
+your own instructions. AID writes only between its `<!-- AID:BEGIN -->` and `<!-- AID:END -->`
+markers, so text you wrote outside them is kept. No side file is written.
 </Aside>
 
 ## One-line first install
@@ -297,12 +304,12 @@ Bootstrap the CLI **and** add a tool to the current project in a single command:
 # Update all installed tools to latest
 aid update
 
-# Update a specific tool
-aid update claude-code
-
 # Update to a pinned version
 aid update --version X.Y.Z
 ```
+
+All installed tools in a repo move to one version together, because the shared files have one
+version. Naming a tool (`aid update claude-code`) also updates the other installed tools.
 
 ### Update the aid CLI itself
 
@@ -334,8 +341,8 @@ aid remove
 ```
 
 Prompts for confirmation. Pass `--force` to skip the prompt. Uninstall is manifest-driven:
-only files that `aid add` wrote are removed. Files you created or modified yourself are
-left in place.
+only files that `aid add` wrote are removed. A file you edited since AID wrote it is moved to
+`.aid/.trash/` rather than deleted. Files AID never wrote are not touched.
 
 ### Remove the global `aid` CLI itself
 

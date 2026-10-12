@@ -10,7 +10,7 @@ generatedFrom: 'canonical/skills/aid-create-cicd/SKILL.md'
 
 - **`name`** — aid-create-cicd
 - **`description`** — Realize a ready CI/CD seed from `.aid/design/cicd.md` into the project's shipping (C8) Knowledge Base document -- the pipeline stages and their order, the triggers, the environments and promotion between them, and the release flow. Use this skill when a CI/CD seed is ready and the project has no record of its delivery pipeline yet. It writes the KB record by default, and emits a workflow file only if you ask for one in that run. Creating the document also registers it, in the same run, which opts it into the Conformance Lane permanently -- a choice you make by running this skill. To revise C8 content already committed use `/aid-update-cicd`; for a resource the pipeline ships to, `/aid-create-infra` or `/aid-update-infra`; for a data pipeline rather than a delivery one, `/aid-create-data-pipeline` or `/aid-update-data-pipeline`; to ship a built artifact now, `/aid-deploy`.
-- **`allowed-tools`** — Read, Glob, Grep, Bash, Write, Edit, Agent
+- **`allowed-tools`** — Read Glob Grep Bash Shell Terminal Write Edit Agent
 - **`argument-hint`** — [&lt;direction>] -- which parts of the CI/CD seed to realize
 
 [Definition: `canonical/skills/aid-create-cicd/SKILL.md`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-create-cicd/SKILL.md)
@@ -56,14 +56,14 @@ Every node in the chart above, in chart order, with the exact `canonical/` text 
 ## State: INTAKE
 
 1. **Allocate** through the Work Initiation Gate exactly as the contract's Allocation rule
-   requires (`canonical/skills/aid-design/SKILL.md` INTAKE step 4 is the shape), with
+   requires (`.agents/skills/aid-design/SKILL.md` INTAKE step 4 is the shape), with
    `initiator: aid-create-cicd`. `phase` is not driven.
 2. **Read the seed** at `.aid/design/cicd.md`.
 3. **Resolve the destination by concern, not filename.** This skill binds concern **C8**
-   (shipping & operation, `canonical/aid/templates/kb-authoring/concern-model.md`). The seed's
+   (shipping & operation, `.aid/runtime/templates/kb-authoring/concern-model.md`). The seed's
    `## Destination` names the resolved path; where it does not, resolve C8 against
    `.aid/settings.yml` `knowledge.doc_set`, falling back to the C8 row of
-   `canonical/aid/templates/kb-authoring/domain-doc-matrix.md`, and confirm with the user. An
+   `.aid/runtime/templates/kb-authoring/domain-doc-matrix.md`, and confirm with the user. An
    ambiguous realization is **asked**, never picked silently.
 4. **Read the whole destination** if it exists, and note its `source:` field.
 5. **Ask whether the user also wants production config this run.** Emitting a workflow file

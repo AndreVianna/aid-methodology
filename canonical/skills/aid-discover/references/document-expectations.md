@@ -78,7 +78,7 @@ as-built artifacts to intent-evidence:
 > dimension floor — it never replaces it.
 >
 > **Single-source note:** the "Owns named section(s)" column below is copied from the
-> owning-table in `canonical/aid/templates/kb-authoring/concern-model.md`
+> owning-table in `.aid/runtime/templates/kb-authoring/concern-model.md`
 > (§ "The four operational-guidance classes") and MUST NOT be edited here independently —
 > edit the source table and reflect it here.
 
@@ -471,7 +471,7 @@ Features obviously missing from the user's original list.
 
 ---
 
-### {reviewer_output_file}
+### STATE.md
 
 **What does the reviewer still need to know that the code alone cannot tell?** Every
 open question must be specific to this project, answerable by the user (not inferable
@@ -521,7 +521,7 @@ that acknowledges gaps, and a revision history that shows how the KB has evolved
 
 ---
 
-### {project_context_file}
+### AGENTS.md
 
 **Does this context file give an agent everything it needs to operate on this project
 without additional discovery?** The description, build commands, test commands,
@@ -734,7 +734,7 @@ is drained into release-tracking.md.
 out of backlog.md into a new version section of release-tracking.md — each becoming a
 release-note bullet under its own `[NEW]` / `[CHANGE]` / `[FIX]` tag — and is deleted from
 backlog.md in the same pass. **AID ships no adopter-facing skill that performs this drain:** no
-skill under `canonical/skills/` reads backlog.md at tag time, so nothing a project installs
+skill under `.agents/skills/` reads backlog.md at tag time, so nothing a project installs
 will do it. It is therefore a **manual step**, performed by hand as part of cutting a release.
 **Operational open question:** What are the traps of working the backlog itself — the moves
 that quietly break the item audit? Surface these as a `## Gotchas` section, so an agent

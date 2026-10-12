@@ -4,7 +4,7 @@ Per-family scaffolding reference for the **`report`** verb (bare `aid-report` on
 the **`review`** verb (bare `aid-review` only), and the **`research`** verb (bare
 `aid-research` only).
 Consulted by the shared engine
-(`canonical/aid/templates/shortcut-engine.md § Family Scaffolding Consult`) at
+(`.aid/runtime/templates/shortcut-engine.md § Family Scaffolding Consult`) at
 CAPTURE, SPEC, and DETAIL for every `{verb, artifact}` whose `verb` field resolves to
 `report`, `review`, or `research`. None of these rows carry an artifact suffix or
 alias rows. Free-form prose, like any other `state-*.md` reference doc -- the
@@ -75,7 +75,7 @@ Same `task-type-rules.md ## RESEARCH` mapping as `aid-report`:
 
 | Task | Type | Notes |
 |---|---|---|
-| `task-001` | RESEARCH | assess `{target}` against the captured criteria/rubric; at least 2 considerations (e.g. strengths vs. risks, or 2 competing readings of an ambiguous criterion); ends with findings + a recommendation. Emits the reviewer-ledger per the global review-output schema (`canonical/aid/templates/reviewer-ledger-schema.md` -- CLAUDE.md § Review output format), NOT prose findings, so the task's own output is directly consumable by any downstream FIX loop. |
+| `task-001` | RESEARCH | assess `{target}` against the captured criteria/rubric; at least 2 considerations (e.g. strengths vs. risks, or 2 competing readings of an ambiguous criterion); ends with findings + a recommendation. Emits the reviewer-ledger per the global review-output schema (`.aid/runtime/templates/reviewer-ledger-schema.md` -- CLAUDE.md § Review output format), NOT prose findings, so the task's own output is directly consumable by any downstream FIX loop. |
 | `task-002` (optional) | DOCUMENT | write up the findings for a stakeholder audience; depends on `task-001` |
 
 ## `aid-research` -- CAPTURE
@@ -134,18 +134,18 @@ not a project-wide discovery pass.
 
 ## See also
 
-- `canonical/aid/templates/shortcut-engine.md § Family Scaffolding Consult` -- how
+- `.aid/runtime/templates/shortcut-engine.md § Family Scaffolding Consult` -- how
   this file is looked up and what happens when it is absent
-- `canonical/aid/templates/shortcut-scaffolding/document.md § Ownership boundary` --
+- `.aid/runtime/templates/shortcut-scaffolding/document.md § Ownership boundary` --
   where a status/progress report routes instead
-- `canonical/aid/templates/shortcut-scaffolding/test-experiment.md § aid-experiment`
+- `.aid/runtime/templates/shortcut-scaffolding/test-experiment.md § aid-experiment`
   -- where a controlled experiment/A-B test design routes instead
-- `canonical/aid/templates/shortcut-scaffolding/change-refactor.md § aid-remove /
+- `.aid/runtime/templates/shortcut-scaffolding/change-refactor.md § aid-remove /
   § aid-deprecate / § aid-migrate` -- where acting on a review/research
   recommendation routes instead
-- `canonical/aid/templates/reviewer-ledger-schema.md` -- the ledger schema
+- `.aid/runtime/templates/reviewer-ledger-schema.md` -- the ledger schema
   `aid-review`'s `task-001` emits
-- `canonical/skills/aid-execute/references/task-type-rules.md ## RESEARCH /
+- `.agents/skills/aid-execute/references/task-type-rules.md ## RESEARCH /
   ## IMPLEMENT` -- the per-type execution rules this breakdown maps onto
 - `.aid/knowledge/artifact-schemas.md § Task DETAIL.md` -- the one-type-per-task
   contract

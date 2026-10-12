@@ -4,15 +4,15 @@ source: hand-authored
 objective: AID's own source-code conventions -- shell, PowerShell, Python, and JS/Node rules mined from the actual scripts, with project examples and the security conventions a contributor must honor.
 summary: Read this before writing or reviewing any AID script (Bash, PowerShell, Python, Node) to follow the project's real conventions for headers, error handling, naming, exit codes, cross-platform compatibility, and download integrity.
 sources:
-  - .claude/aid/scripts/config/read-setting.sh
-  - .claude/aid/scripts/execute/writeback-state.sh
-  - .claude/aid/scripts/kb/kb-citation-lint.sh
+  - canonical/aid/scripts/config/read-setting.sh
+  - canonical/aid/scripts/execute/writeback-state.sh
+  - canonical/aid/scripts/kb/kb-citation-lint.sh
   - lib/aid-install-core.sh
   - lib/AidInstallCore.psm1
   - .claude/skills/generate-profile/scripts/aid_profile.py
-  - .claude/aid/scripts/summarize/contrast-check.mjs
+  - canonical/aid/scripts/summarize/contrast-check.mjs
   - tests/canonical/ps51-compat-check.ps1
-  - .claude/aid/scripts/connectors/connector-secret.sh
+  - canonical/aid/scripts/connectors/connector-secret.sh
 tags: [C3, conventions, shell, powershell, python, javascript, security, exit-codes]
 see_also: [authoring-conventions.md, module-map.md, test-landscape.md]
 owner: architect
@@ -94,7 +94,7 @@ with a `Provides:` block listing every public function and its signature;
 | PowerShell modules | PascalCase + `.psm1` | `AidInstallCore.psm1` | `lib/` |
 | Bash functions | snake_case | `lookup_list`, `abs_path`, `fetch_tarball` | `read-setting.sh`, `aid-install-core.sh` |
 | Bash variables | UPPER_SNAKE (globals), lower (locals) | `SETTINGS_FILE`, `HAS_DEFAULT`; `local p`, `local file` | `read-setting.sh` |
-| PowerShell functions | `Verb-AidNoun` (approved verb) | `Get-Sha256File`, `Install-AidTool`, `Write-AidManifest` | `AidInstallCore.psm1` |
+| PowerShell functions | `Verb-AidNoun` (approved verb) | `Get-Sha256File`, `Install-AidTool`, `Write-AidManifestV3` | `AidInstallCore.psm1` |
 | Python functions | snake_case | `load_profile`, `validate`, `_parse_model_tiers` | `aid_profile.py` |
 | Python dataclasses | PascalCase | `Profile`, `CapabilitiesConfig`, `ModelTierSimple` | `aid_profile.py` |
 | Private Python helpers | leading underscore | `_parse_capabilities`, `_KNOWN_TIERS` | `aid_profile.py` |

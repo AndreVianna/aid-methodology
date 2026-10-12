@@ -4,10 +4,10 @@ The work `STATE.yml`'s `features:` entry for this feature shows `state: In Discu
 
 Emit pipeline phase (silent state-write only — no output, no gate):
 ```
-bash .claude/aid/scripts/execute/writeback-state.sh --pipeline --field Lifecycle --value Running
-bash .claude/aid/scripts/execute/writeback-state.sh --pipeline --field Phase --value Specify
-bash .claude/aid/scripts/execute/writeback-state.sh --pipeline --field "Active Skill" --value aid-specify
-bash .claude/aid/scripts/execute/writeback-state.sh --pipeline --field Updated --value "$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+bash .aid/runtime/scripts/execute/writeback-state.sh --pipeline --field Lifecycle --value Running
+bash .aid/runtime/scripts/execute/writeback-state.sh --pipeline --field Phase --value Specify
+bash .aid/runtime/scripts/execute/writeback-state.sh --pipeline --field "Active Skill" --value aid-specify
+bash .aid/runtime/scripts/execute/writeback-state.sh --pipeline --field Updated --value "$(date -u +%Y-%m-%dT%H:%M:%SZ)"
 ```
 
 ---
@@ -60,7 +60,7 @@ Continue until the user is satisfied.
 When agreed:
 
 1. Write the section into `REQUIREMENTS.md § 11 / Feature NNN` under `#### Technical
-   Specification`, following `.claude/aid/templates/specs/technical-specification-template.md`
+   Specification`, following `.aid/runtime/templates/specs/technical-specification-template.md`
    — which defines the body's shape (Data Model, Feature Flow, Layers & Components, and
    the conditional sections) and its heading levels, already nested for § 11.
 2. Update work `STATE.yml` `features` entry status → `Written`
@@ -69,7 +69,7 @@ When agreed:
 
 ### 4. Review
 
-**Agent:** Dispatch with `subagent_type: aid-reviewer` (overriding the default `aid-architect`) **at Large tier** — the executor is the Large `aid-architect`, so reviewer tier >= executor tier (`.claude/aid/templates/agent-dispatch-tiering.md`). The aid-reviewer must run with clean context — it grades against KB/codebase reality without seeing the aid-architect's working notes. Print before dispatch: `[Review] Dispatching aid-reviewer for SPEC validation.`
+**Agent:** Dispatch with `subagent_type: aid-reviewer` (overriding the default `aid-architect`) **at Large tier** — the executor is the Large `aid-architect`, so reviewer tier >= executor tier (`.aid/runtime/templates/agent-dispatch-tiering.md`). The aid-reviewer must run with clean context — it grades against KB/codebase reality without seeing the aid-architect's working notes. Print before dispatch: `[Review] Dispatching aid-reviewer for SPEC validation.`
 
 ▶ aid-reviewer starting (~1–2 min)
 
@@ -83,7 +83,7 @@ Immediately after writing, verify what was written:
 
 **Grade the section** using the universal rubric (`../../../aid/templates/grading-rubric.md`).
 Classify each issue by severity (Minor/Low/Medium/High/Critical). The grade is
-calculated — worst issue dominates. Compare to minimum grade from `bash .claude/aid/scripts/config/read-setting.sh --skill specify --key minimum_grade --default A`.
+calculated — worst issue dominates. Compare to minimum grade from `bash .aid/runtime/scripts/config/read-setting.sh --skill specify --key minimum_grade --default A`.
 
 | Condition | Action |
 |-----------|--------|

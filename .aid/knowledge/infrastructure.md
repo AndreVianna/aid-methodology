@@ -12,7 +12,7 @@ sources:
   - .github/workflows/coverage-parity.yml
   - install.sh
   - install.ps1
-  - .claude/aid/scripts/release/check-version-sync.sh
+  - canonical/aid/scripts/release/check-version-sync.sh
   - .claude/skills/generate-profile/SKILL.md
   - bin/aid
 tags: [C8, infrastructure, ci-cd, release, distribution, versioning, dashboard]
@@ -85,16 +85,17 @@ CONFIRMED via the workflow files + `.gitattributes` + the `kb-hygiene` CRLF chec
 
 ## The Build: Multi-Profile Render
 
-AID's "build" is a render, not a compile. The single source of truth is `canonical/`; a
-Python generator renders it into five per-tool install trees under `profiles/`.
+AID's "build" is a render plus a packaging step, not a compile. The single source of truth is `canonical/`;
+a Python generator renders its agents into five per-tool agent trees under `profiles/`, and `release.sh` copies the
+skills and the runtime from `canonical/` into one shared payload.
 
 - **Generator:** `python .claude/skills/generate-profile/scripts/run_generator.py` (the
   `generate-profile` skill; maintainer-only, the lone skill outside `canonical/`).
 - **Profiles produced:** `claude-code`, `codex`, `cursor`, `copilot-cli`, `antigravity`
   (derived from `ls profiles/*.toml`).
-- **Safety boundary:** the generator only writes/deletes files it previously emitted, recorded
-  per profile in `profiles/{tool}/emission-manifest.jsonl`; user-created files inside install
-  trees are never touched.
+- **Wipe boundary:** the generator wipes each `profiles/{tool}/` tree and regenerates it in full, so a profile
+  tree holds only generated agents and its `aid-tool.conf`. The generator never touches an installed user repo;
+  install and uninstall prune only the files the install manifest records.
 - **Drift gate:** CI (`test.yml` `render-drift`) and the release `gate` re-run the generator
   and `git diff --exit-code -- profiles/`; any uncommitted drift fails the build. So
   `profiles/` is treated as committed build output that must always equal a fresh render.
@@ -113,7 +114,7 @@ release/deploy view:
 | `.github/workflows/test.yml` | push/PR to `master` | Correctness gate: render-drift, full canonical suite, visual-fidelity, generator self-tests, KB/repo hygiene |
 | `.github/workflows/installer-tests.yml` | push to any non-`master` branch | Cross-platform installer/CLI/release validation (ubuntu bash-harness + windows native-ps1) so feature branches are validated remotely |
 | `.github/workflows/release.yml` | push of a `v*` tag (or `workflow_dispatch`) | Gate → build → publish all channels |
-| `.github/workflows/docs.yml` | push **and PR** to `master`, path-filtered to `site/**`, `docs/**`, `canonical/**`, `VERSION` (or `workflow_dispatch`) | Test (site vitest) + build the Astro site on both; deploy to GitHub Pages on push only |
+| `.github/workflows/docs.yml` | push **and PR** to `master`, path-filtered to `site/**`, `docs/**`, `canonical/**`, `VERSION` (or `workflow_dispatch`) | Test (site vitest) + build the Astro site on both; deploy to GitHub Pages on push (unless `DOCS_DEPLOY_PAUSED` is `'true'`) or `workflow_dispatch` |
 | `.github/workflows/coverage-parity.yml` | PR + push to `master`, path-filtered to `tests/**` | Advisory coverage-regression gate: diffs the executed-assertion inventory against a committed baseline (enforces once bootstrapped) |
 
 CONFIRMED by each workflow's `on:` block.
@@ -157,8 +158,8 @@ Job order and dependencies:
    idempotent on re-run (npm `npm view` pre-check; PyPI `skip-existing`).
 
 `release.sh` itself (the maintainer runbook script): asserts a clean worktree, re-verifies
-render state (render-drift), stages `.aid/.temp/release-<VERSION>/`, packages **five
-per-profile tarballs + one CLI bundle (`aid-cli-v<VERSION>.tar.gz`) + the two installer libs +
+render state (render-drift), stages `.aid/.temp/release-<VERSION>/`, packages **one
+shared payload (`aid-shared-v<VERSION>.tar.gz`), five per-tool agent artifacts, one CLI bundle (`aid-cli-v<VERSION>.tar.gz`), the two installer libs +
 `SHA256SUMS`**, then `gh release create` (or `gh release upload --clobber` for idempotent
 recovery re-runs). `--dry-run` stages artifacts and stops before any network I/O; `--sign` is
 deferred (exits non-zero). Exit codes: 0 ok, 1 general, 2 usage, 3 version mismatch, 4 tag
@@ -172,7 +173,7 @@ Three channels, all from the same tag:
 
 | Channel | Artifact(s) | How built | Auth |
 |---|---|---|---|
-| GitHub Releases | 5 profile tarballs + `aid-cli-v*.tar.gz` + `aid-install-core.sh` + `AidInstallCore.psm1` + `SHA256SUMS` | `release.sh` via `gh release create` | built-in `GITHUB_TOKEN` (`contents: write`) |
+| GitHub Releases | shared payload `aid-shared-v*.tar.gz` + 5 tool artifacts `aid-<tool>-v*.tar.gz` + `aid-cli-v*.tar.gz` + `aid-install-core.sh` + `AidInstallCore.psm1` + `SHA256SUMS` | `release.sh` via `gh release create` | built-in `GITHUB_TOKEN` (`contents: write`) |
 | npm (`aid-installer`) | npm package vendoring the aid-cli payload | `packages/npm/scripts/vendor.js` runs at `prepack`; `npm publish --provenance` | OIDC Trusted Publishing (token-less; optional classic `NPM_TOKEN` fallback) |
 | PyPI (`aid-installer`) | sdist + wheel vendoring the aid-cli payload | hatchling build hook `packages/pypi/scripts/vendor.py`; `python -m build` | OIDC Trusted Publishing via `pypa/gh-action-pypi-publish` (PEP 740 attestations) |
 
@@ -221,6 +222,9 @@ A standalone Astro Starlight site under `site/` (separate build, own `package.js
 from `release.yml`. Pages deploys only from `master` (push or manual `workflow_dispatch`) —
 the `github-pages` environment permits master-ref deploys only, so a tag/release ref is
 rejected; after a release, refresh release-bound content with a `workflow_dispatch` on master.
+A push deploys only while the repository variable `DOCS_DEPLOY_PAUSED` is not `'true'`; setting it
+keeps docs for unreleased work on master from going live before the release that installs it, while
+the push still builds and tests the site. A manual `workflow_dispatch` always deploys.
 CONFIRMED in `.github/workflows/docs.yml`.
 
 ---

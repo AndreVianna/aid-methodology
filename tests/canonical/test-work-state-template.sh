@@ -29,8 +29,9 @@
 #         key line (retargeted: SP-2/SP-20 -- no un-instantiated placeholder may sit on a
 #         key whose value must be readable before the first write)
 #   WS06  (removed) comment-text assertion -- see body note; coverage: WS07 (dogfood), WS03/WS04 (enums)
-#   WS07  Rendered dogfood work-state-template.yml matches canonical (spot checks)
-#   WS08  Rendered profile trees all contain the work-state-template.yml heading comment
+#   WS07  Installed runtime work-state-template.yml has the heading and the lifecycle/phase keys
+#   WS08  Installed runtime work-state-template.yml has the heading comment (re-pointed: the
+#         rendered profile copies this searched pre-refactor no longer exist)
 #         (retargeted: the `## Pipeline State` heading this searched for is retired)
 #   WS09  No "Status" section/field names remain in any new template (naming contract) --
 #         still passes against the two heading-less .yml templates (vacuously: there are no
@@ -78,9 +79,8 @@ DELIVERY_STATE="${REPO_ROOT}/canonical/aid/templates/delivery-state-template.yml
 TASK_STATE="${REPO_ROOT}/canonical/aid/templates/task-state-template.yml"
 TASK_SPEC="${REPO_ROOT}/canonical/aid/templates/task-detail-template.md"
 
-DOGFOOD_WORK_STATE="${REPO_ROOT}/.claude/aid/templates/work-state-template.yml"
+INSTALLED_WORK_STATE="${REPO_ROOT}/.aid/runtime/templates/work-state-template.yml"
 FIRST_RUN="${REPO_ROOT}/canonical/skills/aid-describe/references/state-first-run.md"
-PROFILES_DIR="${REPO_ROOT}/profiles"
 
 # ---------------------------------------------------------------------------
 # WS01: work-state-template has the "# Work State --" full-line comment
@@ -149,44 +149,36 @@ assert_file_contains \
 # ---------------------------------------------------------------------------
 
 # ---------------------------------------------------------------------------
-# WS07: Rendered dogfood work-state-template.yml has the comment heading and
-# the pipeline-scalar keys (path retargeted from the retired .md render).
+# WS07: The installed runtime work-state-template.yml has the comment heading
+# and the pipeline-scalar keys (path re-pointed from the retired per-tool
+# copy to the shared runtime tree, .aid/runtime/).
 # ---------------------------------------------------------------------------
-if [[ -f "$DOGFOOD_WORK_STATE" ]]; then
+if [[ -f "$INSTALLED_WORK_STATE" ]]; then
     assert_file_contains \
-        "$DOGFOOD_WORK_STATE" \
+        "$INSTALLED_WORK_STATE" \
         "# Work State --" \
-        "WS07 dogfood rendered work-state-template.yml has the comment heading"
+        "WS07 installed runtime work-state-template.yml has the comment heading"
     assert_file_contains \
-        "$DOGFOOD_WORK_STATE" \
+        "$INSTALLED_WORK_STATE" \
         "lifecycle:" \
-        "WS07 dogfood rendered work-state-template.yml has the lifecycle key"
+        "WS07 installed runtime work-state-template.yml has the lifecycle key"
     assert_file_contains \
-        "$DOGFOOD_WORK_STATE" \
+        "$INSTALLED_WORK_STATE" \
         "phase:" \
-        "WS07 dogfood rendered work-state-template.yml has the phase key"
+        "WS07 installed runtime work-state-template.yml has the phase key"
 else
-    fail "WS07 dogfood rendered work-state-template.yml not found: $DOGFOOD_WORK_STATE"
+    fail "WS07 installed runtime work-state-template.yml not found: $INSTALLED_WORK_STATE"
 fi
 
 # ---------------------------------------------------------------------------
-# WS08: Each rendered profile tree contains the work-state-template.yml
-# comment heading (retargeted -- the `## Pipeline State` heading this
-# searched for pre-refactor is retired script-wide).
+# WS08: The installed runtime work-state-template.yml carries the comment
+# heading (re-pointed: the rendered profile copies this searched pre-refactor
+# no longer exist, so the single installed copy is the template under test).
 # ---------------------------------------------------------------------------
-profile_found=0
-while IFS= read -r -d '' rendered_tmpl; do
-    profile_found=$((profile_found + 1))
-    assert_file_contains \
-        "$rendered_tmpl" \
-        "# Work State --" \
-        "WS08 profile rendered work-state-template.yml has the comment heading: ${rendered_tmpl#"$REPO_ROOT/"}"
-done < <(find "$REPO_ROOT/profiles" -name "work-state-template.yml" -print0 2>/dev/null)
-
-if [[ $profile_found -eq 0 ]]; then
-    echo "  NOTE: no rendered profile copies of work-state-template.yml found -- run generator to create them"
-    pass "WS08 profile rendered templates check (none found -- generator not yet run)"
-fi
+assert_file_contains \
+    "$INSTALLED_WORK_STATE" \
+    "# Work State --" \
+    "WS08 installed runtime work-state-template.yml has the comment heading"
 
 # ---------------------------------------------------------------------------
 # WS09: No "Status" section/field names in any new template (naming contract).

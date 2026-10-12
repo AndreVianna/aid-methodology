@@ -102,7 +102,7 @@ out of cycle scope).
 
 **Auto-generated files refresh LAST.** Hand-edits land first; generated files
 (metrics.md, INDEX.md, project-index.md) regenerate at the end of FIX, so they reflect
-the final state. Refresh is driven by `canonical/aid/templates/generated-files.txt`
+the final state. Refresh is driven by `.aid/runtime/templates/generated-files.txt`
 registry.
 
 ## P4. Enforce via review, not by mechanical lint
@@ -135,7 +135,7 @@ Two kinds of non-curated files exist:
   registered scripts. Each file MUST carry an HTML-style comment at the top:
 
   ```html
-  <!-- AUTO-GENERATED 2026-05-27T12:34:56Z by build-kb-index.sh — DO NOT EDIT — regenerate with `bash canonical/aid/scripts/kb/build-kb-index.sh` -->
+  <!-- AUTO-GENERATED 2026-05-27T12:34:56Z by build-kb-index.sh — DO NOT EDIT — regenerate with `bash .aid/runtime/scripts/kb/build-kb-index.sh` -->
   ```
 
   The `source: generated` + `generator: <script>` frontmatter fields also declare this.
@@ -354,7 +354,7 @@ P1(d)-SIG and "Signature exception" in the Document boundary rule section).
 - **P10 + P6** — dual-audience classification is enforced via the frontmatter fields
   `audience:`, `owner:`, `tags:` (concern/dimension classification). P10 sets the
   standard; P6 carries the machine-parseable fields; the Anatomy mandate (see
-  `canonical/skills/aid-discover/references/state-review.md`) checks compliance.
+  `.agents/skills/aid-discover/references/state-review.md`) checks compliance.
 
 ## Document boundary rule
 

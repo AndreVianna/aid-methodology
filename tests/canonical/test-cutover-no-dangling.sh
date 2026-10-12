@@ -1,14 +1,13 @@
 #!/usr/bin/env bash
 # test-cutover-no-dangling.sh -- task-031 (work-001-lite-aid-skills, feature-002 AC-5/C-4):
-# broadened no-dangling + mirror-deletion guard test.
+# broadened no-dangling + agents-only profile-scope guard test.
 #
 # The recipe-catalog removal (feature-002) deletes canonical/aid/recipes/,
 # parse-recipe.sh, recipe-template.md, specs/lite-spec-template.md, and 7
 # canonical/skills/aid-describe/references/*.md lite/triage reference files, and edits
 # work-state-template.md to drop the `## Triage` / `## Escalation Carry` STATE blocks.
-# Because a `canonical/` deletion flows through the emission-manifest pure-mirror-deletion
-# boundary (C-4), the same absence must hold in every rendered profile and the dogfood
-# `.claude/`.
+# Profiles now contain agents and aid-tool.conf only; generated output must have no legacy
+# skill/runtime trees.
 #
 # Two parts:
 #   1. No-dangling grep over ALL of `canonical/` (not just skills/scripts/templates) -- the
@@ -19,16 +18,13 @@
 #      EXAMPLE elsewhere in aid-discover's glossary-authoring instructions is a different,
 #      unrelated concept that happens to share the word "Triage" -- not a dangling
 #      reference to the deleted STATE.md block).
-#   2. Mirror-deletion assertion -- inspects the ALREADY-RENDERED `profiles/*/` and the
-#      dogfood `.claude/` directly on disk (this suite never invokes `run_generator.py`);
-#      none of the 5 profiles nor dogfood contain `aid/recipes/`,
-#      `aid/scripts/interview/parse-recipe.sh`, `recipe-template.md`, or
-#      `specs/lite-spec-template.md`.
+#   2. Profile-scope assertion -- inspects the ALREADY-RENDERED `profiles/*/` directly
+#      on disk (this suite never invokes `run_generator.py`); every profile has a
+#      descriptor and none contains a generated skills/runtime tree or old manifest.
 #
 # No agent is invoked; nothing here dispatches aid-architect/aid-reviewer. Does NOT run
-# `run_generator.py` -- mirror-deletion is checked against whatever render is currently on
-# disk, corroborated by the existing `test-dogfood-byte-identity.sh` suite (run separately,
-# discovered by the same `tests/run-all.sh` glob).
+# `run_generator.py` -- profile-scope is checked against whatever render is currently on
+# disk; dogfood synchronization is covered after task-027 updates its ownership model.
 #
 # Usage:
 #   bash tests/canonical/test-cutover-no-dangling.sh [--verbose]
@@ -44,7 +40,7 @@ source "$(dirname "${BASH_SOURCE[0]}")/../lib/assert.sh"
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 CANONICAL="${REPO_ROOT}/canonical"
 
-echo "=== Broadened no-dangling + mirror-deletion guard (task-031, feature-002 AC-5/C-4) ==="
+echo "=== Broadened no-dangling + agents-only profile guard (task-031, feature-002 AC-5/C-4) ==="
 
 assert_dir_exists "$CANONICAL" "CND00 canonical/ exists"
 if [[ $FAIL -gt 0 ]]; then
@@ -150,34 +146,25 @@ else
 fi
 
 # ===========================================================================
-# Part 2 -- Mirror-deletion assertion (inspect already-rendered profiles + dogfood;
-# this suite never invokes run_generator.py).
+# Part 2 -- Confirm the five agent-only rendered profile trees; this suite never invokes
+# run_generator.py.
 # ===========================================================================
 echo ""
-echo "--- Part 2: mirror-deletion (5 profiles + dogfood; no run_generator.py) ---"
+echo "--- Part 2: agents-only profile outputs (no run_generator.py) ---"
 
-declare -A MIRROR_ROOTS=(
-    ["claude-code"]="${REPO_ROOT}/profiles/claude-code/.claude"
-    ["antigravity"]="${REPO_ROOT}/profiles/antigravity/.agent"
-    ["codex"]="${REPO_ROOT}/profiles/codex/.codex"
-    ["copilot-cli"]="${REPO_ROOT}/profiles/copilot-cli/.github"
-    ["cursor"]="${REPO_ROOT}/profiles/cursor/.cursor"
-    ["dogfood"]="${REPO_ROOT}/.claude"
-)
-
-for label in "${!MIRROR_ROOTS[@]}"; do
-    root="${MIRROR_ROOTS[$label]}"
-    if [[ ! -d "$root" ]]; then
-        fail "CND20 [${label}] mirror root exists at ${root}"
+for label in claude-code antigravity codex copilot-cli cursor; do
+    profile_dir="${REPO_ROOT}/profiles/${label}"
+    if [[ ! -f "${profile_dir}/aid-tool.conf" ]]; then
+        fail "CND20 [${label}] aid-tool.conf exists"
         continue
     fi
-    pass "CND20 [${label}] mirror root exists"
+    pass "CND20 [${label}] aid-tool.conf exists"
 
-    FOUND=$(find "$root" -path '*aid/recipes*' -o -name 'parse-recipe.sh' -o -name 'recipe-template.md' -o -path '*specs/lite-spec-template.md' 2>/dev/null || true)
+    FOUND=$(find "$profile_dir" -type d \( -name skills -o -name aid \) -o -name '*.jsonl' 2>/dev/null || true)
     if [[ -n "$FOUND" ]]; then
-        fail "CND21 [${label}] no aid/recipes/, parse-recipe.sh, recipe-template.md, or specs/lite-spec-template.md -- found: ${FOUND}"
+        fail "CND21 [${label}] no generated skills/runtime trees or manifests -- found: ${FOUND}"
     else
-        pass "CND21 [${label}] no aid/recipes/, parse-recipe.sh, recipe-template.md, or specs/lite-spec-template.md"
+        pass "CND21 [${label}] no generated skills/runtime trees or manifests"
     fi
 done
 

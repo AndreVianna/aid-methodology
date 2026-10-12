@@ -10,7 +10,7 @@ ELICIT runs exactly once per cycle (`--reset` clears the block to re-run it).
 table (`Q-AND-A`, `APPROVAL`) — ELICIT is a user dialogue, not a sub-agent analysis.
 
 > **P7 exemption.** ELICIT is the one `aid-discover` state exempted from the read-only P7
-> principle (`.claude/aid/templates/kb-authoring/principles.md` P7 — "Exception (connector
+> principle (`.aid/runtime/templates/kb-authoring/principles.md` P7 — "Exception (connector
 > sub-phase)"). In addition to the usual `.aid/knowledge/` / `.aid/generated/` / `.aid/.temp/`
 > write zone, it may write ONLY within `.aid/connectors/` (this state, below) — the **single**
 > P7-exempt write target (STATE.md Q10: AID writes, wires, and manages no host tool's MCP
@@ -73,7 +73,7 @@ Reply with one entry per line as:  <path-or-url> | file|directory|url | <one-lin
 ```
 
 **This is a genuine PAUSE-FOR-USER-DECISION.** Stop after presenting; emit the pipeline pause
-signal per `.claude/aid/templates/state-machine-chaining.md` §4. Do **not** write the
+signal per `.aid/runtime/templates/state-machine-chaining.md` §4. Do **not** write the
 `## Discovery Elicitation` block yet — nothing has been captured.
 
 **Advance:** Stop here. Re-run `/aid-discover` after answering to continue processing Step E1's
@@ -141,7 +141,7 @@ Then present **Step E2**'s prompt and PAUSE there.
 ## Step E2: Tool INTEGRATIONS branch (PAUSE-FOR-USER-DECISION)
 
 Tools are **connectable integrations**, captured into `.aid/connectors/` per the descriptor
-contract in `.claude/aid/templates/connectors/`. Present:
+contract in `.aid/runtime/templates/connectors/`. Present:
 
 ```
 Tool integrations
@@ -197,7 +197,7 @@ registry at all this cycle.
 ### Preset vs. custom declaration
 
 - **Preset (`<preset-id>`):** read the matching row of
-  `.claude/aid/templates/connectors/preset-catalog.md` (LLM-read, as Step 0d reads the domain
+  `.aid/runtime/templates/connectors/preset-catalog.md` (LLM-read, as Step 0d reads the domain
   doc matrix) and pre-fill `name`, `connection_type`, `endpoint` (from `endpoint-template`),
   `auth_method`, the `secret_reference` FORM (from `secret_reference-form`, **aid-managed presets
   only** — a tool-managed preset row carries no form), and `preset: <preset-id>`. Present the
@@ -254,7 +254,7 @@ Runs once per ELICIT cycle, after "On resume — branch per reply" above has res
 declared set `D` (`SKIPPED` never reaches here; `DECLARED-EMPTY` gives `D = {}`; `ENGAGED` gives
 `D` = the N declared tools, each keyed by its stem). ELICIT reconciles the registry via the shared
 reconcile reference's **bulk mode** —
-`.claude/aid/templates/connectors/reconcile.md` § "Bulk mode (ELICIT)" — which documents Steps
+`.aid/runtime/templates/connectors/reconcile.md` § "Bulk mode (ELICIT)" — which documents Steps
 R0-R5 in full and verbatim (this is the same logic that lived inline here, relocated so it can
 also be reused by the net-new single-stem `aid-set-connector`/`aid-unset-connector` skills without
 duplicating it): the guard that keeps a `SKIPPED` cycle from touching the registry at all (no

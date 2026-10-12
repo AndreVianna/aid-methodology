@@ -10,7 +10,7 @@ description: >
   already-answerable technical question that wants a curated, verified answer, use
   `/aid-research` instead. Produced by the aid-architect agent and independently verified by
   aid-reviewer. Allocates a work-NNN folder.
-allowed-tools: Read, Glob, Grep, Bash, Write, Edit, Agent
+allowed-tools: Read Glob Grep Bash Shell Terminal Write Edit Agent
 argument-hint: "<subject> -- a fuzzy problem or theme to explore (not yet a formed question)"
 ---
 
@@ -18,7 +18,7 @@ argument-hint: "<subject> -- a fuzzy problem or theme to explore (not yet a form
 
 Bind **VERB=`brainstorm`**, **ARTIFACT=`` (none)** -- the `design` *stage* in the
 contract's vocabulary -- then follow the shared contract at
-`canonical/aid/templates/design-lifecycle.md`. This skill binds that contract and
+`.aid/runtime/templates/design-lifecycle.md`. This skill binds that contract and
 restates none of its rules. It serves the case `/aid-research` cannot: a problem not yet
 formed into a question. It has no `create` counterpart -- the seed it produces is the
 whole deliverable, and the user decides where it goes next.
@@ -44,7 +44,7 @@ entry line on each state.
    `artifact` rule does not apply: derive a kebab-case `<slug>` from the subject and
    **confirm it with the user**, then the seed is `.aid/design/<slug>.md`.
 3. **Allocate** through the Work Initiation Gate exactly as the contract's Allocation rule
-   requires (`canonical/skills/aid-design/SKILL.md` INTAKE step 4 is the shape), with
+   requires (`.agents/skills/aid-design/SKILL.md` INTAKE step 4 is the shape), with
    `initiator: aid-brainstorm`. `phase` is not driven. The `work-NNN` folder is where
    `STATE.md` and the review gate live, even though the seed is the deliverable.
 4. **Classify complexity** for the `aid-architect` dispatch (verifier tier >= producer).

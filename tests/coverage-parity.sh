@@ -25,7 +25,8 @@
 #       assert.sh `PASS:`/`FAIL:` lines, and write a sorted, deterministic
 #       multiset inventory (<suite>\t<key>\t<count>) to FILE plus a sibling
 #       provenance sidecar (<FILE without .tsv>.meta).
-#       DIR defaults to <repo>/tests/canonical.
+#       DIR defaults to <repo>/tests/canonical. Suites run AID_COVERAGE_JOBS at
+#       a time (default nproc); the inventory is the same at any parallelism.
 #
 #   coverage-parity.sh diff --baseline FILE (--collect [--dir DIR] | --after FILE)
 #                            [--allow FILE] [--accept FILE] [--allow-missing-runtime]
@@ -85,7 +86,7 @@ die() { echo "${PROG}: $*" >&2; exit "${2:-2}"; }
 
 usage() {
     # Reprint the header block (Purpose/Usage/Exit codes) per coding-standards.md.
-    sed -n '2,63p' "$SCRIPT_SRC" | sed 's/^# \{0,1\}//'
+    sed -n '2,64p' "$SCRIPT_SRC" | sed 's/^# \{0,1\}//'
 }
 
 # ---------------------------------------------------------------------------
@@ -169,17 +170,44 @@ normalize_key() {
 
 # ---------------------------------------------------------------------------
 # run_one_suite SUITE -> the suite's combined stdout+stderr (verbose run).
-# Uses `timeout 300` when available (mirrors run-all.sh:47), tolerating any
+# Uses `timeout 300` (1500 for the heavy suites) when available (mirrors run-all.sh), tolerating any
 # non-zero exit -- a failing suite still executed its assertions.
 # ---------------------------------------------------------------------------
 TIMEOUT_BIN="$(command -v timeout 2>/dev/null || true)"
 run_one_suite() {
-    local suite="$1"
+    local suite="$1" budget=300
+    # Same budget as run-all.sh: the heavy parity/migrate suites get 1500 s.
+    case "$(basename "$suite")" in
+        test-aid-cli-parity.sh | test-aid-migrate.sh) budget=1500 ;;
+    esac
     if [[ -n "$TIMEOUT_BIN" ]]; then
-        "$TIMEOUT_BIN" 300 bash "$suite" --verbose 2>&1
+        "$TIMEOUT_BIN" "$budget" bash "$suite" --verbose 2>&1
     else
         bash "$suite" --verbose 2>&1
     fi
+}
+
+# ---------------------------------------------------------------------------
+# collect_one WORKDIR SUITE (hidden `__collect-one` worker)
+# Run one suite exactly as run_one_suite does, with its own empty HOME under
+# WORKDIR (the run-all.sh isolation: no concurrent sibling can see another
+# suite's home or trip its real-HOME canary), and capture its combined output
+# to WORKDIR/<suite>.out. Always exits 0: a failing suite still executed its
+# assertions, and GNU xargs stops dispatching after a child exits 255.
+# ---------------------------------------------------------------------------
+collect_one() {
+    local work="$1" suite="$2" base home
+    base="${suite##*/}"
+    home="${work}/home/${base}"
+    mkdir -p "$home"
+    export HOME="$home"
+    if command -v cygpath >/dev/null 2>&1; then
+        local win_home
+        win_home="$(cygpath -w "$home")"
+        export USERPROFILE="$win_home" HOMEDRIVE="${win_home:0:2}" HOMEPATH="${win_home:2}"
+    fi
+    run_one_suite "$suite" > "${work}/${base}.out"
+    exit 0
 }
 
 # ---------------------------------------------------------------------------
@@ -187,6 +215,10 @@ run_one_suite() {
 # Core collector: chmod +x the suites (idempotent), run each DIR/test-*.sh in
 # isolation under --verbose, extract the assert.sh PASS/FAIL labels, normalize,
 # and write the sorted multiset <suite>\t<key>\t<count> to OUTFILE.
+# Suites run concurrently (AID_COVERAGE_JOBS, default nproc; 1 = one at a time),
+# each into its own output file; the labels are then read back suite by suite in
+# sorted order, so attribution and the inventory bytes do not depend on the
+# parallelism. The heavy suites are dispatched first so they do not finish last.
 # Does NOT check runtimes (the caller does) and does NOT write a .meta sidecar
 # (the `collect` subcommand does).
 # ---------------------------------------------------------------------------
@@ -213,16 +245,28 @@ collect_inventory() {
     if [[ ${#suites[@]} -gt 0 ]]; then
         # Sort the glob deterministically (byte order under LC_ALL=C).
         mapfile -t suites < <(printf '%s\n' "${suites[@]}" | sort)
-        local base label
+        local base label work jobs
+        local -a order=()
+        work="$(mktemp -d)"
+        jobs="${AID_COVERAGE_JOBS:-$(nproc 2>/dev/null || echo 4)}"
+        for s in "${suites[@]}"; do
+            case "${s##*/}" in test-aid-cli-parity.sh | test-aid-migrate.sh) order+=("$s") ;; esac
+        done
+        for s in "${suites[@]}"; do
+            case "${s##*/}" in test-aid-cli-parity.sh | test-aid-migrate.sh) ;; *) order+=("$s") ;; esac
+        done
+        printf '%s\0' "${order[@]}" \
+            | xargs -0 -P "$jobs" -n1 bash "$SCRIPT_SRC" __collect-one "$work"
         for s in "${suites[@]}"; do
             base="${s##*/}"
+            [[ -f "${work}/${base}.out" ]] || continue
             while IFS= read -r label; do
                 [[ -z "$label" ]] && continue
                 printf '%s\t%s\n' "$base" "$(normalize_key "$label")" >> "$raw"
-            done < <(run_one_suite "$s" \
-                        | grep -E '^[[:space:]]*(PASS|FAIL):[[:space:]]' \
+            done < <(grep -E '^[[:space:]]*(PASS|FAIL):[[:space:]]' "${work}/${base}.out" \
                         | sed -E 's/^[[:space:]]*(PASS|FAIL):[[:space:]]+//')
         done
+        rm -rf "$work"
     fi
 
     # Counted multiset via `sort | uniq -c` (NOT `sort -u`, which would drop the
@@ -515,6 +559,7 @@ main() {
     case "$sub" in
         collect) shift; cmd_collect "$@" ;;
         diff)    shift; cmd_diff "$@" ;;
+        __collect-one) shift; collect_one "$@" ;;
         -h|--help|help) usage; exit 0 ;;
         "") die "no subcommand -- use 'collect' or 'diff' (see --help)" ;;
         *) die "unknown subcommand: $sub (use 'collect' or 'diff')" ;;

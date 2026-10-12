@@ -95,7 +95,7 @@ later tick -> resume normally, exactly as if the pause had never happened.
 
 **Poll interval -- read exactly as the heartbeat does, same call, same fallback:**
 ```bash
-bash canonical/aid/scripts/config/read-setting.sh --path traceability.heartbeat_interval --default 1
+bash .aid/runtime/scripts/config/read-setting.sh --path traceability.heartbeat_interval --default 1
 ```
 
 **Where these checks fire (existing ticks -- nothing new is introduced):**
@@ -178,7 +178,7 @@ operation requires.
 ### PD-0: Read Configuration
 
 1. **Read `MaxConcurrent`** from `.aid/knowledge/STATE.md` top-of-file metadata:
-   `bash canonical/aid/scripts/config/read-setting.sh --path execution.max_parallel_tasks --default 5` (default `5` if absent).
+   `bash .aid/runtime/scripts/config/read-setting.sh --path execution.max_parallel_tasks --default 5` (default `5` if absent).
 
 2. **Detect host capability — `run_in_background` probe.**
 
@@ -258,7 +258,7 @@ Pending). The **in-flight set** starts empty. The **blocked set** starts empty.
 **Advance delivery lifecycle to Executing** (silent state-write -- fires once when
 the first task is dispatched, idempotent if already Executing):
 ```bash
-bash canonical/aid/scripts/execute/writeback-state.sh \
+bash .aid/runtime/scripts/execute/writeback-state.sh \
     --delivery-id DDD --lifecycle Executing
 ```
 
@@ -477,22 +477,22 @@ Remove `task-{NNN}` from the in-flight set.
 
    Advance delivery lifecycle to Blocked (silent state-write -- no output, no gate):
    ```bash
-   bash canonical/aid/scripts/execute/writeback-state.sh --delivery-id DDD --lifecycle Blocked
+   bash .aid/runtime/scripts/execute/writeback-state.sh --delivery-id DDD --lifecycle Blocked
    ```
 
    Emit pipeline block signal (silent state-write -- no output, no gate):
    ```bash
-   bash canonical/aid/scripts/execute/writeback-state.sh --pipeline --field Lifecycle --value Blocked
-   bash canonical/aid/scripts/execute/writeback-state.sh --pipeline --field "Block Reason" --value "Task failed with unresolved impediment -- task-{NNN}"
-   bash canonical/aid/scripts/execute/writeback-state.sh --pipeline --field "Block Artifact" --value ".aid/works/{work}/IMPEDIMENT-task-{NNN}.md"
-   bash canonical/aid/scripts/execute/writeback-state.sh --pipeline --field Updated --value "$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+   bash .aid/runtime/scripts/execute/writeback-state.sh --pipeline --field Lifecycle --value Blocked
+   bash .aid/runtime/scripts/execute/writeback-state.sh --pipeline --field "Block Reason" --value "Task failed with unresolved impediment -- task-{NNN}"
+   bash .aid/runtime/scripts/execute/writeback-state.sh --pipeline --field "Block Artifact" --value ".aid/works/{work}/IMPEDIMENT-task-{NNN}.md"
+   bash .aid/runtime/scripts/execute/writeback-state.sh --pipeline --field Updated --value "$(date -u +%Y-%m-%dT%H:%M:%SZ)"
    ```
 
 3. Emit `[pool] ✗ task-{NNN} FAILED — computing failure-block-radius`.
 
 4. **Compute the failure-block-radius (transitive-descendant BFS):**
 
-   Run `canonical/aid/scripts/execute/compute-block-radius.sh` with the
+   Run `.aid/runtime/scripts/execute/compute-block-radius.sh` with the
    failed task and the reverse dependency graph:
 
    ```bash
@@ -718,22 +718,22 @@ executing this task directly or you are the dispatched sub-agent running it --
 either way, this is the FIRST thing that happens in this state, not something
 deferred until "real work" starts:
 ```bash
-bash canonical/aid/scripts/execute/writeback-state.sh \
+bash .aid/runtime/scripts/execute/writeback-state.sh \
     --delivery-id DDD --task-id NNN --field State --value "In Progress"
 ```
 
 Advance delivery lifecycle to Executing (silent state-write -- no output, idempotent):
 ```bash
-bash canonical/aid/scripts/execute/writeback-state.sh \
+bash .aid/runtime/scripts/execute/writeback-state.sh \
     --delivery-id DDD --lifecycle Executing
 ```
 
 Emit pipeline phase (silent state-write only -- no output, no gate):
 ```
-bash canonical/aid/scripts/execute/writeback-state.sh --pipeline --field Lifecycle --value Running
-bash canonical/aid/scripts/execute/writeback-state.sh --pipeline --field Phase --value Execute
-bash canonical/aid/scripts/execute/writeback-state.sh --pipeline --field "Active Skill" --value aid-execute
-bash canonical/aid/scripts/execute/writeback-state.sh --pipeline --field Updated --value "$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+bash .aid/runtime/scripts/execute/writeback-state.sh --pipeline --field Lifecycle --value Running
+bash .aid/runtime/scripts/execute/writeback-state.sh --pipeline --field Phase --value Execute
+bash .aid/runtime/scripts/execute/writeback-state.sh --pipeline --field "Active Skill" --value aid-execute
+bash .aid/runtime/scripts/execute/writeback-state.sh --pipeline --field Updated --value "$(date -u +%Y-%m-%dT%H:%M:%SZ)"
 ```
 
 **Pick the executor by task Type from the Agent Selection table above** (RESEARCH -> `aid-researcher`, DESIGN -> `aid-architect`, IMPLEMENT/TEST/REFACTOR -> `aid-developer`, DOCUMENT -> `aid-tech-writer`, MIGRATE -> `aid-developer`, CONFIGURE -> `aid-developer`).
@@ -757,7 +757,7 @@ above:** when execution passes → update task State to `In Review`. This write
 happens HERE, at EXECUTE-complete -- not after the reviewer has already been
 dispatched, not batched together with a later write:
 ```bash
-bash canonical/aid/scripts/execute/writeback-state.sh \
+bash .aid/runtime/scripts/execute/writeback-state.sh \
     --delivery-id DDD --task-id NNN --field State --value "In Review"
 ```
 

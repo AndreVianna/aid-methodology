@@ -84,14 +84,14 @@ prototype with real users (usability testing, a controlled A/B test) is a G7 act
 
 ## See also
 
-- `canonical/skills/aid-prototype/SKILL.md` -- the hand-authored collapse body that
+- `.agents/skills/aid-prototype/SKILL.md` -- the hand-authored collapse body that
   reads this file for per-slot capture/detail guidance (work-005; `prototype` is no
   longer engine-consulted)
-- `canonical/aid/templates/shortcut-scaffolding/create.md` -- where the validated
+- `.aid/runtime/templates/shortcut-scaffolding/create.md` -- where the validated
   direction's real build routes
-- `canonical/aid/templates/shortcut-scaffolding/test-experiment.md § aid-experiment` --
+- `.aid/runtime/templates/shortcut-scaffolding/test-experiment.md § aid-experiment` --
   where testing the prototype with users routes
-- `canonical/skills/aid-execute/references/task-type-rules.md ## DESIGN` -- the
+- `.agents/skills/aid-execute/references/task-type-rules.md ## DESIGN` -- the
   per-type execution rule this breakdown maps onto
 - `.aid/knowledge/artifact-schemas.md § Task DETAIL.md` -- the one-type-per-task
   contract

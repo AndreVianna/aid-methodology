@@ -27,7 +27,7 @@ import { chromium } from 'playwright';
 From the repo root (one-time setup):
 
 ```bash
-cd canonical/aid/scripts/summarize
+cd .aid/runtime/scripts/summarize
 npm ci                                # install playwright (uses lock file)
 npx playwright install chromium       # download the pinned Chromium binary
 ```
@@ -117,8 +117,8 @@ pattern as the existing `.mjs` validators in this directory.
 
 ## Dependency isolation
 
-The `package.json` + `package-lock.json` in `canonical/aid/scripts/summarize/` ship as part of
-the install tree (the generator copies `canonical/aid/` verbatim into each profile's `aid/`
+The `package.json` + `package-lock.json` in the summarize scripts directory ship as part of
+the install tree (the generator copies the runtime tree verbatim into each profile's `aid/`
 subtree). They serve as the **on-demand install manifest**: adopters who want to run the visual-
 fidelity gate locally run `npm ci` in their installed `aid/scripts/summarize/` directory to get
 Playwright.

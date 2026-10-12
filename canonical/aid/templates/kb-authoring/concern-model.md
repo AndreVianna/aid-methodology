@@ -34,7 +34,7 @@ doc-set derivation generalize beyond software (feature-014). Only the spine's *r
 The numbered concerns below (C0-C9, + D) are how the spine **renders for a software
 project**. A non-software project answers the *same dimensions* with a domain-appropriate
 doc set, resolved via the domain->doc-set matrix (see
-`canonical/aid/templates/kb-authoring/domain-doc-matrix.md`); "did we cover everything?"
+`.aid/runtime/templates/kb-authoring/domain-doc-matrix.md`); "did we cover everything?"
 is always answered by walking the fixed spine.
 
 **Standards grounding.** The spine is the cross-standard recurring-concern set distilled
@@ -237,7 +237,7 @@ remains exactly 15 docs.
 the same dimension as `test-landscape.md`, but owned by `aid-researcher-quality` rather
 than `skill-self`: it records which gates block a merge and who may waive one. It is
 proposed only when a project enforces merge-blocking quality gates. Like the three above it
-is **not** a seed doc and has no template under `canonical/aid/templates/knowledge-base/`,
+is **not** a seed doc and has no template under `.aid/runtime/templates/knowledge-base/`,
 so it too leaves `synth_default_seed` unchanged.
 
 ---
@@ -410,5 +410,5 @@ presence check from over-reporting legitimate absences.
 - [principles.md](principles.md) -- normative authoring rules (see "Document boundary rule" section for the cross-ref)
 - [frontmatter-schema.md](frontmatter-schema.md) -- `owner:`/`audience:` field schema (f001)
 - [README.md](README.md) -- index of all kb-authoring docs
-- `canonical/skills/aid-discover/references/doc-set-resolve.md` -- `synth_default_seed` + concern annotations
-- `canonical/skills/aid-discover/references/document-expectations.md` -- per-doc research expectations (open-question form) + `## Spine-Dimension Depth Standards` section (one `### C<N>` block per dimension, single-sourced from this owning-table for the "Owns named section(s)" column)
+- `.agents/skills/aid-discover/references/doc-set-resolve.md` -- `synth_default_seed` + concern annotations
+- `.agents/skills/aid-discover/references/document-expectations.md` -- per-doc research expectations (open-question form) + `## Spine-Dimension Depth Standards` section (one `### C<N>` block per dimension, single-sourced from this owning-table for the "Owns named section(s)" column)

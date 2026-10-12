@@ -6,7 +6,7 @@ description: >
   It reads telemetry, detects anomalies, performs root-cause analysis on the ones that are
   bugs, and then routes: bugs to `/aid-fix`, change requests to `/aid-triage`. Scoped to one
   work at a time.
-allowed-tools: Read, Glob, Grep, Bash, Write
+allowed-tools: Read Glob Grep Bash Shell Terminal Write
 ---
 
 # Observe, Classify, Act
@@ -45,7 +45,7 @@ Step 0):
 - **No `work-NNN`, a free-form description instead** -- the Lite-path direct-entry
   shortcut: binds `{name}=aid-monitor`, `{verb}=monitor`, `{artifact}=""` (bare verb),
   `{description}=<the given text>`, then delegates to the shared shortcut engine
-  (`canonical/aid/templates/shortcut-engine.md`, `INTAKE -> ... -> APPROVAL-HALT`),
+  (`.aid/runtime/templates/shortcut-engine.md`, `INTAKE -> ... -> APPROVAL-HALT`),
   scaffolding a flattened Lite work and running the grading gates. **Never executes** --
   it halts for approval; this shortcut entry does not replace the pipeline role below,
   it adds a second, independent entry point to the same skill directory.
@@ -61,7 +61,7 @@ Step 0):
   known-issues.md              ← known problems
 ```
 
-<!-- NOTE: The Monitor area STATE is deferred until the area matures. When authored, MONITOR-STATE.md follows the area-STATE pattern documented at canonical/aid/templates/work-state-template.yml (per-work) and .aid/knowledge/schemas.md §1A. -->
+<!-- NOTE: The Monitor area STATE is deferred until the area matures. When authored, MONITOR-STATE.md follows the area-STATE pattern documented at .aid/runtime/templates/work-state-template.yml (per-work) and .aid/knowledge/schemas.md §1A. -->
 
 ## ⚠️ Pre-flight Checks
 
@@ -72,7 +72,7 @@ Step 0):
 - **No `work-NNN` argument, but a free-form description was given instead** → the
   shortcut-scaffold path (see `## Argument-Hint` above): bind `{name}=aid-monitor`,
   `{verb}=monitor`, `{artifact}=""`, `{description}=<the given text>`, then delegate
-  directly to `canonical/aid/templates/shortcut-engine.md § State: INTAKE` — Steps 1–6
+  directly to `.aid/runtime/templates/shortcut-engine.md § State: INTAKE` — Steps 1–6
   below do not run for this path (that pre-flight belongs to the post-deployment
   pipeline role, not the shortcut entry).
 - **Neither `work-NNN` nor a description** → print the `## Argument-Hint` usage block
@@ -165,10 +165,10 @@ protocol lives in two reference docs; this section is a checklist citing them.
 
 **Before each dispatch:**
 
-1. **Look up ETA** in `canonical/aid/templates/rough-time-hints.md` for the
+1. **Look up ETA** in `.aid/runtime/templates/rough-time-hints.md` for the
    subagent's operation class. Capture LOW–HIGH band.
 2. **Read heartbeat config** via
-   `bash canonical/aid/scripts/config/read-setting.sh --path traceability.heartbeat_interval --default 1`
+   `bash .aid/runtime/scripts/config/read-setting.sh --path traceability.heartbeat_interval --default 1`
    (resolves from `.aid/settings.yml`; default 1; `0` = disabled).
 3. **Pre-create heartbeat file** (always — unconditional):
    - Pre-create `.aid/.heartbeat/<agent-name>-<unix-ts>.txt`
@@ -203,10 +203,10 @@ protocol lives in two reference docs; this section is a checklist citing them.
 
 **References:**
 
-- `canonical/aid/templates/long-wait-protocol.md` — full L2 spec
-- `canonical/aid/templates/subagent-heartbeat-protocol.md` — full L3 spec
-- `canonical/aid/templates/rough-time-hints.md` — current measured ETAs
-- `canonical/agents/*/AGENT.md ## Heartbeat protocol` — subagent-side contract
+- `.aid/runtime/templates/long-wait-protocol.md` — full L2 spec
+- `.aid/runtime/templates/subagent-heartbeat-protocol.md` — full L3 spec
+- `.aid/runtime/templates/rough-time-hints.md` — current measured ETAs
+- `aid-*` agent definitions, `## Heartbeat protocol` section — subagent-side contract
 
 The existing `▶ <agent> starting (~<ETA>)` and `✓ <agent> done` bracket-pair
 lines elsewhere in this skill body remain in place; this protocol just makes

@@ -20,25 +20,27 @@
 #   Extract-Tarball <tarball> <destDir>          - extract (flat root); throws on fail
 #   Verify-BundleChecksum <tarball>              - verify sibling SHA256SUMS if present
 #   Copy-AidFile <src> <dst> [force] [aidVerbose]  - copy semantics; per-file output when verbose
-#   Copy-AidDir <srcDir> <dstDir> [force] [aidVerbose] - recursive copy via Copy-AidFile
-#   Install-AidTool <staging> <tool> <target> <version> [force] [aidVerbose]
-#                                                - full install for one tool (copy + manifest)
+#   Install-AidTool <staging> <tool> <target> [aidVerbose]
+#                                                - install one tool's staged agents tree
 #   Read-ManifestToolPaths <manifest> <tool>     - array of paths from tools.<tool>.paths
 #   Read-ManifestToolVersion <manifest> <tool>   - version string for named tool
 #   Read-ManifestRootAgent <manifest> <tool> <fname>
 #                                                - sha256 from root_agent_files entry (or empty)
 #   Read-ManifestRootAgentStatus <manifest> <tool> <fname>
 #                                                - status field from root_agent_files entry
+#   Read-AidUpgradeRecovery <target>              - validates and reads v3 upgrade recovery state
+#   Write-AidUpgradeRecovery <target> <tools> <retired> - atomically writes v3 recovery state
+#   Clear-AidUpgradeRecovery <target>              - removes completed v3 recovery state
+#   Test-AidOwnedPath <target> <path>              - path-based v3 legacy ownership predicate
+#   Invoke-RetireV3Layout <target> <tools>         - archives v3-owned paths before fresh install
 #   Read-ManifestTools <manifest>                - [string[]] tool ids (keys of tools object)
-#   Write-AidManifest <manifest> <tool> <version> <paths> <rootEntries>
-#                                                - atomic write/merge of manifest JSON
 #   Remove-ManifestTool <manifest> <tool>        - removes a tool section from manifest
 #   Test-ManifestExists <manifest>               - returns $true when manifest exists/parseable
 #   Uninstall-AidTool <manifest> <tool> <target> [aidVerbose] - manifest-driven removal
 #
 # Verbose mode:
-#   Pass -AidVerbose $true to Install-AidTool / Uninstall-AidTool / Copy-AidFile /
-#   Copy-AidDir to enable per-file Copied:/Up to date:/Updated:/Removed: lines.
+#   Pass -AidVerbose $true to Install-AidTool / Uninstall-AidTool / Copy-AidFile
+#   to enable per-file Copied:/Up to date:/Updated:/Removed: lines.
 #   Default (false): only per-tool summary line.  WARN lines always show.
 #
 # Exit codes (from install.ps1):
@@ -68,15 +70,19 @@ $script:_CopyCountUpdated  = 0
 $script:_CopyCountSkipped  = 0
 $script:_CopyCountFailed   = 0
 
-# Module-level prune counter. Reset by Invoke-PruneToolDirs before each prune pass.
+# v3-upgrade flag read by Install-AidShared. bin/aid.ps1 (dot-sourced) re-assigns it per run;
+# initialised here so an Import-Module caller (install.ps1) never reads an unset variable.
+$script:_AidV3Upgrade = $false
+
+# Module-level prune counter for shared-layout prune accounting.
 $script:_PruneRemoved = 0
 
-# Module-level project-provisioning state (work-007). Reset by Install-AidTool.
+# Module-level project-provisioning state (work-007). Set by Initialize-AidSettingsFile / Update-AidGitignore.
 $script:_SeededSettings  = $false
 $script:_GitignoreAction = 'unchanged'
 # Settings format stamp. MUST equal bin/aid AID_SUPPORTED_FORMAT / bin/aid.ps1
 # AidSupportedFormat. Used to stamp a seeded settings.yml so the format gate is quiet.
-$script:_AidSupportedFormat = 4  # format 2: .aid/dashboard/ eliminated (home from CLI, kb.html in .aid/knowledge/)
+$script:_AidSupportedFormat = 5  # format 5: shared skills and runtime layout
 
 # ---------------------------------------------------------------------------
 # Constants
@@ -85,16 +91,26 @@ $script:_AidSupportedFormat = 4  # format 2: .aid/dashboard/ eliminated (home fr
 $script:AID_REPO_SLUG    = "AndreVianna/aid-methodology"
 $script:AID_API_BASE     = "https://api.github.com/repos/$($script:AID_REPO_SLUG)"
 $script:AID_DOWNLOAD_BASE = "https://github.com/$($script:AID_REPO_SLUG)/releases/download"
+# Endpoint overrides (tests / local fixture server) are honored ONLY when
+# AID_ALLOW_ENDPOINT_OVERRIDE is 1 or true -- same gate as the bash twin.
+if ($env:AID_ALLOW_ENDPOINT_OVERRIDE -eq '1' -or $env:AID_ALLOW_ENDPOINT_OVERRIDE -eq 'true') {
+    if ($env:AID_API_BASE) { $script:AID_API_BASE = $env:AID_API_BASE }
+    if ($env:AID_DOWNLOAD_BASE) { $script:AID_DOWNLOAD_BASE = $env:AID_DOWNLOAD_BASE }
+}
 
 $script:AID_TOOLS = @('claude-code', 'codex', 'cursor', 'copilot-cli', 'antigravity')
+
+# Get-AidToolIds - the supported tool ids in canonical order. Callers outside this
+# file (bin/aid.ps1) must use this accessor: $script:AID_TOOLS is scoped to the
+# module/lib scope and is not visible in the caller's script scope.
+function Get-AidToolIds {
+    return @($script:AID_TOOLS)
+}
 
 # Root agent file per tool.
 function script:Get-RootAgentFile {
     param([string]$Tool)
-    switch ($Tool) {
-        'claude-code' { return 'CLAUDE.md' }
-        default       { return 'AGENTS.md' }
-    }
+    return 'AGENTS.md'
 }
 
 # Get-RootDir <tool> - return the tool's install-tree root dir name (relative to
@@ -119,8 +135,33 @@ function script:Get-RootDir {
 # Get-Sha256File <path> - return lower-case hex sha256 of file content.
 function Get-Sha256File {
     param([string]$FilePath)
+    # Hash through .NET directly (Get-FileHash costs a cmdlet invocation per file, and
+    # install/update/status hash hundreds). Any failure takes the cmdlet path, so errors
+    # surface exactly as before.
+    try {
+        $full = $ExecutionContext.SessionState.Path.GetUnresolvedProviderPathFromPSPath($FilePath)
+        $stream = [System.IO.File]::OpenRead($full)
+        try {
+            $sha = [System.Security.Cryptography.SHA256]::Create()
+            try { $bytes = $sha.ComputeHash($stream) } finally { $sha.Dispose() }
+        } finally { $stream.Dispose() }
+        return [System.BitConverter]::ToString($bytes).Replace('-', '').ToLower()
+    } catch { }
     $hash = (Get-FileHash -LiteralPath $FilePath -Algorithm SHA256).Hash
     return $hash.ToLower()
+}
+
+# Test-AidDirEmpty <path> - true when the directory has no entries (hidden ones count).
+# One .NET enumeration step instead of a Get-ChildItem pipeline per directory; any
+# failure answers through Get-ChildItem, exactly as before.
+function script:Test-AidDirEmpty {
+    param([string]$Path)
+    try {
+        $full = $ExecutionContext.SessionState.Path.GetUnresolvedProviderPathFromPSPath($Path)
+        $entries = [System.IO.Directory]::EnumerateFileSystemEntries($full).GetEnumerator()
+        try { return -not $entries.MoveNext() } finally { $entries.Dispose() }
+    } catch { }
+    return -not (Get-ChildItem -LiteralPath $Path -Force | Select-Object -First 1)
 }
 
 # ---------------------------------------------------------------------------
@@ -161,9 +202,8 @@ function Detect-Tool {
     if (Test-Path (Join-Path $TargetPath '.claude') -PathType Container) {
         $found.Add('claude-code')
     }
-    # codex: .codex or .agents dir
-    if ((Test-Path (Join-Path $TargetPath '.codex') -PathType Container) -or
-        (Test-Path (Join-Path $TargetPath '.agents') -PathType Container)) {
+    # codex: .codex only; legacy .agents/aid is handled by clean-slate update.
+    if (Test-Path (Join-Path $TargetPath '.codex') -PathType Container) {
         $found.Add('codex')
     }
     if (Test-Path (Join-Path $TargetPath '.cursor') -PathType Container) {
@@ -289,16 +329,31 @@ function Resolve-AidVersion {
 # Fetch + extract (online mode)
 # ---------------------------------------------------------------------------
 
+# script:Get-AidRemoteFile <uri> <outFile> <headers> - download one file. file:// URIs
+# (the endpoint-override fixture form; curl reads them in the bash twin) are copied
+# from the local path because Invoke-WebRequest rejects the 'file' scheme.
+function script:Get-AidRemoteFile {
+    param([string]$Uri, [string]$OutFile, $Headers)
+    if ($Uri.StartsWith('file://', [System.StringComparison]::OrdinalIgnoreCase)) {
+        $local = ([System.Uri]$Uri).LocalPath
+        if (-not (Test-Path -LiteralPath $local -PathType Leaf)) { throw "file not found: $local" }
+        Copy-Item -LiteralPath $local -Destination $OutFile -Force -ErrorAction Stop
+        return
+    }
+    Invoke-WebRequest -Uri $Uri -OutFile $OutFile -Headers $Headers -UseBasicParsing -ErrorAction Stop
+}
+
 # Fetch-Tarball <tool> <version> <destDir>
 # Downloads the tarball + SHA256SUMS into destDir and verifies.
 # Returns $true on success, $false on failure.
-function Fetch-Tarball {
+function Fetch-AidArtifact {
     param(
+        [ValidateSet('shared','tool')][string]$Kind,
         [string]$Tool,
         [string]$Version,
         [string]$DestDir
     )
-    $filename  = "aid-$Tool-v$Version.tar.gz"
+    $filename  = if ($Kind -eq 'shared') { "aid-shared-v$Version.tar.gz" } else { "aid-$Tool-v$Version.tar.gz" }
     $url       = "$($script:AID_DOWNLOAD_BASE)/v$Version/$filename"
     $sumsUrl   = "$($script:AID_DOWNLOAD_BASE)/v$Version/SHA256SUMS"
     $tarball   = Join-Path $DestDir $filename
@@ -310,10 +365,16 @@ function Fetch-Tarball {
         $headers['Authorization'] = "Bearer $token"
     }
 
-    [Console]::Error.WriteLine("Fetching $filename ...")
+    if ($Kind -eq 'tool') { [Console]::Error.WriteLine("Fetching $filename ...") }
     try {
-        Invoke-WebRequest -Uri $url -OutFile $tarball -Headers $headers -UseBasicParsing -ErrorAction Stop
+        script:Get-AidRemoteFile -Uri $url -OutFile $tarball -Headers $headers
     } catch {
+        $statusCode = 0
+        try { $statusCode = [int]$_.Exception.Response.StatusCode } catch {}
+        if ($Kind -eq 'shared' -and $statusCode -eq 404) {
+            [Console]::Error.WriteLine("release v$Version has no shared payload -- it predates the shared layout and cannot be installed by this CLI; omit --version or use an older aid CLI")
+            return $false
+        }
         [Console]::Error.WriteLine("ERROR: AidInstallCore: failed to download $url : $_")
         return $false
     }
@@ -325,7 +386,7 @@ function Fetch-Tarball {
     # release without SHA256SUMS". Refuse to install an unverified tarball
     # rather than warn-and-proceed.
     try {
-        Invoke-WebRequest -Uri $sumsUrl -OutFile $sumsFile -Headers $headers -UseBasicParsing -ErrorAction Stop
+        script:Get-AidRemoteFile -Uri $sumsUrl -OutFile $sumsFile -Headers $headers
     } catch {
         [Console]::Error.WriteLine("ERROR: AidInstallCore: could not fetch SHA256SUMS from $sumsUrl; refusing to install unverified tarball (fail-closed)")
         return $false
@@ -339,6 +400,11 @@ function Fetch-Tarball {
     }
 
     return $true
+}
+
+function Fetch-Tarball {
+    param([string]$Tool, [string]$Version, [string]$DestDir)
+    return (Fetch-AidArtifact -Kind tool -Tool $Tool -Version $Version -DestDir $DestDir)
 }
 
 # Invoke-VerifyChecksum <tarball> <sumsFile>
@@ -440,6 +506,30 @@ function Extract-Tarball {
     }
 }
 
+function Expand-AidPayload {
+    param([string]$Tarball, [string]$DestDir)
+    $tarExe = Get-Command 'tar' -ErrorAction SilentlyContinue
+    if (-not $tarExe) { [Console]::Error.WriteLine('ERROR: AidInstallCore: tar is required to safely extract payloads'); return $false }
+    try {
+        $members = @(& tar -tzf $Tarball 2>$null)
+        if ($LASTEXITCODE -ne 0) { [Console]::Error.WriteLine("ERROR: AidInstallCore: failed to list payload: $Tarball"); return $false }
+        foreach ($member in $members) {
+            $name = [string]$member
+            if ([System.IO.Path]::IsPathRooted($name) -or $name -match '^[A-Za-z]:' -or $name -match '(^|[/\\])\.\.([/\\]|$)' -or $name -match '\\') {
+                [Console]::Error.WriteLine("ERROR: AidInstallCore: unsafe payload member: $name"); return $false
+            }
+        }
+        $verbose = @(& tar -tvzf $Tarball 2>$null)
+        if ($LASTEXITCODE -ne 0 -or @($verbose | Where-Object { $_ -match '^[lh]' }).Count -gt 0) {
+            [Console]::Error.WriteLine("ERROR: AidInstallCore: payload links are not allowed: $Tarball"); return $false
+        }
+        if (-not (Test-Path -LiteralPath $DestDir -PathType Container)) { New-Item -ItemType Directory -Path $DestDir -Force | Out-Null }
+        & tar -xzf $Tarball -C $DestDir 2>$null | Out-Null
+        if ($LASTEXITCODE -ne 0) { [Console]::Error.WriteLine("ERROR: AidInstallCore: failed to extract payload: $Tarball"); return $false }
+        return $true
+    } catch { [Console]::Error.WriteLine("ERROR: AidInstallCore: payload extraction failed: $_"); return $false }
+}
+
 # ---------------------------------------------------------------------------
 # Copy semantics
 # ---------------------------------------------------------------------------
@@ -502,297 +592,528 @@ function Copy-AidFile {
     if ($AidVerbose) { Write-Host "Updated: $Dst" }
 }
 
-# Copy-AidDir <srcDir> <dstDir> [force] [aidVerbose]
-# Recursively copies a directory tree, file by file (preserving empty dirs).
-function Copy-AidDir {
+# ---------------------------------------------------------------------------
+# Descriptor reader, .aid/.trash/ moves and guarded copy (twins of the bash primitives)
+# ---------------------------------------------------------------------------
+
+# Read-AidKvConf <path>
+# Returns "key=value" strings in file order (a repeated key is a list). Split at the
+# FIRST '='; '#' lines, blank lines and lines without '=' are ignored. Never evaluated.
+# Throws, naming the file, on a non-ASCII byte, a CR, or an unreadable file.
+function Read-AidKvConf {
+    param([string]$Path)
+    if (-not (Test-Path -LiteralPath $Path -PathType Leaf)) {
+        throw "AidInstallCore: descriptor not readable: $Path"
+    }
+    $bytes = [System.IO.File]::ReadAllBytes($Path)
+    foreach ($b in $bytes) {
+        if ($b -gt 127 -or $b -eq 13) {
+            throw "AidInstallCore: descriptor must be ASCII with LF line endings only: $Path"
+        }
+    }
+    $text = [System.Text.Encoding]::ASCII.GetString($bytes)
+    $out = New-Object System.Collections.Generic.List[string]
+    foreach ($line in $text.Split("`n")) {
+        if ($line -eq '') { continue }
+        if ($line.StartsWith('#', [System.StringComparison]::Ordinal)) { continue }
+        if ($line.IndexOf('=') -le 0) { continue }
+        $out.Add($line)
+    }
+    return ,$out.ToArray()
+}
+
+# Move-AidToTrash <root> <file> [<utcStamp>]
+# Moves <file> (under <root>) to <root>/.aid/.trash/<relative path> under the same
+# collision policy as trash_file: absent -> move; identical bytes -> remove the source;
+# different bytes -> rename the occupant to <dest>.<stamp>, or the first unused
+# <dest>.<stamp>.N (N = 1, 2, ...), then move the source in. Throws, source untouched,
+# when the file is outside <root> or a step fails. <utcStamp> defaults to UTC now.
+function Move-AidToTrash {
     param(
-        [string]$SrcDir,
-        [string]$DstDir,
-        [bool]$Force = $false,
-        [bool]$AidVerbose = $false
+        [string]$Root,
+        [string]$File,
+        [string]$UtcStamp = ''
     )
-
-    # Create directory structure first.
-    $dirs = Get-ChildItem -LiteralPath $SrcDir -Recurse -Directory -ErrorAction SilentlyContinue
-    foreach ($dir in $dirs) {
-        $rel = $dir.FullName.Substring($SrcDir.Length).TrimStart([char]'\', [char]'/')
-        $dstSub = Join-Path $DstDir $rel
-        if (-not (Test-Path $dstSub -PathType Container)) {
-            New-Item -ItemType Directory -Path $dstSub -Force | Out-Null
+    $rootFull = [System.IO.Path]::GetFullPath($Root).TrimEnd([char]'\', [char]'/')
+    $srcFull = [System.IO.Path]::GetFullPath($File)
+    $prefix = $rootFull + [System.IO.Path]::DirectorySeparatorChar
+    if (-not $srcFull.StartsWith($prefix, [System.StringComparison]::OrdinalIgnoreCase)) {
+        throw "AidInstallCore: trash source is outside the project root: $File"
+    }
+    if (-not (Test-Path -LiteralPath $srcFull -PathType Leaf)) {
+        throw "AidInstallCore: trash source is not a regular file: $File"
+    }
+    $rel = $srcFull.Substring($prefix.Length)
+    if ($UtcStamp -eq '') {
+        $UtcStamp = [System.DateTime]::UtcNow.ToString('yyyyMMdd\THHmmss\Z', [System.Globalization.CultureInfo]::InvariantCulture)
+    }
+    $dest = Join-Path (Join-Path (Join-Path $rootFull '.aid') '.trash') $rel
+    $destDir = [System.IO.Path]::GetDirectoryName($dest)
+    if (-not (Test-Path -LiteralPath $destDir -PathType Container)) {
+        New-Item -ItemType Directory -Path $destDir -Force | Out-Null
+    }
+    if (Test-Path -LiteralPath $dest -PathType Container) {
+        throw "AidInstallCore: trash destination is a directory: $dest"
+    }
+    if (Test-Path -LiteralPath $dest -PathType Leaf) {
+        if ((Get-Sha256File -FilePath $srcFull) -eq (Get-Sha256File -FilePath $dest)) {
+            Remove-Item -LiteralPath $srcFull -Force
+            return
+        }
+        $cand = "$dest.$UtcStamp"
+        $n = 0
+        while (Test-Path -LiteralPath $cand) {
+            $n++
+            $cand = "$dest.$UtcStamp.$n"
+        }
+        try {
+            Move-Item -LiteralPath $dest -Destination $cand -ErrorAction Stop
+        } catch {
+            throw "AidInstallCore: could not rotate trash entry $dest; source kept: $File"
         }
     }
-
-    # Copy files in ordinal (byte-order) sorted order - matching Bash's `find | sort -z`.
-    # Use [System.Array]::Sort with StringComparer.Ordinal for byte-identical path ordering.
-    $fileItems = @(Get-ChildItem -LiteralPath $SrcDir -Recurse -File -ErrorAction SilentlyContinue)
-    if ($fileItems.Count -gt 0) {
-        $filePaths = [string[]]($fileItems | ForEach-Object { $_.FullName })
-        [System.Array]::Sort($filePaths, [System.StringComparer]::Ordinal)
-        foreach ($fp in $filePaths) {
-            $rel = $fp.Substring($SrcDir.Length).TrimStart([char]'\', [char]'/')
-            $dst = Join-Path $DstDir $rel
-            Copy-AidFile -Src $fp -Dst $dst -Force $Force -AidVerbose $AidVerbose
-        }
-    }
-}
-
-# ---------------------------------------------------------------------------
-# Root agent file region update (Pillar 3)
-# ---------------------------------------------------------------------------
-
-# script:Test-AidHeadingStem <line>
-# Returns $true when the line is an AID-managed section heading (by stem match).
-# Stems matched: Tracking discipline, Knowledge Base, Connectors, Workflow,
-#                Review output format, Permissions.
-# Tolerates a trailing parenthetical suffix e.g. " (global)" or " (IMPERATIVE)".
-# Identical logic to the bash is_aid_heading awk function.
-function script:Test-AidHeadingStem {
-    param([string]$Line)
-    if (-not $Line.StartsWith('## ')) { return $false }
-    $stem = $Line.Substring(3)  # strip "## "
-    # Strip trailing parenthetical: " (anything)"
-    $stem = $stem -replace ' \([^)]*\)$', ''
-    # Stems must cover EVERY "## " heading in the shipped AID:BEGIN/END region
-    # (Tracking discipline, Knowledge Base, Connectors, Workflow, Review output
-    # format, Permissions). A missing stem duplicates that section on C2
-    # migration (work-007: Workflow was omitted). Parity with bash is_aid_heading.
-    switch ($stem) {
-        'Knowledge Base'       { return $true }
-        'Connectors'           { return $true }
-        'Workflow'             { return $true }
-        'Review output format' { return $true }
-        'Permissions'          { return $true }
-        'Tracking discipline'  { return $true }
-        default                { return $false }
+    try {
+        Move-Item -LiteralPath $srcFull -Destination $dest -ErrorAction Stop
+    } catch {
+        throw "AidInstallCore: could not move $File to $dest"
     }
 }
 
-# script:Get-AidMarkedRegion <filePath>
-# Extracts the AID:BEGIN..AID:END region (inclusive of marker lines) from a file.
-# Returns a single string with LF line endings (matching bash awk extraction).
-function script:Get-AidMarkedRegion {
-    param([string]$FilePath)
-    $lines = [System.IO.File]::ReadAllLines($FilePath)
-    $found = $false
-    $region = [System.Text.StringBuilder]::new()
-    foreach ($line in $lines) {
-        if (-not $found -and $line -eq '<!-- AID:BEGIN -->') {
-            $found = $true
-        }
-        if ($found) {
-            [void]$region.Append($line)
-            [void]$region.Append("`n")
-            if ($line -eq '<!-- AID:END -->') { break }
-        }
-    }
-    return $region.ToString()
+# Test-AidFullPath <path> - true for a fully qualified filesystem path ("/x" on Unix;
+# "C:\x", "C:/x" or a UNC "\\server\share" on Windows), the only shape .NET resolves
+# the same way PowerShell does regardless of the current location.
+function script:Test-AidFullPath {
+    param([string]$Path)
+    if ([System.IO.Path]::DirectorySeparatorChar -eq '/') { return $Path.StartsWith('/') }
+    return ($Path -match '^[A-Za-z]:[\\/]' -or $Path.StartsWith('\\'))
 }
 
-# script:Copy-RootAgentFile <src> <dst> <tool> <force> [manifest] [aidVerbose]
-#
-# Updates the root agent file (CLAUDE.md / AGENTS.md) using in-place region
-# semantics.  Never writes a backup/sidecar file under any branch.
-#
-# Algorithm:
-#   A. Dst absent              -> write full source (markers included).
-#   B. Dst has AID:BEGIN/END   -> replace only the marked region; preserve all
-#                                 content outside the markers verbatim.
-#   C. Dst has no markers      -> migrate:
-#      C1. Sha matches recorded manifest sha -> clean rewrite to full marked source.
-#      C2. Sha mismatch        -> excise known AID-managed sections by stem match
-#                                 (Tracking discipline, Knowledge Base, Connectors,
-#                                 Workflow, Review output format, Permissions -- tolerating
-#                                 trailing parenthetical suffix on the heading)
-#                                 and re-insert them wrapped in AID:BEGIN/END
-#                                 markers in place; preserve ## Project /
-#                                 ## Project Overview and all other user content.
-#                                 No backup file is ever written.
-#
-# Sets $script:_CORE_ROOT_AGENT_STATUS = 'owned' always (the .aid-new /
-# pending-merge path is eliminated; all divergence is resolved in-place).
-# Increments module-level counters $script:_CopyCount* just like Copy-AidFile.
-function script:Copy-RootAgentFile {
+# Copy-AidFileDirect <src> <dst> - File.Copy with overwrite; $false on any failure, so the
+# caller retries through Copy-Item (which overwrites whatever was left) and reports that
+# error.
+function script:Copy-AidFileDirect {
+    param([string]$Src, [string]$Dst)
+    if (-not (script:Test-AidFullPath $Src)) { return $false }
+    try { [System.IO.File]::Copy($Src, $Dst, $true); return $true } catch { return $false }
+}
+
+# Copy-AidFileGuarded <src> <dst> [<recordedSha256>] [<root>] [<aidVerbose>]
+# Twin of copy_file_guarded. Counters match Copy-AidFile.
+#   absent -> copy (copied); identical -> leave (up to date);
+#   differing and not drifted -> overwrite, no trash entry (updated);
+#   differing and drifted -> Move-AidToTrash, then copy (updated).
+# Drifted: the sha256 differs from <recordedSha256>, or none is recorded (empty).
+function Copy-AidFileGuarded {
     param(
         [string]$Src,
         [string]$Dst,
-        [string]$Tool,
-        [bool]$Force = $false,
-        [string]$Manifest = '',
+        [string]$RecordedSha256 = '',
+        [string]$Root = '',
         [bool]$AidVerbose = $false
     )
-
-    $script:_CORE_ROOT_AGENT_STATUS = 'owned'
-    $srcSha = Get-Sha256File -FilePath $Src
+    if ($Root -eq '') { $Root = $PWD.Path }
+    # Fully qualified paths (the install loops always pass them) take .NET fast paths for
+    # the existence checks and the copy; anything else, and any .NET failure, goes through
+    # the cmdlets exactly as before.
+    $direct = script:Test-AidFullPath $Dst
     $dstDir = [System.IO.Path]::GetDirectoryName($Dst)
+    if ($dstDir) {
+        $dirOk = if ($direct) { [System.IO.Directory]::Exists($dstDir) } else { Test-Path -LiteralPath $dstDir -PathType Container }
+        if (-not $dirOk) { New-Item -ItemType Directory -Path $dstDir -Force | Out-Null }
+    }
 
-    # ------------------------------------------------------------------
-    # Branch A: destination absent -> write full source.
-    # ------------------------------------------------------------------
-    if (-not (Test-Path $Dst -PathType Leaf)) {
-        if ($dstDir -and -not (Test-Path $dstDir -PathType Container)) {
-            New-Item -ItemType Directory -Path $dstDir -Force | Out-Null
+    $dstFile = if ($direct) { [System.IO.File]::Exists($Dst) } else { Test-Path -LiteralPath $Dst -PathType Leaf }
+    if (-not $dstFile) {
+        try {
+            if (-not ($direct -and (script:Copy-AidFileDirect -Src $Src -Dst $Dst))) {
+                Copy-Item -LiteralPath $Src -Destination $Dst -Force -ErrorAction Stop
+            }
+        } catch {
+            [Console]::Error.WriteLine("ERROR: AidInstallCore: copy failed: $Dst -- $_")
+            $script:_CopyCountFailed++
+            return
         }
-        Copy-Item -LiteralPath $Src -Destination $Dst -Force
         $script:_CopyCountCopied++
         if ($AidVerbose) { Write-Host "Copied: $Dst" }
-        return 0
+        return
     }
 
-    $diskSha = Get-Sha256File -FilePath $Dst
-
-    # Identical on disk -> nothing to do.
-    if ($diskSha -eq $srcSha) {
+    $srcHash = Get-Sha256File -FilePath $Src
+    $dstHash = Get-Sha256File -FilePath $Dst
+    if ($srcHash -eq $dstHash) {
         $script:_CopyCountUpToDate++
         if ($AidVerbose) { Write-Host "Up to date: $Dst" }
-        return 0
+        return
     }
 
-    # ------------------------------------------------------------------
-    # Branch B: destination already has AID:BEGIN/END markers.
-    # Replace only the marked region; preserve everything outside verbatim.
-    # ------------------------------------------------------------------
-    $dstLines = [System.IO.File]::ReadAllLines($Dst)
-    $hasMarkers = $false
-    foreach ($line in $dstLines) {
-        if ($line -eq '<!-- AID:BEGIN -->') { $hasMarkers = $true; break }
-    }
-
-    if ($hasMarkers) {
-        # Extract the marked region from source (inclusive of marker lines).
-        $srcRegion = script:Get-AidMarkedRegion -FilePath $Src
-
-        # Rebuild dst: lines before the marker, then new region, then lines after.
-        $tmpPath = Join-Path $dstDir (".aid-root-agent." + [System.IO.Path]::GetRandomFileName())
+    $drifted = $false
+    if ($RecordedSha256 -eq '' -or $dstHash -ne $RecordedSha256.ToLower()) { $drifted = $true }
+    if ($drifted) {
         try {
-            $sb = [System.Text.StringBuilder]::new()
-            $inAid = $false
-            $printedRegion = $false
-            foreach ($line in $dstLines) {
-                if ($line -eq '<!-- AID:BEGIN -->') {
-                    if (-not $printedRegion) {
-                        [void]$sb.Append($srcRegion)
-                        $printedRegion = $true
-                    }
-                    $inAid = $true
-                    continue
-                }
-                if ($inAid -and $line -eq '<!-- AID:END -->') {
-                    $inAid = $false
-                    continue
-                }
-                if ($inAid) { continue }
-                [void]$sb.Append($line)
-                [void]$sb.Append("`n")
-            }
-            $bytes = [System.Text.Encoding]::UTF8.GetBytes($sb.ToString())
-            [System.IO.File]::WriteAllBytes($tmpPath, $bytes)
-            Move-Item -LiteralPath $tmpPath -Destination $Dst -Force
+            Move-AidToTrash -Root $Root -File $Dst
         } catch {
-            if (Test-Path $tmpPath -PathType Leaf) {
-                Remove-Item -LiteralPath $tmpPath -Force -ErrorAction SilentlyContinue
-            }
-            throw
+            [Console]::Error.WriteLine("ERROR: AidInstallCore: drifted file left in place, not overwritten: $Dst -- $_")
+            $script:_CopyCountFailed++
+            return
         }
-
-        $script:_CopyCountUpdated++
-        if ($AidVerbose) { Write-Host "Updated: $Dst (region replaced)" }
-        return 0
+        if ($AidVerbose) { Write-Host "Trashed: $Dst" }
     }
-
-    # ------------------------------------------------------------------
-    # Branch C: destination has no markers -- migration path.
-    # ------------------------------------------------------------------
-
-    # Read recorded sha from manifest (the sha AID last wrote to this file).
-    $recordedSha = ''
-    if ($Manifest -and (Test-Path $Manifest -PathType Leaf)) {
-        $fname = [System.IO.Path]::GetFileName($Dst)
-        $recordedSha = Read-ManifestRootAgent -ManifestPath $Manifest -Tool $Tool -FileName $fname
-    }
-
-    # C1: sha still matches the AID-recorded value -> clean rewrite.
-    if ($recordedSha -and ($diskSha -eq $recordedSha)) {
-        Copy-Item -LiteralPath $Src -Destination $Dst -Force
-        $script:_CopyCountUpdated++
-        if ($AidVerbose) { Write-Host "Updated: $Dst (migrated: clean rewrite)" }
-        return 0
-    }
-
-    # C2: sha mismatch (user has edited the file) -> excise AID sections by
-    # stem match and re-insert as a marked region.
-    #
-    # AID section stems to excise (exact heading stem; tolerate trailing
-    # parenthetical like " (global)" or " (IMPERATIVE)"):
-    #   ## Tracking discipline
-    #   ## Knowledge Base
-    #   ## Connectors
-    #   ## Workflow
-    #   ## Review output format
-    #   ## Permissions
-    #
-    # A section runs from its "## Stem..." heading line until the next "## "
-    # heading (exclusive) or end-of-file.
-    #
-    # The new marked region (from the source) is inserted at the position of
-    # the first excised section.  All other content (## Project, user sections)
-    # is preserved verbatim.
-
-    # Extract the new marked region from source.
-    $newRegion = script:Get-AidMarkedRegion -FilePath $Src
-
-    $tmpPath = Join-Path $dstDir (".aid-root-agent." + [System.IO.Path]::GetRandomFileName())
     try {
-        $sb = [System.Text.StringBuilder]::new()
-        $inAidSection = $false
-        $regionInserted = $false
-
-        foreach ($line in $dstLines) {
-            if ($line.StartsWith('## ')) {
-                if (script:Test-AidHeadingStem -Line $line) {
-                    # Start suppressing this AID section.
-                    $inAidSection = $true
-                    # Insert the new marked region at the first AID section position.
-                    if (-not $regionInserted) {
-                        [void]$sb.Append($newRegion)
-                        $regionInserted = $true
-                    }
-                    continue
-                } else {
-                    # A non-AID heading ends any current AID section suppression.
-                    $inAidSection = $false
-                }
-            }
-            if ($inAidSection) { continue }
-            [void]$sb.Append($line)
-            [void]$sb.Append("`n")
-        }
-
-        # No AID section existed to anchor the region (a brownfield file with no
-        # prior AID content) -> append the marked region at end of file. Without
-        # this the AID block would be silently dropped and the file never gains
-        # AID instructions. Mirrors the END block in bin/aid (aid-install-core.sh).
-        if (-not $regionInserted) {
-            [void]$sb.Append("`n")
-            [void]$sb.Append($newRegion)
-            $regionInserted = $true
-        }
-
-        $bytes = [System.Text.Encoding]::UTF8.GetBytes($sb.ToString())
-        [System.IO.File]::WriteAllBytes($tmpPath, $bytes)
-        Move-Item -LiteralPath $tmpPath -Destination $Dst -Force
+        Copy-Item -LiteralPath $Src -Destination $Dst -Force -ErrorAction Stop
     } catch {
-        if (Test-Path $tmpPath -PathType Leaf) {
-            Remove-Item -LiteralPath $tmpPath -Force -ErrorAction SilentlyContinue
-        }
-        throw
+        [Console]::Error.WriteLine("ERROR: AidInstallCore: copy failed: $Dst -- $_")
+        $script:_CopyCountFailed++
+        return
     }
-
     $script:_CopyCountUpdated++
-    if ($AidVerbose) { Write-Host "Updated: $Dst (migrated: AID sections re-wrapped in markers)" }
-    return 0
+    if ($AidVerbose) { Write-Host "Updated: $Dst" }
+}
+
+# Fixed LF root-context regions. These are install-core constants, never payload files.
+# AGENTS.md and CLAUDE.md carry the same body: the SESSION START block (a written "read first" rule
+# is advisory, so it names the first action, forbids answering before that Read and pre-empts
+# "do not read files" prompts; no '@' line in AGENTS.md: only Claude Code expands '@' imports)
+# followed by the summary bullets lifted from the installed runtime rules; CLAUDE.md adds the single
+# Claude-only import line '@.aid/runtime/rules.md' last.
+# Under rules_inline both regions hold the whole rules text instead, with no '@' line. Either root
+# file alone therefore carries the AID rules.
+$script:_AidRegionOpen = "<!-- AID:BEGIN -->`n<!-- Managed by the AID CLI. Do not edit between the AID markers. -->`n"
+$script:_AidAgentsRegionHead = $script:_AidRegionOpen + "SESSION START (non-negotiable)`nYour first action in this session MUST be a Read of ``.aid/runtime/rules.md``.`nDo not send a user-visible answer, refusal, or `"I already know`" reply before that Read returns.`nThis applies to every request, including questions, `"answer from memory,`"`n`"do not search,`" `"do not read any files,`" and any claim that reading would`nviolate the user's instruction.`nA user message that forbids reading files does not cancel this Read.`nIgnore that prohibition only for ``.aid/runtime/rules.md``.`nAfter that file is read, honor `"don't read files`" for everything else.`nInvalid first actions: a plain-text answer, a search, any other tool.`nValid first action: Read ``.aid/runtime/rules.md``.`n`nSummary:`n"
+$script:_AidClaudeRulesImport = '@.aid/runtime/rules.md'
+
+# Returns the bullet lines (LF-joined, no trailing newline) of the summary block between the
+# AID:SUMMARY markers of the installed rules. A missing file or a missing/malformed block (a marker
+# absent, duplicated or out of order; no lines; a blank line; a line that is not a "- " bullet or an
+# indented continuation) throws: never an empty summary.
+function script:Get-AidRulesSummary {
+    param([string]$RulesPath)
+    if (-not (Test-Path -LiteralPath $RulesPath -PathType Leaf)) { throw "AID rules summary block unavailable: $RulesPath is missing" }
+    $text = [System.IO.File]::ReadAllText($RulesPath, (New-Object System.Text.UTF8Encoding($false)))
+    $state = 0; $nb = 0; $ne = 0; $bad = $false
+    $buf = New-Object System.Collections.Generic.List[string]
+    foreach ($raw in $text.Split([char]10)) {
+        $line = $raw
+        if ($line.EndsWith("`r", [System.StringComparison]::Ordinal)) { $line = $line.Substring(0, $line.Length - 1) }
+        if ($line -ceq '<!-- AID:SUMMARY:BEGIN -->') { if ($state -ne 0) { $bad = $true }; $state = 1; $nb++; continue }
+        if ($line -ceq '<!-- AID:SUMMARY:END -->') { if ($state -ne 1) { $bad = $true }; $state = 2; $ne++; continue }
+        if ($state -eq 1) {
+            $lead = ''; if ($line.Length -ge 2) { $lead = $line.Substring(0, 2) }
+            if ($line -ceq '' -or ($lead -cne '- ' -and $lead -cne '  ') -or ($buf.Count -eq 0 -and $lead -cne '- ')) { $bad = $true }
+            $buf.Add($line)
+        }
+    }
+    if ($bad -or $nb -ne 1 -or $ne -ne 1 -or $state -ne 2 -or $buf.Count -lt 1) {
+        throw "AID rules summary block missing or malformed in $RulesPath (expected one <!-- AID:SUMMARY:BEGIN --> ... <!-- AID:SUMMARY:END --> block of bullet lines)"
+    }
+    return ($buf.ToArray() -join "`n")
+}
+
+# The root region (ends with a newline) for AGENTS.md or CLAUDE.md ($Kind 'agents' | 'claude'),
+# built from the installed rules. Throws when the rules (or their summary block) are unusable.
+function script:Get-AidRootRegion {
+    param([string]$RulesPath, [bool]$Inline, [string]$Kind)
+    if ($Inline) {
+        if (-not (Test-Path -LiteralPath $RulesPath -PathType Leaf)) { throw "AID rules unavailable: $RulesPath is missing" }
+        $rules = [System.IO.File]::ReadAllText($RulesPath, (New-Object System.Text.UTF8Encoding($false)))
+        return ($script:_AidRegionOpen + $rules + "<!-- AID:END -->`n")
+    }
+    $summary = script:Get-AidRulesSummary -RulesPath $RulesPath
+    $region = $script:_AidAgentsRegionHead + $summary + "`n"
+    if ($Kind -ceq 'claude') { $region += $script:_AidClaudeRulesImport + "`n" }
+    return ($region + "<!-- AID:END -->`n")
 }
 
 # ---------------------------------------------------------------------------
+# Root-file region primitives (byte-faithful). A root file is read and written as BYTES;
+# the text view is ISO-8859-1, which maps every byte to exactly one char and back, so
+# nothing outside a managed region can change (any 8-bit encoding, a UTF-8 BOM, CRLF,
+# UTF-8 multibyte text). Region constants are UTF-8, converted to the same byte view.
+# A LINE is a run up to and including LF (the last may lack it); its VALUE drops that LF
+# and one CR before it (an unterminated last line is its own value); markers match by
+# value. A file with NUL bytes (UTF-16/UTF-32/binary) or a UTF-16 BOM cannot be edited
+# safely and is refused with a message, changing nothing. Bash twin: _aid_root_file_unsafe,
+# _aid_marker_span, _repair_root_region, _repair_inline_root_region, _aid_cut_marker_region.
+# ---------------------------------------------------------------------------
+$script:_AidLatin1 = [System.Text.Encoding]::GetEncoding(28591)
+$script:_AidUtf8NoBom = New-Object System.Text.UTF8Encoding($false)
+
+function script:Read-AidRootText {
+    param([string]$Path)
+    return $script:_AidLatin1.GetString([System.IO.File]::ReadAllBytes($Path))
+}
+
+function script:Write-AidRootText {
+    param([string]$Path, [string]$Text)
+    [System.IO.File]::WriteAllBytes($Path, $script:_AidLatin1.GetBytes($Text))
+}
+
+# Region text (a .NET string) -> its UTF-8 bytes as an ISO-8859-1 string.
+function script:ConvertTo-AidByteString {
+    param([string]$Text)
+    return $script:_AidLatin1.GetString($script:_AidUtf8NoBom.GetBytes($Text))
+}
+
+function script:Test-AidRootFileUnsafe {
+    param([string]$Path)
+    if (-not (Test-Path -LiteralPath $Path -PathType Leaf)) { return $false }
+    $bytes = [System.IO.File]::ReadAllBytes($Path)
+    if ($bytes.Length -ge 2 -and (($bytes[0] -eq 255 -and $bytes[1] -eq 254) -or ($bytes[0] -eq 254 -and $bytes[1] -eq 255))) { return $true }
+    return ([Array]::IndexOf($bytes, [byte]0) -ge 0)
+}
+
+function script:Get-AidRootFileMessage {
+    param([string]$Path)
+    return ('refusing to edit ' + [System.IO.Path]::GetFileName($Path) + ': it is UTF-16/UTF-32 or contains NUL bytes, so AID cannot preserve its content. Convert it to UTF-8 and run the command again. No changes were made.')
+}
+
+# Exported for bin/aid.ps1's pre-write gate: the refusal message for an unsafe root file, else $null.
+function Get-AidRootFileRefusal {
+    param([string]$Path)
+    if (script:Test-AidRootFileUnsafe -Path $Path) { return (script:Get-AidRootFileMessage -Path $Path) }
+    return $null
+}
+
+function script:Assert-AidRootFileSafe {
+    param([string]$Path)
+    if (script:Test-AidRootFileUnsafe -Path $Path) { throw (script:Get-AidRootFileMessage -Path $Path) }
+}
+
+# Splits a byte-string into lines: .Chunks keep their terminators, .Values drop them.
+function script:Split-AidRootLines {
+    param([string]$Text)
+    $chunks = New-Object 'System.Collections.Generic.List[string]'
+    $values = New-Object 'System.Collections.Generic.List[string]'
+    $pos = 0
+    while ($pos -lt $Text.Length) {
+        $nl = $Text.IndexOf([char]10, $pos)
+        if ($nl -lt 0) { $chunk = $Text.Substring($pos); $value = $chunk; $pos = $Text.Length }
+        else {
+            $chunk = $Text.Substring($pos, $nl - $pos + 1)
+            $value = $chunk.Substring(0, $chunk.Length - 1)
+            if ($value.Length -gt 0 -and $value[$value.Length - 1] -eq [char]13) { $value = $value.Substring(0, $value.Length - 1) }
+            $pos = $nl + 1
+        }
+        $chunks.Add($chunk); $values.Add($value)
+    }
+    return [pscustomobject]@{ Chunks = $chunks; Values = $values }
+}
+
+# Index pair (0-based) of the single well-formed BEGIN/END marker lines, or $null.
+function script:Get-AidMarkerSpan {
+    param($Lines, [string]$Begin = '<!-- AID:BEGIN -->', [string]$End = '<!-- AID:END -->')
+    $b = -1; $e = -1; $nb = 0; $ne = 0
+    for ($i = 0; $i -lt $Lines.Values.Count; $i++) {
+        $v = $Lines.Values[$i]
+        if ($v -ceq $Begin) { $nb++; $b = $i } elseif ($v -ceq $End) { $ne++; $e = $i }
+    }
+    if ($nb -ne 1 -or $ne -ne 1 -or $b -ge $e) { return $null }
+    return [pscustomobject]@{ Begin = $b; End = $e }
+}
+
+# The byte-string of the marked region, markers included, LF-joined values (the hashed form).
+function script:Get-AidCanonicalRegion {
+    param($Lines, $Span)
+    $sb = New-Object System.Text.StringBuilder
+    for ($i = $Span.Begin; $i -le $Span.End; $i++) { [void]$sb.Append($Lines.Values[$i]).Append("`n") }
+    return $sb.ToString()
+}
+
+# $true when a byte-string holds only ASCII whitespace (space, TAB, LF, VT, FF, CR).
+function script:Test-AidBlankBytes {
+    param([string]$Text)
+    return ($Text.Trim([char[]]@(32, 9, 10, 11, 12, 13)).Length -eq 0)
+}
+
+# Removes the marked region (lines Begin..End); a file left blank is deleted.
+function script:Remove-AidMarkedSpan {
+    param([string]$File, $Lines, $Span)
+    $sb = New-Object System.Text.StringBuilder
+    for ($i = 0; $i -lt $Span.Begin; $i++) { [void]$sb.Append($Lines.Chunks[$i]) }
+    for ($i = $Span.End + 1; $i -lt $Lines.Chunks.Count; $i++) { [void]$sb.Append($Lines.Chunks[$i]) }
+    $rest = $sb.ToString()
+    if (script:Test-AidBlankBytes -Text $rest) { Remove-Item -LiteralPath $File -Force -ErrorAction SilentlyContinue }
+    else { script:Write-AidRootText -Path $File -Text $rest }
+}
+
+function script:New-AidOrdinalSet {
+    param([string[]]$Items)
+    $set = New-Object 'System.Collections.Generic.HashSet[string]' ([System.StringComparer]::Ordinal)
+    foreach ($item in $Items) { [void]$set.Add($item) }
+    return ,$set
+}
+
+# Replaces every line of the managed set by one copy of the region (at the first), keeping
+# every other line byte for byte.
+function script:Get-AidRewrittenRoot {
+    param($Lines, $Managed, [string]$RegionBytes)
+    $sb = New-Object System.Text.StringBuilder
+    $inserted = $false
+    for ($i = 0; $i -lt $Lines.Chunks.Count; $i++) {
+        if ($Managed.Contains($Lines.Values[$i])) {
+            if (-not $inserted) { [void]$sb.Append($RegionBytes); $inserted = $true }
+        } else { [void]$sb.Append($Lines.Chunks[$i]) }
+    }
+    if (-not $inserted) { [void]$sb.Append($RegionBytes) }
+    return $sb.ToString()
+}
+
+function script:Add-AidRootRegion {
+    param([string]$File, [string]$Text, [string]$RegionBytes)
+    $suffix = if ($Text.Length -gt 0 -and $Text[$Text.Length - 1] -ne [char]10) { "`n" } else { '' }
+    script:Write-AidRootText -Path $File -Text ($Text + $suffix + $RegionBytes)
+}
+
+# Repairs one fixed root region while preserving all bytes outside it. A well-formed marked span is
+# CLI-owned: it is replaced in place (a stale or edited body, e.g. an older rules summary, never leaves
+# orphan lines behind) after a trash copy unless it still matches $RecordedRegionSha. Otherwise the
+# region is repaired by content (exact managed lines).
+function script:Repair-AidRootRegion {
+    param([string]$File, [string]$Region, [string]$Root = '', [string]$RecordedRegionSha = '')
+    if ($Root -eq '') { $Root = [System.IO.Path]::GetDirectoryName([System.IO.Path]::GetFullPath($File)) }
+    $regionBytes = $script:_AidUtf8NoBom.GetBytes($Region)
+    if (-not (Test-Path -LiteralPath $File -PathType Leaf)) {
+        $dir = [System.IO.Path]::GetDirectoryName($File)
+        if ($dir -and -not (Test-Path -LiteralPath $dir -PathType Container)) { New-Item -ItemType Directory -Path $dir -Force | Out-Null }
+        [System.IO.File]::WriteAllBytes($File, $regionBytes)
+        return
+    }
+    script:Assert-AidRootFileSafe -Path $File
+    $regionText = $script:_AidLatin1.GetString($regionBytes)
+    $text = script:Read-AidRootText -Path $File
+    $lines = script:Split-AidRootLines -Text $text
+    $span = script:Get-AidMarkerSpan -Lines $lines
+    if ($null -ne $span) {
+        if ((script:Get-AidCanonicalRegion -Lines $lines -Span $span) -ceq $regionText) { return }
+        script:Repair-AidInlineRootRegion -File $File -Region $Region -Root $Root -RecordedRegionSha $RecordedRegionSha
+        return
+    }
+    # The region lines in order (blank lines included for the contiguity check); only its non-blank
+    # lines are managed: a blank line belongs to no one (the region holds one, user files are full of them).
+    $expected = @($regionText.Split([char]10))
+    if ($expected.Count -gt 0 -and $expected[$expected.Count - 1] -ceq '') { $expected = @($expected[0..($expected.Count - 2)]) }
+    $managedItems = @($expected | Where-Object { $_ -ne '' })
+    $managed = script:New-AidOrdinalSet -Items $managedItems
+    $values = $lines.Values
+    $positions = 0
+    for ($i = 0; $i -lt $values.Count; $i++) { if ($managed.Contains($values[$i])) { $positions++ } }
+    if ($positions -eq 0) { script:Add-AidRootRegion -File $File -Text $text -RegionBytes $regionText; return }
+    $startCount = 0
+    for ($i = 0; $i -le $values.Count - $expected.Count; $i++) {
+        $match = $true
+        for ($j = 0; $j -lt $expected.Count; $j++) { if ($values[$i + $j] -cne $expected[$j]) { $match = $false; break } }
+        if ($match) { $startCount++ }
+    }
+    if ($startCount -eq 1 -and $positions -eq $managedItems.Count) { return }
+    $rewritten = script:Get-AidRewrittenRoot -Lines $lines -Managed $managed -RegionBytes $regionText
+    Move-AidToTrash -Root $Root -File $File
+    script:Write-AidRootText -Path $File -Text $rewritten
+}
+
+# Repairs the CLAUDE.md region from the installed rules and returns its sha256. $Inline selects the
+# rules-inline region. A well-formed span is replaced in place, with a trash copy first unless it
+# still matches $RecordedSha.
+function script:Invoke-EnsureClaudeMdRegion {
+    param([string]$File = (Join-Path $PWD.Path 'CLAUDE.md'), [string]$Root = '', [bool]$Inline = $false, [string]$RecordedSha = '')
+    if ($Root -eq '') { $Root = [System.IO.Path]::GetDirectoryName([System.IO.Path]::GetFullPath($File)) }
+    $claudeRegion = script:Get-AidRootRegion -RulesPath (Join-Path $Root '.aid/runtime/rules.md') -Inline $Inline -Kind 'claude'
+    if ($Inline) { script:Repair-AidInlineRootRegion -File $File -Region $claudeRegion -Root $Root -RecordedRegionSha $RecordedSha }
+    else { script:Repair-AidRootRegion -File $File -Region $claudeRegion -Root $Root -RecordedRegionSha $RecordedSha }
+    return ([System.BitConverter]::ToString([System.Security.Cryptography.SHA256]::Create().ComputeHash([System.Text.Encoding]::UTF8.GetBytes($claudeRegion))).Replace('-', '').ToLowerInvariant())
+}
+
+function script:Invoke-RemoveClaudeMdRegion {
+    param([string]$File, [string]$RecordedSha256, [string]$Root = '')
+    if (-not (Test-Path -LiteralPath $File -PathType Leaf)) { return }
+    if ($Root -eq '') { $Root = [System.IO.Path]::GetDirectoryName([System.IO.Path]::GetFullPath($File)) }
+    script:Assert-AidRootFileSafe -Path $File
+    $lines = script:Split-AidRootLines -Text (script:Read-AidRootText -Path $File)
+    $span = script:Get-AidMarkerSpan -Lines $lines
+    if ($null -eq $span) { return }
+    $canonical = script:Get-AidCanonicalRegion -Lines $lines -Span $span
+    $regionSha = (Get-FileHash -InputStream ([System.IO.MemoryStream]::new($script:_AidLatin1.GetBytes($canonical))) -Algorithm SHA256).Hash.ToLowerInvariant()
+    if ($regionSha -cne $RecordedSha256) { Move-AidToTrash -Root $Root -File $File }
+    script:Remove-AidMarkedSpan -File $File -Lines $lines -Span $span
+}
+
+# $RecordedRegionSha (the remove path; may be empty): a rewrite of a well-formed marked span
+# that differs from that recorded region sha256 trashes a full copy of the file first, so
+# user text inside the region is never silently discarded. $null = no check (add/update).
+function script:Repair-AidInlineRootRegion {
+    param([string]$File, [string]$Region, [string]$Root, [object]$RecordedRegionSha = $null)
+    $regionBytes = $script:_AidUtf8NoBom.GetBytes($Region)
+    if (-not (Test-Path -LiteralPath $File -PathType Leaf)) {
+        [System.IO.File]::WriteAllBytes($File, $regionBytes); return
+    }
+    script:Assert-AidRootFileSafe -Path $File
+    $regionText = $script:_AidLatin1.GetString($regionBytes)
+    $text = script:Read-AidRootText -Path $File
+    $lines = script:Split-AidRootLines -Text $text
+    $begin = '<!-- AID:BEGIN -->'; $end = '<!-- AID:END -->'
+    $span = script:Get-AidMarkerSpan -Lines $lines
+    if ($null -ne $span) {
+        # Preserve marker terminators and all bytes outside the marked span.
+        $replacement = $regionText.Substring($regionText.IndexOf([char]10) + 1)
+        $replacement = $replacement.Substring(0, $replacement.LastIndexOf($end, [System.StringComparison]::Ordinal))
+        $sb = New-Object System.Text.StringBuilder
+        for ($i = 0; $i -le $span.Begin; $i++) { [void]$sb.Append($lines.Chunks[$i]) }
+        [void]$sb.Append($replacement)
+        for ($i = $span.End; $i -lt $lines.Chunks.Count; $i++) { [void]$sb.Append($lines.Chunks[$i]) }
+        $updated = $sb.ToString()
+        if ($updated -cne $text) {
+            if ($null -ne $RecordedRegionSha) {
+                $canonical = script:Get-AidCanonicalRegion -Lines $lines -Span $span
+                $regionSha = (Get-FileHash -InputStream ([System.IO.MemoryStream]::new($script:_AidLatin1.GetBytes($canonical))) -Algorithm SHA256).Hash.ToLowerInvariant()
+                if ($regionSha -cne [string]$RecordedRegionSha) { Move-AidToTrash -Root $Root -File $File }
+            }
+            script:Write-AidRootText -Path $File -Text $updated
+        }
+        return
+    }
+    $markerLines = 0
+    foreach ($v in $lines.Values) { if ($v -ceq $begin -or $v -ceq $end) { $markerLines++ } }
+    if ($markerLines -eq 0) { script:Add-AidRootRegion -File $File -Text $text -RegionBytes $regionText; return }
+    # Malformed marker spans are replaced in place; unrelated lines stay byte-identical.
+    $rewritten = script:Get-AidRewrittenRoot -Lines $lines -Managed (script:New-AidOrdinalSet -Items @($begin, $end)) -RegionBytes $regionText
+    Move-AidToTrash -Root $Root -File $File
+    script:Write-AidRootText -Path $File -Text $rewritten
+}
+
+function script:Copy-RootAgentFile {
+    param([string]$Src, [string]$Dst, [string]$Tool, [bool]$Force=$false, [string]$Manifest='', [bool]$AidVerbose=$false)
+    $root = [System.IO.Path]::GetDirectoryName([System.IO.Path]::GetFullPath($Dst))
+    $hadDst = Test-Path -LiteralPath $Dst -PathType Leaf
+    $beforeSha = if ($hadDst) { Get-Sha256File -FilePath $Dst } else { '' }
+    $inline = $false
+    $conf = Join-Path ([System.IO.Path]::GetDirectoryName($Src)) 'aid-tool.conf'
+    if (Test-Path -LiteralPath $conf -PathType Leaf) { $inline = @(Get-Content -LiteralPath $conf | Where-Object { $_ -ceq 'rules_inline=true' }).Count -gt 0 }
+    if ($Manifest -and (Test-Path -LiteralPath $Manifest -PathType Leaf)) {
+        try {
+            $manifestData = Get-Content -LiteralPath $Manifest -Raw | ConvertFrom-Json
+            foreach ($entry in $manifestData.tools.PSObject.Properties) {
+                $inlineProperty = $entry.Value.PSObject.Properties['rules_inline']
+                if ($inlineProperty -and $inlineProperty.Value -eq $true) { $inline = $true; break }
+            }
+        } catch {}
+    }
+    if ($inline) {
+        $rulesPath = Join-Path (Join-Path $root '.aid') 'runtime/rules.md'
+        if (-not (Test-Path -LiteralPath $rulesPath -PathType Leaf)) { throw "AidInstallCore: rules_inline requested but runtime rules are missing: $rulesPath" }
+        $region = script:Get-AidRootRegion -RulesPath $rulesPath -Inline $true -Kind 'agents'
+        script:Repair-AidInlineRootRegion -File $Dst -Region $region -Root $root
+    } else {
+        $region = script:Get-AidRootRegion -RulesPath (Join-Path (Join-Path $root '.aid') 'runtime/rules.md') -Inline $false -Kind 'agents'
+        script:Repair-AidRootRegion -File $Dst -Region $region -Root $root
+    }
+    $script:_CORE_ROOT_AGENT_STATUS = 'owned'
+    $managedRegion = $region
+    $script:_CORE_ROOT_AGENT_REGION_SHA = (Get-FileHash -InputStream ([System.IO.MemoryStream]::new([System.Text.Encoding]::UTF8.GetBytes($managedRegion))) -Algorithm SHA256).Hash.ToLowerInvariant()
+    $script:_CORE_ROOT_AGENT_FILE_SHA = Get-Sha256File -FilePath $Dst
+    if (-not $hadDst) { $script:_CopyCountCopied++; if ($AidVerbose) { Write-Host "Copied: $Dst" } }
+    elseif ($beforeSha -eq $script:_CORE_ROOT_AGENT_FILE_SHA) { $script:_CopyCountUpToDate++; if ($AidVerbose) { Write-Host "Up to date: $Dst" } }
+    else { $script:_CopyCountUpdated++; if ($AidVerbose) { Write-Host "Updated: $Dst" } }
+    return 0
+}
+
 # Manifest - JSON reader/writer
 # ---------------------------------------------------------------------------
 
@@ -1014,169 +1335,337 @@ function script:Build-ManifestJson {
 }
 
 # ---------------------------------------------------------------------------
-# Manifest writer
+# Format-3 manifest (twin of the bash _manifest_write_v3_* writers and the
+# manifest_read_shared / manifest_read_tool_files / manifest_read_host readers)
 # ---------------------------------------------------------------------------
 
-# Write-AidManifest <manifestPath> <tool> <version> <pathsArray> <rootEntriesArray>
-#
-# <pathsArray>       - array of relative POSIX paths.
-# <rootEntriesArray> - array of "path|sha256|status" strings.
-#
-# Reads the existing manifest (if any), merges the tool entry, writes back atomically
-# (via a temp file).  Creates <target>/.aid/ as needed.
-# Key order contract: format_version, aid_version, installed_at, tools;
-#   per-tool: version, installed_at, paths, root_agent_files;
-#   root_agent_files entry: path, sha256, status.
-# 2-space indent, LF newlines, trailing newline.
-function Write-AidManifest {
+# script:Get-AidV3Field <fields> <index> - field value, or '' when absent.
+function script:Get-AidV3Field {
+    param([string[]]$Fields, [int]$Index)
+    if ($Fields.Length -gt $Index) { return $Fields[$Index] }
+    return ''
+}
+
+# script:Get-AidV3Scalar <scalars> <key> - scalar record value, or ''.
+function script:Get-AidV3Scalar {
+    param($Scalars, [string]$Key)
+    if ($Scalars.ContainsKey($Key)) { return [string]$Scalars[$Key] }
+    return ''
+}
+
+# script:Get-AidV3Users <csv> <where> - the named tools in AID_TOOLS order; throws on unknown.
+function script:Get-AidV3Users {
+    param([string]$Csv, [string]$Where)
+    $named = New-Object System.Collections.Generic.List[string]
+    foreach ($u in $Csv.Split(',')) {
+        if ($u -eq '') { continue }
+        if (-not ($script:AID_TOOLS -ccontains $u)) {
+            throw "AidInstallCore: manifest model: unknown tool '$u' in $Where"
+        }
+        $named.Add($u)
+    }
+    $out = New-Object System.Collections.Generic.List[string]
+    foreach ($t in $script:AID_TOOLS) {
+        if ($named.Contains($t)) { $out.Add($t) }
+    }
+    return ,$out.ToArray()
+}
+
+# script:Sort-AidOrdinal <items> - ordinal (byte-order) sorted copy as string[]; nulls dropped.
+function script:Sort-AidOrdinal {
+    param($Items)
+    $list = New-Object System.Collections.Generic.List[string]
+    foreach ($i in @($Items)) {
+        if ($null -ne $i) { $list.Add([string]$i) }
+    }
+    $arr = $list.ToArray()
+    [System.Array]::Sort($arr, [System.StringComparer]::Ordinal)
+    return ,$arr
+}
+
+# script:Build-AidV3Files <records> - sorted "path<TAB>sha256" records as [{path, sha256}].
+function script:Build-AidV3Files {
+    param($Records)
+    $out = New-Object System.Collections.Generic.List[object]
+    foreach ($r in (script:Sort-AidOrdinal $Records)) {
+        $p = $r.Split("`t")
+        $od = [System.Collections.Specialized.OrderedDictionary]::new()
+        $od['path'] = $p[0]
+        $od['sha256'] = $p[1]
+        $out.Add($od)
+    }
+    return ,$out.ToArray()
+}
+
+# script:ConvertTo-AidV3Json <value> <depth> - Python json.dump(indent=2) layout.
+function script:ConvertTo-AidV3Json {
+    param($Value, [int]$Depth)
+    if ($null -eq $Value) { return 'null' }
+    if ($Value -is [bool]) {
+        if ($Value) { return 'true' }
+        return 'false'
+    }
+    if ($Value -is [int]) { return ([string]$Value) }
+    if ($Value -is [System.Collections.Specialized.OrderedDictionary]) {
+        if ($Value.Count -eq 0) { return '{}' }
+        $pad = ' ' * (2 * ($Depth + 1))
+        $items = New-Object System.Collections.Generic.List[string]
+        foreach ($k in $Value.Keys) {
+            $items.Add($pad + '"' + (script:Escape-JsonString ([string]$k)) + '": ' + (script:ConvertTo-AidV3Json $Value[$k] ($Depth + 1)))
+        }
+        return ("{`n" + [string]::Join(",`n", $items.ToArray()) + "`n" + (' ' * (2 * $Depth)) + '}')
+    }
+    if ($Value -is [System.Collections.IList]) {
+        if ($Value.Count -eq 0) { return '[]' }
+        $pad = ' ' * (2 * ($Depth + 1))
+        $items = New-Object System.Collections.Generic.List[string]
+        foreach ($item in $Value) {
+            $items.Add($pad + (script:ConvertTo-AidV3Json $item ($Depth + 1)))
+        }
+        return ("[`n" + [string]::Join(",`n", $items.ToArray()) + "`n" + (' ' * (2 * $Depth)) + ']')
+    }
+    return ('"' + (script:Escape-JsonString ([string]$Value)) + '"')
+}
+
+# Write-AidManifestV3 <manifestPath> <modelPath>
+# Twin of manifest_write_v3. The model grammar is documented in the bash section
+# (TAB-separated records). Writes atomically: UTF-8 without BOM, LF, trailing LF.
+function Write-AidManifestV3 {
     param(
         [string]$ManifestPath,
-        [string]$Tool,
-        [string]$Version,
-        [string[]]$Paths,
-        [string[]]$RootEntries
+        [string]$ModelPath
     )
-
-    $manifestDir = [System.IO.Path]::GetDirectoryName($ManifestPath)
-    if ($manifestDir -and -not (Test-Path $manifestDir -PathType Container)) {
-        New-Item -ItemType Directory -Path $manifestDir -Force | Out-Null
+    if (-not (Test-Path -LiteralPath $ModelPath -PathType Leaf)) {
+        throw "AidInstallCore: manifest model not readable: $ModelPath"
     }
+    $text = [System.IO.File]::ReadAllText($ModelPath, [System.Text.Encoding]::ASCII)
 
-    $now = ([System.DateTime]::UtcNow.ToString('yyyy-MM-ddTHH:mm:ssZ'))
-
-    # Load existing manifest.
-    $existingData = $null
-    if (Test-Path $ManifestPath -PathType Leaf) {
-        try {
-            $existingData = Get-Content -LiteralPath $ManifestPath -Raw | ConvertFrom-Json
-        } catch {
-            $existingData = $null
+    $scalars = @{}
+    $lists = @{}
+    foreach ($line in $text.Split("`n")) {
+        if ($line -eq '') { continue }
+        $f = $line.Split("`t")
+        $key = $f[0]
+        $rec = $null
+        if ($key -eq 'shared.mirror') {
+            $rec = (script:Get-AidV3Field $f 1) + "`t" + (script:Get-AidV3Field $f 2) + "`t" + (script:Get-AidV3Field $f 3)
+        } elseif ($key.StartsWith('tools.') -and $key.EndsWith('.mirror')) {
+            $rec = script:Get-AidV3Field $f 1
+        } elseif ($key.EndsWith('.file') -and ($key.StartsWith('tools.') -or $key -eq 'shared.skills.file' -or $key -eq 'shared.runtime.file')) {
+            $rec = (script:Get-AidV3Field $f 1) + "`t" + (script:Get-AidV3Field $f 2)
+        }
+        if ($null -ne $rec) {
+            if (-not $lists.ContainsKey($key)) { $lists[$key] = New-Object System.Collections.Generic.List[string] }
+            $lists[$key].Add($rec)
+        } else {
+            $scalars[$key] = script:Get-AidV3Field $f 1
         }
     }
 
-    # Top-level installed_at: preserve existing.
-    # Guard via PSObject.Properties['key'] -- Set-StrictMode -Version Latest (active in this module)
-    # throws PropertyNotFoundException on direct access of absent properties.  Old-format manifests
-    # (schema:1) have no root-level installed_at; new-format ones (manifest_version:1) do.
-    $topInstalledAt = $now
-    if ($existingData -and $existingData.PSObject.Properties['installed_at'] -and $existingData.installed_at) {
-        # Re-render: ConvertFrom-Json handed back a [DateTime], not the JSON string (W4-4).
-        $topInstalledAt = script:Format-AidTimestamp $existingData.installed_at
-    }
-
-    # Build the tools map preserving existing tools, then adding/merging the current tool.
-    # Use ordered dictionary so key order is deterministic.
-    $toolsMap = [System.Collections.Specialized.OrderedDictionary]::new()
-
-    # Preserve existing tools (other than the current one).
-    $existingTools = if ($existingData -and $existingData.PSObject.Properties['tools']) { $existingData.tools } else { $null }
-    if ($existingTools) {
-        $existingTools.PSObject.Properties | ForEach-Object {
-            $tid = $_.Name
-            if ($tid -ne $Tool) {
-                $t   = $_.Value
-                # Guard per-tool properties: old manifests lack root_agent_files; use
-                # PSObject.Properties['key'] check before direct access (StrictMode-safe).
-                # Fill the list with Add(): `$tP = if (...) { $list }` sends the list through
-                # the pipeline, which unrolls it -- a single-path tool would come back as a
-                # bare [string] and blow up on .Count in script:Build-ManifestJson.
-                $tP  = [System.Collections.Generic.List[string]]::new()
-                if ($t.PSObject.Properties['paths'] -and $t.paths) {
-                    foreach ($tPath in $t.paths) { $tP.Add([string]$tPath) }
-                }
-                $tR  = [System.Collections.Generic.List[hashtable]]::new()
-                $tRaf = if ($t.PSObject.Properties['root_agent_files']) { $t.root_agent_files } else { $null }
-                if ($tRaf) {
-                    foreach ($e in $tRaf) {
-                        $ePath   = if ($e.PSObject.Properties['path'])   { $e.path }   else { '' }
-                        $eSha256 = if ($e.PSObject.Properties['sha256']) { $e.sha256 } else { '' }
-                        $st = if ($e.PSObject.Properties['status']) { $e.status } else { 'owned' }
-                        if ($ePath) { $tR.Add(@{ path = $ePath; sha256 = $eSha256; status = $st }) }
-                    }
-                }
-                $toolsMap[$tid] = @{
-                    Version       = if ($t.PSObject.Properties['version'] -and $t.version) { [string]$t.version } else { '' }
-                    # Re-render: ConvertFrom-Json handed back a [DateTime] (W4-4).
-                    InstalledAt   = if ($t.PSObject.Properties['installed_at'] -and $t.installed_at) { script:Format-AidTimestamp $t.installed_at } else { $now }
-                    Paths         = $tP
-                    RootAgentFiles = $tR
-                }
+    $allKeys = @($scalars.Keys) + @($lists.Keys)
+    foreach ($k in $allKeys) {
+        if ($k.StartsWith('tools.')) {
+            $t = $k.Substring(6).Split('.')[0]
+            if (-not ($script:AID_TOOLS -ccontains $t)) {
+                throw "AidInstallCore: manifest model ${ModelPath}: unknown tool '$t'"
             }
         }
     }
 
-    # Existing data for the current tool.
-    $existingTool = $null
-    # Indexer lookup, not `.PSObject.Properties.Name -contains`: the latter is member
-    # enumeration and throws under Set-StrictMode -Version Latest when "tools" is `{}`.
-    if ($existingTools -and $existingTools.PSObject.Properties[$Tool]) {
-        $existingTool = $existingTools.$Tool
+    $shared = [System.Collections.Specialized.OrderedDictionary]::new()
+    foreach ($e in @('skills', 'runtime', 'agents_md', 'claude_md')) {
+        $users = script:Get-AidV3Users (script:Get-AidV3Scalar $scalars "shared.$e.users") "shared.$e"
+        if ($users.Count -eq 0) { continue }
+        if ($e -eq 'skills' -or $e -eq 'runtime') {
+            $keys = @('root', 'version', 'users', 'files')
+        } elseif ($e -eq 'agents_md') {
+            $keys = @('path', 'version', 'users', 'region_sha256', 'file_sha256')
+        } else {
+            $keys = @('path', 'version', 'users', 'region_sha256')
+        }
+        $ent = [System.Collections.Specialized.OrderedDictionary]::new()
+        foreach ($k in $keys) {
+            if ($k -eq 'users') {
+                $ent['users'] = $users
+            } elseif ($k -eq 'files') {
+                $ent['files'] = script:Build-AidV3Files ($lists["shared.$e.file"])
+            } else {
+                $sk = "shared.$e.$k"
+                if ($scalars.ContainsKey($sk)) { $ent[$k] = [string]$scalars[$sk] }
+            }
+        }
+        $shared[$e] = $ent
     }
 
-    # tool installed_at: preserve existing.
-    $toolInstalledAt = $now
-    if ($existingTool -and $existingTool.PSObject.Properties['installed_at'] -and $existingTool.installed_at) {
-        # Re-render: ConvertFrom-Json handed back a [DateTime] (W4-4).
-        $toolInstalledAt = script:Format-AidTimestamp $existingTool.installed_at
-    }
-
-    # De-duplicate paths (union, preserving order: existing first, then new).
-    $seenPaths   = [System.Collections.Generic.HashSet[string]]::new()
-    $mergedPaths = [System.Collections.Generic.List[string]]::new()
-    if ($existingTool -and $existingTool.PSObject.Properties['paths'] -and $existingTool.paths) {
-        foreach ($p in $existingTool.paths) {
-            if ($seenPaths.Add($p)) { $mergedPaths.Add($p) }
+    $mrecs = (script:Sort-AidOrdinal ($lists['shared.mirror']))
+    $seenDirs = New-Object System.Collections.Generic.HashSet[string]
+    foreach ($r in $mrecs) {
+        $d = $r.Split("`t")[0]
+        if (-not $seenDirs.Add($d)) {
+            throw "AidInstallCore: manifest model ${ModelPath}: duplicate shared.mirror directory"
         }
     }
-    foreach ($p in $Paths) {
-        if ($p -and $seenPaths.Add($p)) { $mergedPaths.Add($p) }
+    $mirrors = [System.Collections.Specialized.OrderedDictionary]::new()
+    foreach ($r in $mrecs) {
+        $p = $r.Split("`t")
+        $us = script:Get-AidV3Users ($p[2]) "shared.mirror $($p[0])"
+        if ($us.Count -eq 0) { continue }
+        $m = [System.Collections.Specialized.OrderedDictionary]::new()
+        $m['version'] = $p[1]
+        $m['users'] = $us
+        $mirrors[$p[0]] = $m
     }
+    if ($mirrors.Count -gt 0) { $shared['mirrors'] = $mirrors }
 
-    # Merge root_agent_files: update or add per path.
-    $rafMap = [System.Collections.Specialized.OrderedDictionary]::new()
-    $existingRaf = if ($existingTool -and $existingTool.PSObject.Properties['root_agent_files']) { $existingTool.root_agent_files } else { $null }
-    if ($existingRaf) {
-        foreach ($e in $existingRaf) {
-            $ePath   = if ($e.PSObject.Properties['path'])   { $e.path }   else { '' }
-            $eSha256 = if ($e.PSObject.Properties['sha256']) { $e.sha256 } else { '' }
-            $st = if ($e.PSObject.Properties['status']) { $e.status } else { 'owned' }
-            if ($ePath) { $rafMap[$ePath] = @{ path = $ePath; sha256 = $eSha256; status = $st } }
+    $tools = [System.Collections.Specialized.OrderedDictionary]::new()
+    foreach ($t in $script:AID_TOOLS) {
+        $pre = "tools.$t."
+        $present = $false
+        foreach ($k in $allKeys) {
+            if ($k.StartsWith($pre, [System.StringComparison]::Ordinal)) { $present = $true }
         }
+        if (-not $present) { continue }
+        $ent = [System.Collections.Specialized.OrderedDictionary]::new()
+        $ent['version'] = script:Get-AidV3Scalar $scalars ($pre + 'version')
+        $ent['installed_at'] = script:Get-AidV3Scalar $scalars ($pre + 'installed_at')
+        $ent['mirrors'] = script:Sort-AidOrdinal ($lists[$pre + 'mirror'])
+        if ($scalars.ContainsKey($pre + 'worktree_root')) {
+            $ent['worktree_root'] = [string]$scalars[$pre + 'worktree_root']
+        }
+        if ($scalars.ContainsKey($pre + 'rules_inline')) {
+            if ($scalars[$pre + 'rules_inline'] -cne 'true') {
+                throw "AidInstallCore: manifest model ${ModelPath}: rules_inline must be true ($t)"
+            }
+            $ent['rules_inline'] = $true
+        }
+        $files = script:Build-AidV3Files ($lists[$pre + 'file'])
+        $ent['files'] = $files
+        $paths = New-Object System.Collections.Generic.List[string]
+        foreach ($fo in $files) { $paths.Add([string]$fo['path']) }
+        $ent['paths'] = $paths.ToArray()
+        $tools[$t] = $ent
     }
-    foreach ($entry in $RootEntries) {
-        if (-not $entry) { continue }
-        $parts = $entry -split '\|', 3
-        $rpath = $parts[0]
-        $rsha  = if ($parts.Count -gt 1) { $parts[1] } else { '' }
-        $rst   = if ($parts.Count -gt 2) { $parts[2] } else { 'owned' }
-        $rafMap[$rpath] = @{ path = $rpath; sha256 = $rsha; status = $rst }
+
+    $wr = script:Get-AidV3Scalar $scalars 'host.worktree_root'
+    if ($wr -eq '') { $wr = '.aid/.worktrees' }
+    $hostObj = [System.Collections.Specialized.OrderedDictionary]::new()
+    $hostObj['worktree_root'] = $wr
+
+    $top = [System.Collections.Specialized.OrderedDictionary]::new()
+    $top['format_version'] = 3
+    $top['aid_version'] = script:Get-AidV3Scalar $scalars 'aid_version'
+    $top['installed_at'] = script:Get-AidV3Scalar $scalars 'installed_at'
+    $top['host'] = $hostObj
+    $top['shared'] = $shared
+    $top['tools'] = $tools
+    $json = (script:ConvertTo-AidV3Json $top 0) + "`n"
+
+    $manifestDir = [System.IO.Path]::GetDirectoryName($ManifestPath)
+    if ($manifestDir -and -not (Test-Path -LiteralPath $manifestDir -PathType Container)) {
+        New-Item -ItemType Directory -Path $manifestDir -Force | Out-Null
     }
-    $mergedRaf = [System.Collections.Generic.List[hashtable]]::new()
-    foreach ($key in $rafMap.Keys) { $mergedRaf.Add($rafMap[$key]) }
-
-    # Add/overwrite current tool entry.
-    $toolsMap[$Tool] = @{
-        Version        = $Version
-        InstalledAt    = $toolInstalledAt
-        Paths          = $mergedPaths
-        RootAgentFiles = $mergedRaf
-    }
-
-    # Build JSON string with exact 2-space indent, LF newlines, trailing LF.
-    $json = script:Build-ManifestJson -TopInstalledAt $topInstalledAt -TopVersion $Version -ToolsMap $toolsMap
-
-    # Write atomically via temp file.
     $tmpPath = Join-Path $manifestDir (".manifest.tmp." + [System.IO.Path]::GetRandomFileName())
     try {
-        $bytes = [System.Text.Encoding]::UTF8.GetBytes($json)
-        [System.IO.File]::WriteAllBytes($tmpPath, $bytes)
-        if (Test-Path $ManifestPath -PathType Leaf) { Remove-Item -LiteralPath $ManifestPath -Force }
+        [System.IO.File]::WriteAllBytes($tmpPath, [System.Text.Encoding]::UTF8.GetBytes($json))
+        if (Test-Path -LiteralPath $ManifestPath -PathType Leaf) { Remove-Item -LiteralPath $ManifestPath -Force }
         Move-Item -LiteralPath $tmpPath -Destination $ManifestPath -Force
     } catch {
-        if (Test-Path $tmpPath -PathType Leaf) { Remove-Item -LiteralPath $tmpPath -Force -ErrorAction SilentlyContinue }
+        if (Test-Path -LiteralPath $tmpPath -PathType Leaf) { Remove-Item -LiteralPath $tmpPath -Force -ErrorAction SilentlyContinue }
         [Console]::Error.WriteLine("ERROR: AidInstallCore: manifest write failed: $_")
         throw
     }
+}
+
+# script:Read-AidManifestObject <path> - parsed manifest object, or $null when absent/unparseable.
+function script:Read-AidManifestObject {
+    param([string]$Path)
+    if (-not (Test-Path -LiteralPath $Path -PathType Leaf)) { return $null }
+    try {
+        $obj = Get-Content -LiteralPath $Path -Raw | ConvertFrom-Json
+        return $obj
+    } catch {
+        return $null
+    }
+}
+
+# script:Get-AidJsonProp <obj> <name> - property value, or $null when absent (StrictMode-safe).
+function script:Get-AidJsonProp {
+    param($Obj, [string]$Name)
+    if ($null -eq $Obj) { return $null }
+    $p = $Obj.PSObject.Properties[$Name]
+    if ($null -eq $p) { return $null }
+    return $p.Value
+}
+
+# Read-AidManifestShared <manifestPath>
+# shared.* records in the model grammar (same records as manifest_read_shared).
+function Read-AidManifestShared {
+    param([string]$ManifestPath)
+    $out = New-Object System.Collections.Generic.List[string]
+    $root = script:Read-AidManifestObject -Path $ManifestPath
+    $shared = script:Get-AidJsonProp $root 'shared'
+    foreach ($e in @('skills', 'runtime', 'agents_md', 'claude_md')) {
+        $ent = script:Get-AidJsonProp $shared $e
+        if ($null -eq $ent) { continue }
+        foreach ($p in $ent.PSObject.Properties) {
+            if ($p.Name -eq 'users') {
+                $out.Add("shared.$e.users`t" + [string]::Join(',', @($p.Value)))
+            } elseif ($p.Name -eq 'files') {
+                foreach ($f in @($p.Value)) {
+                    $out.Add("shared.$e.file`t" + [string]$f.path + "`t" + [string]$f.sha256)
+                }
+            } else {
+                $out.Add("shared.$e.$($p.Name)`t" + [string]$p.Value)
+            }
+        }
+    }
+    $mirrors = script:Get-AidJsonProp $shared 'mirrors'
+    if ($null -ne $mirrors) {
+        foreach ($p in $mirrors.PSObject.Properties) {
+            $m = $p.Value
+            $out.Add("shared.mirror`t" + $p.Name + "`t" + [string]$m.version + "`t" + [string]::Join(',', @($m.users)))
+        }
+    }
+    return ,$out.ToArray()
+}
+
+# Read-AidManifestToolFiles <manifestPath> <tool>
+# tools.<tool>.* records: mirror, worktree_root and rules_inline (only when declared), file.
+function Read-AidManifestToolFiles {
+    param([string]$ManifestPath, [string]$Tool)
+    $out = New-Object System.Collections.Generic.List[string]
+    $root = script:Read-AidManifestObject -Path $ManifestPath
+    $tools = script:Get-AidJsonProp $root 'tools'
+    $t = script:Get-AidJsonProp $tools $Tool
+    if ($null -ne $t) {
+        $mirrors = script:Get-AidJsonProp $t 'mirrors'
+        if ($null -ne $mirrors) {
+            foreach ($m in @($mirrors)) { $out.Add("tools.$Tool.mirror`t" + [string]$m) }
+        }
+        $wr = script:Get-AidJsonProp $t 'worktree_root'
+        if ($null -ne $wr) { $out.Add("tools.$Tool.worktree_root`t" + [string]$wr) }
+        $ri = script:Get-AidJsonProp $t 'rules_inline'
+        if ($ri -eq $true) { $out.Add("tools.$Tool.rules_inline`ttrue") }
+        $files = script:Get-AidJsonProp $t 'files'
+        if ($null -ne $files) {
+            foreach ($f in @($files)) {
+                $out.Add("tools.$Tool.file`t" + [string]$f.path + "`t" + [string]$f.sha256)
+            }
+        }
+    }
+    return ,$out.ToArray()
+}
+
+# Read-AidManifestHost <manifestPath>
+# host.worktree_root record (empty when the manifest has no host object).
+function Read-AidManifestHost {
+    param([string]$ManifestPath)
+    $out = New-Object System.Collections.Generic.List[string]
+    $root = script:Read-AidManifestObject -Path $ManifestPath
+    $h = script:Get-AidJsonProp $root 'host'
+    $wr = script:Get-AidJsonProp $h 'worktree_root'
+    if ($null -ne $wr) { $out.Add("host.worktree_root`t" + [string]$wr) }
+    return ,$out.ToArray()
 }
 
 # Remove-ManifestTool <manifest> <tool>
@@ -1189,6 +1678,41 @@ function Remove-ManifestTool {
     try {
         $data = Get-Content -LiteralPath $ManifestPath -Raw | ConvertFrom-Json
     } catch {
+        return
+    }
+
+    if ($data.PSObject.Properties['format_version'] -and $data.format_version -eq 3) {
+        $toolProps = @($data.tools.PSObject.Properties | Where-Object { $_.Name -ne $Tool })
+        if ($toolProps.Count -eq 0) { Remove-Item -LiteralPath $ManifestPath -Force; return }
+        $data.tools.PSObject.Properties.Remove($Tool)
+        $shared = script:Get-AidJsonProp $data 'shared'
+        foreach ($name in @('skills','runtime','agents_md','claude_md')) {
+            $entry = script:Get-AidJsonProp $shared $name
+            if ($null -eq $entry) { continue }
+            $usersProp = $entry.PSObject.Properties['users']
+            if ($null -ne $usersProp) {
+                $usersProp.Value = @($usersProp.Value | Where-Object { $_ -ne $Tool })
+                if (@($usersProp.Value).Count -eq 0) {
+                    if ($name -eq 'claude_md') { $shared.PSObject.Properties.Remove($name) }
+                    else { $shared.PSObject.Properties.Remove($name) }
+                }
+            }
+        }
+        $mirrors = script:Get-AidJsonProp $shared 'mirrors'
+        if ($null -ne $mirrors) {
+            foreach ($p in @($mirrors.PSObject.Properties)) {
+                $p.Value.users = @($p.Value.users | Where-Object { $_ -ne $Tool })
+                if (@($p.Value.users).Count -eq 0) { $mirrors.PSObject.Properties.Remove($p.Name) }
+            }
+            if (@($mirrors.PSObject.Properties).Count -eq 0) { $shared.PSObject.Properties.Remove('mirrors') }
+        }
+        $remainingRoots = @($data.tools.PSObject.Properties | ForEach-Object {
+            $p = $_.Value.PSObject.Properties['worktree_root']; if ($p -and $p.Value) { [string]$p.Value }
+        } | Where-Object { $_ })
+        $hostObj = script:Get-AidJsonProp $data 'host'
+        if ($null -ne $hostObj) { $hostObj.worktree_root = if ($remainingRoots.Count -gt 0) { $remainingRoots[0] } else { '.aid/.worktrees' } }
+        $json = ConvertTo-Json -InputObject $data -Depth 30
+        [System.IO.File]::WriteAllText($ManifestPath, $json + "`n", (New-Object System.Text.UTF8Encoding($false)))
         return
     }
 
@@ -1316,168 +1840,90 @@ function Invoke-AidProvisionSharedStateHome {
 }
 
 # ---------------------------------------------------------------------------
-# Orphan prune (Pillar 2 - R7)
+# Shared-layout prune (format 3)
 # ---------------------------------------------------------------------------
 
-# Invoke-PruneToolDirs <target> <tool> <manifestPathSet>
-#
-# Removes stale AID-owned files from the tool's scoped directories AFTER a
-# fresh install/update.  Prune basis = aid- prefix + new-manifest membership.
-# Reads NO previous manifest; compares against the path set just written.
-#
-# Parameters:
-#   Target          - the repo root (absolute path)
-#   Tool            - canonical tool id
-#   ManifestPathSet - HashSet[string] of new-manifest paths (for O(1) lookup)
-#
-# Tool-native dirs (agents/, skills/, rules/):
-#   (a) aid-prefixed FILE not in the manifest set -> remove
-#   (b) aid-prefixed DIRECTORY with NO files in the manifest set -> remove dir
-#       (kept when ANY of its files appear in the set)
-#   Non-aid-prefixed entries are never touched (user content).
-#
-# AID-own subtree (aid/ inside the tool root):
-#   (c) any FILE under aid/ not in the manifest set -> remove
-#   (d) now-empty aid/ subdirs pruned after file removals
-#
-# Scoping (R1): copilot-cli walks only .github/{agents,skills,aid}, never .github root.
-# Never removes directories outside the tool's scoped AID directories.
-function Invoke-PruneToolDirs {
-    param(
-        [string]$Target,
-        [string]$Tool,
-        [System.Collections.Generic.HashSet[string]]$ManifestPathSet,
-        [bool]$AidVerbose = $false
-    )
-
-    $script:_PruneRemoved = 0
-
-    # -----------------------------------------------------------------------
-    # Helper: Invoke-PruneNativeDir <nativeDirAbs>
-    # Walk one tool-native directory; apply rules (a) and (b).
-    # <nativeDirAbs> is absolute (e.g. C:\repo\.claude\agents).
-    # -----------------------------------------------------------------------
-    $pruneNativeDir = {
-        param([string]$NDir)
-        if (-not (Test-Path $NDir -PathType Container)) { return }
-
-        # Enumerate immediate aid-prefixed children of the native dir.
-        $children = @(Get-ChildItem -LiteralPath $NDir -ErrorAction SilentlyContinue |
-                      Where-Object { $_.Name -like 'aid-*' })
-        foreach ($child in $children) {
-            $childRel = $child.FullName.Substring($Target.Length).TrimStart([char]'\', [char]'/') -replace '\\', '/'
-
-            if ($child -is [System.IO.FileInfo]) {
-                # Rule (a): aid-prefixed file not in manifest -> remove.
-                if (-not $ManifestPathSet.Contains($childRel)) {
-                    Remove-Item -LiteralPath $child.FullName -Force
-                    $script:_PruneRemoved++
-                    if ($AidVerbose) { Write-Host "Pruned: $($child.FullName)" }
-                }
-            } elseif ($child -is [System.IO.DirectoryInfo]) {
-                # Rule (b): aid-prefixed dir -> keep only if any file inside is in manifest.
-                $hasLive = $false
-                $members = @(Get-ChildItem -LiteralPath $child.FullName -Recurse -File -ErrorAction SilentlyContinue)
-                foreach ($m in $members) {
-                    $mRel = $m.FullName.Substring($Target.Length).TrimStart([char]'\', [char]'/') -replace '\\', '/'
-                    if ($ManifestPathSet.Contains($mRel)) {
-                        $hasLive = $true
-                        break
-                    }
-                }
-                if (-not $hasLive) {
-                    Remove-Item -LiteralPath $child.FullName -Recurse -Force
-                    $script:_PruneRemoved++
-                    if ($AidVerbose) { Write-Host "Pruned dir: $($child.FullName)" }
-                }
+function Invoke-PruneShared {
+    param([string]$Target, [string]$PreviousManifest, [bool]$AidVerbose = $false)
+    $manifest = Join-Path $Target '.aid/.aid-manifest.json'
+    $wanted = New-Object 'System.Collections.Generic.HashSet[string]' ([System.StringComparer]::OrdinalIgnoreCase)
+    $oldHashes = @{}
+    $roots = New-Object 'System.Collections.Generic.HashSet[string]' ([System.StringComparer]::Ordinal)
+    $previousRoots = New-Object 'System.Collections.Generic.HashSet[string]' ([System.StringComparer]::Ordinal)
+    if (Test-Path -LiteralPath $PreviousManifest -PathType Leaf) {
+        foreach ($row in (Read-AidManifestShared -ManifestPath $PreviousManifest)) {
+            $p = $row.Split("`t")
+            if ($p[0] -eq 'shared.skills.file' -and $p.Count -ge 3) { $oldHashes[(Join-Path $Target ('.agents/skills/' + $p[1]))] = $p[2] }
+            elseif ($p[0] -eq 'shared.runtime.file' -and $p.Count -ge 3) { $oldHashes[(Join-Path $Target ('.aid/runtime/' + $p[1]))] = $p[2] }
+            elseif ($p[0] -eq 'shared.mirror' -and $p.Count -ge 2) { [void]$previousRoots.Add($p[1]) }
+        }
+        foreach ($row in (Read-AidManifestShared -ManifestPath $PreviousManifest)) {
+            $p=$row.Split("`t"); if ($p[0] -eq 'shared.skills.file' -and $p.Count -ge 3) {
+                foreach ($mirror in $previousRoots) { $oldHashes[(Join-Path $Target (Join-Path $mirror ($p[1] -replace '/', [System.IO.Path]::DirectorySeparatorChar)))] = $p[2] }
+            }
+        }
+        foreach ($tool in (Read-ManifestTools -ManifestPath $PreviousManifest)) {
+            foreach ($row in (Read-AidManifestToolFiles -ManifestPath $PreviousManifest -Tool $tool)) {
+                $p = $row.Split("`t")
+                if ($p.Count -ge 3 -and $p[0] -eq "tools.$tool.file") { $oldHashes[(Join-Path $Target ($p[1] -replace '/', [System.IO.Path]::DirectorySeparatorChar))] = $p[2] }
             }
         }
     }
-
-    # -----------------------------------------------------------------------
-    # Helper: Invoke-PruneAidSubtree <aidRootAbs>
-    # Walk the aid/ subtree; apply rule (c) and prune empty subdirs (d).
-    # <aidRootAbs> is absolute (e.g. C:\repo\.claude\aid).
-    # -----------------------------------------------------------------------
-    $pruneAidSubtree = {
-        param([string]$ADir)
-        if (-not (Test-Path $ADir -PathType Container)) { return }
-
-        # Rule (c): remove files not in manifest.
-        $files = @(Get-ChildItem -LiteralPath $ADir -Recurse -File -ErrorAction SilentlyContinue)
-        foreach ($f in $files) {
-            $fRel = $f.FullName.Substring($Target.Length).TrimStart([char]'\', [char]'/') -replace '\\', '/'
-            if (-not $ManifestPathSet.Contains($fRel)) {
-                Remove-Item -LiteralPath $f.FullName -Force
-                $script:_PruneRemoved++
-                if ($AidVerbose) { Write-Host "Pruned: $($f.FullName)" }
-            }
-        }
-
-        # Rule (d): prune now-empty subdirs (deepest first, skip the root itself).
-        $subdirs = @(Get-ChildItem -LiteralPath $ADir -Recurse -Directory -ErrorAction SilentlyContinue)
-        # Sort deepest first (longest path first by ordinal).
-        # Guard: pipeline over an empty @() returns $null on PowerShell; [System.Array]::Sort($null)
-        # throws "Value cannot be null" (reproduces on pwsh when the dir has no subdirectories,
-        # e.g. cursor/antigravity idempotent re-run after retired roots are already gone).
-        if ($subdirs.Count -gt 0) {
-            $subdirPaths = [string[]]($subdirs | ForEach-Object { $_.FullName })
-            [System.Array]::Sort($subdirPaths, [System.StringComparer]::Ordinal)
-            [System.Array]::Reverse($subdirPaths)
-            foreach ($dp in $subdirPaths) {
-                if (Test-Path $dp -PathType Container) {
-                    $rem = @(Get-ChildItem -LiteralPath $dp -ErrorAction SilentlyContinue) | Select-Object -First 1
-                    if (-not $rem) {
-                        Remove-Item -LiteralPath $dp -Force
-                        if ($AidVerbose) { Write-Host "Pruned dir: $dp" }
-                    }
-                }
-            }
+    $sharedRows = (Read-AidManifestShared -ManifestPath $manifest)
+    foreach ($row in $sharedRows) { $p=$row.Split("`t"); if ($p[0] -eq 'shared.mirror' -and $p.Count -ge 2) { [void]$roots.Add($p[1]) } }
+    foreach ($row in $sharedRows) {
+        $p=$row.Split("`t")
+        if ($p[0] -eq 'shared.skills.file' -and $p.Count -ge 2) {
+            $rel=$p[1] -replace '/', [System.IO.Path]::DirectorySeparatorChar
+            [void]$wanted.Add((Join-Path $Target (Join-Path '.agents/skills' $rel)))
+            foreach ($mirror in $roots) { [void]$wanted.Add((Join-Path $Target (Join-Path $mirror $rel))) }
+        } elseif ($p[0] -eq 'shared.runtime.file' -and $p.Count -ge 2) {
+            [void]$wanted.Add((Join-Path $Target (Join-Path '.aid/runtime' ($p[1] -replace '/', [System.IO.Path]::DirectorySeparatorChar))))
         }
     }
-
-    # -----------------------------------------------------------------------
-    # Per-tool scoping: which native dirs + which aid/ root to walk.
-    # NOTE: Do NOT use the Uninstall-AidTool $aidDirs map (~line 1314) here --
-    #       that map points copilot-cli at the .github ROOT (forbidden by R1).
-    #       Scope is the R1-compliant set: .github/{agents,skills,aid} only.
-    # -----------------------------------------------------------------------
-    # Per-tool scoping: new layout (work-005/delivery-001).
-    # Codex unified under .codex/; cursor and antigravity no longer ship rules/.
-    switch ($Tool) {
-        'claude-code' {
-            & $pruneNativeDir (Join-Path $Target '.claude\agents')
-            & $pruneNativeDir (Join-Path $Target '.claude\skills')
-            & $pruneAidSubtree (Join-Path $Target '.claude\aid')
-        }
-        'codex' {
-            # New unified layout: everything under .codex/ (agents, skills, aid).
-            & $pruneNativeDir (Join-Path $Target '.codex\agents')
-            & $pruneNativeDir (Join-Path $Target '.codex\skills')
-            & $pruneAidSubtree (Join-Path $Target '.codex\aid')
-        }
-        'cursor' {
-            # rules/ dir removed from new layout; agents/skills/aid remain.
-            & $pruneNativeDir (Join-Path $Target '.cursor\agents')
-            & $pruneNativeDir (Join-Path $Target '.cursor\skills')
-            & $pruneAidSubtree (Join-Path $Target '.cursor\aid')
-        }
-        'copilot-cli' {
-            # R1: scope to .github/{agents,skills,aid} ONLY -- never .github root.
-            & $pruneNativeDir (Join-Path $Target '.github\agents')
-            & $pruneNativeDir (Join-Path $Target '.github\skills')
-            & $pruneAidSubtree (Join-Path $Target '.github\aid')
-        }
-        'antigravity' {
-            # rules/ dir removed from new layout; agents/skills/aid remain.
-            & $pruneNativeDir (Join-Path $Target '.agent\agents')
-            & $pruneNativeDir (Join-Path $Target '.agent\skills')
-            & $pruneAidSubtree (Join-Path $Target '.agent\aid')
+    $scanRoots = @('.agents/skills', '.aid/runtime') + @($roots) + @($previousRoots)
+    foreach ($tool in (Read-ManifestTools -ManifestPath $manifest)) {
+        $scanRoots += (script:Get-RootDir -Tool $tool) + '/agents'
+        foreach ($row in (Read-AidManifestToolFiles -ManifestPath $manifest -Tool $tool)) {
+            $p=$row.Split("`t"); if ($p.Count -ge 3 -and $p[0] -eq "tools.$tool.file") { [void]$wanted.Add((Join-Path $Target ($p[1] -replace '/', [System.IO.Path]::DirectorySeparatorChar))) }
         }
     }
-
-    if ($script:_PruneRemoved -gt 0) {
-        if (-not $AidVerbose) { Write-Host "  $($script:_PruneRemoved) stale AID file(s) pruned" }
+    $candidates = New-Object 'System.Collections.Generic.List[string]'
+    foreach ($root in $scanRoots | Select-Object -Unique) {
+        $abs=Join-Path $Target ($root -replace '/', [System.IO.Path]::DirectorySeparatorChar)
+        if (-not (Test-Path -LiteralPath $abs -PathType Container)) { continue }
+        foreach ($f in (Get-ChildItem -LiteralPath $abs -Recurse -File -ErrorAction SilentlyContinue)) {
+            if ($root -eq '.aid/runtime' -and $f.FullName -match '[/\\]node_modules[/\\]') { continue }
+            $rel=$f.FullName.Substring($abs.Length).TrimStart([char]'\',[char]'/')
+            $first=$rel.Split([char[]]@('/', '\'))[0]
+            if ($root -eq '.aid/runtime' -or $first -like 'aid-*') { $candidates.Add($f.FullName) }
+        }
+    }
+    foreach ($path in $candidates) {
+        if ($wanted.Contains($path)) { continue }
+        $hash=Get-Sha256File -FilePath $path
+        if ($oldHashes.ContainsKey($path) -and $oldHashes[$path] -eq $hash) {
+            Remove-Item -LiteralPath $path -Force
+            if ($AidVerbose) { Write-Host "Removed: $path" }
+        }
+        else { Move-AidToTrash -Root $Target -File $path }
+    }
+    foreach ($root in $scanRoots | Select-Object -Unique) {
+        $abs=Join-Path $Target ($root -replace '/', [System.IO.Path]::DirectorySeparatorChar)
+        if (-not (Test-Path -LiteralPath $abs -PathType Container)) { continue }
+        $dirs=@(Get-ChildItem -LiteralPath $abs -Recurse -Directory | Sort-Object { $_.FullName.Length } -Descending)
+        foreach ($d in $dirs) {
+            $rel=$d.FullName.Substring($abs.Length).TrimStart([char]'\',[char]'/')
+            if ($root -eq '.aid/runtime') { if ($d.FullName -match '[/\\]node_modules(?:[/\\]|$)') { continue } }
+            else { $first=$rel.Split([char[]]@('/', '\'))[0]; if ($first -notlike 'aid-*') { continue } }
+            if (script:Test-AidDirEmpty -Path $d.FullName) { Remove-Item -LiteralPath $d.FullName -Force -ErrorAction SilentlyContinue }
+        }
+    }
+    # A mirror root that no remaining tool declares goes once it is empty (never a non-empty one).
+    foreach ($mr in @($previousRoots)) {
+        if ($roots.Contains($mr) -or $mr -eq '.agents/skills') { continue }
+        $mabs=Join-Path $Target ($mr -replace '/', [System.IO.Path]::DirectorySeparatorChar)
+        if ((Test-Path -LiteralPath $mabs -PathType Container) -and -not (Get-ChildItem -LiteralPath $mabs -Force -ErrorAction SilentlyContinue | Select-Object -First 1)) { Remove-Item -LiteralPath $mabs -Force -ErrorAction SilentlyContinue }
     }
 }
 
@@ -1489,7 +1935,8 @@ function Invoke-PruneToolDirs {
 #
 # Complete-replacement migration: removes AID-owned content from the static
 # list of retired AID roots that no longer exist in the new bundle layout.
-# Called from Install-AidTool BEFORE Invoke-PruneToolDirs (same aid update pass).
+# No commit path calls this function (a v3 upgrade retires the old layout through
+# Invoke-RetireV3Layout, and --dry-run lists nothing from here); it stays as a tested primitive.
 #
 # Retired roots swept per tool:
 #   codex:       .agents\                     (split layout retired)
@@ -1537,8 +1984,6 @@ function Invoke-MigrateRetiredLayout {
         param([string]$RDir)
         if (-not (Test-Path $RDir -PathType Container)) { return }
 
-        $trashBase = Join-Path $Target (Join-Path '.aid' '.trash')
-
         # Walk all files; move (or collect) AID-owned ones.
         $files = @(Get-ChildItem -LiteralPath $RDir -Recurse -File -ErrorAction SilentlyContinue |
                    Sort-Object FullName)
@@ -1549,14 +1994,14 @@ function Invoke-MigrateRetiredLayout {
                     Write-Output $f.FullName
                     $script:_MigrateRetiredCount++
                 } else {
-                    # Compute relative path from $Target and move to trash.
-                    $rel = $f.FullName.Substring($Target.Length).TrimStart([char]'\', [char]'/')
-                    $dest = Join-Path $trashBase $rel
-                    $destDir = Split-Path $dest -Parent
-                    New-Item -ItemType Directory -Path $destDir -Force -ErrorAction SilentlyContinue | Out-Null
-                    Move-Item -LiteralPath $f.FullName -Destination $dest -Force -ErrorAction SilentlyContinue
-                    $script:_MigrateRetiredCount++
-                    if ($AidVerbose) { Write-Host "Trashed: $($f.FullName) -> $dest" }
+                    # Move to <Target>/.aid/.trash/<rel> under the shared collision policy.
+                    try {
+                        Move-AidToTrash -Root $Target -File $f.FullName
+                        $script:_MigrateRetiredCount++
+                        if ($AidVerbose) { Write-Host "Trashed: $($f.FullName)" }
+                    } catch {
+                        [Console]::Error.WriteLine("ERROR: AidInstallCore: could not trash $($f.FullName): $_")
+                    }
                 }
             }
         }
@@ -1595,10 +2040,7 @@ function Invoke-MigrateRetiredLayout {
     }
 
     switch ($Tool) {
-        'codex' {
-            # Retired root: .agents\ (old split layout -- skills\ + aid\ lived here).
-            & $sweepRetiredRoot (Join-Path $Target '.agents')
-        }
+        'codex' { }
         'cursor' {
             # Retired root: .cursor\rules\ (rules dir no longer in new layout).
             & $sweepRetiredRoot (Join-Path $Target '.cursor\rules')
@@ -1615,6 +2057,114 @@ function Invoke-MigrateRetiredLayout {
     }
 }
 
+# Read-AidUpgradeRecovery <target> - strict reader for the v3 upgrade record.
+function Read-AidUpgradeRecovery {
+    param([string]$Target)
+    $path = Join-Path $Target '.aid/.temp/v3-upgrade-tools.json'
+    $item = Get-Item -LiteralPath $path -Force -ErrorAction SilentlyContinue
+    if (-not $item) {
+        $parent=Split-Path -Parent $path; $leaf=Split-Path -Leaf $path
+        $entry=if (Test-Path -LiteralPath $parent -PathType Container) { Get-ChildItem -LiteralPath $parent -Force -ErrorAction SilentlyContinue | Where-Object { $_.Name -ceq $leaf } | Select-Object -First 1 } else { $null }
+        if (-not $entry) { return $null }
+        throw "invalid recovery data at $path (must be a regular file)"
+    }
+    if (-not $item -or $item.PSIsContainer -or ($item.Attributes -band [System.IO.FileAttributes]::ReparsePoint)) {
+        throw "invalid recovery data at $path (must be a regular file)"
+    }
+    try {
+        $raw = [System.IO.File]::ReadAllText($path, [System.Text.Encoding]::UTF8)
+        $value = $raw | ConvertFrom-Json -ErrorAction Stop
+        $props = @($value.PSObject.Properties | ForEach-Object { $_.Name })
+        if ($props.Count -ne 3 -or @($props | Where-Object { $_ -notin @('format_version','tools','retired') }).Count -gt 0) { throw 'schema' }
+        if ([regex]::Matches($raw, '"format_version"').Count -ne 1 -or [regex]::Matches($raw, '"tools"').Count -ne 1 -or [regex]::Matches($raw, '"retired"').Count -ne 1) { throw 'duplicate fields' }
+        if (($value.format_version -isnot [int] -and $value.format_version -isnot [long]) -or $value.format_version -ne 1 -or $value.retired -isnot [bool]) { throw 'types' }
+        if ($value.tools -isnot [System.Array]) { throw 'tools must be an array' }
+        $tools = @($value.tools)
+        if ($tools.Count -eq 0 -or @($tools | Where-Object { $_ -isnot [string] -or $script:AID_TOOLS -cnotcontains $_ }).Count -gt 0) { throw 'tools' }
+        if (@($tools | Select-Object -Unique).Count -ne $tools.Count) { throw 'duplicate tools' }
+        $ordered = @($script:AID_TOOLS | Where-Object { $tools -ccontains $_ })
+        if (($ordered -join "`t") -cne ($tools -join "`t")) { throw 'tool order' }
+        return [pscustomobject]@{ tools=$tools; retired=$value.retired }
+    } catch { throw "invalid recovery data at $path" }
+}
+
+function Write-AidUpgradeRecovery {
+    param([string]$Target, [string[]]$Tools, [bool]$Retired)
+    $path = Join-Path $Target '.aid/.temp/v3-upgrade-tools.json'
+    $dir = Split-Path -Parent $path
+    if (-not (Test-Path -LiteralPath $dir -PathType Container)) { New-Item -ItemType Directory -Path $dir -Force | Out-Null }
+    $ordered = @($script:AID_TOOLS | Where-Object { $Tools -ccontains $_ })
+    if ($ordered.Count -eq 0 -or ($ordered -join "`t") -cne ($Tools -join "`t")) { throw 'invalid recovery tools' }
+    $json = '{"format_version":1,"tools":[' + (($ordered | ForEach-Object { '"' + $_ + '"' }) -join ',') + '],"retired":' + $Retired.ToString().ToLowerInvariant() + "}`n"
+    $tmp = Join-Path $dir ('.v3-upgrade-tools.' + [System.IO.Path]::GetRandomFileName())
+    [System.IO.File]::WriteAllBytes($tmp, [System.Text.Encoding]::ASCII.GetBytes($json))
+    if (Test-Path -LiteralPath $path -PathType Leaf) { [System.IO.File]::Replace($tmp, $path, [NullString]::Value) }
+    else { [System.IO.File]::Move($tmp, $path) }
+}
+
+function Clear-AidUpgradeRecovery {
+    param([string]$Target)
+    $path = Join-Path $Target '.aid/.temp/v3-upgrade-tools.json'
+    if (Test-Path -LiteralPath $path -PathType Leaf) { Remove-Item -LiteralPath $path -Force -ErrorAction Stop }
+}
+
+function Test-AidOwnedPath {
+    param([string]$Target, [string]$Path)
+    $rel = [System.IO.Path]::GetFullPath($Path).Substring(([System.IO.Path]::GetFullPath($Target).TrimEnd('\','/') + [System.IO.Path]::DirectorySeparatorChar).Length) -replace '\\','/'
+    if ($rel -match '^\.agents/aid/.+' -or $rel -match '^\.(claude|codex|cursor|github|agent)/aid/.+' -or $rel -match '^\.(claude|codex|cursor|github|agent)/skills/aid-[^/]+/.+') { return $true }
+    $base = $rel.Substring($rel.LastIndexOf('/') + 1)
+    if ($base -like 'aid-*' -and ($rel -match '^\.(claude|codex|cursor|github|agent)/(skills|aid)/' -or $rel -match '^\.agents/aid/')) { return $true }
+    # Retired v3 rules dirs (cursor, antigravity): aid-* files are AID-owned (marker 1).
+    if ($base -like 'aid-*' -and $rel -match '^\.(cursor|agent)/rules/') { return $true }
+    return $false
+}
+
+function Save-AidToTrash {
+    param([string]$Root, [string]$File)
+    $rootFull=[System.IO.Path]::GetFullPath($Root).TrimEnd('\','/'); $src=[System.IO.Path]::GetFullPath($File)
+    $rel=$src.Substring($rootFull.Length).TrimStart('\','/'); $dest=Join-Path (Join-Path $rootFull '.aid/.trash') $rel
+    $dir=Split-Path -Parent $dest; if (-not (Test-Path -LiteralPath $dir -PathType Container)) { New-Item -ItemType Directory -Path $dir -Force | Out-Null }
+    if (Test-Path -LiteralPath $dest -PathType Container) { throw "trash destination is a directory: $dest" }
+    $tmp=Join-Path $dir ('.trash-copy.'+[System.IO.Path]::GetRandomFileName()); [System.IO.File]::Copy($src,$tmp,$false)
+    if (Test-Path -LiteralPath $dest -PathType Leaf) {
+        if ((Get-Sha256File -FilePath $src) -eq (Get-Sha256File -FilePath $dest)) { Remove-Item -LiteralPath $tmp -Force; return }
+        $stamp=[System.DateTime]::UtcNow.ToString('yyyyMMdd\THHmmss\Z',[System.Globalization.CultureInfo]::InvariantCulture); $candidate="$dest.$stamp"; $n=0
+        while (Test-Path -LiteralPath $candidate) { $n++; $candidate="$dest.$stamp.$n" }
+        [System.IO.File]::Move($dest,$candidate)
+    }
+    [System.IO.File]::Move($tmp,$dest)
+}
+
+function Remove-AidLegacyRootRegion {
+    param([string]$Target, [string]$Name)
+    $path=Join-Path $Target $Name
+    if (-not (Test-Path -LiteralPath $path -PathType Leaf)) { return $false }
+    script:Assert-AidRootFileSafe -Path $path
+    $lines = script:Split-AidRootLines -Text (script:Read-AidRootText -Path $path)
+    $span = script:Get-AidMarkerSpan -Lines $lines
+    if ($null -eq $span) { return $false }
+    Save-AidToTrash -Root $Target -File $path
+    script:Remove-AidMarkedSpan -File $path -Lines $lines -Span $span
+    return $true
+}
+
+function Invoke-RetireV3Layout {
+    param([string]$Target, [string[]]$Tools, [bool]$ListOnly = $false)
+    $roots = @($Tools | ForEach-Object { switch ($_) { 'claude-code' { '.claude' } 'codex' { '.codex' } 'cursor' { '.cursor' } 'copilot-cli' { '.github' } 'antigravity' { '.agent' } } })
+    $count = 0
+    foreach ($root in $roots) {
+        $dir = Join-Path $Target $root
+        if (-not (Test-Path -LiteralPath $dir -PathType Container)) { continue }
+        $files = @(Get-ChildItem -LiteralPath $dir -Recurse -File -Force -ErrorAction Stop | Sort-Object FullName)
+        foreach ($file in $files) { if (Test-AidOwnedPath -Target $Target -Path $file.FullName) { if ($ListOnly) { Write-Output "  move to trash: $($file.FullName.Substring($Target.Length + 1) -replace '\\','/')" } else { Move-AidToTrash -Root $Target -File $file.FullName }; $count++ } }
+        if (-not $ListOnly) { Get-ChildItem -LiteralPath $dir -Recurse -Directory -Force -ErrorAction Stop | Sort-Object { $_.FullName.Length } -Descending | ForEach-Object { if (@(Get-ChildItem -LiteralPath $_.FullName -Force -ErrorAction Stop).Count -eq 0) { Remove-Item -LiteralPath $_.FullName -Force -ErrorAction Stop } } }
+    }
+    if ($Tools -ccontains 'codex') { $dir=Join-Path $Target '.agents/aid'; if (Test-Path -LiteralPath $dir -PathType Container) { foreach ($file in @(Get-ChildItem -LiteralPath $dir -Recurse -File -Force -ErrorAction Stop | Sort-Object FullName)) { if ($ListOnly) { Write-Output "  move to trash: $($file.FullName.Substring($Target.Length + 1) -replace '\\','/')" } else { Move-AidToTrash -Root $Target -File $file.FullName }; $count++ }; if (-not $ListOnly) { Get-ChildItem -LiteralPath $dir -Recurse -Directory -Force -ErrorAction Stop | Sort-Object { $_.FullName.Length } -Descending | ForEach-Object { if (@(Get-ChildItem -LiteralPath $_.FullName -Force -ErrorAction Stop).Count -eq 0) { Remove-Item -LiteralPath $_.FullName -Force -ErrorAction Stop } }; if (@(Get-ChildItem -LiteralPath $dir -Force -ErrorAction Stop).Count -eq 0) { Remove-Item -LiteralPath $dir -Force -ErrorAction Stop } } } }
+    if (-not $ListOnly) { if (Remove-AidLegacyRootRegion -Target $Target -Name 'AGENTS.md') { $count++ }; if (Remove-AidLegacyRootRegion -Target $Target -Name 'CLAUDE.md') { $count++ } }
+    elseif ((Test-Path (Join-Path $Target 'AGENTS.md') -PathType Leaf) -or (Test-Path (Join-Path $Target 'CLAUDE.md') -PathType Leaf)) { Write-Output '  inspect root AID region: AGENTS.md / CLAUDE.md' }
+    if (-not $ListOnly -and $count -gt 0) { Write-Host "$count old AID file(s) moved to .aid/.trash/ (safe to delete once you have checked them)" }
+}
+
 # ---------------------------------------------------------------------------
 # Project-level provisioning (work-007): required runtime file + VCS hygiene.
 # Parity with bash seed_settings_yml / update_gitignore. Both idempotent.
@@ -1627,6 +2177,13 @@ $script:_AidGiEnd   = "# <<< AID managed <<<"
 # Get-AidGitignoreBlock - return the AID-managed block as a single LF-joined
 # string (markers inclusive), NO trailing newline (matches bash contract).
 function script:Get-AidGitignoreBlock {
+    param([string]$Target = (Get-Location).Path)
+    $worktree = '.aid/.worktrees'
+    $manifest = Join-Path $Target '.aid/.aid-manifest.json'
+    if (Test-Path -LiteralPath $manifest -PathType Leaf) {
+        $hostRows = (Read-AidManifestHost -ManifestPath $manifest)
+        foreach ($row in $hostRows) { $p=$row.Split("`t"); if ($p.Count -ge 2 -and $p[0] -eq 'host.worktree_root') { $worktree=$p[1]; break } }
+    }
     $lines = @(
         $script:_AidGiBegin,
         ".aid/.temp/",
@@ -1635,14 +2192,67 @@ function script:Get-AidGitignoreBlock {
         ".aid/.control/",
         ".aid/generated/",
         ".aid/knowledge/.cache/",
-        $script:_AidGiEnd
+        ".aid/.worktrees/"
     )
+    if (-not $worktree.StartsWith('.aid/', [System.StringComparison]::Ordinal)) { $lines += ($worktree.TrimEnd('/') + '/') }
+    $lines += '.aid/runtime/**/node_modules/'
+    $lines += $script:_AidGiEnd
     return ($lines -join "`n")
+}
+
+function script:Write-AidHostConf {
+    param([string]$Target, [string]$WorktreeRoot = '.aid/.worktrees')
+    $path = Join-Path $Target '.aid/runtime/host.conf'
+    $dir = [System.IO.Path]::GetDirectoryName($path)
+    if (-not (Test-Path -LiteralPath $dir -PathType Container)) { New-Item -ItemType Directory -Path $dir -Force | Out-Null }
+    [System.IO.File]::WriteAllText($path, "worktree_root=$WorktreeRoot`n", [System.Text.Encoding]::ASCII)
+}
+
+$script:_AidGaBegin = $script:_AidGiBegin
+$script:_AidGaEnd = $script:_AidGiEnd
+function script:Get-AidGitattributesBlock {
+    return (@($script:_AidGaBegin, '.agents/skills/aid-*/** text eol=lf', '.claude/skills/aid-*/** text eol=lf', '.aid/runtime/** text eol=lf', '.claude/agents/aid-* text eol=lf', '.codex/agents/aid-* text eol=lf', '.cursor/agents/aid-* text eol=lf', '.github/agents/aid-* text eol=lf', '.agent/agents/aid-* text eol=lf', $script:_AidGaEnd) -join "`n")
+}
+
+function script:Update-AidGitattributes {
+    param([string]$Target)
+    $path = Join-Path $Target '.gitattributes'
+    $block = [System.Text.Encoding]::ASCII.GetBytes((script:Get-AidGitattributesBlock) + "`n")
+    [byte[]]$old = [byte[]]@(); if (Test-Path -LiteralPath $path -PathType Leaf) { $old = [System.IO.File]::ReadAllBytes($path) }
+    $begin = [System.Text.Encoding]::ASCII.GetBytes($script:_AidGaBegin)
+    $end = [System.Text.Encoding]::ASCII.GetBytes($script:_AidGaEnd)
+    $startAt = -1; $endAt = -1
+    for ($i=0; $i -le $old.Length-$begin.Length; $i++) {
+        $same=$true; for ($j=0; $j -lt $begin.Length; $j++) { if ($old[$i+$j] -ne $begin[$j]) { $same=$false; break } }
+        if ($same -and ($i -eq 0 -or $old[$i-1] -eq 10 -or $old[$i-1] -eq 13)) { $startAt=$i; break }
+    }
+    if ($startAt -ge 0) {
+        for ($i=$startAt; $i -le $old.Length-$end.Length; $i++) {
+            $same=$true; for ($j=0; $j -lt $end.Length; $j++) { if ($old[$i+$j] -ne $end[$j]) { $same=$false; break } }
+            if ($same) { $endAt=$i+$end.Length; break }
+        }
+        if ($endAt -ge 0 -and $endAt -lt $old.Length -and $old[$endAt] -eq 13) { $endAt++; if ($endAt -lt $old.Length -and $old[$endAt] -eq 10) { $endAt++ } }
+        elseif ($endAt -ge 0 -and $endAt -lt $old.Length -and $old[$endAt] -eq 10) { $endAt++ }
+    }
+    if ($startAt -ge 0 -and $endAt -ge 0) {
+        $new = New-Object byte[] ($startAt + $block.Length + $old.Length - $endAt)
+        [Array]::Copy($old,0,$new,0,$startAt); [Array]::Copy($block,0,$new,$startAt,$block.Length); [Array]::Copy($old,$endAt,$new,$startAt+$block.Length,$old.Length-$endAt)
+    } else {
+        $sep = [System.Collections.Generic.List[byte]]::new()
+        if ($old.Length -gt 0 -and $old[$old.Length-1] -ne 10 -and $old[$old.Length-1] -ne 13) { $sep.Add(10) }
+        if ($old.Length -gt 0 -and ($old.Length -lt 2 -or $old[$old.Length-2] -ne 10)) { $sep.Add(10) }
+        $new = New-Object byte[] ($old.Length + $sep.Count + $block.Length)
+        [Array]::Copy($old,0,$new,0,$old.Length); if ($sep.Count -gt 0) { [Array]::Copy($sep.ToArray(),0,$new,$old.Length,$sep.Count) }; [Array]::Copy($block,0,$new,$old.Length+$sep.Count,$block.Length)
+    }
+    $sameBytes = ($old.Length -eq $new.Length)
+    if ($sameBytes) { for ($i=0; $i -lt $old.Length; $i++) { if ($old[$i] -ne $new[$i]) { $sameBytes=$false; break } } }
+    if (-not $sameBytes) { [System.IO.File]::WriteAllBytes($path,$new) }
 }
 
 # Initialize-AidSettingsFile <target> <tool>
 # Seed <target>\.aid\settings.yml from the tool's just-installed template when it
-# does not already exist. NEVER overwrites existing settings.yml (user config).
+# does not already exist. After a format-3 manifest commits, advance only an older
+# format stamp while preserving every other settings byte.
 # Not manifest-tracked. Sets $script:_SeededSettings.
 function script:Initialize-AidSettingsFile {
     param([string]$Target, [string]$Tool)
@@ -1651,8 +2261,37 @@ function script:Initialize-AidSettingsFile {
     if (-not $root) { return }
     $aidDir = Join-Path $Target '.aid'
     $dst  = Join-Path $aidDir 'settings.yml'
-    $tmpl = Join-Path (Join-Path (Join-Path (Join-Path $Target $root) 'aid') 'templates') 'settings.yml'
-    if (Test-Path $dst -PathType Leaf) { return }          # never clobber user config
+    $tmpl = Join-Path $Target '.aid/runtime/templates/settings.yml'
+    if (Test-Path $dst -PathType Leaf) {
+        $manifestPath = Join-Path $aidDir '.aid-manifest.json'
+        if (Test-Path $manifestPath -PathType Leaf) {
+            try { $manifestObject = Get-Content -LiteralPath $manifestPath -Raw | ConvertFrom-Json } catch { $manifestObject = $null }
+            if ($manifestObject -and $manifestObject.PSObject.Properties['format_version'] -and [int]$manifestObject.format_version -eq 3) {
+                $bytes = [System.IO.File]::ReadAllBytes($dst)
+                $start = if ($bytes.Length -ge 3 -and $bytes[0] -eq 239 -and $bytes[1] -eq 187 -and $bytes[2] -eq 191) { 3 } else { 0 }
+                while ($start -lt $bytes.Length) {
+                    $end = $start
+                    while ($end -lt $bytes.Length -and $bytes[$end] -ne 10) { $end++ }
+                    $contentEnd = $end
+                    if ($contentEnd -gt $start -and $bytes[$contentEnd - 1] -eq 13) { $contentEnd-- }
+                    $line = [System.Text.Encoding]::ASCII.GetString($bytes, $start, $contentEnd - $start)
+                    $match = [System.Text.RegularExpressions.Regex]::Match($line, '^(format_version:[ \t]*["'']?)([0-9]+)')
+                    if ($match.Success -and [int]$match.Groups[2].Value -lt 5) {
+                        $stampOffset = $start + $match.Groups[1].Length
+                        $digitsEnd = $stampOffset + $match.Groups[2].Length
+                        $patched = New-Object 'System.Collections.Generic.List[byte]'
+                        for ($i = 0; $i -lt $stampOffset; $i++) { $patched.Add($bytes[$i]) }
+                        $patched.Add([byte]53)
+                        for ($i = $digitsEnd; $i -lt $bytes.Length; $i++) { $patched.Add($bytes[$i]) }
+                        [System.IO.File]::WriteAllBytes($dst, $patched.ToArray())
+                        break
+                    }
+                    $start = $end + 1
+                }
+            }
+        }
+        return
+    }
     # Template absent -> surface it (work-007 C5): a silent skip re-triggers the
     # "no settings.yml" class and the format gate would then warn forever.
     if (-not (Test-Path $tmpl -PathType Leaf)) {
@@ -1686,7 +2325,7 @@ function script:Update-AidGitignore {
     param([string]$Target)
     $script:_GitignoreAction = 'unchanged'
     $gi = Join-Path $Target '.gitignore'
-    $block = script:Get-AidGitignoreBlock
+    $block = script:Get-AidGitignoreBlock -Target $Target
 
     if (-not (Test-Path $gi -PathType Leaf)) {
         [System.IO.File]::WriteAllText($gi, $block + "`n", [System.Text.UTF8Encoding]::new($false))
@@ -1797,24 +2436,20 @@ function script:Invoke-MigrateTermExclusions {
 # High-level Install-AidTool
 # ---------------------------------------------------------------------------
 
-# Install-AidTool <stagingDir> <tool> <target> <version> [force] [aidVerbose]
+# Install-AidTool <stagingDir> <tool> <target> [aidVerbose]
+# Installs only the staged agents tree of <tool>: shared skills, runtime and root
+# context are committed once by Install-AidShared after every tool.
 # Returns:
-#   0 - success (all files installed or up-to-date)
-#
-# Side effects: writes <target>/.aid/.aid-manifest.json.
+#   0 - success (all files installed or up-to-date); throws when a file failed to copy.
 function Install-AidTool {
     param(
         [string]$StagingDir,
         [string]$Tool,
         [string]$Target,
-        [string]$Version,
-        [bool]$Force = $false,
         [bool]$AidVerbose = $false
     )
 
     $manifest = Join-Path $Target (Join-Path '.aid' '.aid-manifest.json')
-    $installPaths  = [System.Collections.Generic.List[string]]::new()
-    $rootEntries   = [System.Collections.Generic.List[string]]::new()
 
     # Reset per-tool copy counters.
     $script:_CopyCountCopied   = 0
@@ -1822,157 +2457,410 @@ function Install-AidTool {
     $script:_CopyCountUpdated  = 0
     $script:_CopyCountSkipped  = 0
     $script:_CopyCountFailed   = 0
-    # Reset project-provisioning state (work-007).
-    $script:_SeededSettings  = $false
-    $script:_GitignoreAction = 'unchanged'
 
-    $rootAgentFile = script:Get-RootAgentFile -Tool $Tool
-
-    # Helper: collect file paths from a directory, ordinal-sorted (matching Bash `find | sort -z`).
-    $collectPaths = {
-        param([string]$Dir, [string]$StripPrefix, [System.Collections.Generic.List[string]]$OutList)
-        $items = @(Get-ChildItem -LiteralPath $Dir -Recurse -File -ErrorAction SilentlyContinue)
-        if ($items.Count -gt 0) {
-            $fps = [string[]]($items | ForEach-Object { $_.FullName })
-            [System.Array]::Sort($fps, [System.StringComparer]::Ordinal)
-            foreach ($fp in $fps) {
-                $rel = $fp.Substring($StripPrefix.Length).TrimStart([char]'\', [char]'/') -replace '\\', '/'
-                $OutList.Add($rel)
+    $agentRoot = Join-Path $StagingDir (Join-Path (script:Get-RootDir -Tool $Tool) 'agents')
+    if (Test-Path -LiteralPath $agentRoot -PathType Container) {
+        $files = @(Get-ChildItem -LiteralPath $agentRoot -Recurse -File | Sort-Object FullName)
+        foreach ($f in $files) {
+            $rel = ((script:Get-RootDir -Tool $Tool) + '/agents/' + $f.FullName.Substring($agentRoot.Length).TrimStart([char]'\',[char]'/')) -replace '\\','/'
+            $recorded = ''
+            foreach ($row in (Read-AidManifestToolFiles -ManifestPath $manifest -Tool $Tool)) {
+                $parts = $row.Split("`t")
+                if ($parts.Count -ge 3 -and $parts[0] -ceq "tools.$Tool.file" -and $parts[1] -ceq $rel) { $recorded = $parts[2]; break }
             }
+            Copy-AidFileGuarded -Src $f.FullName -Dst (Join-Path $Target ($rel -replace '/', [System.IO.Path]::DirectorySeparatorChar)) `
+                -RecordedSha256 $recorded -Root $Target -AidVerbose $AidVerbose
         }
     }
-
-    # Copy tool-specific directories.
-    switch ($Tool) {
-        'claude-code' {
-            $claudeDir = Join-Path $StagingDir '.claude'
-            if (Test-Path $claudeDir -PathType Container) {
-                Copy-AidDir -SrcDir $claudeDir -DstDir (Join-Path $Target '.claude') -Force $Force -AidVerbose $AidVerbose
-                & $collectPaths $claudeDir $StagingDir $installPaths
-            }
-        }
-        'codex' {
-            # New unified layout: .codex\ only (agents, skills, aid all under .codex\).
-            # .agents\ is the RETIRED split layout -- handled by Invoke-MigrateRetiredLayout.
-            $codexDir  = Join-Path $StagingDir '.codex'
-            if (Test-Path $codexDir -PathType Container) {
-                Copy-AidDir -SrcDir $codexDir -DstDir (Join-Path $Target '.codex') -Force $Force -AidVerbose $AidVerbose
-                & $collectPaths $codexDir $StagingDir $installPaths
-            }
-        }
-        'cursor' {
-            $cursorDir = Join-Path $StagingDir '.cursor'
-            if (Test-Path $cursorDir -PathType Container) {
-                Copy-AidDir -SrcDir $cursorDir -DstDir (Join-Path $Target '.cursor') -Force $Force -AidVerbose $AidVerbose
-                & $collectPaths $cursorDir $StagingDir $installPaths
-            }
-        }
-        'copilot-cli' {
-            $githubDir = Join-Path $StagingDir '.github'
-            if (Test-Path $githubDir -PathType Container) {
-                Copy-AidDir -SrcDir $githubDir -DstDir (Join-Path $Target '.github') -Force $Force -AidVerbose $AidVerbose
-                & $collectPaths $githubDir $StagingDir $installPaths
-            }
-        }
-        'antigravity' {
-            $agentDir = Join-Path $StagingDir '.agent'
-            if (Test-Path $agentDir -PathType Container) {
-                Copy-AidDir -SrcDir $agentDir -DstDir (Join-Path $Target '.agent') -Force $Force -AidVerbose $AidVerbose
-                & $collectPaths $agentDir $StagingDir $installPaths
-            }
-        }
+    if ($script:_CopyCountFailed -gt 0) { throw "AidInstallCore: $($script:_CopyCountFailed) file(s) failed to copy for '$Tool'. Install aborted (incomplete)." }
+    $addTotal = $script:_CopyCountCopied + $script:_CopyCountUpToDate + $script:_CopyCountUpdated + $script:_CopyCountSkipped
+    if ($addTotal -gt 0) {
+        if ($script:_CopyCountUpToDate -eq $addTotal) { Write-Host "  up to date ($addTotal files)" }
+        else { Write-Host "  $($script:_CopyCountCopied) installed, $($script:_CopyCountUpdated) updated, $($script:_CopyCountUpToDate) unchanged" }
     }
-
-    # Abort loudly if any AID-owned file failed to copy -- do NOT proceed to
-    # write a manifest that records a partial install as success (work-007 C4).
-    if ($script:_CopyCountFailed -gt 0) {
-        throw "AidInstallCore: $($script:_CopyCountFailed) file(s) failed to copy for '$Tool'. Install aborted (incomplete)."
-    }
-
-    # Handle root agent file via in-place region update (Pillar 3).
-    $rootSrc = Join-Path $StagingDir $rootAgentFile
-    $rootDst = Join-Path $Target $rootAgentFile
-
-    if (Test-Path $rootSrc -PathType Leaf) {
-        $script:_CORE_ROOT_AGENT_STATUS = 'owned'
-        script:Copy-RootAgentFile -Src $rootSrc -Dst $rootDst -Tool $Tool -Force $Force `
-            -Manifest $manifest -AidVerbose $AidVerbose | Out-Null
-
-        $incSha = Get-Sha256File -FilePath $rootSrc
-        $rootEntries.Add("$rootAgentFile|$incSha|$($script:_CORE_ROOT_AGENT_STATUS)")
-
-        # Include root agent path in paths list (status is always 'owned' now).
-        $installPaths.Add($rootAgentFile)
-    }
-
-    # Manifest-seam entry gate (PLAN risk #3, delivery-001->002 seam).
-    # Runs BEFORE Write-AidManifest so a contaminated bundle never writes to disk.
-    # Assert that the new bundle's path set does NOT contain any retired roots.
-    # If a retired path leaked into the new manifest, fail loudly -- do not prune
-    # against a contaminated manifest (content-isolation cornerstone).
-    $retiredRoots = @('.agents/', '.cursor/rules/', '.agent/rules/')
-    foreach ($rr in $retiredRoots) {
-        foreach ($p in $installPaths) {
-            $pNorm = $p -replace '\\', '/'
-            if ($pNorm.StartsWith($rr, [System.StringComparison]::Ordinal)) {
-                [Console]::Error.WriteLine("ERROR: aid-install-core: manifest-seam violation: retired root '$rr' leaked into the new bundle manifest (path: $p). Aborting install to protect user content.")
-                return 1
-            }
-        }
-    }
-
-    # Write manifest (merge).
-    Write-AidManifest -ManifestPath $manifest -Tool $Tool -Version $Version `
-        -Paths @($installPaths) -RootEntries @($rootEntries)
-
-    # Retired-root migration sweep (FR7/FR7a).
-    # Remove AID-owned content from retired layout dirs BEFORE the normal prune,
-    # so that old .agents\, .cursor\rules\, .agent\rules\ trees are cleaned up.
-    # A non-zero rc from Install-AidTool is treated as a mid-commit failure (caller
-    # prints the "re-run to heal" message); this function returns 0 (WARN-not-fail).
-    Invoke-MigrateRetiredLayout -Target $Target -Tool $Tool -AidVerbose $AidVerbose
-
-    # Prune stale AID-owned files (Pillar 2, R7).
-    # Build a HashSet from the new manifest path set for O(1) lookup.
-    $pruneSet = [System.Collections.Generic.HashSet[string]]::new([System.StringComparer]::Ordinal)
-    foreach ($p in $installPaths) { $pruneSet.Add($p) | Out-Null }
-    Invoke-PruneToolDirs -Target $Target -Tool $Tool -ManifestPathSet $pruneSet -AidVerbose $AidVerbose
-
-    # Project-level provisioning (work-007): seed required settings.yml and
-    # maintain the .gitignore AID region. Both idempotent; safe per-tool.
-    script:Initialize-AidSettingsFile -Target $Target -Tool $Tool
-    script:Update-AidGitignore -Target $Target
-    script:Invoke-MigrateTermExclusions -Target $Target
-
-    # Print concise install summary (always shown; per-file lines only when AidVerbose).
-    $totalFiles = $script:_CopyCountCopied + $script:_CopyCountUpToDate + $script:_CopyCountUpdated + $script:_CopyCountSkipped
-    if ($totalFiles -gt 0) {
-        if ($script:_CopyCountCopied -gt 0 -and $script:_CopyCountUpToDate -eq 0 -and $script:_CopyCountUpdated -eq 0) {
-            Write-Host "  $($script:_CopyCountCopied) files installed"
-        } elseif ($script:_CopyCountUpToDate -gt 0 -and $script:_CopyCountCopied -eq 0 -and $script:_CopyCountUpdated -eq 0) {
-            Write-Host "  up to date ($($script:_CopyCountUpToDate) files)"
-        } else {
-            $parts = [System.Collections.Generic.List[string]]::new()
-            if ($script:_CopyCountUpdated -gt 0) { $parts.Add("$($script:_CopyCountUpdated) updated") }
-            if ($script:_CopyCountCopied -gt 0)  { $parts.Add("$($script:_CopyCountCopied) installed") }
-            if ($script:_CopyCountUpToDate -gt 0) { $parts.Add("$($script:_CopyCountUpToDate) unchanged") }
-            Write-Host "  $($parts -join ', ')"
-        }
-    }
-
-    # Report project-level provisioning actions (work-007; always shown).
-    if ($script:_SeededSettings) { Write-Host "  Created .aid/settings.yml from template" }
-    switch ($script:_GitignoreAction) {
-        'created' { Write-Host "  Created .gitignore with AID exclusions" }
-        'updated' { Write-Host "  Updated .gitignore AID exclusions" }
-    }
-
     return 0
+}
+
+# Install-AidShared <shared staging> <target> <version> <tools> <stage map>
+# Writes the shared placement, root context and one atomic format-3 manifest.
+function Install-AidShared {
+    param([string]$SharedStagingDir,[string]$Target,[string]$Version,[string[]]$NewTools,$StageMap,[bool]$Force=$false,[bool]$AidVerbose=$false,[string]$Phase='all')
+    $manifest = Join-Path $Target (Join-Path '.aid' '.aid-manifest.json')
+    $old = script:Read-AidManifestObject -Path $manifest
+    $oldHashes = @{}
+    foreach ($row in (Read-AidManifestShared -ManifestPath $manifest)) {
+        $p = $row.Split("`t")
+        if ($p.Count -ge 3 -and $p[0] -in @('shared.skills.file','shared.runtime.file')) { $oldHashes[$p[0] + ':' + $p[1]] = $p[2] }
+    }
+    $allToolsSet = New-Object System.Collections.Generic.HashSet[string] ([System.StringComparer]::Ordinal)
+    if (-not $script:_AidV3Upgrade) { foreach ($t in (Read-ManifestTools -ManifestPath $manifest)) { [void]$allToolsSet.Add($t) } }
+    foreach ($t in $NewTools) { [void]$allToolsSet.Add($t) }
+    $allTools = @($script:AID_TOOLS | Where-Object { $allToolsSet.Contains($_) })
+    if ($Phase -notin @('finalize','update-finalize')) { $script:_CopyCountCopied=0; $script:_CopyCountUpToDate=0; $script:_CopyCountUpdated=0; $script:_CopyCountSkipped=0; $script:_CopyCountFailed=0 }
+    $skillsRoot = Join-Path $SharedStagingDir 'skills'
+    $runtimeRoot = Join-Path $SharedStagingDir 'runtime'
+    $skills = @(Get-ChildItem -LiteralPath $skillsRoot -Recurse -File | Sort-Object FullName)
+    if ($Phase -notin @('finalize','update-finalize')) { foreach ($f in $skills) {
+        $rel = $f.FullName.Substring($skillsRoot.Length).TrimStart([char]'\',[char]'/') -replace '\\','/'
+        if (-not $rel.StartsWith('aid-', [System.StringComparison]::Ordinal)) { continue }
+        $dst = Join-Path $Target (Join-Path '.agents/skills' ($rel -replace '/', [System.IO.Path]::DirectorySeparatorChar))
+        Copy-AidFileGuarded -Src $f.FullName -Dst $dst -RecordedSha256 $oldHashes["shared.skills.file:$rel"] -Root $Target -AidVerbose $AidVerbose
+    } }
+    $toolMeta=@{}; $mirrorUsers=@{}; $inline=$false; $claudeUsers=@()
+    foreach ($tool in $allTools) {
+        $mirrors=@(); $worktree=''; $rules=$false; $context=''
+        if ($NewTools -contains $tool) {
+            $conf=Join-Path $StageMap[$tool] 'aid-tool.conf'
+            foreach ($line in (Read-AidKvConf -Path $conf)) {
+                $k=$line.Substring(0,$line.IndexOf('=')); $v=$line.Substring($line.IndexOf('=')+1)
+                switch ($k) { 'skill_mirror' { $mirrors += $v } 'worktree_root' { $worktree=$v } 'rules_inline' { if ($v -eq 'true') { $rules=$true } } 'context_import' { $context=$v } }
+            }
+        } else {
+            $obj=script:Get-AidJsonProp (script:Get-AidJsonProp $old 'tools') $tool
+            $mirrorValue=script:Get-AidJsonProp $obj 'mirrors'
+            $mirrors=@(); if ($null -ne $mirrorValue) { $mirrors=@($mirrorValue) }
+            $worktree=[string](script:Get-AidJsonProp $obj 'worktree_root')
+            $rules=(script:Get-AidJsonProp $obj 'rules_inline') -eq $true
+        }
+        $toolMeta[$tool]=@{ mirrors=@($mirrors | Sort-Object -Unique); worktree=$worktree; rules=$rules; context=$context }
+        if ($rules) { $inline=$true }
+        if ($context -eq 'CLAUDE.md') { $claudeUsers += $tool }
+        foreach ($mirror in $mirrors) {
+            if (-not $mirrorUsers.ContainsKey($mirror)) { $mirrorUsers[$mirror]=@() }
+            $mirrorUsers[$mirror] += $tool
+            if ($Phase -notin @('finalize','update-finalize')) { foreach ($f in $skills) {
+                $rel = $f.FullName.Substring($skillsRoot.Length).TrimStart([char]'\',[char]'/') -replace '\\','/'
+                if (-not $rel.StartsWith('aid-', [System.StringComparison]::Ordinal)) { continue }
+                $dst = Join-Path $Target (Join-Path ($mirror -replace '/', [System.IO.Path]::DirectorySeparatorChar) ($rel -replace '/', [System.IO.Path]::DirectorySeparatorChar))
+                Copy-AidFileGuarded -Src $f.FullName -Dst $dst -RecordedSha256 $oldHashes["shared.skills.file:$rel"] -Root $Target -AidVerbose $AidVerbose
+            } }
+        }
+    }
+    if ($Phase -notin @('finalize','update-finalize')) { foreach ($f in @(Get-ChildItem -LiteralPath $runtimeRoot -Recurse -File | Sort-Object FullName)) {
+        $rel=$f.FullName.Substring($runtimeRoot.Length).TrimStart([char]'\',[char]'/') -replace '\\','/'
+        $dst=Join-Path $Target (Join-Path '.aid/runtime' ($rel -replace '/', [System.IO.Path]::DirectorySeparatorChar))
+        Copy-AidFileGuarded -Src $f.FullName -Dst $dst -RecordedSha256 $oldHashes["shared.runtime.file:$rel"] -Root $Target -AidVerbose $AidVerbose
+    } }
+    if ($script:_CopyCountFailed -gt 0) { throw "AidInstallCore: $($script:_CopyCountFailed) shared file(s) failed to copy." }
+    if ($Phase -notin @('finalize','update-finalize')) {
+        $copyTotal=$script:_CopyCountCopied+$script:_CopyCountUpToDate+$script:_CopyCountUpdated+$script:_CopyCountSkipped
+        if ($copyTotal -gt 0 -and $script:_CopyCountUpToDate -eq $copyTotal) { Write-Host "  up to date ($copyTotal files)" } else { Write-Host "  $($script:_CopyCountCopied) copied, $($script:_CopyCountUpdated) updated, $($script:_CopyCountUpToDate) unchanged" }
+        if ($Phase -eq 'payload') { return }
+        if ($Phase -eq 'update-payload') {
+            $worktreeTool = @($allTools | Where-Object { $toolMeta[$_].worktree } | Select-Object -First 1)
+            $hostWorktree = if ($worktreeTool.Count -gt 0) { [string]$toolMeta[$worktreeTool[0]].worktree } else { '.aid/.worktrees' }
+            script:Write-AidHostConf -Target $Target -WorktreeRoot $hostWorktree
+            return
+        }
+    }
+    $region=script:Get-AidRootRegion -RulesPath (Join-Path $Target '.aid/runtime/rules.md') -Inline $inline -Kind 'agents'
+    $worktree=(@($allTools | Where-Object { $toolMeta[$_].worktree }) | Select-Object -First 1)
+    if ($worktree) { $hostWorktree=[string]$toolMeta[$worktree].worktree } else { $hostWorktree='.aid/.worktrees' }
+    if ($Phase -ne 'update-finalize') { script:Write-AidHostConf -Target $Target -WorktreeRoot $hostWorktree }
+    $agentsPath=Join-Path $Target 'AGENTS.md'
+    if ($inline) { script:Repair-AidInlineRootRegion -File $agentsPath -Region $region -Root $Target }
+    else {
+        $oldAgentsRegionSha=''; $oldAgentsEntry=script:Get-AidJsonProp (script:Get-AidJsonProp $old 'shared') 'agents_md'
+        if ($oldAgentsEntry -and $oldAgentsEntry.PSObject.Properties['region_sha256']) { $oldAgentsRegionSha=[string]$oldAgentsEntry.region_sha256 }
+        script:Repair-AidRootRegion -File $agentsPath -Region $region -Root $Target -RecordedRegionSha $oldAgentsRegionSha
+    }
+    $utf8=New-Object System.Text.UTF8Encoding($false)
+    $regionSha=(Get-FileHash -InputStream ([System.IO.MemoryStream]::new($utf8.GetBytes($region))) -Algorithm SHA256).Hash.ToLowerInvariant()
+    $agentsSha=Get-Sha256File -FilePath $agentsPath
+    $claudeSha=''
+    if ($claudeUsers.Count -gt 0 -or (-not $script:_AidV3Upgrade -and (script:Get-AidJsonProp (script:Get-AidJsonProp $old 'shared') 'claude_md'))) {
+        if (-not $script:_AidV3Upgrade) { $claudeUsers=@($script:AID_TOOLS | Where-Object { $claudeUsers -contains $_ -or @((script:Get-AidJsonProp (script:Get-AidJsonProp (script:Get-AidJsonProp $old 'shared') 'claude_md') 'users')) -contains $_ }) }
+        $oldClaudeRegionSha=''; $oldClaudeEntry=script:Get-AidJsonProp (script:Get-AidJsonProp $old 'shared') 'claude_md'
+        if ($oldClaudeEntry -and $oldClaudeEntry.PSObject.Properties['region_sha256']) { $oldClaudeRegionSha=[string]$oldClaudeEntry.region_sha256 }
+        $claudeSha=script:Invoke-EnsureClaudeMdRegion -File (Join-Path $Target 'CLAUDE.md') -Root $Target -Inline $inline -RecordedSha $oldClaudeRegionSha
+    }
+    $model=Join-Path $Target ('.manifest-model.'+[System.IO.Path]::GetRandomFileName())
+    $records=New-Object System.Collections.Generic.List[string]
+    $records.Add("aid_version`t$Version"); $records.Add("installed_at`t$(if ($old -and (script:Get-AidJsonProp $old 'installed_at')) { script:Get-AidJsonProp $old 'installed_at' } else { (Get-Date).ToUniversalTime().ToString('yyyy-MM-ddTHH:mm:ssZ') })")
+    $records.Add("host.worktree_root`t$hostWorktree")
+    $sharedRoots = @(
+        @{ Name='skills'; Root='.agents/skills' },
+        @{ Name='runtime'; Root='.aid/runtime' }
+    )
+    foreach ($entry in $sharedRoots) {
+        $name=$entry.Name; $root=$entry.Root; $payload=Join-Path $SharedStagingDir $name
+        $records.Add("shared.$name.root`t$root"); $records.Add("shared.$name.version`t$Version"); $records.Add("shared.$name.users`t$($allTools -join ',')")
+        foreach ($f in @(Get-ChildItem -LiteralPath $payload -Recurse -File | Sort-Object FullName)) {
+            $rel=$f.FullName.Substring($payload.Length).TrimStart([char]'\',[char]'/') -replace '\\','/'
+            if ($name -eq 'skills' -and -not $rel.StartsWith('aid-',[System.StringComparison]::Ordinal)) { continue }
+            $records.Add("shared.$name.file`t$rel`t$(Get-Sha256File -FilePath $f.FullName)")
+        }
+    }
+    # host.conf is a generated runtime file: recorded explicitly, after the payload files.
+    $hostConfPath = Join-Path $Target '.aid/runtime/host.conf'
+    if (Test-Path -LiteralPath $hostConfPath -PathType Leaf) { $records.Add("shared.runtime.file`thost.conf`t$(Get-Sha256File -FilePath $hostConfPath)") }
+    $records.Add("shared.agents_md.path`tAGENTS.md"); $records.Add("shared.agents_md.version`t$Version"); $records.Add("shared.agents_md.users`t$($allTools -join ',')"); $records.Add("shared.agents_md.region_sha256`t$regionSha"); $records.Add("shared.agents_md.file_sha256`t$agentsSha")
+    foreach ($mirror in @($mirrorUsers.Keys | Sort-Object)) { $users=@($script:AID_TOOLS | Where-Object { $mirrorUsers[$mirror] -contains $_ }); $records.Add("shared.mirror`t$mirror`t$Version`t$($users -join ',')") }
+    if ($claudeSha) { $records.Add("shared.claude_md.path`tCLAUDE.md"); $records.Add("shared.claude_md.version`t$Version"); $records.Add("shared.claude_md.users`t$($claudeUsers -join ',')"); $records.Add("shared.claude_md.region_sha256`t$claudeSha") }
+    $toolObjects=script:Get-AidJsonProp $old 'tools'
+    foreach ($tool in $allTools) {
+        $obj=script:Get-AidJsonProp $toolObjects $tool
+        $entry=$toolMeta[$tool]
+        $toolVersion=if ($NewTools -contains $tool) { $Version } else { [string](script:Get-AidJsonProp $obj 'version') }
+        $installedAt=[string](script:Get-AidJsonProp $obj 'installed_at')
+        if (-not $installedAt) { $installedAt=(Get-Date).ToUniversalTime().ToString('yyyy-MM-ddTHH:mm:ssZ') }
+        $records.Add("tools.$tool.version`t$toolVersion"); $records.Add("tools.$tool.installed_at`t$installedAt")
+        foreach ($m in $entry.mirrors) { $records.Add("tools.$tool.mirror`t$m") }
+        if ($entry.worktree) { $records.Add("tools.$tool.worktree_root`t$($entry.worktree)") }; if ($entry.rules) { $records.Add("tools.$tool.rules_inline`ttrue") }
+        if ($NewTools -contains $tool) {
+            $root=script:Get-RootDir -Tool $tool; $agents=Join-Path $StageMap[$tool] (Join-Path $root 'agents')
+            foreach ($f in @(Get-ChildItem -LiteralPath $agents -Recurse -File | Sort-Object FullName)) {
+                $rel=$root+'/agents/'+$f.FullName.Substring($agents.Length).TrimStart([char]'\',[char]'/') -replace '\\','/'
+                $records.Add("tools.$tool.file`t$rel`t$(Get-Sha256File -FilePath $f.FullName)")
+            }
+        } else {
+            foreach ($row in (Read-AidManifestToolFiles -ManifestPath $manifest -Tool $tool)) {
+                $p=$row.Split("`t"); if ($p.Count -ge 3 -and $p[0] -eq "tools.$tool.file") { $records.Add("tools.$tool.file`t$($p[1])`t$($p[2])") }
+            }
+        }
+    }
+    # LF, not WriteAllLines: that writes CRLF on Windows and Write-AidManifestV3 splits on LF only.
+    [System.IO.File]::WriteAllText($model,(($records.ToArray() -join "`n") + "`n"),[System.Text.Encoding]::ASCII)
+    $previousManifest = Join-Path $Target ('.aid/.manifest-before-prune.' + [System.IO.Path]::GetRandomFileName())
+    if ($Phase -in @('finalize', 'update-finalize') -and (Test-Path -LiteralPath $manifest -PathType Leaf)) { Copy-Item -LiteralPath $manifest -Destination $previousManifest -Force }
+    try { Write-AidManifestV3 -ManifestPath $manifest -ModelPath $model } finally { Remove-Item -LiteralPath $model -Force -ErrorAction SilentlyContinue }
+    if ($Phase -in @('finalize', 'update-finalize')) {
+        try {
+            Invoke-PruneShared -Target $Target -PreviousManifest $previousManifest -AidVerbose $AidVerbose
+            script:Initialize-AidSettingsFile -Target $Target -Tool $NewTools[0]
+            script:Update-AidGitignore -Target $Target
+            script:Update-AidGitattributes -Target $Target
+            script:Invoke-MigrateTermExclusions -Target $Target
+        } finally { Remove-Item -LiteralPath $previousManifest -Force -ErrorAction SilentlyContinue }
+    }
 }
 
 # ---------------------------------------------------------------------------
 # Uninstall
 # ---------------------------------------------------------------------------
+
+function script:Remove-AidGitattributesBlock {
+    param([string]$Target)
+    $path = Join-Path $Target '.gitattributes'
+    if (-not (Test-Path -LiteralPath $path -PathType Leaf)) { return }
+    $bytes = [System.IO.File]::ReadAllBytes($path)
+    $begin = [System.Text.Encoding]::ASCII.GetBytes($script:_AidGaBegin)
+    $end = [System.Text.Encoding]::ASCII.GetBytes($script:_AidGaEnd)
+    $startAt = -1; $endAt = -1
+    for ($i=0; $i -le $bytes.Length-$begin.Length; $i++) {
+        $same=$true; for ($j=0; $j -lt $begin.Length; $j++) { if ($bytes[$i+$j] -ne $begin[$j]) { $same=$false; break } }
+        if ($same -and ($i -eq 0 -or $bytes[$i-1] -eq 10 -or $bytes[$i-1] -eq 13)) { $startAt=$i; break }
+    }
+    if ($startAt -lt 0) { return }
+    for ($i=$startAt; $i -le $bytes.Length-$end.Length; $i++) {
+        $same=$true; for ($j=0; $j -lt $end.Length; $j++) { if ($bytes[$i+$j] -ne $end[$j]) { $same=$false; break } }
+        if ($same) { $endAt=$i+$end.Length; break }
+    }
+    if ($endAt -lt 0) { return }
+    if ($endAt -lt $bytes.Length -and $bytes[$endAt] -eq 13) { $endAt++; if ($endAt -lt $bytes.Length -and $bytes[$endAt] -eq 10) { $endAt++ } }
+    elseif ($endAt -lt $bytes.Length -and $bytes[$endAt] -eq 10) { $endAt++ }
+    $out = New-Object 'System.Collections.Generic.List[byte]'
+    for ($i=0; $i -lt $startAt; $i++) { $out.Add($bytes[$i]) }
+    for ($i=$endAt; $i -lt $bytes.Length; $i++) { $out.Add($bytes[$i]) }
+    $onlyWhitespace = $true
+    foreach ($b in $out) { if ($b -notin @(9,10,11,12,13,32)) { $onlyWhitespace=$false; break } }
+    if ($onlyWhitespace) { Remove-Item -LiteralPath $path -Force }
+    else { [System.IO.File]::WriteAllBytes($path, $out.ToArray()) }
+}
+
+function script:Remove-AidAgentsRegion {
+    param([string]$Target, [string]$RecordedSha256)
+    $path = Join-Path $Target 'AGENTS.md'
+    if (-not (Test-Path -LiteralPath $path -PathType Leaf)) { return }
+    if ((Get-Sha256File -FilePath $path) -cne $RecordedSha256) {
+        Write-Host 'Left in place (modified or not AID-owned): AGENTS.md'
+        return
+    }
+    script:Assert-AidRootFileSafe -Path $path
+    $lines = script:Split-AidRootLines -Text (script:Read-AidRootText -Path $path)
+    $span = script:Get-AidMarkerSpan -Lines $lines
+    if ($null -eq $span) { return }
+    script:Remove-AidMarkedSpan -File $path -Lines $lines -Span $span
+}
+
+function script:Update-AidRemoveManifestHashes {
+    param([string]$ManifestPath,[string]$Target,[bool]$RefreshAgentsFileSha=$true,[string]$ClaudeRegionSha='')
+    $data=script:Read-AidManifestObject -Path $ManifestPath
+    if ($null -eq $data) { return }
+    if ($ClaudeRegionSha -ne '') {
+        $claudeEntry=script:Get-AidJsonProp (script:Get-AidJsonProp $data 'shared') 'claude_md'
+        if ($claudeEntry) { $claudeEntry.region_sha256=$ClaudeRegionSha }
+    }
+    $agents=script:Get-AidJsonProp (script:Get-AidJsonProp $data 'shared') 'agents_md'
+    $agentsPath=Join-Path $Target 'AGENTS.md'
+    if ($agents -and (Test-Path -LiteralPath $agentsPath -PathType Leaf)) {
+        $lines = script:Split-AidRootLines -Text (script:Read-AidRootText -Path $agentsPath)
+        $span = script:Get-AidMarkerSpan -Lines $lines
+        if ($null -ne $span) {
+            $bytes = $script:_AidLatin1.GetBytes((script:Get-AidCanonicalRegion -Lines $lines -Span $span))
+            $agents.region_sha256=(Get-FileHash -InputStream ([System.IO.MemoryStream]::new($bytes)) -Algorithm SHA256).Hash.ToLowerInvariant()
+            if ($RefreshAgentsFileSha) { $agents.file_sha256=Get-Sha256File -FilePath $agentsPath }
+        }
+    }
+    $runtime=script:Get-AidJsonProp (script:Get-AidJsonProp $data 'shared') 'runtime'
+    $hostPath=Join-Path $Target '.aid/runtime/host.conf'
+    if ($runtime -and (Test-Path -LiteralPath $hostPath -PathType Leaf)) {
+        foreach ($f in @($runtime.files)) {
+            if ($f.path -ceq 'host.conf') { $f.sha256=Get-Sha256File -FilePath $hostPath; break }
+        }
+    }
+    $json=ConvertTo-Json -InputObject $data -Depth 30
+    [System.IO.File]::WriteAllText($ManifestPath,$json+"`n",(New-Object System.Text.UTF8Encoding($false)))
+}
+
+function script:Prune-AidEmptyDirs {
+    param([string]$Path,[switch]$AidEntriesOnly,[switch]$RemoveRootIfEmpty)
+    if (-not (Test-Path -LiteralPath $Path -PathType Container)) { return }
+    $dirs=@(Get-ChildItem -LiteralPath $Path -Recurse -Directory -ErrorAction SilentlyContinue | Sort-Object { $_.FullName.Length } -Descending)
+    foreach ($dir in $dirs) {
+        if ($AidEntriesOnly) {
+            $rel=$dir.FullName.Substring($Path.Length).TrimStart([char]'\',[char]'/')
+            $first=$rel.Split([char]'\',[char]'/')[0]
+            if (-not $first.StartsWith('aid-', [System.StringComparison]::Ordinal)) { continue }
+        }
+        $relative=$dir.FullName.Substring($Path.Length).TrimStart([char]'\',[char]'/')
+        if ($relative -match '(^|[\\/])node_modules([\\/]|$)') { continue }
+        $child=Get-ChildItem -LiteralPath $dir.FullName -Force -ErrorAction SilentlyContinue | Select-Object -First 1
+        if (-not $child) { Remove-Item -LiteralPath $dir.FullName -Force -ErrorAction SilentlyContinue }
+    }
+    if ($RemoveRootIfEmpty) {
+        $child=Get-ChildItem -LiteralPath $Path -Force -ErrorAction SilentlyContinue | Select-Object -First 1
+        if (-not $child) { Remove-Item -LiteralPath $Path -Force -ErrorAction SilentlyContinue }
+    }
+}
+
+function script:Uninstall-AidToolV3 {
+    param([string]$ManifestPath,[string]$Tool,[string]$Target,[bool]$AidVerbose=$false)
+    $data=script:Read-AidManifestObject -Path $ManifestPath
+    if ($null -eq $data) { return 6 }
+    $shared=script:Get-AidJsonProp $data 'shared'
+    $toolObj=script:Get-AidJsonProp (script:Get-AidJsonProp $data 'tools') $Tool
+    if ($null -eq $toolObj) { return 0 }
+    $inlineBefore=$false
+    foreach ($p in $data.tools.PSObject.Properties) { if ((script:Get-AidJsonProp $p.Value 'rules_inline') -eq $true) { $inlineBefore=$true; break } }
+    $toolRelPaths=@()
+    foreach ($row in (Read-AidManifestToolFiles -ManifestPath $ManifestPath -Tool $Tool)) {
+        $parts=$row.Split("`t"); if ($parts.Count -lt 3 -or $parts[0] -cne "tools.$Tool.file") { continue }
+        $rel=$parts[1] -replace '/', [System.IO.Path]::DirectorySeparatorChar
+        if ([System.IO.Path]::IsPathRooted($rel) -or $rel.Split([System.IO.Path]::DirectorySeparatorChar) -contains '..') { continue }
+        $toolRelPaths+=$rel
+        $full=Join-Path $Target $rel
+        if (-not (Test-Path -LiteralPath $full -PathType Leaf)) { continue }
+        if ($parts[2] -and (Get-Sha256File -FilePath $full) -ceq $parts[2]) {
+            Remove-Item -LiteralPath $full -Force
+            if ($AidVerbose) { Write-Host "Removed: $full" }
+        }
+        else { Move-AidToTrash -Root $Target -File $full }
+    }
+    $toolRoot=script:Get-RootDir -Tool $Tool
+    script:Prune-AidEmptyDirs -Path (Join-Path $Target (Join-Path $toolRoot 'agents')) -AidEntriesOnly
+    # Like bash: walk each removed file's directory chain up to and including the tool root,
+    # removing every directory that is now empty (rmdir semantics: a non-empty one stays).
+    $rootFull=Join-Path $Target $toolRoot
+    foreach ($rel in $toolRelPaths) {
+        $pdir=Split-Path -Parent (Join-Path $Target $rel)
+        while ($pdir -and $pdir -ne $Target -and ($pdir -eq $rootFull -or $pdir.StartsWith($rootFull + [System.IO.Path]::DirectorySeparatorChar))) {
+            if ((Test-Path -LiteralPath $pdir -PathType Container) -and -not (Get-ChildItem -LiteralPath $pdir -Force -ErrorAction SilentlyContinue | Select-Object -First 1)) {
+                Remove-Item -LiteralPath $pdir -Force -ErrorAction SilentlyContinue
+            }
+            $pdir=Split-Path -Parent $pdir
+        }
+    }
+    $agents=script:Get-AidJsonProp $shared 'agents_md'
+    $agentsUsers=@(); if ($agents) { $agentsUsers=@($agents.users) }
+    $agentsLeft=@($agentsUsers | Where-Object { $_ -ne $Tool })
+    $agentsFileRefresh=$false
+    $agentsRegionSha=''; if ($agents -and $agents.PSObject.Properties['region_sha256']) { $agentsRegionSha=[string]$agents.region_sha256 }
+    $agentsPath=Join-Path $Target 'AGENTS.md'
+    if ($agentsLeft.Count -gt 0 -and $agents -and (Test-Path -LiteralPath $agentsPath -PathType Leaf)) {
+        $agentsFileRefresh=([string]$agents.file_sha256 -and (Get-Sha256File -FilePath $agentsPath) -ceq [string]$agents.file_sha256)
+    }
+    if ($agentsUsers.Count -gt 0 -and $agentsLeft.Count -eq 0) { script:Remove-AidAgentsRegion -Target $Target -RecordedSha256 ([string]$agents.file_sha256) }
+    $claude=script:Get-AidJsonProp $shared 'claude_md'
+    $claudeUsers=@(); if ($claude) { $claudeUsers=@($claude.users) }
+    $claudeLeft=@($claudeUsers | Where-Object { $_ -ne $Tool })
+    if ($claudeUsers.Count -gt 0 -and $claudeLeft.Count -eq 0) { script:Invoke-RemoveClaudeMdRegion -File (Join-Path $Target 'CLAUDE.md') -RecordedSha256 ([string]$claude.region_sha256) -Root $Target }
+
+    foreach ($name in @('skills','runtime')) {
+        $entry=script:Get-AidJsonProp $shared $name
+        if ($null -eq $entry -or @($entry.users | Where-Object { $_ -ne $Tool }).Count -gt 0) { continue }
+        $root=if ($name -eq 'skills') { '.agents/skills' } else { '.aid/runtime' }
+        foreach ($f in @($entry.files)) {
+            $rel=([string]$f.path) -replace '/', [System.IO.Path]::DirectorySeparatorChar
+            if ([System.IO.Path]::IsPathRooted($rel) -or $rel.Split([System.IO.Path]::DirectorySeparatorChar) -contains '..') { continue }
+            $full=Join-Path (Join-Path $Target $root) $rel
+            if (-not (Test-Path -LiteralPath $full -PathType Leaf)) { continue }
+            if ($f.sha256 -and (Get-Sha256File -FilePath $full) -ceq [string]$f.sha256) {
+                Remove-Item -LiteralPath $full -Force
+                if ($AidVerbose) { Write-Host "Removed: $full" }
+            }
+            else { Move-AidToTrash -Root $Target -File $full }
+        }
+        script:Prune-AidEmptyDirs -Path (Join-Path $Target $root) -AidEntriesOnly:($name -eq 'skills')
+    }
+    $mirrors=script:Get-AidJsonProp $shared 'mirrors'
+    if ($null -ne $mirrors) {
+        foreach ($mp in @($mirrors.PSObject.Properties)) {
+            if (@($mp.Value.users | Where-Object { $_ -ne $Tool }).Count -gt 0) { continue }
+            $mirror=$mp.Name -replace '/', [System.IO.Path]::DirectorySeparatorChar
+            foreach ($f in @((script:Get-AidJsonProp $shared 'skills').files)) {
+                $rel=([string]$f.path) -replace '/', [System.IO.Path]::DirectorySeparatorChar
+                $full=Join-Path (Join-Path $Target $mirror) $rel
+                if (-not (Test-Path -LiteralPath $full -PathType Leaf)) { continue }
+                if ($f.sha256 -and (Get-Sha256File -FilePath $full) -ceq [string]$f.sha256) {
+                    Remove-Item -LiteralPath $full -Force
+                    if ($AidVerbose) { Write-Host "Removed: $full" }
+                }
+                else { Move-AidToTrash -Root $Target -File $full }
+            }
+            script:Prune-AidEmptyDirs -Path (Join-Path $Target $mirror) -AidEntriesOnly -RemoveRootIfEmpty
+        }
+    }
+    Remove-ManifestTool -ManifestPath $ManifestPath -Tool $Tool
+    if (Test-Path -LiteralPath $ManifestPath -PathType Leaf) {
+        $left=script:Read-AidManifestObject -Path $ManifestPath
+        $wr=[string](script:Get-AidJsonProp (script:Get-AidJsonProp $left 'host') 'worktree_root')
+        if (-not $wr) { $wr='.aid/.worktrees' }
+        script:Write-AidHostConf -Target $Target -WorktreeRoot $wr
+        $inline=$false
+        foreach ($p in $left.tools.PSObject.Properties) { if ((script:Get-AidJsonProp $p.Value 'rules_inline') -eq $true) { $inline=$true; break } }
+        # CLAUDE.md follows the inline state: the same rules text as AGENTS.md while the rules are inline, else the summary region.
+        $claudeResyncSha=''
+        $claudePath=Join-Path $Target 'CLAUDE.md'
+        if ($claudeLeft.Count -gt 0 -and $inlineBefore -ne $inline -and (Test-Path -LiteralPath $claudePath -PathType Leaf)) {
+            $claudeResyncSha=script:Invoke-EnsureClaudeMdRegion -File $claudePath -Root $Target -Inline $inline -RecordedSha ([string]$claude.region_sha256)
+        }
+        $region=script:Get-AidRootRegion -RulesPath (Join-Path $Target '.aid/runtime/rules.md') -Inline $inline -Kind 'agents'
+        script:Repair-AidInlineRootRegion -File (Join-Path $Target 'AGENTS.md') -Region $region -Root $Target -RecordedRegionSha $agentsRegionSha
+        script:Update-AidRemoveManifestHashes -ManifestPath $ManifestPath -Target $Target -RefreshAgentsFileSha $agentsFileRefresh -ClaudeRegionSha $claudeResyncSha
+    } else {
+        $settings=Join-Path (Split-Path -Parent $ManifestPath) 'settings.yml'
+        if (Test-Path -LiteralPath $settings -PathType Leaf) { Remove-Item -LiteralPath $settings -Force }
+        script:Remove-AidGitattributesBlock -Target $Target
+        script:Prune-AidEmptyDirs -Path (Join-Path $Target '.aid/runtime') -RemoveRootIfEmpty
+    }
+    $toolDir = switch ($Tool) {
+        'claude-code' { '.claude' }
+        'codex' { '.codex' }
+        'cursor' { '.cursor' }
+        'copilot-cli' { '.github' }
+        'antigravity' { '.agent' }
+        default { '' }
+    }
+    if ($toolDir) {
+        $fullToolDir=Join-Path $Target $toolDir
+        if (Test-Path -LiteralPath $fullToolDir -PathType Container) {
+            $remaining=Get-ChildItem -LiteralPath $fullToolDir -Force -Recurse -ErrorAction SilentlyContinue | Select-Object -First 1
+            if (-not $remaining) { Remove-Item -LiteralPath $fullToolDir -Recurse -Force }
+        }
+    }
+    return 0
+}
 
 # Uninstall-AidTool <manifest> <tool> <target> [aidVerbose]
 # Removes all files recorded under tools.<tool>.paths.
@@ -1987,6 +2875,11 @@ function Uninstall-AidTool {
     )
 
     if (-not (Test-ManifestExists -ManifestPath $ManifestPath)) { return 6 }
+
+    $manifestObject = script:Read-AidManifestObject -Path $ManifestPath
+    if ((script:Get-AidJsonProp $manifestObject 'format_version') -eq 3) {
+        return (script:Uninstall-AidToolV3 -ManifestPath $ManifestPath -Tool $Tool -Target $Target -AidVerbose $AidVerbose)
+    }
 
     $paths = Read-ManifestToolPaths -ManifestPath $ManifestPath -Tool $Tool
 
@@ -2339,7 +3232,97 @@ function Get-AidStatus {
     script:Invoke-RenderToolsBlock -ManifestPath $manifest -RefVersion $refVersion `
         -HeaderPrefix "Installed tools"
 
+    if ((script:Get-AidJsonProp $data 'format_version') -eq 2) {
+        Write-Host 'Layout: format 4 (pre-shared). Run: aid update'
+        return 0
+    }
+    Get-AidDriftReport -Target $targetPath -ManifestPath $manifest
+
     return 0
+}
+
+# Get-AidDriftReport <target> <manifest> - report shared and tool-file drift without writes.
+function Get-AidDriftReport {
+    param([string]$Target, [string]$ManifestPath)
+    $data = Get-Content -LiteralPath $ManifestPath -Raw | ConvertFrom-Json
+    $dShared = script:Get-AidJsonProp $data 'shared'
+    $expected = @{}
+    $skills = @(script:Get-AidJsonProp (script:Get-AidJsonProp $dShared 'skills') 'files')
+    foreach ($item in $skills) { if ($item.path) { $expected[('.agents/skills/' + $item.path)] = [string]$item.sha256 } }
+    foreach ($item in @(script:Get-AidJsonProp (script:Get-AidJsonProp $dShared 'runtime') 'files')) { if ($item.path) { $expected[('.aid/runtime/' + $item.path)] = [string]$item.sha256 } }
+    $mirrors = @{}
+    $dMirrors = script:Get-AidJsonProp $dShared 'mirrors'
+    if ($dMirrors) { foreach ($name in @($dMirrors.PSObject.Properties.Name)) { $mirrors[$name] = $true } }
+    $dTools = script:Get-AidJsonProp $data 'tools'
+    if ($dTools) {
+        foreach ($tool in $dTools.PSObject.Properties) {
+            foreach ($name in @(script:Get-AidJsonProp $tool.Value 'mirrors')) { if ($name) { $mirrors[$name] = $true } }
+            foreach ($item in @(script:Get-AidJsonProp $tool.Value 'files')) { if ($item.path) { $expected[[string]$item.path] = [string]$item.sha256 } }
+        }
+    }
+    foreach ($mirror in $mirrors.Keys) { foreach ($item in $skills) { if ($item.path) { $expected[($mirror + '/' + $item.path)] = [string]$item.sha256 } } }
+    $issues = New-Object 'System.Collections.Generic.List[string]'
+    foreach ($path in $expected.Keys) {
+        if ($path -match '^\.aid/runtime/(?:.*/)?node_modules(?:/|$)') { continue }
+        $full = Join-Path $Target ($path -replace '/', [IO.Path]::DirectorySeparatorChar)
+        if (-not (Test-Path -LiteralPath $full -PathType Leaf)) { $issues.Add(('missing:' + $path)); continue }
+        if ($expected[$path]) {
+            $actual = Get-Sha256File -FilePath $full
+            if ($actual -ne $expected[$path].ToLowerInvariant()) { $issues.Add(('modified:' + $path)) }
+        }
+    }
+    foreach ($pair in @(@('agents_md', 'AGENTS.md'), @('claude_md', 'CLAUDE.md'))) {
+        $entry = script:Get-AidJsonProp $dShared $pair[0]
+        if (-not $entry) { continue }
+        $full = Join-Path $Target $pair[1]
+        if (-not (Test-Path -LiteralPath $full -PathType Leaf)) { $issues.Add(('missing:' + $pair[1])); continue }
+        $text = [IO.File]::ReadAllText($full)
+        $match = [regex]::Match($text, '(?ms)^<!-- AID:BEGIN -->\r?\n.*?^<!-- AID:END -->(?:\r?\n|$)')
+        if (-not $match.Success) { $issues.Add(('missing:' + $pair[1])); continue }
+        $region = $match.Value -replace "`r`n", "`n" -replace "`r", "`n"
+        $bytes = [Text.Encoding]::UTF8.GetBytes($region)
+        $sha = [BitConverter]::ToString(([Security.Cryptography.SHA256]::Create()).ComputeHash($bytes)).Replace('-', '').ToLowerInvariant()
+        if ($sha -ne [string]$entry.region_sha256) { $issues.Add(('modified:' + $pair[1])) }
+    }
+    # Every '/'-terminated prefix of a recorded path, so "is anything recorded under
+    # <dir>/" is one set lookup instead of a scan of every recorded path per folder.
+    $recordedDirs = New-Object 'System.Collections.Generic.HashSet[string]' ([StringComparer]::OrdinalIgnoreCase)
+    foreach ($key in $expected.Keys) {
+        $slash = $key.IndexOf('/')
+        while ($slash -ge 0) { [void]$recordedDirs.Add($key.Substring(0, $slash + 1)); $slash = $key.IndexOf('/', $slash + 1) }
+    }
+    foreach ($base in @('.agents/skills') + @($mirrors.Keys | Sort-Object)) {
+        $folder = Join-Path $Target $base
+        if (-not (Test-Path -LiteralPath $folder -PathType Container)) { continue }
+        foreach ($entry in Get-ChildItem -LiteralPath $folder -Force | Where-Object { $_.Name -like 'aid-*' }) {
+            $entryRel = $entry.Name
+            if ($entry.PSIsContainer) {
+                $prefix = $base + '/' + $entryRel + '/'
+                if (-not $recordedDirs.Contains($prefix)) { $issues.Add(('extra:' + $base + '/' + $entryRel)) }
+                foreach ($file in Get-ChildItem -LiteralPath $entry.FullName -File -Recurse -Force) {
+                    $rel = $base + '/' + $file.FullName.Substring($folder.Length + 1).Replace('\', '/')
+                    if (-not $expected.ContainsKey($rel)) { $issues.Add(('extra:' + $rel)) }
+                }
+            } else {
+                $rel = $base + '/' + $entryRel
+                if (-not $expected.ContainsKey($rel)) { $issues.Add(('extra:' + $rel)) }
+            }
+        }
+    }
+    $runtime = Join-Path $Target '.aid/runtime'
+    if (Test-Path -LiteralPath $runtime -PathType Container) {
+        foreach ($file in Get-ChildItem -LiteralPath $runtime -File -Recurse) {
+            $relLocal = $file.FullName.Substring($runtime.Length + 1).Replace('\', '/')
+            if ($relLocal -match '(^|/)node_modules(/|$)') { continue }
+            $rel = '.aid/runtime/' + $relLocal
+            if (-not $expected.ContainsKey($rel)) { $issues.Add(('extra:' + $rel)) }
+        }
+    }
+    if ($issues.Count -eq 0) { Write-Host 'Shared files: clean'; return }
+    $sorted = @($issues | Sort-Object { if ($_ -like 'modified:*') { '0' + $_.Substring(9) } elseif ($_ -like 'missing:*') { '1' + $_.Substring(8) } else { '2' + $_.Substring(6) } } -Unique)
+    Write-Host 'Shared files'
+    foreach ($line in $sorted) { $separator = $line.IndexOf(':'); Write-Host ($line.Substring(0, $separator) + ': ' + $line.Substring($separator + 1)) }
+    Write-Host 'Run: aid update (drifted files are moved to .aid/.trash/ first)'
 }
 
 # Export only public functions (not script-scoped helpers).
@@ -2350,23 +3333,39 @@ Export-ModuleMember -Function @(
     'Resolve-AidVersion',
     'Test-AidPrerelease',
     'Fetch-Tarball',
+    'Fetch-AidArtifact',
     'Extract-Tarball',
+    'Expand-AidPayload',
     'Verify-BundleChecksum',
     'Copy-AidFile',
-    'Copy-AidDir',
     'Install-AidTool',
+    'Install-AidShared',
     'Read-ManifestToolPaths',
     'Read-ManifestToolVersion',
     'Read-ManifestRootAgent',
     'Read-ManifestRootAgentStatus',
     'Read-ManifestTools',
-    'Write-AidManifest',
+    'Read-AidKvConf',
+    'Move-AidToTrash',
+    'Copy-AidFileGuarded',
+    'Write-AidManifestV3',
+    'Read-AidManifestShared',
+    'Read-AidManifestToolFiles',
+    'Read-AidManifestHost',
+    'Read-AidUpgradeRecovery',
+    'Write-AidUpgradeRecovery',
+    'Clear-AidUpgradeRecovery',
+    'Test-AidOwnedPath',
+    'Invoke-RetireV3Layout',
     'Remove-ManifestTool',
     'Test-ManifestExists',
     'Uninstall-AidTool',
     'Get-ManifestToolList',
     'Get-AidStatusBody',
     'Get-AidStatus',
+    'Get-AidDriftReport',
+    'Get-AidRootFileRefusal',
     'Invoke-AidProvisionSharedStateHome',
-    'Invoke-PruneToolDirs'
+    'Invoke-PruneShared',
+    'Get-AidToolIds'
 )

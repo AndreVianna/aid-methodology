@@ -4,15 +4,14 @@ source: hand-authored
 objective: The conventions AID mandates for authoring its own artifacts -- KB docs, reviewer ledgers, skill prose, and content-isolated host files -- with the rules, examples, and where each is enforced.
 summary: Read this before writing any AID methodology artifact (a KB doc, a reviewer ledger, a SKILL.md, a root agent-context file) to follow the project's authoring rules; for source-code style see coding-standards.md.
 sources:
-  - .claude/aid/templates/kb-authoring/principles.md
-  - .claude/aid/templates/kb-authoring/frontmatter-schema.md
-  - .claude/aid/templates/kb-authoring/concern-model.md
-  - .claude/aid/templates/reviewer-ledger-schema.md
-  - .claude/aid/scripts/kb/lint-frontmatter.sh
-  - .claude/aid/scripts/kb/kb-citation-lint.sh
-  - .claude/aid/scripts/grade.sh
+  - canonical/aid/templates/kb-authoring/principles.md
+  - canonical/aid/templates/kb-authoring/frontmatter-schema.md
+  - canonical/aid/templates/kb-authoring/concern-model.md
+  - canonical/aid/templates/reviewer-ledger-schema.md
+  - canonical/aid/scripts/kb/lint-frontmatter.sh
+  - canonical/aid/scripts/kb/kb-citation-lint.sh
+  - canonical/aid/scripts/grade.sh
   - CLAUDE.md
-  - canonical/EMISSION-MANIFEST.md
 tags: [C3, authoring, kb-authoring, reviewer-ledger, frontmatter, content-isolation, dual-audience, enforcement]
 see_also: [coding-standards.md, artifact-schemas.md]
 owner: architect
@@ -202,14 +201,14 @@ in the ledger's `Doc` column. A finding citing no id, or an id resolving nowhere
 | G-03 | `*` | validate | A resolved or closed tracked item leaves no trace — its row, detail, and closure prose are removed | MEDIUM | a resolved item still visible reads as open; git is the audit trail |
 | G-04 | `state` | exclude | Never reviewed, at any level, in any folder | — | bookkeeping; a completed run's rows are correct as history, so any content check fires forever |
 | G-05 | `agent-context` | exclude | The root `CLAUDE.md` / `AGENTS.md` are never content-reviewed | — | shared host files; AID owns only the `AID:BEGIN`/`AID:END` region and points at truth rather than holding it; they carry no frontmatter to declare this on |
-| G-06 | `rendered` | exclude | A file that IS a render is not content-reviewed — it appears as a `dst` in an emission manifest, OR it sits under `profiles/<tool>/` and has a corresponding `canonical/` source | — | byte-identical output of `canonical/`; the byte-compare gate is its review. Keyed on provenance not path, so authored repo-local content under a dogfood tree stays reviewable |
+| G-06 | `rendered` | exclude | A file that IS a render is not content-reviewed — it sits under `profiles/<tool>/` and has a corresponding `canonical/` source | — | byte-identical output of `canonical/`; the byte-compare gate is its review. Keyed on provenance not path, so authored repo-local content under a dogfood tree stays reviewable |
 | G-07 | `*` | validate | Every in-scope markdown file resolves to exactly one type in the registry above | HIGH | FR-10 backstop; an untyped file has no resolved criteria and drifts unchecked |
 | G-08 | `*` | validate | No superseded frontmatter field survives in a file's OWN frontmatter -- `intent:` is replaced by `objective:` plus `summary:`, and `changelog:` is not a valid field at all. A KB-doc TEMPLATE is out of reach whatever type it resolves to: its frontmatter belongs to the artifact it emits, and `tests/canonical/test-kb-template-authoring-standard.sh` requires the emitted shape to keep `intent:` while the coexistence window is open -- that test is the contract, so it bounds this criterion rather than the reverse | LOW | the rule to delete them existed with no id, so a reviewer that found one could not cite it and had to report outside the ledger; a rule nobody can cite is not enforced |
 | G-09 | `*` | validate | Every cited path, anchor, and identifier in this file resolves to a target that exists on disk | MEDIUM | G-02 checks form (durable anchor shape) but not resolution; SR-01 covers instruction-content pointers in two types only; a dead citation misleads any reader who follows it |
-| G-10 | `*` | validate | Every AID-own directory is nested under an `aid/` subtree, never placed at the root of a tool-native directory | HIGH | an unnested AID directory is indistinguishable from user content by path and cannot be pruned by manifest membership on uninstall |
-| G-11 | `*` | validate | Every AID file placed inside a tool-native directory (`agents/`, `skills/`, `rules/`) carries the `aid-` prefix | HIGH | an un-prefixed AID file inside a tool-native directory cannot be pruned safely on uninstall without risk of deleting user content |
+| G-10 | `*` | validate | Every AID-owned directory sits under `.aid/runtime/`, or is an `aid-*` skill directory under `.agents/skills/` or a declared skill mirror; no AID-owned directory is placed bare at the root of a tool-native directory | HIGH | an unnested AID directory is indistinguishable from user content by path and cannot be pruned by manifest membership on uninstall |
+| G-11 | `*` | validate | Every AID file placed inside a tool-native directory (`agents/`, `skills/`, `rules/`), including `.agents/skills/` and each declared skill mirror, carries the `aid-` prefix; the runtime is placed only under `.aid/runtime/` | HIGH | an un-prefixed AID file inside a tool-native directory cannot be pruned safely on uninstall without risk of deleting user content |
 | G-12 | `*` | validate | No AID-delivered content is placed at the `.github` root level | HIGH | content at the `.github/` root must be user-owned; AID content there cannot be namespaced without overwriting user configurations |
-| G-13 | `*` | validate | No AID-own content is placed at the `.codex/` root level outside `.codex/aid/` | HIGH | content outside `.codex/aid/` violates the AID namespace convention and cannot be correctly pruned on uninstall |
+| G-13 | `*` | validate | No AID-own content is placed at the root level of a tool directory (for example `.codex/`) outside that tool's `agents/` or `skills/` subtree | HIGH | content at a tool root outside its `agents/` or `skills/` subtree is not namespaced and cannot be pruned by manifest membership on uninstall |
 | G-14 | `work-artifact` | validate | Every citation in a work artifact's prose is a durable anchor (a path plus a grep-recoverable symbol or heading), never a bare `file.ext:LINE`. Membership: a `REQUIREMENTS.md`, `PLAN.md`, `features/*/SPEC.md` or `deliveries/*/BLUEPRINT.md` under `.aid/works/`. A reviewer ledger's `Line` cell is a column, not prose, and is never a citation | LOW | the same drift `G-02` names, in the artifacts a later phase reads most closely; `G-02` cannot reach them because it is scoped to the registry's corpus and a work folder is not in it |
 | G-15 | `work-artifact` | validate | A span presented as a quotation from a named source appears verbatim in that source. Membership: as `G-14` | MEDIUM | a misquoted requirement propagates into every artifact derived from it, and unlike a stale line number it reads as correct; the reader has no signal to re-check |
 | G-16 | `*` | validate | When a section is rewritten, every cross-reference pointing at it still states a purpose the new content supports. Membership: any reference naming another section of the same document, by heading or by number | MEDIUM | a pointer that resolves but now names the opposite of what it points at is worse than a dead one, because a dead pointer is visibly dead and this one reads as checked; and it is invisible to the sweep that catches the rest, since grepping a claim's own words finds every place that states it and no place that points at it |
@@ -483,23 +482,26 @@ canonical suites.)
 The cornerstone rule: **all AID-delivered content is isolated/namespaced from user
 content.**
 
-- **`aid-` prefix.** Skills and agents are named `aid-<name>`; orphan pruning on
-  uninstall is by this prefix. Scripts/templates are namespaced under the toolkit
-  subtree and tracked by the install manifest.
-- **Root agent files use an AID:BEGIN/END boundary.** `CLAUDE.md` / `AGENTS.md`
-  carry an AID-managed region between `<!-- AID:BEGIN -->` and `<!-- AID:END -->`
-  (see `CLAUDE.md`). The installer updates only the content **in place** inside that
-  region; content outside it (the user's own instructions) is never touched, and
-  there is no `.aid-new` side file. Two layers produce this: the **mechanism** is the
-  install-core region-replacement (`lib/aid-install-core.sh` `_copy_root_agent_file` + its
-  PowerShell twin `lib/AidInstallCore.psm1` `Copy-RootAgentFile`), which copies the AID region
-  from the source root-agent file into the host file in place; the **content** is the
-  `AID:BEGIN/END` body of the rendered root-agent source `profiles/<tool>/{CLAUDE.md,AGENTS.md}`
-  (the file the installer reads). So to change HOW the region is written, edit the install-core
-  libs; to change WHAT AID writes into it, edit that root-agent body -- never the user's host file.
-- **Red flag:** an AID file without the `aid-` prefix; writing outside the
-  AID:BEGIN/END region in a host file; an uninstall that deletes by directory rather
-  than by manifest.
+- **`aid-` prefix.** Skills are `aid-<name>` directories under `.agents/skills/` and under each declared
+  skill mirror (`.claude/skills/`). Agents are `aid-<name>` files in each tool's agents directory. Orphan
+  pruning on uninstall is by this prefix and by the install manifest.
+- **Runtime under `.aid/runtime/`.** Scripts and templates live in the shared runtime at
+  `.aid/runtime/scripts/` and `.aid/runtime/templates/`, with `rules.md` beside them. The CLI owns that tree
+  and records it in the install manifest.
+- **Root agent files use an AID:BEGIN/END boundary.** `AGENTS.md` carries an AID-managed region
+  (a SESSION START block plus the rules summary bullets, with no `@` line) for every tool. While Claude Code is installed, `CLAUDE.md` carries a region
+  with the same body plus an `@.aid/runtime/rules.md` import line (the inline rules text under `rules_inline`). Both are between `<!-- AID:BEGIN -->` and `<!-- AID:END -->`. The
+  installer updates only the content **in place** inside that region; content outside it (the user's own
+  instructions) is never touched, and there is no `.aid-new` side file. Two layers produce this: the
+  **mechanism** is the install-core region replacement (`lib/aid-install-core.sh` `_copy_root_agent_file`,
+  and its PowerShell twin `lib/AidInstallCore.psm1` `Copy-RootAgentFile`), and the **content** is the
+  region body: the fixed SESSION START block in the install core (`_AID_AGENTS_REGION_HEAD` in `lib/aid-install-core.sh`, and the
+  matching `$script:` constants in `lib/AidInstallCore.psm1`) plus the summary bullets, which have one source, the
+  `AID:SUMMARY` block at the top of `canonical/aid/rules.md`. So to change HOW the region is written, edit
+  the install-core libs; to change the summary, edit that block; to change the instruction, edit the constants -- never the user's host file. The block names the first action (a Read of `.aid/runtime/rules.md`) explicitly, forbids any answer before that Read returns and pre-empts "do not read files" prompts, because a written "read first" instruction is advisory; repair by content treats the block's one blank line as no one's, so only its non-blank lines are managed lines.
+- **Red flag:** an AID file without the `aid-` prefix; AID content at a tool root outside that tool's
+  `agents/` or `skills/` subtree; writing outside the AID:BEGIN/END region in a host file; an uninstall that
+  deletes by directory rather than by manifest; a skill mirror that differs byte-wise from `.agents/skills/`.
 
 ---
 
@@ -544,8 +546,8 @@ content.**
 | Durable citations (no bare `file:LINE`) | `kb-citation-lint.sh` | Yes (lint, orchestrator-gated at GENERATE) | Lint exit 1; cycle blocked until fixed. |
 | Reviewer-ledger schema + grade | `grade.sh` | Yes (parses the table) | Mis-shaped ledger mis-grades; a `## Summary` line over-counts. |
 | Doc layout, one-concern, dual-audience, no-diagrams, P1/P9 | `aid-reviewer` sub-agent (semantic) | No (review judgment) | Findings logged to the ledger; grade gate fails below `minimum_grade`. |
-| INDEX regeneration | `build-kb-index.sh` (run from `canonical/.../kb/`) | Partly (CI KB-hygiene checks the script path) | Stale INDEX; KB-hygiene CI fails on the embedded path. |
-| Render drift (canonical -> profiles) | full `run_generator.py` + emission manifests | Yes (render-drift CI) | CI render-drift failure on stale emission. |
+| INDEX regeneration | `build-kb-index.sh` (`.aid/runtime/scripts/kb/`; the `canonical/` copy embeds the same path) | Partly (CI KB-hygiene "INDEX.md is fresh" check) | Stale INDEX; KB-hygiene CI fails. |
+| Render drift (canonical -> profiles) | full `run_generator.py` (wipes and regenerates each profile agent tree) | Yes (render-drift CI) | CI render-drift failure on a stale profile tree. |
 | ASCII-only + WinPS 5.1 (shipped PS) | `ps51-compat-check.ps1`, ASCII CI guard | Yes (CI) | Windows mis-parse / 5.1 break; CI red. |
 | Content isolation (`aid-` prefix, AID:BEGIN/END) | install/uninstall logic + review | Partly | User content clobbered or orphan files left behind. |
 
