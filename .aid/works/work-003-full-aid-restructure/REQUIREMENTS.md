@@ -114,6 +114,13 @@ from the KB. The user does not trigger them.
 
 Summarize is no longer a separate skill: it is absorbed by Build KB and Update KB.
 
+### FR-3 What a feature is
+
+"Feature" keeps only its business meaning: a capability a user or customer can see and would value
+on its own. The PRD is built from **requirements with acceptance criteria**. A work is split into
+several features only when it truly delivers several such capabilities; most works have one, or none
+(a bug fix, a refactor). Tasks trace to requirements and acceptance criteria, not to feature folders.
+
 ## 6. Non-Functional Requirements
 
 - **NFR-Q (how questions are asked).** Every question put to the user carries a
