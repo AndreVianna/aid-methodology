@@ -138,8 +138,33 @@ function script:Get-RootDir {
 # Get-Sha256File <path> - return lower-case hex sha256 of file content.
 function Get-Sha256File {
     param([string]$FilePath)
+    # Hash through .NET directly (Get-FileHash costs a cmdlet invocation per file, and
+    # install/update/status hash hundreds). Any failure takes the cmdlet path, so errors
+    # surface exactly as before.
+    try {
+        $full = $ExecutionContext.SessionState.Path.GetUnresolvedProviderPathFromPSPath($FilePath)
+        $stream = [System.IO.File]::OpenRead($full)
+        try {
+            $sha = [System.Security.Cryptography.SHA256]::Create()
+            try { $bytes = $sha.ComputeHash($stream) } finally { $sha.Dispose() }
+        } finally { $stream.Dispose() }
+        return [System.BitConverter]::ToString($bytes).Replace('-', '').ToLower()
+    } catch { }
     $hash = (Get-FileHash -LiteralPath $FilePath -Algorithm SHA256).Hash
     return $hash.ToLower()
+}
+
+# Test-AidDirEmpty <path> - true when the directory has no entries (hidden ones count).
+# One .NET enumeration step instead of a Get-ChildItem pipeline per directory; any
+# failure answers through Get-ChildItem, exactly as before.
+function script:Test-AidDirEmpty {
+    param([string]$Path)
+    try {
+        $full = $ExecutionContext.SessionState.Path.GetUnresolvedProviderPathFromPSPath($Path)
+        $entries = [System.IO.Directory]::EnumerateFileSystemEntries($full).GetEnumerator()
+        try { return -not $entries.MoveNext() } finally { $entries.Dispose() }
+    } catch { }
+    return -not (Get-ChildItem -LiteralPath $Path -Force | Select-Object -First 1)
 }
 
 # ---------------------------------------------------------------------------
@@ -1860,7 +1885,7 @@ function Invoke-PruneShared {
             $rel=$d.FullName.Substring($abs.Length).TrimStart([char]'\',[char]'/')
             if ($root -eq '.aid/runtime') { if ($d.FullName -match '[/\\]node_modules(?:[/\\]|$)') { continue } }
             else { $first=$rel.Split([char[]]@('/', '\'))[0]; if ($first -notlike 'aid-*') { continue } }
-            if (-not (Get-ChildItem -LiteralPath $d.FullName -Force | Select-Object -First 1)) { Remove-Item -LiteralPath $d.FullName -Force -ErrorAction SilentlyContinue }
+            if (script:Test-AidDirEmpty -Path $d.FullName) { Remove-Item -LiteralPath $d.FullName -Force -ErrorAction SilentlyContinue }
         }
     }
     # A mirror root that no remaining tool declares goes once it is empty (never a non-empty one).
@@ -3347,7 +3372,7 @@ function Get-AidDriftReport {
         $full = Join-Path $Target ($path -replace '/', [IO.Path]::DirectorySeparatorChar)
         if (-not (Test-Path -LiteralPath $full -PathType Leaf)) { $issues.Add(('missing:' + $path)); continue }
         if ($expected[$path]) {
-            $actual = (Get-FileHash -LiteralPath $full -Algorithm SHA256).Hash.ToLowerInvariant()
+            $actual = Get-Sha256File -FilePath $full
             if ($actual -ne $expected[$path].ToLowerInvariant()) { $issues.Add(('modified:' + $path)) }
         }
     }
@@ -3364,6 +3389,13 @@ function Get-AidDriftReport {
         $sha = [BitConverter]::ToString(([Security.Cryptography.SHA256]::Create()).ComputeHash($bytes)).Replace('-', '').ToLowerInvariant()
         if ($sha -ne [string]$entry.region_sha256) { $issues.Add(('modified:' + $pair[1])) }
     }
+    # Every '/'-terminated prefix of a recorded path, so "is anything recorded under
+    # <dir>/" is one set lookup instead of a scan of every recorded path per folder.
+    $recordedDirs = New-Object 'System.Collections.Generic.HashSet[string]' ([StringComparer]::OrdinalIgnoreCase)
+    foreach ($key in $expected.Keys) {
+        $slash = $key.IndexOf('/')
+        while ($slash -ge 0) { [void]$recordedDirs.Add($key.Substring(0, $slash + 1)); $slash = $key.IndexOf('/', $slash + 1) }
+    }
     foreach ($base in @('.agents/skills') + @($mirrors.Keys | Sort-Object)) {
         $folder = Join-Path $Target $base
         if (-not (Test-Path -LiteralPath $folder -PathType Container)) { continue }
@@ -3371,8 +3403,7 @@ function Get-AidDriftReport {
             $entryRel = $entry.Name
             if ($entry.PSIsContainer) {
                 $prefix = $base + '/' + $entryRel + '/'
-                $recorded = @($expected.Keys | Where-Object { $_.StartsWith($prefix, [StringComparison]::OrdinalIgnoreCase) })
-                if ($recorded.Count -eq 0) { $issues.Add(('extra:' + $base + '/' + $entryRel)) }
+                if (-not $recordedDirs.Contains($prefix)) { $issues.Add(('extra:' + $base + '/' + $entryRel)) }
                 foreach ($file in Get-ChildItem -LiteralPath $entry.FullName -File -Recurse -Force) {
                     $rel = $base + '/' + $file.FullName.Substring($folder.Length + 1).Replace('\', '/')
                     if (-not $expected.ContainsKey($rel)) { $issues.Add(('extra:' + $rel)) }
