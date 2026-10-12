@@ -870,7 +870,7 @@
         },
         {
           "path": "rules.md",
-          "sha256": "2e16a916eb93a1bd2f1b2ffae4556be20e21e48d4c8e4a0c51588560d98eea7a"
+          "sha256": "f3a7f11f6bea38dd0c11528149f589df414ea4fd5cdc9341c9319ed833d83b90"
         },
         {
           "path": "scripts/config/read-setting.sh",
@@ -1425,8 +1425,8 @@
         "claude-code",
         "cursor"
       ],
-      "region_sha256": "69fab3017939c40fc27fb34eb1bea322a7fb2b51fe12a4a7e0f394e9137473ba",
-      "file_sha256": "42b5d23853762ea89744ee4b94f5cca6990f6a1bc6270ef614afc0463666b57d"
+      "region_sha256": "33874ba676ae003685d8c36fa0489049a4ffb31fd45d41ca317b94a3b08d44bd",
+      "file_sha256": "928bb3721929613ccd0140ce6ee27451882c1f74fe03820baa212003e520f843"
     },
     "claude_md": {
       "path": "CLAUDE.md",
@@ -1434,7 +1434,7 @@
       "users": [
         "claude-code"
       ],
-      "region_sha256": "d1674d0290292ad2cef8092c25100a19f2519064cc900e984f650abbc89fa7c8"
+      "region_sha256": "f55d03ed2c6ff47a0f12ef2134679fbc9bafbe4826c35d2ab41989ed92d35d18"
     },
     "mirrors": {
       ".claude/skills": {
