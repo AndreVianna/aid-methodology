@@ -773,46 +773,177 @@ function Copy-AidFileGuarded {
 $script:_AidAgentsPointerRegion = "<!-- AID:BEGIN -->`n<!-- Managed by the AID CLI. Do not edit between the AID markers. -->`n@.aid/runtime/rules.md`nBefore acting, read and follow ``.aid/runtime/rules.md`` (AID rules).`n<!-- AID:END -->`n"
 $script:_AidClaudeImportRegion = "<!-- AID:BEGIN -->`n@AGENTS.md`n<!-- AID:END -->`n"
 
+# ---------------------------------------------------------------------------
+# Root-file region primitives (byte-faithful). A root file is read and written as BYTES;
+# the text view is ISO-8859-1, which maps every byte to exactly one char and back, so
+# nothing outside a managed region can change (any 8-bit encoding, a UTF-8 BOM, CRLF,
+# UTF-8 multibyte text). Region constants are UTF-8, converted to the same byte view.
+# A LINE is a run up to and including LF (the last may lack it); its VALUE drops that LF
+# and one CR before it (an unterminated last line is its own value); markers match by
+# value. A file with NUL bytes (UTF-16/UTF-32/binary) or a UTF-16 BOM cannot be edited
+# safely and is refused with a message, changing nothing. Bash twin: _aid_root_file_unsafe,
+# _aid_marker_span, _repair_root_region, _repair_inline_root_region, _aid_cut_marker_region.
+# ---------------------------------------------------------------------------
+$script:_AidLatin1 = [System.Text.Encoding]::GetEncoding(28591)
+$script:_AidUtf8NoBom = New-Object System.Text.UTF8Encoding($false)
+
+function script:Read-AidRootText {
+    param([string]$Path)
+    return $script:_AidLatin1.GetString([System.IO.File]::ReadAllBytes($Path))
+}
+
+function script:Write-AidRootText {
+    param([string]$Path, [string]$Text)
+    [System.IO.File]::WriteAllBytes($Path, $script:_AidLatin1.GetBytes($Text))
+}
+
+# Region text (a .NET string) -> its UTF-8 bytes as an ISO-8859-1 string.
+function script:ConvertTo-AidByteString {
+    param([string]$Text)
+    return $script:_AidLatin1.GetString($script:_AidUtf8NoBom.GetBytes($Text))
+}
+
+function script:Test-AidRootFileUnsafe {
+    param([string]$Path)
+    if (-not (Test-Path -LiteralPath $Path -PathType Leaf)) { return $false }
+    $bytes = [System.IO.File]::ReadAllBytes($Path)
+    if ($bytes.Length -ge 2 -and (($bytes[0] -eq 255 -and $bytes[1] -eq 254) -or ($bytes[0] -eq 254 -and $bytes[1] -eq 255))) { return $true }
+    return ([Array]::IndexOf($bytes, [byte]0) -ge 0)
+}
+
+function script:Get-AidRootFileMessage {
+    param([string]$Path)
+    return ('refusing to edit ' + [System.IO.Path]::GetFileName($Path) + ': it is UTF-16/UTF-32 or contains NUL bytes, so AID cannot preserve its content. Convert it to UTF-8 and run the command again. No changes were made.')
+}
+
+# Exported for bin/aid.ps1's pre-write gate: the refusal message for an unsafe root file, else $null.
+function Get-AidRootFileRefusal {
+    param([string]$Path)
+    if (script:Test-AidRootFileUnsafe -Path $Path) { return (script:Get-AidRootFileMessage -Path $Path) }
+    return $null
+}
+
+function script:Assert-AidRootFileSafe {
+    param([string]$Path)
+    if (script:Test-AidRootFileUnsafe -Path $Path) { throw (script:Get-AidRootFileMessage -Path $Path) }
+}
+
+# Splits a byte-string into lines: .Chunks keep their terminators, .Values drop them.
+function script:Split-AidRootLines {
+    param([string]$Text)
+    $chunks = New-Object 'System.Collections.Generic.List[string]'
+    $values = New-Object 'System.Collections.Generic.List[string]'
+    $pos = 0
+    while ($pos -lt $Text.Length) {
+        $nl = $Text.IndexOf([char]10, $pos)
+        if ($nl -lt 0) { $chunk = $Text.Substring($pos); $value = $chunk; $pos = $Text.Length }
+        else {
+            $chunk = $Text.Substring($pos, $nl - $pos + 1)
+            $value = $chunk.Substring(0, $chunk.Length - 1)
+            if ($value.Length -gt 0 -and $value[$value.Length - 1] -eq [char]13) { $value = $value.Substring(0, $value.Length - 1) }
+            $pos = $nl + 1
+        }
+        $chunks.Add($chunk); $values.Add($value)
+    }
+    return [pscustomobject]@{ Chunks = $chunks; Values = $values }
+}
+
+# Index pair (0-based) of the single well-formed BEGIN/END marker lines, or $null.
+function script:Get-AidMarkerSpan {
+    param($Lines, [string]$Begin = '<!-- AID:BEGIN -->', [string]$End = '<!-- AID:END -->')
+    $b = -1; $e = -1; $nb = 0; $ne = 0
+    for ($i = 0; $i -lt $Lines.Values.Count; $i++) {
+        $v = $Lines.Values[$i]
+        if ($v -ceq $Begin) { $nb++; $b = $i } elseif ($v -ceq $End) { $ne++; $e = $i }
+    }
+    if ($nb -ne 1 -or $ne -ne 1 -or $b -ge $e) { return $null }
+    return [pscustomobject]@{ Begin = $b; End = $e }
+}
+
+# The byte-string of the marked region, markers included, LF-joined values (the hashed form).
+function script:Get-AidCanonicalRegion {
+    param($Lines, $Span)
+    $sb = New-Object System.Text.StringBuilder
+    for ($i = $Span.Begin; $i -le $Span.End; $i++) { [void]$sb.Append($Lines.Values[$i]).Append("`n") }
+    return $sb.ToString()
+}
+
+# $true when a byte-string holds only ASCII whitespace (space, TAB, LF, VT, FF, CR).
+function script:Test-AidBlankBytes {
+    param([string]$Text)
+    return ($Text.Trim([char[]]@(32, 9, 10, 11, 12, 13)).Length -eq 0)
+}
+
+# Removes the marked region (lines Begin..End); a file left blank is deleted.
+function script:Remove-AidMarkedSpan {
+    param([string]$File, $Lines, $Span)
+    $sb = New-Object System.Text.StringBuilder
+    for ($i = 0; $i -lt $Span.Begin; $i++) { [void]$sb.Append($Lines.Chunks[$i]) }
+    for ($i = $Span.End + 1; $i -lt $Lines.Chunks.Count; $i++) { [void]$sb.Append($Lines.Chunks[$i]) }
+    $rest = $sb.ToString()
+    if (script:Test-AidBlankBytes -Text $rest) { Remove-Item -LiteralPath $File -Force -ErrorAction SilentlyContinue }
+    else { script:Write-AidRootText -Path $File -Text $rest }
+}
+
+function script:New-AidOrdinalSet {
+    param([string[]]$Items)
+    $set = New-Object 'System.Collections.Generic.HashSet[string]' ([System.StringComparer]::Ordinal)
+    foreach ($item in $Items) { [void]$set.Add($item) }
+    return ,$set
+}
+
+# Replaces every line of the managed set by one copy of the region (at the first), keeping
+# every other line byte for byte.
+function script:Get-AidRewrittenRoot {
+    param($Lines, $Managed, [string]$RegionBytes)
+    $sb = New-Object System.Text.StringBuilder
+    $inserted = $false
+    for ($i = 0; $i -lt $Lines.Chunks.Count; $i++) {
+        if ($Managed.Contains($Lines.Values[$i])) {
+            if (-not $inserted) { [void]$sb.Append($RegionBytes); $inserted = $true }
+        } else { [void]$sb.Append($Lines.Chunks[$i]) }
+    }
+    if (-not $inserted) { [void]$sb.Append($RegionBytes) }
+    return $sb.ToString()
+}
+
+function script:Add-AidRootRegion {
+    param([string]$File, [string]$Text, [string]$RegionBytes)
+    $suffix = if ($Text.Length -gt 0 -and $Text[$Text.Length - 1] -ne [char]10) { "`n" } else { '' }
+    script:Write-AidRootText -Path $File -Text ($Text + $suffix + $RegionBytes)
+}
+
 # Repairs one fixed root region while preserving all bytes outside it.
 function script:Repair-AidRootRegion {
     param([string]$File, [string]$Region, [string]$Root = '')
     if ($Root -eq '') { $Root = [System.IO.Path]::GetDirectoryName([System.IO.Path]::GetFullPath($File)) }
-    $encoding = New-Object System.Text.UTF8Encoding($false)
-    $regionBytes = $encoding.GetBytes($Region)
+    $regionBytes = $script:_AidUtf8NoBom.GetBytes($Region)
     if (-not (Test-Path -LiteralPath $File -PathType Leaf)) {
         $dir = [System.IO.Path]::GetDirectoryName($File)
         if ($dir -and -not (Test-Path -LiteralPath $dir -PathType Container)) { New-Item -ItemType Directory -Path $dir -Force | Out-Null }
         [System.IO.File]::WriteAllBytes($File, $regionBytes)
         return
     }
-    $text = $encoding.GetString([System.IO.File]::ReadAllBytes($File))
-    $chunks = [regex]::Matches($text, '[^\n]*\n|[^\n]+$') | ForEach-Object { $_.Value }
-    $expected = $Region.Split("`n") | Where-Object { $_ -ne '' }
-    $values = @($chunks | ForEach-Object { $_.TrimEnd("`n").TrimEnd("`r") })
-    $managed = @{}
-    foreach ($line in $expected) { $managed[$line] = $true }
-    $positions = @(); for ($i=0; $i -lt $values.Count; $i++) { if ($managed.ContainsKey($values[$i])) { $positions += $i } }
-    if ($positions.Count -eq 0) {
-        $suffix = if ($text.Length -gt 0 -and -not $text.EndsWith("`n")) { "`n" } else { '' }
-        [System.IO.File]::WriteAllBytes($File, $encoding.GetBytes($text + $suffix + $Region)); return
-    }
+    script:Assert-AidRootFileSafe -Path $File
+    $regionText = $script:_AidLatin1.GetString($regionBytes)
+    $text = script:Read-AidRootText -Path $File
+    $lines = script:Split-AidRootLines -Text $text
+    $expected = @($regionText.Split([char]10) | Where-Object { $_ -ne '' })
+    $managed = script:New-AidOrdinalSet -Items $expected
+    $values = $lines.Values
+    $positions = 0
+    for ($i = 0; $i -lt $values.Count; $i++) { if ($managed.Contains($values[$i])) { $positions++ } }
+    if ($positions -eq 0) { script:Add-AidRootRegion -File $File -Text $text -RegionBytes $regionText; return }
     $startCount = 0
-    for ($i=0; $i -le $values.Count-$expected.Count; $i++) {
+    for ($i = 0; $i -le $values.Count - $expected.Count; $i++) {
         $match = $true
-        for ($j=0; $j -lt $expected.Count; $j++) { if ($values[$i+$j] -cne $expected[$j]) { $match=$false; break } }
+        for ($j = 0; $j -lt $expected.Count; $j++) { if ($values[$i + $j] -cne $expected[$j]) { $match = $false; break } }
         if ($match) { $startCount++ }
     }
-    if ($startCount -eq 1 -and $positions.Count -eq $expected.Count) { return }
+    if ($startCount -eq 1 -and $positions -eq $expected.Count) { return }
+    $rewritten = script:Get-AidRewrittenRoot -Lines $lines -Managed $managed -RegionBytes $regionText
     Move-AidToTrash -Root $Root -File $File
-    $sb = New-Object System.Text.StringBuilder
-    $inserted = $false
-    foreach ($i in 0..($chunks.Count-1)) {
-        if ($managed.ContainsKey($values[$i])) {
-            if (-not $inserted) { [void]$sb.Append($Region); $inserted=$true }
-        } else { [void]$sb.Append($chunks[$i]) }
-    }
-    if (-not $inserted) { [void]$sb.Append($Region) }
-    [System.IO.File]::WriteAllBytes($File, $encoding.GetBytes($sb.ToString()))
+    script:Write-AidRootText -Path $File -Text $rewritten
 }
 
 function script:Invoke-EnsureClaudeMdRegion {
@@ -825,51 +956,47 @@ function script:Invoke-RemoveClaudeMdRegion {
     param([string]$File, [string]$RecordedSha256, [string]$Root = '')
     if (-not (Test-Path -LiteralPath $File -PathType Leaf)) { return }
     if ($Root -eq '') { $Root = [System.IO.Path]::GetDirectoryName([System.IO.Path]::GetFullPath($File)) }
-    $encoding = New-Object System.Text.UTF8Encoding($false)
-    $text = $encoding.GetString([System.IO.File]::ReadAllBytes($File))
-    $linePattern = '(?m)^<!-- AID:(?:BEGIN|END) -->(?=\r?$)'
-    $markers = [regex]::Matches($text, $linePattern)
-    $begins = @($markers | Where-Object { $_.Value -ceq '<!-- AID:BEGIN -->' })
-    $ends = @($markers | Where-Object { $_.Value -ceq '<!-- AID:END -->' })
-    if ($begins.Count -ne 1 -or $ends.Count -ne 1 -or $begins[0].Index -ge $ends[0].Index) { return }
-    $begin = $begins[0]; $end = $ends[0]
-    $start = $begin.Index
-    $finish = $end.Index + $end.Length
-    if ($finish + 2 -le $text.Length -and $text.Substring($finish, 2) -ceq "`r`n") { $finish += 2 }
-    elseif ($finish -lt $text.Length -and $text.Substring($finish, 1) -ceq "`n") { $finish++ }
-    $matchText = $text.Substring($start, $finish - $start)
-    $canonical = $matchText.Replace("`r`n", "`n")
-    $regionSha = (Get-FileHash -InputStream ([System.IO.MemoryStream]::new($encoding.GetBytes($canonical))) -Algorithm SHA256).Hash.ToLowerInvariant()
-    if ($regionSha -ne $RecordedSha256) { Move-AidToTrash -Root $Root -File $File }
-    $rest = $text.Remove($start, $finish - $start)
-    if ($rest.Trim().Length -eq 0) { Remove-Item -LiteralPath $File -Force -ErrorAction SilentlyContinue }
-    else { [System.IO.File]::WriteAllBytes($File, $encoding.GetBytes($rest)) }
+    script:Assert-AidRootFileSafe -Path $File
+    $lines = script:Split-AidRootLines -Text (script:Read-AidRootText -Path $File)
+    $span = script:Get-AidMarkerSpan -Lines $lines
+    if ($null -eq $span) { return }
+    $canonical = script:Get-AidCanonicalRegion -Lines $lines -Span $span
+    $regionSha = (Get-FileHash -InputStream ([System.IO.MemoryStream]::new($script:_AidLatin1.GetBytes($canonical))) -Algorithm SHA256).Hash.ToLowerInvariant()
+    if ($regionSha -cne $RecordedSha256) { Move-AidToTrash -Root $Root -File $File }
+    script:Remove-AidMarkedSpan -File $File -Lines $lines -Span $span
 }
 
 function script:Repair-AidInlineRootRegion {
     param([string]$File, [string]$Region, [string]$Root)
-    $encoding = New-Object System.Text.UTF8Encoding($false)
+    $regionBytes = $script:_AidUtf8NoBom.GetBytes($Region)
     if (-not (Test-Path -LiteralPath $File -PathType Leaf)) {
-        [System.IO.File]::WriteAllBytes($File, $encoding.GetBytes($Region)); return
+        [System.IO.File]::WriteAllBytes($File, $regionBytes); return
     }
-    $text = $encoding.GetString([System.IO.File]::ReadAllBytes($File))
+    script:Assert-AidRootFileSafe -Path $File
+    $regionText = $script:_AidLatin1.GetString($regionBytes)
+    $text = script:Read-AidRootText -Path $File
+    $lines = script:Split-AidRootLines -Text $text
     $begin = '<!-- AID:BEGIN -->'; $end = '<!-- AID:END -->'
-    $linePattern = '(?m)^<!-- AID:(?:BEGIN|END) -->(?=\r?$)'
-    $markers = [regex]::Matches($text, $linePattern)
-    $begins = @($markers | Where-Object { $_.Value -ceq $begin })
-    $ends = @($markers | Where-Object { $_.Value -ceq $end })
-    if ($begins.Count -eq 1 -and $ends.Count -eq 1 -and $begins[0].Index -lt $ends[0].Index) {
-        $beginMarker = $begins[0]; $endMarker = $ends[0]
-        $beginLineEnd = $beginMarker.Index + $beginMarker.Length
-        if ($text.Substring($beginLineEnd, 2) -ceq "`r`n") { $innerStart = $beginLineEnd + 2 }
-        elseif ($text.Substring($beginLineEnd, 1) -ceq "`n") { $innerStart = $beginLineEnd + 1 }
-        else { script:Repair-AidRootRegion -File $File -Region $Region -Root $Root; return }
-        $replacement = $Region.Substring($Region.IndexOf("`n") + 1)
-        $replacement = $replacement.Substring(0, $replacement.LastIndexOf($end))
-        $updated = $text.Substring(0, $innerStart) + $replacement + $text.Substring($endMarker.Index)
-        [System.IO.File]::WriteAllBytes($File, $encoding.GetBytes($updated)); return
+    $span = script:Get-AidMarkerSpan -Lines $lines
+    if ($null -ne $span) {
+        # Preserve marker terminators and all bytes outside the marked span.
+        $replacement = $regionText.Substring($regionText.IndexOf([char]10) + 1)
+        $replacement = $replacement.Substring(0, $replacement.LastIndexOf($end, [System.StringComparison]::Ordinal))
+        $sb = New-Object System.Text.StringBuilder
+        for ($i = 0; $i -le $span.Begin; $i++) { [void]$sb.Append($lines.Chunks[$i]) }
+        [void]$sb.Append($replacement)
+        for ($i = $span.End; $i -lt $lines.Chunks.Count; $i++) { [void]$sb.Append($lines.Chunks[$i]) }
+        $updated = $sb.ToString()
+        if ($updated -cne $text) { script:Write-AidRootText -Path $File -Text $updated }
+        return
     }
-    script:Repair-AidRootRegion -File $File -Region $Region -Root $Root
+    $markerLines = 0
+    foreach ($v in $lines.Values) { if ($v -ceq $begin -or $v -ceq $end) { $markerLines++ } }
+    if ($markerLines -eq 0) { script:Add-AidRootRegion -File $File -Text $text -RegionBytes $regionText; return }
+    # Malformed marker spans are replaced in place; unrelated lines stay byte-identical.
+    $rewritten = script:Get-AidRewrittenRoot -Lines $lines -Managed (script:New-AidOrdinalSet -Items @($begin, $end)) -RegionBytes $regionText
+    Move-AidToTrash -Root $Root -File $File
+    script:Write-AidRootText -Path $File -Text $rewritten
 }
 
 function script:Copy-RootAgentFile {
@@ -1930,24 +2057,12 @@ function Remove-AidLegacyRootRegion {
     param([string]$Target, [string]$Name)
     $path=Join-Path $Target $Name
     if (-not (Test-Path -LiteralPath $path -PathType Leaf)) { return $false }
-    $data=[System.IO.File]::ReadAllBytes($path); $begin=[System.Text.Encoding]::ASCII.GetBytes('<!-- AID:BEGIN -->'); $end=[System.Text.Encoding]::ASCII.GetBytes('<!-- AID:END -->')
-    $begins=New-Object 'System.Collections.Generic.List[int]'; $ends=New-Object 'System.Collections.Generic.List[int]'
-    for ($i=0; $i -lt $data.Length; $i++) {
-        $matches=$i+$begin.Length -le $data.Length
-        for ($j=0; $matches -and $j -lt $begin.Length; $j++) { if ($data[$i+$j] -ne $begin[$j]) { $matches=$false } }
-        if ($matches -and ($i -eq 0 -or $data[$i-1] -eq 10) -and ($i+$begin.Length -eq $data.Length -or $data[$i+$begin.Length] -eq 10 -or $data[$i+$begin.Length] -eq 13)) { $begins.Add($i) }
-        $matches=$i+$end.Length -le $data.Length
-        for ($j=0; $matches -and $j -lt $end.Length; $j++) { if ($data[$i+$j] -ne $end[$j]) { $matches=$false } }
-        if ($matches -and ($i -eq 0 -or $data[$i-1] -eq 10) -and ($i+$end.Length -eq $data.Length -or $data[$i+$end.Length] -eq 10 -or $data[$i+$end.Length] -eq 13)) { $ends.Add($i) }
-    }
-    if ($begins.Count -ne 1 -or $ends.Count -ne 1 -or $begins[0] -ge $ends[0]) { return $false }
+    script:Assert-AidRootFileSafe -Path $path
+    $lines = script:Split-AidRootLines -Text (script:Read-AidRootText -Path $path)
+    $span = script:Get-AidMarkerSpan -Lines $lines
+    if ($null -eq $span) { return $false }
     Save-AidToTrash -Root $Target -File $path
-    $finish=$ends[0]+$end.Length
-    if ($finish -lt $data.Length -and $data[$finish] -eq 13) { $finish++; if ($finish -lt $data.Length -and $data[$finish] -eq 10) { $finish++ } }
-    elseif ($finish -lt $data.Length -and $data[$finish] -eq 10) { $finish++ }
-    $rest=New-Object byte[] ($begins[0]+$data.Length-$finish)
-    [Array]::Copy($data,0,$rest,0,$begins[0]); [Array]::Copy($data,$finish,$rest,$begins[0],$data.Length-$finish)
-    if ([System.Text.Encoding]::UTF8.GetString($rest).Trim().Length -eq 0) { Remove-Item -LiteralPath $path -Force } else { [System.IO.File]::WriteAllBytes($path,$rest) }
+    script:Remove-AidMarkedSpan -File $path -Lines $lines -Span $span
     return $true
 }
 
@@ -2461,7 +2576,7 @@ function script:Remove-AidGitattributesBlock {
     for ($i=0; $i -lt $startAt; $i++) { $out.Add($bytes[$i]) }
     for ($i=$endAt; $i -lt $bytes.Length; $i++) { $out.Add($bytes[$i]) }
     $onlyWhitespace = $true
-    foreach ($b in $out) { if ($b -notin @(9,10,13,32)) { $onlyWhitespace=$false; break } }
+    foreach ($b in $out) { if ($b -notin @(9,10,11,12,13,32)) { $onlyWhitespace=$false; break } }
     if ($onlyWhitespace) { Remove-Item -LiteralPath $path -Force }
     else { [System.IO.File]::WriteAllBytes($path, $out.ToArray()) }
 }
@@ -2474,18 +2589,11 @@ function script:Remove-AidAgentsRegion {
         Write-Host 'Left in place (modified or not AID-owned): AGENTS.md'
         return
     }
-    $encoding = New-Object System.Text.UTF8Encoding($false)
-    $text = $encoding.GetString([System.IO.File]::ReadAllBytes($path))
-    $markers = [regex]::Matches($text, '(?m)^<!-- AID:(?:BEGIN|END) -->(?=\r?$)')
-    $begins = @($markers | Where-Object { $_.Value -ceq '<!-- AID:BEGIN -->' })
-    $ends = @($markers | Where-Object { $_.Value -ceq '<!-- AID:END -->' })
-    if ($begins.Count -ne 1 -or $ends.Count -ne 1 -or $begins[0].Index -ge $ends[0].Index) { return }
-    $start=$begins[0].Index; $finish=$ends[0].Index+$ends[0].Length
-    if ($finish+2 -le $text.Length -and $text.Substring($finish,2) -ceq "`r`n") { $finish+=2 }
-    elseif ($finish -lt $text.Length -and $text.Substring($finish,1) -ceq "`n") { $finish++ }
-    $rest=$text.Remove($start,$finish-$start)
-    if ($rest.Trim().Length -eq 0) { Remove-Item -LiteralPath $path -Force }
-    else { [System.IO.File]::WriteAllBytes($path,$encoding.GetBytes($rest)) }
+    script:Assert-AidRootFileSafe -Path $path
+    $lines = script:Split-AidRootLines -Text (script:Read-AidRootText -Path $path)
+    $span = script:Get-AidMarkerSpan -Lines $lines
+    if ($null -eq $span) { return }
+    script:Remove-AidMarkedSpan -File $path -Lines $lines -Span $span
 }
 
 function script:Update-AidRemoveManifestHashes {
@@ -2495,11 +2603,10 @@ function script:Update-AidRemoveManifestHashes {
     $agents=script:Get-AidJsonProp (script:Get-AidJsonProp $data 'shared') 'agents_md'
     $agentsPath=Join-Path $Target 'AGENTS.md'
     if ($agents -and (Test-Path -LiteralPath $agentsPath -PathType Leaf)) {
-        $text=[System.IO.File]::ReadAllText($agentsPath,(New-Object System.Text.UTF8Encoding($false)))
-        $match=[regex]::Match($text,'(?ms)^<!-- AID:BEGIN -->\r?\n.*?^<!-- AID:END -->(?:\r?\n|$)')
-        if ($match.Success) {
-            $canonical=$match.Value.Replace("`r`n","`n").Replace("`r","`n")
-            $bytes=[System.Text.Encoding]::UTF8.GetBytes($canonical)
+        $lines = script:Split-AidRootLines -Text (script:Read-AidRootText -Path $agentsPath)
+        $span = script:Get-AidMarkerSpan -Lines $lines
+        if ($null -ne $span) {
+            $bytes = $script:_AidLatin1.GetBytes((script:Get-AidCanonicalRegion -Lines $lines -Span $span))
             $agents.region_sha256=(Get-FileHash -InputStream ([System.IO.MemoryStream]::new($bytes)) -Algorithm SHA256).Hash.ToLowerInvariant()
             if ($RefreshAgentsFileSha) { $agents.file_sha256=Get-Sha256File -FilePath $agentsPath }
         }
@@ -3160,6 +3267,7 @@ Export-ModuleMember -Function @(
     'Get-AidStatusBody',
     'Get-AidStatus',
     'Get-AidDriftReport',
+    'Get-AidRootFileRefusal',
     'Invoke-AidProvisionSharedStateHome',
     'Invoke-PruneShared',
     'Get-AidToolIds'

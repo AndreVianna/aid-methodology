@@ -1414,6 +1414,21 @@ implemented twice. The parity suite names every row (AC-16).
     equals a region line, allowing LF or CRLF terminators, is removed wherever it sits, and one
     well-formed LF region is written at the position of the first removed line. Every other byte
     is kept. A second run finds the file well-formed and changes nothing.
+- **Root files are bytes.** `AGENTS.md`, `CLAUDE.md` and `.gitattributes` are read and written
+  byte-faithfully in both shells (bash: bytes through awk/head/tail; PowerShell: bytes, viewed
+  through ISO-8859-1, which maps bytes 1:1; the markers are ASCII). A line is the bytes up to
+  and including LF, its value drops that LF and one CR before it, and markers match by value.
+  Every byte outside the managed region survives unchanged: a cp1252 or other 8-bit byte, a UTF-8
+  BOM, CRLF, UTF-8 multibyte text, a missing final newline. Nothing decodes the file as UTF-8
+  and re-encodes it. A file that cannot be handled safely, that is a UTF-16/UTF-32 file (a
+  UTF-16 byte-order mark) or holds a NUL byte, is refused: `aid add`, `aid update` and `aid
+  remove` check it before any write (`AGENTS.md` always; `CLAUDE.md` when claude-code is named or
+  installed, or on a v3 upgrade), print `ERROR: aid: refusing to edit <file>: it is
+  UTF-16/UTF-32 or contains NUL bytes, so AID cannot preserve its content. Convert it to UTF-8
+  and run the command again. No changes were made.` on stderr, exit 2 and change nothing. The
+  two shells print the same bytes. Tests: a `CLAUDE.md` and an `AGENTS.md` with a cp1252 byte,
+  a UTF-8 BOM and CRLF around the region keep their outside bytes through add, update and remove
+  in both shells; a UTF-16 root file is refused identically.
 - **`_ensure_claude_md_region`** runs in every add and update commit (flow 3, commit step 5)
   whenever an installed tool declares `context_import`, and calls `_repair_root_region` with the
   import region. `_copy_root_agent_file` does the same for `AGENTS.md` with the pointer region.

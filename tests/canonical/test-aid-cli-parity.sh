@@ -6075,15 +6075,22 @@ t23_update_all() {
 t23_update_all
 
 # ===========================================================================
-# FIX-A: final-review row 1, both shells, identical bytes.
+# FIX-A / FIX-C: final-review rows 1 and 3, both shells, identical bytes.
 #   FIX-A  a format-3 (v4) repo is never a v3 upgrade: stray legacy-looking paths (a
 #          restored .cursor/aid/, a user .codex/skills/aid-* folder) are left untouched
 #          and reported once; the manifest's tools and the Claude mirror stay; add works.
+#   FIX-C  root files are byte-preserved outside the managed region (cp1252 byte, UTF-8
+#          BOM, CRLF, UTF-8 multibyte); a UTF-16 root file is refused, nothing changes.
 # ===========================================================================
 tfx_aid() {  # <sh|ps> <home> <target> <args...> -> OUT / RC (add and update)
     local shell="$1" home="$2" tgt="$3"; shift 3
     if [[ "$shell" == sh ]]; then run_sh "$home" "$@" --from-bundle "$T23_STAGE" --target "$tgt"; OUT="$OUT_SH"; RC="$RC_SH"
     else run_ps1 "$home" "$@" -FromBundle "$T23_STAGE" -Target "$tgt"; OUT="$OUT_PS1"; RC="$RC_PS1"; fi
+}
+tfx_remove() {  # <sh|ps> <home> <target> <tool> -> OUT / RC
+    local shell="$1" home="$2" tgt="$3" tool="$4"
+    if [[ "$shell" == sh ]]; then run_sh "$home" remove "$tool" --target "$tgt"; OUT="$OUT_SH"; RC="$RC_SH"
+    else run_ps1 "$home" remove "$tool" -Target "$tgt"; OUT="$OUT_PS1"; RC="$RC_PS1"; fi
 }
 tfx_home() {  # <sh|ps> -> a fresh AID_HOME
     local h; h="$(newhome)"
@@ -6130,6 +6137,44 @@ tfx_row1() {
     assert_eq "$warn_ps" "$warn_sh" "${id} warning text identical across shells"
 }
 tfx_row1
+
+tfx_row3() {
+    local id="FIX-C" shell home tgt pre post region_c region_a ex
+    pre=$'\xef\xbb\xbf# Caf\xe9 \xc3\xa9 \xe2\x82\xac\r\nbefore\r\n'
+    post=$'after \xe9\r\nlast line without newline'
+    region_c=$'<!-- AID:BEGIN -->\n@AGENTS.md\n<!-- AID:END -->\n'
+    region_a=$'<!-- AID:BEGIN -->\n<!-- Managed by the AID CLI. Do not edit between the AID markers. -->\n@.aid/runtime/rules.md\nBefore acting, read and follow `.aid/runtime/rules.md` (AID rules).\n<!-- AID:END -->\n'
+    ex="${TMP}/fixc-expected"; mkdir -p "$ex"
+    printf '%s' "${pre}${region_c}" > "$ex/claude-added";   printf '%s' "${pre}${region_c}${post}" > "$ex/claude-user-tail"
+    printf '%s' "${pre}${post}" > "$ex/claude-removed";     printf '%s' "${pre}${region_a}" > "$ex/agents-added"
+    printf '%s' "${pre}" > "$ex/pre"
+    for shell in sh ps; do
+        home="$(tfx_home "$shell")"; tgt="$(newtarget)"
+        printf '%s' "$pre" > "$tgt/CLAUDE.md"; printf '%s' "$pre" > "$tgt/AGENTS.md"
+        tfx_aid "$shell" "$home" "$tgt" add claude-code
+        assert_exit_eq "$RC" 0 "${id} ${shell} add claude-code on cp1252/BOM/CRLF root files -> exit 0"
+        cmp -s "$tgt/CLAUDE.md" "$ex/claude-added" && pass "${id} ${shell} CLAUDE.md: bytes before the region unchanged after add" || fail "${id} ${shell} CLAUDE.md: bytes before the region unchanged after add"
+        cmp -s "$tgt/AGENTS.md" "$ex/agents-added" && pass "${id} ${shell} AGENTS.md: bytes before the region unchanged after add" || fail "${id} ${shell} AGENTS.md: bytes before the region unchanged after add"
+        printf '%s' "$post" >> "$tgt/CLAUDE.md"
+        tfx_aid "$shell" "$home" "$tgt" update
+        assert_exit_eq "$RC" 0 "${id} ${shell} update with user bytes after the region -> exit 0"
+        cmp -s "$tgt/CLAUDE.md" "$ex/claude-user-tail" && pass "${id} ${shell} CLAUDE.md: bytes before and after the region unchanged after update" || fail "${id} ${shell} CLAUDE.md: bytes before and after the region unchanged after update"
+        [[ ! -e "$tgt/.aid/.trash/CLAUDE.md" ]] && pass "${id} ${shell} update of an intact region trashes nothing" || fail "${id} ${shell} update of an intact region trashes nothing"
+        tfx_remove "$shell" "$home" "$tgt" claude-code
+        assert_exit_eq "$RC" 0 "${id} ${shell} remove claude-code -> exit 0"
+        cmp -s "$tgt/CLAUDE.md" "$ex/claude-removed" && pass "${id} ${shell} CLAUDE.md: bytes outside the region unchanged after remove" || fail "${id} ${shell} CLAUDE.md: bytes outside the region unchanged after remove"
+        cmp -s "$tgt/AGENTS.md" "$ex/pre" && pass "${id} ${shell} AGENTS.md: original bytes restored after remove" || fail "${id} ${shell} AGENTS.md: original bytes restored after remove"
+        # UTF-16 root file: refused up front, nothing changes, same message in both shells.
+        tgt="$(newtarget)"; printf '\xff\xfeA\x00B\x00' > "$tgt/AGENTS.md"
+        tfx_aid "$shell" "$home" "$tgt" add cursor
+        assert_exit_eq "$RC" 2 "${id} ${shell} add with a UTF-16 AGENTS.md is refused -> exit 2"
+        assert_output_contains "$OUT" "refusing to edit AGENTS.md" "${id} ${shell} refusal names the file"
+        [[ "$(ls -A "$tgt")" == "AGENTS.md" ]] && pass "${id} ${shell} refusal changes nothing (no .aid created)" || fail "${id} ${shell} refusal changes nothing (no .aid created)"
+        if [[ "$shell" == sh ]]; then FIXC_REFUSAL_SH="$(grep -F 'refusing to edit' <<< "$OUT")"; else FIXC_REFUSAL_PS="$(grep -F 'refusing to edit' <<< "$OUT")"; fi
+    done
+    assert_eq "$FIXC_REFUSAL_PS" "$FIXC_REFUSAL_SH" "${id} refusal message identical across shells"
+}
+tfx_row3
 
 # ===========================================================================
 # End-of-suite: real-HOME blast-surface canary

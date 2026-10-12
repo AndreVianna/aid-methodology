@@ -2162,6 +2162,20 @@ _aid_layout_gate() {
     return 0
 }
 
+# _aid_root_files_gate <repo> <mode:0 add/update|1 v3 upgrade|2 remove> <tools...> - refuse,
+# before any write, when a root file the command would edit cannot be edited byte-safely
+# (UTF-16/UTF-32 or NUL bytes): AGENTS.md always; CLAUDE.md when claude-code is named (add,
+# update, remove), installed (add, update) or when a v3 upgrade retires regions from both. Prints the refusal and returns 2; the PowerShell twin does the same.
+_aid_root_files_gate() {
+    local _repo="$1" _mode="$2" _manifest="${1}/.aid/.aid-manifest.json" _claude=0 _t; shift 2
+    for _t in "$@"; do [[ "$_t" == claude-code ]] && _claude=1; done
+    if [[ "$_mode" == 1 ]]; then _claude=1
+    elif [[ "$_mode" == 0 && -f "$_manifest" ]] && manifest_list_tools "$_manifest" | grep -qx claude-code; then _claude=1; fi
+    _aid_root_file_guard "${_repo}/AGENTS.md" || return 2
+    if [[ "$_claude" -eq 1 ]]; then _aid_root_file_guard "${_repo}/CLAUDE.md" || return 2; fi
+    return 0
+}
+
 # _aid_migration_stamp <repo> - preserve legacy/recovery stamp 4; otherwise 5.
 _aid_migration_stamp() {
     local _repo="$1" _manifest="${1}/.aid/.aid-manifest.json" _fmt _has_tools=0
@@ -6704,6 +6718,9 @@ case "$SUBCMD" in
             _aid_format_gate "${_AID_TARGET}" || exit $?
         fi
 
+        # Root-file gate: refuse before any write when AGENTS.md / CLAUDE.md cannot be edited safely.
+        _aid_root_files_gate "${_AID_TARGET}" "${_AID_V3_UPGRADE:-0}" "${_AID_TOOLS[@]}" || { _gate_rc=$?; rm -rf "$_AID_STAGING_BASE"; exit "$_gate_rc"; }
+
         # ---------------------------------------------------------------------------
         # FR10 Stage-all-first atomicity (task-009):
         # PHASE 1: Stage ALL tools (resolve version, fetch, checksum-verify, extract
@@ -6987,6 +7004,7 @@ case "$SUBCMD" in
             echo "ERROR: aid: no manifest at ${_AID_TARGET}/.aid/.aid-manifest.json; nothing to uninstall" >&2
             exit 6
         }
+        _aid_root_files_gate "${_AID_TARGET}" 2 "${_AID_TOOLS[@]}" || { _gate_rc=$?; exit "$_gate_rc"; }
 
         for _tool in "${_AID_TOOLS[@]}"; do
             echo ""

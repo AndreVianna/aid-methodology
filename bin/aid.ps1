@@ -1734,6 +1734,31 @@ function script:Test-AidLayoutGate {
     return $true
 }
 
+# Test-AidRootFilesGate -Repo <dir> -Mode <0 add/update|1 v3 upgrade|2 remove> -Tools <ids> - refuse,
+# before any write, when a root file the command would edit cannot be edited byte-safely
+# (UTF-16/UTF-32 or NUL bytes): AGENTS.md always; CLAUDE.md when claude-code is named (add,
+# update, remove), installed (add, update) or when a v3 upgrade retires regions from both.
+# Prints the refusal (stderr) and returns $false. Bash twin: _aid_root_files_gate.
+function script:Test-AidRootFilesGate {
+    param([string]$Repo, [int]$Mode, [string[]]$Tools)
+    $claude = (@($Tools) -contains 'claude-code')
+    if ($Mode -eq 1) { $claude = $true }
+    elseif ($Mode -eq 0) {
+        $manifestPath = Join-Path $Repo (Join-Path '.aid' '.aid-manifest.json')
+        if ((Test-Path $manifestPath -PathType Leaf) -and (@(Get-ManifestToolList -ManifestPath $manifestPath | ForEach-Object { $_.Id }) -contains 'claude-code')) { $claude = $true }
+    }
+    $names = @('AGENTS.md'); if ($claude) { $names += 'CLAUDE.md' }
+    foreach ($name in $names) {
+        $path = Join-Path $Repo $name
+        $refusal = Get-AidRootFileRefusal -Path $path
+        if ($refusal) {
+            [Console]::Error.WriteLine('ERROR: aid: ' + $refusal)
+            return $false
+        }
+    }
+    return $true
+}
+
 function script:Get-AidMigrationStamp {
     param([string]$Repo)
     $aidDir = Join-Path $Repo '.aid'
@@ -6174,6 +6199,9 @@ try {
                 script:Invoke-AidCwdClassify -Target $_AidTarget
             }
 
+            # Root-file gate: refuse before any write when AGENTS.md / CLAUDE.md cannot be edited safely.
+            if (-not (script:Test-AidRootFilesGate -Repo $_AidTarget -Mode ([int][bool]$script:_AidV3Upgrade) -Tools @($_AidTools))) { script:Exit-Aid 2 }
+
             # ---------------------------------------------------------------------------
             # FR10 Stage-all-first atomicity (task-009):
             # PHASE 1: Stage ALL tools (resolve version, fetch, checksum-verify, extract
@@ -6409,6 +6437,7 @@ try {
                 [Console]::Error.WriteLine("ERROR: aid: no manifest at $_AidTarget\.aid\.aid-manifest.json; nothing to uninstall")
                 script:Exit-Aid 6
             }
+            if (-not (script:Test-AidRootFilesGate -Repo $_AidTarget -Mode 2 -Tools @($_AidTools))) { script:Exit-Aid 2 }
 
             foreach ($t in $_AidTools) {
                 Write-Host ""
