@@ -987,8 +987,12 @@ function script:Repair-AidRootRegion {
         script:Repair-AidInlineRootRegion -File $File -Region $Region -Root $Root -RecordedRegionSha $RecordedRegionSha
         return
     }
-    $expected = @($regionText.Split([char]10) | Where-Object { $_ -ne '' })
-    $managed = script:New-AidOrdinalSet -Items $expected
+    # The region lines in order (blank lines included for the contiguity check); only its non-blank
+    # lines are managed: a blank line belongs to no one (the region holds one, user files are full of them).
+    $expected = @($regionText.Split([char]10))
+    if ($expected.Count -gt 0 -and $expected[$expected.Count - 1] -ceq '') { $expected = @($expected[0..($expected.Count - 2)]) }
+    $managedItems = @($expected | Where-Object { $_ -ne '' })
+    $managed = script:New-AidOrdinalSet -Items $managedItems
     $values = $lines.Values
     $positions = 0
     for ($i = 0; $i -lt $values.Count; $i++) { if ($managed.Contains($values[$i])) { $positions++ } }
@@ -999,7 +1003,7 @@ function script:Repair-AidRootRegion {
         for ($j = 0; $j -lt $expected.Count; $j++) { if ($values[$i + $j] -cne $expected[$j]) { $match = $false; break } }
         if ($match) { $startCount++ }
     }
-    if ($startCount -eq 1 -and $positions -eq $expected.Count) { return }
+    if ($startCount -eq 1 -and $positions -eq $managedItems.Count) { return }
     $rewritten = script:Get-AidRewrittenRoot -Lines $lines -Managed $managed -RegionBytes $regionText
     Move-AidToTrash -Root $Root -File $File
     script:Write-AidRootText -Path $File -Text $rewritten
