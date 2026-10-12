@@ -1467,6 +1467,10 @@ and the `.cursor/` tuple of the dogfood suite. Each gets a row in
 
 ##### Upgrade from v3 (clean slate)
 
+**Supported source.** v4 upgrades only from a v3.x project. A project older than v3 (a pre-v3
+layout or manifest shape) is not a supported source: upgrade it to v3 first, then run `aid update`
+with v4. The test corpus covers the v3 -> v4 upgrade only.
+
 **Trigger.** `aid update` finds v3 legacy evidence (FR-11),
 or `.aid/.temp/v3-upgrade-tools.json` exists. `aid add` never upgrades; `aid add` and `aid remove`
 refuse while that record exists. Read-only format checks for unsupported future formats still
