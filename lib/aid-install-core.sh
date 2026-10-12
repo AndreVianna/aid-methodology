@@ -309,33 +309,49 @@ _aid_dirname_to() {
 }
 
 # _aid_same_rels <src-root> <dst-root> [aid-only] - prepare a copy of every file under
-# <src-root> to the same relative path under <dst-root> (aid-only=1: aid-*/* paths only):
-#   - print, NUL-terminated, every relative path whose destination already holds the same
-#     bytes (one batched hash pass replaces a cmp per file);
-#   - create the missing destination directories in one mkdir batch (a directory the
-#     batch could not create is created, and its error reported, by the per-file copy).
-# A path that is not printed is simply unknown: the caller compares it itself.
+# <src-root> to the same relative path under <dst-root> (aid-only=1: aid-*/* paths only).
+# Prints one NUL-terminated record per path it settled:
+#   S<rel>  the destination already holds the same bytes (one batched hash pass
+#           replaces a cmp per file);
+#   C<rel>  the destination was absent and is now a copy: missing directories are made
+#           in one mkdir batch and the files of each destination directory are copied
+#           by one cp (a directory whose cp fails has its new files removed again, so
+#           the per-file copy redoes them and reports any error itself).
+# A path with no record is simply unknown: the caller handles it itself.
 _aid_same_rels() {
-    local src="$1" dst="$2" aid_only="${3:-0}" f rel sha path dir
-    local -a rels=() files=() dirs=()
-    local -A got=() seen=()
+    local src="$1" dst="$2" aid_only="${3:-0}" f rel sha path dir i
+    local -a rels=() files=() dirs=() new_rels=() new_srcs=() new_dirs=() batch=()
+    local -A got=() seen=() group=()
     while IFS= read -r -d '' f; do
         rel="${f#${src}/}"
         [[ "$aid_only" == 1 && "$rel" != aid-*/* ]] && continue
         if [[ ! -e "${dst}/${rel}" ]]; then
+            [[ -L "${dst}/${rel}" ]] && continue
             _aid_dirname_to dir "${dst}/${rel}"
             if [[ ! -d "$dir" && -z "${seen[$dir]+x}" ]]; then seen["$dir"]=1; dirs+=("$dir"); fi
+            [[ -n "${group[$dir]+x}" ]] || new_dirs+=("$dir")
+            group["$dir"]+="${#new_rels[@]} "
+            new_rels+=("$rel"); new_srcs+=("$f")
             continue
         fi
         [[ -f "${dst}/${rel}" ]] || continue
         rels+=("$rel"); files+=("$f" "${dst}/${rel}")
     done < <(find "$src" -type f -print0 2>/dev/null)
     if [[ "${#dirs[@]}" -gt 0 ]]; then printf '%s\0' "${dirs[@]}" | xargs -0 mkdir -p -- 2>/dev/null || true; fi
+    for dir in "${new_dirs[@]}"; do
+        batch=()
+        for i in ${group[$dir]}; do batch+=("${new_srcs[i]}"); done
+        if cp -- "${batch[@]}" "${dir}/" 2>/dev/null; then
+            for i in ${group[$dir]}; do printf 'C%s\0' "${new_rels[i]}"; done
+        else
+            for i in ${group[$dir]}; do rm -f -- "${dst}/${new_rels[i]}" 2>/dev/null; done
+        fi
+    done
     [[ "${#files[@]}" -gt 0 ]] || return 0
     while IFS=$'\t' read -r sha path; do got["$path"]="$sha"; done < <(printf '%s\0' "${files[@]}" | _aid_sha256_batch)
     for rel in "${rels[@]}"; do
         sha="${got["${src}/${rel}"]:-}"
-        [[ -n "$sha" && "${got["${dst}/${rel}"]:-}" == "$sha" ]] && printf '%s\0' "$rel"
+        [[ -n "$sha" && "${got["${dst}/${rel}"]:-}" == "$sha" ]] && printf 'S%s\0' "$rel"
     done
     return 0
 }
@@ -874,16 +890,18 @@ trash_file() {
 # sha256 is recorded (empty), it is drifted because its bytes differ from <src>.
 # <dst> must sit under <root> (default: $PWD) for the trash entry to be placed.
 # A failed trash leaves the destination in place and counts as a failure.
-# <same>=1 is the caller's promise that <src> and an existing <dst> hold identical
-# bytes (see _aid_same_rels); it replaces the per-file cmp.
+# <same> is a hint from _aid_same_rels: 1 promises that <src> and an existing <dst> hold
+# identical bytes (it replaces the per-file cmp); 2 says <dst> was absent and has just
+# been copied from <src> in a batch (it is counted and reported as copied here).
 copy_file_guarded() {
     local src="$1" dst="$2" recorded="${3:-}" root="${4:-$PWD}" same="${5:-0}"
-    local drifted=0 dst_sha dst_dir
+    local drifted=0 dst_sha dst_dir precopied=0
     _aid_dirname_to dst_dir "$dst"
     [[ -d "$dst_dir" ]] || mkdir -p "$dst_dir"
+    [[ "$same" == 2 && -f "$dst" ]] && precopied=1
 
-    if [[ ! -e "$dst" ]]; then
-        if ! cp "$src" "$dst"; then
+    if [[ "$precopied" == 1 || ! -e "$dst" ]]; then
+        if [[ "$precopied" != 1 ]] && ! cp "$src" "$dst"; then
             echo "ERROR: aid-install-core: copy failed: ${dst}" >&2
             _COPY_COUNT_FAILED=$((_COPY_COUNT_FAILED + 1))
             return 0
@@ -3771,7 +3789,7 @@ install_shared() {
     if [[ "$phase" != finalize && "$phase" != update-finalize ]]; then
     _COPY_COUNT_COPIED=0; _COPY_COUNT_UPTODATE=0; _COPY_COUNT_UPDATED=0; _COPY_COUNT_SKIPPED=0; _COPY_COUNT_FAILED=0
     local -A same=()
-    while IFS= read -r -d '' rel; do same["$rel"]=1; done < <(_aid_same_rels "$skills_src" "${target}/.agents/skills" 1)
+    while IFS= read -r -d '' rel; do if [[ "$rel" == S* ]]; then same["${rel#S}"]=1; else same["${rel#C}"]=2; fi; done < <(_aid_same_rels "$skills_src" "${target}/.agents/skills" 1)
     while IFS= read -r -d '' f; do
         rel="${f#${skills_src}/}"
         [[ "$rel" == aid-*/* ]] || continue
@@ -3792,7 +3810,7 @@ install_shared() {
         for root in "${declared[@]}"; do
             mirror_users[$root]+=" $tool"
             same=()
-            while IFS= read -r -d '' rel; do same["$rel"]=1; done < <(_aid_same_rels "$skills_src" "${target}/${root}" 1)
+            while IFS= read -r -d '' rel; do if [[ "$rel" == S* ]]; then same["${rel#S}"]=1; else same["${rel#C}"]=2; fi; done < <(_aid_same_rels "$skills_src" "${target}/${root}" 1)
             while IFS= read -r -d '' f; do
                 rel="${f#${skills_src}/}"; [[ "$rel" == aid-*/* ]] || continue
                 old_sha=""
@@ -3803,7 +3821,7 @@ install_shared() {
     done
 
     same=()
-    while IFS= read -r -d '' rel; do same["$rel"]=1; done < <(_aid_same_rels "$runtime_src" "${target}/.aid/runtime")
+    while IFS= read -r -d '' rel; do if [[ "$rel" == S* ]]; then same["${rel#S}"]=1; else same["${rel#C}"]=2; fi; done < <(_aid_same_rels "$runtime_src" "${target}/.aid/runtime")
     while IFS= read -r -d '' f; do
         rel="${f#${runtime_src}/}"
         copy_file_guarded "$f" "${target}/.aid/runtime/${rel}" "${old_hash[runtime:$rel]:-}" "$target" "${same[$rel]:-0}"
