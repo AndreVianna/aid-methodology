@@ -870,7 +870,7 @@
         },
         {
           "path": "rules.md",
-          "sha256": "1619306857049eb648551291bb5000612b39d51d7b1c52840413b45282f1c2ac"
+          "sha256": "2e16a916eb93a1bd2f1b2ffae4556be20e21e48d4c8e4a0c51588560d98eea7a"
         },
         {
           "path": "scripts/config/read-setting.sh",
@@ -1350,7 +1350,7 @@
         },
         {
           "path": "templates/shortcut-catalog.yml",
-          "sha256": "2956450617b1c43b6f9bb77fe87b74e5676d86f45d6f0bdc3bebc4fcdb4da280"
+          "sha256": "87a9e7f7b818664a74ccefd51d2a980f36d11339471d7dd3a800e46ddf812e5e"
         },
         {
           "path": "templates/shortcut-engine.md",

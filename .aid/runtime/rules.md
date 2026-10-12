@@ -55,8 +55,8 @@ Read `.aid/connectors/INDEX.md`.
 
 - Connectors are catalogued via `aid-discover` (ELICIT) and can be added, updated, or removed on
   demand — without re-running discovery — with `aid-set-connector` / `aid-unset-connector`.
-- Consumption is MCP-first (`.aid/runtime/templates/connectors/consumption-protocol.md`, under this tool's
-  install root): scan the index, and for a `connection_type: mcp` connector, request the connection
+- Consumption is MCP-first (`.aid/runtime/templates/connectors/consumption-protocol.md`, shared by
+  all tools): scan the index, and for a `connection_type: mcp` connector, request the connection
   from your host tool's own MCP/plugin — AID resolves nothing and stores no credential for it.
 - aid-managed consumption (`api` / `ssh` / `url` / `cli`) remains deferred; those descriptors exist
   for discovery and audit only, not for live use.
@@ -88,7 +88,7 @@ not the enforcer:
 
 Any review output you produce — dispatched sub-agent, script validator, or
 ad-hoc user-prompted — uses the schema at
-`.aid/runtime/templates/reviewer-ledger-schema.md` (under this tool's install root). Write the ledger as a single
+`.aid/runtime/templates/reviewer-ledger-schema.md`. Write the ledger as a single
 markdown table at `.aid/.temp/review-pending/<scope>.md`. Use the 7-column
 shape: `# | Severity | Status | Doc | Line | Description | Evidence`.
 Severity tags bracketed; Status enum: Pending/Fixed/Recurred/Accepted/OOS/Invalid.
