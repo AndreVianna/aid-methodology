@@ -961,9 +961,12 @@ function script:Add-AidRootRegion {
     script:Write-AidRootText -Path $File -Text ($Text + $suffix + $RegionBytes)
 }
 
-# Repairs one fixed root region while preserving all bytes outside it.
+# Repairs one fixed root region while preserving all bytes outside it. A well-formed marked span is
+# CLI-owned: it is replaced in place (a stale or edited body, e.g. an older rules summary, never leaves
+# orphan lines behind) after a trash copy unless it still matches $RecordedRegionSha. Otherwise the
+# region is repaired by content (exact managed lines).
 function script:Repair-AidRootRegion {
-    param([string]$File, [string]$Region, [string]$Root = '')
+    param([string]$File, [string]$Region, [string]$Root = '', [string]$RecordedRegionSha = '')
     if ($Root -eq '') { $Root = [System.IO.Path]::GetDirectoryName([System.IO.Path]::GetFullPath($File)) }
     $regionBytes = $script:_AidUtf8NoBom.GetBytes($Region)
     if (-not (Test-Path -LiteralPath $File -PathType Leaf)) {
@@ -976,6 +979,12 @@ function script:Repair-AidRootRegion {
     $regionText = $script:_AidLatin1.GetString($regionBytes)
     $text = script:Read-AidRootText -Path $File
     $lines = script:Split-AidRootLines -Text $text
+    $span = script:Get-AidMarkerSpan -Lines $lines
+    if ($null -ne $span) {
+        if ((script:Get-AidCanonicalRegion -Lines $lines -Span $span) -ceq $regionText) { return }
+        script:Repair-AidInlineRootRegion -File $File -Region $Region -Root $Root -RecordedRegionSha $RecordedRegionSha
+        return
+    }
     $expected = @($regionText.Split([char]10) | Where-Object { $_ -ne '' })
     $managed = script:New-AidOrdinalSet -Items $expected
     $values = $lines.Values
@@ -995,14 +1004,14 @@ function script:Repair-AidRootRegion {
 }
 
 # Repairs the CLAUDE.md region from the installed rules and returns its sha256. $Inline selects the
-# rules-inline region. With $RecordedSha (the remove path) a well-formed span is replaced in place,
-# trashing a copy first when it differs from the recorded hash.
+# rules-inline region. A well-formed span is replaced in place, with a trash copy first unless it
+# still matches $RecordedSha.
 function script:Invoke-EnsureClaudeMdRegion {
-    param([string]$File = (Join-Path $PWD.Path 'CLAUDE.md'), [string]$Root = '', [bool]$Inline = $false, [object]$RecordedSha = $null)
+    param([string]$File = (Join-Path $PWD.Path 'CLAUDE.md'), [string]$Root = '', [bool]$Inline = $false, [string]$RecordedSha = '')
     if ($Root -eq '') { $Root = [System.IO.Path]::GetDirectoryName([System.IO.Path]::GetFullPath($File)) }
     $claudeRegion = script:Get-AidRootRegion -RulesPath (Join-Path $Root '.aid/runtime/rules.md') -Inline $Inline -Kind 'claude'
-    if ($Inline -or $null -ne $RecordedSha) { script:Repair-AidInlineRootRegion -File $File -Region $claudeRegion -Root $Root -RecordedRegionSha $RecordedSha }
-    else { script:Repair-AidRootRegion -File $File -Region $claudeRegion -Root $Root }
+    if ($Inline) { script:Repair-AidInlineRootRegion -File $File -Region $claudeRegion -Root $Root -RecordedRegionSha $RecordedSha }
+    else { script:Repair-AidRootRegion -File $File -Region $claudeRegion -Root $Root -RecordedRegionSha $RecordedSha }
     return ([System.BitConverter]::ToString([System.Security.Cryptography.SHA256]::Create().ComputeHash([System.Text.Encoding]::UTF8.GetBytes($claudeRegion))).Replace('-', '').ToLowerInvariant())
 }
 
@@ -2544,14 +2553,20 @@ function Install-AidShared {
     if ($Phase -ne 'update-finalize') { script:Write-AidHostConf -Target $Target -WorktreeRoot $hostWorktree }
     $agentsPath=Join-Path $Target 'AGENTS.md'
     if ($inline) { script:Repair-AidInlineRootRegion -File $agentsPath -Region $region -Root $Target }
-    else { script:Repair-AidRootRegion -File $agentsPath -Region $region -Root $Target }
+    else {
+        $oldAgentsRegionSha=''; $oldAgentsEntry=script:Get-AidJsonProp (script:Get-AidJsonProp $old 'shared') 'agents_md'
+        if ($oldAgentsEntry -and $oldAgentsEntry.PSObject.Properties['region_sha256']) { $oldAgentsRegionSha=[string]$oldAgentsEntry.region_sha256 }
+        script:Repair-AidRootRegion -File $agentsPath -Region $region -Root $Target -RecordedRegionSha $oldAgentsRegionSha
+    }
     $utf8=New-Object System.Text.UTF8Encoding($false)
     $regionSha=(Get-FileHash -InputStream ([System.IO.MemoryStream]::new($utf8.GetBytes($region))) -Algorithm SHA256).Hash.ToLowerInvariant()
     $agentsSha=Get-Sha256File -FilePath $agentsPath
     $claudeSha=''
     if ($claudeUsers.Count -gt 0 -or (-not $script:_AidV3Upgrade -and (script:Get-AidJsonProp (script:Get-AidJsonProp $old 'shared') 'claude_md'))) {
         if (-not $script:_AidV3Upgrade) { $claudeUsers=@($script:AID_TOOLS | Where-Object { $claudeUsers -contains $_ -or @((script:Get-AidJsonProp (script:Get-AidJsonProp (script:Get-AidJsonProp $old 'shared') 'claude_md') 'users')) -contains $_ }) }
-        $claudeSha=script:Invoke-EnsureClaudeMdRegion -File (Join-Path $Target 'CLAUDE.md') -Root $Target -Inline $inline
+        $oldClaudeRegionSha=''; $oldClaudeEntry=script:Get-AidJsonProp (script:Get-AidJsonProp $old 'shared') 'claude_md'
+        if ($oldClaudeEntry -and $oldClaudeEntry.PSObject.Properties['region_sha256']) { $oldClaudeRegionSha=[string]$oldClaudeEntry.region_sha256 }
+        $claudeSha=script:Invoke-EnsureClaudeMdRegion -File (Join-Path $Target 'CLAUDE.md') -Root $Target -Inline $inline -RecordedSha $oldClaudeRegionSha
     }
     $model=Join-Path $Target ('.manifest-model.'+[System.IO.Path]::GetRandomFileName())
     $records=New-Object System.Collections.Generic.List[string]
