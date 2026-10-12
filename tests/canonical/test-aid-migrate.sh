@@ -1080,6 +1080,9 @@ else
     fail "AC-13 frozen clock: preoccupied .N suffixes kept and prior bytes moved to .2 — got ${RC}"
 fi
 v3_put "${fx}/.claude/aid/rules.md" "THIRD-EDIT"
+# The project is format 3 now, so a restored legacy path alone no longer re-triggers the
+# upgrade (FR-11); an interrupted-upgrade record is what legitimately runs retirement again.
+printf '{"format_version":1,"tools":["claude-code"],"retired":false}\n' > "${fx}/.aid/.temp/v3-upgrade-tools.json"
 v3_aid "$FROZEN_CODE" update --target "$fx" --from-bundle "$BUNDLE_DIR"
 if [[ "$RC" -eq 0 ]] && [[ "$(cat "$t")" == "THIRD-EDIT" ]] && cmp -s "${t}.20260101T000000Z.3" "${V3_PRE}/${name}/.claude/aid/rules.md" \
    && [[ "$(cat "${t}.20260101T000000Z")" == "PREOCCUPIED-1" ]] && [[ "$(cat "${t}.20260101T000000Z.1")" == "PREOCCUPIED-2" ]] \

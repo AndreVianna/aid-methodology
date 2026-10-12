@@ -1636,6 +1636,9 @@ function script:Invoke-AidFormatGate {
 }
 
 function script:Test-AidV3LegacyEvidence {
+    # A project whose manifest is a valid format 3 is a v4 project: legacy-looking paths
+    # (a v3 .cursor/aid/ restored by a branch switch, a user .codex/skills/aid-* folder)
+    # are NEVER evidence there -- see Get-AidV4StrayLegacyPaths, which reports them.
     param([string]$Repo)
     $manifestPath = Join-Path $Repo (Join-Path '.aid' '.aid-manifest.json')
     $manifest = $null
@@ -1645,6 +1648,7 @@ function script:Test-AidV3LegacyEvidence {
         if ($manifest -and $manifest.PSObject.Properties['format_version']) { $format = [int]$manifest.format_version }
         $tools = @(if ($manifest -and $manifest.PSObject.Properties['tools']) { @($manifest.tools.PSObject.Properties) } else { @() })
         if ($format -le 2 -and $tools.Count -gt 0) { return $true }
+        if ($format -eq 3) { return $false }
     }
     foreach ($rootName in @('.claude', '.codex', '.cursor', '.github', '.agent')) {
         if (Test-Path (Join-Path $Repo (Join-Path $rootName 'aid')) -PathType Container) { return $true }
@@ -1652,21 +1656,48 @@ function script:Test-AidV3LegacyEvidence {
         $skillsDir = Join-Path $Repo (Join-Path $rootName 'skills')
         if (Test-Path $skillsDir -PathType Container) {
             $skillDirs = @(Get-ChildItem -LiteralPath $skillsDir -Directory -Filter 'aid-*' -ErrorAction SilentlyContinue)
-            if ($skillDirs.Count -gt 0) {
-                $mirrorValid = $false
-                if ($rootName -eq '.claude' -and $format -eq 3 -and $manifest -and $manifest.PSObject.Properties['shared']) {
-                    $mirrors = $manifest.shared.PSObject.Properties['mirrors']
-                    if ($mirrors -and $mirrors.Value.PSObject.Properties['.claude/skills']) {
-                        $mirrorEntry = $mirrors.Value.PSObject.Properties['.claude/skills'].Value
-                        $users = @(if ($mirrorEntry.PSObject.Properties['users']) { @($mirrorEntry.users) } else { @() })
-                        $mirrorValid = ($users -contains 'claude-code')
-                    }
-                }
-                if (-not $mirrorValid) { return $true }
-            }
+            if ($skillDirs.Count -gt 0) { return $true }
         }
     }
     return $false
+}
+
+# Get-AidV4StrayLegacyPaths -Repo <dir> - the legacy-looking AID paths of a format-3
+# project, one string per path (fixed root order, then ordinal name order): <root>/aid,
+# .agents/aid and <root>/skills/aid-* folders under a skills dir the manifest does not
+# record as a mirror. Empty for any other project. Read-only.
+function script:Get-AidV4StrayLegacyPaths {
+    param([string]$Repo)
+    $manifestPath = Join-Path $Repo (Join-Path '.aid' '.aid-manifest.json')
+    $found = New-Object 'System.Collections.Generic.List[string]'
+    if (-not (Test-Path $manifestPath -PathType Leaf)) { return @() }
+    try { $manifest = Get-Content -LiteralPath $manifestPath -Raw | ConvertFrom-Json } catch { return @() }
+    if (-not ($manifest -and $manifest.PSObject.Properties['format_version'] -and [int]$manifest.format_version -eq 3)) { return @() }
+    $mirrorDirs = @()
+    if ($manifest.PSObject.Properties['shared'] -and $manifest.shared -and $manifest.shared.PSObject.Properties['mirrors'] -and $manifest.shared.mirrors) {
+        $mirrorDirs = @($manifest.shared.mirrors.PSObject.Properties | ForEach-Object { $_.Name })
+    }
+    foreach ($rootName in @('.claude', '.codex', '.cursor', '.github', '.agent')) {
+        if (Test-Path (Join-Path $Repo (Join-Path $rootName 'aid')) -PathType Container) { $found.Add("$rootName/aid") }
+        if ($rootName -eq '.codex' -and (Test-Path (Join-Path $Repo '.agents/aid') -PathType Container)) { $found.Add('.agents/aid') }
+        $skillsDir = Join-Path $Repo (Join-Path $rootName 'skills')
+        if ($mirrorDirs -contains "$rootName/skills" -or -not (Test-Path $skillsDir -PathType Container)) { continue }
+        $names = @(Get-ChildItem -LiteralPath $skillsDir -Directory -Filter 'aid-*' -ErrorAction SilentlyContinue | ForEach-Object { $_.Name })
+        [Array]::Sort($names, [StringComparer]::Ordinal)
+        foreach ($n in $names) { $found.Add("$rootName/skills/$n") }
+    }
+    return @($found)
+}
+
+# Write-AidV4StrayPathsWarning -Repo <dir> - one warning (stderr) naming the stray
+# legacy-looking paths of a v4 project; they are left untouched. Silent when none.
+function script:Write-AidV4StrayPathsWarning {
+    param([string]$Repo)
+    $strays = @(script:Get-AidV4StrayLegacyPaths -Repo $Repo)
+    if ($strays.Count -eq 0) { return }
+    [Console]::Error.WriteLine('WARN: aid: this v4 project has legacy-looking AID paths; they were left untouched:')
+    foreach ($p in $strays) { [Console]::Error.WriteLine("  $p") }
+    [Console]::Error.WriteLine('They are not part of the v4 layout. If you do not need them, delete them by hand (for example: rm -r <path>, or Remove-Item -Recurse <path> in PowerShell).')
 }
 
 function script:Test-AidManifestFormatGate {
@@ -5805,6 +5836,12 @@ if ($SUBCMD -in @('add','remove')) {
 # Ensures the CLI is current before the per-repo tool-update runs.  WARN-not-fail.
 if ($SUBCMD -eq 'update') {
     script:Invoke-AidUpdateSelfIfStale -FromBundle $_AidFromBundle
+}
+
+# A v4 (format 3) project is never a v3 upgrade, whatever legacy-looking paths a branch
+# switch or a user left behind: leave them untouched and report them once.
+if ($SUBCMD -eq 'update' -and -not $script:_AidV3Upgrade -and (script:Test-AidIsProjectDir -Dir $_AidTarget)) {
+    script:Write-AidV4StrayPathsWarning -Repo $_AidTarget
 }
 
 # Strip leading 'v' from version.

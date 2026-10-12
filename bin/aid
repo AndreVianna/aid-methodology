@@ -2073,8 +2073,11 @@ _aid_format_gate() {
 }
 
 # _aid_v3_legacy_evidence <repo> - FR-11's path and manifest evidence predicate.
+# A project whose manifest is a valid format 3 is a v4 project: legacy-looking paths
+# (a v3 .cursor/aid/ restored by a branch switch, a user .codex/skills/aid-* folder)
+# are NEVER evidence there -- see _aid_v4_stray_legacy_paths, which reports them.
 _aid_v3_legacy_evidence() {
-    local _repo="$1" _manifest="${1}/.aid/.aid-manifest.json" _fmt _tool _mirror_ok=0 _line _record
+    local _repo="$1" _manifest="${1}/.aid/.aid-manifest.json" _fmt _line
     if [[ -f "$_manifest" ]]; then
         _fmt="$(manifest_format "$_manifest")"
         # A manifest with no format_version predates format 3 (same as the PowerShell twin's 0).
@@ -2082,33 +2085,51 @@ _aid_v3_legacy_evidence() {
           && [[ -n "$(manifest_list_tools "$_manifest" | head -1)" ]]; then
             return 0
         fi
+        [[ "$_fmt" == 3 ]] && return 1
     fi
     for _line in .claude .codex .cursor .github .agent; do
         [[ -d "${_repo}/${_line}/aid" ]] && return 0
         if [[ "$_line" == ".codex" && -d "${_repo}/.agents/aid" ]]; then return 0; fi
         if [[ -d "${_repo}/${_line}/skills" ]]; then
-            # The manifest mirror check does not depend on the skill folder: answer it
-            # once (lazily, on the first aid-* folder) rather than once per folder.
-            local _mirror_known=0
-            while IFS= read -r _tool; do
-                [[ -n "$_tool" ]] || continue
-                if [[ "$_mirror_known" -eq 0 ]]; then
-                    _mirror_known=1
-                    _mirror_ok=0
-                    if [[ "$_line" == ".claude" && -f "$_manifest" && "${_fmt:-}" == 3 ]]; then
-                        while IFS= read -r _record; do
-                            if [[ "$_record" == $'shared.mirror\t.claude/skills\t'* && "$_record" == *$'\tclaude-code'* ]]; then
-                                _mirror_ok=1
-                                break
-                            fi
-                        done < <(manifest_read_shared "$_manifest")
-                    fi
-                fi
-                [[ "$_mirror_ok" -eq 1 ]] || return 0
-            done < <(find "${_repo}/${_line}/skills" -mindepth 1 -maxdepth 1 -type d -name 'aid-*' -print 2>/dev/null)
+            [[ -n "$(find "${_repo}/${_line}/skills" -mindepth 1 -maxdepth 1 -type d -name 'aid-*' -print -quit 2>/dev/null)" ]] && return 0
         fi
     done
     return 1
+}
+
+# _aid_v4_stray_legacy_paths <repo> - print, one per line (fixed root order, then name
+# order), the legacy-looking AID paths of a format-3 project: <root>/aid, .agents/aid
+# and <root>/skills/aid-* folders under a skills dir the manifest does not record as a
+# mirror. Prints nothing for any other project. Read-only.
+_aid_v4_stray_legacy_paths() {
+    local _repo="$1" _manifest="${1}/.aid/.aid-manifest.json" _root _record _name
+    local -A _mirror=()
+    [[ -f "$_manifest" && "$(manifest_format "$_manifest")" == 3 ]] || return 0
+    while IFS= read -r _record; do
+        [[ "$_record" == $'shared.mirror\t'* ]] || continue
+        _record="${_record#*$'\t'}"; _mirror["${_record%%$'\t'*}"]=1
+    done < <(manifest_read_shared "$_manifest")
+    for _root in .claude .codex .cursor .github .agent; do
+        [[ -d "${_repo}/${_root}/aid" ]] && printf '%s\n' "${_root}/aid"
+        [[ "$_root" == .codex && -d "${_repo}/.agents/aid" ]] && printf '%s\n' ".agents/aid"
+        [[ -n "${_mirror[${_root}/skills]:-}" || ! -d "${_repo}/${_root}/skills" ]] && continue
+        while IFS= read -r _name; do
+            printf '%s\n' "${_root}/skills/${_name}"
+        done < <(find "${_repo}/${_root}/skills" -mindepth 1 -maxdepth 1 -type d -name 'aid-*' 2>/dev/null | sed 's|.*/||' | LC_ALL=C sort)
+    done
+}
+
+# _aid_warn_v4_stray_paths <repo> - one warning (stderr) naming the stray legacy-looking
+# paths of a v4 project; they are left untouched. Silent when there are none.
+_aid_warn_v4_stray_paths() {
+    local _strays _p
+    _strays="$(_aid_v4_stray_legacy_paths "$1")"
+    [[ -n "$_strays" ]] || return 0
+    {
+        printf 'WARN: aid: this v4 project has legacy-looking AID paths; they were left untouched:\n'
+        while IFS= read -r _p; do printf '  %s\n' "$_p"; done <<< "$_strays"
+        printf 'They are not part of the v4 layout. If you do not need them, delete them by hand (for example: rm -r <path>, or Remove-Item -Recurse <path> in PowerShell).\n'
+    } >&2
 }
 
 # _aid_manifest_format_gate <repo> - refuse manifest formats newer than this CLI.
@@ -6335,6 +6356,12 @@ fi
 # Ensures the CLI is current before the per-repo tool-update runs.  WARN-not-fail.
 if [[ "$SUBCMD" == "update" ]]; then
     _aid_update_self_if_stale
+fi
+
+# A v4 (format 3) project is never a v3 upgrade, whatever legacy-looking paths a branch
+# switch or a user left behind: leave them untouched and report them once.
+if [[ "$SUBCMD" == "update" && "${_AID_V3_UPGRADE:-0}" -eq 0 ]] && _aid_is_project_dir "${_AID_TARGET}"; then
+    _aid_warn_v4_stray_paths "${_AID_TARGET}"
 fi
 
 # Strip leading 'v' from version.

@@ -6075,6 +6075,63 @@ t23_update_all() {
 t23_update_all
 
 # ===========================================================================
+# FIX-A: final-review row 1, both shells, identical bytes.
+#   FIX-A  a format-3 (v4) repo is never a v3 upgrade: stray legacy-looking paths (a
+#          restored .cursor/aid/, a user .codex/skills/aid-* folder) are left untouched
+#          and reported once; the manifest's tools and the Claude mirror stay; add works.
+# ===========================================================================
+tfx_aid() {  # <sh|ps> <home> <target> <args...> -> OUT / RC (add and update)
+    local shell="$1" home="$2" tgt="$3"; shift 3
+    if [[ "$shell" == sh ]]; then run_sh "$home" "$@" --from-bundle "$T23_STAGE" --target "$tgt"; OUT="$OUT_SH"; RC="$RC_SH"
+    else run_ps1 "$home" "$@" -FromBundle "$T23_STAGE" -Target "$tgt"; OUT="$OUT_PS1"; RC="$RC_PS1"; fi
+}
+tfx_home() {  # <sh|ps> -> a fresh AID_HOME
+    local h; h="$(newhome)"
+    if [[ "$1" == sh ]]; then setup_sh_home "$h"; else setup_ps1_home "$h"; fi
+    printf '%s\n' "$T23_VERSION" > "$h/VERSION"
+    printf '%s' "$h"
+}
+
+tfx_row1() {
+    local id="FIX-A" shell home tgt before after warn_sh="" warn_ps="" warn n
+    for shell in sh ps; do
+        home="$(tfx_home "$shell")"; tgt="$(newtarget)"
+        tfx_aid "$shell" "$home" "$tgt" add claude-code,cursor
+        assert_exit_eq "$RC" 0 "${id} ${shell} seed: add claude-code,cursor -> exit 0"
+        tfx_aid "$shell" "$home" "$tgt" update
+        assert_exit_eq "$RC" 0 "${id} ${shell} seed: first update settles the project -> exit 0"
+        mkdir -p "$tgt/.codex/skills/aid-mine" "$tgt/.cursor/aid/scripts"
+        printf 'user skill\n' > "$tgt/.codex/skills/aid-mine/SKILL.md"
+        printf '#!/bin/sh\n' > "$tgt/.cursor/aid/scripts/x.sh"
+        before="$(t23_tree "$tgt")"
+        tfx_aid "$shell" "$home" "$tgt" update
+        assert_exit_eq "$RC" 0 "${id} ${shell} update on a format-3 repo with stray legacy paths -> exit 0"
+        after="$(t23_tree "$tgt")"
+        assert_eq "$after" "$before" "${id} ${shell} update touches nothing (strays, mirror, agents, manifest bytes all unchanged)"
+        n="$(grep -c 'legacy-looking AID paths' <<< "$OUT")"
+        assert_eq "$n" "1" "${id} ${shell} the stray-path warning is printed exactly once"
+        assert_output_contains "$OUT" "  .cursor/aid" "${id} ${shell} warning names .cursor/aid"
+        assert_output_contains "$OUT" "  .codex/skills/aid-mine" "${id} ${shell} warning names .codex/skills/aid-mine"
+        assert_output_contains "$OUT" "delete them by hand" "${id} ${shell} warning says how to remove them"
+        assert_output_not_contains "$OUT" "moved to .aid/.trash" "${id} ${shell} no clean-slate upgrade ran"
+        [[ ! -e "$tgt/.aid/.trash" && ! -e "$tgt/.aid/.temp/v3-upgrade-tools.json" ]] \
+            && pass "${id} ${shell} no trash and no recovery record" || fail "${id} ${shell} no trash and no recovery record"
+        [[ "$(grep -c '"claude-code": {\|"cursor": {' "$tgt/.aid/.aid-manifest.json")" == 2 && ! -e "$tgt/.codex/agents" ]] \
+            && pass "${id} ${shell} manifest keeps claude-code and cursor; codex is not installed" || fail "${id} ${shell} manifest keeps claude-code and cursor; codex is not installed"
+        [[ -f "$tgt/.claude/skills/aid-ask/SKILL.md" ]] && pass "${id} ${shell} the v4 Claude mirror is kept" || fail "${id} ${shell} the v4 Claude mirror is kept"
+        warn="$(grep -F -e 'legacy-looking' -e '  .cursor/aid' -e '  .codex/skills/aid-mine' -e 'They are not part' <<< "$OUT")"
+        if [[ "$shell" == sh ]]; then warn_sh="$warn"; else warn_ps="$warn"; fi
+        tfx_aid "$shell" "$home" "$tgt" add copilot-cli
+        assert_exit_eq "$RC" 0 "${id} ${shell} add on that repo is accepted (layout gate ignores the strays)"
+        assert_output_not_contains "$OUT" "v3 AID layout" "${id} ${shell} add prints no v3-layout refusal"
+        [[ -f "$tgt/.cursor/aid/scripts/x.sh" && -f "$tgt/.codex/skills/aid-mine/SKILL.md" ]] \
+            && pass "${id} ${shell} add leaves the strays untouched" || fail "${id} ${shell} add leaves the strays untouched"
+    done
+    assert_eq "$warn_ps" "$warn_sh" "${id} warning text identical across shells"
+}
+tfx_row1
+
+# ===========================================================================
 # End-of-suite: real-HOME blast-surface canary
 #
 # Compare the .aid-subtree snapshot taken before the global HOME pin against

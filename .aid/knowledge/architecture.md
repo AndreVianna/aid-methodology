@@ -542,7 +542,10 @@ Non-obvious traps a change will trip (cannot be inferred from the code alone):
   `.agents/skills/aid-*/**` and `.aid/runtime/**`. Without it, a `core.autocrlf=true` checkout turns every
   installed file modified and breaks the `.sh` runtime.
 - **Old layouts do not mix.** `aid add` refuses a repo that holds v3 legacy evidence and points to
-  `aid update`, which runs a clean-slate upgrade: the old AID paths move to `.aid/.trash/`. A CLI from before
+  `aid update`, which runs a clean-slate upgrade: the old AID paths move to `.aid/.trash/`. A project whose
+  manifest is a valid format 3 is a v4 project and has no path evidence: `aid update` keeps its manifest tool
+  set, `aid add` accepts it, and any legacy-looking path found there (a restored `.cursor/aid/`, a user
+  `.codex/skills/aid-*` folder) is left untouched and reported by one warning. A CLI from before
   the shared layout cannot drive the shared layout, so the release notes name the CLI version each release
   requires.
 - **`generate-profile` is maintainer-only** and lives only in `.claude/skills/` — do not look

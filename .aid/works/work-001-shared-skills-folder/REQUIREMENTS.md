@@ -301,8 +301,21 @@ Any byte difference between copies therefore produces mixed, unpredictable behav
   - the manifest records `format_version` 2 or lower and at least one tool (a manifest recording no
     tools is never legacy evidence);
   - the directory `<root>/aid/` exists (for Codex, also the legacy `.agents/aid/`);
-  - a directory `<root>/skills/aid-*` exists, except the v4 Claude mirror `.claude/skills/aid-*`
-    when a valid format-3 manifest records it under `shared.mirrors`.
+  - a directory `<root>/skills/aid-*` exists.
+
+  **A valid format-3 manifest settles the question: that project is a v4 project and has no path
+  evidence at all.** The two path bullets above are consulted only when the manifest is not a
+  `format_version` 3 (absent, format 2 or lower with no tools, or unreadable); a pending recovery
+  record is the only other trigger and keeps its meaning. So `aid update` on a format-3 project
+  never takes the clean-slate upgrade, whatever legacy-looking paths appear -- a v3 `.cursor/aid/`
+  restored by a branch switch, a user `.codex/skills/aid-*` folder -- and its installed tool set is
+  always the tool set the format-3 manifest records, never one derived from such paths. Those
+  stray paths are left untouched (never moved, trashed or pruned) and reported once per run, on
+  stderr, as `WARN: aid: this v4 project has legacy-looking AID paths; they were left untouched:`
+  followed by one `  <path>` line each (fixed root order, then name order; the v4 mirror dirs
+  recorded under `shared.mirrors` are not stray) and a closing line telling the user to delete
+  them by hand if unwanted. `aid add` accepts such a project (its layout gate ignores them) and
+  stays silent about them. Bash and PowerShell print the same bytes.
 
   v4 per-tool agent files (`<root>/agents/aid-*`), the `AGENTS.md` pointer region, the `CLAUDE.md`
   import region and user directories holding no AID-owned path are NOT legacy evidence.
@@ -999,9 +1012,9 @@ recovery record or v3 legacy evidence (FR-11) exists (proven fresh install), or 
 records no tools and no other v3 legacy evidence exists (bare project). Manifest-less legacy layouts keep stamp 4, including after `aid projects add` or `aid
 update self` migrates settings; `aid add` refuses writes and directs the user to `aid update`. A
 pending recovery record also keeps stamp 4 until the format-3 manifest is committed. Otherwise it
-writes `4`. The evidence is the FR-11 list: v4 agents and root regions never count, and a valid format-3
-manifest recognizes the legitimate v4 Claude mirror. User directory-only evidence never triggers
-refusal.
+writes `4`. The evidence is the FR-11 list: v4 agents and root regions never count, and a valid
+format-3 manifest has no path evidence at all (its legitimate v4 Claude mirror included). User
+directory-only evidence never triggers refusal.
 
 **`.gitignore` managed block** (`_aid_gitignore_block`): `.aid/.worktrees/` is added to the
 existing entries. When `host.worktree_root` is not under `.aid/`, the block also lists that root
@@ -1092,7 +1105,8 @@ copy. That is replaced by this policy.
    tools, no other legacy evidence) passes whatever its manifest format and stamp, and this add
    writes the format-3 manifest and stamp 5. A fresh repo with none of these signals passes, including when
    settings are absent. Legacy evidence is the FR-11 list only; v4 agents at `<root>/agents/aid-*` never
-   count. User directory names alone are not evidence. Print `This project uses the v3 AID layout. Run: aid update
+   count, and a valid format-3 manifest has no path evidence, so stray legacy-looking paths never
+   refuse `aid add` on a v4 project. User directory names alone are not evidence. Print `This project uses the v3 AID layout. Run: aid update
    (it upgrades every installed tool), then retry aid add.`, and write nothing (AC-12).
 3. **Skew gate.** The manifest records a `tools.*.version` or a `shared.*.version` that differs
    from `aid_version`. Exit 2 and name `aid update` (AC-11).
@@ -1472,7 +1486,9 @@ layout or manifest shape) is not a supported source: upgrade it to v3 first, the
 with v4. The test corpus covers the v3 -> v4 upgrade only.
 
 **Trigger.** `aid update` finds v3 legacy evidence (FR-11),
-or `.aid/.temp/v3-upgrade-tools.json` exists. `aid add` never upgrades; `aid add` and `aid remove`
+or `.aid/.temp/v3-upgrade-tools.json` exists. A project whose manifest is a valid format 3 has no
+path evidence (FR-11), so it never takes this path unless the recovery record exists; its stray
+legacy-looking paths are left untouched and reported once as a warning. `aid add` never upgrades; `aid add` and `aid remove`
 refuse while that record exists. Read-only format checks for unsupported future formats still
 win over recovery. Ordinary `aid update` without either trigger is unchanged.
 
