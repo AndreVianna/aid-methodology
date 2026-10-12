@@ -258,6 +258,7 @@ END {
     for (i = 1; i <= n; i++) { v = L[i]; if (!(i == n && !endnl)) sub(/\r$/, "", v); V[i] = v }
     if (inl) { M["<!-- AID:BEGIN -->"] = 1; M["<!-- AID:END -->"] = 1 }
     else for (r = 1; r <= nR; r++) M[R[r]] = 1
+    if (xtra != "") M[xtra] = 1
     for (i = 1; i <= n; i++) {
         if (V[i] == "<!-- AID:BEGIN -->") { nb++; b = i } else if (V[i] == "<!-- AID:END -->") { ne++; e = i }
         if (V[i] in M) pos++
@@ -288,9 +289,10 @@ _aid_marker_span() {
     LC_ALL=C awk -v endnl="$(_aid_file_endnl "$1")" -v mb="$mb" -v me="$me" "$_AID_AWK_SPAN" "$1"
 }
 
-# _aid_region_decide <file> <region> <inline:0|1> <rewrite-out> - run _AID_AWK_REPAIR.
+# _aid_region_decide <file> <region> <inline:0|1> <rewrite-out> [extra-owned-line] - run _AID_AWK_REPAIR.
+# The optional line is owned like a region line (a stale copy outside the region is absorbed).
 _aid_region_decide() {
-    AID_REWRITE_OUT="$4" LC_ALL=C awk -v endnl="$(_aid_file_endnl "$1")" -v inl="$3" "$_AID_AWK_REPAIR" <(printf '%s' "$2") "$1"
+    AID_REWRITE_OUT="$4" LC_ALL=C awk -v endnl="$(_aid_file_endnl "$1")" -v inl="$3" -v xtra="${5:-}" "$_AID_AWK_REPAIR" <(printf '%s' "$2") "$1"
 }
 
 # _aid_cut_marker_region <file> <check:0|1> <root> <recorded-sha> [begin end]
@@ -1110,13 +1112,17 @@ PY
 
 
 # Fixed root context regions. Keep these LF-only constants in both install cores.
-_AID_AGENTS_POINTER_REGION=$'<!-- AID:BEGIN -->\n<!-- Managed by the AID CLI. Do not edit between the AID markers. -->\n@.aid/runtime/rules.md\nBefore acting, read and follow `.aid/runtime/rules.md` (AID rules).\n<!-- AID:END -->\n'
-_AID_CLAUDE_IMPORT_REGION=$'<!-- AID:BEGIN -->\n@AGENTS.md\n<!-- AID:END -->\n'
+# AGENTS.md carries a plain read instruction (no '@' line: only Claude Code expands '@' imports);
+# CLAUDE.md imports AGENTS.md and the rules directly, or only AGENTS.md when the rules are inline.
+_AID_AGENTS_POINTER_REGION=$'<!-- AID:BEGIN -->\n<!-- Managed by the AID CLI. Do not edit between the AID markers. -->\nAt the start of every session, before anything else, read `.aid/runtime/rules.md` and follow it (AID rules).\n<!-- AID:END -->\n'
+_AID_CLAUDE_IMPORT_REGION=$'<!-- AID:BEGIN -->\n@AGENTS.md\n@.aid/runtime/rules.md\n<!-- AID:END -->\n'
+_AID_CLAUDE_IMPORT_REGION_INLINE=$'<!-- AID:BEGIN -->\n@AGENTS.md\n<!-- AID:END -->\n'
+_AID_CLAUDE_RULES_IMPORT='@.aid/runtime/rules.md'
 
-# _repair_root_region <file> <region> [project-root]
+# _repair_root_region <file> <region> [project-root] [extra-owned-line]
 # Preserve bytes outside exact managed lines; malformed regions are backed up first.
 _repair_root_region() {
-    local file="$1" region="$2" root="${3:-$(dirname "$1")}" tmp decision
+    local file="$1" region="$2" root="${3:-$(dirname "$1")}" xtra="${4:-}" tmp decision
     if [[ ! -e "$file" ]]; then
         mkdir -p "$(dirname "$file")" || return 1
         printf '%s' "$region" > "$file"
@@ -1125,7 +1131,7 @@ _repair_root_region() {
     [[ -f "$file" ]] || return 1
     _aid_root_file_guard "$file" || return 1
     tmp="$(mktemp)" || return 1
-    decision="$(_aid_region_decide "$file" "$region" 0 "$tmp")" || { rm -f "$tmp"; return 1; }
+    decision="$(_aid_region_decide "$file" "$region" 0 "$tmp" "$xtra")" || { rm -f "$tmp"; return 1; }
     case "$decision" in
         noop) ;;
         append) _aid_append_region "$file" "$region" || { rm -f "$tmp"; return 1; } ;;
@@ -1137,11 +1143,13 @@ _repair_root_region() {
     rm -f "$tmp"
 }
 
-# Repair and print the canonical import-region hash.
+# Repair and print the canonical import-region hash. A third argument of 1 (rules_inline active)
+# selects the @AGENTS.md-only region; the rules import line stays owned either way.
 _ensure_claude_md_region() {
-    local file="${1:-$PWD/CLAUDE.md}" root="${2:-$(dirname "${1:-$PWD/CLAUDE.md}")}"
-    _repair_root_region "$file" "$_AID_CLAUDE_IMPORT_REGION" "$root" || return 1
-    printf '%s\n' "$(printf '%s' "$_AID_CLAUDE_IMPORT_REGION" | _aid_sha256_stdin)"
+    local file="${1:-$PWD/CLAUDE.md}" root="${2:-$(dirname "${1:-$PWD/CLAUDE.md}")}" region="$_AID_CLAUDE_IMPORT_REGION"
+    [[ "${3:-0}" == 1 ]] && region="$_AID_CLAUDE_IMPORT_REGION_INLINE"
+    _repair_root_region "$file" "$region" "$root" "$_AID_CLAUDE_RULES_IMPORT" || return 1
+    printf '%s\n' "$(printf '%s' "$region" | _aid_sha256_stdin)"
 }
 
 # Remove the exact Claude import region, backing up drift before the surgical edit.
@@ -3710,7 +3718,7 @@ install_shared() {
     region_sha="$(printf '%s' "$region" | _aid_sha256_stdin)"
     agents_sha="$(sha256_file "${target}/AGENTS.md")"
     if [[ "$claude_users" -eq 1 ]]; then
-        claude_sha="$(_ensure_claude_md_region "${target}/CLAUDE.md" "$target")" || return 1
+        claude_sha="$(_ensure_claude_md_region "${target}/CLAUDE.md" "$target" "$inline")" || return 1
     else claude_sha=""; fi
     [[ "${_COPY_COUNT_FAILED:-0}" -eq 0 ]] || return 1
 
@@ -3755,10 +3763,11 @@ _AID_AWK_REFRESH='
 BEGIN { FS = OFS = "\t" }
 $1 == "shared.agents_md.region_sha256" && ars != "" { print $1, ars; next }
 $1 == "shared.agents_md.file_sha256" && afs != "" { print $1, afs; next }
+$1 == "shared.claude_md.region_sha256" && cs != "" { print $1, cs; next }
 $1 == "shared.runtime.file" && $2 == "host.conf" && hs != "" && !done { print $1, $2, hs; done = 1; next }
 { print }'
 _refresh_remove_manifest_hashes() {
-    local manifest="$1" target="$2" refresh_file_sha="${3:-0}" agents="${2}/AGENTS.md" host="${2}/.aid/runtime/host.conf"
+    local manifest="$1" target="$2" refresh_file_sha="${3:-0}" cs="${4:-}" agents="${2}/AGENTS.md" host="${2}/.aid/runtime/host.conf"
     local canon ars="" afs="" hs="" model
     if [[ -f "$agents" ]]; then
         canon="$(mktemp)" || return 1
@@ -3770,15 +3779,25 @@ _refresh_remove_manifest_hashes() {
     fi
     [[ -f "$host" ]] && hs="$(sha256_file "$host")"
     model="$(mktemp "$(dirname "$manifest")/.manifest-model.XXXXXX")" || return 1
-    _manifest_model "$manifest" | LC_ALL=C awk -v ars="$ars" -v afs="$afs" -v hs="$hs" "$_AID_AWK_REFRESH" > "$model" || { rm -f "$model"; return 1; }
+    _manifest_model "$manifest" | LC_ALL=C awk -v ars="$ars" -v afs="$afs" -v hs="$hs" -v cs="$cs" "$_AID_AWK_REFRESH" > "$model" || { rm -f "$model"; return 1; }
     manifest_write_v3 "$manifest" "$model" || { rm -f "$model"; return 1; }
     rm -f "$model"
 }
 
+# _aid_manifest_has_inline <manifest> - 0 when any recorded tool declares rules_inline.
+_aid_manifest_has_inline() {
+    local t
+    while IFS= read -r t; do
+        if manifest_read_tool_files "$1" "$t" | awk -F '\t' -v t="$t" '$1=="tools." t ".rules_inline" && $2=="true" {found=1} END{exit !found}'; then return 0; fi
+    done < <(manifest_list_tools "$1")
+    return 1
+}
+
 _uninstall_tool_v3() {
-    local manifest="$1" tool="$2" target="$3" format line rel sha full previous pdir root
+    local manifest="$1" tool="$2" target="$3" format line rel sha full previous pdir root inline_before=0 claude_resync=""
     local -a paths=()
     _aid_mc_prime "$manifest"
+    _aid_manifest_has_inline "$manifest" && inline_before=1
     format="$(manifest_format "$manifest")"
     [[ "$format" == 3 ]] || return 2
     previous="$(mktemp "${target}/.aid/.manifest-remove.XXXXXX")" || return 1
@@ -3837,16 +3856,18 @@ _uninstall_tool_v3() {
         worktree="$(manifest_list_tools "$manifest" | while IFS= read -r t; do manifest_read_tool_files "$manifest" "$t" | awk -F '\t' -v t="$t" '$1=="tools." t ".worktree_root" {print $2; exit}'; done | head -1)"
         [[ -n "$worktree" ]] || worktree='.aid/.worktrees'
         write_host_conf "$target" "$worktree" || return 1
-        while IFS= read -r t; do
-            if manifest_read_tool_files "$manifest" "$t" | awk -F '\t' -v t="$t" '$1=="tools." t ".rules_inline" && $2=="true" {found=1} END{exit !found}'; then inline=1; break; fi
-        done < <(manifest_list_tools "$manifest")
+        _aid_manifest_has_inline "$manifest" && inline=1
         if [[ "$inline" == 1 ]]; then
             region="$(printf '<!-- AID:BEGIN -->\n<!-- Managed by the AID CLI. Do not edit between the AID markers. -->\n'; cat "${target}/.aid/runtime/rules.md"; printf '<!-- AID:END -->\n')"$'\n'
             _repair_inline_root_region "${target}/AGENTS.md" "$region" "$target" "$agents_region_sha" || return 1
         else
             _repair_inline_root_region "${target}/AGENTS.md" "$_AID_AGENTS_POINTER_REGION" "$target" "$agents_region_sha" || return 1
         fi
-        _refresh_remove_manifest_hashes "$manifest" "$target" "$agents_file_refresh" || return 1
+        # CLAUDE.md follows the inline state: @AGENTS.md alone while the rules are inline, else it also imports them.
+        if [[ -n "$claude_left" && "$inline_before" != "$inline" && -f "${target}/CLAUDE.md" ]]; then
+            claude_resync="$(_ensure_claude_md_region "${target}/CLAUDE.md" "$target" "$inline")" || return 1
+        fi
+        _refresh_remove_manifest_hashes "$manifest" "$target" "$agents_file_refresh" "$claude_resync" || return 1
     else
         rm -f "$(dirname "$manifest")/settings.yml"
         _remove_gitattributes_block "$target" || return 1
