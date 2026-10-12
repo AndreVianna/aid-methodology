@@ -17,6 +17,11 @@
 # so a Windows autocrlf checkout can't inject CRLF that a consumer's parser mishandles
 # (a CRLF checkout made vendor.js leak comment lines as bogus file paths).
 dashboard/MANIFEST text eol=lf
+# The per-tool install descriptor is extensionless too, and release.sh copies it into
+# each tool artifact verbatim. The CLI refuses a descriptor that is not ASCII with LF
+# endings, so a Windows autocrlf checkout that stages a release made every `aid add`
+# from that stage fail.
+profiles/*/aid-tool.conf text eol=lf
 # Two registered files that sit outside every root above and that no extension rule
 # reaches: the settings template (verbatim class) and the generated-file registry
 # (transformed class).
