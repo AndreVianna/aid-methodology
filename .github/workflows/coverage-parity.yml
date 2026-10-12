@@ -5,10 +5,11 @@ name: coverage-parity
 # WHY A SEPARATE LANE (not a step in test.yml's canonical-tests job):
 #   test.yml's canonical suites run in parallel and are budgeted to finish in
 #   ~3 min. coverage-parity.sh `collect` re-runs the ENTIRE canonical corpus
-#   SERIALLY under --verbose (one suite at a time, so every executed PASS/FAIL
-#   assertion can be attributed to its suite), which takes ~6-7 min. Folding
-#   that into the canonical-tests job would roughly triple its wall-clock, so
-#   it gets its own path-filtered lane that only fires when tests/** change.
+#   under --verbose (suites run in parallel, each into its own output file, and
+#   are read back one suite at a time so every executed PASS/FAIL assertion is
+#   attributed to its suite). Folding that into the canonical-tests job would
+#   roughly double its wall-clock, so it gets its own path-filtered lane that
+#   only fires when tests/** change.
 #
 # ADVISORY UNTIL BOOTSTRAPPED:
 #   The gate diffs the live corpus against a committed baseline inventory
@@ -70,7 +71,7 @@ jobs:
         run: find canonical/aid/scripts tests/canonical -name '*.sh' -exec chmod +x {} +
       - name: Assert test runtimes present (node + pwsh + python3)
         shell: bash
-        # `collect` counts only "PASS:"/"FAIL:" lines (tests/coverage-parity.sh:223-224)
+        # `collect` counts only "PASS:"/"FAIL:" lines (collect_inventory in tests/coverage-parity.sh)
         # and a SKIP is neither, so a runtime-guarded assertion whose runtime is absent is
         # ABSENT FROM THE INVENTORY ENTIRELY rather than recorded as skipped. A baseline
         # captured that way cannot notice those assertions disappearing -- the exact

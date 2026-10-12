@@ -2448,16 +2448,32 @@ PY
 }
 
 # v3_shared_checks <label> <fx> <tool...>: AC-3 and AC-7 after an upgrade.
+declare -A V3_SUM=()
+# v3_same <a> <b>: cmp -s, answered from the batched hashes in V3_SUM when both are known.
+v3_same() {
+    if [[ -n "${V3_SUM[$1]:-}" && -n "${V3_SUM[$2]:-}" ]]; then [[ "${V3_SUM[$1]}" == "${V3_SUM[$2]}" ]]
+    else cmp -s "$1" "$2"; fi
+}
 v3_shared_checks() {
-    local lbl="$1" fx="$2" rel tool bad=0 root
+    local lbl="$1" fx="$2" rel tool bad=0 root line
+    local -a rels=() files=()
     shift 2
-    while IFS= read -r rel; do
-        cmp -s "${REPO_ROOT}/canonical/skills/${rel}" "${fx}/.agents/skills/${rel}" || bad=$((bad + 1))
+    mapfile -t rels < <(cd "${REPO_ROOT}/canonical/skills" && find . -type f | sed 's#^\./##' | sort)
+    # One sha256sum pass over every compared file instead of a cmp per file pair.
+    V3_SUM=()
+    for rel in "${rels[@]}"; do
+        files+=("${REPO_ROOT}/canonical/skills/${rel}" "${fx}/.agents/skills/${rel}" "${fx}/.claude/skills/${rel}")
+    done
+    while IFS= read -r line; do
+        [[ "${line:0:64}" =~ ^[0-9a-f]{64}$ && "${line:64:2}" == "  " ]] && V3_SUM["${line:66}"]="${line:0:64}"
+    done < <(printf '%s\0' "${files[@]}" | xargs -0 sha256sum 2>/dev/null)
+    for rel in "${rels[@]}"; do
+        v3_same "${REPO_ROOT}/canonical/skills/${rel}" "${fx}/.agents/skills/${rel}" || bad=$((bad + 1))
         for tool in "$@"; do
             [[ "$tool" == claude-code ]] || continue
-            cmp -s "${REPO_ROOT}/canonical/skills/${rel}" "${fx}/.claude/skills/${rel}" || bad=$((bad + 1))
+            v3_same "${REPO_ROOT}/canonical/skills/${rel}" "${fx}/.claude/skills/${rel}" || bad=$((bad + 1))
         done
-    done < <(cd "${REPO_ROOT}/canonical/skills" && find . -type f | sed 's#^\./##' | sort)
+    done
     if [[ "$bad" -eq 0 ]]; then pass "${lbl}: AC-3 installed skills byte-identical to canonical"
     else fail "${lbl}: AC-3 installed skills byte-identical to canonical — ${bad} mismatch(es)"; fi
     if diff -r -x node_modules -x '.*' "${REPO_ROOT}/canonical/aid/scripts" "${fx}/.aid/runtime/scripts" >/dev/null 2>&1 \

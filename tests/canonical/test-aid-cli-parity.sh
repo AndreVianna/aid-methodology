@@ -5803,17 +5803,29 @@ t23_manifest() {  # <manifest-path>
 
 # Tree fingerprint: "relpath sha256" per file. Trash stamps in names are masked;
 # the manifest is hashed in its masked form.
+# One find, one sed and one batched sha256sum per tree (a file the batch could not
+# hash -- an escaped name, an unreadable file -- is hashed on its own, as before).
 t23_tree() {  # <dir>
-    local dir="$1" rel shown
-    while IFS= read -r rel; do
-        rel="${rel#./}"
-        shown="$(printf '%s' "$rel" | sed -E 's/[0-9]{8}T[0-9]{6}Z/<TS>/g')"
+    local dir="$1" rel line i
+    local -a rels=() shown=()
+    local -A sum=()
+    mapfile -t rels < <(cd "$dir" && find . -type f | LC_ALL=C sort)
+    [[ "${#rels[@]}" -gt 0 ]] || return 0
+    rels=("${rels[@]#./}")
+    mapfile -t shown < <(printf '%s\n' "${rels[@]}" | sed -E 's/[0-9]{8}T[0-9]{6}Z/<TS>/g')
+    while IFS= read -r line; do
+        [[ "${line:0:64}" =~ ^[0-9a-f]{64}$ && "${line:64:2}" == "  " ]] && sum["${line:66}"]="${line:0:64}"
+    done < <(cd "$dir" && printf '%s\0' "${rels[@]}" | xargs -0 sha256sum 2>/dev/null)
+    for i in "${!rels[@]}"; do
+        rel="${rels[$i]}"
         if [[ "$rel" == .aid/.aid-manifest.json ]]; then
-            printf '%s manifest:%s\n' "$shown" "$(t23_manifest "${dir}/${rel}" | sha256sum | awk '{print $1}')"
+            printf '%s manifest:%s\n' "${shown[$i]}" "$(t23_manifest "${dir}/${rel}" | sha256sum | awk '{print $1}')"
+        elif [[ -n "${sum[$rel]+x}" ]]; then
+            printf '%s %s\n' "${shown[$i]}" "${sum[$rel]}"
         else
-            printf '%s %s\n' "$shown" "$(sha256sum "${dir}/${rel}" | awk '{print $1}')"
+            printf '%s %s\n' "${shown[$i]}" "$(sha256sum "${dir}/${rel}" | awk '{print $1}')"
         fi
-    done < <(cd "$dir" && find . -type f | LC_ALL=C sort)
+    done
 }
 
 # Trash entries whose name carries a date-like stamp that is not yyyyMMddTHHmmssZ
