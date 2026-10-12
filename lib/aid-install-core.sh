@@ -274,6 +274,72 @@ sha256_file() {
     fi
 }
 
+# _aid_sha256_batch - read NUL-terminated file paths on stdin and print one
+# "<sha256><TAB><path>" line per file hashed, using ONE hashing process for the whole
+# list instead of one per file. Files the utility cannot read, and names it would
+# have to escape (backslash or newline), are simply absent from the output: callers
+# fall back to sha256_file (or cmp) for any path without a line. Prints nothing when
+# no sha256 utility exists.
+_aid_sha256_batch() {
+    local line
+    local -a hasher=()
+    if command -v sha256sum >/dev/null 2>&1; then hasher=(sha256sum)
+    elif command -v shasum >/dev/null 2>&1; then hasher=(shasum -a 256)
+    else cat >/dev/null; return 0; fi
+    xargs -0 "${hasher[@]}" 2>/dev/null | while IFS= read -r line; do
+        [[ "${line:0:64}" =~ ^[0-9a-f]{64}$ && "${line:64:1}" == ' ' ]] || continue
+        printf '%s\t%s\n' "${line:0:64}" "${line:66}"
+    done
+    return 0
+}
+
+# _aid_dirname_to <var> <path> - dirname(1) without a fork: assign the directory part
+# of <path> to <var> (trailing slashes ignored, "." for a bare name, "/" for the root).
+_aid_dirname_to() {
+    local _adt_p="$2"
+    while [[ "$_adt_p" == */ && "$_adt_p" != / ]]; do _adt_p="${_adt_p%/}"; done
+    if [[ "$_adt_p" != */* ]]; then
+        _adt_p=.
+    else
+        _adt_p="${_adt_p%/*}"
+        while [[ "$_adt_p" == */ ]]; do _adt_p="${_adt_p%/}"; done
+        [[ -n "$_adt_p" ]] || _adt_p=/
+    fi
+    printf -v "$1" '%s' "$_adt_p"
+}
+
+# _aid_same_rels <src-root> <dst-root> [aid-only] - prepare a copy of every file under
+# <src-root> to the same relative path under <dst-root> (aid-only=1: aid-*/* paths only):
+#   - print, NUL-terminated, every relative path whose destination already holds the same
+#     bytes (one batched hash pass replaces a cmp per file);
+#   - create the missing destination directories in one mkdir batch (a directory the
+#     batch could not create is created, and its error reported, by the per-file copy).
+# A path that is not printed is simply unknown: the caller compares it itself.
+_aid_same_rels() {
+    local src="$1" dst="$2" aid_only="${3:-0}" f rel sha path dir
+    local -a rels=() files=() dirs=()
+    local -A got=() seen=()
+    while IFS= read -r -d '' f; do
+        rel="${f#${src}/}"
+        [[ "$aid_only" == 1 && "$rel" != aid-*/* ]] && continue
+        if [[ ! -e "${dst}/${rel}" ]]; then
+            _aid_dirname_to dir "${dst}/${rel}"
+            if [[ ! -d "$dir" && -z "${seen[$dir]+x}" ]]; then seen["$dir"]=1; dirs+=("$dir"); fi
+            continue
+        fi
+        [[ -f "${dst}/${rel}" ]] || continue
+        rels+=("$rel"); files+=("$f" "${dst}/${rel}")
+    done < <(find "$src" -type f -print0 2>/dev/null)
+    if [[ "${#dirs[@]}" -gt 0 ]]; then printf '%s\0' "${dirs[@]}" | xargs -0 mkdir -p -- 2>/dev/null || true; fi
+    [[ "${#files[@]}" -gt 0 ]] || return 0
+    while IFS=$'\t' read -r sha path; do got["$path"]="$sha"; done < <(printf '%s\0' "${files[@]}" | _aid_sha256_batch)
+    for rel in "${rels[@]}"; do
+        sha="${got["${src}/${rel}"]:-}"
+        [[ -n "$sha" && "${got["${dst}/${rel}"]:-}" == "$sha" ]] && printf '%s\0' "$rel"
+    done
+    return 0
+}
+
 # ---------------------------------------------------------------------------
 # Tool-id normalization + detection
 # ---------------------------------------------------------------------------
@@ -647,8 +713,8 @@ extract_tarball() {
 copy_file() {
     local src="$1" dst="$2" force="${3:-0}"
     local dst_dir
-    dst_dir="$(dirname "$dst")"
-    mkdir -p "$dst_dir"
+    _aid_dirname_to dst_dir "$dst"
+    [[ -d "$dst_dir" ]] || mkdir -p "$dst_dir"
 
     if [[ ! -e "$dst" ]]; then
         if ! cp "$src" "$dst"; then
@@ -766,7 +832,8 @@ trash_file() {
         return 1
     fi
     dest="${root}/.aid/.trash/${rel}"
-    if ! mkdir -p "$(dirname "$dest")"; then
+    local dest_dir; _aid_dirname_to dest_dir "$dest"
+    if ! mkdir -p "$dest_dir"; then
         echo "ERROR: aid-install-core: cannot create trash directory for: ${dest}" >&2
         return 1
     fi
@@ -807,10 +874,13 @@ trash_file() {
 # sha256 is recorded (empty), it is drifted because its bytes differ from <src>.
 # <dst> must sit under <root> (default: $PWD) for the trash entry to be placed.
 # A failed trash leaves the destination in place and counts as a failure.
+# <same>=1 is the caller's promise that <src> and an existing <dst> hold identical
+# bytes (see _aid_same_rels); it replaces the per-file cmp.
 copy_file_guarded() {
-    local src="$1" dst="$2" recorded="${3:-}" root="${4:-$PWD}"
-    local drifted=0 dst_sha
-    mkdir -p "$(dirname "$dst")"
+    local src="$1" dst="$2" recorded="${3:-}" root="${4:-$PWD}" same="${5:-0}"
+    local drifted=0 dst_sha dst_dir
+    _aid_dirname_to dst_dir "$dst"
+    [[ -d "$dst_dir" ]] || mkdir -p "$dst_dir"
 
     if [[ ! -e "$dst" ]]; then
         if ! cp "$src" "$dst"; then
@@ -823,7 +893,7 @@ copy_file_guarded() {
         return 0
     fi
 
-    if cmp -s "$src" "$dst"; then
+    if [[ "$same" == 1 ]] || cmp -s "$src" "$dst"; then
         _COPY_COUNT_UPTODATE=$((_COPY_COUNT_UPTODATE + 1))
         [[ "${AID_VERBOSE:-0}" -eq 1 ]] && echo "Up to date: ${dst}"
         return 0
@@ -1714,6 +1784,8 @@ PY
 manifest_list_tools() {
     local manifest="$1"
     [[ -f "$manifest" ]] || return 0
+    _aid_mc_prime "$manifest"
+    if _aid_mc_find "$manifest" && _aid_mc_emit list; then return 0; fi
     if command -v python3 >/dev/null 2>&1; then
         # tr strips any stray CR from Python's text-mode stdout translation
         # on Windows (print() emits \r\n there); on Linux/macOS this is a
@@ -2308,14 +2380,90 @@ _aid_v3_read_awk() {
 }
 
 # _manifest_v3_read_python <manifest> <mode> [tool] - python3 reader (same records as the awk reader).
+# Mode "all" (used by _aid_mc_prime only) prints every view at once: for each view a
+# \x01<key>\x01 header then the exact bytes the single-view call would print, where
+# <key> is format, host, shared, list (manifest_list_tools) or tool:<id>; a final
+# \x01END marks a complete render. It prints
+# nothing at all -- so nothing is cached -- unless the manifest is plain printable
+# ASCII without backslashes (no JSON escapes) and every view renders cleanly.
 _manifest_v3_read_python() {
-    python3 - "$1" "$2" "${3:-}" <<'PY'
-import json, sys
+    python3 - "$1" "$2" "${3:-}" "${AID_TOOLS[@]}" <<'PY'
+import json, re, sys
 import signal
 if hasattr(signal, "SIGPIPE"):
     signal.signal(signal.SIGPIPE, signal.SIG_DFL)  # a reader that stops early (head, awk exit) is not an error
 
 manifest, mode, tool = sys.argv[1], sys.argv[2], sys.argv[3]
+
+
+def render(data, mode, tool):
+    out = []
+    if mode == "format":
+        if "format_version" in data:
+            out.append(str(data["format_version"]))
+    elif mode == "host":
+        host = data.get("host")
+        if isinstance(host, dict) and "worktree_root" in host:
+            out.append("host.worktree_root\t" + str(host["worktree_root"]))
+    elif mode == "shared":
+        shared = data.get("shared") if isinstance(data.get("shared"), dict) else {}
+        for e in ["skills", "runtime", "agents_md", "claude_md"]:
+            ent = shared.get(e)
+            if not isinstance(ent, dict):
+                continue
+            for k, v in ent.items():
+                if k == "users":
+                    out.append("shared.%s.users\t%s" % (e, ",".join(v)))
+                elif k == "files":
+                    for f in v:
+                        out.append("shared.%s.file\t%s\t%s" % (e, f["path"], f["sha256"]))
+                else:
+                    out.append("shared.%s.%s\t%s" % (e, k, v))
+        mirrors = shared.get("mirrors") if isinstance(shared.get("mirrors"), dict) else {}
+        for d, m in mirrors.items():
+            out.append("shared.mirror\t%s\t%s\t%s" % (d, m.get("version", ""), ",".join(m.get("users", []))))
+    elif mode == "tool":
+        tools = data.get("tools") if isinstance(data.get("tools"), dict) else {}
+        t = tools.get(tool)
+        if isinstance(t, dict):
+            for m in t.get("mirrors", []):
+                out.append("tools.%s.mirror\t%s" % (tool, m))
+            if "worktree_root" in t:
+                out.append("tools.%s.worktree_root\t%s" % (tool, t["worktree_root"]))
+            if t.get("rules_inline") is True:
+                out.append("tools.%s.rules_inline\ttrue" % tool)
+            for f in t.get("files", []):
+                out.append("tools.%s.file\t%s\t%s" % (tool, f["path"], f["sha256"]))
+    return "".join(line + "\n" for line in out)
+
+
+if mode == "all":
+    try:
+        with open(manifest, "rb") as fh:
+            raw = fh.read()
+        if re.search(rb"[^\x20-\x5b\x5d-\x7e\t\n\r]", raw):
+            sys.exit(0)  # escapes or non-ASCII: let every view parse the file itself
+        data = json.loads(raw.decode("ascii"))
+        sections = []
+        listed = []
+        if isinstance(data, dict):
+            sections = [(k, render(data, k, "")) for k in ("format", "host", "shared")]
+            if isinstance(data.get("tools", {}), dict):
+                listed = list(data.get("tools", {}).keys())
+            names = []
+            for t in listed + sys.argv[4:]:
+                if re.fullmatch(r"[a-z0-9-]+", t) and t not in names:
+                    names.append(t)
+            sections += [("tool:" + t, render(data, "tool", t)) for t in names]
+        else:
+            sections = [(k, "") for k in ("format", "host", "shared")]
+        sections.append(("list", "".join(t + "\n" for t in listed)))
+        body = "".join("\x01%s\x01%s" % (k, v) for k, v in sections) + "\x01END"
+    except Exception:
+        sys.exit(0)
+    sys.stdout.write(body)
+    sys.exit(0)
+
 try:
     with open(manifest, encoding="utf-8") as fh:
         data = json.load(fh)
@@ -2323,51 +2471,94 @@ except Exception:
     sys.exit(0)
 if not isinstance(data, dict):
     sys.exit(0)
-out = []
-if mode == "format":
-    if "format_version" in data:
-        out.append(str(data["format_version"]))
-elif mode == "host":
-    host = data.get("host")
-    if isinstance(host, dict) and "worktree_root" in host:
-        out.append("host.worktree_root\t" + str(host["worktree_root"]))
-elif mode == "shared":
-    shared = data.get("shared") if isinstance(data.get("shared"), dict) else {}
-    for e in ["skills", "runtime", "agents_md", "claude_md"]:
-        ent = shared.get(e)
-        if not isinstance(ent, dict):
-            continue
-        for k, v in ent.items():
-            if k == "users":
-                out.append("shared.%s.users\t%s" % (e, ",".join(v)))
-            elif k == "files":
-                for f in v:
-                    out.append("shared.%s.file\t%s\t%s" % (e, f["path"], f["sha256"]))
-            else:
-                out.append("shared.%s.%s\t%s" % (e, k, v))
-    mirrors = shared.get("mirrors") if isinstance(shared.get("mirrors"), dict) else {}
-    for d, m in mirrors.items():
-        out.append("shared.mirror\t%s\t%s\t%s" % (d, m.get("version", ""), ",".join(m.get("users", []))))
-elif mode == "tool":
-    tools = data.get("tools") if isinstance(data.get("tools"), dict) else {}
-    t = tools.get(tool)
-    if isinstance(t, dict):
-        for m in t.get("mirrors", []):
-            out.append("tools.%s.mirror\t%s" % (tool, m))
-        if "worktree_root" in t:
-            out.append("tools.%s.worktree_root\t%s" % (tool, t["worktree_root"]))
-        if t.get("rules_inline") is True:
-            out.append("tools.%s.rules_inline\ttrue" % tool)
-        for f in t.get("files", []):
-            out.append("tools.%s.file\t%s\t%s" % (tool, f["path"], f["sha256"]))
-for line in out:
-    sys.stdout.write(line + "\n")
+sys.stdout.write(render(data, mode, tool))
 PY
+}
+
+# ---------------------------------------------------------------------------
+# Per-run manifest read cache (bin/aid turns it on; sourcing the library does not)
+# ---------------------------------------------------------------------------
+# Every reader call used to re-parse the manifest (one python3 start each), and a CLI
+# run makes dozens of reads, most inside $(...) or <(...) subshells where a cache
+# filled by the reader itself would be lost. So the cache is filled in the MAIN shell
+# (_aid_mc_prime: one python3 start renders every view), subshells inherit it, and
+# EVERY read validates it against the manifest's current bytes: a manifest rewritten
+# since -- by any writer, in any shell -- misses and is parsed directly, as before. The
+# cache is keyed by content, not path, so the pre-write copy an update or remove keeps
+# also hits. Two slots hold the last two distinct contents. Shell variables only:
+# nothing is written to disk and nothing outlives the process.
+_AID_MC_ON="${_AID_MC_ON:-0}"
+
+# _aid_mc_find <manifest> - set _aid_mc_s to the slot caching <manifest>'s current bytes.
+_aid_mc_find() {
+    local _mc_c _mc_i _mc_v
+    _aid_mc_s=""
+    [[ "$_AID_MC_ON" == 1 && -f "$1" && -r "$1" ]] || return 1
+    command -v python3 >/dev/null 2>&1 || return 1
+    { _mc_c="$(<"$1")"; } 2>/dev/null || return 1
+    for _mc_i in 0 1; do
+        _mc_v="_AID_MC_SRC_${_mc_i}"
+        if [[ -n "${!_mc_v+x}" && "${!_mc_v}" == "$_mc_c" ]]; then _aid_mc_s="$_mc_i"; return 0; fi
+    done
+    return 1
+}
+
+# _aid_mc_emit <mode> [tool] - print the cached view from slot _aid_mc_s; exit 1 when the
+# view is not cached (the caller then parses the file itself).
+_aid_mc_emit() {
+    local _mc_v
+    case "$1" in
+        format|host|shared|list) _mc_v="_AID_MC_${_aid_mc_s}_$1" ;;
+        tool) [[ "${2:-}" =~ ^[a-z0-9-]+$ ]] || return 1; _mc_v="_AID_MC_${_aid_mc_s}_tool_${2//-/_}" ;;
+        *) return 1 ;;
+    esac
+    [[ -n "${!_mc_v+x}" ]] || return 1
+    printf '%s' "${!_mc_v}"
+}
+
+# _aid_mc_prime <manifest> - cache every view of <manifest> (main shell only; no-op when
+# the cache is off, inside a subshell, or when the bytes are already cached).
+_aid_mc_prime() {
+    [[ "$_AID_MC_ON" == 1 && "${BASH_SUBSHELL:-0}" == 0 ]] || return 0
+    local _mc_m="$1" _mc_c _mc_c2 _mc_all _mc_slot _mc_sec _mc_key _mc_n _mc_i _mc_k
+    local -a _mc_old=() _mc_parts=()
+    _aid_mc_find "$_mc_m" && return 0
+    [[ -f "$_mc_m" && -r "$_mc_m" ]] || return 0
+    command -v python3 >/dev/null 2>&1 || return 0
+    { _mc_c="$(<"$_mc_m")"; } 2>/dev/null || return 0
+    _mc_all="$(_manifest_v3_read_python "$_mc_m" all; printf x)" || return 0
+    _mc_all="${_mc_all%x}"
+    [[ "$_mc_all" == $'\x01'* ]] || return 0
+    { _mc_c2="$(<"$_mc_m")"; } 2>/dev/null || return 0
+    [[ "$_mc_c2" == "$_mc_c" ]] || return 0
+    # One split on \x01 (views never contain it): "", key, view, key, view, ..., "END\n".
+    IFS=$'\x01' read -r -d '' -a _mc_parts <<< "$_mc_all"
+    _mc_k="${#_mc_parts[@]}"
+    [[ "$_mc_k" -ge 3 && $(( _mc_k % 2 )) -eq 0 && "${_mc_parts[0]}" == "" && "${_mc_parts[_mc_k - 1]}" == $'END\n' ]] || return 0
+    _mc_slot="${_AID_MC_NEXT:-0}"
+    unset -v "_AID_MC_SRC_${_mc_slot}"
+    if [[ "$_mc_slot" == 0 ]]; then _mc_old=("${!_AID_MC_0_@}"); else _mc_old=("${!_AID_MC_1_@}"); fi
+    [[ "${#_mc_old[@]}" -gt 0 ]] && unset -v "${_mc_old[@]}"
+    for (( _mc_i = 1; _mc_i < _mc_k - 1; _mc_i += 2 )); do
+        _mc_key="${_mc_parts[_mc_i]}"; _mc_sec="${_mc_parts[_mc_i + 1]}"
+        case "$_mc_key" in
+            format|host|shared) _mc_n="_AID_MC_${_mc_slot}_${_mc_key}" ;;
+            list) _mc_n="_AID_MC_${_mc_slot}_list"; _mc_sec="${_mc_sec//$'\r'/}" ;;
+            tool:*) _mc_n="_AID_MC_${_mc_slot}_tool_${_mc_key#tool:}"; _mc_n="${_mc_n//-/_}" ;;
+            *) continue ;;
+        esac
+        printf -v "$_mc_n" '%s' "$_mc_sec"
+    done
+    printf -v "_AID_MC_SRC_${_mc_slot}" '%s' "$_mc_c"
+    _AID_MC_NEXT=$(( 1 - _mc_slot ))
+    return 0
 }
 
 # _manifest_v3_read <manifest> <mode> [tool] - dispatch: python3 when available, else awk.
 _manifest_v3_read() {
     [[ -f "$1" ]] || return 0
+    _aid_mc_prime "$1"
+    if _aid_mc_find "$1" && _aid_mc_emit "$2" "${3:-}"; then return 0; fi
     if command -v python3 >/dev/null 2>&1; then
         _manifest_v3_read_python "$1" "$2" "${3:-}"
     else
@@ -2798,22 +2989,26 @@ _provision_shared_state_home() {
 prune_shared() {
     local target="$1" previous="$2" current="${target}/.aid/.aid-manifest.json"
     local manifest="$current" line rel sha path root tool child dpath
-    local -A wanted=() old=() roots=() previous_roots=()
-    local -a candidates=() directories=()
+    local -A wanted=() old=() roots=() previous_roots=() hashed=()
+    local -a candidates=() directories=() records=() current_tools=() stale=() empties=()
     [[ -f "$previous" ]] || previous=""
+    [[ -n "$previous" ]] && _aid_mc_prime "$previous"
+    _aid_mc_prime "$current"
     if [[ -n "$previous" ]]; then
-        while IFS= read -r line; do
+        # One read per manifest view: the records are reused by both passes below.
+        mapfile -t records < <(manifest_read_shared "$previous")
+        for line in "${records[@]}"; do
             case "$line" in
                 shared.skills.file$'\t'*) rel="${line#*$'\t'}"; rel="${rel%%$'\t'*}"; sha="${line##*$'\t'}"; old["${target}/.agents/skills/${rel}"]="$sha" ;;
                 shared.runtime.file$'\t'*) rel="${line#*$'\t'}"; rel="${rel%%$'\t'*}"; sha="${line##*$'\t'}"; old["${target}/.aid/runtime/${rel}"]="$sha" ;;
                 shared.mirror$'\t'*) IFS=$'\t' read -r _ root _ _ <<< "$line"; previous_roots["$root"]=1 ;;
             esac
-        done < <(manifest_read_shared "$previous")
-        while IFS= read -r line; do
+        done
+        for line in "${records[@]}"; do
             [[ "$line" == shared.skills.file$'\t'* ]] || continue
             rel="${line#*$'\t'}"; rel="${rel%%$'\t'*}"; sha="${line##*$'\t'}"
             for root in "${!previous_roots[@]}"; do old["${target}/${root}/${rel}"]="$sha"; done
-        done < <(manifest_read_shared "$previous")
+        done
         while IFS= read -r tool; do
             while IFS= read -r line; do
                 [[ "$line" == "tools.${tool}.file"$'\t'* ]] || continue
@@ -2821,30 +3016,32 @@ prune_shared() {
             done < <(manifest_read_tool_files "$previous" "$tool")
         done < <(manifest_list_tools "$previous")
     fi
-    while IFS= read -r line; do
+    mapfile -t records < <(manifest_read_shared "$manifest")
+    for line in "${records[@]}"; do
         case "$line" in
             shared.skills.file$'\t'*) rel="${line#*$'\t'}"; wanted["${target}/.agents/skills/${rel%%$'\t'*}"]=1 ;;
             shared.runtime.file$'\t'*) rel="${line#*$'\t'}"; wanted["${target}/.aid/runtime/${rel%%$'\t'*}"]=1 ;;
             shared.mirror$'\t'*) IFS=$'\t' read -r _ root _ _ <<< "$line"; roots["$root"]=1 ;;
         esac
-    done < <(manifest_read_shared "$manifest")
-    while IFS= read -r line; do
+    done
+    for line in "${records[@]}"; do
         [[ "$line" == shared.skills.file$'\t'* ]] || continue
         rel="${line#*$'\t'}"; rel="${rel%%$'\t'*}"
         for root in "${!roots[@]}"; do [[ "$root" == .agents/skills ]] || wanted["${target}/${root}/${rel}"]=1; done
-    done < <(manifest_read_shared "$manifest")
+    done
+    mapfile -t current_tools < <(manifest_list_tools "$current")
     if [[ -d "${target}/.aid/runtime" ]]; then
         while IFS= read -r -d '' path; do
             [[ "$path" == */node_modules/* ]] && continue
             candidates+=("$path")
         done < <(find "${target}/.aid/runtime" -type f -print0 2>/dev/null)
     fi
-    while IFS= read -r tool; do
+    for tool in "${current_tools[@]}"; do
         while IFS= read -r line; do
             [[ "$line" == "tools.${tool}.file"$'\t'* ]] || continue
             IFS=$'\t' read -r _ rel _ <<< "$line"; wanted["${target}/${rel}"]=1
         done < <(manifest_read_tool_files "$current" "$tool")
-    done < <(manifest_list_tools "$current")
+    done
     # Collect candidates from the controlled roots, then remove every unrecorded path.
     for root in .agents/skills "${!roots[@]}" "${!previous_roots[@]}" .aid/runtime; do
         [[ -d "${target}/${root}" ]] || continue
@@ -2854,26 +3051,59 @@ prune_shared() {
             while IFS= read -r -d '' path; do rel="${path#${target}/${root}/}"; [[ "$rel" == aid-* || "$rel" == aid-*/* ]] && candidates+=("$path"); done < <(find "${target}/${root}" -type f -print0 2>/dev/null)
         fi
     done
-    while IFS= read -r tool; do
+    for tool in "${current_tools[@]}"; do
         root="$(_root_dir "$tool")/agents"; [[ -d "${target}/${root}" ]] || continue
         while IFS= read -r -d '' path; do rel="${path#${target}/${root}/}"; [[ "$rel" == aid-* || "$rel" == aid-*/* ]] && candidates+=("$path"); done < <(find "${target}/${root}" -type f -print0 2>/dev/null)
-    done < <(manifest_list_tools "$current")
+    done
+    # Hash every unwanted candidate in one pass (sha256_file remains the per-file
+    # fallback for anything the batch could not hash).
+    for path in "${candidates[@]}"; do
+        case "$path" in */node_modules/*) continue;; esac
+        [[ -z "${wanted[$path]+x}" && -f "$path" ]] && stale+=("$path")
+    done
+    if [[ "${#stale[@]}" -gt 0 ]]; then
+        while IFS=$'\t' read -r sha path; do hashed["$path"]="$sha"; done < <(printf '%s\0' "${stale[@]}" | _aid_sha256_batch)
+    fi
+    # Unchanged recorded files are deleted in batches (one rm per run of them); a batch is
+    # flushed before any trash move so the filesystem sees the same order of operations.
+    local -a doomed=()
+    local -A doomed_set=()
+    _prune_flush() {
+        local _pf_p
+        [[ "${#doomed[@]}" -gt 0 ]] || return 0
+        if ! printf '%s\0' "${doomed[@]}" | xargs -0 rm -f -- 2>/dev/null; then
+            # Redo the batch one file at a time for the exact per-file error and stop.
+            for _pf_p in "${doomed[@]}"; do
+                if [[ -e "$_pf_p" || -L "$_pf_p" ]]; then rm -f "$_pf_p" || return 1; fi
+                [[ "${AID_VERBOSE:-0}" -eq 1 ]] && echo "Removed: ${_pf_p}"
+            done
+        elif [[ "${AID_VERBOSE:-0}" -eq 1 ]]; then
+            for _pf_p in "${doomed[@]}"; do echo "Removed: ${_pf_p}"; done
+        fi
+        doomed=()
+        return 0
+    }
     for path in "${candidates[@]}"; do
         [[ -f "$path" ]] || continue
+        [[ -n "${doomed_set[$path]+x}" ]] && continue
         rel="${path#${target}/}"
         case "$path" in */node_modules/*) continue;; esac
         if [[ -n "${wanted[$path]+x}" ]]; then continue; fi
-        sha="$(sha256_file "$path")"
+        if [[ -n "${hashed[$path]:-}" ]]; then sha="${hashed[$path]}"; else sha="$(sha256_file "$path")"; fi
         if [[ -n "${old[$path]:-}" && "${old[$path]}" == "$sha" ]]; then
-            rm -f "$path" || return 1
-            [[ "${AID_VERBOSE:-0}" -eq 1 ]] && echo "Removed: ${path}"
-        else trash_file "$target" "$path" || return 1; fi
+            doomed+=("$path"); doomed_set["$path"]=1
+        else
+            _prune_flush || return 1
+            trash_file "$target" "$path" || return 1
+        fi
     done
+    _prune_flush || return 1
     # Remove empty AID directories, but never a placement root.
     for root in .agents/skills .aid/runtime "${!roots[@]}" "${!previous_roots[@]}"; do [[ -d "${target}/${root}" ]] && directories+=("${target}/${root}"); done
-    while IFS= read -r tool; do root="$(_root_dir "$tool")/agents"; [[ -d "${target}/${root}" ]] && directories+=("${target}/${root}"); done < <(manifest_list_tools "$current")
+    for tool in "${current_tools[@]}"; do root="$(_root_dir "$tool")/agents"; [[ -d "${target}/${root}" ]] && directories+=("${target}/${root}"); done
     for root in "${directories[@]}"; do
         [[ -d "$root" ]] || continue
+        empties=()
         while IFS= read -r dpath; do
             [[ "$dpath" == "$root" ]] && continue
             rel="${dpath#${root}/}"
@@ -2883,8 +3113,11 @@ prune_shared() {
                 child="${rel%%/*}"
                 [[ "$child" == aid-* ]] || continue
             fi
-            rmdir "$dpath" 2>/dev/null || true
+            empties+=("$dpath")
         done < <(find "$root" -depth -type d 2>/dev/null)
+        # One rmdir for the whole depth-first list: it tries each path in order, so a
+        # parent emptied by its children's removal still goes; non-empty ones stay.
+        if [[ "${#empties[@]}" -gt 0 ]]; then printf '%s\0' "${empties[@]}" | xargs -0 rmdir -- 2>/dev/null || true; fi
     done
     # A mirror root that no remaining tool declares goes once it is empty (rmdir never
     # removes a non-empty directory, so user content under it is preserved). The tool
@@ -3322,6 +3555,7 @@ PY
 install_tool() {
     local staging="$1" tool="$2" target="$3" version="$4" force="${5:-0}" add_only="${6:-0}"
     local manifest="${target}/.aid/.aid-manifest.json"
+    _aid_mc_prime "$manifest"
 
     local -a install_paths=()
     local -a root_entries=()
@@ -3341,12 +3575,20 @@ install_tool() {
     if [[ "$add_only" == 1 ]]; then
         local agents_src="${staging}/$( _root_dir "$tool" )/agents"
         if [[ -d "$agents_src" ]]; then
+            # Read the tool's recorded hashes once (first record per path wins, as before).
+            local -A tool_sha=()
+            local rec rec_path
+            if [[ -f "$manifest" ]]; then
+                while IFS= read -r rec; do
+                    [[ "$rec" == *$'\t'* ]] || continue
+                    rec="${rec#*$'\t'}"; rec_path="${rec%%$'\t'*}"
+                    if [[ "$rec" == *$'\t'* ]]; then rec="${rec#*$'\t'}"; rec="${rec%%$'\t'*}"; else rec=""; fi
+                    [[ -n "${tool_sha[$rec_path]+x}" ]] || tool_sha["$rec_path"]="$rec"
+                done < <(manifest_read_tool_files "$manifest" "$tool")
+            fi
             while IFS= read -r -d '' f; do
                 local rel="${f#${staging}/}"
-                local old_sha=""
-                if [[ -f "$manifest" ]]; then
-                    old_sha="$(manifest_read_tool_files "$manifest" "$tool" | awk -F '\t' -v p="$rel" '$2==p {print $3; exit}')"
-                fi
+                local old_sha="${tool_sha[$rel]:-}"
                 copy_file_guarded "$f" "${target}/${rel}" "$old_sha" "$target"
                 install_paths+=("$rel")
             done < <(find "$agents_src" -type f -print0 2>/dev/null | sort -z)
@@ -3502,6 +3744,7 @@ install_tool() {
 install_shared() {
     local shared="$1" target="$2" version="$3" new_file="$4" force="${5:-0}" phase="${6:-all}"
     local manifest="${target}/.aid/.aid-manifest.json" now old_shared old_host old_tools
+    _aid_mc_prime "$manifest"
     local skills_src="${shared}/skills" runtime_src="${shared}/runtime" f rel old_sha tool stage root conf key value
     local inline=0 claude_users=0 region region_sha agents_sha claude_sha line host_worktree=".aid/.worktrees" previous_manifest=""
     local -A old_hash=() mirrors=() mirror_users=() tool_mirror=() tool_wr=() tool_inline=() tool_context=() tool_stage=()
@@ -3527,10 +3770,12 @@ install_shared() {
 
     if [[ "$phase" != finalize && "$phase" != update-finalize ]]; then
     _COPY_COUNT_COPIED=0; _COPY_COUNT_UPTODATE=0; _COPY_COUNT_UPDATED=0; _COPY_COUNT_SKIPPED=0; _COPY_COUNT_FAILED=0
+    local -A same=()
+    while IFS= read -r -d '' rel; do same["$rel"]=1; done < <(_aid_same_rels "$skills_src" "${target}/.agents/skills" 1)
     while IFS= read -r -d '' f; do
         rel="${f#${skills_src}/}"
         [[ "$rel" == aid-*/* ]] || continue
-        copy_file_guarded "$f" "${target}/.agents/skills/${rel}" "${old_hash[skills:$rel]:-}" "$target"
+        copy_file_guarded "$f" "${target}/.agents/skills/${rel}" "${old_hash[skills:$rel]:-}" "$target" "${same[$rel]:-0}"
     done < <(find "$skills_src" -type f -print0 2>/dev/null | sort -z)
 
     # Every mirror is declared by the full installed/new tool set. Never touch
@@ -3546,18 +3791,22 @@ install_shared() {
         tool_mirror[$tool]="$(IFS=,; echo "${declared[*]}")"
         for root in "${declared[@]}"; do
             mirror_users[$root]+=" $tool"
+            same=()
+            while IFS= read -r -d '' rel; do same["$rel"]=1; done < <(_aid_same_rels "$skills_src" "${target}/${root}" 1)
             while IFS= read -r -d '' f; do
                 rel="${f#${skills_src}/}"; [[ "$rel" == aid-*/* ]] || continue
                 old_sha=""
                 old_sha="${old_hash[skills:$rel]:-}"
-                copy_file_guarded "$f" "${target}/${root}/${rel}" "$old_sha" "$target"
+                copy_file_guarded "$f" "${target}/${root}/${rel}" "$old_sha" "$target" "${same[$rel]:-0}"
             done < <(find "$skills_src" -type f -print0 2>/dev/null | sort -z)
         done
     done
 
+    same=()
+    while IFS= read -r -d '' rel; do same["$rel"]=1; done < <(_aid_same_rels "$runtime_src" "${target}/.aid/runtime")
     while IFS= read -r -d '' f; do
         rel="${f#${runtime_src}/}"
-        copy_file_guarded "$f" "${target}/.aid/runtime/${rel}" "${old_hash[runtime:$rel]:-}" "$target"
+        copy_file_guarded "$f" "${target}/.aid/runtime/${rel}" "${old_hash[runtime:$rel]:-}" "$target" "${same[$rel]:-0}"
     done < <(find "$runtime_src" -type f -print0 2>/dev/null | sort -z)
     [[ "${_COPY_COUNT_FAILED:-0}" -eq 0 ]] || return 1
     local total=$((_COPY_COUNT_COPIED + _COPY_COUNT_UPTODATE + _COPY_COUNT_UPDATED + _COPY_COUNT_SKIPPED))
@@ -3781,6 +4030,7 @@ PY
 _uninstall_tool_v3() {
     local manifest="$1" tool="$2" target="$3" format line rel sha full previous pdir root
     local -a paths=()
+    _aid_mc_prime "$manifest"
     format="$(manifest_format "$manifest")"
     [[ "$format" == 3 ]] || return 2
     previous="$(mktemp "${target}/.aid/.manifest-remove.XXXXXX")" || return 1
@@ -3801,23 +4051,24 @@ _uninstall_tool_v3() {
     done < <(manifest_read_tool_files "$manifest" "$tool")
     root="${target}/$(_root_dir "$tool")"
     for p in "${paths[@]}"; do
-        pdir="${target}/$(dirname "$p")"
+        _aid_dirname_to pdir "$p"; pdir="${target}/${pdir}"
         while [[ "$pdir" != "$target" && ( "$pdir" == "$root" || "$pdir" == "$root/"* ) ]]; do
             rmdir "$pdir" 2>/dev/null || true
-            pdir="$(dirname "$pdir")"
+            _aid_dirname_to pdir "$pdir"
         done
     done
 
-    local agents_users agents_sha claude_users claude_sha
-    agents_users="$(manifest_read_shared "$manifest" | awk -F '\t' '$1=="shared.agents_md.users" {print $2}')"
-    agents_sha="$(manifest_read_shared "$manifest" | awk -F '\t' '$1=="shared.agents_md.file_sha256" {print $2}')"
-    claude_users="$(manifest_read_shared "$manifest" | awk -F '\t' '$1=="shared.claude_md.users" {print $2}')"
-    claude_sha="$(manifest_read_shared "$manifest" | awk -F '\t' '$1=="shared.claude_md.region_sha256" {print $2}')"
+    local agents_users agents_sha claude_users claude_sha shared_records
+    shared_records="$(manifest_read_shared "$manifest")"
+    agents_users="$(printf '%s\n' "$shared_records" | awk -F '\t' '$1=="shared.agents_md.users" {print $2}')"
+    agents_sha="$(printf '%s\n' "$shared_records" | awk -F '\t' '$1=="shared.agents_md.file_sha256" {print $2}')"
+    claude_users="$(printf '%s\n' "$shared_records" | awk -F '\t' '$1=="shared.claude_md.users" {print $2}')"
+    claude_sha="$(printf '%s\n' "$shared_records" | awk -F '\t' '$1=="shared.claude_md.region_sha256" {print $2}')"
     local agents_left= claude_left= u agents_file_refresh=0 agents_recorded_sha agents_current_sha
     IFS=',' read -r -a users <<< "$agents_users"
     for u in "${users[@]}"; do [[ -n "$u" && "$u" != "$tool" ]] && agents_left+="${agents_left:+,}${u}"; done
     if [[ -n "$agents_left" ]]; then
-        agents_recorded_sha="$(manifest_read_shared "$manifest" | awk -F '\t' '$1=="shared.agents_md.file_sha256" {print $2}')"
+        agents_recorded_sha="$agents_sha"
         agents_current_sha="$(sha256_file "${target}/AGENTS.md" 2>/dev/null || true)"
         [[ -n "$agents_recorded_sha" && "$agents_recorded_sha" == "$agents_current_sha" ]] && agents_file_refresh=1
     fi

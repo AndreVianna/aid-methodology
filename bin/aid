@@ -133,6 +133,8 @@ if [[ ! -f "$_AID_CORE" ]]; then
 fi
 # shellcheck source=../lib/aid-install-core.sh
 source "$_AID_CORE"
+# Per-run manifest read cache (shell variables only; see _aid_mc_prime in the core).
+_AID_MC_ON=1
 
 # Defensive guard: verify the required core function was defined by the sourced lib.
 # This catches an upgrade that left a stale aid-install-core.sh (missing new functions).
@@ -2085,16 +2087,22 @@ _aid_v3_legacy_evidence() {
         [[ -d "${_repo}/${_line}/aid" ]] && return 0
         if [[ "$_line" == ".codex" && -d "${_repo}/.agents/aid" ]]; then return 0; fi
         if [[ -d "${_repo}/${_line}/skills" ]]; then
+            # The manifest mirror check does not depend on the skill folder: answer it
+            # once (lazily, on the first aid-* folder) rather than once per folder.
+            local _mirror_known=0
             while IFS= read -r _tool; do
                 [[ -n "$_tool" ]] || continue
-                _mirror_ok=0
-                if [[ "$_line" == ".claude" && -f "$_manifest" && "${_fmt:-}" == 3 ]]; then
-                    while IFS= read -r _record; do
-                        if [[ "$_record" == $'shared.mirror\t.claude/skills\t'* && "$_record" == *$'\tclaude-code'* ]]; then
-                            _mirror_ok=1
-                            break
-                        fi
-                    done < <(manifest_read_shared "$_manifest")
+                if [[ "$_mirror_known" -eq 0 ]]; then
+                    _mirror_known=1
+                    _mirror_ok=0
+                    if [[ "$_line" == ".claude" && -f "$_manifest" && "${_fmt:-}" == 3 ]]; then
+                        while IFS= read -r _record; do
+                            if [[ "$_record" == $'shared.mirror\t.claude/skills\t'* && "$_record" == *$'\tclaude-code'* ]]; then
+                                _mirror_ok=1
+                                break
+                            fi
+                        done < <(manifest_read_shared "$_manifest")
+                    fi
                 fi
                 [[ "$_mirror_ok" -eq 1 ]] || return 0
             done < <(find "${_repo}/${_line}/skills" -mindepth 1 -maxdepth 1 -type d -name 'aid-*' -print 2>/dev/null)
@@ -6299,6 +6307,7 @@ fi
 # Unsupported future manifests/stamps are a read-only refusal and must happen
 # before the self-update preamble can mutate the CLI installation.
 _AID_V3_UPGRADE=0
+[[ -n "${_AID_TARGET:-}" ]] && _aid_mc_prime "${_AID_TARGET}/.aid/.aid-manifest.json"
 if [[ "$SUBCMD" == "update" ]] && _aid_is_project_dir "${_AID_TARGET}"; then
     _aid_manifest_format_gate "${_AID_TARGET}" || exit $?
     _AID_REPO_FMT="$(_aid_repo_format "${_AID_TARGET}")"
