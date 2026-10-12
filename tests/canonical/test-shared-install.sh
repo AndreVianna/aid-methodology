@@ -219,6 +219,70 @@ for kind in malformed duplicate lone-import; do
     assert_eq "$(find "$target/.aid/.trash" -type f | wc -l | tr -d ' ')" "$trash" "AC-14(f) $kind adds no redundant trash"
 done
 
+# NP: the bash CLI works end to end WITHOUT python3 (Git Bash often lacks it): add, a no-op
+# update, status, remove and the v3 upgrade give the same output, tree and manifest bytes
+# (installed_at masked) as the python3 run. PATH is a directory of symlinks to the needed
+# tools, python3 excluded.
+NOPY="$TMP/nopy-bin"; mkdir -p "$NOPY"
+for c in bash sh awk gawk mawk sed grep egrep find xargs sort uniq cut tr head tail cat cp mv rm mkdir rmdir mktemp date sha256sum shasum tar gzip gunzip cmp diff od dirname basename wc ls ln chmod touch env uname stat readlink realpath tee printf true false sleep id git tput getconf expr seq; do
+    src="$(command -v "$c" 2>/dev/null)" && [[ "$src" == /* ]] && ln -sf "$src" "$NOPY/$c"
+done
+if PATH="$NOPY" command -v python3 >/dev/null 2>&1; then fail 'NP no-python PATH really lacks python3'; else pass 'NP no-python PATH really lacks python3'; fi
+np_snapshot() {  # <dir> -> "path sha" per file, installed_at masked in the manifest
+    local dir="$1" f
+    while IFS= read -r f; do
+        if [[ "$f" == .aid/.aid-manifest.json ]]; then printf '%s manifest:%s\n' "$f" "$(sed -E 's/("installed_at": ")[^"]*"/\1<TS>"/' "$dir/$f" | sha256sum | cut -c1-64)"
+        else printf '%s %s\n' "$f" "$(sha256sum < "$dir/$f" | cut -c1-64)"; fi
+    done < <(cd "$dir" && find . -type f -not -path './.aid/.trash/*' -not -path './.git/*' | sed 's|^\./||' | LC_ALL=C sort)
+}
+np_run() {  # <label> <path-or-empty>; writes $TMP/np-<label>.{out,snap}
+    local label="$1" pathv="$2" t st out snap v3
+    t="$TMP/np-$label"; st="$TMP/np-$label-state"; out="$TMP/np-$label.out"; snap="$TMP/np-$label.snap"; v3="$TMP/np-$label-v3"
+    mkdir -p "$t" "$st" "$v3/.cursor/aid"; : > "$out"; : > "$snap"
+    step() {
+        local tg="$1" fb=(--from-bundle "$STAGE"); shift
+        [[ "$1" != status ]] || fb=()
+        { printf '== %s\n' "$*"
+          if [[ -n "$pathv" ]]; then PATH="$pathv" AID_HOME="$st" AID_NO_UPDATE_CHECK=1 bash "$REPO/bin/aid" "$@" --target "$tg" "${fb[@]}" 2>&1
+          else AID_HOME="$st" AID_NO_UPDATE_CHECK=1 bash "$REPO/bin/aid" "$@" --target "$tg" "${fb[@]}" 2>&1; fi
+          printf 'rc=%s\n' "$?"; } | sed "s|$TMP/np-$label-v3|<V3>|g; s|$TMP/np-$label|<T>|g; s|$TMP/np-[a-z]*|<T>|g" >> "$out"
+        { printf '## %s\n' "$*"; np_snapshot "$tg"; } >> "$snap"
+    }
+    printf 'user note\n' > "$t/CLAUDE.md"
+    step "$t" add cursor,claude-code
+    step "$t" update
+    step "$t" status
+    step "$t" add codex
+    step "$t" remove cursor
+    step "$t" remove claude-code
+    step "$t" remove codex
+    # v3 upgrade: a format-2 manifest with one tool, the old tool-root layout and an old root region.
+    mkdir -p "$v3/.aid" "$v3/.cursor/skills/aid-old"
+    printf '{\n  "format_version": 2,\n  "aid_version": "3.0.0",\n  "installed_at": "2026-01-01T00:00:00Z",\n  "tools": {\n    "cursor": {\n      "version": "3.0.0",\n      "installed_at": "2026-01-01T00:00:00Z",\n      "paths": [\n        ".cursor/aid/x.md"\n      ]\n    }\n  }\n}\n' > "$v3/.aid/.aid-manifest.json"
+    printf 'old\n' > "$v3/.cursor/aid/x.md"; printf 'skill\n' > "$v3/.cursor/skills/aid-old/SKILL.md"
+    printf 'mine\n<!-- AID:BEGIN -->\nold v3 text\n<!-- AID:END -->\n' > "$v3/AGENTS.md"
+    step "$v3" update
+    step "$v3" update
+    step "$v3" status
+}
+np_run py ""
+np_run nopy "$NOPY"
+assert_eq "$(cat "$TMP/np-nopy.out")" "$(cat "$TMP/np-py.out")" 'NP add/update/status/remove/v3-upgrade output identical without python3'
+assert_eq "$(cat "$TMP/np-nopy.snap")" "$(cat "$TMP/np-py.snap")" 'NP trees and manifest bytes (installed_at masked) identical without python3 after every step'
+assert_eq "$(grep -c '^rc=0$' "$TMP/np-nopy.out")" "$(grep -c '^== ' "$TMP/np-nopy.out")" 'NP every no-python step exits 0'
+assert_output_contains "$(cat "$TMP/np-nopy.out")" 'old AID file(s) moved to .aid/.trash/' 'NP the v3 upgrade ran without python3'
+assert_output_contains "$(cat "$TMP/np-nopy.snap")" '.aid/.aid-manifest.json manifest:' 'NP snapshot captured the manifest'
+# The bash writer emits python3's bytes (ASCII only, \uXXXX for non-ASCII and control characters).
+printf 'aid_version\t4.0.0\ninstalled_at\tT\nhost.worktree_root\t.aid/w\xc3\xb6rk "q"\\\\\ntools.cursor.version\t4.0.0\ntools.cursor.installed_at\tT\ntools.cursor.file\t.cursor/agents/aid-caf\xc3\xa9\xf0\x9f\x98\x80.md\t%s\n' "$(printf 'a%.0s' {1..64})" > "$TMP/np-model.tsv"
+( source "$REPO/lib/aid-install-core.sh"; _manifest_write_v3_bash "$TMP/np-w-bash.json" "$TMP/np-model.tsv" )
+if command -v python3 >/dev/null 2>&1; then
+    ( source "$REPO/lib/aid-install-core.sh"; _manifest_write_v3_python "$TMP/np-w-py.json" "$TMP/np-model.tsv" )
+    if cmp -s "$TMP/np-w-bash.json" "$TMP/np-w-py.json"; then pass 'NP bash and python3 writers emit identical bytes for non-ASCII and escaped values'; else fail 'NP bash and python3 writers emit identical bytes for non-ASCII and escaped values'; fi
+fi
+if grep -qF -e '\u00f6' "$TMP/np-w-bash.json"; then pass 'NP bash writer escapes non-ASCII as \uXXXX'; else fail 'NP bash writer escapes non-ASCII as \uXXXX'; fi
+if grep -qF -e '\ud83d\ude00' "$TMP/np-w-bash.json"; then pass 'NP bash writer escapes a non-BMP character as a surrogate pair'; else fail 'NP bash writer escapes a non-BMP character as a surrogate pair'; fi
+if LC_ALL=C grep -q '[^ -~]' "$TMP/np-w-bash.json"; then fail 'NP bash writer output is ASCII only'; else pass 'NP bash writer output is ASCII only'; fi
+
 # Existing primitive suite has bounded tests for frozen stamp collisions and preoccupied .N suffixes.
 if [[ "$SELF_MUTATE" -eq 1 ]]; then
     if HOME="$TMP/primitive-home" bash "$REPO/tests/canonical/test-install-core-primitives.sh" --verbose >"$TMP/primitives.log" 2>&1; then

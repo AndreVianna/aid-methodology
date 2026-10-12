@@ -991,7 +991,20 @@ other. It lies outside `runtime/{scripts,templates}`, so AC-7's byte check does 
   - 2-space indent, LF line endings, and a trailing newline;
   - keys in exactly the order shown above;
   - `files` sorted by `path` in byte order;
-  - `users` in `AID_TOOLS` order.
+  - `users` in `AID_TOOLS` order;
+  - ASCII only: a backslash or quote is escaped, `\b \f \n \r \t` use their short escapes, and every other control
+    character, DEL and every non-ASCII character is written `\uXXXX` (lower-case hex, a surrogate
+    pair above U+FFFF), exactly as python3's `json.dump` does, so any value AID writes has the
+    same bytes from the python3 and the pure-bash writer (PowerShell's model is ASCII, and every
+    value AID itself writes is ASCII).
+- **python3 is optional.** The bash CLI (`bin/aid` and `lib/aid-install-core.sh`) works end to
+  end without python3, which Git Bash on Windows often lacks: add, update (a no-op update
+  included), remove, status and the v3 upgrade. python3 is only a fast path where the library
+  has a python3 and a pure-bash implementation of the same reader or writer (the manifest
+  readers and writer); everything else (root-region edits, `.gitattributes`, the recovery-record
+  check, the install model, drift, remove) is one awk/bash implementation shared by both modes.
+  The output, the tree and the manifest bytes (`installed_at` masked) are identical with and
+  without python3, and a test runs the sequence under a `PATH` without python3.
 
   The parity tests rely on this (they mask `installed_at` and then diff the bytes).
 - **Format detection.** A reader treats `format_version` 2 as the v3 layout, which triggers the
@@ -1239,8 +1252,8 @@ the agents, `AGENTS.md` and `CLAUDE.md` are committed (AC-18).
 
   An extra is an `aid-*` entry in `.agents/skills/` or a mirror that the manifest does not list,
   or an unrecorded file in `.aid/runtime/` outside the FR-6 runtime-local paths.
-- **Hashing.** Hashes are computed in one batch: a single python3 `hashlib` pass, or a single
-  `sha256sum`/`shasum` call over the file list. PowerShell calls `Get-FileHash` per file.
+- **Hashing.** Hashes are computed in one batch: a single `sha256sum`/`shasum` call over the
+  file list (the pure-bash path; python3 `hashlib` is only an optional alternative). PowerShell calls `Get-FileHash` per file.
 - **Exit code.** It stays 0 (drift is informational), or 7 when there is no manifest. For a
   format-2 manifest, status prints `Layout: format 4 (pre-shared). Run: aid update` and skips the
   drift check. The bare `aid` dashboard (`aid_status_body`) does not run the drift check, which

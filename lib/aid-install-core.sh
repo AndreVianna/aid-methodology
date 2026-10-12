@@ -95,6 +95,47 @@ AID_TOOLS=(claude-code codex cursor copilot-cli antigravity)
 # Root agent file per tool.
 _root_agent_file() { echo "AGENTS.md"; }
 
+# _aid_parse_recovery <file> - validate the v3 recovery record with bash only. Prints
+# "<retired>\t<tool>\t<tool>..." (tools in AID_TOOLS order) and exits 0, or exits 2 when the
+# record is not exactly {"format_version":1,"tools":[...],"retired":true|false} (any key
+# order, JSON whitespace between tokens, unique known tools in AID_TOOLS order).
+_aid_parse_recovery() {
+    local raw compact fv='"format_version":1' tl='"tools":\[(("[a-z-]+"(,"[a-z-]+")*)?)\]' rt='"retired":(true|false)'
+    local list retired tool seen="" prev=-1 idx t n i
+    local -a names=()
+    raw="$(LC_ALL=C cat -- "$1"; printf x)" || return 2
+    raw="${raw%x}"
+    # Whitespace is legal only between tokens: none inside a quoted string.
+    if ! printf '%s' "$raw" | LC_ALL=C awk -F'"' '{ for (i = 2; i <= NF; i += 2) if ($i ~ /[ \t\r]/) bad = 1 } END { exit bad }'; then return 2; fi
+    compact="$(printf '%s' "$raw" | LC_ALL=C tr -d ' \t\r\n')"
+    [[ "$compact" =~ ^\{(.*)\}$ ]] || return 2
+    compact="${BASH_REMATCH[1]}"
+    local p1="$fv,$tl,$rt" p2="$fv,$rt,$tl" p3="$tl,$fv,$rt" p4="$tl,$rt,$fv" p5="$rt,$fv,$tl" p6="$rt,$tl,$fv" ok=0 pat
+    for pat in "$p1" "$p2" "$p3" "$p4" "$p5" "$p6"; do
+        if [[ "$compact" =~ ^${pat}$ ]]; then ok=1; break; fi
+    done
+    [[ "$ok" -eq 1 ]] || return 2
+    [[ "$compact" =~ \"tools\":\[([^]]*)\] ]] || return 2
+    list="${BASH_REMATCH[1]}"
+    [[ "$compact" =~ \"retired\":(true|false) ]] || return 2
+    retired="${BASH_REMATCH[1]}"
+    [[ -n "$list" ]] || return 2
+    list="${list//\"/}"
+    IFS=',' read -r -a names <<< "$list"
+    for tool in "${names[@]}"; do
+        idx=-1; n=0
+        for t in "${AID_TOOLS[@]}"; do
+            if [[ "$t" == "$tool" ]]; then idx=$n; fi
+            n=$((n + 1))
+        done
+        [[ "$idx" -gt "$prev" ]] || return 2
+        prev=$idx
+    done
+    printf '%s' "$retired"
+    for tool in "${names[@]}"; do printf '\t%s' "$tool"; done
+    printf '\n'
+}
+
 # read_upgrade_recovery <target> - validate the durable v3 upgrade record.
 # Sets _AID_UPGRADE_TOOLS and _AID_UPGRADE_RETIRED; invalid data returns 2.
 read_upgrade_recovery() {
@@ -104,28 +145,7 @@ read_upgrade_recovery() {
     if [[ -L "$record" || ! -f "$record" ]]; then
         echo "ERROR: aid update: invalid recovery data at ${record} (must be a regular file)" >&2; return 2
     fi
-    parsed="$(python3 - "$record" "${AID_TOOLS[@]}" <<'PY'
-import json, pathlib, sys
-def unique(pairs):
-    out={}
-    for key,value in pairs:
-        if key in out: raise ValueError('duplicate key')
-        out[key]=value
-    return out
-try:
-    value=json.loads(pathlib.Path(sys.argv[1]).read_text(encoding='utf-8'), object_pairs_hook=unique)
-    allowed=sys.argv[2:]
-    if type(value) is not dict or set(value) != {'format_version','tools','retired'}: raise ValueError()
-    tools=value['tools']
-    if type(value['format_version']) is not int or value['format_version'] != 1: raise ValueError()
-    if type(value['retired']) is not bool or type(tools) is not list or not tools: raise ValueError()
-    if any(type(x) is not str or x not in allowed for x in tools) or len(set(tools)) != len(tools): raise ValueError()
-    if tools != [x for x in allowed if x in tools]: raise ValueError()
-    print(('true' if value['retired'] else 'false') + '\t' + '\t'.join(tools))
-except Exception:
-    raise SystemExit(2)
-PY
-)" || { echo "ERROR: aid update: invalid recovery data at ${record}" >&2; return 2; }
+    parsed="$(_aid_parse_recovery "$record")" || { echo "ERROR: aid update: invalid recovery data at ${record}" >&2; return 2; }
     IFS=$'\t' read -r _AID_UPGRADE_RETIRED _ <<< "$parsed"
     local rest="${parsed#*$'\t'}" tool
     while [[ -n "$rest" ]]; do tool="${rest%%$'\t'*}"; _AID_UPGRADE_TOOLS+=("$tool"); [[ "$rest" == *$'\t'* ]] || break; rest="${rest#*$'\t'}"; done
@@ -168,31 +188,143 @@ _copy_to_trash() {
     mv "$tmp" "$dest" || { rm -f "$tmp"; return 1; }
 }
 
+# ---------------------------------------------------------------------------
+# Root-file region primitives (byte-faithful; awk/bash only, python3 not needed)
+# ---------------------------------------------------------------------------
+# A root file (AGENTS.md, CLAUDE.md, .gitattributes) is a byte string. A LINE is a run of
+# bytes up to and including LF (the last line may lack it). A line's VALUE drops that LF and
+# one CR before it; an unterminated last line is its own value. Markers match by value. Every
+# edit keeps all other bytes unchanged (any 8-bit encoding, a UTF-8 BOM, CRLF, UTF-8
+# multibyte text). A file holding NUL bytes (UTF-16/UTF-32/binary) or starting with a UTF-16
+# BOM cannot be edited safely: it is refused with a message and nothing is changed. The
+# PowerShell twin implements the same rules (Read/Write-AidRootBytes, Test-AidRootFileUnsafe).
+
+# _aid_root_file_unsafe <file> - exit 0 when <file> exists and cannot be edited byte-safely.
+_aid_root_file_unsafe() {
+    local f="$1" bom
+    [[ -f "$f" && -s "$f" ]] || return 1
+    bom="$(head -c2 "$f" | od -An -tx1 | tr -d ' \n')"
+    [[ "$bom" == fffe || "$bom" == feff ]] && return 0
+    LC_ALL=C tr -d '\000' < "$f" | cmp -s - "$f" || return 0
+    return 1
+}
+
+# _aid_root_file_guard <file> - exit 0 when <file> is absent or safe; else print the refusal.
+_aid_root_file_guard() {
+    _aid_root_file_unsafe "$1" || return 0
+    echo "ERROR: aid: refusing to edit $(basename "$1"): it is UTF-16/UTF-32 or contains NUL bytes, so AID cannot preserve its content. Convert it to UTF-8 and run the command again. No changes were made." >&2
+    return 1
+}
+
+# _aid_file_endnl <file> - print 1 when <file> is empty or ends with LF, else 0.
+_aid_file_endnl() {
+    if [[ ! -s "$1" || -z "$(tail -c1 "$1")" ]]; then echo 1; else echo 0; fi
+}
+
+# _aid_append_region <file> <region> - append <region>, first completing an unterminated last line.
+_aid_append_region() {
+    { if [[ -s "$1" && -n "$(tail -c1 "$1")" ]]; then printf '\n'; fi; printf '%s' "$2"; } >> "$1"
+}
+
+# _aid_is_blank_file <file> - exit 0 when <file> holds only ASCII whitespace.
+_aid_is_blank_file() { [[ -z "$(LC_ALL=C tr -d ' \t\r\n\v\f' < "$1")" ]]; }
+
+# Marker span: prints "S F" (1-based line numbers of the BEGIN and END lines) and exits 0
+# only for exactly one BEGIN line, one END line, in that order. AID_CANON_OUT (env) names a
+# file that receives the LF-joined values of lines S..F.
+_AID_AWK_SPAN='
+{ L[++n] = $0 }
+END {
+    for (i = 1; i <= n; i++) {
+        v = L[i]
+        if (!(i == n && !endnl)) sub(/\r$/, "", v)
+        if (v == mb) { nb++; b = i } else if (v == me) { ne++; e = i }
+        V[i] = v
+    }
+    if (nb != 1 || ne != 1 || b >= e) exit 1
+    print b " " e
+    out = ENVIRON["AID_CANON_OUT"]
+    if (out != "") { for (i = b; i <= e; i++) printf "%s\n", V[i] > out; close(out) }
+}'
+
+# Region repair: reads the region file, then the target. Prints noop | append | rewrite
+# (rewrite also writes the new content to AID_REWRITE_OUT) | span B E (inline mode only: one
+# well-formed marker pair).
+_AID_AWK_REPAIR='
+FNR == NR { R[++nR] = $0; next }
+{ L[++n] = $0 }
+END {
+    out = ENVIRON["AID_REWRITE_OUT"]
+    for (i = 1; i <= n; i++) { v = L[i]; if (!(i == n && !endnl)) sub(/\r$/, "", v); V[i] = v }
+    if (inl) { M["<!-- AID:BEGIN -->"] = 1; M["<!-- AID:END -->"] = 1 }
+    else for (r = 1; r <= nR; r++) M[R[r]] = 1
+    for (i = 1; i <= n; i++) {
+        if (V[i] == "<!-- AID:BEGIN -->") { nb++; b = i } else if (V[i] == "<!-- AID:END -->") { ne++; e = i }
+        if (V[i] in M) pos++
+    }
+    if (inl && nb == 1 && ne == 1 && b < e) { print "span " b " " e; exit }
+    if (pos == 0) { print "append"; exit }
+    if (!inl) {
+        for (i = 1; i + nR - 1 <= n; i++) {
+            ok = 1
+            for (j = 1; j <= nR; j++) if (V[i + j - 1] != R[j]) { ok = 0; break }
+            if (ok) starts++
+        }
+        if (starts == 1 && pos == nR) { print "noop"; exit }
+    }
+    for (i = 1; i <= n; i++) {
+        if (V[i] in M) {
+            if (!ins) { for (r = 1; r <= nR; r++) printf "%s\n", R[r] > out; ins = 1 }
+        } else { printf "%s", L[i] > out; if (!(i == n && !endnl)) printf "\n" > out }
+    }
+    if (!ins) for (r = 1; r <= nR; r++) printf "%s\n", R[r] > out
+    close(out)
+    print "rewrite"
+}'
+
+# _aid_marker_span <file> [begin end] - see _AID_AWK_SPAN.
+_aid_marker_span() {
+    local mb="${2:-<!-- AID:BEGIN -->}" me="${3:-<!-- AID:END -->}"
+    LC_ALL=C awk -v endnl="$(_aid_file_endnl "$1")" -v mb="$mb" -v me="$me" "$_AID_AWK_SPAN" "$1"
+}
+
+# _aid_region_decide <file> <region> <inline:0|1> <rewrite-out> - run _AID_AWK_REPAIR.
+_aid_region_decide() {
+    AID_REWRITE_OUT="$4" LC_ALL=C awk -v endnl="$(_aid_file_endnl "$1")" -v inl="$3" "$_AID_AWK_REPAIR" <(printf '%s' "$2") "$1"
+}
+
+# _aid_cut_marker_region <file> <check:0|1> <root> <recorded-sha> [begin end]
+# Removes the single well-formed marked region (markers included); a file left blank is
+# deleted. With check=1 the file is first copied to .aid/.trash/ when the region's canonical
+# hash differs from <recorded-sha>. A file without a well-formed region is left alone.
+_aid_cut_marker_region() {
+    local file="$1" check="$2" root="$3" recorded="$4" mb="${5:-}" me="${6:-}" canon="" tmp span s f
+    [[ -f "$file" ]] || return 0
+    tmp="$(mktemp)" || return 1
+    if [[ "$check" == 1 ]]; then canon="$(mktemp)" || { rm -f "$tmp"; return 1; }; fi
+    if ! span="$(AID_CANON_OUT="$canon" _aid_marker_span "$file" ${mb:+"$mb" "$me"})"; then rm -f "$tmp" "$canon"; return 0; fi
+    read -r s f <<< "$span"
+    if ! { head -n "$((s - 1))" "$file"; tail -n "+$((f + 1))" "$file"; } > "$tmp"; then rm -f "$tmp" "$canon"; return 1; fi
+    if [[ "$check" == 1 && "$(sha256_file "$canon")" != "$recorded" ]]; then
+        trash_file "$root" "$file" || { rm -f "$tmp" "$canon"; return 1; }
+    fi
+    if _aid_is_blank_file "$tmp"; then rm -f "$file"; else cat "$tmp" > "$file" || { rm -f "$tmp" "$canon"; return 1; }; fi
+    rm -f "$tmp" "$canon"
+    return 0
+}
+
 _retire_root_agent_region() {
-    local target="$1" file="$2" path="${1}/${2}" temp
+    local target="$1" file="$2" path="${1}/${2}" temp span s f
     _AID_V3_ROOT_REGION_RETIRED=0
     [[ -f "$path" && ! -L "$path" ]] || return 0
-    if ! python3 - "$path" <<'PY'
-import pathlib, sys
-p=pathlib.Path(sys.argv[1]); data=p.read_bytes(); lines=data.splitlines(keepends=True)
-def v(x): return x[:-2] if x.endswith(b'\r\n') else x[:-1] if x.endswith(b'\n') else x
-beg=[i for i,x in enumerate(lines) if v(x)==b'<!-- AID:BEGIN -->']; end=[i for i,x in enumerate(lines) if v(x)==b'<!-- AID:END -->']
-raise SystemExit(0 if len(beg)==1 and len(end)==1 and beg[0]<end[0] else 1)
-PY
-    then return 0; fi
+    _aid_root_file_guard "$path" || return 1
+    span="$(_aid_marker_span "$path")" || return 0
+    read -r s f <<< "$span"
     _copy_to_trash "$target" "$path" || return 1
     _AID_V3_ROOT_REGION_RETIRED=1
     temp="$(mktemp "${path}.aid-region.XXXXXX")" || return 1
-    python3 - "$path" "$temp" <<'PY' || { rm -f "$temp"; return 1; }
-import pathlib, sys
-src,dst=map(pathlib.Path,sys.argv[1:]); lines=src.read_bytes().splitlines(keepends=True)
-def v(x): return x[:-2] if x.endswith(b'\r\n') else x[:-1] if x.endswith(b'\n') else x
-b=[i for i,x in enumerate(lines) if v(x)==b'<!-- AID:BEGIN -->']; e=[i for i,x in enumerate(lines) if v(x)==b'<!-- AID:END -->']
-out=b''.join(lines[:b[0]]+lines[e[0]+1:])
-if out.strip(): dst.write_bytes(out)
-else: dst.write_bytes(b'')
-PY
-    if [[ ! -s "$temp" ]]; then rm -f "$path" "$temp"; else mv "$temp" "$path" || return 1; fi
+    if ! { head -n "$((s - 1))" "$path"; tail -n "+$((f + 1))" "$path"; } > "$temp"; then rm -f "$temp"; return 1; fi
+    if _aid_is_blank_file "$temp"; then rm -f "$path" "$temp"; else mv "$temp" "$path" || return 1; fi
 }
 
 _is_aid_owned_path() {
@@ -938,19 +1070,8 @@ except Exception:
 PY
         return
     fi
-    # Pure-Bash fallback: extract section between "tool": { ... } and next top-level "tool":
-    # Use awk to capture paths array lines for the target tool.
-    awk -v tool="$tool" '
-    BEGIN { in_tool=0; in_paths=0 }
-    /"'"${tool}"'"[[:space:]]*:/ { in_tool=1; next }
-    in_tool && /"paths"[[:space:]]*:/ { in_paths=1; next }
-    in_tool && in_paths && /\]/ { exit }
-    in_tool && in_paths && /"[^"]*"/ {
-        # Extract the quoted string.
-        s=$0; gsub(/^[^"]*"/, "", s); gsub(/".*/, "", s)
-        if (s != "") print s
-    }
-    ' "$manifest"
+    # Pure-Bash fallback: the elements of tools.<tool>.paths.
+    _aid_v3_flatten "$manifest" | awk -F '\t' -v tool="$tool" '$1 == "tools" && $2 == tool && $3 == "paths" && NF == 5 && $5 != "" { print $5 }'
 }
 
 # manifest_read_tool_version <manifest> <tool>
@@ -970,17 +1091,8 @@ except Exception:
 PY
         return
     fi
-    # Pure-Bash: find version line inside the tool block.
-    awk -v tool="$tool" '
-    BEGIN { in_tool=0; depth=0 }
-    /"'"${tool}"'"[[:space:]]*:/ { in_tool=1; depth=0; next }
-    in_tool && /\{/ { depth++ }
-    in_tool && /\}/ { depth--; if (depth<0) exit }
-    in_tool && depth==1 && /"version"/ {
-        s=$0; gsub(/.*"version"[^:]*:[^"]*"/, "", s); gsub(/".*/, "", s)
-        print s; exit
-    }
-    ' "$manifest"
+    # Pure-Bash: the tool's version record.
+    _aid_v3_flatten "$manifest" | awk -F '\t' -v tool="$tool" '$1 == "tools" && $2 == tool && $3 == "version" && NF == 4 && $4 != "" { print $4; exit }'
 }
 
 
@@ -991,35 +1103,25 @@ _AID_CLAUDE_IMPORT_REGION=$'<!-- AID:BEGIN -->\n@AGENTS.md\n<!-- AID:END -->\n'
 # _repair_root_region <file> <region> [project-root]
 # Preserve bytes outside exact managed lines; malformed regions are backed up first.
 _repair_root_region() {
-    local file="$1" region="$2" root="${3:-$(dirname "$1")}" core="${BASH_SOURCE[0]}"
-    python3 - "$file" "$region" "$root" "$core" <<'PY'
-import os, pathlib, subprocess, sys
-path, region, root, core = sys.argv[1], sys.argv[2].encode(), sys.argv[3], sys.argv[4]
-expected = region.splitlines()
-def content(line): return line[:-2] if line.endswith(b"\r\n") else line[:-1] if line.endswith(b"\n") else line
-if not os.path.exists(path):
-    os.makedirs(os.path.dirname(path) or ".", exist_ok=True)
-    pathlib.Path(path).write_bytes(region)
-    raise SystemExit(0)
-data = pathlib.Path(path).read_bytes()
-lines = data.splitlines(keepends=True)
-contents = [content(line) for line in lines]
-managed = set(expected)
-positions = [i for i, line in enumerate(contents) if line in managed]
-if not positions:
-    pathlib.Path(path).write_bytes(data + (b"" if not data or data.endswith(b"\n") else b"\n") + region)
-    raise SystemExit(0)
-starts = [i for i in range(len(lines)-len(expected)+1) if contents[i:i+len(expected)] == expected]
-if len(starts) == 1 and len(positions) == len(expected): raise SystemExit(0)
-subprocess.run(["bash", "-c", 'source "$1"; trash_file "$2" "$3"', "_", core, root, path], check=True)
-out = bytearray(); inserted = False
-for line, value in zip(lines, contents):
-    if value in managed:
-        if not inserted: out.extend(region); inserted = True
-    else: out.extend(line)
-if not inserted: out.extend(region)
-pathlib.Path(path).write_bytes(out)
-PY
+    local file="$1" region="$2" root="${3:-$(dirname "$1")}" tmp decision
+    if [[ ! -e "$file" ]]; then
+        mkdir -p "$(dirname "$file")" || return 1
+        printf '%s' "$region" > "$file"
+        return
+    fi
+    [[ -f "$file" ]] || return 1
+    _aid_root_file_guard "$file" || return 1
+    tmp="$(mktemp)" || return 1
+    decision="$(_aid_region_decide "$file" "$region" 0 "$tmp")" || { rm -f "$tmp"; return 1; }
+    case "$decision" in
+        noop) ;;
+        append) _aid_append_region "$file" "$region" || { rm -f "$tmp"; return 1; } ;;
+        rewrite)
+            trash_file "$root" "$file" || { rm -f "$tmp"; return 1; }
+            cat "$tmp" > "$file" || { rm -f "$tmp"; return 1; } ;;
+        *) rm -f "$tmp"; return 1 ;;
+    esac
+    rm -f "$tmp"
 }
 
 # Repair and print the canonical import-region hash.
@@ -1031,59 +1133,38 @@ _ensure_claude_md_region() {
 
 # Remove the exact Claude import region, backing up drift before the surgical edit.
 _remove_claude_md_region() {
-    local file="$1" recorded="${2:-}" root="${3:-$(dirname "$1")}" core="${BASH_SOURCE[0]}"
+    local file="$1" recorded="${2:-}" root="${3:-$(dirname "$1")}"
     [[ -f "$file" ]] || return 0
-    python3 - "$file" "$recorded" "$root" "$core" <<'PY'
-import hashlib, os, pathlib, subprocess, sys
-path, recorded, root, core = sys.argv[1:]
-data=pathlib.Path(path).read_bytes(); lines=data.splitlines(keepends=True)
-def content(line): return line[:-2] if line.endswith(b"\r\n") else line[:-1] if line.endswith(b"\n") else line
-values=[content(x) for x in lines]
-begin=b"<!-- AID:BEGIN -->"; end=b"<!-- AID:END -->"
-starts=[i for i,x in enumerate(values) if x==begin]; ends=[i for i,x in enumerate(values) if x==end]
-if len(starts)!=1 or len(ends)!=1 or starts[0]>=ends[0]: raise SystemExit(0)
-start,finish=starts[0],ends[0]
-canonical=b"".join(values[i]+b"\n" for i in range(start,finish+1))
-if hashlib.sha256(canonical).hexdigest()!=recorded:
-    subprocess.run(["bash", "-c", 'source "$1"; trash_file "$2" "$3"', "_", core, root, path], check=True)
-out=b"".join(lines[:start]+lines[finish+1:])
-if not out.strip(): os.remove(path)
-else: pathlib.Path(path).write_bytes(out)
-PY
+    _aid_root_file_guard "$file" || return 1
+    _aid_cut_marker_region "$file" 1 "$root" "$recorded"
 }
 # Writes the shared AGENTS.md pointer region and records its hashes for the caller.
 _repair_inline_root_region() {
-    local file="$1" region="$2" root="${3:-$(dirname "$1")}" core="${BASH_SOURCE[0]}"
-    python3 - "$file" "$region" "$root" "$core" <<'PY'
-import os, pathlib, subprocess, sys
-path, region, root, core = sys.argv[1], sys.argv[2].encode(), sys.argv[3], sys.argv[4]
-begin=b"<!-- AID:BEGIN -->"; end=b"<!-- AID:END -->"
-if not os.path.exists(path):
-    os.makedirs(os.path.dirname(path) or ".", exist_ok=True); pathlib.Path(path).write_bytes(region); raise SystemExit(0)
-data=pathlib.Path(path).read_bytes()
-lines=data.splitlines(keepends=True)
-def value(x): return x[:-2] if x.endswith(b"\r\n") else x[:-1] if x.endswith(b"\n") else x
-starts=[i for i,x in enumerate(lines) if value(x)==begin]; ends=[i for i,x in enumerate(lines) if value(x)==end]
-if len(starts)==1 and len(ends)==1 and starts[0]<ends[0]:
-    start,endline=starts[0],ends[0]
-    # Preserve marker terminators and all bytes outside the marked span.
-    prefix=b"".join(lines[:start+1]); suffix=b"".join(lines[endline:])
-    replacement=region[len(begin)+1:-(len(end)+1)]
-    if not lines[start].endswith(b"\n"): prefix += b"\n"
-    pathlib.Path(path).write_bytes(prefix+replacement+suffix); raise SystemExit(0)
-if not starts and not ends:
-    pathlib.Path(path).write_bytes(data+(b"" if not data or data.endswith(b"\n") else b"\n")+region); raise SystemExit(0)
-subprocess.run(["bash","-c",'source "$1"; trash_file "$2" "$3"',"_",core,root,path],check=True)
-# Malformed marker spans are replaced in place; unrelated lines stay byte-identical.
-out=bytearray(); inserted=False
-for line in lines:
-    v=value(line)
-    if v in (begin,end):
-        if not inserted: out.extend(region); inserted=True
-    else: out.extend(line)
-if not inserted: out.extend(region)
-pathlib.Path(path).write_bytes(out)
-PY
+    local file="$1" region="$2" root="${3:-$(dirname "$1")}" tmp decision b e repl
+    if [[ ! -e "$file" ]]; then
+        mkdir -p "$(dirname "$file")" || return 1
+        printf '%s' "$region" > "$file"
+        return
+    fi
+    [[ -f "$file" ]] || return 1
+    _aid_root_file_guard "$file" || return 1
+    tmp="$(mktemp)" || return 1
+    decision="$(_aid_region_decide "$file" "$region" 1 "$tmp")" || { rm -f "$tmp"; return 1; }
+    case "$decision" in
+        span\ *)
+            # Preserve marker terminators and all bytes outside the marked span.
+            read -r _ b e <<< "$decision"
+            repl="${region#*$'\n'}"; repl="${repl%'<!-- AID:END -->'$'\n'}"
+            { head -n "$b" "$file"; printf '%s' "$repl"; tail -n "+$e" "$file"; } > "$tmp" || { rm -f "$tmp"; return 1; }
+            if ! cmp -s "$tmp" "$file"; then cat "$tmp" > "$file" || { rm -f "$tmp"; return 1; }; fi ;;
+        append) _aid_append_region "$file" "$region" || { rm -f "$tmp"; return 1; } ;;
+        rewrite)
+            # Malformed marker spans are replaced in place; unrelated lines stay byte-identical.
+            trash_file "$root" "$file" || { rm -f "$tmp"; return 1; }
+            cat "$tmp" > "$file" || { rm -f "$tmp"; return 1; } ;;
+        *) rm -f "$tmp"; return 1 ;;
+    esac
+    rm -f "$tmp"
 }
 
 _copy_root_agent_file() {
@@ -1092,15 +1173,11 @@ _copy_root_agent_file() {
     if [[ -f "$dst" ]]; then had_dst=1; before_sha="$(sha256_file "$dst")"; fi
     _CORE_ROOT_AGENT_STATUS="owned"
     if [[ -f "$(dirname "$src")/aid-tool.conf" ]] && grep -qx 'rules_inline=true' "$(dirname "$src")/aid-tool.conf"; then inline=1; fi
-    if [[ -n "$manifest" && -f "$manifest" ]] && command -v python3 >/dev/null 2>&1; then
-        python3 - "$manifest" <<'PY' | grep -qx true && inline=1
-import json,sys
-import signal
-if hasattr(signal, "SIGPIPE"):
-    signal.signal(signal.SIGPIPE, signal.SIG_DFL)  # a reader that stops early (head, awk exit) is not an error
-try: print(str(any(t.get('rules_inline') is True for t in json.load(open(sys.argv[1])).get('tools',{}).values())).lower())
-except Exception: pass
-PY
+    if [[ -n "$manifest" && -f "$manifest" && "$inline" -eq 0 ]]; then
+        local _rt
+        while IFS= read -r _rt; do
+            if manifest_read_tool_files "$manifest" "$_rt" | awk -F '\t' -v t="$_rt" '$1=="tools." t ".rules_inline" && $2=="true" {found=1} END{exit !found}'; then inline=1; break; fi
+        done < <(manifest_list_tools "$manifest")
     fi
     if [[ "$inline" -eq 1 ]]; then
         rules="$root/.aid/runtime/rules.md"
@@ -1205,6 +1282,12 @@ manifest_remove_tool() {
     local manifest="$1" tool="$2"
     [[ -f "$manifest" ]] || return 0
 
+    # A format-3 manifest is edited through the shared model (same bytes with or without python3).
+    if [[ "$(manifest_format "$manifest")" == 3 ]]; then
+        _manifest_remove_tool_v3 "$manifest" "$tool"
+        return
+    fi
+
     if command -v python3 >/dev/null 2>&1; then
         python3 - "$manifest" "$tool" <<'PY'
 import json, sys, os, tempfile
@@ -1221,30 +1304,6 @@ except Exception:
 tools = data.get("tools", {})
 tools.pop(tool, None)
 data["tools"] = tools
-
-if data.get("format_version") == 3:
-    shared = data.get("shared", {})
-    for name in ("skills", "runtime", "agents_md", "claude_md"):
-        entry = shared.get(name)
-        if not isinstance(entry, dict): continue
-        if "users" in entry:
-            entry["users"] = [u for u in entry["users"] if u != tool]
-        if name == "claude_md" and not entry.get("users"):
-            shared.pop(name, None)
-        elif "users" in entry and not entry["users"]:
-            shared.pop(name, None)
-    mirrors = shared.get("mirrors", {})
-    for root in list(mirrors):
-        mirrors[root]["users"] = [u for u in mirrors[root].get("users", []) if u != tool]
-        if not mirrors[root]["users"]: del mirrors[root]
-    if not mirrors: shared.pop("mirrors", None)
-    data["shared"] = shared
-    remaining = data["tools"]
-    roots = [v.get("worktree_root") for v in remaining.values() if v.get("worktree_root")]
-    if roots:
-        data.setdefault("host", {})["worktree_root"] = roots[0]
-    elif remaining:
-        data.setdefault("host", {})["worktree_root"] = ".aid/.worktrees"
 
 if not tools:
     os.remove(manifest_path)
@@ -1389,19 +1448,8 @@ except Exception:
 PY
         return
     fi
-    # Pure-Bash fallback: extract tool keys from the "tools" section.
-    # Each tool entry looks like:    "tool-name": {  at 4-space indent.
-    # (awk emits bare \n natively; tr -d '\r' is a no-op safety net here too.)
-    awk '
-    BEGIN { in_tools=0; depth=0 }
-    /"tools"[[:space:]]*:/ { in_tools=1; depth=0; next }
-    in_tools && /\{/ { depth++ }
-    in_tools && /\}/ { depth--; if (depth<=0) exit }
-    in_tools && depth==1 && /^    "[a-z][a-zA-Z-]*"[[:space:]]*:/ {
-        s=$0; gsub(/^[[:space:]]*"/, "", s); gsub(/".*/, "", s)
-        if (s != "") print s
-    }
-    ' "$manifest" | tr -d '\r'
+    # Pure-Bash fallback: the tool keys of the "tools" object, in file order.
+    _aid_v3_flatten "$manifest" | awk -F '\t' '$1 == "tools" && NF >= 3 && !($2 in seen) { seen[$2] = 1; print $2 }' | tr -d '\r'
 }
 
 # ---------------------------------------------------------------------------
@@ -1467,14 +1515,49 @@ _aid_v3_users() {
 # Writer helpers. Every helper that renders JSON takes an output variable name first.
 _v3_pad() { printf -v "$1" '%*s' "$2" ''; }
 
-# _v3_quote <outvar> <string> - JSON string literal (escapes backslash, quote, LF, CR, TAB).
+# _v3_quote <outvar> <string> - JSON string literal, byte-identical to python3's
+# json.dump (ensure_ascii): escapes backslash, quote, \b \f \n \r \t, every other control
+# character, DEL and every non-ASCII character as \uXXXX (lower-case hex; a surrogate
+# pair above U+FFFF). The common all-printable-ASCII value takes the fast path.
 _v3_quote() {
-    local s="$2"
+    local LC_ALL=C
+    local s="$2" out="" c n cp need k b hi lo i len=0 piece
     s="${s//\\/\\\\}"
     s="${s//\"/\\\"}"
-    s="${s//$'\n'/\\n}"
-    s="${s//$'\r'/\\r}"
-    s="${s//$'\t'/\\t}"
+    if [[ "$s" =~ [^\ -~] ]]; then
+        len=${#s}; i=0
+        while (( i < len )); do
+            c="${s:i:1}"; i=$((i + 1))
+            printf -v n '%d' "'$c"
+            if (( n >= 32 && n < 127 )); then out+="$c"; continue; fi
+            cp=$n; need=0
+            case 1 in
+                $(( n == 8 )))  out+='\b'; continue ;;
+                $(( n == 9 )))  out+='\t'; continue ;;
+                $(( n == 10 ))) out+='\n'; continue ;;
+                $(( n == 12 ))) out+='\f'; continue ;;
+                $(( n == 13 ))) out+='\r'; continue ;;
+                $(( n < 32 || n == 127 )))  printf -v piece '\\u%04x' "$n"; out+="$piece"; continue ;;
+                $(( n >= 194 && n <= 223 ))) need=1; cp=$(( n & 31 )) ;;
+                $(( n >= 224 && n <= 239 ))) need=2; cp=$(( n & 15 )) ;;
+                $(( n >= 240 && n <= 244 ))) need=3; cp=$(( n & 7 )) ;;
+                *) cp=65533 ;;
+            esac
+            for (( k = 0; k < need; k++ )); do
+                b=-1
+                if (( i < len )); then printf -v b '%d' "'${s:i:1}"; fi
+                if (( b >= 128 && b <= 191 )); then cp=$(( (cp << 6) | (b & 63) )); i=$((i + 1)); else cp=65533; break; fi
+            done
+            if (( cp > 65535 )); then
+                hi=$(( 55296 + ((cp - 65536) >> 10) )); lo=$(( 56320 + ((cp - 65536) & 1023) ))
+                printf -v piece '\\u%04x\\u%04x' "$hi" "$lo"
+            else
+                printf -v piece '\\u%04x' "$cp"
+            fi
+            out+="$piece"
+        done
+        s="$out"
+    fi
     printf -v "$1" '"%s"' "$s"
 }
 
@@ -1893,79 +1976,325 @@ manifest_write_v3() {
     fi
 }
 
+# ---------------------------------------------------------------------------
+# Format-3 model helpers (bash + awk; the writer is shared with python3)
+# ---------------------------------------------------------------------------
+
+# _manifest_model <manifest> - every record of a manifest as writer-model lines.
+_manifest_model() { _aid_v3_flatten "$1" | _aid_v3_view_awk model; }
+
+# _manifest_remove_tool_v3 <manifest> <tool> - drop a tool from a format-3 manifest: its own
+# records, its entry in every shared users list and mirror, and re-derive host.worktree_root
+# from the tools left. The manifest is deleted when no tool is left.
+_AID_AWK_RM_TOOL='
+BEGIN { FS = OFS = "\t"; no = split(order, O, " ") }
+function drop(csv,   a, na, i, r) {
+    na = split(csv, a, ","); r = ""
+    for (i = 1; i <= na; i++) if (a[i] != "" && a[i] != tool) r = (r == "" ? a[i] : r "," a[i])
+    return r
+}
+{
+    k = $1
+    if (k ~ /^tools\./) {
+        t = substr(k, 7); sub(/\..*$/, "", t)
+        if (t == tool) next
+        left[t] = 1
+        if (k == "tools." t ".worktree_root" && $2 != "") wr[t] = $2
+        rec[++n] = $0; next
+    }
+    if (k ~ /^shared\.(skills|runtime|agents_md|claude_md)\.users$/) { rec[++n] = k OFS drop($2); next }
+    if (k == "shared.mirror") { rec[++n] = k OFS $2 OFS $3 OFS drop($4); next }
+    if (k == "host.worktree_root") next
+    rec[++n] = $0
+}
+END {
+    nleft = 0
+    for (t in left) nleft++
+    if (nleft == 0) exit 3
+    host = ""
+    for (i = 1; i <= no; i++) if (O[i] in wr) { host = wr[O[i]]; break }
+    for (i = 1; i <= n; i++) print rec[i]
+    print "host.worktree_root" OFS (host != "" ? host : ".aid/.worktrees")
+}'
+_manifest_remove_tool_v3() {
+    local manifest="$1" tool="$2" model rc
+    model="$(mktemp "$(dirname "$manifest")/.manifest-model.XXXXXX")" || return 1
+    _manifest_model "$manifest" | LC_ALL=C awk -v tool="$tool" -v order="${AID_TOOLS[*]}" "$_AID_AWK_RM_TOOL" > "$model"
+    rc=$?
+    if [[ "$rc" -eq 3 ]]; then rm -f "$model" "$manifest"; return 0; fi
+    if [[ "$rc" -ne 0 ]]; then rm -f "$model"; echo "ERROR: manifest remove failed" >&2; return 1; fi
+    manifest_write_v3 "$manifest" "$model" || { rm -f "$model"; return 1; }
+    rm -f "$model"
+}
+
+# _aid_tree_records <dir> - "rel<TAB>sha256" for every regular file under <dir>, in byte order.
+_aid_tree_records() {
+    local dir="$1" sha path
+    local -A hashed=()
+    local -a files=()
+    [[ -d "$dir" ]] || return 0
+    while IFS= read -r -d '' path; do files+=("$path"); done < <(find "$dir" -type f -print0 | LC_ALL=C sort -z)
+    [[ "${#files[@]}" -gt 0 ]] || return 0
+    while IFS=$'\t' read -r sha path; do hashed["$path"]="$sha"; done < <(printf '%s\0' "${files[@]}" | _aid_sha256_batch)
+    for path in "${files[@]}"; do
+        sha="${hashed[$path]:-}"
+        [[ -n "$sha" ]] || sha="$(sha256_file "$path")" || return 1
+        printf '%s\t%s\n' "${path#"$dir"/}" "$sha"
+    done
+}
+
+# _aid_build_install_model <manifest> <model> <shared-stage> <target> <version> <now>
+#   <new-tools-file> <region-sha> <agents-sha> <claude-sha>
+# Writes the writer model of the install install_shared is committing: the old manifest's
+# tools (all of them, unless AID_UPGRADE_EXACT=1) overlaid with the newly staged tools.
+_aid_build_install_model() {
+    local manifest="$1" model="$2" shared_dir="$3" target="$4" version="$5" now="$6" new_file="$7"
+    local region_sha="$8" agents_sha="$9" claude_sha="${10}"
+    local exact="${AID_UPGRADE_EXACT:-0}" line key rest t stage root k v rel sha dir e ci_set wr_set
+    local conf_lines old_iat="" old_iat_set=0 old_claude="" csv host_wr="" claude_csv=""
+    local -A has_old=() o_ver=() o_iat=() o_wr=() o_inline=() o_mirrors=() o_files=() n_stage=() ctx=()
+    local -A t_ver=() t_iat=() t_wr=() t_inline=() t_mirrors=() t_files=() in_set=() mir_users=()
+    local -a mir=() ri=() ordered=()
+
+    if [[ -f "$manifest" ]]; then
+        while IFS= read -r line; do
+            key="${line%%$'\t'*}"; rest="${line#*$'\t'}"
+            case "$key" in
+                installed_at) old_iat="$rest"; old_iat_set=1 ;;
+                shared.claude_md.users) old_claude="$rest" ;;
+                tools.*)
+                    t="${key#tools.}"; k="${t#*.}"; t="${t%%.*}"; has_old[$t]=1
+                    case "$k" in
+                        version) o_ver[$t]="$rest" ;;
+                        installed_at) o_iat[$t]="$rest" ;;
+                        worktree_root) o_wr[$t]="$rest" ;;
+                        rules_inline) o_inline[$t]=1 ;;
+                        mirror) o_mirrors[$t]+="$rest"$'\n' ;;
+                        file) o_files[$t]+="$rest"$'\n' ;;
+                    esac ;;
+            esac
+        done < <(_manifest_model "$manifest")
+    fi
+    while IFS=$'\t' read -r t stage; do
+        [[ -n "$t" && -n "$stage" ]] && n_stage[$t]="$stage"
+    done < "$new_file"
+
+    if [[ "$exact" != 1 ]]; then
+        for t in "${!has_old[@]}"; do in_set[$t]=1; done
+        csv="$old_claude"
+        while [[ -n "$csv" ]]; do
+            t="${csv%%,*}"
+            if [[ "$csv" == *,* ]]; then csv="${csv#*,}"; else csv=""; fi
+            [[ -n "$t" ]] && ctx[$t]=1
+        done
+    fi
+    for t in "${!n_stage[@]}"; do in_set[$t]=1; ctx[$t]=0; done
+
+    for t in "${AID_TOOLS[@]}"; do
+        [[ -n "${in_set[$t]:-}" ]] || continue
+        ordered+=("$t")
+        if [[ -n "${n_stage[$t]:-}" ]]; then
+            stage="${n_stage[$t]}"; mir=(); ri=(); wr_set=0; ci_set=0
+            t_wr[$t]=""
+            conf_lines="$(read_kv_conf "${stage}/aid-tool.conf")" || return 1
+            while IFS= read -r line; do
+                k="${line%%=*}"; v="${line#*=}"
+                case "$k" in
+                    skill_mirror) mir+=("$v") ;;
+                    worktree_root) if [[ "$wr_set" -eq 0 ]]; then t_wr[$t]="$v"; wr_set=1; fi ;;
+                    rules_inline) ri+=("$v") ;;
+                    context_import) if [[ "$ci_set" -eq 0 ]]; then ci_set=1; [[ "$v" == CLAUDE.md ]] && ctx[$t]=1; fi ;;
+                esac
+            done <<< "$conf_lines"
+            [[ "$wr_set" -eq 1 ]] || unset "t_wr[$t]"
+            if [[ "${#ri[@]}" -eq 1 && "${ri[0]}" == true ]]; then t_inline[$t]=1; fi
+            t_ver[$t]="$version"
+            if [[ -n "${o_iat[$t]+x}" ]]; then t_iat[$t]="${o_iat[$t]}"; else t_iat[$t]="$now"; fi
+            t_mirrors[$t]=""
+            if [[ "${#mir[@]}" -gt 0 ]]; then printf -v "t_mirrors[$t]" '%s\n' "${mir[@]}"; fi
+            root="$(_root_dir "$t")"
+            t_files[$t]=""
+            if [[ -d "${stage}/${root}/agents" ]]; then
+                while IFS=$'\t' read -r rel sha; do t_files[$t]+="${root}/agents/${rel}"$'\t'"${sha}"$'\n'; done < <(_aid_tree_records "${stage}/${root}/agents")
+            fi
+        else
+            t_ver[$t]="${o_ver[$t]-}"
+            if [[ -n "${o_iat[$t]+x}" ]]; then t_iat[$t]="${o_iat[$t]}"; else t_iat[$t]="$now"; fi
+            [[ -n "${o_wr[$t]+x}" ]] && t_wr[$t]="${o_wr[$t]}"
+            [[ -n "${o_inline[$t]:-}" ]] && t_inline[$t]=1
+            t_mirrors[$t]="${o_mirrors[$t]-}"
+            t_files[$t]="${o_files[$t]-}"
+        fi
+    done
+    for t in "${ordered[@]}"; do
+        if [[ -n "${t_wr[$t]:-}" ]]; then host_wr="${t_wr[$t]}"; break; fi
+    done
+    [[ -n "$host_wr" ]] || host_wr=".aid/.worktrees"
+    local all_csv=""; for t in "${ordered[@]}"; do all_csv+="${all_csv:+,}${t}"; done
+    for t in "${ordered[@]}"; do
+        [[ "${ctx[$t]:-0}" == 1 ]] && claude_csv+="${claude_csv:+,}${t}"
+        while IFS= read -r dir; do
+            [[ -n "$dir" ]] && mir_users[$dir]+="${mir_users[$dir]:+,}${t}"
+        done <<< "${t_mirrors[$t]}"
+    done
+
+    {
+        printf 'aid_version\t%s\n' "$version"
+        if [[ "$old_iat_set" -eq 1 ]]; then printf 'installed_at\t%s\n' "$old_iat"; else printf 'installed_at\t%s\n' "$now"; fi
+        printf 'host.worktree_root\t%s\n' "$host_wr"
+        for e in skills runtime; do
+            if [[ "$e" == skills ]]; then root=".agents/skills"; else root=".aid/runtime"; fi
+            printf 'shared.%s.root\t%s\nshared.%s.version\t%s\nshared.%s.users\t%s\n' "$e" "$root" "$e" "$version" "$e" "$all_csv"
+            while IFS=$'\t' read -r rel sha; do
+                [[ "$e" == skills && "$rel" != aid-* ]] && continue
+                printf 'shared.%s.file\t%s\t%s\n' "$e" "$rel" "$sha"
+            done < <(_aid_tree_records "${shared_dir}/${e}")
+        done
+        if [[ -f "${target}/.aid/runtime/host.conf" ]]; then
+            printf 'shared.runtime.file\thost.conf\t%s\n' "$(sha256_file "${target}/.aid/runtime/host.conf")"
+        fi
+        printf 'shared.agents_md.path\tAGENTS.md\nshared.agents_md.version\t%s\nshared.agents_md.users\t%s\nshared.agents_md.region_sha256\t%s\nshared.agents_md.file_sha256\t%s\n' "$version" "$all_csv" "$region_sha" "$agents_sha"
+        for dir in "${!mir_users[@]}"; do printf 'shared.mirror\t%s\t%s\t%s\n' "$dir" "$version" "${mir_users[$dir]}"; done
+        if [[ -n "$claude_sha" ]]; then
+            printf 'shared.claude_md.path\tCLAUDE.md\nshared.claude_md.version\t%s\nshared.claude_md.users\t%s\nshared.claude_md.region_sha256\t%s\n' "$version" "$claude_csv" "$claude_sha"
+        fi
+        for t in "${ordered[@]}"; do
+            printf 'tools.%s.version\t%s\ntools.%s.installed_at\t%s\n' "$t" "${t_ver[$t]}" "$t" "${t_iat[$t]}"
+            while IFS= read -r dir; do [[ -n "$dir" ]] && printf 'tools.%s.mirror\t%s\n' "$t" "$dir"; done <<< "${t_mirrors[$t]}"
+            if [[ -n "${t_wr[$t]+x}" ]]; then printf 'tools.%s.worktree_root\t%s\n' "$t" "${t_wr[$t]}"; fi
+            if [[ -n "${t_inline[$t]:-}" ]]; then printf 'tools.%s.rules_inline\ttrue\n' "$t"; fi
+            while IFS= read -r line; do [[ -n "$line" ]] && printf 'tools.%s.file\t%s\n' "$t" "$line"; done <<< "${t_files[$t]}"
+        done
+        true
+    } > "$model"
+}
+
 # Readers. _aid_v3_flatten prints each scalar and array element of a pretty-printed
 # JSON manifest as TAB-separated path segments followed by the value. Array elements
-# are numbered from 0. Only the layout the writers emit is supported.
+# are numbered from 0. Nesting is tracked by the braces, so any indent width works; the
+# one-member-per-line layout of json.dump / the writers is required. String escapes
+# (\n \t \" \\ \/ \b \f \r and \uXXXX, surrogate pairs included) are decoded to the bytes
+# python3's json would yield (UTF-8), so both readers return the same records.
 _aid_v3_flatten() {
-    awk '
+    LC_ALL=C awk '
     function jn(a, b) { return (a == "") ? b : a "\t" b }
+    function hex(h,   i, v) {
+        v = 0; h = tolower(h)
+        for (i = 1; i <= length(h); i++) v = v * 16 + index("0123456789abcdef", substr(h, i, 1)) - 1
+        return v
+    }
+    function utf8(cp) {
+        if (cp < 128) return sprintf("%c", cp)
+        if (cp < 2048) return sprintf("%c%c", 192 + int(cp / 64), 128 + cp % 64)
+        if (cp < 65536) return sprintf("%c%c%c", 224 + int(cp / 4096), 128 + int(cp / 64) % 64, 128 + cp % 64)
+        return sprintf("%c%c%c%c", 240 + int(cp / 262144), 128 + int(cp / 4096) % 64, 128 + int(cp / 64) % 64, 128 + cp % 64)
+    }
+    function unesc(s,   o, i, n, c, cp, lo) {
+        if (index(s, "\\") == 0) return s
+        o = ""; n = length(s)
+        for (i = 1; i <= n; i++) {
+            c = substr(s, i, 1)
+            if (c != "\\") { o = o c; continue }
+            i++; c = substr(s, i, 1)
+            if (c == "n") o = o "\n"
+            else if (c == "t") o = o "\t"
+            else if (c == "r") o = o "\r"
+            else if (c == "b") o = o "\b"
+            else if (c == "f") o = o "\f"
+            else if (c == "u") {
+                cp = hex(substr(s, i + 1, 4)); i += 4
+                if (cp >= 55296 && cp <= 56319 && substr(s, i + 1, 2) == "\\u") {
+                    lo = hex(substr(s, i + 3, 4))
+                    if (lo >= 56320 && lo <= 57343) { cp = 65536 + (cp - 55296) * 1024 + (lo - 56320); i += 6 }
+                }
+                o = o utf8(cp)
+            } else o = o c
+        }
+        return o
+    }
+    function endq(s,   i, n, c) {
+        n = length(s)
+        for (i = 1; i <= n; i++) { c = substr(s, i, 1); if (c == "\\") i++; else if (c == "\"") return i }
+        return 0
+    }
     {
-        if (match($0, /[^ ]/) == 0) next
-        lvl = (RSTART - 1) / 2
+        if (match($0, /[^ \t]/) == 0) next
         body = substr($0, RSTART)
+        sub(/[ \t\r]+$/, "", body)
         sub(/,$/, "", body)
-        if (lvl == 0) { P[1] = ""; next }
         if (body == "{" || body == "[") {
-            n = cnt[P[lvl]]++
-            P[lvl + 1] = jn(P[lvl], n)
+            if (d == 0) { d = 1; P[1] = ""; next }
+            n = cnt[P[d]]++
+            P[d + 1] = jn(P[d], n); d++
             next
         }
-        if (body ~ /^[]}]/) next
-        if (body ~ /^"[^"]*"$/) {
-            n = cnt[P[lvl]]++
-            print jn(P[lvl], n) "\t" substr(body, 2, length(body) - 2)
-            next
-        }
+        if (body == "{}" || body == "[]") { cnt[P[d]]++; next }
+        if (body ~ /^[]}]/) { d--; next }
         rest = substr(body, 2)
-        q = index(rest, "\"")
-        key = substr(rest, 1, q - 1)
+        q = endq(rest)
+        if (q == length(rest)) {
+            n = cnt[P[d]]++
+            print jn(P[d], n) "\t" unesc(substr(rest, 1, q - 1))
+            next
+        }
+        key = unesc(substr(rest, 1, q - 1))
         val = substr(rest, q + 3)
-        if (val == "{" || val == "[") { P[lvl + 1] = jn(P[lvl], key); next }
+        if (val == "{" || val == "[") { P[d + 1] = jn(P[d], key); d++; next }
         if (val == "{}" || val == "[]") next
-        if (substr(val, 1, 1) == "\"") val = substr(val, 2, length(val) - 2)
-        print jn(P[lvl], key) "\t" val
+        if (substr(val, 1, 1) == "\"") val = unesc(substr(val, 2, length(val) - 2))
+        print jn(P[d], key) "\t" val
     }' "$1"
 }
 
-# _aid_v3_read_awk <manifest> <mode> [tool] - pure-bash reader (mode: format|host|shared|tool).
-_aid_v3_read_awk() {
-    _aid_v3_flatten "$1" | awk -v mode="$2" -v tool="${3:-}" '
+# _aid_v3_view_awk <mode> [tool] - the record views, reading _aid_v3_flatten output on stdin.
+# Modes: format | host | shared | tool (one tool) | model (every record: the top-level
+# aid_version/installed_at, host, shared and, for every tool, version, installed_at,
+# mirrors, worktree_root, rules_inline and files).
+_aid_v3_view_awk() {
+    LC_ALL=C awk -v mode="$1" -v tool="${2:-}" '
     BEGIN { FS = "\t"; E[1] = "skills"; E[2] = "runtime"; E[3] = "agents_md"; E[4] = "claude_md" }
     mode == "format" && NF == 2 && $1 == "format_version" { print $2; next }
     mode == "host" && NF == 3 && $1 == "host" && $2 == "worktree_root" { print "host.worktree_root\t" $3; next }
-    mode == "shared" {
-        if (NF == 4 && $1 == "shared" && $2 ~ /^(skills|runtime|agents_md|claude_md)$/ && $3 ~ /^(root|path|version|region_sha256|file_sha256)$/) {
+    mode == "model" && NF == 3 && $1 == "host" && $2 == "worktree_root" { print "host.worktree_root\t" $3; next }
+    mode == "model" && NF == 2 && ($1 == "aid_version" || $1 == "installed_at") { print $1 "\t" $2; next }
+    (mode == "shared" || mode == "model") && $1 == "shared" {
+        if (NF == 4 && $2 ~ /^(skills|runtime|agents_md|claude_md)$/ && $3 ~ /^(root|path|version|region_sha256|file_sha256)$/) {
             print "shared." $2 "." $3 "\t" $4
-        } else if (NF == 5 && $1 == "shared" && $2 ~ /^(skills|runtime|agents_md|claude_md)$/ && $3 == "users") {
+        } else if (NF == 5 && $2 ~ /^(skills|runtime|agents_md|claude_md)$/ && $3 == "users") {
             if (ucsv[$2] != "") ucsv[$2] = ucsv[$2] ","
             ucsv[$2] = ucsv[$2] $5
-        } else if (NF == 6 && $1 == "shared" && $2 ~ /^(skills|runtime)$/ && $3 == "files") {
+        } else if (NF == 6 && $2 ~ /^(skills|runtime)$/ && $3 == "files") {
             if ($5 == "path") pend[$2] = $6
             else if ($5 == "sha256") print "shared." $2 ".file\t" pend[$2] "\t" $6
-        } else if (NF == 5 && $1 == "shared" && $2 == "mirrors" && $4 == "version") {
+        } else if (NF == 5 && $2 == "mirrors" && $4 == "version") {
             if (!($3 in mseen)) { mseen[$3] = 1; mord[++nm] = $3 }
             mver[$3] = $5
-        } else if (NF == 6 && $1 == "shared" && $2 == "mirrors" && $4 == "users") {
+        } else if (NF == 6 && $2 == "mirrors" && $4 == "users") {
             if (!($3 in mseen)) { mseen[$3] = 1; mord[++nm] = $3 }
             if (mcsv[$3] != "") mcsv[$3] = mcsv[$3] ","
             mcsv[$3] = mcsv[$3] $6
         }
+        next
     }
-    mode == "tool" && $1 == "tools" && $2 == tool {
-        if (NF == 5 && $3 == "mirrors") print "tools." tool ".mirror\t" $5
-        else if (NF == 4 && ($3 == "worktree_root" || $3 == "rules_inline")) print "tools." tool "." $3 "\t" $4
+    $1 == "tools" && ((mode == "tool" && $2 == tool) || mode == "model") {
+        t = $2
+        if (NF == 5 && $3 == "mirrors") print "tools." t ".mirror\t" $5
+        else if (NF == 4 && ($3 == "worktree_root" || $3 == "rules_inline" || (mode == "model" && ($3 == "version" || $3 == "installed_at")))) print "tools." t "." $3 "\t" $4
         else if (NF == 6 && $3 == "files") {
             if ($5 == "path") tpend = $6
-            else if ($5 == "sha256") print "tools." tool ".file\t" tpend "\t" $6
+            else if ($5 == "sha256") print "tools." t ".file\t" tpend "\t" $6
         }
     }
     END {
-        if (mode == "shared") {
+        if (mode == "shared" || mode == "model") {
             for (i = 1; i <= 4; i++) if (E[i] in ucsv) print "shared." E[i] ".users\t" ucsv[E[i]]
             for (i = 1; i <= nm; i++) print "shared.mirror\t" mord[i] "\t" mver[mord[i]] "\t" mcsv[mord[i]]
         }
     }'
 }
+
+# _aid_v3_read_awk <manifest> <mode> [tool] - pure-bash reader (mode: format|host|shared|tool|model).
+_aid_v3_read_awk() { _aid_v3_flatten "$1" | _aid_v3_view_awk "$2" "${3:-}"; }
 
 # _manifest_v3_read_python <manifest> <mode> [tool] - python3 reader (same records as the awk reader).
 # Mode "all" (used by _aid_mc_prime only) prints every view at once: for each view a
@@ -2398,90 +2727,137 @@ PY
     return 0
 }
 
+# Drift view of one root region: CRLF and lone CR count as LF (so a Windows checkout of an
+# LF region hashes the same); prints missing, or region and writes the region's lines
+# (LF-terminated as in the file) to AID_CANON_OUT.
+_AID_AWK_DRIFT_REGION='
+{ L[++n] = $0 }
+END {
+    for (i = 1; i <= n; i++) {
+        s = L[i]; term = (i < n) || endnl
+        if (sub(/\r$/, "", s)) term = 1
+        if (s == "") { m = 1; parts[1] = "" } else m = split(s, parts, "\r")
+        for (k = 1; k <= m; k++) { c++; T[c] = parts[k]; TT[c] = (k < m) ? 1 : term }
+    }
+    for (i = 1; i <= c; i++) { if (T[i] == mb) { nb++; b = i } else if (T[i] == me) { ne++; e = i } }
+    if (nb != 1 || ne != 1 || e < b) { print "missing"; exit }
+    print "region"
+    out = ENVIRON["AID_CANON_OUT"]
+    for (i = b; i <= e; i++) printf "%s%s", T[i], (TT[i] ? "\n" : "") > out
+    close(out)
+}'
+
 # drift_report <target> <manifest> - report shared and tool-file drift without writes.
 drift_report() {
-    local target="$1" manifest="$2"
-    python3 - "$target" "$manifest" <<'PY'
-import hashlib, json, os, pathlib, sys
-root = pathlib.Path(sys.argv[1]); data = json.loads(pathlib.Path(sys.argv[2]).read_text())
-shared = data.get('shared', {})
-if data.get('format_version') == 2:
-    print('Layout: format 4 (pre-shared). Run: aid update'); raise SystemExit
-expected = {}
-for area, base in (('skills', '.agents/skills'), ('runtime', '.aid/runtime')):
-    for item in shared.get(area, {}).get('files', []):
-        rel = item.get('path', '')
-        if rel: expected[(base, rel)] = item.get('sha256', '')
-mirrors = set(shared.get('mirrors', {}))
-for tool in data.get('tools', {}).values():
-    mirrors.update(tool.get('mirrors', []))
-for mirror in sorted(mirrors):
-    for item in shared.get('skills', {}).get('files', []):
-        rel = item.get('path', '')
-        if rel: expected[(mirror, rel)] = item.get('sha256', '')
-for tool in data.get('tools', {}).values():
-    for item in tool.get('files', []):
-        rel = item.get('path', '')
-        if rel: expected[('', rel)] = item.get('sha256', '')
-regions = []
-for section, filename in (('agents_md', 'AGENTS.md'), ('claude_md', 'CLAUDE.md')):
-    entry = shared.get(section)
-    if not entry: continue
-    path = root / filename
-    if not path.is_file():
-        regions.append(('missing', filename, None)); continue
-    raw = path.read_bytes().replace(b'\r\n', b'\n').replace(b'\r', b'\n')
-    begin=b'<!-- AID:BEGIN -->'; end=b'<!-- AID:END -->'
-    starts=[i for i,line in enumerate(raw.splitlines(keepends=True)) if line.rstrip(b'\n') == begin]
-    lines=raw.splitlines(keepends=True); ends=[i for i,line in enumerate(lines) if line.rstrip(b'\n') == end]
-    if len(starts)!=1 or len(ends)!=1 or ends[0] < starts[0]:
-        regions.append(('missing', filename, None)); continue
-    region=b''.join(lines[starts[0]:ends[0]+1])
-    regions.append(('region', filename, (hashlib.sha256(region).hexdigest(), entry.get('region_sha256', ''))))
-paths = {}
-for (base, rel), sha in expected.items():
-    if (base == '.aid/runtime' or (not base and rel.startswith('.aid/runtime/'))) and 'node_modules' in pathlib.PurePosixPath(rel).parts: continue
-    paths[str(root / base / rel) if base else str(root / rel)] = sha
-hashes = {}
-for name in paths:
-    try:
-        with open(name, 'rb') as stream: hashes[name] = hashlib.sha256(stream.read()).hexdigest()
-    except OSError: hashes[name] = None
-issues=[]
-for name, wanted in paths.items():
-    label=os.path.relpath(name, root)
-    if hashes[name] is None: issues.append(('missing', label))
-    elif wanted and hashes[name] != wanted: issues.append(('modified', label))
-for kind, filename, values in regions:
-    if kind == 'missing': issues.append((kind, filename))
-    elif values[0] != values[1]: issues.append(('modified', filename))
-for base in ['.agents/skills'] + sorted(mirrors):
-    folder=root/base
-    if folder.is_dir():
-        for child in folder.iterdir():
-            if not child.name.startswith('aid-'): continue
-            rel=child.relative_to(folder).as_posix()
-            recorded={x for b,x in expected if b == base}
-            if child.is_file():
-                if rel not in recorded: issues.append(('extra', base+'/'+rel))
-            elif child.is_dir():
-                if not any(x == rel or x.startswith(rel+'/') for x in recorded): issues.append(('extra', base+'/'+rel))
-                for p in child.rglob('*'):
-                    item_rel=p.relative_to(folder).as_posix()
-                    if p.is_file() and item_rel not in recorded: issues.append(('extra', base+'/'+item_rel))
-folder=root/'.aid/runtime'
-if folder.is_dir():
-    for p in folder.rglob('*'):
-        if not p.is_file() or 'node_modules' in p.relative_to(folder).parts: continue
-        rel=p.relative_to(folder).as_posix()
-        if ('.aid/runtime', rel) not in expected: issues.append(('extra', '.aid/runtime/'+rel))
-if not issues: print('Shared files: clean')
-else:
-    order={'modified':0,'missing':1,'extra':2}
-    print('Shared files')
-    for kind,path in sorted(set(issues), key=lambda x:(order[x[0]],x[1])): print(kind+': '+path)
-    print('Run: aid update (drifted files are moved to .aid/.trash/ first)')
-PY
+    local target="$1" manifest="$2" root="${1%/}"
+    local rec rest key rel sha base dir t sec fname decision canon got label abs p x name child folder
+    local -A exp=() mirrors=() skill_sha=() has_sec=() sec_sha=() recfile=() recdir=() paths=() labels=() hashes=()
+    local -a skill_rels=() issues=() files=() sorted_mirrors=() bases=()
+    if [[ "$(manifest_format "$manifest")" == 2 ]]; then
+        echo 'Layout: format 4 (pre-shared). Run: aid update'
+        return 0
+    fi
+    while IFS= read -r rec; do
+        key="${rec%%$'\t'*}"; rest="${rec#*$'\t'}"
+        case "$key" in
+            shared.skills.file)
+                rel="${rest%%$'\t'*}"; sha="${rest#*$'\t'}"
+                if [[ -n "$rel" ]]; then exp[".agents/skills"$'\t'"$rel"]="$sha"; skill_rels+=("$rel"); skill_sha[$rel]="$sha"; fi ;;
+            shared.runtime.file)
+                rel="${rest%%$'\t'*}"; sha="${rest#*$'\t'}"
+                [[ -n "$rel" ]] && exp[".aid/runtime"$'\t'"$rel"]="$sha" ;;
+            shared.mirror) mirrors["${rest%%$'\t'*}"]=1 ;;
+            shared.agents_md.*|shared.claude_md.*)
+                sec="${key#shared.}"; sec="${sec%%.*}"; has_sec[$sec]=1
+                [[ "$key" == *.region_sha256 ]] && sec_sha[$sec]="$rest" ;;
+        esac
+    done < <(manifest_read_shared "$manifest")
+    while IFS= read -r t; do
+        [[ -n "$t" ]] || continue
+        while IFS= read -r rec; do
+            key="${rec%%$'\t'*}"; rest="${rec#*$'\t'}"
+            case "$key" in
+                "tools.${t}.mirror") mirrors[$rest]=1 ;;
+                "tools.${t}.file")
+                    rel="${rest%%$'\t'*}"; sha="${rest#*$'\t'}"
+                    [[ -n "$rel" ]] && exp[$'\t'"$rel"]="$sha" ;;
+            esac
+        done < <(manifest_read_tool_files "$manifest" "$t")
+    done < <(manifest_list_tools "$manifest")
+    for dir in "${!mirrors[@]}"; do
+        for rel in "${skill_rels[@]+"${skill_rels[@]}"}"; do exp["$dir"$'\t'"$rel"]="${skill_sha[$rel]}"; done
+    done
+
+    for key in "${!exp[@]}"; do
+        base="${key%%$'\t'*}"; rel="${key#*$'\t'}"
+        recfile[$key]=1
+        p="$rel"; recdir["${base}"$'\t'"${p}"]=1
+        while [[ "$p" == */* ]]; do p="${p%/*}"; recdir["${base}"$'\t'"${p}"]=1; done
+        if [[ "$base" == .aid/runtime || ( -z "$base" && "$rel" == .aid/runtime/* ) ]] && [[ "/$rel/" == */node_modules/* ]]; then continue; fi
+        if [[ -n "$base" ]]; then abs="${root}/${base}/${rel}"; label="${base}/${rel}"; else abs="${root}/${rel}"; label="$rel"; fi
+        paths[$abs]="${exp[$key]}"; labels[$abs]="$label"
+    done
+    for abs in "${!paths[@]}"; do [[ -f "$abs" ]] && files+=("$abs"); done
+    if [[ "${#files[@]}" -gt 0 ]]; then
+        while IFS=$'\t' read -r sha p; do hashes[$p]="$sha"; done < <(printf '%s\0' "${files[@]}" | _aid_sha256_batch)
+        for abs in "${files[@]}"; do [[ -n "${hashes[$abs]:-}" ]] || hashes[$abs]="$(sha256_file "$abs" 2>/dev/null)"; done
+    fi
+    for abs in "${!paths[@]}"; do
+        if [[ -z "${hashes[$abs]:-}" ]]; then issues+=("1"$'\t'"${labels[$abs]}")
+        elif [[ -n "${paths[$abs]}" && "${hashes[$abs]}" != "${paths[$abs]}" ]]; then issues+=("0"$'\t'"${labels[$abs]}"); fi
+    done
+    for sec in agents_md claude_md; do
+        [[ -n "${has_sec[$sec]:-}" ]] || continue
+        if [[ "$sec" == agents_md ]]; then fname=AGENTS.md; else fname=CLAUDE.md; fi
+        if [[ ! -f "${root}/${fname}" ]]; then issues+=("1"$'\t'"$fname"); continue; fi
+        canon="$(mktemp)" || return 1
+        decision="$(AID_CANON_OUT="$canon" LC_ALL=C awk -v endnl="$(_aid_file_endnl "${root}/${fname}")" -v mb='<!-- AID:BEGIN -->' -v me='<!-- AID:END -->' "$_AID_AWK_DRIFT_REGION" "${root}/${fname}")"
+        if [[ "$decision" != region ]]; then issues+=("1"$'\t'"$fname")
+        else
+            got="$(sha256_file "$canon")"
+            [[ "$got" == "${sec_sha[$sec]:-}" ]] || issues+=("0"$'\t'"$fname")
+        fi
+        rm -f "$canon"
+    done
+
+    bases=(".agents/skills")
+    if [[ "${#mirrors[@]}" -gt 0 ]]; then
+        while IFS= read -r dir; do [[ -n "$dir" ]] && bases+=("$dir"); done < <(printf '%s\n' "${!mirrors[@]}" | LC_ALL=C sort)
+    fi
+    for base in "${bases[@]}"; do
+        folder="${root}/${base}"
+        [[ -d "$folder" ]] || continue
+        while IFS= read -r -d '' child; do
+            name="${child##*/}"
+            if [[ -f "$child" ]]; then
+                [[ -n "${recfile[${base}$'\t'${name}]+x}" ]] || issues+=("2"$'\t'"${base}/${name}")
+            elif [[ -d "$child" ]]; then
+                [[ -n "${recdir[${base}$'\t'${name}]+x}" ]] || issues+=("2"$'\t'"${base}/${name}")
+                while IFS= read -r -d '' p; do
+                    [[ -f "$p" ]] || continue
+                    x="${p#"${folder}"/}"
+                    [[ -n "${recfile[${base}$'\t'${x}]+x}" ]] || issues+=("2"$'\t'"${base}/${x}")
+                done < <(find "$child" -mindepth 1 \( -type f -o -type l \) -print0)
+            fi
+        done < <(find "$folder" -mindepth 1 -maxdepth 1 -name 'aid-*' -print0)
+    done
+    folder="${root}/.aid/runtime"
+    if [[ -d "$folder" ]]; then
+        while IFS= read -r -d '' p; do
+            [[ -f "$p" ]] || continue
+            rel="${p#"${folder}"/}"
+            [[ "/$rel/" == */node_modules/* ]] && continue
+            [[ -n "${exp[.aid/runtime$'\t'${rel}]+x}" ]] || issues+=("2"$'\t'".aid/runtime/${rel}")
+        done < <(find "$folder" \( -type f -o -type l \) -print0)
+    fi
+
+    if [[ "${#issues[@]}" -eq 0 ]]; then echo 'Shared files: clean'; return 0; fi
+    echo 'Shared files'
+    printf '%s\n' "${issues[@]}" | LC_ALL=C sort -u | while IFS=$'\t' read -r rec label; do
+        case "$rec" in 0) key=modified ;; 1) key=missing ;; *) key=extra ;; esac
+        printf '%s: %s\n' "$key" "$label"
+    done
+    echo 'Run: aid update (drifted files are moved to .aid/.trash/ first)'
 }
 
 # manifest_exists <manifest> - exits 0 when manifest exists and is parseable; 6 otherwise.
@@ -3091,43 +3467,44 @@ _aid_gitattributes_block() {
 }
 
 # update_gitattributes <target>; bytes outside the managed span are retained.
+# The managed span runs from the begin marker's line start through the end marker's line
+# break; with no span the block is appended after one blank line.
 update_gitattributes() {
-    local target="$1" path="${1}/.gitattributes" block tmp
+    local LC_ALL=C
+    local target="$1" path="${1}/.gitattributes" block blk old="" pre linepre rest pre2 start ls le two new sep tmp found=0
     block="$(_aid_gitattributes_block)"
-    python3 - "$path" "$block" "$_AID_GA_BEGIN" "$_AID_GA_END" <<'PY'
-import os, pathlib, sys, tempfile
-path, block, begin, end = sys.argv[1:]
-old = pathlib.Path(path).read_bytes() if os.path.isfile(path) else b''
-marker_b, marker_e = begin.encode(), end.encode()
-def span(data):
-    start = data.find(marker_b)
-    if start < 0: return None
-    # Markers are complete standalone lines; include the end marker's line break.
-    line_start = data.rfind(b'\n', 0, start) + 1
-    if data[line_start:start].strip(b'\r'): return None
-    end_start = data.find(marker_e, start)
-    if end_start < 0: return None
-    line_end = end_start + len(marker_e)
-    if data[line_end:line_end+2] == b'\r\n': line_end += 2
-    elif data[line_end:line_end+1] in (b'\n', b'\r'): line_end += 1
-    return line_start, line_end
-blk = (block + '\n').encode('ascii')
-where = span(old)
-if where:
-    new = old[:where[0]] + blk + old[where[1]:]
-else:
-    sep = b'' if not old or old.endswith((b'\n', b'\r')) else b'\n'
-    if old and not old.endswith((b'\n\n', b'\r\n\r\n')): sep += b'\n'
-    new = old + sep + blk
-if new != old:
-    os.makedirs(os.path.dirname(path), exist_ok=True)
-    fd, tmp = tempfile.mkstemp(prefix='.gitattributes.aid-', dir=os.path.dirname(path) or '.')
-    try:
-        with os.fdopen(fd, 'wb') as f: f.write(new)
-        os.replace(tmp, path)
-    finally:
-        if os.path.exists(tmp): os.unlink(tmp)
-PY
+    blk="${block}"$'\n'
+    if [[ -f "$path" ]]; then old="$(cat "$path"; printf x)"; old="${old%x}"; fi
+    if [[ "$old" == *"$_AID_GA_BEGIN"* ]]; then
+        pre="${old%%"$_AID_GA_BEGIN"*}"; start=${#pre}
+        linepre="${pre##*$'\n'}"
+        if [[ -z "${linepre//$'\r'/}" ]]; then
+            rest="${old:start}"
+            if [[ "$rest" == *"$_AID_GA_END"* ]]; then
+                pre2="${rest%%"$_AID_GA_END"*}"
+                ls=$(( start - ${#linepre} ))
+                le=$(( start + ${#pre2} + ${#_AID_GA_END} ))
+                two="${old:le:2}"
+                if [[ "$two" == $'\r\n' ]]; then le=$((le + 2))
+                elif [[ "${two:0:1}" == $'\n' || "${two:0:1}" == $'\r' ]]; then le=$((le + 1)); fi
+                found=1
+            fi
+        fi
+    fi
+    if [[ "$found" -eq 1 ]]; then
+        new="${old:0:ls}${blk}${old:le}"
+    else
+        sep=""
+        if [[ -n "$old" ]]; then
+            if [[ "${old: -1}" != $'\n' && "${old: -1}" != $'\r' ]]; then sep=$'\n'; fi
+            if [[ "$old" != *$'\n\n' && "$old" != *$'\r\n\r\n' ]]; then sep+=$'\n'; fi
+        fi
+        new="${old}${sep}${blk}"
+    fi
+    [[ "$new" != "$old" ]] || return 0
+    mkdir -p "$target" || return 1
+    tmp="$(mktemp "${target}/.gitattributes.aid-XXXXXX")" || return 1
+    if ! printf '%s' "$new" > "$tmp" || ! mv -f "$tmp" "$path"; then rm -f "$tmp"; return 1; fi
 }
 
 # ---------------------------------------------------------------------------
@@ -3307,87 +3684,7 @@ install_shared() {
 
     now="$(date -u +%Y-%m-%dT%H:%M:%SZ)"
     local model; model="$(mktemp "${target}/.aid/.manifest-model.XXXXXX")" || return 1
-python3 - "$manifest" "$model" "$shared" "$target" "$version" "$now" "$new_file" "$region_sha" "$agents_sha" "$claude_sha" <<'PY' || { rm -f "$model"; return 1; }
-import hashlib, json, os, pathlib, sys
-manifest, model, shared_dir, target, version, now, new_file, region_sha, agents_sha, claude_sha = sys.argv[1:]
-old={}
-try:
-    with open(manifest, encoding='utf-8') as f: old=json.load(f)
-except Exception: pass
-new={}
-for line in pathlib.Path(new_file).read_text().splitlines():
-    if '\t' in line:
-        t,p=line.split('\t',1); new[t]=p
-tools={}
-if os.environ.get('AID_UPGRADE_EXACT') != '1': tools.update(old.get('tools',{}))
-if os.environ.get('AID_UPGRADE_EXACT') != '1':
-    for t in (old.get('shared',{}).get('claude_md',{}).get('users',[]) or []):
-        tools.setdefault(t,{})['context_import']='CLAUDE.md'
-for tool, stage in new.items():
-    conf={}
-    for line in pathlib.Path(stage,'aid-tool.conf').read_text().splitlines():
-        if '=' in line and not line.startswith('#'):
-            k,v=line.split('=',1); conf.setdefault(k,[]).append(v)
-    root={'claude-code':'.claude','codex':'.codex','cursor':'.cursor','copilot-cli':'.github','antigravity':'.agent'}[tool]
-    files=[]
-    for p in pathlib.Path(stage,root,'agents').rglob('*'):
-        if p.is_file():
-            rel=(pathlib.Path(root,'agents')/p.relative_to(pathlib.Path(stage,root,'agents'))).as_posix()
-            files.append({'path':rel,'sha256':hashlib.sha256(p.read_bytes()).hexdigest()})
-    files.sort(key=lambda x:x['path'])
-    prior=old.get('tools',{}).get(tool,{})
-    ent={'version':version,'installed_at':prior.get('installed_at',now),'mirrors':sorted(conf.get('skill_mirror',[]))}
-    if conf.get('worktree_root'): ent['worktree_root']=conf['worktree_root'][0]
-    if conf.get('rules_inline')==['true']: ent['rules_inline']=True
-    if conf.get('context_import'): ent['context_import']=conf['context_import'][0]
-    ent['files']=files; ent['paths']=[x['path'] for x in files]
-    tools[tool]=ent
-order=['claude-code','codex','cursor','copilot-cli','antigravity']
-all_tools=[t for t in order if t in tools]
-shared_entries={}
-for name, root in [('skills','.agents/skills'),('runtime','.aid/runtime')]:
-    payload=pathlib.Path(shared_dir,name)
-    files=[]
-    for p in payload.rglob('*'):
-        if p.is_file():
-            rel=p.relative_to(payload).as_posix()
-            if name=='skills' and not rel.startswith('aid-'): continue
-            files.append({'path':rel,'sha256':hashlib.sha256(p.read_bytes()).hexdigest()})
-    files.sort(key=lambda x:x['path'])
-    shared_entries[name]={'root':root,'version':version,'users':all_tools,'files':files}
-if name == 'runtime':
-    host = pathlib.Path(target,'.aid/runtime/host.conf')
-    if host.is_file(): files.append({'path':'host.conf','sha256':hashlib.sha256(host.read_bytes()).hexdigest()})
-    files.sort(key=lambda x:x['path'])
-shared_entries['agents_md']={'path':'AGENTS.md','version':version,'users':all_tools,'region_sha256':region_sha,'file_sha256':agents_sha}
-mirrors={}
-for t in all_tools:
-    for d in tools[t].get('mirrors',[]): mirrors.setdefault(d,[]).append(t)
-if mirrors: shared_entries['mirrors']={d:{'version':version,'users':[t for t in order if t in us]} for d,us in sorted(mirrors.items())}
-if claude_sha:
-    users=[t for t in all_tools if tools[t].get('context_import')=='CLAUDE.md']
-    shared_entries['claude_md']={'path':'CLAUDE.md','version':version,'users':users,'region_sha256':claude_sha}
-wr=next((tools[t]['worktree_root'] for t in all_tools if tools[t].get('worktree_root')),'.aid/.worktrees')
-data={'format_version':3,'aid_version':version,'installed_at':old.get('installed_at',now),'host':{'worktree_root':wr},'shared':shared_entries,'tools':{t:tools[t] for t in all_tools}}
-lines=[f'aid_version\t{version}',f'installed_at\t{data["installed_at"]}',f'host.worktree_root\t{wr}']
-for e in ('skills','runtime'):
-    x=shared_entries[e]; lines += [f'shared.{e}.root\t{x["root"]}',f'shared.{e}.version\t{x["version"]}',f'shared.{e}.users\t{",".join(x["users"])}']
-    lines += [f'shared.{e}.file\t{f["path"]}\t{f["sha256"]}' for f in x['files']]
-for e,x in shared_entries.items():
-    if e in ('skills','runtime'): continue
-    for k,v in x.items():
-        if k=='users': v=','.join(v)
-        lines.append(f'shared.{e}.{k}\t{v}')
-for d,x in shared_entries.get('mirrors',{}).items(): lines.append(f'shared.mirror\t{d}\t{x["version"]}\t{",".join(x["users"])}')
-for t in all_tools:
-    x=tools[t]; pre=f'tools.{t}.'
-    lines += [pre+f'version\t{x["version"]}',pre+f'installed_at\t{x.get("installed_at",now)}']
-    lines += [pre+'mirror\t'+m for m in x.get('mirrors',[])]
-    for k in ('worktree_root','rules_inline'):
-        if k in x: lines.append(pre+k+'\t'+('true' if x[k] is True else x[k]))
-    lines += [pre+f'file\t{f["path"]}\t{f["sha256"]}' for f in x.get('files',[])]
-pathlib.Path(model).write_text('\n'.join(lines)+'\n',encoding='ascii')
-PY
+_aid_build_install_model "$manifest" "$model" "$shared" "$target" "$version" "$now" "$new_file" "$region_sha" "$agents_sha" "$claude_sha" || { rm -f "$model"; return 1; }
     if [[ -f "$manifest" ]]; then previous_manifest="$(mktemp "${target}/.aid/.manifest-before-prune.XXXXXX")" || { rm -f "$model"; return 1; }; cp "$manifest" "$previous_manifest" || { rm -f "$model" "$previous_manifest"; return 1; }; fi
     if ! manifest_write_v3 "$manifest" "$model"; then rm -f "$model" "${previous_manifest:-}"; return 1; fi
     rm -f "$model"
@@ -3404,20 +3701,9 @@ PY
 # ---------------------------------------------------------------------------
 
 _remove_gitattributes_block() {
-    local target="$1" path="${1}/.gitattributes" begin="${_AID_GA_BEGIN}" end="${_AID_GA_END}"
+    local target="$1" path="${1}/.gitattributes"
     [[ -f "$path" ]] || return 0
-    python3 - "$path" "$begin" "$end" <<'PY'
-import os, pathlib, sys
-path, begin, end = sys.argv[1:]
-data=pathlib.Path(path).read_bytes(); lines=data.splitlines(keepends=True)
-def content(line): return line[:-2] if line.endswith(b'\r\n') else line[:-1] if line.endswith((b'\n',b'\r')) else line
-values=[content(x) for x in lines]; b=begin.encode(); e=end.encode()
-starts=[i for i,x in enumerate(values) if x==b]; ends=[i for i,x in enumerate(values) if x==e]
-if len(starts)!=1 or len(ends)!=1 or starts[0]>=ends[0]: raise SystemExit(0)
-out=b''.join(lines[:starts[0]]+lines[ends[0]+1:])
-if not out.strip(): os.remove(path)
-elif out!=data: pathlib.Path(path).write_bytes(out)
-PY
+    _aid_cut_marker_region "$path" 0 "$target" "" "$_AID_GA_BEGIN" "$_AID_GA_END"
 }
 
 _remove_agents_md_region() {
@@ -3429,46 +3715,32 @@ _remove_agents_md_region() {
         echo "Left in place (modified or not AID-owned): AGENTS.md"
         return 0
     fi
-    python3 - "$path" <<'PY'
-import os, pathlib, sys
-p=pathlib.Path(sys.argv[1]); data=p.read_bytes(); lines=data.splitlines(keepends=True)
-def content(x): return x[:-2] if x.endswith(b'\r\n') else x[:-1] if x.endswith((b'\n',b'\r')) else x
-v=[content(x) for x in lines]; b=b'<!-- AID:BEGIN -->'; e=b'<!-- AID:END -->'
-s=[i for i,x in enumerate(v) if x==b]; z=[i for i,x in enumerate(v) if x==e]
-if len(s)!=1 or len(z)!=1 or s[0]>=z[0]: raise SystemExit(0)
-out=b''.join(lines[:s[0]]+lines[z[0]+1:])
-if not out.strip(): p.unlink()
-elif out!=data: p.write_bytes(out)
-PY
+    _aid_root_file_guard "$path" || return 1
+    _aid_cut_marker_region "$path" 0 "$target" ""
 }
 
+_AID_AWK_REFRESH='
+BEGIN { FS = OFS = "\t" }
+$1 == "shared.agents_md.region_sha256" && ars != "" { print $1, ars; next }
+$1 == "shared.agents_md.file_sha256" && afs != "" { print $1, afs; next }
+$1 == "shared.runtime.file" && $2 == "host.conf" && hs != "" && !done { print $1, $2, hs; done = 1; next }
+{ print }'
 _refresh_remove_manifest_hashes() {
-    local manifest="$1" target="$2" refresh_file_sha="${3:-0}"
-    python3 - "$manifest" "$target" "$refresh_file_sha" <<'PY'
-import hashlib, json, pathlib, sys
-manifest, target, refresh_file_sha = sys.argv[1:]
-root=pathlib.Path(target); data=json.loads(pathlib.Path(manifest).read_text(encoding='utf-8'))
-agents=root/'AGENTS.md'
-if agents.is_file():
-    raw=agents.read_bytes(); lines=raw.splitlines(keepends=True)
-    def content(line):
-        return line[:-2] if line.endswith(b'\r\n') else line[:-1] if line.endswith((b'\n',b'\r')) else line
-    vals=[content(x) for x in lines]
-    starts=[i for i,x in enumerate(vals) if x==b'<!-- AID:BEGIN -->']
-    ends=[i for i,x in enumerate(vals) if x==b'<!-- AID:END -->']
-    entry=data.get('shared',{}).get('agents_md')
-    if entry and len(starts)==1 and len(ends)==1 and starts[0]<ends[0]:
-        region=b''.join(vals[i]+b'\n' for i in range(starts[0],ends[0]+1))
-        entry['region_sha256']=hashlib.sha256(region).hexdigest()
-        if refresh_file_sha == '1': entry['file_sha256']=hashlib.sha256(raw).hexdigest()
-runtime=data.get('shared',{}).get('runtime',{})
-host=root/'.aid/runtime/host.conf'
-if runtime and host.is_file():
-    for item in runtime.get('files',[]):
-        if item.get('path')=='host.conf': item['sha256']=hashlib.sha256(host.read_bytes()).hexdigest()
-        if item.get('path')=='host.conf': break
-pathlib.Path(manifest).write_text(json.dumps(data,indent=2)+'\n',encoding='utf-8')
-PY
+    local manifest="$1" target="$2" refresh_file_sha="${3:-0}" agents="${2}/AGENTS.md" host="${2}/.aid/runtime/host.conf"
+    local canon ars="" afs="" hs="" model
+    if [[ -f "$agents" ]]; then
+        canon="$(mktemp)" || return 1
+        if AID_CANON_OUT="$canon" _aid_marker_span "$agents" >/dev/null; then
+            ars="$(sha256_file "$canon")"
+            [[ "$refresh_file_sha" == 1 ]] && afs="$(sha256_file "$agents")"
+        fi
+        rm -f "$canon"
+    fi
+    [[ -f "$host" ]] && hs="$(sha256_file "$host")"
+    model="$(mktemp "$(dirname "$manifest")/.manifest-model.XXXXXX")" || return 1
+    _manifest_model "$manifest" | LC_ALL=C awk -v ars="$ars" -v afs="$afs" -v hs="$hs" "$_AID_AWK_REFRESH" > "$model" || { rm -f "$model"; return 1; }
+    manifest_write_v3 "$manifest" "$model" || { rm -f "$model"; return 1; }
+    rm -f "$model"
 }
 
 _uninstall_tool_v3() {
