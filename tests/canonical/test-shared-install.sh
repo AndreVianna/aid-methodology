@@ -58,7 +58,7 @@ root_user_content() {
         $0 == "<!-- AID:BEGIN -->" || $0 == "<!-- AID:END -->" ||
         $0 == "<!-- Managed by the AID CLI. Do not edit between the AID markers. -->" ||
         $0 == "@AGENTS.md" || $0 == "@.aid/runtime/rules.md" ||
-        $0 == "Before acting, read and follow `.aid/runtime/rules.md` (AID rules)." { next }
+        $0 == "At the start of every session, before anything else, read `.aid/runtime/rules.md` and follow it (AID rules)." { next }
         { print }
     ' "$input" > "$output"
 }
@@ -134,10 +134,12 @@ if skills_match "$REPO/canonical/skills" "$target/.agents/skills"; then fail 'ne
 target="$TMP/root-a"; state="$TMP/state-a"; mkdir -p "$target" "$state"
 out="$(AID_HOME="$state" AID_NO_UPDATE_CHECK=1 bash "$REPO/bin/aid" add claude-code --target "$target" --from-bundle "$STAGE" 2>&1)"; rc=$?
 assert_exit_zero "$rc" 'AC-14(a) Claude add succeeds without CLAUDE.md'
-printf '<!-- AID:BEGIN -->\n@AGENTS.md\n<!-- AID:END -->\n' > "$TMP/import-region"
-printf '<!-- AID:BEGIN -->\n<!-- Managed by the AID CLI. Do not edit between the AID markers. -->\n@.aid/runtime/rules.md\nBefore acting, read and follow `.aid/runtime/rules.md` (AID rules).\n<!-- AID:END -->\n' > "$TMP/pointer-region"
+printf '<!-- AID:BEGIN -->\n@AGENTS.md\n@.aid/runtime/rules.md\n<!-- AID:END -->\n' > "$TMP/import-region"
+printf '<!-- AID:BEGIN -->\n<!-- Managed by the AID CLI. Do not edit between the AID markers. -->\nAt the start of every session, before anything else, read `.aid/runtime/rules.md` and follow it (AID rules).\n<!-- AID:END -->\n' > "$TMP/pointer-region"
 if cmp -s "$target/CLAUDE.md" "$TMP/import-region"; then pass 'AC-14(a) missing CLAUDE.md equals LF import region'; else fail 'AC-14(a) missing CLAUDE.md equals LF import region'; fi
-if cmp -s "$target/AGENTS.md" "$TMP/pointer-region"; then pass 'AC-14(a) missing AGENTS.md equals five-line pointer region'; else fail 'AC-14(a) missing AGENTS.md equals five-line pointer region'; fi
+if cmp -s "$target/AGENTS.md" "$TMP/pointer-region"; then pass 'AC-14(a) missing AGENTS.md equals four-line pointer region'; else fail 'AC-14(a) missing AGENTS.md equals four-line pointer region'; fi
+assert_eq "$(grep -c '^@' "$target/AGENTS.md")" 0 'AC-14(a) AGENTS.md pointer region contains no @ line'
+assert_eq "$(grep -cx '@AGENTS.md' "$target/CLAUDE.md") $(grep -cx '@.aid/runtime/rules.md' "$target/CLAUDE.md")" '1 1' 'AC-14(a) CLAUDE.md imports both AGENTS.md and the rules'
 target="$TMP/root-a-cursor"; state="$TMP/state-a-cursor"; mkdir -p "$target" "$state"
 out="$(AID_HOME="$state" AID_NO_UPDATE_CHECK=1 bash "$REPO/bin/aid" add cursor --target "$target" --from-bundle "$STAGE" 2>&1)"; rc=$?
 assert_exit_zero "$rc" 'AC-14(a) cursor add succeeds'
@@ -202,7 +204,7 @@ for kind in malformed duplicate lone-import; do
     assert_exit_zero "$rc" "AC-14(f) $kind fixture add succeeds"
     if cmp -s "$TMP/f-before" "$target/.aid/.trash/$file"; then pass "AC-14(f) $kind full pre-add backup exists"; else fail "AC-14(f) $kind full pre-add backup exists"; fi
     if [[ "$file" == CLAUDE.md ]]; then
-        assert_eq "$(count_line "$target/$file" '<!-- AID:BEGIN -->') $(count_line "$target/$file" '<!-- AID:END -->') $(count_line "$target/$file" '@AGENTS.md')" '1 1 1' "AC-14(f) $kind has exactly one import region"
+        assert_eq "$(count_line "$target/$file" '<!-- AID:BEGIN -->') $(count_line "$target/$file" '<!-- AID:END -->') $(count_line "$target/$file" '@AGENTS.md') $(count_line "$target/$file" '@.aid/runtime/rules.md')" '1 1 1 1' "AC-14(f) $kind has exactly one import region"
     else assert_eq "$(count_line "$target/$file" '<!-- AID:BEGIN -->') $(count_line "$target/$file" '<!-- AID:END -->')" '1 1' 'AC-14(f) duplicate has exactly one pointer region'; fi
     root_user_content "$TMP/f-before" "$TMP/f-user-before"
     root_user_content "$target/$file" "$TMP/f-user-after"

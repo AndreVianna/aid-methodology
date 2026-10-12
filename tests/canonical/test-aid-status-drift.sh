@@ -13,7 +13,7 @@ def put(path,data):
 skill=b'skill\n'; runtime=b'host\n'; agent=b'agent\n'
 recorded_dep=b'original package\n'; missing_dep=b'original missing package\n'
 agents=b'outside\n<!-- AID:BEGIN -->\nmanaged\n<!-- AID:END -->\nmore\n'
-claude=b'outside\n<!-- AID:BEGIN -->\n@AGENTS.md\n<!-- AID:END -->\nmore\n'
+claude=b'outside\n<!-- AID:BEGIN -->\n@AGENTS.md\n@.aid/runtime/rules.md\n<!-- AID:END -->\nmore\n'
 put('.agents/skills/aid-one/SKILL.md',skill);put('.claude/skills/aid-one/SKILL.md',skill)
 put('.aid/runtime/host.conf',runtime);put('.tool/agents/aid-x',agent)
 recorded_dep_sha=put('.aid/runtime/pkg/node_modules/recorded.js',recorded_dep)

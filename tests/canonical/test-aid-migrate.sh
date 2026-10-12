@@ -561,8 +561,8 @@ V3_CODE="$(new_code_home)"
 V3_STATE="$(new_state_home)"
 V3_SPEC="${TMP}/spec"; V3_PRE="${TMP}/pre"
 mkdir -p "$V3_SPEC" "$V3_PRE"
-IMPORT_REGION=$'<!-- AID:BEGIN -->\n@AGENTS.md\n<!-- AID:END -->\n'
-POINTER_REGION=$'<!-- AID:BEGIN -->\n<!-- Managed by the AID CLI. Do not edit between the AID markers. -->\n@.aid/runtime/rules.md\nBefore acting, read and follow `.aid/runtime/rules.md` (AID rules).\n<!-- AID:END -->\n'
+IMPORT_REGION=$'<!-- AID:BEGIN -->\n@AGENTS.md\n@.aid/runtime/rules.md\n<!-- AID:END -->\n'
+POINTER_REGION=$'<!-- AID:BEGIN -->\n<!-- Managed by the AID CLI. Do not edit between the AID markers. -->\nAt the start of every session, before anything else, read `.aid/runtime/rules.md` and follow it (AID rules).\n<!-- AID:END -->\n'
 V3_REGION_BODY='<!-- Managed by the AID CLI. Do not edit between the AID markers. -->'
 
 # v3_tool_root <tool>: the tool's old root directory (relative to the project root).
@@ -1104,17 +1104,17 @@ root_case() {
 }
 seed_user_region() {
     printf '%s\n' '# Project memory' 'user line above' '<!-- AID:BEGIN -->' "$V3_REGION_BODY" \
-        '@.aid/runtime/rules.md' 'Before acting, read and follow `.aid/runtime/rules.md` (AID rules).' '<!-- AID:END -->' "$1" > "$2/CLAUDE.md"
+        'v3 AID rules (full region body)' '<!-- AID:END -->' "$1" > "$2/CLAUDE.md"
 }
 seed_user_region_c_user() { seed_user_region 'user line below' "$1"; }
 seed_user_region_c_nolf() { printf '%s\n' '# Project memory' 'user line above' '<!-- AID:BEGIN -->' "$V3_REGION_BODY" \
-        '@.aid/runtime/rules.md' 'Before acting, read and follow `.aid/runtime/rules.md` (AID rules).' '<!-- AID:END -->' > "$1/CLAUDE.md"
+        'v3 AID rules (full region body)' '<!-- AID:END -->' > "$1/CLAUDE.md"
     printf 'user line below' >> "$1/CLAUDE.md"; }
 seed_nomarker() { printf '%s\n' 'plain user memory' 'no markers here' > "$1/CLAUDE.md"; }
 seed_agents_region() { printf '%s\n' '# Agents guide' 'user agents line' '<!-- AID:BEGIN -->' "$V3_REGION_BODY" \
-        '@.aid/runtime/rules.md' 'Before acting, read and follow `.aid/runtime/rules.md` (AID rules).' '<!-- AID:END -->' > "$1/AGENTS.md"; }
+        'v3 AID rules (full region body)' '<!-- AID:END -->' > "$1/AGENTS.md"; }
 seed_agents_region_nolf() { printf '%s\n' '<!-- AID:BEGIN -->' "$V3_REGION_BODY" \
-        '@.aid/runtime/rules.md' 'Before acting, read and follow `.aid/runtime/rules.md` (AID rules).' '<!-- AID:END -->' > "$1/AGENTS.md"
+        'v3 AID rules (full region body)' '<!-- AID:END -->' > "$1/AGENTS.md"
     printf 'user tail without newline' >> "$1/AGENTS.md"; }
 
 # (c1) user-edited CLAUDE.md with user content above and below the full old region.
@@ -1169,6 +1169,11 @@ for name in ac14-claude-user ac14-claude-nolf ac14-claude-nomarker ac14-agents a
         pass "AC-14 (c) ${name}: exactly one @AGENTS.md line in CLAUDE.md and one AID:BEGIN line in AGENTS.md"
     else
         fail "AC-14 (c) ${name}: exactly one @AGENTS.md line in CLAUDE.md and one AID:BEGIN line in AGENTS.md"
+    fi
+    if [[ "$(grep -cx '@.aid/runtime/rules.md' "$fx/CLAUDE.md")" == 1 && "$(grep -c '^@' "$fx/AGENTS.md")" == 0 ]]; then
+        pass "AC-14 (c) ${name}: CLAUDE.md imports the rules once and AGENTS.md has no @ line"
+    else
+        fail "AC-14 (c) ${name}: CLAUDE.md imports the rules once and AGENTS.md has no @ line"
     fi
 done
 

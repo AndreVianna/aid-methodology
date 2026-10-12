@@ -19,9 +19,10 @@
 #                 both ways (no aid-* orphan on either side).
 #   DBI-MAN-*     .aid/.aid-manifest.json records shared.skills, shared.runtime,
 #                 shared.agents_md, shared.claude_md and the .claude/skills mirror.
-#   DBI-ROOT-*    the repo-root CLAUDE.md AID region holds only @AGENTS.md and its
-#                 ## Project section is present; AGENTS.md has exactly one
-#                 <!-- AID:BEGIN --> line.
+#   DBI-ROOT-*    the repo-root CLAUDE.md AID region imports @AGENTS.md and
+#                 @.aid/runtime/rules.md and its ## Project section is present;
+#                 AGENTS.md has exactly one <!-- AID:BEGIN --> line and its AID
+#                 region has no @ line.
 #   DBI-ABS-*     .claude/aid/, .cursor/aid/ and .cursor/skills/aid-* are absent.
 #   DBI-SURV-*    .claude/skills/generate-profile/SKILL.md and
 #                 .claude/skills/release-aid/SKILL.md survive (hand-authored).
@@ -256,13 +257,13 @@ dbi_manifest_shared() {
 # Root context.
 # ---------------------------------------------------------------------------
 dbi_root_context() {
-    local begins region agents_begins
+    local begins region agents_begins agents_region
     begins="$(grep -cxF '<!-- AID:BEGIN -->' "$CLAUDE_MD" 2>/dev/null)"
     region="$(awk '/^<!-- AID:BEGIN -->$/ { f = 1; next } /^<!-- AID:END -->$/ { f = 0 } f' "$CLAUDE_MD" 2>/dev/null)"
-    if [[ "$begins" == "1" && "$region" == "@AGENTS.md" ]]; then
-        pass "DBI-ROOT-CLAUDE CLAUDE.md AID region holds only @AGENTS.md"
+    if [[ "$begins" == "1" && "$region" == $'@AGENTS.md\n@.aid/runtime/rules.md' ]]; then
+        pass "DBI-ROOT-CLAUDE CLAUDE.md AID region imports @AGENTS.md and @.aid/runtime/rules.md"
     else
-        fail "DBI-ROOT-CLAUDE CLAUDE.md AID region must hold only @AGENTS.md (AID:BEGIN lines: ${begins:-none}; region: ${region:-<empty>})"
+        fail "DBI-ROOT-CLAUDE CLAUDE.md AID region must import @AGENTS.md and @.aid/runtime/rules.md (AID:BEGIN lines: ${begins:-none}; region: ${region:-<empty>})"
     fi
 
     if grep -qxF '## Project' "$CLAUDE_MD" 2>/dev/null; then
@@ -276,6 +277,13 @@ dbi_root_context() {
         pass "DBI-ROOT-AGENTS AGENTS.md has exactly one <!-- AID:BEGIN --> line"
     else
         fail "DBI-ROOT-AGENTS AGENTS.md must have exactly one <!-- AID:BEGIN --> line (found ${agents_begins:-none})"
+    fi
+
+    agents_region="$(awk '/^<!-- AID:BEGIN -->$/ { f = 1; next } /^<!-- AID:END -->$/ { f = 0 } f' "$AGENTS_MD" 2>/dev/null)"
+    if [[ -n "$agents_region" ]] && ! grep -q '^@' <<<"$agents_region"; then
+        pass "DBI-ROOT-AGENTS-NOAT AGENTS.md AID region has no @ line (plain read instruction)"
+    else
+        fail "DBI-ROOT-AGENTS-NOAT AGENTS.md AID region must be non-empty and hold no @ line"
     fi
     return 0
 }

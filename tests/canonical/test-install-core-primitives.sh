@@ -48,12 +48,14 @@ CLAUDE="$ROOT_FIX/CLAUDE.md"
 assert_eq "$(_root_agent_file claude-code) $(_root_agent_file codex) $(_root_agent_file cursor) $(_root_agent_file copilot-cli) $(_root_agent_file antigravity)" "AGENTS.md AGENTS.md AGENTS.md AGENTS.md AGENTS.md" "root region: every tool uses AGENTS.md"
 _repair_root_region "$AGENT" "$_AID_AGENTS_POINTER_REGION" "$ROOT_FIX"
 if cmp -s "$AGENT" <(printf '%s' "$_AID_AGENTS_POINTER_REGION"); then pass "root region: missing file gets the fixed pointer region"; else fail "root region: missing file gets the fixed pointer region"; fi
+if cmp -s "$AGENT" <(printf '<!-- AID:BEGIN -->\n<!-- Managed by the AID CLI. Do not edit between the AID markers. -->\nAt the start of every session, before anything else, read `.aid/runtime/rules.md` and follow it (AID rules).\n<!-- AID:END -->\n'); then pass "root region: AGENTS.md pointer region bytes are the decided text"; else fail "root region: AGENTS.md pointer region bytes are the decided text"; fi
+assert_eq "$(grep -c '^@' "$AGENT")" "0" "root region: AGENTS.md pointer region contains no @ line"
 agent_sha="$(sha256_file "$AGENT")"
 _repair_root_region "$AGENT" "$_AID_AGENTS_POINTER_REGION" "$ROOT_FIX"
 assert_eq "$(sha256_file "$AGENT")" "$agent_sha" "root region: exact region repair is idempotent"
 
 # A single CRLF-managed region with mixed outside bytes stays byte-identical.
-printf 'before\r\n<!-- AID:BEGIN -->\r\n<!-- Managed by the AID CLI. Do not edit between the AID markers. -->\r\n@.aid/runtime/rules.md\r\nBefore acting, read and follow `.aid/runtime/rules.md` (AID rules).\r\n<!-- AID:END -->\r\nafter\n' > "$AGENT"
+printf 'before\r\n<!-- AID:BEGIN -->\r\n<!-- Managed by the AID CLI. Do not edit between the AID markers. -->\r\nAt the start of every session, before anything else, read `.aid/runtime/rules.md` and follow it (AID rules).\r\n<!-- AID:END -->\r\nafter\n' > "$AGENT"
 agent_sha="$(sha256_file "$AGENT")"
 _repair_root_region "$AGENT" "$_AID_AGENTS_POINTER_REGION" "$ROOT_FIX"
 assert_eq "$(sha256_file "$AGENT")" "$agent_sha" "root region: CRLF region and mixed outside endings are unchanged"
@@ -103,6 +105,20 @@ rm "$CLAUDE"
 
 claude_hash="$(_ensure_claude_md_region "$CLAUDE" "$ROOT_FIX")"
 if cmp -s "$CLAUDE" <(printf '%s' "$_AID_CLAUDE_IMPORT_REGION"); then pass "Claude region: missing file gets import region"; else fail "Claude region: missing file gets import region"; fi
+if cmp -s "$CLAUDE" <(printf '<!-- AID:BEGIN -->\n@AGENTS.md\n@.aid/runtime/rules.md\n<!-- AID:END -->\n'); then pass "Claude region: import region bytes are the decided text"; else fail "Claude region: import region bytes are the decided text"; fi
+assert_eq "$(grep -cx '@AGENTS.md' "$CLAUDE") $(grep -cx '@.aid/runtime/rules.md' "$CLAUDE")" "1 1" "Claude region: CLAUDE.md imports both AGENTS.md and the rules"
+assert_eq "$claude_hash" "$(printf '%s' "$_AID_CLAUDE_IMPORT_REGION" | sha256sum | awk '{print $1}')" "Claude region: recorded hash is the import region hash"
+# rules_inline switch: the region shrinks to @AGENTS.md alone and absorbs the stale rules import line.
+inline_hash="$(_ensure_claude_md_region "$CLAUDE" "$ROOT_FIX" 1)"
+if cmp -s "$CLAUDE" <(printf '%s' "$_AID_CLAUDE_IMPORT_REGION_INLINE"); then pass "Claude region: rules_inline holds only @AGENTS.md (no stray rules import)"; else fail "Claude region: rules_inline holds only @AGENTS.md (no stray rules import)"; fi
+assert_eq "$(grep -c '^@' "$CLAUDE")" "1" "Claude region: rules_inline CLAUDE.md has exactly one @ line"
+assert_eq "$inline_hash" "$(printf '<!-- AID:BEGIN -->\n@AGENTS.md\n<!-- AID:END -->\n' | sha256sum | awk '{print $1}')" "Claude region: rules_inline hash is the @AGENTS.md-only region hash"
+inline_sha="$(sha256_file "$CLAUDE")"
+_ensure_claude_md_region "$CLAUDE" "$ROOT_FIX" 1 >/dev/null
+assert_eq "$(sha256_file "$CLAUDE")" "$inline_sha" "Claude region: rules_inline repair is idempotent"
+# ... and back: leaving rules_inline restores the full import region in place.
+claude_hash="$(_ensure_claude_md_region "$CLAUDE" "$ROOT_FIX")"
+if cmp -s "$CLAUDE" <(printf '%s' "$_AID_CLAUDE_IMPORT_REGION"); then pass "Claude region: leaving rules_inline restores the full import region"; else fail "Claude region: leaving rules_inline restores the full import region"; fi
 _remove_claude_md_region "$CLAUDE" "$claude_hash" "$ROOT_FIX"
 if [[ ! -e "$CLAUDE" ]]; then pass "Claude region: add/remove deletes a created-only file"; else fail "Claude region: add/remove deletes a created-only file — still present"; fi
 printf 'user-content\n' > "$CLAUDE"

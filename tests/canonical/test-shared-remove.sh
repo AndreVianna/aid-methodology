@@ -153,14 +153,15 @@ FOURTH="${TMP}/inline-transition"; mkdir -p "$FOURTH"
 run_aid add claude-code,cursor --from-bundle "$BUNDLE" --target "$FOURTH" >/dev/null 2>&1 || exit 1
 set_inline_tool "$FOURTH" cursor
 run_aid remove cursor --target "$FOURTH" >/dev/null 2>&1 || exit 1
-assert_file_contains "$FOURTH/AGENTS.md" '@.aid/runtime/rules.md' 'Removing the last inline-rules tool restores the pointer region'
+assert_file_contains "$FOURTH/AGENTS.md" 'read `.aid/runtime/rules.md` and follow it' 'Removing the last inline-rules tool restores the pointer region'
+assert_eq "$(grep -c '^@' "$FOURTH/AGENTS.md")" "0" 'Restored AGENTS.md pointer region contains no @ line'
 assert_file_not_contains "$FOURTH/AGENTS.md" 'The AID rules' 'Pointer rewrite removes the previous inline body'
 
 FIFTH="${TMP}/inline-remains"; mkdir -p "$FIFTH"
 run_aid add claude-code,cursor --from-bundle "$BUNDLE" --target "$FIFTH" >/dev/null 2>&1 || exit 1
 set_inline_tool "$FIFTH" cursor
 run_aid remove claude-code --target "$FIFTH" >/dev/null 2>&1 || exit 1
-assert_file_not_contains "$FIFTH/AGENTS.md" '@.aid/runtime/rules.md' 'Remaining inline-rules tool does not receive a pointer region'
+assert_file_not_contains "$FIFTH/AGENTS.md" 'read `.aid/runtime/rules.md` and follow it' 'Remaining inline-rules tool does not receive a pointer region'
 if python3 - "$FIFTH" <<'PY'
 import hashlib,json,pathlib,sys
 r=pathlib.Path(sys.argv[1]); d=json.loads((r/'.aid/.aid-manifest.json').read_text())
@@ -192,7 +193,7 @@ run_aid add claude-code,cursor --from-bundle "$BUNDLE" --target "$SIXTH" >/dev/n
 set_inline_tool "$SIXTH" claude-code
 printf 'user outside-region edit\n' >> "$SIXTH/AGENTS.md"
 run_aid remove claude-code --target "$SIXTH" >/dev/null 2>&1 || exit 1
-assert_file_contains "$SIXTH/AGENTS.md" '@.aid/runtime/rules.md' 'Partial removal updates the managed region to the remaining tool choice'
+assert_file_contains "$SIXTH/AGENTS.md" 'read `.aid/runtime/rules.md` and follow it' 'Partial removal updates the managed region to the remaining tool choice'
 if python3 - "$SIXTH" <<'PY'
 import hashlib,json,pathlib,sys
 r=pathlib.Path(sys.argv[1]); d=json.loads((r/'.aid/.aid-manifest.json').read_text()); b=(r/'AGENTS.md').read_bytes()
@@ -221,6 +222,32 @@ assert_file_exists "$SEVENTH/.aid/.trash/AGENTS.md" 'Non-last remove trashes AGE
 assert_eq "$(cat "$SEVENTH/.aid/.trash/AGENTS.md" 2>/dev/null)" "$before_rm" 'The trash copy is the full edited AGENTS.md'
 assert_file_contains "$SEVENTH/.aid/.trash/AGENTS.md" 'MY IMPORTANT NOTE' 'The edited region text survives in the trash copy'
 if grep -qF 'MY IMPORTANT NOTE' "$SEVENTH/AGENTS.md"; then fail 'The live AGENTS.md region is rewritten to the managed bytes'; else pass 'The live AGENTS.md region is rewritten to the managed bytes'; fi
-assert_file_contains "$SEVENTH/AGENTS.md" '@.aid/runtime/rules.md' 'The remaining tool keeps its managed region'
+assert_file_contains "$SEVENTH/AGENTS.md" 'read `.aid/runtime/rules.md` and follow it' 'The remaining tool keeps its managed region'
+
+# CLAUDE.md follows the rules_inline state: it holds only @AGENTS.md while a tool's rules are inline,
+# and imports the rules again (manifest hash refreshed) once the last inline tool leaves.
+EIGHTH="${TMP}/claude-inline-transition"; mkdir -p "$EIGHTH"
+run_aid add claude-code,cursor --from-bundle "$BUNDLE" --target "$EIGHTH" >/dev/null 2>&1 || exit 1
+assert_eq "$(grep -cx '@AGENTS.md' "$EIGHTH/CLAUDE.md") $(grep -cx '@.aid/runtime/rules.md' "$EIGHTH/CLAUDE.md")" '1 1' 'CLAUDE.md imports both AGENTS.md and the rules while no tool is inline'
+assert_eq "$(grep -c '^@' "$EIGHTH/AGENTS.md")" '0' 'AGENTS.md pointer region contains no @ line after add'
+set_inline_tool "$EIGHTH" cursor
+python3 - "$EIGHTH" <<'PY'
+import hashlib,json,pathlib,sys
+r=pathlib.Path(sys.argv[1]); m=r/'.aid/.aid-manifest.json'; d=json.loads(m.read_text())
+region='<!-- AID:BEGIN -->\n@AGENTS.md\n<!-- AID:END -->\n'
+(r/'CLAUDE.md').write_text(region,encoding='utf-8')
+d['shared']['claude_md']['region_sha256']=hashlib.sha256(region.encode()).hexdigest()
+m.write_text(json.dumps(d,indent=2)+'\n',encoding='utf-8')
+PY
+run_aid remove cursor --target "$EIGHTH" >/dev/null 2>&1 || exit 1
+assert_eq "$(grep -cx '@AGENTS.md' "$EIGHTH/CLAUDE.md") $(grep -cx '@.aid/runtime/rules.md' "$EIGHTH/CLAUDE.md")" '1 1' 'Removing the last inline tool restores the CLAUDE.md rules import'
+if python3 - "$EIGHTH" <<'PY'
+import hashlib,json,pathlib,sys
+r=pathlib.Path(sys.argv[1]); d=json.loads((r/'.aid/.aid-manifest.json').read_text())
+region=b'<!-- AID:BEGIN -->\n@AGENTS.md\n@.aid/runtime/rules.md\n<!-- AID:END -->\n'
+assert (r/'CLAUDE.md').read_bytes()==region
+assert d['shared']['claude_md']['region_sha256']==hashlib.sha256(region).hexdigest()
+PY
+then pass 'CLAUDE.md region and its manifest hash follow the inline state on remove'; else fail 'CLAUDE.md region and its manifest hash follow the inline state on remove'; fi
 
 test_summary

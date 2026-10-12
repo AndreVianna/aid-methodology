@@ -6092,6 +6092,11 @@ tfx_remove() {  # <sh|ps> <home> <target> <tool> -> OUT / RC
     if [[ "$shell" == sh ]]; then run_sh "$home" remove "$tool" --target "$tgt"; OUT="$OUT_SH"; RC="$RC_SH"
     else run_ps1 "$home" remove "$tool" -Target "$tgt"; OUT="$OUT_PS1"; RC="$RC_PS1"; fi
 }
+tfx_status() {  # <sh|ps> <home> <target> -> OUT / RC
+    local shell="$1" home="$2" tgt="$3"
+    if [[ "$shell" == sh ]]; then run_sh "$home" status --target "$tgt"; OUT="$OUT_SH"; RC="$RC_SH"
+    else run_ps1 "$home" status -Target "$tgt"; OUT="$OUT_PS1"; RC="$RC_PS1"; fi
+}
 tfx_home() {  # <sh|ps> -> a fresh AID_HOME
     local h; h="$(newhome)"
     if [[ "$1" == sh ]]; then setup_sh_home "$h"; else setup_ps1_home "$h"; fi
@@ -6142,8 +6147,8 @@ tfx_row3() {
     local id="FIX-C" shell home tgt pre post region_c region_a ex
     pre=$'\xef\xbb\xbf# Caf\xe9 \xc3\xa9 \xe2\x82\xac\r\nbefore\r\n'
     post=$'after \xe9\r\nlast line without newline'
-    region_c=$'<!-- AID:BEGIN -->\n@AGENTS.md\n<!-- AID:END -->\n'
-    region_a=$'<!-- AID:BEGIN -->\n<!-- Managed by the AID CLI. Do not edit between the AID markers. -->\n@.aid/runtime/rules.md\nBefore acting, read and follow `.aid/runtime/rules.md` (AID rules).\n<!-- AID:END -->\n'
+    region_c=$'<!-- AID:BEGIN -->\n@AGENTS.md\n@.aid/runtime/rules.md\n<!-- AID:END -->\n'
+    region_a=$'<!-- AID:BEGIN -->\n<!-- Managed by the AID CLI. Do not edit between the AID markers. -->\nAt the start of every session, before anything else, read `.aid/runtime/rules.md` and follow it (AID rules).\n<!-- AID:END -->\n'
     ex="${TMP}/fixc-expected"; mkdir -p "$ex"
     printf '%s' "${pre}${region_c}" > "$ex/claude-added";   printf '%s' "${pre}${region_c}${post}" > "$ex/claude-user-tail"
     printf '%s' "${pre}${post}" > "$ex/claude-removed";     printf '%s' "${pre}${region_a}" > "$ex/agents-added"
@@ -6278,6 +6283,43 @@ tfx_row6to9() {
     assert_eq "${seen_dry[ps]}" "${seen_dry[sh]}" "${id}9 dry-run trash list identical across shells"
 }
 tfx_row6to9
+
+# FIX-E: the CLAUDE.md region follows rules_inline. Without an inline tool it imports @AGENTS.md and
+# the rules; while a tool's rules are inline in AGENTS.md it holds only @AGENTS.md; leaving rules_inline
+# restores the full import. AGENTS.md carries no @ line while it is the pointer region. Bytes equal in both shells.
+tfx_row_claude_inline() {
+    local id="FIX-E" shell home tgt inl_stage="${TMP}/tfx-inline-stage-e"
+    local -A seen_a=() seen_b=() seen_c=() seen_m=()
+    local full=$'<!-- AID:BEGIN -->\n@AGENTS.md\n@.aid/runtime/rules.md\n<!-- AID:END -->\n'
+    local only=$'<!-- AID:BEGIN -->\n@AGENTS.md\n<!-- AID:END -->\n'
+    tfx_inline_stage "$inl_stage" || fail "${id} setup: could not build the rules_inline bundle"
+    for shell in sh ps; do
+        home="$(tfx_home "$shell")"; tgt="$(newtarget)"
+        tfx_aid "$shell" "$home" "$tgt" add claude-code
+        assert_exit_eq "$RC" 0 "${id} ${shell} add claude-code -> exit 0"
+        [[ "$(cat "$tgt/CLAUDE.md"; printf x)" == "${full}x" ]] && pass "${id} ${shell} CLAUDE.md imports AGENTS.md and the rules" || fail "${id} ${shell} CLAUDE.md imports AGENTS.md and the rules"
+        assert_eq "$(grep -c '^@' "$tgt/AGENTS.md")" "0" "${id} ${shell} AGENTS.md pointer region has no @ line"
+        seen_a[$shell]="$(cat "$tgt/CLAUDE.md")"
+        TFX_STAGE="$inl_stage" tfx_aid "$shell" "$home" "$tgt" add cursor
+        assert_exit_eq "$RC" 0 "${id} ${shell} add cursor (rules_inline) -> exit 0"
+        [[ "$(cat "$tgt/CLAUDE.md"; printf x)" == "${only}x" ]] && pass "${id} ${shell} CLAUDE.md holds only @AGENTS.md under rules_inline" || fail "${id} ${shell} CLAUDE.md holds only @AGENTS.md under rules_inline"
+        seen_b[$shell]="$(cat "$tgt/CLAUDE.md")"
+        tfx_status "$shell" "$home" "$tgt"
+        assert_output_not_contains "$OUT" "CLAUDE.md" "${id} ${shell} status reports no CLAUDE.md drift under rules_inline"
+        tfx_remove "$shell" "$home" "$tgt" cursor
+        assert_exit_eq "$RC" 0 "${id} ${shell} remove cursor -> exit 0"
+        [[ "$(cat "$tgt/CLAUDE.md"; printf x)" == "${full}x" ]] && pass "${id} ${shell} leaving rules_inline restores the CLAUDE.md rules import" || fail "${id} ${shell} leaving rules_inline restores the CLAUDE.md rules import"
+        seen_c[$shell]="$(cat "$tgt/CLAUDE.md")"
+        tfx_status "$shell" "$home" "$tgt"
+        assert_output_not_contains "$OUT" "CLAUDE.md" "${id} ${shell} status reports no CLAUDE.md drift after leaving rules_inline"
+        seen_m[$shell]="$(grep -o '"region_sha256": "[0-9a-f]*"' "$tgt/.aid/.aid-manifest.json" | LC_ALL=C sort)"
+    done
+    assert_eq "${seen_a[ps]}" "${seen_a[sh]}" "${id} CLAUDE.md after add identical across shells"
+    assert_eq "${seen_b[ps]}" "${seen_b[sh]}" "${id} CLAUDE.md under rules_inline identical across shells"
+    assert_eq "${seen_c[ps]}" "${seen_c[sh]}" "${id} CLAUDE.md after leaving rules_inline identical across shells"
+    assert_eq "${seen_m[ps]}" "${seen_m[sh]}" "${id} manifest region hashes identical across shells after the toggle"
+}
+tfx_row_claude_inline
 
 # ===========================================================================
 # End-of-suite: real-HOME blast-surface canary

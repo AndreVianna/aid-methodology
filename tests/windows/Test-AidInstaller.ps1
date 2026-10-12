@@ -673,11 +673,12 @@ Assert-Contains $updatedContent15 '<!-- AID:END -->'   'T15d AID:END marker pres
 Assert-Contains $updatedContent15 'User project section.'  'T15e user content before region preserved'
 Assert-Contains $updatedContent15 'User-added content after the AID region.' 'T15f user content after region preserved'
 # v4 region repair (spec: a region that is not exactly the import region is repaired by
-# content): exactly one AID:BEGIN marker and one @AGENTS.md import remain, and the user
+# content): exactly one AID:BEGIN marker, one @AGENTS.md and one @.aid/runtime/rules.md import
+# remain, and the user
 # text around the old region is kept byte-for-byte.
 $t15Begins = ([regex]::Matches($updatedContent15, '<!-- AID:BEGIN -->')).Count
-Assert ($t15Begins -eq 1 -and $updatedContent15 -match '(?m)^@AGENTS\.md$') `
-    'T15g exactly one import region after repair' "expected one AID:BEGIN and @AGENTS.md, got $t15Begins BEGIN marker(s)"
+Assert ($t15Begins -eq 1 -and $updatedContent15 -match '(?m)^@AGENTS\.md$' -and $updatedContent15 -match '(?m)^@\.aid/runtime/rules\.md$') `
+    'T15g exactly one import region after repair' "expected one AID:BEGIN, @AGENTS.md and @.aid/runtime/rules.md, got $t15Begins BEGIN marker(s)"
 Assert-Contains $updatedContent15 'User-added content after the AID region.' 'T15h user text after the old region kept'
 Write-Host ""
 

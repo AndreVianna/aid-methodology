@@ -131,10 +131,10 @@ STAGE_VERSION="$(tr -d '[:space:]' < "${CLONE}/VERSION")"
 STAGE_DIR="${CLONE}/.aid/.temp/release-${STAGE_VERSION}"
 
 # The project-root CLAUDE.md that `aid add claude-code` writes is not a payload file: it is the
-# fixed three-line @AGENTS.md import region (spec §8 A-3). Its bytes are a CLI constant, so the
+# fixed four-line import region (@AGENTS.md and @.aid/runtime/rules.md; spec §8 A-3). Its bytes are a CLI constant, so the
 # installed file is compared against that text, not against a profile source.
 CLAUDE_REGION_EXPECT="${TMP}/claude-region.expected"
-printf '%s\n' '<!-- AID:BEGIN -->' '@AGENTS.md' '<!-- AID:END -->' > "${CLAUDE_REGION_EXPECT}"
+printf '%s\n' '<!-- AID:BEGIN -->' '@AGENTS.md' '@.aid/runtime/rules.md' '<!-- AID:END -->' > "${CLAUDE_REGION_EXPECT}"
 claude_region_matches() { cmp -s "$1" "${CLAUDE_REGION_EXPECT}" && echo same || echo diff; }
 
 # ---------------------------------------------------------------------------
