@@ -217,30 +217,35 @@ The orchestrator does not map phrasings; it interprets **meaning**, the way a co
 
 ### FR-6 Approvals and the merge boundary
 
-| Depth | Mandatory approvals |
+| Depth | Mandatory document approvals |
 |---|---|
 | `full` | **Every document** is confirmed by the user (seed, requirements, task plan, ...), plus the final result. |
 | `lite` | **One approval before Building starts** -- the agent always confirms what it is about to build (for a small fix, one short line) -- plus the final result. |
 
+- The table covers the approval of **documents**. The building milestones below apply at **every depth**.
 - **There is no depth without a confirmation before building.** Even the smallest work is confirmed before Building starts.
 - **Always an approval at the end**, on the final result, at every depth -- **before the PR/MR is created or updated**.
 - **Building milestones.** After the confirmation before building (which is not a milestone), building runs
   without the user, and stops for approval only at:
   - **Required:** the end of **each delivery**, after verification, before creating or updating a PR/MR;
     and the end of **the whole build**, after verification, before creating or updating a PR/MR.
-  - The approval at each required milestone also asks **"Create or update the PR/MR now?"**; the user's
+  - The approval at each milestone that may push (every required one, and an opted-in wave with a PR/MR
+    update) also asks **"Create or update the PR/MR now?"**; the user's
     yes is the instruction FR-7 requires. Building then makes a **quick hand-off** to the CI skill
     (`/aid-monitor-pipeline`, FR-20): it pushes the approved work, creates or updates the PR/MR, and
     **hands straight back** to Building. The CI skill is the only one that touches the PR/MR.
   - **Nothing runs in parallel.** Review comments and pipeline failures that arrive while building
     continues are brought to the user **at the next milestone**, each with its proposed correction:
-    just **before** each required milestone approval, Building makes a **read-only quick hand-off** to
+    just **before** each milestone approval that may push, Building makes a **read-only quick hand-off** to
     `/aid-monitor-pipeline`, which only reads the new comments and pipeline results and hands back;
     Building prepares the corrections (FR-19); the approval shows the delivery plus those corrections,
     and on yes the push carries both. Every push carries only approved work. **Full CI
     monitoring** starts only after the whole build is approved.
-  - **Optional** (the agent asks during the confirmation before building whether the user wants it): the end of
-    **each wave**, after verification -- a review per wave, and/or a PR/MR update per wave.
+  - **Optional** (the agent asks during the confirmation before building whether the user wants it):
+    the end of **each wave**, after verification -- a **review per wave**, optionally **with a PR/MR update
+    per wave**. A PR/MR update per wave is offered only together with the review per wave, and a wave
+    milestone that may push works exactly like a required one (read-only hand-off, approval of the wave
+    plus its corrections, "Create or update the PR/MR now?", quick hand-off).
   - **Real blockers** are raised when they happen: something the agent cannot decide or fix on its
     own, including a decision that conflicts with the KB (AC-5). They are interruptions, not milestones.
 - **One worktree and one branch per work, always.** A work has exactly one worktree, and one branch
@@ -537,7 +542,7 @@ If assumption 1 or 2 fails in a tool, transparent orchestration degrades there t
 | AC-29 | A ticket pulled in mid-work is **recorded as a work source** in `STATE.yml`; the pending questions it answers are closed, any new questions are added, and the phase advances when its conditions are met; on request, the agent **writes the work's information back** to the source; project sources are used by every work when needed without being attached. | FR-18 |
 | AC-30 | For every kind in the catalog, the typed form (`/aid-<action> <kind> ...`) and a plain-words request for the same thing reach **the same skill and the same rules**. | FR-4, FR-8 |
 | AC-31 | No skill name combines an action (create, update, design, document, test, prototype) with a kind of thing (e.g. no `/aid-create-api`); the dashboard and chat show **only current skill names**. | Scope, M1 |
-| AC-32 | During building, the user is asked for approval **only** at the end of each delivery and at the end of the whole build (each after verification, before a PR/MR is created or updated), plus at the end of each wave **only when the user opted in** during the confirmation before building; real blockers (something the agent cannot decide or fix on its own, including a conflict with the KB) are the only other interruptions. | FR-6 |
+| AC-32 | During building, the user is asked for approval **only** at the end of each delivery and at the end of the whole build (each after verification, before a PR/MR is created or updated), plus at the end of each wave **only when the user opted in** during the confirmation before building (a PR/MR update per wave only together with the review per wave); these milestones apply at every depth; real blockers (something the agent cannot decide or fix on its own, including a conflict with the KB) are the only other interruptions. | FR-6 |
 | AC-33 | For each task and each delivery, the work record shows verify -> simplify, and a scoped re-verify **only when** the simplification changed something; simplification runs once, and the test set before and after it is identical and passing. | FR-19 |
 | AC-34 | Running a work from start to PR/MR creates **exactly one worktree and one branch** for it; no skill or script creates a per-delivery branch or merges anything. | FR-6 |
 | AC-35 | The PR/MR diff contains **only changes meant for the parent branch**: no file under `.aid/.temp/`, files under `.aid/works/` only when the project setting is **push**, and no commit that adds and later removes files. | FR-7 |
@@ -547,7 +552,7 @@ If assumption 1 or 2 fails in a tool, transparent orchestration degrades there t
 | AC-39 | Roadmap and backlog are ordinary KB documents and the MVP is a section of the roadmap, all created and updated through the normal flow with **no dedicated skills**. | FR-14 |
 | AC-40 | The question protocol is run by the main conversation; the interviewer sub-agent no longer exists. | FR-13, FR-17 |
 | AC-41 | The dashboard and chat read the work's state from the new `STATE.yml` layout (FR-20) and show it correctly for a work at each phase. | FR-20, Scope |
-| AC-42 | At each required building milestone the approval asks whether to create or update the PR/MR; on yes, `/aid-monitor-pipeline` alone pushes the approved work, creates or updates the PR/MR, and returns to Building; just before each milestone approval a read-only hand-off to `/aid-monitor-pipeline` collects review comments and pipeline failures, Building prepares their corrections, and the approval shows them with the delivery; no push ever carries unapproved commits; full monitoring starts only after the whole build is approved. | FR-6, FR-7, FR-20 |
+| AC-42 | At each building milestone that may push (every required one, and an opted-in wave with a PR/MR update) the approval asks whether to create or update the PR/MR; on yes, `/aid-monitor-pipeline` alone pushes the approved work, creates or updates the PR/MR, and returns to Building; just before each such approval a read-only hand-off to `/aid-monitor-pipeline` collects review comments and pipeline failures, Building prepares their corrections, and the approval shows them with the delivery; no push ever carries unapproved commits; full monitoring starts only after the whole build is approved. | FR-6, FR-7, FR-20 |
 | AC-43 | No `/aid-design` skill exists; a request to design a kind of thing (e.g. "design the orders API") reaches `/aid-brainstorm` with that kind's catalog rules, and only `/aid-brainstorm` writes idea drafts under `.aid/design/`. | Scope, FR-9 |
 | AC-44 | Every approved `REQUIREMENTS.md` has a business part and a technical part; the technical part exists once for the whole work, or once per feature when it splits, and each technical section names the requirements it serves. | FR-3 |
 

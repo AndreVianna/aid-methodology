@@ -302,6 +302,10 @@ review_history:
     event: 'Cross-reference cycle 4'
     outcome: 'Grade C+ (1 MEDIUM, row 12); rows 1-11 confirmed Fixed'
     notes: 'Row 12 resolved by Q25'
+  - date: '2026-10-13'
+    event: 'Cross-reference cycle 5'
+    outcome: 'Grade C+ (1 MEDIUM, row 13); rows 1-12 confirmed Fixed'
+    notes: 'Row 13 resolved by Q26; FR-6 table clarified as document approvals (milestones at every depth)'
 
 # [A] written by the orchestrator on the work's active branch (single
 #     writer). Append-only audit trail of phase transitions and gate
@@ -567,3 +571,11 @@ qa:
     suggested: 'Read-only quick hand-off to /aid-monitor-pipeline just before each milestone; Building prepares corrections; approval shows both; full monitoring after the whole build is approved.'
     answer: 'Accepted as recommended.'
     applied_to: 'REQUIREMENTS.md FR-6, FR-7, AC-27, AC-42, Features 007 and 008'
+  - id: Q26
+    category: Requirements
+    impact: Medium
+    state: Answered
+    context: 'Optional wave milestone allowed a PR/MR update without a wave review, pushing unapproved work (surfaced by /aid-define cross-reference cycle 5)'
+    suggested: 'PR/MR update per wave only together with a review per wave; a pushing wave milestone works like a required one.'
+    answer: 'Accepted as recommended.'
+    applied_to: 'REQUIREMENTS.md FR-6, AC-32, AC-42'
