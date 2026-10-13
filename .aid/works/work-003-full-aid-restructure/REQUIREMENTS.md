@@ -207,6 +207,13 @@ The orchestrator does not map phrasings; it interprets **meaning**, the way a co
 - **The agent also starts and follows skills on its own**, behind the scenes -- equally a native
   capability of the host tools. This is how the orchestration of FR-5 works in practice.
 
+### FR-9 Where the Ideation seed lives
+
+The seed (the shaped idea: framing, candidate directions, open questions) lives in
+`.aid/design/<name>.md` while the idea is being shaped, and is **deleted once its PRD is approved**;
+its content then lives on in the PRD. An idea can survive across sessions before it is ready, and
+may never become a work; work folders are disposable by rule, so the seed does not live there.
+
 ## 6. Non-Functional Requirements
 
 - **NFR-Q (how questions are asked).** Every question put to the user carries a
