@@ -298,6 +298,10 @@ review_history:
     event: 'Cross-reference cycle 3'
     outcome: 'Grade C (4 MEDIUM); rows 10-11 fixed by the orchestrator; rows 8-9 need a maintainer decision (Q24)'
     notes: 'Restored Q16, Q18-Q20 answers overwritten by a cycle-2 script bug'
+  - date: '2026-10-13'
+    event: 'Cross-reference cycle 4'
+    outcome: 'Grade C+ (1 MEDIUM, row 12); rows 1-11 confirmed Fixed'
+    notes: 'Row 12 resolved by Q25'
 
 # [A] written by the orchestrator on the work's active branch (single
 #     writer). Append-only audit trail of phase transitions and gate
@@ -555,3 +559,11 @@ qa:
     suggested: 'At a milestone the PR create/update is a quick call-and-return hand-off; reviews and pipeline failures are collected and handled at the next milestone; full CI monitoring starts after the whole build is approved.'
     answer: 'No parallel CI during building: quick call-and-return hand-off at milestones; reviews/failures collected for the next milestone; full monitoring after the whole build is approved.'
     applied_to: 'REQUIREMENTS.md FR-6, AC-42, Features 007 and 008'
+  - id: Q25
+    category: Requirements
+    impact: High
+    state: Answered
+    context: 'Who reads review comments and pipeline failures during building, given only the CI skill touches the PR/MR and runs after the milestone yes (surfaced by /aid-define cross-reference cycle 4)'
+    suggested: 'Read-only quick hand-off to /aid-monitor-pipeline just before each milestone; Building prepares corrections; approval shows both; full monitoring after the whole build is approved.'
+    answer: 'Accepted as recommended.'
+    applied_to: 'REQUIREMENTS.md FR-6, FR-7, AC-27, AC-42, Features 007 and 008'

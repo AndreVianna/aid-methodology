@@ -233,8 +233,11 @@ The orchestrator does not map phrasings; it interprets **meaning**, the way a co
     (`/aid-monitor-pipeline`, FR-20): it pushes the approved work, creates or updates the PR/MR, and
     **hands straight back** to Building. The CI skill is the only one that touches the PR/MR.
   - **Nothing runs in parallel.** Review comments and pipeline failures that arrive while building
-    continues are **collected** and brought to the user **at the next milestone**, each with its
-    proposed correction (built under FR-19). Every push carries only approved work. **Full CI
+    continues are brought to the user **at the next milestone**, each with its proposed correction:
+    just **before** each required milestone approval, Building makes a **read-only quick hand-off** to
+    `/aid-monitor-pipeline`, which only reads the new comments and pipeline results and hands back;
+    Building prepares the corrections (FR-19); the approval shows the delivery plus those corrections,
+    and on yes the push carries both. Every push carries only approved work. **Full CI
     monitoring** starts only after the whole build is approved.
   - **Optional** (the agent asks during the confirmation before building whether the user wants it): the end of
     **each wave**, after verification -- a review per wave, and/or a PR/MR update per wave.
@@ -252,7 +255,8 @@ The orchestrator does not map phrasings; it interprets **meaning**, the way a co
 - **Opening the PR is part of CI, and happens only when the user instructs it.** The agent opens a
   pull request (GitHub) or merge request (GitLab) for the work only on the user's instruction; it
   never opens one on its own.
-- **CI is the pull-request phase.** Once the PR/MR exists, CI manages it to a mergeable
+- **CI is the pull-request phase.** Once the PR/MR exists and **the whole build is approved** (before
+  that, see the building milestones in FR-6), CI manages it to a mergeable
   state: it handles code reviews from other agents or developers, makes sure the CI pipeline
   completes green, and runs the hardening, security and quality reviews. It never merges (FR-6).
 - **The CI phase ends when the PR/MR is merged** -- by a human -- into its parent branch (usually
@@ -528,7 +532,7 @@ If assumption 1 or 2 fails in a tool, transparent orchestration degrades there t
 | AC-18 | In a new project, KB facts appear **as they are decided or built**, never guessed up front. | FR-10 |
 | AC-19 | `PLAN.md` is a scannable checklist (deliveries with their acceptance criteria, waves, tasks, dependencies, state); **no separate delivery documents or state files**; each task has one instruction file with no state. | FR-12 |
 | AC-26 | Building: `/aid-execute` runs each task's tests as part of the task; a task is marked **Done only after its tests pass**, and the final result shows the test results. | FR-1 |
-| AC-27 | CI: for an open PR/MR, `/aid-monitor-pipeline` corrects reported bugs, required corrections and pipeline failures on its own, and brings each suggestion or plain comment to the user as options with a recommendation; **every correction goes through the build process and the user's approval before it is pushed**; this continues **until a human merges the PR/MR** into its parent branch; the agent **never merges**. | FR-7 |
+| AC-27 | CI: for an open PR/MR, once the whole build is approved, `/aid-monitor-pipeline` corrects reported bugs, required corrections and pipeline failures on its own, and brings each suggestion or plain comment to the user as options with a recommendation; **every correction goes through the build process and the user's approval before it is pushed**; this continues **until a human merges the PR/MR** into its parent branch; the agent **never merges**. | FR-7 |
 | AC-28 | For each skill that asks the user questions, a scripted test conversation shows: one topic per question, each with its reason, a recommendation, only valid options and a free-text answer; groups of 3-5 by subject, most important first; a break offered after each group and at each change of subject; follow-ups right after the question that raised them; answered or trivial questions skipped; a skipped question recorded as open and resumable later by the same or another user. | FR-17 |
 | AC-29 | A ticket pulled in mid-work is **recorded as a work source** in `STATE.yml`; the pending questions it answers are closed, any new questions are added, and the phase advances when its conditions are met; on request, the agent **writes the work's information back** to the source; project sources are used by every work when needed without being attached. | FR-18 |
 | AC-30 | For every kind in the catalog, the typed form (`/aid-<action> <kind> ...`) and a plain-words request for the same thing reach **the same skill and the same rules**. | FR-4, FR-8 |
@@ -543,7 +547,7 @@ If assumption 1 or 2 fails in a tool, transparent orchestration degrades there t
 | AC-39 | Roadmap and backlog are ordinary KB documents and the MVP is a section of the roadmap, all created and updated through the normal flow with **no dedicated skills**. | FR-14 |
 | AC-40 | The question protocol is run by the main conversation; the interviewer sub-agent no longer exists. | FR-13, FR-17 |
 | AC-41 | The dashboard and chat read the work's state from the new `STATE.yml` layout (FR-20) and show it correctly for a work at each phase. | FR-20, Scope |
-| AC-42 | At each required building milestone the approval asks whether to create or update the PR/MR; on yes, `/aid-monitor-pipeline` alone pushes the approved work, creates or updates the PR/MR, and returns to Building; review comments and pipeline failures arriving during building are shown at the next milestone with their proposed corrections; no push ever carries unapproved commits; full monitoring starts only after the whole build is approved. | FR-6, FR-7, FR-20 |
+| AC-42 | At each required building milestone the approval asks whether to create or update the PR/MR; on yes, `/aid-monitor-pipeline` alone pushes the approved work, creates or updates the PR/MR, and returns to Building; just before each milestone approval a read-only hand-off to `/aid-monitor-pipeline` collects review comments and pipeline failures, Building prepares their corrections, and the approval shows them with the delivery; no push ever carries unapproved commits; full monitoring starts only after the whole build is approved. | FR-6, FR-7, FR-20 |
 | AC-43 | No `/aid-design` skill exists; a request to design a kind of thing (e.g. "design the orders API") reaches `/aid-brainstorm` with that kind's catalog rules, and only `/aid-brainstorm` writes idea drafts under `.aid/design/`. | Scope, FR-9 |
 | AC-44 | Every approved `REQUIREMENTS.md` has a business part and a technical part; the technical part exists once for the whole work, or once per feature when it splits, and each technical section names the requirements it serves. | FR-3 |
 
@@ -714,7 +718,7 @@ Improves how AID talks with the user and how skills move through their states. Q
 
 #### Description
 
-`/aid-execute` carries out the plan's tasks and tests them: a task is done only when its tests pass, and the result shows the test outcome. The user is involved only at the milestones (end of each delivery and of the whole build; optionally each wave); each task, and each delivery as a whole, goes through verification, then a lighter simplification pass, then a scoped re-verification only when the simplification changed something (FR-19). Each work builds on its one worktree and branch; the per-delivery branches are removed. At each required milestone it asks whether to create or update the PR/MR, and on yes makes a quick hand-off to the CI skill and continues.
+`/aid-execute` carries out the plan's tasks and tests them: a task is done only when its tests pass, and the result shows the test outcome. The user is involved only at the milestones (end of each delivery and of the whole build; optionally each wave); each task, and each delivery as a whole, goes through verification, then a lighter simplification pass, then a scoped re-verification only when the simplification changed something (FR-19). Each work builds on its one worktree and branch; the per-delivery branches are removed. Just before each required milestone it collects new review comments and pipeline results (a read-only hand-off to the CI skill) and prepares their corrections; the milestone shows both, asks whether to create or update the PR/MR, and on yes makes a quick hand-off to the CI skill and continues.
 
 #### User Stories
 
@@ -732,7 +736,7 @@ Improves how AID talks with the user and how skills move through their states. Q
 
 #### Description
 
-`/aid-monitor-pipeline` creates or updates the PR/MR only on the user's instruction -- given at a building milestone, through a quick hand-off that returns straight to Building; reviews and failures arriving during building wait for the next milestone, and full monitoring starts once the whole build is approved -- and takes it to a mergeable state: review comments, a green pipeline, hardening, security and quality reviews -- without ever merging. Reported bugs, required corrections and pipeline failures are corrected automatically; suggestions are brought to the user with a recommendation; every correction is built, verified and approved by the user before it is pushed. When GitHub or GitLab cannot be reached, the agent first helps the user connect. The PR/MR holds only the real changes; whether the work folder is pushed, kept locally or deleted is a project setting. After the merge the agent marks the work done and cleans up locally only (temporary files, local branch, worktree); it never deletes a remote branch. Marking the work done is the minimum of this phase, even for a project with no repository. It integrates with and monitors the project's CI/CD process, reacting to reviews and to pipeline failures until a human merges the PR/MR into its parent branch (usually `main` or `master`) -- the end of the work's CI. Deploying and monitoring production are separate works.
+`/aid-monitor-pipeline` creates or updates the PR/MR only on the user's instruction -- given at a building milestone, through a quick hand-off that returns straight to Building; reviews and failures arriving during building are read (read-only) just before the next milestone, and full monitoring starts once the whole build is approved -- and takes it to a mergeable state: review comments, a green pipeline, hardening, security and quality reviews -- without ever merging. Reported bugs, required corrections and pipeline failures are corrected automatically; suggestions are brought to the user with a recommendation; every correction is built, verified and approved by the user before it is pushed. When GitHub or GitLab cannot be reached, the agent first helps the user connect. The PR/MR holds only the real changes; whether the work folder is pushed, kept locally or deleted is a project setting. After the merge the agent marks the work done and cleans up locally only (temporary files, local branch, worktree); it never deletes a remote branch. Marking the work done is the minimum of this phase, even for a project with no repository. It integrates with and monitors the project's CI/CD process, reacting to reviews and to pipeline failures until a human merges the PR/MR into its parent branch (usually `main` or `master`) -- the end of the work's CI. Deploying and monitoring production are separate works.
 
 #### User Stories
 
