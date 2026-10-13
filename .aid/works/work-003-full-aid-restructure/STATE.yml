@@ -215,60 +215,59 @@ interview:
 #   sections[].state: Pending | In Discussion | Complete
 features:
   - id: '001'
-    name: understand-request-size-work
+    name: plain-language-requests
     state: Pending
     grade: Pending
     qa_count: 0
     sections: []
   - id: '002'
-    name: user-interaction-state-machines
+    name: step-by-step-decisions
     state: Pending
     grade: Pending
     qa_count: 0
     sections: []
   - id: '003'
-    name: definition
+    name: work-definition
     state: Pending
     grade: Pending
     qa_count: 0
     sections: []
   - id: '004'
-    name: specification
+    name: kb-management
     state: Pending
     grade: Pending
     qa_count: 0
     sections: []
   - id: '005'
-    name: planning
+    name: specification
     state: Pending
     grade: Pending
     qa_count: 0
     sections: []
   - id: '006'
-    name: building
+    name: planning
     state: Pending
     grade: Pending
     qa_count: 0
     sections: []
   - id: '007'
-    name: kb-runs-itself
+    name: building
     state: Pending
     grade: Pending
     qa_count: 0
     sections: []
   - id: '008'
-    name: ci-phase
+    name: cicd-integration-monitoring
     state: Pending
     grade: Pending
     qa_count: 0
     sections: []
   - id: '009'
-    name: smaller-clearer-skill-set
+    name: one-skill-per-need
     state: Pending
     grade: Pending
     qa_count: 0
     sections: []
-
 # [A] appended by aid-describe / aid-define as the interview and its
 #     cross-reference pass proceed. Append-only, newest LAST. Distinct from
 #     `lifecycle_history`, which records PHASE transitions and gates: this
@@ -361,7 +360,7 @@ qa:
     impact: High
     state: Pending
     context: 'Where does Describe''s job go? Definition only makes a seed, but today Describe writes REQUIREMENTS.md §1-10, and FR-1 gives that file to Specification. (surfaced by /aid-define cross-reference)'
-    suggested: 'The requirements interview moves to /aid-specify (Feature 004); Definition keeps only idea-shaping and ticket digestion.'
+    suggested: 'The requirements interview moves to /aid-specify (Feature 005); Definition keeps only idea-shaping and ticket digestion.'
     answer: --
     applied_to: --
   - id: Q2
@@ -401,7 +400,7 @@ qa:
     impact: Medium
     state: Pending
     context: '§4 puts adjusting the dashboard and chat to the new layout/names in scope, but no feature or AC owns it. (surfaced by /aid-define cross-reference)'
-    suggested: 'State layout to Feature 005, skill names to Feature 009, each with an AC.'
+    suggested: 'State layout to Feature 006, skill names to Feature 009, each with an AC.'
     answer: --
     applied_to: --
   - id: Q7
@@ -409,7 +408,7 @@ qa:
     impact: Medium
     state: Pending
     context: 'Unclaimed skills: create/update-{architecture,stack,testing-strategy,cicd} (8), aid-triage, aid-housekeep are owned by no feature and overlap /aid-kb-update. (surfaced by /aid-define cross-reference)'
-    suggested: 'The 8 retire into /aid-kb-update (Feature 007); aid-triage into the rules.md skill guide (Feature 001); each owner writes its AC-24 rows.'
+    suggested: 'The 8 retire into /aid-kb-update (Feature 004); aid-triage into the rules.md skill guide (Feature 001); each owner writes its AC-24 rows.'
     answer: --
     applied_to: --
   - id: Q8
@@ -464,8 +463,8 @@ qa:
     category: Requirements
     impact: Medium
     state: Pending
-    context: 'AC-19 mixes the plan checklist (Feature 005) with roadmap/backlog/MVP (Feature 007). (surfaced by /aid-define cross-reference)'
-    suggested: 'Split: move the roadmap/backlog/MVP clause into a new AC owned by Feature 007.'
+    context: 'AC-19 mixes the plan checklist (Feature 006) with roadmap/backlog/MVP (Feature 004). (surfaced by /aid-define cross-reference)'
+    suggested: 'Split: move the roadmap/backlog/MVP clause into a new AC owned by Feature 004.'
     answer: --
     applied_to: --
   - id: Q15
@@ -498,5 +497,21 @@ qa:
     state: Pending
     context: 'Tidy: §10 vs §11 requirement lists differ; §4 "internal helpers" vs FR-8 no internal split; waves derived vs held; AC-23 spans Features 001 and 002. (surfaced by /aid-define cross-reference)'
     suggested: '§10 points at §11; "supporting skills"; PLAN.md shows derived waves; split AC-23.'
+    answer: --
+    applied_to: --
+  - id: Q19
+    category: Requirements
+    impact: High
+    state: Pending
+    context: 'Feature 007 now promises verification and simplification passes and user involvement only at required milestones; no FR or AC covers either, and "required milestones" is undefined. (raised by the feature renaming)'
+    suggested: 'Define the milestones (the approvals in FR-6) and add an AC for each pass, owned by Feature 007.'
+    answer: --
+    applied_to: --
+  - id: Q20
+    category: Scope
+    impact: High
+    state: Pending
+    context: 'Feature 008 is now "CI/CD integration and monitoring", but FR-7 keeps deploy and monitoring as works of their own and limits the phase to bringing a PR/MR to mergeable. (raised by the feature renaming)'
+    suggested: 'Confirm the phase reacts to reviews and pipeline failures on the PR/MR only; deploy and production monitoring stay separate works.'
     answer: --
     applied_to: --
