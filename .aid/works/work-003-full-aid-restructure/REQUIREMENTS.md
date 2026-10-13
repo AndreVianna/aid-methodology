@@ -234,6 +234,16 @@ Plain, familiar names -- no invented verbs, no acronyms (NFR-N):
 | Building (execute and test) | `/aid-execute` *(M2)* |
 | CI (the pull-request phase) | `/aid-monitor-pipeline` |
 
+### FR-12 Deliveries and waves live in `PLAN.md`
+
+Deliveries stay: a delivery is a way to group tasks so they build something that can be delivered.
+What goes away is **dedicated documents** for them (no per-delivery folder, state file or blueprint).
+The Planning phase's `PLAN.md` holds them all:
+
+- each **delivery**, with its acceptance criteria;
+- the **waves** inside each delivery;
+- the atomic **tasks** and their **dependencies** -- still the most important information.
+
 ## 6. Non-Functional Requirements
 
 - **NFR-N (naming).** No acronyms in artifact or skill names: names say plainly what the thing is.
