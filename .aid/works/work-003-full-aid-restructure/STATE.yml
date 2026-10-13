@@ -597,3 +597,11 @@ qa:
     suggested: 'PR/MR update per wave only together with a review per wave; a pushing wave milestone works like a required one.'
     answer: 'Accepted as recommended.'
     applied_to: 'REQUIREMENTS.md FR-6, AC-32, AC-42'
+  - id: Q27
+    category: Specification (Feature 001)
+    impact: High
+    state: Answered
+    context: 'Should rules.md carry a skill guide, given host tools already list skills? Not all hosts behave the same; cost measured at ~900-1,200 tokens (<1% of context).'
+    suggested: 'Keep the guide: one short line per skill (what for, when to use); rewrite each skill description in the same style; static test checks the guide lists exactly the existing skills.'
+    answer: 'Accepted as recommended.'
+    applied_to: 'Feature 001 Technical Specification (Components)'
