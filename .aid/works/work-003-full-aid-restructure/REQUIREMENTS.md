@@ -1,7 +1,7 @@
 # Requirements
 
-- **Name:** *(pending)*
-- **Description:** *(pending)*
+- **Name:** Conversational AID Restructure
+- **Description:** Restructure AID so the agent in the user's tool reads plain requests, runs only the phases each work needs, and brings decisions to the user one topic at a time, with a smaller, clearer skill set underneath.
 
 ## 1. Objective
 
