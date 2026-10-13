@@ -413,3 +413,5 @@ without blocking the others.
   the next major version); the release notes carry an old -> new table.
 - **M2 -- Remaining phase skill names.** Specification, Planning and Building keep today's familiar
   names: `/aid-specify`, `/aid-plan`, `/aid-execute`.
+- **M3 -- Knowledge Base operation names (no acronyms).** Build = `/aid-discover`, Query = `/aid-ask`,
+  Update = `/aid-update-knowledge` (was `/aid-update-kb`), Visualize = `/aid-view-knowledge`.
