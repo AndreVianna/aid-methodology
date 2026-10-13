@@ -234,6 +234,9 @@ The orchestrator does not map phrasings; it interprets **meaning**, the way a co
 - **CI is the pull-request phase.** Once the PR/MR exists, CI manages it to a mergeable
   state: it handles code reviews from other agents or developers, makes sure the CI pipeline
   completes green, and runs the hardening, security and quality reviews. It never merges (FR-6).
+- **The CI phase ends when the PR/MR is merged** -- by a human -- into its parent branch (usually
+  `main` or `master`). Until then the agent keeps reacting to reviews and pipeline failures; after
+  the merge, deploying and monitoring production are separate works.
 - **Operational activities are works of their own, not phases:** preparing a release, publishing,
   deploying, and starting monitoring are each an individual work, started like any other request
   ("prepare release 4.0", "deploy to staging"). They act on merged history, not on a single work.
@@ -449,7 +452,7 @@ If assumption 1 or 2 fails in a tool, transparent orchestration degrades there t
 | AC-18 | In a new project, KB facts appear **as they are decided or built**, never guessed up front. | FR-10 |
 | AC-19 | `PLAN.md` is a scannable checklist (deliveries with their acceptance criteria, waves, tasks, dependencies, state); **no separate delivery documents or state files**; each task has one instruction file with no state; roadmap/backlog/MVP are ordinary KB documents with no dedicated skills. | FR-12, FR-14 |
 | AC-26 | Building: `/aid-execute` runs each task's tests as part of the task; a task is marked **Done only after its tests pass**, and the final result shows the test results. | FR-1 |
-| AC-27 | CI: for an open PR/MR, `/aid-monitor-pipeline` fixes or answers **every review comment**, pushes fixes to the work's branch **until the pipeline is green**, runs the hardening, security and quality reviews, and **never merges**. | FR-7 |
+| AC-27 | CI: for an open PR/MR, `/aid-monitor-pipeline` fixes or answers **every review comment**, pushes fixes to the work's branch **until the pipeline is green**, runs the hardening, security and quality reviews, keeps doing so **until a human merges the PR/MR** into its parent branch, and **never merges** itself. | FR-7 |
 | AC-28 | For each skill that asks the user questions, a scripted test conversation shows: one topic per question, each with its reason, a recommendation, only valid options and a free-text answer; groups of 3-5 by subject, most important first; a break offered after each group and at each change of subject; follow-ups right after the question that raised them; answered or trivial questions skipped; a skipped question recorded as open and resumable later by the same or another user. | FR-17 |
 | AC-29 | A ticket pulled in mid-work is **recorded as a work source** in `STATE.yml`; the pending questions it answers are closed, any new questions are added, and the phase advances when its conditions are met; on request, the agent **writes the work's information back** to the source; project sources are used by every work when needed without being attached. | FR-18 |
 | AC-30 | For every kind in the catalog, the typed form (`/aid-<action> <kind> ...`) and a plain-words request for the same thing reach **the same skill and the same rules**. | FR-4, FR-8 |
@@ -643,7 +646,7 @@ Improves how AID talks with the user and how skills move through their states. Q
 
 #### Description
 
-`/aid-monitor-pipeline` opens a PR/MR only on the user's instruction and takes it to a mergeable state: review comments, a green pipeline, hardening, security and quality reviews -- without ever merging. When GitHub or GitLab cannot be reached, the agent first helps the user connect. Runs only when the project has a pipeline. It integrates with and monitors the project's CI/CD process, reacting to reviews and to pipeline failures.
+`/aid-monitor-pipeline` opens a PR/MR only on the user's instruction and takes it to a mergeable state: review comments, a green pipeline, hardening, security and quality reviews -- without ever merging. When GitHub or GitLab cannot be reached, the agent first helps the user connect. Runs only when the project has a pipeline. It integrates with and monitors the project's CI/CD process, reacting to reviews and to pipeline failures until a human merges the PR/MR into its parent branch (usually `main` or `master`) -- the end of the work's CI. Deploying and monitoring production are separate works.
 
 #### User Stories
 

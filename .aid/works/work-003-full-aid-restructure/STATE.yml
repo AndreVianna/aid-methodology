@@ -510,8 +510,8 @@ qa:
   - id: Q20
     category: Scope
     impact: High
-    state: Pending
+    state: Answered
     context: 'Feature 008 is now "CI/CD integration and monitoring", but FR-7 keeps deploy and monitoring as works of their own and limits the phase to bringing a PR/MR to mergeable. (raised by the feature renaming)'
     suggested: 'Confirm the phase reacts to reviews and pipeline failures on the PR/MR only; deploy and production monitoring stay separate works.'
-    answer: --
-    applied_to: --
+    answer: 'A work''s CI/CD ends when its PR/MR is merged (by a human) into the parent branch; until then the agent reacts to reviews and pipeline failures. Deploy and production monitoring are separate works.'
+    applied_to: 'REQUIREMENTS.md FR-7, AC-27, Feature 008'
