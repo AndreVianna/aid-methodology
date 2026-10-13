@@ -118,7 +118,7 @@ phase: Describe
 # [W] aid-{skill} | none
 active_skill: aid-describe
 # [W]
-updated: '2026-10-13T03:50:42Z'
+updated: '2026-10-13T03:51:11Z'
 # [W] set only when lifecycle = Paused-Awaiting-Input
 pause_reason: --
 # [W] set only when lifecycle = Blocked
@@ -246,6 +246,10 @@ lifecycle_history:
     event: 'Describe: skills-restructure analysis produced at the maintainer request (analysis/skills-restructure-proposal.md): 112 skills -> 20 (10 user-facing, 10 internal), 9 agents -> 7, one work layout; 12 open forks (F1-F12) for the maintainer'
     grade: --
     notes: 'aid-architect analysis; input to the remaining Describe interview'
+  - date: '2026-10-13'
+    event: 'Describe COMPLETION: quality check passed (every requirement has observable acceptance criteria AC-1..AC-25; no contradictions; scope consistent with FR-1..FR-16; constraints consistent). KB hydration: no extraction -- the requirements describe changes not yet built and the KB states only the current state of the sources; KB facts enter as the work is built (FR-10 rule applied to this work).'
+    grade: --
+    notes: 'aid-describe state-completion steps 1-2'
 
 deploy: []
 
