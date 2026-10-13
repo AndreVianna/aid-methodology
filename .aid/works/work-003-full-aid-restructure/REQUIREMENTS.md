@@ -219,6 +219,10 @@ The orchestrator does not map phrasings; it interprets **meaning**, the way a co
     **each wave**, after verification -- a review per wave, and/or a PR/MR update per wave.
   - **Real blockers** are raised when they happen: something the agent cannot decide or fix on its
     own, including a decision that conflicts with the KB (AC-5). They are interruptions, not milestones.
+- **One worktree and one branch per work, always.** A work has exactly one worktree, and one branch
+  (on the remote once the worktree is pushed). There are no per-delivery branches; one PR/MR per
+  work is created or updated at the milestones above. `/aid-execute`'s per-delivery branches and
+  its "merge to main" step are removed.
 - **AID never merges anything.** The furthest it goes is pushing to the work's own branch; the merge
   is always a human act.
 
@@ -452,6 +456,7 @@ If assumption 1 or 2 fails in a tool, transparent orchestration degrades there t
 | AC-31 | No remaining skill name combines an action with a kind of thing; the dashboard and chat show **only current skill names**. | Scope, M1 |
 | AC-32 | During building, the user is asked for approval **only** at the end of each delivery and at the end of the whole build (each after verification, before a PR/MR is created or updated), plus at the end of each wave **only when the user opted in** during the confirmation before building; real blockers (something the agent cannot decide or fix on its own, including a conflict with the KB) are the only other interruptions. | FR-6 |
 | AC-33 | For each task and each delivery, the work record shows verify -> simplify, and a scoped re-verify **only when** the simplification changed something; simplification runs once, and the test set before and after it is identical and passing. | FR-19 |
+| AC-34 | Running a work from start to PR/MR creates **exactly one worktree and one branch** for it; no skill or script creates a per-delivery branch or merges anything. | FR-6 |
 
 ### Skills, naming and constraints
 
@@ -616,11 +621,11 @@ Improves how AID talks with the user and how skills move through their states. Q
 
 - **Priority:** Must
 - **Requirements:** §5 FR-1, FR-11, FR-19
-- **Criteria:** AC-26, AC-32, AC-33
+- **Criteria:** AC-26, AC-32, AC-33, AC-34
 
 #### Description
 
-`/aid-execute` carries out the plan's tasks and tests them: a task is done only when its tests pass, and the result shows the test outcome. The user is involved only at the milestones (end of each delivery and of the whole build; optionally each wave); each task, and each delivery as a whole, goes through verification, then a lighter simplification pass, then a scoped re-verification only when the simplification changed something (FR-19).
+`/aid-execute` carries out the plan's tasks and tests them: a task is done only when its tests pass, and the result shows the test outcome. The user is involved only at the milestones (end of each delivery and of the whole build; optionally each wave); each task, and each delivery as a whole, goes through verification, then a lighter simplification pass, then a scoped re-verification only when the simplification changed something (FR-19). Each work builds on its one worktree and branch; the per-delivery branches are removed.
 
 #### User Stories
 

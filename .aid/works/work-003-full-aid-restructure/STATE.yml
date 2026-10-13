@@ -390,11 +390,11 @@ qa:
   - id: Q5
     category: Architecture
     impact: Medium
-    state: Pending
+    state: Answered
     context: 'One branch per work or per delivery? FR-6 says the work branch; /aid-execute uses aid/{work}-delivery-NNN branches and still mentions merge to main. (surfaced by /aid-define cross-reference)'
     suggested: 'One branch per work; deliveries are only groupings.'
-    answer: --
-    applied_to: --
+    answer: 'Always one worktree and one branch (when pushed) per work; no per-delivery branches; /aid-execute has been wrong and is corrected.'
+    applied_to: 'REQUIREMENTS.md FR-6, AC-34, Feature 007'
   - id: Q6
     category: Scope
     impact: Medium
