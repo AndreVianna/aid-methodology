@@ -414,11 +414,11 @@ qa:
   - id: Q8
     category: Requirements
     impact: Medium
-    state: Pending
+    state: Answered
     context: 'Can AID open a PR without a pipeline? CI runs only with a pipeline, yet opening the PR is part of CI and every depth ends before a PR. (surfaced by /aid-define cross-reference)'
     suggested: 'CI runs whenever the user asks for a PR/MR; the until-green step is skipped when there is no pipeline.'
-    answer: --
-    applied_to: --
+    answer: 'CI always closes the work (minimum: mark done, even without git); PR/MR on instruction; pipeline steps only when a pipeline exists. Only real changes pushed; local-only clean-up after merge; never delete a remote branch.'
+    applied_to: 'REQUIREMENTS.md FR-1, FR-7, §4, AC-14, AC-35, AC-36, Feature 008'
   - id: Q9
     category: Requirements
     impact: Medium

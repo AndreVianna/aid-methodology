@@ -100,7 +100,7 @@ corrected by FR-5):
   skill per action, with the kind as an argument; the rules for each kind live in one catalog (Feature 009).
 - Phases are flexible around a fixed core: Specify -> Plan -> Execute almost always happens; Definition
   runs when the work must first be defined (discussion or an external ticket); Preparation runs once
-  plus on demand; CI only when a pipeline exists. `full` / `lite` changes how much the
+  plus on demand; CI always closes the work (at minimum, marking it done). `full` / `lite` changes how much the
   user reviews; intent is read by meaning and validated against the KB (FR-4); depth escalates or
   de-escalates as the work evolves.
 - The orchestrator and interviewer sub-agents retire (only the main conversation can talk with the
@@ -129,7 +129,8 @@ see phase names; the phases are the backbone the orchestrator tracks.
 
 The phases are **flexible around a fixed core**: **Specify -> Plan -> Execute** almost always happens.
 Preparation runs once (plus on-demand KB updates), Definition runs when the work first has to be
-defined, and CI runs only when the project has a pipeline.
+defined, and CI always closes the work -- its PR/MR and pipeline steps apply only when the project
+uses a repository and a pipeline.
 
 | Phase | Produces | Absorbs today's | Notes |
 |---|---|---|---|
@@ -138,7 +139,7 @@ defined, and CI runs only when the project has a pipeline.
 | Specification | `REQUIREMENTS.md` | Define, Specify | The "feature" concept must be revisited: the current skill almost always proposes more features than are actually necessary, and its notion of a feature is not what a feature represents in a business model. |
 | Planning | the tasks | Plan, Detail | Deliveries and waves are only groupings of tasks; the atomic tasks and their dependencies are the most important information. |
 | Building | the outcome | Execute | Building is executing **and testing**. |
-| CI | a merge-ready PR | (new) | The pull-request phase -- see FR-7. **Only exists when the project has a pipeline.** Not deploy/monitor: those are works of their own. |
+| CI | a merged PR/MR and a closed work | (new) | The pull-request phase -- see FR-7. **Always runs**: its minimum action is marking the work done, even without git or a repository; the PR/MR and pipeline steps apply when they exist. Not deploy/monitor: those are works of their own. |
 
 ### FR-2 Knowledge Base management
 
@@ -237,6 +238,14 @@ The orchestrator does not map phrasings; it interprets **meaning**, the way a co
 - **The CI phase ends when the PR/MR is merged** -- by a human -- into its parent branch (usually
   `main` or `master`). Until then the agent keeps reacting to reviews and pipeline failures; after
   the merge, deploying and monitoring production are separate works.
+- **Only the real changes are pushed.** What the work pushes is exactly what will land in the parent
+  branch: the PR/MR holds only the proper changes. Work folders and other AID working files are
+  never pushed (no pushing them and then adding a commit to clean them out).
+- **Closing a work.** Marking the work **done** is the minimum action of this phase -- it means there is
+  nothing left to monitor -- and it applies even when the user uses no git or repository. After the
+  merge, clean-up is **local only**: remove the temporary folders and files, delete the local branch,
+  and exit and delete the worktree.
+- **AID never deletes a remote branch.** That is part of the merge process or reserved to the user.
 - **Operational activities are works of their own, not phases:** preparing a release, publishing,
   deploying, and starting monitoring are each an individual work, started like any other request
   ("prepare release 4.0", "deploy to staging"). They act on merged history, not on a single work.
@@ -445,7 +454,7 @@ If assumption 1 or 2 fails in a tool, transparent orchestration degrades there t
 
 | # | Check | Covers |
 |---|---|---|
-| AC-14 | Phases flex around the core: every work that builds something runs **Specify -> Plan -> Execute** (Execute includes **testing**); **Definition** runs when the work must first be defined (`/aid-brainstorm`); external sources can enter at any phase (FR-18); **Preparation** runs once when the KB is created and on demand for updates; **Monitor pipeline** runs only when a pipeline exists; release, deploy and monitoring run as **works of their own**. | FR-1, FR-7 |
+| AC-14 | Phases flex around the core: every work that builds something runs **Specify -> Plan -> Execute** (Execute includes **testing**); **Definition** runs when the work must first be defined (`/aid-brainstorm`); external sources can enter at any phase (FR-18); **Preparation** runs once when the KB is created and on demand for updates; **CI** always closes the work (at minimum marking it done), with its PR/MR and pipeline steps only when a repository and pipeline exist; release, deploy and monitoring run as **works of their own**. | FR-1, FR-7 |
 | AC-15 | The KB is built, queried, updated and shown as HTML **through the agent's own judgment**, with no user step required; there is no separate summarize skill. | FR-2 |
 | AC-16 | Specification produces `REQUIREMENTS.md` made of **requirements with acceptance criteria**; it splits into features **only** when several user-visible capabilities exist (a bug fix produces none). | FR-3, NFR-N |
 | AC-17 | An idea's seed lives in `.aid/design/` and is **deleted once its requirements are approved**. | FR-9 |
@@ -460,6 +469,8 @@ If assumption 1 or 2 fails in a tool, transparent orchestration degrades there t
 | AC-32 | During building, the user is asked for approval **only** at the end of each delivery and at the end of the whole build (each after verification, before a PR/MR is created or updated), plus at the end of each wave **only when the user opted in** during the confirmation before building; real blockers (something the agent cannot decide or fix on its own, including a conflict with the KB) are the only other interruptions. | FR-6 |
 | AC-33 | For each task and each delivery, the work record shows verify -> simplify, and a scoped re-verify **only when** the simplification changed something; simplification runs once, and the test set before and after it is identical and passing. | FR-19 |
 | AC-34 | Running a work from start to PR/MR creates **exactly one worktree and one branch** for it; no skill or script creates a per-delivery branch or merges anything. | FR-6 |
+| AC-35 | The PR/MR diff contains **only changes meant for the parent branch**: no file under `.aid/works/` or `.aid/.temp/`, and no commit that adds and later removes such files. | FR-7 |
+| AC-36 | After a human merges the PR/MR, the work is marked **done** and clean-up is local only (temporary files, local branch, worktree); **no remote branch is deleted** by AID. A work in a project with no repository is still marked done at the end. | FR-7 |
 
 ### Skills, naming and constraints
 
@@ -642,11 +653,11 @@ Improves how AID talks with the user and how skills move through their states. Q
 
 - **Priority:** Must
 - **Requirements:** §5 FR-7, FR-11, FR-16
-- **Criteria:** AC-13, AC-27
+- **Criteria:** AC-13, AC-27, AC-35, AC-36
 
 #### Description
 
-`/aid-monitor-pipeline` opens a PR/MR only on the user's instruction and takes it to a mergeable state: review comments, a green pipeline, hardening, security and quality reviews -- without ever merging. When GitHub or GitLab cannot be reached, the agent first helps the user connect. Runs only when the project has a pipeline. It integrates with and monitors the project's CI/CD process, reacting to reviews and to pipeline failures until a human merges the PR/MR into its parent branch (usually `main` or `master`) -- the end of the work's CI. Deploying and monitoring production are separate works.
+`/aid-monitor-pipeline` opens a PR/MR only on the user's instruction and takes it to a mergeable state: review comments, a green pipeline, hardening, security and quality reviews -- without ever merging. When GitHub or GitLab cannot be reached, the agent first helps the user connect. The PR/MR holds only the real changes -- work folders and AID working files are never pushed. After the merge the agent marks the work done and cleans up locally only (temporary files, local branch, worktree); it never deletes a remote branch. Marking the work done is the minimum of this phase, even for a project with no repository. It integrates with and monitors the project's CI/CD process, reacting to reviews and to pipeline failures until a human merges the PR/MR into its parent branch (usually `main` or `master`) -- the end of the work's CI. Deploying and monitoring production are separate works.
 
 #### User Stories
 
