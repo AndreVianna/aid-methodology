@@ -466,6 +466,8 @@ A skill's state machine is the fixed set of steps it moves through. It is revise
 - **NFR-N (naming).** No acronyms in artifact or skill names: names say plainly what the thing is.
   The Specification phase produces `REQUIREMENTS.md` (not a "PRD" file). Accepted exception: **KB**,
   an established term in AID (`/aid-kb-build`, `/aid-kb-query`, `/aid-kb-update`, `/aid-kb-show`).
+  **Every skill name is a verb**, or "KB" plus a verb (`/aid-kb-build`); `/aid-config` is renamed
+  `/aid-configure` (old -> new table, no alias).
 
 - **NFR-T (testing behaviour).** Criteria about how the agent behaves are checked by a **conversation
   test suite**: each has a few scripted sample conversations with an expected outcome; each runs
@@ -566,7 +568,7 @@ If assumption 1 or 2 fails in a tool, transparent orchestration degrades there t
 |---|---|---|
 | AC-20 | Each skill has **one clear job** and no two skills overlap; skills that hold no logic of their own (pure wrappers) are gone, their variations kept as data. **No fixed skill count**: the final number is set by evaluating whether the agents solve developers' problems efficiently. | Scope, Problem 3 |
 | AC-21 | **Every** AID skill can be run by slash command in all five tools, and the agent can also run it on its own. | FR-8 |
-| AC-22 | Phase skills are named `/aid-kb-build`, `/aid-brainstorm`, `/aid-specify`, `/aid-plan`, `/aid-execute`, `/aid-monitor-pipeline`; **no skill or artifact name uses an acronym**. | FR-11, NFR-N |
+| AC-22 | Phase skills are named `/aid-kb-build`, `/aid-brainstorm`, `/aid-specify`, `/aid-plan`, `/aid-execute`, `/aid-monitor-pipeline`; **no skill or artifact name uses an acronym**, and **every skill name is a verb** (or KB + a verb). | FR-11, NFR-N |
 | AC-23 | `aid-tech-writer` and `aid-developer` remain separate agents; the orchestrator sub-agent is retired. Reviewer specialization is settled in a later phase (open question, FR-13). | FR-13 |
 | AC-24 | The release notes carry an **old -> new table** for every retired slash name. | M1 |
 | AC-25 | AID's engineering rules hold: one source rendered for all five tools, byte-identical bash/PowerShell output, the tracking discipline, no work ids in the KB, and **all CI green on Linux and Windows**. | Constraints |
@@ -780,7 +782,7 @@ or in plain words (*"create an API endpoint for orders"*); both reach the same s
 rules. The rules for each kind of thing (what to ask, what to check, which tests) live in **one
 catalog**, which the agent also uses to understand plain requests (FR-4). Skills that only wrote KB
 documents (architecture, stack, testing strategy, CI/CD, roadmap, backlog, MVP) and `/aid-housekeep`
-fold into KB management (Feature 004); `/aid-triage` folds into the skill guide (Feature 001). The
+fold into KB management (Feature 004); `/aid-triage` folds into the skill guide (Feature 001). `/aid-config` becomes `/aid-configure`, so every skill name is a verb. The
 dashboard and chat show the new names.
 
 #### User Stories

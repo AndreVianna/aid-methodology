@@ -621,3 +621,11 @@ qa:
     suggested: '/aid-orchestrate'
     answer: '/aid-orchestrate'
     applied_to: 'Feature 001 Technical Specification (Files and layout, Components)'
+  - id: Q30
+    category: Requirements (naming)
+    impact: Low
+    state: Answered
+    context: 'Maintainer prefers verbs for skill names; only /aid-config is not a verb.'
+    suggested: 'NFR-N: every skill name is a verb or KB + verb; rename /aid-config to /aid-configure (old->new table, no alias).'
+    answer: 'Accepted as recommended.'
+    applied_to: 'REQUIREMENTS.md NFR-N, AC-22, Feature 009'
