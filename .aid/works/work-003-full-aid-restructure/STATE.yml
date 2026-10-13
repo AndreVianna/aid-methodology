@@ -613,3 +613,11 @@ qa:
     suggested: 'Wait, but put the reading in the same message as the first real question or approval (lite: the confirmation before building; full: the first brainstorm/specification question); never an extra turn just for it.'
     answer: 'Accepted as recommended.'
     applied_to: 'Feature 001 Technical Specification (Orchestration flow)'
+  - id: Q29
+    category: Specification (Feature 001)
+    impact: Medium
+    state: Answered
+    context: 'Name of the on-demand procedures skill (FR-5). Maintainer prefers a verb for skill names.'
+    suggested: '/aid-orchestrate'
+    answer: '/aid-orchestrate'
+    applied_to: 'Feature 001 Technical Specification (Files and layout, Components)'
