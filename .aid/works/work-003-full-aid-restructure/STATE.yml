@@ -530,11 +530,11 @@ qa:
   - id: Q22
     category: Scope
     impact: High
-    state: Pending
+    state: Answered
     context: '/aid-design <kind> writes seeds to .aid/design/<kind>.md -- the same artifact /aid-brainstorm writes (FR-9, Feature 003); two skills on one artifact breaks AC-20. (surfaced by /aid-define cross-reference cycle 2)'
     suggested: 'Fold seed-writing design kinds into /aid-brainstorm as profiles (Feature 003); keep /aid-design only for kept designs, or retire it.'
-    answer: --
-    applied_to: --
+    answer: 'Retire /aid-design: idea shaping per kind -> /aid-brainstorm with catalog rules; kept design -> technical part of Specification. Five actions remain.'
+    applied_to: 'REQUIREMENTS.md AC-31, AC-43, Features 003 and 009'
   - id: Q23
     category: Requirements
     impact: Medium

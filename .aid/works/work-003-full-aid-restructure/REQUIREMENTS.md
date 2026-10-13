@@ -519,7 +519,7 @@ If assumption 1 or 2 fails in a tool, transparent orchestration degrades there t
 | AC-28 | For each skill that asks the user questions, a scripted test conversation shows: one topic per question, each with its reason, a recommendation, only valid options and a free-text answer; groups of 3-5 by subject, most important first; a break offered after each group and at each change of subject; follow-ups right after the question that raised them; answered or trivial questions skipped; a skipped question recorded as open and resumable later by the same or another user. | FR-17 |
 | AC-29 | A ticket pulled in mid-work is **recorded as a work source** in `STATE.yml`; the pending questions it answers are closed, any new questions are added, and the phase advances when its conditions are met; on request, the agent **writes the work's information back** to the source; project sources are used by every work when needed without being attached. | FR-18 |
 | AC-30 | For every kind in the catalog, the typed form (`/aid-<action> <kind> ...`) and a plain-words request for the same thing reach **the same skill and the same rules**. | FR-4, FR-8 |
-| AC-31 | No skill name combines one of the six actions (create, update, design, document, test, prototype) with a kind of thing (e.g. no `/aid-create-api`); the dashboard and chat show **only current skill names**. | Scope, M1 |
+| AC-31 | No skill name combines an action (create, update, design, document, test, prototype) with a kind of thing (e.g. no `/aid-create-api`); the dashboard and chat show **only current skill names**. | Scope, M1 |
 | AC-32 | During building, the user is asked for approval **only** at the end of each delivery and at the end of the whole build (each after verification, before a PR/MR is created or updated), plus at the end of each wave **only when the user opted in** during the confirmation before building; real blockers (something the agent cannot decide or fix on its own, including a conflict with the KB) are the only other interruptions. | FR-6 |
 | AC-33 | For each task and each delivery, the work record shows verify -> simplify, and a scoped re-verify **only when** the simplification changed something; simplification runs once, and the test set before and after it is identical and passing. | FR-19 |
 | AC-34 | Running a work from start to PR/MR creates **exactly one worktree and one branch** for it; no skill or script creates a per-delivery branch or merges anything. | FR-6 |
@@ -531,6 +531,7 @@ If assumption 1 or 2 fails in a tool, transparent orchestration degrades there t
 | AC-40 | The question protocol is run by the main conversation; the interviewer sub-agent no longer exists. | FR-13, FR-17 |
 | AC-41 | The dashboard and chat read the work's state from the new `STATE.yml` layout (FR-20) and show it correctly for a work at each phase. | FR-20, Scope |
 | AC-42 | At each required building milestone the approval asks whether to create or update the PR/MR; on yes, the work is handed to `/aid-monitor-pipeline`, which alone creates or updates it, while building continues; on no, no PR/MR is touched. | FR-6, FR-7, FR-20 |
+| AC-43 | No `/aid-design` skill exists; a request to design a kind of thing (e.g. "design the orders API") reaches `/aid-brainstorm` with that kind's catalog rules, and only `/aid-brainstorm` writes idea drafts under `.aid/design/`. | Scope, FR-9 |
 
 ### Skills, naming and constraints
 
@@ -621,11 +622,11 @@ Improves how AID talks with the user and how skills move through their states. Q
 
 - **Priority:** Must
 - **Requirements:** §5 FR-1, FR-9, FR-11
-- **Criteria:** AC-17
+- **Criteria:** AC-17, AC-43
 
 #### Description
 
-`/aid-brainstorm` shapes an idea with the user, across sessions if needed; a ticket or other external source can feed it, as it can any phase (FR-18). The shaped idea lives in `.aid/design/` and is deleted once its requirements are approved. Absorbs today's describe step.
+`/aid-brainstorm` shapes an idea with the user, across sessions if needed -- also for a specific kind of thing (an API, a UI, a data model, ...), using the catalog's rules for that kind, which replaces today's `/aid-design-*` skills; a ticket or other external source can feed it, as it can any phase (FR-18). The shaped idea lives in `.aid/design/` and is deleted once its requirements are approved. Absorbs today's describe step.
 
 #### User Stories
 
@@ -737,8 +738,10 @@ Improves how AID talks with the user and how skills move through their states. Q
 
 Today AID has a separate skill for every pair of action and kind of thing (`/aid-create-api`,
 `/aid-update-ui`, `/aid-design-data-model`, ...) -- 78 near-identical names. They become **one skill
-per action**: `/aid-create`, `/aid-update`, `/aid-design`, `/aid-document`, `/aid-test`,
-`/aid-prototype`. The kind of thing is given as an argument (`/aid-create api endpoint for orders`)
+per action**: `/aid-create`, `/aid-update`, `/aid-document`, `/aid-test`, `/aid-prototype`.
+`/aid-design` retires: shaping an idea for a kind of thing is `/aid-brainstorm`'s job (using the
+catalog's rules for that kind, Feature 003), and the design that is kept -- how it will be built --
+is the technical part of Specification (Feature 005). The kind of thing is given as an argument (`/aid-create api endpoint for orders`)
 or in plain words (*"create an API endpoint for orders"*); both reach the same skill and the same
 rules. The rules for each kind of thing (what to ask, what to check, which tests) live in **one
 catalog**, which the agent also uses to understand plain requests (FR-4). Skills that only wrote KB
