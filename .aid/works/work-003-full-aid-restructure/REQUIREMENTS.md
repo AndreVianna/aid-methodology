@@ -221,6 +221,19 @@ task. The orchestrator **builds the KB organically from that**, and **keeps upda
 construction of the initial features**: each fact (stack, conventions, architecture, decisions)
 enters the KB when it is actually decided or built, not guessed up front.
 
+### FR-11 Phase skill names
+
+Plain, familiar names -- no invented verbs, no acronyms (NFR-N):
+
+| Phase | Skill |
+|---|---|
+| Preparation (builds the KB) | `/aid-discover` |
+| Ideation | `/aid-brainstorm` |
+| Specification | `/aid-specify` *(M2)* |
+| Planning | `/aid-plan` *(M2)* |
+| Building (execute and test) | `/aid-execute` *(M2)* |
+| CI (the pull-request phase) | `/aid-monitor-pipeline` |
+
 ## 6. Non-Functional Requirements
 
 - **NFR-N (naming).** No acronyms in artifact or skill names: names say plainly what the thing is.
@@ -243,3 +256,5 @@ enters the KB when it is actually decided or built, not guessed up front.
 
 - **M1 -- Old slash names.** Skills that are retired take their slash names with them (clean break in
   the next major version); the release notes carry an old -> new table.
+- **M2 -- Remaining phase skill names.** Specification, Planning and Building keep today's familiar
+  names: `/aid-specify`, `/aid-plan`, `/aid-execute`.
