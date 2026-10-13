@@ -20,10 +20,10 @@ only suggests a skill for the user to invoke.)
 and guides it from there:
 
 - *Rich input* -- e.g. "I want to work on Jira ticket XYZ", where the ticket already carries enough
-  to generate the full PRD and break it into tasks: the orchestrator produces them, presents the
+  to generate the full requirements and break them into tasks: the orchestrator produces them, presents the
   result to the user in a digestible way, and on the user's approval the process moves to Building.
 - *Thin input* -- the user has only an idea: the orchestrator discusses more topics, asks more
-  questions, proposes a PRD, discusses it, proposes a task breakdown, executes part of it, reviews
+  questions, proposes the requirements, discusses them, proposes a task breakdown, executes part of it, reviews
   with the user, and so on.
 
 All of it runs as one process in which the user deals with the information they can, but stays in
@@ -33,7 +33,7 @@ control through the final approvals.
 orchestrator (and maintainers) need a clean, unambiguous set to route to. The user never *needs* to
 know them; power users can still invoke a skill directly.
 
-**Digestible review.** Digestible means **one topic at a time**. A PRD may hold several sections of
+**Digestible review.** Digestible means **one topic at a time**. A requirements document may hold several sections of
 related, interdependent items, all crucial to the task -- too much to absorb and decide at once.
 Humans need to focus on one decision item or topic at a time. At the same time, many disconnected
 decisions in rapid sequence are overwhelming, confusing and tiresome. So:
