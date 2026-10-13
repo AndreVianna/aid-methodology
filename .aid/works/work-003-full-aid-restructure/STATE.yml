@@ -313,7 +313,11 @@ review_history:
   - date: '2026-10-13'
     event: 'Cross-reference cycle 7'
     outcome: 'Grade C (2 MEDIUM, rows 16-17); rows 1-15 confirmed Fixed'
-    notes: 'Approvals reworded to before the push they control; confirmation before building owned by /aid-execute (M12, to confirm)'
+    notes: 'Approvals reworded to before the push they control; confirmation before building owned by /aid-execute (M12, since confirmed)'
+  - date: '2026-10-13'
+    event: 'Cross-reference cycle 8'
+    outcome: 'Grade C+ (1 MEDIUM, row 18); rows 1-17 confirmed Fixed'
+    notes: 'Row 18 (Feature 002 description wording) fixed by the orchestrator'
 
 # [A] written by the orchestrator on the work's active branch (single
 #     writer). Append-only audit trail of phase transitions and gate
