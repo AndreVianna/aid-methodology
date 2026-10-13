@@ -467,7 +467,7 @@ Improves how AID talks with the user and how skills move through their states. Q
 
 *(pending -- added by `/aid-specify`)*
 
-### Feature 003 — Improved Work Definition Process
+### Feature 003 — Shape an Idea or Ticket into a Clear Work Definition
 
 - **Priority:** Must
 - **Requirements:** §5 FR-1, FR-9, FR-11
@@ -485,7 +485,7 @@ Improves how AID talks with the user and how skills move through their states. Q
 
 *(pending -- added by `/aid-specify`)*
 
-### Feature 004 — Simplified KB Management with Auto-Generated/Updated HTML Visualization
+### Feature 004 — Self-Maintaining KB with an Always-Current Web View
 
 - **Priority:** Must
 - **Requirements:** §5 FR-2, FR-10, FR-14, FR-15
@@ -493,7 +493,7 @@ Improves how AID talks with the user and how skills move through their states. Q
 
 #### Description
 
-`/aid-kb-build`, `/aid-kb-query`, `/aid-kb-update` and `/aid-kb-show`, run by the agent's own judgment; summarize is absorbed. In a new project the KB grows as things are decided and built. Roadmap, backlog and MVP become ordinary KB documents. Before analysis-heavy tasks the agent checks the effort level and recommends a higher one when needed. The HTML view (`kb.html`) is generated when the KB is built and refreshed whenever it is updated.
+`/aid-kb-build`, `/aid-kb-query`, `/aid-kb-update` and `/aid-kb-show`, run by the agent's own judgment; summarize is absorbed. In a new project the KB grows as things are decided and built. Roadmap, backlog and MVP become ordinary KB documents. Before analysis-heavy tasks the agent checks the effort level and recommends a higher one when needed. KB management is simplified: the HTML view (`kb.html`) is generated automatically when the KB is built and refreshed whenever it is updated.
 
 #### User Stories
 
@@ -504,7 +504,7 @@ Improves how AID talks with the user and how skills move through their states. Q
 
 *(pending -- added by `/aid-specify`)*
 
-### Feature 005 — Better Specification Including Business and Technical Information About the Work
+### Feature 005 — Specification with Both Business and Technical Detail
 
 - **Priority:** Must
 - **Requirements:** §5 FR-1, FR-3, FR-11; NFR-N
@@ -522,7 +522,7 @@ Improves how AID talks with the user and how skills move through their states. Q
 
 *(pending -- added by `/aid-specify`)*
 
-### Feature 006 — More Complete Planning with Grouping of Tasks into Deliveries and Waves, Respecting the Task Dependency Tree
+### Feature 006 — Planning by Deliveries and Waves That Follow Task Dependencies
 
 - **Priority:** Must
 - **Requirements:** §5 FR-1, FR-11, FR-12
@@ -541,7 +541,7 @@ Improves how AID talks with the user and how skills move through their states. Q
 
 *(pending -- added by `/aid-specify`)*
 
-### Feature 007 — Streamlined Building Process with Less User Intervention Until Required Milestones, Including Verification and Simplification Passes
+### Feature 007 — Hands-Off Building with Built-In Verification and Simplification
 
 - **Priority:** Must
 - **Requirements:** §5 FR-1, FR-11
@@ -559,7 +559,7 @@ Improves how AID talks with the user and how skills move through their states. Q
 
 *(pending -- added by `/aid-specify`)*
 
-### Feature 008 — Integration and Monitoring of a CI/CD Process to React to Reviews and Pipeline Failures
+### Feature 008 — Pull Requests Kept on Track Through Reviews and Pipeline Failures
 
 - **Priority:** Must
 - **Requirements:** §5 FR-7, FR-11, FR-16
@@ -567,7 +567,7 @@ Improves how AID talks with the user and how skills move through their states. Q
 
 #### Description
 
-`/aid-monitor-pipeline` opens a PR/MR only on the user's instruction and takes it to a mergeable state: review comments, a green pipeline, hardening, security and quality reviews -- without ever merging. When GitHub or GitLab cannot be reached, the agent first helps the user connect. Runs only when the project has a pipeline. It integrates with the project's CI/CD process and reacts to reviews and to pipeline failures.
+`/aid-monitor-pipeline` opens a PR/MR only on the user's instruction and takes it to a mergeable state: review comments, a green pipeline, hardening, security and quality reviews -- without ever merging. When GitHub or GitLab cannot be reached, the agent first helps the user connect. Runs only when the project has a pipeline. It integrates with and monitors the project's CI/CD process, reacting to reviews and to pipeline failures.
 
 #### User Stories
 
