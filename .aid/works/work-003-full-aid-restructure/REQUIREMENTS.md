@@ -148,10 +148,10 @@ from the KB. The user does not trigger them.
 
 | Operation | Purpose | Absorbs today's |
 |---|---|---|
-| Build KB | Create the KB (Preparation phase) | `/aid-discover` |
-| Query KB | Answer project questions from the KB | `/aid-ask` |
-| Update KB | Keep the KB current as the project changes | `/aid-update-kb` |
-| Visualize KB | Expose the HTML view produced during Build and refreshed during Update | `/aid-summarize` |
+| Build KB (`/aid-kb-build`) | Create the KB (Preparation phase) | `/aid-discover` |
+| Query KB (`/aid-kb-query`) | Answer project questions from the KB | `/aid-ask` |
+| Update KB (`/aid-kb-update`) | Keep the KB current as the project changes | `/aid-update-kb` |
+| Visualize KB (`/aid-kb-show`) | Give a link to open the HTML view (`kb.html`) produced during Build and refreshed during Update | `/aid-summarize` |
 
 Summarize is no longer a separate skill: it is absorbed by Build KB and Update KB.
 
@@ -253,7 +253,7 @@ Plain, familiar names -- no invented verbs, no acronyms (NFR-N):
 
 | Phase | Skill |
 |---|---|
-| Preparation (builds the KB) | `/aid-discover` |
+| Preparation (builds the KB) | `/aid-kb-build` |
 | Definition | `/aid-brainstorm` (when discussing; an external ticket is digested in this phase too) |
 | Specification | `/aid-specify` *(M2)* |
 | Planning | `/aid-plan` *(M2)* |
@@ -307,7 +307,8 @@ agent first tries to help the user establish the connection, and only gives up i
 ## 6. Non-Functional Requirements
 
 - **NFR-N (naming).** No acronyms in artifact or skill names: names say plainly what the thing is.
-  The Specification phase produces `REQUIREMENTS.md` (not a "PRD" file).
+  The Specification phase produces `REQUIREMENTS.md` (not a "PRD" file). Accepted exception: **KB**,
+  an established term in AID (`/aid-kb-build`, `/aid-kb-query`, `/aid-kb-update`, `/aid-kb-show`).
 
 - **NFR-Q (how questions are asked).** Every question put to the user carries a
   **recommendation**. More than one option is offered only when the options are equally valid or
@@ -385,7 +386,7 @@ If assumption 1 or 2 fails in a tool, transparent orchestration degrades there t
 |---|---|---|
 | AC-20 | Each skill has **one clear job** and no two skills overlap; skills that hold no logic of their own (pure wrappers) are gone, their variations kept as data. **No fixed skill count**: the final number is set by evaluating whether the agents solve developers' problems efficiently. | Scope, Problem 3 |
 | AC-21 | **Every** AID skill can be run by slash command in all five tools, and the agent can also run it on its own. | FR-8 |
-| AC-22 | Phase skills are named `/aid-discover`, `/aid-brainstorm`, `/aid-specify`, `/aid-plan`, `/aid-execute`, `/aid-monitor-pipeline`; **no skill or artifact name uses an acronym**. | FR-11, NFR-N |
+| AC-22 | Phase skills are named `/aid-kb-build`, `/aid-brainstorm`, `/aid-specify`, `/aid-plan`, `/aid-execute`, `/aid-monitor-pipeline`; **no skill or artifact name uses an acronym**. | FR-11, NFR-N |
 | AC-23 | `aid-tech-writer` and `aid-developer` remain separate agents; the orchestrator and interviewer sub-agents are retired. Reviewer specialization is settled in a later phase (open question, FR-13). | FR-13 |
 | AC-24 | The release notes carry an **old -> new table** for every retired slash name. | M1 |
 | AC-25 | AID's engineering rules hold: one source rendered for all five tools, byte-identical bash/PowerShell output, the tracking discipline, no work ids in the KB, and **all CI green on Linux and Windows**. | Constraints |
@@ -410,8 +411,9 @@ without blocking the others.
 ## Minor decisions taken by the AI (to confirm in one batch at the end)
 
 - **M1 -- Old slash names.** Skills that are retired take their slash names with them (clean break in
-  the next major version); the release notes carry an old -> new table.
+  the next major version); the release notes carry an old -> new table. *(Confirmed by the maintainer.)*
 - **M2 -- Remaining phase skill names.** Specification, Planning and Building keep today's familiar
-  names: `/aid-specify`, `/aid-plan`, `/aid-execute`.
-- **M3 -- Knowledge Base operation names (no acronyms).** Build = `/aid-discover`, Query = `/aid-ask`,
-  Update = `/aid-update-knowledge` (was `/aid-update-kb`), Visualize = `/aid-view-knowledge`.
+  names: `/aid-specify`, `/aid-plan`, `/aid-execute`. *(Confirmed by the maintainer.)*
+- **M3 -- Knowledge Base operation names.** *(Set by the maintainer.)* `/aid-kb-build` (replaces
+  `/aid-discover` as the Preparation skill -- v4 is a breaking release), `/aid-kb-query`,
+  `/aid-kb-update`, `/aid-kb-show` (gives a link to open `kb.html`).
