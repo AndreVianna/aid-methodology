@@ -146,17 +146,18 @@ uses a repository and a pipeline.
 
 The KB is managed through four operations, **always handled by the orchestrator**: it identifies
 when the KB should be updated, and when a piece of information about the project should be queried
-from the KB. The user never *needs* to trigger them (they stay invocable, FR-8).
+from the KB. The user never needs to trigger them (FR-8).
 
 | Operation | Purpose | Absorbs today's |
 |---|---|---|
 | Build KB (`/aid-kb-build`) | Create the KB (Preparation phase) | `/aid-discover` |
 | Query KB (`/aid-kb-query`) | Answer project questions from the KB | `/aid-ask` |
 | Update KB (`/aid-kb-update`) | Keep the KB current as the project changes | `/aid-update-kb` |
-| Visualize KB (`/aid-kb-show`) | Give a link to open the HTML view (`kb.html`) produced during Build and refreshed during Update | `/aid-summarize` |
+| Visualize KB (`/aid-kb-show`) | Only exposes the existing HTML view (`kb.html`): gives a link to open it. It builds nothing. | (new) |
 
-Summarize is no longer a separate skill: generating the HTML view moves into Build KB and Update KB, and
-`/aid-kb-show` opens it (old -> new: `/aid-summarize` -> `/aid-kb-show`).
+Summarize is no longer a separate skill: building the HTML view (what `/aid-summarize` did) is absorbed
+by Build KB and Update KB, which generate and refresh `kb.html` automatically. In the old -> new table,
+`/aid-summarize` maps to "automatic in `/aid-kb-build` and `/aid-kb-update`", not to `/aid-kb-show`.
 
 ### FR-3 What a feature is
 
@@ -267,6 +268,8 @@ The orchestrator does not map phrasings; it interprets **meaning**, the way a co
 
 ### FR-8 How skills are invoked
 
+- **The user never needs to run any skill**: the agent starts the right one from a plain request. But
+  every skill stays available to a user who wants to run it.
 - **Every AID skill stays invocable by slash command** -- that is part of the host tool's behavior,
   and AID does not change it. There is no hidden/internal split: all skills are always available.
 - **The agent also starts and follows skills on its own**, behind the scenes -- equally a native
@@ -334,12 +337,13 @@ flow (brainstorm, then update the KB), with no dedicated skills (today's six
 "work on the next backlog item" or "what's on the roadmap?"; teams that prefer their tracker can
 simply not use them.
 
-### FR-15 Effort-level check before analysis-heavy tasks
+### FR-15 Effort-level check before Specification
 
 Interpreting intent and doing analysis well depend on the model's reasoning effort level. In the
 maintainer's tests, analysis-heavy tasks (e.g. discovery and specification) run below **high** effort
-give sub-optimal results, up to completely wrong answers. Before such a critical task the agent
-checks the current effort level and, when it is not enough, recommends a better one to the user.
+give sub-optimal results, up to completely wrong answers. The agent checks the current effort level
+**once the work has been captured (after Definition) and before Specification starts**, and, when it
+is below high, recommends a higher one to the user. Building the KB carries no effort check.
 
 ### FR-16 Help establish unreachable connections
 
@@ -489,7 +493,7 @@ If assumption 1 or 2 fails in a tool, transparent orchestration degrades there t
 | AC-9 | Reviews come **one topic at a time**, in logical chunks, most important first; trivial decisions are taken by the AI and confirmed **in one batch at the end**. | Objective (digestible review) |
 | AC-10 | `full`: the user confirms every document. `lite`: exactly one approval before building. Every depth: a final approval of the result **before the PR/MR**. | FR-6 |
 | AC-11 | **Nothing in AID ever merges**: no skill or script merges a branch or a PR/MR, and a PR/MR is opened only on the user's instruction. | FR-6, FR-7 |
-| AC-12 | Before `/aid-kb-build`, `/aid-specify` and any task the playbook marks analysis-heavy, the agent checks the effort level and **recommends a higher one** when it is below high. | FR-15 |
+| AC-12 | After Definition and before Specification starts, the agent checks the effort level and **recommends a higher one** when it is below high; no effort check runs before building the KB. | FR-15 |
 | AC-13 | When GitHub/GitLab cannot be reached, the agent **offers to help establish the connection** before stopping. | FR-16 |
 
 ### Phases and documents
@@ -548,18 +552,17 @@ test suite (NFR-T).
 - **M3 -- Knowledge Base operation names.** *(Set by the maintainer.)* `/aid-kb-build` (replaces
   `/aid-discover` as the Preparation skill -- v4 is a breaking release), `/aid-kb-query`,
   `/aid-kb-update`, `/aid-kb-show` (gives a link to open `kb.html`).
-- **M4 -- Work-folder setting.** Values `push` / `keep-local` / `delete`; default `keep-local` (clean
-  PRs, nothing lost on the user's machine). *(To confirm.)*
+- **M4 -- Work-folder setting.** Values `push` / `keep-local` / `delete`; default `push`. *(Set by the maintainer.)*
 - **M5 -- Idea draft deletion.** When an idea draft exists, it is deleted at the first approval that
-  covers its requirements. *(To confirm.)*
+  covers its requirements. *(Confirmed by the maintainer.)*
 - **M6 -- Pause cadence.** A break is offered after each group of 3-5 questions and at each change of
   subject (FR-17). *(Set by the maintainer.)*
 - **M7 -- Pipeline retry limit.** When the same pipeline failure survives 3 correction attempts, the
-  agent stops and asks (FR-7). *(To confirm.)*
+  agent stops and asks (FR-7). *(Confirmed by the maintainer.)*
 - **M8 -- Feature names 001, 002, 009.** "Ask for Work in Plain Language", "Clear, Step-by-Step
-  Decisions", "One Obvious Skill for Each Need". *(To confirm.)*
+  Decisions", "One Obvious Skill for Each Need". *(Confirmed by the maintainer.)*
 - **M9 -- Other agents.** Architect, researcher, operator and clerk keep their roles in this work (§4).
-  *(To confirm.)*
+  *(Confirmed by the maintainer.)*
 
 ## 11. Features
 
@@ -626,12 +629,12 @@ Improves how AID talks with the user and how skills move through their states. Q
 ### Feature 004 — Self-Maintaining KB with an Always-Current Web View
 
 - **Priority:** Must
-- **Requirements:** §5 FR-2, FR-10, FR-14, FR-15
-- **Criteria:** AC-12, AC-15, AC-18, AC-39
+- **Requirements:** §5 FR-2, FR-10, FR-14
+- **Criteria:** AC-15, AC-18, AC-39
 
 #### Description
 
-`/aid-kb-build`, `/aid-kb-query`, `/aid-kb-update` and `/aid-kb-show`, run by the agent's own judgment; summarize, `/aid-housekeep` and the skills that only wrote KB documents (architecture, stack, testing strategy, CI/CD, roadmap, backlog, MVP) are absorbed. In a new project the KB grows as things are decided and built. Roadmap, backlog and MVP become ordinary KB documents. Before analysis-heavy tasks the agent checks the effort level and recommends a higher one when needed. KB management is simplified: the HTML view (`kb.html`) is generated automatically when the KB is built and refreshed whenever it is updated.
+`/aid-kb-build`, `/aid-kb-query`, `/aid-kb-update` and `/aid-kb-show`, run by the agent's own judgment; summarize, `/aid-housekeep` and the skills that only wrote KB documents (architecture, stack, testing strategy, CI/CD, roadmap, backlog, MVP) are absorbed. In a new project the KB grows as things are decided and built. Roadmap, backlog and MVP become ordinary KB documents. KB management is simplified: the HTML view (`kb.html`) is generated automatically when the KB is built and refreshed whenever it is updated.
 
 #### User Stories
 
@@ -645,12 +648,12 @@ Improves how AID talks with the user and how skills move through their states. Q
 ### Feature 005 — Specification with Both Business and Technical Detail
 
 - **Priority:** Must
-- **Requirements:** §5 FR-1, FR-3, FR-11; §6 NFR-N
-- **Criteria:** AC-16
+- **Requirements:** §5 FR-1, FR-3, FR-11, FR-15; §6 NFR-N
+- **Criteria:** AC-12, AC-16
 
 #### Description
 
-`/aid-specify` (today's define and specify merged) produces `REQUIREMENTS.md` made of requirements with acceptance criteria. It splits the work into features only when it delivers several user-visible capabilities. The document carries both the business view of the work (what and why) and its technical view (how).
+`/aid-specify` (today's define and specify merged) produces `REQUIREMENTS.md` made of requirements with acceptance criteria. It splits the work into features only when it delivers several user-visible capabilities. The document carries both the business view of the work (what and why) and its technical view (how). Before it starts, the agent checks the effort level and recommends a higher one when it is below high.
 
 #### User Stories
 
