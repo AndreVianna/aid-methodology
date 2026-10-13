@@ -203,7 +203,7 @@ The orchestrator does not map phrasings; it interprets **meaning**, the way a co
 | `fast` | **One approval before Building starts**, plus the final result. |
 | `direct` | The final result. |
 
-- **Always an approval at the end**, on the final result, at every depth.
+- **Always an approval at the end**, on the final result, at every depth -- **before the PR/MR** is opened.
 - **AID never merges anything.** The furthest it goes is pushing to the work's own branch; the merge
   is always a human act.
 
@@ -344,6 +344,17 @@ If assumption 1 or 2 fails in a tool, transparent orchestration degrades there t
 | AC-5 | During a work, a decision that conflicts with the KB is **raised to the user**, never resolved silently. | FR-4 |
 | AC-6 | `rules.md` has an orchestration section of **at most 20 lines** plus a skill guide covering **every** AID skill (what it is for, when to use it); there is no front-door skill and no orchestrator sub-agent. | FR-5 |
 | AC-7 | A ticket with objective, users, scope, acceptance criteria and constraints goes straight to requirements + plan with **one approval** before building (`fast`); a bare idea starts brainstorming (`full`). | Objective, FR-1 |
+
+### Conversation and control
+
+| # | Check | Covers |
+|---|---|---|
+| AC-8 | Every question to the user carries **one recommendation** and an **importance label**; several options only for real forks, never a bad option, and a free-form answer is always possible. | NFR-Q |
+| AC-9 | Reviews come **one topic at a time**, in logical chunks, most important first; trivial decisions are taken by the AI and confirmed **in one batch at the end**. | Objective (digestible review) |
+| AC-10 | `full`: the user confirms every document. `fast`: exactly one approval before building. Every depth: a final approval of the result **before the PR/MR**. | FR-6 |
+| AC-11 | **Nothing in AID ever merges**: no skill or script merges a branch or a PR/MR, and a PR/MR is opened only on the user's instruction. | FR-6, FR-7 |
+| AC-12 | Before discovery or specification, the agent checks the effort level and **recommends a higher one** when it is below high. | FR-15 |
+| AC-13 | When GitHub/GitLab cannot be reached, the agent **offers to help establish the connection** before stopping. | FR-16 |
 
 ## 10. Priority
 
