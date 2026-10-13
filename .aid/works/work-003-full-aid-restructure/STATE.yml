@@ -629,3 +629,11 @@ qa:
     suggested: 'NFR-N: every skill name is a verb or KB + verb; rename /aid-config to /aid-configure (old->new table, no alias).'
     answer: 'Accepted as recommended.'
     applied_to: 'REQUIREMENTS.md NFR-N, AC-22, Feature 009'
+  - id: Q31
+    category: Specification (Feature 001)
+    impact: Medium
+    state: Answered
+    context: 'Replace the single ticket_ref links (work, feature, delivery, task) with one sources list per work (FR-18).'
+    suggested: 'One sources list in the work STATE.yml: ref, kind, added + phase, effect (questions answered/raised), written_back (when, files); existing ticket_ref values migrated automatically.'
+    answer: 'Accepted as recommended.'
+    applied_to: 'Feature 001 Technical Specification (External sources, Migration)'
