@@ -92,7 +92,7 @@ corrected by FR-5):
 
 - The host agent is the orchestrator, guided by `rules.md` (short orchestration section + skill
   guide) and an on-demand playbook skill (FR-5).
-- The skill set shrinks from 112 to about 20: six phase skills (Preparation/KB build, Ideation,
+- The skill set shrinks from 112 to about 20: six phase skills (Preparation/KB build, Definition,
   Specification, Planning, Building, CI), setup skills (config, connectors, chat), and internal
   helpers (KB query/update/view, research, prototype, review, test, ticket, release, monitor).
 - The 68 skills that hold no logic of their own (34 generated doorways, 13 kind-siblings, 21
@@ -232,7 +232,7 @@ The orchestrator does not map phrasings; it interprets **meaning**, the way a co
 - **The agent also starts and follows skills on its own**, behind the scenes -- equally a native
   capability of the host tools. This is how the orchestration of FR-5 works in practice.
 
-### FR-9 Where the Ideation seed lives
+### FR-9 Where the Definition seed lives
 
 The seed (the shaped idea: framing, candidate directions, open questions) lives in
 `.aid/design/<name>.md` while the idea is being shaped, and is **deleted once its requirements is approved**;
