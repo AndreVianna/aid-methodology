@@ -550,8 +550,8 @@ qa:
   - id: Q24
     category: Requirements
     impact: High
-    state: Pending
+    state: Answered
     context: 'CI starting during building conflicts with sequential hand-offs (FR-20), with the milestone-only interruptions (AC-32), and could push unapproved commits from the single branch (surfaced by /aid-define cross-reference cycle 3)'
     suggested: 'At a milestone the PR create/update is a quick call-and-return hand-off; reviews and pipeline failures are collected and handled at the next milestone; full CI monitoring starts after the whole build is approved.'
-    answer: --
-    applied_to: --
+    answer: 'No parallel CI during building: quick call-and-return hand-off at milestones; reviews/failures collected for the next milestone; full monitoring after the whole build is approved.'
+    applied_to: 'REQUIREMENTS.md FR-6, AC-42, Features 007 and 008'
