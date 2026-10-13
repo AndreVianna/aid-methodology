@@ -239,12 +239,17 @@ The orchestrator does not map phrasings; it interprets **meaning**, the way a co
   `main` or `master`). Until then the agent keeps reacting to reviews and pipeline failures; after
   the merge, deploying and monitoring production are separate works.
 - **Only the real changes are pushed.** What the work pushes is exactly what will land in the parent
-  branch: the PR/MR holds only the proper changes. Work folders and other AID working files are
-  never pushed (no pushing them and then adding a commit to clean them out).
+  branch: the PR/MR holds only the proper changes. AID's temporary files are never pushed, and
+  nothing is pushed only to be removed later by a clean-up commit.
+- **What happens to a work folder is a project setting** (`.aid/settings.yml`):
+  - **push** -- the work folder is part of the work's changes and lands in the parent branch;
+  - **keep local** -- preserved on the local machine only, never pushed;
+  - **delete** -- removed at clean-up, e.g. when the team keeps its source of truth in Jira or
+    another tool and asks the agent to update it (FR-18) before the work closes.
 - **Closing a work.** Marking the work **done** is the minimum action of this phase -- it means there is
   nothing left to monitor -- and it applies even when the user uses no git or repository. After the
   merge, clean-up is **local only**: remove the temporary folders and files, delete the local branch,
-  and exit and delete the worktree.
+  and exit and delete the worktree -- handling the work folder as the project setting says.
 - **AID never deletes a remote branch.** That is part of the merge process or reserved to the user.
 - **Operational activities are works of their own, not phases:** preparing a release, publishing,
   deploying, and starting monitoring are each an individual work, started like any other request
@@ -369,7 +374,9 @@ work **at any moment**, not only at its start. There are two kinds:
 - When the user asks the agent to pull in a source, its information becomes part of the work: it is
   **analysed and applied** -- it may move the work to the next phase, answer pending questions, or
   raise new ones (asked through the question protocol, FR-17).
-- **Two-way:** on the user's request, the agent also updates the source with information from the work.
+- **Two-way:** on the user's request, the agent also updates the source with information from the work,
+  and attaches the files the user picks (usually `REQUIREMENTS.md`) -- for teams whose source of truth
+  is the external tool.
 
 ### FR-19 Verification and simplification
 
@@ -469,8 +476,8 @@ If assumption 1 or 2 fails in a tool, transparent orchestration degrades there t
 | AC-32 | During building, the user is asked for approval **only** at the end of each delivery and at the end of the whole build (each after verification, before a PR/MR is created or updated), plus at the end of each wave **only when the user opted in** during the confirmation before building; real blockers (something the agent cannot decide or fix on its own, including a conflict with the KB) are the only other interruptions. | FR-6 |
 | AC-33 | For each task and each delivery, the work record shows verify -> simplify, and a scoped re-verify **only when** the simplification changed something; simplification runs once, and the test set before and after it is identical and passing. | FR-19 |
 | AC-34 | Running a work from start to PR/MR creates **exactly one worktree and one branch** for it; no skill or script creates a per-delivery branch or merges anything. | FR-6 |
-| AC-35 | The PR/MR diff contains **only changes meant for the parent branch**: no file under `.aid/works/` or `.aid/.temp/`, and no commit that adds and later removes such files. | FR-7 |
-| AC-36 | After a human merges the PR/MR, the work is marked **done** and clean-up is local only (temporary files, local branch, worktree); **no remote branch is deleted** by AID. A work in a project with no repository is still marked done at the end. | FR-7 |
+| AC-35 | The PR/MR diff contains **only changes meant for the parent branch**: no file under `.aid/.temp/`, files under `.aid/works/` only when the project setting is **push**, and no commit that adds and later removes files. | FR-7 |
+| AC-36 | After a human merges the PR/MR, the work is marked **done** and clean-up is local only (temporary files, local branch, worktree); **no remote branch is deleted** by AID. The work folder is pushed, kept locally, or deleted exactly as the project setting says. A work in a project with no repository is still marked done at the end. | FR-7 |
 
 ### Skills, naming and constraints
 
@@ -512,6 +519,12 @@ and AC-25 (engineering rules, CI green).
 - **M3 -- Knowledge Base operation names.** *(Set by the maintainer.)* `/aid-kb-build` (replaces
   `/aid-discover` as the Preparation skill -- v4 is a breaking release), `/aid-kb-query`,
   `/aid-kb-update`, `/aid-kb-show` (gives a link to open `kb.html`).
+- **M4 -- Work-folder setting.** Values `push` / `keep-local` / `delete`; default `keep-local` (clean
+  PRs, nothing lost on the user's machine). *(To confirm.)*
+- **M5 -- Idea draft deletion.** When an idea draft exists, it is deleted at the first approval that
+  covers its requirements. *(To confirm.)*
+- **M6 -- Pause cadence.** A break is offered after each group of 3-5 questions and at each change of
+  subject (FR-17). *(Set by the maintainer.)*
 
 ## 11. Features
 
@@ -657,7 +670,7 @@ Improves how AID talks with the user and how skills move through their states. Q
 
 #### Description
 
-`/aid-monitor-pipeline` opens a PR/MR only on the user's instruction and takes it to a mergeable state: review comments, a green pipeline, hardening, security and quality reviews -- without ever merging. When GitHub or GitLab cannot be reached, the agent first helps the user connect. The PR/MR holds only the real changes -- work folders and AID working files are never pushed. After the merge the agent marks the work done and cleans up locally only (temporary files, local branch, worktree); it never deletes a remote branch. Marking the work done is the minimum of this phase, even for a project with no repository. It integrates with and monitors the project's CI/CD process, reacting to reviews and to pipeline failures until a human merges the PR/MR into its parent branch (usually `main` or `master`) -- the end of the work's CI. Deploying and monitoring production are separate works.
+`/aid-monitor-pipeline` opens a PR/MR only on the user's instruction and takes it to a mergeable state: review comments, a green pipeline, hardening, security and quality reviews -- without ever merging. When GitHub or GitLab cannot be reached, the agent first helps the user connect. The PR/MR holds only the real changes; whether the work folder is pushed, kept locally or deleted is a project setting. After the merge the agent marks the work done and cleans up locally only (temporary files, local branch, worktree); it never deletes a remote branch. Marking the work done is the minimum of this phase, even for a project with no repository. It integrates with and monitors the project's CI/CD process, reacting to reviews and to pipeline failures until a human merges the PR/MR into its parent branch (usually `main` or `master`) -- the end of the work's CI. Deploying and monitoring production are separate works.
 
 #### User Stories
 
