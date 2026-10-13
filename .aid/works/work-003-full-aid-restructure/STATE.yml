@@ -112,15 +112,15 @@ minimum_grade: A
 # [W] 'yes' | 'no' -- quoted, see NFR-2 / D-5
 user_approved: 'yes'
 # [W] Running | Paused-Awaiting-Input | Blocked | Completed | Canceled
-lifecycle: Paused-Awaiting-Input
+lifecycle: Running
 # [W] Describe | Define | Specify | Plan | Detail | Execute
-phase: Define
+phase: Specify
 # [W] aid-{skill} | none
-active_skill: aid-define
+active_skill: aid-specify
 # [W]
-updated: '2026-10-13T21:59:38Z'
+updated: '2026-10-13T22:01:58Z'
 # [W] set only when lifecycle = Paused-Awaiting-Input
-pause_reason: 'Features defined and cross-referenced (A+) -- run /aid-specify work-003 to specify the features'
+pause_reason: --
 # [W] set only when lifecycle = Blocked
 block_reason: --
 # [W] e.g. IMPEDIMENT-task-NNN.md, or the failed gate
@@ -216,7 +216,9 @@ interview:
 features:
   - id: '001'
     name: plain-language-requests
-    state: Pending
+    state: In Discussion
+    started: '2026-10-13'
+    updated: '2026-10-13'
     grade: Pending
     qa_count: 0
     sections: []
