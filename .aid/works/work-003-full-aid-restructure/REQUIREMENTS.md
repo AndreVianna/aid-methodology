@@ -97,7 +97,9 @@ corrected by FR-5):
   helpers (KB query/update/view, research, prototype, review, test, ticket, release, monitor).
 - The 68 skills that hold no logic of their own (34 generated doorways, 13 kind-siblings, 21
   `aid-design-*` copies) become data: an intent catalog crossed with artifact profiles.
-- Depth: every work runs the same six phases; `full` / `fast` / `direct` changes only how much the
+- Phases are flexible around a fixed core: Specify -> Plan -> Execute almost always happens; Definition
+  runs when the work must first be defined (discussion or an external ticket); Preparation runs once
+  plus on demand; CI only when a pipeline exists. `full` / `fast` / `direct` changes how much the
   user reviews; intent is read by meaning and validated against the KB (FR-4); depth escalates or
   de-escalates as the work evolves.
 - Agents shrink from 9 to about 7; the orchestrator and interviewer sub-agents retire (only the
@@ -124,14 +126,18 @@ corrected by FR-5):
 AID adopts the community's six phases as its phase model, replacing today's seven. Users rarely
 see phase names; the phases are the backbone the orchestrator tracks.
 
+The phases are **flexible around a fixed core**: **Specify -> Plan -> Execute** almost always happens.
+Preparation runs once (plus on-demand KB updates), Definition runs when the work first has to be
+defined, and CI runs only when the project has a pipeline.
+
 | Phase | Produces | Absorbs today's | Notes |
 |---|---|---|---|
-| Preparation | the KB | Discover | |
-| Ideation | a seed | Describe, Brainstorm | Describe and Brainstorm overlap. |
+| Preparation | the KB | Discover | Runs **once**, when the KB is created, and then **on demand** when the KB needs an update -- not a step of every work. |
+| Definition | a seed (when the problem is discussed) | Describe, Brainstorm | Digests what the work is: through `/aid-brainstorm` when the user is discussing the problem, or from an **external source** (a Jira ticket, a GitHub issue, ...). Describe and Brainstorm overlap. |
 | Specification | `REQUIREMENTS.md` | Define, Specify | The "feature" concept must be revisited: the current skill almost always proposes more features than are actually necessary, and its notion of a feature is not what a feature represents in a business model. |
 | Planning | the tasks | Plan, Detail | Deliveries and waves are only groupings of tasks; the atomic tasks and their dependencies are the most important information. |
 | Building | the outcome | Execute | Building is executing **and testing**. |
-| CI | a merge-ready PR | (new) | The pull-request phase -- see FR-7. Not deploy/monitor: those are works of their own. |
+| CI | a merge-ready PR | (new) | The pull-request phase -- see FR-7. **Only exists when the project has a pipeline.** Not deploy/monitor: those are works of their own. |
 
 ### FR-2 Knowledge Base management
 
@@ -247,7 +253,7 @@ Plain, familiar names -- no invented verbs, no acronyms (NFR-N):
 | Phase | Skill |
 |---|---|
 | Preparation (builds the KB) | `/aid-discover` |
-| Ideation | `/aid-brainstorm` |
+| Definition | `/aid-brainstorm` (when discussing; an external ticket is digested in this phase too) |
 | Specification | `/aid-specify` *(M2)* |
 | Planning | `/aid-plan` *(M2)* |
 | Building (execute and test) | `/aid-execute` *(M2)* |
@@ -355,6 +361,12 @@ If assumption 1 or 2 fails in a tool, transparent orchestration degrades there t
 | AC-11 | **Nothing in AID ever merges**: no skill or script merges a branch or a PR/MR, and a PR/MR is opened only on the user's instruction. | FR-6, FR-7 |
 | AC-12 | Before discovery or specification, the agent checks the effort level and **recommends a higher one** when it is below high. | FR-15 |
 | AC-13 | When GitHub/GitLab cannot be reached, the agent **offers to help establish the connection** before stopping. | FR-16 |
+
+### Phases and documents
+
+| # | Check | Covers |
+|---|---|---|
+| AC-14 | Phases flex around the core: every work that builds something runs **Specify -> Plan -> Execute** (Execute includes **testing**); **Definition** runs when the work must first be defined, via `/aid-brainstorm` or by digesting an external ticket (Jira, GitHub issue, ...); **Preparation** runs once when the KB is created and on demand for updates; **Monitor pipeline** runs only when a pipeline exists; release, deploy and monitoring run as **works of their own**. | FR-1, FR-7 |
 
 ## 10. Priority
 

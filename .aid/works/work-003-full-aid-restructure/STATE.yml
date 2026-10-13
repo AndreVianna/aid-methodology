@@ -118,7 +118,7 @@ phase: Describe
 # [W] aid-{skill} | none
 active_skill: aid-describe
 # [W]
-updated: '2026-10-13T03:29:51Z'
+updated: '2026-10-13T03:36:20Z'
 # [W] set only when lifecycle = Paused-Awaiting-Input
 pause_reason: --
 # [W] set only when lifecycle = Blocked
@@ -181,7 +181,7 @@ interview:
     - id: 9
       name: 'Acceptance Criteria'
       state: Partial
-      updated: '2026-10-13T03:29:51Z'
+      updated: '2026-10-13T03:36:20Z'
     - id: 10
       name: Priority
       state: Pending
