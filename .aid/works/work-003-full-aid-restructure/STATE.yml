@@ -234,10 +234,10 @@ review_history: []
 #     writer). Append-only audit trail of phase transitions and gate
 #     approvals, newest LAST (append to bottom).
 lifecycle_history:
-  - date: '2026-01-01'
+  - date: '2026-10-12'
     event: 'Work created'
     grade: --
-    notes: 'Initial scaffold by aid-config'
+    notes: 'Initial scaffold by aid-describe (FIRST-RUN)'
 
 # [A] aid-deploy only; one entry per delivery (never derived from child
 #     files; aid-deploy is the sole author):
