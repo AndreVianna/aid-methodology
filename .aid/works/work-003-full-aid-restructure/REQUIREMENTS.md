@@ -253,6 +253,14 @@ The `aid-tech-writer` agent (prose for people: docs, READMEs, release notes) sta
 `aid-developer` agent (code): clear writing is a different skill, and agents are invisible to users,
 so merging them would simplify nothing the user notices.
 
+### FR-14 Product-planning documents
+
+Roadmap, backlog and MVP stay, as **ordinary KB documents**: created and updated through the normal
+flow (brainstorm, then update the KB), with no dedicated skills (today's six
+`aid-create/update-{roadmap,backlog,mvp}` skills retire). They let the agent act on requests such as
+"work on the next backlog item" or "what's on the roadmap?"; teams that prefer their tracker can
+simply not use them.
+
 ## 6. Non-Functional Requirements
 
 - **NFR-N (naming).** No acronyms in artifact or skill names: names say plainly what the thing is.
