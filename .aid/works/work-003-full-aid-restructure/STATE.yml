@@ -144,7 +144,7 @@ gate_timestamp: --
 #   sections[].state: Pending | Complete
 interview:
   state: Approved
-  grade: Pending
+  grade: C
   sections:
     - id: 1
       name: Objective
@@ -287,6 +287,10 @@ review_history:
     event: 'Feature Decomposition'
     outcome: '9 features defined (all Must); AC-26, AC-27 added; §10 reordered'
     notes: 'Approved by the maintainer after two adjustment rounds'
+  - date: '2026-10-13'
+    event: 'Cross-reference cycle 1'
+    outcome: 'Grade C (3 MEDIUM); 18 Q&A entries pending'
+    notes: 'Below minimum A; resolving one topic at a time'
 
 # [A] written by the orchestrator on the work's active branch (single
 #     writer). Append-only audit trail of phase transitions and gate
@@ -351,4 +355,148 @@ delivery_gate:
 #     impact: High | Medium | Low | Required /
 #     state: Pending | Answered | Skipped /
 #     context / suggested / answer / applied_to
-qa: []
+qa:
+  - id: Q1
+    category: Requirements
+    impact: High
+    state: Pending
+    context: 'Where does Describe''s job go? Definition only makes a seed, but today Describe writes REQUIREMENTS.md §1-10, and FR-1 gives that file to Specification. (surfaced by /aid-define cross-reference)'
+    suggested: 'The requirements interview moves to /aid-specify (Feature 004); Definition keeps only idea-shaping and ticket digestion.'
+    answer: --
+    applied_to: --
+  - id: Q2
+    category: Requirements
+    impact: High
+    state: Pending
+    context: 'How does a ticket flow? FR-1/AC-14 put ticket digestion in Definition; Objective/AC-7 send a rich ticket straight to requirements + plan. Feature 003 owns no ticket criterion. (surfaced by /aid-define cross-reference)'
+    suggested: 'A ticket gets a light Definition digest (no seed), then goes to Specification; add a ticket-intake AC owned by Feature 003.'
+    answer: --
+    applied_to: --
+  - id: Q3
+    category: Requirements
+    impact: High
+    state: Pending
+    context: 'Do per-task DETAIL.md files survive? Planning absorbs Detail and PLAN.md is a light TODO list, but /aid-execute reads each task DETAIL.md as its brief. (surfaced by /aid-define cross-reference)'
+    suggested: 'Keep one immutable DETAIL.md per task, no per-task state file.'
+    answer: --
+    applied_to: --
+  - id: Q4
+    category: Requirements
+    impact: High
+    state: Pending
+    context: 'Feature 002 (interview revision, skill state-machine handling) has no FR and no AC covering those two parts. (surfaced by /aid-define cross-reference)'
+    suggested: 'Add an FR and an observable AC for each, owned by Feature 002.'
+    answer: --
+    applied_to: --
+  - id: Q5
+    category: Architecture
+    impact: Medium
+    state: Pending
+    context: 'One branch per work or per delivery? FR-6 says the work branch; /aid-execute uses aid/{work}-delivery-NNN branches and still mentions merge to main. (surfaced by /aid-define cross-reference)'
+    suggested: 'One branch per work; deliveries are only groupings.'
+    answer: --
+    applied_to: --
+  - id: Q6
+    category: Scope
+    impact: Medium
+    state: Pending
+    context: '§4 puts adjusting the dashboard and chat to the new layout/names in scope, but no feature or AC owns it. (surfaced by /aid-define cross-reference)'
+    suggested: 'State layout to Feature 005, skill names to Feature 009, each with an AC.'
+    answer: --
+    applied_to: --
+  - id: Q7
+    category: Scope
+    impact: Medium
+    state: Pending
+    context: 'Unclaimed skills: create/update-{architecture,stack,testing-strategy,cicd} (8), aid-triage, aid-housekeep are owned by no feature and overlap /aid-kb-update. (surfaced by /aid-define cross-reference)'
+    suggested: 'The 8 retire into /aid-kb-update (Feature 007); aid-triage into the rules.md skill guide (Feature 001); each owner writes its AC-24 rows.'
+    answer: --
+    applied_to: --
+  - id: Q8
+    category: Requirements
+    impact: Medium
+    state: Pending
+    context: 'Can AID open a PR without a pipeline? CI runs only with a pipeline, yet opening the PR is part of CI and every depth ends before a PR. (surfaced by /aid-define cross-reference)'
+    suggested: 'CI runs whenever the user asks for a PR/MR; the until-green step is skipped when there is no pipeline.'
+    answer: --
+    applied_to: --
+  - id: Q9
+    category: Requirements
+    impact: Medium
+    state: Pending
+    context: 'AC-27: do CI fixes after the final approval need re-approval, and when does the fix loop stop? (surfaced by /aid-define cross-reference)'
+    suggested: 'Summarize post-approval changes for re-approval; stop and report after 3 failed fix attempts.'
+    answer: --
+    applied_to: --
+  - id: Q10
+    category: Requirements
+    impact: Medium
+    state: Pending
+    context: 'FR-2 says the user does not trigger KB skills; FR-8/AC-21 say any skill can be invoked. (surfaced by /aid-define cross-reference)'
+    suggested: 'Reword FR-2 to: the user never needs to trigger them.'
+    answer: --
+    applied_to: --
+  - id: Q11
+    category: Requirements
+    impact: Medium
+    state: Pending
+    context: '"fast" means approval depth (FR-6) but Feature 009 calls the one-pass path "fast"; the KB has a "Lite fast path" and pipeline.path full|lite. (surfaced by /aid-define cross-reference)'
+    suggested: 'full/fast/direct mean approval depth only; reword Feature 009; retire the lite/full layout terms.'
+    answer: --
+    applied_to: --
+  - id: Q12
+    category: Requirements
+    impact: Medium
+    state: Pending
+    context: 'When is direct chosen, and what deletes the seed when requirements are never separately approved? (surfaced by /aid-define cross-reference)'
+    suggested: 'direct for bug fixes and small refactors with a defined problem; delete the seed at the first approval covering the requirements.'
+    answer: --
+    applied_to: --
+  - id: Q13
+    category: Requirements
+    impact: Medium
+    state: Pending
+    context: 'Behaviour criteria AC-1..AC-5, AC-9, AC-20 have no pinned observable; slash/self-invocation in all five tools is unconfirmed by the KB. (surfaced by /aid-define cross-reference)'
+    suggested: 'Scripted conversation probes with expected outcomes, plus a per-tool invocation probe.'
+    answer: --
+    applied_to: --
+  - id: Q14
+    category: Requirements
+    impact: Medium
+    state: Pending
+    context: 'AC-19 mixes the plan checklist (Feature 005) with roadmap/backlog/MVP (Feature 007). (surfaced by /aid-define cross-reference)'
+    suggested: 'Split: move the roadmap/backlog/MVP clause into a new AC owned by Feature 007.'
+    answer: --
+    applied_to: --
+  - id: Q15
+    category: Requirements
+    impact: Low
+    state: Pending
+    context: '/aid-summarize old->new: FR-2 table maps it to /aid-kb-show, the next line says it is absorbed by Build and Update. (surfaced by /aid-define cross-reference)'
+    suggested: '/aid-kb-show in the table; generation moves into build and update.'
+    answer: --
+    applied_to: --
+  - id: Q16
+    category: Requirements
+    impact: Low
+    state: Pending
+    context: 'MVP is a section of roadmap.md today, not a document; an MVP document name would break NFR-N. (surfaced by /aid-define cross-reference)'
+    suggested: 'Keep MVP as a roadmap section.'
+    answer: --
+    applied_to: --
+  - id: Q17
+    category: Requirements
+    impact: Low
+    state: Pending
+    context: 'AC-12 says "before discovery or specification" (closed list, retired name); FR-15 says "e.g.". (surfaced by /aid-define cross-reference)'
+    suggested: 'Before /aid-kb-build, /aid-specify and any task the playbook marks analysis-heavy.'
+    answer: --
+    applied_to: --
+  - id: Q18
+    category: Requirements
+    impact: Low
+    state: Pending
+    context: 'Tidy: §10 vs §11 requirement lists differ; §4 "internal helpers" vs FR-8 no internal split; waves derived vs held; AC-23 spans Features 001 and 002. (surfaced by /aid-define cross-reference)'
+    suggested: '§10 points at §11; "supporting skills"; PLAN.md shows derived waves; split AC-23.'
+    answer: --
+    applied_to: --
