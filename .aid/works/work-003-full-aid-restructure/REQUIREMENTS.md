@@ -602,11 +602,11 @@ test suite (NFR-T).
   *(Confirmed by the maintainer.)*
 - **M10 -- Collection at every milestone.** The read-only collection of review comments and pipeline
   results runs before every building milestone, including a review-only wave, so one rule covers all
-  milestones (FR-6). *(To confirm.)*
+  milestones (FR-6). *(Confirmed by the maintainer.)*
 - **M11 -- Coinciding approvals.** Approvals that fall at the same moment are one approval (FR-6).
-  *(To confirm.)*
+  *(Confirmed by the maintainer.)*
 - **M12 -- Confirmation before building.** `/aid-execute` opens with it (FR-6); in `full` it follows the plan
-  approval, or is the same approval when both fall at the same moment. *(To confirm.)*
+  approval, or is the same approval when both fall at the same moment. *(Confirmed by the maintainer.)*
 
 ## 11. Features
 
