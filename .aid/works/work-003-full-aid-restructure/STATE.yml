@@ -503,7 +503,7 @@ qa:
     category: Requirements
     impact: High
     state: Pending
-    context: 'Feature 007 now promises verification and simplification passes and user involvement only at required milestones; no FR or AC covers either, and "required milestones" is undefined. (raised by the feature renaming)'
+    context: 'Feature 007 promises verification and simplification passes; no FR or AC covers them (milestones now defined in FR-6 / AC-32). (raised by the feature renaming)'
     suggested: 'Define the milestones (the approvals in FR-6) and add an AC for each pass, owned by Feature 007.'
     answer: --
     applied_to: --

@@ -211,6 +211,13 @@ The orchestrator does not map phrasings; it interprets **meaning**, the way a co
 
 - **There is no depth without a confirmation before building.** Even the smallest work is confirmed before Building starts.
 - **Always an approval at the end**, on the final result, at every depth -- **before the PR/MR** is opened.
+- **Building milestones.** Building runs without the user, and stops for approval only at:
+  - **Required:** the end of **each delivery**, after verification, before creating or updating a PR/MR;
+    and the end of **the whole build**, after verification, before creating or updating a PR/MR.
+  - **Optional** (the agent asks, when building starts, whether the user wants it): the end of
+    **each wave**, after verification -- a review per wave, and/or a PR/MR update per wave.
+  - Blockers and decisions that conflict with the KB (AC-5) are still raised when they happen;
+    they are interruptions, not milestones.
 - **AID never merges anything.** The furthest it goes is pushing to the work's own branch; the merge
   is always a human act.
 
@@ -426,6 +433,7 @@ If assumption 1 or 2 fails in a tool, transparent orchestration degrades there t
 | AC-29 | A ticket pulled in mid-work is **recorded as a work source** in `STATE.yml`; the pending questions it answers are closed, any new questions are added, and the phase advances when its conditions are met; on request, the agent **writes the work's information back** to the source; project sources are used by every work when needed without being attached. | FR-18 |
 | AC-30 | For every kind in the catalog, the typed form (`/aid-<action> <kind> ...`) and a plain-words request for the same thing reach **the same skill and the same rules**. | FR-4, FR-8 |
 | AC-31 | No remaining skill name combines an action with a kind of thing; the dashboard and chat show **only current skill names**. | Scope, M1 |
+| AC-32 | During building, the user is asked for approval **only** at the end of each delivery and at the end of the whole build (each after verification, before a PR/MR is created or updated), plus at the end of each wave **only when the user opted in** when building started; blockers and KB conflicts are the only other interruptions. | FR-6 |
 
 ### Skills, naming and constraints
 
@@ -590,11 +598,11 @@ Improves how AID talks with the user and how skills move through their states. Q
 
 - **Priority:** Must
 - **Requirements:** §5 FR-1, FR-11
-- **Criteria:** AC-26
+- **Criteria:** AC-26, AC-32
 
 #### Description
 
-`/aid-execute` carries out the plan's tasks and tests them: a task is done only when its tests pass, and the result shows the test outcome. The user is involved only at the required milestones; each task also goes through verification and simplification passes.
+`/aid-execute` carries out the plan's tasks and tests them: a task is done only when its tests pass, and the result shows the test outcome. The user is involved only at the milestones (end of each delivery and of the whole build; optionally each wave); each task also goes through verification and simplification passes.
 
 #### User Stories
 
