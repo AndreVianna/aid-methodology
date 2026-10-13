@@ -200,6 +200,13 @@ The orchestrator does not map phrasings; it interprets **meaning**, the way a co
   deploying, and starting monitoring are each an individual work, started like any other request
   ("prepare release 4.0", "deploy to staging"). They act on merged history, not on a single work.
 
+### FR-8 How skills are invoked
+
+- **Every AID skill stays invocable by slash command** -- that is part of the host tool's behavior,
+  and AID does not change it. There is no hidden/internal split: all skills are always available.
+- **The agent also starts and follows skills on its own**, behind the scenes -- equally a native
+  capability of the host tools. This is how the orchestration of FR-5 works in practice.
+
 ## 6. Non-Functional Requirements
 
 - **NFR-Q (how questions are asked).** Every question put to the user carries a
@@ -214,3 +221,8 @@ The orchestrator does not map phrasings; it interprets **meaning**, the way a co
 ## 9. Acceptance Criteria
 
 ## 10. Priority
+
+## Minor decisions taken by the AI (to confirm in one batch at the end)
+
+- **M1 -- Old slash names.** Skills that are retired take their slash names with them (clean break in
+  the next major version); the release notes carry an old -> new table.
