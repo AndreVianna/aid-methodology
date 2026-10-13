@@ -80,7 +80,7 @@ These phases and their artifacts have several problems (not an exhaustive list):
 | Who | Role | What they need from this |
 |---|---|---|
 | **People who use AID through their AI coding tool** (Claude Code, Codex, Cursor, ...) -- developers, and non-technical or attention-limited people who review and approve work | Primary users | Say what they want in plain words; review one topic at a time; stay in control through the approvals |
-| **AID maintainers** | Secondary users | A small, clean skill set (about 20 instead of 112) with one clear job each |
+| **AID maintainers** | Secondary users | A clean skill set with one clear, non-overlapping job per skill |
 | **The AID maintainer (Andre Vianna)** | Decision-maker | Approves the requirements and the final result |
 
 ## 4. Scope
@@ -92,7 +92,8 @@ corrected by FR-5):
 
 - The host agent is the orchestrator, guided by `rules.md` (short orchestration section + skill
   guide) and an on-demand playbook skill (FR-5).
-- The skill set shrinks from 112 to about 20: six phase skills (Preparation/KB build, Definition,
+- The skill set shrinks substantially -- **no fixed target number**; the final count is decided after the
+  work, by whether the agents solve developers' problems efficiently. Indicative shape: phase skills (Preparation/KB build, Definition,
   Specification, Planning, Building, CI), setup skills (config, connectors, chat), and internal
   helpers (KB query/update/view, research, prototype, review, test, ticket, release, monitor).
 - The 68 skills that hold no logic of their own (34 generated doorways, 13 kind-siblings, 21
@@ -102,8 +103,8 @@ corrected by FR-5):
   plus on demand; CI only when a pipeline exists. `full` / `fast` / `direct` changes how much the
   user reviews; intent is read by meaning and validated against the KB (FR-4); depth escalates or
   de-escalates as the work evolves.
-- Agents shrink from 9 to about 7; the orchestrator and interviewer sub-agents retire (only the
-  main conversation can talk with the user).
+- The orchestrator and interviewer sub-agents retire (only the main conversation can talk with the
+  user). The rest of the agent set is an open question (see FR-13).
 - One work layout: a single `STATE.yml` per work; no delivery- or task-level state files; waves are
   derived from task dependencies.
 - The proposal's F3 (does the front door engage on every plain-language request?) is settled by
@@ -278,6 +279,11 @@ The `aid-tech-writer` agent (prose for people: docs, READMEs, release notes) sta
 `aid-developer` agent (code): clear writing is a different skill, and agents are invisible to users,
 so merging them would simplify nothing the user notices.
 
+**Open question -- reviewer specialization.** A single generic reviewer may be too broad a judge. A
+possible split is separate reviewers for **completeness**, **correctness** and **semantic
+consistency** (correlations across documents). This is still a big unknown, to be settled in a later
+phase (by experimentation), not decided here.
+
 ### FR-14 Product-planning documents
 
 Roadmap, backlog and MVP stay, as **ordinary KB documents**: created and updated through the normal
@@ -373,6 +379,16 @@ If assumption 1 or 2 fails in a tool, transparent orchestration degrades there t
 | AC-18 | In a new project, KB facts appear **as they are decided or built**, never guessed up front. | FR-10 |
 | AC-19 | `PLAN.md` is a scannable checklist (deliveries with their acceptance criteria, waves, tasks, dependencies, state); **no separate delivery documents or state files**; roadmap/backlog/MVP are ordinary KB documents with no dedicated skills. | FR-12, FR-14 |
 
+### Skills, naming and constraints
+
+| # | Check | Covers |
+|---|---|---|
+| AC-20 | Each skill has **one clear job** and no two skills overlap; skills that hold no logic of their own (pure wrappers) are gone, their variations kept as data. **No fixed skill count**: the final number is set by evaluating whether the agents solve developers' problems efficiently. | Scope, Problem 3 |
+| AC-21 | **Every** AID skill can be run by slash command in all five tools, and the agent can also run it on its own. | FR-8 |
+| AC-22 | Phase skills are named `/aid-discover`, `/aid-brainstorm`, `/aid-specify`, `/aid-plan`, `/aid-execute`, `/aid-monitor-pipeline`; **no skill or artifact name uses an acronym**. | FR-11, NFR-N |
+| AC-23 | `aid-tech-writer` and `aid-developer` remain separate agents; the orchestrator and interviewer sub-agents are retired. Reviewer specialization is settled in a later phase (open question, FR-13). | FR-13 |
+| AC-24 | The release notes carry an **old -> new table** for every retired slash name. | M1 |
+| AC-25 | AID's engineering rules hold: one source rendered for all five tools, byte-identical bash/PowerShell output, the tracking discipline, no work ids in the KB, and **all CI green on Linux and Windows**. | Constraints |
 ## 10. Priority
 
 ## Minor decisions taken by the AI (to confirm in one batch at the end)
