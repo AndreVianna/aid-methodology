@@ -118,7 +118,7 @@ phase: Describe
 # [W] aid-{skill} | none
 active_skill: aid-describe
 # [W]
-updated: '2026-10-12T23:52:13Z'
+updated: '2026-10-13T00:06:19Z'
 # [W] set only when lifecycle = Paused-Awaiting-Input
 pause_reason: --
 # [W] set only when lifecycle = Blocked
@@ -242,6 +242,11 @@ lifecycle_history:
 # [A] aid-deploy only; one entry per delivery (never derived from child
 #     files; aid-deploy is the sole author):
 #   - delivery / state / pr / kb_updated / tag / notes
+  - date: '2026-10-13'
+    event: 'Describe: skills-restructure analysis produced at the maintainer request (analysis/skills-restructure-proposal.md): 112 skills -> 20 (10 user-facing, 10 internal), 9 agents -> 7, one work layout; 12 open forks (F1-F12) for the maintainer'
+    grade: --
+    notes: 'aid-architect analysis; input to the remaining Describe interview'
+
 deploy: []
 
 # [A] flattened only; single writer: this work's active branch. Written by
