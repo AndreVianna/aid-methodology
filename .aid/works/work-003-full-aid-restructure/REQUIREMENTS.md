@@ -121,6 +121,23 @@ on its own. The PRD is built from **requirements with acceptance criteria**. A w
 several features only when it truly delivers several such capabilities; most works have one, or none
 (a bug fix, a refactor). Tasks trace to requirements and acceptance criteria, not to feature folders.
 
+### FR-4 Intent interpretation
+
+The orchestrator does not map phrasings; it interprets **meaning**, the way a colleague would.
+
+- **Meaning, not keywords.** Different wordings of the same intent land in the same place; example
+  phrasings are illustrations, not a lookup list.
+- **Verified against the project.** The user's words are a hint, not the truth: the orchestrator
+  checks the interpreted intent against the KB and the code. Example: a "refactor" that adds a new
+  API endpoint changes behavior, so it is treated as a new capability.
+- **Stated before starting.** The orchestrator states its reading and the reason in one line, which
+  the user can correct, before starting a route. It asks one question (with a recommendation,
+  NFR-Q) only when genuinely unsure.
+- **Re-classified as the work evolves.** When the conversation reveals the work is bigger or
+  different, the orchestrator re-routes and says so.
+- **Questions and decisions are always validated against the KB** -- at intake and throughout the
+  work. A question about the project starts no work: it is answered from the KB, with sources.
+
 ## 6. Non-Functional Requirements
 
 - **NFR-Q (how questions are asked).** Every question put to the user carries a
