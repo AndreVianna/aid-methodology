@@ -81,6 +81,26 @@ These phases and their artifacts have several problems (not an exhaustive list):
 
 ### In Scope
 
+**Base direction** (accepted by the maintainer, from `analysis/skills-restructure-proposal.md` as
+corrected by FR-5):
+
+- The host agent is the orchestrator, guided by `rules.md` (short orchestration section + skill
+  guide) and an on-demand playbook skill (FR-5).
+- The skill set shrinks from 112 to about 20: six phase skills (Preparation/KB build, Ideation,
+  Specification, Planning, Building, CI), setup skills (config, connectors, chat), and internal
+  helpers (KB query/update/view, research, prototype, review, test, ticket, release, monitor).
+- The 68 skills that hold no logic of their own (34 generated doorways, 13 kind-siblings, 21
+  `aid-design-*` copies) become data: an intent catalog crossed with artifact profiles.
+- Depth: every work runs the same six phases; `full` / `fast` / `direct` changes only how much the
+  user reviews; intent is read by meaning and validated against the KB (FR-4); depth escalates or
+  de-escalates as the work evolves.
+- Agents shrink from 9 to about 7; the orchestrator and interviewer sub-agents retire (only the
+  main conversation can talk with the user).
+- One work layout: a single `STATE.yml` per work; no delivery- or task-level state files; waves are
+  derived from task dependencies.
+- The proposal's F3 (does the front door engage on every plain-language request?) is settled by
+  FR-5: `rules.md` guides the host agent on every request.
+
 ### Out of Scope
 
 ## 5. Functional Requirements
