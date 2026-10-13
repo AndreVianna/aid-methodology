@@ -438,11 +438,11 @@ qa:
   - id: Q11
     category: Requirements
     impact: Medium
-    state: Pending
+    state: Answered
     context: '"fast" means approval depth (FR-6) but Feature 009 calls the one-pass path "fast"; the KB has a "Lite fast path" and pipeline.path full|lite. (surfaced by /aid-define cross-reference)'
     suggested: 'full/fast/direct mean approval depth only; reword Feature 009; retire the lite/full layout terms.'
-    answer: --
-    applied_to: --
+    answer: 'Approval depth is full / lite (the old layout terms keep their names but now mean approval depth). The word fast is dropped everywhere.'
+    applied_to: 'REQUIREMENTS.md FR-6, §4, AC-7, AC-10, Features 001 and 009'
   - id: Q12
     category: Requirements
     impact: Medium

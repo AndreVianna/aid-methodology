@@ -100,7 +100,7 @@ corrected by FR-5):
   `aid-design-*` copies) become data: an intent catalog crossed with artifact profiles.
 - Phases are flexible around a fixed core: Specify -> Plan -> Execute almost always happens; Definition
   runs when the work must first be defined (discussion or an external ticket); Preparation runs once
-  plus on demand; CI only when a pipeline exists. `full` / `fast` changes how much the
+  plus on demand; CI only when a pipeline exists. `full` / `lite` changes how much the
   user reviews; intent is read by meaning and validated against the KB (FR-4); depth escalates or
   de-escalates as the work evolves.
 - The orchestrator and interviewer sub-agents retire (only the main conversation can talk with the
@@ -207,7 +207,7 @@ The orchestrator does not map phrasings; it interprets **meaning**, the way a co
 | Depth | Mandatory approvals |
 |---|---|
 | `full` | **Every document** is confirmed by the user (seed, requirements, task plan, ...), plus the final result. |
-| `fast` | **One approval before Building starts** -- the agent always confirms what it is about to build (for a small fix, one short line) -- plus the final result. |
+| `lite` | **One approval before Building starts** -- the agent always confirms what it is about to build (for a small fix, one short line) -- plus the final result. |
 
 - **There is no depth without a confirmation before building.** Even the smallest work is confirmed before Building starts.
 - **Always an approval at the end**, on the final result, at every depth -- **before the PR/MR** is opened.
@@ -394,7 +394,7 @@ If assumption 1 or 2 fails in a tool, transparent orchestration degrades there t
 | AC-4 | A question about the project ("how does X work?") is answered **from the KB, with sources**, and starts no work. | FR-4 |
 | AC-5 | During a work, a decision that conflicts with the KB is **raised to the user**, never resolved silently. | FR-4 |
 | AC-6 | `rules.md` has an orchestration section of **at most 20 lines** plus a skill guide covering **every** AID skill (what it is for, when to use it); there is no front-door skill and no orchestrator sub-agent. | FR-5 |
-| AC-7 | A ticket with objective, users, scope, acceptance criteria and constraints goes straight to requirements + plan with **one approval** before building (`fast`); a bare idea starts brainstorming (`full`). | Objective, FR-1 |
+| AC-7 | A ticket with objective, users, scope, acceptance criteria and constraints goes straight to requirements + plan with **one approval** before building (`lite`); a bare idea starts brainstorming (`full`). | Objective, FR-1 |
 
 ### Conversation and control
 
@@ -402,7 +402,7 @@ If assumption 1 or 2 fails in a tool, transparent orchestration degrades there t
 |---|---|---|
 | AC-8 | Every question to the user carries **one recommendation** and an **importance label**; several options only for real forks, never a bad option, and a free-form answer is always possible. | NFR-Q |
 | AC-9 | Reviews come **one topic at a time**, in logical chunks, most important first; trivial decisions are taken by the AI and confirmed **in one batch at the end**. | Objective (digestible review) |
-| AC-10 | `full`: the user confirms every document. `fast`: exactly one approval before building. Every depth: a final approval of the result **before the PR/MR**. | FR-6 |
+| AC-10 | `full`: the user confirms every document. `lite`: exactly one approval before building. Every depth: a final approval of the result **before the PR/MR**. | FR-6 |
 | AC-11 | **Nothing in AID ever merges**: no skill or script merges a branch or a PR/MR, and a PR/MR is opened only on the user's instruction. | FR-6, FR-7 |
 | AC-12 | Before discovery or specification, the agent checks the effort level and **recommends a higher one** when it is below high. | FR-15 |
 | AC-13 | When GitHub/GitLab cannot be reached, the agent **offers to help establish the connection** before stopping. | FR-16 |
@@ -476,7 +476,7 @@ AC-22, AC-24 and AC-25.
 
 #### Description
 
-The agent in the user's own tool reads a plain request by its meaning, checks it against the skill guide in `rules.md`, the KB and the code, and proposes the matching workflow -- or just continues when nothing matches. It sizes the work (`full` / `fast`) and runs only the phases the work needs around the Specify -> Plan -> Execute core. Project questions are answered from the KB with sources. Information from external sources -- project sources in the KB, or work sources attached to one work -- is applied to the work at any moment, and written back to the source on request. The orchestrator and interviewer sub-agents retire; every skill stays runnable by slash command.
+The agent in the user's own tool reads a plain request by its meaning, checks it against the skill guide in `rules.md`, the KB and the code, and proposes the matching workflow -- or just continues when nothing matches. It sizes the work (`full` / `lite`) and runs only the phases the work needs around the Specify -> Plan -> Execute core. Project questions are answered from the KB with sources. Information from external sources -- project sources in the KB, or work sources attached to one work -- is applied to the work at any moment, and written back to the source on request. The orchestrator and interviewer sub-agents retire; every skill stays runnable by slash command.
 
 #### User Stories
 
@@ -625,7 +625,7 @@ Improves how AID talks with the user and how skills move through their states. Q
 
 #### Description
 
-The 68 skills that hold no logic of their own (34 doorways, 13 kind-siblings, 21 design copies) become data: a catalog of intents crossed with artifact profiles, behind the one-pass ("fast") create/update path. Every remaining skill has one job and no two overlap.
+The 68 skills that hold no logic of their own (34 doorways, 13 kind-siblings, 21 design copies) become data: a catalog of intents crossed with artifact profiles, behind the one-pass create/update path. Every remaining skill has one job and no two overlap.
 
 #### User Stories
 
