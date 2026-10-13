@@ -391,6 +391,22 @@ If assumption 1 or 2 fails in a tool, transparent orchestration degrades there t
 | AC-25 | AID's engineering rules hold: one source rendered for all five tools, byte-identical bash/PowerShell output, the tracking discipline, no work ids in the KB, and **all CI green on Linux and Windows**. | Constraints |
 ## 10. Priority
 
+Build order, if it cannot all land at once:
+
+1. **Orchestration** -- the `rules.md` orchestration section, the skill guide, intent matching
+   (FR-4, FR-5, FR-8). The leading goal; everything else hangs off it.
+2. **The core phases** -- Definition -> Specify -> Plan -> Execute, with `REQUIREMENTS.md`, `PLAN.md` as
+   an improved TODO list, and no delivery documents (FR-1, FR-3, FR-9, FR-11, FR-12).
+3. **Conversation rules** -- one topic at a time, importance labels, batched minor decisions, the
+   approvals, never merging (Objective, NFR-Q, FR-6).
+4. **KB operations** -- discover / query / update / HTML view through the agent's judgment, the
+   greenfield KB, and the effort-level check (FR-2, FR-10, FR-14, FR-15).
+5. **Wrapper skills become data**, and the old -> new table (Scope, M1).
+6. **Monitor pipeline** (the PR phase) and help with connections (FR-7, FR-16).
+
+Items 1-3 deliver the transparent, conversational experience; 4-6 build on it and can each ship
+without blocking the others.
+
 ## Minor decisions taken by the AI (to confirm in one batch at the end)
 
 - **M1 -- Old slash names.** Skills that are retired take their slash names with them (clean break in

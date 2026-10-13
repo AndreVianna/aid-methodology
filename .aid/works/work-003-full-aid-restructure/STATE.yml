@@ -118,7 +118,7 @@ phase: Describe
 # [W] aid-{skill} | none
 active_skill: aid-describe
 # [W]
-updated: '2026-10-13T03:44:00Z'
+updated: '2026-10-13T03:45:01Z'
 # [W] set only when lifecycle = Paused-Awaiting-Input
 pause_reason: --
 # [W] set only when lifecycle = Blocked
@@ -184,8 +184,8 @@ interview:
       updated: '2026-10-13T03:44:00Z'
     - id: 10
       name: Priority
-      state: Pending
-      updated: --
+      state: Complete
+      updated: '2026-10-13T03:45:01Z'
 
 # [A] one entry per feature, in id order. Created by aid-define at feature
 #     decomposition (one entry per `### Feature NNN` section it appends to
