@@ -358,11 +358,11 @@ qa:
   - id: Q1
     category: Requirements
     impact: High
-    state: Pending
+    state: Answered
     context: 'Where does Describe''s job go? Definition only makes a seed, but today Describe writes REQUIREMENTS.md §1-10, and FR-1 gives that file to Specification. (surfaced by /aid-define cross-reference)'
     suggested: 'The requirements interview moves to /aid-specify (Feature 005); Definition keeps only idea-shaping and ticket digestion.'
-    answer: --
-    applied_to: --
+    answer: 'No separate interview: the Q&A is one protocol (FR-17) used by every skill that needs input from the user; /aid-specify gathers requirements through it.'
+    applied_to: 'REQUIREMENTS.md FR-17, NFR-Q, AC-28, Feature 002'
   - id: Q2
     category: Requirements
     impact: High
@@ -383,7 +383,7 @@ qa:
     category: Requirements
     impact: High
     state: Pending
-    context: 'Feature 002 (interview revision, skill state-machine handling) has no FR and no AC covering those two parts. (surfaced by /aid-define cross-reference)'
+    context: 'Feature 002: the skill state-machine handling has no FR and no AC (the Q&A part is now FR-17 / AC-28). (surfaced by /aid-define cross-reference)'
     suggested: 'Add an FR and an observable AC for each, owned by Feature 002.'
     answer: --
     applied_to: --

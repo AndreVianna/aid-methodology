@@ -304,16 +304,39 @@ checks the current effort level and, when it is not enough, recommends a better 
 When an environment the work needs (e.g. GitHub or GitLab for the CI phase) is out of reach, the
 agent first tries to help the user establish the connection, and only gives up if that fails.
 
+### FR-17 Question protocol
+
+There is no separate interview step: the Q&A is **one protocol**, used **always**, whenever any
+skill needs information from the user or discusses something with them -- brainstorm,
+requirements, planning, questions during building, building the KB.
+
+1. **One question at a time.** Never one question that answers several topics at once.
+2. **Short and clear**, presented with a short, clear reason why it is asked.
+3. **Respect the user's technical level.** Never ask a technical question of a non-technical
+   user; always assume the lower level. Give deeper technical detail only when the user asks.
+4. **Always a recommendation** (or proposed answer), with its reasoning.
+5. **Only valid options** -- never one that could lead to errors or worse results.
+   1. When the recommendation is the only valid option, the question becomes a confirmation.
+   2. When two or more options are equally valid and good, present them all, and say which is best.
+   3. Do not ask obvious questions that need no confirmation.
+   4. Always let the user give a different answer, or ask for clarification, as free text.
+6. **Grouped by subject**, so the user concentrates on one topic at a time; within a subject,
+   the most important question first. Groups hold **3 to 5 questions**.
+7. **Offer a break** after each group and **whenever the subject changes**.
+8. **Follow-ups come immediately** after the question that raised them, so the user keeps track.
+9. **Skip what is already answered**: when an earlier answer settles a question, or makes it
+   trivial, assume the answer and skip it.
+10. **Every question and answer is recorded.** A user who cannot answer (lack of knowledge, ...)
+    can skip a question; it stays open and is resumed later, with the same user or another one.
+
 ## 6. Non-Functional Requirements
 
 - **NFR-N (naming).** No acronyms in artifact or skill names: names say plainly what the thing is.
   The Specification phase produces `REQUIREMENTS.md` (not a "PRD" file). Accepted exception: **KB**,
   an established term in AID (`/aid-kb-build`, `/aid-kb-query`, `/aid-kb-update`, `/aid-kb-show`).
 
-- **NFR-Q (how questions are asked).** Every question put to the user carries a
-  **recommendation**. More than one option is offered only when the options are equally valid or
-  mark a clear fork in the path; a bad option is never presented. The user can always give an
-  alternative answer that is not in the list.
+- **NFR-Q (how questions are asked).** Every question put to the user follows the question
+  protocol (FR-17).
 
 ## 7. Constraints
 
@@ -381,6 +404,7 @@ If assumption 1 or 2 fails in a tool, transparent orchestration degrades there t
 | AC-19 | `PLAN.md` is a scannable checklist (deliveries with their acceptance criteria, waves, tasks, dependencies, state); **no separate delivery documents or state files**; roadmap/backlog/MVP are ordinary KB documents with no dedicated skills. | FR-12, FR-14 |
 | AC-26 | Building: `/aid-execute` runs each task's tests as part of the task; a task is marked **Done only after its tests pass**, and the final result shows the test results. | FR-1 |
 | AC-27 | CI: for an open PR/MR, `/aid-monitor-pipeline` fixes or answers **every review comment**, pushes fixes to the work's branch **until the pipeline is green**, runs the hardening, security and quality reviews, and **never merges**. | FR-7 |
+| AC-28 | For each skill that asks the user questions, a scripted test conversation shows: one topic per question, each with its reason, a recommendation, only valid options and a free-text answer; groups of 3-5 by subject, most important first; a break offered after each group and at each change of subject; follow-ups right after the question that raised them; answered or trivial questions skipped; a skipped question recorded as open and resumable later by the same or another user. | FR-17 |
 
 ### Skills, naming and constraints
 
@@ -451,12 +475,12 @@ The agent in the user's own tool reads a plain request by its meaning, checks it
 ### Feature 002 — Clear, Step-by-Step Decisions
 
 - **Priority:** Must
-- **Requirements:** §5 FR-6, NFR-Q
-- **Criteria:** AC-8, AC-9, AC-10, AC-11
+- **Requirements:** §5 FR-6, FR-17; §6 NFR-Q
+- **Criteria:** AC-8, AC-9, AC-10, AC-11, AC-28
 
 #### Description
 
-Improves how AID talks with the user and how skills move through their states. Questions come one topic at a time, each with a recommendation and an importance label; reviews arrive in chunks, most important first; minor decisions are confirmed in one batch at the end. Approvals follow the depth, with a final approval before any PR/MR, and nothing ever merges. Includes a revision of the Q&A / interview process and of how skill state machines are handled. Every phase skill built after this feature follows these rules.
+Improves how AID talks with the user and how skills move through their states. Questions come one topic at a time, each with a recommendation and an importance label; reviews arrive in chunks, most important first; minor decisions are confirmed in one batch at the end. Approvals follow the depth, with a final approval before any PR/MR, and nothing ever merges. Includes the question protocol (FR-17), which replaces the separate interview step and is used by every skill that talks with the user, and a revision of how skill state machines are handled. Every phase skill built after this feature follows these rules.
 
 #### User Stories
 
