@@ -374,11 +374,11 @@ qa:
   - id: Q3
     category: Requirements
     impact: High
-    state: Pending
+    state: Answered
     context: 'Do per-task DETAIL.md files survive? Planning absorbs Detail and PLAN.md is a light TODO list, but /aid-execute reads each task DETAIL.md as its brief. (surfaced by /aid-define cross-reference)'
     suggested: 'Keep one immutable DETAIL.md per task, no per-task state file.'
-    answer: --
-    applied_to: --
+    answer: 'Keep one instruction file per task (instructions only, no state); PLAN.md links to it; progress in the work STATE.yml.'
+    applied_to: 'REQUIREMENTS.md FR-12, AC-19, Feature 006'
   - id: Q4
     category: Requirements
     impact: High
