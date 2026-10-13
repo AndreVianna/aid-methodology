@@ -118,7 +118,7 @@ phase: Describe
 # [W] aid-{skill} | none
 active_skill: aid-describe
 # [W]
-updated: '2026-10-13T02:49:57Z'
+updated: '2026-10-13T02:51:25Z'
 # [W] set only when lifecycle = Paused-Awaiting-Input
 pause_reason: --
 # [W] set only when lifecycle = Blocked
@@ -160,8 +160,8 @@ interview:
       updated: '2026-10-13T02:49:57Z'
     - id: 4
       name: Scope
-      state: Partial
-      updated: '2026-10-13T00:37:51Z'
+      state: Complete
+      updated: '2026-10-13T02:51:25Z'
     - id: 5
       name: 'Functional Requirements'
       state: Partial

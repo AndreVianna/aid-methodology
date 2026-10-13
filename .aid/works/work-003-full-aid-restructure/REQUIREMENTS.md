@@ -109,6 +109,14 @@ corrected by FR-5):
 
 ### Out of Scope
 
+- **Changes to the host tools themselves** -- AID only supplies rules and skills.
+- **The KB's internal content model** -- covered by the separate knowledge-graph redesign seed
+  (`.aid/design/knowledge-graph-redesign.md`); this work changes how the KB is used, not its
+  document structure.
+- **Other backlog follow-ups:** hooks, the model-tier settings map, a shared agents folder.
+- **The dashboard and chat features**, beyond adjusting them to the new skill names and state layout.
+- **Compatibility stubs for old slash names** (see M1).
+
 ## 5. Functional Requirements
 
 ### FR-1 Phase model
