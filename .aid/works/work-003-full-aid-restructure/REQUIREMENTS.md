@@ -355,6 +355,22 @@ work **at any moment**, not only at its start. There are two kinds:
   raise new ones (asked through the question protocol, FR-17).
 - **Two-way:** on the user's request, the agent also updates the source with information from the work.
 
+### FR-19 Verification and simplification
+
+Every task goes through **build -> verify -> simplify -> re-verify (only if something changed)**:
+
+- **Verify** is the review cycle: agents other than the one that did the work review it against its
+  acceptance criteria and the KB, under the grading protocol; the tests must pass.
+- **Simplify** comes **only after verification passes**: a lighter review cycle that looks for what
+  can be simplified or cleaned, to avoid over-engineering and clutter.
+  - It runs **once** per task -- no simplify/verify loop.
+  - It **never changes behaviour**: the same tests must pass, and no test is changed or removed to fit.
+- **Re-verify** runs only when the simplification changed something, scoped to what it changed. No
+  change, no extra review cycle.
+- **At the end of each delivery** the same sequence runs over the whole delivery (verify, then one
+  light simplification for duplication across tasks, then a scoped re-verify if anything changed),
+  before the delivery milestone (FR-6).
+
 ## 6. Non-Functional Requirements
 
 - **NFR-N (naming).** No acronyms in artifact or skill names: names say plainly what the thing is.
@@ -435,6 +451,7 @@ If assumption 1 or 2 fails in a tool, transparent orchestration degrades there t
 | AC-30 | For every kind in the catalog, the typed form (`/aid-<action> <kind> ...`) and a plain-words request for the same thing reach **the same skill and the same rules**. | FR-4, FR-8 |
 | AC-31 | No remaining skill name combines an action with a kind of thing; the dashboard and chat show **only current skill names**. | Scope, M1 |
 | AC-32 | During building, the user is asked for approval **only** at the end of each delivery and at the end of the whole build (each after verification, before a PR/MR is created or updated), plus at the end of each wave **only when the user opted in** during the confirmation before building; real blockers (something the agent cannot decide or fix on its own, including a conflict with the KB) are the only other interruptions. | FR-6 |
+| AC-33 | For each task and each delivery, the work record shows verify -> simplify, and a scoped re-verify **only when** the simplification changed something; simplification runs once, and the test set before and after it is identical and passing. | FR-19 |
 
 ### Skills, naming and constraints
 
@@ -598,12 +615,12 @@ Improves how AID talks with the user and how skills move through their states. Q
 ### Feature 007 — Hands-Off Building with Built-In Verification and Simplification
 
 - **Priority:** Must
-- **Requirements:** §5 FR-1, FR-11
-- **Criteria:** AC-26, AC-32
+- **Requirements:** §5 FR-1, FR-11, FR-19
+- **Criteria:** AC-26, AC-32, AC-33
 
 #### Description
 
-`/aid-execute` carries out the plan's tasks and tests them: a task is done only when its tests pass, and the result shows the test outcome. The user is involved only at the milestones (end of each delivery and of the whole build; optionally each wave); each task also goes through verification and simplification passes.
+`/aid-execute` carries out the plan's tasks and tests them: a task is done only when its tests pass, and the result shows the test outcome. The user is involved only at the milestones (end of each delivery and of the whole build; optionally each wave); each task, and each delivery as a whole, goes through verification, then a lighter simplification pass, then a scoped re-verification only when the simplification changed something (FR-19).
 
 #### User Stories
 
