@@ -110,17 +110,17 @@ started: '2026-10-12'
 # [W] resolved at runtime by `bash canonical/aid/scripts/config/read-setting.sh --skill {phase} --key minimum_grade --default A`; source is `.aid/settings.yml`
 minimum_grade: A
 # [W] 'yes' | 'no' -- quoted, see NFR-2 / D-5
-user_approved: 'no'
+user_approved: 'yes'
 # [W] Running | Paused-Awaiting-Input | Blocked | Completed | Canceled
-lifecycle: Running
+lifecycle: Paused-Awaiting-Input
 # [W] Describe | Define | Specify | Plan | Detail | Execute
 phase: Describe
 # [W] aid-{skill} | none
 active_skill: aid-describe
 # [W]
-updated: '2026-10-13T03:51:11Z'
+updated: '2026-10-13T03:52:53Z'
 # [W] set only when lifecycle = Paused-Awaiting-Input
-pause_reason: --
+pause_reason: 'Requirements approved — run /aid-define work-003 to decompose into features'
 # [W] set only when lifecycle = Blocked
 block_reason: --
 # [W] e.g. IMPEDIMENT-task-NNN.md, or the failed gate
@@ -143,7 +143,7 @@ gate_timestamp: --
 #   grade: {grade} | Pending
 #   sections[].state: Pending | Complete
 interview:
-  state: 'In Progress'
+  state: Approved
   grade: Pending
   sections:
     - id: 1
@@ -250,6 +250,10 @@ lifecycle_history:
     event: 'Describe COMPLETION: quality check passed (every requirement has observable acceptance criteria AC-1..AC-25; no contradictions; scope consistent with FR-1..FR-16; constraints consistent). KB hydration: no extraction -- the requirements describe changes not yet built and the KB states only the current state of the sources; KB facts enter as the work is built (FR-10 rule applied to this work).'
     grade: --
     notes: 'aid-describe state-completion steps 1-2'
+  - date: '2026-10-13'
+    event: 'Describe: requirements approved by the maintainer (sections 1-10 complete; FR-1..FR-16, NFR-Q, NFR-N, AC-1..AC-25; minor decisions M1-M3 confirmed). Open on purpose: final skill count; reviewer specialization.'
+    grade: --
+    notes: 'aid-describe COMPLETION approval'
 
 deploy: []
 
