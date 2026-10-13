@@ -275,6 +275,18 @@ flow (brainstorm, then update the KB), with no dedicated skills (today's six
 "work on the next backlog item" or "what's on the roadmap?"; teams that prefer their tracker can
 simply not use them.
 
+### FR-15 Effort-level check before analysis-heavy tasks
+
+Interpreting intent and doing analysis well depend on the model's reasoning effort level. In the
+maintainer's tests, analysis-heavy tasks (e.g. discovery and specification) run below **high** effort
+give sub-optimal results, up to completely wrong answers. Before such a critical task the agent
+checks the current effort level and, when it is not enough, recommends a better one to the user.
+
+### FR-16 Help establish unreachable connections
+
+When an environment the work needs (e.g. GitHub or GitLab for the CI phase) is out of reach, the
+agent first tries to help the user establish the connection, and only gives up if that fails.
+
 ## 6. Non-Functional Requirements
 
 - **NFR-N (naming).** No acronyms in artifact or skill names: names say plainly what the thing is.
@@ -297,6 +309,22 @@ simply not use them.
    must stay compact (FR-5).
 
 ## 8. Assumptions & Dependencies
+
+**Assumptions**
+
+1. Every supported tool reliably reads `rules.md` at session start (confirmed for all five tools by the
+   v4 SESSION START probes).
+2. Every tool's agent can pick and run skills on its own, not only by slash command (FR-8).
+3. The agent's model can interpret intent by meaning and check it against the KB (FR-4) -- **only at a
+   sufficient reasoning effort level**; below it, analysis-heavy tasks degrade (FR-15).
+4. For the CI phase the agent can reach GitHub/GitLab through the tool's own access or a connector;
+   when it cannot, it helps the user establish the connection before giving up (FR-16).
+
+If assumption 1 or 2 fails in a tool, transparent orchestration degrades there to plain slash commands.
+
+**Dependencies**
+
+- AID v4's shared layout (one skills folder, `.aid/runtime/`, `rules.md`), merged on master.
 
 ## 9. Acceptance Criteria
 
