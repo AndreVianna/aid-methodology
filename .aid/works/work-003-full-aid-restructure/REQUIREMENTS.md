@@ -214,6 +214,13 @@ The seed (the shaped idea: framing, candidate directions, open questions) lives 
 its content then lives on in the PRD. An idea can survive across sessions before it is ready, and
 may never become a work; work folders are disposable by rule, so the seed does not live there.
 
+### FR-10 The KB in a greenfield project
+
+In a greenfield project the user does not start with "build me a KB"; they start with an idea or a
+task. The orchestrator **builds the KB organically from that**, and **keeps updating it along the
+construction of the initial features**: each fact (stack, conventions, architecture, decisions)
+enters the KB when it is actually decided or built, not guessed up front.
+
 ## 6. Non-Functional Requirements
 
 - **NFR-Q (how questions are asked).** Every question put to the user carries a
