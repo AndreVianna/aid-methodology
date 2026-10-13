@@ -605,3 +605,11 @@ qa:
     suggested: 'Keep the guide: one short line per skill (what for, when to use); rewrite each skill description in the same style; static test checks the guide lists exactly the existing skills.'
     answer: 'Accepted as recommended.'
     applied_to: 'Feature 001 Technical Specification (Components)'
+  - id: Q28
+    category: Specification (Feature 001)
+    impact: High
+    state: Answered
+    context: 'After stating its one-line reading, does the agent wait for the user OK?'
+    suggested: 'Wait, but put the reading in the same message as the first real question or approval (lite: the confirmation before building; full: the first brainstorm/specification question); never an extra turn just for it.'
+    answer: 'Accepted as recommended.'
+    applied_to: 'Feature 001 Technical Specification (Orchestration flow)'
