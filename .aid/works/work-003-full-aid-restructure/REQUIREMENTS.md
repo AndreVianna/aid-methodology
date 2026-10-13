@@ -117,7 +117,7 @@ see phase names; the phases are the backbone the orchestrator tracks.
 | Specification | a PRD | Define, Specify | The "feature" concept must be revisited: the current skill almost always proposes more features than are actually necessary, and its notion of a feature is not what a feature represents in a business model. |
 | Planning | the tasks | Plan, Detail | Deliveries and waves are only groupings of tasks; the atomic tasks and their dependencies are the most important information. |
 | Building | the outcome | Execute | Building is executing **and testing**. |
-| CI | a merge-ready result | Deploy, Monitor (to confirm) | Hardening, security and quality reviews that prepare the result for a merge. |
+| CI | a merge-ready PR | (new) | The pull-request phase -- see FR-7. Not deploy/monitor: those are works of their own. |
 
 ### FR-2 Knowledge Base management
 
@@ -187,6 +187,15 @@ The orchestrator does not map phrasings; it interprets **meaning**, the way a co
 - **Always an approval at the end**, on the final result, at every depth.
 - **AID never merges anything.** The furthest it goes is pushing to the work's own branch; the merge
   is always a human act.
+
+### FR-7 The CI phase, and operational works
+
+- **CI is the pull-request phase.** Once a PR exists for the work, CI manages it to a mergeable
+  state: it handles code reviews from other agents or developers, makes sure the CI pipeline
+  completes green, and runs the hardening, security and quality reviews. It never merges (FR-6).
+- **Operational activities are works of their own, not phases:** preparing a release, publishing,
+  deploying, and starting monitoring are each an individual work, started like any other request
+  ("prepare release 4.0", "deploy to staging"). They act on merged history, not on a single work.
 
 ## 6. Non-Functional Requirements
 
