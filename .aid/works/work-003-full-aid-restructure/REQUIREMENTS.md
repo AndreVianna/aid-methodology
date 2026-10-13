@@ -247,6 +247,12 @@ The Planning phase's `PLAN.md` holds them all:
 `PLAN.md` is **an improved TODO list**: a simple, scannable checklist (deliveries, waves, tasks with
 their dependencies and state), not a heavy document.
 
+### FR-13 Agents
+
+The `aid-tech-writer` agent (prose for people: docs, READMEs, release notes) stays separate from the
+`aid-developer` agent (code): clear writing is a different skill, and agents are invisible to users,
+so merging them would simplify nothing the user notices.
+
 ## 6. Non-Functional Requirements
 
 - **NFR-N (naming).** No acronyms in artifact or skill names: names say plainly what the thing is.
