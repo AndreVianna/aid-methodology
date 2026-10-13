@@ -96,8 +96,8 @@ corrected by FR-5):
   work, by whether the agents solve developers' problems efficiently. Indicative shape: phase skills (Preparation/KB build, Definition,
   Specification, Planning, Building, CI), setup skills (config, connectors, chat), and internal
   helpers (KB query/update/view, research, prototype, review, test, ticket, release, monitor).
-- The 68 skills that hold no logic of their own (34 generated doorways, 13 kind-siblings, 21
-  `aid-design-*` copies) become data: an intent catalog crossed with artifact profiles.
+- The skills that pair an action with a kind of thing (84 today, e.g. `/aid-create-api`) become one
+  skill per action, with the kind as an argument; the rules for each kind live in one catalog (Feature 009).
 - Phases are flexible around a fixed core: Specify -> Plan -> Execute almost always happens; Definition
   runs when the work must first be defined (discussion or an external ticket); Preparation runs once
   plus on demand; CI only when a pipeline exists. `full` / `lite` changes how much the
@@ -421,6 +421,8 @@ If assumption 1 or 2 fails in a tool, transparent orchestration degrades there t
 | AC-27 | CI: for an open PR/MR, `/aid-monitor-pipeline` fixes or answers **every review comment**, pushes fixes to the work's branch **until the pipeline is green**, runs the hardening, security and quality reviews, and **never merges**. | FR-7 |
 | AC-28 | For each skill that asks the user questions, a scripted test conversation shows: one topic per question, each with its reason, a recommendation, only valid options and a free-text answer; groups of 3-5 by subject, most important first; a break offered after each group and at each change of subject; follow-ups right after the question that raised them; answered or trivial questions skipped; a skipped question recorded as open and resumable later by the same or another user. | FR-17 |
 | AC-29 | A ticket pulled in mid-work is **recorded as a work source** in `STATE.yml`; the pending questions it answers are closed, any new questions are added, and the phase advances when its conditions are met; on request, the agent **writes the work's information back** to the source; project sources are used by every work when needed without being attached. | FR-18 |
+| AC-30 | For every kind in the catalog, the typed form (`/aid-<action> <kind> ...`) and a plain-words request for the same thing reach **the same skill and the same rules**. | FR-4, FR-8 |
+| AC-31 | No remaining skill name combines an action with a kind of thing; the dashboard and chat show **only current skill names**. | Scope, M1 |
 
 ### Skills, naming and constraints
 
@@ -476,7 +478,7 @@ AC-22, AC-24 and AC-25.
 
 #### Description
 
-The agent in the user's own tool reads a plain request by its meaning, checks it against the skill guide in `rules.md`, the KB and the code, and proposes the matching workflow -- or just continues when nothing matches. It sizes the work (`full` / `lite`) and runs only the phases the work needs around the Specify -> Plan -> Execute core. Project questions are answered from the KB with sources. Information from external sources -- project sources in the KB, or work sources attached to one work -- is applied to the work at any moment, and written back to the source on request. The orchestrator and interviewer sub-agents retire; every skill stays runnable by slash command.
+The agent in the user's own tool reads a plain request by its meaning, checks it against the skill guide in `rules.md`, the KB and the code, and proposes the matching workflow -- or just continues when nothing matches. It sizes the work (`full` / `lite`) and runs only the phases the work needs around the Specify -> Plan -> Execute core. Project questions are answered from the KB with sources. Information from external sources -- project sources in the KB, or work sources attached to one work -- is applied to the work at any moment, and written back to the source on request. `/aid-triage` folds into the skill guide. The orchestrator and interviewer sub-agents retire; every skill stays runnable by slash command.
 
 #### User Stories
 
@@ -533,7 +535,7 @@ Improves how AID talks with the user and how skills move through their states. Q
 
 #### Description
 
-`/aid-kb-build`, `/aid-kb-query`, `/aid-kb-update` and `/aid-kb-show`, run by the agent's own judgment; summarize is absorbed. In a new project the KB grows as things are decided and built. Roadmap, backlog and MVP become ordinary KB documents. Before analysis-heavy tasks the agent checks the effort level and recommends a higher one when needed. KB management is simplified: the HTML view (`kb.html`) is generated automatically when the KB is built and refreshed whenever it is updated.
+`/aid-kb-build`, `/aid-kb-query`, `/aid-kb-update` and `/aid-kb-show`, run by the agent's own judgment; summarize, `/aid-housekeep` and the skills that only wrote KB documents (architecture, stack, testing strategy, CI/CD, roadmap, backlog, MVP) are absorbed. In a new project the KB grows as things are decided and built. Roadmap, backlog and MVP become ordinary KB documents. Before analysis-heavy tasks the agent checks the effort level and recommends a higher one when needed. KB management is simplified: the HTML view (`kb.html`) is generated automatically when the KB is built and refreshed whenever it is updated.
 
 #### User Stories
 
@@ -620,17 +622,27 @@ Improves how AID talks with the user and how skills move through their states. Q
 ### Feature 009 — One Obvious Skill for Each Need
 
 - **Priority:** Must
-- **Requirements:** §5 Scope (wrapper skills), M1
-- **Criteria:** AC-20
+- **Requirements:** §4 Scope (wrapper skills); §5 FR-4, FR-8; M1
+- **Criteria:** AC-20, AC-30, AC-31
 
 #### Description
 
-The 68 skills that hold no logic of their own (34 doorways, 13 kind-siblings, 21 design copies) become data: a catalog of intents crossed with artifact profiles, behind the one-pass create/update path. Every remaining skill has one job and no two overlap.
+Today AID has a separate skill for every pair of action and kind of thing (`/aid-create-api`,
+`/aid-update-ui`, `/aid-design-data-model`, ...) -- 84 near-identical names. They become **one skill
+per action**: `/aid-create`, `/aid-update`, `/aid-design`, `/aid-document`, `/aid-test`,
+`/aid-prototype`. The kind of thing is given as an argument (`/aid-create api endpoint for orders`)
+or in plain words (*"create an API endpoint for orders"*); both reach the same skill and the same
+rules. The rules for each kind of thing (what to ask, what to check, which tests) live in **one
+catalog**, which the agent also uses to understand plain requests (FR-4). Skills that only wrote KB
+documents (architecture, stack, testing strategy, CI/CD, roadmap, backlog, MVP) and `/aid-housekeep`
+fold into KB management (Feature 004); `/aid-triage` folds into the skill guide (Feature 001). The
+dashboard and chat show the new names.
 
 #### User Stories
 
-- As an AID user, I want one clear skill for each kind of request, so that I never have to choose between near-identical names.
-- As a maintainer, I want the copy-paste skills replaced by a catalog, so that a change happens in one place.
+- As an AID user, I want one clear skill for each action, so that I never have to choose between near-identical names.
+- As an AID user, I want to type `/aid-create api ...` or just say "create an API endpoint", so that both routes give the same result.
+- As a maintainer, I want the rules for each kind of thing in one catalog, so that a change happens in one place.
 
 #### Technical Specification
 

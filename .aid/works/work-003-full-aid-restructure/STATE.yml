@@ -398,19 +398,19 @@ qa:
   - id: Q6
     category: Scope
     impact: Medium
-    state: Pending
+    state: Answered
     context: '§4 puts adjusting the dashboard and chat to the new layout/names in scope, but no feature or AC owns it. (surfaced by /aid-define cross-reference)'
     suggested: 'State layout to Feature 006, skill names to Feature 009, each with an AC.'
-    answer: --
-    applied_to: --
+    answer: 'Skill names in dashboard/chat owned by Feature 009 (AC-31); state-layout adjustment still to place.'
+    applied_to: 'Feature 009, AC-31'
   - id: Q7
     category: Scope
     impact: Medium
-    state: Pending
+    state: Answered
     context: 'Unclaimed skills: create/update-{architecture,stack,testing-strategy,cicd} (8), aid-triage, aid-housekeep are owned by no feature and overlap /aid-kb-update. (surfaced by /aid-define cross-reference)'
     suggested: 'The 8 retire into /aid-kb-update (Feature 004); aid-triage into the rules.md skill guide (Feature 001); each owner writes its AC-24 rows.'
-    answer: --
-    applied_to: --
+    answer: 'KB-writing skills and aid-housekeep fold into Feature 004; aid-triage into the skill guide (Feature 001).'
+    applied_to: 'Features 001, 004, 009'
   - id: Q8
     category: Requirements
     impact: Medium
