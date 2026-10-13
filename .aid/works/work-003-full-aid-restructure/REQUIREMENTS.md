@@ -114,7 +114,7 @@ see phase names; the phases are the backbone the orchestrator tracks.
 |---|---|---|---|
 | Preparation | the KB | Discover | |
 | Ideation | a seed | Describe, Brainstorm | Describe and Brainstorm overlap. |
-| Specification | a PRD | Define, Specify | The "feature" concept must be revisited: the current skill almost always proposes more features than are actually necessary, and its notion of a feature is not what a feature represents in a business model. |
+| Specification | `REQUIREMENTS.md` | Define, Specify | The "feature" concept must be revisited: the current skill almost always proposes more features than are actually necessary, and its notion of a feature is not what a feature represents in a business model. |
 | Planning | the tasks | Plan, Detail | Deliveries and waves are only groupings of tasks; the atomic tasks and their dependencies are the most important information. |
 | Building | the outcome | Execute | Building is executing **and testing**. |
 | CI | a merge-ready PR | (new) | The pull-request phase -- see FR-7. Not deploy/monitor: those are works of their own. |
@@ -137,7 +137,7 @@ Summarize is no longer a separate skill: it is absorbed by Build KB and Update K
 ### FR-3 What a feature is
 
 "Feature" keeps only its business meaning: a capability a user or customer can see and would value
-on its own. The PRD is built from **requirements with acceptance criteria**. A work is split into
+on its own. The requirements document is built from **requirements with acceptance criteria**. A work is split into
 several features only when it truly delivers several such capabilities; most works have one, or none
 (a bug fix, a refactor). Tasks trace to requirements and acceptance criteria, not to feature folders.
 
@@ -180,7 +180,7 @@ The orchestrator does not map phrasings; it interprets **meaning**, the way a co
 
 | Depth | Mandatory approvals |
 |---|---|
-| `full` | **Every document** is confirmed by the user (seed, PRD, task plan, ...), plus the final result. |
+| `full` | **Every document** is confirmed by the user (seed, requirements, task plan, ...), plus the final result. |
 | `fast` | **One approval before Building starts**, plus the final result. |
 | `direct` | The final result. |
 
@@ -210,8 +210,8 @@ The orchestrator does not map phrasings; it interprets **meaning**, the way a co
 ### FR-9 Where the Ideation seed lives
 
 The seed (the shaped idea: framing, candidate directions, open questions) lives in
-`.aid/design/<name>.md` while the idea is being shaped, and is **deleted once its PRD is approved**;
-its content then lives on in the PRD. An idea can survive across sessions before it is ready, and
+`.aid/design/<name>.md` while the idea is being shaped, and is **deleted once its requirements is approved**;
+its content then lives on in the requirements. An idea can survive across sessions before it is ready, and
 may never become a work; work folders are disposable by rule, so the seed does not live there.
 
 ### FR-10 The KB in a greenfield project
@@ -222,6 +222,9 @@ construction of the initial features**: each fact (stack, conventions, architect
 enters the KB when it is actually decided or built, not guessed up front.
 
 ## 6. Non-Functional Requirements
+
+- **NFR-N (naming).** No acronyms in artifact or skill names: names say plainly what the thing is.
+  The Specification phase produces `REQUIREMENTS.md` (not a "PRD" file).
 
 - **NFR-Q (how questions are asked).** Every question put to the user carries a
   **recommendation**. More than one option is offered only when the options are equally valid or
