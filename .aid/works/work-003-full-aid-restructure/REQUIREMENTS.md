@@ -100,7 +100,7 @@ corrected by FR-5):
   `aid-design-*` copies) become data: an intent catalog crossed with artifact profiles.
 - Phases are flexible around a fixed core: Specify -> Plan -> Execute almost always happens; Definition
   runs when the work must first be defined (discussion or an external ticket); Preparation runs once
-  plus on demand; CI only when a pipeline exists. `full` / `fast` / `direct` changes how much the
+  plus on demand; CI only when a pipeline exists. `full` / `fast` changes how much the
   user reviews; intent is read by meaning and validated against the KB (FR-4); depth escalates or
   de-escalates as the work evolves.
 - The orchestrator and interviewer sub-agents retire (only the main conversation can talk with the
@@ -207,9 +207,9 @@ The orchestrator does not map phrasings; it interprets **meaning**, the way a co
 | Depth | Mandatory approvals |
 |---|---|
 | `full` | **Every document** is confirmed by the user (seed, requirements, task plan, ...), plus the final result. |
-| `fast` | **One approval before Building starts**, plus the final result. |
-| `direct` | The final result. |
+| `fast` | **One approval before Building starts** -- the agent always confirms what it is about to build (for a small fix, one short line) -- plus the final result. |
 
+- **There is no depth without a confirmation before building.** Even the smallest work is confirmed before Building starts.
 - **Always an approval at the end**, on the final result, at every depth -- **before the PR/MR** is opened.
 - **AID never merges anything.** The furthest it goes is pushing to the work's own branch; the merge
   is always a human act.
@@ -476,7 +476,7 @@ AC-22, AC-24 and AC-25.
 
 #### Description
 
-The agent in the user's own tool reads a plain request by its meaning, checks it against the skill guide in `rules.md`, the KB and the code, and proposes the matching workflow -- or just continues when nothing matches. It sizes the work (`full` / `fast` / `direct`) and runs only the phases the work needs around the Specify -> Plan -> Execute core. Project questions are answered from the KB with sources. Information from external sources -- project sources in the KB, or work sources attached to one work -- is applied to the work at any moment, and written back to the source on request. The orchestrator and interviewer sub-agents retire; every skill stays runnable by slash command.
+The agent in the user's own tool reads a plain request by its meaning, checks it against the skill guide in `rules.md`, the KB and the code, and proposes the matching workflow -- or just continues when nothing matches. It sizes the work (`full` / `fast`) and runs only the phases the work needs around the Specify -> Plan -> Execute core. Project questions are answered from the KB with sources. Information from external sources -- project sources in the KB, or work sources attached to one work -- is applied to the work at any moment, and written back to the source on request. The orchestrator and interviewer sub-agents retire; every skill stays runnable by slash command.
 
 #### User Stories
 

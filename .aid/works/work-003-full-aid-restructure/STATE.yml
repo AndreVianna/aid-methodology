@@ -446,11 +446,11 @@ qa:
   - id: Q12
     category: Requirements
     impact: Medium
-    state: Pending
+    state: Answered
     context: 'When is direct chosen, and what deletes the seed when requirements are never separately approved? (surfaced by /aid-define cross-reference)'
     suggested: 'direct for bug fixes and small refactors with a defined problem; delete the seed at the first approval covering the requirements.'
-    answer: --
-    applied_to: --
+    answer: 'No direct depth: the agent always confirms what it is about to build. Depths are full and fast only.'
+    applied_to: 'REQUIREMENTS.md FR-6, §4, Feature 001'
   - id: Q13
     category: Requirements
     impact: Medium
