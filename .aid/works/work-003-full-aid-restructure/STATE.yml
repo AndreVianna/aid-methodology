@@ -538,8 +538,8 @@ qa:
   - id: Q23
     category: Requirements
     impact: Medium
-    state: Pending
+    state: Answered
     context: 'Feature 005 promises a technical view in REQUIREMENTS.md; no FR/AC defines where it sits or what it holds. (surfaced by /aid-define cross-reference cycle 2)'
     suggested: 'REQUIREMENTS.md holds a technical section per requirement, or per feature when it splits; add to FR-3 and AC-16.'
-    answer: --
-    applied_to: --
+    answer: 'REQUIREMENTS.md has a business part and a technical part; technical once per work or per feature when split, each naming the requirements it serves.'
+    applied_to: 'REQUIREMENTS.md FR-3, AC-44, Feature 005'

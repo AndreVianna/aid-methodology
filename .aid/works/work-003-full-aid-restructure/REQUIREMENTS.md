@@ -166,6 +166,13 @@ on its own. The requirements document is built from **requirements with acceptan
 several features only when it truly delivers several such capabilities; most works have one, or none
 (a bug fix, a refactor). Tasks trace to requirements and acceptance criteria, not to feature folders.
 
+`REQUIREMENTS.md` has **two parts**:
+
+1. **Business** -- what and why: objective, problem, users, scope, requirements, acceptance criteria.
+2. **Technical** -- how it will be built: the approach, the parts of the system it touches, data and
+   interfaces, risks, and the design that is kept. Written **once for the whole work**, or **once per
+   feature** when the work splits into features; each technical section names the requirements it serves.
+
 ### FR-4 Intent interpretation
 
 The orchestrator does not map phrasings; it interprets **meaning**, the way a colleague would.
@@ -532,6 +539,7 @@ If assumption 1 or 2 fails in a tool, transparent orchestration degrades there t
 | AC-41 | The dashboard and chat read the work's state from the new `STATE.yml` layout (FR-20) and show it correctly for a work at each phase. | FR-20, Scope |
 | AC-42 | At each required building milestone the approval asks whether to create or update the PR/MR; on yes, the work is handed to `/aid-monitor-pipeline`, which alone creates or updates it, while building continues; on no, no PR/MR is touched. | FR-6, FR-7, FR-20 |
 | AC-43 | No `/aid-design` skill exists; a request to design a kind of thing (e.g. "design the orders API") reaches `/aid-brainstorm` with that kind's catalog rules, and only `/aid-brainstorm` writes idea drafts under `.aid/design/`. | Scope, FR-9 |
+| AC-44 | Every approved `REQUIREMENTS.md` has a business part and a technical part; the technical part exists once for the whole work, or once per feature when it splits, and each technical section names the requirements it serves. | FR-3 |
 
 ### Skills, naming and constraints
 
@@ -659,7 +667,7 @@ Improves how AID talks with the user and how skills move through their states. Q
 
 - **Priority:** Must
 - **Requirements:** §5 FR-1, FR-3, FR-11, FR-15; §6 NFR-N
-- **Criteria:** AC-12, AC-16
+- **Criteria:** AC-12, AC-16, AC-44
 
 #### Description
 
