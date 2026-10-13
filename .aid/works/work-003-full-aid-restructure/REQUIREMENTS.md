@@ -138,6 +138,24 @@ The orchestrator does not map phrasings; it interprets **meaning**, the way a co
 - **Questions and decisions are always validated against the KB** -- at intake and throughout the
   work. A question about the project starts no work: it is answered from the KB, with sources.
 
+### FR-5 Where orchestration lives
+
+- **The orchestrator is the host agent** -- the agent in the tool the user is already talking to
+  (Claude Code, Codex, Cursor, ...). AID adds no separate orchestrator actor: no front-door skill to
+  invoke and no orchestrator sub-agent.
+- **AID supplies guidance, not an actor:**
+  - `rules.md` (loaded at every session start) carries a **short orchestration section** (about
+    10-20 lines): read the intent, always consult the KB, find where the work stands, size the work,
+    and follow the one-topic-at-a-time and approval rules.
+  - `rules.md` also carries a **guide to the AID skills**: what each one is for and when to use it,
+    so the agent knows what is available and picks the right one. (This absorbs the intent-to-skill
+    routing idea in `.aid/design/skill-routing.md`.)
+  - The **detailed procedures** (richness checklist, depth rules, resuming a work, ...) live in an
+    on-demand playbook skill that the agent loads when it starts or resumes a work.
+- **Why the split:** the rules must be present every time, or the agent will not apply them to a plain
+  request; the detailed procedures are only needed when a work starts, so keeping them out of
+  `rules.md` keeps every session's context small.
+
 ## 6. Non-Functional Requirements
 
 - **NFR-Q (how questions are asked).** Every question put to the user carries a
