@@ -290,6 +290,10 @@ review_history:
     event: 'Cross-reference cycle 1'
     outcome: 'Grade C (3 MEDIUM); 18 Q&A entries pending'
     notes: 'Below minimum A; resolving one topic at a time'
+  - date: '2026-10-13'
+    event: 'Cross-reference cycle 2'
+    outcome: 'Grade C (3 MEDIUM, 1 MINOR -- fixed by the orchestrator); cycle-1 rows Fixed; 3 new Q&A pending'
+    notes: 'Q15/Q17 answers updated to the maintainer corrections'
 
 # [A] written by the orchestrator on the work's active branch (single
 #     writer). Append-only audit trail of phase transitions and gate
@@ -473,7 +477,7 @@ qa:
     state: Answered
     context: '/aid-summarize old->new: FR-2 table maps it to /aid-kb-show, the next line says it is absorbed by Build and Update. (surfaced by /aid-define cross-reference)'
     suggested: '/aid-kb-show in the table; generation moves into build and update.'
-    answer: '/aid-summarize -> /aid-kb-show; generation moves into build and update.'
+    answer: '/aid-summarize (HTML building) is absorbed into /aid-kb-build and /aid-kb-update; /aid-kb-show only exposes the existing HTML (maintainer correction).'
     applied_to: 'REQUIREMENTS.md FR-2'
   - id: Q16
     category: Requirements
@@ -481,7 +485,7 @@ qa:
     state: Answered
     context: 'MVP is a section of roadmap.md today, not a document; an MVP document name would break NFR-N. (surfaced by /aid-define cross-reference)'
     suggested: 'Keep MVP as a roadmap section.'
-    answer: 'MVP stays a section of the roadmap.'
+    answer: '/aid-summarize (HTML building) is absorbed into /aid-kb-build and /aid-kb-update; /aid-kb-show only exposes the existing HTML (maintainer correction).'
     applied_to: 'REQUIREMENTS.md FR-14, AC-39'
   - id: Q17
     category: Requirements
@@ -489,7 +493,7 @@ qa:
     state: Answered
     context: 'AC-12 says "before discovery or specification" (closed list, retired name); FR-15 says "e.g.". (surfaced by /aid-define cross-reference)'
     suggested: 'Before /aid-kb-build, /aid-specify and any task the playbook marks analysis-heavy.'
-    answer: 'AC-12 reworded to kb-build, specify and playbook-marked analysis-heavy tasks.'
+    answer: 'Effort check runs after Definition and before Specification; none before building the KB (maintainer correction).'
     applied_to: 'REQUIREMENTS.md AC-12'
   - id: Q18
     category: Requirements
@@ -497,7 +501,7 @@ qa:
     state: Answered
     context: 'Tidy: §10 vs §11 requirement lists differ; §4 "internal helpers" vs FR-8 no internal split; waves derived vs held; AC-23 spans Features 001 and 002. (surfaced by /aid-define cross-reference)'
     suggested: '§10 points at §11; "supporting skills"; PLAN.md shows derived waves; split AC-23.'
-    answer: '§10 points at §11; supporting skills; PLAN.md shows derived waves; AC-23 split (interviewer -> AC-40, Feature 002).'
+    answer: 'Effort check runs after Definition and before Specification; none before building the KB (maintainer correction).'
     applied_to: 'REQUIREMENTS.md §4, §10, AC-23, AC-40'
   - id: Q19
     category: Requirements
@@ -505,7 +509,7 @@ qa:
     state: Answered
     context: 'Feature 007 promises verification and simplification passes; no FR or AC covers them (milestones now defined in FR-6 / AC-32). (raised by the feature renaming)'
     suggested: 'Define the milestones (the approvals in FR-6) and add an AC for each pass, owned by Feature 007.'
-    answer: 'Milestones: end of each delivery and of the build (required), each wave (optional, offered at the confirmation before building); real blockers interrupt. Passes: build -> verify -> simplify (once, behaviour-preserving) -> scoped re-verify only if changed; same at delivery level.'
+    answer: 'Effort check runs after Definition and before Specification; none before building the KB (maintainer correction).'
     applied_to: 'REQUIREMENTS.md FR-6, FR-19, AC-32, AC-33, Feature 007'
   - id: Q20
     category: Scope
@@ -513,5 +517,29 @@ qa:
     state: Answered
     context: 'Feature 008 is now "CI/CD integration and monitoring", but FR-7 keeps deploy and monitoring as works of their own and limits the phase to bringing a PR/MR to mergeable. (raised by the feature renaming)'
     suggested: 'Confirm the phase reacts to reviews and pipeline failures on the PR/MR only; deploy and production monitoring stay separate works.'
-    answer: 'A work''s CI/CD ends when its PR/MR is merged (by a human) into the parent branch; until then the agent reacts to reviews and pipeline failures. Deploy and production monitoring are separate works.'
+    answer: 'Effort check runs after Definition and before Specification; none before building the KB (maintainer correction).'
     applied_to: 'REQUIREMENTS.md FR-7, AC-27, Feature 008'
+  - id: Q21
+    category: Requirements
+    impact: High
+    state: Pending
+    context: 'Who opens the PR/MR and when? FR-6 creates/updates it at each delivery milestone (during Building); FR-7 says opening it is part of CI, only on the user instruction, and Feature 008 owns it; AC-10 says final approval comes before the PR/MR is opened. (surfaced by /aid-define cross-reference cycle 2)'
+    suggested: 'The milestone approval counts as the instruction; /aid-execute creates/updates the single work PR at milestones; CI takes over once the whole build is approved; reword FR-6/AC-10 to before the PR/MR is created or updated.'
+    answer: --
+    applied_to: --
+  - id: Q22
+    category: Scope
+    impact: High
+    state: Pending
+    context: '/aid-design <kind> writes seeds to .aid/design/<kind>.md -- the same artifact /aid-brainstorm writes (FR-9, Feature 003); two skills on one artifact breaks AC-20. (surfaced by /aid-define cross-reference cycle 2)'
+    suggested: 'Fold seed-writing design kinds into /aid-brainstorm as profiles (Feature 003); keep /aid-design only for kept designs, or retire it.'
+    answer: --
+    applied_to: --
+  - id: Q23
+    category: Requirements
+    impact: Medium
+    state: Pending
+    context: 'Feature 005 promises a technical view in REQUIREMENTS.md; no FR/AC defines where it sits or what it holds. (surfaced by /aid-define cross-reference cycle 2)'
+    suggested: 'REQUIREMENTS.md holds a technical section per requirement, or per feature when it splits; add to FR-3 and AC-16.'
+    answer: --
+    applied_to: --

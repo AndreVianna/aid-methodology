@@ -96,7 +96,7 @@ corrected by FR-5):
   work, by whether the agents solve developers' problems efficiently. Indicative shape: phase skills (Preparation/KB build, Definition,
   Specification, Planning, Building, CI), setup skills (config, connectors, chat), and supporting
   skills (KB query/update/view, research, prototype, review, test, ticket, release, monitor).
-- The skills that pair an action with a kind of thing (84 today, e.g. `/aid-create-api`) become one
+- The skills that pair an action with a kind of thing (78 today, e.g. `/aid-create-api`) become one
   skill per action, with the kind as an argument; the rules for each kind live in one catalog (Feature 009).
 - Phases are flexible around a fixed core: Specify -> Plan -> Execute almost always happens; Definition
   runs when the work must first be defined (discussion or an external ticket); Preparation runs once
@@ -320,6 +320,10 @@ their dependencies and state), not a heavy document.
 
 ### FR-13 Agents
 
+The **orchestrator** sub-agent retires (the host agent orchestrates, FR-5), and the **interviewer**
+sub-agent retires (the question protocol, FR-17, runs in the main conversation, the only one that can
+talk with the user).
+
 The `aid-tech-writer` agent (prose for people: docs, READMEs, release notes) stays separate from the
 `aid-developer` agent (code): clear writing is a different skill, and agents are invisible to users,
 so merging them would simplify nothing the user notices.
@@ -511,7 +515,7 @@ If assumption 1 or 2 fails in a tool, transparent orchestration degrades there t
 | AC-28 | For each skill that asks the user questions, a scripted test conversation shows: one topic per question, each with its reason, a recommendation, only valid options and a free-text answer; groups of 3-5 by subject, most important first; a break offered after each group and at each change of subject; follow-ups right after the question that raised them; answered or trivial questions skipped; a skipped question recorded as open and resumable later by the same or another user. | FR-17 |
 | AC-29 | A ticket pulled in mid-work is **recorded as a work source** in `STATE.yml`; the pending questions it answers are closed, any new questions are added, and the phase advances when its conditions are met; on request, the agent **writes the work's information back** to the source; project sources are used by every work when needed without being attached. | FR-18 |
 | AC-30 | For every kind in the catalog, the typed form (`/aid-<action> <kind> ...`) and a plain-words request for the same thing reach **the same skill and the same rules**. | FR-4, FR-8 |
-| AC-31 | No remaining skill name combines an action with a kind of thing; the dashboard and chat show **only current skill names**. | Scope, M1 |
+| AC-31 | No skill name combines one of the six actions (create, update, design, document, test, prototype) with a kind of thing (e.g. no `/aid-create-api`); the dashboard and chat show **only current skill names**. | Scope, M1 |
 | AC-32 | During building, the user is asked for approval **only** at the end of each delivery and at the end of the whole build (each after verification, before a PR/MR is created or updated), plus at the end of each wave **only when the user opted in** during the confirmation before building; real blockers (something the agent cannot decide or fix on its own, including a conflict with the KB) are the only other interruptions. | FR-6 |
 | AC-33 | For each task and each delivery, the work record shows verify -> simplify, and a scoped re-verify **only when** the simplification changed something; simplification runs once, and the test set before and after it is identical and passing. | FR-19 |
 | AC-34 | Running a work from start to PR/MR creates **exactly one worktree and one branch** for it; no skill or script creates a per-delivery branch or merges anything. | FR-6 |
@@ -572,12 +576,12 @@ AC-22, AC-24 and AC-25.
 ### Feature 001 — Ask for Work in Plain Language
 
 - **Priority:** Must
-- **Requirements:** §5 FR-1, FR-4, FR-5, FR-8, FR-13, FR-18; §6 NFR-T
+- **Requirements:** §5 FR-1, FR-4, FR-5, FR-7, FR-8, FR-13, FR-18; §6 NFR-T
 - **Criteria:** AC-1, AC-2, AC-3, AC-4, AC-5, AC-6, AC-7, AC-14, AC-21, AC-23, AC-29
 
 #### Description
 
-The agent in the user's own tool reads a plain request by its meaning, checks it against the skill guide in `rules.md`, the KB and the code, and proposes the matching workflow -- or just continues when nothing matches. It sizes the work (`full` / `lite`) and runs only the phases the work needs around the Specify -> Plan -> Execute core. Project questions are answered from the KB with sources. Information from external sources -- project sources in the KB, or work sources attached to one work -- is applied to the work at any moment, and written back to the source on request. `/aid-triage` folds into the skill guide. The orchestrator and interviewer sub-agents retire; every skill stays runnable by slash command.
+The agent in the user's own tool reads a plain request by its meaning, checks it against the skill guide in `rules.md`, the KB and the code, and proposes the matching workflow -- or just continues when nothing matches. It sizes the work (`full` / `lite`) and runs only the phases the work needs around the Specify -> Plan -> Execute core. Project questions are answered from the KB with sources. Information from external sources -- project sources in the KB, or work sources attached to one work -- is applied to the work at any moment, and written back to the source on request. `/aid-triage` folds into the skill guide. The orchestrator sub-agent retires; every skill stays runnable by slash command.
 
 #### User Stories
 
@@ -592,7 +596,7 @@ The agent in the user's own tool reads a plain request by its meaning, checks it
 ### Feature 002 — Clear, Step-by-Step Decisions
 
 - **Priority:** Must
-- **Requirements:** §5 FR-6, FR-17, FR-20; §6 NFR-Q
+- **Requirements:** §5 FR-6, FR-7, FR-17, FR-20; §6 NFR-Q
 - **Criteria:** AC-8, AC-9, AC-10, AC-11, AC-28, AC-37, AC-38, AC-40, AC-41
 
 #### Description
@@ -685,7 +689,7 @@ Improves how AID talks with the user and how skills move through their states. Q
 ### Feature 007 — Hands-Off Building with Built-In Verification and Simplification
 
 - **Priority:** Must
-- **Requirements:** §5 FR-1, FR-11, FR-19
+- **Requirements:** §5 FR-1, FR-6, FR-11, FR-19
 - **Criteria:** AC-26, AC-32, AC-33, AC-34
 
 #### Description
@@ -727,7 +731,7 @@ Improves how AID talks with the user and how skills move through their states. Q
 #### Description
 
 Today AID has a separate skill for every pair of action and kind of thing (`/aid-create-api`,
-`/aid-update-ui`, `/aid-design-data-model`, ...) -- 84 near-identical names. They become **one skill
+`/aid-update-ui`, `/aid-design-data-model`, ...) -- 78 near-identical names. They become **one skill
 per action**: `/aid-create`, `/aid-update`, `/aid-design`, `/aid-document`, `/aid-test`,
 `/aid-prototype`. The kind of thing is given as an argument (`/aid-create api endpoint for orders`)
 or in plain words (*"create an API endpoint for orders"*); both reach the same skill and the same
