@@ -522,11 +522,11 @@ qa:
   - id: Q21
     category: Requirements
     impact: High
-    state: Pending
+    state: Answered
     context: 'Who opens the PR/MR and when? FR-6 creates/updates it at each delivery milestone (during Building); FR-7 says opening it is part of CI, only on the user instruction, and Feature 008 owns it; AC-10 says final approval comes before the PR/MR is opened. (surfaced by /aid-define cross-reference cycle 2)'
     suggested: 'The milestone approval counts as the instruction; /aid-execute creates/updates the single work PR at milestones; CI takes over once the whole build is approved; reword FR-6/AC-10 to before the PR/MR is created or updated.'
-    answer: --
-    applied_to: --
+    answer: 'Milestone approval asks whether to create/update the PR; yes = instruction; Building hands off to /aid-monitor-pipeline, the only skill that touches the PR, while building continues.'
+    applied_to: 'REQUIREMENTS.md FR-6, AC-10, AC-42, Feature 008'
   - id: Q22
     category: Scope
     impact: High

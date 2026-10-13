@@ -214,11 +214,15 @@ The orchestrator does not map phrasings; it interprets **meaning**, the way a co
 | `lite` | **One approval before Building starts** -- the agent always confirms what it is about to build (for a small fix, one short line) -- plus the final result. |
 
 - **There is no depth without a confirmation before building.** Even the smallest work is confirmed before Building starts.
-- **Always an approval at the end**, on the final result, at every depth -- **before the PR/MR** is opened.
+- **Always an approval at the end**, on the final result, at every depth -- **before the PR/MR is created or updated**.
 - **Building milestones.** After the confirmation before building (which is not a milestone), building runs
   without the user, and stops for approval only at:
   - **Required:** the end of **each delivery**, after verification, before creating or updating a PR/MR;
     and the end of **the whole build**, after verification, before creating or updating a PR/MR.
+  - The approval at each required milestone also asks **"Create or update the PR/MR now?"**; the user's
+    yes is the instruction FR-7 requires. Building then hands the work to the CI skill
+    (`/aid-monitor-pipeline`, FR-20 hand-off), which creates or updates the PR/MR and starts watching it
+    while building continues with the next delivery. The CI skill is the only one that touches the PR/MR.
   - **Optional** (the agent asks during the confirmation before building whether the user wants it): the end of
     **each wave**, after verification -- a review per wave, and/or a PR/MR update per wave.
   - **Real blockers** are raised when they happen: something the agent cannot decide or fix on its
@@ -495,7 +499,7 @@ If assumption 1 or 2 fails in a tool, transparent orchestration degrades there t
 |---|---|---|
 | AC-8 | Every question to the user carries **one recommendation** and an **importance label**; several options only for real forks, never a bad option, and a free-form answer is always possible. | NFR-Q |
 | AC-9 | Reviews come **one topic at a time**, in logical chunks, most important first; trivial decisions are taken by the AI and confirmed **in one batch at the end**. | Objective (digestible review) |
-| AC-10 | `full`: the user confirms every document. `lite`: exactly one approval before building. Every depth: a final approval of the result **before the PR/MR**. | FR-6 |
+| AC-10 | `full`: the user confirms every document. `lite`: exactly one approval before building. Every depth: a final approval of the result **before the PR/MR is created or updated**. | FR-6 |
 | AC-11 | **Nothing in AID ever merges**: no skill or script merges a branch or a PR/MR, and a PR/MR is opened only on the user's instruction. | FR-6, FR-7 |
 | AC-12 | After Definition and before Specification starts, the agent checks the effort level and **recommends a higher one** when it is below high; no effort check runs before building the KB. | FR-15 |
 | AC-13 | When GitHub/GitLab cannot be reached, the agent **offers to help establish the connection** before stopping. | FR-16 |
@@ -526,6 +530,7 @@ If assumption 1 or 2 fails in a tool, transparent orchestration degrades there t
 | AC-39 | Roadmap and backlog are ordinary KB documents and the MVP is a section of the roadmap, all created and updated through the normal flow with **no dedicated skills**. | FR-14 |
 | AC-40 | The question protocol is run by the main conversation; the interviewer sub-agent no longer exists. | FR-13, FR-17 |
 | AC-41 | The dashboard and chat read the work's state from the new `STATE.yml` layout (FR-20) and show it correctly for a work at each phase. | FR-20, Scope |
+| AC-42 | At each required building milestone the approval asks whether to create or update the PR/MR; on yes, the work is handed to `/aid-monitor-pipeline`, which alone creates or updates it, while building continues; on no, no PR/MR is touched. | FR-6, FR-7, FR-20 |
 
 ### Skills, naming and constraints
 
@@ -708,11 +713,11 @@ Improves how AID talks with the user and how skills move through their states. Q
 
 - **Priority:** Must
 - **Requirements:** §5 FR-7, FR-11, FR-16
-- **Criteria:** AC-13, AC-27, AC-35, AC-36
+- **Criteria:** AC-13, AC-27, AC-35, AC-36, AC-42
 
 #### Description
 
-`/aid-monitor-pipeline` opens a PR/MR only on the user's instruction and takes it to a mergeable state: review comments, a green pipeline, hardening, security and quality reviews -- without ever merging. Reported bugs, required corrections and pipeline failures are corrected automatically; suggestions are brought to the user with a recommendation; every correction is built, verified and approved by the user before it is pushed. When GitHub or GitLab cannot be reached, the agent first helps the user connect. The PR/MR holds only the real changes; whether the work folder is pushed, kept locally or deleted is a project setting. After the merge the agent marks the work done and cleans up locally only (temporary files, local branch, worktree); it never deletes a remote branch. Marking the work done is the minimum of this phase, even for a project with no repository. It integrates with and monitors the project's CI/CD process, reacting to reviews and to pipeline failures until a human merges the PR/MR into its parent branch (usually `main` or `master`) -- the end of the work's CI. Deploying and monitoring production are separate works.
+`/aid-monitor-pipeline` creates or updates the PR/MR only on the user's instruction -- given at a building milestone, which hands the work to it -- and takes it to a mergeable state: review comments, a green pipeline, hardening, security and quality reviews -- without ever merging. Reported bugs, required corrections and pipeline failures are corrected automatically; suggestions are brought to the user with a recommendation; every correction is built, verified and approved by the user before it is pushed. When GitHub or GitLab cannot be reached, the agent first helps the user connect. The PR/MR holds only the real changes; whether the work folder is pushed, kept locally or deleted is a project setting. After the merge the agent marks the work done and cleans up locally only (temporary files, local branch, worktree); it never deletes a remote branch. Marking the work done is the minimum of this phase, even for a project with no repository. It integrates with and monitors the project's CI/CD process, reacting to reviews and to pipeline failures until a human merges the PR/MR into its parent branch (usually `main` or `master`) -- the end of the work's CI. Deploying and monitoring production are separate works.
 
 #### User Stories
 
