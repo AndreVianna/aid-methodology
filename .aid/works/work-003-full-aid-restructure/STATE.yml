@@ -366,11 +366,11 @@ qa:
   - id: Q2
     category: Requirements
     impact: High
-    state: Pending
+    state: Answered
     context: 'How does a ticket flow? FR-1/AC-14 put ticket digestion in Definition; Objective/AC-7 send a rich ticket straight to requirements + plan. Feature 003 owns no ticket criterion. (surfaced by /aid-define cross-reference)'
     suggested: 'A ticket gets a light Definition digest (no seed), then goes to Specification; add a ticket-intake AC owned by Feature 003.'
-    answer: --
-    applied_to: --
+    answer: 'External sources enter at any moment, not only Definition. Two kinds: project sources (in the KB, used by every work when needed) and work sources (recorded in the work STATE). Info is analysed and applied (may advance phase, answer or raise questions); two-way update on request.'
+    applied_to: 'REQUIREMENTS.md FR-18, AC-29, AC-14, FR-1, FR-11, Features 001 and 003'
   - id: Q3
     category: Requirements
     impact: High

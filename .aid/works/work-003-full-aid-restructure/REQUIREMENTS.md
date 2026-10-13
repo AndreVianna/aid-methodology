@@ -134,7 +134,7 @@ defined, and CI runs only when the project has a pipeline.
 | Phase | Produces | Absorbs today's | Notes |
 |---|---|---|---|
 | Preparation | the KB | Discover | Runs **once**, when the KB is created, and then **on demand** when the KB needs an update -- not a step of every work. |
-| Definition | a seed (when the problem is discussed) | Describe, Brainstorm | Digests what the work is: through `/aid-brainstorm` when the user is discussing the problem, or from an **external source** (a Jira ticket, a GitHub issue, ...). Describe and Brainstorm overlap. |
+| Definition | a seed (when the problem is discussed) | Describe, Brainstorm | Digests what the work is through `/aid-brainstorm` when the user is discussing the problem. External sources (a Jira ticket, a GitHub issue, ...) can enter at any phase (FR-18). Describe and Brainstorm overlap. |
 | Specification | `REQUIREMENTS.md` | Define, Specify | The "feature" concept must be revisited: the current skill almost always proposes more features than are actually necessary, and its notion of a feature is not what a feature represents in a business model. |
 | Planning | the tasks | Plan, Detail | Deliveries and waves are only groupings of tasks; the atomic tasks and their dependencies are the most important information. |
 | Building | the outcome | Execute | Building is executing **and testing**. |
@@ -254,7 +254,7 @@ Plain, familiar names -- no invented verbs, no acronyms (NFR-N):
 | Phase | Skill |
 |---|---|
 | Preparation (builds the KB) | `/aid-kb-build` |
-| Definition | `/aid-brainstorm` (when discussing; an external ticket is digested in this phase too) |
+| Definition | `/aid-brainstorm` (when discussing the problem) |
 | Specification | `/aid-specify` *(M2)* |
 | Planning | `/aid-plan` *(M2)* |
 | Building (execute and test) | `/aid-execute` *(M2)* |
@@ -329,6 +329,21 @@ requirements, planning, questions during building, building the KB.
 10. **Every question and answer is recorded.** A user who cannot answer (lack of knowledge, ...)
     can skip a question; it stays open and is resumed later, with the same user or another one.
 
+### FR-18 External sources
+
+Information from external sources (a Jira ticket, a GitHub issue, any other source) can enter a
+work **at any moment**, not only at its start. There are two kinds:
+
+| Kind | Where it lives | Reach |
+|---|---|---|
+| **Project sources** | Catalogued in the KB (external sources, connectors) | Used by every work when needed, without being attached |
+| **Work sources** | Recorded in that work's `STATE.yml` | Apply to that work only (e.g. the ticket behind it) |
+
+- When the user asks the agent to pull in a source, its information becomes part of the work: it is
+  **analysed and applied** -- it may move the work to the next phase, answer pending questions, or
+  raise new ones (asked through the question protocol, FR-17).
+- **Two-way:** on the user's request, the agent also updates the source with information from the work.
+
 ## 6. Non-Functional Requirements
 
 - **NFR-N (naming).** No acronyms in artifact or skill names: names say plainly what the thing is.
@@ -396,7 +411,7 @@ If assumption 1 or 2 fails in a tool, transparent orchestration degrades there t
 
 | # | Check | Covers |
 |---|---|---|
-| AC-14 | Phases flex around the core: every work that builds something runs **Specify -> Plan -> Execute** (Execute includes **testing**); **Definition** runs when the work must first be defined, via `/aid-brainstorm` or by digesting an external ticket (Jira, GitHub issue, ...); **Preparation** runs once when the KB is created and on demand for updates; **Monitor pipeline** runs only when a pipeline exists; release, deploy and monitoring run as **works of their own**. | FR-1, FR-7 |
+| AC-14 | Phases flex around the core: every work that builds something runs **Specify -> Plan -> Execute** (Execute includes **testing**); **Definition** runs when the work must first be defined (`/aid-brainstorm`); external sources can enter at any phase (FR-18); **Preparation** runs once when the KB is created and on demand for updates; **Monitor pipeline** runs only when a pipeline exists; release, deploy and monitoring run as **works of their own**. | FR-1, FR-7 |
 | AC-15 | The KB is built, queried, updated and shown as HTML **through the agent's own judgment**, with no user step required; there is no separate summarize skill. | FR-2 |
 | AC-16 | Specification produces `REQUIREMENTS.md` made of **requirements with acceptance criteria**; it splits into features **only** when several user-visible capabilities exist (a bug fix produces none). | FR-3, NFR-N |
 | AC-17 | An idea's seed lives in `.aid/design/` and is **deleted once its requirements are approved**. | FR-9 |
@@ -405,6 +420,7 @@ If assumption 1 or 2 fails in a tool, transparent orchestration degrades there t
 | AC-26 | Building: `/aid-execute` runs each task's tests as part of the task; a task is marked **Done only after its tests pass**, and the final result shows the test results. | FR-1 |
 | AC-27 | CI: for an open PR/MR, `/aid-monitor-pipeline` fixes or answers **every review comment**, pushes fixes to the work's branch **until the pipeline is green**, runs the hardening, security and quality reviews, and **never merges**. | FR-7 |
 | AC-28 | For each skill that asks the user questions, a scripted test conversation shows: one topic per question, each with its reason, a recommendation, only valid options and a free-text answer; groups of 3-5 by subject, most important first; a break offered after each group and at each change of subject; follow-ups right after the question that raised them; answered or trivial questions skipped; a skipped question recorded as open and resumable later by the same or another user. | FR-17 |
+| AC-29 | A ticket pulled in mid-work is **recorded as a work source** in `STATE.yml`; the pending questions it answers are closed, any new questions are added, and the phase advances when its conditions are met; on request, the agent **writes the work's information back** to the source; project sources are used by every work when needed without being attached. | FR-18 |
 
 ### Skills, naming and constraints
 
@@ -455,12 +471,12 @@ AC-22, AC-24 and AC-25.
 ### Feature 001 — Ask for Work in Plain Language
 
 - **Priority:** Must
-- **Requirements:** §5 FR-1, FR-4, FR-5, FR-8, FR-13
-- **Criteria:** AC-1, AC-2, AC-3, AC-4, AC-5, AC-6, AC-7, AC-14, AC-21, AC-23
+- **Requirements:** §5 FR-1, FR-4, FR-5, FR-8, FR-13, FR-18
+- **Criteria:** AC-1, AC-2, AC-3, AC-4, AC-5, AC-6, AC-7, AC-14, AC-21, AC-23, AC-29
 
 #### Description
 
-The agent in the user's own tool reads a plain request by its meaning, checks it against the skill guide in `rules.md`, the KB and the code, and proposes the matching workflow -- or just continues when nothing matches. It sizes the work (`full` / `fast` / `direct`) and runs only the phases the work needs around the Specify -> Plan -> Execute core. Project questions are answered from the KB with sources. The orchestrator and interviewer sub-agents retire; every skill stays runnable by slash command.
+The agent in the user's own tool reads a plain request by its meaning, checks it against the skill guide in `rules.md`, the KB and the code, and proposes the matching workflow -- or just continues when nothing matches. It sizes the work (`full` / `fast` / `direct`) and runs only the phases the work needs around the Specify -> Plan -> Execute core. Project questions are answered from the KB with sources. Information from external sources -- project sources in the KB, or work sources attached to one work -- is applied to the work at any moment, and written back to the source on request. The orchestrator and interviewer sub-agents retire; every skill stays runnable by slash command.
 
 #### User Stories
 
@@ -499,7 +515,7 @@ Improves how AID talks with the user and how skills move through their states. Q
 
 #### Description
 
-`/aid-brainstorm` shapes an idea with the user, across sessions if needed, or takes in an external ticket (Jira, GitHub issue, ...). The shaped idea lives in `.aid/design/` and is deleted once its requirements are approved. Absorbs today's describe step.
+`/aid-brainstorm` shapes an idea with the user, across sessions if needed; a ticket or other external source can feed it, as it can any phase (FR-18). The shaped idea lives in `.aid/design/` and is deleted once its requirements are approved. Absorbs today's describe step.
 
 #### User Stories
 
