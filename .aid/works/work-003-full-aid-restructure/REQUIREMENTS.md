@@ -176,6 +176,18 @@ The orchestrator does not map phrasings; it interprets **meaning**, the way a co
   request; the detailed procedures are only needed when a work starts, so keeping them out of
   `rules.md` keeps every session's context small.
 
+### FR-6 Approvals and the merge boundary
+
+| Depth | Mandatory approvals |
+|---|---|
+| `full` | **Every document** is confirmed by the user (seed, PRD, task plan, ...), plus the final result. |
+| `fast` | **One approval before Building starts**, plus the final result. |
+| `direct` | The final result. |
+
+- **Always an approval at the end**, on the final result, at every depth.
+- **AID never merges anything.** The furthest it goes is pushing to the work's own branch; the merge
+  is always a human act.
+
 ## 6. Non-Functional Requirements
 
 - **NFR-Q (how questions are asked).** Every question put to the user carries a
