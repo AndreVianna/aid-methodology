@@ -367,6 +367,11 @@ If assumption 1 or 2 fails in a tool, transparent orchestration degrades there t
 | # | Check | Covers |
 |---|---|---|
 | AC-14 | Phases flex around the core: every work that builds something runs **Specify -> Plan -> Execute** (Execute includes **testing**); **Definition** runs when the work must first be defined, via `/aid-brainstorm` or by digesting an external ticket (Jira, GitHub issue, ...); **Preparation** runs once when the KB is created and on demand for updates; **Monitor pipeline** runs only when a pipeline exists; release, deploy and monitoring run as **works of their own**. | FR-1, FR-7 |
+| AC-15 | The KB is built, queried, updated and shown as HTML **through the agent's own judgment**, with no user step required; there is no separate summarize skill. | FR-2 |
+| AC-16 | Specification produces `REQUIREMENTS.md` made of **requirements with acceptance criteria**; it splits into features **only** when several user-visible capabilities exist (a bug fix produces none). | FR-3, NFR-N |
+| AC-17 | An idea's seed lives in `.aid/design/` and is **deleted once its requirements are approved**. | FR-9 |
+| AC-18 | In a new project, KB facts appear **as they are decided or built**, never guessed up front. | FR-10 |
+| AC-19 | `PLAN.md` is a scannable checklist (deliveries with their acceptance criteria, waves, tasks, dependencies, state); **no separate delivery documents or state files**; roadmap/backlog/MVP are ordinary KB documents with no dedicated skills. | FR-12, FR-14 |
 
 ## 10. Priority
 
