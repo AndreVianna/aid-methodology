@@ -287,6 +287,15 @@ simply not use them.
 
 ## 7. Constraints
 
+1. **Ships as part of AID v4.0.0.** v4 (the shared skills folder) is merged but not yet released;
+   folding this restructure into the same release gives users one breaking upgrade, not two in a row.
+2. **Works the same in all five supported tools:** Claude Code, Codex, Cursor, Antigravity, Copilot CLI.
+3. **Keeps AID's engineering rules:** one source (`canonical/`) rendered for every tool; bash and
+   PowerShell CLIs with byte-identical output (PowerShell 5.1-safe, ASCII); the tracking discipline;
+   no work ids in the KB.
+4. **`rules.md` stays short.** It loads in every session, so its orchestration section and skill guide
+   must stay compact (FR-5).
+
 ## 8. Assumptions & Dependencies
 
 ## 9. Acceptance Criteria
