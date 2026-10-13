@@ -190,7 +190,10 @@ The orchestrator does not map phrasings; it interprets **meaning**, the way a co
 
 ### FR-7 The CI phase, and operational works
 
-- **CI is the pull-request phase.** Once a PR exists for the work, CI manages it to a mergeable
+- **Opening the PR is part of CI, and happens only when the user instructs it.** The agent opens a
+  pull request (GitHub) or merge request (GitLab) for the work only on the user's instruction; it
+  never opens one on its own.
+- **CI is the pull-request phase.** Once the PR/MR exists, CI manages it to a mergeable
   state: it handles code reviews from other agents or developers, makes sure the CI pipeline
   completes green, and runs the hardening, security and quality reviews. It never merges (FR-6).
 - **Operational activities are works of their own, not phases:** preparing a release, publishing,
