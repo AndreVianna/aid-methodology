@@ -159,6 +159,11 @@ several features only when it truly delivers several such capabilities; most wor
 
 The orchestrator does not map phrasings; it interprets **meaning**, the way a colleague would.
 
+- **Matched against the skill guide.** Every user request is compared against the skill guide in
+  `rules.md` (FR-5) to find a skill that corresponds to it. One match: the agent proposes that
+  skill's workflow. Several candidates: the agent decides itself whenever it can, and asks the user
+  for the path only when it genuinely cannot decide. No match: the agent just continues normally --
+  no AID workflow is forced.
 - **Meaning, not keywords.** Different wordings of the same intent land in the same place; example
   phrasings are illustrations, not a lookup list.
 - **Verified against the project.** The user's words are a hint, not the truth: the orchestrator
@@ -327,6 +332,18 @@ If assumption 1 or 2 fails in a tool, transparent orchestration degrades there t
 - AID v4's shared layout (one skills folder, `.aid/runtime/`, `rules.md`), merged on master.
 
 ## 9. Acceptance Criteria
+
+### Understanding the request
+
+| # | Check | Covers |
+|---|---|---|
+| AC-1 | Every user request is compared against the skill guide; when one skill matches, the agent **proposes that skill's workflow** before starting. | FR-4, FR-5 |
+| AC-2 | When several skills match, the agent decides itself whenever it can, and **asks the user for the path only when it genuinely cannot decide**. | FR-4, NFR-Q |
+| AC-3 | When no skill matches, the agent **continues normally**, without forcing an AID workflow. | FR-4 |
+| AC-4 | A question about the project ("how does X work?") is answered **from the KB, with sources**, and starts no work. | FR-4 |
+| AC-5 | During a work, a decision that conflicts with the KB is **raised to the user**, never resolved silently. | FR-4 |
+| AC-6 | `rules.md` has an orchestration section of **at most 20 lines** plus a skill guide covering **every** AID skill (what it is for, when to use it); there is no front-door skill and no orchestrator sub-agent. | FR-5 |
+| AC-7 | A ticket with objective, users, scope, acceptance criteria and constraints goes straight to requirements + plan with **one approval** before building (`fast`); a bare idea starts brainstorming (`full`). | Objective, FR-1 |
 
 ## 10. Priority
 
