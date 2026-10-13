@@ -422,11 +422,11 @@ qa:
   - id: Q9
     category: Requirements
     impact: Medium
-    state: Pending
+    state: Answered
     context: 'AC-27: do CI fixes after the final approval need re-approval, and when does the fix loop stop? (surfaced by /aid-define cross-reference)'
     suggested: 'Summarize post-approval changes for re-approval; stop and report after 3 failed fix attempts.'
-    answer: --
-    applied_to: --
+    answer: 'Bugs/required corrections fixed automatically; suggestions/comments evaluated and brought to the user with options and a recommendation; every correction is a build and must be approved before push. Same failure after 3 attempts: stop and ask (assumed).'
+    applied_to: 'REQUIREMENTS.md FR-7, AC-27, Feature 008'
   - id: Q10
     category: Requirements
     impact: Medium
