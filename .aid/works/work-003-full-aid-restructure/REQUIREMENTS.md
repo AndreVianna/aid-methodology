@@ -224,7 +224,11 @@ The orchestrator does not map phrasings; it interprets **meaning**, the way a co
 
 - The table covers the approval of **documents**. The building milestones below apply at **every depth**.
 - **There is no depth without a confirmation before building.** Even the smallest work is confirmed before Building starts.
-- **Always an approval at the end**, on the final result, at every depth -- **before the PR/MR is created or updated**.
+  `/aid-execute` opens with this confirmation: in `lite` it is the single pre-build approval; in `full` it follows
+  the plan approval, or is the same approval when both fall at the same moment. It is where the per-wave
+  option below is asked.
+- **Always an approval at the end**, on the final result, at every depth. Like every approval, it comes
+  **before the push it controls**: nothing reaches the PR/MR without the approval that covers it.
 - **Building milestones.** After the confirmation before building (which is not a milestone), building runs
   without the user and stops for approval only at milestones. This is the single definition of the
   milestone flow; features and criteria refer to it.
@@ -521,7 +525,7 @@ If assumption 1 or 2 fails in a tool, transparent orchestration degrades there t
 |---|---|---|
 | AC-8 | Every question to the user carries **one recommendation** and an **importance label**; several options only for real forks, never a bad option, and a free-form answer is always possible. | NFR-Q |
 | AC-9 | Reviews come **one topic at a time**, in logical chunks, most important first; trivial decisions are taken by the AI and confirmed **in one batch at the end**. | Objective (digestible review) |
-| AC-10 | `full`: the user confirms every document. `lite`: exactly one approval before building. Every depth: a final approval of the result **before the PR/MR is created or updated**. | FR-6 |
+| AC-10 | `full`: the user confirms every document. `lite`: exactly one approval before building. Every depth: a final approval of the result; every approval comes **before the push it controls**. | FR-6 |
 | AC-11 | **Nothing in AID ever merges**: no skill or script merges a branch or a PR/MR, and a PR/MR is opened only on the user's instruction. | FR-6, FR-7 |
 | AC-12 | After Definition and before Specification starts, the agent checks the effort level and **recommends a higher one** when it is below high; no effort check runs before building the KB. | FR-15 |
 | AC-13 | When GitHub/GitLab cannot be reached, the agent **offers to help establish the connection** before stopping. | FR-16 |
@@ -601,6 +605,8 @@ test suite (NFR-T).
   milestones (FR-6). *(To confirm.)*
 - **M11 -- Coinciding approvals.** Approvals that fall at the same moment are one approval (FR-6).
   *(To confirm.)*
+- **M12 -- Confirmation before building.** `/aid-execute` opens with it (FR-6); in `full` it follows the plan
+  approval, or is the same approval when both fall at the same moment. *(To confirm.)*
 
 ## 11. Features
 
@@ -640,7 +646,7 @@ Improves how AID talks with the user and how skills move through their states. Q
 #### User Stories
 
 - As an AID user who tires of long documents, I want decisions one topic at a time, most important first, each with a recommendation, so that I can decide well without being overwhelmed.
-- As the decision-maker, I want a final approval before any PR/MR and a guarantee that nothing merges on its own, so that I keep control of what ships.
+- As the decision-maker, I want every push approved before it happens, including a final approval of the result, and a guarantee that nothing merges on its own, so that I keep control of what ships.
 
 #### Technical Specification
 
@@ -728,7 +734,7 @@ Improves how AID talks with the user and how skills move through their states. Q
 
 #### Description
 
-`/aid-execute` carries out the plan's tasks and tests them: a task is done only when its tests pass, and the result shows the test outcome. The user is involved only at the building milestones defined in FR-6; each task, and each delivery as a whole, goes through verification, then a lighter simplification pass, then a scoped re-verification only when the simplification changed something (FR-19). Each work builds on its one worktree and branch; the per-delivery branches are removed. It runs the FR-6 milestone steps, including the hand-offs to the CI skill.
+`/aid-execute` carries out the plan's tasks and tests them: a task is done only when its tests pass, and the result shows the test outcome. It opens with the confirmation before building (where the per-wave option is asked); after that the user is involved only at the building milestones defined in FR-6 and for real blockers; each task, and each delivery as a whole, goes through verification, then a lighter simplification pass, then a scoped re-verification only when the simplification changed something (FR-19). Each work builds on its one worktree and branch; the per-delivery branches are removed. It runs the FR-6 milestone steps, including the hand-offs to the CI skill.
 
 #### User Stories
 

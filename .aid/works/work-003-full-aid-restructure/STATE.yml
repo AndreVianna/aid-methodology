@@ -310,6 +310,10 @@ review_history:
     event: 'Cross-reference cycle 6'
     outcome: 'Grade C (2 MEDIUM, rows 14-15); rows 1-13 confirmed Fixed'
     notes: 'Milestone flow now defined once in FR-6 and referenced by Features 007/008 and AC-42; M10/M11 to confirm'
+  - date: '2026-10-13'
+    event: 'Cross-reference cycle 7'
+    outcome: 'Grade C (2 MEDIUM, rows 16-17); rows 1-15 confirmed Fixed'
+    notes: 'Approvals reworded to before the push they control; confirmation before building owned by /aid-execute (M12, to confirm)'
 
 # [A] written by the orchestrator on the work's active branch (single
 #     writer). Append-only audit trail of phase transitions and gate
