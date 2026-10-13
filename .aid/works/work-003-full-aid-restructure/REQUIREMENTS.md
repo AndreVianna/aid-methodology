@@ -77,6 +77,12 @@ These phases and their artifacts have several problems (not an exhaustive list):
 
 ## 3. Users & Stakeholders
 
+| Who | Role | What they need from this |
+|---|---|---|
+| **People who use AID through their AI coding tool** (Claude Code, Codex, Cursor, ...) -- developers, and non-technical or attention-limited people who review and approve work | Primary users | Say what they want in plain words; review one topic at a time; stay in control through the approvals |
+| **AID maintainers** | Secondary users | A small, clean skill set (about 20 instead of 112) with one clear job each |
+| **The AID maintainer (Andre Vianna)** | Decision-maker | Approves the requirements and the final result |
+
 ## 4. Scope
 
 ### In Scope
