@@ -213,7 +213,61 @@ interview:
 #   qa_count: integer
 #   withdrawn: true -- omit the key entirely for a live feature
 #   sections[].state: Pending | In Discussion | Complete
-features: []
+features:
+  - id: '001'
+    name: understand-request-size-work
+    state: Pending
+    grade: Pending
+    qa_count: 0
+    sections: []
+  - id: '002'
+    name: user-interaction-state-machines
+    state: Pending
+    grade: Pending
+    qa_count: 0
+    sections: []
+  - id: '003'
+    name: definition
+    state: Pending
+    grade: Pending
+    qa_count: 0
+    sections: []
+  - id: '004'
+    name: specification
+    state: Pending
+    grade: Pending
+    qa_count: 0
+    sections: []
+  - id: '005'
+    name: planning
+    state: Pending
+    grade: Pending
+    qa_count: 0
+    sections: []
+  - id: '006'
+    name: building
+    state: Pending
+    grade: Pending
+    qa_count: 0
+    sections: []
+  - id: '007'
+    name: kb-runs-itself
+    state: Pending
+    grade: Pending
+    qa_count: 0
+    sections: []
+  - id: '008'
+    name: ci-phase
+    state: Pending
+    grade: Pending
+    qa_count: 0
+    sections: []
+  - id: '009'
+    name: smaller-clearer-skill-set
+    state: Pending
+    grade: Pending
+    qa_count: 0
+    sections: []
 
 # [A] appended by aid-describe / aid-define as the interview and its
 #     cross-reference pass proceed. Append-only, newest LAST. Distinct from
@@ -228,7 +282,11 @@ features: []
 #     range. A table the schema does not name is still data.
 #
 #   - date / event / outcome / notes
-review_history: []
+review_history:
+  - date: '2026-10-13'
+    event: 'Feature Decomposition'
+    outcome: '9 features defined (all Must); AC-26, AC-27 added; §10 reordered'
+    notes: 'Approved by the maintainer after two adjustment rounds'
 
 # [A] written by the orchestrator on the work's active branch (single
 #     writer). Append-only audit trail of phase transitions and gate

@@ -379,6 +379,8 @@ If assumption 1 or 2 fails in a tool, transparent orchestration degrades there t
 | AC-17 | An idea's seed lives in `.aid/design/` and is **deleted once its requirements are approved**. | FR-9 |
 | AC-18 | In a new project, KB facts appear **as they are decided or built**, never guessed up front. | FR-10 |
 | AC-19 | `PLAN.md` is a scannable checklist (deliveries with their acceptance criteria, waves, tasks, dependencies, state); **no separate delivery documents or state files**; roadmap/backlog/MVP are ordinary KB documents with no dedicated skills. | FR-12, FR-14 |
+| AC-26 | Building: `/aid-execute` runs each task's tests as part of the task; a task is marked **Done only after its tests pass**, and the final result shows the test results. | FR-1 |
+| AC-27 | CI: for an open PR/MR, `/aid-monitor-pipeline` fixes or answers **every review comment**, pushes fixes to the work's branch **until the pipeline is green**, runs the hardening, security and quality reviews, and **never merges**. | FR-7 |
 
 ### Skills, naming and constraints
 
@@ -392,21 +394,24 @@ If assumption 1 or 2 fails in a tool, transparent orchestration degrades there t
 | AC-25 | AID's engineering rules hold: one source rendered for all five tools, byte-identical bash/PowerShell output, the tracking discipline, no work ids in the KB, and **all CI green on Linux and Windows**. | Constraints |
 ## 10. Priority
 
-Build order, if it cannot all land at once:
+Every feature is **Must**. Build order (the §11 feature order):
 
-1. **Orchestration** -- the `rules.md` orchestration section, the skill guide, intent matching
-   (FR-4, FR-5, FR-8). The leading goal; everything else hangs off it.
-2. **The core phases** -- Definition -> Specify -> Plan -> Execute, with `REQUIREMENTS.md`, `PLAN.md` as
-   an improved TODO list, and no delivery documents (FR-1, FR-3, FR-9, FR-11, FR-12).
-3. **Conversation rules** -- one topic at a time, importance labels, batched minor decisions, the
-   approvals, never merging (Objective, NFR-Q, FR-6).
-4. **KB operations** -- discover / query / update / HTML view through the agent's judgment, the
-   greenfield KB, and the effort-level check (FR-2, FR-10, FR-14, FR-15).
-5. **Wrapper skills become data**, and the old -> new table (Scope, M1).
-6. **Monitor pipeline** (the PR phase) and help with connections (FR-7, FR-16).
+1. **Understand the request and size the work** -- orchestration, the skill guide, intent matching,
+   depth and flexible phases (FR-1, FR-4, FR-5, FR-8, FR-13). The leading goal; everything else hangs off it.
+2. **User interaction and skill state machines** -- one topic at a time, importance labels, batched
+   minor decisions, the approvals, never merging, and a revised Q&A/interview process (Objective,
+   NFR-Q, FR-6). Every phase skill built after it follows these rules.
+3. **Definition** (FR-1, FR-9, FR-11).
+4. **Specification** -- `REQUIREMENTS.md` (FR-1, FR-3, FR-11).
+5. **Planning** -- `PLAN.md` as an improved TODO list, no delivery documents (FR-1, FR-11, FR-12).
+6. **Building** -- execute and test (FR-1, FR-11).
+7. **KB operations** -- build / query / update / HTML view through the agent's judgment, the
+   greenfield KB, product-planning documents, and the effort-level check (FR-2, FR-10, FR-14, FR-15).
+8. **CI phase** -- monitor pipeline and help with connections (FR-7, FR-16).
+9. **A smaller, clearer skill set** -- wrapper skills become data (Scope, M1).
 
-Items 1-3 deliver the transparent, conversational experience; 4-6 build on it and can each ship
-without blocking the others.
+Every feature must also pass AC-22 (names), AC-24 (old -> new table rows for the skills it retires)
+and AC-25 (engineering rules, CI green).
 
 ## Minor decisions taken by the AI (to confirm in one batch at the end)
 
@@ -417,3 +422,176 @@ without blocking the others.
 - **M3 -- Knowledge Base operation names.** *(Set by the maintainer.)* `/aid-kb-build` (replaces
   `/aid-discover` as the Preparation skill -- v4 is a breaking release), `/aid-kb-query`,
   `/aid-kb-update`, `/aid-kb-show` (gives a link to open `kb.html`).
+
+## 11. Features
+
+Every feature is **Must**; the order below is the build order (§10). Every feature must also pass
+AC-22, AC-24 and AC-25.
+
+### Feature 001 — Understand the Request and Size the Work
+
+- **Priority:** Must
+- **Requirements:** §5 FR-1, FR-4, FR-5, FR-8, FR-13
+- **Criteria:** AC-1, AC-2, AC-3, AC-4, AC-5, AC-6, AC-7, AC-14, AC-21, AC-23
+
+#### Description
+
+The agent in the user's own tool reads a plain request by its meaning, checks it against the skill guide in `rules.md`, the KB and the code, and proposes the matching workflow -- or just continues when nothing matches. It sizes the work (`full` / `fast` / `direct`) and runs only the phases the work needs around the Specify -> Plan -> Execute core. Project questions are answered from the KB with sources. The orchestrator and interviewer sub-agents retire; every skill stays runnable by slash command.
+
+#### User Stories
+
+- As an AID user, I want to say what I need in my own words and have the agent pick the right process, so that I never need to know skill names.
+- As an AID user with a complete ticket, I want to go straight to requirements and plan with one approval, so that small, well-defined work is not slowed down.
+- As an AID user, I want a question about my project answered from the KB, with sources, without starting a work, so that a quick question stays quick.
+
+#### Technical Specification
+
+*(pending -- added by `/aid-specify`)*
+
+### Feature 002 — User Interaction and Skill State Machines
+
+- **Priority:** Must
+- **Requirements:** §5 FR-6, NFR-Q
+- **Criteria:** AC-8, AC-9, AC-10, AC-11
+
+#### Description
+
+Improves how AID talks with the user and how skills move through their states. Questions come one topic at a time, each with a recommendation and an importance label; reviews arrive in chunks, most important first; minor decisions are confirmed in one batch at the end. Approvals follow the depth, with a final approval before any PR/MR, and nothing ever merges. Includes a revision of the Q&A / interview process and of how skill state machines are handled. Every phase skill built after this feature follows these rules.
+
+#### User Stories
+
+- As an AID user who tires of long documents, I want decisions one topic at a time, most important first, each with a recommendation, so that I can decide well without being overwhelmed.
+- As the decision-maker, I want a final approval before any PR/MR and a guarantee that nothing merges on its own, so that I keep control of what ships.
+
+#### Technical Specification
+
+*(pending -- added by `/aid-specify`)*
+
+### Feature 003 — Definition
+
+- **Priority:** Must
+- **Requirements:** §5 FR-1, FR-9, FR-11
+- **Criteria:** AC-17
+
+#### Description
+
+`/aid-brainstorm` shapes an idea with the user, across sessions if needed, or takes in an external ticket (Jira, GitHub issue, ...). The shaped idea lives in `.aid/design/` and is deleted once its requirements are approved. Absorbs today's describe step.
+
+#### User Stories
+
+- As an AID user, I want to shape an idea across sessions, or hand over a ticket, and have it turned into a clear starting point, so that work begins from a well-understood problem.
+
+#### Technical Specification
+
+*(pending -- added by `/aid-specify`)*
+
+### Feature 004 — Specification
+
+- **Priority:** Must
+- **Requirements:** §5 FR-1, FR-3, FR-11; NFR-N
+- **Criteria:** AC-16
+
+#### Description
+
+`/aid-specify` (today's define and specify merged) produces `REQUIREMENTS.md` made of requirements with acceptance criteria. It splits the work into features only when it delivers several user-visible capabilities.
+
+#### User Stories
+
+- As an AID user, I want one requirements document, split into features only when there really are several capabilities, so that I review what matters and nothing invented.
+
+#### Technical Specification
+
+*(pending -- added by `/aid-specify`)*
+
+### Feature 005 — Planning
+
+- **Priority:** Must
+- **Requirements:** §5 FR-1, FR-11, FR-12
+- **Criteria:** AC-19
+
+#### Description
+
+`/aid-plan` (today's plan and detail merged) writes `PLAN.md` as an improved TODO list: deliveries with their acceptance criteria, waves, atomic tasks, dependencies and state. One `STATE.yml` per work; no delivery documents or state files.
+
+#### User Stories
+
+- As an AID user, I want the plan as a short checklist of tasks and their order, so that I can see progress at a glance.
+- As a maintainer, I want one state file per work and no delivery documents, so that there is less to keep consistent.
+
+#### Technical Specification
+
+*(pending -- added by `/aid-specify`)*
+
+### Feature 006 — Building
+
+- **Priority:** Must
+- **Requirements:** §5 FR-1, FR-11
+- **Criteria:** AC-26
+
+#### Description
+
+`/aid-execute` carries out the plan's tasks and tests them: a task is done only when its tests pass, and the result shows the test outcome.
+
+#### User Stories
+
+- As an AID user, I want every task built and tested before it counts as done, so that what I approve at the end actually works.
+
+#### Technical Specification
+
+*(pending -- added by `/aid-specify`)*
+
+### Feature 007 — The KB Runs Itself
+
+- **Priority:** Must
+- **Requirements:** §5 FR-2, FR-10, FR-14, FR-15
+- **Criteria:** AC-12, AC-15, AC-18
+
+#### Description
+
+`/aid-kb-build`, `/aid-kb-query`, `/aid-kb-update` and `/aid-kb-show`, run by the agent's own judgment; summarize is absorbed. In a new project the KB grows as things are decided and built. Roadmap, backlog and MVP become ordinary KB documents. Before analysis-heavy tasks the agent checks the effort level and recommends a higher one when needed.
+
+#### User Stories
+
+- As an AID user, I want the KB built, consulted and kept current without asking, so that the agent always works from accurate facts.
+- As an AID user starting a new project, I want the KB to grow as decisions are made, so that it never holds guesses.
+
+#### Technical Specification
+
+*(pending -- added by `/aid-specify`)*
+
+### Feature 008 — CI Phase
+
+- **Priority:** Must
+- **Requirements:** §5 FR-7, FR-11, FR-16
+- **Criteria:** AC-13, AC-27
+
+#### Description
+
+`/aid-monitor-pipeline` opens a PR/MR only on the user's instruction and takes it to a mergeable state: review comments, a green pipeline, hardening, security and quality reviews -- without ever merging. When GitHub or GitLab cannot be reached, the agent first helps the user connect. Runs only when the project has a pipeline.
+
+#### User Stories
+
+- As an AID user, I want the agent to bring my PR/MR to a mergeable state when I ask, and to help me connect if it cannot reach GitHub or GitLab, so that the last step does not stall while the merge stays mine.
+
+#### Technical Specification
+
+*(pending -- added by `/aid-specify`)*
+
+### Feature 009 — A Smaller, Clearer Skill Set
+
+- **Priority:** Must
+- **Requirements:** §5 Scope (wrapper skills), M1
+- **Criteria:** AC-20
+
+#### Description
+
+The 68 skills that hold no logic of their own (34 doorways, 13 kind-siblings, 21 design copies) become data: a catalog of intents crossed with artifact profiles, behind the one-pass ("fast") create/update path. Every remaining skill has one job and no two overlap.
+
+#### User Stories
+
+- As an AID user, I want one clear skill for each kind of request, so that I never have to choose between near-identical names.
+- As a maintainer, I want the copy-paste skills replaced by a catalog, so that a change happens in one place.
+
+#### Technical Specification
+
+*(pending -- added by `/aid-specify`)*
