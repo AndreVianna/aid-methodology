@@ -94,8 +94,8 @@ corrected by FR-5):
   guide) and an on-demand playbook skill (FR-5).
 - The skill set shrinks substantially -- **no fixed target number**; the final count is decided after the
   work, by whether the agents solve developers' problems efficiently. Indicative shape: phase skills (Preparation/KB build, Definition,
-  Specification, Planning, Building, CI), setup skills (config, connectors, chat), and internal
-  helpers (KB query/update/view, research, prototype, review, test, ticket, release, monitor).
+  Specification, Planning, Building, CI), setup skills (config, connectors, chat), and supporting
+  skills (KB query/update/view, research, prototype, review, test, ticket, release, monitor).
 - The skills that pair an action with a kind of thing (84 today, e.g. `/aid-create-api`) become one
   skill per action, with the kind as an argument; the rules for each kind live in one catalog (Feature 009).
 - Phases are flexible around a fixed core: Specify -> Plan -> Execute almost always happens; Definition
@@ -104,9 +104,10 @@ corrected by FR-5):
   user reviews; intent is read by meaning and validated against the KB (FR-4); depth escalates or
   de-escalates as the work evolves.
 - The orchestrator and interviewer sub-agents retire (only the main conversation can talk with the
-  user). The rest of the agent set is an open question (see FR-13).
-- One work layout: a single `STATE.yml` per work; no delivery- or task-level state files; waves are
-  derived from task dependencies.
+  user). `aid-tech-writer` and `aid-developer` stay separate; reviewer specialization stays open (FR-13);
+  the other agents (architect, researcher, operator, clerk) keep their roles in this work.
+- One work layout: a single `STATE.yml` per work; no delivery- or task-level state files; `PLAN.md` shows
+  the waves, derived from task dependencies.
 - The proposal's F3 (does the front door engage on every plain-language request?) is settled by
   FR-5: `rules.md` guides the host agent on every request.
 
@@ -145,7 +146,7 @@ uses a repository and a pipeline.
 
 The KB is managed through four operations, **always handled by the orchestrator**: it identifies
 when the KB should be updated, and when a piece of information about the project should be queried
-from the KB. The user does not trigger them.
+from the KB. The user never *needs* to trigger them (they stay invocable, FR-8).
 
 | Operation | Purpose | Absorbs today's |
 |---|---|---|
@@ -154,7 +155,8 @@ from the KB. The user does not trigger them.
 | Update KB (`/aid-kb-update`) | Keep the KB current as the project changes | `/aid-update-kb` |
 | Visualize KB (`/aid-kb-show`) | Give a link to open the HTML view (`kb.html`) produced during Build and refreshed during Update | `/aid-summarize` |
 
-Summarize is no longer a separate skill: it is absorbed by Build KB and Update KB.
+Summarize is no longer a separate skill: generating the HTML view moves into Build KB and Update KB, and
+`/aid-kb-show` opens it (old -> new: `/aid-summarize` -> `/aid-kb-show`).
 
 ### FR-3 What a feature is
 
@@ -326,7 +328,7 @@ phase (by experimentation), not decided here.
 
 ### FR-14 Product-planning documents
 
-Roadmap, backlog and MVP stay, as **ordinary KB documents**: created and updated through the normal
+Roadmap and backlog stay as **ordinary KB documents**, and the MVP stays a section of the roadmap: created and updated through the normal
 flow (brainstorm, then update the KB), with no dedicated skills (today's six
 `aid-create/update-{roadmap,backlog,mvp}` skills retire). They let the agent act on requests such as
 "work on the next backlog item" or "what's on the roadmap?"; teams that prefer their tracker can
@@ -427,6 +429,12 @@ A skill's state machine is the fixed set of steps it moves through. It is revise
   The Specification phase produces `REQUIREMENTS.md` (not a "PRD" file). Accepted exception: **KB**,
   an established term in AID (`/aid-kb-build`, `/aid-kb-query`, `/aid-kb-update`, `/aid-kb-show`).
 
+- **NFR-T (testing behaviour).** Criteria about how the agent behaves are checked by a **conversation
+  test suite**: each has a few scripted sample conversations with an expected outcome; each runs
+  **3 times** and passes only if all 3 runs meet it; an independent reviewer agent judges the
+  transcripts. "Every skill in all five tools" is checked statically, against each tool's installed
+  files. Feature 001 builds the suite; every feature adds its own samples.
+
 - **NFR-Q (how questions are asked).** Every question put to the user follows the question
   protocol (FR-17).
 
@@ -481,7 +489,7 @@ If assumption 1 or 2 fails in a tool, transparent orchestration degrades there t
 | AC-9 | Reviews come **one topic at a time**, in logical chunks, most important first; trivial decisions are taken by the AI and confirmed **in one batch at the end**. | Objective (digestible review) |
 | AC-10 | `full`: the user confirms every document. `lite`: exactly one approval before building. Every depth: a final approval of the result **before the PR/MR**. | FR-6 |
 | AC-11 | **Nothing in AID ever merges**: no skill or script merges a branch or a PR/MR, and a PR/MR is opened only on the user's instruction. | FR-6, FR-7 |
-| AC-12 | Before discovery or specification, the agent checks the effort level and **recommends a higher one** when it is below high. | FR-15 |
+| AC-12 | Before `/aid-kb-build`, `/aid-specify` and any task the playbook marks analysis-heavy, the agent checks the effort level and **recommends a higher one** when it is below high. | FR-15 |
 | AC-13 | When GitHub/GitLab cannot be reached, the agent **offers to help establish the connection** before stopping. | FR-16 |
 
 ### Phases and documents
@@ -493,7 +501,7 @@ If assumption 1 or 2 fails in a tool, transparent orchestration degrades there t
 | AC-16 | Specification produces `REQUIREMENTS.md` made of **requirements with acceptance criteria**; it splits into features **only** when several user-visible capabilities exist (a bug fix produces none). | FR-3, NFR-N |
 | AC-17 | An idea's seed lives in `.aid/design/` and is **deleted once its requirements are approved**. | FR-9 |
 | AC-18 | In a new project, KB facts appear **as they are decided or built**, never guessed up front. | FR-10 |
-| AC-19 | `PLAN.md` is a scannable checklist (deliveries with their acceptance criteria, waves, tasks, dependencies, state); **no separate delivery documents or state files**; each task has one instruction file with no state; roadmap/backlog/MVP are ordinary KB documents with no dedicated skills. | FR-12, FR-14 |
+| AC-19 | `PLAN.md` is a scannable checklist (deliveries with their acceptance criteria, waves, tasks, dependencies, state); **no separate delivery documents or state files**; each task has one instruction file with no state. | FR-12 |
 | AC-26 | Building: `/aid-execute` runs each task's tests as part of the task; a task is marked **Done only after its tests pass**, and the final result shows the test results. | FR-1 |
 | AC-27 | CI: for an open PR/MR, `/aid-monitor-pipeline` corrects reported bugs, required corrections and pipeline failures on its own, and brings each suggestion or plain comment to the user as options with a recommendation; **every correction goes through the build process and the user's approval before it is pushed**; this continues **until a human merges the PR/MR** into its parent branch; the agent **never merges**. | FR-7 |
 | AC-28 | For each skill that asks the user questions, a scripted test conversation shows: one topic per question, each with its reason, a recommendation, only valid options and a free-text answer; groups of 3-5 by subject, most important first; a break offered after each group and at each change of subject; follow-ups right after the question that raised them; answered or trivial questions skipped; a skipped question recorded as open and resumable later by the same or another user. | FR-17 |
@@ -507,6 +515,9 @@ If assumption 1 or 2 fails in a tool, transparent orchestration degrades there t
 | AC-36 | After a human merges the PR/MR, the work is marked **done** and clean-up is local only (temporary files, local branch, worktree); **no remote branch is deleted** by AID. The work folder is pushed, kept locally, or deleted exactly as the project setting says. A work in a project with no repository is still marked done at the end. | FR-7 |
 | AC-37 | During a work, no state banner or "you are here" map is shown unless the user asks; after an interrupted session, a new session resumes at the step saved in `STATE.yml`; every stop that needs the user follows FR-17. | FR-20 |
 | AC-38 | In a scripted work, (a) at the end of Definition the work passes to Specification **without the user typing a command**, and (b) when Building needs a KB update mid-task, the KB update runs and the work **returns to the same step**; `STATE.yml` records each hand-off (from, to, why, return point). | FR-20 |
+| AC-39 | Roadmap and backlog are ordinary KB documents and the MVP is a section of the roadmap, all created and updated through the normal flow with **no dedicated skills**. | FR-14 |
+| AC-40 | The question protocol is run by the main conversation; the interviewer sub-agent no longer exists. | FR-13, FR-17 |
+| AC-41 | The dashboard and chat read the work's state from the new `STATE.yml` layout (FR-20) and show it correctly for a work at each phase. | FR-20, Scope |
 
 ### Skills, naming and constraints
 
@@ -515,31 +526,20 @@ If assumption 1 or 2 fails in a tool, transparent orchestration degrades there t
 | AC-20 | Each skill has **one clear job** and no two skills overlap; skills that hold no logic of their own (pure wrappers) are gone, their variations kept as data. **No fixed skill count**: the final number is set by evaluating whether the agents solve developers' problems efficiently. | Scope, Problem 3 |
 | AC-21 | **Every** AID skill can be run by slash command in all five tools, and the agent can also run it on its own. | FR-8 |
 | AC-22 | Phase skills are named `/aid-kb-build`, `/aid-brainstorm`, `/aid-specify`, `/aid-plan`, `/aid-execute`, `/aid-monitor-pipeline`; **no skill or artifact name uses an acronym**. | FR-11, NFR-N |
-| AC-23 | `aid-tech-writer` and `aid-developer` remain separate agents; the orchestrator and interviewer sub-agents are retired. Reviewer specialization is settled in a later phase (open question, FR-13). | FR-13 |
+| AC-23 | `aid-tech-writer` and `aid-developer` remain separate agents; the orchestrator sub-agent is retired. Reviewer specialization is settled in a later phase (open question, FR-13). | FR-13 |
 | AC-24 | The release notes carry an **old -> new table** for every retired slash name. | M1 |
 | AC-25 | AID's engineering rules hold: one source rendered for all five tools, byte-identical bash/PowerShell output, the tracking discipline, no work ids in the KB, and **all CI green on Linux and Windows**. | Constraints |
 ## 10. Priority
 
-Every feature is **Must**. Build order (the §11 feature order):
-
-1. **Understand the request and size the work** -- orchestration, the skill guide, intent matching,
-   depth and flexible phases (FR-1, FR-4, FR-5, FR-8, FR-13). The leading goal; everything else hangs off it.
-2. **User interaction and skill state machines** -- one topic at a time, importance labels, batched
-   minor decisions, the approvals, never merging, and a revised Q&A/interview process (Objective,
-   NFR-Q, FR-6). Every phase skill built after it follows these rules.
-3. **Definition** (FR-1, FR-9, FR-11).
-4. **KB operations** -- build / query / update / HTML view through the agent's judgment, the
-   greenfield KB, product-planning documents, and the effort-level check (FR-2, FR-10, FR-14, FR-15).
-5. **Specification** -- `REQUIREMENTS.md` (FR-1, FR-3, FR-11).
-6. **Planning** -- `PLAN.md` as an improved TODO list, no delivery documents (FR-1, FR-11, FR-12).
-7. **Building** -- execute and test (FR-1, FR-11).
-8. **CI phase** -- monitor pipeline and help with connections (FR-7, FR-16).
-9. **A smaller, clearer skill set** -- wrapper skills become data (Scope, M1).
+Every feature is **Must**. The build order is the §11 feature order (Feature 001 first); each feature
+lists its own requirements and criteria there. Feature 001 leads -- everything else hangs off it --
+and Feature 002 comes next because every phase skill built after it follows its rules.
 
 Every feature must also pass AC-22 (names), AC-24 (old -> new table rows for the skills it retires)
-and AC-25 (engineering rules, CI green).
+and AC-25 (engineering rules, CI green), and adds its own sample conversations to the conversation
+test suite (NFR-T).
 
-## Minor decisions taken by the AI (to confirm in one batch at the end)
+## Minor decisions
 
 - **M1 -- Old slash names.** Skills that are retired take their slash names with them (clean break in
   the next major version); the release notes carry an old -> new table. *(Confirmed by the maintainer.)*
@@ -554,6 +554,12 @@ and AC-25 (engineering rules, CI green).
   covers its requirements. *(To confirm.)*
 - **M6 -- Pause cadence.** A break is offered after each group of 3-5 questions and at each change of
   subject (FR-17). *(Set by the maintainer.)*
+- **M7 -- Pipeline retry limit.** When the same pipeline failure survives 3 correction attempts, the
+  agent stops and asks (FR-7). *(To confirm.)*
+- **M8 -- Feature names 001, 002, 009.** "Ask for Work in Plain Language", "Clear, Step-by-Step
+  Decisions", "One Obvious Skill for Each Need". *(To confirm.)*
+- **M9 -- Other agents.** Architect, researcher, operator and clerk keep their roles in this work (§4).
+  *(To confirm.)*
 
 ## 11. Features
 
@@ -563,7 +569,7 @@ AC-22, AC-24 and AC-25.
 ### Feature 001 — Ask for Work in Plain Language
 
 - **Priority:** Must
-- **Requirements:** §5 FR-1, FR-4, FR-5, FR-8, FR-13, FR-18
+- **Requirements:** §5 FR-1, FR-4, FR-5, FR-8, FR-13, FR-18; §6 NFR-T
 - **Criteria:** AC-1, AC-2, AC-3, AC-4, AC-5, AC-6, AC-7, AC-14, AC-21, AC-23, AC-29
 
 #### Description
@@ -584,7 +590,7 @@ The agent in the user's own tool reads a plain request by its meaning, checks it
 
 - **Priority:** Must
 - **Requirements:** §5 FR-6, FR-17, FR-20; §6 NFR-Q
-- **Criteria:** AC-8, AC-9, AC-10, AC-11, AC-28, AC-37, AC-38
+- **Criteria:** AC-8, AC-9, AC-10, AC-11, AC-28, AC-37, AC-38, AC-40, AC-41
 
 #### Description
 
@@ -621,7 +627,7 @@ Improves how AID talks with the user and how skills move through their states. Q
 
 - **Priority:** Must
 - **Requirements:** §5 FR-2, FR-10, FR-14, FR-15
-- **Criteria:** AC-12, AC-15, AC-18
+- **Criteria:** AC-12, AC-15, AC-18, AC-39
 
 #### Description
 
@@ -639,7 +645,7 @@ Improves how AID talks with the user and how skills move through their states. Q
 ### Feature 005 — Specification with Both Business and Technical Detail
 
 - **Priority:** Must
-- **Requirements:** §5 FR-1, FR-3, FR-11; NFR-N
+- **Requirements:** §5 FR-1, FR-3, FR-11; §6 NFR-N
 - **Criteria:** AC-16
 
 #### Description

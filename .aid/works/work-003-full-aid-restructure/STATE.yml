@@ -430,11 +430,11 @@ qa:
   - id: Q10
     category: Requirements
     impact: Medium
-    state: Pending
+    state: Answered
     context: 'FR-2 says the user does not trigger KB skills; FR-8/AC-21 say any skill can be invoked. (surfaced by /aid-define cross-reference)'
     suggested: 'Reword FR-2 to: the user never needs to trigger them.'
-    answer: --
-    applied_to: --
+    answer: 'Reworded FR-2: the user never needs to trigger KB skills (they stay invocable).'
+    applied_to: 'REQUIREMENTS.md FR-2'
   - id: Q11
     category: Requirements
     impact: Medium
@@ -454,51 +454,51 @@ qa:
   - id: Q13
     category: Requirements
     impact: Medium
-    state: Pending
+    state: Answered
     context: 'Behaviour criteria AC-1..AC-5, AC-9, AC-20 have no pinned observable; slash/self-invocation in all five tools is unconfirmed by the KB. (surfaced by /aid-define cross-reference)'
     suggested: 'Scripted conversation probes with expected outcomes, plus a per-tool invocation probe.'
-    answer: --
-    applied_to: --
+    answer: 'Conversation test suite: scripted samples, 3 runs each, all must pass, independent reviewer judges; 5-tool availability checked statically.'
+    applied_to: 'REQUIREMENTS.md NFR-T, §10'
   - id: Q14
     category: Requirements
     impact: Medium
-    state: Pending
+    state: Answered
     context: 'AC-19 mixes the plan checklist (Feature 006) with roadmap/backlog/MVP (Feature 004). (surfaced by /aid-define cross-reference)'
     suggested: 'Split: move the roadmap/backlog/MVP clause into a new AC owned by Feature 004.'
-    answer: --
-    applied_to: --
+    answer: 'AC-19 split; roadmap/backlog/MVP clause is AC-39 owned by Feature 004.'
+    applied_to: 'REQUIREMENTS.md AC-19, AC-39, Feature 004'
   - id: Q15
     category: Requirements
     impact: Low
-    state: Pending
+    state: Answered
     context: '/aid-summarize old->new: FR-2 table maps it to /aid-kb-show, the next line says it is absorbed by Build and Update. (surfaced by /aid-define cross-reference)'
     suggested: '/aid-kb-show in the table; generation moves into build and update.'
-    answer: --
-    applied_to: --
+    answer: '/aid-summarize -> /aid-kb-show; generation moves into build and update.'
+    applied_to: 'REQUIREMENTS.md FR-2'
   - id: Q16
     category: Requirements
     impact: Low
-    state: Pending
+    state: Answered
     context: 'MVP is a section of roadmap.md today, not a document; an MVP document name would break NFR-N. (surfaced by /aid-define cross-reference)'
     suggested: 'Keep MVP as a roadmap section.'
-    answer: --
-    applied_to: --
+    answer: 'MVP stays a section of the roadmap.'
+    applied_to: 'REQUIREMENTS.md FR-14, AC-39'
   - id: Q17
     category: Requirements
     impact: Low
-    state: Pending
+    state: Answered
     context: 'AC-12 says "before discovery or specification" (closed list, retired name); FR-15 says "e.g.". (surfaced by /aid-define cross-reference)'
     suggested: 'Before /aid-kb-build, /aid-specify and any task the playbook marks analysis-heavy.'
-    answer: --
-    applied_to: --
+    answer: 'AC-12 reworded to kb-build, specify and playbook-marked analysis-heavy tasks.'
+    applied_to: 'REQUIREMENTS.md AC-12'
   - id: Q18
     category: Requirements
     impact: Low
-    state: Pending
+    state: Answered
     context: 'Tidy: §10 vs §11 requirement lists differ; §4 "internal helpers" vs FR-8 no internal split; waves derived vs held; AC-23 spans Features 001 and 002. (surfaced by /aid-define cross-reference)'
     suggested: '§10 points at §11; "supporting skills"; PLAN.md shows derived waves; split AC-23.'
-    answer: --
-    applied_to: --
+    answer: '§10 points at §11; supporting skills; PLAN.md shows derived waves; AC-23 split (interviewer -> AC-40, Feature 002).'
+    applied_to: 'REQUIREMENTS.md §4, §10, AC-23, AC-40'
   - id: Q19
     category: Requirements
     impact: High
