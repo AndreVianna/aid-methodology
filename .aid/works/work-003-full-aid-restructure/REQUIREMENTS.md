@@ -97,7 +97,9 @@ corrected by FR-5):
   Specification, Planning, Building, CI), setup skills (config, connectors, chat), and supporting
   skills (KB query/update/view, research, prototype, review, test, ticket, release, monitor).
 - The skills that pair an action with a kind of thing (78 today, e.g. `/aid-create-api`) become one
-  skill per action, with the kind as an argument; the rules for each kind live in one catalog (Feature 009).
+  skill per action (create, update, document, test, prototype), with the kind as an argument; the rules
+  for each kind live in one catalog (Feature 009). `/aid-design` retires: shaping an idea for a kind is
+  `/aid-brainstorm`'s job, and the kept design is the technical part of Specification.
 - Phases are flexible around a fixed core: Specify -> Plan -> Execute almost always happens; Definition
   runs when the work must first be defined (discussion or an external ticket); Preparation runs once
   plus on demand; CI always closes the work (at minimum, marking it done). `full` / `lite` changes how much the
@@ -590,7 +592,7 @@ AC-22, AC-24 and AC-25.
 ### Feature 001 — Ask for Work in Plain Language
 
 - **Priority:** Must
-- **Requirements:** §5 FR-1, FR-4, FR-5, FR-7, FR-8, FR-13, FR-18; §6 NFR-T
+- **Requirements:** §5 FR-1, FR-4, FR-5, FR-7, FR-8, FR-13, FR-18; §6 NFR-Q, NFR-T
 - **Criteria:** AC-1, AC-2, AC-3, AC-4, AC-5, AC-6, AC-7, AC-14, AC-21, AC-23, AC-29
 
 #### Description
@@ -610,7 +612,7 @@ The agent in the user's own tool reads a plain request by its meaning, checks it
 ### Feature 002 — Clear, Step-by-Step Decisions
 
 - **Priority:** Must
-- **Requirements:** §5 FR-6, FR-7, FR-17, FR-20; §6 NFR-Q
+- **Requirements:** §4 Scope; §5 FR-6, FR-7, FR-13, FR-17, FR-20; §6 NFR-Q
 - **Criteria:** AC-8, AC-9, AC-10, AC-11, AC-28, AC-37, AC-38, AC-40, AC-41
 
 #### Description
@@ -629,7 +631,7 @@ Improves how AID talks with the user and how skills move through their states. Q
 ### Feature 003 — Shape an Idea or Ticket into a Clear Work Definition
 
 - **Priority:** Must
-- **Requirements:** §5 FR-1, FR-9, FR-11
+- **Requirements:** §4 Scope; §5 FR-1, FR-9, FR-11
 - **Criteria:** AC-17, AC-43
 
 #### Description
@@ -721,7 +723,7 @@ Improves how AID talks with the user and how skills move through their states. Q
 ### Feature 008 — Pull Requests Kept on Track Through Reviews and Pipeline Failures
 
 - **Priority:** Must
-- **Requirements:** §5 FR-7, FR-11, FR-16
+- **Requirements:** §5 FR-6, FR-7, FR-11, FR-16, FR-20
 - **Criteria:** AC-13, AC-27, AC-35, AC-36, AC-42
 
 #### Description
