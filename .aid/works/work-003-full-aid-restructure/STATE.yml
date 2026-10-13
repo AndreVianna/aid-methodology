@@ -382,11 +382,11 @@ qa:
   - id: Q4
     category: Requirements
     impact: High
-    state: Pending
+    state: Answered
     context: 'Feature 002: the skill state-machine handling has no FR and no AC (the Q&A part is now FR-17 / AC-28). (surfaced by /aid-define cross-reference)'
     suggested: 'Add an FR and an observable AC for each, owned by Feature 002.'
-    answer: --
-    applied_to: --
+    answer: 'Steps invisible; current step saved; stops use FR-17; one shared rule set; plus automatic hand-offs to another skill at the end or mid-process (returning to the same step) -- state machine and STATE.yml reviewed as a whole.'
+    applied_to: 'REQUIREMENTS.md FR-20, AC-37, AC-38, Feature 002'
   - id: Q5
     category: Architecture
     impact: Medium

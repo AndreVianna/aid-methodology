@@ -402,6 +402,25 @@ Every task goes through **build -> verify -> simplify -> re-verify (only if some
   light simplification for duplication across tasks, then a scoped re-verify if anything changed),
   before the delivery milestone (FR-6).
 
+### FR-20 Skill state machines and hand-offs
+
+A skill's state machine is the fixed set of steps it moves through. It is revised so that:
+
+1. **Steps are invisible to the user.** No state banners or "you are here" maps; at most one plain
+   progress line, and more only when the user asks.
+2. **The current step is always saved** in the work's `STATE.yml`, so any session -- or another
+   user -- resumes exactly where the work stopped.
+3. **Every stop that needs the user uses the question protocol (FR-17)**; no skill-specific prompts.
+4. **One shared set of rules** governs how every skill moves between its steps, instead of each skill
+   describing its own.
+5. **Automatic hand-offs between skills.** A skill can pass the work to another skill on its own:
+   - **at the end** of its process (e.g. Definition -> Specification), when no approval is required in
+     between; and
+   - **in the middle** of its process (e.g. Building needs a KB update), with the work coming back to
+     the exact step it left once the other skill finishes.
+   The state machine and the `STATE.yml` layout are reviewed as a whole to support this: each hand-off
+   records where it came from, where it went, why, and where to return.
+
 ## 6. Non-Functional Requirements
 
 - **NFR-N (naming).** No acronyms in artifact or skill names: names say plainly what the thing is.
@@ -486,6 +505,8 @@ If assumption 1 or 2 fails in a tool, transparent orchestration degrades there t
 | AC-34 | Running a work from start to PR/MR creates **exactly one worktree and one branch** for it; no skill or script creates a per-delivery branch or merges anything. | FR-6 |
 | AC-35 | The PR/MR diff contains **only changes meant for the parent branch**: no file under `.aid/.temp/`, files under `.aid/works/` only when the project setting is **push**, and no commit that adds and later removes files. | FR-7 |
 | AC-36 | After a human merges the PR/MR, the work is marked **done** and clean-up is local only (temporary files, local branch, worktree); **no remote branch is deleted** by AID. The work folder is pushed, kept locally, or deleted exactly as the project setting says. A work in a project with no repository is still marked done at the end. | FR-7 |
+| AC-37 | During a work, no state banner or "you are here" map is shown unless the user asks; after an interrupted session, a new session resumes at the step saved in `STATE.yml`; every stop that needs the user follows FR-17. | FR-20 |
+| AC-38 | In a scripted work, (a) at the end of Definition the work passes to Specification **without the user typing a command**, and (b) when Building needs a KB update mid-task, the KB update runs and the work **returns to the same step**; `STATE.yml` records each hand-off (from, to, why, return point). | FR-20 |
 
 ### Skills, naming and constraints
 
@@ -562,12 +583,12 @@ The agent in the user's own tool reads a plain request by its meaning, checks it
 ### Feature 002 — Clear, Step-by-Step Decisions
 
 - **Priority:** Must
-- **Requirements:** §5 FR-6, FR-17; §6 NFR-Q
-- **Criteria:** AC-8, AC-9, AC-10, AC-11, AC-28
+- **Requirements:** §5 FR-6, FR-17, FR-20; §6 NFR-Q
+- **Criteria:** AC-8, AC-9, AC-10, AC-11, AC-28, AC-37, AC-38
 
 #### Description
 
-Improves how AID talks with the user and how skills move through their states. Questions come one topic at a time, each with a recommendation and an importance label; reviews arrive in chunks, most important first; minor decisions are confirmed in one batch at the end. Approvals follow the depth, with a final approval before any PR/MR, and nothing ever merges. Includes the question protocol (FR-17), which replaces the separate interview step and is used by every skill that talks with the user, and a revision of how skill state machines are handled. Every phase skill built after this feature follows these rules.
+Improves how AID talks with the user and how skills move through their states. Questions come one topic at a time, each with a recommendation and an importance label; reviews arrive in chunks, most important first; minor decisions are confirmed in one batch at the end. Approvals follow the depth, with a final approval before any PR/MR, and nothing ever merges. Includes the question protocol (FR-17), which replaces the separate interview step and is used by every skill that talks with the user, and a revision of the skill state machines (FR-20): steps invisible to the user, the current step always saved, one shared set of rules, and automatic hand-offs to another skill -- at the end of a process or in the middle of it, returning to the same step. Every phase skill built after this feature follows these rules.
 
 #### User Stories
 
