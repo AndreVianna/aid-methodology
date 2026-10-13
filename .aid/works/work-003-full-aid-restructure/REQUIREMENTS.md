@@ -244,6 +244,9 @@ The Planning phase's `PLAN.md` holds them all:
 - the **waves** inside each delivery;
 - the atomic **tasks** and their **dependencies** -- still the most important information.
 
+`PLAN.md` is **an improved TODO list**: a simple, scannable checklist (deliveries, waves, tasks with
+their dependencies and state), not a heavy document.
+
 ## 6. Non-Functional Requirements
 
 - **NFR-N (naming).** No acronyms in artifact or skill names: names say plainly what the thing is.
