@@ -2221,7 +2221,7 @@ sources, rendered as in Feature 001. "The view" is `.aid/knowledge/kb.html`; "th
 
 | Change | Path | What |
 |---|---|---|
-| Move + rewrite | `canonical/skills/aid-discover/` -> `canonical/skills/aid-kb-build/` | `SKILL.md` rewritten: its step table (see Flows), `skill-steps.md` and `question-protocol.md` cited, Feature 001's what/when `description:`, at most 150 lines. Goes: `--reset` (a rebuild is a plain request, see Flows), `--grade` (the bar is `.aid/settings.yml` `minimum_grade`), § Targeted Discovery (Re-entry) (`/aid-kb-update` does it), the state map. The dispatch-visibility checklist stays, as a pointer to `long-wait-protocol.md`. The references move with the skill and change only where Flows says: `state-elicit.md` -> `elicit.md`, `state-generate.md` -> `generate.md` (Step 7 goes: no installed `AGENTS.md` carries its `AID-DISCOVER` placeholders), `state-review.md` -> `review.md`, `state-q-and-a.md` -> `questions.md`, `state-fix.md` -> `fix.md`, `state-approval.md` -> `approve.md`, `state-done.md` -> `finish.md`; `document-expectations.md` loses its `greenfield: true` mode; new `start.md`, at most 120 lines |
+| Move + rewrite | `canonical/skills/aid-discover/` -> `canonical/skills/aid-kb-build/` | `SKILL.md` rewritten: its step table (see Flows), `skill-steps.md` and `question-protocol.md` cited, Feature 001's what/when `description:`, at most 150 lines. Goes: `--reset` (a rebuild is a plain request, see Flows), `--grade` (the bar is `.aid/settings.yml` `minimum_grade`), § Targeted Discovery (Re-entry) (`/aid-kb-update` does it), the state map. The dispatch-visibility checklist stays, as a pointer to `long-wait-protocol.md`. The references move with the skill; they change where Flows says, and every retired name or old path in them is re-pointed (Migration, Re-pointing): `state-elicit.md` -> `elicit.md`, `state-generate.md` -> `generate.md` (Step 7 goes: no installed `AGENTS.md` carries its `AID-DISCOVER` placeholders), `state-review.md` -> `review.md`, `state-q-and-a.md` -> `questions.md`, `state-fix.md` -> `fix.md`, `state-approval.md` -> `approve.md`, `state-done.md` -> `finish.md`; `document-expectations.md` loses its `greenfield: true` mode; new `start.md`, at most 120 lines |
 | Move + rewrite | `canonical/skills/aid-update-kb/` -> `canonical/skills/aid-kb-update/` | `SKILL.md` rewritten, at most 120 lines. Goes: Pre-flight ISOLATE (its own worktree, `aid/update-kb-<ts>` branch, prompt matching, `.aid/.temp/UPDATEKB_STATE_*.md`), because it always runs inside a work. Kept and edited: `state-analyze.md` -> `analyze.md`, `state-scope.md` -> `scope.md`, `state-confirm.md` -> `confirm.md`, `state-apply.md` -> `apply.md`, `state-review.md` -> `review.md`. `state-approval.md` and `state-done.md` merge into `finish.md`. New, each at most 120 lines: `start.md`, `sweep.md` (from `aid-housekeep/references/state-kb-delta.md`, its conformance check included), `new-document.md` (creating and registering a document, from the retiring `create` skills), `reviewer-brief.md` (with `### What to report`, SS-13) |
 | Move + edit | `canonical/skills/aid-ask/` -> `canonical/skills/aid-kb-query/` | New name and description; gap capture through the writer (see Flows); `allowed-tools` becomes `Read Glob Grep Bash Agent` |
 | Create | `canonical/skills/aid-kb-show/SKILL.md` | The link to the view (see Flows); at most 60 lines; `allowed-tools: Read Glob Bash` |
@@ -2242,6 +2242,7 @@ sources, rendered as in Feature 001. "The view" is `.aid/knowledge/kb.html`; "th
 | Edit | `canonical/aid/templates/skill-steps.md` (Feature 002) | § When approvals happen gains two rows; new § The KB build record (see Components) |
 | Edit | `canonical/aid/templates/question-protocol.md` (Feature 002) | Its "Where" bullet: KB building writes through `--ask --kb` / `--answer --kb` |
 | Edit | `canonical/skills/aid-orchestrate/references/start-or-resume.md`, `size-and-route.md`, `feedback-routing.md` (Feature 001) | The drift check, the build's resume offer, the routing rows (see Components) |
+| Edit | `canonical/skills/aid-orchestrate/references/check-intent.md` (Feature 001) | Reads `backlog.md` for "the next backlog item" and records it as a work source (see Components, Roadmap, backlog and MVP) |
 | Edit | `canonical/skills/aid-brainstorm/references/finish.md` (Feature 003) | The KB-update hand-off targets `aid-kb-update` |
 | Edit | `canonical/aid/templates/work-initiation-gate.md` § 3b legacy block (Feature 002) | One row for old works of the deleted `create` / `update` skills (see Migration) |
 | Edit | `canonical/aid/rules.md` | The tracking line and the connectors line (see Components); in § Skill guide the lines of the retired skills go and four lines come |
@@ -2251,6 +2252,7 @@ sources, rendered as in Feature 001. "The view" is `.aid/knowledge/kb.html`; "th
 | Edit | `dashboard/reader/models.py`, `parsers.py`, `derivation.py`, `reader.py`, `dashboard/server/reader.mjs`, `dashboard/server/server.py` and `server.mjs` (the KB state passed to the page), `dashboard/home.html` (the KB card) | See Dashboard |
 | Delete | the repository-root `package.json` and its entry in `.github/dependabot.yml` | Their only purpose was the view's Playwright check |
 | Edit | `.github/workflows/test.yml`, `release.yml` | The summarize validator steps and comments go |
+| Edit | every other kept file under `canonical/`, and `dashboard/home.html`, that names a retired skill, a moved reference by its old path, or `.aid/knowledge/STATE.md` | Re-pointed by one rule (Migration, Re-pointing) |
 | Create | `tests/canonical/test-kb-skills.sh`, `test-render-kb-view.sh`, `test-kb-commit.sh`, `test-kb-state-migration.sh`, `tests/canonical/lib/contrast-check.mjs`, `tests/conversation/samples/feature-004/` | See Testing |
 
 ##### 2. The KB state file
@@ -2262,8 +2264,8 @@ change made inside a work is recorded in that work's `STATE.yml`, never here, so
 on this file.
 
 ```yaml
-# [W] Building | Approved | Growing
-status: Growing
+# [W] Building | Approved | Growing; -- only in the template (the creating write sets it)
+status: --
 # [W] the skill building the KB now, or none -- only aid-kb-build is ever saved here
 active_skill: none
 # [W] its saved step; -- when none
@@ -2316,9 +2318,13 @@ qa: []
 
 **Writer modes** -- `writeback-state.sh` keeps Feature 002's lock, quoting, atomic-rename and exit codes.
 - **`--kb` target**: points `--step`, `--ask`, `--answer`, `--check` and `--repair` at
-  `.aid/knowledge/STATE.yml`. It creates the file from `kb-state-template.yml` when it is missing, as
-  `--project` does for `.aid/STATE.yml`. `--step --kb` accepts only `--skill aid-kb-build` and sets
+  `.aid/knowledge/STATE.yml`. `--step --kb` accepts only `--skill aid-kb-build` and sets
   `status: Building` in the same write, so a saved step never sits on a finished KB.
+- **Only two writes create the file** (from `kb-state-template.yml`, in the same write that sets
+  `status`): `--step --kb` (the build's START) and `--kb --field Status --value Growing` (an update's
+  first KB creation, Components, A new project). Every other `--kb` write on a missing file changes
+  nothing and exits 10 (no KB), a new code documented in the writer's header. So no question, gap or
+  review ever makes a KB appear.
 - **KB-only modes**:
 
 | Mode | Writes |
@@ -2326,7 +2332,7 @@ qa: []
 | `--kb --field F --value V` | F is `Status` (`Building`, `Approved`, `Growing`), `Grade` (`[A-F][+-]?` or `Pending`), `User Approved` (`yes`, `no`), `Baseline` (a commit or `--`), `Domain`, `Triage`, `Elicitation` (`yes`, `no`); any other field or value exits 4 |
 | `--kb --doc D --doc-status S [--grade G]` | adds or updates the `documents` entry of D |
 | `--kb --review --grade G --notes T` | appends a `reviews` entry: `at`, `grade`, `by` (the saved skill), `notes` |
-| `--kb-update-log --mode M --docs D --grade G --commit C` | appends a `kb_updates` entry to the work's `STATE.yml` |
+| `--kb-update-log --mode M --docs D --grade G --commit C` | appends a `kb_updates` entry to the work's `STATE.yml`; with `--mode refresh`, `--docs` and `--grade` are not taken and are written `--` (exit 5 when another mode lacks them) |
 
 `--check --kb` reports a missing or inconsistent build record with the work rules applied to the KB record:
 - a `Building` file with `active_skill: none` or with `step: --`;
@@ -2362,7 +2368,7 @@ is saved resumes it.
 | START | `references/start.md` | main conversation | `CHAIN` -> ELICIT |
 | ELICIT | `references/elicit.md` | main conversation | `ASK` -> GENERATE |
 | GENERATE | `references/generate.md` | `aid-architect` (fans out `aid-researcher` as today) | `CHAIN` -> REVIEW |
-| REVIEW | `references/review.md` (brief: `references/reviewer-brief.md`) | `aid-architect` (dispatches the `aid-reviewer` panel, as today) | `CHAIN` -> QUESTIONS when a question is open; `CHAIN` -> FIX when the grade is below the bar; else `CHAIN` -> APPROVE |
+| REVIEW | `references/review.md` (brief: `references/reviewer-brief.md`) | `aid-architect` (dispatches the `aid-reviewer` panel, as today) | `CHAIN` -> QUESTIONS when a question is `Pending`; `CHAIN` -> FIX when the grade is below the bar; else `CHAIN` -> APPROVE |
 | QUESTIONS | `references/questions.md` | main conversation | `ASK` -> FIX |
 | FIX | `references/fix.md` | `aid-architect` (one agent per document, as today) | `CHAIN` -> REVIEW |
 | APPROVE | `references/approve.md` | main conversation | `ASK` -> FINISH |
@@ -2375,8 +2381,10 @@ is saved resumes it.
    - **a KB already exists** (`status: Approved` or `Growing`): a rebuild is confirmed with one question
      first, which replaces `--reset`. Like Feature 002's intake questions, its outcome is recorded where
      it lands: the build's record, or nothing when the user declines.
-1. **START** -- its step entry (`--kb --step`) also sets `status: Building` in the same write. Then the
-   domain and the document set, as today's steps 0c-0f (their confirmations through the question
+1. **START** -- its step entry (`--kb --step`) also sets `status: Building` in the same write. Its first
+   action is today's existing-KB check (`state-generate.md` Step 0, moved here): documents already on
+   disk are kept, and only missing ones are generated. It runs on every entry to START, fresh or
+   resumed. Then the domain and the document set, as today's steps 0c-0f (their confirmations through the question
    protocol); `Domain` and `Triage` written.
 2. **ELICIT** -- external sources and connectors, as today; `Elicitation` is set to `yes` once settled.
 3. **GENERATE / REVIEW / FIX** -- today's generation, review panel and fix loop. What changes:
@@ -2384,9 +2392,10 @@ is saved resumes it.
    - every question goes through `--ask --kb`;
    - no banner, no "run again".
    - Unchanged: the "never assume -- ask" rule and the grade bar (`.aid/settings.yml` `minimum_grade`).
-4. **QUESTIONS** -- the open questions, in the protocol's groups. A question the user skips stays open
-   (FR-17 rule 10). Its point is written in its document as open -- never as a fact -- and it is
-   offered again when the build resumes, or at the next session's start (Components).
+4. **QUESTIONS** -- the `Pending` questions, in the protocol's groups. A question the user skips stays
+   open (FR-17 rule 10) but no longer sends REVIEW back here, and it does not block APPROVE: its point
+   is written in its document as open -- never as a fact -- and it is offered again at the next
+   session's start (Components).
 5. **APPROVE** -- one approval of the whole KB (Q56):
    - the KB is shown in chunks, most important documents first (Feature 002 reviews), with the build's
      small decisions confirmed in the same batch;
@@ -2396,11 +2405,18 @@ is saved resumes it.
    1. stamp `approved_at_commit:` in every document of the set with the current `HEAD`;
    2. regenerate `INDEX.md` and `README.md`'s completeness rows;
    3. render the view;
-   4. write `User Approved` `yes`, `Baseline` (the same `HEAD`) and `Status` `Approved` (which clears the record);
-   5. commit once with `kb-commit.sh --build`. **Nothing is pushed**; the agent says in one line how to push.
-   - Without git: nothing is committed, and the agent says so.
-   - A commit that fails: the agent says why in one line. The approved KB stays on disk, and the commit is
-     made once the branch can take it.
+   4. write `User Approved` `yes` and `Baseline` (the same `HEAD`); the record stays at FINISH;
+   5. commit once with `kb-commit.sh --build --finish`. **Nothing is pushed**; the agent says in one line
+      how to push. `--finish` makes the commit carry the finished state file: after `git add`, the
+      script runs `writeback-state.sh --kb --field Status --value Approved` (which clears the record)
+      and stages the state file, then commits. If the commit does not complete, the script puts back the
+      copy of the state file it took before that write, so the record is back at FINISH, and exits 6 (the commit
+      failed; a new code). The KB is marked `Approved` only by a commit that succeeded, and no clone
+      ever receives a KB state file still waiting at FINISH.
+   - Without git: nothing is committed, the agent says so, and `Status` `Approved` is written directly.
+   - A commit that fails: the agent says why in one line. The build stays at FINISH with its record
+     kept and the approved content on disk, so the next resume retries the commit (the approval is
+     not asked again: `user_approved` is already `yes`).
 
 **`/aid-kb-update`** -- the only writer of KB documents after a build. It always runs **inside a work**:
 - **as the work's own job**: a knowledge-update work the gate creates with `--create --reading 'knowledge
@@ -2424,9 +2440,12 @@ Its questions go in the work's `qa`; its process state is the work record.
    - **Mode**: `change` (a known change), `sweep` (documents named by the drift check, or "check the KB
      against the code"), or `refresh` (only the index and the view; see `/aid-kb-show`).
    - **`refresh`** changes no document: it goes from CONFIRM straight to FINISH, which skips the
-     stamping.
-   - **No KB yet**: START creates it through `--kb` (`status: Growing`), plus `README.md` and `INDEX.md`
-     (Components, A new project).
+     stamping and writes `--kb-update-log --mode refresh --commit C` with no docs and no grade (both
+     `--`).
+   - **No KB yet**: START creates nothing. In a new project (`.aid/settings.yml` `type: greenfield`,
+     Components, A new project) the KB is created at the first KB write, in APPLY. Otherwise the agent
+     says in one line that the KB is not built yet and writes nothing: called, it `HALT`s and returns;
+     on its own job, it offers `/aid-kb-build` first (one question) and the work waits at START.
 2. **ANALYZE / SCOPE**:
    - today's analysis and scope plan: the documents and sections the change lands in, and what is
      deliberately left alone;
@@ -2440,7 +2459,9 @@ Its questions go in the work's `qa`; its process state is the work record.
    - **own job**: the confirmation before editing, shown with the scope (one short line in `lite`) -- the
      approvals table row (Components);
    - **called**: no stop. The scope is saved in `step_detail` and shown with the work's next approval.
-4. **APPLY** -- edits within the confirmed scope only. A fact whose document does not exist yet:
+4. **APPLY** -- edits within the confirmed scope only. In a new project with no KB, its first write is
+   `--kb --field Status --value Growing` (which creates the KB state file), then `README.md`, `INDEX.md`
+   and the document the fact belongs to. A fact whose document does not exist yet:
    `new-document.md` creates the document from `knowledge-base/<doc>.md` when a template exists, or
    else with the fields `kb-authoring/frontmatter-schema.md` requires. It registers the document in
    `.aid/settings.yml` `knowledge.doc_set` and in `README.md`, choosing the document by the concern model
@@ -2473,7 +2494,8 @@ Its questions go in the work's `qa`; its process state is the work record.
   a work, a call.
 - **When nothing can answer**: say so.
 - **Writes**: only the gap record, through `--ask` (in a work: the work's `qa`; otherwise `--ask --kb`),
-  `category: Knowledge Base`, `asked_by: aid-kb-query`. Nothing else.
+  `category: Knowledge Base`, `asked_by: aid-kb-query`. Nothing else. Outside any work in a project with
+  no KB, it says so and records nothing (the writer would refuse with exit 10 anyway).
 
 **`/aid-kb-show`** -- one pass, builds nothing (FR-2, Q15). It runs `render-kb-view.sh --check`:
 
@@ -2487,7 +2509,8 @@ Its questions go in the work's `qa`; its process state is the work record.
 
 `render-kb-view.sh` makes `kb.html` from the KB documents alone, **with no agent and no user step** (Q53).
 - **When it runs**: `/aid-kb-build` FINISH and every `/aid-kb-update` FINISH. **Nothing else writes the
-  file.**
+  file**, with one named exception: Feature 008's step that resolves a pull-request collision on `kb.html`
+  or `INDEX.md` runs `render-kb-view.sh` and `build-kb-index.sh` (What other features must provide).
 - **Git**: the view is tracked in git (Q54). A merge collision on it, or on `INDEX.md`, is resolved by
   rendering again, never by hand.
 
@@ -2597,7 +2620,8 @@ asked for:
       Base documents may be out of date: <doc> (<changed sources>). Update them as part of this work?"
       Recommendation: yes.
     - **Yes**: `--handoff --to aid-kb-update --step START --why 'KB drift: <docs>' --returns yes`, and the
-      update runs in `sweep` mode and returns to the work's step.
+      update runs in `sweep` mode and returns to the work's step. The fix rides the current work and is
+      shown at its next approval (Q59), like any KB change made by a call.
     - **No**: the answer is recorded, and the same documents are not raised again in this work.
     - **`current` or `unknown`**: nothing is said.
     - **Skipped** with no KB or no git.
@@ -2606,11 +2630,15 @@ asked for:
 
   | Reading | Phases |
   |---|---|
-  | A new project (no code, no KB) | no Preparation: the KB grows through `/aid-kb-update` as things are decided or built |
+  | A new project (no code, no KB) | no Preparation: `type: greenfield` is set, and the KB grows through `/aid-kb-update` as things are decided or built |
 
 - **`feedback-routing.md`**: "KB questions -> KB update" names `/aid-kb-update`.
 
 **A new project (FR-10, AC-18).**
+- **Which project is new**: when `size-and-route.md` routes a request in a project with no code and no
+  KB (its new-project row), the agent sets `type: greenfield` in `.aid/settings.yml` (the key `/aid-config`
+  already sets). Only that setting lets `/aid-kb-update` create a KB. A project with code and no KB gets
+  the build instead (Feature 001), even when the user declines it for now.
 - **No skeleton**: no build runs and no KB exists until the first fact. The first `/aid-kb-update` creates
   the KB state file (`status: Growing`), `README.md`, `INDEX.md` and the document that fact belongs to.
 - **When a fact enters** (decision D28's commitment line):
@@ -2639,11 +2667,12 @@ asked for:
 | Use | Commits |
 |---|---|
 | `kb-commit.sh --message M [--with-settings]` | `.aid/knowledge/` (additions, changes and removals), plus `.aid/settings.yml` when `--with-settings` (passed when this run registered a document or changed the document set) |
-| `kb-commit.sh --build --message M` | the same, plus `.aid/connectors/` and `.aid/settings.yml` |
+| `kb-commit.sh --build [--finish] --message M` | the same, plus `.aid/connectors/` and `.aid/settings.yml`; `--finish` marks the KB `Approved` inside the commit, as the build's FINISH says |
 
 - **How**: `git add -- <paths>`, then `git commit --only -- <paths>`. Other staged files stay staged and
   uncommitted.
-- **Exit codes**: 0 committed (or nothing to commit, said in one line); 2 bad argument; 3 no git; 4 the
+- **Exit codes**: 0 committed (or nothing to commit, said in one line); 2 bad argument; 3 no git; 6 the
+  commit failed after staging (with `--finish`, the state file is put back); 4 the
   branch cannot take a commit (none checked out, a merge or rebase in progress).
 - **No push, ever.**
 
@@ -2679,7 +2708,7 @@ asked for:
 | 005 | After the `REQUIREMENTS.md` approval, a `CALL` to `/aid-kb-update` (`change`) for each approved decision that settles a project-wide fact | `004-10` |
 | 006 | Its work-state conversion joins format 6 (Migration) | -- |
 | 007 | After each task is verified and committed, the KB check: `kb-freshness-check.sh` over the documents whose `sources:` the task touched, plus the task's own report of a new module, dependency or convention; on a hit, a `CALL` to `/aid-kb-update`, which stamps against that commit. At the end of the whole build, the same for the backlog or roadmap items the work's `sources:` name. The milestone approval lists the work's `kb_updates` | `002-13`, `004-11`, `004-12` |
-| 008 | The close of a work takes over `cleanup-classify.sh` (housekeep's clean-up of finished works, with tech-debt SY-1). A pull-request collision on `kb.html` or `INDEX.md` is resolved by running `render-kb-view.sh` and `build-kb-index.sh`, never by hand | -- |
+| 008 | The close of a work takes over `cleanup-classify.sh` (housekeep's clean-up of finished works, with tech-debt SY-1). A pull-request collision on `kb.html` or `INDEX.md` is resolved by running `render-kb-view.sh` and `build-kb-index.sh` and committing through `kb-commit.sh`, never by hand -- the named exception in The view and KB-03 | -- |
 | 009 | Its single catalog brings back no `create` / `update` kind for a KB document | -- |
 
 ##### 7. Migration
@@ -2712,7 +2741,8 @@ asked for:
   - **The KB step**, run when `.aid/knowledge/STATE.md` exists and `STATE.yml` does not:
     - frontmatter scalars:
       - `kb_status` becomes `status`. `Approved` stays; anything else becomes `Building`, with
-        `active_skill: aid-kb-build` and `step: START`, whose existing-KB check takes it from there;
+        `active_skill: aid-kb-build` and `step: START`. A resume enters START, whose first action is the
+        existing-KB check (Flows): the documents already written are kept and only missing ones generated;
       - `kb_grade` becomes `grade`;
       - the approval line becomes `user_approved`;
     - sections:
@@ -2735,23 +2765,32 @@ asked for:
   and read as the work's draft. Feature 006's migration uses the same row.
 - **This repository**: its KB state file is converted by running the migration, and its `kb.html` is
   re-rendered by the script.
-- **Re-pointed sites** (a full search for the retired skill names and for `knowledge/STATE.md`, outside
-  work folders and renders):
-  - **Agents**: the escalation lines of `aid-architect`, `aid-researcher` and `aid-reviewer` record
-    through `--ask` (the work's `qa` in a work, `--ask --kb` otherwise).
-  - **Templates**: `reviewer-dispatch.md`; `kb-authoring/tier-model.md`; `kb-authoring/principles.md`
-    ("runs last in any /aid-discover cycle"); `delivery-state-template.yml`'s comment;
-    `rough-time-hints.md` and `agent-dispatch-tiering.md` (the operation names).
-  - **Skills**: `aid-deploy` (`SKILL.md`, `references/state-idle.md`, `state-packaging.md`); `aid-plan`
-    § Feedback Loops; `aid-specify` `references/handling-outcomes.md`; `aid-detail`
-    `references/task-decomposition.md`; `aid-execute` `references/state-delivery-gate.md`.
-  - **Scripts**: `recon-classify.sh`'s new-project message, and the comments of `read-setting.sh`,
-    `build-metrics.sh`, `build-project-index.sh` and `cleanup-classify.sh`.
-  - **Generator**: the `GENERATED` doorway skills, through their builder, where they name a retired skill.
-  - **Site**: `site/scripts/skills/` (roster, groups, counts), `site/scripts/.skills-manifest.json`,
-    `site/scripts/gen-reference.mjs`, `site/scripts/lib/flow-graph/advance.mjs` and
-    `extract-dispatch.mjs`, with their `__tests__`; pages and flows regenerated by
-    `site/scripts/gen-skills.mjs`.
+- **Re-pointing** -- one rule: every kept file under `canonical/`, and `dashboard/home.html`, that names a
+  retired skill (`aid-discover`, `aid-ask`, `aid-update-kb`, `aid-summarize`, `aid-housekeep`, the KB
+  `create` / `update` skills), a moved reference by its old path (`aid-discover/references/...`,
+  `aid-update-kb/references/...`, `aid-ask/`), or `.aid/knowledge/STATE.md`, is re-pointed to its new
+  home: the skill that now does the job, the reference's new path, or `.aid/knowledge/STATE.yml`. A
+  descriptive mention is reworded. The moved references are under the same rule. Exempt: the gate's
+  legacy block (old works' initiators) and `canonical/aid/scripts/migrate/` (it reads old shapes). KB-02
+  and KB-04 enforce the rule. Pointers that need a target, not only a new name:
+  - `connectors/reconcile.md` and `connectors/preset-catalog.md` -> `aid-kb-build/references/elicit.md`
+    (the build's ELICIT step, Step E2);
+  - `kb-authoring/concern-model.md`, `domain-doc-matrix.md`, `frontmatter-schema.md`, `review-rubric.md`
+    and `principles.md` -> `.agents/skills/aid-kb-build/references/doc-set-resolve.md`,
+    `document-expectations.md` and `review.md`;
+  - `knowledge-summary/html-skeleton.html`: its `description` and `generator` meta and its footer ("Re-run
+    /aid-summarize") say the page is rendered by `render-kb-view.sh` from `.aid/knowledge/`, with no command
+    to run; `lightbox.js`'s header names the renderer;
+  - the escalation lines of `aid-architect`, `aid-researcher` and `aid-reviewer` record through `--ask`
+    (the work's `qa` in a work, `--ask --kb` otherwise; outside a work with no KB, the question goes in
+    the agent's report only);
+  - `aid-execute`'s "kb-gap -> targeted /aid-discover" -> a `CALL` to `/aid-kb-update`;
+  - `dashboard/home.html`'s KB card texts (Dashboard);
+  - the `GENERATED` doorway skills change through their builder.
+- **Site** (outside `canonical/`, so outside the rule): `site/scripts/skills/` (roster, groups, counts), `site/scripts/.skills-manifest.json`,
+  `site/scripts/gen-reference.mjs`, `site/scripts/lib/flow-graph/advance.mjs` and
+  `extract-dispatch.mjs`, with their `__tests__`; pages and flows regenerated by
+  `site/scripts/gen-skills.mjs`.
 - **Lists other features own** -- each changes in the same commit as the skill it concerns, or their
   tests fail:
   - **Shared exempt list** (`tests/canonical/skill-steps-exempt.tsv`): every row with owner Feature 004
@@ -2824,11 +2863,11 @@ suite list of `.github/workflows/installer-tests.yml`):
 | Group | Asserts |
 |---|---|
 | KB-01 | `aid-kb-build`, `aid-kb-query`, `aid-kb-update`, `aid-kb-show` exist. Absent: `aid-discover`, `aid-ask`, `aid-update-kb`, `aid-summarize`, `aid-housekeep`, the KB `create` / `update` skills, `design-lifecycle.md`, `discovery-state-template.md`, `canonical/aid/scripts/summarize/`. No `shortcut-catalog.yml` row names a retired skill |
-| KB-02 | No retired skill name appears under `canonical/` or in `dashboard/home.html`, except the gate's legacy block |
-| KB-03 | `aid-kb-show` and `aid-kb-query` have no `Write` or `Edit` in `allowed-tools`. `render-kb-view.sh` (without `--check`), `build-kb-index.sh` and `kb-commit.sh` are run only by files of `aid-kb-build` and `aid-kb-update`. No file but `kb-commit.sh` runs `git commit` on `.aid/knowledge/`, and `kb-commit.sh` has no `git push` |
-| KB-04 | `kb-state-template.yml` parses through the dashboard reader with no warning; nothing under `canonical/` writes `summary_approved`, `kb_baseline`, `## Q&A (Pending)` or `## Summarization History`; `.aid/knowledge/STATE.md` is named by nothing under `canonical/` outside `canonical/aid/scripts/migrate/`, which must read old shapes |
+| KB-02 | The re-pointing rule (Migration): no kept file under `canonical/`, nor `dashboard/home.html`, names a retired skill or a moved reference by its old path (`aid-discover/`, `aid-update-kb/`, `aid-ask/`, `state-elicit.md`, `state-generate.md`, ...), except the gate's legacy block and `canonical/aid/scripts/migrate/` |
+| KB-03 | `aid-kb-show` and `aid-kb-query` have no `Write` or `Edit` in `allowed-tools`. `render-kb-view.sh` (without `--check`), `build-kb-index.sh` and `kb-commit.sh` are run only by files of `aid-kb-build` and `aid-kb-update`, with one named exception: files under `canonical/skills/aid-monitor-pipeline/`, for Feature 008's pull-request collision step. No file but `kb-commit.sh` runs `git commit` on `.aid/knowledge/`, and `kb-commit.sh` has no `git push` |
+| KB-04 | `kb-state-template.yml` parses through the dashboard reader with no warning; nothing under `canonical/` writes `summary_approved`, `kb_baseline`, `## Q&A (Pending)` or `## Summarization History`; under the re-pointing rule, `.aid/knowledge/STATE.md` is named by no kept file under `canonical/`, nor `dashboard/home.html`, outside `canonical/aid/scripts/migrate/`, which must read old shapes |
 | KB-05 | `skill-steps.md` has the two approval rows and § The KB build record; `aid-kb-update`'s `finish.md` names `idea-drafts.sh`, `--kb-update-log` and the close |
-| KB-06 | `start-or-resume.md` names `kb-freshness-check.sh` and the build's resume offer; `size-and-route.md` routes a knowledge update to `aid-kb-update` |
+| KB-06 | `start-or-resume.md` names `kb-freshness-check.sh` and the build's resume offer; `size-and-route.md` routes a knowledge update to `aid-kb-update` and sets `type: greenfield` on its new-project row; `check-intent.md` names `backlog.md` and records it as a work source |
 | KB-07 | `knowledge-base/roadmap.md` has a `## MVP` heading; `knowledge-base/backlog.md` exists |
 | KB-08 | `canonical/aid/rules.md` names `.aid/knowledge/STATE.yml` and `/aid-kb-build` in its connectors line |
 
@@ -2839,7 +2878,7 @@ suite list of `.github/workflows/installer-tests.yml`):
   - a document that matches no card structure still renders;
   - markup in a document is escaped;
   - each Markdown form renders, and an unknown one shows as text;
-  - no `src` or `href` reaches outside the file;
+  - no external link: every `src` and `href` is a fragment, a relative link to a KB document (`./<doc>.md`), or one of the skeleton's own dashboard links (`/`, `./home.html`); none starts with a scheme (`http:`, `https:`, ...) or `//`;
   - landmarks, language and the skip link are present;
   - the contrast of the inlined palette passes `tests/canonical/lib/contrast-check.mjs`;
   - `--check` returns 0, 1 and 3 for its three cases and writes nothing;
@@ -2850,13 +2889,17 @@ suite list of `.github/workflows/installer-tests.yml`):
   - only KB paths are committed;
   - another staged file stays staged;
   - `--with-settings` and `--build` add their paths;
-  - exit 3 without git and 4 on a detached head or during a merge, each changing nothing.
+  - exit 3 without git and 4 on a detached head or during a merge, each changing nothing;
+  - `--finish` commits a state file marked `Approved`; a commit made to fail exits 6 and leaves the state
+    file back at FINISH, byte for byte.
 - **`tests/canonical/test-writeback-state.sh`**:
-  - `--kb` creates the file, and every KB mode writes its keys;
+  - only `--step --kb` and `--kb --field Status --value Growing` create the file; any other `--kb` write
+    on a missing file exits 10 and creates nothing; every KB mode writes its keys;
   - setting `Approved` clears the record;
   - invalid values exit 4;
   - `--check --kb` reports each missing and inconsistent case with exit 9, and `--repair --kb` fixes it;
-  - `--kb-update-log` appends to the work file;
+  - `--kb-update-log` appends to the work file; with `--mode refresh` it writes `docs` and `grade` as `--`,
+    and another mode without them exits 5;
   - every file written parses through the dashboard reader.
 - **`tests/canonical/test-kb-state-migration.sh`**:
   - a full `STATE.md` fixture converts to the expected `STATE.yml`;
