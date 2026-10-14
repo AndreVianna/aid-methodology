@@ -2243,7 +2243,7 @@ sources, rendered as in Feature 001. "The view" is `.aid/knowledge/kb.html`; "th
 | Edit | `canonical/aid/templates/question-protocol.md` (Feature 002) | Its "Where" bullet: KB building writes through `--ask --kb` / `--answer --kb` |
 | Edit | `canonical/skills/aid-orchestrate/references/start-or-resume.md`, `size-and-route.md`, `feedback-routing.md` (Feature 001) | The drift check, the build's resume offer, the routing rows (see Components) |
 | Edit | `canonical/skills/aid-orchestrate/references/check-intent.md` (Feature 001) | Reads `backlog.md` for "the next backlog item" and records it as a work source (see Components, Roadmap, backlog and MVP) |
-| Edit | `canonical/skills/aid-brainstorm/references/finish.md` (Feature 003) | The KB-update hand-off targets `aid-kb-update` |
+| Edit | `canonical/skills/aid-brainstorm/references/finish.md` (Feature 003) | The KB-update hand-off targets `aid-kb-update`, and is offered only when a KB exists (see Components, No KB: one rule) |
 | Edit | `canonical/aid/templates/work-initiation-gate.md` § 3a (Feature 002) | The new-project step, run before the worktree is created (see Components, A new project) |
 | Edit | `canonical/aid/templates/work-initiation-gate.md` § 3a, `canonical/aid/scripts/works/worktree-lifecycle.sh` (the `--base` default and its `master` lines), `canonical/aid/templates/worktree-lifecycle.md` | Q60: a new work's worktree branches from the main folder's current branch, which is the work's parent branch (its pull-request target). The hard-coded `master` default goes: `create` takes the main folder's checked-out branch when `--base` is not given, and refuses with a plain message (exit 2) when that folder has no branch checked out. § 3a passes the branch to `--create --parent-branch` |
 | Edit | `canonical/aid/templates/work-initiation-gate.md` § 3b legacy block (Feature 002) | One row for old works of the deleted `create` / `update` skills (see Migration) |
@@ -2362,6 +2362,8 @@ It exits 9 on any problem. `summarize/writeback-state.sh` and its scalars (`kb_s
 | A task built something the KB describes | `/aid-kb-update` called inside that work (Feature 007 provides the call) |
 | An idea draft sent to the KB at brainstorm's FINISH (Q47) | `/aid-kb-update` as that work's pass target (Feature 003) |
 | A work starts or resumes and a document it reads may be out of date | One question; on yes, `/aid-kb-update` (sweep) called inside that work (Q57) |
+
+Every row that hands work to `/aid-kb-update` is subject to Components, No KB: one rule.
 | The user wants to read what the project knows; a build has just ended | `/aid-kb-show` |
 
 The skill-guide lines carry the same moments (Components).
@@ -2460,12 +2462,13 @@ Its questions go in the work's `qa`; its process state is the work record.
    - **`refresh`** changes no document: it goes from CONFIRM straight to FINISH, which skips the
      stamping and writes `--kb-update-log --mode refresh --commit C` with no docs and no grade (both
      `--`).
-   - **No KB** (no KB state file at `Approved` or `Growing`): START creates nothing. The agent says in one
-     line that the KB is not built yet and writes nothing. Called, it `HALT`s and returns. A new project
-     always has its KB skeleton before any work exists, because the gate's § 3a makes it before the
-     first work's worktree (Components, A new project). On its own job this cannot happen in a project
-     with code either, because `size-and-route.md` checks for a KB before the work exists (Components). If
-     the KB was removed since, the agent says so and offers to cancel the work.
+   - **No KB** (no KB state file at `Approved` or `Growing`): START creates nothing and writes nothing.
+     Components, No KB: one rule, keeps every caller away from this case, so this is only a safety net.
+     - **Called**: it `HALT`s and returns.
+     - **On its own job**: if the work's base commit held a KB (`.aid/knowledge/STATE.yml` exists at the
+       merge base of the work's branch and `pipeline.parent_branch`), the agent says the KB was removed
+       since the work began, and offers to cancel the work. Otherwise it says the KB is not built yet,
+       keeps the work's draft as it is, and offers the build, as that rule says for brainstorm.
 2. **ANALYZE / SCOPE**:
    - today's analysis and scope plan: the documents and sections the change lands in, and what is
      deliberately left alone;
@@ -2509,7 +2512,7 @@ Its questions go in the work's `qa`; its process state is the work record.
 **`/aid-kb-query`** -- one pass, no step table, starts no work (AC-4).
 - **Answer**: from the KB, the code and open works, with sources, as today.
 - **When the KB lacks what the code shows**: answer from the code (cited), then ask one question offering
-  a KB update (recommendation: yes). Yes opens a knowledge-update work through `/aid-orchestrate`, or, inside
+  a KB update (recommendation: yes) -- or, with no KB, the build (Components, No KB: one rule). Yes opens a knowledge-update work through `/aid-orchestrate`, or, inside
   a work, a call.
 - **When nothing can answer**: say so.
 - **Writes**: only the gap record, through `--ask` (in a work: the work's `qa`; otherwise `--ask --kb`),
@@ -2652,7 +2655,7 @@ asked for:
       shown at its next approval (Q59), like any KB change made by a call.
     - **No**: the answer is recorded, and the same documents are not raised again in this work.
     - **`current` or `unknown`**: nothing is said.
-    - **Skipped** with no KB or no git.
+    - **Skipped** with no KB (Components, No KB: one rule) or no git.
 - **`size-and-route.md`**: the "Knowledge update" row creates the work with `--skill aid-kb-update --step
   START` and no phase; the Preparation row names `/aid-kb-build`. **Before that `--create`**, it checks for
   a KB by the same rule as everywhere else: a KB exists only when the main folder's
@@ -2672,6 +2675,20 @@ asked for:
   | A new project (no code, no KB) | no Preparation: the gate's new-project step (A new project) commits the KB skeleton, and the KB grows through `/aid-kb-update` as things are decided or built |
 
 - **`feedback-routing.md`**: "KB questions -> KB update" names `/aid-kb-update`.
+
+**No KB: one rule.** A KB exists only when the KB state file says `Approved` or `Growing`. A new
+project always has one before its first work (A new project, below). In a project with code and no KB,
+no path hands work to `/aid-kb-update` expecting a KB. Every caller checks first:
+
+| Caller | With no KB |
+|---|---|
+| Brainstorm's FINISH (Feature 003) | Offers "build the KB first" in place of "KB update". The idea is kept as a draft (Feature 003's *Keep it as a draft*: loose in the main folder, the work cancelled), and the build is offered. After the build's commit, the agent offers to take the draft to the KB: a knowledge-update work created then, through the gate, with the draft as a `draft` source, deleted at that work's KB change approval as Feature 003's rule does for a draft handed to a KB update |
+| `size-and-route.md`'s knowledge-update row | Offers the build first (above) |
+| The drift check | Skipped |
+| A decision approved inside a work (Feature 005) and the Building call (Feature 007) | No call. The agent says once per work that the KB is not built, so this fact will be recorded when it is |
+| The open KB questions route | Nothing to offer |
+| `/aid-kb-query`'s update offer | Offers the build instead |
+| `/aid-kb-show`'s refresh | Never offered without documents (its table) |
 
 **A new project (FR-10, AC-18).**
 - **The new-project step** sits on the one path every work goes through: the gate's § 3a (Feature 002),
@@ -2756,9 +2773,9 @@ asked for:
 
 | Feature | Must provide | Waiting on it |
 |---|---|---|
-| 005 | After the `REQUIREMENTS.md` approval, a `CALL` to `/aid-kb-update` (`change`) for each approved decision that settles a project-wide fact | `004-10` |
+| 005 | After the `REQUIREMENTS.md` approval, a `CALL` to `/aid-kb-update` (`change`) for each approved decision that settles a project-wide fact, only when a KB exists (Components, No KB: one rule) | `004-10` |
 | 006 | Its work-state conversion joins format 6 (Migration) | -- |
-| 007 | Its per-delivery branches are gone, and the work's one branch is compared against `pipeline.parent_branch` (Q60), never against `master`. After each task is verified and committed, the KB check: `kb-freshness-check.sh` over the documents whose `sources:` the task touched, plus the task's own report of a new module, dependency or convention; on a hit, a `CALL` to `/aid-kb-update`, which stamps against that commit. At the end of the whole build, the same for the backlog or roadmap items the work's `sources:` name. The milestone approval lists the work's `kb_updates` | `002-13`, `004-11`, `004-12` |
+| 007 | Its per-delivery branches are gone, and the work's one branch is compared against `pipeline.parent_branch` (Q60), never against `master`. After each task is verified and committed, the KB check: `kb-freshness-check.sh` over the documents whose `sources:` the task touched, plus the task's own report of a new module, dependency or convention; on a hit, and only when a KB exists (Components, No KB: one rule), a `CALL` to `/aid-kb-update`, which stamps against that commit. At the end of the whole build, the same for the backlog or roadmap items the work's `sources:` name. The milestone approval lists the work's `kb_updates` | `002-13`, `004-11`, `004-12` |
 | 008 | The pull request targets `pipeline.parent_branch` (Q60), and the close compares against it, never against a hard-coded `master`. The close of a work takes over `cleanup-classify.sh` (housekeep's clean-up of finished works, with tech-debt SY-1). A pull-request collision on `kb.html` or `INDEX.md` is resolved by running `render-kb-view.sh` and `build-kb-index.sh`, staging both files and finishing the merge with Feature 008's own normal merge commit, never by hand -- the named exception in The view and KB-03 | -- |
 | 009 | Its single catalog brings back no `create` / `update` kind for a KB document | -- |
 
@@ -2810,6 +2827,14 @@ asked for:
   - **Baselines** (Q57): every hand-authored primary or extension document without `approved_at_commit:`
     gets `git log -1 --format=%H -- <doc>`. With no git, or a document never committed, the field is
     left absent (the check reports `unknown`). A document that already carries the field is not touched.
+  - **Parent branch** (Q60): every existing work's `STATE.yml` -- in the main folder and in each worktree
+    `git worktree list` registers -- that has no `pipeline.parent_branch`, or has it empty, gets the
+    branch old works were made from, today's default:
+    - `master` when a local `master` exists;
+    - otherwise the main folder's current branch;
+    - `--` with no git.
+    A value already there is not touched, so a re-run changes nothing. Bash and PowerShell give the same
+    output.
 - **Existing works**: `work-initiation-gate.md` § 3b legacy block gains one row. A work whose
   `pipeline.initiator` is a deleted `create` / `update` KB skill is proposed `/aid-kb-update` at START,
   `change` mode. Its old seed is found and collected with `idea-drafts.sh list` / `collect` (Feature 003)
@@ -2963,6 +2988,9 @@ suite list of `.github/workflows/installer-tests.yml`):
   - a full `STATE.md` fixture converts to the expected `STATE.yml`;
   - running again changes nothing;
   - baselines are filled only where absent and skipped without git;
+  - `pipeline.parent_branch` is filled for works in the main folder and in a registered worktree: `master`
+    when it exists, the current branch when it does not, `--` without git; an existing value is kept, and a
+    re-run changes nothing;
   - STEP 0 accepts a `STATE.yml`-only repository;
   - bash and PowerShell give the same bytes, with the PowerShell half in the Windows lane.
 - **Dashboard**:
