@@ -909,3 +909,11 @@ qa:
     suggested: 'The drift fix is made inside the current work, shown at its next approval and shipped in its pull request, so the agent works from corrected facts at once.'
     answer: 'Accepted as recommended (inside the current work).'
     applied_to: 'Feature 004 Technical Specification (drift)'
+  - id: Q60
+    category: Specification (Feature 004)
+    impact: High
+    state: Answered
+    context: 'The gate creates every work worktree off a hard-coded master, while the KB build and new-project commits land on the main folder''s checked-out branch; when they differ, works cannot see the KB.'
+    suggested: 'A new work''s worktree branches from the main folder''s current branch, and that branch is the work''s parent branch (its pull request target); the hard-coded master default is removed.'
+    answer: 'Accepted as recommended (branch from the current branch).'
+    applied_to: 'Feature 004 Technical Specification (gate changes); noted for Features 007 and 008'
