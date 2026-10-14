@@ -239,7 +239,7 @@ features:
     state: In Discussion
     started: '2026-10-14'
     updated: '2026-10-14'
-    grade: Pending
+    grade: D+
     qa_count: 6
     sections:
       - name: Files and layout
