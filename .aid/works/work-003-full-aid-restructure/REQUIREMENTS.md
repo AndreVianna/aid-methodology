@@ -1121,15 +1121,22 @@ qa: []
   | `dashboard/reader/parsers.py` and `dashboard/server/reader.mjs` (the phase map) | old name -> member | new name -> member, plus the old names in a block marked `legacy-phase-map: begin` / `end` |
   | `dashboard/reader/state_schema.py` (a comment's example value) | `'Execute'` | `'Building'` |
 
-  **Resume table** of `work-initiation-gate.md` § 3b, first match wins (rows not named are unchanged):
+  **Resume table** of `work-initiation-gate.md` § 3b, written out **in full** -- it replaces today's table
+  row for row, first match wins:
 
-  | Chosen work's state | Resume entry point |
-  |---|---|
-  | A saved `active_skill` other than `none` on a work whose `lifecycle` is **not** `Completed` or `Canceled` (new row, placed right **after** the unchanged "Already Completed / Canceled" and "Lite work halted at APPROVAL-HALT" rows and **before** every `phase` row -- so finished works are reported as finished, a halted Lite work still goes to `/aid-execute`, and a Building work with an open call resumes inside the called skill; `test-work-initiation-gate.sh` gains a halted-Lite fixture that carries `active_skill` and a Building fixture with an open call) | that skill, at its saved `step` (FR-20.2) |
-  | `phase: Building`, or `delivery_state` `Executing` / `Gated` / `Done` | `/aid-execute <work>` |
-  | `phase: CI` | `/aid-monitor-pipeline <work>` once Feature 008 delivers it; until then `/aid-orchestrate <work>`, which closes the work (Feature 001's interim minimum) |
-  | `Definition` / `Specification` / `Planning` with no saved skill | Definition -> `/aid-describe`; Specification -> `/aid-define` while `REQUIREMENTS.md` § 11 has no feature section, else `/aid-specify`; Planning -> `/aid-plan` while `PLAN.md` is missing, else `/aid-detail`. Features 003, 005 and 006 re-point their own row as they rebuild those skills |
-  | An old name (a work not yet migrated) -- a separate small table right after this one, between `<!-- legacy-phase-map: begin -->` and `<!-- legacy-phase-map: end -->` | today's door for that name: `Describe` -> `/aid-describe`, `Define` -> `/aid-define`, `Specify` -> `/aid-specify`, `Plan` -> `/aid-plan`, `Detail` -> `/aid-detail`, `Execute` -> `/aid-execute`. Feature 006's migration renames every stored phase, then removes these rows |
+  | # | Chosen work's state | Resume entry point |
+  |---|---|---|
+  | 1 | Already `Completed` / `Canceled` (moved up from last place) | Tell the user the work is finished (nothing to resume) and stop; suggest a new work if they meant to start fresh |
+  | 2 | Flattened Lite work halted at the shortcut engine's APPROVAL-HALT (`lifecycle: Paused-Awaiting-Input` **and** `delivery_state: Specified`) (unchanged) | `/aid-execute <work>` |
+  | 3 | A saved `active_skill` other than `none` (new; replaces today's Deploy row, which it covers -- `active_skill: aid-deploy` resumes `/aid-deploy`) | that skill, at its saved `step` (FR-20.2); a Building work with an open call therefore resumes inside the called skill |
+  | 4 | `phase: Building`, or `delivery_state` `Executing` / `Gated` / `Done` | `/aid-execute <work>` |
+  | 5 | `phase: CI` | `/aid-monitor-pipeline <work>` once Feature 008 delivers it; until then `/aid-orchestrate <work>`, which closes the work (Feature 001's interim minimum) |
+  | 6 | `Definition` / `Specification` / `Planning` with no saved skill | Definition -> `/aid-describe`; Specification -> `/aid-define` while `REQUIREMENTS.md` § 11 has no feature section, else `/aid-specify`; Planning -> `/aid-plan` while `PLAN.md` is missing, else `/aid-detail`. Features 003, 005 and 006 re-point their own row as they rebuild those skills |
+  | 7 | An old name (a work not yet migrated) -- a separate small table right after this one, between `<!-- legacy-phase-map: begin -->` and `<!-- legacy-phase-map: end -->` | today's door for that name: `Describe` -> `/aid-describe`, `Define` -> `/aid-define`, `Specify` -> `/aid-specify`, `Plan` -> `/aid-plan`, `Detail` -> `/aid-detail`, `Execute` -> `/aid-execute`. Feature 006's migration renames every stored phase, then removes these rows |
+
+  `test-work-initiation-gate.sh` gains fixtures for every row in this order: a finished Building work (row 1, not
+  rows 3-4), a halted Lite work carrying `active_skill` (row 2), a Building work with an open call (row 3),
+  and new-name works for rows 4-6.
 
   **Finishing clears the saved skill:** the writer, whenever it sets `lifecycle` to `Completed` or `Canceled`,
   also sets `active_skill: none` and clears `step` / `step_detail` in the same locked write (a
@@ -1477,7 +1484,7 @@ suite list of `.github/workflows/installer-tests.yml`):
 | SS-09 | Every asking skill -- each skill that cites the protocol, and the generated doorway skills through `shortcut-engine.md` -- has a sample whose frontmatter `skills:` names it and whose `covers` holds AC-28, or a `skill:` row of the deferred list matching it (the table below) |
 | SS-10 | `canonical/aid/templates/agent-boilerplate.md` has the `## Talking with the user` section; every `canonical/agents/*/AGENT.md` includes `{{include:agent-boilerplate}}`; no `AGENT.md` tells its agent to ask the user (`AskUserQuestion`, "ask the user") |
 | SS-11 | No old phase name (`Describe`, `Define`, `Specify`, `Plan`, `Detail`, `Execute`) as data or logic. **Scope**: tracked files under `canonical/skills/`, `canonical/aid/templates/`, `canonical/aid/scripts/` (except `summarize/`, whose diagram tokens are text), `dashboard/home.html`, `dashboard/reader/*.py`, `dashboard/server/*.mjs`, `dashboard/server/*.py`, `dashboard/scripts/writeback-state.sh` -- never a `tests/` or `__tests__/` folder. **Forms**: `phase: <old>`; `--field Phase --value <old>`; a quoted `'<old>'` or `"<old>"`; an enum list `<old> \| <old>`; `Phase.<old>`; `=== '<old>'`; a backticked old name on a line that mentions the phase. **Excluded**: lines between `legacy-phase-map: begin` and `end` markers (the two readers' maps and the gate's old-name rows). Run on today's tree, these forms reach 55 lines, all of them listed in the phase-sites table or the page's sites; only the deploy sentence, prose split over two lines, is listed without being reachable |
-| SS-12 | No hand-written finish: no line matching `lifecycle: (Completed|Canceled)` (any quoting) in tracked files under `canonical/skills/` and `canonical/aid/templates/`, except files of skills on the SS-12 exempt list (each row: skill, owning feature). Fails if an exempt skill folder no longer exists, and under `AID_RELEASE_CHECK=1` if the exempt list is not empty. Lives in `tests/canonical/test-skill-steps.sh`. |
+| SS-12 | No hand-written finish: no line matching `lifecycle: (Completed\|Canceled)` (any quoting) in tracked files under `canonical/skills/` and `canonical/aid/templates/`, except files of skills on the SS-12 exempt list (each row: skill, owning feature). Fails if an exempt skill folder no longer exists, and under `AID_RELEASE_CHECK=1` if the exempt list is not empty. Lives in `tests/canonical/test-skill-steps.sh`. |
 
 **Static checks -- `tests/canonical/test-never-merges.sh`**, over the tracked files (`git ls-files`) that
 match:
