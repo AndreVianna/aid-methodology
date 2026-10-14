@@ -683,3 +683,11 @@ qa:
     suggested: 'Isolated unit tests and static checks per feature; integration tests only when their dependencies exist; a deferred-tests list; the full integration suite at the end with the list empty. No stand-in tests with soon-retired skills.'
     answer: 'Accepted as recommended.'
     applied_to: 'REQUIREMENTS.md NFR-T; Feature 002 Technical Specification (Testing)'
+  - id: Q36
+    category: Specification (Feature 002)
+    impact: Medium
+    state: Answered
+    context: 'Small decisions taken by the AI are confirmed in one batch at the end -- the end of what?'
+    suggested: 'With the next approval that covers them: the document approval (full), the confirmation before building (lite), the next milestone (during building). No extra approval.'
+    answer: 'Accepted as recommended.'
+    applied_to: 'Feature 002 Technical Specification (Question protocol)'
