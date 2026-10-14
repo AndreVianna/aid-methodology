@@ -1162,8 +1162,10 @@ qa: []
   skill no longer exists, and -- like DT-02 -- fails under `AID_RELEASE_CHECK=1` while the list is not
   empty, so a skill rebuilt under the same name (e.g. `aid-brainstorm`) cannot stay exempt for good.
 
-  The same-invocation sentence becomes "when the chosen work's `phase` is `Definition`, or its old name
-  on a work not yet migrated" (no old name written out, so SS-11 stays green). `tests/canonical/test-work-initiation-gate.sh` gains new-name works next to its
+  The same-invocation sentence becomes "when the table above resolves the chosen work to the skill the
+  user already invoked" -- it follows the table's own answer (including row 3's saved skill), so a
+  doorway work with `active_skill: aid-create-X` picked from `/aid-describe` goes to `/aid-create-X`, never
+  resumed by `/aid-describe` (no old name written out, so SS-11 stays green). `tests/canonical/test-work-initiation-gate.sh` gains new-name works next to its
   old-name fixtures.
 
   **Tests** follow one rule: a hand-written old name in a fixture's input stays (it exercises the readers'
@@ -1362,6 +1364,14 @@ them and the hand-off bookkeeping must be exact (decisions.md § D17):
 `--project` targets `.aid/STATE.yml`, created from its template when missing; without it the target is
 the work's `STATE.yml`, resolved as today (`AID_STATE_FILE`).
 
+**Review focus (FR-21).** `canonical/agents/aid-reviewer/AGENT.md` and the shared review instructions
+(`canonical/aid/templates/reviewer-dispatch.md`, and every skill's `references/reviewer-brief.md`) gain one
+short "What to report" rule: only issues that affect the work -- a step that cannot be built, a check that
+would fail on the real files, a contradiction with another part of the document or a user decision.
+Exact counts, word-for-word comparisons and wording or cosmetic points are not findings. Static check
+**SS-13** fails if a review brief template asks for exact counts, verbatim comparison or cosmetic wording
+checks, or if the rule is missing from the reviewer agent.
+
 ##### 5. Approvals and the merge boundary
 
 `skill-steps.md` § When approvals happen states the FR-6 approvals once for AID; how a milestone runs is
@@ -1493,6 +1503,7 @@ suite list of `.github/workflows/installer-tests.yml`):
 | SS-10 | `canonical/aid/templates/agent-boilerplate.md` has the `## Talking with the user` section; every `canonical/agents/*/AGENT.md` includes `{{include:agent-boilerplate}}`; no `AGENT.md` tells its agent to ask the user (`AskUserQuestion`, "ask the user") |
 | SS-11 | No old phase name (`Describe`, `Define`, `Specify`, `Plan`, `Detail`, `Execute`) as data or logic. **Scope**: tracked files under `canonical/skills/`, `canonical/aid/templates/`, `canonical/aid/scripts/` (except `summarize/`, whose diagram tokens are text), `dashboard/home.html`, `dashboard/reader/*.py`, `dashboard/server/*.mjs`, `dashboard/server/*.py`, `dashboard/scripts/writeback-state.sh` -- never a `tests/` or `__tests__/` folder. **Forms**: `phase: <old>`; `--field Phase --value <old>`; a quoted `'<old>'` or `"<old>"`; an enum list `<old> \| <old>`; `Phase.<old>`; `=== '<old>'`; a backticked old name on a line that mentions the phase. **Excluded**: lines between `legacy-phase-map: begin` and `end` markers (the two readers' maps and the gate's old-name rows). Run on today's tree, these forms reach 55 lines, all of them listed in the phase-sites table or the page's sites; only the deploy sentence, prose split over two lines, is listed without being reachable |
 | SS-12 | No hand-written finish: no line matching `lifecycle: (Completed\|Canceled)` (any quoting) in tracked files under `canonical/skills/` and `canonical/aid/templates/`, except files of skills on the SS-12 exempt list (each row: skill, owning feature). Fails if an exempt skill folder no longer exists, and under `AID_RELEASE_CHECK=1` if the exempt list is not empty. Lives in `tests/canonical/test-skill-steps.sh`. |
+| SS-13 | `canonical/agents/aid-reviewer/AGENT.md` and `canonical/aid/templates/reviewer-dispatch.md` carry the FR-21 "What to report" rule; no `references/reviewer-brief.md` asks for exact counts, verbatim comparison or cosmetic wording checks. Lives in `tests/canonical/test-skill-steps.sh`. |
 
 **Static checks -- `tests/canonical/test-never-merges.sh`**, over the tracked files (`git ls-files`) that
 match:
@@ -1593,6 +1604,7 @@ label -- to every sample, of any feature, that covers AC-8 or AC-28.
 | AC-38 | Steps and hand-offs (`PASS`, `CALL`, `HALT`) | writer unit tests (`--handoff`, `--handoff-return`, nesting); `002-12`, `002-13` (deferred) |
 | AC-40 | Question protocol (sub-agents never ask); Migration | SS-05, SS-10 |
 | AC-41 | Dashboard and chat | dashboard fixtures and parity test; SS-07 |
+| AC-46 | Question protocol (review focus) | SS-13 |
 
 ### Feature 003 — Shape an Idea or Ticket into a Clear Work Definition
 
