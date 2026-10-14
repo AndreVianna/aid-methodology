@@ -936,7 +936,8 @@ release.
   (holding only the credentials the host needs), no `--add-dir`, `--strict-mcp-config` with no
   `--mcp-config` (no MCP server), and `--setting-sources project` (the fixture's installed AID files load;
   the maintainer's own settings and plugins do not). The suite runs on demand on the maintainer's
-  machine, never in CI. `files.diff` records every change inside the fixture and the throwaway `HOME`;
+  machine, never in CI. `files.diff` records every change the agent makes inside the fixture and the throwaway
+  `HOME` (see Transcript capture for the exclusions);
   a write elsewhere through an absolute path is **not** recorded -- a known limit of running on the
   maintainer's machine rather than in a container.
 - **The simulated user** is a separate `claude -p` call per turn with only text in and out: run from a new
