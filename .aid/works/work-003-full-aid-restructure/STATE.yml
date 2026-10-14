@@ -789,3 +789,11 @@ qa:
     suggested: 'One light reviewer pass (conflicts with the KB and the user answers), findings fixed once, no grading loop (FR-21).'
     answer: 'Accepted as recommended.'
     applied_to: 'Feature 003 Technical Specification (Flow: CHECK)'
+  - id: Q47
+    category: Specification (Feature 003)
+    impact: Medium
+    state: Answered
+    context: 'Where a shaped idea goes next (Specification vs KB update), e.g. roadmap/backlog/MVP.'
+    suggested: 'Roadmap/backlog/MVP -> KB update; architecture/stack/testing strategy/CI-CD -> Specification.'
+    answer: 'The user decides. At FINISH the agent proposes the next step (recommendation: KB update for roadmap/backlog/MVP, Specification otherwise) as a question; the kind catalog then field is only the default recommendation.'
+    applied_to: 'Feature 003 Technical Specification (Flow: FINISH; Kinds of things)'
