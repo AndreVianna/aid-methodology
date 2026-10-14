@@ -49,3 +49,12 @@
 - **Source:** `canonical/skills/aid-brainstorm/SKILL.md` § State: INTAKE (allocates and enters a new worktree) and § State: DESIGN (writes `.aid/design/<slug>.md` there), § State: PRESENT and § State: DONE (the work is marked `Completed` in the same run); `canonical/aid/templates/work-initiation-gate.md` § 3a NEW (every new work gets a fresh worktree off `master`) and § 3b CONTINUATION (a `Completed` work is not resumed: "suggest a NEW work"); `canonical/aid/scripts/works/worktree-lifecycle.sh` header ("git worktree add cannot carry untracked content"); the same pattern in every `canonical/skills/aid-design-*/SKILL.md`, in `canonical/aid/templates/shortcut-engine.md` § Step 2: Read context (`.aid/design/{artifact}.md`) and in the seed reads of `canonical/skills/aid-create-document/SKILL.md` and `aid-update-document/SKILL.md`
 - **Description:** Every brainstorm or design run writes its draft as an untracked file inside its own work's worktree, then closes that work. The skill tells the user to iterate by running it again, and the `create` skills are meant to read the draft, but each of those runs is a new work in a new worktree branched off `master`, which cannot see an untracked file in another worktree. So the next run starts from nothing, with no warning, unless the user happened to commit and merge the draft. FR-9 needs a draft that survives across sessions (and possibly without ever becoming built work), so Feature 003 has to settle where a draft lives with one worktree per work before it can meet AC-17.
 - **See also:** --
+
+## KI-005: Bringing the parent branch into a work branch conflicts with the never-merges test
+
+- **Type:** Gap
+- **Severity:** Medium
+- **Affects:** Feature 008 — Pull Requests Kept on Track Through Reviews and Pipeline Failures
+- **Source:** REQUIREMENTS.md § 11 Feature 002 Technical Specification, test NM-01 (forbids any `git merge`); Feature 004 Technical Specification, The view and its "What other features must provide" row for Feature 008 (a `kb.html` / `INDEX.md` collision is resolved by re-rendering and finishing the merge with Feature 008's own merge commit)
+- **Description:** Feature 008 has to bring the parent branch into the work branch to resolve a pull-request conflict, and finish that merge with its own commit. NM-01 forbids every `git merge`, but its purpose is that AID never merges the pull request itself. Feature 008's spec must narrow NM-01 to that purpose, or resolve conflicts in a way NM-01 allows.
+- **See also:** --
