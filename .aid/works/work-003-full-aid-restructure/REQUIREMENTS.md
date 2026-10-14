@@ -461,6 +461,13 @@ A skill's state machine is the fixed set of steps it moves through. It is revise
    The state machine and the `STATE.yml` layout are reviewed as a whole to support this: each hand-off
    records where it came from, where it went, why, and where to return.
 
+### FR-21 Review focus
+
+Every review (by an agent or a script) reports **only issues that affect the work**: a step that cannot
+be built, a check that would fail on the real files, or something that contradicts another part of the
+document or a decision the user made. Exact counts, word-for-word comparisons and wording or cosmetic
+points are **not findings**. This keeps review cycles short and every round meaningful.
+
 ## 6. Non-Functional Requirements
 
 - **NFR-N (naming).** No acronyms in artifact or skill names: names say plainly what the thing is.
@@ -565,6 +572,7 @@ If assumption 1 or 2 fails in a tool, transparent orchestration degrades there t
 | AC-43 | No `/aid-design` skill exists; a request to design a kind of thing (e.g. "design the orders API") reaches `/aid-brainstorm` with that kind's catalog rules, and only `/aid-brainstorm` writes idea drafts under `.aid/design/`. | Scope, FR-9 |
 | AC-44 | Every approved `REQUIREMENTS.md` has a business part and a technical part; the technical part exists once for the whole work, or once per feature when it splits, and each technical section names the requirements it serves. | FR-3 |
 | AC-45 | After all features are built, one documentation pass (the tech-writer agent) rewrites the user documentation (`docs/`, `site/src/content/`, `README.md`) against the finished product; a pre-release check fails if any user document still names a retired skill or an old phase name. | Scope, M1 |
+| AC-46 | The shared reviewer instructions (the reviewer agent and every review brief template) state the review focus of FR-21; a static check fails if a review brief template asks for exact counts, word-for-word comparison or cosmetic wording checks. | FR-21 |
 
 ### Skills, naming and constraints
 
@@ -1021,8 +1029,8 @@ checks: `STATE.yml` ends with `lifecycle: Completed` and the agent pushes nothin
 ### Feature 002 — Clear, Step-by-Step Decisions
 
 - **Priority:** Must
-- **Requirements:** §4 Scope; §5 FR-6, FR-7, FR-13, FR-17, FR-20; §6 NFR-Q
-- **Criteria:** AC-8, AC-9, AC-10, AC-11, AC-28, AC-37, AC-38, AC-40, AC-41
+- **Requirements:** §4 Scope; §5 FR-6, FR-7, FR-13, FR-17, FR-20, FR-21; §6 NFR-Q
+- **Criteria:** AC-8, AC-9, AC-10, AC-11, AC-28, AC-37, AC-38, AC-40, AC-41, AC-46
 
 #### Description
 

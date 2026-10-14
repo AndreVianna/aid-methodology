@@ -739,3 +739,11 @@ qa:
     suggested: 'One documentation pass at the end of this work by the tech-writer agent; a pre-release check fails on retired skill names or old phase names.'
     answer: 'Accepted as recommended.'
     applied_to: 'REQUIREMENTS.md AC-45, §10, §11 intro'
+  - id: Q41
+    category: Requirements (reviews)
+    impact: Medium
+    state: Answered
+    context: 'Review cycles spent effort on verbatim comparisons, irrelevant counts and wording points (maintainer feedback).'
+    suggested: 'FR-21: reviews report only issues that affect the work; counts, word-for-word comparisons and cosmetic points are not findings; static check on review brief templates (AC-46), owned by Feature 002.'
+    answer: 'Accepted as recommended.'
+    applied_to: 'REQUIREMENTS.md FR-21, AC-46, Feature 002'
