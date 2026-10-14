@@ -1125,7 +1125,7 @@ qa: []
 
   | Chosen work's state | Resume entry point |
   |---|---|
-  | A saved `active_skill` other than `none` on a work whose `lifecycle` is **not** `Completed` or `Canceled` (new row, placed **first** in the table -- its `lifecycle` condition already lets the unchanged "Already Completed / Canceled" row report a finished work as finished, and being first lets a Building work with an open call resume inside the called skill) | that skill, at its saved `step` (FR-20.2) |
+  | A saved `active_skill` other than `none` on a work whose `lifecycle` is **not** `Completed` or `Canceled` (new row, placed right **after** the unchanged "Already Completed / Canceled" and "Lite work halted at APPROVAL-HALT" rows and **before** every `phase` row -- so finished works are reported as finished, a halted Lite work still goes to `/aid-execute`, and a Building work with an open call resumes inside the called skill; `test-work-initiation-gate.sh` gains a halted-Lite fixture that carries `active_skill` and a Building fixture with an open call) | that skill, at its saved `step` (FR-20.2) |
   | `phase: Building`, or `delivery_state` `Executing` / `Gated` / `Done` | `/aid-execute <work>` |
   | `phase: CI` | `/aid-monitor-pipeline <work>` once Feature 008 delivers it; until then `/aid-orchestrate <work>`, which closes the work (Feature 001's interim minimum) |
   | `Definition` / `Specification` / `Planning` with no saved skill | Definition -> `/aid-describe`; Specification -> `/aid-define` while `REQUIREMENTS.md` § 11 has no feature section, else `/aid-specify`; Planning -> `/aid-plan` while `PLAN.md` is missing, else `/aid-detail`. Features 003, 005 and 006 re-point their own row as they rebuild those skills |
@@ -1137,13 +1137,15 @@ qa: []
   `lifecycle: Completed` / `Canceled` by hand (e.g. `aid-research`, `aid-test`, `aid-prototype`,
   `aid-report`) switches to the writer; static check **SS-12** fails on any hand-written `lifecycle:
   Completed` / `Canceled` in `canonical/skills/` or `canonical/aid/templates/`, so no stale saved skill
-  outlives its work. Today 43 skill files do it. Feature 002 converts the ones that stay (`aid-research`,
-  `aid-test`, `aid-prototype`, `aid-report`, `aid-review`, `aid-deploy`, `aid-create-document`,
+  outlives its work. Today 42 skill files do it (`aid-deploy` already uses the writer; its
+  `state-done.md` prose that quotes `lifecycle: Completed` is reworded so SS-12 does not match it). Feature 002 converts the 7 that stay (`aid-research`,
+  `aid-test`, `aid-prototype`, `aid-report`, `aid-review`, `aid-create-document`,
   `aid-update-document`); the rest are skills a later feature rebuilds or retires (the `aid-design-*`
   family and `aid-design` -> Features 003/009; the KB-writing `aid-create-*` / `aid-update-*` for
   architecture, stack, testing strategy, CI/CD, roadmap, backlog and MVP -> Feature 004; `aid-brainstorm` ->
   Feature 003) and sit on an SS-12 exempt list that names the owning feature; SS-12 fails if an exempt
-  skill no longer exists, so the list only shrinks and is empty by release.
+  skill no longer exists, and -- like DT-02 -- fails under `AID_RELEASE_CHECK=1` while the list is not
+  empty, so a skill rebuilt under the same name (e.g. `aid-brainstorm`) cannot stay exempt for good.
 
   The same-invocation sentence becomes "when the chosen work's `phase` is `Definition`, or its old name
   on a work not yet migrated" (no old name written out, so SS-11 stays green). `tests/canonical/test-work-initiation-gate.sh` gains new-name works next to its
@@ -1475,6 +1477,7 @@ suite list of `.github/workflows/installer-tests.yml`):
 | SS-09 | Every asking skill -- each skill that cites the protocol, and the generated doorway skills through `shortcut-engine.md` -- has a sample whose frontmatter `skills:` names it and whose `covers` holds AC-28, or a `skill:` row of the deferred list matching it (the table below) |
 | SS-10 | `canonical/aid/templates/agent-boilerplate.md` has the `## Talking with the user` section; every `canonical/agents/*/AGENT.md` includes `{{include:agent-boilerplate}}`; no `AGENT.md` tells its agent to ask the user (`AskUserQuestion`, "ask the user") |
 | SS-11 | No old phase name (`Describe`, `Define`, `Specify`, `Plan`, `Detail`, `Execute`) as data or logic. **Scope**: tracked files under `canonical/skills/`, `canonical/aid/templates/`, `canonical/aid/scripts/` (except `summarize/`, whose diagram tokens are text), `dashboard/home.html`, `dashboard/reader/*.py`, `dashboard/server/*.mjs`, `dashboard/server/*.py`, `dashboard/scripts/writeback-state.sh` -- never a `tests/` or `__tests__/` folder. **Forms**: `phase: <old>`; `--field Phase --value <old>`; a quoted `'<old>'` or `"<old>"`; an enum list `<old> \| <old>`; `Phase.<old>`; `=== '<old>'`; a backticked old name on a line that mentions the phase. **Excluded**: lines between `legacy-phase-map: begin` and `end` markers (the two readers' maps and the gate's old-name rows). Run on today's tree, these forms reach 55 lines, all of them listed in the phase-sites table or the page's sites; only the deploy sentence, prose split over two lines, is listed without being reachable |
+| SS-12 | No hand-written finish: no line matching `lifecycle: (Completed|Canceled)` (any quoting) in tracked files under `canonical/skills/` and `canonical/aid/templates/`, except files of skills on the SS-12 exempt list (each row: skill, owning feature). Fails if an exempt skill folder no longer exists, and under `AID_RELEASE_CHECK=1` if the exempt list is not empty. Lives in `tests/canonical/test-skill-steps.sh`. |
 
 **Static checks -- `tests/canonical/test-never-merges.sh`**, over the tracked files (`git ls-files`) that
 match:
