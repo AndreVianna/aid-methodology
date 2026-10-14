@@ -263,7 +263,7 @@ features:
     state: In Discussion
     started: '2026-10-14'
     updated: '2026-10-14'
-    grade: D
+    grade: C
     qa_count: 5
     sections:
       - name: Files and layout
@@ -843,3 +843,11 @@ qa:
     suggested: 'A stated exception for open invitations answered in the user own words; questions with real choices keep rule 4.'
     answer: 'Accepted as recommended.'
     applied_to: 'Feature 003 Technical Specification (Flow); question-protocol.md'
+  - id: Q52
+    category: Specification (Feature 003)
+    impact: Medium
+    state: Answered
+    context: 'commit-on (commit a parked idea on a named branch) created extra draft states (review row 11).'
+    suggested: 'On parking, the agent asks: keep it as a loose draft in the main folder (uncommitted), or open a small work for it so the draft is committed on that work branch; the named-branch option is removed.'
+    answer: 'Accepted as recommended.'
+    applied_to: 'Feature 003 Technical Specification (The idea draft, Flow: parking)'
