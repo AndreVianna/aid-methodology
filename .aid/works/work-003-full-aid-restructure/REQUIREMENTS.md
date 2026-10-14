@@ -953,7 +953,10 @@ release.
   `transcript.jsonl` (one object per message: `turn`, `role` user or agent, `text`, the `tools` the agent
   called with their names and target paths, `ts`), `transcript.md` (the same, readable, given to the
   judge), `files.diff` (a before/after comparison of the whole fixture folder -- git-ignored files such as
-  `.aid/.temp/` included -- and of the throwaway `HOME`), `checks.txt`
+  `.aid/.temp/` included -- and of the throwaway `HOME`; format: a unified diff of contents for text
+  files, path and size only for binary files; **excluded**: the fixture's `.git/` and, in `HOME`, the host
+  tool's own files (`.claude/`, `.claude.json`) and any credential file, so the judge sees only the
+  agent's own changes and no secret is copied into a run folder), `checks.txt`
   and the judge's ledger.
 - `samples/feature-NNN/<id>.md`: frontmatter `id`, `covers`, `fixture`; sections `## User` (opening
   message and persona), `## Answer sheet` (all the simulated user knows), `## Expected outcome`,
