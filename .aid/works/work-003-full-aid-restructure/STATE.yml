@@ -637,3 +637,11 @@ qa:
     suggested: 'One sources list in the work STATE.yml: ref, kind, added + phase, effect (questions answered/raised), written_back (when, files); existing ticket_ref values migrated automatically.'
     answer: 'Accepted as recommended.'
     applied_to: 'Feature 001 Technical Specification (External sources, Migration)'
+  - id: Q32
+    category: Specification (Feature 001)
+    impact: Low
+    state: Answered
+    context: 'Write-back when the tracker cannot hold attachments (e.g. GitHub issues).'
+    suggested: 'Post the content as a comment with a link to the file on the work branch.'
+    answer: 'The user must be notified; the agent presents options/workarounds with a recommendation (question protocol); how the work is persisted is always the user decision. Applies to any limitation when persisting work to an external tool.'
+    applied_to: 'Feature 001 Technical Specification (External sources)'
