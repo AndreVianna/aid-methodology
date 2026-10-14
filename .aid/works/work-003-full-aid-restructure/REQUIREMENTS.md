@@ -2244,6 +2244,7 @@ sources, rendered as in Feature 001. "The view" is `.aid/knowledge/kb.html`; "th
 | Edit | `canonical/skills/aid-orchestrate/references/start-or-resume.md`, `size-and-route.md`, `feedback-routing.md` (Feature 001) | The drift check, the build's resume offer, the routing rows (see Components) |
 | Edit | `canonical/skills/aid-orchestrate/references/check-intent.md` (Feature 001) | Reads `backlog.md` for "the next backlog item" and records it as a work source (see Components, Roadmap, backlog and MVP) |
 | Edit | `canonical/skills/aid-brainstorm/references/finish.md` (Feature 003) | The KB-update hand-off targets `aid-kb-update` |
+| Edit | `canonical/aid/templates/work-initiation-gate.md` § 3a (Feature 002) | The new-project step, run before the worktree is created (see Components, A new project) |
 | Edit | `canonical/aid/templates/work-initiation-gate.md` § 3b legacy block (Feature 002) | One row for old works of the deleted `create` / `update` skills (see Migration) |
 | Edit | `canonical/aid/rules.md` | The tracking line and the connectors line (see Components); in § Skill guide the lines of the retired skills go and four lines come |
 | Edit | `canonical/aid/templates/settings.yml`, `canonical/skills/aid-config/SKILL.md` (the `knowledge` row) | `knowledge.source` and `knowledge.last_update` are no longer written or read (see Dashboard); `doc_set` and `term_exclusions` stay |
@@ -2454,8 +2455,9 @@ Its questions go in the work's `qa`; its process state is the work record.
      `--`).
    - **No KB** (no KB state file at `Approved` or `Growing`): START creates nothing. The agent says in one
      line that the KB is not built yet and writes nothing. Called, it `HALT`s and returns. A new project
-     always has its KB skeleton before any work exists (Components, A new project). On its own job this
-     cannot happen, because `size-and-route.md` checks for a KB before the work exists (Components). If
+     always has its KB skeleton before any work exists, because the gate's § 3a makes it before the
+     first work's worktree (Components, A new project). On its own job this cannot happen in a project
+     with code either, because `size-and-route.md` checks for a KB before the work exists (Components). If
      the KB was removed since, the agent says so and offers to cancel the work.
 2. **ANALYZE / SCOPE**:
    - today's analysis and scope plan: the documents and sections the change lands in, and what is
@@ -2513,11 +2515,14 @@ Its questions go in the work's `qa`; its process state is the work record.
 |---|---|
 | 0 (current) | the link: `file://` plus the absolute path of `kb.html`, and that `aid dashboard start` also shows it |
 | 1 (older than the KB) | the link, that the view is older than the KB, and one question offering a refresh (recommendation: yes); yes runs `/aid-kb-update` in `refresh` mode -- called inside the current work, or as a knowledge-update work |
-| 3 (missing) | that there is no view yet; with a KB, the same refresh question; with none, that the KB is built or grows first |
+| 3 (missing) | with a KB that holds documents: that there is no view yet, and the same refresh question; with a `Growing` KB that holds no document: "Nothing is recorded in the KB yet; it grows as things are decided and built" -- nothing offered, no work started; with no KB: that the KB is built or grows first |
 
 ##### 4. The view
 
 `render-kb-view.sh` makes `kb.html` from the KB documents alone, **with no agent and no user step** (Q53).
+- **Only on a KB with documents**: every caller renders only when the KB holds at least one document, so
+  exit 4 is a guard, never a path. `/aid-kb-update` FINISH skips the render (and leaves `kb.html` as it
+  is) when the KB holds none; `/aid-kb-show` never offers a refresh then.
 - **When it runs**: `/aid-kb-build` FINISH and every `/aid-kb-update` FINISH. **Nothing else writes the
   file**, with one named exception: Feature 008's step that resolves a pull-request collision on `kb.html`
   or `INDEX.md` runs `render-kb-view.sh` and `build-kb-index.sh`, stages both files, and finishes the merge
@@ -2650,21 +2655,22 @@ asked for:
   - **A first build not finished** (`Building`): finishing that build is offered first.
   - In both cases the update work is created only after the build's commit, so its branch contains the
     KB. If the user declines, no work is created.
-  - **A new project**: the new-project step (A new project) has already made the KB `Growing`, so the work
-    is created as now.
+  - **A new project** (no state file, no code): the work is created as now; the gate's § 3a runs the
+    new-project step before the worktree, so the work's branch holds the `Growing` KB.
 
   One new row:
 
   | Reading | Phases |
   |---|---|
-  | A new project (no code, no KB) | no Preparation: the new-project step sets `type: greenfield` and commits the KB skeleton, and the KB grows through `/aid-kb-update` as things are decided or built |
+  | A new project (no code, no KB) | no Preparation: the gate's new-project step (A new project) commits the KB skeleton, and the KB grows through `/aid-kb-update` as things are decided or built |
 
 - **`feedback-routing.md`**: "KB questions -> KB update" names `/aid-kb-update`.
 
 **A new project (FR-10, AC-18).**
-- **The new-project step**: when `size-and-route.md` routes a request in a project with no code and no
-  KB (its new-project row), the agent works in the main folder, before the gate creates the first work's
-  branch:
+- **The new-project step** sits on the one path every work goes through: the gate's § 3a (Feature 002),
+  which a plain request, a typed slash command and a doorway skill all use. Before § 3a creates a work's
+  worktree in a project with no KB state file and no code (`recon-classify.sh`), it works in the main
+  folder:
   - sets `type: greenfield` in `.aid/settings.yml` (the key `/aid-config` already sets);
   - makes the KB skeleton: the KB state file at `Growing` (`--kb --field Status --value Growing`), and a
     `README.md` with an empty completeness table and an `INDEX.md` from `build-kb-index.sh`, both holding
@@ -2901,10 +2907,10 @@ suite list of `.github/workflows/installer-tests.yml`):
 |---|---|
 | KB-01 | `aid-kb-build`, `aid-kb-query`, `aid-kb-update`, `aid-kb-show` exist. Absent: `aid-discover`, `aid-ask`, `aid-update-kb`, `aid-summarize`, `aid-housekeep`, the KB `create` / `update` skills, `design-lifecycle.md`, `discovery-state-template.md`, `canonical/aid/scripts/summarize/`. No `shortcut-catalog.yml` row names a retired skill |
 | KB-02 | The re-pointing rule (Migration): no kept file under `canonical/`, nor `dashboard/home.html`, names a retired skill or a moved reference by its old path (`aid-discover/`, `aid-update-kb/`, `aid-ask/`, `state-elicit.md`, `state-generate.md`, ...), except the gate's legacy block and `canonical/aid/scripts/migrate/` |
-| KB-03 | `aid-kb-show` and `aid-kb-query` have no `Write` or `Edit` in `allowed-tools`. `render-kb-view.sh` (without `--check`), `build-kb-index.sh` and `kb-commit.sh` are run only by files of `aid-kb-build` and `aid-kb-update`, with two named exceptions: files under `canonical/skills/aid-monitor-pipeline/` run the first two for Feature 008's pull-request collision step, and `aid-orchestrate`'s `size-and-route.md` runs `build-kb-index.sh` and `kb-commit.sh --new-project` for the new-project step. No file but `kb-commit.sh` runs `git commit` on `.aid/knowledge/`, with one named exception: the merge commit of that same Feature 008 step, which finishes a merge whose `kb.html` / `INDEX.md` collision it re-rendered. `kb-commit.sh` has no `git push` |
+| KB-03 | `aid-kb-show` and `aid-kb-query` have no `Write` or `Edit` in `allowed-tools`. `render-kb-view.sh` (without `--check`), `build-kb-index.sh` and `kb-commit.sh` are run only by files of `aid-kb-build` and `aid-kb-update`, with two named exceptions: files under `canonical/skills/aid-monitor-pipeline/` run the first two for Feature 008's pull-request collision step, and `canonical/aid/templates/work-initiation-gate.md` § 3a runs `build-kb-index.sh` and `kb-commit.sh --new-project` for the new-project step. No file but `kb-commit.sh` runs `git commit` on `.aid/knowledge/`, with one named exception: the merge commit of that same Feature 008 step, which finishes a merge whose `kb.html` / `INDEX.md` collision it re-rendered. `kb-commit.sh` has no `git push` |
 | KB-04 | `kb-state-template.yml` parses through the dashboard reader with no warning; nothing under `canonical/` writes `summary_approved`, `kb_baseline`, `## Q&A (Pending)` or `## Summarization History`; under the re-pointing rule, `.aid/knowledge/STATE.md` is named by no kept file under `canonical/`, nor `dashboard/home.html`, outside `canonical/aid/scripts/migrate/`, which must read old shapes |
 | KB-05 | `skill-steps.md` has the two approval rows and § The KB build record; `aid-kb-update`'s `finish.md` names `idea-drafts.sh`, `--kb-update-log` and the close |
-| KB-06 | `start-or-resume.md` names `kb-freshness-check.sh` and the build's resume offer; `size-and-route.md` routes a knowledge update to `aid-kb-update` and sets `type: greenfield` on its new-project row; `check-intent.md` names `backlog.md` and records it as a work source |
+| KB-06 | `start-or-resume.md` names `kb-freshness-check.sh` and the build's resume offer; `size-and-route.md` routes a knowledge update to `aid-kb-update`; `work-initiation-gate.md` § 3a runs the new-project step (`type: greenfield`, `kb-commit.sh --new-project`) before it creates the worktree; `check-intent.md` names `backlog.md` and records it as a work source |
 | KB-07 | `knowledge-base/roadmap.md` has a `## MVP` heading; `knowledge-base/backlog.md` exists |
 | KB-08 | `canonical/aid/rules.md` names `.aid/knowledge/STATE.yml` and `/aid-kb-build` in its connectors line |
 
