@@ -645,3 +645,11 @@ qa:
     suggested: 'Post the content as a comment with a link to the file on the work branch.'
     answer: 'The user must be notified; the agent presents options/workarounds with a recommendation (question protocol); how the work is persisted is always the user decision. Applies to any limitation when persisting work to an external tool.'
     applied_to: 'Feature 001 Technical Specification (External sources)'
+  - id: Q33
+    category: Specification (Feature 001)
+    impact: High
+    state: Answered
+    context: 'Which tools run the conversation test suite (NFR-T), and when.'
+    suggested: 'Claude Code required, other 4 tools optional via a flag; run on demand at each feature end and before release, not in GitHub CI; the 5-tool static check runs on every push.'
+    answer: 'Accepted as recommended.'
+    applied_to: 'Feature 001 Technical Specification (Testing)'
