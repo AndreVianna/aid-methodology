@@ -474,6 +474,9 @@ A skill's state machine is the fixed set of steps it moves through. It is revise
   **3 times** and passes only if all 3 runs meet it; an independent reviewer agent judges the
   transcripts. "Every skill in all five tools" is checked statically, against each tool's installed
   files. Feature 001 builds the suite; every feature adds its own samples.
+  **When tests run:** unit tests are isolated and run with every feature; integration tests run only once
+  everything they need exists -- until then each is recorded in a **deferred-tests list** (test, waiting
+  for which feature); the **full integration suite** runs at the end, before release, with that list empty.
 
 - **NFR-Q (how questions are asked).** Every question put to the user follows the question
   protocol (FR-17).

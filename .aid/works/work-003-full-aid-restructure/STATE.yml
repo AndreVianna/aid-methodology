@@ -675,3 +675,11 @@ qa:
     suggested: 'Feature 002 owns the overall shape (template, writer, readers, phase names); Feature 006 owns the planning part (deliveries, waves, tasks), removing delivery/task state files, and the single migration of existing works.'
     answer: 'Accepted as recommended.'
     applied_to: 'Feature 002 and 006 Technical Specifications'
+  - id: Q35
+    category: Requirements (testing)
+    impact: High
+    state: Answered
+    context: 'How to verify criteria that depend on skills later features rebuild (integration tests).'
+    suggested: 'Isolated unit tests and static checks per feature; integration tests only when their dependencies exist; a deferred-tests list; the full integration suite at the end with the list empty. No stand-in tests with soon-retired skills.'
+    answer: 'Accepted as recommended.'
+    applied_to: 'REQUIREMENTS.md NFR-T; Feature 002 Technical Specification (Testing)'
