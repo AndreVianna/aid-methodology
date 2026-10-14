@@ -1067,6 +1067,7 @@ the shared files cited, questions recorded in one place, no interviewer).
 | Edit | every phase site of Work state layout, including `canonical/aid/templates/work-initiation-gate.md` § 3b CONTINUATION and `aid-deploy` `references/state-idle.md` | The new phase names; the gate's resume table re-keyed (Work state layout) |
 | Edit | every hand-authored `canonical/skills/*/SKILL.md` and `references/*.md` that prints a banner, routes by the old advance words or asks the user; `canonical/aid/templates/shortcut-engine.md`, `design-lifecycle.md` | Banners removed, `skill-steps.md` and the protocol cited, advance words updated, host question pickers dropped (see Steps and hand-offs). The generated doorway skills print nothing themselves: they run `shortcut-engine.md`, so they change through it |
 | Edit | `canonical/skills/aid-orchestrate/references/start-or-resume.md` (Feature 001) | Creates a work through the gate's `--create`; resume reads only the work record (see The work record) and the open questions |
+| Edit | `canonical/skills/aid-orchestrate/references/start-or-resume.md` (Feature 001) | Requests about an existing work: "cancel work-NNN" is read as an action on that work, not a new request -- one confirmation question, then `writeback-state.sh --pipeline --field Lifecycle --value Canceled` (clears the saved skill and step) |
 | Edit | `canonical/aid/templates/work-initiation-gate.md` § 3a NEW and § 3b CONTINUATION | The gate becomes the only creator of a work's `STATE.yml`: § 3a runs `writeback-state.sh --create` (type, request, the calling skill, its first step, phase) before it hands the new work back; § 3b routes by the record only (see The work record) |
 | Edit | every **allocation point** -- the places a work's `STATE.yml` is created today: `canonical/aid/templates/design-lifecycle.md` § Allocation (used by `aid-brainstorm`, every `aid-design-*` and the KB-writing `aid-create-*` / `aid-update-*`); `aid-design/SKILL.md` § State: INTAKE step 4; `canonical/aid/templates/shortcut-engine.md` § State: INTAKE, Step 4 (every doorway skill); `aid-describe/SKILL.md` § No works exist, § Direct `work-NNN` argument, § Arguments and the `--reset` step of § State Detection, with `references/state-first-run.md` § 1b / 1b-ii; and the `SKILL.md` of the starters that stay -- `aid-research`, `aid-review`, `aid-test`, `aid-prototype`, `aid-report`, `aid-create-document`, `aid-update-document` | Each calls the gate's § 3a with its request, its own name, its first step and, where it sets them today, `pipeline.path` and minimum grade; the gate's `--create` makes `STATE.yml`. Their copy-the-template instructions, the two `phase: Describe` scaffold blocks and their hand-written `initiator:` / `active_skill:` / `lifecycle:` lines go (SS-11, SS-14). `aid-describe`'s `--reset` is removed, and a directly named `work-NNN` that does not exist goes through the gate like any new work (see The work record) |
 | Edit | the starters' own continuation lines: `aid-research`, `aid-test`, `aid-prototype`, `aid-report`, `aid-create-document`, `aid-update-document`, `aid-design` (each in its allocation step: "on continuation route to the chosen work's resume door and STOP"), `aid-review` § Step 5, `shortcut-engine.md` § Design Notes and § State: INTAKE Step 3 (both route by the `phase`-matched skill and HALT), `aid-describe/SKILL.md` § One or more works exist (the Continuation bullet keyed on a Describe-phase work) | Each becomes one line: "On continuation, follow the gate's § 3b: enter the chosen work's worktree and run the skill its record names, at its saved step." SS-14 (d) keeps phase-keyed continuation out |
@@ -1194,9 +1195,9 @@ qa: []
     - **The request words** passed to `--create` are the user's message that started the work. When a
       skill is started by a bare slash command with no words, its first question (question protocol) asks
       what the user wants, and that answer is the request the gate reads with `check-intent.md` before
-      `--create`. Because no work `STATE.yml` exists yet, that one question is recorded in the project's
-      `.aid/STATE.yml` (`--ask --project`, Q38); after `--create` succeeds it is marked answered there with
-      `applied_to` naming the new work, whose `intent.request` holds the answer.
+      `--create`. That question is not recorded separately: its answer becomes `intent.request` in the
+      record `--create` writes, which is the question's record. If the user does not answer, no work is
+      created, so there is nothing to resume.
   - **Exempt skills until their feature lands**: a skill on the shared exempt list keeps a binding line of
     its own (`initiator: aid-<name>`, sometimes `active_skill:`), but it allocates through the converted
     `design-lifecycle.md` § Allocation, so `--create` has already written the record, with those same
@@ -1698,6 +1699,7 @@ label -- to every sample, of any feature, that covers AC-8 or AC-28.
 | `002-18-report-what-to-analyze` (`/aid-report`) | AC-28 | now |
 | `002-19-monitor-finding-question` (`/aid-monitor`) | AC-28 | now |
 | `002-20-record-recovery` -- fixture: a work whose saved step names an artifact that is not on disk; the user asks to continue; check: the agent says so, proposes the repaired record as one question, writes nothing before the yes, then resumes there | AC-37 | now |
+| `002-21-cancel-work` -- fixture: an open work; the user says "cancel work-NNN"; check: no new work is created, the agent asks one confirmation question, and only after yes the record shows `lifecycle: Canceled` with no saved skill; the next resume reports the work as finished (runs now) |
 | `002-06-review-in-chunks` | AC-9 | deferred: Feature 005 |
 | `002-07-small-decisions-with-approval` | AC-9, AC-10 | deferred: Features 005, 007 |
 | `002-08-full-confirms-each-document` | AC-10 | deferred: Features 003, 005, 006, 007 |
@@ -1716,7 +1718,7 @@ label -- to every sample, of any feature, that covers AC-8 or AC-28.
 | AC-10 | Approvals and the merge boundary | writer unit tests (approval record); `002-07`, `002-08`, `002-09` (deferred) |
 | AC-11 | Approvals and the merge boundary (never merges) | NM-01 to NM-04; `002-05`; `002-10` (deferred) |
 | AC-28 | Question protocol | `002-01` to `002-04`, `002-14` to `002-19`; SS-09 with the coverage table (a sample or a `skill:` row per asking skill); `protocol-checks.md` |
-| AC-37 | Steps and hand-offs (what the user sees, resume); Work state layout (The work record) | SS-01, SS-02, SS-14; writer unit tests (`--create`, `--step`, `--check`, `--repair`, failed writes); gate `--check` fixtures; `002-20`; `002-11` (deferred) |
+| AC-37 | Steps and hand-offs (what the user sees, resume); Work state layout (The work record) | SS-01, SS-02, SS-14; writer unit tests (`--create`, `--step`, `--check`, `--repair`, failed writes); gate `--check` fixtures; `002-20`; `002-11` (deferred); `002-21` |
 | AC-38 | Steps and hand-offs (`PASS`, `CALL`, `HALT`) | writer unit tests (`--handoff`, `--handoff-return`, nesting); `002-12`, `002-13` (deferred) |
 | AC-40 | Question protocol (sub-agents never ask); Migration | SS-05, SS-10 |
 | AC-41 | Dashboard and chat | dashboard fixtures and parity test; SS-07 |
