@@ -699,3 +699,19 @@ qa:
     suggested: 'Merge small, related subjects into one group of 3-5.'
     answer: 'Merge only when the subjects are genuinely related (e.g. naming + skill descriptions); when nothing relates, a small group is fine.'
     applied_to: 'Feature 002 Technical Specification (Question protocol)'
+  - id: Q38
+    category: Specification (Feature 002)
+    impact: Medium
+    state: Answered
+    context: 'Where questions are recorded outside a work (KB building, setup skills).'
+    suggested: 'KB building -> the KB state file; setup skills -> the setting is the record.'
+    answer: 'KB building records questions in the KB state file; where no state file exists (e.g. setup skills), create a small one just for questions (.aid/STATE.yml, question record only).'
+    applied_to: 'Feature 002 Technical Specification (Question protocol, Work state layout)'
+  - id: Q39
+    category: Specification (Feature 004)
+    impact: Medium
+    state: Answered
+    context: 'The KB state file is still Markdown (.aid/knowledge/STATE.md, template discovery-state-template.md, 136 references); only work state moved to YAML.'
+    suggested: 'Convert to .aid/knowledge/STATE.yml; Feature 004 does the conversion (references + migration of existing projects); Feature 002 defines the shared question-record shape used by work, KB and project files.'
+    answer: 'Accepted: convert it.'
+    applied_to: 'Feature 004 Technical Specification (to write); Feature 002 (shared question-record shape)'
