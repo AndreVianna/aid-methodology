@@ -1370,10 +1370,13 @@ qa:
 - New keys: `asked_by`, `step` (where to resume), `answered_by` (`git config user.name`, or `--`).
   Approval entries add `covers` and `commit` (Approvals).
 - Every question is written `Pending` before it is shown (`--ask`), and its outcome right after the
-  answer (`--answer`). **One exception:** the "what do you want?" question of a bare slash start, asked
-  before any work exists -- its record is the new work's `intent.request` written by `--create` (rule 10
-  is met there); `question-protocol.md` and `protocol-checks.md` state this exception so the judge does
-  not fail samples `002-16` and `002-18` on it. On start or resume, the open entries (`Pending`, `Skipped`) come first, in the
+  answer (`--answer`). **One exception -- intake questions:** questions asked before a work exists or is entered ("what do you
+  want?" on a bare slash start, which skill fits when the reading is unsure, new work or continue an existing
+  one, a work's short name) are not written with `--ask`, because there is no work record yet. Their
+  outcome is recorded where it lands: a new work's `intent` and name in the record `--create` writes, or
+  the chosen work's own record on resume -- so rule 10 is met there. If the user does not answer, nothing
+  is created and nothing needs resuming. `question-protocol.md` and `protocol-checks.md` state this
+  exception, so the judge does not fail samples `002-14`, `002-16` and `002-18` on it. On start or resume, the open entries (`Pending`, `Skipped`) come first, in the
   usual groups -- `start-or-resume.md` gains this step.
 - Where: a work's questions in its `STATE.yml`; KB building in the KB state file; setup skills
   (configure, connectors) in `.aid/STATE.yml`.
