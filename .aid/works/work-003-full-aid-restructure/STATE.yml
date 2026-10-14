@@ -263,7 +263,7 @@ features:
     state: In Discussion
     started: '2026-10-14'
     updated: '2026-10-14'
-    grade: Pending
+    grade: D
     qa_count: 5
     sections:
       - name: Files and layout
@@ -819,3 +819,11 @@ qa:
     suggested: 'Remove it in Feature 003; nothing is released in between; dependent tests go on the deferred list.'
     answer: 'Accepted as recommended.'
     applied_to: 'Feature 003 Technical Specification (Files and layout, Migration, Testing)'
+  - id: Q49
+    category: Specification (Feature 003)
+    impact: High
+    state: Answered
+    context: 'Brainstorm defined as draft -> ask -> finish; maintainer: brainstorming is a back-and-forth conversation.'
+    suggested: 'start -> conversation loop (agent proposes options/suggestions/challenges and asks; user leads) with a living draft updated after every exchange -> light check -> finish; only the user ends the loop.'
+    answer: 'Accepted, with the agent prompt being: "Do you have anything else you would like to add or discuss?" (instead of suggesting to wrap up).'
+    applied_to: 'Feature 003 Technical Specification (Flow)'
