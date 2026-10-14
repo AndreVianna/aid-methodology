@@ -747,3 +747,11 @@ qa:
     suggested: 'FR-21: reviews report only issues that affect the work; counts, word-for-word comparisons and cosmetic points are not findings; static check on review brief templates (AC-46), owned by Feature 002.'
     answer: 'Accepted as recommended.'
     applied_to: 'REQUIREMENTS.md FR-21, AC-46, Feature 002'
+  - id: Q42
+    category: Specification (Feature 002)
+    impact: High
+    state: Answered
+    context: 'Resume guessed from phase names/files because the work record (work type, running skill + step) could be missing; maintainer flagged the gap (row 17 is not LOW).'
+    suggested: 'Every work records its type and running skill + step from creation, however started; resume reads only that record; phase is display only; phase/file guessing only for unmigrated old works (Feature 006 fills and removes); static check that every work-creating skill writes both at creation.'
+    answer: 'Accepted, with the condition that the record is updated frequently and without fail -- it must not become a single point of failure for all skills.'
+    applied_to: 'Feature 002 Technical Specification (Work state layout, Steps and hand-offs, Testing)'
