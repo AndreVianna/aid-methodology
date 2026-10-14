@@ -901,3 +901,11 @@ qa:
     suggested: '/aid-kb-update always runs one graded review, scoped to the documents it changed; the task reviewer judges code, not KB claims.'
     answer: 'Accepted as recommended (own review every time).'
     applied_to: 'Feature 004 Technical Specification (KB update)'
+  - id: Q59
+    category: Specification (Feature 004)
+    impact: Medium
+    state: Answered
+    context: 'When the drift check finds a stale document and the user agrees to update it, the fix can ride the current work or go to a separate knowledge-update work.'
+    suggested: 'The drift fix is made inside the current work, shown at its next approval and shipped in its pull request, so the agent works from corrected facts at once.'
+    answer: 'Accepted as recommended (inside the current work).'
+    applied_to: 'Feature 004 Technical Specification (drift)'
