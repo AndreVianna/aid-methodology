@@ -773,3 +773,11 @@ qa:
     suggested: 'In the project main folder .aid/design/, never committed by AID; parking an idea cancels its work (after confirmation) and keeps the draft.'
     answer: 'Accepted, but AID must ASK the user whether to persist and commit the idea draft (not silently leave it uncommitted).'
     applied_to: 'Feature 003 Technical Specification (The idea draft, Flow)'
+  - id: Q45
+    category: Specification (Feature 003)
+    impact: High
+    state: Answered
+    context: 'Where the per-kind rules live before Feature 009 builds the single catalog.'
+    suggested: 'Feature 003 creates the kind catalog file (kind, about, shape, then); Feature 009 grows the same file into the one catalog.'
+    answer: 'Accepted as recommended.'
+    applied_to: 'Feature 003 Technical Specification (Kinds of things); Feature 009'
