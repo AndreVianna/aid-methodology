@@ -853,3 +853,19 @@ qa:
     suggested: 'On parking, the agent asks: keep it as a loose draft in the main folder (uncommitted), or open a small work for it so the draft is committed on that work branch; the named-branch option is removed.'
     answer: 'Accepted as recommended.'
     applied_to: 'Feature 003 Technical Specification (The idea draft, Flow: parking)'
+  - id: Q53
+    category: Specification (Feature 004)
+    impact: High
+    state: Answered
+    context: 'kb.html must be regenerated on every KB change; today an agent hand-writes it with a human visual check.'
+    suggested: 'A script renders kb.html from the KB documents (deterministic, seconds, no user step); each section opens with the document''s own summary; hand-drawn diagrams dropped; decision D18 amended.'
+    answer: 'Accepted as recommended (script only).'
+    applied_to: 'Feature 004 Technical Specification (web view)'
+  - id: Q54
+    category: Specification (Feature 004)
+    impact: Medium
+    state: Answered
+    context: 'Tracking kb.html in git risks merge collisions between KB-touching PRs; ignoring it leaves a fresh clone without a view.'
+    suggested: 'kb.html is tracked in git with no embedded timestamps; a collision is resolved by re-rendering.'
+    answer: 'Accepted as recommended (kept in git).'
+    applied_to: 'Feature 004 Technical Specification (web view)'
