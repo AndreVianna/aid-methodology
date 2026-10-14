@@ -2237,14 +2237,15 @@ sources, rendered as in Feature 001. "The view" is `.aid/knowledge/kb.html`; "th
 | Edit | `canonical/aid/scripts/kb/build-kb-index.sh` | No timestamp in its output (see The view); its header names `/aid-kb-build` and `/aid-kb-update` |
 | Replace | `canonical/aid/templates/discovery-state-template.md` -> `canonical/aid/templates/kb-state-template.yml` | The KB state file's template (see The KB state file) |
 | Create | `canonical/aid/templates/knowledge-base/roadmap.md`, `backlog.md` | The two documents' shapes, taken from `aid-create-roadmap` (the `## MVP` section included) and `aid-create-backlog`; type `template-payload` |
-| Edit | `canonical/aid/scripts/execute/writeback-state.sh` | The `--kb` target, the KB modes and `--kb-update-log` (see The KB state file) |
-| Edit | `canonical/aid/templates/work-state-template.yml` | `kb_updates: []` with its `[W]` comment (see The KB state file) |
+| Edit | `canonical/aid/scripts/execute/writeback-state.sh` | The `--kb` target, the KB modes, `--kb-update-log`, and `--create --parent-branch` (see The KB state file) |
+| Edit | `canonical/aid/templates/work-state-template.yml` | `kb_updates: []` and `pipeline.parent_branch: --`, each with its `[W]` comment (see The KB state file) |
 | Edit | `canonical/aid/templates/skill-steps.md` (Feature 002) | § When approvals happen gains two rows; new § The KB build record (see Components) |
 | Edit | `canonical/aid/templates/question-protocol.md` (Feature 002) | Its "Where" bullet: KB building writes through `--ask --kb` / `--answer --kb` |
 | Edit | `canonical/skills/aid-orchestrate/references/start-or-resume.md`, `size-and-route.md`, `feedback-routing.md` (Feature 001) | The drift check, the build's resume offer, the routing rows (see Components) |
 | Edit | `canonical/skills/aid-orchestrate/references/check-intent.md` (Feature 001) | Reads `backlog.md` for "the next backlog item" and records it as a work source (see Components, Roadmap, backlog and MVP) |
 | Edit | `canonical/skills/aid-brainstorm/references/finish.md` (Feature 003) | The KB-update hand-off targets `aid-kb-update` |
 | Edit | `canonical/aid/templates/work-initiation-gate.md` § 3a (Feature 002) | The new-project step, run before the worktree is created (see Components, A new project) |
+| Edit | `canonical/aid/templates/work-initiation-gate.md` § 3a, `canonical/aid/scripts/works/worktree-lifecycle.sh` (the `--base` default and its `master` lines), `canonical/aid/templates/worktree-lifecycle.md` | Q60: a new work's worktree branches from the main folder's current branch, which is the work's parent branch (its pull-request target). The hard-coded `master` default goes: `create` takes the main folder's checked-out branch when `--base` is not given, and refuses with a plain message (exit 2) when that folder has no branch checked out. § 3a passes the branch to `--create --parent-branch` |
 | Edit | `canonical/aid/templates/work-initiation-gate.md` § 3b legacy block (Feature 002) | One row for old works of the deleted `create` / `update` skills (see Migration) |
 | Edit | `canonical/aid/rules.md` | The tracking line and the connectors line (see Components); in § Skill guide the lines of the retired skills go and four lines come |
 | Edit | `canonical/aid/templates/settings.yml`, `canonical/skills/aid-config/SKILL.md` (the `knowledge` row) | `knowledge.source` and `knowledge.last_update` are no longer written or read (see Dashboard); `doc_set` and `term_exclusions` stay |
@@ -2316,6 +2317,11 @@ qa: []
 
   `mode` is `change`, `sweep` or `refresh`. `docs` is one comma-separated string. Both dashboard readers
   accept the key, which they do not display.
+- **The work's parent branch** (Q60). Features 001 and 002 have no key for it, so this feature adds
+  `pipeline.parent_branch`. It is written once by the gate's `--create --parent-branch <branch>` (`--`
+  without git) and never changed. It records the branch the work's worktree was made from: the main
+  folder's current branch, which is also the work's pull-request target. Resume and Features 007 and 008
+  read it from there.
 
 **Writer modes** -- `writeback-state.sh` keeps Feature 002's lock, quoting, atomic-rename and exit codes.
 - **`--kb` target**: points `--step`, `--ask`, `--answer`, `--check` and `--repair` at
@@ -2361,7 +2367,8 @@ It exits 9 on any problem. `summarize/writeback-state.sh` and its scalars (`kb_s
 The skill-guide lines carry the same moments (Components).
 
 **`/aid-kb-build`** -- Preparation. It is not a work (Feature 002: Preparation is not a work phase). It
-builds in the project's **main folder**, on the branch checked out there (Q55). It runs **no effort
+builds in the project's **main folder**, on the branch checked out there (Q55) -- the branch every new
+work branches from (Q60), so works see the KB once it is committed. It runs **no effort
 check** (FR-15, Q17). Its record is the KB build record (Components). Typing `/aid-kb-build` while a build
 is saved resumes it.
 
@@ -2653,8 +2660,8 @@ asked for:
   asks here is not written with `--ask`, because no work exists yet:
   - **No KB, a project with code** (no state file): the build is offered first.
   - **A first build not finished** (`Building`): finishing that build is offered first.
-  - In both cases the update work is created only after the build's commit, so its branch contains the
-    KB. If the user declines, no work is created.
+  - In both cases the update work is created only after the build's commit. Its branch is made from the
+    main folder's current branch (Q60), which holds that commit, so it contains the KB. If the user declines, no work is created.
   - **A new project** (no state file, no code): the work is created as now; the gate's § 3a runs the
     new-project step before the worktree, so the work's branch holds the `Growing` KB.
 
@@ -2676,7 +2683,8 @@ asked for:
     `README.md` with an empty completeness table and an `INDEX.md` from `build-kb-index.sh`, both holding
     no document;
   - commits them with the settings file in one `kb-commit.sh --new-project` commit; nothing is pushed.
-  - Every work then branches from a commit that already has the KB state file. Two works never both
+  - Every work then branches from the main folder's current branch (Q60), at a commit that already has
+    the KB state file. Two works never both
     create it, and the state file, `README.md` and `INDEX.md` are never created twice. A collision on
     `INDEX.md` or `kb.html` from two works adding documents is resolved by Feature 008's re-render step.
   - A project with code and no KB gets the build instead (Feature 001), even when the user declines it
@@ -2750,8 +2758,8 @@ asked for:
 |---|---|---|
 | 005 | After the `REQUIREMENTS.md` approval, a `CALL` to `/aid-kb-update` (`change`) for each approved decision that settles a project-wide fact | `004-10` |
 | 006 | Its work-state conversion joins format 6 (Migration) | -- |
-| 007 | After each task is verified and committed, the KB check: `kb-freshness-check.sh` over the documents whose `sources:` the task touched, plus the task's own report of a new module, dependency or convention; on a hit, a `CALL` to `/aid-kb-update`, which stamps against that commit. At the end of the whole build, the same for the backlog or roadmap items the work's `sources:` name. The milestone approval lists the work's `kb_updates` | `002-13`, `004-11`, `004-12` |
-| 008 | The close of a work takes over `cleanup-classify.sh` (housekeep's clean-up of finished works, with tech-debt SY-1). A pull-request collision on `kb.html` or `INDEX.md` is resolved by running `render-kb-view.sh` and `build-kb-index.sh`, staging both files and finishing the merge with Feature 008's own normal merge commit, never by hand -- the named exception in The view and KB-03 | -- |
+| 007 | Its per-delivery branches are gone, and the work's one branch is compared against `pipeline.parent_branch` (Q60), never against `master`. After each task is verified and committed, the KB check: `kb-freshness-check.sh` over the documents whose `sources:` the task touched, plus the task's own report of a new module, dependency or convention; on a hit, a `CALL` to `/aid-kb-update`, which stamps against that commit. At the end of the whole build, the same for the backlog or roadmap items the work's `sources:` name. The milestone approval lists the work's `kb_updates` | `002-13`, `004-11`, `004-12` |
+| 008 | The pull request targets `pipeline.parent_branch` (Q60), and the close compares against it, never against a hard-coded `master`. The close of a work takes over `cleanup-classify.sh` (housekeep's clean-up of finished works, with tech-debt SY-1). A pull-request collision on `kb.html` or `INDEX.md` is resolved by running `render-kb-view.sh` and `build-kb-index.sh`, staging both files and finishing the merge with Feature 008's own normal merge commit, never by hand -- the named exception in The view and KB-03 | -- |
 | 009 | Its single catalog brings back no `create` / `update` kind for a KB document | -- |
 
 ##### 7. Migration
@@ -2928,6 +2936,11 @@ suite list of `.github/workflows/installer-tests.yml`):
   - a missing template exits 5.
 - **`tests/canonical/test-build-kb-index.sh`**: rebuilding gives the same `INDEX.md`, with no timestamp line
   (W4-5).
+- **`tests/canonical/test-worktree-lifecycle.sh`** (Q60): with the main folder on a branch other than
+  `master` and `master` also present, `create` without `--base` makes the worktree from the checked-out
+  branch (its first commit is that branch's tip, not `master`'s); with no branch checked out it exits 2
+  and creates nothing. `test-writeback-state.sh` checks that `--create --parent-branch` writes
+  `pipeline.parent_branch`.
 - **`tests/canonical/test-kb-commit.sh`**, on throwaway git fixtures:
   - only KB paths are committed;
   - another staged file stays staged;
