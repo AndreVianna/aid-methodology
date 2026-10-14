@@ -216,7 +216,7 @@ interview:
 features:
   - id: '001'
     name: plain-language-requests
-    state: In Discussion
+    state: Ready
     started: '2026-10-13'
     updated: '2026-10-14'
     grade: A+
@@ -230,7 +230,9 @@ features:
       - {name: Testing, state: Complete}
   - id: '002'
     name: step-by-step-decisions
-    state: Pending
+    state: In Discussion
+    started: '2026-10-14'
+    updated: '2026-10-14'
     grade: Pending
     qa_count: 0
     sections: []
