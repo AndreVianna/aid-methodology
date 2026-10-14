@@ -1121,11 +1121,15 @@ qa: []
 
   | Chosen work's state | Resume entry point |
   |---|---|
-  | A saved `active_skill` other than `none` (new row, after the Deploy row) | that skill, at its saved `step` (FR-20.2) |
+  | A saved `active_skill` other than `none` on a work whose `lifecycle` is **not** `Completed` or `Canceled` (new row, placed **after** the unchanged "Already Completed / Canceled" row, so a finished work is always reported as finished) | that skill, at its saved `step` (FR-20.2) |
   | `phase: Building`, or `delivery_state` `Executing` / `Gated` / `Done` | `/aid-execute <work>` |
   | `phase: CI` | `/aid-monitor-pipeline <work>` once Feature 008 delivers it; until then `/aid-orchestrate <work>`, which closes the work (Feature 001's interim minimum) |
   | `Definition` / `Specification` / `Planning` with no saved skill | Definition -> `/aid-describe`; Specification -> `/aid-define` while `REQUIREMENTS.md` § 11 has no feature section, else `/aid-specify`; Planning -> `/aid-plan` while `PLAN.md` is missing, else `/aid-detail`. Features 003, 005 and 006 re-point their own row as they rebuild those skills |
   | An old name (a work not yet migrated) -- a separate small table right after this one, between `<!-- legacy-phase-map: begin -->` and `<!-- legacy-phase-map: end -->` | today's door for that name: `Describe` -> `/aid-describe`, `Define` -> `/aid-define`, `Specify` -> `/aid-specify`, `Plan` -> `/aid-plan`, `Detail` -> `/aid-detail`, `Execute` -> `/aid-execute`. Feature 006's migration renames every stored phase, then removes these rows |
+
+  **Finishing clears the saved skill:** the writer, whenever it sets `lifecycle` to `Completed` or `Canceled`,
+  also sets `active_skill: none` and clears `step` / `step_detail` in the same locked write (a
+  `test-writeback-state.sh` case covers it), so no stale saved skill outlives its work.
 
   The same-invocation sentence becomes "when the chosen work's `phase` is `Definition`, or its old name
   on a work not yet migrated" (no old name written out, so SS-11 stays green). `tests/canonical/test-work-initiation-gate.sh` gains new-name works next to its
