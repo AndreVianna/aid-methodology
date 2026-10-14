@@ -835,3 +835,11 @@ qa:
     suggested: 'Drafts never committed by default; a draft that belongs to a work, when the user asks to keep it, is committed on that work branch and deleted there at the covering approval, so the PR final content never includes it; a parked idea stays uncommitted in the main folder unless the user names a branch. AC-35 judges the PR final content; work folders keep the strict rule.'
     answer: 'Accepted as recommended.'
     applied_to: 'REQUIREMENTS.md AC-35; Feature 003 Technical Specification (The idea draft)'
+  - id: Q51
+    category: Specification (Feature 003)
+    impact: Low
+    state: Answered
+    context: 'The brainstorm closing question has no recommendation (FR-17 rule 4).'
+    suggested: 'A stated exception for open invitations answered in the user own words; questions with real choices keep rule 4.'
+    answer: 'Accepted as recommended.'
+    applied_to: 'Feature 003 Technical Specification (Flow); question-protocol.md'
