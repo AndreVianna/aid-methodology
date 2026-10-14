@@ -1185,13 +1185,18 @@ qa: []
     (Files and layout), so this holds for every entry point on disk. `--create` stays gate-only:
     - **`/aid-describe --reset` is removed** (the skill retires with Feature 003, so it gets no new
       machinery): a user who wants a fresh start cancels the work and starts a new one through the gate
-      (Migration).
+      (Migration). **Cancelling a work** is a plain request ("cancel work-003") handled by `/aid-orchestrate`:
+      it asks one confirmation question (question protocol), then runs `writeback-state.sh --pipeline
+      --field Lifecycle --value Canceled`, which also clears the saved skill and step (Finishing clears the
+      saved skill); the gate then reports the work as finished and the dashboard shows it as canceled.
     - **A directly named `work-NNN` that does not exist** is not created by `/aid-describe`: the agent says
       so in one line and the request goes through the gate like any new work, which gives it the next id.
     - **The request words** passed to `--create` are the user's message that started the work. When a
       skill is started by a bare slash command with no words, its first question (question protocol) asks
       what the user wants, and that answer is the request the gate reads with `check-intent.md` before
-      `--create`.
+      `--create`. Because no work `STATE.yml` exists yet, that one question is recorded in the project's
+      `.aid/STATE.yml` (`--ask --project`, Q38); after `--create` succeeds it is marked answered there with
+      `applied_to` naming the new work, whose `intent.request` holds the answer.
   - **Exempt skills until their feature lands**: a skill on the shared exempt list keeps a binding line of
     its own (`initiator: aid-<name>`, sometimes `active_skill:`), but it allocates through the converted
     `design-lifecycle.md` § Allocation, so `--create` has already written the record, with those same
