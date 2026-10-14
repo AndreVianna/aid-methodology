@@ -928,13 +928,15 @@ release.
   tool without one is skipped with a notice.
 - **Permissions of the agent under test**, on every turn: working folder = the fixture;
   `--permission-mode acceptEdits` (file edits inside the working folder need no prompt);
-  `--tools` limited to `Read,Glob,Grep,Edit,Write,Bash,Skill,Task`; `--allowedTools` naming the same file
-  tools plus `Skill`, `Task`, `Bash(bash .aid/runtime/scripts/*)` and read-only git
-  (`Bash(git status*)`, `Bash(git diff*)`, `Bash(git log*)`), so any other shell command is refused in
-  print mode; no `--add-dir`, so no folder outside the fixture is granted; `--strict-mcp-config` with no
-  `--mcp-config`, so no MCP server is loaded; `--setting-sources project`, so the fixture's installed AID
-  files load and the maintainer's own user settings and plugins do not. The fixture is a disposable copy,
-  so a stray write is harmless and shows in `files.diff`.
+  `--tools` limited to `Read,Glob,Grep,Edit,Write,Bash,Skill,Task`; `--allowedTools` naming the same
+  tools, with **`Bash` allowed in full** -- AID's own skills and agents write through shell commands
+  (e.g. the installed `aid-reviewer` has no Write tool and writes its ledger with a heredoc), so a narrower
+  shell rule would make any sample that reaches a review fail for the wrong reason. Isolation comes from
+  the run, not from the shell rule: each run uses a throwaway fixture folder **and a throwaway `HOME`**
+  (holding only the credentials the host needs), no `--add-dir`, `--strict-mcp-config` with no
+  `--mcp-config` (no MCP server), and `--setting-sources project` (the fixture's installed AID files load;
+  the maintainer's own settings and plugins do not). The suite runs on demand on the maintainer's
+  machine, never in CI, and any write shows in `files.diff`.
 - **The simulated user** is a separate `claude -p` call per turn with only text in and out: run from a new
   empty temporary folder, with `--tools ""` (every built-in tool disabled), `--safe-mode` (no
   `CLAUDE.md`, skills, plugins, agents or hooks), `--strict-mcp-config` with no `--mcp-config` (no MCP
