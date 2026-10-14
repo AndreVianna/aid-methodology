@@ -564,6 +564,7 @@ If assumption 1 or 2 fails in a tool, transparent orchestration degrades there t
 | AC-42 | Every building milestone follows the FR-6 steps: a read-only hand-off to `/aid-monitor-pipeline` collects new review comments and pipeline results, Building prepares their corrections, and the approval shows the work since the last milestone plus those corrections; at a milestone that may push, the approval asks whether to create or update the PR/MR, and on yes `/aid-monitor-pipeline` alone pushes the approved work and returns to Building; no push ever carries unapproved commits; full monitoring starts only after the whole build is approved. | FR-6, FR-7, FR-20 |
 | AC-43 | No `/aid-design` skill exists; a request to design a kind of thing (e.g. "design the orders API") reaches `/aid-brainstorm` with that kind's catalog rules, and only `/aid-brainstorm` writes idea drafts under `.aid/design/`. | Scope, FR-9 |
 | AC-44 | Every approved `REQUIREMENTS.md` has a business part and a technical part; the technical part exists once for the whole work, or once per feature when it splits, and each technical section names the requirements it serves. | FR-3 |
+| AC-45 | After all features are built, one documentation pass (the tech-writer agent) rewrites the user documentation (`docs/`, `site/src/content/`, `README.md`) against the finished product; a pre-release check fails if any user document still names a retired skill or an old phase name. | Scope, M1 |
 
 ### Skills, naming and constraints
 
@@ -584,6 +585,9 @@ and Feature 002 comes next because every phase skill built after it follows its 
 Every feature must also pass AC-22 (names), AC-24 (old -> new table rows for the skills it retires)
 and AC-25 (engineering rules, CI green), and adds its own sample conversations to the conversation
 test suite (NFR-T).
+
+After the last feature, **one documentation pass** updates the user documentation against the finished
+product (AC-45), instead of each feature rewriting the same pages.
 
 ## Minor decisions
 
@@ -616,7 +620,7 @@ test suite (NFR-T).
 ## 11. Features
 
 Every feature is **Must**; the order below is the build order (§10). Every feature must also pass
-AC-22, AC-24 and AC-25.
+AC-22, AC-24 and AC-25. AC-45 (the final documentation pass) runs once, after all features.
 
 ### Feature 001 — Ask for Work in Plain Language
 

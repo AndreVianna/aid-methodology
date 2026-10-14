@@ -731,3 +731,11 @@ qa:
     suggested: 'Convert to .aid/knowledge/STATE.yml; Feature 004 does the conversion (references + migration of existing projects); Feature 002 defines the shared question-record shape used by work, KB and project files.'
     answer: 'Accepted: convert it.'
     applied_to: 'Feature 004 Technical Specification (to write); Feature 002 (shared question-record shape)'
+  - id: Q40
+    category: Requirements (documentation)
+    impact: Medium
+    state: Answered
+    context: 'User documentation (docs/, site, README) still describes the old 7-step pipeline; no feature owned rewriting it.'
+    suggested: 'One documentation pass at the end of this work by the tech-writer agent; a pre-release check fails on retired skill names or old phase names.'
+    answer: 'Accepted as recommended.'
+    applied_to: 'REQUIREMENTS.md AC-45, §10, §11 intro'
