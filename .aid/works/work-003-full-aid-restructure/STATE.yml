@@ -667,3 +667,11 @@ qa:
     suggested: 'Claude Code required, other 4 tools optional via a flag; run on demand at each feature end and before release, not in GitHub CI; the 5-tool static check runs on every push.'
     answer: 'Accepted as recommended.'
     applied_to: 'Feature 001 Technical Specification (Testing)'
+  - id: Q34
+    category: Specification (Feature 002)
+    impact: High
+    state: Answered
+    context: 'Which feature owns the work STATE.yml shape (Q6 left the state-layout adjustment unplaced).'
+    suggested: 'Feature 002 owns the overall shape (template, writer, readers, phase names); Feature 006 owns the planning part (deliveries, waves, tasks), removing delivery/task state files, and the single migration of existing works.'
+    answer: 'Accepted as recommended.'
+    applied_to: 'Feature 002 and 006 Technical Specifications'
