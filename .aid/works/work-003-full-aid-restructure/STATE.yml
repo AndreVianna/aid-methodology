@@ -222,12 +222,18 @@ features:
     grade: A+
     qa_count: 7
     sections:
-      - {name: Files and layout, state: Complete}
-      - {name: Orchestration flow, state: Complete}
-      - {name: Components, state: Complete}
-      - {name: External sources, state: Complete}
-      - {name: Migration, state: Complete}
-      - {name: Testing, state: Complete}
+      - name: Files and layout
+        state: Complete
+      - name: Orchestration flow
+        state: Complete
+      - name: Components
+        state: Complete
+      - name: External sources
+        state: Complete
+      - name: Migration
+        state: Complete
+      - name: Testing
+        state: Complete
   - id: '002'
     name: step-by-step-decisions
     state: In Discussion
