@@ -762,7 +762,7 @@ blank lines do not. The draft below is 16 body lines: with the heading and its b
 - A typed `/aid-<skill>` always wins.
 - The user's words are a hint: check your reading against the Knowledge Base and the code (a
   "refactor" that adds an endpoint changes behaviour, so it is new work).
-- To start or resume a work, run `/aid-orchestrate`: it finds where the work stands, sizes it and
+- To start, resume or cancel a work, run `/aid-orchestrate`: it finds where the work stands, sizes it and
   picks the phases it needs.
 - Show your reading and its reason in one line, inside your first question or approval; then wait.
 - Specification, Planning and Building (with tests) almost always run; Definition only when the problem
@@ -795,8 +795,8 @@ hand (see Files and layout).
 
 **`/aid-orchestrate`** -- runs in the main conversation (no sub-agent: only the main conversation can
 talk with the user). `SKILL.md` at most 80 lines, each reference at most 120 lines. Its description
-follows the shared shape: "Start or resume an AID work: find where it stands, size it and pick its
-phases. Use when a plain request starts a new work or continues an existing one." References:
+follows the shared shape: "Start, resume or cancel an AID work: find where it stands, size it and pick its
+phases. Use when a plain request starts a new work, continues an existing one, or cancels one." References:
 
 | Reference | Holds |
 |---|---|
@@ -1068,6 +1068,7 @@ the shared files cited, questions recorded in one place, no interviewer).
 | Edit | every hand-authored `canonical/skills/*/SKILL.md` and `references/*.md` that prints a banner, routes by the old advance words or asks the user; `canonical/aid/templates/shortcut-engine.md`, `design-lifecycle.md` | Banners removed, `skill-steps.md` and the protocol cited, advance words updated, host question pickers dropped (see Steps and hand-offs). The generated doorway skills print nothing themselves: they run `shortcut-engine.md`, so they change through it |
 | Edit | `canonical/skills/aid-orchestrate/references/start-or-resume.md` (Feature 001) | Creates a work through the gate's `--create`; resume reads only the work record (see The work record) and the open questions |
 | Edit | `canonical/skills/aid-orchestrate/references/start-or-resume.md` (Feature 001) | Requests about an existing work: "cancel work-NNN" is read as an action on that work, not a new request -- one confirmation question, then `writeback-state.sh --pipeline --field Lifecycle --value Canceled` (clears the saved skill and step) |
+| Edit | `canonical/aid/rules.md` § Handling a request (the `/aid-orchestrate` line) and `canonical/skills/aid-orchestrate/SKILL.md` `description:` and its skill-guide line | "start or resume" becomes "start, resume or cancel", so a request such as "cancel work-NNN" matches `/aid-orchestrate` (same line count; SG-01 unchanged) |
 | Edit | `canonical/aid/templates/work-initiation-gate.md` § 3a NEW and § 3b CONTINUATION | The gate becomes the only creator of a work's `STATE.yml`: § 3a runs `writeback-state.sh --create` (type, request, the calling skill, its first step, phase) before it hands the new work back; § 3b routes by the record only (see The work record) |
 | Edit | every **allocation point** -- the places a work's `STATE.yml` is created today: `canonical/aid/templates/design-lifecycle.md` § Allocation (used by `aid-brainstorm`, every `aid-design-*` and the KB-writing `aid-create-*` / `aid-update-*`); `aid-design/SKILL.md` § State: INTAKE step 4; `canonical/aid/templates/shortcut-engine.md` § State: INTAKE, Step 4 (every doorway skill); `aid-describe/SKILL.md` § No works exist, § Direct `work-NNN` argument, § Arguments and the `--reset` step of § State Detection, with `references/state-first-run.md` § 1b / 1b-ii; and the `SKILL.md` of the starters that stay -- `aid-research`, `aid-review`, `aid-test`, `aid-prototype`, `aid-report`, `aid-create-document`, `aid-update-document` | Each calls the gate's § 3a with its request, its own name, its first step and, where it sets them today, `pipeline.path` and minimum grade; the gate's `--create` makes `STATE.yml`. Their copy-the-template instructions, the two `phase: Describe` scaffold blocks and their hand-written `initiator:` / `active_skill:` / `lifecycle:` lines go (SS-11, SS-14). `aid-describe`'s `--reset` is removed, and a directly named `work-NNN` that does not exist goes through the gate like any new work (see The work record) |
 | Edit | the starters' own continuation lines: `aid-research`, `aid-test`, `aid-prototype`, `aid-report`, `aid-create-document`, `aid-update-document`, `aid-design` (each in its allocation step: "on continuation route to the chosen work's resume door and STOP"), `aid-review` § Step 5, `shortcut-engine.md` § Design Notes and § State: INTAKE Step 3 (both route by the `phase`-matched skill and HALT), `aid-describe/SKILL.md` § One or more works exist (the Continuation bullet keyed on a Describe-phase work) | Each becomes one line: "On continuation, follow the gate's § 3b: enter the chosen work's worktree and run the skill its record names, at its saved step." SS-14 (d) keeps phase-keyed continuation out |
@@ -1369,7 +1370,10 @@ qa:
 - New keys: `asked_by`, `step` (where to resume), `answered_by` (`git config user.name`, or `--`).
   Approval entries add `covers` and `commit` (Approvals).
 - Every question is written `Pending` before it is shown (`--ask`), and its outcome right after the
-  answer (`--answer`). On start or resume, the open entries (`Pending`, `Skipped`) come first, in the
+  answer (`--answer`). **One exception:** the "what do you want?" question of a bare slash start, asked
+  before any work exists -- its record is the new work's `intent.request` written by `--create` (rule 10
+  is met there); `question-protocol.md` and `protocol-checks.md` state this exception so the judge does
+  not fail samples `002-16` and `002-18` on it. On start or resume, the open entries (`Pending`, `Skipped`) come first, in the
   usual groups -- `start-or-resume.md` gains this step.
 - Where: a work's questions in its `STATE.yml`; KB building in the KB state file; setup skills
   (configure, connectors) in `.aid/STATE.yml`.
