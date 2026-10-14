@@ -869,3 +869,19 @@ qa:
     suggested: 'kb.html is tracked in git with no embedded timestamps; a collision is resolved by re-rendering.'
     answer: 'Accepted as recommended (kept in git).'
     applied_to: 'Feature 004 Technical Specification (web view)'
+  - id: Q55
+    category: Specification (Feature 004)
+    impact: High
+    state: Answered
+    context: 'The KB build is not a work and has no branch; works start from committed history, so an uncommitted KB is invisible to them.'
+    suggested: 'After approval, the built KB is committed once on the branch currently checked out, never pushed; the agent says in one line how to push.'
+    answer: 'Accepted as recommended (commit on the current branch).'
+    applied_to: 'Feature 004 Technical Specification (KB build)'
+  - id: Q56
+    category: Specification (Feature 004)
+    impact: Medium
+    state: Answered
+    context: 'Discovery ends with a human approval today; the requirements say the KB is built with no user step required.'
+    suggested: 'One approval at the end of the build, shown in chunks, most important documents first, with small decisions confirmed in the same batch.'
+    answer: 'Accepted as recommended (approve at the end).'
+    applied_to: 'Feature 004 Technical Specification (KB build)'
