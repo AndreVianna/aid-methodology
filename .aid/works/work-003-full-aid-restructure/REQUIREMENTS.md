@@ -1056,17 +1056,19 @@ the shared files cited, questions recorded in one place, no interviewer).
 | Change | Path | What |
 |---|---|---|
 | Create | `canonical/aid/templates/question-protocol.md` | The one question protocol (FR-17) and the one question-record shape (see Question protocol); type `template-own` |
-| Create | `canonical/aid/templates/skill-steps.md` | The one rule set for steps, hand-offs and approvals (FR-20, FR-6); type `template-own` |
+| Create | `canonical/aid/templates/skill-steps.md` | The one rule set for steps, hand-offs, approvals and the work record (FR-20, FR-6, Q42); type `template-own` |
 | Delete | `canonical/aid/templates/state-machine-chaining.md` | Replaced by `skill-steps.md` |
 | Edit | `canonical/agents/aid-reviewer/AGENT.md`, `canonical/aid/templates/reviewer-dispatch.md`, every `canonical/skills/*/references/reviewer-brief.md` | Add the `### What to report` rule (FR-21; see Review focus) |
 | Create | `canonical/aid/templates/project-state-template.yml` | The project-level `.aid/STATE.yml`: the question record only (Q38) |
 | Edit | `canonical/aid/rules.md` § Handling a request | Its last bullet names the protocol and the merge rule (see Question protocol) |
 | Edit | `canonical/aid/templates/work-state-template.yml` | New keys, `qa` on every work, phase names, the block-style rule (see Work state layout) |
-| Edit | `canonical/aid/scripts/execute/writeback-state.sh` | Modes `--step`, `--handoff`, `--handoff-return`, `--ask`, `--answer`; the new phase names |
+| Edit | `canonical/aid/scripts/execute/writeback-state.sh` | Modes `--create`, `--step`, `--handoff`, `--handoff-return`, `--reroute`, `--check`, `--repair`, `--ask`, `--answer`; the new phase names |
 | Edit | `dashboard/scripts/writeback-state.sh` (the deliberate fork) | The new phase names only; it keeps `Deploy` |
 | Edit | every phase site of Work state layout, including `canonical/aid/templates/work-initiation-gate.md` § 3b CONTINUATION and `aid-deploy` `references/state-idle.md` | The new phase names; the gate's resume table re-keyed (Work state layout) |
 | Edit | every hand-authored `canonical/skills/*/SKILL.md` and `references/*.md` that prints a banner, routes by the old advance words or asks the user; `canonical/aid/templates/shortcut-engine.md`, `design-lifecycle.md` | Banners removed, `skill-steps.md` and the protocol cited, advance words updated, host question pickers dropped (see Steps and hand-offs). The generated doorway skills print nothing themselves: they run `shortcut-engine.md`, so they change through it |
-| Edit | `canonical/skills/aid-orchestrate/references/start-or-resume.md` (Feature 001) | Resume reads the saved step, an open call and the open questions |
+| Edit | `canonical/skills/aid-orchestrate/references/start-or-resume.md` (Feature 001) | Creates a work through the gate's `--create`; resume reads only the work record (see The work record) and the open questions |
+| Edit | `canonical/aid/templates/work-initiation-gate.md` § 3a NEW step 3 and § 3b CONTINUATION; `aid-describe` `references/state-first-run.md`; `shortcut-engine.md` § State: INTAKE | Every work is created by `writeback-state.sh --create` (type, skill and step in one write); resume routes by the record only (see The work record) |
+| Edit | every `canonical/skills/*/SKILL.md` § State Detection (or its equivalent) | Detection becomes recovery-only: it proposes a repaired record, it never routes (see The work record) |
 | Edit | the delivery-level `qa` writers (`aid-ask/SKILL.md` § Target-file resolution, `aid-plan/SKILL.md` § Feedback Loops, `aid-execute/references/state-delivery-gate.md` § Non-CODE issues) and every skill file naming `## Cross-phase Q&A` (in `aid-specify`, `aid-define`, `aid-detail` and `aid-describe`, whose engine references `elicitation-engine.md`, `move-playbook.md`, `advisor-stance.md`, `state-describe-seed.md`, `state-q-and-a.md` included) | Every question recorded in the work's `qa` through `--ask` / `--answer` (known issue KI-003) |
 | Delete | `canonical/agents/aid-interviewer/` | FR-13, AC-40 |
 | Edit | `canonical/aid/templates/agent-boilerplate.md` (inlined into every `canonical/agents/*/AGENT.md` by `{{include:agent-boilerplate}}`); the "When to Escalate" lines of `aid-architect`, `aid-researcher` and `aid-reviewer` that write a Q&A entry | A new `## Talking with the user` section: a sub-agent never asks the user; it records its open questions with `--ask` and lists them in its report, and the main conversation asks them. The escalation lines record through `--ask` (AC-40) |
@@ -1109,7 +1111,8 @@ handoffs:
 qa: []
 ```
 
-- **`phase`** takes the FR-1 names. Preparation is not a work phase: the KB's own state shows it, as it
+- **`phase`** is a display label: shown to the user and on the dashboard, never used to route or resume
+  (the work record below does that). It takes the FR-1 names. Preparation is not a work phase: the KB's own state shows it, as it
   shows Discover today. Old -> new: Describe -> Definition, Define and Specify -> Specification, Plan and
   Detail -> Planning, Execute -> Building. The writer accepts only the new names; both readers map the old
   ones, so a work not yet migrated still shows its phase. **Phase sites** -- every place outside tests
@@ -1122,30 +1125,13 @@ qa: []
   | `dashboard/scripts/writeback-state.sh` (the fork; same three places) | old names plus `Deploy` | the new names plus `Deploy` |
   | `canonical/aid/templates/work-state-template.yml` (enum comment and default) | `phase: Describe` | the new enum; default `phase: Specification`, the first phase of the fixed core (the skill creating the work writes `Definition` when that phase runs first) |
   | The nine `--field Phase --value` writes: `aid-specify` `references/state-initialize.md`, `references/state-continue.md`; `aid-define` `references/state-feature-decomposition.md`; `aid-plan` `references/first-run-loop.md`; `aid-detail` `references/first-run.md`; `aid-execute` `references/state-execute.md`; `shortcut-engine.md` § State: SPEC, § State: PLAN, § State: DETAIL | old names | by the mapping |
-  | The two literal seeds that bypass the writer: `aid-describe` `references/state-first-run.md`, `shortcut-engine.md` § State: INTAKE | `phase: Describe` | `phase: Definition` |
+  | The two literal seeds that bypass the writer: `aid-describe` `references/state-first-run.md`, `shortcut-engine.md` § State: INTAKE | `phase: Describe` written by hand | replaced by `writeback-state.sh --create ... --phase Definition` (The work record) |
   | `shortcut-engine.md` § State: GATE (the `Phase` enum sentence, "`Phase` stays `Detail`") | old enum | new enum; stays `Planning` |
-  | `canonical/aid/templates/work-initiation-gate.md` § 3b CONTINUATION (the resume table and the same-invocation sentence below it) | keyed on old names | see the resume table below |
+  | `canonical/aid/templates/work-initiation-gate.md` § 3b CONTINUATION (the resume table and the same-invocation sentence below it) | keyed on old names | routes by the work record only; old names survive only in the legacy block that proposes a repair (The work record) |
   | `aid-deploy` `references/state-idle.md` ("it stays at `Execute`") | `Execute` | `Building` |
   | `dashboard/reader/models.py` (`Phase` enum and its docstring); `dashboard/server/reader.mjs` (`Phase` object) | old members | `Definition`, `Specification`, `Planning`, `Building`, `CI`, plus `Unknown` |
   | `dashboard/reader/parsers.py` and `dashboard/server/reader.mjs` (the phase map) | old name -> member | new name -> member, plus the old names in a block marked `legacy-phase-map: begin` / `end` |
   | `dashboard/reader/state_schema.py` (a comment's example value) | `'Execute'` | `'Building'` |
-
-  **Resume table** of `work-initiation-gate.md` § 3b, written out **in full** -- it replaces today's table
-  row for row, first match wins:
-
-  | # | Chosen work's state | Resume entry point |
-  |---|---|---|
-  | 1 | Already `Completed` / `Canceled` (moved up from last place) | Tell the user the work is finished (nothing to resume) and stop; suggest a new work if they meant to start fresh |
-  | 2 | Flattened Lite work halted at the shortcut engine's APPROVAL-HALT (`lifecycle: Paused-Awaiting-Input` **and** `delivery_state: Specified`) (unchanged) | `/aid-execute <work>` |
-  | 3 | A saved `active_skill` other than `none` (new; replaces today's Deploy row, which it covers -- `active_skill: aid-deploy` resumes `/aid-deploy`) | that skill, at its saved `step` (FR-20.2); a Building work with an open call therefore resumes inside the called skill |
-  | 4 | `phase: Building`, or `delivery_state` `Executing` / `Gated` / `Done` | `/aid-execute <work>` |
-  | 5 | `phase: CI` | `/aid-monitor-pipeline <work>` once Feature 008 delivers it; until then `/aid-orchestrate <work>`, which closes the work (Feature 001's interim minimum) |
-  | 6 | `Definition` / `Specification` / `Planning` with no saved skill | Definition -> `/aid-describe`; Specification -> `/aid-define` while `REQUIREMENTS.md` § 11 has no feature section, else `/aid-specify`; Planning -> `/aid-plan` while `PLAN.md` is missing, else `/aid-detail`. Features 003, 005 and 006 re-point their own row as they rebuild those skills |
-  | 7 | An old name (a work not yet migrated) -- a separate small table right after this one, between `<!-- legacy-phase-map: begin -->` and `<!-- legacy-phase-map: end -->` | today's door for that name: `Describe` -> `/aid-describe`, `Define` -> `/aid-define`, `Specify` -> `/aid-specify`, `Plan` -> `/aid-plan`, `Detail` -> `/aid-detail`, `Execute` -> `/aid-execute`. Feature 006's migration renames every stored phase, then removes these rows |
-
-  `test-work-initiation-gate.sh` gains fixtures for every row in this order: a finished Building work (row 1, not
-  rows 3-4), a halted Lite work carrying `active_skill` (row 2), a Building work with an open call (row 3),
-  and new-name works for rows 4-6.
 
   **Finishing clears the saved skill:** the writer, whenever it sets `lifecycle` to `Completed` or `Canceled`,
   also sets `active_skill: none` and clears `step` / `step_detail` in the same locked write (a
@@ -1163,12 +1149,6 @@ qa: []
   skill no longer exists, and -- like DT-02 -- fails under `AID_RELEASE_CHECK=1` while the list is not
   empty, so a skill rebuilt under the same name (e.g. `aid-brainstorm`) cannot stay exempt for good.
 
-  The same-invocation sentence becomes "when the table above resolves the chosen work to the skill the
-  user already invoked" -- it follows the table's own answer (including row 3's saved skill), so a
-  doorway work with `active_skill: aid-create-X` picked from `/aid-describe` goes to `/aid-create-X`, never
-  resumed by `/aid-describe` (no old name written out, so SS-11 stays green). `tests/canonical/test-work-initiation-gate.sh` gains new-name works next to its
-  old-name fixtures.
-
   **Tests** follow one rule: a hand-written old name in a fixture's input stays (it exercises the readers'
   mapping); every reader output asserted (`Phase.Execute`, golden files such as
   `dashboard/reader/tests/fixtures/task011_golden/*.json`) and every value fed to a writer changes to the
@@ -1182,6 +1162,59 @@ qa: []
   `site/src/data/__tests__/ac13-version-injection.test.ts`), which is not phase data. SS-11 keeps an old
   name from coming back.
 - **`step` / `step_detail`** are written together with `active_skill`, by `--step` (Steps and hand-offs).
+- **The work record** (Q42) -- `intent.reading` (the work's type, Feature 001), `active_skill`, `step` and
+  `step_detail`. It is the **only** thing that decides where a work resumes, in the gate, in
+  `/aid-orchestrate` and inside every skill.
+  - **From creation, however the work starts**: a plain request through `/aid-orchestrate`, a typed slash
+    command, or a one-pass doorway skill. All of them create through the gate's § 3a, whose step 3 becomes
+    one locked write: `writeback-state.sh --create --work-dir <dir> --reading <type> --request '<words>'
+    --skill <starter> --step <first step> --phase <phase> [--depth lite or full]`. The starter takes the
+    type from `/aid-orchestrate`'s `check-intent.md` reading of the request (a typed command's own kind is
+    only a hint, FR-4). `--create` copies `work-state-template.yml` and fills the record, `lifecycle:
+    Running`, `started` and `updated` in the same write, so no work ever exists without its record. The two
+    hand-written seeds (`aid-describe` `references/state-first-run.md`, `shortcut-engine.md` § State: INTAKE)
+    are replaced by it.
+  - **Kept current**: written at creation, at every step entry **before** any work in that step, at every
+    hand-off and return, at every re-route (`--reroute`, which also appends Feature 001's `intent.changes`
+    entry), and at finish. Only the writer touches it -- never a hand edit (SS-14).
+  - **Fail-closed**: a non-zero exit from any record write stops the skill at once; the agent tells the user
+    in one plain line what failed and that nothing more runs until it is fixed. No silent continue, no retry
+    beyond the writer's own lock wait.
+  - **Starting is not resuming**: when a skill starts on a work (a `PASS`, a `CALL`, or the user typing
+    another skill's command on an existing work), it picks its first step from its own detection and the
+    start is recorded as a hand-off (`why: 'user ran /aid-<skill>'` for a typed command). Resuming never
+    uses detection.
+  - **Recovery, never silent**: on every resume the agent first runs `writeback-state.sh --check`. It
+    reports the record missing (an open work with no `intent.reading`, or with `active_skill: none`) or
+    inconsistent (a finished work with a saved skill; a saved skill that is not installed; a malformed open
+    call; or -- found by the resumed skill's own detection -- a saved step whose artifact is not on disk).
+    Then the agent tells the user, proposes the repaired record (from the skill's detection; for a work not
+    yet migrated, from the legacy block of the gate) as one confirmation question under the question
+    protocol, and writes it with `--repair` only after the user confirms. `--repair` also appends a
+    `lifecycle_history` entry naming the old and the new record.
+
+  **Resume table** of `work-initiation-gate.md` § 3b, written out in full, first match wins:
+
+  | # | Chosen work's state | Resume entry point |
+  |---|---|---|
+  | 1 | Already `Completed` / `Canceled` | Tell the user the work is finished (nothing to resume) and stop; suggest a new work if they meant to start fresh |
+  | 2 | `--check` reports the record missing or inconsistent | The recovery above; once the user confirms and `--repair` has written, continue at row 3 |
+  | 3 | The record (every other open work) | `active_skill` at its saved `step`; with an open call, inside the called skill. A halted Lite work resumes at its doorway skill's APPROVAL-HALT step, which asks for the pending approval again (today's separate Lite row folds into this one) |
+
+  After the table, a **legacy block** between `<!-- legacy-phase-map: begin -->` and
+  `<!-- legacy-phase-map: end -->` holds today's phase-and-file rows (old phase name -> its skill; the
+  halted-Lite and `delivery_state` rows -> `/aid-execute`; `active_skill: aid-deploy` -> `/aid-deploy`).
+  They never route: recovery reads them only to propose a record for a work started before the record
+  existed. Feature 006's migration fills the record for every old work, then removes the block.
+
+  The same-invocation sentence goes: the starter always enters the chosen work's worktree (the steps that
+  follow the table) and runs the skill the record names -- itself or another (FR-8) -- with no special case.
+  `tests/canonical/test-work-initiation-gate.sh` gains `--check` fixtures for every row: a finished work,
+  which stops even when a leftover saved skill makes `--check` report it inconsistent (row 1); a work with
+  no `intent.reading` and one whose saved skill is not installed (row 2, each with its reason); a healthy
+  work and one with an open call (row 3); and an old-name work whose proposal comes from the legacy block.
+
+
 - **`handoffs`**: `returns: 'yes'` is a call -- the work comes back to `from`, `from_step`,
   `from_detail`; `'no'` is a pass at the end of a process. `returned` stays `--` while the work is away
   (and always for a pass). The newest entry with `returns: 'yes'` and `returned: --` is the **open call**.
@@ -1329,9 +1362,11 @@ Each step:
 6. **`HALT`**: with an open call, `--handoff-return` restores the caller's skill, step and detail, and the
    caller continues there (AC-38). Calls nest; the newest returns first. Without one, the run ends.
 
-**Resume** (any session, any user): the saved `active_skill`, `step` and `step_detail` decide where the
-work continues; an open call means it continues inside the called skill. A skill's own artifact detection
-is used only when nothing is saved (a work started before this layout).
+**Resume** (any session, any user): only the work record decides where the work continues -- the saved
+`active_skill`, `step` and `step_detail`; an open call means it continues inside the called skill. A
+skill's own artifact detection never routes: it serves the recovery path and the first step of a skill
+that is starting (Work state layout, The work record). `skill-steps.md` § The work record holds these
+rules once: when the record is written, fail-closed, starting versus resuming, and recovery.
 
 **What the user sees** (FR-20.1, AC-37):
 - Removed everywhere: `[State: X] -- ...` entry lines, "you are here" maps, "-> Advancing to [State: X]",
@@ -1349,13 +1384,19 @@ keeping its step the same way. A pause that today ends the skill and points at a
 line, until the rebuilt phase skill turns it into a `PASS`. They gain no new `PASS` or `CALL` edges: the
 rebuilt phase skills of Features 003-008 add those (Q35).
 
-**Writer modes** in `writeback-state.sh` -- same lock and quoting as today, block style only; a new exit
-code 7 (no open call) is documented in its header. They are scripts, not prose, because every skill runs
+**Writer modes** in `writeback-state.sh` -- same lock and quoting as today, block style only; a write
+either completes or leaves the file untouched (it writes a temporary copy and renames it into place under
+the lock). New exit codes, documented in its header: 7 (no open call), 8 (`STATE.yml` already exists),
+9 (`--check` found a problem). They are scripts, not prose, because every skill runs
 them and the hand-off bookkeeping must be exact (decisions.md § D17):
 
 | Mode | Writes |
 |---|---|
+| `--create --work-dir W --reading R --request T --skill S --step N --phase P [--depth D]` | copies `work-state-template.yml` into W and fills `intent.reading`, `intent.request`, `intent.depth`, `active_skill`, `step`, `phase`, `lifecycle: Running`, `started`, `updated` in one write; exit 5 when a required option is missing, 4 when a value is invalid, 8 when W already holds a `STATE.yml` |
 | `--step --skill S --name N [--detail D]` | `active_skill`, `step`, `step_detail` (`--` when omitted), `updated` |
+| `--reroute --reading R [--depth D] --why W` | `intent.reading` (and `intent.depth`), plus an `intent.changes` entry (at, from, to, why) |
+| `--check` | writes nothing; prints one line per problem with the record (missing or inconsistent, Work state layout) and exits 9 when there is any, 0 otherwise |
+| `--repair --skill S --name N [--detail D] [--reading R]` | the record in one write, plus a `lifecycle_history` entry naming the old and the new record; used only after the user confirms |
 | `--handoff --to S --why W --returns yes` | appends a `handoffs` entry whose `from*` keys are the current skill, step and detail; sets `active_skill` to S, `step` and `step_detail` to `--` |
 | `--handoff --to S --why W --returns no --phase P` | the same, plus `phase` P (validated) |
 | `--handoff-return` | sets `returned` on the open call; restores `active_skill`, `step`, `step_detail` from it; exit 7 when there is none |
@@ -1428,6 +1469,11 @@ heading (a presence check -- it does not scan wording, so the rule's own text an
   The readers hand the page only new names, so the page holds no old-name mapping. The work card shows the
   phase, one plain line from `step_detail`, "Waiting for your answer (N)" when open questions exist, and
   "Away in /aid-update-kb -- back to Building after" while a call is open. No step names, no maps.
+- **Work record warning**: both readers compute `record_status` (`ok`, `missing`, `inconsistent`) with the
+  field rules of `--check` (the installed-skill rule stays with `--check`, which knows the tool's skills
+  folder); `_ser_work` and `reader.mjs` pass it on, and the work card shows a visible warning -- "This
+  work's record is incomplete: the agent will ask you to confirm a repair when the work resumes" -- for any
+  status other than `ok`. Works not yet migrated show it too, until Feature 006's migration fills their record.
 - **Chat**: `chat-node/` reads no work state -- no `.aid/works/` path, no `STATE.yml` -- so nothing changes
   (AC-41); SS-07 keeps it so.
 - The skill names shown are Feature 009's (AC-31).
@@ -1442,9 +1488,11 @@ heading (a presence check -- it does not scan wording, so the rule's own text an
   § Next Release. `state-machine-chaining.md` is internal: no row.
 - **Installed projects**: `aid update` removes the agent's files through the install manifest
   (decisions.md § D9).
-- **Existing works**: nothing is rewritten here -- the new keys are optional, the readers map the old phase
-  names and still read delivery `qa`. Feature 006's migration rewrites the phase names, moves delivery `qa`
-  into the work and drops `pipeline.path`.
+- **Existing works**: nothing is rewritten here -- the readers map the old phase names and still read
+  delivery `qa`. An old work has no work record, so its first resume goes through the recovery path (a
+  confirmed repair proposed from the gate's legacy block) and the dashboard shows the record warning.
+  Feature 006's migration fills the record for every old work, rewrites the phase names, moves delivery `qa`
+  into the work, drops `pipeline.path`, and then removes the gate's legacy block.
 - **Interviewer sites** (a full search for `interviewer`, any case, outside work folders and renders):
   those in Files and layout, plus `docs/aid-methodology.md`, `docs/diagram-content-reference.md`,
   `examples/brownfield-lite-path/README.md` (its CONDENSED-INTAKE walk-through), `examples/greenfield/README.md`,
@@ -1494,7 +1542,7 @@ suite list of `.github/workflows/installer-tests.yml`):
 | Group | Asserts |
 |---|---|
 | SS-01 | No banner form (Steps and hand-offs) under `canonical/skills/` or `canonical/aid/templates/` |
-| SS-02 | `state-machine-chaining.md` is absent and cited nowhere; every `SKILL.md` with a Dispatch table cites `skill-steps.md` |
+| SS-02 | `state-machine-chaining.md` is absent and cited nowhere; every `SKILL.md` with a Dispatch table or a `## State:` section, and `shortcut-engine.md` and `design-lifecycle.md`, cite `skill-steps.md`, whose step-entry rule writes the record before any work in the step |
 | SS-03 | No `**Advance:**` line uses a word other than `CHAIN`, `ASK`, `WAIT`, `PASS`, `CALL`, `HALT` (a line naming only its next step is a `CHAIN`, as today) |
 | SS-04 | Every hand-authored `SKILL.md`, and `shortcut-engine.md` for the generated ones, cites `question-protocol.md`, except the test's never-asks list (each listed skill must exist); no `AskUserQuestion` in any `allowed-tools` |
 | SS-05 | No `canonical/agents/aid-interviewer/`; the word `interviewer`, in any case, appears nowhere in `canonical/agents/`, `canonical/skills/`, `canonical/aid/templates/`, `docs/`, `examples/` or `site/src/content/` |
@@ -1505,6 +1553,7 @@ suite list of `.github/workflows/installer-tests.yml`):
 | SS-10 | `canonical/aid/templates/agent-boilerplate.md` has the `## Talking with the user` section; every `canonical/agents/*/AGENT.md` includes `{{include:agent-boilerplate}}`; no `AGENT.md` tells its agent to ask the user (`AskUserQuestion`, "ask the user") |
 | SS-11 | No old phase name (`Describe`, `Define`, `Specify`, `Plan`, `Detail`, `Execute`) as data or logic. **Scope**: tracked files under `canonical/skills/`, `canonical/aid/templates/`, `canonical/aid/scripts/` (except `summarize/`, whose diagram tokens are text), `dashboard/home.html`, `dashboard/reader/*.py`, `dashboard/server/*.mjs`, `dashboard/server/*.py`, `dashboard/scripts/writeback-state.sh` -- never a `tests/` or `__tests__/` folder. **Forms**: `phase: <old>`; `--field Phase --value <old>`; a quoted `'<old>'` or `"<old>"`; an enum list `<old> \| <old>`; `Phase.<old>`; `=== '<old>'`; a backticked old name on a line that mentions the phase. **Excluded**: lines between `legacy-phase-map: begin` and `end` markers (the two readers' maps and the gate's old-name rows). Run on today's tree, these forms reach 55 lines, all of them listed in the phase-sites table or the page's sites; only the deploy sentence, prose split over two lines, is listed without being reachable |
 | SS-12 | No hand-written finish: no line matching `lifecycle: (Completed\|Canceled)` (any quoting) in tracked files under `canonical/skills/` and `canonical/aid/templates/`, except files of skills on the SS-12 exempt list (each row: skill, owning feature). Fails if an exempt skill folder no longer exists, and under `AID_RELEASE_CHECK=1` if the exempt list is not empty. Lives in `tests/canonical/test-skill-steps.sh`. |
+| SS-14 | The work record is written only by the writer: `work-initiation-gate.md` § 3a creates a work only through `writeback-state.sh --create`, naming `--reading` and `--skill`; no file under `canonical/skills/` or `canonical/aid/templates/` other than `work-state-template.yml` and `project-state-template.yml` writes the record by hand -- a line starting at column 0 with `active_skill:`, `step:`, `step_detail:` or `phase:`, or an indented `  reading:` -- outside the gate's legacy block (today only the two seeds that `--create` replaces match); `skill-steps.md` § The work record carries the fail-closed and recovery rules. Lives in `tests/canonical/test-skill-steps.sh`. |
 | SS-13 | Each of `canonical/agents/aid-reviewer/AGENT.md`, `canonical/aid/templates/reviewer-dispatch.md` and every `canonical/skills/*/references/reviewer-brief.md` (today: `aid-define`, `aid-detail`, `aid-discover`, `aid-execute`, `aid-plan`, `aid-specify`) has a `### What to report` heading (FR-21). Presence check only. Lives in `tests/canonical/test-skill-steps.sh`. |
 
 **Static checks -- `tests/canonical/test-never-merges.sh`**, over the tracked files (`git ls-files`) that
@@ -1554,12 +1603,17 @@ A row leaves the list when what it waits for has landed and its sample passes 3 
 | Never asks: `aid-chat` (it talks with other agents, not the user), `aid-unset-connector` (no question in its flow) | the test's never-asks list (SS-04) |
 
 **Unit tests**
-- `tests/canonical/test-writeback-state.sh`: `--step`; `--handoff` as pass and as call; `--handoff-return`
+- `tests/canonical/test-writeback-state.sh`: `--create` writes type, skill, step, phase and lifecycle in
+  one write, and exits 5, 4 or 8 on a missing option, a bad value or an existing `STATE.yml`; a write that
+  fails (lock timeout, exit 2; unwritable file) leaves the file byte-for-byte unchanged; `--check` reports
+  each missing and inconsistent case with exit 9, and 0 on a healthy record; `--repair` writes the record
+  and its history entry; `--reroute`; `--step`; `--handoff` as pass and as call; `--handoff-return`
   with two nested calls (newest first) and exit 7 with none; `--ask` id numbering, and `--project` creating
   `.aid/STATE.yml`; `--answer` for each state, including an approval's `--covers` / `--commit`; the phase
   names (an old name refused on write); every file written parses through the dashboard reader with no warning.
 - Dashboard: fixtures for a work at each phase -- Definition, Specification, Planning, Building, Building
-  during a call, CI, Completed -- and one with old phase names, in `dashboard/reader/tests/` and the Node
+  during a call, CI, Completed -- one with old phase names, and one each with a missing and an inconsistent
+  record (`record_status` and the card warning), in `dashboard/reader/tests/` and the Node
   suite, plus a parity test; `test_index_html.py` for `PHASE_ORDER` and the card lines.
 - Dashboard page: a new Node test, `dashboard/server/tests/test_home_stage_rails.mjs` (standard library
   `node:vm`), takes `PHASE_ORDER`, `renderStageRail` and `_renderLiteStageRail` from `home.html` by name,
@@ -1584,6 +1638,7 @@ label -- to every sample, of any feature, that covers AC-8 or AC-28.
 | `002-17-review-publish-approval` (`/aid-review`) | AC-28 | now |
 | `002-18-report-what-to-analyze` (`/aid-report`) | AC-28 | now |
 | `002-19-monitor-finding-question` (`/aid-monitor`) | AC-28 | now |
+| `002-20-record-recovery` -- fixture: a work whose saved step names an artifact that is not on disk; the user asks to continue; check: the agent says so, proposes the repaired record as one question, writes nothing before the yes, then resumes there | AC-37 | now |
 | `002-06-review-in-chunks` | AC-9 | deferred: Feature 005 |
 | `002-07-small-decisions-with-approval` | AC-9, AC-10 | deferred: Features 005, 007 |
 | `002-08-full-confirms-each-document` | AC-10 | deferred: Features 003, 005, 006, 007 |
@@ -1602,7 +1657,7 @@ label -- to every sample, of any feature, that covers AC-8 or AC-28.
 | AC-10 | Approvals and the merge boundary | writer unit tests (approval record); `002-07`, `002-08`, `002-09` (deferred) |
 | AC-11 | Approvals and the merge boundary (never merges) | NM-01 to NM-04; `002-05`; `002-10` (deferred) |
 | AC-28 | Question protocol | `002-01` to `002-04`, `002-14` to `002-19`; SS-09 with the coverage table (a sample or a `skill:` row per asking skill); `protocol-checks.md` |
-| AC-37 | Steps and hand-offs (what the user sees, resume) | SS-01; writer unit tests (`--step`); `002-11` (deferred) |
+| AC-37 | Steps and hand-offs (what the user sees, resume); Work state layout (The work record) | SS-01, SS-02, SS-14; writer unit tests (`--create`, `--step`, `--check`, `--repair`, failed writes); gate `--check` fixtures; `002-20`; `002-11` (deferred) |
 | AC-38 | Steps and hand-offs (`PASS`, `CALL`, `HALT`) | writer unit tests (`--handoff`, `--handoff-return`, nesting); `002-12`, `002-13` (deferred) |
 | AC-40 | Question protocol (sub-agents never ask); Migration | SS-05, SS-10 |
 | AC-41 | Dashboard and chat | dashboard fixtures and parity test; SS-07 |
