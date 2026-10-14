@@ -1890,8 +1890,8 @@ bare idea, an unclear problem or a request to design something (Feature 001 rout
 1. **START** -- gather what the idea starts from: the request, the kind (`check-intent.md`'s match against
    `kind-catalog.yml`, or the typed `<kind>` argument), and the work's `sources:` (Feature 001). Run
    `idea-drafts.sh list`; when a draft matches the request by meaning, or the user named one, offer to
-   continue it -- one question with a recommendation; a draft left in another worktree is first `collect`ed;
-   for a draft kept in another work, the agent offers to resume that work instead.
+   continue it -- one question with a recommendation; a draft left in another worktree is first `collect`ed.
+   A draft kept in a work is not offered here (see Parking for how it is picked up).
    Otherwise create the draft from `design-seed.md`. Write the folder README on first use. Record
    `idea_draft` -- or, for a side idea, `side_idea`, always for a new draft and never the work's own.
 2. **CONVERSE** -- a loop the user leads. Each turn:
@@ -1938,7 +1938,9 @@ bare idea, an unclear problem or a request to design something (Feature 001 rout
      aid-update-kb --step <its entry step> --returns no --why ...`, with no `--phase` (Preparation is not a
      work phase); what happens next is Feature 004's (below);
    - *Keep it for later* -- **park** it.
-3. **Keep the draft with this work?** -- asked only when the idea goes on and git exists; importance low;
+3. **Keep the draft with this work?** -- asked only when the idea goes on and git exists, and skipped when
+   the draft is already committed on this work's branch (a work resumed after *Keep it in a work*, or the new
+   work made for a side idea kept in a work); importance low;
    recommendation **no**, because the draft is deleted at the next covering approval and stays safe in the
    main folder meanwhile; yes runs `keep`. The user may also ask to keep it at any moment in CONVERSE.
 
@@ -1954,8 +1956,10 @@ the set-aside question (The idea draft):
   Canceled`).
 
 The user is told in one line how to pick the idea up. *Keep it as a draft*: say so, and START offers it.
-*Keep it in a work*: resume that work, which follows the normal resume from its work record (Feature 002) and
-continues at CONVERSE; START is not involved. Pausing is not parking.
+*Keep it in a work*: that work is paused, so it is an open work, and the gate's existing "new work or
+continue" question (Feature 002, before any `--create`) offers it; continuing it follows the normal resume
+from its work record and goes on at CONVERSE. START is not involved, and a side idea never takes it (a side
+idea is always a new standalone draft). Pausing is not parking.
 
 **As a side idea** -- brainstorm runs inside a work that continues: an open call from another skill, or a
 typed start on a work already past Definition. **The work is never cancelled and its own draft is never
