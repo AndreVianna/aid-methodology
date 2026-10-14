@@ -691,3 +691,11 @@ qa:
     suggested: 'With the next approval that covers them: the document approval (full), the confirmation before building (lite), the next milestone (during building). No extra approval.'
     answer: 'Accepted as recommended.'
     applied_to: 'Feature 002 Technical Specification (Question protocol)'
+  - id: Q37
+    category: Specification (Feature 002)
+    impact: Medium
+    state: Answered
+    context: 'Subjects with only one or two questions.'
+    suggested: 'Merge small, related subjects into one group of 3-5.'
+    answer: 'Merge only when the subjects are genuinely related (e.g. naming + skill descriptions); when nothing relates, a small group is fine.'
+    applied_to: 'Feature 002 Technical Specification (Question protocol)'
