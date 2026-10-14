@@ -765,3 +765,11 @@ qa:
     suggested: 'Approve now; the build phase (writer unit tests, runnable samples) and the cross-feature review at Planning catch remaining edge cases. Also confirms the start/resume/cancel wording change in Feature 001.'
     answer: 'Approved.'
     applied_to: 'Feature 002 state Ready; Feature 001 wording amendment confirmed'
+  - id: Q44
+    category: Specification (Feature 003)
+    impact: High
+    state: Answered
+    context: 'Where an idea draft lives (KI-004: drafts written inside one work copy are invisible to later works).'
+    suggested: 'In the project main folder .aid/design/, never committed by AID; parking an idea cancels its work (after confirmation) and keeps the draft.'
+    answer: 'Accepted, but AID must ASK the user whether to persist and commit the idea draft (not silently leave it uncommitted).'
+    applied_to: 'Feature 003 Technical Specification (The idea draft, Flow)'
