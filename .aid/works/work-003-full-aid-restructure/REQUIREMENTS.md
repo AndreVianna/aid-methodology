@@ -1125,7 +1125,7 @@ qa: []
 
   | Chosen work's state | Resume entry point |
   |---|---|
-  | A saved `active_skill` other than `none` on a work whose `lifecycle` is **not** `Completed` or `Canceled` (new row, placed **after** the unchanged "Already Completed / Canceled" row, so a finished work is always reported as finished) | that skill, at its saved `step` (FR-20.2) |
+  | A saved `active_skill` other than `none` on a work whose `lifecycle` is **not** `Completed` or `Canceled` (new row, placed **first** in the table -- its `lifecycle` condition already lets the unchanged "Already Completed / Canceled" row report a finished work as finished, and being first lets a Building work with an open call resume inside the called skill) | that skill, at its saved `step` (FR-20.2) |
   | `phase: Building`, or `delivery_state` `Executing` / `Gated` / `Done` | `/aid-execute <work>` |
   | `phase: CI` | `/aid-monitor-pipeline <work>` once Feature 008 delivers it; until then `/aid-orchestrate <work>`, which closes the work (Feature 001's interim minimum) |
   | `Definition` / `Specification` / `Planning` with no saved skill | Definition -> `/aid-describe`; Specification -> `/aid-define` while `REQUIREMENTS.md` § 11 has no feature section, else `/aid-specify`; Planning -> `/aid-plan` while `PLAN.md` is missing, else `/aid-detail`. Features 003, 005 and 006 re-point their own row as they rebuild those skills |
@@ -1133,7 +1133,17 @@ qa: []
 
   **Finishing clears the saved skill:** the writer, whenever it sets `lifecycle` to `Completed` or `Canceled`,
   also sets `active_skill: none` and clears `step` / `step_detail` in the same locked write (a
-  `test-writeback-state.sh` case covers it), so no stale saved skill outlives its work.
+  `test-writeback-state.sh` case covers it). Every skill that today finishes a work by writing
+  `lifecycle: Completed` / `Canceled` by hand (e.g. `aid-research`, `aid-test`, `aid-prototype`,
+  `aid-report`) switches to the writer; static check **SS-12** fails on any hand-written `lifecycle:
+  Completed` / `Canceled` in `canonical/skills/` or `canonical/aid/templates/`, so no stale saved skill
+  outlives its work. Today 43 skill files do it. Feature 002 converts the ones that stay (`aid-research`,
+  `aid-test`, `aid-prototype`, `aid-report`, `aid-review`, `aid-deploy`, `aid-create-document`,
+  `aid-update-document`); the rest are skills a later feature rebuilds or retires (the `aid-design-*`
+  family and `aid-design` -> Features 003/009; the KB-writing `aid-create-*` / `aid-update-*` for
+  architecture, stack, testing strategy, CI/CD, roadmap, backlog and MVP -> Feature 004; `aid-brainstorm` ->
+  Feature 003) and sit on an SS-12 exempt list that names the owning feature; SS-12 fails if an exempt
+  skill no longer exists, so the list only shrinks and is empty by release.
 
   The same-invocation sentence becomes "when the chosen work's `phase` is `Definition`, or its old name
   on a work not yet migrated" (no old name written out, so SS-11 stays green). `tests/canonical/test-work-initiation-gate.sh` gains new-name works next to its
