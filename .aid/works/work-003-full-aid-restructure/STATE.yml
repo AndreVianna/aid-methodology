@@ -264,8 +264,22 @@ features:
     started: '2026-10-14'
     updated: '2026-10-14'
     grade: Pending
-    qa_count: 0
-    sections: []
+    qa_count: 5
+    sections:
+      - name: Files and layout
+        state: Complete
+      - name: The idea draft
+        state: Complete
+      - name: Flow
+        state: Complete
+      - name: Kinds of things
+        state: Complete
+      - name: Components
+        state: Complete
+      - name: Migration
+        state: Complete
+      - name: Testing
+        state: Complete
   - id: '004'
     name: kb-management
     state: Pending
