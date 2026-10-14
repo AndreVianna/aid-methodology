@@ -1750,7 +1750,7 @@ label -- to every sample, of any feature, that covers AC-8 or AC-28.
 #### Technical Specification
 
 Serves §4 Scope (`/aid-design` retires, Q22), FR-1 (the Definition phase), FR-9 and FR-11, and follows
-FR-17, FR-18 and FR-20 as Features 001 and 002 define them. Maintainer decisions: Q44-Q48. Paths are
+FR-17, FR-18 and FR-20 as Features 001 and 002 define them. Maintainer decisions: Q44-Q50. Paths are
 `canonical/` sources, rendered as in Feature 001. "Idea draft" is the plain name for FR-9's seed; the
 folder keeps its name, `.aid/design/`.
 
@@ -1759,17 +1759,18 @@ folder keeps its name, `.aid/design/`.
 | Change | Path | What |
 |---|---|---|
 | Rewrite | `canonical/skills/aid-brainstorm/SKILL.md` | The Definition phase skill: its step table (see Flow), `skill-steps.md` and `question-protocol.md` cited, `description:` in Feature 001's what/when shape (see Components), `argument-hint: "[<kind>] <idea>"`. At most 100 lines |
-| Create | `canonical/skills/aid-brainstorm/references/` | `start.md`, `draft.md`, `shape.md`, `check.md`, `reviewer-brief.md`, `finish.md`, `shaping-moves.md`; each at most 120 lines |
+| Create | `canonical/skills/aid-brainstorm/references/` | `start.md`, `converse.md`, `check.md`, `reviewer-brief.md`, `finish.md`, `shaping-moves.md`; each at most 120 lines |
 | Delete | `canonical/skills/aid-describe/` | Retired whole (Q48; see Components for where its parts go) |
 | Delete | `canonical/skills/aid-design/` and every `canonical/skills/aid-design-*/` | Retired (Q22, AC-43) |
 | Create | `canonical/aid/templates/kind-catalog.yml` | The rules for each kind of thing (Q45; see Kinds of things); type `template-own` |
 | Edit | `canonical/aid/templates/shortcut-catalog.yml` | Every `verb: design` row goes, with any comment naming them; the `aid-brainstorm` row stays, its `intent:` rewritten |
 | Edit | `canonical/aid/templates/design-seed.md` | The idea draft's shape (see The idea draft) |
 | Edit | `canonical/aid/templates/design-folder-readme.md` and this repository's `.aid/design/README.md` | One lifecycle (see The idea draft) |
-| Create | `canonical/aid/scripts/works/idea-drafts.sh` | Bash, like the other `works/` scripts: `dir`, `list`, `commit`, `delete` (see The idea draft) |
+| Create | `canonical/aid/scripts/works/idea-drafts.sh` | Bash, like the other `works/` scripts: where a draft is, and the only code that moves, commits or deletes one (see The idea draft) |
 | Edit | `canonical/aid/scripts/execute/writeback-state.sh` | `--pipeline` accepts the field `"Idea Draft"`, key `idea_draft`; value `--` or `.aid/design/<name>.md` (lowercase letters, digits and hyphens), anything else exit 4 |
 | Edit | `canonical/aid/templates/work-state-template.yml` | `idea_draft: --` with its `[W]` comment |
 | Edit | `canonical/aid/templates/skill-steps.md` § When approvals happen (Feature 002) | The deletion rule (see The idea draft) |
+| Edit | `canonical/aid/templates/work-initiation-gate.md` § 3b, its legacy block (Feature 002) | Rows for old idea and design works (see Migration) |
 | Edit | `canonical/skills/aid-orchestrate/references/size-and-route.md`, `check-intent.md` (Feature 001) | Two routing rows, the kind hook, drafts as evidence (see Components) |
 | Edit | `canonical/aid/rules.md` § Skill guide | The `/aid-describe`, `/aid-design` and `/aid-design-<kind>` lines go; the `/aid-brainstorm` line is rewritten |
 | Edit | `canonical/aid/templates/shortcut-engine.md` § Step 2: Read context; `canonical/skills/aid-create-document/SKILL.md`, `canonical/skills/aid-update-document/SKILL.md` | Their reads of `.aid/design/<kind>.md` go: no skill writes a draft under a kind's name any more, and a draft reaches the next phase through the work record |
@@ -1780,134 +1781,189 @@ folder keeps its name, `.aid/design/`.
 
 ##### 2. The idea draft
 
-**Where it lives (Q44, known issue KI-004).** In the project's **main folder**, `.aid/design/<name>.md` --
-never inside a work's own worktree, so it outlives a cancelled work and every later work and session can
-find it. `idea-drafts.sh` is the only code that touches it:
+**Where it lives (Q44, Q50; known issue KI-004).** A draft has exactly one live copy, found through
+`idea-drafts.sh path <name>`:
 
-| Operation | Does | Exit codes |
-|---|---|---|
-| `dir` | Prints the absolute path of the main folder's `.aid/design/` (the main worktree, resolved the way `worktree-lifecycle.sh` resolves it, from any worktree); without git, the project folder's `.aid/design/` | 0; 1 when no project folder is found |
-| `list` | One line per draft: name, and the first line under `## Problem` | 0 |
-| `commit <name>` | In the main folder only: `git add` the draft (and `README.md` if git does not track it yet), then a commit of those paths alone (`git commit -m 'idea draft: <name>' -- <paths>`), on whatever branch the main folder has checked out; other staged changes stay staged and uncommitted | 0; 3 no git; 4 the main folder cannot take a commit (no branch checked out, a merge or rebase in progress); 5 no such draft |
-| `delete <name> [--commit]` | Removes the draft from the main folder; with `--commit`, records the removal as a commit of that path alone | 0; 3 `--commit` without git; 4 as above; 5 no such draft |
+- **Loose** (the default): in the project's **main folder**, `.aid/design/<name>.md`, never staged and never
+  committed, so it outlives a cancelled work and every later work and session can find it.
+- **Tracked on the work's branch**: in the work's worktree, `.aid/design/<name>.md`, when git tracks it on the
+  branch checked out there -- because the user asked to keep it with the work, or because the work inherited
+  it from its parent branch (a seed someone committed by hand).
 
-- Every `<name>` is checked before anything runs: lowercase letters, digits and hyphens only; `README` is
-  refused; the resolved path must stay inside `.aid/design/` (exit 2 otherwise).
-- **Never pushed by AID on its own, never part of a work's pull request.** The script runs git only against
-  the main folder and has no push. A push happens only when the user asks for it; the agent never pushes
-  `main` or `master` (Feature 002, NM-02) and in that case leaves the push to the user. No skill stages
-  `.aid/design/` inside a work's worktree, so the PR/MR holds only the work's real changes (FR-7, AC-35).
-- **Committing is always the user's choice (Q44)**, asked under the question protocol:
-  - **when the idea is parked** -- recommendation **yes**: the idea may wait a long time, and a commit keeps
-    it safe and visible to the team;
-  - **at FINISH, when the idea goes on** -- recommendation **no**: it is deleted once its content is
-    approved, usually soon;
-  - with no git, nothing is asked.
-  On yes, `idea-drafts.sh commit`; on no, the draft stays as an uncommitted file, said in one line.
-- **Deletion (M5, AC-17)** -- `skill-steps.md` § When approvals happen gains one rule: when an approval
-  covers the requirements -- the `REQUIREMENTS.md` approval in `full`, the confirmation before building in
-  `lite` -- or covers the KB change an idea fed, and the record names an `idea_draft`, the main
-  conversation deletes the draft and clears the key (`--pipeline --field "Idea Draft" --value --`), right
-  after recording the approval. A draft git does not track is simply deleted. A tracked draft gets one
-  follow-up question in the same group: "Record the removal of the idea draft in the project's
-  history?" -- recommendation **yes**, since its addition is in the history too; yes runs `delete --commit`,
-  no runs `delete` and says in one line that the removal is left for the user to commit.
-- **Name**: a new draft takes the work's short name, asked once at intake (Feature 002). A draft that is
-  picked up again keeps its own name. When the name is taken by an unrelated draft, the agent proposes
-  `<name>-2` as a confirmation question.
+The work record stores only the draft's identity, `idea_draft: .aid/design/<name>.md`. **Every reader and
+writer resolves the live copy with `idea-drafts.sh path` first** -- `aid-brainstorm`, the deletion rule,
+and Feature 005 when Specification reads the draft -- and never opens the identity as a path inside a
+worktree. A sub-agent never touches the draft: it returns text, and the main conversation writes it.
+
+`idea-drafts.sh` is the only code that moves, commits or deletes a draft:
+
+| Operation | Does |
+|---|---|
+| `dir` | Prints the absolute path of the main folder's `.aid/design/` (the main worktree, resolved the way `worktree-lifecycle.sh` resolves it, from any worktree); without git, the project folder's `.aid/design/` |
+| `path <name>` | Prints the live copy: the current worktree's `.aid/design/<name>.md` when git tracks it on the current branch, otherwise `dir`'s `<name>.md` |
+| `list` | One line per draft in the main folder (name, first line under `## Problem`), plus drafts left untracked in another worktree by an old run (KI-004), each marked with that worktree |
+| `collect <name> --from <worktree>` | Moves such a left-behind draft into the main folder, loose |
+| `keep <name>` | Run inside a work's worktree: moves the loose draft into it and commits that path alone on the work's branch; run again, commits the draft's later changes |
+| `release <name>` | The reverse: copies the worktree copy to the main folder, loose, and commits the draft's removal from the work's branch (that path alone) |
+| `commit-on <name> <branch>` | Commits the loose draft onto an existing local branch the user named: a normal commit of that path alone when the main folder has that branch checked out, otherwise a commit made without checking the branch out, so the main folder's checked-out branch and files stay as they were |
+| `delete <name>` | Loose: removes the file. Tracked on the current branch: removes it and commits the removal (that path alone) on that branch |
+
+- Exit codes: 0 done; 2 a bad `<name>` (only lowercase letters, digits and hyphens; `README` refused) or a
+  path outside `.aid/design/`, checked before anything runs; 3 git needed and absent; 4 the branch cannot
+  take a commit (none checked out, a merge or rebase in progress) or `keep` / `release` run outside a work's
+  worktree; 5 no such draft or branch.
+- **No push, ever.** The script has no `git push`, and no other code stages `.aid/design/`.
+
+**Committing is never the default (Q50).**
+- **A draft of a work** is committed only when the user asks to keep it with the work (`keep`), and then on
+  **that work's branch**; it is re-committed when the user pauses or ends the conversation, and at FINISH. It is removed
+  from the branch at the covering approval (below), so the PR/MR's final content never holds it -- its
+  history may (AC-35). FINISH asks once (see Flow).
+- **A parked idea** (no work continues with it) stays loose in the main folder unless the user names a
+  branch to commit it on. Then the agent first says in one line that every work started from that branch
+  will carry the draft, and runs `commit-on`. No commit ever lands on the main folder's branch by default.
+- With no git, nothing is asked.
+
+**Deletion (M5, AC-17)** -- `skill-steps.md` § When approvals happen gains one rule, applied right after the
+approval is recorded, when the record names an `idea_draft`:
+
+| The draft was handed on | Deleted at |
+|---|---|
+| To Specification, or back into a work whose covering approval is still ahead (a side idea, see Flow) | the `REQUIREMENTS.md` approval (`full`) or the confirmation before building (`lite`) |
+| To a KB update | the approval of the KB change (owed by Feature 004, see Flow) |
+| Back into a work already past that approval (a side idea) | the work's next approval of any kind |
+
+The approval's own message says the draft will be removed, so the user's yes covers it. `idea-drafts.sh
+delete` then removes the live copy -- committing the removal when the draft is tracked on the work's branch,
+including one inherited from the parent branch, whose removal the PR/MR then carries -- and the key is
+cleared (`--pipeline --field "Idea Draft" --value --`).
+
+**Name**: a new draft takes the work's short name, asked once at intake (Feature 002). A draft picked up
+again keeps its own name. When the name is taken by an unrelated draft, the agent proposes `<name>-2` as a
+confirmation question. **One draft per work**: a side idea started while the work still names an
+`idea_draft` continues that draft.
 
 **Its shape** (`design-seed.md`) -- one plain document that stands on its own, because it can outlive the work
 and the work's `qa` record:
 
 ```markdown
 # {Idea title}
+## Where we left off  -- the subject under discussion and what waits for the user; rewritten every exchange
 ## Problem            -- in the user's words
 ## Who it is for
 ## Options considered -- including the ones rejected, and why
-## Current direction  -- rewritten each round
+## Current direction  -- rewritten as the conversation moves
 ## Constraints
 ## Open questions     -- what is still undecided; carried into Specification
 ## Kind               -- optional: a kind from kind-catalog.yml
 ## Sources            -- optional: tickets, issues, files that fed it
 ```
 
-`## Destination` and the readiness gate on `## Open questions` go: what is still open when the user
-decides to go on is carried into Specification, whose question protocol asks it. No `## Change Log`.
-
-**The record**: `idea_draft` in the work's `STATE.yml`, written by `start.md` through the writer and cleared by
-the deletion rule. Feature 005 reads it when Specification starts.
+`## Destination` and the readiness gate on `## Open questions` go: what is still open when the user decides
+to go on is carried into Specification, whose question protocol asks it. No `## Change Log`.
 
 **Folder README** (`design-folder-readme.md`): one lifecycle -- "An idea draft is written by `/aid-brainstorm`
 (or by hand) while an idea is shaped, and is deleted at the first approval that covers its content. Drafts
-of ideas not taken forward are kept. AID asks before committing a draft or its removal." The write-on-first-use
-rule stays (in `start.md`): copy it when `README.md` is absent, never overwrite one.
+of ideas not taken forward are kept. AID commits a draft only when you ask." The write-on-first-use rule
+stays (in `start.md`): copy it when `README.md` is absent, never overwrite one.
 
 ##### 3. Flow
 
-Step table of the rebuilt `/aid-brainstorm`. The gate creates the work with
+Brainstorm is a **conversation** (Q49). The gate creates the work with
 `--skill aid-brainstorm --step START --phase Definition` (Feature 002); `/aid-orchestrate` starts it for a
 bare idea, an unclear problem or a request to design something (Feature 001 routing).
 
 | Step | Reference | Worker | Advance |
 |---|---|---|---|
-| START | `references/start.md` | main conversation | `CHAIN` -> DRAFT |
-| DRAFT | `references/draft.md` | `aid-architect` | `CHAIN` -> SHAPE |
-| SHAPE | `references/shape.md` | main conversation | `ASK` -> SHAPE while questions remain; `CHAIN` -> DRAFT on a change of direction; `CHAIN` -> CHECK when done |
+| START | `references/start.md` | main conversation | `CHAIN` -> CONVERSE |
+| CONVERSE | `references/converse.md` | main conversation (may dispatch `aid-architect`) | `ASK` -> CONVERSE after every agent turn; `CHAIN` -> CHECK only when the user ends the conversation |
 | CHECK | `references/check.md` (brief: `references/reviewer-brief.md`) | `aid-reviewer` | `CHAIN` -> FINISH |
-| FINISH | `references/finish.md` | main conversation | `ASK`, then `PASS` (idea goes on), `HALT` (an open call, or the idea is parked) |
+| FINISH | `references/finish.md` | main conversation | `ASK`, then `PASS` or `HALT` (below) |
 
 1. **START** -- gather what the idea starts from: the request, the kind (`check-intent.md`'s match against
    `kind-catalog.yml`, or the typed `<kind>` argument), and the work's `sources:` (Feature 001). Run
    `idea-drafts.sh list`; when a draft matches the request by meaning, or the user named one, offer to
-   continue it -- one question with a recommendation. Write the folder README on first use. Record
-   `idea_draft`. A draft of an old work found inside that work's own worktree (KI-004) is moved to the main
-   folder once, uncommitted, and said in one line.
-2. **DRAFT** -- `aid-architect` (tiered by `agent-dispatch-tiering.md`) writes or updates the draft from the
-   KB, the code, the sources and the answers so far: two to four ways to frame or solve it, then a current
-   direction with its reasons, then the open questions, the kind's `shape` points first. It writes nothing
-   else -- no KB document, no production code -- and returns its questions without asking them.
-3. **SHAPE** -- the main conversation asks the draft's open questions in groups under the question
-   protocol (subject = a draft section; most important first), using `shaping-moves.md`. After each group
-   it updates the draft itself and records the answers (`--answer`). A change of direction goes back to
-   DRAFT. It goes on to CHECK when no high-importance question is left or the user says that is enough;
-   what is still open stays in `## Open questions`. A ticket or file pulled in meanwhile goes through
-   Feature 001's apply step (`external-sources.md`): the questions it answers are closed and the draft
-   updated.
-4. **CHECK (Q46)** -- one clean-context `aid-reviewer` pass (tier at least the producer's). It reads the
-   draft, the KB documents it cites and the work's `qa` answers, and reports only, under `### What to
-   report`: a conflict with the KB, a conflict with a user's answer, something stated as decided that the
-   user never decided, and a `shape` point of the kind neither settled nor listed as open. Ledger:
-   `.aid/.temp/review-pending/<work>-idea-check.md` (7 columns). The main conversation fixes each row
-   once, or moves it to `## Open questions` when it needs the user. No grade, no second pass.
-5. **FINISH** -- the draft is shown in chunks, one topic per chunk, most important first (Feature 002
-   reviews), then one group of questions, subject "The idea draft":
-   1. **Approve the draft** -- `full` only (Feature 002's approvals table), importance high; recorded
-      `category: Approval`, `covers: idea draft`.
-   2. **Where it goes next (Q47)** -- importance high. The user decides; the agent recommends the kind's
-      `then` (Specification when there is no kind):
-      - *Specification* -- turn it into requirements and build it;
-      - *KB update* -- record it in the KB (e.g. the roadmap, the backlog, the MVP);
-      - *Keep it for later* -- park it (below).
-   3. **Commit the draft** -- importance medium, recommendation as in The idea draft.
+   continue it -- one question with a recommendation; a draft left in another worktree is first `collect`ed.
+   Otherwise create the draft from `design-seed.md`. Write the folder README on first use. Record
+   `idea_draft`.
+2. **CONVERSE** -- a loop the user leads. Each turn:
+   - the user shares, reacts, answers or redirects;
+   - the agent **proposes** -- options, suggestions, alternatives, challenges, concrete examples --
+     grounded in the KB and the code, and **asks** what it needs under the question protocol, the kind's
+     `shape` points among the first (`shaping-moves.md` says how);
+   - the agent updates the draft (resolved with `path`) after **every** exchange, `## Where we left off`
+     included, records the answers (`--answer`), and saves the step with `--detail` naming the subject
+     under discussion (e.g. `'talking about: who it is for; waiting for Q14'`).
 
-   Then:
-   - **Specification**: `PASS` -- `--handoff --to aid-specify --step <its entry step> --returns no --phase
-     Specification --why 'idea shaped: <draft>'`, and `aid-specify` starts in the same turn (AC-38 (a)).
-     Its entry step is the first row of its step table, read when the skill runs.
-   - **KB update**: `PASS` -- `--handoff --to aid-update-kb --step <its entry step> --returns no --why ...`,
-     with no `--phase` (Preparation is not a work phase); Feature 004 renames the target `aid-kb-update`.
-     CI then closes the work, at minimum marking it done.
-   - **Open call** (another skill called brainstorm mid-process): `HALT`, which returns to the caller.
-   - **Started by a typed command on a work already past Definition** (a pass with no open call): `PASS`
-     back to the skill that drives the work's phase, at its entry step, without `--phase`.
+   When the agent needs research to propose well, it dispatches `aid-architect` (tiered by
+   `agent-dispatch-tiering.md`) as a worker: it reads the KB, the code and the draft, and returns options
+   and evidence as text; it never asks the user and never writes a file.
+   - **Only the user ends the loop.** When the agent has nothing pressing to propose or ask, it asks
+     exactly: "Do you have anything else you would like to add or discuss?" -- with no recommendation and
+     no options, an exception to the protocol's recommendation rule set by Q49 -- and never suggests
+     wrapping up. The user ending it, in any words, moves to CHECK.
+   - **Pausing** is allowed at any moment: the work stays at CONVERSE, and any later session (FR-20)
+     resumes the conversation from the draft's `## Where we left off`, the saved `step_detail` and the open
+     questions, which come first.
+   - A ticket or file pulled in meanwhile goes through Feature 001's apply step (`external-sources.md`): the
+     questions it answers are closed and the draft updated.
+3. **CHECK (Q46)** -- one clean-context `aid-reviewer` pass. It reads the draft, the KB documents it cites
+   and the work's `qa` answers, and reports only, under `### What to report`: a conflict with the KB, a
+   conflict with a user's answer, something stated as decided that the user never decided, and a `shape`
+   point of the kind neither settled nor listed as open. Ledger:
+   `.aid/.temp/review-pending/<work>-idea-check.md` (7 columns). The main conversation fixes each row once,
+   or brings it to the user. No grade, no second pass.
+4. **FINISH** -- the draft is shown in chunks, one topic per chunk, most important first (Feature 002
+   reviews), then one group of questions, subject "The idea draft". What it asks depends on how brainstorm
+   is running.
 
-**Parking an idea (Q44).** Choosing *Keep it for later*, or saying so at any question, parks the idea. The
-answer that chooses it is the confirmation; said elsewhere, one confirmation question comes first ("Close
-this work and keep the draft for later?"). Then the commit question (recommendation yes), then the work is
-cancelled the way `/aid-orchestrate` cancels one (`writeback-state.sh --pipeline --field Lifecycle --value
-Canceled`), and the user is told in one line how to pick it up: say so, and a new work's START offers the
-draft. An unanswered question is **not** parking: the work stays paused at its saved step and resumes there
-(FR-20).
+**In Definition** (the work's phase is Definition and there is no open call):
+1. **Approve the draft** -- `full` only (Feature 002's approvals table), importance high; recorded
+   `category: Approval`, `covers: idea draft`.
+2. **Where it goes next (Q47)** -- importance high. The user decides; the agent recommends the kind's `then`
+   (Specification when there is no kind):
+   - *Specification* -- turn it into requirements and build it: `PASS` -- `--handoff --to aid-specify --step
+     <its entry step> --returns no --phase Specification --why 'idea shaped: <draft>'`, and `aid-specify`
+     starts in the same turn (AC-38 (a)); its entry step is the first row of its step table, read when the
+     skill runs;
+   - *KB update* -- record it in the KB (e.g. the roadmap, the backlog, the MVP): `PASS` -- `--handoff --to
+     aid-update-kb --step <its entry step> --returns no --why ...`, with no `--phase` (Preparation is not a
+     work phase); what happens next is Feature 004's (Dependencies below);
+   - *Keep it for later* -- **park** it.
+3. **Keep the draft with this work?** -- asked only when the idea goes on and git exists; importance low;
+   recommendation **no**, because the draft is deleted at the next covering approval and stays safe in the
+   main folder meanwhile; yes runs `keep`. The user may also ask to keep it at any moment in CONVERSE.
+
+**Parking** -- choosing *Keep it for later*, or saying so at any question. The answer that chooses it is the
+confirmation; said elsewhere, one confirmation question comes first ("Close this work and keep the draft for
+later?"). Then: a draft kept with the work is `release`d to the main folder; one question, "Commit the draft
+on a branch?", recommendation **no** (it stays in the main folder, uncommitted), with the user naming a
+branch as the other answer (`commit-on`, after its one-line warning); then the work is cancelled the way
+`/aid-orchestrate` cancels one (`writeback-state.sh --pipeline --field Lifecycle --value Canceled`), and the
+user is told in one line how to pick the idea up: say so, and a new work's START offers the draft. Pausing
+is not parking.
+
+**As a side idea** -- brainstorm runs inside a work that continues: an open call from another skill, or a
+typed start on a work already past Definition. **The work is never cancelled.** No approval of the draft
+(it is not in the approvals table outside Definition). One question, where it goes:
+- *Back into the work* (recommended) -- the draft stays the work's `idea_draft`, the work's own skill takes
+  it in, and it is deleted at the work's next approval (deletion table);
+- *Keep it for later* -- the draft becomes a standalone idea: `release` it if it was kept with the work, clear
+  `idea_draft`, then the same branch question as parking.
+
+Either way the work goes back where it was: `HALT`, which returns to the open call; or, after a typed start,
+`PASS` back to the skill that drives the work's phase, at its entry step, without `--phase`.
+
+**What Feature 004 must provide for the KB-update branch** (row on the deferred list, see Testing):
+- a `KB change` row in `skill-steps.md`'s approvals table: the approval of the KB change a work makes, at
+  every depth where that change is the work's result, recorded `category: Approval`, `covers: KB change`
+  -- the deletion rule fires on it;
+- the KB update skill, when it is a work's `PASS` target, reads the work record, uses the draft (resolved
+  with `path`), and ends by passing the work to its close: the CI minimum (marking the work done), run by
+  `/aid-orchestrate` until Feature 008 delivers `/aid-monitor-pipeline` (Feature 001 phase table).
+
+Until Feature 004 lands, the KB-update answer reaches today's `aid-update-kb`, which reads no work state, so
+the work stays open; nothing is released in between.
 
 ##### 4. Kinds of things
 
@@ -1942,16 +1998,16 @@ kinds:
 ##### 5. Components
 
 **`/aid-brainstorm` description** (Feature 001's shape; final text set at build):
-"Shape an idea, or a problem that is not yet clear, into an idea draft in `.aid/design/`, across sessions if
-needed, also for a kind of thing (an API, a screen, a data model). Use when the user has only an idea, wants
-to design something before it is built, or cannot yet say what the problem is." Skill-guide line, within
-SG-03's limit: `` - `/aid-brainstorm` -- shape an idea or a design before building; when the problem is unclear ``.
+"Talk an idea through, or a problem that is not yet clear, into an idea draft in `.aid/design/`, across
+sessions if needed, also for a kind of thing (an API, a screen, a data model). Use when the user has only an
+idea, wants to design something before it is built, or cannot yet say what the problem is." Skill-guide
+line, within SG-03's limit: `` - `/aid-brainstorm` -- talk an idea or a design through; when the problem is unclear ``.
 
 **Where `aid-describe`'s parts go (Q48):**
 
 | Part | Goes to |
 |---|---|
-| The analyst moves and the assumption guards (`references/move-playbook.md`; `references/advisor-stance.md` § Anti-Anchoring, Assumption-Flagging, and Distortion Guards) | Condensed into `aid-brainstorm/references/shaping-moves.md`: propose a first draft and let the user correct it; keep the user's own terms; ask what is in and out; ask for one concrete example; at most two "why" questions in a row; note what can wait and move on; restate an answer before replacing it |
+| The analyst moves and the assumption guards (`references/move-playbook.md`; `references/advisor-stance.md` § Anti-Anchoring, Assumption-Flagging, and Distortion Guards) | Condensed into `aid-brainstorm/references/shaping-moves.md`: propose something concrete and let the user correct it; keep the user's own terms; ask what is in and out; offer one concrete example; challenge an assumption with a reason; at most two "why" questions in a row; note what can wait and move on; restate an answer before replacing it |
 | The question envelope and `references/calibration.md` | Not kept: the question protocol (Feature 002) covers them |
 | The requirements interview (`state-first-run.md`, `state-continue.md`, `state-q-and-a.md`, `state-completion.md`, `interview-loop.md`, `interview-strategies.md`, `elicitation-engine.md`) | Not kept: `/aid-specify` gathers requirements through the question protocol (Q1, Feature 005) |
 | The new-project KB seed (`state-describe-seed.md`, `kb-hydration.md`, `coherence-check.md`) | Not kept: the KB grows as things are decided or built (FR-10, Feature 004) |
@@ -1963,8 +2019,8 @@ SG-03's limit: `` - `/aid-brainstorm` -- shape an idea or a design before buildi
 | Design a kind of thing (shape it before building) | Definition (`/aid-brainstorm` with that kind) -> then as the user decides at FINISH |
 | Shape a roadmap, backlog or MVP | Definition -> KB update, unless the user decides otherwise at FINISH |
 
-`check-intent.md`'s kind hook matches design requests against `kind-catalog.yml` `about:`; a draft in
-`.aid/design/` that matches the request is evidence of an idea already under way, offered at START.
+`check-intent.md`'s kind hook matches design requests against `kind-catalog.yml` `about:`; a draft that
+`idea-drafts.sh list` shows matching the request is evidence of an idea already under way, offered at START.
 
 **`design-lifecycle.md`** -- the rules that bind only design-stage writers and `/aid-brainstorm` go (the
 `design` stage, the two classes' design rows, the seed naming by kind, `/aid-brainstorm`'s case, their rows
@@ -1979,7 +2035,7 @@ document, no production code.
 
 | Old | New |
 |---|---|
-| `/aid-describe` | Say what you want in plain words; an idea is shaped by `/aid-brainstorm`, requirements are gathered by `/aid-specify` |
+| `/aid-describe` | Say what you want in plain words; an idea is talked through by `/aid-brainstorm`, requirements are gathered by `/aid-specify` |
 | `/aid-design` | `/aid-brainstorm` shapes it; the design that is kept is the technical part of `REQUIREMENTS.md` (`/aid-specify`) |
 | `/aid-design-<kind>` | `/aid-brainstorm <kind> ...`, or "design the <kind> ..." in plain words |
 
@@ -1987,11 +2043,19 @@ document, no production code.
   § Next Release. No stubs (M1).
 - **Installed projects**: `aid update` removes the retired skill files through the install manifest
   (decisions.md § D9). An existing `.aid/design/README.md` is user data and is never overwritten.
-- **Existing works**: Feature 002's legacy row `Describe` -> `/aid-describe` becomes `Describe` ->
-  `/aid-specify` (requirements are gathered there now). A work in the middle of an `aid-design*` or old
-  `aid-brainstorm` run fails `--check` (its saved skill is not installed, or has no step); recovery
-  proposes `aid-brainstorm` at SHAPE with its existing draft, which START moves to the main folder. Old
-  `interview:` keys are left for Feature 006's migration.
+- **Existing works** -- through Feature 002's recovery, which takes the skill and step of a work without a
+  record from the legacy block of `work-initiation-gate.md` § 3b. This feature puts two rows at the **top**
+  of that block, so they win over the phase rows:
+
+  | Old work | Proposed skill and step |
+  |---|---|
+  | `pipeline.initiator` is `aid-brainstorm`, `aid-design` or an `aid-design-*` skill (whatever its `phase`) | `/aid-brainstorm` at **START** -- which finds the old draft with `list` (it sits untracked in that work's own worktree), `collect`s it to the main folder and writes `idea_draft`, then continues at CONVERSE |
+  | `pipeline.initiator` is `aid-describe`, or `phase: Describe` | `/aid-specify` at its entry step (requirements are gathered there now) |
+
+  An old idea or design work already `Completed` is not resumed (Feature 002's resume table, row 1); its
+  draft is found by any new work's START through `list` and `collect`. Feature 006's migration, which fills
+  the record of every old work and then removes the legacy block, uses the same two rows. Old `interview:`
+  keys are left for that migration.
 - **Re-pointed lines** -- a line telling the user to run `/aid-describe` says instead to tell the agent
   what they want: the "No works found" messages of `aid-define`, `aid-specify`, `aid-plan`, `aid-detail`,
   `aid-execute`, `aid-deploy`; the greenfield signpost of `canonical/aid/scripts/kb/recon-classify.sh` and
@@ -2010,7 +2074,8 @@ document, no production code.
   skills (`test-work-initiation-gate.sh`, `test-path-fixtures.sh`, `test-pipeline-status-walkthrough.sh`,
   `test-work-state-template.sh`, `test-cutover-no-dangling.sh`, `test-connector-consumption-linkage.sh`,
   `test-ticket-retirement-structural.sh`, `test-deploy-monitor-repurpose.sh`, `test-prototype-family-scaffold.sh`)
-  change with them; the site scripts that list skills (`site/scripts/skills/`, `site/scripts/lib/flow-graph/`,
+  change with them; `test-work-initiation-gate.sh` gains a `--check` fixture for each new legacy row; the
+  site scripts that list skills (`site/scripts/skills/`, `site/scripts/lib/flow-graph/`,
   `site/scripts/.skills-manifest.json`) and their `__tests__`; pages and flows regenerated by
   `site/scripts/gen-skills.mjs`. Removed assertions go to `tests/coverage-accepted-removals.tsv`;
   `tests/cost-baseline.tsv` and `tests/coverage-baseline.tsv` are re-recorded.
@@ -2022,9 +2087,14 @@ document, no production code.
 - **KB** (no work ids): `architecture.md` (the design family row), `capability-inventory.md`,
   `module-map.md`, `pipeline-contracts.md` (the `design` verb rows), `domain-glossary.md` (idea draft;
   the design family and describe go), `project-structure.md` (`.aid/design/`), `artifact-schemas.md`
-  (`idea_draft`, `kind-catalog.yml`), `test-landscape.md` (the two new suites); `decisions.md` gains "ideas
-  are shaped by one skill, drafts live in the main folder", which supersedes the design-lifecycle decision
-  and D24; then `INDEX.md` is regenerated.
+  (`idea_draft`, `kind-catalog.yml`), `test-landscape.md` (the two new suites), `roadmap.md` § MVP (the
+  delivered `/aid-design-roadmap`, `/aid-design-mvp`, `/aid-design-backlog` are retired), `tech-debt.md`
+  row SY-4 (resolved: the DESCRIBE-SEED tracking block goes with `aid-describe`). `decisions.md` gains
+  "ideas are talked through by one skill; drafts live in the main folder and are committed only on
+  request", which supersedes D27 (`design` as a grid verb) and D24 (`/aid-describe` reduced to the full
+  path), and amends D28's consequence (no `create` step now turns a seed into a KB fact: a KB update does,
+  through the normal flow); all three marked in the summary table and their sections. Then `INDEX.md` is
+  regenerated.
 
 ##### 7. Testing
 
@@ -2037,12 +2107,12 @@ suite list of `.github/workflows/installer-tests.yml`):
 | Group | Asserts |
 |---|---|
 | ID-01 | No `canonical/skills/aid-describe/`, `canonical/skills/aid-design/` or `canonical/skills/aid-design-*/`; no `verb: design` row in `shortcut-catalog.yml` |
-| ID-02 | `aid-describe` and `aid-design` (any form) appear nowhere under `canonical/` or in `dashboard/home.html`, except files of entries on the shared exempt list marked for ID-02 |
-| ID-03 | Under `canonical/skills/` and `canonical/aid/templates/`, `.aid/design/` is named only by `aid-brainstorm`'s files, `design-seed.md`, `design-folder-readme.md`, `kind-catalog.yml`, `shortcut-catalog.yml` (the `aid-brainstorm` row), `skill-steps.md`, `work-initiation-gate.md`, `aid-orchestrate`'s references, and entries on the shared exempt list marked for ID-03; no file but `idea-drafts.sh` runs `git add`, `git rm` or `git commit` on `.aid/design/`, and it has no `git push` |
+| ID-02 | `aid-describe` and `aid-design` (any form) appear nowhere under `canonical/` or in `dashboard/home.html`, except files of entries on the shared exempt list marked for ID-02, and the legacy block of `work-initiation-gate.md` |
+| ID-03 | Under `canonical/skills/` and `canonical/aid/templates/`, `.aid/design/` is named only by `aid-brainstorm`'s files, `design-seed.md`, `design-folder-readme.md`, `kind-catalog.yml`, `shortcut-catalog.yml` (the `aid-brainstorm` row), `skill-steps.md`, `work-initiation-gate.md`, `aid-orchestrate`'s references, and entries on the shared exempt list marked for ID-03; no file but `idea-drafts.sh` runs `git add`, `git rm` or `git commit` on `.aid/design/`; no `git push` in `idea-drafts.sh` |
 | ID-04 | Every `kind-catalog.yml` entry has non-empty `kind`, `about`, `shape`, and `then` equal to `Specification` or `KB update`; `aid-brainstorm`'s `start.md` cites the file |
 | ID-05 | `design-seed.md` has the headings of The idea draft; `design-folder-readme.md` has its lifecycle section (presence only) |
-| ID-06 | `skill-steps.md` § When approvals happen names `idea_draft`; `work-state-template.yml` has the key |
-| ID-07 | `aid-brainstorm`'s FINISH row advances by `PASS` and `finish.md` names `aid-specify` |
+| ID-06 | `skill-steps.md` § When approvals happen names `idea_draft` and `idea-drafts.sh`; `work-state-template.yml` has the key |
+| ID-07 | `aid-brainstorm`'s step table has START, CONVERSE, CHECK and FINISH; FINISH advances by `PASS` and `finish.md` names `aid-specify`; `converse.md` holds the closing question of Q49 |
 
 **Shared exempt list** -- `tests/canonical/skill-steps-exempt.tsv` (Feature 002) gains the codes `ID-02` and
 `ID-03` in its `checks` column, for the KB-writing `aid-create-*` / `aid-update-*` skills of architecture,
@@ -2051,39 +2121,46 @@ all with owner Feature 004. Its rows for `aid-brainstorm`, `aid-design` and ever
 001's description exempt list (SG-04) loses its describe, design and brainstorm rows.
 
 **Unit tests**
-- `tests/canonical/test-idea-drafts.sh`: `dir` prints the same main-folder path from the main folder and from
-  a worktree, and the project folder without git; `list`; `commit` commits only the draft (another staged
-  file stays staged and uncommitted), refuses with 3 without git and with 4 on a detached head and during a
-  merge; `delete` removes an untracked draft, `delete --commit` records the removal of a tracked one alone,
-  plain `delete` of a tracked draft leaves the removal uncommitted; every operation refuses `README`, a
-  name with `/` or `..`, or a path outside `.aid/design/` with exit 2 and changes nothing.
-- `tests/canonical/test-writeback-state.sh`: `--pipeline --field "Idea Draft"` accepts `--` and a valid path,
-  refuses any other value with exit 4; the file still parses through the dashboard reader.
+- `tests/canonical/test-idea-drafts.sh`, on throwaway git fixtures with a main folder and a worktree: `dir`
+  gives the same main-folder path from both, and the project folder without git; `path` gives the worktree
+  copy only when git tracks it on the worktree's branch, the main-folder copy otherwise; `list` shows a draft
+  left untracked in another worktree, and `collect` moves it; `keep` moves the draft into the worktree and
+  commits only that path on the work's branch, and refuses in the main folder; `release` restores the loose
+  copy and commits only the removal; `commit-on` commits on the checked-out branch, and on another branch
+  leaves the main folder's branch, index and files unchanged; `delete` removes a loose draft without a
+  commit, and a tracked one with a removal commit of that path alone; another staged file is never committed;
+  exit 3 without git, 4 on a detached head or during a merge, 5 for an unknown draft or branch, 2 for
+  `README`, a name with `/` or `..`, or a path outside `.aid/design/`, each changing nothing.
+- `tests/canonical/test-writeback-state.sh`: `--pipeline --field "Idea Draft"` accepts `--` and a valid
+  identity, refuses any other value with exit 4; the file still parses through the dashboard reader.
 
 **Conversation samples -- `tests/conversation/samples/feature-003/`** (frontmatter `skills: aid-brainstorm`)
 
 | Sample | Covers | Runs |
 |---|---|---|
-| `003-01-idea-across-sessions` -- a bare idea; the user stops in the middle of a group; a second session by another persona continues; check: one draft in the main folder's `.aid/design/`, none in the worktree, the record at SHAPE with `idea_draft`, the second session continues the same draft | AC-17, AC-28 | now |
-| `003-02-design-a-kind` -- "design the orders API"; check: no `aid-design*` skill exists or is run, the draft's `## Kind` is `api` and its first questions are api's `shape` points, no KB or code file written | AC-43, AC-28 | now |
+| `003-01-conversation-across-sessions` -- a bare idea; the agent proposes options and challenges, the user pauses; a second session by another persona continues; check: the draft in the main folder updated after every exchange, `## Where we left off` and `step_detail` match the last subject, the second session picks up there, no wrap-up is suggested, and the conversation ends only when the user says so | AC-17, AC-28, AC-37 | now |
+| `003-02-design-a-kind` -- "design the orders API"; check: no `aid-design*` skill exists or is run, the draft's `## Kind` is `api` and api's `shape` points are raised early, no KB or code file written | AC-43, AC-28 | now |
 | `003-03-unclear-ticket` -- a ticket exported as a file, whose problem is unclear; check: a `sources:` entry, the draft's `## Sources` names it, questions the ticket answers are not asked | AC-28 | now |
-| `003-04-park-commit-and-pick-up` -- the user keeps the idea for later and says yes to the commit; a later session picks it up; check: the work `Canceled`, one commit in the main folder touching only the draft, nothing pushed, no work branch contains the draft, the new work's START offers it | AC-17 | now |
-| `003-05-finish-next-step` -- check: the next-step question recommends the kind's `then`, the user's choice is recorded, and the hand-off goes where the user chose | AC-17, AC-38 | deferred: Feature 005 |
-| `003-06-deleted-at-requirements-approval` -- a committed draft; check: deleted at the `REQUIREMENTS.md` approval, the removal committed only after the user's yes, `idea_draft` cleared | AC-17 | deferred: Feature 005 |
-| `003-07-deleted-at-lite-confirmation` | AC-17 | deferred: Feature 007 |
-| `003-08-roadmap-to-kb` -- "let's rethink the roadmap"; check: KB update recommended and chosen, the roadmap KB document updated, the draft deleted at that approval | AC-43 | deferred: Feature 004 |
+| `003-04-park-and-pick-up` -- the user parks the idea and names no branch; a later session picks it up; check: the work `Canceled`, the draft loose and uncommitted in the main folder, no commit made anywhere, the new work's START offers it | AC-17 | now |
+| `003-05-park-on-named-branch` -- the user names the branch `ideas`; check: the one-line warning, one commit on `ideas` touching only the draft, the main folder's checked-out branch unchanged, nothing pushed | AC-17 | now |
+| `003-06-side-idea-never-cancels` -- fixture: a work in Specification; the user brainstorms a side idea and keeps it for later; check: the work not cancelled, its skill and phase restored, the draft loose in the main folder, `idea_draft` cleared | AC-17, AC-37 | deferred: Feature 005 |
+| `003-07-finish-next-step` -- check: the next-step question recommends the kind's `then`, the user's choice is recorded, and the hand-off goes where the user chose | AC-17, AC-38 | deferred: Feature 005 |
+| `003-08-kept-draft-removed-at-approval` -- the user keeps the draft with the work; check: committed on the work's branch only, removed with a commit at the `REQUIREMENTS.md` approval, the branch's final content holds no draft, `idea_draft` cleared | AC-17, AC-35 | deferred: Feature 005 |
+| `003-09-deleted-at-lite-confirmation` | AC-17 | deferred: Feature 007 |
+| `003-10-roadmap-to-kb` -- "let's rethink the roadmap"; check: KB update recommended and chosen, the roadmap KB document updated, the draft deleted at the KB change approval, the work closed as done | AC-43 | deferred: Feature 004 (needs: the `KB change` approval row and the KB update skill's close, Flow) |
 
 **Deferred list** (`tests/conversation/deferred.tsv`): the rows `skill:aid-brainstorm`, `skill:aid-describe`,
 `skill:aid-design` and `skill:aid-design-*` go (the first is covered by these samples, the others leave with
-their skills); `002-12` now waits only for Feature 005 and `002-08` for Features 005, 006 and 007; the four
-deferred samples above are added. Feature 001's `001-08-bare-idea` is run again at this feature's end.
+their skills); `002-12` now waits only for Feature 005 and `002-08` for Features 005, 006 and 007; the five
+deferred samples above are added, `003-10` with the two Feature 004 needs in its `needs` column. Feature
+001's `001-08-bare-idea` is run again at this feature's end.
 
 ##### Criteria traceability
 
 | Criterion | Where satisfied | How verified |
 |---|---|---|
-| AC-17 | The idea draft (where it lives, the record, the deletion rule, commits on the user's yes); Flow (START, FINISH, parking) | ID-05, ID-06; `test-idea-drafts.sh`; writer unit tests; `003-01`, `003-04`; `003-05`, `003-06`, `003-07` (deferred) |
-| AC-43 | Files and layout (deletions); Kinds of things; Components (routing, the kept invariant) | ID-01 to ID-04; `003-02`; `003-08` (deferred) |
+| AC-17 | The idea draft (where it lives, the record, `idea-drafts.sh`, the deletion rule, commits only on request); Flow (START, CONVERSE, FINISH, parking, side ideas) | ID-03, ID-05, ID-06, ID-07; `test-idea-drafts.sh`; writer unit tests; `003-01`, `003-04`, `003-05`; `003-06` to `003-09` (deferred) |
+| AC-43 | Files and layout (deletions); Kinds of things; Components (routing, the kept invariant) | ID-01 to ID-04; `003-02`; `003-10` (deferred) |
 
 ### Feature 004 — Self-Maintaining KB with an Always-Current Web View
 
