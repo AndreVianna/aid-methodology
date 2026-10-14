@@ -633,7 +633,277 @@ The agent in the user's own tool reads a plain request by its meaning, checks it
 
 #### Technical Specification
 
-*(pending -- added by `/aid-specify`)*
+Serves FR-1, FR-4, FR-5, FR-7, FR-8, FR-13, FR-18, NFR-Q and NFR-T. Paths are `canonical/` sources;
+each is rendered to `.agents/skills/`, `.claude/skills/`, `.aid/runtime/` and the five tool profiles
+by the existing render (`.claude/skills/generate-profile/scripts/run_generator.py`). Skill names used
+here follow whatever names exist when each line is written (renames such as `/aid-config` ->
+`/aid-configure` belong to Feature 009).
+
+##### 1. Files and layout
+
+| Change | Path | What |
+|---|---|---|
+| Edit | `canonical/aid/rules.md` | Replace `## Workflow` with `## Handling a request` (at most 20 lines); add `## Skill guide`; add one summary bullet; fix the stale state-file wording (known issue KI-001) |
+| Create | `canonical/skills/aid-orchestrate/SKILL.md` | The on-demand procedures skill (FR-5) |
+| Create | `canonical/skills/aid-orchestrate/references/` | `start-or-resume.md`, `check-intent.md`, `size-and-route.md`, `external-sources.md`, `feedback-routing.md` |
+| Edit | every `canonical/skills/*/SKILL.md` that stays in this work | `description:` rewritten as "what it is for. Use when ..." (see Components) |
+| Edit | `canonical/aid/templates/work-state-template.yml` | Add `intent:` and `sources:`; remove `ticket_ref` |
+| Edit | `canonical/aid/templates/delivery-state-template.yml`, `task-state-template.yml`, `requirements/requirements-template.md` | Remove `ticket_ref` and the feature `**Ticket:**` line |
+| Edit | `canonical/skills/aid-update-ticket/SKILL.md` | Add an `attachment` part (see External sources) |
+| Edit | `canonical/skills/aid-monitor/SKILL.md`, `references/state-route.md` | ROUTE runs in the main conversation; findings become plain requests (see Components) |
+| Delete | `canonical/skills/aid-triage/` | Folded into the skill guide and `/aid-orchestrate` |
+| Delete | `canonical/agents/aid-orchestrator/` | The host agent orchestrates (FR-13) |
+| Delete | `.aid/design/skill-routing.md` | Absorbed by the skill guide, as the seed itself instructs |
+| Create | `tests/canonical/test-skill-guide.sh` | Static check (see Testing) |
+| Create | `tests/conversation/` | Conversation test suite (see Testing) |
+
+New work `STATE.yml` keys (authored by the work's active branch; their final place in the single
+layout is set with Features 002 and 006):
+
+```yaml
+intent:
+  request: 'make login sessions last longer'   # the user's words, short
+  reading: change          # bug fix | refactor | change | new capability | document | operational | knowledge update
+  reason: 'session length is fixed in the auth module; users see new behaviour'
+  depth: lite              # lite | full
+  phases: [Specification, Planning, Building, CI]
+  changes: []              # one entry per re-route: at, from, to, why
+sources: []                # see External sources
+```
+
+Constraint carried by `tests/canonical/test-shared-layout-sources.sh`: `rules.md` names no tool
+folder (`.claude/`, `.codex/`, ...), no `canonical/` path and no extra `<!-- AID` comment, so the new
+sections use slash names and `.aid/runtime/` paths only and are located by heading.
+
+##### 2. Orchestration flow
+
+1. **Match.** Read the request by its meaning and compare it with the skill guide (FR-4).
+2. **Project question** -> answer from the KB with sources (`/aid-ask`, later `/aid-kb-query`);
+   no work folder is created.
+3. **No match** -> carry on normally. **One match** -> propose that skill's workflow. **Several** ->
+   choose; ask one question with a recommendation only when truly undecidable. A typed `/aid-<skill>`
+   always wins.
+4. **Check the reading** against the KB and the code (`check-intent.md`): read
+   `.aid/knowledge/INDEX.md`, then `capability-inventory.md`, `module-map.md` and `architecture.md`;
+   search the code for what the user named; classify by observable effect (new behaviour -> new
+   capability; same behaviour -> refactor; behaviour broken against the KB -> bug fix). The user's
+   label is a hint only.
+5. **Start or resume** with `/aid-orchestrate`: find or create the work (reusing
+   `.aid/runtime/scripts/works/enumerate-works.sh` and `.aid/runtime/templates/work-initiation-gate.md`,
+   not restating them), read the resume point from `STATE.yml`, size the work, pick its phases, and
+   record `intent:`.
+6. **Show the reading** -- one line with its reason -- in the same message as the first real question
+   or approval, and wait for the answer (never a turn of its own): in `lite`, the confirmation before
+   building; in `full`, the first brainstorm or specification question.
+7. **Hand over** to the first phase skill, started by the agent itself (FR-8). Where a tool cannot
+   start skills on its own, the agent names the slash command instead (the fallback in §8 Assumptions).
+8. **During the work**: new facts or sources trigger a re-check; a re-route is said in one line and
+   added to `intent.changes`; a decision that conflicts with the KB is raised with the user.
+
+Sizing (`size-and-route.md`):
+
+| Input | Depth | Phases |
+|---|---|---|
+| Objective, users, scope, acceptance criteria and constraints all present (e.g. a complete ticket) | `lite` | Specification -> Planning -> Building -> CI, one approval before building |
+| Any of the five missing, or a bare idea | `full` | Definition (`/aid-brainstorm`) first, then the core |
+| Several user-visible capabilities, a data migration, security-sensitive work | `full` | as above, whatever the input |
+
+| Reading | Phases |
+|---|---|
+| Bug fix, refactor, change | Specification -> Planning -> Building -> CI (Definition only when the problem is unclear) |
+| New capability | as sized above |
+| Knowledge update ("we moved to Postgres") | KB update only (Preparation on demand) |
+| Operational (release, deploy, monitor) | a work of its own with its own skill |
+| No KB in an existing codebase | offer Preparation first |
+| Any work | CI always closes it, at minimum by marking it done |
+
+##### 3. Components
+
+**`## Handling a request`** in `canonical/aid/rules.md` -- at most 20 non-blank lines. Draft wording
+(final text is set at build, within the cap):
+
+```markdown
+- Read what the user wants by its meaning, not its wording, and compare it with the skill guide below.
+- A question about this project starts no work: answer it from the Knowledge Base, citing the sources.
+- One skill fits: propose its workflow. Several fit: choose yourself, and ask one question with your
+  recommendation only when you truly cannot choose. None fits: carry on normally, with no AID workflow.
+  A typed `/aid-<skill>` always wins.
+- The user's words are a hint: check your reading against the Knowledge Base and the code first (a
+  "refactor" that adds an endpoint changes behaviour, so it is new work).
+- Before starting or resuming a work, run `/aid-orchestrate`: it finds where the work stands, sizes it
+  (`full` or `lite`) and picks the phases it needs.
+- Show your reading and its reason in one line, in the same message as your first question or approval,
+  and wait for the answer; never spend a turn on the reading alone.
+- Phases: Specification, Planning and Building (with tests) almost always run; Definition only when the
+  work must first be defined; Preparation builds the Knowledge Base once, then updates it on demand; CI
+  always closes the work. Release, deploy and monitoring are works of their own.
+- When the work turns out bigger or different, re-route and say so in one line.
+- Check every decision against the Knowledge Base; raise a conflict with the user, never settle it alone.
+- Ask one topic at a time, with a recommendation; the user approves before building and approves the
+  result; AID never merges.
+```
+
+**Summary bullet** (copied into every `AGENTS.md` / `CLAUDE.md` region by `lib/aid-install-core.sh`
+`_aid_rules_summary`): "Read every request by its meaning and match it to the skill guide in
+`.aid/runtime/rules.md`; answer project questions from the Knowledge Base." The summary goes from
+7 to 8 bullets.
+
+**`## Skill guide`** in `canonical/aid/rules.md`:
+- One line per skill, under about 100 characters: `` - `/aid-x` -- what it is for; when to use it ``.
+- Order: phase skills, KB skills, supporting skills, setup skills.
+- Hand-written; the static test keeps it equal to `canonical/skills/` both ways.
+- Until Feature 009 collapses them, each action-and-kind family is one line written with a `<kind>`
+  placeholder (e.g. `` `/aid-create-<kind>` ``); the test expands it against
+  `canonical/aid/templates/shortcut-catalog.yml`. Feature 009 removes these lines and the expansion.
+- Measured cost for the target skill set: about 900-1,200 tokens per session.
+
+**Skill descriptions** -- every skill's `description:` uses the same shape as its guide line: first
+sentence says what it is for, then a sentence starting "Use when". Skills a later feature of this work
+retires are listed in the static test as exempt; the test fails if an exempt skill no longer exists, so
+the list empties as they go.
+
+**`/aid-orchestrate`** -- runs in the main conversation (no sub-agent: only the main conversation can
+talk with the user). `SKILL.md` at most 80 lines, each reference at most 120 lines. Description opens
+"Load before starting or resuming any AID work". References:
+
+| Reference | Holds |
+|---|---|
+| `start-or-resume.md` | Find or create the work; read the resume point from `STATE.yml` |
+| `check-intent.md` | The KB-and-code check (Orchestration flow, step 4); `/aid-triage`'s question shortcut and work-type heuristic move here |
+| `size-and-route.md` | The five-item richness check, the depth rule and the phase table (Orchestration flow); triage's scope judgement moves here |
+| `external-sources.md` | Pull-in, apply and write-back (see External sources) |
+| `feedback-routing.md` | The table moved from the orchestrator agent: work questions -> main conversation; KB questions -> KB update; impediments -> Building; monitor bugs and change requests -> new works through this same intake |
+
+**Kind catalog hook** -- `check-intent.md` matches kinds of things against the `intent:` field of
+`shortcut-catalog.yml`, as `/aid-triage` does today; Feature 009 points it at the new catalog.
+
+**`aid-monitor` re-point** -- its "Default executor" and ROUTE dispatch row name `aid-orchestrator`, and
+`references/state-route.md` sends change requests to `/aid-triage`. ROUTE now runs inline and hands each
+finding back as a plain request (bug -> fix work; change request -> new work).
+
+##### 4. External sources
+
+| Kind | Where | Reach |
+|---|---|---|
+| Project sources | `.aid/connectors/INDEX.md` and `.aid/knowledge/external-sources.md` (unchanged) | Used by any work when needed; never attached |
+| Work sources | the work's `sources:` list | That work only |
+
+```yaml
+sources:
+  - ref: 'jira:PROJ-123'   # connector-stem:id, a URL, or a repo-relative path
+    kind: ticket           # ticket | issue | document | link | file
+    added: '2026-10-14T10:00:00Z'
+    phase: Planning        # phase when it entered
+    effect: 'answered Q4, Q6; raised Q9'
+    written_back: []       # one entry per write: at, part, files
+```
+
+- **Pull in** (any phase): a tracker item through `/aid-read-ticket`, whose connector resolution and
+  fetch through the tool's own connection stay unchanged
+  (`.aid/runtime/templates/connectors/consumption-protocol.md`); a file or link is read directly. Add
+  the `sources:` entry.
+- **Apply**: compare with open `qa:` entries -- answered ones are closed with the source named in the
+  answer; new questions follow the question protocol (FR-17); the phase moves on when its conditions are
+  met. Record the outcome in `effect`.
+- **Write back** only on the user's request, through `/aid-update-ticket` (preview and confirm, as
+  today); its closed part list gains `attachment` for the files the user picks (usually
+  `REQUIREMENTS.md`).
+- **Tool limits**: when the tool cannot hold what is written (no attachments, size caps, missing
+  permission, ...), the agent stops, tells the user, and offers the workable options with a
+  recommendation under the question protocol. The user always decides how the work is persisted; the
+  agent never picks a workaround on its own.
+- AID stores no credential; aid-managed connection types stay deferred.
+
+##### 5. Migration
+
+| Old | New |
+|---|---|
+| `/aid-triage` | Say what you want in plain words; the skill guide in the rules routes it |
+| agent `aid-orchestrator` | The agent in your tool, guided by `rules.md` and `/aid-orchestrate` |
+| `ticket_ref` (work, feature, delivery, task) | One `sources:` list in the work's `STATE.yml` |
+
+- **Release notes**: the first two rows go into the old -> new table (AC-24), drafted in
+  `.aid/knowledge/backlog.md` § Next Release. No stubs (M1).
+- **Installed projects**: `aid update` removes the retired skill and agent files through the install
+  manifest (decisions.md § D9); no installer change.
+- **Existing works**: `ticket_ref: X` becomes `sources: [{ref: X, kind: ticket}]` automatically, in the
+  work-state migration built with Feature 006 (bash and PowerShell twins, identical output).
+- **`ticket_ref` sites**: `consumption-protocol.md` § Multi-level `ticket_ref` linkage (rewritten for
+  `sources:`), `aid-specify` `references/state-initialize.md` Step 3b, `aid-plan`
+  `references/first-run-loop.md`, `shortcut-engine.md`, `aid-describe` `references/state-first-run.md`;
+  tests `test-connector-consumption-linkage.sh`, `test-ticket-retirement-structural.sh`,
+  `dashboard/server/tests/test_task033_execution_control_round_trips.py`; regenerated site skill flows.
+- **Orchestrator sites**: `canonical/aid/templates/agent-dispatch-tiering.md` § Per-agent defaults,
+  `canonical/aid/templates/self-review-protocol.md`, `aid-monitor`, `tests/canonical/test-deploy-monitor-repurpose.sh`,
+  `docs/aid-methodology.md`, `examples/brownfield-full-path/README.md`, the site's agents, methodology and
+  `aid-monitor` pages. `tests/windows/Test-AidInstaller.ps1` uses `aid-orchestrator.md` only as a legacy
+  file name in a fixture and stays.
+- **Triage sites**: `shortcut-catalog.yml`, `aid-describe`, `aid-monitor`, `README.md`, `docs/`, the
+  site's skill pages, roster, groups, counts and their tests, `test-cutover-no-dangling.sh`;
+  `test-triage-routing.sh` is deleted.
+- **Baselines**: removed assertions go to `tests/coverage-accepted-removals.tsv`; the per-session growth of
+  `AGENTS.md` / `CLAUDE.md` is an excused increase in `tests/cost-baseline.tsv`;
+  `tests/canonical/test-shared-layout-sources.sh` expects 8 summary bullets.
+- **KB** (no work ids): architecture, pipeline-contracts (entry doors), capability-inventory,
+  domain-glossary, module-map, project-structure, test-landscape (the two new suites), integration-map and
+  artifact-schemas (`intent:`, `sources:`); decisions gains "the host agent orchestrates", superseding
+  D21 and amending D14 and D15; then `INDEX.md` is regenerated.
+- The interviewer agent's retirement is Feature 002's (AC-40); the effort check is Feature 005's.
+
+##### 6. Testing
+
+**Static check -- `tests/canonical/test-skill-guide.sh`** (bash harness, `# COVERS:` headers for
+`canonical/aid/rules.md`, `canonical/skills`, `canonical/agents`). Runs on every push: picked up by
+`tests/run-all.sh` and added to the suite list of `.github/workflows/installer-tests.yml`, which is
+the lane feature branches run.
+
+| Group | Asserts |
+|---|---|
+| SG-01 | `## Handling a request` has at most 20 non-blank lines |
+| SG-02 | The skill guide names exactly the skills in `canonical/skills/`, both ways (with `<kind>` expansion while it exists) |
+| SG-03 | Every guide line is under about 100 characters |
+| SG-04 | Every non-exempt `description:` has the what/when shape; every exempt skill still exists |
+| SG-05 | No front-door skill (`canonical/skills/aid/` absent); no `aid-orchestrator` agent; `aid-developer` and `aid-tech-writer` both present |
+| SG-06 | One staged bundle (`tests/lib/bundle.sh`) installed for each of the five tools: every skill is present where that tool reads skills (`.claude/skills/` for Claude Code, `.agents/skills/` for the others), byte-identical to `canonical/`, `name` equal to its folder, a non-empty `description`, and no flag that blocks slash or agent invocation |
+
+**Conversation suite -- `tests/conversation/`** (NFR-T). Outside the `tests/canonical/test-*.sh`
+glob, so neither `run-all.sh` nor GitHub CI runs it; run on demand at each feature's end and before a
+release.
+- `run.py` (Python 3, standard library only): `--feature 001 [--sample ID] [--hosts claude-code,...] [--runs 3]`.
+  Claude Code is required; Codex, Cursor, Copilot CLI and Antigravity run only when named.
+- Each run builds a fresh throwaway fixture (a small project with code and a seeded KB, AID installed
+  from a bundle staged from the working tree) and drives the tool non-interactively, with edits allowed
+  only inside the fixture.
+- `samples/feature-NNN/<id>.md`: frontmatter `id`, `covers`, `fixture`; sections `## User` (opening
+  message and persona), `## Answer sheet` (all the simulated user knows), `## Expected outcome`,
+  `## Must not`, `## Checks` (file assertions run before judging).
+- A simulated user answers only from the answer sheet ("I don't know" otherwise), up to 12 turns.
+- An independent `aid-reviewer` session judges the transcript against the expected outcome and writes a
+  7-column ledger in the fixture's `.aid/.temp/review-pending/`; any Pending row fails the run.
+- A sample passes only when all 3 runs pass. Transcripts and ledgers go to
+  `.aid/.temp/conversation-tests/<run-id>/`. Exit codes: 0 all pass, 1 any failure, 2 invocation error.
+- Every later feature adds its own `samples/feature-NNN/` folder.
+
+Feature 001 samples: `001-01-one-match`, `001-02-several-decide`, `001-03-several-ask`,
+`001-04-no-match`, `001-05-project-question`, `001-06-kb-conflict`, `001-07-rich-ticket`,
+`001-08-bare-idea`, `001-09-bug-fix-phases`, `001-10-release-own-work`, `001-11-ticket-mid-work`,
+`001-12-write-back-limit`, `001-13-project-source-unattached`, `001-14-refactor-is-new-capability`.
+
+##### Criteria traceability
+
+| Criterion | Where satisfied | How verified |
+|---|---|---|
+| AC-1 | Orchestration flow steps 1, 3, 4, 6; Components (Handling a request) | `001-01-one-match`, `001-14-refactor-is-new-capability` |
+| AC-2 | Orchestration flow step 3 | `001-02-several-decide`, `001-03-several-ask` |
+| AC-3 | Orchestration flow step 3 | `001-04-no-match` |
+| AC-4 | Orchestration flow step 2 | `001-05-project-question` (check: no new `.aid/works/` folder; answer cites sources) |
+| AC-5 | Orchestration flow step 8; Components (Handling a request) | `001-06-kb-conflict` |
+| AC-6 | Components (Handling a request, Skill guide); Files and layout (deletions) | SG-01, SG-02, SG-03, SG-05 |
+| AC-7 | Orchestration flow (sizing table) | `001-07-rich-ticket`, `001-08-bare-idea` |
+| AC-14 | Orchestration flow (phase table) | `001-09-bug-fix-phases`, `001-10-release-own-work` |
+| AC-21 | Components (Skill guide, descriptions); Orchestration flow step 7 | SG-06; agent-started skills in `001-07-rich-ticket` |
+| AC-23 | Files and layout (deletions); Migration (orchestrator sites) | SG-05 |
+| AC-29 | External sources | `001-11-ticket-mid-work` (check: `sources:` entry, closed `qa:` entries), `001-12-write-back-limit`, `001-13-project-source-unattached` |
 
 ### Feature 002 — Clear, Step-by-Step Decisions
 

@@ -218,10 +218,16 @@ features:
     name: plain-language-requests
     state: In Discussion
     started: '2026-10-13'
-    updated: '2026-10-13'
+    updated: '2026-10-14'
     grade: Pending
-    qa_count: 0
-    sections: []
+    qa_count: 7
+    sections:
+      - {name: Files and layout, state: Complete}
+      - {name: Orchestration flow, state: Complete}
+      - {name: Components, state: Complete}
+      - {name: External sources, state: Complete}
+      - {name: Migration, state: Complete}
+      - {name: Testing, state: Complete}
   - id: '002'
     name: step-by-step-decisions
     state: Pending
