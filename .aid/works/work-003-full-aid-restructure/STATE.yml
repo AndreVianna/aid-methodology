@@ -260,7 +260,7 @@ features:
         state: Complete
   - id: '003'
     name: work-definition
-    state: In Discussion
+    state: Ready
     started: '2026-10-14'
     updated: '2026-10-14'
     grade: A+
@@ -282,7 +282,9 @@ features:
         state: Complete
   - id: '004'
     name: kb-management
-    state: Pending
+    state: In Discussion
+    started: '2026-10-14'
+    updated: '2026-10-14'
     grade: Pending
     qa_count: 0
     sections: []
