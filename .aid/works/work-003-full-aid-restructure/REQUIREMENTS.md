@@ -936,7 +936,9 @@ release.
   (holding only the credentials the host needs), no `--add-dir`, `--strict-mcp-config` with no
   `--mcp-config` (no MCP server), and `--setting-sources project` (the fixture's installed AID files load;
   the maintainer's own settings and plugins do not). The suite runs on demand on the maintainer's
-  machine, never in CI, and any write shows in `files.diff`.
+  machine, never in CI. `files.diff` records every change inside the fixture and the throwaway `HOME`;
+  a write elsewhere through an absolute path is **not** recorded -- a known limit of running on the
+  maintainer's machine rather than in a container.
 - **The simulated user** is a separate `claude -p` call per turn with only text in and out: run from a new
   empty temporary folder, with `--tools ""` (every built-in tool disabled), `--safe-mode` (no
   `CLAUDE.md`, skills, plugins, agents or hooks), `--strict-mcp-config` with no `--mcp-config` (no MCP
@@ -950,7 +952,8 @@ release.
 - **Transcript capture** in `.aid/.temp/conversation-tests/<run-id>/<sample>/run-<n>/`:
   `transcript.jsonl` (one object per message: `turn`, `role` user or agent, `text`, the `tools` the agent
   called with their names and target paths, `ts`), `transcript.md` (the same, readable, given to the
-  judge), `files.diff` (the fixture's `git status --porcelain` and `git diff` at the end), `checks.txt`
+  judge), `files.diff` (a before/after comparison of the whole fixture folder -- git-ignored files such as
+  `.aid/.temp/` included -- and of the throwaway `HOME`), `checks.txt`
   and the judge's ledger.
 - `samples/feature-NNN/<id>.md`: frontmatter `id`, `covers`, `fixture`; sections `## User` (opening
   message and persona), `## Answer sheet` (all the simulated user knows), `## Expected outcome`,
@@ -964,7 +967,8 @@ release.
   `--output-format`, `--input-format`, `--permission-mode` (`acceptEdits`), `--tools`, `--allowedTools`,
   `--add-dir`, `--strict-mcp-config`, `--mcp-config`, `--setting-sources`, `--safe-mode`,
   `--system-prompt`. To confirm at build time: the built-in tool names `Skill` and `Task` (the
-  sub-agent tool's current name) and the `Bash(...)` rule pattern syntax in `--allowedTools`.
+  sub-agent tool's current name). No `Bash(...)` pattern rule is used: `Bash` is allowed in full (see
+  Permissions of the agent under test).
 - A sample passes only when all 3 runs pass. Exit codes: 0 all pass, 1 any failure, 2 invocation error.
 - Every later feature adds its own `samples/feature-NNN/` folder.
 
