@@ -236,7 +236,7 @@ features:
         state: Complete
   - id: '002'
     name: step-by-step-decisions
-    state: In Discussion
+    state: Ready
     started: '2026-10-14'
     updated: '2026-10-14'
     grade: B+
@@ -260,7 +260,9 @@ features:
         state: Complete
   - id: '003'
     name: work-definition
-    state: Pending
+    state: In Discussion
+    started: '2026-10-14'
+    updated: '2026-10-14'
     grade: Pending
     qa_count: 0
     sections: []
@@ -755,3 +757,11 @@ qa:
     suggested: 'Every work records its type and running skill + step from creation, however started; resume reads only that record; phase is display only; phase/file guessing only for unmigrated old works (Feature 006 fills and removes); static check that every work-creating skill writes both at creation.'
     answer: 'Accepted, with the condition that the record is updated frequently and without fail -- it must not become a single point of failure for all skills.'
     applied_to: 'Feature 002 Technical Specification (Work state layout, Steps and hand-offs, Testing)'
+  - id: Q43
+    category: Specification (Feature 002)
+    impact: Medium
+    state: Answered
+    context: 'Feature 002 after 17 review rounds: B+, last one-sentence fix (intake exception scoped by purpose) not re-reviewed; recent rounds each found one small edge case caused by the previous fix.'
+    suggested: 'Approve now; the build phase (writer unit tests, runnable samples) and the cross-feature review at Planning catch remaining edge cases. Also confirms the start/resume/cancel wording change in Feature 001.'
+    answer: 'Approved.'
+    applied_to: 'Feature 002 state Ready; Feature 001 wording amendment confirmed'
