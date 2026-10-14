@@ -1890,7 +1890,8 @@ bare idea, an unclear problem or a request to design something (Feature 001 rout
 1. **START** -- gather what the idea starts from: the request, the kind (`check-intent.md`'s match against
    `kind-catalog.yml`, or the typed `<kind>` argument), and the work's `sources:` (Feature 001). Run
    `idea-drafts.sh list`; when a draft matches the request by meaning, or the user named one, offer to
-   continue it -- one question with a recommendation; a draft left in another worktree is first `collect`ed.
+   continue it -- one question with a recommendation; a draft left in another worktree is first `collect`ed;
+   for a draft kept in another work, the agent offers to resume that work instead.
    Otherwise create the draft from `design-seed.md`. Write the folder README on first use. Record
    `idea_draft` -- or, for a side idea, `side_idea`, always for a new draft and never the work's own.
 2. **CONVERSE** -- a loop the user leads. Each turn:
@@ -1941,7 +1942,8 @@ bare idea, an unclear problem or a request to design something (Feature 001 rout
    recommendation **no**, because the draft is deleted at the next covering approval and stays safe in the
    main folder meanwhile; yes runs `keep`. The user may also ask to keep it at any moment in CONVERSE.
 
-**Parking** -- choosing *Keep it for later*, or saying so at any question. The answer that chooses it is the
+**Parking** -- only when the brainstorm is the work's own idea (in Definition); during a side idea, "keep it
+for later" follows the side-idea rules below. Choosing *Keep it for later*, or saying so at any question. The answer that chooses it is the
 confirmation; said elsewhere, one confirmation question comes first ("Set this idea aside for later?"). Then
 the set-aside question (The idea draft):
 - *Keep it in a work* (recommended: the idea survives losing the folder and resumes where it stopped) -- this
@@ -1951,8 +1953,9 @@ the set-aside question (The idea draft):
   cancelled the way `/aid-orchestrate` cancels one (`writeback-state.sh --pipeline --field Lifecycle --value
   Canceled`).
 
-Either way the user is told in one line how to pick the idea up: say so, and START offers it. Pausing is not
-parking.
+The user is told in one line how to pick the idea up. *Keep it as a draft*: say so, and START offers it.
+*Keep it in a work*: resume that work, which follows the normal resume from its work record (Feature 002) and
+continues at CONVERSE; START is not involved. Pausing is not parking.
 
 **As a side idea** -- brainstorm runs inside a work that continues: an open call from another skill, or a
 typed start on a work already past Definition. **The work is never cancelled and its own draft is never
@@ -1964,10 +1967,16 @@ in the approvals table outside Definition). One question, where it goes:
   building (deletion table). Then the keep question (The idea draft);
 - *Keep it in a work* (recommended once the work is past Specification) -- a small new work is created for
   it through the gate's § 3a (`--skill aid-brainstorm --step CONVERSE --phase Definition`, its request the
-  side idea's problem), the draft is committed on that work's branch (`keep`), the new work is paused at
-  CONVERSE, and the agent goes back to the original work's worktree (`worktree-lifecycle.sh locate`);
+  side idea's problem), the draft is committed on that work's branch (`keep`), the new work's `idea_draft`
+  is recorded with the same write START uses (`--pipeline --field "Idea Draft"`), so its resume finds the
+  draft and the deletion rule fires before its PR/MR; the new work is paused at CONVERSE, and the agent goes
+  back to the original work's worktree (`worktree-lifecycle.sh locate`). It is picked up like a parked idea
+  kept in a work: by resuming it;
 - *Keep it as a draft* -- it stays loose in the main folder, and the agent says it is lost if that folder is
   deleted.
+
+Saying "keep it for later" at any point of a side idea leads to this same question, without *Back into the
+work*: the current work is never paused, cancelled or committed to.
 
 Then `side_idea` is cleared, and the work goes back where it was: `HALT`, which returns to the open call; or,
 after a typed start, `PASS` back to the skill that drives the work's phase, at its entry step, without
@@ -2161,9 +2170,9 @@ all with owner Feature 004. Its rows for `aid-brainstorm`, `aid-design` and ever
 | `003-02-design-a-kind` -- "design the orders API"; check: no `aid-design*` skill exists or is run, the draft's `## Kind` is `api` and api's `shape` points are raised early, no KB or code file written | AC-43, AC-28 | now |
 | `003-03-unclear-ticket` -- a ticket exported as a file, whose problem is unclear; check: a `sources:` entry, the draft's `## Sources` names it, questions the ticket answers are not asked | AC-28 | now |
 | `003-04-park-as-draft` -- the user parks the idea and keeps it as a draft; a later session picks it up; check: the work `Canceled`, the draft loose and uncommitted in the main folder, the agent said it is lost if that folder is deleted, no commit made anywhere, the new work's START offers it | AC-17 | now |
-| `003-05-park-in-a-work` -- the user parks the idea and keeps it in a work; a later session picks it up; check: the work not cancelled but paused at CONVERSE, one commit on the work's branch touching only the draft, nothing committed in the main folder, nothing pushed, the later session resumes the conversation | AC-17 | now |
+| `003-05-park-in-a-work` -- the user parks the idea and keeps it in a work; a later session asks to continue that work; check: the work not cancelled but paused at CONVERSE, one commit on the work's branch touching only the draft, nothing committed in the main folder, nothing pushed, the later session resumes that work from its record at CONVERSE, and no new work is created | AC-17 | now |
 | `003-06-side-idea-into-specification` -- fixture: a work in Specification with its own `idea_draft`; the user brainstorms a side idea and takes it back into the work; check: a new draft with its own name, the work's own draft unchanged and still its `idea_draft`, a `sources:` entry of kind `draft`, the keep question asked, the work not cancelled, its skill and phase restored | AC-17, AC-37 | deferred: Feature 005 |
-| `003-07-side-idea-in-building` -- fixture: a work in Building; check: FINISH offers only *Keep it in a work* and *Keep it as a draft*; with the first, a new paused work holds the draft committed on its own branch only, the original work resumes at its saved step, and its `sources:` gains nothing | AC-17, AC-37 | deferred: Feature 007 |
+| `003-07-side-idea-in-building` -- fixture: a work in Building that reached brainstorm by an open call (a `handoffs` entry with `returns: 'yes'`); check: FINISH offers only *Keep it in a work* and *Keep it as a draft*; with the first, a new paused work holds the draft committed on its own branch only, with its `idea_draft` recorded, the original work resumes at its saved step (`HALT` returns the call), and its `sources:` gains nothing. Run also as a typed start: the work goes back by `PASS` at its phase skill's entry step | AC-17, AC-37 | deferred: Feature 007 |
 | `003-08-finish-next-step` -- check: the next-step question recommends the kind's `then`, the user's choice is recorded, and the hand-off goes where the user chose | AC-17, AC-38 | deferred: Feature 005 |
 | `003-09-kept-draft-removed-at-approval` -- the user keeps the draft with the work; check: committed on the work's branch only, removed with a commit at the `REQUIREMENTS.md` approval, the branch's final content holds no draft, `idea_draft` cleared | AC-17, AC-35 | deferred: Feature 005 |
 | `003-10-deleted-at-lite-confirmation` | AC-17 | deferred: Feature 007 |
