@@ -885,3 +885,19 @@ qa:
     suggested: 'One approval at the end of the build, shown in chunks, most important documents first, with small decisions confirmed in the same batch.'
     answer: 'Accepted as recommended (approve at the end).'
     applied_to: 'Feature 004 Technical Specification (KB build)'
+  - id: Q57
+    category: Specification (Feature 004)
+    impact: Medium
+    state: Answered
+    context: 'Drift (code changed outside AID) shows only by comparing a document''s sources with its baseline commit; no document has a baseline today.'
+    suggested: 'When a work starts or resumes, run the fast freshness check on the documents the agent reads and, if one is stale, propose an update in one question; the migration sets each existing document''s baseline to the commit that last changed it.'
+    answer: 'Accepted as recommended (check at work start and ask).'
+    applied_to: 'Feature 004 Technical Specification (drift)'
+  - id: Q58
+    category: Specification (Feature 004)
+    impact: Low
+    state: Answered
+    context: 'A KB change made during building already sits inside a verified task; a separate graded KB review adds cost.'
+    suggested: '/aid-kb-update always runs one graded review, scoped to the documents it changed; the task reviewer judges code, not KB claims.'
+    answer: 'Accepted as recommended (own review every time).'
+    applied_to: 'Feature 004 Technical Specification (KB update)'
