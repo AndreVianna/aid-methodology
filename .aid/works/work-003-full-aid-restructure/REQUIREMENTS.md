@@ -560,7 +560,7 @@ If assumption 1 or 2 fails in a tool, transparent orchestration degrades there t
 | AC-38 | In a scripted work, (a) at the end of Definition the work passes to Specification **without the user typing a command**, and (b) when Building needs a KB update mid-task, the KB update runs and the work **returns to the same step**; `STATE.yml` records each hand-off (from, to, why, return point). | FR-20 |
 | AC-39 | Roadmap and backlog are ordinary KB documents and the MVP is a section of the roadmap, all created and updated through the normal flow with **no dedicated skills**. | FR-14 |
 | AC-40 | The question protocol is run by the main conversation; the interviewer sub-agent no longer exists. | FR-13, FR-17 |
-| AC-41 | The dashboard and chat read the work's state from the new `STATE.yml` layout (FR-20) and show it correctly for a work at each phase. | FR-20, Scope |
+| AC-41 | The dashboard reads the work's state from the new `STATE.yml` layout (FR-20) and shows it correctly for a work at each phase; the chat reads no work state, so it needs no change. | FR-20, Scope |
 | AC-42 | Every building milestone follows the FR-6 steps: a read-only hand-off to `/aid-monitor-pipeline` collects new review comments and pipeline results, Building prepares their corrections, and the approval shows the work since the last milestone plus those corrections; at a milestone that may push, the approval asks whether to create or update the PR/MR, and on yes `/aid-monitor-pipeline` alone pushes the approved work and returns to Building; no push ever carries unapproved commits; full monitoring starts only after the whole build is approved. | FR-6, FR-7, FR-20 |
 | AC-43 | No `/aid-design` skill exists; a request to design a kind of thing (e.g. "design the orders API") reaches `/aid-brainstorm` with that kind's catalog rules, and only `/aid-brainstorm` writes idea drafts under `.aid/design/`. | Scope, FR-9 |
 | AC-44 | Every approved `REQUIREMENTS.md` has a business part and a technical part; the technical part exists once for the whole work, or once per feature when it splits, and each technical section names the requirements it serves. | FR-3 |
@@ -670,7 +670,12 @@ intent:
   reading: change          # bug fix | refactor | change | new capability | document | operational | knowledge update
   reason: 'session length is fixed in the auth module; users see new behaviour'
   depth: lite              # lite | full
-  phases: [Specification, Planning, Building, CI]
+  # block style: the state readers reject inline lists
+  phases:
+    - Specification
+    - Planning
+    - Building
+    - CI
   changes: []              # one entry per re-route: at, from, to, why
 sources: []                # see External sources
 ```
@@ -810,7 +815,12 @@ sources:
     added: '2026-10-14T10:00:00Z'
     phase: Planning        # phase when it entered
     effect: 'answered Q4, Q6; raised Q9'
-    written_back: []       # one entry per write: at, part, files
+# one entry per write-back, at the top level (three levels at most)
+write_backs:
+  - at: '2026-10-15T09:00:00Z'
+    source: 'jira:PROJ-123'  # the sources[].ref written to
+    part: attachment
+    files: 'REQUIREMENTS.md, PLAN.md'   # one comma-separated string
 ```
 
 - **Pull in** (any phase): a tracker item through `/aid-read-ticket`, whose connector resolution and
@@ -1021,7 +1031,419 @@ Improves how AID talks with the user and how skills move through their states. Q
 
 #### Technical Specification
 
-*(pending -- added by `/aid-specify`)*
+Serves §4 Scope (interviewer retirement, one state layout), FR-6, FR-7, FR-13, FR-17, FR-20 and NFR-Q.
+Paths are `canonical/` sources, rendered as in Feature 001. **Ownership of the work's `STATE.yml`** (Q34):
+this feature owns its overall shape -- template, writer, readers, phase names; Feature 006 owns the
+planning part inside it (deliveries, waves, tasks), the removal of delivery and task state files, and the
+single migration of existing works. The phase skills rebuilt by Features 003-008 follow the two shared
+files defined here; today's skills change only where a rule must hold for every skill now (no banners,
+the shared files cited, questions recorded in one place, no interviewer).
+
+##### 1. Files and layout
+
+| Change | Path | What |
+|---|---|---|
+| Create | `canonical/aid/templates/question-protocol.md` | The one question protocol (FR-17) and the one question-record shape (see Question protocol); type `template-own` |
+| Create | `canonical/aid/templates/skill-steps.md` | The one rule set for steps, hand-offs and approvals (FR-20, FR-6); type `template-own` |
+| Delete | `canonical/aid/templates/state-machine-chaining.md` | Replaced by `skill-steps.md` |
+| Create | `canonical/aid/templates/project-state-template.yml` | The project-level `.aid/STATE.yml`: the question record only (Q38) |
+| Edit | `canonical/aid/rules.md` § Handling a request | Its last bullet names the protocol and the merge rule (see Question protocol) |
+| Edit | `canonical/aid/templates/work-state-template.yml` | New keys, `qa` on every work, phase names, the block-style rule (see Work state layout) |
+| Edit | `canonical/aid/scripts/execute/writeback-state.sh` | Modes `--step`, `--handoff`, `--handoff-return`, `--ask`, `--answer`; the new phase names |
+| Edit | `dashboard/scripts/writeback-state.sh` (the deliberate fork) | The new phase names only; it keeps `Deploy` |
+| Edit | every hand-authored `canonical/skills/*/SKILL.md` and `references/*.md` that prints a banner, routes by the old advance words or asks the user; `canonical/aid/templates/shortcut-engine.md`, `design-lifecycle.md` | Banners removed, `skill-steps.md` and the protocol cited, advance words updated, host question pickers dropped (see Steps and hand-offs). The generated doorway skills print nothing themselves: they run `shortcut-engine.md`, so they change through it |
+| Edit | `canonical/skills/aid-orchestrate/references/start-or-resume.md` (Feature 001) | Resume reads the saved step, an open call and the open questions |
+| Edit | the delivery-level `qa` writers (`aid-ask/SKILL.md` § Target-file resolution, `aid-plan/SKILL.md` § Feedback Loops, `aid-execute/references/state-delivery-gate.md` § Non-CODE issues) and every skill file naming `## Cross-phase Q&A` (in `aid-specify`, `aid-define`, `aid-detail` and `aid-describe`, whose engine references `elicitation-engine.md`, `move-playbook.md`, `advisor-stance.md`, `state-describe-seed.md`, `state-q-and-a.md` included) | Every question recorded in the work's `qa` through `--ask` / `--answer` (known issue KI-003) |
+| Delete | `canonical/agents/aid-interviewer/` | FR-13, AC-40 |
+| Edit | `aid-describe` (`SKILL.md` Dispatch, `references/advisor-stance.md`), `aid-define/references/` (`state-feature-decomposition.md`, `state-cross-reference.md`, `reviewer-brief.md`), `canonical/aid/templates/agent-dispatch-tiering.md` § Per-agent defaults | Interviewer references removed (see Migration) |
+| Edit | `site/scripts/lib/flow-graph/advance.mjs` | The new advance words; flows regenerated by `site/scripts/gen-skills.mjs` |
+| Edit | `dashboard/reader/models.py`, `dashboard/reader/parsers.py`, `dashboard/server/reader.mjs`, `dashboard/home.html` | The dashboard reads the new layout (see Dashboard and chat) |
+| Create | `tests/canonical/test-skill-steps.sh`, `tests/canonical/test-never-merges.sh`, `tests/canonical/test-deferred-tests.sh`; `tests/conversation/protocol-checks.md`, `tests/conversation/deferred.tsv`, `tests/conversation/samples/feature-002/` | See Testing |
+
+##### 2. Work state layout
+
+**Block style only**, for every state file (work, project, and the KB file Feature 004 converts): the
+dashboard readers (`dashboard/reader/state_schema.py` and its Node twin) accept no inline list or
+mapping other than the literal `[]` / `{}`, nothing deeper than three levels, and no comment on the line
+of a key that opens a list or mapping (the key then reads as empty). Each template's header states the
+rule, the writer emits nothing else, and SS-08 parses the templates with the dashboard reader (known issue
+KI-002).
+
+New and changed keys in the work's `STATE.yml`:
+
+```yaml
+# [W] Definition | Specification | Planning | Building | CI
+phase: Building
+# [W] the skill running the work now
+active_skill: aid-execute
+# [W] that skill's current step; -- when none
+step: EXECUTE
+# [W] where inside the step, in plain words; -- when none
+step_detail: 'task-004: tests written, code half done'
+# [W] append-only, newest last; one entry per hand-off
+handoffs:
+  - at: '2026-10-15T10:00:00Z'
+    from: aid-execute
+    from_step: EXECUTE
+    from_detail: 'task-004: tests written, code half done'
+    to: aid-update-kb
+    why: 'task-004 moved sessions to Redis; the KB still says in memory'
+    returns: 'yes'
+    returned: --
+# [W] every question and answer, newest last (shape: see Question protocol)
+qa: []
+```
+
+- **`phase`** takes the FR-1 names. Preparation is not a work phase: the KB's own state shows it, as it
+  shows Discover today. The nine `--field Phase` writes in today's skills change: Describe -> Definition,
+  Define and Specify -> Specification, Plan and Detail -> Planning, Execute -> Building. The writer
+  accepts only the new names; both readers map the old ones, so a work not yet migrated still shows its phase.
+- **`step` / `step_detail`** are written together with `active_skill`, by `--step` (Steps and hand-offs).
+- **`handoffs`**: `returns: 'yes'` is a call -- the work comes back to `from`, `from_step`,
+  `from_detail`; `'no'` is a pass at the end of a process. `returned` stays `--` while the work is away
+  (and always for a pass). The newest entry with `returns: 'yes'` and `returned: --` is the **open call**.
+- **`qa` on every work**: the template's full-layout omission rule goes, and delivery-level `qa` is no
+  longer written. It existed so two delivery branches never wrote one file; FR-6 leaves one branch per
+  work. The readers keep merging delivery `qa` until Feature 006 removes the delivery files.
+- **Unchanged**: `lifecycle`, `pause_reason`, `user_approved` (now written `'yes'` at the final-result
+  approval), Feature 001's `intent`, `sources` and `write_backs`. `pipeline.path` is replaced by
+  `intent.depth`; Feature 006's migration drops it.
+- **Project file `.aid/STATE.yml`** (Q38): created on first use from `project-state-template.yml` by
+  `--ask --project`; holds only `qa`. It is project data like `.aid/settings.yml`, outside the install
+  manifest, so `aid update` and `aid remove` never touch it (decisions.md § D9).
+- **KB file**: questions while building the KB keep today's place (`.aid/knowledge/STATE.md`
+  § Q&A (Pending)) until Feature 004 converts it to `.aid/knowledge/STATE.yml`, which then carries the
+  same `qa` shape (Q39).
+
+##### 3. Question protocol
+
+`question-protocol.md` holds the procedure once. It runs only in the main conversation, the only one
+that can talk with the user.
+
+**Where it applies and how skills use it**
+- `rules.md` (read in every session) points at it. The last bullet of § Handling a request becomes two
+  lines, so the section counts 19 of its 20 lines by SG-01's rule:
+  ```markdown
+  - Ask only as `.aid/runtime/templates/question-protocol.md` says; the user approves before building
+    and the result; AID never merges.
+  ```
+- Every skill that talks with the user carries one line: "Talking with the user: follow
+  `.aid/runtime/templates/question-protocol.md`." The generated doorway skills get it from
+  `shortcut-engine.md`, which they run; `skill-steps.md` makes every `ASK` step use it.
+- **Sub-agents never ask the user**: every worker brief says to return open questions to the main
+  conversation, which asks them. This is what lets the interviewer agent go.
+- **One plain-text form in all five tools.** The host's own question picker (`AskUserQuestion` in
+  today's `aid-config`, `aid-set-connector`, ticket skills, `aid-summarize` and `aid-housekeep`) is no
+  longer used, so every question shows its reason and recommendation the same way everywhere.
+
+**One question**
+
+```text
+Connections -- question 2 of 3 -- importance: high
+Should AID reach your Jira through the connection your tool already has?
+Why I ask: AID stores no passwords, so it needs your tool's own connection.
+My recommendation: yes -- your tool is already signed in to Jira.
+  1. Yes, use my tool's connection (recommended)
+  2. Not now, skip Jira
+Or answer in your own words, ask me to explain, or skip this question.
+```
+
+- One question, one topic; short, with **Why I ask** (FR-17 rules 1-2).
+- The lower technical level is assumed in every session; deeper detail only on request; the level is
+  not stored (rule 3).
+- Always **My recommendation**, with its reason (rule 4).
+- Options only when two or more are valid, the recommended one first; with one valid option the question
+  becomes a confirmation ("I'll do X because Y -- all right?"); no question whose answer is obvious; the
+  closing line always allows a free answer, an explanation or a skip (rule 5).
+- **Importance**: high, medium or low (AC-8); the most important first.
+- **Groups**: open questions sorted by subject, then importance; one subject per group, 3 to 5 questions.
+  Small subjects merge into one group only when they are genuinely related (e.g. naming and skill
+  descriptions); otherwise a small group stands (rule 6, Q37).
+- **Breaks**: offered after each group and at every change of subject -- "That's all on {subject}. Take a
+  break, or go on to {next}?" (rule 7). A break offer decides nothing and is not recorded.
+- **Follow-ups** come right after the question that raised them, inside the same group (rule 8).
+- **Already answered** by an earlier answer, or made trivial by it: not asked; recorded `Assumed`, with
+  the reason (rule 9).
+
+**Reviews and small decisions** (AC-9)
+- A document is reviewed in chunks: one topic per chunk, most important first; each chunk is a short
+  plain summary plus the decisions inside it; then one approval question.
+- Small decisions the agent takes itself are recorded `Assumed` and confirmed **in one batch with the next
+  approval that covers them**: the document's approval in `full`, the confirmation before building in
+  `lite`, the next milestone during building. No extra approval (Q36). An item the user rejects reopens as
+  an ordinary question.
+
+**The question record** -- one shape for the work, project and KB files (rule 10):
+
+```yaml
+qa:
+  - id: Q12
+    category: Connections
+    impact: High
+    state: Answered
+    asked_by: aid-set-connector
+    step: --
+    context: 'Reach Jira through the tool''s own connection? AID stores no passwords'
+    suggested: 'Yes -- the tool is already signed in to Jira'
+    answer: 'Yes'
+    answered_by: 'Andre Vianna'
+    applied_to: 'connector jira'
+```
+
+- `category` is the subject the groups follow; `impact` is the importance label (`High`, `Medium`,
+  `Low`; `Required` retires).
+- `state`: `Pending` (asked, open), `Answered`, `Skipped` (still open: offered again later to whoever
+  continues the work), `Assumed` (the agent's own decision, waiting for its batch; `Answered` once confirmed).
+- New keys: `asked_by`, `step` (where to resume), `answered_by` (`git config user.name`, or `--`).
+  Approval entries add `covers` and `commit` (Approvals).
+- Every question is written `Pending` before it is shown (`--ask`), and its outcome right after the
+  answer (`--answer`). On start or resume, the open entries (`Pending`, `Skipped`) come first, in the
+  usual groups -- `start-or-resume.md` gains this step.
+- Where: a work's questions in its `STATE.yml`; KB building in the KB state file; setup skills
+  (configure, connectors) in `.aid/STATE.yml`.
+
+`aid-describe` keeps its interview engine until Feature 003 replaces it: the envelope section of its
+`advisor-stance.md` becomes a pointer to the protocol, and the envelope's "Not applicable" option goes
+(rule 5).
+
+##### 4. Steps and hand-offs
+
+`skill-steps.md` is the one rule set (FR-20.4). A skill keeps only its step table (Dispatch: step,
+reference, worker, next) and a fallback detection from its artifacts; no skill restates how to move.
+
+Advance words (the `**Advance:**` line of every step; internal, never shown to the user):
+
+| Word | Meaning | Replaces |
+|---|---|---|
+| `CHAIN` | Go on to the next step now | `CHAIN` |
+| `ASK` | Stop for the user through the question protocol; continue when answered | `PAUSE-FOR-USER-DECISION`, without "re-run the command" |
+| `WAIT` | The user must do something outside the conversation; say what, plainly | `PAUSE-FOR-USER-ACTION` |
+| `PASS` | End of this skill's process: hand the work to the next skill | (new) |
+| `CALL` | In the middle of the process: hand the work to another skill, then come back to this step | (new) |
+| `HALT` | This run is finished -- after returning to an open call, if there is one | `HALT` |
+
+Each step:
+1. **Enter**: the main conversation runs `writeback-state.sh --step --skill <skill> --name <STEP>
+   [--detail '<where>']` before doing or dispatching the step's work (FR-20.2).
+2. **Work**: inline or by a worker; a worker returns its questions, never asks them.
+3. **`ASK`**: record the questions (`--ask`); set `lifecycle: Paused-Awaiting-Input` with
+   `pause_reason: 'Waiting for the user: Q12, Q13'`; ask; record the answers; back to `Running`.
+4. **`PASS`**: if the approvals table requires an approval here at the work's depth, `ASK` it first. Then
+   `--handoff --to <skill> --why '<reason>' --returns no --phase <phase>`, and start that skill in the same
+   turn (FR-8); where a tool cannot start a skill itself, name the command (Feature 001's fallback). This is
+   how Definition reaches Specification without the user typing a command (AC-38).
+5. **`CALL`**: bring `--detail` up to date with what is done, then `--handoff --to <skill> --why
+   '<reason>' --returns yes`. The called skill runs as usual; `phase` does not change.
+6. **`HALT`**: with an open call, `--handoff-return` restores the caller's skill, step and detail, and the
+   caller continues there (AC-38). Calls nest; the newest returns first. Without one, the run ends.
+
+**Resume** (any session, any user): the saved `active_skill`, `step` and `step_detail` decide where the
+work continues; an open call means it continues inside the called skill. A skill's own artifact detection
+is used only when nothing is saved (a work started before this layout).
+
+**What the user sees** (FR-20.1, AC-37):
+- Removed everywhere: `[State: X] -- ...` entry lines, "you are here" maps, "-> Advancing to [State: X]",
+  "[State N] Dispatching ..." and "[Resolved: ...]" lines, and "Re-run `/aid-...` to continue" messages.
+  `[State: X]` survives only as a target inside `**Advance:**` lines, which the site flow builder reads.
+- At most one plain progress line, when a step starts work that takes noticeable time ("Checking the plan
+  against the Knowledge Base."); never a step name.
+- "Where are we?" is answered from `STATE.yml`: phase, what is done, what is next, open questions, an open call.
+
+**Today's skills**: banners removed, `skill-steps.md` cited in place of the chaining file, advance words
+translated (`PAUSE-FOR-USER-DECISION` -> `ASK` then `HALT`; `PAUSE-FOR-USER-ACTION` -> `WAIT`). They gain
+no new `PASS` or `CALL` edges: the rebuilt phase skills of Features 003-008 add those (Q35).
+
+**Writer modes** in `writeback-state.sh` -- same lock and quoting as today, block style only; a new exit
+code 7 (no open call) is documented in its header. They are scripts, not prose, because every skill runs
+them and the hand-off bookkeeping must be exact (decisions.md § D17):
+
+| Mode | Writes |
+|---|---|
+| `--step --skill S --name N [--detail D]` | `active_skill`, `step`, `step_detail` (`--` when omitted), `updated` |
+| `--handoff --to S --why W --returns yes` | appends a `handoffs` entry whose `from*` keys are the current skill, step and detail; sets `active_skill` to S, `step` and `step_detail` to `--` |
+| `--handoff --to S --why W --returns no --phase P` | the same, plus `phase` P (validated) |
+| `--handoff-return` | sets `returned` on the open call; restores `active_skill`, `step`, `step_detail` from it; exit 7 when there is none |
+| `--ask --category C --impact I --context T --suggested T [--asked-by S] [--step N] [--covers X] [--project]` | appends a `Pending` entry; prints its id (the next free `Q<n>`) |
+| `--answer --id Q<n> --state Answered or Skipped or Assumed [--value T] [--by B] [--applied-to T] [--commit C] [--project]` | updates that entry |
+
+`--project` targets `.aid/STATE.yml`, created from its template when missing; without it the target is
+the work's `STATE.yml`, resolved as today (`AID_STATE_FILE`).
+
+##### 5. Approvals and the merge boundary
+
+`skill-steps.md` § When approvals happen states the FR-6 approvals once for AID; how a milestone runs is
+`/aid-execute`'s (Feature 007) and the push is `/aid-monitor-pipeline`'s (Feature 008).
+
+| Moment | `full` | `lite` |
+|---|---|---|
+| The idea draft, when one is written (Definition) | approve | -- |
+| `REQUIREMENTS.md` (Specification) | approve | -- |
+| `PLAN.md` (Planning) | approve | -- |
+| Confirmation before building -- opens `/aid-execute`; the per-wave option is asked here | approve | approve |
+| End of each wave -- only when chosen | approve | approve |
+| End of each delivery | approve | approve |
+| End of the whole build | approve | approve |
+| The final result | approve | approve |
+
+- **Approvals at the same moment are one approval** (M11) -- on a one-delivery work, the delivery,
+  whole-build and final-result approvals.
+- **Each approval also confirms the small decisions it covers** (Q36). It is recorded as a `qa` entry
+  with `category: Approval`, `covers` (the document or milestone) and, when a push may follow, `commit`
+  (the newest commit it approves). The final-result approval also sets `user_approved: 'yes'`.
+- **Who applies it**: the main conversation, at each phase skill's last step (`ASK` then `PASS`, or
+  straight `PASS`) and at `/aid-execute`'s milestones. The depth is `intent.depth`; with none recorded,
+  `full` applies.
+- **Before the push it controls**: a push carries only commits up to the newest approved `commit`;
+  `/aid-monitor-pipeline` makes the push and checks this.
+- **AID never merges** (FR-6, FR-7, AC-11): no skill or script merges a branch or a PR/MR, and a PR/MR
+  is created only on the user's yes, by `/aid-monitor-pipeline` alone. Stated in `skill-steps.md` and in
+  `rules.md`; enforced by `test-never-merges.sh` (Testing).
+
+##### 6. Dashboard and chat
+
+- **Both readers** (`dashboard/reader/` and `dashboard/server/reader.mjs`, kept equal by the parity tests):
+  - `phase`: the new names; the old ones mapped as in Work state layout; anything else reads `Unknown`, as today;
+  - `qa`: read at work level on every layout; open = `Pending` + `Skipped`; delivery `qa` still merged
+    until Feature 006;
+  - new work fields: `step`, `step_detail`, and the open call (where the work went, why, which phase it
+    returns to).
+- **`dashboard/home.html`**: `PHASE_ORDER` becomes `['Definition', 'Specification', 'Planning',
+  'Building', 'CI']` and `PRE_EXEC_STEPS` 3. The work card shows the phase, one plain line from
+  `step_detail`, "Waiting for your answer (N)" when open questions exist, and "Away in /aid-update-kb --
+  back to Building after" while a call is open. No step names, no maps.
+- **Chat**: `chat-node/` reads no work state -- no `.aid/works/` path, no `STATE.yml` -- so nothing changes
+  (AC-41); SS-07 keeps it so.
+- The skill names shown are Feature 009's (AC-31).
+
+##### 7. Migration
+
+| Old | New |
+|---|---|
+| agent `aid-interviewer` | The agent in your tool asks the questions itself, one topic at a time (question protocol) |
+
+- **Release notes**: the row joins the old -> new table (AC-24), drafted in `.aid/knowledge/backlog.md`
+  § Next Release. `state-machine-chaining.md` is internal: no row.
+- **Installed projects**: `aid update` removes the agent's files through the install manifest
+  (decisions.md § D9).
+- **Existing works**: nothing is rewritten here -- the new keys are optional, the readers map the old phase
+  names and still read delivery `qa`. Feature 006's migration rewrites the phase names, moves delivery `qa`
+  into the work and drops `pipeline.path`.
+- **Interviewer sites**: those in Files and layout, plus `docs/aid-methodology.md`,
+  `docs/diagram-content-reference.md`, the site pages `reference/agents.md`, `concepts/methodology.md`
+  and `skills/aid-describe.md` under `site/src/content/docs/`, the regenerated flows `aid-describe.flow.json`
+  and `aid-define.flow.json`, `tests/canonical/test-describe-full-only.sh` and `tests/cost-baseline.tsv`.
+  The `profiles/*` and dogfood copies (`.claude/agents/`, `.cursor/agents/`) and `.aid/.aid-manifest.json`
+  follow the render. `canonical/aid/scripts/summarize/validate-diagram-content.mjs` only masks the name and stays.
+- **Chaining-file sites**: the `SKILL.md` of `aid-create-ticket`, `aid-define`, `aid-deploy`,
+  `aid-describe`, `aid-detail`, `aid-discover`, `aid-execute`, `aid-housekeep`, `aid-monitor`, `aid-plan`,
+  `aid-specify`, `aid-summarize`, `aid-update-kb`, `aid-update-ticket`; `aid-discover`
+  `references/state-elicit.md` and `references/state-generate.md`; `shortcut-engine.md`;
+  `connectors/ticket-resolution.md`; `tests/canonical/test-pipeline-status-walkthrough.sh` (group B2 moves to
+  `skill-steps.md`'s `ASK` handler); `tests/cost-baseline.tsv`, `tests/coverage-baseline.tsv`; the regenerated
+  `aid-discover.flow.json`; KB `architecture.md`.
+- **Banner and advance-word sites**: every file the SS-01 and SS-03 searches find under `canonical/`,
+  fixed at the source: the hand-authored files and the two shared engines (the generated doorway skills
+  carry no banner of their own). The `writeback-state.sh` header's "<- you are here (edit this)" becomes "<- this is the source
+  (edit this)". `site/scripts/__tests__/flow-advance.test.mjs` learns the new words.
+- **Question-record sites** (Files and layout): this resolves the question-record slice of tech-debt
+  SY-6; the AD13 ratchet ceilings in `tests/canonical/test-artifact-discipline.sh` drop to the new
+  measured counts.
+- **Other suites**: `tests/canonical/test-writeback-state.sh` and `test-pipeline-status-walkthrough.sh`
+  (phase names), `dashboard/server/tests/test_index_html.py` (`PHASE_ORDER`). Removed assertions go to
+  `tests/coverage-accepted-removals.tsv`; `tests/cost-baseline.tsv` drops the deleted agent and template
+  and adds the two new templates.
+- **KB** (no work ids): `architecture.md` (state machines, the agent table), `pipeline-contracts.md`
+  (§ Per-Skill State Machines rewritten -- its "one invocation advances one state" claim is stale today),
+  `artifact-schemas.md` (the new keys, `qa`, `handoffs`, `.aid/STATE.yml`, phase names),
+  `domain-glossary.md` (question protocol, step, hand-off; the interviewer goes), `decisions.md` (a new
+  decision -- one question protocol run by the main conversation, saved steps, pass and call -- which
+  supersedes the chaining rule and amends D15's agent count), `module-map.md`, `test-landscape.md` (the new
+  suites and the deferred-tests list), `tech-debt.md` (SY-6 narrowed); then `INDEX.md` is regenerated.
+
+##### 8. Testing
+
+Per NFR-T (Q35): unit tests and static checks run now; a conversation sample runs only when every skill it
+needs exists, and until then it is listed in the deferred-tests list.
+
+**Static checks -- `tests/canonical/test-skill-steps.sh`** (picked up by `tests/run-all.sh`; added to the
+suite list of `.github/workflows/installer-tests.yml`):
+
+| Group | Asserts |
+|---|---|
+| SS-01 | No banner form (Steps and hand-offs) under `canonical/skills/` or `canonical/aid/templates/` |
+| SS-02 | `state-machine-chaining.md` is absent and cited nowhere; every `SKILL.md` with a Dispatch table cites `skill-steps.md` |
+| SS-03 | No `**Advance:**` line uses a word other than `CHAIN`, `ASK`, `WAIT`, `PASS`, `CALL`, `HALT` (a line naming only its next step is a `CHAIN`, as today) |
+| SS-04 | Every hand-authored `SKILL.md`, and `shortcut-engine.md` for the generated ones, cites `question-protocol.md`, except the test's never-asks list (each listed skill must exist); no `AskUserQuestion` in any `allowed-tools` |
+| SS-05 | No `canonical/agents/aid-interviewer/`; nothing under `canonical/` dispatches or names `aid-interviewer` |
+| SS-06 | No file under `canonical/skills/` names `## Cross-phase Q&A` or sends a question to a delivery-level `qa` (the migration scripts, which must read the old shapes, are outside its scope) |
+| SS-07 | Nothing under `chat-node/` names `.aid/works` or `STATE.yml` |
+| SS-08 | `work-state-template.yml` and `project-state-template.yml` parse through the dashboard reader with no warning |
+| SS-09 | Every skill that cites the protocol has a sample whose frontmatter `skills:` names it and whose `covers` holds AC-28, or a deferred-list row for it; skills a later feature retires sit on an exempt list that fails once a listed skill is gone |
+
+**Static checks -- `tests/canonical/test-never-merges.sh`**, over `canonical/`, `bin/`, `lib/`,
+`dashboard/`, `chat-node/`, `scripts/`, `release.sh`, `install.sh` and `install.ps1` (not `tests/`,
+whose fixtures may merge on purpose):
+
+| Group | Asserts |
+|---|---|
+| NM-01 | No `git merge` (`git merge-base` excepted) and no `git pull` without `--ff-only` |
+| NM-02 | No `gh pr merge`, `glab mr merge`, merge endpoint of a hosting service's interface, auto-merge flag, or push to `main` / `master` |
+| NM-03 | `gh pr create` / `glab mr create` only under `canonical/skills/aid-monitor-pipeline/`; exempt: `aid-housekeep`, until Feature 004 retires it; fails once an exempt skill is gone |
+| NM-04 | No "merge to main" in skill text; exempt: `aid-execute`, until Feature 007; same rule |
+
+**Deferred tests -- `tests/conversation/deferred.tsv`** (tab-separated: `test`, `covers`, `waiting_for`,
+`needs`) **and `tests/canonical/test-deferred-tests.sh`**:
+
+| Group | Asserts |
+|---|---|
+| DT-01 | Every row names an existing sample under `tests/conversation/samples/`, at least one criterion, and what it waits for |
+| DT-02 | With `AID_RELEASE_CHECK=1` the list must be empty -- set on the `run-all.sh` step of `.github/workflows/release.yml` and in `release.sh`'s checks before it stages |
+
+A row leaves the list when what it waits for has landed and its sample passes 3 runs of 3.
+
+**Unit tests**
+- `tests/canonical/test-writeback-state.sh`: `--step`; `--handoff` as pass and as call; `--handoff-return`
+  with two nested calls (newest first) and exit 7 with none; `--ask` id numbering, and `--project` creating
+  `.aid/STATE.yml`; `--answer` for each state, including an approval's `--covers` / `--commit`; the phase
+  names (an old name refused on write); every file written parses through the dashboard reader with no warning.
+- Dashboard: fixtures for a work at each phase -- Definition, Specification, Planning, Building, Building
+  during a call, CI, Completed -- and one with old phase names, in `dashboard/reader/tests/` and the Node
+  suite, plus a parity test; `test_index_html.py` for `PHASE_ORDER` and the card lines.
+- Site: `flow-advance.test.mjs` for the new words.
+
+**Conversation samples -- `tests/conversation/samples/feature-002/`** (frontmatter adds `skills:`). The
+judge also applies `tests/conversation/protocol-checks.md` -- one check per FR-17 rule, plus the importance
+label -- to every sample, of any feature, that covers AC-8 or AC-28.
+
+| Sample | Covers | Runs |
+|---|---|---|
+| `002-01-connector-question` -- a non-technical user connects a tracker (`/aid-set-connector`) | AC-8, AC-28 | now |
+| `002-02-settings-groups-and-breaks` -- settings across several subjects (`/aid-config`) | AC-8, AC-28 | now |
+| `002-03-follow-up-and-skip-answered` | AC-28 | now |
+| `002-04-skip-then-another-user` -- two sessions, two personas; check: the entry in `.aid/STATE.yml` goes `Skipped` -> `Answered` with a different `answered_by` | AC-28 | now |
+| `002-05-merge-request-declined` -- fixture: a work branch; "merge it into main"; check: `main` unchanged, no merge command run | AC-11 | now |
+| `002-06-review-in-chunks` | AC-9 | deferred: Feature 005 |
+| `002-07-small-decisions-with-approval` | AC-9, AC-10 | deferred: Features 005, 007 |
+| `002-08-full-confirms-each-document` | AC-10 | deferred: Features 003, 005, 006, 007 |
+| `002-09-lite-one-approval` | AC-10 | deferred: Features 005, 006, 007 |
+| `002-10-pull-request-only-when-asked` | AC-11 | deferred: Feature 008 |
+| `002-11-resume-at-saved-step` -- interrupted session; check: no banner text, resumes at the saved step | AC-37 | deferred: Feature 005 |
+| `002-12-definition-passes-to-specification` | AC-38 | deferred: Features 003, 005 |
+| `002-13-mid-task-kb-update-returns` | AC-38 | deferred: Features 004, 007 |
+
+##### Criteria traceability
+
+| Criterion | Where satisfied | How verified |
+|---|---|---|
+| AC-8 | Question protocol (one question, rules) | SS-04; `002-01`, `002-02`; `protocol-checks.md` |
+| AC-9 | Question protocol (reviews and small decisions) | `002-06`, `002-07` (deferred) |
+| AC-10 | Approvals and the merge boundary | writer unit tests (approval record); `002-07`, `002-08`, `002-09` (deferred) |
+| AC-11 | Approvals and the merge boundary (never merges) | NM-01 to NM-04; `002-05`; `002-10` (deferred) |
+| AC-28 | Question protocol | `002-01` to `002-04`; SS-09 (one sample per asking skill); `protocol-checks.md` |
+| AC-37 | Steps and hand-offs (what the user sees, resume) | SS-01; writer unit tests (`--step`); `002-11` (deferred) |
+| AC-38 | Steps and hand-offs (`PASS`, `CALL`, `HALT`) | writer unit tests (`--handoff`, `--handoff-return`, nesting); `002-12`, `002-13` (deferred) |
+| AC-40 | Question protocol (sub-agents never ask); Migration | SS-05 |
+| AC-41 | Dashboard and chat | dashboard fixtures and parity test; SS-07 |
 
 ### Feature 003 — Shape an Idea or Ticket into a Clear Work Definition
 

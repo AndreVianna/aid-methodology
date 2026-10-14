@@ -240,8 +240,24 @@ features:
     started: '2026-10-14'
     updated: '2026-10-14'
     grade: Pending
-    qa_count: 0
-    sections: []
+    qa_count: 6
+    sections:
+      - name: Files and layout
+        state: Complete
+      - name: Work state layout
+        state: Complete
+      - name: Question protocol
+        state: Complete
+      - name: Steps and hand-offs
+        state: Complete
+      - name: Approvals and the merge boundary
+        state: Complete
+      - name: Dashboard and chat
+        state: Complete
+      - name: Migration
+        state: Complete
+      - name: Testing
+        state: Complete
   - id: '003'
     name: work-definition
     state: Pending
