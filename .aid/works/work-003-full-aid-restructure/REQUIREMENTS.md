@@ -728,29 +728,29 @@ How much the user reviews (depth, by richness):
 
 ##### 3. Components
 
-**`## Handling a request`** in `canonical/aid/rules.md` -- at most 20 lines, blank lines included,
-counted from the heading to the next `## ` heading. Draft wording, 18 lines (final text is set at
-build, within the cap):
+**`## Handling a request`** in `canonical/aid/rules.md` -- at most 20 lines. **How lines are counted**
+(the same rule SG-01 applies): from the `## Handling a request` heading line through the last non-blank
+line before the next `## ` heading, so the heading and the blank line under it count and the trailing
+blank lines do not. The draft below is 16 body lines: with the heading and its blank line it counts
+**18**, leaving a margin of 2. Final text is set at build, within the cap:
 
 ```markdown
-- Read what the user wants by its meaning, not its wording, and compare it with the skill guide below.
-- A question about this project starts no work: answer it from the Knowledge Base, citing the sources.
-- One skill fits: propose its workflow. Several fit: choose yourself, and ask one question with your
-  recommendation only when you truly cannot choose. None fits: carry on normally, with no AID workflow.
-  A typed `/aid-<skill>` always wins.
-- The user's words are a hint: check your reading against the Knowledge Base and the code first (a
+- Read what the user wants by its meaning, not its wording, and match it to the skill guide below.
+- A question about this project starts no work: answer it from the Knowledge Base, citing sources.
+- One skill fits: propose its workflow. Several fit: choose yourself; ask one question, with your
+  recommendation, only if you cannot choose. None fits: carry on with no AID workflow.
+- A typed `/aid-<skill>` always wins.
+- The user's words are a hint: check your reading against the Knowledge Base and the code (a
   "refactor" that adds an endpoint changes behaviour, so it is new work).
-- Before starting or resuming a work, run `/aid-orchestrate`: it finds where the work stands, sizes it
-  (`full` or `lite`) and picks the phases it needs.
-- Show your reading and its reason in one line, in the same message as your first question or approval,
-  and wait for the answer; never spend a turn on the reading alone.
-- Phases: Specification, Planning and Building (with tests) almost always run; Definition only when the
-  work must first be defined; Preparation builds the Knowledge Base once, then updates it on demand; CI
-  always closes the work. Release, deploy and monitoring are works of their own.
-- When the work turns out bigger or different, re-route and say so in one line.
-- Check every decision against the Knowledge Base; raise a conflict with the user, never settle it alone.
-- Ask one topic at a time, with a recommendation; the user approves before building and approves the
-  result; AID never merges.
+- To start or resume a work, run `/aid-orchestrate`: it finds where the work stands, sizes it and
+  picks the phases it needs.
+- Show your reading and its reason in one line, inside your first question or approval; then wait.
+- Specification, Planning and Building (with tests) almost always run; Definition only when the problem
+  must first be shaped; Preparation builds the Knowledge Base once, then updates it on demand; CI always
+  closes the work. Release, deploy and monitoring are works of their own.
+- If the work turns out bigger or different, re-route and say so in one line.
+- Check every decision against the Knowledge Base; raise a conflict, never settle it alone.
+- Ask one topic at a time, with a recommendation; the user approves before building and the result.
 ```
 
 **Summary bullet** (copied into every `AGENTS.md` / `CLAUDE.md` region by `lib/aid-install-core.sh`
@@ -858,8 +858,13 @@ sources:
   `references/elicitation-engine.md`, `references/state-first-run.md`); `aid-monitor` (`SKILL.md`,
   `references/state-route.md`); `.claude/skills/generate-profile/SKILL.md` (its curated-skill count that
   includes the triage router); `README.md`; `docs/aid-methodology.md`, `docs/diagram-content-reference.md`,
-  `docs/faq.md`, `docs/glossary.md`, `docs/repository-structure.md`; the site's skill, reference,
-  concept and get-started pages under `site/src/content/docs/`, `site/scripts/skills/` (roster, groups,
+  `docs/faq.md`, `docs/glossary.md`, `docs/repository-structure.md`; the site pages under `site/src/content/docs/`:
+  `index.mdx`, `guides/pipeline.mdx`, `concepts/faq.md`, `concepts/methodology.md`,
+  `get-started/first-work.mdx`, `get-started/lite-path.mdx`, `reference/artifacts.md`,
+  `reference/glossary.md`, `reference/overview.md`, `reference/repository-structure.md`,
+  `reference/skills.md`, `skills/aid-monitor.md`, `skills/index.md` (and `skills/aid-triage.md` is deleted);
+  the regenerated flows `site/src/data/skill-flows/aid-monitor.flow.json` and `aid-describe.flow.json`
+  (`aid-triage.flow.json` is deleted); `site/scripts/skills/` (roster, groups,
   counts, index), `site/scripts/gen-reference.mjs`, `site/scripts/.skills-manifest.json` and their tests
   in `site/scripts/__tests__/`; `tests/canonical/test-cutover-no-dangling.sh`,
   `tests/canonical/test-deploy-monitor-repurpose.sh`, `tests/cost-baseline.tsv`; KB `tech-debt.md` row W1-6
@@ -881,8 +886,12 @@ sources:
   | `tests/canonical/test-install-provisioning.sh`, `tests/windows/Test-InstallProvisioning.ps1` | use their own synthetic `## Workflow` fixtures | none |
 - **KB** (no work ids): architecture, pipeline-contracts (entry doors), capability-inventory,
   domain-glossary, module-map, project-structure, test-landscape (the two new suites), integration-map and
-  artifact-schemas (`intent:`, `sources:`); decisions gains "the host agent orchestrates", superseding
-  D21 and amending D14 and D15; then `INDEX.md` is regenerated.
+  artifact-schemas (`intent:`, `sources:`); decisions gains "the host agent orchestrates", which
+  supersedes D21 (`/aid-triage` as a suggest-only router) and D25's change-request route to `/aid-triage`
+  (both marked Superseded in the summary table and their sections, matching the re-pointed `aid-monitor`),
+  and amends D14 (its pointer to D21) and D15 (the agent count); then `INDEX.md` is regenerated. A final
+  search for `aid-triage`, `/aid-triage` and "triage router" across `site/`, `docs/`, `.aid/knowledge/`
+  and `canonical/` finds no file beyond the lists above, except history that stays as it is.
 - The interviewer agent's retirement is Feature 002's (AC-40); the effort check is Feature 005's.
 
 ##### 6. Testing
@@ -894,7 +903,7 @@ the lane feature branches run.
 
 | Group | Asserts |
 |---|---|
-| SG-01 | `## Handling a request` spans at most 20 lines, blank lines included (heading to next `## `) |
+| SG-01 | `## Handling a request` counts at most 20 lines: from its heading line through the last non-blank line before the next `## ` heading (trailing blank lines excluded) |
 | SG-02 | The skill guide names exactly the skills in `canonical/skills/`, both ways (with `<kind>` expansion while it exists) |
 | SG-03 | Every guide line is at most 100 characters |
 | SG-04 | Every non-exempt `description:` has the what/when shape; every exempt skill still exists |
@@ -908,7 +917,7 @@ release.
   Claude Code is required; Codex, Cursor, Copilot CLI and Antigravity run only when named.
 - Each run builds a fresh throwaway fixture: a small git project with code, a seeded KB unless the
   sample says otherwise, and AID installed from a bundle staged from the working tree
-  (`tests/lib/bundle.sh`). Edits are allowed only inside the fixture.
+  (`tests/lib/bundle.sh`).
 - **Driving the conversation (Claude Code).** Each agent turn is one `claude -p` run in the fixture
   folder with `--output-format stream-json`: the first turn starts a session, every later turn passes
   `--resume <session-id>` with the next user message. Why: it is the real tool reading the installed
@@ -917,8 +926,20 @@ release.
   `claude -p --input-format stream-json` process fed one user message per turn. The other four tools use
   an adapter with the same three steps (start, send, read) through their own non-interactive mode; a
   tool without one is skipped with a notice.
-- **The simulated user** is a separate `claude -p` call per turn, run from an empty temporary folder so
-  it sees no project, AID or tools. Its prompt is `tests/conversation/simulated-user.md` plus the
+- **Permissions of the agent under test**, on every turn: working folder = the fixture;
+  `--permission-mode acceptEdits` (file edits inside the working folder need no prompt);
+  `--tools` limited to `Read,Glob,Grep,Edit,Write,Bash,Skill,Task`; `--allowedTools` naming the same file
+  tools plus `Skill`, `Task`, `Bash(bash .aid/runtime/scripts/*)` and read-only git
+  (`Bash(git status*)`, `Bash(git diff*)`, `Bash(git log*)`), so any other shell command is refused in
+  print mode; no `--add-dir`, so no folder outside the fixture is granted; `--strict-mcp-config` with no
+  `--mcp-config`, so no MCP server is loaded; `--setting-sources project`, so the fixture's installed AID
+  files load and the maintainer's own user settings and plugins do not. The fixture is a disposable copy,
+  so a stray write is harmless and shows in `files.diff`.
+- **The simulated user** is a separate `claude -p` call per turn with only text in and out: run from a new
+  empty temporary folder, with `--tools ""` (every built-in tool disabled), `--safe-mode` (no
+  `CLAUDE.md`, skills, plugins, agents or hooks), `--strict-mcp-config` with no `--mcp-config` (no MCP
+  server), and `--system-prompt` set to the simulated-user brief. It therefore cannot read the fixture
+  or see a skill name. Its prompt is `tests/conversation/simulated-user.md` plus the
   sample's `## User` persona, its `## Answer sheet` and the transcript so far. It answers only from the
   sheet ("I don't know" otherwise), never volunteers a skill name, and replies `<<END>>` when the sheet
   has nothing left to say or the agent has finished.
@@ -932,9 +953,16 @@ release.
 - `samples/feature-NNN/<id>.md`: frontmatter `id`, `covers`, `fixture`; sections `## User` (opening
   message and persona), `## Answer sheet` (all the simulated user knows), `## Expected outcome`,
   `## Must not`, `## Checks` (file assertions run before judging).
-- An independent `aid-reviewer` session (a fresh `claude -p` whose prompt is the fixture's installed
-  `aid-reviewer` agent body plus `tests/conversation/judge.md`) judges the transcript against the expected outcome and writes a
-  7-column ledger in the fixture's `.aid/.temp/review-pending/`; any Pending row fails the run.
+- An independent `aid-reviewer` judge: a fresh `claude -p` with the same text-only settings as the
+  simulated user, whose system prompt is the installed `aid-reviewer` agent body plus
+  `tests/conversation/judge.md`, and whose input is `transcript.md`, `files.diff`, `checks.txt` and the
+  sample's expected outcome. It returns only a 7-column ledger table, which `run.py` saves in the
+  fixture's `.aid/.temp/review-pending/` and in the run folder; any Pending row fails the run.
+- **Flags checked** against `claude --help` of Claude Code 2.1.296: `-p`, `--resume`,
+  `--output-format`, `--input-format`, `--permission-mode` (`acceptEdits`), `--tools`, `--allowedTools`,
+  `--add-dir`, `--strict-mcp-config`, `--mcp-config`, `--setting-sources`, `--safe-mode`,
+  `--system-prompt`. To confirm at build time: the built-in tool names `Skill` and `Task` (the
+  sub-agent tool's current name) and the `Bash(...)` rule pattern syntax in `--allowedTools`.
 - A sample passes only when all 3 runs pass. Exit codes: 0 all pass, 1 any failure, 2 invocation error.
 - Every later feature adds its own `samples/feature-NNN/` folder.
 
