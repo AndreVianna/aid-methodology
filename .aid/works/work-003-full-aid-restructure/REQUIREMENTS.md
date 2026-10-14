@@ -1068,8 +1068,8 @@ the shared files cited, questions recorded in one place, no interviewer).
 | Edit | every hand-authored `canonical/skills/*/SKILL.md` and `references/*.md` that prints a banner, routes by the old advance words or asks the user; `canonical/aid/templates/shortcut-engine.md`, `design-lifecycle.md` | Banners removed, `skill-steps.md` and the protocol cited, advance words updated, host question pickers dropped (see Steps and hand-offs). The generated doorway skills print nothing themselves: they run `shortcut-engine.md`, so they change through it |
 | Edit | `canonical/skills/aid-orchestrate/references/start-or-resume.md` (Feature 001) | Creates a work through the gate's `--create`; resume reads only the work record (see The work record) and the open questions |
 | Edit | `canonical/aid/templates/work-initiation-gate.md` § 3a NEW and § 3b CONTINUATION | The gate becomes the only creator of a work's `STATE.yml`: § 3a runs `writeback-state.sh --create` (type, request, the calling skill, its first step, phase) before it hands the new work back; § 3b routes by the record only (see The work record) |
-| Edit | the starters that stay and create a work's `STATE.yml` themselves today: the `SKILL.md` of `aid-research`, `aid-review`, `aid-test`, `aid-prototype`, `aid-report`, `aid-create-document`, `aid-update-document` | None of them creates `STATE.yml` any more: each passes its own name and first step to the gate, and adds only its own keys afterwards through the writer. Their copy-the-template instructions and hand-written `initiator:` / `active_skill:` / `lifecycle:` lines go (SS-14) |
-| Exempt (not edited) | the creation sites a later feature rebuilds or retires: `shortcut-engine.md` (§ State: INTAKE, Step 4) and the generated doorway skills it serves -> Feature 009; `design-lifecycle.md` (§ Allocation) -> retired with its last users (Features 003, 004, 009); `aid-describe` `references/state-first-run.md` and `aid-brainstorm` -> Feature 003; `aid-design` and every `aid-design-*` (`api`, `architecture`, `backlog`, `cicd`, `cli`, `config`, `dashboard`, `data-model`, `data-pipeline`, `document`, `infra`, `integration`, `job`, `messaging`, `mvp`, `roadmap`, `stack`, `test`, `testing-strategy`, `theme`, `ui`) -> Features 003/009; `aid-create-*` / `aid-update-*` for `architecture`, `backlog`, `cicd`, `mvp`, `roadmap`, `stack`, `testing-strategy` -> Feature 004 | Listed on the shared exempt list (Testing). Works they start still get their record from the gate's `--create`, which runs first (see The work record) |
+| Edit | every **allocation point** -- the places a work's `STATE.yml` is created today: `canonical/aid/templates/design-lifecycle.md` § Allocation (used by `aid-brainstorm`, every `aid-design-*` and the KB-writing `aid-create-*` / `aid-update-*`); `aid-design/SKILL.md` § State: INTAKE step 4; `canonical/aid/templates/shortcut-engine.md` § State: INTAKE, Step 4 (every doorway skill); `aid-describe/SKILL.md` § No works exist and the `--reset` step of § State Detection, with `references/state-first-run.md` § 1b / 1b-ii; and the `SKILL.md` of the starters that stay -- `aid-research`, `aid-review`, `aid-test`, `aid-prototype`, `aid-report`, `aid-create-document`, `aid-update-document` | Each calls the gate's § 3a with its request, its own name, its first step and, where it sets them today, `pipeline.path` and minimum grade; the gate's `--create` makes `STATE.yml`. Their copy-the-template instructions, the two `phase: Describe` scaffold blocks and their hand-written `initiator:` / `active_skill:` / `lifecycle:` lines go (SS-11, SS-14). `--reset` asks the user to confirm, deletes the work folder, then goes through `--create` |
+| Exempt (not edited) | the per-skill files of skills a later feature rebuilds or retires, which allocate through the converted points above but keep a binding line of their own (`initiator: aid-<name>`, sometimes `active_skill:`): `aid-brainstorm` -> Feature 003; every `aid-design-*` (`api`, `architecture`, `backlog`, `cicd`, `cli`, `config`, `dashboard`, `data-model`, `data-pipeline`, `document`, `infra`, `integration`, `job`, `messaging`, `mvp`, `roadmap`, `stack`, `test`, `testing-strategy`, `theme`, `ui`) -> Features 003/009; `aid-create-*` / `aid-update-*` for `architecture`, `backlog`, `cicd`, `mvp`, `roadmap`, `stack`, `testing-strategy` -> Feature 004 | On the shared exempt list for SS-14 (Testing). Their works are still created by the gate's `--create`, because their allocation runs through the converted `design-lifecycle.md` § Allocation (see The work record) |
 | Edit | every `canonical/skills/*/SKILL.md` § State Detection (or its equivalent) | Detection never routes: it only shapes the entry step of a skill starting fresh and validates a saved step on resume (see The work record) |
 | Edit | the delivery-level `qa` writers (`aid-ask/SKILL.md` § Target-file resolution, `aid-plan/SKILL.md` § Feedback Loops, `aid-execute/references/state-delivery-gate.md` § Non-CODE issues) and every skill file naming `## Cross-phase Q&A` (in `aid-specify`, `aid-define`, `aid-detail` and `aid-describe`, whose engine references `elicitation-engine.md`, `move-playbook.md`, `advisor-stance.md`, `state-describe-seed.md`, `state-q-and-a.md` included) | Every question recorded in the work's `qa` through `--ask` / `--answer` (known issue KI-003) |
 | Delete | `canonical/agents/aid-interviewer/` | FR-13, AC-40 |
@@ -1176,17 +1176,23 @@ qa: []
     '<words>' --skill <caller> --step <first step> [--phase <phase>] [--depth lite or full]` -- **before**
     it hands the new work back. `--create` copies `work-state-template.yml` and fills the record,
     `pipeline.initiator` (the caller), `lifecycle: Running`, `started` and `updated` in that one write, so no
-    work ever exists without its record. The caller then adds only its own keys, through the writer. The
-    starters that stay lose their own creation instruction now (Files and layout).
-  - **Exempt starters until their feature lands**: a skill on the shared exempt list still carries its old
-    "copy the template, then write `initiator` / `active_skill` / `lifecycle`" prose, but every one of them
-    allocates through the gate, and the gate runs first -- so `STATE.yml` already exists, record included,
-    when the skill reaches its own creation step. **The gate's record wins.** The gate's hand-back says so
-    in one line: "`STATE.yml` was created by the gate; skip any instruction to copy the template or to
-    write `initiator`, `active_skill`, `lifecycle` or `phase` by hand; set other keys through the writer."
-    That step therefore becomes a no-op. `--create` itself refuses an existing `STATE.yml` (exit 8), so
-    nothing may create the file before the gate does; and if an agent copied the template over the record
-    anyway, the next resume's `--check` finds the record missing and recovery repairs it with the user.
+    work ever exists without its record. The caller then adds only its own keys, through the writer.
+    `--create` also takes `--path` (`pipeline.path`, until Feature 006 drops it) and `--minimum-grade`, which
+    the converted scaffolds set today. Every allocation point -- the shared ones every exempt skill
+    allocates through (`design-lifecycle.md` § Allocation, `aid-design` INTAKE step 4, `shortcut-engine.md`
+    § INTAKE Step 4) and `aid-describe`'s new-work and `--reset` paths -- is converted in this feature
+    (Files and layout), so this holds for every entry point on disk. `/aid-describe --reset` asks the user to
+    confirm, deletes the work folder (its record and answers go with it), then creates the work again
+    through `--create`.
+  - **Exempt skills until their feature lands**: a skill on the shared exempt list keeps a binding line of
+    its own (`initiator: aid-<name>`, sometimes `active_skill:`), but it allocates through the converted
+    `design-lifecycle.md` § Allocation, so `--create` has already written the record, with those same
+    values, when the skill reads that line. **The record `--create` wrote wins**: the converted allocation
+    text and the gate's hand-back both say, in one line, "`STATE.yml` was created by the gate; skip any
+    instruction to write `initiator`, `active_skill`, `lifecycle` or `phase` by hand; set other keys
+    through the writer." `--create` refuses an existing `STATE.yml` (exit 8), so nothing may create the file
+    before the gate does; and if an agent overwrote the record anyway, the next resume's `--check` finds it
+    missing and recovery repairs it with the user.
   - **Kept current**: written at creation, at every step entry **before** any work in that step, at every
     hand-off and return, at every re-route (`--reroute`, which also appends Feature 001's `intent.changes`
     entry), and at finish. Only the writer touches it -- never a hand edit (SS-14).
@@ -1201,8 +1207,9 @@ qa: []
     command the record already names is a resume. A hand-off writes the target skill **and its entry step**
     (the first row of its step table) in the same locked write, so there is never a moment with a skill
     but no step: an interrupted hand-off, or a tool that cannot start skills and names the command instead,
-    still leaves a resumable step. A typed start of another skill is recorded as a hand-off
-    (`why: 'user ran /aid-<skill>'`).
+    still leaves a resumable step. A typed start of another skill is a pass without a phase change:
+    `--handoff --to <skill> --step <its entry step> --returns no --why 'user ran /aid-<skill>'`, with no
+    `--phase` -- the current phase stays (an on-demand skill drives none), and no open call is left behind.
   - **Recovery, never silent**: on every resume the agent first runs `writeback-state.sh --check`. It
     reports the record missing (an open work with no `intent.reading`, with `active_skill: none`, or with a
     saved skill but `step: --`) or inconsistent (a finished work with a saved skill; a saved skill that is
@@ -1421,13 +1428,13 @@ them and the hand-off bookkeeping must be exact (decisions.md § D17):
 
 | Mode | Writes |
 |---|---|
-| `--create --work-dir W --reading R --request T --skill S --step N [--phase P] [--depth D]` | run only by the gate; copies `work-state-template.yml` into W and fills `intent.reading`, `intent.request`, `intent.depth`, `active_skill`, `step`, `pipeline.initiator` (S), `phase` (`--` when omitted: an on-demand skill drives no phase), `lifecycle: Running`, `started`, `updated` in one write; exit 5 when a required option is missing, 4 when a value is invalid, 8 when W already holds a `STATE.yml` |
+| `--create --work-dir W --reading R --request T --skill S --step N [--phase P] [--depth D] [--path P] [--minimum-grade G]` | run only by the gate; copies `work-state-template.yml` into W and fills `intent.reading`, `intent.request`, `intent.depth`, `active_skill`, `step`, `pipeline.initiator` (S), `phase` (`--` when omitted: an on-demand skill drives no phase), `lifecycle: Running`, `started`, `updated` in one write; exit 5 when a required option is missing, 4 when a value is invalid, 8 when W already holds a `STATE.yml` |
 | `--step --skill S --name N [--detail D]` | `active_skill`, `step`, `step_detail` (`--` when omitted), `updated` |
 | `--reroute --reading R [--depth D] --why W` | `intent.reading` (and `intent.depth`), plus an `intent.changes` entry (at, from, to, why) |
 | `--check` | writes nothing; prints one line per problem with the record (missing or inconsistent, Work state layout) and exits 9 when there is any, 0 otherwise |
 | `--repair --skill S --name N [--detail D] [--reading R]` | the record in one write, plus a `lifecycle_history` entry naming the old and the new record; `--reading` is required when the record has none (exit 5); used only after the user confirms |
 | `--handoff --to S --step N --why W --returns yes` | appends a `handoffs` entry whose `from*` keys are the current skill, step and detail; sets `active_skill` to S and `step` to N (S's entry step), `step_detail` to `--`, in the same write |
-| `--handoff --to S --step N --why W --returns no --phase P` | the same, plus `phase` P (validated) |
+| `--handoff --to S --step N --why W --returns no [--phase P]` | the same, plus `phase` P (validated) when given; without `--phase` the phase stays -- a typed start of another skill, or a pass to an on-demand skill |
 | `--handoff-return` | sets `returned` on the open call; restores `active_skill`, `step`, `step_detail` from it; exit 7 when there is none |
 | `--ask --category C --impact I --context T --suggested T [--asked-by S] [--step N] [--covers X] [--project]` | appends a `Pending` entry; prints its id (the next free `Q<n>`) |
 | `--answer --id Q<n> --state Answered or Skipped or Assumed [--value T] [--by B] [--applied-to T] [--commit C] [--project]` | updates that entry |
@@ -1582,15 +1589,16 @@ suite list of `.github/workflows/installer-tests.yml`):
 | SS-10 | `canonical/aid/templates/agent-boilerplate.md` has the `## Talking with the user` section; every `canonical/agents/*/AGENT.md` includes `{{include:agent-boilerplate}}`; no `AGENT.md` tells its agent to ask the user (`AskUserQuestion`, "ask the user") |
 | SS-11 | No old phase name (`Describe`, `Define`, `Specify`, `Plan`, `Detail`, `Execute`) as data or logic. **Scope**: tracked files under `canonical/skills/`, `canonical/aid/templates/`, `canonical/aid/scripts/` (except `summarize/`, whose diagram tokens are text), `dashboard/home.html`, `dashboard/reader/*.py`, `dashboard/server/*.mjs`, `dashboard/server/*.py`, `dashboard/scripts/writeback-state.sh` -- never a `tests/` or `__tests__/` folder. **Forms**: `phase: <old>`; `--field Phase --value <old>`; a quoted `'<old>'` or `"<old>"`; an enum list `<old> \| <old>`; `Phase.<old>`; `=== '<old>'`; a backticked old name on a line that mentions the phase. **Excluded**: lines between `legacy-phase-map: begin` and `end` markers (the two readers' maps and the gate's old-name rows). Run on today's tree, these forms reach 55 lines, all of them listed in the phase-sites table or the page's sites; only the deploy sentence, prose split over two lines, is listed without being reachable |
 | SS-12 | No hand-written finish: no line matching `lifecycle: (Completed\|Canceled)` (any quoting) in tracked files under `canonical/skills/` and `canonical/aid/templates/`, except files of entries on the shared exempt list marked for SS-12. Lives in `tests/canonical/test-skill-steps.sh`. |
-| SS-14 | The gate is the only creator and the writer the only writer of the work record. (a) `work-initiation-gate.md` § 3a runs `writeback-state.sh --create` with `--reading`, `--skill` and `--step`. (b) No tracked file under `canonical/skills/` or `canonical/aid/templates/` -- except `work-state-template.yml`, `project-state-template.yml`, `delivery-state-template.yml`, `task-state-template.yml` and `work-initiation-gate.md` -- has a line matching `initiator:` (only a creator writes it), `[Cc]opy.*work-state-template\.yml` or ``work-state-template\.yml` to\b`` (copying the template), or `^(active_skill\|step\|step_detail\|phase):` (a hand-written record block). Files of entries on the shared exempt list marked for SS-14 are skipped. Run on today's tree, (b) matches exactly the creation sites in Files and layout -- the seven starters this feature converts plus the exempt ones -- and, once this feature lands, only exempt files. (c) `skill-steps.md` § The work record carries the fail-closed and recovery rules. Lives in `tests/canonical/test-skill-steps.sh`. |
+| SS-14 | The gate is the only creator and the writer the only writer of the work record. (a) `work-initiation-gate.md` § 3a runs `writeback-state.sh --create` with `--reading`, `--skill` and `--step`. (b) No tracked file under `canonical/skills/` or `canonical/aid/templates/` -- except `work-state-template.yml`, `project-state-template.yml`, `delivery-state-template.yml`, `task-state-template.yml` and `work-initiation-gate.md` -- has a line matching `initiator:` (only a creator writes it), `[Cc]opy.*work-state-template\.yml` or ``work-state-template\.yml` to\b`` (copying the template), or `^(active_skill\|step\|step_detail\|phase):` (a hand-written record block). Files of entries on the shared exempt list marked for SS-14 are skipped. Run on today's tree, every file (b) matches is in Files and layout, as a converted allocation point or an exempt per-skill file; once this feature lands it matches only the exempt per-skill files. (c) `skill-steps.md` § The work record carries the fail-closed and recovery rules. Lives in `tests/canonical/test-skill-steps.sh`. |
 | SS-13 | Each of `canonical/agents/aid-reviewer/AGENT.md`, `canonical/aid/templates/reviewer-dispatch.md` and every `canonical/skills/*/references/reviewer-brief.md` (today: `aid-define`, `aid-detail`, `aid-discover`, `aid-execute`, `aid-plan`, `aid-specify`) has a `### What to report` heading (FR-21). Presence check only. Lives in `tests/canonical/test-skill-steps.sh`. |
 
 **Shared exempt list -- `tests/canonical/skill-steps-exempt.tsv`** (tab-separated: `entry` -- a skill
 folder name or a `canonical/` path --, `checks` -- `SS-12`, `SS-14` or both --, `owner` -- the feature that
 rebuilds or retires it). One list serves SS-12 and SS-14: `test-skill-steps.sh` fails when an entry no
 longer exists on disk (its feature landed: the row goes), and under `AID_RELEASE_CHECK=1` while the list
-is not empty. Its rows are the exempt sites of Files and layout (SS-14) and the exempt finishers of Work
-state layout (SS-12).
+is not empty. Its rows are the exempt per-skill files of Files and layout (SS-14) and the exempt finishers
+of Work state layout (SS-12); the converted allocation points are not on it (`aid-design` stays only for
+SS-12, for its hand-written finish).
 
 **Static checks -- `tests/canonical/test-never-merges.sh`**, over the tracked files (`git ls-files`) that
 match:
@@ -1643,7 +1651,8 @@ A row leaves the list when what it waits for has landed and its sample passes 3 
   one write, and exits 5, 4 or 8 on a missing option, a bad value or an existing `STATE.yml`; a write that
   fails (lock timeout, exit 2; unwritable file) leaves the file byte-for-byte unchanged; `--check` reports
   each missing and inconsistent case with exit 9, and 0 on a healthy record; `--repair` writes the record
-  and its history entry; `--reroute`; `--step`; `--handoff` as pass and as call; `--handoff-return`
+  and its history entry; `--reroute`; `--step`; `--handoff` as call, as pass with `--phase`, and as pass without it (phase
+  unchanged, no open call left); `--handoff-return`
   with two nested calls (newest first) and exit 7 with none; `--ask` id numbering, and `--project` creating
   `.aid/STATE.yml`; `--answer` for each state, including an approval's `--covers` / `--commit`; the phase
   names (an old name refused on write); every file written parses through the dashboard reader with no warning.
