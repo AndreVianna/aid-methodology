@@ -1287,3 +1287,11 @@ qa:
     suggested: 'Search every suite for each deleted file and retired engine reference and list a change for every hit, stating the search so the reviewer can re-run it; then one more review.'
     answer: 'Accepted as recommended (fix with the full search, then one more review).'
     applied_to: 'Feature 009 Technical Specification (Migration suites)'
+  - id: Q106
+    category: Specification (Feature 009)
+    impact: Medium
+    state: Answered
+    context: 'Cycle 4 found test-work-initiation-gate.sh asserting text inside aid-test and aid-prototype, which Feature 009 rewrites; the file-name search cannot find text-level assertions.'
+    suggested: 'Fix that suite (point it at action-start.md and rewrite the prototype group) and add one rule: every suite that reads a file this feature rewrites is updated in the same task as the rewrite; then one more review.'
+    answer: 'Fix it, add the rule, then one more review.'
+    applied_to: 'Feature 009 Technical Specification (Migration suites)'
