@@ -1001,3 +1001,19 @@ qa:
     suggested: 'In a lite work, a requirement change before the confirmation becomes part of what is confirmed; after the confirmation it needs approval at once, as Q62 says.'
     answer: 'Accepted as recommended (only after the confirmation).'
     applied_to: 'Feature 005 Technical Specification (REVISE)'
+  - id: Q71
+    category: Specification (Feature 006)
+    impact: High
+    state: Answered
+    context: 'Where the task list and dependencies are written decides what is edited to change the plan and whether PLAN.md can disagree with the task files.'
+    suggested: 'The task instruction files are the only source of tasks, dependencies and delivery membership; PLAN.md''s checklist is generated from them and STATE.yml, so the two never disagree.'
+    answer: 'Accepted as recommended (task files are the source).'
+    applied_to: 'Feature 006 Technical Specification (PLAN.md shape, task instruction file)'
+  - id: Q72
+    category: Specification (Feature 006)
+    impact: Medium
+    state: Answered
+    context: 'Each delivery adds a required approval stop during building.'
+    suggested: 'One delivery for an unsplit work and one per feature for a split work; more only when a part must be checked before the rest can be built (for example a data migration).'
+    answer: 'Accepted as recommended (one per capability).'
+    applied_to: 'Feature 006 Technical Specification (BREAKDOWN)'
