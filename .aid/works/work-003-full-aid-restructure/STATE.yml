@@ -1295,3 +1295,11 @@ qa:
     suggested: 'Fix that suite (point it at action-start.md and rewrite the prototype group) and add one rule: every suite that reads a file this feature rewrites is updated in the same task as the rewrite; then one more review.'
     answer: 'Fix it, add the rule, then one more review.'
     applied_to: 'Feature 009 Technical Specification (Migration suites)'
+  - id: Q107
+    category: Specification (Feature 009)
+    impact: High
+    state: Pending
+    context: 'At Feature 009 approval the maintainer chose to change it: the action list and kinds look software-focused; how can AID apply to health, law, productivity, media, arts and everyday tasks? Research requested before deciding.'
+    suggested: 'Research how actions, kinds and the pipeline map to non-software domains, then decide what Feature 009 must include in v4.0.0 so it is not a dead end and what becomes a later work.'
+    answer: '--'
+    applied_to: 'Feature 009 Technical Specification (pending research)'
