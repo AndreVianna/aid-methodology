@@ -6093,16 +6093,28 @@ Nothing: this is the last feature.
   - **Re-pointed**:
     - `test-downstream-worktree-entry.sh`: G6 slices the same Step 0 and pipeline regions and checks that the free-form
       region names the intake, not `shortcut-engine.md`.
-    - `test-work-initiation-gate.sh`: its list of allocation points drops `shortcut-engine.md`, `aid-create-document` and
-      `aid-update-document` and gains `action-start.md`.
+    - `test-work-initiation-gate.sh`:
+      - Group G's list of work-starting places drops `shortcut-engine.md`, `aid-create-document`, `aid-update-document`,
+        `aid-test` and `aid-prototype` (with their `STARTER_ALLOC_ANCHOR` and `STARTER_COVERAGE_ID` entries) and gains
+        `canonical/aid/templates/action-start.md` under its own coverage ID. For it, `-consults` asserts it names
+        `work-initiation-gate.md`; `-create-mention` asserts it names the gate's § 3a (which creates the worktree); and the
+        ordering check asserts the § 3a line comes before its first `writeback-state.sh` line. The count assertions (G and
+        GG00) take the new list's length.
+      - New, in place of the two removed starters: `aid-test` and `aid-prototype` `SKILL.md` each cite `action-start.md`
+        and name no `worktree-lifecycle.sh create` of their own.
+      - The reconciliation group's two `aid-prototype` checks are rewritten for the new location: `aid-prototype`'s
+        `references/build.md` names `.aid/.temp/prototype/` as the only place the model is written, and no file of the
+        skill opens a worktree of its own (no "opt-in git worktree" sentence, no `git worktree add`). Its `aid-research`
+        and `aid-review` checks are unchanged.
     - `test-state-review-surface.sh`: the engine's GATE surface and its missing-file guard go; the new briefs of
       `aid-test` and `aid-prototype` join by glob.
     - `test-artifact-discipline.sh`: AD07 and AD08 drop `shortcut-engine.md` and `shortcut-scaffolding/` from their scan
       lists; a group left with nothing to scan retires.
     - `test-connector-skills-structural.sh`: its check that the connector skills have no shortcut-catalog row retires with
       the catalog; its comments name `aid-configure`.
-    - `test-connector-consumption-linkage.sh`: the engine's intake seam leaves its seam count, following
-      `consumption-protocol.md`'s table.
+    - `test-connector-consumption-linkage.sh`: the engine's intake seam leaves its seam count, and `aid-fix` leaves its
+      seam loop, following `consumption-protocol.md`'s table (a tracker item now enters through Feature 001's
+      `external-sources.md` and `/aid-specify` START).
   - **Unchanged**: `test-aid-cli-parity.sh`, `dashboard/reader/tests/test_reader.py`,
     `dashboard/server/tests/test_server_node.mjs` and `test_task012_consuming_round_trips.py` (their `/aid-config` hits are
     comments inside synthetic old-style settings fixtures, read as data); `dashboard/reader/tests/test_derivation.py`
@@ -6135,6 +6147,24 @@ Nothing: this is the last feature.
       `site/src/data/skill-flows/` (retired skills' flows deleted) and the skill pages under
       `site/src/content/docs/skills/` (retired pages deleted);
     - the rest of `site/src/content/docs/`: the final documentation pass (Components).
+  - **Suites over the files this feature rewrites** -- a second, targeted search, also re-runnable: `git grep -nE
+    '(skills/|\}/|/)aid-(create|update|fix|refactor|document|test|prototype|deploy|monitor|read-ticket)([/"'"'"' ]|$)' --
+    tests dashboard/reader/tests dashboard/server/tests`, read hit by hit. The hits that assert text the rewrite changes:
+    `test-work-initiation-gate.sh` (Group G and the reconciliation group, above); `test-deploy-monitor-repurpose.sh`
+    (DMR20a-c, above); `test-downstream-worktree-entry.sh` (G6, above); `test-ticket-skills-structural.sh` (its
+    `aid-read-ticket` checks that name the sibling ticket skills; rewritten, above); `test-connector-consumption-linkage.sh`
+    (the `aid-fix` seam, above); and the retired family suites. The other hits assert nothing the rewrite changes and stay:
+    `test-multitool-isolation.sh` and `tests/windows/Test-AidInstaller.ps1` (they use `aid-fix/SKILL.md` as a sample
+    installed file, compared byte for byte with its own source); `test-pipeline-status-walkthrough.sh` (`aid-deploy`'s
+    `state-idle.md`, which this feature does not edit); `test-ticket-retirement-structural.sh`'s `aid-deploy` and
+    `aid-monitor` reads (`state-packaging.md`, `state-route.md` and their ticket-fetch patterns, untouched by the Step 0
+    edit); `test-review-path-audit.sh` (`/aid-create` inside a fixture sentence); `dashboard/server/tests/test_index_html.py`
+    (a comment).
+  - **The rule for this class**, stated once: every suite that asserts text inside a file this feature rewrites -- the
+    action skills, `aid-deploy`, `aid-monitor`, `aid-read-ticket`, `action-start.md`, the catalog, and Feature 008's
+    `close.md`, `cleanup-classify.sh` and `close-work.sh` -- is updated in the same task as that rewrite, and a task is not
+    `Done` while any such suite fails (Feature 007's TEST step). The full suite at the end of the build (Feature 007,
+    FINAL) is the final check for this class.
   - `tests/cost-baseline.tsv` and `tests/coverage-baseline.tsv` re-recorded; removed assertions go to
     `tests/coverage-accepted-removals.tsv`.
 - **KB** (no work ids) -- the list was built from a search of `.aid/knowledge/*.md` for every path this feature deletes
