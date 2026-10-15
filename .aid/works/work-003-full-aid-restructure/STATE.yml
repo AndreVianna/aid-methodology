@@ -983,3 +983,19 @@ qa:
     suggested: 'One /aid-kb-update call per approval carries all project-wide decisions from it; Feature 004''s row is reworded to match.'
     answer: 'Accepted as recommended (one update per approval).'
     applied_to: 'Feature 005 Technical Specification (FINISH); Feature 004 row wording'
+  - id: Q69
+    category: Specification (Feature 005)
+    impact: High
+    state: Answered
+    context: 'The specification review loop has no bound; the architect proposed moving on after three rounds below the grade bar.'
+    suggested: 'After three rounds below the bar, the agent shows the user what is still open; for each issue the user chooses fix, accept as is, or keep reviewing. Nothing moves on unless the grade passes or the user accepts what is left.'
+    answer: 'Accepted as recommended (after three rounds, the user decides).'
+    applied_to: 'Feature 005 Technical Specification (CHECK)'
+  - id: Q70
+    category: Specification (Feature 005)
+    impact: Medium
+    state: Answered
+    context: 'Q62 asks for an immediate approval of a requirement change at every depth, but a lite work has nothing approved before the confirmation before building, and AC-10 says lite has exactly one approval.'
+    suggested: 'In a lite work, a requirement change before the confirmation becomes part of what is confirmed; after the confirmation it needs approval at once, as Q62 says.'
+    answer: 'Accepted as recommended (only after the confirmation).'
+    applied_to: 'Feature 005 Technical Specification (REVISE)'
