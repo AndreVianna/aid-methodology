@@ -1149,3 +1149,35 @@ qa:
     suggested: 'Bring them in by fast-forward, or by the guarded merge of the branch''s own remote copy, and show them at the next approval.'
     answer: 'Accepted as recommended (bring them in automatically).'
     applied_to: 'Feature 008 Technical Specification (PUSH)'
+  - id: Q89
+    category: Specification (Feature 008)
+    impact: High
+    state: Answered
+    context: 'Keeps reacting until merged cannot mean watching forever in a session that can end at any time.'
+    suggested: 'Check at intervals while a pipeline is running, with a time cap, then wait; any resume or check-my-PR request checks again.'
+    answer: 'Accepted as recommended (while a pipeline runs, with a time cap).'
+    applied_to: 'Feature 008 Technical Specification (WATCH)'
+  - id: Q90
+    category: Specification (Feature 008)
+    impact: Medium
+    state: Answered
+    context: 'A PR opened at a delivery milestone invites full reviews of half-built work.'
+    suggested: 'Open the PR as a draft (GitLab Draft:) during building and mark it ready when the whole build is approved.'
+    answer: 'Accepted as recommended (draft while building).'
+    applied_to: 'Feature 008 Technical Specification (PUSH)'
+  - id: Q91
+    category: Specification (Feature 008)
+    impact: Medium
+    state: Answered
+    context: 'A PR reply is a public write made on the user''s behalf.'
+    suggested: 'After the push that carries a fix, one short factual reply (fixed in <commit>); for a declined suggestion, reply only with the user''s reason and their OK; threads are left for reviewers to resolve.'
+    answer: 'Accepted as recommended (short factual replies only).'
+    applied_to: 'Feature 008 Technical Specification (REACT)'
+  - id: Q92
+    category: Specification (Feature 008)
+    impact: Medium
+    state: Answered
+    context: 'FR-7 requires hardening, security and quality reviews but sets no timing or depth.'
+    suggested: 'One reviewer pass with one brief and three lenses when full monitoring starts, no grade loop; defects become corrections, the rest suggestions.'
+    answer: 'Accepted as recommended (one pass when watching starts).'
+    applied_to: 'Feature 008 Technical Specification (REVIEW)'
