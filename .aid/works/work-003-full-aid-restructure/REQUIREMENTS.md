@@ -5007,7 +5007,7 @@ milestone calls arrive there too, and START sends them on. Typing the command on
 |---|---|---|---|
 | START | `references/start.md` | main conversation | `CHAIN` -> COLLECT (a collect call), PUSH (a push call), WATCH (a pull request exists), CLOSE (nothing to land, no git, or *no pull request*); `ASK` -> START for the create question; `PASS` back for a typed start before the whole build is approved |
 | COLLECT | `references/collect.md` (`hosts.md`) | main conversation | `HALT` in a collect call; `CHAIN` -> CLOSE when merged; else `CHAIN` -> REACT |
-| PUSH | `references/push.md` (`hosts.md`) | main conversation | `ASK` -> PUSH for the Every-way-in approval; `CHAIN` -> PARENT on a conflict; `HALT` in a push call; else `CHAIN` -> WATCH |
+| PUSH | `references/push.md` (`hosts.md`) | main conversation | `ASK` -> PUSH for the ignored-folder question and the Every-way-in approval; `CALL` to `aid-plan`, then `aid-execute`, for a change asked there; `HALT` or `CHAIN` -> WATCH on *not now*; `CHAIN` -> PARENT on a conflict; `HALT` in a push call; else `CHAIN` -> WATCH |
 | PARENT | `references/parent.md` (brief: `references/reviewer-brief.md`) | main conversation; `aid-developer` resolves; `aid-reviewer` checks | `ASK` the conflict-merge approval, then `CHAIN` -> PUSH |
 | REVIEW | `references/review.md` (brief: `references/reviewer-brief.md`) | `aid-reviewer` | `CHAIN` -> REACT |
 | REACT | `references/react.md` | main conversation | `CALL` to `aid-plan`, then `CALL` to `aid-execute`, then `CHAIN` -> PUSH; `ASK` -> REACT for suggestions and for a failure that survived three attempts; `CHAIN` -> PARENT for a conflict; `CHAIN` -> WATCH when nothing is open |
@@ -5063,9 +5063,14 @@ by `HALT` at CLOSE; the one `PASS` is START's pass back on a typed start before 
 3. **PUSH** -- in this order: step 0, then the Every-way-in check, then steps 1-7, so `--check` never reads a `--`
    remote or work-folder value.
    0. **The first push**, before anything else: `pull_request.remote` is checked -- still `--` (START could not resolve
-      it), `connect.md`; and while `pull_request.work_folder` is `--`, the setting is frozen for this work through the
-      writer (`--pull-request --field "Work Folder" --value <work_folders>`), before anything is checked, committed or
-      pushed.
+      it), `connect.md`. Then, while `pull_request.work_folder` is `--`:
+      - **An ignored work folder**: when `.gitignore` hides `.aid/works/` (`git check-ignore`) and `.aid/settings.yml` has
+        no `work_folders` key (the setting was never chosen for this project), one question first, `category:
+        Settings`, recommendation `keep-local` (the project already keeps work folders out of git), recorded with
+        `--ask --project` -- an `ASK` back to PUSH. The answer is written to `.aid/settings.yml` the way `/aid-configure`
+        writes it.
+      - **The freeze**, only then: the setting is frozen for this work through the writer (`--pull-request --field "Work
+        Folder" --value <work_folders>`), before anything is checked, committed or pushed.
    - **Every way in** -- a push call from Building's milestone, START's create question or a resume, REACT after a
      corrections approval (and the KB call on confirmation that follows it, Feature 007), PARENT -- then runs one check,
      stated here once: `push-approved.sh --check` names the commits past the newest approved `commit` that it would not
@@ -5073,7 +5078,13 @@ by `HALT` at CLOSE; the one `PASS` is START's pass back on a typed start before 
      Approval` with `commit` the head: `covers: KB change` when they change only KB paths (the KB call after the last
      approval, a knowledge fact a correction settled), else `covers: final result` (FR-6: nothing reaches the pull
      request before its approval). The approval is an `ASK` back to PUSH: a session that ends before the answer resumes
-     at PUSH, which runs step 0 and this check again and finds the question still open. A knowledge-update work's own `KB change` approval already records its `commit`
+     at PUSH, which runs step 0 and this check again and finds the question still open. The answer is recorded as
+     Feature 002's protocol says (`--ask` before it is shown, `--answer` after), and counts as an approval only for a yes:
+     - **yes**: on to step 1, and the push;
+     - **a change asked**: corrections, as REACT makes them -- `/aid-plan` REVISE, then a correction `CALL` to
+       `/aid-execute` -- then back to PUSH, where this check runs again over the new commits;
+     - **not now**: nothing is pushed and the commits stay waiting. In a push call from Building: `HALT`, back to the
+       caller, saying the push was declined; at CI: WATCH, and the next way in asks again. A knowledge-update work's own `KB change` approval already records its `commit`
      (Feature 004). So every commit on the work branch reaches the pull request, and at CLOSE, on the normal path, the
      local tip equals `pull_request.head`.
    1. **Others' commits first** (Q88; AC-11): fetch; when the remote work branch holds commits the local one does not:
@@ -5419,7 +5430,7 @@ to the parent branch, and never deletes a remote branch.
 - **Names**: `/aid-monitor` (production) and `/aid-monitor-pipeline` (the pull request) are easy to confuse; their
   guide lines say plainly which is which.
 - **Default `push` and ignored work folders**: a project whose `.gitignore` hides `.aid/works/` (this repository hides
-  some old works) cannot commit the record; the first push there asks once which setting to keep (Migration).
+  some old works) cannot commit the record; PUSH step 0 asks once which setting to keep, before the freeze (Migration).
 - **A work folder committed on its parent branch while still running** (only possible by hand) would read as finished
   under Q95; the gate's recovery still lets the user resume it by confirming a repair.
 - **The stand-ins** in the conversation suite prove the command route, not the plug-in route or the hosts' real replies;
@@ -5432,9 +5443,9 @@ finished works are cleaned up when they close.
 
 - **Installed projects**: `aid update` installs the new skill and the `pipeline/` scripts and removes
   `housekeep/cleanup-classify.sh` through the install manifest (decisions.md § D9).
-- **Settings**: `work_folders` is read with its default, so no format change (Feature 004's format 6 stands). The first
-  push in a project whose `.gitignore` excludes `.aid/works/` asks once (`--ask --project`), recommendation `keep-local`;
-  the answer is written to `.aid/settings.yml` the way `/aid-configure` writes it.
+- **Settings**: `work_folders` is read with its default, so no format change (Feature 004's format 6 stands). A project
+  whose `.gitignore` excludes `.aid/works/` and which never chose the setting is asked once, at PUSH step 0, before the
+  first freeze (recommendation `keep-local`).
 - **Existing works**: no `pull_request` key means no pull request; START adopts an open pull request whose head is the
   work branch. Old local delivery branches go at the work's close (Feature 007). A work marked done by hand before this
   feature keeps its worktree until a leftovers question removes it.
@@ -5537,6 +5548,8 @@ answer from the sample's `host.json` and log every call to `host-calls.log`, whi
 | `008-14-research-closes` -- a research work ends. Check: a pass to the close; done; its worktree removed; no pull request question | AC-14, AC-36 | now |
 | `008-15-live-hosts` -- `008-03` and `008-09` against a scratch repository on GitHub and on GitLab, through each route | AC-13, AC-27, AC-36 | integration run before release |
 | `008-16-correction-settles-a-fact` -- after the whole build, a pipeline failure whose fix settles a project fact (a check the pipeline now requires), with a KB. Check: the corrections approval, then the KB call on confirmation and its KB commit; one approval `covers: KB change` before the push; the pushed head contains the KB commit; after the stand-in reports the merge, the close deletes the local branch (nothing unpushed) | AC-27, AC-36, AC-42 | now |
+| `008-17-push-declined-in-a-push-call` -- a two-delivery work; at the delivery-001 milestone, after the yes to the push question, the KB call on confirmation leaves a KB commit past the approved one, and the user answers *not now* to the Every-way-in approval. Check: the answer recorded, not as an approval; nothing pushed; the call returns to Building, which goes on; the next push asks again and, after its yes, the pushed head holds the KB commit | AC-42 | now |
+| `008-18-ignored-work-folders` -- a project whose `.gitignore` hides `.aid/works/`, with no `work_folders` key. Check: one question at the first push, recommending `keep-local`, asked before anything is pushed; the answer in `.aid/settings.yml`, then `pull_request.work_folder` equal to it; nothing under `.aid/works/` in the pushed content | AC-35 | now |
 
 `002-10-pull-request-only-when-asked`, `007-13-milestone-collect-and-push` and `001-16-work-closes-done` run at this
 feature's end.
@@ -5549,9 +5562,9 @@ feature's end.
 | AC-13 | Components (Reaching the host) | MP-03; `008-12`, `008-15` |
 | AC-27 | Flow (REVIEW, REACT, WATCH); Components (Approvals) | MP-02; `008-03`, `008-04`, `008-05`, `008-08`, `008-15`, `008-16` |
 | AC-34 | Components (`merge-parent.sh`: the one merge AC-34 allows) | NM-01, NM-06; Feature 007's `007-09` |
-| AC-35 | Flow (PUSH step 3); Components (`push-approved.sh`); Work state (`work_folder`) | `test-push-approved.sh`; `008-10` |
+| AC-35 | Flow (PUSH step 3); Components (`push-approved.sh`); Work state (`work_folder`) | `test-push-approved.sh`; `008-10`, `008-18` |
 | AC-36 | Flow (CLOSE); Components (`close-work.sh`, `cleanup-classify.sh`, Merged work folders) | NM-05, NM-06; `test-close-work.sh`; `008-09`, `008-10`, `008-11`, `008-13`, `008-14`, `008-16` |
-| AC-42 | Flow (COLLECT, PUSH); Components (`push-approved.sh`) | `test-push-approved.sh`; `008-01`, `008-02`, `008-03`, `008-06`, `008-07`, `008-16`; `007-13` |
+| AC-42 | Flow (COLLECT, PUSH); Components (`push-approved.sh`) | `test-push-approved.sh`; `008-01`, `008-02`, `008-03`, `008-06`, `008-07`, `008-16`, `008-17`; `007-13` |
 
 ### Feature 009 — One Obvious Skill for Each Need
 
