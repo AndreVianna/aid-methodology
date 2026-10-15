@@ -4022,8 +4022,10 @@ changes `REQUIREMENTS.md` only through `/aid-specify` and a KB document only thr
     - `intent.depth`, when missing, takes `pipeline.path`'s value (Q11); then `pipeline.path` goes;
     - `interview`, `features` and `review_history` go (Feature 005);
     - the old phase names are rewritten (Feature 002's mapping);
-    - **the record** of every open work whose record is missing or incomplete by `--check`'s field rules (Feature
-      002); a work with a complete record -- every work `--create` made -- is never touched, since its record is the
+    - **the record** of every open work whose resume fields are missing or incomplete -- `active_skill` and `step`,
+      by `--check`'s field rules (Feature 002). An empty type, left on purpose for the one resume question (Q74), does
+      not make the record incomplete for the fill, so a work an earlier run filled is skipped on every later run. A
+      work with complete resume fields -- every work `--create` made -- is never touched, since its record is the
       only resume source and the record `--create` wrote wins. So only old phase names reach the fill. `active_skill`
       and `step` are decided from what is on disk, first match wins. The template's default `phase: Describe` is
       kept by every skill that never sets a phase, so only a phase some pipeline step moved is trusted:
@@ -4157,7 +4159,8 @@ list.
   `/aid-brainstorm` and `/aid-kb-update`; an `aid-refactor` work halted at the shortcut approval with phase `Detail`
   gets `/aid-execute`; a work with `active_skill: aid-deploy` at `phase: Execute` gets `/aid-deploy`; a work with a
   complete record (made by `--create`) at `phase: Definition` keeps its record byte for byte; a duplicate task id and an unknown file each warn and change or drop nothing; a
-  second run changes nothing; bash and PowerShell give the same bytes, the PowerShell half in the Windows lane.
+  second run over these fixtures changes nothing, the records included -- also for a work whose type the first run
+  left empty; bash and PowerShell give the same bytes, the PowerShell half in the Windows lane.
 - `tests/canonical/test-work-initiation-gate.sh`: an old-layout work gets the `aid update` line and no repair.
 - Dashboard: fixtures for a single-layout work at Planning (task files, no entries yet), at Building with two
   deliveries (lanes per delivery, delivery names from the plan), and an old nested work (`layout_status: old`, the
