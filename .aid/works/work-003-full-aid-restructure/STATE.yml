@@ -919,3 +919,19 @@ qa:
     suggested: 'A new work''s worktree branches from the main folder''s current branch, and that branch is the work''s parent branch (its pull request target); the hard-coded master default is removed.'
     answer: 'Accepted as recommended (branch from the current branch).'
     applied_to: 'Feature 004 Technical Specification (gate changes); noted for Features 007 and 008'
+  - id: Q61
+    category: Specification (Feature 005)
+    impact: High
+    state: Answered
+    context: 'Designing on requirements the user has not confirmed risks redoing the design; each checkpoint is another stop.'
+    suggested: 'At full depth the business part is confirmed before DESIGN, and the final approval covers the technical part and the whole document; adds one row to Feature 002''s approvals table.'
+    answer: 'Accepted as recommended (two checkpoints).'
+    applied_to: 'Feature 005 Technical Specification (approvals)'
+  - id: Q62
+    category: Specification (Feature 005)
+    impact: High
+    state: Answered
+    context: 'A change to approved requirements during planning or building has no row in Feature 002''s approvals table.'
+    suggested: 'A change to a requirement or acceptance criterion is approved at once, at every depth; a technical-only change is a small decision confirmed at the next approval or milestone.'
+    answer: 'Accepted as recommended (depends on the change).'
+    applied_to: 'Feature 005 Technical Specification (REVISE)'
