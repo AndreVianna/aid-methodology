@@ -1231,3 +1231,35 @@ qa:
     suggested: 'Not now at CI with no PR pauses the work like START''s not-yet answer; the next resume asks again.'
     answer: 'Fix it, then one more review.'
     applied_to: 'Feature 008 Technical Specification (PUSH Every-way-in answers)'
+  - id: Q99
+    category: Specification (Feature 009)
+    impact: High
+    state: Answered
+    context: 'AC-20 removes pure wrappers; Feature 008 already relies on a fix skill; fix, refactor, remove, deprecate, migrate and experiment are bare doorways today.'
+    suggested: 'Keep /aid-fix and /aid-refactor as action skills; remove, deprecate and migrate become change patterns of /aid-update; experiment becomes a kind of /aid-test.'
+    answer: 'Accepted as recommended (keep fix and refactor).'
+    applied_to: 'Feature 009 Technical Specification (action skills, catalog)'
+  - id: Q100
+    category: Specification (Feature 009)
+    impact: Medium
+    state: Answered
+    context: 'aid-create-ticket and aid-update-ticket break AC-31, and Features 001 and 008 point at the update one.'
+    suggested: 'A ticket kind of /aid-create and /aid-update writes to the tracker with no work, previewing before it writes; /aid-read-ticket stays.'
+    answer: 'Accepted as recommended (a ticket kind).'
+    applied_to: 'Feature 009 Technical Specification (catalog, ticket kind)'
+  - id: Q101
+    category: Specification (Feature 009)
+    impact: Medium
+    state: Answered
+    context: 'Creating and updating a document are separate skills today, so two skills overlap.'
+    suggested: '/aid-document writes new documents and revises existing ones; create and update take no document kind.'
+    answer: 'Accepted as recommended (/aid-document does both).'
+    applied_to: 'Feature 009 Technical Specification (/aid-document)'
+  - id: Q102
+    category: Specification (Feature 009)
+    impact: Medium
+    state: Answered
+    context: 'Test means both running checks and writing tests today.'
+    suggested: '/aid-test runs checks and reports; writing tests is /aid-create test or /aid-update test, built through the full pipeline.'
+    answer: 'Accepted as recommended (/aid-test runs checks).'
+    applied_to: 'Feature 009 Technical Specification (/aid-test, catalog)'
