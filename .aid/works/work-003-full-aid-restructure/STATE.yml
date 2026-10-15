@@ -322,11 +322,11 @@ features:
     sections: []
   - id: '009'
     name: one-skill-per-need
-    state: In Discussion
+    state: Ready
     started: '2026-10-15'
     updated: '2026-10-15'
     grade: A+
-    qa_count: 0
+    qa_count: 12
     sections: []
 # [A] appended by aid-describe / aid-define as the interview and its
 #     cross-reference pass proceed. Append-only, newest LAST. Distinct from
