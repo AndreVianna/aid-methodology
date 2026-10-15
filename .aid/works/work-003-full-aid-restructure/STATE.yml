@@ -293,7 +293,7 @@ features:
     state: In Discussion
     started: '2026-10-15'
     updated: '2026-10-15'
-    grade: Pending
+    grade: C
     qa_count: 0
     sections: []
   - id: '006'
