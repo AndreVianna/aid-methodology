@@ -1181,3 +1181,35 @@ qa:
     suggested: 'One reviewer pass with one brief and three lenses when full monitoring starts, no grade loop; defects become corrections, the rest suggestions.'
     answer: 'Accepted as recommended (one pass when watching starts).'
     applied_to: 'Feature 008 Technical Specification (REVIEW)'
+  - id: Q93
+    category: Specification (Feature 008)
+    impact: Medium
+    state: Answered
+    context: 'rules.md defers AID-managed command-line connectors; without a fallback GitLab only works through the host tool''s plug-in.'
+    suggested: 'Plug-in connector first, then the user''s own signed-in gh / glab; AID never stores a credential.'
+    answer: 'Accepted as recommended (plug-in first, then gh/glab).'
+    applied_to: 'Feature 008 Technical Specification (reaching the host); connectors protocol'
+  - id: Q94
+    category: Specification (Feature 008)
+    impact: Medium
+    state: Answered
+    context: 'A work with git but no PR has an unmerged branch; deleting it would lose work.'
+    suggested: 'Ask: create the PR now / not yet (the work pauses at CI) / no PR; no PR marks the work done and keeps its branch and worktree until merged, when the leftovers question removes them.'
+    answer: 'Accepted as recommended (ask).'
+    applied_to: 'Feature 008 Technical Specification (START, CLOSE)'
+  - id: Q95
+    category: Specification (Feature 008)
+    impact: Medium
+    state: Answered
+    context: 'With work_folders: push, the copy merged into the parent branch still says waiting for the merge.'
+    suggested: 'Readers and the gate treat a work folder found on a branch other than its own as finished (it arrived through a merge); it is never resumed.'
+    answer: 'Accepted as recommended (treat it as finished).'
+    applied_to: 'Feature 008 Technical Specification (dashboard, gate)'
+  - id: Q96
+    category: Specification (Feature 008)
+    impact: Medium
+    state: Answered
+    context: 'Research, review, report, document, test and prototype skills write done themselves, so their worktrees are never cleaned and created documents never get a PR.'
+    suggested: 'Each passes to the close instead; Feature 008 converts the ones that stay and Feature 009 converts the ones it rebuilds.'
+    answer: 'Accepted as recommended (hand over to the close).'
+    applied_to: 'Feature 008 Technical Specification (CLOSE); Feature 009'
