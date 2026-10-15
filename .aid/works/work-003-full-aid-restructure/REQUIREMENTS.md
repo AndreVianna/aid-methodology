@@ -4992,7 +4992,7 @@ project's main worktree.
 | Edit | `canonical/agents/aid-operator/AGENT.md` | "Create pull requests" lines go: the operator writes the release's description, `/aid-monitor-pipeline` opens the pull request |
 | Edit | every other kept file under `canonical/` that runs `git push` (today `aid-discover`'s fix step and its `SKILL.md` note, carried into `aid-kb-build` by Feature 004, and `aid-update-kb`'s done step) | The push line goes: the KB is committed, never pushed (Feature 004); NM-05 keeps `push-approved.sh` the only push |
 | Edit | `canonical/skills/aid-execute/references/milestone.md` (Feature 007) | Its two calls name their entry: the collect call passes `--why 'collect: <covers>'`, the push call `--why 'push: <commit>'` (START reads the first word) |
-| Edit | `dashboard/scripts/delete-pipeline.sh` and its suite `tests/canonical/test-delete-pipeline.sh` | NM-06: its `git worktree remove --force` loses `--force`. The work folder is removed first, as today for a shared worktree; then the dedicated worktree is removed without force, so a worktree still holding the user's other uncommitted changes is kept and the script exits 3 naming it, instead of destroying them. The suite gains that case; unit 12 (a locked worktree, exit 3) stands |
+| Edit | `dashboard/scripts/delete-pipeline.sh` and its suite `tests/canonical/test-delete-pipeline.sh` | NM-06: its `git worktree remove --force` loses `--force`. For a dedicated worktree, in this order: (1) a locked worktree, or any uncommitted change outside this work's folder (`git status --porcelain --untracked-files=all -- . ':(exclude).aid/works/<work_id>'`), exits 3 and touches nothing; (2) only this work's folder changes are discarded -- its tracked files restored (`git checkout -- .aid/works/<work_id>`, when git tracks any) and its untracked ones, the sentinel lock included, cleaned (`git clean -fdq -- .aid/works/<work_id>`); ignored files such as `.aid/.temp/` do not block; (3) `git worktree remove` without force, the folder's committed copy going with the worktree. The main and shared cases keep today's folder-only removal of the target copy (other copies stay untouched, unit 14). Suite: unit 8 (a committed folder) exits 0 with the worktree gone and the branch kept; unit 12 (a locked worktree) exits 3 with the folder and worktree in place; a new unit -- another uncommitted file in the worktree -- exits 3 with everything in place |
 | Edit | `canonical/aid/rules.md` § Skill guide | The `/aid-monitor-pipeline` line (Components) |
 | Edit | `dashboard/reader/models.py`, `parsers.py`, `reader.py`, `dashboard/server/reader.mjs`, `server.py` § `_ser_work`, `server.mjs`, `dashboard/home.html` | See Components, Dashboard |
 | Create | `tests/canonical/test-monitor-pipeline.sh`, `test-push-approved.sh`, `test-merge-parent.sh`, `test-close-work.sh`, `tests/conversation/samples/feature-008/`, `tests/conversation/stand-ins/` | See Testing |
@@ -5040,12 +5040,8 @@ by `HALT` at CLOSE; the one `PASS` is START's pass back on a typed start before 
      now* (recommended), *not yet* (the work pauses at CI, `pause_reason: 'Pull request not created yet'`; any resume asks
      again), or *no pull request* (CLOSE, mode `no-pr`: the work is marked done, its branch and worktree kept). The yes is
      the instruction FR-7 requires: PUSH.
-   - **Commits no approval covers** -- at the pass to CI, commits past the newest approved `commit` that `push-approved.sh
-     --check` names as waiting: a work that reached CI without a milestone (a release work, say), or the KB call made
-     right after the final approval (Feature 007). They are shown in one approval before the create question or the
-     push, recorded `category: Approval` with `commit` the head and `covers: KB change` when they change only KB paths,
-     else `covers: final result` (FR-6: nothing reaches the pull request before its approval). A knowledge-update work's
-     own `KB change` approval already records its `commit` (Feature 004).
+   - **Commits no approval covers** (a release work that reached CI without a milestone, say) are approved at PUSH's
+     entry, before anything is pushed (PUSH, Every way in).
    - **A host other than GitHub or GitLab**: PUSH pushes on the yes; the user opens the pull request; WATCH is replaced by
      one `WAIT` ("tell me when it is merged"), and the user's word moves the work to CLOSE.
    - **A pull request exists** (`pull_request.number`): a draft is marked ready for review now that the whole build is
@@ -5065,6 +5061,15 @@ by `HALT` at CLOSE; the one `PASS` is START's pass back on a typed start before 
    - `pull_request.state`, `pipeline` and `checked` are written.
    - In a collect call: `HALT` (Building's MILESTONE turns the entries into corrections, Feature 007).
 3. **PUSH**
+   - **Every way in** -- a push call from Building's milestone, START's create question or a resume, REACT after a
+     corrections approval (and the KB call on confirmation that follows it, Feature 007), PARENT -- first runs one check,
+     stated here once: `push-approved.sh --check` names the commits past the newest approved `commit` that it would not
+     push. When there are some, they are shown in one approval before anything else in PUSH, recorded `category:
+     Approval` with `commit` the head: `covers: KB change` when they change only KB paths (the KB call after the last
+     approval, a knowledge fact a correction settled), else `covers: final result` (FR-6: nothing reaches the pull
+     request before its approval). A knowledge-update work's own `KB change` approval already records its `commit`
+     (Feature 004). So every commit on the work branch reaches the pull request, and at CLOSE, on the normal path, the
+     local tip equals `pull_request.head`.
    0. **The first push** (`pull_request.work_folder` is `--`): the setting is frozen for this work through the writer
       (`--pull-request --field "Work Folder" --value <work_folders>`), before anything is committed or pushed.
    1. **Others' commits first** (Q88; AC-11): fetch; when the remote work branch holds commits the local one does not:
@@ -5299,8 +5304,10 @@ Reads `cleanup-classify.sh --work` and acts on its items only.
   does not offer such a ledger.
 - **The local work branch** (`merged`): deleted only when the host reported the merge and the local tip equals
   `pull_request.head` (nothing unpushed), or the tip is contained in the parent's remote tip (`nothing`); otherwise kept,
-  and said. The old local delivery branches (Feature 007's migration): deleted when contained in the work branch's
-  pushed head, else kept and said. Branches are deleted only after the worktree is gone.
+  and said. On the normal path nothing is unpushed: every commit went through PUSH's check (Every way in), and the close's
+  own writes are uncommitted and dropped with the folder. The old local delivery branches (Feature 007's migration):
+  deleted when contained in the work branch's pushed head, else kept and said. Branches are deleted only after the
+  worktree is gone.
 - **The worktree**: `git worktree remove` without `--force`, run from the main folder; one holding changes is kept, and
   said. `no-pr` keeps both the branch and the worktree (Q94).
 - **The work folder** (`work_folder`, or the setting without a push): `push` -- the worktree copy goes with the worktree
@@ -5524,6 +5531,7 @@ answer from the sample's `host.json` and log every call to `host-calls.log`, whi
 | `008-13-no-pull-request` -- the user answers *no pull request*. Check: done; branch and worktree kept | AC-36 | now |
 | `008-14-research-closes` -- a research work ends. Check: a pass to the close; done; its worktree removed; no pull request question | AC-14, AC-36 | now |
 | `008-15-live-hosts` -- `008-03` and `008-09` against a scratch repository on GitHub and on GitLab, through each route | AC-13, AC-27, AC-36 | integration run before release |
+| `008-16-correction-settles-a-fact` -- after the whole build, a pipeline failure whose fix settles a project fact (a check the pipeline now requires), with a KB. Check: the corrections approval, then the KB call on confirmation and its KB commit; one approval `covers: KB change` before the push; the pushed head contains the KB commit; after the stand-in reports the merge, the close deletes the local branch (nothing unpushed) | AC-27, AC-36, AC-42 | now |
 
 `002-10-pull-request-only-when-asked`, `007-13-milestone-collect-and-push` and `001-16-work-closes-done` run at this
 feature's end.
@@ -5534,11 +5542,11 @@ feature's end.
 |---|---|---|
 | AC-11 | Components (`merge-parent.sh`, `hosts.md`, Kept invariant); Flow (START, PARENT) | NM-01, NM-02, NM-03, NM-05; MP-03; `008-01`, `008-06`; `002-10` |
 | AC-13 | Components (Reaching the host) | MP-03; `008-12`, `008-15` |
-| AC-27 | Flow (REVIEW, REACT, WATCH); Components (Approvals) | MP-02; `008-03`, `008-04`, `008-05`, `008-08`, `008-15` |
+| AC-27 | Flow (REVIEW, REACT, WATCH); Components (Approvals) | MP-02; `008-03`, `008-04`, `008-05`, `008-08`, `008-15`, `008-16` |
 | AC-34 | Components (`merge-parent.sh`: the one merge AC-34 allows) | NM-01, NM-06; Feature 007's `007-09` |
 | AC-35 | Flow (PUSH step 3); Components (`push-approved.sh`); Work state (`work_folder`) | `test-push-approved.sh`; `008-10` |
-| AC-36 | Flow (CLOSE); Components (`close-work.sh`, `cleanup-classify.sh`, Merged work folders) | NM-05, NM-06; `test-close-work.sh`; `008-09`, `008-10`, `008-11`, `008-13`, `008-14` |
-| AC-42 | Flow (COLLECT, PUSH); Components (`push-approved.sh`) | `test-push-approved.sh`; `008-01`, `008-02`, `008-03`, `008-06`, `008-07`; `007-13` |
+| AC-36 | Flow (CLOSE); Components (`close-work.sh`, `cleanup-classify.sh`, Merged work folders) | NM-05, NM-06; `test-close-work.sh`; `008-09`, `008-10`, `008-11`, `008-13`, `008-14`, `008-16` |
+| AC-42 | Flow (COLLECT, PUSH); Components (`push-approved.sh`) | `test-push-approved.sh`; `008-01`, `008-02`, `008-03`, `008-06`, `008-07`, `008-16`; `007-13` |
 
 ### Feature 009 — One Obvious Skill for Each Need
 
