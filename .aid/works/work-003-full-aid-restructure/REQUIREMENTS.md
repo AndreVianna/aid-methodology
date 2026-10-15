@@ -4204,7 +4204,580 @@ Feature 007; Feature 001's `001-07-rich-ticket` runs again at this feature's end
 
 #### Technical Specification
 
-*(pending -- added by `/aid-specify`)*
+Serves FR-1 (the Building phase), FR-6 (the confirmation, the milestones, one worktree and one branch), FR-11 and
+FR-19, and follows FR-7, FR-17, FR-18 and FR-20 as Features 001-006 define them. Maintainer decisions: Q5, Q19, Q21,
+Q24-Q26, Q35, Q36, Q60, Q62, Q70, Q73, Q76-Q80. Paths are `canonical/` sources, rendered as in Feature 001. "The plan"
+is a work's `PLAN.md`; "a task file" is `tasks/task-NNN/DETAIL.md`; "the work file" is the work's `STATE.yml`; "the work
+branch" is the work's one branch; "the parent branch" is `pipeline.parent_branch` (Feature 004, Q60).
+
+##### 1. Files and layout
+
+| Change | Path | What |
+|---|---|---|
+| Rewrite | `canonical/skills/aid-execute/SKILL.md` | The Building phase skill, for the whole plan: its step table (see Flow), `skill-steps.md` and `question-protocol.md` cited, Feature 001's what/when `description:` (see Components), `argument-hint: "[the work to build, or what to change while building]"`. At most 120 lines. Goes: Check 1's work listing and its own worktree entry (the gate and the work record do both, Feature 002), the layout detection and every full/flat branch, Check 5's per-delivery branches, the state map and banners, `## Delivery Lifecycle` with its "merge to main", the pool dispatch, `## Impediments`, `## Ticket Suggestion` (a write-back is made only on request, Feature 001), the quality checklist. The plan-mode check stays, as one line |
+| Create | `canonical/skills/aid-execute/references/` | `start.md`, `build.md`, `test.md`, `verify.md`, `simplify.md`, `next.md`, `delivery.md`, `final.md`, `milestone.md`, `blocker.md`, `finish.md`, `old-work.md` (Migration); `reviewer-brief.md` is rewritten, with `### What to report` (SS-13) and four modes: task, delivery, simplify, re-verify. Each at most 120 lines |
+| Edit | `canonical/skills/aid-execute/references/task-type-rules.md` | Each type says which tests it writes and runs, and what counts as its tests when it writes no code (see Flow, TEST) |
+| Delete | `canonical/skills/aid-execute/references/` `state-execute.md`, `state-execute-drilldown.md`, `state-review.md`, `state-fix.md`, `state-re-run.md`, `state-delivery-gate.md`, `reviewer-guide.md` | Replaced by the references above; the type review focus of `reviewer-guide.md` moves into the brief |
+| Create | `canonical/aid/scripts/execute/simplify-guard.sh` | The test-set check of SIMPLIFY (see Components) |
+| Edit | `canonical/aid/scripts/execute/writeback-state.sh` | The building fields and states, `--full-suite`, `--feedback`, `--feedback-add`, `"Wave Stops"`; `--findings`, `--append-issue`, `--gate-field` and `--block` go (see Work state) |
+| Edit | `dashboard/scripts/writeback-state.sh` (the deliberate fork) | The same task and delivery targets for its writes; it keeps `Deploy` |
+| Edit | `canonical/aid/scripts/execute/derive-waves.sh` | `--from-tasks <work-dir> --delivery NNN`: the dependency table and wave block of one delivery, a dependency on an earlier delivery's task counted as met; without `--delivery` the output is unchanged (see Components) |
+| Edit | `canonical/aid/scripts/execute/complexity-score.sh` | Reads the delivery's graph from `derive-waves.sh --from-tasks --delivery` output; the quick-check consult factor and `--quick-check-state` go; header re-pointed |
+| Edit | `canonical/aid/scripts/execute/compute-block-radius.sh` | Header only: its graph is the whole work's `derive-waves.sh --from-tasks` output |
+| Delete | `canonical/aid/templates/delivery-issues.md` | No delivery issue log (AC-19) |
+| Edit | `canonical/aid/templates/work-state-template.yml` | The building part (see Work state) |
+| Edit | `canonical/aid/templates/skill-steps.md` § When approvals happen (Feature 002) | One row, the corrections after the whole build, and one rule, questions during Building (see Components, Approvals) |
+| Edit | `canonical/aid/templates/reviewer-ledger-schema.md` (the ledger-path table) | The `/aid-execute task-NNN` row becomes the four `/aid-execute` ledgers (see Flow) |
+| Edit | `canonical/aid/templates/downstream-worktree-entry.md`, `worktree-lifecycle.md` | `aid-execute` leaves their consumer lists; § Composition with `aid-execute`'s per-task worktrees goes |
+| Edit | `canonical/aid/templates/shortcut-engine.md` § State: APPROVAL-HALT and its lines naming `state-delivery-gate.md`, `delivery_gate` or `delivery_state` | The yes is recorded as the confirmation before building (see Components, The shortcut engine); the delivery lines name `deliveries`. The engine itself stays until Feature 009 |
+| Edit | `canonical/agents/aid-developer/AGENT.md` | "IMPEDIMENT.md" becomes a blocker in its report -- evidence, options, recommendation -- which the main conversation raises (Feature 002: a sub-agent never asks) |
+| Edit | `canonical/aid/scripts/config/read-setting.sh` | Its usage example names a key that is still read (`execution.max_parallel_tasks` has no reader left) |
+| Edit | `canonical/aid/rules.md` § Skill guide | The `/aid-execute` line is rewritten (Components) |
+| Edit | `dashboard/reader/models.py`, `parsers.py`, `reader.py`, `dashboard/server/reader.mjs`, `server.py` § `_ser_work`, `server.mjs`, `dashboard/home.html` | See Components, Dashboard |
+| Edit | `bin/aid`, `bin/aid.ps1` | The building part of format 6's work-state step (see Migration) |
+| Edit | every other kept file under `canonical/`, and `dashboard/home.html`, that names a deleted reference, `delivery-NNN-issues.md`, `IMPEDIMENT-task-NNN.md`, a per-delivery branch or the per-task worktrees | Re-pointed (Migration) |
+| Create | `tests/canonical/test-execute.sh`, `tests/canonical/test-simplify-guard.sh`, `tests/conversation/samples/feature-007/` | See Testing |
+
+##### 2. Flow
+
+The plan's FINISH passes the work here with `--phase Building` (Feature 006); typing `/aid-execute` on a work at
+Building is a resume, on another work a typed start (Feature 002). One run builds the whole plan, **one task at a time**
+(Q76), in the order of the plan's waves, inside the work's one worktree and on the work branch. The depth is
+`intent.depth`; with none recorded, `full` applies (Feature 002).
+
+| Step | Reference | Worker | Advance |
+|---|---|---|---|
+| START | `references/start.md` (`references/old-work.md`) | main conversation | `ASK` -> START for the confirmation, then for the wave question; `CHAIN` -> BUILD; `CHAIN` -> DELIVERY, FINAL or MILESTONE when the plan already stands there |
+| BUILD | `references/build.md` | the executor of the task's type | `CHAIN` -> TEST |
+| TEST | `references/test.md` | main conversation | `CHAIN` -> VERIFY when the task's tests pass; `CHAIN` -> BUILD in a fix |
+| VERIFY | `references/verify.md` (brief: `references/reviewer-brief.md`) | `aid-reviewer` | `CHAIN` -> SIMPLIFY when the grade passes; `CHAIN` -> BUILD in a fix; after three rounds below the bar, `ASK` per open row |
+| SIMPLIFY | `references/simplify.md` | `aid-reviewer` lists; the executor applies | `CHAIN` -> REVERIFY when something changed; else `CHAIN` -> NEXT |
+| REVERIFY | `references/verify.md` (re-verify mode) | `aid-reviewer` | `CHAIN` -> NEXT, after undoing the simplification when it fails |
+| NEXT | `references/next.md` | main conversation | `CALL` to `aid-kb-update` when the KB check hits; then `CHAIN` -> BUILD, MILESTONE (a chosen wave end) or DELIVERY (a delivery end) |
+| DELIVERY | `references/delivery.md` | `aid-reviewer`; the executor for fixes and the simplification | `CHAIN` -> MILESTONE; after the last delivery, `CHAIN` -> FINAL |
+| FINAL | `references/final.md` | main conversation; the executor and `aid-reviewer` for fixes | `CALL` to `aid-kb-update` when owed; `CHAIN` -> MILESTONE |
+| MILESTONE | `references/milestone.md` | main conversation | `CALL` to `aid-monitor-pipeline` (collect, push); `CALL` to `aid-plan` for corrections, then `CHAIN` -> BUILD; `ASK` the approval; then `CHAIN` -> BUILD, or -> FINISH after the whole build |
+| FINISH | `references/finish.md` | main conversation | `PASS` to the close; in a correction call, `HALT` |
+
+Any step may raise a **real blocker** (`references/blocker.md`): `ASK` -> the same step. `step_detail` always names the
+task or delivery and where it stands (`'task-004: verify round 2'`, `'delivery-002: simplify'`).
+
+1. **START**
+   - **Reads**: the work record; the plan and every task file (id, type, delivery from Source, dependencies); state from
+     `tasks_lifecycle` and `deliveries`; `REQUIREMENTS.md` through `slice-requirements.sh`, either shape (Feature 005);
+     `known-issues.md`; the open `qa` entries, which come first (Feature 002); `.aid/knowledge/INDEX.md` and the
+     documents it routes to, when a KB exists. `--plan-sync` runs first, so every task has its entry.
+   - **The confirmation before building** (FR-6, M12; Approvals):
+     - **Already recorded** -- an `Approval` entry whose `covers` holds `confirmation before building` (Feature 006's
+       combined approval, Q73): nothing more is approved.
+     - **Otherwise** (`lite`, a `full` work after *approve, build later*, or a doorway work, Components): START asks
+       it. The plan and, in `lite`, the requirements are shown in chunks, most important first -- one short line for a
+       small fix -- with the small decisions taken so far in the same batch (`Assumed` `Specification change` and
+       `Plan change` included). The message says, when they apply, that the idea draft will be removed (Feature 003)
+       and which `project` decisions will be recorded in the KB (Feature 005). Recorded `category: Approval`, `covers:
+       REQUIREMENTS.md; PLAN.md; confirmation before building` in `lite`, `covers: confirmation before building` in
+       `full`. Right after the yes: Feature 003's draft deletion and the KB call on confirmation (`skill-steps.md`).
+     - **A change asked here**: a requirement or criterion -> `CALL` to `/aid-specify` (REVISE); a task or delivery ->
+       `CALL` to `/aid-plan` (REVISE); on return, the confirmation is asked again. *Not now* pauses the work
+       (`pause_reason: 'Waiting for the confirmation before building'`).
+   - **The wave question** -- a follow-up question, not an approval, asked once (`wave_stops` is `--`), and only when a
+     delivery has more than one wave (otherwise every wave end is a delivery end, and `none` is recorded). Options:
+     *no stop per wave* (recommended: the delivery and whole-build milestones stay), *a review per wave*, *a review and
+     a pull-request update per wave* (offered only when the work branch has a remote). Recorded `category: Building`.
+   - **The full-suite baseline** (Q79), once, before the first BUILD: the project's full suite runs on the starting
+     commit (Components, Full suite); `full_suite.baseline` holds what passed and which tests already fail. When
+     START finds a task already built and no baseline (an old work), it records `baseline: not taken`.
+   - **What is already on disk is kept** (Feature 002, use (a)): `Done` tasks stay; an `In Progress` task goes on at
+     BUILD, an `In Review` task at VERIFY; a delivery whose tasks are all `Done` and which is not `Done` goes to
+     DELIVERY; a plan all `Done` goes to FINAL, or to MILESTONE when the build only waits for its approval. An old
+     work's per-delivery branches and per-task worktrees are handled first (`references/old-work.md`, Migration).
+   - **A correction call** (a `CALL` from `/aid-monitor-pipeline`, What other features must provide): no confirmation
+     and no wave question; on to the correction tasks.
+2. **BUILD** -- for the next task whose dependencies are `Done`, lowest id first within its wave.
+   - **Task state**: `In Progress` written at entry, before anything else (rules.md tracking discipline); the task's
+     `base` (the commit before its first round) on the first round.
+   - **The executor**: by type, as today -- `aid-developer` (IMPLEMENT, TEST, MIGRATE, REFACTOR, CONFIGURE),
+     `aid-researcher` (RESEARCH), `aid-architect` (DESIGN), `aid-tech-writer` (DOCUMENT) -- in a clean context, tiered
+     by `agent-dispatch-tiering.md`, with the dispatch protocol (`dispatch-protocol-checklist.md`). It receives the
+     task file, the slice, `known-issues.md`, the KB documents the index routes to and its type's rules, and works in
+     the work's worktree. It returns what it changed, its test files and test command, the small decisions it took
+     (recorded `Assumed`, `category: Building`), and its open questions (never asked by it, Feature 002).
+   - **A fix round** (from TEST, VERIFY, DELIVERY or FINAL) is scoped to the failing tests or the ledger rows, with
+     `step_detail: 'task-004: fix rows 2, 3'`.
+   - **Commit**: each round ends with one commit on the work branch, `task-NNN: <title>` or `task-NNN: fix <rows>`,
+     staging only the paths that round changed -- never `.aid/.temp/` or `.aid/works/` (the work folder is Feature
+     008's, by the project setting); KB paths only through `kb-commit.sh` (Feature 004). Without git, nothing is
+     committed and the `commit` fields stay `--`.
+   - **What the executor finds**: an open question goes to `blocker.md` when the task cannot go on without it, otherwise
+     it waits for the next milestone. A finding that the requirements are wrong (today's `wrong-assumption` and
+     `architecture-conflict`) -> `CALL` to `/aid-specify` (REVISE); a missing task or dependency -> `CALL` to `/aid-plan`
+     (REVISE); a fact the KB lacks (today's `kb-gap`) -> `CALL` to `/aid-kb-update`; each returns here.
+3. **TEST** -- the main conversation runs the task's tests itself: the test files the executor wrote or that cover what
+   it changed, with the command it named (AC-26). A task that writes no code (RESEARCH, DESIGN, DOCUMENT) runs the checks
+   its criteria name (a link check, a render), or records `not applicable` with the reason, which VERIFY judges.
+   - Pass: `tests` is written (`'passed 14 of 14'`) and the test files listed in
+     `.aid/.temp/execute/<work>/task-NNN-tests.txt` for SIMPLIFY.
+   - Fail: back to BUILD in a fix, with the failure output. The same failure after three fix rounds is a real blocker
+     (the M7 limit, applied here).
+4. **VERIFY** -- the review cycle (FR-19). Task state `In Review`, written before the reviewer is dispatched.
+   - One graded `aid-reviewer` pass, clean context, at a tier no lower than the executor's (decision D6), over the
+     task's diff (`base..HEAD`), the task file, the slice, the KB documents it touches and the test result. Ledger
+     `.aid/.temp/review-pending/<work>-task-NNN.md`, 7 columns, under `### What to report` (FR-21). It reports a
+     criterion not met, a test that does not exercise what it claims, a conflict with the KB or the technical part,
+     a change outside the task's scope, and a known issue the task ignores. Wording and style are not findings.
+   - **Grade**: `grade.sh` against `minimum_grade` (`read-setting.sh --skill execute`), recorded with `--review` (Feature
+     005's work mode) and in the task's `verify`. Below the bar: BUILD in a fix, TEST, VERIFY again.
+   - **After three rounds below the bar**, Feature 005's rule (Q69), as a real blocker: per open row, *fix it*,
+     *accept it as is* (`Accepted` in the ledger) or *keep reviewing*.
+5. **SIMPLIFY** -- only after VERIFY passes, **once** per task (FR-19).
+   - `aid-reviewer` in simplify mode, one pass, no grade, lists what can be simplified or cleaned without changing
+     behaviour: duplication, dead code, needless indirection, over-engineering, clutter. Ledger
+     `<work>-task-NNN-simplify.md`. No row: `simplify: no change`, on to NEXT.
+   - The executor applies the rows it can apply without changing behaviour, touching no test file, in one commit
+     `task-NNN: simplify`. Then the task's tests run again, and `simplify-guard.sh` checks that no file of the task's
+     test list was changed, added or removed. A guard failure or a test that no longer passes undoes the
+     simplification at once (below) -- it never changes behaviour.
+   - Something changed: `simplify: changed`, on to REVERIFY.
+6. **REVERIFY** -- only when the simplification changed something, scoped to the simplify commit's diff (re-verify mode,
+   ledger `<work>-task-NNN-reverify.md`), graded against the same bar, recorded in `reverify` and with `--review`.
+   - **Fails** (Q78): the simplification is undone -- `git reset --keep <the verified commit>`, which leaves every
+     uncommitted file in place; without git, the snapshot SIMPLIFY took under `.aid/.temp/execute/<work>/` is restored
+     -- and `simplify: undone` is recorded. No second round: no simplify/verify loop.
+7. **NEXT**
+   - `Done` is written only now: the tests passed, VERIFY passed, and REVERIFY passed or the simplification was undone
+     (AC-26, AC-33). `commit` records the task's last commit; the ledgers are deleted.
+   - **The KB check** (Feature 004): `kb-freshness-check.sh --doc <doc> --format tsv` for every KB document whose
+     `sources:` the task's commits touched, plus the executor's report of a new module, dependency or convention. A hit,
+     with a KB: one `CALL` to `/aid-kb-update` (`--why 'task-NNN built: <what>'`), which stamps against the task's commit
+     and records its change `Assumed` for the next approval. With no KB, no call: the agent says once per work that
+     the KB is not built (Feature 004, No KB: one rule).
+   - **What comes next**: the next task of the wave; at a wave end, MILESTONE when `wave_stops` is not `none` and the
+     wave is not the delivery's last; at a delivery end, DELIVERY; after a correction task made at a milestone, back
+     to that MILESTONE once every correction is built.
+8. **DELIVERY** -- the same sequence over the whole delivery (FR-19), before its milestone. Delivery state
+   `Verifying`.
+   - **Verify**: one graded `aid-reviewer` pass over the delivery's diff (`deliveries.<id>.base..HEAD`), its tasks, the
+     criteria its stanza lists and the KB, at the tier `complexity-score.sh` gives (`tier`). Ledger
+     `<work>-delivery-NNN.md`. It also reports what the tasks miss together: glue, naming across tasks, a criterion
+     checkable only now. Every task's tests run together. Fixes are made by the executor, scoped to the rows, as in a
+     task; three rounds below the bar ask per row, as in VERIFY. Rows the user accepts go to `issue_list`.
+   - **Simplify**: once, for duplication across the delivery's tasks, with the same guard over every task's test list.
+   - **Re-verify**: scoped to that commit, only when something changed; a failure undoes it (Q78).
+   - Recorded in the delivery's `verify`, `simplify`, `reverify`, `tests` and `commit`; then MILESTONE, or FINAL after
+     the last delivery.
+9. **FINAL** -- once everything is built.
+   - **The full suite** runs on the work branch's head (Components, Full suite). A failure absent from the baseline is
+     the work's: fixed by the executor in a scoped round (`step_detail: 'full suite: fix <tests>'`), the suite run
+     again, and the fix verified (re-verify mode) -- three rounds, then a real blocker. A failure already in the
+     baseline is reported, not fixed (Q79). With `baseline: not taken`, every failure is shown at the approval, each
+     with the agent's recommendation: a correction task, or report it as already present.
+   - **Backlog and roadmap** (Feature 004): when the work's `sources:` name a `backlog.md` or `roadmap.md` item, one
+     `CALL` to `/aid-kb-update` updates it as the document says, with a KB; none without one.
+10. **MILESTONE** -- the FR-6 steps, one rule for every milestone (M10).
+    1. **Collect**: when the work has a pull request (`pull_request`, Feature 008), a read-only `CALL` to
+       `/aid-monitor-pipeline` adds the new review comments and pipeline results to `feedback`, and returns.
+    2. **Corrections** (Q77): every `Open` entry of kind `bug`, `correction` or `pipeline failure` becomes a correction
+       task -- one `CALL` to `/aid-plan` (REVISE, `--why 'corrections: F1, F3'`), recorded `Assumed` `Plan change`
+       (Feature 006) -- built through the task loop, BUILD to NEXT; the entry's state becomes `Task`. A `conflict` with the parent
+       branch is not corrected here: it is shown, and `/aid-monitor-pipeline` resolves it when it pushes (Feature 008,
+       KI-005). A `suggestion` or `comment` becomes a question in this milestone's batch, with options and a
+       recommendation (FR-7).
+    3. **The approval**: in chunks, most important first -- what was built since the last milestone (tasks, test
+       results, verify grades, simplify outcomes), the corrections, the work's `kb_updates` since then, and the small
+       decisions to confirm (`Building`, `Plan change`, `Specification change`, `KB change`) in the same batch. At the
+       whole build it also shows the full-suite result against the baseline (AC-26). Recorded `category: Approval`,
+       `covers` -- `wave 2 of delivery-001`, `delivery-001`, or, for the last, `delivery-002; whole build; final
+       result` (coinciding approvals are one, M11) -- and `commit`, the work branch's head. Right after the yes, the KB
+       call on confirmation for any `project` decision it confirmed. A suggestion the user takes becomes a correction
+       task, built after this approval and shown at the next one.
+       - **A change the user asks for** is a correction task as in 2 (Q77); once built, the same milestone is asked
+         again. A rejected `KB change` reopens as a question (Feature 004).
+    4. **The push** -- at a milestone that may push (every delivery and the whole build, and a wave when `wave_stops`
+       is `review-and-update`), when the work branch has a remote: one question, "Create or update the pull request
+       now?", recommendation yes. Yes: a `CALL` to `/aid-monitor-pipeline` that pushes up to the approved `commit` and
+       creates or updates the one pull request, and returns. No: nothing is pushed; the next milestone asks again.
+    - Then: delivery state `Done` at a delivery milestone; on to BUILD, or FINISH after the whole build.
+11. **FINISH**
+    - **After the whole build**: `user_approved: 'yes'` (Feature 002), then `PASS` to the close -- `--handoff --to
+      aid-monitor-pipeline --step <its entry step> --returns no --phase CI --why 'whole build approved'`. Until Feature
+      008 lands, `/aid-orchestrate` runs the close minimum (Feature 001's phase table), as Feature 004's KB update does.
+    - **In a correction call**: `HALT`, which returns to `/aid-monitor-pipeline`, which pushes.
+
+**Real blockers** (`references/blocker.md`; FR-6, AC-32) -- the only interruptions besides the milestones:
+- a question a task cannot go on without; a decision that conflicts with the KB (AC-5);
+- an approval at once from a revision: a requirement or criterion change once the confirmation is recorded (Feature 005,
+  Q62, Q70), a change to the deliveries (Feature 006);
+- three rounds below the bar (VERIFY, DELIVERY), or the same test failure after three fix rounds (TEST, FINAL);
+- a KB-update question the change cannot go on without (Feature 004);
+- an old work's diverging delivery branches or a leftover task worktree holding changes (Migration).
+
+Each is one question under the protocol, `category: Blocker`, importance high, with its options and recommendation;
+`ASK` saves the step and pauses the work (`lifecycle: Paused-Awaiting-Input`). The task keeps its state. Only when the
+user gives a task up is it `Failed`; its dependents become `Blocked` (`compute-block-radius.sh` over the whole work's
+graph), their delivery `Blocked` with `block_reason` naming the question, and a `CALL` to `/aid-plan` (REVISE) replaces
+what they were to build. A question that does not block is recorded `Pending` and asked at the next milestone, before
+its approval.
+
+**Changing the plan or the requirements during Building** -- the routes of Features 005 and 006, unchanged:
+- a task-level plan change or a technical-only requirements change: no stop, recorded `Assumed`, confirmed at the next
+  milestone;
+- a requirement, criterion or delivery change once the confirmation is recorded: the revising skill's approval at once,
+  a real blocker (above); before the confirmation in `lite`, recorded `Assumed` for it;
+- a return from `/aid-specify` REVISE that changed what tasks serve: a `CALL` to `/aid-plan` (REVISE);
+- on every return: `--plan-sync`, then the step it left, which re-reads the plan. A `Done` task is never edited
+  (Feature 006): a change to what it built is a new task.
+- A typed start of another skill comes back by `PASS` to START; a side idea from Building (Feature 003) by `HALT`, to
+  the saved step.
+
+**Control signals** (the dashboard's stop and finish, kept): at every step entry the work's `lifecycle` is re-read --
+not `Running` stops the run before any dispatch -- and the current task's `.aid/.control/<work>/task-NNN.stop` is
+checked -- present pauses the run before the task's next dispatch, until it is removed. No task state is written for a
+pause, as today.
+
+##### 3. Work state
+
+The building part of the work file (block style, Feature 002; three levels at most). It extends Feature 006's planning
+part:
+
+```yaml
+# [W] the per-wave stop chosen at the confirmation before building
+#   none | review | review-and-update; -- until asked
+wave_stops: --
+# [W] the project's full test suite: the baseline at START and the run at the end
+full_suite:
+  command: --
+  baseline: --
+  baseline_commit: --
+  result: --
+  commit: --
+# [W] review comments and pipeline results collected at milestones, newest last
+#   kind: bug | correction | suggestion | comment | pipeline failure | conflict
+#   state: Open | Task | Asked | Declined | Shown | Done
+feedback: []
+# [W] one entry per delivery of PLAN.md, keyed by its id
+#   state: Pending | Building | Verifying | Approving | Done | Blocked
+deliveries:
+  delivery-001:
+    state: Pending
+    updated: '2026-10-20T10:00:00Z'
+    tier: --
+    base: --
+    verify: --
+    simplify: --
+    reverify: --
+    tests: --
+    commit: --
+    issue_list: --
+    block_reason: --
+# [W] one entry per task, keyed by its id
+#   state: Pending | In Progress | In Review | Blocked | Done | Failed | Canceled
+#   simplify: changed | no change | undone; --
+tasks_lifecycle:
+  task-001:
+    state: Pending
+    base: --
+    verify: --
+    simplify: --
+    reverify: --
+    tests: --
+    commit: --
+    elapsed: --
+    notes: --
+    display_name: --
+```
+
+A `feedback` entry holds `id` (`F<n>`), `at`, `kind`, `ref` (the comment or pipeline run), `summary`, `state` and `link`
+(the task or question it became, or `--`).
+
+- **Task states** keep the closed list and its meaning: `In Progress` from BUILD (and in a fix round), `In Review` from
+  VERIFY through REVERIFY, `Done` at NEXT, `Failed` only for a task given up; `Blocked` is assigned to the dependents of
+  a failed task, never self-written (rules.md).
+- **Delivery states** settle what Feature 006 left open: `Building` from its first BUILD, `Verifying` in DELIVERY,
+  `Approving` at its milestone, `Done` after its approval, `Blocked` while a task of it is `Failed`.
+- **Gone**: `review` (now `verify`), `quick_check`, `gate_tier` (now `tier`), `gate_grade` (now `verify`),
+  `gate_timestamp`, `block_artifact` (a blocker is a `qa` entry); `dispatch_log` is no longer written (its per-task
+  file is gone, Feature 006; the console dispatch lines stay).
+- **`reviews`** (Feature 005) gets one entry per graded pass: `by: aid-execute`, `notes: 'task-004 verify; ledger
+  <work>-task-004.md'`.
+- **`qa` entries this skill writes** (Feature 002's shape): `Approval` (`covers` as in Flow), `Building` (the wave
+  question and the executors' small decisions), `Blocker`, and the milestone's suggestion questions (`category:
+  Pull request`).
+
+**Writer** -- `writeback-state.sh` keeps Feature 002's lock, quoting, atomic rename and exit codes, and Feature 006's
+re-render of the plan after every task or delivery state write (exit 11, fail-closed).
+- `--task-id NNN --field F --value V`: F is `State`, `Base`, `Verify`, `Simplify`, `Reverify`, `Tests`, `Commit`,
+  `Elapsed`, `Notes` or `Name`. `Verify` and `Reverify` take a grade or `--`; `Simplify` takes `changed`, `no change`,
+  `undone` or `--`; anything else exits 4. `Review` exits 4.
+- `--delivery-id NNN --lifecycle V`: the six delivery states; `Executing`, `Gated`, `Pending-Spec` and `Specified` exit
+  4.
+- `--delivery-id NNN --field F --value V` (new): `Tier` (`Small`, `Medium`, `Large`), `Base`, `Verify`, `Simplify`,
+  `Reverify`, `Tests`, `Commit`, `Issue List`, `Block Reason`; same validation.
+- `--pipeline --field "Wave Stops" --value V`: `none`, `review`, `review-and-update`.
+- `--full-suite --field F --value V` (new): `Command`, `Baseline`, `Baseline Commit`, `Result`, `Commit`.
+- `--feedback-add --kind K --ref R --summary T` (new; run by `/aid-monitor-pipeline`): appends an `Open` entry and prints
+  its id. `--feedback --id F<n> --state S [--link L]` (new): updates it.
+- **Gone**: `--findings`, `--append-issue`, `--gate-field`, `--block` -- each exits 4 with a line naming its
+  replacement.
+
+##### 4. Components
+
+**`/aid-execute` description and guide line** (Feature 001's shape; final text set at build):
+- `description:` "Build a work's planned tasks one at a time -- each built, tested, verified and simplified -- and stop
+  for approval only at the end of each delivery and of the whole build. Use when a plan is approved and building
+  should start or continue."
+- Skill-guide line, within SG-03's limit: `` - `/aid-execute` -- build and test the planned tasks; after the plan is approved ``
+
+**Approvals** -- `skill-steps.md` § When approvals happen keeps Feature 002's rows (the confirmation, the chosen wave
+ends, each delivery, the whole build, the final result) and gains:
+
+| Moment | `full` | `lite` |
+|---|---|---|
+| Corrections made after the whole build is approved, before they are pushed (FR-7) | approve | approve |
+
+and one rule under the table: "During Building, a question that does not block waits for the next milestone and is
+asked before its approval; a question the work cannot go on without, and an approval a revision needs at once, are
+real blockers: asked at once, recorded `category: Blocker`." The corrections approval is the MILESTONE of a correction
+call, recorded `covers: corrections`, with no collection and no push question (`/aid-monitor-pipeline` does both).
+
+**Full suite** (Q79): the command comes from the KB's `test-landscape.md` or `technology-stack.md`; with neither, from
+the project's own build files, recorded `Assumed` with reach `project` (so the next approval's KB call records it). A
+project with no test suite records `command: none found`, and FINAL says so at the approval. The baseline and the final
+run record what passed and the failing tests by name.
+
+**`simplify-guard.sh`** -- `simplify-guard.sh --before <commit> --tests <list-file>`: exit 0 when no file of the list,
+nor any new file in the list's folders, changed between `<commit>` and `HEAD`; 1 otherwise, naming each; 2 bad
+argument; 3 no git. Without git, SIMPLIFY compares the snapshot it took instead. Bash and PowerShell give the same
+output. Rationale: "no test is changed or removed to fit" (FR-19) must be exact, so it is a script (decision D17).
+
+**`derive-waves.sh --from-tasks <work-dir> --delivery NNN`** -- the dependency table and wave block of one delivery,
+the same sort as `--plan` (Feature 006): a dependency on an earlier delivery's task is met. BUILD's order,
+`complexity-score.sh` and the wave milestones read it; `compute-block-radius.sh` reads the unscoped output, so a
+failed task blocks its dependents in later deliveries too.
+
+**The shortcut engine** (until Feature 009): APPROVAL-HALT's yes is recorded `category: Approval`, `covers:
+REQUIREMENTS.md; PLAN.md; confirmation before building`, so `/aid-execute` asks only the wave question and a doorway work
+gets one approval before building (AC-10). Its "run `/aid-execute` when ready" line stays.
+
+**Dashboard** (both readers, kept equal by the parity tests; AC-41):
+- **Task cells**: state, and for the task being built a plain stage from the record ("being tested", "being reviewed",
+  "being simplified"); `verify`, `simplify`, `reverify`, `tests`. The quick-check display goes.
+- **Delivery cells**: the six states, `verify`, `tests`, `issue_list`; the gate tier and timestamp go.
+- **The work card**: "Waiting for your approval: end of delivery-002" at a milestone; "Needs your decision" for an open
+  `Blocker` entry; the full-suite result once FINAL has run. No step names (Feature 002).
+- `_ser_work` and `reader.mjs` pass `wave_stops`, `full_suite` and the new task and delivery fields; `feedback` is read
+  and not shown. The stop and finish controls are unchanged.
+
+**Kept invariant**: `/aid-execute` changes product code and tests only through its executors, the work file only
+through the writer, `REQUIREMENTS.md` only through `/aid-specify`, the plan and the task files only through
+`/aid-plan`, and a KB document only through `/aid-kb-update`. It never pushes, never merges, and makes no branch and
+no worktree (AC-34).
+
+##### 5. What other features must provide
+
+| Feature | Must provide | Waiting on it |
+|---|---|---|
+| 008 | `/aid-monitor-pipeline` offers three entries: a read-only collect `CALL` that adds each new review comment and pipeline result with `--feedback-add` and returns; a push `CALL` that pushes the work branch only up to the newest approved `commit`, creates or updates the one pull request, records `pull_request` (the work file key it adds), and returns; and the close, as the `PASS` target with phase `CI`. Its corrections after the whole build go through `/aid-plan` REVISE (correction tasks, `Assumed`) and a correction `CALL` to `/aid-execute`, which builds them, asks the corrections approval and returns. It resolves a conflict with the parent branch itself (KI-005); Building never brings the parent branch in. It commits the work folder as the project setting says. Its local clean-up also deletes the work's old local delivery branches left by Migration | `007-13` |
+| 009 | The shortcut engine's APPROVAL-HALT goes with the engine, and with it the recorded-confirmation edit above | -- |
+
+**Owed to this feature by Features 001-006, and where each is met:**
+
+| From | Owed | Met in |
+|---|---|---|
+| 001 | The depth table: `lite` has one approval before building, plus the final result | Flow (START, MILESTONE) |
+| 001 | The close minimum by `/aid-orchestrate` until Feature 008 | Flow (FINISH) |
+| 001 | The what/when `description:` and the skill-guide line | Components |
+| 002 | The approvals table rows: the confirmation before building (with the wave question), the chosen wave ends, each delivery, the whole build, the final result; coinciding approvals are one; `Approval` entries with `covers` and `commit`; `user_approved` | Flow (START, MILESTONE, FINISH); Components (Approvals) |
+| 002 | How a milestone runs is `/aid-execute`'s | Flow (MILESTONE) |
+| 002 | `skill-steps.md` and the question protocol cited; no banners; `### What to report` in the brief | Files and layout; Testing (EX-02) |
+| 002 | NM-04's `aid-execute` exemption goes | Files and layout (no "merge to main"); Migration (Suites) |
+| 002 | The `skill:aid-execute` AC-28 row; samples `002-07`, `002-08`, `002-09`, `002-13` | Testing |
+| 003 | The draft deletion fires on the `lite` confirmation (`003-10`) | Flow (START) |
+| 003 | A side idea from Building returns to the saved step (`003-07`) | Flow (Changing the plan) |
+| 004 | Per-delivery branches gone; the work branch compared against `pipeline.parent_branch`, never `master` | Flow (BUILD, DELIVERY, Migration); Components (Kept invariant) |
+| 004 | The KB check after each verified, committed task; the call stamps at that commit | Flow (NEXT) |
+| 004 | Backlog and roadmap items at the end of the whole build | Flow (FINAL) |
+| 004 | The milestone approval lists `kb_updates` | Flow (MILESTONE) |
+| 004 | No KB: no call, one line per work; a KB-update question blocks only when needed; `kb-gap` becomes the call | Flow (NEXT, BUILD, Real blockers) |
+| 004 | Samples `002-13`, `004-11`, `004-12` | Testing |
+| 005 | The KB call on confirmation at the confirmation and at every milestone; the `lite` confirmation approves `REQUIREMENTS.md` | Flow (START, MILESTONE) |
+| 005 | `wrong-assumption` and `architecture-conflict` become a `CALL` to `/aid-specify` (REVISE) | Flow (BUILD) |
+| 005 | The unsplit shape read through the slice | Flow (START, BUILD) |
+| 005 | A requirement change after the `lite` confirmation is approved at once, a real blocker (Q70) | Flow (Real blockers) |
+| 005 | Samples `005-11`, `005-12` | Testing |
+| 006 | Tasks, dependencies and delivery from the task files; the graph scripts and wave milestones through the same sort; state from `tasks_lifecycle` and `deliveries`; `pipeline.path` and the full-path branches gone | Flow (START, NEXT); Components (`derive-waves.sh`); Files and layout |
+| 006 | After a recorded `covers: PLAN.md; confirmation before building`, only the wave question; otherwise the confirmation is the approval (Q73) | Flow (START) |
+| 006 | A task that finds the plan wrong, and a return from `/aid-specify` REVISE that changed what tasks serve, make a `CALL` to `/aid-plan` (REVISE) | Flow (BUILD, Changing the plan) |
+| 006 | `delivery-NNN-issues.md` and `--append-issue` fold into `deliveries.<id>.issue_list` | Work state; Migration |
+| 006 | The entry step is `START`; the `aid-execute` `PL-04` row on the shared exempt list goes | Flow; Migration (Lists) |
+| 006 | The delivery building states | Work state |
+| 006 | Sample `006-06` | Testing |
+
+##### 6. Risks
+
+- **Review cost.** Every task now gets a graded review (FR-19) where today it gets an ungraded quick check, plus a
+  simplify pass. Contained by the reviewer tiers, a simplify pass with no grade and no loop, and a re-verify scoped to
+  the simplify commit.
+- **Feature 008 is not built yet** (Feature 006's precedent: no bridge, no release between them). The collect and push
+  steps run only when a pull request or a remote exists; the samples that need one wait on the deferred list, and the
+  close runs through `/aid-orchestrate` until Feature 008.
+- **One task at a time** (Q76) takes longer on a wide plan than today's pool. The trade is honest test results and one
+  commit history per work.
+- **The full suite's cost**: it runs twice per work (baseline and end) and again after each fix round at the end. A slow
+  suite makes FINAL slow; the one-line progress line says so (Feature 002).
+- **Without git** there are no commits, no `base`, and the undo uses a file snapshot; the diffs the reviewer reads are
+  the snapshot's.
+- **`rules.md`** (tracking discipline) says "`In Progress` at the start of EXECUTE"; the step is now BUILD. The meaning
+  holds, but the line needs rewording when this feature is built (tracked with KI-001); its summary bullet is unchanged.
+- **The KB says the opposite today**: `pipeline-contracts.md` (the parallel-pool contract, two-tier review, loops L6 and
+  L7 through `IMPEDIMENT-task-NNN.md`), `quality-gates.md` (the delivery gate), `architecture.md`, `domain-glossary.md`
+  (Max Concurrent, the execution graph). Migration updates them; the user documentation waits for the final pass
+  (AC-45).
+- **A doorway work's double approval** if the shortcut engine's APPROVAL-HALT edit is missed; EX-06 checks it.
+
+##### 7. Migration
+
+| Old | New |
+|---|---|
+| `/aid-execute work-NNN task-NNN`, `/aid-execute delivery-NNN` | `/aid-execute` builds the whole plan, one task at a time; to change a task, say what should change |
+| `aid/<work>-delivery-NNN` branches, "merge to main" | One branch per work; the merge is yours, through its pull request |
+| `execution.max_parallel_tasks` | No setting: tasks are built one at a time |
+
+- **Release notes**: the rows join the old -> new table (AC-24), drafted in `.aid/knowledge/backlog.md` § Next Release.
+  No stubs (M1).
+- **Installed projects**: `aid update` removes the deleted references and `delivery-issues.md` through the install
+  manifest (decisions.md § D9).
+- **Format 6 -- the building part** of Feature 006's work-state step (no format 7), in bash and PowerShell, byte for
+  byte, idempotent:
+  - `tasks_lifecycle.*.review` -> `verify`; `quick_check` -> appended to `notes`; `gate_tier` -> `tier`, `gate_grade` ->
+    `verify`; `gate_timestamp` goes; delivery `Executing` -> `Building`, `Gated` -> `Verifying`;
+  - each `delivery-NNN-issues.md` -> appended to that delivery's `issue_list`, then deleted;
+  - each `IMPEDIMENT-task-NNN.md` or `IMPEDIMENT-delivery-NNN.md` -> one `qa` entry, `category: Blocker`, `state:
+    Pending`, `context` its description, `suggested` its recommendation, then deleted; `block_artifact` goes. The
+    task's `Failed` state stays.
+- **At START, for an old work** (`references/old-work.md`; it needs git and judgement, so it is not in the script):
+  - **Per-delivery branches** (Q80): for each `aid/<work>-delivery-NNN`, in delivery order, when it descends from the
+    work branch's head, the work branch is moved forward to it (`git switch <work branch>`, then `git reset --keep
+    <delivery branch>`: no merge, no rewrite). One that does not descend is a real blocker: the agent says what
+    diverged and the user decides how to combine them. The old branches are left in place; Feature 008's clean-up
+    removes them.
+  - **Leftover task worktrees** (`.aid/.worktrees/task-NNN/` on a delivery branch): removed with `git worktree remove`
+    (never forced) when they hold no uncommitted change; one that does is a real blocker.
+  - Old ledgers (`execute-task-NNN.md`, `execute-delivery-NNN.md`) go with `.aid/.temp/`'s own clean-up.
+- **Re-pointing**: every kept file under `canonical/`, and `dashboard/home.html`, that names a deleted reference,
+  `delivery-NNN-issues.md`, `IMPEDIMENT-task-NNN.md`, `--append-issue`, `--findings`, a per-delivery branch or the
+  per-task worktrees is re-pointed or reworded. Exempt: `canonical/aid/scripts/migrate/`, which reads old shapes, and
+  the shared `feedback-artifacts/IMPEDIMENT.md`, which other skills still use (Feature 009). EX-05 enforces it. The
+  sites today, beyond Files and layout: `aid-deploy` `references/state-verifying.md` (its "loop back to aid-execute"
+  stays true and is kept) and the comment in `bin/aid`'s state converter, which describes old works and stays.
+- **Site**: `site/scripts/skills/` (roster, groups), `site/scripts/.skills-manifest.json`, `site/scripts/lib/flow-graph/`
+  and their `__tests__`; pages and flows regenerated by `site/scripts/gen-skills.mjs`.
+- **Lists other features own** -- each changes in the same commit as the skill:
+  - **Deferred list** (`tests/conversation/deferred.tsv`): the `skill:aid-execute` row goes (covered by `007-02`);
+    `002-07`, `002-08`, `002-09`, `002-13`, `003-07`, `003-10`, `004-11`, `004-12`, `005-11`, `005-12` and `006-06` run
+    now; `007-13` is added, waiting for Feature 008.
+  - **Shared exempt list** (`tests/canonical/skill-steps-exempt.tsv`): the `aid-execute` row (`PL-04`, owner Feature
+    007) goes.
+  - **Never-merges test**: NM-04's `aid-execute` exemption goes.
+  - **Description exempt list** (SG-04): `aid-execute`'s row, if it has one.
+  - **SS-13** finds the rewritten brief by its glob.
+- **Suites**:
+  - Retired, to `tests/coverage-accepted-removals.tsv`: `test-disjoint-merge.sh` (its subject, delivery branches merging
+    back, no longer exists; Feature 006 lists it among the suites that follow the single layout) and
+    `test-delivery-gate-aggregate.sh` (the issue log and the quick check are gone).
+  - `test-executor-graph-flat-plan.sh`: rewritten so `complexity-score.sh` and `compute-block-radius.sh` read
+    `derive-waves.sh --from-tasks` output, scoped and unscoped.
+  - `test-writeback-state.sh`: the `--findings`, `--append-issue` and gate units retire; the new fields, states and
+    modes are added (Testing). `test-task-state-transitions.sh` follows the new references.
+  - `test-pipeline-status-walkthrough.sh`: the `aid-execute` row of A1 points to `references/start.md` with phase
+    `Building`; A3's impediment fixture becomes a `Blocker` question.
+  - `test-downstream-worktree-entry.sh`: its `aid-execute` assertions go (the skill no longer enters a worktree itself).
+  - `test-complexity-score.sh`, `test-compute-block-radius.sh`, `test-derive-waves.sh` (`--delivery`),
+    `test-work-state-template.sh`, `test-lite-work-end-to-end.sh` and the dashboard reader, server and parity suites
+    follow; old fixtures stay where they now check the migration.
+  - `tests/coverage-rehome-allowlist.tsv`, `tests/cost-baseline.tsv` and `tests/coverage-baseline.tsv` are re-recorded.
+- **User documentation** waits for the final pass (Q40, AC-45). The only edit now: the numbers `test-doc-counts.sh`
+  asserts.
+- **KB** (no work ids):
+  - `pipeline-contracts.md` (the Building contract and state machine; the parallel-pool contract and two-tier review
+    go; loops L6 and L7 become the calls to `/aid-specify`, `/aid-plan` and `/aid-kb-update`, and blockers);
+  - `quality-gates.md` (task and delivery verification, simplify and re-verify replace the quick check and the delivery
+    gate; the three-round rule);
+  - `architecture.md` (the Execute rows; one worktree and one branch per work);
+  - `artifact-schemas.md` (the building part; `delivery-NNN-issues.md`, `IMPEDIMENT-task-NNN.md` and
+    `execution.max_parallel_tasks` go);
+  - `domain-glossary.md` (milestone, real blocker, simplify, re-verify, full-suite baseline; Max Concurrent, quick check
+    and delivery gate go), `coding-standards.md` (its settings-key example), `capability-inventory.md`,
+    `module-map.md`, `test-landscape.md` (the new suites), `tech-debt.md`;
+  - `decisions.md` gains "one task at a time in the work's one worktree; every task and delivery goes build, test,
+    verify, simplify once, and re-verify only when the simplification changed something", which supersedes the
+    parallel pool and the two-tier review; D6 stays.
+  - Then `INDEX.md` is regenerated and `kb.html` rendered by the script (Feature 004).
+
+##### 8. Testing
+
+Per NFR-T (Q35): unit tests and static checks now; a sample that needs a later feature waits on the deferred-tests list;
+the full integration suite runs at the end of the work, before release, with that list empty.
+
+**Static checks -- `tests/canonical/test-execute.sh`** (picked up by `tests/run-all.sh`; added to the suite list of
+`.github/workflows/installer-tests.yml`):
+
+| Group | Asserts |
+|---|---|
+| EX-01 | `aid-execute`'s new references and brief exist, its deleted references do not; `delivery-issues.md` is absent; `simplify-guard.sh` exists |
+| EX-02 | The step table has START, BUILD, TEST, VERIFY, SIMPLIFY, REVERIFY, NEXT, DELIVERY, FINAL, MILESTONE and FINISH; FINISH advances by `PASS` and `finish.md` names `--phase CI`; `start.md` names `confirmation before building`, `Wave Stops` and the baseline; `milestone.md` names `aid-monitor-pipeline`, `aid-plan`, `covers` and `commit`; `next.md` names `kb-freshness-check.sh` and `aid-kb-update`; `blocker.md` names `Blocker`; `SKILL.md` cites `skill-steps.md` and `question-protocol.md` |
+| EX-03 | One worktree and one branch (AC-34): no file under `canonical/skills/aid-execute/` or `canonical/aid/scripts/execute/` creates a branch or a worktree (`git worktree add`, `git checkout -b`, `git switch -c`, `git branch <name>`) or names `run_in_background`, `max_parallel_tasks` or "merge to main"; a `-delivery-` branch is named only in `references/old-work.md` |
+| EX-04 | `simplify.md` names `simplify-guard.sh`, once per task, and `undone`; `verify.md` names `grade.sh`, `--review`, `git reset --keep` and the three choices after three rounds with `Accepted` |
+| EX-05 | No tracked file under `canonical/skills/`, `canonical/aid/templates/` or `canonical/aid/scripts/` (except `migrate/`, and the writer's refusal of its retired modes) names `IMPEDIMENT-task-`, `delivery-NNN-issues`, `--append-issue`, `--findings` or `quick_check` |
+| EX-06 | `skill-steps.md` § When approvals happen has the corrections row and the Building rule; `shortcut-engine.md` § State: APPROVAL-HALT names `confirmation before building`; `reviewer-ledger-schema.md` names the four `/aid-execute` ledgers |
+| EX-07 | `work-state-template.yml` has `wave_stops`, `full_suite`, `feedback`, and the building fields of `deliveries` and `tasks_lifecycle`, each with its `[W]` comment, and no `gate_tier`, `gate_grade`, `gate_timestamp`, `quick_check` or `review:` under a task |
+
+**Unit tests**
+- `tests/canonical/test-writeback-state.sh`: each new task and delivery field, with its values and exit 4 on a bad one;
+  the six delivery states and the refused old ones; `"Wave Stops"`; `--full-suite`; `--feedback-add` ids and
+  `--feedback` updates; `--findings`, `--append-issue`, `--gate-field` and `--block` exit 4 naming their replacement;
+  a task write still re-renders the plan; every file written parses through the dashboard reader with no warning.
+- `tests/canonical/test-simplify-guard.sh`, on throwaway repositories: an untouched test list exits 0; a changed, a
+  removed and an added test file each exit 1 naming it; no git exits 3; bash and PowerShell give the same output.
+- `tests/canonical/test-derive-waves.sh`: `--from-tasks --delivery` prints one delivery's table and waves, a dependency
+  on an earlier delivery counted as met; the unscoped output is unchanged.
+- `test-complexity-score.sh` and `test-compute-block-radius.sh` on `derive-waves.sh --from-tasks` output; a failed task
+  blocks a dependent in a later delivery.
+- `tests/canonical/test-work-state-migration.sh` (Feature 006's) gains: the renamed fields and states, an issues file
+  and an impediment file folded and deleted, a second run changing nothing, bash and PowerShell giving the same bytes.
+- Dashboard: fixtures for a work in Building with a task being verified, a delivery at its milestone, an open
+  `Blocker` entry and a finished full suite; `test_index_html.py` for the card lines; the parity tests.
+
+**Conversation samples -- `tests/conversation/samples/feature-007/`** (frontmatter `skills: aid-execute`; each fixture
+a small project with code and a test suite, no remote unless named)
+
+| Sample | Covers | Runs |
+|---|---|---|
+| `007-01-lite-one-approval-to-result` -- a `lite` bug fix with its requirements and plan written. Check: one approval before any code change, `covers: REQUIREMENTS.md; PLAN.md; confirmation before building`; no wave question; no other question until the final approval; each task `Done` with `tests` passed, `verify` at or above the bar and a `simplify` value; the final approval shows the task tests and the full suite against the baseline; `user_approved: 'yes'`; a pass to the close | AC-26, AC-32, AC-10 | now |
+| `007-02-full-after-plan-approval` -- a `full` work whose plan approval covers the confirmation; a delivery with two waves. Check: no second approval; one wave question, recorded `category: Building`, following the protocol | AC-32, AC-28 | now |
+| `007-03-review-per-wave` -- as `007-02`; the user picks a review per wave. Check: an approval at the end of wave 1; the delivery end, the whole build and the final result as one approval; no pull-request question | AC-32 | now |
+| `007-04-failing-test-not-done` -- the task's first build leaves a planted test failing. Check: the task is not `Done` until its tests pass; a fix round happened; `tests` names the passing run | AC-26 | now |
+| `007-05-simplify-no-change` -- a task with nothing to simplify. Check: `simplify: no change`, `reverify: --`, and no re-verify entry in `reviews` | AC-33 | now |
+| `007-06-simplify-then-reverify` -- a task that copies a helper the code already has. Check: `simplify: changed`; a re-verify entry in `reviews` and a `reverify` grade; the simplify commit touches no test file; `tests` the same before and after | AC-33 | now |
+| `007-07-two-deliveries` -- a work with two deliveries. Check: a delivery verify, one simplify and, when it changed, a re-verify recorded for each delivery before its approval; an approval after delivery-001; the full suite before the last approval, which is one approval | AC-32, AC-33 | now |
+| `007-08-kb-conflict-blocker` -- a task that needs a choice the KB rules out. Check: one `Blocker` question with a recommendation, the work paused, no other task built before the answer, then the build goes on from the same step | AC-32 | now |
+| `007-09-one-worktree-one-branch` -- a complete ticket for a two-delivery change, from the first message through Specification, Planning and Building to the final approval. Check: `git worktree list` shows one worktree added for the work and `git branch` one branch; no `-delivery-` branch; no merge commit | AC-34 | now |
+| `007-10-baseline-failure-reported` -- a test already failing on the parent branch. Check: `full_suite.baseline` names it; at the end it is reported at the approval, no task is made for it, and the work's own failures are fixed | AC-26 | now |
+| `007-11-change-at-milestone` -- at the delivery-001 approval the user asks for a change. Check: a `handoffs` call to `aid-plan`, a new task with a `Plan change` entry `Assumed`, built through the loop, then the same milestone asked again | AC-32, AC-33 | now |
+| `007-12-old-delivery-branch` -- an old work after `aid update`, built on a delivery branch that descends from the work branch, with a second one that diverges. Check: the work branch moved forward to the first with no merge commit; one `Blocker` question for the second | AC-34, AC-37 | now |
+| `007-13-milestone-collect-and-push` -- fixture: a remote and an open pull request with a bug comment. Check: a collect call returned, a correction task built, an approval with its `commit`, the push question; after yes, the pushed head equals that `commit` | AC-32, AC-42 | deferred: Feature 008 |
+
+The undo of a failed re-verify (Q78) is checked by EX-04 and `test-simplify-guard.sh`: a planted failing re-verify is
+not reproducible in a scripted conversation. Feature 001's `001-07-rich-ticket` and `001-16-work-closes-done`, and
+Feature 006's `006-01`, run again at this feature's end.
+
+##### Criteria traceability
+
+| Criterion | Where satisfied | How verified |
+|---|---|---|
+| AC-26 | Flow (TEST, NEXT: `Done` only after the tests pass; FINAL and MILESTONE: the final result shows the task tests and the full suite against the baseline); Components (Full suite) | EX-02; writer unit tests; `007-01`, `007-04`, `007-10` |
+| AC-32 | Flow (START: the confirmation and the wave question; MILESTONE; Real blockers); Components (Approvals) | EX-02, EX-06; `007-01`, `007-02`, `007-03`, `007-07`, `007-08`, `007-11`; `007-13` (deferred) |
+| AC-33 | Flow (VERIFY, SIMPLIFY, REVERIFY, DELIVERY); Work state (`verify`, `simplify`, `reverify`, `tests`, `reviews`); Components (`simplify-guard.sh`) | EX-04; `test-simplify-guard.sh`; `007-05`, `007-06`, `007-07`, `007-11` |
+| AC-34 | Flow (one worktree, one branch, one task at a time); Components (Kept invariant); Migration (old delivery branches and task worktrees) | EX-03; `007-09`, `007-12` |
 
 ### Feature 008 — Pull Requests Kept on Track Through Reviews and Pipeline Failures
 
