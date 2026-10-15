@@ -1075,3 +1075,11 @@ qa:
     suggested: 'The full suite runs once at START on the starting commit; at the end, failures the work caused are fixed and failures already present are only reported at the final approval.'
     answer: 'Accepted as recommended (baseline at START).'
     applied_to: 'Feature 007 Technical Specification (START, FINAL)'
+  - id: Q80
+    category: Specification (Feature 007)
+    impact: Low
+    state: Answered
+    context: 'Old works mid-build carry per-delivery branches; AID never merges, but their commits must reach the work''s one branch.'
+    suggested: 'When a delivery branch descends from the work branch, the work branch is moved forward to it (fast-forward, no merge, no rewrite); otherwise the agent stops, explains, and the user decides how to combine them.'
+    answer: 'Accepted as recommended (move forward when possible, else ask).'
+    applied_to: 'Feature 007 Technical Specification (migration)'
