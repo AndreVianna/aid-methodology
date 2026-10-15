@@ -3306,12 +3306,9 @@ What a fix changed in the business part is shown first at APPROVE.
    - **`lite`**: no stop. The document is approved by the confirmation before building (Feature 007), which
      also deletes the draft (Feature 003's deletion table).
 7. **FINISH**
-   1. **The KB call** (Q68), in `full`: when the approved technical part holds a decision of reach `project`
-      and a KB exists, one `CALL` for all of them -- `--handoff --to aid-kb-update --step START --why 'approved
-      decisions: <titles>' --returns yes`. `/aid-kb-update` runs in `change` mode and returns here (Feature
-      004). With no KB there is no call: the agent says once per work that the KB is not built, so the decision
-      will be recorded when it is (Feature 004, No KB: one rule). In `lite` the call is Feature 007's (What
-      other features must provide). The business checkpoint makes no call: decisions live in the technical part.
+   1. **The KB call** (Q68): the `REQUIREMENTS.md` approval follows Components, The KB call on confirmation --
+      in `full` it is made here; in `lite` the approval is the confirmation before building, which makes it.
+      The business checkpoint approves no decision (decisions live in the technical part), so it makes none.
    2. **`PASS`**: `--handoff --to aid-plan --step <its entry step> --returns no --phase Planning --why
       'requirements approved'` (`lite`: `'requirements written'`), and `aid-plan` starts in the same turn
       (FR-8).
@@ -3336,9 +3333,9 @@ Planning and Building can find it wrong.
     During Building, such an approval is a real blocker (FR-6), not a milestone;
   - a technical-only change: no stop. It is recorded `Assumed`, `category: Specification change`, and confirmed
     in the batch of the work's next approval (Feature 002).
-- **FINISH** in a revision: after an approval at once, the KB call above when the change carries a `project`
-  decision; a change recorded `Assumed` gets its call from the approval that confirms it (Components, The KB
-  call on confirmation).
+- **FINISH** in a revision: the KB call follows Components, The KB call on confirmation -- an approval at once,
+  at any depth, makes it right after the yes; a change recorded `Assumed` gets it from the approval that
+  confirms it.
   Then `HALT`, which returns an open call, or, after a typed start, `PASS` back to the skill that drives the
   work's phase, at its entry step, without `--phase` (as Feature 003's side ideas do).
 
@@ -3418,11 +3415,15 @@ The revision approvals of Q62 are not a new moment of the table: they are `/aid-
 `revise.md`, and recorded like every approval.
 
 **The KB call on confirmation** -- one rule, added under the table in `skill-steps.md`, so it binds every skill
-that runs an approval: whichever approval confirms an `Assumed` entry holding a decision of reach `project`
-(a `Specification change`, or any other) -- `aid-plan`'s `PLAN.md` approval, `/aid-execute`'s confirmation
-before building or a milestone, or any later approval -- makes, right after the yes, the single `CALL` to
-`/aid-kb-update` (`change`) carrying every such decision it confirmed (Q68), only when a KB exists (Feature 004,
-No KB: one rule). The skill running that approval makes the call; no decision waits for a particular skill.
+that runs an approval: **any approval that approves a decision of reach `project`** makes, right after the yes,
+the single `CALL` to `/aid-kb-update` (`change`) carrying every such decision it approved (Q68) --
+`--handoff --to aid-kb-update --step START --why 'approved decisions: <titles>' --returns yes`, returning to
+that approval's step. It covers decisions approved directly (the `REQUIREMENTS.md` approval, the confirmation
+before building of a `lite` work, an approval at once in a revision at any depth) and decisions confirmed from
+an `Assumed` entry (a `Specification change`, or any other) by `aid-plan`'s `PLAN.md` approval, `/aid-execute`'s
+confirmation or a milestone, or any later approval. Only when a KB exists: with none there is no call, and the
+agent says once per work that the KB is not built, so the decision will be recorded when it is (Feature 004, No
+KB: one rule). The skill running that approval makes the call; no decision waits for a particular skill.
 
 **The contradiction pass** -- `reviewer-dispatch.md`'s site table: the `aid-define` CROSS-REFERENCE row becomes
 `aid-specify` CHECK -- receives `REQUIREMENTS.md`, every section -- covers Specification's own output, once per
@@ -3441,7 +3442,7 @@ work's `STATE.yml`. It changes a KB document only through the `/aid-kb-update` c
 | Feature | Must provide | Waiting on it |
 |---|---|---|
 | 006 | `aid-plan` reads both shapes: an unsplit document's `## 11. Technical Specification` as one unit, with tasks citing requirement and criterion ids and no feature; a split document by feature (Q67). Its work-state migration drops `interview`, `features` and `review_history` from old works, and fills the record of old Define and Specify works with the legacy rows of Migration. Its `PLAN.md` approval applies `skill-steps.md`'s KB call on confirmation (Components): when it confirms an `Assumed` entry holding a `project` decision, the one call. The two reads of the `features` key go: `aid-plan` § Check 2's `Ready` gate and `aid-detail` `task-decomposition.md`'s "Spike Needed" read (a spike is now a `WAIT` inside Specification). The dashboard's feature count (the "Full path" summary line in `home.html`) follows its plan model | `005-07` past Specification, `005-13`, `002-08`, `002-09` |
-| 007 | In `lite`, at the confirmation before building, after the yes: one `CALL` to `/aid-kb-update` (`change`) carrying every decision of reach `project` in `REQUIREMENTS.md`, only when a KB exists (Feature 004, No KB: one rule) -- the `lite` half of Q68; Feature 003's draft deletion already fires on that approval (`skill-steps.md`). Its confirmation and milestones apply `skill-steps.md`'s KB call on confirmation (Components), like any approval that confirms an `Assumed` entry holding a `project` decision. A task that finds the document wrong makes a `CALL` to `/aid-specify` (REVISE) with the reason: today's `IMPEDIMENT` routes of type `wrong-assumption` and `architecture-conflict` to Specify become that call. `aid-execute` reads the unsplit shape through the slice | `005-11`, `005-12` |
+| 007 | Its confirmation before building and its milestones apply `skill-steps.md`'s KB call on confirmation (Components): the confirmation approves a `lite` work's `REQUIREMENTS.md` and so its `project` decisions, and any of them may confirm an `Assumed` one; Feature 003's draft deletion already fires on that confirmation (`skill-steps.md`). A task that finds the document wrong makes a `CALL` to `/aid-specify` (REVISE) with the reason: today's `IMPEDIMENT` routes of type `wrong-assumption` and `architecture-conflict` to Specify become that call. `aid-execute` reads the unsplit shape through the slice | `005-11`, `005-12` |
 | 009 | The shortcut engine's CAPTURE and SPEC states go (Q65), and with them its `SP-08` row on the shared exempt list; until then the engine writes `REQUIREMENTS.md` itself, in the old shape. Its action skills pass to `/aid-specify` with the kind, and the catalog fields that shape a technical part are read by `design.md` | -- |
 
 ##### 7. Migration
@@ -3545,7 +3546,7 @@ of `.github/workflows/installer-tests.yml`):
 | SP-04 | `start.md` cites `effort-check.md`; `effort-check.md` has a row for each of Claude Code, Codex, Cursor, Antigravity and Copilot CLI and states the "cannot be read" path; no file under `canonical/skills/aid-kb-build/` cites it |
 | SP-05 | `requirements-template.md` has the headings `## 1.` to `## 10.`, `## 11. Technical Specification`, `## 11. Features`, the technical headings of The document, a `**Serves:**` line, and `## Verifiable Acceptance Criteria` |
 | SP-06 | `work-state-template.yml` has no `interview:`, `features:` or `review_history:` key and has `reviews: []` and `effort_check: --`, each with its `[W]` comment; no file under `canonical/skills/` or `canonical/aid/templates/` other than that template has a line opening with `interview:`, `features:` or `review_history:` |
-| SP-07 | `skill-steps.md` § When approvals happen has the business-part row; `reviewer-dispatch.md`'s Guard 2 site table names `aid-specify` CHECK and no `aid-define` row; `skill-steps.md` states the KB call on confirmation and names `aid-kb-update` |
+| SP-07 | `skill-steps.md` § When approvals happen has the business-part row; `reviewer-dispatch.md`'s Guard 2 site table names `aid-specify` CHECK and no `aid-define` row; `skill-steps.md` states the KB call on confirmation -- for any approval that approves a `project` decision, directly or from an `Assumed` entry -- and names `aid-kb-update` |
 | SP-08 | No file under `canonical/skills/` or `canonical/aid/templates/` other than `aid-specify`'s authors `REQUIREMENTS.md` in a state of its own: no `## State: CAPTURE` or `## State: SPEC` heading. Files of entries on the shared exempt list marked for SP-08 are skipped (Q65: `shortcut-engine.md`, owner Feature 009) |
 
 **Unit tests**
