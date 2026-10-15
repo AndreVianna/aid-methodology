@@ -4022,22 +4022,25 @@ changes `REQUIREMENTS.md` only through `/aid-specify` and a KB document only thr
     - `intent.depth`, when missing, takes `pipeline.path`'s value (Q11); then `pipeline.path` goes;
     - `interview`, `features` and `review_history` go (Feature 005);
     - the old phase names are rewritten (Feature 002's mapping);
-    - **the record** of every open work: `active_skill` and `step`, decided from what is on disk, first match wins.
-      The template's default `phase: Describe` is kept by every skill that never sets a phase, so only a phase some
-      pipeline step moved is trusted:
+    - **the record** of every open work whose record is missing or incomplete by `--check`'s field rules (Feature
+      002); a work with a complete record -- every work `--create` made -- is never touched, since its record is the
+      only resume source and the record `--create` wrote wins. So only old phase names reach the fill. `active_skill`
+      and `step` are decided from what is on disk, first match wins. The template's default `phase: Describe` is
+      kept by every skill that never sets a phase, so only a phase some pipeline step moved is trusted:
       1. **A work halted at the shortcut approval** (Feature 002's halted-Lite row: `lifecycle:
          Paused-Awaiting-Input` and `delivery_state: Specified`) -> `/aid-execute`, before any phase row, so its
          `Detail` phase cannot catch it;
-      2. **a phase other than the default** (anything but `Describe`, and not missing, `--` or `Deploy`) decides:
+      2. **an old `active_skill: aid-deploy`** -> `/aid-deploy`, whatever the phase, as the gate orders it today, so
+         an interrupted deploy at `phase: Execute` resumes in deploy;
+      3. **a phase other than the default** (anything but `Describe`, and not missing, `--` or `Deploy`) decides:
          `Define` or `Specify` -> `/aid-specify`; `Plan` or `Detail` -> `/aid-plan`; `Execute` -> `/aid-execute`
-         (Feature 002's `delivery_state` rows are Execute rows); a new name -> the phase skill of that phase;
-      3. **phase `Describe`**: initiator `aid-describe` -> `/aid-specify`; any other initiator -> the initiator rows of
+         (Feature 002's `delivery_state` rows are Execute rows);
+      4. **phase `Describe`**: initiator `aid-describe` -> `/aid-specify`; any other initiator -> the initiator rows of
          Features 003-005 (idea and design works -> `/aid-brainstorm`, the deleted KB `create` / `update` skills ->
          `/aid-kb-update`); with no row, the old `active_skill`, else the initiator itself, when that skill still
          exists (an `aid-research` or `aid-review` work resumes in its own skill);
-      4. **phase missing, `--` or `Deploy`**: the old `active_skill` (`aid-define` -> `/aid-specify`, `aid-detail` ->
-         `/aid-plan`, `aid-deploy` -> `/aid-deploy`, a skill that still exists -> itself), then the initiator rows as
-         in 3.
+      5. **phase missing, `--` or `Deploy`**: the old `active_skill` (`aid-define` -> `/aid-specify`, `aid-detail` ->
+         `/aid-plan`, a skill that still exists -> itself), then the initiator rows as in 4.
 
       The skill is written at its entry step: `START` for the rebuilt skills (`aid-execute` included, Feature 007),
       `IDLE` for `aid-deploy`; each skill's START keeps what is on disk. The initiator otherwise serves only the type
@@ -4152,7 +4155,8 @@ list.
   the type only where Q74 says; a work started by `aid-describe` and now at `Detail` gets `/aid-plan` at START; an
   `aid-design-api` work and an `aid-create-roadmap` work, each at the default `phase: Describe`, get
   `/aid-brainstorm` and `/aid-kb-update`; an `aid-refactor` work halted at the shortcut approval with phase `Detail`
-  gets `/aid-execute`; a duplicate task id and an unknown file each warn and change or drop nothing; a
+  gets `/aid-execute`; a work with `active_skill: aid-deploy` at `phase: Execute` gets `/aid-deploy`; a work with a
+  complete record (made by `--create`) at `phase: Definition` keeps its record byte for byte; a duplicate task id and an unknown file each warn and change or drop nothing; a
   second run changes nothing; bash and PowerShell give the same bytes, the PowerShell half in the Windows lane.
 - `tests/canonical/test-work-initiation-gate.sh`: an old-layout work gets the `aid update` line and no repair.
 - Dashboard: fixtures for a single-layout work at Planning (task files, no entries yet), at Building with two
