@@ -4257,7 +4257,7 @@ Building is a resume, on another work a typed start (Feature 002). One run build
 | NEXT | `references/next.md` | main conversation | `CALL` to `aid-kb-update` when the KB check hits; then `CHAIN` by the routing rule (NEXT, below) -> BUILD, MILESTONE, DELIVERY or FINAL |
 | DELIVERY | `references/delivery.md` | `aid-reviewer`; the executor for fixes and the simplification | `CHAIN` by NEXT's routing rule -> MILESTONE, or FINAL first for the last delivery |
 | FINAL | `references/final.md` | main conversation; the executor and `aid-reviewer` for fixes | `CALL` to `aid-kb-update` when owed; `CHAIN` -> MILESTONE |
-| MILESTONE | `references/milestone.md` | main conversation | `CALL` to `aid-monitor-pipeline` (collect, push); `CALL` to `aid-plan` for corrections, then `CHAIN` -> BUILD; `ASK` the approval; then `CHAIN` -> BUILD, or -> FINISH after the whole build |
+| MILESTONE | `references/milestone.md` | main conversation | `CALL` to `aid-monitor-pipeline` (collect, push); `CALL` to `aid-plan` for corrections, then `CHAIN` -> BUILD; `ASK` the approval, recorded with its `covers` (step 10); then `CHAIN` by NEXT's routing rule |
 | FINISH | `references/finish.md` | main conversation | `PASS` to the close; in a correction call, `HALT` |
 
 Any step may raise a **real blocker** (`references/blocker.md`): `ASK` -> the same step. `step_detail` always names the
@@ -4294,7 +4294,7 @@ task or delivery and where it stands (`'task-004: verify round 2'`, `'delivery-0
      build only waits for its approval. An old work's per-delivery branches and per-task worktrees are handled first
      (`references/old-work.md`, Migration).
    - **A correction call** (a `CALL` from `/aid-monitor-pipeline`, What other features must provide): no confirmation
-     and no wave question; on to the correction tasks.
+     and no wave question; on to the correction tasks, whose `notes` name `corrections <round>` (step 10).
 2. **BUILD** -- for the next task whose dependencies are `Done`, lowest id first within its wave.
    - **Task state**: `In Progress` written at entry, before anything else (rules.md tracking discipline); the task's
      `base` (the commit before its first round) on the first round.
@@ -4310,12 +4310,13 @@ task or delivery and where it stands (`'task-004: verify round 2'`, `'delivery-0
    - **Commit**: each round ends with one commit on the work branch, `task-NNN: <title>` or `task-NNN: fix <rows>`,
      staging only the paths that round changed -- never `.aid/.temp/` or `.aid/works/` (the work folder is Feature
      008's, by the project setting); KB paths only through `kb-commit.sh` (Feature 004).
-   - **Without git** -- the one rule for it: nothing is committed and the `commit` fields stay `--`. Instead, a
-     snapshot of the project's files outside `.aid/` is taken under `.aid/.temp/execute/<work>/snapshots/` at the start
-     of every round -- a task's build, fix and simplify rounds, and DELIVERY's fix and simplify rounds. The task's
-     first snapshot is its `base` for VERIFY; the first snapshot of a delivery's first task is the delivery's `base` for
-     DELIVERY; the snapshot taken at the start of a simplify round is what the undo restores and what
-     `simplify-guard.sh --snapshot` compares against.
+   - **Without git** -- the one rule for it: nothing is committed, and every `commit` field (a task's, a delivery's,
+     an approval's) holds the name of the newest snapshot, numbered in order, so "newer than an approval" reads as
+     with git. A snapshot of the project's files outside `.aid/` is taken under `.aid/.temp/execute/<work>/snapshots/`
+     at the start of every round -- a task's build, fix and simplify rounds, and DELIVERY's fix and simplify rounds.
+     The task's first snapshot is its `base` for VERIFY; the first snapshot of a delivery's first task is the
+     delivery's `base` for DELIVERY; the snapshot taken at the start of a simplify round is what the undo restores and
+     what `simplify-guard.sh --snapshot` compares against.
    - **What the executor finds**: an open question goes to `blocker.md` when the task cannot go on without it;
      otherwise the main conversation takes the executor's recommendation and records it `Assumed` (with `--answer`,
      state `Assumed`), confirmed at the next milestone like every small decision (Real blockers). A finding that the
@@ -4364,15 +4365,21 @@ task or delivery and where it stands (`'task-004: verify round 2'`, `'delivery-0
      that the KB is not built (Feature 004, No KB: one rule).
    - **What comes next** -- the one routing rule. It runs at the end of NEXT, DELIVERY and MILESTONE, and when a call
      made from NEXT returns (a given-up task, Real blockers), so it holds in a live run as on resume. It reads state
-     only, for the current delivery -- the lowest-numbered one that is neither `Done` nor `Canceled` (`Canceled`
-     deliveries are skipped) -- first match:
-     1. corrections made at a milestone: the next one -> BUILD; once all are built -> that MILESTONE;
-     2. a wave just ended, `wave_stops` is not `none`, and it is not the delivery's last wave -> MILESTONE;
-     3. a task neither `Done` nor `Canceled` whose dependencies are `Done` -> BUILD;
-     4. no such task, at least one `Done`, the delivery not yet verified -> DELIVERY;
-     5. the delivery verified and waiting for its approval -> MILESTONE, after FINAL when it is the last delivery and
-        FINAL has not run;
-     6. no delivery left -> FINAL, then the whole-build MILESTONE.
+     only: the task and delivery states, `full_suite.result`, and the milestone approvals -- `qa` entries `category:
+     Approval` answered yes, each `covers` listing the milestones it approved (step 10). "Approved" below means such an
+     entry lists that milestone. The current delivery is the lowest-numbered one that is neither `Done` nor `Canceled`
+     (`Canceled` deliveries are skipped). First match:
+     1. corrections -- tasks whose `notes` name the milestone they were made for (step 10): one still open -> BUILD;
+        all `Done`, and that milestone not approved, or one of them built after its newest approval (a `commit` newer
+        than the approval's) -> that MILESTONE;
+     2. `whole build` approved -> FINISH;
+     3. a wave of the current delivery whose tasks are all `Done` or `Canceled`, `wave_stops` not `none`, not the
+        delivery's last wave, and `wave delivery-NNN/wave-N` not approved -> MILESTONE;
+     4. a task of the current delivery neither `Done` nor `Canceled` whose dependencies are `Done` -> BUILD;
+     5. no such task, at least one `Done`, the delivery not yet verified -> DELIVERY;
+     6. the delivery verified and `delivery delivery-NNN` not approved -> MILESTONE, after FINAL when it is the last
+        delivery and FINAL has not run (`full_suite.result` is `--`);
+     7. no delivery left -> FINAL when it has not run, then MILESTONE while `whole build` is not approved.
 8. **DELIVERY** -- the same sequence over the whole delivery (FR-19), before its milestone. Delivery state
    `Verifying`.
    - **Verify**: one graded `aid-reviewer` pass over the delivery's diff (`deliveries.<id>.base..HEAD`), its tasks, the
@@ -4397,7 +4404,8 @@ task or delivery and where it stands (`'task-004: verify round 2'`, `'delivery-0
        `/aid-monitor-pipeline` adds the new review comments and pipeline results to `feedback`, and returns.
     2. **Corrections** (Q77): every `Open` entry of kind `bug`, `correction` or `pipeline failure` becomes a correction
        task -- one `CALL` to `/aid-plan` (REVISE, `--why 'corrections: F1, F3'`), recorded `Assumed` `Plan change`
-       (Feature 006) -- built through the task loop, BUILD to NEXT; the entry's state becomes `Task`. A `conflict`
+       (Feature 006) -- built through the task loop, BUILD to NEXT; the entry's state becomes `Task`, and each
+       correction task's `notes` names this milestone (`correction for delivery delivery-001`). A `conflict`
        with the parent branch is not corrected here: it is shown, and `/aid-monitor-pipeline` resolves it when it
        pushes (Feature 008, KI-005). A `suggestion` or `comment` becomes a question in this milestone's batch, with
        options and a recommendation (FR-7).
@@ -4405,17 +4413,20 @@ task or delivery and where it stands (`'task-004: verify round 2'`, `'delivery-0
        results, verify grades, simplify outcomes), the corrections, the work's `kb_updates` since then, and the small
        decisions to confirm (`Building`, `Plan change`, `Specification change`, `KB change`) in the same batch. At the
        whole build it also shows the full-suite result against the baseline (AC-26). Recorded `category: Approval`,
-       `covers` -- `wave 2 of delivery-001`, `delivery-001`, or, for the last, `delivery-002; whole build; final
-       result` (coinciding approvals are one, M11) -- and `commit`, the work branch's head. Right after the yes, the KB
-       call on confirmation for any `project` decision it confirmed. A suggestion the user takes becomes a correction
-       task, built after this approval and shown at the next one.
+       with `commit`, the work branch's head, and `covers` naming each milestone it approves, in these exact forms:
+       `wave delivery-NNN/wave-N`, `delivery delivery-NNN`, `corrections <round>` (a correction call; the round is one
+       more than the `corrections` approvals before it) and `whole build`. Coinciding approvals are one (M11), so its
+       `covers` lists each, separated by `; ` -- `delivery delivery-002; whole build; final result`; NEXT's routing
+       rule reads these values. Right after the yes, the KB call on confirmation for any `project` decision it
+       confirmed. A suggestion the user takes becomes a correction task for this milestone, built after this approval;
+       the milestone is then asked again for it (step 7, rule 1).
        - **A change the user asks for** is a correction task as in 2 (Q77); once built, the same milestone is asked
          again. A rejected `KB change` reopens as a question (Feature 004).
     4. **The push** -- at a milestone that may push (every delivery and the whole build, and a wave when `wave_stops`
        is `review-and-update`), when the work branch has a remote: one question, "Create or update the pull request
        now?", recommendation yes. Yes: a `CALL` to `/aid-monitor-pipeline` that pushes up to the approved `commit` and
        creates or updates the one pull request, and returns. No: nothing is pushed; the next milestone asks again.
-    - Then: delivery state `Done` at a delivery milestone; on to BUILD, or FINISH after the whole build.
+    - Then: delivery state `Done` at a delivery milestone; then on by NEXT's routing rule (step 7).
 11. **FINISH**
     - **After the whole build**: `user_approved: 'yes'` (Feature 002), then `PASS` to the close -- `--handoff --to
       aid-monitor-pipeline --step <its entry step> --returns no --phase CI --why 'whole build approved'`. Until Feature
@@ -4583,8 +4594,8 @@ and one rule under the table: "During Building, a question that does not block i
 recommendation is recorded `Assumed` and confirmed at the next milestone. A question the work cannot go on without is a
 real blocker, asked at once and recorded `category: Blocker`. An approval a revision needs at once is asked at once too,
 recorded as that revision's `Approval` (`covers: requirements change` or `plan change`), never as a `Blocker`." The
-corrections approval is the MILESTONE of a correction call, recorded `covers: corrections`, with no collection and no
-push question (`/aid-monitor-pipeline` does both).
+corrections approval is the MILESTONE of a correction call, recorded `covers: corrections <round>`, with no collection
+and no push question (`/aid-monitor-pipeline` does both).
 
 **Full suite** (Q79): the command comes from the KB's `test-landscape.md` or `technology-stack.md`; with neither, from
 the project's own build files, recorded `Assumed` with reach `project` (so the next approval's KB call records it). A
@@ -4818,6 +4829,7 @@ the full integration suite runs at the end of the work, before release, with tha
 | EX-05 | No tracked file under `canonical/skills/`, `canonical/aid/templates/` or `canonical/aid/scripts/` (except `migrate/`, and the writer's refusal of its retired modes) names `IMPEDIMENT-task-`, `delivery-NNN-issues`, `--append-issue`, `--findings` or `quick_check` |
 | EX-06 | `skill-steps.md` § When approvals happen has the corrections row and the Building rule; `shortcut-engine.md` § State: APPROVAL-HALT names `confirmation before building`; `reviewer-ledger-schema.md` names the four `/aid-execute` ledgers |
 | EX-07 | `work-state-template.yml` has `wave_stops`, `full_suite`, `feedback`, and the building fields of `deliveries` and `tasks_lifecycle`, each with its `[W]` comment, and no `gate_tier`, `gate_grade`, `gate_timestamp`, `quick_check` or `review:` under a task |
+| EX-08 | The routing reads `covers`: `milestone.md` writes, and `next.md` checks, each of `wave delivery-`, `delivery delivery-`, `corrections ` and `whole build`; `next.md` names `covers`, `commit` and `full_suite.result` |
 
 **Unit tests**
 - `tests/canonical/test-writeback-state.sh`: each new task and delivery field, with its values and exit 4 on a bad
