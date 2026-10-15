@@ -4288,7 +4288,7 @@ task or delivery and where it stands (`'task-004: verify round 2'`, `'delivery-0
      Building`. With the choice, START saves the planned stops in `wave_stops.planned`: every wave end of each
      delivery but its last, from `derive-waves.sh --from-tasks --delivery` over the plan as approved (empty for
      `none`). It is written once, here, and never changes: corrections and `/aid-plan` REVISE never add to it, and a
-     delivery added or changed during building gets no wave stop, only its delivery milestone.
+     delivery added during building gets no wave stop, only its delivery milestone.
    - **The full-suite baseline** (Q79), once, before the first BUILD: the project's full suite runs on the starting
      commit (Components, Full suite); `full_suite.baseline` holds what passed and which tests already fail. When
      START finds a task already built and no baseline (an old work), it records `baseline: not taken`.

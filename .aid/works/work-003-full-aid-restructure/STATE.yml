@@ -1107,3 +1107,11 @@ qa:
     suggested: 'Remove the refresh exception (a delivery added during building gets only its delivery milestone, no wave stops) and fix sample 007-03 to use three chained corrections.'
     answer: 'Fix both, then one more review.'
     applied_to: 'Feature 007 Technical Specification (START wave choice, EX-08, sample 007-03)'
+  - id: Q84
+    category: Specification (Feature 007)
+    impact: Low
+    state: Answered
+    context: 'Cycle 14 found START saying a delivery added or changed during building gets no wave stop, while rule 1 keeps a changed delivery''s planned stops.'
+    suggested: 'Delete or changed: only a delivery added during building has no wave stops; a changed delivery keeps its planned stops.'
+    answer: 'Delete the two words, then one more review.'
+    applied_to: 'Feature 007 Technical Specification (START wave choice)'
