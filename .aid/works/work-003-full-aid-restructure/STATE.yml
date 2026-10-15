@@ -1043,3 +1043,19 @@ qa:
     suggested: 'One stage rail for every work, built from the work''s own intent.phases, with depth shown as a badge; this replaces Feature 002''s two rails.'
     answer: 'Accepted as recommended (one rail from the work''s own stages).'
     applied_to: 'Feature 006 Technical Specification (dashboard); Feature 002 rail'
+  - id: Q76
+    category: Specification (Feature 007)
+    impact: High
+    state: Answered
+    context: 'With one worktree per work, parallel tasks would share one folder and can corrupt each other''s test runs and commits.'
+    suggested: 'Tasks are built one at a time in dependency order; waves still order the work and mark the optional stops; the parallel pool and per-task worktrees are removed.'
+    answer: 'Accepted as recommended (one at a time).'
+    applied_to: 'Feature 007 Technical Specification (task loop)'
+  - id: Q77
+    category: Specification (Feature 007)
+    impact: Medium
+    state: Answered
+    context: 'A Done task is never edited, and every correction is a build that must be approved.'
+    suggested: 'Each correction (milestone collection fixes, user-requested changes, later Feature 008''s) becomes a new plan task through /aid-plan REVISE, recorded Assumed, built through the same loop and shown at the next approval.'
+    answer: 'Accepted as recommended (a new task in the plan).'
+    applied_to: 'Feature 007 Technical Specification (milestones, corrections)'
