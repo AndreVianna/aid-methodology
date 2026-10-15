@@ -3059,9 +3059,10 @@ part" is its sections 1-10; "the technical part" is its section 11.
 | Delete | `canonical/skills/aid-specify/references/` `state-initialize.md`, `state-continue.md`, `state-review.md`, `state-spike.md`, `state-blocked.md`, `state-done.md`, `handling-outcomes.md`, `known-issues-scope.md` | Replaced by the references above; the known-issues filter moves into `design.md` (Flow, DESIGN) |
 | Delete | `canonical/skills/aid-define/` | Retired whole: the split decision moves to FEATURES, the cross-reference to CHECK |
 | Rewrite | `canonical/aid/templates/requirements/requirements-template.md` | The two-part shape (see The document). Its `## Verifiable Acceptance Criteria` section stays under that heading, which `aid-plan`, `aid-detail` and `shortcut-engine.md` cite |
-| Delete | `canonical/aid/templates/specs/technical-specification-template.md` (and the `specs/` folder it leaves empty), `canonical/aid/templates/requirements.md` | Folded into the one template; the bare scaffold's last user, `aid-describe`, went with Feature 003 |
-| Edit | `canonical/aid/templates/work-state-template.yml` | `interview`, `features` and `review_history` go, with their comments; `reviews: []` comes, with its `[W]` comment (see Work state) |
-| Edit | `canonical/aid/scripts/execute/writeback-state.sh` | Extends Feature 004's `--review` mode to the work file (see Work state) |
+| Delete | `canonical/aid/templates/specs/technical-specification-template.md` (and the `specs/` folder it leaves empty) | Folded into `requirements-template.md` |
+| Rewrite | `canonical/aid/templates/requirements.md` | Kept at its path as the bare scaffold START copies (see The document): the identity block and every unfilled section hold `*(pending)*`, the marker the dashboard readers already treat as not filled; sections 1-10, then `## 11. Technical Specification`. The `- **Name:**` and `- **Description:**` lines that `dashboard/reader/tests/test_feature009.py`'s `test_pf1_*` tests pin stay |
+| Edit | `canonical/aid/templates/work-state-template.yml` | `interview`, `features` and `review_history` go, with their comments; `reviews: []` and `effort_check: --` come, each with its `[W]` comment (see Work state) |
+| Edit | `canonical/aid/scripts/execute/writeback-state.sh` | Extends Feature 004's `--review` mode to the work file; `--pipeline` accepts the field `"Effort Check"` (see Work state) |
 | Edit | `canonical/aid/scripts/execute/slice-requirements.sh` | Also reads a document that does not split (see The document, Readers of the old shape) |
 | Edit | `canonical/aid/templates/skill-steps.md` § When approvals happen (Feature 002) | One new row, the business part (Q61; see Approvals) |
 | Edit | `canonical/aid/templates/reviewer-dispatch.md` | In § The cross-document contradiction pass (Guard 2), the `aid-define` CROSS-REFERENCE site becomes `aid-specify` CHECK (see Components); `aid-define` leaves its list of skills that render the brief structure |
@@ -3079,8 +3080,8 @@ part" is its sections 1-10; "the technical part" is its section 11.
 ```markdown
 # Requirements
 
-- **Name:** {Title}
-- **Description:** {one sentence}
+- **Name:** *(pending)*
+- **Description:** *(pending)*
 
 <!-- Sections 1-10 are the business part: what and why, in the user's words.
      Section 11 is the technical part: how it will be built. -->
@@ -3170,8 +3171,9 @@ feature under any headings -- stays valid; nothing rewrites it.
   error.
 - **`aid-plan`, `aid-detail`, `aid-execute`** read § 11 by feature today. Reading the unsplit shape is
   Feature 006's and Feature 007's (Q67, What other features must provide). Until Feature 006 lands, a work
-  whose document does not split reaches today's `aid-plan`, which stops when it finds no feature section. No release
-  carries that gap, since every feature ships in v4.0.0 (§7 Constraints 1); the samples that go past
+  whose document does not split reaches today's `aid-plan`, which stops when it finds no feature section; a
+  split one also stops there, because its Check 2 wants each feature `Ready` in the `features` key, which
+  nothing writes any more (Work state). No release carries that gap, since every feature ships in v4.0.0 (§7 Constraints 1); the samples that go past
   Specification wait on the deferred list.
 - **`/aid-specify` START** accepts both shapes (Flow).
 - **The shortcut engine** keeps writing its own § 11 `### Feature 001` until Feature 009 (Q65). That is
@@ -3187,13 +3189,22 @@ applies (Feature 002).
 | Step | Reference | Worker | Advance |
 |---|---|---|---|
 | START | `references/start.md` (`references/effort-check.md`) | main conversation | `CHAIN` -> REQUIREMENTS; `ASK` -> REQUIREMENTS when the effort check asks; `CHAIN` -> REVISE for a change after Specification (below) |
-| REQUIREMENTS | `references/requirements.md` | `aid-architect` drafts; main conversation asks | `ASK` -> REQUIREMENTS after each group; `CHAIN` -> FEATURES when nothing is open |
-| FEATURES | `references/features.md` | main conversation (`aid-architect` proposes a split) | `full`: `ASK` -> DESIGN, or -> REQUIREMENTS when the user asks for a change; `lite`: `CHAIN` -> DESIGN |
+| REQUIREMENTS | `references/requirements.md` | `aid-architect` drafts; main conversation asks | `ASK` -> REQUIREMENTS after each group; `CHAIN` -> FEATURES when nothing is open; in a fix, `CHAIN` -> CHECK, or -> FEATURES / DESIGN when the fix reaches them (Fix route) |
+| FEATURES | `references/features.md` | main conversation (`aid-architect` proposes a split) | `full`: `ASK` -> DESIGN, or -> REQUIREMENTS when the user asks for a change at the checkpoint; `lite`: `CHAIN` -> DESIGN; in a fix, only the split question, then `ASK` -> DESIGN |
 | DESIGN | `references/design.md` | `aid-architect` drafts (fans out `aid-researcher` as today); main conversation asks | `ASK` -> DESIGN after each group; `WAIT` -> DESIGN for an investigation only the user can make; `CHAIN` -> CHECK |
-| CHECK | `references/check.md` (brief: `references/reviewer-brief.md`) | `aid-reviewer` | `CHAIN` -> REQUIREMENTS or DESIGN to fix; `ASK` -> APPROVE for rows still open after three rounds; else `CHAIN` -> APPROVE |
-| APPROVE | `references/approve.md` | main conversation | `full`: `ASK` -> FINISH, or -> REQUIREMENTS / DESIGN when the user asks for a change; `lite`: `CHAIN` -> FINISH; in a revision, by the kind of change (REVISE below) |
+| CHECK | `references/check.md` (brief: `references/reviewer-brief.md`) | `aid-reviewer` | `CHAIN` -> REQUIREMENTS or DESIGN in a fix (Fix route); `ASK` -> APPROVE for rows still open after three rounds; else `CHAIN` -> APPROVE |
+| APPROVE | `references/approve.md` | main conversation | `full`: `ASK` -> FINISH, or -> REQUIREMENTS / DESIGN in a fix when the user asks for a change; `lite`: `CHAIN` -> FINISH; in a revision, by the kind of change (REVISE below) |
 | FINISH | `references/finish.md` | main conversation | `CALL` to `aid-kb-update` when owed (below), then `PASS` to `aid-plan`; in a revision, `HALT` or `PASS` back |
-| REVISE | `references/revise.md` | main conversation (`aid-architect` drafts) | `CHAIN` -> CHECK |
+| REVISE | `references/revise.md` | main conversation (`aid-architect` drafts) | `CHAIN` -> CHECK; that check's fixes take the Fix route |
+
+**Fix route.** A fix asked by CHECK's rows, by a change the user asks for at APPROVE, or by the check inside
+a revision is made in the step that owns the section -- REQUIREMENTS for the business part, DESIGN for the
+technical part -- with `step_detail: 'fix: <rows or change>'`, and goes straight back to CHECK. It does not
+re-run the split question or the business checkpoint, and a business fix does not pass through DESIGN. Two
+exceptions, each re-entering only the step it affects: a fix that changes the feature split re-enters FEATURES
+for the split question alone, then DESIGN for the technical parts the new split moves; a fix that changes a
+requirement or criterion a technical part serves re-enters DESIGN for those parts. Both then go on to CHECK.
+What a fix changed in the business part is shown first at APPROVE.
 
 1. **START**
    - **Reads**: the work record (request, reading, depth); the idea draft and every `draft` source, each
@@ -3201,13 +3212,16 @@ applies (Feature 002).
      `## Open questions`, asked later in their subjects, and its `## Kind` with that kind's `shape` points from
      `kind-catalog.yml`; the work's `sources:` (Feature 001); the open `qa` entries, which come first (Feature
      002); `.aid/knowledge/INDEX.md` and the documents it routes to, when a KB exists.
-   - **The effort check** (Components) -- only when the work's `qa` holds no `category: Effort level` entry
-     (Q64).
+   - **The effort check** (Components) -- only while the work record's `effort_check` is `--` (Q64).
+   - **A tracker item** the user names, or one the request traces to, is pulled in through `/aid-read-ticket`
+     and added to the work's `sources:` (Feature 001, `external-sources.md`). This is the read seam that
+     `state-initialize.md` Step 3b held, moved here with its wording: "Skip silently when no such ticket
+     applies or no matching connector is catalogued".
    - **What is already on disk is kept.** Detection (Feature 002, use (a)) shapes how far each step goes:
      an existing business part (one an old `/aid-describe` wrote, say) is kept and REQUIREMENTS drafts only
      what is missing; existing technical sections, in either shape, are kept and DESIGN writes only the
      missing ones. Nothing is converted to the new shape.
-   - `REQUIREMENTS.md` is created from the template when absent.
+   - `REQUIREMENTS.md` is created from `requirements.md`, the bare scaffold, when absent.
    - **A change after Specification** goes straight to REVISE, with no effort check: START is the entry step
      every hand-off writes (Feature 002), so a call from another skill, or a typed start on a work whose phase
      is already past Specification, arrives here first (below).
@@ -3273,8 +3287,8 @@ applies (Feature 002).
 
    Heading names, wording, and the headings of an old-shape document are not findings.
    - **Grade**: `grade.sh` on the ledger, against the global `minimum_grade`; recorded with `--review` (Work
-     state). Below the bar, the main conversation fixes the rows -- business rows back in REQUIREMENTS,
-     technical rows in DESIGN, each fix scoped to its row -- and CHECK runs again. Rows still open after three
+     state). Below the bar, the main conversation fixes the rows by the Fix route -- business rows in
+     REQUIREMENTS, technical rows in DESIGN, each fix scoped to its row -- and CHECK runs again. Rows still open after three
      rounds are brought to the user as questions; their answers are written in and close the rows, and the
      work goes on to APPROVE, which shows them.
    - It runs at every depth.
@@ -3284,7 +3298,7 @@ applies (Feature 002).
      technical detail only when asked; the small decisions in the same batch. The message also says, when they
      apply, that the idea draft will be removed (Feature 003's deletion rule fires on this approval) and which
      `project` decisions will be recorded in the KB. Recorded `category: Approval`, `covers: REQUIREMENTS.md`.
-     A change the user asks for reopens as a question, goes back to REQUIREMENTS or DESIGN, then CHECK.
+     A change the user asks for reopens as a question and takes the Fix route, then CHECK.
    - **`lite`**: no stop. The document is approved by the confirmation before building (Feature 007), which
      also deletes the draft (Feature 003's deletion table).
 7. **FINISH**
@@ -3306,7 +3320,8 @@ Planning and Building can find it wrong.
   No new work is created.
 - **REVISE**: scope the change (the sections and ids it touches), edit them in place, and save `step_detail:
   'revise: <what>'`. No effort check.
-- **CHECK**: the same pass, scoped to the changed sections and every section that cites a changed id.
+- **CHECK**: the same pass, scoped to the changed sections and every section that cites a changed id; its
+  fixes take the Fix route.
 - **APPROVE** in a revision:
   - a change to a requirement or a criterion (sections 5 or 9, or which feature owns them): one approval at once,
     **at every depth**, recorded `category: Approval`, `covers: requirements change`;
@@ -3325,9 +3340,15 @@ Planning and Building can find it wrong.
   `Specification change` (`Assumed`).
 - **Gone from `work-state-template.yml`**: `interview` (with its ten `sections`), `features` and
   `review_history`. Their writers were `aid-describe` (gone with Feature 003), `aid-define` and the old
-  `aid-specify`; none remains. Progress inside Specification is the work record; progress across features is
-  `step_detail`. Old works keep the keys until Feature 006's migration drops them, and the dashboard readers
-  already read a work without them (their `features` list is never filled today).
+  `aid-specify`; no writer remains. Progress inside Specification is the work record; progress across features
+  is `step_detail`. Two readers of `features` remain until Feature 006 removes them (What other features must
+  provide): `aid-plan` § Check 2, which wants each feature `Ready`, and `aid-detail`'s `task-decomposition.md`,
+  which reads "Spike Needed" from it. Old works keep the keys until Feature 006's migration drops them; the
+  dashboard readers already read a work without them (their `features` list is never filled today).
+- **`effort_check`** -- new, written once by START when the effort check runs, whatever it finds
+  (`--pipeline --field "Effort Check" --value <the level read, or unknown>`), before any question it asks.
+  While it is `--` the check is owed; once set, re-entering START never runs it again (Q64). The writer accepts
+  `--`, `unknown`, or a level name of lowercase letters; anything else exits 4.
 - **`reviews`** -- new, one entry per graded review of the work's documents:
 
   ```yaml
@@ -3356,14 +3377,15 @@ Planning and Building can find it wrong.
 - The `/aid-define` line goes, so SG-02 still matches `canonical/skills/` both ways.
 
 **Effort check** (`references/effort-check.md`; FR-15, AC-12, Q17, Q63, Q64):
-- **When**: once per work, as Specification starts -- START, when `qa` holds no `Effort level` entry. Not in
-  REVISE, not on a resume at a later step, never when building the KB (Feature 004).
+- **When**: once per work, as Specification starts -- START, while `effort_check` is `--` (Work state). Not in
+  REVISE, never again on a later entry to START (a resume, or a pass back after a side idea), never when
+  building the KB (Feature 004).
 - **Reading the level**: one row per supported tool -- where that tool keeps the reasoning effort of the main
   conversation (a settings file, an environment variable, a documented command), how to read it without
   changing anything, and how its level names compare with "high". The rows are filled at build time from each
   tool's own documentation; a tool with no documented place is marked "cannot be read". The agent only reads;
   it never writes a tool setting.
-- **High or above**: nothing is said or recorded.
+- **High or above**: nothing is said; only `effort_check` is recorded.
 - **Below high**: one question, `category: Effort level`, importance high -- "Specification works best at high
   effort or above; this session runs at <level>." Recommendation: raise it to high, then go on. Options: raise
   it (the agent says how, from the table) / go on at <level>. When the tool applies a new level only in a new
@@ -3401,9 +3423,9 @@ work's `STATE.yml`. It changes a KB document only through the `/aid-kb-update` c
 
 | Feature | Must provide | Waiting on it |
 |---|---|---|
-| 006 | `aid-plan` reads both shapes: an unsplit document's `## 11. Technical Specification` as one unit, with tasks citing requirement and criterion ids and no feature; a split document by feature (Q67). Its work-state migration drops `interview`, `features` and `review_history` from old works, and fills the record of old Define and Specify works with the legacy rows of Migration. The dashboard's feature count (the "Full path" summary line in `home.html`) follows its plan model | `005-07` past Specification, `002-08`, `002-09` |
+| 006 | `aid-plan` reads both shapes: an unsplit document's `## 11. Technical Specification` as one unit, with tasks citing requirement and criterion ids and no feature; a split document by feature (Q67). Its work-state migration drops `interview`, `features` and `review_history` from old works, and fills the record of old Define and Specify works with the legacy rows of Migration. The two reads of the `features` key go: `aid-plan` § Check 2's `Ready` gate and `aid-detail` `task-decomposition.md`'s "Spike Needed" read (a spike is now a `WAIT` inside Specification). The dashboard's feature count (the "Full path" summary line in `home.html`) follows its plan model | `005-07` past Specification, `002-08`, `002-09` |
 | 007 | In `lite`, at the confirmation before building, after the yes: one `CALL` to `/aid-kb-update` (`change`) carrying every decision of reach `project` in `REQUIREMENTS.md`, only when a KB exists (Feature 004, No KB: one rule) -- the `lite` half of Q68; Feature 003's draft deletion already fires on that approval (`skill-steps.md`). At every approval it runs that confirms a `Specification change` entry carrying a `project` decision, the same one call. A task that finds the document wrong makes a `CALL` to `/aid-specify` (REVISE) with the reason: today's `IMPEDIMENT` routes of type `wrong-assumption` and `architecture-conflict` to Specify become that call. `aid-execute` reads the unsplit shape through the slice | `005-11` |
-| 009 | The shortcut engine's CAPTURE and SPEC states go (Q65); until then the engine writes `REQUIREMENTS.md` itself, in the old shape. Its action skills pass to `/aid-specify` with the kind, and the catalog fields that shape a technical part are read by `design.md` | -- |
+| 009 | The shortcut engine's CAPTURE and SPEC states go (Q65), and with them its `SP-08` row on the shared exempt list; until then the engine writes `REQUIREMENTS.md` itself, in the old shape. Its action skills pass to `/aid-specify` with the kind, and the catalog fields that shape a technical part are read by `design.md` | -- |
 
 ##### 7. Migration
 
@@ -3445,6 +3467,9 @@ work's `STATE.yml`. It changes a KB document only through the `/aid-kb-update` c
   - **Description exempt list** (`test-skill-guide.sh` SG-04): the `aid-define` row goes, and `aid-specify`'s if
     it has one.
   - **SS-13** finds the rewritten brief by its glob; `aid-define`'s goes with its skill.
+  - **Shared exempt list** (`tests/canonical/skill-steps-exempt.tsv`): one row -- `canonical/aid/templates/shortcut-engine.md`,
+    checks `SP-08`, owner Feature 009 (Q65) -- so the release check keeps the engine's own requirements writing
+    from shipping undone.
 - **Suites**:
   - `test-scoped-review-cycles.sh`: SC10's three sites become `aid-specify/references/check.md`,
     `aid-plan/references/review-deliverables.md` and `aid-detail/references/review.md`; SC11 flips -- it now
@@ -3452,11 +3477,16 @@ work's `STATE.yml`. It changes a KB document only through the `/aid-kb-update` c
   - `test-downstream-worktree-entry.sh`: its `aid-define` and `aid-specify` assertions go.
   - `test-state-review-surface.sh`: the `aid-define` brief path goes.
   - `test-work-state-template.sh`: WS21 (`features`) and WS22 (`review_history`) go; one assertion for `reviews:
-    []` and its `[W]` comment comes.
+    []`, one for `effort_check: --`, each with its `[W]` comment, comes.
   - `test-shared-prune.sh`, `test-shared-remove.sh` and the `test-aid-cli-parity.sh` drift row use `aid-define` as a
     sample installed skill; they switch to one that stays (`aid-plan`).
-  - `test-ticket-retirement-structural.sh` and `test-connector-consumption-linkage.sh` read the template and follow
-    its new shape.
+  - `test-ticket-retirement-structural.sh`: its `SPECIFY_INIT` path (in the T000 setup loop and the seam map)
+    becomes `canonical/skills/aid-specify/references/start.md`, which carries the read seam and its silent-skip
+    sentence, so T045, T046 and T097 hold there; its template assertions follow the new template.
+  - `test-connector-consumption-linkage.sh` reads the template and follows its new shape.
+  - `dashboard/reader/tests/test_feature009.py`: its `test_pf1_*` tests keep reading
+    `canonical/aid/templates/requirements.md`, which keeps its path and its `- **Name:**` / `- **Description:**`
+    lines with `*(pending)*`; nothing changes.
   - `test-pipeline-status-walkthrough.sh` and `test-writeback-state.sh` follow the deleted references;
     `test-artifact-discipline.sh` AD13 ceilings drop to the new measured counts.
   - Dashboard fixtures that name `aid-define` or `aid-specify` as an old work's skill stay: they are old works'
@@ -3492,13 +3522,14 @@ of `.github/workflows/installer-tests.yml`):
 
 | Group | Asserts |
 |---|---|
-| SP-01 | `canonical/skills/aid-define/`, `canonical/aid/templates/specs/` and `canonical/aid/templates/requirements.md` are absent; `aid-specify`'s nine new references and its brief exist; none of its deleted references does |
+| SP-01 | `canonical/skills/aid-define/` and `canonical/aid/templates/specs/` are absent; `canonical/aid/templates/requirements.md` exists, its identity lines hold `*(pending)*`; `aid-specify`'s nine new references and its brief exist; none of its deleted references does |
 | SP-02 | `aid-define` is named by no kept file under `canonical/`, nor by `dashboard/home.html`, outside the legacy block of `work-initiation-gate.md` and `canonical/aid/scripts/migrate/` |
 | SP-03 | `aid-specify`'s step table has START, REQUIREMENTS, FEATURES, DESIGN, CHECK, APPROVE, FINISH and REVISE; FINISH advances by `PASS` and `finish.md` names `aid-plan`, `--phase Planning`, `aid-kb-update` with `--returns yes`, and the No-KB rule; `revise.md` names `requirements change` and `Specification change` |
 | SP-04 | `start.md` cites `effort-check.md`; `effort-check.md` has a row for each of Claude Code, Codex, Cursor, Antigravity and Copilot CLI and states the "cannot be read" path; no file under `canonical/skills/aid-kb-build/` cites it |
 | SP-05 | `requirements-template.md` has the headings `## 1.` to `## 10.`, `## 11. Technical Specification`, `## 11. Features`, the technical headings of The document, a `**Serves:**` line, and `## Verifiable Acceptance Criteria` |
-| SP-06 | `work-state-template.yml` has no `interview:`, `features:` or `review_history:` key and has `reviews: []` with its `[W]` comment; no file under `canonical/skills/` or `canonical/aid/templates/` other than that template has a line opening with `interview:`, `features:` or `review_history:` |
+| SP-06 | `work-state-template.yml` has no `interview:`, `features:` or `review_history:` key and has `reviews: []` and `effort_check: --`, each with its `[W]` comment; no file under `canonical/skills/` or `canonical/aid/templates/` other than that template has a line opening with `interview:`, `features:` or `review_history:` |
 | SP-07 | `skill-steps.md` § When approvals happen has the business-part row; `reviewer-dispatch.md`'s Guard 2 site table names `aid-specify` CHECK and no `aid-define` row |
+| SP-08 | No file under `canonical/skills/` or `canonical/aid/templates/` other than `aid-specify`'s authors `REQUIREMENTS.md` in a state of its own: no `## State: CAPTURE` or `## State: SPEC` heading. Files of entries on the shared exempt list marked for SP-08 are skipped (Q65: `shortcut-engine.md`, owner Feature 009) |
 
 **Unit tests**
 - `tests/canonical/test-slice-requirements.sh`: an unsplit document prints `## 11. Technical Specification`, the
@@ -3506,7 +3537,8 @@ of `.github/workflows/installer-tests.yml`):
   in both shapes, is unchanged; a Source naming no criterion still fails.
 - `tests/canonical/test-writeback-state.sh`: `--review` without `--kb` appends a `reviews` entry to the work file,
   with `by` the saved skill; a bad grade exits 4 and changes nothing; the file parses through the dashboard reader;
-  `--kb --review` is unchanged.
+  `--kb --review` is unchanged. `--pipeline --field "Effort Check"` accepts `--`, `unknown` and a level name, and
+  refuses anything else with exit 4.
 - `tests/canonical/test-scoped-review-cycles.sh`: SC10 and SC11 as in Migration.
 
 **Conversation samples -- `tests/conversation/samples/feature-005/`** (frontmatter `skills: aid-specify`)
@@ -3516,7 +3548,7 @@ of `.github/workflows/installer-tests.yml`):
 | `005-01-bug-fix-no-features` -- fixture: code and a KB; "exporting an empty list crashes". Check: the document has sections 1-10 (those that do not apply say "None.") and `## 11. Technical Specification` with a `**Serves:**` line; no `## 11. Features`; no split question; the questions follow the protocol | AC-16, AC-44, AC-28 | now |
 | `005-02-two-capabilities-split` -- a request for two capabilities a user would each value alone. Check: one split question with its recommendation; after yes, `## 11. Features` with two features, each with its own technical part and `**Serves:**` line; every criterion owned once or on the shared line; `intent.depth` is `full` | AC-16, AC-44, AC-28 | now |
 | `005-03-many-requirements-one-capability` -- many requirements, one capability. Check: no split proposed; one technical part | AC-16 | now |
-| `005-04-effort-below-high` -- fixture: the host's effort set below high (how, confirmed at build with `effort-check.md`'s Claude Code row). Check: the effort question comes before any requirements question, importance high, recommending high; a `qa` entry `Effort level`; a second session that resumes the work is not asked again | AC-12, AC-28 | now |
+| `005-04-effort-below-high` -- fixture: the host's effort set below high (how, confirmed at build with `effort-check.md`'s Claude Code row). Check: the effort question comes before any requirements question, importance high, recommending high; a `qa` entry `Effort level` and `effort_check` set; a second session that resumes the work is not asked again | AC-12, AC-28 | now |
 | `005-05-effort-cannot-be-read` -- fixture: the installed `effort-check.md` marks the host "cannot be read". Check: one confirmation question saying so and recommending high, asked once | AC-12 | now |
 | `005-06-full-two-checkpoints` -- a `full` work from an idea draft. Check: a `covers: requirements business part` approval before any technical question; the final approval in chunks, naming the draft's removal; both approvals in `qa`; the draft deleted after the second; a `reviews` entry at or above the bar | AC-9, AC-10, AC-44 | now |
 | `005-07-lite-ticket-no-stop` -- a complete ticket. Check: no approval question in Specification; small decisions recorded `Assumed`; the document written with its `reviews` entry; a `handoffs` pass to `aid-plan` with phase Planning. The checks stop at that pass | AC-10, AC-44 | now |
