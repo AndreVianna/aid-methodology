@@ -1117,3 +1117,35 @@ qa:
     suggested: 'Delete or changed: only a delivery added during building has no wave stops; a changed delivery keeps its planned stops.'
     answer: 'Delete the two words, then one more review.'
     applied_to: 'Feature 007 Technical Specification (START wave choice)'
+  - id: Q85
+    category: Specification (Feature 008)
+    impact: High
+    state: Answered
+    context: 'Resolving a conflict with the parent branch needs a merge, but AC-11, AC-34 and NM-01 forbid every merge (KI-005).'
+    suggested: 'Narrow AC-11, AC-34 and NM-01 to: AID never merges a work into its parent branch nor any PR; the only allowed merge brings the parent branch into the work branch, only for a conflict, and its result is approved before it is pushed.'
+    answer: 'Accepted as recommended (allow only that one merge).'
+    applied_to: 'Feature 008 Technical Specification (PARENT); AC-11, AC-34; Feature 002 NM-01'
+  - id: Q86
+    category: Specification (Feature 008)
+    impact: High
+    state: Answered
+    context: 'Each approval is written into the work folder, so committing the folder adds a commit after the approved one.'
+    suggested: 'With work_folders: push, one record commit touching only this work''s folder is made right before each push; the approval message says the record is included.'
+    answer: 'Accepted as recommended (record commit before each push).'
+    applied_to: 'Feature 008 Technical Specification (PUSH, work-folder setting)'
+  - id: Q87
+    category: Specification (Feature 008)
+    impact: Medium
+    state: Answered
+    context: 'Feature 007 left the push question after a corrections approval to Feature 008.'
+    suggested: 'The corrections approval after the whole build is also the push instruction; its message says the yes pushes.'
+    answer: 'Accepted as recommended (approval also pushes).'
+    applied_to: 'Feature 008 Technical Specification (REACT, PUSH); Feature 007 milestone.md'
+  - id: Q88
+    category: Specification (Feature 008)
+    impact: Low
+    state: Answered
+    context: 'Others can add commits to the work branch on the host (for example an accepted reviewer suggestion).'
+    suggested: 'Bring them in by fast-forward, or by the guarded merge of the branch''s own remote copy, and show them at the next approval.'
+    answer: 'Accepted as recommended (bring them in automatically).'
+    applied_to: 'Feature 008 Technical Specification (PUSH)'
