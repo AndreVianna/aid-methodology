@@ -5007,7 +5007,7 @@ milestone calls arrive there too, and START sends them on. Typing the command on
 |---|---|---|---|
 | START | `references/start.md` | main conversation | `CHAIN` -> COLLECT (a collect call), PUSH (a push call), WATCH (a pull request exists), CLOSE (nothing to land, no git, or *no pull request*); `ASK` -> START for the create question; `PASS` back for a typed start before the whole build is approved |
 | COLLECT | `references/collect.md` (`hosts.md`) | main conversation | `HALT` in a collect call; `CHAIN` -> CLOSE when merged; else `CHAIN` -> REACT |
-| PUSH | `references/push.md` (`hosts.md`) | main conversation | `CHAIN` -> PARENT on a conflict; `HALT` in a push call; else `CHAIN` -> WATCH |
+| PUSH | `references/push.md` (`hosts.md`) | main conversation | `ASK` -> PUSH for the Every-way-in approval; `CHAIN` -> PARENT on a conflict; `HALT` in a push call; else `CHAIN` -> WATCH |
 | PARENT | `references/parent.md` (brief: `references/reviewer-brief.md`) | main conversation; `aid-developer` resolves; `aid-reviewer` checks | `ASK` the conflict-merge approval, then `CHAIN` -> PUSH |
 | REVIEW | `references/review.md` (brief: `references/reviewer-brief.md`) | `aid-reviewer` | `CHAIN` -> REACT |
 | REACT | `references/react.md` | main conversation | `CALL` to `aid-plan`, then `CALL` to `aid-execute`, then `CHAIN` -> PUSH; `ASK` -> REACT for suggestions and for a failure that survived three attempts; `CHAIN` -> PARENT for a conflict; `CHAIN` -> WATCH when nothing is open |
@@ -5060,18 +5060,22 @@ by `HALT` at CLOSE; the one `PASS` is START's pass back on a typed start before 
      entry per commit (`ref: 'commit:<id>'`), state `Shown`, listed in the next approval; PUSH brings them in.
    - `pull_request.state`, `pipeline` and `checked` are written.
    - In a collect call: `HALT` (Building's MILESTONE turns the entries into corrections, Feature 007).
-3. **PUSH**
+3. **PUSH** -- in this order: step 0, then the Every-way-in check, then steps 1-7, so `--check` never reads a `--`
+   remote or work-folder value.
+   0. **The first push**, before anything else: `pull_request.remote` is checked -- still `--` (START could not resolve
+      it), `connect.md`; and while `pull_request.work_folder` is `--`, the setting is frozen for this work through the
+      writer (`--pull-request --field "Work Folder" --value <work_folders>`), before anything is checked, committed or
+      pushed.
    - **Every way in** -- a push call from Building's milestone, START's create question or a resume, REACT after a
-     corrections approval (and the KB call on confirmation that follows it, Feature 007), PARENT -- first runs one check,
+     corrections approval (and the KB call on confirmation that follows it, Feature 007), PARENT -- then runs one check,
      stated here once: `push-approved.sh --check` names the commits past the newest approved `commit` that it would not
      push. When there are some, they are shown in one approval before anything else in PUSH, recorded `category:
      Approval` with `commit` the head: `covers: KB change` when they change only KB paths (the KB call after the last
      approval, a knowledge fact a correction settled), else `covers: final result` (FR-6: nothing reaches the pull
-     request before its approval). A knowledge-update work's own `KB change` approval already records its `commit`
+     request before its approval). The approval is an `ASK` back to PUSH: a session that ends before the answer resumes
+     at PUSH, which runs step 0 and this check again and finds the question still open. A knowledge-update work's own `KB change` approval already records its `commit`
      (Feature 004). So every commit on the work branch reaches the pull request, and at CLOSE, on the normal path, the
      local tip equals `pull_request.head`.
-   0. **The first push** (`pull_request.work_folder` is `--`): the setting is frozen for this work through the writer
-      (`--pull-request --field "Work Folder" --value <work_folders>`), before anything is committed or pushed.
    1. **Others' commits first** (Q88; AC-11): fetch; when the remote work branch holds commits the local one does not:
       - the local branch has nothing of its own past them: it moves forward (`merge-parent.sh fast-forward --from own`) --
         no merge and no approval, since those commits are already on the host;
@@ -5489,8 +5493,9 @@ of `.github/workflows/installer-tests.yml`):
   remote unchanged; pushes a record commit and a commit deleting only the work's idea draft that follow the approved
   one; a KB commit after the approved one waits, and so does a record commit after it (both named); a merge of the
   branch's own remote copy not yet covered by an approval waits; a work file with `pull_request.remote` or
-  `work_folder` at `--` exits 9, and after START's and PUSH step 0's writer calls (`--pull-request --field Remote`,
-  `"Work Folder"`) the same first push succeeds; exit 5 for a committed
+  `work_folder` at `--` exits 9 -- from `--check` too; the first-push case: a fresh work file, START's and PUSH step 0's
+  writer calls (`--pull-request --field Remote`, `"Work Folder"`), then `--check` (exit 0, nothing waiting) and the push
+  both succeed; exit 5 for a committed
   `.aid/.temp/` file, another work's folder, the own folder with `work_folder: keep-local`, and an added idea draft,
   while a removed draft passes; exit 6 when the remote branch is ahead; exit 7 when the work branch is `main`; never a
   forced push; `--check` changes nothing.
