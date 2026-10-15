@@ -4215,9 +4215,9 @@ branch" is the work's one branch; "the parent branch" is `pipeline.parent_branch
 | Change | Path | What |
 |---|---|---|
 | Rewrite | `canonical/skills/aid-execute/SKILL.md` | The Building phase skill, for the whole plan: its step table (see Flow), `skill-steps.md` and `question-protocol.md` cited, Feature 001's what/when `description:` (see Components), `argument-hint: "[the work to build, or what to change while building]"`. At most 120 lines. Goes: Check 1's work listing and its own worktree entry (the gate and the work record do both, Feature 002), the layout detection and every full/flat branch, Check 5's per-delivery branches, the state map and banners, `## Delivery Lifecycle` with its "merge to main", the pool dispatch, `## Impediments`, `## Ticket Suggestion` (a write-back is made only on request, Feature 001), the quality checklist. The plan-mode check stays, as one line |
-| Create | `canonical/skills/aid-execute/references/` | `start.md`, `build.md`, `test.md`, `verify.md`, `simplify.md`, `next.md`, `delivery.md`, `final.md`, `milestone.md`, `blocker.md`, `finish.md`, `old-work.md` (Migration); `reviewer-brief.md` is rewritten, with `### What to report` (SS-13) and four modes: task, delivery, simplify, re-verify. Each at most 120 lines |
+| Create | `canonical/skills/aid-execute/references/` | `start.md`, `build.md`, `test.md`, `verify.md`, `simplify.md`, `next.md`, `delivery.md`, `final.md`, `milestone.md`, `blocker.md`, `finish.md`, `old-work.md` (Migration), `fix.md` (the FIX contract, below); `reviewer-brief.md` is rewritten, with `### What to report` (SS-13) and four modes: task, delivery, simplify, re-verify. Each at most 120 lines |
 | Edit | `canonical/skills/aid-execute/references/task-type-rules.md` | Each type says which tests it writes and runs, and what counts as its tests when it writes no code (see Flow, TEST) |
-| Delete | `canonical/skills/aid-execute/references/` `state-execute.md`, `state-execute-drilldown.md`, `state-review.md`, `state-fix.md`, `state-re-run.md`, `state-delivery-gate.md`, `reviewer-guide.md` | Replaced by the references above; the type review focus of `reviewer-guide.md` moves into the brief |
+| Delete | `canonical/skills/aid-execute/references/` `state-execute.md`, `state-execute-drilldown.md`, `state-review.md`, `state-fix.md`, `state-re-run.md`, `state-delivery-gate.md`, `reviewer-guide.md` | Replaced by the references above; the type review focus of `reviewer-guide.md` moves into the brief, and `state-fix.md`'s FIX contract (F1-F7: a finding is a class, its sweep trailers, the oracle run) moves unchanged in substance into `fix.md` |
 | Create | `canonical/aid/scripts/execute/simplify-guard.sh` | The test-set check of SIMPLIFY (see Components) |
 | Edit | `canonical/aid/scripts/execute/writeback-state.sh` | The building fields and states, `--full-suite`, `--feedback`, `--feedback-add`, `"Wave Stops"`; `--findings`, `--append-issue`, `--gate-field` and `--block` go (see Work state) |
 | Edit | `dashboard/scripts/writeback-state.sh` (the deliberate fork) | The same task and delivery targets for its writes; it keeps `Deploy` |
@@ -4289,9 +4289,9 @@ task or delivery and where it stands (`'task-004: verify round 2'`, `'delivery-0
      commit (Components, Full suite); `full_suite.baseline` holds what passed and which tests already fail. When
      START finds a task already built and no baseline (an old work), it records `baseline: not taken`.
    - **What is already on disk is kept** (Feature 002, use (a)): `Done` tasks stay; an `In Progress` task goes on at
-     BUILD, an `In Review` task at VERIFY; a delivery whose tasks are all `Done` or `Canceled` and which is not `Done`
-     goes to DELIVERY; a plan all `Done` or `Canceled` goes to FINAL, or to MILESTONE when the build only waits for
-     its approval. An old work's per-delivery branches and per-task worktrees are handled first
+     BUILD, an `In Review` task at VERIFY; a delivery whose tasks are all `Done` or `Canceled` and which is neither
+     `Done` nor `Canceled` goes to DELIVERY; a plan all `Done` or `Canceled` goes to FINAL, or to MILESTONE when the
+     build only waits for its approval. An old work's per-delivery branches and per-task worktrees are handled first
      (`references/old-work.md`, Migration).
    - **A correction call** (a `CALL` from `/aid-monitor-pipeline`, What other features must provide): no confirmation
      and no wave question; on to the correction tasks.
@@ -4304,7 +4304,8 @@ task or delivery and where it stands (`'task-004: verify round 2'`, `'delivery-0
      task file, the slice, `known-issues.md`, the KB documents the index routes to and its type's rules, and works in
      the work's worktree. It returns what it changed, its test files and test command, the small decisions it took
      (recorded `Assumed`, `category: Building`), and its open questions (never asked by it, Feature 002).
-   - **A fix round** (from TEST, VERIFY, DELIVERY or FINAL) is scoped to the failing tests or the ledger rows, with
+   - **A fix round** (from TEST, VERIFY, DELIVERY or FINAL) follows `references/fix.md` and is scoped to the failing
+     tests or the ledger rows, with
      `step_detail: 'task-004: fix rows 2, 3'`.
    - **Commit**: each round ends with one commit on the work branch, `task-NNN: <title>` or `task-NNN: fix <rows>`,
      staging only the paths that round changed -- never `.aid/.temp/` or `.aid/works/` (the work folder is Feature
@@ -4314,7 +4315,7 @@ task or delivery and where it stands (`'task-004: verify round 2'`, `'delivery-0
      of every round -- a task's build, fix and simplify rounds, and DELIVERY's fix and simplify rounds. The task's
      first snapshot is its `base` for VERIFY; the first snapshot of a delivery's first task is the delivery's `base` for
      DELIVERY; the snapshot taken at the start of a simplify round is what the undo restores and what
-     `simplify-guard.sh` compares against.
+     `simplify-guard.sh --snapshot` compares against.
    - **What the executor finds**: an open question goes to `blocker.md` when the task cannot go on without it;
      otherwise the main conversation takes the executor's recommendation and records it `Assumed` (with `--answer`,
      state `Assumed`), confirmed at the next milestone like every small decision (Real blockers). A finding that the
@@ -4439,7 +4440,7 @@ should be built instead). Giving up writes the task `Failed`, its dependents `Bl
 the whole work's graph) and their delivery `Blocked` with `block_reason` naming the question, then makes a `CALL` to
 `/aid-plan` (REVISE, `--why 'task-NNN given up: cancel'` or `'... replan'`). REVISE cancels the task and its dependents,
 or replaces the task and rewires the dependents, and its FINISH runs `--plan-sync --cancel` (Work state): the cancelled
-tasks become `Canceled`, a rewired dependent goes back to `Pending`, and the delivery back to `Building`. Cancelling
+tasks become `Canceled`, a rewired dependent goes back to `Pending`, and the writer resets their delivery. Cancelling
 every task of a delivery is a change to the deliveries, approved at once (Feature 006). DELIVERY and FINAL count a
 `Canceled` task as closed.
 
@@ -4481,7 +4482,7 @@ full_suite:
 #   state: Open | Task | Asked | Declined | Shown | Done
 feedback: []
 # [W] one entry per delivery of PLAN.md, keyed by its id
-#   state: Pending | Building | Verifying | Approving | Done | Blocked
+#   state: Pending | Building | Verifying | Approving | Done | Blocked | Canceled
 deliveries:
   delivery-001:
     state: Pending
@@ -4521,7 +4522,7 @@ A `feedback` entry holds `id` (`F<n>`), `at`, `kind`, `ref` (the comment or pipe
   REVISE cancels them.
 - **Delivery states** settle what Feature 006 left open: `Building` from its first BUILD, `Verifying` in DELIVERY,
   `Approving` at its milestone, `Done` after its approval, `Blocked` from a task given up until `/aid-plan` REVISE
-  returns.
+  returns, `Canceled` when every task of it is cancelled (set by `--plan-sync --cancel`).
 - **Gone**: `review` (now `verify`), `quick_check`, `gate_tier` (now `tier`), `gate_grade` (now `verify`),
   `gate_timestamp`, `block_artifact` (a blocker is a `qa` entry); `dispatch_log` is no longer written (its per-task
   file is gone, Feature 006; the console dispatch lines stay).
@@ -4536,7 +4537,7 @@ re-render of the plan after every task or delivery state write (exit 11, fail-cl
 - `--task-id NNN --field F --value V`: F is `State`, `Base`, `Verify`, `Simplify`, `Reverify`, `Tests`, `Commit`,
   `Elapsed`, `Notes` or `Name`. `Verify` and `Reverify` take a grade or `--`; `Simplify` takes `changed`, `no change`,
   `undone` or `--`; anything else exits 4. `Review` exits 4.
-- `--delivery-id NNN --lifecycle V`: the six delivery states; `Executing`, `Gated`, `Pending-Spec` and `Specified` exit
+- `--delivery-id NNN --lifecycle V`: the seven delivery states; `Executing`, `Gated`, `Pending-Spec` and `Specified` exit
   4.
 - `--delivery-id NNN --field F --value V` (new): `Tier` (`Small`, `Medium`, `Large`), `Base`, `Verify`, `Simplify`,
   `Reverify`, `Tests`, `Commit`, `Issue List`, `Block Reason`; same validation.
@@ -4548,6 +4549,9 @@ re-render of the plan after every task or delivery state write (exit 11, fail-cl
   `--cancel task-NNN[,task-NNN]` sets `Canceled` on each named task that is `Failed`, `Blocked` or `Pending` (any
   other state exits 4 and nothing is written), and every run sets `Pending` on a `Blocked` task none of whose
   dependencies is `Failed` or `Canceled`. Task files are kept: a started task is never removed (Feature 006).
+  In the same write, `--cancel` sets the delivery of every affected task: back to `Building` while it still has a task
+  that is neither `Done` nor `Canceled`; otherwise its building is closed -- `Verifying` when one of its tasks is `Done`
+  (START then sends it to DELIVERY and its milestone), `Canceled` when none is.
 - **Gone**: `--findings`, `--append-issue`, `--gate-field`, `--block` -- each exits 4 with a line naming its
   replacement.
 
@@ -4578,11 +4582,12 @@ the project's own build files, recorded `Assumed` with reach `project` (so the n
 project with no test suite records `command: none found`, and FINAL says so at the approval. The baseline and the final
 run record what passed and the failing tests by name.
 
-**`simplify-guard.sh`** -- `simplify-guard.sh --before <commit> --tests <list-file>`: exit 0 when no file of the list,
-nor any new file in the list's folders, changed between `<commit>` and `HEAD`; 1 otherwise, naming each; 2 bad
-argument; 3 no git. Without git, it compares against the simplify round's snapshot (Flow, BUILD, Without git). Bash
-and PowerShell give the same output. Rationale: "no test is changed or removed to fit" (FR-19) must be exact, so it is
-a script (decision D17).
+**`simplify-guard.sh`** -- `simplify-guard.sh --tests <list-file> (--before <commit> | --snapshot <dir>)`: with git,
+`--before` compares `<commit>` with `HEAD`; without git, `--snapshot` compares the working files with the simplify
+round's snapshot (Flow, BUILD, Without git). Exit 0 when no file of the list, nor any new file in the list's folders,
+changed; 1 otherwise, naming each; 2 bad argument; 3 only when neither can be used (no git and no snapshot). Bash and
+PowerShell give the same output. Rationale: "no test is changed or removed to fit" (FR-19) must be exact, so it is a
+script (decision D17).
 
 **`derive-waves.sh --from-tasks <work-dir> --delivery NNN`** -- the dependency table and wave block of one delivery,
 the same sort as `--plan` (Feature 006): a dependency on an earlier delivery's task is met. BUILD's order,
@@ -4596,7 +4601,7 @@ work gets one approval before building (AC-10). Its "run `/aid-execute` when rea
 **Dashboard** (both readers, kept equal by the parity tests; AC-41):
 - **Task cells**: state, and for the task being built a plain stage from the record ("being tested", "being reviewed",
   "being simplified"); `verify`, `simplify`, `reverify`, `tests`. The quick-check display goes.
-- **Delivery cells**: the six states, `verify`, `tests`, `issue_list`; the gate tier and timestamp go.
+- **Delivery cells**: the seven states, `verify`, `tests`, `issue_list`; the gate tier and timestamp go.
 - **The work card**: "Waiting for your approval: end of delivery-002" at a milestone; "Needs your decision" for an open
   `Blocker` entry; the full-suite result once FINAL has run. No step names (Feature 002).
 - `_ser_work` and `reader.mjs` pass `wave_stops`, `full_suite` and the new task and delivery fields; `feedback` is read
@@ -4715,29 +4720,60 @@ no worktree (AC-34).
   - **Never-merges test**: NM-04's `aid-execute` exemption goes.
   - **Description exempt list** (SG-04): `aid-execute`'s row, if it has one.
   - **SS-13** finds the rewritten brief by its glob.
-- **Suites**:
-  - Retired, to `tests/coverage-accepted-removals.tsv`: `test-disjoint-merge.sh` (its subject, delivery branches merging
-    back, no longer exists; Feature 006 lists it among the suites that follow the single layout) and
-    `test-delivery-gate-aggregate.sh` (the issue log and the quick check are gone).
+- **Suites**. This list was built from one search, which the reviewer can re-run: every file under `tests/` and
+  `dashboard/` that names a file this feature deletes -- `grep -rlE
+  'state-execute\.md|state-execute-drilldown\.md|state-review\.md|state-fix\.md|state-re-run\.md|state-delivery-gate\.md|reviewer-guide\.md|delivery-issues\.md'
+  tests dashboard` -- keeping the hits on `aid-execute`'s files (the same names under `aid-discover`, `aid-update-kb`
+  and `aid-summarize` are other skills' files: `test-expectations-single-source.sh`, `test-ledger-isolation.sh`,
+  `test-update-kb-scope-fidelity.sh` and their baseline rows are not hits). No script is deleted. Every hit:
+  - `test-pipeline-status-walkthrough.sh`:
+    - A1: the `aid-execute` row points to `references/start.md`, phase `Building`. A3: its impediment fixture becomes
+      a `Blocker` question;
+    - M4's `aid-execute` row and its B1 check: retired -- `/aid-execute` writes no phase of its own (`/aid-plan`'s
+      FINISH hand-off sets Building; the `CI` write is EX-02's `finish.md` check);
+    - B2's delivery-gate checks (the non-CODE stop's `Paused-Awaiting-Input` and Pause Reason in
+      `state-delivery-gate.md`): retired -- that stop is gone; a blocker's pause is asserted in B3;
+    - B3 (the `Blocked`, Block Reason and Block Artifact emits of `state-execute.md`, `state-review.md` and
+      `state-delivery-gate.md`): rewritten over `references/blocker.md` -- it records a `Blocker` question and sets
+      `Paused-Awaiting-Input`, and no `aid-execute` file writes the `"Block Artifact"` field;
+    - B4a and B4b (silent-write annotation, no `Print:` in an emit block): the three deleted files leave the emit-file
+      list and `references/blocker.md` joins it;
+    - B4e (the impediment-write instruction kept beside the emit in `state-execute.md`): retired -- no impediment file
+      is written any more; the `Blocker` question replaces it (B3);
+    - B4f (the delivery gate's STOP instruction beside its pause emit): retired -- the delivery gate is gone; DELIVERY's
+      three-round question is checked by EX-02 and EX-04.
+  - `test-ticket-retirement-structural.sh`: re-pointed -- its `STATE_EXECUTE` path (the T000 setup list) becomes
+    `references/build.md`; T037-T039 (no connector-mirror signature) hold there; T040 asserts `build.md`'s
+    `In Progress` task-state write in place of the `## MANDATORY: State-Write Protocol` heading.
+  - `test-compute-block-radius.sh`: T17 (the pool's degradation notice in `state-execute.md`) retired -- the pool and
+    its notice are gone (Q76); the rest follows the new graph input (Testing).
+  - `test-delivery-gate-aggregate.sh`: retired -- the delivery gate, its issue log and the quick check are gone.
+  - `test-task-state-transitions.sh`: re-pointed -- its header and the mandate it cites name `references/build.md`.
+  - `test-scoped-review-cycles.sh`: re-pointed -- the comment above SW01-SW04 names `aid-execute/references/fix.md`,
+    where the FIX contract's F1 now lives.
+  - `tests/cost-meter.py`: kept -- its `today` shape models the old quick check on purpose, as the baseline the
+    alternatives are measured against.
+  - `dashboard/reader/derivation.py`: re-pointed -- the comments naming the old producers of `Blocked` and
+    `IMPEDIMENT-task-NNN.md` name `references/blocker.md`; its reads stay for old works.
+  - `dashboard/reader/tests/test_integration.py`: re-pointed -- the docstring's "last Running emit" names the running
+    skill's step entry instead of `state-execute.md`.
+  - `dashboard/scripts/writeback-state.sh`: its comments citing `state-review.md` and `state-delivery-gate.md` go with
+    the `--findings` and `--block` modes (Files and layout).
+  - `tests/cost-baseline.tsv`: the `delivery-issues.md` template row goes.
+  - `tests/coverage-baseline.tsv` and `tests/coverage-rehome-allowlist.tsv`: the rows of the assertions above are
+    re-recorded; the removed ones go to `tests/coverage-accepted-removals.tsv`.
+
+  Beyond that search:
+  - Retired, to `tests/coverage-accepted-removals.tsv`: `test-disjoint-merge.sh` -- its subject, delivery branches
+    merging back, no longer exists (Feature 006 lists it among the suites that follow the single layout).
   - `test-executor-graph-flat-plan.sh`: rewritten so `complexity-score.sh` and `compute-block-radius.sh` read
     `derive-waves.sh --from-tasks` output, scoped and unscoped.
   - `test-writeback-state.sh`: the `--findings`, `--append-issue` and gate units retire; the new fields, states and
-    modes are added (Testing). `test-task-state-transitions.sh` follows the new references.
-  - `test-pipeline-status-walkthrough.sh`: the `aid-execute` row of A1 points to `references/start.md` with phase
-    `Building`; A3's impediment fixture becomes a `Blocker` question. M4's `aid-execute` row (and its B1 check) is
-    retired: `/aid-execute` writes no phase of its own -- `/aid-plan`'s FINISH hand-off sets Building, and the `CI`
-    write is EX-02's `finish.md` check. Group B3 (the `Blocked`, Block Reason and Block Artifact emits of
-    `state-execute.md`, `state-review.md` and `state-delivery-gate.md`) is rewritten over `references/blocker.md`: it
-    records a `Blocker` question and sets `Paused-Awaiting-Input`, and no `aid-execute` file writes the
-    `"Block Artifact"` field.
-  - `test-ticket-retirement-structural.sh`: its `STATE_EXECUTE` path (the T000 setup list) becomes
-    `references/build.md`; T037-T039 (no connector-mirror signature) hold there; T040 asserts `build.md`'s `In Progress`
-    task-state write in place of the `## MANDATORY: State-Write Protocol` heading.
+    modes are added (Testing).
   - `test-downstream-worktree-entry.sh`: its `aid-execute` assertions go (the skill no longer enters a worktree itself).
-  - `test-complexity-score.sh`, `test-compute-block-radius.sh`, `test-derive-waves.sh` (`--delivery`),
-    `test-work-state-template.sh`, `test-lite-work-end-to-end.sh` and the dashboard reader, server and parity suites
-    follow; old fixtures stay where they now check the migration.
-  - `tests/coverage-rehome-allowlist.tsv`, `tests/cost-baseline.tsv` and `tests/coverage-baseline.tsv` are re-recorded.
+  - `test-complexity-score.sh`, `test-derive-waves.sh` (`--delivery`), `test-work-state-template.sh`,
+    `test-lite-work-end-to-end.sh` and the dashboard reader, server and parity suites follow; old fixtures stay where
+    they now check the migration.
 - **User documentation** waits for the final pass (Q40, AC-45). The only edit now: the numbers `test-doc-counts.sh`
   asserts.
 - **KB** (no work ids):
@@ -4776,13 +4812,15 @@ the full integration suite runs at the end of the work, before release, with tha
 
 **Unit tests**
 - `tests/canonical/test-writeback-state.sh`: each new task and delivery field, with its values and exit 4 on a bad one;
-  the six delivery states and the refused old ones; `"Wave Stops"`; `--full-suite`; `--feedback-add` ids and
+  the seven delivery states and the refused old ones; `"Wave Stops"`; `--full-suite`; `--feedback-add` ids and
   `--feedback` updates; `--plan-sync --cancel` on `Failed`, `Blocked` and `Pending` tasks, exit 4 on a `Done` one, and a
-  rewired `Blocked` task back to `Pending`; `--findings`, `--append-issue`, `--gate-field` and `--block` exit 4 naming
+  rewired `Blocked` task back to `Pending`; the affected delivery set to `Building` with a task still open, to
+  `Verifying` with every task `Done` or `Canceled` and one `Done`, and to `Canceled` with every task `Canceled`; `--findings`, `--append-issue`, `--gate-field` and `--block` exit 4 naming
   their replacement; a task write still re-renders the plan; every file written parses through the dashboard reader
   with no warning.
-- `tests/canonical/test-simplify-guard.sh`, on throwaway repositories: an untouched test list exits 0; a changed, a
-  removed and an added test file each exit 1 naming it; no git exits 3; bash and PowerShell give the same output.
+- `tests/canonical/test-simplify-guard.sh`, on throwaway repositories and on throwaway folders with no git: an
+  untouched test list exits 0; a changed, a removed and an added test file each exit 1 naming it, with `--before` and
+  with `--snapshot`; no git and no snapshot exits 3; bash and PowerShell give the same output.
 - `tests/canonical/test-derive-waves.sh`: `--from-tasks --delivery` prints one delivery's table and waves, a dependency
   on an earlier delivery counted as met; the unscoped output is unchanged.
 - `test-complexity-score.sh` and `test-compute-block-radius.sh` on `derive-waves.sh --from-tasks` output; without
