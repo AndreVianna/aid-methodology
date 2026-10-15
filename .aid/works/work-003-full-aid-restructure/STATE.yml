@@ -298,15 +298,17 @@ features:
     sections: []
   - id: '006'
     name: planning
-    state: In Discussion
+    state: Ready
     started: '2026-10-15'
     updated: '2026-10-15'
     grade: A+
-    qa_count: 0
+    qa_count: 5
     sections: []
   - id: '007'
     name: building
-    state: Pending
+    state: In Discussion
+    started: '2026-10-15'
+    updated: '2026-10-15'
     grade: Pending
     qa_count: 0
     sections: []
