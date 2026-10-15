@@ -4220,7 +4220,7 @@ branch" is the work's one branch; "the parent branch" is `pipeline.parent_branch
 | Delete | `canonical/skills/aid-execute/references/` `state-execute.md`, `state-execute-drilldown.md`, `state-review.md`, `state-fix.md`, `state-re-run.md`, `state-delivery-gate.md`, `reviewer-guide.md` | Replaced by the references above; the type review focus of `reviewer-guide.md` moves into the brief, and `state-fix.md`'s FIX contract (F1-F7: a finding is a class, its sweep trailers, the oracle run) moves unchanged in substance into `fix.md` |
 | Create | `canonical/aid/scripts/execute/simplify-guard.sh` | The test-set check of SIMPLIFY (see Components) |
 | Edit | `canonical/aid/scripts/execute/writeback-state.sh` | The building fields and states, `--full-suite`, `--feedback`, `--feedback-add`, `"Wave Stops"`; `--findings`, `--append-issue`, `--gate-field` and `--block` go (see Work state) |
-| Edit | `dashboard/scripts/writeback-state.sh` (the deliberate fork) | The same task and delivery targets for its writes; it keeps `Deploy` |
+| Edit | `dashboard/scripts/writeback-state.sh` (the deliberate fork) | The same task and delivery targets for its writes, and the same derived delivery state (Work state); it keeps `Deploy` |
 | Edit | `canonical/aid/scripts/execute/derive-waves.sh` | `--from-tasks <work-dir> --delivery NNN`: the dependency table and wave block of one delivery, a dependency on an earlier delivery's task counted as met; without `--delivery` the output is unchanged (see Components) |
 | Edit | `canonical/aid/scripts/execute/complexity-score.sh` | Reads the delivery's graph from `derive-waves.sh --from-tasks --delivery` output; the quick-check consult factor and `--quick-check-state` go; header re-pointed |
 | Edit | `canonical/aid/scripts/execute/compute-block-radius.sh` | Without `--delivery-id`, a graph with several `### delivery-NNN` sections (the unscoped `derive-waves.sh --from-tasks` output) is read as one graph across deliveries -- task ids are unique in a work -- instead of exiting 5; `--delivery-id` keeps today's scoped mode; header re-pointed |
@@ -4369,8 +4369,10 @@ task or delivery and where it stands (`'task-004: verify round 2'`, `'delivery-0
        `commit`), `full_suite.result` (with `full_suite.commit`) and every milestone `Approval` (with its `commit`) are
        **stale** when a `Done` task in their scope has a commit they do not contain (`git merge-base --is-ancestor
        <task commit> <their commit>` fails; without git, a newer snapshot -- BUILD, Without git). The scope is the
-       delivery for its `verify` and its approval; the delivery's waves 1 to N for the approval of `wave
-       delivery-NNN/wave-N`; the whole work for `full_suite` and the `whole build` approval. A `Canceled` task is
+       delivery for its `verify` and its approval; the delivery's waves 1 to N for wave N's approval; the whole work
+       for `full_suite` and the `whole build` approval. Wave N's approval is its own `wave delivery-NNN/wave-N` entry
+       or the delivery's `delivery delivery-NNN` approval, which covers every wave of that delivery; either counts
+       when it is current on the scope of waves 1 to N. A `Canceled` task is
        closed and adds no commit. A milestone's approval is the newest `Approval` answered yes whose `covers` lists it.
      - **Inputs** -- only these: the task states and each task's `commit`, each delivery's `verify` and `commit`,
        `full_suite`, `wave_stops`, and those approvals. **It never reads a stored delivery state**: that state is a
@@ -4382,8 +4384,9 @@ task or delivery and where it stands (`'task-004: verify round 2'`, `'delivery-0
      - **First match**:
        1. a wave stop -- a pause inside a delivery only: in the current delivery, N the furthest wave with every task
           of waves 1 to N closed, a later wave of the same delivery still holding an open task, `wave_stops` not
-          `none`, and the approval of `wave delivery-NNN/wave-N` missing or stale -> MILESTONE. At the delivery's last wave there is no wave stop:
-          the delivery milestone covers it;
+          `none`, and no current approval of wave N (its own entry or the delivery's) -> MILESTONE. At the delivery's
+          last wave there is no wave stop: the delivery milestone covers it. So a correction that opens a new wave
+          after the delivery was approved never asks an earlier wave stop;
        2. an open task of the current delivery whose dependencies are `Done` -> BUILD;
        3. the current delivery with no open task, at least one `Done`, and its `verify` missing or stale -> DELIVERY;
        4. the current delivery with no open task, its `verify` current, and its approval missing or stale -> MILESTONE
@@ -4437,8 +4440,9 @@ task or delivery and where it stands (`'task-004: verify round 2'`, `'delivery-0
        confirmed. A suggestion the user takes becomes a correction task, built after this approval.
        - **A change the user asks for** is a correction task as in 2 (Q77). Like every correction, it is built where
          the wave graph places it and approved at the next milestone that covers it (step 7): at a delivery or
-         whole-build milestone, that milestone again, now stale; at a wave stop, a later wave stop or the delivery
-         milestone. A rejected `KB change` reopens as a question (Feature 004).
+         whole-build milestone, that milestone again, now stale; at a wave stop, the same wave stop when it lands in
+         that wave or an earlier one, otherwise a later wave stop or the delivery milestone. A rejected `KB change`
+         reopens as a question (Feature 004).
     4. **The push** -- at a milestone that may push (every delivery and the whole build, and a wave when `wave_stops`
        is `review-and-update`), when the work branch has a remote: one question, "Create or update the pull request
        now?", recommendation yes. Yes: a `CALL` to `/aid-monitor-pipeline` that pushes up to the approved `commit` and
@@ -4561,8 +4565,11 @@ A `feedback` entry holds `id` (`F<n>`), `at`, `kind`, `ref` (the comment or pipe
 - **Delivery states** settle what Feature 006 left open, as a display value only: the writer derives `state` and
   `block_reason` at every write, from the facts NEXT's routing rule reads, first match -- `Canceled` (every task
   `Canceled`), `Blocked` (a task `Failed` or `Blocked`; `block_reason` names the open `Blocker` question), `Pending`
-  (no task started), `Building` (an open task), `Verifying` (`verify` missing or stale), `Approving` (its approval
-  missing or stale), `Done` (closed). No step writes it, and the routing never reads it; the dashboard shows it.
+  (no task `Done`, `In Progress` or `In Review`: nothing has started), `Building` (open tasks, and at least one task
+  started or `Done` -- so a delivery a correction reopens after it had `Done` tasks shows `Building` at once),
+  `Verifying` (no open task, `verify` missing or stale), `Approving` (its approval missing or stale), `Done` (closed).
+  No step writes it, and the routing never reads it; the dashboard shows it. Both writers -- the canonical one and the
+  dashboard fork -- derive it the same way, held equal by the writer parity case (Testing).
 - **Gone**: `review` (now `verify`), `quick_check`, `gate_tier` (now `tier`), `gate_grade` (now `verify`),
   `gate_timestamp`, `block_artifact` (a blocker is a `qa` entry); `dispatch_log` is no longer written (its per-task
   file is gone, Feature 006; the console dispatch lines stay).
@@ -4849,17 +4856,19 @@ the full integration suite runs at the end of the work, before release, with tha
 | EX-05 | No tracked file under `canonical/skills/`, `canonical/aid/templates/` or `canonical/aid/scripts/` (except `migrate/`, and the writer's refusal of its retired modes) names `IMPEDIMENT-task-`, `delivery-NNN-issues`, `--append-issue`, `--findings` or `quick_check` |
 | EX-06 | `skill-steps.md` § When approvals happen has the corrections row and the Building rule; `shortcut-engine.md` § State: APPROVAL-HALT names `confirmation before building`; `reviewer-ledger-schema.md` names the four `/aid-execute` ledgers |
 | EX-07 | `work-state-template.yml` has `wave_stops`, `full_suite`, `feedback`, and the building fields of `deliveries` and `tasks_lifecycle`, each with its `[W]` comment, and no `gate_tier`, `gate_grade`, `gate_timestamp`, `quick_check` or `review:` under a task |
-| EX-08 | The routing reads states plus commits: `next.md` names `verify`, `full_suite`, `commit`, `covers` and `merge-base --is-ancestor`, and each `covers` form -- `wave delivery-`, `delivery delivery-`, `whole build` -- which `milestone.md` also writes; its wave rule names a later wave with an open task. No file under `canonical/skills/aid-execute/` reads or writes a stored delivery state (`--lifecycle`, `deliveries.<id>.state`), or names `corrections <` or a correction task's milestone in `notes` |
+| EX-08 | The routing reads states plus commits: `next.md` names `verify`, `full_suite`, `commit`, `covers` and `merge-base --is-ancestor`, and each `covers` form -- `wave delivery-`, `delivery delivery-`, `whole build` -- which `milestone.md` also writes; its wave rule names a later wave with an open task and counts a current `delivery delivery-` approval as covering every wave of that delivery. No file under `canonical/skills/aid-execute/` reads or writes a stored delivery state (`--lifecycle`, `deliveries.<id>.state`), or names `corrections <` or a correction task's milestone in `notes` |
 
 **Unit tests**
 - `tests/canonical/test-writeback-state.sh`: each new task and delivery field, with its values and exit 4 on a bad
   one; `--lifecycle` and the old delivery states refused; `"Wave Stops"`; `--full-suite`; `--feedback-add` ids and
   `--feedback` updates; `--plan-sync --cancel` on `Failed`, `Blocked` and `Pending` tasks, exit 4 on a `Done` one, and
   a rewired `Blocked` task back to `Pending`; the derived delivery state for each of its seven cases, recomputed after
-  a task write, a `--plan-sync --cancel` and an approval -- a correction added to a `Done` or `Canceled` delivery shows
-  it `Building`, a new task commit after its `verify` shows it `Verifying`; `--findings`, `--append-issue`,
-  `--gate-field` and `--block` exit 4 naming their replacement; a task write still re-renders the plan; every file
-  written parses through the dashboard reader with no warning.
+  a task write, a `--plan-sync --cancel` and an approval -- a correction added to a `Done` delivery shows it
+  `Building` at once; one added to an all-`Canceled` delivery that never started shows it `Pending` until its task is
+  `In Progress`, then `Building`; a new task commit after its `verify` shows it `Verifying`; the writer parity case:
+  the canonical writer and the dashboard fork, run on the same fixtures, write the same derived states; `--findings`,
+  `--append-issue`, `--gate-field` and `--block` exit 4 naming their replacement; a task write still re-renders the
+  plan; every file written parses through the dashboard reader with no warning.
 - `tests/canonical/test-simplify-guard.sh`, on throwaway repositories and on throwaway folders with no git: an
   untouched test list exits 0; a changed, a removed and an added test file each exit 1 naming it, with `--before` and
   with `--snapshot`; no git and no snapshot exits 3.
