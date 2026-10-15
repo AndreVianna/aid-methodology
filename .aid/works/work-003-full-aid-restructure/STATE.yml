@@ -290,15 +290,17 @@ features:
     sections: []
   - id: '005'
     name: specification
-    state: In Discussion
+    state: Ready
     started: '2026-10-15'
     updated: '2026-10-15'
     grade: A+
-    qa_count: 0
+    qa_count: 10
     sections: []
   - id: '006'
     name: planning
-    state: Pending
+    state: In Discussion
+    started: '2026-10-15'
+    updated: '2026-10-15'
     grade: Pending
     qa_count: 0
     sections: []
