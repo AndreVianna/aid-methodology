@@ -1263,3 +1263,19 @@ qa:
     suggested: '/aid-test runs checks and reports; writing tests is /aid-create test or /aid-update test, built through the full pipeline.'
     answer: 'Accepted as recommended (/aid-test runs checks).'
     applied_to: 'Feature 009 Technical Specification (/aid-test, catalog)'
+  - id: Q103
+    category: Specification (Feature 009)
+    impact: Medium
+    state: Answered
+    context: 'Works that merge nothing (test, prototype, research, review, report) have no value in Feature 001''s list of work types.'
+    suggested: 'Add one plain work type, investigation, which runs only its own skill and then the close.'
+    answer: 'Accepted as recommended (investigation).'
+    applied_to: 'Feature 009 Technical Specification (work types); Feature 001 intent.reading list'
+  - id: Q104
+    category: Specification (Feature 009)
+    impact: Medium
+    state: Answered
+    context: 'AC-45''s final documentation pass and pre-release name check have no owning feature.'
+    suggested: 'Feature 009 owns them as its last delivery.'
+    answer: 'Accepted as recommended (Feature 009, last delivery).'
+    applied_to: 'Feature 009 Technical Specification (final documentation pass)'
