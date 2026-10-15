@@ -5605,10 +5605,11 @@ dashboard and chat show the new names.
 
 Serves §4 Scope (pure wrappers gone, their variations kept as data; `/aid-design` retired), FR-4 (a kind read by
 meaning), FR-8 (every skill invocable, typed or not), M1 (no stubs) and NFR-N (`/aid-configure`), and owns AC-45, the
-final documentation pass (Q104). It follows FR-1, FR-6, FR-7, FR-17, FR-18, FR-19 and FR-20 as Features 001-008 define
-them. Maintainer decisions: Q6, Q7, Q11, Q22, Q30, Q35, Q40, Q45, Q65, Q74, Q96, Q99-Q104. Paths are `canonical/`
+final documentation pass (Q104). It also leaves room for work outside software without shipping any (Q107-Q110; see
+Components, Domain readiness). It follows FR-1, FR-6, FR-7, FR-17, FR-18, FR-19 and FR-20 as Features 001-008 define
+them. Maintainer decisions: Q6, Q7, Q11, Q22, Q30, Q35, Q40, Q45, Q65, Q74, Q96, Q99-Q110. Paths are `canonical/`
 sources, rendered as in Feature 001. "The catalog" is `canonical/aid/templates/kind-catalog.yml` (installed at
-`.aid/runtime/templates/kind-catalog.yml`); "an action skill" is one of `/aid-create`, `/aid-update`, `/aid-fix`,
+`.aid/runtime/templates/kind-catalog.yml`) together with the project's own `.aid/kinds/` files (The catalog); "an action skill" is one of `/aid-create`, `/aid-update`, `/aid-fix`,
 `/aid-refactor`, `/aid-document`, `/aid-test`, `/aid-prototype`; "the work file" is the work's `STATE.yml`; "the main
 folder" is the project's main worktree.
 
@@ -5643,7 +5644,8 @@ folder" is the project's main worktree.
 | Edit | `canonical/skills/aid-execute/references/test.md`, `task-type-rules.md`, `reviewer-brief.md` (Feature 007) | Read the kind's `tests` and `checks` |
 | Edit | `canonical/skills/aid-monitor-pipeline/references/close.md`, `canonical/aid/scripts/pipeline/cleanup-classify.sh`, `canonical/aid/scripts/pipeline/close-work.sh` (Feature 008) | `cleanup-classify.sh --work` lists `.aid/.temp/prototype/<work>/` as one more item of the work; `close.md` passes `--move-to-main` for the test ledger (`.aid/.temp/review-pending/<work>-test.md`, already an item) and for that folder, and `close-work.sh` accepts a folder there as it accepts a file; the leftovers scan offers neither once moved (see Flow, FINISH) |
 | Edit | `canonical/skills/aid-deploy/SKILL.md`, `canonical/skills/aid-monitor/SKILL.md` (Step 0 and § Argument-Hint) | Their free-form mode loses the engine: text after the command is a plain request (see Components, `/aid-deploy` and `/aid-monitor` free-form text); a bare command keeps its own flow |
-| Edit | `canonical/skills/aid-research/SKILL.md`, `aid-review/SKILL.md`, `aid-report/SKILL.md` | The three-cycle impediment becomes the per-row choice (see Components, No impediment file); their boundary lines name the new skills |
+| Edit | `canonical/skills/aid-research/SKILL.md`, `aid-review/SKILL.md`, `aid-report/SKILL.md` | The three-cycle impediment becomes the per-row choice (see Components, No impediment file); their boundary lines name the new skills; each passes the kind `check-intent.md` finds to the gate and reads that kind's `ask` and `checks` (Q109) |
+| Edit | the files that state what AID is (Components, Domain readiness) | One identity statement, the same everywhere (Q108) |
 | Edit | `dashboard/reader/state_schema.py`, `dashboard/server/reader.mjs` | `SHORTCUT_KIND_MAP` and `_FULL_PATH_INITIATOR` sit between `legacy-skill-names: begin` / `end` markers (see Components, Dashboard and chat) |
 | Edit | `bin/aid`, `bin/aid.ps1` | The "Run `/aid-config`" line names `/aid-configure`; `legacy-skill-names: begin` / `end` comment markers wrap every row of the format-6 conversion step that names a retired skill, whichever feature added it (Feature 003's initiator rows, Feature 006's type and document rows, and this feature's rows) (Migration); bash and PowerShell output byte-identical |
 | Edit | every other kept file under `canonical/`, `.claude/skills/generate-profile/`, `scripts/checks/`, `dashboard/home.html` and the dashboard reader and server files, that names a retired skill, the engine, the shortcut catalog, a scaffolding file or `IMPEDIMENT.md` | Re-pointed (Migration) |
@@ -5665,8 +5667,8 @@ Feature 001's depth table, read the same way for both forms (AC-30).
      kind's `about`.
    - Several kinds fit and their rules differ: one question with a recommendation (FR-4); none fits: `--`, the action's
      own rules.
-   - A typed kind is only a hint (Feature 002): it is checked against the request and the code like any reading.
-3. **The reading** -- the action's `reading` from the catalog, then checked against the KB and the code by
+   - A typed kind is only a hint (Feature 002): it is checked against the request and the project's own files like any reading.
+3. **The reading** -- the action's `reading` from the catalog, then checked against the KB and the project's files by
    `check-intent.md` (Feature 001): `/aid-create` for something that already exists reads as a change, a `/aid-refactor`
    that changes behaviour as a change, an `/aid-update` that states a fact about the project as a knowledge update. When the
    checked reading is not this action's own, the agent says so in one line, and the checked reading is the one recorded
@@ -5817,7 +5819,8 @@ kinds:
 | `actions[].next` | `Specification` or `own` | START |
 | `actions[].rules` | what the action adds to every kind | Specification (`requirements.md`, `design.md`), Planning, the action's own steps |
 | `kinds[].kind`, `about` | the name a typed command uses; one plain line for a plain request | START, `check-intent.md` |
-| `kinds[].taken_by` | the skills that take this kind: `brainstorm` and action names | START, `/aid-brainstorm` START; AS-03 |
+| `kinds[].taken_by` | the skills that take this kind, by name without `aid-`: any skill (an action, `brainstorm`, `review`, `research`, `report`, ...) | START, `/aid-brainstorm` START, the skills it names; AS-03 |
+| `kinds[].domain` | optional: the area of work, default `software` | not branched on in v4 |
 | `kinds[].shape`, `then` | Feature 003's fields, unchanged, for kinds `brainstorm` takes | `/aid-brainstorm` |
 | `kinds[].ask` | what a requirement of this kind cannot do without -- asked only when the evidence does not settle it (Q65) | `/aid-specify` REQUIREMENTS; the action's own steps |
 | `kinds[].design` | the heading(s) the technical part adds under Data and interfaces (or Migration) | `/aid-specify` DESIGN (`design.md`) |
@@ -5826,12 +5829,21 @@ kinds:
 | `kinds[].tests` | which tests building writes and runs | `/aid-execute` TEST |
 | `kinds[].update` | optional: how a change differs from a creation | the same readers, when the reading is `change` |
 | `kinds[].next` | optional: overrides the action's `next` (`tracker` for `ticket`) | START |
+| `risk`, `limits`, `sign_off`, `release` | reserved names for a later work; no v4 behaviour | nothing in v4 |
 
 Every field but `kind`, `about` and `taken_by` is optional; a reader with no value for its field applies the action's
 `rules` alone. The content comes from today's scaffolding files: `create.md`'s slots, conditional sections and task
 chains become `ask`, `design` and `tasks`; `change-refactor.md` becomes the `update` notes and the change kinds;
 `fix.md`, `document.md`, `prototype.md` and `test-experiment.md` become their kinds' fields. A reader that needs "the
 action" of a work takes the one whose `reading` the record holds (unique for every action that passes to Specification).
+
+**Sources, precedence and unknown fields** (Q109). Every reader reads one merged catalog: the shipped file first, then
+each `*.yml` in the project's `.aid/kinds/`, in name order, with the same shape (a `kinds` list; a user file adds no
+action). `.aid/kinds/` is the user's, like `.aid/connectors/` and `.aid/design/`: it is not in the install manifest, so
+`aid update` and `aid remove` never touch it -- a kind file under `.aid/runtime/` would be deleted by `aid update`
+(decisions.md § D9). **Additive only**: kind names are unique across every source, so a user kind never replaces a
+shipped one; an entry whose `kind` is already defined is skipped, and the reader says so in one line. Readers ignore a
+field they do not know, and nothing in AID rewrites a kind file, so unknown fields are kept.
 
 **The actions**: `create` (new capability), `update` (change), `fix` (bug fix), `refactor` (refactor), `document`
 (document) -- each `next: Specification` -- and `test`, `prototype` (investigation, `next: own`).
@@ -5882,17 +5894,19 @@ intent:
 
 | Skill | `description:` | Skill-guide line |
 |---|---|---|
-| `/aid-create` | "Build something new -- an API, a screen, a job, tests, a ticket, or plain code -- through requirements, a plan and a checked build. Use when the user wants something that does not exist yet; the kind may be typed or said in plain words." | `` - `/aid-create` -- build something new; the kind typed or said (api, ui, test, ticket, ...) `` |
-| `/aid-update` | "Change something that already exists -- its behaviour or contract, or remove, deprecate or migrate it -- through requirements, a plan and a checked build. Use when existing behaviour must change." | `` - `/aid-update` -- change what exists, or remove, deprecate or migrate it `` |
+| `/aid-create` | "Make something new, of any kind the catalog knows, through requirements, a plan and a checked build. Use when the user wants something that does not exist yet; the kind may be typed or said in plain words." | `` - `/aid-create` -- make something new; the kind typed or said in plain words `` |
+| `/aid-update` | "Change something that already exists -- what it does or how it is used, or remove, deprecate or migrate it -- through requirements, a plan and a checked build. Use when something existing must change." | `` - `/aid-update` -- change what exists, or remove, deprecate or migrate it `` |
 | `/aid-fix` | "Correct a defect, a regression, an incident or a vulnerability, from its symptoms or from a review's or a test's findings. Use when something does not work as it should." | `` - `/aid-fix` -- correct a defect; also the findings of a review or a test `` |
-| `/aid-refactor` | "Restructure code without changing what it does, its tests unchanged. Use when code must get cleaner, faster or simpler and its behaviour must stay the same." | `` - `/aid-refactor` -- restructure code without changing its behaviour `` |
+| `/aid-refactor` | "Restructure something without changing what it does; its checks stay the same and keep passing. Use when a work product must get cleaner, faster or simpler and must keep behaving the same." | `` - `/aid-refactor` -- restructure something without changing what it does `` |
 | `/aid-document` | "Write or revise documentation for people, outside the Knowledge Base -- a runbook, a decision record, a tutorial, a changelog, a diagram. Use when a document is needed; facts about the project go to the Knowledge Base." | `` - `/aid-document` -- write or revise a document for people (runbook, decision, ...) `` |
-| `/aid-test` | "Run a check -- tests, a security scan, a benchmark, a data-quality check, a model evaluation or an experiment -- and report what it finds, changing nothing. Use when the user wants to know the state of something measurable; writing tests is `/aid-create test`." | `` - `/aid-test` -- run a check (tests, security, performance, ...) and report findings `` |
+| `/aid-test` | "Run a check of any kind the catalog knows on what exists, and report what it finds, changing nothing. Use when the user wants to know the state of something measurable; writing new tests is `/aid-create test`." | `` - `/aid-test` -- run a check and report what it finds, changing nothing `` |
 | `/aid-prototype` | "Build a throwaway model to find out whether a direction works, and report what it shows; nothing reaches the project. Use when a decision hinges on something that can only be learned by trying it." | `` - `/aid-prototype` -- try a direction with a throwaway model, before building it `` |
 | `/aid-configure` | Today's `aid-config` description in the what/when shape | `` - `/aid-configure` -- set up or change this project's AID settings `` |
 
 The guide's `<kind>` lines go, and SG-02 matches `canonical/skills/` both ways with no expansion. Every guide line stays
-within SG-03's limit.
+within SG-03's limit. **The action layer names no software term** (Q109): the action skills' `description:` and guide
+lines, the catalog's `actions` entries and `action-start.md` say "something" or "a work product"; whatever is specific
+to software lives in the software kinds (AS-10).
 
 **Routing** (Feature 001's `size-and-route.md` and `check-intent.md`) -- the kind hook reads the catalog: a request is
 matched against the actions' `about` and then the `about` of the kinds that action takes. When the reading matches an
@@ -5914,7 +5928,9 @@ as for a typed command. Investigation works get their own phase row: the investi
 **Who reads the catalog** -- one line each, citing the field: `/aid-specify` `start.md` (`intent.kind`, and the draft's
 `## Kind` when the work came from brainstorm), `requirements.md` (`ask`, `rules`), `design.md` (`design`), `check.md`
 (`checks`); `/aid-plan` `breakdown.md` (`tasks`); `/aid-execute` `test.md` and `task-type-rules.md` (`tests`),
-`reviewer-brief.md` task mode (`checks`); `/aid-brainstorm` `start.md` (kinds with `brainstorm` in `taken_by`).
+`reviewer-brief.md` task mode (`checks`); `/aid-brainstorm` `start.md` (kinds with `brainstorm` in `taken_by`);
+`aid-review`, `aid-research` and `aid-report` (`ask`, `checks`, for kinds that name them -- none in the shipped catalog).
+Each reads the merged catalog (The catalog).
 
 **`/aid-deploy` and `/aid-monitor` free-form text** -- today Step 0 of each hands any text after the command to the
 engine. Now that text is handled as a plain request through Feature 001's intake (`/aid-orchestrate`, `check-intent.md`),
@@ -5938,6 +5954,35 @@ product: the phases, the skills, the old -> new table. The old -> new table, the
 skills, sits between `<!-- legacy-skill-names: begin -->` and `<!-- legacy-skill-names: end -->`, the same marker rule as
 the dashboard and `bin/aid`. The site's generated pages are regenerated by `site/scripts/gen-skills.mjs`, not
 hand-edited. `test-doc-names.sh` (Testing) is the pre-release check.
+
+**Domain readiness** (Q107-Q110) -- AID is software first, not software only: v4.0.0 ships no pack and no non-software
+kind, but nothing in it closes the door. The seven changes, each stated where it lives:
+1. the user-owned `.aid/kinds/` folder, its precedence and its collision rule (The catalog);
+2. the optional `domain` field, default `software`, with kind names unique across every source (The catalog);
+3. any skill may take a kind -- `review`, `research` and `report` read a kind's rules too (The catalog; Who reads the
+   catalog);
+4. readers ignore and keep unknown fields; `risk`, `limits`, `sign_off` and `release` are reserved, with no v4 behaviour
+   (The catalog);
+5. no software term in the action layer (Descriptions and guide lines);
+6. one no-repository sample, `009-18` (Testing);
+7. **the identity statement** (Q108): every file that says what AID is says the same: AID is built for software first,
+   not software only -- its pipeline and kind catalog leave room for other areas of work, which no shipped kind covers
+   yet. The files come from one search, which the reviewer can re-run:
+
+   ```sh
+   git grep -lIiE 'building software|software-development lifecycle|AI Integrated Software Development|methodology for software development|kind of digital work' -- . ':!.aid/works' ':!site/src/data' ':!.aid/knowledge/kb.html' ':!.aid/runtime'
+   ```
+
+   Today it finds: `.aid/knowledge/README.md`,
+   `capability-inventory.md`, `architecture.md`; the root `README.md`; `CLAUDE.md` (its `## Project` lines are written
+   for this repository, outside the AID markers, so no render carries them; `AGENTS.md` has no identity line);
+   `canonical/aid/templates/kb-authoring/concern-model.md` and `domain-doc-matrix.md` (rendered to `.aid/runtime/`);
+   `packages/pypi/README.md`; and `docs/aid-methodology.md` and the site pages `concepts/methodology.md`,
+   `concepts/overview.md`, `get-started/overview.md` and `index.mdx`, which the final documentation pass rewrites.
+   `kb.html` follows by its render.
+   The decision is recorded in `decisions.md` (Migration, KB).
+
+The nine later works are one roadmap entry (Q110; Migration, KB).
 
 **Kept invariants**:
 - the action skills that pass to Specification write only the work file, through the writer;
@@ -5993,6 +6038,10 @@ Nothing: this is the last feature.
   the close; a session that ends first loses it, and the user asks again in plain words.
 - **The site generator** reads the shortcut catalog and models doorways and kind siblings (`site/scripts/skills/`, the
   flow-graph extractors): a sizeable rewrite, outside `canonical/`.
+- **An open door with nothing behind it.** A user kind from another area runs today's pipeline unchanged: its checks
+  stand in for tests, and the close offers a pull request only where a repository exists. High-stakes rules, a release
+  step, privacy classes and packs are later works (the roadmap's "Beyond software"); the reserved fields do nothing in
+  v4, so a user kind must not rely on them.
 - **Last feature**: every list that waits on a later feature must be empty here, so any deferred sample still failing
   blocks the release (Testing).
 - **Ticket samples need a live tracker**: the conversation suite runs with no connection (Feature 001), so `009-11` and
@@ -6015,6 +6064,7 @@ Nothing: this is the last feature.
   No stubs (M1).
 - **Installed projects**: `aid update` removes the retired skills, the engine, the shortcut catalog, the scaffolding,
   `feedback-artifacts/` and `aid-config`, and installs `aid-configure`, through the install manifest (decisions.md § D9).
+  `.aid/kinds/` is not in the manifest: `aid update` and `aid remove` leave it as it is.
 - **Format 6 -- the work-state step** (Features 004 and 006; no format 7), bash and PowerShell, byte for byte, idempotent.
   In `bin/aid` and `bin/aid.ps1`, `legacy-skill-names` markers wrap every row of the format-6 conversion step that names a retired skill, whichever feature added it (Feature 003's initiator rows, Feature 006's type and document rows, and this feature's rows). **Precedence**: the
   approved, more specific rows win -- Feature 004's row for the KB `create` / `update` skills and `aid-update-kb` (->
@@ -6160,6 +6210,9 @@ Nothing: this is the last feature.
     `aid-monitor` reads (`state-packaging.md`, `state-route.md` and their ticket-fetch patterns, untouched by the Step 0
     edit); `test-review-path-audit.sh` (`/aid-create` inside a fixture sentence); `dashboard/server/tests/test_index_html.py`
     (a comment).
+  - **Domain readiness**: `test-shared-prune.sh` and `test-shared-remove.sh` each gain a case -- a file under `.aid/kinds/`
+    is unchanged after `aid update` and after `aid remove`, as `.aid/design/` is. The identity search above, run over
+    `tests/`, `dashboard/` and `site/scripts/`, finds no suite that asserts an identity line.
   - **The rule for this class**, stated once: every suite that asserts text inside a file this feature rewrites -- the
     action skills, `aid-deploy`, `aid-monitor`, `aid-read-ticket`, `action-start.md`, the catalog, and Feature 008's
     `close.md`, `cleanup-classify.sh` and `close-work.sh` -- is updated in the same task as that rewrite, and a task is not
@@ -6186,7 +6239,13 @@ Nothing: this is the last feature.
   - `coding-standards.md`: settings are "managed by `/aid-configure`";
   - `infrastructure.md`: the ticket family is `/aid-read-ticket` plus the `ticket` kind of `/aid-create` and `/aid-update`,
     its sources the two connector procedures;
-  - `roadmap.md`: its shortcut-path sentences describe the action skills;
+  - `roadmap.md`: its shortcut-path sentences describe the action skills; and `## Later` gains one entry, "Beyond software"
+    (Q110), listing in this order: the pack format and its sharing, with a review before install; high-stakes handling
+    (sign-off, `full` depth forced, health and law packs off by default); a release close for work outside software;
+    work that lives outside git; privacy classes; a checking task type; the first packs, lowest risk first; samples per
+    pack, refusal samples included; KB rows for the new areas. `## Contents` stays in step with the headings;
+  - `README.md`, `capability-inventory.md`, `architecture.md`: the identity statement (Components, Domain readiness);
+    `decisions.md` also gains "software first, not software only" (Q108);
   - `tech-debt.md`: W5-6 loses its `shortcut-engine.md` site, and W1-2's doorway split goes with the doorways;
   - then `INDEX.md` is regenerated and `kb.html` rendered by the script (Feature 004).
 
@@ -6202,13 +6261,14 @@ empty, the **full integration suite** before release.
 |---|---|
 | AS-01 | Every action skill and `aid-configure` exist; no folder under `canonical/skills/` matches `aid-(create\|update\|design\|document\|test\|prototype)-`; `aid-remove`, `aid-deprecate`, `aid-migrate`, `aid-experiment` and `aid-config` are absent (AC-31) |
 | AS-02 | `shortcut-engine.md`, `shortcut-catalog.yml`, `shortcut-scaffolding/`, `feedback-artifacts/` and `build-shortcut-skills.py` are absent, and the re-pointing rule holds (Migration): no retired skill, engine, catalog, scaffolding or `IMPEDIMENT.md` named outside its exemptions; text between `legacy-skill-names` markers (the dashboard's maps; in `bin/aid` and `bin/aid.ps1`, every format-6 row that names a retired skill, whichever feature added it) is skipped |
-| AS-03 | The catalog: every action names a skill that exists, a reading the writer accepts and `next` `Specification` or `own`; every kind has a unique `kind` of lowercase letters, digits and hyphens, an `about`, and a `taken_by` naming only `brainstorm` or an action; no KB kind (architecture, stack, testing-strategy, cicd, roadmap, backlog, mvp) and not `document` is taken by `create` or `update` |
+| AS-03 | The catalog: every action names a skill that exists, a reading the writer accepts and `next` `Specification` or `own`; every kind has a unique `kind` of lowercase letters, digits and hyphens, an `about`, and a `taken_by` naming only skills that exist (without `aid-`); a `domain`, when present, of lowercase letters and hyphens, and `software` on every shipped kind (no pack ships); no shipped kind sets a reserved field (`risk`, `limits`, `sign_off`, `release`); no KB kind (architecture, stack, testing-strategy, cicd, roadmap, backlog, mvp) and not `document` is taken by `create` or `update` |
 | AS-04 | Every action skill cites `action-start.md`, the catalog, `skill-steps.md` and `question-protocol.md`; `action-start.md` names `--kind`, `intent.kind`, `check-intent.md`, `aid-specify`, `aid-brainstorm` and `aid-kb-update`; `work-initiation-gate.md` § 3a passes `--kind` to `--create`; `aid-deploy` and `aid-monitor` name neither the engine nor the shortcut catalog |
 | AS-05 | `aid-test` and `aid-prototype` `finish.md` hand off to `aid-monitor-pipeline` with `--phase CI`; `close.md` names `<work>-test.md` and `.aid/.temp/prototype/`, and `cleanup-classify.sh` lists `.aid/.temp/prototype/<work>/` among a work's items; `aid-prototype`'s files write nowhere but `.aid/.temp/prototype/` |
 | AS-06 | `aid-fix`'s `findings.md` names the main folder and `.aid/.temp/review-pending/`; the TICKET references name the preview and the confirmation |
 | AS-07 | No retired skill name in `dashboard/home.html`, `dashboard/reader/*.py`, `dashboard/server/*.mjs`, `dashboard/server/*.py` or `chat-node/` outside `legacy-skill-names` markers (AC-31) |
 | AS-08 | The skill guide has one line per action skill and no `<kind>` placeholder |
-| AS-09 | The readers cite their fields: `requirements.md` `ask`, `design.md` `design`, `breakdown.md` `tasks`, `test.md` `tests`, `aid-execute`'s brief `checks`, `check-intent.md` the catalog |
+| AS-09 | The readers cite their fields: `requirements.md` `ask`, `design.md` `design`, `breakdown.md` `tasks`, `test.md` `tests`, `aid-execute`'s brief `checks`, `check-intent.md` the catalog; `action-start.md` and `check-intent.md` name `.aid/kinds/`, the shipped-first order and the skip of a duplicate name; `aid-review`, `aid-research` and `aid-report` name `ask` and `checks` |
+| AS-10 | The action layer names no software term: the action skills' `description:` lines, their skill-guide lines, the catalog's `actions` entries and `action-start.md` contain none of `code`, `codebase`, `repository`, `commit`, `branch`, `pull request` (whole words, any case); a kind's name in backticks is a kind, not a term of the layer (Q109) |
 
 **Pre-release check -- `tests/canonical/test-doc-names.sh`** (AC-45). `tests/canonical/retired-names.txt` lists every
 retired slash name, one per line, kept equal to the old -> new table.
@@ -6216,6 +6276,7 @@ retired slash name, one per line, kept equal to the old -> new table.
 | Group | Asserts |
 |---|---|
 | DN-01 | With `AID_RELEASE_CHECK=1`, no file under `docs/`, `site/src/content/` or `examples/`, nor `README.md`, names a name of `retired-names.txt` as `/aid-<name>` or in backticks, nor an old phase name (Discover, Describe, Define, Specify, Plan, Detail, Execute) as a phase: in a step sequence (`->` or `→`) or followed by "phase". Text between `legacy-skill-names` markers (the old -> new table) is skipped. Without the flag it prints the hits and passes, as the documents wait for the last delivery |
+| DN-03 | With `AID_RELEASE_CHECK=1`, every file the identity search (Components, Domain readiness) finds carries the phrase "software first, not software only", and no file under the search's scope says "kind of digital work" (Q108) |
 | DN-02 | No name of `retired-names.txt` is a folder under `canonical/skills/`; with `AID_RELEASE_CHECK=1`, each has a row in the old -> new table of `.aid/knowledge/backlog.md` § Next Release (AC-24) |
 
 **Unit tests**
@@ -6251,6 +6312,7 @@ retired slash name, one per line, kept equal to the old -> new table.
 | `009-14-old-doorway-work-after-update` -- fixture: an old `aid-create-api` work at phase `Specify`, no record, after `aid update`. Check: it resumes at `/aid-specify` START with `intent.kind: api` and reading new capability, with no type question | AC-37 | now |
 | `009-15-configure` -- settings across two subjects with `/aid-configure`. Check: the protocol checks; no output names `/aid-config` | AC-22, AC-28 | now |
 | `009-17-update-asks-the-kind` -- `/aid-update the orders export`, where the code has both an export endpoint and an export pipeline with different rules. Check: one kind question (the protocol checks: its reason, a recommendation, only the two valid options, a free answer), the answer in `intent.kind`, then a pass to `aid-specify` | AC-28, AC-30 | now |
+| `009-18-budget-sheet-no-repository` -- fixture: a folder with no git, holding a monthly budget spreadsheet; "tidy my monthly budget sheet, no number may change". Check: `/aid-refactor` reached by meaning (reading refactor); no software question and no pull request mentioned; the work's checks run and show every number unchanged; the work closes done with nothing pushed (Q109) | AC-14, AC-36 | now |
 | `009-16-research-three-rounds` -- a research work below the bar three times. Check: one question per open row with the three choices; no impediment file; `lifecycle` never `Blocked` | AC-28 | now |
 
 At this feature's end, Feature 001's `001-01-one-match` and `001-07-rich-ticket`, Feature 002's `002-02` (now with
@@ -6270,3 +6332,6 @@ integration suite** runs -- every sample of every feature, 3 runs of 3, plus Fea
 | AC-30 | Flow (START: one path, `intent.kind` read by every later step); The catalog; Components (Routing, Who reads the catalog) | AS-03, AS-04, AS-09; `009-01` to `009-13`, `009-17` |
 | AC-31 | Files and layout (deletions); Components (Dashboard and chat) | AS-01, AS-07 |
 | AC-45 | Components (The final documentation pass) | DN-01, DN-02 |
+
+Domain readiness (Q107-Q110) answers no criterion of its own; it is checked by AS-03, AS-09, AS-10, DN-03, the
+`.aid/kinds/` cases of `test-shared-prune.sh` and `test-shared-remove.sh`, and `009-18`.
