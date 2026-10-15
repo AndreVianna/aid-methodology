@@ -4022,16 +4022,20 @@ changes `REQUIREMENTS.md` only through `/aid-specify` and a KB document only thr
     - `intent.depth`, when missing, takes `pipeline.path`'s value (Q11); then `pipeline.path` goes;
     - `interview`, `features` and `review_history` go (Feature 005);
     - the old phase names are rewritten (Feature 002's mapping);
-    - **the record** of every open work: `active_skill` and `step`, decided by this precedence, stated once and
-      first match wins -- **no initiator row ever overrides a phase**:
-      1. **the phase** (old or new name): `Describe`, `Define` or `Specify` -> `/aid-specify`; `Plan` or `Detail`
-         -> `/aid-plan`; `Execute` -> `/aid-execute` (Feature 002's halted-lite and `delivery_state` rows are
-         Execute rows);
-      2. when the phase decides nothing (missing, `--`, or `Deploy`): the old `active_skill` -- `aid-define` ->
-         `/aid-specify`, `aid-detail` -> `/aid-plan`, `aid-deploy` -> `/aid-deploy`, a skill that still exists ->
-         itself;
-      3. only when neither decides: the initiator rows of Features 003-005 (idea and design works ->
-         `/aid-brainstorm`, the deleted KB `create` / `update` skills -> `/aid-kb-update`).
+    - **the record** of every open work: `active_skill` and `step`, decided by one rule, stated once -- **the phase
+      is trusted only when the initiator is a pipeline skill that sets it**: `aid-describe`, `aid-define`,
+      `aid-specify`, `aid-plan`, `aid-detail`, `aid-execute`, and the shortcut engine's `create`, `update` and `fix`
+      kinds (the KB `create` / `update` skills of Feature 004 are not among them). Every other initiator never set
+      the phase, so a work it started still carries the template's default `phase: Describe`, which is ignored.
+      - **A pipeline initiator**, first match wins: (1) **the phase** (old or new name): `Describe`, `Define` or
+        `Specify` -> `/aid-specify`; `Plan` or `Detail` -> `/aid-plan`; `Execute` -> `/aid-execute` (Feature 002's
+        halted-lite and `delivery_state` rows are Execute rows); (2) when the phase decides nothing (missing, `--`,
+        or `Deploy`), the old `active_skill` -- `aid-define` -> `/aid-specify`, `aid-detail` -> `/aid-plan`,
+        `aid-deploy` -> `/aid-deploy`, a skill that still exists -> itself.
+      - **Any other initiator**: the initiator rows of Features 003-005 decide (idea and design works ->
+        `/aid-brainstorm`, the deleted KB `create` / `update` skills -> `/aid-kb-update`); with no row, the old
+        `active_skill`, else the initiator itself, when that skill still exists (an `aid-research` or `aid-review`
+        work resumes in its own skill).
 
       The skill is written at its entry step: `START` for the rebuilt skills (`aid-execute` included, Feature 007),
       `IDLE` for `aid-deploy`; each skill's START keeps what is on disk. The initiator otherwise serves only the type
@@ -4143,8 +4147,9 @@ list.
   nested work, an old lite work and a single-layout work convert to the expected file and tree; `ticket_ref` at each
   level becomes one `sources:` entry per ref; delivery `qa` lands under fresh ids with its old place; the dropped
   keys go and `intent.depth` takes `pipeline.path`; phase names are rewritten; the record follows each legacy row,
-  the type only where Q74 says; a work started by `aid-describe` and now at `Detail` gets `/aid-plan` at START, and
-  one at `phase: --` started by `aid-design-api` gets `/aid-brainstorm`; a duplicate task id and an unknown file each warn and change or drop nothing; a
+  the type only where Q74 says; a work started by `aid-describe` and now at `Detail` gets `/aid-plan` at START; an
+  `aid-design-api` work and an `aid-create-roadmap` work, each at the default `phase: Describe`, get
+  `/aid-brainstorm` and `/aid-kb-update`; a duplicate task id and an unknown file each warn and change or drop nothing; a
   second run changes nothing; bash and PowerShell give the same bytes, the PowerShell half in the Windows lane.
 - `tests/canonical/test-work-initiation-gate.sh`: an old-layout work gets the `aid update` line and no repair.
 - Dashboard: fixtures for a single-layout work at Planning (task files, no entries yet), at Building with two
