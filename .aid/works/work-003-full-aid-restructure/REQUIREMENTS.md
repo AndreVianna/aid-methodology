@@ -5645,7 +5645,7 @@ folder" is the project's main worktree.
 | Edit | `canonical/skills/aid-deploy/SKILL.md`, `canonical/skills/aid-monitor/SKILL.md` (Step 0 and § Argument-Hint) | Their free-form mode loses the engine: text after the command is a plain request (see Components, `/aid-deploy` and `/aid-monitor` free-form text); a bare command keeps its own flow |
 | Edit | `canonical/skills/aid-research/SKILL.md`, `aid-review/SKILL.md`, `aid-report/SKILL.md` | The three-cycle impediment becomes the per-row choice (see Components, No impediment file); their boundary lines name the new skills |
 | Edit | `dashboard/reader/state_schema.py`, `dashboard/server/reader.mjs` | `SHORTCUT_KIND_MAP` and `_FULL_PATH_INITIATOR` sit between `legacy-skill-names: begin` / `end` markers (see Components, Dashboard and chat) |
-| Edit | `bin/aid`, `bin/aid.ps1` | The "Run `/aid-config`" line names `/aid-configure`; this feature's rows of the format-6 work-state step (Migration), which must name retired skills, sit between `legacy-skill-names: begin` / `end` comment markers; bash and PowerShell output byte-identical |
+| Edit | `bin/aid`, `bin/aid.ps1` | The "Run `/aid-config`" line names `/aid-configure`; `legacy-skill-names: begin` / `end` comment markers wrap every row of the format-6 conversion step that names a retired skill, whichever feature added it (Feature 003's initiator rows, Feature 006's type and document rows, and this feature's rows) (Migration); bash and PowerShell output byte-identical |
 | Edit | every other kept file under `canonical/`, `.claude/skills/generate-profile/`, `scripts/checks/`, `dashboard/home.html` and the dashboard reader and server files, that names a retired skill, the engine, the shortcut catalog, a scaffolding file or `IMPEDIMENT.md` | Re-pointed (Migration) |
 | Create | `tests/canonical/test-actions.sh`, `tests/canonical/test-doc-names.sh`, `tests/canonical/retired-names.txt`, `tests/conversation/samples/feature-009/` | See Testing |
 | Rewrite (last delivery) | `docs/`, `site/src/content/docs/`, `README.md`, `examples/` | The final documentation pass (AC-45, Q104; see Components) |
@@ -6016,7 +6016,7 @@ Nothing: this is the last feature.
 - **Installed projects**: `aid update` removes the retired skills, the engine, the shortcut catalog, the scaffolding,
   `feedback-artifacts/` and `aid-config`, and installs `aid-configure`, through the install manifest (decisions.md § D9).
 - **Format 6 -- the work-state step** (Features 004 and 006; no format 7), bash and PowerShell, byte for byte, idempotent.
-  Its rows for retired names sit between `legacy-skill-names` markers in `bin/aid` and `bin/aid.ps1`. **Precedence**: the
+  In `bin/aid` and `bin/aid.ps1`, `legacy-skill-names` markers wrap every row of the format-6 conversion step that names a retired skill, whichever feature added it (Feature 003's initiator rows, Feature 006's type and document rows, and this feature's rows). **Precedence**: the
   approved, more specific rows win -- Feature 004's row for the KB `create` / `update` skills and `aid-update-kb` (->
   `/aid-kb-update`, knowledge update) and Feature 006's Q74 types for the document skills (document). The patterns below
   exclude those names: `aid-create-*` and `aid-update-*` never match `aid-create-document`, `aid-update-document`,
@@ -6040,7 +6040,7 @@ Nothing: this is the last feature.
   `bin/aid` and `bin/aid.ps1`, and the dashboard files, that names a retired skill, `aid-config`, the engine, the
   shortcut catalog, a scaffolding file or `IMPEDIMENT.md` is re-pointed to the skill or file that does the job now, or
   reworded. Exempt: `canonical/aid/scripts/migrate/` (it reads old shapes) and text between `legacy-skill-names`
-  markers -- the dashboard's maps and this feature's format-6 rows in `bin/aid` and `bin/aid.ps1`. AS-02 enforces it. The sites today, beyond Files and layout and once Features 001-008 have landed:
+  markers -- the dashboard's maps and, in `bin/aid` and `bin/aid.ps1`, every row of the format-6 conversion step that names a retired skill, whichever feature added it (Feature 003's initiator rows, Feature 006's type and document rows, and this feature's rows). AS-02 enforces it. The sites today, beyond Files and layout and once Features 001-008 have landed:
   `connectors/consumption-protocol.md` (the ticket seams), `connectors/ticket-resolution.md`, `aid-read-ticket` (its
   sibling lines), `work-initiation-gate.md` and `work-state-template.yml` (the initiator examples), `settings.yml` ("Managed
   by `/aid-configure`"), `subagent-heartbeat-protocol.md`, `grading-rubric.md`, `aid-set-connector`, `aid-unset-connector`,
@@ -6069,7 +6069,9 @@ Nothing: this is the last feature.
     their rules now live in the catalog, which AS-03 checks.
   - Re-pointed: `test-doc-counts.sh` (counts from `canonical/skills/`, not catalog rows), `test-deploy-monitor-repurpose.sh`
     (DMR00e, which wants the shortcut catalog, and the `alias_of` rows go; DMR20a/b assert instead that Step 0 hands
-    free-form text to Feature 001's intake and names no engine), `test-downstream-worktree-entry.sh` (G6 slices the same
+    free-form text to Feature 001's intake and names no engine; re-pointed off the deleted catalog: DMR24 asserts the two
+    skills carry no `GENERATED` marker, DMR33 that no `canonical/skills/*/SKILL.md` carries one, and DMR36 that every skill
+    folder has a skill-guide line, as SG-02 does), `test-downstream-worktree-entry.sh` (G6 slices the same
     Step 0 and pipeline regions, and checks that the free-form region names the intake, not `shortcut-engine.md`), `test-ticket-skills-structural.sh`, `test-ticket-retirement-structural.sh` and
     `test-connector-skills-structural.sh` (the ticket procedures' new paths), `test-connector-consumption-linkage.sh`,
     `test-work-initiation-gate.sh`, `test-artifact-discipline.sh`, `test-state-review-surface.sh`, the dashboard reader
@@ -6110,7 +6112,7 @@ empty, the **full integration suite** before release.
 | Group | Asserts |
 |---|---|
 | AS-01 | Every action skill and `aid-configure` exist; no folder under `canonical/skills/` matches `aid-(create\|update\|design\|document\|test\|prototype)-`; `aid-remove`, `aid-deprecate`, `aid-migrate`, `aid-experiment` and `aid-config` are absent (AC-31) |
-| AS-02 | `shortcut-engine.md`, `shortcut-catalog.yml`, `shortcut-scaffolding/`, `feedback-artifacts/` and `build-shortcut-skills.py` are absent, and the re-pointing rule holds (Migration): no retired skill, engine, catalog, scaffolding or `IMPEDIMENT.md` named outside its exemptions; text between `legacy-skill-names` markers (the dashboard's maps, the format-6 rows in `bin/aid` and `bin/aid.ps1`) is skipped |
+| AS-02 | `shortcut-engine.md`, `shortcut-catalog.yml`, `shortcut-scaffolding/`, `feedback-artifacts/` and `build-shortcut-skills.py` are absent, and the re-pointing rule holds (Migration): no retired skill, engine, catalog, scaffolding or `IMPEDIMENT.md` named outside its exemptions; text between `legacy-skill-names` markers (the dashboard's maps; in `bin/aid` and `bin/aid.ps1`, every format-6 row that names a retired skill, whichever feature added it) is skipped |
 | AS-03 | The catalog: every action names a skill that exists, a reading the writer accepts and `next` `Specification` or `own`; every kind has a unique `kind` of lowercase letters, digits and hyphens, an `about`, and a `taken_by` naming only `brainstorm` or an action; no KB kind (architecture, stack, testing-strategy, cicd, roadmap, backlog, mvp) and not `document` is taken by `create` or `update` |
 | AS-04 | Every action skill cites `action-start.md`, the catalog, `skill-steps.md` and `question-protocol.md`; `action-start.md` names `--kind`, `intent.kind`, `check-intent.md`, `aid-specify`, `aid-brainstorm` and `aid-kb-update`; `work-initiation-gate.md` § 3a passes `--kind` to `--create`; `aid-deploy` and `aid-monitor` name neither the engine nor the shortcut catalog |
 | AS-05 | `aid-test` and `aid-prototype` `finish.md` hand off to `aid-monitor-pipeline` with `--phase CI`; `close.md` names `<work>-test.md` and `.aid/.temp/prototype/`, and `cleanup-classify.sh` lists `.aid/.temp/prototype/<work>/` among a work's items; `aid-prototype`'s files write nowhere but `.aid/.temp/prototype/` |
@@ -6136,7 +6138,7 @@ retired slash name, one per line, kept equal to the old -> new table.
   new capability; Feature 006's `aid-create-roadmap` fixture still gets `/aid-kb-update`, an `aid-create-document` work
   `/aid-document` with type document, and an `aid-update-kb` work kind `--`; an `aid-test-security` work gets `/aid-test`,
   type investigation; a work with a kind keeps it; a second run changes nothing; bash and PowerShell give the same bytes;
-  the rows sit inside their `legacy-skill-names` markers.
+  every row naming a retired skill, Feature 003's and Feature 006's included, sits inside the `legacy-skill-names` markers.
 - Dashboard: the parity test of the two legacy maps inside their markers.
 
 **Conversation samples -- `tests/conversation/samples/feature-009/`** (frontmatter `skills:` the action skill). Each
