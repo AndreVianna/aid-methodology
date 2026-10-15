@@ -6061,23 +6061,82 @@ Nothing: this is the last feature.
   - **SS-13** finds the two new briefs by its glob; **SG-02** finds the action lines.
   - **This is the last feature**: the deferred list, the shared exempt list and the description exempt list all end
     **empty**, so DT-02 and the exempt-list release checks pass under `AID_RELEASE_CHECK=1`.
-- **Suites**:
-  - Retired, to `tests/coverage-accepted-removals.tsv`: `test-shortcut-engine-contract.sh`,
-    `test-shortcut-builder-invariants.sh`, `test-catalog-dirs-parity.sh`, and the family suites
-    (`test-create-family-scaffold.sh`, `test-change-refactor-family-scaffold.sh`, `test-fix-family-scaffold.sh`,
-    `test-document-family-scaffold.sh`, `test-prototype-family-scaffold.sh`, `test-test-experiment-family-scaffold.sh`) --
-    their rules now live in the catalog, which AS-03 checks.
-  - Re-pointed: `test-doc-counts.sh` (counts from `canonical/skills/`, not catalog rows), `test-deploy-monitor-repurpose.sh`
-    (DMR00e, which wants the shortcut catalog, and the `alias_of` rows go; DMR20a/b assert instead that Step 0 hands
-    free-form text to Feature 001's intake and names no engine; re-pointed off the deleted catalog: DMR24 asserts the two
-    skills carry no `GENERATED` marker, DMR33 that no `canonical/skills/*/SKILL.md` carries one, and DMR36 that every skill
-    folder has a skill-guide line, as SG-02 does), `test-downstream-worktree-entry.sh` (G6 slices the same
-    Step 0 and pipeline regions, and checks that the free-form region names the intake, not `shortcut-engine.md`), `test-ticket-skills-structural.sh`, `test-ticket-retirement-structural.sh` and
-    `test-connector-skills-structural.sh` (the ticket procedures' new paths), `test-connector-consumption-linkage.sh`,
-    `test-work-initiation-gate.sh`, `test-artifact-discipline.sh`, `test-state-review-surface.sh`, the dashboard reader
-    tests naming the old skills, `dashboard/reader/tests/test_shortcut_kind_map_cross_runtime_parity.py` (the maps inside
-    their markers).
-  - `tests/cost-baseline.tsv` and `tests/coverage-baseline.tsv` re-recorded.
+- **Suites**. This list was built from one search, which the reviewer can re-run: every tracked file under `tests/`,
+  `dashboard/` and `site/` that names a file or name this feature deletes or retires -- `git grep -lE
+  'shortcut-catalog|shortcut-engine|shortcut-scaffolding|build-shortcut-skills|IMPEDIMENT\.md|(^|[^a-z-])aid-((create|update)-(api|ui|theme|cli|data-model|data-pipeline|messaging|integration|job|config|infra|test|dashboard|document|diagram|ticket)|document-[a-z]+|test-(security|performance|data-quality)|prototype-ui|remove|deprecate|migrate|experiment|config)([^a-z-]|$)'
+  -- tests dashboard site`. The `[^a-z-]` guard keeps out the `test-aid-migrate*.sh` suites, which test the `aid migrate`
+  command, not the `/aid-migrate` skill. Every hit:
+  - **Retired**, to `tests/coverage-accepted-removals.tsv` -- their subject is gone, and AS-01 to AS-03 and SG-02 check what
+    replaces it: `test-shortcut-engine-contract.sh`, `test-shortcut-builder-invariants.sh`, `test-catalog-dirs-parity.sh`,
+    and the family suites `test-create-family-scaffold.sh`, `test-change-refactor-family-scaffold.sh`,
+    `test-fix-family-scaffold.sh`, `test-document-family-scaffold.sh`, `test-prototype-family-scaffold.sh`,
+    `test-test-experiment-family-scaffold.sh` (their rules live in the catalog).
+  - **`test-deploy-monitor-repurpose.sh`**, check by check:
+    - DMR00a, DMR00b, DMR00d, DMR00f, DMR10a-e, DMR11a-d, DMR12, DMR13a, DMR13b: unchanged (the files exist; the dispatch
+      tables and the `work-NNN` path are untouched). DMR01-DMR05 are Feature 001's (`/aid-triage`), unchanged here.
+    - DMR00e (the catalog exists): retired, the catalog is deleted.
+    - DMR20a, DMR20b: rewritten -- Step 0 hands free-form text to Feature 001's intake and names no engine.
+    - DMR20c ("Never executes"): rewritten -- Step 0 says the free-form branch creates no work of its own; whatever runs is
+      the skill the intake routes to.
+    - DMR21, DMR22, DMR23 and their fixture (a work the engine halted at approval): retired -- the free-form branch no
+      longer produces such a work.
+    - DMR24: re-pointed -- the two skills carry no `GENERATED` marker. DMR33: re-pointed -- no `canonical/skills/*/SKILL.md`
+      carries one. DMR36: re-pointed -- every skill folder has a skill-guide line, as SG-02 does.
+    - DMR30, DMR31, DMR32, DMR34, DMR35a, DMR35b (the catalog's row counts, the `alias_of` split, rows against folders):
+      retired -- the catalog is deleted, and SG-02 checks the guide against `canonical/skills/` both ways.
+  - **Rewritten**:
+    - `test-ticket-skills-structural.sh`: over `connectors/ticket-create.md`, `ticket-update.md` and the `ticket` kind of
+      `/aid-create` and `/aid-update`.
+    - `test-ticket-retirement-structural.sh`: its ticket-skill paths become the two connector procedures; its
+      engine-seam assertions go with the engine.
+    - `test-doc-counts.sh`: counts from `canonical/skills/`, not catalog rows.
+  - **Re-pointed**:
+    - `test-downstream-worktree-entry.sh`: G6 slices the same Step 0 and pipeline regions and checks that the free-form
+      region names the intake, not `shortcut-engine.md`.
+    - `test-work-initiation-gate.sh`: its list of allocation points drops `shortcut-engine.md`, `aid-create-document` and
+      `aid-update-document` and gains `action-start.md`.
+    - `test-state-review-surface.sh`: the engine's GATE surface and its missing-file guard go; the new briefs of
+      `aid-test` and `aid-prototype` join by glob.
+    - `test-artifact-discipline.sh`: AD07 and AD08 drop `shortcut-engine.md` and `shortcut-scaffolding/` from their scan
+      lists; a group left with nothing to scan retires.
+    - `test-connector-skills-structural.sh`: its check that the connector skills have no shortcut-catalog row retires with
+      the catalog; its comments name `aid-configure`.
+    - `test-connector-consumption-linkage.sh`: the engine's intake seam leaves its seam count, following
+      `consumption-protocol.md`'s table.
+  - **Unchanged**: `test-aid-cli-parity.sh`, `dashboard/reader/tests/test_reader.py`,
+    `dashboard/server/tests/test_server_node.mjs` and `test_task012_consuming_round_trips.py` (their `/aid-config` hits are
+    comments inside synthetic old-style settings fixtures, read as data); `dashboard/reader/tests/test_derivation.py`
+    (`task-NNN/IMPEDIMENT.md` is an old work's file the reader still meets, not the deleted template);
+    `test-describe-full-only.sh` and `test-triage-routing.sh` (deleted by Features 003 and 001).
+  - **Dashboard**:
+    - `dashboard/reader/state_schema.py`, `dashboard/server/reader.mjs`: the maps go inside their markers, and their
+      comments call the map a frozen list of old initiators, naming neither the catalog nor the builder.
+    - `dashboard/reader/tests/test_shortcut_kind_map_cross_runtime_parity.py`: Legs 1, 2 and 4 stay; Leg 3 (every catalog
+      row has a key) and its control `test_p1b` retire with the catalog; a new check finds both maps inside their markers.
+    - `dashboard/reader/tests/test_work003_state_schema.py`: unchanged assertions (old initiators still resolve); its
+      docstrings stop naming the catalog.
+    - `dashboard/home.html`, `dashboard/reader/parsers.py`: their `aid-config` comments name `aid-configure`.
+  - **Site** -- the Site bullet above, check by check:
+    - retired with their modules: `site/scripts/lib/flow-graph/engine-core.mjs`, `extract-engine.mjs`,
+      `extract-sibling.mjs` and their tests `flow-engine-core.test.mjs`, `flow-extract-engine.test.mjs`,
+      `flow-extract-sibling.test.mjs`, `flow-graph-doorways.test.mjs`;
+    - rewritten: `site/scripts/skills/catalog.mjs` (the skill list from `canonical/skills/*/SKILL.md`), `groups.mjs` and
+      `curated-roster.mjs` (groups in the skill guide's order; `aid-configure`), `lib/flow-graph/classify.mjs` (no doorway
+      or sibling class), with `skills-catalog.test.mjs`, `skills-groups.test.mjs`, `skill-counts.test.mjs`,
+      `flow-classify.test.mjs`;
+    - re-pointed (names, paths and fixtures): `discover.mjs`, `paths.mjs`, `render-index.mjs`, `gen-skills.mjs`,
+      `gen-reference.mjs` (the engine and catalog rows go), `lib/flow-graph/compose.mjs`, `advance.mjs`,
+      `extract-residual.mjs`, `lib/provenance/index.mjs`, `verify.mjs`, and the tests `flow-compose`, `flow-graph`,
+      `flow-facade`, `flow-extract-residual`, `flow-extract-inline`, `flow-advance`, `gen-reference`, `gen-skills`,
+      `gen-skills-index`, `skills-paths`, `skills-body`, `skills-render-index`, `skills-render-page`,
+      `provenance-appender`, `provenance-deep-link` (`.test.mjs`), and `site/src/lib/__tests__/feature-006-head-gate.test.ts`
+      and `skill-node-panel.test.ts` (their `generatedFrom` strings name `canonical/skills/*/SKILL.md` only);
+    - regenerated, never hand-edited: `site/scripts/.skills-manifest.json`, `.reference-manifest.json`,
+      `site/src/data/skill-flows/` (retired skills' flows deleted) and the skill pages under
+      `site/src/content/docs/skills/` (retired pages deleted);
+    - the rest of `site/src/content/docs/`: the final documentation pass (Components).
+  - `tests/cost-baseline.tsv` and `tests/coverage-baseline.tsv` re-recorded; removed assertions go to
+    `tests/coverage-accepted-removals.tsv`.
 - **KB** (no work ids) -- the list was built from a search of `.aid/knowledge/*.md` for every path this feature deletes
   and every name it retires. Left as they are: `release-tracking.md` (shipped history), the KB state file (Feature 004
   converts it) and `INDEX.md` (regenerated):
