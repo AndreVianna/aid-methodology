@@ -5636,15 +5636,15 @@ folder" is the project's main worktree.
 | Edit | `canonical/aid/scripts/execute/writeback-state.sh` | `--kind` on `--create` and `--reroute`; the reading `investigation` (see Work state) |
 | Edit | `canonical/aid/templates/work-initiation-gate.md` § 3a (Feature 002) | Takes the kind its caller passes and forwards it as `--create ... --kind <kind>`; with none, `--kind` is left out (the writer's `--`) |
 | Edit | `canonical/aid/templates/work-state-template.yml` | `intent.kind` with its `[W]` comment; the reading list gains `investigation`; the `initiator` comment names no shortcut skill |
-| Edit | `canonical/skills/aid-orchestrate/references/check-intent.md`, `size-and-route.md` (Feature 001) | The kind hook reads the catalog's actions and kinds; an action match hands the request to the action skill; the investigation row (see Components, Routing) |
+| Edit | `canonical/skills/aid-orchestrate/references/check-intent.md`, `size-and-route.md` (Feature 001) | The kind hook reads the catalog's actions and kinds, filtered by the calling skill; new § The merged catalog (sources, precedence, skip rule); an action match hands the request to the action skill; the investigation row (see Components, Routing; The catalog) |
 | Edit | `canonical/aid/rules.md` § Skill guide | One line per action skill; the `<kind>` lines go; `/aid-config` becomes `/aid-configure` (see Components) |
-| Edit | `canonical/skills/aid-brainstorm/references/start.md` (Feature 003) | Matches only kinds whose `taken_by` names `brainstorm` |
+| Edit | `canonical/skills/aid-brainstorm/references/start.md` (Feature 003) | Asks the kind hook for the kinds whose `taken_by` names `brainstorm` (Components, Routing) |
 | Edit | `canonical/skills/aid-specify/references/start.md`, `requirements.md`, `design.md`, `check.md` (Feature 005) | Read `intent.kind` and the catalog's `ask`, `design` and `checks` (see Components, Who reads the catalog) |
 | Edit | `canonical/skills/aid-plan/references/breakdown.md` (Feature 006) | Reads the kind's `tasks` |
 | Edit | `canonical/skills/aid-execute/references/test.md`, `task-type-rules.md`, `reviewer-brief.md` (Feature 007) | Read the kind's `tests` and `checks` |
 | Edit | `canonical/skills/aid-monitor-pipeline/references/close.md`, `canonical/aid/scripts/pipeline/cleanup-classify.sh`, `canonical/aid/scripts/pipeline/close-work.sh` (Feature 008) | `cleanup-classify.sh --work` lists `.aid/.temp/prototype/<work>/` as one more item of the work; `close.md` passes `--move-to-main` for the test ledger (`.aid/.temp/review-pending/<work>-test.md`, already an item) and for that folder, and `close-work.sh` accepts a folder there as it accepts a file; the leftovers scan offers neither once moved (see Flow, FINISH) |
 | Edit | `canonical/skills/aid-deploy/SKILL.md`, `canonical/skills/aid-monitor/SKILL.md` (Step 0 and § Argument-Hint) | Their free-form mode loses the engine: text after the command is a plain request (see Components, `/aid-deploy` and `/aid-monitor` free-form text); a bare command keeps its own flow |
-| Edit | `canonical/skills/aid-research/SKILL.md`, `aid-review/SKILL.md`, `aid-report/SKILL.md` | The three-cycle impediment becomes the per-row choice (see Components, No impediment file); their boundary lines name the new skills; each passes the kind `check-intent.md` finds to the gate and reads that kind's `ask` and `checks` (Q109) |
+| Edit | `canonical/skills/aid-research/SKILL.md`, `aid-review/SKILL.md`, `aid-report/SKILL.md` | The three-cycle impediment becomes the per-row choice (see Components, No impediment file); their boundary lines name the new skills; each asks `check-intent.md`'s kind hook for the kinds that name it (Components, Routing), passes the result to the gate as `--kind`, and reads that kind's `ask` and `checks` (Q109) |
 | Edit | the files that state what AID is (Components, Domain readiness) | One identity statement, the same everywhere (Q108) |
 | Edit | `dashboard/reader/state_schema.py`, `dashboard/server/reader.mjs` | `SHORTCUT_KIND_MAP` and `_FULL_PATH_INITIATOR` sit between `legacy-skill-names: begin` / `end` markers (see Components, Dashboard and chat) |
 | Edit | `bin/aid`, `bin/aid.ps1` | The "Run `/aid-config`" line names `/aid-configure`; `legacy-skill-names: begin` / `end` comment markers wrap every row of the format-6 conversion step that names a retired skill, whichever feature added it (Feature 003's initiator rows, Feature 006's type and document rows, and this feature's rows) (Migration); bash and PowerShell output byte-identical |
@@ -5842,8 +5842,12 @@ each `*.yml` in the project's `.aid/kinds/`, in name order, with the same shape 
 action). `.aid/kinds/` is the user's, like `.aid/connectors/` and `.aid/design/`: it is not in the install manifest, so
 `aid update` and `aid remove` never touch it -- a kind file under `.aid/runtime/` would be deleted by `aid update`
 (decisions.md § D9). **Additive only**: kind names are unique across every source, so a user kind never replaces a
-shipped one; an entry whose `kind` is already defined is skipped, and the reader says so in one line. Readers ignore a
-field they do not know, and nothing in AID rewrites a kind file, so unknown fields are kept.
+shipped one. **An entry the readers cannot use is skipped**, in any source: a `kind` outside the name form (lowercase
+letters, digits and hyphens), a `kind` already defined, or a missing `kind`, `about` or `taken_by`. It is dropped when
+the catalog is read, with one notice line naming its file and entry, and is never matched, offered or recorded. So
+every kind a reader can return is in the writer's form. The merge and this rule are stated once, in `check-intent.md`
+§ The merged catalog, which every other reader cites. Readers ignore a field they do not know, and nothing in AID
+rewrites a kind file, so unknown fields are kept.
 
 **The actions**: `create` (new capability), `update` (change), `fix` (bug fix), `refactor` (refactor), `document`
 (document) -- each `next: Specification` -- and `test`, `prototype` (investigation, `next: own`).
@@ -5884,8 +5888,8 @@ intent:
 
 **Writer** -- `writeback-state.sh` keeps Feature 002's lock, quoting, atomic rename and exit codes.
 - `--create ... [--kind K]` and `--reroute --reading R [--depth D] [--kind K] --why W`: K is `--` or lowercase letters,
-  digits and hyphens, anything else exit 4. The writer does not read the catalog (it stays dependency-free); AS-03 keeps
-  the catalog's names in that form.
+  digits and hyphens, anything else exit 4. The writer does not read the catalog (it stays dependency-free): AS-03 keeps
+  the shipped names in that form, and the skip rule (The catalog) keeps every user entry outside it from being read.
 - `--reading` accepts `investigation`; every other value as before.
 
 ##### 5. Components
@@ -5908,8 +5912,11 @@ within SG-03's limit. **The action layer names no software term** (Q109): the ac
 lines, the catalog's `actions` entries and `action-start.md` say "something" or "a work product"; whatever is specific
 to software lives in the software kinds (AS-10).
 
-**Routing** (Feature 001's `size-and-route.md` and `check-intent.md`) -- the kind hook reads the catalog: a request is
-matched against the actions' `about` and then the `about` of the kinds that action takes. When the reading matches an
+**Routing** (Feature 001's `size-and-route.md` and `check-intent.md`) -- the kind hook reads the merged catalog and is
+asked by a skill: it matches a request against the `about` of **the kinds whose `taken_by` names that skill**, and
+returns one kind or `--`. The same filter serves every caller: an action skill's START, `/aid-brainstorm`'s START, and
+`aid-review`, `aid-research` and `aid-report`, which call it before the gate and pass what it returns as `--kind`.
+`/aid-orchestrate` first matches the actions' `about` to choose the skill, then asks the hook for that skill. When the reading matches an
 action skill, `/aid-orchestrate` hands the request to it **before** creating the work; START creates it through the gate,
 as for a typed command. Investigation works get their own phase row: the investigating skill, then the close.
 
@@ -5967,10 +5974,11 @@ kind, but nothing in it closes the door. The seven changes, each stated where it
 6. one no-repository sample, `009-18` (Testing);
 7. **the identity statement** (Q108): every file that says what AID is says the same: AID is built for software first,
    not software only -- its pipeline and kind catalog leave room for other areas of work, which no shipped kind covers
-   yet. The files come from one search, which the reviewer can re-run:
+   yet. The files come from one search, which the reviewer can re-run. Its scope leaves out every test folder, so the
+   check that runs it (DN-03) and any fixture holding the pattern are never among its hits:
 
    ```sh
-   git grep -lIiE 'building software|software-development lifecycle|AI Integrated Software Development|methodology for software development|kind of digital work' -- . ':!.aid/works' ':!site/src/data' ':!.aid/knowledge/kb.html' ':!.aid/runtime'
+   git grep -lIiE 'building software|software-development lifecycle|AI Integrated Software Development|methodology for software development|kind of digital work' -- . ':!.aid/works' ':!site/src/data' ':!.aid/knowledge/kb.html' ':!.aid/runtime' ':!tests' ':!**/tests/**' ':!**/__tests__/**'
    ```
 
    Today it finds: `.aid/knowledge/README.md`,
@@ -6261,13 +6269,13 @@ empty, the **full integration suite** before release.
 |---|---|
 | AS-01 | Every action skill and `aid-configure` exist; no folder under `canonical/skills/` matches `aid-(create\|update\|design\|document\|test\|prototype)-`; `aid-remove`, `aid-deprecate`, `aid-migrate`, `aid-experiment` and `aid-config` are absent (AC-31) |
 | AS-02 | `shortcut-engine.md`, `shortcut-catalog.yml`, `shortcut-scaffolding/`, `feedback-artifacts/` and `build-shortcut-skills.py` are absent, and the re-pointing rule holds (Migration): no retired skill, engine, catalog, scaffolding or `IMPEDIMENT.md` named outside its exemptions; text between `legacy-skill-names` markers (the dashboard's maps; in `bin/aid` and `bin/aid.ps1`, every format-6 row that names a retired skill, whichever feature added it) is skipped |
-| AS-03 | The catalog: every action names a skill that exists, a reading the writer accepts and `next` `Specification` or `own`; every kind has a unique `kind` of lowercase letters, digits and hyphens, an `about`, and a `taken_by` naming only skills that exist (without `aid-`); a `domain`, when present, of lowercase letters and hyphens, and `software` on every shipped kind (no pack ships); no shipped kind sets a reserved field (`risk`, `limits`, `sign_off`, `release`); no KB kind (architecture, stack, testing-strategy, cicd, roadmap, backlog, mvp) and not `document` is taken by `create` or `update` |
+| AS-03 | The shipped catalog (user files are held to the same form by the skip rule, AS-09): every action names a skill that exists, a reading the writer accepts and `next` `Specification` or `own`; every kind has a unique `kind` of lowercase letters, digits and hyphens, an `about`, and a `taken_by` naming only skills that exist (without `aid-`); a `domain`, when present, of lowercase letters and hyphens, and `software` on every shipped kind (no pack ships); no shipped kind sets a reserved field (`risk`, `limits`, `sign_off`, `release`); no KB kind (architecture, stack, testing-strategy, cicd, roadmap, backlog, mvp) and not `document` is taken by `create` or `update` |
 | AS-04 | Every action skill cites `action-start.md`, the catalog, `skill-steps.md` and `question-protocol.md`; `action-start.md` names `--kind`, `intent.kind`, `check-intent.md`, `aid-specify`, `aid-brainstorm` and `aid-kb-update`; `work-initiation-gate.md` § 3a passes `--kind` to `--create`; `aid-deploy` and `aid-monitor` name neither the engine nor the shortcut catalog |
 | AS-05 | `aid-test` and `aid-prototype` `finish.md` hand off to `aid-monitor-pipeline` with `--phase CI`; `close.md` names `<work>-test.md` and `.aid/.temp/prototype/`, and `cleanup-classify.sh` lists `.aid/.temp/prototype/<work>/` among a work's items; `aid-prototype`'s files write nowhere but `.aid/.temp/prototype/` |
 | AS-06 | `aid-fix`'s `findings.md` names the main folder and `.aid/.temp/review-pending/`; the TICKET references name the preview and the confirmation |
 | AS-07 | No retired skill name in `dashboard/home.html`, `dashboard/reader/*.py`, `dashboard/server/*.mjs`, `dashboard/server/*.py` or `chat-node/` outside `legacy-skill-names` markers (AC-31) |
 | AS-08 | The skill guide has one line per action skill and no `<kind>` placeholder |
-| AS-09 | The readers cite their fields: `requirements.md` `ask`, `design.md` `design`, `breakdown.md` `tasks`, `test.md` `tests`, `aid-execute`'s brief `checks`, `check-intent.md` the catalog; `action-start.md` and `check-intent.md` name `.aid/kinds/`, the shipped-first order and the skip of a duplicate name; `aid-review`, `aid-research` and `aid-report` name `ask` and `checks` |
+| AS-09 | The readers cite their fields: `requirements.md` `ask`, `design.md` `design`, `breakdown.md` `tasks`, `test.md` `tests`, `aid-execute`'s brief `checks`, `check-intent.md` the catalog; `check-intent.md` § The merged catalog names `.aid/kinds/`, the shipped-first order and each skip case (name form, duplicate, missing field) with its notice line, and every other reader cites that section; `check-intent.md`'s kind hook filters by `taken_by` naming the calling skill, and `aid-brainstorm`'s `start.md`, `action-start.md` and the `SKILL.md` of `aid-review`, `aid-research` and `aid-report` each call the hook with their own name and pass its result as `--kind` (the last three before the gate); those three name `ask` and `checks` |
 | AS-10 | The action layer names no software term: the action skills' `description:` lines, their skill-guide lines, the catalog's `actions` entries and `action-start.md` contain none of `code`, `codebase`, `repository`, `commit`, `branch`, `pull request` (whole words, any case); a kind's name in backticks is a kind, not a term of the layer (Q109) |
 
 **Pre-release check -- `tests/canonical/test-doc-names.sh`** (AC-45). `tests/canonical/retired-names.txt` lists every
@@ -6276,7 +6284,7 @@ retired slash name, one per line, kept equal to the old -> new table.
 | Group | Asserts |
 |---|---|
 | DN-01 | With `AID_RELEASE_CHECK=1`, no file under `docs/`, `site/src/content/` or `examples/`, nor `README.md`, names a name of `retired-names.txt` as `/aid-<name>` or in backticks, nor an old phase name (Discover, Describe, Define, Specify, Plan, Detail, Execute) as a phase: in a step sequence (`->` or `→`) or followed by "phase". Text between `legacy-skill-names` markers (the old -> new table) is skipped. Without the flag it prints the hits and passes, as the documents wait for the last delivery |
-| DN-03 | With `AID_RELEASE_CHECK=1`, every file the identity search (Components, Domain readiness) finds carries the phrase "software first, not software only", and no file under the search's scope says "kind of digital work" (Q108) |
+| DN-03 | With `AID_RELEASE_CHECK=1`, every file the identity search (Components, Domain readiness) finds carries the phrase "software first, not software only", and the same search, with its test-folder exclusions, finds "kind of digital work" in no file (Q108) |
 | DN-02 | No name of `retired-names.txt` is a folder under `canonical/skills/`; with `AID_RELEASE_CHECK=1`, each has a row in the old -> new table of `.aid/knowledge/backlog.md` § Next Release (AC-24) |
 
 **Unit tests**
@@ -6313,6 +6321,7 @@ retired slash name, one per line, kept equal to the old -> new table.
 | `009-15-configure` -- settings across two subjects with `/aid-configure`. Check: the protocol checks; no output names `/aid-config` | AC-22, AC-28 | now |
 | `009-17-update-asks-the-kind` -- `/aid-update the orders export`, where the code has both an export endpoint and an export pipeline with different rules. Check: one kind question (the protocol checks: its reason, a recommendation, only the two valid options, a free answer), the answer in `intent.kind`, then a pass to `aid-specify` | AC-28, AC-30 | now |
 | `009-18-budget-sheet-no-repository` -- fixture: a folder with no git, holding a monthly budget spreadsheet; "tidy my monthly budget sheet, no number may change". Check: `/aid-refactor` reached by meaning (reading refactor); no software question and no pull request mentioned; the work's checks run and show every number unchanged; the work closes done with nothing pushed (Q109) | AC-14, AC-36 | now |
+| `009-19-user-kind-for-review` -- fixture: `.aid/kinds/contracts.yml` with a kind `contract-review` (`taken_by: review`, its own `checks`) and a second entry `Budget_Sheet`; "/aid-review the supplier contract". Check: `intent.kind: contract-review`; the review applies that kind's `checks`; one notice line names the skipped `Budget_Sheet` entry, which is never offered (Q109) | AC-30 | now |
 | `009-16-research-three-rounds` -- a research work below the bar three times. Check: one question per open row with the three choices; no impediment file; `lifecycle` never `Blocked` | AC-28 | now |
 
 At this feature's end, Feature 001's `001-01-one-match` and `001-07-rich-ticket`, Feature 002's `002-02` (now with
@@ -6334,4 +6343,4 @@ integration suite** runs -- every sample of every feature, 3 runs of 3, plus Fea
 | AC-45 | Components (The final documentation pass) | DN-01, DN-02 |
 
 Domain readiness (Q107-Q110) answers no criterion of its own; it is checked by AS-03, AS-09, AS-10, DN-03, the
-`.aid/kinds/` cases of `test-shared-prune.sh` and `test-shared-remove.sh`, and `009-18`.
+`.aid/kinds/` cases of `test-shared-prune.sh` and `test-shared-remove.sh`, `009-18` and `009-19`.
