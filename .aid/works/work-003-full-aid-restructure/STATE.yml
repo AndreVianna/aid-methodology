@@ -1221,3 +1221,11 @@ qa:
     suggested: 'FR-6 and FR-7 say AID never merges a work into its parent branch nor any PR/MR; the only merge brings the parent branch (or the work branch''s own remote copy) into the work''s branch to resolve a conflict, approved before it is pushed.'
     answer: 'Accepted as recommended (update both).'
     applied_to: 'REQUIREMENTS.md §5 FR-6, FR-7'
+  - id: Q98
+    category: Specification (Feature 008)
+    impact: Medium
+    state: Answered
+    context: 'Cycle 5 found that not now at CI, before any PR exists, sends the work to WATCH, which needs a PR and never leads back to PUSH.'
+    suggested: 'Not now at CI with no PR pauses the work like START''s not-yet answer; the next resume asks again.'
+    answer: 'Fix it, then one more review.'
+    applied_to: 'Feature 008 Technical Specification (PUSH Every-way-in answers)'
