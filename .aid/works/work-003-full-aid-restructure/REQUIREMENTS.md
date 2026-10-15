@@ -1482,6 +1482,7 @@ heading (a presence check -- it does not scan wording, so the rule's own text an
 | Moment | `full` | `lite` |
 |---|---|---|
 | The idea draft, when one is written (Definition) | approve | -- |
+| The business part of `REQUIREMENTS.md`, before the technical part is designed (Specification; Feature 005, Q61) | approve | -- |
 | `REQUIREMENTS.md` (Specification) | approve | -- |
 | `PLAN.md` (Planning) | approve | -- |
 | Confirmation before building -- opens `/aid-execute`; the per-wave option is asked here | approve | approve |
@@ -2773,7 +2774,7 @@ no path hands work to `/aid-kb-update` expecting a KB. Every caller checks first
 
 | Feature | Must provide | Waiting on it |
 |---|---|---|
-| 005 | After the `REQUIREMENTS.md` approval, a `CALL` to `/aid-kb-update` (`change`) for each approved decision that settles a project-wide fact, only when a KB exists (Components, No KB: one rule) | `004-10` |
+| 005 | After the `REQUIREMENTS.md` approval, one `CALL` to `/aid-kb-update` (`change`) carrying every approved decision that settles a project-wide fact (one call per approval, Q68), only when a KB exists (Components, No KB: one rule) | `004-10` |
 | 006 | Its work-state conversion joins format 6 (Migration) | -- |
 | 007 | Its per-delivery branches are gone, and the work's one branch is compared against `pipeline.parent_branch` (Q60), never against `master`. After each task is verified and committed, the KB check: `kb-freshness-check.sh` over the documents whose `sources:` the task touched, plus the task's own report of a new module, dependency or convention; on a hit, and only when a KB exists (Components, No KB: one rule), a `CALL` to `/aid-kb-update`, which stamps against that commit. At the end of the whole build, the same for the backlog or roadmap items the work's `sources:` name. The milestone approval lists the work's `kb_updates` | `002-13`, `004-11`, `004-12` |
 | 008 | The pull request targets `pipeline.parent_branch` (Q60), and the close compares against it, never against a hard-coded `master`. The close of a work takes over `cleanup-classify.sh` (housekeep's clean-up of finished works, with tech-debt SY-1). A pull-request collision on `kb.html` or `INDEX.md` is resolved by running `render-kb-view.sh` and `build-kb-index.sh`, staging both files and finishing the merge with Feature 008's own normal merge commit, never by hand -- the named exception in The view and KB-03 | -- |
@@ -3044,7 +3045,495 @@ again at this feature's end.
 
 #### Technical Specification
 
-*(pending -- added by `/aid-specify`)*
+Serves FR-1 (the Specification phase), FR-3, FR-11, FR-15 and NFR-N, and follows FR-6, FR-17, FR-18 and
+FR-20 as Features 001-004 define them. Maintainer decisions: Q1, Q11, Q17, Q22, Q23, Q47, Q61-Q68. Paths are
+`canonical/` sources, rendered as in Feature 001. "The document" is a work's `REQUIREMENTS.md`; "the business
+part" is its sections 1-10; "the technical part" is its section 11.
+
+##### 1. Files and layout
+
+| Change | Path | What |
+|---|---|---|
+| Rewrite | `canonical/skills/aid-specify/SKILL.md` | The Specification phase skill, for the whole work at once: its step table (see Flow), `skill-steps.md` and `question-protocol.md` cited, Feature 001's what/when `description:` (see Components), `argument-hint: "[what to specify, or what to change]"`. At most 120 lines. Goes: the feature-path argument, `--reset`, Check 1's work listing and its own worktree entry (the gate and the work record do both, Feature 002), the state map and banners. The plan-mode check stays, as one line |
+| Create | `canonical/skills/aid-specify/references/` | `start.md`, `effort-check.md`, `requirements.md`, `features.md`, `design.md`, `check.md`, `approve.md`, `finish.md`, `revise.md`; `reviewer-brief.md` is rewritten, with `### What to report` (SS-13). Each at most 120 lines |
+| Delete | `canonical/skills/aid-specify/references/` `state-initialize.md`, `state-continue.md`, `state-review.md`, `state-spike.md`, `state-blocked.md`, `state-done.md`, `handling-outcomes.md`, `known-issues-scope.md` | Replaced by the references above; the known-issues filter moves into `design.md` (Flow, DESIGN) |
+| Delete | `canonical/skills/aid-define/` | Retired whole: the split decision moves to FEATURES, the cross-reference to CHECK |
+| Rewrite | `canonical/aid/templates/requirements/requirements-template.md` | The two-part shape (see The document). Its `## Verifiable Acceptance Criteria` section stays under that heading, which `aid-plan`, `aid-detail` and `shortcut-engine.md` cite |
+| Delete | `canonical/aid/templates/specs/technical-specification-template.md` (and the `specs/` folder it leaves empty), `canonical/aid/templates/requirements.md` | Folded into the one template; the bare scaffold's last user, `aid-describe`, went with Feature 003 |
+| Edit | `canonical/aid/templates/work-state-template.yml` | `interview`, `features` and `review_history` go, with their comments; `reviews: []` comes, with its `[W]` comment (see Work state) |
+| Edit | `canonical/aid/scripts/execute/writeback-state.sh` | Extends Feature 004's `--review` mode to the work file (see Work state) |
+| Edit | `canonical/aid/scripts/execute/slice-requirements.sh` | Also reads a document that does not split (see The document, Readers of the old shape) |
+| Edit | `canonical/aid/templates/skill-steps.md` § When approvals happen (Feature 002) | One new row, the business part (Q61; see Approvals) |
+| Edit | `canonical/aid/templates/reviewer-dispatch.md` | In § The cross-document contradiction pass (Guard 2), the `aid-define` CROSS-REFERENCE site becomes `aid-specify` CHECK (see Components); `aid-define` leaves its list of skills that render the brief structure |
+| Edit | `canonical/aid/templates/reviewer-ledger-schema.md` (the ledger-path table) | The `/aid-specify <feature>` and `/aid-define <work>` rows become one: `/aid-specify` -> `.aid/.temp/review-pending/<work>-specify.md` |
+| Edit | `canonical/aid/templates/work-initiation-gate.md` § 3b legacy block (Feature 002) | The `Define` and `Specify` rows re-pointed, one row added (see Migration) |
+| Edit | `canonical/aid/rules.md` § Skill guide | The `/aid-define` line goes; the `/aid-specify` line is rewritten (Components) |
+| Edit | `canonical/agents/aid-architect/AGENT.md` | Its "What You Do" and "Output Format" lines name § 11 "once for the work, or once per feature" instead of "that feature's section" |
+| Edit | every other kept file under `canonical/` that names `aid-define`, and the comment in `dashboard/reader/derivation.py` | Re-pointed (Migration) |
+| Create | `tests/canonical/test-specify.sh`, `tests/conversation/samples/feature-005/` | See Testing |
+
+##### 2. The document
+
+**Its shape** (`requirements-template.md`) -- one document, two parts (FR-3, Q23):
+
+```markdown
+# Requirements
+
+- **Name:** {Title}
+- **Description:** {one sentence}
+
+<!-- Sections 1-10 are the business part: what and why, in the user's words.
+     Section 11 is the technical part: how it will be built. -->
+
+## 1. Objective
+## 2. Problem Statement
+## 3. Users & Stakeholders
+## 4. Scope
+## 5. Functional Requirements       -- FR-N ids
+## 6. Non-Functional Requirements
+## 7. Constraints
+## 8. Assumptions & Dependencies
+## 9. Acceptance Criteria           -- AC-N ids, each naming an observable
+## 10. Priority
+
+## 11. Technical Specification      -- a work that does not split
+
+**Serves:** FR-1, FR-2; AC-1, AC-2, AC-3
+
+### Approach
+### What changes
+### Data and interfaces
+### Decisions
+### Risks
+### Migration                       -- only when something existing is replaced
+### Testing
+```
+
+A work that splits has, in place of that section 11:
+
+```markdown
+## 11. Features
+
+Criteria every feature must also pass: AC-7.     -- only when there are any
+
+### Feature 001 — {Title}
+
+- **Priority:** Must | Should | Could
+- **Requirements:** FR-1, FR-3
+- **Criteria:** AC-1, AC-4
+
+#### Description
+#### User Stories
+#### Technical Specification
+
+**Serves:** FR-1, FR-3; AC-1, AC-4
+
+##### Approach
+##### What changes
+...                                              -- the same headings, one level down
+```
+
+**Rules**
+- **The business part keeps all ten sections (Q66).** A section that does not apply holds one line, "None.";
+  it is never removed, so the section numbers every skill cites stay put. Plain words, in the user's own
+  terms.
+- **Ids** stay as today: `FR-N` and `AC-N`, never reused or renumbered; a withdrawn one keeps its id, marked
+  withdrawn. A criterion's text lives only in section 9; features and technical parts cite ids.
+- **The technical part is written once for the work, or once per feature** -- never both. Each opens with a
+  **Serves:** line naming the requirement and criterion ids it serves (AC-44). In a split work every
+  criterion is owned by exactly one feature, or listed once on the "Criteria every feature must also pass"
+  line (the convention this document's own § 11 already uses), and every requirement is served by at least
+  one feature.
+- **What each heading holds**:
+
+  | Heading | Holds |
+  |---|---|
+  | Approach | The chosen way, in a few sentences, and the alternatives turned down, with why |
+  | What changes | The files, modules and parts of the system created, edited or deleted -- a table: change, path, what -- grounded in the KB and the code |
+  | Data and interfaces | Data shapes, stored state, and what other code or users call, with its contract. An idea draft's kind `shape` points (Feature 003) are settled here, under a heading of their own when they need one (an API's contract, a screen's states) |
+  | Decisions | A table: decision, why, reach -- `project` (it settles a fact the KB holds or should hold: the stack, a convention, the architecture, a recorded decision) or `work` (this work only) |
+  | Risks | What could go wrong and how it is contained; issues found in code this work touches, by their `known-issues.md` id |
+  | Migration | What existing users, data or works must do, or what is done for them; present only when something existing is replaced |
+  | Testing | How each criterion is checked (tests, scripts, conversation samples), ending with a criteria table: criterion, where satisfied, how verified |
+
+- A heading that does not apply is left out: an empty heading reads as an unanswered question. Today's
+  optional-section list (API contracts, UI, events, security, caching, migration, ...) survives in
+  `design.md` as prompts for the drafting agent, not as headings.
+- No `## Change Log` (as today).
+
+**Readers of the old shape.** The old shape -- `## 11. Features` with a `#### Technical Specification` per
+feature under any headings -- stays valid; nothing rewrites it.
+- **`slice-requirements.sh`**: when the document has `## 11. Technical Specification`, it prints that whole
+  section in place of a feature section, and the task's `**Source:**` line need not name a feature. Otherwise
+  it prints the task's `### Feature NNN` section as today, for both shapes of a split document. The cited
+  criteria and the identity block are printed as today, and a Source that names no criterion is still an
+  error.
+- **`aid-plan`, `aid-detail`, `aid-execute`** read § 11 by feature today. Reading the unsplit shape is
+  Feature 006's and Feature 007's (Q67, What other features must provide). Until Feature 006 lands, a work
+  whose document does not split reaches today's `aid-plan`, which stops when it finds no feature section. No release
+  carries that gap, since every feature ships in v4.0.0 (§7 Constraints 1); the samples that go past
+  Specification wait on the deferred list.
+- **`/aid-specify` START** accepts both shapes (Flow).
+- **The shortcut engine** keeps writing its own § 11 `### Feature 001` until Feature 009 (Q65). That is
+  the old shape, which every reader above still reads.
+
+##### 3. Flow
+
+The gate creates the work with `--skill aid-specify --step START --phase Specification` (Feature 002),
+`/aid-orchestrate` routes a clear problem here (Feature 001), and brainstorm's FINISH passes an idea here
+(Feature 003). One run covers the whole work. The depth is `intent.depth`; with none recorded, `full`
+applies (Feature 002).
+
+| Step | Reference | Worker | Advance |
+|---|---|---|---|
+| START | `references/start.md` (`references/effort-check.md`) | main conversation | `CHAIN` -> REQUIREMENTS; `ASK` -> REQUIREMENTS when the effort check asks; `CHAIN` -> REVISE for a change after Specification (below) |
+| REQUIREMENTS | `references/requirements.md` | `aid-architect` drafts; main conversation asks | `ASK` -> REQUIREMENTS after each group; `CHAIN` -> FEATURES when nothing is open |
+| FEATURES | `references/features.md` | main conversation (`aid-architect` proposes a split) | `full`: `ASK` -> DESIGN, or -> REQUIREMENTS when the user asks for a change; `lite`: `CHAIN` -> DESIGN |
+| DESIGN | `references/design.md` | `aid-architect` drafts (fans out `aid-researcher` as today); main conversation asks | `ASK` -> DESIGN after each group; `WAIT` -> DESIGN for an investigation only the user can make; `CHAIN` -> CHECK |
+| CHECK | `references/check.md` (brief: `references/reviewer-brief.md`) | `aid-reviewer` | `CHAIN` -> REQUIREMENTS or DESIGN to fix; `ASK` -> APPROVE for rows still open after three rounds; else `CHAIN` -> APPROVE |
+| APPROVE | `references/approve.md` | main conversation | `full`: `ASK` -> FINISH, or -> REQUIREMENTS / DESIGN when the user asks for a change; `lite`: `CHAIN` -> FINISH; in a revision, by the kind of change (REVISE below) |
+| FINISH | `references/finish.md` | main conversation | `CALL` to `aid-kb-update` when owed (below), then `PASS` to `aid-plan`; in a revision, `HALT` or `PASS` back |
+| REVISE | `references/revise.md` | main conversation (`aid-architect` drafts) | `CHAIN` -> CHECK |
+
+1. **START**
+   - **Reads**: the work record (request, reading, depth); the idea draft and every `draft` source, each
+     resolved with `idea-drafts.sh path` and never opened as a path (Feature 003); the draft's
+     `## Open questions`, asked later in their subjects, and its `## Kind` with that kind's `shape` points from
+     `kind-catalog.yml`; the work's `sources:` (Feature 001); the open `qa` entries, which come first (Feature
+     002); `.aid/knowledge/INDEX.md` and the documents it routes to, when a KB exists.
+   - **The effort check** (Components) -- only when the work's `qa` holds no `category: Effort level` entry
+     (Q64).
+   - **What is already on disk is kept.** Detection (Feature 002, use (a)) shapes how far each step goes:
+     an existing business part (one an old `/aid-describe` wrote, say) is kept and REQUIREMENTS drafts only
+     what is missing; existing technical sections, in either shape, are kept and DESIGN writes only the
+     missing ones. Nothing is converted to the new shape.
+   - `REQUIREMENTS.md` is created from the template when absent.
+   - **A change after Specification** goes straight to REVISE, with no effort check: START is the entry step
+     every hand-off writes (Feature 002), so a call from another skill, or a typed start on a work whose phase
+     is already past Specification, arrives here first (below).
+2. **REQUIREMENTS** -- the business part. The agent proposes; the user disposes.
+   - `aid-architect` (clean context, tiered by `agent-dispatch-tiering.md`) drafts all ten sections from the
+     request, the draft, the sources, the KB and the code, and writes them. A point the evidence does not
+     settle is drafted as its best proposal and returned as an open point, never stated as a fact. It never
+     asks the user (Feature 002).
+   - The main conversation asks the open points under the question protocol: grouped by subject (scope,
+     users, requirements, criteria, ...), most important first, each with its recommendation; the draft's
+     open questions join their subjects. Small choices are recorded `Assumed`. Each answer is written into the
+     document and recorded (`--answer`); `step_detail` names the subject (`'business part: scope; waiting for
+     Q14, Q15'`).
+   - **Ask only what blocks** a concrete requirement or an observable criterion: input with Feature 001's
+     five items present asks nothing here. This is the shortcut engine's "ask only what is load-bearing" rule,
+     moved here (Q65).
+   - Every criterion names an observable (`## Verifiable Acceptance Criteria`); one that cannot is a question,
+     not a line.
+   - When Specification is the work's first phase, its first question carries the agent's one-line reading
+     (Feature 001, Orchestration flow step 6).
+3. **FEATURES** -- whether the work splits (FR-3, AC-16), then the business checkpoint.
+   - **The rule**: split only when the work delivers more than one capability a user or customer can see and
+     would value on its own; the test is that each could be delivered, and announced, alone. Never split by
+     layer, module, size, or number of requirements or tasks. A bug fix, a refactor, a document or a small
+     change never splits.
+   - **No split**: nothing is asked about it; section 11 is `## 11. Technical Specification`.
+   - **A split**: the agent proposes the features -- each one's title, the requirements and criteria it owns,
+     and the shared criteria line -- as one question with its recommendation, and the answer decides. In `lite`
+     the split first re-routes the work to `full` (`writeback-state.sh --reroute --reading <same> --depth full
+     --why 'several capabilities'`), said in one line (Feature 001's depth table); the `full` rules then apply.
+   - **The business checkpoint** (`full`, Q61): the business part -- with the features, when it splits -- is
+     shown in chunks, most important first, with the small decisions taken so far in the same batch (Feature
+     002), then one approval question, recorded `category: Approval`, `covers: requirements business part`.
+     A change the user asks for reopens as a question and goes back to REQUIREMENTS. `lite` has no checkpoint.
+4. **DESIGN** -- the technical part.
+   - `aid-architect` drafts it from the business part, the KB and the code: once for the work, or feature by
+     feature in id order (`step_detail: 'design: feature 002'`).
+   - **Research** it needs is fanned out to `aid-researcher`, as today. An investigation only the user can
+     make outside the conversation is a `WAIT` that says what to do (today's SPIKE); an answer still pending is
+     an open question (today's BLOCKED). Both states go.
+   - **Decisions with a real fork** are asked in plain words -- what changes for the user, the cost, the risk;
+     the mechanism only when the user asks (FR-17 rule 3). Choices with no visible difference are the agent's:
+     recorded `Assumed`, confirmed in the approval batch.
+   - **Known issues**: `known-issues-scope.md`'s filter, now in `design.md`, unchanged -- issues in code this
+     work touches go to `.aid/works/<work>/known-issues.md`, which `aid-plan`, `aid-execute`, `aid-deploy` and
+     `aid-monitor` still read; Risks names them by id.
+   - A decision that conflicts with the KB is raised with the user, never settled alone (Feature 001).
+   - A kind's `shape` points carried by the draft are settled in Data and interfaces: the design that is kept
+     is the technical part (Feature 003, Q22).
+5. **CHECK** -- one graded `aid-reviewer` pass over the whole document, in a clean context, at a tier no lower
+   than the drafting architect's. Ledger `.aid/.temp/review-pending/<work>-specify.md`, 7 columns, under
+   `### What to report` (FR-21). It reports:
+   - a conflict with the KB, the code, or a user's answer;
+   - something stated as decided that the user never decided;
+   - a criterion with no observable, or a requirement no criterion covers;
+   - a technical part with no **Serves:** line, a requirement no technical part serves, or, in a split work, a
+     criterion owned twice, or by no feature and not on the shared line;
+   - a split that breaks the rule, or a work that delivers several capabilities and does not split;
+   - a technical step that cannot be built from what it says (an edit to a path that does not exist, an
+     interface nothing defines);
+   - on cycle 1, the cross-document contradiction pass (Guard 2): two sections asserting different values for
+     one fact. It runs once per work, because this review sees every section.
+
+   Heading names, wording, and the headings of an old-shape document are not findings.
+   - **Grade**: `grade.sh` on the ledger, against the global `minimum_grade`; recorded with `--review` (Work
+     state). Below the bar, the main conversation fixes the rows -- business rows back in REQUIREMENTS,
+     technical rows in DESIGN, each fix scoped to its row -- and CHECK runs again. Rows still open after three
+     rounds are brought to the user as questions; their answers are written in and close the rows, and the
+     work goes on to APPROVE, which shows them.
+   - It runs at every depth.
+6. **APPROVE**
+   - **`full`** (Feature 002's `REQUIREMENTS.md` row): first what changed in the business part since its
+     checkpoint (the CHECK fixes); then the technical part in chunks, one topic per chunk, most important first,
+     technical detail only when asked; the small decisions in the same batch. The message also says, when they
+     apply, that the idea draft will be removed (Feature 003's deletion rule fires on this approval) and which
+     `project` decisions will be recorded in the KB. Recorded `category: Approval`, `covers: REQUIREMENTS.md`.
+     A change the user asks for reopens as a question, goes back to REQUIREMENTS or DESIGN, then CHECK.
+   - **`lite`**: no stop. The document is approved by the confirmation before building (Feature 007), which
+     also deletes the draft (Feature 003's deletion table).
+7. **FINISH**
+   1. **The KB call** (Q68), in `full`: when the approved technical part holds a decision of reach `project`
+      and a KB exists, one `CALL` for all of them -- `--handoff --to aid-kb-update --step START --why 'approved
+      decisions: <titles>' --returns yes`. `/aid-kb-update` runs in `change` mode and returns here (Feature
+      004). With no KB there is no call: the agent says once per work that the KB is not built, so the decision
+      will be recorded when it is (Feature 004, No KB: one rule). In `lite` the call is Feature 007's (What
+      other features must provide). The business checkpoint makes no call: decisions live in the technical part.
+   2. **`PASS`**: `--handoff --to aid-plan --step <its entry step> --returns no --phase Planning --why
+      'requirements approved'` (`lite`: `'requirements written'`), and `aid-plan` starts in the same turn
+      (FR-8).
+
+**Changing the document after Specification -- REVISE (Q62).** A specification is a hypothesis (decision D3):
+Planning and Building can find it wrong.
+- **Entry**: a `CALL` from the skill that found the problem (`aid-plan`, `aid-execute`), with the reason in
+  `--why`; or the user asking to change a requirement or the design of a work already past Specification, which
+  is a typed start -- a pass without a phase change (Feature 002). Both land at START, which goes on to REVISE.
+  No new work is created.
+- **REVISE**: scope the change (the sections and ids it touches), edit them in place, and save `step_detail:
+  'revise: <what>'`. No effort check.
+- **CHECK**: the same pass, scoped to the changed sections and every section that cites a changed id.
+- **APPROVE** in a revision:
+  - a change to a requirement or a criterion (sections 5 or 9, or which feature owns them): one approval at once,
+    **at every depth**, recorded `category: Approval`, `covers: requirements change`;
+  - a technical-only change: no stop. It is recorded `Assumed`, `category: Specification change`, and confirmed
+    in the batch of the work's next approval (Feature 002).
+- **FINISH** in a revision: after an approval at once, the KB call above when the change carries a `project`
+  decision, at every depth; a technical-only change's call follows the approval that confirms it (Feature 007).
+  Then `HALT`, which returns an open call, or, after a typed start, `PASS` back to the skill that drives the
+  work's phase, at its entry step, without `--phase` (as Feature 003's side ideas do).
+
+##### 4. Work state
+
+- **No new record keys**: steps, `step_detail` and hand-offs are Feature 002's.
+- **`qa` entries this skill writes** (Feature 002's shape): `Effort level`; the requirement and design questions,
+  by subject; `Approval`, with `covers` `requirements business part`, `REQUIREMENTS.md` or `requirements change`;
+  `Specification change` (`Assumed`).
+- **Gone from `work-state-template.yml`**: `interview` (with its ten `sections`), `features` and
+  `review_history`. Their writers were `aid-describe` (gone with Feature 003), `aid-define` and the old
+  `aid-specify`; none remains. Progress inside Specification is the work record; progress across features is
+  `step_detail`. Old works keep the keys until Feature 006's migration drops them, and the dashboard readers
+  already read a work without them (their `features` list is never filled today).
+- **`reviews`** -- new, one entry per graded review of the work's documents:
+
+  ```yaml
+  # [W] append-only, newest last: at, grade, by, notes
+  reviews:
+    - at: '2026-10-20T10:00:00Z'
+      grade: A
+      by: aid-specify
+      notes: 'REQUIREMENTS.md; ledger <work>-specify.md'
+  ```
+
+  The dashboard readers ignore keys they do not show; SS-08 parses the template with no warning.
+- **Writer -- an extension of Feature 004's `--review` mode.** Feature 004 defines `--kb --review --grade G
+  --notes T` for the KB state file. Without `--kb`, the same mode appends the same entry (`at`, `grade`, `by`
+  = the saved `active_skill`, `notes`) to the work's `STATE.yml` `reviews`, the file resolved like every work
+  write. Same grade validation (exit 4), lock and atomic rename. Features 006 and 007 may use it for their own
+  reviews.
+
+##### 5. Components
+
+**`/aid-specify` description and guide line** (Feature 001's shape; final text set at build):
+- `description:` "Write a work's requirements -- what and why, with acceptance criteria -- and how it will be
+  built, split into features only when the work delivers several capabilities. Use when a work's problem is
+  clear and must be specified before planning, or when approved requirements must change."
+- Skill-guide line, within SG-03's limit: `` - `/aid-specify` -- write the requirements and how they will be built; before planning ``
+- The `/aid-define` line goes, so SG-02 still matches `canonical/skills/` both ways.
+
+**Effort check** (`references/effort-check.md`; FR-15, AC-12, Q17, Q63, Q64):
+- **When**: once per work, as Specification starts -- START, when `qa` holds no `Effort level` entry. Not in
+  REVISE, not on a resume at a later step, never when building the KB (Feature 004).
+- **Reading the level**: one row per supported tool -- where that tool keeps the reasoning effort of the main
+  conversation (a settings file, an environment variable, a documented command), how to read it without
+  changing anything, and how its level names compare with "high". The rows are filled at build time from each
+  tool's own documentation; a tool with no documented place is marked "cannot be read". The agent only reads;
+  it never writes a tool setting.
+- **High or above**: nothing is said or recorded.
+- **Below high**: one question, `category: Effort level`, importance high -- "Specification works best at high
+  effort or above; this session runs at <level>." Recommendation: raise it to high, then go on. Options: raise
+  it (the agent says how, from the table) / go on at <level>. When the tool applies a new level only in a new
+  session, the agent says so; the work resumes at REQUIREMENTS, the step START saved.
+- **Cannot be read** (Q63): one confirmation question, same category and importance -- "I cannot see this
+  tool's effort level. Specification works best at high or above." -- with how to set it when the table knows.
+  Recommendation: set it to high if it is lower, then go on.
+- It is a question, not an approval: a `lite` work still has exactly one approval before building (AC-10).
+- Sub-agents keep the effort their tier sets (`agent-dispatch-tiering.md`); the check concerns the main
+  conversation, which reads the request and talks with the user.
+
+**Approvals** -- `skill-steps.md` § When approvals happen gains one row (Q61), placed above the `REQUIREMENTS.md`
+row, and Feature 002's table carries it:
+
+| Moment | `full` | `lite` |
+|---|---|---|
+| The business part of `REQUIREMENTS.md`, before the technical part is designed (Specification) | approve | -- |
+
+The revision approvals of Q62 are not a new moment of the table: they are `/aid-specify`'s, stated in
+`revise.md`, and recorded like every approval.
+
+**The contradiction pass** -- `reviewer-dispatch.md`'s site table: the `aid-define` CROSS-REFERENCE row becomes
+`aid-specify` CHECK -- receives `REQUIREMENTS.md`, every section -- covers Specification's own output, once per
+work. The paragraph "`aid-specify` deliberately gets no invocation" (it reviewed one feature at a time) is
+replaced by one line saying CHECK reviews the whole document once per work, so it hosts the pass. The
+`aid-plan` row stays as it is until Feature 006.
+
+**`aid-architect`** -- its Output Format line: "Technical specification: written into `REQUIREMENTS.md § 11`,
+once for the work or once per feature, per `templates/requirements/requirements-template.md`."
+
+**Kept invariant**: `/aid-specify` writes only `REQUIREMENTS.md`, `known-issues.md` and, through the writer, the
+work's `STATE.yml`. It changes a KB document only through the `/aid-kb-update` call.
+
+##### 6. What other features must provide
+
+| Feature | Must provide | Waiting on it |
+|---|---|---|
+| 006 | `aid-plan` reads both shapes: an unsplit document's `## 11. Technical Specification` as one unit, with tasks citing requirement and criterion ids and no feature; a split document by feature (Q67). Its work-state migration drops `interview`, `features` and `review_history` from old works, and fills the record of old Define and Specify works with the legacy rows of Migration. The dashboard's feature count (the "Full path" summary line in `home.html`) follows its plan model | `005-07` past Specification, `002-08`, `002-09` |
+| 007 | In `lite`, at the confirmation before building, after the yes: one `CALL` to `/aid-kb-update` (`change`) carrying every decision of reach `project` in `REQUIREMENTS.md`, only when a KB exists (Feature 004, No KB: one rule) -- the `lite` half of Q68; Feature 003's draft deletion already fires on that approval (`skill-steps.md`). At every approval it runs that confirms a `Specification change` entry carrying a `project` decision, the same one call. A task that finds the document wrong makes a `CALL` to `/aid-specify` (REVISE) with the reason: today's `IMPEDIMENT` routes of type `wrong-assumption` and `architecture-conflict` to Specify become that call. `aid-execute` reads the unsplit shape through the slice | `005-11` |
+| 009 | The shortcut engine's CAPTURE and SPEC states go (Q65); until then the engine writes `REQUIREMENTS.md` itself, in the old shape. Its action skills pass to `/aid-specify` with the kind, and the catalog fields that shape a technical part are read by `design.md` | -- |
+
+##### 7. Migration
+
+| Old | New |
+|---|---|
+| `/aid-define` | Say what you want; `/aid-specify` writes the requirements and splits them into features only when the work delivers several capabilities |
+| `/aid-specify work-NNN/feature-NNN`, `/aid-specify --reset` | `/aid-specify` covers the whole work; to change approved requirements, say what should change |
+
+- **Release notes**: the rows join the old -> new table (AC-24), drafted in `.aid/knowledge/backlog.md` § Next
+  Release. No stubs (M1).
+- **Installed projects**: `aid update` removes `aid-define`, the deleted references and the two deleted templates
+  through the install manifest (decisions.md § D9).
+- **Existing works**:
+  - **Legacy block** of `work-initiation-gate.md` § 3b: Feature 002's old-phase rows `Define` -> `/aid-define` and
+    `Specify` -> `/aid-specify` become `Define` or `Specify` -> `/aid-specify` at **START**, and one row is added:
+    `pipeline.initiator` or `active_skill` `aid-define` -> the same. Feature 003's `aid-describe` row already
+    points here. START keeps what the old work wrote (Flow). Feature 006's migration uses the same rows.
+    `test-work-initiation-gate.sh` gains a `--check` fixture for each changed row.
+  - Old documents keep their shape (The document); old `interview`, `features` and `review_history` keys wait for
+    Feature 006's migration.
+  - Old ledgers (`specify-<feature>.md`, `interview-<work>-cross-ref.md`) go with `.aid/.temp/`'s own clean-up.
+- **Re-pointing**: every kept file under `canonical/`, and `dashboard/home.html`, that names `aid-define` is
+  re-pointed to `/aid-specify` or reworded. Exempt: the gate's legacy block and `canonical/aid/scripts/migrate/`,
+  which read old shapes. SP-02 enforces it. The sites today, beyond Files and layout:
+  `downstream-worktree-entry.md` and `worktree-lifecycle.md` (their consumer lists; `aid-specify` no longer
+  enters a worktree itself), `reviewer-ledger-schema.md`, `shortcut-scaffolding/analyze-report.md`,
+  `shortcut-engine.md` § State: SPEC (its sentence naming define's CROSS-REFERENCE is reworded; the engine itself
+  stays, Q65), `work-state-template.yml` (its comments go with the keys), and
+  `aid-kb-build/references/reviewer-brief.md` (moved there by Feature 004). Outside `canonical/`: the comment in
+  `dashboard/reader/derivation.py`; the comment in `bin/aid`'s state converter stays, because it describes old works.
+- **Site**: `site/scripts/skills/` (roster, groups), `site/scripts/.skills-manifest.json`,
+  `site/scripts/lib/flow-graph/` (`model.mjs`, `extract-dispatch.mjs`, `advance.mjs`) and their `__tests__`;
+  pages and flows regenerated by `site/scripts/gen-skills.mjs`.
+- **Lists other features own** -- each changes in the same commit as the skill it concerns:
+  - **Deferred list** (`tests/conversation/deferred.tsv`): the `skill:aid-define` and `skill:aid-specify` rows go
+    (`aid-specify` is covered by `005-01` and `005-04`); `002-06`, `002-11`, `002-12`, `003-06`, `003-08`, `003-09`
+    and `004-10` run now; `002-07` waits only for Feature 007, and `002-08` and `002-09` for Features 006 and 007;
+    this feature's deferred samples are added.
+  - **Description exempt list** (`test-skill-guide.sh` SG-04): the `aid-define` row goes, and `aid-specify`'s if
+    it has one.
+  - **SS-13** finds the rewritten brief by its glob; `aid-define`'s goes with its skill.
+- **Suites**:
+  - `test-scoped-review-cycles.sh`: SC10's three sites become `aid-specify/references/check.md`,
+    `aid-plan/references/review-deliverables.md` and `aid-detail/references/review.md`; SC11 flips -- it now
+    asserts that `aid-specify` invokes the pass in `check.md` and in no other reference, once per work.
+  - `test-downstream-worktree-entry.sh`: its `aid-define` and `aid-specify` assertions go.
+  - `test-state-review-surface.sh`: the `aid-define` brief path goes.
+  - `test-work-state-template.sh`: WS21 (`features`) and WS22 (`review_history`) go; one assertion for `reviews:
+    []` and its `[W]` comment comes.
+  - `test-shared-prune.sh`, `test-shared-remove.sh` and the `test-aid-cli-parity.sh` drift row use `aid-define` as a
+    sample installed skill; they switch to one that stays (`aid-plan`).
+  - `test-ticket-retirement-structural.sh` and `test-connector-consumption-linkage.sh` read the template and follow
+    its new shape.
+  - `test-pipeline-status-walkthrough.sh` and `test-writeback-state.sh` follow the deleted references;
+    `test-artifact-discipline.sh` AD13 ceilings drop to the new measured counts.
+  - Dashboard fixtures that name `aid-define` or `aid-specify` as an old work's skill stay: they are old works'
+    inputs.
+  - Removed assertions go to `tests/coverage-accepted-removals.tsv`; the `tests/coverage-rehome-allowlist.tsv` rows
+    for the deleted assertions go; `tests/cost-baseline.tsv` and `tests/coverage-baseline.tsv` are re-recorded.
+- **User documentation** waits for the final pass (Q40, AC-45). The only edit now: the numbers
+  `test-doc-counts.sh` asserts.
+- **KB** (no work ids):
+  - `architecture.md` and `pipeline-contracts.md` (the Define and Specify rows become one Specification row; the
+    state machines; the artifact rows for `REQUIREMENTS.md` and the feature section; the loops that route to
+    Specify now reach `/aid-specify`'s REVISE);
+  - `artifact-schemas.md` (the two-part shape; `interview`, `features`, `review_history` gone; `reviews`);
+  - `domain-glossary.md` (feature as a business capability, business part, technical part, effort check; define
+    goes);
+  - `capability-inventory.md`, `module-map.md`, `quality-gates.md` (one Specification check replaces the
+    cross-reference and per-feature gates), `test-landscape.md` (the new suite);
+  - `tech-debt.md`: SY-6 and W5-5 narrowed, their `aid-define` and `aid-specify` sites gone;
+  - `decisions.md` gains "one Specification skill: a feature is a capability a user values on its own, and the
+    technical part is written once per work, or once per feature when the work splits". It **amends D29**: the
+    one-document rule and ids cited, never copied, stay; "a feature is an independently implementable unit" and
+    "every criterion is owned by exactly one feature" become the business-capability rule and "owned by one
+    feature, or shared by all" -- marked in the summary table and in D29's section.
+  - Then `INDEX.md` is regenerated and `kb.html` rendered by the script (Feature 004).
+
+##### 8. Testing
+
+Per NFR-T (Q35): unit tests and static checks now; a sample that needs a later feature waits on the
+deferred-tests list.
+
+**Static checks -- `tests/canonical/test-specify.sh`** (picked up by `tests/run-all.sh`; added to the suite list
+of `.github/workflows/installer-tests.yml`):
+
+| Group | Asserts |
+|---|---|
+| SP-01 | `canonical/skills/aid-define/`, `canonical/aid/templates/specs/` and `canonical/aid/templates/requirements.md` are absent; `aid-specify`'s nine new references and its brief exist; none of its deleted references does |
+| SP-02 | `aid-define` is named by no kept file under `canonical/`, nor by `dashboard/home.html`, outside the legacy block of `work-initiation-gate.md` and `canonical/aid/scripts/migrate/` |
+| SP-03 | `aid-specify`'s step table has START, REQUIREMENTS, FEATURES, DESIGN, CHECK, APPROVE, FINISH and REVISE; FINISH advances by `PASS` and `finish.md` names `aid-plan`, `--phase Planning`, `aid-kb-update` with `--returns yes`, and the No-KB rule; `revise.md` names `requirements change` and `Specification change` |
+| SP-04 | `start.md` cites `effort-check.md`; `effort-check.md` has a row for each of Claude Code, Codex, Cursor, Antigravity and Copilot CLI and states the "cannot be read" path; no file under `canonical/skills/aid-kb-build/` cites it |
+| SP-05 | `requirements-template.md` has the headings `## 1.` to `## 10.`, `## 11. Technical Specification`, `## 11. Features`, the technical headings of The document, a `**Serves:**` line, and `## Verifiable Acceptance Criteria` |
+| SP-06 | `work-state-template.yml` has no `interview:`, `features:` or `review_history:` key and has `reviews: []` with its `[W]` comment; no file under `canonical/skills/` or `canonical/aid/templates/` other than that template has a line opening with `interview:`, `features:` or `review_history:` |
+| SP-07 | `skill-steps.md` § When approvals happen has the business-part row; `reviewer-dispatch.md`'s Guard 2 site table names `aid-specify` CHECK and no `aid-define` row |
+
+**Unit tests**
+- `tests/canonical/test-slice-requirements.sh`: an unsplit document prints `## 11. Technical Specification`, the
+  cited criteria and the identity block, with a Source that names no feature; the output for a split document,
+  in both shapes, is unchanged; a Source naming no criterion still fails.
+- `tests/canonical/test-writeback-state.sh`: `--review` without `--kb` appends a `reviews` entry to the work file,
+  with `by` the saved skill; a bad grade exits 4 and changes nothing; the file parses through the dashboard reader;
+  `--kb --review` is unchanged.
+- `tests/canonical/test-scoped-review-cycles.sh`: SC10 and SC11 as in Migration.
+
+**Conversation samples -- `tests/conversation/samples/feature-005/`** (frontmatter `skills: aid-specify`)
+
+| Sample | Covers | Runs |
+|---|---|---|
+| `005-01-bug-fix-no-features` -- fixture: code and a KB; "exporting an empty list crashes". Check: the document has sections 1-10 (those that do not apply say "None.") and `## 11. Technical Specification` with a `**Serves:**` line; no `## 11. Features`; no split question; the questions follow the protocol | AC-16, AC-44, AC-28 | now |
+| `005-02-two-capabilities-split` -- a request for two capabilities a user would each value alone. Check: one split question with its recommendation; after yes, `## 11. Features` with two features, each with its own technical part and `**Serves:**` line; every criterion owned once or on the shared line; `intent.depth` is `full` | AC-16, AC-44, AC-28 | now |
+| `005-03-many-requirements-one-capability` -- many requirements, one capability. Check: no split proposed; one technical part | AC-16 | now |
+| `005-04-effort-below-high` -- fixture: the host's effort set below high (how, confirmed at build with `effort-check.md`'s Claude Code row). Check: the effort question comes before any requirements question, importance high, recommending high; a `qa` entry `Effort level`; a second session that resumes the work is not asked again | AC-12, AC-28 | now |
+| `005-05-effort-cannot-be-read` -- fixture: the installed `effort-check.md` marks the host "cannot be read". Check: one confirmation question saying so and recommending high, asked once | AC-12 | now |
+| `005-06-full-two-checkpoints` -- a `full` work from an idea draft. Check: a `covers: requirements business part` approval before any technical question; the final approval in chunks, naming the draft's removal; both approvals in `qa`; the draft deleted after the second; a `reviews` entry at or above the bar | AC-9, AC-10, AC-44 | now |
+| `005-07-lite-ticket-no-stop` -- a complete ticket. Check: no approval question in Specification; small decisions recorded `Assumed`; the document written with its `reviews` entry; a `handoffs` pass to `aid-plan` with phase Planning. The checks stop at that pass | AC-10, AC-44 | now |
+| `005-08-decision-to-kb` -- fixture: a KB; the design picks a new library. Check: after the final approval, one `handoffs` call to `aid-kb-update`, returned, one `kb_updates` entry, the decision in `decisions.md`. Run also with no KB: no call, and one line saying the decision will be recorded when the KB exists | AC-15 | now |
+| `005-09-change-requirement-later` -- fixture: a `lite` work at Planning; the user asks to change a criterion, then a technical detail. Check: the criterion change asks one approval at once; the technical change asks nothing and is recorded `Assumed`, `Specification change`; the work goes back to `aid-plan` | AC-10, AC-37 | now |
+| `005-10-old-define-work` -- fixture: a work at `phase: Define` with an old business part and no record. Check: recovery proposes `/aid-specify` at START as one question; after yes, the old sections are kept, not rewritten | AC-37 | now |
+| `005-11-lite-decision-to-kb-at-confirmation` -- a `lite` work whose design picks a new library. Check: no KB change before the confirmation before building; after its yes, one call to `aid-kb-update` | AC-15 | deferred: Feature 007 |
+
+Feature 001's `001-08-bare-idea` and `001-09-bug-fix-phases` run again at this feature's end.
+
+##### Criteria traceability
+
+| Criterion | Where satisfied | How verified |
+|---|---|---|
+| AC-12 | Flow (START); Components (Effort check) | SP-04; `005-04`, `005-05`; `004-01` (no check before building the KB) |
+| AC-16 | The document; Flow (REQUIREMENTS, FEATURES, CHECK) | SP-05; `005-01`, `005-02`, `005-03` |
+| AC-44 | The document (two parts, **Serves:** lines, one technical part per work or per feature); Flow (DESIGN, CHECK) | SP-05; `test-slice-requirements.sh`; `005-01`, `005-02`, `005-06`, `005-07` |
 
 ### Feature 006 — Planning by Deliveries and Waves That Follow Task Dependencies
 
