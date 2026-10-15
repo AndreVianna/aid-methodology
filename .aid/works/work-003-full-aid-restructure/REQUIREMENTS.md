@@ -4269,8 +4269,8 @@ task or delivery and where it stands (`'task-004: verify round 2'`, `'delivery-0
      `known-issues.md`; the open `qa` entries, which come first (Feature 002); `.aid/knowledge/INDEX.md` and the
      documents it routes to, when a KB exists. `--plan-sync` runs first, so every task has its entry.
    - **The confirmation before building** (FR-6, M12; Approvals):
-     - **Already recorded** -- an `Approval` entry whose `covers` holds `confirmation before building` (Feature 006's
-       combined approval, Q73): nothing more is approved.
+     - **Already recorded** -- an `Approval` entry answered yes whose `covers` holds `confirmation before building`
+       (Feature 006's combined approval, Q73): nothing more is approved.
      - **Otherwise** (`lite`, a `full` work after *approve, build later*, or a doorway work, Components): START asks
        it. The plan and, in `lite`, the requirements are shown in chunks, most important first -- one short line for a
        small fix -- with the small decisions taken so far in the same batch (`Assumed` `Specification change` and
@@ -4366,26 +4366,29 @@ task or delivery and where it stands (`'task-004: verify round 2'`, `'delivery-0
    - **What comes next** -- the one routing rule. It runs at the end of NEXT, DELIVERY and MILESTONE, and when a call
      made from NEXT returns (a given-up task, Real blockers), so it holds in a live run as on resume.
      - **One principle: a result is valid only for the commit it records.** A delivery's `verify` (with the delivery's
-       `commit`), `full_suite.result` (with `full_suite.commit`) and every milestone `Approval` (with its `commit`) are
-       **stale** when a `Done` task in their scope has a commit they do not contain (`git merge-base --is-ancestor
-       <task commit> <their commit>` fails; without git, a newer snapshot -- BUILD, Without git). The scope is the
-       delivery for its `verify` and its approval; the delivery's waves 1 to N for the approval of `wave
-       delivery-NNN/wave-N`; the whole work for `full_suite` and the `whole build` approval. A `Canceled` task is
-       closed and adds no commit. A milestone's approval is the newest `Approval` answered yes whose `covers` lists it.
+       `commit`), `full_suite.result` (with `full_suite.commit`) and every milestone `Approval` (with its `commit`)
+       are **stale** when a `Done` task in their scope has a commit they do not contain
+       (`git merge-base --is-ancestor <task commit> <their commit>` fails; without git, a newer snapshot -- BUILD,
+       Without git). The scope is the delivery for its `verify` and its approval; the whole work for `full_suite` and
+       the `whole build` approval. A wave stop is never stale: it is asked once (rule 1). A `Canceled` task is closed
+       and adds no commit. A milestone's approval is the newest `Approval` answered yes whose `covers` lists it.
      - **Inputs** -- only these: the task states and each task's `commit`, each delivery's `verify` and `commit`,
-       `full_suite`, `wave_stops`, and those approvals. **It never reads a stored delivery state**: that state is a
-       display value the writer derives from the same facts (Work state), and no step writes it.
+       `full_suite`, `wave_stops`, those approvals, and the wave stops' answered entries. **It never reads a stored
+       delivery state**: that state is a display value the writer derives from the same facts (Work state), and no
+       step writes it.
      - **Open and closed**: an open task is one neither `Done` nor `Canceled`. A delivery is **closed** when it has no
        open task and either all its tasks are `Canceled`, or its `verify` and its `delivery delivery-NNN` approval are
        both current; otherwise it is open. The current delivery is the lowest-numbered open one. A task added to any
        delivery -- a closed one, or one whose tasks were all `Canceled` -- simply makes it open again.
      - **First match**:
-       1. a wave stop -- a pause inside a delivery's first build only: while the current delivery has no `verify`
-          recorded (current or stale) and no `full_suite` result has ever been recorded -- a delivery's first build
-          ends when DELIVERY first runs, the whole build when FINAL first runs -- N the furthest wave of the current
-          delivery with every task of waves 1 to N closed, a later wave of the same delivery still holding an open
-          task, `wave_stops` not `none`, and the approval of `wave delivery-NNN/wave-N` missing or stale -> MILESTONE.
-          At the delivery's last wave there is no wave stop: the delivery milestone covers it;
+       1. a wave stop -- a pause inside a delivery's first build only, asked once: while the current delivery has no
+          `verify` recorded (current or stale) and no `full_suite` result has ever been recorded -- a delivery's first
+          build ends when DELIVERY first runs, the whole build when FINAL first runs -- N the furthest wave of the
+          current delivery with every task of waves 1 to N closed, a later wave of the same delivery still holding an
+          open task, `wave_stops` not `none`, and no answered entry (yes or a change) whose `covers` lists `wave
+          delivery-NNN/wave-N` -> MILESTONE. Once a wave stop is answered it is never asked again: the changes asked
+          there, and the suggestions taken there, are corrections approved at the delivery milestone. At the delivery's
+          last wave there is no wave stop: the delivery milestone covers it;
        2. an open task of the current delivery whose dependencies are `Done` -> BUILD;
        3. the current delivery with no open task, at least one `Done`, and its `verify` missing or stale -> DELIVERY;
        4. the current delivery with no open task, its `verify` current, and its approval missing or stale -> MILESTONE
@@ -4398,8 +4401,8 @@ task or delivery and where it stands (`'task-004: verify round 2'`, `'delivery-0
        all-`Canceled` one. It declares no dependency on a `Done` task -- what it corrects is already built -- so the
        wave graph places it in wave 1 unless it depends on another correction. Adding it reopens that delivery; once it
        is built, the rule above finds the results it made stale, so the delivery is verified again and the milestone
-       that covers it is asked again. After its delivery's first build no wave stop fires, so the delivery milestone --
-       or the whole-build milestone that coincides with the last one -- approves it. A correction never creates a wave
+       that covers it is asked again. A wave stop is never asked again (rule 1), so the delivery milestone -- or the
+       whole-build milestone that coincides with the last one -- approves it. A correction never creates a wave
        stop of its own, and no milestone is asked again with nothing new built in it.
 8. **DELIVERY** -- the same sequence over the whole delivery (FR-19), before its milestone.
    - **Verify**: one graded `aid-reviewer` pass over the delivery's diff (`deliveries.<id>.base..HEAD`), its tasks, the
@@ -4440,12 +4443,14 @@ task or delivery and where it stands (`'task-004: verify round 2'`, `'delivery-0
        `covers` lists each, separated by `; ` -- `delivery delivery-002; whole build; final result`; NEXT's routing
        rule reads these values. Right after the yes, the KB call on confirmation for any `project` decision it
        confirmed. A suggestion the user takes becomes a correction task, built after this approval.
-       - **How an answer is recorded** -- as Features 005 and 006 do. An `Approval` entry is written only for a yes. A
-         milestone answered with a change records no approval: the changes become correction tasks, by step 2's
-         route, and once they are built the milestone is asked again -- its yes is still missing, and DELIVERY runs
-         first because `verify` is stale (step 7). At a wave stop the correction lands in wave 1 (step 7, Corrections
-         are ordinary tasks), so the same wave stop is asked again once it is built. A rejected `KB change` reopens as
-         a question (Feature 004).
+       - **How an answer is recorded** -- Feature 002's protocol, as every approval in Features 004-006: the milestone
+         question is written `Pending` with `--ask` (`category: Approval`, its `covers`) before it is shown, and the
+         answer records it `Answered`, its value yes or the change asked. It is an approval -- it counts for `covers`,
+         for `commit` and for a push -- only when the answer is yes. A delivery or whole-build milestone answered with a
+         change becomes correction tasks, by step 2's route, and once they are built it is asked again: its yes is
+         still missing, and DELIVERY runs first because `verify` is stale (step 7). A wave stop answered with a change
+         is not asked again: its corrections are approved at the delivery milestone (rule 1). A rejected `KB change`
+         reopens as a question (Feature 004).
     4. **The push** -- at a milestone that may push (every delivery and the whole build, and a wave when `wave_stops`
        is `review-and-update`), when the work branch has a remote: one question, "Create or update the pull request
        now?", recommendation yes. Yes: a `CALL` to `/aid-monitor-pipeline` that pushes up to the approved `commit` and
@@ -4859,7 +4864,7 @@ the full integration suite runs at the end of the work, before release, with tha
 | EX-05 | No tracked file under `canonical/skills/`, `canonical/aid/templates/` or `canonical/aid/scripts/` (except `migrate/`, and the writer's refusal of its retired modes) names `IMPEDIMENT-task-`, `delivery-NNN-issues`, `--append-issue`, `--findings` or `quick_check` |
 | EX-06 | `skill-steps.md` § When approvals happen has the corrections row and the Building rule; `shortcut-engine.md` § State: APPROVAL-HALT names `confirmation before building`; `reviewer-ledger-schema.md` names the four `/aid-execute` ledgers |
 | EX-07 | `work-state-template.yml` has `wave_stops`, `full_suite`, `feedback`, and the building fields of `deliveries` and `tasks_lifecycle`, each with its `[W]` comment, and no `gate_tier`, `gate_grade`, `gate_timestamp`, `quick_check` or `review:` under a task |
-| EX-08 | The routing reads states plus commits: `next.md` names `verify`, `full_suite`, `commit`, `covers` and `merge-base --is-ancestor`, and each `covers` form -- `wave delivery-`, `delivery delivery-`, `whole build` -- which `milestone.md` also writes; its wave rule names a later wave with an open task and fires only while the current delivery has no `verify` recorded and no `full_suite` result has been recorded; it reads no approval to decide that. No file under `canonical/skills/aid-execute/` reads or writes a stored delivery state (`--lifecycle`, `deliveries.<id>.state`), or names `corrections <` or a correction task's milestone in `notes` |
+| EX-08 | The routing reads states plus commits: `next.md` names `verify`, `full_suite`, `commit`, `covers` and `merge-base --is-ancestor`, and each `covers` form -- `wave delivery-`, `delivery delivery-`, `whole build` -- which `milestone.md` also writes; its wave rule names a later wave with an open task and fires only while the current delivery has no `verify` recorded and no `full_suite` result has been recorded, and only for a wave end with no answered (yes or change) `wave delivery-` entry -- a wave stop is asked once. No file under `canonical/skills/aid-execute/` reads or writes a stored delivery state (`--lifecycle`, `deliveries.<id>.state`), or names `corrections <` or a correction task's milestone in `notes` |
 
 **Unit tests**
 - `tests/canonical/test-writeback-state.sh`: each new task and delivery field, with its values and exit 4 on a bad
@@ -4891,7 +4896,7 @@ a small project with code and a test suite, no remote unless named)
 |---|---|---|
 | `007-01-lite-one-approval-to-result` -- a `lite` bug fix with its requirements and plan written. Check: one approval before any code change, `covers: REQUIREMENTS.md; PLAN.md; confirmation before building`; no wave question; no other question until the final approval; each task `Done` with `tests` passed, `verify` at or above the bar and a `simplify` value; the final approval shows the task tests and the full suite against the baseline; `user_approved: 'yes'`; a pass to the close | AC-26, AC-32, AC-10 | now |
 | `007-02-full-after-plan-approval` -- a `full` work whose plan approval covers the confirmation; a delivery with two waves. Check: no second approval; one wave question, recorded `category: Building`, following the protocol | AC-32, AC-28 | now |
-| `007-03-review-per-wave` -- as `007-02`; the user picks a review per wave. Check: an approval at the end of wave 1; the delivery end, the whole build and the final result as one approval; no pull-request question. Second run: a work with two deliveries, delivery-002 all `Canceled`; at the combined `delivery delivery-001; whole build` milestone the user asks for a change. Check: no `Approval` entry is written for that answer; the correction joins delivery-001 and is built; DELIVERY runs again, then FINAL; one combined milestone is asked again, with no wave stop and no milestone asked with nothing new built | AC-32 | now |
+| `007-03-review-per-wave` -- as `007-02`; the user picks a review per wave. Check: an approval at the end of wave 1 (run also with a change asked there: the wave-1 stop is not asked again, and the correction is approved at the delivery milestone); the delivery end, the whole build and the final result as one approval; no pull-request question. Second run: a work with two deliveries, delivery-002 all `Canceled`; at the combined `delivery delivery-001; whole build` milestone the user asks for a change. Check: the answer is recorded as a change, not a yes; the correction joins delivery-001 and is built; DELIVERY runs again, then FINAL; one combined milestone is asked again, with no wave stop and no milestone asked with nothing new built | AC-32 | now |
 | `007-04-failing-test-not-done` -- the task's first build leaves a planted test failing. Check: the task is not `Done` until its tests pass; a fix round happened; `tests` names the passing run | AC-26 | now |
 | `007-05-simplify-no-change` -- a task with nothing to simplify. Check: `simplify: no change`, `reverify: --`, and no re-verify entry in `reviews` | AC-33 | now |
 | `007-06-simplify-then-reverify` -- a task that copies a helper the code already has. Check: `simplify: changed`; a re-verify entry in `reviews` and a `reverify` grade; the simplify commit touches no test file; `tests` the same before and after | AC-33 | now |
