@@ -1083,3 +1083,11 @@ qa:
     suggested: 'When a delivery branch descends from the work branch, the work branch is moved forward to it (fast-forward, no merge, no rewrite); otherwise the agent stops, explains, and the user decides how to combine them.'
     answer: 'Accepted as recommended (move forward when possible, else ask).'
     applied_to: 'Feature 007 Technical Specification (migration)'
+  - id: Q81
+    category: Specification (Feature 007)
+    impact: Medium
+    state: Answered
+    context: 'After eleven review cycles two rows stayed open: a change answer at a milestone recorded no entry, contradicting Feature 002''s rule that every question is written before it is shown; and chained corrections asked at a wave stop could re-ask that wave stop before all were built.'
+    suggested: 'Fix both, then one final review: a milestone question is written Pending before it is shown (Feature 002) and answered yes or change-requested, and only a yes counts as an approval; a wave stop is asked only once, and changes asked there are approved at the delivery milestone.'
+    answer: 'Accepted as recommended (fix both, then one final review).'
+    applied_to: 'Feature 007 Technical Specification (step 10.3, rule 1)'
