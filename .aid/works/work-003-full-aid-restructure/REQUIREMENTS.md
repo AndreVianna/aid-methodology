@@ -5007,7 +5007,7 @@ milestone calls arrive there too, and START sends them on. Typing the command on
 |---|---|---|---|
 | START | `references/start.md` | main conversation | `CHAIN` -> COLLECT (a collect call), PUSH (a push call), WATCH (a pull request exists), CLOSE (nothing to land, no git, or *no pull request*); `ASK` -> START for the create question; `PASS` back for a typed start before the whole build is approved |
 | COLLECT | `references/collect.md` (`hosts.md`) | main conversation | `HALT` in a collect call; `CHAIN` -> CLOSE when merged; else `CHAIN` -> REACT |
-| PUSH | `references/push.md` (`hosts.md`) | main conversation | `ASK` -> PUSH for the ignored-folder question and the Every-way-in approval; `CALL` to `aid-plan`, then `aid-execute`, for a change asked there; `HALT` or `CHAIN` -> WATCH on *not now*; `CHAIN` -> PARENT on a conflict; `HALT` in a push call; else `CHAIN` -> WATCH |
+| PUSH | `references/push.md` (`hosts.md`) | main conversation | `ASK` -> PUSH for the ignored-folder question and the Every-way-in approval; `CALL` to `aid-plan`, then `aid-execute`, for a change asked there; on *not now*, `HALT` in a push call, `CHAIN` -> WATCH when a pull request exists, else `ASK` -> PUSH (paused, no pull request yet); `CHAIN` -> PARENT on a conflict; `HALT` in a push call; else `CHAIN` -> WATCH |
 | PARENT | `references/parent.md` (brief: `references/reviewer-brief.md`) | main conversation; `aid-developer` resolves; `aid-reviewer` checks | `ASK` the conflict-merge approval, then `CHAIN` -> PUSH |
 | REVIEW | `references/review.md` (brief: `references/reviewer-brief.md`) | `aid-reviewer` | `CHAIN` -> REACT |
 | REACT | `references/react.md` | main conversation | `CALL` to `aid-plan`, then `CALL` to `aid-execute`, then `CHAIN` -> PUSH; `ASK` -> REACT for suggestions and for a failure that survived three attempts; `CHAIN` -> PARENT for a conflict; `CHAIN` -> WATCH when nothing is open |
@@ -5084,9 +5084,13 @@ by `HALT` at CLOSE; the one `PASS` is START's pass back on a typed start before 
      - **a change asked**: corrections, as REACT makes them -- `/aid-plan` REVISE, then a correction `CALL` to
        `/aid-execute` -- then back to PUSH, where this check runs again over the new commits;
      - **not now**: nothing is pushed and the commits stay waiting. In a push call from Building: `HALT`, back to the
-       caller, saying the push was declined; at CI: WATCH, and the next way in asks again. A knowledge-update work's own `KB change` approval already records its `commit`
-     (Feature 004). So every commit on the work branch reaches the pull request, and at CLOSE, on the normal path, the
-     local tip equals `pull_request.head`.
+       caller, saying the push was declined; at CI with a pull request: WATCH, and the next way in asks again; at CI with no
+       pull request yet: the work pauses exactly as START's *not yet* does (`pause_reason: 'Pull request not created
+       yet'`), with the step saved as PUSH, so the next resume asks this question again.
+
+     A knowledge-update work's own `KB change` approval already records its `commit` (Feature 004). So every commit on
+     the work branch reaches the pull request, and at CLOSE, on the normal path, the local tip equals
+     `pull_request.head`.
    1. **Others' commits first** (Q88; AC-11): fetch; when the remote work branch holds commits the local one does not:
       - the local branch has nothing of its own past them: it moves forward (`merge-parent.sh fast-forward --from own`) --
         no merge and no approval, since those commits are already on the host;
@@ -5548,7 +5552,7 @@ answer from the sample's `host.json` and log every call to `host-calls.log`, whi
 | `008-14-research-closes` -- a research work ends. Check: a pass to the close; done; its worktree removed; no pull request question | AC-14, AC-36 | now |
 | `008-15-live-hosts` -- `008-03` and `008-09` against a scratch repository on GitHub and on GitLab, through each route | AC-13, AC-27, AC-36 | integration run before release |
 | `008-16-correction-settles-a-fact` -- after the whole build, a pipeline failure whose fix settles a project fact (a check the pipeline now requires), with a KB. Check: the corrections approval, then the KB call on confirmation and its KB commit; one approval `covers: KB change` before the push; the pushed head contains the KB commit; after the stand-in reports the merge, the close deletes the local branch (nothing unpushed) | AC-27, AC-36, AC-42 | now |
-| `008-17-push-declined-in-a-push-call` -- a two-delivery work; at the delivery-001 milestone, after the yes to the push question, the KB call on confirmation leaves a KB commit past the approved one, and the user answers *not now* to the Every-way-in approval. Check: the answer recorded, not as an approval; nothing pushed; the call returns to Building, which goes on; the next push asks again and, after its yes, the pushed head holds the KB commit | AC-42 | now |
+| `008-17-push-declined-in-a-push-call` -- a two-delivery work; at the delivery-001 milestone, after the yes to the push question, the KB call on confirmation leaves a KB commit past the approved one, and the user answers *not now* to the Every-way-in approval. Check: the answer recorded, not as an approval; nothing pushed; the call returns to Building, which goes on; the next push asks again and, after its yes, the pushed head holds the KB commit. Second run, at CI with no pull request yet (the user said no at every push question, then yes to the create question): *not now* pauses the work with `pause_reason: 'Pull request not created yet'` and the step saved as PUSH; nothing pushed, no pull request created; a new session asks the same question again | AC-42 | now |
 | `008-18-ignored-work-folders` -- a project whose `.gitignore` hides `.aid/works/`, with no `work_folders` key. Check: one question at the first push, recommending `keep-local`, asked before anything is pushed; the answer in `.aid/settings.yml`, then `pull_request.work_folder` equal to it; nothing under `.aid/works/` in the pushed content | AC-35 | now |
 
 `002-10-pull-request-only-when-asked`, `007-13-milestone-collect-and-push` and `001-16-work-closes-done` run at this
