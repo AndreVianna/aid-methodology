@@ -1017,3 +1017,11 @@ qa:
     suggested: 'One delivery for an unsplit work and one per feature for a split work; more only when a part must be checked before the rest can be built (for example a data migration).'
     answer: 'Accepted as recommended (one per capability).'
     applied_to: 'Feature 006 Technical Specification (BREAKDOWN)'
+  - id: Q73
+    category: Specification (Feature 006)
+    impact: High
+    state: Answered
+    context: 'At full depth the plan approval and the confirmation before building are one approval (M11/M12), but the confirmation and its per-wave choice belong to /aid-execute.'
+    suggested: '/aid-plan asks the single approval, recorded as covering both the plan and the start of building; /aid-execute then asks only the per-wave stop choice as a follow-up question.'
+    answer: 'Accepted as recommended (the planning skill asks).'
+    applied_to: 'Feature 006 Technical Specification (APPROVE); Feature 007 confirmation'
