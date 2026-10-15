@@ -1025,3 +1025,19 @@ qa:
     suggested: '/aid-plan asks the single approval, recorded as covering both the plan and the start of building; /aid-execute then asks only the per-wave stop choice as a follow-up question.'
     answer: 'Accepted as recommended (the planning skill asks).'
     applied_to: 'Feature 006 Technical Specification (APPROVE); Feature 007 confirmation'
+  - id: Q74
+    category: Specification (Feature 006)
+    impact: Medium
+    state: Answered
+    context: 'The migration is a script with no agent, so it cannot judge an old work''s type.'
+    suggested: 'The migration sets intent.reading only where the starting skill makes it certain (for example aid-fix means bug fix); otherwise it is left empty, the first resume asks one confirmation question, and the dashboard warns until then.'
+    answer: 'Accepted as recommended (only when certain).'
+    applied_to: 'Feature 006 Technical Specification (migration)'
+  - id: Q75
+    category: Specification (Feature 006)
+    impact: Low
+    state: Answered
+    context: 'The dashboard chooses between a full and a lite stage rail using pipeline.path, which is removed; Feature 002''s lite rail has no Planning stage.'
+    suggested: 'One stage rail for every work, built from the work''s own intent.phases, with depth shown as a badge; this replaces Feature 002''s two rails.'
+    answer: 'Accepted as recommended (one rail from the work''s own stages).'
+    applied_to: 'Feature 006 Technical Specification (dashboard); Feature 002 rail'
