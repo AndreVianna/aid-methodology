@@ -1059,3 +1059,19 @@ qa:
     suggested: 'Each correction (milestone collection fixes, user-requested changes, later Feature 008''s) becomes a new plan task through /aid-plan REVISE, recorded Assumed, built through the same loop and shown at the next approval.'
     answer: 'Accepted as recommended (a new task in the plan).'
     applied_to: 'Feature 007 Technical Specification (milestones, corrections)'
+  - id: Q78
+    category: Specification (Feature 007)
+    impact: Medium
+    state: Answered
+    context: 'FR-19 forbids a simplify/verify loop; the task already passed verification before simplification.'
+    suggested: 'When the scoped re-verify after simplification fails, the simplification is undone, the verified version is kept, and simplify: undone is recorded.'
+    answer: 'Accepted as recommended (undo).'
+    applied_to: 'Feature 007 Technical Specification (SIMPLIFY, REVERIFY)'
+  - id: Q79
+    category: Specification (Feature 007)
+    impact: Medium
+    state: Answered
+    context: 'Without a baseline, a test already failing before the work would either widen the work''s scope or block the final approval.'
+    suggested: 'The full suite runs once at START on the starting commit; at the end, failures the work caused are fixed and failures already present are only reported at the final approval.'
+    answer: 'Accepted as recommended (baseline at START).'
+    applied_to: 'Feature 007 Technical Specification (START, FINAL)'
