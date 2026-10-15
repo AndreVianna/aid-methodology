@@ -935,3 +935,19 @@ qa:
     suggested: 'A change to a requirement or acceptance criterion is approved at once, at every depth; a technical-only change is a small decision confirmed at the next approval or milestone.'
     answer: 'Accepted as recommended (depends on the change).'
     applied_to: 'Feature 005 Technical Specification (REVISE)'
+  - id: Q63
+    category: Specification (Feature 005)
+    impact: Medium
+    state: Answered
+    context: 'Some host tools do not expose the effort level; guessing it is worse than saying nothing.'
+    suggested: 'When the level cannot be read, one confirmation question says so, recommends high, and says how to set it in that tool.'
+    answer: 'Accepted as recommended (ask once).'
+    applied_to: 'Feature 005 Technical Specification (effort check)'
+  - id: Q64
+    category: Specification (Feature 005)
+    impact: Low
+    state: Answered
+    context: 'A new session continuing Specification may run at a lower effort level, but re-asking nags.'
+    suggested: 'The effort check runs once per work, when Specification first starts.'
+    answer: 'Accepted as recommended (once per work).'
+    applied_to: 'Feature 005 Technical Specification (effort check)'
