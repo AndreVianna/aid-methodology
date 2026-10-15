@@ -538,7 +538,7 @@ If assumption 1 or 2 fails in a tool, transparent orchestration degrades there t
 | AC-8 | Every question to the user carries **one recommendation** and an **importance label**; several options only for real forks, never a bad option, and a free-form answer is always possible. | Objective, NFR-Q |
 | AC-9 | Reviews come **one topic at a time**, in logical chunks, most important first; trivial decisions are taken by the AI and confirmed **in one batch at the end**. | Objective (digestible review) |
 | AC-10 | `full`: the user confirms every document. `lite`: exactly one approval before building. Every depth: a final approval of the result; every approval comes **before the push it controls**. | FR-6 |
-| AC-11 | **Nothing in AID ever merges**: no skill or script merges a branch or a PR/MR, and a PR/MR is opened only on the user's instruction. | FR-6, FR-7 |
+| AC-11 | **AID never merges a work into its parent branch**: no skill or script merges a PR/MR or merges a work's branch into another branch; the only merge allowed brings the parent branch (or the work branch's own remote copy) into the work's branch, only to resolve a conflict, and its result is approved before it is pushed (Q85, Q88); a PR/MR is opened only on the user's instruction. | FR-6, FR-7 |
 | AC-12 | After Definition and before Specification starts, the agent checks the effort level and **recommends a higher one** when it is below high; no effort check runs before building the KB. | FR-15 |
 | AC-13 | When GitHub/GitLab cannot be reached, the agent **offers to help establish the connection** before stopping. | FR-16 |
 
@@ -560,7 +560,7 @@ If assumption 1 or 2 fails in a tool, transparent orchestration degrades there t
 | AC-31 | No skill name combines an action (create, update, design, document, test, prototype) with a kind of thing (e.g. no `/aid-create-api`); the dashboard and chat show **only current skill names**. | Scope, M1 |
 | AC-32 | During building, the user is asked for approval **only** at the end of each delivery and at the end of the whole build (each after verification, before a PR/MR is created or updated), plus at the end of each wave **only when the user opted in** during the confirmation before building (a PR/MR update per wave only together with the review per wave); these milestones apply at every depth, and approvals that fall at the same moment count as one; real blockers (something the agent cannot decide or fix on its own, including a conflict with the KB) are the only other interruptions. | FR-6 |
 | AC-33 | For each task and each delivery, the work record shows verify -> simplify, and a scoped re-verify **only when** the simplification changed something; simplification runs once, and the test set before and after it is identical and passing. | FR-19 |
-| AC-34 | Running a work from start to PR/MR creates **exactly one worktree and one branch** for it; no skill or script creates a per-delivery branch or merges anything. | FR-6 |
+| AC-34 | Running a work from start to PR/MR creates **exactly one worktree and one branch** for it; no skill or script creates a per-delivery branch or merges anything other than the conflict merge AC-11 allows. | FR-6 |
 | AC-35 | The PR/MR's **final content** (its net diff against the parent branch) contains **only changes meant for the parent branch**: no file under `.aid/.temp/`, files under `.aid/works/` only when the project setting is **push**, and no idea draft. A work folder is never pushed only to be removed by a later clean-up commit; a work's own idea draft may appear in earlier commits of its branch and be removed before the PR/MR's final content. | FR-7 |
 | AC-36 | After a human merges the PR/MR, the work is marked **done** and clean-up is local only (temporary files, local branch, worktree); **no remote branch is deleted** by AID. The work folder is pushed, kept locally, or deleted exactly as the project setting says. A work in a project with no repository is still marked done at the end. | FR-7 |
 | AC-37 | During a work, no state banner or "you are here" map is shown unless the user asks; after an interrupted session, a new session resumes at the step saved in `STATE.yml`; every stop that needs the user follows FR-17. | FR-20 |
@@ -736,7 +736,7 @@ Which phases run (by reading):
 | Knowledge update ("we moved to Postgres") | KB update only (Preparation on demand) |
 | Operational (release, deploy, monitor) | a work of its own, run by its own skill, closed by CI |
 | Before the first phase, when an existing codebase has no KB | Preparation is offered first |
-| Every work | CI closes it, at minimum by marking it done; until Feature 008 delivers `/aid-monitor-pipeline`, `/aid-orchestrate` does this minimum itself (`writeback-state.sh --pipeline --field Lifecycle --value Completed`) |
+| Every work | CI closes it, at minimum by marking it done; until Feature 008 delivers `/aid-monitor-pipeline`, `/aid-orchestrate` does this minimum itself (`writeback-state.sh --pipeline --field Lifecycle --value Completed`); Feature 008 replaces it with a `PASS` to `/aid-monitor-pipeline` |
 
 How much the user reviews (depth, by richness):
 
@@ -942,7 +942,8 @@ release.
   Claude Code is required; Codex, Cursor, Copilot CLI and Antigravity run only when named.
 - Each run builds a fresh throwaway fixture: a small git project with code, a seeded KB unless the
   sample says otherwise, and AID installed from a bundle staged from the working tree
-  (`tests/lib/bundle.sh`).
+  (`tests/lib/bundle.sh`). A sample whose fixture names a `bin/` folder gets it copied into the fixture and put first
+  on the `PATH` of the agent under test (Feature 008's stand-in `gh` / `glab`).
 - **Driving the conversation (Claude Code).** Each agent turn is one `claude -p` run in the fixture
   folder with `--output-format stream-json`: the first turn starts a session, every later turn passes
   `--resume <session-id>` with the next user message. Why: it is the real tool reading the installed
@@ -1501,8 +1502,8 @@ heading (a presence check -- it does not scan wording, so the rule's own text an
   `full` applies.
 - **Before the push it controls**: a push carries only commits up to the newest approved `commit`;
   `/aid-monitor-pipeline` makes the push and checks this.
-- **AID never merges** (FR-6, FR-7, AC-11): no skill or script merges a branch or a PR/MR, and a PR/MR
-  is created only on the user's yes, by `/aid-monitor-pipeline` alone. Stated in `skill-steps.md` and in
+- **AID never merges** (FR-6, FR-7, AC-11): no skill or script merges a branch or a PR/MR -- except the conflict
+  merge AC-11 allows, Feature 008's (Q85) -- and a PR/MR is created only on the user's yes, by `/aid-monitor-pipeline` alone. Stated in `skill-steps.md` and in
   `rules.md`; enforced by `test-never-merges.sh` (Testing).
 
 ##### 6. Dashboard and chat
@@ -1637,7 +1638,7 @@ match:
 
 | Group | Asserts |
 |---|---|
-| NM-01 | No `git merge` (`git merge-base` excepted) and no `git pull` without `--ff-only` |
+| NM-01 | No `git merge` (`git merge-base` and `git merge-tree` excepted) and no `git pull` without `--ff-only`, outside `canonical/aid/scripts/pipeline/merge-parent.sh`, which only brings the parent branch or the work branch's own remote copy into the work branch (Q85, Feature 008) |
 | NM-02 | No `gh pr merge`, `glab mr merge`, call to a hosting service's merge endpoint (`pulls/<n>/merge`, `merge_requests/<n>/merge`), or `git push` naming `main` or `master` as its target |
 | NM-03 | `gh pr create` / `glab mr create` only under `canonical/skills/aid-monitor-pipeline/`; exempt: `aid-housekeep` (`references/state-done.md`), until Feature 004 retires it; fails once an exempt skill is gone |
 | NM-04 | No "merge to main" under `canonical/skills/`; exempt: `aid-execute` (`SKILL.md`, `references/reviewer-brief.md`, `references/state-delivery-gate.md`), until Feature 007; same rule |
@@ -1994,7 +1995,7 @@ after a typed start, `PASS` back to the skill that drives the work's phase, at i
   -- the deletion rule fires on it;
 - the KB update skill, when it is a work's `PASS` target, reads the work record, uses the draft (resolved
   with `path`), and ends by passing the work to its close: the CI minimum (marking the work done), run by
-  `/aid-orchestrate` until Feature 008 delivers `/aid-monitor-pipeline` (Feature 001 phase table).
+  `/aid-orchestrate` until Feature 008 delivers `/aid-monitor-pipeline` (Feature 001 phase table), then by a `PASS` to it.
 
 Until Feature 004 lands, the KB-update answer reaches today's `aid-update-kb`, which reads no work state, so
 the work stays open; nothing is released in between.
@@ -2508,7 +2509,8 @@ Its questions go in the work's `qa`; its process state is the work record.
      - then `HALT`, which returns to the caller.
    - **Own job**:
      - the KB change approval (Components), whose yes runs Feature 003's draft deletion;
-     - then `PASS` to the close: the close minimum, run by `/aid-orchestrate` until Feature 008.
+     - then `PASS` to the close: the close minimum, run by `/aid-orchestrate` until Feature 008, which replaces it with
+       `--handoff --to aid-monitor-pipeline --step START --returns no --phase CI`.
      - A change the user asks for goes back to SCOPE.
 
 **`/aid-kb-query`** -- one pass, no step table, starts no work (AC-4).
@@ -2626,7 +2628,7 @@ asked for:
 | Moment | `full` | `lite` |
 |---|---|---|
 | Confirmation before the KB is edited -- a knowledge-update work's CONFIRM | approve | approve |
-| The KB change -- a knowledge-update work's result, recorded `category: Approval`, `covers: KB change` | approve | approve |
+| The KB change -- a knowledge-update work's result, recorded `category: Approval`, `covers: KB change`, with `commit` (the head after `kb-commit.sh`, so Feature 008 can push it) | approve | approve |
 
 - **Coinciding approvals**: on a knowledge-update work the KB change approval and the final-result
   approval fall at the same moment, so they are one approval (M11). Feature 003's deletion rule fires on it.
@@ -2942,7 +2944,7 @@ suite list of `.github/workflows/installer-tests.yml`):
 |---|---|
 | KB-01 | `aid-kb-build`, `aid-kb-query`, `aid-kb-update`, `aid-kb-show` exist. Absent: `aid-discover`, `aid-ask`, `aid-update-kb`, `aid-summarize`, `aid-housekeep`, the KB `create` / `update` skills, `design-lifecycle.md`, `discovery-state-template.md`, `canonical/aid/scripts/summarize/`. No `shortcut-catalog.yml` row names a retired skill |
 | KB-02 | The re-pointing rule (Migration): no kept file under `canonical/`, nor `dashboard/home.html`, names a retired skill or a moved reference by its old path (`aid-discover/`, `aid-update-kb/`, `aid-ask/`, `state-elicit.md`, `state-generate.md`, ...), except the gate's legacy block and `canonical/aid/scripts/migrate/` |
-| KB-03 | `aid-kb-show` and `aid-kb-query` have no `Write` or `Edit` in `allowed-tools`. `render-kb-view.sh` (without `--check`), `build-kb-index.sh` and `kb-commit.sh` are run only by files of `aid-kb-build` and `aid-kb-update`, with two named exceptions: files under `canonical/skills/aid-monitor-pipeline/` run the first two for Feature 008's pull-request collision step, and `canonical/aid/templates/work-initiation-gate.md` § 3a runs `build-kb-index.sh` and `kb-commit.sh --new-project` for the new-project step. No file but `kb-commit.sh` runs `git commit` on `.aid/knowledge/`, with one named exception: the merge commit of that same Feature 008 step, which finishes a merge whose `kb.html` / `INDEX.md` collision it re-rendered. `kb-commit.sh` has no `git push` |
+| KB-03 | `aid-kb-show` and `aid-kb-query` have no `Write` or `Edit` in `allowed-tools`. `render-kb-view.sh` (without `--check`), `build-kb-index.sh` and `kb-commit.sh` are run only by files of `aid-kb-build` and `aid-kb-update`, with two named exceptions: files under `canonical/skills/aid-monitor-pipeline/` run the first two for Feature 008's pull-request collision step, and `canonical/aid/templates/work-initiation-gate.md` § 3a runs `build-kb-index.sh` and `kb-commit.sh --new-project` for the new-project step. No file but `kb-commit.sh` runs `git commit` on `.aid/knowledge/`, with one named exception: the merge commit `canonical/aid/scripts/pipeline/merge-parent.sh` makes for that same Feature 008 step, which finishes a merge whose `kb.html` / `INDEX.md` collision it re-rendered. `kb-commit.sh` has no `git push` |
 | KB-04 | `kb-state-template.yml` parses through the dashboard reader with no warning; nothing under `canonical/` writes `summary_approved`, `kb_baseline`, `## Q&A (Pending)` or `## Summarization History`; under the re-pointing rule, `.aid/knowledge/STATE.md` is named by no kept file under `canonical/`, nor `dashboard/home.html`, outside `canonical/aid/scripts/migrate/`, which must read old shapes |
 | KB-05 | `skill-steps.md` has the two approval rows and § The KB build record; `aid-kb-update`'s `finish.md` names `idea-drafts.sh`, `--kb-update-log` and the close |
 | KB-06 | `start-or-resume.md` names `kb-freshness-check.sh` and the build's resume offer; `size-and-route.md` routes a knowledge update to `aid-kb-update`; `work-initiation-gate.md` § 3a runs the new-project step (`type: greenfield`, `kb-commit.sh --new-project`) before it creates the worktree; `check-intent.md` names `backlog.md` and records it as a work source |
@@ -4337,7 +4339,7 @@ task or delivery and where it stands (`'task-004: verify round 2'`, `'delivery-0
      (the M7 limit, applied here).
 4. **VERIFY** -- the review cycle (FR-19). Task state `In Review`, written before the reviewer is dispatched.
    - One graded `aid-reviewer` pass, clean context, at a tier no lower than the executor's (decision D6), over the
-     task's diff (`base..HEAD`), the task file, the slice, the KB documents it touches and the test result. Ledger
+     task's diff (`base..HEAD`; the work folder excluded), the task file, the slice, the KB documents it touches and the test result. Ledger
      `.aid/.temp/review-pending/<work>-task-NNN.md`, 7 columns, under `### What to report` (FR-21). It reports a
      criterion not met, a test that does not exercise what it claims, a conflict with the KB or the technical part,
      a change outside the task's scope, and a known issue the task ignores. Wording and style are not findings.
@@ -4410,7 +4412,10 @@ task or delivery and where it stands (`'task-004: verify round 2'`, `'delivery-0
        whole-build milestone that coincides with the last one -- approves it. A correction never creates a wave
        stop of its own, and no milestone is asked again with nothing new built in it.
 8. **DELIVERY** -- the same sequence over the whole delivery (FR-19), before its milestone.
-   - **Verify**: one graded `aid-reviewer` pass over the delivery's diff (`deliveries.<id>.base..HEAD`), its tasks, the
+   - **Verify**: one graded `aid-reviewer` pass over the delivery's diff (`deliveries.<id>.base..HEAD`: its own commits,
+     `git log --first-parent --no-merges -p`, plus only the resolution of a conflict merge in that range, `git show
+     --remerge-diff`, so the parent branch's changes are never reviewed as the work's (Feature 008); the work folder
+     excluded), its tasks, the
      criteria its stanza lists and the KB, at the tier `complexity-score.sh` gives (`tier`). Ledger
      `<work>-delivery-NNN.md`. It also reports what the tasks miss together: glue, naming across tasks, a criterion
      checkable only now. Every task's tests run together. Fixes are made by the executor, scoped to the rows, as in a
@@ -4460,12 +4465,14 @@ task or delivery and where it stands (`'task-004: verify round 2'`, `'delivery-0
        `wave_stops.choice` is `review-and-update`), when the work branch has a remote: one question, "Create or update
        the pull request now?", recommendation yes. Yes: a `CALL` to `/aid-monitor-pipeline` that pushes up to the
        approved `commit` and creates or updates the one pull request, and returns. No: nothing is pushed; the next
-       milestone asks again.
+       milestone asks again. In a correction call there is no push question: the approval's message says its yes also
+       pushes the corrections (Q87), and `/aid-monitor-pipeline` pushes on return.
     - Then on by NEXT's routing rule (step 7).
 11. **FINISH**
     - **After the whole build**: `user_approved: 'yes'` (Feature 002), then `PASS` to the close -- `--handoff --to
       aid-monitor-pipeline --step <its entry step> --returns no --phase CI --why 'whole build approved'`. Until Feature
-      008 lands, `/aid-orchestrate` runs the close minimum (Feature 001's phase table), as Feature 004's KB update does.
+      008 lands, `/aid-orchestrate` runs the close minimum (Feature 001's phase table), as Feature 004's KB update does;
+      Feature 008 then takes the pass at its START.
     - **In a correction call**: `HALT`, which returns to `/aid-monitor-pipeline`, which pushes.
 
 **Real blockers** (`references/blocker.md`; FR-6, AC-32) -- the only interruptions besides the milestones:
@@ -4641,7 +4648,7 @@ real blocker, asked at once and recorded `category: Blocker`. An approval a revi
 recorded as that revision's `Approval` (`covers: requirements change` or `plan change`), never as a `Blocker`." The
 corrections approval is the MILESTONE a correction call reaches -- the last delivery's and the whole build's again,
 `covers: delivery delivery-NNN; whole build; final result` -- with no collection and no push question
-(`/aid-monitor-pipeline` does both).
+(`/aid-monitor-pipeline` does both): its message says the yes also pushes the corrections (Q87).
 
 **Full suite** (Q79): the command comes from the KB's `test-landscape.md` or `technology-stack.md`; with neither, from
 the project's own build files, recorded `Assumed` with reach `project` (so the next approval's KB call records it). A
@@ -4949,7 +4956,562 @@ Feature 006's `006-01`, run again at this feature's end.
 
 #### Technical Specification
 
-*(pending -- added by `/aid-specify`)*
+Serves FR-6 (the push at the milestones, the merge boundary), FR-7 (the CI phase, reacting to reviews and failures, the
+work-folder setting, the close), FR-11, FR-16 and FR-20, and follows FR-17, FR-18 and FR-19 as Features 001-007 define
+them. Maintainer decisions: Q8, Q9, Q20, Q21, Q24, Q25, Q32, Q60, M4, M7, Q85-Q96. Paths are `canonical/` sources,
+rendered as in Feature 001. "The pull request" is the work's one pull request (GitHub) or merge request (GitLab); "the
+host" is GitHub or GitLab; "the work branch" is the work's one branch, `work-NNN`; "the parent branch" is
+`pipeline.parent_branch` (Feature 004, Q60); "the work file" is the work's `STATE.yml`; "the main folder" is the
+project's main worktree.
+
+##### 1. Files and layout
+
+| Change | Path | What |
+|---|---|---|
+| Create | `canonical/skills/aid-monitor-pipeline/SKILL.md` | The CI phase skill: its step table (see Flow), `skill-steps.md` and `question-protocol.md` cited, Feature 001's what/when `description:` (see Components), `argument-hint: "[check, update or close the work's pull request]"`. At most 120 lines. The plan-mode check, as one line |
+| Create | `canonical/skills/aid-monitor-pipeline/references/` | `start.md`, `collect.md`, `push.md`, `parent.md`, `review.md`, `react.md`, `watch.md`, `close.md`, `connect.md` (reaching the host, FR-16), `hosts.md` (each host operation on GitHub and GitLab, see Components), `reviewer-brief.md` (with `### What to report`, SS-13, and two modes: the three-lens review and the conflict check). Each at most 120 lines |
+| Create | `canonical/aid/scripts/pipeline/push-approved.sh` | The only `git push` in AID: pushes the work branch only up to what was approved, after checking the pull request's final content (see Components) |
+| Create | `canonical/aid/scripts/pipeline/merge-parent.sh` | The only `git merge` in AID: brings the parent branch, or the work branch's own remote copy, into the work branch, and nothing else (Q85, Q88; see Components) |
+| Create | `canonical/aid/scripts/pipeline/close-work.sh` | The local clean-up of one closed work (see Components) |
+| Move + rewrite | `canonical/aid/scripts/housekeep/cleanup-classify.sh` -> `canonical/aid/scripts/pipeline/cleanup-classify.sh` | Feature 004's hand-over: reads the work file's YAML (`lifecycle`, `pull_request.state`), compares against `pipeline.parent_branch` instead of `origin/master` (tech-debt SY-1), and gains `--work <work-id>`, the items of one work; stays read-only, its safety self-check kept (see Components) |
+| Edit | `canonical/aid/scripts/execute/writeback-state.sh` | `--pull-request --field F --value V`; `--feedback-add` with a `ref` already present writes nothing and prints the existing id (see Work state) |
+| Edit | `dashboard/scripts/writeback-state.sh` (the deliberate fork) | The same `--feedback-add` duplicate rule, for writer parity; it keeps `Deploy` |
+| Edit | `canonical/aid/templates/work-state-template.yml` | The `pull_request` key with its `[W]` comment (see Work state) |
+| Edit | `canonical/aid/templates/settings.yml`, `canonical/skills/aid-config/SKILL.md` (its settings rows) | `work_folders: push` with its comment (`push`, `keep-local`, `delete`; M4) and the row that sets it |
+| Edit | `canonical/aid/templates/skill-steps.md` § When approvals happen (Feature 002) and its never-merges sentence | One row, the conflict merge (see Components, Approvals); the never-merges sentence narrowed as AC-11 now reads (Q85) |
+| Edit | `canonical/aid/templates/work-initiation-gate.md` § 3b, row 1 (Feature 002) | A work folder found on a branch other than its own counts as finished (Q95; see Components, Merged work folders) |
+| Edit | `canonical/aid/templates/worktree-lifecycle.md` § Step 3 and the header of `canonical/aid/scripts/works/worktree-lifecycle.sh` | The `aid-housekeep` teardown consumer row becomes the close of `/aid-monitor-pipeline` (`close-work.sh`); "teardown is exclusively feature-004 / aid-housekeep" names the close |
+| Edit | `canonical/aid/templates/connectors/consumption-protocol.md` | A wired-seam row for `/aid-monitor-pipeline`, the one seam that writes to a source host, on the user's instruction; the header's reads-only sentence scoped to ticket seams (Q93; see Components, Reaching the host) |
+| Edit | `canonical/skills/aid-orchestrate/references/size-and-route.md` (Feature 001's phase table row "Every work") | CI closes every work through `/aid-monitor-pipeline`; the interim `/aid-orchestrate` close minimum goes |
+| Edit | `canonical/skills/aid-kb-update/references/finish.md` (Feature 004), `canonical/skills/aid-execute/references/finish.md` (Feature 007) | Their `PASS` to the close names `aid-monitor-pipeline` with `--phase CI`; the interim lines go |
+| Edit | `canonical/skills/aid-research/SKILL.md`, `aid-review/SKILL.md`, `aid-report/SKILL.md` (each § State: DONE) | Q96: the work is no longer marked done by hand: `PASS` to `aid-monitor-pipeline` (`--phase CI`, `--why '<skill> done'`), which closes it. `aid-review`'s findings ledger is named as kept (see Flow, CLOSE) |
+| Edit | `canonical/skills/aid-deploy/SKILL.md` and `references/state-packaging.md`, `references/state-done.md` | Q96 for the release work: its finish passes to the close; the "PR-based: create pull request" package step becomes "the release's pull request is opened by the close, on the user's yes" (FR-6: one skill touches the pull request) |
+| Edit | `canonical/agents/aid-operator/AGENT.md` | "Create pull requests" lines go: the operator writes the release's description, `/aid-monitor-pipeline` opens the pull request |
+| Edit | every other kept file under `canonical/` that runs `git push` (today `aid-discover`'s fix step and its `SKILL.md` note, carried into `aid-kb-build` by Feature 004, and `aid-update-kb`'s done step) | The push line goes: the KB is committed, never pushed (Feature 004); NM-05 keeps `push-approved.sh` the only push |
+| Edit | `canonical/aid/rules.md` § Skill guide | The `/aid-monitor-pipeline` line (Components) |
+| Edit | `dashboard/reader/models.py`, `parsers.py`, `reader.py`, `dashboard/server/reader.mjs`, `server.py` § `_ser_work`, `server.mjs`, `dashboard/home.html` | See Components, Dashboard |
+| Create | `tests/canonical/test-monitor-pipeline.sh`, `test-push-approved.sh`, `test-merge-parent.sh`, `test-close-work.sh`, `tests/conversation/samples/feature-008/`, `tests/conversation/stand-ins/` | See Testing |
+
+##### 2. Flow
+
+Three ways in, one step table. Building's `PASS` with `--phase CI` (Feature 007), a knowledge-update work's `PASS`
+(Feature 004), the `PASS` of the finishing skills (Q96) and a typed `/aid-monitor-pipeline` arrive at START; Building's two
+milestone calls arrive there too, and START sends them on. Typing the command on a work at CI is a resume (Feature 002).
+
+| Step | Reference | Worker | Advance |
+|---|---|---|---|
+| START | `references/start.md` | main conversation | `CHAIN` -> COLLECT (a collect call), PUSH (a push call), REVIEW (a pull request exists), CLOSE (nothing to land, no git, or *no pull request*); `ASK` -> START for the create question; `PASS` back for a typed start before the whole build is approved |
+| COLLECT | `references/collect.md` (`hosts.md`) | main conversation | `HALT` in a collect call; `CHAIN` -> CLOSE when merged; else `CHAIN` -> REACT |
+| PUSH | `references/push.md` (`hosts.md`) | main conversation | `CHAIN` -> PARENT on a conflict; `HALT` in a push call; else `CHAIN` -> WATCH |
+| PARENT | `references/parent.md` (brief: `references/reviewer-brief.md`) | main conversation; `aid-developer` resolves; `aid-reviewer` checks | `ASK` the conflict-merge approval, then `CHAIN` -> PUSH |
+| REVIEW | `references/review.md` (brief: `references/reviewer-brief.md`) | `aid-reviewer` | `CHAIN` -> REACT |
+| REACT | `references/react.md` | main conversation | `CALL` to `aid-plan`, then `CALL` to `aid-execute`, then `CHAIN` -> PUSH; `ASK` -> REACT for suggestions and the third failure; `CHAIN` -> PARENT for a conflict; `CHAIN` -> WATCH when nothing is open |
+| WATCH | `references/watch.md` | main conversation | `CHAIN` -> COLLECT at each check; `WAIT` -> WATCH when idle; `ASK` -> WATCH when the pull request is closed unmerged |
+| CLOSE | `references/close.md` | main conversation | `ASK` -> CLOSE for the write-back and the leftovers; `HALT` |
+
+Any step that reaches the host and cannot follows `references/connect.md` (Reaching the host): `ASK` -> the same step.
+`step_detail` names where it stands (`'pull request #42: pipeline running'`, `'conflict merge: 3 files'`). The work leaves
+by `HALT` at CLOSE; the one `PASS` is START's pass back on a typed start before the whole build is approved.
+
+1. **START**
+   - **Reads**: the work record; the open call, if any; `pipeline.parent_branch`; `pull_request`; `feedback`; the
+     newest `Approval` answered yes with a `commit`; `work_folders` (`read-setting.sh --key work_folders --default push`);
+     the KB documents on the project's pipeline (`infrastructure.md`, `integration-map.md`) when a KB exists.
+   - **A call from Building** (Feature 007, MILESTONE): `--why` starting `collect` -> COLLECT; starting `push` -> PUSH.
+   - **A typed start before the whole build is approved** (no `whole build` approval yet): full monitoring may not
+     start (FR-6). The agent reads the pull request's state through COLLECT's reads, says it in one line, writes no
+     `feedback`, and passes back to the skill that drives the work's phase, at its entry step, without `--phase` (as
+     Features 003 and 005 do).
+   - **The host and remote** (Components, Reaching the host): the remote is the one the parent branch tracks, else
+     `origin`, else the only remote; the host is read from its address, an unknown address asked once.
+   - **Nothing to land** -- the work branch has no commit of its own beyond its merge base with the parent branch
+     (research, review, a report, a question): CLOSE, mode `nothing`. No pull request question.
+   - **No git** (`pipeline.parent_branch: --`): CLOSE, mode `no-git` -- the close minimum (FR-1, AC-36).
+   - **No remote**: `connect.md` first offers to add one; then as *no pull request yet*.
+   - **No pull request yet** (the user said no at every push question, or the work never had a milestone, e.g. a
+     knowledge-update or release work): one question (Q94), `category: Pull request`, importance high -- *create it
+     now* (recommended), *not yet* (the work pauses at CI, `pause_reason: 'Pull request not created yet'`; any resume asks
+     again), or *no pull request* (CLOSE, mode `no-pr`: the work is marked done, its branch and worktree kept). The yes is
+     the instruction FR-7 requires: PUSH.
+   - **A head no approval covers** -- a work that reaches CI without a milestone (a release work, say) and whose newest
+     commit no `Approval` answered yes records: its final-result approval is asked first, in chunks, and recorded
+     `category: Approval`, `covers: final result`, with `commit` (FR-6: every work ends with that approval, before the push
+     it controls). A knowledge-update work's `KB change` approval already records its `commit` (Feature 004).
+   - **A host other than GitHub or GitLab**: PUSH pushes on the yes; the user opens the pull request; WATCH is replaced by
+     one `WAIT` ("tell me when it is merged"), and the user's word moves the work to CLOSE.
+   - **A pull request exists** (`pull_request.number`): a draft is marked ready for review now that the whole build is
+     approved (Q90); then REVIEW, once (`pull_request.review` names the commit it ran on; set means skip to REACT).
+   - **An open pull request not yet recorded** -- an old work, or one opened by hand, whose head is the work branch: it is
+     adopted (recorded), never duplicated.
+2. **COLLECT** -- read-only on the work and the code: nothing is committed, pushed or written to the host.
+   - Through `hosts.md`: review comments and review threads newer than `pull_request.checked`, the reviews' verdicts, the
+     pipeline runs on the pushed head and their failing jobs, the host's mergeability, and the pull request's state.
+   - Each new item becomes one `feedback` entry (`--feedback-add`, keyed by its `ref`, so it is added once). The kind is
+     the agent's reading: `bug` (a defect is reported), `correction` (a change the reviewer requires -- a "changes
+     requested" verdict, or a blocking remark), `suggestion` (optional), `comment` (no change asked), `pipeline failure`,
+     `conflict` (the host or `git merge-tree` reports one with the parent branch). Unsure between a required and an
+     optional change: `suggestion` -- the user decides. Comments from bots count like any reviewer's.
+   - **Commits others added to the work branch on the host** (Q88) -- an accepted review suggestion, say: one `comment`
+     entry per commit (`ref: 'commit:<id>'`), state `Shown`, listed in the next approval; PUSH brings them in.
+   - `pull_request.state`, `pipeline` and `checked` are written.
+   - In a collect call: `HALT` (Building's MILESTONE turns the entries into corrections, Feature 007).
+3. **PUSH**
+   1. **Others' commits first** (Q88): fetch; when the remote work branch holds commits the local one does not, the local
+      branch moves forward to it when it has nothing new (`merge-parent.sh fast-forward --from own`); otherwise
+      `merge-parent.sh start --from own`. A clean merge is committed at once (`finish`) and pushed with the approved
+      commits -- it adds nothing beyond what is approved here and already on the host, which `push-approved.sh`
+      verifies; one with conflicts goes to PARENT like a parent conflict.
+   2. **A conflict with the parent branch** (the host's mergeability, or `git merge-tree --write-tree` against the
+      parent's remote tip): PARENT, then back here.
+   3. **The record commit** (Q86; `work_folders: push` only): when the work branch's head is the newest approved
+      `commit` (or the clean merge of step 1 on top of it), one commit of `.aid/works/<work>/` alone, `work-NNN: record`.
+      The approval message that led here said the record is included. When the head is past the approved commit, no
+      record commit: the push carries the approved commit alone, and the record follows with the next push.
+   4. **The push**: `push-approved.sh --work-dir <dir>` -- exactly what was approved, to the work branch on the remote,
+      never forced, never to the parent branch, `main` or `master`.
+   5. **The pull request** (`hosts.md`): created on the first push -- **as a draft while the work is in Building** (Q90;
+      GitLab's `Draft:`), ready when the whole build is approved; base `pipeline.parent_branch`, head the work branch;
+      title from `REQUIREMENTS.md`'s **Name**; body from the project's own template when it has one (`.github/
+      pull_request_template.md`, `.gitlab/merge_request_templates/Default.md`), filled from `REQUIREMENTS.md` (objective,
+      criteria), the plan's deliveries, the test results (`full_suite`) and one line: "Merging is yours." Later pushes
+      update the body. A host that refuses drafts (a plan without them): created ready, and the user told in one line.
+   6. **Record and reply**: `pull_request.head`, `number`, `link`, `state`; each `feedback` entry the pushed commits fix
+      becomes `Done`; then one short factual reply on each fixed review comment -- "Fixed in <short commit>." (Q91).
+      Threads are left for the reviewers to resolve.
+   7. In a push call: `HALT`, back to Building's MILESTONE. Else WATCH.
+4. **PARENT** -- the only merge AID makes (Q85): bringing the parent branch (or the work branch's own remote copy, step
+   3.1) into the work branch, only for a conflict, approved before it is pushed. Building never brings the parent in
+   (Feature 007).
+   1. `merge-parent.sh start --from parent`: merges the parent's remote tip with `--no-ff --no-commit` and lists the
+      conflicted paths.
+   2. **KB files** (Feature 004): a conflicted KB document is resolved by keeping both sides' text and adding no claim of
+      its own; then `build-kb-index.sh` and, when the KB holds a document, `render-kb-view.sh` regenerate `INDEX.md` and
+      `kb.html` -- never resolved by hand -- and both are staged. After the merge commit, when a KB document was
+      conflicted, one `CALL` to `/aid-kb-update` (`sweep`, those documents) reconciles their meaning; its change joins
+      this approval.
+   3. **Other conflicts**: `aid-developer` (clean context, tiered as in Building) resolves them keeping both sides'
+      intent, and returns each resolution with its reason. A conflict that needs a choice the requirements, the KB or a
+      user decision rules on is a real blocker (`category: Blocker`), never settled alone (AC-5).
+   4. The full suite (`full_suite.command`, Feature 007) runs on the merged tree before the commit; a failure the parent
+      branch does not already have goes back to step 3, three rounds, then a real blocker (M7).
+   5. `merge-parent.sh finish`: the merge commit. `aid-reviewer` (conflict-check mode) reads only the resolution
+      (`git show --remerge-diff <merge>`) and the test result; rows are fixed by `aid-developer` in one commit on top,
+      `merge: fix <rows>`, and checked again (three rounds, then the Q69 choice per row).
+   6. **The approval** -- in chunks: what the parent brought in, each conflict and how it was resolved, the tests, the
+      check. Recorded `category: Approval`, `covers: conflict merge`, `commit` the head. A change asked: back to step 3.
+      *Not now*: the work pauses (`pause_reason: 'Waiting for the conflict-merge approval'`); nothing is pushed.
+   7. Then PUSH.
+5. **REVIEW** -- the hardening, security and quality reviews (FR-7, Q92), once, when full monitoring starts.
+   - One `aid-reviewer` pass, clean context, at a tier no lower than Building's highest executor tier, with three lenses
+     in one brief: **hardening** (error handling, input checks, limits, failure modes), **security** (injection,
+     secrets, permissions, unsafe dependencies), **quality** (duplication, dead code, tests that do not test, unclear
+     structure). Scope: the work's net change against the parent branch. Ledger
+     `.aid/.temp/review-pending/<work>-pipeline-review.md`, 7 columns, under `### What to report` (FR-21). No grade, no
+     loop.
+   - Each row becomes a `feedback` entry (`ref: 'review:<row>'`): a defect is a `bug`, a required fix a `correction`,
+     the rest `suggestion`. `pull_request.review` records the commit. Then REACT.
+6. **REACT** -- every `Open` entry, most important first.
+   - **`bug`, `correction`, `pipeline failure`** -- corrected without asking (FR-7), always as a build (Q77):
+     one `CALL` to `/aid-plan` (REVISE, `--why 'corrections: F3, F5'`): ordinary tasks, recorded `Assumed` `Plan change`,
+     in the last delivery that has a `Done` task, declaring no dependency on a `Done` task; the entries become `Task`.
+     Then one correction `CALL` to `/aid-execute`, which builds them, verifies the delivery again, runs the full suite,
+     asks the corrections approval and returns (Feature 007). That approval is also the push instruction (Q87): on
+     return, PUSH, with no second question.
+     - A requested change that contradicts the KB, the requirements or a user decision is not applied: it becomes a
+       question (AC-5).
+     - A pipeline failure the parent branch's own latest run also has is not the work's: `Shown`, reported, not fixed
+       (as Building's baseline, Q79). A failure that does not reproduce on a re-run of the same commit is reported once
+       as unstable, and the run re-requested once.
+     - **The same failure three times** (M7): an entry whose failure signature -- job and failing test, at the head of
+       its `summary` -- already reached `Task` twice is not corrected again: one question, `category: Blocker`, with the
+       three attempts and the options *try again with my guidance*, *leave it to me*, *stop* (recommendation by evidence).
+   - **`suggestion`, `comment`** -- grouped questions (question protocol, subject "review comments"), `category: Pull
+     request`, each with the agent's evaluation, options and a recommendation; the entry becomes `Asked`. *Take it*: it
+     joins the next corrections round. *Decline*: `Declined`, and one follow-up confirmation, "Reply to the reviewer:
+     '<your reason>'?" -- the reply is posted only on that yes (Q91). A `comment` that asks nothing is `Shown`, with no
+     question.
+   - **`conflict`**: PARENT.
+   - Nothing open: WATCH.
+7. **WATCH** (Q89)
+   - While a pipeline runs on the pushed head: COLLECT every 2 minutes, up to a 30-minute window
+     (`pull_request.watch_until`); new entries go to REACT, a merge to CLOSE.
+   - Idle -- no run in progress, nothing open, or the window spent: `WAIT` with one plain line -- what is pending
+     (reviews, a merge) and that merging is the user's. Any resume, or "check my pull request", starts a new check at
+     COLLECT.
+   - **Closed without merge**: one question -- *finish without the pull request* (recommended: the work is marked done,
+     its branch and worktree kept, as *no pull request*), *reopen it* (through `hosts.md`), *cancel the work*
+     (`/aid-orchestrate`'s cancel).
+8. **CLOSE** -- FR-7, AC-36. The minimum, marking the work done, runs on every path.
+   1. **Before anything is removed**, with `work_folders: delete` and a work source of kind `ticket` (Feature 001): one
+      question offering the write-back first (`/aid-update-ticket`); a tool limit follows Q32 -- the user is told and
+      chooses the workaround.
+   2. **Done**: `writeback-state.sh --pipeline --field Lifecycle --value Completed`, which clears the saved skill and step
+      (Feature 002).
+   3. **Leave the worktree** before it is removed: the host's own exit (Claude Code's `ExitWorktree`); a tool without one
+      carries on from the main folder and says so in one line (`worktree-lifecycle.md`).
+   4. **Local clean-up**: `close-work.sh --work-dir <dir> --main <main folder> --mode <mode>`, mode `merged`, `no-pr`,
+      `nothing` or `no-git` (Components). It removes only this work's temporary files (other works keep theirs; a review
+      work's findings ledger, `<work>-review.md`, is kept for `/aid-fix`), the local work branch and the old local delivery
+      branches when nothing of theirs would be lost, and the worktree (never forced); the work folder goes as the setting
+      says. **No remote branch is ever deleted** (FR-7).
+   5. **Leftovers** -- other finished works' worktrees and branches already contained in the parent branch, and temporary
+      files no open work owns (`cleanup-classify.sh --root <main folder>`): one question, importance low, only when there
+      are some; yes runs `close-work.sh` on each.
+   6. One line: done, and, after a merge, how to bring the main folder's parent branch up to date (AID does not pull).
+      `HALT`.
+
+##### 3. Work state
+
+The CI part of the work file (block style, Feature 002; three levels at most):
+
+```yaml
+# [W] the work's one pull request (GitHub) or merge request (GitLab); every value -- until it exists
+#   host: github | gitlab | other; via: a connector stem | gh | glab | user
+#   state: draft | open | merged | closed; pipeline: running | passing | failing | none | --
+#   work_folder: the work_folders setting read at the first push, kept for this work
+pull_request:
+  host: --
+  via: --
+  remote: --
+  number: --
+  link: --
+  state: --
+  head: --
+  pipeline: --
+  checked: --
+  watch_until: --
+  review: --
+  work_folder: --
+```
+
+- **`head`** is the newest commit pushed; **`checked`** the time of the last COLLECT; **`review`** the commit REVIEW ran on.
+- **`work_folder`** freezes the setting for this work at its first push, so a setting changed mid-work never leaves a
+  pushed folder to be removed by a clean-up commit (AC-35); a later change applies to new works.
+- **`feedback`** (Feature 007) is used as defined; its states: `Open` (collected), `Task` (a correction task exists),
+  `Asked` (a question is open), `Declined`, `Shown` (reported, nothing to change), `Done` (fixed and pushed, or resolved).
+- **`qa` entries this skill writes** (Feature 002's shape): `Pull request` (the create question, suggestions, the reply
+  confirmations, the closed-unmerged question), `Approval` (`covers: conflict merge`, with `commit`), `Blocker` (a
+  conflict that needs a decision, the third failure), `Connection` (Reaching the host).
+
+**Writer** -- `writeback-state.sh` keeps Feature 002's lock, quoting, atomic rename and exit codes.
+- `--pull-request --field F --value V` (new): `Host`, `Via`, `Remote`, `Number`, `Link`, `State`, `Head`, `Pipeline`,
+  `Checked`, `Watch Until`, `Review`, `Work Folder`; `State`, `Pipeline`, `Host` and `Work Folder` validated against
+  their lists, anything else exits 4.
+- `--feedback-add` (Feature 007): a `ref` already present writes nothing and prints that entry's id, exit 0 -- so a
+  repeated COLLECT never duplicates an entry.
+
+##### 4. Components
+
+**`/aid-monitor-pipeline` description and guide line** (Feature 001's shape; final text set at build):
+- `description:` "Take a work's pull request to a mergeable state -- review comments, a green pipeline, hardening,
+  security and quality reviews -- and close the work once a person merges it. Use when building is approved, or to
+  check, update or close a work's pull request."
+- Skill-guide line, within SG-03's limit: `` - `/aid-monitor-pipeline` -- keep the pull request on track; close the work ``
+
+**Reaching the host** (FR-16, AC-13, Q93; `references/connect.md`, `references/hosts.md`)
+- **Order**: (1) a catalogued connector of connection type `mcp` whose purpose is a source host -- the connection is
+  requested from the host tool's own plug-in, as the consumption protocol says; (2) the user's own signed-in `gh`
+  (GitHub) or `glab` (GitLab); (3) neither: `connect.md`. `pull_request.via` records which. AID stores no credential
+  (decision D19). `git push` uses the user's own git access.
+- **`hosts.md`** -- one row per operation, each with the plug-in route (the operation the plug-in offers) and the
+  command: create (`gh pr create --draft --base <parent> --head <branch>`, `glab mr create --draft --target-branch
+  <parent>`), mark ready (`gh pr ready`, `glab mr update --ready`), edit the body, read state and mergeability, read
+  review comments and verdicts, read the pipeline and a failed job's log (`gh pr checks`, `gh run view --log-failed`,
+  `glab ci status`, `glab ci trace`), reply to a comment, reopen. **No merge operation and no branch deletion** are
+  listed; NM-02 and NM-05 keep it so.
+- **`connect.md`** -- the agent first finds which piece fails: no remote; the push refused (sign-in, permission, a
+  protected branch); the host not reachable through any route; no network. It then helps, one step at a time under the
+  question protocol: the sign-in steps for `gh auth login` / `glab auth login`; turning on the tool's own GitHub or
+  GitLab plug-in and cataloguing it with `/aid-set-connector <host> mcp`; adding the remote the user names. Only when
+  that fails: the user is told plainly and offered the workable options with a recommendation (Q32) -- *push the branch
+  and open the pull request yourself* (the agent gives the link and the body), *keep the work local for now* (paused at
+  CI), *try again later*. How the work is persisted is always the user's choice, recorded (`category: Connection`).
+- **The consumption protocol**: its wired-seam table gains `aid-monitor-pipeline` (role: *publish*), the one seam that
+  writes to a source host -- push, create and update the pull request, reply -- always on the user's instruction. The
+  header's reads-only rule is scoped to ticket seams. Aid-managed connection types stay deferred: `gh` / `glab` are the
+  user's own tools, not a catalogued connector.
+
+**`push-approved.sh`** -- `push-approved.sh --work-dir W [--check]`; bash, like the other runtime scripts. Exactness is
+the point (decision D17): FR-6's "every push carries only approved work" is checked by code.
+- Reads the work file: the newest `Approval` answered yes with a `commit`, `pipeline.parent_branch`, `pull_request.remote`
+  and `work_folder`.
+- **What may reach the remote**: every commit in `<remote>/<work branch>..<head to push>` is an ancestor of (or equal to)
+  the approved commit; or a clean merge of the work branch's own remote copy whose tree equals `git merge-tree
+  --write-tree` of its two parents (Q88); or a record commit touching only `.aid/works/<work>/` (Q86). Anything else:
+  nothing is pushed.
+- **The final content** (AC-35) -- `git diff --name-status` between the merge base with the parent's remote tip and the
+  head to push holds no path under `.aid/.temp/`, `.aid/.control/`, `.aid/.heartbeat/`, `.aid/.worktrees/`; no path under
+  `.aid/works/` other than this work's folder, and that one only with `work_folder: push`; no idea draft added or changed
+  under `.aid/design/` (a removal is allowed, Feature 003).
+- Pushes `git push <remote> <head>:refs/heads/<work branch>`: no `--force`, no other ref; it refuses when the work branch
+  is the parent branch, `main` or `master`.
+- Exit codes: 0 pushed (prints the commit); 2 bad argument; 3 no git or no remote; 4 no approved commit, or it is not on
+  the work branch; 5 the final-content check failed (each path named); 6 the remote branch has commits not brought in
+  (PUSH step 1 first); 7 a refused target; 8 the push failed (the host's message; `connect.md`). `--check` writes and
+  pushes nothing.
+
+**`merge-parent.sh`** -- the only `git merge` in AID (Q85, NM-01).
+- `start --work-dir W --from parent|own`: refuses (exit 4) unless the checked-out branch is the work's own branch, which
+  is not the parent branch, `main` or `master`, and no merge is in progress; fetches; runs `git merge --no-ff --no-commit
+  <remote>/<parent>` (or `<remote>/<work branch>`); prints the conflicted paths. Exit 0 clean, 1 conflicts, 2 bad
+  argument, 3 no git.
+- `finish --work-dir W`: refuses while a conflict marker remains (`git diff --cached --check`) or a path is unmerged;
+  commits with a fixed message, `merge <source> into <work branch>`; prints the commit.
+- `abort`: `git merge --abort`. `fast-forward --from own`: `git merge --ff-only <remote>/<work branch>`.
+- Never pushes, never checks out another branch.
+
+**`cleanup-classify.sh`** (moved, Feature 004's hand-over) -- read-only, its safety self-check kept.
+- Signals read the work file's YAML: (i) merged -- `pull_request.state: merged`, or the work branch's tip contained in
+  `<remote>/<pipeline.parent_branch>` (`git merge-base --is-ancestor`), never `origin/master`; (ii) concluded --
+  `lifecycle: Completed` or `Canceled`. The `## Deploy Status` and `> **Status:**` reads go (tech-debt SY-1).
+- `--work <work-id>` (new): one record per item of that work -- its temporary paths (`.aid/.temp/execute/<work>/`,
+  `.aid/.temp/review-pending/<work>-*`, `.aid/.control/<work>/`), the local work branch, its old
+  `aid/<work>-delivery-NNN` branches, its worktree, its work folder -- with whether each is safe to remove.
+- The project scan (S1-S6, tier 2) stays for the leftovers question; S1 offers a temporary path only when no open work
+  owns it.
+
+**`close-work.sh`** -- `close-work.sh --work-dir W --main M --mode merged|no-pr|nothing|no-git [--keep P]...`; bash.
+Reads `cleanup-classify.sh --work` and acts on its items only.
+- Temporary files of this work: removed (`--keep` names a file to leave, `aid-review`'s ledger).
+- **The local work branch** (`merged`): deleted only when the host reported the merge and the local tip equals
+  `pull_request.head` (nothing unpushed), or the tip is contained in the parent's remote tip (`nothing`); otherwise kept,
+  and said. The old local delivery branches (Feature 007's migration): deleted when contained in the work branch's
+  pushed head, else kept and said. Branches are deleted only after the worktree is gone.
+- **The worktree**: `git worktree remove` without `--force`, run from the main folder; one holding changes is kept, and
+  said. `no-pr` keeps both the branch and the worktree (Q94).
+- **The work folder** (`work_folder`, or the setting without a push): `push` -- the worktree copy goes with the worktree
+  (the merged copy reaches the main folder with the parent branch); `keep-local` -- moved to the main folder's
+  `.aid/works/` and listed in `.git/info/exclude` (local, never committed); `delete` -- removed. With `no-git` or
+  `nothing` there is nothing to push, so `push` keeps it as `keep-local` does.
+  The folder is settled before the worktree is removed, so it never blocks the removal; for `push`, its changes since
+  the last push (the close's own writes) are dropped, scoped to `.aid/works/<work>/` -- the pushed copy is the record.
+- Never `git push`, never a remote ref, never `--force`, never a path outside this work's items; a safety self-check, as
+  `cleanup-classify.sh`. Exit codes: 0 done (each kept item named on stderr), 2 bad argument, 3 no git where the mode
+  needs it, 4 an item refused.
+
+**Approvals** -- `skill-steps.md` § When approvals happen gains one row, and its never-merges sentence reads as AC-11:
+
+| Moment | `full` | `lite` |
+|---|---|---|
+| A merge brought into the work branch to resolve a conflict (PARENT), before it is pushed | approve | approve |
+
+Recorded `covers: conflict merge`, with `commit`. The create question at START is not an approval: the yes is the
+instruction FR-7 requires (`category: Pull request`). Feature 007's corrections row stands; its yes also pushes (Q87).
+
+**Merged work folders** (Q95). With `work_folders: push`, the copy that reaches the parent branch was pushed before the
+merge and still says the work is at CI. The gate's § 3b row 1 and both dashboard readers therefore treat a work folder
+**committed on a branch other than its own** (`work-NNN`), with no registered worktree on its own branch, as finished: it
+is shown done and never resumed. Without git the rule does not apply. After the close the worktree is gone, so until the
+user brings the main folder's parent branch up to date the work is not listed; then its merged copy shows it done.
+
+**The finishing skills** (Q96): `aid-research`, `aid-review`, `aid-report` and `aid-deploy` end with `PASS` to
+`aid-monitor-pipeline` instead of marking the work done, so their worktrees are cleaned and a release work's pull
+request is opened on the user's yes. A research, review or report work has nothing to land: CLOSE, mode `nothing`.
+
+**KB** -- read, never written here. START and REACT read the pipeline's documents (`infrastructure.md`,
+`integration-map.md`) and check every requested change against the KB (AC-5). A project-wide fact learned while
+diagnosing the pipeline (a required check, a new workflow) is recorded `Assumed` with reach `project`, so the next
+approval's KB call records it (Feature 005). KB changes from corrections come through Building's KB check (Feature 007);
+a conflicted KB document gets PARENT's one `/aid-kb-update` call. With no KB, nothing is read and no call is made
+(Feature 004, No KB: one rule).
+
+**Dashboard** (both readers, kept equal by the parity tests; AC-41):
+- `pull_request` read and passed on by `_ser_work` and `reader.mjs`; `feedback` counted by state.
+- **The work card at CI**: "Pull request #42 -- pipeline passing" (or running, failing), with its link; "2 review
+  comments being corrected"; "Waiting for your answer (N)" for `Asked` entries; "Waiting for the merge -- merging is
+  yours" at an idle WATCH; "Can't reach GitHub -- needs your help" while a `Connection` question is open; "Pull request
+  not created yet" while paused at START. No step names (Feature 002).
+- **Merged work folders**: the readers compute `merged_in` (`yes` when the rule above holds, read with `git rev-parse
+  --abbrev-ref HEAD` and `git ls-files` as `cleanup-classify.sh` does) and show such a work as done.
+
+**Kept invariant**: `/aid-monitor-pipeline` is the only skill that pushes or touches the pull request; it pushes only
+through `push-approved.sh` and merges only through `merge-parent.sh`. It changes product code only through `/aid-execute`
+(corrections) and PARENT's executor, the plan only through `/aid-plan`, a KB document only through `/aid-kb-update` and
+PARENT's keep-both-sides rule, and the work file only through the writer. It never merges the pull request, never pushes
+to the parent branch, and never deletes a remote branch.
+
+##### 5. What other features must provide
+
+| Feature | Must provide | Waiting on it |
+|---|---|---|
+| 007 | MILESTONE's two calls start their `--why` with `collect` and `push` (START reads them) | `007-13` |
+| 009 | The skills it rebuilds that finish a work (`create`, `update`, `document`, `test`, `prototype`) end with `PASS` to `aid-monitor-pipeline` (Q96), as this feature does for `aid-research`, `aid-review`, `aid-report` and `aid-deploy`; the skill names on the dashboard card are its own (AC-31) | -- |
+
+**Owed to this feature by Features 001-007, and where each is met:**
+
+| From | Owed | Met in |
+|---|---|---|
+| 001 | CI closes every work, at minimum by marking it done; `/aid-orchestrate` does it only until this feature | Flow (START, CLOSE); Files and layout (`size-and-route.md`); `001-16` run again |
+| 001 | The what/when `description:` and the skill-guide line | Components |
+| 001 | A tool limit when persisting work: the user is told, offered workarounds, and decides (Q32) | Components (Reaching the host); Flow (CLOSE step 1) |
+| 001 | The conversation suite gains `samples/feature-008/` | Testing |
+| 002 | A push carries only commits up to the newest approved `commit`; this skill pushes and checks it | Components (`push-approved.sh`) |
+| 002 | A pull request is created only on the user's yes, by this skill alone (NM-03) | Flow (START, PUSH); Files and layout (`aid-deploy`, `aid-operator`) |
+| 002 | AID never merges (NM-01, NM-02), narrowed by Q85 | Components (`merge-parent.sh`); Testing (NM-01, NM-05) |
+| 002 | `skill-steps.md` and the protocol cited; advance words; `### What to report`; finishing through the writer; a protocol sample for a new asking skill (SS-09) | Files and layout; Flow; Testing (`008-04`) |
+| 002 | Sample `002-10` | Testing |
+| 003 | The pull request's final content holds no idea draft | Components (`push-approved.sh`) |
+| 004 | The pull request targets `pipeline.parent_branch`; the close compares against it, never `master` | Flow (PUSH); Components (`cleanup-classify.sh`, `close-work.sh`) |
+| 004 | The close takes over `cleanup-classify.sh`, with tech-debt SY-1 | Components (`cleanup-classify.sh`) |
+| 004 | A `kb.html` / `INDEX.md` collision is resolved by `render-kb-view.sh` and `build-kb-index.sh`, both staged, and this feature's own merge commit (KB-03) | Flow (PARENT step 2); Components (`merge-parent.sh`) |
+| 004 | A knowledge-update work's `PASS` to the close | Flow (START); Files and layout (`aid-kb-update` `finish.md`) |
+| 005 | Nothing addressed here; the KB call on confirmation reaches corrections through Feature 007's approvals | -- |
+| 006 | Nothing addressed here | -- |
+| 007 | A read-only collect `CALL` adding each new item with `--feedback-add`, and returning | Flow (COLLECT) |
+| 007 | A push `CALL` up to the newest approved `commit` that creates or updates the one pull request and records `pull_request` | Flow (PUSH); Work state |
+| 007 | The close as the `PASS` target with phase `CI` | Flow (START) |
+| 007 | Corrections after the whole build through `/aid-plan` REVISE and a correction `CALL` to `/aid-execute` | Flow (REACT) |
+| 007 | A conflict with the parent branch resolved here; Building never brings the parent in | Flow (PARENT) |
+| 007 | The work folder committed as the project setting says | Flow (PUSH step 3); Work state (`work_folder`) |
+| 007 | The local clean-up deletes the old local delivery branches | Components (`close-work.sh`) |
+| 007 | `feedback` and its writer modes | Work state |
+| 007 | The corrections approval's push, left to this feature | Flow (REACT; Q87) |
+| 007 | Sample `007-13` | Testing |
+
+##### 6. Risks
+
+- **Monitoring is not continuous** (Q89). A session can end at any time, so WATCH checks only while a pipeline runs, in a
+  30-minute window, and waits; reviews posted while nobody is in a session are read at the next resume or "check my pull
+  request". The dashboard card says the work is waiting.
+- **Git versions**: `git merge-tree --write-tree` needs git 2.38 and `git show --remerge-diff` git 2.36. With an older
+  git, PUSH relies on the host's mergeability report, and PARENT's check reads the whole merge diff instead.
+- **A KB document edited inside a merge**, outside `/aid-kb-update` -- unavoidable while the merge is in progress
+  (`kb-commit.sh` refuses then, Feature 004). Contained by the keep-both-sides rule and the sweep call that follows.
+- **Hosts differ**: drafts are not offered on every plan (fallback: created ready, said once); the plug-in route
+  exposes different operations per tool (`hosts.md` names the command route for each); a host other than GitHub or
+  GitLab gets push-only support.
+- **Leaving the worktree**: a tool with no exit primitive keeps its session pointing at a folder the close removes; the
+  close says so and the next request runs from the main folder.
+- **Names**: `/aid-monitor` (production) and `/aid-monitor-pipeline` (the pull request) are easy to confuse; their
+  guide lines say plainly which is which.
+- **Default `push` and ignored work folders**: a project whose `.gitignore` hides `.aid/works/` (this repository hides
+  some old works) cannot commit the record; the first push there asks once which setting to keep (Migration).
+- **A work folder committed on its parent branch while still running** (only possible by hand) would read as finished
+  under Q95; the gate's recovery still lets the user resume it by confirming a repair.
+- **The stand-ins** in the conversation suite prove the command route, not the plug-in route or the hosts' real replies;
+  one run against a scratch repository on each host is part of the full integration suite before release.
+
+##### 7. Migration
+
+No retired skill: nothing joins the old -> new table (AC-24). `/aid-housekeep`'s row (Feature 004) is made true here:
+finished works are cleaned up when they close.
+
+- **Installed projects**: `aid update` installs the new skill and the `pipeline/` scripts and removes
+  `housekeep/cleanup-classify.sh` through the install manifest (decisions.md § D9).
+- **Settings**: `work_folders` is read with its default, so no format change (Feature 004's format 6 stands). The first
+  push in a project whose `.gitignore` excludes `.aid/works/` asks once (`--ask --project`), recommendation `keep-local`;
+  the answer is written to `.aid/settings.yml` the way `/aid-configure` writes it.
+- **Existing works**: no `pull_request` key means no pull request; START adopts an open pull request whose head is the
+  work branch. Old local delivery branches go at the work's close (Feature 007). A work marked done by hand before this
+  feature keeps its worktree until a leftovers question removes it.
+- **Re-pointing**: every kept file under `canonical/`, and `dashboard/home.html`, that names `housekeep/cleanup-classify.sh`,
+  the `aid-housekeep` teardown, `origin/master` as a merge target, or the interim `/aid-orchestrate` close.
+- **Site**: `site/scripts/skills/` (roster, groups), `site/scripts/.skills-manifest.json` and their `__tests__`; pages and
+  flows regenerated by `site/scripts/gen-skills.mjs`.
+- **Lists other features own** -- each changes in the same commit as the skill:
+  - **Deferred list** (`tests/conversation/deferred.tsv`): `002-10` and `007-13` run now; any feature-008 sample that
+    needs a live host waits on the integration run.
+  - **Never-merges test**: NM-01 as narrowed (Q85); NM-03's exemption list is empty; NM-05 and NM-06 added (Testing).
+  - **SS-13** finds the new brief by its glob; **SG-02** finds the new guide line; **KB-03** names `merge-parent.sh`.
+- **Suites**: `test-housekeep-classify.sh`, `test-housekeep-deletion-split.sh` and `test-housekeep-workfolder-safety.sh`
+  follow the script to its new path and the YAML signals (their `origin/master` fixtures become a parent-branch fixture);
+  `test-writeback-state.sh` (`--pull-request`, the duplicate `ref`), `test-work-state-template.sh`, the dashboard reader,
+  server and parity suites follow; `tests/cost-baseline.tsv` and `tests/coverage-baseline.tsv` re-recorded, removed
+  assertions to `tests/coverage-accepted-removals.tsv`.
+- **User documentation** waits for the final pass (Q40, AC-45). The only edit now: the numbers `test-doc-counts.sh`
+  asserts.
+- **KB** (no work ids): `pipeline-contracts.md` (the CI phase contract and its steps); `architecture.md` (the CI row; the
+  only merge AID makes); `decisions.md` gains "the CI phase ends at a person's merge: AID pushes only approved work,
+  merges only the parent branch into the work branch to resolve a conflict, cleans up locally and never deletes a remote
+  branch"; `integration-map.md` (GitHub and GitLab through the plug-in or `gh` / `glab`; the push); `artifact-schemas.md`
+  (`pull_request`, `work_folders`, the `feedback` states); `domain-glossary.md` (pull request phase, parent branch, close,
+  conflict merge, work-folder setting); `capability-inventory.md`, `module-map.md`, `project-structure.md` (the
+  `pipeline/` scripts), `test-landscape.md` (the new suites), `tech-debt.md` (SY-1 resolved). Then `INDEX.md` is
+  regenerated and `kb.html` rendered by the script (Feature 004).
+
+##### 8. Testing
+
+Per NFR-T (Q35): unit tests and static checks now; a sample that needs a live host runs in the full integration suite
+at the end.
+
+**Static checks -- `tests/canonical/test-monitor-pipeline.sh`** (picked up by `tests/run-all.sh`; added to the suite list
+of `.github/workflows/installer-tests.yml`):
+
+| Group | Asserts |
+|---|---|
+| MP-01 | The skill, its references and brief exist; the step table has START, COLLECT, PUSH, PARENT, REVIEW, REACT, WATCH and CLOSE; `SKILL.md` cites `skill-steps.md` and `question-protocol.md`; only START's `**Advance:**` line has a `PASS` |
+| MP-02 | `push.md` names `push-approved.sh`, `draft` and the record commit; `parent.md` names `merge-parent.sh`, `render-kb-view.sh`, `build-kb-index.sh`, `remerge-diff` and `conflict merge`; `react.md` names `aid-plan`, `aid-execute`, `Assumed` and the third failure; `close.md` names `close-work.sh`, `cleanup-classify.sh` and `Completed` |
+| MP-03 | `hosts.md` names no merge operation (`pr merge`, `mr merge`, a merge endpoint) and no branch deletion; `connect.md` names `/aid-set-connector`, `gh auth login` and `glab auth login` |
+| MP-04 | `work-state-template.yml` has `pull_request` with its `[W]` comment; `settings.yml` has `work_folders: push`; `skill-steps.md` has the conflict-merge row; the gate's § 3b row 1 names a folder on another branch; `consumption-protocol.md` has the `aid-monitor-pipeline` row |
+| MP-05 | `aid-research`, `aid-review`, `aid-report` and `aid-deploy` hand off to `aid-monitor-pipeline` and write no `Completed`; `aid-orchestrate`, `aid-kb-update` and `aid-execute` name no interim close; no file under `canonical/` names `housekeep/cleanup-classify.sh` or `origin/master` as a merge target |
+
+**Never-merges test** (`tests/canonical/test-never-merges.sh`, Feature 002) after this feature:
+
+| Group | Asserts |
+|---|---|
+| NM-01 | As narrowed (Q85): no `git merge` (`git merge-base` and `git merge-tree` excepted) and no `git pull` without `--ff-only`, outside `canonical/aid/scripts/pipeline/merge-parent.sh` |
+| NM-03 | `gh pr create` / `glab mr create` only under `canonical/skills/aid-monitor-pipeline/`; no exemption left |
+| NM-05 | `git push` only in `canonical/aid/scripts/pipeline/push-approved.sh`; nowhere a forced push (`--force`, `-f`, `+<ref>`), a remote deletion (`--delete`, `:<branch>`) or a hosting call that deletes a branch |
+| NM-06 | `git branch -D` only in `close-work.sh`; no `git worktree remove --force` anywhere |
+
+**Unit tests** -- on throwaway repositories with a local bare repository as the remote:
+- `test-push-approved.sh`: pushes exactly the approved commit; refuses an unapproved commit (exit 4) and leaves the
+  remote unchanged; accepts a record commit touching only the work's folder and refuses one touching anything else;
+  accepts a clean merge of the branch's own remote copy and refuses one with an edited tree; exit 5 for a committed
+  `.aid/.temp/` file, another work's folder, the own folder with `work_folder: keep-local`, and an added idea draft,
+  while a removed draft passes; exit 6 when the remote branch is ahead; exit 7 when the work branch is `main`; never a
+  forced push; `--check` changes nothing.
+- `test-merge-parent.sh`: `start` refuses on the parent branch, on `main` and during a merge; a clean merge, a conflicted
+  one listing its paths; `finish` refuses a conflict marker; `fast-forward --from own`; `abort` restores the branch.
+- `test-close-work.sh`: each mode -- `merged` deletes the local branch and the worktree, keeps the remote branch; a
+  branch with an unpushed commit is kept; a worktree holding a change is kept; old delivery branches deleted only when
+  contained; `no-pr` keeps branch and worktree; the three work-folder settings (`keep-local` moved and excluded locally);
+  `no-git`; another work's temporary files untouched; `--keep` honoured.
+- The `cleanup-classify.sh` suites: the YAML signals, the parent-branch comparison (a parent other than `master`), and
+  `--work`.
+- `test-writeback-state.sh`: `--pull-request` fields and refusals; a repeated `--feedback-add` ref writes nothing; every
+  file written parses through the dashboard reader with no warning.
+- Dashboard: fixtures for a work at CI with a draft, an open pull request with a failing pipeline, an idle watch, a
+  `Connection` question, and a merged-in work folder (`merged_in: yes`, shown done); `test_index_html.py` for the card
+  lines; the parity tests.
+
+**Conversation samples -- `tests/conversation/samples/feature-008/`** (frontmatter `skills: aid-monitor-pipeline`). Each
+fixture is a small project with code, a test suite and a local bare remote. The host is a stand-in: `gh` and `glab`
+scripts under `tests/conversation/stand-ins/`, copied into the fixture's `bin/` (Feature 001's per-sample `bin/`), which
+answer from the sample's `host.json` and log every call to `host-calls.log`, which `## Checks` read.
+
+| Sample | Covers | Runs |
+|---|---|---|
+| `008-01-pull-request-only-when-asked` -- a work at its whole-build approval; the user says no, then, at CI, *not yet*, then in a new session yes. Check: no push and no create call before the yes; the pull request created ready, targeting the parent branch | AC-11, AC-42 | now |
+| `008-02-draft-while-building` -- a two-delivery work; yes at the delivery-001 push question. Check: a draft created; the pushed head equals that approval's `commit`; at the whole build, marked ready | AC-42 | now |
+| `008-03-bug-comment-corrected` -- an open pull request after the whole build; the stand-in adds a bug comment. Check: a correction task in the last delivery with a `Done` task, built and verified; one corrections approval and no second push question; after the yes, the pushed head equals its `commit`; one "Fixed in" reply | AC-27, AC-42 | now |
+| `008-04-suggestion-asked` -- a suggestion and a plain comment. Check: one question with a recommendation and its reason (protocol checks); declined, the reply posted only after the user's yes; the comment asked nothing | AC-27, AC-28 | now |
+| `008-05-pipeline-failure-three-times` -- the stand-in fails the same test on every run. Check: two correction rounds, then one `Blocker` question with the three attempts; nothing pushed without an approval | AC-27 | now |
+| `008-06-parent-conflict-with-kb-view` -- the parent branch moved with a conflicting code change and a new KB document. Check: one merge commit whose second parent is the parent's tip; `kb.html` and `INDEX.md` equal a fresh render; the conflict-merge approval before the push; no merge in the parent branch | AC-11, AC-42 | now |
+| `008-07-commit-added-on-host` -- the stand-in's remote branch gains a reviewer's commit. Check: brought in by fast-forward, listed in the next approval, nothing forced | AC-42 | now |
+| `008-08-review-lenses` -- the work's change holds an unchecked input. Check: one review pass, its defect corrected as a task, its suggestions asked | AC-27 | now |
+| `008-09-merged-then-closed` -- the stand-in reports the merge. Check: `lifecycle: Completed`; the local branch, the worktree, an old delivery branch and the work's temporary files gone; another work's temporary files and the remote branch still there; no `git push` after the merge | AC-36 | now |
+| `008-10-work-folder-settings` -- three runs, one per setting. Check: `push` -- the final content holds the work folder and no clean-up commit follows; `keep-local` -- never committed, in the main folder after the close; `delete` -- gone, with the write-back offered first for a ticket work | AC-35, AC-36 | now |
+| `008-11-no-repository` -- a project with no git. Check: the work done, nothing pushed, no question about a pull request | AC-14, AC-36 | now |
+| `008-12-host-unreachable` -- the stand-in refuses every call (not signed in). Check: the agent finds the cause, offers the sign-in steps and the plug-in route; when they fail, the workarounds with a recommendation; the user's choice recorded; nothing pushed | AC-13 | now |
+| `008-13-no-pull-request` -- the user answers *no pull request*. Check: done; branch and worktree kept | AC-36 | now |
+| `008-14-research-closes` -- a research work ends. Check: a pass to the close; done; its worktree removed; no pull request question | AC-14, AC-36 | now |
+| `008-15-live-hosts` -- `008-03` and `008-09` against a scratch repository on GitHub and on GitLab, through each route | AC-13, AC-27, AC-36 | integration run before release |
+
+`002-10-pull-request-only-when-asked`, `007-13-milestone-collect-and-push` and `001-16-work-closes-done` run at this
+feature's end.
+
+##### Criteria traceability
+
+| Criterion | Where satisfied | How verified |
+|---|---|---|
+| AC-11 | Components (`merge-parent.sh`, `hosts.md`, Kept invariant); Flow (START, PARENT) | NM-01, NM-02, NM-03, NM-05; MP-03; `008-01`, `008-06`; `002-10` |
+| AC-13 | Components (Reaching the host) | MP-03; `008-12`, `008-15` |
+| AC-27 | Flow (REVIEW, REACT, WATCH); Components (Approvals) | MP-02; `008-03`, `008-04`, `008-05`, `008-08`, `008-15` |
+| AC-34 | Components (`merge-parent.sh`: the one merge AC-34 allows) | NM-01, NM-06; Feature 007's `007-09` |
+| AC-35 | Flow (PUSH step 3); Components (`push-approved.sh`); Work state (`work_folder`) | `test-push-approved.sh`; `008-10` |
+| AC-36 | Flow (CLOSE); Components (`close-work.sh`, `cleanup-classify.sh`, Merged work folders) | NM-05, NM-06; `test-close-work.sh`; `008-09`, `008-10`, `008-11`, `008-13`, `008-14` |
+| AC-42 | Flow (COLLECT, PUSH); Components (`push-approved.sh`) | `test-push-approved.sh`; `008-01`, `008-02`, `008-03`, `008-06`, `008-07`; `007-13` |
 
 ### Feature 009 — One Obvious Skill for Each Need
 
