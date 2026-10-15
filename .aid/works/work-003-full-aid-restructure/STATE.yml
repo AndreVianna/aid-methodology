@@ -1298,8 +1298,32 @@ qa:
   - id: Q107
     category: Specification (Feature 009)
     impact: High
-    state: Pending
+    state: Answered
     context: 'At Feature 009 approval the maintainer chose to change it: the action list and kinds look software-focused; how can AID apply to health, law, productivity, media, arts and everyday tasks? Research requested before deciding.'
     suggested: 'Research how actions, kinds and the pipeline map to non-software domains, then decide what Feature 009 must include in v4.0.0 so it is not a dead end and what becomes a later work.'
-    answer: '--'
-    applied_to: 'Feature 009 Technical Specification (pending research)'
+    answer: 'Research done (research/non-software-domains.md); decisions recorded as Q108-Q110.'
+    applied_to: 'Feature 009 Technical Specification'
+  - id: Q108
+    category: Specification (Feature 009)
+    impact: High
+    state: Answered
+    context: 'The KB, README and CLAUDE.md say AID is for building software; two templates say any digital work. The identity statement must be one.'
+    suggested: 'Software first, not software only: AID is built for software and its design leaves room for other areas; recorded in decisions.md and stated the same way everywhere.'
+    answer: 'Accepted as recommended (software first, not software only).'
+    applied_to: 'Feature 009 Technical Specification (identity statement)'
+  - id: Q109
+    category: Specification (Feature 009)
+    impact: High
+    state: Answered
+    context: 'Some changes that open AID to other areas are cheap now but break compatibility after v4.0.0; packs and high-stakes rules are large designs.'
+    suggested: 'v4.0.0 takes the 7 small changes: a user-owned .aid/kinds/ folder; an optional domain field (default software, names unique across packs); any skill may take a kind; readers keep unknown fields, with risk, limits, sign_off and release reserved; no code words in the action layer; one no-repository sample; the identity decision (Q108). No pack ships in v4.0.0.'
+    answer: 'Accepted as recommended (the 7 small changes).'
+    applied_to: 'Feature 009 Technical Specification (domain readiness)'
+  - id: Q110
+    category: Specification (Feature 009)
+    impact: Medium
+    state: Answered
+    context: 'Nine later works (pack format and sharing, high-stakes handling, non-software release, work outside git, privacy classes, a checking task type, first packs, per-pack samples, KB rows for the new areas) must not be lost; work folders are pruned after shipping.'
+    suggested: 'One roadmap entry in the KB (.aid/knowledge/roadmap.md, Later): "Beyond software", listing the nine items, written by this work with no work id.'
+    answer: 'Accepted as recommended (one KB roadmap entry).'
+    applied_to: 'Feature 009 Technical Specification (roadmap entry)'
