@@ -4254,8 +4254,8 @@ Building is a resume, on another work a typed start (Feature 002). One run build
 | VERIFY | `references/verify.md` (brief: `references/reviewer-brief.md`) | `aid-reviewer` | `CHAIN` -> SIMPLIFY when the grade passes; `CHAIN` -> BUILD in a fix; after three rounds below the bar, `ASK` per open row |
 | SIMPLIFY | `references/simplify.md` | `aid-reviewer` lists; the executor applies | `CHAIN` -> REVERIFY when something changed; else `CHAIN` -> NEXT |
 | REVERIFY | `references/verify.md` (re-verify mode) | `aid-reviewer` | `CHAIN` -> NEXT, after undoing the simplification when it fails |
-| NEXT | `references/next.md` | main conversation | `CALL` to `aid-kb-update` when the KB check hits; then `CHAIN` -> BUILD, MILESTONE (a chosen wave end) or DELIVERY (a delivery end) |
-| DELIVERY | `references/delivery.md` | `aid-reviewer`; the executor for fixes and the simplification | `CHAIN` -> MILESTONE; after the last delivery, `CHAIN` -> FINAL |
+| NEXT | `references/next.md` | main conversation | `CALL` to `aid-kb-update` when the KB check hits; then `CHAIN` by the routing rule (NEXT, below) -> BUILD, MILESTONE, DELIVERY or FINAL |
+| DELIVERY | `references/delivery.md` | `aid-reviewer`; the executor for fixes and the simplification | `CHAIN` by NEXT's routing rule -> MILESTONE, or FINAL first for the last delivery |
 | FINAL | `references/final.md` | main conversation; the executor and `aid-reviewer` for fixes | `CALL` to `aid-kb-update` when owed; `CHAIN` -> MILESTONE |
 | MILESTONE | `references/milestone.md` | main conversation | `CALL` to `aid-monitor-pipeline` (collect, push); `CALL` to `aid-plan` for corrections, then `CHAIN` -> BUILD; `ASK` the approval; then `CHAIN` -> BUILD, or -> FINISH after the whole build |
 | FINISH | `references/finish.md` | main conversation | `PASS` to the close; in a correction call, `HALT` |
@@ -4362,9 +4362,17 @@ task or delivery and where it stands (`'task-004: verify round 2'`, `'delivery-0
      with a KB: one `CALL` to `/aid-kb-update` (`--why 'task-NNN built: <what>'`), which stamps against the task's
      commit and records its change `Assumed` for the next approval. With no KB, no call: the agent says once per work
      that the KB is not built (Feature 004, No KB: one rule).
-   - **What comes next**: the next task of the wave; at a wave end, MILESTONE when `wave_stops` is not `none` and the
-     wave is not the delivery's last; at a delivery end, DELIVERY; after a correction task made at a milestone, back
-     to that MILESTONE once every correction is built.
+   - **What comes next** -- the one routing rule. It runs at the end of NEXT, DELIVERY and MILESTONE, and when a call
+     made from NEXT returns (a given-up task, Real blockers), so it holds in a live run as on resume. It reads state
+     only, for the current delivery -- the lowest-numbered one that is neither `Done` nor `Canceled` (`Canceled`
+     deliveries are skipped) -- first match:
+     1. corrections made at a milestone: the next one -> BUILD; once all are built -> that MILESTONE;
+     2. a wave just ended, `wave_stops` is not `none`, and it is not the delivery's last wave -> MILESTONE;
+     3. a task neither `Done` nor `Canceled` whose dependencies are `Done` -> BUILD;
+     4. no such task, at least one `Done`, the delivery not yet verified -> DELIVERY;
+     5. the delivery verified and waiting for its approval -> MILESTONE, after FINAL when it is the last delivery and
+        FINAL has not run;
+     6. no delivery left -> FINAL, then the whole-build MILESTONE.
 8. **DELIVERY** -- the same sequence over the whole delivery (FR-19), before its milestone. Delivery state
    `Verifying`.
    - **Verify**: one graded `aid-reviewer` pass over the delivery's diff (`deliveries.<id>.base..HEAD`), its tasks, the
@@ -4374,8 +4382,8 @@ task or delivery and where it stands (`'task-004: verify round 2'`, `'delivery-0
      task; three rounds below the bar ask per row, as in VERIFY. Rows the user accepts go to `issue_list`.
    - **Simplify**: once, for duplication across the delivery's tasks, with the same guard over every task's test list.
    - **Re-verify**: scoped to that commit, only when something changed; a failure undoes it (Q78).
-   - Recorded in the delivery's `verify`, `simplify`, `reverify`, `tests` and `commit`; then MILESTONE, or FINAL after
-     the last delivery.
+   - Recorded in the delivery's `verify`, `simplify`, `reverify`, `tests` and `commit`; then on by NEXT's routing rule
+     (step 7): its MILESTONE, or FINAL first for the last delivery.
 9. **FINAL** -- once every task is `Done` or `Canceled`.
    - **The full suite** runs on the work branch's head (Components, Full suite). A failure absent from the baseline is
      the work's: fixed by the executor in a scoped round (`step_detail: 'full suite: fix <tests>'`), the suite run
@@ -4437,12 +4445,13 @@ session asks only real blockers.
 **A task that keeps failing** (TEST or VERIFY after three rounds, or a blocker about one task): the question offers
 *retry*, with the user's guidance, or *give it up* -- *cancel it and what depends on it*, or *replan them* (with what
 should be built instead). Giving up writes the task `Failed`, its dependents `Blocked` (`compute-block-radius.sh` over
-the whole work's graph) and their delivery `Blocked` with `block_reason` naming the question, then makes a `CALL` to
-`/aid-plan` (REVISE, `--why 'task-NNN given up: cancel'` or `'... replan'`). REVISE cancels the task and its dependents,
-or replaces the task and rewires the dependents, and its FINISH runs `--plan-sync --cancel` (Work state): the cancelled
-tasks become `Canceled`, a rewired dependent goes back to `Pending`, and the writer resets their delivery. Cancelling
-every task of a delivery is a change to the deliveries, approved at once (Feature 006). DELIVERY and FINAL count a
-`Canceled` task as closed.
+the whole work's graph) and their delivery `Blocked` with `block_reason` naming the question, saves the step as NEXT,
+and makes a `CALL` to `/aid-plan` (REVISE, `--why 'task-NNN given up: cancel'` or `'... replan'`), which returns to
+NEXT, not to the TEST or VERIFY step it left; NEXT's routing rule then picks what comes next. REVISE cancels the task
+and its dependents, or replaces the task and rewires the dependents, and its FINISH runs `--plan-sync --cancel` (Work
+state): the cancelled tasks become `Canceled`, a rewired dependent goes back to `Pending`, and the writer resets their
+delivery. Cancelling every task of a delivery is a change to the deliveries, approved at once (Feature 006). DELIVERY
+and FINAL count a `Canceled` task as closed.
 
 **Changing the plan or the requirements during Building** -- the routes of Features 005 and 006, unchanged:
 - a task-level plan change or a technical-only requirements change: no stop, recorded `Assumed`, confirmed at the next
@@ -4551,7 +4560,7 @@ re-render of the plan after every task or delivery state write (exit 11, fail-cl
   dependencies is `Failed` or `Canceled`. Task files are kept: a started task is never removed (Feature 006).
   In the same write, `--cancel` sets the delivery of every affected task: back to `Building` while it still has a task
   that is neither `Done` nor `Canceled`; otherwise its building is closed -- `Verifying` when one of its tasks is `Done`
-  (START then sends it to DELIVERY and its milestone), `Canceled` when none is.
+  (NEXT's routing rule then sends it to DELIVERY and its milestone), `Canceled` when none is.
 - **Gone**: `--findings`, `--append-issue`, `--gate-field`, `--block` -- each exits 4 with a line naming its
   replacement.
 
@@ -4585,9 +4594,9 @@ run record what passed and the failing tests by name.
 **`simplify-guard.sh`** -- `simplify-guard.sh --tests <list-file> (--before <commit> | --snapshot <dir>)`: with git,
 `--before` compares `<commit>` with `HEAD`; without git, `--snapshot` compares the working files with the simplify
 round's snapshot (Flow, BUILD, Without git). Exit 0 when no file of the list, nor any new file in the list's folders,
-changed; 1 otherwise, naming each; 2 bad argument; 3 only when neither can be used (no git and no snapshot). Bash and
-PowerShell give the same output. Rationale: "no test is changed or removed to fit" (FR-19) must be exact, so it is a
-script (decision D17).
+changed; 1 otherwise, naming each; 2 bad argument; 3 only when neither can be used (no git and no snapshot). Bash
+only, like the other `execute/` scripts. Rationale: "no test is changed or removed to fit" (FR-19) must be exact, so
+it is a script (decision D17).
 
 **`derive-waves.sh --from-tasks <work-dir> --delivery NNN`** -- the dependency table and wave block of one delivery,
 the same sort as `--plan` (Feature 006): a dependency on an earlier delivery's task is met. BUILD's order,
@@ -4811,16 +4820,16 @@ the full integration suite runs at the end of the work, before release, with tha
 | EX-07 | `work-state-template.yml` has `wave_stops`, `full_suite`, `feedback`, and the building fields of `deliveries` and `tasks_lifecycle`, each with its `[W]` comment, and no `gate_tier`, `gate_grade`, `gate_timestamp`, `quick_check` or `review:` under a task |
 
 **Unit tests**
-- `tests/canonical/test-writeback-state.sh`: each new task and delivery field, with its values and exit 4 on a bad one;
-  the seven delivery states and the refused old ones; `"Wave Stops"`; `--full-suite`; `--feedback-add` ids and
-  `--feedback` updates; `--plan-sync --cancel` on `Failed`, `Blocked` and `Pending` tasks, exit 4 on a `Done` one, and a
-  rewired `Blocked` task back to `Pending`; the affected delivery set to `Building` with a task still open, to
-  `Verifying` with every task `Done` or `Canceled` and one `Done`, and to `Canceled` with every task `Canceled`; `--findings`, `--append-issue`, `--gate-field` and `--block` exit 4 naming
-  their replacement; a task write still re-renders the plan; every file written parses through the dashboard reader
-  with no warning.
+- `tests/canonical/test-writeback-state.sh`: each new task and delivery field, with its values and exit 4 on a bad
+  one; the seven delivery states and the refused old ones; `"Wave Stops"`; `--full-suite`; `--feedback-add` ids and
+  `--feedback` updates; `--plan-sync --cancel` on `Failed`, `Blocked` and `Pending` tasks, exit 4 on a `Done` one, and
+  a rewired `Blocked` task back to `Pending`; the affected delivery set to `Building` with a task still open, to
+  `Verifying` with every task `Done` or `Canceled` and one `Done`, and to `Canceled` with every task `Canceled`;
+  `--findings`, `--append-issue`, `--gate-field` and `--block` exit 4 naming their replacement; a task write still
+  re-renders the plan; every file written parses through the dashboard reader with no warning.
 - `tests/canonical/test-simplify-guard.sh`, on throwaway repositories and on throwaway folders with no git: an
   untouched test list exits 0; a changed, a removed and an added test file each exit 1 naming it, with `--before` and
-  with `--snapshot`; no git and no snapshot exits 3; bash and PowerShell give the same output.
+  with `--snapshot`; no git and no snapshot exits 3.
 - `tests/canonical/test-derive-waves.sh`: `--from-tasks --delivery` prints one delivery's table and waves, a dependency
   on an earlier delivery counted as met; the unscoped output is unchanged.
 - `test-complexity-score.sh` and `test-compute-block-radius.sh` on `derive-waves.sh --from-tasks` output; without
