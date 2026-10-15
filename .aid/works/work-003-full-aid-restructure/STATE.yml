@@ -951,3 +951,35 @@ qa:
     suggested: 'The effort check runs once per work, when Specification first starts.'
     answer: 'Accepted as recommended (once per work).'
     applied_to: 'Feature 005 Technical Specification (effort check)'
+  - id: Q65
+    category: Specification (Feature 005)
+    impact: High
+    state: Answered
+    context: 'The shortcut engine still writes REQUIREMENTS.md itself, in the old shape.'
+    suggested: 'It stays until Feature 009, on the shared exempt list with owner 009; Feature 005 moves only its ask-only-what-blocks rule into /aid-specify and lists the cut under what other features must provide.'
+    answer: 'Accepted as recommended (leave it for Feature 009).'
+    applied_to: 'Feature 005 Technical Specification (what other features must provide)'
+  - id: Q66
+    category: Specification (Feature 005)
+    impact: Medium
+    state: Answered
+    context: 'The requirement names six business sections, but the other four are cited by number across AID.'
+    suggested: 'Keep all ten business sections; a section that does not apply says None, so section numbers and ids stay stable.'
+    answer: 'Accepted as recommended (keep all ten).'
+    applied_to: 'Feature 005 Technical Specification (REQUIREMENTS.md shape)'
+  - id: Q67
+    category: Specification (Feature 005)
+    impact: Low
+    state: Answered
+    context: 'Today''s aid-plan stops on a document with no feature sections.'
+    suggested: 'Planning is left to Feature 006; Feature 005 updates only slice-requirements.sh and defers the samples that reach Planning.'
+    answer: 'Accepted as recommended (Feature 006).'
+    applied_to: 'Feature 005 Technical Specification (migration, testing)'
+  - id: Q68
+    category: Specification (Feature 005)
+    impact: Medium
+    state: Answered
+    context: 'Feature 004 asks for one /aid-kb-update call per approved decision, each with its own graded review.'
+    suggested: 'One /aid-kb-update call per approval carries all project-wide decisions from it; Feature 004''s row is reworded to match.'
+    answer: 'Accepted as recommended (one update per approval).'
+    applied_to: 'Feature 005 Technical Specification (FINISH); Feature 004 row wording'
