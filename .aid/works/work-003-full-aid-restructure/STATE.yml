@@ -1099,3 +1099,11 @@ qa:
     suggested: 'The planned wave stops are saved when the per-wave choice is made; a wave stop fires only at a wave end on that saved list, so corrections can never add one.'
     answer: 'Fix it, then one more review.'
     applied_to: 'Feature 007 Technical Specification (START wave choice, rule 1)'
+  - id: Q83
+    category: Specification (Feature 007)
+    impact: Low
+    state: Answered
+    context: 'Cycle 13 found three LOWs: nothing runs the planned-wave-stops refresh during a live build, a refresh would re-add correction-created wave ends, and sample 007-03''s chained-corrections fixture cannot create a new wave.'
+    suggested: 'Remove the refresh exception (a delivery added during building gets only its delivery milestone, no wave stops) and fix sample 007-03 to use three chained corrections.'
+    answer: 'Fix both, then one more review.'
+    applied_to: 'Feature 007 Technical Specification (START wave choice, EX-08, sample 007-03)'
