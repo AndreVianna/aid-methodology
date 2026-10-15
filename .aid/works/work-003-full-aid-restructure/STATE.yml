@@ -1213,3 +1213,11 @@ qa:
     suggested: 'Each passes to the close instead; Feature 008 converts the ones that stay and Feature 009 converts the ones it rebuilds.'
     answer: 'Accepted as recommended (hand over to the close).'
     applied_to: 'Feature 008 Technical Specification (CLOSE); Feature 009'
+  - id: Q97
+    category: Requirements change
+    impact: High
+    state: Answered
+    context: 'FR-6 and FR-7 still said AID never merges anything, contradicting the narrowed AC-11 (Q85).'
+    suggested: 'FR-6 and FR-7 say AID never merges a work into its parent branch nor any PR/MR; the only merge brings the parent branch (or the work branch''s own remote copy) into the work''s branch to resolve a conflict, approved before it is pushed.'
+    answer: 'Accepted as recommended (update both).'
+    applied_to: 'REQUIREMENTS.md §5 FR-6, FR-7'

@@ -256,8 +256,10 @@ The orchestrator does not map phrasings; it interprets **meaning**, the way a co
   (on the remote once the worktree is pushed). There are no per-delivery branches; one PR/MR per
   work is created or updated at the milestones above. `/aid-execute`'s per-delivery branches and
   its "merge to main" step are removed.
-- **AID never merges anything.** The furthest it goes is pushing to the work's own branch; the merge
-  is always a human act.
+- **AID never merges a work into its parent branch, nor any PR/MR.** The furthest it goes is pushing
+  to the work's own branch; merging the work is always a human act. The only merge AID makes brings
+  the parent branch (or the work branch's own remote copy) into the work's branch, only to resolve a
+  conflict, and its result is approved before it is pushed (Q85, Q97).
 
 ### FR-7 The CI phase, and operational works
 
@@ -267,7 +269,8 @@ The orchestrator does not map phrasings; it interprets **meaning**, the way a co
 - **CI is the pull-request phase.** Once the PR/MR exists and **the whole build is approved** (before
   that, see the building milestones in FR-6), CI manages it to a mergeable
   state: it handles code reviews from other agents or developers, makes sure the CI pipeline
-  completes green, and runs the hardening, security and quality reviews. It never merges (FR-6).
+  completes green, and runs the hardening, security and quality reviews. It never merges the work
+  or the PR/MR (FR-6).
 - **The CI phase ends when the PR/MR is merged** -- by a human -- into its parent branch (usually
   `main` or `master`). Until then the agent keeps reacting to reviews and pipeline failures; after
   the merge, deploying and monitoring production are separate works.
