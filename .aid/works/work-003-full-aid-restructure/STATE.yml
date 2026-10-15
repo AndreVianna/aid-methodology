@@ -282,15 +282,17 @@ features:
         state: Complete
   - id: '004'
     name: kb-management
-    state: In Discussion
+    state: Ready
     started: '2026-10-14'
     updated: '2026-10-15'
     grade: A+
-    qa_count: 0
+    qa_count: 8
     sections: []
   - id: '005'
     name: specification
-    state: Pending
+    state: In Discussion
+    started: '2026-10-15'
+    updated: '2026-10-15'
     grade: Pending
     qa_count: 0
     sections: []
