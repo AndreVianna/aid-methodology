@@ -3636,7 +3636,7 @@ rendered as in Feature 001. "The plan" is a work's `PLAN.md`; "a task file" is a
 | Edit | `canonical/aid/rules.md` § Skill guide | The `/aid-detail` line goes; the `/aid-plan` line is rewritten (Components) |
 | Edit | `canonical/agents/aid-architect/AGENT.md` | "What You Do" and "Output Format": task files each declare their `**Depends on:**` and their delivery; the plan's shape is `plan-template.md` |
 | Edit | `bin/aid`, `bin/aid.ps1` | The work-state step of format 6 (see Migration) |
-| Edit | `dashboard/reader/models.py`, `parsers.py`, `reader.py`, `derivation.py`, `dashboard/server/reader.mjs`, `server.py` § `_ser_work`, `server.mjs`, `dashboard/home.html` | See Components, Dashboard |
+| Edit | `dashboard/reader/models.py`, `parsers.py`, `reader.py`, `derivation.py`, `state_schema.py` (its docstring example names `intent.depth` instead of `pipeline.path`), `dashboard/server/reader.mjs`, `server.py` § `_ser_work`, `server.mjs`, `dashboard/home.html` | See Components, Dashboard |
 | Edit | every other kept file under `canonical/`, and `dashboard/home.html`, that names `aid-detail`, a deleted template or reference, or a `deliveries/delivery-NNN/` path | Re-pointed (Migration) |
 | Create | `tests/canonical/test-plan.sh`, `tests/canonical/test-work-state-migration.sh`, `tests/conversation/samples/feature-006/` | See Testing |
 
@@ -3695,10 +3695,10 @@ two never disagree. The task file keeps today's folder at the work root -- the l
 
 <!-- checklist: begin -->
 **Wave 1**
-- [x] task-001 -- Session length setting (IMPLEMENT) -- after: --
+- [x] [task-001](tasks/task-001/DETAIL.md) -- Session length setting (IMPLEMENT) -- after: --
 **Wave 2**
-- [ ] task-002 -- Refresh the session on activity (IMPLEMENT) -- after: task-001 -- In Progress
-- [ ] task-003 -- Sign-in timeout tests (TEST) -- after: task-001
+- [ ] [task-002](tasks/task-002/DETAIL.md) -- Refresh the session on activity (IMPLEMENT) -- after: task-001 -- In Progress
+- [ ] [task-003](tasks/task-003/DETAIL.md) -- Sign-in timeout tests (TEST) -- after: task-001
 <!-- checklist: end -->
 ```
 
@@ -3706,14 +3706,15 @@ two never disagree. The task file keeps today's folder at the work root -- the l
   listed by exactly one delivery -- the one in which it becomes checkable -- except those on the document's
   "every feature must also pass" line, which every delivery lists. A criterion a delivery needs and the document
   lacks is added through `/aid-specify` REVISE, never written here.
-- **The checklist**: wave headings, then one line per task: checkbox (`[x]` when Done), id, title, type, its
-  dependencies, and its state when it is neither `Pending` nor `Done`.
+- **The checklist**: wave headings, then one line per task: checkbox (`[x]` when Done), its id as a relative link to
+  its task file (`[task-NNN](tasks/task-NNN/DETAIL.md)`, Q3, FR-12), title, type, its dependencies, and its state when
+  it is neither `Pending` nor `Done`.
 - **No other sections.** `## Cross-Cutting Risks` and `## Deferred` go: risks live in the technical part's Risks,
   and a requirement left unplanned is a change to the requirements, not a plan entry.
 
 **Waves (Q18)** are never stored. `derive-waves.sh --plan <work-dir>` reads every task file (its id from the
 folder, its delivery from Source, its dependencies) and the work file's task states, and writes each delivery's
-checklist between its markers, using the same Kahn sort the script runs today: per delivery, a task enters the
+checklist between its markers, each task line linking to its task file, using the same Kahn sort the script runs today: per delivery, a task enters the
 first wave in which every dependency of the same delivery is already placed; a dependency on an earlier
 delivery's task is met.
 
@@ -3973,9 +3974,10 @@ changes `REQUIREMENTS.md` only through `/aid-specify` and a KB document only thr
 
 ##### 7. Risks
 
-- **`aid-execute` is Feature 007's** (Q67's precedent). Between the two features, the writer's unchanged command
-  lines and `aid-execute`'s lite read path keep a one-delivery work buildable; several deliveries need Feature 007.
-  No release carries the gap (§7 Constraints 1); the samples that build wait on the deferred list.
+- **`aid-execute` is Feature 007's** (Q67's precedent). Until Feature 007 lands, a work planned by the new `/aid-plan`
+  cannot be built by today's `aid-execute`: with a `PLAN.md` present, its flat path reads the plan's top-level
+  `## Execution Graph`, which the checklist replaces. No bridge is built: no release ships between the two features
+  (§7 Constraints 1), and the samples that build wait on the deferred list.
 - **The PowerShell twin of the migration** restructures work state byte for byte, PowerShell 5.1-safe and ASCII, in
   every worktree. Its fixtures are written first and run in the Windows lane.
 - **Removing the nested layout** reaches many suites and fixtures (Migration, Suites); `migrate-work-hierarchy.sh`
@@ -4020,11 +4022,20 @@ changes `REQUIREMENTS.md` only through `/aid-specify` and a KB document only thr
     - `intent.depth`, when missing, takes `pipeline.path`'s value (Q11); then `pipeline.path` goes;
     - `interview`, `features` and `review_history` go (Feature 005);
     - the old phase names are rewritten (Feature 002's mapping);
-    - **the record** of every open work: `active_skill` and `step` from the legacy rows -- Feature 002's, with
-      Feature 003's, 004's and 005's above them, and one new row: `phase` `Plan` or `Detail`, or `active_skill`
-      `aid-plan` or `aid-detail` -> `/aid-plan` at **START**. Each row's skill is written at its entry step
-      (`START` for the rebuilt phase skills, `aid-execute` included -- Feature 007 -- and `IDLE` for `aid-deploy`);
-      each skill's START keeps what is on disk. A finished work gets no record (Feature 002);
+    - **the record** of every open work: `active_skill` and `step`, decided by this precedence, stated once and
+      first match wins -- **no initiator row ever overrides a phase**:
+      1. **the phase** (old or new name): `Describe`, `Define` or `Specify` -> `/aid-specify`; `Plan` or `Detail`
+         -> `/aid-plan`; `Execute` -> `/aid-execute` (Feature 002's halted-lite and `delivery_state` rows are
+         Execute rows);
+      2. when the phase decides nothing (missing, `--`, or `Deploy`): the old `active_skill` -- `aid-define` ->
+         `/aid-specify`, `aid-detail` -> `/aid-plan`, `aid-deploy` -> `/aid-deploy`, a skill that still exists ->
+         itself;
+      3. only when neither decides: the initiator rows of Features 003-005 (idea and design works ->
+         `/aid-brainstorm`, the deleted KB `create` / `update` skills -> `/aid-kb-update`).
+
+      The skill is written at its entry step: `START` for the rebuilt skills (`aid-execute` included, Feature 007),
+      `IDLE` for `aid-deploy`; each skill's START keeps what is on disk. The initiator otherwise serves only the type
+      (below). A finished work gets no record (Feature 002);
     - **the type (Q74)**: `intent.reading` is set only where the starting skill makes it certain -- `aid-fix` ->
       bug fix, `aid-refactor` -> refactor, `aid-document-*`, `aid-create-document`, `aid-update-document` ->
       document, `aid-deploy` -> operational, `aid-update-kb` and the KB `create` / `update` skills -> knowledge
@@ -4065,6 +4076,16 @@ changes `REQUIREMENTS.md` only through `/aid-specify` and a KB document only thr
     `test-downstream-worktree-entry.sh` and the dashboard reader, server and parity suites (hierarchy and
     `wave-map` fixtures among them) follow the single layout; an old nested fixture stays where it now checks the
     old-layout diagnosis.
+  - `test-state-review-surface.sh`: SR17's `aid-detail` brief path is retired (the skill is gone); `aid-plan`'s
+    rewritten brief stays covered; its old-shape state-file fixtures stay, still checking that state files never
+    reach a review surface.
+  - `test-pipeline-status-walkthrough.sh`: the `aid-plan` rows of A1, M4 and B1 re-point to `references/start.md`
+    and `breakdown.md` with phase `Planning`; the `aid-detail` rows are retired (the skill is gone).
+  - `test-task-state-transitions.sh`: its fixture is converted to the single layout (no `pipeline.path`, no
+    top-level `delivery_state`; a `deliveries.delivery-001` entry), so the readers surface task state again.
+  - `test-producer-completeness.sh`: its nested `deliveries/delivery-001` fixture is converted to the single layout,
+    and the expected null lane is produced by a dependency cycle in the task files (lanes are derived from them, and
+    a cycle yields none) instead of by removing `wave-map` blocks.
   - `test-artifact-discipline.sh` AD13 ceilings drop to the new measured counts.
   - Removed assertions go to `tests/coverage-accepted-removals.tsv`; `tests/coverage-rehome-allowlist.tsv`,
     `tests/cost-baseline.tsv` and `tests/coverage-baseline.tsv` are re-recorded.
@@ -4113,15 +4134,17 @@ list.
 - `tests/canonical/test-derive-waves.sh`: `--plan` writes each delivery's checklist and a second run is
   byte-identical; `--check` returns 0, 1, 2 and 3 for its four cases and writes nothing; a dependency on a later
   delivery's task, a cycle and an undefined task each exit 2 with the plan unchanged; a delivery with no stanza
-  gets one appended; a dependency on an earlier delivery is met; an old stanza's `#### Execution Graph` and `wave-map` are replaced and
-  its authored lines kept; the marks follow the work file; `--from-tasks` output is unchanged.
+  gets one appended; a dependency on an earlier delivery is met; every task line's link resolves to that task's
+  `DETAIL.md` from the plan's folder; an old stanza's `#### Execution Graph` and `wave-map` are replaced and its
+  authored lines kept; the marks follow the work file; `--from-tasks` output is unchanged.
 - `tests/canonical/test-slice-requirements.sh`: both new Source forms slice as Feature 005 says; the old form still
   reads.
 - `tests/canonical/test-work-state-migration.sh`, on throwaway fixtures (a main folder and a registered worktree): a
   nested work, an old lite work and a single-layout work convert to the expected file and tree; `ticket_ref` at each
   level becomes one `sources:` entry per ref; delivery `qa` lands under fresh ids with its old place; the dropped
   keys go and `intent.depth` takes `pipeline.path`; phase names are rewritten; the record follows each legacy row,
-  the type only where Q74 says; a duplicate task id and an unknown file each warn and change or drop nothing; a
+  the type only where Q74 says; a work started by `aid-describe` and now at `Detail` gets `/aid-plan` at START, and
+  one at `phase: --` started by `aid-design-api` gets `/aid-brainstorm`; a duplicate task id and an unknown file each warn and change or drop nothing; a
   second run changes nothing; bash and PowerShell give the same bytes, the PowerShell half in the Windows lane.
 - `tests/canonical/test-work-initiation-gate.sh`: an old-layout work gets the `aid update` line and no repair.
 - Dashboard: fixtures for a single-layout work at Planning (task files, no entries yet), at Building with two
