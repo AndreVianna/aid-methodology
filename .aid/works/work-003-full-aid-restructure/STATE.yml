@@ -306,15 +306,17 @@ features:
     sections: []
   - id: '007'
     name: building
-    state: In Discussion
+    state: Ready
     started: '2026-10-15'
     updated: '2026-10-15'
     grade: A+
-    qa_count: 0
+    qa_count: 9
     sections: []
   - id: '008'
     name: cicd-integration-monitoring
-    state: Pending
+    state: In Discussion
+    started: '2026-10-15'
+    updated: '2026-10-15'
     grade: Pending
     qa_count: 0
     sections: []
