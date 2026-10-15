@@ -4022,20 +4022,22 @@ changes `REQUIREMENTS.md` only through `/aid-specify` and a KB document only thr
     - `intent.depth`, when missing, takes `pipeline.path`'s value (Q11); then `pipeline.path` goes;
     - `interview`, `features` and `review_history` go (Feature 005);
     - the old phase names are rewritten (Feature 002's mapping);
-    - **the record** of every open work: `active_skill` and `step`, decided by one rule, stated once -- **the phase
-      is trusted only when the initiator is a pipeline skill that sets it**: `aid-describe`, `aid-define`,
-      `aid-specify`, `aid-plan`, `aid-detail`, `aid-execute`, and the shortcut engine's `create`, `update` and `fix`
-      kinds (the KB `create` / `update` skills of Feature 004 are not among them). Every other initiator never set
-      the phase, so a work it started still carries the template's default `phase: Describe`, which is ignored.
-      - **A pipeline initiator**, first match wins: (1) **the phase** (old or new name): `Describe`, `Define` or
-        `Specify` -> `/aid-specify`; `Plan` or `Detail` -> `/aid-plan`; `Execute` -> `/aid-execute` (Feature 002's
-        halted-lite and `delivery_state` rows are Execute rows); (2) when the phase decides nothing (missing, `--`,
-        or `Deploy`), the old `active_skill` -- `aid-define` -> `/aid-specify`, `aid-detail` -> `/aid-plan`,
-        `aid-deploy` -> `/aid-deploy`, a skill that still exists -> itself.
-      - **Any other initiator**: the initiator rows of Features 003-005 decide (idea and design works ->
-        `/aid-brainstorm`, the deleted KB `create` / `update` skills -> `/aid-kb-update`); with no row, the old
-        `active_skill`, else the initiator itself, when that skill still exists (an `aid-research` or `aid-review`
-        work resumes in its own skill).
+    - **the record** of every open work: `active_skill` and `step`, decided from what is on disk, first match wins.
+      The template's default `phase: Describe` is kept by every skill that never sets a phase, so only a phase some
+      pipeline step moved is trusted:
+      1. **A work halted at the shortcut approval** (Feature 002's halted-Lite row: `lifecycle:
+         Paused-Awaiting-Input` and `delivery_state: Specified`) -> `/aid-execute`, before any phase row, so its
+         `Detail` phase cannot catch it;
+      2. **a phase other than the default** (anything but `Describe`, and not missing, `--` or `Deploy`) decides:
+         `Define` or `Specify` -> `/aid-specify`; `Plan` or `Detail` -> `/aid-plan`; `Execute` -> `/aid-execute`
+         (Feature 002's `delivery_state` rows are Execute rows); a new name -> the phase skill of that phase;
+      3. **phase `Describe`**: initiator `aid-describe` -> `/aid-specify`; any other initiator -> the initiator rows of
+         Features 003-005 (idea and design works -> `/aid-brainstorm`, the deleted KB `create` / `update` skills ->
+         `/aid-kb-update`); with no row, the old `active_skill`, else the initiator itself, when that skill still
+         exists (an `aid-research` or `aid-review` work resumes in its own skill);
+      4. **phase missing, `--` or `Deploy`**: the old `active_skill` (`aid-define` -> `/aid-specify`, `aid-detail` ->
+         `/aid-plan`, `aid-deploy` -> `/aid-deploy`, a skill that still exists -> itself), then the initiator rows as
+         in 3.
 
       The skill is written at its entry step: `START` for the rebuilt skills (`aid-execute` included, Feature 007),
       `IDLE` for `aid-deploy`; each skill's START keeps what is on disk. The initiator otherwise serves only the type
@@ -4149,7 +4151,8 @@ list.
   keys go and `intent.depth` takes `pipeline.path`; phase names are rewritten; the record follows each legacy row,
   the type only where Q74 says; a work started by `aid-describe` and now at `Detail` gets `/aid-plan` at START; an
   `aid-design-api` work and an `aid-create-roadmap` work, each at the default `phase: Describe`, get
-  `/aid-brainstorm` and `/aid-kb-update`; a duplicate task id and an unknown file each warn and change or drop nothing; a
+  `/aid-brainstorm` and `/aid-kb-update`; an `aid-refactor` work halted at the shortcut approval with phase `Detail`
+  gets `/aid-execute`; a duplicate task id and an unknown file each warn and change or drop nothing; a
   second run changes nothing; bash and PowerShell give the same bytes, the PowerShell half in the Windows lane.
 - `tests/canonical/test-work-initiation-gate.sh`: an old-layout work gets the `aid update` line and no repair.
 - Dashboard: fixtures for a single-layout work at Planning (task files, no entries yet), at Building with two
