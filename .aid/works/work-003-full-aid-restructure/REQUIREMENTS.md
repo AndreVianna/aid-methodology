@@ -5638,7 +5638,7 @@ folder" is the project's main worktree.
 | Edit | `canonical/aid/templates/work-state-template.yml` | `intent.kind` with its `[W]` comment; the reading list gains `investigation`; the `initiator` comment names no shortcut skill |
 | Edit | `canonical/skills/aid-orchestrate/references/check-intent.md`, `size-and-route.md` (Feature 001) | The kind hook reads the catalog's actions and kinds, filtered by the calling skill; new § The merged catalog (sources, precedence, skip rule); an action match hands the request to the action skill; the investigation row (see Components, Routing; The catalog) |
 | Edit | `canonical/aid/rules.md` § Skill guide | One line per action skill; the `<kind>` lines go; `/aid-config` becomes `/aid-configure` (see Components) |
-| Edit | `canonical/skills/aid-brainstorm/references/start.md` (Feature 003) | Asks the kind hook for the kinds whose `taken_by` names `brainstorm` (Components, Routing) |
+| Edit | `canonical/skills/aid-brainstorm/references/start.md` (Feature 003) | Asks the kind hook for the kinds whose `taken_by` names `brainstorm` (Components, Routing), only to propose the draft's `## Kind`; it passes no `--kind` to the gate (Feature 003's gate call is unchanged, and the work keeps `intent.kind: --`, Work state) |
 | Edit | `canonical/skills/aid-specify/references/start.md`, `requirements.md`, `design.md`, `check.md` (Feature 005) | Read `intent.kind` and the catalog's `ask`, `design` and `checks` (see Components, Who reads the catalog) |
 | Edit | `canonical/skills/aid-plan/references/breakdown.md` (Feature 006) | Reads the kind's `tasks` |
 | Edit | `canonical/skills/aid-execute/references/test.md`, `task-type-rules.md`, `reviewer-brief.md` (Feature 007) | Read the kind's `tests` and `checks` |
@@ -5914,8 +5914,9 @@ to software lives in the software kinds (AS-10).
 
 **Routing** (Feature 001's `size-and-route.md` and `check-intent.md`) -- the kind hook reads the merged catalog and is
 asked by a skill: it matches a request against the `about` of **the kinds whose `taken_by` names that skill**, and
-returns one kind or `--`. The same filter serves every caller: an action skill's START, `/aid-brainstorm`'s START, and
-`aid-review`, `aid-research` and `aid-report`, which call it before the gate and pass what it returns as `--kind`.
+returns one kind or `--`. The same filter serves every caller. An action skill's START, and `aid-review`, `aid-research`
+and `aid-report` before the gate, pass what it returns as `--kind`. `/aid-brainstorm`'s START uses it only to propose
+the draft's `## Kind` and passes no `--kind` (Work state).
 `/aid-orchestrate` first matches the actions' `about` to choose the skill, then asks the hook for that skill. When the reading matches an
 action skill, `/aid-orchestrate` hands the request to it **before** creating the work; START creates it through the gate,
 as for a typed command. Investigation works get their own phase row: the investigating skill, then the close.
@@ -6275,7 +6276,7 @@ empty, the **full integration suite** before release.
 | AS-06 | `aid-fix`'s `findings.md` names the main folder and `.aid/.temp/review-pending/`; the TICKET references name the preview and the confirmation |
 | AS-07 | No retired skill name in `dashboard/home.html`, `dashboard/reader/*.py`, `dashboard/server/*.mjs`, `dashboard/server/*.py` or `chat-node/` outside `legacy-skill-names` markers (AC-31) |
 | AS-08 | The skill guide has one line per action skill and no `<kind>` placeholder |
-| AS-09 | The readers cite their fields: `requirements.md` `ask`, `design.md` `design`, `breakdown.md` `tasks`, `test.md` `tests`, `aid-execute`'s brief `checks`, `check-intent.md` the catalog; `check-intent.md` § The merged catalog names `.aid/kinds/`, the shipped-first order and each skip case (name form, duplicate, missing field) with its notice line, and every other reader cites that section; `check-intent.md`'s kind hook filters by `taken_by` naming the calling skill, and `aid-brainstorm`'s `start.md`, `action-start.md` and the `SKILL.md` of `aid-review`, `aid-research` and `aid-report` each call the hook with their own name and pass its result as `--kind` (the last three before the gate); those three name `ask` and `checks` |
+| AS-09 | The readers cite their fields: `requirements.md` `ask`, `design.md` `design`, `breakdown.md` `tasks`, `test.md` `tests`, `aid-execute`'s brief `checks`, `check-intent.md` the catalog; `check-intent.md` § The merged catalog names `.aid/kinds/`, the shipped-first order and each skip case (name form, duplicate, missing field) with its notice line, and every other reader cites that section; `check-intent.md`'s kind hook filters by `taken_by` naming the calling skill, and `aid-brainstorm`'s `start.md`, `action-start.md` and the `SKILL.md` of `aid-review`, `aid-research` and `aid-report` each call the hook with their own name; `action-start.md` and those three `SKILL.md` files pass its result as `--kind` (the three before the gate), while `aid-brainstorm`'s `start.md` writes it only to the draft's `## Kind` and names no `--kind`; those three name `ask` and `checks` |
 | AS-10 | The action layer names no software term: the action skills' `description:` lines, their skill-guide lines, the catalog's `actions` entries and `action-start.md` contain none of `code`, `codebase`, `repository`, `commit`, `branch`, `pull request` (whole words, any case); a kind's name in backticks is a kind, not a term of the layer (Q109) |
 
 **Pre-release check -- `tests/canonical/test-doc-names.sh`** (AC-45). `tests/canonical/retired-names.txt` lists every
