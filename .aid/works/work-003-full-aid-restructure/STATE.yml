@@ -1279,3 +1279,11 @@ qa:
     suggested: 'Feature 009 owns them as its last delivery.'
     answer: 'Accepted as recommended (Feature 009, last delivery).'
     applied_to: 'Feature 009 Technical Specification (final documentation pass)'
+  - id: Q105
+    category: Specification (Feature 009)
+    impact: Medium
+    state: Answered
+    context: 'Cycle 3 found three more checks in test-deploy-monitor-repurpose.sh reading the deleted shortcut catalog, after earlier rounds fixed that suite check by check.'
+    suggested: 'Search every suite for each deleted file and retired engine reference and list a change for every hit, stating the search so the reviewer can re-run it; then one more review.'
+    answer: 'Accepted as recommended (fix with the full search, then one more review).'
+    applied_to: 'Feature 009 Technical Specification (Migration suites)'
