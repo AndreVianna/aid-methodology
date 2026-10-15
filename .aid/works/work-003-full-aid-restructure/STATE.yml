@@ -1091,3 +1091,11 @@ qa:
     suggested: 'Fix both, then one final review: a milestone question is written Pending before it is shown (Feature 002) and answered yes or change-requested, and only a yes counts as an approval; a wave stop is asked only once, and changes asked there are approved at the delivery milestone.'
     answer: 'Accepted as recommended (fix both, then one final review).'
     applied_to: 'Feature 007 Technical Specification (step 10.3, rule 1)'
+  - id: Q82
+    category: Specification (Feature 007)
+    impact: Low
+    state: Answered
+    context: 'Final review found one LOW: chained corrections asked at a wave stop can spill into a new wave and trigger a wave stop nobody planned.'
+    suggested: 'The planned wave stops are saved when the per-wave choice is made; a wave stop fires only at a wave end on that saved list, so corrections can never add one.'
+    answer: 'Fix it, then one more review.'
+    applied_to: 'Feature 007 Technical Specification (START wave choice, rule 1)'
