@@ -1515,3 +1515,11 @@ qa:
     suggested: 'Apply the plan''s scratch-copy rule to FINAL too: suites that read installed or rendered copies run in the clean scratch copy, after run_generator.py there; then one more review.'
     answer: 'Accepted as recommended (fix, then one more review).'
     applied_to: 'PLAN.md (Testing before the resync; deliveries 010-014; switch table, delivery-010 gate session)'
+  - id: Q132
+    category: Planning
+    impact: Medium
+    state: Answered
+    context: 'Plan review cycle 5 row 27: F007 Components "Full suite" takes the command from the KB (test-landscape.md or technology-stack.md) and never says a recorded full_suite.command is reused, so the plan''s driver could be bypassed at FINAL.'
+    suggested: 'Small F007 spec edit: the command is resolved once and recorded in full_suite.command; the baseline, FINAL and every later full-suite run use the recorded command (F008 PARENT step 4 already does); then one more review.'
+    answer: 'Accepted as recommended, with one more review.'
+    applied_to: 'REQUIREMENTS.md Feature 007 (Components, Full suite); PLAN.md delivery-009'
