@@ -454,6 +454,10 @@ review_history:
     event: 'Detail light review delivery-011 (Q136)'
     outcome: 'Grade C (2 MEDIUM, 9 LOW; 1 OOS PLAN)'
     notes: 'Research output not committed (G16, same as delivery-010); site tests using real skill bodies as fixtures; review-surface suite list; G4/G12 edges; AS-10 wording in the catalog actions; fixes sent to the third architect'
+  - date: '2026-10-16'
+    event: 'Detail light review delivery-012 (Q136)'
+    outcome: 'Grade D+ (1 HIGH, 7 LOW)'
+    notes: 'Deleting a file leaves KB sources: citations to it (AD14) until later DOCUMENT tasks; retired generated pages need an explicit git rm step; missing edges; fixes sent to the third architect'
 
 # [A] written by the orchestrator on the work's active branch (single
 #     writer). Append-only audit trail of phase transitions and gate
