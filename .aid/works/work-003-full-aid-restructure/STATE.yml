@@ -406,6 +406,14 @@ review_history:
     event: 'Plan review cycle 6'
     outcome: 'Grade A+ (meets minimum A); rows 1-18, 20-27 Fixed; row 19 OOS routed to the KB (knowledge STATE Q9)'
     notes: 'Awaiting maintainer approval of PLAN.md (14 deliveries)'
+  - date: '2026-10-16'
+    event: 'Detail light review delivery-001 (Q136)'
+    outcome: 'Grade C (2 MEDIUM, 3 LOW); fixes sent to the architect'
+    notes: 'task-009/DMR05c same-task rule; conversation-level checks belong to the runner (task-004); replay criterion; fixture dependencies; task-006 -> task-007 edge'
+  - date: '2026-10-16'
+    event: 'Detail light review delivery-003 (Q136)'
+    outcome: 'Grade D (2 HIGH, 4 MEDIUM; 1 OOS KB)'
+    notes: '13 hand-written skills without a protocol-line owner; generated site reference pages not regenerated when an agent is deleted; fixes sent to the architect'
 
 # [A] written by the orchestrator on the work's active branch (single
 #     writer). Append-only audit trail of phase transitions and gate
