@@ -446,6 +446,10 @@ review_history:
     event: 'Detail light review delivery-009 (Q136)'
     outcome: 'Grade D (2 HIGH, 2 MEDIUM, 1 LOW; 1 OOS)'
     notes: 'Writer refusals vs test-disjoint-merge.sh order; "-delivery-" substring criterion; missing sample edges; switch outcomes not re-checked after the switch; format-6 building part leaves wave_stops/full_suite/feedback absent (settled by rule: added at template defaults); fixes sent to the third architect'
+  - date: '2026-10-16'
+    event: 'Detail light review delivery-010 (Q136)'
+    outcome: 'Grade D+ (1 HIGH, 3 MEDIUM, 5 LOW; 1 OOS PLAN)'
+    notes: 'A new skill folder without SKILL.md breaks the site generator; research output in the work folder is neither committed nor reviewed under the new builder; pre-migration task paths; --pull-request on a file without the key; fixes sent to the third architect'
 
 # [A] written by the orchestrator on the work's active branch (single
 #     writer). Append-only audit trail of phase transitions and gate
