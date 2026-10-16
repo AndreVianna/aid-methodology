@@ -7,7 +7,7 @@
 
 **Source:** feature-009-one-skill-per-need -> delivery-014 -> AC-31, AC-45
 
-**Depends on:** task-353, task-354
+**Depends on:** task-354
 
 **Scope:**
 - Fix at its source every DN-01 or DN-03 hit the findings place in a generated site page (D1 with D4): the `SKILL.md`,
@@ -38,7 +38,8 @@
   - A renamed assertion gets its row in `tests/coverage-rehome-allowlist.tsv`.
   - The baselines themselves are re-recorded at the gate (Q134, D11).
 - **Findings.** This task's scope also includes every site that
-  `.aid/works/work-003-full-aid-restructure/research/delivery-014-sites.md` assigns to `task-364`.
+  `.aid/works/work-003-full-aid-restructure/research/delivery-014-sites.md` (written, reviewed and committed before
+  the run starts, Q139) assigns to `task-364`.
 - **Test step** (PLAN.md § "Testing before the resync"; the same in every task of this delivery).
   `BASE` is this task's `base` (`tasks_lifecycle.task-364.base`, which `/aid-execute` BUILD records on the
   first round). Work in the `work-003` worktree only, create no

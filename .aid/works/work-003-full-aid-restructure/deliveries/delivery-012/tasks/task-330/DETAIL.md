@@ -19,7 +19,8 @@
   changes nothing; bash and PowerShell give the same bytes; every row naming a retired skill, Feature 003's and
   Feature 006's included, sits inside the `legacy-skill-names` markers.
 - **Findings.** This task's scope also includes every site that
-  `.aid/works/work-003-full-aid-restructure/research/delivery-012-sites.md` assigns to `task-330`.
+  `.aid/works/work-003-full-aid-restructure/research/delivery-012-sites.md` (written, reviewed and committed before
+  the run starts, Q139) assigns to `task-330`.
 - **Test step** (PLAN.md § "Testing before the resync"; the same in every task of this delivery).
   `BASE` is this task's `base` (`tasks_lifecycle.task-330.base`, which `/aid-execute` BUILD records on the
   first round). Work in the `work-003` worktree only, create no

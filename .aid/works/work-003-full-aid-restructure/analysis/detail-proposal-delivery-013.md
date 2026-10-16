@@ -1,5 +1,11 @@
 # Detail proposal -- delivery-013: `/aid-configure` and room beyond software (Feature 009c)
 
+> **Q139 (maintainer decision).** The research task task-338 is dropped from the task graph. Its searches, owner
+> classes and tables are now the research brief in task-337 (delivery-012), step 5, in the "Gate-session steps" block: `aid-researcher`
+> writes `research/delivery-013-sites.md`, `aid-reviewer` grades it with `grade.sh` against `minimum_grade`, and it
+> is committed alone before this delivery's run starts. Every task's findings bullet points at that committed file,
+> and the tasks that depended on task-338 now start the graph.
+
 This is `aid-detail` FIRST-RUN for **delivery-013**, under Q136. Decisions are settled by recommendation, the task
 files are written at once, and the light review is the check.
 
@@ -7,23 +13,22 @@ files are written at once, and the light review is the check.
 
 | Task | Title | Type | Stanza wave | Derived wave | Depends on |
 |---|---|---|---|---|---|
-| task-338 | Delivery-013 site search and reconciled edit list | RESEARCH | 1 | 1 | -- |
-| task-339 | aid-config renamed aid-configure: the skill, its guide line and its lists | IMPLEMENT | 2 | 2 | task-338 |
-| task-340 | aid-config renamed everywhere else: settings, bin/aid and the dashboard comments | IMPLEMENT | 2 | 3 | task-339 |
-| task-341 | The catalog's domain field, and the reserved fields set on none | IMPLEMENT | 2 | 2 | task-338 |
-| task-342 | The action layer worded with no software term | IMPLEMENT | 2 | 4 | task-339, task-340, task-341, task-344 |
-| task-343 | The identity statement outside the KB: software first, not software only | DOCUMENT | 2 | 4 | task-338, task-340 |
-| task-344 | The merged catalog's second source: .aid/kinds/, the precedence and the skip rule | IMPLEMENT | 2 | 3 | task-338, task-341 |
-| task-345 | Install cases: a user's .aid/kinds/ survives aid update and aid remove | TEST | 2 | 4 | task-340, task-344 |
-| task-346 | Any skill may take a kind: the kind hooks of aid-review, aid-research and aid-report | IMPLEMENT | 3 | 4 | task-341, task-344 |
-| task-347 | Conversation runner: a fixture with no repository | TEST | 4 | 2 | task-338 |
-| task-348 | test-actions.sh group C | TEST | 4 | 5 | task-339, task-340, task-341, task-342, task-344, task-346 |
-| task-349 | Samples 009-15, 009-18 and 009-19 (run at this gate) | TEST | 4 | 5 | task-339, task-340, task-342, task-344, task-346, task-347 |
-| task-350 | KB: the identity decision, Beyond software, the release note and the identity lines | DOCUMENT | 4 | 5 | task-339, task-343 |
-| task-351 | KB: the kind's domain, the user's kinds folder and /aid-configure | DOCUMENT | 4 | 6 | task-340, task-341, task-344, task-350 |
-| task-352 | KB test landscape for domain readiness, the regenerated index and the view | DOCUMENT | 4 | 7 | task-345, task-347, task-348, task-349, task-350, task-351 |
+| task-339 | aid-config renamed aid-configure: the skill, its guide line and its lists | IMPLEMENT | 2 | 1 | -- |
+| task-340 | aid-config renamed everywhere else: settings, bin/aid and the dashboard comments | IMPLEMENT | 2 | 2 | task-339 |
+| task-341 | The catalog's domain field, and the reserved fields set on none | IMPLEMENT | 2 | 1 | -- |
+| task-342 | The action layer worded with no software term | IMPLEMENT | 2 | 3 | task-339, task-340, task-341, task-344 |
+| task-343 | The identity statement outside the KB: software first, not software only | DOCUMENT | 2 | 3 | task-340 |
+| task-344 | The merged catalog's second source: .aid/kinds/, the precedence and the skip rule | IMPLEMENT | 2 | 2 | task-341 |
+| task-345 | Install cases: a user's .aid/kinds/ survives aid update and aid remove | TEST | 2 | 3 | task-340, task-344 |
+| task-346 | Any skill may take a kind: the kind hooks of aid-review, aid-research and aid-report | IMPLEMENT | 3 | 3 | task-341, task-344 |
+| task-347 | Conversation runner: a fixture with no repository | TEST | 4 | 1 | -- |
+| task-348 | test-actions.sh group C | TEST | 4 | 4 | task-339, task-340, task-341, task-342, task-344, task-346 |
+| task-349 | Samples 009-15, 009-18 and 009-19 (run at this gate) | TEST | 4 | 4 | task-339, task-340, task-342, task-344, task-346, task-347 |
+| task-350 | KB: the identity decision, Beyond software, the release note and the identity lines | DOCUMENT | 4 | 4 | task-339, task-343 |
+| task-351 | KB: the kind's domain, the user's kinds folder and /aid-configure | DOCUMENT | 4 | 5 | task-340, task-341, task-344, task-350 |
+| task-352 | KB test landscape for domain readiness, the regenerated index and the view | DOCUMENT | 4 | 6 | task-345, task-347, task-348, task-349, task-350, task-351 |
 
-That is 15 tasks (task-338 to task-352). The resync follows the run's pause at the delivery-013 MILESTONE approval
+That is 14 tasks (task-339 to task-352; task-338 dropped, Q139). The resync follows the run's pause at the delivery-013 MILESTONE approval
 (§ 4).
 
 ---
@@ -62,65 +67,9 @@ That is 15 tasks (task-338 to task-352). The resync follows the run's pause at t
 its own (F009, Criteria traceability); its tasks cite the criterion the checked behaviour serves (AC-30 for the
 catalog, AC-45 for the identity statement's pre-release check).
 
-### task-338: Delivery-013 site search and reconciled edit list [RESEARCH]
-
-- **Stanza wave:** 1. **Depends on:** --.
-- **Source:** AC-22, AC-31.
-- **Scope:**
-  - Create `.aid/works/work-003-full-aid-restructure/research/delivery-013-sites.md`. Touch nothing else.
-  - Re-run these searches at this task's base commit, and record the base commit in the file
-    (REQUIREMENTS.md § 11 Feature 009 `##### 5. Components`, Domain readiness, and `##### 8. Migration`):
-    - **C1** the identity search of REQUIREMENTS.md § 11 Feature 009 `##### 5. Components`, Domain readiness, item 7, verbatim:
-      `git grep -lIiE 'building software|software-development lifecycle|AI Integrated Software Development|methodology for software development|kind of digital work' -- . ':!.aid/works' ':!site/src/data' ':!.aid/knowledge/kb.html' ':!.aid/runtime' ':!tests' ':!**/tests/**' ':!**/__tests__/**'`; each hit with its owner (task-343 for the files outside the KB, `docs/` and the site pages;
-      task-350 for the KB; delivery-014 for `docs/` and `site/src/content/docs/`);
-    - **C2** every mention of `aid-config` as a name: `git grep -nE '(^|[^a-z-])aid-config([^a-z-]|$)' -- . ':!.aid/works'`,
-      each hit classed by REQUIREMENTS.md § 11 Feature 009 `##### 8. Migration` (the rename in approved features; Suites, Unchanged; Dashboard):
-      renamed here (the skill, the settings rows, `settings.yml`, `bin/aid`, `bin/aid.ps1`, the dashboard comments,
-      sample `002-02`'s `skills:` line, every kept file under `canonical/`, `.claude/skills/generate-profile/` and
-      `scripts/checks/`), kept as written (the approved specs; the synthetic old-style settings fixtures in
-      `test-aid-cli-parity.sh`, `test_reader.py`, `test_server_node.mjs`, `test_task012_consuming_round_trips.py`), or
-      delivery-014's (`docs/`, `site/src/content/docs/`, `README.md`, `examples/`);
-    - **C3** every reader of `kind-catalog.yml` and of `check-intent.md` § The merged catalog, and every suite that
-      asserts the catalog's fields or the merged catalog's one-source wording;
-    - **C4** how `aid update` and `aid remove` treat a user folder under `.aid/` (`bin/aid`, `bin/aid.ps1`, the
-      install manifest), with the `.aid/design/` cases of `test-shared-prune.sh` and `test-shared-remove.sh`;
-    - **C5** the AS-10 terms (`code`, `codebase`, `repository`, `commit`, `branch`, `pull request`, whole words, any case) over the action layer: the action skills'
-      `description:` lines, their skill-guide lines, the catalog's `actions` entries and `action-start.md`;
-    - **C6** the gate calls and catalog reads of `aid-review`, `aid-research` and `aid-report`, and every suite that
-      asserts their `SKILL.md`;
-    - **C7** the SG-04 description exempt list, `tests/conversation/deferred.tsv` and the SS-09 coverage of
-      `aid-config`.
-  - **Site fixtures (G11, extended).** Also search `site/scripts/__tests__/` and `site/src/lib/__tests__/` for every
-    test that reads a real skill's or template's body as a fixture -- by path, or by name through `loadSkillRecord`,
-    `buildFlowChart`, `liveChart` or the like (`git grep -nE "'aid-[a-z-]+'|canonical/(skills|aid/templates)/" --
-    site/scripts/__tests__ site/src/lib/__tests__`). Each hit on a file this delivery rewrites, moves or deletes goes to
-    the task that changes that file, which re-points the test in the same task.
-  - Give each hit exactly one owner:
-    - a task of delivery-013 (task-339 to task-352; see the task files under
-      `.aid/works/work-003-full-aid-restructure/tasks/task-NNN/DETAIL.md`, the layout delivery-008's migration leaves);
-    - delivery-014, for a hit under `docs/`, `site/src/content/docs/` (outside the generated pages), `README.md`
-      (outside its identity line) or `examples/`;
-    - "installed copy (resync)";
-    - "history, left as is";
-    - "rendered after the resync (gate step)" for hits in `.aid/knowledge/kb.html`, `.aid/knowledge/INDEX.md` and the
-      site pages generated from `.aid/settings.yml` (`reference/settings.md`), which this resync changes when the
-      "Managed by" line reaches the installed settings (G8).
-  - In a delta section, list each suite assigned to two independent tasks, with the order to run them.
-  - **The owner classes also include "baseline, re-recorded at the gate"** for hits in
-    `tests/cost-baseline.tsv` and `tests/coverage-baseline.tsv`. No task edits a baseline (Q134 D11).
-  - **Skill owner table (G2).** Build it from a full listing, `ls canonical/skills/*/SKILL.md`, not from
-    text searches. It has one row per skill on disk at the base, naming the task of this delivery that owns
-    that skill's edits, or "no change needed here" with the reason (for example "generated doorway: changes
-    through the builder").
-- **Acceptance criteria:**
-  - [ ] Each of C1-C7 shows its exact command, and re-running it at the base named in the file reproduces its hits.
-  - [ ] Every hit has exactly one owner; the count of rows with an empty owner cell is 0.
-  - [ ] The skill owner table has exactly one row per `canonical/skills/*/SKILL.md` on disk at the base (the row count equals `ls canonical/skills/*/SKILL.md | wc -l`), and no row is unowned.
-  - [ ] RESEARCH defaults are overridden as in task-001; the test step selects nothing (work folder only).
-
 ### task-339: aid-config renamed aid-configure: the skill, its guide line and its lists [IMPLEMENT]
 
-- **Stanza wave:** 2. **Depends on:** task-338.
+- **Stanza wave:** 2. **Depends on:** --.
 - **Source:** AC-22, AC-31.
 - **Scope:**
   - Move `canonical/skills/aid-config/` to `canonical/skills/aid-configure/` (REQUIREMENTS.md § 11 Feature 009 `##### 1. Files and layout`, Move +
@@ -172,7 +121,7 @@ catalog, AC-45 for the identity statement's pre-release check).
 
 ### task-341: The catalog's domain field, and the reserved fields set on none [IMPLEMENT]
 
-- **Stanza wave:** 2. **Depends on:** task-338.
+- **Stanza wave:** 2. **Depends on:** --.
 - **Source:** AC-30.
 - **Scope:**
   - `canonical/aid/templates/kind-catalog.yml` (REQUIREMENTS.md § 11 Feature 009 `##### 3. The catalog`; Domain readiness items 2 and 4):
@@ -204,7 +153,7 @@ catalog, AC-45 for the identity statement's pre-release check).
 
 ### task-343: The identity statement outside the KB: software first, not software only [DOCUMENT]
 
-- **Stanza wave:** 2. **Depends on:** task-338, task-340.
+- **Stanza wave:** 2. **Depends on:** task-340.
 - **Source:** AC-45.
 - **Scope:**
   - In every file the identity search finds (the findings' C1) outside `.aid/knowledge/`, `docs/` and
@@ -221,7 +170,7 @@ catalog, AC-45 for the identity statement's pre-release check).
 
 ### task-344: The merged catalog's second source: .aid/kinds/, the precedence and the skip rule [IMPLEMENT]
 
-- **Stanza wave:** 2. **Depends on:** task-338, task-341.
+- **Stanza wave:** 2. **Depends on:** task-341.
 - **Source:** AC-30.
 - **Scope:**
   - `canonical/skills/aid-orchestrate/references/check-intent.md` § The merged catalog (REQUIREMENTS.md § 11 Feature 009 `##### 3. The catalog`,
@@ -277,7 +226,7 @@ catalog, AC-45 for the identity statement's pre-release check).
 
 ### task-347: Conversation runner: a fixture with no repository [TEST]
 
-- **Stanza wave:** 4. **Depends on:** task-338.
+- **Stanza wave:** 4. **Depends on:** --.
 - **Source:** AC-14, AC-36.
 - **Scope:**
   - `tests/conversation/run.py` (REQUIREMENTS.md § 11 Feature 009 `##### 9. Testing`, sample `009-18`: "a folder with no git"): a sample whose
@@ -431,13 +380,12 @@ reaches `.aid/settings.yml`; then the criteria, the samples and G0).
 ## 5. Execution graph
 
 ```text
-wave 1: task-338
-wave 2: task-339, task-341, task-347
-wave 3: task-340, task-344
-wave 4: task-342, task-343, task-345, task-346
-wave 5: task-348, task-349, task-350
-wave 6: task-351
-wave 7: task-352
+wave 1: task-339, task-341, task-347
+wave 2: task-340, task-344
+wave 3: task-342, task-343, task-345, task-346
+wave 4: task-348, task-349, task-350
+wave 5: task-351
+wave 6: task-352
 ```
 
 Step 5 writes the table under `### delivery-013 Execution Graph`, one task per row.

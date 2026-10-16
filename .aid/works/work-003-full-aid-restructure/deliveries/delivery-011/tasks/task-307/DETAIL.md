@@ -22,7 +22,8 @@
 - Smoke run (Q134 D8): `009-13`, `009-17`, both forms of `009-05`, and the typed form of `009-07`, once each, in a
   scratch copy.
 - **Findings.** This task's scope also includes every site that
-  `.aid/works/work-003-full-aid-restructure/research/delivery-011-sites.md` assigns to `task-307`.
+  `.aid/works/work-003-full-aid-restructure/research/delivery-011-sites.md` (written, reviewed and committed before
+  the run starts, Q139) assigns to `task-307`.
 - **Test step** (PLAN.md § "Testing before the resync"; the same in every task of this delivery).
   `BASE` is this task's `base` (`tasks_lifecycle.task-307.base`, which `/aid-execute` BUILD records on the
   first round). Work in the `work-003` worktree only, create no

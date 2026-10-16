@@ -1,5 +1,11 @@
 # Detail proposal -- delivery-012: One obvious skill for each need (Feature 009b)
 
+> **Q139 (maintainer decision).** The research task task-311 is dropped from the task graph. Its searches, owner
+> classes and tables are now the research brief in task-310 (delivery-011), step 5, in the "Gate-session steps" block: `aid-researcher`
+> writes `research/delivery-012-sites.md`, `aid-reviewer` grades it with `grade.sh` against `minimum_grade`, and it
+> is committed alone before this delivery's run starts. Every task's findings bullet points at that committed file,
+> and the tasks that depended on task-311 now start the graph.
+
 This is `aid-detail` FIRST-RUN for **delivery-012**, under Q136. Decisions are settled by recommendation, the task
 files are written at once, and the light review is the check.
 
@@ -7,35 +13,34 @@ files are written at once, and the light review is the check.
 
 | Task | Title | Type | Stanza wave | Derived wave | Depends on |
 |---|---|---|---|---|---|
-| task-311 | Delivery-012 site search and reconciled edit list | RESEARCH | 1 | 1 | -- |
-| task-312 | The tracker procedures: connectors/ticket-create.md and ticket-update.md | IMPLEMENT | 2 | 2 | task-311 |
-| task-313 | The TICKET step and the ticket kind of /aid-create and /aid-update | IMPLEMENT | 2 | 3 | task-312 |
-| task-314 | Free-form text after /aid-deploy and /aid-monitor is a plain request | IMPLEMENT | 2 | 2 | task-311 |
-| task-315 | No impediment file: the per-row choice in aid-research, aid-review and aid-report | IMPLEMENT | 2 | 2 | task-311 |
-| task-316 | Site generator: the skill list from canonical/skills/ | IMPLEMENT | 2 | 2 | task-311 |
-| task-317 | Site generator: the flow graph without doorways, engine or siblings | IMPLEMENT | 2 | 3 | task-316 |
-| task-318 | The generated wrapper skills retired | IMPLEMENT | 3 | 4 | task-314, task-316, task-317 |
-| task-319 | The ticket skills retired, and the ticket seams re-pointed | IMPLEMENT | 3 | 5 | task-313, task-315, task-318 |
-| task-320 | The document, test and prototype wrappers retired, and the guide's <kind> lines gone | IMPLEMENT | 3 | 6 | task-319 |
-| task-321 | The shortcut engine retired, and the shared exempt list empty | IMPLEMENT | 3 | 7 | task-313, task-314, task-316, task-317, task-319, task-320 |
-| task-322 | The shortcut scaffolding retired | IMPLEMENT | 3 | 8 | task-321 |
-| task-323 | The impediment template retired | IMPLEMENT | 3 | 9 | task-315, task-322 |
-| task-324 | KB type registry: the generated-skill type retired | DOCUMENT | 3 | 7 | task-320 |
-| task-325 | The doorway builder retired, and generate-profile counting from the folders | IMPLEMENT | 3 | 7 | task-320 |
-| task-326 | The shortcut catalog retired, with its counting suites | IMPLEMENT | 3 | 9 | task-318, task-319, task-320, task-321, task-322, task-324, task-325 |
-| task-327 | Format 6: the doorway rows, inside legacy-skill-names markers | IMPLEMENT | 4 | 10 | task-326 |
-| task-328 | Dashboard: the legacy maps inside markers, and no retired name outside them | IMPLEMENT | 4 | 10 | task-326 |
-| task-329 | Re-pointing: every kept file that names a retired skill, the engine or its files | IMPLEMENT | 4 | 10 | task-319, task-323, task-325, task-326 |
-| task-330 | Migration cases: old doorway works | TEST | 5 | 11 | task-327 |
-| task-331 | Dashboard: parity of the two legacy maps inside their markers | TEST | 5 | 11 | task-328 |
-| task-332 | test-actions.sh group B | TEST | 5 | 11 | task-313, task-314, task-320, task-323, task-326, task-327, task-328, task-329 |
-| task-333 | Samples 009-06, 009-08, 009-09 and 009-10 (plain words, run at this gate) | TEST | 5 | 11 | task-320, task-329 |
-| task-334 | Samples 009-11, 009-12, 009-14 and 009-16, the plain runs, and the deferred list | TEST | 5 | 12 | task-313, task-315, task-327, task-333 |
-| task-335 | KB decisions, release notes, quality gates, roadmap and tech debt for one skill per need | DOCUMENT | 5 | 11 | task-326, task-329 |
-| task-336 | KB architecture, contracts, structure, schemas and glossary without the engine | DOCUMENT | 5 | 12 | task-319, task-326, task-329, task-335 |
-| task-337 | KB test landscape for one skill per need, the regenerated index and the view | DOCUMENT | 5 | 13 | task-324, task-330, task-331, task-332, task-334, task-335, task-336 |
+| task-312 | The tracker procedures: connectors/ticket-create.md and ticket-update.md | IMPLEMENT | 2 | 1 | -- |
+| task-313 | The TICKET step and the ticket kind of /aid-create and /aid-update | IMPLEMENT | 2 | 2 | task-312 |
+| task-314 | Free-form text after /aid-deploy and /aid-monitor is a plain request | IMPLEMENT | 2 | 1 | -- |
+| task-315 | No impediment file: the per-row choice in aid-research, aid-review and aid-report | IMPLEMENT | 2 | 1 | -- |
+| task-316 | Site generator: the skill list from canonical/skills/ | IMPLEMENT | 2 | 1 | -- |
+| task-317 | Site generator: the flow graph without doorways, engine or siblings | IMPLEMENT | 2 | 2 | task-316 |
+| task-318 | The generated wrapper skills retired | IMPLEMENT | 3 | 3 | task-314, task-316, task-317 |
+| task-319 | The ticket skills retired, and the ticket seams re-pointed | IMPLEMENT | 3 | 4 | task-313, task-315, task-318 |
+| task-320 | The document, test and prototype wrappers retired, and the guide's <kind> lines gone | IMPLEMENT | 3 | 5 | task-319 |
+| task-321 | The shortcut engine retired, and the shared exempt list empty | IMPLEMENT | 3 | 6 | task-313, task-314, task-316, task-317, task-319, task-320 |
+| task-322 | The shortcut scaffolding retired | IMPLEMENT | 3 | 7 | task-321 |
+| task-323 | The impediment template retired | IMPLEMENT | 3 | 8 | task-315, task-322 |
+| task-324 | KB type registry: the generated-skill type retired | DOCUMENT | 3 | 6 | task-320 |
+| task-325 | The doorway builder retired, and generate-profile counting from the folders | IMPLEMENT | 3 | 6 | task-320 |
+| task-326 | The shortcut catalog retired, with its counting suites | IMPLEMENT | 3 | 8 | task-318, task-319, task-320, task-321, task-322, task-324, task-325 |
+| task-327 | Format 6: the doorway rows, inside legacy-skill-names markers | IMPLEMENT | 4 | 9 | task-326 |
+| task-328 | Dashboard: the legacy maps inside markers, and no retired name outside them | IMPLEMENT | 4 | 9 | task-326 |
+| task-329 | Re-pointing: every kept file that names a retired skill, the engine or its files | IMPLEMENT | 4 | 9 | task-319, task-323, task-325, task-326 |
+| task-330 | Migration cases: old doorway works | TEST | 5 | 10 | task-327 |
+| task-331 | Dashboard: parity of the two legacy maps inside their markers | TEST | 5 | 10 | task-328 |
+| task-332 | test-actions.sh group B | TEST | 5 | 10 | task-313, task-314, task-320, task-323, task-326, task-327, task-328, task-329 |
+| task-333 | Samples 009-06, 009-08, 009-09 and 009-10 (plain words, run at this gate) | TEST | 5 | 10 | task-320, task-329 |
+| task-334 | Samples 009-11, 009-12, 009-14 and 009-16, the plain runs, and the deferred list | TEST | 5 | 11 | task-313, task-315, task-327, task-333 |
+| task-335 | KB decisions, release notes, quality gates, roadmap and tech debt for one skill per need | DOCUMENT | 5 | 10 | task-326, task-329 |
+| task-336 | KB architecture, contracts, structure, schemas and glossary without the engine | DOCUMENT | 5 | 11 | task-319, task-326, task-329, task-335 |
+| task-337 | KB test landscape for one skill per need, the regenerated index and the view | DOCUMENT | 5 | 12 | task-324, task-330, task-331, task-332, task-334, task-335, task-336 |
 
-That is 27 tasks (task-311 to task-337). The resync follows the run's pause at the delivery-012 MILESTONE approval
+That is 26 tasks (task-312 to task-337; task-311 dropped, Q139). The resync follows the run's pause at the delivery-012 MILESTONE approval
 (§ 4).
 
 ---
@@ -86,62 +91,9 @@ That is 27 tasks (task-311 to task-337). The resync follows the run's pause at t
 
 `Source` reads `feature-009-one-skill-per-need -> delivery-012 -> AC-...`.
 
-### task-311: Delivery-012 site search and reconciled edit list [RESEARCH]
-
-- **Stanza wave:** 1. **Depends on:** --.
-- **Source:** AC-20, AC-31.
-- **Scope:**
-  - Create `.aid/works/work-003-full-aid-restructure/research/delivery-012-sites.md`. Touch nothing else.
-  - Re-run these searches at this task's base commit, and record the base commit in the file
-    (REQUIREMENTS.md § 11 Feature 009 `##### 1. Files and layout` and `##### 8. Migration`):
-    - **B1** both `git grep` commands of REQUIREMENTS.md § 11 Feature 009 `##### 8. Migration`, Suites, verbatim, read hit by hit, each hit with
-      the class the spec gives it (retired, rewritten, re-pointed, unchanged, dashboard, site);
-    - **B2** the re-pointing sites: every kept file under `canonical/`, `.claude/skills/generate-profile/`,
-      `scripts/checks/`, `bin/aid`, `bin/aid.ps1` and `dashboard/` that names a skill this delivery retires, the engine,
-      the shortcut catalog, a scaffolding file, `build-shortcut-skills.py` or `IMPEDIMENT.md` (the spec's list of sites
-      is the minimum, not the whole). `aid-config` hits are delivery-013's, and `canonical/aid/scripts/migrate/` is
-      exempt;
-    - **B3** the full list of skill folders this delivery deletes, from `ls -d canonical/skills/aid-*/`: every
-      remaining `aid-create-*`, `aid-update-*`, `aid-document-*` and `aid-test-*`, and `aid-prototype-ui`,
-      `aid-remove`, `aid-deprecate`, `aid-migrate`, `aid-experiment`; each with whether it is a generated doorway or
-      hand-authored, and the task that deletes it (task-318, task-319 or task-320);
-    - **B4** for each file this delivery deletes (the folders of B3, `shortcut-engine.md`, `shortcut-catalog.yml`,
-      `shortcut-scaffolding/`, `feedback-artifacts/`, `build-shortcut-skills.py`, the site's engine, sibling and doorway
-      modules), every reader in `tests/`, `site/`, `dashboard/`, `.github/` and `scripts/`, and the clause or check
-      that reads it;
-    - **B5** the rows of `tests/conversation/deferred.tsv`, `tests/canonical/skill-steps-exempt.tsv`, the SG-04
-      description exempt list and the `SUITES` list of `installer-tests.yml` that name a retired skill, a retired
-      suite or the engine;
-    - **B6** the format-6 conversion rows in `bin/aid` and `bin/aid.ps1` that name a retired skill (Feature 003's
-      initiator rows, Feature 006's type and document rows), which the markers must wrap;
-    - **B7** the impediment sites of `aid-research`, `aid-review` and `aid-report`, and every suite that asserts them.
-  - Give each hit exactly one owner:
-    - a task of delivery-012 (task-312 to task-337; see the task files under
-      `.aid/works/work-003-full-aid-restructure/tasks/task-NNN/DETAIL.md`, the layout delivery-008's migration leaves);
-    - delivery-013, for a hit on `aid-config`, `.aid/kinds/`, the `domain` field, the identity statement or the kind
-      hooks of `aid-review`, `aid-research` and `aid-report`;
-    - delivery-014, for a hit under `docs/`, `site/src/content/docs/` (outside the generated skill pages),
-      `README.md` (outside the counted phrases) or `examples/`;
-    - "installed copy (resync)";
-    - "history, left as is";
-    - "rendered after the resync (gate step)" for hits in `.aid/knowledge/kb.html`, `.aid/knowledge/INDEX.md` and the
-      site pages generated from `.aid/settings.yml` (`reference/settings.md`), which the resync could change (G8).
-  - In a delta section, list each suite assigned to two independent tasks, with the order to run them.
-  - **The owner classes also include "baseline, re-recorded at the gate"** for hits in
-    `tests/cost-baseline.tsv` and `tests/coverage-baseline.tsv`. No task edits a baseline (Q134 D11).
-  - **Skill owner table (G2).** Build it from a full listing, `ls canonical/skills/*/SKILL.md`, not from
-    text searches. It has one row per skill on disk at the base, naming the task of this delivery that owns
-    that skill's edits, or "no change needed here" with the reason (for example "generated doorway: changes
-    through the builder").
-- **Acceptance criteria:**
-  - [ ] Each of B1-B7 shows its exact command, and re-running it at the base named in the file reproduces its hits.
-  - [ ] Every hit has exactly one owner; the count of rows with an empty owner cell is 0; B3 lists every folder `ls -d canonical/skills/aid-{create,update,document,test}-*/ canonical/skills/aid-{prototype-ui,remove,deprecate,migrate,experiment}/` prints at the base.
-  - [ ] The skill owner table has exactly one row per `canonical/skills/*/SKILL.md` on disk at the base (the row count equals `ls canonical/skills/*/SKILL.md | wc -l`), and no row is unowned.
-  - [ ] RESEARCH defaults are overridden as in task-001; the test step selects nothing (work folder only).
-
 ### task-312: The tracker procedures: connectors/ticket-create.md and ticket-update.md [IMPLEMENT]
 
-- **Stanza wave:** 2. **Depends on:** task-311.
+- **Stanza wave:** 2. **Depends on:** --.
 - **Source:** AC-20, AC-30.
 - **Scope:**
   - Create `canonical/aid/templates/connectors/ticket-create.md` and `ticket-update.md`, type `template-own`
@@ -178,7 +130,7 @@ That is 27 tasks (task-311 to task-337). The resync follows the run's pause at t
 
 ### task-314: Free-form text after /aid-deploy and /aid-monitor is a plain request [IMPLEMENT]
 
-- **Stanza wave:** 2. **Depends on:** task-311.
+- **Stanza wave:** 2. **Depends on:** --.
 - **Source:** AC-20, AC-31.
 - **Scope:**
   - `canonical/skills/aid-deploy/SKILL.md` and `canonical/skills/aid-monitor/SKILL.md`, Step 0 and § Argument-Hint
@@ -197,7 +149,7 @@ That is 27 tasks (task-311 to task-337). The resync follows the run's pause at t
 
 ### task-315: No impediment file: the per-row choice in aid-research, aid-review and aid-report [IMPLEMENT]
 
-- **Stanza wave:** 2. **Depends on:** task-311.
+- **Stanza wave:** 2. **Depends on:** --.
 - **Source:** AC-20, AC-28.
 - **Scope:**
   - `canonical/skills/aid-research/SKILL.md`, `aid-review/SKILL.md` and `aid-report/SKILL.md` (REQUIREMENTS.md § 11 Feature 009 `##### 5. Components`,
@@ -214,7 +166,7 @@ That is 27 tasks (task-311 to task-337). The resync follows the run's pause at t
 
 ### task-316: Site generator: the skill list from canonical/skills/ [IMPLEMENT]
 
-- **Stanza wave:** 2. **Depends on:** task-311.
+- **Stanza wave:** 2. **Depends on:** --.
 - **Source:** AC-31.
 - **Scope:**
   - REQUIREMENTS.md § 11 Feature 009 `##### 8. Migration`, Site and its check-by-check list, the `skills/` part:
@@ -801,19 +753,18 @@ the stanza's criteria, the samples and G0; then the approval and the push questi
 `derive-waves.sh --from-tasks` derives the following from the written task files:
 
 ```text
-wave 1: task-311
-wave 2: task-312, task-314, task-315, task-316
-wave 3: task-313, task-317
-wave 4: task-318
-wave 5: task-319
-wave 6: task-320
-wave 7: task-321, task-324, task-325
-wave 8: task-322
-wave 9: task-323, task-326
-wave 10: task-327, task-328, task-329
-wave 11: task-330, task-331, task-332, task-333, task-335
-wave 12: task-334, task-336
-wave 13: task-337
+wave 1: task-312, task-314, task-315, task-316
+wave 2: task-313, task-317
+wave 3: task-318
+wave 4: task-319
+wave 5: task-320
+wave 6: task-321, task-324, task-325
+wave 7: task-322
+wave 8: task-323, task-326
+wave 9: task-327, task-328, task-329
+wave 10: task-330, task-331, task-332, task-333, task-335
+wave 11: task-334, task-336
+wave 12: task-337
 ```
 
 Step 5 writes the table under `### delivery-012 Execution Graph`, one task per row.

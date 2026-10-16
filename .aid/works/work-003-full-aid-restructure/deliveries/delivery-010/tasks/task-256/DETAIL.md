@@ -7,7 +7,7 @@
 
 **Source:** feature-008-cicd-integration-monitoring -> delivery-010 -> AC-11, AC-34
 
-**Depends on:** task-254
+**Depends on:** --
 
 **Scope:**
 - Create `canonical/aid/scripts/pipeline/merge-parent.sh` (REQUIREMENTS.md § 11 Feature 008 `##### 4. Components`, `merge-parent.sh`):
@@ -36,7 +36,8 @@
   - A renamed assertion gets its row in `tests/coverage-rehome-allowlist.tsv`.
   - The baselines themselves are re-recorded at the gate (Q134, D11).
 - **Findings.** This task's scope also includes every site that
-  `.aid/works/work-003-full-aid-restructure/research/delivery-010-sites.md` assigns to `task-256`.
+  `.aid/works/work-003-full-aid-restructure/research/delivery-010-sites.md` (written, reviewed and committed before
+  the run starts, Q139) assigns to `task-256`.
 - **Test step** (PLAN.md § "Testing before the resync"; the same in every task of this delivery).
   `BASE` is this task's `base` (`tasks_lifecycle.task-256.base`, which `/aid-execute` BUILD records on the
   first round). Work in the `work-003` worktree only, create no

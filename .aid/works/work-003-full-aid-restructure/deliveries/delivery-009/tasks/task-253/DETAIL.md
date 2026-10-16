@@ -57,6 +57,62 @@
      `active_skill: aid-execute` and `step: START`; `qa` holds one `Approval` entry answered yes, with a `commit`,
      whose `covers` names `delivery delivery-001` to `delivery delivery-009` and `confirmation before building`.
      A failure here is fixed and the check re-run before delivery-010's START.
+  6. **Research for delivery-010 (Q139)**, after the post-switch check (step 5). `aid-researcher` writes
+     `.aid/works/work-003-full-aid-restructure/research/delivery-010-sites.md` from the brief below, in a clean
+     context. `aid-reviewer` grades it in a clean context with `grade.sh` against `minimum_grade`, against the brief's
+     criteria; fix rounds follow as for a task, and the same failure after three rounds goes to the maintainer. The
+     file is then committed alone (a work-folder file, not resync-relevant). Delivery-010's run starts only after
+     that commit.
+     **Brief:**
+     - Create `.aid/works/work-003-full-aid-restructure/research/delivery-010-sites.md`. The step touches nothing else.
+     - Re-run these searches at the head the gate session leaves, and record that commit in the file
+       (REQUIREMENTS.md § 11 Feature 008 `##### 1. Files and layout` and `##### 7. Migration`):
+       - **Y1** `housekeep/cleanup-classify.sh`, the `aid-housekeep` teardown, and `origin/master` as a merge target,
+         over every kept file under `canonical/`, `dashboard/`, `tests/`, `site/scripts/` and `.github/`;
+       - **Y2** the interim close: `/aid-orchestrate`'s close minimum, and every line that marks a work `Completed`
+         by hand (`aid-research`, `aid-review`, `aid-report`, `aid-deploy`, `aid-orchestrate`, `aid-kb-update`,
+         `aid-execute`);
+       - **Y3** every executed or written `git push`, `git merge`, `git pull`, `gh pr create`, `glab mr create`,
+         `git branch -D` and `git worktree remove --force` under `canonical/` and `dashboard/scripts/` (NM-01, NM-03,
+         NM-05, NM-06), each with the task that removes it or the exception that keeps it;
+       - **Y4** the readers of `pull_request`, `work_folders`, `feedback` and the dashboard's CI card lines;
+       - **Y5** the consumer rows of `worktree-lifecycle.md` § Step 3, `consumption-protocol.md`'s wired-seam
+         table, and the gate's § 3b row 1;
+       - **Y6** this repository's own `.gitignore` entries for `.aid/works/` (the ignored-folder question at the
+         first push of this work, Risks);
+       - **Y7** the rows of `tests/conversation/deferred.tsv` and the SG-04 exempt list that name a sample or skill
+         this delivery runs or adds;
+       - **Y8** the Q106 suite map for every file on the edit list, including the site's skill lists.
+     - **Site fixtures (G11, extended).** Also search `site/scripts/__tests__/` and `site/src/lib/__tests__/` for every
+       test that reads a real skill's or template's body as a fixture -- by path, or by name through `loadSkillRecord`,
+       `buildFlowChart`, `liveChart` or the like (`git grep -nE "'aid-[a-z-]+'|canonical/(skills|aid/templates)/" --
+       site/scripts/__tests__ site/src/lib/__tests__`). Each hit on a file this delivery rewrites, moves or deletes goes to
+       the task that changes that file, which re-points the test in the same task.
+     - **KB `sources:` (G17).** The G6 and G2 searches also run over `.aid/knowledge/` (the frontmatter `sources:` lists): each
+       `sources:` entry that cites a file this delivery deletes, moves or renames goes to the task that deletes, moves or
+       renames it, which fixes the entry in the same task (AD14).
+     - **Site generator sources (G19).** The searches also run over `site/scripts/` outside `__tests__` for the name of every
+       skill this delivery retires or renames; each hit goes to the task that retires or renames that skill.
+     - Give each hit exactly one owner:
+       - a task of delivery-010 (task-255 to task-287; see the task files under
+         `.aid/works/work-003-full-aid-restructure/tasks/task-NNN/DETAIL.md`, the layout delivery-008's migration leaves);
+       - Feature 009 (delivery-012) for the skills it rebuilds that finish a work (`create`, `update`, `document`,
+         `test`, `prototype`);
+       - "installed copy (resync)";
+       - "history, left as is".
+     - **Content owner of the moved file (G7):** `cleanup-classify.sh` moves to `canonical/aid/scripts/pipeline/`, and
+       task-257 owns both the move and its content.
+     - In a delta section, list each suite assigned to two independent tasks, with the order to run them.
+     - **The owner classes also include "baseline, re-recorded at the gate"** for hits in
+       `tests/cost-baseline.tsv` and `tests/coverage-baseline.tsv`. No task edits a baseline (Q134 D11).
+     - **Skill owner table (G2).** Build it from a full listing, `ls canonical/skills/*/SKILL.md`, not from
+       text searches. It has one row per skill on disk at the base, naming the task of this delivery that owns
+       that skill's edits, or "no change needed here" with the reason (for example "generated doorway: changes
+       through the builder").
+     **Criteria:**
+     - [ ] Each of Y1-Y8 shows its exact command, and re-running it at the base named in the file reproduces its hits.
+     - [ ] Every hit has exactly one owner; the count of rows with an empty owner cell is 0.
+     - [ ] The skill owner table has exactly one row per `canonical/skills/*/SKILL.md` on disk at the base (the row count equals `ls canonical/skills/*/SKILL.md | wc -l`), and no row is unowned.
 - **Test step** (PLAN.md § "Testing before the resync"; the same in every task of this delivery).
   `BASE` is this task's `task-253: In Progress` commit. Work in the `work-003` worktree only, create no
   branch or worktree, and never run `run_generator.py` in the live tree.

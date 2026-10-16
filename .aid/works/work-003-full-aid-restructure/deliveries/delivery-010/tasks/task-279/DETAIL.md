@@ -15,7 +15,8 @@
   `push-approved.sh`, with the text-only and instruction-only exceptions) and NM-06 (`git branch -D` only in
   `close-work.sh`; no `git worktree remove --force` anywhere).
 - **Findings.** This task's scope also includes every site that
-  `.aid/works/work-003-full-aid-restructure/research/delivery-010-sites.md` assigns to `task-279`.
+  `.aid/works/work-003-full-aid-restructure/research/delivery-010-sites.md` (written, reviewed and committed before
+  the run starts, Q139) assigns to `task-279`.
 - **Test step** (PLAN.md § "Testing before the resync"; the same in every task of this delivery).
   `BASE` is this task's `base` (`tasks_lifecycle.task-279.base`, which `/aid-execute` BUILD records on the
   first round). Work in the `work-003` worktree only, create no

@@ -7,7 +7,7 @@
 
 **Source:** feature-008-cicd-integration-monitoring -> delivery-010 -> AC-13, AC-27, AC-42
 
-**Depends on:** task-254, task-262
+**Depends on:** task-262
 
 **Scope:**
 - Create `tests/conversation/stand-ins/gh` and `tests/conversation/stand-ins/glab` (REQUIREMENTS.md § 11 Feature 008 `##### 8. Testing`,
@@ -19,7 +19,8 @@
 - Each command and flag the stand-ins answer is the one `canonical/skills/aid-monitor-pipeline/references/hosts.md`
   (task-262) names for that operation.
 - **Findings.** This task's scope also includes every site that
-  `.aid/works/work-003-full-aid-restructure/research/delivery-010-sites.md` assigns to `task-261`.
+  `.aid/works/work-003-full-aid-restructure/research/delivery-010-sites.md` (written, reviewed and committed before
+  the run starts, Q139) assigns to `task-261`.
 - **Test step** (PLAN.md § "Testing before the resync"; the same in every task of this delivery).
   `BASE` is this task's `base` (`tasks_lifecycle.task-261.base`, which `/aid-execute` BUILD records on the
   first round). Work in the `work-003` worktree only, create no

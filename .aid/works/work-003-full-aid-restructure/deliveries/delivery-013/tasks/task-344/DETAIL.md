@@ -7,7 +7,7 @@
 
 **Source:** feature-009-one-skill-per-need -> delivery-013 -> AC-30
 
-**Depends on:** task-338, task-341
+**Depends on:** task-341
 
 **Scope:**
 - `canonical/skills/aid-orchestrate/references/check-intent.md` § The merged catalog (REQUIREMENTS.md § 11 Feature 009 `##### 3. The catalog`,
@@ -41,7 +41,8 @@
   - A renamed assertion gets its row in `tests/coverage-rehome-allowlist.tsv`.
   - The baselines themselves are re-recorded at the gate (Q134, D11).
 - **Findings.** This task's scope also includes every site that
-  `.aid/works/work-003-full-aid-restructure/research/delivery-013-sites.md` assigns to `task-344`.
+  `.aid/works/work-003-full-aid-restructure/research/delivery-013-sites.md` (written, reviewed and committed before
+  the run starts, Q139) assigns to `task-344`.
 - **Test step** (PLAN.md § "Testing before the resync"; the same in every task of this delivery).
   `BASE` is this task's `base` (`tasks_lifecycle.task-344.base`, which `/aid-execute` BUILD records on the
   first round). Work in the `work-003` worktree only, create no

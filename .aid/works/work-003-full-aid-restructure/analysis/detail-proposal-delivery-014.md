@@ -1,5 +1,11 @@
 # Detail proposal -- delivery-014: Final documentation pass and release readiness
 
+> **Q139 (maintainer decision).** The research task task-353 is dropped from the task graph. Its searches, owner
+> classes and tables are now the research brief in task-352 (delivery-013), step 5, in the "Gate-session steps" block: `aid-researcher`
+> writes `research/delivery-014-sites.md`, `aid-reviewer` grades it with `grade.sh` against `minimum_grade`, and it
+> is committed alone before this delivery's run starts. Every task's findings bullet points at that committed file,
+> and the tasks that depended on task-353 now start the graph.
+
 This is `aid-detail` FIRST-RUN for **delivery-014**, under Q136. Decisions are settled by recommendation, the task
 files are written at once, and the light review is the check.
 
@@ -7,20 +13,19 @@ files are written at once, and the light review is the check.
 
 | Task | Title | Type | Stanza wave | Derived wave | Depends on |
 |---|---|---|---|---|---|
-| task-353 | Delivery-014 documentation search and reconciled rewrite list | RESEARCH | 1 | 1 | -- |
-| task-354 | The pre-release name check: retired-names.txt and test-doc-names.sh | TEST | 2 | 2 | task-353 |
-| task-355 | The name check in the CI lane and in the live release checks | CONFIGURE | 2 | 3 | task-354 |
-| task-356 | Final pass: docs/aid-methodology.md | DOCUMENT | 2 | 5 | task-358 |
-| task-357 | Final pass: the FAQ, the glossary and the repository structure | DOCUMENT | 2 | 6 | task-356 |
-| task-358 | Final pass: install, release and the old -> new table | DOCUMENT | 2 | 4 | task-353, task-354, task-364 |
-| task-359 | Final pass: the site's home page, concepts and getting started | DOCUMENT | 2 | 7 | task-357 |
-| task-360 | Final pass: the site's guides and hand-written reference pages | DOCUMENT | 2 | 8 | task-359 |
-| task-361 | Final pass: README.md and the examples | DOCUMENT | 2 | 7 | task-357 |
-| task-362 | Release readiness before the gate: regeneration, the site build and the flagged checks | TEST | 2 | 9 | task-355, task-356, task-357, task-358, task-359, task-360, task-361 |
-| task-363 | KB test landscape for the name check, the regenerated index and the view | DOCUMENT | 2 | 10 | task-355, task-362 |
-| task-364 | Canonical text the generated pages copy: no retired name and no old phase sequence | IMPLEMENT | 2 | 3 | task-353, task-354 |
+| task-354 | The pre-release name check: retired-names.txt and test-doc-names.sh | TEST | 2 | 1 | -- |
+| task-355 | The name check in the CI lane and in the live release checks | CONFIGURE | 2 | 2 | task-354 |
+| task-356 | Final pass: docs/aid-methodology.md | DOCUMENT | 2 | 4 | task-358 |
+| task-357 | Final pass: the FAQ, the glossary and the repository structure | DOCUMENT | 2 | 5 | task-356 |
+| task-358 | Final pass: install, release and the old -> new table | DOCUMENT | 2 | 3 | task-354, task-364 |
+| task-359 | Final pass: the site's home page, concepts and getting started | DOCUMENT | 2 | 6 | task-357 |
+| task-360 | Final pass: the site's guides and hand-written reference pages | DOCUMENT | 2 | 7 | task-359 |
+| task-361 | Final pass: README.md and the examples | DOCUMENT | 2 | 6 | task-357 |
+| task-362 | Release readiness before the gate: regeneration, the site build and the flagged checks | TEST | 2 | 8 | task-355, task-356, task-357, task-358, task-359, task-360, task-361 |
+| task-363 | KB test landscape for the name check, the regenerated index and the view | DOCUMENT | 2 | 9 | task-355, task-362 |
+| task-364 | Canonical text the generated pages copy: no retired name and no old phase sequence | IMPLEMENT | 2 | 2 | task-354 |
 
-That is 12 tasks (task-353 to task-364; task-364 was added by the light review, so its id comes last). Stanza wave 3 is the resync, which is no task; the release checks under
+That is 11 tasks (task-354 to task-364; task-353 dropped, Q139; task-364 was added by the light review, so its id comes last). Stanza wave 3 is the resync, which is no task; the release checks under
 `AID_RELEASE_CHECK=1` and the full integration suite are gate checks after it (§ 4).
 
 ---
@@ -60,70 +65,9 @@ That is 12 tasks (task-353 to task-364; task-364 was added by the light review, 
 
 `Source` reads `feature-009-one-skill-per-need -> delivery-014 -> AC-...`.
 
-### task-353: Delivery-014 documentation search and reconciled rewrite list [RESEARCH]
-
-- **Stanza wave:** 1. **Depends on:** --.
-- **Source:** AC-24, AC-45.
-- **Scope:**
-  - Create `.aid/works/work-003-full-aid-restructure/research/delivery-014-sites.md`. Touch nothing else.
-  - Re-run these searches at this task's base commit, and record the base commit in the file
-    (REQUIREMENTS.md § 11 Feature 009 `##### 5. Components`, The final documentation pass; `##### 9. Testing`, DN-01 to DN-03). `test-doc-names.sh`
-    comes with task-354, so the DN rules are run by hand, as the spec states them:
-    - **D1** DN-01's rule without the release flag: over `docs/`, `site/src/content/` and `examples/`, and `README.md`,
-      every mention of a retired slash name (as `/aid-<name>` or in backticks) and every old phase name (Discover,
-      Describe, Define, Specify, Plan, Detail, Execute) written as a phase -- in a `->` or `→` sequence, or followed by
-      "phase";
-    - **D2** the retired names: every skill folder under `canonical/skills/` at the work's base
-      (`git merge-base master HEAD`) that `canonical/skills/` no longer holds, and every family form the old -> new
-      table of `.aid/knowledge/backlog.md` § Next Release names; the two lists compared, each difference named;
-    - **D3** DN-03's rule without the flag: the identity search, `git grep -lIiE 'building software|software-development lifecycle|AI Integrated Software Development|methodology for software development|kind of digital work' -- . ':!.aid/works' ':!site/src/data' ':!.aid/knowledge/kb.html' ':!.aid/runtime' ':!tests' ':!**/tests/**' ':!**/__tests__/**'`, over `docs/` and `site/src/content/docs/`,
-      and every file it finds without "software first, not software only";
-    - **D4** each page under `site/src/content/docs/`, classed as generated (`gen-skills.mjs`, `gen-reference.mjs`),
-      synced from `docs/` (`sync-docs.mjs`'s manifest) or hand-written;
-    - **D5** the counted phrases `test-doc-counts.sh` asserts, with their files;
-    - **D6** every link into a page or anchor the pass renames or removes.
-  - **Site fixtures (G11, extended).** Also search `site/scripts/__tests__/` and `site/src/lib/__tests__/` for every
-    test that reads a real skill's or template's body as a fixture -- by path, or by name through `loadSkillRecord`,
-    `buildFlowChart`, `liveChart` or the like (`git grep -nE "'aid-[a-z-]+'|canonical/(skills|aid/templates)/" --
-    site/scripts/__tests__ site/src/lib/__tests__`). Each hit on a file this delivery rewrites, moves or deletes goes to
-    the task that changes that file, which re-points the test in the same task.
-  - **KB `sources:` (G17).** The G6 and G2 searches also run over `.aid/knowledge/` (the frontmatter `sources:` lists): each
-    `sources:` entry that cites a file this delivery deletes, moves or renames goes to the task that deletes, moves or
-    renames it, which fixes the entry in the same task (AD14).
-  - **Site generator sources (G19).** The searches also run over `site/scripts/` outside `__tests__` for the name of every
-    skill this delivery retires or renames; each hit goes to the task that retires or renames that skill.
-  - Give each hit exactly one owner:
-    - a task of delivery-014 (task-354 to task-363; see the task files under
-      `.aid/works/work-003-full-aid-restructure/tasks/task-NNN/DETAIL.md`, the layout delivery-008's migration leaves):
-      task-356 (`docs/aid-methodology.md`), task-357 (`docs/faq.md`, `glossary.md`, `repository-structure.md`),
-      task-364 (canonical text a generated page copies), task-358 (`docs/install.md` with the old -> new table, `release.md`, `chat-wake-install.md`,
-      `diagram-content-reference.md`), task-359 (the hand-written site pages of the home page, `concepts/` and
-      `get-started/`), task-360 (the hand-written site pages of `guides/`, `reference/` and `contact/`), task-361
-      (`README.md` and `examples/`);
-    - **a hit in a generated page is owned by its source**: the findings name, for each, the file the generator copies
-      the text from (a `SKILL.md`, a reference, a template, `.aid/settings.yml`); its owner is task-364, which fixes it
-      there and regenerates. "Generated page: regenerated" is never the owner of a DN-01 or DN-03 hit; a page synced from
-      `docs/` follows its `docs/` source's task;
-    - "installed copy (resync)";
-    - "history, left as is";
-    - "rendered after the resync (gate step)" for hits in `.aid/knowledge/kb.html`, `.aid/knowledge/INDEX.md` and the
-      site pages generated from `.aid/settings.yml` (`reference/settings.md`) (G8).
-  - In a delta section, list each file assigned to two independent tasks, with the order to edit it.
-  - **The owner classes also include "baseline, re-recorded at the gate"** for hits in
-    `tests/cost-baseline.tsv` and `tests/coverage-baseline.tsv`. No task edits a baseline (Q134 D11).
-  - **Skill owner table (G2).** Build it from a full listing, `ls canonical/skills/*/SKILL.md`, not from
-    text searches. It has one row per skill on disk at the base, naming the task of this delivery that owns
-    that skill's edits, or "no change needed here" with the reason (for example "generated doorway: changes
-    through the builder").
-- **Acceptance criteria:**
-  - [ ] Each of D1-D6 shows its exact command, and re-running it at the base named in the file reproduces its hits.
-  - [ ] Every hit has exactly one owner; the count of rows with an empty owner cell is 0; D2's two lists agree or each difference has its owner.
-  - [ ] The skill owner table has exactly one row per `canonical/skills/*/SKILL.md` on disk at the base (the row count equals `ls canonical/skills/*/SKILL.md | wc -l`), and no row is unowned.
-  - [ ] RESEARCH defaults are overridden as in task-001; the test step selects nothing (work folder only).
-
 ### task-354: The pre-release name check: retired-names.txt and test-doc-names.sh [TEST]
 
-- **Stanza wave:** 2. **Depends on:** task-353.
+- **Stanza wave:** 2. **Depends on:** --.
 - **Source:** AC-24, AC-45.
 - **Scope:**
   - Create `tests/canonical/retired-names.txt` (REQUIREMENTS.md § 11 Feature 009 `##### 9. Testing`, Pre-release check): every retired slash name,
@@ -228,7 +172,7 @@ That is 12 tasks (task-353 to task-364; task-364 was added by the light review, 
 
 ### task-358: Final pass: install, release and the old -> new table [DOCUMENT]
 
-- **Stanza wave:** 2. **Depends on:** task-353, task-354, task-364.
+- **Stanza wave:** 2. **Depends on:** task-354, task-364.
 - **Source:** AC-24, AC-45.
 - **Scope:**
   - `docs/install.md`, `docs/release.md`, `docs/chat-wake-install.md` and `docs/diagram-content-reference.md`, then
@@ -431,7 +375,7 @@ That is 12 tasks (task-353 to task-364; task-364 was added by the light review, 
 
 ### task-364: Canonical text the generated pages copy: no retired name and no old phase sequence [IMPLEMENT]
 
-- **Stanza wave:** 2. **Depends on:** task-353, task-354.
+- **Stanza wave:** 2. **Depends on:** task-354.
 - **Source:** AC-31, AC-45.
 - **Scope:**
   - Fix at its source every DN-01 or DN-03 hit the findings place in a generated site page (D1 with D4): the `SKILL.md`,
@@ -471,16 +415,15 @@ checks with the flag; G0); then the approval, the push and CI through `/aid-moni
 ## 5. Execution graph
 
 ```text
-wave 1: task-353
-wave 2: task-354
-wave 3: task-355, task-364
-wave 4: task-358
-wave 5: task-356
-wave 6: task-357
-wave 7: task-359, task-361
-wave 8: task-360
-wave 9: task-362
-wave 10: task-363
+wave 1: task-354
+wave 2: task-355, task-364
+wave 3: task-358
+wave 4: task-356
+wave 5: task-357
+wave 6: task-359, task-361
+wave 7: task-360
+wave 8: task-362
+wave 9: task-363
 ```
 
 Step 5 writes the table under `### delivery-014 Execution Graph`, one task per row (waiting for the go-ahead).

@@ -15,7 +15,8 @@
   dashboard reader with no warning; `--pull-request` and `--feedback-add` on a work file with neither key (a fixture
   shaped like this work's `STATE.yml`) add the block at the template's defaults, then the value.
 - **Findings.** This task's scope also includes every site that
-  `.aid/works/work-003-full-aid-restructure/research/delivery-010-sites.md` assigns to `task-277`.
+  `.aid/works/work-003-full-aid-restructure/research/delivery-010-sites.md` (written, reviewed and committed before
+  the run starts, Q139) assigns to `task-277`.
 - **Test step** (PLAN.md § "Testing before the resync"; the same in every task of this delivery).
   `BASE` is this task's `base` (`tasks_lifecycle.task-277.base`, which `/aid-execute` BUILD records on the
   first round). Work in the `work-003` worktree only, create no

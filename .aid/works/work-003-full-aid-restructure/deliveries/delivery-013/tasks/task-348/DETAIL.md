@@ -14,7 +14,8 @@
   `aid-configure` clause; AS-02 and AS-07 for `aid-config`; AS-03's `domain`, reserved-field and user-file clauses;
   AS-09's `.aid/kinds/`, skip-rule and review/research/report clauses; AS-10. Groups A and B stay.
 - **Findings.** This task's scope also includes every site that
-  `.aid/works/work-003-full-aid-restructure/research/delivery-013-sites.md` assigns to `task-348`.
+  `.aid/works/work-003-full-aid-restructure/research/delivery-013-sites.md` (written, reviewed and committed before
+  the run starts, Q139) assigns to `task-348`.
 - **Test step** (PLAN.md § "Testing before the resync"; the same in every task of this delivery).
   `BASE` is this task's `base` (`tasks_lifecycle.task-348.base`, which `/aid-execute` BUILD records on the
   first round). Work in the `work-003` worktree only, create no

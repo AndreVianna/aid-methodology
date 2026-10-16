@@ -1,5 +1,11 @@
 # Detail proposal -- delivery-011: Action skills and one catalog of kinds (Feature 009a)
 
+> **Q139 (maintainer decision).** The research task task-288 is dropped from the task graph. Its searches, owner
+> classes and tables are now the research brief in task-287 (delivery-010), step 5, in the "Gate-session steps" block: `aid-researcher`
+> writes `research/delivery-011-sites.md`, `aid-reviewer` grades it with `grade.sh` against `minimum_grade`, and it
+> is committed alone before this delivery's run starts. Every task's findings bullet points at that committed file,
+> and the tasks that depended on task-288 now start the graph.
+
 This is `aid-detail` FIRST-RUN for **delivery-011**, under Q136. Decisions are settled by recommendation, the task
 files are written at once, and the light review is the check.
 
@@ -7,31 +13,30 @@ files are written at once, and the light review is the check.
 
 | Task | Title | Type | Stanza wave | Derived wave | Depends on |
 |---|---|---|---|---|---|
-| task-288 | Delivery-011 site search and reconciled edit list | RESEARCH | 1 | 1 | -- |
-| task-289 | The kind catalog, version 2: actions, the new fields and the new kinds | IMPLEMENT | 2 | 2 | task-288 |
-| task-290 | The merged catalog and the kind hook in check-intent.md, and the action routing | IMPLEMENT | 2 | 3 | task-288, task-289 |
-| task-291 | Writer: --kind on --create and --reroute, and the reading investigation | IMPLEMENT | 2 | 2 | task-288 |
-| task-292 | Recording the kind: intent.kind in the template, and the gate's --kind | IMPLEMENT | 2 | 3 | task-291 |
-| task-293 | action-start.md: the one START of every action skill | IMPLEMENT | 3 | 4 | task-289, task-290, task-292 |
-| task-294 | aid-create and aid-update hand-authored, and their catalog rows gone | IMPLEMENT | 3 | 5 | task-293 |
-| task-295 | aid-fix and aid-refactor hand-authored with the findings reference, and their catalog rows gone | IMPLEMENT | 3 | 6 | task-294 |
-| task-296 | aid-document rewritten as an action skill | IMPLEMENT | 3 | 5 | task-293 |
-| task-297 | aid-test rewritten as an investigation, with its references | IMPLEMENT | 3 | 5 | task-293 |
-| task-298 | aid-prototype rewritten as an investigation, with its references | IMPLEMENT | 3 | 6 | task-297 |
-| task-299 | Specification reads the kind: aid-specify's catalog fields | IMPLEMENT | 4 | 4 | task-289, task-290 |
-| task-300 | Planning, Building and Definition read the kind | IMPLEMENT | 4 | 4 | task-289, task-290 |
-| task-301 | The close moves the test ledger and the prototype folder to the main folder | IMPLEMENT | 4 | 7 | task-297, task-298 |
-| task-302 | The skill guide's lines for the seven action skills | IMPLEMENT | 4 | 7 | task-294, task-295, task-296, task-297, task-298 |
-| task-303 | Conversation runner: the typed and the plain form of one sample | TEST | 5 | 2 | task-288 |
-| task-304 | Writer unit cases: --kind and the reading investigation | TEST | 5 | 4 | task-291, task-292 |
-| task-305 | test-actions.sh group A | TEST | 5 | 8 | task-289, task-290, task-292, task-293, task-294, task-295, task-296, task-297, task-298, task-299, task-300, task-301 |
-| task-306 | Samples 009-01 to 009-04 (typed runs and 009-03, 009-04 at this gate) | TEST | 5 | 7 | task-290, task-294, task-295, task-299, task-300, task-303 |
-| task-307 | Samples 009-05, 009-07, 009-13 and 009-17, and the deferred rows | TEST | 5 | 8 | task-294, task-295, task-297, task-300, task-301, task-302, task-306 |
-| task-308 | test-actions.sh in the CI lane | CONFIGURE | 5 | 9 | task-305 |
-| task-309 | KB schemas, glossary and contracts for the action skills and the kind catalog | DOCUMENT | 5 | 8 | task-289, task-290, task-291, task-292, task-293, task-294, task-295, task-296, task-297, task-298, task-301 |
-| task-310 | KB test landscape for the action suites, the regenerated index and the view | DOCUMENT | 5 | 10 | task-294, task-295, task-303, task-304, task-305, task-306, task-307, task-308, task-309 |
+| task-289 | The kind catalog, version 2: actions, the new fields and the new kinds | IMPLEMENT | 2 | 1 | -- |
+| task-290 | The merged catalog and the kind hook in check-intent.md, and the action routing | IMPLEMENT | 2 | 2 | task-289 |
+| task-291 | Writer: --kind on --create and --reroute, and the reading investigation | IMPLEMENT | 2 | 1 | -- |
+| task-292 | Recording the kind: intent.kind in the template, and the gate's --kind | IMPLEMENT | 2 | 2 | task-291 |
+| task-293 | action-start.md: the one START of every action skill | IMPLEMENT | 3 | 3 | task-289, task-290, task-292 |
+| task-294 | aid-create and aid-update hand-authored, and their catalog rows gone | IMPLEMENT | 3 | 4 | task-293 |
+| task-295 | aid-fix and aid-refactor hand-authored with the findings reference, and their catalog rows gone | IMPLEMENT | 3 | 5 | task-294 |
+| task-296 | aid-document rewritten as an action skill | IMPLEMENT | 3 | 4 | task-293 |
+| task-297 | aid-test rewritten as an investigation, with its references | IMPLEMENT | 3 | 4 | task-293 |
+| task-298 | aid-prototype rewritten as an investigation, with its references | IMPLEMENT | 3 | 5 | task-297 |
+| task-299 | Specification reads the kind: aid-specify's catalog fields | IMPLEMENT | 4 | 3 | task-289, task-290 |
+| task-300 | Planning, Building and Definition read the kind | IMPLEMENT | 4 | 3 | task-289, task-290 |
+| task-301 | The close moves the test ledger and the prototype folder to the main folder | IMPLEMENT | 4 | 6 | task-297, task-298 |
+| task-302 | The skill guide's lines for the seven action skills | IMPLEMENT | 4 | 6 | task-294, task-295, task-296, task-297, task-298 |
+| task-303 | Conversation runner: the typed and the plain form of one sample | TEST | 5 | 1 | -- |
+| task-304 | Writer unit cases: --kind and the reading investigation | TEST | 5 | 3 | task-291, task-292 |
+| task-305 | test-actions.sh group A | TEST | 5 | 7 | task-289, task-290, task-292, task-293, task-294, task-295, task-296, task-297, task-298, task-299, task-300, task-301 |
+| task-306 | Samples 009-01 to 009-04 (typed runs and 009-03, 009-04 at this gate) | TEST | 5 | 6 | task-290, task-294, task-295, task-299, task-300, task-303 |
+| task-307 | Samples 009-05, 009-07, 009-13 and 009-17, and the deferred rows | TEST | 5 | 7 | task-294, task-295, task-297, task-300, task-301, task-302, task-306 |
+| task-308 | test-actions.sh in the CI lane | CONFIGURE | 5 | 8 | task-305 |
+| task-309 | KB schemas, glossary and contracts for the action skills and the kind catalog | DOCUMENT | 5 | 7 | task-289, task-290, task-291, task-292, task-293, task-294, task-295, task-296, task-297, task-298, task-301 |
+| task-310 | KB test landscape for the action suites, the regenerated index and the view | DOCUMENT | 5 | 9 | task-294, task-295, task-303, task-304, task-305, task-306, task-307, task-308, task-309 |
 
-That is 23 tasks (task-288 to task-310). The resync follows the run's pause at the delivery-011 MILESTONE approval
+That is 22 tasks (task-289 to task-310; task-288 dropped, Q139). The resync follows the run's pause at the delivery-011 MILESTONE approval
 (§ 4).
 
 ---
@@ -80,68 +85,9 @@ That is 23 tasks (task-288 to task-310). The resync follows the run's pause at t
 
 `Source` reads `feature-009-one-skill-per-need -> delivery-011 -> AC-...`.
 
-### task-288: Delivery-011 site search and reconciled edit list [RESEARCH]
-
-- **Stanza wave:** 1. **Depends on:** --.
-- **Source:** AC-20, AC-30.
-- **Scope:**
-  - Create `.aid/works/work-003-full-aid-restructure/research/delivery-011-sites.md`. Touch nothing else.
-  - Re-run these searches at this task's base commit, and record the base commit in the file
-    (REQUIREMENTS.md § 11 Feature 009 `##### 1. Files and layout` and `##### 8. Migration`, Suites):
-    - **Z1** the second, targeted search of REQUIREMENTS.md § 11 Feature 009 `##### 8. Migration` ("Suites over the files this feature
-      rewrites"), verbatim, read hit by hit: which hit asserts text that a delivery-011 rewrite changes (the action
-      skills, `action-start.md`, the kind catalog, `close.md`, `cleanup-classify.sh`, `close-work.sh`);
-    - **Z2** every reader and suite of `kind-catalog.yml` and its v1 fields (`test-idea-shaping.sh` ID-03 and ID-04,
-      `check-intent.md`'s kind hook, `aid-brainstorm`'s `start.md`, the dashboard), with what each needs from v2;
-    - **Z3** every suite, site module and document that counts `shortcut-catalog.yml` rows or doorways, or reads the
-      `GENERATED` marker: `test-deploy-monitor-repurpose.sh` (DMR24, DMR30-DMR36), `test-shortcut-builder-invariants.sh`,
-      `test-catalog-dirs-parity.sh`, `test-doc-counts.sh` and the phrases it asserts in `README.md` and `docs/`,
-      `site/scripts/skills/` (`skill-counts.mjs`, `groups.mjs`, `curated-roster.mjs`, `catalog.mjs`),
-      `site/scripts/gen-reference.mjs`, `site/scripts/lib/flow-graph/classify.mjs`, and
-      `.claude/skills/generate-profile/SKILL.md`; each count with its value at the base and its value once the rows of
-      `aid-create`, `aid-update`, `aid-fix` and `aid-refactor` are gone;
-    - **Z4** the writer's `--create`, `--reroute` and `--reading` options and their readers (tests, both dashboard
-      readers, `dashboard/scripts/writeback-state.sh`), and the work-state template's `intent` block and `initiator`
-      comment;
-    - **Z5** the assertions of the six family-scaffold suites and of `test-deploy-monitor-repurpose.sh` on
-      `aid-create`, `aid-update`, `aid-fix`, `aid-refactor`, `aid-document`, `aid-test` and `aid-prototype`: which
-      one a delivery-011 rewrite breaks (owned here), and which waits for its file's deletion (delivery-012);
-    - **Z6** `test-work-initiation-gate.sh` Group G (its starter list, `STARTER_ALLOC_ANCHOR`, `STARTER_COVERAGE_ID`,
-      the GG00 count) and its reconciliation group's `aid-prototype` checks;
-    - **Z7** the rows of `tests/conversation/deferred.tsv`, the SG-04 description exempt list and
-      `tests/canonical/skill-steps-exempt.tsv` that name an action skill or a generated doorway, and how SS-09 covers
-      each of the seven action skills at the base;
-    - **Z8** the `canonical/aid/rules.md` § Skill guide lines of the seven action skills, and the `<kind>` lines
-      (which stay until delivery-012);
-    - **Z9** the catalog readers of REQUIREMENTS.md § 11 Feature 009 `##### 5. Components`, Who reads the catalog, as they stand at the base
-      (`aid-specify`, `aid-plan`, `aid-execute`, `aid-brainstorm`), each with the field AS-09 needs it to cite.
-  - Give each hit exactly one owner:
-    - a task of delivery-011 (task-289 to task-310; see the task files under
-      `.aid/works/work-003-full-aid-restructure/tasks/task-NNN/DETAIL.md`, the layout delivery-008's migration leaves);
-    - delivery-012, for a hit on a file it deletes or on the TICKET step (the wrappers, `shortcut-engine.md`,
-      `shortcut-catalog.yml`, the scaffolding, `IMPEDIMENT.md`, the builder, the ticket skills);
-    - delivery-013, for a hit on `aid-config`, `.aid/kinds/`, the `domain` field, or the kind hooks of
-      `aid-review`, `aid-research` and `aid-report`;
-    - "installed copy (resync)";
-    - "history, left as is";
-    - "rendered after the resync (gate step)" for hits in `.aid/knowledge/kb.html`, `.aid/knowledge/INDEX.md` and the
-      site pages generated from `.aid/settings.yml` (`reference/settings.md`), which the resync could change (G8).
-  - In a delta section, list each suite assigned to two independent tasks, with the order to run them.
-  - **The owner classes also include "baseline, re-recorded at the gate"** for hits in
-    `tests/cost-baseline.tsv` and `tests/coverage-baseline.tsv`. No task edits a baseline (Q134 D11).
-  - **Skill owner table (G2).** Build it from a full listing, `ls canonical/skills/*/SKILL.md`, not from
-    text searches. It has one row per skill on disk at the base, naming the task of this delivery that owns
-    that skill's edits, or "no change needed here" with the reason (for example "generated doorway: changes
-    through the builder").
-- **Acceptance criteria:**
-  - [ ] Each of Z1-Z9 shows its exact command, and re-running it at the base named in the file reproduces its hits.
-  - [ ] Every hit has exactly one owner; the count of rows with an empty owner cell is 0.
-  - [ ] The skill owner table has exactly one row per `canonical/skills/*/SKILL.md` on disk at the base (the row count equals `ls canonical/skills/*/SKILL.md | wc -l`), and no row is unowned.
-  - [ ] RESEARCH defaults are overridden as in task-001; the test step selects nothing (work folder only).
-
 ### task-289: The kind catalog, version 2: actions, the new fields and the new kinds [IMPLEMENT]
 
-- **Stanza wave:** 2. **Depends on:** task-288.
+- **Stanza wave:** 2. **Depends on:** --.
 - **Source:** AC-20, AC-30.
 - **Scope:**
   - `canonical/aid/templates/kind-catalog.yml` becomes `version: 2` (REQUIREMENTS.md § 11 Feature 009 `##### 3. The catalog`), block style, every
@@ -169,7 +115,7 @@ That is 23 tasks (task-288 to task-310). The resync follows the run's pause at t
 
 ### task-290: The merged catalog and the kind hook in check-intent.md, and the action routing [IMPLEMENT]
 
-- **Stanza wave:** 2. **Depends on:** task-288, task-289.
+- **Stanza wave:** 2. **Depends on:** task-289.
 - **Source:** AC-30.
 - **Scope:**
   - `canonical/skills/aid-orchestrate/references/check-intent.md` (REQUIREMENTS.md § 11 Feature 009 `##### 3. The catalog`, Sources, precedence and
@@ -192,7 +138,7 @@ That is 23 tasks (task-288 to task-310). The resync follows the run's pause at t
 
 ### task-291: Writer: --kind on --create and --reroute, and the reading investigation [IMPLEMENT]
 
-- **Stanza wave:** 2. **Depends on:** task-288.
+- **Stanza wave:** 2. **Depends on:** --.
 - **Source:** AC-30.
 - **Scope:**
   - `canonical/aid/scripts/execute/writeback-state.sh` (REQUIREMENTS.md § 11 Feature 009 `##### 4. Work state`, Writer), keeping Feature 002's lock,
@@ -475,7 +421,7 @@ That is 23 tasks (task-288 to task-310). The resync follows the run's pause at t
 
 ### task-303: Conversation runner: the typed and the plain form of one sample [TEST]
 
-- **Stanza wave:** 5. **Depends on:** task-288.
+- **Stanza wave:** 5. **Depends on:** --.
 - **Source:** AC-30.
 - **Scope:**
   - `tests/conversation/run.py` (REQUIREMENTS.md § 11 Feature 009 `##### 9. Testing`, Conversation samples: "Each typed and plain sample runs twice,
@@ -658,16 +604,15 @@ That is 23 tasks (task-288 to task-310). The resync follows the run's pause at t
 `derive-waves.sh --from-tasks` derives the following from the written task files:
 
 ```text
-wave 1: task-288
-wave 2: task-289, task-291, task-303
-wave 3: task-290, task-292
-wave 4: task-293, task-299, task-300, task-304
-wave 5: task-294, task-296, task-297
-wave 6: task-295, task-298
-wave 7: task-301, task-302, task-306
-wave 8: task-305, task-307, task-309
-wave 9: task-308
-wave 10: task-310
+wave 1: task-289, task-291, task-303
+wave 2: task-290, task-292
+wave 3: task-293, task-299, task-300, task-304
+wave 4: task-294, task-296, task-297
+wave 5: task-295, task-298
+wave 6: task-301, task-302, task-306
+wave 7: task-305, task-307, task-309
+wave 8: task-308
+wave 9: task-310
 ```
 
 Step 5 writes the table under `### delivery-011 Execution Graph`, one task per row, from the task files'

@@ -20,7 +20,8 @@
 - Each suite runs where the test step puts it. A failure is fixed by the task that owns the file (a correction through
   `/aid-plan` REVISE), not here.
 - **Findings.** This task's scope also includes every site that
-  `.aid/works/work-003-full-aid-restructure/research/delivery-014-sites.md` assigns to `task-362`.
+  `.aid/works/work-003-full-aid-restructure/research/delivery-014-sites.md` (written, reviewed and committed before
+  the run starts, Q139) assigns to `task-362`.
 - **Test step** (PLAN.md § "Testing before the resync"; the same in every task of this delivery).
   `BASE` is this task's `base` (`tasks_lifecycle.task-362.base`, which `/aid-execute` BUILD records on the
   first round). Work in the `work-003` worktree only, create no

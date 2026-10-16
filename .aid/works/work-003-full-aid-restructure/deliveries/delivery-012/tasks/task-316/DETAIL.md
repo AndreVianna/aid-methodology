@@ -7,7 +7,7 @@
 
 **Source:** feature-009-one-skill-per-need -> delivery-012 -> AC-31
 
-**Depends on:** task-311
+**Depends on:** --
 
 **Scope:**
 - REQUIREMENTS.md § 11 Feature 009 `##### 8. Migration`, Site and its check-by-check list, the `skills/` part:
@@ -43,7 +43,8 @@
   - A renamed assertion gets its row in `tests/coverage-rehome-allowlist.tsv`.
   - The baselines themselves are re-recorded at the gate (Q134, D11).
 - **Findings.** This task's scope also includes every site that
-  `.aid/works/work-003-full-aid-restructure/research/delivery-012-sites.md` assigns to `task-316`.
+  `.aid/works/work-003-full-aid-restructure/research/delivery-012-sites.md` (written, reviewed and committed before
+  the run starts, Q139) assigns to `task-316`.
 - **Test step** (PLAN.md § "Testing before the resync"; the same in every task of this delivery).
   `BASE` is this task's `base` (`tasks_lifecycle.task-316.base`, which `/aid-execute` BUILD records on the
   first round). Work in the `work-003` worktree only, create no

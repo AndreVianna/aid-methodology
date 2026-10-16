@@ -498,7 +498,7 @@ G2 owner table.
       `STATE.yml`: `pipeline.path: full`, the top-level `delivery_state`, `gate_*`, `delivery_lifecycle` and
       `delivery_gate`, `interview`, `features` and `review_history`, a top-level `qa`, `ticket_ref: --` at every
       level, phase `Execute` and `active_skill: aid-execute`, and per-task `STATE.yml` files with `quick_check`
-      and `dispatch_log` (its expected result follows proposal F-1);
+      and `dispatch_log` (dropped, with a warning when it is not empty, Q138);
     - `ticket_ref` at each level; delivery `qa`; each legacy record row and the Q74 type rows; the named cases
       (an `aid-describe` work at `Detail`; `aid-design-api` and `aid-create-roadmap` works at `phase: Describe`;
       a halted `aid-refactor` work at `Detail`; `active_skill: aid-deploy` at `Execute`; a `--create`-made work at
@@ -522,7 +522,7 @@ G2 owner table.
       `tasks_lifecycle.task-NNN` (with `quick_check` as one text value); delivery cells become
       `deliveries.delivery-NNN` (`Pending-Spec` and `Specified` -> `Pending`; `delivery_gate.issue_list` -> one
       text value); a per-task `dispatch_log`, which the spec's `tasks_lifecycle` shape does not carry, is dropped,
-      with a warning when it is not empty (proposal F-1, pending the maintainer's confirmation); each delivery's `qa` is appended to the work's `qa` under the next free ids, its `context`
+      with a warning when it is not empty (Q138); each delivery's `qa` is appended to the work's `qa` under the next free ids, its `context`
       opening with the old place; the per-unit state files are deleted, then the folders left empty; an unknown
       file is kept, with a warning;
     - **old lite works**: the flattened keys become `deliveries.delivery-001`;
@@ -884,7 +884,7 @@ Step 5 writes the table under `### delivery-008 Execution Graph`, one task per r
 
 ## 7. Flagged for the maintainer
 
-- **F-1 (spec gap, F006 § 8).** The migration maps a per-task state file's cells to `tasks_lifecycle` "with
+- **F-1 (spec gap, F006 § 8; decided by Q138: drop it, with a warning).** The migration maps a per-task state file's cells to `tasks_lifecycle` "with
   today's fields and its `quick_check` text value", but says nothing of the per-task `dispatch_log` list.
   Recommendation: drop it, with a warning when it is not empty. It is a dispatch record, not task state, and this
   work's are all empty. Tasks 201 and 202 are written on that recommendation, marked as pending your

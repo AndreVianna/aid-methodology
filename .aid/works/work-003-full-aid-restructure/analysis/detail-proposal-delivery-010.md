@@ -1,5 +1,11 @@
 # Detail proposal -- delivery-010: Pull requests to a mergeable state, never merged (Feature 008)
 
+> **Q139 (maintainer decision).** The research task task-254 is dropped from the task graph. Its searches, owner
+> classes and tables are now the research brief in task-253 (delivery-009), step 6, after the switch, in the "Gate-session steps" block: `aid-researcher`
+> writes `research/delivery-010-sites.md`, `aid-reviewer` grades it with `grade.sh` against `minimum_grade`, and it
+> is committed alone before this delivery's run starts. Every task's findings bullet points at that committed file,
+> and the tasks that depended on task-254 now start the graph.
+
 This is `aid-detail` FIRST-RUN for **delivery-010**, under Q136. Decisions are settled by recommendation,
 the task files are written at once, and the light review is the check.
 
@@ -42,42 +48,41 @@ which names the driver from delivery-010's gate session on.
 
 | Task | Title | Type | Stanza wave | Derived wave | Depends on |
 |---|---|---|---|---|---|
-| task-254 | Delivery-010 site search and reconciled edit list | RESEARCH | 1 | 1 | -- |
-| task-255 | push-approved.sh: the only push, checked against the approval | IMPLEMENT | 2 | 2 | task-254 |
-| task-256 | merge-parent.sh: the only merge | IMPLEMENT | 2 | 2 | task-254 |
-| task-257 | cleanup-classify.sh moved to pipeline/, reading the work file | IMPLEMENT | 2 | 2 | task-254 |
-| task-258 | close-work.sh: the local clean-up of one closed work | IMPLEMENT | 2 | 3 | task-257 |
-| task-259 | The pull_request key and the writer's --pull-request, with the duplicate-ref rule | IMPLEMENT | 2 | 2 | task-254 |
-| task-260 | The work_folders setting | IMPLEMENT | 2 | 2 | task-254 |
-| task-261 | The gh and glab stand-ins for the conversation suite | TEST | 2 | 4 | task-254, task-262 |
-| task-262 | aid-monitor-pipeline: the folder with a stub SKILL.md and its lists; START, COLLECT and the host references | IMPLEMENT | 3 | 3 | task-259, task-260 |
-| task-263 | aid-monitor-pipeline references: PUSH and PARENT | IMPLEMENT | 3 | 4 | task-255, task-256, task-259, task-262 |
-| task-264 | aid-monitor-pipeline references: REVIEW, REACT, WATCH and the brief | IMPLEMENT | 3 | 4 | task-259, task-262 |
-| task-265 | aid-monitor-pipeline reference: CLOSE | IMPLEMENT | 3 | 4 | task-256, task-258, task-262 |
-| task-266 | aid-monitor-pipeline SKILL.md: the full step table, and its deferred row | IMPLEMENT | 3 | 5 | task-262, task-263, task-264, task-265 |
-| task-267 | Contracts for the CI phase: approvals, the gate's row 1, the publish seam, the worktree teardown | IMPLEMENT | 3 | 2 | task-254 |
-| task-268 | The finishing skills pass to the close | IMPLEMENT | 3 | 6 | task-266 |
-| task-269 | The interim close retired, and Building's calls named | IMPLEMENT | 3 | 6 | task-263, task-266 |
-| task-270 | Every other push removed, and the housekeep and origin/master re-pointing | IMPLEMENT | 4 | 7 | task-257, task-266, task-267, task-268, task-269 |
-| task-271 | delete-pipeline.sh without --force | IMPLEMENT | 4 | 2 | task-254 |
-| task-272 | Dashboard readers and server: the pull request and merged work folders | IMPLEMENT | 4 | 3 | task-259 |
-| task-273 | Dashboard page: the CI card lines | IMPLEMENT | 4 | 8 | task-270, task-272 |
-| task-274 | test-push-approved.sh | TEST | 5 | 3 | task-255, task-259 |
-| task-275 | test-merge-parent.sh | TEST | 5 | 3 | task-256 |
-| task-276 | test-close-work.sh, and the cleanup-classify cases | TEST | 5 | 4 | task-257, task-258 |
-| task-277 | Writer unit cases: --pull-request and the duplicate ref | TEST | 5 | 3 | task-259 |
-| task-278 | Dashboard cases: draft, failing pipeline, idle watch, connection, merged-in folder | TEST | 5 | 9 | task-272, task-273 |
-| task-279 | test-never-merges.sh: NM-01 narrowed, NM-03 with no exemption, NM-05 and NM-06 | TEST | 5 | 8 | task-255, task-256, task-258, task-265, task-268, task-270, task-271 |
-| task-280 | test-monitor-pipeline.sh (MP-01 to MP-05) | TEST | 5 | 8 | task-259, task-260, task-266, task-267, task-268, task-269, task-270 |
-| task-281 | Samples 008-01 to 008-07 (run at this gate) | TEST | 5 | 8 | task-261, task-266, task-268, task-269, task-270 |
-| task-282 | Samples 008-08 to 008-14 (run at this gate) | TEST | 5 | 9 | task-281 |
-| task-283 | Samples 008-15 to 008-18, and the deferred rows | TEST | 5 | 10 | task-262, task-266, task-282 |
-| task-284 | The four new suites in the CI lane | CONFIGURE | 5 | 9 | task-274, task-275, task-276, task-280 |
-| task-285 | KB decisions, schemas, glossary and tech debt for the CI phase | DOCUMENT | 5 | 8 | task-259, task-260, task-270 |
-| task-286 | KB architecture, contracts and integration documents for the CI phase | DOCUMENT | 5 | 9 | task-266, task-270, task-271, task-285 |
-| task-287 | KB test landscape for the CI suites, the regenerated index and the view | DOCUMENT | 5 | 11 | task-277, task-278, task-279, task-283, task-284, task-285, task-286 |
+| task-255 | push-approved.sh: the only push, checked against the approval | IMPLEMENT | 2 | 1 | -- |
+| task-256 | merge-parent.sh: the only merge | IMPLEMENT | 2 | 1 | -- |
+| task-257 | cleanup-classify.sh moved to pipeline/, reading the work file | IMPLEMENT | 2 | 1 | -- |
+| task-258 | close-work.sh: the local clean-up of one closed work | IMPLEMENT | 2 | 2 | task-257 |
+| task-259 | The pull_request key and the writer's --pull-request, with the duplicate-ref rule | IMPLEMENT | 2 | 1 | -- |
+| task-260 | The work_folders setting | IMPLEMENT | 2 | 1 | -- |
+| task-261 | The gh and glab stand-ins for the conversation suite | TEST | 2 | 3 | task-262 |
+| task-262 | aid-monitor-pipeline: the folder with a stub SKILL.md and its lists; START, COLLECT and the host references | IMPLEMENT | 3 | 2 | task-259, task-260 |
+| task-263 | aid-monitor-pipeline references: PUSH and PARENT | IMPLEMENT | 3 | 3 | task-255, task-256, task-259, task-262 |
+| task-264 | aid-monitor-pipeline references: REVIEW, REACT, WATCH and the brief | IMPLEMENT | 3 | 3 | task-259, task-262 |
+| task-265 | aid-monitor-pipeline reference: CLOSE | IMPLEMENT | 3 | 3 | task-256, task-258, task-262 |
+| task-266 | aid-monitor-pipeline SKILL.md: the full step table, and its deferred row | IMPLEMENT | 3 | 4 | task-262, task-263, task-264, task-265 |
+| task-267 | Contracts for the CI phase: approvals, the gate's row 1, the publish seam, the worktree teardown | IMPLEMENT | 3 | 1 | -- |
+| task-268 | The finishing skills pass to the close | IMPLEMENT | 3 | 5 | task-266 |
+| task-269 | The interim close retired, and Building's calls named | IMPLEMENT | 3 | 5 | task-263, task-266 |
+| task-270 | Every other push removed, and the housekeep and origin/master re-pointing | IMPLEMENT | 4 | 6 | task-257, task-266, task-267, task-268, task-269 |
+| task-271 | delete-pipeline.sh without --force | IMPLEMENT | 4 | 1 | -- |
+| task-272 | Dashboard readers and server: the pull request and merged work folders | IMPLEMENT | 4 | 2 | task-259 |
+| task-273 | Dashboard page: the CI card lines | IMPLEMENT | 4 | 7 | task-270, task-272 |
+| task-274 | test-push-approved.sh | TEST | 5 | 2 | task-255, task-259 |
+| task-275 | test-merge-parent.sh | TEST | 5 | 2 | task-256 |
+| task-276 | test-close-work.sh, and the cleanup-classify cases | TEST | 5 | 3 | task-257, task-258 |
+| task-277 | Writer unit cases: --pull-request and the duplicate ref | TEST | 5 | 2 | task-259 |
+| task-278 | Dashboard cases: draft, failing pipeline, idle watch, connection, merged-in folder | TEST | 5 | 8 | task-272, task-273 |
+| task-279 | test-never-merges.sh: NM-01 narrowed, NM-03 with no exemption, NM-05 and NM-06 | TEST | 5 | 7 | task-255, task-256, task-258, task-265, task-268, task-270, task-271 |
+| task-280 | test-monitor-pipeline.sh (MP-01 to MP-05) | TEST | 5 | 7 | task-259, task-260, task-266, task-267, task-268, task-269, task-270 |
+| task-281 | Samples 008-01 to 008-07 (run at this gate) | TEST | 5 | 7 | task-261, task-266, task-268, task-269, task-270 |
+| task-282 | Samples 008-08 to 008-14 (run at this gate) | TEST | 5 | 8 | task-281 |
+| task-283 | Samples 008-15 to 008-18, and the deferred rows | TEST | 5 | 9 | task-262, task-266, task-282 |
+| task-284 | The four new suites in the CI lane | CONFIGURE | 5 | 8 | task-274, task-275, task-276, task-280 |
+| task-285 | KB decisions, schemas, glossary and tech debt for the CI phase | DOCUMENT | 5 | 7 | task-259, task-260, task-270 |
+| task-286 | KB architecture, contracts and integration documents for the CI phase | DOCUMENT | 5 | 8 | task-266, task-270, task-271, task-285 |
+| task-287 | KB test landscape for the CI suites, the regenerated index and the view | DOCUMENT | 5 | 10 | task-277, task-278, task-279, task-283, task-284, task-285, task-286 |
 
-That is 34 tasks. The resync follows the run's pause at the delivery-010 MILESTONE approval (§ 4).
+That is 33 tasks (task-255 to task-287; task-254 dropped, Q139). The resync follows the run's pause at the delivery-010 MILESTONE approval (§ 4).
 
 ---
 
@@ -96,55 +101,9 @@ and runs `sync:docs`.
 `Source` reads `feature-008-cicd-integration-monitoring -> delivery-010 -> AC-...` (the old Source form, which
 Feature 006 keeps readable).
 
-### task-254: Delivery-010 site search and reconciled edit list [RESEARCH]
-
-- **Stanza wave:** 1. **Depends on:** --.
-- **Source:** AC-11, AC-35, AC-36.
-- **Scope:**
-  - Create `.aid/works/work-003-full-aid-restructure/research/delivery-010-sites.md`. Touch nothing else.
-  - Re-run these searches at this task's base commit, and record the base commit in the file
-    (REQUIREMENTS.md § 11 Feature 008 `##### 1. Files and layout` and `##### 7. Migration`):
-    - **Y1** `housekeep/cleanup-classify.sh`, the `aid-housekeep` teardown, and `origin/master` as a merge target,
-      over every kept file under `canonical/`, `dashboard/`, `tests/`, `site/scripts/` and `.github/`;
-    - **Y2** the interim close: `/aid-orchestrate`'s close minimum, and every line that marks a work `Completed`
-      by hand (`aid-research`, `aid-review`, `aid-report`, `aid-deploy`, `aid-orchestrate`, `aid-kb-update`,
-      `aid-execute`);
-    - **Y3** every executed or written `git push`, `git merge`, `git pull`, `gh pr create`, `glab mr create`,
-      `git branch -D` and `git worktree remove --force` under `canonical/` and `dashboard/scripts/` (NM-01, NM-03,
-      NM-05, NM-06), each with the task that removes it or the exception that keeps it;
-    - **Y4** the readers of `pull_request`, `work_folders`, `feedback` and the dashboard's CI card lines;
-    - **Y5** the consumer rows of `worktree-lifecycle.md` § Step 3, `consumption-protocol.md`'s wired-seam
-      table, and the gate's § 3b row 1;
-    - **Y6** this repository's own `.gitignore` entries for `.aid/works/` (the ignored-folder question at the
-      first push of this work, Risks);
-    - **Y7** the rows of `tests/conversation/deferred.tsv` and the SG-04 exempt list that name a sample or skill
-      this delivery runs or adds;
-    - **Y8** the Q106 suite map for every file on the edit list, including the site's skill lists.
-  - Give each hit exactly one owner:
-    - a task of delivery-010 (task-255 to task-287; see the task files under
-      `.aid/works/work-003-full-aid-restructure/tasks/task-NNN/DETAIL.md`, the layout delivery-008's migration leaves);
-    - Feature 009 (delivery-012) for the skills it rebuilds that finish a work (`create`, `update`, `document`,
-      `test`, `prototype`);
-    - "installed copy (resync)";
-    - "history, left as is".
-  - **Content owner of the moved file (G7):** `cleanup-classify.sh` moves to `canonical/aid/scripts/pipeline/`, and
-    task-257 owns both the move and its content.
-  - In a delta section, list each suite assigned to two independent tasks, with the order to run them.
-  - **The owner classes also include "baseline, re-recorded at the gate"** for hits in
-    `tests/cost-baseline.tsv` and `tests/coverage-baseline.tsv`. No task edits a baseline (Q134 D11).
-  - **Skill owner table (G2).** Build it from a full listing, `ls canonical/skills/*/SKILL.md`, not from
-    text searches. It has one row per skill on disk at the base, naming the task of this delivery that owns
-    that skill's edits, or "no change needed here" with the reason (for example "generated doorway: changes
-    through the builder").
-- **Acceptance criteria:**
-  - [ ] Each of Y1-Y8 shows its exact command, and re-running it at the base named in the file reproduces its hits.
-  - [ ] Every hit has exactly one owner; the count of rows with an empty owner cell is 0.
-  - [ ] The skill owner table has exactly one row per `canonical/skills/*/SKILL.md` on disk at the base (the row count equals `ls canonical/skills/*/SKILL.md | wc -l`), and no row is unowned.
-  - [ ] RESEARCH defaults are overridden as in task-001; the test step selects nothing (work folder only).
-
 ### task-255: push-approved.sh: the only push, checked against the approval [IMPLEMENT]
 
-- **Stanza wave:** 2. **Depends on:** task-254.
+- **Stanza wave:** 2. **Depends on:** --.
 - **Source:** AC-35, AC-42.
 - **Scope:**
   - Create `canonical/aid/scripts/pipeline/push-approved.sh` (REQUIREMENTS.md § 11 Feature 008 `##### 4. Components`, `push-approved.sh`):
@@ -161,7 +120,7 @@ Feature 006 keeps readable).
 
 ### task-256: merge-parent.sh: the only merge [IMPLEMENT]
 
-- **Stanza wave:** 2. **Depends on:** task-254.
+- **Stanza wave:** 2. **Depends on:** --.
 - **Source:** AC-11, AC-34.
 - **Scope:**
   - Create `canonical/aid/scripts/pipeline/merge-parent.sh` (REQUIREMENTS.md § 11 Feature 008 `##### 4. Components`, `merge-parent.sh`):
@@ -178,7 +137,7 @@ Feature 006 keeps readable).
 
 ### task-257: cleanup-classify.sh moved to pipeline/, reading the work file [IMPLEMENT]
 
-- **Stanza wave:** 2. **Depends on:** task-254.
+- **Stanza wave:** 2. **Depends on:** --.
 - **Source:** AC-36.
 - **Scope:**
   - Move `canonical/aid/scripts/housekeep/cleanup-classify.sh` to `canonical/aid/scripts/pipeline/cleanup-classify.sh`
@@ -220,7 +179,7 @@ Feature 006 keeps readable).
 
 ### task-259: The pull_request key and the writer's --pull-request, with the duplicate-ref rule [IMPLEMENT]
 
-- **Stanza wave:** 2. **Depends on:** task-254.
+- **Stanza wave:** 2. **Depends on:** --.
 - **Source:** AC-35, AC-42.
 - **Scope:**
   - `canonical/aid/templates/work-state-template.yml`: the `pull_request` key (`host`, `via`, `remote`, `number`,
@@ -240,7 +199,7 @@ Feature 006 keeps readable).
 
 ### task-260: The work_folders setting [IMPLEMENT]
 
-- **Stanza wave:** 2. **Depends on:** task-254.
+- **Stanza wave:** 2. **Depends on:** --.
 - **Source:** AC-35, AC-36.
 - **Scope:**
   - `canonical/aid/templates/settings.yml`: `work_folders: push` with its comment (`push`, `keep-local`, `delete`;
@@ -254,7 +213,7 @@ Feature 006 keeps readable).
 
 ### task-261: The gh and glab stand-ins for the conversation suite [TEST]
 
-- **Stanza wave:** 2. **Depends on:** task-254, task-262.
+- **Stanza wave:** 2. **Depends on:** task-262.
 - **Source:** AC-13, AC-27, AC-42.
 - **Scope:**
   - Create `tests/conversation/stand-ins/gh` and `tests/conversation/stand-ins/glab` (REQUIREMENTS.md § 11 Feature 008 `##### 8. Testing`,
@@ -368,7 +327,7 @@ Feature 006 keeps readable).
 
 ### task-267: Contracts for the CI phase: approvals, the gate's row 1, the publish seam, the worktree teardown [IMPLEMENT]
 
-- **Stanza wave:** 3. **Depends on:** task-254.
+- **Stanza wave:** 3. **Depends on:** --.
 - **Source:** AC-11, AC-36.
 - **Scope:**
   - `canonical/aid/templates/skill-steps.md` § When approvals happen: the conflict-merge row; the never-merges
@@ -438,7 +397,7 @@ Feature 006 keeps readable).
 
 ### task-271: delete-pipeline.sh without --force [IMPLEMENT]
 
-- **Stanza wave:** 4. **Depends on:** task-254.
+- **Stanza wave:** 4. **Depends on:** --.
 - **Source:** AC-34, AC-36.
 - **Scope:**
   - `dashboard/scripts/delete-pipeline.sh` (REQUIREMENTS.md § 11 Feature 008 `##### 1. Files and layout`): its `git worktree remove --force` loses
@@ -726,17 +685,16 @@ in its "Gate-session steps" block (G13):
 `derive-waves.sh --from-tasks` derives the following from the written task files:
 
 ```text
-wave 1: task-254
-wave 2: task-255, task-256, task-257, task-259, task-260, task-267, task-271
-wave 3: task-258, task-262, task-272, task-274, task-275, task-277
-wave 4: task-261, task-263, task-264, task-265, task-276
-wave 5: task-266
-wave 6: task-268, task-269
-wave 7: task-270
-wave 8: task-273, task-279, task-280, task-281, task-285
-wave 9: task-278, task-282, task-284, task-286
-wave 10: task-283
-wave 11: task-287
+wave 1: task-255, task-256, task-257, task-259, task-260, task-267, task-271
+wave 2: task-258, task-262, task-272, task-274, task-275, task-277
+wave 3: task-261, task-263, task-264, task-265, task-276
+wave 4: task-266
+wave 5: task-268, task-269
+wave 6: task-270
+wave 7: task-273, task-279, task-280, task-281, task-285
+wave 8: task-278, task-282, task-284, task-286
+wave 9: task-283
+wave 10: task-287
 ```
 
 Step 5 writes the table under `### delivery-010 Execution Graph`, one task per row, from the task files'

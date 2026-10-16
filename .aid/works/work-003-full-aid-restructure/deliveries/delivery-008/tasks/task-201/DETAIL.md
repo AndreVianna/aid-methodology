@@ -33,7 +33,7 @@
     never reads the live work folder. Its expected result is written by hand from the spec: `tasks_lifecycle`
     filled once with every task's entry (never a second block); `deliveries` from the nested files, the delivery-008
     gate grade included; the flattened keys, `pipeline.path`, `interview`, `features` and `review_history` gone;
-    every other key byte-identical; the `dispatch_log` result as proposal F-1 says;
+    every other key byte-identical; the per-task `dispatch_log` dropped, with a warning when it is not empty (Q138);
   - `ticket_ref` at each level; delivery `qa`; each legacy record row and the Q74 type rows; the named cases
     (an `aid-describe` work at `Detail`; `aid-design-api` and `aid-create-roadmap` works at `phase: Describe`;
     a halted `aid-refactor` work at `Detail`; `active_skill: aid-deploy` at `Execute`; a `--create`-made work at

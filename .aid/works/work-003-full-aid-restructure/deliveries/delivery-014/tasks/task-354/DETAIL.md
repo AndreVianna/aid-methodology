@@ -7,7 +7,7 @@
 
 **Source:** feature-009-one-skill-per-need -> delivery-014 -> AC-24, AC-45
 
-**Depends on:** task-353
+**Depends on:** --
 
 **Scope:**
 - Create `tests/canonical/retired-names.txt` (REQUIREMENTS.md § 11 Feature 009 `##### 9. Testing`, Pre-release check): every retired slash name,
@@ -24,7 +24,8 @@
     the same search, with its test-folder exclusions, finds "kind of digital work" in no file. Without the flag it
     prints those hits and passes, as DN-01 does, so tasks 356-361 can check their own files before the gate.
 - **Findings.** This task's scope also includes every site that
-  `.aid/works/work-003-full-aid-restructure/research/delivery-014-sites.md` assigns to `task-354`.
+  `.aid/works/work-003-full-aid-restructure/research/delivery-014-sites.md` (written, reviewed and committed before
+  the run starts, Q139) assigns to `task-354`.
 - **Test step** (PLAN.md § "Testing before the resync"; the same in every task of this delivery).
   `BASE` is this task's `base` (`tasks_lifecycle.task-354.base`, which `/aid-execute` BUILD records on the
   first round). Work in the `work-003` worktree only, create no

@@ -16,7 +16,8 @@
 - The folder is outside the install manifest, so today's `bin/aid` should keep it; a failing case is a real blocker
   that names the install code, not something this task changes.
 - **Findings.** This task's scope also includes every site that
-  `.aid/works/work-003-full-aid-restructure/research/delivery-013-sites.md` assigns to `task-345`.
+  `.aid/works/work-003-full-aid-restructure/research/delivery-013-sites.md` (written, reviewed and committed before
+  the run starts, Q139) assigns to `task-345`.
 - **Test step** (PLAN.md § "Testing before the resync"; the same in every task of this delivery).
   `BASE` is this task's `base` (`tasks_lifecycle.task-345.base`, which `/aid-execute` BUILD records on the
   first round). Work in the `work-003` worktree only, create no

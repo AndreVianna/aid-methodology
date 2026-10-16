@@ -7,7 +7,7 @@
 
 **Source:** feature-009-one-skill-per-need -> delivery-011 -> AC-30
 
-**Depends on:** task-288
+**Depends on:** --
 
 **Scope:**
 - `tests/conversation/run.py` (REQUIREMENTS.md § 11 Feature 009 `##### 9. Testing`, Conversation samples: "Each typed and plain sample runs twice,
@@ -20,7 +20,8 @@
 - `tests/canonical/test-conversation-runner.sh` (Q134 D10) gains the cases, with no agent call (the runner's dry
   path).
 - **Findings.** This task's scope also includes every site that
-  `.aid/works/work-003-full-aid-restructure/research/delivery-011-sites.md` assigns to `task-303`.
+  `.aid/works/work-003-full-aid-restructure/research/delivery-011-sites.md` (written, reviewed and committed before
+  the run starts, Q139) assigns to `task-303`.
 - **Test step** (PLAN.md § "Testing before the resync"; the same in every task of this delivery).
   `BASE` is this task's `base` (`tasks_lifecycle.task-303.base`, which `/aid-execute` BUILD records on the
   first round). Work in the `work-003` worktree only, create no

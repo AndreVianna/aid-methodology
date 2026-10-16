@@ -28,7 +28,7 @@
     `tasks_lifecycle.task-NNN` (with `quick_check` as one text value); delivery cells become
     `deliveries.delivery-NNN` (`Pending-Spec` and `Specified` -> `Pending`; `delivery_gate.issue_list` -> one
     text value); a per-task `dispatch_log`, which the spec's `tasks_lifecycle` shape does not carry, is dropped,
-    with a warning when it is not empty (proposal F-1, pending the maintainer's confirmation); each delivery's `qa` is appended to the work's `qa` under the next free ids, its `context`
+    with a warning when it is not empty (Q138); each delivery's `qa` is appended to the work's `qa` under the next free ids, its `context`
     opening with the old place; the per-unit state files are deleted, then the folders left empty; an unknown
     file is kept, with a warning;
   - **old lite works**: the flattened keys become `deliveries.delivery-001`;
