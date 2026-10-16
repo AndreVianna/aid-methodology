@@ -1,5 +1,10 @@
 # Detail proposal -- delivery-001: Ask in plain words
 
+> **Approved (Q134, "accept all").** D1-D12 stand as recommended. D10 adds task-019 [TEST],
+> `tests/canonical/test-conversation-runner.sh` (depends on task-004, task-005 and task-010; derived
+> wave 7), and task-018 also depends on it. The task files under `deliveries/delivery-001/tasks/` are now
+> the source of truth.
+
 This is `aid-detail` FIRST-RUN Step 1 for **delivery-001 only**. It proposes the delivery's task breakdown
 for the maintainer's approval (Q133: delivery by delivery, a short table first). No task folder exists
 yet, and none is created until this proposal is approved.

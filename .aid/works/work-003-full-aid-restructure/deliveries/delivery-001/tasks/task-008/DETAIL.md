@@ -1,0 +1,88 @@
+# task-008: aid-orchestrator agent retired and aid-monitor re-pointed
+
+> **Execution protocol (binding on whoever executes this task -- no
+> exceptions):** the moment this task's `State` changes, write it --
+> `In Progress` before starting work, `In Review` before dispatching the
+> reviewer, and the terminal value (`Done` / `Failed`) at the end -- via
+> `writeback-state.sh --field State --value ...`. This applies equally
+> whether the main/orchestrator agent executes this task directly or
+> dispatches it to a sub-agent; neither may skip, batch, or defer these
+> writes. (`Blocked` is a distinct, orchestrator-assigned value for a
+> DIFFERENT, downstream task that depends on a failed one -- it is never
+> self-written by the task being executed.) Full mandate:
+> `aid-execute/references/state-execute.md § MANDATORY: State-Write
+> Protocol`.
+
+**Type:** IMPLEMENT
+
+**Source:** feature-001-plain-language-requests -> delivery-001 -> AC-6, AC-23
+
+**Depends on:** task-006
+
+**Scope:**
+- Delete `canonical/agents/aid-orchestrator/`. task-006's `feedback-routing.md` already holds its table.
+- Re-point the orchestrator mentions in `canonical/aid/templates/agent-dispatch-tiering.md` (§ Per-agent
+  defaults) and `canonical/aid/templates/self-review-protocol.md`.
+- `canonical/skills/aid-monitor/SKILL.md`: re-point the Default executor line, the ROUTE dispatch row and
+  the routing targets. ROUTE runs inline, and no target is `/aid-triage`.
+- `canonical/skills/aid-monitor/references/state-route.md`: a bug goes back as a fix request, and a
+  change request as a new-work request, both in plain words through `rules.md` § Handling a request
+  (REQUIREMENTS.md § 11 Feature 001 `##### 3. Components`, `aid-monitor` re-point).
+- Delete `.aid/design/skill-routing.md`, and remove any mention of it in `.aid/design/README.md`.
+- Keep `tests/windows/Test-AidInstaller.ps1` as it is. It uses `aid-orchestrator.md` only as a legacy
+  fixture name.
+- Count re-sync (Q134, D5): the agent-count phrases `test-doc-counts.sh` asserts in `README.md` and
+  `docs/` take the derived count, and `sync:docs` runs. Change only the numbers.
+- Suites to update in this same task:
+  - `tests/canonical/test-deploy-monitor-repurpose.sh`: DMR01b, DMR02b, DMR03b and the ROUTE-row
+    assertion;
+  - `test-doc-counts.sh`;
+  - the site tests that read the `aid-monitor` body;
+  - any suite the findings' S2 or S6 assigns here.
+- **Site regeneration.** Run `(cd site && npm run gen:skills && npm run gen:reference)` and commit its
+  output: the skill pages, `skills/index.md`, `src/data/skill-flows/`, `reference/skills.md` and
+  `scripts/.skills-manifest.json`. Never edit a generated site file by hand.
+- **Same-task rule (Q106).** This task updates every suite that asserts text in a file it changes,
+  including `site/scripts/__tests__/` and the dashboard tests. It is not `Done` while such a suite fails.
+  - A removed assertion gets its row in `tests/coverage-accepted-removals.tsv`.
+  - A renamed assertion gets its row in `tests/coverage-rehome-allowlist.tsv`.
+  - The baselines themselves are re-recorded at the gate (Q134, D11).
+- **Findings.** This task's scope also includes every site that
+  `.aid/works/work-003-full-aid-restructure/research/delivery-001-sites.md` assigns to `task-008`.
+- **Test step** (PLAN.md § "Testing before the resync"; the same in every task of this delivery).
+  `BASE` is this task's `task-008: In Progress` commit. Work in the `work-003` worktree only, create no
+  branch or worktree, and never run `run_generator.py` in the live tree.
+  1. **Spawn-free checks (T2).** Run `bash -n` on each changed `.sh`, `python3 -m py_compile` on each
+     changed `.py`, and `node --check` on each changed `.mjs`.
+  2. **Selection.** `SEL` is the output of `bash tests/canonical/select-suites.sh --since "$BASE"`.
+     `COPY` is the members of `SEL` whose text matches the pattern `P` of PLAN.md § "Testing before the
+     resync", The driver. `LIVE` is `SEL` minus `COPY`. A change that lies wholly under `.aid/works/`
+     selects nothing.
+  3. **Scratch half** (when `COPY` is not empty).
+     - Make the copy exactly as PLAN.md § "How the copy is made" says, with `S=.aid/.temp/scratch/task-008`.
+       That includes the copy's own `run_generator.py`, run from inside it, then the `resync` commit.
+     - Delete from `"$S"/tests/canonical/` every `test-*.sh` not in `COPY`.
+     - Run `(cd "$S" && HOME="$(mktemp -d)" bash tests/run-all.sh)` and record its failures.
+     - Run `rm -rf "$S"` before step 4.
+     - If the copy's generator fails, that failure is the result, and `COPY` is reported as not run.
+  4. **Live half.**
+     - When `LIVE` is every suite outside `COPY`, run `HOME="$(mktemp -d)" bash tests/run-all.sh` and
+       drop the `COPY` suites' results by name.
+     - Otherwise, run each `LIVE` suite with `HOME="$(mktemp -d)" bash tests/canonical/<suite>`.
+  5. **Outside `run-all.sh`.**
+     - Run `(cd site && npm test)` when this task changes `canonical/skills/`,
+       `canonical/aid/templates/shortcut-catalog.yml`, `docs/` or `site/`. Run `npm ci` there first if
+       `site/node_modules` is absent.
+     - Run `python3 -m pytest <file>` for each dashboard test file this task changes.
+  6. **Report.** For each suite, report where it ran, its result and its run count.
+     - Ceiling (T5): one full run of steps 2-5 per test round. Between rounds, re-run only the failing
+       group (T6).
+     - The same failure after three fix rounds goes to the maintainer.
+
+**Acceptance Criteria:**
+- [ ] `test -e canonical/agents/aid-orchestrator` fails, `git grep -n aid-orchestrator -- canonical/ .aid/design/` finds nothing, and `.aid/design/skill-routing.md` is absent. `git diff "$BASE" -- tests/windows/Test-AidInstaller.ps1` is empty (AC-23).
+- [ ] `aid-monitor`'s ROUTE row names no agent, and `git grep -n -E 'aid-triage|aid-orchestrator' -- canonical/skills/aid-monitor/` finds nothing. `state-route.md` hands a bug back as a fix request and a change request as a new-work request (AC-23).
+- [ ] `canonical/agents/aid-developer/` and `canonical/agents/aid-tech-writer/` exist, which is the SG-05 clause (AC-6), and `test-doc-counts.sh` passes live with the new agent count.
+- [ ] `test-deploy-monitor-repurpose.sh` passes in the scratch copy, and the site `npm test` passes after regeneration.
+- [ ] The test step (last Scope bullet) reports no failure: the spawn-free checks, the scratch half, the live half and the site or dashboard runs it calls for. Every existing test still passes.
+- [ ] All section-6 quality gates pass (REQUIREMENTS.md § 6: NFR-N, NFR-T, NFR-Q).
