@@ -2093,7 +2093,7 @@ document, no production code.
   | Old work | Proposed skill and step |
   |---|---|
   | `pipeline.initiator` is `aid-brainstorm`, `aid-design` or an `aid-design-*` skill (whatever its `phase`) | `/aid-brainstorm` at **START** -- which finds the old draft with `list` (it sits untracked in that work's own worktree), `collect`s it to the main folder and writes `idea_draft`, then continues at CONVERSE |
-  | `pipeline.initiator` is `aid-describe`, or `phase: Describe` | `/aid-specify` at its entry step (requirements are gathered there now) |
+  | `pipeline.initiator` is `aid-describe` and `phase` is `Describe`, missing or `--` (a later phase decides by its own phase row, as in Feature 006's migration order, Q137) | `/aid-specify` at its entry step (requirements are gathered there now) |
 
   An old idea or design work already `Completed` is not resumed (Feature 002's resume table, row 1); its
   draft is found by any new work's START through `list` and `collect`. Feature 006's migration, which fills

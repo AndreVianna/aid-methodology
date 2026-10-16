@@ -1567,3 +1567,11 @@ qa:
     suggested: '--'
     answer: 'Changed by the maintainer: no per-delivery maintainer approval. After each delivery''s tasks are written, a light review runs; one full review cycle runs at the end. Tasks whose review passes count as approved. Architect decision points are settled by their recommendation and recorded.'
     applied_to: 'aid-detail FIRST-RUN loop (deliveries 003-014) and REVIEW'
+  - id: Q137
+    category: Detail
+    impact: Low
+    state: Answered
+    context: 'Flagged by the delivery-004 detail (F-1): F003 § 6 puts "initiator aid-describe, or phase Describe -> /aid-specify" at the top of the gate''s legacy block, winning over the phase rows, while F006''s migration applies the aid-describe initiator row only at phase Describe (its rules 3-5). Between deliveries 004 and 008 an old aid-describe work in Plan or Execute would be routed back to /aid-specify.'
+    suggested: 'Narrow F003''s row to match F006: initiator aid-describe with phase Describe, missing or --; a later phase decides by its own phase row. One-line spec edit plus task-088''s scope.'
+    answer: 'Accepted as recommended.'
+    applied_to: 'REQUIREMENTS.md Feature 003 Migration (legacy rows); delivery-004 task-088'
