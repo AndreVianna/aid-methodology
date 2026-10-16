@@ -1327,3 +1327,27 @@ qa:
     suggested: 'One roadmap entry in the KB (.aid/knowledge/roadmap.md, Later): "Beyond software", listing the nine items, written by this work with no work id.'
     answer: 'Accepted as recommended (one KB roadmap entry).'
     applied_to: 'Feature 009 Technical Specification (roadmap entry)'
+  - id: Q111
+    category: Planning
+    impact: High
+    state: Answered
+    context: 'This repository installs AID into itself, so each green delivery replaces the skills and scripts building work-003; delivery-006 (F006 + F007) replaces aid-plan, aid-detail and aid-execute.'
+    suggested: 'Re-seat once, at delivery-006: today''s /aid-detail details every delivery up front; the dogfood resync is the last task of every delivery; delivery-006''s last task migrates work-003, and later work runs on the new /aid-execute.'
+    answer: 'Accepted as recommended (re-seat once, at delivery-006).'
+    applied_to: 'PLAN.md (toolchain; every delivery''s last task)'
+  - id: Q112
+    category: Planning
+    impact: Medium
+    state: Answered
+    context: 'Today''s /aid-execute builds each delivery on aid/work-003-delivery-NNN and ends with "merge to main"; nothing may reach master before v4.0.0.'
+    suggested: 'After each delivery gate the maintainer fast-forwards work-003 to the delivery branch: no merge commit, master untouched.'
+    answer: 'Accepted as recommended (fast-forward work-003 after each gate).'
+    applied_to: 'PLAN.md (delivery branches, deliveries before the re-seat)'
+  - id: Q113
+    category: Planning
+    impact: Medium
+    state: Answered
+    context: 'The proposed delivery-008 (F009 without its final documentation pass) adds 7 action skills and a catalog and deletes dozens of wrapper skills and the shortcut engine: too big for one review pass. The maintainer also asked whether the deliveries follow dependency order (yes: each spec needs all earlier ones; F008 needs F007 and F004, so it cannot move before F003).'
+    suggested: 'Split it in two: add (action skills, catalog, domain readiness), then retire (old skills, engine, rename, site generator); the AS suite split into two groups.'
+    answer: 'Split it in three: (a) add the action skills and the kind catalog; (b) retire the old skills, the shortcut engine and its catalog, and move the site generator; (c) the /aid-configure rename and domain readiness. The F009 suite is cut into one group per part.'
+    applied_to: 'PLAN.md (F009 split into three deliveries plus the final documentation delivery)'
