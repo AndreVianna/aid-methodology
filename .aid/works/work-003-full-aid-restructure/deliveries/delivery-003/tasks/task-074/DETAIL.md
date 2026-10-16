@@ -17,15 +17,34 @@
 
 **Source:** feature-002-step-by-step-decisions -> delivery-003 -> AC-37
 
-**Depends on:** task-062, task-063, task-064, task-065, task-066, task-067, task-068
+**Depends on:** task-058
 
 **Scope:**
-- Delete `canonical/aid/templates/state-machine-chaining.md`, together with any citation the findings
-  assign to this task.
+- Delete `canonical/aid/templates/state-machine-chaining.md`. Delivery-002's sweep already re-pointed its
+  citations to `skill-steps.md`; any citation the findings still find is re-pointed here.
+- Remove its row from `tests/canonical/skill-steps-exempt.tsv` (the `SS-03` row task-050 added), since the
+  list fails on an entry that no longer exists.
 - `tests/canonical/test-pipeline-status-walkthrough.sh`: group B2 moves to `skill-steps.md`'s `ASK`
   handler (REQUIREMENTS.md § 11 Feature 002 `##### 7. Migration`, Chaining-file sites).
 - Removed assertions get their rows in `tests/coverage-accepted-removals.tsv`. The baselines are
   re-recorded at the gate.
+- **Suites that read what this task deletes, moves or renames (G6).** For each such file and folder,
+  build the list with `git grep -l -e '<path>' -e '<folder>/' -- tests/ site/` at this task's base. The
+  list does not come from the findings' map alone. Every suite it finds is updated in this same task
+  (Q106 applied to deletions). Any exemption row this task's own criteria need is created here, or the
+  criterion is scoped so it holds without the row.
+- **Site regeneration (G1, G5).** When this task adds, deletes, renames or edits anything under
+  `canonical/skills/`, `canonical/agents/` or `canonical/aid/templates/`, it runs
+  `(cd site && npm run gen:skills && npm run gen:reference)` in this same task and commits the output:
+  the skill pages, `skills/index.md`, `src/data/skill-flows/`, `reference/skills.md`,
+  `reference/agents.md` and `scripts/.skills-manifest.json`.
+  - It also updates any hard-coded count or name list in a site generator, for example the agent count
+    in `site/scripts/gen-reference.mjs`, so the generators' drift checks pass at this task's end.
+  - A generated site page is never edited by hand.
+- **Later checks on this task's files (G3).** Before `Done`, run by hand, over the files this task
+  writes, every static-check pattern that this delivery's own suites or an earlier delivery's suites apply
+  to those files, and fix every hit here. Repo-wide criteria in this file are scoped to what this task
+  owns.
 - **Same-task rule (Q106).** This task updates every suite that asserts text in a file it changes,
   including `site/scripts/__tests__/` and the dashboard tests. It is not `Done` while such a suite fails.
   - A removed assertion gets its row in `tests/coverage-accepted-removals.tsv`.
@@ -54,9 +73,9 @@
        drop the `COPY` suites' results by name.
      - Otherwise, run each `LIVE` suite with `HOME="$(mktemp -d)" bash tests/canonical/<suite>`.
   5. **Outside `run-all.sh`.**
-     - Run `(cd site && npm test)` when this task changes `canonical/skills/`,
-       `canonical/aid/templates/shortcut-catalog.yml`, `docs/` or `site/`. Run `npm ci` there first if
-       `site/node_modules` is absent.
+     - Run `(cd site && npm test)` when this task changes anything under `canonical/skills/`,
+       `canonical/agents/` or `canonical/aid/templates/`, or under `docs/` or `site/` (G5). Run `npm ci`
+       there first if `site/node_modules` is absent.
      - Run `python3 -m pytest <file>` for each dashboard Python test file this task changes, and
        `node --test <file>` for each dashboard `.mjs` test file it changes.
   6. **Report.** For each suite, report where it ran, its result and its run count.
@@ -65,7 +84,7 @@
      - The same failure after three fix rounds goes to the maintainer.
 
 **Acceptance Criteria:**
-- [ ] The file is absent, and `git grep -l state-machine-chaining -- canonical tests/canonical site/scripts` finds nothing.
+- [ ] The file is absent, and `git grep -l state-machine-chaining -- canonical tests/canonical site/scripts` finds nothing. The baselines (re-recorded at the gate), `tests/coverage-accepted-removals.tsv` and `.aid/works/` are outside this check.
 - [ ] `test-pipeline-status-walkthrough.sh` passes live, with B2 asserting `skill-steps.md`.
 - [ ] The test step (last Scope bullet) reports no failure: the spawn-free checks, the scratch half, the live half and the site or dashboard runs it calls for. Every existing test still passes.
 - [ ] All section-6 quality gates pass (REQUIREMENTS.md § 6: NFR-N, NFR-T, NFR-Q).

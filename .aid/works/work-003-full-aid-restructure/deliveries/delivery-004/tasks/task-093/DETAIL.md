@@ -26,6 +26,9 @@
   want to build", with `dashboard/server/tests/test_index_html.py`. The readers' `SHORTCUT_KIND_MAP` and
   `_FULL_PATH_INITIATOR` stay.
 - Delete `tests/canonical/test-describe-full-only.sh`, with an accepted-removal row per assertion.
+- Update the suites that read files inside the folder: `test-ticket-retirement-structural.sh` (T001-T006,
+  `DESCRIBE_COMPLETION`, `DESCRIBE_FIRSTRUN`, and its walk of the folder) and `test-work-state-template.sh`
+  (WS19, `FIRST_RUN`).
 - Update the suites that name it: `test-work-initiation-gate.sh`, `test-path-fixtures.sh`,
   `test-pipeline-status-walkthrough.sh`, `test-cutover-no-dangling.sh`, `test-deploy-monitor-repurpose.sh`,
   and any suite the findings' R1 or R5 assigns here.
@@ -39,9 +42,23 @@
 - **Count re-sync (Q134 D5):** the skill-count phrases that `tests/canonical/test-doc-counts.sh` asserts
   in `README.md` and `docs/` take the derived count, then `(cd site && npm run sync:docs)` runs. Only the
   numbers change; user documentation otherwise waits for the final pass (REQUIREMENTS.md § 11 Feature 003 `##### 6. Migration`).
-- **Site regeneration.** Run `(cd site && npm run gen:skills && npm run gen:reference)` and commit its
-  output: the skill pages, `skills/index.md`, `src/data/skill-flows/`, `reference/skills.md` and
-  `scripts/.skills-manifest.json`. Never edit a generated site file by hand.
+- **Suites that read what this task deletes, moves or renames (G6).** For each such file and folder,
+  build the list with `git grep -l -e '<path>' -e '<folder>/' -- tests/ site/` at this task's base. The
+  list does not come from the findings' map alone. Every suite it finds is updated in this same task
+  (Q106 applied to deletions). Any exemption row this task's own criteria need is created here, or the
+  criterion is scoped so it holds without the row.
+- **Site regeneration (G1, G5).** When this task adds, deletes, renames or edits anything under
+  `canonical/skills/`, `canonical/agents/` or `canonical/aid/templates/`, it runs
+  `(cd site && npm run gen:skills && npm run gen:reference)` in this same task and commits the output:
+  the skill pages, `skills/index.md`, `src/data/skill-flows/`, `reference/skills.md`,
+  `reference/agents.md` and `scripts/.skills-manifest.json`.
+  - It also updates any hard-coded count or name list in a site generator, for example the agent count
+    in `site/scripts/gen-reference.mjs`, so the generators' drift checks pass at this task's end.
+  - A generated site page is never edited by hand.
+- **Later checks on this task's files (G3).** Before `Done`, run by hand, over the files this task
+  writes, every static-check pattern that this delivery's own suites or an earlier delivery's suites apply
+  to those files, and fix every hit here. Repo-wide criteria in this file are scoped to what this task
+  owns.
 - **Same-task rule (Q106).** This task updates every suite that asserts text in a file it changes,
   including `site/scripts/__tests__/` and the dashboard tests. It is not `Done` while such a suite fails.
   - A removed assertion gets its row in `tests/coverage-accepted-removals.tsv`.
@@ -70,9 +87,9 @@
        drop the `COPY` suites' results by name.
      - Otherwise, run each `LIVE` suite with `HOME="$(mktemp -d)" bash tests/canonical/<suite>`.
   5. **Outside `run-all.sh`.**
-     - Run `(cd site && npm test)` when this task changes `canonical/skills/`,
-       `canonical/aid/templates/shortcut-catalog.yml`, `docs/` or `site/`. Run `npm ci` there first if
-       `site/node_modules` is absent.
+     - Run `(cd site && npm test)` when this task changes anything under `canonical/skills/`,
+       `canonical/agents/` or `canonical/aid/templates/`, or under `docs/` or `site/` (G5). Run `npm ci`
+       there first if `site/node_modules` is absent.
      - Run `python3 -m pytest <file>` for each dashboard Python test file this task changes, and
        `node --test <file>` for each dashboard `.mjs` test file it changes.
   6. **Report.** For each suite, report where it ran, its result and its run count.
@@ -81,7 +98,7 @@
      - The same failure after three fix rounds goes to the maintainer.
 
 **Acceptance Criteria:**
-- [ ] `test -e canonical/skills/aid-describe` fails, and outside the gate's legacy block nothing under `canonical/` or in `dashboard/home.html` names `aid-describe` (ID-02's rule).
+- [ ] `test -e canonical/skills/aid-describe` fails. Outside the gate's legacy block, nothing under `canonical/` or in `dashboard/home.html` names `aid-describe`, except `design-lifecycle.md` and the KB-writing `aid-create-*` / `aid-update-*` skills, which Feature 004 retires; task-099 adds their ID-02 exemption row (ID-02's rule, scoped to hold at this task's end).
 - [ ] DT-01, SG-04 and `test-skill-steps.sh` pass in the scratch copy, and `test-doc-counts.sh` passes live.
 - [ ] `python3 -m pytest dashboard/server/tests/test_index_html.py` and the site `npm test` pass.
 - [ ] The test step (last Scope bullet) reports no failure: the spawn-free checks, the scratch half, the live half and the site or dashboard runs it calls for. Every existing test still passes.

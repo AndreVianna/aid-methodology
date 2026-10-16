@@ -43,6 +43,11 @@
   - `tests/canonical/test-deploy-monitor-repurpose.sh`, whose standalone list drops `aid-triage`;
   - `test-doc-counts.sh`;
   - any suite the findings' S1 or S6 assigns here.
+- **Suites that read what this task deletes, moves or renames (G6).** For each such file and folder,
+  build the list with `git grep -l -e '<path>' -e '<folder>/' -- tests/ site/` at this task's base. The
+  list does not come from the findings' map alone. Every suite it finds is updated in this same task
+  (Q106 applied to deletions). Any exemption row this task's own criteria need is created here, or the
+  criterion is scoped so it holds without the row.
 - **Site regeneration (G1, G5).** When this task adds, deletes, renames or edits anything under
   `canonical/skills/`, `canonical/agents/` or `canonical/aid/templates/`, it runs
   `(cd site && npm run gen:skills && npm run gen:reference)` in this same task and commits the output:

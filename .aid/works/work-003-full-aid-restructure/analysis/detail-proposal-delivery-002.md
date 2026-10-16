@@ -1,5 +1,10 @@
 # Detail proposal -- delivery-002: One work record and one set of step rules (Feature 002, engine)
 
+> **Superseded by the task files.** After the light-review fixes (general rules G1-G6, Q137), the
+> dependencies, scopes and criteria in this proposal's tables, task blocks and execution graph no longer
+> match the task files. The task files under `deliveries/delivery-002/tasks/` are the source of truth. Step 5
+> builds PLAN.md's Execution Graph from their `**Depends on:**` lines, never from this proposal.
+
 This is `aid-detail` FIRST-RUN Step 1 for **delivery-002**. It proposes the delivery's task breakdown
 for the maintainer's approval (Q133). No task folder is created until it is approved. Numbering continues
 from delivery-001's task-019.

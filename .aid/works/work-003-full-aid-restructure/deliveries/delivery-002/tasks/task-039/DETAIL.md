@@ -23,7 +23,10 @@
 - Apply the stanza-wave-4 sweep conversions to this task's group only. The groups of task-034 to
   task-044 are disjoint.
   - **(a) Citation.** Every `SKILL.md` with a Dispatch table or a `## State:` section cites
-    `.aid/runtime/templates/skill-steps.md` (SS-02).
+    `.aid/runtime/templates/skill-steps.md` (SS-02). In the same edit, every citation of
+    `state-machine-chaining.md` in the group's files is re-pointed to `skill-steps.md`, for example the
+    "route by its `**Advance:**` type (per `state-machine-chaining.md`)" lines. The spec cites
+    `skill-steps.md` "in place of the chaining file" (F002 § 4). Delivery-003 only deletes the file.
   - **(b) Advance words.** Every `**Advance:**` word is translated one for one:
     - `PAUSE-FOR-USER-DECISION` becomes `ASK` and keeps its step ("Re-run `/aid-<skill>` to continue to
       [State: X]" becomes `ASK` -> [State: X]);
@@ -34,17 +37,27 @@
     standard rule: it shapes the entry step of a fresh start, validates a saved step on resume, and never
     routes.
   - **(d) Group-specific sites,** listed below.
-  - **Out of scope here:** banners, the chaining file, the protocol line, question-record sites and the
-    interviewer. Those are delivery-003's.
+  - **Out of scope here:** banners, deleting the chaining file, the protocol line, question-record sites
+    and the interviewer. Those are delivery-003's.
 - Suites to update in this same task: every suite the findings' P8 or P9 assigns to this group's files,
   including the site tests that read these skill bodies.
 - **Group:** `canonical/skills/aid-define/`, `canonical/skills/aid-specify/`.
 - **(d):** the three `--field Phase --value` writes take the new names: `aid-specify`
   `references/state-initialize.md` and `references/state-continue.md`; `aid-define`
   `references/state-feature-decomposition.md`.
-- **Site regeneration.** Run `(cd site && npm run gen:skills && npm run gen:reference)` and commit its
-  output: the skill pages, `skills/index.md`, `src/data/skill-flows/`, `reference/skills.md` and
-  `scripts/.skills-manifest.json`. Never edit a generated site file by hand.
+- `tests/canonical/test-pipeline-status-walkthrough.sh` B1 ("M4 phase emits"): the expected phase for `aid-define` and `aid-specify` becomes the new name, in this same task (Q106).
+- **Site regeneration (G1, G5).** When this task adds, deletes, renames or edits anything under
+  `canonical/skills/`, `canonical/agents/` or `canonical/aid/templates/`, it runs
+  `(cd site && npm run gen:skills && npm run gen:reference)` in this same task and commits the output:
+  the skill pages, `skills/index.md`, `src/data/skill-flows/`, `reference/skills.md`,
+  `reference/agents.md` and `scripts/.skills-manifest.json`.
+  - It also updates any hard-coded count or name list in a site generator, for example the agent count
+    in `site/scripts/gen-reference.mjs`, so the generators' drift checks pass at this task's end.
+  - A generated site page is never edited by hand.
+- **Later checks on this task's files (G3).** Before `Done`, run by hand, over the files this task
+  writes, every static-check pattern that this delivery's own suites or an earlier delivery's suites apply
+  to those files, and fix every hit here. Repo-wide criteria in this file are scoped to what this task
+  owns.
 - **Same-task rule (Q106).** This task updates every suite that asserts text in a file it changes,
   including `site/scripts/__tests__/` and the dashboard tests. It is not `Done` while such a suite fails.
   - A removed assertion gets its row in `tests/coverage-accepted-removals.tsv`.
@@ -73,9 +86,9 @@
        drop the `COPY` suites' results by name.
      - Otherwise, run each `LIVE` suite with `HOME="$(mktemp -d)" bash tests/canonical/<suite>`.
   5. **Outside `run-all.sh`.**
-     - Run `(cd site && npm test)` when this task changes `canonical/skills/`,
-       `canonical/aid/templates/shortcut-catalog.yml`, `docs/` or `site/`. Run `npm ci` there first if
-       `site/node_modules` is absent.
+     - Run `(cd site && npm test)` when this task changes anything under `canonical/skills/`,
+       `canonical/agents/` or `canonical/aid/templates/`, or under `docs/` or `site/` (G5). Run `npm ci`
+       there first if `site/node_modules` is absent.
      - Run `python3 -m pytest <file>` for each dashboard Python test file this task changes, and
        `node --test <file>` for each dashboard `.mjs` test file it changes.
   6. **Report.** For each suite, report where it ran, its result and its run count.
@@ -86,7 +99,7 @@
 **Acceptance Criteria:**
 - [ ] Over this group's files, `grep -c 'PAUSE-FOR-USER'` prints 0, and every `**Advance:**` word is one of `CHAIN`, `ASK`, `WAIT`, `PASS`, `CALL` or `HALT` (SS-03 by hand).
 - [ ] Every `SKILL.md` in the group with a Dispatch table or a `## State:` section names `skill-steps.md` (SS-02 by hand).
-- [ ] The SS-11, SS-12 and SS-14 (b)/(d) patterns, run by hand over the group's files, match only lines inside legacy markers or in files on the shared exempt list.
+- [ ] The SS-11, SS-12 and SS-14 (b)/(d) patterns, run by hand over the group's files, match only lines inside legacy markers, or in the per-skill files that F002 § 1 (its Exempt row) and § 2 (the exempt finishers) name as exempt. `grep -c state-machine-chaining` over the group's files prints 0.
 - [ ] The SS-11 forms find nothing in either skill.
 - [ ] This group's suites pass where the test step puts them, and the site `npm test` passes after regeneration.
 - [ ] The test step (last Scope bullet) reports no failure: the spawn-free checks, the scratch half, the live half and the site or dashboard runs it calls for. Every existing test still passes.

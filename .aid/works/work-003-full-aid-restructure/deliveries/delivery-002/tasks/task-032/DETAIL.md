@@ -34,9 +34,18 @@
   only (Q135, R9).
 - Suites to update in this same task: `tests/canonical/test-skill-guide.sh` SG-01, and any suite the
   findings' P8 assigns here.
-- **Site regeneration.** Run `(cd site && npm run gen:skills && npm run gen:reference)` and commit its
-  output: the skill pages, `skills/index.md`, `src/data/skill-flows/`, `reference/skills.md` and
-  `scripts/.skills-manifest.json`. Never edit a generated site file by hand.
+- **Site regeneration (G1, G5).** When this task adds, deletes, renames or edits anything under
+  `canonical/skills/`, `canonical/agents/` or `canonical/aid/templates/`, it runs
+  `(cd site && npm run gen:skills && npm run gen:reference)` in this same task and commits the output:
+  the skill pages, `skills/index.md`, `src/data/skill-flows/`, `reference/skills.md`,
+  `reference/agents.md` and `scripts/.skills-manifest.json`.
+  - It also updates any hard-coded count or name list in a site generator, for example the agent count
+    in `site/scripts/gen-reference.mjs`, so the generators' drift checks pass at this task's end.
+  - A generated site page is never edited by hand.
+- **Later checks on this task's files (G3).** Before `Done`, run by hand, over the files this task
+  writes, every static-check pattern that this delivery's own suites or an earlier delivery's suites apply
+  to those files, and fix every hit here. Repo-wide criteria in this file are scoped to what this task
+  owns.
 - **Same-task rule (Q106).** This task updates every suite that asserts text in a file it changes,
   including `site/scripts/__tests__/` and the dashboard tests. It is not `Done` while such a suite fails.
   - A removed assertion gets its row in `tests/coverage-accepted-removals.tsv`.
@@ -65,9 +74,9 @@
        drop the `COPY` suites' results by name.
      - Otherwise, run each `LIVE` suite with `HOME="$(mktemp -d)" bash tests/canonical/<suite>`.
   5. **Outside `run-all.sh`.**
-     - Run `(cd site && npm test)` when this task changes `canonical/skills/`,
-       `canonical/aid/templates/shortcut-catalog.yml`, `docs/` or `site/`. Run `npm ci` there first if
-       `site/node_modules` is absent.
+     - Run `(cd site && npm test)` when this task changes anything under `canonical/skills/`,
+       `canonical/agents/` or `canonical/aid/templates/`, or under `docs/` or `site/` (G5). Run `npm ci`
+       there first if `site/node_modules` is absent.
      - Run `python3 -m pytest <file>` for each dashboard Python test file this task changes, and
        `node --test <file>` for each dashboard `.mjs` test file it changes.
   6. **Report.** For each suite, report where it ran, its result and its run count.

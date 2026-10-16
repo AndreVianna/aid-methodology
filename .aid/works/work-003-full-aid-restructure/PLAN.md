@@ -295,6 +295,9 @@ The Notes explain why each is needed.
     `## State:` skills a later delivery rebuilds or retires: `aid-brainstorm`, `aid-design` and every
     `aid-design-*`, the KB `create`/`update` skills, `aid-create-document` and `aid-update-document`.
   - No generated doorway skill has a Dispatch table or a `## State:` section today.
+  - `skill-steps.md` is cited "in place of" the chaining file (F002 § 4), so every citation of
+    `state-machine-chaining.md` is re-pointed to `skill-steps.md` in the same edit. The file itself is
+    deleted in delivery-003.
 - **Advance words:** every `**Advance:**` line is translated one for one:
   - `PAUSE-FOR-USER-DECISION` becomes `ASK`, keeping the step it named;
   - `PAUSE-FOR-USER-ACTION` becomes `WAIT`;
@@ -379,7 +382,8 @@ from the engine.
 
 **Scope:**
 - Banners and "you are here" maps are removed from every hand-authored skill and the two shared
-  engines. `state-machine-chaining.md` is deleted, with every citation of it. (AC-37)
+  engines. `state-machine-chaining.md` is deleted; delivery-002 already re-pointed its citations to
+  `skill-steps.md`. (AC-37)
 - Every asking skill carries the protocol line, and `AskUserQuestion` leaves every `allowed-tools`.
   `aid-describe`'s envelope points at the protocol. (AC-8, AC-9, AC-28)
 - Every question-record site writes through `--ask` and `--answer`, and no skill names

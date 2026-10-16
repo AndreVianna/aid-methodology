@@ -1,5 +1,10 @@
 # Detail proposal -- delivery-001: Ask in plain words
 
+> **Superseded by the task files.** After the light-review fixes (general rules G1-G6, Q137), the
+> dependencies, scopes and criteria in this proposal's tables, task blocks and execution graph no longer
+> match the task files. The task files under `deliveries/delivery-001/tasks/` are the source of truth. Step 5
+> builds PLAN.md's Execution Graph from their `**Depends on:**` lines, never from this proposal.
+
 > **Approved (Q134, "accept all").** D1-D12 stand as recommended. D10 adds task-019 [TEST],
 > `tests/canonical/test-conversation-runner.sh` (depends on task-004, task-005 and task-010; derived
 > wave 7), and task-018 also depends on it. The task files under `deliveries/delivery-001/tasks/` are now

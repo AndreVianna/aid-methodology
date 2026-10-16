@@ -42,6 +42,12 @@
   - "installed copy (resync)";
   - "history, left as is".
 - In a delta section, list each suite assigned to two independent tasks, with the order to run them.
+- **The owner classes also include "baseline, re-recorded at the gate"** for hits in
+  `tests/cost-baseline.tsv` and `tests/coverage-baseline.tsv`. No task edits a baseline (Q134 D11).
+- **Skill owner table (G2).** Build it from a full listing, `ls canonical/skills/*/SKILL.md`, not from
+  text searches. It has one row per skill on disk at the base, naming the task of this delivery that owns
+  that skill's edits, or "no change needed here" with the reason (for example "generated doorway: changes
+  through the builder").
 - **Test step** (PLAN.md § "Testing before the resync"; the same in every task of this delivery).
   `BASE` is this task's `task-082: In Progress` commit. Work in the `work-003` worktree only, create no
   branch or worktree, and never run `run_generator.py` in the live tree.
@@ -63,9 +69,9 @@
        drop the `COPY` suites' results by name.
      - Otherwise, run each `LIVE` suite with `HOME="$(mktemp -d)" bash tests/canonical/<suite>`.
   5. **Outside `run-all.sh`.**
-     - Run `(cd site && npm test)` when this task changes `canonical/skills/`,
-       `canonical/aid/templates/shortcut-catalog.yml`, `docs/` or `site/`. Run `npm ci` there first if
-       `site/node_modules` is absent.
+     - Run `(cd site && npm test)` when this task changes anything under `canonical/skills/`,
+       `canonical/agents/` or `canonical/aid/templates/`, or under `docs/` or `site/` (G5). Run `npm ci`
+       there first if `site/node_modules` is absent.
      - Run `python3 -m pytest <file>` for each dashboard Python test file this task changes, and
        `node --test <file>` for each dashboard `.mjs` test file it changes.
   6. **Report.** For each suite, report where it ran, its result and its run count.
@@ -76,6 +82,7 @@
 **Acceptance Criteria:**
 - [ ] Each of R1-R7 shows its exact command, and re-running it at the base named in the file reproduces its hits.
 - [ ] Every hit has exactly one owner; the count of rows with an empty owner cell is 0.
+- [ ] The skill owner table has exactly one row per `canonical/skills/*/SKILL.md` on disk at the base (the row count equals `ls canonical/skills/*/SKILL.md | wc -l`), and no row is unowned.
 - [ ] R7 gives one quoted source line per kind for all 21 kinds. RESEARCH defaults are overridden as in task-001, and the test step selects nothing (work folder only).
 - [ ] The test step (last Scope bullet) reports no failure: the spawn-free checks, the scratch half, the live half and the site or dashboard runs it calls for. Every existing test still passes.
 - [ ] All section-6 quality gates pass (REQUIREMENTS.md § 6: NFR-N, NFR-T, NFR-Q).

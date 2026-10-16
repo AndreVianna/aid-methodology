@@ -1,5 +1,10 @@
 # Detail proposal -- delivery-004: Shape an idea into a draft that survives (Feature 003)
 
+> **Superseded by the task files.** After the light-review fixes (general rules G1-G6, Q137), the
+> dependencies, scopes and criteria in this proposal's tables, task blocks and execution graph no longer
+> match the task files. The task files under `deliveries/delivery-004/tasks/` are the source of truth. Step 5
+> builds PLAN.md's Execution Graph from their `**Depends on:**` lines, never from this proposal.
+
 This is `aid-detail` FIRST-RUN for **delivery-004**, under Q136. Decisions are settled by recommendation,
 the task files are written at once, and the light review after the delivery is the check. Numbering
 continues from delivery-003's task-081.
@@ -515,7 +520,11 @@ Step 5 writes the table under `### delivery-004 Execution Graph`, one task per r
 
 ---
 
-## 7. Flagged for the maintainer (not settled)
+## 7. Flagged for the maintainer
+
+> **Decided (Q137): option a, narrow the row.** REQUIREMENTS.md F003 § 6 now carries the narrowed row, and task-088
+> and task-096 follow it, including a negative case: an `aid-describe` work at `phase: Plan` does not
+> route to `/aid-specify`.
 
 **F-1. The `aid-describe` legacy row conflicts with Feature 006's migration order.** This would change an
 approved spec, so it is not settled.

@@ -17,7 +17,7 @@
 
 **Source:** feature-002-step-by-step-decisions -> delivery-002 -> AC-10, AC-11, AC-37, AC-38
 
-**Depends on:** task-020
+**Depends on:** task-020, task-022
 
 **Scope:**
 - Create `canonical/aid/templates/skill-steps.md`, of type `template-own` (REQUIREMENTS.md § 11 Feature 002 `##### 4. Steps and
@@ -33,8 +33,20 @@
     it controls";
   - the never-merges rule;
   - what the user sees: no banners, and one progress line.
-- It cites `question-protocol.md` for `ASK`. When tasks are built one at a time, build task-022 first.
+- It cites `question-protocol.md` for `ASK`. task-022 is a dependency.
 - Suites to update in this same task: none exist.
+- **Site regeneration (G1, G5).** When this task adds, deletes, renames or edits anything under
+  `canonical/skills/`, `canonical/agents/` or `canonical/aid/templates/`, it runs
+  `(cd site && npm run gen:skills && npm run gen:reference)` in this same task and commits the output:
+  the skill pages, `skills/index.md`, `src/data/skill-flows/`, `reference/skills.md`,
+  `reference/agents.md` and `scripts/.skills-manifest.json`.
+  - It also updates any hard-coded count or name list in a site generator, for example the agent count
+    in `site/scripts/gen-reference.mjs`, so the generators' drift checks pass at this task's end.
+  - A generated site page is never edited by hand.
+- **Later checks on this task's files (G3).** Before `Done`, run by hand, over the files this task
+  writes, every static-check pattern that this delivery's own suites or an earlier delivery's suites apply
+  to those files, and fix every hit here. Repo-wide criteria in this file are scoped to what this task
+  owns.
 - **Same-task rule (Q106).** This task updates every suite that asserts text in a file it changes,
   including `site/scripts/__tests__/` and the dashboard tests. It is not `Done` while such a suite fails.
   - A removed assertion gets its row in `tests/coverage-accepted-removals.tsv`.
@@ -63,9 +75,9 @@
        drop the `COPY` suites' results by name.
      - Otherwise, run each `LIVE` suite with `HOME="$(mktemp -d)" bash tests/canonical/<suite>`.
   5. **Outside `run-all.sh`.**
-     - Run `(cd site && npm test)` when this task changes `canonical/skills/`,
-       `canonical/aid/templates/shortcut-catalog.yml`, `docs/` or `site/`. Run `npm ci` there first if
-       `site/node_modules` is absent.
+     - Run `(cd site && npm test)` when this task changes anything under `canonical/skills/`,
+       `canonical/agents/` or `canonical/aid/templates/`, or under `docs/` or `site/` (G5). Run `npm ci`
+       there first if `site/node_modules` is absent.
      - Run `python3 -m pytest <file>` for each dashboard Python test file this task changes, and
        `node --test <file>` for each dashboard `.mjs` test file it changes.
   6. **Report.** For each suite, report where it ran, its result and its run count.
@@ -78,5 +90,6 @@
 - [ ] § The work record states fail-closed, the two detection uses, and recovery: one confirmation question, then `--repair`, which needs `--reading` when the record has none (AC-37). `PASS`, `CALL` and `HALT` with nested calls match the spec's step procedure, steps 4-6 (AC-38).
 - [ ] § When approvals happen holds the nine-row `full`/`lite` table and the M11 and Q36 rules (AC-10). The file says AID never merges, naming Feature 008's conflict-merge exception (AC-11).
 - [ ] Every pointer resolves under `canonical/aid/` (SR-01).
+- [ ] `grep -nE '^(active_skill|step|step_detail|phase):' canonical/aid/templates/skill-steps.md` finds nothing: every record example is indented or inline (SS-14 (b)). The SS-11 forms find no old phase name in the file (G3).
 - [ ] The test step (last Scope bullet) reports no failure: the spawn-free checks, the scratch half, the live half and the site or dashboard runs it calls for. Every existing test still passes.
 - [ ] All section-6 quality gates pass (REQUIREMENTS.md § 6: NFR-N, NFR-T, NFR-Q).

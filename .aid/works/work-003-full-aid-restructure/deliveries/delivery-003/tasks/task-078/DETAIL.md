@@ -17,12 +17,14 @@
 
 **Source:** feature-002-step-by-step-decisions -> delivery-003 -> AC-8, AC-28, AC-37, AC-40, AC-46
 
-**Depends on:** task-060, task-061, task-062, task-063, task-064, task-065, task-066, task-067, task-068, task-069, task-072, task-074
+**Depends on:** task-060, task-061, task-062, task-063, task-064, task-065, task-066, task-067, task-068, task-069, task-072, task-074, task-076
 
 **Scope:**
 - Add group S to `tests/canonical/test-skill-steps.sh`, as REQUIREMENTS.md § 11 Feature 002 `##### 8. Testing` defines it:
   - SS-01;
-  - the SS-02 chaining clause;
+  - the SS-02 chaining clause, scoped to `canonical/`, `tests/canonical/`, `site/scripts/`, `docs/`,
+    `examples/` and `dashboard/`. The baselines (re-recorded at the gate), `tests/coverage-accepted-removals.tsv`
+    and `.aid/works/` are outside it;
   - SS-04, with its never-asks list (`aid-chat`, `aid-unset-connector`; each must exist);
   - SS-05, SS-06, SS-07, SS-09, SS-10 and SS-13.
 - Add to `tests/conversation/deferred.tsv` the `skill:` rows of the spec's AC-28 coverage table (Q135 R8).
@@ -55,9 +57,9 @@
        drop the `COPY` suites' results by name.
      - Otherwise, run each `LIVE` suite with `HOME="$(mktemp -d)" bash tests/canonical/<suite>`.
   5. **Outside `run-all.sh`.**
-     - Run `(cd site && npm test)` when this task changes `canonical/skills/`,
-       `canonical/aid/templates/shortcut-catalog.yml`, `docs/` or `site/`. Run `npm ci` there first if
-       `site/node_modules` is absent.
+     - Run `(cd site && npm test)` when this task changes anything under `canonical/skills/`,
+       `canonical/agents/` or `canonical/aid/templates/`, or under `docs/` or `site/` (G5). Run `npm ci`
+       there first if `site/node_modules` is absent.
      - Run `python3 -m pytest <file>` for each dashboard Python test file this task changes, and
        `node --test <file>` for each dashboard `.mjs` test file it changes.
   6. **Report.** For each suite, report where it ran, its result and its run count.
