@@ -401,7 +401,7 @@ from the engine.
 1. Re-run the spec's stated searches: SS-01 forms, interviewer sites, question-record sites, `AskUserQuestion` users, `reviewer-brief.md` files and citations of the chaining file. Reconcile the edit list.
 2. `agent-boilerplate.md`'s new section. The agent edits depend on it.
 3. Two groups that do not depend on each other. First, the sweep over skills, shared engines, agents and briefs: banners, the chaining file, the protocol line, question-record sites, the interviewer removed, `### What to report`. Second, the dashboard work fields. Each task updates the suites asserting the texts it changes, for example `test-describe-full-only.sh` and `test_index_html.py`.
-4. The new group S and dashboard cases, and the delivery's sample files. Then the delivery's resync step.
+4. The new group S and dashboard cases, and `tests/conversation/protocol-checks.md`. The delivery's samples were written in delivery-002 (Q135); here their `deferred.tsv` rows go. Then the delivery's resync step.
 
 **Gate Criteria:**
 - [ ] `test-skill-steps.sh` group S passes, and group E still passes:

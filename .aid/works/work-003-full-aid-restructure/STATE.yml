@@ -1559,3 +1559,11 @@ qa:
     suggested: 'D1: write all 21 Feature 002 samples in delivery-002, the ten delivery-003 runs waiting with waiting_for Feature 002 (sweep). D2: the release checks run only in release.sh live publish mode and the run-all.sh step of release.yml, never in dry-run or stage-only.'
     answer: 'Accepted as recommended (accept all).'
     applied_to: 'delivery-002 task files (task-020 to task-057); PLAN.md delivery-003 wave 4 wording'
+  - id: Q136
+    category: Detail
+    impact: Medium
+    state: Answered
+    context: 'Q133 set a maintainer review of each delivery''s tasks; after deliveries 001 and 002 the maintainer changed the approval rule.'
+    suggested: '--'
+    answer: 'Changed by the maintainer: no per-delivery maintainer approval. After each delivery''s tasks are written, a light review runs; one full review cycle runs at the end. Tasks whose review passes count as approved. Architect decision points are settled by their recommendation and recorded.'
+    applied_to: 'aid-detail FIRST-RUN loop (deliveries 003-014) and REVIEW'
