@@ -37,7 +37,10 @@
   - `document-expectations.md` loses its `greenfield: true` mode;
   - every state write goes through `--kb`, and every question through `--ask --kb`.
 - The REVIEW to FINISH references are task-123. Their files are renamed here, and only their contents
-  change there.
+  change there. This task's criteria cover only the files it writes; every other moved reference has the
+  content owner the findings' table names (task-123 or task-129) (G7).
+- `SKILL.md`'s aggregate-step note "then a single `git commit` + `git push`" goes: the build commits once,
+  at FINISH, through `kb-commit.sh`, and pushes nothing (F004 Flows step 6).
 - Delete `canonical/aid/templates/discovery-state-template.md`, whose last user this was.
 - **Lists and counts that follow a moved or new skill**, in this same task:
   - its `canonical/aid/rules.md` § Skill guide line, with the spec's text (`##### 5. Components`);
@@ -108,7 +111,7 @@
 
 **Acceptance Criteria:**
 - [ ] `test -d canonical/skills/aid-discover` fails, and `canonical/skills/aid-kb-build/` holds `SKILL.md` of at most 150 lines and `references/start.md`, `elicit.md` and `generate.md`.
-- [ ] Over the skill, `git grep -nE 'STATE\.md|discovery-state-template|--reset|--grade'` finds nothing, and every state write names `--kb`. `git grep -nE 'knowledge\.(source|last_update)'` over the skill finds nothing either (G3).
+- [ ] Over the files this task writes (`SKILL.md`, `references/start.md`, `elicit.md`, `generate.md` and `document-expectations.md`), `git grep -nE 'STATE\.md|discovery-state-template|--reset|--grade|knowledge\.(source|last_update)|git (commit|push)'` finds nothing, and every state write in them names `--kb` (G3, G7).
 - [ ] SG-02, SG-04, DT-01 and SS-09 pass in the scratch copy, and the suites above pass where the test step puts them.
 - [ ] The test step (last Scope bullet) reports no failure: the spawn-free checks, the scratch half, the live half and the site or dashboard runs it calls for. Every existing test still passes.
 - [ ] All section-6 quality gates pass (REQUIREMENTS.md § 6: NFR-N, NFR-T, NFR-Q).

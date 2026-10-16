@@ -56,6 +56,10 @@
   - The baselines themselves are re-recorded at the gate (Q134, D11).
 - **Findings.** This task's scope also includes every site that
   `.aid/works/work-003-full-aid-restructure/research/delivery-007-sites.md` assigns to `task-174`.
+- **Count re-sync (Q134 D5):** the skill-count and catalog-row phrases that `tests/canonical/test-doc-counts.sh`
+  asserts in `README.md` and `docs/` take the derived counts, then `(cd site && npm run sync:docs)` runs, so the
+  synced pages under `site/src/content/docs/` match. Only the numbers change; user documentation otherwise waits
+  for the final pass (AC-45).
 - **Test step** (PLAN.md § "Testing before the resync"; the same in every task of this delivery).
   `BASE` is this task's `task-174: In Progress` commit. Work in the `work-003` worktree only, create no
   branch or worktree, and never run `run_generator.py` in the live tree.
@@ -91,5 +95,6 @@
 - [ ] `test -e canonical/skills/aid-define` fails, and over `canonical/` and `dashboard/home.html`, `git grep -n aid-define` finds only the gate's legacy block and `canonical/aid/scripts/migrate/` (SP-02).
 - [ ] SG-02, SG-04 and DT-01 pass in the scratch copy, `test-doc-counts.sh` passes live, and the three switched suites pass where the test step puts them.
 - [ ] The site `npm test` passes after regeneration.
+- [ ] `test-doc-counts.sh` passes live with the derived counts, and the site `npm test` passes after `sync:docs` (its sync-docs drift test included).
 - [ ] The test step (last Scope bullet) reports no failure: the spawn-free checks, the scratch half, the live half and the site or dashboard runs it calls for. Every existing test still passes.
 - [ ] All section-6 quality gates pass (REQUIREMENTS.md § 6: NFR-N, NFR-T, NFR-Q).

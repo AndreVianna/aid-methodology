@@ -22,7 +22,10 @@
 **Scope:**
 - Raise the format to 6 in every carrier (REQUIREMENTS.md § 11 Feature 004 `##### 7. Migration`, Format 6): `bin/aid`
   `AID_SUPPORTED_FORMAT`, `bin/aid.ps1` `AidSupportedFormat`, `lib/AidInstallCore.psm1`,
-  `lib/aid-install-core.sh`'s default, and `canonical/aid/templates/settings.yml` `format_version`.
+  `lib/aid-install-core.sh`'s default, and `canonical/aid/templates/settings.yml` `format_version`. That
+  includes `bin/aid.ps1`'s `Set-Variable -Name AidSupportedFormat -Value 5`, every `${AID_SUPPORTED_FORMAT:-5}`
+  default in `bin/aid` and `lib/aid-install-core.sh`, and the settings seed `lib/aid-install-core.sh` writes for
+  `install.sh`.
 - STEP 0 DETECT accepts `.aid/knowledge/STATE.yml` as an era marker, in both twins.
 - The KB conversion step itself is task-120.
 - Suites to update in this same task (every suite asserting format 5): `test-aid-cli.sh`,
@@ -83,7 +86,7 @@
      - The same failure after three fix rounds goes to the maintainer.
 
 **Acceptance Criteria:**
-- [ ] `git grep -nE 'AID_SUPPORTED_FORMAT=5|AidSupportedFormat *= *5|format_version: 5' -- bin lib canonical` finds nothing.
+- [ ] `git grep -nE 'AID_SUPPORTED_FORMAT=5|AID_SUPPORTED_FORMAT:-5|AidSupportedFormat *= *5|AidSupportedFormat -Value 5|format_version: 5' -- bin lib canonical install.sh` finds nothing.
 - [ ] `test-aid-cli-parity.sh`, `test-aid-migrate.sh` and `test-layout-format-guard.sh` pass in the scratch copy. `test-ps51-compat.sh` and `test-ascii-only.sh` pass live.
 - [ ] STEP 0 on a fixture repository holding only `.aid/knowledge/STATE.yml` detects it as a current-era repository in both twins, with byte-identical output.
 - [ ] The test step (last Scope bullet) reports no failure: the spawn-free checks, the scratch half, the live half and the site or dashboard runs it calls for. Every existing test still passes.

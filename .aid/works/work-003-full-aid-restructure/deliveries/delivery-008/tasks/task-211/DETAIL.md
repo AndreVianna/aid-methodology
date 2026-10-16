@@ -24,6 +24,8 @@
   (task files, no entries yet), at Building with two deliveries (lanes per delivery, delivery names from the
   plan), and an old nested work (`layout_status: old`, the card line); the depth badge and path line in
   `test_index_html.py`; the parity tests.
+- **Findings.** This task's scope also includes every site that
+  `.aid/works/work-003-full-aid-restructure/research/delivery-008-sites.md` assigns to `task-211`.
 - **Test step** (PLAN.md § "Testing before the resync"; the same in every task of this delivery).
   `BASE` is this task's `task-211: In Progress` commit. Work in the `work-003` worktree only, create no
   branch or worktree, and never run `run_generator.py` in the live tree.

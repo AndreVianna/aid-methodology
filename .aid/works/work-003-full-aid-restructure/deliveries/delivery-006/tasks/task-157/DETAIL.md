@@ -26,6 +26,8 @@
 - Update `tests/conversation/deferred.tsv` with one row each: `004-10` waits for Feature 005, `004-11` and
   `004-12` for Feature 007 (Feature 004's deferred samples, `##### 7. Migration`, Lists other features own).
   Delivery-007 runs `004-10` and delivery-009 runs `004-11` and `004-12` (PLAN.md).
+- **Findings.** This task's scope also includes every site that
+  `.aid/works/work-003-full-aid-restructure/research/delivery-006-sites.md` assigns to `task-157`.
 - **Test step** (PLAN.md § "Testing before the resync"; the same in every task of this delivery).
   `BASE` is this task's `task-157: In Progress` commit. Work in the `work-003` worktree only, create no
   branch or worktree, and never run `run_generator.py` in the live tree.

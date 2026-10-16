@@ -27,6 +27,8 @@
   - exit 3 without git, and 4 on a detached head or during a merge, each changing nothing;
   - `--finish` commits a state file marked `Approved`; a commit made to fail exits 6 and leaves the
     state file back at FINISH, byte for byte.
+- **Findings.** This task's scope also includes every site that
+  `.aid/works/work-003-full-aid-restructure/research/delivery-005-sites.md` assigns to `task-126`.
 - **Test step** (PLAN.md § "Testing before the resync"; the same in every task of this delivery).
   `BASE` is this task's `task-126: In Progress` commit. Work in the `work-003` worktree only, create no
   branch or worktree, and never run `run_generator.py` in the live tree.

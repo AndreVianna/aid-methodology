@@ -42,7 +42,9 @@
   - **R6** the drift and baseline sites: the callers of `kb-freshness-check.sh`, the writers of
     `approved_at_commit:` (`migrate-kb-frontmatter.sh` among them), and the CONVERT-STATE step's KB step
     in `bin/aid`, `bin/aid.ps1`, `lib/aid-install-core.sh` and `lib/AidInstallCore.psm1`;
-  - **R7** the readers of `backlog.md` and `roadmap.md` under `canonical/`, and every consumer of
+  - **R7** the shapes the two new templates carry over: `aid-create-roadmap`'s document, `aid-create-mvp`'s
+    `## MVP` section shape and anchor position, and `aid-create-backlog`'s document; the readers of
+    `backlog.md` and `roadmap.md` under `canonical/`; and every consumer of
     `canonical/aid/templates/knowledge-base/` (`synth_default_seed`, `domain-doc-matrix.md`, the site
     reference manifest, `test-kb-template-authoring-standard.sh` AS06);
   - **R8** the Q106 suite map for every file on the edit list, including the dashboard tests and the
@@ -53,7 +55,9 @@
   - "Feature 009 (delivery-012)" for the dashboard readers' legacy skill maps, which Feature 009 puts
     inside `legacy-skill-names` markers;
   - "installed copy (resync)";
-  - "history, left as is".
+  - "history, left as is";
+  - "rendered after the resync (gate step)" for hits in `.aid/knowledge/kb.html` and `.aid/knowledge/INDEX.md`,
+    which the resync's baselines step changes (G8, proposal S7).
 - In a delta section, list each suite assigned to two independent tasks, with the order to run them.
 - **The owner classes also include "baseline, re-recorded at the gate"** for hits in
   `tests/cost-baseline.tsv` and `tests/coverage-baseline.tsv`. No task edits a baseline (Q134 D11).

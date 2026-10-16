@@ -32,7 +32,19 @@
     - called: an `Assumed` `KB change` entry, then `HALT`;
     - own job: the KB change approval, whose yes runs Feature 003's draft deletion, then `PASS` to the
       close minimum run by `/aid-orchestrate`;
-    - `refresh` skips stamping.
+    - `refresh` skips stamping;
+    - the closure re-verify (`closure-check.sh`) still runs before the commit;
+    - the only commit is `kb-commit.sh`'s, and nothing is pushed: every `git commit`, `git push` and
+      `git checkout -b` of `state-done.md` goes (F004 Flows, `/aid-kb-update` FINISH).
+- Suites to update in this same task: `test-f010-governance-guards.sh` (G09 and G10 move from `state-done.md`
+  to `finish.md`: it references `closure-check.sh`, and the closure re-verify precedes the commit) and
+  `test-update-kb-scope-fidelity.sh` (`APPROVAL_MD` and `DONE_MD`, with UK10-UK17 and UK51, move to
+  `finish.md`), and any suite the findings' K2, K7 or K9 assigns to these references.
+- **Suites that read what this task deletes, moves or renames (G6).** For each such file and folder,
+  build the list with `git grep -l -e '<path>' -e '<folder>/' -- tests/ site/` at this task's base. The
+  list does not come from the findings' map alone. Every suite it finds is updated in this same task
+  (Q106 applied to deletions). Any exemption row this task's own criteria need is created here, or the
+  criterion is scoped so it holds without the row.
 - **Site regeneration (G1, G5).** When this task adds, deletes, renames or edits anything under
   `canonical/skills/`, `canonical/agents/` or `canonical/aid/templates/`, it runs
   `(cd site && npm run gen:skills && npm run gen:reference)` in this same task and commits the output:
@@ -85,7 +97,8 @@
 
 **Acceptance Criteria:**
 - [ ] `finish.md` names `idea-drafts.sh`, `--kb-update-log` and the close (KB-05's second clause), and `state-approval.md` and `state-done.md` no longer exist.
-- [ ] `reviewer-brief.md` has `### What to report`. No reference names `STATE.md` or a worktree of its own.
+- [ ] `reviewer-brief.md` has `### What to report`. Over the files this task writes (`apply.md`, `review.md`, `reviewer-brief.md`, `finish.md`), nothing names `STATE.md` or a worktree of its own, and `git grep -nE 'git (commit|push)|checkout -b'` finds nothing.
+- [ ] `finish.md` runs `closure-check.sh` before `kb-commit.sh`, and `test-f010-governance-guards.sh` and `test-update-kb-scope-fidelity.sh` pass where the test step puts them.
 - [ ] The suites pass where the test step puts them, and the site `npm test` passes after regeneration.
 - [ ] The test step (last Scope bullet) reports no failure: the spawn-free checks, the scratch half, the live half and the site or dashboard runs it calls for. Every existing test still passes.
 - [ ] All section-6 quality gates pass (REQUIREMENTS.md § 6: NFR-N, NFR-T, NFR-Q).

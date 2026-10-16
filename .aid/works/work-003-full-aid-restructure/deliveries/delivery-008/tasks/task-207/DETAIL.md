@@ -27,6 +27,8 @@
   changes nothing on a second run; a state write re-renders the checklist; a malformed graph exits 11 with both
   files unchanged; no `PLAN.md`, no render; `--create --path` and `"Pipeline Path"` are refused; every file
   written parses through the dashboard reader with no warning.
+- **Findings.** This task's scope also includes every site that
+  `.aid/works/work-003-full-aid-restructure/research/delivery-008-sites.md` assigns to `task-207`.
 - **Test step** (PLAN.md § "Testing before the resync"; the same in every task of this delivery).
   `BASE` is this task's `task-207: In Progress` commit. Work in the `work-003` worktree only, create no
   branch or worktree, and never run `run_generator.py` in the live tree.

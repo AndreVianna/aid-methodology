@@ -29,6 +29,8 @@
   - `002-13` waits only for Feature 007.
   `003-11` keeps its row until delivery-006 runs it (PLAN.md delivery-006 gate).
 - Smoke run (Q134 D8): each sample once, in a scratch copy.
+- **Findings.** This task's scope also includes every site that
+  `.aid/works/work-003-full-aid-restructure/research/delivery-005-sites.md` assigns to `task-135`.
 - **Test step** (PLAN.md § "Testing before the resync"; the same in every task of this delivery).
   `BASE` is this task's `task-135: In Progress` commit. Work in the `work-003` worktree only, create no
   branch or worktree, and never run `run_generator.py` in the live tree.

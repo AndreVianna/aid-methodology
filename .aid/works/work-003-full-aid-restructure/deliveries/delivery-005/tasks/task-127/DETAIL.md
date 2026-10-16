@@ -26,6 +26,8 @@
   - STEP 0 accepts a `STATE.yml`-only repository;
   - bash and PowerShell give the same bytes, with the PowerShell half running under `pwsh`.
 - The baselines and parent-branch cases are delivery-006's.
+- **Findings.** This task's scope also includes every site that
+  `.aid/works/work-003-full-aid-restructure/research/delivery-005-sites.md` assigns to `task-127`.
 - **Test step** (PLAN.md § "Testing before the resync"; the same in every task of this delivery).
   `BASE` is this task's `task-127: In Progress` commit. Work in the `work-003` worktree only, create no
   branch or worktree, and never run `run_generator.py` in the live tree.

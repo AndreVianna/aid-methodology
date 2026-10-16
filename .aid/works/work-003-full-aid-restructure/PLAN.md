@@ -1207,6 +1207,12 @@ later migration of this work meets no duplicate task id.
    - It ends at the first resync whose gate passes and whose approval is answered yes.
 5. A task that edits an agent does not run the generator. Its render reaches `profiles/` at the
    resync. Tasks test as the intro's "Testing before the resync" says.
+6. **Files the resync changes are regenerated after it, in the gate session, before the gate's
+   checks.** Any generated or derived file that the resync itself changes -- `INDEX.md` and `kb.html`
+   after a KB conversion, the site reference pages (`gen:reference`, for example `reference/settings.md`
+   after a format re-stamp), the plan render after the work-state migration -- is regenerated with the
+   installed scripts as a listed step that is not a task, then the site `npm test` runs. Each delivery's
+   task files list these steps; they are not resync-relevant.
 
 **How deliveries 001-009 are built (Q127, Q125).** The main conversation drives each delivery. It
 writes every state change through `writeback-state.sh` the moment it happens, with `AID_STATE_FILE`

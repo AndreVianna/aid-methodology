@@ -92,7 +92,7 @@
 
 **Acceptance Criteria:**
 - [ ] A `STATE.yml` fixture at `Building` reads `generating` in both readers, and a legacy `STATE.md` fixture still reads its status.
-- [ ] `git grep -nE 'git_freshness_check|parse_kb_baseline|last_update' -- dashboard/reader dashboard/server` finds nothing outside the legacy block.
+- [ ] `git grep -nE 'git_freshness_check|parse_kb_baseline|knowledge\.last_update|"last_update:"' -- dashboard/reader dashboard/server ':!*/tests/*'` finds nothing outside the legacy block. The work card's `Last Update:` label is not KB state and stays.
 - [ ] `test-dashboard-parity.sh` and `test-dashboard-reader.sh` pass live, and `test-dashboard-parity-h.sh` passes in the scratch copy.
 - [ ] The test step (last Scope bullet) reports no failure: the spawn-free checks, the scratch half, the live half and the site or dashboard runs it calls for. Every existing test still passes.
 - [ ] All section-6 quality gates pass (REQUIREMENTS.md § 6: NFR-N, NFR-T, NFR-Q).

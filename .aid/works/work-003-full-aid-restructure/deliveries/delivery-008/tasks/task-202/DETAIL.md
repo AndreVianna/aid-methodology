@@ -93,7 +93,7 @@
 
 **Acceptance Criteria:**
 - [ ] On task-201's nested, old lite and Q129 fixtures, the bash step's tree equals the expected tree, and a second run changes nothing (`sha256sum` of every file unchanged).
-- [ ] Under `pwsh`, the PowerShell twin gives byte-identical trees for the same fixtures; `test-ps51-compat.sh`, `test-ascii-only.sh` and `test-aid-cli-parity.sh` pass.
+- [ ] Under `pwsh`, the PowerShell twin gives byte-identical trees for the same fixtures; `test-ps51-compat.sh` and `test-ascii-only.sh` pass live, and `test-aid-cli-parity.sh` passes in the scratch copy.
 - [ ] The new `Test-AidInstaller.ps1` case passes under `pwsh` locally (5.1 runs in the Windows lane at G0).
 - [ ] The test step (last Scope bullet) reports no failure: the spawn-free checks, the scratch half, the live half and the site or dashboard runs it calls for. Every existing test still passes.
 - [ ] All section-6 quality gates pass (REQUIREMENTS.md § 6: NFR-N, NFR-T, NFR-Q).

@@ -89,7 +89,7 @@
 
 **Acceptance Criteria:**
 - [ ] On task-201's fixtures, each named record case gets the spec's skill and step (the Q129 fixture: `aid-execute` at `START`, type empty, `intent.depth: full`), and a second run changes nothing, the records included.
-- [ ] Under `pwsh`, the twin gives byte-identical files for every fixture; `test-ps51-compat.sh`, `test-ascii-only.sh` and `test-aid-cli-parity.sh` pass.
+- [ ] Under `pwsh`, the twin gives byte-identical files for every fixture; `test-ps51-compat.sh` and `test-ascii-only.sh` pass live, and `test-aid-cli-parity.sh` passes in the scratch copy.
 - [ ] The new `Test-AidInstaller.ps1` case passes under `pwsh` locally.
 - [ ] The test step (last Scope bullet) reports no failure: the spawn-free checks, the scratch half, the live half and the site or dashboard runs it calls for. Every existing test still passes.
 - [ ] All section-6 quality gates pass (REQUIREMENTS.md § 6: NFR-N, NFR-T, NFR-Q).

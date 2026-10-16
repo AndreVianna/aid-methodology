@@ -86,6 +86,6 @@
 **Acceptance Criteria:**
 - [ ] On a scratch repository with `master` and a branch `dev` checked out in the main folder, `create` without `--base` makes a worktree whose first commit is `dev`'s tip. On a detached head it exits 2, and `git worktree list` and `git branch` are unchanged.
 - [ ] `grep -nE 'BASE_REF="master"|default: master|off master' canonical/aid/scripts/works/worktree-lifecycle.sh canonical/aid/templates/worktree-lifecycle.md` prints nothing.
-- [ ] `test-worktree-lifecycle.sh` passes live.
+- [ ] `test-worktree-lifecycle.sh` passes in the scratch copy, where its test step runs it (a copy-reading suite: Group R installs from a bundle staged from `profiles/`).
 - [ ] The test step (last Scope bullet) reports no failure: the spawn-free checks, the scratch half, the live half and the site or dashboard runs it calls for. Every existing test still passes.
 - [ ] All section-6 quality gates pass (REQUIREMENTS.md § 6: NFR-N, NFR-T, NFR-Q).

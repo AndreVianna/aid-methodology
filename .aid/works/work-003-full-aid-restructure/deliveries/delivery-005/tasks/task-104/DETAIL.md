@@ -40,11 +40,23 @@
   - **K8** the rows of `deferred.tsv`, the SG-04 exempt list and `test-never-merges.sh` (NM-03) that
     name a retiring or moving skill.
 - Give each hit exactly one owner:
-  - a task of delivery-005 (task-105 to task-139; see
-    `.aid/works/work-003-full-aid-restructure/analysis/detail-proposal-delivery-005.md`);
+  - a task of delivery-005 (task-105 to task-139; see the task files under
+    `.aid/works/work-003-full-aid-restructure/deliveries/delivery-005/tasks/`);
   - delivery-006 (the KB `create`/`update` skills, `design-lifecycle.md`);
   - "installed copy (resync)";
-  - "history, left as is".
+  - "history, left as is";
+  - "rendered after the resync (gate step)" for hits in `.aid/knowledge/kb.html` and
+    `.aid/knowledge/INDEX.md`, and in the site pages generated from `.aid/settings.yml`
+    (`reference/settings.md`), which the resync changes (G8).
+- **K9** every `git commit` and `git push` under `canonical/skills/aid-discover/`,
+  `canonical/skills/aid-update-kb/` and `canonical/aid/scripts/housekeep/`. Each gets its owner: the task
+  that writes the file in which it stands, and that task removes it. The build commits once, at FINISH,
+  through `kb-commit.sh`, and pushes nothing (F004 Flows step 6).
+- **Content owner of every moved file (G7).** A table with one row per file under `aid-discover/`,
+  `aid-update-kb/` and `aid-ask/` at the base. Each row names its new path and the one task that owns its
+  content: task-116 or task-123 for `aid-kb-build`, task-117 or task-124 for `aid-kb-update`, task-119 for
+  `aid-kb-query`, and task-129 for the references that no skill task rewrites (for example
+  `agent-prompts.md`, `doc-set-resolve.md`, `path-config.md`, `reviewer-prompt.md` and `reviewer-prompt-*.md`).
 - In a delta section, list each suite assigned to two independent tasks, with the order to run them.
 - **The owner classes also include "baseline, re-recorded at the gate"** for hits in
   `tests/cost-baseline.tsv` and `tests/coverage-baseline.tsv`. No task edits a baseline (Q134 D11).
@@ -84,8 +96,8 @@
      - The same failure after three fix rounds goes to the maintainer.
 
 **Acceptance Criteria:**
-- [ ] Each of K1-K8 shows its exact command, and re-running it at the base named in the file reproduces its hits.
-- [ ] Every hit has exactly one owner; the count of rows with an empty owner cell is 0.
+- [ ] Each of K1-K9 shows its exact command, and re-running it at the base named in the file reproduces its hits.
+- [ ] Every hit has exactly one owner; the count of rows with an empty owner cell is 0. The content-owner table has one row per moved file at the base (its count equals `git ls-files canonical/skills/aid-discover canonical/skills/aid-update-kb canonical/skills/aid-ask | wc -l`), each with exactly one owner.
 - [ ] The skill owner table has exactly one row per `canonical/skills/*/SKILL.md` on disk at the base (the row count equals `ls canonical/skills/*/SKILL.md | wc -l`), and no row is unowned.
 - [ ] RESEARCH defaults are overridden as in task-001; the test step selects nothing (work folder only).
 - [ ] The test step (last Scope bullet) reports no failure: the spawn-free checks, the scratch half, the live half and the site or dashboard runs it calls for. Every existing test still passes.

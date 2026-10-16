@@ -31,6 +31,8 @@
   - another staged file is never committed, and nothing changes the main folder's branch;
   - exits 3, 4, 5 and 2, each changing nothing.
 - It carries `# COVERS: canonical/aid/scripts/works/idea-drafts.sh` and a group filter.
+- **Findings.** This task's scope also includes every site that
+  `.aid/works/work-003-full-aid-restructure/research/delivery-004-sites.md` assigns to `task-095`.
 - **Test step** (PLAN.md § "Testing before the resync"; the same in every task of this delivery).
   `BASE` is this task's `task-095: In Progress` commit. Work in the `work-003` worktree only, create no
   branch or worktree, and never run `run_generator.py` in the live tree.

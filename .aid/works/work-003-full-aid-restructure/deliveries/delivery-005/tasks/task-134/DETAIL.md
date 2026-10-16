@@ -31,6 +31,8 @@
   - KB-08.
   It has `# COVERS:` lines and a group filter. The KB `create`/`update` names, the drift check, the new
   project, the backlog and KB-07 are delivery-006's group K2.
+- **Findings.** This task's scope also includes every site that
+  `.aid/works/work-003-full-aid-restructure/research/delivery-005-sites.md` assigns to `task-134`.
 - **Test step** (PLAN.md § "Testing before the resync"; the same in every task of this delivery).
   `BASE` is this task's `task-134: In Progress` commit. Work in the `work-003` worktree only, create no
   branch or worktree, and never run `run_generator.py` in the live tree.

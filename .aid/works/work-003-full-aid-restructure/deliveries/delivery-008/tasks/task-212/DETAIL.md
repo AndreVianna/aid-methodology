@@ -24,6 +24,8 @@
   `# COVERS:` lines.
 - `tests/canonical/skill-steps-exempt.tsv`: the `shortcut-engine.md` row's `checks` gain `PL-06` (owner Feature
   009); a new row, `aid-execute`, checks `PL-04`, owner Feature 007.
+- **Findings.** This task's scope also includes every site that
+  `.aid/works/work-003-full-aid-restructure/research/delivery-008-sites.md` assigns to `task-212`.
 - **Test step** (PLAN.md § "Testing before the resync"; the same in every task of this delivery).
   `BASE` is this task's `task-212: In Progress` commit. Work in the `work-003` worktree only, create no
   branch or worktree, and never run `run_generator.py` in the live tree.

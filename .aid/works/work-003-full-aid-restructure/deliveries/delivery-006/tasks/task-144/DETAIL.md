@@ -24,7 +24,9 @@
   (REQUIREMENTS.md § 11 Feature 004 `##### 1. Files and layout` and `##### 5. Components`, Roadmap, backlog and MVP):
   - `roadmap.md` takes its shape from `aid-create-roadmap` (frontmatter, title, preamble, `## Contents`,
     `## Now`, `## Next`, `## Later`) and carries the `## MVP` section itself: the MVP is a section of the
-    roadmap (Q16), with no skill of its own;
+    roadmap (Q16), with no skill of its own. The section's shape (What, Why, Rejected, Status) and its place
+    (after `## Contents`, before `## Now`) come from `aid-create-mvp` ("`## MVP` section shape" and "Anchor
+    position when creating the section"), read here before task-151 deletes it;
   - `backlog.md` takes its shape from `aid-create-backlog`, including how an item is ordered and how it is
     updated once the work that took it is built (Feature 007 reads that rule);
   - both follow the seed-template standard (frontmatter with `kb-category` and `intent`, `## Contents`, no
@@ -90,5 +92,6 @@
 - [ ] Both files exist; `roadmap.md` has a `## MVP` heading and `backlog.md` exists (KB-07). `test-kb-template-authoring-standard.sh` passes live with AS06 counting both.
 - [ ] `synth_default_seed` and `domain-doc-matrix.md` name neither file (`grep -cE 'roadmap\.md|backlog\.md'` over both prints 0, or only the counts the findings' R7 recorded at the base).
 - [ ] The site `npm test` passes after `gen:reference`.
+- [ ] `roadmap.md`'s `## MVP` sits after `## Contents` and before `## Now`, with the four parts `aid-create-mvp` defines (What, Why, Rejected, Status).
 - [ ] The test step (last Scope bullet) reports no failure: the spawn-free checks, the scratch half, the live half and the site or dashboard runs it calls for. Every existing test still passes.
 - [ ] All section-6 quality gates pass (REQUIREMENTS.md § 6: NFR-N, NFR-T, NFR-Q).

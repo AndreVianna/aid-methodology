@@ -1,5 +1,10 @@
 # Detail proposal -- delivery-006: The KB grows and stays current (Feature 004, second part)
 
+> **Superseded by the task files.** After the light-review fixes (general rules G7-G10 and this
+> delivery's ledger rows), the scopes and criteria in this proposal's task blocks no longer match the task
+> files. The task files under `deliveries/delivery-006/tasks/` are the source of truth. Step 5 builds PLAN.md's
+> Execution Graph from their `**Depends on:**` lines, never from this proposal.
+
 This is `aid-detail` FIRST-RUN for **delivery-006**, under Q136. Decisions are settled by recommendation,
 the task files are written at once, and the light review is the check.
 
@@ -594,11 +599,15 @@ task-146 (`work-initiation-gate.md`), task-157 after task-156 (`deferred.tsv`).
    - `aid update` runs format 6's new steps on this repository, already at format 6: the baselines step
      stamps `approved_at_commit:` in this repository's KB documents, and the parent-branch step fills this
      work's `pipeline.parent_branch` with `master` (PLAN.md switch table);
-   - the retired skills leave through the manifest;
-   - then `INDEX.md` is regenerated and `kb.html` rendered with the installed scripts, as a KB commit (not
-     resync-relevant), as delivery-005 does (S7).
-5. The gate, in a new session:
-   - the stanza's criteria;
+   - the retired skills leave through the manifest.
+5. **After the resync, in the gate session (G8)** -- steps that are not tasks:
+   - `INDEX.md` regenerated and `kb.html` rendered with the installed scripts, as a KB commit (not
+     resync-relevant), since the baselines step changed the documents' frontmatter (S7);
+   - `(cd site && npm run gen:reference)` and the site `npm test`: a site page generated from a file the resync
+     changes (`reference/settings.md` from `.aid/settings.yml`) is regenerated and committed; a no-op when
+     nothing changed.
+6. The gate, in the same session, after step 5:
+   - the stanza's criteria; `render-kb-view.sh --check` exits 0 and the site `npm test` passes;
    - the four samples and `003-11` at 3 of 3;
    - G0 with the baselines;
    - the tracking proof for task-140 to task-160.

@@ -104,7 +104,7 @@
      - The same failure after three fix rounds goes to the maintainer.
 
 **Acceptance Criteria:**
-- [ ] `test -d canonical/skills/aid-update-kb` fails. `SKILL.md` is at most 120 lines, with no worktree or branch creation (`git grep -nE 'worktree add|checkout -b|UPDATEKB_STATE' canonical/skills/aid-kb-update` finds nothing).
+- [ ] `test -d canonical/skills/aid-update-kb` fails. `SKILL.md` is at most 120 lines. Over the files this task writes (`SKILL.md`, `references/start.md`, `analyze.md`, `scope.md`, `confirm.md` and `sweep.md`), `git grep -nE 'worktree add|checkout -b|UPDATEKB_STATE'` finds nothing; the renamed `apply.md` and `review.md` and the kept `state-approval.md` and `state-done.md` are task-124's content (G7).
 - [ ] `start.md` names the three modes and both No-KB paths. `sweep.md` holds the conformance check: divergences are raised, never overwritten.
 - [ ] The three re-pointed suites pass where the test step puts them, and SG-02, SG-04, DT-01 and SS-09 pass in the scratch copy.
 - [ ] The test step (last Scope bullet) reports no failure: the spawn-free checks, the scratch half, the live half and the site or dashboard runs it calls for. Every existing test still passes.

@@ -37,9 +37,13 @@
     the new name until task-135's samples land (DT-01, SS-09);
   - the site skill lists and their `__tests__`;
   - the counted phrases, if the skill count changes (Q134 D5).
-- Suites to update in this same task: every suite the findings' K1, K2 or K7 assigns to `aid-ask`.
+- `canonical/aid/templates/shortcut-catalog.yml`: the `name: aid-ask` row (`repurpose: true`) becomes
+  `name: aid-kb-query`, so every catalog row still has its folder (`test-catalog-dirs-parity.sh`).
+- Suites to update in this same task: `test-catalog-dirs-parity.sh`, and every suite the findings' K1, K2
+  or K7 assigns to `aid-ask`.
 - **Suites that read what this task deletes, moves or renames (G6).** For each such file and folder,
-  build the list with `git grep -l -e '<path>' -e '<folder>/' -- tests/ site/` at this task's base. The
+  build the list with `git grep -l -e '<path>' -e '<folder>/' -- tests/ site/` at this task's base, plus
+  every suite that reads `shortcut-catalog.yml` rows (`git grep -l shortcut-catalog -- tests/ site/`). The
   list does not come from the findings' map alone. Every suite it finds is updated in this same task
   (Q106 applied to deletions). Any exemption row this task's own criteria need is created here, or the
   criterion is scoped so it holds without the row.
@@ -62,6 +66,10 @@
   - The baselines themselves are re-recorded at the gate (Q134, D11).
 - **Findings.** This task's scope also includes every site that
   `.aid/works/work-003-full-aid-restructure/research/delivery-005-sites.md` assigns to `task-119`.
+- **Count re-sync (Q134 D5):** the skill-count and catalog-row phrases that `tests/canonical/test-doc-counts.sh`
+  asserts in `README.md` and `docs/` take the derived counts, then `(cd site && npm run sync:docs)` runs, so the
+  synced pages under `site/src/content/docs/` match. Only the numbers change; user documentation otherwise waits
+  for the final pass (AC-45).
 - **Test step** (PLAN.md § "Testing before the resync"; the same in every task of this delivery).
   `BASE` is this task's `task-119: In Progress` commit. Work in the `work-003` worktree only, create no
   branch or worktree, and never run `run_generator.py` in the live tree.
@@ -97,5 +105,7 @@
 - [ ] `test -d canonical/skills/aid-ask` fails. The `allowed-tools` lines of `aid-kb-query` and `aid-kb-show` hold no `Write` and no `Edit` (KB-03's first clause).
 - [ ] `aid-kb-show/SKILL.md` is at most 60 lines and covers exits 0, 1 and 3, including the `Growing` message verbatim.
 - [ ] SG-02, SG-04, DT-01 and SS-09 pass in the scratch copy, and `test-doc-counts.sh` passes live with the skill count raised by one.
+- [ ] `grep -c 'name: aid-ask$' canonical/aid/templates/shortcut-catalog.yml` prints 0, and `test-catalog-dirs-parity.sh` passes where the test step puts it.
+- [ ] `test-doc-counts.sh` passes live with the derived counts, and the site `npm test` passes after `sync:docs` (its sync-docs drift test included).
 - [ ] The test step (last Scope bullet) reports no failure: the spawn-free checks, the scratch half, the live half and the site or dashboard runs it calls for. Every existing test still passes.
 - [ ] All section-6 quality gates pass (REQUIREMENTS.md § 6: NFR-N, NFR-T, NFR-Q).

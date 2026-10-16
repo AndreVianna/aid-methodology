@@ -17,7 +17,7 @@
 
 **Source:** feature-004-kb-management -> delivery-005 -> AC-15
 
-**Depends on:** task-116, task-117, task-118, task-119, task-123, task-124
+**Depends on:** task-109, task-116, task-117, task-118, task-119, task-123, task-124, task-125
 
 **Scope:**
 - Re-point by one rule (REQUIREMENTS.md § 11 Feature 004 `##### 7. Migration`, Re-pointing) every kept file under
@@ -29,6 +29,9 @@
   exempt.
 - The KB-writing `aid-create-*` / `aid-update-*` skills are kept files until delivery-006 retires them, so
   their mentions are re-pointed here too (KB-02 has no exemption for them).
+- The moved references whose content no skill task rewrites (the findings' content-owner table: for example
+  `aid-kb-build/references/agent-prompts.md`, `doc-set-resolve.md`, `path-config.md`, `reviewer-prompt.md`
+  and `reviewer-prompt-*.md`) are re-pointed here, including their mentions of old `state-*.md` names (G7).
 - Named targets:
   - `aid-execute`'s "kb-gap -> targeted /aid-discover" becomes a `CALL` to `/aid-kb-update`;
   - the escalation lines of `aid-architect`, `aid-researcher` and `aid-reviewer` record through `--ask`:
@@ -89,5 +92,6 @@
 - [ ] Over `canonical/skills/` and `canonical/agents/`, `git grep -nE 'aid-(discover|ask|update-kb|summarize|housekeep)\b|knowledge/STATE\.md'` finds only lines in skills task-131 and task-132 delete.
 - [ ] `aid-execute` names `/aid-kb-update` where it named `/aid-discover`, and the three agents' escalation lines name `--ask`.
 - [ ] The suites pass where the test step puts them, and the site `npm test` passes after regeneration.
+- [ ] Over `canonical/skills/aid-kb-build/` and `canonical/skills/aid-kb-update/`, no line names a `state-*.md` file that does not exist.
 - [ ] The test step (last Scope bullet) reports no failure: the spawn-free checks, the scratch half, the live half and the site or dashboard runs it calls for. Every existing test still passes.
 - [ ] All section-6 quality gates pass (REQUIREMENTS.md § 6: NFR-N, NFR-T, NFR-Q).

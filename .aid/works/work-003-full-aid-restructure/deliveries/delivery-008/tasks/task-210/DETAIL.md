@@ -25,6 +25,8 @@
   tree; the Q129 case keeps its nested delivery data and loses the flattened keys; a second run changes nothing,
   the records included, also for a work whose type the first run left empty; bash and PowerShell give the same
   bytes. It has `# COVERS:` lines.
+- **Findings.** This task's scope also includes every site that
+  `.aid/works/work-003-full-aid-restructure/research/delivery-008-sites.md` assigns to `task-210`.
 - **Test step** (PLAN.md § "Testing before the resync"; the same in every task of this delivery).
   `BASE` is this task's `task-210: In Progress` commit. Work in the `work-003` worktree only, create no
   branch or worktree, and never run `run_generator.py` in the live tree.

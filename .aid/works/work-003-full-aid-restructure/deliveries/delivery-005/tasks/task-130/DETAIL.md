@@ -17,7 +17,7 @@
 
 **Source:** feature-004-kb-management -> delivery-005 -> AC-15
 
-**Depends on:** task-116, task-117, task-119, task-123, task-124
+**Depends on:** task-116, task-117, task-118, task-119, task-123, task-124
 
 **Scope:**
 - The same rule (REQUIREMENTS.md § 11 Feature 004 `##### 7. Migration`, Re-pointing) over every kept file under
@@ -29,7 +29,8 @@
     and `principles.md` point at `.agents/skills/aid-kb-build/references/doc-set-resolve.md`,
     `document-expectations.md` and `review.md`; `principles.md`'s `discover-preflight.sh` mention goes;
   - `work-initiation-gate.md` outside its legacy block, and `design-lifecycle.md` (kept until delivery-006);
-  - the rows and comments of `shortcut-catalog.yml` that name a retired or moved skill. The `GENERATED`
+  - the rows and comments of `shortcut-catalog.yml` that name a retired or moved skill (the `aid-ask` row is
+    task-119's). The `GENERATED`
     doorway skills change only through `build-shortcut-skills.py`.
 - Suites to update in this same task: `test-shortcut-builder-invariants.sh`, and every suite the
   findings' K1, K2, K3 or K7 assigns to these files.

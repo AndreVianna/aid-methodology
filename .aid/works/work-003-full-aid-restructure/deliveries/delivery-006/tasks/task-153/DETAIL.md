@@ -23,6 +23,8 @@
 - `tests/canonical/test-kb-commit.sh` gains the `--new-project` case of REQUIREMENTS.md § 11 Feature 004 `##### 8. Testing`:
   `--new-project` commits `.aid/settings.yml` and the KB skeleton, and nothing else; another staged file
   stays staged; a combination with `--build` exits 2 and commits nothing.
+- **Findings.** This task's scope also includes every site that
+  `.aid/works/work-003-full-aid-restructure/research/delivery-006-sites.md` assigns to `task-153`.
 - **Test step** (PLAN.md § "Testing before the resync"; the same in every task of this delivery).
   `BASE` is this task's `task-153: In Progress` commit. Work in the `work-003` worktree only, create no
   branch or worktree, and never run `run_generator.py` in the live tree.

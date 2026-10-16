@@ -23,8 +23,9 @@
 - `.aid/knowledge/test-landscape.md`: the new suites (`test-kb-skills.sh` K1, `test-render-kb-view.sh`,
   `test-kb-commit.sh`, `test-kb-state-migration.sh`), the new `test-build-kb-index.sh` cases, and their lane; the
   retired summarize and housekeep suites go.
-- Then regenerate `INDEX.md`. `kb.html` is rendered at this delivery's resync step, after the conversion
-  (PLAN.md delivery-005, wave 5).
+- `INDEX.md` and `kb.html` are not regenerated here: the installed `build-kb-index.sh` is one resync behind,
+  and `.aid/knowledge/STATE.md` still exists. Both are regenerated after the resync, in the gate session,
+  with the then-installed scripts (G8; proposal § 4).
 - Name no work and no work folder.
 - **Same-task rule (Q106).** This task updates every suite that asserts text in a file it changes,
   including `site/scripts/__tests__/` and the dashboard tests. It is not `Done` while such a suite fails.
@@ -66,6 +67,6 @@
 
 **Acceptance Criteria:**
 - [ ] `test-landscape.md` names the four new suites and the new `test-build-kb-index.sh` cases, and none of the retired suites.
-- [ ] `INDEX.md` is regenerated; no work id, and the lints pass.
+- [ ] No work id, and the citation and frontmatter lints pass.
 - [ ] The test step (last Scope bullet) reports no failure: the spawn-free checks, the scratch half, the live half and the site or dashboard runs it calls for. Every existing test still passes.
 - [ ] All section-6 quality gates pass (REQUIREMENTS.md § 6: NFR-N, NFR-T, NFR-Q).

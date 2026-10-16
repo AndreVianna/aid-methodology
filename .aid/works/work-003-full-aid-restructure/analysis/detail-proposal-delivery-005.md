@@ -1,5 +1,10 @@
 # Detail proposal -- delivery-005: The four KB skills on one KB state file (Feature 004, first part)
 
+> **Superseded by the task files.** After the light-review fixes (general rules G7-G10 and this
+> delivery's ledger rows), the scopes and criteria in this proposal's task blocks no longer match the task
+> files. The task files under `deliveries/delivery-005/tasks/` are the source of truth. Step 5 builds PLAN.md's
+> Execution Graph from their `**Depends on:**` lines, never from this proposal.
+
 This is `aid-detail` FIRST-RUN for **delivery-005**, under Q136. Decisions are settled by recommendation,
 the task files are written at once, and the light review is the check.
 
@@ -959,10 +964,18 @@ The moved and new skills (task-116, task-117, task-119) update their lists and c
    - `aid update` runs format 6's KB step on this repository, converting `.aid/knowledge/STATE.md` to
      `STATE.yml`;
    - the retired skills leave through the manifest;
-   - `kb.html` is then rendered with the installed `render-kb-view.sh` (PLAN wave 5).
-5. The gate, in a new session:
+   - the format re-stamp writes `format_version: 6` into this repository's `.aid/settings.yml`.
+5. **After the resync, in the gate session (G8)** -- steps that are not tasks, each committed on its own
+   (KB and site paths, not resync-relevant):
+   - `INDEX.md` regenerated with the installed (now current) `build-kb-index.sh`, so it no longer lists
+     `STATE.md` and carries no timestamp;
+   - `kb.html` rendered with the installed `render-kb-view.sh` (PLAN wave 5);
+   - `(cd site && npm run gen:reference)` and the site `npm test`: a site page generated from a file the resync
+     changes (`reference/settings.md` from `.aid/settings.yml`) is regenerated and committed; here `format_version` moves from 5 to 6.
+6. The gate, in the same session, after step 5:
    - the stanza's criteria;
-   - this repository's `render-kb-view.sh --check` exits 0;
+   - this repository's `render-kb-view.sh --check` exits 0, `INDEX.md` lists no `STATE.md`, and the site
+     `npm test` passes;
    - the five samples at 3 of 3, and `001-05` and `001-15` again;
    - G0 with the baselines;
    - the tracking proof for task-104 to task-139.

@@ -25,7 +25,9 @@
     reviews through `--kb --review`, and the grade through `--kb --field Grade`;
   - `questions.md` (from `state-q-and-a.md`): `Pending` questions in groups; a skipped one is written as
     open in its document and does not block APPROVE;
-  - `fix.md` (from `state-fix.md`);
+  - `fix.md` (from `state-fix.md`): its Step 4 "single `git commit`" and `git push` go; a FIX cycle commits
+    nothing, since the build commits once, at FINISH, through `kb-commit.sh --build --finish`, and pushes
+    nothing (F004 Flows step 6; KB-03);
   - `approve.md` (from `state-approval.md`): one approval in chunks, recorded `--ask --kb --category
     Approval --covers 'KB build'`;
   - `finish.md` (from `state-done.md`): stamp `approved_at_commit:`; regenerate `INDEX.md` and
@@ -86,7 +88,7 @@
 
 **Acceptance Criteria:**
 - [ ] `finish.md` runs `kb-commit.sh --build --finish`, `render-kb-view.sh` and `build-kb-index.sh` in that order of steps, and contains no `git push`.
-- [ ] No reference under `canonical/skills/aid-kb-build/` names `STATE.md`, a `state-*.md` file, or a banner form, and every step's `**Advance:**` matches the spec's table.
+- [ ] Over the files this task writes (`review.md`, `reviewer-brief.md`, `questions.md`, `fix.md`, `approve.md`, `finish.md`), nothing names `STATE.md`, a `state-*.md` file or a banner form, `git grep -nE 'git (commit|push)'` finds only `finish.md`'s one push instruction line, and every step's `**Advance:**` matches the spec's table. The other moved references are task-129's content (G7).
 - [ ] The suites pass where the test step puts them, and the site `npm test` passes after regeneration.
 - [ ] The test step (last Scope bullet) reports no failure: the spawn-free checks, the scratch half, the live half and the site or dashboard runs it calls for. Every existing test still passes.
 - [ ] All section-6 quality gates pass (REQUIREMENTS.md § 6: NFR-N, NFR-T, NFR-Q).

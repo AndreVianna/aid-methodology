@@ -1,5 +1,10 @@
 # Detail proposal -- delivery-007: One requirements document, business and technical (Feature 005)
 
+> **Superseded by the task files.** After the light-review fixes (general rules G7-G10), the scopes and
+> criteria in this proposal's task blocks no longer match the task files. The task files under
+> `deliveries/delivery-007/tasks/` are the source of truth. Step 5 builds PLAN.md's Execution Graph from their
+> `**Depends on:**` lines, never from this proposal.
+
 This is `aid-detail` FIRST-RUN for **delivery-007**, under Q136. Decisions are settled by recommendation,
 the task files are written at once, and the light review is the check.
 
@@ -626,7 +631,11 @@ Every needed order is a dependency edge (G4). Same-file edits in one wave are or
 3. Verification.
 4. The resync (`delivery-007: resync`): the retired `aid-define`, the deleted references and the two deleted
    templates leave through the manifest.
-5. The gate, in a new session: the stanza's criteria; `005-01` to `005-10`, the seven samples that now run,
+5. **After the resync, in the gate session (G8):** `(cd site && npm run gen:reference)` and the site `npm test`: a site page generated from a file the resync
+     changes (`reference/settings.md` from `.aid/settings.yml`) is regenerated and committed; a no-op when
+     nothing changed. The resync converts no file and changes no
+   KB document, so `INDEX.md` and `kb.html` stay as task-184 left them (`render-kb-view.sh --check` exits 0).
+6. The gate, in the same session, after step 5: the stanza's criteria; `005-01` to `005-10`, the seven samples that now run,
    and `001-08` and `001-09` again, each 3 of 3; G0 with the baselines; the tracking proof for task-161 to
    task-184.
 

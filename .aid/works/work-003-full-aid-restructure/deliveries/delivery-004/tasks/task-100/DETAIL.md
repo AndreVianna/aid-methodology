@@ -29,6 +29,8 @@
 - Smoke run (Q134 D8): each sample once with `python3 tests/conversation/run.py --feature 003 --sample
   <id> --runs 1`, in a scratch copy. Fix any defect caused by a sample; report any defect caused by the
   product.
+- **Findings.** This task's scope also includes every site that
+  `.aid/works/work-003-full-aid-restructure/research/delivery-004-sites.md` assigns to `task-100`.
 - **Test step** (PLAN.md § "Testing before the resync"; the same in every task of this delivery).
   `BASE` is this task's `task-100: In Progress` commit. Work in the `work-003` worktree only, create no
   branch or worktree, and never run `run_generator.py` in the live tree.

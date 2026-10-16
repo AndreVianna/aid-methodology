@@ -22,6 +22,8 @@
 **Scope:**
 - `tests/canonical/test-slice-requirements.sh` gains the cases of REQUIREMENTS.md § 11 Feature 006 `##### 9. Testing`: both new Source
   forms slice as Feature 005 says, from a task file at `tasks/task-NNN/DETAIL.md`; the old form still reads.
+- **Findings.** This task's scope also includes every site that
+  `.aid/works/work-003-full-aid-restructure/research/delivery-008-sites.md` assigns to `task-209`.
 - **Test step** (PLAN.md § "Testing before the resync"; the same in every task of this delivery).
   `BASE` is this task's `task-209: In Progress` commit. Work in the `work-003` worktree only, create no
   branch or worktree, and never run `run_generator.py` in the live tree.

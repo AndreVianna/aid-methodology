@@ -25,6 +25,8 @@
   fixtures and the checks of REQUIREMENTS.md § 11 Feature 005 `##### 8. Testing`.
 - Update `tests/conversation/deferred.tsv` with one row each: `005-11` and `005-12` wait for Feature 007,
   `005-13` for Feature 006. Delivery-008 runs `005-13` and delivery-009 runs `005-11` and `005-12` (PLAN.md).
+- **Findings.** This task's scope also includes every site that
+  `.aid/works/work-003-full-aid-restructure/research/delivery-007-sites.md` assigns to `task-180`.
 - **Test step** (PLAN.md § "Testing before the resync"; the same in every task of this delivery).
   `BASE` is this task's `task-180: In Progress` commit. Work in the `work-003` worktree only, create no
   branch or worktree, and never run `run_generator.py` in the live tree.

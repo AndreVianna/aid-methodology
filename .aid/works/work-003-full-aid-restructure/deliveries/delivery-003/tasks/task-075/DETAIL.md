@@ -24,6 +24,8 @@
   FR-17 rule, plus the importance label.
 - It states the intake-question exception, so the judge does not fail samples `002-14`, `002-16` and
   `002-18` on it (REQUIREMENTS.md § 11 Feature 002 `##### 3. Question protocol`).
+- **Findings.** This task's scope also includes every site that
+  `.aid/works/work-003-full-aid-restructure/research/delivery-003-sites.md` assigns to `task-075`.
 - **Test step** (PLAN.md § "Testing before the resync"; the same in every task of this delivery).
   `BASE` is this task's `task-075: In Progress` commit. Work in the `work-003` worktree only, create no
   branch or worktree, and never run `run_generator.py` in the live tree.

@@ -26,6 +26,8 @@
 - Update `tests/conversation/deferred.tsv`: the `003-11` row goes, since it runs at this gate (PLAN.md
   delivery-006 gate).
 - Smoke run (Q134 D8): each new sample once, and `003-11` once, in a scratch copy.
+- **Findings.** This task's scope also includes every site that
+  `.aid/works/work-003-full-aid-restructure/research/delivery-006-sites.md` assigns to `task-156`.
 - **Test step** (PLAN.md § "Testing before the resync"; the same in every task of this delivery).
   `BASE` is this task's `task-156: In Progress` commit. Work in the `work-003` worktree only, create no
   branch or worktree, and never run `run_generator.py` in the live tree.

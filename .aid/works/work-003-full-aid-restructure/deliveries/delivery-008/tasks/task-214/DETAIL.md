@@ -27,6 +27,8 @@
   `skill:aid-plan` and `skill:aid-deploy` rows go (covered by `006-01` and `006-07`); `005-13` runs now; `002-08`
   and `002-09` wait only for Feature 007; a row for `006-06`, waiting for Feature 007.
 - Smoke run (Q134 D8): `006-07`, `006-08` and `005-13` once each, in a scratch copy.
+- **Findings.** This task's scope also includes every site that
+  `.aid/works/work-003-full-aid-restructure/research/delivery-008-sites.md` assigns to `task-214`.
 - **Test step** (PLAN.md § "Testing before the resync"; the same in every task of this delivery).
   `BASE` is this task's `task-214: In Progress` commit. Work in the `work-003` worktree only, create no
   branch or worktree, and never run `run_generator.py` in the live tree.

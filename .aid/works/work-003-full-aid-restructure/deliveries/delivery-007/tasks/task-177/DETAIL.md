@@ -25,6 +25,8 @@
 - `tests/canonical/skill-steps-exempt.tsv` gains one row: `canonical/aid/templates/shortcut-engine.md`,
   checks `SP-08`, owner Feature 009 (Q65), so SP-08 skips the engine's own `## State: CAPTURE` and
   `## State: SPEC` until Feature 009 removes them.
+- **Findings.** This task's scope also includes every site that
+  `.aid/works/work-003-full-aid-restructure/research/delivery-007-sites.md` assigns to `task-177`.
 - **Test step** (PLAN.md § "Testing before the resync"; the same in every task of this delivery).
   `BASE` is this task's `task-177: In Progress` commit. Work in the `work-003` worktree only, create no
   branch or worktree, and never run `run_generator.py` in the live tree.
