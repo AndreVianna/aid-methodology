@@ -45,7 +45,7 @@ Anchors read as in the earlier proposals.
 | task-074 | `state-machine-chaining.md` deleted | IMPLEMENT | 3 | 3 | 062-068 |
 | task-075 | Judge checklist `protocol-checks.md` | TEST | 4 | 3 | 071 |
 | task-076 | User documents and site pages without the interviewer | DOCUMENT | 3 | 4 | 063, 064, 072 |
-| task-077 | KB: interviewer retired, questions in one place, chaining rule gone | DOCUMENT | 3 | 4 | 063, 065, 067, 072, 074 |
+| task-077 | KB: interviewer retired, questions in one place, chaining rule gone | DOCUMENT | 3 | 4 | 063, 064, 065, 067, 068, 072, 074 |
 | task-078 | `test-skill-steps.sh` group S, the `skill:` rows and the AD13 ceilings | TEST | 4 | 4 | 060-069, 072, 074 |
 | task-079 | Dashboard cases: card lines, call and record status, parity | TEST | 4 | 4 | 073 |
 | task-080 | The ten Feature 002 asking samples: smoke run, then their deferred rows go | TEST | 4 | 5 | 075, 078 |
@@ -266,7 +266,7 @@ Each depends on task-058 and applies (a) to (f) of § 2 to its group. Its accept
 
 ### task-077: KB: interviewer retired, questions in one place, chaining rule gone [DOCUMENT]
 
-- **Depends on:** task-063, task-065, task-067, task-072, task-074.
+- **Depends on:** task-063, task-064, task-065, task-067, task-068, task-072, task-074.
 - **Source:** AC-24 (row), AC-28, AC-40.
 - **Scope:** edits these documents under `.aid/knowledge/`, with no work id:
   - `decisions.md`: D15's agent count;
@@ -378,7 +378,7 @@ Each depends on task-058 and applies (a) to (f) of § 2 to its group. Its accept
 | task-074 | task-062, task-063, task-064, task-065, task-066, task-067, task-068 |
 | task-075 | task-071 |
 | task-076 | task-063, task-064, task-072 |
-| task-077 | task-063, task-065, task-067, task-072, task-074 |
+| task-077 | task-063, task-064, task-065, task-067, task-068, task-072, task-074 |
 | task-078 | task-060 to task-069, task-072, task-074 |
 | task-079 | task-073 |
 | task-080 | task-075, task-078 |
