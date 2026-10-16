@@ -1535,3 +1535,11 @@ qa:
     suggested: 'Small F007 spec edit: the command is resolved once and recorded in full_suite.command; the baseline, FINAL and every later full-suite run use the recorded command (F008 PARENT step 4 already does); then one more review.'
     answer: 'Accepted as recommended, with one more review.'
     applied_to: 'REQUIREMENTS.md Feature 007 (Components, Full suite); PLAN.md delivery-009'
+  - id: Q133
+    category: Detail
+    impact: Low
+    state: Answered
+    context: 'aid-detail must break 14 deliveries into tasks (well over 100); the skill proposes and discusses tasks per delivery.'
+    suggested: 'Review delivery by delivery: each delivery''s tasks shown as a short table for approval or adjustment.'
+    answer: 'Accepted as recommended (delivery by delivery).'
+    applied_to: 'aid-detail FIRST-RUN loop'
