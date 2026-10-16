@@ -1403,3 +1403,19 @@ qa:
     suggested: 'That last task and delivery-008''s gate are also run by the main conversation directly, extending Q114 by one task and one gate.'
     answer: 'Accepted as recommended.'
     applied_to: 'PLAN.md (delivery-008 Notes; Toolchain and Branching)'
+  - id: Q120
+    category: Planning
+    impact: High
+    state: Answered
+    context: 'Plan review cycle 1 row 1: today''s /aid-execute pool provisions a per-task worktree (git worktree add) on the delivery branch even when serial; with no delivery branch (Q112) that branch is work-003, already checked out, so git refuses.'
+    suggested: 'For deliveries 001-008, each task runs directly in the work-003 worktree with no per-task worktree: one more documented exception to today''s skill, like skipping Check 5.'
+    answer: 'Accepted as recommended.'
+    applied_to: 'PLAN.md (Toolchain and Branching)'
+  - id: Q121
+    category: Planning
+    impact: Medium
+    state: Answered
+    context: 'Plan review cycle 1 row 10: the architect adjusted two splits without a recorded answer: F002 (phase renames everywhere and step saves on entry move from the sweep into the engine) and F009a (also removes the four shortcut-catalog rows of aid-create/update/fix/refactor; plain-word sample runs move to F009b).'
+    suggested: 'Keep both adjustments: without them state writes and tests break between deliveries.'
+    answer: 'Accepted as recommended (keep both).'
+    applied_to: 'PLAN.md (delivery-002, delivery-003, delivery-011, delivery-012)'
