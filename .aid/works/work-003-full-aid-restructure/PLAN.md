@@ -171,8 +171,10 @@ true:
   suite holds one group per part, and each group is added in the delivery that lands its part.
 - **Deliveries 001-009, built directly (Q127): the tracking proof (Q125).** For every task of the
   delivery:
-  - `git log --format=%s -- <the file holding the task's state>` shows two commits of that file alone,
-    `task-NNN: In Progress` then `task-NNN: In Review`, before the task's own commit;
+  - `git log --format=%s -- <the file holding the task's state>` shows two state-only commits,
+    `task-NNN: In Progress` then `task-NNN: In Review`, before the task's own commit. A state-only commit
+    holds only what that state write changed: the state file, plus, from delivery-008's resync on, the
+    `PLAN.md` the writer re-renders on each task state write (F006);
   - in the task's own commit, the state file holds the task's terminal state and a review grade at or
     above `minimum_grade` (the task's `review` field);
   - from delivery-008 on, the work `STATE.yml` `reviews` also holds an entry noting `task-NNN verify`.
@@ -1226,14 +1228,15 @@ and `AID_WORK_DIR` exported for this work (tech-debt W5-5).
    - For every delivery, write `--delivery-id NNN --lifecycle Executing`.
 2. **Each task, in wave order, one at a time:**
    1. Write `In Progress` with `--task-id NNN --field State` (plus `--delivery-id NNN` while the layout is
-      nested), and commit the file holding the task's state alone, as `task-NNN: In Progress`.
+      nested), and commit only what that write changed (the state-only commit of the tracking proof), as
+      `task-NNN: In Progress`.
    2. Dispatch the executor for the task's type (`aid-developer`; `aid-researcher`, `aid-architect` or
       `aid-tech-writer` by type), in a clean context, tiered by `agent-dispatch-tiering.md`. It gets the
       task file, its requirements slice (the task's `### Feature NNN` section, from its heading to the next, read so that headings inside fenced code blocks do not count, plus the §1-§10 entries the task cites; today's `slice-requirements.sh` is not used for this, because this document's fenced example headings end § 11 early), the KB documents the index routes to, the same-task rule and
       this instruction: "work in the `work-003` worktree only; create no branch or worktree; do not run
       `run_generator.py`". It returns its changes and its test command; it never asks the user.
    3. Run the task's tests ("Testing before the resync").
-   4. Write `In Review`, and commit the state file alone, as `task-NNN: In Review`.
+   4. Write `In Review`, and commit only what that write changed, as `task-NNN: In Review`.
    5. Dispatch `aid-reviewer` in a clean context, at a tier no lower than the executor's. Grade its
       7-column ledger with `grade.sh`, and write the grade with `--task-id NNN --field Review`. From
       delivery-008 on, also record it with `--review --grade G --notes 'task-NNN verify; ...'`.
