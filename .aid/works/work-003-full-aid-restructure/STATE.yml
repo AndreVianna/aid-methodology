@@ -430,6 +430,10 @@ review_history:
     event: 'Detail light review delivery-005 (Q136)'
     outcome: 'Grade D (2 HIGH, 8 MEDIUM, 1 LOW; 1 OOS SPEC)'
     notes: 'Move-then-rewrite greps; fix-step commit/push carried into aid-kb-build; missing G4 edges and G6 blocks; INDEX.md and reference/settings.md not regenerated after the resync. OOS: Feature 008 said Feature 004 carries the fix-step push; Feature 008 row corrected by the orchestrator to match Feature 004 (commit once, push nothing)'
+  - date: '2026-10-16'
+    event: 'Detail light review delivery-006 (Q136)'
+    outcome: 'Grade C+ (1 MEDIUM, 4 LOW)'
+    notes: 'Doc counts and sync:docs on a skill deletion; live-vs-scratch placement in a criterion; roadmap MVP shape source; kb.html owner; findings bullet on TEST tasks; fixes sent to the architect'
 
 # [A] written by the orchestrator on the work's active branch (single
 #     writer). Append-only audit trail of phase transitions and gate
