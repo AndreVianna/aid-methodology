@@ -118,7 +118,7 @@ phase: Plan
 # [W] aid-{skill} | none
 active_skill: aid-plan
 # [W]
-updated: '2026-10-15T23:19:54Z'
+updated: '2026-10-16T02:13:21Z'
 # [W] set only when lifecycle = Paused-Awaiting-Input
 pause_reason: --
 # [W] set only when lifecycle = Blocked
@@ -431,6 +431,14 @@ lifecycle_history:
     event: 'Describe: requirements approved by the maintainer (sections 1-10 complete; FR-1..FR-16, NFR-Q, NFR-N, AC-1..AC-25; minor decisions M1-M3 confirmed). Open on purpose: final skill count; reviewer specialization.'
     grade: --
     notes: 'aid-describe COMPLETION approval'
+  - date: '2026-10-16'
+    event: 'Specify: all 9 features specified and approved (Ready, A+ except Feature 002 at B+ by Q43)'
+    grade: A+
+    notes: 'aid-specify, one feature at a time; decisions Q53-Q110'
+  - date: '2026-10-16'
+    event: 'Plan: PLAN.md approved by the maintainer (14 deliveries, all Pending-Spec; deliveries 001-009 built directly by the main conversation, 010-014 by the new /aid-execute)'
+    grade: A+
+    notes: 'aid-plan FIRST-RUN + REVIEW (6 cycles, incl. Guard 2 and the Feature 002 cross-feature review); decisions Q111-Q132; ledger deleted'
 
 deploy: []
 
