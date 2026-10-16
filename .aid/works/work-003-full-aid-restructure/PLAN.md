@@ -743,6 +743,9 @@ Toolchain and Branching).
 - **The skill:** `aid-execute` is rewritten with the steps START, BUILD, TEST, VERIFY, SIMPLIFY,
   REVERIFY, NEXT, DELIVERY, FINAL, MILESTONE and FINISH. Thirteen references are created, seven are
   deleted, and `task-type-rules.md` is edited. (AC-26, AC-32, AC-33)
+  - The full suite's command is resolved once, at the baseline, and recorded in `full_suite.command`.
+    FINAL, each re-run after a fix round and a correction call's run use the recorded command, never a
+    fresh lookup; a missing one is resolved and recorded first (F007 § 4, Full suite; Q132).
 - **Scripts:**
   - new `simplify-guard.sh`;
   - `derive-waves.sh --from-tasks --delivery`;
@@ -787,7 +790,8 @@ close runs through `/aid-orchestrate`.
   - the step table is complete;
   - no file under `aid-execute/` or `scripts/execute/` creates a branch or worktree, or names
     `run_in_background`, `max_parallel_tasks` or "merge to main";
-  - `next.md` routes by states plus commits.
+  - `next.md` routes by states plus commits;
+  - `start.md` and `final.md` name `full_suite.command` (Q132).
   (AC-26, AC-32, AC-34)
 - [ ] `test-simplify-guard.sh` passes with git and without git. `test-writeback-state.sh` derives each of the seven delivery states, identical in the canonical writer and the dashboard fork. `test-never-merges.sh` passes with NM-04's exemption gone. The `Test-AidInstaller.ps1` building-step case passes under `pwsh` and 5.1. (AC-25, AC-33, AC-34)
 - [ ] `canonical/aid/rules.md` § Tracking discipline names BUILD, not EXECUTE, for the `In Progress` write. (KI-001 follow-up)
@@ -1252,8 +1256,9 @@ following F007 § 2.
   - MILESTONE's collect and corrections (step 10, sub-steps 1 and 2).
   These steps make every resync-relevant change of the delivery. They come before the resync, so
   none of them runs on skill text loaded before it. Every suite they run follows "Testing before the
-  resync": TEST runs each copy-reading suite in a scratch copy, and FINAL and each re-run after a fix
-  round run `full_suite.command`, which names the driver.
+  resync": TEST runs each copy-reading suite in a scratch copy. FINAL and each re-run after a fix round
+  run the recorded `full_suite.command` (F007 § 4, Full suite), which names the driver from
+  delivery-010's gate session on.
 - MILESTONE's approval question is written `Pending` with `--ask` before it is shown (step 10.3).
   `ASK` then pauses the work (`lifecycle: Paused-Awaiting-Input`; F002 § 4, Steps and hand-offs,
   step 3). This is the defined point. The main conversation does not answer it, and ends the session.
@@ -1281,7 +1286,7 @@ before delivery-010, so its record is not consulted until the switch.
 | Delivery-008's resync | The migration moves this work to the single layout and drops `pipeline.path`; `intent.depth` takes `full`. It fills the record from `phase: Execute`: `aid-execute` at `START`. The type is left empty (Q74). | No question. |
 | Delivery-009, after its resync, in the gate's new session | The main conversation does two things. **(1)** `--check` reports the type missing. The main conversation runs `--repair --skill aid-execute --name START --reading change`, with Q124 as the maintainer's recorded confirmation. **(2)** It writes `Verify` and `Commit` for deliveries 001-009 with `--delivery-id NNN --field`. `Verify` is the gate grade each delivery recorded, which the migrations already carried; writing it confirms it. `Commit` is the head each gate passed on. Then it asks one approval (Q123): "Deliveries 001-009 are built and each passed its gate; approve them, and confirm building goes on with delivery-010?" It is recorded through `--ask` and `--answer`: `category: Approval`, `covers: delivery delivery-001; ...; delivery delivery-009; confirmation before building`, `commit` the head. | (1) none: Q124. (2) yes. |
 | Delivery-010's START | `--check` passes, and the confirmation is recorded. The new `/aid-execute` asks only the wave question, and records the full-suite baseline as `not taken` (an old work). With every earlier delivery's `verify` and approval current, its routing goes straight to delivery-010's first task. No catch-up milestone, and so no push question, comes before `/aid-monitor-pipeline` exists. | "No stop per wave". |
-| Delivery-010's gate session | Before resuming `/aid-execute`, the main conversation saves `full-suite.sh` in the work folder ("Testing before the resync", The driver) and commits it alone. Then it writes `--full-suite --field Command --value 'bash .aid/works/work-003-full-aid-restructure/full-suite.sh'`. START has run by then, and it runs once. FINAL, its re-runs, a correction call's run and F008's run on a merged tree all run `full_suite.command` (F007 § 2 step 9 and § 4, Full suite; F008 § 2, PARENT, step 4). Each later gate session checks that the command still names the driver, and writes it again if not. | No question. |
+| Delivery-010's gate session | Before resuming `/aid-execute`, the main conversation saves `full-suite.sh` in the work folder ("Testing before the resync", The driver) and commits it alone. Then it records it with `--full-suite --field Command --value 'bash .aid/works/work-003-full-aid-restructure/full-suite.sh'`. FINAL, its re-runs and a correction call's run use the recorded command, never a fresh lookup (F007 § 4, Full suite; Q132), and so does F008's run on a merged tree (F008 § 2, PARENT, step 4). Later gate sessions need no check: a command is looked up only at the baseline or when none is recorded, and from this write on one is recorded. | No question. |
 | Delivery-010's milestone | The first push question, "Create or update the pull request now?". Yes opens the draft v4.0.0 pull request from `work-003` to `master` through `/aid-monitor-pipeline`. | Maintainer's choice. Yes starts G0's lane check through the milestone push. |
 
 After delivery-014, the work reaches CI through `/aid-monitor-pipeline`, which marks the pull request

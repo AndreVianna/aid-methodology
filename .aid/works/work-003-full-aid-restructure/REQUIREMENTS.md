@@ -4313,8 +4313,9 @@ task or delivery and where it stands (`'task-004: verify round 2'`, `'delivery-0
      `none`). It is written once, here, and never changes: corrections and `/aid-plan` REVISE never add to it, and a
      delivery added during building gets no wave stop, only its delivery milestone.
    - **The full-suite baseline** (Q79), once, before the first BUILD: the project's full suite runs on the starting
-     commit (Components, Full suite); `full_suite.baseline` holds what passed and which tests already fail. When
-     START finds a task already built and no baseline (an old work), it records `baseline: not taken`.
+     commit, with its command resolved and recorded in `full_suite.command` (Components, Full suite);
+     `full_suite.baseline` holds what passed and which tests already fail. When START finds a task already built and
+     no baseline (an old work), it records `baseline: not taken`.
    - **What is already on disk is kept** (Feature 002, use (a)): `Done` tasks stay; an `In Progress` task goes on at
      BUILD, an `In Review` task at VERIFY; anything else goes by NEXT's routing rule (step 7), which reads no stored
      delivery state. An old work's per-delivery branches and per-task worktrees are handled first
@@ -4447,12 +4448,13 @@ task or delivery and where it stands (`'task-004: verify round 2'`, `'delivery-0
      passed on (step 7); then on by NEXT's routing rule
      (step 7): its MILESTONE, or FINAL first for the last delivery.
 9. **FINAL** -- once every task is `Done` or `Canceled`.
-   - **The full suite** runs on the work branch's head (Components, Full suite). A failure absent from the baseline is
-     the work's: fixed by the executor in a scoped round (`step_detail: 'full suite: fix <tests>'`), the suite run
-     again, and the fix verified (re-verify mode) -- three rounds, then a real blocker. A failure already in the
-     baseline is reported, not fixed (Q79). With `baseline: not taken`, every failure is shown at the approval, each
-     with the agent's recommendation: a correction task, or report it as already present. The run that ends FINAL is
-     recorded in `full_suite.result` with `full_suite.commit`, the head it ran on (step 7).
+   - **The full suite** -- the recorded `full_suite.command` (Components, Full suite) -- runs on the work branch's
+     head. A failure absent from the baseline is the work's: fixed by the executor in a scoped round (`step_detail:
+     'full suite: fix <tests>'`), the suite run again, and the fix verified (re-verify mode) -- three rounds, then a
+     real blocker. A failure already in the baseline is reported, not fixed (Q79). With `baseline: not taken`, every
+     failure is shown at the approval, each with the agent's recommendation: a correction task, or report it as
+     already present. The run that ends FINAL is recorded in `full_suite.result` with `full_suite.commit`, the head it
+     ran on (step 7).
    - **Backlog and roadmap** (Feature 004): when the work's `sources:` name a `backlog.md` or `roadmap.md` item, one
      `CALL` to `/aid-kb-update` updates it as the document says, with a KB; none without one.
 10. **MILESTONE** -- the FR-6 steps, one rule for every milestone (M10).
@@ -4675,6 +4677,11 @@ corrections approval is the MILESTONE a correction call reaches -- the last deli
 the project's own build files, recorded `Assumed` with reach `project` (so the next approval's KB call records it). A
 project with no test suite records `command: none found`, and FINAL says so at the approval. The baseline and the final
 run record what passed and the failing tests by name.
+- **Resolved once** (Q132): the command is resolved at the baseline and recorded in `full_suite.command`.
+- **Reused after that.** Every later run uses the recorded command, never a fresh lookup: FINAL, each re-run after a
+  fix round, a correction call's run, and Feature 008's run on a merged tree.
+- **Missing.** When no command is recorded (`--`, as for an old work whose baseline is `not taken`), the run that
+  needs one resolves it as above and records it first.
 
 **`simplify-guard.sh`** -- `simplify-guard.sh --tests <list-file> (--before <commit> | --snapshot <dir>)`: with git,
 `--before` compares `<commit>` with `HEAD`; without git, `--snapshot` compares the working files with the simplify
@@ -4897,7 +4904,7 @@ the full integration suite runs at the end of the work, before release, with tha
 | Group | Asserts |
 |---|---|
 | EX-01 | `aid-execute`'s new references and brief exist, its deleted references do not; `delivery-issues.md` is absent; `simplify-guard.sh` exists |
-| EX-02 | The step table has START, BUILD, TEST, VERIFY, SIMPLIFY, REVERIFY, NEXT, DELIVERY, FINAL, MILESTONE and FINISH; FINISH advances by `PASS` and `finish.md` names `--phase CI`; `start.md` names `confirmation before building`, `Wave Stops` and the baseline; `milestone.md` names `aid-monitor-pipeline`, `aid-plan`, `covers` and `commit`; `next.md` names `kb-freshness-check.sh` and `aid-kb-update`; `blocker.md` names `Blocker`, `Assumed`, the give-up choices and `aid-plan`; `SKILL.md` cites `skill-steps.md` and `question-protocol.md` |
+| EX-02 | The step table has START, BUILD, TEST, VERIFY, SIMPLIFY, REVERIFY, NEXT, DELIVERY, FINAL, MILESTONE and FINISH; FINISH advances by `PASS` and `finish.md` names `--phase CI`; `start.md` names `confirmation before building`, `Wave Stops` and the baseline; `start.md` and `final.md` name `full_suite.command`; `milestone.md` names `aid-monitor-pipeline`, `aid-plan`, `covers` and `commit`; `next.md` names `kb-freshness-check.sh` and `aid-kb-update`; `blocker.md` names `Blocker`, `Assumed`, the give-up choices and `aid-plan`; `SKILL.md` cites `skill-steps.md` and `question-protocol.md` |
 | EX-03 | One worktree and one branch (AC-34): no file under `canonical/skills/aid-execute/` or `canonical/aid/scripts/execute/` creates a branch or a worktree (`git worktree add`, `git checkout -b`, `git switch -c`, `git branch <name>`) or names `run_in_background`, `max_parallel_tasks` or "merge to main"; a `-delivery-` branch is named only in `references/old-work.md` |
 | EX-04 | `simplify.md` names `simplify-guard.sh`, once per task, and `undone`; `verify.md` names `grade.sh`, `--review`, `git reset --keep` and the three choices after three rounds with `Accepted` |
 | EX-05 | No tracked file under `canonical/skills/`, `canonical/aid/templates/` or `canonical/aid/scripts/` (except `migrate/`, and the writer's refusal of its retired modes) names `IMPEDIMENT-task-`, `delivery-NNN-issues`, `--append-issue`, `--findings` or `quick_check` |
