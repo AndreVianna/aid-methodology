@@ -31,7 +31,7 @@
   - **Y8** the Q106 suite map for every file on the edit list, including the site's skill lists.
 - Give each hit exactly one owner:
   - a task of delivery-010 (task-255 to task-287; see the task files under
-    `.aid/works/work-003-full-aid-restructure/deliveries/delivery-010/tasks/`);
+    `.aid/works/work-003-full-aid-restructure/tasks/task-NNN/DETAIL.md`, the layout delivery-008's migration leaves);
   - Feature 009 (delivery-012) for the skills it rebuilds that finish a work (`create`, `update`, `document`,
     `test`, `prototype`);
   - "installed copy (resync)";

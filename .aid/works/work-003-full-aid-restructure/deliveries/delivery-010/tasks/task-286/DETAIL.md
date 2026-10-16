@@ -7,7 +7,7 @@
 
 **Source:** feature-008-cicd-integration-monitoring -> delivery-010 -> AC-11, AC-13, AC-36
 
-**Depends on:** task-266, task-270, task-271
+**Depends on:** task-266, task-270, task-271, task-285
 
 **Scope:**
 - Edit these documents under `.aid/knowledge/` (REQUIREMENTS.md § 11 Feature 008 `##### 7. Migration`, KB): `pipeline-contracts.md` (the CI phase
@@ -15,6 +15,13 @@
   and GitLab through the plug-in or `gh` / `glab`; the push); `capability-inventory.md`, `module-map.md`,
   `project-structure.md` (the `pipeline/` scripts).
 - Name no work and no work folder.
+- **KB edits and NEXT's KB check (Feature 007 § 2, step 7; Feature 004).** After every earlier task of this
+  delivery, NEXT's KB check may make a `CALL` to `/aid-kb-update`, which edits and commits the drifted documents
+  itself (`kb-commit.sh`) and records a `KB change` entry `Assumed`. This task is the delivery's planned KB edit, and
+  it runs on the KB those calls left: before editing, it reads this work's `kb_updates` and its `KB change` entries;
+  it keeps what they wrote that agrees with the spec, adds only what the spec's KB list still lacks, and changes their
+  text only where it contradicts the spec, naming the entry it corrects. It commits through `kb-commit.sh`. Its
+  commits touch no document's `sources:`, so NEXT's KB check after it finds nothing to do.
 - **Same-task rule (Q106).** This task updates every suite that asserts text in a file it changes,
   including `site/scripts/__tests__/` and the dashboard tests. It is not `Done` while such a suite fails.
   - A removed assertion gets its row in `tests/coverage-accepted-removals.tsv`.

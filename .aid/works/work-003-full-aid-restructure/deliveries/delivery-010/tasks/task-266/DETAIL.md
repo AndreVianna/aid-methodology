@@ -1,4 +1,4 @@
-# task-266: aid-monitor-pipeline SKILL.md, its guide line and its lists
+# task-266: aid-monitor-pipeline SKILL.md: the full step table, and its deferred row
 
 > Execution protocol (unchanged): write the task's State as it changes -- In Progress, In Review,
 > Done / Failed -- through writeback-state.sh --task-id 266 --field State.
@@ -10,18 +10,14 @@
 **Depends on:** task-262, task-263, task-264, task-265
 
 **Scope:**
-- Create `canonical/skills/aid-monitor-pipeline/SKILL.md`, at most 120 lines (REQUIREMENTS.md § 11 Feature 008 `##### 1. Files and layout`,
-  `##### 2. Flow` and `##### 4. Components`): the step table START, COLLECT, PUSH, PARENT, REVIEW, REACT, WATCH and
-  CLOSE, with only START's `**Advance:**` having a `PASS`; `skill-steps.md` and `question-protocol.md` cited; the
-  spec's `description:` and `argument-hint`; the plan-mode check as one line.
-- **Lists and counts that follow a new skill**, in this same task: its `canonical/aid/rules.md` § Skill guide line
-  with the spec's text; its `description:` (not SG-04-exempt); a `skill:aid-monitor-pipeline` row in
-  `tests/conversation/deferred.tsv` until task-283's samples cover it (DT-01, SS-09); the site skill lists and
-  their `__tests__`.
-- **Count re-sync (Q134 D5):** the skill-count and catalog-row phrases that `tests/canonical/test-doc-counts.sh`
-  asserts in `README.md` and `docs/` take the derived counts, then `(cd site && npm run sync:docs)` runs, so the
-  synced pages under `site/src/content/docs/` match. Only the numbers change; user documentation otherwise waits
-  for the final pass (AC-45).
+- Write `canonical/skills/aid-monitor-pipeline/SKILL.md` in full over task-262's stub, at most 120 lines
+  (REQUIREMENTS.md § 11 Feature 008 `##### 1. Files and layout`, `##### 2. Flow` and `##### 4. Components`): the step
+  table START, COLLECT, PUSH, PARENT, REVIEW, REACT, WATCH and CLOSE, with only START's `**Advance:**` having a
+  `PASS`; `skill-steps.md` and `question-protocol.md` cited; the spec's `description:` and `argument-hint` (as the
+  stub has them); the plan-mode check as one line.
+- The guide line, the site lists and the counts came with task-262 (G14). This task adds, now that the skill cites
+  the protocol, a `skill:aid-monitor-pipeline` row in `tests/conversation/deferred.tsv` until task-283's samples
+  cover it (DT-01, SS-09).
 - **Site regeneration (G1, G5).** When this task adds, deletes, renames or edits anything under
   `canonical/skills/`, `canonical/agents/` or `canonical/aid/templates/`, it runs
   `(cd site && npm run gen:skills && npm run gen:reference)` in this same task and commits the output:
@@ -76,6 +72,6 @@
 
 **Acceptance Criteria:**
 - [ ] `SKILL.md` exists, at most 120 lines, with the eight steps, and only START's `**Advance:**` names `PASS` (MP-01).
-- [ ] SG-02, SG-04, DT-01 and SS-09 pass where the test step puts them, `test-doc-counts.sh` passes live with the skill count raised by one, and the site `npm test` passes after `sync:docs` and regeneration.
+- [ ] SG-02, SG-04, DT-01 and SS-09 pass where the test step puts them, and the site `npm test` passes after regeneration.
 - [ ] The test step (last Scope bullet) reports no failure: the spawn-free checks, the scratch half, the live half and the site or dashboard runs it calls for. Every existing test still passes.
 - [ ] All section-6 quality gates pass (REQUIREMENTS.md § 6: NFR-N, NFR-T, NFR-Q).

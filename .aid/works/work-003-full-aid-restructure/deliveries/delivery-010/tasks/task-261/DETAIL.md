@@ -7,7 +7,7 @@
 
 **Source:** feature-008-cicd-integration-monitoring -> delivery-010 -> AC-13, AC-27, AC-42
 
-**Depends on:** task-254
+**Depends on:** task-254, task-262
 
 **Scope:**
 - Create `tests/conversation/stand-ins/gh` and `tests/conversation/stand-ins/glab` (REQUIREMENTS.md § 11 Feature 008 `##### 8. Testing`,
@@ -16,6 +16,8 @@
   checks and a failed job's log, reply, reopen), refuses every call when `host.json` says the host is unreachable,
   and logs every call to `host-calls.log`.
 - Neither offers a merge or a branch deletion.
+- Each command and flag the stand-ins answer is the one `canonical/skills/aid-monitor-pipeline/references/hosts.md`
+  (task-262) names for that operation.
 - **Findings.** This task's scope also includes every site that
   `.aid/works/work-003-full-aid-restructure/research/delivery-010-sites.md` assigns to `task-261`.
 - **Test step** (PLAN.md § "Testing before the resync"; the same in every task of this delivery).

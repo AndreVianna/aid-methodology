@@ -7,7 +7,7 @@
 
 **Source:** feature-008-cicd-integration-monitoring -> delivery-010 -> AC-27
 
-**Depends on:** task-259
+**Depends on:** task-259, task-262
 
 **Scope:**
 - Create in `canonical/skills/aid-monitor-pipeline/references/`, each at most 120 lines (REQUIREMENTS.md § 11 Feature 008 `##### 2. Flow`, steps 5-7):

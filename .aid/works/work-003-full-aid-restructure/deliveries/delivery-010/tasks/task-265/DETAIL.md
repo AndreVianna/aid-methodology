@@ -7,7 +7,7 @@
 
 **Source:** feature-008-cicd-integration-monitoring -> delivery-010 -> AC-36
 
-**Depends on:** task-256, task-258
+**Depends on:** task-256, task-258, task-262
 
 **Scope:**
 - Create `canonical/skills/aid-monitor-pipeline/references/close.md`, at most 120 lines (REQUIREMENTS.md § 11 Feature 008 `##### 2. Flow`, step 8): the write-back offer before
@@ -71,6 +71,6 @@
 
 **Acceptance Criteria:**
 - [ ] `close.md` names `close-work.sh`, `cleanup-classify.sh` and `Completed` (MP-02), and runs no `git pull`.
-- [ ] `test-never-merges.sh` passes live with the one exception, and the site `npm test` passes after regeneration.
+- [ ] `test-never-merges.sh` passes where the test step puts it (the scratch half when its text matches the driver's pattern `P`, else the live half), with the one exception, and the site `npm test` passes after regeneration.
 - [ ] The test step (last Scope bullet) reports no failure: the spawn-free checks, the scratch half, the live half and the site or dashboard runs it calls for. Every existing test still passes.
 - [ ] All section-6 quality gates pass (REQUIREMENTS.md § 6: NFR-N, NFR-T, NFR-Q).

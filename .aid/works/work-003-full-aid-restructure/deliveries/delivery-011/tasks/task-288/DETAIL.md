@@ -42,7 +42,7 @@
     (`aid-specify`, `aid-plan`, `aid-execute`, `aid-brainstorm`), each with the field AS-09 needs it to cite.
 - Give each hit exactly one owner:
   - a task of delivery-011 (task-289 to task-310; see the task files under
-    `.aid/works/work-003-full-aid-restructure/deliveries/delivery-011/tasks/`);
+    `.aid/works/work-003-full-aid-restructure/tasks/task-NNN/DETAIL.md`, the layout delivery-008's migration leaves);
   - delivery-012, for a hit on a file it deletes or on the TICKET step (the wrappers, `shortcut-engine.md`,
     `shortcut-catalog.yml`, the scaffolding, `IMPEDIMENT.md`, the builder, the ticket skills);
   - delivery-013, for a hit on `aid-config`, `.aid/kinds/`, the `domain` field, or the kind hooks of

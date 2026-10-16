@@ -1,4 +1,4 @@
-# task-262: aid-monitor-pipeline references: START, COLLECT, reaching the host
+# task-262: aid-monitor-pipeline: the folder with a stub SKILL.md and its lists; START, COLLECT and the host references
 
 > Execution protocol (unchanged): write the task's State as it changes -- In Progress, In Review,
 > Done / Failed -- through writeback-state.sh --task-id 262 --field State.
@@ -21,7 +21,19 @@
   - `connect.md`: finding the failing piece; the sign-in steps (`gh auth login`, `glab auth login`); the plug-in
     route with `/aid-set-connector`; the workarounds with a recommendation (Q32), recorded `category: Connection`;
   - `hosts.md`: one row per operation, the plug-in route and the command; no merge operation and no branch deletion.
-- `SKILL.md` is task-266.
+- **The skill's folder starts here (G14).** This is the first task that writes in
+  `canonical/skills/aid-monitor-pipeline/`, so it also creates, in this same task:
+  - `SKILL.md` as a minimal valid stub: `name: aid-monitor-pipeline`, the spec's `description:` (what/when shape,
+    not SG-04-exempt) and `argument-hint`, and one body line saying the step table follows. task-266 writes the full
+    file;
+  - **lists and counts that follow a new skill:** its `canonical/aid/rules.md` § Skill guide line with the spec's
+    text (SG-02, SG-03); the site skill lists (`site/scripts/skills/curated-roster.mjs`, `groups.mjs`) and their
+    `__tests__`, so `discoverSkills()` and `gen-reference.mjs`'s drift check accept the folder;
+  - the count re-sync below.
+- **Count re-sync (Q134 D5):** the skill-count and catalog-row phrases that `tests/canonical/test-doc-counts.sh`
+  asserts in `README.md` and `docs/` take the derived counts, then `(cd site && npm run sync:docs)` runs, so the
+  synced pages under `site/src/content/docs/` match. Only the numbers change; user documentation otherwise waits
+  for the final pass (AC-45).
 - **Site regeneration (G1, G5).** When this task adds, deletes, renames or edits anything under
   `canonical/skills/`, `canonical/agents/` or `canonical/aid/templates/`, it runs
   `(cd site && npm run gen:skills && npm run gen:reference)` in this same task and commits the output:
@@ -76,6 +88,6 @@
 
 **Acceptance Criteria:**
 - [ ] The four files exist, each at most 120 lines; `connect.md` names `/aid-set-connector`, `gh auth login` and `glab auth login`, and `hosts.md` names no `pr merge`, `mr merge` or branch deletion (MP-03).
-- [ ] The site `npm test` passes after regeneration.
+- [ ] `canonical/skills/aid-monitor-pipeline/SKILL.md` exists with `name: aid-monitor-pipeline` and the spec's `description:`; the guide has its line; SG-02, SG-03 and SG-04 pass where the test step puts them, `test-doc-counts.sh` passes live with the skill count raised by one, and the site `npm test` passes after `sync:docs` and regeneration.
 - [ ] The test step (last Scope bullet) reports no failure: the spawn-free checks, the scratch half, the live half and the site or dashboard runs it calls for. Every existing test still passes.
 - [ ] All section-6 quality gates pass (REQUIREMENTS.md § 6: NFR-N, NFR-T, NFR-Q).

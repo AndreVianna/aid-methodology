@@ -72,6 +72,6 @@
 
 **Acceptance Criteria:**
 - [ ] In a scratch repository, `start --from parent` on the parent branch exits 4 and changes nothing; on the work branch it merges and lists the conflicted paths.
-- [ ] `grep -nE 'git (push|checkout|switch)' canonical/aid/scripts/pipeline/merge-parent.sh` prints nothing, and `test-never-merges.sh` passes live.
+- [ ] `grep -nE 'git (push|checkout|switch)' canonical/aid/scripts/pipeline/merge-parent.sh` prints nothing, and `test-never-merges.sh` passes where the test step puts it (the scratch half when its text matches the driver's pattern `P`, else the live half).
 - [ ] The test step (last Scope bullet) reports no failure: the spawn-free checks, the scratch half, the live half and the site or dashboard runs it calls for. Every existing test still passes.
 - [ ] All section-6 quality gates pass (REQUIREMENTS.md § 6: NFR-N, NFR-T, NFR-Q).

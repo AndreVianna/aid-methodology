@@ -450,6 +450,10 @@ review_history:
     event: 'Detail light review delivery-010 (Q136)'
     outcome: 'Grade D+ (1 HIGH, 3 MEDIUM, 5 LOW; 1 OOS PLAN)'
     notes: 'A new skill folder without SKILL.md breaks the site generator; research output in the work folder is neither committed nor reviewed under the new builder; pre-migration task paths; --pull-request on a file without the key; fixes sent to the third architect'
+  - date: '2026-10-16'
+    event: 'Detail light review delivery-011 (Q136)'
+    outcome: 'Grade C (2 MEDIUM, 9 LOW; 1 OOS PLAN)'
+    notes: 'Research output not committed (G16, same as delivery-010); site tests using real skill bodies as fixtures; review-surface suite list; G4/G12 edges; AS-10 wording in the catalog actions; fixes sent to the third architect'
 
 # [A] written by the orchestrator on the work's active branch (single
 #     writer). Append-only audit trail of phase transitions and gate

@@ -72,6 +72,6 @@
 
 **Acceptance Criteria:**
 - [ ] In a scratch repository with a local bare remote, `--mode merged` deletes the local branch and the worktree and leaves the remote branch; a branch with an unpushed commit is kept and named on stderr.
-- [ ] `grep -nE '^[^#]*git (push|worktree remove --force)' canonical/aid/scripts/pipeline/close-work.sh` prints nothing.
+- [ ] `grep -nE '^[^#]*git (push|worktree remove --force)' canonical/aid/scripts/pipeline/close-work.sh | grep -vE "'[^']*git (push|worktree remove --force)[^']*'"` prints nothing: the only lines left are the safety self-check's quoted search patterns, which NM-05 allows (F008 § 8).
 - [ ] The test step (last Scope bullet) reports no failure: the spawn-free checks, the scratch half, the live half and the site or dashboard runs it calls for. Every existing test still passes.
 - [ ] All section-6 quality gates pass (REQUIREMENTS.md § 6: NFR-N, NFR-T, NFR-Q).

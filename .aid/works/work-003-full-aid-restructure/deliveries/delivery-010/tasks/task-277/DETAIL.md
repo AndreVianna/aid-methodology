@@ -12,7 +12,8 @@
 **Scope:**
 - `tests/canonical/test-writeback-state.sh` gains (REQUIREMENTS.md § 11 Feature 008 `##### 8. Testing`): the `--pull-request` fields and
   refusals; a repeated `--feedback-add` ref writes nothing, in both writers; every file written parses through the
-  dashboard reader with no warning.
+  dashboard reader with no warning; `--pull-request` and `--feedback-add` on a work file with neither key (a fixture
+  shaped like this work's `STATE.yml`) add the block at the template's defaults, then the value.
 - **Findings.** This task's scope also includes every site that
   `.aid/works/work-003-full-aid-restructure/research/delivery-010-sites.md` assigns to `task-277`.
 - **Test step** (PLAN.md § "Testing before the resync"; the same in every task of this delivery).

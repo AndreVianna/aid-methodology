@@ -17,6 +17,10 @@
   `State`, `Pipeline`, `Host` and `Work Folder` validated against their lists, anything else exits 4);
   `--feedback-add` with a `ref` already present writes nothing and prints that entry's id, exit 0.
 - `dashboard/scripts/writeback-state.sh` (the fork): the same duplicate-`ref` rule; it keeps `Deploy`.
+- **A work file with no `pull_request` key** (every existing work, this one included: no format step adds it,
+  F008 § 7): `--pull-request` first adds the block at the template's defaults, then writes the field, in the same
+  locked write; `--feedback-add` adds `feedback:` when absent the same way. This work's first push, at the
+  delivery-010 milestone, writes into such a file.
 - The unit cases are task-277.
 - Suites to update in this same task: `test-work-state-template.sh`, the existing `test-writeback-state.sh`
   assertions, `test-skill-steps.sh` SS-08, and any suite the findings' Y4 assigns here.
@@ -76,5 +80,6 @@
 - [ ] The template has `pull_request` with its `[W]` comment (MP-04's clause) and parses through both readers with no warning.
 - [ ] On a scratch work, a second `--feedback-add` with the same `ref` prints the first id and leaves the file byte-identical, in both writers; `--pull-request --field State --value pending` exits 4.
 - [ ] `test-work-state-template.sh`, `test-writeback-state.sh` and SS-08 pass where the test step puts them.
+- [ ] On a scratch copy of this work's own `STATE.yml` shape (no `pull_request` key), `--pull-request --field Host --value github` adds the block at the template's defaults with `host: github`, and the file parses through both readers with no warning; on a file with no `feedback` key, `--feedback-add` adds it with one entry.
 - [ ] The test step (last Scope bullet) reports no failure: the spawn-free checks, the scratch half, the live half and the site or dashboard runs it calls for. Every existing test still passes.
 - [ ] All section-6 quality gates pass (REQUIREMENTS.md § 6: NFR-N, NFR-T, NFR-Q).

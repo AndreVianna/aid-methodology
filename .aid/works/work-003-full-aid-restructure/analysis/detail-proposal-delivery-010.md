@@ -49,33 +49,33 @@ which names the driver from delivery-010's gate session on.
 | task-258 | close-work.sh: the local clean-up of one closed work | IMPLEMENT | 2 | 3 | task-257 |
 | task-259 | The pull_request key and the writer's --pull-request, with the duplicate-ref rule | IMPLEMENT | 2 | 2 | task-254 |
 | task-260 | The work_folders setting | IMPLEMENT | 2 | 2 | task-254 |
-| task-261 | The gh and glab stand-ins for the conversation suite | TEST | 2 | 2 | task-254 |
-| task-262 | aid-monitor-pipeline references: START, COLLECT, reaching the host | IMPLEMENT | 3 | 3 | task-259, task-260 |
-| task-263 | aid-monitor-pipeline references: PUSH and PARENT | IMPLEMENT | 3 | 3 | task-255, task-256, task-259 |
-| task-264 | aid-monitor-pipeline references: REVIEW, REACT, WATCH and the brief | IMPLEMENT | 3 | 3 | task-259 |
-| task-265 | aid-monitor-pipeline reference: CLOSE | IMPLEMENT | 3 | 4 | task-256, task-258 |
-| task-266 | aid-monitor-pipeline SKILL.md, its guide line and its lists | IMPLEMENT | 3 | 5 | task-262, task-263, task-264, task-265 |
+| task-261 | The gh and glab stand-ins for the conversation suite | TEST | 2 | 4 | task-254, task-262 |
+| task-262 | aid-monitor-pipeline: the folder with a stub SKILL.md and its lists; START, COLLECT and the host references | IMPLEMENT | 3 | 3 | task-259, task-260 |
+| task-263 | aid-monitor-pipeline references: PUSH and PARENT | IMPLEMENT | 3 | 4 | task-255, task-256, task-259, task-262 |
+| task-264 | aid-monitor-pipeline references: REVIEW, REACT, WATCH and the brief | IMPLEMENT | 3 | 4 | task-259, task-262 |
+| task-265 | aid-monitor-pipeline reference: CLOSE | IMPLEMENT | 3 | 4 | task-256, task-258, task-262 |
+| task-266 | aid-monitor-pipeline SKILL.md: the full step table, and its deferred row | IMPLEMENT | 3 | 5 | task-262, task-263, task-264, task-265 |
 | task-267 | Contracts for the CI phase: approvals, the gate's row 1, the publish seam, the worktree teardown | IMPLEMENT | 3 | 2 | task-254 |
 | task-268 | The finishing skills pass to the close | IMPLEMENT | 3 | 6 | task-266 |
 | task-269 | The interim close retired, and Building's calls named | IMPLEMENT | 3 | 6 | task-263, task-266 |
-| task-270 | Every other push removed, and the housekeep and origin/master re-pointing | IMPLEMENT | 4 | 6 | task-257, task-266, task-267 |
+| task-270 | Every other push removed, and the housekeep and origin/master re-pointing | IMPLEMENT | 4 | 7 | task-257, task-266, task-267, task-268, task-269 |
 | task-271 | delete-pipeline.sh without --force | IMPLEMENT | 4 | 2 | task-254 |
 | task-272 | Dashboard readers and server: the pull request and merged work folders | IMPLEMENT | 4 | 3 | task-259 |
-| task-273 | Dashboard page: the CI card lines | IMPLEMENT | 4 | 7 | task-270, task-272 |
+| task-273 | Dashboard page: the CI card lines | IMPLEMENT | 4 | 8 | task-270, task-272 |
 | task-274 | test-push-approved.sh | TEST | 5 | 3 | task-255, task-259 |
 | task-275 | test-merge-parent.sh | TEST | 5 | 3 | task-256 |
 | task-276 | test-close-work.sh, and the cleanup-classify cases | TEST | 5 | 4 | task-257, task-258 |
 | task-277 | Writer unit cases: --pull-request and the duplicate ref | TEST | 5 | 3 | task-259 |
-| task-278 | Dashboard cases: draft, failing pipeline, idle watch, connection, merged-in folder | TEST | 5 | 8 | task-272, task-273 |
-| task-279 | test-never-merges.sh: NM-01 narrowed, NM-03 with no exemption, NM-05 and NM-06 | TEST | 5 | 7 | task-255, task-256, task-258, task-265, task-268, task-270, task-271 |
-| task-280 | test-monitor-pipeline.sh (MP-01 to MP-05) | TEST | 5 | 7 | task-259, task-260, task-266, task-267, task-268, task-269, task-270 |
-| task-281 | Samples 008-01 to 008-07 (run at this gate) | TEST | 5 | 7 | task-261, task-266, task-268, task-269, task-270 |
-| task-282 | Samples 008-08 to 008-14 (run at this gate) | TEST | 5 | 8 | task-281 |
-| task-283 | Samples 008-15 to 008-18, and the deferred rows | TEST | 5 | 9 | task-282 |
-| task-284 | The four new suites in the CI lane | CONFIGURE | 5 | 8 | task-274, task-275, task-276, task-280 |
-| task-285 | KB decisions, schemas, glossary and tech debt for the CI phase | DOCUMENT | 5 | 7 | task-259, task-260, task-270 |
-| task-286 | KB architecture, contracts and integration documents for the CI phase | DOCUMENT | 5 | 7 | task-266, task-270, task-271 |
-| task-287 | KB test landscape for the CI suites, the regenerated index and the view | DOCUMENT | 5 | 10 | task-277, task-278, task-279, task-283, task-284, task-285, task-286 |
+| task-278 | Dashboard cases: draft, failing pipeline, idle watch, connection, merged-in folder | TEST | 5 | 9 | task-272, task-273 |
+| task-279 | test-never-merges.sh: NM-01 narrowed, NM-03 with no exemption, NM-05 and NM-06 | TEST | 5 | 8 | task-255, task-256, task-258, task-265, task-268, task-270, task-271 |
+| task-280 | test-monitor-pipeline.sh (MP-01 to MP-05) | TEST | 5 | 8 | task-259, task-260, task-266, task-267, task-268, task-269, task-270 |
+| task-281 | Samples 008-01 to 008-07 (run at this gate) | TEST | 5 | 8 | task-261, task-266, task-268, task-269, task-270 |
+| task-282 | Samples 008-08 to 008-14 (run at this gate) | TEST | 5 | 9 | task-281 |
+| task-283 | Samples 008-15 to 008-18, and the deferred rows | TEST | 5 | 10 | task-262, task-266, task-282 |
+| task-284 | The four new suites in the CI lane | CONFIGURE | 5 | 9 | task-274, task-275, task-276, task-280 |
+| task-285 | KB decisions, schemas, glossary and tech debt for the CI phase | DOCUMENT | 5 | 8 | task-259, task-260, task-270 |
+| task-286 | KB architecture, contracts and integration documents for the CI phase | DOCUMENT | 5 | 9 | task-266, task-270, task-271, task-285 |
+| task-287 | KB test landscape for the CI suites, the regenerated index and the view | DOCUMENT | 5 | 11 | task-277, task-278, task-279, task-283, task-284, task-285, task-286 |
 
 That is 34 tasks. The resync follows the run's pause at the delivery-010 MILESTONE approval (§ 4).
 
@@ -85,8 +85,8 @@ That is 34 tasks. The resync follows the run's pause at the delivery-010 MILESTO
 
 The blocks of delivery-009, with the three adaptations above, and G1-G13. Same-file edits are ordered by a direct
 dependency edge, never by the waves (G12): `test-never-merges.sh` (256, then 265, then 279), `deferred.tsv` (266,
-then 283), `test-kb-skills.sh` (263, then 269), `home.html` (270, then 273). The steps after the resync and before
-the gate are written into task-287's text (G13). The new skill adds one to the skill count: task-266 re-syncs the counted numbers
+then 283, a direct edge), the finishing and close sites (268 and 269, then 270), `test-kb-skills.sh` (263, then 269), `home.html` (270, then 273). The steps after the resync and before
+the gate are written into task-287's text (G13). The new skill adds one to the skill count: task-262 (G14) re-syncs the counted numbers
 and runs `sync:docs`.
 
 ---
@@ -122,7 +122,7 @@ Feature 006 keeps readable).
     - **Y8** the Q106 suite map for every file on the edit list, including the site's skill lists.
   - Give each hit exactly one owner:
     - a task of delivery-010 (task-255 to task-287; see the task files under
-      `.aid/works/work-003-full-aid-restructure/deliveries/delivery-010/tasks/`);
+      `.aid/works/work-003-full-aid-restructure/tasks/task-NNN/DETAIL.md`, the layout delivery-008's migration leaves);
     - Feature 009 (delivery-012) for the skills it rebuilds that finish a work (`create`, `update`, `document`,
       `test`, `prototype`);
     - "installed copy (resync)";
@@ -254,7 +254,7 @@ Feature 006 keeps readable).
 
 ### task-261: The gh and glab stand-ins for the conversation suite [TEST]
 
-- **Stanza wave:** 2. **Depends on:** task-254.
+- **Stanza wave:** 2. **Depends on:** task-254, task-262.
 - **Source:** AC-13, AC-27, AC-42.
 - **Scope:**
   - Create `tests/conversation/stand-ins/gh` and `tests/conversation/stand-ins/glab` (REQUIREMENTS.md § 11 Feature 008 `##### 8. Testing`,
@@ -269,7 +269,7 @@ Feature 006 keeps readable).
   - [ ] A scratch `host.json` with one open pull request and one failing check gives the expected answers to `gh pr view`, `gh pr checks` and `glab ci status`, and each call is appended to `host-calls.log`.
   - [ ] `gh pr merge` and `glab mr merge` exit non-zero and change nothing; the stand-ins are deterministic and need no network.
 
-### task-262: aid-monitor-pipeline references: START, COLLECT, reaching the host [IMPLEMENT]
+### task-262: aid-monitor-pipeline: the folder with a stub SKILL.md and its lists; START, COLLECT and the host references [IMPLEMENT]
 
 - **Stanza wave:** 3. **Depends on:** task-259, task-260.
 - **Source:** AC-13, AC-42.
@@ -292,7 +292,7 @@ Feature 006 keeps readable).
 
 ### task-263: aid-monitor-pipeline references: PUSH and PARENT [IMPLEMENT]
 
-- **Stanza wave:** 3. **Depends on:** task-255, task-256, task-259.
+- **Stanza wave:** 3. **Depends on:** task-255, task-256, task-259, task-262.
 - **Source:** AC-11, AC-35, AC-42.
 - **Scope:**
   - Create in `canonical/skills/aid-monitor-pipeline/references/`, each at most 120 lines (REQUIREMENTS.md § 11 Feature 008 `##### 2. Flow`, steps 3-4):
@@ -312,7 +312,7 @@ Feature 006 keeps readable).
 
 ### task-264: aid-monitor-pipeline references: REVIEW, REACT, WATCH and the brief [IMPLEMENT]
 
-- **Stanza wave:** 3. **Depends on:** task-259.
+- **Stanza wave:** 3. **Depends on:** task-259, task-262.
 - **Source:** AC-27.
 - **Scope:**
   - Create in `canonical/skills/aid-monitor-pipeline/references/`, each at most 120 lines (REQUIREMENTS.md § 11 Feature 008 `##### 2. Flow`, steps 5-7):
@@ -331,7 +331,7 @@ Feature 006 keeps readable).
 
 ### task-265: aid-monitor-pipeline reference: CLOSE [IMPLEMENT]
 
-- **Stanza wave:** 3. **Depends on:** task-256, task-258.
+- **Stanza wave:** 3. **Depends on:** task-256, task-258, task-262.
 - **Source:** AC-36.
 - **Scope:**
   - Create `canonical/skills/aid-monitor-pipeline/references/close.md`, at most 120 lines (REQUIREMENTS.md § 11 Feature 008 `##### 2. Flow`, step 8): the write-back offer before
@@ -345,7 +345,7 @@ Feature 006 keeps readable).
   - [ ] `close.md` names `close-work.sh`, `cleanup-classify.sh` and `Completed` (MP-02), and runs no `git pull`.
   - [ ] `test-never-merges.sh` passes live with the one exception, and the site `npm test` passes after regeneration.
 
-### task-266: aid-monitor-pipeline SKILL.md, its guide line and its lists [IMPLEMENT]
+### task-266: aid-monitor-pipeline SKILL.md: the full step table, and its deferred row [IMPLEMENT]
 
 - **Stanza wave:** 3. **Depends on:** task-262, task-263, task-264, task-265.
 - **Source:** AC-14, AC-21, AC-36.
@@ -423,7 +423,7 @@ Feature 006 keeps readable).
 
 ### task-270: Every other push removed, and the housekeep and origin/master re-pointing [IMPLEMENT]
 
-- **Stanza wave:** 4. **Depends on:** task-257, task-266, task-267.
+- **Stanza wave:** 4. **Depends on:** task-257, task-266, task-267, task-268, task-269.
 - **Source:** AC-11, AC-36.
 - **Scope:**
   - Every kept file under `canonical/` that still runs `git push` loses that line: the KB is committed, never pushed
@@ -611,7 +611,7 @@ Feature 006 keeps readable).
 
 ### task-283: Samples 008-15 to 008-18, and the deferred rows [TEST]
 
-- **Stanza wave:** 5. **Depends on:** task-282.
+- **Stanza wave:** 5. **Depends on:** task-262, task-266, task-282.
 - **Source:** AC-13, AC-27, AC-35, AC-36, AC-42.
 - **Scope:**
   - Create `008-15-live-hosts`, `008-16`, `008-17` and `008-18` under `tests/conversation/samples/feature-008/`, with the
@@ -656,7 +656,7 @@ Feature 006 keeps readable).
 
 ### task-286: KB architecture, contracts and integration documents for the CI phase [DOCUMENT]
 
-- **Stanza wave:** 5. **Depends on:** task-266, task-270, task-271.
+- **Stanza wave:** 5. **Depends on:** task-266, task-270, task-271, task-285.
 - **Source:** AC-11, AC-13, AC-36.
 - **Scope:**
   - Edit these documents under `.aid/knowledge/` (REQUIREMENTS.md § 11 Feature 008 `##### 7. Migration`, KB): `pipeline-contracts.md` (the CI phase
@@ -727,15 +727,16 @@ in its "Gate-session steps" block (G13):
 
 ```text
 wave 1: task-254
-wave 2: task-255, task-256, task-257, task-259, task-260, task-261, task-267, task-271
-wave 3: task-258, task-262, task-263, task-264, task-272, task-274, task-275, task-277
-wave 4: task-265, task-276
+wave 2: task-255, task-256, task-257, task-259, task-260, task-267, task-271
+wave 3: task-258, task-262, task-272, task-274, task-275, task-277
+wave 4: task-261, task-263, task-264, task-265, task-276
 wave 5: task-266
-wave 6: task-268, task-269, task-270
-wave 7: task-273, task-279, task-280, task-281, task-285, task-286
-wave 8: task-278, task-282, task-284
-wave 9: task-283
-wave 10: task-287
+wave 6: task-268, task-269
+wave 7: task-270
+wave 8: task-273, task-279, task-280, task-281, task-285
+wave 9: task-278, task-282, task-284, task-286
+wave 10: task-283
+wave 11: task-287
 ```
 
 Step 5 writes the table under `### delivery-010 Execution Graph`, one task per row, from the task files'
@@ -749,7 +750,7 @@ Step 5 writes the table under `### delivery-010 Execution Graph`, one task per r
 |---|---|---|---|
 | S1 | The Execution protocol note in the task files of deliveries 010-014. | Feature 006's `task-detail-template.md` note, word for word, naming the writer and no file, with the task's id in place of `NNN`. | Settled by recommendation (Q136, follows F006's template); the maintainer's answer to the delivery-009 flag. |
 | S2 | The test step under the new builder. | `BASE` is the task's recorded `base`; the same failure after three fix rounds is a real blocker. The scratch-half and live-half split stays. | F007 Flow (BUILD's `base`; TEST's M7 limit); PLAN.md "Testing before the resync". |
-| S3 | `aid-monitor-pipeline`'s eleven references and `SKILL.md`. | Four tasks write the references, unreferenced until task-266 writes `SKILL.md` and adds the skill's lists. | One session per task. |
+| S3 | `aid-monitor-pipeline`'s eleven references and `SKILL.md`. | Task-262, the first task writing in the folder, creates it with a stub `SKILL.md`, its guide line, its site lists and the counts (G14); 263-265 depend on it and write the other references; task-266 writes the full `SKILL.md` and its deferred row. | One session per task; G14 (light review row 1: the site rejects a skill folder with no `SKILL.md` or no roster entry). |
 | S4 | NM-01's `close.md` exception and KB-03's use by `parent.md`. | Each in the task that writes the file that needs it (265, 263); NM-05 and NM-06 come with task-279. | G11. |
 | S5 | The new skill's sample coverage before its samples exist. | A temporary `skill:aid-monitor-pipeline` row in `deferred.tsv` (266), removed by task-283. | DT-01, SS-09. |
 | S6 | The stand-ins. | A TEST task of their own (261), before the samples. | F008 § 8. |

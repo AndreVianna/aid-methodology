@@ -16,6 +16,13 @@
 - Then regenerate `INDEX.md` and render `kb.html` with the installed scripts (G0). This delivery's resync changes no
   KB document.
 - Name no work and no work folder.
+- **KB edits and NEXT's KB check (Feature 007 § 2, step 7; Feature 004).** After every earlier task of this
+  delivery, NEXT's KB check may make a `CALL` to `/aid-kb-update`, which edits and commits the drifted documents
+  itself (`kb-commit.sh`) and records a `KB change` entry `Assumed`. This task is the delivery's planned KB edit, and
+  it runs on the KB those calls left: before editing, it reads this work's `kb_updates` and its `KB change` entries;
+  it keeps what they wrote that agrees with the spec, adds only what the spec's KB list still lacks, and changes their
+  text only where it contradicts the spec, naming the entry it corrects. It commits through `kb-commit.sh`. Its
+  commits touch no document's `sources:`, so NEXT's KB check after it finds nothing to do.
 - **Gate-session steps (not built by this task).** Listed here so whoever runs the resync and the gate reads
   them from a task file (PLAN.md, The resync rule, item 6; G13). None is a task step, and none is resync-relevant
   except the resync itself.

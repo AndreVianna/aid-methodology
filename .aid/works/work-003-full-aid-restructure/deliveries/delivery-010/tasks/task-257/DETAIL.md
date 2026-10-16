@@ -80,6 +80,6 @@
 
 **Acceptance Criteria:**
 - [ ] `test -e canonical/aid/scripts/housekeep` fails and `canonical/aid/scripts/pipeline/cleanup-classify.sh` exists; over it, `git grep -nE 'origin/master|Deploy Status'` finds nothing.
-- [ ] The three housekeep suites pass live on the new path, with a parent branch other than `master` in their fixtures.
+- [ ] The three housekeep suites pass in the scratch copy (their text names `.aid/runtime`, which matches the driver's pattern `P`) on the new path, with a parent branch other than `master` in their fixtures.
 - [ ] The test step (last Scope bullet) reports no failure: the spawn-free checks, the scratch half, the live half and the site or dashboard runs it calls for. Every existing test still passes.
 - [ ] All section-6 quality gates pass (REQUIREMENTS.md § 6: NFR-N, NFR-T, NFR-Q).

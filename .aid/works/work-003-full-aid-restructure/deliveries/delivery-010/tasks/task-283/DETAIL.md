@@ -7,7 +7,7 @@
 
 **Source:** feature-008-cicd-integration-monitoring -> delivery-010 -> AC-13, AC-27, AC-35, AC-36, AC-42
 
-**Depends on:** task-282
+**Depends on:** task-262, task-266, task-282
 
 **Scope:**
 - Create `008-15-live-hosts`, `008-16`, `008-17` and `008-18` under `tests/conversation/samples/feature-008/`, with the

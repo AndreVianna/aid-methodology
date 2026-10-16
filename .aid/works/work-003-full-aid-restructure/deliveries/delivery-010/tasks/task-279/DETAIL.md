@@ -50,7 +50,7 @@
        `references/blocker.md`).
 
 **Acceptance Criteria:**
-- [ ] The suite passes live.
+- [ ] The suite passes where the test step puts it (the scratch half when its text matches the driver's pattern `P`, else the live half).
 - [ ] Each new check fails its own mutation in a scratch copy: a `git push` in a skill reference; a forced push in `push-approved.sh`; `git branch -D` in another script; `--force` back in `delete-pipeline.sh`.
 - [ ] The test step (last Scope bullet) reports no failure: the spawn-free checks, the scratch half, the live half and the site or dashboard runs it calls for. Every existing test still passes.
 - [ ] All section-6 quality gates pass (REQUIREMENTS.md § 6: NFR-N, NFR-T, NFR-Q).

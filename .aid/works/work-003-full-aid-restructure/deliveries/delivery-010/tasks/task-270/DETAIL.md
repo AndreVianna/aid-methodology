@@ -7,7 +7,7 @@
 
 **Source:** feature-008-cicd-integration-monitoring -> delivery-010 -> AC-11, AC-36
 
-**Depends on:** task-257, task-266, task-267
+**Depends on:** task-257, task-266, task-267, task-268, task-269
 
 **Scope:**
 - Every kept file under `canonical/` that still runs `git push` loses that line: the KB is committed, never pushed
