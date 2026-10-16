@@ -1475,3 +1475,27 @@ qa:
     suggested: 'Build deliveries 001-008 directly by the main conversation, like delivery-009 (Q114): developer then reviewer agent per task, every state change written as it happens; the new /aid-execute builds from delivery-010. Q118 and Q120 become moot.'
     answer: 'Accepted as recommended (deliveries 001-009 built directly).'
     applied_to: 'PLAN.md (Toolchain and Branching; every delivery 001-009)'
+  - id: Q128
+    category: Planning
+    impact: Medium
+    state: Answered
+    context: 'Plan review cycle 3 graded C+ (third round below the bar, rule 9b): rows 23 (new /aid-execute keeps working after the resync task in deliveries 010-014), 24 (delivery-008 resync task proof straddles the file switch) and 25 (no reviews key for the work-file --review mode).'
+    suggested: 'Fix the three, then one more review. Also keep the architect''s notes: deliveries 001-007 review proof lives in each task''s commit; Q124 applied at the switch without a new question; phase Execute written at the start of delivery-001.'
+    answer: 'Accepted as recommended (fix, then one more review; notes kept).'
+    applied_to: 'PLAN.md (rows 23-25)'
+  - id: Q129
+    category: Planning
+    impact: Medium
+    state: Answered
+    context: 'This work''s STATE.yml is nested but also carries the template''s flattened delivery keys; F006''s format-6 work-state step does not say which wins.'
+    suggested: 'State the rule in F006''s spec (nested data wins over the flattened keys) so every work with this shape migrates correctly, with a fixture.'
+    answer: 'Accepted as recommended (in F006''s spec).'
+    applied_to: 'REQUIREMENTS.md Feature 006 Migration; PLAN.md delivery-008'
+  - id: Q130
+    category: Planning
+    impact: Low
+    state: Answered
+    context: 'F005''s work-file --review mode is used from delivery-008 for every task''s grade, but this work''s STATE.yml has no reviews key and F005 does not say the writer creates one.'
+    suggested: 'F005''s spec: the --review mode creates the reviews key when it is missing.'
+    answer: 'Accepted as recommended (in F005''s spec).'
+    applied_to: 'REQUIREMENTS.md Feature 005 writer change; PLAN.md'
