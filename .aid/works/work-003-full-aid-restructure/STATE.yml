@@ -1423,3 +1423,51 @@ qa:
     suggested: 'Keep both adjustments: without them state writes and tests break between deliveries.'
     answer: 'Accepted as recommended (keep both).'
     applied_to: 'PLAN.md (delivery-002, delivery-003, delivery-011, delivery-012)'
+  - id: Q122
+    category: Planning
+    impact: Medium
+    state: Answered
+    context: 'Plan review rows 3 and 10: delivery-002 makes skills resume at their saved step but the pause-to-ASK/WAIT translation (advance words) sat in the sweep, so a paused skill restarts between deliveries 002 and 003.'
+    suggested: 'Move the advance-word translation into the engine (delivery-002).'
+    answer: 'Accepted as recommended.'
+    applied_to: 'PLAN.md (delivery-002, delivery-003)'
+  - id: Q123
+    category: Planning
+    impact: Medium
+    state: Answered
+    context: 'At the end of delivery-009 the new /aid-execute takes over and finds no milestone approval recorded for earlier deliveries.'
+    suggested: 'The main conversation writes deliveries 001-009 Verify/Commit records and asks one combined approval covering them and the confirmation before building.'
+    answer: 'Accepted as recommended (one combined approval).'
+    applied_to: 'PLAN.md (Toolchain and Branching)'
+  - id: Q124
+    category: Planning
+    impact: Medium
+    state: Answered
+    context: 'F002''s gate asks a recovery question at delivery-002 because work-003 has no intent.reading (work type).'
+    suggested: 'Record this work''s type as change.'
+    answer: 'Accepted as recommended (change).'
+    applied_to: 'PLAN.md (toolchain switch table)'
+  - id: Q125
+    category: Planning
+    impact: Medium
+    state: Answered
+    context: 'A directly built delivery needs gate evidence that its tracking happened; tasks_lifecycle keeps no history and ledgers are gitignored.'
+    suggested: 'Each task adds two STATE.yml-only commits (In Progress, In Review) before its own commit, plus a reviews entry; the gate checks them in git.'
+    answer: 'Accepted as recommended.'
+    applied_to: 'PLAN.md (every directly built delivery)'
+  - id: Q126
+    category: Planning
+    impact: Low
+    state: Answered
+    context: 'Windows CI runs only Test-AidInstaller.ps1 and Test-InstallProvisioning.ps1.'
+    suggested: 'Add a Test-AidInstaller.ps1 case for each format-6 step, slightly beyond the specs.'
+    answer: 'Accepted as recommended.'
+    applied_to: 'PLAN.md (Common Gate, Windows coverage; deliveries adding format-6 steps)'
+  - id: Q127
+    category: Planning
+    impact: High
+    state: Answered
+    context: 'Plan review rows 1, 21 and 22 all come from patching today''s /aid-execute (delivery branches, per-task worktrees, gate fix rounds) to build on work-003; it is retired by this same work.'
+    suggested: 'Build deliveries 001-008 directly by the main conversation, like delivery-009 (Q114): developer then reviewer agent per task, every state change written as it happens; the new /aid-execute builds from delivery-010. Q118 and Q120 become moot.'
+    answer: 'Accepted as recommended (deliveries 001-009 built directly).'
+    applied_to: 'PLAN.md (Toolchain and Branching; every delivery 001-009)'
