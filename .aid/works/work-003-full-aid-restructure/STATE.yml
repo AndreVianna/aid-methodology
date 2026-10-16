@@ -398,6 +398,10 @@ review_history:
     event: 'Plan review cycle 4'
     outcome: 'Grade C+ (1 MEDIUM open): new row 26 (FINAL full suite runs before the resync); rows 23-25 confirmed Fixed'
     notes: 'Spec edits (F005 --review key, F006 nested wins) consistent with citing features; maintainer decides on row 26 (rule 9b)'
+  - date: '2026-10-16'
+    event: 'Plan review cycle 5'
+    outcome: 'Grade C+ (1 MEDIUM open): new row 27 (F007 FINAL does not say it runs the recorded full_suite.command); row 26 confirmed Fixed'
+    notes: 'Maintainer decides on row 27 (rule 9b)'
 
 # [A] written by the orchestrator on the work's active branch (single
 #     writer). Append-only audit trail of phase transitions and gate
