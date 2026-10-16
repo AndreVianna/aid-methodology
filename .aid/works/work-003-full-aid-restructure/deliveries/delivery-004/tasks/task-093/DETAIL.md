@@ -22,6 +22,12 @@
 **Scope:**
 - Delete `canonical/skills/aid-describe/`. Its parts are already placed (REQUIREMENTS.md § 11 Feature 003 `##### 5. Components`).
 - `canonical/aid/rules.md` § Skill guide: the `/aid-describe` line goes.
+- **No legacy row proposes the deleted skill.** In `canonical/aid/templates/work-initiation-gate.md` § 3b,
+  the old phase row `Describe -> /aid-describe` (inside the `legacy-phase-map` block; about line 139 at the
+  base) goes. task-088's third row already sends every phase-`Describe` work to its initiator's skill, so
+  nothing is re-pointed in its place. `aid-describe` stays in the block only as an initiator a row matches
+  (task-088's second row). The suites asserting the removed row (`test-work-initiation-gate.sh`, and any
+  suite the G6 grep below finds) change in this same task (G6, G3).
 - `dashboard/home.html`'s empty-state steps: "run `/aid-describe`" becomes "tell your AI tool what you
   want to build", with `dashboard/server/tests/test_index_html.py`. The readers' `SHORTCUT_KIND_MAP` and
   `_FULL_PATH_INITIATOR` stay.
@@ -99,6 +105,7 @@
 
 **Acceptance Criteria:**
 - [ ] `test -e canonical/skills/aid-describe` fails. Outside the gate's legacy block, nothing under `canonical/` or in `dashboard/home.html` names `aid-describe`, except `design-lifecycle.md` and the KB-writing `aid-create-*` / `aid-update-*` skills, which Feature 004 retires; task-099 adds their ID-02 exemption row (ID-02's rule, scoped to hold at this task's end).
+- [ ] Inside the `legacy-phase-map` block, no row's proposed skill or step names `aid-describe`: the only lines naming it match it as an old `pipeline.initiator`. Walking the block's first-match order by hand, recorded in the report: an `aid-research` work at `phase: Describe` -> `/aid-research`; an `aid-describe` work at `phase: Describe` -> `/aid-specify`. `test-work-initiation-gate.sh` passes live.
 - [ ] DT-01, SG-04 and `test-skill-steps.sh` pass in the scratch copy, and `test-doc-counts.sh` passes live.
 - [ ] `python3 -m pytest dashboard/server/tests/test_index_html.py` and the site `npm test` pass.
 - [ ] The test step (last Scope bullet) reports no failure: the spawn-free checks, the scratch half, the live half and the site or dashboard runs it calls for. Every existing test still passes.

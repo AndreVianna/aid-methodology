@@ -23,9 +23,11 @@
 - `tests/canonical/test-writeback-state.sh`: `--pipeline --field "Idea Draft"` and `--field "Side Idea"`
   accept `--` and a valid identity, refuse any other value with exit 4, and the file still parses through
   the dashboard reader (REQUIREMENTS.md § 11 Feature 003 `##### 7. Testing`).
-- `tests/canonical/test-work-initiation-gate.sh`: one `--check` fixture for each of the two new legacy
+- `tests/canonical/test-work-initiation-gate.sh`: one `--check` fixture for each of the three new legacy
   rows, plus a negative case (Q137): a work with `pipeline.initiator: aid-describe` at `phase: Plan` is
-  proposed the `Plan` row's skill (`/aid-plan`), not `/aid-specify`.
+  proposed the `Plan` row's skill (`/aid-plan`), not `/aid-specify`. The third row's fixture is a work
+  with `pipeline.initiator: aid-research` at `phase: Describe`: it is proposed `/aid-research`, never
+  `/aid-describe`.
 - **Test step** (PLAN.md § "Testing before the resync"; the same in every task of this delivery).
   `BASE` is this task's `task-096: In Progress` commit. Work in the `work-003` worktree only, create no
   branch or worktree, and never run `run_generator.py` in the live tree.
@@ -58,7 +60,7 @@
      - The same failure after three fix rounds goes to the maintainer.
 
 **Acceptance Criteria:**
-- [ ] Both suites pass live, with the named cases, including the Q137 negative case.
+- [ ] Both suites pass live, with the named cases, including the Q137 negative case and the `aid-research` at `phase: Describe` case.
 - [ ] Each case fails when its writer branch or legacy row is broken in a scratch copy.
 - [ ] The test step (last Scope bullet) reports no failure: the spawn-free checks, the scratch half, the live half and the site or dashboard runs it calls for. Every existing test still passes.
 - [ ] All section-6 quality gates pass (REQUIREMENTS.md § 6: NFR-N, NFR-T, NFR-Q).

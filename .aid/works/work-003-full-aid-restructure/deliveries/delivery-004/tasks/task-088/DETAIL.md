@@ -1,4 +1,4 @@
-# task-088: The draft deletion rule and the gate's two legacy rows
+# task-088: The draft deletion rule and the gate's three legacy rows
 
 > **Execution protocol (binding on whoever executes this task -- no
 > exceptions):** the moment this task's `State` changes, write it --
@@ -28,13 +28,20 @@
   - `--pipeline --field "Idea Draft" --value --` clears the key.
   - A `draft` source keeps its entry, and its `effect` notes the deletion.
   - The approval's own message says the draft will be removed.
-- `canonical/aid/templates/work-initiation-gate.md` § 3b: the legacy block gains, at its top, the two rows
-  of REQUIREMENTS.md § 11 Feature 003 `##### 6. Migration` (Existing works), as Q137 narrowed the second:
+- `canonical/aid/templates/work-initiation-gate.md` § 3b: the legacy block gains, at its top and in this
+  order, the three rows of REQUIREMENTS.md § 11 Feature 003 `##### 6. Migration` (Existing works), as Q137
+  narrowed them:
   - `pipeline.initiator` is `aid-brainstorm`, `aid-design` or an `aid-design-*` skill, whatever its
     `phase` -> `/aid-brainstorm` at START;
   - `pipeline.initiator` is `aid-describe` **and** `phase` is `Describe`, missing or `--` ->
     `/aid-specify` at its entry step. A work `aid-describe` started that is at a later phase falls through
-    to that phase's own row, as in Feature 006's migration order.
+    to that phase's own row, as in Feature 006's migration order;
+  - `phase` is `Describe`, missing or `--`, with any other initiator (an old `aid-research` or
+    `aid-review` work keeps the template's default `phase: Describe`) -> that initiator's row in this
+    block, else the old `active_skill`, else the initiator itself when that skill still exists (Feature
+    006's migration rule 4). It never proposes the deleted `/aid-describe`.
+- The old phase row `Describe -> /aid-describe` stays until task-093 deletes `aid-describe`; the third row
+  above already wins over it for every phase-`Describe` work.
 - The new `--check` fixtures are task-096.
 - Suites to update in this same task: the existing `tests/canonical/test-work-initiation-gate.sh`
   assertions, and any suite the findings' R5 assigns here.
@@ -90,6 +97,6 @@
 
 **Acceptance Criteria:**
 - [ ] § When approvals happen names `idea_draft` and `idea-drafts.sh`, and holds the two-row deletion table (ID-06's rule).
-- [ ] The two rows sit first inside the `legacy-phase-map` markers, the second with the Q137 wording, and `test-work-initiation-gate.sh` passes live. Walking the block's first-match order by hand, recorded in the report: an `aid-design` work at any phase -> `/aid-brainstorm`; an `aid-describe` work at `phase: Describe` -> `/aid-specify`; an `aid-describe` work at `phase: Plan` -> the `Plan` row (`/aid-plan`), never `/aid-specify`.
+- [ ] The three rows sit first inside the `legacy-phase-map` markers, in the spec's order and with the Q137 wording, and `test-work-initiation-gate.sh` passes live. Walking the block's first-match order by hand, recorded in the report: an `aid-design` work at any phase -> `/aid-brainstorm`; an `aid-describe` work at `phase: Describe` -> `/aid-specify`; an `aid-describe` work at `phase: Plan` -> the `Plan` row (`/aid-plan`), never `/aid-specify`; an `aid-research` work at `phase: Describe` -> `/aid-research`, never `/aid-describe`.
 - [ ] The test step (last Scope bullet) reports no failure: the spawn-free checks, the scratch half, the live half and the site or dashboard runs it calls for. Every existing test still passes.
 - [ ] All section-6 quality gates pass (REQUIREMENTS.md § 6: NFR-N, NFR-T, NFR-Q).

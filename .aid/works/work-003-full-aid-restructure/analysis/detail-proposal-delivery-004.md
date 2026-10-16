@@ -37,7 +37,7 @@ Anchors read as in the earlier proposals. "F003 § 2" is Feature 003's `##### 2.
 | task-085 | Kind catalog `kind-catalog.yml` (v1) | IMPLEMENT | 2 | 2 | 082 |
 | task-086 | Idea-draft shape and the design-folder README | IMPLEMENT | 2 | 2 | 082 |
 | task-087 | `/aid-brainstorm` rewrite: the skill, START and CONVERSE | IMPLEMENT | 3 | 3 | 083, 084, 085, 086 |
-| task-088 | The draft deletion rule and the gate's two legacy rows | IMPLEMENT | 3 | 3 | 083, 084 |
+| task-088 | The draft deletion rule and the gate's three legacy rows | IMPLEMENT | 3 | 3 | 083, 084 |
 | task-089 | `/aid-orchestrate` routing rows and the kind hook | IMPLEMENT | 3 | 3 | 083, 085 |
 | task-090 | `/aid-brainstorm` rewrite: CHECK, FINISH, parking and side ideas | IMPLEMENT | 3 | 4 | 087 |
 | task-091 | Re-point the skills that name `/aid-describe` or `/aid-design` | IMPLEMENT | 4 | 4 | 087 |
@@ -193,20 +193,20 @@ The retirements (task-093 and task-094) also apply these rules in the same task:
   - [ ] The line caps hold. `test-skill-guide.sh` (SG-02 to SG-04) and `test-skill-steps.sh` pass in the
     scratch copy.
 
-### task-088: The draft deletion rule and the gate's two legacy rows [IMPLEMENT]
+### task-088: The draft deletion rule and the gate's three legacy rows [IMPLEMENT]
 
 - **Depends on:** task-083, task-084.
 - **Source:** AC-17, AC-37.
 - **Scope:**
   - `skill-steps.md` § When approvals happen gains the deletion rule and table: `idea-drafts.sh delete`,
     then clear `idea_draft`; a `draft` source keeps its entry, with `effect` noting the deletion.
-  - The legacy block of `work-initiation-gate.md` § 3b gains the two rows of F003 § 6 at its top.
+  - The legacy block of `work-initiation-gate.md` § 3b gains the three rows of F003 § 6 at its top.
     Flagged: F-1.
   - The new `--check` fixtures are task-096.
 - **Suites updated in the same task:** the existing `test-work-initiation-gate.sh` assertions.
 - **Acceptance criteria:**
   - [ ] § When approvals happen names `idea_draft` and `idea-drafts.sh` (ID-06's rule).
-  - [ ] The two rows sit first inside the legacy markers, and `test-work-initiation-gate.sh` passes live.
+  - [ ] The three rows sit first inside the legacy markers, and `test-work-initiation-gate.sh` passes live.
 
 ### task-089: `/aid-orchestrate` routing rows and the kind hook [IMPLEMENT]
 
