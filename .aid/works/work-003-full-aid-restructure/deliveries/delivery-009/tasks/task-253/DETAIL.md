@@ -46,10 +46,17 @@
   3. **The gate:** the stanza's criteria, the samples, G0 with the baselines, and the tracking proof for task-219
      to task-253 (the work `STATE.yml`'s state-only commits and its `reviews`). A fix after this resync records its
      grade with `--delivery-id 009 --field Verify`; no lifecycle is written.
+     The gate's pre-switch checks leave out the stanza's "After the switch, four things hold" criterion; step 5
+     checks it.
   4. **The switch** (Q123, Q124): `--check`, then `--repair --skill aid-execute --name START --reading change`;
      `Verify` and `Commit` for deliveries 001-009 with `--delivery-id NNN --field`; then the one approval through
      `--ask` and `--answer`, `covers: delivery delivery-001; ...; delivery delivery-009; confirmation before
      building`, `commit` the head.
+  5. **Post-switch check** (the stanza's "After the switch, four things hold", run after step 4): the installed
+     `writeback-state.sh --check` exits 0 on this work; its `STATE.yml` reads `intent.reading: change`,
+     `active_skill: aid-execute` and `step: START`; `qa` holds one `Approval` entry answered yes, with a `commit`,
+     whose `covers` names `delivery delivery-001` to `delivery delivery-009` and `confirmation before building`.
+     A failure here is fixed and the check re-run before delivery-010's START.
 - **Test step** (PLAN.md § "Testing before the resync"; the same in every task of this delivery).
   `BASE` is this task's `task-253: In Progress` commit. Work in the `work-003` worktree only, create no
   branch or worktree, and never run `run_generator.py` in the live tree.

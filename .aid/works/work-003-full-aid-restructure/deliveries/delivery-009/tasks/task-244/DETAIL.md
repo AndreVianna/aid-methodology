@@ -23,7 +23,10 @@
 - `tests/canonical/test-work-state-migration.sh` (Feature 006's) gains (REQUIREMENTS.md § 11 Feature 007 `##### 8. Testing`): the renamed
   fields and states; an issues file and an impediment file folded and deleted; a second run changing nothing;
   bash and PowerShell giving the same bytes; a fixture shaped like this work after delivery-008's migration, with
-  every delivery's gate grade carried into `verify`.
+  every delivery's gate grade carried into `verify`;
+  - that same fixture, which has no `wave_stops`, `full_suite` or `feedback` block, gets the three blocks at their
+    template defaults (task-238); a fixture that already holds them with values keeps them byte-identical; a second
+    run changes nothing, in bash and PowerShell alike.
 - **Findings.** This task's scope also includes every site that
   `.aid/works/work-003-full-aid-restructure/research/delivery-009-sites.md` assigns to `task-244`.
 - **Test step** (PLAN.md § "Testing before the resync"; the same in every task of this delivery).
@@ -58,7 +61,7 @@
      - The same failure after three fix rounds goes to the maintainer.
 
 **Acceptance Criteria:**
-- [ ] The suite passes in the scratch copy, with each new case named.
+- [ ] The suite passes in the scratch copy, with each new case named, including the absent-blocks case (the three blocks added at their template defaults, present blocks kept).
 - [ ] Changing one byte of the PowerShell output in a scratch copy fails the byte-identity case.
 - [ ] The test step (last Scope bullet) reports no failure: the spawn-free checks, the scratch half, the live half and the site or dashboard runs it calls for. Every existing test still passes.
 - [ ] All section-6 quality gates pass (REQUIREMENTS.md § 6: NFR-N, NFR-T, NFR-Q).

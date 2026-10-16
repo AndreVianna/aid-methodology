@@ -28,7 +28,13 @@
   - each `IMPEDIMENT-task-NNN.md` or `IMPEDIMENT-delivery-NNN.md` -> one `qa` entry (`category: Blocker`,
     `state: Pending`, `context` its description, `suggested` its recommendation), then deleted;
     `block_artifact` goes; a task's `Failed` state stays;
-  - it runs on a repository already stamped format 6 (PLAN.md Cross-Cutting Risks, row 5).
+  - it runs on a repository already stamped format 6 (PLAN.md Cross-Cutting Risks, row 5);
+  - **the building blocks a work lacks are added at their template defaults** (settled by rule, F007 § 7 is
+    silent): `wave_stops` (`choice: --`, `planned: --`), `full_suite` (`command`, `baseline`, `baseline_commit`,
+    `result`, `commit`, each `--`) and `feedback: []`, each only when absent, so a second run changes nothing and a
+    block already present is kept as it is. A reader meeting a work without one of these blocks treats it as that
+    template default: `/aid-execute` START (task-226) asks the wave question and records `baseline:
+    not taken` for an old work, and the dashboard readers (task-239) pass the defaults.
 - **This work's own state is a case to get right**: this delivery's resync runs the step on it, carrying every
   delivery's gate grade into its `verify` (PLAN.md Toolchain and Branching, step 3).
 - `tests/windows/Test-AidInstaller.ps1` gains a building-step case (Q126).
@@ -89,5 +95,6 @@
 - [ ] On a scratch repository at format 6 holding a single-layout work with `review`, `quick_check`, `gate_grade`, an issues file and an impediment file, the step gives the expected `STATE.yml`, deletes both files, and a second run changes nothing.
 - [ ] Under `pwsh`, the twin gives byte-identical files; `test-ps51-compat.sh` and `test-ascii-only.sh` pass live, and `test-aid-cli-parity.sh` passes in the scratch copy.
 - [ ] The new `Test-AidInstaller.ps1` case passes under `pwsh` locally (5.1 runs in the Windows lane at G0).
+- [ ] On a scratch single-layout work with no `wave_stops`, `full_suite` or `feedback` block (this work's shape after delivery-008's migration), the step adds the three blocks at their template defaults (`wave_stops.choice: --`, every `full_suite` field `--`, `feedback: []`); on a work that already holds them, with values, it leaves them byte-identical; a second run changes nothing.
 - [ ] The test step (last Scope bullet) reports no failure: the spawn-free checks, the scratch half, the live half and the site or dashboard runs it calls for. Every existing test still passes.
 - [ ] All section-6 quality gates pass (REQUIREMENTS.md § 6: NFR-N, NFR-T, NFR-Q).

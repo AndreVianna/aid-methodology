@@ -33,13 +33,19 @@
   `--append-issue`.
 - Suites to update in this same task: the existing `test-writeback-state.sh` assertions on the retired modes
   (their units retire, with accepted-removal rows); `test-delivery-gate-aggregate.sh`, retired with
-  accepted-removal rows; `test-lite-work-end-to-end.sh`; `tests/cost-baseline.tsv`'s `delivery-issues.md` row is
+  accepted-removal rows; `tests/canonical/test-disjoint-merge.sh`, retired with accepted-removal rows, because it
+  calls `--lifecycle`, `--findings`, `--block` and `--gate-field` on the canonical writer, which this task makes
+  refuse them, and delivery branches merging back no longer exist (G11); `test-lite-work-end-to-end.sh`; `tests/cost-baseline.tsv`'s `delivery-issues.md` row is
   re-recorded at the gate; and any suite the findings' X1 or X3 assigns here.
 - **Suites that read what this task deletes, moves or renames (G6).** For each such file and folder,
   build the list with `git grep -l -e '<path>' -e '<folder>/' -- tests/ site/` at this task's base. The
   list does not come from the findings' map alone. Every suite it finds is updated in this same task
   (Q106 applied to deletions). Any exemption row this task's own criteria need is created here, or the
   criterion is scoped so it holds without the row.
+  - **Suites that call what this task refuses (G6, G11).** Also run
+    `git grep -l -E -e '--(lifecycle|findings|append-issue|gate-field|block)([^a-z-]|$)' -e '--field Review' -- tests/ site/ dashboard/`
+    at this task's base. Every suite it finds that calls one of the refused modes on either writer is updated or
+    retired in this same task.
 - **Site regeneration (G1, G5).** When this task adds, deletes, renames or edits anything under
   `canonical/skills/`, `canonical/agents/` or `canonical/aid/templates/`, it runs
   `(cd site && npm run gen:skills && npm run gen:reference)` in this same task and commits the output:
@@ -93,6 +99,6 @@
 **Acceptance Criteria:**
 - [ ] On a scratch work, a `Done` task commit after the delivery's `verify` shows the delivery `Verifying` in both writers, and a correction added to a `Done` delivery shows it `Building` at once.
 - [ ] `--delivery-id 001 --lifecycle Done` and `--findings` each exit 4 naming the replacement, with the file byte-identical; `test -e canonical/aid/templates/delivery-issues.md` fails.
-- [ ] `test-writeback-state.sh` and `test-lite-work-end-to-end.sh` pass live.
+- [ ] `test-writeback-state.sh` and `test-lite-work-end-to-end.sh` pass live; `test -e tests/canonical/test-disjoint-merge.sh` fails, with its accepted-removal rows, and the refused-mode grep of the scope finds no suite that still calls a refused mode.
 - [ ] The test step (last Scope bullet) reports no failure: the spawn-free checks, the scratch half, the live half and the site or dashboard runs it calls for. Every existing test still passes.
 - [ ] All section-6 quality gates pass (REQUIREMENTS.md § 6: NFR-N, NFR-T, NFR-Q).

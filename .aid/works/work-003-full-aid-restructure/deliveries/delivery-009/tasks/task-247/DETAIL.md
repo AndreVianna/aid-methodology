@@ -17,7 +17,7 @@
 
 **Source:** feature-007-building -> delivery-009 -> AC-10, AC-26, AC-28, AC-32, AC-33
 
-**Depends on:** task-233, task-234, task-235
+**Depends on:** task-231, task-232, task-233, task-234, task-235
 
 **Scope:**
 - Create under `tests/conversation/samples/feature-007/`, with frontmatter `skills: aid-execute`, their fixtures

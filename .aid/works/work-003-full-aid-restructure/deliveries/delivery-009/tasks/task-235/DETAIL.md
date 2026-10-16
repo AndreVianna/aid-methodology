@@ -23,15 +23,8 @@
 - `canonical/aid/templates/worktree-lifecycle.md` and `downstream-worktree-entry.md` (REQUIREMENTS.md § 11 Feature 007 `##### 1. Files and
   layout`): `aid-execute` leaves their consumer lists; § Composition with `aid-execute`'s per-task worktrees goes.
 - `tests/canonical/test-never-merges.sh`: NM-04's `aid-execute` exemption goes.
-- `tests/canonical/test-disjoint-merge.sh` is retired, with accepted-removal rows: delivery branches merging back
-  no longer exist.
 - Suites to update in this same task: `test-downstream-worktree-entry.sh` where it asserts the two templates (its
   `aid-execute` assertions went with task-233's rewrite), and any suite the findings' X5 assigns here.
-- **Suites that read what this task deletes, moves or renames (G6).** For each such file and folder,
-  build the list with `git grep -l -e '<path>' -e '<folder>/' -- tests/ site/` at this task's base. The
-  list does not come from the findings' map alone. Every suite it finds is updated in this same task
-  (Q106 applied to deletions). Any exemption row this task's own criteria need is created here, or the
-  criterion is scoped so it holds without the row.
 - **Site regeneration (G1, G5).** When this task adds, deletes, renames or edits anything under
   `canonical/skills/`, `canonical/agents/` or `canonical/aid/templates/`, it runs
   `(cd site && npm run gen:skills && npm run gen:reference)` in this same task and commits the output:
@@ -84,6 +77,6 @@
 
 **Acceptance Criteria:**
 - [ ] Neither template names `aid-execute` as a consumer or a per-task worktree; `test-never-merges.sh` passes live with NM-04's exemption gone.
-- [ ] `test-downstream-worktree-entry.sh` passes in the scratch copy, and `test -e tests/canonical/test-disjoint-merge.sh` fails, with its accepted-removal rows.
+- [ ] `test-downstream-worktree-entry.sh` passes in the scratch copy. (`test-disjoint-merge.sh` is retired by task-234.)
 - [ ] The test step (last Scope bullet) reports no failure: the spawn-free checks, the scratch half, the live half and the site or dashboard runs it calls for. Every existing test still passes.
 - [ ] All section-6 quality gates pass (REQUIREMENTS.md § 6: NFR-N, NFR-T, NFR-Q).

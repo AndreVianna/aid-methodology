@@ -68,7 +68,7 @@ task-234, after task-233 removes their last callers (G7, G11).
 | task-244 | Unit cases: test-work-state-migration.sh, the building part | TEST | 5 | 4 | task-238 |
 | task-245 | Dashboard cases: a task being verified, a milestone, a blocker, a finished full suite | TEST | 5 | 5 | task-239, task-240 |
 | task-246 | test-execute.sh (EX-01 to EX-08) | TEST | 5 | 9 | task-220, task-223, task-231, task-233, task-234, task-235, task-237 |
-| task-247 | Samples 007-01 to 007-06 (run at this gate) | TEST | 5 | 8 | task-233, task-234, task-235 |
+| task-247 | Samples 007-01 to 007-06 (run at this gate) | TEST | 5 | 8 | task-231, task-232, task-233, task-234, task-235 |
 | task-248 | Samples 007-07 to 007-12 (run at this gate) | TEST | 5 | 9 | task-232, task-238, task-247 |
 | task-249 | Sample 007-13 (deferred) and the deferred rows that now run | TEST | 5 | 10 | task-248 |
 | task-250 | test-execute.sh and test-simplify-guard.sh in the CI lane | CONFIGURE | 5 | 10 | task-242, task-246 |
@@ -437,7 +437,7 @@ then 222, then 234), `aid-execute` (226-230, then 233), the dashboard (239, then
     criterion is scoped so it holds without the row.
 - **Acceptance criteria:**
   - [ ] `SKILL.md` is at most 120 lines with the eleven steps, FINISH advancing by `PASS`; none of the seven old references exists, and the thirteen new ones and the brief do (EX-01's reference clauses, EX-02's table clause).
-  - [ ] Over `canonical/skills/aid-execute/`, `git grep -nE 'worktree add|checkout -b|switch -c|run_in_background|max_parallel_tasks|merge to main'` finds nothing, and `-delivery-` appears only in `old-work.md` (EX-03).
+  - [ ] Over `canonical/skills/aid-execute/`, `git grep -nE 'worktree add|checkout -b|switch -c|run_in_background|max_parallel_tasks|merge to main'` finds nothing, and a delivery *branch* is named only in `old-work.md` (EX-03): `git grep -nE 'aid/[^ ]*-delivery-|(checkout -b|switch -c|branch) [^ ]*-delivery-'` over the skill finds hits only in `old-work.md`. The writer's `--delivery-id` and the delivery ledger name `<work>-delivery-NNN.md` are not branch names and stay allowed.
   - [ ] `skill-steps-exempt.tsv` has no `aid-execute` row and PL-04 passes; SG-02, SG-04 and the listed suites pass where the test step puts them, and the site `npm test` passes after regeneration.
 
 ### task-234: Writer: the derived delivery state, and the retired modes refused, with the fork [IMPLEMENT]
@@ -478,8 +478,6 @@ then 222, then 234), `aid-execute` (226-230, then 233), the dashboard (239, then
   - `canonical/aid/templates/worktree-lifecycle.md` and `downstream-worktree-entry.md` (REQUIREMENTS.md § 11 Feature 007 `##### 1. Files and
     layout`): `aid-execute` leaves their consumer lists; § Composition with `aid-execute`'s per-task worktrees goes.
   - `tests/canonical/test-never-merges.sh`: NM-04's `aid-execute` exemption goes.
-  - `tests/canonical/test-disjoint-merge.sh` is retired, with accepted-removal rows: delivery branches merging back
-    no longer exist.
   - Suites to update in this same task: `test-downstream-worktree-entry.sh` where it asserts the two templates (its
     `aid-execute` assertions went with task-233's rewrite), and any suite the findings' X5 assigns here.
   - **Suites that read what this task deletes, moves or renames (G6).** For each such file and folder,
@@ -489,7 +487,7 @@ then 222, then 234), `aid-execute` (226-230, then 233), the dashboard (239, then
     criterion is scoped so it holds without the row.
 - **Acceptance criteria:**
   - [ ] Neither template names `aid-execute` as a consumer or a per-task worktree; `test-never-merges.sh` passes live with NM-04's exemption gone.
-  - [ ] `test-downstream-worktree-entry.sh` passes in the scratch copy, and `test -e tests/canonical/test-disjoint-merge.sh` fails, with its accepted-removal rows.
+  - [ ] `test-downstream-worktree-entry.sh` passes in the scratch copy. (`test-disjoint-merge.sh` is retired by task-234.)
 
 ### task-236: rules.md's tracking line, aid-developer's blocker report, read-setting.sh's example [IMPLEMENT]
 
@@ -678,7 +676,7 @@ then 222, then 234), `aid-execute` (226-230, then 233), the dashboard (239, then
 
 ### task-247: Samples 007-01 to 007-06 (run at this gate) [TEST]
 
-- **Stanza wave:** 5. **Depends on:** task-233, task-234, task-235.
+- **Stanza wave:** 5. **Depends on:** task-231, task-232, task-233, task-234, task-235.
 - **Source:** AC-10, AC-26, AC-28, AC-32, AC-33.
 - **Scope:**
   - Create under `tests/conversation/samples/feature-007/`, with frontmatter `skills: aid-execute`, their fixtures
@@ -818,7 +816,8 @@ then 222, then 234), `aid-execute` (226-230, then 233), the dashboard (239, then
 5. **After the resync, in the gate session (G8):** `derive-waves.sh --plan --check` (installed) on this work, and
    `--plan` when it reports stale; `(cd site && npm run gen:reference)` and the site `npm test`, a no-op unless the
    resync changed `.aid/settings.yml`. The KB is not changed by this resync.
-6. The gate, in the same session: the stanza's criteria (the `rules.md` line included); `007-01` to `007-12`, the
+6. The gate, in the same session: the stanza's criteria (the `rules.md` line included), except "After the switch,
+   four things hold", which step 8 checks; `007-01` to `007-12`, the
    eleven samples that now run, and `001-07`, `001-16` and `006-01` again, each 3 of 3; G0 with the baselines; the
    tracking proof for task-219 to task-253, read from the work `STATE.yml`'s history and its `reviews`. A fix after
    this resync records its grade with `--delivery-id 009 --field Verify`, and no lifecycle is written (PLAN.md step
@@ -828,6 +827,9 @@ then 222, then 234), `aid-execute` (226-230, then 233), the dashboard (239, then
    are written for deliveries 001-009 with `--delivery-id NNN --field`; then the one approval, through `--ask` and
    `--answer`: `category: Approval`, `covers: delivery delivery-001; ...; delivery delivery-009; confirmation before
    building`, `commit` the head.
+8. **Post-switch check:** the stanza's "After the switch, four things hold" -- `--check` exits 0, `intent.reading:
+   change`, `active_skill: aid-execute` at `step: START`, and the one `Approval` entry answered yes with its `commit`
+   and `covers` -- checked after step 7 (task-253's gate-session block, step 5).
 
 ---
 
@@ -861,7 +863,7 @@ Step 5 writes the table under `### delivery-009 Execution Graph`, one task per r
 | S1 | `aid-execute`'s rewrite: `SKILL.md`, thirteen references and the brief. | Five tasks create the references, unreferenced until task-233 rewrites `SKILL.md`, points its table at them and deletes the seven old ones. | One session per task; no dangling pointer. |
 | S2 | The writer's retired modes still have callers until `aid-execute` is rewritten. | The writer's new fields are additive (221, 222); the derived delivery state and the refusals come in task-234, after task-233 removes the last callers, with the fork and `delivery-issues.md`. | G7, G11; no caller fails between tasks. |
 | S3 | `test-downstream-worktree-entry.sh` asserts `aid-execute`'s worktree entry. | Its `aid-execute` assertions change in task-233, which removes that entry; task-235 keeps the template parts. | G11. |
-| S4 | `test-disjoint-merge.sh` is retired "beyond the search". | In task-235, with the per-delivery branch material. | F007 § 7, Suites. |
+| S4 | `test-disjoint-merge.sh` is retired "beyond the search". | In task-234, whose writer change makes it fail (it calls the four refused modes); light review of delivery-009, row 1. | F007 § 7, Suites; G11. |
 | S5 | The format-6 building part, bash and PowerShell. | One task (238): a small field mapping, both twins together. The unit cases are task-244. | delivery-005 S3. |
 | S6 | The dashboard's building fields. | Readers and server (239), then the page (240). | Size; the parity tests. |
 | S7 | `007-13` is the feature's one deferred sample. | Written in task-249 with the rows of the samples that now run. | F007 § 7, Lists. |

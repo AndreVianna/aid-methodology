@@ -98,7 +98,7 @@
 
 **Acceptance Criteria:**
 - [ ] `SKILL.md` is at most 120 lines with the eleven steps, FINISH advancing by `PASS`; none of the seven old references exists, and the thirteen new ones and the brief do (EX-01's reference clauses, EX-02's table clause).
-- [ ] Over `canonical/skills/aid-execute/`, `git grep -nE 'worktree add|checkout -b|switch -c|run_in_background|max_parallel_tasks|merge to main'` finds nothing, and `-delivery-` appears only in `old-work.md` (EX-03).
+- [ ] Over `canonical/skills/aid-execute/`, `git grep -nE 'worktree add|checkout -b|switch -c|run_in_background|max_parallel_tasks|merge to main'` finds nothing, and a delivery *branch* is named only in `old-work.md` (EX-03): `git grep -nE 'aid/[^ ]*-delivery-|(checkout -b|switch -c|branch) [^ ]*-delivery-'` over the skill finds hits only in `old-work.md`. The writer's `--delivery-id` and the delivery ledger name `<work>-delivery-NNN.md` are not branch names and stay allowed.
 - [ ] `skill-steps-exempt.tsv` has no `aid-execute` row and PL-04 passes; SG-02, SG-04 and the listed suites pass where the test step puts them, and the site `npm test` passes after regeneration.
 - [ ] The test step (last Scope bullet) reports no failure: the spawn-free checks, the scratch half, the live half and the site or dashboard runs it calls for. Every existing test still passes.
 - [ ] All section-6 quality gates pass (REQUIREMENTS.md § 6: NFR-N, NFR-T, NFR-Q).
