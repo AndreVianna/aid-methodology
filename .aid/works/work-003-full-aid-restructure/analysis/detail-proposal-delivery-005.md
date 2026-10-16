@@ -38,7 +38,7 @@ the task files are written at once, and the light review is the check.
 | task-111 | KB view renderer: At a Glance, the three card types and the Markdown export | IMPLEMENT | 2 | 3 | task-106 |
 | task-112 | Format 6: the carriers, STEP 0 and the suites that assert format 5 | IMPLEMENT | 4 | 3 | task-105 |
 | task-113 | Dashboard readers: the KB state file, the legacy block and the new waterfall | IMPLEMENT | 4 | 3 | task-105 |
-| task-114 | Unit cases: test-build-kb-index.sh | TEST | 5 | 3 | task-107 |
+| task-114 | Unit cases added to test-build-kb-index.sh | TEST | 5 | 3 | task-107 |
 | task-115 | KB commit script kb-commit.sh | IMPLEMENT | 2 | 4 | task-110 |
 | task-116 | aid-kb-build: the move, START, ELICIT and GENERATE | IMPLEMENT | 3 | 4 | task-105, task-110 |
 | task-117 | aid-kb-update: the move, START, ANALYZE, SCOPE, CONFIRM and sweep | IMPLEMENT | 3 | 4 | task-110 |
@@ -335,16 +335,22 @@ The moved and new skills (task-116, task-117, task-119) update their lists and c
   - [ ] `git grep -nE 'git_freshness_check|parse_kb_baseline|last_update' -- dashboard/reader dashboard/server` finds nothing outside the legacy block.
   - [ ] `test-dashboard-parity.sh` and `test-dashboard-reader.sh` pass live, and `test-dashboard-parity-h.sh` passes in the scratch copy.
 
-### task-114: Unit cases: test-build-kb-index.sh [TEST]
+### task-114: Unit cases added to test-build-kb-index.sh [TEST]
 
 - **Stanza wave:** 5. **Depends on:** task-107.
 - **Source:** AC-15.
 - **Scope:**
-  - Create `tests/canonical/test-build-kb-index.sh` (REQUIREMENTS.md § 11 Feature 004 `##### 8. Testing`): rebuilding gives the same
-    `INDEX.md`, with no timestamp line (W4-5). It carries
-    `# COVERS: canonical/aid/scripts/kb/build-kb-index.sh`.
+  - Extend the existing `tests/canonical/test-build-kb-index.sh` (BI01-BI19b) with the cases of
+    REQUIREMENTS.md § 11 Feature 004 `##### 8. Testing`: rebuilding gives the same `INDEX.md`, with no
+    timestamp line (W4-5).
+    - BI05 compares two rebuilds byte for byte with no line filtered, since the script no longer writes a
+      timestamp.
+    - A new case asserts that the output holds no `Generated at:` line and no time in the `AUTO-GENERATED`
+      comment.
+    - The existing cases keep passing, and the suite keeps its `# COVERS:` line for
+      `canonical/aid/scripts/kb/build-kb-index.sh`.
 - **Acceptance criteria:**
-  - [ ] The suite passes, with one case for byte-identical rebuilds and one for the absence of any timestamp line.
+  - [ ] The suite passes, with BI05 comparing unfiltered rebuilds and a named case for the absence of any timestamp line; BI01-BI19b still pass.
   - [ ] Re-adding a timestamp line to a scratch copy of the script fails it. The suite is deterministic and cleans up.
 
 ### task-115: KB commit script kb-commit.sh [IMPLEMENT]
@@ -869,7 +875,9 @@ The moved and new skills (task-116, task-117, task-119) update their lists and c
     - `domain-glossary.md`: Preparation, KB build, update, query, show, web view and drift; summarize,
       housekeep and the KB `STATE.md` vocabulary go;
     - `quality-gates.md`: the two-grade view rubric goes;
-    - `tech-debt.md`: L6, SY-7, W4-5 and the view half of W1-11 are resolved (G-03); SY-1 moves with
+    - `tech-debt.md`: L6, SY-7, the index half of W4-5 (timestamps in `INDEX.md`) and the view half of W1-11
+    are resolved (G-03). W4-5's baseline half stays open until delivery-006's format-6 baselines step
+    (task-158 resolves it). SY-1 moves with
       `cleanup-classify.sh`;
     - `backlog.md` § Next Release: the old -> new rows for `/aid-discover`, `/aid-ask`, `/aid-update-kb`,
       `/aid-summarize` and `/aid-housekeep` (AC-24).
@@ -878,7 +886,7 @@ The moved and new skills (task-116, task-117, task-119) update their lists and c
   - Name no work and no work folder.
 - **Acceptance criteria:**
   - [ ] The five backlog rows carry the spec's New text, and D18 and D28 are marked in the summary table and in their sections.
-  - [ ] L6, SY-7 and W4-5 leave no trace. No work id, and the citation and frontmatter lints pass.
+  - [ ] L6 and SY-7 leave no trace, and W4-5 states only its baseline half (no KB document carries `approved_at_commit:`). No work id, and the citation and frontmatter lints pass.
 
 ### task-137: KB architecture, navigation and toolchain documents for the KB skills [DOCUMENT]
 
@@ -915,13 +923,13 @@ The moved and new skills (task-116, task-117, task-119) update their lists and c
 - **Source:** AC-15, AC-25.
 - **Scope:**
   - `.aid/knowledge/test-landscape.md`: the new suites (`test-kb-skills.sh` K1, `test-render-kb-view.sh`,
-    `test-kb-commit.sh`, `test-kb-state-migration.sh`, `test-build-kb-index.sh`) and their lane; the
+    `test-kb-commit.sh`, `test-kb-state-migration.sh`), the new `test-build-kb-index.sh` cases, and their lane; the
     retired summarize and housekeep suites go.
   - Then regenerate `INDEX.md`. `kb.html` is rendered at this delivery's resync step, after the conversion
     (PLAN.md delivery-005, wave 5).
   - Name no work and no work folder.
 - **Acceptance criteria:**
-  - [ ] `test-landscape.md` names the five new suites, and none of the retired ones.
+  - [ ] `test-landscape.md` names the four new suites and the new `test-build-kb-index.sh` cases, and none of the retired suites.
   - [ ] `INDEX.md` is regenerated; no work id, and the lints pass.
 
 ---

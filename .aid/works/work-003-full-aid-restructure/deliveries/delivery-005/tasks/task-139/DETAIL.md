@@ -21,7 +21,7 @@
 
 **Scope:**
 - `.aid/knowledge/test-landscape.md`: the new suites (`test-kb-skills.sh` K1, `test-render-kb-view.sh`,
-  `test-kb-commit.sh`, `test-kb-state-migration.sh`, `test-build-kb-index.sh`) and their lane; the
+  `test-kb-commit.sh`, `test-kb-state-migration.sh`), the new `test-build-kb-index.sh` cases, and their lane; the
   retired summarize and housekeep suites go.
 - Then regenerate `INDEX.md`. `kb.html` is rendered at this delivery's resync step, after the conversion
   (PLAN.md delivery-005, wave 5).
@@ -65,7 +65,7 @@
      - The same failure after three fix rounds goes to the maintainer.
 
 **Acceptance Criteria:**
-- [ ] `test-landscape.md` names the five new suites, and none of the retired ones.
+- [ ] `test-landscape.md` names the four new suites and the new `test-build-kb-index.sh` cases, and none of the retired suites.
 - [ ] `INDEX.md` is regenerated; no work id, and the lints pass.
 - [ ] The test step (last Scope bullet) reports no failure: the spawn-free checks, the scratch half, the live half and the site or dashboard runs it calls for. Every existing test still passes.
 - [ ] All section-6 quality gates pass (REQUIREMENTS.md § 6: NFR-N, NFR-T, NFR-Q).

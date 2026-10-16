@@ -1,4 +1,4 @@
-# task-114: Unit cases: test-build-kb-index.sh
+# task-114: Unit cases added to test-build-kb-index.sh
 
 > **Execution protocol (binding on whoever executes this task -- no
 > exceptions):** the moment this task's `State` changes, write it --
@@ -20,9 +20,15 @@
 **Depends on:** task-107
 
 **Scope:**
-- Create `tests/canonical/test-build-kb-index.sh` (REQUIREMENTS.md § 11 Feature 004 `##### 8. Testing`): rebuilding gives the same
-  `INDEX.md`, with no timestamp line (W4-5). It carries
-  `# COVERS: canonical/aid/scripts/kb/build-kb-index.sh`.
+- Extend the existing `tests/canonical/test-build-kb-index.sh` (BI01-BI19b) with the cases of
+  REQUIREMENTS.md § 11 Feature 004 `##### 8. Testing`: rebuilding gives the same `INDEX.md`, with no
+  timestamp line (W4-5).
+  - BI05 compares two rebuilds byte for byte with no line filtered, since the script no longer writes a
+    timestamp.
+  - A new case asserts that the output holds no `Generated at:` line and no time in the `AUTO-GENERATED`
+    comment.
+  - The existing cases keep passing, and the suite keeps its `# COVERS:` line for
+    `canonical/aid/scripts/kb/build-kb-index.sh`.
 - **Test step** (PLAN.md § "Testing before the resync"; the same in every task of this delivery).
   `BASE` is this task's `task-114: In Progress` commit. Work in the `work-003` worktree only, create no
   branch or worktree, and never run `run_generator.py` in the live tree.
@@ -55,7 +61,7 @@
      - The same failure after three fix rounds goes to the maintainer.
 
 **Acceptance Criteria:**
-- [ ] The suite passes, with one case for byte-identical rebuilds and one for the absence of any timestamp line.
+- [ ] The suite passes, with BI05 comparing unfiltered rebuilds and a named case for the absence of any timestamp line; BI01-BI19b still pass.
 - [ ] Re-adding a timestamp line to a scratch copy of the script fails it. The suite is deterministic and cleans up.
 - [ ] The test step (last Scope bullet) reports no failure: the spawn-free checks, the scratch half, the live half and the site or dashboard runs it calls for. Every existing test still passes.
 - [ ] All section-6 quality gates pass (REQUIREMENTS.md § 6: NFR-N, NFR-T, NFR-Q).

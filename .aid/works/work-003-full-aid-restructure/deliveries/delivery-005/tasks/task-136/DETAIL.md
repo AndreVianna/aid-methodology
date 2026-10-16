@@ -28,7 +28,9 @@
   - `domain-glossary.md`: Preparation, KB build, update, query, show, web view and drift; summarize,
     housekeep and the KB `STATE.md` vocabulary go;
   - `quality-gates.md`: the two-grade view rubric goes;
-  - `tech-debt.md`: L6, SY-7, W4-5 and the view half of W1-11 are resolved (G-03); SY-1 moves with
+  - `tech-debt.md`: L6, SY-7, the index half of W4-5 (timestamps in `INDEX.md`) and the view half of W1-11
+    are resolved (G-03). W4-5's baseline half stays open until delivery-006's format-6 baselines step
+    (task-158 resolves it). SY-1 moves with
     `cleanup-classify.sh`;
   - `backlog.md` § Next Release: the old -> new rows for `/aid-discover`, `/aid-ask`, `/aid-update-kb`,
     `/aid-summarize` and `/aid-housekeep` (AC-24).
@@ -75,6 +77,6 @@
 
 **Acceptance Criteria:**
 - [ ] The five backlog rows carry the spec's New text, and D18 and D28 are marked in the summary table and in their sections.
-- [ ] L6, SY-7 and W4-5 leave no trace. No work id, and the citation and frontmatter lints pass.
+- [ ] L6 and SY-7 leave no trace, and W4-5 states only its baseline half (no KB document carries `approved_at_commit:`). No work id, and the citation and frontmatter lints pass.
 - [ ] The test step (last Scope bullet) reports no failure: the spawn-free checks, the scratch half, the live half and the site or dashboard runs it calls for. Every existing test still passes.
 - [ ] All section-6 quality gates pass (REQUIREMENTS.md § 6: NFR-N, NFR-T, NFR-Q).
