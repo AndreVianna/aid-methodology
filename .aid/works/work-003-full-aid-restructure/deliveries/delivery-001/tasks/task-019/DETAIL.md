@@ -17,18 +17,21 @@
 
 **Source:** feature-001-plain-language-requests -> delivery-001 -> AC-1, AC-21, AC-29
 
-**Depends on:** task-004, task-005, task-010
+**Depends on:** task-004, task-010
 
 **Scope:**
 - Create `tests/canonical/test-conversation-runner.sh` (Q134, D10). It is a bash harness on
   `tests/lib/assert.sh`, with `# COVERS: tests/conversation/` and a group filter (T6).
   - It drives `tests/conversation/run.py` with a stub `claude` placed first on `PATH`, built in a
     temporary folder. The stub logs its argv and answers in stream-json.
-  - Its throwaway sample and fixture are built in a temporary folder; it reads no committed sample.
+  - It builds its own named tree under its temporary folder: `samples/feature-900/`, `fixtures/stub/`
+    and `briefs/` (stand-in `simulated-user.md` and `judge.md`). It passes them with `run.py`'s
+    `--samples-dir`, `--fixtures-dir` and `--briefs-dir`, and reads no committed sample, fixture or
+    brief.
   - It runs with `HOME` pinned and makes no network call.
 - `run.py` installs AID through `tests/lib/bundle.sh`, so the suite reaches `profiles/` through
   `release.sh`. Its header says so, which places it in the driver's copy-reading set (`P`).
-- This task depends on task-010 by the stanza's order. A delivery's last wave adds its unit cases
+- This task depends on task-010 by the stanza's order (the last wave adds the unit cases). A delivery's last wave adds its unit cases
   (PLAN.md, the same-task rule bullet).
 - Suites to update in this same task: none.
 - **Same-task rule (Q106).** This task updates every suite that asserts text in a file it changes,
@@ -59,9 +62,9 @@
        drop the `COPY` suites' results by name.
      - Otherwise, run each `LIVE` suite with `HOME="$(mktemp -d)" bash tests/canonical/<suite>`.
   5. **Outside `run-all.sh`.**
-     - Run `(cd site && npm test)` when this task changes `canonical/skills/`,
-       `canonical/aid/templates/shortcut-catalog.yml`, `docs/` or `site/`. Run `npm ci` there first if
-       `site/node_modules` is absent.
+     - Run `(cd site && npm test)` when this task changes anything under `canonical/skills/`,
+       `canonical/agents/` or `canonical/aid/templates/`, or under `docs/` or `site/` (G5). Run `npm ci`
+       there first if `site/node_modules` is absent.
      - Run `python3 -m pytest <file>` for each dashboard test file this task changes.
   6. **Report.** For each suite, report where it ran, its result and its run count.
      - Ceiling (T5): one full run of steps 2-5 per test round. Between rounds, re-run only the failing
@@ -69,7 +72,7 @@
      - The same failure after three fix rounds goes to the maintainer.
 
 **Acceptance Criteria:**
-- [ ] In the scratch copy, `bash tests/canonical/test-conversation-runner.sh` exits 0 with groups covering: exit 2 on a bad call; the five capture files; the agent, simulated-user and judge flags; the `files.diff` exclusions; Pending ledger -> failed run; 1 failure in 3 -> exit 1; the 12-turn cap.
+- [ ] In the scratch copy, `bash tests/canonical/test-conversation-runner.sh` exits 0, with groups covering: exit 2 on a bad call; `--validate` (exit 0 and 1); the five capture files; the agent, simulated-user and judge flags; the `files.diff` exclusions; `tool-called` and `tool-not-called` checks; a Pending ledger row -> a failed run; 1 failure in 3 -> exit 1; the 12-turn cap.
 - [ ] Each group fails when its behaviour is broken in a throwaway copy of `run.py` (one mutation per group, restored afterwards).
 - [ ] The suite is deterministic and cleans up after itself: its temporary folders are removed and `HOME` is pinned. It needs no network and no real `claude`, and finishes inside the 300-second budget of `run-all.sh`.
 - [ ] The test step (last Scope bullet) reports no failure: the spawn-free checks, the scratch half, the live half and the site or dashboard runs it calls for. Every existing test still passes.

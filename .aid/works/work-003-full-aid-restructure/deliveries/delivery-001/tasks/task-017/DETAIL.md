@@ -24,7 +24,8 @@
   `001-12-write-back-limit.md`, `001-13-project-source-unattached.md`,
   `001-14-refactor-is-new-capability.md`, `001-15-no-kb-offers-preparation.md` and
   `001-16-work-closes-done.md` under `tests/conversation/samples/feature-001/`. Use the same shape as
-  task-016.
+  task-016: mechanical expectations as `## Checks` lines, and judgments as `## Expected outcome` or
+  `## Must not` items.
 - Create their fixtures under `tests/conversation/fixtures/`:
   - `001-15`: code, and no `.aid/knowledge/`;
   - `001-16`: a work whose tasks are all `Done`, in a project with no git remote;
@@ -60,9 +61,9 @@
        drop the `COPY` suites' results by name.
      - Otherwise, run each `LIVE` suite with `HOME="$(mktemp -d)" bash tests/canonical/<suite>`.
   5. **Outside `run-all.sh`.**
-     - Run `(cd site && npm test)` when this task changes `canonical/skills/`,
-       `canonical/aid/templates/shortcut-catalog.yml`, `docs/` or `site/`. Run `npm ci` there first if
-       `site/node_modules` is absent.
+     - Run `(cd site && npm test)` when this task changes anything under `canonical/skills/`,
+       `canonical/agents/` or `canonical/aid/templates/`, or under `docs/` or `site/` (G5). Run `npm ci`
+       there first if `site/node_modules` is absent.
      - Run `python3 -m pytest <file>` for each dashboard test file this task changes.
   6. **Report.** For each suite, report where it ran, its result and its run count.
      - Ceiling (T5): one full run of steps 2-5 per test round. Between rounds, re-run only the failing
@@ -71,7 +72,7 @@
 
 **Acceptance Criteria:**
 - [ ] There are eight files with the spec's ids. `covers`: `001-09`, `001-10`, `001-15` and `001-16` AC-14; `001-11`, `001-12` and `001-13` AC-29; `001-14` AC-1.
-- [ ] `001-11` checks for a `sources:` entry and closed `qa:` entries. `001-15` checks that Preparation is offered before any Specification question and that no KB file is written before the user agrees. `001-16` checks that `STATE.yml` ends with `lifecycle: Completed` and that nothing is pushed.
-- [ ] No `## Answer sheet` names a skill. Each sample's checks give the same verdict on a re-run of the same transcript, and each sample has had one smoke run with its result reported.
+- [ ] `001-11` has `contains` checks for the work's `sources:` entry and its closed `qa:` entries in the fixture's work `STATE.yml`. `001-15` has `## Expected outcome` items that Preparation is offered before any Specification question and that no KB file is written before the user agrees. `001-16` has a `contains` check for `lifecycle: Completed` and a `no-push` check.
+- [ ] No `## Answer sheet` names a skill. `python3 tests/conversation/run.py --validate --feature 001` exits 0, and each sample has had one smoke run, with its result reported.
 - [ ] The test step (last Scope bullet) reports no failure: the spawn-free checks, the scratch half, the live half and the site or dashboard runs it calls for. Every existing test still passes.
 - [ ] All section-6 quality gates pass (REQUIREMENTS.md § 6: NFR-N, NFR-T, NFR-Q).

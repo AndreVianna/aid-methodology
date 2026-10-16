@@ -17,7 +17,7 @@
 
 **Source:** feature-001-plain-language-requests -> delivery-001 -> AC-1, AC-2, AC-3, AC-4, AC-7, AC-14, AC-29
 
-**Depends on:** task-002, task-003
+**Depends on:** task-002, task-003, task-007
 
 **Scope:**
 - Create `canonical/skills/aid-orchestrate/SKILL.md`, at most 80 lines.
@@ -36,10 +36,8 @@
   - `size-and-route.md`: the routing rule, the phase table and the depth table; triage's scope
     judgement; the close minimum (`writeback-state.sh --pipeline --field Lifecycle --value Completed`)
     until `/aid-monitor-pipeline` exists;
-  - `external-sources.md`: pull in, apply, write back through `/aid-update-ticket` `attachment`, tool
-    limits, no credential, and the `sources:` and `write_backs:` entry shapes. task-007, in the same
-    wave, adds the `attachment` part. When tasks are built one at a time, build task-007 before this
-    task, so the pointer never names a missing part;
+  - `external-sources.md`: pull in, apply, write back through `/aid-update-ticket` `attachment` (task-007,
+    a dependency), tool limits, no credential, and the `sources:` and `write_backs:` entry shapes;
   - `feedback-routing.md`: the routing table, moved from `canonical/agents/aid-orchestrator/AGENT.md`.
 - Site placement: `aid-orchestrate` joins the curated roster in the Support group. task-009 later gives it
   `aid-triage`'s first place (Q134, D6).
@@ -52,9 +50,18 @@
   - `test-doc-counts.sh`;
   - the site tests that pin the curated roster or the skill counts;
   - any suite the findings' S6 or S7 assigns here.
-- **Site regeneration.** Run `(cd site && npm run gen:skills && npm run gen:reference)` and commit its
-  output: the skill pages, `skills/index.md`, `src/data/skill-flows/`, `reference/skills.md` and
-  `scripts/.skills-manifest.json`. Never edit a generated site file by hand.
+- **Site regeneration (G1, G5).** When this task adds, deletes, renames or edits anything under
+  `canonical/skills/`, `canonical/agents/` or `canonical/aid/templates/`, it runs
+  `(cd site && npm run gen:skills && npm run gen:reference)` in this same task and commits the output:
+  the skill pages, `skills/index.md`, `src/data/skill-flows/`, `reference/skills.md`,
+  `reference/agents.md` and `scripts/.skills-manifest.json`.
+  - It also updates any hard-coded count or name list in a site generator, for example the agent count
+    in `site/scripts/gen-reference.mjs`, so the generators' drift checks pass at this task's end.
+  - A generated site page is never edited by hand.
+- **Later checks on this task's files (G3).** Before `Done`, run by hand, over the files this task
+  writes, every static-check pattern that this delivery's own suites or an earlier delivery's suites apply
+  to those files, and fix every hit here. Repo-wide criteria in this file are scoped to what this task
+  owns.
 - **Same-task rule (Q106).** This task updates every suite that asserts text in a file it changes,
   including `site/scripts/__tests__/` and the dashboard tests. It is not `Done` while such a suite fails.
   - A removed assertion gets its row in `tests/coverage-accepted-removals.tsv`.
@@ -83,9 +90,9 @@
        drop the `COPY` suites' results by name.
      - Otherwise, run each `LIVE` suite with `HOME="$(mktemp -d)" bash tests/canonical/<suite>`.
   5. **Outside `run-all.sh`.**
-     - Run `(cd site && npm test)` when this task changes `canonical/skills/`,
-       `canonical/aid/templates/shortcut-catalog.yml`, `docs/` or `site/`. Run `npm ci` there first if
-       `site/node_modules` is absent.
+     - Run `(cd site && npm test)` when this task changes anything under `canonical/skills/`,
+       `canonical/agents/` or `canonical/aid/templates/`, or under `docs/` or `site/` (G5). Run `npm ci`
+       there first if `site/node_modules` is absent.
      - Run `python3 -m pytest <file>` for each dashboard test file this task changes.
   6. **Report.** For each suite, report where it ran, its result and its run count.
      - Ceiling (T5): one full run of steps 2-5 per test round. Between rounds, re-run only the failing

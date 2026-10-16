@@ -23,14 +23,26 @@
 - Create `tests/conversation/run.py` (Python 3, standard library only), as REQUIREMENTS.md § 11
   Feature 001 `##### 6. Testing`, "Conversation suite", says. This task builds the harness that verifies
   the ACs above (NFR-T).
-  - **Arguments:** `--feature NNN [--sample ID] [--hosts claude-code,...] [--runs 3]`.
+  - **Arguments:** `--feature NNN [--sample ID] [--hosts claude-code,...] [--runs 3]`, plus
+    `--samples-dir DIR`, `--fixtures-dir DIR` and `--briefs-dir DIR`. Their defaults are
+    `tests/conversation/samples`, `tests/conversation/fixtures` and `tests/conversation`, where
+    `simulated-user.md` and `judge.md` live.
+  - **`--validate`:** parses every selected sample (its frontmatter keys, the five sections, and every
+    `## Checks` line against the grammar) and runs nothing. It exits 0 when all parse, 1 otherwise.
   - **Exit codes:** 0 when every run passes, 1 on any failure, 2 on an invocation error.
   - **Samples:** reads `tests/conversation/samples/feature-NNN/<id>.md`, with frontmatter `id`, `covers`
     and `fixture`, and the sections `## User`, `## Answer sheet`, `## Expected outcome`, `## Must not`
     and `## Checks`. Any other frontmatter key is kept and ignored, never rejected. Feature 002's samples
     add `skills:`.
-  - **Checks:** the `## Checks` grammar is documented in `run.py`'s header. It covers a file that exists
-    or is absent, a file that contains a text, no new folder under a path, and no push.
+  - **Checks:** the `## Checks` grammar is documented in `run.py`'s header. It has two kinds of check,
+    both evaluated before judging:
+    - file checks, on the fixture after the run: `exists PATH`, `absent PATH`, `contains PATH TEXT`,
+      `no-new-dir PATH` and `no-push`;
+    - transcript checks, on `transcript.jsonl`: `tool-called NAME [TARGET-GLOB]` and
+      `tool-not-called NAME [TARGET-GLOB]`.
+  - **Judgments:** how the conversation went (for example the order of questions, "the answer cites its
+    sources", "one approval before building") is not a check. It is written as items of
+    `## Expected outcome` and `## Must not`, which the judge rules on one by one (task-005's `judge.md`).
   - **Fixture:** each run builds a fresh throwaway git project from `tests/conversation/fixtures/<fixture>/`.
     - AID is installed in it from a bundle staged by `tests/lib/bundle.sh`.
     - A sample's `bin/` goes first on the `PATH` of the agent under test.
@@ -50,8 +62,22 @@
     - `checks.txt`;
     - the judge's ledger, also saved in the fixture's `.aid/.temp/review-pending/`.
   - **Pass rule:** any Pending ledger row fails the run, and a sample passes only when all its runs pass.
-- Suites to update in this same task: none exist. The stub checks below run from a scratch area and are
-  not committed. The permanent suite is task-019.
+- **The stub run** uses its own named stand-ins in a scratch area, passed with the directory options, and
+  needs nothing from task-005: `$S/briefs/simulated-user.md`, `$S/briefs/judge.md`,
+  `$S/samples/feature-900/900-01-stub.md` and `$S/fixtures/stub/`. They are not committed.
+- Suites to update in this same task: none exist. The permanent suite is task-019.
+- **Site regeneration (G1, G5).** When this task adds, deletes, renames or edits anything under
+  `canonical/skills/`, `canonical/agents/` or `canonical/aid/templates/`, it runs
+  `(cd site && npm run gen:skills && npm run gen:reference)` in this same task and commits the output:
+  the skill pages, `skills/index.md`, `src/data/skill-flows/`, `reference/skills.md`,
+  `reference/agents.md` and `scripts/.skills-manifest.json`.
+  - It also updates any hard-coded count or name list in a site generator, for example the agent count
+    in `site/scripts/gen-reference.mjs`, so the generators' drift checks pass at this task's end.
+  - A generated site page is never edited by hand.
+- **Later checks on this task's files (G3).** Before `Done`, run by hand, over the files this task
+  writes, every static-check pattern that this delivery's own suites or an earlier delivery's suites apply
+  to those files, and fix every hit here. Repo-wide criteria in this file are scoped to what this task
+  owns.
 - **Same-task rule (Q106).** This task updates every suite that asserts text in a file it changes,
   including `site/scripts/__tests__/` and the dashboard tests. It is not `Done` while such a suite fails.
   - A removed assertion gets its row in `tests/coverage-accepted-removals.tsv`.
@@ -80,9 +106,9 @@
        drop the `COPY` suites' results by name.
      - Otherwise, run each `LIVE` suite with `HOME="$(mktemp -d)" bash tests/canonical/<suite>`.
   5. **Outside `run-all.sh`.**
-     - Run `(cd site && npm test)` when this task changes `canonical/skills/`,
-       `canonical/aid/templates/shortcut-catalog.yml`, `docs/` or `site/`. Run `npm ci` there first if
-       `site/node_modules` is absent.
+     - Run `(cd site && npm test)` when this task changes anything under `canonical/skills/`,
+       `canonical/agents/` or `canonical/aid/templates/`, or under `docs/` or `site/` (G5). Run `npm ci`
+       there first if `site/node_modules` is absent.
      - Run `python3 -m pytest <file>` for each dashboard test file this task changes.
   6. **Report.** For each suite, report where it ran, its result and its run count.
      - Ceiling (T5): one full run of steps 2-5 per test round. Between rounds, re-run only the failing
@@ -94,5 +120,6 @@
 - [ ] With a stub `claude` first on `PATH` that logs its argv and answers in stream-json, one `--runs 1` run writes `transcript.jsonl`, `transcript.md`, `files.diff`, `checks.txt` and the ledger into the run folder. For agent turns, the log shows `--permission-mode acceptEdits`, `--tools Read,Glob,Grep,Edit,Write,Bash,Skill,Task`, the same `--allowedTools`, `--strict-mcp-config`, `--setting-sources project`, no `--add-dir`, and `--resume` from turn 2 on. For the simulated user and the judge, it shows `--tools ""`, `--safe-mode`, `--strict-mcp-config` and `--system-prompt`.
 - [ ] A stub turn that writes into the fixture's `.git/`, `HOME/.claude/`, `HOME/.claude.json` and a credential file leaves none of them in `files.diff`. A binary file appears as path and size only.
 - [ ] A stub judge ledger with one Pending row fails its run. A sample with one failed run of 3 makes `run.py` exit 1. A stub that never sends `<<END>>` fails at the 12-turn cap.
+- [ ] `--validate` on a stand-in sample with a malformed check line exits 1, and with valid lines exits 0. A `tool-called Skill` check passes on a stub transcript that holds a `Skill` call, and fails on one that does not.
 - [ ] The test step (last Scope bullet) reports no failure: the spawn-free checks, the scratch half, the live half and the site or dashboard runs it calls for. Every existing test still passes.
 - [ ] All section-6 quality gates pass (REQUIREMENTS.md § 6: NFR-N, NFR-T, NFR-Q).

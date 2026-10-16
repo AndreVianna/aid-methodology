@@ -29,8 +29,9 @@
     and `docs/repository-structure.md`;
   - `examples/brownfield-full-path/README.md`;
   - every hand-written page under `site/src/content/docs/` that the findings' S10 lists.
-- Synced site pages are refreshed with `(cd site && npm run sync:docs)`. Generated site pages are not
-  edited.
+- Synced site pages are refreshed with `(cd site && npm run sync:docs)`.
+- Generated site pages, such as `reference/agents.md` and `reference/skills.md`, are not edited here.
+  task-008 and task-009 regenerate them (G1).
 - Suites to update in this same task: `tests/canonical/test-doc-counts.sh`, if a counted phrase is
   touched, and any suite the findings' S6 assigns here.
 - **Same-task rule (Q106).** This task updates every suite that asserts text in a file it changes,
@@ -61,9 +62,9 @@
        drop the `COPY` suites' results by name.
      - Otherwise, run each `LIVE` suite with `HOME="$(mktemp -d)" bash tests/canonical/<suite>`.
   5. **Outside `run-all.sh`.**
-     - Run `(cd site && npm test)` when this task changes `canonical/skills/`,
-       `canonical/aid/templates/shortcut-catalog.yml`, `docs/` or `site/`. Run `npm ci` there first if
-       `site/node_modules` is absent.
+     - Run `(cd site && npm test)` when this task changes anything under `canonical/skills/`,
+       `canonical/agents/` or `canonical/aid/templates/`, or under `docs/` or `site/` (G5). Run `npm ci`
+       there first if `site/node_modules` is absent.
      - Run `python3 -m pytest <file>` for each dashboard test file this task changes.
   6. **Report.** For each suite, report where it ran, its result and its run count.
      - Ceiling (T5): one full run of steps 2-5 per test round. Between rounds, re-run only the failing

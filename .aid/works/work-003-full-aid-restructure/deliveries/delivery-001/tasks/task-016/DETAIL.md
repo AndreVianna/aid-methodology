@@ -26,7 +26,10 @@
   `tests/conversation/fixtures/` they need.
   - Each has frontmatter `id`, `covers` and `fixture`.
   - Each has the sections `## User`, `## Answer sheet`, `## Expected outcome`, `## Must not` and
-    `## Checks`, in `run.py`'s check grammar.
+    `## Checks`.
+  - Mechanical expectations are `## Checks` lines in `run.py`'s grammar (file and transcript kinds).
+    Judgments about the conversation are items of `## Expected outcome` or `## Must not`, which the
+    judge rules on.
 - Smoke run (Q134, D8): run each sample once with `python3 tests/conversation/run.py --feature 001
   --sample <id> --runs 1`, inside a scratch copy made as the test step says, after its generator.
   - Fix any failure caused by the sample.
@@ -61,9 +64,9 @@
        drop the `COPY` suites' results by name.
      - Otherwise, run each `LIVE` suite with `HOME="$(mktemp -d)" bash tests/canonical/<suite>`.
   5. **Outside `run-all.sh`.**
-     - Run `(cd site && npm test)` when this task changes `canonical/skills/`,
-       `canonical/aid/templates/shortcut-catalog.yml`, `docs/` or `site/`. Run `npm ci` there first if
-       `site/node_modules` is absent.
+     - Run `(cd site && npm test)` when this task changes anything under `canonical/skills/`,
+       `canonical/agents/` or `canonical/aid/templates/`, or under `docs/` or `site/` (G5). Run `npm ci`
+       there first if `site/node_modules` is absent.
      - Run `python3 -m pytest <file>` for each dashboard test file this task changes.
   6. **Report.** For each suite, report where it ran, its result and its run count.
      - Ceiling (T5): one full run of steps 2-5 per test round. Between rounds, re-run only the failing
@@ -72,8 +75,8 @@
 
 **Acceptance Criteria:**
 - [ ] There are eight files with the spec's ids. Each `covers` equals REQUIREMENTS.md § 11 Feature 001 Criteria traceability: `001-01` AC-1; `001-02` and `001-03` AC-2; `001-04` AC-3; `001-05` AC-4; `001-06` AC-5; `001-07` AC-7 and AC-21; `001-08` AC-7.
-- [ ] `001-05`'s checks assert that no new `.aid/works/` folder exists and that the answer cites sources. `001-07`'s checks assert a `Skill` call the agent made itself and one approval before building.
-- [ ] No `## Answer sheet` names a skill, and no sample needs a network or a live tracker. Each sample's checks give the same verdict on a re-run of the same transcript.
+- [ ] `001-05` has a `no-new-dir .aid/works` check, and an `## Expected outcome` item that the answer cites its sources. `001-07` has a `tool-called Skill` check (the agent started the skill itself), and an `## Expected outcome` item that there is exactly one approval before building.
+- [ ] No `## Answer sheet` names a skill, and no sample needs a network or a live tracker. `python3 tests/conversation/run.py --validate --feature 001` exits 0.
 - [ ] Each sample has had one smoke run, and the report lists each sample's result and the cause of any failure.
 - [ ] The test step (last Scope bullet) reports no failure: the spawn-free checks, the scratch half, the live half and the site or dashboard runs it calls for. Every existing test still passes.
 - [ ] All section-6 quality gates pass (REQUIREMENTS.md § 6: NFR-N, NFR-T, NFR-Q).

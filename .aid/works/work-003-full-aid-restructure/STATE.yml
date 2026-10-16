@@ -418,6 +418,10 @@ review_history:
     event: 'Detail light review delivery-002 (Q136)'
     outcome: 'Grade D+ (1 HIGH, 4 MEDIUM, 2 LOW; 2 OOS: PLAN chaining-citation timing, KB G-14 = knowledge STATE Q10)'
     notes: 'Repo-wide "nowhere" criteria checked before the converting tasks run; "build X first" notes instead of edges; site regeneration for templates the flows read; fixes sent to the architect'
+  - date: '2026-10-16'
+    event: 'Detail light review delivery-004 (Q136)'
+    outcome: 'Grade C (2 MEDIUM, 3 LOW)'
+    notes: 'Side-idea idea_draft write; baseline owner class; suites reading deleted files not owned by the deleting task; fixes sent to the architect'
 
 # [A] written by the orchestrator on the work's active branch (single
 #     writer). Append-only audit trail of phase transitions and gate

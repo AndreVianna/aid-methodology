@@ -55,6 +55,12 @@
   - each hit the spec's lists omit;
   - each spec-listed path with no hit;
   - each suite assigned to two tasks that do not depend on each other, with the order to run them.
+- **The owner classes also include "baseline, re-recorded at the gate"** for hits in
+  `tests/cost-baseline.tsv` and `tests/coverage-baseline.tsv`. No task edits a baseline (Q134 D11).
+- **Skill owner table (G2).** Build it from a full listing, `ls canonical/skills/*/SKILL.md`, not from
+  text searches. It has one row per skill on disk at the base, naming the task of this delivery that owns
+  that skill's edits, or "no change needed here" with the reason (for example "generated doorway: changes
+  through the builder").
 - **Test step** (PLAN.md § "Testing before the resync"; the same in every task of this delivery).
   `BASE` is this task's `task-001: In Progress` commit. Work in the `work-003` worktree only, create no
   branch or worktree, and never run `run_generator.py` in the live tree.
@@ -76,9 +82,9 @@
        drop the `COPY` suites' results by name.
      - Otherwise, run each `LIVE` suite with `HOME="$(mktemp -d)" bash tests/canonical/<suite>`.
   5. **Outside `run-all.sh`.**
-     - Run `(cd site && npm test)` when this task changes `canonical/skills/`,
-       `canonical/aid/templates/shortcut-catalog.yml`, `docs/` or `site/`. Run `npm ci` there first if
-       `site/node_modules` is absent.
+     - Run `(cd site && npm test)` when this task changes anything under `canonical/skills/`,
+       `canonical/agents/` or `canonical/aid/templates/`, or under `docs/` or `site/` (G5). Run `npm ci`
+       there first if `site/node_modules` is absent.
      - Run `python3 -m pytest <file>` for each dashboard test file this task changes.
   6. **Report.** For each suite, report where it ran, its result and its run count.
      - Ceiling (T5): one full run of steps 2-5 per test round. Between rounds, re-run only the failing
@@ -88,6 +94,7 @@
 **Acceptance Criteria:**
 - [ ] Each of S1-S10 shows its exact command. Re-running each command at the base commit named in the file reproduces its hit list line for line.
 - [ ] Every hit row has exactly one owner from the classes above. The count of rows with an empty owner cell is 0.
+- [ ] The skill owner table has exactly one row per `canonical/skills/*/SKILL.md` on disk at the base (the row count equals `ls canonical/skills/*/SKILL.md | wc -l`), and no row is unowned.
 - [ ] The delta section lists every hit the spec omits and every spec-listed path with no hit, each with its owner, plus any suite assigned to two independent tasks, with the order to run them.
 - [ ] The S9 exempt list names, per row, the skill and the anchor of the later feature that deletes or renames it. No skill that keeps its name through v4.0.0 appears in it.
 - [ ] RESEARCH defaults overridden: the spec fixes the searches, so there are no alternatives to compare. The recorded commands are the cited sources. The test step selects nothing, because the change lies wholly under `.aid/works/`.
