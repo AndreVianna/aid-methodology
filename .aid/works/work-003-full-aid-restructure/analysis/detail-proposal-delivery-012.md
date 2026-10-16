@@ -838,6 +838,8 @@ Step 5 writes the table under `### delivery-012 Execution Graph`, one task per r
 | S12 | KB edits and NEXT's KB check. | Every DOCUMENT task runs on the KB the NEXT calls left, keeps what agrees with the spec, adds what is missing, and corrects only contradictions, naming the entry. | Delivery-010 light review row 10; F007 § 2 step 7; no plan change. |
 | S13 | KB `sources:` citations and retired skills' site pages (delivery-012 light review rows 1 and 8). | G17: every task that deletes, moves or renames a file fixes the KB `sources:` entries that cite it in the same task (AD14), with a criterion; the DOCUMENT tasks keep the prose. G18: every task that retires or renames a skill `git rm`s its generated page and flow before regenerating, with a criterion. The research task searches `.aid/knowledge/` `sources:` too. | G17, G18 (general rules). |
 | S14 | Direct edges on shared files (rows 3-5). | 326 now depends on 318, 319 and 320; 321 on 319; 319 on 315 (both edit the research, review and report `SKILL.md`). The DOCUMENT and TEST tasks already reach every task whose result they check through a dependency path (rows 6-7), so no edge is added there. | G12; G4 as restated (a path suffices). |
+| S15 | Site generator sources that name a retired skill (G19). | Each wrapper-retirement task (318-320) fixes them before it regenerates; the research searches `site/scripts/` outside `__tests__`. | G19. |
+
 ---
 
 ## 7. Flagged for the maintainer

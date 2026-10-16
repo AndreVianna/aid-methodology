@@ -12,8 +12,11 @@
 **Scope:**
 - Edit these documents under `.aid/knowledge/` (REQUIREMENTS.md § 11 Feature 009 `##### 8. Migration`, KB): `artifact-schemas.md` (the `domain`
   field, the reserved fields, `.aid/kinds/` and the skip rule); `project-structure.md` (`.aid/kinds/`, the user's
-  folder, outside the install manifest); `domain-glossary.md` (domain); `integration-map.md` (its `sources:` entry and
-  the host-tool table name `aid-configure`); `coding-standards.md` (settings are "managed by `/aid-configure`").
+  folder, outside the install manifest); `domain-glossary.md` (domain); `integration-map.md` (the host-tool table names `aid-configure`; its `sources:`
+  entry moved with task-339, G17); `coding-standards.md` (settings are "managed by `/aid-configure`").
+- **Every other KB document that names `aid-config` as a current skill** (REQUIREMENTS.md § 11 Feature 009 `##### 8. Migration`, KB) -- today `architecture.md`,
+  `capability-inventory.md`, `module-map.md`, `pipeline-contracts.md`, and any other the findings' C2 lists -- names
+  `aid-configure`; only a legacy or old-work mention keeps the old name.
 - Name no work and no work folder.
 - **KB edits and NEXT's KB check (Feature 007 § 2, step 7; Feature 004).** After every earlier task of this
   delivery, NEXT's KB check may make a `CALL` to `/aid-kb-update`, which edits and commits the drifted documents
@@ -63,7 +66,7 @@
        `references/blocker.md`).
 
 **Acceptance Criteria:**
-- [ ] Over the edited documents, `git grep -nE '(^|[^a-z-])aid-config([^a-z-]|$)'` finds nothing, and `artifact-schemas.md` names `domain`, the four reserved fields and `.aid/kinds/`.
+- [ ] Over `.aid/knowledge/*.md`, `git grep -nE '(^|[^a-z-])aid-config([^a-z-]|$)'` finds only `backlog.md`'s old -> new row and the legacy or old-work mentions the findings' C2 classes as kept, and `artifact-schemas.md` names `domain`, the four reserved fields and `.aid/kinds/`.
 - [ ] Each statement matches `canonical/` as this delivery leaves it; no work id, and the lints pass.
 - [ ] The test step (last Scope bullet) reports no failure: the spawn-free checks, the scratch half, the live half and the site or dashboard runs it calls for. Every existing test still passes.
 - [ ] All section-6 quality gates pass (REQUIREMENTS.md § 6: NFR-N, NFR-T, NFR-Q).

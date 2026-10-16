@@ -44,6 +44,8 @@
 - **KB `sources:` (G17).** The G6 and G2 searches also run over `.aid/knowledge/` (the frontmatter `sources:` lists): each
   `sources:` entry that cites a file this delivery deletes, moves or renames goes to the task that deletes, moves or
   renames it, which fixes the entry in the same task (AD14).
+- **Site generator sources (G19).** The searches also run over `site/scripts/` outside `__tests__` for the name of every
+  skill this delivery retires or renames; each hit goes to the task that retires or renames that skill.
 - Give each hit exactly one owner:
   - a task of delivery-004 (task-083 to task-103; see
     each task's `DETAIL.md` under `.aid/works/work-003-full-aid-restructure/deliveries/delivery-004/tasks/` -- the proposal file is superseded by the task files);

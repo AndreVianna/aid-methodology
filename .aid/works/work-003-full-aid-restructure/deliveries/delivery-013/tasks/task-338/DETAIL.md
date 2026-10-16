@@ -18,7 +18,7 @@
     task-350 for the KB; delivery-014 for `docs/` and `site/src/content/docs/`);
   - **C2** every mention of `aid-config` as a name: `git grep -nE '(^|[^a-z-])aid-config([^a-z-]|$)' -- . ':!.aid/works'`,
     each hit classed by REQUIREMENTS.md § 11 Feature 009 `##### 8. Migration` (the rename in approved features; Suites, Unchanged; Dashboard):
-    renamed here (the skill, the settings rows, `settings.yml`, `bin/aid`, `bin/aid.ps1`, the dashboard comments,
+    renamed here (the site generator sources under `site/scripts/`, G19, with task-339; the skill, the settings rows, `settings.yml`, `bin/aid`, `bin/aid.ps1`, the dashboard comments,
     sample `002-02`'s `skills:` line, every kept file under `canonical/`, `.claude/skills/generate-profile/` and
     `scripts/checks/`), kept as written (the approved specs; the synthetic old-style settings fixtures in
     `test-aid-cli-parity.sh`, `test_reader.py`, `test_server_node.mjs`, `test_task012_consuming_round_trips.py`), or
@@ -41,6 +41,8 @@
 - **KB `sources:` (G17).** The G6 and G2 searches also run over `.aid/knowledge/` (the frontmatter `sources:` lists): each
   `sources:` entry that cites a file this delivery deletes, moves or renames goes to the task that deletes, moves or
   renames it, which fixes the entry in the same task (AD14).
+- **Site generator sources (G19).** The searches also run over `site/scripts/` outside `__tests__` for the name of every
+  skill this delivery retires or renames; each hit goes to the task that retires or renames that skill.
 - Give each hit exactly one owner:
   - a task of delivery-013 (task-339 to task-352; see the task files under
     `.aid/works/work-003-full-aid-restructure/tasks/task-NNN/DETAIL.md`, the layout delivery-008's migration leaves);

@@ -26,6 +26,11 @@
   `sources:` entries change here; the prose stays for the delivery's DOCUMENT task. So `test-artifact-discipline.sh`
   AD14 (every `sources:` citation resolves) holds at this task's end. The KB lines are committed as the delivery
   commits KB paths (through `kb-commit.sh` once it exists, as Feature 007's BUILD requires).
+- **KB edits and NEXT's KB check (Feature 007 § 2, step 7; Feature 004).** This task edits no KB document. Its commits
+  may touch files that KB documents cite in their `sources:`, so NEXT's KB check after it may make a `CALL` to
+  `/aid-kb-update`, which edits and commits the drifted documents itself and records a `KB change` entry `Assumed`.
+  This task leaves that to the call; the delivery's KB DOCUMENT task then runs on the KB the call left (its own KB
+  block).
 - **Site regeneration (G1, G5).** When this task adds, deletes, renames or edits anything under
   `canonical/skills/`, `canonical/agents/` or `canonical/aid/templates/`, it runs
   `(cd site && npm run gen:skills && npm run gen:reference)` in this same task and commits the output:

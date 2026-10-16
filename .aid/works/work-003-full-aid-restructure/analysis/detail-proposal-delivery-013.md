@@ -12,16 +12,16 @@ files are written at once, and the light review is the check.
 | task-340 | aid-config renamed everywhere else: settings, bin/aid and the dashboard comments | IMPLEMENT | 2 | 3 | task-339 |
 | task-341 | The catalog's domain field, and the reserved fields set on none | IMPLEMENT | 2 | 2 | task-338 |
 | task-342 | The action layer worded with no software term | IMPLEMENT | 2 | 4 | task-339, task-340, task-341, task-344 |
-| task-343 | The identity statement outside the KB: software first, not software only | DOCUMENT | 2 | 2 | task-338 |
+| task-343 | The identity statement outside the KB: software first, not software only | DOCUMENT | 2 | 4 | task-338, task-340 |
 | task-344 | The merged catalog's second source: .aid/kinds/, the precedence and the skip rule | IMPLEMENT | 2 | 3 | task-338, task-341 |
 | task-345 | Install cases: a user's .aid/kinds/ survives aid update and aid remove | TEST | 2 | 4 | task-340, task-344 |
 | task-346 | Any skill may take a kind: the kind hooks of aid-review, aid-research and aid-report | IMPLEMENT | 3 | 4 | task-341, task-344 |
 | task-347 | Conversation runner: a fixture with no repository | TEST | 4 | 2 | task-338 |
 | task-348 | test-actions.sh group C | TEST | 4 | 5 | task-339, task-340, task-341, task-342, task-344, task-346 |
 | task-349 | Samples 009-15, 009-18 and 009-19 (run at this gate) | TEST | 4 | 5 | task-339, task-340, task-342, task-344, task-346, task-347 |
-| task-350 | KB: the identity decision, Beyond software, the release note and the identity lines | DOCUMENT | 4 | 3 | task-339, task-343 |
-| task-351 | KB: the kind's domain, the user's kinds folder and /aid-configure | DOCUMENT | 4 | 4 | task-340, task-341, task-344, task-350 |
-| task-352 | KB test landscape for domain readiness, the regenerated index and the view | DOCUMENT | 4 | 6 | task-345, task-347, task-348, task-349, task-350, task-351 |
+| task-350 | KB: the identity decision, Beyond software, the release note and the identity lines | DOCUMENT | 4 | 5 | task-339, task-343 |
+| task-351 | KB: the kind's domain, the user's kinds folder and /aid-configure | DOCUMENT | 4 | 6 | task-340, task-341, task-344, task-350 |
+| task-352 | KB test landscape for domain readiness, the regenerated index and the view | DOCUMENT | 4 | 7 | task-345, task-347, task-348, task-349, task-350, task-351 |
 
 That is 15 tasks (task-338 to task-352). The resync follows the run's pause at the delivery-013 MILESTONE approval
 (§ 4).
@@ -204,7 +204,7 @@ catalog, AC-45 for the identity statement's pre-release check).
 
 ### task-343: The identity statement outside the KB: software first, not software only [DOCUMENT]
 
-- **Stanza wave:** 2. **Depends on:** task-338.
+- **Stanza wave:** 2. **Depends on:** task-338, task-340.
 - **Source:** AC-45.
 - **Scope:**
   - In every file the identity search finds (the findings' C1) outside `.aid/knowledge/`, `docs/` and
@@ -432,11 +432,12 @@ reaches `.aid/settings.yml`; then the criteria, the samples and G0).
 
 ```text
 wave 1: task-338
-wave 2: task-339, task-341, task-343, task-347
-wave 3: task-340, task-344, task-350
-wave 4: task-342, task-345, task-346, task-351
-wave 5: task-348, task-349
-wave 6: task-352
+wave 2: task-339, task-341, task-347
+wave 3: task-340, task-344
+wave 4: task-342, task-343, task-345, task-346
+wave 5: task-348, task-349, task-350
+wave 6: task-351
+wave 7: task-352
 ```
 
 Step 5 writes the table under `### delivery-013 Execution Graph`, one task per row.
@@ -455,6 +456,8 @@ Step 5 writes the table under `### delivery-013 Execution Graph`, one task per r
 | S6 | The action-layer wording. | A task (342) that rewords only what the AS-10 search still finds; delivery-011 wrote the layer to the rule. | Stanza wave 2. |
 | S7 | Sources for the domain-readiness tasks. | AC-30 for the catalog and its readers, AC-45 for the identity statement (DN-03 is its pre-release check). | F009 Criteria traceability. |
 | S8 | KB `sources:` citations and retired skills' site pages (delivery-012 light review rows 1 and 8). | G17: every task that deletes, moves or renames a file fixes the KB `sources:` entries that cite it in the same task (AD14), with a criterion; the DOCUMENT tasks keep the prose. G18: every task that retires or renames a skill `git rm`s its generated page and flow before regenerating, with a criterion. The research task searches `.aid/knowledge/` `sources:` too. | G17, G18 (general rules). |
+| S9 | Delivery-013 light review. | Row 1: task-339 moves `integration-map.md`'s `sources:` entry (G17). Row 2: G19 -- task-339 fixes `gen-reference.mjs`'s settings-page intro and any other site script naming `aid-config`; C2 classes them. Row 3: task-343 depends on 340 (both edit `concern-model.md`). Row 4: 351 and 352 already reach 339 through 340 and 351, so no edge. Row 5: task-343 carries the KB block for a task that edits no KB document. Row 6: task-351 owns F009 § 8's new KB bullet (every KB document naming `aid-config` as a current skill). | Light review of delivery-013; G12, G17, G19. |
+
 ---
 
 ## 7. Flagged for the maintainer

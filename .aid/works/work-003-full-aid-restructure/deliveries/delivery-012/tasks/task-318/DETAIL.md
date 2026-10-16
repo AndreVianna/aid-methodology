@@ -50,6 +50,11 @@
   skill folder this task deletes or renames away: its page under `site/src/content/docs/skills/` and its
   `site/src/data/skill-flows/<name>.flow.json` (the generators never delete; `gen-skills.mjs`'s drift check names any
   orphan with its `git rm` remedy). Then the site regeneration below.
+- **Site generator sources (G19).** Every site script source outside `__tests__` that hard-codes the name of a skill
+  this task retires or renames (`git grep -nE 'aid-<name>([^a-z-]|$)' -- site/scripts/ ':!site/scripts/__tests__'`,
+  for example the settings-page intro in `gen-reference.mjs` or a name list in `lib/flow-graph/extract-residual.mjs`)
+  is fixed in this same task, before it regenerates: the name follows the rename, or the retired skill's mention
+  goes. A generated page is never edited by hand to hide a stale generator.
 - **Site regeneration (G1, G5).** When this task adds, deletes, renames or edits anything under
   `canonical/skills/`, `canonical/agents/` or `canonical/aid/templates/`, it runs
   `(cd site && npm run gen:skills && npm run gen:reference)` in this same task and commits the output:
@@ -107,5 +112,6 @@
 - [ ] `test-skill-guide.sh`, `test-deploy-monitor-repurpose.sh`, `test-catalog-dirs-parity.sh` and `test-shortcut-builder-invariants.sh` pass where the test step puts them, DT-01 passes, `test-doc-counts.sh` passes live with the skill count lowered, the six family-scaffold suites are gone with their rows, and the site `npm test` passes after `sync:docs` and regeneration.
 - [ ] Over `.aid/knowledge/`, no frontmatter `sources:` entry cites a path this task deletes, moves or renames, and `test-artifact-discipline.sh` AD14 passes where the test step puts the suite (G17).
 - [ ] No page under `site/src/content/docs/skills/` and no `site/src/data/skill-flows/*.flow.json` is left for a skill folder this task deletes or renames away, and `npm run gen:skills` reports no orphan (G18).
+- [ ] Over `site/scripts/` outside `__tests__`, no source names a skill this task retires, and none names a renamed skill by its old name (G19).
 - [ ] The test step (last Scope bullet) reports no failure: the spawn-free checks, the scratch half, the live half and the site or dashboard runs it calls for. Every existing test still passes.
 - [ ] All section-6 quality gates pass (REQUIREMENTS.md § 6: NFR-N, NFR-T, NFR-Q).

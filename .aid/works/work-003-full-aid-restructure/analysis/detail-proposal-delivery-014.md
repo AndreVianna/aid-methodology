@@ -386,6 +386,8 @@ Step 5 writes the table under `### delivery-014 Execution Graph`, one task per r
 | S6 | The three integration-run rows of `deferred.tsv`. | They wait until the gate's integration run passes, then leave in one commit of their own in the gate session (a test-list change, not resync-relevant); then DT-02 runs with the flag. Task-362 checks that they are the only rows left. | PLAN delivery-014 wave 3 (the release checks and the integration suite are gate checks); the integration suite reads the staged bundle, so it runs after the resync. |
 | S7 | A pre-gate run of the release checks. | A TEST task (362) runs the regeneration, the site build and the flagged checks before the resync, so the gate finds no pass failure for the first time. | Settled by recommendation (Q136). |
 | S8 | KB `sources:` citations and retired skills' site pages (delivery-012 light review rows 1 and 8). | G17: every task that deletes, moves or renames a file fixes the KB `sources:` entries that cite it in the same task (AD14), with a criterion; the DOCUMENT tasks keep the prose. G18: every task that retires or renames a skill `git rm`s its generated page and flow before regenerating, with a criterion. The research task searches `.aid/knowledge/` `sources:` too. | G17, G18 (general rules). |
+| S9 | The KB block in the non-KB documentation tasks. | 356-361 carry the variant for a task that edits no KB document: NEXT's KB check may call `/aid-kb-update` after them, and task-363 runs on the KB that call left. | Delivery-013 light review row 5 (every DOCUMENT task carries the block). |
+
 ---
 
 ## 7. Flagged for the maintainer

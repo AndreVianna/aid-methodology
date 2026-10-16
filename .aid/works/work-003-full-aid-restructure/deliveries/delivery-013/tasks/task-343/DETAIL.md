@@ -7,7 +7,7 @@
 
 **Source:** feature-009-one-skill-per-need -> delivery-013 -> AC-45
 
-**Depends on:** task-338
+**Depends on:** task-338, task-340
 
 **Scope:**
 - In every file the identity search finds (the findings' C1) outside `.aid/knowledge/`, `docs/` and
@@ -18,6 +18,11 @@
 - The KB files are task-350's; `docs/` and the site pages are delivery-014's final pass; `kb.html` follows by its
   render.
 - Only the identity lines change.
+- **KB edits and NEXT's KB check (Feature 007 § 2, step 7; Feature 004).** This task edits no KB document. Its commits
+  may touch files that KB documents cite in their `sources:`, so NEXT's KB check after it may make a `CALL` to
+  `/aid-kb-update`, which edits and commits the drifted documents itself and records a `KB change` entry `Assumed`.
+  This task leaves that to the call; the delivery's KB DOCUMENT task then runs on the KB the call left (its own KB
+  block).
 - **Same-task rule (Q106).** This task updates every suite that asserts text in a file it changes,
   including `site/scripts/__tests__/` and the dashboard tests. It is not `Done` while such a suite fails.
   - A removed assertion gets its row in `tests/coverage-accepted-removals.tsv`.
