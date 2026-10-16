@@ -39,6 +39,9 @@
   `buildFlowChart`, `liveChart` or the like (`git grep -nE "'aid-[a-z-]+'|canonical/(skills|aid/templates)/" --
   site/scripts/__tests__ site/src/lib/__tests__`). Each hit on a file this delivery rewrites, moves or deletes goes to
   the task that changes that file, which re-points the test in the same task.
+- **KB `sources:` (G17).** The G6 and G2 searches also run over `.aid/knowledge/` (the frontmatter `sources:` lists): each
+  `sources:` entry that cites a file this delivery deletes, moves or renames goes to the task that deletes, moves or
+  renames it, which fixes the entry in the same task (AD14).
 - Give each hit exactly one owner:
   - a task of delivery-012 (task-312 to task-337; see the task files under
     `.aid/works/work-003-full-aid-restructure/tasks/task-NNN/DETAIL.md`, the layout delivery-008's migration leaves);

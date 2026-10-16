@@ -7,7 +7,7 @@
 
 **Source:** feature-009-one-skill-per-need -> delivery-012 -> AC-20
 
-**Depends on:** task-313, task-314, task-316, task-317, task-320
+**Depends on:** task-313, task-314, task-316, task-317, task-319, task-320
 
 **Scope:**
 - Delete `canonical/aid/templates/shortcut-engine.md` (REQUIREMENTS.md § 11 Feature 009 `##### 1. Files and layout`; What replaces the engine).
@@ -32,6 +32,12 @@
     `tests/coverage-accepted-removals.tsv`.
   - For a skill folder it also searches the skill's bare name (`git grep -nE "'<name>'" -- site/scripts/__tests__
     site/src/lib/__tests__`): a site test that loads the skill's body as a fixture by name is re-pointed here.
+- **KB `sources:` citations (G17).** Every `.aid/knowledge/` document whose frontmatter `sources:` cites a file or
+  folder this task deletes, moves or renames is fixed in this same task (`git grep -n -e '<path>' -e '<folder>/' --
+  .aid/knowledge/` at this task's base): the entry follows a moved file, and goes when the file is gone. Only the
+  `sources:` entries change here; the prose stays for the delivery's DOCUMENT task. So `test-artifact-discipline.sh`
+  AD14 (every `sources:` citation resolves) holds at this task's end. The KB lines are committed as the delivery
+  commits KB paths (through `kb-commit.sh` once it exists, as Feature 007's BUILD requires).
 - **Site regeneration (G1, G5).** When this task adds, deletes, renames or edits anything under
   `canonical/skills/`, `canonical/agents/` or `canonical/aid/templates/`, it runs
   `(cd site && npm run gen:skills && npm run gen:reference)` in this same task and commits the output:
@@ -86,6 +92,7 @@
 
 **Acceptance Criteria:**
 - [ ] `test -e canonical/aid/templates/shortcut-engine.md` fails; `tests/canonical/skill-steps-exempt.tsv` holds no data row.
-- [ ] Every suite named in the scope passes where the test step puts it, `test-shortcut-engine-contract.sh` is gone with its rows, and over the files this task changes, `git grep -n 'shortcut-engine'` finds nothing.
+- [ ] Every suite named in the scope passes where the test step puts it, `test-shortcut-engine-contract.sh` is gone with its rows, and over the files this task changes, except `tests/coverage-accepted-removals.tsv` (whose new rows name the retired suite), `git grep -n 'shortcut-engine'` finds nothing.
+- [ ] Over `.aid/knowledge/`, no frontmatter `sources:` entry cites a path this task deletes, moves or renames, and `test-artifact-discipline.sh` AD14 passes where the test step puts the suite (G17).
 - [ ] The test step (last Scope bullet) reports no failure: the spawn-free checks, the scratch half, the live half and the site or dashboard runs it calls for. Every existing test still passes.
 - [ ] All section-6 quality gates pass (REQUIREMENTS.md § 6: NFR-N, NFR-T, NFR-Q).

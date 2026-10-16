@@ -7,7 +7,7 @@
 
 **Source:** feature-009-one-skill-per-need -> delivery-012 -> AC-20, AC-31
 
-**Depends on:** task-321, task-322, task-324, task-325
+**Depends on:** task-318, task-319, task-320, task-321, task-322, task-324, task-325
 
 **Scope:**
 - Delete `canonical/aid/templates/shortcut-catalog.yml` (REQUIREMENTS.md § 11 Feature 009 `##### 1. Files and layout`).
@@ -33,6 +33,12 @@
     `tests/coverage-accepted-removals.tsv`.
   - For a skill folder it also searches the skill's bare name (`git grep -nE "'<name>'" -- site/scripts/__tests__
     site/src/lib/__tests__`): a site test that loads the skill's body as a fixture by name is re-pointed here.
+- **KB `sources:` citations (G17).** Every `.aid/knowledge/` document whose frontmatter `sources:` cites a file or
+  folder this task deletes, moves or renames is fixed in this same task (`git grep -n -e '<path>' -e '<folder>/' --
+  .aid/knowledge/` at this task's base): the entry follows a moved file, and goes when the file is gone. Only the
+  `sources:` entries change here; the prose stays for the delivery's DOCUMENT task. So `test-artifact-discipline.sh`
+  AD14 (every `sources:` citation resolves) holds at this task's end. The KB lines are committed as the delivery
+  commits KB paths (through `kb-commit.sh` once it exists, as Feature 007's BUILD requires).
 - **Site regeneration (G1, G5).** When this task adds, deletes, renames or edits anything under
   `canonical/skills/`, `canonical/agents/` or `canonical/aid/templates/`, it runs
   `(cd site && npm run gen:skills && npm run gen:reference)` in this same task and commits the output:
@@ -88,5 +94,6 @@
 **Acceptance Criteria:**
 - [ ] `test -e canonical/aid/templates/shortcut-catalog.yml` fails, and over `tests/canonical/*.sh` and `site/scripts/` `git grep -n 'shortcut-catalog'` finds nothing (the dashboard comments and docstrings are task-328's, and the baselines are re-recorded at the gate).
 - [ ] `test-deploy-monitor-repurpose.sh`, `test-kb-skills.sh`, `test-idea-shaping.sh` and `test-connector-skills-structural.sh` pass where the test step puts them, `test-doc-counts.sh` passes live, and `python3 -m pytest dashboard/reader/tests/test_shortcut_kind_map_cross_runtime_parity.py` passes.
+- [ ] Over `.aid/knowledge/`, no frontmatter `sources:` entry cites a path this task deletes, moves or renames, and `test-artifact-discipline.sh` AD14 passes where the test step puts the suite (G17).
 - [ ] The test step (last Scope bullet) reports no failure: the spawn-free checks, the scratch half, the live half and the site or dashboard runs it calls for. Every existing test still passes.
 - [ ] All section-6 quality gates pass (REQUIREMENTS.md § 6: NFR-N, NFR-T, NFR-Q).

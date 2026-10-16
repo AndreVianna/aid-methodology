@@ -25,6 +25,12 @@
 - `.github/workflows/test.yml` and `release.yml`: the summarize validator steps and comments go.
 - Suites to update in this same task: every workflow-reading suite the findings' K6 or K7 assigns here
   (`test-ascii-only.sh`, `test-ps51-compat.sh`, `test-aid-cli-parity.sh` where they apply).
+- **KB `sources:` citations (G17).** Every `.aid/knowledge/` document whose frontmatter `sources:` cites a file or
+  folder this task deletes, moves or renames is fixed in this same task (`git grep -n -e '<path>' -e '<folder>/' --
+  .aid/knowledge/` at this task's base): the entry follows a moved file, and goes when the file is gone. Only the
+  `sources:` entries change here; the prose stays for the delivery's DOCUMENT task. So `test-artifact-discipline.sh`
+  AD14 (every `sources:` citation resolves) holds at this task's end. The KB lines are committed as the delivery
+  commits KB paths (through `kb-commit.sh` once it exists, as Feature 007's BUILD requires).
 - **Same-task rule (Q106).** This task updates every suite that asserts text in a file it changes,
   including `site/scripts/__tests__/` and the dashboard tests. It is not `Done` while such a suite fails.
   - A removed assertion gets its row in `tests/coverage-accepted-removals.tsv`.
@@ -66,5 +72,6 @@
 **Acceptance Criteria:**
 - [ ] `test -e package.json` fails; `grep -c` for `package.json` or `npm` in the root `package-ecosystem` entry of `.github/dependabot.yml` finds no root entry; `grep -c summarize .github/workflows/test.yml .github/workflows/release.yml` totals 0.
 - [ ] The workflow-reading suites pass. No secret is added, and applying the edit twice changes nothing.
+- [ ] Over `.aid/knowledge/`, no frontmatter `sources:` entry cites a path this task deletes, moves or renames, and `test-artifact-discipline.sh` AD14 passes where the test step puts the suite (G17).
 - [ ] The test step (last Scope bullet) reports no failure: the spawn-free checks, the scratch half, the live half and the site or dashboard runs it calls for. Every existing test still passes.
 - [ ] All section-6 quality gates pass (REQUIREMENTS.md § 6: NFR-N, NFR-T, NFR-Q).

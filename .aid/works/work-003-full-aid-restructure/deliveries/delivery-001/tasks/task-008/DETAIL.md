@@ -47,6 +47,12 @@
   list does not come from the findings' map alone. Every suite it finds is updated in this same task
   (Q106 applied to deletions). Any exemption row this task's own criteria need is created here, or the
   criterion is scoped so it holds without the row.
+- **KB `sources:` citations (G17).** Every `.aid/knowledge/` document whose frontmatter `sources:` cites a file or
+  folder this task deletes, moves or renames is fixed in this same task (`git grep -n -e '<path>' -e '<folder>/' --
+  .aid/knowledge/` at this task's base): the entry follows a moved file, and goes when the file is gone. Only the
+  `sources:` entries change here; the prose stays for the delivery's DOCUMENT task. So `test-artifact-discipline.sh`
+  AD14 (every `sources:` citation resolves) holds at this task's end. The KB lines are committed as the delivery
+  commits KB paths (through `kb-commit.sh` once it exists, as Feature 007's BUILD requires).
 - **Site regeneration (G1, G5).** When this task adds, deletes, renames or edits anything under
   `canonical/skills/`, `canonical/agents/` or `canonical/aid/templates/`, it runs
   `(cd site && npm run gen:skills && npm run gen:reference)` in this same task and commits the output:
@@ -101,5 +107,6 @@
 - [ ] `aid-monitor`'s ROUTE row names no agent, and `git grep -n -E 'aid-triage|aid-orchestrator' -- canonical/skills/aid-monitor/` finds nothing. `state-route.md` hands a bug back as a fix request and a change request as a new-work request (AC-23).
 - [ ] `canonical/agents/aid-developer/` and `canonical/agents/aid-tech-writer/` exist, which is the SG-05 clause (AC-6), and `test-doc-counts.sh` passes live with the new agent count.
 - [ ] `test-deploy-monitor-repurpose.sh` passes in the scratch copy. After `(cd site && npm run gen:skills && npm run gen:reference)`, `git status --porcelain site/` is empty, and the site `npm test` passes.
+- [ ] Over `.aid/knowledge/`, no frontmatter `sources:` entry cites a path this task deletes, moves or renames, and `test-artifact-discipline.sh` AD14 passes where the test step puts the suite (G17).
 - [ ] The test step (last Scope bullet) reports no failure: the spawn-free checks, the scratch half, the live half and the site or dashboard runs it calls for. Every existing test still passes.
 - [ ] All section-6 quality gates pass (REQUIREMENTS.md § 6: NFR-N, NFR-T, NFR-Q).

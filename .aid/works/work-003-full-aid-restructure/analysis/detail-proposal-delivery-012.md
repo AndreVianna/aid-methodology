@@ -15,14 +15,14 @@ files are written at once, and the light review is the check.
 | task-316 | Site generator: the skill list from canonical/skills/ | IMPLEMENT | 2 | 2 | task-311 |
 | task-317 | Site generator: the flow graph without doorways, engine or siblings | IMPLEMENT | 2 | 3 | task-316 |
 | task-318 | The generated wrapper skills retired | IMPLEMENT | 3 | 4 | task-314, task-316, task-317 |
-| task-319 | The ticket skills retired, and the ticket seams re-pointed | IMPLEMENT | 3 | 5 | task-313, task-318 |
+| task-319 | The ticket skills retired, and the ticket seams re-pointed | IMPLEMENT | 3 | 5 | task-313, task-315, task-318 |
 | task-320 | The document, test and prototype wrappers retired, and the guide's <kind> lines gone | IMPLEMENT | 3 | 6 | task-319 |
-| task-321 | The shortcut engine retired, and the shared exempt list empty | IMPLEMENT | 3 | 7 | task-313, task-314, task-316, task-317, task-320 |
+| task-321 | The shortcut engine retired, and the shared exempt list empty | IMPLEMENT | 3 | 7 | task-313, task-314, task-316, task-317, task-319, task-320 |
 | task-322 | The shortcut scaffolding retired | IMPLEMENT | 3 | 8 | task-321 |
 | task-323 | The impediment template retired | IMPLEMENT | 3 | 9 | task-315, task-322 |
 | task-324 | KB type registry: the generated-skill type retired | DOCUMENT | 3 | 7 | task-320 |
 | task-325 | The doorway builder retired, and generate-profile counting from the folders | IMPLEMENT | 3 | 7 | task-320 |
-| task-326 | The shortcut catalog retired, with its counting suites | IMPLEMENT | 3 | 9 | task-321, task-322, task-324, task-325 |
+| task-326 | The shortcut catalog retired, with its counting suites | IMPLEMENT | 3 | 9 | task-318, task-319, task-320, task-321, task-322, task-324, task-325 |
 | task-327 | Format 6: the doorway rows, inside legacy-skill-names markers | IMPLEMENT | 4 | 10 | task-326 |
 | task-328 | Dashboard: the legacy maps inside markers, and no retired name outside them | IMPLEMENT | 4 | 10 | task-326 |
 | task-329 | Re-pointing: every kept file that names a retired skill, the engine or its files | IMPLEMENT | 4 | 10 | task-319, task-323, task-325, task-326 |
@@ -303,7 +303,7 @@ That is 27 tasks (task-311 to task-337). The resync follows the run's pause at t
 
 ### task-319: The ticket skills retired, and the ticket seams re-pointed [IMPLEMENT]
 
-- **Stanza wave:** 3. **Depends on:** task-313, task-318.
+- **Stanza wave:** 3. **Depends on:** task-313, task-315, task-318.
 - **Source:** AC-20, AC-31.
 - **Scope:**
   - Delete `canonical/skills/aid-create-ticket/` and `canonical/skills/aid-update-ticket/` (REQUIREMENTS.md § 11 Feature 009 `##### 1. Files and
@@ -383,7 +383,7 @@ That is 27 tasks (task-311 to task-337). The resync follows the run's pause at t
 
 ### task-321: The shortcut engine retired, and the shared exempt list empty [IMPLEMENT]
 
-- **Stanza wave:** 3. **Depends on:** task-313, task-314, task-316, task-317, task-320.
+- **Stanza wave:** 3. **Depends on:** task-313, task-314, task-316, task-317, task-319, task-320.
 - **Source:** AC-20.
 - **Scope:**
   - Delete `canonical/aid/templates/shortcut-engine.md` (REQUIREMENTS.md § 11 Feature 009 `##### 1. Files and layout`; What replaces the engine).
@@ -501,7 +501,7 @@ That is 27 tasks (task-311 to task-337). The resync follows the run's pause at t
 
 ### task-326: The shortcut catalog retired, with its counting suites [IMPLEMENT]
 
-- **Stanza wave:** 3. **Depends on:** task-321, task-322, task-324, task-325.
+- **Stanza wave:** 3. **Depends on:** task-318, task-319, task-320, task-321, task-322, task-324, task-325.
 - **Source:** AC-20, AC-31.
 - **Scope:**
   - Delete `canonical/aid/templates/shortcut-catalog.yml` (REQUIREMENTS.md § 11 Feature 009 `##### 1. Files and layout`).
@@ -779,7 +779,7 @@ That is 27 tasks (task-311 to task-337). The resync follows the run's pause at t
 | Free-form text after `/aid-deploy` and `/aid-monitor` | 314 |
 | No impediment file | 315, 323 |
 | Format 6 doorway rows with markers and the `Test-AidInstaller.ps1` case; the dashboard maps inside markers | 327, 330; 328, 331 |
-| Site generator rewrite; retired flows and pages deleted; pages regenerated | 316, 317; 318-320 regenerate |
+| Site generator rewrite; retired flows and pages deleted; pages regenerated | 316, 317; 318-320 `git rm` the retired pages and flows (G18), then regenerate |
 | Skill guide: the `<kind>` lines go, SG-02 with no expansion | 318, 319 (follow the folders), 320 |
 | Suites of F009 § 8, each in the task that changes its file (Q106) | 313-326 |
 | Shared exempt list empty; Feature 009 `skill:` rows gone | 321; 318-320, 333, 334 |
@@ -836,7 +836,8 @@ Step 5 writes the table under `### delivery-012 Execution Graph`, one task per r
 | S10 | The CI lane. | No CONFIGURE task: `test-actions` is already in `SUITES` (task-308); a retired suite leaves `SUITES` in the task that retires it. | G6 widened to `.github/workflows/`. |
 | S11 | The KB. | The type registry (324) before the catalog goes; decisions, release notes, quality gates, roadmap and tech debt (335); the architecture set (336); the test landscape with the index and view (337). `aid-config` sites and `## Later` are delivery-013's. | F009 § 8, KB; G0. |
 | S12 | KB edits and NEXT's KB check. | Every DOCUMENT task runs on the KB the NEXT calls left, keeps what agrees with the spec, adds what is missing, and corrects only contradictions, naming the entry. | Delivery-010 light review row 10; F007 § 2 step 7; no plan change. |
-
+| S13 | KB `sources:` citations and retired skills' site pages (delivery-012 light review rows 1 and 8). | G17: every task that deletes, moves or renames a file fixes the KB `sources:` entries that cite it in the same task (AD14), with a criterion; the DOCUMENT tasks keep the prose. G18: every task that retires or renames a skill `git rm`s its generated page and flow before regenerating, with a criterion. The research task searches `.aid/knowledge/` `sources:` too. | G17, G18 (general rules). |
+| S14 | Direct edges on shared files (rows 3-5). | 326 now depends on 318, 319 and 320; 321 on 319; 319 on 315 (both edit the research, review and report `SKILL.md`). The DOCUMENT and TEST tasks already reach every task whose result they check through a dependency path (rows 6-7), so no edge is added there. | G12; G4 as restated (a path suffices). |
 ---
 
 ## 7. Flagged for the maintainer

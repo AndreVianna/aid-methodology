@@ -45,6 +45,12 @@
   list does not come from the findings' map alone. Every suite it finds is updated in this same task
   (Q106 applied to deletions). Any exemption row this task's own criteria need is created here, or the
   criterion is scoped so it holds without the row.
+- **KB `sources:` citations (G17).** Every `.aid/knowledge/` document whose frontmatter `sources:` cites a file or
+  folder this task deletes, moves or renames is fixed in this same task (`git grep -n -e '<path>' -e '<folder>/' --
+  .aid/knowledge/` at this task's base): the entry follows a moved file, and goes when the file is gone. Only the
+  `sources:` entries change here; the prose stays for the delivery's DOCUMENT task. So `test-artifact-discipline.sh`
+  AD14 (every `sources:` citation resolves) holds at this task's end. The KB lines are committed as the delivery
+  commits KB paths (through `kb-commit.sh` once it exists, as Feature 007's BUILD requires).
 - **Site regeneration (G1, G5).** When this task adds, deletes, renames or edits anything under
   `canonical/skills/`, `canonical/agents/` or `canonical/aid/templates/`, it runs
   `(cd site && npm run gen:skills && npm run gen:reference)` in this same task and commits the output:
@@ -100,5 +106,6 @@
 - [ ] `reviewer-brief.md` has `### What to report`. Over the files this task writes (`apply.md`, `review.md`, `reviewer-brief.md`, `finish.md`), nothing names `STATE.md` or a worktree of its own, and `git grep -nE 'git (commit|push)|checkout -b'` finds nothing.
 - [ ] `finish.md` runs `closure-check.sh` before `kb-commit.sh`, and `test-f010-governance-guards.sh` and `test-update-kb-scope-fidelity.sh` pass where the test step puts them.
 - [ ] The suites pass where the test step puts them, and the site `npm test` passes after regeneration.
+- [ ] Over `.aid/knowledge/`, no frontmatter `sources:` entry cites a path this task deletes, moves or renames, and `test-artifact-discipline.sh` AD14 passes where the test step puts the suite (G17).
 - [ ] The test step (last Scope bullet) reports no failure: the spawn-free checks, the scratch half, the live half and the site or dashboard runs it calls for. Every existing test still passes.
 - [ ] All section-6 quality gates pass (REQUIREMENTS.md § 6: NFR-N, NFR-T, NFR-Q).

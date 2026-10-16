@@ -40,6 +40,16 @@
     `tests/coverage-accepted-removals.tsv`.
   - For a skill folder it also searches the skill's bare name (`git grep -nE "'<name>'" -- site/scripts/__tests__
     site/src/lib/__tests__`): a site test that loads the skill's body as a fixture by name is re-pointed here.
+- **KB `sources:` citations (G17).** Every `.aid/knowledge/` document whose frontmatter `sources:` cites a file or
+  folder this task deletes, moves or renames is fixed in this same task (`git grep -n -e '<path>' -e '<folder>/' --
+  .aid/knowledge/` at this task's base): the entry follows a moved file, and goes when the file is gone. Only the
+  `sources:` entries change here; the prose stays for the delivery's DOCUMENT task. So `test-artifact-discipline.sh`
+  AD14 (every `sources:` citation resolves) holds at this task's end. The KB lines are committed as the delivery
+  commits KB paths (through `kb-commit.sh` once it exists, as Feature 007's BUILD requires).
+- **The retired skill's site pages (G18).** Before regenerating, `git rm` what the generators no longer produce for each
+  skill folder this task deletes or renames away: its page under `site/src/content/docs/skills/` and its
+  `site/src/data/skill-flows/<name>.flow.json` (the generators never delete; `gen-skills.mjs`'s drift check names any
+  orphan with its `git rm` remedy). Then the site regeneration below.
 - **Site regeneration (G1, G5).** When this task adds, deletes, renames or edits anything under
   `canonical/skills/`, `canonical/agents/` or `canonical/aid/templates/`, it runs
   `(cd site && npm run gen:skills && npm run gen:reference)` in this same task and commits the output:
@@ -95,5 +105,7 @@
 **Acceptance Criteria:**
 - [ ] `ls -d canonical/skills/aid-{create,update}-*/ 2>/dev/null` lists only the hand-authored folders task-319 and task-320 retire, and `aid-remove`, `aid-deprecate`, `aid-migrate` and `aid-experiment` are absent; no catalog row names a deleted folder.
 - [ ] `test-skill-guide.sh`, `test-deploy-monitor-repurpose.sh`, `test-catalog-dirs-parity.sh` and `test-shortcut-builder-invariants.sh` pass where the test step puts them, DT-01 passes, `test-doc-counts.sh` passes live with the skill count lowered, the six family-scaffold suites are gone with their rows, and the site `npm test` passes after `sync:docs` and regeneration.
+- [ ] Over `.aid/knowledge/`, no frontmatter `sources:` entry cites a path this task deletes, moves or renames, and `test-artifact-discipline.sh` AD14 passes where the test step puts the suite (G17).
+- [ ] No page under `site/src/content/docs/skills/` and no `site/src/data/skill-flows/*.flow.json` is left for a skill folder this task deletes or renames away, and `npm run gen:skills` reports no orphan (G18).
 - [ ] The test step (last Scope bullet) reports no failure: the spawn-free checks, the scratch half, the live half and the site or dashboard runs it calls for. Every existing test still passes.
 - [ ] All section-6 quality gates pass (REQUIREMENTS.md § 6: NFR-N, NFR-T, NFR-Q).

@@ -454,7 +454,7 @@ Step 5 writes the table under `### delivery-013 Execution Graph`, one task per r
 | S5 | `009-18`'s fixture with no repository. | A TEST task (347) gives `run.py` a no-repository fixture, with its runner case, before the sample. | Settled by recommendation (Q136), as delivery-011's S3: test infrastructure the spec's sample needs. |
 | S6 | The action-layer wording. | A task (342) that rewords only what the AS-10 search still finds; delivery-011 wrote the layer to the rule. | Stanza wave 2. |
 | S7 | Sources for the domain-readiness tasks. | AC-30 for the catalog and its readers, AC-45 for the identity statement (DN-03 is its pre-release check). | F009 Criteria traceability. |
-
+| S8 | KB `sources:` citations and retired skills' site pages (delivery-012 light review rows 1 and 8). | G17: every task that deletes, moves or renames a file fixes the KB `sources:` entries that cite it in the same task (AD14), with a criterion; the DOCUMENT tasks keep the prose. G18: every task that retires or renames a skill `git rm`s its generated page and flow before regenerating, with a criterion. The research task searches `.aid/knowledge/` `sources:` too. | G17, G18 (general rules). |
 ---
 
 ## 7. Flagged for the maintainer

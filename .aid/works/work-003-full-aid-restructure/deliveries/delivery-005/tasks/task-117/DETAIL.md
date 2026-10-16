@@ -53,6 +53,16 @@
   list does not come from the findings' map alone. Every suite it finds is updated in this same task
   (Q106 applied to deletions). Any exemption row this task's own criteria need is created here, or the
   criterion is scoped so it holds without the row.
+- **KB `sources:` citations (G17).** Every `.aid/knowledge/` document whose frontmatter `sources:` cites a file or
+  folder this task deletes, moves or renames is fixed in this same task (`git grep -n -e '<path>' -e '<folder>/' --
+  .aid/knowledge/` at this task's base): the entry follows a moved file, and goes when the file is gone. Only the
+  `sources:` entries change here; the prose stays for the delivery's DOCUMENT task. So `test-artifact-discipline.sh`
+  AD14 (every `sources:` citation resolves) holds at this task's end. The KB lines are committed as the delivery
+  commits KB paths (through `kb-commit.sh` once it exists, as Feature 007's BUILD requires).
+- **The retired skill's site pages (G18).** Before regenerating, `git rm` what the generators no longer produce for each
+  skill folder this task deletes or renames away: its page under `site/src/content/docs/skills/` and its
+  `site/src/data/skill-flows/<name>.flow.json` (the generators never delete; `gen-skills.mjs`'s drift check names any
+  orphan with its `git rm` remedy). Then the site regeneration below.
 - **Site regeneration (G1, G5).** When this task adds, deletes, renames or edits anything under
   `canonical/skills/`, `canonical/agents/` or `canonical/aid/templates/`, it runs
   `(cd site && npm run gen:skills && npm run gen:reference)` in this same task and commits the output:
@@ -107,5 +117,7 @@
 - [ ] `test -d canonical/skills/aid-update-kb` fails. `SKILL.md` is at most 120 lines. Over the files this task writes (`SKILL.md`, `references/start.md`, `analyze.md`, `scope.md`, `confirm.md` and `sweep.md`), `git grep -nE 'worktree add|checkout -b|UPDATEKB_STATE'` finds nothing; the renamed `apply.md` and `review.md` and the kept `state-approval.md` and `state-done.md` are task-124's content (G7).
 - [ ] `start.md` names the three modes and both No-KB paths. `sweep.md` holds the conformance check: divergences are raised, never overwritten.
 - [ ] The three re-pointed suites pass where the test step puts them, and SG-02, SG-04, DT-01 and SS-09 pass in the scratch copy.
+- [ ] Over `.aid/knowledge/`, no frontmatter `sources:` entry cites a path this task deletes, moves or renames, and `test-artifact-discipline.sh` AD14 passes where the test step puts the suite (G17).
+- [ ] No page under `site/src/content/docs/skills/` and no `site/src/data/skill-flows/*.flow.json` is left for a skill folder this task deletes or renames away, and `npm run gen:skills` reports no orphan (G18).
 - [ ] The test step (last Scope bullet) reports no failure: the spawn-free checks, the scratch half, the live half and the site or dashboard runs it calls for. Every existing test still passes.
 - [ ] All section-6 quality gates pass (REQUIREMENTS.md § 6: NFR-N, NFR-T, NFR-Q).
