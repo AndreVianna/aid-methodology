@@ -16,8 +16,8 @@
   `IMPEDIMENT-*.md` is written and `lifecycle` is never set `Blocked` by these skills; their boundary lines name the
   new skills (`/aid-test` for checks, `/aid-prototype` for spikes, the `experiment` kind) instead of the retired ones.
 - Their kind hooks are delivery-013's.
-- Suites to update in this same task: every suite the findings' B7 lists, and any suite the findings' B1 assigns
-  here.
+- Suites to update in this same task: every suite the findings' B7 lists, the site tests that use the three skills'
+  bodies as fixtures (the findings' site-fixture search), and any suite the findings' B1 assigns here.
 - **Site regeneration (G1, G5).** When this task adds, deletes, renames or edits anything under
   `canonical/skills/`, `canonical/agents/` or `canonical/aid/templates/`, it runs
   `(cd site && npm run gen:skills && npm run gen:reference)` in this same task and commits the output:

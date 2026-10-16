@@ -16,7 +16,8 @@
   skill's own name; several fit, one question with a recommendation; none, `--`; a typed kind is a hint, checked like
   any reading); the reading (the action's `reading`, checked by `check-intent.md`, a different checked reading said
   in one line and recorded); the work (the gate's § 3a with the words, the skill's name, step `START`, the reading,
-  `--kind` and the depth from `size-and-route.md`; § 3b on continuation); next by the recorded reading (knowledge
+  `--kind` and the depth from `size-and-route.md`; § 3b on continuation); every catalog read (the action's `reading`,
+  the kinds this action takes, a typed kind) goes through `check-intent.md` § The merged catalog, which it cites; next by the recorded reading (knowledge
   update, operational, investigation, a problem not clear yet, otherwise `aid-specify`), with the exact `--handoff`
   lines of the spec; a resume skips each step whose answer the record holds.
 - The ticket branch (step 4) is delivery-012's, with the TICKET step.
@@ -79,7 +80,7 @@
        `references/blocker.md`).
 
 **Acceptance Criteria:**
-- [ ] `action-start.md` exists, at most 120 lines, and names `--kind`, `intent.kind`, `check-intent.md`, `aid-specify`, `aid-brainstorm` and `aid-kb-update` (AS-04's `action-start.md` clause).
+- [ ] `action-start.md` exists, at most 120 lines, and names `--kind`, `intent.kind`, `check-intent.md`, `The merged catalog`, `aid-specify`, `aid-brainstorm` and `aid-kb-update` (AS-04's `action-start.md` clause; AS-09's "every other reader cites that section").
 - [ ] Over `action-start.md`, `grep -niwE 'code|codebase|repository|commit|branch|pull request'` prints nothing.
 - [ ] `test-work-initiation-gate.sh` passes where the test step puts it, with the new Group G entry.
 - [ ] The test step (last Scope bullet) reports no failure: the spawn-free checks, the scratch half, the live half and the site or dashboard runs it calls for. Every existing test still passes.

@@ -25,6 +25,8 @@
   - The same search also runs over `.github/workflows/`: a suite this task retires leaves the `SUITES` list of
     `installer-tests.yml` in this same task, and its assertions get their rows in
     `tests/coverage-accepted-removals.tsv`.
+  - For a skill folder it also searches the skill's bare name (`git grep -nE "'<name>'" -- site/scripts/__tests__
+    site/src/lib/__tests__`): a site test that loads the skill's body as a fixture by name is re-pointed here.
 - **Site regeneration (G1, G5).** When this task adds, deletes, renames or edits anything under
   `canonical/skills/`, `canonical/agents/` or `canonical/aid/templates/`, it runs
   `(cd site && npm run gen:skills && npm run gen:reference)` in this same task and commits the output:

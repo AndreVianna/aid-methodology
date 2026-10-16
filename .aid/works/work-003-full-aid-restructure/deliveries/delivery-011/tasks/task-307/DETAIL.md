@@ -7,7 +7,7 @@
 
 **Source:** feature-009-one-skill-per-need -> delivery-011 -> AC-14, AC-15, AC-28, AC-30, AC-36
 
-**Depends on:** task-297, task-300, task-301, task-302, task-306
+**Depends on:** task-294, task-295, task-297, task-300, task-301, task-302, task-306
 
 **Scope:**
 - Create `009-05-refactor-typed-and-plain`, `009-07-security-test-typed-and-plain` (each with both openings),

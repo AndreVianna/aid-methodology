@@ -7,7 +7,7 @@
 
 **Source:** feature-009-one-skill-per-need -> delivery-011 -> AC-25, AC-30
 
-**Depends on:** task-303, task-304, task-305, task-307, task-308, task-309
+**Depends on:** task-294, task-295, task-303, task-304, task-305, task-306, task-307, task-308, task-309
 
 **Scope:**
 - `.aid/knowledge/test-landscape.md`: `test-actions.sh` group A and its lane; the writer's `--kind` cases; the

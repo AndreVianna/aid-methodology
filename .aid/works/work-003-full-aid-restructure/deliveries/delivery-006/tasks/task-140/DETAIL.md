@@ -49,6 +49,11 @@
     reference manifest, `test-kb-template-authoring-standard.sh` AS06);
   - **R8** the Q106 suite map for every file on the edit list, including the dashboard tests and the
     site's skill lists.
+- **Site fixtures (G11, extended).** Also search `site/scripts/__tests__/` and `site/src/lib/__tests__/` for every
+  test that reads a real skill's or template's body as a fixture -- by path, or by name through `loadSkillRecord`,
+  `buildFlowChart`, `liveChart` or the like (`git grep -nE "'aid-[a-z-]+'|canonical/(skills|aid/templates)/" --
+  site/scripts/__tests__ site/src/lib/__tests__`). Each hit on a file this delivery rewrites, moves or deletes goes to
+  the task that changes that file, which re-points the test in the same task.
 - Give each hit exactly one owner:
   - a task of delivery-006 (task-141 to task-160; see
     `.aid/works/work-003-full-aid-restructure/analysis/detail-proposal-delivery-006.md`);

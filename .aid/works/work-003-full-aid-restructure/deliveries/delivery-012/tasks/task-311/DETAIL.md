@@ -34,6 +34,11 @@
   - **B6** the format-6 conversion rows in `bin/aid` and `bin/aid.ps1` that name a retired skill (Feature 003's
     initiator rows, Feature 006's type and document rows), which the markers must wrap;
   - **B7** the impediment sites of `aid-research`, `aid-review` and `aid-report`, and every suite that asserts them.
+- **Site fixtures (G11, extended).** Also search `site/scripts/__tests__/` and `site/src/lib/__tests__/` for every
+  test that reads a real skill's or template's body as a fixture -- by path, or by name through `loadSkillRecord`,
+  `buildFlowChart`, `liveChart` or the like (`git grep -nE "'aid-[a-z-]+'|canonical/(skills|aid/templates)/" --
+  site/scripts/__tests__ site/src/lib/__tests__`). Each hit on a file this delivery rewrites, moves or deletes goes to
+  the task that changes that file, which re-points the test in the same task.
 - Give each hit exactly one owner:
   - a task of delivery-012 (task-312 to task-337; see the task files under
     `.aid/works/work-003-full-aid-restructure/tasks/task-NNN/DETAIL.md`, the layout delivery-008's migration leaves);

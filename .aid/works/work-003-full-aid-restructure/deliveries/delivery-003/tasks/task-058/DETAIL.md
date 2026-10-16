@@ -37,6 +37,11 @@
     `skill:` row it needs.
   - **Q8** The Q106 suite map for every file on the delivery's edit list.
   - **Q9** Today's counts for each AD13 class in `tests/canonical/test-artifact-discipline.sh`.
+- **Site fixtures (G11, extended).** Also search `site/scripts/__tests__/` and `site/src/lib/__tests__/` for every
+  test that reads a real skill's or template's body as a fixture -- by path, or by name through `loadSkillRecord`,
+  `buildFlowChart`, `liveChart` or the like (`git grep -nE "'aid-[a-z-]+'|canonical/(skills|aid/templates)/" --
+  site/scripts/__tests__ site/src/lib/__tests__`). Each hit on a file this delivery rewrites, moves or deletes goes to
+  the task that changes that file, which re-points the test in the same task.
 - Give each hit exactly one owner:
   - a task of delivery-003 (task-059 to task-081; see
     each task's `DETAIL.md` under `.aid/works/work-003-full-aid-restructure/deliveries/delivery-003/tasks/` -- the proposal file is superseded by the task files);

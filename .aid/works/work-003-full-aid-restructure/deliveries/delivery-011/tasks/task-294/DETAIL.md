@@ -29,6 +29,11 @@
     `groups.mjs` name them in their group (`groups.mjs` stops with "unassignable skill" otherwise); then
     the site regeneration below.
   - Any count of catalog rows that `.claude/skills/generate-profile/SKILL.md` states and a suite asserts follows.
+- Suites asserting the two old doorway bodies, in this same task (G11): `test-change-refactor-family-scaffold.sh`
+  CRF14c and CRF14d (`aid-update`'s bare-verb body); the site tests that use `aid-create`'s body as an engine-doorway
+  fixture (`flow-classify.test.mjs` "real aid-create body classifies as engine-doorway", `flow-facade.test.mjs`'s
+  `aid-create` chart) re-pointed to a doorway that stays until delivery-012 (for example `aid-remove` or
+  `aid-migrate`); any other the findings' site-fixture search assigns here.
 - **SS-09:** each skill now cites the protocol itself. When no row of `tests/conversation/deferred.tsv` covers it
   (the findings' Z7), a `skill:aid-create` or `skill:aid-update` row waits until task-306's samples (task-307
   removes it).

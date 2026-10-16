@@ -45,6 +45,11 @@
 - **Old-to-new reference map.** One row per file under `canonical/skills/aid-execute/references/` at the base,
   naming the new reference (or references) that takes its content and the task that writes it: for example
   `state-fix.md`'s FIX contract (F1-F7) to `fix.md`, and `reviewer-guide.md`'s type review focus to the brief.
+- **Site fixtures (G11, extended).** Also search `site/scripts/__tests__/` and `site/src/lib/__tests__/` for every
+  test that reads a real skill's or template's body as a fixture -- by path, or by name through `loadSkillRecord`,
+  `buildFlowChart`, `liveChart` or the like (`git grep -nE "'aid-[a-z-]+'|canonical/(skills|aid/templates)/" --
+  site/scripts/__tests__ site/src/lib/__tests__`). Each hit on a file this delivery rewrites, moves or deletes goes to
+  the task that changes that file, which re-points the test in the same task.
 - Give each hit exactly one owner:
   - a task of delivery-009 (task-220 to task-253; see the task files under
     `.aid/works/work-003-full-aid-restructure/deliveries/delivery-009/tasks/`);

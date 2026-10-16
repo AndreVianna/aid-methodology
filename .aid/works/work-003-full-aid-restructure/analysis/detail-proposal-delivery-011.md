@@ -25,11 +25,11 @@ files are written at once, and the light review is the check.
 | task-303 | Conversation runner: the typed and the plain form of one sample | TEST | 5 | 2 | task-288 |
 | task-304 | Writer unit cases: --kind and the reading investigation | TEST | 5 | 4 | task-291, task-292 |
 | task-305 | test-actions.sh group A | TEST | 5 | 8 | task-289, task-290, task-292, task-293, task-294, task-295, task-296, task-297, task-298, task-299, task-300, task-301 |
-| task-306 | Samples 009-01 to 009-04 (typed runs and 009-03, 009-04 at this gate) | TEST | 5 | 7 | task-290, task-294, task-295, task-299, task-303 |
-| task-307 | Samples 009-05, 009-07, 009-13 and 009-17, and the deferred rows | TEST | 5 | 8 | task-297, task-300, task-301, task-302, task-306 |
+| task-306 | Samples 009-01 to 009-04 (typed runs and 009-03, 009-04 at this gate) | TEST | 5 | 7 | task-290, task-294, task-295, task-299, task-300, task-303 |
+| task-307 | Samples 009-05, 009-07, 009-13 and 009-17, and the deferred rows | TEST | 5 | 8 | task-294, task-295, task-297, task-300, task-301, task-302, task-306 |
 | task-308 | test-actions.sh in the CI lane | CONFIGURE | 5 | 9 | task-305 |
-| task-309 | KB schemas, glossary and contracts for the action skills and the kind catalog | DOCUMENT | 5 | 8 | task-289, task-291, task-292, task-293, task-295, task-296, task-298, task-301 |
-| task-310 | KB test landscape for the action suites, the regenerated index and the view | DOCUMENT | 5 | 10 | task-303, task-304, task-305, task-307, task-308, task-309 |
+| task-309 | KB schemas, glossary and contracts for the action skills and the kind catalog | DOCUMENT | 5 | 8 | task-289, task-290, task-291, task-292, task-293, task-294, task-295, task-296, task-297, task-298, task-301 |
+| task-310 | KB test landscape for the action suites, the regenerated index and the view | DOCUMENT | 5 | 10 | task-294, task-295, task-303, task-304, task-305, task-306, task-307, task-308, task-309 |
 
 That is 23 tasks (task-288 to task-310). The resync follows the run's pause at the delivery-011 MILESTONE approval
 (§ 4).
@@ -70,7 +70,8 @@ That is 23 tasks (task-288 to task-310). The resync follows the run's pause at t
 - **Same-file and cross-assert order is an edge (G4, G12):** `test-work-initiation-gate.sh` (292, 293, 297, 298);
   `shortcut-catalog.yml`, the counting suites, the site roster and the doc counts (294, then 295);
   `test-idea-shaping.sh` (289, then 300); `test-writeback-state.sh` (291, then 304); `deferred.tsv` (294, 295, then
-  307 through 306). The remaining `g12scan.py` hits are basename collisions between different files (`SKILL.md`,
+  307, direct edges); `test-change-refactor-family-scaffold.sh` (294, then 295); `test-state-review-surface.sh`'s
+  `BRIEF_TEMPLATES` (297, then 298). The remaining `g12scan.py` hits are basename collisions between different files (`SKILL.md`,
   `check.md`, `start.md`, `reviewer-brief.md` of different skills) or a file one task only names.
 
 ---
@@ -528,7 +529,7 @@ That is 23 tasks (task-288 to task-310). The resync follows the run's pause at t
 
 ### task-306: Samples 009-01 to 009-04 (typed runs and 009-03, 009-04 at this gate) [TEST]
 
-- **Stanza wave:** 5. **Depends on:** task-290, task-294, task-295, task-299, task-303.
+- **Stanza wave:** 5. **Depends on:** task-290, task-294, task-295, task-299, task-300, task-303.
 - **Source:** AC-5, AC-28, AC-30.
 - **Scope:**
   - Create under `tests/conversation/samples/feature-009/`, with frontmatter `skills:` the action skill, fixtures and the
@@ -544,7 +545,7 @@ That is 23 tasks (task-288 to task-310). The resync follows the run's pause at t
 
 ### task-307: Samples 009-05, 009-07, 009-13 and 009-17, and the deferred rows [TEST]
 
-- **Stanza wave:** 5. **Depends on:** task-297, task-300, task-301, task-302, task-306.
+- **Stanza wave:** 5. **Depends on:** task-294, task-295, task-297, task-300, task-301, task-302, task-306.
 - **Source:** AC-14, AC-15, AC-28, AC-30, AC-36.
 - **Scope:**
   - Create `009-05-refactor-typed-and-plain`, `009-07-security-test-typed-and-plain` (each with both openings),
@@ -577,7 +578,7 @@ That is 23 tasks (task-288 to task-310). The resync follows the run's pause at t
 
 ### task-309: KB schemas, glossary and contracts for the action skills and the kind catalog [DOCUMENT]
 
-- **Stanza wave:** 5. **Depends on:** task-289, task-291, task-292, task-293, task-295, task-296, task-298, task-301.
+- **Stanza wave:** 5. **Depends on:** task-289, task-290, task-291, task-292, task-293, task-294, task-295, task-296, task-297, task-298, task-301.
 - **Source:** AC-20, AC-30.
 - **Scope:**
   - Edit these documents under `.aid/knowledge/` (REQUIREMENTS.md § 11 Feature 009 `##### 8. Migration`, KB), for what this delivery lands:
@@ -595,7 +596,7 @@ That is 23 tasks (task-288 to task-310). The resync follows the run's pause at t
 
 ### task-310: KB test landscape for the action suites, the regenerated index and the view [DOCUMENT]
 
-- **Stanza wave:** 5. **Depends on:** task-303, task-304, task-305, task-307, task-308, task-309.
+- **Stanza wave:** 5. **Depends on:** task-294, task-295, task-303, task-304, task-305, task-306, task-307, task-308, task-309.
 - **Source:** AC-25, AC-30.
 - **Scope:**
   - `.aid/knowledge/test-landscape.md`: `test-actions.sh` group A and its lane; the writer's `--kind` cases; the
@@ -689,7 +690,10 @@ Step 5 writes the table under `### delivery-011 Execution Graph`, one task per r
 | S9 | The rows of `aid-document`, `aid-test` and `aid-prototype` in `shortcut-catalog.yml`. | They stay until the catalog is deleted (delivery-012); only the four rows leave (Q121). | PLAN delivery-011 Scope. |
 | S10 | The dashboard writer fork and `--kind`. | Not changed: F009 § 1 names only the canonical writer, and no fork caller passes a kind. | Settled by recommendation (Q136). |
 | S11 | The KB in this delivery. | Schemas, glossary, contracts, module map and capability inventory for what lands here (309), and the test landscape (310). `decisions.md`'s new decision, which supersedes D20 (the engine), and the engine's removal from the KB wait for delivery-012. | Settled by recommendation (Q136): the KB states the current tree. |
-| S12 | The action layer's wording. | Written with no software term from the start (293, 302); AS-10 checks it in delivery-013. | F009 § 5; avoids a second edit. |
+| S12 | The action layer's wording. | Written with no software term from the start (289's `actions` entries, 293, 302); AS-10 checks it in delivery-013. | F009 § 5; avoids a second edit. |
+| S13 | Site tests that use a real skill's body as a fixture (light review row 2). | The task that rewrites the skill re-points them (294: `aid-create`; 295: `aid-fix`; 297: `aid-test`), to a doorway that stays until delivery-012; every research task searches `site/scripts/__tests__` and `site/src/lib/__tests__` for them. | G11, extended. |
+| S14 | The new reviewer briefs in `test-state-review-surface.sh`. | Its `BRIEF_TEMPLATES` is a fixed list, not a glob: 297 and 298 each add their brief. | Light review row 3. |
+| S15 | `consumption-protocol.md`'s `aid-fix` ingest step. | Dropped by 295 with the doorway; the engine's seam stays until delivery-012. | Light review row 10. |
 
 ---
 

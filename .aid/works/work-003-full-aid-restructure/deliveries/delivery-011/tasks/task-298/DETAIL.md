@@ -24,7 +24,9 @@
   reconciliation group's two `aid-prototype` checks are rewritten (`references/build.md` names `.aid/.temp/prototype/`
   as the only place the model is written; no file of the skill opens a worktree: no "opt-in git worktree" sentence,
   no `git worktree add`), its `aid-research` and `aid-review` checks unchanged; `test-prototype-family-scaffold.sh`
-  where it asserts `aid-prototype`'s body; any suite the findings' Z1, Z5 or Z6 assigns here.
+  where it asserts `aid-prototype`'s body; `test-state-review-surface.sh`'s `BRIEF_TEMPLATES` list gains
+  `canonical/skills/aid-prototype/references/reviewer-brief.md`; any suite the findings' Z1, Z5, Z6 or site-fixture
+  search assigns here.
 - **Site regeneration (G1, G5).** When this task adds, deletes, renames or edits anything under
   `canonical/skills/`, `canonical/agents/` or `canonical/aid/templates/`, it runs
   `(cd site && npm run gen:skills && npm run gen:reference)` in this same task and commits the output:
@@ -80,6 +82,6 @@
 **Acceptance Criteria:**
 - [ ] `SKILL.md` is at most 100 lines with START, BUILD, CHECK, PRESENT and FINISH; the five references exist, each at most 120 lines; `finish.md` names `aid-monitor-pipeline` and `--phase CI`, and `build.md` names `.aid/.temp/prototype/` (AS-05's `aid-prototype` clauses).
 - [ ] Over `canonical/skills/aid-prototype/`, `git grep -nE 'git worktree add|opt-in git worktree|git (commit|push)'` finds nothing.
-- [ ] `test-work-initiation-gate.sh` passes where the test step puts it, with Group G and the rewritten reconciliation checks, and the site `npm test` passes after regeneration.
+- [ ] `test-state-review-surface.sh`'s `BRIEF_TEMPLATES` names `aid-prototype/references/reviewer-brief.md`, and it passes where the test step puts it; `test-work-initiation-gate.sh` passes where the test step puts it, with Group G and the rewritten reconciliation checks, and the site `npm test` passes after regeneration.
 - [ ] The test step (last Scope bullet) reports no failure: the spawn-free checks, the scratch half, the live half and the site or dashboard runs it calls for. Every existing test still passes.
 - [ ] All section-6 quality gates pass (REQUIREMENTS.md § 6: NFR-N, NFR-T, NFR-Q).

@@ -34,10 +34,16 @@
     the site regeneration below.
   - Any count of catalog rows that `.claude/skills/generate-profile/SKILL.md` states and a suite asserts follows.
 - **SS-09:** as task-294, with `skill:aid-fix` and `skill:aid-refactor` rows when needed.
+- `canonical/aid/templates/connectors/consumption-protocol.md`: the wired-seam table drops `aid-fix`'s ingest step,
+  which the hand-authored `aid-fix` no longer runs (a tracker item now enters through Feature 001's
+  `external-sources.md` and `/aid-specify` START); the shortcut engine's own seam stays until delivery-012.
 - Suites to update in this same task: `test-fix-family-scaffold.sh` and `test-change-refactor-family-scaffold.sh`
   where they assert the two doorways (FFS14, CRF13e and the like; the suites themselves retire with the
-  scaffolding in delivery-012); `test-connector-consumption-linkage.sh`'s `aid-fix` seam, following
-  `consumption-protocol.md`'s table; any suite the findings' Z1 or Z5 assigns here.
+  scaffolding in delivery-012); `test-connector-consumption-linkage.sh`'s `aid-fix` seam, following the edited table;
+  the site tests that use `aid-fix`'s body as a doorway fixture (`flow-extract-engine.test.mjs`'s
+  `loadSkillRecord('aid-fix')`, `flow-graph-doorways.test.mjs`'s `aid-fix` fixture), re-pointed to a bare-verb
+  doorway that stays until delivery-012 (`aid-remove` or `aid-migrate`); any suite the findings' Z1 or Z5 assigns
+  here.
 - **Count re-sync (Q134 D5):** the skill-count and catalog-row phrases that `tests/canonical/test-doc-counts.sh`
   asserts in `README.md` and `docs/` take the derived counts, then `(cd site && npm run sync:docs)` runs, so the
   synced pages under `site/src/content/docs/` match. Only the numbers change; user documentation otherwise waits

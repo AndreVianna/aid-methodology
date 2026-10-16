@@ -40,6 +40,11 @@
     (which stay until delivery-012);
   - **Z9** the catalog readers of REQUIREMENTS.md § 11 Feature 009 `##### 5. Components`, Who reads the catalog, as they stand at the base
     (`aid-specify`, `aid-plan`, `aid-execute`, `aid-brainstorm`), each with the field AS-09 needs it to cite.
+- **Site fixtures (G11, extended).** Also search `site/scripts/__tests__/` and `site/src/lib/__tests__/` for every
+  test that reads a real skill's or template's body as a fixture -- by path, or by name through `loadSkillRecord`,
+  `buildFlowChart`, `liveChart` or the like (`git grep -nE "'aid-[a-z-]+'|canonical/(skills|aid/templates)/" --
+  site/scripts/__tests__ site/src/lib/__tests__`). Each hit on a file this delivery rewrites, moves or deletes goes to
+  the task that changes that file, which re-points the test in the same task.
 - Give each hit exactly one owner:
   - a task of delivery-011 (task-289 to task-310; see the task files under
     `.aid/works/work-003-full-aid-restructure/tasks/task-NNN/DETAIL.md`, the layout delivery-008's migration leaves);

@@ -22,8 +22,9 @@
   `test-ticket-skills-structural.sh` is rewritten over `connectors/ticket-create.md`, `ticket-update.md` and the
   `ticket` kind of `/aid-create` and `/aid-update` (its `aid-read-ticket` sibling checks follow);
   `test-ticket-retirement-structural.sh`'s ticket-skill paths become the two connector procedures (its engine-seam
-  assertions go with the engine, task-321); `test-actions.sh` group A where AS-03 or AS-04 reads these files; any
-  suite the findings' B1 assigns here.
+  assertions go with the engine, task-321); `test-actions.sh` group A where AS-03 or AS-04 reads these files; the
+  site tests that use the two skills' bodies as fixtures (the findings' site-fixture search); any suite the findings'
+  B1 assigns here.
 - **Site regeneration (G1, G5).** When this task adds, deletes, renames or edits anything under
   `canonical/skills/`, `canonical/agents/` or `canonical/aid/templates/`, it runs
   `(cd site && npm run gen:skills && npm run gen:reference)` in this same task and commits the output:

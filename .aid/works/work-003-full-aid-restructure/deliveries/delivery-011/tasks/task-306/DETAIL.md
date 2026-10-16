@@ -7,7 +7,7 @@
 
 **Source:** feature-009-one-skill-per-need -> delivery-011 -> AC-5, AC-28, AC-30
 
-**Depends on:** task-290, task-294, task-295, task-299, task-303
+**Depends on:** task-290, task-294, task-295, task-299, task-300, task-303
 
 **Scope:**
 - Create under `tests/conversation/samples/feature-009/`, with frontmatter `skills:` the action skill, fixtures and the

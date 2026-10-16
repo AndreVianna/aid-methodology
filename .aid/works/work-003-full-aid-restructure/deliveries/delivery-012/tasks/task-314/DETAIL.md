@@ -19,7 +19,8 @@
   DMR20b rewritten (Step 0 hands free-form text to the intake and names no engine), DMR20c rewritten (the free-form
   branch creates no work of its own), DMR21, DMR22, DMR23 and their fixture (a work the engine halted at approval)
   retired; `test-downstream-worktree-entry.sh` G6 checks that the free-form region names the intake, not
-  `shortcut-engine.md`; any suite the findings' B1 assigns here.
+  `shortcut-engine.md`; the site tests that use the two skills' bodies as fixtures (the findings' site-fixture
+  search); any suite the findings' B1 assigns here.
 - **Site regeneration (G1, G5).** When this task adds, deletes, renames or edits anything under
   `canonical/skills/`, `canonical/agents/` or `canonical/aid/templates/`, it runs
   `(cd site && npm run gen:skills && npm run gen:reference)` in this same task and commits the output:

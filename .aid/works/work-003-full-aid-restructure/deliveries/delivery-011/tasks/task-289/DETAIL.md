@@ -20,6 +20,9 @@
   - the new kinds, by the spec's "Taken by" table: removal, deprecation, migration; defect, regression, incident,
     vulnerability; general, decision, guideline, standard, runbook, tutorial, changelog, diagram; functional,
     security, performance, data-quality, model-evaluation, experiment;
+  - the `actions` entries (`about`, `rules`) name no software term (AS-10, which delivery-013 adds; proposal S12):
+    "something" or "a work product", never `code`, `codebase`, `repository`, `commit`, `branch` or `pull request`;
+    software-specific rules live in the software kinds;
   - the content comes from today's scaffolding files: `create.md`'s slots, conditional sections and task chains
     become `ask`, `design` and `tasks`; `change-refactor.md` becomes the `update` notes and the change kinds;
     `fix.md`, `document.md`, `prototype.md` and `test-experiment.md` become their kinds' fields.
@@ -83,6 +86,7 @@
 **Acceptance Criteria:**
 - [ ] `python3 -c "import yaml,sys; d=yaml.safe_load(open('canonical/aid/templates/kind-catalog.yml')); sys.exit(0 if d['version']==2 else 1)"` exits 0; the file holds the seven actions, each with `action`, `reading`, `about`, `next` and `rules`, and every kind of the spec's table except `ticket`.
 - [ ] A check run from this task's scratch area (the AS-03 rule ahead of its suite) finds every `kind` unique and of lowercase letters, digits and hyphens, every kind with `about` and `taken_by` naming only `brainstorm` or an existing action skill, and no KB kind and not `document` taken by `create` or `update`.
+- [ ] Over the `actions` entries, `grep -niwE 'code|codebase|repository|commit|branch|pull request'` prints nothing.
 - [ ] `test-idea-shaping.sh` passes where the test step puts it.
 - [ ] The test step (last Scope bullet) reports no failure: the spawn-free checks, the scratch half, the live half and the site or dashboard runs it calls for. Every existing test still passes.
 - [ ] All section-6 quality gates pass (REQUIREMENTS.md § 6: NFR-N, NFR-T, NFR-Q).

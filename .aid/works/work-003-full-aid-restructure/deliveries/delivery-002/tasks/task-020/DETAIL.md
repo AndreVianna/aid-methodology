@@ -37,6 +37,11 @@
     output. This follows REQUIREMENTS.md § 11 Feature 002 `##### 2. Work state layout`, the Tests rule.
   - **P10** Whether today's writes in `canonical/aid/scripts/execute/writeback-state.sh` are already
     atomic (a temporary copy renamed under the lock).
+- **Site fixtures (G11, extended).** Also search `site/scripts/__tests__/` and `site/src/lib/__tests__/` for every
+  test that reads a real skill's or template's body as a fixture -- by path, or by name through `loadSkillRecord`,
+  `buildFlowChart`, `liveChart` or the like (`git grep -nE "'aid-[a-z-]+'|canonical/(skills|aid/templates)/" --
+  site/scripts/__tests__ site/src/lib/__tests__`). Each hit on a file this delivery rewrites, moves or deletes goes to
+  the task that changes that file, which re-points the test in the same task.
 - Give each hit exactly one owner: a task of delivery-002 (task-021 to task-057; see
   each task's `DETAIL.md` under `.aid/works/work-003-full-aid-restructure/deliveries/delivery-002/tasks/` -- the proposal file is superseded by the task files), "installed copy
   (resync)", or "history, left as is".

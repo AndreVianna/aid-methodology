@@ -7,7 +7,7 @@
 
 **Source:** feature-009-one-skill-per-need -> delivery-011 -> AC-20, AC-30
 
-**Depends on:** task-289, task-291, task-292, task-293, task-295, task-296, task-298, task-301
+**Depends on:** task-289, task-290, task-291, task-292, task-293, task-294, task-295, task-296, task-297, task-298, task-301
 
 **Scope:**
 - Edit these documents under `.aid/knowledge/` (REQUIREMENTS.md § 11 Feature 009 `##### 8. Migration`, KB), for what this delivery lands:

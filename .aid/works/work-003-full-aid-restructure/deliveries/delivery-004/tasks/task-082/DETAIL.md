@@ -36,6 +36,11 @@
     SG-04 exempt list that name a retiring skill;
   - **R7** each retiring `aid-design-*` skill's own statement of what its seed must settle: the source of
     each kind's `shape` (`##### 4. Kinds of things`).
+- **Site fixtures (G11, extended).** Also search `site/scripts/__tests__/` and `site/src/lib/__tests__/` for every
+  test that reads a real skill's or template's body as a fixture -- by path, or by name through `loadSkillRecord`,
+  `buildFlowChart`, `liveChart` or the like (`git grep -nE "'aid-[a-z-]+'|canonical/(skills|aid/templates)/" --
+  site/scripts/__tests__ site/src/lib/__tests__`). Each hit on a file this delivery rewrites, moves or deletes goes to
+  the task that changes that file, which re-points the test in the same task.
 - Give each hit exactly one owner:
   - a task of delivery-004 (task-083 to task-103; see
     each task's `DETAIL.md` under `.aid/works/work-003-full-aid-restructure/deliveries/delivery-004/tasks/` -- the proposal file is superseded by the task files);

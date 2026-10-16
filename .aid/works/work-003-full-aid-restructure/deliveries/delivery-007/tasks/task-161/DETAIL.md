@@ -41,6 +41,11 @@
     runs; and every `## State: CAPTURE` or `## State: SPEC` heading (SP-08);
   - **P8** the Q106 suite map for every file on the edit list, including the dashboard tests and the
     site's skill lists.
+- **Site fixtures (G11, extended).** Also search `site/scripts/__tests__/` and `site/src/lib/__tests__/` for every
+  test that reads a real skill's or template's body as a fixture -- by path, or by name through `loadSkillRecord`,
+  `buildFlowChart`, `liveChart` or the like (`git grep -nE "'aid-[a-z-]+'|canonical/(skills|aid/templates)/" --
+  site/scripts/__tests__ site/src/lib/__tests__`). Each hit on a file this delivery rewrites, moves or deletes goes to
+  the task that changes that file, which re-points the test in the same task.
 - Give each hit exactly one owner:
   - a task of delivery-007 (task-162 to task-184; see the task files under
     `.aid/works/work-003-full-aid-restructure/deliveries/delivery-007/tasks/`);
