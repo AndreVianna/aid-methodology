@@ -1367,3 +1367,11 @@ qa:
     suggested: 'No further splits.'
     answer: 'Split both. F002: engine (protocol, skill-steps.md, writer modes, work record, gate) then sweep (banners and advance words across today''s skills, the interviewer retired, the dashboard). F004: the four KB skills and the renderer, then the KB state file, format 6 and the dashboard. Each suite is cut into one group per part.'
     applied_to: 'PLAN.md (F002 and F004 each in two deliveries)'
+  - id: Q116
+    category: Planning
+    impact: Medium
+    state: Answered
+    context: 'Q43 approved F002 at B+ relying on a cross-feature review at Planning.'
+    suggested: 'Run it in this plan''s REVIEW: one pass checking F002''s shared contracts (writer modes and exit codes, skill-steps.md approval rows, the work record, the deferred and exempt lists) against every use in F003-F009; spec fixes land before tasks are detailed.'
+    answer: 'Accepted as recommended (in this plan''s REVIEW).'
+    applied_to: 'aid-plan REVIEW brief'
