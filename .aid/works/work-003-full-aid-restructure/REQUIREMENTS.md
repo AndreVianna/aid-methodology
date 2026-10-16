@@ -2087,17 +2087,18 @@ document, no production code.
 - **Installed projects**: `aid update` removes the retired skill files through the install manifest
   (decisions.md § D9). An existing `.aid/design/README.md` is user data and is never overwritten.
 - **Existing works** -- through Feature 002's recovery, which takes the skill and step of a work without a
-  record from the legacy block of `work-initiation-gate.md` § 3b. This feature puts two rows at the **top**
+  record from the legacy block of `work-initiation-gate.md` § 3b. This feature puts three rows at the **top**
   of that block, so they win over the phase rows:
 
   | Old work | Proposed skill and step |
   |---|---|
   | `pipeline.initiator` is `aid-brainstorm`, `aid-design` or an `aid-design-*` skill (whatever its `phase`) | `/aid-brainstorm` at **START** -- which finds the old draft with `list` (it sits untracked in that work's own worktree), `collect`s it to the main folder and writes `idea_draft`, then continues at CONVERSE |
   | `pipeline.initiator` is `aid-describe` and `phase` is `Describe`, missing or `--` (a later phase decides by its own phase row, as in Feature 006's migration order, Q137) | `/aid-specify` at its entry step (requirements are gathered there now) |
+  | `phase` is `Describe`, missing or `--`, with any other initiator (an old `aid-research` or `aid-review` work keeps the template's default `phase: Describe`) | that initiator's row in this block, else the old `active_skill`, else the initiator itself when that skill still exists (Feature 006's migration rule 4, Q137); never the deleted `/aid-describe` |
 
   An old idea or design work already `Completed` is not resumed (Feature 002's resume table, row 1); its
   draft is found by any new work's START through `list` and `collect`. Feature 006's migration, which fills
-  the record of every old work and then removes the legacy block, uses the same two rows. Old `interview:`
+  the record of every old work and then removes the legacy block, uses the same three rows. Old `interview:`
   keys are left for that migration.
 - **Re-pointed lines** -- a line telling the user to run `/aid-describe` says instead to tell the agent
   what they want: the "No works found" messages of `aid-define`, `aid-specify`, `aid-plan`, `aid-detail`,

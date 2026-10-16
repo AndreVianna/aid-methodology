@@ -422,6 +422,10 @@ review_history:
     event: 'Detail light review delivery-004 (Q136)'
     outcome: 'Grade C (2 MEDIUM, 3 LOW)'
     notes: 'Side-idea idea_draft write; baseline owner class; suites reading deleted files not owned by the deleting task; fixes sent to the architect'
+  - date: '2026-10-16'
+    event: 'Detail light review deliveries 001-004, cycle 2 (Q136)'
+    outcome: 'All cycle-1 rows Fixed, none Recurred; 001 A+; 002, 003, 004 B+ (one LOW each: research task pointed at superseded proposals) -- fixed by the orchestrator; 1 OOS SPEC (Q137 narrowing) fixed in Feature 003'
+    notes: 'derive-waves --from-tasks exits 0 over deliveries 001-004'
 
 # [A] written by the orchestrator on the work's active branch (single
 #     writer). Append-only audit trail of phase transitions and gate
@@ -1590,4 +1594,4 @@ qa:
     context: 'Flagged by the delivery-004 detail (F-1): F003 § 6 puts "initiator aid-describe, or phase Describe -> /aid-specify" at the top of the gate''s legacy block, winning over the phase rows, while F006''s migration applies the aid-describe initiator row only at phase Describe (its rules 3-5). Between deliveries 004 and 008 an old aid-describe work in Plan or Execute would be routed back to /aid-specify.'
     suggested: 'Narrow F003''s row to match F006: initiator aid-describe with phase Describe, missing or --; a later phase decides by its own phase row. One-line spec edit plus task-088''s scope.'
     answer: 'Accepted as recommended.'
-    applied_to: 'REQUIREMENTS.md Feature 003 Migration (legacy rows); delivery-004 task-088'
+    applied_to: 'REQUIREMENTS.md Feature 003 Migration (legacy rows; a third row added by the orchestrator after the delivery-001..004 cycle-2 light review found the narrowing dropped phase-Describe works of other initiators: they now follow Feature 006''s rule 4, never the deleted /aid-describe); delivery-004 task-088, task-093, task-096'

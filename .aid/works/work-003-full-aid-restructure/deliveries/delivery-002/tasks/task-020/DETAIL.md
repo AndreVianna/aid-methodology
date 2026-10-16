@@ -38,7 +38,7 @@
   - **P10** Whether today's writes in `canonical/aid/scripts/execute/writeback-state.sh` are already
     atomic (a temporary copy renamed under the lock).
 - Give each hit exactly one owner: a task of delivery-002 (task-021 to task-057; see
-  `.aid/works/work-003-full-aid-restructure/analysis/detail-proposal-delivery-002.md`), "installed copy
+  each task's `DETAIL.md` under `.aid/works/work-003-full-aid-restructure/deliveries/delivery-002/tasks/` -- the proposal file is superseded by the task files), "installed copy
   (resync)", or "history, left as is".
 - In a delta section, list:
   - every difference from the spec's own statements;

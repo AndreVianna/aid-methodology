@@ -38,7 +38,7 @@
     each kind's `shape` (`##### 4. Kinds of things`).
 - Give each hit exactly one owner:
   - a task of delivery-004 (task-083 to task-103; see
-    `.aid/works/work-003-full-aid-restructure/analysis/detail-proposal-delivery-004.md`);
+    each task's `DETAIL.md` under `.aid/works/work-003-full-aid-restructure/deliveries/delivery-004/tasks/` -- the proposal file is superseded by the task files);
   - "installed copy (resync)";
   - "history, left as is".
 - In a delta section, list each suite assigned to two independent tasks, with the order to run them.

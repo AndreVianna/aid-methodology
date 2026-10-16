@@ -39,7 +39,7 @@
   - **Q9** Today's counts for each AD13 class in `tests/canonical/test-artifact-discipline.sh`.
 - Give each hit exactly one owner:
   - a task of delivery-003 (task-059 to task-081; see
-    `.aid/works/work-003-full-aid-restructure/analysis/detail-proposal-delivery-003.md`);
+    each task's `DETAIL.md` under `.aid/works/work-003-full-aid-restructure/deliveries/delivery-003/tasks/` -- the proposal file is superseded by the task files);
   - "installed copy (resync)";
   - "history, left as is", for `release-tracking.md`, `kb.html`, `coverage-accepted-removals.tsv` and
     `validate-diagram-content.mjs`.
