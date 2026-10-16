@@ -1341,8 +1341,8 @@ qa:
     state: Answered
     context: 'Today''s /aid-execute builds each delivery on aid/work-003-delivery-NNN and ends with "merge to main"; nothing may reach master before v4.0.0.'
     suggested: 'After each delivery gate the maintainer fast-forwards work-003 to the delivery branch: no merge commit, master untouched.'
-    answer: 'Accepted as recommended (fast-forward work-003 after each gate).'
-    applied_to: 'PLAN.md (delivery branches, deliveries before the re-seat)'
+    answer: 'Changed by the maintainer: no branch per delivery. Every delivery is built directly on work-003 and advances it; today''s /aid-execute delivery-branch step (Check 5) and its "merge to main" end are not used for this work.'
+    applied_to: 'PLAN.md (branching: every delivery on work-003)'
   - id: Q113
     category: Planning
     impact: Medium
