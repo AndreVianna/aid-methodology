@@ -17,7 +17,7 @@
 
 **Source:** feature-004-kb-management -> delivery-005 -> AC-4, AC-15
 
-**Depends on:** task-110, task-111
+**Depends on:** task-110, task-111, task-117
 
 **Scope:**
 - Move `canonical/skills/aid-ask/` to `canonical/skills/aid-kb-query/` (REQUIREMENTS.md § 11 Feature 004 `##### 3. Flows`):

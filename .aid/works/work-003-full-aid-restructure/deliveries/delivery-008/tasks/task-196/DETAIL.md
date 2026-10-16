@@ -17,7 +17,7 @@
 
 **Source:** feature-006-planning -> delivery-008 -> AC-19
 
-**Depends on:** task-193
+**Depends on:** task-193, task-195
 
 **Scope:**
 - `canonical/aid/templates/reviewer-dispatch.md` (REQUIREMENTS.md § 11 Feature 006 `##### 1. Files and layout`): Guard 2's `aid-plan` row

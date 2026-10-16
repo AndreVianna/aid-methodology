@@ -17,7 +17,7 @@
 
 **Source:** feature-003-work-definition -> delivery-004 -> AC-43
 
-**Depends on:** task-088, task-090, task-091, task-092
+**Depends on:** task-088, task-090, task-091, task-092, task-096
 
 **Scope:**
 - Delete `canonical/skills/aid-describe/`. Its parts are already placed (REQUIREMENTS.md § 11 Feature 003 `##### 5. Components`).

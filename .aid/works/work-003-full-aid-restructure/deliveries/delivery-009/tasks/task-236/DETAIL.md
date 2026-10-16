@@ -17,7 +17,7 @@
 
 **Source:** feature-007-building -> delivery-009 -> AC-32, AC-37
 
-**Depends on:** task-227
+**Depends on:** task-227, task-233
 
 **Scope:**
 - `canonical/aid/rules.md` § Tracking discipline: "`In Progress` at the start of EXECUTE" is reworded to name

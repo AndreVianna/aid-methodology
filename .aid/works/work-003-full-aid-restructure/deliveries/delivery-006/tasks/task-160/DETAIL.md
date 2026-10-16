@@ -33,6 +33,17 @@
   - The baselines themselves are re-recorded at the gate (Q134, D11).
 - **Findings.** This task's scope also includes every site that
   `.aid/works/work-003-full-aid-restructure/research/delivery-006-sites.md` assigns to `task-160`.
+- **Gate-session steps (not built by this task).** Listed here so whoever runs the resync and the gate reads
+  them from a task file (PLAN.md, The resync rule, item 6; G13). None is a task step, and none is resync-relevant
+  except the resync itself.
+  1. **Resync session:** the resync (`delivery-006: resync`), committed alone: `aid update` runs format 6's
+     baselines step (stamping `approved_at_commit:` in this repository's KB documents) and parent-branch step
+     (`pipeline.parent_branch: master` for this work), and removes the retired skills. Then the session ends.
+  2. **Gate session, before the gate (G8):** regenerate `INDEX.md` and render `kb.html` with the installed scripts,
+     as one KB commit; run `(cd site && npm run gen:reference)` and the site `npm test`, committing any regenerated page (`reference/settings.md`
+    from `.aid/settings.yml`); a no-op when the resync changed nothing it reads.
+  3. **The gate:** the stanza's criteria, the samples, G0 with the baselines, and the tracking proof for task-140
+     to task-160.
 - **Test step** (PLAN.md § "Testing before the resync"; the same in every task of this delivery).
   `BASE` is this task's `task-160: In Progress` commit. Work in the `work-003` worktree only, create no
   branch or worktree, and never run `run_generator.py` in the live tree.

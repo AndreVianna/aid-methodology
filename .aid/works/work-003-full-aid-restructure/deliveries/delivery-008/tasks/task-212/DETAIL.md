@@ -17,7 +17,7 @@
 
 **Source:** feature-006-planning -> delivery-008 -> AC-19
 
-**Depends on:** task-186, task-194, task-196, task-197, task-198, task-200, task-204, task-206
+**Depends on:** task-186, task-191, task-194, task-196, task-197, task-198, task-200, task-204, task-206
 
 **Scope:**
 - Create `tests/canonical/test-plan.sh` with PL-01 to PL-07, as REQUIREMENTS.md § 11 Feature 006 `##### 9. Testing` defines them. It has

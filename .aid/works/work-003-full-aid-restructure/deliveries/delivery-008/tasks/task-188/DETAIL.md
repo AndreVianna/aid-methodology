@@ -17,7 +17,7 @@
 
 **Source:** feature-006-planning -> delivery-008 -> AC-19
 
-**Depends on:** task-187
+**Depends on:** task-187, task-199
 
 **Scope:**
 - `canonical/aid/scripts/execute/writeback-state.sh` (REQUIREMENTS.md § 11 Feature 006 `##### 4. Work state`, Writer):
@@ -36,7 +36,8 @@
   `test-disjoint-merge.sh`, `test-delivery-gate-aggregate.sh`, `test-lite-work-end-to-end.sh`,
   `test-task-state-transitions.sh` (its fixture converted: no `pipeline.path`, no top-level `delivery_state`, a
   `deliveries.delivery-001` entry), `test-producer-completeness.sh` (its nested fixture converted; the null lane
-  produced by a dependency cycle in the task files), and any suite the findings' L3 or L8 assigns here.
+  produced by a dependency cycle in the task files). The last three also read both dashboard readers, which
+  task-199 has already taught the single layout (G12). And any suite the findings' L3 or L8 assigns here.
 - **Site regeneration (G1, G5).** When this task adds, deletes, renames or edits anything under
   `canonical/skills/`, `canonical/agents/` or `canonical/aid/templates/`, it runs
   `(cd site && npm run gen:skills && npm run gen:reference)` in this same task and commits the output:

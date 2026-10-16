@@ -95,5 +95,6 @@
 - [ ] On task-201's nested, old lite and Q129 fixtures, the bash step's tree equals the expected tree, and a second run changes nothing (`sha256sum` of every file unchanged).
 - [ ] Under `pwsh`, the PowerShell twin gives byte-identical trees for the same fixtures; `test-ps51-compat.sh` and `test-ascii-only.sh` pass live, and `test-aid-cli-parity.sh` passes in the scratch copy.
 - [ ] The new `Test-AidInstaller.ps1` case passes under `pwsh` locally (5.1 runs in the Windows lane at G0).
+- [ ] On the Q129 fixture (this work's real state), `check-migrated-work.sh` exits 0 on the migrated tree: `tasks_lifecycle` filled once, every key outside the drop list byte-identical, the delivery-008 gate grade carried.
 - [ ] The test step (last Scope bullet) reports no failure: the spawn-free checks, the scratch half, the live half and the site or dashboard runs it calls for. Every existing test still passes.
 - [ ] All section-6 quality gates pass (REQUIREMENTS.md § 6: NFR-N, NFR-T, NFR-Q).

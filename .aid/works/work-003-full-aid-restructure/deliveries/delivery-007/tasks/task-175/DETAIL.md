@@ -17,7 +17,7 @@
 
 **Source:** feature-005-specification -> delivery-007 -> AC-12, AC-44
 
-**Depends on:** task-164
+**Depends on:** task-164, task-170
 
 **Scope:**
 - `tests/canonical/test-writeback-state.sh` gains the cases of REQUIREMENTS.md § 11 Feature 005 `##### 8. Testing`:

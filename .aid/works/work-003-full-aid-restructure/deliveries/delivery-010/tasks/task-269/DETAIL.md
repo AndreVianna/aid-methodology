@@ -7,7 +7,7 @@
 
 **Source:** feature-008-cicd-integration-monitoring -> delivery-010 -> AC-14, AC-42
 
-**Depends on:** task-266
+**Depends on:** task-263, task-266
 
 **Scope:**
 - `canonical/skills/aid-orchestrate/references/size-and-route.md`: the phase table row "Every work" says CI closes

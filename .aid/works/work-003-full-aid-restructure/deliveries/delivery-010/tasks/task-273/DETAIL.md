@@ -7,7 +7,7 @@
 
 **Source:** feature-008-cicd-integration-monitoring -> delivery-010 -> AC-41
 
-**Depends on:** task-272
+**Depends on:** task-270, task-272
 
 **Scope:**
 - `dashboard/home.html` (REQUIREMENTS.md § 11 Feature 008 `##### 4. Components`, Dashboard): at CI, "Pull request #42 -- pipeline passing" (or

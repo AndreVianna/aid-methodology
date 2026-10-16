@@ -23,7 +23,11 @@
 - Create under `tests/conversation/samples/feature-006/`, with frontmatter `skills: aid-plan`, their fixtures and
   the checks of REQUIREMENTS.md § 11 Feature 006 `##### 9. Testing`: `006-01-bug-fix-one-delivery`, `006-02-split-work-delivery-per-feature`,
   `006-03-lite-no-stop`, `006-04-reshape-the-plan` and `006-05-extra-delivery-for-a-migration`.
-- Smoke run (Q134 D8): each sample once, in a scratch copy.
+- Extend `tests/conversation/samples/feature-005/005-07-lite-ticket-no-stop.md`, written by task-179, so its checks run
+  on through Planning (REQUIREMENTS.md § 11 Feature 006 `##### 8. Migration`, Lists; PLAN.md delivery-008 gate): after the pass to
+  `aid-plan`, no approval question in Planning, the task files and `PLAN.md` written with `Pending` entries for every
+  delivery and task, and a pass to `aid-execute` with phase Building. Its checks stop at that pass.
+- Smoke run (Q134 D8): each sample once, `005-07` included, in a scratch copy.
 - **Findings.** This task's scope also includes every site that
   `.aid/works/work-003-full-aid-restructure/research/delivery-008-sites.md` assigns to `task-213`.
 - **Test step** (PLAN.md § "Testing before the resync"; the same in every task of this delivery).
@@ -60,5 +64,6 @@
 **Acceptance Criteria:**
 - [ ] There are five files, each `covers` matches the spec's sample table, and no `## Answer sheet` names a skill.
 - [ ] Each smoke run has its result reported.
+- [ ] `005-07`'s checks run through Planning and stop at the pass to `aid-execute`, and its covers still match the spec's sample table.
 - [ ] The test step (last Scope bullet) reports no failure: the spawn-free checks, the scratch half, the live half and the site or dashboard runs it calls for. Every existing test still passes.
 - [ ] All section-6 quality gates pass (REQUIREMENTS.md § 6: NFR-N, NFR-T, NFR-Q).

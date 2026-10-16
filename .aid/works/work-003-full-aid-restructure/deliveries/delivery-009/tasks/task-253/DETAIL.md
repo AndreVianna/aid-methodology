@@ -34,6 +34,22 @@
   - The baselines themselves are re-recorded at the gate (Q134, D11).
 - **Findings.** This task's scope also includes every site that
   `.aid/works/work-003-full-aid-restructure/research/delivery-009-sites.md` assigns to `task-253`.
+- **Gate-session steps (not built by this task).** Listed here so whoever runs the resync and the gate reads
+  them from a task file (PLAN.md, The resync rule, item 6; G13). None is a task step, and none is resync-relevant
+  except the resync itself.
+  1. **Resync session:** the resync (`delivery-009: resync`), committed alone: it installs the new `/aid-execute`,
+     the Feature 007 writer and `simplify-guard.sh`, and runs format 6's building part on this work (every delivery's
+     gate grade into its `verify`). Then the session ends.
+  2. **Gate session, before the gate (G8):** the installed `derive-waves.sh --plan --check` on this work, with
+     `--plan` when it reports stale; then `(cd site && npm run gen:reference)` and the site `npm test`, committing any regenerated page (`reference/settings.md`
+    from `.aid/settings.yml`); a no-op when the resync changed nothing it reads. The KB is not changed by this resync.
+  3. **The gate:** the stanza's criteria, the samples, G0 with the baselines, and the tracking proof for task-219
+     to task-253 (the work `STATE.yml`'s state-only commits and its `reviews`). A fix after this resync records its
+     grade with `--delivery-id 009 --field Verify`; no lifecycle is written.
+  4. **The switch** (Q123, Q124): `--check`, then `--repair --skill aid-execute --name START --reading change`;
+     `Verify` and `Commit` for deliveries 001-009 with `--delivery-id NNN --field`; then the one approval through
+     `--ask` and `--answer`, `covers: delivery delivery-001; ...; delivery delivery-009; confirmation before
+     building`, `commit` the head.
 - **Test step** (PLAN.md § "Testing before the resync"; the same in every task of this delivery).
   `BASE` is this task's `task-253: In Progress` commit. Work in the `work-003` worktree only, create no
   branch or worktree, and never run `run_generator.py` in the live tree.

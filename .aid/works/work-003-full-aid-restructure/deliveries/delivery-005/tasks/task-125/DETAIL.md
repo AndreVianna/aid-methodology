@@ -17,7 +17,7 @@
 
 **Source:** feature-004-kb-management -> delivery-005 -> AC-14, AC-15
 
-**Depends on:** task-116, task-117, task-118
+**Depends on:** task-116, task-117, task-118, task-119
 
 **Scope:**
 - `canonical/skills/aid-orchestrate/references/start-or-resume.md` (REQUIREMENTS.md § 11 Feature 004 `##### 5. Components`,

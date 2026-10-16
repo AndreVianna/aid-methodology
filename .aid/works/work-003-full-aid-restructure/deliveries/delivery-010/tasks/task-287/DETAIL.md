@@ -22,6 +22,20 @@
   - The baselines themselves are re-recorded at the gate (Q134, D11).
 - **Findings.** This task's scope also includes every site that
   `.aid/works/work-003-full-aid-restructure/research/delivery-010-sites.md` assigns to `task-287`.
+- **Gate-session steps (not built by this task).** Listed here so whoever runs the resync and the gate reads
+  them from a task file (PLAN.md, The resync rule, item 6; G13). None is a task step, and none is resync-relevant
+  except the resync itself.
+  1. **The run pauses** at the delivery-010 MILESTONE approval question, written `Pending` with `--ask`; the main
+     conversation ends the session there.
+  2. **Resync session:** the resync (`delivery-010: resync`), committed alone. Then the session ends.
+  3. **Gate session, before the gate (G8):** save `full-suite.sh` in the work folder (PLAN.md "Testing before the
+     resync", The driver), commit it alone, and record it with `--full-suite --field Command --value 'bash
+     .aid/works/work-003-full-aid-restructure/full-suite.sh'`; the installed `derive-waves.sh --plan --check` on this
+     work, with `--plan` when stale; `(cd site && npm run gen:reference)` and the site `npm test`, committing any regenerated page (`reference/settings.md`
+    from `.aid/settings.yml`); a no-op when the resync changed nothing it reads. The KB is not changed by this resync.
+  4. **The gate:** the stanza's criteria, the samples and G0 on the head, except G0's lane item. Then `/aid-execute`
+     resumes and asks the open approval first; a yes is recorded with `--answer --commit <head>`, and the first push
+     question follows.
 - **Test step** (PLAN.md § "Testing before the resync"; the same in every task of this delivery).
   `BASE` is this task's `base` (`tasks_lifecycle.task-287.base`, which `/aid-execute` BUILD records on the
   first round). Work in the `work-003` worktree only, create no

@@ -17,7 +17,7 @@
 
 **Source:** feature-007-building -> delivery-009 -> AC-19, AC-34
 
-**Depends on:** task-233, task-234, task-235
+**Depends on:** task-233, task-234, task-235, task-240
 
 **Scope:**
 - Re-point by one rule (REQUIREMENTS.md § 11 Feature 007 `##### 7. Migration`, Re-pointing) every kept file under `canonical/`, and

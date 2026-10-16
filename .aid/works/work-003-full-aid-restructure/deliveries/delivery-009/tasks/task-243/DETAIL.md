@@ -17,7 +17,7 @@
 
 **Source:** feature-007-building -> delivery-009 -> AC-32, AC-34
 
-**Depends on:** task-224, task-225
+**Depends on:** task-224, task-225, task-233
 
 **Scope:**
 - `tests/canonical/test-derive-waves.sh` gains: `--from-tasks --delivery` prints one delivery's table and waves, a

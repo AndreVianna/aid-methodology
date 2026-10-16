@@ -34,6 +34,18 @@
   - The baselines themselves are re-recorded at the gate (Q134, D11).
 - **Findings.** This task's scope also includes every site that
   `.aid/works/work-003-full-aid-restructure/research/delivery-005-sites.md` assigns to `task-139`.
+- **Gate-session steps (not built by this task).** Listed here so whoever runs the resync and the gate reads
+  them from a task file (PLAN.md, The resync rule, item 6; G13). None is a task step, and none is resync-relevant
+  except the resync itself.
+  1. **Resync session:** the resync (`delivery-005: resync`), committed alone: `aid update` converts this
+     repository's `.aid/knowledge/STATE.md` to `STATE.yml` (format 6's KB step), re-stamps `format_version: 6`, and
+     removes the retired skills through the manifest. Then the session ends.
+  2. **Gate session, before the gate (G8):** regenerate `INDEX.md` with the installed (now current)
+     `build-kb-index.sh`; render `kb.html` with the installed `render-kb-view.sh`; run `(cd site && npm run gen:reference)` and the site `npm test`, committing any regenerated page (`reference/settings.md`
+    from `.aid/settings.yml`); here `format_version` moves from 5 to 6. Each is
+     committed on its own (KB and site paths).
+  3. **The gate:** the stanza's criteria (`render-kb-view.sh --check` exits 0, `INDEX.md` lists no `STATE.md`), the
+     samples, G0 with the baselines, and the tracking proof for task-104 to task-139.
 - **Test step** (PLAN.md § "Testing before the resync"; the same in every task of this delivery).
   `BASE` is this task's `task-139: In Progress` commit. Work in the `work-003` worktree only, create no
   branch or worktree, and never run `run_generator.py` in the live tree.

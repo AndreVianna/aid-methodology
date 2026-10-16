@@ -17,7 +17,7 @@
 
 **Source:** feature-004-kb-management -> delivery-005 -> AC-15
 
-**Depends on:** task-116, task-117, task-118, task-119, task-123, task-124
+**Depends on:** task-116, task-117, task-118, task-119, task-121, task-123, task-124
 
 **Scope:**
 - The same rule (REQUIREMENTS.md § 11 Feature 004 `##### 7. Migration`, Re-pointing) over every kept file under

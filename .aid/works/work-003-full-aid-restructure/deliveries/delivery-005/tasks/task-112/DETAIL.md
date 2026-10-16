@@ -17,7 +17,7 @@
 
 **Source:** feature-004-kb-management -> delivery-005 -> AC-25
 
-**Depends on:** task-105
+**Depends on:** task-105, task-108, task-109
 
 **Scope:**
 - Raise the format to 6 in every carrier (REQUIREMENTS.md § 11 Feature 004 `##### 7. Migration`, Format 6): `bin/aid`

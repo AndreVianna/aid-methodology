@@ -17,7 +17,7 @@
 
 **Source:** feature-004-kb-management -> delivery-005 -> AC-15, AC-28
 
-**Depends on:** task-110
+**Depends on:** task-110, task-116
 
 **Scope:**
 - Move `canonical/skills/aid-update-kb/` to `canonical/skills/aid-kb-update/` (REQUIREMENTS.md § 11 Feature 004 `##### 1. Files and

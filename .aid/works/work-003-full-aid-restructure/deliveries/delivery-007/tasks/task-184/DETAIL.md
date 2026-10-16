@@ -32,6 +32,15 @@
   - The baselines themselves are re-recorded at the gate (Q134, D11).
 - **Findings.** This task's scope also includes every site that
   `.aid/works/work-003-full-aid-restructure/research/delivery-007-sites.md` assigns to `task-184`.
+- **Gate-session steps (not built by this task).** Listed here so whoever runs the resync and the gate reads
+  them from a task file (PLAN.md, The resync rule, item 6; G13). None is a task step, and none is resync-relevant
+  except the resync itself.
+  1. **Resync session:** the resync (`delivery-007: resync`), committed alone; it removes `aid-define`, the deleted
+     references and templates. It converts no file and changes no KB document. Then the session ends.
+  2. **Gate session, before the gate (G8):** run `(cd site && npm run gen:reference)` and the site `npm test`, committing any regenerated page (`reference/settings.md`
+    from `.aid/settings.yml`); a no-op when the resync changed nothing it reads. `INDEX.md` and `kb.html` stay as this task leaves them.
+  3. **The gate:** the stanza's criteria, the samples, G0 with the baselines, and the tracking proof for task-161
+     to task-184.
 - **Test step** (PLAN.md § "Testing before the resync"; the same in every task of this delivery).
   `BASE` is this task's `task-184: In Progress` commit. Work in the `work-003` worktree only, create no
   branch or worktree, and never run `run_generator.py` in the live tree.

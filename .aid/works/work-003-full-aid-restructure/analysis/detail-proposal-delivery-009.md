@@ -1,5 +1,10 @@
 # Detail proposal -- delivery-009: Building tested, verified and simplified, one task at a time (Feature 007)
 
+> **Superseded by the task files.** After the light-review fixes (G12, G13), the dependencies, scopes and
+> criteria in this proposal no longer match the task files. The task files under `deliveries/delivery-009/tasks/` are
+> the source of truth. Step 5 builds PLAN.md's Execution Graph from their `**Depends on:**` lines, never from this
+> proposal.
+
 This is `aid-detail` FIRST-RUN for **delivery-009**, under Q136. Decisions are settled by recommendation,
 the task files are written at once, and the light review is the check.
 

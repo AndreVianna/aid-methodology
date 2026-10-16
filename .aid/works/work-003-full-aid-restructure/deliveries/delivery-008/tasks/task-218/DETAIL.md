@@ -33,6 +33,26 @@
   - The baselines themselves are re-recorded at the gate (Q134, D11).
 - **Findings.** This task's scope also includes every site that
   `.aid/works/work-003-full-aid-restructure/research/delivery-008-sites.md` assigns to `task-218`.
+- **Gate-session steps (not built by this task).** Listed here so whoever runs the resync and the gate reads
+  them from a task file (PLAN.md, The resync rule, item 6; G13). None is a task step, and none is resync-relevant
+  except the resync itself.
+  1. **Resync session -- the migration of this work's live state, the riskiest step of the plan:**
+     1. **Dry run first.** Make a scratch copy as PLAN.md "How the copy is made" says (its own `run_generator.py`
+        runs `aid update` there, migrating the copy's `work-003`). Run
+        `bash tests/canonical/lib/check-migrated-work.sh <copy>/.aid/works/work-003-full-aid-restructure <the live, not yet migrated STATE.yml>`
+        (task-201). On any difference, stop: no live resync until it is fixed.
+     2. The resync (`delivery-008: resync`), committed alone: `aid update` installs the new writer and
+        `derive-waves.sh`, removes `aid-detail` and the deleted templates, and runs the format-6 work-state step on
+        this work (Q129). Run `check-migrated-work.sh` again on the live work. The pre-migration state is in git
+        (the commit before the resync), so a bad migration is reverted (`git revert` of the resync commit) and
+        re-run after the fix. Then the session ends.
+  2. **Gate session, before the gate (G8):** the installed `derive-waves.sh --plan` renders this work's `PLAN.md`
+     checklists, replacing each `### delivery-NNN Execution Graph` section and its `wave-map`; committed as a
+     work-folder change. Then `(cd site && npm run gen:reference)` and the site `npm test`, committing any regenerated page (`reference/settings.md`
+    from `.aid/settings.yml`); a no-op when the resync changed nothing it reads. The KB is not changed by this resync.
+  3. **The gate:** the stanza's criteria (no `deliveries/delivery-*/STATE.yml`; every task with
+     `tasks/task-NNN/DETAIL.md` and one `tasks_lifecycle` entry; `derive-waves.sh --plan --check` exits 0), the
+     samples, G0 with the baselines, and the tracking proof for task-185 to task-218.
 - **Test step** (PLAN.md § "Testing before the resync"; the same in every task of this delivery).
   `BASE` is this task's `task-218: In Progress` commit. Work in the `work-003` worktree only, create no
   branch or worktree, and never run `run_generator.py` in the live tree.

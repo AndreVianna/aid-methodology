@@ -7,7 +7,7 @@
 
 **Source:** feature-008-cicd-integration-monitoring -> delivery-010 -> AC-36
 
-**Depends on:** task-258
+**Depends on:** task-256, task-258
 
 **Scope:**
 - Create `canonical/skills/aid-monitor-pipeline/references/close.md`, at most 120 lines (REQUIREMENTS.md § 11 Feature 008 `##### 2. Flow`, step 8): the write-back offer before

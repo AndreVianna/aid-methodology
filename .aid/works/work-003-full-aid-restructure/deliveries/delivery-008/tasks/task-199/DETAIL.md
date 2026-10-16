@@ -1,4 +1,4 @@
-# task-199: Dashboard readers: one layout, lanes per delivery, the old-layout diagnosis
+# task-199: Dashboard readers: the single layout and lanes per delivery
 
 > **Execution protocol (binding on whoever executes this task -- no
 > exceptions):** the moment this task's `State` changes, write it --
@@ -27,17 +27,15 @@
     `tasks_lifecycle`; delivery cells from `deliveries`; delivery names from the plan's `### delivery-NNN:`
     headings;
   - lanes derived per delivery from the task files (`_derive_lanes_from_details` and its Node twin, grouped by
-    delivery); the `wave-map` parse goes;
-  - gone: `_detect_hierarchy`, `_read_work_hierarchical`, `_detect_flat`, `_declared_work_path`,
-    `parse_task_state_md`, the delivery-file parse and the delivery `qa` merge;
-  - an old-layout work (a `deliveries/` folder, a top-level `delivery_state`, or a `pipeline.path`) is not
-    parsed: `layout_status: old`, the detection lines inside `legacy-layout: begin` / `end` markers;
-  - work fields `depth` (from `intent.depth`) and `phases` (from `intent.phases`) replace `work_path`;
-    `features` goes.
-- The server and page are task-200. New fixtures are task-211.
-- Suites to update in this same task: the existing dashboard reader and parity suites and fixtures (hierarchy
-  and `wave-map` fixtures among them; an old nested fixture stays where it now checks the diagnosis),
-  `test-dashboard-parity-h.sh`, and any suite the findings' L6 assigns here.
+    delivery);
+  - work fields `depth` (from `intent.depth`) and `phases` (from `intent.phases`) are passed on.
+- **Additive only (G12):** today's parses of the old layouts (`_detect_hierarchy`, `_read_work_hierarchical`,
+  `_detect_flat`, `_declared_work_path`, `parse_task_state_md`, the delivery-file parse, the `wave-map` parse)
+  still run in this task, so every existing fixture reads as before. task-188 then converts the writer and the
+  suites that feed the readers through it, and task-200 removes the old parses and adds the old-layout diagnosis.
+- New fixtures are task-211.
+- Suites to update in this same task: the existing dashboard reader and parity suites, where a single-layout
+  case is added beside the old ones, and any suite the findings' L6 assigns here.
 - **Site regeneration (G1, G5).** When this task adds, deletes, renames or edits anything under
   `canonical/skills/`, `canonical/agents/` or `canonical/aid/templates/`, it runs
   `(cd site && npm run gen:skills && npm run gen:reference)` in this same task and commits the output:
@@ -89,8 +87,7 @@
      - The same failure after three fix rounds goes to the maintainer.
 
 **Acceptance Criteria:**
-- [ ] A scratch single-layout work with two deliveries reads with lanes per delivery and delivery names from the plan in both readers; a nested fixture reads `layout_status: old` in both.
-- [ ] Over `dashboard/reader/*.py` and `dashboard/server/reader.mjs`, `git grep -nE 'deliveries/delivery-|pipeline\.path|work_path|parse_execution_graph'` finds nothing outside the `legacy-layout` markers (PL-04 over this task's files).
+- [ ] A scratch single-layout work with two deliveries reads with lanes per delivery and delivery names from the plan in both readers, identically, and every existing nested and flattened fixture still reads as before.
 - [ ] The reader and parity suites pass where the test step puts them.
 - [ ] The test step (last Scope bullet) reports no failure: the spawn-free checks, the scratch half, the live half and the site or dashboard runs it calls for. Every existing test still passes.
 - [ ] All section-6 quality gates pass (REQUIREMENTS.md § 6: NFR-N, NFR-T, NFR-Q).
