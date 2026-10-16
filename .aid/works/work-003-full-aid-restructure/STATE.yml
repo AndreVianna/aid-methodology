@@ -114,11 +114,11 @@ user_approved: 'yes'
 # [W] Running | Paused-Awaiting-Input | Blocked | Completed | Canceled
 lifecycle: Running
 # [W] Describe | Define | Specify | Plan | Detail | Execute
-phase: Plan
+phase: Detail
 # [W] aid-{skill} | none
-active_skill: aid-plan
+active_skill: aid-detail
 # [W]
-updated: '2026-10-16T02:13:21Z'
+updated: '2026-10-16T02:14:21Z'
 # [W] set only when lifecycle = Paused-Awaiting-Input
 pause_reason: --
 # [W] set only when lifecycle = Blocked
