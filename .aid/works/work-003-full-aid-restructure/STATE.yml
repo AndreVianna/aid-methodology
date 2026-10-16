@@ -1635,3 +1635,19 @@ qa:
     suggested: 'Narrow F003''s row to match F006: initiator aid-describe with phase Describe, missing or --; a later phase decides by its own phase row. One-line spec edit plus task-088''s scope.'
     answer: 'Accepted as recommended.'
     applied_to: 'REQUIREMENTS.md Feature 003 Migration (legacy rows; a third row added by the orchestrator after the delivery-001..004 cycle-2 light review found the narrowing dropped phase-Describe works of other initiators: they now follow Feature 006''s rule 4, never the deleted /aid-describe); delivery-004 task-088, task-093, task-096'
+  - id: Q138
+    category: Detail
+    impact: Low
+    state: Answered
+    context: 'Flagged by the delivery-008 detail (F-1): Feature 006''s format-6 work-state step is silent on the per-task dispatch_log of old works; the new layout has no place for it.'
+    suggested: 'Drop it during the migration, with a warning line when it is not empty; this work''s logs are all empty.'
+    answer: 'Accepted as recommended.'
+    applied_to: 'delivery-008 task-201, task-202'
+  - id: Q139
+    category: Detail
+    impact: Medium
+    state: Answered
+    context: 'G16, flagged by the delivery-012 detail: under the new /aid-execute BUILD never commits the work folder and VERIFY leaves it out of the diff, so a RESEARCH task whose only output is research/delivery-NNN-sites.md makes an empty commit and is never reviewed.'
+    suggested: 'For deliveries 010-014, the site search and reconciliation leave the task graph and become a reviewed step that is not a task: the main conversation runs it in the previous delivery''s gate session after that gate passes and its milestone yes is recorded (for 010, delivery-009''s gate session after the switch); aid-researcher writes the file, aid-reviewer grades it with grade.sh against minimum_grade, and it is committed alone. Research tasks 254, 288, 311, 338 and 353 are dropped.'
+    answer: 'Accepted as recommended.'
+    applied_to: 'PLAN.md (010-014 first wave; How deliveries 010-014 are built); task files of deliveries 010-014'
