@@ -29,7 +29,8 @@
 - Suites to update in this same task: `test-scoped-review-cycles.sh` (SC10's detail site goes; its sites are
   `aid-specify` CHECK and `aid-plan` CHECK), `test-state-review-surface.sh` (SR17's `aid-detail` brief path
   retired; its old-shape fixtures stay), `test-pipeline-status-walkthrough.sh` (the `aid-detail` rows retired),
-  `test-artifact-discipline.sh` (AD13's ceilings drop to the measured counts), and any suite the findings' L1 or
+  `test-artifact-discipline.sh` (AD13's ceilings drop to the measured counts), `test-downstream-worktree-entry.sh`
+  (its `aid-detail` assertions go with the skill, G11), and any suite the findings' L1 or
   L2 assigns here.
 - **Suites that read what this task deletes, moves or renames (G6).** For each such file and folder,
   build the list with `git grep -l -e '<path>' -e '<folder>/' -- tests/ site/` at this task's base. The

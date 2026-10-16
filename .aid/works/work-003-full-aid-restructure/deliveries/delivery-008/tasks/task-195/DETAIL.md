@@ -30,8 +30,9 @@
   any; the site skill lists and flows and their `__tests__`.
 - Suites to update in this same task: `test-scoped-review-cycles.sh` (SC10's plan site becomes
   `aid-plan/references/check.md`), `test-pipeline-status-walkthrough.sh` (the `aid-plan` rows of A1, M4 and B1
-  re-point to `start.md` and `breakdown.md` with phase `Planning`), and any suite the findings' L1, L2 or L8
-  assigns here.
+  re-point to `start.md` and `breakdown.md` with phase `Planning`), `test-downstream-worktree-entry.sh` (its
+  `aid-plan` assertions -- G0-G4 -- follow the Check 1 work listing and worktree entry this rewrite removes, G11),
+  and any suite the findings' L1, L2 or L8 assigns here.
 - **Suites that read what this task deletes, moves or renames (G6).** For each such file and folder,
   build the list with `git grep -l -e '<path>' -e '<folder>/' -- tests/ site/` at this task's base. The
   list does not come from the findings' map alone. Every suite it finds is updated in this same task
@@ -91,5 +92,6 @@
 - [ ] `SKILL.md` is at most 120 lines with the six steps and FINISH advancing by `PASS`; `first-run-loop.md` and `review-deliverables.md` are absent (PL-01's and PL-03's `aid-plan` clauses).
 - [ ] Over `canonical/skills/aid-plan/`, `git grep -nE 'Ready|--reset|Spike Needed|deliveries/delivery-'` finds nothing.
 - [ ] SG-02, SG-04 and `test-scoped-review-cycles.sh` pass where the test step puts them, and the site `npm test` passes after regeneration.
+- [ ] `test-downstream-worktree-entry.sh` passes in the scratch copy, with no `aid-plan` assertion on the removed worktree entry.
 - [ ] The test step (last Scope bullet) reports no failure: the spawn-free checks, the scratch half, the live half and the site or dashboard runs it calls for. Every existing test still passes.
 - [ ] All section-6 quality gates pass (REQUIREMENTS.md § 6: NFR-N, NFR-T, NFR-Q).

@@ -32,6 +32,8 @@
 - A tool whose documentation names no such place is recorded as "cannot be read", with the pages searched.
 - For Claude Code, also record how to set the level below high for sample `005-04`'s fixture.
 - Each row cites its source (URL or documented command) and the date read.
+- **Findings.** This task's scope also includes every site that
+  `.aid/works/work-003-full-aid-restructure/research/delivery-007-sites.md` assigns to `task-162`.
 - **Test step** (PLAN.md § "Testing before the resync"; the same in every task of this delivery).
   `BASE` is this task's `task-162: In Progress` commit. Work in the `work-003` worktree only, create no
   branch or worktree, and never run `run_generator.py` in the live tree.

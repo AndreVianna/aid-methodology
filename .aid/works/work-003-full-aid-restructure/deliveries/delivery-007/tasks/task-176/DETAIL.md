@@ -24,7 +24,10 @@
   - an unsplit document prints `## 11. Technical Specification`, the cited criteria and the identity block,
     with a Source that names no feature;
   - the output for a split document, in both shapes, is unchanged;
-  - a Source naming no criterion still fails.
+  - a Source naming no criterion still fails;
+  - built from this work's real shape: a split document whose feature quotes the unsplit shape in a fence
+    (a fenced `## 11. Technical Specification` and fenced `## 1.` to `## 10.` lines) is still read as split; a
+    fenced `## ` heading inside § 11 ends no section, so the feature after it is sliced whole.
 - **Findings.** This task's scope also includes every site that
   `.aid/works/work-003-full-aid-restructure/research/delivery-007-sites.md` assigns to `task-176`.
 - **Test step** (PLAN.md § "Testing before the resync"; the same in every task of this delivery).

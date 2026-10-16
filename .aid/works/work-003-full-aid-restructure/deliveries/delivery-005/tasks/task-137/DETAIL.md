@@ -66,7 +66,7 @@
      - The same failure after three fix rounds goes to the maintainer.
 
 **Acceptance Criteria:**
-- [ ] Over the edited documents, `git grep -nE 'aid-(discover|ask|update-kb|summarize|housekeep)\b'` finds nothing outside marked history, and `technology-stack.md` names no Playwright step.
+- [ ] Over the edited documents, `git grep -nE 'aid-(discover|ask|update-kb|summarize|housekeep)\b'` finds only lines that describe how old works or the old layout are handled (each such line also names `legacy`, `old work` or `aid update`); `git grep -nE 'aid-(discover|ask|update-kb|summarize|housekeep)\b' -- <the edited documents> | grep -viE 'legacy|old work|aid update'` prints nothing, and `technology-stack.md` names no Playwright step.
 - [ ] No work id, and the lints pass. Each statement matches `canonical/` as task-132 leaves it.
 - [ ] The test step (last Scope bullet) reports no failure: the spawn-free checks, the scratch half, the live half and the site or dashboard runs it calls for. Every existing test still passes.
 - [ ] All section-6 quality gates pass (REQUIREMENTS.md § 6: NFR-N, NFR-T, NFR-Q).

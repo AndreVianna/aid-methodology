@@ -26,7 +26,12 @@
     feature section, and the task's `**Source:**` line need not name a feature;
   - otherwise it prints the task's `### Feature NNN` section as today, for both shapes of a split document;
   - the cited criteria and the identity block are printed as today, and a Source that names no criterion is
-    still an error.
+    still an error;
+  - **fence-aware**: a line inside a fenced code block (between ```` ``` ```` or `~~~` fences) is never a heading.
+    That holds for the unsplit detection (only a top-level `## 11. Technical Specification` outside a fence counts)
+    and for every section boundary, so a fenced `## ` example inside § 11 ends no section. This work's own
+    `REQUIREMENTS.md` quotes the unsplit shape in a fence inside Feature 005, and fenced `## ` lines inside
+    Features 003 and 005.
 - The unit cases are task-176.
 - Suites to update in this same task: the existing `test-slice-requirements.sh` assertions, and any suite
   the findings' P4 or P8 assigns here.
@@ -83,5 +88,6 @@
 **Acceptance Criteria:**
 - [ ] On a scratch unsplit document and a task whose Source names only criteria, the output holds `## 11. Technical Specification`, the cited criteria and the identity block.
 - [ ] The output for this work's own `REQUIREMENTS.md` and a delivery-001 task is byte-identical before and after the change, and `test-slice-requirements.sh` passes live.
+- [ ] On this work's own `REQUIREMENTS.md`, the slice of a delivery-007 task (Source naming Feature 005) holds `### Feature 005` through to `### Feature 006`, not just the identity block, and the document is read as split (`## 11. Features`).
 - [ ] The test step (last Scope bullet) reports no failure: the spawn-free checks, the scratch half, the live half and the site or dashboard runs it calls for. Every existing test still passes.
 - [ ] All section-6 quality gates pass (REQUIREMENTS.md § 6: NFR-N, NFR-T, NFR-Q).

@@ -27,7 +27,8 @@
   `reviewer-dispatch.md` (where a ledger may sit), `aid-monitor/SKILL.md` (task-file paths), `complexity-score.sh`
   (its full-layout path), `aid-execute/SKILL.md` (its one `aid-detail` mention; the rest is Feature 007's),
   `aid-kb-build/references/elicit.md`, and the comment in `dashboard/reader/derivation.py`.
-- Suites to update in this same task: `test-downstream-worktree-entry.sh`, `test-connector-consumption-linkage.sh`,
+- Suites to update in this same task: `test-downstream-worktree-entry.sh` where it asserts the two templates'
+  consumer lists (its `aid-plan` and `aid-detail` assertions belong to task-195 and task-206), `test-connector-consumption-linkage.sh`,
   `test-complexity-score.sh`, and any suite the findings' L1, L2, L3 or L8 assigns to these files.
 - **Site regeneration (G1, G5).** When this task adds, deletes, renames or edits anything under
   `canonical/skills/`, `canonical/agents/` or `canonical/aid/templates/`, it runs
@@ -80,7 +81,7 @@
      - The same failure after three fix rounds goes to the maintainer.
 
 **Acceptance Criteria:**
-- [ ] Over `canonical/` and `dashboard/home.html`, `git grep -nE 'aid-detail|deliveries/delivery-|task-state-template|delivery-state-template|delivery-plans/'` finds only the files of `canonical/skills/aid-detail/` and the two templates task-206 deletes, `canonical/aid/scripts/migrate/` and the files of `aid-execute` (PL-02 and PL-04, scoped to hold at this task's end).
+- [ ] Over `canonical/` and `dashboard/home.html`, `git grep -nE 'aid-detail|deliveries/delivery-|task-state-template|delivery-state-template|delivery-plans/'` finds only the files of `canonical/skills/aid-detail/`, the `/aid-detail` line of `canonical/aid/rules.md` § Skill guide (SG-02 needs it while the folder exists), and the two templates task-206 deletes, `canonical/aid/scripts/migrate/` and the files of `aid-execute` (PL-02 and PL-04, scoped to hold at this task's end).
 - [ ] The listed suites pass where the test step puts them, and the site `npm test` passes after regeneration.
 - [ ] The test step (last Scope bullet) reports no failure: the spawn-free checks, the scratch half, the live half and the site or dashboard runs it calls for. Every existing test still passes.
 - [ ] All section-6 quality gates pass (REQUIREMENTS.md § 6: NFR-N, NFR-T, NFR-Q).

@@ -31,8 +31,9 @@
   - `aid-kb-build/references/reviewer-brief.md`;
   - outside `canonical/`, the comment in `dashboard/reader/derivation.py`; the comment in `bin/aid`'s state
     converter stays.
-- Suites to update in this same task: `test-downstream-worktree-entry.sh` (its `aid-define` and
-  `aid-specify` assertions go), and any suite the findings' P1 or P8 assigns to these files.
+- Suites to update in this same task: `test-downstream-worktree-entry.sh` where it asserts the two templates'
+  consumer lists (its `aid-specify` assertions changed with task-170, and its `aid-define` ones go with task-174),
+  and any suite the findings' P1 or P8 assigns to these files.
 - **Site regeneration (G1, G5).** When this task adds, deletes, renames or edits anything under
   `canonical/skills/`, `canonical/agents/` or `canonical/aid/templates/`, it runs
   `(cd site && npm run gen:skills && npm run gen:reference)` in this same task and commits the output:
@@ -84,7 +85,7 @@
      - The same failure after three fix rounds goes to the maintainer.
 
 **Acceptance Criteria:**
-- [ ] Over `canonical/` and `dashboard/home.html`, `git grep -n aid-define` finds only the files of `canonical/skills/aid-define/` (deleted by task-174), the gate's legacy block and `canonical/aid/scripts/migrate/` (SP-02, scoped to hold at this task's end).
+- [ ] Over `canonical/` and `dashboard/home.html`, `git grep -n aid-define` finds only the files of `canonical/skills/aid-define/` and the `/aid-define` line of `canonical/aid/rules.md` § Skill guide (SG-02 needs it while the folder exists; both go with task-174), the gate's legacy block and `canonical/aid/scripts/migrate/` (SP-02, scoped to hold at this task's end).
 - [ ] `test-downstream-worktree-entry.sh` passes where the test step puts it, and the site `npm test` passes after regeneration.
 - [ ] The test step (last Scope bullet) reports no failure: the spawn-free checks, the scratch half, the live half and the site or dashboard runs it calls for. Every existing test still passes.
 - [ ] All section-6 quality gates pass (REQUIREMENTS.md § 6: NFR-N, NFR-T, NFR-Q).

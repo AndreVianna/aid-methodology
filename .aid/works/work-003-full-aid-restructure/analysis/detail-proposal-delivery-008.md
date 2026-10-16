@@ -1,5 +1,10 @@
 # Detail proposal -- delivery-008: The plan as a generated checklist on one state file (Feature 006)
 
+> **Superseded by the task files.** After the light-review fixes (G9-G11), the scopes and criteria in this
+> proposal's task blocks no longer match the task files. The task files under `deliveries/delivery-008/tasks/` are
+> the source of truth. Step 5 builds PLAN.md's Execution Graph from their `**Depends on:**` lines, never from this
+> proposal.
+
 This is `aid-detail` FIRST-RUN for **delivery-008**, under Q136. Decisions are settled by recommendation,
 the task files are written at once, and the light review is the check.
 

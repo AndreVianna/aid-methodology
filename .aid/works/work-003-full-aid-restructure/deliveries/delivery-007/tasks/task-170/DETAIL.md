@@ -39,7 +39,8 @@
 - Suites to update in this same task: `test-ticket-retirement-structural.sh` (`SPECIFY_INIT` becomes
   `start.md` in the T000 loop and the seam map, so T045, T046 and T097 hold there),
   `test-pipeline-status-walkthrough.sh` and `test-writeback-state.sh` where they follow the deleted
-  references, `test-artifact-discipline.sh` (AD13's ceilings drop to the new measured counts), and any suite
+  references, `test-artifact-discipline.sh` (AD13's ceilings drop to the new measured counts),
+  `test-downstream-worktree-entry.sh` (its `aid-specify` assertions -- G0-G4 -- follow the Check 1 work listing and worktree entry this rewrite removes, G11), and any suite
   the findings' P2 or P8 assigns here.
 - **Suites that read what this task deletes, moves or renames (G6).** For each such file and folder,
   build the list with `git grep -l -e '<path>' -e '<folder>/' -- tests/ site/` at this task's base. The
@@ -100,5 +101,6 @@
 - [ ] `SKILL.md` is at most 120 lines, and its step table has the eight steps with FINISH advancing by `PASS` (SP-03). None of the eight old references and no `canonical/aid/templates/specs/` exists, and the nine new references and the brief do (SP-01's `aid-specify` clauses).
 - [ ] Over `canonical/skills/aid-specify/`, `git grep -nE 'state-(initialize|continue|review|spike|blocked|done)\.md|--reset|technical-specification-template'` finds nothing.
 - [ ] SG-02, SG-04 and `test-ticket-retirement-structural.sh` pass where the test step puts them, and the site `npm test` passes after regeneration.
+- [ ] `test-downstream-worktree-entry.sh` passes in the scratch copy, with no `aid-specify` assertion on the removed worktree entry.
 - [ ] The test step (last Scope bullet) reports no failure: the spawn-free checks, the scratch half, the live half and the site or dashboard runs it calls for. Every existing test still passes.
 - [ ] All section-6 quality gates pass (REQUIREMENTS.md § 6: NFR-N, NFR-T, NFR-Q).

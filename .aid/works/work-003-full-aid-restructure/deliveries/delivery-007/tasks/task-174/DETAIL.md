@@ -30,6 +30,7 @@
     `site/scripts/lib/flow-graph/`) and their `__tests__`;
   - the counted phrases that `test-doc-counts.sh` asserts (Q134 D5).
 - Suites to update in this same task: `test-state-review-surface.sh` (the `aid-define` brief path goes),
+  `test-downstream-worktree-entry.sh` (its `aid-define` assertions -- G0-G2 -- go with the skill),
   `test-shared-prune.sh`, `test-shared-remove.sh` and the `test-aid-cli-parity.sh` drift row (they switch to
   `aid-plan` as the sample installed skill), and any suite the findings' P1 or P8 assigns here.
 - **Suites that read what this task deletes, moves or renames (G6).** For each such file and folder,
