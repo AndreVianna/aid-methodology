@@ -1229,7 +1229,7 @@ and `AID_WORK_DIR` exported for this work (tech-debt W5-5).
       nested), and commit the file holding the task's state alone, as `task-NNN: In Progress`.
    2. Dispatch the executor for the task's type (`aid-developer`; `aid-researcher`, `aid-architect` or
       `aid-tech-writer` by type), in a clean context, tiered by `agent-dispatch-tiering.md`. It gets the
-      task file, its requirements slice, the KB documents the index routes to, the same-task rule and
+      task file, its requirements slice (the task's `### Feature NNN` section, from its heading to the next, read so that headings inside fenced code blocks do not count, plus the §1-§10 entries the task cites; today's `slice-requirements.sh` is not used for this, because this document's fenced example headings end § 11 early), the KB documents the index routes to, the same-task rule and
       this instruction: "work in the `work-003` worktree only; create no branch or worktree; do not run
       `run_generator.py`". It returns its changes and its test command; it never asks the user.
    3. Run the task's tests ("Testing before the resync").

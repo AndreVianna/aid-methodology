@@ -434,6 +434,10 @@ review_history:
     event: 'Detail light review delivery-006 (Q136)'
     outcome: 'Grade C+ (1 MEDIUM, 4 LOW)'
     notes: 'Doc counts and sync:docs on a skill deletion; live-vs-scratch placement in a criterion; roadmap MVP shape source; kb.html owner; findings bullet on TEST tasks; fixes sent to the architect'
+  - date: '2026-10-16'
+    event: 'Detail light review delivery-007 (Q136)'
+    outcome: 'Grade D+ (1 HIGH, 3 MEDIUM, 1 LOW; 2 OOS PLAN)'
+    notes: 'G3 criterion vs SG-02 skill-guide line; downstream-worktree-entry suite not owned by the rewriting task; fenced example headings in this REQUIREMENTS.md break the unsplit detection and the slicer (PLAN executor-context line fixed by the orchestrator); fixes sent to the architect'
 
 # [A] written by the orchestrator on the work's active branch (single
 #     writer). Append-only audit trail of phase transitions and gate
