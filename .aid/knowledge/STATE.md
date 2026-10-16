@@ -225,6 +225,16 @@ This is the single state file for the **Discovery area** — persistent project 
 - **Applied to:** infrastructure.md (:104 + CI/CD Pipeline table row + `sources:` entry), test-landscape.md (:162 + CI Lanes table row + `sources:` entry), integration-map.md (:76 overview-table cell + :120 prose/table row), technology-stack.md (:96), project-structure.md (:159 + the `.github/workflows/` tree-listing comment), domain-glossary.md (:808), tech-debt.md (:233 least-privilege enumeration), STATE.md (:37 Measured-signals brace-list).
 - **Deferred:** `.aid/knowledge/kb.html` is the GENERATED summary viewer — it still shows the stale 4-workflow set (in ~3 places) in addition to its already-known stale "118 canonical suites" count. Both are hand-edit-forbidden and deferred to the next housekeep SUMMARY-DELTA regeneration, which will regenerate kb.html from these now-corrected source docs. Not fixed in this pass.
 
+### Q9
+
+- **Category:** Review criteria / plan reviews
+- **Impact:** Low
+- **Status:** Pending
+- **Context:** The criteria table in `authoring-conventions.md` has no criterion id for plan-level checks: the `/aid-plan` rubric bullets, the cross-document contradiction pass (Guard 2) and a cross-feature review of a shared spec. A work artifact such as `PLAN.md` resolves only G-14 and G-15, so a plan review either invents labels for its findings or cites no id, and the review rule says a finding with no resolvable id is itself a defect.
+- **Suggested:** Add a file-class row for work plans, with ids for each `/aid-plan` rubric check and for Guard 2, so plan-review findings cite real ids.
+- **Answer:** --
+- **Applied to:** --
+
 ## Review History
 
 > One row per /aid-discover review cycle. Append-only.

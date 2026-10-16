@@ -796,7 +796,8 @@ blank lines do not. The draft below is 16 body lines: with the heading and its b
 **Skill descriptions** -- every skill's `description:` uses the same shape as its guide line: first
 sentence says what it is for, then a sentence starting "Use when". Skills a later feature of this work
 retires are listed in the static test as exempt; the test fails if an exempt skill no longer exists, so
-the list empties as they go. Generated doorway skills get the shape from the builder template, not by
+the list empties as they go, and with `AID_RELEASE_CHECK=1` it fails while the list is not empty (the
+same release check as Feature 002's shared exempt list). Generated doorway skills get the shape from the builder template, not by
 hand (see Files and layout).
 
 **`/aid-orchestrate`** -- runs in the main conversation (no sub-agent: only the main conversation can
@@ -937,7 +938,7 @@ the lane feature branches run.
 | SG-01 | `## Handling a request` counts at most 20 lines: from its heading line through the last non-blank line before the next `## ` heading (trailing blank lines excluded) |
 | SG-02 | The skill guide names exactly the skills in `canonical/skills/`, both ways (with `<kind>` expansion while it exists) |
 | SG-03 | Every guide line is at most 100 characters |
-| SG-04 | Every non-exempt `description:` has the what/when shape; every exempt skill still exists |
+| SG-04 | Every non-exempt `description:` has the what/when shape; every exempt skill still exists; with `AID_RELEASE_CHECK=1`, the exempt list is empty |
 | SG-05 | No front-door skill (`canonical/skills/aid/` absent); no `aid-orchestrator` agent; `aid-developer` and `aid-tech-writer` both present |
 | SG-06 | One staged bundle (`tests/lib/bundle.sh`) installed for each of the five tools: every skill is present where that tool reads skills (`.claude/skills/` for Claude Code, `.agents/skills/` for the others), byte-identical to `canonical/`, `name` equal to its folder, a non-empty `description`, and no flag that blocks slash or agent invocation |
 
@@ -2437,7 +2438,8 @@ is saved resumes it.
    3. render the view;
    4. write `User Approved` `yes` and `Baseline` (the same `HEAD`); the record stays at FINISH;
    5. commit once with `kb-commit.sh --build --finish`. **Nothing is pushed**; the agent says in one line
-      how to push. `--finish` makes the commit carry the finished state file: after `git add`, the
+      how to push (naming no target branch; Feature 008's NM-05 allows that one instruction line).
+      `--finish` makes the commit carry the finished state file: after `git add`, the
       script runs `writeback-state.sh --kb --field Status --value Approved` (which clears the record)
       and stages the state file, then commits. If the commit does not complete, the script puts back the
       copy of the state file it took before that write, so the record is back at FINISH, and exits 6 (the commit
@@ -2912,6 +2914,12 @@ no path hands work to `/aid-kb-update` expecting a KB. Every caller checks first
     `test-kb-freshness-check.sh`, `test-doc-set-*.sh`, `test-discovery-doc-ownership.sh`,
     `test-cutover-no-dangling.sh`), as do the dashboard KB tests and fixtures (`pt1h-kb-*`, which also
     gain a legacy `STATE.md` fixture).
+  - The suites that assert today's format 5 move to 6 with the carriers, in the same change:
+    `test-aid-cli.sh`, `test-aid-cli-ps1.sh`, `test-aid-cli-parity.sh`, `test-layout-format-guard.sh`,
+    `test-aid-migrate.sh`, `test-aid-migrate-trigger.sh`, `test-aid-migration-stamp.sh`,
+    `test-release-migrate-smoke.sh`, `test-registry.sh`, `test-install-provisioning.sh`, and the Windows
+    lane's `tests/windows/Test-AidInstaller.ps1` (T48c and its stamp check) and
+    `tests/windows/Test-InstallProvisioning.ps1` (SE1d, SE1e).
   - `tests/cost-baseline.tsv` and `tests/coverage-baseline.tsv` are re-recorded.
 - **User documentation** waits for the final pass (Q40, AC-45). The only edit now: the numbers
   `test-doc-counts.sh` asserts.
@@ -5204,7 +5212,8 @@ by `HALT` at CLOSE; the one `PASS` is START's pass back on a typed start before 
    5. **Leftovers** -- other finished works' worktrees and branches already contained in the parent branch, and temporary
       files no open work owns (`cleanup-classify.sh --root <main folder>`): one question, importance low, only when there
       are some; yes runs `close-work.sh` on each.
-   6. One line: done, and, after a merge, how to bring the main folder's parent branch up to date (AID does not pull).
+   6. One line: done, and, after a merge, how to bring the main folder's parent branch up to date (AID does not pull;
+      NM-01 allows this one instruction line to name the command).
       `HALT`.
 
 ##### 3. Work state
@@ -5502,9 +5511,9 @@ of `.github/workflows/installer-tests.yml`):
 
 | Group | Asserts |
 |---|---|
-| NM-01 | As narrowed (Q85): no `git merge` (`git merge-base` and `git merge-tree` excepted) and no `git pull` without `--ff-only`, outside `canonical/aid/scripts/pipeline/merge-parent.sh` |
+| NM-01 | As narrowed (Q85): no `git merge` (`git merge-base` and `git merge-tree` excepted) and no `git pull` without `--ff-only`, outside `canonical/aid/scripts/pipeline/merge-parent.sh`. Instruction-only exception: the one line of `canonical/skills/aid-monitor-pipeline/references/close.md` that tells the user how to bring the main folder's parent branch up to date (CLOSE step 6) may name `git pull` as text for the user to run; the file runs no such command |
 | NM-03 | `gh pr create` / `glab mr create` only under `canonical/skills/aid-monitor-pipeline/`; no exemption left |
-| NM-05 | An executed `git push` only in `canonical/aid/scripts/pipeline/push-approved.sh`. Text-only exceptions: the safety self-checks of `cleanup-classify.sh` and `close-work.sh`, where `git push` (and the forms below) may appear only on a comment line or inside a quoted search pattern; any other such line in them fails; nowhere a forced push (`--force`, `-f`, `+<ref>`), a remote deletion (`--delete`, `:<branch>`) or a hosting call that deletes a branch |
+| NM-05 | An executed `git push` only in `canonical/aid/scripts/pipeline/push-approved.sh`. Text-only exceptions: the safety self-checks of `cleanup-classify.sh` and `close-work.sh`, where `git push` (and the forms below) may appear only on a comment line or inside a quoted search pattern; any other such line in them fails. Instruction-only exception: the one line of `canonical/skills/aid-kb-build/references/finish.md` that tells the user how to push the KB commit (Feature 004, FINISH) may name `git push` as text for the user to run, with no target branch named (NM-02); the file runs no push. Nowhere a forced push (`--force`, `-f`, `+<ref>`), a remote deletion (`--delete`, `:<branch>`) or a hosting call that deletes a branch |
 | NM-06 | `git branch -D` only in `close-work.sh`; no `git worktree remove --force` anywhere (`dashboard/scripts/delete-pipeline.sh` drops it, Files and layout), with the same text-only exceptions as NM-05 |
 
 **Unit tests** -- on throwaway repositories with a local bare repository as the remote:
