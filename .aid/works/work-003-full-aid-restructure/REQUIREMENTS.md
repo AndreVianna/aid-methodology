@@ -3389,8 +3389,9 @@ Planning and Building can find it wrong.
 - **Writer -- an extension of Feature 004's `--review` mode.** Feature 004 defines `--kb --review --grade G
   --notes T` for the KB state file. Without `--kb`, the same mode appends the same entry (`at`, `grade`, `by`
   = the saved `active_skill`, `notes`) to the work's `STATE.yml` `reviews`, the file resolved like every work
-  write. Same grade validation (exit 4), lock and atomic rename. Features 006 and 007 may use it for their own
-  reviews.
+  write. When the file has no `reviews` key (a work made before this feature), the same write adds it, block
+  style, at the top level (Q130). Same grade validation (exit 4), lock and atomic rename. Features 006 and 007
+  may use it for their own reviews.
 
 ##### 5. Components
 
@@ -3572,7 +3573,8 @@ of `.github/workflows/installer-tests.yml`):
   cited criteria and the identity block, with a Source that names no feature; the output for a split document,
   in both shapes, is unchanged; a Source naming no criterion still fails.
 - `tests/canonical/test-writeback-state.sh`: `--review` without `--kb` appends a `reviews` entry to the work file,
-  with `by` the saved skill; a bad grade exits 4 and changes nothing; the file parses through the dashboard reader;
+  with `by` the saved skill; on a work file with no `reviews` key it adds the key with that entry; a bad grade
+  exits 4 and changes nothing; the file parses through the dashboard reader;
   `--kb --review` is unchanged. `--pipeline --field "Effort Check"` accepts `--`, `unknown` and a level name, and
   refuses anything else with exit 4.
 - `tests/canonical/test-scoped-review-cycles.sh`: SC10 and SC11 as in Migration.
@@ -4033,6 +4035,9 @@ changes `REQUIREMENTS.md` only through `/aid-specify` and a KB document only thr
       `BLUEPRINT.md`, say) is kept, with a warning naming it: nothing is dropped.
   - **Old lite works**: `delivery_state`, `gate_*`, `delivery_lifecycle` and `delivery_gate` become
     `deliveries.delivery-001`.
+  - **A nested work that also carries those flattened keys** (the old work-state template wrote them on every
+    work): the nested `deliveries/` data wins. The flattened keys are dropped and never mapped onto
+    `deliveries.delivery-001` (Q129).
   - **Every work**:
     - every `ticket_ref` (work, delivery, task) becomes a `sources:` entry -- `ref`, `kind: ticket`, `added` the
       work's `started`, `phase: --`, `effect: 'from ticket_ref (<level>)'` -- one per distinct ref;
@@ -4168,7 +4173,8 @@ list.
 - `tests/canonical/test-slice-requirements.sh`: both new Source forms slice as Feature 005 says; the old form still
   reads.
 - `tests/canonical/test-work-state-migration.sh`, on throwaway fixtures (a main folder and a registered worktree): a
-  nested work, an old lite work and a single-layout work convert to the expected file and tree; `ticket_ref` at each
+  nested work, an old lite work and a single-layout work convert to the expected file and tree; a nested work that
+  also carries the flattened delivery keys keeps its nested delivery data and loses those keys; `ticket_ref` at each
   level becomes one `sources:` entry per ref; delivery `qa` lands under fresh ids with its old place; the dropped
   keys go and `intent.depth` takes `pipeline.path`; phase names are rewritten; the record follows each legacy row,
   the type only where Q74 says; a work started by `aid-describe` and now at `Detail` gets `/aid-plan` at START; an

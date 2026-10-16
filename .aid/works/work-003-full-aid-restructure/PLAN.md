@@ -42,14 +42,15 @@ The maintainer set the shape in the work `STATE.yml` `qa` Q111-Q127.
 
 ## Common Gate (G0)
 
-Every delivery's gate ends with G0. G0 is checked on a tree whose last change is the delivery's
-resync, in a session started after it (The resync rule). G0 holds when all of these are true:
+Every delivery's gate ends with G0. G0 is checked on a tree whose last resync-relevant change is the
+delivery's resync, in a session started after it (The resync rule). G0 holds when all of these are
+true:
 
 - `HOME="$(mktemp -d)" bash tests/run-all.sh` exits 0 and the site `npm test` passes, both run
   locally. The canonical lane does not run on feature branches (`test-landscape.md` § CI Lanes and
   Where They Run).
-- Running `run_generator.py` again leaves no diff under `profiles/` and no change in the installed
-  trees.
+- `run_generator.py`, run in a scratch copy made as "Testing between tasks" says, produces `profiles/`
+  and installed trees identical to the live ones.
 - `installer-tests.yml` is green for the delivery's commits on `work-003`. (AC-25) It covers what CI
   really runs:
   - the Linux bash-harness job runs its `SUITES` list, where PowerShell halves run under `pwsh` 7.
@@ -87,10 +88,14 @@ resync, in a session started after it (The resync rule). G0 holds when all of th
   - in the task's own commit, the state file holds the task's terminal state and a review grade at or
     above `minimum_grade` (the task's `review` field);
   - from delivery-008 on, the work `STATE.yml` `reviews` also holds an entry noting `task-NNN verify`.
-    The work-file `--review` mode reaches the installed writer only with delivery-007's resync.
+    The work-file `--review` mode reaches the installed writer only with delivery-007's resync. It
+    adds the `reviews` key to this work's file, which has none (F005 § 4, Q130).
 
-  The file holding the task's state is the per-task `STATE.yml` up to delivery-008's resync, and the
-  work `STATE.yml` after it.
+  **Which file holds the task's state.** The resync is no task (The resync rule), so no task straddles
+  delivery-008's file switch:
+  - deliveries 001-008: every task ends before delivery-008's resync, and its file is its per-task
+    `STATE.yml`. The migration deletes that file, but `git log -- <its path>` still reads its history;
+  - delivery-009: every task runs after that resync, and its file is the work `STATE.yml`.
 
 ## Deliverables
 
@@ -138,7 +143,7 @@ It is a distinct unit because nothing else in the work can be built before it.
 2. The rules sections, the templates (`intent:`, `sources:`, no `ticket_ref`) and the conversation-suite harness. Each task updates, in that same task, the suites asserting the text it changes, for example the summary-count suites of the F001 Migration table.
 3. `/aid-orchestrate` and its references, the re-pointed skills and the retirements, each with its asserting suites. These need the rules sections and templates.
 4. Skill descriptions, the builder template, and the site and KB edits.
-5. The new `test-skill-guide.sh` and the delivery's sample files, then the resync task.
+5. The new `test-skill-guide.sh` and the delivery's sample files, then the delivery's resync step.
 
 **Gate Criteria:**
 - [ ] `tests/canonical/test-skill-guide.sh` SG-01 to SG-06 pass:
@@ -238,7 +243,7 @@ The Notes explain why each is needed.
 2. The writer modes, the phase-name enum and the dashboard fork. Then `question-protocol.md`, `skill-steps.md`, `project-state-template.yml`, the work-state template, and `advance.mjs` with its test. Both groups only add, and the next wave consumes them.
 3. The gate's § 3a and § 3b and `/aid-orchestrate`, with `test-work-initiation-gate.sh` in the same task. These need the writer's `--create`, `--check` and `--repair`.
 4. Every allocation point, continuation line, State Detection section, `skill-steps.md` citation, advance word, finisher and phase write site, and both readers' phase sites. Each task updates the suites asserting those texts, for example `test-pipeline-status-walkthrough.sh` and `test-writeback-state.sh`. These need the converted gate and the new names. The flows are regenerated at the end of the wave.
-5. The new group E, NM, DT and stage-rail suites, the writer and gate units, and the delivery's sample files. Then the resync task.
+5. The new group E, NM, DT and stage-rail suites, the writer and gate units, and the delivery's sample files. Then the delivery's resync step.
 
 **Gate Criteria:**
 - [ ] `test-skill-steps.sh` group E passes:
@@ -308,7 +313,7 @@ from the engine.
 1. Re-run the spec's stated searches: SS-01 forms, interviewer sites, question-record sites, `AskUserQuestion` users, `reviewer-brief.md` files and citations of the chaining file. Reconcile the edit list.
 2. `agent-boilerplate.md`'s new section. The agent edits depend on it.
 3. Two groups that do not depend on each other. First, the sweep over skills, shared engines, agents and briefs: banners, the chaining file, the protocol line, question-record sites, the interviewer removed, `### What to report`. Second, the dashboard work fields. Each task updates the suites asserting the texts it changes, for example `test-describe-full-only.sh` and `test_index_html.py`.
-4. The new group S and dashboard cases, and the delivery's sample files. Then the resync task.
+4. The new group S and dashboard cases, and the delivery's sample files. Then the delivery's resync step.
 
 **Gate Criteria:**
 - [ ] `test-skill-steps.sh` group S passes, and group E still passes:
@@ -353,7 +358,7 @@ is checked at delivery-007 (`003-09`) and delivery-009 (`003-10`).
 2. `idea-drafts.sh`, the writer fields, `kind-catalog.yml`, `design-seed.md` and the README template.
 3. `aid-brainstorm` and its references, the `skill-steps.md` deletion rule, the routing rows and the gate's legacy rows. Each task brings its asserting suites. These need wave 2.
 4. The retirements and re-pointing, each with the suites that name the retired skills (F003 § 6 Tests). These need the new skill in place.
-5. The new `test-idea-shaping.sh` and `test-idea-drafts.sh` and the delivery's sample files. Then the resync task.
+5. The new `test-idea-shaping.sh` and `test-idea-drafts.sh` and the delivery's sample files. Then the delivery's resync step.
 
 **Gate Criteria:**
 - [ ] `test-idea-shaping.sh` ID-01 to ID-07 pass:
@@ -438,7 +443,7 @@ is checked at delivery-007 (`003-09`) and delivery-009 (`003-10`).
 2. `kb-state-template.yml`, the writer's `--kb` modes, `kb-commit.sh`, `render-kb-view.sh` and `build-kb-index.sh`, each with its asserting suites.
 3. The four skills, the `skill-steps.md` and `question-protocol.md` edits, and the orchestration and brainstorm edits. Each moved skill is moved together with the suites that follow its text (F004 § 7, Re-pointed suites). These need wave 2.
 4. Two groups. The format-6 carriers and KB step (bash, PowerShell, the `Test-AidInstaller.ps1` case) together with every suite asserting format 5. Both dashboard readers with their KB tests and fixtures. Then the retirements and re-pointing, each retirement with the suites it retires or changes.
-5. The new group K1 and the new unit suites, and the delivery's sample files. Then the resync task: its resync converts this repository's KB, and `kb.html` is then rendered.
+5. The new group K1 and the new unit suites, and the delivery's sample files. Then the delivery's resync step: it converts this repository's KB, and `kb.html` is then rendered.
 
 **Gate Criteria:**
 - [ ] `test-kb-skills.sh` group K1 passes:
@@ -508,7 +513,7 @@ facts in a new project is checked at delivery-007 (`004-10`) and delivery-009 (`
 2. Two independent groups, each with its asserting suites. First, `worktree-lifecycle.sh` with `--create --parent-branch` and the work-state key. Second, `kb-commit.sh --new-project`, `new-document.md` and the two document templates.
 3. The new-project step in the gate, the drift check, the `check-intent.md` backlog read, and the format-6 baselines and parent-branch steps (with the `Test-AidInstaller.ps1` case). These need wave 2.
 4. The retirements and re-pointing, each with the suites that name the retired skills.
-5. The new group K2 and the new unit cases, and the delivery's sample files. Then the resync task.
+5. The new group K2 and the new unit cases, and the delivery's sample files. Then the delivery's resync step.
 
 **Gate Criteria:**
 - [ ] `test-kb-skills.sh` group K2 passes, and group K1 still passes:
@@ -537,7 +542,8 @@ rules and the KB call.
   FINISH and REVISE, and nine references. `aid-define` and `templates/specs/` are deleted. (AC-16)
 - The two-part `requirements-template.md` and the bare `requirements.md` scaffold. (AC-16, AC-44)
 - `effort-check.md`, with one row per tool. (AC-12)
-- Writer: `--review` on the work file and `"Effort Check"`. The template drops `interview`,
+- Writer: `--review` on the work file, adding the `reviews` key when a work file has none (Q130), and
+  `"Effort Check"`. The template drops `interview`,
   `features` and `review_history`. (AC-44)
 - `slice-requirements.sh` reads the unsplit shape.
 - `skill-steps.md`: the business-part row and the KB call on confirmation.
@@ -554,7 +560,7 @@ accepts in Feature 005's § 2: "No release carries that gap, since every feature
 2. The templates, the writer's `--review` and `"Effort Check"`, and `slice-requirements.sh`. Each comes with its asserting suites, for example `test-work-state-template.sh`, `test-slice-requirements.sh` and `test_feature009.py`.
 3. `aid-specify` and its references, the `skill-steps.md` rows, `reviewer-dispatch.md`, the ledger schema and the legacy rows. Each task updates the suites F005 § 7 lists for its file, for example `test-scoped-review-cycles.sh` and `test-ticket-retirement-structural.sh`. These need wave 2.
 4. Retire `aid-define` with the suites that name it, re-point, and update the KB.
-5. The new `test-specify.sh`, the delivery's sample files and the deferred-list rows for the samples that now run. Then the resync task.
+5. The new `test-specify.sh`, the delivery's sample files and the deferred-list rows for the samples that now run. Then the delivery's resync step.
 
 **Gate Criteria:**
 - [ ] `test-specify.sh` SP-01 to SP-08 pass:
@@ -599,7 +605,7 @@ Toolchain and Branching).
 2. The templates, the writer's single layout and `--plan-sync`, `derive-waves.sh --plan` and `slice-requirements.sh`. Each task updates the suites F006 § 8 lists for its file, for example `test-writeback-state.sh`, `test-derive-waves.sh`, `test-task-state-transitions.sh` and `test-producer-completeness.sh`.
 3. Two independent groups that both need wave 2, each with its asserting suites. First, `aid-plan` and its references, with the gate, allocation, engine, `aid-deploy` and `aid-architect` edits. Second, the dashboard's one-layout reading with the reader, server and parity suites.
 4. The format-6 work-state step: bash, then its PowerShell twin, with fixtures written first and the `Test-AidInstaller.ps1` case. It needs the final single layout.
-5. Retire `aid-detail` with the suites that name it, and re-point. Then the new `test-plan.sh` and `test-work-state-migration.sh` and the delivery's sample files. Then the resync task: its `aid update` migrates this work's own state.
+5. Retire `aid-detail` with the suites that name it, and re-point. Then the new `test-plan.sh` and `test-work-state-migration.sh` and the delivery's sample files. Then the delivery's resync step: its `aid update` migrates this work's own state.
 
 **Gate Criteria:**
 - [ ] `test-plan.sh` PL-01 to PL-07 pass:
@@ -613,7 +619,7 @@ Toolchain and Branching).
   - a cycle exits 2 with the plan untouched;
   - a malformed graph written through the writer exits 11 with both files unchanged.
   (AC-19)
-- [ ] `test-work-state-migration.sh` passes on nested, old lite and single-layout fixtures, with bash and PowerShell byte-identical and a second run changing nothing. It also passes on a nested work whose `STATE.yml` also carries the template's flattened delivery keys (`delivery_state`, `gate_*`, `delivery_lifecycle`, `delivery_gate`), the shape this work has. On that fixture the nested `deliveries/` data wins and the flattened keys are dropped, never mapped onto `delivery-001`. The `Test-AidInstaller.ps1` case passes under `pwsh` and 5.1. After the resync task, this work's own state shows the migration on disk:
+- [ ] `test-work-state-migration.sh` passes on nested, old lite and single-layout fixtures, with bash and PowerShell byte-identical and a second run changing nothing. It also passes F006 § 9's fixture for a nested work that also carries the flattened delivery keys (Q129), the shape this work has. The `Test-AidInstaller.ps1` case passes under `pwsh` and 5.1. After the resync, this work's own state shows the migration on disk:
   - `.aid/works/work-003-full-aid-restructure/` has no `deliveries/delivery-*/STATE.yml`;
   - every task has `tasks/task-NNN/DETAIL.md` and a `tasks_lifecycle` entry;
   - `derive-waves.sh --plan --check` exits 0 on its `PLAN.md`.
@@ -624,16 +630,14 @@ Toolchain and Branching).
 **Notes:**
 - This delivery is built directly by the main conversation, like every delivery up to 009 (Q127),
   which also covers Q119.
-  - Before the resync task, its task states are written to the old per-task state files.
-  - From the resync task on, the resync's migration has moved them into `tasks_lifecycle`, and the
-    single-layout writer takes the same command lines.
-- This work's own `STATE.yml` has a nested layout and also the template's flattened delivery keys.
-  F006 § 8 converts a nested work and an old lite work in separate branches, and does not say which
-  wins for a work that has both. The migration step takes the nested data and drops the flattened
-  keys; the gate's extra fixture holds it to that.
-- The gate's grade is recorded with `writeback-state.sh --delivery-id 008 --gate-field`, a mode the
-  single-layout writer still has. Delivery-009's format-6 building step then carries it into
-  `deliveries.delivery-008.verify`.
+  - Every task of this delivery reaches its terminal state in its per-task state file before the
+    delivery's resync step. That step is no task (The resync rule).
+  - The resync's migration then moves those states into `tasks_lifecycle`.
+- This work's `STATE.yml` is nested and also carries the template's flattened delivery keys. F006 § 8
+  (Q129) makes the nested data win and drops those keys, and F006 § 9 adds the fixture.
+- The delivery verification's grade is recorded with `writeback-state.sh --delivery-id 008
+  --gate-field` before the resync. The migration carries it into `deliveries.delivery-008`, and
+  delivery-009's format-6 building step carries it into `verify`.
 
 ### delivery-009: Building tested, verified and simplified, one task at a time
 - **What it delivers:** One `/aid-execute` builds the whole plan one task at a time on the work's one branch -- build, test, verify, simplify once, re-verify only when the simplification changed something -- with a full-suite baseline, the confirmation before building, and approval stops only at milestones and real blockers.
@@ -674,7 +678,7 @@ Toolchain and Branching).
   dashboard reads the building fields.
 - **Suites:** new `test-execute.sh` (EX-01 to EX-08) and `test-simplify-guard.sh`, added to `SUITES`.
   The `aid-execute` PL-04 row leaves the shared exempt list.
-- **The switch, after the resync task** (Toolchain and Branching, The switch questions):
+- **The switch, after the resync** (Toolchain and Branching, The switch questions):
   - this work's type is recorded as `change` (Q124). This completes the record that delivery-008's
     migration filled with `aid-execute` at `START`;
   - deliveries 001-009 get their `verify` and `commit` (Q123);
@@ -688,7 +692,7 @@ close runs through `/aid-orchestrate`.
 2. The writer's building part with its fork and parity case, `simplify-guard.sh`, `derive-waves.sh --delivery`, and the work-state template. Each comes with its asserting suites, for example `test-writeback-state.sh`, `test-derive-waves.sh` and `test-work-state-template.sh`.
 3. `aid-execute` and its references, `complexity-score.sh` and `compute-block-radius.sh`, `skill-steps.md`, the shortcut engine's APPROVAL-HALT, `aid-plan` `revise.md`, `aid-developer` and the `rules.md` tracking line. Each task updates the suites F007 § 7 lists for its file, for example `test-pipeline-status-walkthrough.sh`, `test-ticket-retirement-structural.sh` and `test-compute-block-radius.sh`. These need wave 2.
 4. The format-6 building step (bash, PowerShell, the `Test-AidInstaller.ps1` case) and the dashboard's building fields. These need the template. Then the re-pointing.
-5. The new `test-execute.sh` and `test-simplify-guard.sh`, the delivery's sample files and the deferred-list rows for the samples that now run. Then the resync task, which installs the new `/aid-execute` and migrates this work's building fields. Then, in a new session, the gate and the switch.
+5. The new `test-execute.sh` and `test-simplify-guard.sh`, the delivery's sample files and the deferred-list rows for the samples that now run. Then the delivery's resync step, which installs the new `/aid-execute` and migrates this work's building fields. Then, in a new session, the gate and the switch.
 
 **Gate Criteria:**
 - [ ] `test-execute.sh` EX-01 to EX-08 pass:
@@ -748,7 +752,7 @@ that `/aid-orchestrate` has run since delivery-001.
 2. The three new scripts and the moved `cleanup-classify.sh`, the writer's `--pull-request`, the template, the settings and the stand-ins. The moved script goes together with the housekeep classify, deletion-split and work-folder-safety suites that follow it.
 3. `aid-monitor-pipeline` and its references, the gate row, `skill-steps.md`, the finishing skills, `aid-operator`, `consumption-protocol.md`, and the `milestone.md` and `finish.md` edits. Each comes with its asserting suites. These need wave 2.
 4. `delete-pipeline.sh` with `test-delete-pipeline.sh` in the same task. Then the dashboard CI card and the re-pointing.
-5. The new suites, the narrowed and extended NM groups, and the delivery's sample files. Then the resync task.
+5. The new suites, the narrowed and extended NM groups, and the delivery's sample files. Then the delivery's resync step.
 
 **Gate Criteria:**
 - [ ] `test-monitor-pipeline.sh` MP-01 to MP-05 pass. `test-never-merges.sh` passes:
@@ -818,7 +822,7 @@ yet, so the old wrapper skills keep working beside the new ones until delivery-0
 2. `kind-catalog.yml` v2, `check-intent.md` § The merged catalog, writer `--kind` and `investigation`, the gate's `--kind` and the template. Each comes with its asserting suites, for example `test-idea-shaping.sh` ID-04 and `test-writeback-state.sh`.
 3. `action-start.md` and the seven action skills, which need wave 2. Removing the four generated skills' rows from the shortcut catalog belongs to the same task that makes those four skills hand-authored, together with the suites that count catalog rows or doorways (`test-deploy-monitor-repurpose.sh` DMR30-DMR35, `test-shortcut-builder-invariants.sh`, `test-catalog-dirs-parity.sh`, the site's skill-count tests, `test-doc-counts.sh`). The rewrite of `aid-test` and `aid-prototype` comes with `test-work-initiation-gate.sh` Group G and its reconciliation group (Q106).
 4. The catalog readers in the phase and supporting skills, the close moves (with `test-close-work.sh` and the `cleanup-classify.sh` suites), and the skill guide (with `test-skill-guide.sh`). These need the skills of wave 3.
-5. The new group A and the new unit cases, and the delivery's sample files. Then the resync task.
+5. The new group A and the new unit cases, and the delivery's sample files. Then the delivery's resync step.
 
 **Gate Criteria:**
 - [ ] `test-actions.sh` group A passes:
@@ -898,7 +902,7 @@ delivery also empties the lists that wait on Feature 009.
    - `feedback-artifacts/`;
    - the builder.
 4. The format-6 doorway rows, with `test-work-state-migration.sh` and the `Test-AidInstaller.ps1` case. Then the dashboard markers, with the parity test of the two legacy maps. These need the deletions.
-5. The new group B and the delivery's sample files. Then the resync task.
+5. The new group B and the delivery's sample files. Then the delivery's resync step.
 
 **Gate Criteria:**
 - [ ] `test-actions.sh` group B passes, and group A still passes:
@@ -970,7 +974,7 @@ delivery also empties the lists that wait on Feature 009.
    - the identity statement;
    - § The merged catalog's second source and skip rule, with the `.aid/kinds/` cases.
 3. The kind hooks of `aid-review`, `aid-research` and `aid-report`, which need the merged catalog.
-4. The new group C and the delivery's sample files. Then the resync task.
+4. The new group C and the delivery's sample files. Then the delivery's resync step.
 
 **Gate Criteria:**
 - [ ] `test-actions.sh` group C passes, and groups A and B still pass:
@@ -1013,7 +1017,7 @@ end-of-work checks that make the branch releasable.
 **Waves:**
 1. Re-run DN-01 and DN-03 without the release flag to list every hit, and reconcile the documents to rewrite.
 2. `retired-names.txt` and `test-doc-names.sh`. Then the documentation rewrite and the site regeneration, each with `test-doc-counts.sh` and the site checks in the same task.
-3. The resync task. The release checks under `AID_RELEASE_CHECK=1` and the full integration suite are gate checks, run after it (The resync rule).
+3. The delivery's resync step. The release checks under `AID_RELEASE_CHECK=1` and the full integration suite are gate checks, run after it (The resync rule).
 
 **Gate Criteria:**
 - [ ] With `AID_RELEASE_CHECK=1`, DN-01, DN-02 and DN-03 pass:
@@ -1071,25 +1075,41 @@ later migration of this work meets no duplicate task id.
   - the patches to today's `/aid-execute` (skipping Check 5 and "merge to main");
   - `execution.max_parallel_tasks` (Q118);
   - the per-task worktrees (Q120);
-  - Q119 (the main conversation running delivery-008's last task and gate), now the general rule.
+  - Q119 (the main conversation running delivery-008's resync and gate), now the general rule.
   Q112 still holds.
 
-**The resync rule.** In the live work tree, `run_generator.py` runs only as a delivery's resync. The
-resync renders `profiles/`, verifies, and resyncs the installed trees, all at once.
+**The resync rule.** It holds for every delivery, whichever builder runs it.
 
-1. **The resync runs after the delivery's last file change.** Whatever changes a file after a resync
-   is followed by another resync before the gate is checked:
-   - a review fix round;
-   - a delivery-verification fix;
-   - a simplify commit;
-   - a milestone correction;
-   - a fix the gate itself asks for.
-2. **Every resync ends the session.** Whatever follows it -- the gate, a delivery verification, a
-   milestone -- runs in a new session, from the freshly installed skills. No skill text loaded
-   before the resync is acted on.
-3. **The gate is checked only on a tree whose last change is a resync.** The gate covers the stanza's
-   samples and G0.
-4. A task that edits an agent does not run the generator. Its render reaches `profiles/` at the
+- In the live work tree, `run_generator.py` runs only as a delivery's resync. The resync renders
+  `profiles/`, verifies, and resyncs the installed trees, all at once.
+- A **resync-relevant change** is a change to a file the resync renders or installs: anything under
+  `canonical/`, `bin/` or `lib/`, which `run_generator.py` renders and `release.sh --stage-only`
+  stages for `aid update`.
+- These are not resync-relevant: state writes into the work folder through the writer, and commits
+  under `.aid/knowledge/` (the KB is not installed).
+
+1. **The resync is a delivery step, never a task.** No task file holds it, and no build step of any
+   builder runs it. The main conversation runs it, in a session of its own, at the point where the
+   delivery's resync-relevant changes are final:
+   - deliveries 001-009: after the delivery verification and its fix rounds (step 3 below);
+   - deliveries 010-014: when the new `/aid-execute` pauses at the delivery's MILESTONE approval
+     question (see "How deliveries 010-014 are built").
+   The resync is committed alone, as `delivery-NNN: resync`, and the session ends.
+2. **The gate runs in a new session**, from the freshly installed skills, on a tree whose last
+   resync-relevant change is that resync. No skill text loaded before the resync is acted on. The gate
+   covers the stanza's criteria, the samples and G0.
+3. **A resync-relevant change after a resync** starts the cycle again: another resync in its own
+   session, then the gate in a new one. Such a change can be a fix the gate asks for, or a change the
+   maintainer asks for at the milestone.
+4. **Why this cannot loop.** A resync starts no work.
+   - F007 judges a result stale only "when a `Done` task in their scope has a commit they do not
+     contain" (F007 § 2 step 7). NEXT's KB check reads only a task's commits.
+   - The resync commit is no task's commit, so it makes no `verify`, `full_suite` or approval stale,
+     and routes nothing.
+   - The cycle repeats only when the gate fails or the maintainer asks a change, and each repetition
+     builds that fix.
+   - It ends at the first resync whose gate passes and whose approval is answered yes.
+5. A task that edits an agent does not run the generator. Its render reaches `profiles/` at the
    resync. Tasks test as the intro's "Testing between tasks" says.
 
 **How deliveries 001-009 are built (Q127, Q125).** The main conversation drives each delivery. It
@@ -1122,33 +1142,44 @@ and `AID_WORK_DIR` exported for this work (tech-debt W5-5).
    - Write `--lifecycle Gated`.
    - One `aid-reviewer` pass over the delivery's diff from its first task's base, graded. Fix rounds
      follow as in step 2.6.
-   - Record the grade with `--gate-field Grade`. The installed writer still has that mode up to and
-     including delivery-009's verification, which runs before delivery-009's resync. The format-6
-     building step that delivery-009's resync runs carries every delivery's gate grade into its
-     `verify`.
-4. **The resync task** (the delivery's last task), with its own review. Then the session ends.
-5. **The gate, in a new session:** the stanza's criteria, the samples and G0.
-   - A gate failure is fixed, then the delivery goes back to step 4.
+   - Record the grade with `--gate-field Grade`. Every delivery's verification runs before its own
+     resync, so this mode is still installed, up to and including delivery-009. The format-6 building
+     step that delivery-009's resync runs carries every delivery's gate grade into its `verify`.
+4. **The resync** (resync rule 1). Then the session ends.
+5. **The gate, in a new session** (resync rule 2).
+   - A gate failure is fixed as a fix round of step 3, then the delivery goes back to step 4.
    - When the gate passes, write `--lifecycle Done`.
-   - Exception for delivery-009: its resync installs the F007 writer, which refuses `--lifecycle`,
-     `--gate-field` and `--field Review` (exit 4), and derives the delivery state itself. So from
-     delivery-009's resync task on, a review grade is written with `--field Verify`, and no lifecycle
+   - For delivery-009 only, its resync installs the F007 writer, which refuses `--lifecycle`,
+     `--gate-field` and `--field Review` (exit 4) and derives the delivery state itself. So a fix after
+     delivery-009's resync records its grade with `--delivery-id 009 --field Verify`, and no lifecycle
      is written.
 
-**How deliveries 010-014 are built.** The new `/aid-execute` runs the plan from its saved step.
+**How deliveries 010-014 are built.** The new `/aid-execute` runs the plan from its saved step,
+following F007 § 2.
 
-- Each delivery's resync task is its last planned task. The main conversation stops the run when
-  that task is `Done`, using F007's control signals, and ends the session (resync rule 2).
-- The new session resumes `/aid-execute`. Its routing runs DELIVERY (verify, one simplify, and a
-  re-verify when something changed) and then MILESTONE.
-- **Before answering the milestone approval**, the main conversation checks the gate on the head: the
-  stanza's criteria, the samples and G0, except G0's lane item, which the push carries.
-  - The approval comes before the push question (F007 MILESTONE steps 3 and 4).
-  - When DELIVERY changed a file after the resync task's commit, or the gate fails, the approval is
-    answered with a change: "resync" and any fix. These become correction tasks (Q77), which are
-    built, followed by a resync and a new session.
-  - Routing then runs DELIVERY again, because `verify` is stale, and asks the milestone again.
-- The yes is given only on a tree whose last change is a resync and whose gate passed.
+- Its steps run in order, all in the session that runs them:
+  - every task's BUILD, TEST, VERIFY, SIMPLIFY, REVERIFY and NEXT, with NEXT's KB check;
+  - then DELIVERY (verify, one simplify, a re-verify when something changed);
+  - FINAL, for the last delivery;
+  - MILESTONE's collect and corrections (step 10, sub-steps 1 and 2).
+  These steps make every resync-relevant change of the delivery. They come before the resync, so
+  none of them runs on skill text loaded before it.
+- MILESTONE's approval question is written `Pending` with `--ask` before it is shown (step 10.3).
+  `ASK` then pauses the work (`lifecycle: Paused-Awaiting-Input`; F002 § 4, Steps and hand-offs,
+  step 3). This is the defined point. The main conversation does not answer it, and ends the session.
+- **Resync session** (resync rule 1): the resync, committed alone, then the session ends.
+- **Gate session** (resync rule 2): the stanza's criteria, the samples and G0 on the head, except G0's
+  lane item, which the push carries. Then the main conversation resumes `/aid-execute`, which asks the
+  open approval question first.
+  - **Gate passed, and the maintainer approves:** the answer is recorded with `--answer --commit
+    <head>`, so the approval covers the resync commit. The push question follows (step 10.4).
+  - **Gate failed, or a change asked:** the approval is answered with the change. It becomes correction
+    tasks (step 10.3, How an answer is recorded), built through the task loop. DELIVERY runs again
+    because `verify` is stale, and the run pauses at the milestone question again. The resync session
+    and the gate session repeat (resync rule 3).
+- After a yes, the KB call on confirmation (step 10.3) may commit under `.aid/knowledge/`. That is not
+  resync-relevant. Its commit reaches the pull request only through its own approval at PUSH
+  (F008 § 2, PUSH, Every way in).
 
 **The switch questions.** Only these moments need the maintainer. No AID skill resumes this work
 before delivery-010, so its record is not consulted until the switch.
