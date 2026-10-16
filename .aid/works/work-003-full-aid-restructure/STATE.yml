@@ -1551,3 +1551,11 @@ qa:
     suggested: 'Accept every recommendation D1-D12, adding task-019 [TEST] test-conversation-runner.sh (D10); fail-safe selection keeps each task''s test step close to a full run (D12).'
     answer: 'Accepted as recommended (accept all).'
     applied_to: 'delivery-001 task files (task-001 to task-019)'
+  - id: Q135
+    category: Detail
+    impact: Medium
+    state: Answered
+    context: 'delivery-002 task proposal (analysis/detail-proposal-delivery-002.md): 38 tasks (task-020 to task-057), 11 points settled by rule (R1-R11), and 2 decisions: D1 when the Feature 002 samples are written; D2 where the DT-02 deferred-list release check runs.'
+    suggested: 'D1: write all 21 Feature 002 samples in delivery-002, the ten delivery-003 runs waiting with waiting_for Feature 002 (sweep). D2: the release checks run only in release.sh live publish mode and the run-all.sh step of release.yml, never in dry-run or stage-only.'
+    answer: 'Accepted as recommended (accept all).'
+    applied_to: 'delivery-002 task files (task-020 to task-057); PLAN.md delivery-003 wave 4 wording'
