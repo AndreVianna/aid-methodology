@@ -386,6 +386,10 @@ review_history:
     event: 'Plan review cycle 1'
     outcome: 'Grade D (2 HIGH, 10 MEDIUM, 5 LOW; 2 OOS); includes Guard 2 and the F002 cross-feature review (Q116)'
     notes: 'F002 shared contracts match F003-F009 except rows 16-17; fixes pending maintainer answers on rows 1 and 10'
+  - date: '2026-10-16'
+    event: 'Plan review cycle 2'
+    outcome: 'Grade D+ (1 HIGH, 3 MEDIUM open): row 10 Recurred; new rows 20-22'
+    notes: 'Rows 1-9, 11-18 confirmed Fixed; spec edits for rows 16-18 consistent with citing features'
 
 # [A] written by the orchestrator on the work's active branch (single
 #     writer). Append-only audit trail of phase transitions and gate
