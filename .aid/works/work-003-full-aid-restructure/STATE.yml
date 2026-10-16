@@ -1543,3 +1543,11 @@ qa:
     suggested: 'Review delivery by delivery: each delivery''s tasks shown as a short table for approval or adjustment.'
     answer: 'Accepted as recommended (delivery by delivery).'
     applied_to: 'aid-detail FIRST-RUN loop'
+  - id: Q134
+    category: Detail
+    impact: Medium
+    state: Answered
+    context: 'delivery-001 task proposal (analysis/detail-proposal-delivery-001.md): 18 tasks and 12 decisions D1-D12 (9 derived waves; test-landscape edit last; SUITES edit as its own CONFIGURE task; SG-04 exempt list scope; doc-count re-sync in the IMPLEMENT tasks; aid-orchestrate site placement; write_backs template key; one smoke run per sample; tickets as fixture files; a permanent run.py test; baselines re-recorded at the gate; fail-safe suite selection).'
+    suggested: 'Accept every recommendation D1-D12, adding task-019 [TEST] test-conversation-runner.sh (D10); fail-safe selection keeps each task''s test step close to a full run (D12).'
+    answer: 'Accepted as recommended (accept all).'
+    applied_to: 'delivery-001 task files (task-001 to task-019)'
