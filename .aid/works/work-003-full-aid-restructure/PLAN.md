@@ -247,6 +247,50 @@ It is a distinct unit because nothing else in the work can be built before it.
 - [ ] `canonical/aid/rules.md` § Tracking discipline names the work state file `STATE.yml`, not `STATE.md`. (KI-001)
 - [ ] G0 passes.
 
+### delivery-001 Execution Graph
+
+| Task | Depends On |
+|------|------------|
+| task-001 | — |
+| task-002 | task-001 |
+| task-003 | task-001 |
+| task-004 | task-001 |
+| task-005 | task-001 |
+| task-006 | task-002, task-003, task-007 |
+| task-007 | task-003 |
+| task-008 | task-006 |
+| task-009 | task-006, task-007, task-008 |
+| task-010 | task-009 |
+| task-011 | task-008, task-009 |
+| task-012 | task-007, task-009 |
+| task-013 | task-006, task-009 |
+| task-014 | task-010 |
+| task-015 | task-014 |
+| task-016 | task-004, task-005, task-010 |
+| task-017 | task-004, task-005, task-010 |
+| task-018 | task-012, task-013, task-015, task-016, task-017, task-019 |
+| task-019 | task-004, task-010 |
+
+| Can Be Done In Parallel |
+|------------------------|
+| task-002, task-003, task-004, task-005 |
+| task-010, task-011, task-012, task-013 |
+| task-014, task-016, task-017, task-019 |
+
+```wave-map
+delivery: 001
+wave 1: task-001
+wave 2: task-002, task-003, task-004, task-005
+wave 3: task-007
+wave 4: task-006
+wave 5: task-008
+wave 6: task-009
+wave 7: task-010, task-011, task-012, task-013
+wave 8: task-014, task-016, task-017, task-019
+wave 9: task-015
+wave 10: task-018
+```
+
 ### delivery-002: One work record and one set of step rules (Feature 002, engine)
 - **What it delivers:** Every work gets a record -- type, running skill, step -- from the moment it is created; every skill writes its step before working and says, through the new advance words, which step comes after a pause; any session resumes exactly where the record says; the phase names become Definition, Specification, Planning, Building, CI everywhere; the question protocol, the step rules and the approval and merge rules are written once.
 - **Features:** feature-002-step-by-step-decisions (engine part)
@@ -372,6 +416,72 @@ The Notes explain why each is needed.
     paused, in every skill installed between the two deliveries.
 - The sweep keeps everything the user sees and every cleanup.
 
+### delivery-002 Execution Graph
+
+| Task | Depends On |
+|------|------------|
+| task-020 | — |
+| task-021 | task-020 |
+| task-022 | task-020 |
+| task-023 | task-020, task-022 |
+| task-024 | task-020 |
+| task-025 | task-021 |
+| task-026 | task-022 |
+| task-027 | task-022 |
+| task-028 | task-022, task-023 |
+| task-029 | task-021, task-025 |
+| task-030 | task-023, task-025 |
+| task-031 | task-021, task-025 |
+| task-032 | task-022, task-029, task-030 |
+| task-033 | task-031 |
+| task-034 | task-023, task-025, task-030 |
+| task-035 | task-023, task-025, task-030 |
+| task-036 | task-023, task-025, task-030 |
+| task-037 | task-023, task-025, task-030 |
+| task-038 | task-023, task-025, task-030 |
+| task-039 | task-023, task-025, task-030 |
+| task-040 | task-023, task-025, task-030, task-039 |
+| task-041 | task-023, task-025, task-030 |
+| task-042 | task-023, task-025, task-030 |
+| task-043 | task-023, task-025, task-030 |
+| task-044 | task-023, task-025, task-030 |
+| task-045 | task-022, task-023, task-029, task-030 |
+| task-046 | task-029, task-031 |
+| task-047 | task-029, task-030 |
+| task-048 | task-031 |
+| task-049 | task-032, task-034, task-035, task-036, task-037, task-038, task-039, task-040, task-041, task-042, task-043, task-044 |
+| task-050 | task-032, task-033, task-034, task-035, task-036, task-037, task-038, task-039, task-040, task-041, task-042, task-043, task-044 |
+| task-051 | task-040, task-042 |
+| task-052 | task-046 |
+| task-053 | task-033 |
+| task-054 | task-032, task-034, task-035, task-036, task-037, task-038, task-039, task-040, task-041, task-042, task-043, task-044 |
+| task-055 | task-026, task-027, task-028, task-054 |
+| task-056 | task-050, task-051, task-055 |
+| task-057 | task-045, task-049, task-053, task-056 |
+
+| Can Be Done In Parallel |
+|------------------------|
+| task-021, task-022, task-024 |
+| task-023, task-025, task-026, task-027 |
+| task-028, task-029, task-030, task-031 |
+| task-032, task-033, task-034, task-035, task-036, task-037, task-038, task-039, task-041, task-042, task-043, task-044, task-045, task-046, task-047, task-048 |
+| task-040, task-052, task-053 |
+| task-049, task-050, task-051, task-054 |
+
+```wave-map
+delivery: 002
+wave 1: task-020
+wave 2: task-021, task-022, task-024
+wave 3: task-023, task-025, task-026, task-027
+wave 4: task-028, task-029, task-030, task-031
+wave 5: task-032, task-033, task-034, task-035, task-036, task-037, task-038, task-039, task-041, task-042, task-043, task-044, task-045, task-046, task-047, task-048
+wave 6: task-040, task-052, task-053
+wave 7: task-049, task-050, task-051, task-054
+wave 8: task-055
+wave 9: task-056
+wave 10: task-057
+```
+
 ### delivery-003: Questions one topic at a time, no banners (Feature 002, sweep)
 - **What it delivers:** No state banner or "you are here" map anywhere; every skill that asks the user follows the one question protocol in plain text in all five tools; every question is recorded in one place; the interviewer agent retires; the dashboard shows each work's step, its open questions, an open call and a record warning.
 - **Features:** feature-002-step-by-step-decisions (sweep part)
@@ -423,6 +533,52 @@ from the engine.
 - [ ] Dashboard fixtures show the card lines for a work at each phase, during a call, and with a missing and an inconsistent record. Both readers pass parity, and SS-07 passes for `chat-node/`. (AC-41)
 - [ ] G0 passes.
 
+### delivery-003 Execution Graph
+
+| Task | Depends On |
+|------|------------|
+| task-058 | — |
+| task-059 | task-058 |
+| task-060 | task-058 |
+| task-061 | task-058 |
+| task-062 | task-058 |
+| task-063 | task-058 |
+| task-064 | task-058 |
+| task-065 | task-058 |
+| task-066 | task-058 |
+| task-067 | task-058 |
+| task-068 | task-058 |
+| task-069 | task-058 |
+| task-070 | task-058 |
+| task-071 | task-058 |
+| task-072 | task-059 |
+| task-073 | task-070 |
+| task-074 | task-058 |
+| task-075 | task-071 |
+| task-076 | task-063, task-064, task-072 |
+| task-077 | task-063, task-064, task-065, task-067, task-068, task-072, task-074 |
+| task-078 | task-060, task-061, task-062, task-063, task-064, task-065, task-066, task-067, task-068, task-069, task-072, task-074, task-076 |
+| task-079 | task-073 |
+| task-080 | task-075, task-078 |
+| task-081 | task-077, task-078, task-079, task-080 |
+
+| Can Be Done In Parallel |
+|------------------------|
+| task-059, task-060, task-061, task-062, task-063, task-064, task-065, task-066, task-067, task-068, task-069, task-070, task-071, task-074 |
+| task-072, task-073, task-075 |
+| task-076, task-077, task-079 |
+
+```wave-map
+delivery: 003
+wave 1: task-058
+wave 2: task-059, task-060, task-061, task-062, task-063, task-064, task-065, task-066, task-067, task-068, task-069, task-070, task-071, task-074
+wave 3: task-072, task-073, task-075
+wave 4: task-076, task-077, task-079
+wave 5: task-078
+wave 6: task-080
+wave 7: task-081
+```
+
 ### delivery-004: Shape an idea into a draft that survives
 - **What it delivers:** `/aid-brainstorm` talks an idea through as a conversation the user ends, keeping a living idea draft in the main folder that survives across sessions and works; a typed kind and the same kind in plain words reach the same rules; `/aid-describe`, `/aid-design` and every `/aid-design-<kind>` retire.
 - **Features:** feature-003-work-definition
@@ -470,6 +626,56 @@ is checked at delivery-007 (`003-09`) and delivery-009 (`003-10`).
 - [ ] The writer accepts `"Idea Draft"` and `"Side Idea"` with `--` or a valid identity, and exits 4 on anything else. Each new legacy row has a passing `--check` fixture. (AC-37 resume clause)
 - [ ] Samples `003-01` to `003-05` each pass 3 of 3, and `001-08` passes again. (AC-7, AC-17 draft-location clause, AC-28, AC-37, AC-43)
 - [ ] G0 passes.
+
+### delivery-004 Execution Graph
+
+| Task | Depends On |
+|------|------------|
+| task-082 | — |
+| task-083 | task-082 |
+| task-084 | task-082 |
+| task-085 | task-082 |
+| task-086 | task-082 |
+| task-087 | task-083, task-084, task-085, task-086, task-089 |
+| task-088 | task-083, task-084 |
+| task-089 | task-083, task-085 |
+| task-090 | task-087 |
+| task-091 | task-087 |
+| task-092 | task-087, task-088 |
+| task-093 | task-088, task-090, task-091, task-092, task-096 |
+| task-094 | task-089, task-093 |
+| task-095 | task-083 |
+| task-096 | task-084, task-088 |
+| task-097 | task-088, task-094 |
+| task-098 | task-089, task-094 |
+| task-099 | task-085, task-086, task-090, task-092, task-094 |
+| task-100 | task-089, task-090, task-094 |
+| task-101 | task-100 |
+| task-102 | task-095, task-099 |
+| task-103 | task-097, task-098, task-101, task-102 |
+
+| Can Be Done In Parallel |
+|------------------------|
+| task-083, task-084, task-085, task-086 |
+| task-088, task-089, task-095 |
+| task-087, task-096 |
+| task-090, task-091, task-092 |
+| task-097, task-098, task-099, task-100 |
+| task-101, task-102 |
+
+```wave-map
+delivery: 004
+wave 1: task-082
+wave 2: task-083, task-084, task-085, task-086
+wave 3: task-088, task-089, task-095
+wave 4: task-087, task-096
+wave 5: task-090, task-091, task-092
+wave 6: task-093
+wave 7: task-094
+wave 8: task-097, task-098, task-099, task-100
+wave 9: task-101, task-102
+wave 10: task-103
+```
 
 ### delivery-005: The four KB skills on one KB state file (Feature 004, first part)
 - **What it delivers:** The KB is built, queried, updated and shown through `/aid-kb-build`, `/aid-kb-query`, `/aid-kb-update` and `/aid-kb-show`, run by the agent's own judgment; `kb.html` is rendered by a script, the same bytes for the same KB, at every build and update; KB state lives in `.aid/knowledge/STATE.yml`; summarize and housekeep retire.
@@ -566,6 +772,75 @@ is checked at delivery-007 (`003-09`) and delivery-009 (`003-10`).
   - Under the spec's "No KB: one rule", this repository would otherwise have no KB from this
     delivery's resync onward.
 
+### delivery-005 Execution Graph
+
+| Task | Depends On |
+|------|------------|
+| task-104 | — |
+| task-105 | task-104 |
+| task-106 | task-104 |
+| task-107 | task-104 |
+| task-108 | task-104 |
+| task-109 | task-104 |
+| task-110 | task-105 |
+| task-111 | task-106 |
+| task-112 | task-105, task-108, task-109 |
+| task-113 | task-105 |
+| task-114 | task-107 |
+| task-115 | task-110 |
+| task-116 | task-105, task-110 |
+| task-117 | task-110, task-116 |
+| task-118 | task-110 |
+| task-119 | task-110, task-111, task-117 |
+| task-120 | task-112 |
+| task-121 | task-113 |
+| task-122 | task-110 |
+| task-123 | task-107, task-111, task-115, task-116 |
+| task-124 | task-107, task-111, task-115, task-117, task-118 |
+| task-125 | task-116, task-117, task-118, task-119 |
+| task-126 | task-115 |
+| task-127 | task-120 |
+| task-128 | task-121 |
+| task-129 | task-109, task-116, task-117, task-118, task-119, task-123, task-124, task-125 |
+| task-130 | task-116, task-117, task-118, task-119, task-121, task-123, task-124 |
+| task-131 | task-108, task-111, task-123, task-124, task-129, task-130 |
+| task-132 | task-117, task-131 |
+| task-133 | task-111, task-131 |
+| task-134 | task-121, task-125, task-129, task-130, task-131, task-132 |
+| task-135 | task-125, task-131, task-132 |
+| task-136 | task-110, task-118, task-131, task-132 |
+| task-137 | task-108, task-113, task-125, task-131, task-132 |
+| task-138 | task-126, task-127, task-133, task-134 |
+| task-139 | task-114, task-122, task-128, task-135, task-136, task-137, task-138 |
+
+| Can Be Done In Parallel |
+|------------------------|
+| task-105, task-106, task-107, task-108, task-109 |
+| task-110, task-111, task-112, task-113, task-114 |
+| task-115, task-116, task-118, task-120, task-121, task-122 |
+| task-117, task-123, task-126, task-127, task-128 |
+| task-119, task-124 |
+| task-125, task-130 |
+| task-132, task-133 |
+| task-134, task-135, task-136, task-137 |
+
+```wave-map
+delivery: 005
+wave 1: task-104
+wave 2: task-105, task-106, task-107, task-108, task-109
+wave 3: task-110, task-111, task-112, task-113, task-114
+wave 4: task-115, task-116, task-118, task-120, task-121, task-122
+wave 5: task-117, task-123, task-126, task-127, task-128
+wave 6: task-119, task-124
+wave 7: task-125, task-130
+wave 8: task-129
+wave 9: task-131
+wave 10: task-132, task-133
+wave 11: task-134, task-135, task-136, task-137
+wave 12: task-138
+wave 13: task-139
+```
+
 ### delivery-006: The KB grows and stays current (Feature 004, second part)
 - **What it delivers:** `/aid-kb-update` creates and registers new KB documents, so the KB `create`/`update` skills retire; roadmap and backlog are ordinary documents ("work on the next backlog item" works); a new project starts with a committed `Growing` KB skeleton that holds no document; at work start the agent offers to fix documents that drifted from the code; new works branch from the main folder's current branch.
 - **Features:** feature-004-kb-management (growth, roadmap and backlog, drift, parent branch)
@@ -622,6 +897,51 @@ facts in a new project is checked at delivery-007 (`004-10`) and delivery-009 (`
 - [ ] Samples `004-05`, `004-06`, `004-08`, `004-09` and `003-11` each pass 3 of 3. `skill-steps-exempt.tsv` holds no row whose owner is Feature 004. (AC-15, AC-28, AC-39, AC-43)
 - [ ] G0 passes.
 
+### delivery-006 Execution Graph
+
+| Task | Depends On |
+|------|------------|
+| task-140 | — |
+| task-141 | task-140 |
+| task-142 | task-140 |
+| task-143 | task-140 |
+| task-144 | task-140 |
+| task-145 | task-142, task-144 |
+| task-146 | task-141, task-142, task-143 |
+| task-147 | task-144 |
+| task-148 | task-140 |
+| task-149 | task-142, task-148 |
+| task-150 | task-145, task-146 |
+| task-151 | task-144, task-145, task-147, task-150 |
+| task-152 | task-141, task-142 |
+| task-153 | task-143 |
+| task-154 | task-148, task-149 |
+| task-155 | task-144, task-146, task-147, task-151 |
+| task-156 | task-147, task-151 |
+| task-157 | task-146, task-156 |
+| task-158 | task-142, task-144, task-148, task-151 |
+| task-159 | task-146, task-147, task-149, task-151 |
+| task-160 | task-152, task-153, task-154, task-155, task-156, task-157, task-158, task-159 |
+
+| Can Be Done In Parallel |
+|------------------------|
+| task-141, task-142, task-143, task-144, task-148 |
+| task-145, task-146, task-147, task-149, task-152, task-153 |
+| task-150, task-154 |
+| task-155, task-156, task-158, task-159 |
+
+```wave-map
+delivery: 006
+wave 1: task-140
+wave 2: task-141, task-142, task-143, task-144, task-148
+wave 3: task-145, task-146, task-147, task-149, task-152, task-153
+wave 4: task-150, task-154
+wave 5: task-151
+wave 6: task-155, task-156, task-158, task-159
+wave 7: task-157
+wave 8: task-160
+```
+
 ### delivery-007: One requirements document, business and technical
 - **What it delivers:** One `/aid-specify` writes the whole work's `REQUIREMENTS.md` with a business part and a technical part, splits into features only when the work delivers several capabilities, checks the effort level once per work, revises approved requirements on request, and records approved project decisions in the KB through one call.
 - **Features:** feature-005-specification
@@ -667,6 +987,58 @@ accepts in Feature 005's § 2: "No release carries that gap, since every feature
 - [ ] `test-slice-requirements.sh` prints `## 11. Technical Specification` for an unsplit document, and its output for a split document is unchanged. The writer appends a work `reviews` entry, and exits 4 on a bad grade. (AC-44)
 - [ ] Samples `005-01` to `005-10` each pass 3 of 3, and so do `002-06`, `002-11`, `002-12`, `003-06`, `003-08`, `003-09` and `004-10`. `001-08` and `001-09` pass again. (AC-7, AC-9, AC-10, AC-12, AC-14, AC-15, AC-16, AC-17, AC-18, AC-28, AC-35, AC-37, AC-38, AC-44)
 - [ ] G0 passes.
+
+### delivery-007 Execution Graph
+
+| Task | Depends On |
+|------|------------|
+| task-161 | — |
+| task-162 | task-161 |
+| task-163 | task-161 |
+| task-164 | task-161 |
+| task-165 | task-161 |
+| task-166 | task-162, task-163, task-164 |
+| task-167 | task-163, task-164 |
+| task-168 | task-161 |
+| task-169 | task-164, task-168 |
+| task-170 | task-165, task-166, task-167, task-169 |
+| task-171 | task-167 |
+| task-172 | task-170 |
+| task-173 | task-170, task-171 |
+| task-174 | task-172, task-173 |
+| task-175 | task-164, task-170 |
+| task-176 | task-165 |
+| task-177 | task-163, task-164, task-168, task-170, task-171, task-174 |
+| task-178 | task-170, task-174 |
+| task-179 | task-169, task-172, task-178 |
+| task-180 | task-179 |
+| task-181 | task-177 |
+| task-182 | task-164, task-168, task-174 |
+| task-183 | task-170, task-171, task-174 |
+| task-184 | task-175, task-176, task-177, task-179, task-180, task-181, task-182, task-183 |
+
+| Can Be Done In Parallel |
+|------------------------|
+| task-162, task-163, task-164, task-165, task-168 |
+| task-166, task-167, task-169, task-176 |
+| task-170, task-171 |
+| task-172, task-173, task-175 |
+| task-177, task-178, task-182, task-183 |
+| task-179, task-181 |
+
+```wave-map
+delivery: 007
+wave 1: task-161
+wave 2: task-162, task-163, task-164, task-165, task-168
+wave 3: task-166, task-167, task-169, task-176
+wave 4: task-170, task-171
+wave 5: task-172, task-173, task-175
+wave 6: task-174
+wave 7: task-177, task-178, task-182, task-183
+wave 8: task-179, task-181
+wave 9: task-180
+wave 10: task-184
+```
 
 ### delivery-008: The plan as a generated checklist on one state file
 - **What it delivers:** One `/aid-plan` breaks requirements into atomic tasks grouped into deliveries, keeps `PLAN.md` as a checklist generated from the task files and the work's single `STATE.yml`, and revises the plan on request; no delivery or task state file remains; existing works migrate to the single layout, `ticket_ref` becoming `sources:`.
@@ -732,6 +1104,72 @@ Toolchain and Branching).
 - The delivery verification's grade is recorded with `writeback-state.sh --delivery-id 008
   --gate-field` before the resync. The migration carries it into `deliveries.delivery-008`, and
   delivery-009's format-6 building step carries it into `verify`.
+
+### delivery-008 Execution Graph
+
+| Task | Depends On |
+|------|------------|
+| task-185 | — |
+| task-186 | task-185 |
+| task-187 | task-185 |
+| task-188 | task-187, task-199 |
+| task-189 | task-185 |
+| task-190 | task-188, task-189 |
+| task-191 | task-185 |
+| task-192 | task-186, task-189 |
+| task-193 | task-189 |
+| task-194 | task-190 |
+| task-195 | task-192, task-193, task-194 |
+| task-196 | task-193, task-195 |
+| task-197 | task-190 |
+| task-198 | task-188 |
+| task-199 | task-187 |
+| task-200 | task-188, task-199 |
+| task-201 | task-187 |
+| task-202 | task-188, task-201 |
+| task-203 | task-202 |
+| task-204 | task-197, task-203 |
+| task-205 | task-195, task-196, task-197, task-200, task-204 |
+| task-206 | task-204, task-205 |
+| task-207 | task-190, task-197 |
+| task-208 | task-189 |
+| task-209 | task-191 |
+| task-210 | task-203 |
+| task-211 | task-199, task-200 |
+| task-212 | task-186, task-191, task-194, task-196, task-197, task-198, task-200, task-204, task-206 |
+| task-213 | task-195, task-197, task-206 |
+| task-214 | task-198, task-203, task-204, task-213 |
+| task-215 | task-210, task-212 |
+| task-216 | task-187, task-190, task-206 |
+| task-217 | task-195, task-199, task-203, task-206 |
+| task-218 | task-207, task-208, task-209, task-211, task-214, task-215, task-216, task-217 |
+
+| Can Be Done In Parallel |
+|------------------------|
+| task-186, task-187, task-189, task-191 |
+| task-192, task-193, task-199, task-201, task-208, task-209 |
+| task-190, task-198, task-200, task-202 |
+| task-194, task-197, task-203, task-211 |
+| task-195, task-204, task-207, task-210 |
+| task-212, task-213, task-216, task-217 |
+| task-214, task-215 |
+
+```wave-map
+delivery: 008
+wave 1: task-185
+wave 2: task-186, task-187, task-189, task-191
+wave 3: task-192, task-193, task-199, task-201, task-208, task-209
+wave 4: task-188
+wave 5: task-190, task-198, task-200, task-202
+wave 6: task-194, task-197, task-203, task-211
+wave 7: task-195, task-204, task-207, task-210
+wave 8: task-196
+wave 9: task-205
+wave 10: task-206
+wave 11: task-212, task-213, task-216, task-217
+wave 12: task-214, task-215
+wave 13: task-218
+```
 
 ### delivery-009: Building tested, verified and simplified, one task at a time
 - **What it delivers:** One `/aid-execute` builds the whole plan one task at a time on the work's one branch -- build, test, verify, simplify once, re-verify only when the simplification changed something -- with a full-suite baseline, the confirmation before building, and approval stops only at milestones and real blockers.
@@ -811,6 +1249,72 @@ close runs through `/aid-orchestrate`.
   (Toolchain and Branching, The switch questions)
 - [ ] G0 passes.
 
+### delivery-009 Execution Graph
+
+| Task | Depends On |
+|------|------------|
+| task-219 | — |
+| task-220 | task-219 |
+| task-221 | task-220 |
+| task-222 | task-221 |
+| task-223 | task-219 |
+| task-224 | task-219 |
+| task-225 | task-224 |
+| task-226 | task-221, task-222, task-224 |
+| task-227 | task-221 |
+| task-228 | task-221, task-223 |
+| task-229 | task-221, task-222 |
+| task-230 | task-222, task-225 |
+| task-231 | task-219 |
+| task-232 | task-222 |
+| task-233 | task-220, task-226, task-227, task-228, task-229, task-230 |
+| task-234 | task-221, task-231, task-233 |
+| task-235 | task-233 |
+| task-236 | task-227, task-233 |
+| task-237 | task-233, task-234, task-235, task-240 |
+| task-238 | task-220 |
+| task-239 | task-220 |
+| task-240 | task-239 |
+| task-241 | task-222, task-234 |
+| task-242 | task-223 |
+| task-243 | task-224, task-225, task-233 |
+| task-244 | task-238 |
+| task-245 | task-239, task-240 |
+| task-246 | task-220, task-223, task-231, task-233, task-234, task-235, task-237 |
+| task-247 | task-231, task-232, task-233, task-234, task-235 |
+| task-248 | task-232, task-238, task-247 |
+| task-249 | task-248 |
+| task-250 | task-242, task-246 |
+| task-251 | task-220, task-234, task-236 |
+| task-252 | task-233, task-235, task-237 |
+| task-253 | task-241, task-243, task-244, task-245, task-249, task-250, task-251, task-252 |
+
+| Can Be Done In Parallel |
+|------------------------|
+| task-220, task-223, task-224, task-231 |
+| task-221, task-225, task-238, task-239, task-242 |
+| task-222, task-227, task-228, task-240, task-244 |
+| task-226, task-229, task-230, task-232, task-245 |
+| task-234, task-235, task-236, task-243 |
+| task-237, task-241, task-247, task-251 |
+| task-246, task-248, task-252 |
+| task-249, task-250 |
+
+```wave-map
+delivery: 009
+wave 1: task-219
+wave 2: task-220, task-223, task-224, task-231
+wave 3: task-221, task-225, task-238, task-239, task-242
+wave 4: task-222, task-227, task-228, task-240, task-244
+wave 5: task-226, task-229, task-230, task-232, task-245
+wave 6: task-233
+wave 7: task-234, task-235, task-236, task-243
+wave 8: task-237, task-241, task-247, task-251
+wave 9: task-246, task-248, task-252
+wave 10: task-249, task-250
+wave 11: task-253
+```
+
 ### delivery-010: Pull requests to a mergeable state, never merged
 - **What it delivers:** `/aid-monitor-pipeline` creates or updates the work's one pull request only on the user's yes, pushes only approved commits, corrects reported bugs and pipeline failures as ordinary builds, brings suggestions to the user, brings in the parent branch only to resolve a conflict with that merge approved first, and after a person merges closes the work locally without deleting any remote branch.
 - **Features:** feature-008-cicd-integration-monitoring
@@ -846,7 +1350,7 @@ that `/aid-orchestrate` has run since delivery-001.
 **Out of scope:** The live-host run (`008-15`), which is part of the integration run in delivery-014.
 
 **Waves:**
-1. Re-run the spec's stated re-pointing sites (`housekeep/cleanup-classify.sh`, `origin/master`, the interim close, every `git push`) and reconcile the edit list.
+1. Re-run the spec's stated re-pointing sites (`housekeep/cleanup-classify.sh`, `origin/master`, the interim close, every `git push`) and reconcile the edit list. This runs as the research step (Q139), before the delivery's run; it is no task.
 2. The three new scripts and the moved `cleanup-classify.sh`, the writer's `--pull-request`, the template, the settings and the stand-ins. The moved script goes together with the housekeep classify, deletion-split and work-folder-safety suites that follow it.
 3. `aid-monitor-pipeline` and its references, the gate row, `skill-steps.md`, the finishing skills, `aid-operator`, `consumption-protocol.md`, and the `milestone.md` and `finish.md` edits. Each comes with its asserting suites. These need wave 2.
 4. `delete-pipeline.sh` with `test-delete-pipeline.sh` in the same task. Then the dashboard CI card and the re-pointing.
@@ -873,6 +1377,67 @@ that `/aid-orchestrate` has run since delivery-001.
   (AC-11, AC-36)
 - [ ] Samples `008-01` to `008-14` and `008-16` to `008-18` each pass 3 of 3, and `002-10`, `007-13` and `001-16` pass. (AC-11, AC-13, AC-14, AC-27, AC-28, AC-32, AC-35, AC-36, AC-42)
 - [ ] G0 passes.
+
+### delivery-010 Execution Graph
+
+| Task | Depends On |
+|------|------------|
+| task-255 | — |
+| task-256 | — |
+| task-257 | — |
+| task-258 | task-257 |
+| task-259 | — |
+| task-260 | — |
+| task-261 | task-262 |
+| task-262 | task-259, task-260 |
+| task-263 | task-255, task-256, task-259, task-262 |
+| task-264 | task-259, task-262 |
+| task-265 | task-256, task-258, task-262 |
+| task-266 | task-262, task-263, task-264, task-265 |
+| task-267 | — |
+| task-268 | task-266 |
+| task-269 | task-263, task-266 |
+| task-270 | task-257, task-266, task-267, task-268, task-269 |
+| task-271 | — |
+| task-272 | task-259 |
+| task-273 | task-270, task-272 |
+| task-274 | task-255, task-259 |
+| task-275 | task-256 |
+| task-276 | task-257, task-258 |
+| task-277 | task-259 |
+| task-278 | task-272, task-273 |
+| task-279 | task-255, task-256, task-258, task-265, task-268, task-270, task-271 |
+| task-280 | task-259, task-260, task-266, task-267, task-268, task-269, task-270 |
+| task-281 | task-261, task-266, task-268, task-269, task-270 |
+| task-282 | task-281 |
+| task-283 | task-262, task-266, task-282 |
+| task-284 | task-274, task-275, task-276, task-280 |
+| task-285 | task-259, task-260, task-270 |
+| task-286 | task-266, task-270, task-271, task-285 |
+| task-287 | task-277, task-278, task-279, task-283, task-284, task-285, task-286 |
+
+| Can Be Done In Parallel |
+|------------------------|
+| task-255, task-256, task-257, task-259, task-260, task-267, task-271 |
+| task-258, task-262, task-272, task-274, task-275, task-277 |
+| task-261, task-263, task-264, task-265, task-276 |
+| task-268, task-269 |
+| task-273, task-279, task-280, task-281, task-285 |
+| task-278, task-282, task-284, task-286 |
+
+```wave-map
+delivery: 010
+wave 1: task-255, task-256, task-257, task-259, task-260, task-267, task-271
+wave 2: task-258, task-262, task-272, task-274, task-275, task-277
+wave 3: task-261, task-263, task-264, task-265, task-276
+wave 4: task-266
+wave 5: task-268, task-269
+wave 6: task-270
+wave 7: task-273, task-279, task-280, task-281, task-285
+wave 8: task-278, task-282, task-284, task-286
+wave 9: task-283
+wave 10: task-287
+```
 
 ### delivery-011: Action skills and one catalog of kinds (Feature 009a)
 - **What it delivers:** Seven action skills -- `/aid-create`, `/aid-update`, `/aid-fix`, `/aid-refactor`, `/aid-document`, `/aid-test`, `/aid-prototype` -- each starting from one shared START, reading a kind typed or said in plain words from the one shipped kind catalog; `/aid-test` and `/aid-prototype` run as investigations that land nothing in the project.
@@ -916,7 +1481,7 @@ yet, so the old wrapper skills keep working beside the new ones until delivery-0
 - AC-20 and AC-30 complete at delivery-012.
 
 **Waves:**
-1. Re-run the spec's stated searches over the files this part rewrites (the second search in Feature 009 § 8), and reconcile the edit list.
+1. Re-run the spec's stated searches over the files this part rewrites (the second search in Feature 009 § 8), and reconcile the edit list. This runs as the research step (Q139), before the delivery's run; it is no task.
 2. `kind-catalog.yml` v2, `check-intent.md` § The merged catalog, writer `--kind` and `investigation`, the gate's `--kind` and the template. Each comes with its asserting suites, for example `test-idea-shaping.sh` ID-04 and `test-writeback-state.sh`.
 3. `action-start.md` and the seven action skills, which need wave 2. Removing the four generated skills' rows from the shortcut catalog belongs to the same task that makes those four skills hand-authored, together with the suites that count catalog rows or doorways (`test-deploy-monitor-repurpose.sh` DMR30-DMR35, `test-shortcut-builder-invariants.sh`, `test-catalog-dirs-parity.sh`, the site's skill-count tests, `test-doc-counts.sh`). The rewrite of `aid-test` and `aid-prototype` comes with `test-work-initiation-gate.sh` Group G and its reconciliation group (Q106).
 4. The catalog readers in the phase and supporting skills, the close moves (with `test-close-work.sh` and the `cleanup-classify.sh` suites), and the skill guide (with `test-skill-guide.sh`). These need the skills of wave 3.
@@ -946,6 +1511,56 @@ yet, so the old wrapper skills keep working beside the new ones until delivery-0
   - The plain-word runs of `009-01`, `009-02` and `009-07`, and the plain-only samples `009-06`,
     `009-08`, `009-09` and `009-10`, run at delivery-012. Until the wrappers retire, a plain request
     such as "create an API endpoint for orders" fits both `/aid-create` and `/aid-create-api`.
+
+### delivery-011 Execution Graph
+
+| Task | Depends On |
+|------|------------|
+| task-289 | — |
+| task-290 | task-289 |
+| task-291 | — |
+| task-292 | task-291 |
+| task-293 | task-289, task-290, task-292 |
+| task-294 | task-293 |
+| task-295 | task-294 |
+| task-296 | task-293 |
+| task-297 | task-293 |
+| task-298 | task-297 |
+| task-299 | task-289, task-290 |
+| task-300 | task-289, task-290 |
+| task-301 | task-297, task-298 |
+| task-302 | task-294, task-295, task-296, task-297, task-298 |
+| task-303 | — |
+| task-304 | task-291, task-292 |
+| task-305 | task-289, task-290, task-292, task-293, task-294, task-295, task-296, task-297, task-298, task-299, task-300, task-301 |
+| task-306 | task-290, task-294, task-295, task-299, task-300, task-303 |
+| task-307 | task-294, task-295, task-297, task-300, task-301, task-302, task-306 |
+| task-308 | task-305 |
+| task-309 | task-289, task-290, task-291, task-292, task-293, task-294, task-295, task-296, task-297, task-298, task-301 |
+| task-310 | task-294, task-295, task-303, task-304, task-305, task-306, task-307, task-308, task-309 |
+
+| Can Be Done In Parallel |
+|------------------------|
+| task-289, task-291, task-303 |
+| task-290, task-292 |
+| task-293, task-299, task-300, task-304 |
+| task-294, task-296, task-297 |
+| task-295, task-298 |
+| task-301, task-302, task-306 |
+| task-305, task-307, task-309 |
+
+```wave-map
+delivery: 011
+wave 1: task-289, task-291, task-303
+wave 2: task-290, task-292
+wave 3: task-293, task-299, task-300, task-304
+wave 4: task-294, task-296, task-297
+wave 5: task-295, task-298
+wave 6: task-301, task-302, task-306
+wave 7: task-305, task-307, task-309
+wave 8: task-308
+wave 9: task-310
+```
 
 ### delivery-012: One obvious skill for each need (Feature 009b)
 - **What it delivers:** Every action-and-kind wrapper skill, the shortcut engine, its catalog and scaffolding and the impediment file retire; tickets become a kind of `/aid-create` and `/aid-update`; free-form text after `/aid-deploy` or `/aid-monitor` is a plain request; the site generator models the new skill set; old works of retired skills migrate to the action skills with their kind.
@@ -985,7 +1600,7 @@ delivery also empties the lists that wait on Feature 009.
 **Out of scope:** The `aid-config` rename (delivery-013).
 
 **Waves:**
-1. Re-run the spec's stated suite searches (both `git grep` commands of Feature 009 § 8) and the re-pointing sites, and reconcile the edit list.
+1. Re-run the spec's stated suite searches (both `git grep` commands of Feature 009 § 8) and the re-pointing sites, and reconcile the edit list. This runs as the research step (Q139), before the delivery's run; it is no task.
 2. What replaces the engine, the ticket skills and `IMPEDIMENT.md`, each with its asserting suites:
    - the ticket procedures and the TICKET step, with `test-ticket-skills-structural.sh` and `test-ticket-retirement-structural.sh`;
    - the `aid-deploy` and `aid-monitor` Step 0 edit, with DMR20a-c of `test-deploy-monitor-repurpose.sh` and G6 of `test-downstream-worktree-entry.sh`;
@@ -1018,6 +1633,63 @@ delivery also empties the lists that wait on Feature 009.
   (AC-25, AC-31)
 - [ ] The plain-word runs of `009-01`, `009-02` and `009-07`, and the samples `009-06`, `009-08`, `009-09`, `009-10`, `009-14` and `009-16`, each pass 3 of 3. `001-01`, `001-07`, `003-02` and `008-14` pass again. `skill-steps-exempt.tsv` is empty. (AC-1, AC-7, AC-10, AC-14, AC-21, AC-28, AC-30, AC-36, AC-37, AC-43)
 - [ ] G0 passes.
+
+### delivery-012 Execution Graph
+
+| Task | Depends On |
+|------|------------|
+| task-312 | — |
+| task-313 | task-312 |
+| task-314 | — |
+| task-315 | — |
+| task-316 | — |
+| task-317 | task-316 |
+| task-318 | task-314, task-316, task-317 |
+| task-319 | task-313, task-315, task-318 |
+| task-320 | task-319 |
+| task-321 | task-313, task-314, task-316, task-317, task-319, task-320 |
+| task-322 | task-321 |
+| task-323 | task-315, task-322 |
+| task-324 | task-320 |
+| task-325 | task-320 |
+| task-326 | task-318, task-319, task-320, task-321, task-322, task-324, task-325 |
+| task-327 | task-326 |
+| task-328 | task-326 |
+| task-329 | task-319, task-323, task-325, task-326 |
+| task-330 | task-327 |
+| task-331 | task-328 |
+| task-332 | task-313, task-314, task-320, task-323, task-326, task-327, task-328, task-329 |
+| task-333 | task-320, task-329 |
+| task-334 | task-313, task-315, task-327, task-333 |
+| task-335 | task-326, task-329 |
+| task-336 | task-319, task-326, task-329, task-335 |
+| task-337 | task-324, task-330, task-331, task-332, task-334, task-335, task-336 |
+
+| Can Be Done In Parallel |
+|------------------------|
+| task-312, task-314, task-315, task-316 |
+| task-313, task-317 |
+| task-321, task-324, task-325 |
+| task-323, task-326 |
+| task-327, task-328, task-329 |
+| task-330, task-331, task-332, task-333, task-335 |
+| task-334, task-336 |
+
+```wave-map
+delivery: 012
+wave 1: task-312, task-314, task-315, task-316
+wave 2: task-313, task-317
+wave 3: task-318
+wave 4: task-319
+wave 5: task-320
+wave 6: task-321, task-324, task-325
+wave 7: task-322
+wave 8: task-323, task-326
+wave 9: task-327, task-328, task-329
+wave 10: task-330, task-331, task-332, task-333, task-335
+wave 11: task-334, task-336
+wave 12: task-337
+```
 
 ### delivery-013: `/aid-configure` and room beyond software (Feature 009c)
 - **What it delivers:** `/aid-config` becomes `/aid-configure`, so every skill name is a verb; the catalog's kinds carry a `domain` (all `software`) and reserve the fields later works will use; the action layer names no software term; every file that says what AID is says "software first, not software only"; the roadmap records the later "Beyond software" works.
@@ -1064,7 +1736,7 @@ delivery also empties the lists that wait on Feature 009.
 **Out of scope:** The user documentation (delivery-014).
 
 **Waves:**
-1. Re-run the identity search of Feature 009 § 5 and a search for `aid-config`, and reconcile the edit list.
+1. Re-run the identity search of Feature 009 § 5 and a search for `aid-config`, and reconcile the edit list. This runs as the research step (Q139), before the delivery's run; it is no task.
 2. Five groups that do not depend on each other, each with the suites asserting the text it changes:
    - the rename, with the `aid-config` comments the F009 § 8 list keeps or changes;
    - the catalog's `domain` field;
@@ -1088,6 +1760,42 @@ delivery also empties the lists that wait on Feature 009.
 - [ ] Samples `009-15`, `009-18` and `009-19` each pass 3 of 3, and `002-02` passes on `/aid-configure`. (AC-8, AC-14, AC-22, AC-28, AC-30, AC-36)
 - [ ] Run without the release flag, the identity search of Feature 009 § 5 finds "software first, not software only" in every file outside `docs/` and `site/src/content/docs/`. The description exempt list of `test-skill-guide.sh` is empty. (Q108, NFR-T)
 - [ ] G0 passes.
+
+### delivery-013 Execution Graph
+
+| Task | Depends On |
+|------|------------|
+| task-339 | — |
+| task-340 | task-339 |
+| task-341 | — |
+| task-342 | task-339, task-340, task-341, task-344 |
+| task-343 | task-340 |
+| task-344 | task-341 |
+| task-345 | task-340, task-344 |
+| task-346 | task-341, task-344 |
+| task-347 | — |
+| task-348 | task-339, task-340, task-341, task-342, task-344, task-346 |
+| task-349 | task-339, task-340, task-342, task-344, task-346, task-347 |
+| task-350 | task-339, task-343 |
+| task-351 | task-340, task-341, task-344, task-350 |
+| task-352 | task-345, task-347, task-348, task-349, task-350, task-351 |
+
+| Can Be Done In Parallel |
+|------------------------|
+| task-339, task-341, task-347 |
+| task-340, task-344 |
+| task-342, task-343, task-345, task-346 |
+| task-348, task-349, task-350 |
+
+```wave-map
+delivery: 013
+wave 1: task-339, task-341, task-347
+wave 2: task-340, task-344
+wave 3: task-342, task-343, task-345, task-346
+wave 4: task-348, task-349, task-350
+wave 5: task-351
+wave 6: task-352
+```
 
 ### delivery-014: Final documentation pass and release readiness
 - **What it delivers:** The user documentation describes the finished product -- the phases, the skills, the old -> new table -- and every release check passes with all lists empty and the full integration suite green, so the work is ready for the v4.0.0 pull request.
@@ -1113,7 +1821,7 @@ end-of-work checks that make the branch releasable.
 - Merging the v4.0.0 pull request, which is a human act (FR-6).
 
 **Waves:**
-1. Re-run DN-01 and DN-03 without the release flag to list every hit, and reconcile the documents to rewrite.
+1. Re-run DN-01 and DN-03 without the release flag to list every hit, and reconcile the documents to rewrite. This runs as the research step (Q139), before the delivery's run; it is no task.
 2. `retired-names.txt` and `test-doc-names.sh`. Then the documentation rewrite and the site regeneration, each with `test-doc-counts.sh` and the site checks in the same task.
 3. The delivery's resync step. The release checks under `AID_RELEASE_CHECK=1` and the full integration suite are gate checks, run after it (The resync rule).
 
@@ -1127,6 +1835,40 @@ end-of-work checks that make the branch releasable.
 - [ ] The full integration suite passes. Every sample under `tests/conversation/samples/` passes 3 of 3, including `008-15`, `009-11` and `009-12`. (Every AC a sample's `covers` names)
 - [ ] `site/scripts/gen-skills.mjs` regenerates the site with no diff after the pass, and the Astro build succeeds. (AC-31, AC-45)
 - [ ] G0 passes.
+
+### delivery-014 Execution Graph
+
+| Task | Depends On |
+|------|------------|
+| task-354 | — |
+| task-355 | task-354 |
+| task-356 | task-358 |
+| task-357 | task-356 |
+| task-358 | task-354, task-364 |
+| task-359 | task-357 |
+| task-360 | task-359 |
+| task-361 | task-357 |
+| task-362 | task-355, task-356, task-357, task-358, task-359, task-360, task-361 |
+| task-363 | task-355, task-362 |
+| task-364 | task-354 |
+
+| Can Be Done In Parallel |
+|------------------------|
+| task-355, task-364 |
+| task-359, task-361 |
+
+```wave-map
+delivery: 014
+wave 1: task-354
+wave 2: task-355, task-364
+wave 3: task-358
+wave 4: task-356
+wave 5: task-357
+wave 6: task-359, task-361
+wave 7: task-360
+wave 8: task-362
+wave 9: task-363
+```
 
 ## Delivery Order
 
@@ -1158,7 +1900,8 @@ that from happening in the middle of a delivery.
 deliveries up front. Its FIRST-RUN covers every delivery and its task numbering is global, so the
 later migration of this work meets no duplicate task id.
 
-- Every delivery's first wave re-runs its spec's stated searches.
+- Every delivery's first wave re-runs its spec's stated searches. For deliveries 010-014 they run as the research step of
+  "How deliveries 010-014 are built" (Q139), not as a task.
 - From delivery-009 on, any change to a later delivery's tasks goes through the new `/aid-plan`
   REVISE.
 
@@ -1262,6 +2005,12 @@ and `AID_WORK_DIR` exported for this work (tech-debt W5-5).
 **How deliveries 010-014 are built.** The new `/aid-execute` runs the plan from its saved step,
 following F007 § 2.
 
+- **The research step (Q139).** A delivery's site search and reconciliation is a reviewed step that is not a task. The
+  main conversation runs it in the previous delivery's gate session, after that gate passes and its milestone yes is
+  recorded (for delivery-010, in delivery-009's gate session after the switch). `aid-researcher` writes
+  `research/delivery-NNN-sites.md` from the brief in the previous delivery's last task, `aid-reviewer` grades it with
+  `grade.sh` against `minimum_grade`, and the file is committed alone before the delivery's run starts. It is not
+  resync-relevant.
 - Its steps run in order, all in the session that runs them:
   - every task's BUILD, TEST, VERIFY, SIMPLIFY, REVERIFY and NEXT, with NEXT's KB check;
   - then DELIVERY (verify, one simplify, a re-verify when something changed);
