@@ -394,6 +394,10 @@ review_history:
     event: 'Plan review cycle 3'
     outcome: 'Grade C+ (1 MEDIUM, 2 LOW open): new rows 23-25; rows 10, 20-22 confirmed Fixed'
     notes: 'Third round below the bar: the maintainer decides on what remains (rule 9b)'
+  - date: '2026-10-16'
+    event: 'Plan review cycle 4'
+    outcome: 'Grade C+ (1 MEDIUM open): new row 26 (FINAL full suite runs before the resync); rows 23-25 confirmed Fixed'
+    notes: 'Spec edits (F005 --review key, F006 nested wins) consistent with citing features; maintainer decides on row 26 (rule 9b)'
 
 # [A] written by the orchestrator on the work's active branch (single
 #     writer). Append-only audit trail of phase transitions and gate
