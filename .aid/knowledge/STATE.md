@@ -235,6 +235,16 @@ This is the single state file for the **Discovery area** — persistent project 
 - **Answer:** --
 - **Applied to:** --
 
+### Q10
+
+- **Category:** Review criteria / task files
+- **Impact:** Low
+- **Status:** Pending
+- **Context:** `authoring-conventions.md` defines the file set of criterion G-14 with `BLUEPRINT.md`, while `.aid/runtime/templates/kb-authoring/review-rubric.md` says G-14 and G-15 cover `tasks/*/DETAIL.md`. The two sources disagree on which criteria reach a task file, so a task review cannot tell whether G-14 applies.
+- **Suggested:** Make the two agree on one file set for G-14 and G-15 (the current task-file path `deliveries/*/tasks/*/DETAIL.md`), in the criteria table, and have the rubric cite it.
+- **Answer:** --
+- **Applied to:** --
+
 ## Review History
 
 > One row per /aid-discover review cycle. Append-only.
