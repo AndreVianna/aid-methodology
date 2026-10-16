@@ -390,6 +390,10 @@ review_history:
     event: 'Plan review cycle 2'
     outcome: 'Grade D+ (1 HIGH, 3 MEDIUM open): row 10 Recurred; new rows 20-22'
     notes: 'Rows 1-9, 11-18 confirmed Fixed; spec edits for rows 16-18 consistent with citing features'
+  - date: '2026-10-16'
+    event: 'Plan review cycle 3'
+    outcome: 'Grade C+ (1 MEDIUM, 2 LOW open): new rows 23-25; rows 10, 20-22 confirmed Fixed'
+    notes: 'Third round below the bar: the maintainer decides on what remains (rule 9b)'
 
 # [A] written by the orchestrator on the work's active branch (single
 #     writer). Append-only audit trail of phase transitions and gate
