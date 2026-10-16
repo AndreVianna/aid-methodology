@@ -1351,3 +1351,19 @@ qa:
     suggested: 'Split it in two: add (action skills, catalog, domain readiness), then retire (old skills, engine, rename, site generator); the AS suite split into two groups.'
     answer: 'Split it in three: (a) add the action skills and the kind catalog; (b) retire the old skills, the shortcut engine and its catalog, and move the site generator; (c) the /aid-configure rename and domain readiness. The F009 suite is cut into one group per part.'
     applied_to: 'PLAN.md (F009 split into three deliveries plus the final documentation delivery)'
+  - id: Q114
+    category: Planning
+    impact: High
+    state: Answered
+    context: 'F006 replaces the planning layout; today''s /aid-execute cannot read it and F006 forbids a bridge, so a delivery holding F006 alone leaves no automatic builder for F007.'
+    suggested: 'Keep F006 and F007 in one delivery, the only grouping with a builder at every moment.'
+    answer: 'Two deliveries. F007 is built by the main conversation directly, task by task, writing every state change through the writer as the tracking rules require (no /aid-execute run for that delivery).'
+    applied_to: 'PLAN.md (F006 and F007 as separate deliveries; the toolchain switch of Q111)'
+  - id: Q115
+    category: Planning
+    impact: Medium
+    state: Answered
+    context: 'F002 and F004 are large; each ships one static suite asserting the whole feature, so a split also cuts its suite.'
+    suggested: 'No further splits.'
+    answer: 'Split both. F002: engine (protocol, skill-steps.md, writer modes, work record, gate) then sweep (banners and advance words across today''s skills, the interviewer retired, the dashboard). F004: the four KB skills and the renderer, then the KB state file, format 6 and the dashboard. Each suite is cut into one group per part.'
+    applied_to: 'PLAN.md (F002 and F004 each in two deliveries)'
