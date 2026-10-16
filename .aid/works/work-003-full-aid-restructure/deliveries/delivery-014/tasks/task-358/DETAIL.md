@@ -7,7 +7,7 @@
 
 **Source:** feature-009-one-skill-per-need -> delivery-014 -> AC-24, AC-45
 
-**Depends on:** task-357
+**Depends on:** task-353, task-354, task-364
 
 **Scope:**
 - `docs/install.md`, `docs/release.md`, `docs/chat-wake-install.md` and `docs/diagram-content-reference.md`, then
@@ -85,7 +85,7 @@
        `references/blocker.md`).
 
 **Acceptance Criteria:**
-- [ ] Run without the release flag, `bash tests/canonical/test-doc-names.sh -v` lists no DN-01 or DN-03 hit in the files this task owns; `test-doc-counts.sh` passes live, and the site `npm test` passes after `sync:docs` and regeneration.
+- [ ] Run without the release flag, `test-doc-names.sh -v`, where the test step puts it (the scratch copy: its text matches the driver's pattern `P`), lists no DN-01 or DN-03 hit in the files this task owns; `test-doc-counts.sh` passes live, and the site `npm test` passes after `sync:docs` and regeneration.
 - [ ] `docs/install.md` holds exactly one marked table, and each name of `tests/canonical/retired-names.txt` appears in it.
 - [ ] Over `.aid/knowledge/`, no frontmatter `sources:` entry cites a path this task deletes, moves or renames, and `test-artifact-discipline.sh` AD14 passes where the test step puts the suite (G17).
 - [ ] The test step (last Scope bullet) reports no failure: the spawn-free checks, the scratch half, the live half and the site or dashboard runs it calls for. Every existing test still passes.

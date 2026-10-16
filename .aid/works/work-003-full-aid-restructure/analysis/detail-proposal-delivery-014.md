@@ -10,16 +10,17 @@ files are written at once, and the light review is the check.
 | task-353 | Delivery-014 documentation search and reconciled rewrite list | RESEARCH | 1 | 1 | -- |
 | task-354 | The pre-release name check: retired-names.txt and test-doc-names.sh | TEST | 2 | 2 | task-353 |
 | task-355 | The name check in the CI lane and in the live release checks | CONFIGURE | 2 | 3 | task-354 |
-| task-356 | Final pass: docs/aid-methodology.md | DOCUMENT | 2 | 3 | task-353, task-354 |
-| task-357 | Final pass: the FAQ, the glossary and the repository structure | DOCUMENT | 2 | 4 | task-356 |
-| task-358 | Final pass: install, release and the old -> new table | DOCUMENT | 2 | 5 | task-357 |
-| task-359 | Final pass: the site's home page, concepts and getting started | DOCUMENT | 2 | 6 | task-358 |
-| task-360 | Final pass: the site's guides and hand-written reference pages | DOCUMENT | 2 | 6 | task-358 |
-| task-361 | Final pass: README.md and the examples | DOCUMENT | 2 | 6 | task-358 |
-| task-362 | Release readiness before the gate: regeneration, the site build and the flagged checks | TEST | 2 | 7 | task-355, task-356, task-357, task-358, task-359, task-360, task-361 |
-| task-363 | KB test landscape for the name check, the regenerated index and the view | DOCUMENT | 2 | 8 | task-355, task-362 |
+| task-356 | Final pass: docs/aid-methodology.md | DOCUMENT | 2 | 5 | task-358 |
+| task-357 | Final pass: the FAQ, the glossary and the repository structure | DOCUMENT | 2 | 6 | task-356 |
+| task-358 | Final pass: install, release and the old -> new table | DOCUMENT | 2 | 4 | task-353, task-354, task-364 |
+| task-359 | Final pass: the site's home page, concepts and getting started | DOCUMENT | 2 | 7 | task-357 |
+| task-360 | Final pass: the site's guides and hand-written reference pages | DOCUMENT | 2 | 8 | task-359 |
+| task-361 | Final pass: README.md and the examples | DOCUMENT | 2 | 7 | task-357 |
+| task-362 | Release readiness before the gate: regeneration, the site build and the flagged checks | TEST | 2 | 9 | task-355, task-356, task-357, task-358, task-359, task-360, task-361 |
+| task-363 | KB test landscape for the name check, the regenerated index and the view | DOCUMENT | 2 | 10 | task-355, task-362 |
+| task-364 | Canonical text the generated pages copy: no retired name and no old phase sequence | IMPLEMENT | 2 | 3 | task-353, task-354 |
 
-That is 11 tasks (task-353 to task-363). Stanza wave 3 is the resync, which is no task; the release checks under
+That is 12 tasks (task-353 to task-364; task-364 was added by the light review, so its id comes last). Stanza wave 3 is the resync, which is no task; the release checks under
 `AID_RELEASE_CHECK=1` and the full integration suite are gate checks after it (§ 4).
 
 ---
@@ -45,9 +46,11 @@ That is 11 tasks (task-353 to task-363). Stanza wave 3 is the resync, which is n
   G2 table and site-fixture search; the KB-coexistence block in the KB task (363); no IMPLEMENT task, so no G3 block;
   the documentation tasks run `sync:docs`, the generators and the site `npm test` (G1, G5), and never edit a
   generated page by hand.
-- **Order is an edge (G4, G12):** the synced pages and their manifest follow every `docs/` edit, so the `docs/` tasks
-  form a chain (356 -> 357 -> 358); the old -> new table (358) comes before every page that links to it (359, 360, 361);
-  the release pre-check (362) follows every rewrite. The `g12scan.py` hits left are file names the shared pass block
+- **Order is an edge (G4, G12):** the canonical source fixes come first (364), so every regenerated page is final;
+  then the old -> new table and `install.md`'s headings (358), so every link into `install.md` is written against its
+  final headings; then the other `docs/` pages in a chain for `sync:docs` (358 -> 356 -> 357); then the site pages and
+  the README (359 -> 360, and 361); the release pre-check (362) follows every rewrite. Paths suffice for the rest
+  (G4 as restated). The `g12scan.py` hits left are file names the shared pass block
   only names (`gen-skills.mjs`, `gen-reference.mjs`, `test-doc-counts.sh`) and `index.md` / `overview.md` of different
   site folders.
 
@@ -84,15 +87,23 @@ That is 11 tasks (task-353 to task-363). Stanza wave 3 is the resync, which is n
     `buildFlowChart`, `liveChart` or the like (`git grep -nE "'aid-[a-z-]+'|canonical/(skills|aid/templates)/" --
     site/scripts/__tests__ site/src/lib/__tests__`). Each hit on a file this delivery rewrites, moves or deletes goes to
     the task that changes that file, which re-points the test in the same task.
+  - **KB `sources:` (G17).** The G6 and G2 searches also run over `.aid/knowledge/` (the frontmatter `sources:` lists): each
+    `sources:` entry that cites a file this delivery deletes, moves or renames goes to the task that deletes, moves or
+    renames it, which fixes the entry in the same task (AD14).
+  - **Site generator sources (G19).** The searches also run over `site/scripts/` outside `__tests__` for the name of every
+    skill this delivery retires or renames; each hit goes to the task that retires or renames that skill.
   - Give each hit exactly one owner:
     - a task of delivery-014 (task-354 to task-363; see the task files under
       `.aid/works/work-003-full-aid-restructure/tasks/task-NNN/DETAIL.md`, the layout delivery-008's migration leaves):
       task-356 (`docs/aid-methodology.md`), task-357 (`docs/faq.md`, `glossary.md`, `repository-structure.md`),
-      task-358 (`docs/install.md` with the old -> new table, `release.md`, `chat-wake-install.md`,
+      task-364 (canonical text a generated page copies), task-358 (`docs/install.md` with the old -> new table, `release.md`, `chat-wake-install.md`,
       `diagram-content-reference.md`), task-359 (the hand-written site pages of the home page, `concepts/` and
       `get-started/`), task-360 (the hand-written site pages of `guides/`, `reference/` and `contact/`), task-361
       (`README.md` and `examples/`);
-    - "generated page: regenerated" (no hand edit) and "synced page: follows its `docs/` source";
+    - **a hit in a generated page is owned by its source**: the findings name, for each, the file the generator copies
+      the text from (a `SKILL.md`, a reference, a template, `.aid/settings.yml`); its owner is task-364, which fixes it
+      there and regenerates. "Generated page: regenerated" is never the owner of a DN-01 or DN-03 hit; a page synced from
+      `docs/` follows its `docs/` source's task;
     - "installed copy (resync)";
     - "history, left as is";
     - "rendered after the resync (gate step)" for hits in `.aid/knowledge/kb.html`, `.aid/knowledge/INDEX.md` and the
@@ -126,7 +137,8 @@ That is 11 tasks (task-353 to task-363). Stanza wave 3 is the resync, which is n
     - **DN-02**: no name of `retired-names.txt` is a folder under `canonical/skills/`; with the flag, each has a row in
       the old -> new table of `backlog.md` § Next Release;
     - **DN-03**: with the flag, every file the identity search finds carries "software first, not software only", and
-      the same search, with its test-folder exclusions, finds "kind of digital work" in no file.
+      the same search, with its test-folder exclusions, finds "kind of digital work" in no file. Without the flag it
+      prints those hits and passes, as DN-01 does, so tasks 356-361 can check their own files before the gate.
   - **Findings.** This task's scope also includes every site that
     `.aid/works/work-003-full-aid-restructure/research/delivery-014-sites.md` assigns to `task-354`.
 - **Acceptance criteria:**
@@ -151,7 +163,7 @@ That is 11 tasks (task-353 to task-363). Stanza wave 3 is the resync, which is n
 
 ### task-356: Final pass: docs/aid-methodology.md [DOCUMENT]
 
-- **Stanza wave:** 2. **Depends on:** task-353, task-354.
+- **Stanza wave:** 2. **Depends on:** task-358.
 - **Source:** AC-45.
 - **Scope:**
   - `docs/aid-methodology.md`, then `(cd site && npm run sync:docs)` for its synced page `concepts/methodology.md`.
@@ -164,9 +176,22 @@ That is 11 tasks (task-353 to task-363). Stanza wave 3 is the resync, which is n
     - The counted phrases `test-doc-counts.sh` asserts take the derived counts.
     - A generated site page (`gen-skills.mjs`, `gen-reference.mjs`) is regenerated, never edited by hand; a page synced
       from `docs/` changes only through `(cd site && npm run sync:docs)`.
+  - **KB `sources:` citations (G17).** Every `.aid/knowledge/` document whose frontmatter `sources:` cites a file or
+    folder this task deletes, moves or renames is fixed in this same task (`git grep -n -e '<path>' -e '<folder>/' --
+    .aid/knowledge/` at this task's base): the entry follows a moved file, and goes when the file is gone. Only the
+    `sources:` entries change here; the prose stays for the delivery's DOCUMENT task. So `test-artifact-discipline.sh`
+    AD14 (every `sources:` citation resolves) holds at this task's end. The KB lines are committed as the delivery
+    commits KB paths (through `kb-commit.sh` once it exists, as Feature 007's BUILD requires).
+  - **KB edits and NEXT's KB check (Feature 007 § 2, step 7; Feature 004).** This task edits no KB document. Its commits
+    may touch files that KB documents cite in their `sources:`, so NEXT's KB check after it may make a `CALL` to
+    `/aid-kb-update`, which edits and commits the drifted documents itself and records a `KB change` entry `Assumed`.
+    This task leaves that to the call; the delivery's KB DOCUMENT task then runs on the KB the call left (its own KB
+    block).
+  - Links into `docs/install.md` use the headings and anchors task-358 left; this task writes no anchor into that file.
 - **Acceptance criteria:**
-  - [ ] Run without the release flag, `bash tests/canonical/test-doc-names.sh -v` lists no DN-01 or DN-03 hit in the files this task owns; `test-doc-counts.sh` passes live, and the site `npm test` passes after `sync:docs` and regeneration.
+  - [ ] Run without the release flag, `test-doc-names.sh -v`, where the test step puts it (the scratch copy: its text matches the driver's pattern `P`), lists no DN-01 or DN-03 hit in the files this task owns; `test-doc-counts.sh` passes live, and the site `npm test` passes after `sync:docs` and regeneration.
   - [ ] Each statement about a skill, a phase or a file matches `canonical/` as the work leaves it (accuracy verified against the current tree).
+  - [ ] Over `.aid/knowledge/`, no frontmatter `sources:` entry cites a path this task deletes, moves or renames, and `test-artifact-discipline.sh` AD14 passes where the test step puts the suite (G17).
 
 ### task-357: Final pass: the FAQ, the glossary and the repository structure [DOCUMENT]
 
@@ -184,13 +209,26 @@ That is 11 tasks (task-353 to task-363). Stanza wave 3 is the resync, which is n
     - The counted phrases `test-doc-counts.sh` asserts take the derived counts.
     - A generated site page (`gen-skills.mjs`, `gen-reference.mjs`) is regenerated, never edited by hand; a page synced
       from `docs/` changes only through `(cd site && npm run sync:docs)`.
+  - **KB `sources:` citations (G17).** Every `.aid/knowledge/` document whose frontmatter `sources:` cites a file or
+    folder this task deletes, moves or renames is fixed in this same task (`git grep -n -e '<path>' -e '<folder>/' --
+    .aid/knowledge/` at this task's base): the entry follows a moved file, and goes when the file is gone. Only the
+    `sources:` entries change here; the prose stays for the delivery's DOCUMENT task. So `test-artifact-discipline.sh`
+    AD14 (every `sources:` citation resolves) holds at this task's end. The KB lines are committed as the delivery
+    commits KB paths (through `kb-commit.sh` once it exists, as Feature 007's BUILD requires).
+  - **KB edits and NEXT's KB check (Feature 007 § 2, step 7; Feature 004).** This task edits no KB document. Its commits
+    may touch files that KB documents cite in their `sources:`, so NEXT's KB check after it may make a `CALL` to
+    `/aid-kb-update`, which edits and commits the drifted documents itself and records a `KB change` entry `Assumed`.
+    This task leaves that to the call; the delivery's KB DOCUMENT task then runs on the KB the call left (its own KB
+    block).
+  - Links into `docs/install.md` use the headings and anchors task-358 left; this task writes no anchor into that file.
 - **Acceptance criteria:**
-  - [ ] Run without the release flag, `bash tests/canonical/test-doc-names.sh -v` lists no DN-01 or DN-03 hit in the files this task owns; `test-doc-counts.sh` passes live, and the site `npm test` passes after `sync:docs` and regeneration.
+  - [ ] Run without the release flag, `test-doc-names.sh -v`, where the test step puts it (the scratch copy: its text matches the driver's pattern `P`), lists no DN-01 or DN-03 hit in the files this task owns; `test-doc-counts.sh` passes live, and the site `npm test` passes after `sync:docs` and regeneration.
   - [ ] Each glossary entry and structure line matches `canonical/` and the KB's `domain-glossary.md` and `project-structure.md` as the work leaves them.
+  - [ ] Over `.aid/knowledge/`, no frontmatter `sources:` entry cites a path this task deletes, moves or renames, and `test-artifact-discipline.sh` AD14 passes where the test step puts the suite (G17).
 
 ### task-358: Final pass: install, release and the old -> new table [DOCUMENT]
 
-- **Stanza wave:** 2. **Depends on:** task-357.
+- **Stanza wave:** 2. **Depends on:** task-353, task-354, task-364.
 - **Source:** AC-24, AC-45.
 - **Scope:**
   - `docs/install.md`, `docs/release.md`, `docs/chat-wake-install.md` and `docs/diagram-content-reference.md`, then
@@ -208,13 +246,25 @@ That is 11 tasks (task-353 to task-363). Stanza wave 3 is the resync, which is n
     - The counted phrases `test-doc-counts.sh` asserts take the derived counts.
     - A generated site page (`gen-skills.mjs`, `gen-reference.mjs`) is regenerated, never edited by hand; a page synced
       from `docs/` changes only through `(cd site && npm run sync:docs)`.
+  - **KB `sources:` citations (G17).** Every `.aid/knowledge/` document whose frontmatter `sources:` cites a file or
+    folder this task deletes, moves or renames is fixed in this same task (`git grep -n -e '<path>' -e '<folder>/' --
+    .aid/knowledge/` at this task's base): the entry follows a moved file, and goes when the file is gone. Only the
+    `sources:` entries change here; the prose stays for the delivery's DOCUMENT task. So `test-artifact-discipline.sh`
+    AD14 (every `sources:` citation resolves) holds at this task's end. The KB lines are committed as the delivery
+    commits KB paths (through `kb-commit.sh` once it exists, as Feature 007's BUILD requires).
+  - **KB edits and NEXT's KB check (Feature 007 § 2, step 7; Feature 004).** This task edits no KB document. Its commits
+    may touch files that KB documents cite in their `sources:`, so NEXT's KB check after it may make a `CALL` to
+    `/aid-kb-update`, which edits and commits the drifted documents itself and records a `KB change` entry `Assumed`.
+    This task leaves that to the call; the delivery's KB DOCUMENT task then runs on the KB the call left (its own KB
+    block).
 - **Acceptance criteria:**
-  - [ ] Run without the release flag, `bash tests/canonical/test-doc-names.sh -v` lists no DN-01 or DN-03 hit in the files this task owns; `test-doc-counts.sh` passes live, and the site `npm test` passes after `sync:docs` and regeneration.
+  - [ ] Run without the release flag, `test-doc-names.sh -v`, where the test step puts it (the scratch copy: its text matches the driver's pattern `P`), lists no DN-01 or DN-03 hit in the files this task owns; `test-doc-counts.sh` passes live, and the site `npm test` passes after `sync:docs` and regeneration.
   - [ ] `docs/install.md` holds exactly one marked table, and each name of `tests/canonical/retired-names.txt` appears in it.
+  - [ ] Over `.aid/knowledge/`, no frontmatter `sources:` entry cites a path this task deletes, moves or renames, and `test-artifact-discipline.sh` AD14 passes where the test step puts the suite (G17).
 
 ### task-359: Final pass: the site's home page, concepts and getting started [DOCUMENT]
 
-- **Stanza wave:** 2. **Depends on:** task-358.
+- **Stanza wave:** 2. **Depends on:** task-357.
 - **Source:** AC-45.
 - **Scope:**
   - The hand-written pages the findings' D4 classes under `site/src/content/docs/`: `index.mdx`, `concepts/index.md`,
@@ -229,13 +279,26 @@ That is 11 tasks (task-353 to task-363). Stanza wave 3 is the resync, which is n
     - The counted phrases `test-doc-counts.sh` asserts take the derived counts.
     - A generated site page (`gen-skills.mjs`, `gen-reference.mjs`) is regenerated, never edited by hand; a page synced
       from `docs/` changes only through `(cd site && npm run sync:docs)`.
+  - **KB `sources:` citations (G17).** Every `.aid/knowledge/` document whose frontmatter `sources:` cites a file or
+    folder this task deletes, moves or renames is fixed in this same task (`git grep -n -e '<path>' -e '<folder>/' --
+    .aid/knowledge/` at this task's base): the entry follows a moved file, and goes when the file is gone. Only the
+    `sources:` entries change here; the prose stays for the delivery's DOCUMENT task. So `test-artifact-discipline.sh`
+    AD14 (every `sources:` citation resolves) holds at this task's end. The KB lines are committed as the delivery
+    commits KB paths (through `kb-commit.sh` once it exists, as Feature 007's BUILD requires).
+  - **KB edits and NEXT's KB check (Feature 007 § 2, step 7; Feature 004).** This task edits no KB document. Its commits
+    may touch files that KB documents cite in their `sources:`, so NEXT's KB check after it may make a `CALL` to
+    `/aid-kb-update`, which edits and commits the drifted documents itself and records a `KB change` entry `Assumed`.
+    This task leaves that to the call; the delivery's KB DOCUMENT task then runs on the KB the call left (its own KB
+    block).
+  - Links into `docs/install.md` use the headings and anchors task-358 left; this task writes no anchor into that file.
 - **Acceptance criteria:**
-  - [ ] Run without the release flag, `bash tests/canonical/test-doc-names.sh -v` lists no DN-01 or DN-03 hit in the files this task owns; `test-doc-counts.sh` passes live, and the site `npm test` passes after `sync:docs` and regeneration.
+  - [ ] Run without the release flag, `test-doc-names.sh -v`, where the test step puts it (the scratch copy: its text matches the driver's pattern `P`), lists no DN-01 or DN-03 hit in the files this task owns; `test-doc-counts.sh` passes live, and the site `npm test` passes after `sync:docs` and regeneration.
   - [ ] Each walkthrough's steps match the skills and phases as `canonical/` leaves them.
+  - [ ] Over `.aid/knowledge/`, no frontmatter `sources:` entry cites a path this task deletes, moves or renames, and `test-artifact-discipline.sh` AD14 passes where the test step puts the suite (G17).
 
 ### task-360: Final pass: the site's guides and hand-written reference pages [DOCUMENT]
 
-- **Stanza wave:** 2. **Depends on:** task-358.
+- **Stanza wave:** 2. **Depends on:** task-359.
 - **Source:** AC-45.
 - **Scope:**
   - The hand-written pages the findings' D4 classes under `site/src/content/docs/guides/`, `reference/` and `contact/`
@@ -251,13 +314,26 @@ That is 11 tasks (task-353 to task-363). Stanza wave 3 is the resync, which is n
     - The counted phrases `test-doc-counts.sh` asserts take the derived counts.
     - A generated site page (`gen-skills.mjs`, `gen-reference.mjs`) is regenerated, never edited by hand; a page synced
       from `docs/` changes only through `(cd site && npm run sync:docs)`.
+  - **KB `sources:` citations (G17).** Every `.aid/knowledge/` document whose frontmatter `sources:` cites a file or
+    folder this task deletes, moves or renames is fixed in this same task (`git grep -n -e '<path>' -e '<folder>/' --
+    .aid/knowledge/` at this task's base): the entry follows a moved file, and goes when the file is gone. Only the
+    `sources:` entries change here; the prose stays for the delivery's DOCUMENT task. So `test-artifact-discipline.sh`
+    AD14 (every `sources:` citation resolves) holds at this task's end. The KB lines are committed as the delivery
+    commits KB paths (through `kb-commit.sh` once it exists, as Feature 007's BUILD requires).
+  - **KB edits and NEXT's KB check (Feature 007 § 2, step 7; Feature 004).** This task edits no KB document. Its commits
+    may touch files that KB documents cite in their `sources:`, so NEXT's KB check after it may make a `CALL` to
+    `/aid-kb-update`, which edits and commits the drifted documents itself and records a `KB change` entry `Assumed`.
+    This task leaves that to the call; the delivery's KB DOCUMENT task then runs on the KB the call left (its own KB
+    block).
+  - Links into `docs/install.md` use the headings and anchors task-358 left; this task writes no anchor into that file.
 - **Acceptance criteria:**
-  - [ ] Run without the release flag, `bash tests/canonical/test-doc-names.sh -v` lists no DN-01 or DN-03 hit in the files this task owns; `test-doc-counts.sh` passes live, and the site `npm test` passes after `sync:docs` and regeneration.
+  - [ ] Run without the release flag, `test-doc-names.sh -v`, where the test step puts it (the scratch copy: its text matches the driver's pattern `P`), lists no DN-01 or DN-03 hit in the files this task owns; `test-doc-counts.sh` passes live, and the site `npm test` passes after `sync:docs` and regeneration.
   - [ ] Each artifact, setting and command a page names exists in `canonical/` or `bin/aid` as the work leaves them.
+  - [ ] Over `.aid/knowledge/`, no frontmatter `sources:` entry cites a path this task deletes, moves or renames, and `test-artifact-discipline.sh` AD14 passes where the test step puts the suite (G17).
 
 ### task-361: Final pass: README.md and the examples [DOCUMENT]
 
-- **Stanza wave:** 2. **Depends on:** task-358.
+- **Stanza wave:** 2. **Depends on:** task-357.
 - **Source:** AC-45.
 - **Scope:**
   - `README.md` (its skills, phases, counts and identity line) and `examples/` (its `README.md` and the three example
@@ -272,9 +348,22 @@ That is 11 tasks (task-353 to task-363). Stanza wave 3 is the resync, which is n
     - The counted phrases `test-doc-counts.sh` asserts take the derived counts.
     - A generated site page (`gen-skills.mjs`, `gen-reference.mjs`) is regenerated, never edited by hand; a page synced
       from `docs/` changes only through `(cd site && npm run sync:docs)`.
+  - **KB `sources:` citations (G17).** Every `.aid/knowledge/` document whose frontmatter `sources:` cites a file or
+    folder this task deletes, moves or renames is fixed in this same task (`git grep -n -e '<path>' -e '<folder>/' --
+    .aid/knowledge/` at this task's base): the entry follows a moved file, and goes when the file is gone. Only the
+    `sources:` entries change here; the prose stays for the delivery's DOCUMENT task. So `test-artifact-discipline.sh`
+    AD14 (every `sources:` citation resolves) holds at this task's end. The KB lines are committed as the delivery
+    commits KB paths (through `kb-commit.sh` once it exists, as Feature 007's BUILD requires).
+  - **KB edits and NEXT's KB check (Feature 007 § 2, step 7; Feature 004).** This task edits no KB document. Its commits
+    may touch files that KB documents cite in their `sources:`, so NEXT's KB check after it may make a `CALL` to
+    `/aid-kb-update`, which edits and commits the drifted documents itself and records a `KB change` entry `Assumed`.
+    This task leaves that to the call; the delivery's KB DOCUMENT task then runs on the KB the call left (its own KB
+    block).
+  - Links into `docs/install.md` use the headings and anchors task-358 left; this task writes no anchor into that file.
 - **Acceptance criteria:**
-  - [ ] Run without the release flag, `bash tests/canonical/test-doc-names.sh -v` lists no DN-01 or DN-03 hit in the files this task owns; `test-doc-counts.sh` passes live, and the site `npm test` passes after `sync:docs` and regeneration.
+  - [ ] Run without the release flag, `test-doc-names.sh -v`, where the test step puts it (the scratch copy: its text matches the driver's pattern `P`), lists no DN-01 or DN-03 hit in the files this task owns; `test-doc-counts.sh` passes live, and the site `npm test` passes after `sync:docs` and regeneration.
   - [ ] Each example file matches the template it shows (`requirements-template.md`, `plan-template.md`, `work-state-template.yml`) as the work leaves it.
+  - [ ] Over `.aid/knowledge/`, no frontmatter `sources:` entry cites a path this task deletes, moves or renames, and `test-artifact-discipline.sh` AD14 passes where the test step puts the suite (G17).
 
 ### task-362: Release readiness before the gate: regeneration, the site build and the flagged checks [TEST]
 
@@ -304,6 +393,8 @@ That is 11 tasks (task-353 to task-363). Stanza wave 3 is the resync, which is n
   - `.aid/knowledge/test-landscape.md`: `test-doc-names.sh` and `retired-names.txt`, its lane and its place in the live
     release checks; the full integration run before release (every sample 3 of 3, `008-15`, `009-11`, `009-12`).
   - Then regenerate `INDEX.md` and render `kb.html` with the installed scripts (G0).
+  - What this task writes under `.aid/knowledge/` is inside DN-03's identity search: it describes DN-03 without quoting
+    the search's phrases, or the file also carries "software first, not software only" (G3).
   - Name no work and no work folder.
   - **KB edits and NEXT's KB check (Feature 007 § 2, step 7; Feature 004).** After every earlier task of this
     delivery, NEXT's KB check may make a `CALL` to `/aid-kb-update`, which edits and commits the drifted documents
@@ -335,7 +426,27 @@ That is 11 tasks (task-353 to task-363). Stanza wave 3 is the resync, which is n
        ready.
 - **Acceptance criteria:**
   - [ ] `test-landscape.md` names `test-doc-names.sh`, `retired-names.txt` and the integration run.
+  - [ ] With `AID_RELEASE_CHECK=1`, `test-doc-names.sh` passes where the test step puts it (the scratch copy), after this task's KB edits: DN-01 and DN-03 find nothing, the files this task writes included (G3).
   - [ ] `INDEX.md` is regenerated and `render-kb-view.sh --check` exits 0; no work id, and the lints pass.
+
+### task-364: Canonical text the generated pages copy: no retired name and no old phase sequence [IMPLEMENT]
+
+- **Stanza wave:** 2. **Depends on:** task-353, task-354.
+- **Source:** AC-31, AC-45.
+- **Scope:**
+  - Fix at its source every DN-01 or DN-03 hit the findings place in a generated site page (D1 with D4): the `SKILL.md`,
+    reference or template whose text `gen-skills.mjs` or `gen-reference.mjs` copies into `site/src/content/docs/` (a
+    description, a flow label, a source fragment) -- a retired name re-pointed to the skill that does the job now, an old
+    phase sequence (for example "Discover->Execute") rewritten with the phases Definition, Specification, Planning,
+    Building and CI. Only those lines change; text between `legacy-skill-names` markers stays.
+  - Then the site regeneration below; a generated page is never edited by hand.
+  - Suites to update in this same task: every suite asserting a changed line (the findings' map), and `test-actions.sh`
+    where AS-02 reads it.
+  - **Site fixtures (G11, extended).** The site tests that load a file this task rewrites as a fixture (the findings'
+    site-fixture search) are re-pointed in this same task.
+- **Acceptance criteria:**
+  - [ ] Run without the release flag, `test-doc-names.sh -v`, where the test step puts it, lists no DN-01 or DN-03 hit in any generated page under `site/src/content/docs/`.
+  - [ ] `test-actions.sh` and the suites the findings name pass where the test step puts them, and the site `npm test` passes after regeneration.
 
 ---
 
@@ -362,12 +473,14 @@ checks with the flag; G0); then the approval, the push and CI through `/aid-moni
 ```text
 wave 1: task-353
 wave 2: task-354
-wave 3: task-355, task-356
-wave 4: task-357
-wave 5: task-358
-wave 6: task-359, task-360, task-361
-wave 7: task-362
-wave 8: task-363
+wave 3: task-355, task-364
+wave 4: task-358
+wave 5: task-356
+wave 6: task-357
+wave 7: task-359, task-361
+wave 8: task-360
+wave 9: task-362
+wave 10: task-363
 ```
 
 Step 5 writes the table under `### delivery-014 Execution Graph`, one task per row (waiting for the go-ahead).
@@ -387,6 +500,7 @@ Step 5 writes the table under `### delivery-014 Execution Graph`, one task per r
 | S7 | A pre-gate run of the release checks. | A TEST task (362) runs the regeneration, the site build and the flagged checks before the resync, so the gate finds no pass failure for the first time. | Settled by recommendation (Q136). |
 | S8 | KB `sources:` citations and retired skills' site pages (delivery-012 light review rows 1 and 8). | G17: every task that deletes, moves or renames a file fixes the KB `sources:` entries that cite it in the same task (AD14), with a criterion; the DOCUMENT tasks keep the prose. G18: every task that retires or renames a skill `git rm`s its generated page and flow before regenerating, with a criterion. The research task searches `.aid/knowledge/` `sources:` too. | G17, G18 (general rules). |
 | S9 | The KB block in the non-KB documentation tasks. | 356-361 carry the variant for a task that edits no KB document: NEXT's KB check may call `/aid-kb-update` after them, and task-363 runs on the KB that call left. | Delivery-013 light review row 5 (every DOCUMENT task carries the block). |
+| S10 | Delivery-014 light review. | Row 1: task-363 runs `test-doc-names.sh` with the flag over what it writes (G3). Row 2: a DN hit in a generated page is owned by its canonical source; new task-364 fixes those sources and regenerates, and task-353 classes each such hit by source. Row 3: task-358 (the table and `install.md`'s headings) now comes before 356 and 357, which write no anchor into `install.md`. Row 4: DN-03 prints its hits and passes without the flag. Row 5: the doc tasks run `test-doc-names.sh` where the test step puts it (the scratch copy). Row 6: 360 depends on 359 (both may edit `skill-counts.test.mjs` and `gen-reference.test.mjs`). Row 7: every task has a path to 353 and 354; no extra edge. | G3, G4, G10, G12. |
 
 ---
 

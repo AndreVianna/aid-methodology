@@ -21,7 +21,8 @@
   - **DN-02**: no name of `retired-names.txt` is a folder under `canonical/skills/`; with the flag, each has a row in
     the old -> new table of `backlog.md` § Next Release;
   - **DN-03**: with the flag, every file the identity search finds carries "software first, not software only", and
-    the same search, with its test-folder exclusions, finds "kind of digital work" in no file.
+    the same search, with its test-folder exclusions, finds "kind of digital work" in no file. Without the flag it
+    prints those hits and passes, as DN-01 does, so tasks 356-361 can check their own files before the gate.
 - **Findings.** This task's scope also includes every site that
   `.aid/works/work-003-full-aid-restructure/research/delivery-014-sites.md` assigns to `task-354`.
 - **Test step** (PLAN.md § "Testing before the resync"; the same in every task of this delivery).

@@ -13,6 +13,8 @@
 - `.aid/knowledge/test-landscape.md`: `test-doc-names.sh` and `retired-names.txt`, its lane and its place in the live
   release checks; the full integration run before release (every sample 3 of 3, `008-15`, `009-11`, `009-12`).
 - Then regenerate `INDEX.md` and render `kb.html` with the installed scripts (G0).
+- What this task writes under `.aid/knowledge/` is inside DN-03's identity search: it describes DN-03 without quoting
+  the search's phrases, or the file also carries "software first, not software only" (G3).
 - Name no work and no work folder.
 - **KB edits and NEXT's KB check (Feature 007 § 2, step 7; Feature 004).** After every earlier task of this
   delivery, NEXT's KB check may make a `CALL` to `/aid-kb-update`, which edits and commits the drifted documents
@@ -84,6 +86,7 @@
 
 **Acceptance Criteria:**
 - [ ] `test-landscape.md` names `test-doc-names.sh`, `retired-names.txt` and the integration run.
+- [ ] With `AID_RELEASE_CHECK=1`, `test-doc-names.sh` passes where the test step puts it (the scratch copy), after this task's KB edits: DN-01 and DN-03 find nothing, the files this task writes included (G3).
 - [ ] `INDEX.md` is regenerated and `render-kb-view.sh --check` exits 0; no work id, and the lints pass.
 - [ ] The test step (last Scope bullet) reports no failure: the spawn-free checks, the scratch half, the live half and the site or dashboard runs it calls for. Every existing test still passes.
 - [ ] All section-6 quality gates pass (REQUIREMENTS.md § 6: NFR-N, NFR-T, NFR-Q).

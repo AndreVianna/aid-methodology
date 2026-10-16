@@ -41,11 +41,14 @@
   - a task of delivery-014 (task-354 to task-363; see the task files under
     `.aid/works/work-003-full-aid-restructure/tasks/task-NNN/DETAIL.md`, the layout delivery-008's migration leaves):
     task-356 (`docs/aid-methodology.md`), task-357 (`docs/faq.md`, `glossary.md`, `repository-structure.md`),
-    task-358 (`docs/install.md` with the old -> new table, `release.md`, `chat-wake-install.md`,
+    task-364 (canonical text a generated page copies), task-358 (`docs/install.md` with the old -> new table, `release.md`, `chat-wake-install.md`,
     `diagram-content-reference.md`), task-359 (the hand-written site pages of the home page, `concepts/` and
     `get-started/`), task-360 (the hand-written site pages of `guides/`, `reference/` and `contact/`), task-361
     (`README.md` and `examples/`);
-  - "generated page: regenerated" (no hand edit) and "synced page: follows its `docs/` source";
+  - **a hit in a generated page is owned by its source**: the findings name, for each, the file the generator copies
+    the text from (a `SKILL.md`, a reference, a template, `.aid/settings.yml`); its owner is task-364, which fixes it
+    there and regenerates. "Generated page: regenerated" is never the owner of a DN-01 or DN-03 hit; a page synced from
+    `docs/` follows its `docs/` source's task;
   - "installed copy (resync)";
   - "history, left as is";
   - "rendered after the resync (gate step)" for hits in `.aid/knowledge/kb.html`, `.aid/knowledge/INDEX.md` and the

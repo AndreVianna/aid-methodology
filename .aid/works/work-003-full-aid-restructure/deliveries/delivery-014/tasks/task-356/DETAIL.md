@@ -7,7 +7,7 @@
 
 **Source:** feature-009-one-skill-per-need -> delivery-014 -> AC-45
 
-**Depends on:** task-353, task-354
+**Depends on:** task-358
 
 **Scope:**
 - `docs/aid-methodology.md`, then `(cd site && npm run sync:docs)` for its synced page `concepts/methodology.md`.
@@ -31,6 +31,7 @@
   `/aid-kb-update`, which edits and commits the drifted documents itself and records a `KB change` entry `Assumed`.
   This task leaves that to the call; the delivery's KB DOCUMENT task then runs on the KB the call left (its own KB
   block).
+- Links into `docs/install.md` use the headings and anchors task-358 left; this task writes no anchor into that file.
 - **Site regeneration (G1, G5).** When this task adds, deletes, renames or edits anything under
   `canonical/skills/`, `canonical/agents/` or `canonical/aid/templates/`, it runs
   `(cd site && npm run gen:skills && npm run gen:reference)` in this same task and commits the output:
@@ -80,7 +81,7 @@
        `references/blocker.md`).
 
 **Acceptance Criteria:**
-- [ ] Run without the release flag, `bash tests/canonical/test-doc-names.sh -v` lists no DN-01 or DN-03 hit in the files this task owns; `test-doc-counts.sh` passes live, and the site `npm test` passes after `sync:docs` and regeneration.
+- [ ] Run without the release flag, `test-doc-names.sh -v`, where the test step puts it (the scratch copy: its text matches the driver's pattern `P`), lists no DN-01 or DN-03 hit in the files this task owns; `test-doc-counts.sh` passes live, and the site `npm test` passes after `sync:docs` and regeneration.
 - [ ] Each statement about a skill, a phase or a file matches `canonical/` as the work leaves it (accuracy verified against the current tree).
 - [ ] Over `.aid/knowledge/`, no frontmatter `sources:` entry cites a path this task deletes, moves or renames, and `test-artifact-discipline.sh` AD14 passes where the test step puts the suite (G17).
 - [ ] The test step (last Scope bullet) reports no failure: the spawn-free checks, the scratch half, the live half and the site or dashboard runs it calls for. Every existing test still passes.
