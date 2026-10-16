@@ -6269,6 +6269,9 @@ Nothing: this is the last feature.
     `lite` work's quality is Specification's and Planning's graded checks, as for any work;
   - `integration-map.md`: its `sources:` entry and the host-tool table name `aid-configure`;
   - `coding-standards.md`: settings are "managed by `/aid-configure`";
+  - every other KB document that names `aid-config` as a current skill (today `architecture.md`,
+    `capability-inventory.md`, `module-map.md`, `pipeline-contracts.md`, and any other the search finds) names
+    `aid-configure`; only a `legacy`/old-work mention keeps the old name;
   - `infrastructure.md`: the ticket family is `/aid-read-ticket` plus the `ticket` kind of `/aid-create` and `/aid-update`,
     its sources the two connector procedures;
   - `roadmap.md`: its shortcut-path sentences describe the action skills; and `## Later` gains one entry, "Beyond software"
