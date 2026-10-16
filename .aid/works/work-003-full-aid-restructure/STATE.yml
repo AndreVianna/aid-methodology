@@ -1510,4 +1510,4 @@ qa:
     context: 'Plan review cycle 4 row 26: in deliveries 010-014 F007''s FINAL full-suite run comes before the resync, so the suites that read installed or rendered copies (test-dogfood-byte-identity.sh and others) always fail there and no task can fix them.'
     suggested: 'Apply the plan''s scratch-copy rule to FINAL too: suites that read installed or rendered copies run in the clean scratch copy, after run_generator.py there; then one more review.'
     answer: 'Accepted as recommended (fix, then one more review).'
-    applied_to: 'PLAN.md (Testing between tasks; deliveries 010-014)'
+    applied_to: 'PLAN.md (Testing before the resync; deliveries 010-014; switch table, delivery-010 gate session)'

@@ -13,20 +13,40 @@ The maintainer set the shape in the work `STATE.yml` `qa` Q111-Q127.
 - **Same-task rule (Q106).** A task that rewrites, moves or deletes a file also updates every existing
   suite that asserts text in that file, and it is not `Done` while such a suite fails. A delivery's
   last wave adds only that delivery's *new* static-suite group, its unit cases and its samples.
-- **Testing between tasks.** In the live work tree, `run_generator.py` runs only at a delivery's
-  resync (Toolchain and Branching, The resync rule). Each task runs the suites whose `# COVERS:`
-  headers name the files it changed (`test-landscape.md` § Running only the suites a change can
-  affect). A suite that reads an installed copy (`.aid/runtime/`, `.agents/skills/`, `.claude/skills/`,
-  `.claude/agents/`) or a rendered one (`profiles/`) runs in a **scratch copy with a repository of its
-  own**. Examples are `test-work-state-template.sh`, `test-connector-skills-structural.sh`,
-  `test-cutover-no-dangling.sh` and `test-dogfood-byte-identity.sh`.
+- **Testing before the resync (Q131).** In the live work tree, `run_generator.py` runs only at a
+  delivery's resync (Toolchain and Branching, The resync rule). Until then the live tree's installed
+  copies (the managed set `sync_dogfood.py` names: `.agents/skills/`, `.claude/skills/aid-*`,
+  `.aid/runtime/`, `.claude/agents/`, `.cursor/agents/`, `AGENTS.md`, `CLAUDE.md`) and its rendered
+  `profiles/` are one resync behind `canonical/`. One rule holds for **every suite run before the
+  delivery's resync**, whoever runs it: a task's tests, and from delivery-010 on F007's full suite at
+  FINAL, each re-run after a fix round, a correction call's run and F008's run on a merged tree.
+  - A **copy-reading suite** reads what the resync writes, from its own repository: `profiles/` or an
+    installed copy, directly, or through a clone of the repository's head or a release staged from it
+    (`release.sh` takes each tool's artifacts from `profiles/<tool>`, and its non-stage modes re-render
+    and reject drift against the head). It runs in a **scratch copy with a repository of its own**,
+    after `run_generator.py` there. Examples are `test-dogfood-byte-identity.sh`,
+    `test-work-state-template.sh`, `test-connector-skills-structural.sh`, `test-cutover-no-dangling.sh`
+    and `test-release-install-e2e.sh`.
+  - **Every other suite runs in the live tree.**
+  - A task runs the suites whose `# COVERS:` headers name the files it changed (`test-landscape.md`
+    § Running only the suites a change can affect), each where this rule puts it. `/aid-detail` writes
+    this rule into every task file's test steps, so each builder's executor follows it.
   - **How the copy is made:**
     ```sh
     S=.aid/.temp/scratch/task-NNN; rm -rf "$S"; mkdir -p "$S"
     tar -C <work-003 worktree> --exclude=./.git --exclude=./.aid/.temp -cf - . | tar -C "$S" -xf -
     git -C "$S" init -q && git -C "$S" add -A && git -C "$S" -c user.name=scratch -c user.email=scratch@local commit -qm scratch
+    (cd "$S" && python3 .claude/skills/generate-profile/scripts/run_generator.py)
+    git -C "$S" add -A && git -C "$S" -c user.name=scratch -c user.email=scratch@local commit -q --allow-empty -m resync
     ```
-    Then `run_generator.py` runs with `$S` as its working folder, and the suites run there.
+    - The copy's own `run_generator.py` runs, from inside the copy. The generator renders into its
+      working folder, but starts `sync_dogfood.py` from its own folder; the live tree's script, run
+      there, would resync the live tree.
+    - The second commit makes the copy's head the tree the resync will commit. A suite that clones the
+      head, or checks render drift against it, then sees that tree.
+    - The copy-reading suites run from inside the copy (`cd "$S"`), because `run-all.sh` re-invokes
+      itself by the path it was started with. The copy is deleted (`rm -rf "$S"`) once they have run,
+      and before any live suite runs, so no suite walking the live tree finds it.
   - **Why the live work cannot be reached.**
     - The worktree's `.git` file, which points into this repository's object store and worktree list,
       is not copied.
@@ -35,6 +55,74 @@ The maintainer set the shape in the work `STATE.yml` `qa` Q111-Q127.
     - `sync_dogfood.py` resolves its target from its own path, which is inside the copy.
     - So every migration it runs (from delivery-005 on) rewrites only the copy's files. The live
       `work-003` state is never touched.
+  - **The whole suite before a resync** is the same rule over every suite, reported as one result.
+    `run-all.sh` cannot choose suites: its only option is `-v`, with `AID_TEST_JOBS` for parallelism,
+    and it runs every `tests/canonical/test-*.sh` beside it. So the run has three steps:
+    1. **Scratch half.** In the copy, every suite outside the copy-reading set is deleted, and the
+       copy's `run-all.sh` runs the rest.
+    2. **Live half.** `run-all.sh` runs in the live tree. The copy-reading suites run there too, since
+       it cannot skip them, but their live results are dropped.
+    3. **One result.** The failing suites are the scratch half's failures plus the live half's
+       failures outside the set, by name. The run exits 0 only when there are none. When the generator
+       fails in the copy, that failure is listed, and the copy-reading suites are listed as not run.
+  - **Which suites are in the set.** A search that errs wide picks every suite whose text names
+    `profiles/`, `release.sh` or an installed path.
+    - A suite picked wrongly gets in the copy the result it would get in the live tree after the
+      resync. No suite reads its repository's history or other worktrees: its git uses on its own root
+      are `status --porcelain` counts, `rev-parse`, a temporary tag and a clone of the head, and the
+      copy's repository answers them alike.
+    - A copy-reading suite the search misses fails, or passes on stale copies, in the live half. G0's
+      run after the resync, where nothing is stale, catches either.
+  - **The driver.** `full-suite.sh` in the work folder runs the three steps. The main conversation
+    saves it in delivery-010's gate session and records it as the work's full-suite command
+    (switch questions). Its text:
+    ```bash
+    #!/usr/bin/env bash
+    # The full suite before a delivery's resync (PLAN.md, Testing before the resync).
+    set -uo pipefail
+    cd "$(git rev-parse --show-toplevel)" || exit 2
+    P='profiles/|release\.sh|\.aid/runtime|\.agents/skills|\.claude/skills|\.claude/agents|\.cursor/agents|AGENTS\.md|CLAUDE\.md|aid-manifest'
+    mapfile -t COPY < <(grep -lE "$P" tests/canonical/test-*.sh)
+    in_copy() { printf '%s\n' "${COPY[@]}" | grep -qxF "$1"; }
+    fails() { sed -n '/CANONICAL SUITES FAILED:$/,$ s/^  - //p' "$1"; }
+    failed=(); S=.aid/.temp/scratch/full-suite; L="$(mktemp)"
+    # 1. Scratch half: the copy-reading suites, on the copy after its own generator.
+    rm -rf "$S"; mkdir -p "$S"
+    tar --exclude=./.git --exclude=./.aid/.temp -cf - . | tar -C "$S" -xf -
+    g() { git -C "$S" -c user.name=scratch -c user.email=scratch@local "$@"; }
+    g init -q && g add -A && g commit -qm scratch
+    if (cd "$S" && python3 .claude/skills/generate-profile/scripts/run_generator.py); then
+      g add -A && g commit -q --allow-empty -m resync
+      for f in "$S"/tests/canonical/test-*.sh; do in_copy "tests/canonical/${f##*/}" || rm -f "$f"; done
+      (cd "$S" && HOME="$(mktemp -d)" bash tests/run-all.sh) | tee "$L"; rc=${PIPESTATUS[0]}
+      mapfile -t F < <(fails "$L"); failed+=("${F[@]}")
+      [ "$rc" -ne 0 ] && [ ${#F[@]} -eq 0 ] && failed+=("run-all.sh in the scratch copy (exit $rc)")
+    else
+      failed+=("run_generator.py in the scratch copy" "${COPY[@]/%/ (not run)}")
+    fi
+    rm -rf "$S"
+    # 2. Live half: every other suite. run-all.sh cannot skip, so the copy-reading lines are dropped.
+    HOME="$(mktemp -d)" bash tests/run-all.sh | tee "$L"; rc=${PIPESTATUS[0]}
+    mapfile -t F < <(fails "$L")
+    for t in "${F[@]}"; do in_copy "$t" || failed+=("$t"); done
+    [ "$rc" -ne 0 ] && [ ${#F[@]} -eq 0 ] && failed+=("run-all.sh in the live tree (exit $rc)")
+    rm -f "$L"
+    # 3. One result.
+    echo "=================================================="
+    total=$(ls tests/canonical/test-*.sh | wc -l)
+    if [ ${#failed[@]} -eq 0 ]; then
+      echo "FULL SUITE PASSED: ${#COPY[@]} suites in the scratch copy, $((total - ${#COPY[@]})) in the live tree"; exit 0
+    fi
+    echo "FULL SUITE FAILED (${total} suites):"; printf '  - %s\n' "${failed[@]}"; exit 1
+    ```
+  - **Against the `not taken` baseline.** This work records its full-suite baseline as `not taken`
+    (switch questions), so F007 shows every FINAL failure at the approval, each with a recommendation
+    (F007 § 2 step 9). Under this rule no copy-reading suite meets a stale copy, so each listed failure
+    is the work's own. The one exception is a suite the search missed. The run names it, it is added to
+    the driver's search (a work-folder change, not resync-relevant), and the run repeats.
+  - **After the resync** the live tree's copies are current. So G0's `run-all.sh` runs every suite in
+    the live tree, and no scratch half is needed there. G0 uses a scratch copy only to compare its
+    output with the live trees.
 - **AC citations.** A gate criterion cites only the ACs its own checks verify in that delivery. For a
   sample, these are the ACs its `covers` field names in the spec. When the delivery builds only part
   of an AC, the criterion names that part as a clause, for example "AC-37 (resume clause)". An AC
@@ -46,11 +134,11 @@ Every delivery's gate ends with G0. G0 is checked on a tree whose last resync-re
 delivery's resync, in a session started after it (The resync rule). G0 holds when all of these are
 true:
 
-- `HOME="$(mktemp -d)" bash tests/run-all.sh` exits 0 and the site `npm test` passes, both run
-  locally. The canonical lane does not run on feature branches (`test-landscape.md` § CI Lanes and
-  Where They Run).
-- `run_generator.py`, run in a scratch copy made as "Testing between tasks" says, produces `profiles/`
-  and installed trees identical to the live ones.
+- `HOME="$(mktemp -d)" bash tests/run-all.sh` exits 0 in the live tree, with every suite run there
+  (Testing before the resync, After the resync), and the site `npm test` passes, both run locally. The
+  canonical lane does not run on feature branches (`test-landscape.md` § CI Lanes and Where They Run).
+- `run_generator.py`, run in a scratch copy made as "Testing before the resync" says, produces
+  `profiles/` and installed trees identical to the live ones.
 - `installer-tests.yml` is green for the delivery's commits on `work-003`. (AC-25) It covers what CI
   really runs:
   - the Linux bash-harness job runs its `SUITES` list, where PowerShell halves run under `pwsh` 7.
@@ -1110,7 +1198,7 @@ later migration of this work meets no duplicate task id.
      builds that fix.
    - It ends at the first resync whose gate passes and whose approval is answered yes.
 5. A task that edits an agent does not run the generator. Its render reaches `profiles/` at the
-   resync. Tasks test as the intro's "Testing between tasks" says.
+   resync. Tasks test as the intro's "Testing before the resync" says.
 
 **How deliveries 001-009 are built (Q127, Q125).** The main conversation drives each delivery. It
 writes every state change through `writeback-state.sh` the moment it happens, with `AID_STATE_FILE`
@@ -1130,7 +1218,7 @@ and `AID_WORK_DIR` exported for this work (tech-debt W5-5).
       task file, its requirements slice, the KB documents the index routes to, the same-task rule and
       this instruction: "work in the `work-003` worktree only; create no branch or worktree; do not run
       `run_generator.py`". It returns its changes and its test command; it never asks the user.
-   3. Run the task's tests ("Testing between tasks").
+   3. Run the task's tests ("Testing before the resync").
    4. Write `In Review`, and commit the state file alone, as `task-NNN: In Review`.
    5. Dispatch `aid-reviewer` in a clean context, at a tier no lower than the executor's. Grade its
       7-column ledger with `grade.sh`, and write the grade with `--task-id NNN --field Review`. From
@@ -1163,7 +1251,9 @@ following F007 § 2.
   - FINAL, for the last delivery;
   - MILESTONE's collect and corrections (step 10, sub-steps 1 and 2).
   These steps make every resync-relevant change of the delivery. They come before the resync, so
-  none of them runs on skill text loaded before it.
+  none of them runs on skill text loaded before it. Every suite they run follows "Testing before the
+  resync": TEST runs each copy-reading suite in a scratch copy, and FINAL and each re-run after a fix
+  round run `full_suite.command`, which names the driver.
 - MILESTONE's approval question is written `Pending` with `--ask` before it is shown (step 10.3).
   `ASK` then pauses the work (`lifecycle: Paused-Awaiting-Input`; F002 § 4, Steps and hand-offs,
   step 3). This is the defined point. The main conversation does not answer it, and ends the session.
@@ -1191,6 +1281,7 @@ before delivery-010, so its record is not consulted until the switch.
 | Delivery-008's resync | The migration moves this work to the single layout and drops `pipeline.path`; `intent.depth` takes `full`. It fills the record from `phase: Execute`: `aid-execute` at `START`. The type is left empty (Q74). | No question. |
 | Delivery-009, after its resync, in the gate's new session | The main conversation does two things. **(1)** `--check` reports the type missing. The main conversation runs `--repair --skill aid-execute --name START --reading change`, with Q124 as the maintainer's recorded confirmation. **(2)** It writes `Verify` and `Commit` for deliveries 001-009 with `--delivery-id NNN --field`. `Verify` is the gate grade each delivery recorded, which the migrations already carried; writing it confirms it. `Commit` is the head each gate passed on. Then it asks one approval (Q123): "Deliveries 001-009 are built and each passed its gate; approve them, and confirm building goes on with delivery-010?" It is recorded through `--ask` and `--answer`: `category: Approval`, `covers: delivery delivery-001; ...; delivery delivery-009; confirmation before building`, `commit` the head. | (1) none: Q124. (2) yes. |
 | Delivery-010's START | `--check` passes, and the confirmation is recorded. The new `/aid-execute` asks only the wave question, and records the full-suite baseline as `not taken` (an old work). With every earlier delivery's `verify` and approval current, its routing goes straight to delivery-010's first task. No catch-up milestone, and so no push question, comes before `/aid-monitor-pipeline` exists. | "No stop per wave". |
+| Delivery-010's gate session | Before resuming `/aid-execute`, the main conversation saves `full-suite.sh` in the work folder ("Testing before the resync", The driver) and commits it alone. Then it writes `--full-suite --field Command --value 'bash .aid/works/work-003-full-aid-restructure/full-suite.sh'`. START has run by then, and it runs once. FINAL, its re-runs, a correction call's run and F008's run on a merged tree all run `full_suite.command` (F007 § 2 step 9 and § 4, Full suite; F008 § 2, PARENT, step 4). Each later gate session checks that the command still names the driver, and writes it again if not. | No question. |
 | Delivery-010's milestone | The first push question, "Create or update the pull request now?". Yes opens the draft v4.0.0 pull request from `work-003` to `master` through `/aid-monitor-pipeline`. | Maintainer's choice. Yes starts G0's lane check through the milestone push. |
 
 After delivery-014, the work reaches CI through `/aid-monitor-pipeline`, which marks the pull request
@@ -1200,7 +1291,7 @@ ready.
 
 | # | Risk | Impact | Mitigation |
 |---|------|--------|------------|
-| 1 | The pipeline building this work is the product being changed. A generator run outside a delivery's resync would change installed skills and the writer under a running delivery. From delivery-005 on, it would also migrate this work's state. | H | The resync rule: the generator runs only as a resync, after the last change, and each resync ends the session. Between tasks, installed-copy suites run in a scratch copy with its own repository, which no migration can follow back to the live work. |
+| 1 | The pipeline building this work is the product being changed. A generator run outside a delivery's resync would change installed skills and the writer under a running delivery. From delivery-005 on, it would also migrate this work's state. | H | The resync rule: the generator runs only as a resync, after the last change, and each resync ends the session. Before a resync, every copy-reading suite runs in a scratch copy with its own repository, which no migration can follow back to the live work: a task's tests, and the full suite at FINAL and its re-runs (Testing before the resync). |
 | 2 | Deliveries 001-009 are built directly. Without a building skill, the per-task state writes and reviews depend on the main conversation following the procedure, and a missed write leaves a task at `Pending` while it runs. | H | The stated procedure leaves checkable proof (Q125): two state-only commits per task, the task's review grade, and from delivery-008 a `reviews` entry. G0 checks it for every delivery 001-009. |
 | 3 | The same files are edited in most deliveries: `writeback-state.sh` and its dashboard fork, `work-state-template.yml`, the twin dashboard readers, the `rules.md` skill guide, `skill-steps.md`, and `bin/aid` with `bin/aid.ps1`. | M | Strictly sequential deliveries. The same-task rule (Q106) keeps the writer, template, reader-parity and shell-parity suites green at every task. Every new state key follows the block-style rule (KI-002), checked by SS-08. |
 | 4 | The task files are written up front, but earlier deliveries move and rename files that later task files name. Each spec's site lists were also measured before this work began. | M | Every delivery's first wave re-runs its spec's stated searches and reconciles the edit list. From delivery-009 on, task changes go through `/aid-plan` REVISE. |
