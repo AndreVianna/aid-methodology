@@ -1691,3 +1691,11 @@ qa:
     suggested: '--'
     answer: 'Maintainer rule: the per-task review bar is C- (minimum grade for the task review). After the single fix round, the task is redone (another fix round) only when a CRITICAL or HIGH finding remains; MEDIUM and LOW findings left over are carried to the delivery''s Opus full review.'
     applied_to: 'Per-task review of deliveries 001-009 (Q141)'
+  - id: Q143
+    category: Building
+    impact: Medium
+    state: Answered
+    context: 'Q141/Q142 set the per-task review bar at C-; the delivery''s Opus full review needs its own bar.'
+    suggested: '--'
+    answer: 'Maintainer rule: the delivery''s full Opus review must reach grade A; fix rounds follow until it does.'
+    applied_to: 'Delivery verification of deliveries 001-009 (PLAN step 3)'
