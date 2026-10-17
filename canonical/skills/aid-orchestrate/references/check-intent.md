@@ -50,10 +50,6 @@ Classify by what a user would see after the change, not by the words the user ch
 A "refactor" that adds an endpoint changes behaviour, so it is a new capability. The label the
 user gave is a hint; the observable effect decides.
 
-The first pass uses the user's broad type as a narrowing hint, and the effect confirms it:
-a broken behaviour points at a bug fix; a net-new artifact points at a new capability; a change
-or rename of an existing artifact points at a refactor or a change.
-
 ## 4. Match the shortcut catalog
 
 Read `.aid/runtime/templates/shortcut-catalog.yml` -- one plain read of a static file. Take the
@@ -72,5 +68,5 @@ Record one of three outcomes:
 ## 5. Hand the reading on
 
 Pass the reading, the observable effect that supports it, the matched row (if any) and the
-outcome to `start-or-resume.md` step 5, which sizes the work with `size-and-route.md` and
-records the reading.
+outcome to `start-or-resume.md` step 3, which finds or creates the work. Only then does
+`start-or-resume.md` step 6 size it with `size-and-route.md` and record the reading.

@@ -15,24 +15,30 @@ another skill never runs here.
 
 ## Steps
 
-Work through the steps in order. Load each reference when its step comes up.
+Work through the steps in order. Load each reference when its step comes up. No work is
+created before step 4.
 
-1. **Question or work.** `references/check-intent.md` step 0 spots a question about the
-   project; `references/start-or-resume.md` step 1 answers it from the Knowledge Base, and the
-   flow stops there.
-2. **Find the work.** `references/start-or-resume.md` steps 2 and 3. A matching work is
-   continued from its resume point. Its reading stands unless a new fact has arrived.
-3. **Check the reading.** `references/check-intent.md` steps 1 to 5, for a new work or for a
-   continued work with a new fact. It compares the request with the Knowledge Base and the
-   code, and classifies it by its observable effect.
-4. **Size and record.** `references/start-or-resume.md` step 5 with
+1. **Project question.** `references/check-intent.md` step 0 spots a question about the
+   project; `references/start-or-resume.md` step 1 answers it from the Knowledge Base, with
+   sources. The flow stops there, and no work is created.
+2. **Check the reading.** `references/check-intent.md` steps 1 to 5 compare the request with
+   the Knowledge Base and the code, and classify it by its observable effect.
+3. **Hand over an action-skill reading.** A reading that matches an action skill is handed to
+   that skill now, as `references/size-and-route.md` step 1 lists. No work is created here: the
+   skill's START creates it through the gate. This skill is done.
+4. **Find or create the work.** `references/start-or-resume.md` steps 3 and 4. A matching work
+   is continued from its resume point, and its reading stands unless a new fact has arrived.
+   A request that cancels a named work goes to step 5 instead.
+5. **Cancel a named work.** `references/start-or-resume.md` step 5: resolve the named work,
+   select it, confirm once, then write `Canceled`. The flow stops there.
+6. **Size and record.** `references/start-or-resume.md` step 6 with
    `references/size-and-route.md`. The reading picks the phases; the richness of the input
    picks the depth. Record the `intent:` block in the work's `STATE.yml` at once.
-5. **Show the reading.** In one line with its reason, inside the same message as the first
+7. **Show the reading.** In one line with its reason, inside the same message as the first
    real question or approval. Then wait for the answer. It is never a turn of its own.
-6. **Hand over.** Start the first phase skill yourself. Where the tool cannot start a skill,
+8. **Hand over.** Start the first phase skill yourself. Where the tool cannot start a skill,
    name its slash command instead and let the user run it.
-7. **During the work.** Load `references/external-sources.md` when a source is pulled in,
+9. **During the work.** Load `references/external-sources.md` when a source is pulled in,
    applied or written back. Load `references/feedback-routing.md` when feedback arrives. A new
    fact or source triggers a re-check; a re-route is said in one line and added to
    `intent.changes`.
@@ -43,8 +49,19 @@ Work through the steps in order. Load each reference when its step comes up.
   `sources:`, `write_backs:`, `lifecycle:`, `phase:` and `active_skill:`.
 - Check every decision against the Knowledge Base. A conflict with it is raised with the
   user, never settled alone.
-- Ask one topic at a time. Every question states its reason and gives a recommendation, lists
-  only valid options and allows a free-text answer (FR-17).
+- The question rule (FR-17), in full:
+  - One topic and one question at a time, short, with a short reason for asking.
+  - Pitch it at the user's technical level: never a technical question to a non-technical
+    user; give deeper technical detail only when the user asks.
+  - Always give a recommendation or proposed answer, with its reasoning.
+  - Offer only valid options. One valid option makes it a confirmation; several equally good
+    options are all shown, with the best one named. Skip obvious questions. Always let the
+    user answer in free text or ask for clarification.
+  - Group questions by subject, 3 to 5 per group, the most important first. Offer a break
+    after each group and whenever the subject changes.
+  - Ask a follow-up right after the question that raised it. Skip a question that an earlier
+    answer settles or makes trivial.
+  - Record every question and answer. A skipped question stays open and is resumed later.
 - The user always decides how a work is persisted. When a tool cannot hold what must be
   written, stop, say so, and offer the workable options under the same question rule.
 - AID stores no credential. Reads and writes to a tracker go through the host tool's own
