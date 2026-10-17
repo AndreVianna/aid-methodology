@@ -1675,3 +1675,11 @@ qa:
     suggested: 'One reviewer verifies the 40 fixes and hunts only in what changed (cycle 2).'
     answer: 'Accepted as recommended.'
     applied_to: 'aid-detail REVIEW cycle 2'
+  - id: Q141
+    category: Building
+    impact: High
+    state: Answered
+    context: 'Building deliveries 001-009 directly (Q127): which models execute and review each task, and how many fix rounds.'
+    suggested: '--'
+    answer: 'Maintainer rule: each task is executed by a Haiku 5.5 agent, with clear instructions stressing that every acceptance criterion is met and the task instructions are followed. One quick review per task by a Sonnet 5.5 agent at the task''s end, then a single fix round by the same Haiku agent. At the end of each delivery, a full review cycle by Opus 5.5.'
+    applied_to: 'PLAN.md How deliveries 001-009 are built (steps 2.2, 2.5, 2.6, 3); from task-004 on'
