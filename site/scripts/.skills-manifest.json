@@ -286,6 +286,10 @@
       "dest": "site/src/content/docs/skills/aid-monitor.md"
     },
     {
+      "src": "canonical/skills/aid-orchestrate/SKILL.md",
+      "dest": "site/src/content/docs/skills/aid-orchestrate.md"
+    },
+    {
       "src": "canonical/skills/aid-plan/SKILL.md",
       "dest": "site/src/content/docs/skills/aid-plan.md"
     },
@@ -526,6 +530,7 @@
     "site/src/content/docs/skills/aid-housekeep.md",
     "site/src/content/docs/skills/aid-migrate.md",
     "site/src/content/docs/skills/aid-monitor.md",
+    "site/src/content/docs/skills/aid-orchestrate.md",
     "site/src/content/docs/skills/aid-plan.md",
     "site/src/content/docs/skills/aid-prototype-ui.md",
     "site/src/content/docs/skills/aid-prototype.md",
@@ -851,6 +856,10 @@
       "dest": "site/src/data/skill-flows/aid-monitor.flow.json"
     },
     {
+      "src": "canonical/skills/aid-orchestrate/SKILL.md",
+      "dest": "site/src/data/skill-flows/aid-orchestrate.flow.json"
+    },
+    {
       "src": "canonical/skills/aid-plan/SKILL.md",
       "dest": "site/src/data/skill-flows/aid-plan.flow.json"
     },
@@ -1024,6 +1033,6 @@
     "inline-states": 44,
     "sibling-doorway": 13,
     "engine-doorway": 34,
-    "residual": 8
+    "residual": 9
   }
 }

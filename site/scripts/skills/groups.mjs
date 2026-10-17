@@ -66,6 +66,7 @@ export const CURATED_GROUPS = [
     blurb: "Skills for configuring AID, managing tickets and connectors, and talking to a peer AI session. Start here if you're not sure which skill to use.",
     members: [
       'aid-triage',
+      'aid-orchestrate',
       'aid-config',
       // An on-demand utility like the ticket skills: it belongs to no pipeline phase and has no verb
       // family, so it is neither a Definition full-path entry nor a shortcut-catalog row.

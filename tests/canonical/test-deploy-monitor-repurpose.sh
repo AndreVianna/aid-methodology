@@ -351,7 +351,7 @@ while IFS= read -r d; do
     grep -qF "$GENERATED_MARKER" "$md" 2>/dev/null && is_generated=1
     is_repurpose_pipeline=0
     [[ "$dname" == "aid-deploy" || "$dname" == "aid-monitor" ]] && is_repurpose_pipeline=1
-    [[ "$dname" == "aid-triage" || "$dname" == "aid-describe" ]] && continue  # standalone, deliberately NOT catalog rows
+    [[ "$dname" == "aid-triage" || "$dname" == "aid-describe" || "$dname" == "aid-orchestrate" ]] && continue  # standalone, deliberately NOT catalog rows
     if [[ "$is_generated" -eq 1 || "$is_repurpose_pipeline" -eq 1 ]]; then
         if [[ -z "${NAME_SET[$dname]:-}" ]]; then
             fail "DMR36 [${dname}] no orphan directory -- generated/repurpose doorway has no matching catalog row"

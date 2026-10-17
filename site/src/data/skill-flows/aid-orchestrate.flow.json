@@ -1,0 +1,220 @@
+{
+  "skill": "aid-orchestrate",
+  "shape": "residual",
+  "extractor": "residual",
+  "confidence": "approximate",
+  "title": "aid-orchestrate — state flow",
+  "nodes": [
+    {
+      "id": "n1",
+      "order": 1,
+      "name": "STEP-1",
+      "label": "**Question or work.** references/check-intent.md step 0…",
+      "kind": "entry",
+      "terminal": null,
+      "provenance": {
+        "file": "canonical/skills/aid-orchestrate/SKILL.md",
+        "startLine": 20,
+        "endLine": 20,
+        "sourceKind": "skill",
+        "excerpt": "1. **Question or work.** `references/check-intent.md` step 0 spots a question about the"
+      },
+      "detail": null
+    },
+    {
+      "id": "n2",
+      "order": 2,
+      "name": "STEP-2",
+      "label": "**Find the work.** references/start-or-resume.md steps 2…",
+      "kind": "step",
+      "terminal": null,
+      "provenance": {
+        "file": "canonical/skills/aid-orchestrate/SKILL.md",
+        "startLine": 23,
+        "endLine": 23,
+        "sourceKind": "skill",
+        "excerpt": "2. **Find the work.** `references/start-or-resume.md` steps 2 and 3. A matching work is"
+      },
+      "detail": null
+    },
+    {
+      "id": "n3",
+      "order": 3,
+      "name": "STEP-3",
+      "label": "**Check the reading.** references/check-intent.md steps 1…",
+      "kind": "step",
+      "terminal": null,
+      "provenance": {
+        "file": "canonical/skills/aid-orchestrate/SKILL.md",
+        "startLine": 25,
+        "endLine": 25,
+        "sourceKind": "skill",
+        "excerpt": "3. **Check the reading.** `references/check-intent.md` steps 1 to 5, for a new work or for a"
+      },
+      "detail": null
+    },
+    {
+      "id": "n4",
+      "order": 4,
+      "name": "STEP-4",
+      "label": "**Size and record.** references/start-or-resume.md step 5…",
+      "kind": "step",
+      "terminal": null,
+      "provenance": {
+        "file": "canonical/skills/aid-orchestrate/SKILL.md",
+        "startLine": 28,
+        "endLine": 28,
+        "sourceKind": "skill",
+        "excerpt": "4. **Size and record.** `references/start-or-resume.md` step 5 with"
+      },
+      "detail": null
+    },
+    {
+      "id": "n5",
+      "order": 5,
+      "name": "STEP-5",
+      "label": "**Show the reading.** In one line with its reason, inside…",
+      "kind": "step",
+      "terminal": null,
+      "provenance": {
+        "file": "canonical/skills/aid-orchestrate/SKILL.md",
+        "startLine": 31,
+        "endLine": 31,
+        "sourceKind": "skill",
+        "excerpt": "5. **Show the reading.** In one line with its reason, inside the same message as the first"
+      },
+      "detail": null
+    },
+    {
+      "id": "n6",
+      "order": 6,
+      "name": "STEP-6",
+      "label": "**Hand over.** Start the first phase skill yourself. Where…",
+      "kind": "step",
+      "terminal": null,
+      "provenance": {
+        "file": "canonical/skills/aid-orchestrate/SKILL.md",
+        "startLine": 33,
+        "endLine": 33,
+        "sourceKind": "skill",
+        "excerpt": "6. **Hand over.** Start the first phase skill yourself. Where the tool cannot start a skill,"
+      },
+      "detail": null
+    },
+    {
+      "id": "n7",
+      "order": 7,
+      "name": "STEP-7",
+      "label": "**During the work.** Load references/external-sources.md…",
+      "kind": "exit",
+      "terminal": {
+        "advanceType": "UNSPECIFIED",
+        "handoff": null
+      },
+      "provenance": {
+        "file": "canonical/skills/aid-orchestrate/SKILL.md",
+        "startLine": 35,
+        "endLine": 35,
+        "sourceKind": "skill",
+        "excerpt": "7. **During the work.** Load `references/external-sources.md` when a source is pulled in,"
+      },
+      "detail": null
+    }
+  ],
+  "edges": [
+    {
+      "from": "n1",
+      "to": "n2",
+      "kind": "sequence",
+      "condition": null,
+      "advanceType": "CHAIN",
+      "provenance": {
+        "file": "canonical/skills/aid-orchestrate/SKILL.md",
+        "startLine": 20,
+        "endLine": 20,
+        "sourceKind": "skill",
+        "excerpt": "1. **Question or work.** `references/check-intent.md` step 0 spots a question about the"
+      }
+    },
+    {
+      "from": "n2",
+      "to": "n3",
+      "kind": "sequence",
+      "condition": null,
+      "advanceType": "CHAIN",
+      "provenance": {
+        "file": "canonical/skills/aid-orchestrate/SKILL.md",
+        "startLine": 23,
+        "endLine": 23,
+        "sourceKind": "skill",
+        "excerpt": "2. **Find the work.** `references/start-or-resume.md` steps 2 and 3. A matching work is"
+      }
+    },
+    {
+      "from": "n3",
+      "to": "n4",
+      "kind": "sequence",
+      "condition": null,
+      "advanceType": "CHAIN",
+      "provenance": {
+        "file": "canonical/skills/aid-orchestrate/SKILL.md",
+        "startLine": 25,
+        "endLine": 25,
+        "sourceKind": "skill",
+        "excerpt": "3. **Check the reading.** `references/check-intent.md` steps 1 to 5, for a new work or for a"
+      }
+    },
+    {
+      "from": "n4",
+      "to": "n5",
+      "kind": "sequence",
+      "condition": null,
+      "advanceType": "CHAIN",
+      "provenance": {
+        "file": "canonical/skills/aid-orchestrate/SKILL.md",
+        "startLine": 28,
+        "endLine": 28,
+        "sourceKind": "skill",
+        "excerpt": "4. **Size and record.** `references/start-or-resume.md` step 5 with"
+      }
+    },
+    {
+      "from": "n5",
+      "to": "n6",
+      "kind": "sequence",
+      "condition": null,
+      "advanceType": "CHAIN",
+      "provenance": {
+        "file": "canonical/skills/aid-orchestrate/SKILL.md",
+        "startLine": 31,
+        "endLine": 31,
+        "sourceKind": "skill",
+        "excerpt": "5. **Show the reading.** In one line with its reason, inside the same message as the first"
+      }
+    },
+    {
+      "from": "n6",
+      "to": "n7",
+      "kind": "sequence",
+      "condition": null,
+      "advanceType": "CHAIN",
+      "provenance": {
+        "file": "canonical/skills/aid-orchestrate/SKILL.md",
+        "startLine": 33,
+        "endLine": 33,
+        "sourceKind": "skill",
+        "excerpt": "6. **Hand over.** Start the first phase skill yourself. Where the tool cannot start a skill,"
+      }
+    }
+  ],
+  "entries": [
+    "n1"
+  ],
+  "exits": [
+    "n7"
+  ],
+  "sources": [
+    "canonical/skills/aid-orchestrate/SKILL.md"
+  ],
+  "warnings": []
+}

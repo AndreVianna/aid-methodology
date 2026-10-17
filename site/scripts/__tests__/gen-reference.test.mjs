@@ -151,7 +151,7 @@ const CURATED_SKILL_NAMES = [
   'aid-housekeep', 'aid-ask', 'aid-update-kb',
   'aid-set-connector', 'aid-unset-connector',
   'aid-read-ticket', 'aid-create-ticket', 'aid-update-ticket',
-  'aid-chat',
+  'aid-chat', 'aid-orchestrate',
 ].sort();
 
 // The list above is deliberately NOT derived — deriving it from the roster would make the
