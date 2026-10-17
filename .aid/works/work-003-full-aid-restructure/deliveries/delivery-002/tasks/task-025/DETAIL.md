@@ -17,7 +17,7 @@
 
 **Source:** feature-002-step-by-step-decisions -> delivery-002 -> AC-37, AC-41
 
-**Depends on:** task-021
+**Depends on:** task-021, task-031
 
 **Scope:**
 - Edit `canonical/aid/scripts/execute/writeback-state.sh` (REQUIREMENTS.md § 11 Feature 002 `##### 2. Work state layout` and
@@ -41,7 +41,10 @@
   - `test-lite-work-end-to-end.sh`;
   - `test-producer-completeness.sh`;
   - `test-disjoint-merge.sh`;
-  - the dashboard tests that feed an old phase name to a writer;
+  - the dashboard tests that feed an old phase name to a writer: `dashboard/reader/tests/test_integration.py`'s
+    writer-fed `Phase` values take the new names (`Execute` -> `Building`, `Specify` -> `Specification`). Its
+    reader assertions already name the new members, since task-031 (a dependency) renamed the `Phase` enum and
+    reads the old names through the legacy map, so the suite is green before and after this edit;
   - any suite the findings' P8 or P9 assigns here.
 - Only existing assertions change here. The new-mode unit cases are task-046 and task-052 (Q135, R3).
 - **Site regeneration (G1, G5).** When this task adds, deletes, renames or edits anything under
@@ -70,8 +73,12 @@
      changed `.py`, and `node --check` on each changed `.mjs`.
   2. **Selection.** `SEL` is the output of `bash tests/canonical/select-suites.sh --since "$BASE"`.
      `COPY` is the members of `SEL` whose text matches the pattern `P` of PLAN.md § "Testing before the
-     resync", The driver. `LIVE` is `SEL` minus `COPY`. A change that lies wholly under `.aid/works/`
-     selects nothing.
+     resync", The driver. `LIVE` is `SEL` minus `COPY`.
+     - **Work-folder-only rule.** A task whose changes all lie under `.aid/works/` runs no suite: steps 2-5
+       are skipped, and the report says so. The work folder is transient pipeline state that no suite may
+       depend on, and it is not resync-relevant (PLAN.md § "Testing before the resync"). `select-suites.sh`
+       is not the reason and is not run for it: it selects every suite with no `# COVERS:` header, whatever
+       changed.
   3. **Scratch half** (when `COPY` is not empty).
      - Make the copy exactly as PLAN.md § "How the copy is made" says, with `S=.aid/.temp/scratch/task-025`.
        That includes the copy's own `run_generator.py`, run from inside it, then the `resync` commit.
@@ -99,5 +106,6 @@
 - [ ] A scratch `--create` on an empty folder writes `intent.reading`, `intent.request`, `active_skill`, `step`, `pipeline.initiator`, `phase`, `lifecycle: Running`, `started` and `updated`. A second `--create` exits 8, and a missing `--skill` exits 5.
 - [ ] `--check` exits 9 on a work with no `intent.reading`, and 0 on the work `--create` wrote. A forced failure (an unwritable target) leaves the file's `sha256sum` unchanged.
 - [ ] `test-writeback-state.sh` and `test-pipeline-status-walkthrough.sh` pass live. The SS-11 forms, run by hand over both writers, find no old phase name (G3).
+- [ ] `dashboard/reader/tests/test_integration.py` feeds only new phase names through the writer, and `test-dashboard-reader.sh` passes live.
 - [ ] The test step (last Scope bullet) reports no failure: the spawn-free checks, the scratch half, the live half and the site or dashboard runs it calls for. Every existing test still passes.
 - [ ] All section-6 quality gates pass (REQUIREMENTS.md § 6: NFR-N, NFR-T, NFR-Q).

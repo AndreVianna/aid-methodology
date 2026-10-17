@@ -22,6 +22,10 @@
 **Scope:**
 - Create `tests/canonical/test-plan.sh` with PL-01 to PL-07, as REQUIREMENTS.md § 11 Feature 006 `##### 9. Testing` defines them. It has
   `# COVERS:` lines.
+  - PL-06's `--plan-sync` clause skips `aid-plan`'s and `aid-execute`'s files, as the row states: `aid-execute`
+    syncs state from the task files at START and on every return (Feature 007 § 2) and writes no task file. Its
+    `## State: PLAN` / `## State: DETAIL` clause has no such skip. No exempt-list row is added for `aid-execute`
+    under PL-06 (the shared exempt list must end empty, Feature 009).
 - `tests/canonical/skill-steps-exempt.tsv`: the `shortcut-engine.md` row's `checks` gain `PL-06` (owner Feature
   009); a new row, `aid-execute`, checks `PL-04`, owner Feature 007.
 - **Findings.** This task's scope also includes every site that
@@ -33,8 +37,12 @@
      changed `.py`, and `node --check` on each changed `.mjs`.
   2. **Selection.** `SEL` is the output of `bash tests/canonical/select-suites.sh --since "$BASE"`.
      `COPY` is the members of `SEL` whose text matches the pattern `P` of PLAN.md § "Testing before the
-     resync", The driver. `LIVE` is `SEL` minus `COPY`. A change that lies wholly under `.aid/works/`
-     selects nothing.
+     resync", The driver. `LIVE` is `SEL` minus `COPY`.
+     - **Work-folder-only rule.** A task whose changes all lie under `.aid/works/` runs no suite: steps 2-5
+       are skipped, and the report says so. The work folder is transient pipeline state that no suite may
+       depend on, and it is not resync-relevant (PLAN.md § "Testing before the resync"). `select-suites.sh`
+       is not the reason and is not run for it: it selects every suite with no `# COVERS:` header, whatever
+       changed.
   3. **Scratch half** (when `COPY` is not empty).
      - Make the copy exactly as PLAN.md § "How the copy is made" says, with `S=.aid/.temp/scratch/task-212`.
        That includes the copy's own `run_generator.py`, run from inside it, then the `resync` commit.
@@ -58,8 +66,8 @@
      - The same failure after three fix rounds goes to the maintainer.
 
 **Acceptance Criteria:**
-- [ ] The suite passes in the scratch copy, and `test-skill-steps.sh` passes with the changed exempt list.
-- [ ] Each check fails its own mutation in a scratch copy: a `canonical/skills/aid-detail/` folder; a kept file naming `aid-detail`; `finish.md` without `--plan-sync`; a skill naming `deliveries/delivery-`; the template with `delivery_state`; a `## State: DETAIL` heading in a skill; `skill-steps.md` without the Q73 rule.
+- [ ] The suite passes where the test step puts it, and `test-skill-steps.sh` passes with the changed exempt list.
+- [ ] Each check fails its own mutation in a scratch copy: a `canonical/skills/aid-detail/` folder; a kept file naming `aid-detail`; `finish.md` without `--plan-sync`; a skill naming `deliveries/delivery-`; the template with `delivery_state`; a `## State: DETAIL` heading in a skill; a `--plan-sync` call in `aid-specify`; `skill-steps.md` without the Q73 rule. A `--plan-sync` call in a scratch file under `canonical/skills/aid-execute/references/` is not a PL-06 hit.
 - [ ] It is deterministic and finishes within the 300-second budget.
 - [ ] The test step (last Scope bullet) reports no failure: the spawn-free checks, the scratch half, the live half and the site or dashboard runs it calls for. Every existing test still passes.
 - [ ] All section-6 quality gates pass (REQUIREMENTS.md § 6: NFR-N, NFR-T, NFR-Q).

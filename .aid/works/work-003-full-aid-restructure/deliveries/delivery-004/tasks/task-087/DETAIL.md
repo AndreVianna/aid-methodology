@@ -40,6 +40,9 @@
   rewritten. The `/aid-brainstorm` line of `canonical/aid/rules.md` § Skill guide becomes the spec's line.
 - Its row in `tests/canonical/skill-steps-exempt.tsv` goes: it no longer writes a binding line or a
   finish by hand.
+- Its row in the SG-04 description exempt list of `tests/canonical/test-skill-guide.sh` goes too: its `description:`
+  takes the what/when shape here (REQUIREMENTS.md § 11 Feature 003 `##### 7. Testing`, Shared exempt list: the
+  list loses its describe, design and brainstorm rows; tasks 093 and 094 remove the other two).
 - Suites to update in this same task: `tests/canonical/test-skill-guide.sh`, `test-skill-steps.sh`, and any
   suite the findings' R5 assigns here.
 - **Site regeneration (G1, G5).** When this task adds, deletes, renames or edits anything under
@@ -68,8 +71,12 @@
      changed `.py`, and `node --check` on each changed `.mjs`.
   2. **Selection.** `SEL` is the output of `bash tests/canonical/select-suites.sh --since "$BASE"`.
      `COPY` is the members of `SEL` whose text matches the pattern `P` of PLAN.md § "Testing before the
-     resync", The driver. `LIVE` is `SEL` minus `COPY`. A change that lies wholly under `.aid/works/`
-     selects nothing.
+     resync", The driver. `LIVE` is `SEL` minus `COPY`.
+     - **Work-folder-only rule.** A task whose changes all lie under `.aid/works/` runs no suite: steps 2-5
+       are skipped, and the report says so. The work folder is transient pipeline state that no suite may
+       depend on, and it is not resync-relevant (PLAN.md § "Testing before the resync"). `select-suites.sh`
+       is not the reason and is not run for it: it selects every suite with no `# COVERS:` header, whatever
+       changed.
   3. **Scratch half** (when `COPY` is not empty).
      - Make the copy exactly as PLAN.md § "How the copy is made" says, with `S=.aid/.temp/scratch/task-087`.
        That includes the copy's own `run_generator.py`, run from inside it, then the `resync` commit.
@@ -95,6 +102,7 @@
 **Acceptance Criteria:**
 - [ ] The step table reads START, CONVERSE, CHECK, FINISH, with the spec's advance words, and `converse.md` holds the closing question "Do you have anything else you would like to add or discuss?" verbatim.
 - [ ] `start.md` cites `idea-drafts.sh` (`list`, `path`) and `kind-catalog.yml`, and no file under `canonical/skills/aid-brainstorm/` runs `git add`, `git rm`, `git commit` or `git push`.
-- [ ] The line caps hold, and `test-skill-guide.sh` and `test-skill-steps.sh` pass in the scratch copy.
+- [ ] The line caps hold, and `test-skill-guide.sh` and `test-skill-steps.sh` pass where the test step puts them.
+- [ ] SG-04's exempt list in `tests/canonical/test-skill-guide.sh` has no `aid-brainstorm` row, and SG-04 passes where the test step puts the suite.
 - [ ] The test step (last Scope bullet) reports no failure: the spawn-free checks, the scratch half, the live half and the site or dashboard runs it calls for. Every existing test still passes.
 - [ ] All section-6 quality gates pass (REQUIREMENTS.md § 6: NFR-N, NFR-T, NFR-Q).

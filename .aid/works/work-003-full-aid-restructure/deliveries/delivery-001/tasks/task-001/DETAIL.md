@@ -55,8 +55,8 @@
 - **Site generator sources (G19).** The searches also run over `site/scripts/` outside `__tests__` for the name of every
   skill this delivery retires or renames; each hit goes to the task that retires or renames that skill.
 - Give each hit exactly one owner:
-  - a task of delivery-001 (task-002 to task-019; see
-    `.aid/works/work-003-full-aid-restructure/analysis/detail-proposal-delivery-001.md` for what each owns);
+  - a task of delivery-001 (task-002 to task-019; see the task files under
+    `.aid/works/work-003-full-aid-restructure/deliveries/delivery-001/tasks/` for what each owns);
   - "installed copy (resync)", for `.claude/skills/aid-*`, `.agents/`, `.aid/runtime/`, `profiles/`,
     `.claude/agents/`, `.cursor/agents/` and `.aid/.aid-manifest.json`;
   - "history, left as is", for `.aid/knowledge/release-tracking.md`, `tests/coverage-accepted-removals.tsv`
@@ -78,8 +78,12 @@
      changed `.py`, and `node --check` on each changed `.mjs`.
   2. **Selection.** `SEL` is the output of `bash tests/canonical/select-suites.sh --since "$BASE"`.
      `COPY` is the members of `SEL` whose text matches the pattern `P` of PLAN.md § "Testing before the
-     resync", The driver. `LIVE` is `SEL` minus `COPY`. A change that lies wholly under `.aid/works/`
-     selects nothing.
+     resync", The driver. `LIVE` is `SEL` minus `COPY`.
+     - **Work-folder-only rule.** A task whose changes all lie under `.aid/works/` runs no suite: steps 2-5
+       are skipped, and the report says so. The work folder is transient pipeline state that no suite may
+       depend on, and it is not resync-relevant (PLAN.md § "Testing before the resync"). `select-suites.sh`
+       is not the reason and is not run for it: it selects every suite with no `# COVERS:` header, whatever
+       changed.
   3. **Scratch half** (when `COPY` is not empty).
      - Make the copy exactly as PLAN.md § "How the copy is made" says, with `S=.aid/.temp/scratch/task-001`.
        That includes the copy's own `run_generator.py`, run from inside it, then the `resync` commit.
@@ -107,6 +111,6 @@
 - [ ] The skill owner table has exactly one row per `canonical/skills/*/SKILL.md` on disk at the base (the row count equals `ls canonical/skills/*/SKILL.md | wc -l`), and no row is unowned.
 - [ ] The delta section lists every hit the spec omits and every spec-listed path with no hit, each with its owner, plus any suite assigned to two independent tasks, with the order to run them.
 - [ ] The S9 exempt list names, per row, the skill and the anchor of the later feature that deletes or renames it. No skill that keeps its name through v4.0.0 appears in it.
-- [ ] RESEARCH defaults overridden: the spec fixes the searches, so there are no alternatives to compare. The recorded commands are the cited sources. The test step selects nothing, because the change lies wholly under `.aid/works/`.
+- [ ] RESEARCH defaults overridden: the spec fixes the searches, so there are no alternatives to compare. The recorded commands are the cited sources. The test step runs no suite, because every change lies under `.aid/works/` (its work-folder-only rule).
 - [ ] The test step (last Scope bullet) reports no failure: the spawn-free checks, the scratch half, the live half and the site or dashboard runs it calls for. Every existing test still passes.
 - [ ] All section-6 quality gates pass (REQUIREMENTS.md § 6: NFR-N, NFR-T, NFR-Q).

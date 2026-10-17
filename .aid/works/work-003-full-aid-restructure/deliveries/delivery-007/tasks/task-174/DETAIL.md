@@ -17,7 +17,7 @@
 
 **Source:** feature-005-specification -> delivery-007 -> AC-16
 
-**Depends on:** task-172, task-173
+**Depends on:** task-170, task-172, task-173
 
 **Scope:**
 - Delete `canonical/skills/aid-define/` (REQUIREMENTS.md § 11 Feature 005 `##### 1. Files and layout`): its split decision now lives in
@@ -83,8 +83,12 @@
      changed `.py`, and `node --check` on each changed `.mjs`.
   2. **Selection.** `SEL` is the output of `bash tests/canonical/select-suites.sh --since "$BASE"`.
      `COPY` is the members of `SEL` whose text matches the pattern `P` of PLAN.md § "Testing before the
-     resync", The driver. `LIVE` is `SEL` minus `COPY`. A change that lies wholly under `.aid/works/`
-     selects nothing.
+     resync", The driver. `LIVE` is `SEL` minus `COPY`.
+     - **Work-folder-only rule.** A task whose changes all lie under `.aid/works/` runs no suite: steps 2-5
+       are skipped, and the report says so. The work folder is transient pipeline state that no suite may
+       depend on, and it is not resync-relevant (PLAN.md § "Testing before the resync"). `select-suites.sh`
+       is not the reason and is not run for it: it selects every suite with no `# COVERS:` header, whatever
+       changed.
   3. **Scratch half** (when `COPY` is not empty).
      - Make the copy exactly as PLAN.md § "How the copy is made" says, with `S=.aid/.temp/scratch/task-174`.
        That includes the copy's own `run_generator.py`, run from inside it, then the `resync` commit.
@@ -109,7 +113,7 @@
 
 **Acceptance Criteria:**
 - [ ] `test -e canonical/skills/aid-define` fails, and over `canonical/` and `dashboard/home.html`, `git grep -n aid-define` finds only the gate's legacy block and `canonical/aid/scripts/migrate/` (SP-02).
-- [ ] SG-02, SG-04 and DT-01 pass in the scratch copy, `test-doc-counts.sh` passes live, and the three switched suites pass where the test step puts them.
+- [ ] SG-02, SG-04 and DT-01 pass where the test step puts them, `test-doc-counts.sh` passes live, and the three switched suites pass where the test step puts them.
 - [ ] The site `npm test` passes after regeneration.
 - [ ] `test-doc-counts.sh` passes live with the derived counts, and the site `npm test` passes after `sync:docs` (its sync-docs drift test included).
 - [ ] Over `.aid/knowledge/`, no frontmatter `sources:` entry cites a path this task deletes, moves or renames, and `test-artifact-discipline.sh` AD14 passes where the test step puts the suite (G17).

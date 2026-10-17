@@ -14,10 +14,13 @@
   one per line, kept equal to the old -> new table of `.aid/knowledge/backlog.md` § Next Release (the findings' D2).
 - Create `tests/canonical/test-doc-names.sh`, a bash harness on `tests/lib/assert.sh` with `# COVERS:` lines and a
   group filter:
-  - **DN-01**: with `AID_RELEASE_CHECK=1`, no file under `docs/`, `site/src/content/` or `examples/`, nor `README.md`,
-    names a name of `retired-names.txt` as `/aid-<name>` or in backticks, nor an old phase name as a phase (in a `->`
-    or `→` sequence, or followed by "phase"); text between `legacy-skill-names` markers is skipped. Without the flag
-    it prints the hits and passes;
+  - **DN-01**: with `AID_RELEASE_CHECK=1`, no file under `docs/`, `site/src/content/` or `examples/`, nor `README.md`
+    or `CONTRIBUTING.md`, names a name of `retired-names.txt` as `/aid-<name>` or in backticks, nor an old phase name
+    as a phase (in a `->` or `→` sequence, or followed by "phase"); text between `legacy-skill-names` markers is
+    skipped. Without the flag it prints the hits and passes. Every match is of a **whole name**: `/aid-<name>` is
+    followed by a character outside `[a-z-]` or the line's end (the guard `([^a-z-]|$)` of Feature 009's name
+    search), a backtick span holds the name and nothing else, and a phase name is a whole word (`\bPlan\b`). So
+    `/aid-configure` is no hit for the retired `/aid-config`, and `→ Planning` none for `Plan`;
   - **DN-02**: no name of `retired-names.txt` is a folder under `canonical/skills/`; with the flag, each has a row in
     the old -> new table of `backlog.md` § Next Release;
   - **DN-03**: with the flag, every file the identity search finds carries "software first, not software only", and
@@ -34,8 +37,12 @@
      changed `.py`, and `node --check` on each changed `.mjs`.
   2. **Selection.** `SEL` is the output of `bash tests/canonical/select-suites.sh --since "$BASE"`.
      `COPY` is the members of `SEL` whose text matches the pattern `P` of PLAN.md § "Testing before the
-     resync", The driver. `LIVE` is `SEL` minus `COPY`. A change that lies wholly under `.aid/works/`
-     selects nothing.
+     resync", The driver. `LIVE` is `SEL` minus `COPY`.
+     - **Work-folder-only rule.** A task whose changes all lie under `.aid/works/` runs no suite: steps 2-5
+       are skipped, and the report says so. The work folder is transient pipeline state that no suite may
+       depend on, and it is not resync-relevant (PLAN.md § "Testing before the resync"). `select-suites.sh`
+       is not the reason and is not run for it: it selects every suite with no `# COVERS:` header, whatever
+       changed.
   3. **Scratch half** (when `COPY` is not empty).
      - Make the copy exactly as PLAN.md § "How the copy is made" says, with `S=.aid/.temp/scratch/task-354`.
        That includes the copy's own `run_generator.py`, run from inside it, then the `resync` commit.
@@ -61,7 +68,7 @@
 
 **Acceptance Criteria:**
 - [ ] Without the flag the suite passes where the test step puts it and prints the hits the findings' D1 and D3 list; with `AID_RELEASE_CHECK=1` it fails on them, naming each file.
-- [ ] Each check fails its own mutation in a scratch copy: `/aid-create-api` outside the markers in `README.md`; `Specify -> Plan` in a `docs/` page; a `canonical/skills/aid-design/` folder; a name with no `backlog.md` row; "kind of digital work" in `docs/faq.md`. Text between the markers is skipped.
+- [ ] Each check fails its own mutation in a scratch copy: `/aid-create-api` outside the markers in `README.md`; `Specify -> Plan` in a `docs/` page; a `canonical/skills/aid-design/` folder; a name with no `backlog.md` row; "kind of digital work" in `docs/faq.md`; `/aid-config` in `CONTRIBUTING.md`. Text between the markers is skipped, and the near misses `/aid-configure` and `Specification → Planning` in a `docs/` page are no hits.
 - [ ] It is deterministic, reads files only, and finishes within the 300-second budget.
 - [ ] The test step (last Scope bullet) reports no failure: the spawn-free checks, the scratch half, the live half and the site or dashboard runs it calls for. Every existing test still passes.
 - [ ] All section-6 quality gates pass (REQUIREMENTS.md § 6: NFR-N, NFR-T, NFR-Q).

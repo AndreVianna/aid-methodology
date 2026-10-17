@@ -17,7 +17,7 @@
 
 **Source:** feature-003-work-definition -> delivery-004 -> AC-43
 
-**Depends on:** task-089, task-093
+**Depends on:** task-085, task-087, task-088, task-089, task-093, task-096
 
 **Scope:**
 - Delete `canonical/skills/aid-design/` and the 21 `canonical/skills/aid-design-*/` folders.
@@ -34,7 +34,8 @@
   - their `skill:` rows in `tests/conversation/deferred.tsv`;
   - their rows in `tests/canonical/skill-steps-exempt.tsv`;
   - their rows in the SG-04 exempt list of `tests/canonical/test-skill-guide.sh`.
-- **Count re-sync (Q134 D5):** the skill-count phrases that `tests/canonical/test-doc-counts.sh` asserts
+- **Count re-sync (Q134 D5):** the skill-count and catalog-row phrases (`${ROWS}-row catalog`) that
+  `tests/canonical/test-doc-counts.sh` asserts
   in `README.md` and `docs/` take the derived count, then `(cd site && npm run sync:docs)` runs. Only the
   numbers change; user documentation otherwise waits for the final pass (REQUIREMENTS.md § 11 Feature 003 `##### 6. Migration`).
 - **Suites that read what this task deletes, moves or renames (G6).** For each such file and folder,
@@ -83,8 +84,12 @@
      changed `.py`, and `node --check` on each changed `.mjs`.
   2. **Selection.** `SEL` is the output of `bash tests/canonical/select-suites.sh --since "$BASE"`.
      `COPY` is the members of `SEL` whose text matches the pattern `P` of PLAN.md § "Testing before the
-     resync", The driver. `LIVE` is `SEL` minus `COPY`. A change that lies wholly under `.aid/works/`
-     selects nothing.
+     resync", The driver. `LIVE` is `SEL` minus `COPY`.
+     - **Work-folder-only rule.** A task whose changes all lie under `.aid/works/` runs no suite: steps 2-5
+       are skipped, and the report says so. The work folder is transient pipeline state that no suite may
+       depend on, and it is not resync-relevant (PLAN.md § "Testing before the resync"). `select-suites.sh`
+       is not the reason and is not run for it: it selects every suite with no `# COVERS:` header, whatever
+       changed.
   3. **Scratch half** (when `COPY` is not empty).
      - Make the copy exactly as PLAN.md § "How the copy is made" says, with `S=.aid/.temp/scratch/task-094`.
        That includes the copy's own `run_generator.py`, run from inside it, then the `resync` commit.
@@ -109,7 +114,7 @@
 
 **Acceptance Criteria:**
 - [ ] No `canonical/skills/aid-design*` folder exists, and `grep -c 'verb: design' canonical/aid/templates/shortcut-catalog.yml` prints 0 (ID-01's rule).
-- [ ] `python3 .claude/skills/generate-profile/scripts/build-shortcut-skills.py --check` exits 0, and SG-02, DT-01 and `test-skill-steps.sh` pass in the scratch copy.
+- [ ] `python3 .claude/skills/generate-profile/scripts/build-shortcut-skills.py --check` exits 0, and SG-02, DT-01 and `test-skill-steps.sh` pass where the test step puts them.
 - [ ] `test-doc-counts.sh` passes live, and the site `npm test` passes after regeneration.
 - [ ] Over `.aid/knowledge/`, no frontmatter `sources:` entry cites a path this task deletes, moves or renames, and `test-artifact-discipline.sh` AD14 passes where the test step puts the suite (G17).
 - [ ] No page under `site/src/content/docs/skills/` and no `site/src/data/skill-flows/*.flow.json` is left for a skill folder this task deletes or renames away, and `npm run gen:skills` reports no orphan (G18).

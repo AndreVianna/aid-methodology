@@ -22,8 +22,9 @@
 **Scope:**
 - Edit `canonical/aid/rules.md` as REQUIREMENTS.md § 11 Feature 001 `##### 1. Files and layout` and
   `##### 3. Components` say.
-  - `## Handling a request` replaces `## Workflow`. Start from the spec's draft, and stay within 20 lines
-    by the SG-01 counting rule.
+  - `## Handling a request` replaces `## Workflow`. Start from the spec's draft, and stay within 19 lines
+    by the SG-01 counting rule: delivery-002 turns the last bullet into two lines (REQUIREMENTS.md § 11
+    Feature 002 `##### 3. Question protocol`, "19 of its 20 lines"), so one line of the cap stays free.
   - Add a new `## Skill guide`:
     - one line per skill, `` - `/aid-x` -- what it is for; when to use it ``, at most 100 characters;
     - in the order phase, KB, supporting, setup;
@@ -68,8 +69,12 @@
      changed `.py`, and `node --check` on each changed `.mjs`.
   2. **Selection.** `SEL` is the output of `bash tests/canonical/select-suites.sh --since "$BASE"`.
      `COPY` is the members of `SEL` whose text matches the pattern `P` of PLAN.md § "Testing before the
-     resync", The driver. `LIVE` is `SEL` minus `COPY`. A change that lies wholly under `.aid/works/`
-     selects nothing.
+     resync", The driver. `LIVE` is `SEL` minus `COPY`.
+     - **Work-folder-only rule.** A task whose changes all lie under `.aid/works/` runs no suite: steps 2-5
+       are skipped, and the report says so. The work folder is transient pipeline state that no suite may
+       depend on, and it is not resync-relevant (PLAN.md § "Testing before the resync"). `select-suites.sh`
+       is not the reason and is not run for it: it selects every suite with no `# COVERS:` header, whatever
+       changed.
   3. **Scratch half** (when `COPY` is not empty).
      - Make the copy exactly as PLAN.md § "How the copy is made" says, with `S=.aid/.temp/scratch/task-002`.
        That includes the copy's own `run_generator.py`, run from inside it, then the `resync` commit.
@@ -92,7 +97,7 @@
      - The same failure after three fix rounds goes to the maintainer.
 
 **Acceptance Criteria:**
-- [ ] `awk '/^## /{p=($0=="## Handling a request")} p' canonical/aid/rules.md | awk 'NF{n=NR} END{print n}'` prints a number of at most 20. The section states each rule of the spec's draft: match by meaning; a project question starts no work; one, several or no match; a typed command wins; check the reading; `/aid-orchestrate`; show the reading; which phases run; re-route; raise KB conflicts; one topic at a time (AC-1 to AC-6).
+- [ ] `awk '/^## /{p=($0=="## Handling a request")} p' canonical/aid/rules.md | awk 'NF{n=NR} END{print n}'` prints a number of at most 19, leaving the line delivery-002's two-line last bullet needs (SG-01's cap is 20). The section states each rule of the spec's draft: match by meaning; a project question starts no work; one, several or no match; a typed command wins; check the reading; `/aid-orchestrate`; show the reading; which phases run; re-route; raise KB conflicts; one topic at a time (AC-1 to AC-6).
 - [ ] `sed -n '/^<!-- AID:SUMMARY:BEGIN -->$/,/^<!-- AID:SUMMARY:END -->$/p' canonical/aid/rules.md | grep -c '^- '` prints 8, and the new bullet carries the spec's wording (AC-1, AC-4).
 - [ ] No guide line exceeds 100 characters (the SG-03 rule). The guide's names, with `<kind>` expanded against the catalog, equal `canonical/skills/` minus `aid-triage` plus `aid-orchestrate`, both ways (the SG-02 rule, checked by a one-off command until task-014 lands) (AC-6).
 - [ ] `## Tracking discipline (IMPERATIVE)` names `.aid/works/work-NNN-*/STATE.yml`, and `grep -c 'LITE path' canonical/aid/rules.md` prints 0 (KI-001).

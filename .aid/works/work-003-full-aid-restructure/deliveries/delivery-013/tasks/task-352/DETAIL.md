@@ -35,23 +35,31 @@
      KB is not changed by this resync.
   4. **The gate:** the stanza's criteria (the identity search run without the release flag; the description exempt
      list empty), the samples (`009-15`, `009-18`, `009-19`, and `002-02` on `/aid-configure`, each 3 of 3) and G0 on
-     the head, G0's lane item carried by the milestone push. Then `/aid-execute` resumes and asks the open approval
-     first; a yes is recorded with `--answer --commit <head>`, and the push question follows.
+     the head, G0's lane item carried by the milestone push. Then **the hold** (PLAN.md "How deliveries 010-014 are
+     built", The hold): with `AID_WORK_DIR` exported for this work, the main conversation runs
+     `write-control-signal.sh --task-id NNN --action stop` for every wave-1 task of delivery-014 (its `wave-map`
+     block in `PLAN.md`). Then `/aid-execute` resumes and asks the open approval first; a yes is recorded with
+     `--answer --commit <head>`, and the push question follows. NEXT's routing then reaches delivery-014's first
+     BUILD, whose step entry finds the task's `.stop` file and pauses the run before any dispatch (Feature 007 § 2,
+     Control signals).
   5. **Research for delivery-014 (Q139)**, after this delivery's milestone yes is recorded. `aid-researcher` writes
      `.aid/works/work-003-full-aid-restructure/research/delivery-014-sites.md` from the brief below, in a clean
      context. `aid-reviewer` grades it in a clean context with `grade.sh` against `minimum_grade`, against the brief's
      criteria; fix rounds follow as for a task, and the same failure after three rounds goes to the maintainer. The
      file is then committed alone (a work-folder file, not resync-relevant). Delivery-014's run starts only after
-     that commit.
+     that commit: the main conversation then runs `write-control-signal.sh --task-id NNN --action resume` for each
+     task the hold stopped (step 4), and resumes `/aid-execute`. A gate failure or a change asked at the approval
+     keeps the stops in place: the corrections are built in this delivery, and the research waits for the yes.
      **Brief:**
      - Create `.aid/works/work-003-full-aid-restructure/research/delivery-014-sites.md`. The step touches nothing else.
      - Re-run these searches at the head the gate session leaves, and record that commit in the file
        (REQUIREMENTS.md § 11 Feature 009 `##### 5. Components`, The final documentation pass; `##### 9. Testing`, DN-01 to DN-03). `test-doc-names.sh`
        comes with task-354, so the DN rules are run by hand, as the spec states them:
-       - **D1** DN-01's rule without the release flag: over `docs/`, `site/src/content/` and `examples/`, and `README.md`,
-         every mention of a retired slash name (as `/aid-<name>` or in backticks) and every old phase name (Discover,
-         Describe, Define, Specify, Plan, Detail, Execute) written as a phase -- in a `->` or `→` sequence, or followed by
-         "phase";
+       - **D1** DN-01's rule without the release flag: over `docs/`, `site/src/content/` and `examples/`, and `README.md`
+         and `CONTRIBUTING.md`, every mention of a retired slash name (as `/aid-<name>` or in backticks) and every old
+         phase name (Discover, Describe, Define, Specify, Plan, Detail, Execute) written as a phase -- in a `->` or `→`
+         sequence, or followed by "phase" -- each a whole name (`/aid-configure` is no hit for `/aid-config`, `Planning`
+         none for `Plan`);
        - **D2** the retired names: every skill folder under `canonical/skills/` at the work's base
          (`git merge-base master HEAD`) that `canonical/skills/` no longer holds, and every family form the old -> new
          table of `.aid/knowledge/backlog.md` § Next Release names; the two lists compared, each difference named;
@@ -78,7 +86,7 @@
          task-364 (canonical text a generated page copies), task-358 (`docs/install.md` with the old -> new table, `release.md`, `chat-wake-install.md`,
          `diagram-content-reference.md`), task-359 (the hand-written site pages of the home page, `concepts/` and
          `get-started/`), task-360 (the hand-written site pages of `guides/`, `reference/` and `contact/`), task-361
-         (`README.md` and `examples/`);
+         (`README.md`, `CONTRIBUTING.md` and `examples/`);
        - **a hit in a generated page is owned by its source**: the findings name, for each, the file the generator copies
          the text from (a `SKILL.md`, a reference, a template, `.aid/settings.yml`); its owner is task-364, which fixes it
          there and regenerates. "Generated page: regenerated" is never the owner of a DN-01 or DN-03 hit; a page synced from
@@ -114,8 +122,12 @@
      changed `.py`, and `node --check` on each changed `.mjs`.
   2. **Selection.** `SEL` is the output of `bash tests/canonical/select-suites.sh --since "$BASE"`.
      `COPY` is the members of `SEL` whose text matches the pattern `P` of PLAN.md § "Testing before the
-     resync", The driver. `LIVE` is `SEL` minus `COPY`. A change that lies wholly under `.aid/works/`
-     selects nothing.
+     resync", The driver. `LIVE` is `SEL` minus `COPY`.
+     - **Work-folder-only rule.** A task whose changes all lie under `.aid/works/` runs no suite: steps 2-5
+       are skipped, and the report says so. The work folder is transient pipeline state that no suite may
+       depend on, and it is not resync-relevant (PLAN.md § "Testing before the resync"). `select-suites.sh`
+       is not the reason and is not run for it: it selects every suite with no `# COVERS:` header, whatever
+       changed.
   3. **Scratch half** (when `COPY` is not empty).
      - Make the copy exactly as PLAN.md § "How the copy is made" says, with `S=.aid/.temp/scratch/task-352`.
        That includes the copy's own `run_generator.py`, run from inside it, then the `resync` commit.

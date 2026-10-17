@@ -29,6 +29,16 @@
 - Smoke run (Q134 D8): each sample whose row goes, once, in a scratch copy.
 - **Findings.** This task's scope also includes every site that
   `.aid/works/work-003-full-aid-restructure/research/delivery-009-sites.md` assigns to `task-249`.
+- **Checks and judgments (task-004's grammar).** A `## Checks` line is a file check on the fixture (`exists`,
+  `absent`, `contains`, `no-new-dir`, `no-push`) or a transcript check (`tool-called`, `tool-not-called`). How the
+  conversation went -- the order and count of questions, what the agent says, that nothing is written before a
+  yes -- is an `## Expected outcome` or `## Must not` item, which the judge rules on. This task does not extend
+  `run.py`.
+- **Re-run samples of this gate.** `001-07`, `001-16` and `006-01` pass again at this gate (PLAN.md delivery-009 Gate
+  Criteria). Each is read against the flow this delivery changes -- its answer sheet, `## Expected outcome`,
+  `## Must not` and `## Checks` -- and brought in line in this same task where the flow moved; then each gets one
+  smoke run with the others. `001-16`'s close is still `/aid-orchestrate`'s close minimum, reached now through the
+  new `/aid-execute`'s FINISH.
 - **Test step** (PLAN.md § "Testing before the resync"; the same in every task of this delivery).
   `BASE` is this task's `task-249: In Progress` commit. Work in the `work-003` worktree only, create no
   branch or worktree, and never run `run_generator.py` in the live tree.
@@ -36,8 +46,12 @@
      changed `.py`, and `node --check` on each changed `.mjs`.
   2. **Selection.** `SEL` is the output of `bash tests/canonical/select-suites.sh --since "$BASE"`.
      `COPY` is the members of `SEL` whose text matches the pattern `P` of PLAN.md § "Testing before the
-     resync", The driver. `LIVE` is `SEL` minus `COPY`. A change that lies wholly under `.aid/works/`
-     selects nothing.
+     resync", The driver. `LIVE` is `SEL` minus `COPY`.
+     - **Work-folder-only rule.** A task whose changes all lie under `.aid/works/` runs no suite: steps 2-5
+       are skipped, and the report says so. The work folder is transient pipeline state that no suite may
+       depend on, and it is not resync-relevant (PLAN.md § "Testing before the resync"). `select-suites.sh`
+       is not the reason and is not run for it: it selects every suite with no `# COVERS:` header, whatever
+       changed.
   3. **Scratch half** (when `COPY` is not empty).
      - Make the copy exactly as PLAN.md § "How the copy is made" says, with `S=.aid/.temp/scratch/task-249`.
        That includes the copy's own `run_generator.py`, run from inside it, then the `resync` commit.
@@ -63,5 +77,6 @@
 **Acceptance Criteria:**
 - [ ] `007-13` exists with its `deferred.tsv` row; DT-01 and SS-09 pass, with none of the eleven rows and no `skill:aid-execute` row left.
 - [ ] Each smoke run has its result reported.
+- [ ] The re-run samples `001-07`, `001-16` and `006-01` have had one smoke run each, with the result reported, and `run.py --validate` exits 0 for feature 001 and 006.
 - [ ] The test step (last Scope bullet) reports no failure: the spawn-free checks, the scratch half, the live half and the site or dashboard runs it calls for. Every existing test still passes.
 - [ ] All section-6 quality gates pass (REQUIREMENTS.md § 6: NFR-N, NFR-T, NFR-Q).

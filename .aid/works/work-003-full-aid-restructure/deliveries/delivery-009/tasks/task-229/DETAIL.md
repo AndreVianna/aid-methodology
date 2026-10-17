@@ -31,7 +31,15 @@
     approval asked at once and recorded as its `Approval`; a question that does not block recorded `Assumed`; a
     task that keeps failing: *retry*, or *give it up* (cancel, or replan), writing `Failed`, the dependents
     `Blocked` by `compute-block-radius.sh` over the whole graph, the step saved as NEXT, and a `CALL` to
-    `/aid-plan` REVISE.
+    `/aid-plan` REVISE;
+  - also in `blocker.md`, the routes of "Changing the plan or the requirements during Building" (Feature 007
+    § 2): a task-level plan change or a technical-only requirements change, no stop, recorded `Assumed`; a
+    requirement, criterion or delivery change once the confirmation is recorded, the revising skill's approval at
+    once (`covers: requirements change` or `plan change`), pausing like a real blocker (`Assumed` before the
+    confirmation in `lite`); a return from `/aid-specify` REVISE that changed what tasks serve, a `CALL` to
+    `/aid-plan` REVISE; on every return, `--plan-sync`, then the step it left, which re-reads the plan (a `Done`
+    task is never edited: a change to what it built is a new task); a typed start of another skill comes back by
+    `PASS` to START, and a side idea from Building (Feature 003) by `HALT`, to the saved step.
 - Suites to update in this same task: any suite the findings' X8 assigns to these files.
 - **Site regeneration (G1, G5).** When this task adds, deletes, renames or edits anything under
   `canonical/skills/`, `canonical/agents/` or `canonical/aid/templates/`, it runs
@@ -59,8 +67,12 @@
      changed `.py`, and `node --check` on each changed `.mjs`.
   2. **Selection.** `SEL` is the output of `bash tests/canonical/select-suites.sh --since "$BASE"`.
      `COPY` is the members of `SEL` whose text matches the pattern `P` of PLAN.md § "Testing before the
-     resync", The driver. `LIVE` is `SEL` minus `COPY`. A change that lies wholly under `.aid/works/`
-     selects nothing.
+     resync", The driver. `LIVE` is `SEL` minus `COPY`.
+     - **Work-folder-only rule.** A task whose changes all lie under `.aid/works/` runs no suite: steps 2-5
+       are skipped, and the report says so. The work folder is transient pipeline state that no suite may
+       depend on, and it is not resync-relevant (PLAN.md § "Testing before the resync"). `select-suites.sh`
+       is not the reason and is not run for it: it selects every suite with no `# COVERS:` header, whatever
+       changed.
   3. **Scratch half** (when `COPY` is not empty).
      - Make the copy exactly as PLAN.md § "How the copy is made" says, with `S=.aid/.temp/scratch/task-229`.
        That includes the copy's own `run_generator.py`, run from inside it, then the `resync` commit.
@@ -86,5 +98,6 @@
 **Acceptance Criteria:**
 - [ ] `next.md` names `verify`, `full_suite`, `commit`, `covers`, `merge-base --is-ancestor`, each `covers` form, `kb-freshness-check.sh` and `aid-kb-update`, and its wave rule fires only while the current delivery has no `verify` and no `full_suite` result is recorded, for a planned wave with no answered entry (EX-02, EX-08).
 - [ ] `blocker.md` names `Blocker`, `Assumed`, the give-up choices and `aid-plan`; neither file reads or writes `--lifecycle` or `deliveries.<id>.state`. The site `npm test` passes after regeneration.
+- [ ] `blocker.md` holds the Building-time change routes: it names `Assumed`, `requirements change`, `plan change`, `--plan-sync` on every return, the `CALL` to `/aid-plan` after an `/aid-specify` REVISE that changed what tasks serve, `PASS` to START for a typed start and `HALT` to the saved step for a side idea, and it stays within 120 lines. PL-06 passes with its `--plan-sync` (narrowed, REQUIREMENTS.md § 11 Feature 006 `##### 9. Testing`).
 - [ ] The test step (last Scope bullet) reports no failure: the spawn-free checks, the scratch half, the live half and the site or dashboard runs it calls for. Every existing test still passes.
 - [ ] All section-6 quality gates pass (REQUIREMENTS.md § 6: NFR-N, NFR-T, NFR-Q).

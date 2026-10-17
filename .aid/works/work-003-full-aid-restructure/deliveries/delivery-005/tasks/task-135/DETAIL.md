@@ -17,7 +17,7 @@
 
 **Source:** feature-004-kb-management -> delivery-005 -> AC-4, AC-14, AC-15, AC-28, AC-37
 
-**Depends on:** task-125, task-131, task-132
+**Depends on:** task-116, task-117, task-119, task-125, task-131, task-132
 
 **Scope:**
 - Create `tests/conversation/samples/feature-004/` with `004-01-build-from-code`,
@@ -31,6 +31,15 @@
 - Smoke run (Q134 D8): each sample once, in a scratch copy.
 - **Findings.** This task's scope also includes every site that
   `.aid/works/work-003-full-aid-restructure/research/delivery-005-sites.md` assigns to `task-135`.
+- **Checks and judgments (task-004's grammar).** A `## Checks` line is a file check on the fixture (`exists`,
+  `absent`, `contains`, `no-new-dir`, `no-push`) or a transcript check (`tool-called`, `tool-not-called`). How the
+  conversation went -- the order and count of questions, what the agent says, that nothing is written before a
+  yes -- is an `## Expected outcome` or `## Must not` item, which the judge rules on. This task does not extend
+  `run.py`.
+- **Re-run samples of this gate.** `001-05` and `001-15` pass again at this gate (PLAN.md delivery-005 Gate
+  Criteria). Each is read against the flow this delivery changes -- its answer sheet, `## Expected outcome`,
+  `## Must not` and `## Checks` -- and brought in line in this same task where the flow moved; then each gets one
+  smoke run with the others.
 - **Test step** (PLAN.md § "Testing before the resync"; the same in every task of this delivery).
   `BASE` is this task's `task-135: In Progress` commit. Work in the `work-003` worktree only, create no
   branch or worktree, and never run `run_generator.py` in the live tree.
@@ -38,8 +47,12 @@
      changed `.py`, and `node --check` on each changed `.mjs`.
   2. **Selection.** `SEL` is the output of `bash tests/canonical/select-suites.sh --since "$BASE"`.
      `COPY` is the members of `SEL` whose text matches the pattern `P` of PLAN.md § "Testing before the
-     resync", The driver. `LIVE` is `SEL` minus `COPY`. A change that lies wholly under `.aid/works/`
-     selects nothing.
+     resync", The driver. `LIVE` is `SEL` minus `COPY`.
+     - **Work-folder-only rule.** A task whose changes all lie under `.aid/works/` runs no suite: steps 2-5
+       are skipped, and the report says so. The work folder is transient pipeline state that no suite may
+       depend on, and it is not resync-relevant (PLAN.md § "Testing before the resync"). `select-suites.sh`
+       is not the reason and is not run for it: it selects every suite with no `# COVERS:` header, whatever
+       changed.
   3. **Scratch half** (when `COPY` is not empty).
      - Make the copy exactly as PLAN.md § "How the copy is made" says, with `S=.aid/.temp/scratch/task-135`.
        That includes the copy's own `run_generator.py`, run from inside it, then the `resync` commit.
@@ -66,5 +79,6 @@
 - [ ] There are five files, and each `covers` matches the spec's sample table. No `## Answer sheet` names a skill.
 - [ ] DT-01 and SS-09 pass, with no `skill:aid-kb-*` row left.
 - [ ] Each sample has had one smoke run, with its result reported.
+- [ ] The re-run samples `001-05` and `001-15` have had one smoke run each, with the result reported, and `run.py --validate` exits 0 for feature 001.
 - [ ] The test step (last Scope bullet) reports no failure: the spawn-free checks, the scratch half, the live half and the site or dashboard runs it calls for. Every existing test still passes.
 - [ ] All section-6 quality gates pass (REQUIREMENTS.md § 6: NFR-N, NFR-T, NFR-Q).

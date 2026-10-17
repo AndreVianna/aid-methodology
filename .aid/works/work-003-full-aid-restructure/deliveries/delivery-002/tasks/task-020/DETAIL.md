@@ -66,8 +66,12 @@
      changed `.py`, and `node --check` on each changed `.mjs`.
   2. **Selection.** `SEL` is the output of `bash tests/canonical/select-suites.sh --since "$BASE"`.
      `COPY` is the members of `SEL` whose text matches the pattern `P` of PLAN.md § "Testing before the
-     resync", The driver. `LIVE` is `SEL` minus `COPY`. A change that lies wholly under `.aid/works/`
-     selects nothing.
+     resync", The driver. `LIVE` is `SEL` minus `COPY`.
+     - **Work-folder-only rule.** A task whose changes all lie under `.aid/works/` runs no suite: steps 2-5
+       are skipped, and the report says so. The work folder is transient pipeline state that no suite may
+       depend on, and it is not resync-relevant (PLAN.md § "Testing before the resync"). `select-suites.sh`
+       is not the reason and is not run for it: it selects every suite with no `# COVERS:` header, whatever
+       changed.
   3. **Scratch half** (when `COPY` is not empty).
      - Make the copy exactly as PLAN.md § "How the copy is made" says, with `S=.aid/.temp/scratch/task-020`.
        That includes the copy's own `run_generator.py`, run from inside it, then the `resync` commit.
@@ -95,6 +99,6 @@
 - [ ] The P1 count and the P2 and P3 matches are compared with the spec's statements ("55 lines"; "every file (b) matches is in Files and layout"; "(d) matches exactly the continuation lines listed"). Each difference is listed with its owner.
 - [ ] Every hit has exactly one owner; the count of rows with an empty owner cell is 0. Every suite assigned to two independent tasks is listed, with the order to run them.
 - [ ] The skill owner table has exactly one row per `canonical/skills/*/SKILL.md` on disk at the base (the row count equals `ls canonical/skills/*/SKILL.md | wc -l`), and no row is unowned.
-- [ ] RESEARCH defaults are overridden: the spec fixes the searches, so there are no alternatives to compare, and the recorded commands are the sources. The test step selects nothing, because the change lies wholly under `.aid/works/`.
+- [ ] RESEARCH defaults are overridden: the spec fixes the searches, so there are no alternatives to compare, and the recorded commands are the sources. The test step runs no suite, because every change lies under `.aid/works/` (its work-folder-only rule).
 - [ ] The test step (last Scope bullet) reports no failure: the spawn-free checks, the scratch half, the live half and the site or dashboard runs it calls for. Every existing test still passes.
 - [ ] All section-6 quality gates pass (REQUIREMENTS.md § 6: NFR-N, NFR-T, NFR-Q).

@@ -17,7 +17,7 @@
 
 **Source:** feature-002-step-by-step-decisions -> delivery-002 -> AC-41
 
-**Depends on:** task-021, task-025
+**Depends on:** task-021
 
 **Scope:**
 - Phase sites (REQUIREMENTS.md § 11 Feature 002 `##### 2. Work state layout`, the phase-sites table):
@@ -30,7 +30,9 @@
   `_ser_work` and `server.mjs`, for the stage rail (Q75).
 - The call, `record_status` and card-line fields are delivery-003's (Q135, R7).
 - Suites to update in this same task:
-  - the `Phase.<old>` assertions;
+  - the `Phase.<old>` assertions, `dashboard/reader/tests/test_integration.py` included: its writer still
+    takes the old names until task-025, which depends on this task, so the fed `Execute` and `Specify` stay
+    and the assertions name `Phase.Building` and `Phase.Specification`, which the legacy map returns for them;
   - the `dashboard/reader/tests/fixtures/task011_golden/*.json` outputs. Inputs keep their old names, per
     the spec's Tests rule;
   - the parity suites;
@@ -61,8 +63,12 @@
      changed `.py`, and `node --check` on each changed `.mjs`.
   2. **Selection.** `SEL` is the output of `bash tests/canonical/select-suites.sh --since "$BASE"`.
      `COPY` is the members of `SEL` whose text matches the pattern `P` of PLAN.md § "Testing before the
-     resync", The driver. `LIVE` is `SEL` minus `COPY`. A change that lies wholly under `.aid/works/`
-     selects nothing.
+     resync", The driver. `LIVE` is `SEL` minus `COPY`.
+     - **Work-folder-only rule.** A task whose changes all lie under `.aid/works/` runs no suite: steps 2-5
+       are skipped, and the report says so. The work folder is transient pipeline state that no suite may
+       depend on, and it is not resync-relevant (PLAN.md § "Testing before the resync"). `select-suites.sh`
+       is not the reason and is not run for it: it selects every suite with no `# COVERS:` header, whatever
+       changed.
   3. **Scratch half** (when `COPY` is not empty).
      - Make the copy exactly as PLAN.md § "How the copy is made" says, with `S=.aid/.temp/scratch/task-031`.
        That includes the copy's own `run_generator.py`, run from inside it, then the `resync` commit.

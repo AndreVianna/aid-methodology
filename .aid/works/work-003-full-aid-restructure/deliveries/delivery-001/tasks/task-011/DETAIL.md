@@ -17,7 +17,7 @@
 
 **Source:** feature-001-plain-language-requests -> delivery-001 -> AC-6, AC-23
 
-**Depends on:** task-008, task-009
+**Depends on:** task-006, task-008, task-009
 
 **Scope:**
 - Make small, targeted edits. This is not a rewrite; AC-45's documentation pass belongs to delivery-014.
@@ -48,8 +48,12 @@
      changed `.py`, and `node --check` on each changed `.mjs`.
   2. **Selection.** `SEL` is the output of `bash tests/canonical/select-suites.sh --since "$BASE"`.
      `COPY` is the members of `SEL` whose text matches the pattern `P` of PLAN.md § "Testing before the
-     resync", The driver. `LIVE` is `SEL` minus `COPY`. A change that lies wholly under `.aid/works/`
-     selects nothing.
+     resync", The driver. `LIVE` is `SEL` minus `COPY`.
+     - **Work-folder-only rule.** A task whose changes all lie under `.aid/works/` runs no suite: steps 2-5
+       are skipped, and the report says so. The work folder is transient pipeline state that no suite may
+       depend on, and it is not resync-relevant (PLAN.md § "Testing before the resync"). `select-suites.sh`
+       is not the reason and is not run for it: it selects every suite with no `# COVERS:` header, whatever
+       changed.
   3. **Scratch half** (when `COPY` is not empty).
      - Make the copy exactly as PLAN.md § "How the copy is made" says, with `S=.aid/.temp/scratch/task-011`.
        That includes the copy's own `run_generator.py`, run from inside it, then the `resync` commit.

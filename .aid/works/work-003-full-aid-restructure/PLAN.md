@@ -29,8 +29,13 @@ The maintainer set the shape in the work `STATE.yml` `qa` Q111-Q127.
     and `test-release-install-e2e.sh`.
   - **Every other suite runs in the live tree.**
   - A task runs the suites whose `# COVERS:` headers name the files it changed (`test-landscape.md`
-    § Running only the suites a change can affect), each where this rule puts it. `/aid-detail` writes
+    § Running only the suites a change can affect), plus every suite with no `# COVERS:` header, which
+    `select-suites.sh` always selects as its fail-safe; each runs where this rule puts it. `/aid-detail` writes
     this rule into every task file's test steps, so each builder's executor follows it.
+  - **A task that changes only the work folder runs no suite.** When every file a task changes lies under
+    `.aid/works/`, it runs no suite and no site or dashboard test: the work folder is transient pipeline state
+    that no suite may depend on, and it is not resync-relevant. This is the plan's rule, not `select-suites.sh`'s,
+    which would still select every suite with no `# COVERS:` header.
   - **How the copy is made:**
     ```sh
     S=.aid/.temp/scratch/task-NNN; rm -rf "$S"; mkdir -p "$S"
@@ -258,17 +263,17 @@ It is a distinct unit because nothing else in the work can be built before it.
 | task-005 | task-001 |
 | task-006 | task-002, task-003, task-007 |
 | task-007 | task-003 |
-| task-008 | task-006 |
+| task-008 | task-002, task-006 |
 | task-009 | task-006, task-007, task-008 |
-| task-010 | task-009 |
-| task-011 | task-008, task-009 |
+| task-010 | task-002, task-008, task-009 |
+| task-011 | task-006, task-008, task-009 |
 | task-012 | task-007, task-009 |
-| task-013 | task-006, task-009 |
-| task-014 | task-010 |
-| task-015 | task-014 |
+| task-013 | task-002, task-004, task-005, task-006, task-008, task-009 |
+| task-014 | task-002, task-008, task-010 |
+| task-015 | task-002, task-014 |
 | task-016 | task-004, task-005, task-010 |
 | task-017 | task-004, task-005, task-010 |
-| task-018 | task-012, task-013, task-015, task-016, task-017, task-019 |
+| task-018 | task-005, task-006, task-009, task-012, task-013, task-014, task-015, task-016, task-017, task-019 |
 | task-019 | task-004, task-010 |
 
 | Can Be Done In Parallel |
@@ -425,34 +430,34 @@ The Notes explain why each is needed.
 | task-022 | task-020 |
 | task-023 | task-020, task-022 |
 | task-024 | task-020 |
-| task-025 | task-021 |
+| task-025 | task-021, task-031 |
 | task-026 | task-022 |
 | task-027 | task-022 |
 | task-028 | task-022, task-023 |
 | task-029 | task-021, task-025 |
 | task-030 | task-023, task-025 |
-| task-031 | task-021, task-025 |
+| task-031 | task-021 |
 | task-032 | task-022, task-029, task-030 |
 | task-033 | task-031 |
-| task-034 | task-023, task-025, task-030 |
-| task-035 | task-023, task-025, task-030 |
-| task-036 | task-023, task-025, task-030 |
-| task-037 | task-023, task-025, task-030 |
-| task-038 | task-023, task-025, task-030 |
-| task-039 | task-023, task-025, task-030 |
-| task-040 | task-023, task-025, task-030, task-039 |
-| task-041 | task-023, task-025, task-030 |
-| task-042 | task-023, task-025, task-030 |
-| task-043 | task-023, task-025, task-030 |
-| task-044 | task-023, task-025, task-030 |
+| task-034 | task-023, task-024, task-025, task-030 |
+| task-035 | task-023, task-024, task-025, task-030 |
+| task-036 | task-023, task-024, task-025, task-030 |
+| task-037 | task-023, task-024, task-025, task-030 |
+| task-038 | task-023, task-024, task-025, task-030 |
+| task-039 | task-023, task-024, task-025, task-030 |
+| task-040 | task-023, task-024, task-025, task-030, task-039 |
+| task-041 | task-023, task-024, task-025, task-030 |
+| task-042 | task-023, task-024, task-025, task-030 |
+| task-043 | task-023, task-024, task-025, task-030 |
+| task-044 | task-023, task-024, task-025, task-030 |
 | task-045 | task-022, task-023, task-029, task-030 |
-| task-046 | task-029, task-031 |
+| task-046 | task-025, task-029, task-031 |
 | task-047 | task-029, task-030 |
 | task-048 | task-031 |
 | task-049 | task-032, task-034, task-035, task-036, task-037, task-038, task-039, task-040, task-041, task-042, task-043, task-044 |
 | task-050 | task-032, task-033, task-034, task-035, task-036, task-037, task-038, task-039, task-040, task-041, task-042, task-043, task-044 |
 | task-051 | task-040, task-042 |
-| task-052 | task-046 |
+| task-052 | task-025, task-029, task-046 |
 | task-053 | task-033 |
 | task-054 | task-032, task-034, task-035, task-036, task-037, task-038, task-039, task-040, task-041, task-042, task-043, task-044 |
 | task-055 | task-026, task-027, task-028, task-054 |
@@ -462,24 +467,26 @@ The Notes explain why each is needed.
 | Can Be Done In Parallel |
 |------------------------|
 | task-021, task-022, task-024 |
-| task-023, task-025, task-026, task-027 |
-| task-028, task-029, task-030, task-031 |
-| task-032, task-033, task-034, task-035, task-036, task-037, task-038, task-039, task-041, task-042, task-043, task-044, task-045, task-046, task-047, task-048 |
-| task-040, task-052, task-053 |
+| task-023, task-026, task-027, task-031 |
+| task-025, task-028, task-033, task-048 |
+| task-029, task-030, task-053 |
+| task-032, task-034, task-035, task-036, task-037, task-038, task-039, task-041, task-042, task-043, task-044, task-045, task-046, task-047 |
+| task-040, task-052 |
 | task-049, task-050, task-051, task-054 |
 
 ```wave-map
 delivery: 002
 wave 1: task-020
 wave 2: task-021, task-022, task-024
-wave 3: task-023, task-025, task-026, task-027
-wave 4: task-028, task-029, task-030, task-031
-wave 5: task-032, task-033, task-034, task-035, task-036, task-037, task-038, task-039, task-041, task-042, task-043, task-044, task-045, task-046, task-047, task-048
-wave 6: task-040, task-052, task-053
-wave 7: task-049, task-050, task-051, task-054
-wave 8: task-055
-wave 9: task-056
-wave 10: task-057
+wave 3: task-023, task-026, task-027, task-031
+wave 4: task-025, task-028, task-033, task-048
+wave 5: task-029, task-030, task-053
+wave 6: task-032, task-034, task-035, task-036, task-037, task-038, task-039, task-041, task-042, task-043, task-044, task-045, task-046, task-047
+wave 7: task-040, task-052
+wave 8: task-049, task-050, task-051, task-054
+wave 9: task-055
+wave 10: task-056
+wave 11: task-057
 ```
 
 ### delivery-003: Questions one topic at a time, no banners (Feature 002, sweep)
@@ -558,9 +565,9 @@ from the engine.
 | task-076 | task-063, task-064, task-072 |
 | task-077 | task-063, task-064, task-065, task-067, task-068, task-072, task-074 |
 | task-078 | task-060, task-061, task-062, task-063, task-064, task-065, task-066, task-067, task-068, task-069, task-072, task-074, task-076 |
-| task-079 | task-073 |
-| task-080 | task-075, task-078 |
-| task-081 | task-077, task-078, task-079, task-080 |
+| task-079 | task-070, task-073 |
+| task-080 | task-071, task-075, task-078 |
+| task-081 | task-071, task-075, task-077, task-078, task-079, task-080 |
 
 | Can Be Done In Parallel |
 |------------------------|
@@ -641,18 +648,18 @@ is checked at delivery-007 (`003-09`) and delivery-009 (`003-10`).
 | task-089 | task-083, task-085 |
 | task-090 | task-087 |
 | task-091 | task-087 |
-| task-092 | task-087, task-088 |
-| task-093 | task-088, task-090, task-091, task-092, task-096 |
-| task-094 | task-089, task-093 |
+| task-092 | task-084, task-087, task-088 |
+| task-093 | task-084, task-087, task-088, task-090, task-091, task-092, task-096 |
+| task-094 | task-085, task-087, task-088, task-089, task-093, task-096 |
 | task-095 | task-083 |
 | task-096 | task-084, task-088 |
-| task-097 | task-088, task-094 |
-| task-098 | task-089, task-094 |
-| task-099 | task-085, task-086, task-090, task-092, task-094 |
+| task-097 | task-085, task-088, task-089, task-094 |
+| task-098 | task-089, task-092, task-094 |
+| task-099 | task-085, task-086, task-087, task-090, task-092, task-093, task-094 |
 | task-100 | task-089, task-090, task-094 |
-| task-101 | task-100 |
+| task-101 | task-093, task-094, task-100 |
 | task-102 | task-095, task-099 |
-| task-103 | task-097, task-098, task-101, task-102 |
+| task-103 | task-093, task-095, task-097, task-098, task-099, task-101, task-102 |
 
 | Can Be Done In Parallel |
 |------------------------|
@@ -791,26 +798,26 @@ wave 10: task-103
 | task-116 | task-105, task-110 |
 | task-117 | task-110, task-116 |
 | task-118 | task-110 |
-| task-119 | task-110, task-111, task-117 |
+| task-119 | task-110, task-111, task-116, task-117 |
 | task-120 | task-112 |
 | task-121 | task-113 |
 | task-122 | task-110 |
 | task-123 | task-107, task-111, task-115, task-116 |
-| task-124 | task-107, task-111, task-115, task-117, task-118 |
+| task-124 | task-107, task-111, task-115, task-116, task-117, task-118 |
 | task-125 | task-116, task-117, task-118, task-119 |
 | task-126 | task-115 |
 | task-127 | task-120 |
-| task-128 | task-121 |
+| task-128 | task-113, task-121 |
 | task-129 | task-109, task-116, task-117, task-118, task-119, task-123, task-124, task-125 |
 | task-130 | task-116, task-117, task-118, task-119, task-121, task-123, task-124 |
-| task-131 | task-108, task-111, task-123, task-124, task-129, task-130 |
-| task-132 | task-117, task-131 |
+| task-131 | task-108, task-110, task-111, task-116, task-117, task-119, task-123, task-124, task-125, task-129, task-130 |
+| task-132 | task-116, task-117, task-119, task-125, task-130, task-131 |
 | task-133 | task-111, task-131 |
-| task-134 | task-121, task-125, task-129, task-130, task-131, task-132 |
-| task-135 | task-125, task-131, task-132 |
-| task-136 | task-110, task-118, task-131, task-132 |
-| task-137 | task-108, task-113, task-125, task-131, task-132 |
-| task-138 | task-126, task-127, task-133, task-134 |
+| task-134 | task-105, task-116, task-121, task-125, task-129, task-130, task-131, task-132 |
+| task-135 | task-116, task-117, task-119, task-125, task-131, task-132 |
+| task-136 | task-110, task-111, task-118, task-131, task-132 |
+| task-137 | task-108, task-111, task-113, task-120, task-125, task-131, task-132 |
+| task-138 | task-108, task-126, task-127, task-133, task-134 |
 | task-139 | task-114, task-122, task-128, task-135, task-136, task-137, task-138 |
 
 | Can Be Done In Parallel |
@@ -911,15 +918,15 @@ facts in a new project is checked at delivery-007 (`004-10`) and delivery-009 (`
 | task-147 | task-144 |
 | task-148 | task-140 |
 | task-149 | task-142, task-148 |
-| task-150 | task-145, task-146 |
-| task-151 | task-144, task-145, task-147, task-150 |
+| task-150 | task-141, task-145, task-146 |
+| task-151 | task-142, task-144, task-145, task-146, task-147, task-150 |
 | task-152 | task-141, task-142 |
 | task-153 | task-143 |
 | task-154 | task-148, task-149 |
 | task-155 | task-144, task-146, task-147, task-151 |
 | task-156 | task-147, task-151 |
-| task-157 | task-146, task-156 |
-| task-158 | task-142, task-144, task-148, task-151 |
+| task-157 | task-146, task-151, task-156 |
+| task-158 | task-142, task-144, task-147, task-148, task-151 |
 | task-159 | task-146, task-147, task-149, task-151 |
 | task-160 | task-152, task-153, task-154, task-155, task-156, task-157, task-158, task-159 |
 
@@ -1001,17 +1008,17 @@ accepts in Feature 005's § 2: "No release carries that gap, since every feature
 | task-167 | task-163, task-164 |
 | task-168 | task-161 |
 | task-169 | task-164, task-168 |
-| task-170 | task-165, task-166, task-167, task-169 |
-| task-171 | task-167 |
+| task-170 | task-163, task-164, task-165, task-166, task-167, task-169 |
+| task-171 | task-163, task-167 |
 | task-172 | task-170 |
-| task-173 | task-170, task-171 |
-| task-174 | task-172, task-173 |
+| task-173 | task-163, task-170, task-171 |
+| task-174 | task-170, task-172, task-173 |
 | task-175 | task-164, task-170 |
 | task-176 | task-165 |
-| task-177 | task-163, task-164, task-168, task-170, task-171, task-174 |
+| task-177 | task-163, task-164, task-168, task-170, task-171, task-173, task-174 |
 | task-178 | task-170, task-174 |
-| task-179 | task-169, task-172, task-178 |
-| task-180 | task-179 |
+| task-179 | task-169, task-172, task-174, task-178 |
+| task-180 | task-174, task-179 |
 | task-181 | task-177 |
 | task-182 | task-164, task-168, task-174 |
 | task-183 | task-170, task-171, task-174 |
@@ -1120,25 +1127,25 @@ Toolchain and Branching).
 | task-193 | task-189 |
 | task-194 | task-190 |
 | task-195 | task-192, task-193, task-194 |
-| task-196 | task-193, task-195 |
-| task-197 | task-190 |
+| task-196 | task-186, task-193, task-195 |
+| task-197 | task-188, task-190 |
 | task-198 | task-188 |
 | task-199 | task-187 |
 | task-200 | task-188, task-199 |
 | task-201 | task-187 |
 | task-202 | task-188, task-201 |
 | task-203 | task-202 |
-| task-204 | task-197, task-203 |
-| task-205 | task-195, task-196, task-197, task-200, task-204 |
-| task-206 | task-204, task-205 |
-| task-207 | task-190, task-197 |
+| task-204 | task-187, task-197, task-203 |
+| task-205 | task-191, task-195, task-196, task-197, task-198, task-199, task-200, task-204 |
+| task-206 | task-195, task-196, task-204, task-205 |
+| task-207 | task-188, task-190, task-197 |
 | task-208 | task-189 |
 | task-209 | task-191 |
-| task-210 | task-203 |
+| task-210 | task-201, task-203 |
 | task-211 | task-199, task-200 |
 | task-212 | task-186, task-191, task-194, task-196, task-197, task-198, task-200, task-204, task-206 |
 | task-213 | task-195, task-197, task-206 |
-| task-214 | task-198, task-203, task-204, task-213 |
+| task-214 | task-198, task-203, task-204, task-206, task-213 |
 | task-215 | task-210, task-212 |
 | task-216 | task-187, task-190, task-206 |
 | task-217 | task-195, task-199, task-203, task-206 |
@@ -1264,23 +1271,23 @@ close runs through `/aid-orchestrate`.
 | task-227 | task-221 |
 | task-228 | task-221, task-223 |
 | task-229 | task-221, task-222 |
-| task-230 | task-222, task-225 |
+| task-230 | task-222, task-225, task-226 |
 | task-231 | task-219 |
 | task-232 | task-222 |
-| task-233 | task-220, task-226, task-227, task-228, task-229, task-230 |
-| task-234 | task-221, task-231, task-233 |
+| task-233 | task-220, task-225, task-226, task-227, task-228, task-229, task-230 |
+| task-234 | task-221, task-222, task-231, task-233 |
 | task-235 | task-233 |
 | task-236 | task-227, task-233 |
-| task-237 | task-233, task-234, task-235, task-240 |
+| task-237 | task-227, task-229, task-233, task-234, task-235, task-240 |
 | task-238 | task-220 |
 | task-239 | task-220 |
 | task-240 | task-239 |
-| task-241 | task-222, task-234 |
+| task-241 | task-221, task-222, task-234 |
 | task-242 | task-223 |
 | task-243 | task-224, task-225, task-233 |
 | task-244 | task-238 |
 | task-245 | task-239, task-240 |
-| task-246 | task-220, task-223, task-231, task-233, task-234, task-235, task-237 |
+| task-246 | task-220, task-223, task-225, task-226, task-229, task-230, task-231, task-233, task-234, task-235, task-237 |
 | task-247 | task-231, task-232, task-233, task-234, task-235 |
 | task-248 | task-232, task-238, task-247 |
 | task-249 | task-248 |
@@ -1294,7 +1301,7 @@ close runs through `/aid-orchestrate`.
 | task-220, task-223, task-224, task-231 |
 | task-221, task-225, task-238, task-239, task-242 |
 | task-222, task-227, task-228, task-240, task-244 |
-| task-226, task-229, task-230, task-232, task-245 |
+| task-226, task-229, task-232, task-245 |
 | task-234, task-235, task-236, task-243 |
 | task-237, task-241, task-247, task-251 |
 | task-246, task-248, task-252 |
@@ -1306,13 +1313,14 @@ wave 1: task-219
 wave 2: task-220, task-223, task-224, task-231
 wave 3: task-221, task-225, task-238, task-239, task-242
 wave 4: task-222, task-227, task-228, task-240, task-244
-wave 5: task-226, task-229, task-230, task-232, task-245
-wave 6: task-233
-wave 7: task-234, task-235, task-236, task-243
-wave 8: task-237, task-241, task-247, task-251
-wave 9: task-246, task-248, task-252
-wave 10: task-249, task-250
-wave 11: task-253
+wave 5: task-226, task-229, task-232, task-245
+wave 6: task-230
+wave 7: task-233
+wave 8: task-234, task-235, task-236, task-243
+wave 9: task-237, task-241, task-247, task-251
+wave 10: task-246, task-248, task-252
+wave 11: task-249, task-250
+wave 12: task-253
 ```
 
 ### delivery-010: Pull requests to a mergeable state, never merged
@@ -1330,7 +1338,8 @@ that `/aid-orchestrate` has run since delivery-001.
 - **Scripts:** new `pipeline/push-approved.sh`, `merge-parent.sh` and `close-work.sh`.
   `cleanup-classify.sh` is moved and reads YAML. (AC-11, AC-35, AC-36)
 - **State and settings:**
-  - writer `--pull-request` and the duplicate-`ref` rule, plus the fork;
+  - writer `--pull-request` and the duplicate-`ref` rule, in the canonical writer only (the dashboard fork has
+    no `--feedback-add`, F008 § 3);
   - the `pull_request` key;
   - `work_folders: push` in the settings;
   - the conflict-merge row in `skill-steps.md`;
@@ -1397,7 +1406,7 @@ that `/aid-orchestrate` has run since delivery-001.
 | task-267 | — |
 | task-268 | task-266 |
 | task-269 | task-263, task-266 |
-| task-270 | task-257, task-266, task-267, task-268, task-269 |
+| task-270 | task-255, task-257, task-263, task-266, task-267, task-268, task-269 |
 | task-271 | — |
 | task-272 | task-259 |
 | task-273 | task-270, task-272 |
@@ -1406,7 +1415,7 @@ that `/aid-orchestrate` has run since delivery-001.
 | task-276 | task-257, task-258 |
 | task-277 | task-259 |
 | task-278 | task-272, task-273 |
-| task-279 | task-255, task-256, task-258, task-265, task-268, task-270, task-271 |
+| task-279 | task-255, task-256, task-258, task-263, task-265, task-267, task-268, task-270, task-271 |
 | task-280 | task-259, task-260, task-266, task-267, task-268, task-269, task-270 |
 | task-281 | task-261, task-266, task-268, task-269, task-270 |
 | task-282 | task-281 |
@@ -1520,16 +1529,16 @@ yet, so the old wrapper skills keep working beside the new ones until delivery-0
 | task-290 | task-289 |
 | task-291 | — |
 | task-292 | task-291 |
-| task-293 | task-289, task-290, task-292 |
+| task-293 | task-289, task-290, task-291, task-292 |
 | task-294 | task-293 |
 | task-295 | task-294 |
 | task-296 | task-293 |
-| task-297 | task-293 |
-| task-298 | task-297 |
+| task-297 | task-292, task-293 |
+| task-298 | task-292, task-293, task-297 |
 | task-299 | task-289, task-290 |
 | task-300 | task-289, task-290 |
 | task-301 | task-297, task-298 |
-| task-302 | task-294, task-295, task-296, task-297, task-298 |
+| task-302 | task-290, task-294, task-295, task-296, task-297, task-298 |
 | task-303 | — |
 | task-304 | task-291, task-292 |
 | task-305 | task-289, task-290, task-292, task-293, task-294, task-295, task-296, task-297, task-298, task-299, task-300, task-301 |
@@ -1645,24 +1654,24 @@ delivery also empties the lists that wait on Feature 009.
 | task-316 | — |
 | task-317 | task-316 |
 | task-318 | task-314, task-316, task-317 |
-| task-319 | task-313, task-315, task-318 |
-| task-320 | task-319 |
-| task-321 | task-313, task-314, task-316, task-317, task-319, task-320 |
+| task-319 | task-313, task-315, task-316, task-318 |
+| task-320 | task-316, task-318, task-319 |
+| task-321 | task-313, task-314, task-316, task-317, task-318, task-319, task-320 |
 | task-322 | task-321 |
 | task-323 | task-315, task-322 |
 | task-324 | task-320 |
-| task-325 | task-320 |
-| task-326 | task-318, task-319, task-320, task-321, task-322, task-324, task-325 |
+| task-325 | task-318, task-319, task-320 |
+| task-326 | task-314, task-316, task-318, task-319, task-320, task-321, task-322, task-324, task-325 |
 | task-327 | task-326 |
 | task-328 | task-326 |
-| task-329 | task-319, task-323, task-325, task-326 |
+| task-329 | task-319, task-321, task-323, task-325, task-326 |
 | task-330 | task-327 |
-| task-331 | task-328 |
+| task-331 | task-326, task-328 |
 | task-332 | task-313, task-314, task-320, task-323, task-326, task-327, task-328, task-329 |
-| task-333 | task-320, task-329 |
-| task-334 | task-313, task-315, task-327, task-333 |
-| task-335 | task-326, task-329 |
-| task-336 | task-319, task-326, task-329, task-335 |
+| task-333 | task-318, task-319, task-320, task-329 |
+| task-334 | task-313, task-315, task-318, task-319, task-320, task-327, task-333 |
+| task-335 | task-314, task-316, task-321, task-326, task-329 |
+| task-336 | task-319, task-321, task-325, task-326, task-329, task-335 |
 | task-337 | task-324, task-330, task-331, task-332, task-334, task-335, task-336 |
 
 | Can Be Done In Parallel |
@@ -1777,7 +1786,7 @@ wave 12: task-337
 | task-348 | task-339, task-340, task-341, task-342, task-344, task-346 |
 | task-349 | task-339, task-340, task-342, task-344, task-346, task-347 |
 | task-350 | task-339, task-343 |
-| task-351 | task-340, task-341, task-344, task-350 |
+| task-351 | task-339, task-340, task-341, task-344, task-350 |
 | task-352 | task-345, task-347, task-348, task-349, task-350, task-351 |
 
 | Can Be Done In Parallel |
@@ -1808,8 +1817,8 @@ wave 6: task-352
 end-of-work checks that make the branch releasable.
 
 **Scope:**
-- `aid-tech-writer` rewrites `docs/`, `site/src/content/docs/`, `README.md` and `examples/`. The old
-  -> new table sits between `legacy-skill-names` markers. Generated pages are regenerated, never
+- `aid-tech-writer` rewrites `docs/`, `site/src/content/docs/`, `README.md`, `CONTRIBUTING.md` and `examples/`.
+  The old -> new table sits between `legacy-skill-names` markers. Generated pages are regenerated, never
   edited by hand. (AC-45, AC-24)
 - `tests/canonical/test-doc-names.sh` (DN-01, DN-02, DN-03) and `tests/canonical/retired-names.txt`.
   (AC-24, AC-45)
@@ -1827,8 +1836,8 @@ end-of-work checks that make the branch releasable.
 
 **Gate Criteria:**
 - [ ] With `AID_RELEASE_CHECK=1`, DN-01, DN-02 and DN-03 pass:
-  - no file under `docs/`, `site/src/content/` or `examples/`, nor `README.md`, names a retired skill
-    or an old phase name outside the markers;
+  - no file under `docs/`, `site/src/content/` or `examples/`, nor `README.md` or `CONTRIBUTING.md`, names
+    a retired skill or an old phase name outside the markers;
   - every name in `retired-names.txt` has a row in `backlog.md` § Next Release.
   (AC-24, AC-45)
 - [ ] With `AID_RELEASE_CHECK=1`, DT-02 and both exempt-list release checks pass, with `deferred.tsv` and both exempt lists empty. The shared list's check is F002 § 8; the description list's is SG-04. (NFR-T)
@@ -1843,13 +1852,13 @@ end-of-work checks that make the branch releasable.
 | task-354 | — |
 | task-355 | task-354 |
 | task-356 | task-358 |
-| task-357 | task-356 |
+| task-357 | task-356, task-358 |
 | task-358 | task-354, task-364 |
-| task-359 | task-357 |
+| task-359 | task-357, task-358 |
 | task-360 | task-359 |
-| task-361 | task-357 |
-| task-362 | task-355, task-356, task-357, task-358, task-359, task-360, task-361 |
-| task-363 | task-355, task-362 |
+| task-361 | task-354, task-357 |
+| task-362 | task-354, task-355, task-356, task-357, task-358, task-359, task-360, task-361 |
+| task-363 | task-354, task-355, task-362 |
 | task-364 | task-354 |
 
 | Can Be Done In Parallel |
@@ -2011,6 +2020,21 @@ following F007 § 2.
   `research/delivery-NNN-sites.md` from the brief in the previous delivery's last task, `aid-reviewer` grades it with
   `grade.sh` against `minimum_grade`, and the file is committed alone before the delivery's run starts. It is not
   resync-relevant.
+- **The hold (for Q139's order).** Nothing in F007 stops the run between a delivery's milestone and the next delivery's first
+  BUILD: after the yes and the push question, NEXT's routing goes straight on. So, in the gate sessions of deliveries
+  010-013, the main conversation uses F007's control signals (F007 § 2, Control signals), which every step entry
+  checks:
+  1. Before resuming `/aid-execute`, it runs `write-control-signal.sh --task-id NNN --action stop`, with
+     `AID_WORK_DIR` exported for this work, for every wave-1 task of the next delivery (its `wave-map` block). Only
+     those tasks can be the next delivery's first BUILD.
+  2. The resumed run asks the open approval, records it and asks the push question. When NEXT's routing reaches the
+     next delivery's first BUILD, that step's entry finds the `.stop` file and pauses the run before any dispatch.
+     No task state is written for the pause.
+  3. The main conversation runs the research step, then `--action resume` for each stopped task, and resumes
+     `/aid-execute`.
+  A gate failure or a change asked at the approval leaves the stops in place: the corrections are built in the
+  current delivery, and the research waits for the yes. Delivery-010 needs no hold, since its research runs before
+  its START; delivery-014 has no next delivery.
 - Its steps run in order, all in the session that runs them:
   - every task's BUILD, TEST, VERIFY, SIMPLIFY, REVERIFY and NEXT, with NEXT's KB check;
   - then DELIVERY (verify, one simplify, a re-verify when something changed);
@@ -2026,8 +2050,8 @@ following F007 § 2.
   step 3). This is the defined point. The main conversation does not answer it, and ends the session.
 - **Resync session** (resync rule 1): the resync, committed alone, then the session ends.
 - **Gate session** (resync rule 2): the stanza's criteria, the samples and G0 on the head, except G0's
-  lane item, which the push carries. Then the main conversation resumes `/aid-execute`, which asks the
-  open approval question first.
+  lane item, which the push carries. Then the main conversation places the hold's stops (The hold, above;
+  deliveries 010-013) and resumes `/aid-execute`, which asks the open approval question first.
   - **Gate passed, and the maintainer approves:** the answer is recorded with `--answer --commit
     <head>`, so the approval covers the resync commit. The push question follows (step 10.4).
   - **Gate failed, or a change asked:** the approval is answered with the change. It becomes correction
@@ -2049,6 +2073,7 @@ before delivery-010, so its record is not consulted until the switch.
 | Delivery-009, after its resync, in the gate's new session | The main conversation does two things. **(1)** `--check` reports the type missing. The main conversation runs `--repair --skill aid-execute --name START --reading change`, with Q124 as the maintainer's recorded confirmation. **(2)** It writes `Verify` and `Commit` for deliveries 001-009 with `--delivery-id NNN --field`. `Verify` is the gate grade each delivery recorded, which the migrations already carried; writing it confirms it. `Commit` is the head each gate passed on. Then it asks one approval (Q123): "Deliveries 001-009 are built and each passed its gate; approve them, and confirm building goes on with delivery-010?" It is recorded through `--ask` and `--answer`: `category: Approval`, `covers: delivery delivery-001; ...; delivery delivery-009; confirmation before building`, `commit` the head. | (1) none: Q124. (2) yes. |
 | Delivery-010's START | `--check` passes, and the confirmation is recorded. The new `/aid-execute` asks only the wave question, and records the full-suite baseline as `not taken` (an old work). With every earlier delivery's `verify` and approval current, its routing goes straight to delivery-010's first task. No catch-up milestone, and so no push question, comes before `/aid-monitor-pipeline` exists. | "No stop per wave". |
 | Delivery-010's gate session | Before resuming `/aid-execute`, the main conversation saves `full-suite.sh` in the work folder ("Testing before the resync", The driver) and commits it alone. Then it records it with `--full-suite --field Command --value 'bash .aid/works/work-003-full-aid-restructure/full-suite.sh'`. FINAL, its re-runs and a correction call's run use the recorded command, never a fresh lookup (F007 § 4, Full suite; Q132), and so does F008's run on a merged tree (F008 § 2, PARENT, step 4). Later gate sessions need no check: a command is looked up only at the baseline or when none is recorded, and from this write on one is recorded. | No question. |
+| The gate sessions of deliveries 010-013 | Before resuming `/aid-execute`, the main conversation stops every wave-1 task of the next delivery with `write-control-signal.sh` ("How deliveries 010-014 are built", The hold). After the yes and the push question, the run pauses at the next delivery's first BUILD. The research step runs, its file is committed alone, the stops are removed with `--action resume`, and `/aid-execute` is resumed. | No question. |
 | Delivery-010's milestone | The first push question, "Create or update the pull request now?". Yes opens the draft v4.0.0 pull request from `work-003` to `master` through `/aid-monitor-pipeline`. | Maintainer's choice. Yes starts G0's lane check through the milestone push. |
 
 After delivery-014, the work reaches CI through `/aid-monitor-pipeline`, which marks the pull request

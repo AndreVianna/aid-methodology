@@ -17,7 +17,7 @@
 
 **Source:** feature-004-kb-management -> delivery-005 -> AC-15
 
-**Depends on:** task-108, task-113, task-125, task-131, task-132
+**Depends on:** task-108, task-111, task-113, task-120, task-125, task-131, task-132
 
 **Scope:**
 - Edit these documents under `.aid/knowledge/`, for this delivery's part:
@@ -25,7 +25,9 @@
     becomes Preparation, and the KB loop;
   - `project-structure.md`;
   - `infrastructure.md` and `integration-map.md`;
-  - `technology-stack.md`: Playwright and the root `package.json` go.
+  - `technology-stack.md`: Playwright and the root `package.json` go;
+  - `README.md`: its prose names the KB state file `STATE.yml` ("Read **STATE.yml** ...", the spine-coverage
+    line's section), not `STATE.md`; its frontmatter is task-120's.
 - Name no work and no work folder.
 - **Same-task rule (Q106).** This task updates every suite that asserts text in a file it changes,
   including `site/scripts/__tests__/` and the dashboard tests. It is not `Done` while such a suite fails.
@@ -41,8 +43,12 @@
      changed `.py`, and `node --check` on each changed `.mjs`.
   2. **Selection.** `SEL` is the output of `bash tests/canonical/select-suites.sh --since "$BASE"`.
      `COPY` is the members of `SEL` whose text matches the pattern `P` of PLAN.md § "Testing before the
-     resync", The driver. `LIVE` is `SEL` minus `COPY`. A change that lies wholly under `.aid/works/`
-     selects nothing.
+     resync", The driver. `LIVE` is `SEL` minus `COPY`.
+     - **Work-folder-only rule.** A task whose changes all lie under `.aid/works/` runs no suite: steps 2-5
+       are skipped, and the report says so. The work folder is transient pipeline state that no suite may
+       depend on, and it is not resync-relevant (PLAN.md § "Testing before the resync"). `select-suites.sh`
+       is not the reason and is not run for it: it selects every suite with no `# COVERS:` header, whatever
+       changed.
   3. **Scratch half** (when `COPY` is not empty).
      - Make the copy exactly as PLAN.md § "How the copy is made" says, with `S=.aid/.temp/scratch/task-137`.
        That includes the copy's own `run_generator.py`, run from inside it, then the `resync` commit.
@@ -68,5 +74,6 @@
 **Acceptance Criteria:**
 - [ ] Over the edited documents, `git grep -nE 'aid-(discover|ask|update-kb|summarize|housekeep)\b'` finds only lines that describe how old works or the old layout are handled (each such line also names `legacy`, `old work` or `aid update`); `git grep -nE 'aid-(discover|ask|update-kb|summarize|housekeep)\b' -- <the edited documents> | grep -viE 'legacy|old work|aid update'` prints nothing, and `technology-stack.md` names no Playwright step.
 - [ ] No work id, and the lints pass. Each statement matches `canonical/` as task-132 leaves it.
+- [ ] `grep -c 'STATE\.md' .aid/knowledge/README.md` prints 0.
 - [ ] The test step (last Scope bullet) reports no failure: the spawn-free checks, the scratch half, the live half and the site or dashboard runs it calls for. Every existing test still passes.
 - [ ] All section-6 quality gates pass (REQUIREMENTS.md § 6: NFR-N, NFR-T, NFR-Q).

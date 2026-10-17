@@ -41,15 +41,21 @@
      .aid/works/work-003-full-aid-restructure/full-suite.sh'`; the installed `derive-waves.sh --plan --check` on this
      work, with `--plan` when stale; `(cd site && npm run gen:reference)` and the site `npm test`, committing any regenerated page (`reference/settings.md`
     from `.aid/settings.yml`); a no-op when the resync changed nothing it reads. The KB is not changed by this resync.
-  4. **The gate:** the stanza's criteria, the samples and G0 on the head, except G0's lane item. Then `/aid-execute`
-     resumes and asks the open approval first; a yes is recorded with `--answer --commit <head>`, and the first push
-     question follows.
+  4. **The gate:** the stanza's criteria, the samples and G0 on the head, except G0's lane item. Then **the hold**
+     (PLAN.md "How deliveries 010-014 are built", The hold): with `AID_WORK_DIR` exported for this work, the main
+     conversation runs `write-control-signal.sh --task-id NNN --action stop` for every wave-1 task of delivery-011
+     (its `wave-map` block in `PLAN.md`). Then `/aid-execute` resumes and asks the open approval first; a yes is
+     recorded with `--answer --commit <head>`, and the first push question follows. NEXT's routing then reaches
+     delivery-011's first BUILD, whose step entry finds the task's `.stop` file and pauses the run before any
+     dispatch (Feature 007 § 2, Control signals).
   5. **Research for delivery-011 (Q139)**, after this delivery's milestone yes is recorded. `aid-researcher` writes
      `.aid/works/work-003-full-aid-restructure/research/delivery-011-sites.md` from the brief below, in a clean
      context. `aid-reviewer` grades it in a clean context with `grade.sh` against `minimum_grade`, against the brief's
      criteria; fix rounds follow as for a task, and the same failure after three rounds goes to the maintainer. The
      file is then committed alone (a work-folder file, not resync-relevant). Delivery-011's run starts only after
-     that commit.
+     that commit: the main conversation then runs `write-control-signal.sh --task-id NNN --action resume` for each
+     task step 4 stopped, and resumes `/aid-execute`. A gate failure or a change asked at the approval keeps the
+     stops in place: the corrections are built in delivery-010, and the research waits for the yes.
      **Brief:**
      - Create `.aid/works/work-003-full-aid-restructure/research/delivery-011-sites.md`. The step touches nothing else.
      - Re-run these searches at the head the gate session leaves, and record that commit in the file
@@ -121,8 +127,12 @@
      changed `.py`, and `node --check` on each changed `.mjs`.
   2. **Selection.** `SEL` is the output of `bash tests/canonical/select-suites.sh --since "$BASE"`.
      `COPY` is the members of `SEL` whose text matches the pattern `P` of PLAN.md § "Testing before the
-     resync", The driver. `LIVE` is `SEL` minus `COPY`. A change that lies wholly under `.aid/works/`
-     selects nothing.
+     resync", The driver. `LIVE` is `SEL` minus `COPY`.
+     - **Work-folder-only rule.** A task whose changes all lie under `.aid/works/` runs no suite: steps 2-5
+       are skipped, and the report says so. The work folder is transient pipeline state that no suite may
+       depend on, and it is not resync-relevant (PLAN.md § "Testing before the resync"). `select-suites.sh`
+       is not the reason and is not run for it: it selects every suite with no `# COVERS:` header, whatever
+       changed.
   3. **Scratch half** (when `COPY` is not empty).
      - Make the copy exactly as PLAN.md § "How the copy is made" says, with `S=.aid/.temp/scratch/task-287`.
        That includes the copy's own `run_generator.py`, run from inside it, then the `resync` commit.

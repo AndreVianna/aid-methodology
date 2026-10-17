@@ -16,8 +16,9 @@
   own, with no registered worktree on its own branch, counts as finished (Q95); without git the rule does not apply.
 - `canonical/aid/templates/connectors/consumption-protocol.md`: the wired-seam row for `aid-monitor-pipeline` (role
   *publish*); the header's reads-only sentence scoped to ticket seams (Q93).
-- `canonical/aid/templates/worktree-lifecycle.md` § Step 3 and the header of `worktree-lifecycle.sh`: the
-  `aid-housekeep` teardown consumer becomes the close (`close-work.sh`).
+- `canonical/aid/templates/worktree-lifecycle.md` § Step 3 (and its consumer list) and the header of
+  `worktree-lifecycle.sh`: the interim teardown wording delivery-005's task-130 left ("the work's teardown at its
+  close", "Teardown belongs to the work's close") becomes the close of `/aid-monitor-pipeline` (`close-work.sh`).
 - Suites to update in this same task: `test-work-initiation-gate.sh` (a fixture for the merged-folder row),
   `test-worktree-lifecycle.sh`, the connector consumption suites, and any suite the findings' Y5 assigns here.
 - **Site regeneration (G1, G5).** When this task adds, deletes, renames or edits anything under
@@ -48,8 +49,12 @@
      changed `.py`, and `node --check` on each changed `.mjs`.
   2. **Selection.** `SEL` is the output of `bash tests/canonical/select-suites.sh --since "$BASE"`.
      `COPY` is the members of `SEL` whose text matches the pattern `P` of PLAN.md § "Testing before the
-     resync", The driver. `LIVE` is `SEL` minus `COPY`. A change that lies wholly under `.aid/works/`
-     selects nothing.
+     resync", The driver. `LIVE` is `SEL` minus `COPY`.
+     - **Work-folder-only rule.** A task whose changes all lie under `.aid/works/` runs no suite: steps 2-5
+       are skipped, and the report says so. The work folder is transient pipeline state that no suite may
+       depend on, and it is not resync-relevant (PLAN.md § "Testing before the resync"). `select-suites.sh`
+       is not the reason and is not run for it: it selects every suite with no `# COVERS:` header, whatever
+       changed.
   3. **Scratch half** (when `COPY` is not empty).
      - Make the copy exactly as PLAN.md § "How the copy is made" says, with `S=.aid/.temp/scratch/task-267`.
        That includes the copy's own `run_generator.py`, run from inside it, then the `resync` commit.

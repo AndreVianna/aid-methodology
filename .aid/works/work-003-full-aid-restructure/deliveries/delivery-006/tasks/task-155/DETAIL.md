@@ -38,8 +38,12 @@
      changed `.py`, and `node --check` on each changed `.mjs`.
   2. **Selection.** `SEL` is the output of `bash tests/canonical/select-suites.sh --since "$BASE"`.
      `COPY` is the members of `SEL` whose text matches the pattern `P` of PLAN.md § "Testing before the
-     resync", The driver. `LIVE` is `SEL` minus `COPY`. A change that lies wholly under `.aid/works/`
-     selects nothing.
+     resync", The driver. `LIVE` is `SEL` minus `COPY`.
+     - **Work-folder-only rule.** A task whose changes all lie under `.aid/works/` runs no suite: steps 2-5
+       are skipped, and the report says so. The work folder is transient pipeline state that no suite may
+       depend on, and it is not resync-relevant (PLAN.md § "Testing before the resync"). `select-suites.sh`
+       is not the reason and is not run for it: it selects every suite with no `# COVERS:` header, whatever
+       changed.
   3. **Scratch half** (when `COPY` is not empty).
      - Make the copy exactly as PLAN.md § "How the copy is made" says, with `S=.aid/.temp/scratch/task-155`.
        That includes the copy's own `run_generator.py`, run from inside it, then the `resync` commit.
@@ -63,7 +67,7 @@
      - The same failure after three fix rounds goes to the maintainer.
 
 **Acceptance Criteria:**
-- [ ] Groups K1 and K2 pass in the scratch copy.
+- [ ] Groups K1 and K2 pass where the test step puts the suite.
 - [ ] Each K2 check fails its own mutation in a scratch copy: a `canonical/skills/aid-create-roadmap/` folder; a kept file naming `design-lifecycle.md`; `start-or-resume.md` without `kb-freshness-check.sh`; the new-project step moved after the `create` line; `check-intent.md` without `backlog.md`; `roadmap.md` without `## MVP`.
 - [ ] It is deterministic and finishes within the 300-second budget.
 - [ ] The test step (last Scope bullet) reports no failure: the spawn-free checks, the scratch half, the live half and the site or dashboard runs it calls for. Every existing test still passes.

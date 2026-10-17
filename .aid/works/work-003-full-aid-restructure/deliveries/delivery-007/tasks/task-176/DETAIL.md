@@ -27,7 +27,9 @@
   - a Source naming no criterion still fails;
   - built from this work's real shape: a split document whose feature quotes the unsplit shape in a fence
     (a fenced `## 11. Technical Specification` and fenced `## 1.` to `## 10.` lines) is still read as split; a
-    fenced `## ` heading inside § 11 ends no section, so the feature after it is sliced whole.
+    fenced `## ` heading inside § 11 ends no section, so the feature after it is sliced whole;
+  - § 9 as a table: the cited `| AC-N |` rows are printed under the table's header and separator, and no uncited
+    row; § 9 as bullets keeps its output (task-165).
 - **Findings.** This task's scope also includes every site that
   `.aid/works/work-003-full-aid-restructure/research/delivery-007-sites.md` assigns to `task-176`.
 - **Test step** (PLAN.md § "Testing before the resync"; the same in every task of this delivery).
@@ -37,8 +39,12 @@
      changed `.py`, and `node --check` on each changed `.mjs`.
   2. **Selection.** `SEL` is the output of `bash tests/canonical/select-suites.sh --since "$BASE"`.
      `COPY` is the members of `SEL` whose text matches the pattern `P` of PLAN.md § "Testing before the
-     resync", The driver. `LIVE` is `SEL` minus `COPY`. A change that lies wholly under `.aid/works/`
-     selects nothing.
+     resync", The driver. `LIVE` is `SEL` minus `COPY`.
+     - **Work-folder-only rule.** A task whose changes all lie under `.aid/works/` runs no suite: steps 2-5
+       are skipped, and the report says so. The work folder is transient pipeline state that no suite may
+       depend on, and it is not resync-relevant (PLAN.md § "Testing before the resync"). `select-suites.sh`
+       is not the reason and is not run for it: it selects every suite with no `# COVERS:` header, whatever
+       changed.
   3. **Scratch half** (when `COPY` is not empty).
      - Make the copy exactly as PLAN.md § "How the copy is made" says, with `S=.aid/.temp/scratch/task-176`.
        That includes the copy's own `run_generator.py`, run from inside it, then the `resync` commit.

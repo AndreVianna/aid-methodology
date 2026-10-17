@@ -17,7 +17,7 @@
 
 **Source:** feature-007-building -> delivery-009 -> AC-26, AC-32, AC-33, AC-34
 
-**Depends on:** task-220, task-226, task-227, task-228, task-229, task-230
+**Depends on:** task-220, task-225, task-226, task-227, task-228, task-229, task-230
 
 **Scope:**
 - Rewrite `canonical/skills/aid-execute/SKILL.md`, at most 120 lines (REQUIREMENTS.md § 11 Feature 007 `##### 1. Files and layout` and
@@ -78,8 +78,12 @@
      changed `.py`, and `node --check` on each changed `.mjs`.
   2. **Selection.** `SEL` is the output of `bash tests/canonical/select-suites.sh --since "$BASE"`.
      `COPY` is the members of `SEL` whose text matches the pattern `P` of PLAN.md § "Testing before the
-     resync", The driver. `LIVE` is `SEL` minus `COPY`. A change that lies wholly under `.aid/works/`
-     selects nothing.
+     resync", The driver. `LIVE` is `SEL` minus `COPY`.
+     - **Work-folder-only rule.** A task whose changes all lie under `.aid/works/` runs no suite: steps 2-5
+       are skipped, and the report says so. The work folder is transient pipeline state that no suite may
+       depend on, and it is not resync-relevant (PLAN.md § "Testing before the resync"). `select-suites.sh`
+       is not the reason and is not run for it: it selects every suite with no `# COVERS:` header, whatever
+       changed.
   3. **Scratch half** (when `COPY` is not empty).
      - Make the copy exactly as PLAN.md § "How the copy is made" says, with `S=.aid/.temp/scratch/task-233`.
        That includes the copy's own `run_generator.py`, run from inside it, then the `resync` commit.
@@ -105,7 +109,7 @@
 **Acceptance Criteria:**
 - [ ] `SKILL.md` is at most 120 lines with the eleven steps, FINISH advancing by `PASS`; none of the seven old references exists, and the thirteen new ones and the brief do (EX-01's reference clauses, EX-02's table clause).
 - [ ] Over `canonical/skills/aid-execute/`, `git grep -nE 'worktree add|checkout -b|switch -c|run_in_background|max_parallel_tasks|merge to main'` finds nothing, and a delivery *branch* is named only in `old-work.md` (EX-03): `git grep -nE 'aid/[^ ]*-delivery-|(checkout -b|switch -c|branch) [^ ]*-delivery-'` over the skill finds hits only in `old-work.md`. The writer's `--delivery-id` and the delivery ledger name `<work>-delivery-NNN.md` are not branch names and stay allowed.
-- [ ] `skill-steps-exempt.tsv` has no `aid-execute` row and PL-04 passes; SG-02, SG-04 and the listed suites pass where the test step puts them, and the site `npm test` passes after regeneration.
+- [ ] `skill-steps-exempt.tsv` has no `aid-execute` row, and PL-04 and PL-06 pass (PL-06 skips `aid-execute`'s `--plan-sync` calls by its own clause, not by a row); SG-02, SG-04 and the listed suites pass where the test step puts them, and the site `npm test` passes after regeneration.
 - [ ] Over `.aid/knowledge/`, no frontmatter `sources:` entry cites a path this task deletes, moves or renames, and `test-artifact-discipline.sh` AD14 passes where the test step puts the suite (G17).
 - [ ] The test step (last Scope bullet) reports no failure: the spawn-free checks, the scratch half, the live half and the site or dashboard runs it calls for. Every existing test still passes.
 - [ ] All section-6 quality gates pass (REQUIREMENTS.md § 6: NFR-N, NFR-T, NFR-Q).

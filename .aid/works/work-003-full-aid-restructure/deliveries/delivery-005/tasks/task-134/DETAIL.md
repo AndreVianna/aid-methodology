@@ -17,7 +17,7 @@
 
 **Source:** feature-004-kb-management -> delivery-005 -> AC-15
 
-**Depends on:** task-121, task-125, task-129, task-130, task-131, task-132
+**Depends on:** task-105, task-116, task-121, task-125, task-129, task-130, task-131, task-132
 
 **Scope:**
 - Create `tests/canonical/test-kb-skills.sh`, group K1, as REQUIREMENTS.md § 11 Feature 004 `##### 8. Testing` defines it:
@@ -40,8 +40,12 @@
      changed `.py`, and `node --check` on each changed `.mjs`.
   2. **Selection.** `SEL` is the output of `bash tests/canonical/select-suites.sh --since "$BASE"`.
      `COPY` is the members of `SEL` whose text matches the pattern `P` of PLAN.md § "Testing before the
-     resync", The driver. `LIVE` is `SEL` minus `COPY`. A change that lies wholly under `.aid/works/`
-     selects nothing.
+     resync", The driver. `LIVE` is `SEL` minus `COPY`.
+     - **Work-folder-only rule.** A task whose changes all lie under `.aid/works/` runs no suite: steps 2-5
+       are skipped, and the report says so. The work folder is transient pipeline state that no suite may
+       depend on, and it is not resync-relevant (PLAN.md § "Testing before the resync"). `select-suites.sh`
+       is not the reason and is not run for it: it selects every suite with no `# COVERS:` header, whatever
+       changed.
   3. **Scratch half** (when `COPY` is not empty).
      - Make the copy exactly as PLAN.md § "How the copy is made" says, with `S=.aid/.temp/scratch/task-134`.
        That includes the copy's own `run_generator.py`, run from inside it, then the `resync` commit.
@@ -65,7 +69,7 @@
      - The same failure after three fix rounds goes to the maintainer.
 
 **Acceptance Criteria:**
-- [ ] The suite passes in the scratch copy.
+- [ ] The suite passes where the test step puts it.
 - [ ] Each check fails its own mutation in a scratch copy: a `canonical/skills/aid-discover/` folder; a line naming `aid-ask/` in a kept file; `Write` in `aid-kb-show`'s tools; a kept file naming `.aid/knowledge/STATE.md`; a missing KB-change row; `size-and-route.md` without `aid-kb-update`; `rules.md` without `/aid-kb-build`.
 - [ ] It is deterministic and finishes within the 300-second budget.
 - [ ] The test step (last Scope bullet) reports no failure: the spawn-free checks, the scratch half, the live half and the site or dashboard runs it calls for. Every existing test still passes.

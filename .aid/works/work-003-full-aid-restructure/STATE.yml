@@ -470,6 +470,10 @@ review_history:
     event: 'Detail full review cycle 1 (Q136; six reviewers: slices A-E plus the cross-document pass)'
     outcome: 'Grade D+ (merged ledger, 40 rows: 2 HIGH among them; slices A C, B C, C D+, D C, E C+, X C)'
     notes: 'Spec conflicts to settle (F007 --plan-sync vs PL-06; F008 fork --feedback-add; F004 KB list misses README.md; CONTRIBUTING.md unowned); no stop before the 011-014 research step; test-step claim about work-folder-only changes is false; G12 edge gaps; fixes sent to a fresh architect'
+  - date: '2026-10-17'
+    event: 'Detail full review cycle 1 fixes'
+    outcome: 'All 40 rows Fixed; derive-waves --check exits 0'
+    notes: 'Spec edits under the Q116 precedent: F006 PL-06 narrowed (aid-execute may call --plan-sync); F008 fork row removed (fork unchanged); F004 KB list adds README.md; F005 slicer reads § 9 tables; F009 adds CONTRIBUTING.md to the final pass and DN-01. PLAN: work-folder-only rule; the hold before each 011-014 research step via F007 control signals'
 
 # [A] written by the orchestrator on the work's active branch (single
 #     writer). Append-only audit trail of phase transitions and gate

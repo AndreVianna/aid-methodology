@@ -7,7 +7,7 @@
 
 **Source:** feature-009-one-skill-per-need -> delivery-012 -> AC-20
 
-**Depends on:** task-320
+**Depends on:** task-318, task-319, task-320
 
 **Scope:**
 - Delete `.claude/skills/generate-profile/scripts/build-shortcut-skills.py`: no generated skill remains
@@ -60,8 +60,12 @@
      changed `.py`, and `node --check` on each changed `.mjs`.
   2. **Selection.** `SEL` is the output of `bash tests/canonical/select-suites.sh --since "$BASE"`.
      `COPY` is the members of `SEL` whose text matches the pattern `P` of PLAN.md § "Testing before the
-     resync", The driver. `LIVE` is `SEL` minus `COPY`. A change that lies wholly under `.aid/works/`
-     selects nothing.
+     resync", The driver. `LIVE` is `SEL` minus `COPY`.
+     - **Work-folder-only rule.** A task whose changes all lie under `.aid/works/` runs no suite: steps 2-5
+       are skipped, and the report says so. The work folder is transient pipeline state that no suite may
+       depend on, and it is not resync-relevant (PLAN.md § "Testing before the resync"). `select-suites.sh`
+       is not the reason and is not run for it: it selects every suite with no `# COVERS:` header, whatever
+       changed.
   3. **Scratch half** (when `COPY` is not empty).
      - Make the copy exactly as PLAN.md § "How the copy is made" says, with `S=.aid/.temp/scratch/task-325`.
        That includes the copy's own `run_generator.py`, run from inside it, then the `resync` commit.

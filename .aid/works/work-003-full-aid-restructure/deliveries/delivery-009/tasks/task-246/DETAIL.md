@@ -17,11 +17,17 @@
 
 **Source:** feature-007-building -> delivery-009 -> AC-26, AC-32, AC-33, AC-34
 
-**Depends on:** task-220, task-223, task-231, task-233, task-234, task-235, task-237
+**Depends on:** task-220, task-223, task-225, task-226, task-229, task-230, task-231, task-233, task-234, task-235, task-237
 
 **Scope:**
 - Create `tests/canonical/test-execute.sh` with EX-01 to EX-08, as REQUIREMENTS.md § 11 Feature 007 `##### 8. Testing` defines them. It has
   `# COVERS:` lines.
+  - EX-03's delivery-branch clause matches a branch, not the substring `-delivery-`: it uses task-233's pattern,
+    `aid/[^ ]*-delivery-|(checkout -b|switch -c|branch) [^ ]*-delivery-`, over `canonical/skills/aid-execute/` and
+    `canonical/aid/scripts/execute/`, with hits allowed only in `references/old-work.md`. The writer's `--delivery-id`
+    (in `complexity-score.sh`, `compute-block-radius.sh`, the writer and `delivery.md`) and the ledger name
+    `<work>-delivery-NNN.md` are not branch names and are no hits, so EX-03 and task-233's criterion judge the same
+    files alike.
 - **Findings.** This task's scope also includes every site that
   `.aid/works/work-003-full-aid-restructure/research/delivery-009-sites.md` assigns to `task-246`.
 - **Test step** (PLAN.md § "Testing before the resync"; the same in every task of this delivery).
@@ -31,8 +37,12 @@
      changed `.py`, and `node --check` on each changed `.mjs`.
   2. **Selection.** `SEL` is the output of `bash tests/canonical/select-suites.sh --since "$BASE"`.
      `COPY` is the members of `SEL` whose text matches the pattern `P` of PLAN.md § "Testing before the
-     resync", The driver. `LIVE` is `SEL` minus `COPY`. A change that lies wholly under `.aid/works/`
-     selects nothing.
+     resync", The driver. `LIVE` is `SEL` minus `COPY`.
+     - **Work-folder-only rule.** A task whose changes all lie under `.aid/works/` runs no suite: steps 2-5
+       are skipped, and the report says so. The work folder is transient pipeline state that no suite may
+       depend on, and it is not resync-relevant (PLAN.md § "Testing before the resync"). `select-suites.sh`
+       is not the reason and is not run for it: it selects every suite with no `# COVERS:` header, whatever
+       changed.
   3. **Scratch half** (when `COPY` is not empty).
      - Make the copy exactly as PLAN.md § "How the copy is made" says, with `S=.aid/.temp/scratch/task-246`.
        That includes the copy's own `run_generator.py`, run from inside it, then the `resync` commit.
@@ -56,8 +66,8 @@
      - The same failure after three fix rounds goes to the maintainer.
 
 **Acceptance Criteria:**
-- [ ] The suite passes in the scratch copy.
-- [ ] Each check fails its own mutation in a scratch copy: a missing `next.md`; `finish.md` without `--phase CI`; a `git worktree add` in a reference; `simplify.md` without `simplify-guard.sh`; a skill naming `IMPEDIMENT-task-`; APPROVAL-HALT without `confirmation before building`; the template with `quick_check`; `next.md` without `merge-base --is-ancestor`.
+- [ ] The suite passes where the test step puts it.
+- [ ] Each check fails its own mutation in a scratch copy: a missing `next.md`; `finish.md` without `--phase CI`; a `git worktree add` in a reference; `git switch -c aid/work-001-delivery-002` in `build.md` (while `--delivery-id` in `complexity-score.sh` stays no hit); `simplify.md` without `simplify-guard.sh`; a skill naming `IMPEDIMENT-task-`; APPROVAL-HALT without `confirmation before building`; the template with `quick_check`; `next.md` without `merge-base --is-ancestor`.
 - [ ] It is deterministic and finishes within the 300-second budget.
 - [ ] The test step (last Scope bullet) reports no failure: the spawn-free checks, the scratch half, the live half and the site or dashboard runs it calls for. Every existing test still passes.
 - [ ] All section-6 quality gates pass (REQUIREMENTS.md § 6: NFR-N, NFR-T, NFR-Q).

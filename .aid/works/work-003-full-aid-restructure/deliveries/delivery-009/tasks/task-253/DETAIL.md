@@ -67,7 +67,9 @@
      - Create `.aid/works/work-003-full-aid-restructure/research/delivery-010-sites.md`. The step touches nothing else.
      - Re-run these searches at the head the gate session leaves, and record that commit in the file
        (REQUIREMENTS.md § 11 Feature 008 `##### 1. Files and layout` and `##### 7. Migration`):
-       - **Y1** `housekeep/cleanup-classify.sh`, the `aid-housekeep` teardown, and `origin/master` as a merge target,
+       - **Y1** `housekeep/cleanup-classify.sh`, the interim teardown wording delivery-005's task-130 left ("the work's
+         teardown at its close", "Teardown belongs to the work's close", "the work clean-up"; `aid-housekeep` is named
+         by no kept file), and `origin/master` as a merge target,
          over every kept file under `canonical/`, `dashboard/`, `tests/`, `site/scripts/` and `.github/`;
        - **Y2** the interim close: `/aid-orchestrate`'s close minimum, and every line that marks a work `Completed`
          by hand (`aid-research`, `aid-review`, `aid-report`, `aid-deploy`, `aid-orchestrate`, `aid-kb-update`,
@@ -96,8 +98,9 @@
      - Give each hit exactly one owner:
        - a task of delivery-010 (task-255 to task-287; see the task files under
          `.aid/works/work-003-full-aid-restructure/tasks/task-NNN/DETAIL.md`, the layout delivery-008's migration leaves);
-       - Feature 009 (delivery-012) for the skills it rebuilds that finish a work (`create`, `update`, `document`,
-         `test`, `prototype`);
+       - Feature 009 part (a) (delivery-011) for the skills it rebuilds that finish a work: `aid-create` and `aid-update`
+         (task-294), `aid-document` (task-296), `aid-test` and `aid-prototype` (task-297, task-298, whose FINISH
+         becomes a pass to the close); delivery-012 only retires their wrappers;
        - "installed copy (resync)";
        - "history, left as is".
      - **Content owner of the moved file (G7):** `cleanup-classify.sh` moves to `canonical/aid/scripts/pipeline/`, and
@@ -120,8 +123,12 @@
      changed `.py`, and `node --check` on each changed `.mjs`.
   2. **Selection.** `SEL` is the output of `bash tests/canonical/select-suites.sh --since "$BASE"`.
      `COPY` is the members of `SEL` whose text matches the pattern `P` of PLAN.md § "Testing before the
-     resync", The driver. `LIVE` is `SEL` minus `COPY`. A change that lies wholly under `.aid/works/`
-     selects nothing.
+     resync", The driver. `LIVE` is `SEL` minus `COPY`.
+     - **Work-folder-only rule.** A task whose changes all lie under `.aid/works/` runs no suite: steps 2-5
+       are skipped, and the report says so. The work folder is transient pipeline state that no suite may
+       depend on, and it is not resync-relevant (PLAN.md § "Testing before the resync"). `select-suites.sh`
+       is not the reason and is not run for it: it selects every suite with no `# COVERS:` header, whatever
+       changed.
   3. **Scratch half** (when `COPY` is not empty).
      - Make the copy exactly as PLAN.md § "How the copy is made" says, with `S=.aid/.temp/scratch/task-253`.
        That includes the copy's own `run_generator.py`, run from inside it, then the `resync` commit.

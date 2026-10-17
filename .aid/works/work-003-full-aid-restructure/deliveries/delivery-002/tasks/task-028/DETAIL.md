@@ -36,6 +36,11 @@
   - The baselines themselves are re-recorded at the gate (Q134, D11).
 - **Findings.** This task's scope also includes every site that
   `.aid/works/work-003-full-aid-restructure/research/delivery-002-sites.md` assigns to `task-028`.
+- **Checks and judgments (task-004's grammar).** A `## Checks` line is a file check on the fixture (`exists`,
+  `absent`, `contains`, `no-new-dir`, `no-push`) or a transcript check (`tool-called`, `tool-not-called`). How the
+  conversation went -- the order and count of questions, what the agent says, that nothing is written before a
+  yes -- is an `## Expected outcome` or `## Must not` item, which the judge rules on. This task does not extend
+  `run.py`.
 - **Test step** (PLAN.md § "Testing before the resync"; the same in every task of this delivery).
   `BASE` is this task's `task-028: In Progress` commit. Work in the `work-003` worktree only, create no
   branch or worktree, and never run `run_generator.py` in the live tree.
@@ -43,8 +48,12 @@
      changed `.py`, and `node --check` on each changed `.mjs`.
   2. **Selection.** `SEL` is the output of `bash tests/canonical/select-suites.sh --since "$BASE"`.
      `COPY` is the members of `SEL` whose text matches the pattern `P` of PLAN.md § "Testing before the
-     resync", The driver. `LIVE` is `SEL` minus `COPY`. A change that lies wholly under `.aid/works/`
-     selects nothing.
+     resync", The driver. `LIVE` is `SEL` minus `COPY`.
+     - **Work-folder-only rule.** A task whose changes all lie under `.aid/works/` runs no suite: steps 2-5
+       are skipped, and the report says so. The work folder is transient pipeline state that no suite may
+       depend on, and it is not resync-relevant (PLAN.md § "Testing before the resync"). `select-suites.sh`
+       is not the reason and is not run for it: it selects every suite with no `# COVERS:` header, whatever
+       changed.
   3. **Scratch half** (when `COPY` is not empty).
      - Make the copy exactly as PLAN.md § "How the copy is made" says, with `S=.aid/.temp/scratch/task-028`.
        That includes the copy's own `run_generator.py`, run from inside it, then the `resync` commit.
@@ -69,7 +78,7 @@
 
 **Acceptance Criteria:**
 - [ ] There are eight files, and each `covers` matches the spec's sample table.
-- [ ] `002-11` checks for no banner text and a resume at the saved step. `002-13` checks the `handoffs` entry: from, to, why, and the return point.
+- [ ] `002-11` has a `## Must not` item for banner text and an `## Expected outcome` item that the skill resumes at the saved step. `002-13` has `contains` checks on the fixture's work `STATE.yml` for the `handoffs` entry's from, to, why and return point. `python3 tests/conversation/run.py --validate --feature 002` exits 0.
 - [ ] No `## Answer sheet` names a skill, and each header comment names the same features task-055's row will.
 - [ ] The test step (last Scope bullet) reports no failure: the spawn-free checks, the scratch half, the live half and the site or dashboard runs it calls for. Every existing test still passes.
 - [ ] All section-6 quality gates pass (REQUIREMENTS.md § 6: NFR-N, NFR-T, NFR-Q).

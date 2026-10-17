@@ -17,7 +17,7 @@
 
 **Source:** feature-004-kb-management -> delivery-005 -> AC-4, AC-15
 
-**Depends on:** task-110, task-111, task-117
+**Depends on:** task-110, task-111, task-116, task-117
 
 **Scope:**
 - Move `canonical/skills/aid-ask/` to `canonical/skills/aid-kb-query/` (REQUIREMENTS.md § 11 Feature 004 `##### 3. Flows`):
@@ -35,6 +35,9 @@
   - the old name's rows in the SG-04 exempt list of `tests/canonical/test-skill-guide.sh`;
   - the old name's `skill:` row in `tests/conversation/deferred.tsv`, which becomes a `skill:` row for
     the new name until task-135's samples land (DT-01, SS-09);
+  - the new `aid-kb-show`, which asks one question (its refresh offer), gets a `skill:aid-kb-show` row in
+    `tests/conversation/deferred.tsv` until task-135's samples land (SS-09: every asking skill has a sample or a
+    `skill:` row);
   - the site skill lists and their `__tests__`;
   - the counted phrases, if the skill count changes (Q134 D5).
 - `canonical/aid/templates/shortcut-catalog.yml`: the `name: aid-ask` row (`repurpose: true`) becomes
@@ -92,8 +95,12 @@
      changed `.py`, and `node --check` on each changed `.mjs`.
   2. **Selection.** `SEL` is the output of `bash tests/canonical/select-suites.sh --since "$BASE"`.
      `COPY` is the members of `SEL` whose text matches the pattern `P` of PLAN.md § "Testing before the
-     resync", The driver. `LIVE` is `SEL` minus `COPY`. A change that lies wholly under `.aid/works/`
-     selects nothing.
+     resync", The driver. `LIVE` is `SEL` minus `COPY`.
+     - **Work-folder-only rule.** A task whose changes all lie under `.aid/works/` runs no suite: steps 2-5
+       are skipped, and the report says so. The work folder is transient pipeline state that no suite may
+       depend on, and it is not resync-relevant (PLAN.md § "Testing before the resync"). `select-suites.sh`
+       is not the reason and is not run for it: it selects every suite with no `# COVERS:` header, whatever
+       changed.
   3. **Scratch half** (when `COPY` is not empty).
      - Make the copy exactly as PLAN.md § "How the copy is made" says, with `S=.aid/.temp/scratch/task-119`.
        That includes the copy's own `run_generator.py`, run from inside it, then the `resync` commit.
@@ -119,11 +126,12 @@
 **Acceptance Criteria:**
 - [ ] `test -d canonical/skills/aid-ask` fails. The `allowed-tools` lines of `aid-kb-query` and `aid-kb-show` hold no `Write` and no `Edit` (KB-03's first clause).
 - [ ] `aid-kb-show/SKILL.md` is at most 60 lines and covers exits 0, 1 and 3, including the `Growing` message verbatim.
-- [ ] SG-02, SG-04, DT-01 and SS-09 pass in the scratch copy, and `test-doc-counts.sh` passes live with the skill count raised by one.
+- [ ] SG-02, SG-04, DT-01 and SS-09 pass where the test step puts them, and `test-doc-counts.sh` passes live with the skill count raised by one.
 - [ ] `grep -c 'name: aid-ask$' canonical/aid/templates/shortcut-catalog.yml` prints 0, and `test-catalog-dirs-parity.sh` passes where the test step puts it.
 - [ ] `test-doc-counts.sh` passes live with the derived counts, and the site `npm test` passes after `sync:docs` (its sync-docs drift test included).
 - [ ] Over `.aid/knowledge/`, no frontmatter `sources:` entry cites a path this task deletes, moves or renames, and `test-artifact-discipline.sh` AD14 passes where the test step puts the suite (G17).
 - [ ] No page under `site/src/content/docs/skills/` and no `site/src/data/skill-flows/*.flow.json` is left for a skill folder this task deletes or renames away, and `npm run gen:skills` reports no orphan (G18).
 - [ ] Over `site/scripts/` outside `__tests__`, no source names a skill this task retires, and none names a renamed skill by its old name (G19).
+- [ ] `grep -c '^skill:aid-kb-show' tests/conversation/deferred.tsv` prints 1.
 - [ ] The test step (last Scope bullet) reports no failure: the spawn-free checks, the scratch half, the live half and the site or dashboard runs it calls for. Every existing test still passes.
 - [ ] All section-6 quality gates pass (REQUIREMENTS.md § 6: NFR-N, NFR-T, NFR-Q).

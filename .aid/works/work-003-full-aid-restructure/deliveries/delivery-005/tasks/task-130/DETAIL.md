@@ -53,6 +53,18 @@
   - The baselines themselves are re-recorded at the gate (Q134, D11).
 - **Findings.** This task's scope also includes every site that
   `.aid/works/work-003-full-aid-restructure/research/delivery-005-sites.md` assigns to `task-130`.
+- **Interim teardown wording (the close arrives with Feature 008, delivery-010).** `aid-housekeep` retires here
+  and nothing tears a work down until `/aid-monitor-pipeline`'s close exists, so its mentions are reworded with this
+  fixed text, which delivery-010 (REQUIREMENTS.md § 11 Feature 008 `##### 1. Files and layout`) re-points:
+  - `worktree-lifecycle.md`: the consumer list's "feature-004's `aid-housekeep` teardown" becomes "the work's teardown
+    at its close"; the § Step 3 consumer row's first cell becomes "the work's teardown at its close", and its
+    "**Teardown is exclusively feature-004**" becomes "**Teardown belongs to the work's close**";
+  - the `canonical/aid/scripts/works/worktree-lifecycle.sh` header: "housekeep teardown" becomes "the close's
+    teardown", and "teardown is exclusively feature-004 / aid-housekeep" becomes "teardown belongs to the work's
+    close";
+  - `canonical/aid/scripts/housekeep/cleanup-classify.sh`'s comments: "/aid-housekeep CLEANUP stage" becomes "the work
+    clean-up", the `--active-work` example becomes `work-001-cleanup`, and the run-state comment names "the retired
+    clean-up skill's run-state files". Its code is unchanged (delivery-010's task-257 moves and rewrites it).
 - **Test step** (PLAN.md § "Testing before the resync"; the same in every task of this delivery).
   `BASE` is this task's `task-130: In Progress` commit. Work in the `work-003` worktree only, create no
   branch or worktree, and never run `run_generator.py` in the live tree.
@@ -60,8 +72,12 @@
      changed `.py`, and `node --check` on each changed `.mjs`.
   2. **Selection.** `SEL` is the output of `bash tests/canonical/select-suites.sh --since "$BASE"`.
      `COPY` is the members of `SEL` whose text matches the pattern `P` of PLAN.md § "Testing before the
-     resync", The driver. `LIVE` is `SEL` minus `COPY`. A change that lies wholly under `.aid/works/`
-     selects nothing.
+     resync", The driver. `LIVE` is `SEL` minus `COPY`.
+     - **Work-folder-only rule.** A task whose changes all lie under `.aid/works/` runs no suite: steps 2-5
+       are skipped, and the report says so. The work folder is transient pipeline state that no suite may
+       depend on, and it is not resync-relevant (PLAN.md § "Testing before the resync"). `select-suites.sh`
+       is not the reason and is not run for it: it selects every suite with no `# COVERS:` header, whatever
+       changed.
   3. **Scratch half** (when `COPY` is not empty).
      - Make the copy exactly as PLAN.md § "How the copy is made" says, with `S=.aid/.temp/scratch/task-130`.
        That includes the copy's own `run_generator.py`, run from inside it, then the `resync` commit.
@@ -87,5 +103,6 @@
 **Acceptance Criteria:**
 - [ ] Over these files, `git grep -nE 'aid-(discover|ask|update-kb|summarize|housekeep)\b|knowledge/STATE\.md|state-(elicit|generate)\.md'` finds nothing outside the gate's legacy block and `migrate/`.
 - [ ] `python3 .claude/skills/generate-profile/scripts/build-shortcut-skills.py --check` exits 0, and the suites pass where the test step puts them.
+- [ ] `worktree-lifecycle.md` and `worktree-lifecycle.sh` carry the interim wording "the work's teardown at its close" and "Teardown belongs to the work's close" (case as written), and none of the three files names `aid-housekeep`.
 - [ ] The test step (last Scope bullet) reports no failure: the spawn-free checks, the scratch half, the live half and the site or dashboard runs it calls for. Every existing test still passes.
 - [ ] All section-6 quality gates pass (REQUIREMENTS.md § 6: NFR-N, NFR-T, NFR-Q).

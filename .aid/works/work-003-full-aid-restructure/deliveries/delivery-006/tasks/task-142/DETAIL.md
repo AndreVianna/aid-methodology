@@ -62,8 +62,12 @@
      changed `.py`, and `node --check` on each changed `.mjs`.
   2. **Selection.** `SEL` is the output of `bash tests/canonical/select-suites.sh --since "$BASE"`.
      `COPY` is the members of `SEL` whose text matches the pattern `P` of PLAN.md § "Testing before the
-     resync", The driver. `LIVE` is `SEL` minus `COPY`. A change that lies wholly under `.aid/works/`
-     selects nothing.
+     resync", The driver. `LIVE` is `SEL` minus `COPY`.
+     - **Work-folder-only rule.** A task whose changes all lie under `.aid/works/` runs no suite: steps 2-5
+       are skipped, and the report says so. The work folder is transient pipeline state that no suite may
+       depend on, and it is not resync-relevant (PLAN.md § "Testing before the resync"). `select-suites.sh`
+       is not the reason and is not run for it: it selects every suite with no `# COVERS:` header, whatever
+       changed.
   3. **Scratch half** (when `COPY` is not empty).
      - Make the copy exactly as PLAN.md § "How the copy is made" says, with `S=.aid/.temp/scratch/task-142`.
        That includes the copy's own `run_generator.py`, run from inside it, then the `resync` commit.
@@ -88,7 +92,7 @@
 
 **Acceptance Criteria:**
 - [ ] On a scratch work, `--create ... --parent-branch dev` writes `pipeline.parent_branch: dev`, and `--parent-branch 'a..b'` exits 4 with the file not created.
-- [ ] The template parses through `dashboard/reader/state_schema.py` and `dashboard/server/reader.mjs` with no warning, and `test-skill-steps.sh` SS-08 passes in the scratch copy.
+- [ ] The template parses through `dashboard/reader/state_schema.py` and `dashboard/server/reader.mjs` with no warning, and `test-skill-steps.sh` SS-08 passes where the test step puts it.
 - [ ] `test-writeback-state.sh` and `test-work-state-template.sh` pass where the test step puts them.
 - [ ] The test step (last Scope bullet) reports no failure: the spawn-free checks, the scratch half, the live half and the site or dashboard runs it calls for. Every existing test still passes.
 - [ ] All section-6 quality gates pass (REQUIREMENTS.md § 6: NFR-N, NFR-T, NFR-Q).

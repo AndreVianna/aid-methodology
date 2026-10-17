@@ -1,4 +1,4 @@
-# task-361: Final pass: README.md and the examples
+# task-361: Final pass: README.md, CONTRIBUTING.md and the examples
 
 > Execution protocol (unchanged): write the task's State as it changes -- In Progress, In Review,
 > Done / Failed -- through writeback-state.sh --task-id 361 --field State.
@@ -7,12 +7,16 @@
 
 **Source:** feature-009-one-skill-per-need -> delivery-014 -> AC-45
 
-**Depends on:** task-357
+**Depends on:** task-354, task-357
 
 **Scope:**
 - `README.md` (its skills, phases, counts and identity line) and `examples/` (its `README.md` and the three example
   folders, their samples written in the new shapes: one `REQUIREMENTS.md`, the generated `PLAN.md`, the single work
   `STATE.yml`), linking to the old -> new table.
+- `CONTRIBUTING.md` (REQUIREMENTS.md § 11 Feature 009 `##### 5. Components`, The final documentation pass): how a
+  skill is added or changed in the finished product -- a hand-authored folder under `canonical/skills/`, its
+  variations as kinds -- with no shortcut catalog, engine, scaffolding or `build-shortcut-skills.py`, which
+  delivery-012 deleted.
 - **The final documentation pass** (REQUIREMENTS.md § 11 Feature 009 `##### 5. Components`, The final documentation pass; AC-45, Q104):
   `aid-tech-writer` rewrites the files below against the finished product -- the phases (Definition,
   Specification, Planning, Building, CI), the skills as `canonical/skills/` holds them, the action skills with their
@@ -58,8 +62,12 @@
      changed `.py`, and `node --check` on each changed `.mjs`.
   2. **Selection.** `SEL` is the output of `bash tests/canonical/select-suites.sh --since "$BASE"`.
      `COPY` is the members of `SEL` whose text matches the pattern `P` of PLAN.md § "Testing before the
-     resync", The driver. `LIVE` is `SEL` minus `COPY`. A change that lies wholly under `.aid/works/`
-     selects nothing.
+     resync", The driver. `LIVE` is `SEL` minus `COPY`.
+     - **Work-folder-only rule.** A task whose changes all lie under `.aid/works/` runs no suite: steps 2-5
+       are skipped, and the report says so. The work folder is transient pipeline state that no suite may
+       depend on, and it is not resync-relevant (PLAN.md § "Testing before the resync"). `select-suites.sh`
+       is not the reason and is not run for it: it selects every suite with no `# COVERS:` header, whatever
+       changed.
   3. **Scratch half** (when `COPY` is not empty).
      - Make the copy exactly as PLAN.md § "How the copy is made" says, with `S=.aid/.temp/scratch/task-361`.
        That includes the copy's own `run_generator.py`, run from inside it, then the `resync` commit.
@@ -87,5 +95,6 @@
 - [ ] Run without the release flag, `test-doc-names.sh -v`, where the test step puts it (the scratch copy: its text matches the driver's pattern `P`), lists no DN-01 or DN-03 hit in the files this task owns; `test-doc-counts.sh` passes live, and the site `npm test` passes after `sync:docs` and regeneration.
 - [ ] Each example file matches the template it shows (`requirements-template.md`, `plan-template.md`, `work-state-template.yml`) as the work leaves it.
 - [ ] Over `.aid/knowledge/`, no frontmatter `sources:` entry cites a path this task deletes, moves or renames, and `test-artifact-discipline.sh` AD14 passes where the test step puts the suite (G17).
+- [ ] Over `CONTRIBUTING.md`, `git grep -nE 'shortcut-(engine|catalog|scaffolding)|build-shortcut-skills|aid-create-api'` finds nothing, and each path it names exists.
 - [ ] The test step (last Scope bullet) reports no failure: the spawn-free checks, the scratch half, the live half and the site or dashboard runs it calls for. Every existing test still passes.
 - [ ] All section-6 quality gates pass (REQUIREMENTS.md § 6: NFR-N, NFR-T, NFR-Q).

@@ -7,13 +7,14 @@
 
 **Source:** feature-009-one-skill-per-need -> delivery-014 -> AC-31, AC-45
 
-**Depends on:** task-355, task-356, task-357, task-358, task-359, task-360, task-361
+**Depends on:** task-354, task-355, task-356, task-357, task-358, task-359, task-360, task-361
 
 **Scope:**
 - Run, and record each result in the task's report (REQUIREMENTS.md § 11 Feature 009 `##### 9. Testing`, At the end of the work; PLAN.md
   delivery-014 Gate Criteria):
-  - `(cd site && npm run sync:docs && npm run gen:reference && npm run gen:skills)` leaves `git status --porcelain`
-    empty, and `(cd site && npm run build)` succeeds;
+  - `(cd site && npm run sync:docs && npm run gen:reference && npm run gen:skills)` leaves
+    `git status --porcelain -- site/` empty (scoped: the work folder's own state writes stay uncommitted under
+    `/aid-execute`), and `(cd site && npm run build)` succeeds;
   - with `AID_RELEASE_CHECK=1`: `test-doc-names.sh` (DN-01, DN-02, DN-03), SG-04 of `test-skill-guide.sh` and the
     shared exempt list's check pass; DT-02 of `test-deferred-tests.sh` reports exactly the rows of `008-15`,
     `009-11` and `009-12`, which wait for the integration run at the gate, and no other.
@@ -30,8 +31,12 @@
      changed `.py`, and `node --check` on each changed `.mjs`.
   2. **Selection.** `SEL` is the output of `bash tests/canonical/select-suites.sh --since "$BASE"`.
      `COPY` is the members of `SEL` whose text matches the pattern `P` of PLAN.md § "Testing before the
-     resync", The driver. `LIVE` is `SEL` minus `COPY`. A change that lies wholly under `.aid/works/`
-     selects nothing.
+     resync", The driver. `LIVE` is `SEL` minus `COPY`.
+     - **Work-folder-only rule.** A task whose changes all lie under `.aid/works/` runs no suite: steps 2-5
+       are skipped, and the report says so. The work folder is transient pipeline state that no suite may
+       depend on, and it is not resync-relevant (PLAN.md § "Testing before the resync"). `select-suites.sh`
+       is not the reason and is not run for it: it selects every suite with no `# COVERS:` header, whatever
+       changed.
   3. **Scratch half** (when `COPY` is not empty).
      - Make the copy exactly as PLAN.md § "How the copy is made" says, with `S=.aid/.temp/scratch/task-362`.
        That includes the copy's own `run_generator.py`, run from inside it, then the `resync` commit.
@@ -56,7 +61,7 @@
        `references/blocker.md`).
 
 **Acceptance Criteria:**
-- [ ] Each listed check has its result recorded; the regeneration leaves no diff and the site build succeeds.
+- [ ] Each listed check has its result recorded; the regeneration leaves no diff under `site/` and the site build succeeds.
 - [ ] With the flag, DN-01 to DN-03, SG-04 and the shared exempt list's check pass, and DT-02 lists only the three integration-run rows.
 - [ ] The test step (last Scope bullet) reports no failure: the spawn-free checks, the scratch half, the live half and the site or dashboard runs it calls for. Every existing test still passes.
 - [ ] All section-6 quality gates pass (REQUIREMENTS.md § 6: NFR-N, NFR-T, NFR-Q).

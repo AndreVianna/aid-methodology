@@ -7,14 +7,15 @@
 
 **Source:** feature-008-cicd-integration-monitoring -> delivery-010 -> AC-11, AC-36
 
-**Depends on:** task-257, task-266, task-267, task-268, task-269
+**Depends on:** task-255, task-257, task-263, task-266, task-267, task-268, task-269
 
 **Scope:**
 - Every kept file under `canonical/` that still runs `git push` loses that line: the KB is committed, never pushed
   (Feature 004), and `push-approved.sh` is the only push (REQUIREMENTS.md § 11 Feature 008 `##### 1. Files and layout`).
 - Re-pointing (REQUIREMENTS.md § 11 Feature 008 `##### 7. Migration`): every kept file under `canonical/`, and `dashboard/home.html`, that names
-  `housekeep/cleanup-classify.sh`, the `aid-housekeep` teardown, `origin/master` as a merge target, or the interim
-  `/aid-orchestrate` close.
+  `housekeep/cleanup-classify.sh`, the interim teardown wording delivery-005 left ("the work's teardown at its
+  close", "the work clean-up"; `aid-housekeep` itself is named nowhere since task-130), `origin/master` as a merge
+  target, or the interim `/aid-orchestrate` close.
 - Suites to update in this same task: any suite the findings' Y1 or Y3 assigns to these files.
 - **Site regeneration (G1, G5).** When this task adds, deletes, renames or edits anything under
   `canonical/skills/`, `canonical/agents/` or `canonical/aid/templates/`, it runs
@@ -44,8 +45,12 @@
      changed `.py`, and `node --check` on each changed `.mjs`.
   2. **Selection.** `SEL` is the output of `bash tests/canonical/select-suites.sh --since "$BASE"`.
      `COPY` is the members of `SEL` whose text matches the pattern `P` of PLAN.md § "Testing before the
-     resync", The driver. `LIVE` is `SEL` minus `COPY`. A change that lies wholly under `.aid/works/`
-     selects nothing.
+     resync", The driver. `LIVE` is `SEL` minus `COPY`.
+     - **Work-folder-only rule.** A task whose changes all lie under `.aid/works/` runs no suite: steps 2-5
+       are skipped, and the report says so. The work folder is transient pipeline state that no suite may
+       depend on, and it is not resync-relevant (PLAN.md § "Testing before the resync"). `select-suites.sh`
+       is not the reason and is not run for it: it selects every suite with no `# COVERS:` header, whatever
+       changed.
   3. **Scratch half** (when `COPY` is not empty).
      - Make the copy exactly as PLAN.md § "How the copy is made" says, with `S=.aid/.temp/scratch/task-270`.
        That includes the copy's own `run_generator.py`, run from inside it, then the `resync` commit.

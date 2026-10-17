@@ -27,6 +27,10 @@
   - otherwise it prints the task's `### Feature NNN` section as today, for both shapes of a split document;
   - the cited criteria and the identity block are printed as today, and a Source that names no criterion is
     still an error;
+  - **both forms of § 9** (REQUIREMENTS.md § 11 Feature 005 `##### 2. The document`, Readers of the old shape): a
+    criterion is a `- **AC-N**` bullet with its continuation lines, as today, or a `| AC-N | ... |` table row. For
+    the table form the slice prints the table's header and separator rows once, then each cited row. This work's
+    own § 9 is a table, so without it no cited criterion text reaches the executors of deliveries 010-014;
   - **fence-aware**: a line inside a fenced code block (between ```` ``` ```` or `~~~` fences) is never a heading.
     That holds for the unsplit detection (only a top-level `## 11. Technical Specification` outside a fence counts)
     and for every section boundary, so a fenced `## ` example inside § 11 ends no section. This work's own
@@ -61,8 +65,12 @@
      changed `.py`, and `node --check` on each changed `.mjs`.
   2. **Selection.** `SEL` is the output of `bash tests/canonical/select-suites.sh --since "$BASE"`.
      `COPY` is the members of `SEL` whose text matches the pattern `P` of PLAN.md § "Testing before the
-     resync", The driver. `LIVE` is `SEL` minus `COPY`. A change that lies wholly under `.aid/works/`
-     selects nothing.
+     resync", The driver. `LIVE` is `SEL` minus `COPY`.
+     - **Work-folder-only rule.** A task whose changes all lie under `.aid/works/` runs no suite: steps 2-5
+       are skipped, and the report says so. The work folder is transient pipeline state that no suite may
+       depend on, and it is not resync-relevant (PLAN.md § "Testing before the resync"). `select-suites.sh`
+       is not the reason and is not run for it: it selects every suite with no `# COVERS:` header, whatever
+       changed.
   3. **Scratch half** (when `COPY` is not empty).
      - Make the copy exactly as PLAN.md § "How the copy is made" says, with `S=.aid/.temp/scratch/task-165`.
        That includes the copy's own `run_generator.py`, run from inside it, then the `resync` commit.
@@ -87,7 +95,8 @@
 
 **Acceptance Criteria:**
 - [ ] On a scratch unsplit document and a task whose Source names only criteria, the output holds `## 11. Technical Specification`, the cited criteria and the identity block.
-- [ ] The output for this work's own `REQUIREMENTS.md` and a delivery-001 task is byte-identical before and after the change, and `test-slice-requirements.sh` passes live.
+- [ ] The output for a bullet-form `REQUIREMENTS.md` (the template's § 9 shape) and a task citing two criteria is byte-identical before and after the change. For this work's own `REQUIREMENTS.md` and a delivery-001 task, the output differs only by the added § 9 table (header, separator and the cited `| AC-N |` rows), and `test-slice-requirements.sh` passes live.
 - [ ] On this work's own `REQUIREMENTS.md`, the slice of a delivery-007 task (Source naming Feature 005) holds `### Feature 005` through to `### Feature 006`, not just the identity block, and the document is read as split (`## 11. Features`).
+- [ ] On this work's own `REQUIREMENTS.md`, the slice of a task whose Source cites AC-1 holds the `| AC-1 |` row of § 9 under the table's header row, and no uncited `| AC-N |` row.
 - [ ] The test step (last Scope bullet) reports no failure: the spawn-free checks, the scratch half, the live half and the site or dashboard runs it calls for. Every existing test still passes.
 - [ ] All section-6 quality gates pass (REQUIREMENTS.md § 6: NFR-N, NFR-T, NFR-Q).

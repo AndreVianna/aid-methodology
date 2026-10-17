@@ -2933,6 +2933,8 @@ no path hands work to `/aid-kb-update` expecting a KB. Every caller checks first
   - `quality-gates.md` (the two-grade view rubric goes);
   - `test-landscape.md`, `infrastructure.md`, `integration-map.md`, `technology-stack.md` (Playwright and
     the root `package.json` go);
+  - `README.md` (its `sources:`, `see_also:` and prose name the KB state file `STATE.yml`, not `STATE.md`, so
+    AD14 holds once this repository's `STATE.md` is converted);
   - `authoring-conventions.md`:
     - the `state` row of the type registry and criterion G-04 retire, since this was the last in-scope
       `STATE.md`;
@@ -3187,7 +3189,8 @@ feature under any headings -- stays valid; nothing rewrites it.
   section in place of a feature section, and the task's `**Source:**` line need not name a feature. Otherwise
   it prints the task's `### Feature NNN` section as today, for both shapes of a split document. The cited
   criteria and the identity block are printed as today, and a Source that names no criterion is still an
-  error.
+  error. § 9 is read in either form: a `- **AC-N**` bullet with its continuation lines, or a `| AC-N | ... |` table
+  row, printed under the table's header row.
 - **`aid-plan`, `aid-detail`, `aid-execute`** read § 11 by feature today. Reading the unsplit shape is
   Feature 006's and Feature 007's (Q67, What other features must provide). Until Feature 006 lands, a work
   whose document does not split reaches today's `aid-plan`, which stops when it finds no feature section; a
@@ -4155,7 +4158,7 @@ list.
 | PL-03 | `aid-plan`'s step table has START, BREAKDOWN, CHECK, APPROVE, FINISH and REVISE; FINISH advances by `PASS` and `finish.md` names `aid-execute`, `--phase Building`, `--plan-sync` and `aid-kb-update` with `--returns yes`; `approve.md` names `confirmation before building`; `revise.md` names `plan change` and `Plan change`; `check.md` names the three choices after three rounds and `Accepted` |
 | PL-04 | One layout: no tracked file under `canonical/skills/`, `canonical/aid/templates/` or `canonical/aid/scripts/` (except `migrate/`), nor `dashboard/home.html`, `dashboard/reader/*.py`, `dashboard/server/*.mjs` or `dashboard/server/*.py` outside `legacy-layout` markers, names `deliveries/delivery-`, a per-task `STATE.yml`, `AID_TASK_STATE_FILE`, `AID_DELIVERY_STATE_FILE`, `pipeline.path`, `Pipeline Path` or `Spike Needed`; the dashboard files also name no `work_path`. Files of entries on the shared exempt list marked for PL-04 are skipped (`aid-execute`, owner Feature 007) |
 | PL-05 | `work-state-template.yml` has `deliveries:` and `tasks_lifecycle:`, each with its `[W]` comment, and no `delivery_state`, `gate_tier`, `gate_grade`, `gate_timestamp`, `delivery_lifecycle`, `delivery_gate` or `pipeline.path`; `work-initiation-gate.md` has no `legacy-phase-map` block and names `aid update` in § 3b |
-| PL-06 | No file under `canonical/skills/` or `canonical/aid/templates/` other than `aid-plan`'s writes task files in a state of its own: no `## State: PLAN` or `## State: DETAIL` heading, no `--plan-sync` call. Files of entries on the shared exempt list marked for PL-06 are skipped (`shortcut-engine.md`, owner Feature 009) |
+| PL-06 | No file under `canonical/skills/` or `canonical/aid/templates/` other than `aid-plan`'s writes task files in a state of its own: no `## State: PLAN` or `## State: DETAIL` heading, and no `--plan-sync` call outside `aid-plan`'s and `aid-execute`'s files (`aid-execute` syncs state from the task files at START and on every return, Feature 007 § 2, and writes no task file). Files of entries on the shared exempt list marked for PL-06 are skipped (`shortcut-engine.md`, owner Feature 009) |
 | PL-07 | `skill-steps.md` § When approvals happen states the Q73 rule (`covers: PLAN.md; confirmation before building`); `reviewer-dispatch.md`'s Guard 2 site table names `aid-plan` CHECK and no `aid-detail` row; `reviewer-ledger-schema.md` names `<work>-plan.md` and no `/aid-detail` row |
 
 **Unit tests**
@@ -5004,7 +5007,6 @@ project's main worktree.
 | Create | `canonical/aid/scripts/pipeline/close-work.sh` | The local clean-up of one closed work (see Components) |
 | Move + rewrite | `canonical/aid/scripts/housekeep/cleanup-classify.sh` -> `canonical/aid/scripts/pipeline/cleanup-classify.sh` | Feature 004's hand-over: reads the work file's YAML (`lifecycle`, `pull_request.state`), compares against `pipeline.parent_branch` instead of `origin/master` (tech-debt SY-1), and gains `--work <work-id>`, the items of one work; stays read-only, its safety self-check kept (see Components) |
 | Edit | `canonical/aid/scripts/execute/writeback-state.sh` | `--pull-request --field F --value V`; `--feedback-add` with a `ref` already present writes nothing and prints the existing id (see Work state) |
-| Edit | `dashboard/scripts/writeback-state.sh` (the deliberate fork) | The same `--feedback-add` duplicate rule, for writer parity; it keeps `Deploy` |
 | Edit | `canonical/aid/templates/work-state-template.yml` | The `pull_request` key with its `[W]` comment (see Work state) |
 | Edit | `canonical/aid/templates/settings.yml`, `canonical/skills/aid-config/SKILL.md` (its settings rows) | `work_folders: push` with its comment (`push`, `keep-local`, `delete`; M4) and the row that sets it |
 | Edit | `canonical/aid/templates/skill-steps.md` § When approvals happen (Feature 002) and its never-merges sentence | One row, the conflict merge (see Components, Approvals); the never-merges sentence narrowed as AC-11 now reads (Q85) |
@@ -5268,7 +5270,9 @@ pull_request:
   `Checked`, `Watch Until`, `Review`, `Work Folder`; `State`, `Pipeline`, `Host` and `Work Folder` validated against
   their lists, anything else exits 4.
 - `--feedback-add` (Feature 007): a `ref` already present writes nothing and prints that entry's id, exit 0 -- so a
-  repeated COLLECT never duplicates an entry.
+  repeated COLLECT never duplicates an entry. The dashboard's fork (`dashboard/scripts/writeback-state.sh`) is not
+  changed: Feature 007 gives it only the task and delivery targets and the derived delivery state, and no
+  `--feedback-add`, so the rule is the canonical writer's alone.
 
 ##### 4. Components
 
@@ -5673,7 +5677,7 @@ folder" is the project's main worktree.
 | Edit | `bin/aid`, `bin/aid.ps1` | The "Run `/aid-config`" line names `/aid-configure`; `legacy-skill-names: begin` / `end` comment markers wrap every row of the format-6 conversion step that names a retired skill, whichever feature added it (Feature 003's initiator rows, Feature 006's type and document rows, and this feature's rows) (Migration); bash and PowerShell output byte-identical |
 | Edit | every other kept file under `canonical/`, `.claude/skills/generate-profile/`, `scripts/checks/`, `dashboard/home.html` and the dashboard reader and server files, that names a retired skill, the engine, the shortcut catalog, a scaffolding file or `IMPEDIMENT.md` | Re-pointed (Migration) |
 | Create | `tests/canonical/test-actions.sh`, `tests/canonical/test-doc-names.sh`, `tests/canonical/retired-names.txt`, `tests/conversation/samples/feature-009/` | See Testing |
-| Rewrite (last delivery) | `docs/`, `site/src/content/docs/`, `README.md`, `examples/` | The final documentation pass (AC-45, Q104; see Components) |
+| Rewrite (last delivery) | `docs/`, `site/src/content/docs/`, `README.md`, `CONTRIBUTING.md`, `examples/` | The final documentation pass (AC-45, Q104; see Components) |
 
 ##### 2. Flow
 
@@ -5980,7 +5984,8 @@ file names a retired skill. `chat-node/` names no skill and needs no change. Eve
 target -- is read from the work file, and is current for every work `--create` made.
 
 **The final documentation pass** (AC-45, Q104) -- the last delivery of this feature, after every other task of the work
-is `Done`. `aid-tech-writer` rewrites `docs/`, `site/src/content/docs/`, `README.md` and `examples/` against the finished
+is `Done`. `aid-tech-writer` rewrites `docs/`, `site/src/content/docs/`, `README.md`, `CONTRIBUTING.md` (how a skill
+is added or changed, with no shortcut catalog, engine, scaffolding or builder) and `examples/` against the finished
 product: the phases, the skills, the old -> new table. The old -> new table, the one place a document must name retired
 skills, sits between `<!-- legacy-skill-names: begin -->` and `<!-- legacy-skill-names: end -->`, the same marker rule as
 the dashboard and `bin/aid`. The site's generated pages are regenerated by `site/scripts/gen-skills.mjs`, not
@@ -6310,7 +6315,7 @@ retired slash name, one per line, kept equal to the old -> new table.
 
 | Group | Asserts |
 |---|---|
-| DN-01 | With `AID_RELEASE_CHECK=1`, no file under `docs/`, `site/src/content/` or `examples/`, nor `README.md`, names a name of `retired-names.txt` as `/aid-<name>` or in backticks, nor an old phase name (Discover, Describe, Define, Specify, Plan, Detail, Execute) as a phase: in a step sequence (`->` or `→`) or followed by "phase". Text between `legacy-skill-names` markers (the old -> new table) is skipped. Without the flag it prints the hits and passes, as the documents wait for the last delivery |
+| DN-01 | With `AID_RELEASE_CHECK=1`, no file under `docs/`, `site/src/content/` or `examples/`, nor `README.md` or `CONTRIBUTING.md`, names a name of `retired-names.txt` as `/aid-<name>` or in backticks, nor an old phase name (Discover, Describe, Define, Specify, Plan, Detail, Execute) as a phase: in a step sequence (`->` or `→`) or followed by "phase". Text between `legacy-skill-names` markers (the old -> new table) is skipped. Without the flag it prints the hits and passes, as the documents wait for the last delivery |
 | DN-03 | With `AID_RELEASE_CHECK=1`, every file the identity search (Components, Domain readiness) finds carries the phrase "software first, not software only", and the same search, with its test-folder exclusions, finds "kind of digital work" in no file (Q108) |
 | DN-02 | No name of `retired-names.txt` is a folder under `canonical/skills/`; with `AID_RELEASE_CHECK=1`, each has a row in the old -> new table of `.aid/knowledge/backlog.md` § Next Release (AC-24) |
 

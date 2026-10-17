@@ -16,7 +16,9 @@
 - `canonical/aid/scripts/execute/writeback-state.sh`: `--pull-request --field F --value V` (the twelve fields;
   `State`, `Pipeline`, `Host` and `Work Folder` validated against their lists, anything else exits 4);
   `--feedback-add` with a `ref` already present writes nothing and prints that entry's id, exit 0.
-- `dashboard/scripts/writeback-state.sh` (the fork): the same duplicate-`ref` rule; it keeps `Deploy`.
+- `dashboard/scripts/writeback-state.sh` (the fork) is not changed: it has no `--feedback-add` mode (Feature 007
+  § 1 gives it only the task and delivery targets and the derived delivery state; delivery-009's task-234), so the
+  duplicate-`ref` rule lives in the canonical writer alone (REQUIREMENTS.md § 11 Feature 008 `##### 3. Work state`).
 - **A work file with no `pull_request` key** (every existing work, this one included: no format step adds it,
   F008 § 7): `--pull-request` first adds the block at the template's defaults, then writes the field, in the same
   locked write; `--feedback-add` adds `feedback:` when absent the same way. This work's first push, at the
@@ -52,8 +54,12 @@
      changed `.py`, and `node --check` on each changed `.mjs`.
   2. **Selection.** `SEL` is the output of `bash tests/canonical/select-suites.sh --since "$BASE"`.
      `COPY` is the members of `SEL` whose text matches the pattern `P` of PLAN.md § "Testing before the
-     resync", The driver. `LIVE` is `SEL` minus `COPY`. A change that lies wholly under `.aid/works/`
-     selects nothing.
+     resync", The driver. `LIVE` is `SEL` minus `COPY`.
+     - **Work-folder-only rule.** A task whose changes all lie under `.aid/works/` runs no suite: steps 2-5
+       are skipped, and the report says so. The work folder is transient pipeline state that no suite may
+       depend on, and it is not resync-relevant (PLAN.md § "Testing before the resync"). `select-suites.sh`
+       is not the reason and is not run for it: it selects every suite with no `# COVERS:` header, whatever
+       changed.
   3. **Scratch half** (when `COPY` is not empty).
      - Make the copy exactly as PLAN.md § "How the copy is made" says, with `S=.aid/.temp/scratch/task-259`.
        That includes the copy's own `run_generator.py`, run from inside it, then the `resync` commit.
@@ -79,7 +85,7 @@
 
 **Acceptance Criteria:**
 - [ ] The template has `pull_request` with its `[W]` comment (MP-04's clause) and parses through both readers with no warning.
-- [ ] On a scratch work, a second `--feedback-add` with the same `ref` prints the first id and leaves the file byte-identical, in both writers; `--pull-request --field State --value pending` exits 4.
+- [ ] On a scratch work, a second `--feedback-add` with the same `ref` prints the first id and leaves the file byte-identical (the canonical writer); `git diff "$BASE" -- dashboard/scripts/writeback-state.sh` is empty; `--pull-request --field State --value pending` exits 4.
 - [ ] `test-work-state-template.sh`, `test-writeback-state.sh` and SS-08 pass where the test step puts them.
 - [ ] On a scratch copy of this work's own `STATE.yml` shape (no `pull_request` key), `--pull-request --field Host --value github` adds the block at the template's defaults with `host: github`, and the file parses through both readers with no warning; on a file with no `feedback` key, `--feedback-add` adds it with one entry.
 - [ ] The test step (last Scope bullet) reports no failure: the spawn-free checks, the scratch half, the live half and the site or dashboard runs it calls for. Every existing test still passes.

@@ -59,6 +59,13 @@
   - The baselines themselves are re-recorded at the gate (Q134, D11).
 - **Findings.** This task's scope also includes every site that
   `.aid/works/work-003-full-aid-restructure/research/delivery-005-sites.md` assigns to `task-120`.
+- **The KB README follows the conversion (G17 applied to the KB step).** `.aid/knowledge/README.md` cites
+  `.aid/knowledge/STATE.md` in its `sources:` and `see_also:`. From this task on, the scratch copy's own migration
+  converts the copy's `STATE.md`, so in this same task those two entries name `.aid/knowledge/STATE.yml`
+  (`see_also: [INDEX.md, STATE.yml]`). Only the frontmatter changes here; the prose is task-137's. AD14 then holds
+  wherever the test step runs `test-artifact-discipline.sh` (the scratch copy), and in the live tree after the
+  delivery's resync. The KB lines are committed as the delivery commits KB paths (through `kb-commit.sh` once it
+  exists).
 - **Test step** (PLAN.md § "Testing before the resync"; the same in every task of this delivery).
   `BASE` is this task's `task-120: In Progress` commit. Work in the `work-003` worktree only, create no
   branch or worktree, and never run `run_generator.py` in the live tree.
@@ -66,8 +73,12 @@
      changed `.py`, and `node --check` on each changed `.mjs`.
   2. **Selection.** `SEL` is the output of `bash tests/canonical/select-suites.sh --since "$BASE"`.
      `COPY` is the members of `SEL` whose text matches the pattern `P` of PLAN.md § "Testing before the
-     resync", The driver. `LIVE` is `SEL` minus `COPY`. A change that lies wholly under `.aid/works/`
-     selects nothing.
+     resync", The driver. `LIVE` is `SEL` minus `COPY`.
+     - **Work-folder-only rule.** A task whose changes all lie under `.aid/works/` runs no suite: steps 2-5
+       are skipped, and the report says so. The work folder is transient pipeline state that no suite may
+       depend on, and it is not resync-relevant (PLAN.md § "Testing before the resync"). `select-suites.sh`
+       is not the reason and is not run for it: it selects every suite with no `# COVERS:` header, whatever
+       changed.
   3. **Scratch half** (when `COPY` is not empty).
      - Make the copy exactly as PLAN.md § "How the copy is made" says, with `S=.aid/.temp/scratch/task-120`.
        That includes the copy's own `run_generator.py`, run from inside it, then the `resync` commit.
@@ -94,5 +105,6 @@
 - [ ] Converting a scratch copy of this repository's `.aid/knowledge/STATE.md` gives a `STATE.yml` that parses through both readers with no warning, and a second run changes nothing (`sha256sum` unchanged).
 - [ ] Bash and PowerShell give byte-identical `STATE.yml` for the same fixture under `pwsh`, and `test-ps51-compat.sh` and `test-ascii-only.sh` pass.
 - [ ] The new `Test-AidInstaller.ps1` case passes under `pwsh` locally (5.1 runs in the Windows lane at G0).
+- [ ] `.aid/knowledge/README.md`'s `sources:` and `see_also:` name `STATE.yml` and not `STATE.md`, and `test-artifact-discipline.sh` AD14 passes where the test step puts the suite.
 - [ ] The test step (last Scope bullet) reports no failure: the spawn-free checks, the scratch half, the live half and the site or dashboard runs it calls for. Every existing test still passes.
 - [ ] All section-6 quality gates pass (REQUIREMENTS.md § 6: NFR-N, NFR-T, NFR-Q).

@@ -17,7 +17,7 @@
 
 **Source:** feature-004-kb-management -> delivery-006 -> AC-39
 
-**Depends on:** task-144, task-145, task-147, task-150
+**Depends on:** task-142, task-144, task-145, task-146, task-147, task-150
 
 **Scope:**
 - Delete the 14 KB `create`/`update` skill folders under `canonical/skills/` (`aid-create-*` and
@@ -91,8 +91,12 @@
      changed `.py`, and `node --check` on each changed `.mjs`.
   2. **Selection.** `SEL` is the output of `bash tests/canonical/select-suites.sh --since "$BASE"`.
      `COPY` is the members of `SEL` whose text matches the pattern `P` of PLAN.md § "Testing before the
-     resync", The driver. `LIVE` is `SEL` minus `COPY`. A change that lies wholly under `.aid/works/`
-     selects nothing.
+     resync", The driver. `LIVE` is `SEL` minus `COPY`.
+     - **Work-folder-only rule.** A task whose changes all lie under `.aid/works/` runs no suite: steps 2-5
+       are skipped, and the report says so. The work folder is transient pipeline state that no suite may
+       depend on, and it is not resync-relevant (PLAN.md § "Testing before the resync"). `select-suites.sh`
+       is not the reason and is not run for it: it selects every suite with no `# COVERS:` header, whatever
+       changed.
   3. **Scratch half** (when `COPY` is not empty).
      - Make the copy exactly as PLAN.md § "How the copy is made" says, with `S=.aid/.temp/scratch/task-151`.
        That includes the copy's own `run_generator.py`, run from inside it, then the `resync` commit.
@@ -118,7 +122,7 @@
 **Acceptance Criteria:**
 - [ ] None of the 14 folders and no `design-lifecycle.md` exists, and `grep -cE 'aid-(create|update)-(architecture|stack|testing-strategy|cicd|roadmap|backlog|mvp)\b' canonical/aid/templates/shortcut-catalog.yml` prints 0.
 - [ ] Over `canonical/` and `dashboard/home.html`, `git grep -nE 'aid-(create|update)-(architecture|stack|testing-strategy|cicd|roadmap|backlog|mvp)\b|design-lifecycle'` finds nothing outside the gate's legacy block and `canonical/aid/scripts/migrate/`.
-- [ ] `grep -c 'Feature 004' tests/canonical/skill-steps-exempt.tsv` prints 0. SG-02, SG-04, DT-01 and `test-skill-steps.sh` pass in the scratch copy, `test-doc-counts.sh` passes live, and `build-shortcut-skills.py --check` exits 0.
+- [ ] `grep -c 'Feature 004' tests/canonical/skill-steps-exempt.tsv` prints 0. SG-02, SG-04, DT-01 and `test-skill-steps.sh` pass where the test step puts them, `test-doc-counts.sh` passes live, and `build-shortcut-skills.py --check` exits 0.
 - [ ] The site `npm test` passes after regeneration.
 - [ ] `test-doc-counts.sh` passes live with the derived counts, and the site `npm test` passes after `sync:docs` (its sync-docs drift test included).
 - [ ] Over `.aid/knowledge/`, no frontmatter `sources:` entry cites a path this task deletes, moves or renames, and `test-artifact-discipline.sh` AD14 passes where the test step puts the suite (G17).

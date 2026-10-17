@@ -62,8 +62,12 @@
      changed `.py`, and `node --check` on each changed `.mjs`.
   2. **Selection.** `SEL` is the output of `bash tests/canonical/select-suites.sh --since "$BASE"`.
      `COPY` is the members of `SEL` whose text matches the pattern `P` of PLAN.md § "Testing before the
-     resync", The driver. `LIVE` is `SEL` minus `COPY`. A change that lies wholly under `.aid/works/`
-     selects nothing.
+     resync", The driver. `LIVE` is `SEL` minus `COPY`.
+     - **Work-folder-only rule.** A task whose changes all lie under `.aid/works/` runs no suite: steps 2-5
+       are skipped, and the report says so. The work folder is transient pipeline state that no suite may
+       depend on, and it is not resync-relevant (PLAN.md § "Testing before the resync"). `select-suites.sh`
+       is not the reason and is not run for it: it selects every suite with no `# COVERS:` header, whatever
+       changed.
   3. **Scratch half** (when `COPY` is not empty).
      - Make the copy exactly as PLAN.md § "How the copy is made" says, with `S=.aid/.temp/scratch/task-123`.
        That includes the copy's own `run_generator.py`, run from inside it, then the `resync` commit.
@@ -87,7 +91,7 @@
      - The same failure after three fix rounds goes to the maintainer.
 
 **Acceptance Criteria:**
-- [ ] `finish.md` runs `kb-commit.sh --build --finish`, `render-kb-view.sh` and `build-kb-index.sh` in that order of steps, and contains no `git push`.
+- [ ] `finish.md`'s steps follow the spec's order (REQUIREMENTS.md § 11 Feature 004 `##### 3. Flows`, FINISH): stamp `approved_at_commit:`, `build-kb-index.sh`, `render-kb-view.sh`, write `User Approved` and `Baseline`, then `kb-commit.sh --build --finish`. No step runs `git push`; the one push instruction line names it only as text for the user (Feature 008 NM-05).
 - [ ] Over the files this task writes (`review.md`, `reviewer-brief.md`, `questions.md`, `fix.md`, `approve.md`, `finish.md`), nothing names `STATE.md`, a `state-*.md` file or a banner form, `git grep -nE 'git (commit|push)'` finds only `finish.md`'s one push instruction line, and every step's `**Advance:**` matches the spec's table. The other moved references are task-129's content (G7).
 - [ ] The suites pass where the test step puts them, and the site `npm test` passes after regeneration.
 - [ ] The test step (last Scope bullet) reports no failure: the spawn-free checks, the scratch half, the live half and the site or dashboard runs it calls for. Every existing test still passes.

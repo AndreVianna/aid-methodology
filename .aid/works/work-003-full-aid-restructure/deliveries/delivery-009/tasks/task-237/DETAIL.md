@@ -17,7 +17,7 @@
 
 **Source:** feature-007-building -> delivery-009 -> AC-19, AC-34
 
-**Depends on:** task-233, task-234, task-235, task-240
+**Depends on:** task-227, task-229, task-233, task-234, task-235, task-240
 
 **Scope:**
 - Re-point by one rule (REQUIREMENTS.md § 11 Feature 007 `##### 7. Migration`, Re-pointing) every kept file under `canonical/`, and
@@ -56,8 +56,12 @@
      changed `.py`, and `node --check` on each changed `.mjs`.
   2. **Selection.** `SEL` is the output of `bash tests/canonical/select-suites.sh --since "$BASE"`.
      `COPY` is the members of `SEL` whose text matches the pattern `P` of PLAN.md § "Testing before the
-     resync", The driver. `LIVE` is `SEL` minus `COPY`. A change that lies wholly under `.aid/works/`
-     selects nothing.
+     resync", The driver. `LIVE` is `SEL` minus `COPY`.
+     - **Work-folder-only rule.** A task whose changes all lie under `.aid/works/` runs no suite: steps 2-5
+       are skipped, and the report says so. The work folder is transient pipeline state that no suite may
+       depend on, and it is not resync-relevant (PLAN.md § "Testing before the resync"). `select-suites.sh`
+       is not the reason and is not run for it: it selects every suite with no `# COVERS:` header, whatever
+       changed.
   3. **Scratch half** (when `COPY` is not empty).
      - Make the copy exactly as PLAN.md § "How the copy is made" says, with `S=.aid/.temp/scratch/task-237`.
        That includes the copy's own `run_generator.py`, run from inside it, then the `resync` commit.
