@@ -112,7 +112,7 @@ minimum_grade: A
 # [W] 'yes' | 'no' -- quoted, see NFR-2 / D-5
 user_approved: 'yes'
 # [W] Running | Paused-Awaiting-Input | Blocked | Completed | Canceled
-lifecycle: Paused-Awaiting-Input
+lifecycle: Running
 # [W] Describe | Define | Specify | Plan | Detail | Execute
 phase: Execute
 # [W] aid-{skill} | none
@@ -120,7 +120,7 @@ active_skill: aid-execute
 # [W]
 updated: '2026-10-17T19:10:35Z'
 # [W] set only when lifecycle = Paused-Awaiting-Input
-pause_reason: 'Maintainer paused during delivery-001; task-005 In Progress (executor stopped; any partial output snapshot-committed, check it on resume). Carry-over findings for the delivery review in .aid/.temp/review-pending/delivery-001-carry.md'
+pause_reason: --
 # [W] set only when lifecycle = Blocked
 block_reason: --
 # [W] e.g. IMPEDIMENT-task-NNN.md, or the failed gate
