@@ -34,9 +34,9 @@
 #                        label, aid-research HANDOFF, aid-report HANDOFF route
 #                        through /aid-update-ticket (comment)
 #   T069-T086  AC-11 -- consumption-protocol.md: no mirror signature, no
-#                        aid-execute Target row, linkage + nearest-ancestor
-#                        sections retained, reads-delegate / writes-route
-#                        documented inline, Worked example rewritten
+#                        aid-execute Target row, the work sources: section
+#                        in place of the ticket_ref linkage, reads-delegate /
+#                        writes-route documented inline, Worked example rewritten
 #   T087-T098  AC-10/NFR-3 -- the four templates that once carried ticket_ref
 #                        carry it no more (a work's tracker items are entries
 #                        of its one sources: list); ticket_ref is
@@ -358,16 +358,16 @@ else
 fi
 assert_file_not_contains "$CONSUMPTION_PROTOCOL" '| Target |' "T071 consumption-protocol.md: no seam carries the Target role any more"
 assert_wrapped_not_contains "$CONSUMPTION_PROTOCOL" 'Read or write through the host MCP' "T072 consumption-protocol.md: the old read-or-write Step-4 lead is gone"
-assert_file_contains "$CONSUMPTION_PROTOCOL" '## Multi-level `ticket_ref` linkage' "T073 consumption-protocol.md: the ticket_ref linkage section is retained"
-assert_file_contains "$CONSUMPTION_PROTOCOL" '## Nearest-ancestor resolution' "T074 consumption-protocol.md: the nearest-ancestor resolution section is retained"
-assert_file_contains "$CONSUMPTION_PROTOCOL" 'task → its owning (SPEC-traced) feature → its delivery → work' "T075 consumption-protocol.md: the containment chains table is byte-identical (task row)"
-assert_wrapped_contains "$CONSUMPTION_PROTOCOL" 'Why feature outranks delivery for a task' "T076 consumption-protocol.md: the 'why feature outranks delivery' rationale is retained"
+assert_file_contains "$CONSUMPTION_PROTOCOL" '## Work sources (`sources:`)' "T073 consumption-protocol.md: the work's sources: section replaces the ticket_ref linkage section"
+assert_file_not_contains "$CONSUMPTION_PROTOCOL" '## Nearest-ancestor resolution' "T074 INVERTED: consumption-protocol.md carries no nearest-ancestor resolution section (one work-level list)"
+assert_wrapped_contains "$CONSUMPTION_PROTOCOL" '`kind` is `ticket` and whose `ref` is' "T075 consumption-protocol.md: the seam picks the work's ticket by kind ticket and a stem:id ref"
+assert_wrapped_contains "$CONSUMPTION_PROTOCOL" 'No unit below the work carries one' "T076 consumption-protocol.md: no feature, delivery or task carries a link of its own"
 assert_file_contains "$CONSUMPTION_PROTOCOL" 'Terminal case' "T077 consumption-protocol.md: the terminal silent-skip case is retained"
 assert_wrapped_contains "$CONSUMPTION_PROTOCOL" '**Read, then stop.**' "T078 consumption-protocol.md: seam-recipe Step 4 is renamed 'Read, then stop.'"
 assert_wrapped_not_contains "$CONSUMPTION_PROTOCOL" '**Act, then stop.**' "T079 consumption-protocol.md: the old 'Act, then stop.' lead is gone"
 assert_wrapped_contains "$CONSUMPTION_PROTOCOL" 'when the seam is reading a ticket' "T080 consumption-protocol.md: seam-recipe Step 1 purpose example is read-only (filing dropped)"
 assert_file_not_contains "$CONSUMPTION_PROTOCOL" '## Worked example (AC9)' "T081 consumption-protocol.md: the old worked-example header is gone"
-assert_file_contains "$CONSUMPTION_PROTOCOL" '## Worked example (nearest-ancestor resolution)' "T082 consumption-protocol.md: the worked example is retitled to nearest-ancestor resolution"
+assert_file_contains "$CONSUMPTION_PROTOCOL" '## Worked example (work sources)' "T082 consumption-protocol.md: the worked example is retitled to work sources"
 assert_wrapped_contains "$CONSUMPTION_PROTOCOL" 'No automated caller acts on this resolution' "T083 consumption-protocol.md: worked example states no automated caller acts on the resolution"
 READS_DELEGATE_COUNT="$(grep -oF -- '/aid-read-ticket' "$CONSUMPTION_PROTOCOL" | wc -l | tr -d ' ')"
 if [[ "$READS_DELEGATE_COUNT" -ge 5 ]]; then

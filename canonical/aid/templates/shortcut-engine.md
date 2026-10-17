@@ -432,15 +432,15 @@ the family scaffolding pointer (or "none landed yet"). The agent writes
   one (`requirements-template.md § Verifiable Acceptance Criteria`). §10 Priority
   defaults to `Must` unless the description says otherwise.
 
-### Step 4b: Connector awareness — record a source ticket's `ticket_ref` (optional)
+### Step 4b: Connector awareness — add a source ticket to the work's `sources:` (optional)
 
 If `{description}` (or a Step 1/Step 3 answer) names, or clearly traces to, an already-filed
 ticket in a catalogued issue-tracker connector, fetch it by invoking `/aid-read-ticket
 [<connector>:]<ticket-id>` -- the connector resolution and host-MCP fetch live there
-(feature-001); no direct-fetch recipe is re-implemented here -- and record `ticket_ref:
-<stem>:<external-id>` in the work's `STATE.yml` frontmatter (seeded at INTAKE Step 4). Applies to
-every shortcut this engine serves (`aid-fix` and its siblings), not `aid-fix` alone. Skip silently
-when no such ticket applies or no matching connector is catalogued; the delegated read is
+(feature-001); no direct-fetch recipe is re-implemented here -- and add a `sources:` entry to the
+work's `STATE.yml` (`ref: <stem>:<external-id>`, `kind: ticket`, the phase it is in now; the list is
+seeded at INTAKE Step 4). Applies to every shortcut this engine serves (`aid-fix` and its
+siblings), not `aid-fix` alone. Skip silently when no such ticket applies or no matching connector is catalogued; the delegated read is
 non-destructive, so no extra confirm is added.
 
 ### Step 5: Update STATE.yml

@@ -61,7 +61,7 @@ Every node in the chart above, in chart order, with the exact `canonical/` text 
 | INITIALIZE | `references/state-initialize.md` | `aid-architect` | → CONTINUE |
 ~~~~
 
-[Source: `canonical/skills/aid-specify/SKILL.md#L220`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-specify/SKILL.md#L220) · [full step: `canonical/skills/aid-specify/references/state-initialize.md#L1-L143`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-specify/references/state-initialize.md#L1-L143)
+[Source: `canonical/skills/aid-specify/SKILL.md#L220`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-specify/SKILL.md#L220) · [full step: `canonical/skills/aid-specify/references/state-initialize.md#L1-L144`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-specify/references/state-initialize.md#L1-L144)
 
 <a id="fragment-n2"></a>**2 · `CONTINUE`** — The work STATE.yml's features: entry for this feature shows… · _loop-back_
 

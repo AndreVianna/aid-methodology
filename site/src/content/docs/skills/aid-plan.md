@@ -49,7 +49,7 @@ Every node in the chart above, in chart order, with the exact `canonical/` text 
 | FIRST-RUN | `references/first-run-loop.md` | `aid-architect` | → REVIEW |
 ~~~~
 
-[Source: `canonical/skills/aid-plan/SKILL.md#L150`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-plan/SKILL.md#L150) · [full step: `canonical/skills/aid-plan/references/first-run-loop.md#L1-L231`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-plan/references/first-run-loop.md#L1-L231)
+[Source: `canonical/skills/aid-plan/SKILL.md#L150`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-plan/SKILL.md#L150) · [full step: `canonical/skills/aid-plan/references/first-run-loop.md#L1-L233`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-plan/references/first-run-loop.md#L1-L233)
 
 <a id="fragment-n2"></a>**2 · `REVIEW`** — PLAN.md exists and was previously completed; re-review… · _loop-back_
 

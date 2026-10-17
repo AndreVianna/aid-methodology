@@ -34,6 +34,8 @@
 #             leading-token heuristic), --level accept/reject/quoted-
 #             literal, --parent, flags-any-order, missing-description usage
 #             line (AC-2, AC-3)
+#   T89-T93   The attachment part (AC-29): previewed files, a previewed
+#             CONFIRM, and the tool-limit stop with options and a recommendation
 #   T64-T73   Resolution-ladder branch coverage -- explicit override,
 #             single-silent, 2+-ask, host-MCP fallback, the verbatim notify
 #             string, api/ssh/cli fall-through, and each skill's own
@@ -129,7 +131,7 @@ assert_wrapped_contains "$UPDATE_SKILL" "description: >" "T14 aid-update-ticket 
 assert_file_contains "$UPDATE_SKILL" "allowed-tools: Read Glob Grep AskUserQuestion" "T15 aid-update-ticket allowed-tools includes AskUserQuestion"
 grep -qE '^allowed-tools:.*\bWrite\b' "$UPDATE_SKILL" && fail "T16 aid-update-ticket allowed-tools must NOT include Write" || pass "T16 aid-update-ticket allowed-tools excludes Write"
 grep -qE '^allowed-tools:.*\bEdit\b' "$UPDATE_SKILL" && fail "T17 aid-update-ticket allowed-tools must NOT include Edit" || pass "T17 aid-update-ticket allowed-tools excludes Edit"
-assert_file_contains "$UPDATE_SKILL" 'argument-hint: "<part> [<connector>:]<ticket-id> <content>"' "T18 aid-update-ticket argument-hint = the bare grammar line"
+assert_file_contains "$UPDATE_SKILL" 'argument-hint: "<description | comment | status | attachment> [<connector>:]<ticket-id> <content>"' "T18 aid-update-ticket argument-hint = the bare grammar line"
 
 # ===========================================================================
 # T19-T35  Anatomy -- Feature-Flow durable state headers present.
@@ -206,7 +208,7 @@ assert_eq "$create_btn" "$sharedref_btn" "T52 create's confirm button row is byt
 # T53-T63  Grammar matrix.
 # ===========================================================================
 assert_wrapped_contains "$READ_SKILL" "the token contains a \`:\` → split on the **first** \`:\`" "T53 aid-read-ticket PARSE-ARGS splits stem:id on the first colon"
-assert_wrapped_contains "$UPDATE_SKILL" "closed enum \`description | comment | status\`" "T54 aid-update-ticket <part> is the closed enum {description,comment,status}"
+assert_wrapped_contains "$UPDATE_SKILL" "closed enum \`description | comment | status | attachment\`" "T54 aid-update-ticket <part> is the closed enum {description,comment,status,attachment}"
 assert_wrapped_contains "$UPDATE_SKILL" "rejected with the same usage line above" "T55 aid-update-ticket rejects an out-of-enum <part> with the usage line"
 assert_wrapped_contains "$UPDATE_SKILL" "re-parsed** for flags or further structure" "T56 aid-update-ticket <content> is taken verbatim, never re-parsed"
 assert_file_contains "$CREATE_SKILL" "bare-leading-token connector heuristic" "T57 aid-create-ticket documents it has no bare-leading-token connector heuristic"
@@ -258,6 +260,17 @@ assert_wrapped_contains "$UPDATE_SKILL" "\`comment\` → APPENDS" "T85 aid-updat
 assert_file_contains "$READ_SKILL" '"no issue-tracker connector found."' "T86 aid-read-ticket carries the verbatim notify string"
 assert_file_contains "$CREATE_SKILL" "no issue-tracker connector found." "T87 aid-create-ticket carries the verbatim notify string"
 assert_file_contains "$UPDATE_SKILL" '"no issue-tracker connector found."' "T88 aid-update-ticket carries the verbatim notify string"
+
+# ===========================================================================
+# T89-T93  The attachment part (AC-29): LOAD-CONTEXT previews the files the
+# user picks, CONFIRM shows each one, and a tracker that cannot hold them stops
+# the run with options and a recommendation -- never a self-picked workaround.
+# ===========================================================================
+assert_file_contains "$UPDATE_SKILL" '| `attachment` | Each file named in CONTENT' "T89 aid-update-ticket LOAD-CONTEXT previews each attachment file the user picks"
+assert_file_contains "$UPDATE_SKILL" "#### Attachment Tool Limit" "T90 aid-update-ticket has an attachment tool-limit section"
+assert_wrapped_contains "$UPDATE_SKILL" "give one **recommendation**" "T91 aid-update-ticket's tool-limit stop offers the options with one recommendation"
+assert_wrapped_contains "$UPDATE_SKILL" "does not pick a workaround itself" "T92 aid-update-ticket never picks a workaround for a tool limit"
+assert_wrapped_contains "$UPDATE_SKILL" "each file's name, size and preview" "T93 aid-update-ticket's CONFIRM shows each attached file's preview"
 
 # ===========================================================================
 test_summary

@@ -105,13 +105,14 @@ bash .aid/runtime/scripts/execute/writeback-state.sh --pipeline --field "Active 
 bash .aid/runtime/scripts/execute/writeback-state.sh --pipeline --field Updated --value "$(date -u +%Y-%m-%dT%H:%M:%SZ)"
 ```
 
-### Step 3b: Connector awareness — record this feature's `ticket_ref` (optional)
+### Step 3b: Connector awareness — add a source ticket to the work's `sources:` (optional)
 
 If this feature's requirements trace to, or the user names, an already-filed ticket in a
 catalogued issue-tracker connector, fetch it by invoking `/aid-read-ticket
 [<connector>:]<ticket-id>` — the connector resolution and host-MCP fetch live there (feature-001);
-no direct-fetch recipe is re-implemented here — and record a `**Ticket:** <stem>:<external-id>`
-line in this feature's section of `REQUIREMENTS.md §11`. Skip silently when no such ticket
+no direct-fetch recipe is re-implemented here — and add a `sources:` entry to this work's
+`STATE.yml` (`ref: <stem>:<external-id>`, `kind: ticket`, the phase it is in now). A feature section
+of `REQUIREMENTS.md §11` gets no link of its own. Skip silently when no such ticket
 applies or no matching connector is catalogued; the delegated read is non-destructive, so no extra
 confirm is added.
 

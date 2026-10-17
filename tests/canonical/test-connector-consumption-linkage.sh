@@ -1,50 +1,41 @@
 #!/usr/bin/env bash
 # test-connector-consumption-linkage.sh -- AC9 linkage/consumption smoke suite
-# for work-004-connector-consumption's multi-level `ticket_ref` contract
-# (canonical/aid/templates/connectors/consumption-protocol.md).
+# for a work's tracker links, as one sources: list
+# (canonical/aid/templates/connectors/consumption-protocol.md, "Work sources").
 #
-# SCOPE NOTE -- there is no dedicated script for `ticket_ref` resolution (it is
-# a resolution RULE an agent applies at a wired seam, documented as markdown
-# prose in consumption-protocol.md's "Nearest-ancestor resolution" section).
-# This suite SCRIPTS that resolution rule directly (mirroring how
-# test-reconcile-scenarios.sh scripts ELICIT's R0-R5 prose) and pairs it with a
-# STUBBED host-MCP action -- a local mock function that only appends to a log
-# file -- so "acts via the linked connector's host MCP" is exercised WITHOUT
-# any live external call (per task-007's mandate). Structural assertions
-# separately confirm the contract text is documented in canonical/, and that
-# the retired per-unit `ticket_ref` is gone from the state and feature
+# SCOPE NOTE -- there is no dedicated script that picks a work's ticket (it is a
+# selection RULE an agent applies at a wired seam, documented as markdown prose
+# in consumption-protocol.md's "Finding the work's ticket" rule). This suite
+# SCRIPTS that rule directly (mirroring how test-reconcile-scenarios.sh scripts
+# ELICIT's R0-R5 prose) and pairs it with a STUBBED host-MCP action -- a local
+# mock function that only appends to a log file -- so "acts via the linked
+# connector's host MCP" is exercised WITHOUT any live external call. Structural
+# assertions separately confirm the contract text is documented in canonical/,
+# and that the retired per-unit `ticket_ref` is gone from the state and feature
 # templates (CL08c-CL08f).
 #
 # Traces:
-#   CL01-CL08   Structural -- consumption-protocol.md documents the
-#               `ticket_ref` scalar form, the nearest-ancestor resolution
-#               chains (delivery/feature/task), the "feature outranks delivery"
-#               rationale, and the wired-seams table; CL08c-CL08f: the 4
+#   CL01-CL08f  Structural -- consumption-protocol.md documents the work's
+#               sources: list (the entry fields, the write_backs: entry
+#               fields, the kind enum), the ticket-selection rule, the
+#               terminal case, the Wired seams table; CL08c-CL08f: the 4
 #               templates that once carried `ticket_ref` (work/delivery/task
 #               STATE + the feature section) carry it no more -- a work's
 #               tracker items are entries of its one `sources:` list
-#   CL09-CL16   Resolution -- own ticket_ref wins at every level (work/
-#               delivery/feature/task), ignoring any ancestor value
-#   CL17-CL20   Resolution -- delivery inherits from work when it has none of
-#               its own; feature inherits from work when it has none of its own
-#   CL21-CL24   Resolution -- task inherits from its owning feature BEFORE its
-#               delivery (feature outranks delivery -- AC9's specific rule)
-#   CL25-CL27   Resolution -- task with no own/feature ref falls to delivery,
-#               then to work
-#   CL28-CL30   Resolution -- a task tracing to NO single owning feature skips
-#               the feature level entirely (task -> delivery -> work)
-#   CL31-CL33   Resolution -- terminal case: nothing anywhere in the chain ->
-#               resolves to no ticket; the seam skips silently (no error)
-#   CL34-CL39   Consumption smoke check -- the AC9 worked example (task
-#               inherits `jira:PROJ-45` from its feature; a `jira` MCP
+#   CL34-CL39   Consumption smoke check -- the worked example (the work's
+#               sources: list holds jira:PROJ-45 as kind ticket; a `jira` MCP
 #               connector is catalogued) drives 3 State-Write Protocol
 #               transitions (In Progress / In Review / Done) through the
 #               stubbed host-MCP mock; asserts each transition posted to the
 #               correct external id, in order, with no live call
-#   CL40-CL42   Consumption smoke check (contrast) -- the SAME resolved
-#               ticket_ref, but the connector is `api`-typed (not `mcp`):
-#               the seam recipe's Step 2 confirmation fails, so NO host-MCP
-#               action fires (aid-managed consumption is out of scope)
+#   CL40-CL42   Consumption smoke check (contrast) -- the SAME ticket, but the
+#               connector is `api`-typed (not `mcp`): the seam recipe's Step 2
+#               confirmation fails, so NO host-MCP action fires (aid-managed
+#               consumption is out of scope)
+#   CL43-CL50   Ticket selection -- the seam picks the first sources: entry
+#               whose kind is ticket and whose ref is <connector-stem>:<id>;
+#               every other kind, a URL, an issue, or an empty list resolves
+#               to no ticket (the terminal case, a silent skip)
 #
 # Usage:
 #   bash tests/canonical/test-connector-consumption-linkage.sh [--verbose]
@@ -72,26 +63,52 @@ for f in "$PROTOCOL" "$WORK_TPL" "$DELIVERY_TPL" "$TASK_TPL" "$FEATURE_TPL"; do
     fi
 done
 
-echo "== connector consumption / ticket_ref linkage tests (AC9) =="
+echo "== connector consumption / work sources linkage tests (AC9) =="
 
 # ===========================================================================
 # CL01-CL08  Structural -- the contract is actually documented where the SPEC
 # says it must be.
 # ===========================================================================
-assert_file_contains "$PROTOCOL" 'ticket_ref: "<connector-stem>:<external-id>"' \
-    "CL01 consumption-protocol.md documents the ticket_ref scalar form"
-assert_file_contains "$PROTOCOL" "## Nearest-ancestor resolution" \
-    "CL02 consumption-protocol.md has a Nearest-ancestor resolution section"
-assert_file_contains "$PROTOCOL" "delivery → work" \
-    "CL03 resolution chain documented: delivery -> work"
-assert_file_contains "$PROTOCOL" "feature → work" \
-    "CL04 resolution chain documented: feature -> work"
-assert_file_contains "$PROTOCOL" "task → its owning (SPEC-traced) feature → its delivery → work" \
-    "CL05 resolution chain documented: task -> feature -> delivery -> work"
-assert_file_contains "$PROTOCOL" "Why feature outranks delivery for a task" \
-    "CL06 rationale documented: feature outranks delivery"
-assert_file_contains "$PROTOCOL" "task → its delivery → work" \
-    "CL07 documented fallback: a task with no single owning feature skips the feature level"
+assert_file_contains "$PROTOCOL" '## Work sources (`sources:`)' \
+    "CL01 consumption-protocol.md documents the work's sources: list (its one work-level link list)"
+
+assert_file_contains "$PROTOCOL" "  - ref: 'jira:PROJ-123'" \
+    "CL02 consumption-protocol.md documents the sources: entry, ref first"
+
+missing=""
+for pat in '^    kind: ticket ' '^    added: ' '^    phase: ' '^    effect: '; do
+    grep -qE "$pat" "$PROTOCOL" || missing+=" [$pat]"
+done
+if [[ -z "$missing" ]]; then
+    pass "CL03 sources: entry carries the kind, added, phase and effect fields"
+else
+    fail "CL03 sources: entry is missing field(s):$missing"
+fi
+
+assert_file_contains "$PROTOCOL" "kind: ticket  " \
+    "CL03b the entry names the kind enum with ticket first"
+assert_file_contains "$PROTOCOL" "ticket | issue | document | link | file" \
+    "CL03c the kind values are the closed enum ticket | issue | document | link | file"
+
+missing=""
+for pat in '^write_backs:' '^  - at: ' '^    source: ' '^    part: ' '^    files: '; do
+    grep -qE "$pat" "$PROTOCOL" || missing+=" [$pat]"
+done
+if [[ -z "$missing" ]]; then
+    pass "CL04 write_backs: entry (top-level) carries at, source, part and files"
+else
+    fail "CL04 write_backs: entry is missing field(s):$missing"
+fi
+
+assert_wrapped_contains "$PROTOCOL" 'first `sources:` entry whose `kind` is `ticket`' \
+    "CL05 the seam picks the first sources: entry whose kind is ticket"
+
+assert_wrapped_contains "$PROTOCOL" "A work with no such entry resolves to **no" \
+    "CL06 a work with no ticket entry resolves to no ticket"
+
+assert_file_contains "$PROTOCOL" "**Terminal case.**" \
+    "CL07 the terminal case (no ticket in the list) is documented as a silent skip"
+
 assert_file_contains "$PROTOCOL" "## Wired seams" \
     "CL08 consumption-protocol.md documents the Wired seams table"
 
@@ -125,137 +142,62 @@ assert_file_not_contains "$FEATURE_TPL" '**Ticket:**' \
     "CL08f the feature section carries no Ticket line (retired)"
 
 # ===========================================================================
-# resolve_ticket_ref UNIT_TYPE OWN FEATURE DELIVERY WORK HAS_OWNING_FEATURE
-# -- scripts consumption-protocol.md's "Nearest-ancestor resolution" table
-# directly. Each positional value is the ticket_ref string at that level, or
-# "" if absent. HAS_OWNING_FEATURE is 1/0 (only meaningful for UNIT_TYPE=task):
-# a task tracing to no single feature skips the feature level entirely.
+# pick_ticket ENTRIES -- scripts consumption-protocol.md's "Finding the work's
+# ticket" rule. ENTRIES is a newline-separated list of "kind|ref" lines, one
+# per sources: entry. Prints the first ticket ref (kind ticket, ref shaped
+# <connector-stem>:<id>); prints nothing and returns 1 when there is none.
 # ===========================================================================
-resolve_ticket_ref() {
-    local unit_type="$1" own="$2" feature="$3" delivery="$4" work="$5" has_feature="${6:-1}"
-
-    if [[ -n "$own" ]]; then
-        echo "$own"; return 0
-    fi
-
-    case "$unit_type" in
-        delivery|feature)
-            [[ -n "$work" ]] && { echo "$work"; return 0; }
-            ;;
-        task)
-            if [[ "$has_feature" == "1" && -n "$feature" ]]; then
-                echo "$feature"; return 0
-            fi
-            [[ -n "$delivery" ]] && { echo "$delivery"; return 0; }
-            [[ -n "$work" ]] && { echo "$work"; return 0; }
-            ;;
-    esac
-    echo ""
+pick_ticket() {
+    local entries="$1" line kind ref
+    while IFS= read -r line; do
+        [[ -z "$line" ]] && continue
+        kind="${line%%|*}"
+        ref="${line#*|}"
+        if [[ "$kind" == "ticket" && "$ref" =~ ^[a-z][a-z0-9_-]*:[^/]+$ ]]; then
+            printf '%s' "$ref"
+            return 0
+        fi
+    done <<< "$entries"
     return 1
 }
 
 # ===========================================================================
-# CL09-CL16  Own ticket_ref always wins, at every level, ignoring ancestors.
+# CL43-CL50  Ticket selection over a work's sources: list.
 # ===========================================================================
-r=$(resolve_ticket_ref work "jira:WORK-1" "" "" "" 1)
-assert_eq "$r" "jira:WORK-1" "CL09 own ticket_ref wins -- work level"
+r=$(pick_ticket "file|REQUIREMENTS.md"); ec=$?
+assert_eq "$r" "" "CL43 a list with only a file entry yields no ticket (terminal case)"
+assert_exit_ne "$ec" 0 "CL43b the selection reports no ticket for a file-only list"
 
-r=$(resolve_ticket_ref delivery "jira:DEL-1" "" "" "jira:WORK-2" 1)
-assert_eq "$r" "jira:DEL-1" "CL10 own ticket_ref wins -- delivery (ignores work ancestor)"
+r=$(pick_ticket "ticket|jira:PROJ-1")
+assert_eq "$r" "jira:PROJ-1" "CL44 a single ticket entry is the work's ticket"
 
-r=$(resolve_ticket_ref feature "jira:FEAT-1" "" "" "jira:WORK-3" 1)
-assert_eq "$r" "jira:FEAT-1" "CL11 own ticket_ref wins -- feature (ignores work ancestor)"
+r=$(pick_ticket "file|REQUIREMENTS.md
+ticket|jira:PROJ-2")
+assert_eq "$r" "jira:PROJ-2" "CL45 non-ticket entries are skipped; the ticket entry after them is picked"
 
-r=$(resolve_ticket_ref task "jira:TASK-1" "jira:FEAT-9" "jira:DEL-9" "jira:WORK-9" 1)
-assert_eq "$r" "jira:TASK-1" "CL12 own ticket_ref wins -- task (ignores feature/delivery/work ancestors)"
+r=$(pick_ticket "ticket|jira:PROJ-3
+ticket|jira:PROJ-4")
+assert_eq "$r" "jira:PROJ-3" "CL46 with two ticket entries, the first in the list is the work's ticket"
 
-# Re-run each with the ancestor values varied -- own still wins regardless.
-r=$(resolve_ticket_ref delivery "jira:DEL-1" "" "" "" 1)
-assert_eq "$r" "jira:DEL-1" "CL13 own ticket_ref wins -- delivery, even with no ancestor at all"
-r=$(resolve_ticket_ref feature "jira:FEAT-1" "" "" "" 1)
-assert_eq "$r" "jira:FEAT-1" "CL14 own ticket_ref wins -- feature, even with no ancestor at all"
-r=$(resolve_ticket_ref task "jira:TASK-1" "" "" "" 1)
-assert_eq "$r" "jira:TASK-1" "CL15 own ticket_ref wins -- task, even with no ancestor at all"
-r=$(resolve_ticket_ref work "jira:WORK-1" "irrelevant" "irrelevant" "irrelevant" 1)
-assert_eq "$r" "jira:WORK-1" "CL16 own ticket_ref wins -- work (work has no ancestor to fall back to anyway)"
+r=$(pick_ticket "link|https://example.com/spec")
+assert_eq "$r" "" "CL47 a link entry is never read as a ticket"
 
-# ===========================================================================
-# CL17-CL20  Delivery/feature inherit from work when they carry none of their own.
-# ===========================================================================
-r=$(resolve_ticket_ref delivery "" "" "" "jira:WORK-10" 1)
-assert_eq "$r" "jira:WORK-10" "CL17 delivery with no own ticket_ref inherits from work"
+r=$(pick_ticket "ticket|https://jira.example.com/PROJ-9")
+assert_eq "$r" "" "CL48 a URL is not a <connector-stem>:<id> ref, so it is not a connector ticket"
 
-r=$(resolve_ticket_ref feature "" "" "" "jira:WORK-11" 1)
-assert_eq "$r" "jira:WORK-11" "CL18 feature with no own ticket_ref inherits from work"
+r=$(pick_ticket "issue|github:4")
+assert_eq "$r" "" "CL49 an issue entry is not read as a ticket"
 
-r=$(resolve_ticket_ref delivery "" "" "" "" 1)
-assert_eq "$r" "" "CL19 delivery with no own ref and no work ref resolves to nothing"
-
-r=$(resolve_ticket_ref feature "" "" "" "" 1)
-assert_eq "$r" "" "CL20 feature with no own ref and no work ref resolves to nothing"
+r=$(pick_ticket "")
+assert_eq "$r" "" "CL50 an empty sources: list yields no ticket (terminal case)"
 
 # ===========================================================================
-# CL21-CL24  AC9's specific rule -- for a task, feature outranks delivery.
-# ===========================================================================
-r=$(resolve_ticket_ref task "" "jira:FEAT-20" "jira:DEL-20" "jira:WORK-20" 1)
-assert_eq "$r" "jira:FEAT-20" "CL21 task inherits from its owning FEATURE before its delivery"
-
-r=$(resolve_ticket_ref task "" "jira:FEAT-21" "" "jira:WORK-21" 1)
-assert_eq "$r" "jira:FEAT-21" "CL22 task inherits from its feature even when the delivery carries none"
-
-r=$(resolve_ticket_ref task "" "jira:FEAT-22" "jira:DEL-22" "" 1)
-assert_eq "$r" "jira:FEAT-22" "CL23 task inherits from its feature even when the work carries none"
-
-# Falsifiability contrast: swap which ancestor carries a value -- the RESULT
-# tracks the rule, not a hardcoded return.
-r=$(resolve_ticket_ref task "" "jira:FEAT-23-alt" "jira:DEL-23-alt" "jira:WORK-23-alt" 1)
-assert_eq "$r" "jira:FEAT-23-alt" "CL24 contrast -- changing which value is present, feature still wins"
-
-# ===========================================================================
-# CL25-CL27  Task with no own/feature ref falls to delivery, then to work.
-# ===========================================================================
-r=$(resolve_ticket_ref task "" "" "jira:DEL-24" "jira:WORK-24" 1)
-assert_eq "$r" "jira:DEL-24" "CL25 task with no own/feature ref falls to delivery"
-
-r=$(resolve_ticket_ref task "" "" "" "jira:WORK-25" 1)
-assert_eq "$r" "jira:WORK-25" "CL26 task with no own/feature/delivery ref falls to work"
-
-r=$(resolve_ticket_ref task "" "" "" "jira:WORK-25" 0)
-assert_eq "$r" "jira:WORK-25" "CL27 same, task also has no single owning feature (has_feature=0) -- still falls to work"
-
-# ===========================================================================
-# CL28-CL30  A task tracing to no single owning feature skips the feature
-# level entirely (task -> delivery -> work) -- even when a feature-shaped
-# value happens to be passed in, it must be ignored.
-# ===========================================================================
-r=$(resolve_ticket_ref task "" "jira:FEAT-30-MUST-BE-IGNORED" "jira:DEL-30" "jira:WORK-30" 0)
-assert_eq "$r" "jira:DEL-30" "CL28 task with no single owning feature -- feature level skipped, resolves to delivery"
-
-r=$(resolve_ticket_ref task "" "jira:FEAT-31-MUST-BE-IGNORED" "" "jira:WORK-31" 0)
-assert_eq "$r" "jira:WORK-31" "CL29 task with no single owning feature and no delivery ref -- resolves to work"
-
-# Contrast: the SAME inputs, but has_feature=1 -- now the feature DOES win.
-r=$(resolve_ticket_ref task "" "jira:FEAT-30-MUST-BE-IGNORED" "jira:DEL-30" "jira:WORK-30" 1)
-assert_eq "$r" "jira:FEAT-30-MUST-BE-IGNORED" \
-    "CL30 contrast -- same inputs with has_feature=1 -- feature now wins (proves CL28 depended on the flag, not on the value being empty)"
-
-# ===========================================================================
-# CL31-CL33  Terminal case -- nothing anywhere in the chain.
-# ===========================================================================
-r=$(resolve_ticket_ref task "" "" "" "" 1); ec=$?
-assert_eq "$r" "" "CL31 terminal case -- task, empty chain, resolves to nothing"
-assert_exit_eq "$ec" 1 "CL32 terminal case -- resolver reports non-zero (no ticket found)"
-
-r=$(resolve_ticket_ref delivery "" "" "" "" 1); ec=$?
-assert_eq "$r" "" "CL33 terminal case -- delivery, empty chain, resolves to nothing (seam skips silently, no error)"
-
-# ===========================================================================
-# CL34-CL39  Consumption smoke check -- the AC9 worked example
-# (consumption-protocol.md "Worked example"): task inherits jira:PROJ-45 from
-# its feature; a `jira` connector is catalogued with connection_type: mcp.
-# Drives 3 State-Write Protocol transitions through a STUBBED host-MCP mock
-# (a local function appending to a log file -- no live external call of any
-# kind is made anywhere in this suite).
+# CL34-CL39  Consumption smoke check -- the worked example
+# (consumption-protocol.md "Worked example (work sources)"): the work's
+# sources: list holds jira:PROJ-45 as kind ticket; a `jira` connector is
+# catalogued with connection_type: mcp. Drives 3 State-Write Protocol
+# transitions through a STUBBED host-MCP mock (a local function appending to a
+# log file -- no live external call of any kind is made anywhere in this suite).
 # ===========================================================================
 TMPDIR_BASE=$(mktemp -d)
 trap 'rm -rf "$TMPDIR_BASE"' EXIT
@@ -276,36 +218,39 @@ mock_host_mcp_post() {
 }
 
 JIRA_CONNECTOR_TYPE="mcp"
-TASK_OWN=""; TASK_FEATURE="jira:PROJ-45"; TASK_DELIVERY="jira:DEL-99"; TASK_WORK="jira:WORK-99"
+WORK_SOURCES="file|REQUIREMENTS.md
+ticket|jira:PROJ-45
+document|docs/notes.md"
 
-resolved=$(resolve_ticket_ref task "$TASK_OWN" "$TASK_FEATURE" "$TASK_DELIVERY" "$TASK_WORK" 1)
-assert_eq "$resolved" "jira:PROJ-45" "CL34 AC9 worked example -- task resolves to its feature's jira:PROJ-45"
+resolved=$(pick_ticket "$WORK_SOURCES")
+
+assert_eq "$resolved" "jira:PROJ-45" "CL34 worked example -- the work's ticket is its sources: entry jira:PROJ-45"
 
 stem="${resolved%%:*}"
 external_id="${resolved#*:}"
-assert_eq "$stem" "jira" "CL35 AC9 worked example -- resolved connector stem is 'jira'"
-assert_eq "$external_id" "PROJ-45" "CL36 AC9 worked example -- resolved external id is 'PROJ-45'"
+assert_eq "$stem" "jira" "CL35 worked example -- resolved connector stem is 'jira'"
+assert_eq "$external_id" "PROJ-45" "CL36 worked example -- resolved external id is 'PROJ-45'"
 
 for transition in "In Progress" "In Review" "Done"; do
     mock_host_mcp_post "$JIRA_CONNECTOR_TYPE" "$stem" "$external_id" "$transition"
 done
 
-assert_eq "$(wc -l < "$MCP_LOG" | tr -d ' ')" "3" "CL37 AC9 worked example -- exactly 3 host-MCP posts recorded (one per State-Write Protocol transition)"
-assert_file_contains "$MCP_LOG" "POST jira:PROJ-45 state=In Progress" "CL38a AC9 worked example -- In Progress transition mirrored to PROJ-45"
-assert_file_contains "$MCP_LOG" "POST jira:PROJ-45 state=In Review" "CL38b AC9 worked example -- In Review transition mirrored to PROJ-45"
-assert_file_contains "$MCP_LOG" "POST jira:PROJ-45 state=Done" "CL38c AC9 worked example -- Done transition mirrored to PROJ-45"
+assert_eq "$(wc -l < "$MCP_LOG" | tr -d ' ')" "3" "CL37 worked example -- exactly 3 host-MCP posts recorded (one per State-Write Protocol transition)"
+assert_file_contains "$MCP_LOG" "POST jira:PROJ-45 state=In Progress" "CL38a worked example -- In Progress transition mirrored to PROJ-45"
+assert_file_contains "$MCP_LOG" "POST jira:PROJ-45 state=In Review" "CL38b worked example -- In Review transition mirrored to PROJ-45"
+assert_file_contains "$MCP_LOG" "POST jira:PROJ-45 state=Done" "CL38c worked example -- Done transition mirrored to PROJ-45"
 
 # Order matters (mirrors the pipeline's own transition order).
 first_line=$(sed -n '1p' "$MCP_LOG")
 last_line=$(sed -n '3p' "$MCP_LOG")
-assert_output_contains "$first_line" "state=In Progress" "CL39a AC9 worked example -- transitions mirrored IN ORDER (first = In Progress)"
-assert_output_contains "$last_line" "state=Done" "CL39b AC9 worked example -- transitions mirrored IN ORDER (last = Done)"
+assert_output_contains "$first_line" "state=In Progress" "CL39a worked example -- transitions mirrored IN ORDER (first = In Progress)"
+assert_output_contains "$last_line" "state=Done" "CL39b worked example -- transitions mirrored IN ORDER (last = Done)"
 
 # ===========================================================================
-# CL40-CL42  Contrast -- the SAME resolved ticket_ref, but the connector is
-# `api`-typed, not `mcp`: aid-managed consumption is out of scope (SPEC.md
-# "Out of Scope / Deferred"), so the seam recipe's Step 2 confirmation fails
-# and NO host-MCP action fires.
+# CL40-CL42  Contrast -- the SAME ticket, but the connector is `api`-typed,
+# not `mcp`: aid-managed consumption is out of scope (SPEC.md "Out of Scope /
+# Deferred"), so the seam recipe's Step 2 confirmation fails and NO host-MCP
+# action fires.
 # ===========================================================================
 : > "$MCP_LOG"
 API_CONNECTOR_TYPE="api"
