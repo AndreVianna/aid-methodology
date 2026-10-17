@@ -6195,7 +6195,7 @@ tfx_row3
 #           was edited (nothing is trashed when the region is intact).
 #   FIX-D7  the .gitattributes managed block carries the per-tool agent paths.
 #   FIX-D8  rules_inline: with a malformed inline region, user lines that coincide with
-#           rules.md lines (## Workflow) stay in both shells; the files are byte-equal.
+#           rules.md lines (## Handling a request) stay in both shells; the files are byte-equal.
 #   FIX-D9  --dry-run lists exactly the files the real run moves to .aid/.trash/.
 # ===========================================================================
 tfx_inline_stage() {  # <out-dir>: T23_STAGE with rules_inline=true added to the cursor artifact
@@ -6247,10 +6247,10 @@ tfx_row6to9() {
 
         # --- row 8: rules_inline fallback with a malformed region --------------------------
         home="$(tfx_home "$shell")"; tgt="$(newtarget)"
-        printf '# Mine\n<!-- AID:BEGIN -->\n## Workflow\nmy own workflow text\n' > "$tgt/AGENTS.md"
+        printf '# Mine\n<!-- AID:BEGIN -->\n## Handling a request\nmy own workflow text\n' > "$tgt/AGENTS.md"
         TFX_STAGE="$inl_stage" tfx_aid "$shell" "$home" "$tgt" add cursor
         assert_exit_eq "$RC" 0 "${id}8 ${shell} add cursor (rules_inline) over a malformed inline region -> exit 0"
-        assert_eq "$(grep -c '^## Workflow$' "$tgt/AGENTS.md")" "2" "${id}8 ${shell} the user's ## Workflow line is kept next to the rules.md one"
+        assert_eq "$(grep -c '^## Handling a request$' "$tgt/AGENTS.md")" "2" "${id}8 ${shell} the user's ## Handling a request line is kept next to the rules.md one"
         assert_file_contains "$tgt/AGENTS.md" 'my own workflow text' "${id}8 ${shell} the user's own text is kept"
         assert_file_contains "$tgt/AGENTS.md" '# Mine' "${id}8 ${shell} the user's heading is kept"
         [[ -f "$tgt/.aid/.trash/AGENTS.md" ]] && pass "${id}8 ${shell} the malformed file was trashed first" || fail "${id}8 ${shell} the malformed file was trashed first"

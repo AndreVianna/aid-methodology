@@ -1,6 +1,8 @@
 ## Summary
 
 <!-- AID:SUMMARY:BEGIN -->
+- Read every request by its meaning and match it to the skill guide in `.aid/runtime/rules.md`;
+  answer project questions from the Knowledge Base.
 - Record every state change (status, phase, grade, review outcome) in the work's STATE file immediately;
   during /aid-execute write In Progress, In Review and Done/Failed as they happen.
 - Work folders (`.aid/works/`) are transient: nothing permanent may depend on them.
@@ -14,7 +16,7 @@
 ## Tracking discipline (IMPERATIVE)
 
 Every project, task, and deliverable is tracked in a state file — the work's
-`.aid/works/work-NNN-*/STATE.md` (plus `.aid/knowledge/STATE.md` for knowledge-base and
+`.aid/works/work-NNN-*/STATE.yml` (plus `.aid/knowledge/STATE.md` for knowledge-base and
 cross-phase process state). Keeping it current is **not optional**:
 
 - **ANY and ALL** changes to the state of a project, task, or deliverable —
@@ -22,7 +24,7 @@ cross-phase process state). Keeping it current is **not optional**:
   to the proper tracking file **IMMEDIATELY**, as part of the same action that
   made the change. Untracked work is incomplete work.
 - This binds **EVERY agent, without exception** — whether invoked by a SKILL or
-  by a DIRECT PROMPT, and whether on the FULL or the LITE path.
+  by a DIRECT PROMPT.
 - If no tracking file exists for the work yet, **create it first** (from the
   work-state template) before doing anything else.
 - **Task execution is the sharpest case of this rule.** During `/aid-execute`,
@@ -74,12 +76,84 @@ Read `.aid/connectors/INDEX.md`.
 - aid-managed consumption (`api` / `ssh` / `url` / `cli`) remains deferred; those descriptors exist
   for discovery and audit only, not for live use.
 
-## Workflow
+## Handling a request
 
-- Every change should be traceable to a task or requirement.
-- Follow the current numbered phase: Discover → Describe → Define → Specify → Plan → Detail → Execute — the numbered sequence ends at Execute. `aid-config` bootstraps before the pipeline; Deploy and Monitor are optional, separately-invoked Deliver paths, not steps in the sequence.
-- Produce verifiable artifacts at each phase.
-- Quality gates must pass before proceeding.
+- Read what the user wants by its meaning, not its wording, and match it to the skill guide below.
+- A question about this project starts no work: answer it from the Knowledge Base, citing sources.
+- One skill fits: propose its workflow. Several fit: choose yourself; ask one question, with your
+  recommendation, only if you cannot choose. None fits: carry on with no AID workflow.
+- A typed `/aid-<skill>` always wins.
+- The user's words are a hint: check your reading against the Knowledge Base and the code (a
+  "refactor" that adds an endpoint changes behaviour, so it is new work).
+- To start, resume or cancel a work, run `/aid-orchestrate`: it finds where the work stands, sizes it and
+  picks the phases it needs.
+- Show your reading and its reason in one line, inside your first question or approval; then wait.
+- Specification, Planning and Building (with tests) almost always run; Definition only when the problem
+  must first be shaped; Preparation builds the Knowledge Base once, then updates it on demand; CI always
+  closes the work. Release, deploy and monitoring are works of their own.
+- If the work turns out bigger or different, re-route and say so in one line.
+- Check every decision against the Knowledge Base; raise a conflict, never settle it alone.
+- Ask one topic at a time, with a recommendation; the user approves before building and the result.
+
+## Skill guide
+
+One line per skill: what it is for; when to use it. `<kind>` stands for each kind that
+`.aid/runtime/templates/shortcut-catalog.yml` lists for that action.
+
+### Phase skills
+
+- `/aid-orchestrate` -- start, resume or cancel a work; when a plain request starts or continues one
+- `/aid-discover` -- build the Knowledge Base from existing code; when a project has none yet
+- `/aid-describe` -- gather the requirements by interview; when a new work needs them written
+- `/aid-define` -- split approved requirements into features; after the requirements are approved
+- `/aid-specify` -- write a feature's technical specification; after the features are defined
+- `/aid-plan` -- group the specified features into deliveries; after the specifications are approved
+- `/aid-detail` -- break a delivery into small typed tasks; after the plan is approved
+- `/aid-execute` -- carry out and review each planned task; when a delivery's tasks are ready
+- `/aid-deploy` -- package completed deliveries into a release; when they are ready to ship
+- `/aid-monitor` -- watch production and route what it finds; after a release, or when it misbehaves
+
+### Knowledge Base skills
+
+- `/aid-ask` -- answer a question about the project, with sources; when the user asks one
+- `/aid-update-kb` -- apply one confirmed change to the Knowledge Base; when a fact changes
+- `/aid-summarize` -- build `kb.html`, the Knowledge Base web view; when someone wants to read it
+- `/aid-housekeep` -- re-sync drifted docs and sweep stale works; when the project has drifted
+
+### Supporting skills
+
+- `/aid-brainstorm` -- shape an unformed idea into a design seed; when the problem is still unclear
+- `/aid-research` -- investigate an open technical question; when options must be weighed first
+- `/aid-design` -- design a subject no kind below covers; when its shape is still open
+- `/aid-design-<kind>` -- design one kind of thing as a seed; when its shape is still open
+- `/aid-prototype` -- build a low-fidelity model of a direction; before committing to a full build
+- `/aid-prototype-<kind>` -- prototype one kind of thing, such as a UI; before building it for real
+- `/aid-create` -- create a new code artifact (module, interface, type); when it does not exist yet
+- `/aid-create-<kind>` -- create one kind of thing (an API, a UI, a job, ...); when it is new
+- `/aid-update` -- change an existing code artifact's behaviour; when its criteria change
+- `/aid-update-<kind>` -- change one kind of thing that exists; when it must behave differently
+- `/aid-fix` -- diagnose and correct a defect; when something is broken
+- `/aid-refactor` -- restructure code without changing behaviour; when code needs reshaping
+- `/aid-remove` -- remove code, a feature or a dependency and its uses; when something must go
+- `/aid-deprecate` -- mark something deprecated, with a migration path; before removing it
+- `/aid-migrate` -- move data, a dependency or a platform, with rollback; when switching over
+- `/aid-test` -- run tests or checks and report the findings; when something must be verified
+- `/aid-test-<kind>` -- run one kind of check (security, performance, ...); when only it is due
+- `/aid-experiment` -- design, run and analyse a controlled experiment; when a choice needs evidence
+- `/aid-review` -- review code, a change or a design against criteria; when a review is asked for
+- `/aid-report` -- analyse data or usage into an insight report; when the user needs it explained
+- `/aid-document` -- write a how-to, reference or explanation; when a general document is needed
+- `/aid-document-<kind>` -- write one kind of document (decision, runbook, ...); when that is needed
+- `/aid-read-ticket` -- read one tracker ticket and show its fields; when a ticket is named
+- `/aid-create-ticket` -- file one new tracker ticket; when work must be recorded in the tracker
+- `/aid-update-ticket` -- change one part of a tracker ticket; when the user wants it updated
+- `/aid-chat` -- talk with another AI coding session; when sessions must coordinate
+
+### Setup skills
+
+- `/aid-config` -- view or change the project's AID settings; when setting up or tuning AID
+- `/aid-set-connector` -- add or change a connector to a tracker or tool; when connecting one
+- `/aid-unset-connector` -- remove a connector; when a connection is no longer wanted
 
 ## Review criteria (before you write)
 
