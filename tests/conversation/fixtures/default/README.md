@@ -5,8 +5,8 @@ A small command-line tool that keeps short text notes in a local JSON file.
 ## Usage
 
 ```bash
-python3 -m notes add "buy milk"
-python3 -m notes list
+PYTHONPATH=src python3 -m notes add "buy milk"
+PYTHONPATH=src python3 -m notes list
 ```
 
 Notes are stored in `notes.json` in the current folder. Each note has an `id`, a `text` and a
