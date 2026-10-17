@@ -124,12 +124,12 @@ Confirm canonical completeness:
    Rather than hardcoding the shortcut names, check that every catalog row plus every
    curated skill has a rendered `canonical/skills/<name>/SKILL.md` directory.
 
-2. All 9 canonical agents exist under `canonical/agents/`.
+2. All 8 canonical agents exist under `canonical/agents/`.
 
    ```bash
    ls canonical/agents/ | wc -l
    ```
-   Expected: 9 directories.
+   Expected: 8 directories.
 
 3. `canonical/aid/templates/` subtree is non-empty.
 
@@ -292,7 +292,7 @@ Before calling the run complete, confirm:
 - [ ] All profile TOMLs parsed without errors (`validate()` returned `[]`)
 - [ ] `canonical/` completeness verified against the derivation above, and the decomposition
       SUMS: directories = curatedOnly + catalogRows, and catalogRows = shortcuts + repurposed.
-      Also: 9 agents, non-empty templates.
+      Also: 8 agents, non-empty templates.
 - [ ] All renderers completed without errors
 - [ ] Each `profiles/<tool>/` holds only `aid-tool.conf` and the `<root>/agents/` folder
 - [ ] VERIFY (deterministic): byte-identical re-render PASS, presence audit PASS, frontmatter parse PASS

@@ -4,7 +4,7 @@
 // Generates four reference pages from canonical/ + .aid/settings.yml:
 //   reference/skills.md    — the shortcut-engine narrative (the roster itself now
 //                            lives at /skills/, see delivery-006 / work-level Q4)
-//   reference/agents.md    — 9 agents table
+//   reference/agents.md    — 8 agents table
 //   reference/kb.md        — 14 KB doc-types table
 //   reference/settings.md  — settings keys table
 //
@@ -296,7 +296,7 @@ function generateAgentsPage() {
   });
 
   const intro =
-    'AID runs **9 specialized agents** across three model tiers. The separation is structural: ' +
+    'AID runs **8 specialized agents** across three model tiers. The separation is structural: ' +
     'the reviewer\'s tier is always **≥** the executor\'s, and the agent that writes code never ' +
     'grades its own work. Each profile maps these tiers to concrete models (see ' +
     '[the Agent Model](/concepts/methodology/#5-the-agent-model)). Generated from `canonical/agents/`.';
@@ -321,7 +321,7 @@ function generateAgentsPage() {
 
   const fm = serializeFrontmatter({
     title: 'Agents',
-    description: 'All 9 AID pipeline agents — grouped by model tier, with role, tools, and source definition.',
+    description: 'All 8 AID pipeline agents — grouped by model tier, with role, tools, and source definition.',
     generatedFrom: 'canonical/agents/*/AGENT.md',
   });
   const note = `\n<!-- generated — do not edit; source: canonical/agents/*/AGENT.md -->\n\n`;

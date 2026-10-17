@@ -45,7 +45,6 @@ The agent's frontmatter `tier:` sets its default model; the dispatch site sets e
 | Agent | Default tier | Default effort | Escalate |
 |---|---|---|---|
 | aid-clerk | small | `low` | — |
-| aid-orchestrator | medium | `low` | — |
 | aid-tech-writer | medium | `low`→`medium` | large / `high` (large or complex docs) |
 | aid-operator | medium | `medium` | large / `high` (risky release / verification) |
 | aid-developer | medium | `medium` | large / `xhigh` (cross-file / hard implementation) |
@@ -53,6 +52,8 @@ The agent's frontmatter `tier:` sets its default model; the dispatch site sets e
 | aid-interviewer | medium | `medium` | large / `high` (complex requirement synthesis) |
 | aid-reviewer | medium | `medium` | large / `high`–`xhigh` (complex / security / design / delivery gate, or to match a large executor) |
 | aid-architect | large | `medium` | large / `xhigh` (hard design / decomposition) |
+
+The main conversation orchestrates (FR-13) and has no row: it is not an agent.
 
 ## See also
 

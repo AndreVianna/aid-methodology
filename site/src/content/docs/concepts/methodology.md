@@ -101,7 +101,7 @@ The shortcut path is not a fallback — it is the default entry for the majority
 
 ### Skill Inventory
 
-*113 skill directories in total — 19 curated pipeline / on-demand / router skills plus the 94-row shortcut catalog's skills (34 engine-generated verb-first shortcuts + 60 hand-authored `repurpose` skills). Unchanged: 9 agents, 14 KB doc types.*
+*113 skill directories in total — 19 curated pipeline / on-demand / router skills plus the 94-row shortcut catalog's skills (34 engine-generated verb-first shortcuts + 60 hand-authored `repurpose` skills). Unchanged: 8 agents, 14 KB doc types.*
 
 **A. The 19 curated skills** — the pipeline phases plus the on-demand and router skills that are *not* in the shortcut catalog; their groups, phase numbers, and mandatory pipeline membership. (`aid-deploy` and `aid-monitor` are catalog `repurpose` rows — see table D; `/aid-ask`, also a `repurpose` row, is covered in table C.)
 
@@ -876,7 +876,7 @@ Claude Code additionally gets a `.claude/skills/` mirror of the shared skills.
 ```
 canonical/  (single source of truth — never edit profiles/ or an installed tree directly)
   ├── skills/        (skill directories: the shared skills payload)
-  ├── agents/        (9 agents: rendered once per tool)
+  ├── agents/        (8 agents: rendered once per tool)
   └── aid/
         ├── templates/     (KB templates, document templates, shortcut-catalog.yml, shortcut-scaffolding/)
         ├── scripts/       (helper scripts by phase)

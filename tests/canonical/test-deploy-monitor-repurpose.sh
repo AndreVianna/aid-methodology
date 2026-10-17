@@ -9,8 +9,8 @@
 # "re-derived independently, not by importing the maintainer helper's internals" convention).
 #
 #   Part 1 -- Re-point (part b, Must, § Q-A9):
-#     `aid-monitor` `state-route.md` routes BUG -> `/aid-fix` and CHANGE REQUEST ->
-#     `/aid-triage` (fixture findings); no aid-monitor file (SKILL.md, state-route.md)
+#     `aid-monitor` `state-route.md` hands a BUG back as a fix request and a CHANGE REQUEST
+#     back as a new-work request, both in plain words (ROUTE runs inline); no aid-monitor file (SKILL.md, state-route.md)
 #     carries the deprecated "Route to aid-describe", "re-enters at
 #     aid-describe", "lite bug-fix triage", or "LITE-BUG-FIX" phrasing; pipeline-contracts.md
 #     L9/L10 targets updated in lockstep.
@@ -35,7 +35,7 @@
 #     (test-catalog-dirs-parity.sh itself stays COUNT-AGNOSTIC by design -- this is the
 #     dedicated count assertion its own header comment defers to task-035.)
 #
-# No agent is invoked; nothing here dispatches aid-orchestrator/aid-operator/aid-researcher.
+# No agent is invoked; nothing here dispatches aid-operator/aid-researcher.
 #
 # Usage:
 #   bash tests/canonical/test-deploy-monitor-repurpose.sh [--verbose]
@@ -74,25 +74,25 @@ fi
 # ===========================================================================
 # Part 1 -- Re-point (part b, Must, § Q-A9)
 # ===========================================================================
-echo "--- Part 1: aid-monitor re-point (BUG -> /aid-fix, CR -> /aid-triage) ---"
+echo "--- Part 1: aid-monitor re-point (BUG -> fix request, CR -> new-work request) ---"
 
 # DMR-01: state-route.md Step 4 proposal lines route to the new targets.
-assert_file_contains "$MONITOR_ROUTE" "Proposed: Route to /aid-fix" \
-    "DMR01a state-route.md Step 4 proposes Route to /aid-fix for the BUG finding"
-assert_file_contains "$MONITOR_ROUTE" "Proposed: Route to /aid-triage" \
-    "DMR01b state-route.md Step 4 proposes Route to /aid-triage for the CHANGE REQUEST finding"
+assert_file_contains "$MONITOR_ROUTE" "Proposed: Fix request" \
+    "DMR01a state-route.md Step 4 proposes a fix request for the BUG finding"
+assert_file_contains "$MONITOR_ROUTE" "Proposed: New-work request" \
+    "DMR01b state-route.md Step 4 proposes a new-work request for the CHANGE REQUEST finding"
 
 # DMR-02: state-route.md Step 5 Act blocks are headed by the new routing targets.
-assert_file_contains "$MONITOR_ROUTE" "BUG → /aid-fix:" \
-    "DMR02a state-route.md Step 5 Act block: BUG -> /aid-fix"
-assert_file_contains "$MONITOR_ROUTE" "CHANGE REQUEST → /aid-triage:" \
-    "DMR02b state-route.md Step 5 Act block: CHANGE REQUEST -> /aid-triage"
+assert_file_contains "$MONITOR_ROUTE" "BUG → fix request:" \
+    "DMR02a state-route.md Step 5 Act block: BUG -> fix request"
+assert_file_contains "$MONITOR_ROUTE" "CHANGE REQUEST → new-work request:" \
+    "DMR02b state-route.md Step 5 Act block: CHANGE REQUEST -> new-work request"
 
 # DMR-03: SKILL.md Routing-targets re-pointed. The routing lives in the SHIPPING file;
 # the former README.md duplicates (DMR03c/DMR03d) went with the internal READMEs, and
 # asserted nothing DMR03a/DMR03b do not already assert against SKILL.md.
-assert_file_contains "$MONITOR_SKILL" "BUG → \`/aid-fix\`" "DMR03a SKILL.md Routing targets: BUG -> /aid-fix"
-assert_file_contains "$MONITOR_SKILL" "Change Request → \`/aid-triage\`" "DMR03b SKILL.md Routing targets: Change Request -> /aid-triage"
+assert_file_contains "$MONITOR_SKILL" "BUG → a fix request" "DMR03a SKILL.md Routing targets: BUG -> fix request"
+assert_file_contains "$MONITOR_SKILL" "Change Request → a new-work request" "DMR03b SKILL.md Routing targets: Change Request -> new-work request"
 
 # DMR-04: no residual deprecated phrasing anywhere under aid-monitor/.
 DEPRECATED_PATTERNS=(
@@ -143,8 +143,8 @@ assert_file_contains "$MONITOR_SKILL" "| OBSERVE | \`references/state-observe.md
     "DMR11a aid-monitor Dispatch: OBSERVE row unchanged"
 assert_file_contains "$MONITOR_SKILL" "| CLASSIFY | \`references/state-classify.md\` | \`aid-researcher\` | → ROUTE |" \
     "DMR11b aid-monitor Dispatch: CLASSIFY row unchanged"
-assert_file_contains "$MONITOR_SKILL" "| ROUTE | \`references/state-route.md\` | \`aid-orchestrator\` | → DONE |" \
-    "DMR11c aid-monitor Dispatch: ROUTE row unchanged"
+assert_file_contains "$MONITOR_SKILL" "| ROUTE | \`references/state-route.md\` | \`inline\` (main conversation) | → DONE |" \
+    "DMR11c aid-monitor Dispatch: ROUTE row runs inline in the main conversation"
 assert_file_contains "$MONITOR_SKILL" "State machine: OBSERVE → CLASSIFY → ROUTE → DONE." \
     "DMR11d aid-monitor frontmatter State machine line unchanged"
 

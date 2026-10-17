@@ -6,8 +6,8 @@
 >
 > Every AID agent that produces an artifact (code, docs, configs, KB entries,
 > extracted data, rendered output, etc.) follows this protocol. Reviewers
-> (`aid-reviewer`) and pure coordinators (`aid-orchestrator`) are
-> exempt — they don't produce primary artifacts.
+> (`aid-reviewer`) and pure coordinators (the main conversation, which
+> orchestrates) are exempt — they don't produce primary artifacts.
 
 ## The posture
 
