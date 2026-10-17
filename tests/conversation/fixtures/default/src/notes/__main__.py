@@ -1,5 +1,5 @@
 import sys
 
-from notes.cli import main
+from notes.commands import main
 
 sys.exit(main())

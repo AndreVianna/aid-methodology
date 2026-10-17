@@ -4,7 +4,7 @@ source: hand-authored
 objective: How the notes tool is structured and where its state lives.
 summary: Describes the two layers (command line and store), the single JSON file that holds all state, and the tests that cover the store.
 sources:
-  - src/notes/cli.py
+  - src/notes/commands.py
   - src/notes/store.py
   - README.md
 tags: [architecture, state, layers]
@@ -14,7 +14,7 @@ tags: [architecture, state, layers]
 
 ## Layers
 
-- **Command line** (`src/notes/cli.py`): reads arguments, calls the store, prints the output.
+- **Command line** (`src/notes/commands.py`): reads arguments, calls the store, prints the output.
 - **Store** (`src/notes/store.py`): the only code that touches the disk. Each call reads the whole JSON
   file, changes it in memory, and writes it back.
 

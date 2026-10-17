@@ -15,5 +15,5 @@ Notes are stored in `notes.json` in the current folder. Each note has an `id`, a
 ## Layout
 
 - `src/notes/store.py`: the note store (read, append, list).
-- `src/notes/cli.py`: the command-line entry point.
+- `src/notes/commands.py`: the command-line entry point.
 - `tests/test_store.py`: unit tests for the store.

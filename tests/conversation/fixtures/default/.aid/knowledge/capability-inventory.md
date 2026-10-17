@@ -4,9 +4,9 @@ source: hand-authored
 objective: The capabilities the notes tool offers today.
 summary: Lists each command, what it does, and what it stores, as the code currently implements them.
 sources:
-  - src/notes/cli.py
+  - src/notes/commands.py
   - src/notes/store.py
-tags: [capability, cli, storage]
+tags: [capability, commands, storage]
 ---
 
 # Capability Inventory
