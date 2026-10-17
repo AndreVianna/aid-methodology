@@ -37,8 +37,7 @@
      list empty), the samples (`009-15`, `009-18`, `009-19`, and `002-02` on `/aid-configure`, each 3 of 3) and G0 on
      the head, G0's lane item carried by the milestone push. Then **the hold** (PLAN.md "How deliveries 010-014 are
      built", The hold): with `AID_WORK_DIR` exported for this work, the main conversation runs
-     `write-control-signal.sh --task-id NNN --action stop` for every wave-1 task of delivery-014 (its `wave-map`
-     block in `PLAN.md`). Then `/aid-execute` resumes and asks the open approval first; a yes is recorded with
+     `write-control-signal.sh --task-id NNN --action stop` for every wave-1 task of delivery-014 (the wave-1 tasks that `derive-waves.sh --from-tasks <work-dir> --delivery NNN` prints from the task files; PLAN.md's `wave-map` blocks are re-rendered into the checklist from delivery-008's resync on, so they are not the source). Then `/aid-execute` resumes and asks the open approval first; a yes is recorded with
      `--answer --commit <head>`, and the push question follows. NEXT's routing then reaches delivery-014's first
      BUILD, whose step entry finds the task's `.stop` file and pauses the run before any dispatch (Feature 007 § 2,
      Control signals).

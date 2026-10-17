@@ -118,7 +118,7 @@ phase: Detail
 # [W] aid-{skill} | none
 active_skill: aid-detail
 # [W]
-updated: '2026-10-17T15:16:25Z'
+updated: '2026-10-17T16:05:38Z'
 # [W] set only when lifecycle = Paused-Awaiting-Input
 pause_reason: --
 # [W] set only when lifecycle = Blocked
@@ -474,6 +474,10 @@ review_history:
     event: 'Detail full review cycle 1 fixes'
     outcome: 'All 40 rows Fixed; derive-waves --check exits 0'
     notes: 'Spec edits under the Q116 precedent: F006 PL-06 narrowed (aid-execute may call --plan-sync); F008 fork row removed (fork unchanged); F004 KB list adds README.md; F005 slicer reads § 9 tables; F009 adds CONTRIBUTING.md to the final pass and DN-01. PLAN: work-folder-only rule; the hold before each 011-014 research step via F007 control signals'
+  - date: '2026-10-17'
+    event: 'Detail full review cycle 2 (verify, Q140)'
+    outcome: 'All 40 cycle-1 fixes hold; 1 new MEDIUM (row 41: the hold read wave-1 tasks from wave-map blocks the F006 re-render removes) -- fixed by the orchestrator (source: derive-waves --from-tasks --delivery); ledger grade A+'
+    notes: 'Q136: review passed, tasks approved; ledger deleted'
 
 # [A] written by the orchestrator on the work's active branch (single
 #     writer). Append-only audit trail of phase transitions and gate
@@ -507,6 +511,10 @@ lifecycle_history:
     event: 'Plan: PLAN.md approved by the maintainer (14 deliveries, all Pending-Spec; deliveries 001-009 built directly by the main conversation, 010-014 by the new /aid-execute)'
     grade: A+
     notes: 'aid-plan FIRST-RUN + REVIEW (6 cycles, incl. Guard 2 and the Feature 002 cross-feature review); decisions Q111-Q132; ledger deleted'
+  - date: '2026-10-17'
+    event: 'Detail: 359 tasks across 14 deliveries approved under Q136 (light review per delivery, one full review: cycle 1 D+ fixed, cycle 2 verify A+); execution graphs in PLAN.md'
+    grade: A+
+    notes: 'aid-detail FIRST-RUN + REVIEW; decisions Q133-Q140; general rules G1-G19; ledgers deleted'
 
 deploy: []
 

@@ -2025,7 +2025,7 @@ following F007 § 2.
   010-013, the main conversation uses F007's control signals (F007 § 2, Control signals), which every step entry
   checks:
   1. Before resuming `/aid-execute`, it runs `write-control-signal.sh --task-id NNN --action stop`, with
-     `AID_WORK_DIR` exported for this work, for every wave-1 task of the next delivery (its `wave-map` block). Only
+     `AID_WORK_DIR` exported for this work, for every wave-1 task of the next delivery (the wave-1 tasks that `derive-waves.sh --from-tasks <work-dir> --delivery NNN` prints from the task files; PLAN.md's `wave-map` blocks are re-rendered into the checklist from delivery-008's resync on, so they are not the source). Only
      those tasks can be the next delivery's first BUILD.
   2. The resumed run asks the open approval, records it and asks the push question. When NEXT's routing reaches the
      next delivery's first BUILD, that step's entry finds the `.stop` file and pauses the run before any dispatch.
