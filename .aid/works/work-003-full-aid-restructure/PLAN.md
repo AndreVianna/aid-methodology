@@ -1824,6 +1824,8 @@ end-of-work checks that make the branch releasable.
   (AC-24, AC-45)
 - The full integration suite runs: every sample of every feature 3 of 3, plus `008-15` (live GitHub
   and GitLab) and `009-11` and `009-12` (live tracker).
+- The conversation runner's adapters for Codex, Cursor, Copilot CLI and Antigravity (task-365, KI-006, Q144),
+  built and tested on the maintainer's machine, so the integration run reaches each host.
 
 **Out of scope:**
 - Tagging and publishing v4.0.0. That is an operational work of its own (FR-7).
@@ -1842,6 +1844,7 @@ end-of-work checks that make the branch releasable.
   (AC-24, AC-45)
 - [ ] With `AID_RELEASE_CHECK=1`, DT-02 and both exempt-list release checks pass, with `deferred.tsv` and both exempt lists empty. The shared list's check is F002 § 8; the description list's is SG-04. (NFR-T)
 - [ ] The full integration suite passes. Every sample under `tests/conversation/samples/` passes 3 of 3, including `008-15`, `009-11` and `009-12`. (Every AC a sample's `covers` names)
+- [ ] One sample runs against a scratch repository on each of the five hosts through `run.py --hosts`, with no host skipped. (NFR-T, KI-006)
 - [ ] `site/scripts/gen-skills.mjs` regenerates the site with no diff after the pass, and the Astro build succeeds. (AC-31, AC-45)
 - [ ] G0 passes.
 
@@ -1857,9 +1860,10 @@ end-of-work checks that make the branch releasable.
 | task-359 | task-357, task-358 |
 | task-360 | task-359 |
 | task-361 | task-354, task-357 |
-| task-362 | task-354, task-355, task-356, task-357, task-358, task-359, task-360, task-361 |
+| task-362 | task-354, task-355, task-356, task-357, task-358, task-359, task-360, task-361, task-365 |
 | task-363 | task-354, task-355, task-362 |
 | task-364 | task-354 |
+| task-365 | — |
 
 | Can Be Done In Parallel |
 |------------------------|
@@ -1868,7 +1872,7 @@ end-of-work checks that make the branch releasable.
 
 ```wave-map
 delivery: 014
-wave 1: task-354
+wave 1: task-354, task-365
 wave 2: task-355, task-364
 wave 3: task-358
 wave 4: task-356

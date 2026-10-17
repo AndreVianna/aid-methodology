@@ -1699,3 +1699,11 @@ qa:
     suggested: '--'
     answer: 'Maintainer rule: the delivery''s full Opus review must reach grade A; fix rounds follow until it does.'
     applied_to: 'Delivery verification of deliveries 001-009 (PLAN step 3)'
+  - id: Q144
+    category: Building
+    impact: Medium
+    state: Answered
+    context: 'task-004 (C+) carried a MEDIUM finding: run.py has no adapters for codex, cursor, copilot-cli or antigravity. This cloud session has none of those tools, and no task before delivery-014 runs a host other than claude-code.'
+    suggested: 'a) defer the four adapters to one task before the whole work''s final integration run, built and tested on the maintainer''s machine, logged as a known issue'
+    answer: 'a (28a), confirmed after the check that no earlier task needs the adapters: KI-006 logged; task-365 added to delivery-014 (wave 1, before task-362); delivery-001''s review accepts the gap.'
+    applied_to: 'known-issues.md KI-006; deliveries/delivery-014/tasks/task-365; PLAN.md delivery-014 Scope, Gate Criteria, Execution Graph; analysis/delivery-001-carry.md row task-004.1'

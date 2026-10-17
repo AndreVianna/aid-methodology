@@ -59,3 +59,12 @@
 - **Description:** Feature 008 has to bring the parent branch into the work branch to resolve a pull-request conflict, and finish that merge with its own commit. NM-01 forbids every `git merge`, but its purpose is that AID never merges the pull request itself. Feature 008's spec must narrow NM-01 to that purpose, or resolve conflicts in a way NM-01 allows.
 - **See also:** --
 - **Status:** Settled by Feature 008 (Q85): AC-11, AC-34 and NM-01 are narrowed so the only merge AID makes brings the parent branch (or the work branch's own remote copy) into the work branch, in `canonical/aid/scripts/pipeline/merge-parent.sh`, only for a conflict, approved before it is pushed.
+
+## KI-006: The conversation runner drives only Claude Code
+
+- **Type:** Gap
+- **Severity:** Medium
+- **Affects:** Feature 001 — Plain-Language Requests, Routed to the Right Skill; Feature 009 — One Skill per Need
+- **Source:** `tests/conversation/run.py` (`ADAPTERS` holds only `claude-code`; the "Other hosts" comment); REQUIREMENTS.md § 11 Feature 001 `##### 6. Testing`, Conversation suite ("The other four tools use an adapter with the same three steps"); Feature 009 `##### 6. Risks`, The stand-ins ("one run against a scratch repository on each host is part of the full integration suite before release")
+- **Description:** `run.py` accepts `--hosts codex,cursor,copilot-cli,antigravity` but skips each with a NOTICE, because only the Claude Code driver exists. The cloud sessions that build this work have none of those four tools installed, so their adapters cannot be built or tested there. No task before the end of the work runs a host other than Claude Code (every smoke run uses the default `--hosts claude-code`), so the gap blocks nothing until the full integration run at delivery-014's gate. Delivery reviews before then accept the gap as this known issue.
+- **See also:** task-365 (builds the four adapters on the maintainer's machine, before task-362); Q144
