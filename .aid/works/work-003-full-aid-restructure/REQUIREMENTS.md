@@ -1671,7 +1671,7 @@ A row leaves the list when what it waits for has landed and its sample passes 3 
 
 | Skills | Covered by |
 |---|---|
-| `aid-orchestrate`, `aid-set-connector`, `aid-config`, `aid-read-ticket`, `aid-research`, `aid-review`, `aid-report`, `aid-monitor` -- no later feature rebuilds or retires them | Feature 002 samples, now (table below) |
+| `aid-orchestrate`, `aid-set-connector`, `aid-config`, `aid-read-ticket`, `aid-research`, `aid-review`, `aid-report`, `aid-monitor` -- no later feature rebuilds or retires them (Feature 009 only renames `aid-config` to `aid-configure`; its questions stay as they are) | Feature 002 samples, now (table below) |
 | `aid-brainstorm`, `aid-describe` | `skill:` rows waiting for Feature 003 |
 | `aid-discover`, `aid-ask`, `aid-update-kb`, `aid-summarize`, `aid-housekeep`, and `aid-create-` / `aid-update-` for `architecture`, `stack`, `testing-strategy`, `cicd`, `roadmap`, `backlog`, `mvp` | rows waiting for Feature 004 |
 | `aid-define`, `aid-specify` | rows waiting for Feature 005 |
