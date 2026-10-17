@@ -466,6 +466,10 @@ review_history:
     event: 'Detail light review delivery-014 (Q136)'
     outcome: 'Grade C (3 MEDIUM, 4 LOW; 1 OOS)'
     notes: 'DN-03 not re-run after the KB task; DN-01 hits in generated pages owned by their source; the old -> new table must precede the pages linking to it; DN-03 without the flag; G10/G12/G4 points; fixes sent to the third architect'
+  - date: '2026-10-17'
+    event: 'Detail full review cycle 1 (Q136; six reviewers: slices A-E plus the cross-document pass)'
+    outcome: 'Grade D+ (merged ledger, 40 rows: 2 HIGH among them; slices A C, B C, C D+, D C, E C+, X C)'
+    notes: 'Spec conflicts to settle (F007 --plan-sync vs PL-06; F008 fork --feedback-add; F004 KB list misses README.md; CONTRIBUTING.md unowned); no stop before the 011-014 research step; test-step claim about work-folder-only changes is false; G12 edge gaps; fixes sent to a fresh architect'
 
 # [A] written by the orchestrator on the work's active branch (single
 #     writer). Append-only audit trail of phase transitions and gate
