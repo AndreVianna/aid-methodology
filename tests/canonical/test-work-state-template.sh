@@ -13,8 +13,8 @@
 #   delivery-blueprint-template.md  -- delivery-level BLUEPRINT (unaffected by FR-3)
 #   task-detail-template.md         -- task-level DETAIL (unaffected by FR-3)
 #
-# Tests (WS01-WS20; WS06/WS11/WS17/WS18 were removed pre-refactor as comment-text
-# assertions and stay removed -- 16 live ids):
+# Tests (WS01-WS26; WS06/WS11/WS17/WS18 were removed pre-refactor as comment-text
+# assertions and stay removed -- 22 live ids):
 #   WS01  work-state-template has the "# Work State --" full-line comment heading
 #         (retargeted: FR-2b retires the `## Pipeline State` markdown heading entirely)
 #   WS02  work-state-template has all 7 pipeline-scalar keys -- ALL SEVEN are now plain
@@ -54,6 +54,14 @@
 #   WS19  aid-describe state-first-run seeds the pipeline scalar keys (lifecycle/phase/
 #         active_skill) -- unchanged in substance, only the dogfood path it resolves changed
 #   WS20  The seed prose does not introduce any new user-facing output -- unchanged
+#   WS21  work-state-template declares `features:` as AUTHORED, not DERIVED
+#   WS22  work-state-template declares `review_history:`
+#   WS23  work-state-template declares the `intent:` block: request / reading / reason /
+#         depth / phases (a block list) / changes
+#   WS24  work-state-template declares the top-level `sources: []` and `write_backs: []`
+#   WS25  no state template carries the retired `ticket_ref` key
+#   WS26  every state template fits the dashboard readers' YAML subset (no flow collection
+#         but [] or {}, no line deeper than the readers keep -- KI-002)
 #
 # SP-20/SP-2/SP-3 additionally require, across every live assertion: no writer-owned key
 # carries a trailing inline comment (D-3: documentation is a full-line comment ABOVE the
@@ -284,6 +292,103 @@ if grep -qE 'Distinct from' "$WORK_STATE" 2>/dev/null; then
 else
     fail "WS22 review_history does not distinguish itself from lifecycle_history -- the two are easily conflated"
 fi
+
+# ---------------------------------------------------------------------------
+# WS23: work-state-template declares the `intent:` block -- how the work reads
+# the user's request -- with its six keys, one level under `intent:`.
+# `phases` is a BLOCK list with at least one `- <phase>` entry: both dashboard
+# readers reject an inline (flow) list, so `phases: [a, b]` would read back
+# as nothing (KI-002). `changes` is the empty re-route log.
+# ---------------------------------------------------------------------------
+INTENT_BLOCK="$(awk '
+    /^intent:[[:space:]]*$/ { inb = 1; next }
+    inb && /^[^[:space:]#]/ { inb = 0 }
+    inb { print }
+' "$WORK_STATE" 2>/dev/null)"
+if grep -qxE 'intent:' "$WORK_STATE" 2>/dev/null; then
+    pass "WS23 work-state-template declares a top-level intent: block"
+else
+    fail "WS23 work-state-template has no top-level 'intent:' line (a block, nothing after the colon)"
+fi
+for key in request reading reason depth; do
+    if grep -qE "^  ${key}: [^[:space:]]" <<<"$INTENT_BLOCK"; then
+        pass "WS23 intent: declares an instantiated $key key"
+    else
+        fail "WS23 intent: is missing an instantiated '  ${key}: <value>' line"
+    fi
+done
+if grep -qxE '  depth: (lite|full)' <<<"$INTENT_BLOCK"; then
+    pass "WS23 intent.depth holds a closed-enum value (lite or full)"
+else
+    fail "WS23 intent.depth is not 'lite' or 'full'"
+fi
+PHASES_ITEMS="$(awk '
+    /^  phases:[[:space:]]*$/ { inp = 1; next }
+    inp && /^    - [^[:space:]]/ { print; next }
+    inp && /^[[:space:]]*#/ { next }
+    inp { inp = 0 }
+' <<<"$INTENT_BLOCK")"
+if grep -qxE '  phases:' <<<"$INTENT_BLOCK" && [[ -n "$PHASES_ITEMS" ]]; then
+    pass "WS23 intent.phases is a block list with at least one '- <phase>' entry"
+else
+    fail "WS23 intent.phases is not a block list ('  phases:' followed by '    - <phase>' lines)"
+fi
+if grep -qxE '  changes: \[\]' <<<"$INTENT_BLOCK"; then
+    pass "WS23 intent: declares an instantiated empty changes: [] list"
+else
+    fail "WS23 intent: is missing the '  changes: []' line"
+fi
+
+# ---------------------------------------------------------------------------
+# WS24: work-state-template declares the work's own sources and its
+# write-back log as TOP-LEVEL empty lists. `write_backs` is top-level rather
+# than a child of `sources[]` so its entries stay within the readers' three
+# levels (KI-002).
+# ---------------------------------------------------------------------------
+for key in sources write_backs; do
+    if grep -qxE "${key}: \[\]" "$WORK_STATE" 2>/dev/null; then
+        pass "WS24 work-state-template declares a top-level ${key}: [] key"
+    else
+        fail "WS24 work-state-template is missing the top-level '${key}: []' line"
+    fi
+done
+
+# ---------------------------------------------------------------------------
+# WS25: no state template carries the retired `ticket_ref` key or its note --
+# a work's tracker items are entries of the one `sources:` list instead.
+# ---------------------------------------------------------------------------
+for tmpl in "$WORK_STATE" "$DELIVERY_STATE" "$TASK_STATE"; do
+    tmpl_name="${tmpl#"$REPO_ROOT/"}"
+    assert_file_not_contains \
+        "$tmpl" \
+        "ticket_ref" \
+        "WS25 $tmpl_name carries no ticket_ref"
+done
+
+# ---------------------------------------------------------------------------
+# WS26: every state template fits the dashboard readers' YAML subset
+# (KI-002): no flow collection other than the literal [] / {} on any key
+# line, and no key deeper than the readers' deepest level (indent level 3,
+# `_MAX_LEVEL` in dashboard/reader/state_schema.py).
+# ---------------------------------------------------------------------------
+for tmpl in "$WORK_STATE" "$DELIVERY_STATE" "$TASK_STATE"; do
+    tmpl_name="${tmpl#"$REPO_ROOT/"}"
+    FLOW_HITS="$(grep -nE '^[^#]*:[[:space:]]*[[{][^]}]' "$tmpl" 2>/dev/null || true)"
+    if [[ -z "$FLOW_HITS" ]]; then
+        pass "WS26 $tmpl_name: no flow collection other than [] or {}"
+    else
+        fail "WS26 $tmpl_name: flow collection(s) the readers reject:"$'\n'"$FLOW_HITS"
+    fi
+    DEEP_HITS="$(awk '
+        /^[[:space:]]*#/ || !NF { next }
+        { match($0, /^ */); if (RLENGTH / 2 > 3) print FNR ": " $0 }
+    ' "$tmpl" 2>/dev/null)"
+    if [[ -z "$DEEP_HITS" ]]; then
+        pass "WS26 $tmpl_name: no key deeper than three levels"
+    else
+        fail "WS26 $tmpl_name: line(s) deeper than the readers keep:"$'\n'"$DEEP_HITS"
+    fi
+done
 
 # ---------------------------------------------------------------------------
 # WS12: delivery-state-template has a `qa:` key (content-breaking retarget:

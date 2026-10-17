@@ -11,16 +11,18 @@
 # STUBBED host-MCP action -- a local mock function that only appends to a log
 # file -- so "acts via the linked connector's host MCP" is exercised WITHOUT
 # any live external call (per task-007's mandate). Structural assertions
-# separately confirm the contract text + the optional `ticket_ref`
-# STATE/SPEC scalar are actually documented/present in canonical/.
+# separately confirm the contract text is documented in canonical/, and that
+# the retired per-unit `ticket_ref` is gone from the state and feature
+# templates (CL08c-CL08f).
 #
 # Traces:
 #   CL01-CL08   Structural -- consumption-protocol.md documents the
 #               `ticket_ref` scalar form, the nearest-ancestor resolution
 #               chains (delivery/feature/task), the "feature outranks delivery"
-#               rationale, and the wired-seams table; the optional `ticket_ref`
-#               scalar/line is present in all 4 lifecycle-unit carriers
-#               (work/delivery/task STATE frontmatter + feature SPEC body)
+#               rationale, and the wired-seams table; CL08c-CL08f: the 4
+#               templates that once carried `ticket_ref` (work/delivery/task
+#               STATE + the feature section) carry it no more -- a work's
+#               tracker items are entries of its one `sources:` list
 #   CL09-CL16   Resolution -- own ticket_ref wins at every level (work/
 #               delivery/feature/task), ignoring any ancestor value
 #   CL17-CL20   Resolution -- delivery inherits from work when it has none of
@@ -101,28 +103,26 @@ for seam in "aid-describe" "aid-specify" "aid-plan" "aid-fix" "aid-ask" "aid-res
         "CL08b Wired seams table references $seam"
 done
 
-# task-015 addendum (SP-16/AC-8): retargeted from *-state-template.md to the
-# one-zone *-state-template.yml (work-009 task-002). The instantiated value is
-# now the bare sentinel `ticket_ref: --` (D-2/D-5 -- no live external id in a
-# never-touched template), so the old single-string assertion (which matched
-# the OLD frontmatter's un-instantiated placeholder value directly) no longer
-# has a like-for-like target; the `{connector-stem}:{external-id}` format is
-# still documented, one line above the key, as a full-line comment (D-3).
-# Each check now asserts BOTH halves: the key itself, and the format comment.
-assert_file_contains "$WORK_TPL" "ticket_ref: --" \
-    "CL08c work-state-template.yml carries the optional ticket_ref key"
-assert_file_contains "$WORK_TPL" "{connector-stem}:{external-id}" \
-    "CL08c2 work-state-template.yml documents the ticket_ref value format"
-assert_file_contains "$DELIVERY_TPL" "ticket_ref: --" \
-    "CL08d delivery-state-template.yml carries the optional ticket_ref key"
-assert_file_contains "$DELIVERY_TPL" "{connector-stem}:{external-id}" \
-    "CL08d2 delivery-state-template.yml documents the ticket_ref value format"
-assert_file_contains "$TASK_TPL" "ticket_ref: --" \
-    "CL08e task-state-template.yml carries the optional ticket_ref key"
-assert_file_contains "$TASK_TPL" "{connector-stem}:{external-id}" \
-    "CL08e2 task-state-template.yml documents the ticket_ref value format"
-assert_file_contains "$FEATURE_TPL" '**Ticket:** {connector-stem}:{external-id}' \
-    "CL08f the feature section carries the optional Ticket line (a body line, not frontmatter)"
+# CL08c-CL08f INVERTED: the per-unit `ticket_ref` is retired. A work's tracker
+# items are entries of the one work-level `sources:` list (CL08c2 asserts the
+# key; test-work-state-template.sh WS24 asserts its shape), so none of the four
+# templates that once carried `ticket_ref` -- the key, its
+# `{connector-stem}:{external-id}` format note, or the feature `**Ticket:**`
+# line -- may carry it again.
+assert_file_not_contains "$WORK_TPL" "ticket_ref" \
+    "CL08c work-state-template.yml carries no ticket_ref (retired)"
+assert_file_contains "$WORK_TPL" "sources: []" \
+    "CL08c2 work-state-template.yml carries the work-level sources: list that replaces it"
+assert_file_not_contains "$DELIVERY_TPL" "ticket_ref" \
+    "CL08d delivery-state-template.yml carries no ticket_ref (retired)"
+assert_file_not_contains "$DELIVERY_TPL" "{connector-stem}:{external-id}" \
+    "CL08d2 delivery-state-template.yml carries no ticket_ref value-format note"
+assert_file_not_contains "$TASK_TPL" "ticket_ref" \
+    "CL08e task-state-template.yml carries no ticket_ref (retired)"
+assert_file_not_contains "$TASK_TPL" "{connector-stem}:{external-id}" \
+    "CL08e2 task-state-template.yml carries no ticket_ref value-format note"
+assert_file_not_contains "$FEATURE_TPL" '**Ticket:**' \
+    "CL08f the feature section carries no Ticket line (retired)"
 
 # ===========================================================================
 # resolve_ticket_ref UNIT_TYPE OWN FEATURE DELIVERY WORK HAS_OWNING_FEATURE

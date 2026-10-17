@@ -37,8 +37,9 @@
 #                        aid-execute Target row, linkage + nearest-ancestor
 #                        sections retained, reads-delegate / writes-route
 #                        documented inline, Worked example rewritten
-#   T087-T098  AC-10/NFR-3 -- the four ticket_ref-carrying templates still
-#                        carry their documented carrier; ticket_ref is
+#   T087-T098  AC-10/NFR-3 -- the four templates that once carried ticket_ref
+#                        carry it no more (a work's tracker items are entries
+#                        of its one sources: list); ticket_ref is
 #                        documented as user-supplied-only; silent-skip wording
 #                        present at five ingest/enrich seams (T092, T097-T098)
 #                        and at the connector-gated suggestion sites, incl.
@@ -89,10 +90,10 @@ REPORT_SKILL="${REPO_ROOT}/canonical/skills/aid-report/SKILL.md"
 # -- AC-11: shared reference --
 CONSUMPTION_PROTOCOL="${REPO_ROOT}/canonical/aid/templates/connectors/consumption-protocol.md"
 
-# -- AC-10/NFR-3: the four ticket_ref-carrying templates (FR-11, untouched) --
-# task-015 addendum (SP-16/AC-8): retargeted to the *-state-template.yml
-# one-zone shape (work-009 task-002); the ticket_ref KEY itself is untouched
-# by that conversion (FR-11 still holds), only its file extension moved.
+# -- AC-10/NFR-3: the four templates that once carried ticket_ref --
+# The work, delivery and task state templates and the feature section of the
+# requirements template no longer carry it: a work's tracker items are
+# entries of the work-level sources: list (work-state-template.yml).
 WORK_STATE_TPL="${REPO_ROOT}/canonical/aid/templates/work-state-template.yml"
 DELIVERY_STATE_TPL="${REPO_ROOT}/canonical/aid/templates/delivery-state-template.yml"
 TASK_STATE_TPL="${REPO_ROOT}/canonical/aid/templates/task-state-template.yml"
@@ -378,16 +379,17 @@ assert_file_contains "$CONSUMPTION_PROTOCOL" '/aid-create-ticket' "T085 consumpt
 assert_file_contains "$CONSUMPTION_PROTOCOL" '/aid-update-ticket' "T086 consumption-protocol.md: writes-route documents /aid-update-ticket"
 
 # ===========================================================================
-# T087-T097  AC-10 / NFR-3 -- the four ticket_ref-carrying templates are
-# unchanged (still carry their documented carrier); ticket_ref is documented
+# T087-T097  AC-10 / NFR-3 -- the four templates that once carried ticket_ref
+# carry it no more (T087-T090; the work-level sources: list replaces it, and
+# test-work-state-template.sh WS24 asserts that key); ticket_ref is documented
 # as user-supplied-only; silent-skip wording present at representative seams
 # (T092, T096-T097) and at the three remaining PM-TOOL suggestion sites
 # (T093-T095).
 # ===========================================================================
-assert_file_contains "$WORK_STATE_TPL" 'ticket_ref' "T087 work-state-template.yml still carries the ticket_ref key (FR-11 untouched)"
-assert_file_contains "$DELIVERY_STATE_TPL" 'ticket_ref' "T088 delivery-state-template.yml still carries the ticket_ref key (FR-11 untouched)"
-assert_file_contains "$TASK_STATE_TPL" 'ticket_ref' "T089 task-state-template.yml still carries the ticket_ref key (FR-11 untouched)"
-assert_file_contains "$FEATURE_TPL" 'Ticket:' "T090 the feature section still carries the '> **Ticket:**' line (FR-11 untouched)"
+assert_file_not_contains "$WORK_STATE_TPL" 'ticket_ref' "T087 INVERTED: work-state-template.yml carries no ticket_ref (a work's tracker items are sources: entries)"
+assert_file_not_contains "$DELIVERY_STATE_TPL" 'ticket_ref' "T088 INVERTED: delivery-state-template.yml carries no ticket_ref"
+assert_file_not_contains "$TASK_STATE_TPL" 'ticket_ref' "T089 INVERTED: task-state-template.yml carries no ticket_ref"
+assert_file_not_contains "$FEATURE_TPL" '**Ticket:**' "T090 INVERTED: the feature section carries no '> **Ticket:**' line"
 assert_wrapped_contains "$CONSUMPTION_PROTOCOL" 'sourced from a **user-supplied ref**' "T091 consumption-protocol.md: ticket_ref is documented as populated only from a user-supplied ref"
 assert_wrapped_contains "$DESCRIBE_FIRSTRUN" 'Skip silently when no such ticket is named or no matching connector is catalogued' "T092 aid-describe state-first-run.md: silent-skip on no-connector/no-ticket_ref is documented"
 

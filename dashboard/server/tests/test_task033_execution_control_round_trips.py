@@ -363,7 +363,7 @@ def _seed_pipeline_state(aid: Path, work_id: str, lifecycle: str = "Running") ->
         f"# Work State -- {work_id}\n"
         f"lifecycle: {lifecycle}\n"
         "updated: '2026-01-01T00:00:00Z'\n"
-        "ticket_ref: --\n"
+        "sources: []\n"
         "pause_reason: --\n"
         "block_reason: --\n"
         "block_artifact: --\n",

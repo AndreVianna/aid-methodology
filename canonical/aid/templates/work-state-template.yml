@@ -7,8 +7,9 @@
 #     lifecycle/gate scalars. Written ONLY by `writeback-state.sh` (surgical
 #     single-key write; every other line is reproduced byte-for-byte).
 #   AUTHORED (single-writer, YAML structures under a key, one key per former
-#     markdown section) -- interview, features, lifecycle_history, deploy,
-#     delivery_lifecycle (incl. its tasks_lifecycle child), delivery_gate, qa.
+#     markdown section) -- intent, sources, write_backs, interview, features,
+#     lifecycle_history, deploy, delivery_lifecycle (incl. its
+#     tasks_lifecycle child), delivery_gate, qa.
 #   DERIVED (read-only, assembled at read time) -- Plan/Deliveries, Tasks
 #     State, Delivery Gates, Calibration Log, Dispatches. NOT represented
 #     here -- no key at all. A reader seeing no key derives the same union it
@@ -61,15 +62,16 @@
 # gate_grade, gate_timestamp (the four flattened-only gate/delivery scalars),
 # minus delivery_lifecycle, tasks_lifecycle, delivery_gate (each lives in its
 # own delivery/task file instead), and minus qa (DERIVED on the full path).
-# `features` is NOT on that list: a feature is a work-level concept on both
-# layouts, so the key is present either way.
+# `features`, `intent`, `sources` and `write_backs` are NOT on that list:
+# each is a work-level concept on both layouts, so the key is present either
+# way.
 #
-# Optional `ticket_ref` scalar (top-level, both layouts): links this work to
-# an external tracker item ({connector-stem}:{external-id}, e.g.
-# jira:PROJ-123). Left `--` when this work is not linked; readers/dashboard
-# ignore it. Nearest-ancestor resolution + MCP-first consumption contract:
-# canonical/aid/templates/connectors/consumption-protocol.md. `ticket_ref` is
-# a lifecycle-unit field only -- the connector descriptor schema is unchanged.
+# Shape rule (both dashboard readers): block style only, at most three key
+# levels deep. A flow list or mapping other than the literal `[]` / `{}` is
+# rejected, a key nested deeper than three levels is skipped, and a comment
+# on the line of a key that opens a list or mapping empties that key -- each
+# with only a parse warning. So every new key below is documented in
+# full-line comments above it, never on the key's own line.
 #
 # STATE ADVANCEMENT ORDERING (authoritative source; schemas.md inline copy is downstream)
 #
@@ -125,8 +127,6 @@ pause_reason: --
 block_reason: --
 # [W] e.g. IMPEDIMENT-task-NNN.md, or the failed gate
 block_artifact: --
-# [W] {connector-stem}:{external-id} | -- -- OPTIONAL; e.g. jira:PROJ-123; see the ticket_ref note above
-ticket_ref: --
 
 # Flattened single-delivery works only -- omit these 4 keys for full works.
 # [W] Pending-Spec | Specified | Executing | Gated | Done | Blocked
@@ -137,6 +137,57 @@ gate_tier: Small
 gate_grade: Pending
 # [W]
 gate_timestamp: --
+
+# [A] how this work reads the user's request; written by /aid-orchestrate
+#     on this work's active branch (single writer) when it starts or resumes
+#     the work, and re-written when the work is re-routed. The values below
+#     are the rest values until the first write: no reading yet, and the
+#     default route of a clear request.
+#   request: the user's words, short (quoted)
+#   reading: bug fix | refactor | change | new capability | document |
+#            operational | knowledge update | investigation
+#   reason:  one line on why the reading holds (quoted)
+#   depth:   lite | full -- how much the user reviews
+#   phases:  the phases this work runs, in order, one `- <phase>` line each
+#            (block style: the readers reject an inline list). Names are
+#            the routing phases -- Preparation, Definition, Specification,
+#            Planning, Building, CI -- not the `phase:` enum above.
+#   changes: one entry per re-route, appended -- at / from / to / why
+intent:
+  request: --
+  reading: --
+  reason: --
+  depth: lite
+  phases:
+    - Specification
+    - Planning
+    - Building
+    - CI
+  changes: []
+
+# [A] the work's own sources: one entry per ticket, issue, document, link
+#     or file pulled into THIS work, at any phase, appended when it is pulled
+#     in (a tracker item through /aid-read-ticket; a file or link read
+#     directly). Single writer: this work's active branch. Project sources
+#     (.aid/connectors/INDEX.md, .aid/knowledge/external-sources.md) are
+#     never listed here -- every work uses them when needed, unattached.
+#   - ref:    connector-stem:id (e.g. jira:PROJ-123), a URL, or a
+#             repo-relative path (quoted)
+#     kind:   ticket | issue | document | link | file
+#     added:  ISO-8601 UTC timestamp (quoted)
+#     phase:  the phase the work was in when the source entered
+#     effect: what applying it did, e.g. 'answered Q4, Q6; raised Q9'
+sources: []
+
+# [A] one entry per write-back to a source, made only on the user's request
+#     through /aid-update-ticket (preview and confirm). Single writer: this
+#     work's active branch. A top-level list rather than a child of
+#     sources[], so every key stays within the readers' three levels.
+#   - at:     ISO-8601 UTC timestamp (quoted)
+#     source: the sources[].ref written to
+#     part:   the /aid-update-ticket part written (e.g. comment, attachment)
+#     files:  the files attached, as one comma-separated string (quoted)
+write_backs: []
 
 # [A] updated by aid-describe as each section is completed.
 #   state: In Progress | Complete | Approved
