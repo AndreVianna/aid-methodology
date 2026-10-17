@@ -1,0 +1,809 @@
+#!/usr/bin/env python3
+"""Conversation test suite runner (NFR-T; REQUIREMENTS.md section 11 Feature 001, section 6 Testing).
+
+Purpose: drive the agent under test through scripted sample conversations, capture every
+run, evaluate each sample's checks, and have an independent judge rule on the transcript.
+Standard library only. Runs on demand; never part of run-all.sh or CI.
+
+Usage:
+  python3 tests/conversation/run.py --feature NNN [--sample ID] [--hosts claude-code,...]
+      [--runs 3] [--samples-dir DIR] [--fixtures-dir DIR] [--briefs-dir DIR]
+  python3 tests/conversation/run.py --feature NNN [--sample ID] --validate
+
+Exit codes:
+  0  every run passes (--validate: every selected sample parses)
+  1  any failure (a run failed, or --validate or a malformed sample found an error)
+  2  invocation error (bad arguments, unknown sample or host, missing briefs, no claude)
+
+Run folder: .aid/.temp/conversation-tests/<run-id>/<sample>/run-<n>/ holding transcript.jsonl,
+transcript.md, files.diff, checks.txt and ledger.md (the judge's ledger). The judge's ledger is
+also saved in the fixture's .aid/.temp/review-pending/.
+
+Sample file (samples/feature-NNN/<id>.md):
+  frontmatter        id, covers, fixture (required); any other key is kept and ignored
+                     (Feature 002's samples add skills:)
+  ## User            the first paragraph is the opening message; the whole section is the persona
+  ## Answer sheet    all the simulated user knows
+  ## Expected outcome  items the judge rules on one by one
+  ## Must not          items the judge rules on one by one
+  ## Checks            one check per line, evaluated before judging
+
+Checks grammar (one per line; a leading "- " and surrounding backticks are ignored):
+  exists PATH                  PATH exists in the fixture after the run
+  absent PATH                  nothing exists at PATH in the fixture after the run
+  contains PATH TEXT           the file PATH contains TEXT (TEXT is the rest of the line; one
+                               pair of matching quotes around it is removed)
+  no-new-dir PATH              no directory is created at PATH or directly inside it
+  no-push                      no Bash call runs git push
+  tool-called NAME [GLOB]      the transcript has a call to tool NAME whose target matches GLOB
+  tool-not-called NAME [GLOB]  the transcript has no such call
+  Targets: Skill -> the skill name; Task -> the subagent type; Bash -> the command;
+  Read/Edit/Write -> the file path (relative to the fixture when inside it); Glob/Grep -> the pattern.
+
+Driver (Claude Code): each agent turn is one `claude -p --output-format stream-json` call in the
+fixture, with --permission-mode acceptEdits, --tools and --allowedTools
+"Read,Glob,Grep,Edit,Write,Bash,Skill,Task", --strict-mcp-config, --setting-sources project, and
+--resume <session-id> from turn 2 on. The prompt goes on stdin, because --tools is variadic.
+Tool names checked against the installed CLI (2.1.302; the spec names 2.1.296): `claude --help` does not
+list built-in tool names, so the check used the CLI's own text. Its model-invoked skill calls are
+`"name":"Skill"` with the skill name as the target, so Skill is confirmed. It refers to "the Task
+tool" with a `subagent_type` input, so Task is confirmed, but the same text also says "Agent/Task
+tool": a newer alias may exist, and a live run should confirm the name in use.
+Simulated user and judge: `claude -p --tools "" --safe-mode --strict-mcp-config --system-prompt
+<brief>` from an empty temporary folder, the prompt on stdin.
+Limits: 12 user turns (the run fails when no <<END>> comes within them); 600 s per claude call.
+Other hosts: a start/send/read adapter per host (ADAPTERS). Only claude-code has one in this build;
+a host without one is skipped with a NOTICE.
+"""
+
+from __future__ import annotations
+
+import argparse
+import difflib
+import fnmatch
+import json
+import os
+import re
+import shutil
+import subprocess
+import sys
+import tempfile
+from dataclasses import dataclass
+from datetime import datetime, timezone
+from pathlib import Path
+
+ROOT = Path(__file__).resolve().parents[2]
+DEFAULT_SAMPLES_DIR = ROOT / "tests/conversation/samples"
+DEFAULT_FIXTURES_DIR = ROOT / "tests/conversation/fixtures"
+DEFAULT_BRIEFS_DIR = ROOT / "tests/conversation"
+RUN_ROOT = ROOT / ".aid/.temp/conversation-tests"
+
+TURN_CAP = 12
+TURN_TIMEOUT = 600
+END_MARK = "<<END>>"
+AGENT_TOOLS = "Read,Glob,Grep,Edit,Write,Bash,Skill,Task"
+REQUIRED_KEYS = ("id", "covers", "fixture")
+REQUIRED_SECTIONS = ("User", "Answer sheet", "Expected outcome", "Must not", "Checks")
+CHECK_VERBS = ("exists", "absent", "contains", "no-new-dir", "no-push", "tool-called", "tool-not-called")
+CREDENTIAL_RE = re.compile(r"(?i)(credential|secret|token)|\.(pem|key)$")
+LEDGER_COLUMNS = ("#", "Severity", "Status", "Doc", "Line", "Description", "Evidence")
+DEFAULT_HOSTS = ("claude-code",)
+KNOWN_HOSTS = ("claude-code", "codex", "cursor", "copilot-cli", "antigravity")
+
+
+class UsageError(Exception):
+    """An invocation or setup error: exit 2."""
+
+
+class RunError(Exception):
+    """A run-level failure: that run fails, and the harness goes on to capture and judge it."""
+
+
+# ---------------------------------------------------------------- sample parsing
+
+
+def split_frontmatter(text: str) -> tuple[dict[str, str], str]:
+    lines = text.splitlines()
+    if not lines or lines[0].strip() != "---":
+        raise ValueError("no frontmatter (the file must open with ---)")
+    end = next((i for i in range(1, len(lines)) if lines[i].strip() == "---"), None)
+    if end is None:
+        raise ValueError("frontmatter is not closed by ---")
+    meta: dict[str, str] = {}
+    for raw in lines[1:end]:
+        if not raw.strip() or raw[0] in " \t-":
+            continue  # a continuation line of a list value
+        m = re.match(r"^([A-Za-z][\w-]*):\s*(.*)$", raw)
+        if not m:
+            raise ValueError(f"malformed frontmatter line: {raw!r}")
+        meta[m.group(1)] = m.group(2).strip()
+    return meta, "\n".join(lines[end + 1 :])
+
+
+def split_sections(body: str) -> dict[str, str]:
+    sections: dict[str, list[str]] = {}
+    current = None
+    for line in body.splitlines():
+        m = re.match(r"^## (.+?)\s*$", line)
+        if m:
+            current = m.group(1)
+            sections.setdefault(current, [])
+        elif current is not None:
+            sections[current].append(line)
+    return {name: "\n".join(lines).strip("\n") for name, lines in sections.items()}
+
+
+def parse_check(line: str) -> dict:
+    text = line.strip()
+    if text.startswith("- "):
+        text = text[2:].strip()
+    if len(text) >= 2 and text[0] == text[-1] == "`":
+        text = text[1:-1].strip()
+    parts = text.split(None, 1)
+    verb = parts[0] if parts else ""
+    rest = parts[1].strip() if len(parts) > 1 else ""
+    args = rest.split()
+    if verb not in CHECK_VERBS:
+        raise ValueError(f"unknown check {line.strip()!r}")
+    if verb in ("exists", "absent", "no-new-dir"):
+        if len(args) != 1:
+            raise ValueError(f"{verb} takes one PATH: {line.strip()!r}")
+        return {"verb": verb, "args": args, "label": f"{verb} {args[0]}"}
+    if verb == "contains":
+        pieces = rest.split(None, 1)
+        if len(pieces) != 2 or not pieces[1].strip():
+            raise ValueError(f"contains takes PATH and TEXT: {line.strip()!r}")
+        found = pieces[1].strip()
+        if len(found) >= 2 and found[0] == found[-1] and found[0] in "\"'`":
+            found = found[1:-1]
+        return {"verb": verb, "args": [pieces[0], found], "label": f"contains {pieces[0]} {found}"}
+    if verb == "no-push":
+        if args:
+            raise ValueError(f"no-push takes no arguments: {line.strip()!r}")
+        return {"verb": verb, "args": [], "label": "no-push"}
+    if len(args) not in (1, 2):
+        raise ValueError(f"{verb} takes NAME [GLOB]: {line.strip()!r}")
+    return {"verb": verb, "args": args, "label": " ".join([verb, *args])}
+
+
+@dataclass
+class Sample:
+    path: Path
+    id: str
+    meta: dict[str, str]
+    sections: dict[str, str]
+    checks: list[dict]
+
+
+def load_sample(path: Path) -> Sample:
+    meta, body = split_frontmatter(path.read_text(encoding="utf-8"))
+    missing = [key for key in REQUIRED_KEYS if not meta.get(key)]
+    if missing:
+        raise ValueError(f"frontmatter lacks {', '.join(missing)}")
+    sections = split_sections(body)
+    missing = [name for name in REQUIRED_SECTIONS if name not in sections]
+    if missing:
+        raise ValueError("missing section(s): " + ", ".join(f"## {name}" for name in missing))
+    checks = [parse_check(line) for line in sections["Checks"].splitlines() if line.strip()]
+    return Sample(path=path, id=meta["id"], meta=meta, sections=sections, checks=checks)
+
+
+def sample_ids_match(path: Path, wanted: str) -> bool:
+    if path.stem == wanted:
+        return True
+    try:
+        meta, _ = split_frontmatter(path.read_text(encoding="utf-8"))
+    except (OSError, ValueError):
+        return False
+    return meta.get("id") == wanted
+
+
+def select_samples(samples_dir: Path, feature: str, sample_id: str | None) -> list[Path]:
+    feature_dir = samples_dir / f"feature-{feature}"
+    if not feature_dir.is_dir():
+        raise UsageError(f"no samples folder: {feature_dir}")
+    files = sorted(feature_dir.glob("*.md"))
+    if not files:
+        raise UsageError(f"no samples in {feature_dir}")
+    if sample_id is None:
+        return files
+    selected = [f for f in files if sample_ids_match(f, sample_id)]
+    if not selected:
+        raise UsageError(f"no sample {sample_id!r} in {feature_dir}")
+    return selected
+
+
+# ---------------------------------------------------------------- driver: claude
+
+
+def target_of(name: str, inp: dict, base: str) -> str:
+    if name == "Skill":
+        target = inp.get("skill", "")
+    elif name == "Task":
+        target = inp.get("subagent_type") or inp.get("description", "")
+    elif name == "Bash":
+        target = inp.get("command", "")
+    elif name in ("Read", "Edit", "Write", "MultiEdit", "NotebookEdit"):
+        target = inp.get("file_path") or inp.get("notebook_path") or inp.get("path", "")
+    elif name in ("Glob", "Grep"):
+        target = inp.get("pattern") or inp.get("path", "")
+    else:
+        target = next((v for v in inp.values() if isinstance(v, str)), "")
+    target = str(target)
+    if base and target.startswith(base + "/"):
+        target = target[len(base) + 1 :]
+    return target
+
+
+def read_stream(stdout: str, base: str = "") -> tuple[str | None, str, list[dict]]:
+    """Return (session_id, reply text, tool calls) from stream-json output, or the plain text."""
+    session: str | None = None
+    texts: list[str] = []
+    tools: list[dict] = []
+    saw_json = False
+    for line in stdout.splitlines():
+        line = line.strip()
+        if not line.startswith("{"):
+            continue
+        try:
+            obj = json.loads(line)
+        except ValueError:
+            continue
+        if not isinstance(obj, dict):
+            continue
+        saw_json = True
+        session = session or obj.get("session_id")
+        kind = obj.get("type")
+        if kind == "assistant":
+            for block in (obj.get("message") or {}).get("content") or []:
+                if block.get("type") == "text":
+                    texts.append(block.get("text", ""))
+                elif block.get("type") == "tool_use":
+                    name = block.get("name", "")
+                    tools.append({"name": name, "target": target_of(name, block.get("input") or {}, base)})
+        elif kind == "tool_use":
+            name = obj.get("name", "")
+            tools.append({"name": name, "target": target_of(name, obj.get("input") or {}, base)})
+        elif kind == "result" and not texts and isinstance(obj.get("result"), str):
+            texts.append(obj["result"])
+    if not saw_json:
+        return None, stdout.strip(), []
+    return session, "\n\n".join(t for t in texts if t).strip(), tools
+
+
+def run_claude(args: list[str], *, cwd: Path, env: dict, stdin: str) -> str:
+    try:
+        proc = subprocess.run(
+            ["claude", *args],
+            cwd=cwd,
+            env=env,
+            input=stdin,
+            capture_output=True,
+            text=True,
+            encoding="utf-8",
+            errors="replace",
+            timeout=TURN_TIMEOUT,
+        )
+    except subprocess.TimeoutExpired:
+        raise RunError(f"claude call timed out after {TURN_TIMEOUT} s")
+    except OSError as exc:
+        raise RunError(f"claude could not start: {exc}")
+    if proc.returncode != 0:
+        tail = (proc.stderr or proc.stdout or "").strip()[-400:]
+        raise RunError(f"claude exited {proc.returncode}: {tail}")
+    return proc.stdout
+
+
+class ClaudeCodeAgent:
+    """start/send/read adapter for the agent under test: one `claude -p` call per turn."""
+
+    def __init__(self, fixture: Path, env: dict):
+        self.fixture = fixture
+        self.env = env
+        self.session_id: str | None = None
+
+    def start(self) -> None:
+        self.session_id = None
+
+    def send(self, message: str) -> tuple[str, list[dict]]:
+        args = [
+            "-p",
+            "--output-format", "stream-json",
+            "--verbose",
+            "--permission-mode", "acceptEdits",
+            "--tools", AGENT_TOOLS,
+            "--allowedTools", AGENT_TOOLS,
+            "--strict-mcp-config",
+            "--setting-sources", "project",
+        ]
+        if self.session_id:
+            args += ["--resume", self.session_id]
+        out = run_claude(args, cwd=self.fixture, env=self.env, stdin=message)
+        session, text, tools = read_stream(out, str(self.fixture))
+        if session and not self.session_id:
+            self.session_id = session
+        if not self.session_id:
+            raise RunError("the agent turn returned no session id, so the next turn cannot resume")
+        return text, tools
+
+
+# Other hosts: a start/send/read adapter per host would go here. None is verified in this build
+# (no codex, cursor-agent or copilot CLI is installed to check its non-interactive mode), so every
+# host other than claude-code is skipped with a NOTICE.
+ADAPTERS: dict[str, type] = {"claude-code": ClaudeCodeAgent}
+
+
+def helper_call(prompt: str, system: str, *, cwd: Path, env: dict) -> str:
+    """One text-only claude call: the simulated user and the judge (no tools, no MCP, safe mode)."""
+    args = [
+        "-p",
+        "--output-format", "text",
+        "--tools", "",
+        "--safe-mode",
+        "--strict-mcp-config",
+        "--system-prompt", system,
+    ]
+    out = run_claude(args, cwd=cwd, env=env, stdin=prompt)
+    return read_stream(out)[1]
+
+
+# ---------------------------------------------------------------- fixture and state
+
+
+def base_env(home: Path) -> dict:
+    env = {k: v for k, v in os.environ.items() if k != "CLAUDE_CONFIG_DIR"}
+    env["HOME"] = str(home)
+    env["AID_NO_UPDATE_CHECK"] = "1"
+    return env
+
+
+def git_in(fixture: Path, *args: str) -> None:
+    cmd = ["git", "-C", str(fixture), "-c", "user.name=conversation", "-c", "user.email=conversation@local", *args]
+    proc = subprocess.run(cmd, capture_output=True, text=True)
+    if proc.returncode != 0:
+        raise RunError(f"git {' '.join(args)} failed: {proc.stderr.strip()[-300:]}")
+
+
+def stage_bundle(dest: Path) -> None:
+    lib = ROOT / "tests/lib/bundle.sh"
+    proc = subprocess.run(
+        ["bash", "-c", 'source "$1" && aid_test_stage_bundle "$2"', "stage", str(lib), str(dest)],
+        cwd=ROOT,
+        capture_output=True,
+        text=True,
+    )
+    if proc.returncode != 0:
+        raise UsageError(f"staging the AID bundle failed: {(proc.stderr or proc.stdout).strip()[-400:]}")
+
+
+def build_fixture(sample: Sample, fixtures_dir: Path, bundle: Path, real_home: Path, work: Path) -> tuple[Path, Path]:
+    source = fixtures_dir / sample.meta["fixture"]
+    if not source.is_dir():
+        raise RunError(f"fixture folder not found: {source}")
+    fixture = work / "project"
+    home = work / "home"
+    state = work / "aid-state"
+    shutil.copytree(source, fixture, symlinks=True)
+    (home / ".claude").mkdir(parents=True)
+    state.mkdir()
+    creds = real_home / ".claude" / ".credentials.json"
+    if creds.is_file():
+        shutil.copy2(creds, home / ".claude" / ".credentials.json")
+    env = base_env(home)
+    env["AID_HOME"] = str(state)
+    proc = subprocess.run(
+        ["bash", str(ROOT / "bin/aid"), "add", "claude-code", "--target", str(fixture), "--from-bundle", str(bundle)],
+        cwd=fixture,
+        env=env,
+        capture_output=True,
+        text=True,
+        timeout=TURN_TIMEOUT,
+    )
+    if proc.returncode != 0:
+        raise RunError("AID install into the fixture failed: " + (proc.stdout + proc.stderr).strip()[-400:])
+    git_in(fixture, "init", "-q")
+    git_in(fixture, "add", "-A")
+    git_in(fixture, "commit", "-q", "--allow-empty", "-m", "fixture baseline")
+    return fixture, home
+
+
+# ---------------------------------------------------------------- capture
+
+
+def fixture_skip(rel: str, is_dir: bool) -> bool:
+    return rel == ".git" or rel.startswith(".git/")
+
+
+def home_skip(rel: str, is_dir: bool) -> bool:
+    if rel == ".claude" or rel.startswith(".claude/") or rel == ".claude.json":
+        return True
+    return bool(CREDENTIAL_RE.search(os.path.basename(rel)))
+
+
+def snapshot(root: Path, skip) -> tuple[dict[str, bytes], set[str]]:
+    files: dict[str, bytes] = {}
+    dirs: set[str] = set()
+    for dirpath, dirnames, filenames in os.walk(root):
+        here = Path(dirpath)
+        rel_here = here.relative_to(root)
+        kept = []
+        for name in dirnames:
+            rel = (rel_here / name).as_posix()
+            if skip(rel, True) or (here / name).is_symlink():
+                continue
+            kept.append(name)
+            dirs.add(rel)
+        dirnames[:] = kept
+        for name in filenames:
+            rel = (rel_here / name).as_posix()
+            path = here / name
+            if skip(rel, False) or path.is_symlink() or not path.is_file():
+                continue
+            files[rel] = path.read_bytes()
+    return files, dirs
+
+
+def capture(fixture: Path, home: Path) -> tuple[dict[str, bytes], set[str]]:
+    fixture_files, fixture_dirs = snapshot(fixture, fixture_skip)
+    home_files, _ = snapshot(home, home_skip)
+    state = {f"fixture/{k}": v for k, v in fixture_files.items()}
+    state.update({f"home/{k}": v for k, v in home_files.items()})
+    return state, fixture_dirs
+
+
+def is_binary(data: bytes) -> bool:
+    if b"\0" in data:
+        return True
+    try:
+        data.decode("utf-8")
+    except UnicodeDecodeError:
+        return True
+    return False
+
+
+def build_diff(before: dict[str, bytes], after: dict[str, bytes]) -> str:
+    chunks: list[str] = []
+    for rel in sorted(set(before) | set(after)):
+        old, new = before.get(rel), after.get(rel)
+        if old == new:
+            continue
+        if (old is not None and is_binary(old)) or (new is not None and is_binary(new)):
+            if old is None:
+                chunks.append(f"Binary file {rel} added ({len(new)} bytes)\n")
+            elif new is None:
+                chunks.append(f"Binary file {rel} removed ({len(old)} bytes)\n")
+            else:
+                chunks.append(f"Binary file {rel} changed ({len(old)} -> {len(new)} bytes)\n")
+            continue
+        old_lines = (old or b"").decode("utf-8").splitlines(keepends=True)
+        new_lines = (new or b"").decode("utf-8").splitlines(keepends=True)
+        text = "".join(
+            difflib.unified_diff(
+                old_lines,
+                new_lines,
+                fromfile="/dev/null" if old is None else f"a/{rel}",
+                tofile="/dev/null" if new is None else f"b/{rel}",
+            )
+        )
+        if text and not text.endswith("\n"):
+            text += "\n"
+        chunks.append(text)
+    return "".join(chunks)
+
+
+# ---------------------------------------------------------------- checks
+
+
+def inside(fixture: Path, rel: str) -> Path:
+    target = (fixture / rel).resolve()
+    if fixture.resolve() not in (target, *target.parents):
+        raise ValueError(f"path leaves the fixture: {rel}")
+    return target
+
+
+def run_checks(checks: list[dict], fixture: Path, dirs_before: set[str], dirs_after: set[str], tools: list[dict]):
+    results: list[tuple[str, bool, str]] = []
+    for check in checks:
+        verb, args = check["verb"], check["args"]
+        try:
+            if verb in ("exists", "absent", "contains"):
+                path = inside(fixture, args[0])
+            if verb == "exists":
+                ok, detail = path.exists(), "" if path.exists() else "missing"
+            elif verb == "absent":
+                ok, detail = not path.exists(), "" if not path.exists() else "present"
+            elif verb == "contains":
+                text = path.read_text(encoding="utf-8", errors="replace") if path.is_file() else None
+                ok = text is not None and args[1] in text
+                detail = "" if ok else ("no such file" if text is None else "text not found")
+            elif verb == "no-new-dir":
+                target = args[0].rstrip("/")
+                bad = [d for d in sorted(dirs_after - dirs_before) if d == target or os.path.dirname(d) == target]
+                ok, detail = not bad, "" if not bad else "created: " + ", ".join(bad)
+            elif verb == "no-push":
+                bad = [t["target"] for t in tools if t["name"] == "Bash" and re.search(r"\bgit\b.*\bpush\b", t["target"])]
+                ok, detail = not bad, "" if not bad else "push call: " + bad[0]
+            else:
+                name = args[0]
+                glob = args[1] if len(args) == 2 else None
+                hits = [t for t in tools if t["name"] == name and (glob is None or fnmatch.fnmatchcase(t["target"], glob))]
+                called = bool(hits)
+                ok = called if verb == "tool-called" else not called
+                detail = "" if ok else ("no matching call" if verb == "tool-called" else f"{len(hits)} matching call(s)")
+        except (OSError, ValueError) as exc:
+            ok, detail = False, str(exc)
+        results.append((check["label"], ok, detail))
+    return results
+
+
+def render_checks(results: list[tuple[str, bool, str]]) -> str:
+    if not results:
+        return "(no checks)\n"
+    lines = []
+    for label, ok, detail in results:
+        mark = "PASS" if ok else "FAIL"
+        lines.append(f"{mark} {label}" + (f" -- {detail}" if detail and not ok else ""))
+    return "\n".join(lines) + "\n"
+
+
+# ---------------------------------------------------------------- conversation and judge
+
+
+def opening_message(sample: Sample) -> str:
+    return re.split(r"\n\s*\n", sample.sections["User"].strip())[0].strip()
+
+
+def render_transcript_md(transcript: list[dict]) -> str:
+    out = ["# Transcript", ""]
+    for entry in transcript:
+        who = "User" if entry["role"] == "user" else "Agent"
+        out += [f"## Turn {entry['turn']} -- {who}", "", entry["text"] or "(empty)", ""]
+        if entry["tools"]:
+            calls = ", ".join(f"{t['name']}({t['target']})" for t in entry["tools"])
+            out += [f"Tool calls: {calls}", ""]
+    return "\n".join(out) + "\n"
+
+
+def now() -> str:
+    return datetime.now(timezone.utc).isoformat()
+
+
+def ask_user(brief: str, sample: Sample, transcript: list[dict], scratch: Path, env: dict) -> str:
+    prompt = (
+        f"## Persona (from the sample)\n\n{sample.sections['User']}\n\n"
+        f"## Answer sheet\n\n{sample.sections['Answer sheet']}\n\n"
+        f"## Transcript so far\n\n{render_transcript_md(transcript)}\n"
+        f"Write the simulated user's next message, or {END_MARK} if the sheet has nothing left to say "
+        "or the agent has finished.\n"
+    )
+    reply = helper_call(prompt, brief, cwd=scratch, env=env)
+    return reply or "I don't know."
+
+
+def run_conversation(agent, brief: str, sample: Sample, transcript: list[dict], scratch: Path, env: dict) -> None:
+    message = opening_message(sample)
+    agent.start()
+    for turn in range(1, TURN_CAP + 1):
+        transcript.append({"turn": turn, "role": "user", "text": message, "tools": [], "ts": now()})
+        reply, tools = agent.send(message)
+        transcript.append({"turn": turn, "role": "agent", "text": reply, "tools": tools, "ts": now()})
+        nxt = ask_user(brief, sample, transcript, scratch, env)
+        if END_MARK in nxt:
+            return
+        message = nxt
+    raise RunError(f"no {END_MARK} within {TURN_CAP} user turns (turn cap)")
+
+
+def installed_reviewer_body(fixture: Path) -> str:
+    agent_file = fixture / ".claude/agents/aid-reviewer.md"
+    if not agent_file.is_file():
+        raise RunError("the installed aid-reviewer agent is missing from the fixture")
+    text = agent_file.read_text(encoding="utf-8")
+    try:
+        _, body = split_frontmatter(text)
+    except ValueError:
+        return text
+    return body
+
+
+def judge(fixture: Path, sample: Sample, judge_brief: str, transcript_md: str, diff: str,
+          checks_txt: str, helper_dir: Path, env: dict) -> str:
+    system = installed_reviewer_body(fixture) + "\n\n" + judge_brief
+    prompt = (
+        f"## transcript.md\n\n{transcript_md}\n"
+        f"## files.diff\n\n```diff\n{diff or '(no changes)'}\n```\n\n"
+        f"## checks.txt\n\n{checks_txt}\n"
+        f"## Expected outcome\n\n{sample.sections['Expected outcome']}\n\n"
+        f"## Must not\n\n{sample.sections['Must not']}\n"
+    )
+    return helper_call(prompt, system, cwd=helper_dir, env=env)
+
+
+def ledger_status(text: str) -> tuple[bool, int]:
+    """Return (has a 7-column ledger table, number of Pending rows)."""
+    has_table = False
+    pending = 0
+    for line in text.splitlines():
+        s = line.strip()
+        if not (s.startswith("|") and s.endswith("|")):
+            continue
+        cells = [c.strip() for c in s[1:-1].split("|")]
+        if len(cells) != len(LEDGER_COLUMNS):
+            continue
+        if cells == list(LEDGER_COLUMNS):
+            has_table = True
+        elif cells[0].isdigit() and cells[2].lower() == "pending":
+            pending += 1
+    return has_table, pending
+
+
+# ---------------------------------------------------------------- one run
+
+
+def run_once(sample: Sample, n: int, run_dir: Path, ctx: dict) -> list[str]:
+    run_dir.mkdir(parents=True, exist_ok=True)
+    reasons: list[str] = []
+    work = Path(tempfile.mkdtemp(prefix="aid-conv-run-"))
+    transcript: list[dict] = []
+    checks_txt = ""
+    diff = ""
+    ledger = ""
+    try:
+        fixture, home = build_fixture(sample, ctx["fixtures_dir"], ctx["bundle"], ctx["real_home"], work)
+        env = base_env(home)
+        fixture_bin = fixture / "bin"
+        agent_env = dict(env)
+        if fixture_bin.is_dir():
+            agent_env["PATH"] = str(fixture_bin) + os.pathsep + env.get("PATH", "")
+        before, dirs_before = capture(fixture, home)
+        helper_dir = work / "helper"  # empty, outside the fixture: the simulated user and the judge run here
+        helper_dir.mkdir()
+        agent = ADAPTERS["claude-code"](fixture, agent_env)
+        try:
+            run_conversation(agent, ctx["user_brief"], sample, transcript, helper_dir, env)
+        except RunError as exc:
+            reasons.append(f"conversation: {exc}")
+        after, dirs_after = capture(fixture, home)
+        diff = build_diff(before, after)
+        tools = [t for e in transcript if e["role"] == "agent" for t in e["tools"]]
+        results = run_checks(sample.checks, fixture, dirs_before, dirs_after, tools)
+        checks_txt = render_checks(results)
+        reasons += [f"check: {label} -- {detail}" for label, ok, detail in results if not ok]
+        transcript_md = render_transcript_md(transcript)
+        try:
+            ledger = judge(fixture, sample, ctx["judge_brief"], transcript_md, diff, checks_txt, helper_dir, env)
+            has_table, pending = ledger_status(ledger)
+            if not has_table:
+                reasons.append("judge: no 7-column ledger table in the output")
+            elif pending:
+                reasons.append(f"judge: {pending} Pending row(s) in the ledger")
+            saved = fixture / ".aid/.temp/review-pending"
+            saved.mkdir(parents=True, exist_ok=True)
+            (saved / f"conversation-{sample.id}-run-{n}.md").write_text(ledger, encoding="utf-8")
+        except RunError as exc:
+            reasons.append(f"judge: {exc}")
+    except (RunError, OSError) as exc:
+        reasons.append(f"setup: {exc}")
+    finally:
+        (run_dir / "transcript.jsonl").write_text(
+            "".join(json.dumps(e, ensure_ascii=False) + "\n" for e in transcript), encoding="utf-8"
+        )
+        (run_dir / "transcript.md").write_text(render_transcript_md(transcript), encoding="utf-8")
+        (run_dir / "files.diff").write_text(diff, encoding="utf-8")
+        (run_dir / "checks.txt").write_text(checks_txt, encoding="utf-8")
+        (run_dir / "ledger.md").write_text(ledger.rstrip("\n") + "\n" if ledger else "", encoding="utf-8")
+        shutil.rmtree(work, ignore_errors=True)
+    return reasons
+
+
+# ---------------------------------------------------------------- main
+
+
+def parse_hosts(raw: str) -> list[str]:
+    hosts = [h.strip() for h in raw.split(",") if h.strip()]
+    unknown = [h for h in hosts if h not in KNOWN_HOSTS]
+    if unknown:
+        raise UsageError("unknown host(s): " + ", ".join(unknown))
+    return hosts
+
+
+def main(argv: list[str] | None = None) -> int:
+    parser = argparse.ArgumentParser(description="Conversation test suite (NFR-T).")
+    parser.add_argument("--feature", required=True, help="three-digit feature number, for example 001")
+    parser.add_argument("--sample", help="one sample id; default every sample of the feature")
+    parser.add_argument("--hosts", default=",".join(DEFAULT_HOSTS), help="comma-separated hosts")
+    parser.add_argument("--runs", type=int, default=3, help="runs per sample (default 3)")
+    parser.add_argument("--samples-dir", type=Path, default=DEFAULT_SAMPLES_DIR)
+    parser.add_argument("--fixtures-dir", type=Path, default=DEFAULT_FIXTURES_DIR)
+    parser.add_argument("--briefs-dir", type=Path, default=DEFAULT_BRIEFS_DIR,
+                        help="folder holding simulated-user.md and judge.md")
+    parser.add_argument("--validate", action="store_true", help="parse the samples and run nothing")
+    args = parser.parse_args(argv)
+
+    try:
+        if not re.fullmatch(r"\d{3}", args.feature):
+            raise UsageError("--feature takes three digits, for example 001")
+        if args.runs < 1:
+            raise UsageError("--runs must be at least 1")
+        hosts = parse_hosts(args.hosts)
+        files = select_samples(args.samples_dir, args.feature, args.sample)
+    except UsageError as exc:
+        print(f"error: {exc}", file=sys.stderr)
+        return 2
+
+    samples: list[Sample] = []
+    errors: list[str] = []
+    for path in files:
+        try:
+            samples.append(load_sample(path))
+        except ValueError as exc:
+            errors.append(f"{path}: {exc}")
+
+    if args.validate:
+        for error in errors:
+            print(f"INVALID {error}")
+        for sample in samples:
+            print(f"OK {sample.id} ({len(sample.checks)} checks)")
+        return 1 if errors else 0
+
+    if errors:
+        for error in errors:
+            print(f"FAIL malformed sample: {error}")
+        return 1
+
+    if "claude-code" not in hosts:
+        print("NOTICE: claude-code is required for the agent under test; it runs too")
+        hosts.insert(0, "claude-code")
+    if shutil.which("claude") is None:
+        print("error: the claude CLI is not on PATH", file=sys.stderr)
+        return 2
+    try:
+        user_brief = (args.briefs_dir / "simulated-user.md").read_text(encoding="utf-8")
+        judge_brief = (args.briefs_dir / "judge.md").read_text(encoding="utf-8")
+    except OSError as exc:
+        print(f"error: cannot read a brief: {exc}", file=sys.stderr)
+        return 2
+
+    work_root = Path(tempfile.mkdtemp(prefix="aid-conv-bundle-"))
+    try:
+        bundle = work_root / "bundle"
+        try:
+            stage_bundle(bundle)
+        except UsageError as exc:
+            print(f"error: {exc}", file=sys.stderr)
+            return 2
+        ctx = {
+            "fixtures_dir": args.fixtures_dir,
+            "bundle": bundle,
+            "real_home": Path(os.environ.get("HOME", str(Path.home()))),
+            "user_brief": user_brief,
+            "judge_brief": judge_brief,
+        }
+        any_failed = False
+        for host in hosts:
+            if host not in ADAPTERS:
+                print(f"NOTICE: no non-interactive adapter for host {host}; skipped")
+                continue
+            run_id = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%SZ") + f"-{host}-{os.getpid()}"
+            for sample in samples:
+                failed_runs = 0
+                for n in range(1, args.runs + 1):
+                    run_dir = RUN_ROOT / run_id / sample.id / f"run-{n}"
+                    reasons = run_once(sample, n, run_dir, ctx)
+                    if reasons:
+                        failed_runs += 1
+                        print(f"FAIL {host} {sample.id} run {n}/{args.runs} -> {run_dir}")
+                        for reason in reasons:
+                            print(f"    {reason}")
+                    else:
+                        print(f"PASS {host} {sample.id} run {n}/{args.runs} -> {run_dir}")
+                verdict = "PASS" if failed_runs == 0 else "FAIL"
+                print(f"{verdict} {host} {sample.id}: {args.runs - failed_runs}/{args.runs} runs passed")
+                any_failed = any_failed or failed_runs > 0
+        return 1 if any_failed else 0
+    finally:
+        shutil.rmtree(work_root, ignore_errors=True)
+
+
+if __name__ == "__main__":
+    sys.exit(main())
