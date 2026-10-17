@@ -112,7 +112,7 @@ minimum_grade: A
 # [W] 'yes' | 'no' -- quoted, see NFR-2 / D-5
 user_approved: 'yes'
 # [W] Running | Paused-Awaiting-Input | Blocked | Completed | Canceled
-lifecycle: Running
+lifecycle: Paused-Awaiting-Input
 # [W] Describe | Define | Specify | Plan | Detail | Execute
 phase: Execute
 # [W] aid-{skill} | none
@@ -120,7 +120,7 @@ active_skill: aid-execute
 # [W]
 updated: '2026-10-17T19:10:35Z'
 # [W] set only when lifecycle = Paused-Awaiting-Input
-pause_reason: --
+pause_reason: 'Maintainer paused during delivery-001; task-008 In Progress: all edits done and committed, but deleting canonical/agents/aid-orchestrator/ and .aid/design/skill-routing.md awaits the maintainer''s OK (the auto-mode check blocked the agent). After the deletion: regenerate the site, run the scratch half and the full suite, then the Sonnet review.'
 # [W] set only when lifecycle = Blocked
 block_reason: --
 # [W] e.g. IMPEDIMENT-task-NNN.md, or the failed gate
