@@ -100,6 +100,8 @@ DEPRECATED_PATTERNS=(
     "re-enters at aid-describe"
     "lite bug-fix triage"
     "LITE-BUG-FIX"
+    "/aid-triage"
+    "aid-orchestrator"
 )
 for pat in "${DEPRECATED_PATTERNS[@]}"; do
     HITS=$(grep -rn --include='*.md' -- "$pat" "$MONITOR_DIR" 2>/dev/null || true)

@@ -6,8 +6,11 @@
 >
 > Every AID agent that produces an artifact (code, docs, configs, KB entries,
 > extracted data, rendered output, etc.) follows this protocol. Reviewers
-> (`aid-reviewer`) and pure coordinators (the main conversation, which
-> orchestrates) are exempt — they don't produce primary artifacts.
+> (`aid-reviewer`) are exempt -- they don't produce primary artifacts.
+> So is the main conversation *while it only routes and coordinates*: with no
+> artifact of its own, it has nothing to self-review. When the main conversation
+> writes an artifact or executes a task directly, it follows this protocol like
+> any other writer.
 
 ## The posture
 

@@ -108,8 +108,8 @@ HTTP) and reading the `<text>`/`<tspan>` labels.
   `shortcut-scaffolding/` — in the box that used to read `canonical/aid/recipes/` (recipes are
   deleted; do not reintroduce them)), **Render** (`generate-profile` skill), **Observation**.
 - **Source of truth:** `.aid/knowledge/module-map.md` · skill count = `ls -1d canonical/skills/*/ | wc -l` (113) ·
-  agent count = `ls -1d canonical/agents/*/ | wc -l` (9).
-- **Update when:** the skill count (**113**) or agent count (**9**) changes; a plane/module is added;
+  agent count = `ls -1d canonical/agents/*/ | wc -l` (8).
+- **Update when:** the skill count (**113**) or agent count (**8**) changes; a plane/module is added;
   the shortcut catalog is renamed or moved.
 
 ---

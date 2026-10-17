@@ -53,7 +53,7 @@ The agent's frontmatter `tier:` sets its default model; the dispatch site sets e
 | aid-reviewer | medium | `medium` | large / `high`–`xhigh` (complex / security / design / delivery gate, or to match a large executor) |
 | aid-architect | large | `medium` | large / `xhigh` (hard design / decomposition) |
 
-The main conversation orchestrates (FR-13) and has no row: it is not an agent.
+The main conversation orchestrates and has no row: it is not an agent.
 
 ## See also
 
