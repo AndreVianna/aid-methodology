@@ -112,15 +112,15 @@ minimum_grade: A
 # [W] 'yes' | 'no' -- quoted, see NFR-2 / D-5
 user_approved: 'yes'
 # [W] Running | Paused-Awaiting-Input | Blocked | Completed | Canceled
-lifecycle: Paused-Awaiting-Input
+lifecycle: Running
 # [W] Describe | Define | Specify | Plan | Detail | Execute
 phase: Detail
 # [W] aid-{skill} | none
 active_skill: aid-detail
 # [W]
-updated: '2026-10-16T13:58:13Z'
+updated: '2026-10-17T15:16:25Z'
 # [W] set only when lifecycle = Paused-Awaiting-Input
-pause_reason: 'Maintainer paused before the full detail review (cycle 1); briefs ready in briefs/detail-full-cycle-1-*.md'
+pause_reason: --
 # [W] set only when lifecycle = Blocked
 block_reason: --
 # [W] e.g. IMPEDIMENT-task-NNN.md, or the failed gate
