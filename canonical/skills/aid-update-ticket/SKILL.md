@@ -135,22 +135,33 @@ mutation for any other part:
 #### Attachment Tool Limit
 
 An attachment is the one part whose tracker may not be able to hold what is written: the host MCP
-may expose no attachment call, cap the file size, or deny the permission. Before CONFIRM, the skill
-asks the host MCP whether the connection can attach files. When it cannot, or a previewed file is
-over the tracker's stated cap, the run **stops** — it does not attach a part of the files, and it
-does not pick a workaround itself:
+may expose no attachment call, cap the file size, deny the permission, or take only some of the
+files. The skill does not pick a workaround itself. The limit shows in one of three ways:
+
+- **Known up front.** Before CONFIRM, the skill asks the host MCP whether the connection can attach
+  files, and it cannot, or a previewed file is over the tracker's stated cap. The run **stops**
+  before CONFIRM and does not attach a part of the files.
+- **Unknown up front.** The host MCP cannot say whether it can attach. The skill does not stop
+  early: it goes on to CONFIRM as normal and tries the attach at WRITE; a failed attach is a tool
+  limit, handled as below.
+- **Found at WRITE.** The attach is refused (permission denied, size cap) or takes only some of the
+  files. This takes the same stop. The files that did go in stay attached.
+
+The stop, for every case:
 
 1. **Tell the user** which limit applies, in the tracker's own words, and which files it blocks.
+   After a partial attach, say which files went in and which did not.
 2. **Offer the workable options**, each stated plainly, and give one **recommendation**:
-   - (a) post a comment (`comment` part) that names each file's repo path and quotes its key
+   - (a) post a comment (`comment` part) that names each blocked file's repo path and quotes its key
      lines — this keeps the content visible to the tracker's readers;
-   - (b) leave the files recorded in the work only, with no write-back to the tracker;
-   - (c) the user attaches the files in the tracker by hand, and the skill does nothing further.
-   The recommendation is (a) when the files are small enough to quote in a comment, and (c) when they
-   are not.
-3. **Wait for the user's choice** under the question protocol, which also lets the user answer in
-   free text. The run never runs an option the user did not pick. A chosen option (a) is a fresh `comment` mutation and goes through COMPOSE and
-   CONFIRM as one.
+   - (b) leave the blocked files recorded in the work only, with no write-back to the tracker;
+   - (c) the user attaches the blocked files in the tracker by hand, and the skill does nothing further.
+   The recommendation is (a) when the blocked files are small enough to quote in a comment, and (c)
+   when they are not.
+3. **Wait for the user's choice** under the question protocol: one question, its reason, the
+   recommendation, the valid options only, and a free-text answer allowed. The run never runs an
+   option the user did not pick, and never retries a blocked file. A chosen option (a) is a fresh
+   `comment` mutation and goes through COMPOSE and CONFIRM as one.
 
 ### State 5 — CONFIRM
 
@@ -193,10 +204,10 @@ set, the comment posted, the new state, or the files attached).
 
 **MCP-failure policy (general, all parts).** A failed / not-found / unauthorized / unavailable
 WRITE call surfaces the tracker's error verbatim and exits **non-destructively** — no partial
-write. For `attachment`, a call that attaches only some of the files is also a failure: the skill
-reports which files the tracker did not take and does not retry them. This is distinct from — and,
-for `status`, can only be reached *after* — the Status Validation branch above, which can already
-have stopped the run before CONFIRM was ever asked.
+write. For `attachment`, a refusal or a partial attach is a tool limit instead: it takes the
+Attachment Tool Limit stop above, which names the files that did not go in and does not retry
+them. This is distinct from — and, for `status`, can only be reached *after* — the Status
+Validation branch above, which can already have stopped the run before CONFIRM was ever asked.
 
 ---
 

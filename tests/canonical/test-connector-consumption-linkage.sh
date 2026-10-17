@@ -65,6 +65,20 @@ done
 
 echo "== connector consumption / work sources linkage tests (AC9) =="
 
+# assert_wrapped_contains FILE PATTERN LABEL -- like assert_file_contains, but
+# tolerant of markdown's own line-wrapping: newlines and runs of whitespace are
+# squashed to single spaces before the fixed-string search. (Same helper as
+# test-ticket-skills-structural.sh and test-ticket-retirement-structural.sh.)
+assert_wrapped_contains() {
+    local file="$1" pattern="$2" label="$3" squashed
+    squashed="$(sed -E 's/^>[[:space:]]*//' "$file" | tr '\n' ' ' | tr -s ' ')"
+    if grep -qF -- "$pattern" <<< "$squashed"; then
+        pass "$label"
+    else
+        fail "$label — pattern not found (line-wrap-tolerant): '$pattern' in $file"
+    fi
+}
+
 # ===========================================================================
 # CL01-CL08  Structural -- the contract is actually documented where the SPEC
 # says it must be.

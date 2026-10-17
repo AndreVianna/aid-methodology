@@ -89,16 +89,16 @@ Every node in the chart above, in chart order, with the exact `canonical/` text 
 
 <a id="fragment-n5"></a>**5 · `CONFIRM`** · _step_
 
-~~~~plaintext title="canonical/skills/aid-update-ticket/SKILL.md#L155" wrap
+~~~~plaintext title="canonical/skills/aid-update-ticket/SKILL.md#L166" wrap
 ### State 5 — CONFIRM
 ~~~~
 
-[Source: `canonical/skills/aid-update-ticket/SKILL.md#L155`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-update-ticket/SKILL.md#L155)
+[Source: `canonical/skills/aid-update-ticket/SKILL.md#L166`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-update-ticket/SKILL.md#L166)
 
 <a id="fragment-n6"></a>**6 · `WRITE`** · _exit_ · UNSPECIFIED
 
-~~~~plaintext title="canonical/skills/aid-update-ticket/SKILL.md#L184" wrap
+~~~~plaintext title="canonical/skills/aid-update-ticket/SKILL.md#L195" wrap
 ### State 6 — WRITE
 ~~~~
 
-[Source: `canonical/skills/aid-update-ticket/SKILL.md#L184`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-update-ticket/SKILL.md#L184)
+[Source: `canonical/skills/aid-update-ticket/SKILL.md#L195`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-update-ticket/SKILL.md#L195)

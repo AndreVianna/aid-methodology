@@ -34,8 +34,9 @@
 #             leading-token heuristic), --level accept/reject/quoted-
 #             literal, --parent, flags-any-order, missing-description usage
 #             line (AC-2, AC-3)
-#   T89-T93   The attachment part (AC-29): previewed files, a previewed
-#             CONFIRM, and the tool-limit stop with options and a recommendation
+#   T89-T94   The attachment part (AC-29): previewed files, a previewed
+#             CONFIRM, and the tool-limit stop with options and a recommendation,
+#             including a limit found at WRITE (T94)
 #   T64-T73   Resolution-ladder branch coverage -- explicit override,
 #             single-silent, 2+-ask, host-MCP fallback, the verbatim notify
 #             string, api/ssh/cli fall-through, and each skill's own
@@ -262,7 +263,7 @@ assert_file_contains "$CREATE_SKILL" "no issue-tracker connector found." "T87 ai
 assert_file_contains "$UPDATE_SKILL" '"no issue-tracker connector found."' "T88 aid-update-ticket carries the verbatim notify string"
 
 # ===========================================================================
-# T89-T93  The attachment part (AC-29): LOAD-CONTEXT previews the files the
+# T89-T94  The attachment part (AC-29): LOAD-CONTEXT previews the files the
 # user picks, CONFIRM shows each one, and a tracker that cannot hold them stops
 # the run with options and a recommendation -- never a self-picked workaround.
 # ===========================================================================
@@ -271,6 +272,7 @@ assert_file_contains "$UPDATE_SKILL" "#### Attachment Tool Limit" "T90 aid-updat
 assert_wrapped_contains "$UPDATE_SKILL" "give one **recommendation**" "T91 aid-update-ticket's tool-limit stop offers the options with one recommendation"
 assert_wrapped_contains "$UPDATE_SKILL" "does not pick a workaround itself" "T92 aid-update-ticket never picks a workaround for a tool limit"
 assert_wrapped_contains "$UPDATE_SKILL" "each file's name, size and preview" "T93 aid-update-ticket's CONFIRM shows each attached file's preview"
+assert_wrapped_contains "$UPDATE_SKILL" "a refusal or a partial attach is a tool limit" "T94 aid-update-ticket: an attach refused or partial at WRITE takes the tool-limit stop, naming the files that did not go in"
 
 # ===========================================================================
 test_summary

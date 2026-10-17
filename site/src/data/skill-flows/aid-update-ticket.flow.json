@@ -78,8 +78,8 @@
       "terminal": null,
       "provenance": {
         "file": "canonical/skills/aid-update-ticket/SKILL.md",
-        "startLine": 155,
-        "endLine": 155,
+        "startLine": 166,
+        "endLine": 166,
         "sourceKind": "skill",
         "excerpt": "### State 5 — CONFIRM"
       },
@@ -97,8 +97,8 @@
       },
       "provenance": {
         "file": "canonical/skills/aid-update-ticket/SKILL.md",
-        "startLine": 184,
-        "endLine": 184,
+        "startLine": 195,
+        "endLine": 195,
         "sourceKind": "skill",
         "excerpt": "### State 6 — WRITE"
       },
@@ -170,8 +170,8 @@
       "advanceType": "CHAIN",
       "provenance": {
         "file": "canonical/skills/aid-update-ticket/SKILL.md",
-        "startLine": 155,
-        "endLine": 155,
+        "startLine": 166,
+        "endLine": 166,
         "sourceKind": "skill",
         "excerpt": "### State 5 — CONFIRM"
       }
