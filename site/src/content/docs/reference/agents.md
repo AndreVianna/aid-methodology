@@ -48,14 +48,6 @@ Runs final release verification, packages artifacts, creates PRs and release not
 
 [Definition: `canonical/agents/aid-operator/AGENT.md`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/agents/aid-operator/AGENT.md)
 
-### `aid-orchestrator`
-
-**Tools:** Read, Glob, Grep, Bash
-
-Routes pipeline findings to the next phase or skill, enforces human gates, dispatches agents with context, and manages parallel execution.
-
-[Definition: `canonical/agents/aid-orchestrator/AGENT.md`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/agents/aid-orchestrator/AGENT.md)
-
 ### `aid-researcher`
 
 **Tools:** Read, Glob, Grep, Bash, Write, WebSearch, WebFetch
