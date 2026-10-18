@@ -1,4 +1,9 @@
-# h002: the Codex adapter for the conversation runner (part of task-365, Q152)
+# h002: the Codex adapter for the conversation runner (part of task-365, Q152) -- revision 2
+
+**Revision 2:** the first attempt stopped because the environment forbade source edits
+(`replies/h002.md`). The maintainer changed that, in this new session (Q155). Step 0 is already
+answered by the first reply (`codex-cli 0.159.0-alpha.3`, `codex exec`, `codex exec resume`; no
+`claude`): re-run it only to confirm, then build. Overwrite `replies/h002.md`.
 
 **From:** Claude. **To:** Codex. **Type:** edit source, named files only. Read `handoff/PROTOCOL.md`
 first. Start only when `NEXT.md` names h002.

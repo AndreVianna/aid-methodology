@@ -1795,3 +1795,11 @@ qa:
     suggested: 'Standing delegation: Codex takes every review (each wave''s task reviews in one job, and the delivery review) and machine-limited test runs; Claude builds, fixes, writes state, resyncs and runs gates; building tasks move to Codex later if usage still needs it'
     answer: 'Yes (maintainer): Claude coordinates with Codex and delegates jobs to it to offload usage, for the rest of the work.'
     applied_to: 'handoff/PROTOCOL.md Standing delegation; every delivery from task-020 and task-370 on'
+  - id: Q155
+    category: Building
+    impact: Medium
+    state: Answered
+    context: 'h002 was blocked: the Codex environment forbade editing source and tests, so Codex could only review and run tests.'
+    suggested: 'Relax the rule for jobs that name the files Codex may write'
+    answer: 'A (maintainer): the Codex environment now allows editing, in a new Codex session; h002 re-opened.'
+    applied_to: 'handoff h002 revision 2; Q154 building tier available'
