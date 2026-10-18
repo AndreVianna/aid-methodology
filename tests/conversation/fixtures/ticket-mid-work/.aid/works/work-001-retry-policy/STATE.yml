@@ -1,0 +1,59 @@
+pipeline:
+  path: lite
+  initiator: aid-describe
+started: '2026-10-14'
+minimum_grade: A
+user_approved: 'no'
+lifecycle: Running
+phase: Specify
+active_skill: aid-specify
+updated: '2026-10-16T09:00:00Z'
+pause_reason: --
+block_reason: --
+block_artifact: --
+delivery_state: Pending-Spec
+gate_tier: Small
+gate_grade: Pending
+gate_timestamp: --
+intent:
+  request: 'retry failed sync uploads with a sensible policy'
+  reading: new capability
+  reason: 'the sync job has no retry policy today, so the behaviour is new'
+  depth: lite
+  phases:
+    - Specification
+    - Planning
+    - Building
+    - CI
+  changes: []
+sources: []
+write_backs: []
+lifecycle_history:
+  - date: '2026-10-14'
+    event: 'Work created'
+    grade: --
+    notes: 'Opened from a plain request'
+delivery_lifecycle:
+  updated: '2026-10-16T09:00:00Z'
+  block_reason: --
+  block_artifact: --
+tasks_lifecycle: {}
+delivery_gate:
+  issue_list: []
+qa:
+  - id: Q4
+    category: Requirements
+    impact: High
+    state: Pending
+    context: 'How many attempts does a failed sync upload get before it gives up?'
+    suggested: '3'
+    answer: --
+    applied_to: --
+  - id: Q6
+    category: Requirements
+    impact: Medium
+    state: Pending
+    context: 'How long may one attempt run before it counts as failed?'
+    suggested: '10 seconds'
+    answer: --
+    applied_to: --

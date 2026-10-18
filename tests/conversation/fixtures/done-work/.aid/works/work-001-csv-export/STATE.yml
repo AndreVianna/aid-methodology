@@ -1,0 +1,59 @@
+pipeline:
+  path: lite
+  initiator: aid-describe
+started: '2026-10-01'
+minimum_grade: A
+user_approved: 'yes'
+lifecycle: Running
+phase: Execute
+active_skill: aid-execute
+updated: '2026-10-15T16:00:00Z'
+pause_reason: --
+block_reason: --
+block_artifact: --
+delivery_state: Done
+gate_tier: Small
+gate_grade: A
+gate_timestamp: '2026-10-15T16:00:00Z'
+intent:
+  request: 'let me export every note to a CSV file'
+  reading: new capability
+  reason: 'the tool has no export today, so the behaviour is new'
+  depth: lite
+  phases:
+    - Specification
+    - Planning
+    - Building
+    - CI
+  changes: []
+sources: []
+write_backs: []
+lifecycle_history:
+  - date: '2026-10-01'
+    event: 'Work created'
+    grade: --
+    notes: 'Opened from a plain request'
+  - date: '2026-10-15'
+    event: 'All tasks done'
+    grade: A
+    notes: 'Gate passed clean'
+delivery_lifecycle:
+  updated: '2026-10-15T16:00:00Z'
+  block_reason: --
+  block_artifact: --
+tasks_lifecycle:
+  task-001:
+    state: Done
+    review: A
+    elapsed: --
+    notes: 'CSV writer for one note'
+    display_name: 'Write the CSV writer'
+  task-002:
+    state: Done
+    review: A
+    elapsed: --
+    notes: 'Export command wired to the CSV writer'
+    display_name: 'Add the export command'
+delivery_gate:
+  issue_list: []
+qa: []
