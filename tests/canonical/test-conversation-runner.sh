@@ -833,6 +833,84 @@ PYCR
         'CREDENTIAL_RE = re.compile(r"(?i)(credential|secret|token)|\.(pem|key)$")'
     expect_fail "CR02 a credential rule that matches any name with token or secret fails CR01" \
         "$PY" "$T/credrule.py" "$MUT_PATH"
+    # symbolic links, through snapshot and build_diff itself on a tree of the test's own: a link created,
+    # removed or retargeted shows in the diff (DF16), and a link is never followed, so no file it points at is
+    # read and a linked directory is not descended into (DF17). An empty file added or removed is named (DF18).
+    cat > "$T/linkdiff.py" <<'PYLD'
+import importlib.util
+import os
+import shutil
+import sys
+from pathlib import Path
+
+spec = importlib.util.spec_from_file_location("runner_under_test", sys.argv[1])
+mod = importlib.util.module_from_spec(spec)
+sys.modules[spec.name] = mod  # the dataclass decorator looks the module up by name
+spec.loader.exec_module(mod)
+MODE = sys.argv[2]
+ROOT = Path(sys.argv[3])
+shutil.rmtree(ROOT, ignore_errors=True)
+TREE = ROOT / "tree"
+OUTSIDE = ROOT / "outside"  # what a link may point at: none of it may reach the snapshot
+TREE.mkdir(parents=True)
+OUTSIDE.mkdir()
+(OUTSIDE / "secret.txt").write_text("SECRET\n")
+(TREE / "target.md").write_text("one\n")
+(TREE / "a.md").write_text("A\n")
+(TREE / "b.md").write_text("B\n")
+
+
+def diff_of(edit):
+    before, _ = mod.snapshot(TREE, mod.fixture_skip)
+    edit()
+    after, _ = mod.snapshot(TREE, mod.fixture_skip)
+    return mod.build_diff({"fixture/" + k: v for k, v in before.items()}, {"fixture/" + k: v for k, v in after.items()})
+
+
+if MODE == "appear":
+    ok = "fixture/alias.md" in diff_of(lambda: os.symlink("target.md", TREE / "alias.md"))  # created
+    ok = ok and "fixture/alias.md" in diff_of(lambda: os.unlink(TREE / "alias.md"))  # removed
+    os.symlink("a.md", TREE / "link.md")
+    ok = ok and "fixture/link.md" in diff_of(lambda: (os.unlink(TREE / "link.md"), os.symlink("b.md", TREE / "link.md")))
+else:  # follow: a link to a file outside the tree, and a link to a directory outside it
+    os.symlink(str(OUTSIDE / "secret.txt"), TREE / "secret-link.md")
+    os.symlink(str(OUTSIDE), TREE / "outdir")
+    snap, _ = mod.snapshot(TREE, mod.fixture_skip)
+    ok = snap.get("secret-link.md") == mod.LINK_PREFIX + os.fsencode(str(OUTSIDE / "secret.txt"))
+    ok = ok and snap.get("outdir") == mod.LINK_PREFIX + os.fsencode(str(OUTSIDE))
+    ok = ok and not any(b"SECRET" in data for data in snap.values())
+    ok = ok and not any(name.startswith("outdir/") for name in snap)
+sys.exit(0 if ok else 1)
+PYLD
+    assert_eq "$("$PY" "$T/linkdiff.py" "$RUNNER" appear "$T/linkdiff" && echo ok)" ok \
+        "DF16 a symbolic link created, removed or retargeted inside the fixture appears in the diff"
+    assert_eq "$("$PY" "$T/linkdiff.py" "$RUNNER" follow "$T/linkdiff" && echo ok)" ok \
+        "DF17 a symbolic link is recorded by its target and never followed: no file it points at is read, and a linked directory is not descended into"
+    make_mutant linkskip 'if skip(rel, True):' 'if skip(rel, True) or (here / name).is_symlink():' \
+        'if skip(rel, False):' 'if skip(rel, False) or path.is_symlink():'
+    expect_fail "DF19 a snapshot that skips symbolic links fails DF16" \
+        "$PY" "$T/linkdiff.py" "$MUT_PATH" appear "$T/linkdiff-m"
+    make_mutant linkfollow 'files[rel] = LINK_PREFIX + os.fsencode(os.readlink(path))  # a linked file: its target text, never read through' \
+        'files[rel] = path.read_bytes()  # a linked file, followed'
+    expect_fail "DF20 a snapshot that reads through a symbolic link fails DF17" \
+        "$PY" "$T/linkdiff.py" "$MUT_PATH" follow "$T/linkdiff-m"
+    # an empty file added or removed: the diff holds git's header for it, so files.diff names it (DF18)
+    cat > "$T/emptydiff.py" <<'PYED'
+import importlib.util
+import sys
+
+spec = importlib.util.spec_from_file_location("runner_under_test", sys.argv[1])
+mod = importlib.util.module_from_spec(spec)
+sys.modules[spec.name] = mod  # the dataclass decorator looks the module up by name
+spec.loader.exec_module(mod)
+added = mod.build_diff({}, {"fixture/empty.md": b""})
+removed = mod.build_diff({"fixture/empty.md": b""}, {})
+sys.exit(0 if added and removed and "empty.md" in added and "empty.md" in removed else 1)
+PYED
+    assert_eq "$("$PY" "$T/emptydiff.py" "$RUNNER" && echo ok)" ok \
+        "DF18 an empty text file added or removed is named in the diff, not an empty diff"
+    make_mutant emptydiff 'if not text and (old is None or new is None):' 'if False:'
+    expect_fail "DF21 a diff that drops an empty file's header fails DF18" "$PY" "$T/emptydiff.py" "$MUT_PATH"
 }
 
 # ---------------------------------------------------------------- JUDGE
@@ -1007,6 +1085,45 @@ PYNP
     assert_eq "$("$PY" "$T/nopush.py" "$RUNNER" && echo ok)" ok \
         "NP01 no-push passes a heredoc prose mention and a quoted or piped git, and fails each real push form"
     expect_fail "NP02 a no-push that reads heredoc prose as a push fails NP01" "$PY" "$T/nopush.py" "$MUT_PATH"
+    # no-push behind a shell's combined flags (bash -lc) and the env, command, exec, nohup and sudo wrappers,
+    # through run_checks itself: a real push fails, and the same words in an echo or a status do not
+    cat > "$T/pushwrap.py" <<'PYPW'
+import importlib.util
+import sys
+from pathlib import Path
+
+spec = importlib.util.spec_from_file_location("runner_under_test", sys.argv[1])
+mod = importlib.util.module_from_spec(spec)
+sys.modules[spec.name] = mod  # the dataclass decorator looks the module up by name
+spec.loader.exec_module(mod)
+CHECK = [{"verb": "no-push", "args": [], "label": "no-push"}]
+CASES = [  # (Bash command, whether no-push should pass)
+    ('bash -lc "git push origin main"', False),
+    ("env GIT_TERMINAL_PROMPT=0 git push origin main", False),
+    ("command git push origin main", False),
+    ("sudo git push origin main", False),
+    ("sh -ec 'git push'", False),
+    ("env -i FOO=1 -u BAR git push", False),
+    ("nohup git push origin main", False),
+    ("sudo -u root env X=1 git push", False),
+    ('bash -lc "echo git push"', True),
+    ("env FOO=1 git status", True),
+    ("command -v git", True),
+]
+bad = []
+for command, passes in CASES:
+    got = mod.run_checks(CHECK, Path("."), set(), set(), [{"name": "Bash", "target": command}])[0][1]
+    if got != passes:
+        bad.append(command)
+for command in bad:
+    print("no-push misjudged: " + repr(command), file=sys.stderr)
+sys.exit(1 if bad else 0)
+PYPW
+    assert_eq "$("$PY" "$T/pushwrap.py" "$RUNNER" && echo ok)" ok \
+        "NP03 no-push fails a git push behind bash -lc, sh -ec, env (with VAR=value, -i and -u), command, sudo and nohup, and passes the same words in an echo or a status"
+    make_mutant pushwrap 'if program in WRAPPERS:' 'if False:' \
+        'if SHELL_C_FLAG.match(words[index]):' 'if words[index] == "-c":'
+    expect_fail "NP04 a no-push that sees neither wrappers nor combined shell flags fails NP03" "$PY" "$T/pushwrap.py" "$MUT_PATH"
 }
 
 # ---------------------------------------------------------------- CLEAN
@@ -1050,6 +1167,7 @@ HEAD = "| # | Severity | Status | Doc | Line | Description | Evidence |"
 RULE = "| --- | --- | --- | --- | --- | --- | --- |"
 PENDING = "| 1 | [HIGH] | Pending | transcript.md | 1 | Unmet item | Evidence |"
 FIXED = "| 1 | [LOW] | Fixed | transcript.md | 1 | Note | Evidence |"
+PENDING_ESC = r"| 1 | [HIGH] | Pending | transcript.md | 1 | Unmet item | ran echo x \| cat |"
 HEAD6 = "| # | Severity | Status | Doc | Line | Description |"
 RULE6 = "| --- | --- | --- | --- | --- | --- |"
 PENDING6 = "| 1 | [HIGH] | Pending | transcript.md | 1 | Unmet item |"
@@ -1062,6 +1180,7 @@ CASES = {
     "no-table": "The run looks fine.",
     "six-pending": "\n".join([HEAD6, RULE6, PENDING6]),
     "six-clean": "\n".join([HEAD6, RULE6, FIXED6]),
+    "escaped-pending": "\n".join([HEAD, RULE, PENDING_ESC]),
 }
 has, pending = mod.ledger_status(CASES[sys.argv[2]])
 print("pass" if has and pending == 0 else "fail")
@@ -1086,6 +1205,12 @@ PYLG
     make_mutant ledger6 'elif cells == list(LEDGER_COLUMNS[:6]):' 'elif False:'
     assert_eq "$("$PY" "$T/ledger.py" "$MUT_PATH" six-clean)" fail \
         "LG14 a mutant that rejects six-column tables fails the clean case of LG13"
+    # a row is split on its unescaped pipes only: a Pending row whose Evidence holds an escaped pipe still counts
+    assert_eq "$("$PY" "$T/ledger.py" "$RUNNER" escaped-pending)" fail \
+        "LG15 a seven-column Pending row whose Evidence holds an escaped pipe counts as one Pending row"
+    make_mutant ledgersplit 'cells = [c.strip() for c in re.split(r"(?<!\\)\|", s[1:-1])]' 'cells = [c.strip() for c in s[1:-1].split("|")]'
+    assert_eq "$("$PY" "$T/ledger.py" "$MUT_PATH" escaped-pending)" pass \
+        "LG16 a mutant that splits on every pipe reads the escaped Pending row as clean, so LG15 fails it"
 }
 
 # ---------------------------------------------------------------- SAMPLES

@@ -469,7 +469,13 @@ def home_skip(rel: str, is_dir: bool) -> bool:
     return bool(CREDENTIAL_RE.search(os.path.basename(rel)))
 
 
+LINK_PREFIX = b"\0symlink -> "  # NUL first: no regular file's bytes equal a link's snapshot entry
+
+
 def snapshot(root: Path, skip) -> tuple[dict[str, bytes], set[str]]:
+    """The files and the directories under root that skip does not drop. A symbolic link is recorded as a
+    file whose content is its target text (LINK_PREFIX + target), so a link created, removed or retargeted
+    shows as a change; a link is never followed, so no file it points at is read."""
     files: dict[str, bytes] = {}
     dirs: set[str] = set()
     for dirpath, dirnames, filenames in os.walk(root):
@@ -478,7 +484,10 @@ def snapshot(root: Path, skip) -> tuple[dict[str, bytes], set[str]]:
         kept = []
         for name in dirnames:
             rel = (rel_here / name).as_posix()
-            if skip(rel, True) or (here / name).is_symlink():
+            if skip(rel, True):
+                continue
+            if (here / name).is_symlink():
+                files[rel] = LINK_PREFIX + os.fsencode(os.readlink(here / name))  # a linked directory: never descended
                 continue
             kept.append(name)
             dirs.add(rel)
@@ -486,7 +495,12 @@ def snapshot(root: Path, skip) -> tuple[dict[str, bytes], set[str]]:
         for name in filenames:
             rel = (rel_here / name).as_posix()
             path = here / name
-            if skip(rel, False) or path.is_symlink() or not path.is_file():
+            if skip(rel, False):
+                continue
+            if path.is_symlink():
+                files[rel] = LINK_PREFIX + os.fsencode(os.readlink(path))  # a linked file: its target text, never read through
+                continue
+            if not path.is_file():
                 continue
             files[rel] = path.read_bytes()
     return files, dirs
@@ -522,7 +536,8 @@ def worktree_baseline(rel: str) -> str | None:
 
 
 def diff_chunks(before: dict[str, bytes], after: dict[str, bytes]) -> list[tuple[str, str]]:
-    """One (path, text) pair per changed file, in path order; byte-identical files are omitted."""
+    """One (path, text) pair per changed file, in path order; byte-identical files are omitted. An empty
+    file added or removed has no lines, so its text is git's header alone (no hunk) and it is still named."""
     chunks: list[tuple[str, str]] = []
     for rel in sorted(set(before) | set(after)):
         old_key = rel
@@ -553,6 +568,8 @@ def diff_chunks(before: dict[str, bytes], after: dict[str, bytes]) -> list[tuple
         )
         if text and not text.endswith("\n"):
             text += "\n"
+        if not text and (old is None or new is None):  # an empty file added or removed: no hunk to show
+            text = f"diff --git a/{old_key} b/{rel}\n" + ("new file mode 100644\n" if old is None else "deleted file mode 100644\n")
         chunks.append((rel, text))
     return chunks
 
@@ -605,6 +622,13 @@ def judge_view(chunks: list[tuple[str, str]]) -> str:
 HEREDOC_START = re.compile(r"<<(-?)\s*(['\"]?)(\w+)\2")
 GIT_VALUE_OPTIONS = ("-C", "-c", "--git-dir", "--work-tree", "--namespace")  # git's global options that take a value
 SHELLS = ("sh", "bash", "zsh", "dash")
+SHELL_C_FLAG = re.compile(r"^-[A-Za-z]*c[A-Za-z]*$")  # -c, or a combined flag that holds c: -lc, -ec
+WRAPPERS = ("env", "command", "exec", "nohup", "sudo")  # commands that run the command given after them
+WRAPPER_VALUE_OPTIONS = {  # the wrappers' options that take the next word as their value
+    "env": ("-u", "--unset", "-C"),
+    "exec": ("-a",),
+    "sudo": ("-u", "-g", "-C", "-h", "-p", "-D", "-r", "-t", "-U", "-T"),
+}
 SHELL_PUNCTUATION = "();<>|&`"  # shlex returns these as tokens; a token made only of them ends a command
 
 
@@ -627,7 +651,8 @@ def is_git_push(command: str) -> bool:
     """True when a shell command runs git push. Each command segment (split on ; && || | and newlines) is
     checked: its command is git, after any VAR=value prefix and git's global options, and its subcommand
     is push. Heredoc bodies and quoted text are not commands, so prose that names git push does not count;
-    a shell's -c string is checked as a command of its own."""
+    a shell's -c string (also behind combined flags such as -lc) is checked as a command of its own, and
+    so is the command that a wrapper (env, command, exec, nohup, sudo) runs."""
     text = strip_heredocs(command).replace("\\\n", " ").replace("\n", " ; ")
     try:
         lex = shlex.shlex(text, posix=True, punctuation_chars=SHELL_PUNCTUATION)
@@ -646,15 +671,33 @@ def is_git_push(command: str) -> bool:
     return any(segment_is_git_push(words) for words in segments)
 
 
+def wrapped_words(words: list[str]) -> list[str]:
+    """The words a wrapper runs: those after its own options, their values and VAR=value operands."""
+    values = WRAPPER_VALUE_OPTIONS.get(os.path.basename(words[0]), ())
+    index = 1
+    while index < len(words):
+        if words[index] in values:
+            index += 2
+        elif words[index].startswith("-") or re.match(r"^\w+=", words[index]):
+            index += 1
+        else:
+            break
+    return words[index:]
+
+
 def segment_is_git_push(words: list[str]) -> bool:
     while words and re.match(r"^\w+=", words[0]):  # leading VAR=value assignments
         words = words[1:]
     if not words:
         return False
     program = os.path.basename(words[0])
-    if program in SHELLS and "-c" in words[1:]:
-        index = words.index("-c", 1)
-        return index + 1 < len(words) and is_git_push(words[index + 1])
+    if program in WRAPPERS:
+        return segment_is_git_push(wrapped_words(words))
+    if program in SHELLS:
+        for index in range(1, len(words)):
+            if SHELL_C_FLAG.match(words[index]):
+                return index + 1 < len(words) and is_git_push(words[index + 1])
+        return False
     if program != "git":
         return False
     index = 1
@@ -796,7 +839,8 @@ def ledger_status(text: str) -> tuple[bool, int]:
     writes a six-column table (the first six columns, in order); it is accepted too, so its Pending
     rows still count. A judge that corrects itself writes a table, then a correction, then a second
     table; the last table is the verdict. Rows are grouped under the header that opens them, so rows
-    of an earlier table never count against a later one.
+    of an earlier table never count against a later one. A row is split on its unescaped pipes only:
+    an escaped \\| (the schema's form for a literal pipe inside a cell) stays in its cell.
     """
     tables: list[list[list[str]]] = []
     width = 0  # cells per row of the table that is open
@@ -804,7 +848,7 @@ def ledger_status(text: str) -> tuple[bool, int]:
         s = line.strip()
         if not (s.startswith("|") and s.endswith("|")):
             continue
-        cells = [c.strip() for c in s[1:-1].split("|")]
+        cells = [c.strip() for c in re.split(r"(?<!\\)\|", s[1:-1])]
         if cells == list(LEDGER_COLUMNS):
             tables.append([])
             width = len(LEDGER_COLUMNS)
