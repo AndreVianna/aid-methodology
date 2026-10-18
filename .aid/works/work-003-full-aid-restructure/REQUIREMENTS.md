@@ -990,9 +990,13 @@ release.
   called with their names and target paths, `ts`), `transcript.md` (the same, readable, given to the
   judge), `files.diff` (a before/after comparison of the whole fixture folder -- git-ignored files such as
   `.aid/.temp/` included -- and of the throwaway `HOME`; format: a unified diff of contents for text
-  files, path and size only for binary files; **excluded**: the fixture's `.git/` and, in `HOME`, the host
-  tool's own files (`.claude/`, `.claude.json`) and any credential file, so the judge sees only the
-  agent's own changes and no secret is copied into a run folder), `checks.txt`
+  files, path and size only for binary files; a file the run creates under the fixture's
+  `.claude/worktrees/<wt>/` is diffed against the fixture's own file of the same path, and a copy identical
+  to it is omitted; **excluded**: the fixture's `.git/` and, in `HOME`, the host tool's own files
+  (`.claude/`, `.claude.json`), the sandbox's own set-up folders and files (`.ccr/`, `.pki/`,
+  `.local/share/pki/`, `.aws/`, `.boto`) and any credential file, so the judge sees only the agent's own
+  changes and no secret is copied into a run folder), `model.txt` (the model every agent turn ran with:
+  `claude-sonnet-5-5`, or the `AID_CONV_MODEL` value when that is set, passed as `--model`), `checks.txt`
   and the judge's ledger.
 - `samples/feature-NNN/<id>.md`: frontmatter `id`, `covers`, `fixture`; sections `## User` (opening
   message and persona), `## Answer sheet` (all the simulated user knows), `## Expected outcome`,
@@ -1000,7 +1004,11 @@ release.
 - An independent `aid-reviewer` judge: a fresh `claude -p` with the same text-only settings as the
   simulated user, whose system prompt is the installed `aid-reviewer` agent body plus
   `tests/conversation/judge.md`, and whose input is `transcript.md`, `files.diff`, `checks.txt` and the
-  sample's expected outcome. It returns only a 7-column ledger table, which `run.py` saves in the
+  sample's expected outcome. The judge's copy of `files.diff` is capped: each file at 300 lines and the whole
+  at 200,000 bytes, each cut marked `[... N lines of <path> truncated ...]` (at most 20 such markers; the
+  files past them are counted in one final `[... N more files truncated ...]` line, inside the cap). The cap
+  applies to the judge's prompt only; `files.diff` on disk is never cut. It returns only a 7-column ledger
+  table, which `run.py` saves in the
   fixture's `.aid/.temp/review-pending/` and in the run folder; any Pending row fails the run.
 - **Flags checked** against `claude --help` of Claude Code 2.1.296: `-p`, `--resume`,
   `--output-format`, `--input-format`, `--permission-mode` (`acceptEdits`), `--tools`, `--allowedTools`,

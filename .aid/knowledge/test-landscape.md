@@ -252,9 +252,9 @@ conversations that the guide routes. They differ in how they run.
   passes, 1 any failure, 2 invocation error.
 - **The model under test.** The agent under test runs on `claude-sonnet-5-5`, passed as `--model` on
   every turn; the environment variable `AID_CONV_MODEL` names another model. Each run writes the model
-  it used to `model.txt` in its run folder. The agent's environment drops the parent session's
-  `CLAUDE_CODE_*` variables and `CLAUDECODE`, `CLAUDE_EFFORT` and `CLAUDE_AFTER_LAST_COMPACT`; proxy and
-  CA variables are kept.
+  it used to `model.txt` in its run folder. The agent's environment drops the parent session's identity
+  and wiring (a deny-list of session, account, ingress and remote variables); auth, provider, proxy and CA
+  variables are kept, so the agent can still authenticate.
 - **Three runs per sample.** Each sample runs 3 times (`--runs`, default 3) and passes only if all 3
   runs pass. `tests/conversation/judge.md` rules each transcript, and records only the items of the
   sample's Expected outcome and Must not; a Pending row in the judge's ledger fails the run.
@@ -270,8 +270,9 @@ conversations that the guide routes. They differ in how they run.
   omitted; nothing is excluded wholesale. The sandbox's own set-up and credential files under `HOME`
   (`.ccr/`, `.pki/`, `.local/share/pki/`, `.aws/`, `.boto`) are excluded, with the host tool's `.claude/`
   and the credential-named files. The judge does not read the whole file: its prompt holds each file's
-  diff up to 300 lines and the whole diff up to about 200 KB, with a `[... N lines of <path> truncated ...]`
-  marker at each cut. The judge is told that truncated content is not absent.
+  diff up to 300 lines and the whole diff up to 200,000 bytes, markers included, with a `[... N lines of <path>
+  truncated ...]` marker at each cut (at most 20; the rest are counted in one final `[... N more files
+  truncated ...]` line). The judge is told that truncated content is not absent.
 - **Its own guard: `tests/canonical/test-conversation-runner.sh`.** It runs in `run-all.sh` and guards
   `run.py` without calling a model: a stub `claude` is put first on `PATH`, and the suite builds its
   own samples, fixtures and briefs. Its groups are `EXIT`, `VALIDATE`, `CAPTURE`, `FLAGS`, `DIFF`,

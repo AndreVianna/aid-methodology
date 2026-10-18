@@ -20,9 +20,8 @@ transcript.md, files.diff, checks.txt, ledger.md (the judge's ledger) and model.
 agent under test ran with). The judge's ledger is also saved in the fixture's .aid/.temp/review-pending/.
 
 Agent model: claude-sonnet-5-5 (DEFAULT_MODEL), passed as --model on every agent turn; the environment
-variable AID_CONV_MODEL names another model. The agent's environment drops the parent session's
-CLAUDE_CODE_* variables and CLAUDECODE, CLAUDE_EFFORT and CLAUDE_AFTER_LAST_COMPACT; proxy and CA
-variables are kept.
+variable AID_CONV_MODEL names another model. The agent's environment drops the parent session's identity
+and wiring (ENV_DROP_NAMES, ENV_DROP_PREFIXES); auth, provider, proxy and CA variables are kept.
 
 Sample file (samples/feature-NNN/<id>.md):
   frontmatter        id, covers, fixture (required); any other key is kept and ignored
@@ -93,9 +92,23 @@ REQUIRED_KEYS = ("id", "covers", "fixture")
 REQUIRED_SECTIONS = ("User", "Answer sheet", "Expected outcome", "Must not", "Checks")
 CHECK_VERBS = ("exists", "absent", "contains", "no-new-dir", "no-push", "tool-called", "tool-not-called")
 CREDENTIAL_RE = re.compile(r"(?i)(credential|secret|token)|\.(pem|key)$")
-# the agent's environment: the parent session's variables are dropped, proxy and CA variables are kept
-ENV_DROP_NAMES = ("CLAUDE_CONFIG_DIR", "CLAUDECODE", "CLAUDE_EFFORT", "CLAUDE_AFTER_LAST_COMPACT")
-ENV_DROP_PREFIXES = ("CLAUDE_CODE_",)
+# the agent's environment: the parent session's identity and wiring are dropped (the deny-list below);
+# every auth and provider variable, proxy and CA variable is kept, so the agent can still authenticate
+ENV_DROP_NAMES = (
+    # the parent session's identity: its session, account, organization, user and ingress
+    "CLAUDECODE", "CLAUDE_CODE_SESSION_ID", "CLAUDE_CODE_ENTRYPOINT", "CLAUDE_CODE_CHILD_SESSION",
+    "CLAUDE_CODE_USER_EMAIL", "CLAUDE_CODE_ACCOUNT_UUID", "CLAUDE_CODE_ORGANIZATION_UUID",
+    "CLAUDE_CODE_CONTAINER_ID", "CLAUDE_EFFORT", "CLAUDE_AFTER_LAST_COMPACT", "CLAUDE_CONFIG_DIR",
+    "CLAUDE_PID", "CLAUDE_ADDITIONAL_DIRECTORIES", "CCR_SESSION_PROFILE", "CCR_SPAWN_TIMESTAMP_MS",
+    # the parent session's ingress, messaging and sync wiring (URLs, tokens and sockets of that session)
+    "SESSION_INGRESS_URL", "CLAUDE_SESSION_INGRESS_TOKEN_FILE", "CLAUDE_CODE_POST_FOR_SESSION_INGRESS_V2",
+    "CLAUDE_CODE_MESSAGING_SOCKET", "CLAUDE_CODE_MESSAGING_TOKEN", "CLAUDE_CODE_SESSION_ATTENDED",
+    "CLAUDE_CODE_SYNC_SESSION_REFS", "CLAUDE_CODE_SYNC_PLUGINS", "CLAUDE_CODE_SYNC_SKILLS",
+    "CLAUDE_CODE_WORKER_EPOCH", "CLAUDE_CODE_USE_CCR_V2", "CLAUDE_CODE_ENVIRONMENT_RUNNER_VERSION",
+    "CLAUDE_CODE_DIAGNOSTICS_FILE", "CLAUDE_CODE_TEE_SDK_STDOUT", "CLAUDE_CODE_EXECPATH",
+)
+# every CLAUDE_CODE_REMOTE* variable (the remote-session wiring); no auth or provider name starts with it
+ENV_DROP_PREFIXES = ("CLAUDE_CODE_REMOTE",)
 # the sandbox's own set-up and credential files under HOME, never recorded in files.diff
 HOME_SETUP_DIRS = (".ccr", ".pki", ".local/share/pki", ".aws")
 HOME_SETUP_FILES = (".boto",)
@@ -104,6 +117,8 @@ WORKTREES_PREFIX = "fixture/.claude/worktrees/"
 # the judge's prompt only (files.diff on disk is never cut): per-file line cap and total byte cap
 JUDGE_FILE_LINES = 300
 JUDGE_TOTAL_BYTES = 200_000
+JUDGE_MAX_MARKERS = 20  # per-file truncation markers; the files past them are counted in one final line
+JUDGE_SUMMARY_BYTES = 100  # room kept inside the total for that final line
 # the first rule of every simulated-user turn: the answer sheet's end conditions override the rest
 END_FIRST_RULE = (
     "Before anything else, check the answer sheet's end conditions: if the assistant's last message "
@@ -545,23 +560,40 @@ def build_diff(before: dict[str, bytes], after: dict[str, bytes]) -> str:
 
 
 def judge_view(chunks: list[tuple[str, str]]) -> str:
-    """The diff the judge reads: each file cut at JUDGE_FILE_LINES, the whole cut at JUDGE_TOTAL_BYTES.
-    A cut is marked "[... N lines of <path> truncated ...]"; files.diff on disk is not cut."""
+    """The diff the judge reads, at most JUDGE_TOTAL_BYTES in all: each file cut at JUDGE_FILE_LINES, and
+    every cut marked "[... N lines of <path> truncated ...]". The markers count inside the cap. At most
+    JUDGE_MAX_MARKERS files get a marker; the rest are counted in one final "[... N more files truncated ...]"
+    line, which sits in the bytes reserved for it. files.diff on disk is not cut."""
+    ceiling = JUDGE_TOTAL_BYTES - JUDGE_SUMMARY_BYTES  # the room kept for the final summary line
     out: list[str] = []
     used = 0
+    markers = 0
+    unlisted = 0
     for rel, text in chunks:
         lines = text.splitlines(keepends=True)
+        # room for this file's own marker if it is cut: its hidden count is at most len(lines)
+        room = ceiling - len(f"[... {len(lines)} lines of {rel} truncated ...]\n".encode("utf-8"))
         shown: list[str] = []
         for line in lines[:JUDGE_FILE_LINES]:
             size = len(line.encode("utf-8"))
-            if used + size > JUDGE_TOTAL_BYTES:
+            if used + size > room:
                 break
             shown.append(line)
             used += size
         out.append("".join(shown))
         hidden = len(lines) - len(shown)
-        if hidden:
-            out.append(f"[... {hidden} lines of {rel} truncated ...]\n")
+        if not hidden:
+            continue
+        marker = f"[... {hidden} lines of {rel} truncated ...]\n"
+        size = len(marker.encode("utf-8"))
+        if markers < JUDGE_MAX_MARKERS and used + size <= ceiling:
+            out.append(marker)
+            used += size
+            markers += 1
+        else:
+            unlisted += 1
+    if unlisted:
+        out.append(f"[... {unlisted} more files truncated ...]\n")
     return "".join(out)
 
 

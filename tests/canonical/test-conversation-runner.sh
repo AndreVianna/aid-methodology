@@ -143,7 +143,7 @@ if role == "judge":
 record = {"role": role, "argv": argv, "cwd": os.getcwd(), "home": os.environ.get("HOME", ""),
           "prompt": prompt, "reviewer": reviewer,
           "env": {k: v for k, v in os.environ.items()
-                  if k.startswith(("CLAUDE", "HTTPS_PROXY", "NODE_EXTRA_CA_CERTS"))}}
+                  if k.startswith(("CLAUDE", "CCR_", "SESSION_INGRESS", "HTTPS_PROXY", "NODE_EXTRA_CA_CERTS"))}}
 with open(log, "a", encoding="utf-8") as fh:
     fh.write(json.dumps(record) + "\n")
 
@@ -190,8 +190,12 @@ if role == "agent":
         if os.environ.get("STUB_BIG") == "1":  # two large files: one over the per-file cap, one over the total
             with open("big.txt", "w", encoding="utf-8") as fh:
                 fh.write("".join(f"line {i}\n" for i in range(1, 401)))
-            with open("huge.txt", "w", encoding="utf-8") as fh:
-                fh.write("".join(f"line {i} " + "x" * 990 + "\n" for i in range(1, 301)))
+            with open("huge.txt", "w", encoding="utf-8") as fh:  # 250 lines: under the per-file cap, over the total
+                fh.write("".join(f"line {i} " + "x" * 990 + "\n" for i in range(1, 251)))
+            os.makedirs("many", exist_ok=True)  # 100 more large files: the total cap holds for all of them
+            for j in range(1, 101):
+                with open(os.path.join("many", f"f{j:03}.txt"), "w", encoding="utf-8") as fh:
+                    fh.write("".join(f"file {j} line {i} " + "y" * 20 + "\n" for i in range(1, 401)))
         here = os.getcwd()
         content += [
             {"type": "tool_use", "id": "t1", "name": "Skill", "input": {"skill": "aid-plan"}},
@@ -301,8 +305,18 @@ def end_first_ok(prompt):
         and "end conditions" in head and "overrides every other rule" in head
 
 
+# the parent session's identity and wiring that parent_session exports: none may reach the agent
+SESSION_VARS = (
+    "CLAUDECODE", "CLAUDE_CODE_SESSION_ID", "CLAUDE_CODE_ENTRYPOINT", "CLAUDE_CODE_USER_EMAIL",
+    "CLAUDE_CODE_CHILD_SESSION", "CLAUDE_CODE_REMOTE", "CLAUDE_CODE_REMOTE_SESSION_ID",
+    "CLAUDE_CODE_CONTAINER_ID", "CLAUDE_CODE_MESSAGING_TOKEN", "CLAUDE_EFFORT", "CLAUDE_AFTER_LAST_COMPACT",
+    "CLAUDE_CONFIG_DIR", "CLAUDE_PID", "CLAUDE_ADDITIONAL_DIRECTORIES", "CCR_SESSION_PROFILE",
+    "SESSION_INGRESS_URL", "CLAUDE_SESSION_INGRESS_TOKEN_FILE",
+)
+
+
 def env_leak(call):
-    return sorted(k for k in call["env"] if k == "CLAUDECODE" or k == "CLAUDE_EFFORT" or k.startswith("CLAUDE_CODE_"))
+    return sorted(k for k in call["env"] if k in SESSION_VARS)
 
 
 with open(judge_prompt_out, "w", encoding="utf-8") as fh:
@@ -316,6 +330,7 @@ print("agent_flags_ok=" + flag(bool(agents) and all(
     without_model(c["argv"]) == AGENT + (["--resume", "stub-session-1"] if i else []) for i, c in enumerate(agents))))
 print("agent_models=" + "|".join(sorted({model_of(c["argv"]) for c in agents})))
 print("agent_env_leak=" + ",".join(sorted({k for c in agents for k in env_leak(c)})))
+print("agent_env_auth=" + (agents[0]["env"].get("CLAUDE_CODE_OAUTH_TOKEN", "<unset>") if agents else "<no agent>"))
 print("agent_env_proxy=" + (agents[0]["env"].get("HTTPS_PROXY", "<unset>") if agents else "<no agent>"))
 print("agent_env_ca=" + (agents[0]["env"].get("NODE_EXTRA_CA_CERTS", "<unset>") if agents else "<no agent>"))
 print("user_end_first_ok=" + flag(bool(users) and all(end_first_ok(c["prompt"]) for c in users)))
@@ -324,6 +339,12 @@ print("judge_prompt_len=" + str(len(judge_prompt)))
 print("judge_marker_big=" + flag(re.search(r"\[\.\.\. \d+ lines of fixture/big\.txt truncated \.\.\.\]", judge_prompt)))
 print("judge_marker_huge=" + flag(re.search(r"\[\.\.\. \d+ lines of fixture/huge\.txt truncated \.\.\.\]", judge_prompt)))
 print("judge_has_last_big_line=" + flag("+line 400\n" in judge_prompt))
+judge_diff = re.search(r"```diff\n(.*?)\n```\n\n## checks.txt", judge_prompt, re.S)
+judge_diff_bytes = len(judge_diff.group(1).encode("utf-8")) if judge_diff else -1
+print("judge_diff_cap_ok=" + flag(0 < judge_diff_bytes <= 200000))
+print("judge_summary_big=" + flag(re.search(r"\[\.\.\. \d+ more files truncated \.\.\.\]", judge_prompt)))
+print("judge_markers_bounded=" + flag(
+    0 < len(re.findall(r"^\[\.\.\. .* truncated \.\.\.\]$", judge_prompt, re.M)) <= 21))
 print("judge_cap_ok=" + flag(
     re.search(r"\[\.\.\. \d+ lines of fixture/big\.txt truncated \.\.\.\]", judge_prompt)
     and re.search(r"\[\.\.\. \d+ lines of fixture/huge\.txt truncated \.\.\.\]", judge_prompt)
@@ -528,9 +549,15 @@ need_big()     { [ -f "$T/log/big.rc" ]     || STUB_BIG=1 invoke big end-after-o
 # the agent's environment is checked under a parent session's variables and a model override
 parent_session() {
     (
-        export CLAUDECODE=1 CLAUDE_CODE_SESSION_ID=parent-session CLAUDE_EFFORT=high \
-            CLAUDE_AFTER_LAST_COMPACT=1 HTTPS_PROXY=http://proxy.test:3128 \
-            NODE_EXTRA_CA_CERTS=/stub/ca.pem AID_CONV_MODEL=claude-override-test
+        export CLAUDECODE=1 CLAUDE_CODE_SESSION_ID=parent-session CLAUDE_CODE_ENTRYPOINT=cli \
+            CLAUDE_CODE_USER_EMAIL=user@example.test CLAUDE_CODE_CHILD_SESSION=1 CLAUDE_CODE_REMOTE=1 \
+            CLAUDE_CODE_REMOTE_SESSION_ID=parent-remote CLAUDE_CODE_CONTAINER_ID=parent-container \
+            CLAUDE_CODE_MESSAGING_TOKEN=parent-messaging CLAUDE_EFFORT=high CLAUDE_AFTER_LAST_COMPACT=1 \
+            CLAUDE_CONFIG_DIR=/stub/config CLAUDE_PID=4242 CLAUDE_ADDITIONAL_DIRECTORIES=/stub/extra \
+            CCR_SESSION_PROFILE=parent-profile SESSION_INGRESS_URL=http://ingress.test/parent \
+            CLAUDE_SESSION_INGRESS_TOKEN_FILE=/stub/ingress-token \
+            CLAUDE_CODE_OAUTH_TOKEN=dummy-oauth-token-for-test \
+            HTTPS_PROXY=http://proxy.test:3128 NODE_EXTRA_CA_CERTS=/stub/ca.pem AID_CONV_MODEL=claude-override-test
         "$@"
     )
 }
@@ -730,11 +757,22 @@ group_judge() {
     assert_eq "$(fact "$f" judge_marker_huge)" 1 \
         "JD04 the judge prompt marks the cut of a diff over the total cap, for the file that crosses it"
     assert_eq "$(fact "$f" judge_cap_ok)" 1 "JD05 the judge prompt stays under the total cap"
-    make_mutant cap 'JUDGE_FILE_LINES = 300' 'JUDGE_FILE_LINES = 10**9' \
-        'JUDGE_TOTAL_BYTES = 200_000' 'JUDGE_TOTAL_BYTES = 10**12' || fail "JD06 the cap mutation did not apply"
-    INVOKE_RUNNER="$MUT_PATH" STUB_BIG=1 invoke mbig end-after-one clean --sample s-pass --runs 1
-    expect_fail "JD06 a judge prompt with no cap fails JD02 to JD05" \
-        test "$(fact "$T/log/mbig.facts" judge_cap_ok)" = 1
+    assert_file_contains "$dir/files.diff" "b/fixture/many/f100.txt" \
+        "JD07 files.diff on disk records all 100 large files"
+    assert_eq "$(fact "$f" judge_diff_cap_ok)" 1 \
+        "JD08 the diff the judge reads stays within the total cap (200,000 bytes) with 100 large files"
+    assert_eq "$(fact "$f" judge_summary_big)" 1 \
+        "JD09 the files past the marker limit are counted in one final [... N more files truncated ...] line"
+    assert_eq "$(fact "$f" judge_markers_bounded)" 1 "JD10 the truncation markers are bounded (at most 21 lines)"
+    # mutations: removing one cap leaves the other in place, and each removal fails its own assertion
+    make_mutant jfile 'JUDGE_FILE_LINES = 300' 'JUDGE_FILE_LINES = 10**9' || fail "JD06a the per-file cap mutation did not apply"
+    INVOKE_RUNNER="$MUT_PATH" STUB_BIG=1 invoke mjfile end-after-one clean --sample s-pass --runs 1
+    expect_fail "JD06a a judge prompt with no per-file cap fails JD02" \
+        test "$(fact "$T/log/mjfile.facts" judge_marker_big)" = 1
+    make_mutant jtotal 'JUDGE_TOTAL_BYTES = 200_000' 'JUDGE_TOTAL_BYTES = 10**12' || fail "JD06b the total cap mutation did not apply"
+    INVOKE_RUNNER="$MUT_PATH" STUB_BIG=1 invoke mjtotal end-after-one clean --sample s-pass --runs 1
+    expect_fail "JD06b a judge prompt with no total cap fails JD04" \
+        test "$(fact "$T/log/mjtotal.facts" judge_marker_huge)" = 1
 }
 
 # ---------------------------------------------------------------- ENV
@@ -744,7 +782,9 @@ group_env() {
     local f="$T/log/envrun.facts" dir
     dir="$(any_run_dir "$T/log/envrun.out")"
     assert_eq "$(fact "$f" agent_env_leak)" "" \
-        "EN01 the agent's environment drops CLAUDE_CODE_*, CLAUDECODE, CLAUDE_EFFORT and CLAUDE_AFTER_LAST_COMPACT"
+        "EN01 the agent's environment drops each identity and session variable of the parent session"
+    assert_eq "$(fact "$f" agent_env_auth)" "dummy-oauth-token-for-test" \
+        "EN09 the auth variable CLAUDE_CODE_OAUTH_TOKEN is kept for the agent"
     assert_eq "$(fact "$f" agent_env_proxy)" "http://proxy.test:3128" "EN02 the proxy variable is kept for the agent"
     assert_eq "$(fact "$f" agent_env_ca)" "/stub/ca.pem" "EN03 the CA variable is kept for the agent"
     assert_eq "$(fact "$f" agent_models)" "claude-override-test" \
@@ -753,8 +793,14 @@ group_env() {
     make_mutant env 'if k not in ENV_DROP_NAMES and not k.startswith(ENV_DROP_PREFIXES)' 'if k != "CLAUDE_CONFIG_DIR"' \
         || fail "EN06 the environment mutation did not apply"
     INVOKE_RUNNER="$MUT_PATH" parent_session invoke menv end-after-one clean --sample s-pass --runs 1
-    expect_fail "EN06 an agent that inherits the parent session's CLAUDE_CODE_* variables fails EN01" \
+    expect_fail "EN06 an agent that inherits the parent session's variables fails EN01" \
         test "$(fact "$T/log/menv.facts" agent_env_leak)" = ""
+    make_mutant envauth 'if k not in ENV_DROP_NAMES and not k.startswith(ENV_DROP_PREFIXES)' \
+        'if k not in ENV_DROP_NAMES and not k.startswith(ENV_DROP_PREFIXES) and k != "CLAUDE_CODE_OAUTH_TOKEN"' \
+        || fail "EN10 the auth-drop mutation did not apply"
+    INVOKE_RUNNER="$MUT_PATH" parent_session invoke menvauth end-after-one clean --sample s-pass --runs 1
+    expect_fail "EN10 an agent that drops CLAUDE_CODE_OAUTH_TOKEN fails EN09" \
+        test "$(fact "$T/log/menvauth.facts" agent_env_auth)" = "dummy-oauth-token-for-test"
     make_mutant model '"--model", self.model,' '' || fail "EN07 the --model mutation did not apply"
     INVOKE_RUNNER="$MUT_PATH" invoke mmodel end-after-one clean --sample s-pass --runs 1
     expect_fail "EN07 an agent turn with no --model fails FL17" \
