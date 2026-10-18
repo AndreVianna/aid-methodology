@@ -1,0 +1,51 @@
+pipeline:
+  initiator: aid-describe
+started: '2026-10-14'
+minimum_grade: A
+user_approved: 'no'
+lifecycle: Running
+phase: Building
+active_skill: aid-execute
+step: DELIVERY-GATE
+step_detail: 'both tasks done; the delivery gate has passed; nothing is published yet'
+handoffs: []
+updated: '2026-10-17T16:00:00Z'
+pause_reason: --
+block_reason: --
+block_artifact: --
+intent:
+  request: 'let me list only the notes that carry a given tag'
+  reading: new capability
+  reason: 'notes have no tags today, so the behaviour is new'
+  depth: full
+  phases:
+    - Definition
+    - Specification
+    - Planning
+    - Building
+    - CI
+  changes: []
+sources: []
+write_backs: []
+lifecycle_history:
+  - date: '2026-10-14'
+    event: 'Work created'
+    grade: --
+    notes: 'Opened from a plain request'
+  - date: '2026-10-17'
+    event: 'All tasks done'
+    grade: A
+    notes: 'Gate passed clean'
+features: []
+qa:
+  - id: Q1
+    category: Requirements
+    impact: High
+    state: Answered
+    asked_by: aid-specify
+    step: CONTINUE
+    context: 'Should one note be allowed to carry more than one tag?'
+    suggested: 'Yes, a note may carry several tags'
+    answer: 'Yes'
+    answered_by: 'Sam Lee'
+    applied_to: 'REQUIREMENTS.md FR-2'

@@ -1,0 +1,36 @@
+pipeline:
+  initiator: aid-describe
+started: '2026-10-14'
+minimum_grade: A
+user_approved: 'no'
+lifecycle: Running
+phase: Definition
+active_skill: aid-describe
+step: COMPLETION
+step_detail: 'the idea draft is written, covering the objective, the problem, the users and the scope; waiting for the user to approve it'
+handoffs: []
+updated: '2026-10-16T09:00:00Z'
+pause_reason: --
+block_reason: --
+block_artifact: --
+intent:
+  request: 'let me list only the notes that carry a given tag'
+  reading: new capability
+  reason: 'notes have no tags today, so the behaviour is new'
+  depth: full
+  phases:
+    - Definition
+    - Specification
+    - Planning
+    - Building
+    - CI
+  changes: []
+sources: []
+write_backs: []
+lifecycle_history:
+  - date: '2026-10-14'
+    event: 'Work created'
+    grade: --
+    notes: 'Opened from a plain request'
+features: []
+qa: []

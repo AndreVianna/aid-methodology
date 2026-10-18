@@ -1,0 +1,35 @@
+pipeline:
+  initiator: aid-describe
+started: '2026-10-12'
+minimum_grade: A
+user_approved: 'yes'
+lifecycle: Running
+phase: Building
+active_skill: aid-execute
+step: EXECUTE
+step_detail: 'task-004: tests written, code half done'
+handoffs: []
+updated: '2026-10-17T11:00:00Z'
+pause_reason: --
+block_reason: --
+block_artifact: --
+intent:
+  request: 'keep the notes in a SQLite file instead of the JSON file'
+  reading: change
+  reason: 'the store exists today; only where it keeps the notes changes'
+  depth: full
+  phases:
+    - Specification
+    - Planning
+    - Building
+    - CI
+  changes: []
+sources: []
+write_backs: []
+lifecycle_history:
+  - date: '2026-10-12'
+    event: 'Work created'
+    grade: --
+    notes: 'Opened from a plain request'
+features: []
+qa: []

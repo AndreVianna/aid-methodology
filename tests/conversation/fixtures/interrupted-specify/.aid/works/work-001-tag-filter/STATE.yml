@@ -1,0 +1,47 @@
+pipeline:
+  initiator: aid-describe
+started: '2026-10-14'
+minimum_grade: A
+user_approved: 'no'
+lifecycle: Running
+phase: Specification
+active_skill: aid-specify
+step: CONTINUE
+step_detail: 'sections 1 to 6 of REQUIREMENTS.md are written; section 7 is not'
+handoffs: []
+updated: '2026-10-16T09:00:00Z'
+pause_reason: --
+block_reason: --
+block_artifact: --
+intent:
+  request: 'let me list only the notes that carry a given tag'
+  reading: new capability
+  reason: 'notes have no tags today, so the behaviour is new'
+  depth: full
+  phases:
+    - Definition
+    - Specification
+    - Planning
+    - Building
+    - CI
+  changes: []
+sources: []
+write_backs: []
+lifecycle_history:
+  - date: '2026-10-14'
+    event: 'Work created'
+    grade: --
+    notes: 'Opened from a plain request'
+features: []
+qa:
+  - id: Q1
+    category: Requirements
+    impact: High
+    state: Pending
+    asked_by: aid-specify
+    step: CONTINUE
+    context: 'Should one note be allowed to carry more than one tag?'
+    suggested: 'Yes, a note may carry several tags'
+    answer: --
+    answered_by: --
+    applied_to: --
