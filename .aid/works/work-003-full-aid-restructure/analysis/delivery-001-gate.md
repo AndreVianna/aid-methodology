@@ -26,7 +26,7 @@ start of the gate: `cb44bdc8`.
 | AC-24, retired names in the old -> new table | Pass | `backlog.md` W7-16 (`/aid-triage`), W7-17 (`aid-orchestrator`) |
 | KB with no work id, `INDEX.md` regenerated | Pass | Regenerated index differs only in its timestamp; the one `work-NNN` text in the KB is a command example in `release-tracking.md`, older than this work |
 | Cost baseline re-recorded | Done | Commit `011ca21d`; growth before re-recording was a few characters in skill descriptions and one more skill |
-| Coverage baseline re-recorded | Open, waiting on h003 (Q153) | 29 un-excused reductions, every one in a machine-limit or environment suite; 42 re-homes excused |
+| Coverage baseline re-recorded | Done (Q153) | Merged from this machine's run (head `20488518`, with pwsh) and the Codex run (head `180ca5af`, not root, with the locale): 13 of the 29 gaps ran there; 16 assertions that run on neither (dashboard crash, `rg` absent, pypi network, release smoke, Playwright) keep their baseline count. The diff then passes: 42 re-homes, 303 accepted removals, 2145 additions |
 | Samples the stanza names | As above | |
 | Earlier static-check groups | Not applicable | Delivery-001 is the first delivery |
 | Tracking proof (Q125) | Pass, under the Q151 wording | In Progress then In Review precede each task's own commit; the terminal state and grade sit in a separate state-only commit after it, and parallel waves share one In Progress commit |
