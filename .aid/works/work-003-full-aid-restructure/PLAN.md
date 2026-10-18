@@ -284,6 +284,7 @@ It is a distinct unit because nothing else in the work can be built before it.
 | task-367 | task-018 |
 | task-368 | task-018 |
 | task-369 | task-366, task-367, task-368 |
+| task-370 | task-369 |
 
 | Can Be Done In Parallel |
 |------------------------|
@@ -305,6 +306,7 @@ wave 9: task-015
 wave 10: task-018
 wave 11: task-366, task-367, task-368
 wave 12: task-369
+wave 13: task-370
 ```
 
 ### delivery-002: One work record and one set of step rules (Feature 002, engine)
