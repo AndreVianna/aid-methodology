@@ -190,24 +190,12 @@ describe('aid-read-ticket description fixture (AC-1)', () => {
   // Verbatim folded-block value from canonical/skills/aid-read-ticket/SKILL.md,
   // continuation lines joined with spaces (YAML > folded-block semantics).
   const AID_READ_TICKET_DESCRIPTION =
-    'On-demand, non-destructive ticket read. `aid-read-ticket [<connector>:]<ticket-id>` parses the' +
-    ' ref (an optional `<stem>:` prefix plus the tracker\'s own id), resolves which issue-tracker' +
-    ' connector answers it via the shared connector-resolution ladder (explicit override; a single' +
-    ' catalogued issue-tracker connector used silently; a choice asked when two or more are' +
-    ' catalogued; the host tool\'s own tracker MCP as fallback; a "no issue-tracker connector found."' +
-    ' notice otherwise), fetches the ticket through the host tool\'s own MCP -- AID resolves no' +
-    ' credential and stores none -- and displays its fields. Never writes, locally or to the' +
-    ' tracker, and never shows a confirmation prompt; a failed, not-found, unauthorized, or' +
-    ' unavailable fetch surfaces the tracker\'s error verbatim and exits without side effects.';
+    'Read one ticket from the project\'s issue tracker and show its fields. Use when a ticket' +
+    ' is named and you need its current contents, as `aid-read-ticket [<connector>:]<ticket-id>`.';
 
   it('passes the first code span byte-identical (contains [<connector>:]<ticket-id>)', () => {
     const rendered = renderFrontmatterValue(field('description', 'scalar', AID_READ_TICKET_DESCRIPTION));
     expect(rendered).toContain('`aid-read-ticket [<connector>:]<ticket-id>`');
-  });
-
-  it('passes the second code span byte-identical (contains <stem>:)', () => {
-    const rendered = renderFrontmatterValue(field('description', 'scalar', AID_READ_TICKET_DESCRIPTION));
-    expect(rendered).toContain('`<stem>:`');
   });
 
   it('all code spans in rendered output match originals exactly', () => {

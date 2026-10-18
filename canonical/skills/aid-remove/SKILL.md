@@ -2,10 +2,9 @@
 name: aid-remove
 description: >
   Remove or delete a code artifact, endpoint, dependency, feature, or dead code; update
-  dependents, tests, and docs. Use this skill when you already know what to remove and
-  want it scoped, specified, and broken into reviewable tasks in a single pass, with no
-  requirements interview. You approve the resulting plan before anything is built: this
-  skill plans and stops, so run `/aid-execute` to carry the plan out.
+  dependents, tests, and docs. Use when you already know what to remove and want it
+  scoped, specified and broken into reviewable tasks in one pass, before anything is
+  built.
 allowed-tools: Read Glob Grep Bash Shell Terminal Write Edit Agent
 argument-hint: "[description]  -- what to remove; runs straight to a graded flattened Lite work"
 ---

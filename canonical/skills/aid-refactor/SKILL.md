@@ -2,10 +2,8 @@
 name: aid-refactor
 description: >
   Restructure or optimize code without changing behavior (rename, restructure, or improve
-  performance). Use this skill when you already know what to refactor and want it scoped,
-  specified, and broken into reviewable tasks in a single pass, with no requirements
-  interview. You approve the resulting plan before anything is built: this skill plans and
-  stops, so run `/aid-execute` to carry the plan out.
+  performance). Use when you already know what to refactor and want it scoped, specified
+  and broken into reviewable tasks in one pass, before anything is built.
 allowed-tools: Read Glob Grep Bash Shell Terminal Write Edit Agent
 argument-hint: "[description]  -- what to refactor; runs straight to a graded flattened Lite work"
 ---

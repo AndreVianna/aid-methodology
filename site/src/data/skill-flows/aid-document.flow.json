@@ -14,8 +14,8 @@
       "terminal": null,
       "provenance": {
         "file": "canonical/skills/aid-document/SKILL.md",
-        "startLine": 20,
-        "endLine": 20,
+        "startLine": 14,
+        "endLine": 14,
         "sourceKind": "skill",
         "excerpt": "row (`alias_of: null`, its own `{verb: document, artifact: \"\"}`), `repurpose: true`"
       },
@@ -166,8 +166,8 @@
       "advanceType": "CHAIN",
       "provenance": {
         "file": "canonical/skills/aid-document/SKILL.md",
-        "startLine": 20,
-        "endLine": 20,
+        "startLine": 14,
+        "endLine": 14,
         "sourceKind": "sibling",
         "excerpt": "row (`alias_of: null`, its own `{verb: document, artifact: \"\"}`), `repurpose: true`"
       }

@@ -18,9 +18,9 @@ Skills for configuring AID, managing tickets and connectors, and talking to a pe
 
 - [`aid-orchestrate`](/skills/aid-orchestrate/) — Start, resume or cancel an AID work: find where it stands, size it and pick its phases.
 - [`aid-config`](/skills/aid-config/) — View or update AID pipeline settings.
-- [`aid-chat`](/skills/aid-chat/) — Talk to another AI coding session.
-- [`aid-set-connector`](/skills/aid-set-connector/) — Add or update one entry in the connector catalog.
-- [`aid-unset-connector`](/skills/aid-unset-connector/) — Remove one entry from the connector catalog.
+- [`aid-chat`](/skills/aid-chat/) — Talk with another AI coding session so that sessions can coordinate their work.
+- [`aid-set-connector`](/skills/aid-set-connector/) — Add or change a connector to a tracker or tool.
+- [`aid-unset-connector`](/skills/aid-unset-connector/) — Remove a connector to a tracker or tool.
 - [`aid-read-ticket`](/skills/aid-read-ticket/) — Read one ticket from the project's issue tracker and show its fields.
 - [`aid-create-ticket`](/skills/aid-create-ticket/) — File one new ticket in the project's issue tracker.
 - [`aid-update-ticket`](/skills/aid-update-ticket/) — Change exactly one part of an existing ticket in the project's issue tracker.
@@ -43,8 +43,8 @@ The full AID pipeline plus every shortcut skill, grouped by verb family.
 
 - [`aid-describe`](/skills/aid-describe/) — Gather requirements through an adaptive interview and write them to REQUIREMENTS.md.
 - [`aid-define`](/skills/aid-define/) — Decompose approved requirements into discrete features, each recorded as a `### Feature NNN` section of REQUIREMENTS.md § 11 that cites the `AC-N` criteria…
-- [`aid-specify`](/skills/aid-specify/) — Turn one feature into a technical specification, collaboratively.
-- [`aid-plan`](/skills/aid-plan/) — Sequence feature SPECs into deliverables -- each one a functional MVP that builds on the previous.
+- [`aid-specify`](/skills/aid-specify/) — Write a feature's technical specification.
+- [`aid-plan`](/skills/aid-plan/) — Group the specified features into deliveries.
 - [`aid-detail`](/skills/aid-detail/) — Break deliverables into small, dependency-driven, typed tasks -- each one a reviewable unit.
 
 ### `fix`
@@ -120,7 +120,7 @@ The full AID pipeline plus every shortcut skill, grouped by verb family.
 
 ### `test`
 
-- [`aid-test`](/skills/aid-test/) — Run a test suite or verification and consolidate the results into findings, in one pass.
+- [`aid-test`](/skills/aid-test/) — Run tests or checks and report the findings.
 - [`aid-test-security`](/skills/aid-test-security/) — Run a security verification and consolidate the findings -- SAST, DAST, fuzzing, or a dependency audit.
 - [`aid-test-performance`](/skills/aid-test-performance/) — Run a performance verification against a threshold or SLO -- a benchmark, a load test, or a stress test -- and report measured against target.
 - [`aid-test-data-quality`](/skills/aid-test-data-quality/) — Run data-quality checks against thresholds and report -- schema, freshness, completeness, uniqueness.
@@ -131,7 +131,7 @@ The full AID pipeline plus every shortcut skill, grouped by verb family.
 
 ### `prototype`
 
-- [`aid-prototype`](/skills/aid-prototype/) — Build a throwaway, low-fidelity model to test whether a direction actually works, before anyone commits to building it properly.
+- [`aid-prototype`](/skills/aid-prototype/) — Build a low-fidelity model of a direction.
 - [`aid-prototype-ui`](/skills/aid-prototype-ui/) — Build a throwaway, low-fidelity UI wireframe and interaction flow to test whether a UX direction actually works.
 
 ### `design`
@@ -161,11 +161,11 @@ The full AID pipeline plus every shortcut skill, grouped by verb family.
 
 ### `brainstorm`
 
-- [`aid-brainstorm`](/skills/aid-brainstorm/) — Diverge on a problem not yet formed into an answerable question, then converge it to a DESIGN SEED in `.aid/design/<slug>.md` -- exploration, framings, and…
+- [`aid-brainstorm`](/skills/aid-brainstorm/) — Shape an unformed idea into a design seed, a written note of framings and candidate directions.
 
 ### `document`
 
-- [`aid-document`](/skills/aid-document/) — Write a general document in one pass -- a Diataxis how-to, reference page or explanation, or a status or progress report.
+- [`aid-document`](/skills/aid-document/) — Write a how-to, reference or explanation document.
 - [`aid-document-decision`](/skills/aid-document-decision/) — Write an ADR in one pass -- an architecture decision record: the context, the decision itself, the alternatives considered, and the consequences.
 - [`aid-document-architecture`](/skills/aid-document-architecture/) — Write an architecture write-up in one pass -- a system's components, boundaries, and interactions, as C4 or arc42 views with Mermaid diagrams.
 - [`aid-document-guideline`](/skills/aid-document-guideline/) — Write a guideline in one pass -- an advisory recommended practice, stating the principle, its rationale, and do/don't examples.
@@ -176,15 +176,15 @@ The full AID pipeline plus every shortcut skill, grouped by verb family.
 
 ### `report`
 
-- [`aid-report`](/skills/aid-report/) — Analyse data or usage and return a verified insight report in one pass -- exploratory analysis, metrics, or an A/B result.
+- [`aid-report`](/skills/aid-report/) — Analyse data or usage into an insight report.
 
 ### `review`
 
-- [`aid-review`](/skills/aid-review/) — Review an existing artifact against criteria and return findings and recommendations in one pass -- code, a diff, a design, a pull request, a ticket, a…
+- [`aid-review`](/skills/aid-review/) — Review code, a change or a design against criteria.
 
 ### `research`
 
-- [`aid-research`](/skills/aid-research/) — Investigate an open technical question and return a verified answer in one pass -- evaluating options, or running an isolated feasibility spike if you…
+- [`aid-research`](/skills/aid-research/) — Investigate an open technical question and weigh its options.
 
 ### `deploy`
 
@@ -192,10 +192,10 @@ The full AID pipeline plus every shortcut skill, grouped by verb family.
 
 ### `monitor`
 
-- [`aid-monitor`](/skills/aid-monitor/) — Watch production, classify what you find, and route it to whoever should act.
+- [`aid-monitor`](/skills/aid-monitor/) — Watch production and route what it finds back into the pipeline.
 
 ## Execution
 
 Skills for executing detailed tasks, each through a graded adversarial review loop.
 
-- [`aid-execute`](/skills/aid-execute/) — Carry out one planned task and review the result.
+- [`aid-execute`](/skills/aid-execute/) — Carry out and review each planned task of a delivery.

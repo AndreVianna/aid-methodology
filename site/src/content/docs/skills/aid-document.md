@@ -1,6 +1,6 @@
 ---
 title: 'aid-document'
-description: 'Write a general document in one pass -- a Diataxis how-to, reference page or explanation, or a status or progress report.'
+description: 'Write a how-to, reference or explanation document.'
 generatedFrom: 'canonical/skills/aid-document/SKILL.md'
 ---
 
@@ -9,7 +9,7 @@ generatedFrom: 'canonical/skills/aid-document/SKILL.md'
 ## Frontmatter
 
 - **`name`** — aid-document
-- **`description`** — Write a general document in one pass -- a Diataxis how-to, reference page or explanation, or a status or progress report. Use this skill when the document you need does not fall into one of the named genres and you want it drafted now. It is grounded in, and accuracy- checked against, the Knowledge Base (`.aid/knowledge/`) and the project source; aid-tech- writer produces it and aid-reviewer verifies it. It resolves nothing: it drafts, you approve, and only then is the document placed. It never writes into `.aid/knowledge/`. A thin kind-sibling of `/aid-create-document`, which defines its full behavior. To settle a document's direction as a reusable design seed first, use `/aid-design-document`.
+- **`description`** — Write a how-to, reference or explanation document. Use when a general document is needed rather than one specific kind of document.
 - **`allowed-tools`** — Read Glob Grep Bash Shell Terminal Write Edit Agent
 - **`argument-hint`** — &lt;subject> -- what to document
 
@@ -61,11 +61,11 @@ Every node in the chart above, in chart order, with the exact `canonical/` text 
 
 <a id="fragment-n1"></a>**1 · `aid-document`** — {verb: document, artifact: ""} · _entry_
 
-~~~~plaintext title="canonical/skills/aid-document/SKILL.md#L20" wrap
+~~~~plaintext title="canonical/skills/aid-document/SKILL.md#L14" wrap
 row (`alias_of: null`, its own `{verb: document, artifact: ""}`), `repurpose: true`
 ~~~~
 
-[Source: `canonical/skills/aid-document/SKILL.md#L20`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-document/SKILL.md#L20)
+[Source: `canonical/skills/aid-document/SKILL.md#L14`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-document/SKILL.md#L14)
 
 <a id="fragment-n2"></a>**2 · `INTAKE`** · _entry_
 

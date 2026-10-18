@@ -1,11 +1,8 @@
 ---
 name: aid-monitor
 description: >
-  Watch production, classify what you find, and route it to whoever should act. Use this
-  skill after a deployment, on a schedule, or whenever something looks wrong in the field.
-  It reads telemetry, detects anomalies, performs root-cause analysis on the ones that are
-  bugs, and then routes: bugs back as a fix request, change requests as a new-work request. Scoped to one
-  work at a time.
+  Watch production and route what it finds back into the pipeline. Use when a release has
+  shipped or production misbehaves.
 allowed-tools: Read Glob Grep Bash Shell Terminal Write
 ---
 

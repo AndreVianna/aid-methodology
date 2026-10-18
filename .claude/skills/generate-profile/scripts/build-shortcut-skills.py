@@ -260,10 +260,8 @@ def render_doorway(row: dict) -> str:
     # it in natural English ("an API endpoint / middleware"), whereas the raw catalog value
     # would read as "which api to create". One template, no per-skill wording.
     description = (
-        f"{intent} Use this skill when you already know what to {verb} and want it scoped, "
-        "specified, and broken into reviewable tasks in a single pass, with no requirements "
-        "interview. You approve the resulting plan before anything is built: this skill "
-        "plans and stops, so run `/aid-execute` to carry the plan out."
+        f"{intent} Use when you already know what to {verb} and want it scoped, specified "
+        "and broken into reviewable tasks in one pass, before anything is built."
     )
 
     frontmatter = (
