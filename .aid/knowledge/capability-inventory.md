@@ -22,8 +22,7 @@ multi-profile CLI installer**. Its capabilities fall into five groups:
 
 1. The **pipeline skills** — the full-path lifecycle phases a user drives.
 2. The **direct-entry shortcut skills** — the fast **Lite path**: name a single, known
-   change and one autonomous run carries it from intake to an approval gate. A
-   suggest-only router (`/aid-triage`) points the user at the right entry when unsure.
+   change and one autonomous run carries it from intake to an approval gate. Plain requests are routed to the right entry by `/aid-orchestrate`, guided by the skill guide in `rules.md`.
 3. The **on-demand skills** — optional jobs run outside the linear pipeline.
 4. The **CLI installer** — how AID gets onto a repository and stays current.
 5. The **multi-tool distribution** — the same capabilities rendered for five host agents.
@@ -54,25 +53,25 @@ requirements) then `/aid-define` (Phase 2b, decompose into features). (Other lif
 labels — Init, Implement, Review, Test, Track, Triage — are **not** numbered phases:
 Init is the `aid-config` bootstrap, Implement/Test are Execute task types, Review is an
 Execute state, Track is the optional `/aid-monitor` skill's role, and Triage is the
-standalone `/aid-triage` router skill.)
+skill guide in `rules.md`, with `/aid-orchestrate` as its intake.)
 
 | Capability | Skill | What it does for the user |
 |------------|-------|---------------------------|
 | Configure the pipeline | `/aid-config` | View or set project settings; scaffolds `.aid/settings.yml` and the KB state file. |
 | Discover an existing project | `/aid-discover` | Analyzes a repository and builds the Knowledge Base, with a built-in review→Q&A→fix→approval gate. Its **ELICIT** state also captures external documentation sources and tool integrations (the connector catalog — see [External connections & tool integrations](#external-connections--tool-integrations-connector-catalog)). |
-| Gather requirements | `/aid-describe` (Phase 2a) | Adaptive one-question-at-a-time interview driven by the seasoned-analyst elicitation engine, producing `REQUIREMENTS.md` (the full-path entry only — routing moved to `/aid-triage`), and (greenfield) forward-authors a KB seed. See [Requirements-gathering capabilities](#requirements-gathering-capabilities-deep-dive) below. |
+| Gather requirements | `/aid-describe` (Phase 2a) | Adaptive one-question-at-a-time interview driven by the seasoned-analyst elicitation engine, producing `REQUIREMENTS.md` (the full-path entry only — routing moved to `/aid-orchestrate`), and (greenfield) forward-authors a KB seed. See [Requirements-gathering capabilities](#requirements-gathering-capabilities-deep-dive) below. |
 | Decompose into features | `/aid-define` (Phase 2b) | Decomposes the approved `REQUIREMENTS.md` into `### Feature NNN` sections under § 11, then cross-references the requirements and feature boundaries against the KB and codebase. |
 | Specify a feature | `/aid-specify` | Collaboratively writes the `#### Technical Specification` into that feature's `§ 11` section, one feature at a time. |
 | Plan deliveries | `/aid-plan` | Sequences feature specs into deliverables, each a functional MVP building on the last. |
 | Break down into tasks | `/aid-detail` | Decomposes deliverables into small, typed, dependency-ordered tasks with an execution graph, emitting a `DETAIL.md` per task (the delivery definition is its `PLAN.md` stanza). |
 | Execute a task | `/aid-execute` | Runs a task by type (Implement/Test/Refactor/etc.) with a built-in review→fix loop; one git branch per delivery. |
 | Ship a release | `/aid-deploy` | Packages completed deliveries, verifies the combined build, generates release notes. |
-| Observe production | `/aid-monitor` | Interprets telemetry, classifies findings, and routes them back into the pipeline: bugs to `/aid-fix`, change requests to `/aid-triage`, infrastructure to ops. |
+| Observe production | `/aid-monitor` | Interprets telemetry, classifies findings, and routes them back into the pipeline: bugs to `/aid-fix`, change requests to new works through `/aid-orchestrate`, infrastructure to ops. |
 
 > The "Init / Review / Test / Track / Triage" labels are **not numbered phases**: Init is the
 > `aid-config` bootstrap; Review (a state) and Test (a task type) run inside `/aid-execute`;
 > Track is the optional `/aid-monitor` skill's classify/route role; and Triage is the
-> standalone `/aid-triage` router skill. The exact label→skill mapping is documented in
+> skill guide in `rules.md`, with `/aid-orchestrate` as its intake. The exact label→skill mapping is documented in
 > `pipeline-contracts.md`.
 
 ## Requirements-gathering capabilities (deep dive)
@@ -122,7 +121,7 @@ Parameter: output_root") produces the as-built view without touching the real KB
 
 For a single, well-scoped change the user need not walk the whole pipeline. AID ships
 **34 verb-first direct-entry "shortcut" skills** (e.g. `/aid-fix`, `/aid-create-api`,
-`/aid-update-cli`) plus a suggest-only router, `/aid-triage`. Naming a change with a
+`/aid-update-cli`). Plain requests go through the `/aid-orchestrate` intake. Naming a change with a
 shortcut enters the **Lite path**: one fast, mostly-autonomous run that collapses the five
 definition phases (Describe → Define → Specify → Plan → Detail) into a single pass, then
 halts for approval. It never executes — `/aid-execute` remains a separate, user-initiated
@@ -206,16 +205,9 @@ unrealized part. `update` needs no seed, but consumes one if it finds it.
 an exploratory doorway for a problem space that is not yet a specific question, mutually routed
 with `/aid-research`.
 
-### The `/aid-triage` router
+### The plain-request intake (`/aid-orchestrate`)
 
-`/aid-triage` (`canonical/skills/aid-triage/SKILL.md`) is a **stateless, write-free,
-suggest-only** router — `INTAKE → CLASSIFY → SUGGEST → HALT`. It captures one free-form
-description, infers work-type and scope, then suggests exactly one next step and stops: the
-matching canonical shortcut for a known single change, or the full path `/aid-describe` for
-anything broad, multi-activity, or ambiguous (the conservative default). It reads
-`shortcut-catalog.yml` to resolve to a catalog row name; it writes nothing, creates
-no work folder, and dispatches no sub-agent. It is the extraction of `/aid-describe`'s former
-TRIAGE routing into its own skill; `/aid-monitor` also routes change-request findings to it.
+Plain requests are read against the skill guide in `canonical/aid/rules.md` (`## Handling a request` and `## Skill guide`). The guide matches a request by its meaning: a question about the project is answered from the Knowledge Base with sources and starts no work; one matching skill is proposed; several are chosen among; none carries on with no AID workflow. `/aid-orchestrate` (`canonical/skills/aid-orchestrate/SKILL.md`) then finds or creates the work, checks the reading against the Knowledge Base and the code, sizes it (lite or full) and picks its phases. It runs in the main conversation and dispatches no sub-agent. `/aid-monitor` hands its bug and change-request findings back through the same intake.
 
 ## On-demand skills
 
@@ -292,7 +284,7 @@ Each capability maps to the parts that implement it (full anatomy in `module-map
 |------------------|----------------------------|
 | Pipeline + on-demand skills | `canonical/skills/<skill>/` (SKILL.md + references; installed as `.agents/skills/aid-*`) backed by per-area helper scripts under `canonical/aid/scripts/` (`config/`, `connectors/`, `execute/`, `housekeep/`, `kb/`, `migrate/`, `release/`, `summarize/`); each skill dispatches `canonical/agents/*` sub-agents. See module-map.md "toolkit plane" + per-area script table. |
 | Requirements-gathering deep dive | `/aid-describe`'s `references/` engine corpus (`elicitation-engine.md`, `move-playbook.md`, `calibration.md`, `advisor-stance.md`, `coherence-check.md`, `state-describe-seed.md`) + the `aid-housekeep` Conformance Lane. See module-map.md "aid-describe elicitation engine" + "Conformance Lane". |
-| Direct-entry shortcuts & Lite path | 34 thin `canonical/skills/aid-<verb>[-<artifact>]/SKILL.md` doorways + the `/aid-triage` router, all delegating to `canonical/aid/templates/shortcut-engine.md`; family scaffolding in `canonical/aid/templates/shortcut-scaffolding/<family>.md`; invocation catalog `canonical/aid/templates/shortcut-catalog.yml` (built into skill dirs by `generate-profile/scripts/build-shortcut-skills.py`). |
+| Direct-entry shortcuts & Lite path | 34 thin `canonical/skills/aid-<verb>[-<artifact>]/SKILL.md` doorways, all delegating to `canonical/aid/templates/shortcut-engine.md`; family scaffolding in `canonical/aid/templates/shortcut-scaffolding/<family>.md`; invocation catalog `canonical/aid/templates/shortcut-catalog.yml` (built into skill dirs by `generate-profile/scripts/build-shortcut-skills.py`). |
 | External connections & tool integrations | `.aid/connectors/` (descriptors + generated `INDEX.md` + git-ignored `.secrets/`), populated by `/aid-discover` ELICIT; backed by `canonical/aid/scripts/connectors/` (`connector-registry`, `build-connectors-index`, `connector-secret` bash+PowerShell twins) and the `canonical/aid/templates/connectors/preset-catalog.md` presets. See module-map.md "connectors". |
 | CLI installer (install/update/remove) | `bin/` entry point + `lib/aid-install-core.sh`; `install.sh` / `install.ps1`; the 5 install manifests. See module-map.md "distribution plane". |
 | Dashboard | `dashboard/server/` (multi-repo server) + `dashboard/reader/` (STATE.md parser). See module-map.md "observation plane". |
@@ -307,7 +299,7 @@ Each capability maps to the parts that implement it (full anatomy in `module-map
 ## Open items
 
 - **Skill count.** AID ships **112 skill directories** under `canonical/skills/`: **18 curated
-  skills** (the pipeline-phase, on-demand, and `/aid-triage` router skills that are *not* in the
+  skills** (the pipeline-phase, on-demand, and `/aid-orchestrate` intake skills that are *not* in the
   shortcut catalog — including the three ticket skills `aid-read-ticket`, `aid-create-ticket`,
   `aid-update-ticket`) plus the **94-row shortcut catalog**'s skills, every row a canonical
   name — **34** engine-generated verb-first direct-entry shortcut doorways plus **60**

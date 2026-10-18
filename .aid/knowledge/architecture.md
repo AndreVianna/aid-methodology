@@ -113,7 +113,7 @@ This is the architecture that makes AID a *product*. It is a SYNTHESIS concept �
 
 **The flow:**
 
-1. `canonical/` holds the single source: `skills/` (112 skill directories), `agents/` (9 agent
+1. `canonical/` holds the single source: `skills/` (112 skill directories), `agents/` (8 agent
    directories) and `aid/{scripts,templates,rules.md}`. CONFIRMED via directory listing.
 2. `python .claude/skills/generate-profile/scripts/run_generator.py` renders the agents into the five
    `profiles/<tool>/` trees, one per `profiles/*.toml`. Each tree is wiped and regenerated in full on
@@ -187,8 +187,8 @@ Describe → Define Phase" below); every other numbered phase is one skill. Seve
 from everyday SDLC talk — Init, Implement, Review, Test, Track, Triage — are **not numbered
 phases**; the table below maps each label to what it really is (CONFIRMED in
 `docs/aid-methodology.md` "Skill Inventory" and the `canonical/skills/` listing — **112 skill
-directories**: 18 curated pipeline / on-demand / router skills (the standalone `/aid-triage`
-router among them) and the 94-row shortcut catalog's skills — 34 verb-first direct-entry
+directories**: 18 curated pipeline / on-demand / supporting skills (the `/aid-orchestrate`
+intake among them) and the 94-row shortcut catalog's skills — 34 verb-first direct-entry
 shortcut doorways plus 60 hand-authored `repurpose` skills):
 
 | Workflow label | Skill(s) | Numbered phase? | What it really is |
@@ -205,8 +205,8 @@ shortcut doorways plus 60 hand-authored `repurpose` skills):
 | Review | (inside `aid-execute`) | No | A state of the Execute loop (EXECUTE -> REVIEW -> FIX -> DONE), not a phase. |
 | Test | `aid-execute` | No | A task type (TEST) inside Execute, not a phase. |
 | Deploy | `aid-deploy` | No (Definition shortcut path) | On-demand optional shortcut path in the Definition group; not a numbered phase. |
-| Track / Monitor | `aid-monitor` | No (Definition shortcut path) | On-demand observe -> classify -> route; not a numbered phase. ("Track" has no separate referent.) Routes findings out: bug -> `/aid-fix`, change request -> `/aid-triage`. |
-| Triage | `aid-triage` (standalone skill); `aid-monitor` classify | No | `/aid-triage` is now its own **suggest-only router** skill (INTAKE -> CLASSIFY -> SUGGEST -> HALT) — the extraction of `aid-describe`'s former TRIAGE state; it writes nothing and creates no work. Monitor still classifies its own findings. |
+| Track / Monitor | `aid-monitor` | No (Definition shortcut path) | On-demand observe -> classify -> route; not a numbered phase. ("Track" has no separate referent.) Routes findings out: bug -> `/aid-fix`, change request -> a new work through `/aid-orchestrate`. |
+| Triage | the skill guide in `rules.md` with `/aid-orchestrate` as its intake | No | Reads a plain request by its meaning and matches it to a skill, or answers a project question from the KB; it writes nothing itself. The former standalone suggest-only router is folded into the skill guide. Monitor still classifies its own findings. |
 | Design | 22 `aid-design[-<artifact>]` skills + `aid-brainstorm` | No (pre-build stage) | Develops an idea into a **design seed** under `.aid/design/`; writes no code and no KB document. `create` realizes the seed, `update` revises what `create` committed. |
 | Shortcut (Lite path) | 34 `aid-<verb>[-<artifact>]` skills + the shared shortcut engine | No (collapses Describe→Detail) | Verb-first direct-entry doorways (`/aid-fix`, `/aid-create-api`, …) that delegate to `canonical/aid/templates/shortcut-engine.md` (INTAKE -> CAPTURE -> SPEC -> PLAN -> DETAIL -> GATE -> APPROVAL-HALT). The autonomous Lite path — enter by naming your change. |
 
@@ -226,7 +226,7 @@ Knowledge Base Maintenance group (on-demand, off the numbered pipeline): `aid-ho
 `aid-update-kb` (targeted KB delta), `aid-summarize` (HTML KB viewer) — alongside
 `aid-discover` (Phase 1). CONFIRMED in `docs/aid-methodology.md` "Skill Inventory".
 
-**Three entry points, two paths** (CONFIRMED in `docs/aid-methodology.md` §1 "Three Doors In"
+**Entry points, two paths** (CONFIRMED in `docs/aid-methodology.md` §1 "Three Doors In"
 and §4 "The Phases"):
 
 - **Full path** — `/aid-describe` (2a) -> `/aid-define` (2b) -> `/aid-specify` -> `/aid-plan` ->
@@ -238,16 +238,15 @@ and §4 "The Phases"):
   mostly-autonomous run (it never skips a phase — it collapses the information capture within each),
   grades every generated document at GATE, then halts for approval before `/aid-execute`. The
   default for a known, single-target change.
-- **Not sure which?** `/aid-triage` inspects a free-form description and *suggests* one entry — a
-  matching shortcut or the full path — but runs nothing itself.
+- **Plain request.** Say what you want in your own words. The skill guide in `.aid/runtime/rules.md` matches it to one skill, or the agent answers a project question from the KB with sources and starts no work. `/aid-orchestrate` then finds or creates the work, sizes it (lite or full) and picks its phases.
 
-CONFIRMED in `canonical/aid/templates/shortcut-engine.md`, `canonical/skills/aid-triage/SKILL.md`,
+CONFIRMED in `canonical/aid/templates/shortcut-engine.md`, `canonical/aid/rules.md` (`## Handling a request`), `canonical/skills/aid-orchestrate/SKILL.md`,
 and `docs/aid-methodology.md` §4.
 
 **Eleven formal feedback loops** let any phase revise an upstream artifact (8 within
 development, 2 from production, 1 cross-cutting). CONFIRMED in `docs/aid-methodology.md` §6
 "The Eleven Loops". The two production loops now run out to the entry layer (L9 Monitor ->
-`/aid-fix`, L10 Monitor -> `/aid-triage`; see `.aid/knowledge/pipeline-contracts.md`). The
+`/aid-fix`, L10 Monitor -> `/aid-orchestrate`; see `.aid/knowledge/pipeline-contracts.md`). The
 cross-cutting Loop 11 (Any phase -> Discover, targeted re-discovery) is what makes the KB the
 gravitational center in practice.
 
@@ -259,7 +258,7 @@ split). CONFIRMED: `canonical/skills/` has `aid-describe/` and `aid-define/` and
 `aid-interview/`; `canonical/agents/aid-interviewer/` is unchanged.
 
 - **`aid-describe` (Phase 2a)** — adaptive interview + COMPLETION and (greenfield) the KB seed,
-  **full path only** (no TRIAGE, no lite states — the router lives in `/aid-triage`).
+  **full path only** (no TRIAGE, no lite states — the plain-request intake lives in `/aid-orchestrate`).
   State machine: FIRST-RUN -> Q-AND-A -> CONTINUE ->
   {greenfield: DESCRIBE-SEED ->} COMPLETION [PAUSE -> `/aid-define`]. CONFIRMED in
   `canonical/skills/aid-describe/SKILL.md` (frontmatter `State machine:`).
@@ -323,14 +322,14 @@ concept, "human-gated phase advancement"; see Invariants).
 ## Agent / Sub-Agent Dispatch Model
 
 A skill (driven by the host tool) dispatches **specialist sub-agents** to do the work. AID
-defines **9 agents across 3 model tiers**. CONFIRMED: `canonical/agents/` holds exactly 9
-(aid-architect, aid-clerk, aid-developer, aid-interviewer, aid-operator, aid-orchestrator,
-aid-researcher, aid-reviewer, aid-tech-writer) and `docs/aid-methodology.md` §5.
+defines **8 agents across 3 model tiers**. CONFIRMED: `canonical/agents/` holds exactly 8
+(aid-architect, aid-clerk, aid-developer, aid-interviewer, aid-operator,
+aid-researcher, aid-reviewer, aid-tech-writer) and `docs/aid-methodology.md` §5. The orchestrator sub-agent is retired: the main conversation orchestrates, guided by the skill guide in `rules.md` and `/aid-orchestrate`, and has no agent row.
 
 | Tier | Agents | Role |
 |------|--------|------|
 | Large (1) | aid-architect | Highest-stakes reasoning where depth pays off: architecture, design decomposition, task breakdown. |
-| Medium (7) | aid-developer, aid-operator, aid-orchestrator, aid-tech-writer, aid-interviewer, aid-researcher, aid-reviewer | Workhorses: implement, release, route, document, interview, research/KB authoring, adversarial review. |
+| Medium (6) | aid-developer, aid-operator, aid-tech-writer, aid-interviewer, aid-researcher, aid-reviewer | Workhorses: implement, release, document, interview, research/KB authoring, adversarial review. |
 | Small (1) | aid-clerk | Mechanical extract/format/glob. |
 
 These are **default** tiers, not fixed ceilings. A dispatch site picks the
@@ -417,10 +416,10 @@ CONFIRMED in `README.md` "Install", `docs/aid-methodology.md` §10 and `lib/aid-
        full  : /aid-describe -> /aid-define -> /aid-specify -> /aid-plan -> /aid-detail
        lite  : /aid-<verb>[-<artifact>] shortcut -> shortcut engine
                  (INTAKE -> CAPTURE -> SPEC -> PLAN -> DETAIL -> GATE -> APPROVAL-HALT)
-       unsure: /aid-triage -> suggests one of the two above (runs nothing itself)
+       plain request: the skill guide in rules.md -> /aid-orchestrate sizes it and picks an entry
   -> work in its tracked work folder  -> approval halt -> /aid-execute   (numbered sequence ends here)
   separate on-demand paths (own entry, not sequential): /aid-deploy, /aid-monitor
-       (Monitor: bug -> /aid-fix; change request -> /aid-triage)
+       (Monitor: bug -> /aid-fix; change request -> /aid-orchestrate)
   (any phase -> Q&A entry in a STATE.md -> targeted re-discovery)
 ```
 CONFIRMED in `README.md` "Quick Start", `docs/aid-methodology.md` §4, and
@@ -449,7 +448,7 @@ CONFIRMED in `project-structure.md` "Entry Points" and file headers:
 Documented as reality + flagged; NOT silently reconciled (see `.scout-questions.tmp`):
 
 1. **Skill count (reconciled).** `canonical/skills/` has **112** directories — 18 curated
-   pipeline / on-demand / router skills plus the 94-row shortcut catalog's skills (34 verb-first
+   pipeline / on-demand / supporting skills plus the 94-row shortcut catalog's skills (34 verb-first
    direct-entry shortcut doorways + 60 hand-authored `repurpose` skills). `README.md`,
    `docs/aid-methodology.md`, `docs/repository-structure.md` and `docs/glossary.md` all state this
    taxonomy, so the doc-vs-code gap this item tracked stays closed. It cannot silently reopen:

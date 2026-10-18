@@ -120,7 +120,7 @@ L9_LINE=$(grep -m1 '^| L9 ' "$PIPELINE_CONTRACTS")
 L10_LINE=$(grep -m1 '^| L10 ' "$PIPELINE_CONTRACTS")
 assert_output_contains "$L9_LINE" "/aid-fix" "DMR05a pipeline-contracts.md L9 targets /aid-fix"
 assert_output_contains "$L9_LINE" "finding classified BUG" "DMR05b pipeline-contracts.md L9 trigger is 'finding classified BUG'"
-assert_output_contains "$L10_LINE" "/aid-triage" "DMR05c pipeline-contracts.md L10 targets /aid-triage"
+assert_output_contains "$L10_LINE" "/aid-orchestrate" "DMR05c pipeline-contracts.md L10 targets /aid-orchestrate"
 assert_output_contains "$L10_LINE" "finding classified Change Request" "DMR05d pipeline-contracts.md L10 trigger is 'finding classified Change Request'"
 
 # ===========================================================================

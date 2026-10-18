@@ -2,7 +2,7 @@
 kb-category: primary
 source: hand-authored
 objective: The typed artifact contracts and state-machine transitions between AID pipeline phases — what each phase consumes, produces, and gates on.
-summary: Read this before changing any skill, artifact template, or phase hand-off. It is the workflow + contract layer of the AID methodology — the three entry doors, the phase-to-phase data contracts, the on-disk work hierarchy (full + flattened Lite), the per-skill state machines, the grading gate, and the eleven feedback loops.
+summary: Read this before changing any skill, artifact template, or phase hand-off. It is the workflow + contract layer of the AID methodology — the entry doors, the phase-to-phase data contracts, the on-disk work hierarchy (full + flattened Lite), the per-skill state machines, the grading gate, and the eleven feedback loops.
 sources:
   - docs/aid-methodology.md
   - canonical/skills/
@@ -68,17 +68,7 @@ Two contract facts shape every hand-off:
 - **Artifacts are typed markdown files under `.aid/`.** Each phase reads named files from a
   prior phase and writes named files for the next. The file name and location are the
   contract — downstream skills navigate by convention, never by search.
-- **Three entry doors, two paths.** The *full path* runs every numbered phase and is entered
-  by `/aid-describe` (broad or new-project work). The *flattened Lite path* is entered by
-  naming the change with a verb-first **shortcut** (`/aid-<verb>[-<artifact>]`, e.g. `/aid-fix`,
-  `/aid-create-api`) — each shortcut is a thin doorway into the shared **shortcut engine**
-  (`shortcut-engine.md`) that collapses Describe → Define → Specify → Plan → Detail into one
-  fast, mostly-autonomous run. A third door, **`/aid-triage`**, is a stateless, write-free,
-  *suggest-only* router: it points at the matching shortcut or at `/aid-describe`, then stops.
-  `/aid-describe` is **full-path only** — it no longer triages or emits Lite work. CONFIRMED:
-  `docs/aid-methodology.md` ("## 4. The Phases", "The Lite Path: Direct-Entry Shortcuts");
-  `canonical/aid/templates/shortcut-engine.md`; `canonical/skills/aid-triage/SKILL.md`;
-  `canonical/skills/aid-describe/SKILL.md` (frontmatter `State machine:` — no TRIAGE/lite states).
+- **Entry doors, two paths.** The first door is a *plain request*: the agent reads it by its meaning against the skill guide in `.aid/runtime/rules.md` (§ Handling a request), and `/aid-orchestrate` finds, resumes or sizes the work. A request either reaches a skill, is answered as a project question from the KB (no work created), or carries on with no AID workflow. A typed `/aid-<skill>` always wins. The *full path* runs every numbered phase and is entered by `/aid-describe` (broad or new-project work). The *flattened Lite path* is entered by naming the change with a verb-first **shortcut** (`/aid-<verb>[-<artifact>]`, e.g. `/aid-fix`, `/aid-create-api`) — each shortcut is a thin doorway into the shared **shortcut engine** (`shortcut-engine.md`) that collapses Describe → Define → Specify → Plan → Detail into one fast, mostly-autonomous run. `/aid-describe` is **full-path only** — it no longer triages or emits Lite work. CONFIRMED: `docs/aid-methodology.md` ("## 4. The Phases", "The Lite Path: Direct-Entry Shortcuts"); `canonical/aid/rules.md` (`## Handling a request`, `## Skill guide`); `canonical/skills/aid-orchestrate/SKILL.md`; `canonical/aid/templates/shortcut-engine.md`; `canonical/skills/aid-describe/SKILL.md` (frontmatter `State machine:` — no TRIAGE/lite states).
 
 ---
 
@@ -86,9 +76,7 @@ Two contract facts shape every hand-off:
 
 The mandatory pipeline is six numbered phases; `aid-config` precedes it (bootstrap) and
 `aid-summarize`, `aid-deploy`, `aid-monitor`, `aid-housekeep`, `aid-ask`,
-`aid-update-kb` are off-pipeline or optional. The 34 verb-first shortcuts and
-`/aid-triage` are direct-entry skills that sit outside the numbered pipeline (the shortcuts
-drive the shortcut engine; triage only suggests). CONFIRMED: `docs/aid-methodology.md` ("Skill
+`aid-update-kb` are off-pipeline or optional. The 34 verb-first shortcuts are direct-entry skills, and `/aid-orchestrate` is the plain-request intake; both sit outside the numbered pipeline (the shortcuts drive the shortcut engine; the intake only routes). CONFIRMED: `docs/aid-methodology.md` ("Skill
 Inventory" table, "§4 The Phases").
 
 | # | Phase (skill) | Consumes | Produces | Gate |
@@ -217,7 +205,7 @@ is the contract a producing phase must satisfy and a consuming phase relies on.
 | task `DETAIL.md` | `aid-detail` (full) or shortcut engine DETAIL (flattened Lite) | Execute | `Type` ∈ {RESEARCH, DESIGN, IMPLEMENT, TEST, DOCUMENT, MIGRATE, REFACTOR, CONFIGURE} · Source · Depends on · Scope · Acceptance Criteria | immutable (rev-tracked if amended) |
 | `IMPEDIMENT-task-NNN.md` | Execute | Specify, Detail, Discover | Summary · Type ∈ {wrong-assumption, missing-dependency, architecture-conflict, kb-gap} · Options · Recommendation | closed when resolved |
 | `package-NNN-{slug}.md` | Deploy | Monitor, stakeholders | deliveries included · verification results · environment · release notes | one per shipped release |
-| `MONITOR-STATE.md` | Monitor | `/aid-fix` (bugs), `/aid-triage` (CRs) | Last Run · Active Findings (Classification/Severity/Evidence/Routing) · Resolved Findings | living |
+| `MONITOR-STATE.md` | Monitor | `/aid-fix` (bugs), `/aid-orchestrate` (CRs) | Last Run · Active Findings (Classification/Severity/Evidence/Routing) · Resolved Findings | living |
 
 CONFIRMED by the template files under `canonical/aid/templates/` and the artifact reference
 in `docs/aid-methodology.md` ("Skill Inventory" and "§4 The Phases"). The delivery definition's
@@ -248,7 +236,7 @@ machine … One invocation per state. No auto-advance").
 | `aid-plan` | universal loop applied per delivery: Propose → Discuss → Write → Review |
 | `aid-detail` | universal loop per delivery producing task files → build execution graph |
 | `aid-execute` | per-task universal loop (read type → execute → gates → reviewer dispatch → grade → fix/loopback) inside a parallel pool |
-| `aid-triage` | INTAKE → CLASSIFY → SUGGEST → HALT (stateless, write-free, suggest-only) |
+| `aid-orchestrate` | no state machine; numbered steps (match → check the reading → find or create → size and record → show the reading → hand over), run in the main conversation |
 | shortcut skills (`/aid-<verb>[-<artifact>]`, shared `shortcut-engine.md`) | INTAKE → CAPTURE → SPEC → PLAN → DETAIL → GATE → APPROVAL-HALT (Describe→Detail collapsed & autonomous; never executes) |
 | `aid-deploy` | package selection → final verification → package record → packaging → doc routing → status update |
 | `aid-monitor` | Observe → Classify → Analyze → Propose → Act |
@@ -256,13 +244,13 @@ machine … One invocation per state. No auto-advance").
 | `aid-update-kb` | ANALYZE → SCOPE → CONFIRM → APPLY → REVIEW → APPROVAL → DONE (Pre-flight worktree isolation; CONFIRM gate before any edit; FIX loop inside REVIEW) |
 
 CONFIRMED: per-skill `SKILL.md` files under `canonical/skills/` (`aid-describe/SKILL.md`
-frontmatter `State machine:` + Dispatch table; `aid-define/SKILL.md`; `aid-triage/SKILL.md`);
+frontmatter `State machine:` + Dispatch table; `aid-define/SKILL.md`; `aid-orchestrate/SKILL.md`);
 `canonical/aid/templates/shortcut-engine.md` (the shared engine state machine); the
 lite/housekeep/update sequences additionally in `docs/glossary.md` ("aid-housekeep",
 "aid-update-kb"). **Phase 2 was one skill (`aid-interview`); it is now two:** the interview and
 greenfield-seed states belong to `aid-describe` (2a) and feature-decomposition + cross-reference
 belong to `aid-define` (2b). `aid-describe` no longer triages or emits Lite work — routing moved
-to `/aid-triage` and Lite authoring moved to the shortcut engine. The `aid-interviewer` AGENT
+to `/aid-orchestrate` and Lite authoring moved to the shortcut engine. The `aid-interviewer` AGENT
 was NOT renamed — only the skill split.
 
 The **universal loop** (Propose, then Discuss, then Write, then Review) is shared by every full-path
@@ -331,13 +319,13 @@ CONFIRMED: `docs/aid-methodology.md` ("## 6. Feedback Loops").
 | L7 | Execute Review | any upstream phase | reviewer finds TASK/SPEC/KB-sourced issues | source-tagged issue → loopback |
 | L8 | Deploy | Execute | final verification (build+tests+lint) fails | routed back to `/aid-execute` |
 | L9 | Monitor | `/aid-fix` (shortcut) | finding classified BUG | `MONITOR-STATE.md` finding |
-| L10 | Monitor | `/aid-triage` | finding classified Change Request | `MONITOR-STATE.md` finding |
+| L10 | Monitor | `/aid-orchestrate` (plain request through `rules.md` § Handling a request) | finding classified Change Request | `MONITOR-STATE.md` finding |
 | L11 | any phase | Discover | KB found wrong/incomplete/stale | targeted re-discovery Q&A |
 
 The IMPEDIMENT routing (L6) is by Type: `kb-gap` routes to Discover, `architecture-conflict`
 to Specify, `missing-dependency` to Detail, and `wrong-assumption` to a task/SPEC update.
 CONFIRMED: `docs/aid-methodology.md` ("Loop 6"). The Monitor re-points (L9/L10) are CONFIRMED:
-`canonical/skills/aid-monitor/SKILL.md` ("bugs to /aid-fix, change requests to /aid-triage").
+`canonical/skills/aid-monitor/SKILL.md` (bugs back as a fix request, change requests as a new-work request, both through `rules.md` § Handling a request).
 
 ### The `design -> create -> update` artifact lifecycle (on-demand, off the numbered pipeline)
 
@@ -434,7 +422,7 @@ Load-bearing keys: `project.{name,description,type}`, `tools.installed`,
   `canonical/aid/scripts/execute/writeback-state.sh`) are the current source of truth and name it
   `STATE.yml`.
 - The skill taxonomy is **112 skill directories** under `canonical/skills/`: 18 curated
-  pipeline/on-demand/router skills (including `aid-read-ticket`, `aid-create-ticket`,
+  pipeline/on-demand/supporting skills (including `aid-read-ticket`, `aid-create-ticket`,
   `aid-update-ticket`) + the 94-row shortcut catalog's skills, every row a canonical
   name — 34 verb-first direct-entry shortcut doorways (generated from
   `shortcut-catalog.yml`) plus 60 hand-authored `repurpose` skills. The alias model is
@@ -443,7 +431,7 @@ Load-bearing keys: `project.{name,description,type}`, `tools.installed`,
   and `grep -c '^  - name:' canonical/aid/templates/shortcut-catalog.yml`. The recipe system
   (`canonical/aid/recipes/`, `parse-recipe.sh`, `{{slot}}` placeholders) was removed and
   replaced by the shortcut engine + `shortcut-scaffolding/<family>.md`; the prior "51 vs 52
-  recipes" count drift is closed. Agents (9) and KB doc types (14) are unchanged.
+  recipes" count drift is closed. Agents (8) and KB doc types (14) are the other counts.
 
 ---
 

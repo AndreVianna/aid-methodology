@@ -130,6 +130,7 @@ AID/
 ├── examples/                 # walkthrough samples (greenfield, brownfield full/lite)
 ├── tests/                    # test suites
 │   ├── canonical/            # cross-platform shell test suites + fixtures
+│   ├── conversation/         # conversation-test suite (run on demand): run.py, simulated-user.md, judge.md, fixtures/
 │   ├── lib/                  # shared test helpers (bundle.sh stages a release for the suites)
 │   └── windows/              # Windows-only PowerShell installer tests
 ├── .github/                  # GitHub config + CI workflows
@@ -192,7 +193,7 @@ CONFIRMED. The "edit in canonical, not profiles" rule is stated in
 | `packages/npm/package.json` | npm `aid-installer` manifest. |
 | `packages/pypi/pyproject.toml` | PyPI `aid-installer` build config. |
 | `site/package.json` | Astro website build config (separate from the CLI). |
-| `canonical/aid/templates/shortcut-catalog.yml` | Single-source 94-row manifest, every row a canonical invocation name, that generates the 34 verb-first shortcut doorway directories, alongside 60 hand-authored `repurpose` skills that own their own directories; read by the maintainer build helper (`build-shortcut-skills.py`) and by `/aid-triage`. |
+| `canonical/aid/templates/shortcut-catalog.yml` | Single-source 94-row manifest, every row a canonical invocation name, that generates the 34 verb-first shortcut doorway directories, alongside 60 hand-authored `repurpose` skills that own their own directories; read by the maintainer build helper (`build-shortcut-skills.py`). |
 | `canonical/aid/templates/shortcut-engine.md` | The shared state machine every shortcut skill delegates to (INTAKE → CAPTURE → SPEC → PLAN → DETAIL → GATE → APPROVAL-HALT). |
 | `canonical/aid/templates/shortcut-scaffolding/` | Per-family SPEC/PLAN/DETAIL scaffolding the shortcut engine consults (one file per verb family: create, change-refactor, fix, document, prototype, test-experiment, analyze-report). |
 | `canonical/aid/templates/task-detail-template.md` | Template for a task definition (`DETAIL.md`, formerly the task-level `SPEC.md` / `task-NNN.md`). |
@@ -250,6 +251,7 @@ CONFIRMED by file headers (`bin/aid` usage block) and `README.md` install/quick-
 | Location | Contents |
 |----------|----------|
 | `tests/canonical/` | Cross-platform shell test suites (`test-*.sh`) plus `fixtures/` and `ps51-compat-check.ps1`. Run via `tests/run-all.sh`. |
+| `tests/conversation/` | Conversation-test suite (NFR-T): `run.py` (Python, standard library only), `simulated-user.md`, `judge.md`, `fixtures/`. Run on demand, outside `tests/run-all.sh`. |
 | `tests/windows/` | Windows-only PowerShell installer tests (`Test-AidInstaller.ps1`), run only on the Windows CI lane. |
 | `dashboard/reader/tests/` | Python `pytest` suites for the KB/state reader. |
 | `dashboard/server/tests/` | Node + Python tests for the dashboard server. |

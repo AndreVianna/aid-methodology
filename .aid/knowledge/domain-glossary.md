@@ -375,7 +375,7 @@ computed gate the human approval complements), Task (each reviewed task carries 
 **Definition-as-used-here:** The two skills that together perform Phase 2 (Describe → Define). **`aid-describe`**
 (Phase 2a) gathers requirements through the seasoned-analyst interview — it
 produces the approved `REQUIREMENTS.md` (**full path only**; it no longer triages or emits lite
-work — routing moved to the standalone `/aid-triage` router, and lite work is entered through the
+work — routing moved to the plain-request intake (`/aid-orchestrate`), and lite work is entered through the
 shortcut engine), and on greenfield authors the forward-authored KB seed (DESCRIBE-SEED). Its
 state machine is `FIRST-RUN → Q-AND-A → CONTINUE → {greenfield: DESCRIBE-SEED →} COMPLETION
 [PAUSE → /aid-define]`. **`aid-define`** (Phase 2b, full path only) begins from the approved
@@ -384,8 +384,7 @@ then cross-references them against the KB and codebase (CROSS-REFERENCE). This p
 single former `aid-interview` skill — `aid-describe` is renamed-and-scoped to "describe the work,"
 `aid-define` to "define the features."
 
-**Relates-to:** Triage (the routing formerly opening `aid-describe`, now the standalone
-`/aid-triage` router), Seasoned-Analyst Engine (drives `aid-describe`'s interview),
+**Relates-to:** Plain-Request Intake (the routing formerly opening `aid-describe`, now `/aid-orchestrate`), Seasoned-Analyst Engine (drives `aid-describe`'s interview),
 Forward-Authored Seed (authored by `aid-describe` DESCRIBE-SEED), Work (the unit this pair creates).
 
 **sources:**
@@ -403,13 +402,9 @@ five-step next-move selector that runs every subsequent turn — STOP-CHECK, GAP
 gap inventory, by precedence), MOVE-SELECTION (from the move playbook), CALIBRATION-SHAPING (depth),
 and ENVELOPE + EMIT. Within `aid-describe` it drives the Q-AND-A / CONTINUE interview directly and
 is additionally consumed (never re-implemented) by DESCRIBE-SEED over the 5-element seed gap
-inventory via a three-parameter contract: gap inventory / stop predicate / record sink. The
-standalone `/aid-triage` router reuses the D1 opener's UX shape (a one-shot `Suggested:` / `Why:`
-capture) for its own single-turn reflect-back, but is a **UX-shape consumer only** — it runs no
-adaptive loop and has no gap inventory, stop predicate, or record sink of its own. One question
-per turn, never batched.
+inventory via a three-parameter contract: gap inventory / stop predicate / record sink. The plain-request intake (`/aid-orchestrate`) is not a consumer: it shows its one-line reading and waits for the answer, with no adaptive loop, gap inventory, stop predicate or record sink of its own. One question per turn, never batched.
 
-**Relates-to:** Triage (reuses the engine's D1 opener UX shape for its reflect-back), Forward-Authored
+**Relates-to:** Plain-Request Intake (its one-line reading), Forward-Authored
 Seed (consumes the engine to author the seed), NFR-7 envelope (the per-emission wrapper), Concept
 Spine (the keystone the engine elicits in greenfield).
 
@@ -429,38 +424,25 @@ malformed emission; a pre-emit self-check rejects any turn missing `Suggested:` 
 engine recommends as a real expert rather than punting with "it depends," surfacing its answer as
 a `Suggested:` the user can knowingly accept or override.
 
-**Relates-to:** Seasoned-Analyst Engine (which wraps every emission in this envelope), Triage (its
-SUGGEST reflect-back turn is an NFR-7 straw-man), Forward-Authored Seed (its conflict-surfacing and
+**Relates-to:** Seasoned-Analyst Engine (which wraps every emission in this envelope), Plain-Request Intake (its one-line reading proposes a workflow), Forward-Authored Seed (its conflict-surfacing and
 seed questions are NFR-7-wrapped).
 
 **sources:**
 - `canonical/skills/aid-describe/references/advisor-stance.md` ("The Envelope Template", "Suggested:", "Why:")
 - `canonical/skills/aid-describe/references/elicitation-engine.md` ("no bare, suggestion-less question is ever emitted")
 
-### Triage
+### Plain-Request Intake
 
-**Aliases:** `/aid-triage`, router, suggest-only router
+**Aliases:** plain request, skill guide, `/aid-orchestrate`
 
-**Definition-as-used-here:** The standalone `/aid-triage` router skill
-(`canonical/skills/aid-triage/SKILL.md`) — a **stateless, write-free, suggest-only** entry helper
-for the "I don't know which door fits" case. Its state machine is `INTAKE → CLASSIFY → SUGGEST →
-HALT`: it captures one free-form description, infers work-type and judges scope, then **suggests**
-exactly one next step and stops. A known, single, well-scoped change routes to the matching
-canonical shortcut (`/aid-fix`, `/aid-create-api`, …); anything broad, multi-activity, or
-ambiguous routes to the full path (`/aid-describe`). It reads `shortcut-catalog.yml` to resolve to
-a catalog row name, and every row name is a canonical one. It writes nothing — no work
-folder, no `STATE.md` — runs no interview, and dispatches no subagent; the conservative default
-routes anything short of one confident single match to `/aid-describe`. This is the **extraction**
-of `/aid-describe`'s former TRIAGE state into its own skill.
+**Definition-as-used-here:** How a request in plain words reaches the right AID workflow. The agent in the user's tool reads the request by its meaning and matches it to the skill guide in `canonical/aid/rules.md` (`## Skill guide`). A question about the project is answered from the Knowledge Base with sources and starts no work. One matching skill is proposed; several are chosen among; none carries on with no AID workflow. A typed `/aid-<skill>` always wins. The intake behind it is `/aid-orchestrate`, which runs in the main conversation: it finds or creates the work, checks the reading against the Knowledge Base and the code, sizes it (lite or full) and records its `intent:`. The main conversation dispatches no orchestrator sub-agent.
 
-**Relates-to:** Shortcut (what triage suggests for a known change), Shortcut Engine (where a
-suggested shortcut leads), Describe / Define (the full path triage suggests for broad work),
-NFR-7 Suggested-Answer + Rationale (its SUGGEST reflect-back is an NFR-7 straw-man).
+**Relates-to:** Shortcut (what a lite reading starts), Describe / Define (the full path for broad work), Work (what the intake creates), Monitor (its findings return through this intake).
 
 **sources:**
-- `canonical/skills/aid-triage/SKILL.md` ("Suggest-only router", "State machine: INTAKE -> CLASSIFY -> SUGGEST -> HALT")
-- `docs/glossary.md` ("`/aid-triage`")
-- `docs/aid-methodology.md` ("`/aid-triage` — you don't know which door fits … It never runs anything on your behalf")
+- `canonical/aid/rules.md` (`## Handling a request`, `## Skill guide`)
+- `canonical/skills/aid-orchestrate/SKILL.md`
+- `canonical/skills/aid-monitor/references/state-route.md` ("through `rules.md` § Handling a request")
 
 ### Lite Path
 
@@ -477,7 +459,7 @@ folder). It emits the same typed, reviewed artifacts as the full path with the p
 not skipped: a shortcut for known scope, not a quality bypass.
 
 **Relates-to:** Shortcut (the entry point), Shortcut Engine (the engine every shortcut delegates
-to), Triage (the router that may suggest a shortcut), Task (what a lite run still emits), Delivery
+to), Plain-Request Intake (the intake that may start a shortcut), Task (what a lite run still emits), Delivery
 Gate (the single synthesized delivery-001 it gates).
 
 **sources:**
@@ -498,7 +480,7 @@ doorways (`aid-fix`, `aid-create-api`, `aid-update-ui`, `aid-remove`,
 Engine**, generated by `build-shortcut-skills.py`; the other **24** rows are `repurpose: true`
 hand-authored skills (`aid-review`, `aid-research`, `aid-report`, `aid-design`, the document
 family, …). Every one of the 94 rows owns its own `canonical/skills/<name>/` directory. Naming a
-change with a shortcut is one of AID's three entry points (alongside `/aid-triage` and
+change with a shortcut is one of AID's three entry points (alongside plain requests through `/aid-orchestrate` and
 `/aid-describe`). The shortcut families mirror the verb catalog: create, update, fix, refactor,
 remove, deprecate, migrate, test + experiment, prototype + design, document, report,
 review, research, deploy + monitor, and query. `create` and `update` are the two canonical grid
@@ -507,7 +489,7 @@ artifact suffixes (`api`, `cli`, `config`, `dashboard`, `data-model`, `data-pipe
 `integration`, `job`, `messaging`, `test`, `theme`, `ui`).
 
 **Relates-to:** Shortcut Engine (what every shortcut delegates to), Lite Path (what a shortcut
-enters), Triage (the router that suggests a shortcut), Task (what a shortcut run emits).
+enters), Plain-Request Intake (the intake that starts a shortcut), Task (what a shortcut run emits).
 
 **sources:**
 - `canonical/aid/templates/shortcut-catalog.yml` (the 94-row single-source catalog + field contract)
