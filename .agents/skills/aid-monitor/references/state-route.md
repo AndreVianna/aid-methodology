@@ -1,6 +1,7 @@
 # State: ROUTE
 
 All findings are classified; propose and execute routing actions per finding classification.
+ROUTE runs inline in the main conversation: no sub-agent. Each bug and change request goes back as a plain request.
 
 ### Step 4: Propose Actions
 
@@ -13,11 +14,11 @@ Finding 1: [CRITICAL] [BUG] Null currency causes 500 error
   Evidence: 342 errors in 48h, payment module, started after package-002
   Root cause: PaymentService.Process() missing null validation
   Patch scope: PaymentService.cs + PaymentServiceTests.cs
-  → Proposed: Route to /aid-fix
+  → Proposed: Fix request
 
 Finding 2: [MEDIUM] [CHANGE REQUEST] Reports need local timezone
   Evidence: 12 support tickets requesting midnight-local instead of midnight-UTC
-  → Proposed: Route to /aid-triage
+  → Proposed: New-work request
 
 Finding 3: [LOW] [NO ACTION] Intermittent 504 on health endpoint
   Evidence: 3 occurrences in 7 days, all self-resolved < 30s
@@ -31,13 +32,13 @@ Finding 3: [LOW] [NO ACTION] Intermittent 504 on health endpoint
 
 For each approved finding:
 
-**BUG → /aid-fix:**
+**BUG → fix request:**
 - Record the bug finding in the in-memory monitor context with: root cause, patch scope, test requirements, severity. (A persistent `MONITOR-STATE.md` is deferred until the Monitor area matures — see aid-monitor/SKILL.md.)
-- Hand off the diagnosis — root cause, patch scope, test requirements — to `/aid-fix`, which scaffolds and implements the fix directly (→ optional `aid-deploy`). The spec is already correct; only the code is wrong, so `/aid-fix` skips Specify/Plan/Detail.
+- Hand the diagnosis — root cause, patch scope, test requirements — back as a fix request, in plain words, through `rules.md` § Handling a request. The intake sizes it as a bug fix with a clear problem, which runs Specification → Planning → Building → CI (`/aid-orchestrate` `references/size-and-route.md` § 1), and the diagnosis goes with it so nothing is investigated twice. Missing details are asked in Specification. (→ optional `aid-deploy`)
 
-**CHANGE REQUEST → /aid-triage:**
+**CHANGE REQUEST → new-work request:**
 - Record the change request in the in-memory monitor context (the desired new/changed behavior, with evidence).
-- Hand off the desired change and its evidence to `/aid-triage`, which suggests the right entry — the full path via `/aid-describe` for a broad or ambiguous change (the pipeline then runs from Interview: Specify → Plan → Detail → Execute; a large-enough CR spins up a new work), or a specific direct-entry shortcut for a known single change-type.
+- Hand the desired change and its evidence back as a new-work request, in plain words, through `rules.md` § Handling a request. The intake (`/aid-orchestrate`) checks the reading against the Knowledge Base and the code, sizes the work and picks its phases.
 
 **INFRASTRUCTURE → escalate:**
 - Document in the monitor run summary with recommended ops action

@@ -1,15 +1,9 @@
 ---
 name: aid-brainstorm
 description: >
-  Diverge on a problem not yet formed into an answerable question, then converge it to a
-  DESIGN SEED in `.aid/design/<slug>.md` -- exploration, framings, and the candidate
-  directions worth pursuing. Use this skill when a problem space is still open and you want
-  to explore it, rather than answer one specific question. Grounded in the Knowledge Base
-  (`.aid/knowledge/`) and the project source. It WRITES NO production code and NO KB
-  document, and it RESOLVES NOTHING -- you decide what to do with the seed. For an
-  already-answerable technical question that wants a curated, verified answer, use
-  `/aid-research` instead. Produced by the aid-architect agent and independently verified by
-  aid-reviewer. Allocates a work-NNN folder.
+  Shape an unformed idea into a design seed, a written note of framings and candidate
+  directions. Use when the problem is still unclear and you need to explore it before
+  committing to one direction.
 allowed-tools: Read Glob Grep Bash Shell Terminal Write Edit Agent
 argument-hint: "<subject> -- a fuzzy problem or theme to explore (not yet a formed question)"
 ---
@@ -40,9 +34,11 @@ entry line on each state.
    or theme do you want to explore?") and wait. The subject may be fuzzy -- an unformed
    problem is exactly this skill's case, so INTAKE never refuses an argument for not being
    a question.
-2. **Confirm the seed slug.** Because `artifact` is empty, feature-002 §4's `<token>` =
-   `artifact` rule does not apply: derive a kebab-case `<slug>` from the subject and
-   **confirm it with the user**, then the seed is `.aid/design/<slug>.md`.
+2. **Name the seed.** Because `artifact` is empty, feature-002 §4's `<token>` = `artifact`
+   rule does not apply: derive a kebab-case `<slug>` from the subject and state it in the same
+   message as your first question about the idea (for example "I'll call the seed
+   `note-tagging`; first question: ..."), not as a question of its own. The seed is then
+   `.aid/design/<slug>.md`.
 3. **Allocate** through the Work Initiation Gate exactly as the contract's Allocation rule
    requires (`.agents/skills/aid-design/SKILL.md` INTAKE step 4 is the shape), with
    `initiator: aid-brainstorm`. `phase` is not driven. The `work-NNN` folder is where

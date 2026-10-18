@@ -58,7 +58,10 @@ approval) -> DONE**. Print the `[State: NAME] -- {purpose}` entry line on each s
    (`worktree-lifecycle.sh create <work-id> <name>`, STOP on a non-zero exit or empty path,
    else enter the resolved path), **then** allocate (`pipeline.path: lite`, `initiator:
    aid-create-document`, `lifecycle: Running`, `active_skill: aid-create-document`;
-   `phase` not driven).
+   `phase` not driven). When `/aid-orchestrate` passed an `intent:` block, write it into that
+   STATE.yml in block style, keys as passed, replacing the template's `intent:` rest value, as
+   the engine's INTAKE Step 5 does (`.aid/runtime/templates/shortcut-engine.md`); a typed
+   `/aid-create-document` (or `/aid-document`, which runs this skill) writes none.
 6. **Read the design seed, if present.** If `.aid/design/document.md` exists, read it as
    prior context before drafting; it is an input, never a substitute, and is not modified
    by this run.

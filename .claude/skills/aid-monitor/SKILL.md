@@ -1,11 +1,8 @@
 ---
 name: aid-monitor
 description: >
-  Watch production, classify what you find, and route it to whoever should act. Use this
-  skill after a deployment, on a schedule, or whenever something looks wrong in the field.
-  It reads telemetry, detects anomalies, performs root-cause analysis on the ones that are
-  bugs, and then routes: bugs to `/aid-fix`, change requests to `/aid-triage`. Scoped to one
-  work at a time.
+  Watch production and route what it finds back into the pipeline. Use when a release has
+  shipped or production misbehaves.
 allowed-tools: Read Glob Grep Bash Shell Terminal Write
 ---
 
@@ -17,11 +14,11 @@ Monitor production. Detect what's wrong. Route it to where it gets fixed.
 
 ## Agents Involved
 
-- **Default executor:** `aid-orchestrator` (routes findings; never implements directly).
+- **Default executor:** the main conversation (routes findings inline; never implements directly).
 - **Telemetry interpretation:** `aid-researcher` (reads logs/metrics, classifies anomalies).
 - **Routing targets:**
-  - BUG → `/aid-fix` (creates + implements the fix work).
-  - Change Request → `/aid-triage` (routes to the right entry).
+  - BUG → a fix request, in plain words, through `rules.md` § Handling a request (the fix work is created and implemented through it).
+  - Change Request → a new-work request, in plain words, through `rules.md` § Handling a request.
   - Infrastructure → escalated to ops (outside AID scope).
 
 ## Argument-Hint
@@ -218,7 +215,7 @@ them more informative by adding mid-wait check-ins + structured progress.
 |-------|--------|--------|---------|
 | OBSERVE | `references/state-observe.md` | `aid-researcher` | → CLASSIFY |
 | CLASSIFY | `references/state-classify.md` | `aid-researcher` | → ROUTE |
-| ROUTE | `references/state-route.md` | `aid-orchestrator` | → DONE |
+| ROUTE | `references/state-route.md` | `inline` (main conversation) | → DONE |
 | DONE | _(inline — see Re-run below)_ | `inline` | → halt |
 
 On state entry, print `[State: NAME]` + the "you are here" map from State Detection above.

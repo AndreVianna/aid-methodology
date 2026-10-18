@@ -1,12 +1,8 @@
 ---
 name: aid-specify
 description: >
-  Turn one feature into a technical specification, collaboratively. Use this skill when a
-  feature has been defined and how it will actually be built needs settling before any task
-  is planned. The agent works as a tech lead: it reads the Knowledge Base, the requirements,
-  and the codebase, proposes a technical approach, and refines it with you, writing the
-  result into that feature's `#### Technical Specification` subsection in REQUIREMENTS.md
-  § 11. One feature at a time.
+  Write a feature's technical specification. Use when the features are defined and each
+  one needs a specification.
 allowed-tools: Read Glob Grep Bash Shell Terminal Write Edit
 argument-hint: "work-001/feature-001 (required)  [--reset] clear technical spec for this feature"
 ---

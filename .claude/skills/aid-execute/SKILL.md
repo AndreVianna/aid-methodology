@@ -1,11 +1,8 @@
 ---
 name: aid-execute
 description: >
-  Carry out one planned task and review the result. Use this skill when tasks have been
-  detailed and you are ready for the work to actually be done. It runs the task according to
-  its type -- RESEARCH, DESIGN, IMPLEMENT, TEST, DOCUMENT, MIGRATE, REFACTOR or CONFIGURE --
-  then loops through review and fixes until the result meets the configured minimum grade.
-  Each delivery runs on its own branch, so deliveries stay isolated from each other.
+  Carry out and review each planned task of a delivery. Use when the delivery's tasks are
+  ready to build.
 allowed-tools: Read Glob Grep Write Edit Bash Shell Terminal
 argument-hint: "work-001 (required if multiple works)  task-001 (required)"
 ---

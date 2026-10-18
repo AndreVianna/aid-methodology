@@ -109,8 +109,8 @@ two sub-cases, derived from whether the artifact's catalog rows carry a `repurpo
 | Seed deleted at `create` | **No** — persists; deletion is manual | **No** — same |
 
 **`/aid-brainstorm` — a third case, not a member of either class.** It writes a seed under
-a confirmed slug and has no `create` counterpart at all. Every `create`-stage rule above is
-therefore **inapplicable** to it, not waived — there is nothing to route to and nothing to
+a slug it states with its first question and has no `create` counterpart at all. Every
+`create`-stage rule above is therefore **inapplicable** to it, not waived — there is nothing to route to and nothing to
 consume its seed. The seed persists until the user promotes it into one of the
 `.aid/design/README.md` lifecycle entries, or deletes it by hand.
 
@@ -313,6 +313,6 @@ the count agrees.
 | Catalog row shape | Binds | Binds — its `design` row | Binds |
 | Seed shape and literal headings (fixed by `design-seed.md`) | Binds | Binds — feature-005's engine read and its two collapse-body reads consume it | Binds |
 | `## Destination` section | Required | Required | Optional — no fixed destination until promoted into a lifecycle entry |
-| Naming: `<token>` = the writer's `artifact` field | Binds | Binds | No — confirmed slug; its `artifact` is `""` |
+| Naming: `<token>` = the writer's `artifact` field | Binds | Binds | No — slug stated with its first question; its `artifact` is `""` |
 | Readiness gate + its detection rule + the placeholder convention it depends on | Binds | No — neither class-2 sub-case has a refusal state to hang one on | N/A — no `create` counterpart |
 | No `changelog:` and no `## Change Log` | Binds | Binds | Binds |

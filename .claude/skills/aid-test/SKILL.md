@@ -1,12 +1,7 @@
 ---
 name: aid-test
 description: >
-  Run a test suite or verification and consolidate the results into findings, in one pass.
-  Use this skill when you need to know the current state of something measurable -- unit,
-  integration or end-to-end tests, a security scan, a performance benchmark, a data-quality
-  check, or a model evaluation. It runs whatever the request implies and reports. It is
-  read-only on the source and resolves nothing: findings hand off to `/aid-fix`, and it
-  never fixes. To author test code rather than run it, use `/aid-create-test`.
+  Run tests or checks and report the findings. Use when something must be verified.
 allowed-tools: Read Glob Grep Bash Shell Terminal Write Edit Agent
 argument-hint: "<target> -- what to test/verify (a suite/module, or a kind: security, performance, data-quality, model-eval)"
 ---
@@ -51,7 +46,9 @@ Print the `[State: NAME] -- {purpose}` entry line on each state.
    create and enter the worktree per the gate's `§ 3a` step 2
    (`worktree-lifecycle.sh create <work-id> <name>`, STOP on a non-zero exit or empty path,
    else enter the resolved path), **then** allocate (`pipeline.path: lite`, `initiator:
-   aid-test`, `lifecycle: Running`, `active_skill: aid-test`; `phase` not driven).
+   aid-test`, `lifecycle: Running`, `active_skill: aid-test`; `phase` not driven). When
+   `/aid-orchestrate` passed an `intent:` block, write it into that STATE.yml as the
+   engine's INTAKE Step 5 does (`.aid/runtime/templates/shortcut-engine.md`); a typed `/aid-test` writes none.
 
 **Advance:** RUN.
 

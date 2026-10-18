@@ -19,6 +19,8 @@ Invalid first actions: a plain-text answer, a search, any other tool.
 Valid first action: Read `.aid/runtime/rules.md`.
 
 Summary:
+- Read every request by its meaning and match it to the skill guide in `.aid/runtime/rules.md`;
+  answer project questions from the Knowledge Base.
 - Record every state change (status, phase, grade, review outcome) in the work's STATE file immediately;
   during /aid-execute write In Progress, In Review and Done/Failed as they happen.
 - Work folders (`.aid/works/`) are transient: nothing permanent may depend on them.

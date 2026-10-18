@@ -80,8 +80,8 @@ overwrite them here — they are replaced with confirmed values at COMPLETION (s
 
 ### 1d. Monitor-routed finding seed (optional)
 
-If this work was opened following a `CHANGE REQUEST` finding that `/aid-triage` suggested
-routing here — originating in `aid-monitor/references/state-route.md` Step 5 — seed
+If this work was opened from a plain request that the skill guide routed here after a
+`CHANGE REQUEST` finding — originating in `aid-monitor/references/state-route.md` Step 5 — seed
 REQUIREMENTS.md with the desired new/changed behavior and its evidence; the full-path
 interview then continues over the remaining gaps as usual.
 
@@ -93,15 +93,14 @@ directly to `/aid-fix`; see `aid-monitor/references/state-route.md` Step 5.)
 **Note:** Sections are empty — no placeholder markers. `interview.sections[].state`
 (STATE.yml) tracks which sections have been filled.
 
-### 1e. Connector awareness — record a source ticket's `ticket_ref` (optional)
+### 1e. Connector awareness — add a source ticket to the work's `sources:` (optional)
 
 If this interview's originating context names, or clearly traces to, an already-filed ticket in a
 catalogued issue-tracker connector (e.g. the Monitor-routed finding in Step 1d cites one, or the
 requester names one directly), fetch it by invoking `/aid-read-ticket [<connector>:]<ticket-id>`
 — the connector resolution and host-MCP fetch live there (feature-001); no direct-fetch recipe is
-re-implemented here — and record `ticket_ref: <stem>:<external-id>` in this work's `STATE.yml`
-frontmatter (the same keys seeded at Step 1b-ii). Skip silently when no such ticket is named or
-no matching connector is catalogued — purely additive; never blocks or alters the interview flow;
+re-implemented here — and add a `sources:` entry (`ref: <stem>:<external-id>`, `kind: ticket`, `added` the current UTC time, `phase` the phase it is in now, `effect: ''` until it is applied) to this work's `STATE.yml`, on the list seeded at Step 1b-ii. Skip silently when no such ticket
+is named or no matching connector is catalogued — purely additive; never blocks or alters the interview flow;
 the delegated read is non-destructive, so no extra confirm is added.
 
 ---

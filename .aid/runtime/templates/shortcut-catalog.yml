@@ -19,7 +19,7 @@
 #      directories, one per non-`repurpose` row. After any edit to this file the
 #      maintainer runs that helper, then the FULL `run_generator.py` (never a partial
 #      render -- architecture.md § Gotchas).
-#   2. `/aid-triage` (feature-014) at runtime -- resolves a typed invocation to its
+#   2. The skill guide in `rules.md` at runtime -- resolves a plain request to its
 #      `{verb, artifact, default_type, group}` binding for an unsure user.
 #
 # ---------------------------------------------------------------------------
@@ -72,8 +72,7 @@
 #                      -- `DC01a` in `tests/canonical/test-doc-counts.sh` (asserts
 #                      `CANON + ALIAS == ROWS`, both sides derived by `grep -c` on the
 #                      anchored `^    alias_of:` prefix), `DMR31`/`DMR32` in
-#                      `test-deploy-monitor-repurpose.sh`, `TR21` in
-#                      `test-triage-routing.sh`, and the per-family row checks `CRF15`,
+#                      `test-deploy-monitor-repurpose.sh`, and the per-family row checks `CRF15`,
 #                      `DFS12`, `PFS13` and `TEF13`.
 #                 Deliberately NOT blockers, recorded so a future author does not chase
 #                 them: the `alias_of` column in `test-catalog-dirs-parity.sh` is
@@ -900,7 +899,7 @@ shortcuts:
 
   # --- G9/G10: Deploy + Monitor re-purpose (feature-012, task-034) -- 2 rows, no
   # aliases. repurpose: true -- these are the 2 pre-existing FAT pipeline skills this
-  # catalog also registers so the parity check and /aid-triage recognise them; the
+  # catalog also registers so the parity check and the skill guide recognise them; the
   # build helper SKIPS these rows (never generates/overwrites aid-deploy/aid-monitor's
   # hand-authored SKILL.md).
   - name: aid-deploy

@@ -1,13 +1,11 @@
 ---
 name: aid-experiment
 description: >
-  Design, run, and analyze a controlled experiment or A/B test. Use this skill when you
-  already know what to experiment and want it scoped, specified, and broken into
-  reviewable tasks in a single pass, with no requirements interview. You approve the
-  resulting plan before anything is built: this skill plans and stops, so run `/aid-
-  execute` to carry the plan out.
+  Design, run, and analyze a controlled experiment or A/B test. Use when the request is
+  already clear and you want it scoped, specified and broken into reviewable tasks in one
+  pass, before anything is built.
 allowed-tools: Read Glob Grep Bash Shell Terminal Write Edit Agent
-argument-hint: "[description]  -- what to experiment; runs straight to a graded flattened Lite work"
+argument-hint: "[description]  -- a request to experiment; runs straight to a graded flattened Lite work"
 ---
 
 # Shortcut: experiment

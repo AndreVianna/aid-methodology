@@ -52,117 +52,109 @@ a seam blocks on.
    `/aid-update-ticket`. Never persist anything host-MCP-specific back into `.aid/connectors/` —
    the descriptor and `INDEX.md` are catalog metadata, not a cache of live tool state.
 
-## Multi-level `ticket_ref` linkage
+## Work sources (`sources:`)
 
-A `ticket_ref` scalar links **one lifecycle unit** to **one external tracker item**, tying the
-link to a catalogued connector stem:
+A work's tracker items, files, documents and links are entries of **one** list: the work's
+`sources:` in its `STATE.yml` (`work-state-template.yml`). It is the only place a work records an
+external link. No unit below the work carries one: a feature, a delivery or a task holds no link of
+its own, and a feature's `REQUIREMENTS.md § 11` section carries no `**Ticket:**` line. A work's
+entries reach that work only. Project sources (`.aid/connectors/INDEX.md`,
+`.aid/knowledge/external-sources.md`) are never listed in it: every work uses them when needed,
+unattached.
 
+Each entry carries five fields:
+
+```yaml
+sources:
+  - ref: 'jira:PROJ-123'   # connector-stem:id, a URL, or a repo-relative path
+    kind: ticket           # ticket | issue | document | link | file
+    added: '2026-10-14T10:00:00Z'
+    phase: Planning        # phase when it entered
+    effect: 'answered Q4, Q6; raised Q9'
 ```
-ticket_ref: "<connector-stem>:<external-id>"     # e.g. jira:PROJ-123
+
+- `ref` names the source: `<connector-stem>:<external-id>` for a tracker item (the stem is one
+  catalogued under `.aid/connectors/`, the id is whatever that tracker uses for the item), a URL, or
+  a repo-relative path.
+- `kind` is one of the closed values `ticket | issue | document | link | file`.
+- `added` is the ISO-8601 UTC time the source entered the work; `phase` is the phase the work was in
+  at that time.
+- `effect` says what applying the source did, for example `answered Q4, Q6; raised Q9`.
+
+An entry is appended when a source is pulled in, at any phase, and has a single writer: the work's
+active branch.
+
+### Write-backs (`write_backs:`)
+
+On the user's request only, the agent writes the work's information back to a source through
+`/aid-update-ticket` (preview and confirm, as for any ticket write). Each write adds one entry to the
+top-level `write_backs:` list. The list sits beside `sources:`, not inside it, so every key stays
+within three levels:
+
+```yaml
+write_backs:
+  - at: '2026-10-15T09:00:00Z'
+    source: 'jira:PROJ-123'            # the sources[].ref written to
+    part: attachment                   # the /aid-update-ticket part written
+    files: 'REQUIREMENTS.md, PLAN.md'  # one comma-separated string
 ```
 
-`<connector-stem>` MUST name a stem catalogued under `.aid/connectors/` (the same stem
-`connector-registry.sh read <stem> <field>` addresses); `<external-id>` is whatever identifier
-that connector's target tool uses for the item (a Jira key, a GitHub issue number, ...). `ticket_ref`
-is a **lifecycle-unit field, never a connector-descriptor field** — the descriptor schema
-(`name`/`connection_type`/`endpoint`/`auth_method`/`secret_reference`/`preset`/routing fields) is
-completely unchanged by this protocol; nothing here adds a field to `.aid/connectors/<stem>.md`.
+- `at` is the ISO-8601 UTC time of the write; `source` is the `sources[].ref` it was written to.
+- `part` is the `/aid-update-ticket` part used: `description`, `comment`, `status` or `attachment`.
+- `files` names the files attached, as one comma-separated string. It is set for `attachment` only
+  (usually `REQUIREMENTS.md`).
 
-**Settable at any level, always optional.** `ticket_ref` may be set at **work**, **feature**,
-**delivery**, and/or **task** — independently, and none of them are required. A unit that carries
-no `ticket_ref` of its own simply inherits one via the resolution rule below; a unit whose entire
-containment chain carries no `ticket_ref` anywhere resolves to **nothing**, and every seam treats
-that exactly like "no relevant MCP connector found" (Step 2 of the seam recipe above) — skip
-silently, no error. Readers/dashboard ignore the field entirely when absent (backward-compatible;
-no required-field semantics change anywhere it is added).
+### Finding the work's ticket
 
-**Where it lives, per level**:
+A seam that needs the work's tracker item (to read it through `/aid-read-ticket`) takes the first
+`sources:` entry whose `kind` is `ticket` and whose `ref` is `<connector-stem>:<external-id>`. An
+entry of any other kind is never read as a ticket.
 
-| Level | Carrier | Field |
-|---|---|---|
-| Work | `STATE.yml` frontmatter (`work-state-template.yml`) | `ticket_ref` |
-| Feature | the feature's `### Feature NNN` section in `REQUIREMENTS.md § 11` — a section, so it carries no frontmatter block of its own | `**Ticket:**` line |
-| Delivery | `STATE.yml` frontmatter (`delivery-state-template.yml`) — full path only (a flattened work's single delivery uses the work-root `STATE.yml`'s own `ticket_ref`, per the flattened `delivery_lifecycle` promotion `work-state-template.yml` already documents) | `ticket_ref` |
-| Task | `STATE.yml` frontmatter (`task-state-template.yml`) — **full path only**. The flattened layout (no per-task `STATE.yml`, the `tasks_lifecycle` mapping instead) carries no separate task-level `ticket_ref` of its own; resolution for a flattened task passes straight through to its delivery/work levels, which do carry the scalar. | `ticket_ref` |
-
-## Nearest-ancestor resolution
-
-Nearest-ancestor resolution is the **inheritance/traceability semantics** of the link — a
-lifecycle unit without its own `ticket_ref` inherits the **nearest** ancestor's effective ref by
-AID containment (`work ⊃ delivery ⊃ task`, `work ⊃ feature`; a delivery groups ≥1 feature). A unit
-uses its **own** `ticket_ref` when present; otherwise it inherits, per unit type:
-
-| Resolving for... | Chain (own → ancestor → ... → work) |
-|---|---|
-| Delivery | `delivery → work` |
-| Feature | `feature → work` |
-| Task | `task → its owning (SPEC-traced) feature → its delivery → work` |
-
-**Why feature outranks delivery for a task.** A delivery bundles several features; the feature is
-the task's specific subject. A `PLAN.md` deliverable groups features by shippable increment, not by
-subject matter — inheriting the delivery's `ticket_ref` first would attribute a task to whichever
-tracker item happens to cover the *whole delivery*, when the *feature* it actually implements may
-have its own, more specific one. So the feature — the narrower, more specific ancestor — is
-consulted first; the delivery, the broader one, only if the feature has none.
-
-**"Owning feature" — SPEC-traced, not just co-located.** A task's owning feature is the one its
-`DETAIL.md` traces to (via its `Source`/`Depends on` lineage back through `PLAN.md`'s deliverable
-entry to a specific `### Feature NNN` section) — never merely "some feature in the same delivery."
-**A task tracing to no single feature skips the feature level entirely**: a flattened Lite work has
-one implicit feature and so one `§ 11` section — a Lite work's feature-level `ticket_ref` is
-inherited via the work level instead), and even in a full-path work a task that legitimately spans multiple features
-(rare — most tasks trace to exactly one) has no single feature to consult, so resolution for that
-task is `task → its delivery → work` instead — the delivery is used because it is still a genuine
-ancestor of the task, unlike an ambiguous choice among several sibling features.
-
-**Terminal case.** If every level in the chain is absent (own field empty and every ancestor's
-field empty, all the way to work), resolution yields **no ticket** — the seam skips connector
-interaction for this unit (same silent-skip behavior as an unmatched connector).
+**Terminal case.** A work with no such entry resolves to **no ticket**. The seam then skips
+connector interaction silently, the same as an unmatched connector: there is nothing to read.
 
 ## Wired seams
 
 Every seam below implements the recipe above via a **short, additive step or section** that
 **points to this file** — no seam re-describes the recipe inline, and none of the pointers change
-any existing behavior; a work with zero catalogued connectors and zero `ticket_ref` values behaves
+any existing behavior; a work with zero catalogued connectors and no `sources:` ticket behaves
 identically to before this protocol existed.
 
 | Seam | Role | What it does |
 |---|---|---|
-| `aid-describe` | Ingest | When the interview's originating context names a source ticket (e.g. a Monitor-routed finding, or the human names one), read it **via `/aid-read-ticket`** and record `ticket_ref` at the **work** level it just created. |
-| `aid-specify` | Ingest | When specifying a feature whose requirements trace to a source ticket, read it **via `/aid-read-ticket`** and record `ticket_ref` at the **feature** level (the `§ 11` section it is authoring). |
-| `aid-plan` | Ingest | When a deliverable being written corresponds to (or the user names) an external tracker item, record its `ticket_ref` at the **delivery** level (the `delivery-NNN/STATE.yml`, or the work-root `STATE.yml` for a flattened work, it is creating). |
-| `aid-fix` (and the shared shortcut engine every other shortcut delegates to) | Ingest | When the description this run captures names, or clearly originates from, a filed ticket, record its `ticket_ref` at the **work** level `INTAKE` just allocated. |
+| `aid-describe` | Ingest | When the interview's originating context names a source ticket (e.g. a Monitor-routed finding, or the human names one), read it **via `/aid-read-ticket`** and add its `sources:` entry to the work it just created. |
+| `aid-specify` | Ingest | When specifying a feature whose requirements trace to a source ticket, read it **via `/aid-read-ticket`** and add its `sources:` entry to the work. The feature section gets no link of its own. |
+| `aid-plan` | Ingest | When a deliverable being written corresponds to (or the user names) an external tracker item, add its `sources:` entry to the work's `STATE.yml`. |
+| `aid-fix` (and the shared shortcut engine every other shortcut delegates to) | Ingest | When the description this run captures names, or clearly originates from, a filed ticket, add its `sources:` entry to the work `INTAKE` just allocated. |
 | `aid-ask` | Enrich | May enrich an answer by reading a linked ticket's status/fields **via `/aid-read-ticket`** when the question concerns a linked tracker item; purely additive to its existing KB/codebase/in-flight-work context sources. |
 | `aid-researcher` (agent) | Enrich | May consult `.aid/connectors/INDEX.md` and, for a relevant `mcp` connector, gather additional evidence for a RESEARCH task or a broad `aid-ask` dispatch by reading the linked ticket **via `/aid-read-ticket`** — the same read-heavy, evidence-cited discipline it already applies to KB/codebase sources. |
 | `aid-developer` (agent) | Enrich | May consult `.aid/connectors/INDEX.md` and, for a relevant `mcp` connector, pull additional context for an IMPLEMENT/TEST/REFACTOR/CONFIGURE/MIGRATE task by reading the linked ticket's latest description/comments **via `/aid-read-ticket`** before implementing — read-only enrichment; never a substitute for the TASK file's own Scope/Acceptance Criteria. |
 
 **Ingest vs. enrich, restated.** An **ingest** seam runs early in the pipeline (Describe/Define/Specify/
-Plan/the shortcut engine's INTAKE) and *records* a `ticket_ref` at the level it is creating, sourced
-from a **user-supplied ref** to a ticket that already exists externally, delegating any read to
-`/aid-read-ticket`. `aid-ask`/`aid-researcher`/`aid-developer` *enrich* an answer or an
-investigation from a connector's live data **via `/aid-read-ticket`**, without recording or
-resolving a `ticket_ref` of their own. **No seam performs an outward write** — filing, commenting,
-and status transitions are the dedicated skills' job.
+Plan/the shortcut engine's INTAKE) and *adds* a `sources:` entry to the work it is creating or
+working in, sourced from a **user-supplied ref** to a ticket that already exists externally,
+delegating any read to `/aid-read-ticket`. `aid-ask`/`aid-researcher`/`aid-developer` *enrich* an
+answer or an investigation from a connector's live data **via `/aid-read-ticket`**, without adding
+a `sources:` entry of their own. **No seam performs an outward write** — filing, commenting,
+attaching and status transitions are the dedicated skills' job.
 
-## Worked example (nearest-ancestor resolution)
+## Worked example (work sources)
 
-A task carries no `ticket_ref` of its own, but its owning feature does:
-`ticket_ref: jira:PROJ-45`. A `jira` connector is catalogued with `connection_type: mcp`.
+A work's `sources:` list holds `ref: 'jira:PROJ-45'` with `kind: ticket`, and a `jira` connector is
+catalogued with `connection_type: mcp`.
 
-1. Per this protocol's resolution rule: the task's own `ticket_ref` is absent → its owning
-   (SPEC-traced) feature has `jira:PROJ-45` → resolution stops there (nearest ancestor found). By
-   nearest-ancestor, the task's **effective** `ticket_ref` resolves to `jira:PROJ-45` — the
-   traceability link a reader/dashboard shows for the task.
-2. **No automated caller acts on this resolution** — there is no seam that resolves
-   nearest-ancestor and then writes anything outward.
+1. Per this protocol's "Finding the work's ticket" rule: the first `kind: ticket` entry is
+   `jira:PROJ-45`, so the seam's ticket is `jira:PROJ-45`, on the connector stem `jira`.
+2. **No automated caller acts on this resolution** — there is no seam that picks the ticket and then
+   writes anything outward.
 3. When someone wants that ticket's live fields, they run the **id-based**
    `/aid-read-ticket jira:PROJ-45` (feature-001's locked grammar `[<connector>:]<ticket-id>` —
-   there is **no** unit-scoped invocation mode), which scans `INDEX.md` → `jira` row, Type `mcp` →
+   there is **no** work-scoped invocation mode), which scans `INDEX.md` → `jira` row, Type `mcp` →
    confirms `.aid/connectors/jira.md` carries `connection_type: mcp` → requests the Jira
    connection from the host tool's own MCP → fetches and displays the ticket's fields.
 4. **No outward write occurs** — no status transition and no comment are posted to `PROJ-45`; a
-   change there would be a user-initiated `/aid-update-ticket`.
+   change there would be a user-initiated `/aid-update-ticket`, and a record of it would be a
+   `write_backs:` entry.
 
-If the task's feature instead carried no `ticket_ref`, resolution would continue to the task's
-delivery, then to the work; if none of those carried one either, resolution yields **no effective
-ticket** (terminal case) — there is nothing to read.
+If the work's `sources:` held no `kind: ticket` entry, there would be nothing to read: the terminal
+case, a silent skip.

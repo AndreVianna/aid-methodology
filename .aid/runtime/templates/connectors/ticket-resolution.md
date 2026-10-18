@@ -92,14 +92,14 @@ Deterministic parsing shared by all three skills (REQUIREMENTS.md FR-1/FR-2/FR-3
 |---|---|---|
 | `aid-read-ticket` | `[<connector>:]<ticket-id>` | optional `stem:` prefix + one id token |
 | `aid-create-ticket` | `[--connector <stem>] [--level epic\|story\|task] [--parent <ref>] <description>` | optional connector/level/parent flags (any order) + free-text description |
-| `aid-update-ticket` | `<part> [<connector>:]<ticket-id> <content>` | `part` ∈ `{description, comment, status}` + `[stem:]id` ref + free-text content |
+| `aid-update-ticket` | `<part> [<connector>:]<ticket-id> <content>` | `part` ∈ `{description, comment, status, attachment}` + `[stem:]id` ref + free-text content (for `attachment`, the file paths the user picks) |
 
 Parse rules:
 
 - **read/update ref:** contains a `:` → split on the **first** `:` (`<stem>` selects
   the connector, remainder = `<external-id>`); else the whole token is the id and the
   connector is resolved by the ladder above.
-- **update:** the first whitespace token is `part` — a **closed enum**; anything else
+- **update:** the first whitespace token is `part` — a **closed enum** (`description | comment | status | attachment`); anything else
   is rejected with the `argument-hint` usage line. The second token is the ref.
   Everything after that is `<content>` — free text, may contain spaces/colons, **never
   re-parsed**.
@@ -155,7 +155,8 @@ Parse rules:
   mutated: `description` — before/after; `comment` — the text being appended;
   `status` — the target transition (validated against the tracker's available
   transitions first; an invalid target lists the valid options and the gate is never
-  reached for that attempt).
+  reached for that attempt); `attachment` — the files picked, each previewed (name and
+  size), before the single attach call.
 
 ## Level Resolution (create only)
 

@@ -1,15 +1,8 @@
 ---
 name: aid-report
 description: >
-  Analyse data or usage and return a verified insight report in one pass -- exploratory
-  analysis, metrics, or an A/B result. Use this skill when you have data and need to know
-  what it says, with the caveats stated rather than buried. It presents findings,
-  conclusions both positive and negative, data-quality caveats, any conflicts with the
-  reason for each, and the gaps; you decide what follows. The data itself, plus the
-  Knowledge Base and project source for what the data means, are the authoritative
-  grounding; external baselines are supplementary and cited with a URL and access date. It
-  reads data read-only. For a durable dashboard rather than a one-off report, use
-  `/aid-create-dashboard`.
+  Analyse data or usage into an insight report. Use when the user needs the data or usage
+  explained.
 allowed-tools: Read Glob Grep Bash Shell Terminal Write Edit Agent
 argument-hint: "<subject> -- the data/usage to analyze (a dataset, logs, metrics, an A/B result)"
 ---
