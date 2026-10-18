@@ -469,13 +469,15 @@ def home_skip(rel: str, is_dir: bool) -> bool:
     return bool(CREDENTIAL_RE.search(os.path.basename(rel)))
 
 
-LINK_PREFIX = b"\0symlink -> "  # NUL first: no regular file's bytes equal a link's snapshot entry
+LINK_PREFIX = b"\0symlink -> "  # a link's snapshot entry starts with NUL
+REGULAR_TAG = b"\1"  # a regular file's snapshot entry starts with this byte, so no regular file's entry equals a link's
 
 
 def snapshot(root: Path, skip) -> tuple[dict[str, bytes], set[str]]:
     """The files and the directories under root that skip does not drop. A symbolic link is recorded as a
     file whose content is its target text (LINK_PREFIX + target), so a link created, removed or retargeted
-    shows as a change; a link is never followed, so no file it points at is read."""
+    shows as a change; a link is never followed, so no file it points at is read. A regular file's entry is
+    REGULAR_TAG + its bytes, so a regular file whose bytes equal a link's entry is still a different entry."""
     files: dict[str, bytes] = {}
     dirs: set[str] = set()
     for dirpath, dirnames, filenames in os.walk(root):
@@ -502,7 +504,7 @@ def snapshot(root: Path, skip) -> tuple[dict[str, bytes], set[str]]:
                 continue
             if not path.is_file():
                 continue
-            files[rel] = path.read_bytes()
+            files[rel] = REGULAR_TAG + path.read_bytes()
     return files, dirs
 
 
@@ -535,9 +537,17 @@ def worktree_baseline(rel: str) -> str | None:
     return "fixture/" + parts[1]
 
 
+def untagged(entry: bytes | None) -> bytes | None:
+    """The content of a snapshot entry: a regular file's bytes without REGULAR_TAG; a link's entry as it is."""
+    if entry is not None and entry.startswith(REGULAR_TAG):
+        return entry[len(REGULAR_TAG):]
+    return entry
+
+
 def diff_chunks(before: dict[str, bytes], after: dict[str, bytes]) -> list[tuple[str, str]]:
-    """One (path, text) pair per changed file, in path order; byte-identical files are omitted. An empty
-    file added or removed has no lines, so its text is git's header alone (no hunk) and it is still named."""
+    """One (path, text) pair per changed file, in path order; byte-identical entries are omitted, and a
+    regular file never equals a link, whatever their bytes. An empty file added or removed has no lines, so
+    its text is git's header alone (no hunk) and it is still named."""
     chunks: list[tuple[str, str]] = []
     for rel in sorted(set(before) | set(after)):
         old_key = rel
@@ -547,6 +557,7 @@ def diff_chunks(before: dict[str, bytes], after: dict[str, bytes]) -> list[tuple
         old, new = before.get(old_key), after.get(rel)
         if old == new:
             continue
+        old, new = untagged(old), untagged(new)
         if (old is not None and is_binary(old)) or (new is not None and is_binary(new)):
             if old is None:
                 text = f"Binary file {rel} added ({len(new)} bytes)\n"
@@ -624,11 +635,13 @@ GIT_VALUE_OPTIONS = ("-C", "-c", "--git-dir", "--work-tree", "--namespace")  # g
 SHELLS = ("sh", "bash", "zsh", "dash")
 SHELL_C_FLAG = re.compile(r"^-[A-Za-z]*c[A-Za-z]*$")  # -c, or a combined flag that holds c: -lc, -ec
 WRAPPERS = ("env", "command", "exec", "nohup", "sudo")  # commands that run the command given after them
-WRAPPER_VALUE_OPTIONS = {  # the wrappers' options that take the next word as their value
-    "env": ("-u", "--unset", "-C"),
+WRAPPER_VALUE_OPTIONS = {  # the wrappers' options that take the next word as their value (short and long forms)
+    "env": ("-u", "--unset", "-C", "--chdir"),
     "exec": ("-a",),
-    "sudo": ("-u", "-g", "-C", "-h", "-p", "-D", "-r", "-t", "-U", "-T"),
+    "sudo": ("-u", "-g", "-C", "-h", "-p", "-D", "-r", "-t", "-U", "-T",
+             "--user", "--group", "--host", "--prompt", "--chdir", "--close-from", "--role", "--type", "--other-user"),
 }
+ENV_SPLIT_OPTIONS = ("-S", "--split-string")  # env's option whose value is a command line, checked as a command
 SHELL_PUNCTUATION = "();<>|&`"  # shlex returns these as tokens; a token made only of them ends a command
 
 
@@ -652,7 +665,8 @@ def is_git_push(command: str) -> bool:
     checked: its command is git, after any VAR=value prefix and git's global options, and its subcommand
     is push. Heredoc bodies and quoted text are not commands, so prose that names git push does not count;
     a shell's -c string (also behind combined flags such as -lc) is checked as a command of its own, and
-    so is the command that a wrapper (env, command, exec, nohup, sudo) runs."""
+    so is the command that a wrapper (env, command, exec, nohup, sudo) runs. command -v and -V only look a
+    name up and run nothing, so they are not a push; env -S (--split-string) holds a command line that is checked."""
     text = strip_heredocs(command).replace("\\\n", " ").replace("\n", " ; ")
     try:
         lex = shlex.shlex(text, posix=True, punctuation_chars=SHELL_PUNCTUATION)
@@ -671,14 +685,43 @@ def is_git_push(command: str) -> bool:
     return any(segment_is_git_push(words) for words in segments)
 
 
+def command_line(parts: list[str]) -> list[str]:
+    """The words of a command line that is held in one word (env -S): split as a shell splits words."""
+    if not parts:
+        return []
+    try:
+        return shlex.split(parts[0])
+    except ValueError:  # unbalanced quotes: no words to check
+        return []
+
+
+def command_looks_up(words: list[str]) -> bool:
+    """True when command's own options (-v, -V, also combined as -pv) ask for a lookup: it names a command."""
+    for word in words[1:]:
+        if not word.startswith("-") or word == "-":
+            return False
+        if set(word[1:]) & set("vV"):
+            return True
+    return False
+
+
 def wrapped_words(words: list[str]) -> list[str]:
-    """The words a wrapper runs: those after its own options, their values and VAR=value operands."""
-    values = WRAPPER_VALUE_OPTIONS.get(os.path.basename(words[0]), ())
+    """The words a wrapper runs: those after its own options, their values and VAR=value operands. A value
+    is skipped with its option, as --opt value or --opt=value; flag-only options are skipped alone. env's
+    -S (--split-string) value is a command line of its own, so its words stand in its place."""
+    name = os.path.basename(words[0])
+    values = WRAPPER_VALUE_OPTIONS.get(name, ())
     index = 1
     while index < len(words):
-        if words[index] in values:
+        word = words[index]
+        if name == "env" and word in ENV_SPLIT_OPTIONS:
+            return command_line(words[index + 1 : index + 2]) + words[index + 2 :]
+        if name == "env" and word.startswith(("-S", "--split-string=")):
+            value = word.split("=", 1)[1] if word.startswith("--") else word[2:]
+            return command_line([value]) + words[index + 1 :]
+        if word in values:
             index += 2
-        elif words[index].startswith("-") or re.match(r"^\w+=", words[index]):
+        elif word.startswith("-") or re.match(r"^\w+=", word):
             index += 1
         else:
             break
@@ -691,6 +734,8 @@ def segment_is_git_push(words: list[str]) -> bool:
     if not words:
         return False
     program = os.path.basename(words[0])
+    if program == "command" and command_looks_up(words):
+        return False  # command -v / -V names a command and runs none
     if program in WRAPPERS:
         return segment_is_git_push(wrapped_words(words))
     if program in SHELLS:

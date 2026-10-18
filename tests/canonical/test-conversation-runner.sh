@@ -911,6 +911,43 @@ PYED
         "DF18 an empty text file added or removed is named in the diff, not an empty diff"
     make_mutant emptydiff 'if not text and (old is None or new is None):' 'if False:'
     expect_fail "DF21 a diff that drops an empty file's header fails DF18" "$PY" "$T/emptydiff.py" "$MUT_PATH"
+    # a regular file whose bytes equal a link's snapshot entry is a different entry: replacing it with the link
+    # (or back) shows in the diff, in both directions (DF22); a snapshot that tags no regular file fails it (DF23)
+    cat > "$T/collide.py" <<'PYCL'
+import importlib.util
+import shutil
+import sys
+from pathlib import Path
+
+spec = importlib.util.spec_from_file_location("runner_under_test", sys.argv[1])
+mod = importlib.util.module_from_spec(spec)
+sys.modules[spec.name] = mod  # the dataclass decorator looks the module up by name
+spec.loader.exec_module(mod)
+ROOT = Path(sys.argv[2])
+shutil.rmtree(ROOT, ignore_errors=True)
+TREE = ROOT / "tree"
+TREE.mkdir(parents=True)
+(TREE / "target.md").write_text("one\n")
+
+
+def snap():
+    return {"fixture/" + k: v for k, v in mod.snapshot(TREE, mod.fixture_skip)[0].items()}
+
+
+(TREE / "alias").write_bytes(mod.LINK_PREFIX + b"target.md")  # a regular file, bytes equal to a link's entry
+regular = snap()
+(TREE / "alias").unlink()
+(TREE / "alias").symlink_to("target.md")
+linked = snap()
+forward = mod.build_diff(regular, linked)
+backward = mod.build_diff(linked, regular)
+ok = "fixture/alias" in forward and "fixture/alias" in backward
+sys.exit(0 if ok else 1)
+PYCL
+    assert_eq "$("$PY" "$T/collide.py" "$RUNNER" "$T/collide" && echo ok)" ok \
+        "DF22 a regular file whose bytes equal a symbolic link's entry is replaced by the link (and back) and the change shows in the diff"
+    make_mutant untagged 'files[rel] = REGULAR_TAG + path.read_bytes()' 'files[rel] = path.read_bytes()'
+    expect_fail "DF23 a snapshot that tags no regular file fails DF22" "$PY" "$T/collide.py" "$MUT_PATH" "$T/collide-m"
 }
 
 # ---------------------------------------------------------------- JUDGE
@@ -1124,6 +1161,53 @@ PYPW
     make_mutant pushwrap 'if program in WRAPPERS:' 'if False:' \
         'if SHELL_C_FLAG.match(words[index]):' 'if words[index] == "-c":'
     expect_fail "NP04 a no-push that sees neither wrappers nor combined shell flags fails NP03" "$PY" "$T/pushwrap.py" "$MUT_PATH"
+    # no-push behind a wrapper's value-taking long options (--user root, --user=root, --chdir, env -S) and
+    # flag-only long options, through run_checks itself; command -v and -V only look a name up, so no push
+    cat > "$T/pushlong.py" <<'PYPL'
+import importlib.util
+import sys
+from pathlib import Path
+
+spec = importlib.util.spec_from_file_location("runner_under_test", sys.argv[1])
+mod = importlib.util.module_from_spec(spec)
+sys.modules[spec.name] = mod  # the dataclass decorator looks the module up by name
+spec.loader.exec_module(mod)
+CHECK = [{"verb": "no-push", "args": [], "label": "no-push"}]
+CASES = [  # (Bash command, whether no-push should pass)
+    ("sudo --user root git push origin main", False),
+    ("sudo --user=root git push", False),
+    ("env --chdir . git push origin main", False),
+    ("env --chdir=. git push", False),
+    ("env -S 'git push origin main'", False),
+    ("env --split-string 'FOO=1 git push'", False),
+    ("sudo --login git push", False),
+    ("env --ignore-environment git push", False),
+    ("exec -a name git push", False),
+    ("command git push origin main", False),
+    ("command -p git push", False),
+    ("command -v git push", True),
+    ("command -V git push", True),
+    ("command -p -v git push", True),
+    ("env -S 'echo git push'", True),
+    ("sudo --user root ls", True),
+]
+bad = []
+for command, passes in CASES:
+    got = mod.run_checks(CHECK, Path("."), set(), set(), [{"name": "Bash", "target": command}])[0][1]
+    if got != passes:
+        bad.append(command)
+for command in bad:
+    print("no-push misjudged: " + repr(command), file=sys.stderr)
+sys.exit(1 if bad else 0)
+PYPL
+    assert_eq "$("$PY" "$T/pushlong.py" "$RUNNER" && echo ok)" ok \
+        "NP05 no-push fails a git push behind a wrapper's long options (--user root, --user=root, --chdir, --split-string) and flag-only ones, and passes command -v, -V and -p -v, which only look a name up"
+    # the wrapper's value operand is skipped with its option: a parser that takes it as the command fails NP05
+    make_mutant longopnd '        if word in values:' '        if word in values and not word.startswith("--"):'
+    expect_fail "NP06 a no-push that does not skip a long option's operand fails NP05" "$PY" "$T/pushlong.py" "$MUT_PATH"
+    # command -v and -V are lookups: a parser that reads them as running the command fails NP05
+    make_mutant cmdlookup '    if program == "command" and command_looks_up(words):' '    if False:'
+    expect_fail "NP07 a no-push that reads command -v and -V as running the command fails NP05" "$PY" "$T/pushlong.py" "$MUT_PATH"
 }
 
 # ---------------------------------------------------------------- CLEAN
