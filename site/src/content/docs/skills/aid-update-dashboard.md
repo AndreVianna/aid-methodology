@@ -9,7 +9,7 @@ generatedFrom: 'canonical/skills/aid-update-dashboard/SKILL.md'
 ## Frontmatter
 
 - **`name`** — aid-update-dashboard
-- **`description`** — Update an existing dashboard / BI view (source, visualization, or refresh cadence). Use when you already know what to update and want it scoped, specified and broken into reviewable tasks in one pass, before anything is built.
+- **`description`** — Update an existing dashboard / BI view (source, visualization, or refresh cadence). Use when the request is already clear and you want it scoped, specified and broken into reviewable tasks in one pass, before anything is built.
 - **`allowed-tools`** — Read Glob Grep Bash Shell Terminal Write Edit Agent
 - **`argument-hint`** — [description]  -- what to update; runs straight to a graded flattened Lite work
 

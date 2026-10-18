@@ -1,9 +1,9 @@
 ---
 name: aid-fix
 description: >
-  Diagnose and correct a defect, regression, incident, or vulnerability. Use when you
-  already know what to fix and want it scoped, specified and broken into reviewable tasks
-  in one pass, before anything is built.
+  Diagnose and correct a defect, regression, incident, or vulnerability. Use when the
+  request is already clear and you want it scoped, specified and broken into reviewable
+  tasks in one pass, before anything is built.
 allowed-tools: Read Glob Grep Bash Shell Terminal Write Edit Agent
 argument-hint: "[description]  -- what to fix; runs straight to a graded flattened Lite work"
 ---

@@ -1,7 +1,7 @@
 ---
 name: aid-deploy
 description: >
-  Package completed deliveries into a release. Use when they are ready to ship.
+  Package completed deliveries into a release. Use when completed deliveries are ready to ship.
 allowed-tools: Read Glob Grep Bash Shell Terminal Write
 ---
 

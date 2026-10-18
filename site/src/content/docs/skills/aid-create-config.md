@@ -9,7 +9,7 @@ generatedFrom: 'canonical/skills/aid-create-config/SKILL.md'
 ## Frontmatter
 
 - **`name`** — aid-create-config
-- **`description`** — Create a new configuration option or feature flag. Use when you already know what to create and want it scoped, specified and broken into reviewable tasks in one pass, before anything is built.
+- **`description`** — Create a new configuration option or feature flag. Use when the request is already clear and you want it scoped, specified and broken into reviewable tasks in one pass, before anything is built.
 - **`allowed-tools`** — Read Glob Grep Bash Shell Terminal Write Edit Agent
 - **`argument-hint`** — [description]  -- what to create; runs straight to a graded flattened Lite work
 

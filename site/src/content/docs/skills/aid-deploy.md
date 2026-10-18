@@ -9,7 +9,7 @@ generatedFrom: 'canonical/skills/aid-deploy/SKILL.md'
 ## Frontmatter
 
 - **`name`** — aid-deploy
-- **`description`** — Package completed deliveries into a release. Use when they are ready to ship.
+- **`description`** — Package completed deliveries into a release. Use when completed deliveries are ready to ship.
 - **`allowed-tools`** — Read Glob Grep Bash Shell Terminal Write
 
 [Definition: `canonical/skills/aid-deploy/SKILL.md`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-deploy/SKILL.md)

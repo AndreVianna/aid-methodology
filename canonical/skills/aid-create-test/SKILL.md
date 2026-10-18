@@ -2,7 +2,7 @@
 name: aid-create-test
 description: >
   Author new tests (unit/integration/e2e); each test traces to an acceptance criterion;
-  framework inferred from the KB. Use when you already know what to create and want it
+  framework inferred from the KB. Use when the request is already clear and you want it
   scoped, specified and broken into reviewable tasks in one pass, before anything is
   built.
 allowed-tools: Read Glob Grep Bash Shell Terminal Write Edit Agent

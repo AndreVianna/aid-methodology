@@ -2,8 +2,8 @@
 name: aid-update-data-model
 description: >
   Update an existing data model/entity's schema, with forward+rollback migration. Use when
-  you already know what to update and want it scoped, specified and broken into reviewable
-  tasks in one pass, before anything is built.
+  the request is already clear and you want it scoped, specified and broken into
+  reviewable tasks in one pass, before anything is built.
 allowed-tools: Read Glob Grep Bash Shell Terminal Write Edit Agent
 argument-hint: "[description]  -- what to update; runs straight to a graded flattened Lite work"
 ---

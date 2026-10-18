@@ -258,9 +258,12 @@ def render_doorway(row: dict) -> str:
     # and the state sequence) live in the body below, never here.
     # The trigger clause deliberately does NOT repeat the artifact: `intent` already names
     # it in natural English ("an API endpoint / middleware"), whereas the raw catalog value
-    # would read as "which api to create". One template, no per-skill wording.
+    # would read as "which api to create". The catalog's `verb` is a bare imperative with no
+    # grammatical object ("experiment", "fix"), so it cannot sit in an object position
+    # ("what to experiment" reads as broken English); the clause is therefore verb-free and
+    # reads correctly for every row. One template, no per-skill wording.
     description = (
-        f"{intent} Use when you already know what to {verb} and want it scoped, specified "
+        f"{intent} Use when the request is already clear and you want it scoped, specified "
         "and broken into reviewable tasks in one pass, before anything is built."
     )
 

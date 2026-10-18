@@ -1,7 +1,7 @@
 ---
 name: aid-update-cli
 description: >
-  Update an existing CLI command. Use when you already know what to update and want it
+  Update an existing CLI command. Use when the request is already clear and you want it
   scoped, specified and broken into reviewable tasks in one pass, before anything is
   built.
 allowed-tools: Read Glob Grep Bash Shell Terminal Write Edit Agent

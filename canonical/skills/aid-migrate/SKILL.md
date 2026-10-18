@@ -2,9 +2,9 @@
 name: aid-migrate
 description: >
   Migrate data, a dependency, framework, or platform, with a rollback plan (non-schema;
-  schema migrations use create/update-data-model). Use when you already know what to
-  migrate and want it scoped, specified and broken into reviewable tasks in one pass,
-  before anything is built.
+  schema migrations use create/update-data-model). Use when the request is already clear
+  and you want it scoped, specified and broken into reviewable tasks in one pass, before
+  anything is built.
 allowed-tools: Read Glob Grep Bash Shell Terminal Write Edit Agent
 argument-hint: "[description]  -- what to migrate; runs straight to a graded flattened Lite work"
 ---

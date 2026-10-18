@@ -1,8 +1,8 @@
 ---
 name: aid-update-config
 description: >
-  Update an existing configuration option or feature flag. Use when you already know what
-  to update and want it scoped, specified and broken into reviewable tasks in one pass,
+  Update an existing configuration option or feature flag. Use when the request is already
+  clear and you want it scoped, specified and broken into reviewable tasks in one pass,
   before anything is built.
 allowed-tools: Read Glob Grep Bash Shell Terminal Write Edit Agent
 argument-hint: "[description]  -- what to update; runs straight to a graded flattened Lite work"

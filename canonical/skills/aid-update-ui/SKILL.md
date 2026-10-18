@@ -1,7 +1,7 @@
 ---
 name: aid-update-ui
 description: >
-  Update an existing UI component or page. Use when you already know what to update and
+  Update an existing UI component or page. Use when the request is already clear and you
   want it scoped, specified and broken into reviewable tasks in one pass, before anything
   is built.
 allowed-tools: Read Glob Grep Bash Shell Terminal Write Edit Agent

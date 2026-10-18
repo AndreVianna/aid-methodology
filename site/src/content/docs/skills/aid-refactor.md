@@ -9,7 +9,7 @@ generatedFrom: 'canonical/skills/aid-refactor/SKILL.md'
 ## Frontmatter
 
 - **`name`** — aid-refactor
-- **`description`** — Restructure or optimize code without changing behavior (rename, restructure, or improve performance). Use when you already know what to refactor and want it scoped, specified and broken into reviewable tasks in one pass, before anything is built.
+- **`description`** — Restructure or optimize code without changing behavior (rename, restructure, or improve performance). Use when the request is already clear and you want it scoped, specified and broken into reviewable tasks in one pass, before anything is built.
 - **`allowed-tools`** — Read Glob Grep Bash Shell Terminal Write Edit Agent
 - **`argument-hint`** — [description]  -- what to refactor; runs straight to a graded flattened Lite work
 
