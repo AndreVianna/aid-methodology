@@ -51,7 +51,7 @@ review: A+
 # [W] HH:MM | --
 elapsed: --
 # [W]
-notes: --
+notes: 'Wave 11 full test: test-conversation-runner.sh times out at the 300 s run-all cap under parallel load (199 s alone); sent back for a runtime fix'
 # [W] mutable display-name override (writeback-state.sh:829). Documentation
 #     fix, not a schema change (SP-2's one documented exception): the writer
 #     already writes this key today; it was simply never declared here.
