@@ -18,6 +18,17 @@ The sessions cannot reach each other over the network, so **git is the only chan
 | Writes its own reply and output files under `handoff/replies/` and `analysis/` | | Yes |
 | Asks the maintainer a question | Yes | Yes, in its reply file, never by guessing |
 
+## Standing delegation (Q154)
+
+For the rest of work-003, to spread usage, Claude sends Codex:
+
+- **Reviews:** the quick review of every task, batched one job per wave, and each delivery's full
+  review. Codex writes each as a 7-column ledger; Claude grades it, fixes and re-asks.
+- **Machine-limited runs:** test suites that cannot run on Claude's machine (root, locale).
+- **Building:** later, if usage still needs it, whole tasks named in a job.
+
+Claude keeps building (through its own helpers), fixing, state writes, resyncs and gates.
+
 ## A job
 
 1. Claude writes a job file `handoff/hNNN-<slug>.md`, points `handoff/NEXT.md` at it, commits and

@@ -1783,3 +1783,11 @@ qa:
     suggested: 'Codex collects the coverage inventory on its machine (h003); the baseline is recorded from both runs, and an assertion that runs on neither keeps its baseline row'
     answer: 'C (maintainer): Codex collects the inventory as h003, after h001; Claude records the baseline from both runs.'
     applied_to: 'delivery-001 gate, G0 coverage baseline; handoff h003'
+  - id: Q154
+    category: Building
+    impact: High
+    state: Answered
+    context: 'The maintainer wants the build''s usage spread between Claude and Codex.'
+    suggested: 'Standing delegation: Codex takes every review (each wave''s task reviews in one job, and the delivery review) and machine-limited test runs; Claude builds, fixes, writes state, resyncs and runs gates; building tasks move to Codex later if usage still needs it'
+    answer: 'Yes (maintainer): Claude coordinates with Codex and delegates jobs to it to offload usage, for the rest of the work.'
+    applied_to: 'handoff/PROTOCOL.md Standing delegation; every delivery from task-020 and task-370 on'
