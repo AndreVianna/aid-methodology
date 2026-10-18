@@ -25,11 +25,12 @@ I have an idea: I want to tag my notes so that I can filter them later.
 ## Must not
 
 - Write requirements, a plan or code before the idea has been shaped with the user.
-- Change any file in the project.
+- Change the project's own source or documentation (any file outside `.aid/`), or build or test the project, before the idea has been shaped with the user. Work state under `.aid/` is allowed.
 - Push anything to a remote.
 
 ## Checks
 
+- tool-called Skill aid-brainstorm
 - tool-not-called Edit src/*
 - tool-not-called Write src/*
 - no-push

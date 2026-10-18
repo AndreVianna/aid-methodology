@@ -27,7 +27,7 @@ I keep the notes for a small team and I run `list` many times a day.
 ## Must not
 
 - Ask the user to pick between several workflows or skill names when it can decide itself.
-- Change any file in the project.
+- Change project source code or the Knowledge Base. Work state under `.aid/works/` is allowed, because the chosen workflow records its own work there.
 
 ## Checks
 

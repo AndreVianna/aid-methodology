@@ -1,5 +1,7 @@
 # notes
 
+<!-- Fixture note: this is the `default` fixture plus an empty notes.json. Keep the two in step. -->
+
 A small command-line tool that keeps short text notes in a local JSON file.
 
 ## Usage
