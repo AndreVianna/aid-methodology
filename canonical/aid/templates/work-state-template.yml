@@ -9,13 +9,14 @@
 #   AUTHORED (single-writer, YAML structures under a key, one key per former
 #     markdown section) -- intent, sources, write_backs, interview, features,
 #     lifecycle_history, deploy, delivery_lifecycle (incl. its
-#     tasks_lifecycle child), delivery_gate, qa.
+#     tasks_lifecycle child), delivery_gate.
 #   DERIVED (read-only, assembled at read time) -- Plan/Deliveries, Tasks
 #     State, Delivery Gates, Calibration Log, Dispatches. NOT represented
 #     here -- no key at all. A reader seeing no key derives the same union it
 #     derives today. Agents that write state must target the per-unit
 #     STATE.yml files instead. `qa` is the one former-DERIVED name that keeps
-#     a key here, because on the flattened Lite path it is AUTHORED.
+#     a key here, on both layouts: the question record is written through the
+#     writer, so it is never omitted.
 #
 #     `features` was ALSO listed as DERIVED here and that was wrong. Nothing
 #     derives it: /aid-define creates a row per feature at decomposition and
@@ -60,13 +61,13 @@
 # Full-layout omission rule: a full multi-delivery work's STATE.yml is
 # IDENTICAL to this template minus these keys: delivery_state, gate_tier,
 # gate_grade, gate_timestamp (the four flattened-only gate/delivery scalars),
-# minus delivery_lifecycle, tasks_lifecycle, delivery_gate (each lives in its
-# own delivery/task file instead), and minus qa (DERIVED on the full path).
-# `features`, `intent`, `sources` and `write_backs` are NOT on that list:
-# each is a work-level concept on both layouts, so the key is present either
-# way.
+# and minus delivery_lifecycle, tasks_lifecycle, delivery_gate (each lives in
+# its own delivery/task file instead).
+# `features`, `intent`, `sources`, `write_backs`, `step`, `step_detail`,
+# `handoffs` and `qa` are NOT on that list: each is a work-level concept on
+# both layouts, so the key is present either way.
 #
-# Shape rule (both dashboard readers): block style only, at most three key
+# Shape rule (known issue KI-002, both dashboard readers): block style only, at most three key
 # levels deep. A flow list or mapping other than the literal `[]` / `{}` is
 # rejected, a key nested deeper than three levels is skipped, and a comment
 # on the line of a key that opens a list or mapping empties that key -- each
@@ -115,10 +116,16 @@ minimum_grade: A
 user_approved: 'no'
 # [W] Running | Paused-Awaiting-Input | Blocked | Completed | Canceled
 lifecycle: Running
-# [W] Describe | Define | Specify | Plan | Detail | Execute
-phase: Describe
+# [W] Definition | Specification | Planning | Building | CI
+phase: Specification
 # [W] aid-{skill} | none
 active_skill: none
+# [W] that skill's current step; -- when none
+step: --
+# [W] where inside the step, in plain words; -- when none
+step_detail: --
+# [W] append-only, newest last; one entry per hand-off
+handoffs: []
 # [W]
 updated: '2026-01-01T00:00:00Z'
 # [W] set only when lifecycle = Paused-Awaiting-Input
@@ -325,8 +332,7 @@ tasks_lifecycle: {}
 delivery_gate:
   issue_list: []
 
-# [A] flattened Lite only (AUTHORED here, not derived); one entry per
-#     question:
+# [W] every question and answer, newest last; one entry per question:
 #   - id / category (e.g. Architecture, Requirements, Security) /
 #     impact: High | Medium | Low | Required /
 #     state: Pending | Answered | Skipped /

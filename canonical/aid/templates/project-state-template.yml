@@ -1,0 +1,22 @@
+# Project State -- .aid/STATE.yml
+#
+# This is the PROJECT-LEVEL state file. It holds the project's question record
+# only (`qa`): the questions the AID skills asked across works, and the answers.
+# It is created on first use by `writeback-state.sh --ask --project`.
+#
+# Writer legend -- stated in full-line comments above each key, NEVER as a
+# trailing comment on the key itself:
+#   [W] writeback-state.sh is the sole writer (surgical single-key write)
+#
+# Shape rule (known issue KI-002, both dashboard readers): block style only, at most three key
+# levels deep. A flow list or mapping other than the literal `[]` / `{}` is
+# rejected, a key nested deeper than three levels is skipped, and a comment
+# on the line of a key that opens a list or mapping empties that key -- each
+# with only a parse warning. So every key below is documented in full-line
+# comments above it, never on the key's own line.
+
+# [W] every question and answer, newest last; one entry per question:
+#   - id / category / impact: High | Medium | Low | Required /
+#     state: Pending | Answered | Skipped /
+#     context / suggested / answer / applied_to
+qa: []

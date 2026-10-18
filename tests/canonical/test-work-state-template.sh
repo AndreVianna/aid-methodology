@@ -23,7 +23,7 @@
 #         three that were already frontmatter keys pre-refactor)
 #   WS03  work-state-template declares Lifecycle enum verbatim (closed, 5 members) --
 #         survives in substance (D-2), now inside a full-line comment above `lifecycle:`
-#   WS04  work-state-template declares Phase enum verbatim (6 members) -- same, above `phase:`
+#   WS04  work-state-template declares Phase enum verbatim (5 FR-1 members, no old name) -- same, above `phase:`
 #   WS05  work-state-template declares the Active Skill enum-hint substring `aid-{skill}`
 #         (survives inside a full-line comment) AND the INSTANTIATED `active_skill: none`
 #         key line (retargeted: SP-2/SP-20 -- no un-instantiated placeholder may sit on a
@@ -62,6 +62,10 @@
 #   WS25  no state template carries the retired `ticket_ref` key
 #   WS26  every state template fits the dashboard readers' YAML subset (no flow collection
 #         but [] or {}, no line deeper than the readers keep)
+#   WS27  project-state-template.yml exists, holds only the qa: [] question record, and fits
+#         the same readers' YAML subset
+#   WS28  work-state-template.yml declares the step, step_detail, handoffs and qa keys on
+#         every layout (no full-layout omission of qa)
 #
 # SP-20/SP-2/SP-3 additionally require, across every live assertion: no writer-owned key
 # carries a trailing inline comment (D-3: documentation is a full-line comment ABOVE the
@@ -125,16 +129,24 @@ for member in "Running" "Paused-Awaiting-Input" "Blocked" "Completed" "Canceled"
 done
 
 # ---------------------------------------------------------------------------
-# WS04: work-state-template declares Phase enum verbatim (all 6 members) --
-# faithful numbered pipeline; ends at Execute (Deploy is a separate path, not a
-# phase; Interview/Monitor retired). Survives in substance, comment-hosted.
+# WS04: work-state-template declares Phase enum verbatim (all 5 FR-1 members) --
+# Definition, Specification, Planning, Building, CI. Deploy is a separate path,
+# not a phase. Survives in substance, comment-hosted. The old names are refused
+# here: none may remain anywhere in the template (SS-11).
 # ---------------------------------------------------------------------------
-for member in "Describe" "Define" "Specify" "Plan" "Detail" "Execute"; do
+for member in "Definition" "Specification" "Planning" "Building" "CI"; do
     assert_file_contains \
         "$WORK_STATE" \
         "$member" \
         "WS04 Phase enum member present: $member"
 done
+OLD_PHASE='(Describe|Define|Specify|Plan|Detail|Execute)'
+OLD_PHASE_FORMS="phase: *${OLD_PHASE}([^A-Za-z]|\$)|[|] *${OLD_PHASE}([^A-Za-z]|\$)|${OLD_PHASE} *[|]|['\"]${OLD_PHASE}['\"]|\`${OLD_PHASE}\`"
+if grep -qE "$OLD_PHASE_FORMS" "$WORK_STATE" 2>/dev/null; then
+    fail "WS04 an old phase name (Describe/Define/Specify/Plan/Detail/Execute) remains in work-state-template.yml"
+else
+    pass "WS04 no old phase name remains in work-state-template.yml"
+fi
 
 # ---------------------------------------------------------------------------
 # WS05: work-state-template declares the Active Skill enum-hint substring
@@ -389,6 +401,50 @@ for tmpl in "$WORK_STATE" "$DELIVERY_STATE" "$TASK_STATE"; do
         fail "WS26 $tmpl_name: line(s) deeper than the readers keep:"$'\n'"$DEEP_HITS"
     fi
 done
+
+# ---------------------------------------------------------------------------
+# WS27: project-state-template.yml (the project question record, .aid/STATE.yml)
+# holds the qa: [] key only, and fits the readers' YAML subset like WS26.
+# ---------------------------------------------------------------------------
+PROJECT_STATE="${REPO_ROOT}/canonical/aid/templates/project-state-template.yml"
+if [[ -f "$PROJECT_STATE" ]]; then
+    pass "WS27 project-state-template.yml exists"
+    assert_file_contains \
+        "$PROJECT_STATE" \
+        "qa: []" \
+        "WS27 project-state-template declares an instantiated qa: [] key"
+    if [[ "$(grep -cE '^[a-z_]+:' "$PROJECT_STATE")" == "1" ]]; then
+        pass "WS27 project-state-template carries no top-level key other than qa"
+    else
+        fail "WS27 project-state-template carries a top-level key other than qa"
+    fi
+    FLOW_HITS="$(grep -nE '^[^#]*:[[:space:]]*[[{][^]}]' "$PROJECT_STATE" 2>/dev/null || true)"
+    if [[ -z "$FLOW_HITS" ]]; then
+        pass "WS27 project-state-template: no flow collection other than [] or {}"
+    else
+        fail "WS27 project-state-template: flow collection(s) the readers reject:"$'\n'"$FLOW_HITS"
+    fi
+else
+    fail "WS27 project-state-template.yml not found: $PROJECT_STATE"
+fi
+
+# ---------------------------------------------------------------------------
+# WS28: work-state-template.yml declares step, step_detail, handoffs and qa on
+# every layout. They are work-level concepts, so none is on the full-layout
+# omission list in the header.
+# ---------------------------------------------------------------------------
+for key in "step: --" "step_detail: --" "handoffs: []" "qa: []"; do
+    if grep -qxF "$key" "$WORK_STATE" 2>/dev/null; then
+        pass "WS28 work-state-template declares an instantiated '$key' line"
+    else
+        fail "WS28 work-state-template is missing the instantiated '$key' line"
+    fi
+done
+if grep -qE 'and minus qa' "$WORK_STATE" 2>/dev/null; then
+    fail "WS28 the full-layout omission rule still omits qa"
+else
+    pass "WS28 the full-layout omission rule does not omit qa"
+fi
 
 # ---------------------------------------------------------------------------
 # WS12: delivery-state-template has a `qa:` key (content-breaking retarget:
