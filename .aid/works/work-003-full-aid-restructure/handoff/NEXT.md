@@ -4,4 +4,4 @@ The open job is **h006** (`handoff/h006-review-wave-3.md`). Read `handoff/PROTOC
 
 Done: h000 to h005 (replies in `replies/`). h002 is under review by Claude.
 
-Queued after it (do not start yet): h007 (`handoff/h007-fix-h002.md`).
+Queued after it (do not start yet): h007 (`handoff/h007-fix-h002.md`), then h008 (`handoff/h008-review-wave-4.md`).
