@@ -521,6 +521,12 @@ make_mutant() {  # NAME OLD NEW [OLD NEW...]: sets MUT_PATH to a copy of run.py 
 }
 
 # --- runs: one run.py call each, memoised by key so groups share them ----------
+# Every run.py call stages a release bundle and installs AID into each run's fixture, which is most of
+# the suite's cost. So each call serves every assertion that can read it: the cap run also carries the
+# worktree and large-file stubs and the parent session's environment (CP, EN, DF12, JD); the two mutant
+# runs each carry several independent mutations, and each mutation's check reads only its own fact or
+# folder. A mutation whose check needs a clean environment (the default model) is kept out of the run
+# with the model override.
 invoke() {  # KEY USER-MODE JUDGE-MODE run.py-args...   (STUB_PUSH=1 in the caller makes the agent push)
     local key="$1" user="$2" judge="$3"
     shift 3
@@ -536,17 +542,67 @@ invoke() {  # KEY USER-MODE JUDGE-MODE run.py-args...   (STUB_PUSH=1 in the call
     "$PY" "$T/facts.py" "$T/log/$key.jsonl" "$T/briefs/simulated-user.md" "$T/briefs/judge.md" \
         "$T/log/$key.judge-prompt" > "$T/log/$key.facts" 2>&1
 }
-need_pass()    { [ -f "$T/log/pass.rc" ]    || invoke pass    two-turns clean   --sample s-pass --runs 1; }
-need_checks()  { [ -f "$T/log/checks.rc" ]  || invoke checks  two-turns clean   --sample s-checks-fail --runs 1; }
-need_grammar() { [ -f "$T/log/grammar.rc" ] || STUB_PUSH=1 invoke grammar two-turns clean --sample s-grammar-fail --runs 1; }
-need_pending() { [ -f "$T/log/pending.rc" ] || invoke pending end-after-one pending --sample s-pass --runs 1; }
-need_notable() { [ -f "$T/log/notable.rc" ] || invoke notable end-after-one no-table --sample s-pass --runs 1; }
-need_flaky()   { [ -f "$T/log/flaky.rc" ]   || invoke flaky   end-after-one flaky   --sample s-pass --runs 3; }
-need_clean3()  { [ -f "$T/log/clean3.rc" ]  || invoke clean3  end-after-one clean   --sample s-pass --runs 3; }
-need_cap()     { [ -f "$T/log/cap.rc" ]     || invoke cap     never         clean   --sample s-pass --runs 1; }
-need_wt()      { [ -f "$T/log/wt.rc" ]      || STUB_WORKTREE=1 invoke wt end-after-one clean --sample s-pass --runs 1; }
-need_big()     { [ -f "$T/log/big.rc" ]     || STUB_BIG=1 invoke big end-after-one clean --sample s-pass --runs 1; }
-# the agent's environment is checked under a parent session's variables and a model override
+# need KEY COMMAND...: starts the run in the background, once per KEY; await_runs waits for every run started.
+# A group calls need for each run it reads, then await_runs, so its runs overlap and it reads only finished runs.
+STARTED_KEYS=" "
+RUNS_STARTED=()
+started() { case "$STARTED_KEYS" in *" $1 "*) return 0 ;; esac; return 1; }
+need() {
+    local key="$1"
+    shift
+    started "$key" && return 0
+    STARTED_KEYS="$STARTED_KEYS$key "
+    "$@" &
+    RUNS_STARTED+=("$!")
+}
+await_runs() {
+    local pid
+    for pid in ${RUNS_STARTED[@]+"${RUNS_STARTED[@]}"}; do wait "$pid"; done
+    RUNS_STARTED=()
+}
+need_pass()    { need pass invoke pass two-turns clean --sample s-pass --runs 1; }
+need_checks()  { need checks invoke checks two-turns clean --sample s-checks-fail --runs 1; }
+need_grammar() { STUB_PUSH=1 need grammar invoke grammar two-turns clean --sample s-grammar-fail --runs 1; }
+need_flaky()   { need flaky invoke flaky end-after-one flaky --sample s-pass --runs 3; }
+need_clean3()  { need clean3 invoke clean3 end-after-one clean --sample s-pass --runs 3; }
+# the cap run: 12 turns with no <<END>> (CP); the agent's environment under a parent session and a model
+# override (EN); the worktree and the large-file stubs (DF12, JD); its judge reply is clean
+need_cap() {
+    AID_CONV_MODEL=claude-override-test STUB_WORKTREE=1 STUB_BIG=1 \
+        need cap parent_session invoke cap never clean --sample s-pass --runs 1
+}
+# the first mutant run: the judge reply is Pending (LG02, LG03); the end-first (ED02), default-model (EN07),
+# HOME set-up (DF15) and auth-variable (EN10) mutations; no model override, so EN07 sees the default model
+need_m1() {
+    started m1 && return 0
+    make_mutant m1 \
+        'HOME_SETUP_DIRS = (".ccr", ".pki", ".local/share/pki", ".aws")' 'HOME_SETUP_DIRS = ()' \
+        'HOME_SETUP_FILES = (".boto",)' 'HOME_SETUP_FILES = ()' \
+        'f"{END_FIRST_RULE}\n\n"' '""' \
+        '"--model", self.model,' '' \
+        'if k not in ENV_DROP_NAMES and not k.startswith(ENV_DROP_PREFIXES)' \
+        'if k not in ENV_DROP_NAMES and not k.startswith(ENV_DROP_PREFIXES) and k != "CLAUDE_CODE_OAUTH_TOKEN"' \
+        || { fail "DF15 the HOME mutation did not apply"; fail "ED02 the end-first mutation did not apply"
+             fail "EN07 the --model mutation did not apply"; fail "EN10 the auth-drop mutation did not apply"; }
+    INVOKE_RUNNER="$MUT_PATH" need m1 parent_session invoke m1 end-after-one pending --sample s-pass --runs 1
+}
+# the second mutant run: the judge reply has no ledger table (LG04, LG05); the worktree, judge-cap, env-filter
+# and model-override mutations (DF14, JD06a, JD06b, EN06, EN08), with the model override and the worktree
+# and large-file stubs
+need_m2() {
+    started m2 && return 0
+    make_mutant m2 'if baseline is not None and rel not in before:' 'if False:' \
+        'JUDGE_FILE_LINES = 300' 'JUDGE_FILE_LINES = 10**9' \
+        'JUDGE_TOTAL_BYTES = 200_000' 'JUDGE_TOTAL_BYTES = 10**12' \
+        'if k not in ENV_DROP_NAMES and not k.startswith(ENV_DROP_PREFIXES)' 'if k != "CLAUDE_CONFIG_DIR"' \
+        '"model": os.environ.get(MODEL_ENV) or DEFAULT_MODEL,' '"model": DEFAULT_MODEL,' \
+        || { fail "DF14 the worktree mutation did not apply"; fail "JD06a the per-file cap mutation did not apply"
+             fail "JD06b the total cap mutation did not apply"; fail "EN06 the environment mutation did not apply"
+             fail "EN08 the model-override mutation did not apply"; }
+    AID_CONV_MODEL=claude-override-test STUB_WORKTREE=1 STUB_BIG=1 INVOKE_RUNNER="$MUT_PATH" \
+        need m2 parent_session invoke m2 end-after-one no-table --sample s-pass --runs 1
+}
+# the agent's environment is checked under a parent session's variables (the model override is set by the caller)
 parent_session() {
     (
         export CLAUDECODE=1 CLAUDE_CODE_SESSION_ID=parent-session CLAUDE_CODE_ENTRYPOINT=cli \
@@ -557,11 +613,10 @@ parent_session() {
             CCR_SESSION_PROFILE=parent-profile SESSION_INGRESS_URL=http://ingress.test/parent \
             CLAUDE_SESSION_INGRESS_TOKEN_FILE=/stub/ingress-token \
             CLAUDE_CODE_OAUTH_TOKEN=dummy-oauth-token-for-test \
-            HTTPS_PROXY=http://proxy.test:3128 NODE_EXTRA_CA_CERTS=/stub/ca.pem AID_CONV_MODEL=claude-override-test
+            HTTPS_PROXY=http://proxy.test:3128 NODE_EXTRA_CA_CERTS=/stub/ca.pem
         "$@"
     )
 }
-need_env()     { [ -f "$T/log/envrun.rc" ]  || parent_session invoke envrun end-after-one clean --sample s-pass --runs 1; }
 
 fact() { grep -m1 "^$2=" "$1" | cut -d= -f2-; }
 run_dir_of() { sed -n "s/^$2 claude-code $3 run $4\/[0-9]* -> //p" "$1" | head -1; }
@@ -642,6 +697,7 @@ group_validate() {
 group_capture() {
     echo "--- CAPTURE"
     need_pass
+    await_runs
     local dir
     dir="$(run_dir_of "$T/log/pass.out" PASS s-pass 1)"
     assert_exit_eq "$(cat "$T/log/pass.rc")" 0 "CA01 a passing run exits 0"
@@ -664,6 +720,7 @@ group_capture() {
 group_flags() {
     echo "--- FLAGS"
     need_pass
+    await_runs
     local f="$T/log/pass.facts"
     assert_eq "$(fact "$f" agent_calls)" 2 "FL01 two agent turns for two user messages"
     assert_eq "$(fact "$f" agent_flags_ok)" 1 "FL02 agent flags on every turn, --resume from turn 2 only"
@@ -708,6 +765,10 @@ group_flags() {
 group_diff() {
     echo "--- DIFF"
     need_pass
+    need_cap
+    need_m1
+    need_m2
+    await_runs
     local diff
     diff="$(run_dir_of "$T/log/pass.out" PASS s-pass 1)/files.diff"
     assert_file_contains "$diff" "b/fixture/changed.txt" "DF01 a change inside the fixture is recorded"
@@ -724,31 +785,27 @@ group_diff() {
     assert_file_not_contains "$diff" "server.key" "DF11 a .key credential in HOME is excluded"
     # a worktree under the fixture's .claude/worktrees/: changed files against the fixture's own file,
     # identical files omitted, .aid/ not excluded (DF12); the sandbox's own set-up files excluded (DF13)
-    need_wt
     local dir_w
-    dir_w="$(any_run_dir "$T/log/wt.out")"
+    dir_w="$(any_run_dir "$T/log/cap.out")"
     assert_eq "$(wt_diff_ok "$dir_w" && echo ok)" ok \
         "DF12 a worktree file is diffed against the fixture's file of the same path, and an identical one is omitted"
     assert_eq "$(home_setup_ok "$(run_dir_of "$T/log/pass.out" PASS s-pass 1)" && echo ok)" ok \
         "DF13 the sandbox's set-up files under HOME (.ccr/, .pki/, .local/share/pki/, .aws/, .boto) are excluded"
     # mutations: each broken behaviour fails its own check
-    make_mutant wt 'if baseline is not None and rel not in before:' 'if False:' || fail "DF14 the worktree mutation did not apply"
-    INVOKE_RUNNER="$MUT_PATH" STUB_WORKTREE=1 invoke mwt end-after-one clean --sample s-pass --runs 1
     expect_fail "DF14 a worktree that is not diffed against the fixture's file fails DF12" \
-        wt_diff_ok "$(any_run_dir "$T/log/mwt.out")"
-    make_mutant home 'HOME_SETUP_DIRS = (".ccr", ".pki", ".local/share/pki", ".aws")' 'HOME_SETUP_DIRS = ()' \
-        'HOME_SETUP_FILES = (".boto",)' 'HOME_SETUP_FILES = ()' || fail "DF15 the HOME mutation did not apply"
-    INVOKE_RUNNER="$MUT_PATH" invoke mhome end-after-one clean --sample s-pass --runs 1
+        wt_diff_ok "$(any_run_dir "$T/log/m2.out")"
     expect_fail "DF15 a HOME without the set-up exclusions fails DF13" \
-        home_setup_ok "$(any_run_dir "$T/log/mhome.out")"
+        home_setup_ok "$(any_run_dir "$T/log/m1.out")"
 }
 
 # ---------------------------------------------------------------- JUDGE
 group_judge() {
     echo "--- JUDGE"
-    need_big
-    local f="$T/log/big.facts" dir
-    dir="$(any_run_dir "$T/log/big.out")"
+    need_cap
+    need_m2
+    await_runs
+    local f="$T/log/cap.facts" dir
+    dir="$(any_run_dir "$T/log/cap.out")"
     assert_file_contains "$dir/files.diff" "+line 400" \
         "JD01 files.diff on disk holds every line of a large file (the cap is for the judge only)"
     assert_eq "$(fact "$f" judge_marker_big)" 1 \
@@ -764,23 +821,23 @@ group_judge() {
     assert_eq "$(fact "$f" judge_summary_big)" 1 \
         "JD09 the files past the marker limit are counted in one final [... N more files truncated ...] line"
     assert_eq "$(fact "$f" judge_markers_bounded)" 1 "JD10 the truncation markers are bounded (at most 21 lines)"
-    # mutations: removing one cap leaves the other in place, and each removal fails its own assertion
-    make_mutant jfile 'JUDGE_FILE_LINES = 300' 'JUDGE_FILE_LINES = 10**9' || fail "JD06a the per-file cap mutation did not apply"
-    INVOKE_RUNNER="$MUT_PATH" STUB_BIG=1 invoke mjfile end-after-one clean --sample s-pass --runs 1
+    # mutations: each cap's marker comes from that cap alone, so a judge prompt without a cap fails the
+    # assertion for that cap's marker (the two caps are removed in one mutant run, m2)
     expect_fail "JD06a a judge prompt with no per-file cap fails JD02" \
-        test "$(fact "$T/log/mjfile.facts" judge_marker_big)" = 1
-    make_mutant jtotal 'JUDGE_TOTAL_BYTES = 200_000' 'JUDGE_TOTAL_BYTES = 10**12' || fail "JD06b the total cap mutation did not apply"
-    INVOKE_RUNNER="$MUT_PATH" STUB_BIG=1 invoke mjtotal end-after-one clean --sample s-pass --runs 1
+        test "$(fact "$T/log/m2.facts" judge_marker_big)" = 1
     expect_fail "JD06b a judge prompt with no total cap fails JD04" \
-        test "$(fact "$T/log/mjtotal.facts" judge_marker_huge)" = 1
+        test "$(fact "$T/log/m2.facts" judge_marker_huge)" = 1
 }
 
 # ---------------------------------------------------------------- ENV
 group_env() {
     echo "--- ENV"
-    need_env
-    local f="$T/log/envrun.facts" dir
-    dir="$(any_run_dir "$T/log/envrun.out")"
+    need_cap
+    need_m1
+    need_m2
+    await_runs
+    local f="$T/log/cap.facts" dir
+    dir="$(any_run_dir "$T/log/cap.out")"
     assert_eq "$(fact "$f" agent_env_leak)" "" \
         "EN01 the agent's environment drops each identity and session variable of the parent session"
     assert_eq "$(fact "$f" agent_env_auth)" "dummy-oauth-token-for-test" \
@@ -790,38 +847,26 @@ group_env() {
     assert_eq "$(fact "$f" agent_models)" "claude-override-test" \
         "EN04 AID_CONV_MODEL sets the --model of every agent turn"
     assert_file_contains "$dir/model.txt" "claude-override-test" "EN05 the model the run used is written to the run folder"
-    make_mutant env 'if k not in ENV_DROP_NAMES and not k.startswith(ENV_DROP_PREFIXES)' 'if k != "CLAUDE_CONFIG_DIR"' \
-        || fail "EN06 the environment mutation did not apply"
-    INVOKE_RUNNER="$MUT_PATH" parent_session invoke menv end-after-one clean --sample s-pass --runs 1
-    expect_fail "EN06 an agent that inherits the parent session's variables fails EN01" \
-        test "$(fact "$T/log/menv.facts" agent_env_leak)" = ""
-    make_mutant envauth 'if k not in ENV_DROP_NAMES and not k.startswith(ENV_DROP_PREFIXES)' \
-        'if k not in ENV_DROP_NAMES and not k.startswith(ENV_DROP_PREFIXES) and k != "CLAUDE_CODE_OAUTH_TOKEN"' \
-        || fail "EN10 the auth-drop mutation did not apply"
-    INVOKE_RUNNER="$MUT_PATH" parent_session invoke menvauth end-after-one clean --sample s-pass --runs 1
-    expect_fail "EN10 an agent that drops CLAUDE_CODE_OAUTH_TOKEN fails EN09" \
-        test "$(fact "$T/log/menvauth.facts" agent_env_auth)" = "dummy-oauth-token-for-test"
-    make_mutant model '"--model", self.model,' '' || fail "EN07 the --model mutation did not apply"
-    INVOKE_RUNNER="$MUT_PATH" invoke mmodel end-after-one clean --sample s-pass --runs 1
     expect_fail "EN07 an agent turn with no --model fails FL17" \
-        test "$(fact "$T/log/mmodel.facts" agent_models)" = "claude-sonnet-5-5"
-    make_mutant modelenv '"model": os.environ.get(MODEL_ENV) or DEFAULT_MODEL,' '"model": DEFAULT_MODEL,' \
-        || fail "EN08 the model-override mutation did not apply"
-    INVOKE_RUNNER="$MUT_PATH" parent_session invoke mmodelenv end-after-one clean --sample s-pass --runs 1
+        test "$(fact "$T/log/m1.facts" agent_models)" = "claude-sonnet-5-5"
+    expect_fail "EN10 an agent that drops CLAUDE_CODE_OAUTH_TOKEN fails EN09" \
+        test "$(fact "$T/log/m1.facts" agent_env_auth)" = "dummy-oauth-token-for-test"
+    expect_fail "EN06 an agent that inherits the parent session's variables fails EN01" \
+        test "$(fact "$T/log/m2.facts" agent_env_leak)" = ""
     expect_fail "EN08 a run that ignores AID_CONV_MODEL fails EN04" \
-        test "$(fact "$T/log/mmodelenv.facts" agent_models)" = "claude-override-test"
+        test "$(fact "$T/log/m2.facts" agent_models)" = "claude-override-test"
 }
 
 # ---------------------------------------------------------------- END
 group_end() {
     echo "--- END"
     need_pass
+    need_m1
+    await_runs
     assert_eq "$(fact "$T/log/pass.facts" user_end_first_ok)" 1 \
         "ED01 every simulated-user turn puts the answer sheet's end conditions first, and they override every other rule"
-    make_mutant end 'f"{END_FIRST_RULE}\n\n"' '""' || fail "ED02 the end-first mutation did not apply"
-    INVOKE_RUNNER="$MUT_PATH" invoke mend end-after-one clean --sample s-pass --runs 1
     expect_fail "ED02 a per-turn prompt without the end-first rule fails ED01" \
-        test "$(fact "$T/log/mend.facts" user_end_first_ok)" = 1
+        test "$(fact "$T/log/m1.facts" user_end_first_ok)" = 1
 }
 
 # ---------------------------------------------------------------- BRIEFS
@@ -861,6 +906,7 @@ group_checks() {
     need_pass
     need_checks
     need_grammar
+    await_runs
     local dir_p dir_c dir_g
     dir_p="$(run_dir_of "$T/log/pass.out" PASS s-pass 1)"
     dir_c="$(run_dir_of "$T/log/checks.out" FAIL s-checks-fail 1)"
@@ -892,6 +938,7 @@ group_clean() {
     echo "--- CLEAN"
     need_pass
     need_checks
+    await_runs
     local left
     left="$(ls -A "$T/tmp" 2>/dev/null | grep -c '^aid-conv-' || true)"
     assert_eq "$left" 0 "CL01 no aid-conv-* work folder is left in TMPDIR after the runs"
@@ -901,15 +948,16 @@ group_clean() {
 group_ledger() {
     echo "--- LEDGER"
     need_pass
-    need_pending
-    need_notable
+    need_m1
+    need_m2
+    await_runs
     assert_file_contains "$(run_dir_of "$T/log/pass.out" PASS s-pass 1)/ledger.md" "| # | Severity | Status" \
         "LG01 a clean ledger (no Pending row) passes the run"
-    assert_exit_eq "$(cat "$T/log/pending.rc")" 1 "LG02 a Pending ledger row fails the run"
-    assert_output_contains "$(cat "$T/log/pending.out")" "judge: 1 Pending row(s) in the ledger" \
+    assert_exit_eq "$(cat "$T/log/m1.rc")" 1 "LG02 a Pending ledger row fails the run"
+    assert_output_contains "$(cat "$T/log/m1.out")" "judge: 1 Pending row(s) in the ledger" \
         "LG03 the Pending row is named as the reason"
-    assert_exit_eq "$(cat "$T/log/notable.rc")" 1 "LG04 a judge reply with no ledger table fails the run"
-    assert_output_contains "$(cat "$T/log/notable.out")" "judge: no 7-column ledger table in the output" \
+    assert_exit_eq "$(cat "$T/log/m2.rc")" 1 "LG04 a judge reply with no ledger table fails the run"
+    assert_output_contains "$(cat "$T/log/m2.out")" "judge: no 7-column ledger table in the output" \
         "LG05 the missing table is named as the reason"
 }
 
@@ -918,6 +966,7 @@ group_samples() {
     echo "--- SAMPLES"
     need_clean3
     need_flaky
+    await_runs
     assert_exit_eq "$(cat "$T/log/clean3.rc")" 0 "SA01 3 of 3 passing runs exit 0"
     assert_output_contains "$(cat "$T/log/clean3.out")" "PASS claude-code s-pass: 3/3 runs passed" \
         "SA02 the sample passes when all 3 runs pass"
@@ -933,6 +982,7 @@ group_samples() {
 group_cap() {
     echo "--- CAP"
     need_cap
+    await_runs
     local f="$T/log/cap.facts"
     assert_exit_eq "$(cat "$T/log/cap.rc")" 1 "CP01 a conversation with no <<END>> exits 1"
     assert_output_contains "$(cat "$T/log/cap.out")" "conversation: no <<END>> within 12 user turns (turn cap)" \
