@@ -1,7 +1,7 @@
 # Next job
 
-The open job is **h002, revision 2** (`handoff/h002-codex-runner-adapter.md`, Q152, Q155). Read `handoff/PROTOCOL.md` first.
+The open job is **h006** (`handoff/h006-review-wave-3.md`). Read `handoff/PROTOCOL.md` first.
 
-Done: h000, h001, h003, h004, h005 (replies in `replies/`).
+Done: h000 to h005 (replies in `replies/`). h002 is under review by Claude.
 
 Nothing queued after it yet.
