@@ -1325,10 +1325,10 @@ describe('classifySkill — D5 residual', () => {
 });
 
 describe('classifySkill — precedence D1 > D2 > D3 > D4 > D5', () => {
-  it('D1 beats D2: aid-triage-shaped fixture carries ## State Machine + ## State: headings', () => {
+  it('D1 beats D2: a fixture carries ## State Machine + ## State: headings', () => {
     // The body simultaneously satisfies D1 (## State Machine with State+Advance table)
     // AND D2 (two ## State: headings). D1 must win because it fires first in the chain.
-    // This is the "aid-triage-shaped fixture" required by the AC: a body that carries
+    // This is the precedence fixture required by the AC: a body that carries
     // a Dispatch table heading, a qualifying table, AND inline ## State: sections.
     const body = [
       '## State Machine',

@@ -54,9 +54,9 @@ immediately.
 **Loopback:** Process Q&A injected by downstream phases (e.g., `/aid-specify`).
 
 **Not sure where to start?** If you don't know whether this is a full requirements
-gathering effort or a small single-purpose change, run `/aid-triage` first — it
-suggests the right entry (a specific shortcut, or this skill) from a one-line
-description.
+gathering effort or a small single-purpose change, say what you need in plain words: the
+skill guide in `rules.md` routes it to the right entry (a specific shortcut, or this
+skill) from a one-line description.
 
 ## ⚠️ Pre-flight Checks
 

@@ -354,10 +354,6 @@
       "dest": "site/src/content/docs/skills/aid-test.md"
     },
     {
-      "src": "canonical/skills/aid-triage/SKILL.md",
-      "dest": "site/src/content/docs/skills/aid-triage.md"
-    },
-    {
       "src": "canonical/skills/aid-unset-connector/SKILL.md",
       "dest": "site/src/content/docs/skills/aid-unset-connector.md"
     },
@@ -547,7 +543,6 @@
     "site/src/content/docs/skills/aid-test-performance.md",
     "site/src/content/docs/skills/aid-test-security.md",
     "site/src/content/docs/skills/aid-test.md",
-    "site/src/content/docs/skills/aid-triage.md",
     "site/src/content/docs/skills/aid-unset-connector.md",
     "site/src/content/docs/skills/aid-update-api.md",
     "site/src/content/docs/skills/aid-update-architecture.md",
@@ -924,10 +919,6 @@
       "dest": "site/src/data/skill-flows/aid-test.flow.json"
     },
     {
-      "src": "canonical/skills/aid-triage/SKILL.md",
-      "dest": "site/src/data/skill-flows/aid-triage.flow.json"
-    },
-    {
       "src": "canonical/skills/aid-unset-connector/SKILL.md",
       "dest": "site/src/data/skill-flows/aid-unset-connector.flow.json"
     },
@@ -1029,7 +1020,7 @@
     }
   ],
   "shapeCounts": {
-    "dispatch-table": 13,
+    "dispatch-table": 12,
     "inline-states": 44,
     "sibling-doorway": 13,
     "engine-doorway": 34,

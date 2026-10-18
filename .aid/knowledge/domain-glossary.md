@@ -10,7 +10,6 @@ sources:
   - release.sh
   - canonical/aid/templates/shortcut-engine.md
   - canonical/aid/templates/shortcut-catalog.yml
-  - canonical/skills/aid-triage/SKILL.md
   - canonical/skills/aid-describe/references/elicitation-engine.md
   - canonical/skills/aid-describe/references/state-describe-seed.md
   - canonical/skills/aid-discover/references/state-elicit.md

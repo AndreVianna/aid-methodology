@@ -44,7 +44,6 @@ const RE_CARD   = /^- \[`([a-z0-9-]+)`\]\((\/skills\/[a-z0-9-]+\/)\) \u2014 (.+)
 // ── File paths ─────────────────────────────────────────────────────────────────
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
-const REPO_ROOT = resolve(__dirname, '../../../');
 const RENDER_INDEX_SRC = resolve(__dirname, '../skills/render-index.mjs');
 
 // ── Real-corpus fixtures (built once, shared across all end-to-end tests) ──────
@@ -202,8 +201,8 @@ describe('grouping-divergence + cross-reference note (AC-7)', () => {
     // These two assertions replaced a pair I wrote in task-057 that forbade the words
     // "authoritative" and "disagree" outright, on the belief that hollowing out
     // /reference/skills/ left nothing to diverge from. That was wrong: the competing
-    // grouping is the curated ROSTER, which still exists and still files `aid-triage`
-    // under Definition where this page files it under Support -- so those assertions
+    // grouping is the curated ROSTER, which still exists and still files some skills
+    // under other groups than this page does -- so those assertions
     // banned a true and useful disclosure and locked the ban in. Corrected to check the
     // disclosure is DERIVED and complete instead of banning it.
     const noteLine = lines.find((l) => l.startsWith('> **Note:**')) ?? '';
@@ -222,8 +221,11 @@ describe('grouping-divergence + cross-reference note (AC-7)', () => {
         expect(noteLine, `note must NOT claim ${n} diverges`).not.toContain(`\`${n}\``);
       }
     }
-    // Non-vacuity: there really is a divergence to disclose, so the loop above ran.
-    expect(expected.length).toBeGreaterThan(0);
+    // With no divergence the note discloses nothing: the loop above checks that it invents
+    // no claim, and this check that the disclosure sentence is absent.
+    if (expected.length === 0) {
+      expect(noteLine).not.toContain('files skills per FR-5');
+    }
   });
 
   it('agrees with the document it cites — read from that document, not from SKILL_GROUPS', () => {
@@ -252,7 +254,12 @@ describe('grouping-divergence + cross-reference note (AC-7)', () => {
     };
 
     const divergent = findGroupingDivergence(sections);
-    expect(divergent.length, 'non-vacuity: there is a divergence to check').toBeGreaterThan(0);
+    if (divergent.length === 0) {
+      // Nothing to cite: the note must not cite the document either.
+      const noteText = lines.find((l) => l.startsWith('> **Note:**')) ?? '';
+      expect(noteText).not.toContain('publishes');
+      return;
+    }
 
     for (const d of divergent) {
       const claimed = groupsClaimedFor(d.name);
@@ -666,14 +673,14 @@ describe('family headings inside Definition follow catalog first-appearance orde
     expect(found).toBe(true);
   });
 
-  it('aid-triage sits under ## Support (not ## Definition)', () => {
+  it('aid-orchestrate sits under ## Support (not ## Definition)', () => {
     let currentGroup = null;
     let found = false;
     for (const line of lines) {
       const gm = RE_GROUP.exec(line);
       if (gm) { currentGroup = gm[1]; continue; }
       const cm = RE_CARD.exec(line);
-      if (cm && cm[1] === 'aid-triage') {
+      if (cm && cm[1] === 'aid-orchestrate') {
         expect(currentGroup).toBe('Support');
         found = true;
       }
@@ -681,7 +688,7 @@ describe('family headings inside Definition follow catalog first-appearance orde
     expect(found).toBe(true);
   });
 
-  it('aid-triage is the first card in Support', () => {
+  it('aid-orchestrate is the first card in Support', () => {
     const supportIdx = lines.findIndex((l) => l === '## Support');
     expect(supportIdx).toBeGreaterThan(-1);
     const nextGroupIdx = lines.findIndex((l, i) => i > supportIdx && RE_GROUP.test(l));
@@ -689,7 +696,7 @@ describe('family headings inside Definition follow catalog first-appearance orde
     const firstCard = supportLines.find((l) => RE_CARD.test(l));
     expect(firstCard).toBeDefined();
     const m = RE_CARD.exec(firstCard ?? '');
-    expect(m?.[1]).toBe('aid-triage');
+    expect(m?.[1]).toBe('aid-orchestrate');
   });
 
   it('every catalog-backed card sits under ## Definition under the correct ### verb', () => {

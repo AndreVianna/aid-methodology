@@ -80,8 +80,8 @@ overwrite them here — they are replaced with confirmed values at COMPLETION (s
 
 ### 1d. Monitor-routed finding seed (optional)
 
-If this work was opened following a `CHANGE REQUEST` finding that `/aid-triage` suggested
-routing here — originating in `aid-monitor/references/state-route.md` Step 5 — seed
+If this work was opened from a plain request that the skill guide routed here after a
+`CHANGE REQUEST` finding — originating in `aid-monitor/references/state-route.md` Step 5 — seed
 REQUIREMENTS.md with the desired new/changed behavior and its evidence; the full-path
 interview then continues over the remaining gaps as usual.
 

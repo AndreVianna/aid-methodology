@@ -33,7 +33,7 @@ import { skillSummary } from './summary.mjs';
 // This matches FR-5's own enumeration and gen-reference.mjs:150-199's order.
 //
 // Key design decisions recorded in REQUIREMENTS.md §5 FR-5 (Placement rules):
-//   - aid-triage is Support (first in group), NOT Definition.
+//   - aid-orchestrate is Support (first in group), NOT Definition.
 //   - Definition opens with exactly five full-path skills, un-subdivided,
 //     in pipeline order. They have no catalog row; no family is invented.
 //   - The two skills that used to be curated as full-path but are now ordinary
@@ -65,7 +65,6 @@ export const CURATED_GROUPS = [
     group: 'Support',
     blurb: "Skills for configuring AID, managing tickets and connectors, and talking to a peer AI session. Start here if you're not sure which skill to use.",
     members: [
-      'aid-triage',
       'aid-orchestrate',
       'aid-config',
       // An on-demand utility like the ticket skills: it belongs to no pipeline phase and has no verb

@@ -177,7 +177,7 @@ describe('assertion 2 — ## headings are the four curated groups, in order', ()
   });
 });
 
-// ── Assertion 3 — curated group agreement; aid-triage -> Support by name ─────
+// ── Assertion 3 — curated group agreement; aid-orchestrate -> Support by name ─
 
 describe('assertion 3 — curated skill group agrees with CURATED_GROUPS', () => {
   it("every curated skill's parsed group equals CURATED_GROUPS's", () => {
@@ -196,9 +196,9 @@ describe('assertion 3 — curated skill group agrees with CURATED_GROUPS', () =>
     }
   });
 
-  it('aid-triage is filed under Support', () => {
-    const card = parsed.cards.find((c) => c.name === 'aid-triage');
-    expect(card, 'aid-triage card not found').toBeDefined();
+  it('aid-orchestrate is filed under Support', () => {
+    const card = parsed.cards.find((c) => c.name === 'aid-orchestrate');
+    expect(card, 'aid-orchestrate card not found').toBeDefined();
     expect(card.group).toBe('Support');
   });
 });

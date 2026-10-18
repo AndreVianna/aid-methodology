@@ -4,7 +4,7 @@
 //  - Four guards: unassignable skill, curated skill missing,
 //    duplicate assignment, full-path catalog row
 //  - Family first-appearance ordering (catalog row order)
-//  - Placement rules: aid-triage → Support and first;
+//  - Placement rules: aid-orchestrate → Support and first;
 //    five full-path skills open Definition in pipeline order;
 //    aid-deploy / aid-monitor under deploy / monitor families (no special case)
 //  - Real-corpus integration: every directory assigns cleanly,
@@ -94,7 +94,7 @@ describe('guard: unassignable skill', () => {
 describe('guard: curated skill missing', () => {
   it('throws when a curated name has no record on disk', () => {
     // Omit one curated name so it is "missing".
-    const records = allCuratedRecs({ omit: ['aid-triage'] });
+    const records = allCuratedRecs({ omit: ['aid-orchestrate'] });
     const catalog = makeCatalog([]);
 
     expect(() => assignGroups(records, catalog)).toThrow('[gen-skills] curated skill missing:');
@@ -156,23 +156,23 @@ describe('guard: full-path catalog row', () => {
   });
 });
 
-// ── Placement rule: aid-triage is Support and first ──────────────────────────
+// ── Placement rule: aid-orchestrate is Support and first ──────────────────────────
 
-describe('placement: aid-triage in Support, first', () => {
-  it('aid-triage is in the Support group', () => {
+describe('placement: aid-orchestrate in Support, first', () => {
+  it('aid-orchestrate is in the Support group', () => {
     const supportEntry = CURATED_GROUPS.find((e) => e.group === 'Support');
     expect(supportEntry).toBeDefined();
     const allMembers = [...(supportEntry.fullPath || []), ...supportEntry.members];
-    expect(allMembers).toContain('aid-triage');
+    expect(allMembers).toContain('aid-orchestrate');
   });
 
-  it('aid-triage is the first member of Support', () => {
+  it('aid-orchestrate is the first member of Support', () => {
     const supportEntry = CURATED_GROUPS.find((e) => e.group === 'Support');
     const allMembers = [...(supportEntry.fullPath || []), ...supportEntry.members];
-    expect(allMembers[0]).toBe('aid-triage');
+    expect(allMembers[0]).toBe('aid-orchestrate');
   });
 
-  it('assignGroups places aid-triage card first in the Support section', () => {
+  it('assignGroups places aid-orchestrate card first in the Support section', () => {
     const catalog = loadShortcutCatalog(REPO_ROOT);
     const skillDirs = readdirSync(resolve(REPO_ROOT, 'canonical', 'skills'));
     const records = skillDirs.map(rec);
@@ -181,7 +181,7 @@ describe('placement: aid-triage in Support, first', () => {
     const supportSection = sections.find((s) => s.group === 'Support');
     expect(supportSection).toBeDefined();
     expect(supportSection.cards.length).toBeGreaterThan(0);
-    expect(supportSection.cards[0].name).toBe('aid-triage');
+    expect(supportSection.cards[0].name).toBe('aid-orchestrate');
   });
 });
 

@@ -137,8 +137,8 @@ function stripYamlScalar(raw) {
 
 // Rows that emit a `canonical/skills/<name>/SKILL.md` directory: every row
 // EXCEPT `repurpose: true` ones (those re-register a pre-existing hand-authored
-// skill — `aid-deploy` / `aid-monitor` / `aid-ask` — for
-// /aid-triage's benefit; the maintainer build helper skips generating a
+// skill — `aid-deploy` / `aid-monitor` / `aid-ask` — so that a typed
+// invocation resolves to them; the maintainer build helper skips generating a
 // directory for them).
 function emittingShortcutRows(rows) {
   return rows.filter((r) => r.repurpose !== 'true');
@@ -218,8 +218,8 @@ function generateShortcutEngineSection(catalog, headingLevel = 2) {
     `Propose→Discuss→Write→Review loops); the only interactive moments are a rare CAPTURE gap-question ` +
     `and the terminal APPROVAL-HALT. GATE grades every generated document mechanically against the ` +
     `project's minimum grade before halting. The engine never executes — \`/aid-execute\` is a separate, ` +
-    `user-initiated run after approval. Not sure which shortcut fits your change? \`/aid-triage\` reads ` +
-    `this same catalog and suggests exactly one.\n`
+    `user-initiated run after approval. Not sure which shortcut fits your change? Say what you need in plain words: the skill guide ` +
+    `in \`rules.md\` reads this same catalog and proposes the one that fits.\n`
   );
 }
 
@@ -229,8 +229,8 @@ function generateSkillsPage() {
   const catalog = loadShortcutCatalog();
 
   // Drift guard, kept: this is a correctness check on the corpus, not roster rendering.
-  // Expected skill-directory set = the curated skills (which include `aid-triage`, plus
-  // the classic repurpose skills deploy/monitor/ask) ∪ EVERY catalog row name.
+  // Expected skill-directory set = the curated skills (which include the classic
+  // repurpose skills deploy/monitor/ask) ∪ EVERY catalog row name.
   // Many `repurpose` rows are hand-authored single-shot "collapse" skills
   // that DO have their own directory, so every catalog row's directory is expected — not
   // just the engine-driven (non-`repurpose`) emitting ones.

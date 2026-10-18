@@ -3,7 +3,7 @@
 // Covers every acceptance criterion for the body-inspection shape classifier:
 //   AC-1  Never reads shortcut-catalog.yml or its `repurpose` flag (source grep).
 //   AC-2  D1 requires EXACT heading text and a State+Advance table (not "contains Dispatch").
-//   AC-3  aid-triage → dispatch-table despite having ## State Machine + ## State: headings.
+//   AC-3  ## State Machine + ## State: headings together → dispatch-table (precedence).
 //   AC-4  aid-review → inline-states; aid-test-security → sibling-doorway (both repurpose: true).
 //   AC-5  Classification is total: every input returns one of the five shapes.
 //   AC-6  delegatesTo is the parent dir for D3; null (never undefined) for all other shapes.
@@ -170,10 +170,10 @@ describe('D1 dispatch-table', () => {
     expect(result.shape).not.toBe('dispatch-table');
   });
 
-  // ── AC-3: aid-triage precedence test ────────────────────────────────────
+  // ── AC-3: State Machine + State: precedence test ─────────────────────
 
-  it('AC-3: aid-triage classifies as dispatch-table (## State Machine + ## State: headings present)', () => {
-    const body = readRealBody('aid-triage');
+  it('AC-3: ## State Machine + ## State: headings together classify as dispatch-table', () => {
+    const body = AC3_STATE_MACHINE_PRECEDENCE_BODY;
     // Verify the fixture actually contains the competing headings, so this
     // test exercises precedence rather than a trivial single-discriminator case.
     expect(body).toMatch(/^## State Machine\s*$/m);
@@ -182,6 +182,23 @@ describe('D1 dispatch-table', () => {
     expect(result.shape).toBe('dispatch-table');
   });
 });
+
+// Body carrying BOTH a ## State Machine heading (D1) and ## State: headings (D2).
+const AC3_STATE_MACHINE_PRECEDENCE_BODY = `
+## State Machine
+
+| State | Worker | Advance |
+|-------|--------|---------|
+| INTAKE | inline | DONE |
+
+## State: INTAKE
+
+Capture the request.
+
+## State: DONE
+
+Halt.
+`;
 
 // ── D2: inline-states ─────────────────────────────────────────────────────────
 

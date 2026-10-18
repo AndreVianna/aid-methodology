@@ -58,9 +58,8 @@ describe('deriveSkillCounts — internal consistency', () => {
     expect(counts.catalogRows).toBeGreaterThan(counts.shortcuts);
   });
 
-  it('classic is curated minus exactly the router and the Q&A alias', () => {
-    expect(counts.curated - counts.classic).toBe(2);
-    expect(counts.curatedNames).toContain('aid-triage');
+  it('classic is curated minus exactly the Q&A alias', () => {
+    expect(counts.curated - counts.classic).toBe(1);
     expect(counts.curatedNames).toContain('aid-ask');
   });
 
@@ -388,7 +387,7 @@ describe('the roster has one home', () => {
     // Guards the guard. Each shape is proved against the literal text that shipped, so
     // a future refactor cannot quietly neuter a pattern into matching nothing.
     const regressions = [
-      '// reference/skills.md — 94 skill directories (16 classic + aid-triage',
+      '// reference/skills.md — 94 skill directories (16 classic + aid-ask',
       "// page — individually they'd be 67 near-identical H3 blocks of pure noise.",
       '  // The 64 direct-entry shortcuts are rendered as an H3 family-summary table',
       'the home page promised 92 skills while the site shipped 111 cards.',

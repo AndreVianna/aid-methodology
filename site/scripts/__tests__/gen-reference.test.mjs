@@ -143,7 +143,6 @@ describe('gen-reference: generatedFrom frontmatter', () => {
 // the roster moved to /skills/ and this page kept only the engine narrative.)
 const CURATED_SKILL_NAMES = [
   'aid-config', 'aid-discover', 'aid-summarize',
-  'aid-triage',
   'aid-describe', 'aid-define', 'aid-specify',
   'aid-plan', 'aid-detail',
   'aid-execute',

@@ -170,8 +170,8 @@ export function renderSkillIndex(records, sections) {
   // note with a plain cross-reference, on the reasoning that a hollowed page has no
   // roster left to diverge from. That reasoning was WRONG: the competing grouping was
   // never the reference PAGE, it is the curated roster itself -- which still exists,
-  // still groups `aid-triage` under Definition, and is still what docs/aid-methodology.md
-  // publishes in its inventory table, while this page files it under Support per FR-5.
+  // still groups skills as the roster files them, and is still what docs/aid-methodology.md
+  // publishes in its inventory table, while this page files them per FR-5.
   // Deleting the disclosure removed a true statement a reader needs.
   //
   // So it is DERIVED now, not curated. task-054 extracted SKILL_GROUPS into

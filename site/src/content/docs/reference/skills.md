@@ -7,7 +7,7 @@ generatedFrom: 'canonical/aid/templates/shortcut-catalog.yml, canonical/aid/temp
 <!-- generated — do not edit; source: canonical/aid/templates/shortcut-catalog.yml, canonical/aid/templates/shortcut-engine.md -->
 
 :::tip[Looking for the list of skills?]
-The full roster — all **113** skills, one card each, grouped by skill group and verb family — lives at [**All skills**](/skills/). This page covers the shortcut engine those skills delegate to.
+The full roster — all **112** skills, one card each, grouped by skill group and verb family — lives at [**All skills**](/skills/). This page covers the shortcut engine those skills delegate to.
 :::
 
 ## Direct-entry shortcuts
@@ -20,4 +20,4 @@ Every engine-driven shortcut delegates to the shared **shortcut engine** — [`c
 INTAKE → CAPTURE → SPEC → PLAN → DETAIL → GATE → APPROVAL-HALT
 ```
 
-CAPTURE/SPEC/PLAN/DETAIL run without a per-phase human checkpoint (unlike the full path's Propose→Discuss→Write→Review loops); the only interactive moments are a rare CAPTURE gap-question and the terminal APPROVAL-HALT. GATE grades every generated document mechanically against the project's minimum grade before halting. The engine never executes — `/aid-execute` is a separate, user-initiated run after approval. Not sure which shortcut fits your change? `/aid-triage` reads this same catalog and suggests exactly one.
+CAPTURE/SPEC/PLAN/DETAIL run without a per-phase human checkpoint (unlike the full path's Propose→Discuss→Write→Review loops); the only interactive moments are a rare CAPTURE gap-question and the terminal APPROVAL-HALT. GATE grades every generated document mechanically against the project's minimum grade before halting. The engine never executes — `/aid-execute` is a separate, user-initiated run after approval. Not sure which shortcut fits your change? Say what you need in plain words: the skill guide in `rules.md` reads this same catalog and proposes the one that fits.

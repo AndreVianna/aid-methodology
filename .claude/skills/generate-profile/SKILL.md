@@ -92,8 +92,8 @@ Confirm canonical completeness:
    parts do not add up to the total is how this file was wrong twice:
 
    ```
-   75 skill directories
-     = 17 curated (NOT catalog rows; includes the aid-triage router)
+   74 skill directories
+     = 16 curated (NOT catalog rows)
      + 58 catalog rows
          = 34 verb-first shortcut skills (one generated per non-`repurpose` row)
          + 24 hand-authored `repurpose` skills (each with its own directory;
@@ -104,7 +104,7 @@ Confirm canonical completeness:
    **Do not hand-list the curated skills here.** A list was maintained inline and drifted:
    it named 14 skills while claiming 17, included `aid-deploy`/`aid-monitor`/`aid-query-kb`   <!-- count-history -->
    (catalog rows at the time, not curated), omitted the connector and ticket skills, and then
-   added `aid-triage` and `aid-ask` a second time on top — summing to 113 for what was then a
+   added `aid-ask` a second time on top — summing to 113 for what was then a
    111-skill corpus. Derive the set instead:
 
    ```bash

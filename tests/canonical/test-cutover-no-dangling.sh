@@ -85,8 +85,8 @@ fi
 # filenames) -- closes the gap that let stale `LITE-REVIEW` / `TASK-BREAKDOWN` prose
 # references survive the filename + block-heading greps. Scoped to the four UNAMBIGUOUS
 # tokens (no legitimate surviving use anywhere in canonical/); `TRIAGE` is intentionally
-# omitted because `aid-triage` and the title-case `### Triage (...)` heading-format examples
-# are live, distinct concepts.
+# omitted because the title-case `### Triage (...)` heading-format examples are live,
+# distinct concepts.
 for tok in CONDENSED-INTAKE TASK-BREAKDOWN LITE-REVIEW LITE-DONE; do
     HITS=$(grep -rn --include='*.md' --include='*.sh' --include='*.yml' -- "$tok" "$CANONICAL" 2>/dev/null || true)
     if [[ -n "$HITS" ]]; then

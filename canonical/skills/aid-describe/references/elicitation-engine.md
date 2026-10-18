@@ -4,8 +4,8 @@ The engine driver for the seasoned-analyst interview: one fixed opener (D1) plus
 deterministic five-step next-move selector that runs every subsequent turn (D2). This
 is NOT a question list -- it is an adaptive analyst. Three parameters supplied by the
 caller let feature-003 (greenfield seed authoring) CONSUME this engine without
-re-implementing it (D3). The standalone `/aid-triage` router reuses the D1 opener's reflect-back-turn UX shape as a
-precedent, not as a live three-parameter consumer -- see "Consumption Contract" below.
+re-implementing it (D3). Plain-request routing (`rules.md` § Handling a request) is not a live three-parameter
+consumer of this engine either -- see "Consumption Contract" below.
 
 **Audience.** Two readers at once: a junior maintainer learning how the interview
 works, and the feature implementations that invoke or extend the engine.
@@ -314,13 +314,10 @@ only surfaces a coherence conflict it notices (gap rank 1) and routes it to
 capture-and-defer via Move 9.
 
 **`aid-describe` runs the full-path interview only**; full-vs-lite routing belongs to the
-standalone `/aid-triage` router. That router is the engine's external
-reusability precedent for the reflect-back turn: it reuses the D1 opener's UX shape (one
-fixed "what + why" example-anchored capture, `Suggested:`/`Why:` non-optional) as a
-one-shot single-turn capture, but it does NOT run the adaptive loop -- it has no gap
-inventory, no stop predicate, and no record sink of its own (it is suggest-only; see
-`.agents/skills/aid-triage/SKILL.md`). It is a UX-shape consumer, not a three-parameter
-consumer of this Consumption Contract.
+plain-request routing in `rules.md` § Handling a request and to `/aid-orchestrate`. That
+routing has no gap inventory, no stop predicate and no record sink of its own: it sizes the
+work and hands it to the phase skills (see `/aid-orchestrate`).
+It is not a three-parameter consumer of this Consumption Contract.
 
 **Opener de-dup.** The opener fires exactly once per work, at `state-continue.md`'s
 entry: when all REQUIREMENTS.md sections are still `Pending`, `state-continue.md` emits

@@ -23,24 +23,22 @@ import { loadShortcutCatalog } from './catalog.mjs';
 /**
  * Skills that are curated but are NOT counted as "classic pipeline skills".
  *
- * `/aid-triage` is the suggest-only router and `/aid-ask` is the standalone Q&A skill
- * (it was promoted to canonical, retiring the `/aid-query-kb`
- * it used to alias, so it is now a `repurpose: true` catalog row in its own right);
- * both render inside a group but are counted separately, matching
- * the README and methodology framing of "N classic + /aid-triage + /aid-ask".
+ * `/aid-ask` is the standalone Q&A skill (it was promoted to canonical, retiring the
+ * `/aid-query-kb` it used to alias, so it is now a `repurpose: true` catalog row in its
+ * own right); it renders inside a group but is counted separately.
  * gen-reference.mjs USED to exclude exactly these two when it computed its own classic count;
  * task-057 deleted that computation along with the roster it rendered, so this module is now
  * the only place the distinction is made. `classic` itself is no longer stated on any page --
  * `curatedOnly` is, because that is the figure a decomposition can sum with. Kept because the
  * README and methodology still use the "N classic" framing in prose.
  */
-const NON_CLASSIC_CURATED = ['aid-triage', 'aid-ask'];
+const NON_CLASSIC_CURATED = ['aid-ask'];
 
 /**
  * @typedef {object} SkillCounts
  * @property {number}   directories  Directories under `canonical/skills/`.
- * @property {number}   curated      Curated skills — classic plus the two above.
- * @property {number}   classic      Curated minus `/aid-triage` and `/aid-ask`.
+ * @property {number}   curated      Curated skills — classic plus `/aid-ask`.
+ * @property {number}   classic      Curated minus `/aid-ask`.
  * @property {number}   shortcuts    Catalog rows that emit a shortcut skill.
  * @property {number}   catalogRows  All catalog rows, emitting or `repurpose`.
  * @property {number}   repurposed   Rows that re-register a hand-authored skill.
@@ -107,7 +105,7 @@ export function deriveSkillCounts(repoRoot) {
   // Some curated skills are ALSO catalog rows -- aid-deploy, aid-monitor and aid-ask are
   // `repurpose: true` rows the curated roster carries as well -- so pairing `curated` with
   // the catalog-row count double-counts exactly those, and the sentence
-  // "classic + triage + ask + shortcuts" double-counts some of them AND omits the
+  // "classic + ask + shortcuts" double-counts some of them AND omits the
   // collapse skills entirely. Excluding the overlap gives the figure that SUMS with the
   // catalog rows to the corpus total, which is the decomposition every page on the site states.
   //

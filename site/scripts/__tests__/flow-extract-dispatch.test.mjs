@@ -1,7 +1,7 @@
 // flow-extract-dispatch.test.mjs — Unit tests for extract-dispatch.mjs (task-025).
 //
 // Coverage:
-//   extractDispatch — D1 dispatch-table shape for all 13 corpus skills.
+//   extractDispatch — D1 dispatch-table shape for all 12 corpus skills.
 //
 // Testing discipline (binding per DETAIL.md):
 //   - Every assertion drives the real module; no logic is re-implemented here.
@@ -14,12 +14,13 @@
 //     are hard-coded (§8 / KI-005).
 //   - provenance.excerpt is verified against the live allLines slice (AC-7).
 //   - Rule 8 (re-entry) is confirmed explicitly as required by the user prompt.
-//   - V9 throws are verified to be 0 across all 13 skills.
+//   - V9 throws are verified to be 0 across all 12 skills.
 
-import { describe, it, expect, beforeAll } from 'vitest';
-import { readFileSync } from 'node:fs';
-import { resolve, dirname } from 'node:path';
+import { describe, it, expect, beforeAll, afterAll } from 'vitest';
+import { readFileSync, mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
+import { resolve, dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { tmpdir } from 'node:os';
 import { extractDispatch } from '../lib/flow-graph/extract-dispatch.mjs';
 import { validateChart } from '../lib/flow-graph/validate.mjs';
 import { splitFrontmatter } from '../lib/flow-graph/source.mjs';
@@ -27,12 +28,62 @@ import { splitFrontmatter } from '../lib/flow-graph/source.mjs';
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const REPO_ROOT = resolve(__dirname, '../../../');
 
-/** All 13 D1 corpus skills exercised by this task. */
+/** All 12 D1 corpus skills exercised by this task. */
 const D1_SKILLS = [
   'aid-define', 'aid-deploy', 'aid-describe', 'aid-detail', 'aid-discover',
   'aid-execute', 'aid-housekeep', 'aid-monitor', 'aid-plan', 'aid-specify',
-  'aid-summarize', 'aid-triage', 'aid-update-kb',
+  'aid-summarize', 'aid-update-kb',
 ];
+
+/**
+ * A fixture skill whose dispatch-table state names collide with advance keywords
+ * (HALT), written into a scratch repository root. It replaces the corpus skill
+ * that carried this shape, so the keyword-state assertions do not depend on a
+ * shipped skill's body.
+ */
+const KW_SKILL = 'aid-keyword-states';
+const KW_ROOT = mkdtempSync(join(tmpdir(), 'flow-extract-dispatch-kw-'));
+mkdirSync(join(KW_ROOT, 'canonical/skills', KW_SKILL), { recursive: true });
+writeFileSync(join(KW_ROOT, 'canonical/skills', KW_SKILL, 'SKILL.md'), `---
+name: ${KW_SKILL}
+description: Fixture for keyword-named dispatch states.
+---
+
+# Keyword States Fixture
+
+## Dispatch
+
+| State | Detail | Worker | Advance |
+|-------|--------|--------|---------|
+| INTAKE | inline (below) | inline | CHAIN -> CLASSIFY |
+| CLASSIFY | inline (below) | inline | CHAIN -> SUGGEST |
+| SUGGEST | inline (below) | inline | CHAIN -> HALT |
+| HALT | inline (below) | inline | -> halt |
+
+## State: INTAKE
+
+Capture the request in one line.
+
+**Advance:** **CHAIN** -> [State: CLASSIFY] (continue inline).
+
+## State: CLASSIFY
+
+Classify the request.
+
+**Advance:** **CHAIN** -> [State: SUGGEST] (continue inline).
+
+## State: SUGGEST
+
+Suggest one entry.
+
+**Advance:** **CHAIN** -> [State: HALT] (continue inline).
+
+## State: HALT
+
+Stop here.
+`);
+
+afterAll(() => rmSync(KW_ROOT, { recursive: true, force: true }));
 
 /** Load the SKILL.md body lines for a skill (for provenance cross-checks). */
 function loadSkillLines(name) {
@@ -44,8 +95,8 @@ function loadSkillLines(name) {
 
 // ── Chart metadata ─────────────────────────────────────────────────────────────
 
-describe('extractDispatch — chart metadata (aid-triage)', () => {
-  const chart = extractDispatch('aid-triage', null, REPO_ROOT);
+describe('extractDispatch — chart metadata (keyword-states fixture)', () => {
+  const chart = extractDispatch(KW_SKILL, null, KW_ROOT);
 
   it('shape is dispatch-table', () => {
     // Mutant: change SHAPE constant to 'inline-states' → shape would differ.
@@ -64,7 +115,7 @@ describe('extractDispatch — chart metadata (aid-triage)', () => {
 
   it('skill name is preserved on the chart', () => {
     // Mutant: pass undefined skill → chart.skill would be undefined.
-    expect(chart.skill).toBe('aid-triage');
+    expect(chart.skill).toBe(KW_SKILL);
   });
 
   it('near-miss: aid-describe has the same shape', () => {
@@ -74,11 +125,11 @@ describe('extractDispatch — chart metadata (aid-triage)', () => {
   });
 });
 
-// ── aid-triage: inline detail + keyword-named state HALT ─────────────────────
+// ── keyword-states fixture: inline detail + keyword-named state HALT ─────────
 
-describe('extractDispatch — aid-triage: inline detail, keyword state HALT', () => {
+describe('extractDispatch — keyword-states fixture: inline detail, keyword state HALT', () => {
   let chart;
-  beforeAll(() => { chart = extractDispatch('aid-triage', null, REPO_ROOT); });
+  beforeAll(() => { chart = extractDispatch(KW_SKILL, null, KW_ROOT); });
 
   it('produces exactly 4 nodes (measured from dispatch table)', () => {
     // Mutant: off-by-one in dataRows loop → 3 nodes.
@@ -150,10 +201,10 @@ describe('extractDispatch — aid-triage: inline detail, keyword state HALT', ()
   });
 });
 
-// ── aid-triage: keyword-state edge recovery (HALT → n4 is reachable) ─────────
+// ── keyword-states fixture: keyword-state edge recovery (HALT → n4 is reachable) ─
 
 describe('extractDispatch — SUGGEST→HALT edge (keyword-state edge recovery)', () => {
-  const chart = extractDispatch('aid-triage', null, REPO_ROOT);
+  const chart = extractDispatch(KW_SKILL, null, KW_ROOT);
 
   it('n3→n4 (SUGGEST→HALT) edge exists', () => {
     // Mutant: skip keyword-state edge recovery → no edge to HALT → HALT unreachable.
@@ -248,10 +299,10 @@ describe('extractDispatch — Rule 8 re-entry (aid-describe Targeted Interview h
     expect(re.kind).not.toBe('loop-back');
   });
 
-  it('near-miss: aid-triage has no re-entry heading → no re-entry edges', () => {
-    // aid-triage has no "Loopback" or "Re-entry" heading in its body.
+  it('near-miss: keyword-states fixture has no re-entry heading → no re-entry edges', () => {
+    // The fixture has no "Loopback" or "Re-entry" heading in its body.
     // Mutant: scan all headings regardless of text → would find unrelated headings.
-    const c = extractDispatch('aid-triage', null, REPO_ROOT);
+    const c = extractDispatch(KW_SKILL, null, KW_ROOT);
     const reentryEdges = c.edges.filter((e) => e.kind === 're-entry');
     expect(reentryEdges.length).toBe(0);
   });
@@ -412,7 +463,7 @@ describe('extractDispatch — label ladder via worker first prose sentence', () 
   });
 });
 
-// ── Inline detail binding (aid-triage, AC-3) ──────────────────────────────────
+// ── Inline detail binding (keyword-states fixture, AC-3) ──────────────────────────────────
 
 describe('extractDispatch — inline detail uses findStateSections from source.mjs (AC-3)', () => {
   it('no private ## State: reader implementation in extract-dispatch.mjs', () => {
@@ -435,10 +486,10 @@ describe('extractDispatch — inline detail uses findStateSections from source.m
     expect(src).not.toMatch(/\.test\([^\)]*##\s*State:/);   // direct inline test call
   });
 
-  it('aid-triage inline state INTAKE binds its ## State: section for label', () => {
+  it('keyword-states fixture: inline state INTAKE binds its ## State: section for label', () => {
     // INTAKE uses inline detail; its label must come from the ## State: INTAKE section.
     // Mutant: skip inline label extraction → label falls back to title-case 'Intake'.
-    const chart = extractDispatch('aid-triage', null, REPO_ROOT);
+    const chart = extractDispatch(KW_SKILL, null, KW_ROOT);
     const intake = chart.nodes.find((n) => n.name === 'INTAKE');
     expect(intake.label).toBeDefined();
     // The label should NOT be the title-cased fallback
@@ -498,7 +549,7 @@ describe('extractDispatch — worker file path extraction strips prose suffix', 
   });
 });
 
-// ── V9 sweep: all 13 D1 skills ────────────────────────────────────────────────
+// ── V9 sweep: all 12 D1 skills ────────────────────────────────────────────────
 
 describe('extractDispatch — V9 sweep: no skill throws a V9 error', () => {
   for (const skill of D1_SKILLS) {
@@ -509,9 +560,9 @@ describe('extractDispatch — V9 sweep: no skill throws a V9 error', () => {
   }
 });
 
-// ── All 13 skills: charts are non-null with at least 1 node ──────────────────
+// ── All 12 skills: charts are non-null with at least 1 node ──────────────────
 
-describe('extractDispatch — all 13 D1 skills produce valid charts', () => {
+describe('extractDispatch — all 12 D1 skills produce valid charts', () => {
   for (const skill of D1_SKILLS) {
     it(`${skill}: chart is non-null and has nodes`, () => {
       // Mutant: return null for unknown skills → chart would be null.
@@ -521,7 +572,7 @@ describe('extractDispatch — all 13 D1 skills produce valid charts', () => {
     });
   }
 
-  it('EVERY one of the 13 validates cleanly — no exemptions', () => {
+  it('EVERY one of the 12 validates cleanly — no exemptions', () => {
     // This replaces two tests that between them asserted the OPPOSITE: one
     // exempted `aid-execute` and `aid-specify` from validating, and another
     // asserted their V6 failures were expected, described as "genuinely
@@ -643,10 +694,10 @@ describe('extractDispatch — CONTINUE→DESCRIBE-SEED branch condition (rule 2/
 // ── sources array ─────────────────────────────────────────────────────────────
 
 describe('extractDispatch — sources list', () => {
-  it('aid-triage sources includes the SKILL.md path', () => {
+  it('keyword-states fixture sources includes the SKILL.md path', () => {
     // Mutant: omit SKILL.md from sources → first source would differ.
-    const chart = extractDispatch('aid-triage', null, REPO_ROOT);
-    expect(chart.sources).toContain('canonical/skills/aid-triage/SKILL.md');
+    const chart = extractDispatch(KW_SKILL, null, KW_ROOT);
+    expect(chart.sources).toContain(`canonical/skills/${KW_SKILL}/SKILL.md`);
   });
 
   it('aid-describe sources includes at least one worker file path', () => {
