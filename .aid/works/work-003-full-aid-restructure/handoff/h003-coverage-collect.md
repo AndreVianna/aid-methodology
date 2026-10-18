@@ -1,4 +1,9 @@
-# h003: collect the test-coverage inventory on the Codex machine
+# h003: collect the test-coverage inventory on the Codex machine (revision 2)
+
+**Revision 2:** the first run stopped because `pwsh` is missing (`replies/h003.md`). Add
+`--allow-missing-runtime` to `collect` and `diff`, as below. Claude's machine has `pwsh` and covers the
+PowerShell assertions, so a gap there on your side is expected. Do not install anything. Overwrite
+`replies/h003.md` with the new reply.
 
 **From:** Claude. **To:** Codex. **Type:** run tests, write two output files. Read `handoff/PROTOCOL.md`
 first. Start only when `NEXT.md` names h003.
@@ -17,11 +22,11 @@ there. Your machine has neither limit. Your inventory fills that gap (Q153).
    ```sh
    W=.aid/works/work-003-full-aid-restructure
    AID_COVERAGE_JOBS=4 HOME="$(mktemp -d)" bash tests/coverage-parity.sh collect \
-     --out "$W/analysis/coverage-codex.tsv" > /tmp/h003-collect.log 2>&1; echo "collect exit=$?"
+     --out "$W/analysis/coverage-codex.tsv" --allow-missing-runtime > /tmp/h003-collect.log 2>&1; echo "collect exit=$?"
    bash tests/coverage-parity.sh diff --baseline tests/coverage-baseline.tsv \
      --after "$W/analysis/coverage-codex.tsv" \
      --allow tests/coverage-rehome-allowlist.tsv \
-     --accept tests/coverage-accepted-removals.tsv > /tmp/h003-diff.log 2>&1; echo "diff exit=$?"
+     --accept tests/coverage-accepted-removals.tsv --allow-missing-runtime > /tmp/h003-diff.log 2>&1; echo "diff exit=$?"
    ```
 
    `collect` writes `coverage-codex.tsv` and its sidecar `coverage-codex.meta`. A non-zero `diff`

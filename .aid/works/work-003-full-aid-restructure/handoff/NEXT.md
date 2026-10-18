@@ -1,6 +1,6 @@
 # Next job
 
-The open job is **h003** (`handoff/h003-coverage-collect.md`). Read `handoff/PROTOCOL.md` first.
+The open job is **h003, revision 2** (`handoff/h003-coverage-collect.md`). Read `handoff/PROTOCOL.md` first.
 
 Done: h000 (`replies/h000.md`), h001 (`replies/h001.md`; its four findings are being fixed in task-370).
 
