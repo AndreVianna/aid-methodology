@@ -764,6 +764,7 @@ def _ser_work(obj) -> dict:
         "name":           obj.name,
         "lifecycle":      obj.lifecycle.value,
         "phase":          obj.phase.value if obj.phase is not None else None,
+        "phases":         list(obj.phases) if obj.phases is not None else None,
         "active_skill":   obj.active_skill,
         "updated":        obj.updated,
         "created":        obj.created,

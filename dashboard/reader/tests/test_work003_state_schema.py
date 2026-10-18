@@ -308,7 +308,7 @@ class TestParseStateMdStructured(unittest.TestCase):
     def test_structured_document(self):
         pw = parse_state_md(_STRUCTURED_STATE, work_id="work-900-demo")
         self.assertEqual(pw.lifecycle, Lifecycle.Running)
-        self.assertEqual(pw.phase, Phase.Execute)
+        self.assertEqual(pw.phase, Phase.Building)
         self.assertEqual(pw.active_skill, "aid-execute")
         self.assertEqual(pw.updated, "2026-07-10T12:00:00Z")
         self.assertEqual(pw.source_mode, SourceMode.Normalized)
@@ -350,11 +350,11 @@ class TestPhaseTask010Migration(unittest.TestCase):
 
     def test_frontmatter_phase_describe(self):
         pw = parse_state_md(_PHASE_DESCRIBE_STATE, work_id="work-910-demo")
-        self.assertEqual(pw.phase, Phase.Describe)
+        self.assertEqual(pw.phase, Phase.Definition)
 
     def test_frontmatter_phase_define(self):
         pw = parse_state_md(_PHASE_DEFINE_STATE, work_id="work-911-demo")
-        self.assertEqual(pw.phase, Phase.Define)
+        self.assertEqual(pw.phase, Phase.Specification)
 
 
 # ---------------------------------------------------------------------------
@@ -866,7 +866,8 @@ class TestCrossTwinParity(unittest.TestCase):
                 node_w = _run_node_work(self.root, self.pinned_home)
                 self.assertEqual(py_w, node_w,
                                   f"Python and Node must agree on phase={phase_value!r}")
-                self.assertEqual(py_w["phase"], phase_value)
+                # The legacy names read as their FR-1 members (Feature 002).
+                self.assertEqual(py_w["phase"], {"Describe": "Definition", "Define": "Specification"}[phase_value])
 
     def _run_node_kb_summary_approved(self, root: Path, pinned_home: Path) -> "bool | None":
         script = (

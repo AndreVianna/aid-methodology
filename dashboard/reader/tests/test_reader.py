@@ -617,7 +617,7 @@ class TestParseStateMd(unittest.TestCase):
 
     def test_normalized_phase(self):
         pw = parse_state_md(STATE_NORMALIZED)
-        self.assertEqual(pw.phase, Phase.Execute)
+        self.assertEqual(pw.phase, Phase.Building)
 
     def test_normalized_active_skill(self):
         pw = parse_state_md(STATE_NORMALIZED)
@@ -774,14 +774,27 @@ class TestEnumParsing(unittest.TestCase):
         self.assertEqual(_parse_lifecycle("running"), Lifecycle.Unknown)  # case-sensitive
 
     def test_all_phase_members(self):
-        # Faithful numbered pipeline; ends at Execute.
+        # The FR-1 names map to themselves (Feature 002).
         cases = {
-            "Describe": Phase.Describe,
-            "Define": Phase.Define,
-            "Specify": Phase.Specify,
-            "Plan": Phase.Plan,
-            "Detail": Phase.Detail,
-            "Execute": Phase.Execute,
+            "Definition": Phase.Definition,
+            "Specification": Phase.Specification,
+            "Planning": Phase.Planning,
+            "Building": Phase.Building,
+            "CI": Phase.CI,
+        }
+        for raw, expected in cases.items():
+            with self.subTest(raw=raw):
+                self.assertEqual(_parse_phase(raw), expected)
+
+    def test_legacy_phase_names_map_to_fr1_members(self):
+        # Old names of works not yet migrated map through the legacy block.
+        cases = {
+            "Describe": Phase.Definition,
+            "Define": Phase.Specification,
+            "Specify": Phase.Specification,
+            "Plan": Phase.Planning,
+            "Detail": Phase.Planning,
+            "Execute": Phase.Building,
         }
         for raw, expected in cases.items():
             with self.subTest(raw=raw):
@@ -986,7 +999,7 @@ class TestReadRepo(unittest.TestCase):
         self.assertEqual(len(model.works), 1)
         w = model.works[0]
         self.assertEqual(w.lifecycle, Lifecycle.Running)
-        self.assertEqual(w.phase, Phase.Execute)
+        self.assertEqual(w.phase, Phase.Building)
         self.assertEqual(w.active_skill, "aid-execute")
 
     def test_missing_state_yml_yields_warning(self):
@@ -1254,7 +1267,7 @@ class TestPF4PhaseSingleSource(unittest.TestCase):
         )
         pw = parse_state_md(text)
         from dashboard.reader.models import Phase
-        self.assertEqual(pw.phase, Phase.Execute)
+        self.assertEqual(pw.phase, Phase.Building)
         self.assertEqual(pw.source_mode.value, "normalized")
 
     def test_phase_absent_when_no_lifecycle_key(self):

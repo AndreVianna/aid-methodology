@@ -46,7 +46,7 @@
       "suggested": null
     }
   ],
-  "phase": "Execute",
+  "phase": "Building",
   "source_mode": "normalized",
   "tasks": [
     {

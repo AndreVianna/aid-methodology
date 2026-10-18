@@ -405,7 +405,7 @@ class TestFixtureRunningParallel(unittest.TestCase):
     def test_phase_and_skill(self):
         model = read_repo(self.root)
         w = model.works[0]
-        self.assertEqual(w.phase, Phase.Execute)
+        self.assertEqual(w.phase, Phase.Building)
         self.assertEqual(w.active_skill, "aid-execute")
 
 
@@ -703,7 +703,7 @@ class TestFixtureNormalized(unittest.TestCase):
     def test_phase_populated(self):
         model = read_repo(self.root)
         w = model.works[0]
-        self.assertEqual(w.phase, Phase.Execute)
+        self.assertEqual(w.phase, Phase.Building)
 
     def test_active_skill_populated(self):
         model = read_repo(self.root)

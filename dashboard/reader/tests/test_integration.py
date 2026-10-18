@@ -232,7 +232,7 @@ class TestProducerConsumerRoundTrip(unittest.TestCase):
                          "Reader must return Running after producer wrote Running")
         self.assertEqual(w.source_mode, SourceMode.Normalized,
                          "Pipeline Status block present -> source_mode=normalized")
-        self.assertEqual(w.phase, Phase.Execute,
+        self.assertEqual(w.phase, Phase.Building,
                          "Phase must match what the producer wrote")
         self.assertEqual(w.active_skill, "aid-execute",
                          "Active Skill must match what the producer wrote")
@@ -373,7 +373,7 @@ class TestProducerConsumerRoundTrip(unittest.TestCase):
         w = m.works[0]
         self.assertEqual(w.lifecycle, Lifecycle.Running, "Step 1: must be Running")
         self.assertEqual(w.source_mode, SourceMode.Normalized, "Step 1: normalized path")
-        self.assertEqual(w.phase, Phase.Execute, "Step 1: phase Execute")
+        self.assertEqual(w.phase, Phase.Building, "Step 1: phase Building")
         self.assertEqual(w.active_skill, "aid-execute", "Step 1: active skill")
 
         # --- Paused ---

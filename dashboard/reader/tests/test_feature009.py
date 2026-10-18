@@ -363,7 +363,7 @@ class TestT10ProducerConsumerContract(unittest.TestCase):
             self._write_conforming_repo(Path(d))
             model = read_repo(Path(d))
         w = model.works[0]
-        self.assertEqual(w.phase, Phase.Execute)
+        self.assertEqual(w.phase, Phase.Building)
         self.assertEqual(w.source_mode, SourceMode.Normalized)
 
     def test_pf5a_delivery_from_state_wave_now_unreachable(self):
@@ -409,7 +409,7 @@ class TestT10ProducerConsumerContract(unittest.TestCase):
         self.assertEqual(w.title, "Widget Factory")
         self.assertIsNotNone(w.description)
         # PF-4
-        self.assertEqual(w.phase, Phase.Execute)
+        self.assertEqual(w.phase, Phase.Building)
         self.assertEqual(w.lifecycle, Lifecycle.Running)
         # PF-5a: no longer reachable through this fixture shape (see above)
         self.assertEqual(w.tasks, [])
@@ -896,7 +896,7 @@ class TestT4PhaseSingleSourceExplicit(unittest.TestCase):
             (work / "STATE.yml").write_text(state, encoding="utf-8")
             model = read_repo(Path(d))
         w = model.works[0]
-        self.assertEqual(w.phase, Phase.Execute)
+        self.assertEqual(w.phase, Phase.Building)
         self.assertEqual(w.source_mode, SourceMode.Normalized)
 
     def test_without_pipeline_status_phase_is_none(self):

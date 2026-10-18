@@ -38,26 +38,22 @@ class Lifecycle(str, Enum):
 
 
 class Phase(str, Enum):
-    """Pipeline phase enum -- the faithful 6-phase pipeline (work-003-state-schema task-010).
+    """Work phase enum -- the FR-1 phase names (work-003 Feature 002).
 
-    Members from feature-001 work-state-template.md:
-        Describe | Define | Specify | Plan | Detail | Execute
-    NOT a member here: Discover. `aid-discover` is KB-level -- it writes the KB
-    discovery-area STATE (`kb_status`), never a work `phase:` -- so Discover is
-    surfaced in the dashboard stepper from `KbStateRef.status` (KbStatus), not from
-    this enum. NOT a member either: Deploy. The numbered sequence ends at Execute;
-    `/aid-deploy` is a separate, independently-invoked path (no longer a work
-    `phase:`) -- a deploying work stays at phase Execute and its progress lives in
-    `## Deploy State`.
+    Members, in order: Definition | Specification | Planning | Building | CI.
+    The writer accepts only these names. Works written before the rename carry
+    the old phase names; the readers map them onto these members through their
+    legacy phase map, so an old work still shows its phase.
+    A deploying work is not a phase of its own: its progress lives in
+    `## Deploy State`, and its phase stays Building.
     Reader-only:
-        Unknown -- for an unrecognized Phase literal.
+        Unknown -- for an unrecognized phase literal.
     """
-    Describe = "Describe"
-    Define = "Define"
-    Specify = "Specify"
-    Plan = "Plan"
-    Detail = "Detail"
-    Execute = "Execute"
+    Definition = "Definition"
+    Specification = "Specification"
+    Planning = "Planning"
+    Building = "Building"
+    CI = "CI"
     Unknown = "Unknown"  # reader-only sentinel; never written to disk
 
 
@@ -389,6 +385,7 @@ class WorkModel:
     name: str                       # display label (slug portion)
     lifecycle: Lifecycle = Lifecycle.Unknown
     phase: Optional[Phase] = None
+    phases: Optional[list[str]] = None  # intent.phases, in order (routing phase names); None when absent
     active_skill: Optional[str] = None
     updated: Optional[str] = None   # ISO-8601 or None
     created: Optional[str] = None   # frontmatter `started` if present (task-002 retires the

@@ -71,18 +71,16 @@ const Lifecycle = {
   Unknown: "Unknown",
 };
 
-// Faithful numbered pipeline; ends at Execute (mirrors models.py Phase).
+// The FR-1 phase names (work-003 Feature 002; mirrors models.py Phase).
 // Discover is NOT a member -- aid-discover is KB-level (writes kb_status, never a
 // work phase:); it is surfaced from KbStatus instead. Deploy is NOT a member --
-// the numbered sequence ends at Execute; /aid-deploy is a separate path (no longer
-// a work phase:).
+// a deploying work stays at phase Building; /aid-deploy is a separate path.
 const Phase = {
-  Describe: "Describe",
-  Define: "Define",
-  Specify: "Specify",
-  Plan: "Plan",
-  Detail: "Detail",
-  Execute: "Execute",
+  Definition: "Definition",
+  Specification: "Specification",
+  Planning: "Planning",
+  Building: "Building",
+  CI: "CI",
   Unknown: "Unknown",
 };
 
@@ -819,13 +817,22 @@ const LIFECYCLE_MAP = {
   "Canceled": Lifecycle.Canceled,
 };
 
+// The FR-1 names map to themselves; the legacy block (between the markers)
+// reads the old phase names of works not yet migrated. It never routes.
 const PHASE_MAP = {
-  "Describe": Phase.Describe,
-  "Define": Phase.Define,
-  "Specify": Phase.Specify,
-  "Plan": Phase.Plan,
-  "Detail": Phase.Detail,
-  "Execute": Phase.Execute,
+  "Definition": Phase.Definition,
+  "Specification": Phase.Specification,
+  "Planning": Phase.Planning,
+  "Building": Phase.Building,
+  "CI": Phase.CI,
+  // legacy-phase-map: begin
+  "Describe": Phase.Definition,
+  "Define": Phase.Specification,
+  "Specify": Phase.Specification,
+  "Plan": Phase.Planning,
+  "Detail": Phase.Planning,
+  "Execute": Phase.Building,
+  // legacy-phase-map: end
 };
 
 const TASK_STATUS_MAP = {
@@ -2829,6 +2836,18 @@ function _applyIdentityFrontmatter(data, pw) {
   }
 }
 
+// intent.phases: the block list of routing phase names, in order (Feature 002).
+// Left null when the file has no such list, so the page uses its default rail.
+function _applyIntentPhases(data, pw) {
+  const intent = data.intent;
+  if (!intent || typeof intent !== "object" || Array.isArray(intent)) return;
+  const phases = intent.phases;
+  if (!Array.isArray(phases)) return;
+  pw.phases = phases
+    .filter((v) => typeof v === "string" && !isNull(v.trim()))
+    .map((v) => v.trim());
+}
+
 function parseStateMd(text, workId, workDir) {
   // Parse a work-root STATE.yml document into a ParsedWork-shaped plain
   // object. Twin of Python parse_state_md() (work-009-refactor task-003,
@@ -2855,6 +2874,7 @@ function parseStateMd(text, workId, workDir) {
   const pw = {
     lifecycle: Lifecycle.Unknown,
     phase: null,
+    phases: null,
     activeSkill: null,
     updated: null,
     pauseReason: null,
@@ -2918,6 +2938,7 @@ function parseStateMd(text, workId, workDir) {
   }
 
   _applyIdentityFrontmatter(data, pw);
+  _applyIntentPhases(data, pw);
 
   // lifecycle_history (AUTHORED) -> pw.created: the first entry (append-only,
   // newest LAST per the template) whose event is "Work created".
@@ -3327,6 +3348,7 @@ function readWork(workDir, workId) {
     name,
     lifecycle: pw.lifecycle,
     phase: pw.phase,
+    phases: pw.phases,
     active_skill: pw.activeSkill,
     updated: pw.updated,
     created: pw.created,
@@ -4318,6 +4340,7 @@ function _readWorkFlat(workDir, workId) {
     name,
     lifecycle: pw.lifecycle,
     phase: pw.phase,
+    phases: pw.phases,
     active_skill: pw.activeSkill,
     updated: pw.updated,
     created: pw.created,
@@ -4602,6 +4625,7 @@ function _readWorkHierarchical(workDir, workId) {
     name,
     lifecycle: pw.lifecycle,
     phase: pw.phase,
+    phases: pw.phases,
     active_skill: pw.activeSkill,
     updated: pw.updated,
     created: pw.created,
@@ -4796,6 +4820,7 @@ function _reconcileSameWork(copies) {
     name: winnerWm.name,
     lifecycle: winnerWm.lifecycle,
     phase: winnerWm.phase,
+    phases: winnerWm.phases,
     active_skill: winnerWm.active_skill,
     updated: winnerWm.updated,
     created: winnerWm.created,
@@ -5062,7 +5087,7 @@ function _buildDeliverableRef(d) {
 }
 
 function _buildWorkModel(wm) {
-  // WorkModel field order: work_id, name, lifecycle, phase, active_skill, updated, created,
+  // WorkModel field order: work_id, name, lifecycle, phase, phases, active_skill, updated, created,
   //   pause_reason, block_reason, block_artifact, tasks, pending_inputs, source_mode,
   //   number, title, description, objective, work_path, recipe, features, deliverables,
   //   kind, started, minimum_grade, user_approved (work-003-state-schema task-002)
@@ -5076,6 +5101,7 @@ function _buildWorkModel(wm) {
     name: wm.name,
     lifecycle: wm.lifecycle,
     phase: wm.phase,
+    phases: Array.isArray(wm.phases) ? wm.phases.slice() : null,
     active_skill: wm.active_skill,
     updated: wm.updated,
     created: wm.created !== undefined ? wm.created : null,

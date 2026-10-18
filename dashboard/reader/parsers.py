@@ -61,6 +61,7 @@ class ParsedWork:
     __slots__ = (
         "lifecycle",
         "phase",
+        "phases",
         "active_skill",
         "updated",
         "pause_reason",
@@ -87,6 +88,7 @@ class ParsedWork:
     def __init__(self) -> None:
         self.lifecycle: Lifecycle = Lifecycle.Unknown
         self.phase: Optional[Phase] = None
+        self.phases: Optional[list[str]] = None
         self.active_skill: Optional[str] = None
         self.updated: Optional[str] = None
         self.pause_reason: Optional[str] = None
@@ -1349,6 +1351,7 @@ def parse_state_md(
         pw.parse_warnings.extend(extra_warnings)
 
     _apply_identity_frontmatter(data, pw)
+    _apply_intent_phases(data, pw)
 
     # `lifecycle_history` (AUTHORED) -> pw.created: the first entry (append-
     # only, newest LAST per the template) whose `event` is "Work created".
@@ -1766,6 +1769,22 @@ def _apply_pipeline_frontmatter(data: dict, pw: ParsedWork) -> bool:
     return lifecycle_present
 
 
+def _apply_intent_phases(data: dict, pw: ParsedWork) -> None:
+    """Map `intent.phases` (block list of routing phase names, in order) onto pw.
+
+    Left None when the file has no such list, so the page falls back to its
+    default stage rail.
+    """
+    intent = data.get("intent")
+    if not isinstance(intent, dict):
+        return
+    phases = intent.get("phases")
+    if not isinstance(phases, list):
+        return
+    names = [v.strip() for v in phases if isinstance(v, str) and not _is_null(v.strip())]
+    pw.phases = names
+
+
 def _apply_identity_frontmatter(data: dict, pw: ParsedWork) -> None:
     """Map the document's pipeline-identity + captured-scalar keys onto pw:
     `pipeline.path` -> work_path, `pipeline.initiator` -> kind, `started`,
@@ -1885,14 +1904,22 @@ _LIFECYCLE_MAP: dict[str, Lifecycle] = {
     "Canceled": Lifecycle.Canceled,
 }
 
-# Phase mapping (faithful numbered pipeline; ends at Execute).
+# Phase mapping: the FR-1 phase names (work-003 Feature 002). The legacy
+# block maps the phase names of works not yet migrated; it never routes.
 _PHASE_MAP: dict[str, Phase] = {
-    "Describe": Phase.Describe,
-    "Define": Phase.Define,
-    "Specify": Phase.Specify,
-    "Plan": Phase.Plan,
-    "Detail": Phase.Detail,
-    "Execute": Phase.Execute,
+    "Definition": Phase.Definition,
+    "Specification": Phase.Specification,
+    "Planning": Phase.Planning,
+    "Building": Phase.Building,
+    "CI": Phase.CI,
+    # legacy-phase-map: begin
+    "Describe": Phase.Definition,
+    "Define": Phase.Specification,
+    "Specify": Phase.Specification,
+    "Plan": Phase.Planning,
+    "Detail": Phase.Planning,
+    "Execute": Phase.Building,
+    # legacy-phase-map: end
 }
 
 # TaskStatus mapping (feature-001 M3 closed enum)

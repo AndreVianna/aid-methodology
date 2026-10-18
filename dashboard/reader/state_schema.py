@@ -119,7 +119,7 @@ def _looks_like_unfilled_placeholder(val: str, *, is_freetext: bool = False) -> 
         carries one ('{YYYY-MM-DD}', '{grade or Pending}', 'aid-{skill} | none',
         '{short text} | --'); always a placeholder.
       - a ' | ' enum-alternatives list -- but ONLY for closed-enum fields. A
-        closed-enum field's real value is a single member ('Execute'), never a
+        closed-enum field's real value is a single member ('Building'), never a
         ' | '-list, so ' | ' reliably marks the unfilled template line. A
         FREE-TEXT field (`is_freetext`), however, can legitimately contain
         ' | ' in a real value, so the ' | ' rule is suppressed for it; its own
@@ -871,7 +871,7 @@ SHORTCUT_KIND_MAP: dict[str, tuple[str, str]] = {
 }
 
 # The FULL-pipeline starting skill -- never a shortcut-catalog.yml row (it
-# starts Describe -> Define -> Specify -> Plan -> Detail -> Execute, not a Lite
+# starts Definition -> Specification -> Planning -> Building, not a Lite
 # shortcut). Resolved to a distinct literal so callers/tests can special-case
 # it explicitly rather than silently falling through to "unknown".
 _FULL_PATH_INITIATOR = "aid-describe"

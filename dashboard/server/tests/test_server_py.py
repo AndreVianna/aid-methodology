@@ -1228,7 +1228,7 @@ class TestSerializationDm3(unittest.TestCase):
         works = data["model"]["works"]
         self.assertGreater(len(works), 0)
         expected = [
-            "work_id", "name", "lifecycle", "phase", "active_skill",
+            "work_id", "name", "lifecycle", "phase", "phases", "active_skill",
             "updated", "created", "pause_reason", "block_reason", "block_artifact",
             "tasks", "pending_inputs", "source_mode",
             "number", "title", "description", "objective",
