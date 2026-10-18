@@ -16,8 +16,13 @@ Exit codes:
   2  invocation error (bad arguments, unknown sample or host, missing briefs, no claude)
 
 Run folder: .aid/.temp/conversation-tests/<run-id>/<sample>/run-<n>/ holding transcript.jsonl,
-transcript.md, files.diff, checks.txt and ledger.md (the judge's ledger). The judge's ledger is
-also saved in the fixture's .aid/.temp/review-pending/.
+transcript.md, files.diff, checks.txt, ledger.md (the judge's ledger) and model.txt (the model the
+agent under test ran with). The judge's ledger is also saved in the fixture's .aid/.temp/review-pending/.
+
+Agent model: claude-sonnet-5-5 (DEFAULT_MODEL), passed as --model on every agent turn; the environment
+variable AID_CONV_MODEL names another model. The agent's environment drops the parent session's
+CLAUDE_CODE_* variables and CLAUDECODE, CLAUDE_EFFORT and CLAUDE_AFTER_LAST_COMPACT; proxy and CA
+variables are kept.
 
 Sample file (samples/feature-NNN/<id>.md):
   frontmatter        id, covers, fixture (required); any other key is kept and ignored
@@ -82,10 +87,28 @@ TURN_CAP = 12
 TURN_TIMEOUT = 600
 END_MARK = "<<END>>"
 AGENT_TOOLS = "Read,Glob,Grep,Edit,Write,Bash,Skill,Task"
+DEFAULT_MODEL = "claude-sonnet-5-5"
+MODEL_ENV = "AID_CONV_MODEL"
 REQUIRED_KEYS = ("id", "covers", "fixture")
 REQUIRED_SECTIONS = ("User", "Answer sheet", "Expected outcome", "Must not", "Checks")
 CHECK_VERBS = ("exists", "absent", "contains", "no-new-dir", "no-push", "tool-called", "tool-not-called")
 CREDENTIAL_RE = re.compile(r"(?i)(credential|secret|token)|\.(pem|key)$")
+# the agent's environment: the parent session's variables are dropped, proxy and CA variables are kept
+ENV_DROP_NAMES = ("CLAUDE_CONFIG_DIR", "CLAUDECODE", "CLAUDE_EFFORT", "CLAUDE_AFTER_LAST_COMPACT")
+ENV_DROP_PREFIXES = ("CLAUDE_CODE_",)
+# the sandbox's own set-up and credential files under HOME, never recorded in files.diff
+HOME_SETUP_DIRS = (".ccr", ".pki", ".local/share/pki", ".aws")
+HOME_SETUP_FILES = (".boto",)
+# a worktree the agent creates under the fixture: its files are diffed against the fixture's own files
+WORKTREES_PREFIX = "fixture/.claude/worktrees/"
+# the judge's prompt only (files.diff on disk is never cut): per-file line cap and total byte cap
+JUDGE_FILE_LINES = 300
+JUDGE_TOTAL_BYTES = 200_000
+# the first rule of every simulated-user turn: the answer sheet's end conditions override the rest
+END_FIRST_RULE = (
+    "Before anything else, check the answer sheet's end conditions: if the assistant's last message "
+    f"meets one, reply {END_MARK} alone. This overrides every other rule."
+)
 LEDGER_COLUMNS = ("#", "Severity", "Status", "Doc", "Line", "Description", "Evidence")
 DEFAULT_HOSTS = ("claude-code",)
 KNOWN_HOSTS = ("claude-code", "codex", "cursor", "copilot-cli", "antigravity")
@@ -297,9 +320,10 @@ def run_claude(args: list[str], *, cwd: Path, env: dict, stdin: str) -> str:
 class ClaudeCodeAgent:
     """start/send/read adapter for the agent under test: one `claude -p` call per turn."""
 
-    def __init__(self, fixture: Path, env: dict):
+    def __init__(self, fixture: Path, env: dict, model: str):
         self.fixture = fixture
         self.env = env
+        self.model = model
         self.session_id: str | None = None
 
     def start(self) -> None:
@@ -315,6 +339,7 @@ class ClaudeCodeAgent:
             "--allowedTools", AGENT_TOOLS,
             "--strict-mcp-config",
             "--setting-sources", "project",
+            "--model", self.model,
         ]
         if self.session_id:
             args += ["--resume", self.session_id]
@@ -351,7 +376,11 @@ def helper_call(prompt: str, system: str, *, cwd: Path, env: dict) -> str:
 
 
 def base_env(home: Path) -> dict:
-    env = {k: v for k, v in os.environ.items() if k != "CLAUDE_CONFIG_DIR"}
+    env = {
+        k: v
+        for k, v in os.environ.items()
+        if k not in ENV_DROP_NAMES and not k.startswith(ENV_DROP_PREFIXES)
+    }
     env["HOME"] = str(home)
     env["AID_NO_UPDATE_CHECK"] = "1"
     return env
@@ -417,6 +446,8 @@ def fixture_skip(rel: str, is_dir: bool) -> bool:
 def home_skip(rel: str, is_dir: bool) -> bool:
     if rel == ".claude" or rel.startswith(".claude/") or rel == ".claude.json":
         return True
+    if rel in HOME_SETUP_FILES or any(rel == d or rel.startswith(d + "/") for d in HOME_SETUP_DIRS):
+        return True
     return bool(CREDENTIAL_RE.search(os.path.basename(rel)))
 
 
@@ -461,19 +492,36 @@ def is_binary(data: bytes) -> bool:
     return False
 
 
-def build_diff(before: dict[str, bytes], after: dict[str, bytes]) -> str:
-    chunks: list[str] = []
+def worktree_baseline(rel: str) -> str | None:
+    """The fixture file a file under the fixture's .claude/worktrees/<wt>/ is compared with: the same
+    relative path in the fixture itself. None for any other path."""
+    if not rel.startswith(WORKTREES_PREFIX):
+        return None
+    parts = rel[len(WORKTREES_PREFIX):].split("/", 1)
+    if len(parts) != 2 or not parts[1]:
+        return None
+    return "fixture/" + parts[1]
+
+
+def diff_chunks(before: dict[str, bytes], after: dict[str, bytes]) -> list[tuple[str, str]]:
+    """One (path, text) pair per changed file, in path order; byte-identical files are omitted."""
+    chunks: list[tuple[str, str]] = []
     for rel in sorted(set(before) | set(after)):
-        old, new = before.get(rel), after.get(rel)
+        old_key = rel
+        baseline = worktree_baseline(rel)
+        if baseline is not None and rel not in before:
+            old_key = baseline  # a worktree file the run created is compared with the fixture's file
+        old, new = before.get(old_key), after.get(rel)
         if old == new:
             continue
         if (old is not None and is_binary(old)) or (new is not None and is_binary(new)):
             if old is None:
-                chunks.append(f"Binary file {rel} added ({len(new)} bytes)\n")
+                text = f"Binary file {rel} added ({len(new)} bytes)\n"
             elif new is None:
-                chunks.append(f"Binary file {rel} removed ({len(old)} bytes)\n")
+                text = f"Binary file {rel} removed ({len(old)} bytes)\n"
             else:
-                chunks.append(f"Binary file {rel} changed ({len(old)} -> {len(new)} bytes)\n")
+                text = f"Binary file {rel} changed ({len(old)} -> {len(new)} bytes)\n"
+            chunks.append((rel, text))
             continue
         old_lines = (old or b"").decode("utf-8").splitlines(keepends=True)
         new_lines = (new or b"").decode("utf-8").splitlines(keepends=True)
@@ -481,14 +529,40 @@ def build_diff(before: dict[str, bytes], after: dict[str, bytes]) -> str:
             difflib.unified_diff(
                 old_lines,
                 new_lines,
-                fromfile="/dev/null" if old is None else f"a/{rel}",
+                fromfile="/dev/null" if old is None else f"a/{old_key}",
                 tofile="/dev/null" if new is None else f"b/{rel}",
             )
         )
         if text and not text.endswith("\n"):
             text += "\n"
-        chunks.append(text)
-    return "".join(chunks)
+        chunks.append((rel, text))
+    return chunks
+
+
+def build_diff(before: dict[str, bytes], after: dict[str, bytes]) -> str:
+    """files.diff: every change, in full."""
+    return "".join(text for _, text in diff_chunks(before, after))
+
+
+def judge_view(chunks: list[tuple[str, str]]) -> str:
+    """The diff the judge reads: each file cut at JUDGE_FILE_LINES, the whole cut at JUDGE_TOTAL_BYTES.
+    A cut is marked "[... N lines of <path> truncated ...]"; files.diff on disk is not cut."""
+    out: list[str] = []
+    used = 0
+    for rel, text in chunks:
+        lines = text.splitlines(keepends=True)
+        shown: list[str] = []
+        for line in lines[:JUDGE_FILE_LINES]:
+            size = len(line.encode("utf-8"))
+            if used + size > JUDGE_TOTAL_BYTES:
+                break
+            shown.append(line)
+            used += size
+        out.append("".join(shown))
+        hidden = len(lines) - len(shown)
+        if hidden:
+            out.append(f"[... {hidden} lines of {rel} truncated ...]\n")
+    return "".join(out)
 
 
 # ---------------------------------------------------------------- checks
@@ -570,6 +644,7 @@ def now() -> str:
 
 def ask_user(brief: str, sample: Sample, transcript: list[dict], scratch: Path, env: dict) -> str:
     prompt = (
+        f"{END_FIRST_RULE}\n\n"
         f"## Persona (from the sample)\n\n{sample.sections['User']}\n\n"
         f"## Answer sheet\n\n{sample.sections['Answer sheet']}\n\n"
         f"## Transcript so far\n\n{render_transcript_md(transcript)}\n"
@@ -658,20 +733,22 @@ def run_once(sample: Sample, n: int, run_dir: Path, ctx: dict) -> list[str]:
         before, dirs_before = capture(fixture, home)
         helper_dir = work / "helper"  # empty, outside the fixture: the simulated user and the judge run here
         helper_dir.mkdir()
-        agent = ADAPTERS["claude-code"](fixture, agent_env)
+        agent = ADAPTERS["claude-code"](fixture, agent_env, ctx["model"])
         try:
             run_conversation(agent, ctx["user_brief"], sample, transcript, helper_dir, env)
         except RunError as exc:
             reasons.append(f"conversation: {exc}")
         after, dirs_after = capture(fixture, home)
-        diff = build_diff(before, after)
+        chunks = diff_chunks(before, after)
+        diff = "".join(text for _, text in chunks)
         tools = [t for e in transcript if e["role"] == "agent" for t in e["tools"]]
         results = run_checks(sample.checks, fixture, dirs_before, dirs_after, tools)
         checks_txt = render_checks(results)
         reasons += [f"check: {label} -- {detail}" for label, ok, detail in results if not ok]
         transcript_md = render_transcript_md(transcript)
         try:
-            ledger = judge(fixture, sample, ctx["judge_brief"], transcript_md, diff, checks_txt, helper_dir, env)
+            ledger = judge(fixture, sample, ctx["judge_brief"], transcript_md, judge_view(chunks),
+                           checks_txt, helper_dir, env)
             has_table, pending = ledger_status(ledger)
             if not has_table:
                 reasons.append("judge: no 7-column ledger table in the output")
@@ -692,6 +769,7 @@ def run_once(sample: Sample, n: int, run_dir: Path, ctx: dict) -> list[str]:
         (run_dir / "files.diff").write_text(diff, encoding="utf-8")
         (run_dir / "checks.txt").write_text(checks_txt, encoding="utf-8")
         (run_dir / "ledger.md").write_text(ledger.rstrip("\n") + "\n" if ledger else "", encoding="utf-8")
+        (run_dir / "model.txt").write_text(ctx["model"] + "\n", encoding="utf-8")
         shutil.rmtree(work, ignore_errors=True)
     return reasons
 
@@ -778,6 +856,7 @@ def main(argv: list[str] | None = None) -> int:
             "real_home": Path(os.environ.get("HOME", str(Path.home()))),
             "user_brief": user_brief,
             "judge_brief": judge_brief,
+            "model": os.environ.get(MODEL_ENV) or DEFAULT_MODEL,
         }
         any_failed = False
         for host in hosts:

@@ -16,7 +16,12 @@
 # COVERS: tests/conversation/
 #
 # Groups (a filter, so a failing group can be re-run alone):
-#   EXIT VALIDATE CAPTURE FLAGS DIFF CHECKS CLEAN LEDGER SAMPLES CAP
+#   EXIT VALIDATE CAPTURE FLAGS DIFF JUDGE ENV END BRIEFS CHECKS CLEAN LEDGER SAMPLES CAP
+#
+# Each behaviour of the harness that a group guards has a mutation: a throwaway copy of run.py (or of
+# a brief) with that one behaviour broken. The group asserts that its check fails on the mutant, so a
+# check that would pass on a broken harness is itself a failure. The copies sit under tests/conversation/
+# for the length of the suite and are removed on exit.
 #
 # Usage:
 #   bash test-conversation-runner.sh [--group NAME] [--verbose]
@@ -40,7 +45,7 @@ while [ $# -gt 0 ]; do
         *) echo "unknown argument: $1" >&2; exit 2 ;;
     esac
 done
-ALL_GROUPS="EXIT VALIDATE CAPTURE FLAGS DIFF CHECKS CLEAN LEDGER SAMPLES CAP"
+ALL_GROUPS="EXIT VALIDATE CAPTURE FLAGS DIFF JUDGE ENV END BRIEFS CHECKS CLEAN LEDGER SAMPLES CAP"
 if [ -n "$GROUP" ] && ! [[ " $ALL_GROUPS " == *" $GROUP "* ]]; then
     echo "unknown group: $GROUP (groups: $ALL_GROUPS)" >&2
     exit 2
@@ -71,7 +76,9 @@ TEMP_EXISTED=0
 [ -d "$REPO_ROOT/.aid/.temp" ] && TEMP_EXISTED=1
 if [ -d "$RUN_ROOT" ]; then ls -A "$RUN_ROOT" > "$RUN_SNAP"; else : > "$RUN_SNAP"; fi
 
+MUT_FILES=()
 cleanup() {
+    rm -f -- "${MUT_FILES[@]}"
     # run.py names each run folder <timestamp>-<host>-<pid> with the pid of its own process. The suite
     # records the pid of every run.py it starts (log/run-pids) and removes only the folders carrying one
     # of those pids that were not there before the suite began. A concurrent run.py in the same tree
@@ -94,6 +101,7 @@ BIN="$T/bin"
 mkdir -p "$BIN" "$T/empty" "$T/tmp" "$T/home" "$T/log"
 export HOME="$T/home" TMPDIR="$T/tmp" AID_NO_UPDATE_CHECK=1
 export PATH="$BIN:$PATH"
+unset AID_CONV_MODEL  # the default model is asserted; a maintainer's override must not leak in
 
 # --- the stub claude ----------------------------------------------------------
 cat > "$BIN/claude" <<'PYSTUB'
@@ -133,7 +141,9 @@ if role == "judge":
     except OSError:
         reviewer = None
 record = {"role": role, "argv": argv, "cwd": os.getcwd(), "home": os.environ.get("HOME", ""),
-          "prompt": prompt, "reviewer": reviewer}
+          "prompt": prompt, "reviewer": reviewer,
+          "env": {k: v for k, v in os.environ.items()
+                  if k.startswith(("CLAUDE", "HTTPS_PROXY", "NODE_EXTRA_CA_CERTS"))}}
 with open(log, "a", encoding="utf-8") as fh:
     fh.write(json.dumps(record) + "\n")
 
@@ -160,6 +170,28 @@ if role == "agent":
             fh.write("scratch\n")
         with open("logo.bin", "wb") as fh:  # a binary file: NUL bytes, four of them
             fh.write(b"\x00\x01\x02\x03")
+        for rel, text in ((".ccr/ca-bundle.crt", "stub ca\n"), (".pki/stub-nss.txt", "stub\n"),
+                          (".local/share/pki/stub-db.txt", "stub\n"), (".aws/config", "stub\n"),
+                          (".boto", "stub\n")):  # the sandbox's own set-up files under HOME
+            path = os.path.join(home, rel)
+            os.makedirs(os.path.dirname(path), exist_ok=True)
+            with open(path, "w", encoding="utf-8") as fh:
+                fh.write(text)
+        if os.environ.get("STUB_WORKTREE") == "1":  # a worktree the agent creates under the fixture
+            wt = os.path.join(os.getcwd(), ".claude", "worktrees", "wt1")
+            os.makedirs(os.path.join(wt, "src"), exist_ok=True)
+            os.makedirs(os.path.join(wt, ".aid"), exist_ok=True)
+            with open(os.path.join(wt, "README.md"), "w", encoding="utf-8") as fh:  # as the fixture's: omitted
+                fh.write("# Stub fixture\n")
+            with open(os.path.join(wt, "src", "app.py"), "w", encoding="utf-8") as fh:  # changed
+                fh.write('print("stub changed")\n')
+            with open(os.path.join(wt, ".aid", "state.txt"), "w", encoding="utf-8") as fh:  # new, under .aid/
+                fh.write("new in the worktree\n")
+        if os.environ.get("STUB_BIG") == "1":  # two large files: one over the per-file cap, one over the total
+            with open("big.txt", "w", encoding="utf-8") as fh:
+                fh.write("".join(f"line {i}\n" for i in range(1, 401)))
+            with open("huge.txt", "w", encoding="utf-8") as fh:
+                fh.write("".join(f"line {i} " + "x" * 990 + "\n" for i in range(1, 301)))
         here = os.getcwd()
         content += [
             {"type": "tool_use", "id": "t1", "name": "Skill", "input": {"skill": "aid-plan"}},
@@ -207,6 +239,7 @@ chmod +x "$BIN/claude"
 cat > "$T/facts.py" <<'PYFACTS'
 import json
 import os
+import re
 import sys
 
 log, user_brief_path, judge_brief_path, judge_prompt_out = sys.argv[1:5]
@@ -248,6 +281,30 @@ def flag(value):
     return "1" if value else "0"
 
 
+def model_of(argv):
+    """The value after --model, or "" when the argv names no model."""
+    if "--model" not in argv or argv.index("--model") + 1 >= len(argv):
+        return ""
+    return argv[argv.index("--model") + 1]
+
+
+def without_model(argv):
+    if "--model" not in argv:
+        return argv
+    i = argv.index("--model")
+    return argv[:i] + argv[i + 2:]
+
+
+def end_first_ok(prompt):
+    head, sep, _ = prompt.partition("## Persona")
+    return bool(sep) and head.lstrip().startswith("Before anything else") \
+        and "end conditions" in head and "overrides every other rule" in head
+
+
+def env_leak(call):
+    return sorted(k for k in call["env"] if k == "CLAUDECODE" or k == "CLAUDE_EFFORT" or k.startswith("CLAUDE_CODE_"))
+
+
 with open(judge_prompt_out, "w", encoding="utf-8") as fh:
     fh.write(judges[0]["prompt"] if judges else "")
 
@@ -256,7 +313,21 @@ print(f"agent_calls={len(agents)}")
 print(f"user_calls={len(users)}")
 print(f"judge_calls={len(judges)}")
 print("agent_flags_ok=" + flag(bool(agents) and all(
-    c["argv"] == AGENT + (["--resume", "stub-session-1"] if i else []) for i, c in enumerate(agents))))
+    without_model(c["argv"]) == AGENT + (["--resume", "stub-session-1"] if i else []) for i, c in enumerate(agents))))
+print("agent_models=" + "|".join(sorted({model_of(c["argv"]) for c in agents})))
+print("agent_env_leak=" + ",".join(sorted({k for c in agents for k in env_leak(c)})))
+print("agent_env_proxy=" + (agents[0]["env"].get("HTTPS_PROXY", "<unset>") if agents else "<no agent>"))
+print("agent_env_ca=" + (agents[0]["env"].get("NODE_EXTRA_CA_CERTS", "<unset>") if agents else "<no agent>"))
+print("user_end_first_ok=" + flag(bool(users) and all(end_first_ok(c["prompt"]) for c in users)))
+judge_prompt = judges[0]["prompt"] if judges else ""
+print("judge_prompt_len=" + str(len(judge_prompt)))
+print("judge_marker_big=" + flag(re.search(r"\[\.\.\. \d+ lines of fixture/big\.txt truncated \.\.\.\]", judge_prompt)))
+print("judge_marker_huge=" + flag(re.search(r"\[\.\.\. \d+ lines of fixture/huge\.txt truncated \.\.\.\]", judge_prompt)))
+print("judge_has_last_big_line=" + flag("+line 400\n" in judge_prompt))
+print("judge_cap_ok=" + flag(
+    re.search(r"\[\.\.\. \d+ lines of fixture/big\.txt truncated \.\.\.\]", judge_prompt)
+    and re.search(r"\[\.\.\. \d+ lines of fixture/huge\.txt truncated \.\.\.\]", judge_prompt)
+    and "+line 400\n" not in judge_prompt and len(judge_prompt) < 250000))
 print("agent_prompts=" + "|".join(c["prompt"] for c in agents))
 print("helper_flags_ok=" + flag(bool(helpers) and all(
     c["argv"][:8] == HELPER and len(c["argv"]) == 9 for c in helpers)))
@@ -400,13 +471,42 @@ printf 'print("stub")\n' > "$T/fixtures/stub/src/app.py"
 printf 'USER-BRIEF-MARK\nStand-in simulated-user brief for the suite.\n' > "$T/briefs/simulated-user.md"
 printf 'JUDGE-BRIEF-MARK\nStand-in judge brief for the suite.\n' > "$T/briefs/judge.md"
 
+# --- mutations: a copy of run.py (or of a brief) with one behaviour broken ----
+# mutate.py SRC DST OLD NEW [OLD NEW...]: writes DST from SRC with each OLD replaced by NEW; every OLD
+# must occur exactly once, so a mutation that did not apply fails loudly instead of passing as a no-op.
+cat > "$T/mutate.py" <<'PYMUT'
+import sys
+
+src, dst, pairs = sys.argv[1], sys.argv[2], sys.argv[3:]
+if len(pairs) % 2:
+    sys.exit("mutate.py: OLD and NEW come in pairs")
+with open(src, encoding="utf-8") as fh:
+    text = fh.read()
+for old, new in zip(pairs[::2], pairs[1::2]):
+    found = text.count(old)
+    if found != 1:
+        sys.exit(f"mutate.py: {old!r} occurs {found} times in {src}")
+    text = text.replace(old, new)
+with open(dst, "w", encoding="utf-8") as fh:
+    fh.write(text)
+PYMUT
+
+MUT_PATH=""
+make_mutant() {  # NAME OLD NEW [OLD NEW...]: sets MUT_PATH to a copy of run.py inside the tree
+    MUT_PATH="$REPO_ROOT/tests/conversation/mut-$1.py"
+    MUT_FILES+=("$MUT_PATH")
+    shift
+    "$PY" "$T/mutate.py" "$REPO_ROOT/tests/conversation/run.py" "$MUT_PATH" "$@"
+}
+
 # --- runs: one run.py call each, memoised by key so groups share them ----------
 invoke() {  # KEY USER-MODE JUDGE-MODE run.py-args...   (STUB_PUSH=1 in the caller makes the agent push)
     local key="$1" user="$2" judge="$3"
     shift 3
-    env STUB_USER="$user" STUB_JUDGE="$judge" STUB_PUSH="${STUB_PUSH:-0}" CONV_STUB_LOG="$T/log/$key.jsonl" \
+    env STUB_USER="$user" STUB_JUDGE="$judge" STUB_PUSH="${STUB_PUSH:-0}" STUB_WORKTREE="${STUB_WORKTREE:-0}" \
+        STUB_BIG="${STUB_BIG:-0}" CONV_STUB_LOG="$T/log/$key.jsonl" \
         CONV_STUB_REVIEW_DIR="$T/review-copy/$key" \
-        "$PY" "$RUNNER" --feature 900 --samples-dir "$T/samples" --fixtures-dir "$T/fixtures" \
+        "$PY" "${INVOKE_RUNNER:-$RUNNER}" --feature 900 --samples-dir "$T/samples" --fixtures-dir "$T/fixtures" \
         --briefs-dir "$T/briefs" "$@" > "$T/log/$key.out" 2>&1 < /dev/null &
     local pid=$!
     echo "$pid" >> "$T/log/run-pids"
@@ -423,9 +523,50 @@ need_notable() { [ -f "$T/log/notable.rc" ] || invoke notable end-after-one no-t
 need_flaky()   { [ -f "$T/log/flaky.rc" ]   || invoke flaky   end-after-one flaky   --sample s-pass --runs 3; }
 need_clean3()  { [ -f "$T/log/clean3.rc" ]  || invoke clean3  end-after-one clean   --sample s-pass --runs 3; }
 need_cap()     { [ -f "$T/log/cap.rc" ]     || invoke cap     never         clean   --sample s-pass --runs 1; }
+need_wt()      { [ -f "$T/log/wt.rc" ]      || STUB_WORKTREE=1 invoke wt end-after-one clean --sample s-pass --runs 1; }
+need_big()     { [ -f "$T/log/big.rc" ]     || STUB_BIG=1 invoke big end-after-one clean --sample s-pass --runs 1; }
+# the agent's environment is checked under a parent session's variables and a model override
+parent_session() {
+    (
+        export CLAUDECODE=1 CLAUDE_CODE_SESSION_ID=parent-session CLAUDE_EFFORT=high \
+            CLAUDE_AFTER_LAST_COMPACT=1 HTTPS_PROXY=http://proxy.test:3128 \
+            NODE_EXTRA_CA_CERTS=/stub/ca.pem AID_CONV_MODEL=claude-override-test
+        "$@"
+    )
+}
+need_env()     { [ -f "$T/log/envrun.rc" ]  || parent_session invoke envrun end-after-one clean --sample s-pass --runs 1; }
 
 fact() { grep -m1 "^$2=" "$1" | cut -d= -f2-; }
 run_dir_of() { sed -n "s/^$2 claude-code $3 run $4\/[0-9]* -> //p" "$1" | head -1; }
+# the run folder of the one run in an output file, whatever its verdict
+any_run_dir() { sed -n 's/^[A-Z]* claude-code [^ ]* run [0-9]*\/[0-9]* -> //p' "$1" | head -1; }
+
+# predicates over a run folder: each returns 0 when the behaviour holds in that folder
+wt_diff_ok() {  # the worktree's changed file is diffed against the fixture's file; the identical one is omitted
+    local d="$1/files.diff"
+    grep -q -F -- "--- a/fixture/src/app.py" "$d" \
+        && grep -q -F -- "+++ b/fixture/.claude/worktrees/wt1/src/app.py" "$d" \
+        && grep -q -F -- '-print("stub")' "$d" && grep -q -F -- '+print("stub changed")' "$d" \
+        && grep -q -F -- "+new in the worktree" "$d" \
+        && ! grep -q -F -- "wt1/README.md" "$d"
+}
+home_setup_ok() {  # the sandbox's own set-up and credential files under HOME are not recorded
+    local d="$1/files.diff"
+    grep -q -F -- "b/home/notes.txt" "$d" \
+        && ! grep -q -F -- "home/.ccr/" "$d" && ! grep -q -F -- "home/.pki/" "$d" \
+        && ! grep -q -F -- "home/.local/share/pki/" "$d" && ! grep -q -F -- "home/.aws/" "$d" \
+        && ! grep -q -F -- "home/.boto" "$d"
+}
+user_brief_ok() {  # the end conditions come first in the simulated-user brief, and override every rule
+    local f="$1" end rules
+    end="$(grep -n -F -- "overrides every other rule" "$f" | head -1 | cut -d: -f1)"
+    rules="$(grep -n -F -- "## Rules" "$f" | head -1 | cut -d: -f1)"
+    [ -n "$end" ] && [ -n "$rules" ] && [ "$end" -lt "$rules" ]
+}
+judge_brief_ok() {  # truncated diff content is not absent; no row outside the EO-n and MN-n lists
+    local f="$1"
+    grep -q -F -- "Truncated content is not absent" "$f" && grep -q -F -- "Never add a row that is not an EO-n or MN-n item" "$f"
+}
 
 # ---------------------------------------------------------------- EXIT
 group_exit() {
@@ -489,6 +630,7 @@ group_capture() {
     assert_eq "$(grep -c '"ts": ' "$dir/transcript.jsonl")" 4 "CA11 every transcript entry carries its timestamp"
     assert_file_contains "$dir/transcript.md" "## Turn 2 -- Agent" "CA12 transcript.md is the readable form"
     assert_file_contains "$dir/ledger.md" "| # | Severity | Status" "CA13 ledger.md holds the judge's table"
+    assert_eq "$(cat "$dir/model.txt" 2>/dev/null)" "claude-sonnet-5-5" "CA14 model.txt holds the model the run used"
 }
 
 # ---------------------------------------------------------------- FLAGS
@@ -508,6 +650,8 @@ group_flags() {
     assert_eq "$(fact "$f" helper_cwd_ok)" 1 "FL09 helper calls run from an empty folder, not the fixture"
     assert_eq "$(fact "$f" agent_cwd_ok)" 1 "FL10 agent turns run in the fixture folder"
     assert_eq "$(fact "$f" throwaway_home_ok)" 1 "FL11 every call runs with the throwaway HOME"
+    assert_eq "$(fact "$f" agent_models)" "claude-sonnet-5-5" \
+        "FL17 every agent turn runs with the default model claude-sonnet-5-5 (AID_CONV_MODEL unset)"
     # the judge input (one prompt on stdin): every part the spec names, with its content
     local jp="$T/log/pass.judge-prompt"
     local all_in
@@ -551,6 +695,118 @@ group_diff() {
     assert_file_not_contains "$diff" "b/fixture/logo.bin" "DF09 a binary file carries no content diff"
     assert_file_not_contains "$diff" "deploy.pem" "DF10 a .pem credential in HOME is excluded"
     assert_file_not_contains "$diff" "server.key" "DF11 a .key credential in HOME is excluded"
+    # a worktree under the fixture's .claude/worktrees/: changed files against the fixture's own file,
+    # identical files omitted, .aid/ not excluded (DF12); the sandbox's own set-up files excluded (DF13)
+    need_wt
+    local dir_w
+    dir_w="$(any_run_dir "$T/log/wt.out")"
+    assert_eq "$(wt_diff_ok "$dir_w" && echo ok)" ok \
+        "DF12 a worktree file is diffed against the fixture's file of the same path, and an identical one is omitted"
+    assert_eq "$(home_setup_ok "$(run_dir_of "$T/log/pass.out" PASS s-pass 1)" && echo ok)" ok \
+        "DF13 the sandbox's set-up files under HOME (.ccr/, .pki/, .local/share/pki/, .aws/, .boto) are excluded"
+    # mutations: each broken behaviour fails its own check
+    make_mutant wt 'if baseline is not None and rel not in before:' 'if False:' || fail "DF14 the worktree mutation did not apply"
+    INVOKE_RUNNER="$MUT_PATH" STUB_WORKTREE=1 invoke mwt end-after-one clean --sample s-pass --runs 1
+    expect_fail "DF14 a worktree that is not diffed against the fixture's file fails DF12" \
+        wt_diff_ok "$(any_run_dir "$T/log/mwt.out")"
+    make_mutant home 'HOME_SETUP_DIRS = (".ccr", ".pki", ".local/share/pki", ".aws")' 'HOME_SETUP_DIRS = ()' \
+        'HOME_SETUP_FILES = (".boto",)' 'HOME_SETUP_FILES = ()' || fail "DF15 the HOME mutation did not apply"
+    INVOKE_RUNNER="$MUT_PATH" invoke mhome end-after-one clean --sample s-pass --runs 1
+    expect_fail "DF15 a HOME without the set-up exclusions fails DF13" \
+        home_setup_ok "$(any_run_dir "$T/log/mhome.out")"
+}
+
+# ---------------------------------------------------------------- JUDGE
+group_judge() {
+    echo "--- JUDGE"
+    need_big
+    local f="$T/log/big.facts" dir
+    dir="$(any_run_dir "$T/log/big.out")"
+    assert_file_contains "$dir/files.diff" "+line 400" \
+        "JD01 files.diff on disk holds every line of a large file (the cap is for the judge only)"
+    assert_eq "$(fact "$f" judge_marker_big)" 1 \
+        "JD02 the judge prompt marks the cut of a file over the per-file cap: [... N lines of <path> truncated ...]"
+    assert_eq "$(fact "$f" judge_has_last_big_line)" 0 "JD03 the judge prompt omits the lines past the per-file cap"
+    assert_eq "$(fact "$f" judge_marker_huge)" 1 \
+        "JD04 the judge prompt marks the cut of a diff over the total cap, for the file that crosses it"
+    assert_eq "$(fact "$f" judge_cap_ok)" 1 "JD05 the judge prompt stays under the total cap"
+    make_mutant cap 'JUDGE_FILE_LINES = 300' 'JUDGE_FILE_LINES = 10**9' \
+        'JUDGE_TOTAL_BYTES = 200_000' 'JUDGE_TOTAL_BYTES = 10**12' || fail "JD06 the cap mutation did not apply"
+    INVOKE_RUNNER="$MUT_PATH" STUB_BIG=1 invoke mbig end-after-one clean --sample s-pass --runs 1
+    expect_fail "JD06 a judge prompt with no cap fails JD02 to JD05" \
+        test "$(fact "$T/log/mbig.facts" judge_cap_ok)" = 1
+}
+
+# ---------------------------------------------------------------- ENV
+group_env() {
+    echo "--- ENV"
+    need_env
+    local f="$T/log/envrun.facts" dir
+    dir="$(any_run_dir "$T/log/envrun.out")"
+    assert_eq "$(fact "$f" agent_env_leak)" "" \
+        "EN01 the agent's environment drops CLAUDE_CODE_*, CLAUDECODE, CLAUDE_EFFORT and CLAUDE_AFTER_LAST_COMPACT"
+    assert_eq "$(fact "$f" agent_env_proxy)" "http://proxy.test:3128" "EN02 the proxy variable is kept for the agent"
+    assert_eq "$(fact "$f" agent_env_ca)" "/stub/ca.pem" "EN03 the CA variable is kept for the agent"
+    assert_eq "$(fact "$f" agent_models)" "claude-override-test" \
+        "EN04 AID_CONV_MODEL sets the --model of every agent turn"
+    assert_file_contains "$dir/model.txt" "claude-override-test" "EN05 the model the run used is written to the run folder"
+    make_mutant env 'if k not in ENV_DROP_NAMES and not k.startswith(ENV_DROP_PREFIXES)' 'if k != "CLAUDE_CONFIG_DIR"' \
+        || fail "EN06 the environment mutation did not apply"
+    INVOKE_RUNNER="$MUT_PATH" parent_session invoke menv end-after-one clean --sample s-pass --runs 1
+    expect_fail "EN06 an agent that inherits the parent session's CLAUDE_CODE_* variables fails EN01" \
+        test "$(fact "$T/log/menv.facts" agent_env_leak)" = ""
+    make_mutant model '"--model", self.model,' '' || fail "EN07 the --model mutation did not apply"
+    INVOKE_RUNNER="$MUT_PATH" invoke mmodel end-after-one clean --sample s-pass --runs 1
+    expect_fail "EN07 an agent turn with no --model fails FL17" \
+        test "$(fact "$T/log/mmodel.facts" agent_models)" = "claude-sonnet-5-5"
+    make_mutant modelenv '"model": os.environ.get(MODEL_ENV) or DEFAULT_MODEL,' '"model": DEFAULT_MODEL,' \
+        || fail "EN08 the model-override mutation did not apply"
+    INVOKE_RUNNER="$MUT_PATH" parent_session invoke mmodelenv end-after-one clean --sample s-pass --runs 1
+    expect_fail "EN08 a run that ignores AID_CONV_MODEL fails EN04" \
+        test "$(fact "$T/log/mmodelenv.facts" agent_models)" = "claude-override-test"
+}
+
+# ---------------------------------------------------------------- END
+group_end() {
+    echo "--- END"
+    need_pass
+    assert_eq "$(fact "$T/log/pass.facts" user_end_first_ok)" 1 \
+        "ED01 every simulated-user turn puts the answer sheet's end conditions first, and they override every other rule"
+    make_mutant end 'f"{END_FIRST_RULE}\n\n"' '""' || fail "ED02 the end-first mutation did not apply"
+    INVOKE_RUNNER="$MUT_PATH" invoke mend end-after-one clean --sample s-pass --runs 1
+    expect_fail "ED02 a per-turn prompt without the end-first rule fails ED01" \
+        test "$(fact "$T/log/mend.facts" user_end_first_ok)" = 1
+}
+
+# ---------------------------------------------------------------- BRIEFS
+# The briefs are committed text, read here (not run): the same predicates run on a throwaway copy of
+# each brief with its behaviour's wording broken, and must fail there.
+group_briefs() {
+    echo "--- BRIEFS"
+    local sim="$REPO_ROOT/tests/conversation/simulated-user.md" jud="$REPO_ROOT/tests/conversation/judge.md"
+    mkdir -p "$T/briefs-mut"
+    assert_eq "$(user_brief_ok "$sim" && echo ok)" ok \
+        "BR01 simulated-user.md puts the end conditions first, and they override every other rule"
+    assert_eq "$(judge_brief_ok "$jud" && echo ok)" ok \
+        "BR02 judge.md says truncated content is not absent, and forbids a row that is not an EO-n or MN-n item"
+    sed 's/overrides every other rule/yields to the rest/' "$sim" > "$T/briefs-mut/simulated-user.md"
+    expect_fail "BR03 a simulated-user brief whose end conditions do not override fails BR01" \
+        user_brief_ok "$T/briefs-mut/simulated-user.md"
+    sed 's/Truncated content is not absent/Truncated content is cut/' "$jud" > "$T/briefs-mut/judge.md"
+    expect_fail "BR04 a judge brief that reads truncated content as absent fails BR02" judge_brief_ok "$T/briefs-mut/judge.md"
+    sed 's/Never add a row that is not an EO-n or MN-n item/Add any row you find/' "$jud" > "$T/briefs-mut/judge.md"
+    expect_fail "BR05 a judge brief that allows any row fails BR02" judge_brief_ok "$T/briefs-mut/judge.md"
+}
+
+# expect_fail LABEL command...: the command must fail; a mutant that still passes is a gap in the check
+expect_fail() {
+    local label="$1"
+    shift
+    if "$@" > /dev/null 2>&1; then
+        fail "$label"
+    else
+        pass "$label"
+    fi
 }
 
 # ---------------------------------------------------------------- CHECKS
@@ -646,6 +902,10 @@ want VALIDATE && group_validate
 want CAPTURE && group_capture
 want FLAGS && group_flags
 want DIFF && group_diff
+want JUDGE && group_judge
+want ENV && group_env
+want END && group_end
+want BRIEFS && group_briefs
 want CHECKS && group_checks
 want CLEAN && group_clean
 want LEDGER && group_ledger

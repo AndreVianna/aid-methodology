@@ -18,6 +18,12 @@ The prompt gives you five parts:
 
 Use only these inputs. Do not assume anything the transcript, the diff and the check results do not show.
 
+`files.diff` in your prompt may be cut short. A line `[... N lines of <path> truncated ...]` means the
+prompt omits N lines of that file's diff. Truncated content is not absent: those lines are part of the
+change the run made. Never conclude that a change, a line or a file is missing because its text was cut
+off; judge from the transcript, the checks and the lines shown, and say in the Evidence cell when the
+evidence you cite is partial.
+
 ## Procedure
 
 1. Take the items of `## Expected outcome` one by one, in order, numbered EO-1, EO-2 and so on. For each
@@ -30,6 +36,9 @@ Use only these inputs. Do not assume anything the transcript, the diff and the c
    reason an item is unmet, and it is recorded only through the item it bears on.
 4. Record every unmet expected-outcome item (EO-n) and every must-not item the run did (MN-n) as a
    Pending row. An item the run met gets no row.
+5. Never add a row that is not an EO-n or MN-n item. A remark about the run that matches no item of the
+   two lists, however true, gets no row. An item met in substance gets no row, even when a detail of it
+   was imperfect.
 
 ## Ledger rows
 

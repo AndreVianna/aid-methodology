@@ -250,19 +250,35 @@ conversations that the guide routes. They differ in how they run.
   Claude Code always runs, and the other tools run only when named (this build has an adapter for
   Claude Code only). `--validate` parses the samples without running them. Exit codes: 0 every run
   passes, 1 any failure, 2 invocation error.
+- **The model under test.** The agent under test runs on `claude-sonnet-5-5`, passed as `--model` on
+  every turn; the environment variable `AID_CONV_MODEL` names another model. Each run writes the model
+  it used to `model.txt` in its run folder. The agent's environment drops the parent session's
+  `CLAUDE_CODE_*` variables and `CLAUDECODE`, `CLAUDE_EFFORT` and `CLAUDE_AFTER_LAST_COMPACT`; proxy and
+  CA variables are kept.
 - **Three runs per sample.** Each sample runs 3 times (`--runs`, default 3) and passes only if all 3
-  runs pass. `tests/conversation/judge.md` rules each transcript; a Pending row in the judge's ledger
-  fails the run.
+  runs pass. `tests/conversation/judge.md` rules each transcript, and records only the items of the
+  sample's Expected outcome and Must not; a Pending row in the judge's ledger fails the run.
 - **Never in CI and never in `run-all.sh`.** `run-all.sh` discovers only `tests/canonical/test-*.sh`,
   and no workflow under `.github/workflows/` invokes `tests/conversation/`. The suite runs on the
   maintainer's machine.
 - **Where it captures.** Each run writes `.aid/.temp/conversation-tests/<run-id>/<sample>/run-<n>/`,
-  holding `transcript.jsonl`, `transcript.md`, `files.diff`, `checks.txt` and `ledger.md`. The judge's
-  ledger is also saved in the throwaway fixture's `.aid/.temp/review-pending/`.
+  holding `transcript.jsonl`, `transcript.md`, `files.diff`, `checks.txt`, `ledger.md` and `model.txt`.
+  The judge's ledger is also saved in the throwaway fixture's `.aid/.temp/review-pending/`.
+- **What `files.diff` holds.** Every change the agent made in the fixture and in the throwaway `HOME`,
+  git-ignored files included. A worktree the agent creates under the fixture's `.claude/worktrees/` is
+  diffed file by file against the fixture's file of the same relative path, and a byte-identical file is
+  omitted; nothing is excluded wholesale. The sandbox's own set-up and credential files under `HOME`
+  (`.ccr/`, `.pki/`, `.local/share/pki/`, `.aws/`, `.boto`) are excluded, with the host tool's `.claude/`
+  and the credential-named files. The judge does not read the whole file: its prompt holds each file's
+  diff up to 300 lines and the whole diff up to about 200 KB, with a `[... N lines of <path> truncated ...]`
+  marker at each cut. The judge is told that truncated content is not absent.
 - **Its own guard: `tests/canonical/test-conversation-runner.sh`.** It runs in `run-all.sh` and guards
   `run.py` without calling a model: a stub `claude` is put first on `PATH`, and the suite builds its
   own samples, fixtures and briefs. Its groups are `EXIT`, `VALIDATE`, `CAPTURE`, `FLAGS`, `DIFF`,
-  `CHECKS`, `CLEAN`, `LEDGER`, `SAMPLES` and `CAP`. It skips with a notice when `python3` is absent.
+  `JUDGE`, `ENV`, `END`, `BRIEFS`, `CHECKS`, `CLEAN`, `LEDGER`, `SAMPLES` and `CAP`. The behaviours that
+  `DIFF`, `JUDGE`, `ENV` and `END` guard each have a mutation (a throwaway copy of `run.py`, with that one
+  behaviour broken) on which the same check must fail; `BRIEFS` runs the same test on throwaway copies of
+  the two briefs. It skips with a notice when `python3` is absent.
 
 ## CI Lanes and Where They Run
 
