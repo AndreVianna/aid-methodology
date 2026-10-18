@@ -14,7 +14,7 @@ conditional fields (pause_reason / block_reason / block_artifact).
 
 Round-trip sequence:
   1. Seed a fresh scratch STATE.md from canonical/aid/templates/work-state-template.md
-  2. Producer: write Running + Execute + aid-execute -> Consumer: assert Running / normalized
+  2. Producer: write Running + Building + aid-execute -> Consumer: assert Running / normalized
   3. Producer: write Paused-Awaiting-Input + Pause Reason -> Consumer: assert Paused + pause_reason
   4. Producer: write Blocked + Block Reason + Block Artifact -> Consumer: assert Blocked + artifact
   5. Producer: write Running (transition back) -> Consumer: assert Running + conditional fields cleared
@@ -209,18 +209,18 @@ class TestProducerConsumerRoundTrip(unittest.TestCase):
     # -------------------------------------------------------------------------
 
     def test_step2_running_execute_aid_execute(self):
-        """Step 2: Producer writes Running + Execute + aid-execute.
+        """Step 2: Producer writes Running + Building + aid-execute.
         Consumer reads it back and returns Running (source_mode=normalized).
 
         Proves:
         - writeback-state.sh --pipeline creates a parseable ## Pipeline Status block
         - read_repo() returns Lifecycle.Running from the normalized block
-        - Phase = Execute, active_skill = aid-execute
+        - Phase = Building, active_skill = aid-execute
         - source_mode = normalized (block present)
         - work not in fallback_works
         """
         self._produce("Lifecycle", "Running")
-        self._produce("Phase", "Execute")
+        self._produce("Phase", "Building")
         self._produce("Active Skill", "aid-execute")
         self._produce("Updated", "2026-06-10T15:00:00Z")
 
@@ -254,7 +254,7 @@ class TestProducerConsumerRoundTrip(unittest.TestCase):
         """
         # Seed with Running first (the typical prior state)
         self._produce("Lifecycle", "Running")
-        self._produce("Phase", "Specify")
+        self._produce("Phase", "Specification")
         self._produce("Active Skill", "aid-specify")
         self._produce("Updated", "2026-06-10T14:00:00Z")
 
@@ -291,7 +291,7 @@ class TestProducerConsumerRoundTrip(unittest.TestCase):
         """
         # Seed through a Running state first
         self._produce("Lifecycle", "Running")
-        self._produce("Phase", "Execute")
+        self._produce("Phase", "Building")
         self._produce("Active Skill", "aid-execute")
 
         # Transition to Blocked
@@ -365,7 +365,7 @@ class TestProducerConsumerRoundTrip(unittest.TestCase):
         """
         # --- Running ---
         self._produce("Lifecycle", "Running")
-        self._produce("Phase", "Execute")
+        self._produce("Phase", "Building")
         self._produce("Active Skill", "aid-execute")
         self._produce("Updated", "2026-06-10T12:00:00Z")
 
@@ -420,7 +420,7 @@ class TestProducerConsumerRoundTrip(unittest.TestCase):
     def test_idempotent_read(self):
         """read_repo() is idempotent: reading the same STATE.md twice gives the same result."""
         self._produce("Lifecycle", "Running")
-        self._produce("Phase", "Execute")
+        self._produce("Phase", "Building")
         self._produce("Active Skill", "aid-execute")
 
         model1 = read_repo(self.root)
@@ -478,7 +478,7 @@ class TestProducerConsumerRoundTrip(unittest.TestCase):
         """
         # Simulate full pipeline flow: work runs, then completes (state-done.md emit)
         self._produce("Lifecycle", "Running")
-        self._produce("Phase", "Execute")
+        self._produce("Phase", "Building")
         self._produce("Active Skill", "aid-deploy")
         self._produce("Updated", "2026-06-11T10:00:00Z")
 

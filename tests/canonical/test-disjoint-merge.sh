@@ -151,7 +151,7 @@ make_work_state() {
     cat > "${work_dir}/STATE.yml" <<'WORKSTATEOF'
 # Work State -- work-test
 lifecycle: Running
-phase: Execute
+phase: Building
 active_skill: aid-execute
 updated: '2026-06-18T00:00:00Z'
 started: '2026-06-18'
@@ -416,7 +416,7 @@ assert_file_not_contains "${WORK_DIR}/STATE.yml" "gate_grade: A+" \
 # The work-level pipeline keys authored by main must still be intact.
 assert_file_contains "${WORK_DIR}/STATE.yml" "lifecycle: Running" \
     "DM04d: work STATE.yml lifecycle key intact (not overwritten by delivery branches)"
-assert_file_contains "${WORK_DIR}/STATE.yml" "phase: Execute" \
+assert_file_contains "${WORK_DIR}/STATE.yml" "phase: Building" \
     "DM04e: work STATE.yml phase key intact"
 
 # ---------------------------------------------------------------------------

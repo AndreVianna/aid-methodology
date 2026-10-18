@@ -77,11 +77,10 @@ echo "=== Part A: Lifecycle SM walk-through ==="
 
 # ---------------------------------------------------------------------------
 # A1: Full phase progression
-#   Running/Describe -> Running/Define -> Running/Specify -> Running/Plan ->
-#   Running/Detail -> Running/Execute
-# (Faithful numbered pipeline ending at Execute -- Interview was split into
-# Describe + Define; Deploy and the dead Monitor value are not phases and are
-# not part of this walkthrough.)
+#   Running/Definition -> Running/Specification -> Running/Planning ->
+#   Running/Building -> Running/CI
+# (The five record phases of FR-1. Deploy and the retired Monitor and Interview
+# values are not phases and are not part of this walkthrough.)
 #
 # Assert Phase + Active Skill + Lifecycle: Running at each step;
 # block stays well-formed throughout.
@@ -93,8 +92,8 @@ A1_STATE="${TMPDIR_BASE}/a1/STATE.md"
 make_state "$A1_STATE"
 
 # Declare an ordered array of (Phase, Active Skill) pairs
-A1_PHASES=("Describe" "Define" "Specify" "Plan" "Detail" "Execute")
-A1_SKILLS=("aid-describe" "aid-define" "aid-specify" "aid-plan" "aid-detail" "aid-execute")
+A1_PHASES=("Definition" "Specification" "Planning" "Building" "CI")
+A1_SKILLS=("aid-describe" "aid-specify" "aid-plan" "aid-execute" "aid-deploy")
 
 for i in "${!A1_PHASES[@]}"; do
     phase="${A1_PHASES[$i]}"
@@ -153,9 +152,9 @@ echo "--- A2: Pause/resume walk-through ---"
 A2_STATE="${TMPDIR_BASE}/a2/STATE.md"
 make_state "$A2_STATE"
 
-# Seed: Running / Specify
+# Seed: Running / Specification
 pipeline_write "$A2_STATE" Lifecycle Running
-pipeline_write "$A2_STATE" Phase Specify
+pipeline_write "$A2_STATE" Phase Specification
 pipeline_write "$A2_STATE" "Active Skill" aid-specify
 pipeline_write "$A2_STATE" Updated "2026-06-10T01:00:00Z"
 
@@ -178,7 +177,7 @@ assert_output_contains "$FM_PAUSED" "block_artifact: --" \
 
 # Resume: user re-invokes /aid-specify -- state-continue emits Running
 pipeline_write "$A2_STATE" Lifecycle Running
-pipeline_write "$A2_STATE" Phase Specify
+pipeline_write "$A2_STATE" Phase Specification
 pipeline_write "$A2_STATE" "Active Skill" aid-specify
 pipeline_write "$A2_STATE" Updated "2026-06-10T01:02:00Z"
 
@@ -210,9 +209,9 @@ echo "--- A3: Block/resolve walk-through ---"
 A3_STATE="${TMPDIR_BASE}/a3/STATE.md"
 make_state "$A3_STATE"
 
-# Seed: Running / Execute
+# Seed: Running / Building
 pipeline_write "$A3_STATE" Lifecycle Running
-pipeline_write "$A3_STATE" Phase Execute
+pipeline_write "$A3_STATE" Phase Building
 pipeline_write "$A3_STATE" "Active Skill" aid-execute
 pipeline_write "$A3_STATE" Updated "2026-06-10T02:00:00Z"
 
@@ -237,7 +236,7 @@ assert_output_contains "$FM_BLOCKED" "pause_reason: --" \
 
 # Resolve: user fixes impediment, re-runs /aid-execute
 pipeline_write "$A3_STATE" Lifecycle Running
-pipeline_write "$A3_STATE" Phase Execute
+pipeline_write "$A3_STATE" Phase Building
 pipeline_write "$A3_STATE" "Active Skill" aid-execute
 pipeline_write "$A3_STATE" Updated "2026-06-10T02:02:00Z"
 
@@ -611,7 +610,7 @@ Emit pipeline phase (silent state-write -- no output, no gate):
 ```
 bash canonical/aid/scripts/execute/writeback-state.sh --pipeline --field Lifecycle --value Running
 Print: [Step X] Starting phase
-bash canonical/aid/scripts/execute/writeback-state.sh --pipeline --field Phase --value Specify
+bash canonical/aid/scripts/execute/writeback-state.sh --pipeline --field Phase --value Specification
 ```
 
 After the emit.

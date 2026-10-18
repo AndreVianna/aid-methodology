@@ -1585,7 +1585,7 @@ EOF
 #
 # Enum-validated fields (closed enums from work-state-template.yml):
 #   Lifecycle:      Running | Paused-Awaiting-Input | Blocked | Completed | Canceled
-#   Phase:          Describe | Define | Specify | Plan | Detail | Execute | Deploy
+#   Phase:          Definition | Specification | Planning | Building | CI | Deploy
 #   Active Skill:   any string matching "aid-{skill}" pattern, or "none"
 #   Minimum Grade:  matches ^[A-F][+-]?$
 #   User Approved:  yes | no
@@ -1637,8 +1637,8 @@ mode_pipeline() {
             ;;
         Phase)
             case "$FIELD_VALUE" in
-                Describe|Define|Specify|Plan|Detail|Execute|Deploy) ;;
-                *) die "invalid Phase value '$FIELD_VALUE'; must be one of: Describe | Define | Specify | Plan | Detail | Execute | Deploy" 4 ;;
+                Definition|Specification|Planning|Building|CI|Deploy) ;;
+                *) die "invalid Phase value '$FIELD_VALUE'; must be one of: Definition | Specification | Planning | Building | CI | Deploy" 4 ;;
             esac
             ;;
         "Active Skill")

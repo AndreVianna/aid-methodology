@@ -571,9 +571,9 @@ assert_file_contains "$PIPE_STATE" "lifecycle: Running" "9a: lifecycle key writt
 
 # 9b: Phase field write
 code=0
-AID_STATE_FILE="$PIPE_STATE" bash "$SCRIPT" --pipeline --field Phase --value Execute 2>/dev/null || code=$?
+AID_STATE_FILE="$PIPE_STATE" bash "$SCRIPT" --pipeline --field Phase --value Building 2>/dev/null || code=$?
 assert_exit_zero "$code" "9b: Phase write -> exit 0"
-assert_file_contains "$PIPE_STATE" "phase: Execute" "9b: Phase field written"
+assert_file_contains "$PIPE_STATE" "phase: Building" "9b: Phase field written"
 
 # 9c: Active Skill field write
 code=0
@@ -620,9 +620,9 @@ fi
 PIPE_STATE_G="${TMPDIR_BASE}/pipe09g/STATE.yml"
 make_pipeline_state "$PIPE_STATE_G"
 code=0
-AID_STATE_FILE="$PIPE_STATE_G" bash "$SCRIPT" --pipeline --field Phase --value Plan 2>/dev/null || code=$?
+AID_STATE_FILE="$PIPE_STATE_G" bash "$SCRIPT" --pipeline --field Phase --value Planning 2>/dev/null || code=$?
 assert_exit_zero "$code" "9g: Phase write with no prior base keys -> exit 0"
-assert_file_contains "$PIPE_STATE_G" "phase: Plan" "9g: Phase field written on a document with no base keys yet"
+assert_file_contains "$PIPE_STATE_G" "phase: Planning" "9g: Phase field written on a document with no base keys yet"
 
 # 9h: Update (overwrite) an existing key value
 AID_STATE_FILE="$PIPE_STATE" bash "$SCRIPT" --pipeline --field Lifecycle --value Completed 2>/dev/null
@@ -661,12 +661,20 @@ code=0
 AID_STATE_FILE="$PIPE_STATE10" bash "$SCRIPT" --pipeline --field Lifecycle --value "running" 2>/dev/null || code=$?
 assert_exit_eq "$code" 4 "10c: Lifecycle=running (lowercase) rejected (exit 4)"
 
-# 10d: All valid Phase values accepted (rc 0) -- faithful numbered pipeline;
-# ends at Execute (Deploy/Monitor/Interview are not phases -- see 10d-ii).
-for ph_val in Describe Define Specify Plan Detail Execute; do
+# 10d: All valid Phase values accepted (rc 0) -- the five record phases
+# (Definition to CI); Deploy/Monitor/Interview are not phases -- see 10d-ii.
+for ph_val in Definition Specification Planning Building CI; do
     code=0
     AID_STATE_FILE="$PIPE_STATE10" bash "$SCRIPT" --pipeline --field Phase --value "$ph_val" 2>/dev/null || code=$?
     assert_exit_zero "$code" "10d: Phase=$ph_val accepted (exit 0)"
+done
+
+# 10d-iii: the old phase names are refused on write; they survive only as
+# reader mappings (the readers' legacy phase map).
+for ph_val in Describe Define Specify Plan Detail Execute; do
+    code=0
+    AID_STATE_FILE="$PIPE_STATE10" bash "$SCRIPT" --pipeline --field Phase --value "$ph_val" 2>/dev/null || code=$?
+    assert_exit_eq "$code" 4 "10d-iii: Phase=$ph_val (old name) refused on write (exit 4)"
 done
 
 # 10d-ii: non-phase / retired values rejected on WRITE -- Deploy is a separate
@@ -1125,7 +1133,7 @@ echo "=== Unit 17: Concurrency -- --pipeline ∥ --pipeline and --pipeline ∥ -
 PIPE_STATE17="${TMPDIR_BASE}/pipe17/STATE.yml"
 make_pipeline_state "$PIPE_STATE17"
 AID_STATE_FILE="$PIPE_STATE17" bash "$SCRIPT" --pipeline --field Lifecycle --value Running 2>/dev/null
-AID_STATE_FILE="$PIPE_STATE17" bash "$SCRIPT" --pipeline --field Phase --value Execute 2>/dev/null
+AID_STATE_FILE="$PIPE_STATE17" bash "$SCRIPT" --pipeline --field Phase --value Building 2>/dev/null
 AID_STATE_FILE="$PIPE_STATE17" bash "$SCRIPT" --pipeline --field "Active Skill" --value "aid-develop" 2>/dev/null
 AID_STATE_FILE="$PIPE_STATE17" bash "$SCRIPT" --pipeline --field Updated --value "2026-06-10T00:00:00Z" 2>/dev/null
 
@@ -1137,7 +1145,7 @@ rm -f "$(dirname "$PIPE_STATE17")/.writeback-state.lock"
     AID_LOCK_DIR="$(dirname "$PIPE_STATE17")" AID_STATE_FILE="$PIPE_STATE17" \
         bash "$SCRIPT" --pipeline --field Lifecycle --value Completed &
     AID_LOCK_DIR="$(dirname "$PIPE_STATE17")" AID_STATE_FILE="$PIPE_STATE17" \
-        bash "$SCRIPT" --pipeline --field Phase --value Deploy &
+        bash "$SCRIPT" --pipeline --field Phase --value Building &
     AID_LOCK_DIR="$(dirname "$PIPE_STATE17")" AID_STATE_FILE="$PIPE_STATE17" \
         bash "$SCRIPT" --pipeline --field "Active Skill" --value "aid-release" &
     AID_LOCK_DIR="$(dirname "$PIPE_STATE17")" AID_STATE_FILE="$PIPE_STATE17" \
@@ -1174,7 +1182,7 @@ make_task_state "$CONC17B_DELIV" 1
 make_task_spec  "$CONC17B_DELIV" 1 1
 
 AID_STATE_FILE="$PIPE_STATE17B" bash "$SCRIPT" --pipeline --field Lifecycle --value Running 2>/dev/null
-AID_STATE_FILE="$PIPE_STATE17B" bash "$SCRIPT" --pipeline --field Phase --value Execute 2>/dev/null
+AID_STATE_FILE="$PIPE_STATE17B" bash "$SCRIPT" --pipeline --field Phase --value Building 2>/dev/null
 
 rm -f "${CONC17B_WORK}/.writeback-state.lock"
 
@@ -1184,7 +1192,7 @@ rm -f "${CONC17B_WORK}/.writeback-state.lock"
     AID_STATE_FILE="$PIPE_STATE17B" \
         bash "$SCRIPT" --delivery-id 1 --task-id 1 --field State --value "In Review" &
     AID_LOCK_DIR="${CONC17B_WORK}" AID_STATE_FILE="$PIPE_STATE17B" \
-        bash "$SCRIPT" --pipeline --field Phase --value Deploy &
+        bash "$SCRIPT" --pipeline --field Phase --value Building &
     AID_STATE_FILE="$PIPE_STATE17B" \
         bash "$SCRIPT" --delivery-id 1 --task-id 1 --field Notes --value "note-concurrent" &
     wait
@@ -1242,13 +1250,13 @@ assert_file_contains "$PIPE_STATE18" "block_artifact: --" "18d: FR16 Completed -
 
 # 18e: Grep-recovery of field values from the on-disk key space
 AID_STATE_FILE="$PIPE_STATE18" bash "$SCRIPT" --pipeline --field Lifecycle --value Running 2>/dev/null
-AID_STATE_FILE="$PIPE_STATE18" bash "$SCRIPT" --pipeline --field Phase --value Execute 2>/dev/null
+AID_STATE_FILE="$PIPE_STATE18" bash "$SCRIPT" --pipeline --field Phase --value Building 2>/dev/null
 AID_STATE_FILE="$PIPE_STATE18" bash "$SCRIPT" --pipeline --field "Active Skill" --value "aid-develop" 2>/dev/null
 lc_val=$(grep -m1 '^lifecycle:' "$PIPE_STATE18" | sed 's/^lifecycle:[ \t]*//')
 ph_val=$(grep -m1 '^phase:' "$PIPE_STATE18" | sed 's/^phase:[ \t]*//')
 as_val=$(grep -m1 '^active_skill:' "$PIPE_STATE18" | sed 's/^active_skill:[ \t]*//')
 assert_eq "$lc_val" "Running" "18e: FR16 lifecycle value grep-recoverable on disk"
-assert_eq "$ph_val" "Execute" "18e: FR16 phase value grep-recoverable on disk"
+assert_eq "$ph_val" "Building" "18e: FR16 phase value grep-recoverable on disk"
 assert_eq "$as_val" "aid-develop" "18e: FR16 active_skill value grep-recoverable on disk"
 
 # ---------------------------------------------------------------------------
@@ -1259,7 +1267,7 @@ echo "=== Unit 19: M5 -- pause/block signal sequences ==="
 PIPE_STATE19A="${TMPDIR_BASE}/pipe19a/STATE.yml"
 make_pipeline_state "$PIPE_STATE19A"
 AID_STATE_FILE="$PIPE_STATE19A" bash "$SCRIPT" --pipeline --field Lifecycle --value Running 2>/dev/null
-AID_STATE_FILE="$PIPE_STATE19A" bash "$SCRIPT" --pipeline --field Phase --value Specify 2>/dev/null
+AID_STATE_FILE="$PIPE_STATE19A" bash "$SCRIPT" --pipeline --field Phase --value Specification 2>/dev/null
 AID_STATE_FILE="$PIPE_STATE19A" bash "$SCRIPT" --pipeline --field "Active Skill" --value aid-specify 2>/dev/null
 AID_STATE_FILE="$PIPE_STATE19A" bash "$SCRIPT" --pipeline --field Lifecycle --value "Paused-Awaiting-Input" 2>/dev/null
 code=0
@@ -1283,7 +1291,7 @@ make_delivery_state "$WORK_19C" 1
 make_task_state "$DELIV_19C" 1
 
 AID_STATE_FILE="$PIPE_STATE19C" bash "$SCRIPT" --pipeline --field Lifecycle --value Running 2>/dev/null
-AID_STATE_FILE="$PIPE_STATE19C" bash "$SCRIPT" --pipeline --field Phase --value Execute 2>/dev/null
+AID_STATE_FILE="$PIPE_STATE19C" bash "$SCRIPT" --pipeline --field Phase --value Building 2>/dev/null
 AID_STATE_FILE="$PIPE_STATE19C" bash "$SCRIPT" --pipeline --field "Active Skill" --value aid-execute 2>/dev/null
 AID_STATE_FILE="$PIPE_STATE19C" bash "$SCRIPT" --delivery-id 1 --task-id 1 --field State --value "Failed" 2>/dev/null
 AID_STATE_FILE="$PIPE_STATE19C" bash "$SCRIPT" --pipeline --field Lifecycle --value Blocked 2>/dev/null
@@ -1761,7 +1769,7 @@ BEFORE_LINES_22E=$(wc -l < "${BINV_WORK}/STATE.yml")
 BODY_BEFORE_22E="${BINV_WORK}/before-body.txt"
 cp "${BINV_WORK}/STATE.yml" "$BODY_BEFORE_22E"
 AID_STATE_FILE="${BINV_WORK}/STATE.yml" bash "$SCRIPT" --pipeline --field Lifecycle --value Running 2>/dev/null
-AID_STATE_FILE="${BINV_WORK}/STATE.yml" bash "$SCRIPT" --pipeline --field Phase --value Execute 2>/dev/null
+AID_STATE_FILE="${BINV_WORK}/STATE.yml" bash "$SCRIPT" --pipeline --field Phase --value Building 2>/dev/null
 AID_STATE_FILE="${BINV_WORK}/STATE.yml" bash "$SCRIPT" --pipeline --field "Active Skill" --value aid-execute 2>/dev/null
 AID_STATE_FILE="${BINV_WORK}/STATE.yml" bash "$SCRIPT" --pipeline --field "Pipeline Path" --value lite 2>/dev/null
 AID_STATE_FILE="${BINV_WORK}/STATE.yml" bash "$SCRIPT" --pipeline --field "Pipeline Initiator" --value aid-refactor 2>/dev/null
@@ -1803,7 +1811,7 @@ CRLF_LINES_BEFORE=2  # only the first two lines (lifecycle, phase) are being ove
 CRLF_TAIL_BEFORE="${CRLF_WORK}/before-tail.txt"
 tail -n "+3" "$CRLF_STATE" > "$CRLF_TAIL_BEFORE"
 code=0
-AID_STATE_FILE="$CRLF_STATE" bash "$SCRIPT" --pipeline --field Phase --value Execute 2>/dev/null || code=$?
+AID_STATE_FILE="$CRLF_STATE" bash "$SCRIPT" --pipeline --field Phase --value Building 2>/dev/null || code=$?
 assert_exit_zero "$code" "22f: CRLF STATE.yml scalar write -> exit 0"
 FENCE_CHECK_22F=$(head -1 "$CRLF_STATE" | od -An -c | grep -c -- '\\r' || true)
 if [[ "$FENCE_CHECK_22F" -ge 1 ]]; then
@@ -1811,7 +1819,7 @@ if [[ "$FENCE_CHECK_22F" -ge 1 ]]; then
 else
     fail "22f: CRLF was stripped from an untouched line -- CRLF handling regressed"
 fi
-assert_file_contains "$CRLF_STATE" "phase: Execute" "22f: phase key updated"
+assert_file_contains "$CRLF_STATE" "phase: Building" "22f: phase key updated"
 CRLF_TAIL_AFTER="${CRLF_WORK}/after-tail.txt"
 tail -n "+3" "$CRLF_STATE" > "$CRLF_TAIL_AFTER"
 if cmp -s "$CRLF_TAIL_BEFORE" "$CRLF_TAIL_AFTER"; then

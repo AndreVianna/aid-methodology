@@ -3,7 +3,7 @@
 # ============================================================================
 #  THIS FILE IS THE SOURCE. SEVEN RENDERS EXIST -- EDIT THIS ONE, NEVER A RENDER.
 #
-#  canonical/aid/scripts/execute/writeback-state.sh   <- you are here (edit this)
+#  canonical/aid/scripts/execute/writeback-state.sh   <- this is the source (edit this)
 #  profiles/{claude-code,codex,cursor,copilot-cli,antigravity}/.../writeback-state.sh
 #  ...plus this repo's own per-tool dogfood trees, one render per installed tool
 #     root, at that tool's own aid/scripts/execute/ path.
@@ -36,7 +36,7 @@
 # writeback-state.sh -- row-level write coordination for FR6 parallel pool
 # x per-unit STATE writes in AID aid-execute.
 #
-# Provides 7 safe write modes targeting PER-UNIT STATE.yml files (Pillar 2).
+# Provides 12 safe write modes targeting PER-UNIT STATE.yml files (Pillar 2).
 # Uses a sentinel-file lock (set -o noclobber + atomic create + sleep-poll retry)
 # to prevent races when multiple parallel tasks dispatch reviewers concurrently.
 #
@@ -170,12 +170,40 @@
 #         Active Skill | Updated | Pause Reason | Block Reason | Block Artifact |
 #         Started | Minimum Grade | User Approved | Pipeline Path | Pipeline Initiator
 #       Lifecycle, Phase, Active Skill, User Approved, and Pipeline Path are
-#       closed-enum validated; Minimum Grade must match ^[A-F][+-]?$.
+#       closed-enum validated; Minimum Grade must match ^[A-F][+-]?$. Phase takes
+#       Definition | Specification | Planning | Building | CI.
+#       Lifecycle Completed or Canceled also sets active_skill to none and clears
+#       step and step_detail, in the same locked write.
 #       Conditional fields: Pause Reason written only when Lifecycle is
 #         Paused-Awaiting-Input; Block Reason + Block Artifact written only when
 #         Lifecycle is Blocked. On Lifecycle change, conditional fields that no
 #         longer apply are cleared (reset to the "--" null sentinel).
 #       Emits no user-facing output (C4 behavior-preserving).
+#
+#   writeback-state.sh --create --work-dir DIR --reading R --request T --skill S --step N
+#                       [--phase P] [--depth lite|full] [--path lite|full] [--minimum-grade G]
+#       Run only by the work-initiation gate. Copies work-state-template.yml into DIR
+#       and fills the work record in one write: intent.reading, intent.request,
+#       intent.depth, active_skill (S), step (N), pipeline.initiator (S), phase (P,
+#       or `--` when omitted), lifecycle: Running, started and updated. Exits 8 when
+#       DIR already holds a STATE.yml. Exits 5 when a required option is missing.
+#
+#   writeback-state.sh --step --skill S --name N [--detail D]
+#       Writes active_skill (S), step (N), step_detail (D, or `--`) and updated in one
+#       write, on the work STATE.yml (AID_STATE_FILE).
+#
+#   writeback-state.sh --reroute --reading R [--depth lite|full] --why W
+#       Writes intent.reading (and intent.depth when given) and appends one
+#       intent.changes entry (at, from, to, why) in the same write.
+#
+#   writeback-state.sh --check
+#       Writes nothing. Prints one PROBLEM line for each missing or inconsistent part
+#       of the work record, and exits 9 when there is any, 0 otherwise.
+#
+#   writeback-state.sh --repair --skill S --name N [--detail D] [--reading R]
+#       Writes the whole repaired record in one write and appends a lifecycle_history
+#       entry naming the old and the new record. Used only after the user confirms.
+#       --reading is required (exit 5) when the record has no intent.reading.
 #
 #   writeback-state.sh -h | --help
 #
@@ -193,6 +221,9 @@
 #   4  invalid argument value
 #   5  missing required argument
 #   6  malformed STATE.yml (the file does not parse as a YAML mapping)
+#   7  no open call to return to (--handoff-return with none)
+#   8  STATE.yml already exists (--create)
+#   9  --check found a problem with the work record
 
 set -u
 
@@ -231,7 +262,7 @@ usage() {
     # Upper bound tracks the end of the Exit codes stanza. Bump it whenever
     # lines are added to the header block above it, or --help silently
     # starts truncating (or over-printing) the usage text.
-    sed -n '2,194p' "$0" | sed 's/^# \{0,1\}//'
+    sed -n '2,226p' "$0" | sed 's/^# \{0,1\}//'
 }
 
 die() { echo "ERROR: writeback-state.sh: $*" >&2; exit "${2:-1}"; }
@@ -519,6 +550,23 @@ ISSUE_ROW=""
 PIPELINE_FLAG=0
 GATE_FIELD=""
 GATE_VALUE=""
+CREATE_FLAG=0
+STEP_FLAG=0
+STEP_VALUE=""
+REROUTE_FLAG=0
+CHECK_FLAG=0
+REPAIR_FLAG=0
+NEW_WORK_DIR=""
+READING_ARG=""
+REQUEST_ARG=""
+SKILL_ARG=""
+NAME_ARG=""
+DETAIL_ARG=""
+PHASE_ARG=""
+DEPTH_ARG=""
+PATH_ARG=""
+MIN_GRADE_ARG=""
+WHY_ARG=""
 
 while [[ $# -gt 0 ]]; do
     case "$1" in
@@ -569,6 +617,29 @@ while [[ $# -gt 0 ]]; do
             [[ $# -lt 2 ]] && die "--append-issue requires a value" 5
             ISSUE_ROW="$2"; shift 2
             ;;
+        --create)     CREATE_FLAG=1; shift ;;
+        --check)      CHECK_FLAG=1; shift ;;
+        --repair)     REPAIR_FLAG=1; shift ;;
+        --reroute)    REROUTE_FLAG=1; shift ;;
+        --step)
+            # A bare --step is the step mode; --step N names the first step of --create.
+            if [[ $# -ge 2 && "$2" != --* ]]; then
+                STEP_VALUE="$2"; shift 2
+            else
+                STEP_FLAG=1; shift
+            fi
+            ;;
+        --work-dir)      [[ $# -lt 2 ]] && die "--work-dir requires a value" 5; NEW_WORK_DIR="$2"; shift 2 ;;
+        --reading)       [[ $# -lt 2 ]] && die "--reading requires a value" 5; READING_ARG="$2"; shift 2 ;;
+        --request)       [[ $# -lt 2 ]] && die "--request requires a value" 5; REQUEST_ARG="$2"; shift 2 ;;
+        --skill)         [[ $# -lt 2 ]] && die "--skill requires a value" 5; SKILL_ARG="$2"; shift 2 ;;
+        --name)          [[ $# -lt 2 ]] && die "--name requires a value" 5; NAME_ARG="$2"; shift 2 ;;
+        --detail)        [[ $# -lt 2 ]] && die "--detail requires a value" 5; DETAIL_ARG="$2"; shift 2 ;;
+        --phase)         [[ $# -lt 2 ]] && die "--phase requires a value" 5; PHASE_ARG="$2"; shift 2 ;;
+        --depth)         [[ $# -lt 2 ]] && die "--depth requires a value" 5; DEPTH_ARG="$2"; shift 2 ;;
+        --path)          [[ $# -lt 2 ]] && die "--path requires a value" 5; PATH_ARG="$2"; shift 2 ;;
+        --minimum-grade) [[ $# -lt 2 ]] && die "--minimum-grade requires a value" 5; MIN_GRADE_ARG="$2"; shift 2 ;;
+        --why)           [[ $# -lt 2 ]] && die "--why requires a value" 5; WHY_ARG="$2"; shift 2 ;;
         *)
             die "unknown argument: $1" 5
             ;;
@@ -578,7 +649,24 @@ done
 # ---------------------------------------------------------------------------
 # Determine mode from parsed arguments
 # ---------------------------------------------------------------------------
-if [[ "$PIPELINE_FLAG" -eq 1 && -n "$FIELD" ]]; then
+NEW_MODE_COUNT=$(( CREATE_FLAG + REROUTE_FLAG + CHECK_FLAG + REPAIR_FLAG ))
+if [[ "$STEP_FLAG" -eq 1 || ( -n "$STEP_VALUE" && "$CREATE_FLAG" -eq 0 ) ]]; then
+    NEW_MODE_COUNT=$(( NEW_MODE_COUNT + 1 ))
+fi
+if [[ "$NEW_MODE_COUNT" -gt 1 ]]; then
+    die "one record mode per call: use one of --create, --step, --reroute, --check, --repair" 5
+fi
+if [[ "$CREATE_FLAG" -eq 1 ]]; then
+    MODE="create"
+elif [[ "$STEP_FLAG" -eq 1 || -n "$STEP_VALUE" ]]; then
+    MODE="step"
+elif [[ "$REROUTE_FLAG" -eq 1 ]]; then
+    MODE="reroute"
+elif [[ "$CHECK_FLAG" -eq 1 ]]; then
+    MODE="check"
+elif [[ "$REPAIR_FLAG" -eq 1 ]]; then
+    MODE="repair"
+elif [[ "$PIPELINE_FLAG" -eq 1 && -n "$FIELD" ]]; then
     MODE="pipeline"
     [[ -z "$FIELD_VALUE" ]] && die "--value is required with --pipeline --field" 5
 elif [[ -n "$TASK_ID" && -n "$FIELD" ]]; then
@@ -681,7 +769,21 @@ release_lock() {
     fi
 }
 
-trap 'release_lock' EXIT
+# Staged-write state (see the record modes below). Declared here, with the
+# trap, so the EXIT cleanup is defined whenever the trap can fire.
+STAGE_BASE=""
+STAGE_TARGET=""
+STAGED=""
+
+# wb_exit_cleanup: release the lock and drop any temporary copy left behind.
+wb_exit_cleanup() {
+    release_lock
+    if [[ -n "$STAGED" && "$STAGED" != "$STAGE_BASE" ]]; then
+        rm -f "$STAGED"
+    fi
+}
+
+trap 'wb_exit_cleanup' EXIT
 
 # ---------------------------------------------------------------------------
 # WB_SET_KV_AWK -- THE single write path (work-009-refactor task-007). Collapses
@@ -1419,7 +1521,7 @@ mode_field() {
 
         local key_path="tasks_lifecycle.task-${padded_t}.${fm_key}"
         local tmp
-        tmp=$(mktemp)
+        tmp=$(wb_mktemp_beside "$STATE_FILE")
         wb_set_kv "$STATE_FILE" "$key_path" scalar "$FIELD_VALUE" > "$tmp"
 
         if ! wb_state_verify "$tmp" "$key_path" scalar "$FIELD_VALUE"; then
@@ -1444,7 +1546,7 @@ mode_field() {
     acquire_lock
 
     local tmp
-    tmp=$(mktemp)
+    tmp=$(wb_mktemp_beside "$TASK_STATE_FILE")
     wb_set_kv "$TASK_STATE_FILE" "$fm_key" scalar "$FIELD_VALUE" > "$tmp"
 
     if ! wb_state_verify "$tmp" "$fm_key" scalar "$FIELD_VALUE"; then
@@ -1487,7 +1589,7 @@ mode_findings() {
 
         local key_path="tasks_lifecycle.task-${padded_id}.quick_check"
         local tmp
-        tmp=$(mktemp)
+        tmp=$(wb_mktemp_beside "$STATE_FILE")
         wb_set_kv "$STATE_FILE" "$key_path" scalar "$FINDINGS_BLOCK" > "$tmp"
 
         if ! wb_state_verify "$tmp" "$key_path" scalar "$FINDINGS_BLOCK"; then
@@ -1514,9 +1616,9 @@ mode_findings() {
     acquire_lock
 
     local tmp tmp2
-    tmp=$(mktemp)
+    tmp=$(wb_mktemp_beside "$TASK_STATE_FILE")
     wb_set_kv "$TASK_STATE_FILE" "quick_check.reviewer_tier" scalar "$REVIEWER_TIER" > "$tmp"
-    tmp2=$(mktemp)
+    tmp2=$(wb_mktemp_beside "$TASK_STATE_FILE")
     wb_set_kv "$tmp" "quick_check.findings" seq "${FINDINGS_ITEMS[@]}" > "$tmp2"
     mv "$tmp2" "$tmp"
 
@@ -1557,7 +1659,7 @@ mode_delivery_lifecycle() {
     acquire_lock
 
     local tmp
-    tmp=$(mktemp)
+    tmp=$(wb_mktemp_beside "$DELIVERY_STATE_FILE")
     wb_set_kv "$DELIVERY_STATE_FILE" "delivery_state" scalar "$LIFECYCLE_VALUE" > "$tmp"
 
     if ! wb_state_verify "$tmp" "delivery_state" scalar "$LIFECYCLE_VALUE"; then
@@ -1615,7 +1717,7 @@ mode_gate_field() {
     acquire_lock
 
     local tmp
-    tmp=$(mktemp)
+    tmp=$(wb_mktemp_beside "$DELIVERY_STATE_FILE")
     wb_set_kv "$DELIVERY_STATE_FILE" "$fm_key" scalar "$GATE_VALUE" > "$tmp"
 
     if ! wb_state_verify "$tmp" "$fm_key" scalar "$GATE_VALUE"; then
@@ -1652,7 +1754,7 @@ mode_delivery_block() {
     acquire_lock
 
     local tmp
-    tmp=$(mktemp)
+    tmp=$(wb_mktemp_beside "$DELIVERY_STATE_FILE")
     wb_set_kv "$DELIVERY_STATE_FILE" "delivery_gate.issue_list" seq "${ISSUE_ITEMS[@]}" > "$tmp"
 
     if ! wb_state_verify "$tmp" "delivery_gate.issue_list" seq "${ISSUE_ITEMS[@]}"; then
@@ -1746,7 +1848,7 @@ EOF
 #
 # Enum-validated fields (closed enums from work-state-template.yml):
 #   Lifecycle:      Running | Paused-Awaiting-Input | Blocked | Completed | Canceled
-#   Phase:          Describe | Define | Specify | Plan | Detail | Execute
+#   Phase:          Definition | Specification | Planning | Building | CI
 #   Active Skill:   any string matching "aid-{skill}" pattern, or "none"
 #   Minimum Grade:  matches ^[A-F][+-]?$
 #   User Approved:  yes | no
@@ -1798,8 +1900,8 @@ mode_pipeline() {
             ;;
         Phase)
             case "$FIELD_VALUE" in
-                Describe|Define|Specify|Plan|Detail|Execute) ;;
-                *) die "invalid Phase value '$FIELD_VALUE'; must be one of: Describe | Define | Specify | Plan | Detail | Execute" 4 ;;
+                Definition|Specification|Planning|Building|CI) ;;
+                *) die "invalid Phase value '$FIELD_VALUE'; must be one of: Definition | Specification | Planning | Building | CI" 4 ;;
             esac
             ;;
         "Active Skill")
@@ -1831,39 +1933,383 @@ mode_pipeline() {
     init_lock_file "$STATE_FILE"
     acquire_lock
 
-    local tmp
-    tmp=$(mktemp)
-    wb_set_kv "$STATE_FILE" "$fm_key" scalar "$FIELD_VALUE" > "$tmp"
+    wb_stage_begin "$STATE_FILE"
+    wb_stage "$fm_key" "$FIELD_VALUE"
 
-    # Lifecycle change: clear conditional fields that no longer apply (chained
-    # writes over the same evolving temp file -- each wb_set_kv call only
-    # ever touches its one target key, so chaining preserves every other
-    # line across every step).
+    # Lifecycle change: clear conditional fields that no longer apply, in the
+    # same staged write as the lifecycle itself.
     if [[ "$canonical_field" == "Lifecycle" ]]; then
-        local tmp2
         if [[ "$FIELD_VALUE" != "Paused-Awaiting-Input" ]]; then
-            tmp2=$(mktemp)
-            wb_set_kv "$tmp" "pause_reason" scalar "--" > "$tmp2"
-            mv "$tmp2" "$tmp"
+            wb_stage "pause_reason" "--"
         fi
         if [[ "$FIELD_VALUE" != "Blocked" ]]; then
-            tmp2=$(mktemp)
-            wb_set_kv "$tmp" "block_reason" scalar "--" > "$tmp2"
-            mv "$tmp2" "$tmp"
-            tmp2=$(mktemp)
-            wb_set_kv "$tmp" "block_artifact" scalar "--" > "$tmp2"
-            mv "$tmp2" "$tmp"
+            wb_stage "block_reason" "--"
+            wb_stage "block_artifact" "--"
+        fi
+        if [[ "$FIELD_VALUE" == "Completed" || "$FIELD_VALUE" == "Canceled" ]]; then
+            wb_stage "active_skill" "none"
+            wb_stage "step" "--"
+            wb_stage "step_detail" "--"
         fi
     fi
 
-    if ! wb_state_verify "$tmp" "$fm_key" scalar "$FIELD_VALUE"; then
-        rm -f "$tmp"
-        die "writeback sanity check failed: key '$fm_key' does not resolve to '$FIELD_VALUE' in output; $STATE_FILE preserved" 3
-    fi
-
-    mv "$tmp" "$STATE_FILE"
+    wb_stage_commit
     # No user-facing output
 }
+
+# ---------------------------------------------------------------------------
+# Record modes (--create, --step, --reroute, --check, --repair). The staged
+# writes below build the whole new record in temporary files that sit beside
+# the target, so each rename is a same-filesystem rename, and the target is
+# replaced only once every key has been written and verified.
+# ---------------------------------------------------------------------------
+# wb_mktemp_beside TARGET: a temporary file in TARGET's own directory.
+wb_mktemp_beside() {
+    mktemp "$(dirname "$1")/.wb-state.XXXXXX"
+}
+
+# wb_stage_begin SOURCE TARGET: the staged copy starts as SOURCE. SOURCE is
+# never removed by the staging helpers; only the temporary copies they create
+# are. Every temporary copy is made beside TARGET, the file the commit replaces.
+wb_stage_begin() {
+    STAGE_BASE="$1"
+    STAGE_TARGET="${2:-$1}"
+    STAGED="$1"
+}
+
+# wb_stage KEY_PATH VALUE: set one scalar key on the staged copy.
+wb_stage() {
+    local key="$1" val="$2" t
+    t=$(wb_mktemp_beside "$STAGE_TARGET") || die "cannot create a temporary file beside $STAGE_TARGET" 1
+    if ! wb_set_kv "$STAGED" "$key" scalar "$val" > "$t" || ! wb_state_verify "$t" "$key" scalar "$val"; then
+        rm -f "$t"
+        die "writeback sanity check failed: key '$key' does not resolve to '$val' in output; $STAGE_TARGET preserved" 3
+    fi
+    if [[ "$STAGED" != "$STAGE_BASE" ]]; then
+        rm -f "$STAGED"
+    fi
+    STAGED="$t"
+}
+
+# wb_stage_append KEY_PATH ENTRY: append block-style ENTRY lines (they carry
+# their own indentation) to the end of the block KEY_PATH names. KEY_PATH is
+# one segment (a top-level sequence) or two (a sequence under a mapping).
+wb_stage_append() {
+    local keypath="$1" entry="$2" t
+    local t1="" t2="" depth before after added
+    IFS='.' read -r t1 t2 <<< "$keypath"
+    depth=$(( $(grep -o '\.' <<< "$keypath" | wc -l) + 1 ))
+    t=$(wb_mktemp_beside "$STAGE_TARGET") || die "cannot create a temporary file beside $STAGE_TARGET" 1
+    before=$(wc -l < "$STAGED")
+    added=$(printf '%s\n' "$entry" | wc -l)
+    if ! WB_APPEND_TEXT="$entry" awk -v t1="$t1" -v t2="$t2" -v n="$depth" "$WB_APPEND_AWK" "$STAGED" > "$t" \
+        || [[ "$(wc -l < "$t")" -ne $(( before + added )) ]]; then
+        rm -f "$t"
+        die "writeback sanity check failed: '$keypath' was not found to append to; $STAGE_TARGET preserved" 3
+    fi
+    if [[ "$STAGED" != "$STAGE_BASE" ]]; then
+        rm -f "$STAGED"
+    fi
+    STAGED="$t"
+}
+
+# Appends ENTRY after the last line of the block KEY (indent 0 for one
+# segment, indent 2 for two). A `key: []` line is opened into block style.
+WB_APPEND_AWK='
+function indent_of(s,    m) { match(s, /^ */); return RLENGTH }
+{ L[NR] = $0 }
+END {
+    k = 0; inparent = (n == 1)
+    for (i = 1; i <= NR; i++) {
+        if (n == 2) {
+            if (L[i] ~ ("^" t1 ":[ \t]*$")) { inparent = 1; continue }
+            if (inparent && L[i] ~ /^[^ \t#]/) inparent = 0
+            if (inparent && L[i] ~ ("^  " t2 ":")) { k = i; break }
+        } else if (L[i] ~ ("^" t1 ":")) { k = i; break }
+    }
+    if (k == 0) { exit 3 }
+    kind_indent = (n == 2) ? 2 : 0
+    if (L[k] ~ /:[ \t]*\[\][ \t]*$/) sub(/[ \t]*\[\][ \t]*$/, "", L[k])
+    last = k
+    for (i = k + 1; i <= NR; i++) {
+        if (L[i] ~ /^[ \t]*$/) continue
+        if (indent_of(L[i]) > kind_indent) { last = i; continue }
+        break
+    }
+    for (i = 1; i <= NR; i++) {
+        print L[i]
+        if (i == last) {
+            m = split(ENVIRON["WB_APPEND_TEXT"], E, "\n")
+            for (j = 1; j <= m; j++) print E[j]
+        }
+    }
+}
+'
+
+# wb_stage_commit: rename the staged copy over the target in one step.
+wb_stage_commit() {
+    if [[ "$STAGED" == "$STAGE_BASE" ]]; then
+        die "internal error: nothing staged for $STAGE_TARGET" 1
+    fi
+    mv "$STAGED" "$STAGE_TARGET" || die "cannot replace $STAGE_TARGET; it is preserved" 1
+    STAGED=""
+}
+
+# wb_read_scalar FILE KEY_PATH: the scalar value, or nothing when absent.
+wb_read_scalar() {
+    local r
+    r=$(wb_get_kv "$1" "$2" scalar)
+    case "$r" in
+        SCALAR\|*) printf '%s' "${r#SCALAR|}" ;;
+        *) printf '' ;;
+    esac
+}
+
+wb_now() { date -u +%Y-%m-%dT%H:%M:%SZ; }
+wb_today() { date -u +%Y-%m-%d; }
+
+# wb_sq VALUE: a block-style single-quoted scalar (`--` stays bare).
+wb_sq() {
+    local v="$1"
+    if [[ "$v" == "--" ]]; then printf '%s' "--"; return; fi
+    v="${v//\'/\'\'}"
+    printf "'%s'" "$v"
+}
+
+wb_valid_reading() {
+    case "$1" in
+        "bug fix"|refactor|change|"new capability"|document|operational|"knowledge update"|investigation) return 0 ;;
+        *) return 1 ;;
+    esac
+}
+wb_valid_depth() { [[ "$1" == lite || "$1" == full ]]; }
+wb_valid_skill() { [[ "$1" =~ ^aid-[a-zA-Z0-9_-]+$ ]]; }
+wb_valid_step_name() { [[ "$1" =~ ^[A-Za-z0-9][A-Za-z0-9_-]*$ ]]; }
+
+# wb_skill_installed SKILL: true when the skill is present in the project's
+# skill folder. With no skill folder at all there is nothing to check against,
+# and the check passes.
+wb_skill_installed() {
+    local s="$1" d seen=0
+    if [[ -n "${AID_SKILLS_DIR:-}" ]]; then
+        [[ -f "$AID_SKILLS_DIR/$s/SKILL.md" ]]
+        return
+    fi
+    for d in .claude/skills .codex/skills .cursor/skills .github/skills .agents/skills; do
+        if [[ -d "$d" ]]; then
+            seen=1
+            [[ -f "$d/$s/SKILL.md" ]] && return 0
+        fi
+    done
+    [[ "$seen" -eq 0 ]]
+}
+
+mode_create() {
+    [[ -n "$NEW_WORK_DIR" ]] || die "--create requires --work-dir" 5
+    [[ -n "$READING_ARG" ]] || die "--create requires --reading" 5
+    [[ -n "$REQUEST_ARG" ]] || die "--create requires --request" 5
+    [[ -n "$SKILL_ARG" ]] || die "--create requires --skill" 5
+    [[ -n "$STEP_VALUE" ]] || die "--create requires --step" 5
+    wb_valid_reading "$READING_ARG" || die "invalid --reading '$READING_ARG'; must be one of: bug fix | refactor | change | new capability | document | operational | knowledge update | investigation" 4
+    wb_valid_skill "$SKILL_ARG" || die "invalid --skill '$SKILL_ARG'; must match aid-{skill}" 4
+    wb_valid_step_name "$STEP_VALUE" || die "invalid --step '$STEP_VALUE'" 4
+    if [[ -n "$PHASE_ARG" ]]; then
+        case "$PHASE_ARG" in
+            Definition|Specification|Planning|Building|CI) ;;
+            *) die "invalid --phase '$PHASE_ARG'; must be one of: Definition | Specification | Planning | Building | CI" 4 ;;
+        esac
+    fi
+    if [[ -n "$DEPTH_ARG" ]]; then wb_valid_depth "$DEPTH_ARG" || die "invalid --depth '$DEPTH_ARG'; must be one of: lite | full" 4; fi
+    if [[ -n "$PATH_ARG" ]]; then
+        case "$PATH_ARG" in lite|full) ;; *) die "invalid --path '$PATH_ARG'; must be one of: lite | full" 4 ;; esac
+    fi
+    if [[ -n "$MIN_GRADE_ARG" ]]; then
+        [[ "$MIN_GRADE_ARG" =~ ^[A-F][+-]?$ ]] || die "invalid --minimum-grade '$MIN_GRADE_ARG'; must match ^[A-F][+-]?\$" 4
+    fi
+    [[ -d "$NEW_WORK_DIR" ]] || die "work folder does not exist: $NEW_WORK_DIR" 1
+
+    local template
+    template="$(dirname "${BASH_SOURCE[0]}")/../../templates/work-state-template.yml"
+    [[ -f "$template" ]] || die "work-state template not found: $template" 1
+
+    STATE_FILE="$NEW_WORK_DIR/STATE.yml"
+    init_lock_file "$STATE_FILE"
+    acquire_lock
+    if [[ -e "$STATE_FILE" ]]; then
+        die "$STATE_FILE already exists; --create does not overwrite a work record" 8
+    fi
+
+    wb_stage_begin "$template" "$STATE_FILE"
+    wb_stage "intent.reading" "$READING_ARG"
+    wb_stage "intent.request" "$REQUEST_ARG"
+    if [[ -n "$DEPTH_ARG" ]]; then wb_stage "intent.depth" "$DEPTH_ARG"; fi
+    wb_stage "active_skill" "$SKILL_ARG"
+    wb_stage "step" "$STEP_VALUE"
+    wb_stage "pipeline.initiator" "$SKILL_ARG"
+    if [[ -n "$PATH_ARG" ]]; then wb_stage "pipeline.path" "$PATH_ARG"; fi
+    if [[ -n "$MIN_GRADE_ARG" ]]; then wb_stage "minimum_grade" "$MIN_GRADE_ARG"; fi
+    local phase="--"
+    if [[ -n "$PHASE_ARG" ]]; then phase="$PHASE_ARG"; fi
+    wb_stage "phase" "$phase"
+    wb_stage "lifecycle" "Running"
+    wb_stage "started" "$(wb_today)"
+    wb_stage "updated" "$(wb_now)"
+    wb_stage_commit
+    echo "OK: created $STATE_FILE"
+}
+
+mode_step() {
+    [[ -n "$SKILL_ARG" ]] || die "--step requires --skill" 5
+    local name="${NAME_ARG:-$STEP_VALUE}"
+    [[ -n "$name" ]] || die "--step requires --name" 5
+    wb_valid_skill "$SKILL_ARG" || die "invalid --skill '$SKILL_ARG'; must match aid-{skill}" 4
+    wb_valid_step_name "$name" || die "invalid --name '$name'" 4
+    [[ -f "$STATE_FILE" ]] || die "$STATE_FILE does not exist" 1
+
+    local detail="--"
+    if [[ -n "$DETAIL_ARG" ]]; then detail="$DETAIL_ARG"; fi
+
+    init_lock_file "$STATE_FILE"
+    acquire_lock
+    wb_stage_begin "$STATE_FILE"
+    wb_stage "active_skill" "$SKILL_ARG"
+    wb_stage "step" "$name"
+    wb_stage "step_detail" "$detail"
+    wb_stage "updated" "$(wb_now)"
+    wb_stage_commit
+}
+
+mode_reroute() {
+    [[ -n "$READING_ARG" ]] || die "--reroute requires --reading" 5
+    [[ -n "$WHY_ARG" ]] || die "--reroute requires --why" 5
+    wb_valid_reading "$READING_ARG" || die "invalid --reading '$READING_ARG'; must be one of: bug fix | refactor | change | new capability | document | operational | knowledge update | investigation" 4
+    if [[ -n "$DEPTH_ARG" ]]; then wb_valid_depth "$DEPTH_ARG" || die "invalid --depth '$DEPTH_ARG'; must be one of: lite | full" 4; fi
+    [[ -f "$STATE_FILE" ]] || die "$STATE_FILE does not exist" 1
+
+    init_lock_file "$STATE_FILE"
+    acquire_lock
+    local old_reading now entry
+    old_reading=$(wb_read_scalar "$STATE_FILE" "intent.reading")
+    [[ -n "$old_reading" ]] || old_reading="--"
+    now=$(wb_now)
+    entry="    - at: $(wb_sq "$now")
+      from: $(wb_sq "$old_reading")
+      to: $(wb_sq "$READING_ARG")
+      why: $(wb_sq "$WHY_ARG")"
+    wb_stage_begin "$STATE_FILE"
+    wb_stage "intent.reading" "$READING_ARG"
+    if [[ -n "$DEPTH_ARG" ]]; then wb_stage "intent.depth" "$DEPTH_ARG"; fi
+    wb_stage_append "intent.changes" "$entry"
+    wb_stage "updated" "$now"
+    wb_stage_commit
+}
+
+mode_repair() {
+    [[ -n "$SKILL_ARG" ]] || die "--repair requires --skill" 5
+    local name="${NAME_ARG:-$STEP_VALUE}"
+    [[ -n "$name" ]] || die "--repair requires --name" 5
+    wb_valid_skill "$SKILL_ARG" || die "invalid --skill '$SKILL_ARG'; must match aid-{skill}" 4
+    wb_valid_step_name "$name" || die "invalid --name '$name'" 4
+    if [[ -n "$READING_ARG" ]]; then
+        wb_valid_reading "$READING_ARG" || die "invalid --reading '$READING_ARG'; must be one of: bug fix | refactor | change | new capability | document | operational | knowledge update | investigation" 4
+    fi
+    [[ -f "$STATE_FILE" ]] || die "$STATE_FILE does not exist" 1
+
+    init_lock_file "$STATE_FILE"
+    acquire_lock
+    local old_reading old_skill old_step new_reading detail now entry
+    old_reading=$(wb_read_scalar "$STATE_FILE" "intent.reading")
+    old_skill=$(wb_read_scalar "$STATE_FILE" "active_skill")
+    old_step=$(wb_read_scalar "$STATE_FILE" "step")
+    [[ -n "$old_reading" ]] || old_reading="--"
+    [[ -n "$old_skill" ]] || old_skill="--"
+    [[ -n "$old_step" ]] || old_step="--"
+    new_reading="$old_reading"
+    if [[ -n "$READING_ARG" ]]; then new_reading="$READING_ARG"; fi
+    if [[ "$new_reading" == "--" ]]; then
+        die "--repair requires --reading: the record has no intent.reading" 5
+    fi
+    detail="--"
+    if [[ -n "$DETAIL_ARG" ]]; then detail="$DETAIL_ARG"; fi
+    now=$(wb_now)
+    entry="  - date: $(wb_sq "$(wb_today)")
+    event: 'Record repaired'
+    grade: --
+    notes: $(wb_sq "active_skill $old_skill -> $SKILL_ARG; step $old_step -> $name; intent.reading $old_reading -> $new_reading")"
+
+    wb_stage_begin "$STATE_FILE"
+    if [[ -n "$READING_ARG" ]]; then wb_stage "intent.reading" "$READING_ARG"; fi
+    wb_stage "active_skill" "$SKILL_ARG"
+    wb_stage "step" "$name"
+    wb_stage "step_detail" "$detail"
+    wb_stage "updated" "$now"
+    wb_stage_append "lifecycle_history" "$entry"
+    wb_stage_commit
+}
+
+mode_check() {
+    [[ -f "$STATE_FILE" ]] || die "$STATE_FILE does not exist" 1
+    local life skill step reading problems=0 bad
+    life=$(wb_read_scalar "$STATE_FILE" "lifecycle")
+    skill=$(wb_read_scalar "$STATE_FILE" "active_skill")
+    step=$(wb_read_scalar "$STATE_FILE" "step")
+    reading=$(wb_read_scalar "$STATE_FILE" "intent.reading")
+
+    if [[ "$life" == "Completed" || "$life" == "Canceled" ]]; then
+        if [[ -n "$skill" && "$skill" != "none" ]]; then
+            echo "PROBLEM: inconsistent: the work is $life but still names the saved skill $skill"
+            problems=$((problems + 1))
+        fi
+    else
+        if [[ -z "$reading" || "$reading" == "--" ]]; then
+            echo "PROBLEM: missing: no intent.reading (the work's type)"
+            problems=$((problems + 1))
+        fi
+        if [[ -z "$skill" || "$skill" == "none" ]]; then
+            echo "PROBLEM: missing: no saved skill (active_skill is none)"
+            problems=$((problems + 1))
+        else
+            if [[ -z "$step" || "$step" == "--" ]]; then
+                echo "PROBLEM: missing: the saved skill $skill has no saved step"
+                problems=$((problems + 1))
+            fi
+            if ! wb_skill_installed "$skill"; then
+                echo "PROBLEM: inconsistent: the saved skill $skill is not installed"
+                problems=$((problems + 1))
+            fi
+        fi
+        bad=$(awk -v Q="'" '
+            { sub(/\r$/, "") }
+            /^handoffs:[ \t]*$/ { inh = 1; next }
+            inh && /^[^ \t#]/ { inh = 0 }
+            inh && /^  - / { idx++ }
+            inh && /^    returns:/ {
+                v = $0; sub(/^    returns:[ \t]*/, "", v); gsub(Q, "", v); gsub(/"/, "", v); ret[idx] = v
+            }
+            inh && /^    returned:/ {
+                v = $0; sub(/^    returned:[ \t]*/, "", v); gsub(Q, "", v); gsub(/"/, "", v); rtd[idx] = v
+            }
+            END {
+                for (i = 1; i <= idx; i++) {
+                    if (ret[i] != "yes" && ret[i] != "no")
+                        print "PROBLEM: malformed: handoffs entry " i " has returns \"" ret[i] "\" (yes or no)"
+                    else if (ret[i] == "no" && rtd[i] != "" && rtd[i] != "--")
+                        print "PROBLEM: malformed: handoffs entry " i " is a pass but has returned set"
+                }
+            }
+        ' "$STATE_FILE")
+        if [[ -n "$bad" ]]; then
+            echo "$bad"
+            problems=$((problems + $(printf '%s\n' "$bad" | wc -l)))
+        fi
+    fi
+
+    if [[ "$problems" -gt 0 ]]; then
+        exit 9
+    fi
+    exit 0
+}
+
 
 # ---------------------------------------------------------------------------
 # Dispatch
@@ -1876,5 +2322,10 @@ case "$MODE" in
     delivery-lifecycle)  mode_delivery_lifecycle ;;
     gate-field)          mode_gate_field ;;
     append-issue)        mode_append_issue ;;
+    create)              mode_create ;;
+    step)                mode_step ;;
+    reroute)             mode_reroute ;;
+    check)               mode_check ;;
+    repair)              mode_repair ;;
     *) die "internal error: unknown mode '$MODE'" 1 ;;
 esac
