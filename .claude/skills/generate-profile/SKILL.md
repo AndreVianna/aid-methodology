@@ -92,11 +92,11 @@ Confirm canonical completeness:
    parts do not add up to the total is how this file was wrong twice:
 
    ```
-   74 skill directories
-     = 16 curated (NOT catalog rows)
-     + 58 catalog rows
+   112 skill directories
+     = 18 curated (NOT catalog rows)
+     + 94 catalog rows
          = 34 verb-first shortcut skills (one generated per non-`repurpose` row)
-         + 24 hand-authored `repurpose` skills (each with its own directory;
+         + 60 hand-authored `repurpose` skills (each with its own directory;
            includes aid-ask, aid-deploy and aid-monitor, which are
            re-registered classics and therefore NOT among the 18)
    ```

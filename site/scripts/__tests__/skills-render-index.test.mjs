@@ -297,6 +297,68 @@ describe('grouping-divergence + cross-reference note (AC-7)', () => {
   });
 });
 
+// ── AC-7 non-vacuity: a synthetic grouping divergence ───────────────────────────
+//
+// The real corpus has no grouping divergence, so the conditional checks in the AC-7 block
+// above run only their empty branch and prove nothing about the note's derivation. This
+// block builds a fixture that DOES have one: a clone of the real section tree with one
+// Support card moved into Execution. The divergence and the note must then name that card,
+// cite the published inventory, and name no other skill.
+
+describe('grouping-divergence note with a synthetic divergence (AC-7 non-vacuity)', () => {
+  const moved = structuredClone(sections);
+  const supportSection = moved.find((s) => s.group === 'Support');
+  const executionSection = moved.find((s) => s.group === 'Execution');
+  const movedCard = supportSection.cards[0];
+  supportSection.cards.splice(0, 1);
+  executionSection.cards.push(movedCard);
+
+  const divergentPage = renderSkillIndex(records, moved);
+  const divergentLines = divergentPage.split('\n');
+  const divergentNote = divergentLines.find((l) => l.startsWith('> **Note:**')) ?? '';
+  const realNote = lines.find((l) => l.startsWith('> **Note:**')) ?? '';
+
+  it('findGroupingDivergence derives exactly the moved card, against its roster group', () => {
+    expect(findGroupingDivergence(moved)).toEqual([
+      { name: movedCard.name, here: 'Execution', there: 'Support' },
+    ]);
+  });
+
+  it('the synthetic note is not the zero-divergence note (the branch under test is taken)', () => {
+    expect(divergentNote).not.toBe('');
+    expect(divergentNote).not.toBe(realNote);
+    expect(divergentNote).toContain('files skills per FR-5');
+  });
+
+  it('names the divergent skill with both groupings', () => {
+    expect(divergentNote).toContain(
+      `\`${movedCard.name}\` is **Execution** here and **Support** in the curated roster`,
+    );
+  });
+
+  it('cites the published inventory as the source of the roster grouping', () => {
+    expect(divergentNote).toContain("[the methodology's skill inventory](/concepts/methodology/)");
+    expect(divergentNote).toContain('publishes');
+    expect(divergentNote).toContain('this page is authoritative');
+  });
+
+  it('names no other skill as divergent', () => {
+    const others = records.map((r) => r.dirName).filter((n) => n !== movedCard.name);
+    for (const n of others) {
+      expect(divergentNote, `note must NOT claim ${n} diverges`).not.toContain(`\`${n}\``);
+    }
+  });
+
+  it('still sits above the first ## heading and matches no grammar regex', () => {
+    const noteIdx = divergentPage.indexOf('> **Note:**');
+    expect(noteIdx).toBeGreaterThan(-1);
+    expect(noteIdx).toBeLessThan(divergentPage.indexOf('\n## '));
+    expect(RE_GROUP.test(divergentNote)).toBe(false);
+    expect(RE_FAMILY.test(divergentNote)).toBe(false);
+    expect(RE_CARD.test(divergentNote)).toBe(false);
+  });
+});
+
 // ── AC-2: Heading levels ────────────────────────────────────────────────────────
 
 describe('heading levels (AC-2)', () => {

@@ -54,9 +54,10 @@ immediately.
 **Loopback:** Process Q&A injected by downstream phases (e.g., `/aid-specify`).
 
 **Not sure where to start?** If you don't know whether this is a full requirements
-gathering effort or a small single-purpose change, say what you need in plain words: the
-skill guide in `rules.md` routes it to the right entry (a specific shortcut, or this
-skill) from a one-line description.
+gathering effort or a small single-purpose change, say what you need in plain words. The
+plain-request routing in `rules.md` § Handling a request matches it to a skill; to start or
+resume a work, `/aid-orchestrate` finds where the work stands, sizes it and picks the phases
+it needs (a specific shortcut, or this skill, is among the outcomes).
 
 ## ⚠️ Pre-flight Checks
 

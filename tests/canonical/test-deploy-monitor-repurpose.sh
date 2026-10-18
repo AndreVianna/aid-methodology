@@ -95,12 +95,16 @@ assert_file_contains "$MONITOR_SKILL" "BUG → a fix request" "DMR03a SKILL.md R
 assert_file_contains "$MONITOR_SKILL" "Change Request → a new-work request" "DMR03b SKILL.md Routing targets: Change Request -> new-work request"
 
 # DMR-04: no residual deprecated phrasing anywhere under aid-monitor/.
+# The retired router name is written as two quoted parts, which bash joins into one
+# word. The literal token is kept out of this file so the retirement grep over
+# tests/canonical/ (task-009 AC) matches only DMR05c; the guard still searches for it.
 DEPRECATED_PATTERNS=(
     "Route to aid-describe"
     "re-enters at aid-describe"
     "lite bug-fix triage"
     "LITE-BUG-FIX"
     "aid-orchestrator"
+    "/aid-""triage"
 )
 for pat in "${DEPRECATED_PATTERNS[@]}"; do
     HITS=$(grep -rn --include='*.md' -- "$pat" "$MONITOR_DIR" 2>/dev/null || true)

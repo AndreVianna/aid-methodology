@@ -14,8 +14,8 @@
       "terminal": null,
       "provenance": {
         "file": "canonical/skills/aid-describe/SKILL.md",
-        "startLine": 276,
-        "endLine": 276,
+        "startLine": 277,
+        "endLine": 277,
         "sourceKind": "skill",
         "excerpt": "| FIRST-RUN | `references/state-first-run.md` | `aid-interviewer` | → CONTINUE |"
       },
@@ -36,8 +36,8 @@
       "terminal": null,
       "provenance": {
         "file": "canonical/skills/aid-describe/SKILL.md",
-        "startLine": 277,
-        "endLine": 277,
+        "startLine": 278,
+        "endLine": 278,
         "sourceKind": "skill",
         "excerpt": "| Q-AND-A | `references/state-q-and-a.md` | `aid-interviewer` | → CONTINUE |"
       },
@@ -58,8 +58,8 @@
       "terminal": null,
       "provenance": {
         "file": "canonical/skills/aid-describe/SKILL.md",
-        "startLine": 278,
-        "endLine": 278,
+        "startLine": 279,
+        "endLine": 279,
         "sourceKind": "skill",
         "excerpt": "| CONTINUE | `references/state-continue.md` | `aid-interviewer` | → DESCRIBE-SEED (greenfield: no brownfield KB on disk and seed not yet complete) / → COMPLETION (brownfield or seed already complete) |"
       },
@@ -80,8 +80,8 @@
       "terminal": null,
       "provenance": {
         "file": "canonical/skills/aid-describe/SKILL.md",
-        "startLine": 279,
-        "endLine": 279,
+        "startLine": 280,
+        "endLine": 280,
         "sourceKind": "skill",
         "excerpt": "| DESCRIBE-SEED | `references/state-describe-seed.md` | `aid-interviewer` | → COMPLETION |"
       },
@@ -105,8 +105,8 @@
       },
       "provenance": {
         "file": "canonical/skills/aid-describe/SKILL.md",
-        "startLine": 280,
-        "endLine": 280,
+        "startLine": 281,
+        "endLine": 281,
         "sourceKind": "skill",
         "excerpt": "| COMPLETION | `references/state-completion.md` | `aid-interviewer` | PAUSE-FOR-USER-DECISION → Run /aid-define {work} |"
       },
@@ -184,8 +184,8 @@
       "advanceType": "UNSPECIFIED",
       "provenance": {
         "file": "canonical/skills/aid-describe/SKILL.md",
-        "startLine": 278,
-        "endLine": 278,
+        "startLine": 279,
+        "endLine": 279,
         "sourceKind": "skill",
         "excerpt": "**Advance:** → DESCRIBE-SEED (greenfield: no brownfield KB on disk and seed not yet complete) / → COMPLETION (brownfield or seed already complete)"
       }
@@ -226,8 +226,8 @@
       "advanceType": "UNSPECIFIED",
       "provenance": {
         "file": "canonical/skills/aid-describe/SKILL.md",
-        "startLine": 290,
-        "endLine": 290,
+        "startLine": 291,
+        "endLine": 291,
         "sourceKind": "skill",
         "excerpt": "## Targeted Interview (Loopback Re-entry)"
       }

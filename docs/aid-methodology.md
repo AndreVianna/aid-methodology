@@ -97,9 +97,9 @@ The shortcut path is not a fallback — it is the default entry for the majority
 
 ### Skill Inventory
 
-*112 skill directories in total — 18 curated pipeline / on-demand / router skills plus the 94-row shortcut catalog's skills (34 engine-generated verb-first shortcuts + 60 hand-authored `repurpose` skills). Agents: 8. Unchanged: 14 KB doc types.*
+*112 skill directories in total — 18 curated pipeline / on-demand skills plus the 94-row shortcut catalog's skills (34 engine-generated verb-first shortcuts + 60 hand-authored `repurpose` skills). Agents: 8. Unchanged: 14 KB doc types.*
 
-**A. The 18 curated skills** — the pipeline phases plus the on-demand and router skills that are *not* in the shortcut catalog; their groups, phase numbers, and mandatory pipeline membership. (`aid-deploy` and `aid-monitor` are catalog `repurpose` rows — see table D; `/aid-ask`, also a `repurpose` row, is covered in table C.)
+**A. The 18 curated skills** — the pipeline phases plus the on-demand skills that are *not* in the shortcut catalog; their groups, phase numbers, and mandatory pipeline membership. (`aid-deploy` and `aid-monitor` are catalog `repurpose` rows — see table D; `/aid-ask`, also a `repurpose` row, is covered in table C.)
 
 | **Skill** | Group | Phase | Mandatory pipeline? |
 |-----------|-------|-------|---------------------|
