@@ -27,7 +27,7 @@ Please take this ticket from here, it is complete as written. Objective: let the
 
 - Brainstorm the feature again, or ask the user about the objective, users, scope, acceptance criteria or constraints the ticket already gives.
 - Ask for approval more than once before building.
-- Raise a Knowledge Base conflict, or ask any other question, about the export file: the Knowledge Base already says an export is output, not state, so the one approval before building covers it.
+- Raise a Knowledge Base conflict about the export file, or ask for approval of the export file separately from the one approval before building.
 - Push anything to a remote.
 
 ## Checks

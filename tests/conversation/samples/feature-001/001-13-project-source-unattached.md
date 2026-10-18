@@ -22,12 +22,12 @@ Persona: a developer on the notes team, halfway through the retry work. Knows th
 
 - The agent reads the payments rules from the project source, and applies them to the retry work where they matter.
 - The agent states, in one line, that the rules come from a project source and are not attached to this work.
-- The agent does not add the payments ticket to the work's own sources, and does not write to the project's list of sources.
+- The agent does not add the payments ticket to the work's own sources, because it is a project source, and does not write to the project's list of sources.
 - If a rule conflicts with an open question, the agent raises the conflict with the user instead of settling it alone.
 
 ## Must not
 
-- Add the payments ticket to the work's sources. It is a project source, so it stays out of the work's `sources:`.
+- Add the payments ticket to the work's `sources:` list.
 - Remove or change the project's list of external sources.
 - Settle a conflict between the rules and the open questions without asking the user.
 

@@ -15,8 +15,8 @@ tags: [architecture, state, layers]
 ## Layers
 
 - **Command line** (`src/notes/commands.py`): reads arguments, calls the store, prints the output.
-- **Store** (`src/notes/store.py`): the only code that touches the disk. Each call reads the whole JSON
-  file, changes it in memory, and writes it back.
+- **Store** (`src/notes/store.py`): the only code that reads or writes `notes.json`. Each call reads the whole JSON
+  file, changes it in memory, and writes it back. A file the user asks for, such as an export, is written by the command that produces it (see State).
 
 ## State
 
