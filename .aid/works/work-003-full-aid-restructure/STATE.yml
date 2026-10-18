@@ -1751,3 +1751,11 @@ qa:
     suggested: 'Keep 3-of-3; defer what still fails to the final run of the whole work as a known issue'
     answer: 'Defer the rest (maintainer): keep the 3-of-3 bar; every sample still failing after the fix round becomes a known issue, re-checked at the full integration run at delivery-014 gate; delivery-001 does not block on it.'
     applied_to: 'delivery-001 Gate Criteria (conversation samples); known-issues.md; delivery-014 integration run'
+  - id: Q150
+    category: Building
+    impact: Medium
+    state: Answered
+    context: 'PLAN.md The resync rule runs the resync in a session of its own and the gate in a new session, so no skill text loaded before the resync is acted on.'
+    suggested: 'A new session for the resync, then another for the gate'
+    answer: 'Same session (maintainer): the resync runs in the build session and is still committed alone; the maintainer then runs /reload-skills so the gate acts on the freshly installed skills, in place of a new session.'
+    applied_to: 'The resync rule 1 and 2, for every delivery'
