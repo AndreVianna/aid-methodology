@@ -68,3 +68,28 @@
 - **Source:** `tests/conversation/run.py` (`ADAPTERS` holds only `claude-code`; the "Other hosts" comment); REQUIREMENTS.md § 11 Feature 001 `##### 6. Testing`, Conversation suite ("The other four tools use an adapter with the same three steps"); Feature 009 `##### 6. Risks`, The stand-ins ("one run against a scratch repository on each host is part of the full integration suite before release")
 - **Description:** `run.py` accepts `--hosts codex,cursor,copilot-cli,antigravity` but skips each with a NOTICE, because only the Claude Code driver exists. The cloud sessions that build this work have none of those four tools installed, so their adapters cannot be built or tested there. No task before the end of the work runs a host other than Claude Code (every smoke run uses the default `--hosts claude-code`), so the gap blocks nothing until the full integration run at delivery-014's gate. Delivery reviews before then accept the gap as this known issue.
 - **See also:** task-365 (builds the four adapters on the maintainer's machine, before task-362); Q144
+
+## KI-007: Feature 001 conversation samples still fail on agent behaviour
+
+- **Type:** Bug
+- **Severity:** High
+- **Affects:** Feature 001 — Plain-Language Requests, Routed to the Right Skill
+- **Source:** `tests/conversation/samples/feature-001/` (every sample except 001-04 and 001-15); per-run results, causes and run folders in `analysis/delivery-001-sample-runs.md` (work folder)
+- **Description:** After the delivery-001 fix round (rules wording, size-first routing through `/aid-orchestrate`, harness and sample fixes), all 16 Feature 001 samples were run 3 times each on the real claude CLI (default model `claude-sonnet-5-5`). 22 of 48 runs pass; only 001-04 and 001-15 pass 3 of 3. Every remaining failure is agent behaviour against a clear expectation that was in context:
+  - 001-01 (AC-1), 2/3: the bug reading omits its Knowledge Base basis.
+  - 001-02 (AC-2), 0/3: no read-only investigation workflow named with its reason; once asks the user to pick.
+  - 001-03 (AC-2), 1/3: more than one question in one turn.
+  - 001-05 (AC-4), 2/3: a speculative addition in a Knowledge Base answer (borderline).
+  - 001-06 (AC-5), 1/3: the Knowledge Base conflict is settled by the agent instead of put to the user.
+  - 001-07 (AC-7, AC-21), 0/3: approval asked twice before building; once the Skill tool is not called.
+  - 001-08 (AC-7), 0/3: a bare idea is sized `lite`, not `full`; topics asked at once.
+  - 001-09 (AC-14), 2/3: phases skipped and no CI step in the failing run.
+  - 001-10 (AC-14), 0/3: the release is done and closed by hand, not by its skill and CI.
+  - 001-11 (AC-29), 1/3: the ticket is added to `sources:` as a bare string, not a `ref`/`kind` entry.
+  - 001-12 (AC-29), 2/3: a weak recommendation at the tool limit (borderline).
+  - 001-13 (AC-29), 1/3: the project source is attached to the work's `sources:`.
+  - 001-14 (AC-1), 2/3: the reading is a paragraph, not one line (borderline).
+  - 001-16 (AC-14), 2/3: the work is closed by the write-back script instead of the closing step.
+  Two runs (001-03 run 3, 001-14 run 2) also carry a judge table without its Evidence column, which the runner treats as no table.
+- **See also:** backlog item W7-14 (hooks): a pre-approval guard that blocks source edits until the user agrees is the mechanical fix for the compliance-bound cases.
+- **Status:** Open. Re-checked at the full integration run at delivery-014's gate. Does not block delivery-001 (Q149).
