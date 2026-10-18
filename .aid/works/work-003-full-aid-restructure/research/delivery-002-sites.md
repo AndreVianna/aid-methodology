@@ -8,6 +8,8 @@ This file is the output of task-020 (RESEARCH) of delivery-002. It re-runs the s
 - **Owner classes** (the four allowed by task-020): a task of delivery-002 (task-021 to task-057), `installed copy (resync)`, `history, left as is`, `baseline, re-recorded at the gate`. Where a hit lies in a file that no task edits and that the spec leaves unchanged, the owner is `history, left as is`; see the Delta, item D9.
 - **Owner of a skill file** is the task whose Scope or group names that skill (the skill owner table below); a skill with no hit and no sweep convention is `no change needed here`.
 - **Row counts.** P1, P2, P3, P4 and P7 print one row per hit line. P5 prints one row per file (its line numbers are listed in the row), because 406 lines would repeat the same owner. P8 prints one row per (edit-list token or skill, suite, owner), with the number of matching lines. G11 prints one row per (site test, target, owner).
+- **Branch movement during the run.** Other commits landed on `work-003` while this task ran (`06d32a1b..HEAD` holds 9 commits, ending at `faaa956c`). So the searches pass the base commit as the tree argument (`git grep ... 06d32a1b -- <paths>`), not the working tree. P1 to P9 were also re-run at the base and match the working-tree output line for line. Of the tracked paths the searches cover, only `tests/canonical/test-conversation-runner.sh` and `tests/conversation/run.py` differ from the base, and no search term matches them except three token lines and nine skill-name lines in the first, which the base-tree run already reports.
+- **This file's commit.** Commit `21263602` ("work-003: Q154 ...", a commit this task did not make, landed while this task was still running) already holds an earlier version of this file, and it is listed as tracked. The version in the working tree is the final one. Nothing was committed by this task.
 - **Test step.** Every change in this task lies under `.aid/works/`. Per the work-folder-only rule, no suite runs for it; `select-suites.sh` is not run; no `run_generator.py` runs. Scratch files are in `/tmp/claude-0/-home-user-aid-methodology/cd2e209b-dbef-5f81-874a-fdeb1e92d87f/scratchpad/t020/`.
 
 ## Contents
@@ -511,11 +513,11 @@ Command (run from the repo root). Each token is a basename of an edit-list file 
 
 ```bash
 TESTDIRS="tests site/scripts/__tests__ site/src/lib/__tests__ dashboard/reader/tests dashboard/server/tests"
-for tok in work-state-template.yml project-state-template.yml question-protocol.md skill-steps.md advance.mjs writeback-state.sh work-initiation-gate.md start-or-resume.md rules.md home.html models.py parsers.py state_schema.py reader.py server.py reader.mjs server.mjs design-lifecycle.md shortcut-engine.md decisions.md artifact-schemas.md domain-glossary.md backlog.md pipeline-contracts.md architecture.md test-landscape.md INDEX.md ticket-resolution.md release.yml installer-tests.yml release.sh; do git grep -n -F -e "$tok" -- $TESTDIRS; done
-for n in <every skill named in the owner table>; do git grep -n -F -e "skills/$n/" -e "'$n'" -e "\"$n\"" -e "\`$n\`" -- $TESTDIRS; done
+for tok in work-state-template.yml project-state-template.yml question-protocol.md skill-steps.md advance.mjs writeback-state.sh work-initiation-gate.md start-or-resume.md rules.md home.html models.py parsers.py state_schema.py reader.py server.py reader.mjs server.mjs design-lifecycle.md shortcut-engine.md decisions.md artifact-schemas.md domain-glossary.md backlog.md pipeline-contracts.md architecture.md test-landscape.md INDEX.md ticket-resolution.md release.yml installer-tests.yml release.sh; do git grep -n -F -e "$tok" 06d32a1ba63e1c8810e16978165e5581034f4c87 -- $TESTDIRS; done
+for n in $(ls canonical/skills); do git grep -n -F -e "skills/$n/" -e "'$n'" -e "\"$n\"" -e "\`$n\`" 06d32a1ba63e1c8810e16978165e5581034f4c87 -- $TESTDIRS; done
 ```
 
-Hits: 708 (suite, owner) rows covering 7051 matching lines in 356 suite files. Rows with owner `history, left as is` are references to edit-list skills that no task edits (their text stays); the rest are owned by the task that changes the asserted file, or, for a suite a task names, by that task.
+Hits: 761 (suite, owner) rows covering 7051 (token or name, line) matches in 356 suite files. Rows with owner `history, left as is` are references to edit-list skills that no task edits (their text stays); the rest are owned by the task that changes the asserted file, or, for a suite a task names, by that task.
 
 | # | Suite | Owner | Edit-list names it matches (matching lines) |
 |---|---|---|---|
@@ -528,12 +530,12 @@ Hits: 708 (suite, owner) rows covering 7051 matching lines in 356 suite files. R
 | 7 | `tests/canonical/test-state-review-surface.sh` | task-021 | `work-state-template.yml` 3 |
 | 8 | `tests/canonical/test-task-state-transitions.sh` | task-021 | `work-state-template.yml` 1 |
 | 9 | `tests/canonical/test-ticket-retirement-structural.sh` | task-021 | `work-state-template.yml` 3 |
-| 10 | `tests/canonical/test-work-state-template.sh` | task-021 | `work-state-template.yml` 12, `state_schema.py` 1, `aid-define` 2, `aid-describe` 7, `aid-specify` 1 |
-| 11 | `tests/canonical/test-writeback-state.sh` | task-025 | `work-state-template.yml` 3, `writeback-state.sh` 3, `release.yml` 1, `aid-execute` 5, `aid-review` 2, `aid-specify` 2, `aid-refactor` 4 |
+| 10 | `tests/canonical/test-work-state-template.sh` | task-021 | `work-state-template.yml` 12 |
+| 11 | `tests/canonical/test-writeback-state.sh` | task-021 | `work-state-template.yml` 3 |
 | 12 | `tests/coverage-accepted-removals.tsv` | task-021 | `work-state-template.yml` 1 |
 | 13 | `tests/coverage-baseline.tsv` | task-021 | `work-state-template.yml` 1 |
 | 14 | `tests/coverage-rehome-allowlist.tsv` | task-021 | `work-state-template.yml` 1 |
-| 15 | `site/scripts/__tests__/flow-advance.test.mjs` | task-024 | `advance.mjs` 4, `aid-create-ticket` 4, `aid-define` 4, `aid-deploy` 1, `aid-design` 1, `aid-discover` 2, `aid-housekeep` 1, `aid-prototype` 1, `aid-report` 1, `aid-research` 1, `aid-specify` 4, `aid-summarize` 1, `aid-test` 7, `aid-update-kb` 2, `aid-create` 4, `aid-fix` 4, `aid-update` 2 |
+| 15 | `site/scripts/__tests__/flow-advance.test.mjs` | task-024 | `advance.mjs` 4 |
 | 16 | `site/scripts/__tests__/flow-extract-dispatch.test.mjs` | task-024 | `advance.mjs` 1 |
 | 17 | `site/scripts/__tests__/flow-extract-inline.test.mjs` | task-024 | `advance.mjs` 4 |
 | 18 | `site/scripts/__tests__/flow-graph.test.mjs` | task-024 | `advance.mjs` 8 |
@@ -560,8 +562,8 @@ Hits: 708 (suite, owner) rows covering 7051 matching lines in 356 suite files. R
 | 39 | `tests/canonical/fixtures/migrate/fixture/work-999-migration-test/deliveries/delivery-002/tasks/task-003/STATE.md` | task-025 | `writeback-state.sh` 2 |
 | 40 | `tests/canonical/test-artifact-discipline.sh` | task-025 | `writeback-state.sh` 2 |
 | 41 | `tests/canonical/test-delivery-gate-aggregate.sh` | task-025 | `writeback-state.sh` 6 |
-| 42 | `tests/canonical/test-disjoint-merge.sh` | task-025 | `writeback-state.sh` 9, `aid-execute` 3, `aid-test` 1 |
-| 43 | `tests/canonical/test-lite-work-end-to-end.sh` | task-025 | `writeback-state.sh` 3, `reader.py` 6, `reader.mjs` 5 |
+| 42 | `tests/canonical/test-disjoint-merge.sh` | task-025 | `writeback-state.sh` 9 |
+| 43 | `tests/canonical/test-lite-work-end-to-end.sh` | task-025 | `writeback-state.sh` 3 |
 | 44 | `tests/canonical/test-pipeline-status-walkthrough.sh` | task-025 | `writeback-state.sh` 17 |
 | 45 | `tests/canonical/test-pipeline-status-walkthrough.sh` | task-039 | `writeback-state.sh` 1, `aid-define` 6, `aid-specify` 20 |
 | 46 | `tests/canonical/test-pipeline-status-walkthrough.sh` | task-040 | `writeback-state.sh` 1, `aid-detail` 5, `aid-execute` 14, `aid-plan` 5 |
@@ -569,664 +571,717 @@ Hits: 708 (suite, owner) rows covering 7051 matching lines in 356 suite files. R
 | 48 | `tests/canonical/test-state-review-surface.sh` | task-025 | `writeback-state.sh` 1 |
 | 49 | `tests/canonical/test-task-state-transitions.sh` | task-025 | `writeback-state.sh` 6 |
 | 50 | `tests/canonical/test-version-sync.sh` | task-025 | `writeback-state.sh` 1 |
-| 51 | `tests/conversation/samples/feature-001/001-10-release-own-work.md` | task-025 | `writeback-state.sh` 1 |
-| 52 | `tests/coverage-baseline.tsv` | task-025 | `writeback-state.sh` 380 |
-| 53 | `site/scripts/__tests__/flow-engine-core.test.mjs` | task-030 | `work-initiation-gate.md` 5 |
-| 54 | `site/scripts/__tests__/flow-graph-doorways.test.mjs` | task-030 | `work-initiation-gate.md` 1 |
-| 55 | `tests/canonical/test-work-initiation-gate.sh` | task-030 | `work-initiation-gate.md` 5, `shortcut-engine.md` 3, `aid-create-document` 3, `aid-describe` 4, `aid-design` 3, `aid-execute` 3, `aid-plan` 3, `aid-prototype` 9, `aid-report` 3, `aid-research` 10, `aid-review` 11, `aid-test` 3, `aid-update-document` 5, `aid-create` 3, `aid-update` 5 |
-| 56 | `tests/cost-baseline.tsv` | task-030 | `work-initiation-gate.md` 1 |
-| 57 | `tests/coverage-baseline.tsv` | task-030 | `work-initiation-gate.md` 1 |
-| 58 | `tests/canonical/test-aid-cli-parity.sh` | task-056 | `rules.md` 7, `models.py` 3, `parsers.py` 3, `reader.py` 3, `server.py` 3, `reader.mjs` 3, `server.mjs` 3, `installer-tests.yml` 1, `release.sh` 1, `aid-ask` 7, `aid-config` 2, `aid-define` 1, `aid-migrate` 2, `aid-update` 3 |
-| 59 | `tests/canonical/test-aid-migrate.sh` | task-032 | `rules.md` 29 |
-| 60 | `tests/canonical/test-aid-status-drift.sh` | task-032 | `rules.md` 1 |
-| 61 | `tests/canonical/test-change-refactor-family-scaffold.sh` | task-032 | `rules.md` 1 |
-| 62 | `tests/canonical/test-connector-skills-structural.sh` | task-032 | `rules.md` 9 |
-| 63 | `tests/canonical/test-create-family-scaffold.sh` | task-032 | `rules.md` 1 |
-| 64 | `tests/canonical/test-deploy-monitor-repurpose.sh` | task-032 | `rules.md` 1, `aid-orchestrate` 2 |
-| 65 | `tests/canonical/test-document-family-scaffold.sh` | task-032 | `rules.md` 2 |
-| 66 | `tests/canonical/test-dogfood-byte-identity.sh` | task-032 | `rules.md` 12 |
-| 67 | `tests/canonical/test-install-core-primitives.sh` | task-032 | `rules.md` 24 |
-| 68 | `tests/canonical/test-install-provisioning.sh` | task-032 | `rules.md` 2 |
-| 69 | `tests/canonical/test-layout-format-guard.sh` | task-032 | `rules.md` 1 |
-| 70 | `tests/canonical/test-prototype-family-scaffold.sh` | task-032 | `rules.md` 1 |
-| 71 | `tests/canonical/test-release-install-e2e.sh` | task-032 | `rules.md` 5 |
-| 72 | `tests/canonical/test-release.sh` | task-056 | `rules.md` 2, `release.sh` 11, `aid-discover` 5, `aid-review` 1 |
-| 73 | `tests/canonical/test-shared-install.sh` | task-032 | `rules.md` 12 |
-| 74 | `tests/canonical/test-shared-layout-sources.sh` | task-032 | `rules.md` 1 |
-| 75 | `tests/canonical/test-shared-remove.sh` | task-052 | `rules.md` 13, `aid-define` 7 |
-| 76 | `tests/canonical/test-skill-guide.sh` | task-032 | `rules.md` 10, `aid-ask` 1, `aid-config` 1, `aid-create-architecture` 1, `aid-create-backlog` 1, `aid-create-cicd` 1, `aid-create-document` 1, `aid-create-mvp` 1, `aid-create-roadmap` 1, `aid-create-stack` 1, `aid-create-testing-strategy` 1, `aid-create-ticket` 1, `aid-define` 1, `aid-describe` 1, `aid-design` 5, `aid-design-api` 1, `aid-design-architecture` 1, `aid-design-backlog` 1, `aid-design-cicd` 1, `aid-design-cli` 1, `aid-design-config` 1, `aid-design-dashboard` 1, `aid-design-data-model` 1, `aid-design-data-pipeline` 1, `aid-design-document` 1, `aid-design-infra` 1, `aid-design-integration` 1, `aid-design-job` 1, `aid-design-messaging` 1, `aid-design-mvp` 1, `aid-design-roadmap` 1, `aid-design-stack` 1, `aid-design-test` 1, `aid-design-testing-strategy` 1, `aid-design-theme` 1, `aid-design-ui` 1, `aid-detail` 1, `aid-discover` 1, `aid-housekeep` 1, `aid-prototype` 1, `aid-summarize` 1, `aid-test` 2, `aid-update-architecture` 1, `aid-update-backlog` 1, `aid-update-cicd` 1, `aid-update-document` 1, `aid-update-kb` 1, `aid-update-mvp` 1, `aid-update-roadmap` 1, `aid-update-stack` 1, `aid-update-testing-strategy` 1, `aid-update-ticket` 1, `aid-create` 6, `aid-create-api` 1, `aid-create-cli` 1, `aid-create-config` 1, `aid-create-dashboard` 1, `aid-create-data-model` 1, `aid-create-data-pipeline` 1, `aid-create-diagram` 1, `aid-create-infra` 1, `aid-create-integration` 1, `aid-create-job` 1, `aid-create-messaging` 1, `aid-create-test` 1, `aid-create-theme` 1, `aid-create-ui` 1, `aid-deprecate` 1, `aid-document` 2, `aid-document-architecture` 1, `aid-document-changelog` 1, `aid-document-decision` 1, `aid-document-guideline` 1, `aid-document-runbook` 1, `aid-document-standard` 1, `aid-document-tutorial` 1, `aid-experiment` 1, `aid-migrate` 1, `aid-prototype-ui` 1, `aid-remove` 1, `aid-test-data-quality` 1, `aid-test-performance` 1, `aid-test-security` 1, `aid-update` 5, `aid-update-api` 1, `aid-update-cli` 1, `aid-update-config` 1, `aid-update-dashboard` 1, `aid-update-data-model` 1, `aid-update-data-pipeline` 1, `aid-update-infra` 1, `aid-update-integration` 1, `aid-update-job` 1, `aid-update-messaging` 1, `aid-update-test` 1, `aid-update-theme` 1, `aid-update-ui` 1 |
-| 77 | `tests/coverage-baseline.tsv` | task-032 | `rules.md` 1 |
-| 78 | `tests/coverage-rehome-allowlist.tsv` | task-032 | `rules.md` 6 |
-| 79 | `tests/windows/Test-AidInstaller.ps1` | task-032 | `rules.md` 19 |
-| 80 | `tests/windows/Test-InstallProvisioning.ps1` | task-032 | `rules.md` 2 |
-| 81 | `dashboard/reader/tests/test_flattened_layout_parity.py` | task-033 | `home.html` 1 |
-| 82 | `dashboard/reader/tests/test_work016_container_discovery.py` | task-033 | `home.html` 9 |
-| 83 | `dashboard/server/tests/test_cli_home_html.py` | task-033 | `home.html` 5 |
-| 84 | `dashboard/server/tests/test_home_html_project_header.py` | task-033 | `home.html` 4 |
-| 85 | `dashboard/server/tests/test_index_html.py` | task-033 | `home.html` 27, `server.py` 2, `aid-deploy` 1, `aid-describe` 6, `aid-discover` 3, `aid-housekeep` 7 |
-| 86 | `dashboard/server/tests/test_server_node.mjs` | task-033 | `home.html` 19 |
-| 87 | `dashboard/server/tests/test_server_py.py` | task-033 | `home.html` 8 |
-| 88 | `dashboard/server/tests/test_task009_rename_ui.py` | task-033 | `home.html` 4 |
-| 89 | `dashboard/server/tests/test_task010_task_notes.py` | task-033 | `home.html` 1 |
-| 90 | `dashboard/server/tests/test_task010_task_notes_ui.py` | task-033 | `home.html` 4 |
-| 91 | `dashboard/server/tests/test_task012_consuming_round_trips.py` | task-033 | `home.html` 1 |
-| 92 | `dashboard/server/tests/test_task022_connectors_external_sources_ui.py` | task-033 | `home.html` 6 |
-| 93 | `dashboard/server/tests/test_task026_delete_pipeline_ui.py` | task-033 | `home.html` 6 |
-| 94 | `dashboard/server/tests/test_task030_finish_stop_resume_ui.py` | task-033 | `home.html` 4 |
-| 95 | `dashboard/server/tests/test_task033_execution_control_round_trips.py` | task-033 | `home.html` 5 |
-| 96 | `dashboard/server/tests/test_tools_management_ui.py` | task-033 | `home.html` 7 |
-| 97 | `tests/canonical/test-aid-migrate-trigger.sh` | task-033 | `home.html` 46 |
-| 98 | `tests/canonical/test-aid-migrate.sh` | task-033 | `home.html` 4 |
-| 99 | `tests/canonical/test-aid-migration-stamp.sh` | task-033 | `home.html` 1 |
-| 100 | `tests/canonical/test-chat-node-manifest.sh` | task-033 | `home.html` 1 |
-| 101 | `tests/canonical/test-dashboard-manifest.sh` | task-033 | `home.html` 1 |
-| 102 | `tests/canonical/test-dashboard-parity-h.sh` | task-033 | `home.html` 4 |
-| 103 | `tests/canonical/test-grade-summary.sh` | task-033 | `home.html` 4 |
-| 104 | `tests/canonical/test-guardrails-d012.sh` | task-033 | `home.html` 6 |
-| 105 | `tests/canonical/test-install-parity.sh` | task-033 | `home.html` 5 |
-| 106 | `tests/canonical/test-release-migrate-smoke.sh` | task-033 | `home.html` 1 |
-| 107 | `tests/coverage-accepted-removals.tsv` | task-033 | `home.html` 4 |
-| 108 | `tests/coverage-baseline.tsv` | task-033 | `home.html` 7 |
-| 109 | `tests/lib/sandbox.sh` | task-033 | `home.html` 1 |
-| 110 | `tests/ui/README.md` | task-033 | `home.html` 1 |
-| 111 | `tests/ui/edit-surfaces.spec.mjs` | task-033 | `home.html` 1 |
-| 112 | `dashboard/reader/tests/test_fixtures.py` | task-031 | `models.py` 1, `parsers.py` 3, `reader.py` 1 |
-| 113 | `dashboard/reader/tests/test_reader.py` | task-031 | `models.py` 1, `parsers.py` 2, `reader.py` 6 |
-| 114 | `dashboard/reader/tests/test_work016_container_discovery.py` | task-031 | `models.py` 6, `state_schema.py` 1, `reader.py` 1, `reader.mjs` 5 |
-| 115 | `tests/canonical/test-aid-dashboard-cli.sh` | task-031 | `models.py` 1, `parsers.py` 1, `reader.py` 1, `server.py` 7, `reader.mjs` 1, `server.mjs` 4 |
-| 116 | `dashboard/reader/tests/test_derivation.py` | task-031 | `parsers.py` 1, `state_schema.py` 1, `reader.py` 2 |
-| 117 | `dashboard/reader/tests/test_task014_fixtures.py` | task-031 | `parsers.py` 1, `server.py` 1, `reader.mjs` 8 |
-| 118 | `dashboard/reader/tests/test_task064_kb_status.py` | task-031 | `parsers.py` 1 |
-| 119 | `dashboard/reader/tests/test_task069_detail_parser.py` | task-031 | `parsers.py` 1, `reader.py` 7 |
-| 120 | `dashboard/reader/tests/test_work003_state_schema.py` | task-031 | `parsers.py` 1, `state_schema.py` 5, `reader.py` 2, `server.py` 2, `reader.mjs` 7 |
-| 121 | `dashboard/server/tests/test_task012_consuming_round_trips.py` | task-031 | `parsers.py` 2, `server.py` 3, `reader.mjs` 7, `server.mjs` 9 |
-| 122 | `dashboard/server/tests/test_task022_connectors_external_sources_ui.py` | task-031 | `parsers.py` 1, `server.py` 1, `reader.mjs` 1 |
-| 123 | `dashboard/server/tests/test_task027_pipeline_delete_round_trips.py` | task-031 | `parsers.py` 1, `server.py` 4, `server.mjs` 5 |
-| 124 | `tests/canonical/test-derive-waves.sh` | task-031 | `parsers.py` 1 |
-| 125 | `dashboard/reader/tests/test_shortcut_kind_map_cross_runtime_parity.py` | task-031 | `state_schema.py` 9, `reader.mjs` 13, `server.mjs` 1 |
-| 126 | `dashboard/reader/tests/test_state_yaml_conformance.py` | task-031 | `state_schema.py` 1, `reader.mjs` 1 |
-| 127 | `dashboard/reader/tests/test_declared_path_three_way_parity.py` | task-031 | `reader.py` 3, `reader.mjs` 3 |
-| 128 | `dashboard/reader/tests/test_derived_lanes_cross_runtime_parity.py` | task-031 | `reader.py` 2, `reader.mjs` 3 |
-| 129 | `dashboard/reader/tests/test_feature009.py` | task-031 | `reader.py` 6, `reader.mjs` 3 |
-| 130 | `dashboard/reader/tests/test_flattened_layout_parity.py` | task-031 | `reader.py` 4, `reader.mjs` 4 |
-| 131 | `dashboard/reader/tests/test_plan_delivery_title_cross_runtime_parity.py` | task-031 | `reader.py` 2, `reader.mjs` 4 |
-| 132 | `dashboard/reader/tests/test_task011_golden_master.py` | task-031 | `reader.py` 1, `server.py` 4, `reader.mjs` 7 |
-| 133 | `dashboard/reader/tests/test_task066_kb_parity.py` | task-031 | `reader.py` 1 |
-| 134 | `dashboard/reader/tests/test_work001_delivery_layouts.py` | task-031 | `reader.py` 7, `server.py` 2, `reader.mjs` 7 |
-| 135 | `dashboard/server/tests/test_reader_task069.mjs` | task-031 | `reader.py` 2, `reader.mjs` 3 |
-| 136 | `dashboard/server/tests/test_task033_execution_control_round_trips.py` | task-031 | `reader.py` 1, `server.py` 8, `reader.mjs` 1, `server.mjs` 6 |
-| 137 | `tests/canonical/test-artifact-discipline.sh` | task-031 | `reader.py` 1, `reader.mjs` 1 |
-| 138 | `tests/canonical/test-dashboard-manifest.sh` | task-031 | `reader.py` 2 |
-| 139 | `tests/canonical/test-dashboard-parity-h.sh` | task-031 | `reader.py` 3, `server.py` 12, `reader.mjs` 3, `server.mjs` 10 |
-| 140 | `dashboard/reader/tests/test_task008_display_rename.py` | task-031 | `server.py` 1, `reader.mjs` 3 |
-| 141 | `dashboard/reader/tests/test_task021_external_sources.py` | task-031 | `server.py` 2, `reader.mjs` 3 |
-| 142 | `dashboard/reader/tests/test_task029_stop_requested.py` | task-031 | `server.py` 1, `reader.mjs` 3 |
-| 143 | `dashboard/server/tests/fixtures/README.md` | task-031 | `server.py` 1 |
-| 144 | `dashboard/server/tests/test_home_html_project_header.py` | task-031 | `server.py` 2, `server.mjs` 2 |
-| 145 | `dashboard/server/tests/test_server_py.py` | task-031 | `server.py` 6 |
-| 146 | `dashboard/server/tests/test_task011_dispatch_round_trip.py` | task-031 | `server.py` 8 |
-| 147 | `dashboard/server/tests/test_task013_project_registry_ops.mjs` | task-031 | `server.py` 1, `server.mjs` 10 |
-| 148 | `dashboard/server/tests/test_task017_registry_tooling_round_trips.mjs` | task-031 | `server.py` 1, `server.mjs` 5 |
-| 149 | `dashboard/server/tests/test_task017_registry_tooling_round_trips.py` | task-031 | `server.py` 2, `server.mjs` 11 |
-| 150 | `dashboard/server/tests/test_task023_list_management_round_trips.mjs` | task-031 | `server.py` 1, `server.mjs` 4 |
-| 151 | `dashboard/server/tests/test_task023_list_management_round_trips.py` | task-031 | `server.py` 4, `reader.mjs` 2, `server.mjs` 5 |
-| 152 | `dashboard/server/tests/test_task030_finish_stop_resume_ui.py` | task-031 | `server.py` 2, `server.mjs` 2 |
-| 153 | `dashboard/server/tests/test_tools_management_ui.py` | task-031 | `server.py` 1, `server.mjs` 1 |
-| 154 | `tests/canonical/test-aid-remote.sh` | task-031 | `server.py` 2, `reader.mjs` 1, `server.mjs` 2 |
-| 155 | `tests/canonical/test-ascii-only.sh` | task-056 | `server.py` 1, `reader.mjs` 1, `server.mjs` 1, `installer-tests.yml` 1 |
-| 156 | `tests/canonical/test-dashboard-parity.sh` | task-031 | `server.py` 2, `server.mjs` 2 |
-| 157 | `tests/coverage-baseline.tsv` | task-031 | `server.py` 6, `server.mjs` 4 |
-| 158 | `tests/ui/README.md` | task-031 | `server.py` 1, `server.mjs` 1 |
-| 159 | `tests/ui/serve.mjs` | task-031 | `server.py` 1, `server.mjs` 1 |
-| 160 | `dashboard/reader/tests/test_resolve_work_dir_cross_runtime_parity.py` | task-031 | `reader.mjs` 3 |
-| 161 | `dashboard/reader/tests/test_security_hardening.py` | task-031 | `reader.mjs` 4 |
-| 162 | `dashboard/reader/tests/test_state_yaml_conformance_node.py` | task-031 | `reader.mjs` 6 |
-| 163 | `dashboard/reader/tests/test_task019_connectors.py` | task-031 | `reader.mjs` 3 |
-| 164 | `dashboard/reader/tests/test_task023_list_management_parity.py` | task-031 | `reader.mjs` 5 |
-| 165 | `dashboard/reader/tests/test_task044_freshness_parity.py` | task-031 | `reader.mjs` 2 |
-| 166 | `dashboard/server/tests/test_server_node.mjs` | task-031 | `reader.mjs` 12, `server.mjs` 11 |
-| 167 | `dashboard/server/tests/test_task002_resolve_work_dir.mjs` | task-031 | `reader.mjs` 2 |
-| 168 | `dashboard/server/tests/test_task010_task_notes_cross_runtime_parity.py` | task-031 | `reader.mjs` 2, `server.mjs` 7 |
-| 169 | `dashboard/server/tests/test_task019_connector_ops.mjs` | task-031 | `reader.mjs` 3, `server.mjs` 6 |
-| 170 | `dashboard/server/tests/test_task021_external_source_ops.mjs` | task-031 | `reader.mjs` 4, `server.mjs` 6 |
-| 171 | `dashboard/server/tests/test_task025_pipeline_delete_ops.mjs` | task-031 | `reader.mjs` 3, `server.mjs` 6 |
-| 172 | `dashboard/server/tests/test_task029_task_stop_resume_ops.mjs` | task-031 | `reader.mjs` 3, `server.mjs` 6 |
-| 173 | `dashboard/server/tests/test_write_enabled_cross_runtime_parity.py` | task-031 | `reader.mjs` 5, `server.mjs` 13 |
-| 174 | `tests/canonical/test-producer-completeness.sh` | task-025 | `reader.mjs` 6, `aid-execute` 1 |
-| 175 | `tests/canonical/test-task-state-transitions.sh` | task-031 | `reader.mjs` 2 |
-| 176 | `dashboard/server/tests/test_ki009_windows_dispatch.py` | task-031 | `server.mjs` 5 |
-| 177 | `dashboard/server/tests/test_task010_task_notes.py` | task-031 | `server.mjs` 1 |
-| 178 | `dashboard/server/tests/test_task011_dispatch_round_trip.mjs` | task-031 | `server.mjs` 13 |
-| 179 | `dashboard/server/tests/test_task015_tools_update_ops.mjs` | task-031 | `server.mjs` 14 |
-| 180 | `tests/canonical/test-kb-citation-lint.sh` | task-031 | `server.mjs` 3 |
-| 181 | `tests/cost-baseline.tsv` | task-034 | `design-lifecycle.md` 1, `aid-brainstorm` 5, `aid-design` 110 |
-| 182 | `site/scripts/__tests__/flow-classify.test.mjs` | task-037 | `shortcut-engine.md` 4 |
-| 183 | `site/scripts/__tests__/flow-compose.test.mjs` | task-037 | `shortcut-engine.md` 5 |
-| 184 | `site/scripts/__tests__/flow-engine-core.test.mjs` | task-037 | `shortcut-engine.md` 6 |
-| 185 | `site/scripts/__tests__/flow-extract-engine.test.mjs` | task-037 | `shortcut-engine.md` 2 |
-| 186 | `site/scripts/__tests__/flow-graph-doorways.test.mjs` | task-037 | `shortcut-engine.md` 6 |
-| 187 | `site/scripts/__tests__/flow-graph.test.mjs` | task-037 | `shortcut-engine.md` 4 |
-| 188 | `site/scripts/__tests__/gen-reference.test.mjs` | task-037 | `shortcut-engine.md` 1 |
-| 189 | `site/scripts/__tests__/provenance-appender.test.mjs` | task-037 | `shortcut-engine.md` 5 |
-| 190 | `site/src/lib/__tests__/feature-006-head-gate.test.ts` | task-037 | `shortcut-engine.md` 1 |
-| 191 | `tests/canonical/test-artifact-discipline.sh` | task-037 | `shortcut-engine.md` 2 |
-| 192 | `tests/canonical/test-catalog-dirs-parity.sh` | task-037 | `shortcut-engine.md` 2 |
-| 193 | `tests/canonical/test-change-refactor-family-scaffold.sh` | task-037 | `shortcut-engine.md` 1 |
-| 194 | `tests/canonical/test-create-family-scaffold.sh` | task-037 | `shortcut-engine.md` 6 |
-| 195 | `tests/canonical/test-deploy-monitor-repurpose.sh` | task-037 | `shortcut-engine.md` 2 |
-| 196 | `tests/canonical/test-document-family-scaffold.sh` | task-037 | `shortcut-engine.md` 2 |
-| 197 | `tests/canonical/test-downstream-worktree-entry.sh` | task-037 | `shortcut-engine.md` 2 |
-| 198 | `tests/canonical/test-fix-family-scaffold.sh` | task-037 | `shortcut-engine.md` 1 |
-| 199 | `tests/canonical/test-prototype-family-scaffold.sh` | task-037 | `shortcut-engine.md` 2 |
-| 200 | `tests/canonical/test-shortcut-engine-contract.sh` | task-037 | `shortcut-engine.md` 8 |
-| 201 | `tests/canonical/test-state-review-surface.sh` | task-037 | `shortcut-engine.md` 7 |
-| 202 | `tests/canonical/test-test-experiment-family-scaffold.sh` | task-037 | `shortcut-engine.md` 2 |
-| 203 | `tests/canonical/test-ticket-retirement-structural.sh` | task-037 | `shortcut-engine.md` 5 |
-| 204 | `tests/cost-baseline.tsv` | task-037 | `shortcut-engine.md` 1 |
-| 205 | `tests/coverage-baseline.tsv` | task-037 | `shortcut-engine.md` 4 |
-| 206 | `tests/canonical/fixtures/dual-intent/content/doc-set.tsv` | task-045 | `decisions.md` 1, `domain-glossary.md` 1 |
-| 207 | `tests/canonical/fixtures/dual-intent/data-ml/doc-set.tsv` | task-045 | `decisions.md` 1, `domain-glossary.md` 1 |
-| 208 | `tests/canonical/fixtures/dual-intent/design/doc-set.tsv` | task-045 | `decisions.md` 1, `domain-glossary.md` 1 |
-| 209 | `tests/canonical/test-chat-node-wake.sh` | task-045 | `decisions.md` 1 |
-| 210 | `tests/canonical/test-domain-doc-matrix.sh` | task-045 | `decisions.md` 15 |
-| 211 | `tests/canonical/test-grade-summary.sh` | task-045 | `decisions.md` 6, `domain-glossary.md` 8 |
-| 212 | `tests/canonical/test-kb-review-surface.sh` | task-045 | `decisions.md` 3 |
-| 213 | `tests/canonical/fixtures/actback-task/docset-check.tsv` | task-045 | `domain-glossary.md` 1 |
-| 214 | `tests/canonical/fixtures/actback-task/kb/domain-glossary.md` | task-045 | `domain-glossary.md` 1 |
-| 215 | `tests/canonical/fixtures/kb-essence/actback/actback-fail-kb/knowledge/domain-glossary.md` | task-045 | `domain-glossary.md` 1 |
-| 216 | `tests/canonical/fixtures/kb-essence/actback/representative-task-fixture/doc-set.tsv` | task-045 | `domain-glossary.md` 1 |
-| 217 | `tests/canonical/fixtures/kb-essence/actback/representative-task-fixture/expected/task-spec.txt` | task-045 | `domain-glossary.md` 1 |
-| 218 | `tests/canonical/fixtures/kb-essence/closed-kb/knowledge/architecture.md` | task-045 | `domain-glossary.md` 1 |
-| 219 | `tests/canonical/test-actback-fixtures.sh` | task-045 | `domain-glossary.md` 14 |
-| 220 | `tests/canonical/test-actback-task.sh` | task-045 | `domain-glossary.md` 15 |
-| 221 | `tests/canonical/test-closure-batching.sh` | task-045 | `domain-glossary.md` 2 |
-| 222 | `tests/canonical/test-closure-check.sh` | task-045 | `domain-glossary.md` 5 |
-| 223 | `tests/canonical/test-doc-set-mapping.sh` | task-045 | `domain-glossary.md` 5 |
-| 224 | `tests/canonical/test-doc-set-propose-confirm.sh` | task-045 | `domain-glossary.md` 2 |
-| 225 | `tests/canonical/test-essence-capture.sh` | task-045 | `domain-glossary.md` 2 |
-| 226 | `tests/canonical/test-output-root-isolation.sh` | task-045 | `domain-glossary.md` 4 |
-| 227 | `tests/canonical/test-teachback-fixtures.sh` | task-045 | `domain-glossary.md` 5 |
-| 228 | `tests/cost-baseline.tsv` | task-045 | `domain-glossary.md` 1 |
-| 229 | `tests/coverage-baseline.tsv` | task-045 | `domain-glossary.md` 2 |
-| 230 | `tests/canonical/fixtures/actback-task/docset-contract.tsv` | task-049 | `pipeline-contracts.md` 1 |
-| 231 | `tests/canonical/test-actback-task.sh` | task-049 | `pipeline-contracts.md` 1, `architecture.md` 3 |
-| 232 | `tests/canonical/test-deploy-monitor-repurpose.sh` | task-049 | `pipeline-contracts.md` 8 |
-| 233 | `tests/canonical/test-doc-set-mapping.sh` | task-049 | `pipeline-contracts.md` 9, `architecture.md` 10 |
-| 234 | `tests/canonical/test-doc-set-propose-confirm.sh` | task-049 | `pipeline-contracts.md` 2, `architecture.md` 4 |
-| 235 | `tests/canonical/test-doc-set-read.sh` | task-049 | `pipeline-contracts.md` 5, `architecture.md` 13 |
-| 236 | `tests/cost-baseline.tsv` | task-049 | `pipeline-contracts.md` 1, `architecture.md` 1 |
-| 237 | `tests/coverage-baseline.tsv` | task-049 | `pipeline-contracts.md` 4, `architecture.md` 12 |
-| 238 | `dashboard/reader/tests/test_reader.py` | task-049 | `architecture.md` 1 |
-| 239 | `tests/canonical/fixtures/actback-task/docset-component.tsv` | task-049 | `architecture.md` 1 |
-| 240 | `tests/canonical/fixtures/kb-essence/paths/brownfield-large/generated/project-index.md` | task-049 | `architecture.md` 1 |
-| 241 | `tests/canonical/fixtures/kb-essence/unclosed-kb/knowledge/domain-glossary.md` | task-049 | `architecture.md` 2 |
-| 242 | `tests/canonical/fixtures/teachback-questions/candidate-concepts-mixed.md` | task-049 | `architecture.md` 1 |
-| 243 | `tests/canonical/test-build-kb-index.sh` | task-049 | `architecture.md` 3 |
-| 244 | `tests/canonical/test-closure-check.sh` | task-049 | `architecture.md` 16 |
-| 245 | `tests/canonical/test-conformance-lane-semantics.sh` | task-049 | `architecture.md` 4 |
-| 246 | `tests/canonical/test-essence-capture.sh` | task-049 | `architecture.md` 1 |
-| 247 | `tests/canonical/test-expectations-single-source.sh` | task-049 | `architecture.md` 9 |
-| 248 | `tests/canonical/test-frontmatter-lint.sh` | task-049 | `architecture.md` 1 |
-| 249 | `tests/canonical/test-grade-summary.sh` | task-049 | `architecture.md` 6 |
-| 250 | `tests/canonical/test-harvest-coined-terms.sh` | task-049 | `architecture.md` 1 |
-| 251 | `tests/canonical/test-housekeep-classify.sh` | task-049 | `architecture.md` 2 |
-| 252 | `tests/canonical/test-kb-html-claims-check.sh` | task-049 | `architecture.md` 4 |
-| 253 | `tests/canonical/test-kb-index-extract-list.sh` | task-049 | `architecture.md` 4 |
-| 254 | `tests/canonical/test-kb-review-surface.sh` | task-049 | `architecture.md` 3 |
-| 255 | `tests/canonical/test-spine-depth-coverage.sh` | task-049 | `architecture.md` 3 |
-| 256 | `tests/canonical/test-summarize-preflight.sh` | task-049 | `architecture.md` 1 |
-| 257 | `tests/canonical/test-validator-behavior.sh` | task-049 | `architecture.md` 5 |
-| 258 | `tests/conversation/fixtures/default/.aid/knowledge/INDEX.md` | task-049 | `architecture.md` 1 |
-| 259 | `tests/conversation/fixtures/done-work/.aid/knowledge/INDEX.md` | task-049 | `architecture.md` 1 |
-| 260 | `tests/conversation/fixtures/empty-notes-file/.aid/knowledge/INDEX.md` | task-049 | `architecture.md` 1 |
-| 261 | `tests/conversation/fixtures/ticket-mid-work/.aid/knowledge/INDEX.md` | task-049 | `architecture.md` 1 |
-| 262 | `tests/conversation/samples/feature-001/001-05-project-question.md` | task-049 | `architecture.md` 1 |
-| 263 | `tests/conversation/samples/feature-001/001-06-kb-conflict.md` | task-049 | `architecture.md` 1 |
-| 264 | `tests/canonical/test-discovery-doc-ownership.sh` | task-057 | `test-landscape.md` 4 |
-| 265 | `tests/canonical/test-doc-set-mapping.sh` | task-057 | `test-landscape.md` 13 |
-| 266 | `tests/canonical/test-doc-set-propose-confirm.sh` | task-057 | `test-landscape.md` 9 |
-| 267 | `tests/canonical/test-validator-behavior.sh` | task-057 | `test-landscape.md` 1, `INDEX.md` 5 |
-| 268 | `tests/cost-baseline.tsv` | task-057 | `test-landscape.md` 1 |
-| 269 | `tests/coverage-baseline.tsv` | task-057 | `test-landscape.md` 5, `INDEX.md` 7 |
-| 270 | `dashboard/reader/tests/test_task019_connectors.py` | task-057 | `INDEX.md` 3 |
-| 271 | `dashboard/server/tests/test_task019_connector_ops.mjs` | task-057 | `INDEX.md` 2 |
-| 272 | `dashboard/server/tests/test_task019_connector_ops.py` | task-057 | `INDEX.md` 2 |
-| 273 | `dashboard/server/tests/test_task023_list_management_round_trips.py` | task-057 | `INDEX.md` 7 |
-| 274 | `tests/canonical/test-build-connectors-index.sh` | task-057 | `INDEX.md` 15 |
-| 275 | `tests/canonical/test-connector-registry.sh` | task-057 | `INDEX.md` 4 |
-| 276 | `tests/canonical/test-connector-set-unset-lifecycle.sh` | task-057 | `INDEX.md` 6 |
-| 277 | `tests/canonical/test-connector-twins-ps1-parity.sh` | task-057 | `INDEX.md` 9 |
-| 278 | `tests/canonical/test-connectors-registry-integration.sh` | task-057 | `INDEX.md` 10 |
-| 279 | `tests/canonical/test-conversation-runner.sh` | task-057 | `INDEX.md` 2 |
-| 280 | `tests/canonical/test-frontmatter-lint.sh` | task-057 | `INDEX.md` 1 |
-| 281 | `tests/canonical/test-grade-summary.sh` | task-057 | `INDEX.md` 2 |
-| 282 | `tests/canonical/test-guardrails-d012.sh` | task-057 | `INDEX.md` 1 |
-| 283 | `tests/canonical/test-kb-forward-authored-marker.sh` | task-057 | `INDEX.md` 2 |
-| 284 | `tests/canonical/test-kb-freshness-check.sh` | task-057 | `INDEX.md` 6 |
-| 285 | `tests/canonical/test-kb-review-surface.sh` | task-057 | `INDEX.md` 5 |
-| 286 | `tests/canonical/test-payload-size.sh` | task-057 | `INDEX.md` 1 |
-| 287 | `tests/canonical/test-reconcile-scenarios.sh` | task-057 | `INDEX.md` 30 |
-| 288 | `tests/canonical/test-write-connector.sh` | task-057 | `INDEX.md` 7 |
-| 289 | `tests/cost-meter.py` | task-057 | `INDEX.md` 1 |
-| 290 | `tests/canonical/test-connector-skills-structural.sh` | task-043 | `ticket-resolution.md` 2, `aid-config` 2, `aid-set-connector` 14, `aid-unset-connector` 13 |
-| 291 | `tests/canonical/test-ticket-skills-structural.sh` | task-043 | `ticket-resolution.md` 10, `aid-create-ticket` 35, `aid-read-ticket` 18, `aid-update-ticket` 32 |
-| 292 | `tests/cost-baseline.tsv` | task-043 | `ticket-resolution.md` 1, `aid-chat` 5, `aid-config` 5, `aid-create-ticket` 5, `aid-deploy` 5, `aid-monitor` 5, `aid-read-ticket` 5, `aid-set-connector` 5, `aid-unset-connector` 5, `aid-update-ticket` 5 |
-| 293 | `tests/coverage-baseline.tsv` | task-043 | `ticket-resolution.md` 3, `aid-create-ticket` 33, `aid-deploy` 9, `aid-monitor` 6, `aid-read-ticket` 16, `aid-update-ticket` 25 |
-| 294 | `tests/canonical/test-version-sync.sh` | task-056 | `release.yml` 15 |
-| 295 | `tests/canonical/test-ps51-compat.sh` | task-056 | `installer-tests.yml` 1 |
-| 296 | `tests/windows/Test-AidInstaller.ps1` | task-056 | `installer-tests.yml` 1, `release.sh` 3 |
-| 297 | `tests/canonical/test-aid-cli-ps1.sh` | task-056 | `release.sh` 1 |
-| 298 | `tests/canonical/test-aid-cli.sh` | task-056 | `release.sh` 1 |
-| 299 | `tests/canonical/test-aid-migrate-trigger.sh` | task-056 | `release.sh` 7 |
-| 300 | `tests/canonical/test-aid-migrate.sh` | task-056 | `release.sh` 1 |
-| 301 | `tests/canonical/test-chat-node-manifest.sh` | task-056 | `release.sh` 4 |
-| 302 | `tests/canonical/test-conversation-runner.sh` | task-056 | `release.sh` 1 |
-| 303 | `tests/canonical/test-dashboard-manifest.sh` | task-056 | `release.sh` 2 |
-| 304 | `tests/canonical/test-npm-installer.sh` | task-056 | `release.sh` 1 |
-| 305 | `tests/canonical/test-pypi-installer.sh` | task-056 | `release.sh` 1 |
-| 306 | `tests/canonical/test-registry.sh` | task-056 | `release.sh` 1 |
-| 307 | `tests/canonical/test-release-install-e2e.sh` | task-056 | `release.sh` 20 |
-| 308 | `tests/canonical/test-release-migrate-smoke.sh` | task-056 | `release.sh` 1 |
-| 309 | `tests/canonical/test-shared-install.sh` | task-056 | `release.sh` 1 |
-| 310 | `tests/canonical/test-shortcut-builder-invariants.sh` | task-056 | `release.sh` 1 |
-| 311 | `tests/canonical/test-shortcut-engine-contract.sh` | task-056 | `release.sh` 1 |
-| 312 | `tests/coverage-accepted-removals.tsv` | task-056 | `release.sh` 2 |
-| 313 | `tests/coverage-baseline.tsv` | task-056 | `release.sh` 17 |
-| 314 | `tests/lib/bundle.sh` | task-056 | `release.sh` 2 |
-| 315 | `site/scripts/__tests__/provenance.test.mjs` | task-042 | `aid-ask` 2 |
-| 316 | `site/src/lib/__tests__/feature-006-head-gate.test.ts` | task-042 | `aid-ask` 15 |
-| 317 | `site/src/lib/__tests__/skill-node-panel.test.ts` | task-042 | `aid-ask` 20 |
-| 318 | `tests/canonical/test-aid-migrate.sh` | task-042 | `aid-ask` 1 |
-| 319 | `tests/canonical/test-dogfood-byte-identity.sh` | task-042 | `aid-ask` 2 |
-| 320 | `tests/canonical/test-multitool-isolation.sh` | task-042 | `aid-ask` 4 |
-| 321 | `tests/canonical/test-ticket-retirement-structural.sh` | task-042 | `aid-ask` 5 |
-| 322 | `tests/windows/Test-AidInstaller.ps1` | task-042 | `aid-ask` 3 |
-| 323 | `site/scripts/__tests__/flow-extract-residual.test.mjs` | task-042 | `aid-ask` 5 |
-| 324 | `site/scripts/__tests__/gen-reference.test.mjs` | task-042 | `aid-ask` 1, `aid-housekeep` 1, `aid-summarize` 1, `aid-update-kb` 1 |
-| 325 | `site/scripts/__tests__/provenance-appender.test.mjs` | task-042 | `aid-ask` 3 |
-| 326 | `site/scripts/__tests__/skill-counts.test.mjs` | task-042 | `aid-ask` 2 |
-| 327 | `tests/canonical/fixtures/install-core-primitives/manifest-v3.golden.json` | task-042 | `aid-ask` 1 |
-| 328 | `tests/canonical/fixtures/install-core-primitives/manifest-v3.model.tsv` | task-042 | `aid-ask` 1 |
-| 329 | `tests/canonical/test-catalog-dirs-parity.sh` | task-042 | `aid-ask` 1 |
-| 330 | `tests/canonical/test-connector-consumption-linkage.sh` | task-042 | `aid-ask` 1 |
-| 331 | `tests/canonical/test-deploy-monitor-repurpose.sh` | task-042 | `aid-ask` 1 |
-| 332 | `tests/cost-baseline.tsv` | task-042 | `aid-ask` 5, `aid-housekeep` 5, `aid-summarize` 5, `aid-update-kb` 5 |
-| 333 | `tests/coverage-baseline.tsv` | task-042 | `aid-ask` 2, `aid-housekeep` 1, `aid-update-kb` 1 |
-| 334 | `tests/conversation/samples/feature-001/001-07-rich-ticket.md` | task-034 | `aid-brainstorm` 1 |
-| 335 | `tests/conversation/samples/feature-001/001-08-bare-idea.md` | task-034 | `aid-brainstorm` 1 |
-| 336 | `tests/conversation/samples/feature-001/001-09-bug-fix-phases.md` | task-034 | `aid-brainstorm` 1 |
-| 337 | `tests/conversation/samples/feature-001/001-14-refactor-is-new-capability.md` | task-034 | `aid-brainstorm` 1 |
-| 338 | `tests/canonical/test-chat-node-hub.sh` | task-043 | `aid-chat` 1 |
-| 339 | `tests/canonical/test-chat-node-wake.sh` | task-043 | `aid-chat` 3 |
-| 340 | `site/scripts/__tests__/gen-reference.test.mjs` | task-043 | `aid-chat` 1, `aid-config` 1, `aid-create-ticket` 1, `aid-deploy` 1, `aid-monitor` 1, `aid-read-ticket` 1, `aid-set-connector` 1, `aid-unset-connector` 1, `aid-update-ticket` 1 |
-| 341 | `site/scripts/__tests__/flow-extract-residual.test.mjs` | task-043 | `aid-config` 8, `aid-create-ticket` 4, `aid-read-ticket` 2, `aid-set-connector` 2, `aid-unset-connector` 2, `aid-update-ticket` 2 |
-| 342 | `dashboard/reader/tests/test_reader.py` | task-043 | `aid-config` 3 |
-| 343 | `dashboard/server/tests/test_server_node.mjs` | task-043 | `aid-config` 1 |
-| 344 | `dashboard/server/tests/test_task012_consuming_round_trips.py` | task-043 | `aid-config` 2 |
-| 345 | `site/scripts/__tests__/flow-facade.test.mjs` | task-043 | `aid-config` 16 |
-| 346 | `site/scripts/__tests__/skills-groups.test.mjs` | task-043 | `aid-config` 7, `aid-deploy` 13, `aid-monitor` 10 |
-| 347 | `tests/cost-baseline.tsv` | task-036 | `aid-create-architecture` 5, `aid-create-backlog` 5, `aid-create-cicd` 5, `aid-create-mvp` 5, `aid-create-roadmap` 5, `aid-create-stack` 5, `aid-create-testing-strategy` 5, `aid-update-architecture` 5, `aid-update-backlog` 5, `aid-update-cicd` 5, `aid-update-mvp` 5, `aid-update-roadmap` 5, `aid-update-stack` 5, `aid-update-testing-strategy` 5 |
-| 348 | `site/scripts/__tests__/flow-compose.test.mjs` | task-044 | `aid-create-document` 4, `aid-test` 8 |
-| 349 | `site/scripts/__tests__/flow-extract-inline.test.mjs` | task-044 | `aid-create-document` 2, `aid-prototype` 1, `aid-report` 2, `aid-research` 1, `aid-review` 5, `aid-test` 5, `aid-update-document` 5 |
-| 350 | `site/scripts/__tests__/flow-extract-sibling.test.mjs` | task-044 | `aid-create-document` 6, `aid-test` 53 |
-| 351 | `tests/canonical/test-create-family-scaffold.sh` | task-044 | `aid-create-document` 3, `aid-report` 3, `aid-review` 1, `aid-test` 3 |
-| 352 | `tests/canonical/test-document-family-scaffold.sh` | task-044 | `aid-create-document` 2, `aid-report` 2, `aid-review` 1, `aid-update-document` 1 |
-| 353 | `tests/cost-baseline.tsv` | task-044 | `aid-create-document` 5, `aid-prototype` 10, `aid-report` 5, `aid-research` 6, `aid-review` 6, `aid-test` 20, `aid-update-document` 5 |
-| 354 | `tests/coverage-baseline.tsv` | task-044 | `aid-create-document` 3, `aid-prototype` 5, `aid-report` 4, `aid-research` 24, `aid-review` 15, `aid-test` 3, `aid-update-document` 3 |
-| 355 | `tests/canonical/test-ticket-retirement-structural.sh` | task-043 | `aid-create-ticket` 9, `aid-deploy` 10, `aid-monitor` 11, `aid-read-ticket` 9, `aid-set-connector` 1, `aid-update-ticket` 14 |
-| 356 | `tests/canonical/test-downstream-worktree-entry.sh` | task-039 | `aid-define` 16, `aid-specify` 12 |
-| 357 | `tests/canonical/test-shared-prune.sh` | task-039 | `aid-define` 3 |
-| 358 | `tests/canonical/test-state-review-surface.sh` | task-039 | `aid-define` 1, `aid-specify` 1 |
-| 359 | `dashboard/reader/tests/test_work003_state_schema.py` | task-039 | `aid-define` 1 |
-| 360 | `site/scripts/__tests__/flow-extract-dispatch.test.mjs` | task-039 | `aid-define` 8, `aid-specify` 5 |
-| 361 | `site/scripts/__tests__/flow-graph.test.mjs` | task-039 | `aid-define` 5 |
-| 362 | `site/scripts/__tests__/gen-reference.test.mjs` | task-039 | `aid-define` 1, `aid-specify` 1 |
-| 363 | `site/scripts/__tests__/gen-skills-index.test.mjs` | task-039 | `aid-define` 1, `aid-specify` 1 |
-| 364 | `site/scripts/__tests__/skills-groups.test.mjs` | task-039 | `aid-define` 1, `aid-specify` 1 |
-| 365 | `tests/canonical/test-artifact-discipline.sh` | task-039 | `aid-define` 2, `aid-specify` 2 |
-| 366 | `tests/canonical/test-scoped-review-cycles.sh` | task-039 | `aid-define` 1, `aid-specify` 5 |
-| 367 | `tests/cost-baseline.tsv` | task-039 | `aid-define` 5, `aid-specify` 5 |
-| 368 | `tests/coverage-baseline.tsv` | task-039 | `aid-define` 14, `aid-specify` 16 |
-| 369 | `tests/coverage-rehome-allowlist.tsv` | task-039 | `aid-define` 1, `aid-specify` 1 |
-| 370 | `tests/canonical/test-downstream-worktree-entry.sh` | task-043 | `aid-deploy` 10 |
-| 371 | `tests/canonical/test-pipeline-status-walkthrough.sh` | task-043 | `aid-deploy` 1 |
-| 372 | `site/scripts/__tests__/flow-extract-dispatch.test.mjs` | task-043 | `aid-deploy` 1, `aid-monitor` 1 |
-| 373 | `site/scripts/__tests__/gen-skills-index.test.mjs` | task-043 | `aid-deploy` 8, `aid-monitor` 8 |
-| 374 | `site/scripts/__tests__/skills-catalog.test.mjs` | task-043 | `aid-deploy` 4, `aid-monitor` 2 |
-| 375 | `site/scripts/__tests__/skills-render-index.test.mjs` | task-043 | `aid-deploy` 2, `aid-monitor` 2 |
-| 376 | `tests/canonical/test-catalog-dirs-parity.sh` | task-043 | `aid-deploy` 1, `aid-monitor` 1 |
-| 377 | `tests/canonical/test-deploy-monitor-repurpose.sh` | task-043 | `aid-deploy` 14, `aid-monitor` 21 |
-| 378 | `tests/coverage-rehome-allowlist.tsv` | task-043 | `aid-deploy` 1, `aid-read-ticket` 1, `aid-update-ticket` 1 |
-| 379 | `site/scripts/__tests__/flow-extract-dispatch.test.mjs` | task-038 | `aid-describe` 25 |
-| 380 | `tests/canonical/test-cutover-no-dangling.sh` | task-038 | `aid-describe` 3 |
-| 381 | `tests/canonical/test-pipeline-status-walkthrough.sh` | task-038 | `aid-describe` 3 |
-| 382 | `tests/canonical/test-ticket-retirement-structural.sh` | task-038 | `aid-describe` 16 |
-| 383 | `dashboard/reader/tests/test_feature009.py` | task-038 | `aid-describe` 1 |
-| 384 | `dashboard/reader/tests/test_shortcut_kind_map_cross_runtime_parity.py` | task-038 | `aid-describe` 5 |
-| 385 | `dashboard/reader/tests/test_work003_state_schema.py` | task-038 | `aid-describe` 6 |
-| 386 | `dashboard/server/tests/fixtures/pt1-aid/.aid/works/work-006-lite-sample/SPEC.md` | task-038 | `aid-describe` 1 |
-| 387 | `site/scripts/__tests__/flow-facade.test.mjs` | task-038 | `aid-describe` 8 |
-| 388 | `site/scripts/__tests__/flow-graph.test.mjs` | task-038 | `aid-describe` 3 |
-| 389 | `site/scripts/__tests__/gen-reference.test.mjs` | task-038 | `aid-describe` 1 |
-| 390 | `site/scripts/__tests__/gen-skills-index.test.mjs` | task-038 | `aid-describe` 1 |
-| 391 | `site/scripts/__tests__/skills-groups.test.mjs` | task-038 | `aid-describe` 3 |
-| 392 | `tests/canonical/test-connector-consumption-linkage.sh` | task-038 | `aid-describe` 1 |
-| 393 | `tests/canonical/test-deploy-monitor-repurpose.sh` | task-038 | `aid-describe` 5 |
-| 394 | `tests/canonical/test-describe-full-only.sh` | task-038 | `aid-describe` 9 |
-| 395 | `tests/canonical/test-path-fixtures.sh` | task-038 | `aid-describe` 1 |
-| 396 | `tests/conversation/fixtures/done-work/.aid/works/work-001-csv-export/STATE.yml` | task-038 | `aid-describe` 1 |
-| 397 | `tests/conversation/fixtures/ticket-mid-work/.aid/works/work-001-retry-policy/STATE.yml` | task-038 | `aid-describe` 1 |
-| 398 | `tests/cost-baseline.tsv` | task-038 | `aid-describe` 5 |
-| 399 | `tests/coverage-baseline.tsv` | task-038 | `aid-describe` 12 |
-| 400 | `site/scripts/__tests__/flow-extract-inline.test.mjs` | task-034 | `aid-design` 4 |
-| 401 | `tests/coverage-baseline.tsv` | task-034 | `aid-design` 3 |
-| 402 | `tests/cost-baseline.tsv` | task-035 | `aid-design-api` 5, `aid-design-architecture` 5, `aid-design-backlog` 5, `aid-design-cicd` 5, `aid-design-cli` 5, `aid-design-config` 5, `aid-design-dashboard` 5, `aid-design-data-model` 5, `aid-design-data-pipeline` 5, `aid-design-document` 5, `aid-design-infra` 5, `aid-design-integration` 5, `aid-design-job` 5, `aid-design-messaging` 5, `aid-design-mvp` 5, `aid-design-roadmap` 5, `aid-design-stack` 5, `aid-design-test` 10, `aid-design-testing-strategy` 5, `aid-design-theme` 5, `aid-design-ui` 5 |
-| 403 | `dashboard/reader/tests/test_feature009.py` | task-040 | `aid-detail` 9, `aid-execute` 2 |
-| 404 | `tests/canonical/test-artifact-discipline.sh` | task-040 | `aid-detail` 1, `aid-plan` 2 |
-| 405 | `tests/canonical/test-downstream-worktree-entry.sh` | task-040 | `aid-detail` 7, `aid-execute` 10, `aid-plan` 7 |
-| 406 | `tests/canonical/test-state-review-surface.sh` | task-040 | `aid-detail` 1, `aid-execute` 1, `aid-plan` 1 |
-| 407 | `tests/canonical/test-ticket-retirement-structural.sh` | task-040 | `aid-detail` 11, `aid-execute` 23, `aid-plan` 22 |
-| 408 | `dashboard/reader/tests/test_flattened_layout_parity.py` | task-040 | `aid-detail` 1, `aid-execute` 1, `aid-plan` 1 |
-| 409 | `site/scripts/__tests__/flow-extract-dispatch.test.mjs` | task-040 | `aid-detail` 1, `aid-execute` 5, `aid-plan` 1 |
-| 410 | `site/scripts/__tests__/gen-reference.test.mjs` | task-040 | `aid-detail` 1, `aid-execute` 1, `aid-plan` 1 |
-| 411 | `site/scripts/__tests__/gen-skills-index.test.mjs` | task-040 | `aid-detail` 1, `aid-plan` 1 |
-| 412 | `site/scripts/__tests__/skills-groups.test.mjs` | task-040 | `aid-detail` 1, `aid-plan` 11 |
-| 413 | `tests/canonical/test-derive-waves.sh` | task-040 | `aid-detail` 1 |
-| 414 | `tests/canonical/test-scoped-review-cycles.sh` | task-040 | `aid-detail` 1, `aid-plan` 2 |
-| 415 | `tests/cost-baseline.tsv` | task-040 | `aid-detail` 5, `aid-execute` 5, `aid-plan` 5 |
-| 416 | `tests/coverage-baseline.tsv` | task-040 | `aid-detail` 16, `aid-execute` 22, `aid-plan` 19 |
-| 417 | `tests/coverage-rehome-allowlist.tsv` | task-040 | `aid-detail` 1, `aid-execute` 1, `aid-plan` 1 |
-| 418 | `tests/canonical/test-connector-skills-structural.sh` | task-041 | `aid-discover` 5 |
-| 419 | `tests/canonical/test-cutover-no-dangling.sh` | task-041 | `aid-discover` 7 |
-| 420 | `tests/canonical/test-discovery-doc-ownership.sh` | task-041 | `aid-discover` 2 |
-| 421 | `tests/canonical/test-doc-set-mapping.sh` | task-041 | `aid-discover` 1 |
-| 422 | `tests/canonical/test-doc-set-propose-confirm.sh` | task-041 | `aid-discover` 1 |
-| 423 | `tests/canonical/test-doc-set-read.sh` | task-041 | `aid-discover` 2 |
-| 424 | `tests/canonical/test-domain-doc-matrix.sh` | task-041 | `aid-discover` 1 |
-| 425 | `tests/canonical/test-expectations-single-source.sh` | task-041 | `aid-discover` 4 |
-| 426 | `tests/canonical/test-kb-review-surface.sh` | task-041 | `aid-discover` 2 |
-| 427 | `tests/canonical/test-ledger-isolation.sh` | task-041 | `aid-discover` 3 |
-| 428 | `tests/canonical/test-output-root-isolation.sh` | task-041 | `aid-discover` 1 |
-| 429 | `tests/canonical/test-reconcile-scenarios.sh` | task-041 | `aid-discover` 1 |
-| 430 | `tests/canonical/test-spine-depth-coverage.sh` | task-041 | `aid-discover` 3 |
-| 431 | `tests/canonical/test-state-review-surface.sh` | task-041 | `aid-discover` 1 |
-| 432 | `dashboard/reader/tests/test_task066_kb_parity.py` | task-041 | `aid-discover` 2 |
-| 433 | `dashboard/server/tests/fixtures/pt023-external-sources/multi-entry.md` | task-041 | `aid-discover` 1 |
-| 434 | `dashboard/server/tests/fixtures/pt023-external-sources/placeholder-only.md` | task-041 | `aid-discover` 1 |
-| 435 | `dashboard/server/tests/fixtures/pt023-external-sources/single-entry.md` | task-041 | `aid-discover` 1 |
-| 436 | `site/scripts/__tests__/flow-extract-dispatch.test.mjs` | task-041 | `aid-discover` 1 |
-| 437 | `site/scripts/__tests__/gen-reference.test.mjs` | task-041 | `aid-discover` 1 |
-| 438 | `site/scripts/__tests__/gen-skills.test.mjs` | task-041 | `aid-discover` 2 |
-| 439 | `tests/README.md` | task-041 | `aid-discover` 1 |
-| 440 | `tests/canonical/test-conformance-lane-semantics.sh` | task-041 | `aid-discover` 5 |
-| 441 | `tests/canonical/test-grade-summary.sh` | task-041 | `aid-discover` 2 |
-| 442 | `tests/canonical/test-harvest-batching.sh` | task-041 | `aid-discover` 1 |
-| 443 | `tests/canonical/test-kb-template-authoring-standard.sh` | task-041 | `aid-discover` 1 |
-| 444 | `tests/canonical/test-path-fixtures.sh` | task-041 | `aid-discover` 1 |
-| 445 | `tests/canonical/test-summarize-preflight.sh` | task-041 | `aid-discover` 1 |
-| 446 | `tests/canonical/test-ticket-retirement-structural.sh` | task-041 | `aid-discover` 1 |
-| 447 | `tests/canonical/test-write-external-source.sh` | task-041 | `aid-discover` 3 |
-| 448 | `tests/conversation/samples/feature-001/001-15-no-kb-offers-preparation.md` | task-041 | `aid-discover` 1 |
-| 449 | `tests/cost-baseline.tsv` | task-041 | `aid-discover` 5 |
-| 450 | `tests/canonical/test-compute-block-radius.sh` | task-040 | `aid-execute` 1 |
-| 451 | `tests/canonical/test-delivery-gate-aggregate.sh` | task-040 | `aid-execute` 4 |
-| 452 | `tests/canonical/test-task-state-transitions.sh` | task-040 | `aid-execute` 5 |
-| 453 | `dashboard/reader/tests/fixtures/task011_golden/flat_golden.json` | task-040 | `aid-execute` 1 |
-| 454 | `dashboard/reader/tests/fixtures/task011_golden/hierarchical_golden.json` | task-040 | `aid-execute` 1 |
-| 455 | `dashboard/reader/tests/test_fixtures.py` | task-040 | `aid-execute` 5 |
-| 456 | `dashboard/reader/tests/test_reader.py` | task-040 | `aid-execute` 10, `aid-plan` 1 |
-| 457 | `dashboard/reader/tests/test_resolve_work_dir_cross_runtime_parity.py` | task-040 | `aid-execute` 1 |
-| 458 | `dashboard/reader/tests/test_security_hardening.py` | task-040 | `aid-execute` 1 |
-| 459 | `dashboard/reader/tests/test_task002_resolve_work_dir.py` | task-040 | `aid-execute` 1 |
-| 460 | `dashboard/reader/tests/test_task011_golden_master.py` | task-040 | `aid-execute` 2 |
-| 461 | `dashboard/reader/tests/test_task011_reconcile.py` | task-040 | `aid-execute` 3 |
-| 462 | `dashboard/reader/tests/test_task014_fixtures.py` | task-040 | `aid-execute` 7 |
-| 463 | `dashboard/reader/tests/test_task069_detail_parser.py` | task-040 | `aid-execute` 1 |
-| 464 | `dashboard/reader/tests/test_work001_delivery_layouts.py` | task-040 | `aid-execute` 1 |
-| 465 | `dashboard/reader/tests/test_work003_state_schema.py` | task-040 | `aid-execute` 5 |
-| 466 | `dashboard/reader/tests/test_work016_container_discovery.py` | task-040 | `aid-execute` 1 |
-| 467 | `dashboard/server/tests/fixtures/pt1-aid/.aid/works/work-001-running-parallel/STATE.md` | task-040 | `aid-execute` 1 |
-| 468 | `dashboard/server/tests/fixtures/pt1-aid/.aid/works/work-001-running-parallel/STATE.yml` | task-040 | `aid-execute` 1 |
-| 469 | `dashboard/server/tests/fixtures/pt1-aid/.aid/works/work-003-blocked/STATE.md` | task-040 | `aid-execute` 1 |
-| 470 | `dashboard/server/tests/fixtures/pt1-aid/.aid/works/work-003-blocked/STATE.yml` | task-040 | `aid-execute` 1 |
-| 471 | `dashboard/server/tests/fixtures/pt1-aid/.aid/works/work-006-lite-sample/STATE.md` | task-040 | `aid-execute` 1 |
-| 472 | `dashboard/server/tests/fixtures/pt1-aid/.aid/works/work-006-lite-sample/STATE.yml` | task-040 | `aid-execute` 1 |
-| 473 | `dashboard/server/tests/fixtures/pt1h-detail-repo/.aid/works/work-001-detail/STATE.yml` | task-040 | `aid-execute` 1 |
-| 474 | `dashboard/server/tests/fixtures/pt1h-repo-a/.aid/works/work-001-with-unicode/STATE.md` | task-040 | `aid-execute` 1 |
-| 475 | `dashboard/server/tests/fixtures/pt1h-repo-b/.aid/works/work-001-minimal/STATE.md` | task-040 | `aid-execute` 1 |
-| 476 | `dashboard/server/tests/test_reader_task069.mjs` | task-040 | `aid-execute` 2 |
-| 477 | `dashboard/server/tests/test_task002_resolve_work_dir.mjs` | task-040 | `aid-execute` 1 |
-| 478 | `site/scripts/__tests__/flow-extract-engine.test.mjs` | task-040 | `aid-execute` 1 |
-| 479 | `site/scripts/__tests__/flow-graph-doorways.test.mjs` | task-040 | `aid-execute` 4 |
-| 480 | `site/scripts/__tests__/flow-render-mermaid.test.mjs` | task-040 | `aid-execute` 2 |
-| 481 | `site/scripts/__tests__/gen-skills.test.mjs` | task-040 | `aid-execute` 1 |
-| 482 | `site/src/lib/__tests__/skill-node-panel.test.ts` | task-040 | `aid-execute` 1, `aid-plan` 4 |
-| 483 | `tests/README.md` | task-040 | `aid-execute` 2 |
-| 484 | `tests/canonical/fixtures/migrate/fixture-source/work-999-migration-test/STATE.md` | task-040 | `aid-execute` 1 |
-| 485 | `tests/canonical/fixtures/migrate/fixture/work-999-migration-test/STATE.md` | task-040 | `aid-execute` 1 |
-| 486 | `tests/canonical/test-change-refactor-family-scaffold.sh` | task-040 | `aid-execute` 2 |
-| 487 | `tests/canonical/test-connector-consumption-linkage.sh` | task-040 | `aid-execute` 2, `aid-plan` 1 |
-| 488 | `tests/canonical/test-conversation-runner.sh` | task-040 | `aid-execute` 4, `aid-plan` 2 |
-| 489 | `tests/canonical/test-create-family-scaffold.sh` | task-040 | `aid-execute` 2 |
-| 490 | `tests/canonical/test-deploy-monitor-repurpose.sh` | task-040 | `aid-execute` 1 |
-| 491 | `tests/canonical/test-document-family-scaffold.sh` | task-040 | `aid-execute` 2 |
-| 492 | `tests/canonical/test-fix-family-scaffold.sh` | task-040 | `aid-execute` 1 |
-| 493 | `tests/canonical/test-kb-no-work-ids.sh` | task-040 | `aid-execute` 3 |
-| 494 | `tests/canonical/test-prototype-family-scaffold.sh` | task-040 | `aid-execute` 2 |
-| 495 | `tests/canonical/test-test-experiment-family-scaffold.sh` | task-040 | `aid-execute` 3 |
-| 496 | `tests/conversation/fixtures/done-work/.aid/works/work-001-csv-export/STATE.yml` | task-040 | `aid-execute` 1 |
-| 497 | `tests/cost-meter.py` | task-040 | `aid-execute` 1 |
-| 498 | `tests/canonical/test-conformance-lane-semantics.sh` | task-042 | `aid-housekeep` 1 |
-| 499 | `tests/canonical/test-f010-governance-guards.sh` | task-042 | `aid-housekeep` 2, `aid-update-kb` 4 |
-| 500 | `tests/canonical/test-output-root-isolation.sh` | task-042 | `aid-housekeep` 1 |
-| 501 | `site/scripts/__tests__/flow-extract-dispatch.test.mjs` | task-042 | `aid-housekeep` 1, `aid-summarize` 1, `aid-update-kb` 3 |
-| 502 | `site/scripts/__tests__/flow-graph.test.mjs` | task-042 | `aid-housekeep` 2, `aid-update-kb` 3 |
-| 503 | `tests/canonical/test-connector-skills-structural.sh` | task-042 | `aid-housekeep` 2 |
-| 504 | `tests/canonical/test-doc-counts.sh` | task-042 | `aid-housekeep` 2 |
-| 505 | `tests/canonical/test-worktree-lifecycle.sh` | task-042 | `aid-housekeep` 1 |
-| 506 | `tests/coverage-accepted-removals.tsv` | task-043 | `aid-monitor` 2 |
-| 507 | `tests/canonical/test-document-family-scaffold.sh` | task-043 | `aid-monitor` 1 |
-| 508 | `site/scripts/__tests__/gen-reference.test.mjs` | task-032 | `aid-orchestrate` 1 |
-| 509 | `site/scripts/__tests__/gen-skills-index.test.mjs` | task-032 | `aid-orchestrate` 4 |
-| 510 | `site/scripts/__tests__/skills-groups.test.mjs` | task-032 | `aid-orchestrate` 10 |
-| 511 | `site/scripts/__tests__/skills-render-index.test.mjs` | task-032 | `aid-orchestrate` 4 |
-| 512 | `tests/cost-baseline.tsv` | task-032 | `aid-orchestrate` 5 |
-| 513 | `tests/canonical/test-aid-migrate.sh` | task-040 | `aid-plan` 2 |
-| 514 | `tests/canonical/test-multitool-isolation.sh` | task-040 | `aid-plan` 4 |
-| 515 | `tests/windows/Test-AidInstaller.ps1` | task-040 | `aid-plan` 4 |
-| 516 | `tests/canonical/test-review-path-audit.sh` | task-040 | `aid-plan` 2 |
-| 517 | `tests/canonical/test-prototype-family-scaffold.sh` | task-044 | `aid-prototype` 54, `aid-review` 1, `aid-test` 4 |
-| 518 | `site/scripts/__tests__/gen-skills.test.mjs` | task-043 | `aid-read-ticket` 4 |
-| 519 | `site/scripts/__tests__/skills-render-value.test.mjs` | task-043 | `aid-read-ticket` 6 |
-| 520 | `site/scripts/__tests__/skills-render-page.test.mjs` | task-043 | `aid-read-ticket` 2 |
-| 521 | `tests/canonical/test-connector-consumption-linkage.sh` | task-043 | `aid-read-ticket` 1 |
-| 522 | `tests/canonical/test-ticket-retirement-structural.sh` | task-044 | `aid-report` 3, `aid-research` 10, `aid-review` 12 |
-| 523 | `tests/canonical/fixtures/actback-task/data-ml.tsv` | task-044 | `aid-research` 4 |
-| 524 | `tests/canonical/fixtures/actback-task/design.tsv` | task-044 | `aid-research` 3 |
-| 525 | `tests/canonical/fixtures/actback-task/docset-check.tsv` | task-044 | `aid-research` 5 |
-| 526 | `tests/canonical/fixtures/actback-task/docset-component.tsv` | task-044 | `aid-research` 2 |
-| 527 | `tests/canonical/fixtures/actback-task/docset-contract.tsv` | task-044 | `aid-research` 2 |
-| 528 | `tests/canonical/fixtures/actback-task/docset-endpoint.tsv` | task-044 | `aid-research` 1 |
-| 529 | `tests/canonical/fixtures/actback-task/docset-feature.tsv` | task-044 | `aid-research` 1 |
-| 530 | `tests/canonical/fixtures/actback-task/docset-module.tsv` | task-044 | `aid-research` 2 |
-| 531 | `tests/canonical/fixtures/actback-task/docset-optin.tsv` | task-044 | `aid-research` 1 |
-| 532 | `tests/canonical/fixtures/dual-intent/content/doc-set.tsv` | task-044 | `aid-research` 6 |
-| 533 | `tests/canonical/fixtures/dual-intent/content/good-kb/authoring-conventions.md` | task-044 | `aid-research` 1 |
-| 534 | `tests/canonical/fixtures/dual-intent/content/good-kb/content-inventory.md` | task-044 | `aid-research` 1 |
-| 535 | `tests/canonical/fixtures/dual-intent/content/good-kb/content-map.md` | task-044 | `aid-research` 1 |
-| 536 | `tests/canonical/fixtures/dual-intent/content/good-kb/content-model.md` | task-044 | `aid-research` 1 |
-| 537 | `tests/canonical/fixtures/dual-intent/content/good-kb/decisions.md` | task-044 | `aid-research` 1 |
-| 538 | `tests/canonical/fixtures/dual-intent/content/good-kb/domain-glossary.md` | task-044 | `aid-research` 1 |
-| 539 | `tests/canonical/fixtures/dual-intent/content/shallow-kb/authoring-conventions.md` | task-044 | `aid-research` 1 |
-| 540 | `tests/canonical/fixtures/dual-intent/content/shallow-kb/content-inventory.md` | task-044 | `aid-research` 1 |
-| 541 | `tests/canonical/fixtures/dual-intent/content/shallow-kb/content-map.md` | task-044 | `aid-research` 1 |
-| 542 | `tests/canonical/fixtures/dual-intent/content/shallow-kb/content-model.md` | task-044 | `aid-research` 1 |
-| 543 | `tests/canonical/fixtures/dual-intent/content/shallow-kb/decisions.md` | task-044 | `aid-research` 1 |
-| 544 | `tests/canonical/fixtures/dual-intent/content/shallow-kb/domain-glossary.md` | task-044 | `aid-research` 1 |
-| 545 | `tests/canonical/fixtures/dual-intent/content/wrong-kb/authoring-conventions.md` | task-044 | `aid-research` 1 |
-| 546 | `tests/canonical/fixtures/dual-intent/content/wrong-kb/content-inventory.md` | task-044 | `aid-research` 1 |
-| 547 | `tests/canonical/fixtures/dual-intent/content/wrong-kb/content-map.md` | task-044 | `aid-research` 1 |
-| 548 | `tests/canonical/fixtures/dual-intent/content/wrong-kb/content-model.md` | task-044 | `aid-research` 1 |
-| 549 | `tests/canonical/fixtures/dual-intent/content/wrong-kb/decisions.md` | task-044 | `aid-research` 1 |
-| 550 | `tests/canonical/fixtures/dual-intent/content/wrong-kb/domain-glossary.md` | task-044 | `aid-research` 1 |
-| 551 | `tests/canonical/fixtures/dual-intent/data-ml/doc-set.tsv` | task-044 | `aid-research` 6 |
-| 552 | `tests/canonical/fixtures/dual-intent/data-ml/good-kb/coding-standards.md` | task-044 | `aid-research` 1 |
-| 553 | `tests/canonical/fixtures/dual-intent/data-ml/good-kb/data-pipeline.md` | task-044 | `aid-research` 1 |
-| 554 | `tests/canonical/fixtures/dual-intent/data-ml/good-kb/data-schemas.md` | task-044 | `aid-research` 1 |
-| 555 | `tests/canonical/fixtures/dual-intent/data-ml/good-kb/decisions.md` | task-044 | `aid-research` 1 |
-| 556 | `tests/canonical/fixtures/dual-intent/data-ml/good-kb/domain-glossary.md` | task-044 | `aid-research` 1 |
-| 557 | `tests/canonical/fixtures/dual-intent/data-ml/good-kb/model-cards.md` | task-044 | `aid-research` 1 |
-| 558 | `tests/canonical/fixtures/dual-intent/data-ml/shallow-kb/coding-standards.md` | task-044 | `aid-research` 1 |
-| 559 | `tests/canonical/fixtures/dual-intent/data-ml/shallow-kb/data-pipeline.md` | task-044 | `aid-research` 1 |
-| 560 | `tests/canonical/fixtures/dual-intent/data-ml/shallow-kb/data-schemas.md` | task-044 | `aid-research` 1 |
-| 561 | `tests/canonical/fixtures/dual-intent/data-ml/shallow-kb/decisions.md` | task-044 | `aid-research` 1 |
-| 562 | `tests/canonical/fixtures/dual-intent/data-ml/shallow-kb/domain-glossary.md` | task-044 | `aid-research` 1 |
-| 563 | `tests/canonical/fixtures/dual-intent/data-ml/shallow-kb/model-cards.md` | task-044 | `aid-research` 1 |
-| 564 | `tests/canonical/fixtures/dual-intent/data-ml/wrong-kb/coding-standards.md` | task-044 | `aid-research` 1 |
-| 565 | `tests/canonical/fixtures/dual-intent/data-ml/wrong-kb/data-pipeline.md` | task-044 | `aid-research` 1 |
-| 566 | `tests/canonical/fixtures/dual-intent/data-ml/wrong-kb/data-schemas.md` | task-044 | `aid-research` 1 |
-| 567 | `tests/canonical/fixtures/dual-intent/data-ml/wrong-kb/decisions.md` | task-044 | `aid-research` 1 |
-| 568 | `tests/canonical/fixtures/dual-intent/data-ml/wrong-kb/domain-glossary.md` | task-044 | `aid-research` 1 |
-| 569 | `tests/canonical/fixtures/dual-intent/data-ml/wrong-kb/model-cards.md` | task-044 | `aid-research` 1 |
-| 570 | `tests/canonical/fixtures/dual-intent/design/doc-set.tsv` | task-044 | `aid-research` 6 |
-| 571 | `tests/canonical/fixtures/dual-intent/design/good-kb/component-inventory.md` | task-044 | `aid-research` 1 |
-| 572 | `tests/canonical/fixtures/dual-intent/design/good-kb/decisions.md` | task-044 | `aid-research` 1 |
-| 573 | `tests/canonical/fixtures/dual-intent/design/good-kb/design-overview.md` | task-044 | `aid-research` 1 |
-| 574 | `tests/canonical/fixtures/dual-intent/design/good-kb/design-principles.md` | task-044 | `aid-research` 1 |
-| 575 | `tests/canonical/fixtures/dual-intent/design/good-kb/design-tokens.md` | task-044 | `aid-research` 1 |
-| 576 | `tests/canonical/fixtures/dual-intent/design/good-kb/domain-glossary.md` | task-044 | `aid-research` 1 |
-| 577 | `tests/canonical/fixtures/dual-intent/design/shallow-kb/component-inventory.md` | task-044 | `aid-research` 1 |
-| 578 | `tests/canonical/fixtures/dual-intent/design/shallow-kb/decisions.md` | task-044 | `aid-research` 1 |
-| 579 | `tests/canonical/fixtures/dual-intent/design/shallow-kb/design-overview.md` | task-044 | `aid-research` 1 |
-| 580 | `tests/canonical/fixtures/dual-intent/design/shallow-kb/design-principles.md` | task-044 | `aid-research` 1 |
-| 581 | `tests/canonical/fixtures/dual-intent/design/shallow-kb/design-tokens.md` | task-044 | `aid-research` 1 |
-| 582 | `tests/canonical/fixtures/dual-intent/design/shallow-kb/domain-glossary.md` | task-044 | `aid-research` 1 |
-| 583 | `tests/canonical/fixtures/dual-intent/design/wrong-kb/component-inventory.md` | task-044 | `aid-research` 1 |
-| 584 | `tests/canonical/fixtures/dual-intent/design/wrong-kb/decisions.md` | task-044 | `aid-research` 1 |
-| 585 | `tests/canonical/fixtures/dual-intent/design/wrong-kb/design-overview.md` | task-044 | `aid-research` 1 |
-| 586 | `tests/canonical/fixtures/dual-intent/design/wrong-kb/design-principles.md` | task-044 | `aid-research` 1 |
-| 587 | `tests/canonical/fixtures/dual-intent/design/wrong-kb/design-tokens.md` | task-044 | `aid-research` 1 |
-| 588 | `tests/canonical/fixtures/dual-intent/design/wrong-kb/domain-glossary.md` | task-044 | `aid-research` 1 |
-| 589 | `tests/canonical/fixtures/kb-essence/actback/representative-task-fixture/doc-set.tsv` | task-044 | `aid-research` 4 |
-| 590 | `tests/canonical/test-actback-task.sh` | task-044 | `aid-research` 3 |
-| 591 | `tests/canonical/test-change-refactor-family-scaffold.sh` | task-044 | `aid-research` 2, `aid-review` 3, `aid-test` 1 |
-| 592 | `tests/canonical/test-connector-consumption-linkage.sh` | task-044 | `aid-research` 1 |
-| 593 | `tests/canonical/test-deploy-monitor-repurpose.sh` | task-044 | `aid-research` 3 |
-| 594 | `tests/canonical/test-discovery-doc-ownership.sh` | task-044 | `aid-research` 39 |
-| 595 | `tests/canonical/test-doc-set-mapping.sh` | task-044 | `aid-research` 56 |
-| 596 | `tests/canonical/test-doc-set-propose-confirm.sh` | task-044 | `aid-research` 14 |
-| 597 | `tests/canonical/test-doc-set-read.sh` | task-044 | `aid-research` 44 |
-| 598 | `tests/canonical/test-grade-summary.sh` | task-044 | `aid-research` 5 |
-| 599 | `tests/canonical/test-update-kb-scope-fidelity.sh` | task-044 | `aid-research` 2 |
-| 600 | `site/scripts/__tests__/flow-facade.test.mjs` | task-044 | `aid-review` 20, `aid-test` 1 |
-| 601 | `site/scripts/__tests__/flow-graph.test.mjs` | task-044 | `aid-review` 7, `aid-test` 70 |
-| 602 | `site/scripts/__tests__/provenance.test.mjs` | task-044 | `aid-review` 8, `aid-test` 2 |
-| 603 | `site/scripts/__tests__/skills-render-page.test.mjs` | task-044 | `aid-review` 8, `aid-test` 10 |
-| 604 | `tests/canonical/test-review-path-audit.sh` | task-044 | `aid-review` 10 |
-| 605 | `dashboard/reader/tests/test_work003_state_schema.py` | task-044 | `aid-review` 1 |
-| 606 | `site/scripts/__tests__/flow-classify.test.mjs` | task-044 | `aid-review` 6, `aid-test` 12 |
-| 607 | `site/scripts/__tests__/provenance-appender.test.mjs` | task-044 | `aid-review` 12 |
-| 608 | `site/scripts/__tests__/skills-body.test.mjs` | task-044 | `aid-review` 3 |
-| 609 | `tests/README.md` | task-044 | `aid-review` 1 |
-| 610 | `tests/canonical/test-aid-update-dry-run-plan.sh` | task-044 | `aid-review` 13 |
-| 611 | `tests/canonical/test-artifact-discipline.sh` | task-044 | `aid-review` 1 |
-| 612 | `tests/canonical/test-conversation-runner.sh` | task-044 | `aid-review` 1 |
-| 613 | `tests/canonical/test-cost-meter.sh` | task-044 | `aid-review` 5 |
-| 614 | `tests/canonical/test-criterion-oracles.sh` | task-044 | `aid-review` 2 |
-| 615 | `tests/canonical/test-cutover-no-dangling.sh` | task-044 | `aid-review` 1 |
-| 616 | `tests/canonical/test-describe-full-only.sh` | task-044 | `aid-review` 1 |
-| 617 | `tests/canonical/test-expectations-single-source.sh` | task-044 | `aid-review` 11 |
-| 618 | `tests/canonical/test-fix-family-scaffold.sh` | task-044 | `aid-review` 1, `aid-test` 2 |
-| 619 | `tests/canonical/test-severity-why-line.sh` | task-044 | `aid-review` 1 |
-| 620 | `tests/canonical/test-test-experiment-family-scaffold.sh` | task-044 | `aid-review` 1, `aid-test` 38 |
-| 621 | `tests/conversation/run.py` | task-044 | `aid-review` 2 |
-| 622 | `tests/cost-meter.py` | task-044 | `aid-review` 1 |
-| 623 | `tests/canonical/test-connector-set-unset-lifecycle.sh` | task-043 | `aid-set-connector` 8, `aid-unset-connector` 5 |
-| 624 | `tests/canonical/test-write-connector.sh` | task-043 | `aid-set-connector` 1, `aid-unset-connector` 1 |
-| 625 | `tests/canonical/test-ticket-retirement-structural.sh` | task-039 | `aid-specify` 6 |
-| 626 | `dashboard/reader/tests/test_fixtures.py` | task-039 | `aid-specify` 1 |
-| 627 | `dashboard/reader/tests/test_flattened_layout_parity.py` | task-039 | `aid-specify` 1 |
-| 628 | `dashboard/reader/tests/test_reader.py` | task-039 | `aid-specify` 1 |
-| 629 | `dashboard/reader/tests/test_task014_fixtures.py` | task-039 | `aid-specify` 2 |
-| 630 | `dashboard/server/tests/fixtures/pt1-aid/.aid/works/work-002-paused/STATE.md` | task-039 | `aid-specify` 1 |
-| 631 | `dashboard/server/tests/fixtures/pt1-aid/.aid/works/work-002-paused/STATE.yml` | task-039 | `aid-specify` 1 |
-| 632 | `tests/canonical/test-connector-consumption-linkage.sh` | task-039 | `aid-specify` 1 |
-| 633 | `tests/conversation/fixtures/ticket-mid-work/.aid/works/work-001-retry-policy/STATE.yml` | task-039 | `aid-specify` 1 |
-| 634 | `tests/conversation/samples/feature-001/001-15-no-kb-offers-preparation.md` | task-039 | `aid-specify` 1 |
-| 635 | `tests/canonical/test-grade-summary.sh` | task-042 | `aid-summarize` 4 |
-| 636 | `tests/canonical/test-guardrails-d012.sh` | task-042 | `aid-summarize` 2 |
-| 637 | `tests/canonical/test-ledger-isolation.sh` | task-042 | `aid-summarize` 2 |
-| 638 | `tests/canonical/test-shared-prune.sh` | task-042 | `aid-summarize` 1 |
-| 639 | `site/scripts/__tests__/flow-facade.test.mjs` | task-042 | `aid-summarize` 1 |
-| 640 | `site/scripts/__tests__/flow-render-mermaid.test.mjs` | task-044 | `aid-test` 1 |
-| 641 | `site/scripts/__tests__/flow-validate.test.mjs` | task-044 | `aid-test` 18 |
-| 642 | `site/scripts/__tests__/provenance-render-list.test.mjs` | task-044 | `aid-test` 7 |
-| 643 | `site/scripts/__tests__/skills-discover.test.mjs` | task-044 | `aid-test` 55 |
-| 644 | `dashboard/server/tests/test_reader_task069.mjs` | task-044 | `aid-test` 1 |
-| 645 | `site/scripts/__tests__/flow-extract-residual.test.mjs` | task-044 | `aid-test` 1, `aid-update-document` 1 |
-| 646 | `site/scripts/__tests__/flow-graph-doorways.test.mjs` | task-044 | `aid-test` 25 |
-| 647 | `site/scripts/__tests__/skills-summary.test.mjs` | task-044 | `aid-test` 10 |
-| 648 | `tests/canonical/test-migrate-kb-frontmatter.sh` | task-044 | `aid-test` 1 |
-| 649 | `tests/canonical/test-release-install-e2e.sh` | task-044 | `aid-test` 3 |
-| 650 | `tests/canonical/test-update-kb-scope-fidelity.sh` | task-042 | `aid-update-kb` 11 |
-| 651 | `site/scripts/__tests__/gen-skills.test.mjs` | task-042 | `aid-update-kb` 9 |
-| 652 | `site/scripts/__tests__/flow-extract-sibling.test.mjs` | history, left as is | `aid-create` 7, `aid-document` 6, `aid-document-architecture` 3, `aid-document-changelog` 2, `aid-test-data-quality` 1, `aid-test-performance` 3, `aid-test-security` 17 |
-| 653 | `dashboard/reader/tests/test_work003_state_schema.py` | history, left as is | `aid-create` 4, `aid-create-api` 2, `aid-create-data-model` 1, `aid-refactor` 9 |
-| 654 | `site/scripts/__tests__/flow-classify.test.mjs` | history, left as is | `aid-create` 3, `aid-test-security` 6 |
-| 655 | `site/scripts/__tests__/flow-compose.test.mjs` | history, left as is | `aid-create` 14, `aid-create-api` 10, `aid-document` 1, `aid-fix` 4, `aid-test-performance` 1, `aid-test-security` 4 |
-| 656 | `site/scripts/__tests__/flow-extract-engine.test.mjs` | history, left as is | `aid-create` 12, `aid-create-api` 12, `aid-fix` 5 |
-| 657 | `site/scripts/__tests__/flow-extract-inline.test.mjs` | history, left as is | `aid-create` 2, `aid-update` 5 |
-| 658 | `site/scripts/__tests__/flow-extract-residual.test.mjs` | history, left as is | `aid-create` 5, `aid-deprecate` 1, `aid-document` 2, `aid-document-runbook` 1, `aid-fix` 3, `aid-test-security` 1, `aid-update` 4, `aid-update-api` 1 |
-| 659 | `site/scripts/__tests__/flow-facade.test.mjs` | history, left as is | `aid-create` 8, `aid-document` 4, `aid-document-architecture` 4, `aid-test-security` 1 |
-| 660 | `site/scripts/__tests__/flow-graph-doorways.test.mjs` | history, left as is | `aid-create` 27, `aid-create-api` 23, `aid-document` 1, `aid-fix` 5, `aid-test-security` 18 |
-| 661 | `site/scripts/__tests__/gen-reference.test.mjs` | history, left as is | `aid-create` 1, `aid-update` 2 |
-| 662 | `site/scripts/__tests__/provenance-appender.test.mjs` | history, left as is | `aid-create` 6, `aid-create-api` 6 |
-| 663 | `site/scripts/__tests__/provenance-deep-link.test.mjs` | history, left as is | `aid-create` 1, `aid-create-api` 1 |
-| 664 | `site/scripts/__tests__/skills-body.test.mjs` | history, left as is | `aid-create` 1, `aid-create-api` 1, `aid-fix` 3 |
-| 665 | `site/scripts/__tests__/skills-paths.test.mjs` | history, left as is | `aid-create` 6, `aid-create-api` 6 |
-| 666 | `site/scripts/__tests__/skills-render-page.test.mjs` | history, left as is | `aid-create` 2, `aid-create-api` 2 |
-| 667 | `tests/canonical/test-change-refactor-family-scaffold.sh` | history, left as is | `aid-create` 2, `aid-deprecate` 16, `aid-document` 2, `aid-fix` 5, `aid-migrate` 18, `aid-refactor` 37, `aid-remove` 27, `aid-update` 41, `aid-update-api` 22, `aid-update-data-model` 9 |
-| 668 | `tests/canonical/test-create-family-scaffold.sh` | history, left as is | `aid-create` 39, `aid-create-api` 22, `aid-create-dashboard` 3, `aid-create-data-model` 11, `aid-experiment` 2, `aid-update` 2 |
-| 669 | `tests/canonical/test-document-family-scaffold.sh` | history, left as is | `aid-create` 3, `aid-create-diagram` 1, `aid-document` 57, `aid-document-architecture` 4, `aid-document-changelog` 4, `aid-document-decision` 20, `aid-document-guideline` 4, `aid-document-runbook` 16, `aid-document-standard` 4, `aid-document-tutorial` 4, `aid-refactor` 1, `aid-update` 3, `aid-update-infra` 2 |
-| 670 | `tests/canonical/test-prototype-family-scaffold.sh` | history, left as is | `aid-create` 6, `aid-experiment` 4, `aid-prototype-ui` 27, `aid-update` 6 |
-| 671 | `tests/canonical/test-review-path-audit.sh` | history, left as is | `aid-create` 2 |
-| 672 | `tests/canonical/test-test-experiment-family-scaffold.sh` | history, left as is | `aid-create` 5, `aid-create-test` 1, `aid-experiment` 20, `aid-fix` 15, `aid-test-data-quality` 2, `aid-test-performance` 2, `aid-test-security` 17, `aid-update` 2, `aid-update-test` 1 |
-| 673 | `tests/canonical/test-ticket-retirement-structural.sh` | history, left as is | `aid-create` 9, `aid-update` 14 |
-| 674 | `tests/canonical/test-ticket-skills-structural.sh` | history, left as is | `aid-create` 35, `aid-update` 32 |
-| 675 | `tests/cost-baseline.tsv` | history, left as is | `aid-create` 120, `aid-create-api` 5, `aid-create-cli` 5, `aid-create-config` 5, `aid-create-dashboard` 5, `aid-create-data-model` 5, `aid-create-data-pipeline` 5, `aid-create-diagram` 5, `aid-create-infra` 5, `aid-create-integration` 5, `aid-create-job` 5, `aid-create-messaging` 5, `aid-create-test` 10, `aid-create-theme` 5, `aid-create-ui` 5, `aid-deprecate` 5, `aid-document` 40, `aid-document-architecture` 5, `aid-document-changelog` 5, `aid-document-decision` 5, `aid-document-guideline` 5, `aid-document-runbook` 5, `aid-document-standard` 5, `aid-document-tutorial` 5, `aid-experiment` 5, `aid-fix` 5, `aid-migrate` 5, `aid-prototype-ui` 5, `aid-refactor` 5, `aid-remove` 5, `aid-test-data-quality` 5, `aid-test-performance` 5, `aid-test-security` 5, `aid-update` 120, `aid-update-api` 5, `aid-update-cli` 5, `aid-update-config` 5, `aid-update-dashboard` 5, `aid-update-data-model` 5, `aid-update-data-pipeline` 5, `aid-update-infra` 5, `aid-update-integration` 5, `aid-update-job` 5, `aid-update-messaging` 5, `aid-update-test` 10, `aid-update-theme` 5, `aid-update-ui` 5 |
-| 676 | `tests/coverage-baseline.tsv` | history, left as is | `aid-create` 36, `aid-migrate` 273, `aid-refactor` 1, `aid-update` 29 |
-| 677 | `tests/canonical/test-fix-family-scaffold.sh` | history, left as is | `aid-document` 1, `aid-document-runbook` 1, `aid-fix` 28, `aid-refactor` 1, `aid-test-security` 2, `aid-update` 4, `aid-update-infra` 3 |
-| 678 | `tests/canonical/test-multitool-isolation.sh` | history, left as is | `aid-fix` 3 |
-| 679 | `tests/windows/Test-AidInstaller.ps1` | history, left as is | `aid-fix` 2 |
-| 680 | `dashboard/reader/tests/test_declared_path_three_way_parity.py` | history, left as is | `aid-fix` 2 |
-| 681 | `dashboard/server/tests/test_server_node.mjs` | history, left as is | `aid-fix` 2 |
-| 682 | `dashboard/server/tests/test_server_py.py` | history, left as is | `aid-fix` 2 |
-| 683 | `site/scripts/__tests__/flow-render-mermaid.test.mjs` | history, left as is | `aid-fix` 2 |
-| 684 | `site/scripts/__tests__/provenance-render-list.test.mjs` | history, left as is | `aid-fix` 1 |
-| 685 | `site/scripts/__tests__/skill-node-panel-panel.test.mjs` | history, left as is | `aid-fix` 1 |
-| 686 | `site/scripts/__tests__/skills-catalog.test.mjs` | history, left as is | `aid-fix` 4 |
-| 687 | `site/src/lib/__tests__/skill-node-panel.dom.test.ts` | history, left as is | `aid-fix` 1 |
-| 688 | `tests/canonical/test-connector-consumption-linkage.sh` | history, left as is | `aid-fix` 2 |
-| 689 | `tests/conversation/samples/feature-001/001-01-one-match.md` | history, left as is | `aid-fix` 1 |
-| 690 | `tests/coverage-accepted-removals.tsv` | history, left as is | `aid-fix` 1, `aid-migrate` 200 |
-| 691 | `dashboard/reader/tests/test_task011_golden_master.py` | history, left as is | `aid-migrate` 2, `aid-refactor` 1 |
-| 692 | `tests/canonical/test-aid-migrate-trigger.sh` | history, left as is | `aid-migrate` 2 |
-| 693 | `tests/canonical/test-aid-migrate.sh` | history, left as is | `aid-migrate` 2 |
-| 694 | `tests/canonical/test-release-migrate-smoke.sh` | history, left as is | `aid-migrate` 4 |
-| 695 | `tests/coverage-parity.sh` | history, left as is | `aid-migrate` 3 |
-| 696 | `tests/coverage-rehome-allowlist.tsv` | history, left as is | `aid-migrate` 3, `aid-update` 1 |
-| 697 | `tests/run-all.sh` | history, left as is | `aid-migrate` 1 |
-| 698 | `dashboard/reader/tests/test_flattened_layout_parity.py` | history, left as is | `aid-refactor` 1 |
-| 699 | `tests/canonical/fixtures/state-yaml-conformance/shape-s2-mapping-of-scalars.expected.json` | history, left as is | `aid-refactor` 1 |
-| 700 | `tests/canonical/fixtures/state-yaml-conformance/shape-s2-mapping-of-scalars.yml` | history, left as is | `aid-refactor` 1 |
-| 701 | `tests/canonical/test-task-state-transitions.sh` | history, left as is | `aid-refactor` 1 |
-| 702 | `tests/conversation/samples/feature-001/001-14-refactor-is-new-capability.md` | history, left as is | `aid-refactor` 1 |
-| 703 | `dashboard/server/tests/test_task017_registry_tooling_round_trips.py` | history, left as is | `aid-update` 1 |
-| 704 | `site/scripts/__tests__/flow-extract-dispatch.test.mjs` | history, left as is | `aid-update` 3 |
-| 705 | `site/scripts/__tests__/flow-graph.test.mjs` | history, left as is | `aid-update` 3 |
-| 706 | `site/scripts/__tests__/gen-skills.test.mjs` | history, left as is | `aid-update` 9 |
-| 707 | `tests/canonical/test-f010-governance-guards.sh` | history, left as is | `aid-update` 4 |
-| 708 | `tests/canonical/test-update-kb-scope-fidelity.sh` | history, left as is | `aid-update` 11 |
+| 51 | `tests/canonical/test-writeback-state.sh` | task-025 | `writeback-state.sh` 3 |
+| 52 | `tests/conversation/samples/feature-001/001-10-release-own-work.md` | task-025 | `writeback-state.sh` 1 |
+| 53 | `tests/coverage-baseline.tsv` | task-025 | `writeback-state.sh` 380 |
+| 54 | `site/scripts/__tests__/flow-engine-core.test.mjs` | task-030 | `work-initiation-gate.md` 5 |
+| 55 | `site/scripts/__tests__/flow-graph-doorways.test.mjs` | task-030 | `work-initiation-gate.md` 1 |
+| 56 | `tests/canonical/test-work-initiation-gate.sh` | task-030 | `work-initiation-gate.md` 5 |
+| 57 | `tests/cost-baseline.tsv` | task-030 | `work-initiation-gate.md` 1 |
+| 58 | `tests/coverage-baseline.tsv` | task-030 | `work-initiation-gate.md` 1 |
+| 59 | `tests/canonical/test-aid-cli-parity.sh` | task-032 | `rules.md` 7 |
+| 60 | `tests/canonical/test-aid-migrate.sh` | task-032 | `rules.md` 29 |
+| 61 | `tests/canonical/test-aid-status-drift.sh` | task-032 | `rules.md` 1 |
+| 62 | `tests/canonical/test-change-refactor-family-scaffold.sh` | task-032 | `rules.md` 1 |
+| 63 | `tests/canonical/test-connector-skills-structural.sh` | task-032 | `rules.md` 9 |
+| 64 | `tests/canonical/test-create-family-scaffold.sh` | task-032 | `rules.md` 1 |
+| 65 | `tests/canonical/test-deploy-monitor-repurpose.sh` | task-032 | `rules.md` 1, `aid-orchestrate` 2 |
+| 66 | `tests/canonical/test-document-family-scaffold.sh` | task-032 | `rules.md` 2 |
+| 67 | `tests/canonical/test-dogfood-byte-identity.sh` | task-032 | `rules.md` 12 |
+| 68 | `tests/canonical/test-install-core-primitives.sh` | task-032 | `rules.md` 24 |
+| 69 | `tests/canonical/test-install-provisioning.sh` | task-032 | `rules.md` 2 |
+| 70 | `tests/canonical/test-layout-format-guard.sh` | task-032 | `rules.md` 1 |
+| 71 | `tests/canonical/test-prototype-family-scaffold.sh` | task-032 | `rules.md` 1 |
+| 72 | `tests/canonical/test-release-install-e2e.sh` | task-032 | `rules.md` 5 |
+| 73 | `tests/canonical/test-release.sh` | task-032 | `rules.md` 2 |
+| 74 | `tests/canonical/test-shared-install.sh` | task-032 | `rules.md` 12 |
+| 75 | `tests/canonical/test-shared-layout-sources.sh` | task-032 | `rules.md` 1 |
+| 76 | `tests/canonical/test-shared-remove.sh` | task-032 | `rules.md` 13 |
+| 77 | `tests/canonical/test-skill-guide.sh` | task-032 | `rules.md` 10 |
+| 78 | `tests/coverage-baseline.tsv` | task-032 | `rules.md` 1 |
+| 79 | `tests/coverage-rehome-allowlist.tsv` | task-032 | `rules.md` 6 |
+| 80 | `tests/windows/Test-AidInstaller.ps1` | task-032 | `rules.md` 19 |
+| 81 | `tests/windows/Test-InstallProvisioning.ps1` | task-032 | `rules.md` 2 |
+| 82 | `dashboard/reader/tests/test_flattened_layout_parity.py` | task-033 | `home.html` 1 |
+| 83 | `dashboard/reader/tests/test_work016_container_discovery.py` | task-033 | `home.html` 9 |
+| 84 | `dashboard/server/tests/test_cli_home_html.py` | task-033 | `home.html` 5 |
+| 85 | `dashboard/server/tests/test_home_html_project_header.py` | task-033 | `home.html` 4 |
+| 86 | `dashboard/server/tests/test_index_html.py` | task-033 | `home.html` 27 |
+| 87 | `dashboard/server/tests/test_server_node.mjs` | task-033 | `home.html` 19 |
+| 88 | `dashboard/server/tests/test_server_py.py` | task-033 | `home.html` 8 |
+| 89 | `dashboard/server/tests/test_task009_rename_ui.py` | task-033 | `home.html` 4 |
+| 90 | `dashboard/server/tests/test_task010_task_notes.py` | task-033 | `home.html` 1 |
+| 91 | `dashboard/server/tests/test_task010_task_notes_ui.py` | task-033 | `home.html` 4 |
+| 92 | `dashboard/server/tests/test_task012_consuming_round_trips.py` | task-033 | `home.html` 1 |
+| 93 | `dashboard/server/tests/test_task022_connectors_external_sources_ui.py` | task-033 | `home.html` 6 |
+| 94 | `dashboard/server/tests/test_task026_delete_pipeline_ui.py` | task-033 | `home.html` 6 |
+| 95 | `dashboard/server/tests/test_task030_finish_stop_resume_ui.py` | task-033 | `home.html` 4 |
+| 96 | `dashboard/server/tests/test_task033_execution_control_round_trips.py` | task-033 | `home.html` 5 |
+| 97 | `dashboard/server/tests/test_tools_management_ui.py` | task-033 | `home.html` 7 |
+| 98 | `tests/canonical/test-aid-migrate-trigger.sh` | task-033 | `home.html` 46 |
+| 99 | `tests/canonical/test-aid-migrate.sh` | task-033 | `home.html` 4 |
+| 100 | `tests/canonical/test-aid-migration-stamp.sh` | task-033 | `home.html` 1 |
+| 101 | `tests/canonical/test-chat-node-manifest.sh` | task-033 | `home.html` 1 |
+| 102 | `tests/canonical/test-dashboard-manifest.sh` | task-033 | `home.html` 1 |
+| 103 | `tests/canonical/test-dashboard-parity-h.sh` | task-033 | `home.html` 4 |
+| 104 | `tests/canonical/test-grade-summary.sh` | task-033 | `home.html` 4 |
+| 105 | `tests/canonical/test-guardrails-d012.sh` | task-033 | `home.html` 6 |
+| 106 | `tests/canonical/test-install-parity.sh` | task-033 | `home.html` 5 |
+| 107 | `tests/canonical/test-release-migrate-smoke.sh` | task-033 | `home.html` 1 |
+| 108 | `tests/coverage-accepted-removals.tsv` | task-033 | `home.html` 4 |
+| 109 | `tests/coverage-baseline.tsv` | task-033 | `home.html` 7 |
+| 110 | `tests/lib/sandbox.sh` | task-033 | `home.html` 1 |
+| 111 | `tests/ui/README.md` | task-033 | `home.html` 1 |
+| 112 | `tests/ui/edit-surfaces.spec.mjs` | task-033 | `home.html` 1 |
+| 113 | `dashboard/reader/tests/test_fixtures.py` | task-031 | `models.py` 1, `parsers.py` 3, `reader.py` 1 |
+| 114 | `dashboard/reader/tests/test_reader.py` | task-031 | `models.py` 1, `parsers.py` 2, `reader.py` 6 |
+| 115 | `dashboard/reader/tests/test_work016_container_discovery.py` | task-031 | `models.py` 6, `state_schema.py` 1, `reader.py` 1, `reader.mjs` 5 |
+| 116 | `tests/canonical/test-aid-cli-parity.sh` | task-031 | `models.py` 3, `parsers.py` 3, `reader.py` 3, `server.py` 3, `reader.mjs` 3, `server.mjs` 3 |
+| 117 | `tests/canonical/test-aid-dashboard-cli.sh` | task-031 | `models.py` 1, `parsers.py` 1, `reader.py` 1, `server.py` 7, `reader.mjs` 1, `server.mjs` 4 |
+| 118 | `dashboard/reader/tests/test_derivation.py` | task-031 | `parsers.py` 1, `state_schema.py` 1, `reader.py` 2 |
+| 119 | `dashboard/reader/tests/test_task014_fixtures.py` | task-031 | `parsers.py` 1, `server.py` 1, `reader.mjs` 8 |
+| 120 | `dashboard/reader/tests/test_task064_kb_status.py` | task-031 | `parsers.py` 1 |
+| 121 | `dashboard/reader/tests/test_task069_detail_parser.py` | task-031 | `parsers.py` 1, `reader.py` 7 |
+| 122 | `dashboard/reader/tests/test_work003_state_schema.py` | task-031 | `parsers.py` 1, `state_schema.py` 5, `reader.py` 2, `server.py` 2, `reader.mjs` 7 |
+| 123 | `dashboard/server/tests/test_task012_consuming_round_trips.py` | task-031 | `parsers.py` 2, `server.py` 3, `reader.mjs` 7, `server.mjs` 9 |
+| 124 | `dashboard/server/tests/test_task022_connectors_external_sources_ui.py` | task-031 | `parsers.py` 1, `server.py` 1, `reader.mjs` 1 |
+| 125 | `dashboard/server/tests/test_task027_pipeline_delete_round_trips.py` | task-031 | `parsers.py` 1, `server.py` 4, `server.mjs` 5 |
+| 126 | `tests/canonical/test-derive-waves.sh` | task-031 | `parsers.py` 1 |
+| 127 | `dashboard/reader/tests/test_shortcut_kind_map_cross_runtime_parity.py` | task-031 | `state_schema.py` 9, `reader.mjs` 13, `server.mjs` 1 |
+| 128 | `dashboard/reader/tests/test_state_yaml_conformance.py` | task-031 | `state_schema.py` 1, `reader.mjs` 1 |
+| 129 | `tests/canonical/test-work-state-template.sh` | task-031 | `state_schema.py` 1 |
+| 130 | `dashboard/reader/tests/test_declared_path_three_way_parity.py` | task-031 | `reader.py` 3, `reader.mjs` 3 |
+| 131 | `dashboard/reader/tests/test_derived_lanes_cross_runtime_parity.py` | task-031 | `reader.py` 2, `reader.mjs` 3 |
+| 132 | `dashboard/reader/tests/test_feature009.py` | task-031 | `reader.py` 6, `reader.mjs` 3 |
+| 133 | `dashboard/reader/tests/test_flattened_layout_parity.py` | task-031 | `reader.py` 4, `reader.mjs` 4 |
+| 134 | `dashboard/reader/tests/test_plan_delivery_title_cross_runtime_parity.py` | task-031 | `reader.py` 2, `reader.mjs` 4 |
+| 135 | `dashboard/reader/tests/test_task011_golden_master.py` | task-031 | `reader.py` 1, `server.py` 4, `reader.mjs` 7 |
+| 136 | `dashboard/reader/tests/test_task066_kb_parity.py` | task-031 | `reader.py` 1 |
+| 137 | `dashboard/reader/tests/test_work001_delivery_layouts.py` | task-031 | `reader.py` 7, `server.py` 2, `reader.mjs` 7 |
+| 138 | `dashboard/server/tests/test_reader_task069.mjs` | task-031 | `reader.py` 2, `reader.mjs` 3 |
+| 139 | `dashboard/server/tests/test_task033_execution_control_round_trips.py` | task-031 | `reader.py` 1, `server.py` 8, `reader.mjs` 1, `server.mjs` 6 |
+| 140 | `tests/canonical/test-artifact-discipline.sh` | task-031 | `reader.py` 1, `reader.mjs` 1 |
+| 141 | `tests/canonical/test-dashboard-manifest.sh` | task-031 | `reader.py` 2 |
+| 142 | `tests/canonical/test-dashboard-parity-h.sh` | task-031 | `reader.py` 3, `server.py` 12, `reader.mjs` 3, `server.mjs` 10 |
+| 143 | `tests/canonical/test-lite-work-end-to-end.sh` | task-031 | `reader.py` 6, `reader.mjs` 5 |
+| 144 | `dashboard/reader/tests/test_task008_display_rename.py` | task-031 | `server.py` 1, `reader.mjs` 3 |
+| 145 | `dashboard/reader/tests/test_task021_external_sources.py` | task-031 | `server.py` 2, `reader.mjs` 3 |
+| 146 | `dashboard/reader/tests/test_task029_stop_requested.py` | task-031 | `server.py` 1, `reader.mjs` 3 |
+| 147 | `dashboard/server/tests/fixtures/README.md` | task-031 | `server.py` 1 |
+| 148 | `dashboard/server/tests/test_home_html_project_header.py` | task-031 | `server.py` 2, `server.mjs` 2 |
+| 149 | `dashboard/server/tests/test_index_html.py` | task-031 | `server.py` 2 |
+| 150 | `dashboard/server/tests/test_server_py.py` | task-031 | `server.py` 6 |
+| 151 | `dashboard/server/tests/test_task011_dispatch_round_trip.py` | task-031 | `server.py` 8 |
+| 152 | `dashboard/server/tests/test_task013_project_registry_ops.mjs` | task-031 | `server.py` 1, `server.mjs` 10 |
+| 153 | `dashboard/server/tests/test_task017_registry_tooling_round_trips.mjs` | task-031 | `server.py` 1, `server.mjs` 5 |
+| 154 | `dashboard/server/tests/test_task017_registry_tooling_round_trips.py` | task-031 | `server.py` 2, `server.mjs` 11 |
+| 155 | `dashboard/server/tests/test_task023_list_management_round_trips.mjs` | task-031 | `server.py` 1, `server.mjs` 4 |
+| 156 | `dashboard/server/tests/test_task023_list_management_round_trips.py` | task-031 | `server.py` 4, `reader.mjs` 2, `server.mjs` 5 |
+| 157 | `dashboard/server/tests/test_task030_finish_stop_resume_ui.py` | task-031 | `server.py` 2, `server.mjs` 2 |
+| 158 | `dashboard/server/tests/test_tools_management_ui.py` | task-031 | `server.py` 1, `server.mjs` 1 |
+| 159 | `tests/canonical/test-aid-remote.sh` | task-031 | `server.py` 2, `reader.mjs` 1, `server.mjs` 2 |
+| 160 | `tests/canonical/test-ascii-only.sh` | task-031 | `server.py` 1, `reader.mjs` 1, `server.mjs` 1 |
+| 161 | `tests/canonical/test-dashboard-parity.sh` | task-031 | `server.py` 2, `server.mjs` 2 |
+| 162 | `tests/coverage-baseline.tsv` | task-031 | `server.py` 6, `server.mjs` 4 |
+| 163 | `tests/ui/README.md` | task-031 | `server.py` 1, `server.mjs` 1 |
+| 164 | `tests/ui/serve.mjs` | task-031 | `server.py` 1, `server.mjs` 1 |
+| 165 | `dashboard/reader/tests/test_resolve_work_dir_cross_runtime_parity.py` | task-031 | `reader.mjs` 3 |
+| 166 | `dashboard/reader/tests/test_security_hardening.py` | task-031 | `reader.mjs` 4 |
+| 167 | `dashboard/reader/tests/test_state_yaml_conformance_node.py` | task-031 | `reader.mjs` 6 |
+| 168 | `dashboard/reader/tests/test_task019_connectors.py` | task-031 | `reader.mjs` 3 |
+| 169 | `dashboard/reader/tests/test_task023_list_management_parity.py` | task-031 | `reader.mjs` 5 |
+| 170 | `dashboard/reader/tests/test_task044_freshness_parity.py` | task-031 | `reader.mjs` 2 |
+| 171 | `dashboard/server/tests/test_server_node.mjs` | task-031 | `reader.mjs` 12, `server.mjs` 11 |
+| 172 | `dashboard/server/tests/test_task002_resolve_work_dir.mjs` | task-031 | `reader.mjs` 2 |
+| 173 | `dashboard/server/tests/test_task010_task_notes_cross_runtime_parity.py` | task-031 | `reader.mjs` 2, `server.mjs` 7 |
+| 174 | `dashboard/server/tests/test_task019_connector_ops.mjs` | task-031 | `reader.mjs` 3, `server.mjs` 6 |
+| 175 | `dashboard/server/tests/test_task021_external_source_ops.mjs` | task-031 | `reader.mjs` 4, `server.mjs` 6 |
+| 176 | `dashboard/server/tests/test_task025_pipeline_delete_ops.mjs` | task-031 | `reader.mjs` 3, `server.mjs` 6 |
+| 177 | `dashboard/server/tests/test_task029_task_stop_resume_ops.mjs` | task-031 | `reader.mjs` 3, `server.mjs` 6 |
+| 178 | `dashboard/server/tests/test_write_enabled_cross_runtime_parity.py` | task-031 | `reader.mjs` 5, `server.mjs` 13 |
+| 179 | `tests/canonical/test-producer-completeness.sh` | task-031 | `reader.mjs` 6 |
+| 180 | `tests/canonical/test-task-state-transitions.sh` | task-031 | `reader.mjs` 2 |
+| 181 | `dashboard/server/tests/test_ki009_windows_dispatch.py` | task-031 | `server.mjs` 5 |
+| 182 | `dashboard/server/tests/test_task010_task_notes.py` | task-031 | `server.mjs` 1 |
+| 183 | `dashboard/server/tests/test_task011_dispatch_round_trip.mjs` | task-031 | `server.mjs` 13 |
+| 184 | `dashboard/server/tests/test_task015_tools_update_ops.mjs` | task-031 | `server.mjs` 14 |
+| 185 | `tests/canonical/test-kb-citation-lint.sh` | task-031 | `server.mjs` 3 |
+| 186 | `tests/cost-baseline.tsv` | task-034 | `design-lifecycle.md` 1, `aid-brainstorm` 5, `aid-design` 110 |
+| 187 | `site/scripts/__tests__/flow-classify.test.mjs` | task-037 | `shortcut-engine.md` 4 |
+| 188 | `site/scripts/__tests__/flow-compose.test.mjs` | task-037 | `shortcut-engine.md` 5 |
+| 189 | `site/scripts/__tests__/flow-engine-core.test.mjs` | task-037 | `shortcut-engine.md` 6 |
+| 190 | `site/scripts/__tests__/flow-extract-engine.test.mjs` | task-037 | `shortcut-engine.md` 2 |
+| 191 | `site/scripts/__tests__/flow-graph-doorways.test.mjs` | task-037 | `shortcut-engine.md` 6 |
+| 192 | `site/scripts/__tests__/flow-graph.test.mjs` | task-037 | `shortcut-engine.md` 4 |
+| 193 | `site/scripts/__tests__/gen-reference.test.mjs` | task-037 | `shortcut-engine.md` 1 |
+| 194 | `site/scripts/__tests__/provenance-appender.test.mjs` | task-037 | `shortcut-engine.md` 5 |
+| 195 | `site/src/lib/__tests__/feature-006-head-gate.test.ts` | task-037 | `shortcut-engine.md` 1 |
+| 196 | `tests/canonical/test-artifact-discipline.sh` | task-037 | `shortcut-engine.md` 2 |
+| 197 | `tests/canonical/test-catalog-dirs-parity.sh` | task-037 | `shortcut-engine.md` 2 |
+| 198 | `tests/canonical/test-change-refactor-family-scaffold.sh` | task-037 | `shortcut-engine.md` 1 |
+| 199 | `tests/canonical/test-create-family-scaffold.sh` | task-037 | `shortcut-engine.md` 6 |
+| 200 | `tests/canonical/test-deploy-monitor-repurpose.sh` | task-037 | `shortcut-engine.md` 2 |
+| 201 | `tests/canonical/test-document-family-scaffold.sh` | task-037 | `shortcut-engine.md` 2 |
+| 202 | `tests/canonical/test-downstream-worktree-entry.sh` | task-037 | `shortcut-engine.md` 2 |
+| 203 | `tests/canonical/test-fix-family-scaffold.sh` | task-037 | `shortcut-engine.md` 1 |
+| 204 | `tests/canonical/test-prototype-family-scaffold.sh` | task-037 | `shortcut-engine.md` 2 |
+| 205 | `tests/canonical/test-shortcut-engine-contract.sh` | task-037 | `shortcut-engine.md` 8 |
+| 206 | `tests/canonical/test-state-review-surface.sh` | task-037 | `shortcut-engine.md` 7 |
+| 207 | `tests/canonical/test-test-experiment-family-scaffold.sh` | task-037 | `shortcut-engine.md` 2 |
+| 208 | `tests/canonical/test-ticket-retirement-structural.sh` | task-037 | `shortcut-engine.md` 5 |
+| 209 | `tests/canonical/test-work-initiation-gate.sh` | task-037 | `shortcut-engine.md` 3 |
+| 210 | `tests/cost-baseline.tsv` | task-037 | `shortcut-engine.md` 1 |
+| 211 | `tests/coverage-baseline.tsv` | task-037 | `shortcut-engine.md` 4 |
+| 212 | `tests/canonical/fixtures/dual-intent/content/doc-set.tsv` | task-045 | `decisions.md` 1, `domain-glossary.md` 1 |
+| 213 | `tests/canonical/fixtures/dual-intent/data-ml/doc-set.tsv` | task-045 | `decisions.md` 1, `domain-glossary.md` 1 |
+| 214 | `tests/canonical/fixtures/dual-intent/design/doc-set.tsv` | task-045 | `decisions.md` 1, `domain-glossary.md` 1 |
+| 215 | `tests/canonical/test-chat-node-wake.sh` | task-045 | `decisions.md` 1 |
+| 216 | `tests/canonical/test-domain-doc-matrix.sh` | task-045 | `decisions.md` 15 |
+| 217 | `tests/canonical/test-grade-summary.sh` | task-045 | `decisions.md` 6, `domain-glossary.md` 8 |
+| 218 | `tests/canonical/test-kb-review-surface.sh` | task-045 | `decisions.md` 3 |
+| 219 | `tests/canonical/fixtures/actback-task/docset-check.tsv` | task-045 | `domain-glossary.md` 1 |
+| 220 | `tests/canonical/fixtures/actback-task/kb/domain-glossary.md` | task-045 | `domain-glossary.md` 1 |
+| 221 | `tests/canonical/fixtures/kb-essence/actback/actback-fail-kb/knowledge/domain-glossary.md` | task-045 | `domain-glossary.md` 1 |
+| 222 | `tests/canonical/fixtures/kb-essence/actback/representative-task-fixture/doc-set.tsv` | task-045 | `domain-glossary.md` 1 |
+| 223 | `tests/canonical/fixtures/kb-essence/actback/representative-task-fixture/expected/task-spec.txt` | task-045 | `domain-glossary.md` 1 |
+| 224 | `tests/canonical/fixtures/kb-essence/closed-kb/knowledge/architecture.md` | task-045 | `domain-glossary.md` 1 |
+| 225 | `tests/canonical/test-actback-fixtures.sh` | task-045 | `domain-glossary.md` 14 |
+| 226 | `tests/canonical/test-actback-task.sh` | task-045 | `domain-glossary.md` 15 |
+| 227 | `tests/canonical/test-closure-batching.sh` | task-045 | `domain-glossary.md` 2 |
+| 228 | `tests/canonical/test-closure-check.sh` | task-045 | `domain-glossary.md` 5 |
+| 229 | `tests/canonical/test-doc-set-mapping.sh` | task-045 | `domain-glossary.md` 5 |
+| 230 | `tests/canonical/test-doc-set-propose-confirm.sh` | task-045 | `domain-glossary.md` 2 |
+| 231 | `tests/canonical/test-essence-capture.sh` | task-045 | `domain-glossary.md` 2 |
+| 232 | `tests/canonical/test-output-root-isolation.sh` | task-045 | `domain-glossary.md` 4 |
+| 233 | `tests/canonical/test-teachback-fixtures.sh` | task-045 | `domain-glossary.md` 5 |
+| 234 | `tests/cost-baseline.tsv` | task-045 | `domain-glossary.md` 1 |
+| 235 | `tests/coverage-baseline.tsv` | task-045 | `domain-glossary.md` 2 |
+| 236 | `tests/canonical/fixtures/actback-task/docset-contract.tsv` | task-049 | `pipeline-contracts.md` 1 |
+| 237 | `tests/canonical/test-actback-task.sh` | task-049 | `pipeline-contracts.md` 1, `architecture.md` 3 |
+| 238 | `tests/canonical/test-deploy-monitor-repurpose.sh` | task-049 | `pipeline-contracts.md` 8 |
+| 239 | `tests/canonical/test-doc-set-mapping.sh` | task-049 | `pipeline-contracts.md` 9, `architecture.md` 10 |
+| 240 | `tests/canonical/test-doc-set-propose-confirm.sh` | task-049 | `pipeline-contracts.md` 2, `architecture.md` 4 |
+| 241 | `tests/canonical/test-doc-set-read.sh` | task-049 | `pipeline-contracts.md` 5, `architecture.md` 13 |
+| 242 | `tests/cost-baseline.tsv` | task-049 | `pipeline-contracts.md` 1, `architecture.md` 1 |
+| 243 | `tests/coverage-baseline.tsv` | task-049 | `pipeline-contracts.md` 4, `architecture.md` 12 |
+| 244 | `dashboard/reader/tests/test_reader.py` | task-049 | `architecture.md` 1 |
+| 245 | `tests/canonical/fixtures/actback-task/docset-component.tsv` | task-049 | `architecture.md` 1 |
+| 246 | `tests/canonical/fixtures/kb-essence/paths/brownfield-large/generated/project-index.md` | task-049 | `architecture.md` 1 |
+| 247 | `tests/canonical/fixtures/kb-essence/unclosed-kb/knowledge/domain-glossary.md` | task-049 | `architecture.md` 2 |
+| 248 | `tests/canonical/fixtures/teachback-questions/candidate-concepts-mixed.md` | task-049 | `architecture.md` 1 |
+| 249 | `tests/canonical/test-build-kb-index.sh` | task-049 | `architecture.md` 3 |
+| 250 | `tests/canonical/test-closure-check.sh` | task-049 | `architecture.md` 16 |
+| 251 | `tests/canonical/test-conformance-lane-semantics.sh` | task-049 | `architecture.md` 4 |
+| 252 | `tests/canonical/test-essence-capture.sh` | task-049 | `architecture.md` 1 |
+| 253 | `tests/canonical/test-expectations-single-source.sh` | task-049 | `architecture.md` 9 |
+| 254 | `tests/canonical/test-frontmatter-lint.sh` | task-049 | `architecture.md` 1 |
+| 255 | `tests/canonical/test-grade-summary.sh` | task-049 | `architecture.md` 6 |
+| 256 | `tests/canonical/test-harvest-coined-terms.sh` | task-049 | `architecture.md` 1 |
+| 257 | `tests/canonical/test-housekeep-classify.sh` | task-049 | `architecture.md` 2 |
+| 258 | `tests/canonical/test-kb-html-claims-check.sh` | task-049 | `architecture.md` 4 |
+| 259 | `tests/canonical/test-kb-index-extract-list.sh` | task-049 | `architecture.md` 4 |
+| 260 | `tests/canonical/test-kb-review-surface.sh` | task-049 | `architecture.md` 3 |
+| 261 | `tests/canonical/test-spine-depth-coverage.sh` | task-049 | `architecture.md` 3 |
+| 262 | `tests/canonical/test-summarize-preflight.sh` | task-049 | `architecture.md` 1 |
+| 263 | `tests/canonical/test-validator-behavior.sh` | task-049 | `architecture.md` 5 |
+| 264 | `tests/conversation/fixtures/default/.aid/knowledge/INDEX.md` | task-049 | `architecture.md` 1 |
+| 265 | `tests/conversation/fixtures/done-work/.aid/knowledge/INDEX.md` | task-049 | `architecture.md` 1 |
+| 266 | `tests/conversation/fixtures/empty-notes-file/.aid/knowledge/INDEX.md` | task-049 | `architecture.md` 1 |
+| 267 | `tests/conversation/fixtures/ticket-mid-work/.aid/knowledge/INDEX.md` | task-049 | `architecture.md` 1 |
+| 268 | `tests/conversation/samples/feature-001/001-05-project-question.md` | task-049 | `architecture.md` 1 |
+| 269 | `tests/conversation/samples/feature-001/001-06-kb-conflict.md` | task-049 | `architecture.md` 1 |
+| 270 | `tests/canonical/test-discovery-doc-ownership.sh` | task-057 | `test-landscape.md` 4 |
+| 271 | `tests/canonical/test-doc-set-mapping.sh` | task-057 | `test-landscape.md` 13 |
+| 272 | `tests/canonical/test-doc-set-propose-confirm.sh` | task-057 | `test-landscape.md` 9 |
+| 273 | `tests/canonical/test-validator-behavior.sh` | task-057 | `test-landscape.md` 1, `INDEX.md` 5 |
+| 274 | `tests/cost-baseline.tsv` | task-057 | `test-landscape.md` 1 |
+| 275 | `tests/coverage-baseline.tsv` | task-057 | `test-landscape.md` 5, `INDEX.md` 7 |
+| 276 | `dashboard/reader/tests/test_task019_connectors.py` | task-057 | `INDEX.md` 3 |
+| 277 | `dashboard/server/tests/test_task019_connector_ops.mjs` | task-057 | `INDEX.md` 2 |
+| 278 | `dashboard/server/tests/test_task019_connector_ops.py` | task-057 | `INDEX.md` 2 |
+| 279 | `dashboard/server/tests/test_task023_list_management_round_trips.py` | task-057 | `INDEX.md` 7 |
+| 280 | `tests/canonical/test-build-connectors-index.sh` | task-057 | `INDEX.md` 15 |
+| 281 | `tests/canonical/test-connector-registry.sh` | task-057 | `INDEX.md` 4 |
+| 282 | `tests/canonical/test-connector-set-unset-lifecycle.sh` | task-057 | `INDEX.md` 6 |
+| 283 | `tests/canonical/test-connector-twins-ps1-parity.sh` | task-057 | `INDEX.md` 9 |
+| 284 | `tests/canonical/test-connectors-registry-integration.sh` | task-057 | `INDEX.md` 10 |
+| 285 | `tests/canonical/test-conversation-runner.sh` | task-057 | `INDEX.md` 2 |
+| 286 | `tests/canonical/test-frontmatter-lint.sh` | task-057 | `INDEX.md` 1 |
+| 287 | `tests/canonical/test-grade-summary.sh` | task-057 | `INDEX.md` 2 |
+| 288 | `tests/canonical/test-guardrails-d012.sh` | task-057 | `INDEX.md` 1 |
+| 289 | `tests/canonical/test-kb-forward-authored-marker.sh` | task-057 | `INDEX.md` 2 |
+| 290 | `tests/canonical/test-kb-freshness-check.sh` | task-057 | `INDEX.md` 6 |
+| 291 | `tests/canonical/test-kb-review-surface.sh` | task-057 | `INDEX.md` 5 |
+| 292 | `tests/canonical/test-payload-size.sh` | task-057 | `INDEX.md` 1 |
+| 293 | `tests/canonical/test-reconcile-scenarios.sh` | task-057 | `INDEX.md` 30 |
+| 294 | `tests/canonical/test-write-connector.sh` | task-057 | `INDEX.md` 7 |
+| 295 | `tests/cost-meter.py` | task-057 | `INDEX.md` 1 |
+| 296 | `tests/canonical/test-connector-skills-structural.sh` | task-043 | `ticket-resolution.md` 2, `aid-config` 2, `aid-set-connector` 14, `aid-unset-connector` 13 |
+| 297 | `tests/canonical/test-ticket-skills-structural.sh` | task-043 | `ticket-resolution.md` 10, `aid-create-ticket` 35, `aid-read-ticket` 18, `aid-update-ticket` 32 |
+| 298 | `tests/cost-baseline.tsv` | task-043 | `ticket-resolution.md` 1, `aid-chat` 5, `aid-config` 5, `aid-create-ticket` 5, `aid-deploy` 5, `aid-monitor` 5, `aid-read-ticket` 5, `aid-set-connector` 5, `aid-unset-connector` 5, `aid-update-ticket` 5 |
+| 299 | `tests/coverage-baseline.tsv` | task-043 | `ticket-resolution.md` 3, `aid-create-ticket` 33, `aid-deploy` 9, `aid-monitor` 6, `aid-read-ticket` 16, `aid-update-ticket` 25 |
+| 300 | `tests/canonical/test-version-sync.sh` | task-056 | `release.yml` 15 |
+| 301 | `tests/canonical/test-writeback-state.sh` | task-056 | `release.yml` 1 |
+| 302 | `tests/canonical/test-aid-cli-parity.sh` | task-056 | `installer-tests.yml` 1, `release.sh` 1 |
+| 303 | `tests/canonical/test-ascii-only.sh` | task-056 | `installer-tests.yml` 1 |
+| 304 | `tests/canonical/test-ps51-compat.sh` | task-056 | `installer-tests.yml` 1 |
+| 305 | `tests/windows/Test-AidInstaller.ps1` | task-056 | `installer-tests.yml` 1, `release.sh` 3 |
+| 306 | `tests/canonical/test-aid-cli-ps1.sh` | task-056 | `release.sh` 1 |
+| 307 | `tests/canonical/test-aid-cli.sh` | task-056 | `release.sh` 1 |
+| 308 | `tests/canonical/test-aid-migrate-trigger.sh` | task-056 | `release.sh` 7 |
+| 309 | `tests/canonical/test-aid-migrate.sh` | task-056 | `release.sh` 1 |
+| 310 | `tests/canonical/test-chat-node-manifest.sh` | task-056 | `release.sh` 4 |
+| 311 | `tests/canonical/test-conversation-runner.sh` | task-056 | `release.sh` 1 |
+| 312 | `tests/canonical/test-dashboard-manifest.sh` | task-056 | `release.sh` 2 |
+| 313 | `tests/canonical/test-npm-installer.sh` | task-056 | `release.sh` 1 |
+| 314 | `tests/canonical/test-pypi-installer.sh` | task-056 | `release.sh` 1 |
+| 315 | `tests/canonical/test-registry.sh` | task-056 | `release.sh` 1 |
+| 316 | `tests/canonical/test-release-install-e2e.sh` | task-056 | `release.sh` 20 |
+| 317 | `tests/canonical/test-release-migrate-smoke.sh` | task-056 | `release.sh` 1 |
+| 318 | `tests/canonical/test-release.sh` | task-056 | `release.sh` 11 |
+| 319 | `tests/canonical/test-shared-install.sh` | task-056 | `release.sh` 1 |
+| 320 | `tests/canonical/test-shortcut-builder-invariants.sh` | task-056 | `release.sh` 1 |
+| 321 | `tests/canonical/test-shortcut-engine-contract.sh` | task-056 | `release.sh` 1 |
+| 322 | `tests/coverage-accepted-removals.tsv` | task-056 | `release.sh` 2 |
+| 323 | `tests/coverage-baseline.tsv` | task-056 | `release.sh` 17 |
+| 324 | `tests/lib/bundle.sh` | task-056 | `release.sh` 2 |
+| 325 | `site/scripts/__tests__/provenance.test.mjs` | task-042 | `aid-ask` 2 |
+| 326 | `site/src/lib/__tests__/feature-006-head-gate.test.ts` | task-042 | `aid-ask` 15 |
+| 327 | `site/src/lib/__tests__/skill-node-panel.test.ts` | task-042 | `aid-ask` 20 |
+| 328 | `tests/canonical/test-aid-cli-parity.sh` | task-042 | `aid-ask` 7 |
+| 329 | `tests/canonical/test-aid-migrate.sh` | task-042 | `aid-ask` 1 |
+| 330 | `tests/canonical/test-dogfood-byte-identity.sh` | task-042 | `aid-ask` 2 |
+| 331 | `tests/canonical/test-multitool-isolation.sh` | task-042 | `aid-ask` 4 |
+| 332 | `tests/canonical/test-ticket-retirement-structural.sh` | task-042 | `aid-ask` 5 |
+| 333 | `tests/windows/Test-AidInstaller.ps1` | task-042 | `aid-ask` 3 |
+| 334 | `site/scripts/__tests__/flow-extract-residual.test.mjs` | task-042 | `aid-ask` 5 |
+| 335 | `site/scripts/__tests__/gen-reference.test.mjs` | task-042 | `aid-ask` 1, `aid-housekeep` 1, `aid-summarize` 1, `aid-update-kb` 1 |
+| 336 | `site/scripts/__tests__/provenance-appender.test.mjs` | task-042 | `aid-ask` 3 |
+| 337 | `site/scripts/__tests__/skill-counts.test.mjs` | task-042 | `aid-ask` 2 |
+| 338 | `tests/canonical/fixtures/install-core-primitives/manifest-v3.golden.json` | task-042 | `aid-ask` 1 |
+| 339 | `tests/canonical/fixtures/install-core-primitives/manifest-v3.model.tsv` | task-042 | `aid-ask` 1 |
+| 340 | `tests/canonical/test-catalog-dirs-parity.sh` | task-042 | `aid-ask` 1 |
+| 341 | `tests/canonical/test-connector-consumption-linkage.sh` | task-042 | `aid-ask` 1 |
+| 342 | `tests/canonical/test-deploy-monitor-repurpose.sh` | task-042 | `aid-ask` 1 |
+| 343 | `tests/canonical/test-skill-guide.sh` | task-042 | `aid-ask` 1, `aid-housekeep` 1, `aid-summarize` 1, `aid-update-kb` 1 |
+| 344 | `tests/cost-baseline.tsv` | task-042 | `aid-ask` 5, `aid-housekeep` 5, `aid-summarize` 5, `aid-update-kb` 5 |
+| 345 | `tests/coverage-baseline.tsv` | task-042 | `aid-ask` 2, `aid-housekeep` 1, `aid-update-kb` 1 |
+| 346 | `tests/conversation/samples/feature-001/001-07-rich-ticket.md` | task-034 | `aid-brainstorm` 1 |
+| 347 | `tests/conversation/samples/feature-001/001-08-bare-idea.md` | task-034 | `aid-brainstorm` 1 |
+| 348 | `tests/conversation/samples/feature-001/001-09-bug-fix-phases.md` | task-034 | `aid-brainstorm` 1 |
+| 349 | `tests/conversation/samples/feature-001/001-14-refactor-is-new-capability.md` | task-034 | `aid-brainstorm` 1 |
+| 350 | `tests/canonical/test-chat-node-hub.sh` | task-043 | `aid-chat` 1 |
+| 351 | `tests/canonical/test-chat-node-wake.sh` | task-043 | `aid-chat` 3 |
+| 352 | `site/scripts/__tests__/gen-reference.test.mjs` | task-043 | `aid-chat` 1, `aid-config` 1, `aid-create-ticket` 1, `aid-deploy` 1, `aid-monitor` 1, `aid-read-ticket` 1, `aid-set-connector` 1, `aid-unset-connector` 1, `aid-update-ticket` 1 |
+| 353 | `site/scripts/__tests__/flow-extract-residual.test.mjs` | task-043 | `aid-config` 8, `aid-create-ticket` 4, `aid-read-ticket` 2, `aid-set-connector` 2, `aid-unset-connector` 2, `aid-update-ticket` 2 |
+| 354 | `dashboard/reader/tests/test_reader.py` | task-043 | `aid-config` 3 |
+| 355 | `dashboard/server/tests/test_server_node.mjs` | task-043 | `aid-config` 1 |
+| 356 | `dashboard/server/tests/test_task012_consuming_round_trips.py` | task-043 | `aid-config` 2 |
+| 357 | `site/scripts/__tests__/flow-facade.test.mjs` | task-043 | `aid-config` 16 |
+| 358 | `site/scripts/__tests__/skills-groups.test.mjs` | task-043 | `aid-config` 7, `aid-deploy` 13, `aid-monitor` 10 |
+| 359 | `tests/canonical/test-aid-cli-parity.sh` | task-043 | `aid-config` 2 |
+| 360 | `tests/canonical/test-skill-guide.sh` | task-043 | `aid-config` 1, `aid-create-ticket` 1, `aid-update-ticket` 1 |
+| 361 | `tests/canonical/test-skill-guide.sh` | task-036 | `aid-create-architecture` 1, `aid-create-backlog` 1, `aid-create-cicd` 1, `aid-create-mvp` 1, `aid-create-roadmap` 1, `aid-create-stack` 1, `aid-create-testing-strategy` 1, `aid-update-architecture` 1, `aid-update-backlog` 1, `aid-update-cicd` 1, `aid-update-mvp` 1, `aid-update-roadmap` 1, `aid-update-stack` 1, `aid-update-testing-strategy` 1 |
+| 362 | `tests/cost-baseline.tsv` | task-036 | `aid-create-architecture` 5, `aid-create-backlog` 5, `aid-create-cicd` 5, `aid-create-mvp` 5, `aid-create-roadmap` 5, `aid-create-stack` 5, `aid-create-testing-strategy` 5, `aid-update-architecture` 5, `aid-update-backlog` 5, `aid-update-cicd` 5, `aid-update-mvp` 5, `aid-update-roadmap` 5, `aid-update-stack` 5, `aid-update-testing-strategy` 5 |
+| 363 | `tests/canonical/test-work-initiation-gate.sh` | task-044 | `aid-create-document` 3, `aid-prototype` 9, `aid-report` 3, `aid-research` 10, `aid-review` 11, `aid-test` 3, `aid-update-document` 5 |
+| 364 | `site/scripts/__tests__/flow-compose.test.mjs` | task-044 | `aid-create-document` 4, `aid-test` 8 |
+| 365 | `site/scripts/__tests__/flow-extract-inline.test.mjs` | task-044 | `aid-create-document` 2, `aid-prototype` 1, `aid-report` 2, `aid-research` 1, `aid-review` 5, `aid-test` 5, `aid-update-document` 5 |
+| 366 | `site/scripts/__tests__/flow-extract-sibling.test.mjs` | task-044 | `aid-create-document` 6, `aid-test` 53 |
+| 367 | `tests/canonical/test-create-family-scaffold.sh` | task-044 | `aid-create-document` 3, `aid-report` 3, `aid-review` 1, `aid-test` 3 |
+| 368 | `tests/canonical/test-document-family-scaffold.sh` | task-044 | `aid-create-document` 2, `aid-report` 2, `aid-review` 1, `aid-update-document` 1 |
+| 369 | `tests/canonical/test-skill-guide.sh` | task-044 | `aid-create-document` 1, `aid-prototype` 1, `aid-test` 2, `aid-update-document` 1 |
+| 370 | `tests/cost-baseline.tsv` | task-044 | `aid-create-document` 5, `aid-prototype` 10, `aid-report` 5, `aid-research` 6, `aid-review` 6, `aid-test` 20, `aid-update-document` 5 |
+| 371 | `tests/coverage-baseline.tsv` | task-044 | `aid-create-document` 3, `aid-prototype` 5, `aid-report` 4, `aid-research` 24, `aid-review` 15, `aid-test` 3, `aid-update-document` 3 |
+| 372 | `site/scripts/__tests__/flow-advance.test.mjs` | task-043 | `aid-create-ticket` 4, `aid-deploy` 1 |
+| 373 | `tests/canonical/test-ticket-retirement-structural.sh` | task-043 | `aid-create-ticket` 9, `aid-deploy` 10, `aid-monitor` 11, `aid-read-ticket` 9, `aid-set-connector` 1, `aid-update-ticket` 14 |
+| 374 | `tests/canonical/test-aid-cli-parity.sh` | task-039 | `aid-define` 1 |
+| 375 | `tests/canonical/test-downstream-worktree-entry.sh` | task-039 | `aid-define` 16, `aid-specify` 12 |
+| 376 | `tests/canonical/test-shared-prune.sh` | task-039 | `aid-define` 3 |
+| 377 | `tests/canonical/test-shared-remove.sh` | task-039 | `aid-define` 7 |
+| 378 | `tests/canonical/test-state-review-surface.sh` | task-039 | `aid-define` 1, `aid-specify` 1 |
+| 379 | `dashboard/reader/tests/test_work003_state_schema.py` | task-039 | `aid-define` 1 |
+| 380 | `site/scripts/__tests__/flow-advance.test.mjs` | task-039 | `aid-define` 4, `aid-specify` 4 |
+| 381 | `site/scripts/__tests__/flow-extract-dispatch.test.mjs` | task-039 | `aid-define` 8, `aid-specify` 5 |
+| 382 | `site/scripts/__tests__/flow-graph.test.mjs` | task-039 | `aid-define` 5 |
+| 383 | `site/scripts/__tests__/gen-reference.test.mjs` | task-039 | `aid-define` 1, `aid-specify` 1 |
+| 384 | `site/scripts/__tests__/gen-skills-index.test.mjs` | task-039 | `aid-define` 1, `aid-specify` 1 |
+| 385 | `site/scripts/__tests__/skills-groups.test.mjs` | task-039 | `aid-define` 1, `aid-specify` 1 |
+| 386 | `tests/canonical/test-artifact-discipline.sh` | task-039 | `aid-define` 2, `aid-specify` 2 |
+| 387 | `tests/canonical/test-scoped-review-cycles.sh` | task-039 | `aid-define` 1, `aid-specify` 5 |
+| 388 | `tests/canonical/test-skill-guide.sh` | task-039 | `aid-define` 1 |
+| 389 | `tests/canonical/test-work-state-template.sh` | task-039 | `aid-define` 2, `aid-specify` 1 |
+| 390 | `tests/cost-baseline.tsv` | task-039 | `aid-define` 5, `aid-specify` 5 |
+| 391 | `tests/coverage-baseline.tsv` | task-039 | `aid-define` 14, `aid-specify` 16 |
+| 392 | `tests/coverage-rehome-allowlist.tsv` | task-039 | `aid-define` 1, `aid-specify` 1 |
+| 393 | `tests/canonical/test-downstream-worktree-entry.sh` | task-043 | `aid-deploy` 10 |
+| 394 | `tests/canonical/test-pipeline-status-walkthrough.sh` | task-043 | `aid-deploy` 1 |
+| 395 | `dashboard/server/tests/test_index_html.py` | task-043 | `aid-deploy` 1 |
+| 396 | `site/scripts/__tests__/flow-extract-dispatch.test.mjs` | task-043 | `aid-deploy` 1, `aid-monitor` 1 |
+| 397 | `site/scripts/__tests__/gen-skills-index.test.mjs` | task-043 | `aid-deploy` 8, `aid-monitor` 8 |
+| 398 | `site/scripts/__tests__/skills-catalog.test.mjs` | task-043 | `aid-deploy` 4, `aid-monitor` 2 |
+| 399 | `site/scripts/__tests__/skills-render-index.test.mjs` | task-043 | `aid-deploy` 2, `aid-monitor` 2 |
+| 400 | `tests/canonical/test-catalog-dirs-parity.sh` | task-043 | `aid-deploy` 1, `aid-monitor` 1 |
+| 401 | `tests/canonical/test-deploy-monitor-repurpose.sh` | task-043 | `aid-deploy` 14, `aid-monitor` 21 |
+| 402 | `tests/coverage-rehome-allowlist.tsv` | task-043 | `aid-deploy` 1, `aid-read-ticket` 1, `aid-update-ticket` 1 |
+| 403 | `site/scripts/__tests__/flow-extract-dispatch.test.mjs` | task-038 | `aid-describe` 25 |
+| 404 | `tests/canonical/test-cutover-no-dangling.sh` | task-038 | `aid-describe` 3 |
+| 405 | `tests/canonical/test-pipeline-status-walkthrough.sh` | task-038 | `aid-describe` 3 |
+| 406 | `tests/canonical/test-ticket-retirement-structural.sh` | task-038 | `aid-describe` 16 |
+| 407 | `tests/canonical/test-work-initiation-gate.sh` | task-038 | `aid-describe` 4 |
+| 408 | `tests/canonical/test-work-state-template.sh` | task-038 | `aid-describe` 7 |
+| 409 | `dashboard/reader/tests/test_feature009.py` | task-038 | `aid-describe` 1 |
+| 410 | `dashboard/reader/tests/test_shortcut_kind_map_cross_runtime_parity.py` | task-038 | `aid-describe` 5 |
+| 411 | `dashboard/reader/tests/test_work003_state_schema.py` | task-038 | `aid-describe` 6 |
+| 412 | `dashboard/server/tests/fixtures/pt1-aid/.aid/works/work-006-lite-sample/SPEC.md` | task-038 | `aid-describe` 1 |
+| 413 | `dashboard/server/tests/test_index_html.py` | task-038 | `aid-describe` 6 |
+| 414 | `site/scripts/__tests__/flow-facade.test.mjs` | task-038 | `aid-describe` 8 |
+| 415 | `site/scripts/__tests__/flow-graph.test.mjs` | task-038 | `aid-describe` 3 |
+| 416 | `site/scripts/__tests__/gen-reference.test.mjs` | task-038 | `aid-describe` 1 |
+| 417 | `site/scripts/__tests__/gen-skills-index.test.mjs` | task-038 | `aid-describe` 1 |
+| 418 | `site/scripts/__tests__/skills-groups.test.mjs` | task-038 | `aid-describe` 3 |
+| 419 | `tests/canonical/test-connector-consumption-linkage.sh` | task-038 | `aid-describe` 1 |
+| 420 | `tests/canonical/test-deploy-monitor-repurpose.sh` | task-038 | `aid-describe` 5 |
+| 421 | `tests/canonical/test-describe-full-only.sh` | task-038 | `aid-describe` 9 |
+| 422 | `tests/canonical/test-path-fixtures.sh` | task-038 | `aid-describe` 1 |
+| 423 | `tests/canonical/test-skill-guide.sh` | task-038 | `aid-describe` 1 |
+| 424 | `tests/conversation/fixtures/done-work/.aid/works/work-001-csv-export/STATE.yml` | task-038 | `aid-describe` 1 |
+| 425 | `tests/conversation/fixtures/ticket-mid-work/.aid/works/work-001-retry-policy/STATE.yml` | task-038 | `aid-describe` 1 |
+| 426 | `tests/cost-baseline.tsv` | task-038 | `aid-describe` 5 |
+| 427 | `tests/coverage-baseline.tsv` | task-038 | `aid-describe` 12 |
+| 428 | `tests/canonical/test-work-initiation-gate.sh` | task-034 | `aid-design` 3 |
+| 429 | `site/scripts/__tests__/flow-advance.test.mjs` | task-034 | `aid-design` 1 |
+| 430 | `site/scripts/__tests__/flow-extract-inline.test.mjs` | task-034 | `aid-design` 4 |
+| 431 | `tests/canonical/test-skill-guide.sh` | task-034 | `aid-design` 5 |
+| 432 | `tests/coverage-baseline.tsv` | task-034 | `aid-design` 3 |
+| 433 | `tests/canonical/test-skill-guide.sh` | task-035 | `aid-design-api` 1, `aid-design-architecture` 1, `aid-design-backlog` 1, `aid-design-cicd` 1, `aid-design-cli` 1, `aid-design-config` 1, `aid-design-dashboard` 1, `aid-design-data-model` 1, `aid-design-data-pipeline` 1, `aid-design-document` 1, `aid-design-infra` 1, `aid-design-integration` 1, `aid-design-job` 1, `aid-design-messaging` 1, `aid-design-mvp` 1, `aid-design-roadmap` 1, `aid-design-stack` 1, `aid-design-test` 1, `aid-design-testing-strategy` 1, `aid-design-theme` 1, `aid-design-ui` 1 |
+| 434 | `tests/cost-baseline.tsv` | task-035 | `aid-design-api` 5, `aid-design-architecture` 5, `aid-design-backlog` 5, `aid-design-cicd` 5, `aid-design-cli` 5, `aid-design-config` 5, `aid-design-dashboard` 5, `aid-design-data-model` 5, `aid-design-data-pipeline` 5, `aid-design-document` 5, `aid-design-infra` 5, `aid-design-integration` 5, `aid-design-job` 5, `aid-design-messaging` 5, `aid-design-mvp` 5, `aid-design-roadmap` 5, `aid-design-stack` 5, `aid-design-test` 10, `aid-design-testing-strategy` 5, `aid-design-theme` 5, `aid-design-ui` 5 |
+| 435 | `dashboard/reader/tests/test_feature009.py` | task-040 | `aid-detail` 9, `aid-execute` 2 |
+| 436 | `tests/canonical/test-artifact-discipline.sh` | task-040 | `aid-detail` 1, `aid-plan` 2 |
+| 437 | `tests/canonical/test-downstream-worktree-entry.sh` | task-040 | `aid-detail` 7, `aid-execute` 10, `aid-plan` 7 |
+| 438 | `tests/canonical/test-state-review-surface.sh` | task-040 | `aid-detail` 1, `aid-execute` 1, `aid-plan` 1 |
+| 439 | `tests/canonical/test-ticket-retirement-structural.sh` | task-040 | `aid-detail` 11, `aid-execute` 23, `aid-plan` 22 |
+| 440 | `dashboard/reader/tests/test_flattened_layout_parity.py` | task-040 | `aid-detail` 1, `aid-execute` 1, `aid-plan` 1 |
+| 441 | `site/scripts/__tests__/flow-extract-dispatch.test.mjs` | task-040 | `aid-detail` 1, `aid-execute` 5, `aid-plan` 1 |
+| 442 | `site/scripts/__tests__/gen-reference.test.mjs` | task-040 | `aid-detail` 1, `aid-execute` 1, `aid-plan` 1 |
+| 443 | `site/scripts/__tests__/gen-skills-index.test.mjs` | task-040 | `aid-detail` 1, `aid-plan` 1 |
+| 444 | `site/scripts/__tests__/skills-groups.test.mjs` | task-040 | `aid-detail` 1, `aid-plan` 11 |
+| 445 | `tests/canonical/test-derive-waves.sh` | task-040 | `aid-detail` 1 |
+| 446 | `tests/canonical/test-scoped-review-cycles.sh` | task-040 | `aid-detail` 1, `aid-plan` 2 |
+| 447 | `tests/canonical/test-skill-guide.sh` | task-040 | `aid-detail` 1 |
+| 448 | `tests/cost-baseline.tsv` | task-040 | `aid-detail` 5, `aid-execute` 5, `aid-plan` 5 |
+| 449 | `tests/coverage-baseline.tsv` | task-040 | `aid-detail` 16, `aid-execute` 22, `aid-plan` 19 |
+| 450 | `tests/coverage-rehome-allowlist.tsv` | task-040 | `aid-detail` 1, `aid-execute` 1, `aid-plan` 1 |
+| 451 | `site/scripts/__tests__/flow-advance.test.mjs` | task-041 | `aid-discover` 2 |
+| 452 | `tests/canonical/test-connector-skills-structural.sh` | task-041 | `aid-discover` 5 |
+| 453 | `tests/canonical/test-cutover-no-dangling.sh` | task-041 | `aid-discover` 7 |
+| 454 | `tests/canonical/test-discovery-doc-ownership.sh` | task-041 | `aid-discover` 2 |
+| 455 | `tests/canonical/test-doc-set-mapping.sh` | task-041 | `aid-discover` 1 |
+| 456 | `tests/canonical/test-doc-set-propose-confirm.sh` | task-041 | `aid-discover` 1 |
+| 457 | `tests/canonical/test-doc-set-read.sh` | task-041 | `aid-discover` 2 |
+| 458 | `tests/canonical/test-domain-doc-matrix.sh` | task-041 | `aid-discover` 1 |
+| 459 | `tests/canonical/test-expectations-single-source.sh` | task-041 | `aid-discover` 4 |
+| 460 | `tests/canonical/test-kb-review-surface.sh` | task-041 | `aid-discover` 2 |
+| 461 | `tests/canonical/test-ledger-isolation.sh` | task-041 | `aid-discover` 3 |
+| 462 | `tests/canonical/test-output-root-isolation.sh` | task-041 | `aid-discover` 1 |
+| 463 | `tests/canonical/test-reconcile-scenarios.sh` | task-041 | `aid-discover` 1 |
+| 464 | `tests/canonical/test-release.sh` | task-041 | `aid-discover` 5 |
+| 465 | `tests/canonical/test-spine-depth-coverage.sh` | task-041 | `aid-discover` 3 |
+| 466 | `tests/canonical/test-state-review-surface.sh` | task-041 | `aid-discover` 1 |
+| 467 | `dashboard/reader/tests/test_task066_kb_parity.py` | task-041 | `aid-discover` 2 |
+| 468 | `dashboard/server/tests/fixtures/pt023-external-sources/multi-entry.md` | task-041 | `aid-discover` 1 |
+| 469 | `dashboard/server/tests/fixtures/pt023-external-sources/placeholder-only.md` | task-041 | `aid-discover` 1 |
+| 470 | `dashboard/server/tests/fixtures/pt023-external-sources/single-entry.md` | task-041 | `aid-discover` 1 |
+| 471 | `dashboard/server/tests/test_index_html.py` | task-041 | `aid-discover` 3 |
+| 472 | `site/scripts/__tests__/flow-extract-dispatch.test.mjs` | task-041 | `aid-discover` 1 |
+| 473 | `site/scripts/__tests__/gen-reference.test.mjs` | task-041 | `aid-discover` 1 |
+| 474 | `site/scripts/__tests__/gen-skills.test.mjs` | task-041 | `aid-discover` 2 |
+| 475 | `tests/README.md` | task-041 | `aid-discover` 1 |
+| 476 | `tests/canonical/test-conformance-lane-semantics.sh` | task-041 | `aid-discover` 5 |
+| 477 | `tests/canonical/test-grade-summary.sh` | task-041 | `aid-discover` 2 |
+| 478 | `tests/canonical/test-harvest-batching.sh` | task-041 | `aid-discover` 1 |
+| 479 | `tests/canonical/test-kb-template-authoring-standard.sh` | task-041 | `aid-discover` 1 |
+| 480 | `tests/canonical/test-path-fixtures.sh` | task-041 | `aid-discover` 1 |
+| 481 | `tests/canonical/test-skill-guide.sh` | task-041 | `aid-discover` 1 |
+| 482 | `tests/canonical/test-summarize-preflight.sh` | task-041 | `aid-discover` 1 |
+| 483 | `tests/canonical/test-ticket-retirement-structural.sh` | task-041 | `aid-discover` 1 |
+| 484 | `tests/canonical/test-write-external-source.sh` | task-041 | `aid-discover` 3 |
+| 485 | `tests/conversation/samples/feature-001/001-15-no-kb-offers-preparation.md` | task-041 | `aid-discover` 1 |
+| 486 | `tests/cost-baseline.tsv` | task-041 | `aid-discover` 5 |
+| 487 | `tests/canonical/test-compute-block-radius.sh` | task-040 | `aid-execute` 1 |
+| 488 | `tests/canonical/test-delivery-gate-aggregate.sh` | task-040 | `aid-execute` 4 |
+| 489 | `tests/canonical/test-task-state-transitions.sh` | task-040 | `aid-execute` 5 |
+| 490 | `dashboard/reader/tests/fixtures/task011_golden/flat_golden.json` | task-040 | `aid-execute` 1 |
+| 491 | `dashboard/reader/tests/fixtures/task011_golden/hierarchical_golden.json` | task-040 | `aid-execute` 1 |
+| 492 | `dashboard/reader/tests/test_fixtures.py` | task-040 | `aid-execute` 5 |
+| 493 | `dashboard/reader/tests/test_reader.py` | task-040 | `aid-execute` 10, `aid-plan` 1 |
+| 494 | `dashboard/reader/tests/test_resolve_work_dir_cross_runtime_parity.py` | task-040 | `aid-execute` 1 |
+| 495 | `dashboard/reader/tests/test_security_hardening.py` | task-040 | `aid-execute` 1 |
+| 496 | `dashboard/reader/tests/test_task002_resolve_work_dir.py` | task-040 | `aid-execute` 1 |
+| 497 | `dashboard/reader/tests/test_task011_golden_master.py` | task-040 | `aid-execute` 2 |
+| 498 | `dashboard/reader/tests/test_task011_reconcile.py` | task-040 | `aid-execute` 3 |
+| 499 | `dashboard/reader/tests/test_task014_fixtures.py` | task-040 | `aid-execute` 7 |
+| 500 | `dashboard/reader/tests/test_task069_detail_parser.py` | task-040 | `aid-execute` 1 |
+| 501 | `dashboard/reader/tests/test_work001_delivery_layouts.py` | task-040 | `aid-execute` 1 |
+| 502 | `dashboard/reader/tests/test_work003_state_schema.py` | task-040 | `aid-execute` 5 |
+| 503 | `dashboard/reader/tests/test_work016_container_discovery.py` | task-040 | `aid-execute` 1 |
+| 504 | `dashboard/server/tests/fixtures/pt1-aid/.aid/works/work-001-running-parallel/STATE.md` | task-040 | `aid-execute` 1 |
+| 505 | `dashboard/server/tests/fixtures/pt1-aid/.aid/works/work-001-running-parallel/STATE.yml` | task-040 | `aid-execute` 1 |
+| 506 | `dashboard/server/tests/fixtures/pt1-aid/.aid/works/work-003-blocked/STATE.md` | task-040 | `aid-execute` 1 |
+| 507 | `dashboard/server/tests/fixtures/pt1-aid/.aid/works/work-003-blocked/STATE.yml` | task-040 | `aid-execute` 1 |
+| 508 | `dashboard/server/tests/fixtures/pt1-aid/.aid/works/work-006-lite-sample/STATE.md` | task-040 | `aid-execute` 1 |
+| 509 | `dashboard/server/tests/fixtures/pt1-aid/.aid/works/work-006-lite-sample/STATE.yml` | task-040 | `aid-execute` 1 |
+| 510 | `dashboard/server/tests/fixtures/pt1h-detail-repo/.aid/works/work-001-detail/STATE.yml` | task-040 | `aid-execute` 1 |
+| 511 | `dashboard/server/tests/fixtures/pt1h-repo-a/.aid/works/work-001-with-unicode/STATE.md` | task-040 | `aid-execute` 1 |
+| 512 | `dashboard/server/tests/fixtures/pt1h-repo-b/.aid/works/work-001-minimal/STATE.md` | task-040 | `aid-execute` 1 |
+| 513 | `dashboard/server/tests/test_reader_task069.mjs` | task-040 | `aid-execute` 2 |
+| 514 | `dashboard/server/tests/test_task002_resolve_work_dir.mjs` | task-040 | `aid-execute` 1 |
+| 515 | `site/scripts/__tests__/flow-extract-engine.test.mjs` | task-040 | `aid-execute` 1 |
+| 516 | `site/scripts/__tests__/flow-graph-doorways.test.mjs` | task-040 | `aid-execute` 4 |
+| 517 | `site/scripts/__tests__/flow-render-mermaid.test.mjs` | task-040 | `aid-execute` 2 |
+| 518 | `site/scripts/__tests__/gen-skills.test.mjs` | task-040 | `aid-execute` 1 |
+| 519 | `site/src/lib/__tests__/skill-node-panel.test.ts` | task-040 | `aid-execute` 1, `aid-plan` 4 |
+| 520 | `tests/README.md` | task-040 | `aid-execute` 2 |
+| 521 | `tests/canonical/fixtures/migrate/fixture-source/work-999-migration-test/STATE.md` | task-040 | `aid-execute` 1 |
+| 522 | `tests/canonical/fixtures/migrate/fixture/work-999-migration-test/STATE.md` | task-040 | `aid-execute` 1 |
+| 523 | `tests/canonical/test-change-refactor-family-scaffold.sh` | task-040 | `aid-execute` 2 |
+| 524 | `tests/canonical/test-connector-consumption-linkage.sh` | task-040 | `aid-execute` 2, `aid-plan` 1 |
+| 525 | `tests/canonical/test-conversation-runner.sh` | task-040 | `aid-execute` 4, `aid-plan` 2 |
+| 526 | `tests/canonical/test-create-family-scaffold.sh` | task-040 | `aid-execute` 2 |
+| 527 | `tests/canonical/test-deploy-monitor-repurpose.sh` | task-040 | `aid-execute` 1 |
+| 528 | `tests/canonical/test-disjoint-merge.sh` | task-040 | `aid-execute` 3 |
+| 529 | `tests/canonical/test-document-family-scaffold.sh` | task-040 | `aid-execute` 2 |
+| 530 | `tests/canonical/test-fix-family-scaffold.sh` | task-040 | `aid-execute` 1 |
+| 531 | `tests/canonical/test-kb-no-work-ids.sh` | task-040 | `aid-execute` 3 |
+| 532 | `tests/canonical/test-producer-completeness.sh` | task-040 | `aid-execute` 1 |
+| 533 | `tests/canonical/test-prototype-family-scaffold.sh` | task-040 | `aid-execute` 2 |
+| 534 | `tests/canonical/test-test-experiment-family-scaffold.sh` | task-040 | `aid-execute` 3 |
+| 535 | `tests/canonical/test-work-initiation-gate.sh` | task-040 | `aid-execute` 3, `aid-plan` 3 |
+| 536 | `tests/canonical/test-writeback-state.sh` | task-040 | `aid-execute` 5 |
+| 537 | `tests/conversation/fixtures/done-work/.aid/works/work-001-csv-export/STATE.yml` | task-040 | `aid-execute` 1 |
+| 538 | `tests/cost-meter.py` | task-040 | `aid-execute` 1 |
+| 539 | `tests/canonical/test-conformance-lane-semantics.sh` | task-042 | `aid-housekeep` 1 |
+| 540 | `tests/canonical/test-f010-governance-guards.sh` | task-042 | `aid-housekeep` 2, `aid-update-kb` 4 |
+| 541 | `tests/canonical/test-output-root-isolation.sh` | task-042 | `aid-housekeep` 1 |
+| 542 | `dashboard/server/tests/test_index_html.py` | task-042 | `aid-housekeep` 7 |
+| 543 | `site/scripts/__tests__/flow-advance.test.mjs` | task-042 | `aid-housekeep` 1, `aid-summarize` 1, `aid-update-kb` 2 |
+| 544 | `site/scripts/__tests__/flow-extract-dispatch.test.mjs` | task-042 | `aid-housekeep` 1, `aid-summarize` 1, `aid-update-kb` 3 |
+| 545 | `site/scripts/__tests__/flow-graph.test.mjs` | task-042 | `aid-housekeep` 2, `aid-update-kb` 3 |
+| 546 | `tests/canonical/test-connector-skills-structural.sh` | task-042 | `aid-housekeep` 2 |
+| 547 | `tests/canonical/test-doc-counts.sh` | task-042 | `aid-housekeep` 2 |
+| 548 | `tests/canonical/test-worktree-lifecycle.sh` | task-042 | `aid-housekeep` 1 |
+| 549 | `tests/coverage-accepted-removals.tsv` | task-043 | `aid-monitor` 2 |
+| 550 | `tests/canonical/test-document-family-scaffold.sh` | task-043 | `aid-monitor` 1 |
+| 551 | `site/scripts/__tests__/gen-reference.test.mjs` | task-032 | `aid-orchestrate` 1 |
+| 552 | `site/scripts/__tests__/gen-skills-index.test.mjs` | task-032 | `aid-orchestrate` 4 |
+| 553 | `site/scripts/__tests__/skills-groups.test.mjs` | task-032 | `aid-orchestrate` 10 |
+| 554 | `site/scripts/__tests__/skills-render-index.test.mjs` | task-032 | `aid-orchestrate` 4 |
+| 555 | `tests/cost-baseline.tsv` | task-032 | `aid-orchestrate` 5 |
+| 556 | `tests/canonical/test-aid-migrate.sh` | task-040 | `aid-plan` 2 |
+| 557 | `tests/canonical/test-multitool-isolation.sh` | task-040 | `aid-plan` 4 |
+| 558 | `tests/windows/Test-AidInstaller.ps1` | task-040 | `aid-plan` 4 |
+| 559 | `tests/canonical/test-review-path-audit.sh` | task-040 | `aid-plan` 2 |
+| 560 | `site/scripts/__tests__/flow-advance.test.mjs` | task-044 | `aid-prototype` 1, `aid-report` 1, `aid-research` 1, `aid-test` 7 |
+| 561 | `tests/canonical/test-prototype-family-scaffold.sh` | task-044 | `aid-prototype` 54, `aid-review` 1, `aid-test` 4 |
+| 562 | `site/scripts/__tests__/gen-skills.test.mjs` | task-043 | `aid-read-ticket` 4 |
+| 563 | `site/scripts/__tests__/skills-render-value.test.mjs` | task-043 | `aid-read-ticket` 6 |
+| 564 | `site/scripts/__tests__/skills-render-page.test.mjs` | task-043 | `aid-read-ticket` 2 |
+| 565 | `tests/canonical/test-connector-consumption-linkage.sh` | task-043 | `aid-read-ticket` 1 |
+| 566 | `tests/canonical/test-ticket-retirement-structural.sh` | task-044 | `aid-report` 3, `aid-research` 10, `aid-review` 12 |
+| 567 | `tests/canonical/fixtures/actback-task/data-ml.tsv` | task-044 | `aid-research` 4 |
+| 568 | `tests/canonical/fixtures/actback-task/design.tsv` | task-044 | `aid-research` 3 |
+| 569 | `tests/canonical/fixtures/actback-task/docset-check.tsv` | task-044 | `aid-research` 5 |
+| 570 | `tests/canonical/fixtures/actback-task/docset-component.tsv` | task-044 | `aid-research` 2 |
+| 571 | `tests/canonical/fixtures/actback-task/docset-contract.tsv` | task-044 | `aid-research` 2 |
+| 572 | `tests/canonical/fixtures/actback-task/docset-endpoint.tsv` | task-044 | `aid-research` 1 |
+| 573 | `tests/canonical/fixtures/actback-task/docset-feature.tsv` | task-044 | `aid-research` 1 |
+| 574 | `tests/canonical/fixtures/actback-task/docset-module.tsv` | task-044 | `aid-research` 2 |
+| 575 | `tests/canonical/fixtures/actback-task/docset-optin.tsv` | task-044 | `aid-research` 1 |
+| 576 | `tests/canonical/fixtures/dual-intent/content/doc-set.tsv` | task-044 | `aid-research` 6 |
+| 577 | `tests/canonical/fixtures/dual-intent/content/good-kb/authoring-conventions.md` | task-044 | `aid-research` 1 |
+| 578 | `tests/canonical/fixtures/dual-intent/content/good-kb/content-inventory.md` | task-044 | `aid-research` 1 |
+| 579 | `tests/canonical/fixtures/dual-intent/content/good-kb/content-map.md` | task-044 | `aid-research` 1 |
+| 580 | `tests/canonical/fixtures/dual-intent/content/good-kb/content-model.md` | task-044 | `aid-research` 1 |
+| 581 | `tests/canonical/fixtures/dual-intent/content/good-kb/decisions.md` | task-044 | `aid-research` 1 |
+| 582 | `tests/canonical/fixtures/dual-intent/content/good-kb/domain-glossary.md` | task-044 | `aid-research` 1 |
+| 583 | `tests/canonical/fixtures/dual-intent/content/shallow-kb/authoring-conventions.md` | task-044 | `aid-research` 1 |
+| 584 | `tests/canonical/fixtures/dual-intent/content/shallow-kb/content-inventory.md` | task-044 | `aid-research` 1 |
+| 585 | `tests/canonical/fixtures/dual-intent/content/shallow-kb/content-map.md` | task-044 | `aid-research` 1 |
+| 586 | `tests/canonical/fixtures/dual-intent/content/shallow-kb/content-model.md` | task-044 | `aid-research` 1 |
+| 587 | `tests/canonical/fixtures/dual-intent/content/shallow-kb/decisions.md` | task-044 | `aid-research` 1 |
+| 588 | `tests/canonical/fixtures/dual-intent/content/shallow-kb/domain-glossary.md` | task-044 | `aid-research` 1 |
+| 589 | `tests/canonical/fixtures/dual-intent/content/wrong-kb/authoring-conventions.md` | task-044 | `aid-research` 1 |
+| 590 | `tests/canonical/fixtures/dual-intent/content/wrong-kb/content-inventory.md` | task-044 | `aid-research` 1 |
+| 591 | `tests/canonical/fixtures/dual-intent/content/wrong-kb/content-map.md` | task-044 | `aid-research` 1 |
+| 592 | `tests/canonical/fixtures/dual-intent/content/wrong-kb/content-model.md` | task-044 | `aid-research` 1 |
+| 593 | `tests/canonical/fixtures/dual-intent/content/wrong-kb/decisions.md` | task-044 | `aid-research` 1 |
+| 594 | `tests/canonical/fixtures/dual-intent/content/wrong-kb/domain-glossary.md` | task-044 | `aid-research` 1 |
+| 595 | `tests/canonical/fixtures/dual-intent/data-ml/doc-set.tsv` | task-044 | `aid-research` 6 |
+| 596 | `tests/canonical/fixtures/dual-intent/data-ml/good-kb/coding-standards.md` | task-044 | `aid-research` 1 |
+| 597 | `tests/canonical/fixtures/dual-intent/data-ml/good-kb/data-pipeline.md` | task-044 | `aid-research` 1 |
+| 598 | `tests/canonical/fixtures/dual-intent/data-ml/good-kb/data-schemas.md` | task-044 | `aid-research` 1 |
+| 599 | `tests/canonical/fixtures/dual-intent/data-ml/good-kb/decisions.md` | task-044 | `aid-research` 1 |
+| 600 | `tests/canonical/fixtures/dual-intent/data-ml/good-kb/domain-glossary.md` | task-044 | `aid-research` 1 |
+| 601 | `tests/canonical/fixtures/dual-intent/data-ml/good-kb/model-cards.md` | task-044 | `aid-research` 1 |
+| 602 | `tests/canonical/fixtures/dual-intent/data-ml/shallow-kb/coding-standards.md` | task-044 | `aid-research` 1 |
+| 603 | `tests/canonical/fixtures/dual-intent/data-ml/shallow-kb/data-pipeline.md` | task-044 | `aid-research` 1 |
+| 604 | `tests/canonical/fixtures/dual-intent/data-ml/shallow-kb/data-schemas.md` | task-044 | `aid-research` 1 |
+| 605 | `tests/canonical/fixtures/dual-intent/data-ml/shallow-kb/decisions.md` | task-044 | `aid-research` 1 |
+| 606 | `tests/canonical/fixtures/dual-intent/data-ml/shallow-kb/domain-glossary.md` | task-044 | `aid-research` 1 |
+| 607 | `tests/canonical/fixtures/dual-intent/data-ml/shallow-kb/model-cards.md` | task-044 | `aid-research` 1 |
+| 608 | `tests/canonical/fixtures/dual-intent/data-ml/wrong-kb/coding-standards.md` | task-044 | `aid-research` 1 |
+| 609 | `tests/canonical/fixtures/dual-intent/data-ml/wrong-kb/data-pipeline.md` | task-044 | `aid-research` 1 |
+| 610 | `tests/canonical/fixtures/dual-intent/data-ml/wrong-kb/data-schemas.md` | task-044 | `aid-research` 1 |
+| 611 | `tests/canonical/fixtures/dual-intent/data-ml/wrong-kb/decisions.md` | task-044 | `aid-research` 1 |
+| 612 | `tests/canonical/fixtures/dual-intent/data-ml/wrong-kb/domain-glossary.md` | task-044 | `aid-research` 1 |
+| 613 | `tests/canonical/fixtures/dual-intent/data-ml/wrong-kb/model-cards.md` | task-044 | `aid-research` 1 |
+| 614 | `tests/canonical/fixtures/dual-intent/design/doc-set.tsv` | task-044 | `aid-research` 6 |
+| 615 | `tests/canonical/fixtures/dual-intent/design/good-kb/component-inventory.md` | task-044 | `aid-research` 1 |
+| 616 | `tests/canonical/fixtures/dual-intent/design/good-kb/decisions.md` | task-044 | `aid-research` 1 |
+| 617 | `tests/canonical/fixtures/dual-intent/design/good-kb/design-overview.md` | task-044 | `aid-research` 1 |
+| 618 | `tests/canonical/fixtures/dual-intent/design/good-kb/design-principles.md` | task-044 | `aid-research` 1 |
+| 619 | `tests/canonical/fixtures/dual-intent/design/good-kb/design-tokens.md` | task-044 | `aid-research` 1 |
+| 620 | `tests/canonical/fixtures/dual-intent/design/good-kb/domain-glossary.md` | task-044 | `aid-research` 1 |
+| 621 | `tests/canonical/fixtures/dual-intent/design/shallow-kb/component-inventory.md` | task-044 | `aid-research` 1 |
+| 622 | `tests/canonical/fixtures/dual-intent/design/shallow-kb/decisions.md` | task-044 | `aid-research` 1 |
+| 623 | `tests/canonical/fixtures/dual-intent/design/shallow-kb/design-overview.md` | task-044 | `aid-research` 1 |
+| 624 | `tests/canonical/fixtures/dual-intent/design/shallow-kb/design-principles.md` | task-044 | `aid-research` 1 |
+| 625 | `tests/canonical/fixtures/dual-intent/design/shallow-kb/design-tokens.md` | task-044 | `aid-research` 1 |
+| 626 | `tests/canonical/fixtures/dual-intent/design/shallow-kb/domain-glossary.md` | task-044 | `aid-research` 1 |
+| 627 | `tests/canonical/fixtures/dual-intent/design/wrong-kb/component-inventory.md` | task-044 | `aid-research` 1 |
+| 628 | `tests/canonical/fixtures/dual-intent/design/wrong-kb/decisions.md` | task-044 | `aid-research` 1 |
+| 629 | `tests/canonical/fixtures/dual-intent/design/wrong-kb/design-overview.md` | task-044 | `aid-research` 1 |
+| 630 | `tests/canonical/fixtures/dual-intent/design/wrong-kb/design-principles.md` | task-044 | `aid-research` 1 |
+| 631 | `tests/canonical/fixtures/dual-intent/design/wrong-kb/design-tokens.md` | task-044 | `aid-research` 1 |
+| 632 | `tests/canonical/fixtures/dual-intent/design/wrong-kb/domain-glossary.md` | task-044 | `aid-research` 1 |
+| 633 | `tests/canonical/fixtures/kb-essence/actback/representative-task-fixture/doc-set.tsv` | task-044 | `aid-research` 4 |
+| 634 | `tests/canonical/test-actback-task.sh` | task-044 | `aid-research` 3 |
+| 635 | `tests/canonical/test-change-refactor-family-scaffold.sh` | task-044 | `aid-research` 2, `aid-review` 3, `aid-test` 1 |
+| 636 | `tests/canonical/test-connector-consumption-linkage.sh` | task-044 | `aid-research` 1 |
+| 637 | `tests/canonical/test-deploy-monitor-repurpose.sh` | task-044 | `aid-research` 3 |
+| 638 | `tests/canonical/test-discovery-doc-ownership.sh` | task-044 | `aid-research` 39 |
+| 639 | `tests/canonical/test-doc-set-mapping.sh` | task-044 | `aid-research` 56 |
+| 640 | `tests/canonical/test-doc-set-propose-confirm.sh` | task-044 | `aid-research` 14 |
+| 641 | `tests/canonical/test-doc-set-read.sh` | task-044 | `aid-research` 44 |
+| 642 | `tests/canonical/test-grade-summary.sh` | task-044 | `aid-research` 5 |
+| 643 | `tests/canonical/test-update-kb-scope-fidelity.sh` | task-044 | `aid-research` 2 |
+| 644 | `site/scripts/__tests__/flow-facade.test.mjs` | task-044 | `aid-review` 20, `aid-test` 1 |
+| 645 | `site/scripts/__tests__/flow-graph.test.mjs` | task-044 | `aid-review` 7, `aid-test` 70 |
+| 646 | `site/scripts/__tests__/provenance.test.mjs` | task-044 | `aid-review` 8, `aid-test` 2 |
+| 647 | `site/scripts/__tests__/skills-render-page.test.mjs` | task-044 | `aid-review` 8, `aid-test` 10 |
+| 648 | `tests/canonical/test-review-path-audit.sh` | task-044 | `aid-review` 10 |
+| 649 | `dashboard/reader/tests/test_work003_state_schema.py` | task-044 | `aid-review` 1 |
+| 650 | `site/scripts/__tests__/flow-classify.test.mjs` | task-044 | `aid-review` 6, `aid-test` 12 |
+| 651 | `site/scripts/__tests__/provenance-appender.test.mjs` | task-044 | `aid-review` 12 |
+| 652 | `site/scripts/__tests__/skills-body.test.mjs` | task-044 | `aid-review` 3 |
+| 653 | `tests/README.md` | task-044 | `aid-review` 1 |
+| 654 | `tests/canonical/test-aid-update-dry-run-plan.sh` | task-044 | `aid-review` 13 |
+| 655 | `tests/canonical/test-artifact-discipline.sh` | task-044 | `aid-review` 1 |
+| 656 | `tests/canonical/test-conversation-runner.sh` | task-044 | `aid-review` 1 |
+| 657 | `tests/canonical/test-cost-meter.sh` | task-044 | `aid-review` 5 |
+| 658 | `tests/canonical/test-criterion-oracles.sh` | task-044 | `aid-review` 2 |
+| 659 | `tests/canonical/test-cutover-no-dangling.sh` | task-044 | `aid-review` 1 |
+| 660 | `tests/canonical/test-describe-full-only.sh` | task-044 | `aid-review` 1 |
+| 661 | `tests/canonical/test-expectations-single-source.sh` | task-044 | `aid-review` 11 |
+| 662 | `tests/canonical/test-fix-family-scaffold.sh` | task-044 | `aid-review` 1, `aid-test` 2 |
+| 663 | `tests/canonical/test-release.sh` | task-044 | `aid-review` 1 |
+| 664 | `tests/canonical/test-severity-why-line.sh` | task-044 | `aid-review` 1 |
+| 665 | `tests/canonical/test-test-experiment-family-scaffold.sh` | task-044 | `aid-review` 1, `aid-test` 38 |
+| 666 | `tests/canonical/test-writeback-state.sh` | task-044 | `aid-review` 2 |
+| 667 | `tests/conversation/run.py` | task-044 | `aid-review` 2 |
+| 668 | `tests/cost-meter.py` | task-044 | `aid-review` 1 |
+| 669 | `tests/canonical/test-connector-set-unset-lifecycle.sh` | task-043 | `aid-set-connector` 8, `aid-unset-connector` 5 |
+| 670 | `tests/canonical/test-write-connector.sh` | task-043 | `aid-set-connector` 1, `aid-unset-connector` 1 |
+| 671 | `tests/canonical/test-ticket-retirement-structural.sh` | task-039 | `aid-specify` 6 |
+| 672 | `dashboard/reader/tests/test_fixtures.py` | task-039 | `aid-specify` 1 |
+| 673 | `dashboard/reader/tests/test_flattened_layout_parity.py` | task-039 | `aid-specify` 1 |
+| 674 | `dashboard/reader/tests/test_reader.py` | task-039 | `aid-specify` 1 |
+| 675 | `dashboard/reader/tests/test_task014_fixtures.py` | task-039 | `aid-specify` 2 |
+| 676 | `dashboard/server/tests/fixtures/pt1-aid/.aid/works/work-002-paused/STATE.md` | task-039 | `aid-specify` 1 |
+| 677 | `dashboard/server/tests/fixtures/pt1-aid/.aid/works/work-002-paused/STATE.yml` | task-039 | `aid-specify` 1 |
+| 678 | `tests/canonical/test-connector-consumption-linkage.sh` | task-039 | `aid-specify` 1 |
+| 679 | `tests/canonical/test-writeback-state.sh` | task-039 | `aid-specify` 2 |
+| 680 | `tests/conversation/fixtures/ticket-mid-work/.aid/works/work-001-retry-policy/STATE.yml` | task-039 | `aid-specify` 1 |
+| 681 | `tests/conversation/samples/feature-001/001-15-no-kb-offers-preparation.md` | task-039 | `aid-specify` 1 |
+| 682 | `tests/canonical/test-grade-summary.sh` | task-042 | `aid-summarize` 4 |
+| 683 | `tests/canonical/test-guardrails-d012.sh` | task-042 | `aid-summarize` 2 |
+| 684 | `tests/canonical/test-ledger-isolation.sh` | task-042 | `aid-summarize` 2 |
+| 685 | `tests/canonical/test-shared-prune.sh` | task-042 | `aid-summarize` 1 |
+| 686 | `site/scripts/__tests__/flow-facade.test.mjs` | task-042 | `aid-summarize` 1 |
+| 687 | `site/scripts/__tests__/flow-render-mermaid.test.mjs` | task-044 | `aid-test` 1 |
+| 688 | `site/scripts/__tests__/flow-validate.test.mjs` | task-044 | `aid-test` 18 |
+| 689 | `site/scripts/__tests__/provenance-render-list.test.mjs` | task-044 | `aid-test` 7 |
+| 690 | `site/scripts/__tests__/skills-discover.test.mjs` | task-044 | `aid-test` 55 |
+| 691 | `dashboard/server/tests/test_reader_task069.mjs` | task-044 | `aid-test` 1 |
+| 692 | `site/scripts/__tests__/flow-extract-residual.test.mjs` | task-044 | `aid-test` 1, `aid-update-document` 1 |
+| 693 | `site/scripts/__tests__/flow-graph-doorways.test.mjs` | task-044 | `aid-test` 25 |
+| 694 | `site/scripts/__tests__/skills-summary.test.mjs` | task-044 | `aid-test` 10 |
+| 695 | `tests/canonical/test-disjoint-merge.sh` | task-044 | `aid-test` 1 |
+| 696 | `tests/canonical/test-migrate-kb-frontmatter.sh` | task-044 | `aid-test` 1 |
+| 697 | `tests/canonical/test-release-install-e2e.sh` | task-044 | `aid-test` 3 |
+| 698 | `tests/canonical/test-update-kb-scope-fidelity.sh` | task-042 | `aid-update-kb` 11 |
+| 699 | `site/scripts/__tests__/gen-skills.test.mjs` | task-042 | `aid-update-kb` 9 |
+| 700 | `site/scripts/__tests__/flow-extract-sibling.test.mjs` | history, left as is | `aid-create` 7, `aid-document` 6, `aid-document-architecture` 3, `aid-document-changelog` 2, `aid-test-data-quality` 1, `aid-test-performance` 3, `aid-test-security` 17 |
+| 701 | `dashboard/reader/tests/test_work003_state_schema.py` | history, left as is | `aid-create` 4, `aid-create-api` 2, `aid-create-data-model` 1, `aid-refactor` 9 |
+| 702 | `site/scripts/__tests__/flow-advance.test.mjs` | history, left as is | `aid-create` 4, `aid-fix` 4, `aid-update` 2 |
+| 703 | `site/scripts/__tests__/flow-classify.test.mjs` | history, left as is | `aid-create` 3, `aid-test-security` 6 |
+| 704 | `site/scripts/__tests__/flow-compose.test.mjs` | history, left as is | `aid-create` 14, `aid-create-api` 10, `aid-document` 1, `aid-fix` 4, `aid-test-performance` 1, `aid-test-security` 4 |
+| 705 | `site/scripts/__tests__/flow-extract-engine.test.mjs` | history, left as is | `aid-create` 12, `aid-create-api` 12, `aid-fix` 5 |
+| 706 | `site/scripts/__tests__/flow-extract-inline.test.mjs` | history, left as is | `aid-create` 2, `aid-update` 5 |
+| 707 | `site/scripts/__tests__/flow-extract-residual.test.mjs` | history, left as is | `aid-create` 5, `aid-deprecate` 1, `aid-document` 2, `aid-document-runbook` 1, `aid-fix` 3, `aid-test-security` 1, `aid-update` 4, `aid-update-api` 1 |
+| 708 | `site/scripts/__tests__/flow-facade.test.mjs` | history, left as is | `aid-create` 8, `aid-document` 4, `aid-document-architecture` 4, `aid-test-security` 1 |
+| 709 | `site/scripts/__tests__/flow-graph-doorways.test.mjs` | history, left as is | `aid-create` 27, `aid-create-api` 23, `aid-document` 1, `aid-fix` 5, `aid-test-security` 18 |
+| 710 | `site/scripts/__tests__/gen-reference.test.mjs` | history, left as is | `aid-create` 1, `aid-update` 2 |
+| 711 | `site/scripts/__tests__/provenance-appender.test.mjs` | history, left as is | `aid-create` 6, `aid-create-api` 6 |
+| 712 | `site/scripts/__tests__/provenance-deep-link.test.mjs` | history, left as is | `aid-create` 1, `aid-create-api` 1 |
+| 713 | `site/scripts/__tests__/skills-body.test.mjs` | history, left as is | `aid-create` 1, `aid-create-api` 1, `aid-fix` 3 |
+| 714 | `site/scripts/__tests__/skills-paths.test.mjs` | history, left as is | `aid-create` 6, `aid-create-api` 6 |
+| 715 | `site/scripts/__tests__/skills-render-page.test.mjs` | history, left as is | `aid-create` 2, `aid-create-api` 2 |
+| 716 | `tests/canonical/test-change-refactor-family-scaffold.sh` | history, left as is | `aid-create` 2, `aid-deprecate` 16, `aid-document` 2, `aid-fix` 5, `aid-migrate` 18, `aid-refactor` 37, `aid-remove` 27, `aid-update` 41, `aid-update-api` 22, `aid-update-data-model` 9 |
+| 717 | `tests/canonical/test-create-family-scaffold.sh` | history, left as is | `aid-create` 39, `aid-create-api` 22, `aid-create-dashboard` 3, `aid-create-data-model` 11, `aid-experiment` 2, `aid-update` 2 |
+| 718 | `tests/canonical/test-document-family-scaffold.sh` | history, left as is | `aid-create` 3, `aid-create-diagram` 1, `aid-document` 57, `aid-document-architecture` 4, `aid-document-changelog` 4, `aid-document-decision` 20, `aid-document-guideline` 4, `aid-document-runbook` 16, `aid-document-standard` 4, `aid-document-tutorial` 4, `aid-refactor` 1, `aid-update` 3, `aid-update-infra` 2 |
+| 719 | `tests/canonical/test-prototype-family-scaffold.sh` | history, left as is | `aid-create` 6, `aid-experiment` 4, `aid-prototype-ui` 27, `aid-update` 6 |
+| 720 | `tests/canonical/test-review-path-audit.sh` | history, left as is | `aid-create` 2 |
+| 721 | `tests/canonical/test-skill-guide.sh` | history, left as is | `aid-create` 6, `aid-create-api` 1, `aid-create-cli` 1, `aid-create-config` 1, `aid-create-dashboard` 1, `aid-create-data-model` 1, `aid-create-data-pipeline` 1, `aid-create-diagram` 1, `aid-create-infra` 1, `aid-create-integration` 1, `aid-create-job` 1, `aid-create-messaging` 1, `aid-create-test` 1, `aid-create-theme` 1, `aid-create-ui` 1, `aid-deprecate` 1, `aid-document` 2, `aid-document-architecture` 1, `aid-document-changelog` 1, `aid-document-decision` 1, `aid-document-guideline` 1, `aid-document-runbook` 1, `aid-document-standard` 1, `aid-document-tutorial` 1, `aid-experiment` 1, `aid-migrate` 1, `aid-prototype-ui` 1, `aid-remove` 1, `aid-test-data-quality` 1, `aid-test-performance` 1, `aid-test-security` 1, `aid-update` 5, `aid-update-api` 1, `aid-update-cli` 1, `aid-update-config` 1, `aid-update-dashboard` 1, `aid-update-data-model` 1, `aid-update-data-pipeline` 1, `aid-update-infra` 1, `aid-update-integration` 1, `aid-update-job` 1, `aid-update-messaging` 1, `aid-update-test` 1, `aid-update-theme` 1, `aid-update-ui` 1 |
+| 722 | `tests/canonical/test-test-experiment-family-scaffold.sh` | history, left as is | `aid-create` 5, `aid-create-test` 1, `aid-experiment` 20, `aid-fix` 15, `aid-test-data-quality` 2, `aid-test-performance` 2, `aid-test-security` 17, `aid-update` 2, `aid-update-test` 1 |
+| 723 | `tests/canonical/test-ticket-retirement-structural.sh` | history, left as is | `aid-create` 9, `aid-update` 14 |
+| 724 | `tests/canonical/test-ticket-skills-structural.sh` | history, left as is | `aid-create` 35, `aid-update` 32 |
+| 725 | `tests/canonical/test-work-initiation-gate.sh` | history, left as is | `aid-create` 3, `aid-update` 5 |
+| 726 | `tests/cost-baseline.tsv` | history, left as is | `aid-create` 120, `aid-create-api` 5, `aid-create-cli` 5, `aid-create-config` 5, `aid-create-dashboard` 5, `aid-create-data-model` 5, `aid-create-data-pipeline` 5, `aid-create-diagram` 5, `aid-create-infra` 5, `aid-create-integration` 5, `aid-create-job` 5, `aid-create-messaging` 5, `aid-create-test` 10, `aid-create-theme` 5, `aid-create-ui` 5, `aid-deprecate` 5, `aid-document` 40, `aid-document-architecture` 5, `aid-document-changelog` 5, `aid-document-decision` 5, `aid-document-guideline` 5, `aid-document-runbook` 5, `aid-document-standard` 5, `aid-document-tutorial` 5, `aid-experiment` 5, `aid-fix` 5, `aid-migrate` 5, `aid-prototype-ui` 5, `aid-refactor` 5, `aid-remove` 5, `aid-test-data-quality` 5, `aid-test-performance` 5, `aid-test-security` 5, `aid-update` 120, `aid-update-api` 5, `aid-update-cli` 5, `aid-update-config` 5, `aid-update-dashboard` 5, `aid-update-data-model` 5, `aid-update-data-pipeline` 5, `aid-update-infra` 5, `aid-update-integration` 5, `aid-update-job` 5, `aid-update-messaging` 5, `aid-update-test` 10, `aid-update-theme` 5, `aid-update-ui` 5 |
+| 727 | `tests/coverage-baseline.tsv` | history, left as is | `aid-create` 36, `aid-migrate` 273, `aid-refactor` 1, `aid-update` 29 |
+| 728 | `tests/canonical/test-fix-family-scaffold.sh` | history, left as is | `aid-document` 1, `aid-document-runbook` 1, `aid-fix` 28, `aid-refactor` 1, `aid-test-security` 2, `aid-update` 4, `aid-update-infra` 3 |
+| 729 | `tests/canonical/test-multitool-isolation.sh` | history, left as is | `aid-fix` 3 |
+| 730 | `tests/windows/Test-AidInstaller.ps1` | history, left as is | `aid-fix` 2 |
+| 731 | `dashboard/reader/tests/test_declared_path_three_way_parity.py` | history, left as is | `aid-fix` 2 |
+| 732 | `dashboard/server/tests/test_server_node.mjs` | history, left as is | `aid-fix` 2 |
+| 733 | `dashboard/server/tests/test_server_py.py` | history, left as is | `aid-fix` 2 |
+| 734 | `site/scripts/__tests__/flow-render-mermaid.test.mjs` | history, left as is | `aid-fix` 2 |
+| 735 | `site/scripts/__tests__/provenance-render-list.test.mjs` | history, left as is | `aid-fix` 1 |
+| 736 | `site/scripts/__tests__/skill-node-panel-panel.test.mjs` | history, left as is | `aid-fix` 1 |
+| 737 | `site/scripts/__tests__/skills-catalog.test.mjs` | history, left as is | `aid-fix` 4 |
+| 738 | `site/src/lib/__tests__/skill-node-panel.dom.test.ts` | history, left as is | `aid-fix` 1 |
+| 739 | `tests/canonical/test-connector-consumption-linkage.sh` | history, left as is | `aid-fix` 2 |
+| 740 | `tests/conversation/samples/feature-001/001-01-one-match.md` | history, left as is | `aid-fix` 1 |
+| 741 | `tests/coverage-accepted-removals.tsv` | history, left as is | `aid-fix` 1, `aid-migrate` 200 |
+| 742 | `dashboard/reader/tests/test_task011_golden_master.py` | history, left as is | `aid-migrate` 2, `aid-refactor` 1 |
+| 743 | `tests/canonical/test-aid-cli-parity.sh` | history, left as is | `aid-migrate` 2, `aid-update` 3 |
+| 744 | `tests/canonical/test-aid-migrate-trigger.sh` | history, left as is | `aid-migrate` 2 |
+| 745 | `tests/canonical/test-aid-migrate.sh` | history, left as is | `aid-migrate` 2 |
+| 746 | `tests/canonical/test-release-migrate-smoke.sh` | history, left as is | `aid-migrate` 4 |
+| 747 | `tests/coverage-parity.sh` | history, left as is | `aid-migrate` 3 |
+| 748 | `tests/coverage-rehome-allowlist.tsv` | history, left as is | `aid-migrate` 3, `aid-update` 1 |
+| 749 | `tests/run-all.sh` | history, left as is | `aid-migrate` 1 |
+| 750 | `dashboard/reader/tests/test_flattened_layout_parity.py` | history, left as is | `aid-refactor` 1 |
+| 751 | `tests/canonical/fixtures/state-yaml-conformance/shape-s2-mapping-of-scalars.expected.json` | history, left as is | `aid-refactor` 1 |
+| 752 | `tests/canonical/fixtures/state-yaml-conformance/shape-s2-mapping-of-scalars.yml` | history, left as is | `aid-refactor` 1 |
+| 753 | `tests/canonical/test-task-state-transitions.sh` | history, left as is | `aid-refactor` 1 |
+| 754 | `tests/canonical/test-writeback-state.sh` | history, left as is | `aid-refactor` 4 |
+| 755 | `tests/conversation/samples/feature-001/001-14-refactor-is-new-capability.md` | history, left as is | `aid-refactor` 1 |
+| 756 | `dashboard/server/tests/test_task017_registry_tooling_round_trips.py` | history, left as is | `aid-update` 1 |
+| 757 | `site/scripts/__tests__/flow-extract-dispatch.test.mjs` | history, left as is | `aid-update` 3 |
+| 758 | `site/scripts/__tests__/flow-graph.test.mjs` | history, left as is | `aid-update` 3 |
+| 759 | `site/scripts/__tests__/gen-skills.test.mjs` | history, left as is | `aid-update` 9 |
+| 760 | `tests/canonical/test-f010-governance-guards.sh` | history, left as is | `aid-update` 4 |
+| 761 | `tests/canonical/test-update-kb-scope-fidelity.sh` | history, left as is | `aid-update` 11 |
 
 ## P9 Suites that feed old phase names to a writer, or assert reader phase output
 
@@ -1315,7 +1370,7 @@ Answer: **yes, the field writes already are.** Every write in `canonical/aid/scr
 Command (run from the repo root; the G11 search of task-020 Scope):
 
 ```bash
-git grep -nE "'aid-[a-z-]+'|canonical/(skills|aid/templates)/" -- site/scripts/__tests__ site/src/lib/__tests__
+git grep -nE "'aid-[a-z-]+'|canonical/(skills|aid/templates)/" 06d32a1ba63e1c8810e16978165e5581034f4c87 -- site/scripts/__tests__ site/src/lib/__tests__
 ```
 
 Hits: 835 lines in 39 site test files, grouped below per (test file, target, owner). A target is a real skill or template file, or a fixture name that names no real file (`aid-fixture`, `aid-parent`, `door-skill` and the like). Owner = the owner of the real target (the task that changes it); a target no task changes, and a fixture name, is `history, left as is` (Delta D9). `flow-advance.test.mjs` is also a task-024 file for its new words.
@@ -1330,8 +1385,8 @@ Hits: 835 lines in 39 site test files, grouped below per (test file, target, own
 | 6 | `site/scripts/__tests__/flow-classify.test.mjs` | `skill aid-review` | task-044 | 2 |
 | 7 | `site/scripts/__tests__/flow-classify.test.mjs` | `canonical/skills/aid-test/SKILL.md` | task-044 | 1 |
 | 8 | `site/scripts/__tests__/flow-classify.test.mjs` | `canonical/skills/aid-parent/ (no such skill; fixture path)` | history, left as is | 5 |
-| 9 | `site/scripts/__tests__/flow-classify.test.mjs` | `canonical/skills/aid-first/ (no such skill; fixture path)` | history, left as is | 1 |
-| 10 | `site/scripts/__tests__/flow-classify.test.mjs` | `canonical/skills/aid-second/ (no such skill; fixture path)` | history, left as is | 1 |
+| 9 | `site/scripts/__tests__/flow-classify.test.mjs` | `canonical/skills/aid-second/ (no such skill; fixture path)` | history, left as is | 1 |
+| 10 | `site/scripts/__tests__/flow-classify.test.mjs` | `canonical/skills/aid-first/ (no such skill; fixture path)` | history, left as is | 1 |
 | 11 | `site/scripts/__tests__/flow-classify.test.mjs` | `skill aid-test` | task-044 | 2 |
 | 12 | `site/scripts/__tests__/flow-classify.test.mjs` | `name aid-parent (no such skill; fixture name)` | history, left as is | 2 |
 | 13 | `site/scripts/__tests__/flow-classify.test.mjs` | `skill aid-test-security` | history, left as is | 2 |
@@ -1356,16 +1411,16 @@ Hits: 835 lines in 39 site test files, grouped below per (test file, target, own
 | 32 | `site/scripts/__tests__/flow-compose.test.mjs` | `canonical/skills/aid-unknown/ (no such skill; fixture path)` | history, left as is | 1 |
 | 33 | `site/scripts/__tests__/flow-engine-core.test.mjs` | `canonical/aid/templates/shortcut-engine.md` | task-037 | 2 |
 | 34 | `site/scripts/__tests__/flow-engine-core.test.mjs` | `canonical/aid/templates/work-initiation-gate.md` | task-030 | 2 |
-| 35 | `site/scripts/__tests__/flow-extract-dispatch.test.mjs` | `skill aid-deploy` | task-043 | 1 |
-| 36 | `site/scripts/__tests__/flow-extract-dispatch.test.mjs` | `skill aid-discover` | task-041 | 1 |
-| 37 | `site/scripts/__tests__/flow-extract-dispatch.test.mjs` | `skill aid-detail` | task-040 | 1 |
-| 38 | `site/scripts/__tests__/flow-extract-dispatch.test.mjs` | `skill aid-describe` | task-038 | 10 |
-| 39 | `site/scripts/__tests__/flow-extract-dispatch.test.mjs` | `skill aid-define` | task-039 | 4 |
+| 35 | `site/scripts/__tests__/flow-extract-dispatch.test.mjs` | `skill aid-describe` | task-038 | 10 |
+| 36 | `site/scripts/__tests__/flow-extract-dispatch.test.mjs` | `skill aid-deploy` | task-043 | 1 |
+| 37 | `site/scripts/__tests__/flow-extract-dispatch.test.mjs` | `skill aid-define` | task-039 | 4 |
+| 38 | `site/scripts/__tests__/flow-extract-dispatch.test.mjs` | `skill aid-detail` | task-040 | 1 |
+| 39 | `site/scripts/__tests__/flow-extract-dispatch.test.mjs` | `skill aid-discover` | task-041 | 1 |
 | 40 | `site/scripts/__tests__/flow-extract-dispatch.test.mjs` | `skill aid-plan` | task-040 | 1 |
-| 41 | `site/scripts/__tests__/flow-extract-dispatch.test.mjs` | `skill aid-specify` | task-039 | 2 |
-| 42 | `site/scripts/__tests__/flow-extract-dispatch.test.mjs` | `skill aid-execute` | task-040 | 3 |
-| 43 | `site/scripts/__tests__/flow-extract-dispatch.test.mjs` | `skill aid-housekeep` | task-042 | 1 |
-| 44 | `site/scripts/__tests__/flow-extract-dispatch.test.mjs` | `skill aid-monitor` | task-043 | 1 |
+| 41 | `site/scripts/__tests__/flow-extract-dispatch.test.mjs` | `skill aid-monitor` | task-043 | 1 |
+| 42 | `site/scripts/__tests__/flow-extract-dispatch.test.mjs` | `skill aid-specify` | task-039 | 2 |
+| 43 | `site/scripts/__tests__/flow-extract-dispatch.test.mjs` | `skill aid-execute` | task-040 | 3 |
+| 44 | `site/scripts/__tests__/flow-extract-dispatch.test.mjs` | `skill aid-housekeep` | task-042 | 1 |
 | 45 | `site/scripts/__tests__/flow-extract-dispatch.test.mjs` | `skill aid-summarize` | task-042 | 1 |
 | 46 | `site/scripts/__tests__/flow-extract-dispatch.test.mjs` | `skill aid-update-kb` | task-042 | 2 |
 | 47 | `site/scripts/__tests__/flow-extract-dispatch.test.mjs` | `name aid-keyword-states (no such skill; fixture name)` | history, left as is | 1 |
@@ -1430,8 +1485,8 @@ Hits: 835 lines in 39 site test files, grouped below per (test file, target, own
 | 106 | `site/scripts/__tests__/flow-facade.test.mjs` | `skill aid-config` | task-043 | 11 |
 | 107 | `site/scripts/__tests__/flow-facade.test.mjs` | `skill aid-document-architecture` | history, left as is | 2 |
 | 108 | `site/scripts/__tests__/flow-facade.test.mjs` | `skill aid-create` | history, left as is | 4 |
-| 109 | `site/scripts/__tests__/flow-facade.test.mjs` | `skill aid-summarize` | task-042 | 1 |
-| 110 | `site/scripts/__tests__/flow-facade.test.mjs` | `skill aid-test-security` | history, left as is | 1 |
+| 109 | `site/scripts/__tests__/flow-facade.test.mjs` | `skill aid-test-security` | history, left as is | 1 |
+| 110 | `site/scripts/__tests__/flow-facade.test.mjs` | `skill aid-summarize` | task-042 | 1 |
 | 111 | `site/scripts/__tests__/flow-graph-doorways.test.mjs` | `canonical/aid/templates/shortcut-engine.md` | task-037 | 3 |
 | 112 | `site/scripts/__tests__/flow-graph-doorways.test.mjs` | `canonical/skills/aid-create-api/SKILL.md` | history, left as is | 1 |
 | 113 | `site/scripts/__tests__/flow-graph-doorways.test.mjs` | `canonical/skills/aid-fix/SKILL.md` | history, left as is | 1 |
@@ -1476,9 +1531,9 @@ Hits: 835 lines in 39 site test files, grouped below per (test file, target, own
 | 152 | `site/scripts/__tests__/flow-validate.test.mjs` | `canonical/skills/aid-x/ (no such skill; fixture path)` | history, left as is | 5 |
 | 153 | `site/scripts/__tests__/gen-reference.test.mjs` | `canonical/aid/templates/shortcut-engine.md` | task-037 | 1 |
 | 154 | `site/scripts/__tests__/gen-reference.test.mjs` | `canonical/aid/templates/shortcut-catalog.yml` | history, left as is | 1 |
-| 155 | `site/scripts/__tests__/gen-reference.test.mjs` | `skill aid-discover` | task-041 | 1 |
-| 156 | `site/scripts/__tests__/gen-reference.test.mjs` | `skill aid-config` | task-043 | 1 |
-| 157 | `site/scripts/__tests__/gen-reference.test.mjs` | `skill aid-summarize` | task-042 | 1 |
+| 155 | `site/scripts/__tests__/gen-reference.test.mjs` | `skill aid-summarize` | task-042 | 1 |
+| 156 | `site/scripts/__tests__/gen-reference.test.mjs` | `skill aid-discover` | task-041 | 1 |
+| 157 | `site/scripts/__tests__/gen-reference.test.mjs` | `skill aid-config` | task-043 | 1 |
 | 158 | `site/scripts/__tests__/gen-reference.test.mjs` | `skill aid-describe` | task-038 | 1 |
 | 159 | `site/scripts/__tests__/gen-reference.test.mjs` | `skill aid-define` | task-039 | 1 |
 | 160 | `site/scripts/__tests__/gen-reference.test.mjs` | `skill aid-specify` | task-039 | 1 |
@@ -1492,17 +1547,17 @@ Hits: 835 lines in 39 site test files, grouped below per (test file, target, own
 | 168 | `site/scripts/__tests__/gen-reference.test.mjs` | `skill aid-update-kb` | task-042 | 1 |
 | 169 | `site/scripts/__tests__/gen-reference.test.mjs` | `skill aid-set-connector` | task-043 | 1 |
 | 170 | `site/scripts/__tests__/gen-reference.test.mjs` | `skill aid-unset-connector` | task-043 | 1 |
-| 171 | `site/scripts/__tests__/gen-reference.test.mjs` | `skill aid-create-ticket` | task-043 | 1 |
-| 172 | `site/scripts/__tests__/gen-reference.test.mjs` | `skill aid-read-ticket` | task-043 | 1 |
-| 173 | `site/scripts/__tests__/gen-reference.test.mjs` | `skill aid-update-ticket` | task-043 | 1 |
+| 171 | `site/scripts/__tests__/gen-reference.test.mjs` | `skill aid-update-ticket` | task-043 | 1 |
+| 172 | `site/scripts/__tests__/gen-reference.test.mjs` | `skill aid-create-ticket` | task-043 | 1 |
+| 173 | `site/scripts/__tests__/gen-reference.test.mjs` | `skill aid-read-ticket` | task-043 | 1 |
 | 174 | `site/scripts/__tests__/gen-reference.test.mjs` | `skill aid-orchestrate` | task-032 | 1 |
 | 175 | `site/scripts/__tests__/gen-reference.test.mjs` | `skill aid-chat` | task-043 | 1 |
 | 176 | `site/scripts/__tests__/gen-reference.test.mjs` | `canonical/aid/templates/knowledge-base/` | history, left as is | 1 |
-| 177 | `site/scripts/__tests__/gen-skills-index.test.mjs` | `skill aid-plan` | task-040 | 1 |
-| 178 | `site/scripts/__tests__/gen-skills-index.test.mjs` | `skill aid-specify` | task-039 | 1 |
-| 179 | `site/scripts/__tests__/gen-skills-index.test.mjs` | `skill aid-detail` | task-040 | 1 |
-| 180 | `site/scripts/__tests__/gen-skills-index.test.mjs` | `skill aid-describe` | task-038 | 1 |
-| 181 | `site/scripts/__tests__/gen-skills-index.test.mjs` | `skill aid-define` | task-039 | 1 |
+| 177 | `site/scripts/__tests__/gen-skills-index.test.mjs` | `skill aid-describe` | task-038 | 1 |
+| 178 | `site/scripts/__tests__/gen-skills-index.test.mjs` | `skill aid-plan` | task-040 | 1 |
+| 179 | `site/scripts/__tests__/gen-skills-index.test.mjs` | `skill aid-specify` | task-039 | 1 |
+| 180 | `site/scripts/__tests__/gen-skills-index.test.mjs` | `skill aid-define` | task-039 | 1 |
+| 181 | `site/scripts/__tests__/gen-skills-index.test.mjs` | `skill aid-detail` | task-040 | 1 |
 | 182 | `site/scripts/__tests__/gen-skills-index.test.mjs` | `skill aid-orchestrate` | task-032 | 1 |
 | 183 | `site/scripts/__tests__/gen-skills-index.test.mjs` | `skill aid-deploy` | task-043 | 3 |
 | 184 | `site/scripts/__tests__/gen-skills-index.test.mjs` | `skill aid-monitor` | task-043 | 3 |
@@ -1516,8 +1571,8 @@ Hits: 835 lines in 39 site test files, grouped below per (test file, target, own
 | 192 | `site/scripts/__tests__/gen-skills.test.mjs` | `skill aid-execute` | task-040 | 1 |
 | 193 | `site/scripts/__tests__/gen-skills.test.mjs` | `skill aid-discover` | task-041 | 1 |
 | 194 | `site/scripts/__tests__/provenance-appender.test.mjs` | `canonical/aid/templates/shortcut-engine.md` | task-037 | 3 |
-| 195 | `site/scripts/__tests__/provenance-appender.test.mjs` | `name aid-add-cli (no such skill; fixture name)` | history, left as is | 1 |
-| 196 | `site/scripts/__tests__/provenance-appender.test.mjs` | `name aid-add-api (no such skill; fixture name)` | history, left as is | 3 |
+| 195 | `site/scripts/__tests__/provenance-appender.test.mjs` | `name aid-add-api (no such skill; fixture name)` | history, left as is | 3 |
+| 196 | `site/scripts/__tests__/provenance-appender.test.mjs` | `name aid-add-cli (no such skill; fixture name)` | history, left as is | 1 |
 | 197 | `site/scripts/__tests__/provenance-appender.test.mjs` | `skill aid-review` | task-044 | 9 |
 | 198 | `site/scripts/__tests__/provenance-appender.test.mjs` | `skill aid-create-api` | history, left as is | 3 |
 | 199 | `site/scripts/__tests__/provenance-appender.test.mjs` | `skill aid-ask` | task-042 | 3 |
@@ -1549,8 +1604,8 @@ Hits: 835 lines in 39 site test files, grouped below per (test file, target, own
 | 225 | `site/scripts/__tests__/skills-catalog.test.mjs` | `canonical/aid/templates/shortcut-catalog.yml` | history, left as is | 1 |
 | 226 | `site/scripts/__tests__/skills-catalog.test.mjs` | `name aid-catalog- (no such skill; fixture name)` | history, left as is | 1 |
 | 227 | `site/scripts/__tests__/skills-catalog.test.mjs` | `name aid-middle (no such skill; fixture name)` | history, left as is | 1 |
-| 228 | `site/scripts/__tests__/skills-catalog.test.mjs` | `name aid-zap (no such skill; fixture name)` | history, left as is | 1 |
-| 229 | `site/scripts/__tests__/skills-catalog.test.mjs` | `name aid-alpha (no such skill; fixture name)` | history, left as is | 1 |
+| 228 | `site/scripts/__tests__/skills-catalog.test.mjs` | `name aid-alpha (no such skill; fixture name)` | history, left as is | 1 |
+| 229 | `site/scripts/__tests__/skills-catalog.test.mjs` | `name aid-zap (no such skill; fixture name)` | history, left as is | 1 |
 | 230 | `site/scripts/__tests__/skills-catalog.test.mjs` | `skill aid-deploy` | task-043 | 3 |
 | 231 | `site/scripts/__tests__/skills-catalog.test.mjs` | `skill aid-monitor` | task-043 | 1 |
 | 232 | `site/scripts/__tests__/skills-catalog.test.mjs` | `name aid-bad (no such skill; fixture name)` | history, left as is | 1 |
@@ -1584,8 +1639,8 @@ Hits: 835 lines in 39 site test files, grouped below per (test file, target, own
 | 260 | `site/scripts/__tests__/skills-groups.test.mjs` | `skill aid-describe` | task-038 | 2 |
 | 261 | `site/scripts/__tests__/skills-groups.test.mjs` | `skill aid-plan` | task-040 | 8 |
 | 262 | `site/scripts/__tests__/skills-groups.test.mjs` | `skill aid-specify` | task-039 | 1 |
-| 263 | `site/scripts/__tests__/skills-groups.test.mjs` | `skill aid-detail` | task-040 | 1 |
-| 264 | `site/scripts/__tests__/skills-groups.test.mjs` | `skill aid-define` | task-039 | 1 |
+| 263 | `site/scripts/__tests__/skills-groups.test.mjs` | `skill aid-define` | task-039 | 1 |
+| 264 | `site/scripts/__tests__/skills-groups.test.mjs` | `skill aid-detail` | task-040 | 1 |
 | 265 | `site/scripts/__tests__/skills-groups.test.mjs` | `skill aid-deploy` | task-043 | 7 |
 | 266 | `site/scripts/__tests__/skills-groups.test.mjs` | `skill aid-monitor` | task-043 | 4 |
 | 267 | `site/scripts/__tests__/skills-paths.test.mjs` | `skill aid-create-api` | history, left as is | 3 |
@@ -1665,7 +1720,7 @@ Command (run from the repo root; the terms are the edit-list tokens and the suit
 for term in <the P8 tokens, the P8 suite names, design-lifecycle.md>; do git grep -n -F -e "$term" -- tests/cost-baseline.tsv tests/coverage-baseline.tsv; done
 ```
 
-Hits: 6188 lines in the two baselines, in 129 (baseline, term) rows. Owner for every row: `baseline, re-recorded at the gate` (Q134 D11; no task edits a baseline).
+Hits: 6188 (term, line) matches in the two baselines, in 129 (baseline, term) rows. Owner for every row: `baseline, re-recorded at the gate` (Q134 D11; no task edits a baseline).
 
 | # | Baseline | Matched term | Lines | Owner |
 |---|---|---|---|---|
@@ -1801,19 +1856,24 @@ Hits: 6188 lines in the two baselines, in 129 (baseline, term) rows. Owner for e
 
 ## Installed copies (resync)
 
-`.aid/runtime/` is the installed copy of `canonical/` (the resync step refreshes it at the gate). Command (run from the repo root; one line per pattern of P1-P5):
+`.aid/runtime/` is the installed copy of `canonical/` (the resync step refreshes it at the gate). Command (run from the repo root; the P1-P5 forms over the installed copy):
 
 ```bash
-git grep -n -E 'PAUSE-FOR-USER|\*\*Advance:\*\*|initiator:|work-state-template\.yml` to|^(active_skill|step|step_detail|phase):|resume door|`?phase`?-matched|[A-Z][a-z]+-phase work|route per the chosen work|lifecycle: ["\x27]?(Completed|Canceled)|--field Phase --value' -- .aid/runtime
+# Installed copies (.aid/runtime is the installed copy of canonical/): the P1-P5 forms, run from the repo root
+OLD='(Describe|Define|Specify|Plan|Detail|Execute)'
+git grep -n -E -e 'PAUSE-FOR-USER' -e '\*\*Advance:\*\*' -e 'initiator:' -e "lifecycle: ['\"]?(Completed|Canceled)" -e '--field Phase --value' -e "phase: $OLD\b" -e "Phase\.$OLD\b" -e "['\"]$OLD['\"]" -e "$OLD \| $OLD\b" -e 'work-state-template\.yml` to' -e '^(active_skill|step|step_detail|phase):' -e 'resume door' -e '`?phase`?-matched' -e '[A-Z][a-z]+-phase work' -e 'route per the chosen work' -- .aid/runtime
 ```
 
 | # | Installed file | Lines | Owner |
 |---|---|---|---|
-| 1 | `.aid/runtime/templates/connectors/ticket-resolution.md` | 1 | installed copy (resync) |
-| 2 | `.aid/runtime/templates/design-lifecycle.md` | 1 | installed copy (resync) |
-| 3 | `.aid/runtime/templates/shortcut-engine.md` | 13 | installed copy (resync) |
-| 4 | `.aid/runtime/templates/state-machine-chaining.md` | 12 | installed copy (resync) |
-| 5 | `.aid/runtime/templates/work-state-template.yml` | 2 | installed copy (resync) |
+| 1 | `.aid/runtime/scripts/execute/writeback-state.sh` | 2 | installed copy (resync) |
+| 2 | `.aid/runtime/scripts/summarize/validate-diagram-content.mjs` | 1 | installed copy (resync) |
+| 3 | `.aid/runtime/templates/connectors/ticket-resolution.md` | 1 | installed copy (resync) |
+| 4 | `.aid/runtime/templates/design-lifecycle.md` | 1 | installed copy (resync) |
+| 5 | `.aid/runtime/templates/shortcut-engine.md` | 22 | installed copy (resync) |
+| 6 | `.aid/runtime/templates/state-machine-chaining.md` | 12 | installed copy (resync) |
+| 7 | `.aid/runtime/templates/work-initiation-gate.md` | 2 | installed copy (resync) |
+| 8 | `.aid/runtime/templates/work-state-template.yml` | 5 | installed copy (resync) |
 
 ## Skill owner table (G2)
 
@@ -1943,848 +2003,164 @@ Row count: 112 = 112 files on disk. Rows with an empty owner: 0. Rows owned by a
 
 ## Suites that two tasks share, and the run order
 
-A suite is listed when hits in it are owned by two or more tasks. For each pair of such tasks, the table says whether they depend on each other in the delivery-002 Execution Graph (PLAN.md, the table of the stanza). An independent pair is run after both tasks are done, in task-number order; a dependent pair is run after the later task, which is the one that depends on the earlier.
+A suite is listed when the hits in it are owned by two or more tasks of delivery-002. "Independent" means that neither task is in the other's dependency closure in the delivery-002 Execution Graph (PLAN.md). Every listed suite runs after all its tasks are Done; the run order is a topological order of those tasks by the graph, ties broken by task number. The two-task pairs that are independent are the ones the spec asks to list with an order.
 
-| # | Suite | Tasks | Relation | Run order |
-|---|---|---|---|---|
-| 1 | `dashboard/reader/tests/fixtures/task011_golden/flat_golden.json` | task-031, task-040 | task-040 depends on task-031 | task-031, then task-040 |
-| 2 | `dashboard/reader/tests/fixtures/task011_golden/hierarchical_golden.json` | task-031, task-040 | task-040 depends on task-031 | task-031, then task-040 |
-| 3 | `dashboard/reader/tests/test_declared_path_three_way_parity.py` | task-025, task-031 | task-025 depends on task-031 | task-031, then task-025 |
-| 4 | `dashboard/reader/tests/test_feature009.py` | task-031, task-038 | task-038 depends on task-031 | task-031, then task-038 |
-| 5 | `dashboard/reader/tests/test_feature009.py` | task-031, task-040 | task-040 depends on task-031 | task-031, then task-040 |
-| 6 | `dashboard/reader/tests/test_feature009.py` | task-038, task-040 | independent | task-038 and task-040 in either order; run after both are done, in number order (task-038 then task-040) |
-| 7 | `dashboard/reader/tests/test_fixtures.py` | task-031, task-039 | task-039 depends on task-031 | task-031, then task-039 |
-| 8 | `dashboard/reader/tests/test_fixtures.py` | task-031, task-040 | task-040 depends on task-031 | task-031, then task-040 |
-| 9 | `dashboard/reader/tests/test_fixtures.py` | task-039, task-040 | task-040 depends on task-039 | task-039, then task-040 |
-| 10 | `dashboard/reader/tests/test_flattened_layout_parity.py` | task-031, task-033 | task-033 depends on task-031 | task-031, then task-033 |
-| 11 | `dashboard/reader/tests/test_flattened_layout_parity.py` | task-031, task-039 | task-039 depends on task-031 | task-031, then task-039 |
-| 12 | `dashboard/reader/tests/test_flattened_layout_parity.py` | task-031, task-040 | task-040 depends on task-031 | task-031, then task-040 |
-| 13 | `dashboard/reader/tests/test_flattened_layout_parity.py` | task-033, task-039 | independent | task-033 and task-039 in either order; run after both are done, in number order (task-033 then task-039) |
-| 14 | `dashboard/reader/tests/test_flattened_layout_parity.py` | task-033, task-040 | independent | task-033 and task-040 in either order; run after both are done, in number order (task-033 then task-040) |
-| 15 | `dashboard/reader/tests/test_flattened_layout_parity.py` | task-039, task-040 | task-040 depends on task-039 | task-039, then task-040 |
-| 16 | `dashboard/reader/tests/test_integration.py` | task-025, task-031 | task-025 depends on task-031 | task-031, then task-025 |
-| 17 | `dashboard/reader/tests/test_reader.py` | task-031, task-039 | task-039 depends on task-031 | task-031, then task-039 |
-| 18 | `dashboard/reader/tests/test_reader.py` | task-031, task-040 | task-040 depends on task-031 | task-031, then task-040 |
-| 19 | `dashboard/reader/tests/test_reader.py` | task-031, task-043 | task-043 depends on task-031 | task-031, then task-043 |
-| 20 | `dashboard/reader/tests/test_reader.py` | task-031, task-049 | task-049 depends on task-031 | task-031, then task-049 |
-| 21 | `dashboard/reader/tests/test_reader.py` | task-039, task-040 | task-040 depends on task-039 | task-039, then task-040 |
-| 22 | `dashboard/reader/tests/test_reader.py` | task-039, task-043 | independent | task-039 and task-043 in either order; run after both are done, in number order (task-039 then task-043) |
-| 23 | `dashboard/reader/tests/test_reader.py` | task-039, task-049 | task-049 depends on task-039 | task-039, then task-049 |
-| 24 | `dashboard/reader/tests/test_reader.py` | task-040, task-043 | independent | task-040 and task-043 in either order; run after both are done, in number order (task-040 then task-043) |
-| 25 | `dashboard/reader/tests/test_reader.py` | task-040, task-049 | task-049 depends on task-040 | task-040, then task-049 |
-| 26 | `dashboard/reader/tests/test_reader.py` | task-043, task-049 | task-049 depends on task-043 | task-043, then task-049 |
-| 27 | `dashboard/reader/tests/test_resolve_work_dir_cross_runtime_parity.py` | task-031, task-040 | task-040 depends on task-031 | task-031, then task-040 |
-| 28 | `dashboard/reader/tests/test_security_hardening.py` | task-031, task-040 | task-040 depends on task-031 | task-031, then task-040 |
-| 29 | `dashboard/reader/tests/test_shortcut_kind_map_cross_runtime_parity.py` | task-031, task-038 | task-038 depends on task-031 | task-031, then task-038 |
-| 30 | `dashboard/reader/tests/test_task011_golden_master.py` | task-031, task-040 | task-040 depends on task-031 | task-031, then task-040 |
-| 31 | `dashboard/reader/tests/test_task014_fixtures.py` | task-031, task-039 | task-039 depends on task-031 | task-031, then task-039 |
-| 32 | `dashboard/reader/tests/test_task014_fixtures.py` | task-031, task-040 | task-040 depends on task-031 | task-031, then task-040 |
-| 33 | `dashboard/reader/tests/test_task014_fixtures.py` | task-039, task-040 | task-040 depends on task-039 | task-039, then task-040 |
-| 34 | `dashboard/reader/tests/test_task019_connectors.py` | task-031, task-057 | task-057 depends on task-031 | task-031, then task-057 |
-| 35 | `dashboard/reader/tests/test_task066_kb_parity.py` | task-031, task-041 | task-041 depends on task-031 | task-031, then task-041 |
-| 36 | `dashboard/reader/tests/test_task069_detail_parser.py` | task-031, task-040 | task-040 depends on task-031 | task-031, then task-040 |
-| 37 | `dashboard/reader/tests/test_work001_delivery_layouts.py` | task-031, task-040 | task-040 depends on task-031 | task-031, then task-040 |
-| 38 | `dashboard/reader/tests/test_work003_state_schema.py` | task-031, task-038 | task-038 depends on task-031 | task-031, then task-038 |
-| 39 | `dashboard/reader/tests/test_work003_state_schema.py` | task-031, task-039 | task-039 depends on task-031 | task-031, then task-039 |
-| 40 | `dashboard/reader/tests/test_work003_state_schema.py` | task-031, task-040 | task-040 depends on task-031 | task-031, then task-040 |
-| 41 | `dashboard/reader/tests/test_work003_state_schema.py` | task-031, task-044 | task-044 depends on task-031 | task-031, then task-044 |
-| 42 | `dashboard/reader/tests/test_work003_state_schema.py` | task-038, task-039 | independent | task-038 and task-039 in either order; run after both are done, in number order (task-038 then task-039) |
-| 43 | `dashboard/reader/tests/test_work003_state_schema.py` | task-038, task-040 | independent | task-038 and task-040 in either order; run after both are done, in number order (task-038 then task-040) |
-| 44 | `dashboard/reader/tests/test_work003_state_schema.py` | task-038, task-044 | independent | task-038 and task-044 in either order; run after both are done, in number order (task-038 then task-044) |
-| 45 | `dashboard/reader/tests/test_work003_state_schema.py` | task-039, task-040 | task-040 depends on task-039 | task-039, then task-040 |
-| 46 | `dashboard/reader/tests/test_work003_state_schema.py` | task-039, task-044 | independent | task-039 and task-044 in either order; run after both are done, in number order (task-039 then task-044) |
-| 47 | `dashboard/reader/tests/test_work003_state_schema.py` | task-040, task-044 | independent | task-040 and task-044 in either order; run after both are done, in number order (task-040 then task-044) |
-| 48 | `dashboard/reader/tests/test_work016_container_discovery.py` | task-031, task-033 | task-033 depends on task-031 | task-031, then task-033 |
-| 49 | `dashboard/reader/tests/test_work016_container_discovery.py` | task-031, task-040 | task-040 depends on task-031 | task-031, then task-040 |
-| 50 | `dashboard/reader/tests/test_work016_container_discovery.py` | task-033, task-040 | independent | task-033 and task-040 in either order; run after both are done, in number order (task-033 then task-040) |
-| 51 | `dashboard/server/tests/test_home_html_project_header.py` | task-031, task-033 | task-033 depends on task-031 | task-031, then task-033 |
-| 52 | `dashboard/server/tests/test_reader_task069.mjs` | task-031, task-040 | task-040 depends on task-031 | task-031, then task-040 |
-| 53 | `dashboard/server/tests/test_reader_task069.mjs` | task-031, task-044 | task-044 depends on task-031 | task-031, then task-044 |
-| 54 | `dashboard/server/tests/test_reader_task069.mjs` | task-040, task-044 | independent | task-040 and task-044 in either order; run after both are done, in number order (task-040 then task-044) |
-| 55 | `dashboard/server/tests/test_server_node.mjs` | task-031, task-033 | task-033 depends on task-031 | task-031, then task-033 |
-| 56 | `dashboard/server/tests/test_server_node.mjs` | task-031, task-043 | task-043 depends on task-031 | task-031, then task-043 |
-| 57 | `dashboard/server/tests/test_server_node.mjs` | task-033, task-043 | independent | task-033 and task-043 in either order; run after both are done, in number order (task-033 then task-043) |
-| 58 | `dashboard/server/tests/test_server_py.py` | task-031, task-033 | task-033 depends on task-031 | task-031, then task-033 |
-| 59 | `dashboard/server/tests/test_task002_resolve_work_dir.mjs` | task-031, task-040 | task-040 depends on task-031 | task-031, then task-040 |
-| 60 | `dashboard/server/tests/test_task010_task_notes.py` | task-025, task-031 | task-025 depends on task-031 | task-031, then task-025 |
-| 61 | `dashboard/server/tests/test_task010_task_notes.py` | task-025, task-033 | independent | task-025 and task-033 in either order; run after both are done, in number order (task-025 then task-033) |
-| 62 | `dashboard/server/tests/test_task010_task_notes.py` | task-031, task-033 | task-033 depends on task-031 | task-031, then task-033 |
-| 63 | `dashboard/server/tests/test_task010_task_notes_cross_runtime_parity.py` | task-025, task-031 | task-025 depends on task-031 | task-031, then task-025 |
-| 64 | `dashboard/server/tests/test_task011_dispatch_round_trip.mjs` | task-025, task-031 | task-025 depends on task-031 | task-031, then task-025 |
-| 65 | `dashboard/server/tests/test_task011_dispatch_round_trip.py` | task-025, task-031 | task-025 depends on task-031 | task-031, then task-025 |
-| 66 | `dashboard/server/tests/test_task012_consuming_round_trips.py` | task-025, task-031 | task-025 depends on task-031 | task-031, then task-025 |
-| 67 | `dashboard/server/tests/test_task012_consuming_round_trips.py` | task-025, task-033 | independent | task-025 and task-033 in either order; run after both are done, in number order (task-025 then task-033) |
-| 68 | `dashboard/server/tests/test_task012_consuming_round_trips.py` | task-025, task-043 | task-043 depends on task-025 | task-025, then task-043 |
-| 69 | `dashboard/server/tests/test_task012_consuming_round_trips.py` | task-031, task-033 | task-033 depends on task-031 | task-031, then task-033 |
-| 70 | `dashboard/server/tests/test_task012_consuming_round_trips.py` | task-031, task-043 | task-043 depends on task-031 | task-031, then task-043 |
-| 71 | `dashboard/server/tests/test_task012_consuming_round_trips.py` | task-033, task-043 | independent | task-033 and task-043 in either order; run after both are done, in number order (task-033 then task-043) |
-| 72 | `dashboard/server/tests/test_task019_connector_ops.mjs` | task-031, task-057 | task-057 depends on task-031 | task-031, then task-057 |
-| 73 | `dashboard/server/tests/test_task022_connectors_external_sources_ui.py` | task-031, task-033 | task-033 depends on task-031 | task-031, then task-033 |
-| 74 | `dashboard/server/tests/test_task023_list_management_round_trips.py` | task-031, task-057 | task-057 depends on task-031 | task-031, then task-057 |
-| 75 | `dashboard/server/tests/test_task029_task_stop_resume_ops.mjs` | task-025, task-031 | task-025 depends on task-031 | task-031, then task-025 |
-| 76 | `dashboard/server/tests/test_task030_finish_stop_resume_ui.py` | task-025, task-031 | task-025 depends on task-031 | task-031, then task-025 |
-| 77 | `dashboard/server/tests/test_task030_finish_stop_resume_ui.py` | task-025, task-033 | independent | task-025 and task-033 in either order; run after both are done, in number order (task-025 then task-033) |
-| 78 | `dashboard/server/tests/test_task030_finish_stop_resume_ui.py` | task-031, task-033 | task-033 depends on task-031 | task-031, then task-033 |
-| 79 | `dashboard/server/tests/test_task033_execution_control_round_trips.py` | task-025, task-031 | task-025 depends on task-031 | task-031, then task-025 |
-| 80 | `dashboard/server/tests/test_task033_execution_control_round_trips.py` | task-025, task-033 | independent | task-025 and task-033 in either order; run after both are done, in number order (task-025 then task-033) |
-| 81 | `dashboard/server/tests/test_task033_execution_control_round_trips.py` | task-031, task-033 | task-033 depends on task-031 | task-031, then task-033 |
-| 82 | `dashboard/server/tests/test_tools_management_ui.py` | task-031, task-033 | task-033 depends on task-031 | task-031, then task-033 |
-| 83 | `dashboard/server/tests/test_write_enabled_cross_runtime_parity.py` | task-025, task-031 | task-025 depends on task-031 | task-031, then task-025 |
-| 84 | `site/scripts/__tests__/flow-advance.test.mjs` | task-024, task-041 | task-041 depends on task-024 | task-024, then task-041 |
-| 85 | `site/scripts/__tests__/flow-advance.test.mjs` | task-024, task-042 | task-042 depends on task-024 | task-024, then task-042 |
-| 86 | `site/scripts/__tests__/flow-advance.test.mjs` | task-024, task-044 | task-044 depends on task-024 | task-024, then task-044 |
-| 87 | `site/scripts/__tests__/flow-advance.test.mjs` | task-041, task-042 | independent | task-041 and task-042 in either order; run after both are done, in number order (task-041 then task-042) |
-| 88 | `site/scripts/__tests__/flow-advance.test.mjs` | task-041, task-044 | independent | task-041 and task-044 in either order; run after both are done, in number order (task-041 then task-044) |
-| 89 | `site/scripts/__tests__/flow-advance.test.mjs` | task-042, task-044 | independent | task-042 and task-044 in either order; run after both are done, in number order (task-042 then task-044) |
-| 90 | `site/scripts/__tests__/flow-classify.test.mjs` | task-037, task-044 | independent | task-037 and task-044 in either order; run after both are done, in number order (task-037 then task-044) |
-| 91 | `site/scripts/__tests__/flow-compose.test.mjs` | task-037, task-044 | independent | task-037 and task-044 in either order; run after both are done, in number order (task-037 then task-044) |
-| 92 | `site/scripts/__tests__/flow-engine-core.test.mjs` | task-030, task-037 | task-037 depends on task-030 | task-030, then task-037 |
-| 93 | `site/scripts/__tests__/flow-extract-dispatch.test.mjs` | task-024, task-038 | task-038 depends on task-024 | task-024, then task-038 |
-| 94 | `site/scripts/__tests__/flow-extract-dispatch.test.mjs` | task-024, task-039 | task-039 depends on task-024 | task-024, then task-039 |
-| 95 | `site/scripts/__tests__/flow-extract-dispatch.test.mjs` | task-024, task-040 | task-040 depends on task-024 | task-024, then task-040 |
-| 96 | `site/scripts/__tests__/flow-extract-dispatch.test.mjs` | task-024, task-041 | task-041 depends on task-024 | task-024, then task-041 |
-| 97 | `site/scripts/__tests__/flow-extract-dispatch.test.mjs` | task-024, task-042 | task-042 depends on task-024 | task-024, then task-042 |
-| 98 | `site/scripts/__tests__/flow-extract-dispatch.test.mjs` | task-024, task-043 | task-043 depends on task-024 | task-024, then task-043 |
-| 99 | `site/scripts/__tests__/flow-extract-dispatch.test.mjs` | task-038, task-039 | independent | task-038 and task-039 in either order; run after both are done, in number order (task-038 then task-039) |
-| 100 | `site/scripts/__tests__/flow-extract-dispatch.test.mjs` | task-038, task-040 | independent | task-038 and task-040 in either order; run after both are done, in number order (task-038 then task-040) |
-| 101 | `site/scripts/__tests__/flow-extract-dispatch.test.mjs` | task-038, task-041 | independent | task-038 and task-041 in either order; run after both are done, in number order (task-038 then task-041) |
-| 102 | `site/scripts/__tests__/flow-extract-dispatch.test.mjs` | task-038, task-042 | independent | task-038 and task-042 in either order; run after both are done, in number order (task-038 then task-042) |
-| 103 | `site/scripts/__tests__/flow-extract-dispatch.test.mjs` | task-038, task-043 | independent | task-038 and task-043 in either order; run after both are done, in number order (task-038 then task-043) |
-| 104 | `site/scripts/__tests__/flow-extract-dispatch.test.mjs` | task-039, task-040 | task-040 depends on task-039 | task-039, then task-040 |
-| 105 | `site/scripts/__tests__/flow-extract-dispatch.test.mjs` | task-039, task-041 | independent | task-039 and task-041 in either order; run after both are done, in number order (task-039 then task-041) |
-| 106 | `site/scripts/__tests__/flow-extract-dispatch.test.mjs` | task-039, task-042 | independent | task-039 and task-042 in either order; run after both are done, in number order (task-039 then task-042) |
-| 107 | `site/scripts/__tests__/flow-extract-dispatch.test.mjs` | task-039, task-043 | independent | task-039 and task-043 in either order; run after both are done, in number order (task-039 then task-043) |
-| 108 | `site/scripts/__tests__/flow-extract-dispatch.test.mjs` | task-040, task-041 | independent | task-040 and task-041 in either order; run after both are done, in number order (task-040 then task-041) |
-| 109 | `site/scripts/__tests__/flow-extract-dispatch.test.mjs` | task-040, task-042 | independent | task-040 and task-042 in either order; run after both are done, in number order (task-040 then task-042) |
-| 110 | `site/scripts/__tests__/flow-extract-dispatch.test.mjs` | task-040, task-043 | independent | task-040 and task-043 in either order; run after both are done, in number order (task-040 then task-043) |
-| 111 | `site/scripts/__tests__/flow-extract-dispatch.test.mjs` | task-041, task-042 | independent | task-041 and task-042 in either order; run after both are done, in number order (task-041 then task-042) |
-| 112 | `site/scripts/__tests__/flow-extract-dispatch.test.mjs` | task-041, task-043 | independent | task-041 and task-043 in either order; run after both are done, in number order (task-041 then task-043) |
-| 113 | `site/scripts/__tests__/flow-extract-dispatch.test.mjs` | task-042, task-043 | independent | task-042 and task-043 in either order; run after both are done, in number order (task-042 then task-043) |
-| 114 | `site/scripts/__tests__/flow-extract-engine.test.mjs` | task-037, task-040 | independent | task-037 and task-040 in either order; run after both are done, in number order (task-037 then task-040) |
-| 115 | `site/scripts/__tests__/flow-extract-inline.test.mjs` | task-024, task-034 | task-034 depends on task-024 | task-024, then task-034 |
-| 116 | `site/scripts/__tests__/flow-extract-inline.test.mjs` | task-024, task-044 | task-044 depends on task-024 | task-024, then task-044 |
-| 117 | `site/scripts/__tests__/flow-extract-inline.test.mjs` | task-034, task-044 | independent | task-034 and task-044 in either order; run after both are done, in number order (task-034 then task-044) |
-| 118 | `site/scripts/__tests__/flow-extract-residual.test.mjs` | task-042, task-043 | independent | task-042 and task-043 in either order; run after both are done, in number order (task-042 then task-043) |
-| 119 | `site/scripts/__tests__/flow-extract-residual.test.mjs` | task-042, task-044 | independent | task-042 and task-044 in either order; run after both are done, in number order (task-042 then task-044) |
-| 120 | `site/scripts/__tests__/flow-extract-residual.test.mjs` | task-043, task-044 | independent | task-043 and task-044 in either order; run after both are done, in number order (task-043 then task-044) |
-| 121 | `site/scripts/__tests__/flow-facade.test.mjs` | task-038, task-042 | independent | task-038 and task-042 in either order; run after both are done, in number order (task-038 then task-042) |
-| 122 | `site/scripts/__tests__/flow-facade.test.mjs` | task-038, task-043 | independent | task-038 and task-043 in either order; run after both are done, in number order (task-038 then task-043) |
-| 123 | `site/scripts/__tests__/flow-facade.test.mjs` | task-038, task-044 | independent | task-038 and task-044 in either order; run after both are done, in number order (task-038 then task-044) |
-| 124 | `site/scripts/__tests__/flow-facade.test.mjs` | task-042, task-043 | independent | task-042 and task-043 in either order; run after both are done, in number order (task-042 then task-043) |
-| 125 | `site/scripts/__tests__/flow-facade.test.mjs` | task-042, task-044 | independent | task-042 and task-044 in either order; run after both are done, in number order (task-042 then task-044) |
-| 126 | `site/scripts/__tests__/flow-facade.test.mjs` | task-043, task-044 | independent | task-043 and task-044 in either order; run after both are done, in number order (task-043 then task-044) |
-| 127 | `site/scripts/__tests__/flow-graph-doorways.test.mjs` | task-030, task-037 | task-037 depends on task-030 | task-030, then task-037 |
-| 128 | `site/scripts/__tests__/flow-graph-doorways.test.mjs` | task-030, task-040 | task-040 depends on task-030 | task-030, then task-040 |
-| 129 | `site/scripts/__tests__/flow-graph-doorways.test.mjs` | task-030, task-044 | task-044 depends on task-030 | task-030, then task-044 |
-| 130 | `site/scripts/__tests__/flow-graph-doorways.test.mjs` | task-037, task-040 | independent | task-037 and task-040 in either order; run after both are done, in number order (task-037 then task-040) |
-| 131 | `site/scripts/__tests__/flow-graph-doorways.test.mjs` | task-037, task-044 | independent | task-037 and task-044 in either order; run after both are done, in number order (task-037 then task-044) |
-| 132 | `site/scripts/__tests__/flow-graph-doorways.test.mjs` | task-040, task-044 | independent | task-040 and task-044 in either order; run after both are done, in number order (task-040 then task-044) |
-| 133 | `site/scripts/__tests__/flow-graph.test.mjs` | task-024, task-037 | task-037 depends on task-024 | task-024, then task-037 |
-| 134 | `site/scripts/__tests__/flow-graph.test.mjs` | task-024, task-038 | task-038 depends on task-024 | task-024, then task-038 |
-| 135 | `site/scripts/__tests__/flow-graph.test.mjs` | task-024, task-039 | task-039 depends on task-024 | task-024, then task-039 |
-| 136 | `site/scripts/__tests__/flow-graph.test.mjs` | task-024, task-042 | task-042 depends on task-024 | task-024, then task-042 |
-| 137 | `site/scripts/__tests__/flow-graph.test.mjs` | task-024, task-044 | task-044 depends on task-024 | task-024, then task-044 |
-| 138 | `site/scripts/__tests__/flow-graph.test.mjs` | task-037, task-038 | independent | task-037 and task-038 in either order; run after both are done, in number order (task-037 then task-038) |
-| 139 | `site/scripts/__tests__/flow-graph.test.mjs` | task-037, task-039 | independent | task-037 and task-039 in either order; run after both are done, in number order (task-037 then task-039) |
-| 140 | `site/scripts/__tests__/flow-graph.test.mjs` | task-037, task-042 | independent | task-037 and task-042 in either order; run after both are done, in number order (task-037 then task-042) |
-| 141 | `site/scripts/__tests__/flow-graph.test.mjs` | task-037, task-044 | independent | task-037 and task-044 in either order; run after both are done, in number order (task-037 then task-044) |
-| 142 | `site/scripts/__tests__/flow-graph.test.mjs` | task-038, task-039 | independent | task-038 and task-039 in either order; run after both are done, in number order (task-038 then task-039) |
-| 143 | `site/scripts/__tests__/flow-graph.test.mjs` | task-038, task-042 | independent | task-038 and task-042 in either order; run after both are done, in number order (task-038 then task-042) |
-| 144 | `site/scripts/__tests__/flow-graph.test.mjs` | task-038, task-044 | independent | task-038 and task-044 in either order; run after both are done, in number order (task-038 then task-044) |
-| 145 | `site/scripts/__tests__/flow-graph.test.mjs` | task-039, task-042 | independent | task-039 and task-042 in either order; run after both are done, in number order (task-039 then task-042) |
-| 146 | `site/scripts/__tests__/flow-graph.test.mjs` | task-039, task-044 | independent | task-039 and task-044 in either order; run after both are done, in number order (task-039 then task-044) |
-| 147 | `site/scripts/__tests__/flow-graph.test.mjs` | task-042, task-044 | independent | task-042 and task-044 in either order; run after both are done, in number order (task-042 then task-044) |
-| 148 | `site/scripts/__tests__/flow-render-mermaid.test.mjs` | task-040, task-044 | independent | task-040 and task-044 in either order; run after both are done, in number order (task-040 then task-044) |
-| 149 | `site/scripts/__tests__/flow-validate.test.mjs` | task-024, task-044 | task-044 depends on task-024 | task-024, then task-044 |
-| 150 | `site/scripts/__tests__/gen-reference.test.mjs` | task-032, task-037 | independent | task-032 and task-037 in either order; run after both are done, in number order (task-032 then task-037) |
-| 151 | `site/scripts/__tests__/gen-reference.test.mjs` | task-032, task-038 | independent | task-032 and task-038 in either order; run after both are done, in number order (task-032 then task-038) |
-| 152 | `site/scripts/__tests__/gen-reference.test.mjs` | task-032, task-039 | independent | task-032 and task-039 in either order; run after both are done, in number order (task-032 then task-039) |
-| 153 | `site/scripts/__tests__/gen-reference.test.mjs` | task-032, task-040 | independent | task-032 and task-040 in either order; run after both are done, in number order (task-032 then task-040) |
-| 154 | `site/scripts/__tests__/gen-reference.test.mjs` | task-032, task-041 | independent | task-032 and task-041 in either order; run after both are done, in number order (task-032 then task-041) |
-| 155 | `site/scripts/__tests__/gen-reference.test.mjs` | task-032, task-042 | independent | task-032 and task-042 in either order; run after both are done, in number order (task-032 then task-042) |
-| 156 | `site/scripts/__tests__/gen-reference.test.mjs` | task-032, task-043 | independent | task-032 and task-043 in either order; run after both are done, in number order (task-032 then task-043) |
-| 157 | `site/scripts/__tests__/gen-reference.test.mjs` | task-037, task-038 | independent | task-037 and task-038 in either order; run after both are done, in number order (task-037 then task-038) |
-| 158 | `site/scripts/__tests__/gen-reference.test.mjs` | task-037, task-039 | independent | task-037 and task-039 in either order; run after both are done, in number order (task-037 then task-039) |
-| 159 | `site/scripts/__tests__/gen-reference.test.mjs` | task-037, task-040 | independent | task-037 and task-040 in either order; run after both are done, in number order (task-037 then task-040) |
-| 160 | `site/scripts/__tests__/gen-reference.test.mjs` | task-037, task-041 | independent | task-037 and task-041 in either order; run after both are done, in number order (task-037 then task-041) |
-| 161 | `site/scripts/__tests__/gen-reference.test.mjs` | task-037, task-042 | independent | task-037 and task-042 in either order; run after both are done, in number order (task-037 then task-042) |
-| 162 | `site/scripts/__tests__/gen-reference.test.mjs` | task-037, task-043 | independent | task-037 and task-043 in either order; run after both are done, in number order (task-037 then task-043) |
-| 163 | `site/scripts/__tests__/gen-reference.test.mjs` | task-038, task-039 | independent | task-038 and task-039 in either order; run after both are done, in number order (task-038 then task-039) |
-| 164 | `site/scripts/__tests__/gen-reference.test.mjs` | task-038, task-040 | independent | task-038 and task-040 in either order; run after both are done, in number order (task-038 then task-040) |
-| 165 | `site/scripts/__tests__/gen-reference.test.mjs` | task-038, task-041 | independent | task-038 and task-041 in either order; run after both are done, in number order (task-038 then task-041) |
-| 166 | `site/scripts/__tests__/gen-reference.test.mjs` | task-038, task-042 | independent | task-038 and task-042 in either order; run after both are done, in number order (task-038 then task-042) |
-| 167 | `site/scripts/__tests__/gen-reference.test.mjs` | task-038, task-043 | independent | task-038 and task-043 in either order; run after both are done, in number order (task-038 then task-043) |
-| 168 | `site/scripts/__tests__/gen-reference.test.mjs` | task-039, task-040 | task-040 depends on task-039 | task-039, then task-040 |
-| 169 | `site/scripts/__tests__/gen-reference.test.mjs` | task-039, task-041 | independent | task-039 and task-041 in either order; run after both are done, in number order (task-039 then task-041) |
-| 170 | `site/scripts/__tests__/gen-reference.test.mjs` | task-039, task-042 | independent | task-039 and task-042 in either order; run after both are done, in number order (task-039 then task-042) |
-| 171 | `site/scripts/__tests__/gen-reference.test.mjs` | task-039, task-043 | independent | task-039 and task-043 in either order; run after both are done, in number order (task-039 then task-043) |
-| 172 | `site/scripts/__tests__/gen-reference.test.mjs` | task-040, task-041 | independent | task-040 and task-041 in either order; run after both are done, in number order (task-040 then task-041) |
-| 173 | `site/scripts/__tests__/gen-reference.test.mjs` | task-040, task-042 | independent | task-040 and task-042 in either order; run after both are done, in number order (task-040 then task-042) |
-| 174 | `site/scripts/__tests__/gen-reference.test.mjs` | task-040, task-043 | independent | task-040 and task-043 in either order; run after both are done, in number order (task-040 then task-043) |
-| 175 | `site/scripts/__tests__/gen-reference.test.mjs` | task-041, task-042 | independent | task-041 and task-042 in either order; run after both are done, in number order (task-041 then task-042) |
-| 176 | `site/scripts/__tests__/gen-reference.test.mjs` | task-041, task-043 | independent | task-041 and task-043 in either order; run after both are done, in number order (task-041 then task-043) |
-| 177 | `site/scripts/__tests__/gen-reference.test.mjs` | task-042, task-043 | independent | task-042 and task-043 in either order; run after both are done, in number order (task-042 then task-043) |
-| 178 | `site/scripts/__tests__/gen-skills-index.test.mjs` | task-032, task-038 | independent | task-032 and task-038 in either order; run after both are done, in number order (task-032 then task-038) |
-| 179 | `site/scripts/__tests__/gen-skills-index.test.mjs` | task-032, task-039 | independent | task-032 and task-039 in either order; run after both are done, in number order (task-032 then task-039) |
-| 180 | `site/scripts/__tests__/gen-skills-index.test.mjs` | task-032, task-040 | independent | task-032 and task-040 in either order; run after both are done, in number order (task-032 then task-040) |
-| 181 | `site/scripts/__tests__/gen-skills-index.test.mjs` | task-032, task-043 | independent | task-032 and task-043 in either order; run after both are done, in number order (task-032 then task-043) |
-| 182 | `site/scripts/__tests__/gen-skills-index.test.mjs` | task-038, task-039 | independent | task-038 and task-039 in either order; run after both are done, in number order (task-038 then task-039) |
-| 183 | `site/scripts/__tests__/gen-skills-index.test.mjs` | task-038, task-040 | independent | task-038 and task-040 in either order; run after both are done, in number order (task-038 then task-040) |
-| 184 | `site/scripts/__tests__/gen-skills-index.test.mjs` | task-038, task-043 | independent | task-038 and task-043 in either order; run after both are done, in number order (task-038 then task-043) |
-| 185 | `site/scripts/__tests__/gen-skills-index.test.mjs` | task-039, task-040 | task-040 depends on task-039 | task-039, then task-040 |
-| 186 | `site/scripts/__tests__/gen-skills-index.test.mjs` | task-039, task-043 | independent | task-039 and task-043 in either order; run after both are done, in number order (task-039 then task-043) |
-| 187 | `site/scripts/__tests__/gen-skills-index.test.mjs` | task-040, task-043 | independent | task-040 and task-043 in either order; run after both are done, in number order (task-040 then task-043) |
-| 188 | `site/scripts/__tests__/gen-skills.test.mjs` | task-040, task-041 | independent | task-040 and task-041 in either order; run after both are done, in number order (task-040 then task-041) |
-| 189 | `site/scripts/__tests__/gen-skills.test.mjs` | task-040, task-042 | independent | task-040 and task-042 in either order; run after both are done, in number order (task-040 then task-042) |
-| 190 | `site/scripts/__tests__/gen-skills.test.mjs` | task-040, task-043 | independent | task-040 and task-043 in either order; run after both are done, in number order (task-040 then task-043) |
-| 191 | `site/scripts/__tests__/gen-skills.test.mjs` | task-041, task-042 | independent | task-041 and task-042 in either order; run after both are done, in number order (task-041 then task-042) |
-| 192 | `site/scripts/__tests__/gen-skills.test.mjs` | task-041, task-043 | independent | task-041 and task-043 in either order; run after both are done, in number order (task-041 then task-043) |
-| 193 | `site/scripts/__tests__/gen-skills.test.mjs` | task-042, task-043 | independent | task-042 and task-043 in either order; run after both are done, in number order (task-042 then task-043) |
-| 194 | `site/scripts/__tests__/provenance-appender.test.mjs` | task-037, task-042 | independent | task-037 and task-042 in either order; run after both are done, in number order (task-037 then task-042) |
-| 195 | `site/scripts/__tests__/provenance-appender.test.mjs` | task-037, task-044 | independent | task-037 and task-044 in either order; run after both are done, in number order (task-037 then task-044) |
-| 196 | `site/scripts/__tests__/provenance-appender.test.mjs` | task-042, task-044 | independent | task-042 and task-044 in either order; run after both are done, in number order (task-042 then task-044) |
-| 197 | `site/scripts/__tests__/provenance.test.mjs` | task-042, task-044 | independent | task-042 and task-044 in either order; run after both are done, in number order (task-042 then task-044) |
-| 198 | `site/scripts/__tests__/skills-groups.test.mjs` | task-032, task-038 | independent | task-032 and task-038 in either order; run after both are done, in number order (task-032 then task-038) |
-| 199 | `site/scripts/__tests__/skills-groups.test.mjs` | task-032, task-039 | independent | task-032 and task-039 in either order; run after both are done, in number order (task-032 then task-039) |
-| 200 | `site/scripts/__tests__/skills-groups.test.mjs` | task-032, task-040 | independent | task-032 and task-040 in either order; run after both are done, in number order (task-032 then task-040) |
-| 201 | `site/scripts/__tests__/skills-groups.test.mjs` | task-032, task-043 | independent | task-032 and task-043 in either order; run after both are done, in number order (task-032 then task-043) |
-| 202 | `site/scripts/__tests__/skills-groups.test.mjs` | task-038, task-039 | independent | task-038 and task-039 in either order; run after both are done, in number order (task-038 then task-039) |
-| 203 | `site/scripts/__tests__/skills-groups.test.mjs` | task-038, task-040 | independent | task-038 and task-040 in either order; run after both are done, in number order (task-038 then task-040) |
-| 204 | `site/scripts/__tests__/skills-groups.test.mjs` | task-038, task-043 | independent | task-038 and task-043 in either order; run after both are done, in number order (task-038 then task-043) |
-| 205 | `site/scripts/__tests__/skills-groups.test.mjs` | task-039, task-040 | task-040 depends on task-039 | task-039, then task-040 |
-| 206 | `site/scripts/__tests__/skills-groups.test.mjs` | task-039, task-043 | independent | task-039 and task-043 in either order; run after both are done, in number order (task-039 then task-043) |
-| 207 | `site/scripts/__tests__/skills-groups.test.mjs` | task-040, task-043 | independent | task-040 and task-043 in either order; run after both are done, in number order (task-040 then task-043) |
-| 208 | `site/scripts/__tests__/skills-render-index.test.mjs` | task-032, task-043 | independent | task-032 and task-043 in either order; run after both are done, in number order (task-032 then task-043) |
-| 209 | `site/scripts/__tests__/skills-render-page.test.mjs` | task-043, task-044 | independent | task-043 and task-044 in either order; run after both are done, in number order (task-043 then task-044) |
-| 210 | `site/src/lib/__tests__/feature-006-head-gate.test.ts` | task-037, task-042 | independent | task-037 and task-042 in either order; run after both are done, in number order (task-037 then task-042) |
-| 211 | `site/src/lib/__tests__/skill-node-panel.test.ts` | task-040, task-042 | independent | task-040 and task-042 in either order; run after both are done, in number order (task-040 then task-042) |
-| 212 | `tests/README.md` | task-025, task-040 | task-040 depends on task-025 | task-025, then task-040 |
-| 213 | `tests/README.md` | task-025, task-041 | task-041 depends on task-025 | task-025, then task-041 |
-| 214 | `tests/README.md` | task-025, task-044 | task-044 depends on task-025 | task-025, then task-044 |
-| 215 | `tests/README.md` | task-040, task-041 | independent | task-040 and task-041 in either order; run after both are done, in number order (task-040 then task-041) |
-| 216 | `tests/README.md` | task-040, task-044 | independent | task-040 and task-044 in either order; run after both are done, in number order (task-040 then task-044) |
-| 217 | `tests/README.md` | task-041, task-044 | independent | task-041 and task-044 in either order; run after both are done, in number order (task-041 then task-044) |
-| 218 | `tests/canonical/fixtures/actback-task/docset-check.tsv` | task-044, task-045 | independent | task-044 and task-045 in either order; run after both are done, in number order (task-044 then task-045) |
-| 219 | `tests/canonical/fixtures/actback-task/docset-component.tsv` | task-044, task-049 | task-049 depends on task-044 | task-044, then task-049 |
-| 220 | `tests/canonical/fixtures/actback-task/docset-contract.tsv` | task-044, task-049 | task-049 depends on task-044 | task-044, then task-049 |
-| 221 | `tests/canonical/fixtures/dual-intent/content/doc-set.tsv` | task-044, task-045 | independent | task-044 and task-045 in either order; run after both are done, in number order (task-044 then task-045) |
-| 222 | `tests/canonical/fixtures/dual-intent/data-ml/doc-set.tsv` | task-044, task-045 | independent | task-044 and task-045 in either order; run after both are done, in number order (task-044 then task-045) |
-| 223 | `tests/canonical/fixtures/dual-intent/design/doc-set.tsv` | task-044, task-045 | independent | task-044 and task-045 in either order; run after both are done, in number order (task-044 then task-045) |
-| 224 | `tests/canonical/fixtures/kb-essence/actback/representative-task-fixture/doc-set.tsv` | task-044, task-045 | independent | task-044 and task-045 in either order; run after both are done, in number order (task-044 then task-045) |
-| 225 | `tests/canonical/test-actback-task.sh` | task-044, task-045 | independent | task-044 and task-045 in either order; run after both are done, in number order (task-044 then task-045) |
-| 226 | `tests/canonical/test-actback-task.sh` | task-044, task-049 | task-049 depends on task-044 | task-044, then task-049 |
-| 227 | `tests/canonical/test-actback-task.sh` | task-045, task-049 | independent | task-045 and task-049 in either order; run after both are done, in number order (task-045 then task-049) |
-| 228 | `tests/canonical/test-aid-migrate-trigger.sh` | task-033, task-056 | task-056 depends on task-033 | task-033, then task-056 |
-| 229 | `tests/canonical/test-aid-migrate.sh` | task-032, task-033 | independent | task-032 and task-033 in either order; run after both are done, in number order (task-032 then task-033) |
-| 230 | `tests/canonical/test-aid-migrate.sh` | task-032, task-040 | independent | task-032 and task-040 in either order; run after both are done, in number order (task-032 then task-040) |
-| 231 | `tests/canonical/test-aid-migrate.sh` | task-032, task-042 | independent | task-032 and task-042 in either order; run after both are done, in number order (task-032 then task-042) |
-| 232 | `tests/canonical/test-aid-migrate.sh` | task-032, task-056 | task-056 depends on task-032 | task-032, then task-056 |
-| 233 | `tests/canonical/test-aid-migrate.sh` | task-033, task-040 | independent | task-033 and task-040 in either order; run after both are done, in number order (task-033 then task-040) |
-| 234 | `tests/canonical/test-aid-migrate.sh` | task-033, task-042 | independent | task-033 and task-042 in either order; run after both are done, in number order (task-033 then task-042) |
-| 235 | `tests/canonical/test-aid-migrate.sh` | task-033, task-056 | task-056 depends on task-033 | task-033, then task-056 |
-| 236 | `tests/canonical/test-aid-migrate.sh` | task-040, task-042 | independent | task-040 and task-042 in either order; run after both are done, in number order (task-040 then task-042) |
-| 237 | `tests/canonical/test-aid-migrate.sh` | task-040, task-056 | task-056 depends on task-040 | task-040, then task-056 |
-| 238 | `tests/canonical/test-aid-migrate.sh` | task-042, task-056 | task-056 depends on task-042 | task-042, then task-056 |
-| 239 | `tests/canonical/test-artifact-discipline.sh` | task-025, task-031 | task-025 depends on task-031 | task-031, then task-025 |
-| 240 | `tests/canonical/test-artifact-discipline.sh` | task-025, task-037 | task-037 depends on task-025 | task-025, then task-037 |
-| 241 | `tests/canonical/test-artifact-discipline.sh` | task-025, task-039 | task-039 depends on task-025 | task-025, then task-039 |
-| 242 | `tests/canonical/test-artifact-discipline.sh` | task-025, task-040 | task-040 depends on task-025 | task-025, then task-040 |
-| 243 | `tests/canonical/test-artifact-discipline.sh` | task-025, task-044 | task-044 depends on task-025 | task-025, then task-044 |
-| 244 | `tests/canonical/test-artifact-discipline.sh` | task-031, task-037 | task-037 depends on task-031 | task-031, then task-037 |
-| 245 | `tests/canonical/test-artifact-discipline.sh` | task-031, task-039 | task-039 depends on task-031 | task-031, then task-039 |
-| 246 | `tests/canonical/test-artifact-discipline.sh` | task-031, task-040 | task-040 depends on task-031 | task-031, then task-040 |
-| 247 | `tests/canonical/test-artifact-discipline.sh` | task-031, task-044 | task-044 depends on task-031 | task-031, then task-044 |
-| 248 | `tests/canonical/test-artifact-discipline.sh` | task-037, task-039 | independent | task-037 and task-039 in either order; run after both are done, in number order (task-037 then task-039) |
-| 249 | `tests/canonical/test-artifact-discipline.sh` | task-037, task-040 | independent | task-037 and task-040 in either order; run after both are done, in number order (task-037 then task-040) |
-| 250 | `tests/canonical/test-artifact-discipline.sh` | task-037, task-044 | independent | task-037 and task-044 in either order; run after both are done, in number order (task-037 then task-044) |
-| 251 | `tests/canonical/test-artifact-discipline.sh` | task-039, task-040 | task-040 depends on task-039 | task-039, then task-040 |
-| 252 | `tests/canonical/test-artifact-discipline.sh` | task-039, task-044 | independent | task-039 and task-044 in either order; run after both are done, in number order (task-039 then task-044) |
-| 253 | `tests/canonical/test-artifact-discipline.sh` | task-040, task-044 | independent | task-040 and task-044 in either order; run after both are done, in number order (task-040 then task-044) |
-| 254 | `tests/canonical/test-catalog-dirs-parity.sh` | task-037, task-042 | independent | task-037 and task-042 in either order; run after both are done, in number order (task-037 then task-042) |
-| 255 | `tests/canonical/test-catalog-dirs-parity.sh` | task-037, task-043 | independent | task-037 and task-043 in either order; run after both are done, in number order (task-037 then task-043) |
-| 256 | `tests/canonical/test-catalog-dirs-parity.sh` | task-042, task-043 | independent | task-042 and task-043 in either order; run after both are done, in number order (task-042 then task-043) |
-| 257 | `tests/canonical/test-change-refactor-family-scaffold.sh` | task-032, task-037 | independent | task-032 and task-037 in either order; run after both are done, in number order (task-032 then task-037) |
-| 258 | `tests/canonical/test-change-refactor-family-scaffold.sh` | task-032, task-040 | independent | task-032 and task-040 in either order; run after both are done, in number order (task-032 then task-040) |
-| 259 | `tests/canonical/test-change-refactor-family-scaffold.sh` | task-032, task-044 | independent | task-032 and task-044 in either order; run after both are done, in number order (task-032 then task-044) |
-| 260 | `tests/canonical/test-change-refactor-family-scaffold.sh` | task-037, task-040 | independent | task-037 and task-040 in either order; run after both are done, in number order (task-037 then task-040) |
-| 261 | `tests/canonical/test-change-refactor-family-scaffold.sh` | task-037, task-044 | independent | task-037 and task-044 in either order; run after both are done, in number order (task-037 then task-044) |
-| 262 | `tests/canonical/test-change-refactor-family-scaffold.sh` | task-040, task-044 | independent | task-040 and task-044 in either order; run after both are done, in number order (task-040 then task-044) |
-| 263 | `tests/canonical/test-chat-node-manifest.sh` | task-033, task-056 | task-056 depends on task-033 | task-033, then task-056 |
-| 264 | `tests/canonical/test-chat-node-wake.sh` | task-043, task-045 | independent | task-043 and task-045 in either order; run after both are done, in number order (task-043 then task-045) |
-| 265 | `tests/canonical/test-closure-check.sh` | task-045, task-049 | independent | task-045 and task-049 in either order; run after both are done, in number order (task-045 then task-049) |
-| 266 | `tests/canonical/test-conformance-lane-semantics.sh` | task-041, task-042 | independent | task-041 and task-042 in either order; run after both are done, in number order (task-041 then task-042) |
-| 267 | `tests/canonical/test-conformance-lane-semantics.sh` | task-041, task-049 | task-049 depends on task-041 | task-041, then task-049 |
-| 268 | `tests/canonical/test-conformance-lane-semantics.sh` | task-042, task-049 | task-049 depends on task-042 | task-042, then task-049 |
-| 269 | `tests/canonical/test-connector-consumption-linkage.sh` | task-021, task-038 | task-038 depends on task-021 | task-021, then task-038 |
-| 270 | `tests/canonical/test-connector-consumption-linkage.sh` | task-021, task-039 | task-039 depends on task-021 | task-021, then task-039 |
-| 271 | `tests/canonical/test-connector-consumption-linkage.sh` | task-021, task-040 | task-040 depends on task-021 | task-021, then task-040 |
-| 272 | `tests/canonical/test-connector-consumption-linkage.sh` | task-021, task-042 | task-042 depends on task-021 | task-021, then task-042 |
-| 273 | `tests/canonical/test-connector-consumption-linkage.sh` | task-021, task-043 | task-043 depends on task-021 | task-021, then task-043 |
-| 274 | `tests/canonical/test-connector-consumption-linkage.sh` | task-021, task-044 | task-044 depends on task-021 | task-021, then task-044 |
-| 275 | `tests/canonical/test-connector-consumption-linkage.sh` | task-038, task-039 | independent | task-038 and task-039 in either order; run after both are done, in number order (task-038 then task-039) |
-| 276 | `tests/canonical/test-connector-consumption-linkage.sh` | task-038, task-040 | independent | task-038 and task-040 in either order; run after both are done, in number order (task-038 then task-040) |
-| 277 | `tests/canonical/test-connector-consumption-linkage.sh` | task-038, task-042 | independent | task-038 and task-042 in either order; run after both are done, in number order (task-038 then task-042) |
-| 278 | `tests/canonical/test-connector-consumption-linkage.sh` | task-038, task-043 | independent | task-038 and task-043 in either order; run after both are done, in number order (task-038 then task-043) |
-| 279 | `tests/canonical/test-connector-consumption-linkage.sh` | task-038, task-044 | independent | task-038 and task-044 in either order; run after both are done, in number order (task-038 then task-044) |
-| 280 | `tests/canonical/test-connector-consumption-linkage.sh` | task-039, task-040 | task-040 depends on task-039 | task-039, then task-040 |
-| 281 | `tests/canonical/test-connector-consumption-linkage.sh` | task-039, task-042 | independent | task-039 and task-042 in either order; run after both are done, in number order (task-039 then task-042) |
-| 282 | `tests/canonical/test-connector-consumption-linkage.sh` | task-039, task-043 | independent | task-039 and task-043 in either order; run after both are done, in number order (task-039 then task-043) |
-| 283 | `tests/canonical/test-connector-consumption-linkage.sh` | task-039, task-044 | independent | task-039 and task-044 in either order; run after both are done, in number order (task-039 then task-044) |
-| 284 | `tests/canonical/test-connector-consumption-linkage.sh` | task-040, task-042 | independent | task-040 and task-042 in either order; run after both are done, in number order (task-040 then task-042) |
-| 285 | `tests/canonical/test-connector-consumption-linkage.sh` | task-040, task-043 | independent | task-040 and task-043 in either order; run after both are done, in number order (task-040 then task-043) |
-| 286 | `tests/canonical/test-connector-consumption-linkage.sh` | task-040, task-044 | independent | task-040 and task-044 in either order; run after both are done, in number order (task-040 then task-044) |
-| 287 | `tests/canonical/test-connector-consumption-linkage.sh` | task-042, task-043 | independent | task-042 and task-043 in either order; run after both are done, in number order (task-042 then task-043) |
-| 288 | `tests/canonical/test-connector-consumption-linkage.sh` | task-042, task-044 | independent | task-042 and task-044 in either order; run after both are done, in number order (task-042 then task-044) |
-| 289 | `tests/canonical/test-connector-consumption-linkage.sh` | task-043, task-044 | independent | task-043 and task-044 in either order; run after both are done, in number order (task-043 then task-044) |
-| 290 | `tests/canonical/test-connector-set-unset-lifecycle.sh` | task-043, task-057 | task-057 depends on task-043 | task-043, then task-057 |
-| 291 | `tests/canonical/test-connector-skills-structural.sh` | task-032, task-041 | independent | task-032 and task-041 in either order; run after both are done, in number order (task-032 then task-041) |
-| 292 | `tests/canonical/test-connector-skills-structural.sh` | task-032, task-042 | independent | task-032 and task-042 in either order; run after both are done, in number order (task-032 then task-042) |
-| 293 | `tests/canonical/test-connector-skills-structural.sh` | task-032, task-043 | independent | task-032 and task-043 in either order; run after both are done, in number order (task-032 then task-043) |
-| 294 | `tests/canonical/test-connector-skills-structural.sh` | task-041, task-042 | independent | task-041 and task-042 in either order; run after both are done, in number order (task-041 then task-042) |
-| 295 | `tests/canonical/test-connector-skills-structural.sh` | task-041, task-043 | independent | task-041 and task-043 in either order; run after both are done, in number order (task-041 then task-043) |
-| 296 | `tests/canonical/test-connector-skills-structural.sh` | task-042, task-043 | independent | task-042 and task-043 in either order; run after both are done, in number order (task-042 then task-043) |
-| 297 | `tests/canonical/test-conversation-runner.sh` | task-040, task-044 | independent | task-040 and task-044 in either order; run after both are done, in number order (task-040 then task-044) |
-| 298 | `tests/canonical/test-conversation-runner.sh` | task-040, task-056 | task-056 depends on task-040 | task-040, then task-056 |
-| 299 | `tests/canonical/test-conversation-runner.sh` | task-040, task-057 | task-057 depends on task-040 | task-040, then task-057 |
-| 300 | `tests/canonical/test-conversation-runner.sh` | task-044, task-056 | task-056 depends on task-044 | task-044, then task-056 |
-| 301 | `tests/canonical/test-conversation-runner.sh` | task-044, task-057 | task-057 depends on task-044 | task-044, then task-057 |
-| 302 | `tests/canonical/test-conversation-runner.sh` | task-056, task-057 | task-057 depends on task-056 | task-056, then task-057 |
-| 303 | `tests/canonical/test-create-family-scaffold.sh` | task-032, task-037 | independent | task-032 and task-037 in either order; run after both are done, in number order (task-032 then task-037) |
-| 304 | `tests/canonical/test-create-family-scaffold.sh` | task-032, task-040 | independent | task-032 and task-040 in either order; run after both are done, in number order (task-032 then task-040) |
-| 305 | `tests/canonical/test-create-family-scaffold.sh` | task-032, task-044 | independent | task-032 and task-044 in either order; run after both are done, in number order (task-032 then task-044) |
-| 306 | `tests/canonical/test-create-family-scaffold.sh` | task-037, task-040 | independent | task-037 and task-040 in either order; run after both are done, in number order (task-037 then task-040) |
-| 307 | `tests/canonical/test-create-family-scaffold.sh` | task-037, task-044 | independent | task-037 and task-044 in either order; run after both are done, in number order (task-037 then task-044) |
-| 308 | `tests/canonical/test-create-family-scaffold.sh` | task-040, task-044 | independent | task-040 and task-044 in either order; run after both are done, in number order (task-040 then task-044) |
-| 309 | `tests/canonical/test-cutover-no-dangling.sh` | task-021, task-038 | task-038 depends on task-021 | task-021, then task-038 |
-| 310 | `tests/canonical/test-cutover-no-dangling.sh` | task-021, task-041 | task-041 depends on task-021 | task-021, then task-041 |
-| 311 | `tests/canonical/test-cutover-no-dangling.sh` | task-021, task-044 | task-044 depends on task-021 | task-021, then task-044 |
-| 312 | `tests/canonical/test-cutover-no-dangling.sh` | task-038, task-041 | independent | task-038 and task-041 in either order; run after both are done, in number order (task-038 then task-041) |
-| 313 | `tests/canonical/test-cutover-no-dangling.sh` | task-038, task-044 | independent | task-038 and task-044 in either order; run after both are done, in number order (task-038 then task-044) |
-| 314 | `tests/canonical/test-cutover-no-dangling.sh` | task-041, task-044 | independent | task-041 and task-044 in either order; run after both are done, in number order (task-041 then task-044) |
-| 315 | `tests/canonical/test-dashboard-manifest.sh` | task-031, task-033 | task-033 depends on task-031 | task-031, then task-033 |
-| 316 | `tests/canonical/test-dashboard-manifest.sh` | task-031, task-056 | task-056 depends on task-031 | task-031, then task-056 |
-| 317 | `tests/canonical/test-dashboard-manifest.sh` | task-033, task-056 | task-056 depends on task-033 | task-033, then task-056 |
-| 318 | `tests/canonical/test-dashboard-parity-h.sh` | task-031, task-033 | task-033 depends on task-031 | task-031, then task-033 |
-| 319 | `tests/canonical/test-delivery-gate-aggregate.sh` | task-021, task-025 | task-025 depends on task-021 | task-021, then task-025 |
-| 320 | `tests/canonical/test-delivery-gate-aggregate.sh` | task-021, task-040 | task-040 depends on task-021 | task-021, then task-040 |
-| 321 | `tests/canonical/test-delivery-gate-aggregate.sh` | task-025, task-040 | task-040 depends on task-025 | task-025, then task-040 |
-| 322 | `tests/canonical/test-deploy-monitor-repurpose.sh` | task-032, task-037 | independent | task-032 and task-037 in either order; run after both are done, in number order (task-032 then task-037) |
-| 323 | `tests/canonical/test-deploy-monitor-repurpose.sh` | task-032, task-038 | independent | task-032 and task-038 in either order; run after both are done, in number order (task-032 then task-038) |
-| 324 | `tests/canonical/test-deploy-monitor-repurpose.sh` | task-032, task-040 | independent | task-032 and task-040 in either order; run after both are done, in number order (task-032 then task-040) |
-| 325 | `tests/canonical/test-deploy-monitor-repurpose.sh` | task-032, task-042 | independent | task-032 and task-042 in either order; run after both are done, in number order (task-032 then task-042) |
-| 326 | `tests/canonical/test-deploy-monitor-repurpose.sh` | task-032, task-043 | independent | task-032 and task-043 in either order; run after both are done, in number order (task-032 then task-043) |
-| 327 | `tests/canonical/test-deploy-monitor-repurpose.sh` | task-032, task-044 | independent | task-032 and task-044 in either order; run after both are done, in number order (task-032 then task-044) |
-| 328 | `tests/canonical/test-deploy-monitor-repurpose.sh` | task-032, task-049 | task-049 depends on task-032 | task-032, then task-049 |
-| 329 | `tests/canonical/test-deploy-monitor-repurpose.sh` | task-037, task-038 | independent | task-037 and task-038 in either order; run after both are done, in number order (task-037 then task-038) |
-| 330 | `tests/canonical/test-deploy-monitor-repurpose.sh` | task-037, task-040 | independent | task-037 and task-040 in either order; run after both are done, in number order (task-037 then task-040) |
-| 331 | `tests/canonical/test-deploy-monitor-repurpose.sh` | task-037, task-042 | independent | task-037 and task-042 in either order; run after both are done, in number order (task-037 then task-042) |
-| 332 | `tests/canonical/test-deploy-monitor-repurpose.sh` | task-037, task-043 | independent | task-037 and task-043 in either order; run after both are done, in number order (task-037 then task-043) |
-| 333 | `tests/canonical/test-deploy-monitor-repurpose.sh` | task-037, task-044 | independent | task-037 and task-044 in either order; run after both are done, in number order (task-037 then task-044) |
-| 334 | `tests/canonical/test-deploy-monitor-repurpose.sh` | task-037, task-049 | task-049 depends on task-037 | task-037, then task-049 |
-| 335 | `tests/canonical/test-deploy-monitor-repurpose.sh` | task-038, task-040 | independent | task-038 and task-040 in either order; run after both are done, in number order (task-038 then task-040) |
-| 336 | `tests/canonical/test-deploy-monitor-repurpose.sh` | task-038, task-042 | independent | task-038 and task-042 in either order; run after both are done, in number order (task-038 then task-042) |
-| 337 | `tests/canonical/test-deploy-monitor-repurpose.sh` | task-038, task-043 | independent | task-038 and task-043 in either order; run after both are done, in number order (task-038 then task-043) |
-| 338 | `tests/canonical/test-deploy-monitor-repurpose.sh` | task-038, task-044 | independent | task-038 and task-044 in either order; run after both are done, in number order (task-038 then task-044) |
-| 339 | `tests/canonical/test-deploy-monitor-repurpose.sh` | task-038, task-049 | task-049 depends on task-038 | task-038, then task-049 |
-| 340 | `tests/canonical/test-deploy-monitor-repurpose.sh` | task-040, task-042 | independent | task-040 and task-042 in either order; run after both are done, in number order (task-040 then task-042) |
-| 341 | `tests/canonical/test-deploy-monitor-repurpose.sh` | task-040, task-043 | independent | task-040 and task-043 in either order; run after both are done, in number order (task-040 then task-043) |
-| 342 | `tests/canonical/test-deploy-monitor-repurpose.sh` | task-040, task-044 | independent | task-040 and task-044 in either order; run after both are done, in number order (task-040 then task-044) |
-| 343 | `tests/canonical/test-deploy-monitor-repurpose.sh` | task-040, task-049 | task-049 depends on task-040 | task-040, then task-049 |
-| 344 | `tests/canonical/test-deploy-monitor-repurpose.sh` | task-042, task-043 | independent | task-042 and task-043 in either order; run after both are done, in number order (task-042 then task-043) |
-| 345 | `tests/canonical/test-deploy-monitor-repurpose.sh` | task-042, task-044 | independent | task-042 and task-044 in either order; run after both are done, in number order (task-042 then task-044) |
-| 346 | `tests/canonical/test-deploy-monitor-repurpose.sh` | task-042, task-049 | task-049 depends on task-042 | task-042, then task-049 |
-| 347 | `tests/canonical/test-deploy-monitor-repurpose.sh` | task-043, task-044 | independent | task-043 and task-044 in either order; run after both are done, in number order (task-043 then task-044) |
-| 348 | `tests/canonical/test-deploy-monitor-repurpose.sh` | task-043, task-049 | task-049 depends on task-043 | task-043, then task-049 |
-| 349 | `tests/canonical/test-deploy-monitor-repurpose.sh` | task-044, task-049 | task-049 depends on task-044 | task-044, then task-049 |
-| 350 | `tests/canonical/test-derive-waves.sh` | task-031, task-040 | task-040 depends on task-031 | task-031, then task-040 |
-| 351 | `tests/canonical/test-describe-full-only.sh` | task-021, task-038 | task-038 depends on task-021 | task-021, then task-038 |
-| 352 | `tests/canonical/test-describe-full-only.sh` | task-021, task-044 | task-044 depends on task-021 | task-021, then task-044 |
-| 353 | `tests/canonical/test-describe-full-only.sh` | task-038, task-044 | independent | task-038 and task-044 in either order; run after both are done, in number order (task-038 then task-044) |
-| 354 | `tests/canonical/test-discovery-doc-ownership.sh` | task-041, task-044 | independent | task-041 and task-044 in either order; run after both are done, in number order (task-041 then task-044) |
-| 355 | `tests/canonical/test-discovery-doc-ownership.sh` | task-041, task-057 | task-057 depends on task-041 | task-041, then task-057 |
-| 356 | `tests/canonical/test-discovery-doc-ownership.sh` | task-044, task-057 | task-057 depends on task-044 | task-044, then task-057 |
-| 357 | `tests/canonical/test-doc-set-mapping.sh` | task-041, task-044 | independent | task-041 and task-044 in either order; run after both are done, in number order (task-041 then task-044) |
-| 358 | `tests/canonical/test-doc-set-mapping.sh` | task-041, task-045 | independent | task-041 and task-045 in either order; run after both are done, in number order (task-041 then task-045) |
-| 359 | `tests/canonical/test-doc-set-mapping.sh` | task-041, task-049 | task-049 depends on task-041 | task-041, then task-049 |
-| 360 | `tests/canonical/test-doc-set-mapping.sh` | task-041, task-057 | task-057 depends on task-041 | task-041, then task-057 |
-| 361 | `tests/canonical/test-doc-set-mapping.sh` | task-044, task-045 | independent | task-044 and task-045 in either order; run after both are done, in number order (task-044 then task-045) |
-| 362 | `tests/canonical/test-doc-set-mapping.sh` | task-044, task-049 | task-049 depends on task-044 | task-044, then task-049 |
-| 363 | `tests/canonical/test-doc-set-mapping.sh` | task-044, task-057 | task-057 depends on task-044 | task-044, then task-057 |
-| 364 | `tests/canonical/test-doc-set-mapping.sh` | task-045, task-049 | independent | task-045 and task-049 in either order; run after both are done, in number order (task-045 then task-049) |
-| 365 | `tests/canonical/test-doc-set-mapping.sh` | task-045, task-057 | task-057 depends on task-045 | task-045, then task-057 |
-| 366 | `tests/canonical/test-doc-set-mapping.sh` | task-049, task-057 | task-057 depends on task-049 | task-049, then task-057 |
-| 367 | `tests/canonical/test-doc-set-propose-confirm.sh` | task-041, task-044 | independent | task-041 and task-044 in either order; run after both are done, in number order (task-041 then task-044) |
-| 368 | `tests/canonical/test-doc-set-propose-confirm.sh` | task-041, task-045 | independent | task-041 and task-045 in either order; run after both are done, in number order (task-041 then task-045) |
-| 369 | `tests/canonical/test-doc-set-propose-confirm.sh` | task-041, task-049 | task-049 depends on task-041 | task-041, then task-049 |
-| 370 | `tests/canonical/test-doc-set-propose-confirm.sh` | task-041, task-057 | task-057 depends on task-041 | task-041, then task-057 |
-| 371 | `tests/canonical/test-doc-set-propose-confirm.sh` | task-044, task-045 | independent | task-044 and task-045 in either order; run after both are done, in number order (task-044 then task-045) |
-| 372 | `tests/canonical/test-doc-set-propose-confirm.sh` | task-044, task-049 | task-049 depends on task-044 | task-044, then task-049 |
-| 373 | `tests/canonical/test-doc-set-propose-confirm.sh` | task-044, task-057 | task-057 depends on task-044 | task-044, then task-057 |
-| 374 | `tests/canonical/test-doc-set-propose-confirm.sh` | task-045, task-049 | independent | task-045 and task-049 in either order; run after both are done, in number order (task-045 then task-049) |
-| 375 | `tests/canonical/test-doc-set-propose-confirm.sh` | task-045, task-057 | task-057 depends on task-045 | task-045, then task-057 |
-| 376 | `tests/canonical/test-doc-set-propose-confirm.sh` | task-049, task-057 | task-057 depends on task-049 | task-049, then task-057 |
-| 377 | `tests/canonical/test-doc-set-read.sh` | task-041, task-044 | independent | task-041 and task-044 in either order; run after both are done, in number order (task-041 then task-044) |
-| 378 | `tests/canonical/test-doc-set-read.sh` | task-041, task-049 | task-049 depends on task-041 | task-041, then task-049 |
-| 379 | `tests/canonical/test-doc-set-read.sh` | task-044, task-049 | task-049 depends on task-044 | task-044, then task-049 |
-| 380 | `tests/canonical/test-document-family-scaffold.sh` | task-032, task-037 | independent | task-032 and task-037 in either order; run after both are done, in number order (task-032 then task-037) |
-| 381 | `tests/canonical/test-document-family-scaffold.sh` | task-032, task-040 | independent | task-032 and task-040 in either order; run after both are done, in number order (task-032 then task-040) |
-| 382 | `tests/canonical/test-document-family-scaffold.sh` | task-032, task-043 | independent | task-032 and task-043 in either order; run after both are done, in number order (task-032 then task-043) |
-| 383 | `tests/canonical/test-document-family-scaffold.sh` | task-032, task-044 | independent | task-032 and task-044 in either order; run after both are done, in number order (task-032 then task-044) |
-| 384 | `tests/canonical/test-document-family-scaffold.sh` | task-037, task-040 | independent | task-037 and task-040 in either order; run after both are done, in number order (task-037 then task-040) |
-| 385 | `tests/canonical/test-document-family-scaffold.sh` | task-037, task-043 | independent | task-037 and task-043 in either order; run after both are done, in number order (task-037 then task-043) |
-| 386 | `tests/canonical/test-document-family-scaffold.sh` | task-037, task-044 | independent | task-037 and task-044 in either order; run after both are done, in number order (task-037 then task-044) |
-| 387 | `tests/canonical/test-document-family-scaffold.sh` | task-040, task-043 | independent | task-040 and task-043 in either order; run after both are done, in number order (task-040 then task-043) |
-| 388 | `tests/canonical/test-document-family-scaffold.sh` | task-040, task-044 | independent | task-040 and task-044 in either order; run after both are done, in number order (task-040 then task-044) |
-| 389 | `tests/canonical/test-document-family-scaffold.sh` | task-043, task-044 | independent | task-043 and task-044 in either order; run after both are done, in number order (task-043 then task-044) |
-| 390 | `tests/canonical/test-dogfood-byte-identity.sh` | task-032, task-042 | independent | task-032 and task-042 in either order; run after both are done, in number order (task-032 then task-042) |
-| 391 | `tests/canonical/test-domain-doc-matrix.sh` | task-041, task-045 | independent | task-041 and task-045 in either order; run after both are done, in number order (task-041 then task-045) |
-| 392 | `tests/canonical/test-downstream-worktree-entry.sh` | task-037, task-039 | independent | task-037 and task-039 in either order; run after both are done, in number order (task-037 then task-039) |
-| 393 | `tests/canonical/test-downstream-worktree-entry.sh` | task-037, task-040 | independent | task-037 and task-040 in either order; run after both are done, in number order (task-037 then task-040) |
-| 394 | `tests/canonical/test-downstream-worktree-entry.sh` | task-037, task-043 | independent | task-037 and task-043 in either order; run after both are done, in number order (task-037 then task-043) |
-| 395 | `tests/canonical/test-downstream-worktree-entry.sh` | task-039, task-040 | task-040 depends on task-039 | task-039, then task-040 |
-| 396 | `tests/canonical/test-downstream-worktree-entry.sh` | task-039, task-043 | independent | task-039 and task-043 in either order; run after both are done, in number order (task-039 then task-043) |
-| 397 | `tests/canonical/test-downstream-worktree-entry.sh` | task-040, task-043 | independent | task-040 and task-043 in either order; run after both are done, in number order (task-040 then task-043) |
-| 398 | `tests/canonical/test-essence-capture.sh` | task-045, task-049 | independent | task-045 and task-049 in either order; run after both are done, in number order (task-045 then task-049) |
-| 399 | `tests/canonical/test-expectations-single-source.sh` | task-041, task-044 | independent | task-041 and task-044 in either order; run after both are done, in number order (task-041 then task-044) |
-| 400 | `tests/canonical/test-expectations-single-source.sh` | task-041, task-049 | task-049 depends on task-041 | task-041, then task-049 |
-| 401 | `tests/canonical/test-expectations-single-source.sh` | task-044, task-049 | task-049 depends on task-044 | task-044, then task-049 |
-| 402 | `tests/canonical/test-fix-family-scaffold.sh` | task-037, task-040 | independent | task-037 and task-040 in either order; run after both are done, in number order (task-037 then task-040) |
-| 403 | `tests/canonical/test-fix-family-scaffold.sh` | task-037, task-044 | independent | task-037 and task-044 in either order; run after both are done, in number order (task-037 then task-044) |
-| 404 | `tests/canonical/test-fix-family-scaffold.sh` | task-040, task-044 | independent | task-040 and task-044 in either order; run after both are done, in number order (task-040 then task-044) |
-| 405 | `tests/canonical/test-frontmatter-lint.sh` | task-049, task-057 | task-057 depends on task-049 | task-049, then task-057 |
-| 406 | `tests/canonical/test-grade-summary.sh` | task-033, task-041 | independent | task-033 and task-041 in either order; run after both are done, in number order (task-033 then task-041) |
-| 407 | `tests/canonical/test-grade-summary.sh` | task-033, task-042 | independent | task-033 and task-042 in either order; run after both are done, in number order (task-033 then task-042) |
-| 408 | `tests/canonical/test-grade-summary.sh` | task-033, task-044 | independent | task-033 and task-044 in either order; run after both are done, in number order (task-033 then task-044) |
-| 409 | `tests/canonical/test-grade-summary.sh` | task-033, task-045 | independent | task-033 and task-045 in either order; run after both are done, in number order (task-033 then task-045) |
-| 410 | `tests/canonical/test-grade-summary.sh` | task-033, task-049 | independent | task-033 and task-049 in either order; run after both are done, in number order (task-033 then task-049) |
-| 411 | `tests/canonical/test-grade-summary.sh` | task-033, task-057 | task-057 depends on task-033 | task-033, then task-057 |
-| 412 | `tests/canonical/test-grade-summary.sh` | task-041, task-042 | independent | task-041 and task-042 in either order; run after both are done, in number order (task-041 then task-042) |
-| 413 | `tests/canonical/test-grade-summary.sh` | task-041, task-044 | independent | task-041 and task-044 in either order; run after both are done, in number order (task-041 then task-044) |
-| 414 | `tests/canonical/test-grade-summary.sh` | task-041, task-045 | independent | task-041 and task-045 in either order; run after both are done, in number order (task-041 then task-045) |
-| 415 | `tests/canonical/test-grade-summary.sh` | task-041, task-049 | task-049 depends on task-041 | task-041, then task-049 |
-| 416 | `tests/canonical/test-grade-summary.sh` | task-041, task-057 | task-057 depends on task-041 | task-041, then task-057 |
-| 417 | `tests/canonical/test-grade-summary.sh` | task-042, task-044 | independent | task-042 and task-044 in either order; run after both are done, in number order (task-042 then task-044) |
-| 418 | `tests/canonical/test-grade-summary.sh` | task-042, task-045 | independent | task-042 and task-045 in either order; run after both are done, in number order (task-042 then task-045) |
-| 419 | `tests/canonical/test-grade-summary.sh` | task-042, task-049 | task-049 depends on task-042 | task-042, then task-049 |
-| 420 | `tests/canonical/test-grade-summary.sh` | task-042, task-057 | task-057 depends on task-042 | task-042, then task-057 |
-| 421 | `tests/canonical/test-grade-summary.sh` | task-044, task-045 | independent | task-044 and task-045 in either order; run after both are done, in number order (task-044 then task-045) |
-| 422 | `tests/canonical/test-grade-summary.sh` | task-044, task-049 | task-049 depends on task-044 | task-044, then task-049 |
-| 423 | `tests/canonical/test-grade-summary.sh` | task-044, task-057 | task-057 depends on task-044 | task-044, then task-057 |
-| 424 | `tests/canonical/test-grade-summary.sh` | task-045, task-049 | independent | task-045 and task-049 in either order; run after both are done, in number order (task-045 then task-049) |
-| 425 | `tests/canonical/test-grade-summary.sh` | task-045, task-057 | task-057 depends on task-045 | task-045, then task-057 |
-| 426 | `tests/canonical/test-grade-summary.sh` | task-049, task-057 | task-057 depends on task-049 | task-049, then task-057 |
-| 427 | `tests/canonical/test-guardrails-d012.sh` | task-033, task-042 | independent | task-033 and task-042 in either order; run after both are done, in number order (task-033 then task-042) |
-| 428 | `tests/canonical/test-guardrails-d012.sh` | task-033, task-057 | task-057 depends on task-033 | task-033, then task-057 |
-| 429 | `tests/canonical/test-guardrails-d012.sh` | task-042, task-057 | task-057 depends on task-042 | task-042, then task-057 |
-| 430 | `tests/canonical/test-kb-html-claims-check.sh` | task-021, task-049 | task-049 depends on task-021 | task-021, then task-049 |
-| 431 | `tests/canonical/test-kb-review-surface.sh` | task-041, task-045 | independent | task-041 and task-045 in either order; run after both are done, in number order (task-041 then task-045) |
-| 432 | `tests/canonical/test-kb-review-surface.sh` | task-041, task-049 | task-049 depends on task-041 | task-041, then task-049 |
-| 433 | `tests/canonical/test-kb-review-surface.sh` | task-041, task-057 | task-057 depends on task-041 | task-041, then task-057 |
-| 434 | `tests/canonical/test-kb-review-surface.sh` | task-045, task-049 | independent | task-045 and task-049 in either order; run after both are done, in number order (task-045 then task-049) |
-| 435 | `tests/canonical/test-kb-review-surface.sh` | task-045, task-057 | task-057 depends on task-045 | task-045, then task-057 |
-| 436 | `tests/canonical/test-kb-review-surface.sh` | task-049, task-057 | task-057 depends on task-049 | task-049, then task-057 |
-| 437 | `tests/canonical/test-ledger-isolation.sh` | task-041, task-042 | independent | task-041 and task-042 in either order; run after both are done, in number order (task-041 then task-042) |
-| 438 | `tests/canonical/test-multitool-isolation.sh` | task-040, task-042 | independent | task-040 and task-042 in either order; run after both are done, in number order (task-040 then task-042) |
-| 439 | `tests/canonical/test-output-root-isolation.sh` | task-041, task-042 | independent | task-041 and task-042 in either order; run after both are done, in number order (task-041 then task-042) |
-| 440 | `tests/canonical/test-output-root-isolation.sh` | task-041, task-045 | independent | task-041 and task-045 in either order; run after both are done, in number order (task-041 then task-045) |
-| 441 | `tests/canonical/test-output-root-isolation.sh` | task-042, task-045 | independent | task-042 and task-045 in either order; run after both are done, in number order (task-042 then task-045) |
-| 442 | `tests/canonical/test-path-fixtures.sh` | task-038, task-041 | independent | task-038 and task-041 in either order; run after both are done, in number order (task-038 then task-041) |
-| 443 | `tests/canonical/test-pipeline-status-walkthrough.sh` | task-025, task-038 | task-038 depends on task-025 | task-025, then task-038 |
-| 444 | `tests/canonical/test-pipeline-status-walkthrough.sh` | task-025, task-039 | task-039 depends on task-025 | task-025, then task-039 |
-| 445 | `tests/canonical/test-pipeline-status-walkthrough.sh` | task-025, task-040 | task-040 depends on task-025 | task-025, then task-040 |
-| 446 | `tests/canonical/test-pipeline-status-walkthrough.sh` | task-025, task-043 | task-043 depends on task-025 | task-025, then task-043 |
-| 447 | `tests/canonical/test-pipeline-status-walkthrough.sh` | task-038, task-039 | independent | task-038 and task-039 in either order; run after both are done, in number order (task-038 then task-039) |
-| 448 | `tests/canonical/test-pipeline-status-walkthrough.sh` | task-038, task-040 | independent | task-038 and task-040 in either order; run after both are done, in number order (task-038 then task-040) |
-| 449 | `tests/canonical/test-pipeline-status-walkthrough.sh` | task-038, task-043 | independent | task-038 and task-043 in either order; run after both are done, in number order (task-038 then task-043) |
-| 450 | `tests/canonical/test-pipeline-status-walkthrough.sh` | task-039, task-040 | task-040 depends on task-039 | task-039, then task-040 |
-| 451 | `tests/canonical/test-pipeline-status-walkthrough.sh` | task-039, task-043 | independent | task-039 and task-043 in either order; run after both are done, in number order (task-039 then task-043) |
-| 452 | `tests/canonical/test-pipeline-status-walkthrough.sh` | task-040, task-043 | independent | task-040 and task-043 in either order; run after both are done, in number order (task-040 then task-043) |
-| 453 | `tests/canonical/test-prototype-family-scaffold.sh` | task-032, task-037 | independent | task-032 and task-037 in either order; run after both are done, in number order (task-032 then task-037) |
-| 454 | `tests/canonical/test-prototype-family-scaffold.sh` | task-032, task-040 | independent | task-032 and task-040 in either order; run after both are done, in number order (task-032 then task-040) |
-| 455 | `tests/canonical/test-prototype-family-scaffold.sh` | task-032, task-044 | independent | task-032 and task-044 in either order; run after both are done, in number order (task-032 then task-044) |
-| 456 | `tests/canonical/test-prototype-family-scaffold.sh` | task-037, task-040 | independent | task-037 and task-040 in either order; run after both are done, in number order (task-037 then task-040) |
-| 457 | `tests/canonical/test-prototype-family-scaffold.sh` | task-037, task-044 | independent | task-037 and task-044 in either order; run after both are done, in number order (task-037 then task-044) |
-| 458 | `tests/canonical/test-prototype-family-scaffold.sh` | task-040, task-044 | independent | task-040 and task-044 in either order; run after both are done, in number order (task-040 then task-044) |
-| 459 | `tests/canonical/test-reconcile-scenarios.sh` | task-041, task-057 | task-057 depends on task-041 | task-041, then task-057 |
-| 460 | `tests/canonical/test-release-install-e2e.sh` | task-032, task-044 | independent | task-032 and task-044 in either order; run after both are done, in number order (task-032 then task-044) |
-| 461 | `tests/canonical/test-release-install-e2e.sh` | task-032, task-056 | task-056 depends on task-032 | task-032, then task-056 |
-| 462 | `tests/canonical/test-release-install-e2e.sh` | task-044, task-056 | task-056 depends on task-044 | task-044, then task-056 |
-| 463 | `tests/canonical/test-release-migrate-smoke.sh` | task-033, task-056 | task-056 depends on task-033 | task-033, then task-056 |
-| 464 | `tests/canonical/test-review-path-audit.sh` | task-040, task-044 | independent | task-040 and task-044 in either order; run after both are done, in number order (task-040 then task-044) |
-| 465 | `tests/canonical/test-scoped-review-cycles.sh` | task-039, task-040 | task-040 depends on task-039 | task-039, then task-040 |
-| 466 | `tests/canonical/test-shared-install.sh` | task-032, task-056 | task-056 depends on task-032 | task-032, then task-056 |
-| 467 | `tests/canonical/test-shared-prune.sh` | task-039, task-042 | independent | task-039 and task-042 in either order; run after both are done, in number order (task-039 then task-042) |
-| 468 | `tests/canonical/test-shortcut-engine-contract.sh` | task-025, task-037 | task-037 depends on task-025 | task-025, then task-037 |
-| 469 | `tests/canonical/test-shortcut-engine-contract.sh` | task-025, task-056 | task-056 depends on task-025 | task-025, then task-056 |
-| 470 | `tests/canonical/test-shortcut-engine-contract.sh` | task-037, task-056 | task-056 depends on task-037 | task-037, then task-056 |
-| 471 | `tests/canonical/test-spine-depth-coverage.sh` | task-041, task-049 | task-049 depends on task-041 | task-041, then task-049 |
-| 472 | `tests/canonical/test-state-review-surface.sh` | task-021, task-025 | task-025 depends on task-021 | task-021, then task-025 |
-| 473 | `tests/canonical/test-state-review-surface.sh` | task-021, task-037 | task-037 depends on task-021 | task-021, then task-037 |
-| 474 | `tests/canonical/test-state-review-surface.sh` | task-021, task-039 | task-039 depends on task-021 | task-021, then task-039 |
-| 475 | `tests/canonical/test-state-review-surface.sh` | task-021, task-040 | task-040 depends on task-021 | task-021, then task-040 |
-| 476 | `tests/canonical/test-state-review-surface.sh` | task-021, task-041 | task-041 depends on task-021 | task-021, then task-041 |
-| 477 | `tests/canonical/test-state-review-surface.sh` | task-025, task-037 | task-037 depends on task-025 | task-025, then task-037 |
-| 478 | `tests/canonical/test-state-review-surface.sh` | task-025, task-039 | task-039 depends on task-025 | task-025, then task-039 |
-| 479 | `tests/canonical/test-state-review-surface.sh` | task-025, task-040 | task-040 depends on task-025 | task-025, then task-040 |
-| 480 | `tests/canonical/test-state-review-surface.sh` | task-025, task-041 | task-041 depends on task-025 | task-025, then task-041 |
-| 481 | `tests/canonical/test-state-review-surface.sh` | task-037, task-039 | independent | task-037 and task-039 in either order; run after both are done, in number order (task-037 then task-039) |
-| 482 | `tests/canonical/test-state-review-surface.sh` | task-037, task-040 | independent | task-037 and task-040 in either order; run after both are done, in number order (task-037 then task-040) |
-| 483 | `tests/canonical/test-state-review-surface.sh` | task-037, task-041 | independent | task-037 and task-041 in either order; run after both are done, in number order (task-037 then task-041) |
-| 484 | `tests/canonical/test-state-review-surface.sh` | task-039, task-040 | task-040 depends on task-039 | task-039, then task-040 |
-| 485 | `tests/canonical/test-state-review-surface.sh` | task-039, task-041 | independent | task-039 and task-041 in either order; run after both are done, in number order (task-039 then task-041) |
-| 486 | `tests/canonical/test-state-review-surface.sh` | task-040, task-041 | independent | task-040 and task-041 in either order; run after both are done, in number order (task-040 then task-041) |
-| 487 | `tests/canonical/test-summarize-preflight.sh` | task-041, task-049 | task-049 depends on task-041 | task-041, then task-049 |
-| 488 | `tests/canonical/test-task-state-transitions.sh` | task-021, task-025 | task-025 depends on task-021 | task-021, then task-025 |
-| 489 | `tests/canonical/test-task-state-transitions.sh` | task-021, task-031 | task-031 depends on task-021 | task-021, then task-031 |
-| 490 | `tests/canonical/test-task-state-transitions.sh` | task-021, task-040 | task-040 depends on task-021 | task-021, then task-040 |
-| 491 | `tests/canonical/test-task-state-transitions.sh` | task-025, task-031 | task-025 depends on task-031 | task-031, then task-025 |
-| 492 | `tests/canonical/test-task-state-transitions.sh` | task-025, task-040 | task-040 depends on task-025 | task-025, then task-040 |
-| 493 | `tests/canonical/test-task-state-transitions.sh` | task-031, task-040 | task-040 depends on task-031 | task-031, then task-040 |
-| 494 | `tests/canonical/test-test-experiment-family-scaffold.sh` | task-037, task-040 | independent | task-037 and task-040 in either order; run after both are done, in number order (task-037 then task-040) |
-| 495 | `tests/canonical/test-test-experiment-family-scaffold.sh` | task-037, task-044 | independent | task-037 and task-044 in either order; run after both are done, in number order (task-037 then task-044) |
-| 496 | `tests/canonical/test-test-experiment-family-scaffold.sh` | task-040, task-044 | independent | task-040 and task-044 in either order; run after both are done, in number order (task-040 then task-044) |
-| 497 | `tests/canonical/test-ticket-retirement-structural.sh` | task-021, task-037 | task-037 depends on task-021 | task-021, then task-037 |
-| 498 | `tests/canonical/test-ticket-retirement-structural.sh` | task-021, task-038 | task-038 depends on task-021 | task-021, then task-038 |
-| 499 | `tests/canonical/test-ticket-retirement-structural.sh` | task-021, task-039 | task-039 depends on task-021 | task-021, then task-039 |
-| 500 | `tests/canonical/test-ticket-retirement-structural.sh` | task-021, task-040 | task-040 depends on task-021 | task-021, then task-040 |
-| 501 | `tests/canonical/test-ticket-retirement-structural.sh` | task-021, task-041 | task-041 depends on task-021 | task-021, then task-041 |
-| 502 | `tests/canonical/test-ticket-retirement-structural.sh` | task-021, task-042 | task-042 depends on task-021 | task-021, then task-042 |
-| 503 | `tests/canonical/test-ticket-retirement-structural.sh` | task-021, task-043 | task-043 depends on task-021 | task-021, then task-043 |
-| 504 | `tests/canonical/test-ticket-retirement-structural.sh` | task-021, task-044 | task-044 depends on task-021 | task-021, then task-044 |
-| 505 | `tests/canonical/test-ticket-retirement-structural.sh` | task-037, task-038 | independent | task-037 and task-038 in either order; run after both are done, in number order (task-037 then task-038) |
-| 506 | `tests/canonical/test-ticket-retirement-structural.sh` | task-037, task-039 | independent | task-037 and task-039 in either order; run after both are done, in number order (task-037 then task-039) |
-| 507 | `tests/canonical/test-ticket-retirement-structural.sh` | task-037, task-040 | independent | task-037 and task-040 in either order; run after both are done, in number order (task-037 then task-040) |
-| 508 | `tests/canonical/test-ticket-retirement-structural.sh` | task-037, task-041 | independent | task-037 and task-041 in either order; run after both are done, in number order (task-037 then task-041) |
-| 509 | `tests/canonical/test-ticket-retirement-structural.sh` | task-037, task-042 | independent | task-037 and task-042 in either order; run after both are done, in number order (task-037 then task-042) |
-| 510 | `tests/canonical/test-ticket-retirement-structural.sh` | task-037, task-043 | independent | task-037 and task-043 in either order; run after both are done, in number order (task-037 then task-043) |
-| 511 | `tests/canonical/test-ticket-retirement-structural.sh` | task-037, task-044 | independent | task-037 and task-044 in either order; run after both are done, in number order (task-037 then task-044) |
-| 512 | `tests/canonical/test-ticket-retirement-structural.sh` | task-038, task-039 | independent | task-038 and task-039 in either order; run after both are done, in number order (task-038 then task-039) |
-| 513 | `tests/canonical/test-ticket-retirement-structural.sh` | task-038, task-040 | independent | task-038 and task-040 in either order; run after both are done, in number order (task-038 then task-040) |
-| 514 | `tests/canonical/test-ticket-retirement-structural.sh` | task-038, task-041 | independent | task-038 and task-041 in either order; run after both are done, in number order (task-038 then task-041) |
-| 515 | `tests/canonical/test-ticket-retirement-structural.sh` | task-038, task-042 | independent | task-038 and task-042 in either order; run after both are done, in number order (task-038 then task-042) |
-| 516 | `tests/canonical/test-ticket-retirement-structural.sh` | task-038, task-043 | independent | task-038 and task-043 in either order; run after both are done, in number order (task-038 then task-043) |
-| 517 | `tests/canonical/test-ticket-retirement-structural.sh` | task-038, task-044 | independent | task-038 and task-044 in either order; run after both are done, in number order (task-038 then task-044) |
-| 518 | `tests/canonical/test-ticket-retirement-structural.sh` | task-039, task-040 | task-040 depends on task-039 | task-039, then task-040 |
-| 519 | `tests/canonical/test-ticket-retirement-structural.sh` | task-039, task-041 | independent | task-039 and task-041 in either order; run after both are done, in number order (task-039 then task-041) |
-| 520 | `tests/canonical/test-ticket-retirement-structural.sh` | task-039, task-042 | independent | task-039 and task-042 in either order; run after both are done, in number order (task-039 then task-042) |
-| 521 | `tests/canonical/test-ticket-retirement-structural.sh` | task-039, task-043 | independent | task-039 and task-043 in either order; run after both are done, in number order (task-039 then task-043) |
-| 522 | `tests/canonical/test-ticket-retirement-structural.sh` | task-039, task-044 | independent | task-039 and task-044 in either order; run after both are done, in number order (task-039 then task-044) |
-| 523 | `tests/canonical/test-ticket-retirement-structural.sh` | task-040, task-041 | independent | task-040 and task-041 in either order; run after both are done, in number order (task-040 then task-041) |
-| 524 | `tests/canonical/test-ticket-retirement-structural.sh` | task-040, task-042 | independent | task-040 and task-042 in either order; run after both are done, in number order (task-040 then task-042) |
-| 525 | `tests/canonical/test-ticket-retirement-structural.sh` | task-040, task-043 | independent | task-040 and task-043 in either order; run after both are done, in number order (task-040 then task-043) |
-| 526 | `tests/canonical/test-ticket-retirement-structural.sh` | task-040, task-044 | independent | task-040 and task-044 in either order; run after both are done, in number order (task-040 then task-044) |
-| 527 | `tests/canonical/test-ticket-retirement-structural.sh` | task-041, task-042 | independent | task-041 and task-042 in either order; run after both are done, in number order (task-041 then task-042) |
-| 528 | `tests/canonical/test-ticket-retirement-structural.sh` | task-041, task-043 | independent | task-041 and task-043 in either order; run after both are done, in number order (task-041 then task-043) |
-| 529 | `tests/canonical/test-ticket-retirement-structural.sh` | task-041, task-044 | independent | task-041 and task-044 in either order; run after both are done, in number order (task-041 then task-044) |
-| 530 | `tests/canonical/test-ticket-retirement-structural.sh` | task-042, task-043 | independent | task-042 and task-043 in either order; run after both are done, in number order (task-042 then task-043) |
-| 531 | `tests/canonical/test-ticket-retirement-structural.sh` | task-042, task-044 | independent | task-042 and task-044 in either order; run after both are done, in number order (task-042 then task-044) |
-| 532 | `tests/canonical/test-ticket-retirement-structural.sh` | task-043, task-044 | independent | task-043 and task-044 in either order; run after both are done, in number order (task-043 then task-044) |
-| 533 | `tests/canonical/test-update-kb-scope-fidelity.sh` | task-042, task-044 | independent | task-042 and task-044 in either order; run after both are done, in number order (task-042 then task-044) |
-| 534 | `tests/canonical/test-validator-behavior.sh` | task-049, task-057 | task-057 depends on task-049 | task-049, then task-057 |
-| 535 | `tests/canonical/test-version-sync.sh` | task-025, task-056 | task-056 depends on task-025 | task-025, then task-056 |
-| 536 | `tests/canonical/test-write-connector.sh` | task-043, task-057 | task-057 depends on task-043 | task-043, then task-057 |
-| 537 | `tests/conversation/fixtures/done-work/.aid/works/work-001-csv-export/STATE.yml` | task-038, task-040 | independent | task-038 and task-040 in either order; run after both are done, in number order (task-038 then task-040) |
-| 538 | `tests/conversation/fixtures/ticket-mid-work/.aid/works/work-001-retry-policy/STATE.yml` | task-038, task-039 | independent | task-038 and task-039 in either order; run after both are done, in number order (task-038 then task-039) |
-| 539 | `tests/conversation/samples/feature-001/001-15-no-kb-offers-preparation.md` | task-039, task-041 | independent | task-039 and task-041 in either order; run after both are done, in number order (task-039 then task-041) |
-| 540 | `tests/cost-baseline.tsv` | task-030, task-032 | task-032 depends on task-030 | task-030, then task-032 |
-| 541 | `tests/cost-baseline.tsv` | task-030, task-034 | task-034 depends on task-030 | task-030, then task-034 |
-| 542 | `tests/cost-baseline.tsv` | task-030, task-035 | task-035 depends on task-030 | task-030, then task-035 |
-| 543 | `tests/cost-baseline.tsv` | task-030, task-036 | task-036 depends on task-030 | task-030, then task-036 |
-| 544 | `tests/cost-baseline.tsv` | task-030, task-037 | task-037 depends on task-030 | task-030, then task-037 |
-| 545 | `tests/cost-baseline.tsv` | task-030, task-038 | task-038 depends on task-030 | task-030, then task-038 |
-| 546 | `tests/cost-baseline.tsv` | task-030, task-039 | task-039 depends on task-030 | task-030, then task-039 |
-| 547 | `tests/cost-baseline.tsv` | task-030, task-040 | task-040 depends on task-030 | task-030, then task-040 |
-| 548 | `tests/cost-baseline.tsv` | task-030, task-041 | task-041 depends on task-030 | task-030, then task-041 |
-| 549 | `tests/cost-baseline.tsv` | task-030, task-042 | task-042 depends on task-030 | task-030, then task-042 |
-| 550 | `tests/cost-baseline.tsv` | task-030, task-043 | task-043 depends on task-030 | task-030, then task-043 |
-| 551 | `tests/cost-baseline.tsv` | task-030, task-044 | task-044 depends on task-030 | task-030, then task-044 |
-| 552 | `tests/cost-baseline.tsv` | task-030, task-045 | task-045 depends on task-030 | task-030, then task-045 |
-| 553 | `tests/cost-baseline.tsv` | task-030, task-049 | task-049 depends on task-030 | task-030, then task-049 |
-| 554 | `tests/cost-baseline.tsv` | task-030, task-057 | task-057 depends on task-030 | task-030, then task-057 |
-| 555 | `tests/cost-baseline.tsv` | task-032, task-034 | independent | task-032 and task-034 in either order; run after both are done, in number order (task-032 then task-034) |
-| 556 | `tests/cost-baseline.tsv` | task-032, task-035 | independent | task-032 and task-035 in either order; run after both are done, in number order (task-032 then task-035) |
-| 557 | `tests/cost-baseline.tsv` | task-032, task-036 | independent | task-032 and task-036 in either order; run after both are done, in number order (task-032 then task-036) |
-| 558 | `tests/cost-baseline.tsv` | task-032, task-037 | independent | task-032 and task-037 in either order; run after both are done, in number order (task-032 then task-037) |
-| 559 | `tests/cost-baseline.tsv` | task-032, task-038 | independent | task-032 and task-038 in either order; run after both are done, in number order (task-032 then task-038) |
-| 560 | `tests/cost-baseline.tsv` | task-032, task-039 | independent | task-032 and task-039 in either order; run after both are done, in number order (task-032 then task-039) |
-| 561 | `tests/cost-baseline.tsv` | task-032, task-040 | independent | task-032 and task-040 in either order; run after both are done, in number order (task-032 then task-040) |
-| 562 | `tests/cost-baseline.tsv` | task-032, task-041 | independent | task-032 and task-041 in either order; run after both are done, in number order (task-032 then task-041) |
-| 563 | `tests/cost-baseline.tsv` | task-032, task-042 | independent | task-032 and task-042 in either order; run after both are done, in number order (task-032 then task-042) |
-| 564 | `tests/cost-baseline.tsv` | task-032, task-043 | independent | task-032 and task-043 in either order; run after both are done, in number order (task-032 then task-043) |
-| 565 | `tests/cost-baseline.tsv` | task-032, task-044 | independent | task-032 and task-044 in either order; run after both are done, in number order (task-032 then task-044) |
-| 566 | `tests/cost-baseline.tsv` | task-032, task-045 | independent | task-032 and task-045 in either order; run after both are done, in number order (task-032 then task-045) |
-| 567 | `tests/cost-baseline.tsv` | task-032, task-049 | task-049 depends on task-032 | task-032, then task-049 |
-| 568 | `tests/cost-baseline.tsv` | task-032, task-057 | task-057 depends on task-032 | task-032, then task-057 |
-| 569 | `tests/cost-baseline.tsv` | task-034, task-035 | independent | task-034 and task-035 in either order; run after both are done, in number order (task-034 then task-035) |
-| 570 | `tests/cost-baseline.tsv` | task-034, task-036 | independent | task-034 and task-036 in either order; run after both are done, in number order (task-034 then task-036) |
-| 571 | `tests/cost-baseline.tsv` | task-034, task-037 | independent | task-034 and task-037 in either order; run after both are done, in number order (task-034 then task-037) |
-| 572 | `tests/cost-baseline.tsv` | task-034, task-038 | independent | task-034 and task-038 in either order; run after both are done, in number order (task-034 then task-038) |
-| 573 | `tests/cost-baseline.tsv` | task-034, task-039 | independent | task-034 and task-039 in either order; run after both are done, in number order (task-034 then task-039) |
-| 574 | `tests/cost-baseline.tsv` | task-034, task-040 | independent | task-034 and task-040 in either order; run after both are done, in number order (task-034 then task-040) |
-| 575 | `tests/cost-baseline.tsv` | task-034, task-041 | independent | task-034 and task-041 in either order; run after both are done, in number order (task-034 then task-041) |
-| 576 | `tests/cost-baseline.tsv` | task-034, task-042 | independent | task-034 and task-042 in either order; run after both are done, in number order (task-034 then task-042) |
-| 577 | `tests/cost-baseline.tsv` | task-034, task-043 | independent | task-034 and task-043 in either order; run after both are done, in number order (task-034 then task-043) |
-| 578 | `tests/cost-baseline.tsv` | task-034, task-044 | independent | task-034 and task-044 in either order; run after both are done, in number order (task-034 then task-044) |
-| 579 | `tests/cost-baseline.tsv` | task-034, task-045 | independent | task-034 and task-045 in either order; run after both are done, in number order (task-034 then task-045) |
-| 580 | `tests/cost-baseline.tsv` | task-034, task-049 | task-049 depends on task-034 | task-034, then task-049 |
-| 581 | `tests/cost-baseline.tsv` | task-034, task-057 | task-057 depends on task-034 | task-034, then task-057 |
-| 582 | `tests/cost-baseline.tsv` | task-035, task-036 | independent | task-035 and task-036 in either order; run after both are done, in number order (task-035 then task-036) |
-| 583 | `tests/cost-baseline.tsv` | task-035, task-037 | independent | task-035 and task-037 in either order; run after both are done, in number order (task-035 then task-037) |
-| 584 | `tests/cost-baseline.tsv` | task-035, task-038 | independent | task-035 and task-038 in either order; run after both are done, in number order (task-035 then task-038) |
-| 585 | `tests/cost-baseline.tsv` | task-035, task-039 | independent | task-035 and task-039 in either order; run after both are done, in number order (task-035 then task-039) |
-| 586 | `tests/cost-baseline.tsv` | task-035, task-040 | independent | task-035 and task-040 in either order; run after both are done, in number order (task-035 then task-040) |
-| 587 | `tests/cost-baseline.tsv` | task-035, task-041 | independent | task-035 and task-041 in either order; run after both are done, in number order (task-035 then task-041) |
-| 588 | `tests/cost-baseline.tsv` | task-035, task-042 | independent | task-035 and task-042 in either order; run after both are done, in number order (task-035 then task-042) |
-| 589 | `tests/cost-baseline.tsv` | task-035, task-043 | independent | task-035 and task-043 in either order; run after both are done, in number order (task-035 then task-043) |
-| 590 | `tests/cost-baseline.tsv` | task-035, task-044 | independent | task-035 and task-044 in either order; run after both are done, in number order (task-035 then task-044) |
-| 591 | `tests/cost-baseline.tsv` | task-035, task-045 | independent | task-035 and task-045 in either order; run after both are done, in number order (task-035 then task-045) |
-| 592 | `tests/cost-baseline.tsv` | task-035, task-049 | task-049 depends on task-035 | task-035, then task-049 |
-| 593 | `tests/cost-baseline.tsv` | task-035, task-057 | task-057 depends on task-035 | task-035, then task-057 |
-| 594 | `tests/cost-baseline.tsv` | task-036, task-037 | independent | task-036 and task-037 in either order; run after both are done, in number order (task-036 then task-037) |
-| 595 | `tests/cost-baseline.tsv` | task-036, task-038 | independent | task-036 and task-038 in either order; run after both are done, in number order (task-036 then task-038) |
-| 596 | `tests/cost-baseline.tsv` | task-036, task-039 | independent | task-036 and task-039 in either order; run after both are done, in number order (task-036 then task-039) |
-| 597 | `tests/cost-baseline.tsv` | task-036, task-040 | independent | task-036 and task-040 in either order; run after both are done, in number order (task-036 then task-040) |
-| 598 | `tests/cost-baseline.tsv` | task-036, task-041 | independent | task-036 and task-041 in either order; run after both are done, in number order (task-036 then task-041) |
-| 599 | `tests/cost-baseline.tsv` | task-036, task-042 | independent | task-036 and task-042 in either order; run after both are done, in number order (task-036 then task-042) |
-| 600 | `tests/cost-baseline.tsv` | task-036, task-043 | independent | task-036 and task-043 in either order; run after both are done, in number order (task-036 then task-043) |
-| 601 | `tests/cost-baseline.tsv` | task-036, task-044 | independent | task-036 and task-044 in either order; run after both are done, in number order (task-036 then task-044) |
-| 602 | `tests/cost-baseline.tsv` | task-036, task-045 | independent | task-036 and task-045 in either order; run after both are done, in number order (task-036 then task-045) |
-| 603 | `tests/cost-baseline.tsv` | task-036, task-049 | task-049 depends on task-036 | task-036, then task-049 |
-| 604 | `tests/cost-baseline.tsv` | task-036, task-057 | task-057 depends on task-036 | task-036, then task-057 |
-| 605 | `tests/cost-baseline.tsv` | task-037, task-038 | independent | task-037 and task-038 in either order; run after both are done, in number order (task-037 then task-038) |
-| 606 | `tests/cost-baseline.tsv` | task-037, task-039 | independent | task-037 and task-039 in either order; run after both are done, in number order (task-037 then task-039) |
-| 607 | `tests/cost-baseline.tsv` | task-037, task-040 | independent | task-037 and task-040 in either order; run after both are done, in number order (task-037 then task-040) |
-| 608 | `tests/cost-baseline.tsv` | task-037, task-041 | independent | task-037 and task-041 in either order; run after both are done, in number order (task-037 then task-041) |
-| 609 | `tests/cost-baseline.tsv` | task-037, task-042 | independent | task-037 and task-042 in either order; run after both are done, in number order (task-037 then task-042) |
-| 610 | `tests/cost-baseline.tsv` | task-037, task-043 | independent | task-037 and task-043 in either order; run after both are done, in number order (task-037 then task-043) |
-| 611 | `tests/cost-baseline.tsv` | task-037, task-044 | independent | task-037 and task-044 in either order; run after both are done, in number order (task-037 then task-044) |
-| 612 | `tests/cost-baseline.tsv` | task-037, task-045 | independent | task-037 and task-045 in either order; run after both are done, in number order (task-037 then task-045) |
-| 613 | `tests/cost-baseline.tsv` | task-037, task-049 | task-049 depends on task-037 | task-037, then task-049 |
-| 614 | `tests/cost-baseline.tsv` | task-037, task-057 | task-057 depends on task-037 | task-037, then task-057 |
-| 615 | `tests/cost-baseline.tsv` | task-038, task-039 | independent | task-038 and task-039 in either order; run after both are done, in number order (task-038 then task-039) |
-| 616 | `tests/cost-baseline.tsv` | task-038, task-040 | independent | task-038 and task-040 in either order; run after both are done, in number order (task-038 then task-040) |
-| 617 | `tests/cost-baseline.tsv` | task-038, task-041 | independent | task-038 and task-041 in either order; run after both are done, in number order (task-038 then task-041) |
-| 618 | `tests/cost-baseline.tsv` | task-038, task-042 | independent | task-038 and task-042 in either order; run after both are done, in number order (task-038 then task-042) |
-| 619 | `tests/cost-baseline.tsv` | task-038, task-043 | independent | task-038 and task-043 in either order; run after both are done, in number order (task-038 then task-043) |
-| 620 | `tests/cost-baseline.tsv` | task-038, task-044 | independent | task-038 and task-044 in either order; run after both are done, in number order (task-038 then task-044) |
-| 621 | `tests/cost-baseline.tsv` | task-038, task-045 | independent | task-038 and task-045 in either order; run after both are done, in number order (task-038 then task-045) |
-| 622 | `tests/cost-baseline.tsv` | task-038, task-049 | task-049 depends on task-038 | task-038, then task-049 |
-| 623 | `tests/cost-baseline.tsv` | task-038, task-057 | task-057 depends on task-038 | task-038, then task-057 |
-| 624 | `tests/cost-baseline.tsv` | task-039, task-040 | task-040 depends on task-039 | task-039, then task-040 |
-| 625 | `tests/cost-baseline.tsv` | task-039, task-041 | independent | task-039 and task-041 in either order; run after both are done, in number order (task-039 then task-041) |
-| 626 | `tests/cost-baseline.tsv` | task-039, task-042 | independent | task-039 and task-042 in either order; run after both are done, in number order (task-039 then task-042) |
-| 627 | `tests/cost-baseline.tsv` | task-039, task-043 | independent | task-039 and task-043 in either order; run after both are done, in number order (task-039 then task-043) |
-| 628 | `tests/cost-baseline.tsv` | task-039, task-044 | independent | task-039 and task-044 in either order; run after both are done, in number order (task-039 then task-044) |
-| 629 | `tests/cost-baseline.tsv` | task-039, task-045 | independent | task-039 and task-045 in either order; run after both are done, in number order (task-039 then task-045) |
-| 630 | `tests/cost-baseline.tsv` | task-039, task-049 | task-049 depends on task-039 | task-039, then task-049 |
-| 631 | `tests/cost-baseline.tsv` | task-039, task-057 | task-057 depends on task-039 | task-039, then task-057 |
-| 632 | `tests/cost-baseline.tsv` | task-040, task-041 | independent | task-040 and task-041 in either order; run after both are done, in number order (task-040 then task-041) |
-| 633 | `tests/cost-baseline.tsv` | task-040, task-042 | independent | task-040 and task-042 in either order; run after both are done, in number order (task-040 then task-042) |
-| 634 | `tests/cost-baseline.tsv` | task-040, task-043 | independent | task-040 and task-043 in either order; run after both are done, in number order (task-040 then task-043) |
-| 635 | `tests/cost-baseline.tsv` | task-040, task-044 | independent | task-040 and task-044 in either order; run after both are done, in number order (task-040 then task-044) |
-| 636 | `tests/cost-baseline.tsv` | task-040, task-045 | independent | task-040 and task-045 in either order; run after both are done, in number order (task-040 then task-045) |
-| 637 | `tests/cost-baseline.tsv` | task-040, task-049 | task-049 depends on task-040 | task-040, then task-049 |
-| 638 | `tests/cost-baseline.tsv` | task-040, task-057 | task-057 depends on task-040 | task-040, then task-057 |
-| 639 | `tests/cost-baseline.tsv` | task-041, task-042 | independent | task-041 and task-042 in either order; run after both are done, in number order (task-041 then task-042) |
-| 640 | `tests/cost-baseline.tsv` | task-041, task-043 | independent | task-041 and task-043 in either order; run after both are done, in number order (task-041 then task-043) |
-| 641 | `tests/cost-baseline.tsv` | task-041, task-044 | independent | task-041 and task-044 in either order; run after both are done, in number order (task-041 then task-044) |
-| 642 | `tests/cost-baseline.tsv` | task-041, task-045 | independent | task-041 and task-045 in either order; run after both are done, in number order (task-041 then task-045) |
-| 643 | `tests/cost-baseline.tsv` | task-041, task-049 | task-049 depends on task-041 | task-041, then task-049 |
-| 644 | `tests/cost-baseline.tsv` | task-041, task-057 | task-057 depends on task-041 | task-041, then task-057 |
-| 645 | `tests/cost-baseline.tsv` | task-042, task-043 | independent | task-042 and task-043 in either order; run after both are done, in number order (task-042 then task-043) |
-| 646 | `tests/cost-baseline.tsv` | task-042, task-044 | independent | task-042 and task-044 in either order; run after both are done, in number order (task-042 then task-044) |
-| 647 | `tests/cost-baseline.tsv` | task-042, task-045 | independent | task-042 and task-045 in either order; run after both are done, in number order (task-042 then task-045) |
-| 648 | `tests/cost-baseline.tsv` | task-042, task-049 | task-049 depends on task-042 | task-042, then task-049 |
-| 649 | `tests/cost-baseline.tsv` | task-042, task-057 | task-057 depends on task-042 | task-042, then task-057 |
-| 650 | `tests/cost-baseline.tsv` | task-043, task-044 | independent | task-043 and task-044 in either order; run after both are done, in number order (task-043 then task-044) |
-| 651 | `tests/cost-baseline.tsv` | task-043, task-045 | independent | task-043 and task-045 in either order; run after both are done, in number order (task-043 then task-045) |
-| 652 | `tests/cost-baseline.tsv` | task-043, task-049 | task-049 depends on task-043 | task-043, then task-049 |
-| 653 | `tests/cost-baseline.tsv` | task-043, task-057 | task-057 depends on task-043 | task-043, then task-057 |
-| 654 | `tests/cost-baseline.tsv` | task-044, task-045 | independent | task-044 and task-045 in either order; run after both are done, in number order (task-044 then task-045) |
-| 655 | `tests/cost-baseline.tsv` | task-044, task-049 | task-049 depends on task-044 | task-044, then task-049 |
-| 656 | `tests/cost-baseline.tsv` | task-044, task-057 | task-057 depends on task-044 | task-044, then task-057 |
-| 657 | `tests/cost-baseline.tsv` | task-045, task-049 | independent | task-045 and task-049 in either order; run after both are done, in number order (task-045 then task-049) |
-| 658 | `tests/cost-baseline.tsv` | task-045, task-057 | task-057 depends on task-045 | task-045, then task-057 |
-| 659 | `tests/cost-baseline.tsv` | task-049, task-057 | task-057 depends on task-049 | task-049, then task-057 |
-| 660 | `tests/cost-meter.py` | task-040, task-044 | independent | task-040 and task-044 in either order; run after both are done, in number order (task-040 then task-044) |
-| 661 | `tests/cost-meter.py` | task-040, task-057 | task-057 depends on task-040 | task-040, then task-057 |
-| 662 | `tests/cost-meter.py` | task-044, task-057 | task-057 depends on task-044 | task-044, then task-057 |
-| 663 | `tests/coverage-accepted-removals.tsv` | task-021, task-033 | task-033 depends on task-021 | task-021, then task-033 |
-| 664 | `tests/coverage-accepted-removals.tsv` | task-021, task-043 | task-043 depends on task-021 | task-021, then task-043 |
-| 665 | `tests/coverage-accepted-removals.tsv` | task-021, task-056 | task-056 depends on task-021 | task-021, then task-056 |
-| 666 | `tests/coverage-accepted-removals.tsv` | task-033, task-043 | independent | task-033 and task-043 in either order; run after both are done, in number order (task-033 then task-043) |
-| 667 | `tests/coverage-accepted-removals.tsv` | task-033, task-056 | task-056 depends on task-033 | task-033, then task-056 |
-| 668 | `tests/coverage-accepted-removals.tsv` | task-043, task-056 | task-056 depends on task-043 | task-043, then task-056 |
-| 669 | `tests/coverage-baseline.tsv` | task-021, task-025 | task-025 depends on task-021 | task-021, then task-025 |
-| 670 | `tests/coverage-baseline.tsv` | task-021, task-030 | task-030 depends on task-021 | task-021, then task-030 |
-| 671 | `tests/coverage-baseline.tsv` | task-021, task-031 | task-031 depends on task-021 | task-021, then task-031 |
-| 672 | `tests/coverage-baseline.tsv` | task-021, task-032 | task-032 depends on task-021 | task-021, then task-032 |
-| 673 | `tests/coverage-baseline.tsv` | task-021, task-033 | task-033 depends on task-021 | task-021, then task-033 |
-| 674 | `tests/coverage-baseline.tsv` | task-021, task-034 | task-034 depends on task-021 | task-021, then task-034 |
-| 675 | `tests/coverage-baseline.tsv` | task-021, task-037 | task-037 depends on task-021 | task-021, then task-037 |
-| 676 | `tests/coverage-baseline.tsv` | task-021, task-038 | task-038 depends on task-021 | task-021, then task-038 |
-| 677 | `tests/coverage-baseline.tsv` | task-021, task-039 | task-039 depends on task-021 | task-021, then task-039 |
-| 678 | `tests/coverage-baseline.tsv` | task-021, task-040 | task-040 depends on task-021 | task-021, then task-040 |
-| 679 | `tests/coverage-baseline.tsv` | task-021, task-042 | task-042 depends on task-021 | task-021, then task-042 |
-| 680 | `tests/coverage-baseline.tsv` | task-021, task-043 | task-043 depends on task-021 | task-021, then task-043 |
-| 681 | `tests/coverage-baseline.tsv` | task-021, task-044 | task-044 depends on task-021 | task-021, then task-044 |
-| 682 | `tests/coverage-baseline.tsv` | task-021, task-045 | task-045 depends on task-021 | task-021, then task-045 |
-| 683 | `tests/coverage-baseline.tsv` | task-021, task-049 | task-049 depends on task-021 | task-021, then task-049 |
-| 684 | `tests/coverage-baseline.tsv` | task-021, task-056 | task-056 depends on task-021 | task-021, then task-056 |
-| 685 | `tests/coverage-baseline.tsv` | task-021, task-057 | task-057 depends on task-021 | task-021, then task-057 |
-| 686 | `tests/coverage-baseline.tsv` | task-025, task-030 | task-030 depends on task-025 | task-025, then task-030 |
-| 687 | `tests/coverage-baseline.tsv` | task-025, task-031 | task-025 depends on task-031 | task-031, then task-025 |
-| 688 | `tests/coverage-baseline.tsv` | task-025, task-032 | task-032 depends on task-025 | task-025, then task-032 |
-| 689 | `tests/coverage-baseline.tsv` | task-025, task-033 | independent | task-025 and task-033 in either order; run after both are done, in number order (task-025 then task-033) |
-| 690 | `tests/coverage-baseline.tsv` | task-025, task-034 | task-034 depends on task-025 | task-025, then task-034 |
-| 691 | `tests/coverage-baseline.tsv` | task-025, task-037 | task-037 depends on task-025 | task-025, then task-037 |
-| 692 | `tests/coverage-baseline.tsv` | task-025, task-038 | task-038 depends on task-025 | task-025, then task-038 |
-| 693 | `tests/coverage-baseline.tsv` | task-025, task-039 | task-039 depends on task-025 | task-025, then task-039 |
-| 694 | `tests/coverage-baseline.tsv` | task-025, task-040 | task-040 depends on task-025 | task-025, then task-040 |
-| 695 | `tests/coverage-baseline.tsv` | task-025, task-042 | task-042 depends on task-025 | task-025, then task-042 |
-| 696 | `tests/coverage-baseline.tsv` | task-025, task-043 | task-043 depends on task-025 | task-025, then task-043 |
-| 697 | `tests/coverage-baseline.tsv` | task-025, task-044 | task-044 depends on task-025 | task-025, then task-044 |
-| 698 | `tests/coverage-baseline.tsv` | task-025, task-045 | task-045 depends on task-025 | task-025, then task-045 |
-| 699 | `tests/coverage-baseline.tsv` | task-025, task-049 | task-049 depends on task-025 | task-025, then task-049 |
-| 700 | `tests/coverage-baseline.tsv` | task-025, task-056 | task-056 depends on task-025 | task-025, then task-056 |
-| 701 | `tests/coverage-baseline.tsv` | task-025, task-057 | task-057 depends on task-025 | task-025, then task-057 |
-| 702 | `tests/coverage-baseline.tsv` | task-030, task-031 | task-030 depends on task-031 | task-031, then task-030 |
-| 703 | `tests/coverage-baseline.tsv` | task-030, task-032 | task-032 depends on task-030 | task-030, then task-032 |
-| 704 | `tests/coverage-baseline.tsv` | task-030, task-033 | independent | task-030 and task-033 in either order; run after both are done, in number order (task-030 then task-033) |
-| 705 | `tests/coverage-baseline.tsv` | task-030, task-034 | task-034 depends on task-030 | task-030, then task-034 |
-| 706 | `tests/coverage-baseline.tsv` | task-030, task-037 | task-037 depends on task-030 | task-030, then task-037 |
-| 707 | `tests/coverage-baseline.tsv` | task-030, task-038 | task-038 depends on task-030 | task-030, then task-038 |
-| 708 | `tests/coverage-baseline.tsv` | task-030, task-039 | task-039 depends on task-030 | task-030, then task-039 |
-| 709 | `tests/coverage-baseline.tsv` | task-030, task-040 | task-040 depends on task-030 | task-030, then task-040 |
-| 710 | `tests/coverage-baseline.tsv` | task-030, task-042 | task-042 depends on task-030 | task-030, then task-042 |
-| 711 | `tests/coverage-baseline.tsv` | task-030, task-043 | task-043 depends on task-030 | task-030, then task-043 |
-| 712 | `tests/coverage-baseline.tsv` | task-030, task-044 | task-044 depends on task-030 | task-030, then task-044 |
-| 713 | `tests/coverage-baseline.tsv` | task-030, task-045 | task-045 depends on task-030 | task-030, then task-045 |
-| 714 | `tests/coverage-baseline.tsv` | task-030, task-049 | task-049 depends on task-030 | task-030, then task-049 |
-| 715 | `tests/coverage-baseline.tsv` | task-030, task-056 | task-056 depends on task-030 | task-030, then task-056 |
-| 716 | `tests/coverage-baseline.tsv` | task-030, task-057 | task-057 depends on task-030 | task-030, then task-057 |
-| 717 | `tests/coverage-baseline.tsv` | task-031, task-032 | task-032 depends on task-031 | task-031, then task-032 |
-| 718 | `tests/coverage-baseline.tsv` | task-031, task-033 | task-033 depends on task-031 | task-031, then task-033 |
-| 719 | `tests/coverage-baseline.tsv` | task-031, task-034 | task-034 depends on task-031 | task-031, then task-034 |
-| 720 | `tests/coverage-baseline.tsv` | task-031, task-037 | task-037 depends on task-031 | task-031, then task-037 |
-| 721 | `tests/coverage-baseline.tsv` | task-031, task-038 | task-038 depends on task-031 | task-031, then task-038 |
-| 722 | `tests/coverage-baseline.tsv` | task-031, task-039 | task-039 depends on task-031 | task-031, then task-039 |
-| 723 | `tests/coverage-baseline.tsv` | task-031, task-040 | task-040 depends on task-031 | task-031, then task-040 |
-| 724 | `tests/coverage-baseline.tsv` | task-031, task-042 | task-042 depends on task-031 | task-031, then task-042 |
-| 725 | `tests/coverage-baseline.tsv` | task-031, task-043 | task-043 depends on task-031 | task-031, then task-043 |
-| 726 | `tests/coverage-baseline.tsv` | task-031, task-044 | task-044 depends on task-031 | task-031, then task-044 |
-| 727 | `tests/coverage-baseline.tsv` | task-031, task-045 | task-045 depends on task-031 | task-031, then task-045 |
-| 728 | `tests/coverage-baseline.tsv` | task-031, task-049 | task-049 depends on task-031 | task-031, then task-049 |
-| 729 | `tests/coverage-baseline.tsv` | task-031, task-056 | task-056 depends on task-031 | task-031, then task-056 |
-| 730 | `tests/coverage-baseline.tsv` | task-031, task-057 | task-057 depends on task-031 | task-031, then task-057 |
-| 731 | `tests/coverage-baseline.tsv` | task-032, task-033 | independent | task-032 and task-033 in either order; run after both are done, in number order (task-032 then task-033) |
-| 732 | `tests/coverage-baseline.tsv` | task-032, task-034 | independent | task-032 and task-034 in either order; run after both are done, in number order (task-032 then task-034) |
-| 733 | `tests/coverage-baseline.tsv` | task-032, task-037 | independent | task-032 and task-037 in either order; run after both are done, in number order (task-032 then task-037) |
-| 734 | `tests/coverage-baseline.tsv` | task-032, task-038 | independent | task-032 and task-038 in either order; run after both are done, in number order (task-032 then task-038) |
-| 735 | `tests/coverage-baseline.tsv` | task-032, task-039 | independent | task-032 and task-039 in either order; run after both are done, in number order (task-032 then task-039) |
-| 736 | `tests/coverage-baseline.tsv` | task-032, task-040 | independent | task-032 and task-040 in either order; run after both are done, in number order (task-032 then task-040) |
-| 737 | `tests/coverage-baseline.tsv` | task-032, task-042 | independent | task-032 and task-042 in either order; run after both are done, in number order (task-032 then task-042) |
-| 738 | `tests/coverage-baseline.tsv` | task-032, task-043 | independent | task-032 and task-043 in either order; run after both are done, in number order (task-032 then task-043) |
-| 739 | `tests/coverage-baseline.tsv` | task-032, task-044 | independent | task-032 and task-044 in either order; run after both are done, in number order (task-032 then task-044) |
-| 740 | `tests/coverage-baseline.tsv` | task-032, task-045 | independent | task-032 and task-045 in either order; run after both are done, in number order (task-032 then task-045) |
-| 741 | `tests/coverage-baseline.tsv` | task-032, task-049 | task-049 depends on task-032 | task-032, then task-049 |
-| 742 | `tests/coverage-baseline.tsv` | task-032, task-056 | task-056 depends on task-032 | task-032, then task-056 |
-| 743 | `tests/coverage-baseline.tsv` | task-032, task-057 | task-057 depends on task-032 | task-032, then task-057 |
-| 744 | `tests/coverage-baseline.tsv` | task-033, task-034 | independent | task-033 and task-034 in either order; run after both are done, in number order (task-033 then task-034) |
-| 745 | `tests/coverage-baseline.tsv` | task-033, task-037 | independent | task-033 and task-037 in either order; run after both are done, in number order (task-033 then task-037) |
-| 746 | `tests/coverage-baseline.tsv` | task-033, task-038 | independent | task-033 and task-038 in either order; run after both are done, in number order (task-033 then task-038) |
-| 747 | `tests/coverage-baseline.tsv` | task-033, task-039 | independent | task-033 and task-039 in either order; run after both are done, in number order (task-033 then task-039) |
-| 748 | `tests/coverage-baseline.tsv` | task-033, task-040 | independent | task-033 and task-040 in either order; run after both are done, in number order (task-033 then task-040) |
-| 749 | `tests/coverage-baseline.tsv` | task-033, task-042 | independent | task-033 and task-042 in either order; run after both are done, in number order (task-033 then task-042) |
-| 750 | `tests/coverage-baseline.tsv` | task-033, task-043 | independent | task-033 and task-043 in either order; run after both are done, in number order (task-033 then task-043) |
-| 751 | `tests/coverage-baseline.tsv` | task-033, task-044 | independent | task-033 and task-044 in either order; run after both are done, in number order (task-033 then task-044) |
-| 752 | `tests/coverage-baseline.tsv` | task-033, task-045 | independent | task-033 and task-045 in either order; run after both are done, in number order (task-033 then task-045) |
-| 753 | `tests/coverage-baseline.tsv` | task-033, task-049 | independent | task-033 and task-049 in either order; run after both are done, in number order (task-033 then task-049) |
-| 754 | `tests/coverage-baseline.tsv` | task-033, task-056 | task-056 depends on task-033 | task-033, then task-056 |
-| 755 | `tests/coverage-baseline.tsv` | task-033, task-057 | task-057 depends on task-033 | task-033, then task-057 |
-| 756 | `tests/coverage-baseline.tsv` | task-034, task-037 | independent | task-034 and task-037 in either order; run after both are done, in number order (task-034 then task-037) |
-| 757 | `tests/coverage-baseline.tsv` | task-034, task-038 | independent | task-034 and task-038 in either order; run after both are done, in number order (task-034 then task-038) |
-| 758 | `tests/coverage-baseline.tsv` | task-034, task-039 | independent | task-034 and task-039 in either order; run after both are done, in number order (task-034 then task-039) |
-| 759 | `tests/coverage-baseline.tsv` | task-034, task-040 | independent | task-034 and task-040 in either order; run after both are done, in number order (task-034 then task-040) |
-| 760 | `tests/coverage-baseline.tsv` | task-034, task-042 | independent | task-034 and task-042 in either order; run after both are done, in number order (task-034 then task-042) |
-| 761 | `tests/coverage-baseline.tsv` | task-034, task-043 | independent | task-034 and task-043 in either order; run after both are done, in number order (task-034 then task-043) |
-| 762 | `tests/coverage-baseline.tsv` | task-034, task-044 | independent | task-034 and task-044 in either order; run after both are done, in number order (task-034 then task-044) |
-| 763 | `tests/coverage-baseline.tsv` | task-034, task-045 | independent | task-034 and task-045 in either order; run after both are done, in number order (task-034 then task-045) |
-| 764 | `tests/coverage-baseline.tsv` | task-034, task-049 | task-049 depends on task-034 | task-034, then task-049 |
-| 765 | `tests/coverage-baseline.tsv` | task-034, task-056 | task-056 depends on task-034 | task-034, then task-056 |
-| 766 | `tests/coverage-baseline.tsv` | task-034, task-057 | task-057 depends on task-034 | task-034, then task-057 |
-| 767 | `tests/coverage-baseline.tsv` | task-037, task-038 | independent | task-037 and task-038 in either order; run after both are done, in number order (task-037 then task-038) |
-| 768 | `tests/coverage-baseline.tsv` | task-037, task-039 | independent | task-037 and task-039 in either order; run after both are done, in number order (task-037 then task-039) |
-| 769 | `tests/coverage-baseline.tsv` | task-037, task-040 | independent | task-037 and task-040 in either order; run after both are done, in number order (task-037 then task-040) |
-| 770 | `tests/coverage-baseline.tsv` | task-037, task-042 | independent | task-037 and task-042 in either order; run after both are done, in number order (task-037 then task-042) |
-| 771 | `tests/coverage-baseline.tsv` | task-037, task-043 | independent | task-037 and task-043 in either order; run after both are done, in number order (task-037 then task-043) |
-| 772 | `tests/coverage-baseline.tsv` | task-037, task-044 | independent | task-037 and task-044 in either order; run after both are done, in number order (task-037 then task-044) |
-| 773 | `tests/coverage-baseline.tsv` | task-037, task-045 | independent | task-037 and task-045 in either order; run after both are done, in number order (task-037 then task-045) |
-| 774 | `tests/coverage-baseline.tsv` | task-037, task-049 | task-049 depends on task-037 | task-037, then task-049 |
-| 775 | `tests/coverage-baseline.tsv` | task-037, task-056 | task-056 depends on task-037 | task-037, then task-056 |
-| 776 | `tests/coverage-baseline.tsv` | task-037, task-057 | task-057 depends on task-037 | task-037, then task-057 |
-| 777 | `tests/coverage-baseline.tsv` | task-038, task-039 | independent | task-038 and task-039 in either order; run after both are done, in number order (task-038 then task-039) |
-| 778 | `tests/coverage-baseline.tsv` | task-038, task-040 | independent | task-038 and task-040 in either order; run after both are done, in number order (task-038 then task-040) |
-| 779 | `tests/coverage-baseline.tsv` | task-038, task-042 | independent | task-038 and task-042 in either order; run after both are done, in number order (task-038 then task-042) |
-| 780 | `tests/coverage-baseline.tsv` | task-038, task-043 | independent | task-038 and task-043 in either order; run after both are done, in number order (task-038 then task-043) |
-| 781 | `tests/coverage-baseline.tsv` | task-038, task-044 | independent | task-038 and task-044 in either order; run after both are done, in number order (task-038 then task-044) |
-| 782 | `tests/coverage-baseline.tsv` | task-038, task-045 | independent | task-038 and task-045 in either order; run after both are done, in number order (task-038 then task-045) |
-| 783 | `tests/coverage-baseline.tsv` | task-038, task-049 | task-049 depends on task-038 | task-038, then task-049 |
-| 784 | `tests/coverage-baseline.tsv` | task-038, task-056 | task-056 depends on task-038 | task-038, then task-056 |
-| 785 | `tests/coverage-baseline.tsv` | task-038, task-057 | task-057 depends on task-038 | task-038, then task-057 |
-| 786 | `tests/coverage-baseline.tsv` | task-039, task-040 | task-040 depends on task-039 | task-039, then task-040 |
-| 787 | `tests/coverage-baseline.tsv` | task-039, task-042 | independent | task-039 and task-042 in either order; run after both are done, in number order (task-039 then task-042) |
-| 788 | `tests/coverage-baseline.tsv` | task-039, task-043 | independent | task-039 and task-043 in either order; run after both are done, in number order (task-039 then task-043) |
-| 789 | `tests/coverage-baseline.tsv` | task-039, task-044 | independent | task-039 and task-044 in either order; run after both are done, in number order (task-039 then task-044) |
-| 790 | `tests/coverage-baseline.tsv` | task-039, task-045 | independent | task-039 and task-045 in either order; run after both are done, in number order (task-039 then task-045) |
-| 791 | `tests/coverage-baseline.tsv` | task-039, task-049 | task-049 depends on task-039 | task-039, then task-049 |
-| 792 | `tests/coverage-baseline.tsv` | task-039, task-056 | task-056 depends on task-039 | task-039, then task-056 |
-| 793 | `tests/coverage-baseline.tsv` | task-039, task-057 | task-057 depends on task-039 | task-039, then task-057 |
-| 794 | `tests/coverage-baseline.tsv` | task-040, task-042 | independent | task-040 and task-042 in either order; run after both are done, in number order (task-040 then task-042) |
-| 795 | `tests/coverage-baseline.tsv` | task-040, task-043 | independent | task-040 and task-043 in either order; run after both are done, in number order (task-040 then task-043) |
-| 796 | `tests/coverage-baseline.tsv` | task-040, task-044 | independent | task-040 and task-044 in either order; run after both are done, in number order (task-040 then task-044) |
-| 797 | `tests/coverage-baseline.tsv` | task-040, task-045 | independent | task-040 and task-045 in either order; run after both are done, in number order (task-040 then task-045) |
-| 798 | `tests/coverage-baseline.tsv` | task-040, task-049 | task-049 depends on task-040 | task-040, then task-049 |
-| 799 | `tests/coverage-baseline.tsv` | task-040, task-056 | task-056 depends on task-040 | task-040, then task-056 |
-| 800 | `tests/coverage-baseline.tsv` | task-040, task-057 | task-057 depends on task-040 | task-040, then task-057 |
-| 801 | `tests/coverage-baseline.tsv` | task-042, task-043 | independent | task-042 and task-043 in either order; run after both are done, in number order (task-042 then task-043) |
-| 802 | `tests/coverage-baseline.tsv` | task-042, task-044 | independent | task-042 and task-044 in either order; run after both are done, in number order (task-042 then task-044) |
-| 803 | `tests/coverage-baseline.tsv` | task-042, task-045 | independent | task-042 and task-045 in either order; run after both are done, in number order (task-042 then task-045) |
-| 804 | `tests/coverage-baseline.tsv` | task-042, task-049 | task-049 depends on task-042 | task-042, then task-049 |
-| 805 | `tests/coverage-baseline.tsv` | task-042, task-056 | task-056 depends on task-042 | task-042, then task-056 |
-| 806 | `tests/coverage-baseline.tsv` | task-042, task-057 | task-057 depends on task-042 | task-042, then task-057 |
-| 807 | `tests/coverage-baseline.tsv` | task-043, task-044 | independent | task-043 and task-044 in either order; run after both are done, in number order (task-043 then task-044) |
-| 808 | `tests/coverage-baseline.tsv` | task-043, task-045 | independent | task-043 and task-045 in either order; run after both are done, in number order (task-043 then task-045) |
-| 809 | `tests/coverage-baseline.tsv` | task-043, task-049 | task-049 depends on task-043 | task-043, then task-049 |
-| 810 | `tests/coverage-baseline.tsv` | task-043, task-056 | task-056 depends on task-043 | task-043, then task-056 |
-| 811 | `tests/coverage-baseline.tsv` | task-043, task-057 | task-057 depends on task-043 | task-043, then task-057 |
-| 812 | `tests/coverage-baseline.tsv` | task-044, task-045 | independent | task-044 and task-045 in either order; run after both are done, in number order (task-044 then task-045) |
-| 813 | `tests/coverage-baseline.tsv` | task-044, task-049 | task-049 depends on task-044 | task-044, then task-049 |
-| 814 | `tests/coverage-baseline.tsv` | task-044, task-056 | task-056 depends on task-044 | task-044, then task-056 |
-| 815 | `tests/coverage-baseline.tsv` | task-044, task-057 | task-057 depends on task-044 | task-044, then task-057 |
-| 816 | `tests/coverage-baseline.tsv` | task-045, task-049 | independent | task-045 and task-049 in either order; run after both are done, in number order (task-045 then task-049) |
-| 817 | `tests/coverage-baseline.tsv` | task-045, task-056 | independent | task-045 and task-056 in either order; run after both are done, in number order (task-045 then task-056) |
-| 818 | `tests/coverage-baseline.tsv` | task-045, task-057 | task-057 depends on task-045 | task-045, then task-057 |
-| 819 | `tests/coverage-baseline.tsv` | task-049, task-056 | independent | task-049 and task-056 in either order; run after both are done, in number order (task-049 then task-056) |
-| 820 | `tests/coverage-baseline.tsv` | task-049, task-057 | task-057 depends on task-049 | task-049, then task-057 |
-| 821 | `tests/coverage-baseline.tsv` | task-056, task-057 | task-057 depends on task-056 | task-056, then task-057 |
-| 822 | `tests/coverage-rehome-allowlist.tsv` | task-021, task-032 | task-032 depends on task-021 | task-021, then task-032 |
-| 823 | `tests/coverage-rehome-allowlist.tsv` | task-021, task-039 | task-039 depends on task-021 | task-021, then task-039 |
-| 824 | `tests/coverage-rehome-allowlist.tsv` | task-021, task-040 | task-040 depends on task-021 | task-021, then task-040 |
-| 825 | `tests/coverage-rehome-allowlist.tsv` | task-021, task-043 | task-043 depends on task-021 | task-021, then task-043 |
-| 826 | `tests/coverage-rehome-allowlist.tsv` | task-032, task-039 | independent | task-032 and task-039 in either order; run after both are done, in number order (task-032 then task-039) |
-| 827 | `tests/coverage-rehome-allowlist.tsv` | task-032, task-040 | independent | task-032 and task-040 in either order; run after both are done, in number order (task-032 then task-040) |
-| 828 | `tests/coverage-rehome-allowlist.tsv` | task-032, task-043 | independent | task-032 and task-043 in either order; run after both are done, in number order (task-032 then task-043) |
-| 829 | `tests/coverage-rehome-allowlist.tsv` | task-039, task-040 | task-040 depends on task-039 | task-039, then task-040 |
-| 830 | `tests/coverage-rehome-allowlist.tsv` | task-039, task-043 | independent | task-039 and task-043 in either order; run after both are done, in number order (task-039 then task-043) |
-| 831 | `tests/coverage-rehome-allowlist.tsv` | task-040, task-043 | independent | task-040 and task-043 in either order; run after both are done, in number order (task-040 then task-043) |
-| 832 | `tests/ui/README.md` | task-031, task-033 | task-033 depends on task-031 | task-031, then task-033 |
-| 833 | `tests/windows/Test-AidInstaller.ps1` | task-032, task-040 | independent | task-032 and task-040 in either order; run after both are done, in number order (task-032 then task-040) |
-| 834 | `tests/windows/Test-AidInstaller.ps1` | task-032, task-042 | independent | task-032 and task-042 in either order; run after both are done, in number order (task-032 then task-042) |
-| 835 | `tests/windows/Test-AidInstaller.ps1` | task-032, task-056 | task-056 depends on task-032 | task-032, then task-056 |
-| 836 | `tests/windows/Test-AidInstaller.ps1` | task-040, task-042 | independent | task-040 and task-042 in either order; run after both are done, in number order (task-040 then task-042) |
-| 837 | `tests/windows/Test-AidInstaller.ps1` | task-040, task-056 | task-056 depends on task-040 | task-040, then task-056 |
-| 838 | `tests/windows/Test-AidInstaller.ps1` | task-042, task-056 | task-056 depends on task-042 | task-042, then task-056 |
+| # | Suite | Tasks | Independent pairs | Dependent pairs | Run order |
+|---|---|---|---|---|---|
+| 1 | `dashboard/reader/tests/fixtures/task011_golden/flat_golden.json` | task-031, task-040 | - | task-040 after task-031 | task-031 -> task-040 |
+| 2 | `dashboard/reader/tests/fixtures/task011_golden/hierarchical_golden.json` | task-031, task-040 | - | task-040 after task-031 | task-031 -> task-040 |
+| 3 | `dashboard/reader/tests/test_declared_path_three_way_parity.py` | task-025, task-031 | - | task-025 after task-031 | task-031 -> task-025 |
+| 4 | `dashboard/reader/tests/test_feature009.py` | task-031, task-038, task-040 | task-038/task-040 | task-038 after task-031; task-040 after task-031 | task-031 -> task-038 -> task-040 |
+| 5 | `dashboard/reader/tests/test_fixtures.py` | task-031, task-039, task-040 | - | task-039 after task-031; task-040 after task-031; task-040 after task-039 | task-031 -> task-039 -> task-040 |
+| 6 | `dashboard/reader/tests/test_flattened_layout_parity.py` | task-031, task-033, task-039, task-040 | task-033/task-039, task-033/task-040 | task-033 after task-031; task-039 after task-031; task-040 after task-031; task-040 after task-039 | task-031 -> task-033 -> task-039 -> task-040 |
+| 7 | `dashboard/reader/tests/test_integration.py` | task-025, task-031 | - | task-025 after task-031 | task-031 -> task-025 |
+| 8 | `dashboard/reader/tests/test_reader.py` | task-031, task-039, task-040, task-043, task-049 | task-039/task-043, task-040/task-043 | task-039 after task-031; task-040 after task-031; task-043 after task-031; task-049 after task-031; task-040 after task-039; task-049 after task-039; task-049 after task-040; task-049 after task-043 | task-031 -> task-039 -> task-040 -> task-043 -> task-049 |
+| 9 | `dashboard/reader/tests/test_resolve_work_dir_cross_runtime_parity.py` | task-031, task-040 | - | task-040 after task-031 | task-031 -> task-040 |
+| 10 | `dashboard/reader/tests/test_security_hardening.py` | task-031, task-040 | - | task-040 after task-031 | task-031 -> task-040 |
+| 11 | `dashboard/reader/tests/test_shortcut_kind_map_cross_runtime_parity.py` | task-031, task-038 | - | task-038 after task-031 | task-031 -> task-038 |
+| 12 | `dashboard/reader/tests/test_task011_golden_master.py` | task-031, task-040 | - | task-040 after task-031 | task-031 -> task-040 |
+| 13 | `dashboard/reader/tests/test_task014_fixtures.py` | task-031, task-039, task-040 | - | task-039 after task-031; task-040 after task-031; task-040 after task-039 | task-031 -> task-039 -> task-040 |
+| 14 | `dashboard/reader/tests/test_task019_connectors.py` | task-031, task-057 | - | task-057 after task-031 | task-031 -> task-057 |
+| 15 | `dashboard/reader/tests/test_task066_kb_parity.py` | task-031, task-041 | - | task-041 after task-031 | task-031 -> task-041 |
+| 16 | `dashboard/reader/tests/test_task069_detail_parser.py` | task-031, task-040 | - | task-040 after task-031 | task-031 -> task-040 |
+| 17 | `dashboard/reader/tests/test_work001_delivery_layouts.py` | task-031, task-040 | - | task-040 after task-031 | task-031 -> task-040 |
+| 18 | `dashboard/reader/tests/test_work003_state_schema.py` | task-031, task-038, task-039, task-040, task-044 | task-038/task-039, task-038/task-040, task-038/task-044, task-039/task-044, task-040/task-044 | task-038 after task-031; task-039 after task-031; task-040 after task-031; task-044 after task-031; task-040 after task-039 | task-031 -> task-038 -> task-039 -> task-040 -> task-044 |
+| 19 | `dashboard/reader/tests/test_work016_container_discovery.py` | task-031, task-033, task-040 | task-033/task-040 | task-033 after task-031; task-040 after task-031 | task-031 -> task-033 -> task-040 |
+| 20 | `dashboard/server/tests/test_home_html_project_header.py` | task-031, task-033 | - | task-033 after task-031 | task-031 -> task-033 |
+| 21 | `dashboard/server/tests/test_index_html.py` | task-031, task-033, task-038, task-041, task-042, task-043 | task-033/task-038, task-033/task-041, task-033/task-042, task-033/task-043, task-038/task-041, task-038/task-042, task-038/task-043, task-041/task-042, task-041/task-043, task-042/task-043 | task-033 after task-031; task-038 after task-031; task-041 after task-031; task-042 after task-031; task-043 after task-031 | task-031 -> task-033 -> task-038 -> task-041 -> task-042 -> task-043 |
+| 22 | `dashboard/server/tests/test_reader_task069.mjs` | task-031, task-040, task-044 | task-040/task-044 | task-040 after task-031; task-044 after task-031 | task-031 -> task-040 -> task-044 |
+| 23 | `dashboard/server/tests/test_server_node.mjs` | task-031, task-033, task-043 | task-033/task-043 | task-033 after task-031; task-043 after task-031 | task-031 -> task-033 -> task-043 |
+| 24 | `dashboard/server/tests/test_server_py.py` | task-031, task-033 | - | task-033 after task-031 | task-031 -> task-033 |
+| 25 | `dashboard/server/tests/test_task002_resolve_work_dir.mjs` | task-031, task-040 | - | task-040 after task-031 | task-031 -> task-040 |
+| 26 | `dashboard/server/tests/test_task010_task_notes.py` | task-025, task-031, task-033 | task-025/task-033 | task-025 after task-031; task-033 after task-031 | task-031 -> task-025 -> task-033 |
+| 27 | `dashboard/server/tests/test_task010_task_notes_cross_runtime_parity.py` | task-025, task-031 | - | task-025 after task-031 | task-031 -> task-025 |
+| 28 | `dashboard/server/tests/test_task011_dispatch_round_trip.mjs` | task-025, task-031 | - | task-025 after task-031 | task-031 -> task-025 |
+| 29 | `dashboard/server/tests/test_task011_dispatch_round_trip.py` | task-025, task-031 | - | task-025 after task-031 | task-031 -> task-025 |
+| 30 | `dashboard/server/tests/test_task012_consuming_round_trips.py` | task-025, task-031, task-033, task-043 | task-025/task-033, task-033/task-043 | task-025 after task-031; task-043 after task-025; task-033 after task-031; task-043 after task-031 | task-031 -> task-025 -> task-033 -> task-043 |
+| 31 | `dashboard/server/tests/test_task019_connector_ops.mjs` | task-031, task-057 | - | task-057 after task-031 | task-031 -> task-057 |
+| 32 | `dashboard/server/tests/test_task022_connectors_external_sources_ui.py` | task-031, task-033 | - | task-033 after task-031 | task-031 -> task-033 |
+| 33 | `dashboard/server/tests/test_task023_list_management_round_trips.py` | task-031, task-057 | - | task-057 after task-031 | task-031 -> task-057 |
+| 34 | `dashboard/server/tests/test_task029_task_stop_resume_ops.mjs` | task-025, task-031 | - | task-025 after task-031 | task-031 -> task-025 |
+| 35 | `dashboard/server/tests/test_task030_finish_stop_resume_ui.py` | task-025, task-031, task-033 | task-025/task-033 | task-025 after task-031; task-033 after task-031 | task-031 -> task-025 -> task-033 |
+| 36 | `dashboard/server/tests/test_task033_execution_control_round_trips.py` | task-025, task-031, task-033 | task-025/task-033 | task-025 after task-031; task-033 after task-031 | task-031 -> task-025 -> task-033 |
+| 37 | `dashboard/server/tests/test_tools_management_ui.py` | task-031, task-033 | - | task-033 after task-031 | task-031 -> task-033 |
+| 38 | `dashboard/server/tests/test_write_enabled_cross_runtime_parity.py` | task-025, task-031 | - | task-025 after task-031 | task-031 -> task-025 |
+| 39 | `site/scripts/__tests__/flow-advance.test.mjs` | task-024, task-034, task-039, task-041, task-042, task-043, task-044 | task-034/task-039, task-034/task-041, task-034/task-042, task-034/task-043, task-034/task-044, task-039/task-041, task-039/task-042, task-039/task-043, task-039/task-044, task-041/task-042, task-041/task-043, task-041/task-044, task-042/task-043, task-042/task-044, task-043/task-044 | task-034 after task-024; task-039 after task-024; task-041 after task-024; task-042 after task-024; task-043 after task-024; task-044 after task-024 | task-024 -> task-034 -> task-039 -> task-041 -> task-042 -> task-043 -> task-044 |
+| 40 | `site/scripts/__tests__/flow-classify.test.mjs` | task-037, task-044 | task-037/task-044 | - | task-037 -> task-044 |
+| 41 | `site/scripts/__tests__/flow-compose.test.mjs` | task-037, task-044 | task-037/task-044 | - | task-037 -> task-044 |
+| 42 | `site/scripts/__tests__/flow-engine-core.test.mjs` | task-030, task-037 | - | task-037 after task-030 | task-030 -> task-037 |
+| 43 | `site/scripts/__tests__/flow-extract-dispatch.test.mjs` | task-024, task-038, task-039, task-040, task-041, task-042, task-043 | task-038/task-039, task-038/task-040, task-038/task-041, task-038/task-042, task-038/task-043, task-039/task-041, task-039/task-042, task-039/task-043, task-040/task-041, task-040/task-042, task-040/task-043, task-041/task-042, task-041/task-043, task-042/task-043 | task-038 after task-024; task-039 after task-024; task-040 after task-024; task-041 after task-024; task-042 after task-024; task-043 after task-024; task-040 after task-039 | task-024 -> task-038 -> task-039 -> task-040 -> task-041 -> task-042 -> task-043 |
+| 44 | `site/scripts/__tests__/flow-extract-engine.test.mjs` | task-037, task-040 | task-037/task-040 | - | task-037 -> task-040 |
+| 45 | `site/scripts/__tests__/flow-extract-inline.test.mjs` | task-024, task-034, task-044 | task-034/task-044 | task-034 after task-024; task-044 after task-024 | task-024 -> task-034 -> task-044 |
+| 46 | `site/scripts/__tests__/flow-extract-residual.test.mjs` | task-042, task-043, task-044 | task-042/task-043, task-042/task-044, task-043/task-044 | - | task-042 -> task-043 -> task-044 |
+| 47 | `site/scripts/__tests__/flow-facade.test.mjs` | task-038, task-042, task-043, task-044 | task-038/task-042, task-038/task-043, task-038/task-044, task-042/task-043, task-042/task-044, task-043/task-044 | - | task-038 -> task-042 -> task-043 -> task-044 |
+| 48 | `site/scripts/__tests__/flow-graph-doorways.test.mjs` | task-030, task-037, task-040, task-044 | task-037/task-040, task-037/task-044, task-040/task-044 | task-037 after task-030; task-040 after task-030; task-044 after task-030 | task-030 -> task-037 -> task-040 -> task-044 |
+| 49 | `site/scripts/__tests__/flow-graph.test.mjs` | task-024, task-037, task-038, task-039, task-042, task-044 | task-037/task-038, task-037/task-039, task-037/task-042, task-037/task-044, task-038/task-039, task-038/task-042, task-038/task-044, task-039/task-042, task-039/task-044, task-042/task-044 | task-037 after task-024; task-038 after task-024; task-039 after task-024; task-042 after task-024; task-044 after task-024 | task-024 -> task-037 -> task-038 -> task-039 -> task-042 -> task-044 |
+| 50 | `site/scripts/__tests__/flow-render-mermaid.test.mjs` | task-040, task-044 | task-040/task-044 | - | task-040 -> task-044 |
+| 51 | `site/scripts/__tests__/flow-validate.test.mjs` | task-024, task-044 | - | task-044 after task-024 | task-024 -> task-044 |
+| 52 | `site/scripts/__tests__/gen-reference.test.mjs` | task-032, task-037, task-038, task-039, task-040, task-041, task-042, task-043 | task-032/task-037, task-032/task-038, task-032/task-039, task-032/task-040, task-032/task-041, task-032/task-042, task-032/task-043, task-037/task-038, task-037/task-039, task-037/task-040, task-037/task-041, task-037/task-042, task-037/task-043, task-038/task-039, task-038/task-040, task-038/task-041, task-038/task-042, task-038/task-043, task-039/task-041, task-039/task-042, task-039/task-043, task-040/task-041, task-040/task-042, task-040/task-043, task-041/task-042, task-041/task-043, task-042/task-043 | task-040 after task-039 | task-032 -> task-037 -> task-038 -> task-039 -> task-040 -> task-041 -> task-042 -> task-043 |
+| 53 | `site/scripts/__tests__/gen-skills-index.test.mjs` | task-032, task-038, task-039, task-040, task-043 | task-032/task-038, task-032/task-039, task-032/task-040, task-032/task-043, task-038/task-039, task-038/task-040, task-038/task-043, task-039/task-043, task-040/task-043 | task-040 after task-039 | task-032 -> task-038 -> task-039 -> task-040 -> task-043 |
+| 54 | `site/scripts/__tests__/gen-skills.test.mjs` | task-040, task-041, task-042, task-043 | task-040/task-041, task-040/task-042, task-040/task-043, task-041/task-042, task-041/task-043, task-042/task-043 | - | task-040 -> task-041 -> task-042 -> task-043 |
+| 55 | `site/scripts/__tests__/provenance-appender.test.mjs` | task-037, task-042, task-044 | task-037/task-042, task-037/task-044, task-042/task-044 | - | task-037 -> task-042 -> task-044 |
+| 56 | `site/scripts/__tests__/provenance.test.mjs` | task-042, task-044 | task-042/task-044 | - | task-042 -> task-044 |
+| 57 | `site/scripts/__tests__/skills-groups.test.mjs` | task-032, task-038, task-039, task-040, task-043 | task-032/task-038, task-032/task-039, task-032/task-040, task-032/task-043, task-038/task-039, task-038/task-040, task-038/task-043, task-039/task-043, task-040/task-043 | task-040 after task-039 | task-032 -> task-038 -> task-039 -> task-040 -> task-043 |
+| 58 | `site/scripts/__tests__/skills-render-index.test.mjs` | task-032, task-043 | task-032/task-043 | - | task-032 -> task-043 |
+| 59 | `site/scripts/__tests__/skills-render-page.test.mjs` | task-043, task-044 | task-043/task-044 | - | task-043 -> task-044 |
+| 60 | `site/src/lib/__tests__/feature-006-head-gate.test.ts` | task-037, task-042 | task-037/task-042 | - | task-037 -> task-042 |
+| 61 | `site/src/lib/__tests__/skill-node-panel.test.ts` | task-040, task-042 | task-040/task-042 | - | task-040 -> task-042 |
+| 62 | `tests/README.md` | task-025, task-040, task-041, task-044 | task-040/task-041, task-040/task-044, task-041/task-044 | task-040 after task-025; task-041 after task-025; task-044 after task-025 | task-025 -> task-040 -> task-041 -> task-044 |
+| 63 | `tests/canonical/fixtures/actback-task/docset-check.tsv` | task-044, task-045 | task-044/task-045 | - | task-044 -> task-045 |
+| 64 | `tests/canonical/fixtures/actback-task/docset-component.tsv` | task-044, task-049 | - | task-049 after task-044 | task-044 -> task-049 |
+| 65 | `tests/canonical/fixtures/actback-task/docset-contract.tsv` | task-044, task-049 | - | task-049 after task-044 | task-044 -> task-049 |
+| 66 | `tests/canonical/fixtures/dual-intent/content/doc-set.tsv` | task-044, task-045 | task-044/task-045 | - | task-044 -> task-045 |
+| 67 | `tests/canonical/fixtures/dual-intent/data-ml/doc-set.tsv` | task-044, task-045 | task-044/task-045 | - | task-044 -> task-045 |
+| 68 | `tests/canonical/fixtures/dual-intent/design/doc-set.tsv` | task-044, task-045 | task-044/task-045 | - | task-044 -> task-045 |
+| 69 | `tests/canonical/fixtures/kb-essence/actback/representative-task-fixture/doc-set.tsv` | task-044, task-045 | task-044/task-045 | - | task-044 -> task-045 |
+| 70 | `tests/canonical/test-actback-task.sh` | task-044, task-045, task-049 | task-044/task-045, task-045/task-049 | task-049 after task-044 | task-044 -> task-045 -> task-049 |
+| 71 | `tests/canonical/test-aid-cli-parity.sh` | task-031, task-032, task-039, task-042, task-043, task-056 | task-032/task-039, task-032/task-042, task-032/task-043, task-039/task-042, task-039/task-043, task-042/task-043 | task-032 after task-031; task-039 after task-031; task-042 after task-031; task-043 after task-031; task-056 after task-031; task-056 after task-032; task-056 after task-039; task-056 after task-042; task-056 after task-043 | task-031 -> task-032 -> task-039 -> task-042 -> task-043 -> task-056 |
+| 72 | `tests/canonical/test-aid-migrate-trigger.sh` | task-033, task-056 | - | task-056 after task-033 | task-033 -> task-056 |
+| 73 | `tests/canonical/test-aid-migrate.sh` | task-032, task-033, task-040, task-042, task-056 | task-032/task-033, task-032/task-040, task-032/task-042, task-033/task-040, task-033/task-042, task-040/task-042 | task-056 after task-032; task-056 after task-033; task-056 after task-040; task-056 after task-042 | task-032 -> task-033 -> task-040 -> task-042 -> task-056 |
+| 74 | `tests/canonical/test-artifact-discipline.sh` | task-025, task-031, task-037, task-039, task-040, task-044 | task-037/task-039, task-037/task-040, task-037/task-044, task-039/task-044, task-040/task-044 | task-025 after task-031; task-037 after task-025; task-039 after task-025; task-040 after task-025; task-044 after task-025; task-037 after task-031; task-039 after task-031; task-040 after task-031; task-044 after task-031; task-040 after task-039 | task-031 -> task-025 -> task-037 -> task-039 -> task-040 -> task-044 |
+| 75 | `tests/canonical/test-ascii-only.sh` | task-031, task-056 | - | task-056 after task-031 | task-031 -> task-056 |
+| 76 | `tests/canonical/test-catalog-dirs-parity.sh` | task-037, task-042, task-043 | task-037/task-042, task-037/task-043, task-042/task-043 | - | task-037 -> task-042 -> task-043 |
+| 77 | `tests/canonical/test-change-refactor-family-scaffold.sh` | task-032, task-037, task-040, task-044 | task-032/task-037, task-032/task-040, task-032/task-044, task-037/task-040, task-037/task-044, task-040/task-044 | - | task-032 -> task-037 -> task-040 -> task-044 |
+| 78 | `tests/canonical/test-chat-node-manifest.sh` | task-033, task-056 | - | task-056 after task-033 | task-033 -> task-056 |
+| 79 | `tests/canonical/test-chat-node-wake.sh` | task-043, task-045 | task-043/task-045 | - | task-043 -> task-045 |
+| 80 | `tests/canonical/test-closure-check.sh` | task-045, task-049 | task-045/task-049 | - | task-045 -> task-049 |
+| 81 | `tests/canonical/test-conformance-lane-semantics.sh` | task-041, task-042, task-049 | task-041/task-042 | task-049 after task-041; task-049 after task-042 | task-041 -> task-042 -> task-049 |
+| 82 | `tests/canonical/test-connector-consumption-linkage.sh` | task-021, task-038, task-039, task-040, task-042, task-043, task-044 | task-038/task-039, task-038/task-040, task-038/task-042, task-038/task-043, task-038/task-044, task-039/task-042, task-039/task-043, task-039/task-044, task-040/task-042, task-040/task-043, task-040/task-044, task-042/task-043, task-042/task-044, task-043/task-044 | task-038 after task-021; task-039 after task-021; task-040 after task-021; task-042 after task-021; task-043 after task-021; task-044 after task-021; task-040 after task-039 | task-021 -> task-038 -> task-039 -> task-040 -> task-042 -> task-043 -> task-044 |
+| 83 | `tests/canonical/test-connector-set-unset-lifecycle.sh` | task-043, task-057 | - | task-057 after task-043 | task-043 -> task-057 |
+| 84 | `tests/canonical/test-connector-skills-structural.sh` | task-032, task-041, task-042, task-043 | task-032/task-041, task-032/task-042, task-032/task-043, task-041/task-042, task-041/task-043, task-042/task-043 | - | task-032 -> task-041 -> task-042 -> task-043 |
+| 85 | `tests/canonical/test-conversation-runner.sh` | task-040, task-044, task-056, task-057 | task-040/task-044 | task-056 after task-040; task-057 after task-040; task-056 after task-044; task-057 after task-044; task-057 after task-056 | task-040 -> task-044 -> task-056 -> task-057 |
+| 86 | `tests/canonical/test-create-family-scaffold.sh` | task-032, task-037, task-040, task-044 | task-032/task-037, task-032/task-040, task-032/task-044, task-037/task-040, task-037/task-044, task-040/task-044 | - | task-032 -> task-037 -> task-040 -> task-044 |
+| 87 | `tests/canonical/test-cutover-no-dangling.sh` | task-021, task-038, task-041, task-044 | task-038/task-041, task-038/task-044, task-041/task-044 | task-038 after task-021; task-041 after task-021; task-044 after task-021 | task-021 -> task-038 -> task-041 -> task-044 |
+| 88 | `tests/canonical/test-dashboard-manifest.sh` | task-031, task-033, task-056 | - | task-033 after task-031; task-056 after task-031; task-056 after task-033 | task-031 -> task-033 -> task-056 |
+| 89 | `tests/canonical/test-dashboard-parity-h.sh` | task-031, task-033 | - | task-033 after task-031 | task-031 -> task-033 |
+| 90 | `tests/canonical/test-delivery-gate-aggregate.sh` | task-021, task-025, task-040 | - | task-025 after task-021; task-040 after task-021; task-040 after task-025 | task-021 -> task-025 -> task-040 |
+| 91 | `tests/canonical/test-deploy-monitor-repurpose.sh` | task-032, task-037, task-038, task-040, task-042, task-043, task-044, task-049 | task-032/task-037, task-032/task-038, task-032/task-040, task-032/task-042, task-032/task-043, task-032/task-044, task-037/task-038, task-037/task-040, task-037/task-042, task-037/task-043, task-037/task-044, task-038/task-040, task-038/task-042, task-038/task-043, task-038/task-044, task-040/task-042, task-040/task-043, task-040/task-044, task-042/task-043, task-042/task-044, task-043/task-044 | task-049 after task-032; task-049 after task-037; task-049 after task-038; task-049 after task-040; task-049 after task-042; task-049 after task-043; task-049 after task-044 | task-032 -> task-037 -> task-038 -> task-040 -> task-042 -> task-043 -> task-044 -> task-049 |
+| 92 | `tests/canonical/test-derive-waves.sh` | task-031, task-040 | - | task-040 after task-031 | task-031 -> task-040 |
+| 93 | `tests/canonical/test-describe-full-only.sh` | task-021, task-038, task-044 | task-038/task-044 | task-038 after task-021; task-044 after task-021 | task-021 -> task-038 -> task-044 |
+| 94 | `tests/canonical/test-discovery-doc-ownership.sh` | task-041, task-044, task-057 | task-041/task-044 | task-057 after task-041; task-057 after task-044 | task-041 -> task-044 -> task-057 |
+| 95 | `tests/canonical/test-disjoint-merge.sh` | task-025, task-040, task-044 | task-040/task-044 | task-040 after task-025; task-044 after task-025 | task-025 -> task-040 -> task-044 |
+| 96 | `tests/canonical/test-doc-set-mapping.sh` | task-041, task-044, task-045, task-049, task-057 | task-041/task-044, task-041/task-045, task-044/task-045, task-045/task-049 | task-049 after task-041; task-057 after task-041; task-049 after task-044; task-057 after task-044; task-057 after task-045; task-057 after task-049 | task-041 -> task-044 -> task-045 -> task-049 -> task-057 |
+| 97 | `tests/canonical/test-doc-set-propose-confirm.sh` | task-041, task-044, task-045, task-049, task-057 | task-041/task-044, task-041/task-045, task-044/task-045, task-045/task-049 | task-049 after task-041; task-057 after task-041; task-049 after task-044; task-057 after task-044; task-057 after task-045; task-057 after task-049 | task-041 -> task-044 -> task-045 -> task-049 -> task-057 |
+| 98 | `tests/canonical/test-doc-set-read.sh` | task-041, task-044, task-049 | task-041/task-044 | task-049 after task-041; task-049 after task-044 | task-041 -> task-044 -> task-049 |
+| 99 | `tests/canonical/test-document-family-scaffold.sh` | task-032, task-037, task-040, task-043, task-044 | task-032/task-037, task-032/task-040, task-032/task-043, task-032/task-044, task-037/task-040, task-037/task-043, task-037/task-044, task-040/task-043, task-040/task-044, task-043/task-044 | - | task-032 -> task-037 -> task-040 -> task-043 -> task-044 |
+| 100 | `tests/canonical/test-dogfood-byte-identity.sh` | task-032, task-042 | task-032/task-042 | - | task-032 -> task-042 |
+| 101 | `tests/canonical/test-domain-doc-matrix.sh` | task-041, task-045 | task-041/task-045 | - | task-041 -> task-045 |
+| 102 | `tests/canonical/test-downstream-worktree-entry.sh` | task-037, task-039, task-040, task-043 | task-037/task-039, task-037/task-040, task-037/task-043, task-039/task-043, task-040/task-043 | task-040 after task-039 | task-037 -> task-039 -> task-040 -> task-043 |
+| 103 | `tests/canonical/test-essence-capture.sh` | task-045, task-049 | task-045/task-049 | - | task-045 -> task-049 |
+| 104 | `tests/canonical/test-expectations-single-source.sh` | task-041, task-044, task-049 | task-041/task-044 | task-049 after task-041; task-049 after task-044 | task-041 -> task-044 -> task-049 |
+| 105 | `tests/canonical/test-fix-family-scaffold.sh` | task-037, task-040, task-044 | task-037/task-040, task-037/task-044, task-040/task-044 | - | task-037 -> task-040 -> task-044 |
+| 106 | `tests/canonical/test-frontmatter-lint.sh` | task-049, task-057 | - | task-057 after task-049 | task-049 -> task-057 |
+| 107 | `tests/canonical/test-grade-summary.sh` | task-033, task-041, task-042, task-044, task-045, task-049, task-057 | task-033/task-041, task-033/task-042, task-033/task-044, task-033/task-045, task-033/task-049, task-041/task-042, task-041/task-044, task-041/task-045, task-042/task-044, task-042/task-045, task-044/task-045, task-045/task-049 | task-057 after task-033; task-049 after task-041; task-057 after task-041; task-049 after task-042; task-057 after task-042; task-049 after task-044; task-057 after task-044; task-057 after task-045; task-057 after task-049 | task-033 -> task-041 -> task-042 -> task-044 -> task-045 -> task-049 -> task-057 |
+| 108 | `tests/canonical/test-guardrails-d012.sh` | task-033, task-042, task-057 | task-033/task-042 | task-057 after task-033; task-057 after task-042 | task-033 -> task-042 -> task-057 |
+| 109 | `tests/canonical/test-kb-html-claims-check.sh` | task-021, task-049 | - | task-049 after task-021 | task-021 -> task-049 |
+| 110 | `tests/canonical/test-kb-review-surface.sh` | task-041, task-045, task-049, task-057 | task-041/task-045, task-045/task-049 | task-049 after task-041; task-057 after task-041; task-057 after task-045; task-057 after task-049 | task-041 -> task-045 -> task-049 -> task-057 |
+| 111 | `tests/canonical/test-ledger-isolation.sh` | task-041, task-042 | task-041/task-042 | - | task-041 -> task-042 |
+| 112 | `tests/canonical/test-lite-work-end-to-end.sh` | task-025, task-031 | - | task-025 after task-031 | task-031 -> task-025 |
+| 113 | `tests/canonical/test-multitool-isolation.sh` | task-040, task-042 | task-040/task-042 | - | task-040 -> task-042 |
+| 114 | `tests/canonical/test-output-root-isolation.sh` | task-041, task-042, task-045 | task-041/task-042, task-041/task-045, task-042/task-045 | - | task-041 -> task-042 -> task-045 |
+| 115 | `tests/canonical/test-path-fixtures.sh` | task-038, task-041 | task-038/task-041 | - | task-038 -> task-041 |
+| 116 | `tests/canonical/test-pipeline-status-walkthrough.sh` | task-025, task-038, task-039, task-040, task-043 | task-038/task-039, task-038/task-040, task-038/task-043, task-039/task-043, task-040/task-043 | task-038 after task-025; task-039 after task-025; task-040 after task-025; task-043 after task-025; task-040 after task-039 | task-025 -> task-038 -> task-039 -> task-040 -> task-043 |
+| 117 | `tests/canonical/test-producer-completeness.sh` | task-031, task-040 | - | task-040 after task-031 | task-031 -> task-040 |
+| 118 | `tests/canonical/test-prototype-family-scaffold.sh` | task-032, task-037, task-040, task-044 | task-032/task-037, task-032/task-040, task-032/task-044, task-037/task-040, task-037/task-044, task-040/task-044 | - | task-032 -> task-037 -> task-040 -> task-044 |
+| 119 | `tests/canonical/test-reconcile-scenarios.sh` | task-041, task-057 | - | task-057 after task-041 | task-041 -> task-057 |
+| 120 | `tests/canonical/test-release-install-e2e.sh` | task-032, task-044, task-056 | task-032/task-044 | task-056 after task-032; task-056 after task-044 | task-032 -> task-044 -> task-056 |
+| 121 | `tests/canonical/test-release-migrate-smoke.sh` | task-033, task-056 | - | task-056 after task-033 | task-033 -> task-056 |
+| 122 | `tests/canonical/test-release.sh` | task-032, task-041, task-044, task-056 | task-032/task-041, task-032/task-044, task-041/task-044 | task-056 after task-032; task-056 after task-041; task-056 after task-044 | task-032 -> task-041 -> task-044 -> task-056 |
+| 123 | `tests/canonical/test-review-path-audit.sh` | task-040, task-044 | task-040/task-044 | - | task-040 -> task-044 |
+| 124 | `tests/canonical/test-scoped-review-cycles.sh` | task-039, task-040 | - | task-040 after task-039 | task-039 -> task-040 |
+| 125 | `tests/canonical/test-shared-install.sh` | task-032, task-056 | - | task-056 after task-032 | task-032 -> task-056 |
+| 126 | `tests/canonical/test-shared-prune.sh` | task-039, task-042 | task-039/task-042 | - | task-039 -> task-042 |
+| 127 | `tests/canonical/test-shared-remove.sh` | task-032, task-039 | task-032/task-039 | - | task-032 -> task-039 |
+| 128 | `tests/canonical/test-shortcut-engine-contract.sh` | task-025, task-037, task-056 | - | task-037 after task-025; task-056 after task-025; task-056 after task-037 | task-025 -> task-037 -> task-056 |
+| 129 | `tests/canonical/test-skill-guide.sh` | task-032, task-034, task-035, task-036, task-038, task-039, task-040, task-041, task-042, task-043, task-044 | task-032/task-034, task-032/task-035, task-032/task-036, task-032/task-038, task-032/task-039, task-032/task-040, task-032/task-041, task-032/task-042, task-032/task-043, task-032/task-044, task-034/task-035, task-034/task-036, task-034/task-038, task-034/task-039, task-034/task-040, task-034/task-041, task-034/task-042, task-034/task-043, task-034/task-044, task-035/task-036, task-035/task-038, task-035/task-039, task-035/task-040, task-035/task-041, task-035/task-042, task-035/task-043, task-035/task-044, task-036/task-038, task-036/task-039, task-036/task-040, task-036/task-041, task-036/task-042, task-036/task-043, task-036/task-044, task-038/task-039, task-038/task-040, task-038/task-041, task-038/task-042, task-038/task-043, task-038/task-044, task-039/task-041, task-039/task-042, task-039/task-043, task-039/task-044, task-040/task-041, task-040/task-042, task-040/task-043, task-040/task-044, task-041/task-042, task-041/task-043, task-041/task-044, task-042/task-043, task-042/task-044, task-043/task-044 | task-040 after task-039 | task-032 -> task-034 -> task-035 -> task-036 -> task-038 -> task-039 -> task-040 -> task-041 -> task-042 -> task-043 -> task-044 |
+| 130 | `tests/canonical/test-spine-depth-coverage.sh` | task-041, task-049 | - | task-049 after task-041 | task-041 -> task-049 |
+| 131 | `tests/canonical/test-state-review-surface.sh` | task-021, task-025, task-037, task-039, task-040, task-041 | task-037/task-039, task-037/task-040, task-037/task-041, task-039/task-041, task-040/task-041 | task-025 after task-021; task-037 after task-021; task-039 after task-021; task-040 after task-021; task-041 after task-021; task-037 after task-025; task-039 after task-025; task-040 after task-025; task-041 after task-025; task-040 after task-039 | task-021 -> task-025 -> task-037 -> task-039 -> task-040 -> task-041 |
+| 132 | `tests/canonical/test-summarize-preflight.sh` | task-041, task-049 | - | task-049 after task-041 | task-041 -> task-049 |
+| 133 | `tests/canonical/test-task-state-transitions.sh` | task-021, task-025, task-031, task-040 | - | task-025 after task-021; task-031 after task-021; task-040 after task-021; task-025 after task-031; task-040 after task-025; task-040 after task-031 | task-021 -> task-031 -> task-025 -> task-040 |
+| 134 | `tests/canonical/test-test-experiment-family-scaffold.sh` | task-037, task-040, task-044 | task-037/task-040, task-037/task-044, task-040/task-044 | - | task-037 -> task-040 -> task-044 |
+| 135 | `tests/canonical/test-ticket-retirement-structural.sh` | task-021, task-037, task-038, task-039, task-040, task-041, task-042, task-043, task-044 | task-037/task-038, task-037/task-039, task-037/task-040, task-037/task-041, task-037/task-042, task-037/task-043, task-037/task-044, task-038/task-039, task-038/task-040, task-038/task-041, task-038/task-042, task-038/task-043, task-038/task-044, task-039/task-041, task-039/task-042, task-039/task-043, task-039/task-044, task-040/task-041, task-040/task-042, task-040/task-043, task-040/task-044, task-041/task-042, task-041/task-043, task-041/task-044, task-042/task-043, task-042/task-044, task-043/task-044 | task-037 after task-021; task-038 after task-021; task-039 after task-021; task-040 after task-021; task-041 after task-021; task-042 after task-021; task-043 after task-021; task-044 after task-021; task-040 after task-039 | task-021 -> task-037 -> task-038 -> task-039 -> task-040 -> task-041 -> task-042 -> task-043 -> task-044 |
+| 136 | `tests/canonical/test-update-kb-scope-fidelity.sh` | task-042, task-044 | task-042/task-044 | - | task-042 -> task-044 |
+| 137 | `tests/canonical/test-validator-behavior.sh` | task-049, task-057 | - | task-057 after task-049 | task-049 -> task-057 |
+| 138 | `tests/canonical/test-version-sync.sh` | task-025, task-056 | - | task-056 after task-025 | task-025 -> task-056 |
+| 139 | `tests/canonical/test-work-initiation-gate.sh` | task-030, task-034, task-037, task-038, task-040, task-044 | task-034/task-037, task-034/task-038, task-034/task-040, task-034/task-044, task-037/task-038, task-037/task-040, task-037/task-044, task-038/task-040, task-038/task-044, task-040/task-044 | task-034 after task-030; task-037 after task-030; task-038 after task-030; task-040 after task-030; task-044 after task-030 | task-030 -> task-034 -> task-037 -> task-038 -> task-040 -> task-044 |
+| 140 | `tests/canonical/test-work-state-template.sh` | task-021, task-031, task-038, task-039 | task-038/task-039 | task-031 after task-021; task-038 after task-021; task-039 after task-021; task-038 after task-031; task-039 after task-031 | task-021 -> task-031 -> task-038 -> task-039 |
+| 141 | `tests/canonical/test-write-connector.sh` | task-043, task-057 | - | task-057 after task-043 | task-043 -> task-057 |
+| 142 | `tests/canonical/test-writeback-state.sh` | task-021, task-025, task-039, task-040, task-044, task-056 | task-039/task-044, task-040/task-044 | task-025 after task-021; task-039 after task-021; task-040 after task-021; task-044 after task-021; task-056 after task-021; task-039 after task-025; task-040 after task-025; task-044 after task-025; task-056 after task-025; task-040 after task-039; task-056 after task-039; task-056 after task-040; task-056 after task-044 | task-021 -> task-025 -> task-039 -> task-040 -> task-044 -> task-056 |
+| 143 | `tests/conversation/fixtures/done-work/.aid/works/work-001-csv-export/STATE.yml` | task-038, task-040 | task-038/task-040 | - | task-038 -> task-040 |
+| 144 | `tests/conversation/fixtures/ticket-mid-work/.aid/works/work-001-retry-policy/STATE.yml` | task-038, task-039 | task-038/task-039 | - | task-038 -> task-039 |
+| 145 | `tests/conversation/samples/feature-001/001-15-no-kb-offers-preparation.md` | task-039, task-041 | task-039/task-041 | - | task-039 -> task-041 |
+| 146 | `tests/cost-baseline.tsv` | task-030, task-032, task-034, task-035, task-036, task-037, task-038, task-039, task-040, task-041, task-042, task-043, task-044, task-045, task-049, task-057 | task-032/task-034, task-032/task-035, task-032/task-036, task-032/task-037, task-032/task-038, task-032/task-039, task-032/task-040, task-032/task-041, task-032/task-042, task-032/task-043, task-032/task-044, task-032/task-045, task-034/task-035, task-034/task-036, task-034/task-037, task-034/task-038, task-034/task-039, task-034/task-040, task-034/task-041, task-034/task-042, task-034/task-043, task-034/task-044, task-034/task-045, task-035/task-036, task-035/task-037, task-035/task-038, task-035/task-039, task-035/task-040, task-035/task-041, task-035/task-042, task-035/task-043, task-035/task-044, task-035/task-045, task-036/task-037, task-036/task-038, task-036/task-039, task-036/task-040, task-036/task-041, task-036/task-042, task-036/task-043, task-036/task-044, task-036/task-045, task-037/task-038, task-037/task-039, task-037/task-040, task-037/task-041, task-037/task-042, task-037/task-043, task-037/task-044, task-037/task-045, task-038/task-039, task-038/task-040, task-038/task-041, task-038/task-042, task-038/task-043, task-038/task-044, task-038/task-045, task-039/task-041, task-039/task-042, task-039/task-043, task-039/task-044, task-039/task-045, task-040/task-041, task-040/task-042, task-040/task-043, task-040/task-044, task-040/task-045, task-041/task-042, task-041/task-043, task-041/task-044, task-041/task-045, task-042/task-043, task-042/task-044, task-042/task-045, task-043/task-044, task-043/task-045, task-044/task-045, task-045/task-049 | task-032 after task-030; task-034 after task-030; task-035 after task-030; task-036 after task-030; task-037 after task-030; task-038 after task-030; task-039 after task-030; task-040 after task-030; task-041 after task-030; task-042 after task-030; task-043 after task-030; task-044 after task-030; task-045 after task-030; task-049 after task-030; task-057 after task-030; task-049 after task-032; task-057 after task-032; task-049 after task-034; task-057 after task-034; task-049 after task-035; task-057 after task-035; task-049 after task-036; task-057 after task-036; task-049 after task-037; task-057 after task-037; task-049 after task-038; task-057 after task-038; task-040 after task-039; task-049 after task-039; task-057 after task-039; task-049 after task-040; task-057 after task-040; task-049 after task-041; task-057 after task-041; task-049 after task-042; task-057 after task-042; task-049 after task-043; task-057 after task-043; task-049 after task-044; task-057 after task-044; task-057 after task-045; task-057 after task-049 | task-030 -> task-032 -> task-034 -> task-035 -> task-036 -> task-037 -> task-038 -> task-039 -> task-040 -> task-041 -> task-042 -> task-043 -> task-044 -> task-045 -> task-049 -> task-057 |
+| 147 | `tests/cost-meter.py` | task-040, task-044, task-057 | task-040/task-044 | task-057 after task-040; task-057 after task-044 | task-040 -> task-044 -> task-057 |
+| 148 | `tests/coverage-accepted-removals.tsv` | task-021, task-033, task-043, task-056 | task-033/task-043 | task-033 after task-021; task-043 after task-021; task-056 after task-021; task-056 after task-033; task-056 after task-043 | task-021 -> task-033 -> task-043 -> task-056 |
+| 149 | `tests/coverage-baseline.tsv` | task-021, task-025, task-030, task-031, task-032, task-033, task-034, task-037, task-038, task-039, task-040, task-042, task-043, task-044, task-045, task-049, task-056, task-057 | task-025/task-033, task-030/task-033, task-032/task-033, task-032/task-034, task-032/task-037, task-032/task-038, task-032/task-039, task-032/task-040, task-032/task-042, task-032/task-043, task-032/task-044, task-032/task-045, task-033/task-034, task-033/task-037, task-033/task-038, task-033/task-039, task-033/task-040, task-033/task-042, task-033/task-043, task-033/task-044, task-033/task-045, task-033/task-049, task-034/task-037, task-034/task-038, task-034/task-039, task-034/task-040, task-034/task-042, task-034/task-043, task-034/task-044, task-034/task-045, task-037/task-038, task-037/task-039, task-037/task-040, task-037/task-042, task-037/task-043, task-037/task-044, task-037/task-045, task-038/task-039, task-038/task-040, task-038/task-042, task-038/task-043, task-038/task-044, task-038/task-045, task-039/task-042, task-039/task-043, task-039/task-044, task-039/task-045, task-040/task-042, task-040/task-043, task-040/task-044, task-040/task-045, task-042/task-043, task-042/task-044, task-042/task-045, task-043/task-044, task-043/task-045, task-044/task-045, task-045/task-049, task-045/task-056, task-049/task-056 | task-025 after task-021; task-030 after task-021; task-031 after task-021; task-032 after task-021; task-033 after task-021; task-034 after task-021; task-037 after task-021; task-038 after task-021; task-039 after task-021; task-040 after task-021; task-042 after task-021; task-043 after task-021; task-044 after task-021; task-045 after task-021; task-049 after task-021; task-056 after task-021; task-057 after task-021; task-030 after task-025; task-025 after task-031; task-032 after task-025; task-034 after task-025; task-037 after task-025; task-038 after task-025; task-039 after task-025; task-040 after task-025; task-042 after task-025; task-043 after task-025; task-044 after task-025; task-045 after task-025; task-049 after task-025; task-056 after task-025; task-057 after task-025; task-030 after task-031; task-032 after task-030; task-034 after task-030; task-037 after task-030; task-038 after task-030; task-039 after task-030; task-040 after task-030; task-042 after task-030; task-043 after task-030; task-044 after task-030; task-045 after task-030; task-049 after task-030; task-056 after task-030; task-057 after task-030; task-032 after task-031; task-033 after task-031; task-034 after task-031; task-037 after task-031; task-038 after task-031; task-039 after task-031; task-040 after task-031; task-042 after task-031; task-043 after task-031; task-044 after task-031; task-045 after task-031; task-049 after task-031; task-056 after task-031; task-057 after task-031; task-049 after task-032; task-056 after task-032; task-057 after task-032; task-056 after task-033; task-057 after task-033; task-049 after task-034; task-056 after task-034; task-057 after task-034; task-049 after task-037; task-056 after task-037; task-057 after task-037; task-049 after task-038; task-056 after task-038; task-057 after task-038; task-040 after task-039; task-049 after task-039; task-056 after task-039; task-057 after task-039; task-049 after task-040; task-056 after task-040; task-057 after task-040; task-049 after task-042; task-056 after task-042; task-057 after task-042; task-049 after task-043; task-056 after task-043; task-057 after task-043; task-049 after task-044; task-056 after task-044; task-057 after task-044; task-057 after task-045; task-057 after task-049; task-057 after task-056 | task-021 -> task-031 -> task-025 -> task-030 -> task-032 -> task-033 -> task-034 -> task-037 -> task-038 -> task-039 -> task-040 -> task-042 -> task-043 -> task-044 -> task-045 -> task-049 -> task-056 -> task-057 |
+| 150 | `tests/coverage-rehome-allowlist.tsv` | task-021, task-032, task-039, task-040, task-043 | task-032/task-039, task-032/task-040, task-032/task-043, task-039/task-043, task-040/task-043 | task-032 after task-021; task-039 after task-021; task-040 after task-021; task-043 after task-021; task-040 after task-039 | task-021 -> task-032 -> task-039 -> task-040 -> task-043 |
+| 151 | `tests/ui/README.md` | task-031, task-033 | - | task-033 after task-031 | task-031 -> task-033 |
+| 152 | `tests/windows/Test-AidInstaller.ps1` | task-032, task-040, task-042, task-056 | task-032/task-040, task-032/task-042, task-040/task-042 | task-056 after task-032; task-056 after task-040; task-056 after task-042 | task-032 -> task-040 -> task-042 -> task-056 |
+
+152 suites have hits owned by two or more tasks. Every one runs after all its tasks, in the order shown.
 
 ## Delta
 
@@ -2804,8 +2180,8 @@ Each item is a difference between a search result and a statement of the spec (R
 | D10 | Tests rule (Feature 002 § 2): "`test-describe-full-only.sh`" is named among the suites that change | it has 12 edit-list matches (owners: task-021, task-038, task-044) | No task Scope names this suite. Its owner is the task that changes the file it reads (per P8). Please confirm that the matches are the only edit it needs. |
 | D11 | P7: "Run against today's tree with these globs, only the two exemptions fire" (NM) | NM-03: 1 hit (aid-housekeep, exempt). NM-04: 3 hits (aid-execute, exempt). NM-01 and NM-02: none | None. |
 | D12 | P8: suites named by a task Scope (for example `test-pipeline-status-walkthrough.sh` A1 and B1, `test-work-initiation-gate.sh`, `test-skill-guide.sh`) | The name-based match of P8 finds the files each task names, plus other suites (for example `test_reader.py`, `test-release.sh`) | Each extra suite gets the owner of the file it reads. None is left without an owner. |
-| D13 | Task-021, task-022 and task-025 (P8 assignments) | The spec's Files and layout list `reader.py`, `server.py` (`_ser_work`) and `server.mjs` for task-031 | Owners follow task-031's Scope text ("through `reader.py`, `dashboard/server/server.py` `_ser_work` and `server.mjs`"). No difference. |
-| D14 | P10: "Whether today's writes ... are already atomic" | Yes: temp copy, verify, rename under the lock (see P10) | The spec's § 2 atomic-write requirement is already met for the field writes; the new modes are task-025 and task-029 work. Limit noted in P10. |
+| D13 | Dashboard files the spec lists for the readers (Files and layout: `reader.py`, `dashboard/server/server.py` `_ser_work`, `server.mjs`) | Not in the task-031 bullet of the phase sites, but in its "Both readers pass `intent.phases`" paragraph | Owner task-031, as that paragraph of its Scope says. No difference in owner. |
+| D14 | task-025 Scope: "every write is atomic: a temporary copy is renamed into place under the lock" | Today's field writes already do this (P10); the limit is the temp directory | Owner task-025 keeps the discipline for the new modes (its Scope) and states the same-filesystem limit in its findings. No difference in owner. |
 
 ## Test step
 
