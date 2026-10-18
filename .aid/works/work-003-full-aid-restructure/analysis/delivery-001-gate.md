@@ -65,3 +65,7 @@ live tree after the resync. 22 of 48 runs pass (task-369's runs: 23 of 48).
 | 001-16 | 2/3 | 3/3 | |
 
 Run folders: `.aid/.temp/conversation-tests/<batch>/<sample>/run-<n>/` (not committed).
+
+## Result
+
+Passed on 2026-10-18 after task-370 (the h001 runner fixes, review A+). Delivery state `Gated`, gate grade A.

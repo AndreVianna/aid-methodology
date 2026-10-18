@@ -486,6 +486,10 @@ review_history:
     event: 'Delivery-001 verification (Opus full review, Q143)'
     outcome: 'Cycle 1 E+ (26 rows: 1 CRITICAL, 4 HIGH) -> cycle 2 C -> cycle 3 C+ -> cycle 4 B+ -> cycle 5 A (one MINOR open, D36); D10, D11, D12 accepted'
     notes: 'Ledgers in analysis/delivery-001-review-c1..c5.md; Feature 001 samples 23 of 48 runs pass, residue deferred as KI-007 (Q149); next: the delivery resync in a session of its own, then the gate in a new session'
+  - date: '2026-10-18'
+    event: 'Delivery-001 gate passed'
+    outcome: 'Stanza criteria pass; samples 22 of 48 runs, 5 of 16 at 3 of 3, rest in KI-007 (Q149); G0 passes but for the 9 machine-limit suites; tracking proof under Q151; coverage baseline from both machines (Q153); Codex review h001 found 4 runner defects, fixed in task-370 (A+)'
+    notes: 'Gate report: analysis/delivery-001-gate.md'
 lifecycle_history:
   - date: '2026-10-12'
     event: 'Work created'
