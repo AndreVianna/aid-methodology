@@ -482,6 +482,10 @@ review_history:
 # [A] written by the orchestrator on the work's active branch (single
 #     writer). Append-only audit trail of phase transitions and gate
 #     approvals, newest LAST (append to bottom).
+  - date: '2026-10-18'
+    event: 'Delivery-001 verification (Opus full review, Q143)'
+    outcome: 'Cycle 1 E+ (26 rows: 1 CRITICAL, 4 HIGH) -> cycle 2 C -> cycle 3 C+ -> cycle 4 B+ -> cycle 5 A (one MINOR open, D36); D10, D11, D12 accepted'
+    notes: 'Ledgers in analysis/delivery-001-review-c1..c5.md; Feature 001 samples 23 of 48 runs pass, residue deferred as KI-007 (Q149); next: the delivery resync in a session of its own, then the gate in a new session'
 lifecycle_history:
   - date: '2026-10-12'
     event: 'Work created'
