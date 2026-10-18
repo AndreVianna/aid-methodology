@@ -649,6 +649,9 @@ judge_brief_ok() {  # truncated diff content is not absent; no row outside the E
     local f="$1"
     grep -q -F -- "Truncated content is not absent" "$f" && grep -q -F -- "Never add a row that is not an EO-n or MN-n item" "$f"
 }
+judge_unmet_only_ok() {  # the output part says a row is only for an UNMET item, so a met item gets no row
+    grep -q -F -- "A row is only for an UNMET item" "$1"
+}
 
 # ---------------------------------------------------------------- EXIT
 group_exit() {
@@ -887,6 +890,10 @@ group_briefs() {
     expect_fail "BR04 a judge brief that reads truncated content as absent fails BR02" judge_brief_ok "$T/briefs-mut/judge.md"
     sed 's/Never add a row that is not an EO-n or MN-n item/Add any row you find/' "$jud" > "$T/briefs-mut/judge.md"
     expect_fail "BR05 a judge brief that allows any row fails BR02" judge_brief_ok "$T/briefs-mut/judge.md"
+    assert_eq "$(judge_unmet_only_ok "$jud" && echo ok)" ok \
+        "BR06 judge.md's output part says a row is only for an UNMET item"
+    sed 's/A row is only for an UNMET item/A row may be written for any item/' "$jud" > "$T/briefs-mut/judge.md"
+    expect_fail "BR07 a judge brief without the UNMET-only output rule fails BR06" judge_unmet_only_ok "$T/briefs-mut/judge.md"
 }
 
 # expect_fail LABEL command...: the command must fail; a mutant that still passes is a gap in the check
@@ -931,6 +938,41 @@ group_checks() {
     assert_output_contains "$(cat "$T/log/checks.out")" "check: tool-called Skill aid-execute -- no matching call" \
         "CK07 a failed check is named in the run's reasons"
     assert_exit_eq "$(cat "$T/log/checks.rc")" 1 "CK08 a run with a failed check exits 1"
+    # no-push on Bash targets, through run_checks itself: the module is loaded, no run is made. A prose
+    # mention of git push in a heredoc passes; a real push, however it is written, fails.
+    cat > "$T/nopush.py" <<'PYNP'
+import importlib.util
+import sys
+from pathlib import Path
+
+spec = importlib.util.spec_from_file_location("runner_under_test", sys.argv[1])
+mod = importlib.util.module_from_spec(spec)
+sys.modules[spec.name] = mod  # the dataclass decorator looks the module up by name
+spec.loader.exec_module(mod)
+CHECK = [{"verb": "no-push", "args": [], "label": "no-push"}]
+CASES = [  # (Bash command, whether no-push should pass)
+    ("cat > notes.md <<'EOF'\nThe run ran no `git push`.\nEOF", True),
+    ("cat > notes.md <<EOF\nno git push here\nEOF\ngit status", True),
+    ("git commit -m 'do not git push yet'", True),
+    ("git log --oneline | grep push", True),
+    ("git push origin main", False),
+    ("git -C x push origin main", False),
+    ("cd x && git push", False),
+    ("bash -c 'git push origin main'", False),
+]
+bad = []
+for command, passes in CASES:
+    got = mod.run_checks(CHECK, Path("."), set(), set(), [{"name": "Bash", "target": command}])[0][1]
+    if got != passes:
+        bad.append(command)
+for command in bad:
+    print("no-push misjudged: " + repr(command), file=sys.stderr)
+sys.exit(1 if bad else 0)
+PYNP
+    make_mutant nopush 'and is_git_push(t["target"])]' 'and re.search(r"\bgit\b.*\bpush\b", t["target"])]'
+    assert_eq "$("$PY" "$T/nopush.py" "$RUNNER" && echo ok)" ok \
+        "NP01 no-push passes a heredoc prose mention and a quoted or piped git, and fails each real push form"
+    expect_fail "NP02 a no-push that reads heredoc prose as a push fails NP01" "$PY" "$T/nopush.py" "$MUT_PATH"
 }
 
 # ---------------------------------------------------------------- CLEAN

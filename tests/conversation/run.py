@@ -68,6 +68,7 @@ import fnmatch
 import json
 import os
 import re
+import shlex
 import shutil
 import subprocess
 import sys
@@ -599,6 +600,66 @@ def judge_view(chunks: list[tuple[str, str]]) -> str:
 
 # ---------------------------------------------------------------- checks
 
+HEREDOC_START = re.compile(r"<<(-?)\s*(['\"]?)(\w+)\2")
+GIT_VALUE_OPTIONS = ("-C", "-c", "--git-dir", "--work-tree", "--namespace")  # git's global options that take a value
+SHELLS = ("sh", "bash", "zsh", "dash")
+SHELL_PUNCTUATION = "();<>|&`"  # shlex returns these as tokens; a token made only of them ends a command
+
+
+def strip_heredocs(command: str) -> str:
+    """The command with each heredoc body removed: the lines from <<WORD to the line that is WORD."""
+    kept, end, dash = [], None, False
+    for line in command.split("\n"):
+        if end is not None:
+            if (line.lstrip("\t") if dash else line) == end:
+                end = None
+            continue
+        kept.append(line)
+        match = HEREDOC_START.search(line)
+        if match:
+            dash, end = match.group(1) == "-", match.group(3)
+    return "\n".join(kept)
+
+
+def is_git_push(command: str) -> bool:
+    """True when a shell command runs git push. Each command segment (split on ; && || | and newlines) is
+    checked: its command is git, after any VAR=value prefix and git's global options, and its subcommand
+    is push. Heredoc bodies and quoted text are not commands, so prose that names git push does not count;
+    a shell's -c string is checked as a command of its own."""
+    text = strip_heredocs(command).replace("\\\n", " ").replace("\n", " ; ")
+    try:
+        lex = shlex.shlex(text, posix=True, punctuation_chars=SHELL_PUNCTUATION)
+        lex.whitespace_split = True
+        tokens = list(lex)
+    except ValueError:  # unbalanced quotes: no reliable split, so read the text as plain text
+        return bool(re.search(r"\bgit\b.*\bpush\b", text))
+    segments, words = [], []
+    for token in tokens:
+        if token and all(char in SHELL_PUNCTUATION for char in token):
+            segments.append(words)
+            words = []
+        else:
+            words.append(token)
+    segments.append(words)
+    return any(segment_is_git_push(words) for words in segments)
+
+
+def segment_is_git_push(words: list[str]) -> bool:
+    while words and re.match(r"^\w+=", words[0]):  # leading VAR=value assignments
+        words = words[1:]
+    if not words:
+        return False
+    program = os.path.basename(words[0])
+    if program in SHELLS and "-c" in words[1:]:
+        index = words.index("-c", 1)
+        return index + 1 < len(words) and is_git_push(words[index + 1])
+    if program != "git":
+        return False
+    index = 1
+    while index < len(words) and words[index].startswith("-"):
+        index += 2 if words[index] in GIT_VALUE_OPTIONS else 1
+    return index < len(words) and words[index] == "push"
+
 
 def inside(fixture: Path, rel: str) -> Path:
     target = (fixture / rel).resolve()
@@ -627,7 +688,7 @@ def run_checks(checks: list[dict], fixture: Path, dirs_before: set[str], dirs_af
                 bad = [d for d in sorted(dirs_after - dirs_before) if d == target or os.path.dirname(d) == target]
                 ok, detail = not bad, "" if not bad else "created: " + ", ".join(bad)
             elif verb == "no-push":
-                bad = [t["target"] for t in tools if t["name"] == "Bash" and re.search(r"\bgit\b.*\bpush\b", t["target"])]
+                bad = [t["target"] for t in tools if t["name"] == "Bash" and is_git_push(t["target"])]
                 ok, detail = not bad, "" if not bad else "push call: " + bad[0]
             else:
                 name = args[0]

@@ -65,5 +65,7 @@ no closing note, no code fence around the table. The first line of your reply is
 `| # | Severity | Status | Doc | Line | Description | Evidence |`
 
 The second line is the separator row, `|---|---|---|---|---|---|---|`. Every following line is one Pending
-row. If the run met every item and did none of the forbidden things, the reply is the header row and the
-separator row, with no data rows.
+row. A row is only for an UNMET item (an EO-n the run did not meet, or an MN-n the run did): if you
+conclude that an item is met, in whole or in substance, write no row for it, not even one that says the
+item is met. If the run met every item and did none of the forbidden things, the reply is the header row
+and the separator row, with no data rows.
