@@ -1767,3 +1767,11 @@ qa:
     suggested: 'Accept it and amend the G0 wording to match the Q146 build'
     answer: 'A (maintainer): accepted for delivery-001; the G0 tracking proof now allows a shared In Progress commit for a parallel wave and a state-only terminal commit after the task''s own commit, which in a parallel wave waits for the wave''s full test step.'
     applied_to: 'PLAN.md Common Gate (G0), tracking proof, deliveries 001-009'
+  - id: Q152
+    category: Building
+    impact: Medium
+    state: Answered
+    context: 'A Codex session on the maintainer''s side now shares the build through git (handoff/PROTOCOL.md), to spread usage. task-365 (other-host runner adapters, delivery-014) needs the real codex CLI.'
+    suggested: 'Prove the channel with h000 (handshake) and h001 (delivery-001 review) first, then give Codex the Codex adapter as h002'
+    answer: 'A then B (maintainer): h000 and h001 first; if both go cleanly, Codex builds only the Codex adapter of task-365 as h002. The Cursor, Copilot CLI and Antigravity adapters stay in task-365 at delivery-014.'
+    applied_to: 'handoff queue; task-365 scope split'
