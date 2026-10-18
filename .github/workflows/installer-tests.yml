@@ -82,7 +82,7 @@ jobs:
         shell: bash
         run: |
           set -u
-          SUITES="test-install test-install-ps1 test-install-parity test-aid-cli test-aid-cli-ps1 test-aid-cli-parity test-release test-release-install-e2e test-npm-installer test-pypi-installer"
+          SUITES="test-install test-install-ps1 test-install-parity test-aid-cli test-aid-cli-ps1 test-aid-cli-parity test-release test-release-install-e2e test-npm-installer test-pypi-installer test-skill-guide"
           FAILED=""
           for s in $SUITES; do
             echo "::group::$s (${{ matrix.os }})"
