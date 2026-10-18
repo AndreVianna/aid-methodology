@@ -1759,3 +1759,11 @@ qa:
     suggested: 'A new session for the resync, then another for the gate'
     answer: 'Same session (maintainer): the resync runs in the build session and is still committed alone; the maintainer then runs /reload-skills so the gate acts on the freshly installed skills, in place of a new session.'
     applied_to: 'The resync rule 1 and 2, for every delivery'
+  - id: Q151
+    category: Building
+    impact: Medium
+    state: Answered
+    context: 'The delivery-001 gate found the tracking proof (G0, Q125) met in substance but not in wording: each task''s terminal state and grade sit in a state-only commit after its own commit, and parallel waves share one In Progress commit.'
+    suggested: 'Accept it and amend the G0 wording to match the Q146 build'
+    answer: 'A (maintainer): accepted for delivery-001; the G0 tracking proof now allows a shared In Progress commit for a parallel wave and a state-only terminal commit after the task''s own commit, which in a parallel wave waits for the wave''s full test step.'
+    applied_to: 'PLAN.md Common Gate (G0), tracking proof, deliveries 001-009'

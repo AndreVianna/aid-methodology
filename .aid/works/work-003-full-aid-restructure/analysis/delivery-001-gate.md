@@ -29,7 +29,7 @@ start of the gate: `cb44bdc8`.
 | Coverage baseline re-recorded | Open | 29 un-excused reductions, every one in a machine-limit or environment suite; 42 re-homes excused |
 | Samples the stanza names | As above | |
 | Earlier static-check groups | Not applicable | Delivery-001 is the first delivery |
-| Tracking proof (Q125) | Open | In Progress then In Review precede each task's own commit; the terminal state and grade sit in a separate state-only commit after it, and parallel waves share one In Progress commit |
+| Tracking proof (Q125) | Pass, under the Q151 wording | In Progress then In Review precede each task's own commit; the terminal state and grade sit in a separate state-only commit after it, and parallel waves share one In Progress commit |
 
 ### Machine limits
 

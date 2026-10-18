@@ -177,11 +177,15 @@ true:
 - **Deliveries 001-009, built directly (Q127): the tracking proof (Q125).** For every task of the
   delivery:
   - `git log --format=%s -- <the file holding the task's state>` shows two state-only commits,
-    `task-NNN: In Progress` then `task-NNN: In Review`, before the task's own commit. A state-only commit
-    holds only what that state write changed: the state file, plus, from delivery-008's resync on, the
-    `PLAN.md` the writer re-renders on each task state write (F006);
-  - in the task's own commit, the state file holds the task's terminal state and a review grade at or
-    above `minimum_grade` (the task's `review` field);
+    `task-NNN: In Progress` then `task-NNN: In Review`, before the task's own commit. A parallel wave
+    (Q146) may start its tasks in one state-only commit that names them all, such as
+    `tasks 010-013: In Progress`. A state-only commit holds only what that state write changed: the
+    state file, plus, from delivery-008's resync on, the `PLAN.md` the writer re-renders on each task
+    state write (F006);
+  - after the task's own commit, a state-only commit writes the task's terminal state, and the state
+    file then holds a review grade at or above `minimum_grade` (the task's `review` field). In a
+    parallel wave the terminal state waits for the wave's full test step, and one commit may name every
+    task of the wave (Q151);
   - from delivery-008 on, the work `STATE.yml` `reviews` also holds an entry noting `task-NNN verify`.
     The work-file `--review` mode reaches the installed writer only with delivery-007's resync. It
     adds the `reviews` key to this work's file, which has none (F005 § 4, Q130).
