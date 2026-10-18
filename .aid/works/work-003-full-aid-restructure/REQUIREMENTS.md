@@ -729,7 +729,9 @@ check decides the depth.** Definition runs only when the problem itself must be 
 problem that is unclear). Missing details in an otherwise clear bug fix, change or capability are asked
 inside Specification through the question protocol; they never add Definition. A reading that matches an action skill
 (`/aid-create`, `/aid-update`, `/aid-fix`, `/aid-refactor`, `/aid-document`, `/aid-test`, `/aid-prototype`; Feature 009)
-is handed to that skill before any work is created: its START creates the work through the gate, as for a typed command.
+is sized here first, like any other reading: Preparation is offered when there is no Knowledge Base, the phases and the depth are picked and
+shown in one line, and only then is the reading handed to that skill. Its START creates the work through the gate, and the `intent:` record
+is written into that work. A typed `/aid-<skill>` still goes straight to that skill.
 
 Which phases run (by reading):
 

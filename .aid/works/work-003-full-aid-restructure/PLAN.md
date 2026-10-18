@@ -248,6 +248,7 @@ It is a distinct unit because nothing else in the work can be built before it.
   - every skill is installed for all five tools.
   (AC-6, AC-21, AC-23)
 - [ ] Samples `001-01` to `001-16` each pass 3 of 3 through `tests/conversation/run.py --feature 001`. (AC-1, AC-2, AC-3, AC-4, AC-5, AC-7, AC-14, AC-21, AC-29)
+  A sample still failing on product behaviour after the fix round (tasks 366-369) is recorded as a known issue and re-checked at the full integration run at delivery-014's gate; it does not block this gate (Q149).
 - [ ] `canonical/aid/templates/work-state-template.yml` carries `intent:` and `sources:` in block style, and `git grep ticket_ref -- canonical/aid/templates` finds nothing. (AC-29)
 - [ ] `canonical/aid/rules.md` § Tracking discipline names the work state file `STATE.yml`, not `STATE.md`. (KI-001)
 - [ ] G0 passes.
@@ -275,6 +276,10 @@ It is a distinct unit because nothing else in the work can be built before it.
 | task-017 | task-004, task-005, task-010 |
 | task-018 | task-005, task-006, task-009, task-012, task-013, task-014, task-015, task-016, task-017, task-019 |
 | task-019 | task-004, task-010 |
+| task-366 | task-018 |
+| task-367 | task-018 |
+| task-368 | task-018 |
+| task-369 | task-366, task-367, task-368 |
 
 | Can Be Done In Parallel |
 |------------------------|
@@ -294,6 +299,8 @@ wave 7: task-010, task-011, task-012, task-013
 wave 8: task-014, task-016, task-017, task-019
 wave 9: task-015
 wave 10: task-018
+wave 11: task-366, task-367, task-368
+wave 12: task-369
 ```
 
 ### delivery-002: One work record and one set of step rules (Feature 002, engine)
