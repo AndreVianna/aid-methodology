@@ -59,7 +59,7 @@ Every node in the chart above, in chart order, with the exact `canonical/` text 
 | FIRST-RUN | `references/state-first-run.md` | `aid-interviewer` | → CONTINUE |
 ~~~~
 
-[Source: `canonical/skills/aid-describe/SKILL.md#L277`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-describe/SKILL.md#L277) · [full step: `canonical/skills/aid-describe/references/state-first-run.md#L1-L110`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-describe/references/state-first-run.md#L1-L110)
+[Source: `canonical/skills/aid-describe/SKILL.md#L277`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-describe/SKILL.md#L277) · [full step: `canonical/skills/aid-describe/references/state-first-run.md#L1-L109`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-describe/references/state-first-run.md#L1-L109)
 
 <a id="fragment-n2"></a>**2 · `Q-AND-A`** — STATE.md ## Cross-phase Q&amp;A has entries with Status… · _step_
 

@@ -43,7 +43,7 @@ flowchart TD
     HALT --> EXE["/aid-execute (graded loop · 8 task types)"]
     EXE -. "optional separate path" .-> DEP["/aid-deploy"]
     DEP -. optional .-> MON["/aid-monitor"]
-    MON -. "bug → /aid-fix" .-> SC
+    MON -. "bug → fix request" .-> TR
     MON -. "change request → plain request" .-> TR
 ```
 
@@ -53,7 +53,7 @@ the project once; brownfield projects run `/aid-discover` before Describe, green
 go directly from Configure to Describe. A shortcut runs the shared **shortcut engine** — a
 collapsed, autonomous Describe→Detail — straight to the approval halt; `/aid-describe` walks
 each phase through its own human gate instead. Both converge on the same halt before Execute.
-The Deliver skills (deploy + monitor) are optional; Monitor routes bug findings to `/aid-fix`
+The Deliver skills (deploy + monitor) are optional; Monitor hands bug findings back as fix requests
 and change-request findings back as plain requests, closing the loop.
 
 ## Step 0 — Configure (`/aid-config`)

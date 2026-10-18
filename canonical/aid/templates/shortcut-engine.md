@@ -450,7 +450,7 @@ If `{description}` (or a Step 1/Step 3 answer) names, or clearly traces to, an a
 ticket in a catalogued issue-tracker connector, fetch it by invoking `/aid-read-ticket
 [<connector>:]<ticket-id>` -- the connector resolution and host-MCP fetch live there
 (feature-001); no direct-fetch recipe is re-implemented here -- and add a `sources:` entry to the
-work's `STATE.yml` (`ref: <stem>:<external-id>`, `kind: ticket`, the phase it is in now; the list is
+work's `STATE.yml` (`ref: <stem>:<external-id>`, `kind: ticket`, `added` the current UTC time, `phase` the phase it is in now, `effect: ''` until it is applied; the list is
 seeded at INTAKE Step 4). Applies to every shortcut this engine serves (`aid-fix` and its
 siblings), not `aid-fix` alone. Skip silently when no such ticket applies or no matching connector is catalogued; the delegated read is
 non-destructive, so no extra confirm is added.

@@ -79,15 +79,15 @@ def _argument_hint(row: dict) -> str:
     """Derive a verb-appropriate `argument-hint` for one catalog row.
 
     Every row already carries a natural-English `verb` (fix, create, change,
-    refactor, test, experiment, document, report, prototype, ...), so binding
-    it into "what to {verb}" reads correctly for every row without a bespoke
-    per-verb map -- "what to fix" / "what to create" / "what to refactor" /
-    "what to test" / ... A single hardcoded "what to build" (the prior
-    behavior) read wrong for non-create verbs, e.g. aid-fix saying "what to
-    build" instead of "what to fix".
+    refactor, test, experiment, document, report, prototype, ...). The hint
+    names the request by that verb as an object-free infinitive phrase, "a
+    request to {verb}", which reads correctly for every row: "a request to fix",
+    "a request to experiment". The bare "what to {verb}" form is not used: a verb
+    with no object reads as broken English after "what to" (the same reason the
+    catalog description leaves the verb out, see render_doorway).
     """
     verb = row.get("verb") or _ARGUMENT_HINT_FALLBACK_VERB
-    phrase = f"what to {verb}"
+    phrase = f"a request to {verb}"
     return f"[description]  -- {phrase}; runs straight to a graded flattened Lite work"
 
 

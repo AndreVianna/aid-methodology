@@ -122,7 +122,7 @@ The shortcut path is not a fallback — it is the default entry for the majority
 | `aid-unset-connector` | Support | — | On demand; remove a connector descriptor and purge its secret |
 | `aid-read-ticket` | Support | — | On demand; non-destructive fetch and display of one ticket via the connector-resolution ladder |
 | `aid-create-ticket` | Support | — | On demand; preview + confirm before filing a new ticket via the connector-resolution ladder |
-| `aid-update-ticket` | Support | — | On demand; preview + confirm before mutating one part (description/comment/status) of an existing ticket |
+| `aid-update-ticket` | Support | — | On demand; preview + confirm before mutating one part (description/comment/status/attachment) of an existing ticket |
 | `aid-orchestrate` | Support | — | On demand; starts, resumes or cancels a work from a plain request; finds where it stands and picks its phases |
 
 **B. Plain requests** — no skill to type. The skill guide in `rules.md` (§ Handling a request) reads what you want and proposes one route: a shortcut, the full path, or `/aid-ask` (below) when the input is a question. A request to start, resume or cancel a work goes to `/aid-orchestrate`, which finds where the work stands, sizes it and picks its phases. Nothing runs until you approve the proposal.
@@ -404,7 +404,7 @@ This is the third conviction underlying AID: the Knowledge Base is the gravitati
 | `aid-detail` | Definition | 5 | Typed, PR-sized `deliveries/delivery-NNN/tasks/task-NNN/DETAIL.md` files + execution graph |
 | `aid-execute` | Execution | 6 | Implemented + reviewed code to grade ≥ minimum; 8 task types |
 | `aid-deploy` | Definition (shortcut path) | — (optional) | Release package · `package-NNN.md` · `DEPLOYMENT-STATE.md` |
-| `aid-monitor` | Definition (shortcut path) | — (optional) | classified findings → `/aid-fix` (bugs) or a new-work request in plain words (change requests); observation log kept in-memory (persistent `MONITOR-STATE.md` deferred) |
+| `aid-monitor` | Definition (shortcut path) | — (optional) | classified findings → a fix request in plain words (bugs) or a new-work request in plain words (change requests); observation log kept in-memory (persistent `MONITOR-STATE.md` deferred) |
 | `aid-housekeep` | Knowledge Base Maintenance | — | KB-DELTA refresh · SUMMARY-DELTA · workspace CLEANUP |
 | `aid-<verb>[-<artifact>]` (34 shortcuts) | Definition | — | The flattened artifact set (`REQUIREMENTS.md`, `tasks/task-NNN/DETAIL.md`) via the shared shortcut engine |
 
@@ -764,9 +764,9 @@ This mirrors `aid-summarize` — an optional skill in the Knowledge Base Mainten
 2. **Classify** — For each finding: BUG (spec right, code wrong), Change Request (spec needs change), Infrastructure (ops), or No Action (false positive).
 3. **Analyze** — Root cause analysis for bugs: trace → fault → scope → test requirements.
 4. **Propose** — Present findings with routing recommendations to the user.
-5. **Act** — Route findings: bugs to `/aid-fix` (a direct-entry shortcut that scaffolds and implements the fix work); change requests to a new-work request in plain words (routed to the right entry — a shortcut or the full path); escalate infrastructure findings.
+5. **Act** — Route findings: bugs back as a fix request in plain words, sized by the skill guide like any request (a clear bug fix runs Specification → Planning → Building → CI); change requests to a new-work request in plain words (routed to the right entry — a shortcut or the full path); escalate infrastructure findings.
 
-**The short path:** BUG → `/aid-fix` (shortcut engine, scaffold + task) → `/aid-execute`. The short path skips specification and planning because the spec is already correct — only the code is wrong.
+**The bug path:** BUG → a fix request in plain words → the intake sizes it as a clear bug fix → Specification → Planning → Building → CI. The diagnosis travels with the request, so the root cause is not investigated twice.
 
 **Output:** an in-memory observation log — a last-run summary, active findings (each with classification, severity, evidence, and routing), and resolved findings. A persistent per-work `MONITOR-STATE.md` is deferred until the Monitor area matures.
 
@@ -934,7 +934,7 @@ flowchart TB
     E["6 · Execute"]:::exe
     Dp["Deploy · optional"]:::delopt
     M["Monitor · optional"]:::delopt
-    Fx["/aid-fix · shortcut"]:::entry
+    Fx["fix request (plain words)"]:::entry
     Tr["say what you want<br/>the skill guide routes it"]:::entry
     Any["Any phase<br/>L11 · cross-cutting"]:::offpipe
 
@@ -970,7 +970,7 @@ The development pipeline (Discover through Execute) is sequential by default; th
 | L6 | Execute | Discover / Specify / Detail | Agent discovers an assumption doesn't hold (`IMPEDIMENT-task-NNN.md`) |
 | L7 | Execute Review | Any upstream phase | Reviewer finds issues traced to the task, spec, or KB — not just code quality |
 | L8 | Deploy | Execute | Final verification (build + tests + lint) fails before the delivery ships |
-| L9 | Monitor | `/aid-fix` (shortcut) | Monitor classifies a finding as BUG |
+| L9 | Monitor | Fix request, in plain words (sized as a bug fix) | Monitor classifies a finding as BUG |
 | L10 | Monitor | Plain request (new work) | Monitor classifies a finding as Change Request |
 | L11 | Any phase | Discover | Any phase finds the KB wrong, incomplete, or stale |
 
@@ -996,7 +996,7 @@ The development pipeline (Discover through Execute) is sequential by default; th
 
 These loops apply only when Monitor is run.
 
-**Loop 9: Monitor → `/aid-fix` (Bug Path).** Monitor classifies a finding as BUG. Monitor performs root cause analysis and routes the bug to `/aid-fix`, the direct-entry shortcut that scaffolds and implements the fix through the shortcut engine → `/aid-execute` (→ optional `/aid-deploy`). The short path.
+**Loop 9: Monitor → fix request (Bug Path).** Monitor classifies a finding as BUG. Monitor performs root cause analysis and hands the bug back as a fix request in plain words, through the skill guide; the intake sizes it as a clear bug fix and runs Specification → Planning → Building → CI, then `/aid-execute` (→ optional `/aid-deploy`).
 
 **Loop 10: Monitor → plain request (Change Request Path).** Monitor classifies a finding as Change Request. Monitor hands the change request back as a plain request, which the skill guide routes — the right entry — a matching shortcut for a well-scoped change, or the full path (`/aid-describe`) as new/changed requirements for anything broad; a large-enough CR spins up a new work.
 
@@ -1076,7 +1076,7 @@ wrong-assumption | missing-dependency | architecture-conflict | kb-gap
 | IMPEDIMENT-task-NNN.md | `.aid/works/{work}/` | Execute | Specify, Detail, Discovery | Closed when resolved |
 | package-NNN-{slug}.md | `.aid/works/{work}/packages/` | Deploy | Monitor, stakeholders | One per shipped release package |
 | DEPLOYMENT-STATE.md | `.aid/works/{work}/` | Deploy | Deploy (resume) | Living — operation status + history |
-| MONITOR-STATE.md _(deferred)_ | `.aid/works/{work}/` | Monitor | `/aid-fix` (bugs), a new-work request (change requests) | Planned — currently an in-memory observation log across runs |
+| MONITOR-STATE.md _(deferred)_ | `.aid/works/{work}/` | Monitor | a fix request (bugs), a new-work request (change requests) | Planned — currently an in-memory observation log across runs |
 | KB-DELTA Q&A entry | `.aid/knowledge/STATE.md` | aid-housekeep | aid-discover (targeted re-discovery) | Appended by housekeep; resolved by next targeted discovery run |
 
 Within Execute, the reviewer produces a structured issue list that `canonical/aid/scripts/grade.sh` scores; the issues, the grade, and the full review history are recorded in the task's own `STATE.md` (full path: `deliveries/delivery-NNN/tasks/task-NNN/STATE.md`; lite path: the work-root `STATE.md § Tasks lifecycle` row). There is no separate persistent `REVIEW.md` or `TEST-REPORT.md` file.
@@ -1257,7 +1257,7 @@ Inside Execute, the reviewer produces a structured issue list. Each issue is tag
 **Evidence:** {concrete data — error counts, latency, ticket clusters}
 **Correlation:** {related events — e.g., "error spike 23 min after the package-007-auth deploy"}
 **Root cause:** {for bugs — trace from symptom to the specific fault}
-**Routing:** BUG → `/aid-fix` (shortcut) · Change Request → new-work request (plain words) · Infrastructure → ops escalation · No Action → closed with justification
+**Routing:** BUG → fix request (plain words) · Change Request → new-work request (plain words) · Infrastructure → ops escalation · No Action → closed with justification
 
 ## Resolved Findings
 | Finding | Classification | Resolution | Date |
@@ -1400,7 +1400,7 @@ flowchart TB
 | **Agent model** | One agent per spec | 8 specialist agents across 3 tiers; reviewer tier ≥ executor tier invariant |
 | **Delivery model** | Spec → code → done | Discover → specify → plan → detail → execute → optional deploy/monitor |
 | **Memory** | Stateless | Knowledge Base persists across sessions |
-| **Post-delivery** | Not addressed | Monitor routes bugs to `/aid-fix`, change requests back as new-work requests |
+| **Post-delivery** | Not addressed | Monitor hands bugs back as fix requests, change requests as new-work requests |
 | **Scope** | Code generation | Full lifecycle: discovery through production maintenance |
 | **Human role** | Spec writer, reviewer | Co-pilot across all phases |
 | **Scale options** | One path | Full path (`/aid-describe`) + a lite path via 34 direct-entry shortcuts, with the skill guide routing a plain request when unsure, or `/aid-ask` for a plain question |

@@ -132,7 +132,7 @@ never authored here. Fill in the template's own keys:
 If this deliverable corresponds to (or the user names) an external tracker item, fetch it by invoking
 `/aid-read-ticket [<connector>:]<ticket-id>` — the connector resolution and host-MCP fetch live there
 (feature-001); no direct-fetch recipe is re-implemented here — and add a `sources:` entry (`ref:
-<stem>:<external-id>`, `kind: ticket`, the phase it is in now) to the work's `STATE.yml`. The entry
+<stem>:<external-id>`, `kind: ticket`, `added` the current UTC time, `phase` the phase it is in now, `effect: ''` until it is applied) to the work's `STATE.yml`. The entry
 goes on the work's one list, not on the delivery's `STATE.yml` written above (4a). Skip silently when no such ticket
 applies or no matching connector is catalogued; the delegated read is non-destructive, so no extra
 confirm is added. If instead the team wants a new tracker item filed for this deliverable, aid-plan

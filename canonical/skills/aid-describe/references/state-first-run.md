@@ -99,8 +99,7 @@ If this interview's originating context names, or clearly traces to, an already-
 catalogued issue-tracker connector (e.g. the Monitor-routed finding in Step 1d cites one, or the
 requester names one directly), fetch it by invoking `/aid-read-ticket [<connector>:]<ticket-id>`
 — the connector resolution and host-MCP fetch live there (feature-001); no direct-fetch recipe is
-re-implemented here — and add a `sources:` entry (`ref: <stem>:<external-id>`, `kind: ticket`, the phase it is in
-now) to this work's `STATE.yml`, on the list seeded at Step 1b-ii. Skip silently when no such ticket
+re-implemented here — and add a `sources:` entry (`ref: <stem>:<external-id>`, `kind: ticket`, `added` the current UTC time, `phase` the phase it is in now, `effect: ''` until it is applied) to this work's `STATE.yml`, on the list seeded at Step 1b-ii. Skip silently when no such ticket
 is named or no matching connector is catalogued — purely additive; never blocks or alters the interview flow;
 the delegated read is non-destructive, so no extra confirm is added.
 

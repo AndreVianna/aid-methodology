@@ -11,7 +11,7 @@ generatedFrom: 'canonical/skills/aid-experiment/SKILL.md'
 - **`name`** — aid-experiment
 - **`description`** — Design, run, and analyze a controlled experiment or A/B test. Use when the request is already clear and you want it scoped, specified and broken into reviewable tasks in one pass, before anything is built.
 - **`allowed-tools`** — Read Glob Grep Bash Shell Terminal Write Edit Agent
-- **`argument-hint`** — [description]  -- what to experiment; runs straight to a graded flattened Lite work
+- **`argument-hint`** — [description]  -- a request to experiment; runs straight to a graded flattened Lite work
 
 [Definition: `canonical/skills/aid-experiment/SKILL.md`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-experiment/SKILL.md)
 

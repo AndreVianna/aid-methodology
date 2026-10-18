@@ -25,7 +25,7 @@ Knowledge Base and the code and classify the reading. Then SKILL.md steps 3 and 
 (`size-and-route.md`) and show it, and the flow waits for the user's answer. Nothing below
 runs before that answer.
 
-An action-skill reading (`size-and-route.md` § 1) is handed to that skill now (SKILL.md step
+An action-skill reading (`size-and-route.md` section 1) is handed to that skill now (SKILL.md step
 5). No work is created here. Otherwise carry the reading into step 3.
 
 ## 3. Find the work

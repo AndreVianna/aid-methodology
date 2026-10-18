@@ -44,11 +44,11 @@ concrete target at all is broad or ambiguous. Broad or ambiguous work is `full`.
 CI closes every work. It closes at minimum by marking the work done. Until `/aid-monitor-pipeline`
 exists, this skill does that minimum itself, and only when every task of the work is `Done` (or,
 for an investigation, when nothing was to land). It sets the phase to the last one, then the
-lifecycle:
+lifecycle. Both writes name the work, as the cancel step does, so they land on that work and on no other:
 
 ```bash
-bash .aid/runtime/scripts/execute/writeback-state.sh --pipeline --field Phase --value Execute
-bash .aid/runtime/scripts/execute/writeback-state.sh --pipeline --field Lifecycle --value Completed
+AID_STATE_FILE=<work>/STATE.yml AID_WORK_DIR=<work> bash .aid/runtime/scripts/execute/writeback-state.sh --pipeline --field Phase --value Execute
+AID_STATE_FILE=<work>/STATE.yml AID_WORK_DIR=<work> bash .aid/runtime/scripts/execute/writeback-state.sh --pipeline --field Lifecycle --value Completed
 ```
 
 Push nothing. Pushing is never part of the close.

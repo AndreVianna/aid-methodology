@@ -41,7 +41,7 @@
       "id": "n3",
       "order": 3,
       "name": "STEP-3",
-      "label": "**Size the reading.** references/size-and-route.md §§ 1 and…",
+      "label": "**Size the reading.** references/size-and-route.md sections…",
       "kind": "step",
       "terminal": null,
       "provenance": {
@@ -49,7 +49,7 @@
         "startLine": 27,
         "endLine": 27,
         "sourceKind": "skill",
-        "excerpt": "3. **Size the reading.** `references/size-and-route.md` §§ 1 and 2 pick the phases and the"
+        "excerpt": "3. **Size the reading.** `references/size-and-route.md` sections 1 and 2 pick the phases and the"
       },
       "detail": null
     },
@@ -137,7 +137,7 @@
       "id": "n9",
       "order": 9,
       "name": "STEP-9",
-      "label": "**Close a work.** references/size-and-route.md § 3: when…",
+      "label": "**Close a work.** references/size-and-route.md section 3…",
       "kind": "step",
       "terminal": null,
       "provenance": {
@@ -145,7 +145,7 @@
         "startLine": 46,
         "endLine": 46,
         "sourceKind": "skill",
-        "excerpt": "9. **Close a work.** `references/size-and-route.md` § 3: when every task is `Done` (or, for an"
+        "excerpt": "9. **Close a work.** `references/size-and-route.md` section 3: when every task is `Done` (or, for an"
       },
       "detail": null
     },
@@ -225,7 +225,7 @@
         "startLine": 27,
         "endLine": 27,
         "sourceKind": "skill",
-        "excerpt": "3. **Size the reading.** `references/size-and-route.md` §§ 1 and 2 pick the phases and the"
+        "excerpt": "3. **Size the reading.** `references/size-and-route.md` sections 1 and 2 pick the phases and the"
       }
     },
     {
@@ -309,7 +309,7 @@
         "startLine": 46,
         "endLine": 46,
         "sourceKind": "skill",
-        "excerpt": "9. **Close a work.** `references/size-and-route.md` § 3: when every task is `Done` (or, for an"
+        "excerpt": "9. **Close a work.** `references/size-and-route.md` section 3: when every task is `Done` (or, for an"
       }
     },
     {

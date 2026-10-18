@@ -48,7 +48,7 @@ S-series diagram currently renders the `.aid/works/work-NNN/` tree at that depth
   `/aid-describe`; the shortcut engine's collapsed
   `INTAKE→CAPTURE→SPEC→PLAN→DETAIL→GATE→APPROVAL-HALT` run; the full path
   `/aid-define → /aid-specify → /aid-plan → /aid-detail`; both paths halting for approval before
-  `/aid-execute`; and `/aid-monitor`'s two loopbacks (`bug → /aid-fix`, `change request →
+  `/aid-execute`; and `/aid-monitor`'s two loopbacks (`bug → fix request`, `change request →
   a new-work request). Do NOT show TRIAGE as a state inside `/aid-describe` — routing belongs to the skill guide, not to a skill of its own.
 - **Source of truth:** `canonical/aid/rules.md` § Handling a request (the skill guide routes a plain request) ·
   `canonical/aid/templates/shortcut-engine.md` (the collapsed state machine) ·
@@ -136,11 +136,11 @@ building the site and viewing the page, or by reading the Mermaid source.
   3. **§5 Agent Model** (tier diagram) — unaffected; still 8 agents, three tiers.
   4. **§6 Feedback Loops** — the data-flow node `I["2 · Describe → Define"]` (and its siblings `D`,
      `S`, `P`, `Dt`, `E`) stay; the two Monitor loopback arrows target dedicated entry nodes, not
-     `I` — **L9** (bug) points at the shortcut entry (`/aid-fix`); **L10** (change request) points at
+     `I` — **L9** (bug) points at the plain-request entry (a fix request); **L10** (change request) points at
      a plain request. Matches `.aid/knowledge/pipeline-contracts.md` L9/L10 exactly.
   5. **§9 SDD comparison** — **also affected, not just the feedback-loops block:** this diagram
      carries its own Monitor loopback pair (`Mon -. "bug fix" .-> ` / `Mon -. "change request" .->`)
-     into dedicated `aid-fix` / plain-request nodes — keep it in step with §6 whenever the Monitor
+     into the plain-request entry node — keep it in step with §6 whenever the Monitor
      re-point changes.
 - **Source of truth:** the methodology narrative (this same file) · README **R1** (entry model) ·
   `canonical/aid/rules.md` (§ Handling a request) · `canonical/aid/templates/shortcut-engine.md` ·
@@ -156,7 +156,7 @@ building the site and viewing the page, or by reading the Mermaid source.
 - **Location:** `site/src/content/docs/guides/pipeline.mdx` (1), `site/src/content/docs/index.mdx` (1) — hand-authored site pages (NOT synced).
 - **Must show:** the three entry points (shortcut / plain request / `/aid-describe`, per README **R1**)
   feeding the phase flow, with phase 2 = `Describe → Define` unchanged downstream of `/aid-describe`;
-  `/aid-monitor`'s two loopbacks (`bug → /aid-fix`, `change request → a plain request`). Do NOT show a
+  `/aid-monitor`'s two loopbacks (`bug → fix request`, `change request → a plain request`). Do NOT show a
   TRIAGE-inside-describe branch or any recipe reference — both are gone.
 - **Source of truth:** the methodology pipeline (S1) · README **R1**.
 - **Update when:** a phase rename/reorder; the entry-point model changes; `/aid-monitor`'s routing

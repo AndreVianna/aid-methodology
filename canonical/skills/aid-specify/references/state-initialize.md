@@ -111,7 +111,7 @@ If this feature's requirements trace to, or the user names, an already-filed tic
 catalogued issue-tracker connector, fetch it by invoking `/aid-read-ticket
 [<connector>:]<ticket-id>` — the connector resolution and host-MCP fetch live there (feature-001);
 no direct-fetch recipe is re-implemented here — and add a `sources:` entry to this work's
-`STATE.yml` (`ref: <stem>:<external-id>`, `kind: ticket`, the phase it is in now). A feature section
+`STATE.yml` (`ref: <stem>:<external-id>`, `kind: ticket`, `added` the current UTC time, `phase` the phase it is in now, `effect: ''` until it is applied). A feature section
 of `REQUIREMENTS.md §11` gets no link of its own. Skip silently when no such ticket
 applies or no matching connector is catalogued; the delegated read is non-destructive, so no extra
 confirm is added.

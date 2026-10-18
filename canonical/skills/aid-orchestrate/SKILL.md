@@ -24,9 +24,9 @@ created before step 6.
 2. **Check the reading.** `references/check-intent.md` steps 1 to 5 compare the request with
    the Knowledge Base and the code, and classify it by its observable effect. A request that
    names a work to cancel or close is an action on that work: it goes to step 8 or step 9.
-3. **Size the reading.** `references/size-and-route.md` §§ 1 and 2 pick the phases and the
+3. **Size the reading.** `references/size-and-route.md` sections 1 and 2 pick the phases and the
    depth. When the project has no Knowledge Base, offer Preparation too
-   (`references/size-and-route.md` § 5).
+   (`references/size-and-route.md` section 5).
 4. **Show the reading.** One line with its reason, the phases and the depth, in the same
    message as the first real question or approval. Then wait for the answer. It is never a
    turn of its own.
@@ -43,7 +43,7 @@ created before step 6.
 7. **Record the intent.** `references/start-or-resume.md` step 6. Write the `intent:` block
    into the new work's `STATE.yml` at once.
 8. **Cancel a named work.** `references/start-or-resume.md` step 5. The flow stops there.
-9. **Close a work.** `references/size-and-route.md` § 3: when every task is `Done` (or, for an
+9. **Close a work.** `references/size-and-route.md` section 3: when every task is `Done` (or, for an
    investigation, when nothing was to land), set `phase` to `Execute` and `lifecycle` to
    `Completed`. The flow stops there.
 10. **Hand over.** Start the first phase skill yourself. Where the tool cannot start a skill,

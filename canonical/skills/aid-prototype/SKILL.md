@@ -43,7 +43,9 @@ DONE**. Print the `[State: NAME] -- {purpose}` entry line on each state.
    else enter the resolved path), **then** allocate (`pipeline.path: lite`, `initiator:
    aid-prototype`, `lifecycle: Running`, `active_skill: aid-prototype`; `phase` not
    driven). For a **runnable spike**, associate an opt-in git worktree so the throwaway
-   code is isolated.
+   code is isolated. When `/aid-orchestrate` passed an `intent:` block, write it into that
+   STATE.yml as the engine's INTAKE Step 5 does (`.aid/runtime/templates/shortcut-engine.md`); a typed
+   `/aid-prototype` writes none.
 
 **Advance:** BUILD.
 

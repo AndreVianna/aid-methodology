@@ -198,7 +198,7 @@ Open your AI coding tool in your project and run the skills as slash commands:
 /aid-detail           # decompose deliveries into typed, PR-sized tasks (full path only)
 /aid-execute          # implement each task with the built-in adversarial review loop
 /aid-deploy           # optional — package and ship a delivery
-/aid-monitor          # optional — classify production findings and route fixes back (bug → /aid-fix, change request → a new-work request in plain words)
+/aid-monitor          # optional — classify production findings and route fixes back (bug → a fix request in plain words, change request → a new-work request in plain words)
 /aid-summarize        # optional — generate an offline HTML viewer of the KB
 /aid-housekeep        # on-demand — keep the Knowledge Base current (off-pipeline)
 /aid-update-kb        # on-demand — apply a targeted delta to KB docs through the review gate

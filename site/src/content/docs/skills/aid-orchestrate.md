@@ -29,13 +29,13 @@ flowchart TB
   classDef aidStep fill:#1a2035,stroke:#d4a853,color:#f1f5f9
   n1(["STEP-1<br/>**Project question.** references/check-intent.md step 0…"])
   n2["STEP-2<br/>**Check the reading.** references/check-intent.md steps 1…"]
-  n3["STEP-3<br/>**Size the reading.** references/size-and-route.md §§ 1 and…"]
+  n3["STEP-3<br/>**Size the reading.** references/size-and-route.md sections…"]
   n4["STEP-4<br/>**Show the reading.** One line with its reason, the phases…"]
   n5["STEP-5<br/>**Hand over an action-skill reading.** Once the user…"]
   n6["STEP-6<br/>**Find or create the work.** references/start-or-resume.md…"]
   n7["STEP-7<br/>**Record the intent.** references/start-or-resume.md step…"]
   n8["STEP-8<br/>**Cancel a named work.** references/start-or-resume.md step…"]
-  n9["STEP-9<br/>**Close a work.** references/size-and-route.md § 3: when…"]
+  n9["STEP-9<br/>**Close a work.** references/size-and-route.md section 3…"]
   n10["STEP-10<br/>**Hand over.** Start the first phase skill yourself. Where…"]
   n11(["STEP-11<br/>**During the work.** Load references/external-sources.md…"])
   n1 --> n2
@@ -91,10 +91,10 @@ Every node in the chart above, in chart order, with the exact `canonical/` text 
 
 [Source: `canonical/skills/aid-orchestrate/SKILL.md#L24`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-orchestrate/SKILL.md#L24)
 
-<a id="fragment-n3"></a>**3 · `STEP-3`** — \*\*Size the reading.\*\* references/size-and-route.md §§ 1 and… · _step_
+<a id="fragment-n3"></a>**3 · `STEP-3`** — \*\*Size the reading.\*\* references/size-and-route.md sections… · _step_
 
 ~~~~plaintext title="canonical/skills/aid-orchestrate/SKILL.md#L27" wrap
-3. **Size the reading.** `references/size-and-route.md` §§ 1 and 2 pick the phases and the
+3. **Size the reading.** `references/size-and-route.md` sections 1 and 2 pick the phases and the
 ~~~~
 
 [Source: `canonical/skills/aid-orchestrate/SKILL.md#L27`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-orchestrate/SKILL.md#L27)
@@ -139,10 +139,10 @@ Every node in the chart above, in chart order, with the exact `canonical/` text 
 
 [Source: `canonical/skills/aid-orchestrate/SKILL.md#L45`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-orchestrate/SKILL.md#L45)
 
-<a id="fragment-n9"></a>**9 · `STEP-9`** — \*\*Close a work.\*\* references/size-and-route.md § 3: when… · _step_
+<a id="fragment-n9"></a>**9 · `STEP-9`** — \*\*Close a work.\*\* references/size-and-route.md section 3… · _step_
 
 ~~~~plaintext title="canonical/skills/aid-orchestrate/SKILL.md#L46" wrap
-9. **Close a work.** `references/size-and-route.md` § 3: when every task is `Done` (or, for an
+9. **Close a work.** `references/size-and-route.md` section 3: when every task is `Done` (or, for an
 ~~~~
 
 [Source: `canonical/skills/aid-orchestrate/SKILL.md#L46`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-orchestrate/SKILL.md#L46)

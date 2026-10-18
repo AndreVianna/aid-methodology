@@ -34,7 +34,7 @@ For each approved finding:
 
 **BUG → fix request:**
 - Record the bug finding in the in-memory monitor context with: root cause, patch scope, test requirements, severity. (A persistent `MONITOR-STATE.md` is deferred until the Monitor area matures — see aid-monitor/SKILL.md.)
-- Hand the diagnosis — root cause, patch scope, test requirements — back as a fix request, in plain words, through `rules.md` § Handling a request. The request starts a fix work, which implements the fix directly (→ optional `aid-deploy`). The spec is already correct; only the code is wrong, so the fix work skips Specify/Plan/Detail.
+- Hand the diagnosis — root cause, patch scope, test requirements — back as a fix request, in plain words, through `rules.md` § Handling a request. The intake sizes it as a bug fix with a clear problem, which runs Specification → Planning → Building → CI (`/aid-orchestrate` `references/size-and-route.md` § 1), and the diagnosis goes with it so nothing is investigated twice. Missing details are asked in Specification. (→ optional `aid-deploy`)
 
 **CHANGE REQUEST → new-work request:**
 - Record the change request in the in-memory monitor context (the desired new/changed behavior, with evidence).

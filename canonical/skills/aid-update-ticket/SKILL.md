@@ -9,8 +9,8 @@ description: >
   the single write. A status target is checked against the tracker's available transitions when
   those can be listed, and a mismatch stops before the confirmation gate. An attachment is
   previewed file by file before the confirmation gate, and a tracker that cannot hold it stops
-  the run with the workable options. It never writes silently, and a failed write never leaves a
-  partial one.
+  the run with the workable options. It never writes silently, and a failed write is never hidden:
+  an attachment that lands only some of its files says which ones went in.
 allowed-tools: Read Glob Grep AskUserQuestion
 argument-hint: "<description | comment | status | attachment> [<connector>:]<ticket-id> <content>"
 ---

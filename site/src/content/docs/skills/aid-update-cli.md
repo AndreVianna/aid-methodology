@@ -11,7 +11,7 @@ generatedFrom: 'canonical/skills/aid-update-cli/SKILL.md'
 - **`name`** — aid-update-cli
 - **`description`** — Update an existing CLI command. Use when the request is already clear and you want it scoped, specified and broken into reviewable tasks in one pass, before anything is built.
 - **`allowed-tools`** — Read Glob Grep Bash Shell Terminal Write Edit Agent
-- **`argument-hint`** — [description]  -- what to update; runs straight to a graded flattened Lite work
+- **`argument-hint`** — [description]  -- a request to update; runs straight to a graded flattened Lite work
 
 [Definition: `canonical/skills/aid-update-cli/SKILL.md`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-update-cli/SKILL.md)
 

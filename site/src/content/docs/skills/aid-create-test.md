@@ -11,7 +11,7 @@ generatedFrom: 'canonical/skills/aid-create-test/SKILL.md'
 - **`name`** — aid-create-test
 - **`description`** — Author new tests (unit/integration/e2e); each test traces to an acceptance criterion; framework inferred from the KB. Use when the request is already clear and you want it scoped, specified and broken into reviewable tasks in one pass, before anything is built.
 - **`allowed-tools`** — Read Glob Grep Bash Shell Terminal Write Edit Agent
-- **`argument-hint`** — [description]  -- what to create; runs straight to a graded flattened Lite work
+- **`argument-hint`** — [description]  -- a request to create; runs straight to a graded flattened Lite work
 
 [Definition: `canonical/skills/aid-create-test/SKILL.md`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-create-test/SKILL.md)
 

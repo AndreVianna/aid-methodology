@@ -46,7 +46,9 @@ Print the `[State: NAME] -- {purpose}` entry line on each state.
    create and enter the worktree per the gate's `§ 3a` step 2
    (`worktree-lifecycle.sh create <work-id> <name>`, STOP on a non-zero exit or empty path,
    else enter the resolved path), **then** allocate (`pipeline.path: lite`, `initiator:
-   aid-test`, `lifecycle: Running`, `active_skill: aid-test`; `phase` not driven).
+   aid-test`, `lifecycle: Running`, `active_skill: aid-test`; `phase` not driven). When
+   `/aid-orchestrate` passed an `intent:` block, write it into that STATE.yml as the
+   engine's INTAKE Step 5 does (`.aid/runtime/templates/shortcut-engine.md`); a typed `/aid-test` writes none.
 
 **Advance:** RUN.
 

@@ -83,7 +83,7 @@ Read `.aid/connectors/INDEX.md`.
 - One skill fits: propose its workflow in one line, then stop. Change no project file until the
   user agrees, however small the change. Several fit: choose, and ask one question only if you
   truly cannot. None fits: carry on with no AID workflow.
-- Small work runs `lite`, never by hand outside its workflow; size picks the depth only.
+- The richness check sets the depth: any of its five elements missing means `full`. No step is skipped; nothing runs by hand outside its workflow.
 - A typed `/aid-<skill>` always wins. Every other request that changes the project, or starts,
   resumes, closes or cancels a work, goes through `/aid-orchestrate` first.
 - The user's words are a hint: check the reading against the Knowledge Base and the code.
@@ -104,7 +104,6 @@ One line per skill: what it is for; when to use it. `<kind>` stands for each kin
 
 ### Phase skills
 
-- `/aid-orchestrate` -- start, resume, close or cancel a work; when a plain request asks for one
 - `/aid-discover` -- build the Knowledge Base from existing code; when a project has none yet
 - `/aid-describe` -- gather the requirements by interview; when a new work needs them written
 - `/aid-define` -- split approved requirements into features; after the requirements are approved
@@ -112,7 +111,7 @@ One line per skill: what it is for; when to use it. `<kind>` stands for each kin
 - `/aid-plan` -- group the specified features into deliveries; after the specifications are approved
 - `/aid-detail` -- break a delivery into small typed tasks; after the plan is approved
 - `/aid-execute` -- carry out and review each planned task; when a delivery's tasks are ready
-- `/aid-deploy` -- package completed deliveries into a release; when they are ready to ship
+- `/aid-deploy` -- package completed deliveries into a release; when deliveries are ready to ship
 - `/aid-monitor` -- watch production and route what it finds; after a release, or when it misbehaves
 
 ### Knowledge Base skills
@@ -124,6 +123,7 @@ One line per skill: what it is for; when to use it. `<kind>` stands for each kin
 
 ### Supporting skills
 
+- `/aid-orchestrate` -- start, resume, close or cancel a work; when a plain request asks for one
 - `/aid-brainstorm` -- shape an unformed idea into a design seed; when the problem is still unclear
 - `/aid-research` -- investigate an open technical question; when options must be weighed first
 - `/aid-design` -- design a subject no kind below covers; when its shape is still open
