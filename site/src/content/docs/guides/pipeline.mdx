@@ -25,7 +25,7 @@ duplicate that depth; it points you at the right command and artifact for each s
 flowchart TD
     subgraph Entry["Choose your entry"]
         SC["/aid-&lt;verb&gt;[-&lt;artifact&gt;]<br/>shortcut — I know my change"]
-        TR["/aid-triage<br/>— not sure? (suggest-only)"]
+        TR["say what you want<br/>— the skill guide routes it"]
         DS["/aid-describe<br/>— broad / new project"]
     end
     TR -. suggests .-> SC
@@ -44,17 +44,17 @@ flowchart TD
     EXE -. "optional separate path" .-> DEP["/aid-deploy"]
     DEP -. optional .-> MON["/aid-monitor"]
     MON -. "bug → /aid-fix" .-> SC
-    MON -. "change request → /aid-triage" .-> TR
+    MON -. "change request → plain request" .-> TR
 ```
 
-The diagram shows three ways in: a **shortcut** if you already know your change, `/aid-triage`
+The diagram shows three ways in: a **shortcut** if you already know your change, a **plain request**
 if you're not sure, or `/aid-describe` for broad or new-project work. `/aid-config` bootstraps
 the project once; brownfield projects run `/aid-discover` before Describe, greenfield projects
 go directly from Configure to Describe. A shortcut runs the shared **shortcut engine** — a
 collapsed, autonomous Describe→Detail — straight to the approval halt; `/aid-describe` walks
 each phase through its own human gate instead. Both converge on the same halt before Execute.
 The Deliver skills (deploy + monitor) are optional; Monitor routes bug findings to `/aid-fix`
-and change-request findings to `/aid-triage`, closing the loop.
+and change-request findings back as plain requests, closing the loop.
 
 ## Step 0 — Configure (`/aid-config`)
 
@@ -107,7 +107,7 @@ The Describe skill gathers requirements conversationally — full path only. It 
 structured questions about your goals, constraints, and scope through its elicitation engine,
 then writes `REQUIREMENTS.md`. State machine:
 `FIRST-RUN → Q-AND-A → CONTINUE → {greenfield: DESCRIBE-SEED →} COMPLETION [PAUSE → /aid-define]`. It no longer triages or
-produces lite work — for a small, well-scoped change, invoke a shortcut or ask `/aid-triage`
+produces lite work — for a small, well-scoped change, invoke a shortcut or say what you want in plain words
 instead (see [Lite path quickstart](/get-started/lite-path/)).
 
 **Artifact produced:** `REQUIREMENTS.md`.
@@ -216,7 +216,7 @@ invokes the release pipeline.
 
 The Monitor skill observes the deployed system, classifies incoming findings, and routes
 actionable items to the entry point that fits: a finding classified **BUG** routes to
-`/aid-fix`; a finding classified **change request** routes to `/aid-triage`. This closes the
+`/aid-fix`; a finding classified **change request** goes back as a new-work request. This closes the
 feedback loop.
 
 <Aside type="note">
@@ -228,8 +228,8 @@ handle deployment through their existing CI/CD pipeline without `/aid-deploy` or
 ## Lite vs full path
 
 Not every change needs all six phases. For small, well-scoped work, skip the full pipeline
-entirely: invoke the matching **shortcut** (`/aid-fix`, `/aid-create-api`, …), or ask
-`/aid-triage` if you're not sure which one fits. The shortcut engine collapses Describe
+entirely: invoke the matching **shortcut** (`/aid-fix`, `/aid-create-api`, …), or say what you want
+in plain words if you're not sure which one fits. The shortcut engine collapses Describe
 through Detail into one fast, mostly-autonomous run and produces the same flattened artifact
 set before halting for your approval — see [Lite path quickstart](/get-started/lite-path/)
 for the flow and the [Methodology](/concepts/methodology) page for when a shortcut is the

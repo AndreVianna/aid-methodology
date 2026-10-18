@@ -19,11 +19,11 @@ There is no routing step inside another skill — you enter the lite path direct
   matching verb-first shortcut directly: `/aid-fix` for a bug, `/aid-create-api` for a new
   endpoint, `/aid-update-ui` for a UI change, and so on. Each shortcut is a thin doorway into
   the shared **shortcut engine**.
-- **Ask `/aid-triage` when you're not sure.** Describe your change in one free-form sentence.
-  `/aid-triage` infers the work type and scope, then suggests either the matching shortcut or,
-  for broad / multi-activity / ambiguous work, the full path (`/aid-describe`). `/aid-triage` is
-  stateless and write-free — it suggests one next step and stops; it never runs the change
-  itself and creates no work folder.
+- **Say what you want when you're not sure.** Describe your change in plain words. The skill guide
+  reads it, checks it against the Knowledge Base and the code, and proposes either the matching
+  shortcut or, for broad / multi-activity / ambiguous work, the full path (`/aid-describe`). It
+  proposes one next step and waits; it never runs the change itself and creates nothing before you
+  approve.
 
 `/aid-describe` no longer triages. It is a full-path-only skill — every invocation proceeds
 through the full six-phase pipeline described in [Your first work](/get-started/first-work/).
@@ -50,7 +50,7 @@ Each shortcut invocation allocates a brand-new `work-NNN`; there is no cross-ses
 
 <Steps>
 
-1. **Invoke a shortcut — or ask `/aid-triage` first if you're unsure.**
+1. **Invoke a shortcut — or say what you want first if you're unsure.**
 
    ```
    /aid-fix
@@ -105,14 +105,14 @@ Compare this to the full path's nested `deliveries/delivery-NNN/` structure, cov
 
 | | Lite path | Full path |
 |--|-----------|-----------|
-| Entry | A shortcut (`/aid-fix`, `/aid-create-api`, …), or a `/aid-triage` suggestion | `/aid-describe` |
+| Entry | A shortcut (`/aid-fix`, `/aid-create-api`, …), or a suggestion from a plain request | `/aid-describe` |
 | Best for | Small, low-risk, well-bounded work | Complex, high-risk, or poorly understood work |
 | Phases | One collapsed, mostly-autonomous engine run (Describe → Detail) | Discover → Describe → Define → Specify → Plan → Detail → Execute |
 | Artifacts | Flattened: `REQUIREMENTS.md`, `tasks/task-NNN/DETAIL.md` | Nested: `REQUIREMENTS.md` (§ 11 feature sections), `PLAN.md` (`### delivery-NNN` stanzas), `deliveries/delivery-NNN/tasks/task-NNN/DETAIL.md` |
 | Gates | Terminal approval halt (plus rare gap-questions) | One per phase |
 
-The lite path is not a shortcut that skips quality — it is proportionate rigour. `/aid-triage` is
-conservative: anything short of one confident single-match routes you to the full path instead.
+The lite path is not a shortcut that skips quality — it is proportionate rigour. Broad, multi-activity or
+ambiguous work goes to the full path instead.
 
 ## Next steps
 

@@ -328,7 +328,7 @@ mandatory two-tier review before moving to the next task.
 
 For each task in the execution graph:
 
-1. The `aid-orchestrator` agent reads the task file and dispatches the appropriate
+1. The main conversation reads the task file and dispatches the appropriate
    specialist (e.g., `aid-developer` for task-001 MIGRATE and task-004 IMPLEMENT).
 2. The specialist agent reads the task spec, the relevant KB documents, and the
    feature SPEC, then implements the work.
@@ -339,7 +339,7 @@ For each task in the execution graph:
    delivery's complexity score (Small/Medium/Large) runs a full review→fix→grade loop.
    The grade must reach the configured minimum (default: A) before the delivery is
    marked complete.
-5. On pass, `aid-orchestrator` advances to the next task in the graph.
+5. On pass, the main conversation advances to the next task in the graph.
 
 **For OrderFlow's Refund feature, task-001 (MIGRATE) produces:**
 

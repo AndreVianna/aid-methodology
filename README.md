@@ -20,7 +20,7 @@ pipeline underneath, one approval at the end.
 > create-only. Earlier releases also accepted `add` and `change` (`/aid-add-api`,
 > `/aid-change-ui`); those names are retired and no longer resolve to anything.
 
-**Choosing your entry:** know your change → run the matching shortcut. Know it's big or new → `/aid-describe`. Not sure which? → `/aid-triage`. Just have a question? → `/aid-ask`.
+**Choosing your entry:** know your change → run the matching shortcut. Know it's big or new → `/aid-describe`. Not sure which? → say what you want. Just have a question? → `/aid-ask`.
 
 ```mermaid
 ---
@@ -32,7 +32,7 @@ flowchart TD
     subgraph Start["Start Here"]
         direction LR
         IDK{"I Know What<br/>I need to do"}
-        TR["/aid-triage <br/>Get a Suggestion"]
+        TR["Say what you want <br/>Get a Suggestion"]
         GTG["I am Good to Start"]
         IDK -.YES.-> GTG
         IDK -.NO.-> TR --> GTG
@@ -80,7 +80,7 @@ flowchart TD
     LKG{{"Looks Good"}} --> KB[("Knowledge Base")]
 ```
 
-*3 entry points (shortcut, `/aid-triage`, `/aid-describe`) plus `/aid-ask` for a plain question. Full methodology: [docs/aid-methodology.md](docs/aid-methodology.md).*
+*3 entry points (shortcut, a plain request, `/aid-describe`) plus `/aid-ask` for a plain question. Full methodology: [docs/aid-methodology.md](docs/aid-methodology.md).*
 
 > [!TIP]
 > New to AID? Install takes 2 minutes. Run slash commands directly in your AI coding tool — no plugins required. Jump to [Install](#install) to get started.
@@ -188,7 +188,7 @@ Open your AI coding tool in your project and run the skills as slash commands:
 ```
 /aid-config           # once per project — scaffolds .aid/ and KB structure
 /aid-discover         # brownfield only: analyze the codebase into the KB
-/aid-triage           # not sure where to start? suggest-only router — points you to a shortcut, /aid-describe, or /aid-ask
+# not sure where to start? say what you want in plain words — the agent proposes a shortcut, /aid-describe, or /aid-ask
 /aid-<verb>[-<artifact>]  # shortcut — you know the change; e.g. /aid-fix, /aid-create-api, /aid-update-cli (34 shortcuts)
 /aid-ask              # just have a question? free-form Q&A over the KB + codebase; read-only, cited
 /aid-describe         # gather requirements for broad / new-project work (full path only); on approval, run /aid-define
@@ -198,7 +198,7 @@ Open your AI coding tool in your project and run the skills as slash commands:
 /aid-detail           # decompose deliveries into typed, PR-sized tasks (full path only)
 /aid-execute          # implement each task with the built-in adversarial review loop
 /aid-deploy           # optional — package and ship a delivery
-/aid-monitor          # optional — classify production findings and route fixes back (bug → /aid-fix, change request → /aid-triage)
+/aid-monitor          # optional — classify production findings and route fixes back (bug → /aid-fix, change request → a new-work request in plain words)
 /aid-summarize        # optional — generate an offline HTML viewer of the KB
 /aid-housekeep        # on-demand — keep the Knowledge Base current (off-pipeline)
 /aid-update-kb        # on-demand — apply a targeted delta to KB docs through the review gate
@@ -206,7 +206,7 @@ Open your AI coding tool in your project and run the skills as slash commands:
 /aid-unset-connector  # on-demand — remove a connector descriptor and purge its secret
 ```
 
-**Brownfield** projects run `/aid-config` → `/aid-discover` → `/aid-describe` → `/aid-define`. **Greenfield** projects skip Discovery and start at `/aid-describe`. For a small, well-scoped change, skip straight to a shortcut instead — or run `/aid-triage` if you're not sure which one fits. Just have a question, not a change? Run `/aid-ask`. Every phase is gated — nothing advances without your approval. The block above is the pipeline and the on-demand skills; the rest of AID's 112 skills are the verb-first shortcut doorways and the hand-authored task skills behind them, all built from one canonical source and installed as one shared skill set that every tool reads.
+**Brownfield** projects run `/aid-config` → `/aid-discover` → `/aid-describe` → `/aid-define`. **Greenfield** projects skip Discovery and start at `/aid-describe`. For a small, well-scoped change, skip straight to a shortcut instead — or say what you want in plain words if you're not sure which one fits. Just have a question, not a change? Run `/aid-ask`. Every phase is gated — nothing advances without your approval. The block above is the pipeline and the on-demand skills; the rest of AID's 112 skills are the verb-first shortcut doorways and the hand-authored task skills behind them, all built from one canonical source and installed as one shared skill set that every tool reads.
 
 [See it applied step by step →](examples/)
 
@@ -251,7 +251,7 @@ AID's phases are gated: you approve every transition. Nothing auto-advances. [Fu
 
 AID does not make you weigh the cost of the full pipeline against the size of a change yourself — that trade-off is automated. For a small, well-scoped change, skip the full pipeline entirely: name it with a verb-first shortcut (`/aid-fix`, `/aid-create-api`, `/aid-update-cli`, …) — one of 34 shortcuts spanning the shortcut families (create · update · fix · refactor · remove · deprecate · migrate · test · experiment · prototype · design · document · report · dashboard · review · research) — and the shared shortcut engine collapses Describe → Define → Specify → Plan → Detail into one fast, mostly-autonomous run, then halts for your approval. Each shortcut is bound to one specific change type, so the engine already knows the shape of the work and skips the generic elicitation a from-scratch interview would need — that's what makes it fast, not just short.
 
-Not sure which shortcut fits, or is the change broad or multi-part? `/aid-triage` reads a free-form description and suggests either the matching shortcut or the full `/aid-describe` path. Just asking a question instead of proposing a change? `/aid-triage` points you to `/aid-ask` instead. Either way, nothing runs until you approve it.
+Not sure which shortcut fits, or is the change broad or multi-part? Say what you want in plain words: the skill guide reads it and proposes either the matching shortcut or the full `/aid-describe` path. Just asking a question instead of proposing a change? The skill guide points you to `/aid-ask` instead. Either way, nothing runs until you approve it.
 
 This is not a shortcut that skips quality — it's proportionate rigour. The lite path still produces the full artifact set (`REQUIREMENTS.md`, `SPEC.md`, `PLAN.md`, `BLUEPRINT.md`, `DETAIL.md`) and grades every document at GATE — an A+ floor by default — before the approval halt.
 

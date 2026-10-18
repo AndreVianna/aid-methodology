@@ -14,7 +14,7 @@ See [Repository Structure](/reference/repository-structure/) for the layout of t
 
 These artifacts live under `.aid/{work-id}/` for each active work item. The **full path**
 (entered via `/aid-describe`) nests delivery- and task-level artifacts under
-`deliveries/delivery-NNN/`; the **lite path** (entered via a shortcut or `/aid-triage`)
+`deliveries/delivery-NNN/`; the **lite path** (entered via a shortcut or a plain request)
 flattens them to the work root — see [Lite-path artifact shape](#lite-path-artifact-shape)
 below.
 
@@ -32,8 +32,7 @@ below.
 
 ### Lite-path artifact shape
 
-The lite path (entered via a shortcut such as `/aid-fix` or `/aid-create-api`, or via
-`/aid-triage`) flattens the tree above: a single implicit delivery, no `deliveries/` folder,
+The lite path (entered via a shortcut such as `/aid-fix` or `/aid-create-api`, or via a plain request) flattens the tree above: a single implicit delivery, no `deliveries/` folder,
 no `delivery-001/` folder.
 
 ```

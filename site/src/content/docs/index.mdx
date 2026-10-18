@@ -35,7 +35,7 @@ flowchart TB
 
     subgraph G0[" 0 · Choose your entry "]
         SC["/aid-&lt;verb&gt;[-&lt;artifact&gt;]<br/>shortcut · I know my change"]:::entry
-        TR["/aid-triage<br/>not sure? suggest-only"]:::entry
+        TR["say what you want<br/>the skill guide routes it"]:::entry
     end
     subgraph GS[" Support "]
         Init["aid-config<br/>setup · once"]:::aux
@@ -74,10 +74,10 @@ flowchart TB
 ```
 
 *Three entry points (plus `/aid-ask` for a plain question) · 112 skills — 18 curated pipeline/on-demand skills
-(including `/aid-triage`), 60 hand-authored specialist skills (including `/aid-ask` for Q&A), and 34 verb-first
+(including `/aid-orchestrate`), 60 hand-authored specialist skills (including `/aid-ask` for Q&A), and 34 verb-first
 shortcut skills. Name your change with a **shortcut** and the
 shortcut engine collapses Describe through Detail into one autonomous run straight to
-Execute; ask **`/aid-triage`** when you're not sure which fits; or run **`/aid-describe`**
+Execute; say what you want in plain words when you're not sure which fits; or run **`/aid-describe`**
 for broad or new-project work through the full six-phase pipeline.*
 
 The six core phases, in order (full path):
@@ -91,7 +91,7 @@ The six core phases, in order (full path):
 
 112 skills deliver AID: 18 curated skills — the pipeline phases above, the off-pipeline on-demand
 skills that are not catalog rows (`/aid-housekeep`, `/aid-update-kb`, the connector and ticket
-skills, `/aid-config`, `/aid-summarize`), and the `/aid-triage` suggest-only router — plus the
+skills, `/aid-config`, `/aid-summarize`), and the `/aid-orchestrate` intake for plain requests — plus the
 94-row shortcut catalog's skills: 34 verb-first shortcut
 skills (`/aid-fix`, `/aid-create-api`, …) and 60 hand-authored `repurpose` skills.
 When you already know your change, a shortcut skips straight to Execute — the same rigour,

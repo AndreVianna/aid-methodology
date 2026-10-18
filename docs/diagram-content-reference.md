@@ -22,7 +22,7 @@ fact, grep the **"Update triggers"** index below to find every diagram that must
 |----------------|------------------------|
 | A pipeline **phase** name / order / count (e.g. the Phase-2 Describe→Define split) | kb.html **Pipeline**; site **methodology G1-G5 flow**; site **pipeline.mdx / index.mdx** flows; README **R1** |
 | A **skill** rename / add / remove (changes the **112** count: 18 curated + 34 shortcuts + 60 repurpose skills) | kb.html **Four-plane module map** ("112 skills"); site **methodology skill diagrams**; the `gen-reference` roster test (asserts 112 on-disk dirs = the 18 curated skill names ∪ all 94 catalog rows — keep this assertion in sync if the count changes again). **README R1 only for a catalog/shortcut add** — R1 carries the entry points, the numbered path, the engine and Monitor's loopbacks, so a *curated on-demand* skill (the `aid-summarize` class) reaches README's prose skill count but neither R1's node set nor its caption; adding a node for one would contradict R1's own content contract below |
-| The **entry-point model** (shortcut / `/aid-triage` / `/aid-describe`) or the **shortcut engine**'s collapsed-phase list | README **R1**; site **methodology G1-G5 flow**; site **pipeline.mdx / index.mdx** flows (TRIAGE-inside-describe is gone — do not reintroduce it) |
+| The **entry-point model** (shortcut / plain request / `/aid-describe`) or the **shortcut engine**'s collapsed-phase list | README **R1**; site **methodology G1-G5 flow**; site **pipeline.mdx / index.mdx** flows (TRIAGE-inside-describe is gone — do not reintroduce it) |
 | The **shortcut catalog** (`shortcut-catalog.yml`) or recipe-era content (recipes are **deleted** — do not reintroduce "recipe(s)", `{{slot}}`, or `canonical/aid/recipes/`) | kb.html **Four-plane module map** (Toolkit plane's former "recipes" box); site **methodology** build-pipeline tree/listing |
 | **`/aid-monitor`**'s loopback targets (bug / change-request routing, L9/L10) | site **methodology feedback-loops** Mermaid; README **R1** (`MON -. "bug" .-> SC` / `MON -. "change request" .-> TR`) |
 | An **agent** rename / add / remove (changes the **8** count) | kb.html **Four-plane module map** ("8 agents"); site **agent-tier** Mermaid |
@@ -43,17 +43,17 @@ S-series diagram currently renders the `.aid/works/work-NNN/` tree at that depth
 ### R1 — Pipeline + entry points
 - **Location:** `README.md`, top-of-file Mermaid block (directly under the tagline).
 - **Must show:** the **three entry points** — a verb-first **shortcut** (`/aid-<verb>[-<artifact>]`),
-  **`/aid-triage`** (stateless, suggest-only), and **`/aid-describe`** (full path) — with
-  `/aid-triage` suggesting into the other two; `/aid-config` → `/aid-discover` feeding into
+  a **plain request** (the skill guide routes it; it proposes and never runs), and **`/aid-describe`** (full path) — with
+  the plain request suggesting into the other two; `/aid-config` → `/aid-discover` feeding into
   `/aid-describe`; the shortcut engine's collapsed
   `INTAKE→CAPTURE→SPEC→PLAN→DETAIL→GATE→APPROVAL-HALT` run; the full path
   `/aid-define → /aid-specify → /aid-plan → /aid-detail`; both paths halting for approval before
   `/aid-execute`; and `/aid-monitor`'s two loopbacks (`bug → /aid-fix`, `change request →
-  /aid-triage`). Do NOT show TRIAGE as a state inside `/aid-describe` — it is a separate skill now.
-- **Source of truth:** `canonical/skills/aid-triage/SKILL.md` (INTAKE→CLASSIFY→SUGGEST→HALT) ·
+  a new-work request). Do NOT show TRIAGE as a state inside `/aid-describe` — routing belongs to the skill guide, not to a skill of its own.
+- **Source of truth:** `canonical/aid/rules.md` § Handling a request (the skill guide routes a plain request) ·
   `canonical/aid/templates/shortcut-engine.md` (the collapsed state machine) ·
   `.aid/knowledge/pipeline-contracts.md` (L9/L10, for the Monitor loopbacks).
-- **Update when:** a shortcut family is added/removed; `/aid-triage`'s routing logic changes; the
+- **Update when:** a shortcut family is added/removed; the skill guide's routing rules change; the
   shortcut engine's phase list changes; `/aid-monitor`'s loopback targets change.
 - **Edit at the source:** this diagram is hand-authored directly in `README.md` — no sync step, no
   generator. Keep the one-line caption below it (the entry-point count) in step. The caption states
@@ -74,7 +74,7 @@ HTTP) and reading the `<text>`/`<tspan>` labels.
 - **Must show (in order):** `Discover → Describe → Define → Specify → Plan → Detail → Execute`
   (phase 2 = the **Describe → Define** pair, 2a/2b — NOT the old single "Interview"), plus the
   legend "Six numbered phases" and "Teal = knowledge-intensive phases" (Discover + Execute highlighted).
-  This diagram is phase-sequence-only — it does not (and should not) show the shortcut / `/aid-triage`
+  This diagram is phase-sequence-only — it does not (and should not) show the shortcut / plain-request
   entry model; see README **R1** for that.
 - **Source of truth:** `CLAUDE.md` workflow line · `.aid/knowledge/architecture.md` (Process Architecture)
   · `.aid/knowledge/pipeline-contracts.md` (Phase I/O table).
@@ -122,13 +122,13 @@ building the site and viewing the page, or by reading the Mermaid source.
 ### S1 — Methodology pipeline + supporting diagrams
 - **Location:** `docs/aid-methodology.md` (7 mermaid blocks) → synced to `site/src/content/docs/concepts/methodology.md` by `site/scripts/sync-docs.mjs`. (Still 7 — the old §4 "Describe → Define →
   TRIAGE Routing" mini-diagram was **replaced, not removed**: it is now the "Three doors" /
-  shortcut-engine diagram under *The Lite Path: Direct-Entry Shortcuts*, showing `/aid-triage`
+  shortcut-engine diagram under *The Lite Path: Direct-Entry Shortcuts*, showing the plain-request route
   suggesting into the full path or the shortcut engine's `INTAKE→CAPTURE→SPEC→PLAN→DETAIL→GATE`
   state machine.)
 - **Must show, per block (in doc order):**
   1. **§1 The Pipeline** (the G1-G5 flow) — phase groups `G1 Prepare · G2 Describe → Define · G3 Map
      · G4 Execute · G5 Deliver`, with **2a `aid-describe` / 2b `aid-define`** under G2 (NOT
-     "Interview"); the choice of entering via a **shortcut**, `/aid-triage`, or `/aid-describe` (the
+     "Interview"); the choice of entering via a **shortcut**, a **plain request**, or `/aid-describe` (the
      three entries — see README **R1**) must sit *upstream* of G2, not as a `TRIAGE{}` decision
      diamond inside it — `/aid-describe` is full-path-only now.
   2. **§3 Knowledge Base** diagram and the **3-tier RAG retrieval** diagram — unaffected;
@@ -137,13 +137,13 @@ building the site and viewing the page, or by reading the Mermaid source.
   4. **§6 Feedback Loops** — the data-flow node `I["2 · Describe → Define"]` (and its siblings `D`,
      `S`, `P`, `Dt`, `E`) stay; the two Monitor loopback arrows target dedicated entry nodes, not
      `I` — **L9** (bug) points at the shortcut entry (`/aid-fix`); **L10** (change request) points at
-     `/aid-triage`. Matches `.aid/knowledge/pipeline-contracts.md` L9/L10 exactly.
+     a plain request. Matches `.aid/knowledge/pipeline-contracts.md` L9/L10 exactly.
   5. **§9 SDD comparison** — **also affected, not just the feedback-loops block:** this diagram
      carries its own Monitor loopback pair (`Mon -. "bug fix" .-> ` / `Mon -. "change request" .->`)
-     into dedicated `aid-fix` / `aid-triage` nodes — keep it in step with §6 whenever the Monitor
+     into dedicated `aid-fix` / plain-request nodes — keep it in step with §6 whenever the Monitor
      re-point changes.
 - **Source of truth:** the methodology narrative (this same file) · README **R1** (entry model) ·
-  `canonical/skills/aid-triage/SKILL.md` · `canonical/aid/templates/shortcut-engine.md` ·
+  `canonical/aid/rules.md` (§ Handling a request) · `canonical/aid/templates/shortcut-engine.md` ·
   `.aid/knowledge/pipeline-contracts.md` (L9/L10).
 - **Update when:** a phase/group is renamed; a skill/agent/tier changes; the entry model changes;
   `/aid-monitor`'s loopback targets change (update §6 **and** §9 together); the shortcut catalog
@@ -154,9 +154,9 @@ building the site and viewing the page, or by reading the Mermaid source.
 
 ### S2 — Pipeline / overview flows
 - **Location:** `site/src/content/docs/guides/pipeline.mdx` (1), `site/src/content/docs/index.mdx` (1) — hand-authored site pages (NOT synced).
-- **Must show:** the three entry points (shortcut / `/aid-triage` / `/aid-describe`, per README **R1**)
+- **Must show:** the three entry points (shortcut / plain request / `/aid-describe`, per README **R1**)
   feeding the phase flow, with phase 2 = `Describe → Define` unchanged downstream of `/aid-describe`;
-  `/aid-monitor`'s two loopbacks (`bug → /aid-fix`, `change request → /aid-triage`). Do NOT show a
+  `/aid-monitor`'s two loopbacks (`bug → /aid-fix`, `change request → a plain request`). Do NOT show a
   TRIAGE-inside-describe branch or any recipe reference — both are gone.
 - **Source of truth:** the methodology pipeline (S1) · README **R1**.
 - **Update when:** a phase rename/reorder; the entry-point model changes; `/aid-monitor`'s routing
