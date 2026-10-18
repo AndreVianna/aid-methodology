@@ -66,6 +66,8 @@ review-criteria:
 - [D27 — `design` / `create` / `update` as the verbs, not `export` or `document-`](#d27--design--create--update-as-the-verbs-not-export-or-document-)
 - [D28 — Forward-looking documents in a Knowledge Base that describes what *is*](#d28--forward-looking-documents-in-a-knowledge-base-that-describes-what-is)
 - [D29 — One requirements document per work: features, delivery definitions and the Lite path folded in](#d29--one-requirements-document-per-work-features-delivery-definitions-and-the-lite-path-folded-in)
+- [D30 — A chat member's position is a scalar into its own hub's arrival order](#d30--a-chat-members-position-is-a-scalar-into-its-own-hubs-arrival-order)
+- [D31 — The agent-facing chat surface omits every operation that reaches another session](#d31--the-agent-facing-chat-surface-omits-every-operation-that-reaches-another-session)
 - [D32 — The host agent orchestrates](#d32--the-host-agent-orchestrates)
 - [Still Load-Bearing](#still-load-bearing)
 
@@ -102,6 +104,8 @@ review-criteria:
 | D25 | `/aid-monitor` re-point (BUG and change request routed back into the pipeline) | Superseded by D32 | `canonical/skills/aid-monitor/SKILL.md` |
 | D26 | No line-coverage metric; effectiveness measured via a dedicated program (tech-debt L4) | Accepted (line-coverage); L4 program open | `test-landscape.md` §Coverage Assessment; `tech-debt.md` L4 |
 | D29 | One requirements document per work (`SPEC.md` + `BLUEPRINT.md` retired) | Accepted (supersedes D23) | `canonical/skills/aid-define/SKILL.md`; `canonical/aid/templates/shortcut-engine.md` |
+| D30 | A chat member's position is a scalar into its own hub's arrival order | Accepted | `chat-node/server/store.mjs`; `chat-node/server/core.mjs`; `tests/canonical/test-chat-node-core.sh` |
+| D31 | The agent-facing chat surface omits every operation that reaches another session | — (section has no Status line) | `canonical/skills/aid-chat/SKILL.md`; `tests/canonical/test-chat-node-wake.sh`; `tests/canonical/test-chat-node-hub.sh` |
 | D32 | The host agent orchestrates; no orchestrator actor and no router skill | Accepted (supersedes D21 and D25; amends D14 and D15) | `canonical/aid/rules.md` § Handling a request; `canonical/skills/aid-orchestrate/SKILL.md` |
 
 ---
