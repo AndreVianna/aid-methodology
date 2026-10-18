@@ -19,8 +19,9 @@ Run folder: .aid/.temp/conversation-tests/<run-id>/<sample>/run-<n>/ holding tra
 transcript.md, files.diff, checks.txt, ledger.md (the judge's ledger) and model.txt (the model the
 agent under test ran with). The judge's ledger is also saved in the fixture's .aid/.temp/review-pending/.
 
-Agent model: claude-sonnet-5-5 (DEFAULT_MODEL), passed as --model on every agent turn; the environment
-variable AID_CONV_MODEL names another model. The agent's environment drops the parent session's identity
+Agent model: Claude Code uses claude-sonnet-5-5 (DEFAULT_MODEL), passed as --model on every agent turn;
+Codex uses its CLI default unless AID_CODEX_MODEL names another model. AID_CONV_MODEL names another
+Claude Code model. The agent's environment drops the parent session's identity
 and wiring (ENV_DROP_NAMES, ENV_DROP_PREFIXES); auth, provider, proxy and CA variables are kept.
 
 Sample file (samples/feature-NNN/<id>.md):
@@ -56,8 +57,8 @@ tool": a newer alias may exist, and a live run should confirm the name in use.
 Simulated user and judge: `claude -p --tools "" --safe-mode --strict-mcp-config --system-prompt
 <brief>` from an empty temporary folder, the prompt on stdin.
 Limits: 12 user turns (the run fails when no <<END>> comes within them); 600 s per claude call.
-Other hosts: a start/send/read adapter per host (ADAPTERS). Only claude-code has one in this build;
-a host without one is skipped with a NOTICE.
+Other hosts: a start/send/read adapter per host (ADAPTERS). Claude Code and Codex have adapters;
+hosts without an adapter are skipped with a NOTICE.
 """
 
 from __future__ import annotations
@@ -114,6 +115,7 @@ ENV_DROP_NAMES = (
 ENV_DROP_PREFIXES = ("CLAUDE_CODE_REMOTE",)
 # the sandbox's own set-up and credential files under HOME, never recorded in files.diff
 HOME_SETUP_DIRS = (".ccr", ".pki", ".local/share/pki", ".aws")
+HOME_SETUP_DIRS += (".codex",)
 HOME_SETUP_FILES = (".boto",)
 # a worktree the agent creates under the fixture: its files are diffed against the fixture's own files
 WORKTREES_PREFIX = "fixture/.claude/worktrees/"
@@ -335,6 +337,22 @@ def run_claude(args: list[str], *, cwd: Path, env: dict, stdin: str) -> str:
     return proc.stdout
 
 
+def run_codex(args: list[str], *, cwd: Path, env: dict, stdin: str) -> str:
+    try:
+        proc = subprocess.run(
+            ["codex", *args], cwd=cwd, env=env, input=stdin, capture_output=True,
+            text=True, encoding="utf-8", errors="replace", timeout=TURN_TIMEOUT,
+        )
+    except subprocess.TimeoutExpired:
+        raise RunError(f"codex call timed out after {TURN_TIMEOUT} s")
+    except OSError as exc:
+        raise RunError(f"codex could not start: {exc}")
+    if proc.returncode != 0:
+        tail = (proc.stderr or proc.stdout or "").strip()[-400:]
+        raise RunError(f"codex exited {proc.returncode}: {tail}")
+    return proc.stdout
+
+
 class ClaudeCodeAgent:
     """start/send/read adapter for the agent under test: one `claude -p` call per turn."""
 
@@ -370,10 +388,70 @@ class ClaudeCodeAgent:
         return text, tools
 
 
-# Other hosts: a start/send/read adapter per host would go here. None is verified in this build
-# (no codex, cursor-agent or copilot CLI is installed to check its non-interactive mode), so every
-# host other than claude-code is skipped with a NOTICE.
-ADAPTERS: dict[str, type] = {"claude-code": ClaudeCodeAgent}
+class CodexAgent:
+    """start/send/read adapter: one non-interactive `codex exec` call per turn."""
+
+    def __init__(self, fixture: Path, env: dict, model: str):
+        self.fixture = fixture
+        self.env = env
+        self.model = os.environ.get("AID_CODEX_MODEL", "")
+        self.session_id: str | None = None
+
+    def start(self) -> None:
+        self.session_id = None
+
+    def send(self, message: str) -> tuple[str, list[dict]]:
+        # Confirmed by `codex exec --help`: --json, --model (when configured), --sandbox,
+        # --approve-for-me and --output-last-message; the prompt is read from stdin.
+        # `codex exec resume <thread-id>` is the CLI's own conversation-resume option.
+        with tempfile.TemporaryDirectory(prefix="aid-codex-turn-") as turn_dir:
+            last_message = Path(turn_dir) / "last-message.txt"
+            args = ["exec"]
+            if self.session_id:
+                args += ["resume", self.session_id]
+            args += ["--json"]
+            if self.model:
+                args += ["--model", self.model]
+            if not self.session_id:
+                args += ["--sandbox", "workspace-write", "--approve-for-me"]
+            args += ["--output-last-message", str(last_message), "-"]
+            self.env["CODEX_HOME"] = str(Path(self.env["HOME"]) / ".codex")
+            out = run_codex(args, cwd=self.fixture, env=self.env, stdin=message)
+            thread_id = None
+            for line in out.splitlines():
+                try:
+                    event = json.loads(line)
+                except ValueError:
+                    continue
+                if isinstance(event, dict) and event.get("type") == "thread.started":
+                    thread_id = event.get("thread_id")
+            if thread_id and not self.session_id:
+                self.session_id = str(thread_id)
+            if not self.session_id:
+                raise RunError("the codex turn returned no thread id, so the next turn cannot resume")
+            try:
+                text = last_message.read_text(encoding="utf-8").strip()
+            except OSError:
+                text = ""
+            return text, []  # Codex JSON output is not normalized to the runner's tool-call schema.
+
+    @staticmethod
+    def available() -> tuple[bool, str]:
+        if shutil.which("codex") is None:
+            return False, "codex CLI is not on PATH"
+        try:
+            proc = subprocess.run(["codex", "login", "status"], capture_output=True, text=True,
+                                  encoding="utf-8", errors="replace", timeout=15)
+        except (OSError, subprocess.TimeoutExpired):
+            return False, "codex login status could not be checked"
+        status = (proc.stdout + proc.stderr).lower()
+        if proc.returncode != 0 or not re.search(r"(?m)^\s*logged in(?:\s|$)", status):
+            return False, "codex is not signed in"
+        return True, ""
+
+
+# Other hosts: each registered host has a start/send/read adapter; unavailable CLIs are skipped.
+ADAPTERS: dict[str, type] = {"claude-code": ClaudeCodeAgent, "codex": CodexAgent}
 
 
 def helper_call(prompt: str, system: str, *, cwd: Path, env: dict) -> str:
@@ -436,6 +514,11 @@ def build_fixture(sample: Sample, fixtures_dir: Path, bundle: Path, real_home: P
     creds = real_home / ".claude" / ".credentials.json"
     if creds.is_file():
         shutil.copy2(creds, home / ".claude" / ".credentials.json")
+    codex_home = Path(os.environ.get("CODEX_HOME") or (real_home / ".codex"))
+    codex_auth = codex_home / "auth.json"
+    if codex_auth.is_file():
+        (home / ".codex").mkdir(parents=True, exist_ok=True)
+        shutil.copy2(codex_auth, home / ".codex" / "auth.json")
     env = base_env(home)
     env["AID_HOME"] = str(state)
     proc = subprocess.run(
@@ -758,10 +841,13 @@ def inside(fixture: Path, rel: str) -> Path:
     return target
 
 
-def run_checks(checks: list[dict], fixture: Path, dirs_before: set[str], dirs_after: set[str], tools: list[dict]):
-    results: list[tuple[str, bool, str]] = []
+def run_checks(checks: list[dict], fixture: Path, dirs_before: set[str], dirs_after: set[str], tools: list[dict], host: str = "claude-code"):
+    results: list[tuple[str, bool | None, str]] = []
     for check in checks:
         verb, args = check["verb"], check["args"]
+        if host == "codex" and verb in ("no-push", "tool-called", "tool-not-called"):
+            results.append((check["label"], None, "Codex output does not expose normalized tool calls"))
+            continue
         try:
             if verb in ("exists", "absent", "contains"):
                 path = inside(fixture, args[0])
@@ -793,13 +879,13 @@ def run_checks(checks: list[dict], fixture: Path, dirs_before: set[str], dirs_af
     return results
 
 
-def render_checks(results: list[tuple[str, bool, str]]) -> str:
+def render_checks(results: list[tuple[str, bool | None, str]]) -> str:
     if not results:
         return "(no checks)\n"
     lines = []
     for label, ok, detail in results:
-        mark = "PASS" if ok else "FAIL"
-        lines.append(f"{mark} {label}" + (f" -- {detail}" if detail and not ok else ""))
+        mark = "PASS" if ok is True else "FAIL" if ok is False else "NOT RUN"
+        lines.append(f"{mark} {label}" + (f" -- {detail}" if detail and ok is not True else ""))
     return "\n".join(lines) + "\n"
 
 
@@ -911,7 +997,7 @@ def ledger_status(text: str) -> tuple[bool, int]:
 # ---------------------------------------------------------------- one run
 
 
-def run_once(sample: Sample, n: int, run_dir: Path, ctx: dict) -> list[str]:
+def run_once(sample: Sample, n: int, run_dir: Path, ctx: dict, host: str = "claude-code") -> list[str]:
     run_dir.mkdir(parents=True, exist_ok=True)
     reasons: list[str] = []
     work = Path(tempfile.mkdtemp(prefix="aid-conv-run-"))
@@ -929,7 +1015,7 @@ def run_once(sample: Sample, n: int, run_dir: Path, ctx: dict) -> list[str]:
         before, dirs_before = capture(fixture, home)
         helper_dir = work / "helper"  # empty, outside the fixture: the simulated user and the judge run here
         helper_dir.mkdir()
-        agent = ADAPTERS["claude-code"](fixture, agent_env, ctx["model"])
+        agent = ADAPTERS[host](fixture, agent_env, ctx["model"])
         try:
             run_conversation(agent, ctx["user_brief"], sample, transcript, helper_dir, env)
         except RunError as exc:
@@ -938,9 +1024,9 @@ def run_once(sample: Sample, n: int, run_dir: Path, ctx: dict) -> list[str]:
         chunks = diff_chunks(before, after)
         diff = "".join(text for _, text in chunks)
         tools = [t for e in transcript if e["role"] == "agent" for t in e["tools"]]
-        results = run_checks(sample.checks, fixture, dirs_before, dirs_after, tools)
+        results = run_checks(sample.checks, fixture, dirs_before, dirs_after, tools, host)
         checks_txt = render_checks(results)
-        reasons += [f"check: {label} -- {detail}" for label, ok, detail in results if not ok]
+        reasons += [f"check: {label} -- {detail}" for label, ok, detail in results if ok is False]
         transcript_md = render_transcript_md(transcript)
         try:
             ledger = judge(fixture, sample, ctx["judge_brief"], transcript_md, judge_view(chunks),
@@ -965,7 +1051,8 @@ def run_once(sample: Sample, n: int, run_dir: Path, ctx: dict) -> list[str]:
         (run_dir / "files.diff").write_text(diff, encoding="utf-8")
         (run_dir / "checks.txt").write_text(checks_txt, encoding="utf-8")
         (run_dir / "ledger.md").write_text(ledger.rstrip("\n") + "\n" if ledger else "", encoding="utf-8")
-        (run_dir / "model.txt").write_text(ctx["model"] + "\n", encoding="utf-8")
+        recorded_model = (os.environ.get("AID_CODEX_MODEL") or "Codex CLI default") if host == "codex" else ctx["model"]
+        (run_dir / "model.txt").write_text(recorded_model + "\n", encoding="utf-8")
         shutil.rmtree(work, ignore_errors=True)
     return reasons
 
@@ -975,6 +1062,8 @@ def run_once(sample: Sample, n: int, run_dir: Path, ctx: dict) -> list[str]:
 
 def parse_hosts(raw: str) -> list[str]:
     hosts = [h.strip() for h in raw.split(",") if h.strip()]
+    if not hosts:
+        raise UsageError("at least one host is required")
     unknown = [h for h in hosts if h not in KNOWN_HOSTS]
     if unknown:
         raise UsageError("unknown host(s): " + ", ".join(unknown))
@@ -1026,7 +1115,7 @@ def main(argv: list[str] | None = None) -> int:
         return 1
 
     if "claude-code" not in hosts:
-        print("NOTICE: claude-code is required for the agent under test; it runs too")
+        print("NOTICE: claude-code is required for the simulated user and judge; it runs too")
         hosts.insert(0, "claude-code")
     if shutil.which("claude") is None:
         print("error: the claude CLI is not on PATH", file=sys.stderr)
@@ -1059,12 +1148,17 @@ def main(argv: list[str] | None = None) -> int:
             if host not in ADAPTERS:
                 print(f"NOTICE: no non-interactive adapter for host {host}; skipped")
                 continue
+            if host == "codex":
+                available, reason = CodexAgent.available()
+                if not available:
+                    print(f"NOTICE: {reason}; codex host skipped")
+                    continue
             run_id = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%SZ") + f"-{host}-{os.getpid()}"
             for sample in samples:
                 failed_runs = 0
                 for n in range(1, args.runs + 1):
                     run_dir = RUN_ROOT / run_id / sample.id / f"run-{n}"
-                    reasons = run_once(sample, n, run_dir, ctx)
+                    reasons = run_once(sample, n, run_dir, ctx, host)
                     if reasons:
                         failed_runs += 1
                         print(f"FAIL {host} {sample.id} run {n}/{args.runs} -> {run_dir}")

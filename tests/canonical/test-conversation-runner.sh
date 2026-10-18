@@ -2,9 +2,8 @@
 # test-conversation-runner.sh -- guards tests/conversation/run.py, the conversation test runner (NFR-T).
 #
 # run.py drives the agent under test through scripted sample conversations, captures each run and
-# has a judge rule on it. Nothing here calls a real model. A stub `claude` is put first on PATH; it
-# logs every call and answers in the shape run.py reads (stream-json for an agent turn, plain text
-# for the simulated user and the judge). The suite builds its own tree (samples/feature-900,
+# has a judge rule on it. Nothing here calls a real model. Stub `claude` and `codex` CLIs are put
+# first on PATH; they log calls and answer in the shapes run.py reads. The suite builds its own tree (samples/feature-900,
 # fixtures/stub, briefs) and passes it with --samples-dir, --fixtures-dir and --briefs-dir, so it
 # reads no committed sample, fixture or brief. HOME and TMPDIR are pinned to temporary folders, and
 # no network call is made.
@@ -45,7 +44,7 @@ while [ $# -gt 0 ]; do
         *) echo "unknown argument: $1" >&2; exit 2 ;;
     esac
 done
-ALL_GROUPS="EXIT VALIDATE CAPTURE FLAGS DIFF JUDGE ENV END BRIEFS CHECKS CLEAN LEDGER SAMPLES VSAMPLES CAP"
+ALL_GROUPS="EXIT VALIDATE CAPTURE FLAGS DIFF JUDGE ENV END BRIEFS CHECKS CLEAN LEDGER SAMPLES VSAMPLES CAP CODEX"
 if [ -n "$GROUP" ] && ! [[ " $ALL_GROUPS " == *" $GROUP "* ]]; then
     echo "unknown group: $GROUP (groups: $ALL_GROUPS)" >&2
     exit 2
@@ -231,7 +230,7 @@ elif role == "user":
     if mode == "never":
         out = "Keep going."
     elif mode == "two-turns":
-        out = "Second message from the persona." if count == 1 else "<<END>>"
+        out = "Second message from the persona." if count % 2 == 1 else "<<END>>"
     else:
         out = "<<END>>"
     print(out)
@@ -247,6 +246,30 @@ elif role == "judge":
             print(LEDGER_HEAD + LEDGER_RULE + "| 1 | [LOW] | Fixed | transcript.md | 1 | Stub note | Stub evidence |")
 PYSTUB
 chmod +x "$BIN/claude"
+
+# Stub Codex CLI: record session/resume arguments, write its last-message file, and emit a JSONL
+# thread.started event. Login status is separately checked by the adapter.
+cat > "$BIN/codex" <<'CODEXSTUB'
+#!/usr/bin/env python3
+import json, os, sys
+argv = sys.argv[1:]
+if argv[:2] == ["login", "status"]:
+    print("Logged in using ChatGPT" if os.environ.get("STUB_CODEX_SIGNED_IN", "1") == "1" else "Not logged in")
+    raise SystemExit(0)
+if not argv or argv[0] != "exec":
+    raise SystemExit("expected codex exec")
+last = argv[argv.index("--output-last-message") + 1]
+with open(os.environ["CODEX_STUB_LOG"], "a", encoding="utf-8") as f:
+    f.write(json.dumps({"argv": argv, "cwd": os.getcwd(), "home": os.environ.get("HOME")}) + "\n")
+if "resume" not in argv:
+    with open("changed.txt", "w", encoding="utf-8") as f:
+        f.write("hello from the stub\n")
+with open(last, "w", encoding="utf-8") as f:
+    f.write("Codex reply " + ("2" if "resume" in argv else "1"))
+if "resume" not in argv:
+    print(json.dumps({"type": "thread.started", "thread_id": "stub-codex-thread"}))
+CODEXSTUB
+chmod +x "$BIN/codex"
 
 # --- the facts reader: one key=value line per fact of a stub log --------------
 cat > "$T/facts.py" <<'PYFACTS'
@@ -539,8 +562,8 @@ make_mutant() {  # NAME OLD NEW [OLD NEW...]: sets MUT_PATH to a copy of run.py 
 invoke() {  # KEY USER-MODE JUDGE-MODE run.py-args...   (STUB_PUSH=1 in the caller makes the agent push)
     local key="$1" user="$2" judge="$3"
     shift 3
-    env STUB_USER="$user" STUB_JUDGE="$judge" STUB_PUSH="${STUB_PUSH:-0}" STUB_WORKTREE="${STUB_WORKTREE:-0}" \
-        STUB_BIG="${STUB_BIG:-0}" CONV_STUB_LOG="$T/log/$key.jsonl" \
+    env STUB_USER="$user" STUB_JUDGE="$judge" STUB_CODEX_SIGNED_IN="${STUB_CODEX_SIGNED_IN:-1}" STUB_PUSH="${STUB_PUSH:-0}" STUB_WORKTREE="${STUB_WORKTREE:-0}" \
+        STUB_BIG="${STUB_BIG:-0}" CONV_STUB_LOG="$T/log/$key.jsonl" CODEX_STUB_LOG="$T/log/$key.codex.jsonl" \
         CONV_STUB_REVIEW_DIR="$T/review-copy/$key" \
         "$PY" "${INVOKE_RUNNER:-$RUNNER}" --feature 900 --samples-dir "$T/samples" --fixtures-dir "$T/fixtures" \
         --briefs-dir "$T/briefs" "$@" > "$T/log/$key.out" 2>&1 < /dev/null &
@@ -550,6 +573,20 @@ invoke() {  # KEY USER-MODE JUDGE-MODE run.py-args...   (STUB_PUSH=1 in the call
     echo $? > "$T/log/$key.rc"
     "$PY" "$T/facts.py" "$T/log/$key.jsonl" "$T/briefs/simulated-user.md" "$T/briefs/judge.md" \
         "$T/log/$key.judge-prompt" > "$T/log/$key.facts" 2>&1
+}
+invoke_no_codex() {  # KEY USER-MODE JUDGE-MODE run.py-args...
+    local key="$1" user="$2" judge="$3"
+    shift 3
+    mkdir -p "$T/no-codex-bin"
+    ln -sf "$BIN/claude" "$T/no-codex-bin/claude"
+    env PATH="$T/no-codex-bin:/usr/bin:/bin" STUB_USER="$user" STUB_JUDGE="$judge" \
+        CONV_STUB_LOG="$T/log/$key.jsonl" CODEX_STUB_LOG="$T/log/$key.codex.jsonl" \
+        "$PY" "${INVOKE_RUNNER:-$RUNNER}" --feature 900 --samples-dir "$T/samples" \
+        --fixtures-dir "$T/fixtures" --briefs-dir "$T/briefs" "$@" > "$T/log/$key.out" 2>&1 < /dev/null &
+    local pid=$!
+    echo "$pid" >> "$T/log/run-pids"
+    wait "$pid"
+    echo $? > "$T/log/$key.rc"
 }
 # need KEY COMMAND...: starts the run in the background, once per KEY; await_runs waits for every run started.
 # A group calls need for each run it reads, then await_runs, so its runs overlap and it reads only finished runs.
@@ -681,6 +718,12 @@ group_exit() {
     expect_code "EX07 a missing brief folder exits 2" 2 "$PY" "$RUNNER" --feature 900 \
         --samples-dir "$T/samples" --fixtures-dir "$T/fixtures" --briefs-dir "$T/nobriefs"
     expect_code "EX08 no claude on PATH exits 2" 2 env PATH="$T/empty" "$PY" "$RUNNER" --feature 900 "${base[@]}"
+    "$PY" "$RUNNER" --feature 900 --hosts , "${base[@]}" > "$T/log/empty-hosts.out" 2>&1
+    assert_exit_eq "$?" 2 "EX09 an empty --hosts value exits 2"
+    assert_output_contains "$(cat "$T/log/empty-hosts.out")" "error: at least one host is required" \
+        "EX10 an empty --hosts value reports usage"
+    assert_output_not_contains "$(cat "$T/log/empty-hosts.out")" "Traceback" \
+        "EX11 an empty --hosts value does not print a traceback"
 }
 
 # ---------------------------------------------------------------- VALIDATE
@@ -1342,6 +1385,80 @@ group_cap() {
         "CP05 the run folder records the 12 agent turns"
 }
 
+# ---------------------------------------------------------------- CODEX
+group_codex() {
+    echo "--- CODEX"
+    invoke codex two-turns clean --hosts codex --sample s-pass --runs 1
+    local out="$T/log/codex.out" dir calls
+    dir="$(sed -n 's/^PASS codex s-pass run 1\/1 -> //p' "$out" | head -1)"
+    calls="$T/log/codex.codex.jsonl"
+    assert_exit_eq "$(cat "$T/log/codex.rc")" 0 "CX01 Codex host completes a stubbed two-turn run"
+    assert_output_contains "$(cat "$out")" "PASS codex s-pass: 1/1 runs passed" \
+        "CX02 the Codex host is run through its registered adapter"
+    assert_eq "$(wc -l < "$calls" | tr -d ' ')" 2 "CX03 Codex starts once and sends the second turn"
+    assert_file_contains "$calls" '"resume", "stub-codex-thread"' "CX04 the second turn resumes the returned thread"
+    assert_file_contains "$calls" '"--sandbox", "workspace-write"' "CX05 Codex starts with the workspace-write sandbox"
+    assert_file_contains "$calls" '"--approve-for-me"' "CX06 Codex uses automatic workspace-write approval"
+    assert_file_contains "$dir/files.diff" 'hello from the stub' "CX07 Codex fixture edits appear in the capture"
+    assert_file_contains "$dir/transcript.md" 'Codex reply 2' "CX08 the resumed turn enters the transcript"
+    assert_file_contains "$dir/checks.txt" 'NOT RUN tool-called Skill aid-plan' \
+        "CX09 tool checks Codex cannot answer are reported as not run"
+    assert_output_contains "$(cat "$out")" "PASS claude-code s-pass: 1/1 runs passed" \
+        "CX10 requiring Claude helpers keeps its agent run active beside Codex"
+
+    make_mutant codex-start 'args = ["exec"]' 'args = []'
+    INVOKE_RUNNER="$MUT_PATH" invoke codex-start-mut two-turns clean --hosts codex --sample s-pass --runs 1
+    expect_fail "CX11 removing the Codex start command fails CX02" \
+        bash -c 'grep -q "PASS codex s-pass: 1/1 runs passed" "$1"' _ "$T/log/codex-start-mut.out"
+
+    make_mutant codex-resume 'args += ["resume", self.session_id]' 'args += []'
+    INVOKE_RUNNER="$MUT_PATH" invoke codex-resume-mut two-turns clean --hosts codex --sample s-pass --runs 1
+    expect_fail "CX12 removing Codex resume fails CX04" \
+        bash -c 'grep -q '"'"'"resume", "stub-codex-thread"'"'"' "$1"' _ "$T/log/codex-resume-mut.codex.jsonl"
+
+    make_mutant codex-capture 'diff = "".join(text for _, text in chunks)' 'diff = ""'
+    INVOKE_RUNNER="$MUT_PATH" invoke codex-capture-mut two-turns clean --hosts codex --sample s-pass --runs 1
+    local capture_dir
+    capture_dir="$(sed -n 's/^[A-Z]* codex s-pass run 1\/1 -> //p' "$T/log/codex-capture-mut.out" | head -1)"
+    expect_fail "CX13 breaking captured files.diff fails CX07" \
+        bash -c 'grep -q "hello from the stub" "$1"' _ "$capture_dir/files.diff"
+
+    make_mutant codex-not-run \
+        'results.append((check["label"], None, "Codex output does not expose normalized tool calls"))' \
+        'results.append((check["label"], True, ""))'
+    INVOKE_RUNNER="$MUT_PATH" invoke codex-check-mut two-turns clean --hosts codex --sample s-pass --runs 1
+    local check_dir
+    check_dir="$(sed -n 's/^[A-Z]* codex s-pass run 1\/1 -> //p' "$T/log/codex-check-mut.out" | head -1)"
+    expect_fail "CX14 marking unsupported Codex checks as pass fails CX09" \
+        bash -c 'grep -q "NOT RUN tool-called Skill aid-plan" "$1"' _ "$check_dir/checks.txt"
+
+    make_mutant codex-register \
+        'ADAPTERS: dict[str, type] = {"claude-code": ClaudeCodeAgent, "codex": CodexAgent}' \
+        'ADAPTERS: dict[str, type] = {"claude-code": ClaudeCodeAgent}'
+    INVOKE_RUNNER="$MUT_PATH" invoke codex-mut two-turns clean --hosts codex --sample s-pass --runs 1
+    expect_fail "CX15 removing the Codex adapter registration fails CX02" \
+        bash -c 'grep -q "PASS codex s-pass: 1/1 runs passed" "$1"' _ "$T/log/codex-mut.out"
+
+    invoke_no_codex missing-codex end-after-one clean --hosts codex --sample s-pass --runs 1
+    assert_exit_eq "$(cat "$T/log/missing-codex.rc")" 0 "CX21 a missing Codex CLI leaves Claude helpers and the run operational"
+    assert_output_contains "$(cat "$T/log/missing-codex.out")" \
+        "NOTICE: codex CLI is not on PATH; codex host skipped" "CX16 a missing Codex CLI produces a NOTICE and skips the host"
+    assert_output_contains "$(cat "$T/log/missing-codex.out")" "PASS claude-code s-pass: 1/1 runs passed" \
+        "CX17 Claude Code continues to run when the Codex CLI is missing"
+
+    STUB_CODEX_SIGNED_IN=0 invoke unsigned-codex end-after-one clean --hosts codex --sample s-pass --runs 1
+    assert_output_contains "$(cat "$T/log/unsigned-codex.out")" \
+        "NOTICE: codex is not signed in; codex host skipped" "CX18 an unsigned Codex CLI produces a NOTICE and is skipped"
+    assert_output_contains "$(cat "$T/log/unsigned-codex.out")" "PASS claude-code s-pass: 1/1 runs passed" \
+        "CX19 Claude Code continues to run when Codex is unsigned"
+
+    make_mutant codex-missing \
+        'if shutil.which("codex") is None:' 'if False:'
+    INVOKE_RUNNER="$MUT_PATH" invoke_no_codex missing-mut end-after-one clean --hosts codex --sample s-pass --runs 1
+    expect_fail "CX20 omitting the missing-CLI check fails CX16" \
+        bash -c 'grep -q "NOTICE: codex CLI is not on PATH; codex host skipped" "$1"' _ "$T/log/missing-mut.out"
+}
+
 want EXIT && group_exit
 want VALIDATE && group_validate
 want CAPTURE && group_capture
@@ -1357,6 +1474,7 @@ want LEDGER && group_ledger
 want SAMPLES && group_samples
 want VSAMPLES && group_vsamples
 want CAP && group_cap
+want CODEX && group_codex
 
 test_summary
 exit $?
