@@ -788,9 +788,13 @@ def judge(fixture: Path, sample: Sample, judge_brief: str, transcript_md: str, d
 
 
 def ledger_status(text: str) -> tuple[bool, int]:
-    """Return (has a 7-column ledger table, number of Pending rows)."""
-    has_table = False
-    pending = 0
+    """Return (has a 7-column ledger table, number of Pending rows in the LAST ledger table).
+
+    A judge that corrects itself writes a table, then a correction, then a second table; the last
+    table is the verdict. Rows are grouped under the header that opens them, so rows of an earlier
+    table never count against a later one.
+    """
+    tables: list[list[list[str]]] = []
     for line in text.splitlines():
         s = line.strip()
         if not (s.startswith("|") and s.endswith("|")):
@@ -799,10 +803,13 @@ def ledger_status(text: str) -> tuple[bool, int]:
         if len(cells) != len(LEDGER_COLUMNS):
             continue
         if cells == list(LEDGER_COLUMNS):
-            has_table = True
-        elif cells[0].isdigit() and cells[2].lower() == "pending":
-            pending += 1
-    return has_table, pending
+            tables.append([])
+        elif tables:
+            tables[-1].append(cells)
+    if not tables:
+        return False, 0
+    pending = sum(1 for cells in tables[-1] if cells[0].isdigit() and cells[2].lower() == "pending")
+    return True, pending
 
 
 # ---------------------------------------------------------------- one run

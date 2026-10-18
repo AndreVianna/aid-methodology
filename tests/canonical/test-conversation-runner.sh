@@ -1001,6 +1001,44 @@ group_ledger() {
     assert_exit_eq "$(cat "$T/log/m2.rc")" 1 "LG04 a judge reply with no ledger table fails the run"
     assert_output_contains "$(cat "$T/log/m2.out")" "judge: no 7-column ledger table in the output" \
         "LG05 the missing table is named as the reason"
+    # the verdict reads the LAST ledger table only, through ledger_status itself: the module is loaded and
+    # no run is made. A judge that corrects itself (a Pending table, then a corrected table) passes; a
+    # clean table followed by a Pending table fails; a single table keeps its verdict.
+    cat > "$T/ledger.py" <<'PYLG'
+import importlib.util
+import sys
+
+spec = importlib.util.spec_from_file_location("runner_under_test", sys.argv[1])
+mod = importlib.util.module_from_spec(spec)
+sys.modules[spec.name] = mod  # the dataclass decorator looks the module up by name
+spec.loader.exec_module(mod)
+HEAD = "| # | Severity | Status | Doc | Line | Description | Evidence |"
+RULE = "| --- | --- | --- | --- | --- | --- | --- |"
+PENDING = "| 1 | [HIGH] | Pending | transcript.md | 1 | Unmet item | Evidence |"
+FIXED = "| 1 | [LOW] | Fixed | transcript.md | 1 | Note | Evidence |"
+CASES = {
+    "corrected": "\n".join([HEAD, RULE, PENDING, "Correction -- the above row should not be present.", HEAD, RULE]),
+    "reversed": "\n".join([HEAD, RULE, HEAD, RULE, PENDING]),
+    "single-pending": "\n".join([HEAD, RULE, PENDING]),
+    "single-clean": "\n".join([HEAD, RULE, FIXED]),
+    "no-table": "The run looks fine.",
+}
+has, pending = mod.ledger_status(CASES[sys.argv[2]])
+print("pass" if has and pending == 0 else "fail")
+PYLG
+    assert_eq "$("$PY" "$T/ledger.py" "$RUNNER" corrected)" pass \
+        "LG06 a Pending table followed by a corrected empty table passes: only the last table counts"
+    assert_eq "$("$PY" "$T/ledger.py" "$RUNNER" reversed)" fail \
+        "LG07 an empty table followed by a Pending table fails"
+    make_mutant ledgerall 'for cells in tables[-1] if' 'for t in tables for cells in t if'
+    assert_eq "$("$PY" "$T/ledger.py" "$MUT_PATH" corrected)" fail \
+        "LG08 a mutant that counts the Pending rows of all tables fails the corrected case of LG06"
+    assert_eq "$("$PY" "$T/ledger.py" "$RUNNER" single-pending)" fail \
+        "LG09 a single table with a Pending row still fails"
+    assert_eq "$("$PY" "$T/ledger.py" "$RUNNER" single-clean)" pass \
+        "LG10 a single clean table still passes"
+    assert_eq "$("$PY" "$T/ledger.py" "$RUNNER" no-table)" fail \
+        "LG11 a reply with no ledger table still fails"
 }
 
 # ---------------------------------------------------------------- SAMPLES

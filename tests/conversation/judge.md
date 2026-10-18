@@ -68,4 +68,4 @@ The second line is the separator row, `|---|---|---|---|---|---|---|`. Every fol
 row. A row is only for an UNMET item (an EO-n the run did not meet, or an MN-n the run did): if you
 conclude that an item is met, in whole or in substance, write no row for it, not even one that says the
 item is met. If the run met every item and did none of the forbidden things, the reply is the header row
-and the separator row, with no data rows.
+and the separator row, with no data rows. If you correct yourself, end the reply with the complete corrected table; only the last table in the reply counts.
