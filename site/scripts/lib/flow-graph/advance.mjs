@@ -58,6 +58,13 @@ const ARROW_RE = /→|--?>+/g;
 const STATE_WRAPPER_RE = /\[State:\s+([^\]]+)\]/g;
 
 /**
+ * A step-by-step word leading a clause (`PASS -> aid-plan`, `WAIT`). Anchored to the
+ * start of the clause: the same word inside parenthesised prose
+ * (`(scope-diff already PASS)`) is not an outcome and does not match.
+ */
+const STEP_WORD_LEAD_RE = /^(?:ASK|WAIT|PASS|CALL)(?![A-Za-z0-9-])/;
+
+/**
  * Token scanner: a letter followed by letters, digits, or hyphens.
  * Hyphenated names (PRESENT-FINDINGS, Q-AND-A) are matched as one token.
  * Must be reset via lastIndex = 0 before each exec loop.
@@ -593,8 +600,13 @@ function _proposeSeparatorPositions(content) {
 
 /**
  * Return true if `text` "resolves" for phase-2 validation purposes — i.e.,
- * contains a declared state name (whole-token, case-insensitive) OR a
- * recognized terminal keyword.
+ * contains a declared state name (whole-token, case-insensitive), OR a
+ * recognized terminal keyword, OR leads with a step-by-step word (ASK, WAIT,
+ * PASS, CALL) — a complete outcome with no declared-state target.
+ *
+ * The step-by-step words count only in leading position (STEP_WORD_LEAD_RE). A
+ * word inside parenthesised prose, as in `(scope-diff already PASS)`, must not make
+ * a half resolve: that would split a clause the prose belongs to.
  *
  * @param {string}  text
  * @param {Map}     stateByName
@@ -607,6 +619,7 @@ function _clauseResolves(text, stateByName) {
   if (/\bStop here\b/.test(text)) return true;
   if (/(?<![A-Za-z0-9-])PAUSE-FOR-USER-ACTION(?![A-Za-z0-9-])/.test(text)) return true;
   if (/(?<![A-Za-z0-9-])PAUSE-FOR-USER-DECISION(?![A-Za-z0-9-])/.test(text)) return true;
+  if (STEP_WORD_LEAD_RE.test(text.trim())) return true;
   return _resolveTarget(text, stateByName) !== null;
 }
 

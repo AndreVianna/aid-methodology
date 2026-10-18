@@ -1673,6 +1673,56 @@ describe('Advance words — CALL', () => {
   });
 });
 
+describe('Advance words — a separate unnamed outcome is its own outcome, not absorbed', () => {
+  // A clause whose advance word names no declared state is a complete outcome. It
+  // must split from its neighbour and become the terminal, not be merged into it:
+  // a merged clause loses the outcome, and the neighbour's edge takes its condition.
+  const NEW_WORDS = ['ASK', 'WAIT', 'PASS', 'CALL'];
+
+  for (const word of NEW_WORDS) {
+    it(`a bare ${word} after a semicolon is a terminal with advanceType ${word}`, () => {
+      const r = parse(advBlock(`CHAIN -> [State: BETA]; ${word}`), states('ALPHA', 'BETA'), { fromNodeName: 'ALPHA' });
+      expect(r.terminal).not.toBeNull();
+      expect(r.terminal.advanceType).toBe(word);
+      expect(r.edges).toHaveLength(1);
+      expect(r.edges[0]).toMatchObject({ to: 'n2', condition: null, advanceType: 'CHAIN' });
+    });
+  }
+
+  for (const word of ['PASS', 'CALL']) {
+    it(`a ${word} with hand-off prose after a semicolon keeps that prose as the handoff`, () => {
+      const r = parse(advBlock(`ASK -> [State: BETA]; ${word} -> aid-plan`), states('ALPHA', 'BETA'), { fromNodeName: 'ALPHA' });
+      expect(r.terminal).toMatchObject({ advanceType: word });
+      expect(r.terminal.handoff).toContain('aid-plan');
+      // The neighbour keeps its own edge, with no condition borrowed from the hand-off.
+      const to2 = r.edges.filter((e) => e.to === 'n2');
+      expect(to2).toHaveLength(1);
+      expect(to2[0]).toMatchObject({ advanceType: 'ASK', condition: null });
+      expect(r.edges.some((e) => e.condition === 'aid-plan')).toBe(false);
+    });
+  }
+
+  it('the reviewer case: ASK -> [State: BETA]; PASS -> aid-plan loses no outcome and invents no self-loop', () => {
+    const r = parse(advBlock('ASK -> [State: BETA]; PASS -> aid-plan'), states('ALPHA', 'BETA'), { fromNodeName: 'ALPHA' });
+    expect(r.terminal.advanceType).toBe('PASS');
+    expect(r.edges.map((e) => e.condition)).toEqual([null]);
+    expect(r.edges.some((e) => e.condition === 'otherwise')).toBe(false);
+  });
+
+  it('a step-by-step word inside parenthesised prose does not split a clause', () => {
+    // The half "the scope check (already PASS) -> aid-plan" has no leading step word
+    // and no declared target, so the cut must stay rejected and the clause stays whole.
+    // A resolver that accepted PASS anywhere would split here and invent a PASS terminal.
+    const r = parse(advBlock('CHAIN -> [State: BETA]; the scope check (already PASS) -> aid-plan'), states('ALPHA', 'BETA'), { fromNodeName: 'ALPHA' });
+    expect(r.terminal).toBeNull();
+    // One edge to BETA, the CHAIN edge. (Rule 5's self-loop is the other edge here: the
+    // joined clause has a single conditional target.)
+    const toBeta = r.edges.filter((e) => e.to === 'n2');
+    expect(toBeta).toHaveLength(1);
+    expect(toBeta[0]).toMatchObject({ advanceType: 'CHAIN' });
+  });
+});
+
 describe('Advance words — today\'s words keep their meaning beside the new ones', () => {
   it('PAUSE-FOR-USER-DECISION still becomes a rule-9 terminal, with no edge', () => {
     const result = parse(advBlock('PAUSE-FOR-USER-DECISION BETA'), states('ALPHA', 'BETA'));
