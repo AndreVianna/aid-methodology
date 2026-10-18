@@ -64,6 +64,7 @@ no closing note, no code fence around the table. The first line of your reply is
 
 `| # | Severity | Status | Doc | Line | Description | Evidence |`
 
+Your table has exactly the 7 columns `# | Severity | Status | Doc | Line | Description | Evidence`; the Evidence column is never omitted, even when the evidence is short or partial.
 The second line is the separator row, `|---|---|---|---|---|---|---|`. Every following line is one Pending
 row. A row is only for an UNMET item (an EO-n the run did not meet, or an MN-n the run did): if you
 conclude that an item is met, in whole or in substance, write no row for it, not even one that says the

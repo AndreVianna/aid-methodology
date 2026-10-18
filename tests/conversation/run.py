@@ -788,23 +788,28 @@ def judge(fixture: Path, sample: Sample, judge_brief: str, transcript_md: str, d
 
 
 def ledger_status(text: str) -> tuple[bool, int]:
-    """Return (has a 7-column ledger table, number of Pending rows in the LAST ledger table).
+    """Return (has a ledger table, number of Pending rows in the LAST ledger table).
 
-    A judge that corrects itself writes a table, then a correction, then a second table; the last
-    table is the verdict. Rows are grouped under the header that opens them, so rows of an earlier
-    table never count against a later one.
+    A ledger table has the seven columns of LEDGER_COLUMNS. A judge that drops the Evidence column
+    writes a six-column table (the first six columns, in order); it is accepted too, so its Pending
+    rows still count. A judge that corrects itself writes a table, then a correction, then a second
+    table; the last table is the verdict. Rows are grouped under the header that opens them, so rows
+    of an earlier table never count against a later one.
     """
     tables: list[list[list[str]]] = []
+    width = 0  # cells per row of the table that is open
     for line in text.splitlines():
         s = line.strip()
         if not (s.startswith("|") and s.endswith("|")):
             continue
         cells = [c.strip() for c in s[1:-1].split("|")]
-        if len(cells) != len(LEDGER_COLUMNS):
-            continue
         if cells == list(LEDGER_COLUMNS):
             tables.append([])
-        elif tables:
+            width = len(LEDGER_COLUMNS)
+        elif cells == list(LEDGER_COLUMNS[:6]):  # the header without its Evidence column
+            tables.append([])
+            width = 6
+        elif tables and len(cells) == width:
             tables[-1].append(cells)
     if not tables:
         return False, 0

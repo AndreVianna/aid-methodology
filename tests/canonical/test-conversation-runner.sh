@@ -1016,12 +1016,18 @@ HEAD = "| # | Severity | Status | Doc | Line | Description | Evidence |"
 RULE = "| --- | --- | --- | --- | --- | --- | --- |"
 PENDING = "| 1 | [HIGH] | Pending | transcript.md | 1 | Unmet item | Evidence |"
 FIXED = "| 1 | [LOW] | Fixed | transcript.md | 1 | Note | Evidence |"
+HEAD6 = "| # | Severity | Status | Doc | Line | Description |"
+RULE6 = "| --- | --- | --- | --- | --- | --- |"
+PENDING6 = "| 1 | [HIGH] | Pending | transcript.md | 1 | Unmet item |"
+FIXED6 = "| 1 | [LOW] | Fixed | transcript.md | 1 | Note |"
 CASES = {
     "corrected": "\n".join([HEAD, RULE, PENDING, "Correction -- the above row should not be present.", HEAD, RULE]),
     "reversed": "\n".join([HEAD, RULE, HEAD, RULE, PENDING]),
     "single-pending": "\n".join([HEAD, RULE, PENDING]),
     "single-clean": "\n".join([HEAD, RULE, FIXED]),
     "no-table": "The run looks fine.",
+    "six-pending": "\n".join([HEAD6, RULE6, PENDING6]),
+    "six-clean": "\n".join([HEAD6, RULE6, FIXED6]),
 }
 has, pending = mod.ledger_status(CASES[sys.argv[2]])
 print("pass" if has and pending == 0 else "fail")
@@ -1039,6 +1045,13 @@ PYLG
         "LG10 a single clean table still passes"
     assert_eq "$("$PY" "$T/ledger.py" "$RUNNER" no-table)" fail \
         "LG11 a reply with no ledger table still fails"
+    assert_eq "$("$PY" "$T/ledger.py" "$RUNNER" six-pending)" fail \
+        "LG12 a six-column table (no Evidence column) with a Pending row fails"
+    assert_eq "$("$PY" "$T/ledger.py" "$RUNNER" six-clean)" pass \
+        "LG13 a six-column table (no Evidence column) with no Pending row passes"
+    make_mutant ledger6 'elif cells == list(LEDGER_COLUMNS[:6]):' 'elif False:'
+    assert_eq "$("$PY" "$T/ledger.py" "$MUT_PATH" six-clean)" fail \
+        "LG14 a mutant that rejects six-column tables fails the clean case of LG13"
 }
 
 # ---------------------------------------------------------------- SAMPLES
