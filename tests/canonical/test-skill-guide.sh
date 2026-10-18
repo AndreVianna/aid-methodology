@@ -11,7 +11,7 @@
 #   SG-01  ## Handling a request counts at most 20 lines (heading through the last non-blank line)
 #   SG-02  the skill guide names exactly the skills in canonical/skills/, both ways; a <kind> line
 #          expands to the catalog rows of that verb (canonical/aid/templates/shortcut-catalog.yml)
-#   SG-03  every skill-guide line is at most 100 characters
+#   SG-03  the skill guide has at least one line, and every skill-guide line is at most 100 characters
 #   SG-04  every non-exempt description has the what/when shape ("Use when" after a what-sentence);
 #          every exempt skill still exists; with AID_RELEASE_CHECK=1 the exempt list must be empty
 #   SG-05  no front-door skill (canonical/skills/aid/), no aid-orchestrator agent, and aid-developer
@@ -152,7 +152,7 @@ skill_dirs() {
 
 is_exempt() {
     local e
-    for e in "${SG_EXEMPT[@]}"; do [[ "$e" == "$1" ]] && return 0; done
+    for e in ${SG_EXEMPT[@]+"${SG_EXEMPT[@]}"}; do [[ "$e" == "$1" ]] && return 0; done
     return 1
 }
 
@@ -201,12 +201,16 @@ group_sg03() {
             fail "SG-03 guide line is ${#line} characters, at most 100: ${line:0:60}..."
         fi
     done < <(guide_section "$SG_ROOT/canonical/aid/rules.md")
+    if [[ $n -eq 0 ]]; then
+        fail "SG-03 the skill guide has no lines to check (## Skill guide is missing or empty)"
+        return
+    fi
     if [[ $long -eq 0 ]]; then pass "SG-03 all $n skill-guide lines are at most 100 characters"; fi
 }
 
 group_sg04() {
     local name desc before checked=0 bad=0 missing=0
-    for name in "${SG_EXEMPT[@]}"; do
+    for name in ${SG_EXEMPT[@]+"${SG_EXEMPT[@]}"}; do
         if [[ ! -d "$SG_ROOT/canonical/skills/$name" ]]; then
             missing=$((missing + 1))
             fail "SG-04 exempt row names a skill that no longer exists: $name"
@@ -347,6 +351,28 @@ mut_root() {  # <label>: a private copy of canonical/, made the mutant's SG_ROOT
     SG_ROOT="$m"
 }
 
+# Mutant targets are picked at run time (never by name), so a later rename cannot make a mutant a no-op.
+# Each picker prints nothing when no target exists; the mutant then changes nothing and its group
+# passes, which run_mutant reports as "did not fail" (fail closed, never a wrong-reason pass).
+
+# Line number of the first guide bullet that names a literal skill (no <kind>).
+first_guide_literal_line() {
+    awk '$0 == "## Skill guide" { on = 1; next } on && /^## / { exit }
+         on && /^- `\/aid-[^`<]*`/ { print NR; exit }' "$1"
+}
+
+# Name of the first non-exempt skill whose description contains "Use when".
+first_nonexempt_use_when() {
+    local name
+    while IFS= read -r name; do
+        is_exempt "$name" && continue
+        if [[ "$(fm_description "$1/canonical/skills/$name/SKILL.md")" == *"Use when"* ]]; then
+            echo "$name"; return 0
+        fi
+    done < <(skill_dirs "$1/canonical/skills")
+    return 1
+}
+
 m_sg01_21st_line() {
     mut_root sg01
     awk '{ print } $0 == "## Handling a request" { print "- filler line one"; print "- filler line two"; print "- filler line three" }' \
@@ -356,7 +382,9 @@ m_sg01_21st_line() {
 
 m_sg02_guide_line_removed() {
     mut_root sg02a
-    sed -i '/^- `\/aid-ask` --/d' "$SG_ROOT/canonical/aid/rules.md"
+    local ln
+    ln="$(first_guide_literal_line "$SG_ROOT/canonical/aid/rules.md")"
+    [[ -n "$ln" ]] && sed -i "${ln}d" "$SG_ROOT/canonical/aid/rules.md"
     group_sg02
 }
 
@@ -370,7 +398,9 @@ m_sg02_stray_folder() {
 
 m_sg03_101_char_line() {
     mut_root sg03
-    local base="- \`/aid-ask\` -- " pad fill line
+    local name base pad fill line
+    name="$(guide_names "$REPO/canonical/aid/rules.md" | grep -v '<kind>' | head -n 1)"
+    base="- \`/${name}\` -- "
     pad=$((101 - ${#base}))
     fill="$(printf 'x%.0s' $(seq 1 "$pad"))"
     line="${base}${fill}"
@@ -379,9 +409,21 @@ m_sg03_101_char_line() {
     group_sg03
 }
 
+m_sg03_no_heading() {
+    mut_root sg03b
+    sed -i '/^## Skill guide$/d' "$SG_ROOT/canonical/aid/rules.md"
+    group_sg03
+}
+
 m_sg04_no_use_when() {
     mut_root sg04a
-    sed -i 's/Use when a plain request/Use if a plain request/' "$SG_ROOT/canonical/skills/aid-orchestrate/SKILL.md"
+    local name file
+    name="$(first_nonexempt_use_when "$SG_ROOT")" || return 0
+    file="$SG_ROOT/canonical/skills/$name/SKILL.md"
+    awk 'NR == 1 && $0 == "---" { infm = 1; print; next }
+         infm && $0 == "---" { infm = 0; print; next }
+         infm && !done && /Use when/ { sub(/Use when/, "Use if"); done = 1 }
+         { print }' "$file" > "$file.mut" && mv "$file.mut" "$file"
     group_sg04
 }
 
@@ -416,18 +458,23 @@ m_sg05_developer_removed() {
     group_sg05
 }
 
+# First skill folder installed for claude-code (run-time pick; empty if the install failed).
+sg06_first_installed() { skill_dirs "${SG06_DIR[claude-code]}" | head -n 1; }
+
 m_sg06_installed_byte() {
-    local m="${TMP}/mutant-sg06-byte"
+    local m="${TMP}/mutant-sg06-byte" name
     rm -rf "$m"; cp -R "${SG06_DIR[claude-code]}" "$m"
-    printf ' ' >> "$m/aid-ask/SKILL.md"
+    name="$(sg06_first_installed)"
+    [[ -n "$name" ]] && printf ' ' >> "$m/$name/SKILL.md"
     SG06_DIR[claude-code]="$m"
     sg06_check_all
 }
 
 m_sg06_disable_model_invocation() {
-    local m="${TMP}/mutant-sg06-flag"
+    local m="${TMP}/mutant-sg06-flag" name
     rm -rf "$m"; cp -R "${SG06_DIR[claude-code]}" "$m"
-    sed -i '1a disable-model-invocation: true' "$m/aid-ask/SKILL.md"
+    name="$(sg06_first_installed)"
+    [[ -n "$name" ]] && sed -i '1a disable-model-invocation: true' "$m/$name/SKILL.md"
     SG06_DIR[claude-code]="$m"
     sg06_check_all
 }
@@ -459,6 +506,7 @@ if [[ $SELF_MUTATE -eq 1 ]]; then
     run_mutant SG-02 sg02-guide-line-removed m_sg02_guide_line_removed
     run_mutant SG-02 sg02-stray-folder m_sg02_stray_folder
     run_mutant SG-03 sg03-101-char-line m_sg03_101_char_line
+    run_mutant SG-03 sg03-skill-guide-heading-removed m_sg03_no_heading
     run_mutant SG-04 sg04-no-use-when m_sg04_no_use_when
     run_mutant SG-04 sg04-exempt-row-missing m_sg04_exempt_row_missing
     run_mutant SG-04 sg04-release-check-nonempty m_sg04_release_check
