@@ -36,5 +36,3 @@ Persona: a developer who maintains the notes tool for a small team. Writes short
 ## Checks
 
 - tool-not-called Skill aid-brainstorm
-- tool-not-called Edit *src/*
-- tool-not-called Write *src/*

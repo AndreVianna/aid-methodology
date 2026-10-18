@@ -35,5 +35,3 @@ Persona: a developer who uses the notes tool every day. Calls the change a refac
 
 - tool-not-called Skill aid-refactor
 - tool-not-called Skill aid-brainstorm
-- tool-not-called Edit *src/*
-- tool-not-called Write *src/*

@@ -992,7 +992,7 @@ The development pipeline (Discover through Execute) is sequential by default; th
 
 These loops apply only when Monitor is run.
 
-**Loop 9: Monitor → fix request (Bug Path).** Monitor classifies a finding as BUG. Monitor performs root cause analysis and hands the bug back as a fix request in plain words, through the skill guide; the intake sizes it as a clear bug fix and runs Specification → Planning → Building → CI, then `/aid-execute` (→ optional `/aid-deploy`).
+**Loop 9: Monitor → fix request (Bug Path).** Monitor classifies a finding as BUG. Monitor performs root cause analysis and hands the bug back as a fix request in plain words, through the skill guide; the intake sizes it as a clear bug fix and runs Specification → Planning → Building (`/aid-execute`) → CI (→ optional `/aid-deploy`).
 
 **Loop 10: Monitor → plain request (Change Request Path).** Monitor classifies a finding as Change Request. Monitor hands the change request back as a plain request, which the skill guide routes — the right entry — a matching shortcut for a well-scoped change, or the full path (`/aid-describe`) as new/changed requirements for anything broad; a large-enough CR spins up a new work.
 

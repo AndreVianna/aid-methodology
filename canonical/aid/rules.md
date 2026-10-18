@@ -83,7 +83,7 @@ Read `.aid/connectors/INDEX.md`.
 - One skill fits: propose its workflow in one line, then stop. Change no project file until the
   user agrees, however small the change. Several fit: choose, and ask one question only if you
   truly cannot. None fits: carry on with no AID workflow.
-- The richness check sets the depth: any of its five elements missing means `full`. No step is skipped; nothing runs by hand outside its workflow.
+- The richness check sets the depth: any of its five elements missing means `full`. No step of the chosen workflow is skipped; the reading picks its phases, and nothing runs by hand outside it.
 - A typed `/aid-<skill>` always wins. Every other request that changes the project, or starts,
   resumes, closes or cancels a work, goes through `/aid-orchestrate` first.
 - The user's words are a hint: check the reading against the Knowledge Base and the code.

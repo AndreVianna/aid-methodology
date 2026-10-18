@@ -277,10 +277,12 @@ by this skill.
   available transitions whenever the MCP can enumerate them; a mismatch stops the run before
   CONFIRM. When transitions cannot be enumerated, the attempt proceeds and any rejection is
   surfaced verbatim — never silently swallowed, never silently retried.
-- **Attachments are previewed and never partial.** Every file is previewed before CONFIRM. When the
-  tracker cannot hold the files, the run stops and offers the options; it never picks one, and it
-  never attaches some of the files and not others.
+- **Attachments are previewed, and a partial attach is named.** Every file is previewed before CONFIRM.
+  When the tracker cannot hold the files, the run stops and offers the options; it never picks one.
+  An attach that lands only some of the files keeps the ones that went in and says which did not
+  (§ Attachment Tool Limit); nothing is hidden.
 - **Non-destructive failure.** Any MCP error (at RESOLVE-CONNECTOR, LOAD-CONTEXT, or WRITE)
-  surfaces the tracker's message verbatim and exits without a partial write.
+  surfaces the tracker's message verbatim and exits without a partial write, except an attachment
+  refused or cut short at WRITE, which takes the Attachment Tool Limit stop instead.
 - **No repo writes.** `Write`/`Edit` are absent from `allowed-tools`; this skill persists nothing
   locally.
