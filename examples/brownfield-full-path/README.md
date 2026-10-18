@@ -69,14 +69,12 @@ Then run `aid-config` to initialize the AID work area inside OrderFlow:
 
 **What `aid-config` does:**
 
-- Creates the `.aid/` directory with the required scaffold
-- Seeds `.aid/knowledge/` with 14 blank KB document templates and 3 meta-files
-  (`INDEX.md`, `README.md`, `STATE.md`)
-- Creates `CLAUDE.md` (or `AGENTS.md`, depending on your tool) with context
-  pointers for the AI agent
+- Creates the `.aid/` directory and `.aid/settings.yml` from the template (project name,
+  type, source control, minimum grade, heartbeat interval)
+- Shows the settings, and lets you change any of them with `/aid-config <key>`
 
-At this point `.aid/knowledge/` exists but every document is empty — Discovery will
-fill them.
+It does not touch `.aid/knowledge/`. At this point the Knowledge Base has no content yet —
+Discovery will fill it.
 
 ---
 
@@ -144,27 +142,26 @@ machine, the payment service interface, and the existing notification pattern.
 /aid-describe
 ```
 
-**What `aid-describe` does (TRIAGE first):**
+**What `aid-describe` does (reached through a plain request):**
 
-`aid-describe` opens with a TRIAGE sequence — three diagnostic questions to determine
-whether the full path or the lite path is appropriate:
+You do not pick the path yourself. Describe the work in plain words, for example "add a
+Refund workflow to OrderFlow". The plain-request routing in `rules.md` sends it to
+`/aid-orchestrate`, which reads the request against the Knowledge Base, sees a new capability
+that touches the order-state machine, a new table and an external payment processor, and
+picks the **full path**. It shows that reading in one line before its first question:
+"Reading: new capability, full path — it changes the order-state machine and integrates
+with an external processor."
 
-- **T1 — Breadth:** "How many distinct features does this work touch?" → For the
-  Refund workflow: one feature with cross-cutting impact. Breadth = 1 feature, but
-  it is substantial.
-- **T2 — Size:** "How long do you estimate this would take a developer without AID?"
-  → "At least a week, maybe more." Size = large.
-- **T3 — workType:** "Is this a bug fix, small refactor, or new feature?" → "New
-  feature with state-machine complexity."
-
-TRIAGE result: **full path**. The skill proceeds to the full Interview state machine.
+Then `aid-describe` runs its interview: one question at a time, each chosen from the gaps
+in what you have said so far, with the Knowledge Base already loaded.
 
 **The interview produces:**
 
 - `REQUIREMENTS.md` at `.aid/works/work-NNN/REQUIREMENTS.md` — the scope boundary and
-  business requirements for this work item
-- A `### Feature 001: Refund Workflow` section under `REQUIREMENTS.md § 11` — the
-  feature's shell, ready for technical specification
+  business requirements for this work item, presented to you for approval
+- A `### Feature 001: Refund Workflow` section under `REQUIREMENTS.md § 11` — created when
+  `/aid-define` splits the approved requirements into features; the feature's shell, ready
+  for technical specification
 
 **Sample REQUIREMENTS.md structure:**
 
@@ -191,8 +188,8 @@ BR-4: Webhook notification to storefront within 60 seconds of processor ACK.
 
 ## Step 3 — Specify: add technical depth to each feature SPEC
 
-`aid-specify` reads the requirements and the KB, then writes the technical
-specification for each feature SPEC stub created by Interview.
+`aid-specify` reads the requirements and the KB, then writes the technical specification
+for one feature at a time: the feature section that `aid-define` created.
 
 ```
 /aid-specify
@@ -200,8 +197,8 @@ specification for each feature SPEC stub created by Interview.
 
 **What `aid-specify` does:**
 
-For each feature section under `.aid/works/work-NNN/REQUIREMENTS.md § 11`, the
-`aid-architect` agent reads:
+For the feature being specified (its section under `.aid/works/work-NNN/REQUIREMENTS.md § 11`),
+the `aid-architect` agent reads:
 - The feature's section as `aid-define` left it (business requirements from Interview)
 - The relevant KB documents (especially `architecture.md`, `module-map.md`,
   `domain-glossary.md`, `schemas.md`, and `pipeline-contracts.md`)
@@ -279,7 +276,7 @@ each delivery, creating the execution graph.
 **What `aid-detail` does:**
 
 For each delivery in `PLAN.md`, the `aid-architect` agent writes one `tasks/task-NNN/DETAIL.md`
-per unit of work under `.aid/works/work-NNN/tasks/`. Each task file has:
+per unit of work under `.aid/works/work-NNN/deliveries/delivery-NNN/tasks/`. Each task file has:
 
 - A **type** (RESEARCH, DESIGN, IMPLEMENT, TEST, DOCUMENT, MIGRATE, REFACTOR, CONFIGURE)
 - A **scope** — which files it touches
@@ -362,13 +359,14 @@ CREATE INDEX idx_refunds_status   ON refunds(status);
 
 The `aid-reviewer` agent checks this against `schemas.md` (UUID primary key pattern
 matches existing tables), `coding-standards.md` (column naming in snake_case), and
-the SPEC requirement for idempotency. It grades the migration B+ and marks the task
-done.
+the SPEC requirement for idempotency. Its Quick-Check records any finding; the
+Delivery Gate then grades the delivery as a whole, and the grade must reach the
+configured minimum before the delivery is marked complete.
 
 **Review gates enforce KB consistency:** If an `aid-developer` agent had used `INT` for the
 primary key (inconsistent with existing `UUID` usage in `module-map.md`), the
-reviewer would catch it and require correction before the task closes. The KB is the
-reference, not just the task spec.
+reviewer would flag it, and the Delivery Gate would require correction before the delivery
+is marked complete. The KB is the reference, not just the task spec.
 
 ---
 
@@ -377,12 +375,12 @@ reference, not just the task spec.
 After all tasks are complete and merged, two optional end-of-pipeline skills are
 available:
 
-**`/aid-deploy`** — packages the delivery, produces release notes (`package-NNN.md`),
-and tracks deployment state in `DEPLOYMENT-STATE.md`.
+**`/aid-deploy`** — packages the completed deliveries into a release (`package-NNN-{name}.md`).
 
 **`/aid-monitor`** — after deployment, classifies incoming signals (errors, alerts,
-user-reported issues) and routes them back: bugs go to a new `aid-describe` work
-item; change requests also go to a new `aid-describe`. This closes the feedback loop.
+user-reported issues) and routes them back: bugs go back as a fix request, and change
+requests as a new-work request, each sent in plain words through the plain-request routing.
+This closes the feedback loop.
 
 Neither skill is mandatory. Teams that deploy and monitor through other processes can
 omit them.
@@ -399,7 +397,7 @@ After completing all six steps for the Refund workflow, OrderFlow has:
 | REQUIREMENTS.md | `.aid/works/work-003/` | Scope boundary and business requirements |
 | Refund feature section | `.aid/works/work-003/REQUIREMENTS.md` § 11 | Full technical specification |
 | PLAN.md | `.aid/works/work-003/` | Delivery sequence with dependency mapping |
-| task-001 through task-010 | `.aid/works/work-003/tasks/` | Typed, PR-sized task files |
+| task-001 through task-010 | `.aid/works/work-003/deliveries/delivery-NNN/tasks/` | Typed, PR-sized task files |
 | Migration file | Committed to the repo | PostgreSQL migration for `refunds` table |
 | `RefundService.js` | Committed to the repo | State machine + Stripe integration |
 | REST controllers | Committed to the repo | Three new API endpoints |
