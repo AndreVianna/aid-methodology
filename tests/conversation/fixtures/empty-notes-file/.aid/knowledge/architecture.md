@@ -21,7 +21,8 @@ tags: [architecture, state, layers]
 ## State
 
 All state is one file, `notes.json`, in the folder the command runs from. It holds a JSON list of notes.
-Nothing else is persisted.
+Nothing else is persisted. An export file the user asks for (for example `notes.csv`) is output, not state: no
+command reads it back, and it does not change `notes.json`.
 
 ## Testing
 

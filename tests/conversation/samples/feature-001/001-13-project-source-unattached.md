@@ -27,7 +27,7 @@ Persona: a developer on the notes team, halfway through the retry work. Knows th
 
 ## Must not
 
-- Add the payments ticket to the work's sources, or record it in the work's state file.
+- Add the payments ticket to the work's sources. It is a project source, so it stays out of the work's `sources:`.
 - Remove or change the project's list of external sources.
 - Settle a conflict between the rules and the open questions without asking the user.
 

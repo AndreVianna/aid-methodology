@@ -19,8 +19,8 @@ I have not looked at the code for a while, so I do not have a list of problems.
 
 ## Expected outcome
 
-- The assistant sees that several workflows could fit this request, for example tidying the code, removing code, or re-syncing the Knowledge Base, and that the request alone does not say which is meant.
-- It asks exactly one question, about which kind of clean-up the user means, and gives its own recommendation together with that question.
+- The assistant sees that several kinds of clean-up could fit this request, and that the request alone does not say which is meant.
+- It asks exactly one question, about which kind of clean-up the user means. Its options are valid kinds of clean-up for this project, and it gives its own recommendation together with that question.
 - It does not start any work and does not change any file before the user answers.
 
 ## Must not

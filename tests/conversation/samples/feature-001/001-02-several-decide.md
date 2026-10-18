@@ -20,7 +20,7 @@ I keep the notes for a small team and I run `list` many times a day.
 
 ## Expected outcome
 
-- The assistant sees that more than one workflow could fit this request, and chooses one itself. It names the one it chose and gives the reason. The choice should be the performance check, not a general investigation or a general test run.
+- The assistant sees that more than one workflow could fit this request, and chooses one read-only investigation workflow itself. It names the one it chose and gives the reason. Any named read-only investigation workflow with its reason meets this item.
 - It answers from the code and the store: it explains where the time goes, with reasoning or measurements, and it says what it did to find out.
 - It makes this choice without asking the user to pick between workflows.
 
