@@ -19,6 +19,13 @@ Task files are under `.aid/works/work-003-full-aid-restructure/deliveries/delive
 
 task-025 is the largest and riskiest change: give it the most attention.
 
+**Already known for task-025, include it as a ledger row:** the wave's full test step fails
+`tests/canonical/test-shared-layout-sources.sh` AC-5, because the shared runtime writer names host
+folders directly (`canonical/aid/scripts/execute/writeback-state.sh:2098`, the `--check` lookup of
+installed skills). Shared runtime code must stay host-neutral. In the row's Evidence, say how the
+runtime should find the installed skills folder instead (look at how other `canonical/aid/scripts/`
+code resolves host paths, for example through `aid-tool.conf` or an environment variable).
+
 Points the builders flagged, for you to judge:
 
 - task-025: the forced-failure check used a held lock, not an unwritable file (the build machine runs as
