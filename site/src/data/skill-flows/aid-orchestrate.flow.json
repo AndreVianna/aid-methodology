@@ -94,8 +94,8 @@
       "terminal": null,
       "provenance": {
         "file": "canonical/skills/aid-orchestrate/SKILL.md",
-        "startLine": 38,
-        "endLine": 38,
+        "startLine": 40,
+        "endLine": 40,
         "sourceKind": "skill",
         "excerpt": "6. **Find or create the work.** `references/start-or-resume.md` steps 3 and 4. A matching work"
       },
@@ -110,8 +110,8 @@
       "terminal": null,
       "provenance": {
         "file": "canonical/skills/aid-orchestrate/SKILL.md",
-        "startLine": 41,
-        "endLine": 41,
+        "startLine": 43,
+        "endLine": 43,
         "sourceKind": "skill",
         "excerpt": "7. **Record the intent.** `references/start-or-resume.md` step 6. Write the `intent:` block"
       },
@@ -126,8 +126,8 @@
       "terminal": null,
       "provenance": {
         "file": "canonical/skills/aid-orchestrate/SKILL.md",
-        "startLine": 43,
-        "endLine": 43,
+        "startLine": 45,
+        "endLine": 45,
         "sourceKind": "skill",
         "excerpt": "8. **Cancel a named work.** `references/start-or-resume.md` step 5. The flow stops there."
       },
@@ -142,8 +142,8 @@
       "terminal": null,
       "provenance": {
         "file": "canonical/skills/aid-orchestrate/SKILL.md",
-        "startLine": 44,
-        "endLine": 44,
+        "startLine": 46,
+        "endLine": 46,
         "sourceKind": "skill",
         "excerpt": "9. **Close a work.** `references/size-and-route.md` § 3: when every task is `Done` (or, for an"
       },
@@ -158,8 +158,8 @@
       "terminal": null,
       "provenance": {
         "file": "canonical/skills/aid-orchestrate/SKILL.md",
-        "startLine": 47,
-        "endLine": 47,
+        "startLine": 49,
+        "endLine": 49,
         "sourceKind": "skill",
         "excerpt": "10. **Hand over.** Start the first phase skill yourself. Where the tool cannot start a skill,"
       },
@@ -177,8 +177,8 @@
       },
       "provenance": {
         "file": "canonical/skills/aid-orchestrate/SKILL.md",
-        "startLine": 49,
-        "endLine": 49,
+        "startLine": 51,
+        "endLine": 51,
         "sourceKind": "skill",
         "excerpt": "11. **During the work.** Load `references/external-sources.md` when a source is pulled in,"
       },
@@ -264,8 +264,8 @@
       "advanceType": "CHAIN",
       "provenance": {
         "file": "canonical/skills/aid-orchestrate/SKILL.md",
-        "startLine": 38,
-        "endLine": 38,
+        "startLine": 40,
+        "endLine": 40,
         "sourceKind": "skill",
         "excerpt": "6. **Find or create the work.** `references/start-or-resume.md` steps 3 and 4. A matching work"
       }
@@ -278,8 +278,8 @@
       "advanceType": "CHAIN",
       "provenance": {
         "file": "canonical/skills/aid-orchestrate/SKILL.md",
-        "startLine": 41,
-        "endLine": 41,
+        "startLine": 43,
+        "endLine": 43,
         "sourceKind": "skill",
         "excerpt": "7. **Record the intent.** `references/start-or-resume.md` step 6. Write the `intent:` block"
       }
@@ -292,8 +292,8 @@
       "advanceType": "CHAIN",
       "provenance": {
         "file": "canonical/skills/aid-orchestrate/SKILL.md",
-        "startLine": 43,
-        "endLine": 43,
+        "startLine": 45,
+        "endLine": 45,
         "sourceKind": "skill",
         "excerpt": "8. **Cancel a named work.** `references/start-or-resume.md` step 5. The flow stops there."
       }
@@ -306,8 +306,8 @@
       "advanceType": "CHAIN",
       "provenance": {
         "file": "canonical/skills/aid-orchestrate/SKILL.md",
-        "startLine": 44,
-        "endLine": 44,
+        "startLine": 46,
+        "endLine": 46,
         "sourceKind": "skill",
         "excerpt": "9. **Close a work.** `references/size-and-route.md` § 3: when every task is `Done` (or, for an"
       }
@@ -320,8 +320,8 @@
       "advanceType": "CHAIN",
       "provenance": {
         "file": "canonical/skills/aid-orchestrate/SKILL.md",
-        "startLine": 47,
-        "endLine": 47,
+        "startLine": 49,
+        "endLine": 49,
         "sourceKind": "skill",
         "excerpt": "10. **Hand over.** Start the first phase skill yourself. Where the tool cannot start a skill,"
       }

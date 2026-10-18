@@ -20,7 +20,7 @@ Entry C — skill-authored, code artifacts (14)
                               Delete it by hand when the artifact is built.
 
 Entry D — exploratory
-  /aid-brainstorm          →  seed written under a confirmed slug
+  /aid-brainstorm          →  seed written under a slug stated with its first question
                               No create counterpart. It persists until you promote it
                               into one of the entries above, or delete it by hand.
 ```

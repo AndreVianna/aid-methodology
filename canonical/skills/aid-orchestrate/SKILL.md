@@ -32,9 +32,11 @@ created before step 6.
    turn of its own.
 5. **Hand over an action-skill reading.** Once the user approves, a reading that matches an
    action skill (`/aid-create`, `/aid-update`, `/aid-fix`, `/aid-refactor`, `/aid-document`,
-   `/aid-test`, `/aid-prototype`) is handed to that skill, with its `intent:` block. The
-   skill's START creates the work through the gate and writes the `intent:` block into that
-   work. No work is created here, and this skill is done.
+   `/aid-test`, `/aid-prototype`) is handed to that skill. Pass the block as an `intent:` line
+   with its keys indented two spaces beneath it (`request`, `reading`, `reason`, `depth`,
+   `phases` as `- <phase>` lines, `changes`), as in `.aid/runtime/templates/work-state-template.yml`.
+   The skill's START creates the work through the gate and writes that block into it
+   (`shortcut-engine.md` INTAKE Step 5). No work is created here, and this skill is done.
 6. **Find or create the work.** `references/start-or-resume.md` steps 3 and 4. A matching work
    is continued from its resume point and keeps its reading; otherwise the gate creates the
    work. This is the first write the flow makes.

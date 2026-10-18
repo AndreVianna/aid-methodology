@@ -117,48 +117,48 @@ Every node in the chart above, in chart order, with the exact `canonical/` text 
 
 <a id="fragment-n6"></a>**6 · `STEP-6`** — \*\*Find or create the work.\*\* references/start-or-resume.md… · _step_
 
-~~~~plaintext title="canonical/skills/aid-orchestrate/SKILL.md#L38" wrap
+~~~~plaintext title="canonical/skills/aid-orchestrate/SKILL.md#L40" wrap
 6. **Find or create the work.** `references/start-or-resume.md` steps 3 and 4. A matching work
 ~~~~
 
-[Source: `canonical/skills/aid-orchestrate/SKILL.md#L38`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-orchestrate/SKILL.md#L38)
+[Source: `canonical/skills/aid-orchestrate/SKILL.md#L40`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-orchestrate/SKILL.md#L40)
 
 <a id="fragment-n7"></a>**7 · `STEP-7`** — \*\*Record the intent.\*\* references/start-or-resume.md step… · _step_
 
-~~~~plaintext title="canonical/skills/aid-orchestrate/SKILL.md#L41" wrap
-7. **Record the intent.** `references/start-or-resume.md` step 6. Write the `intent:` block
-~~~~
-
-[Source: `canonical/skills/aid-orchestrate/SKILL.md#L41`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-orchestrate/SKILL.md#L41)
-
-<a id="fragment-n8"></a>**8 · `STEP-8`** — \*\*Cancel a named work.\*\* references/start-or-resume.md step… · _step_
-
 ~~~~plaintext title="canonical/skills/aid-orchestrate/SKILL.md#L43" wrap
-8. **Cancel a named work.** `references/start-or-resume.md` step 5. The flow stops there.
+7. **Record the intent.** `references/start-or-resume.md` step 6. Write the `intent:` block
 ~~~~
 
 [Source: `canonical/skills/aid-orchestrate/SKILL.md#L43`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-orchestrate/SKILL.md#L43)
 
+<a id="fragment-n8"></a>**8 · `STEP-8`** — \*\*Cancel a named work.\*\* references/start-or-resume.md step… · _step_
+
+~~~~plaintext title="canonical/skills/aid-orchestrate/SKILL.md#L45" wrap
+8. **Cancel a named work.** `references/start-or-resume.md` step 5. The flow stops there.
+~~~~
+
+[Source: `canonical/skills/aid-orchestrate/SKILL.md#L45`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-orchestrate/SKILL.md#L45)
+
 <a id="fragment-n9"></a>**9 · `STEP-9`** — \*\*Close a work.\*\* references/size-and-route.md § 3: when… · _step_
 
-~~~~plaintext title="canonical/skills/aid-orchestrate/SKILL.md#L44" wrap
+~~~~plaintext title="canonical/skills/aid-orchestrate/SKILL.md#L46" wrap
 9. **Close a work.** `references/size-and-route.md` § 3: when every task is `Done` (or, for an
 ~~~~
 
-[Source: `canonical/skills/aid-orchestrate/SKILL.md#L44`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-orchestrate/SKILL.md#L44)
+[Source: `canonical/skills/aid-orchestrate/SKILL.md#L46`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-orchestrate/SKILL.md#L46)
 
 <a id="fragment-n10"></a>**10 · `STEP-10`** — \*\*Hand over.\*\* Start the first phase skill yourself. Where… · _step_
 
-~~~~plaintext title="canonical/skills/aid-orchestrate/SKILL.md#L47" wrap
+~~~~plaintext title="canonical/skills/aid-orchestrate/SKILL.md#L49" wrap
 10. **Hand over.** Start the first phase skill yourself. Where the tool cannot start a skill,
 ~~~~
 
-[Source: `canonical/skills/aid-orchestrate/SKILL.md#L47`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-orchestrate/SKILL.md#L47)
+[Source: `canonical/skills/aid-orchestrate/SKILL.md#L49`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-orchestrate/SKILL.md#L49)
 
 <a id="fragment-n11"></a>**11 · `STEP-11`** — \*\*During the work.\*\* Load references/external-sources.md… · _exit_ · UNSPECIFIED
 
-~~~~plaintext title="canonical/skills/aid-orchestrate/SKILL.md#L49" wrap
+~~~~plaintext title="canonical/skills/aid-orchestrate/SKILL.md#L51" wrap
 11. **During the work.** Load `references/external-sources.md` when a source is pulled in,
 ~~~~
 
-[Source: `canonical/skills/aid-orchestrate/SKILL.md#L49`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-orchestrate/SKILL.md#L49)
+[Source: `canonical/skills/aid-orchestrate/SKILL.md#L51`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-orchestrate/SKILL.md#L51)
