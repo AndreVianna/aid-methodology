@@ -68,5 +68,7 @@ Record one of three outcomes:
 ## 5. Hand the reading on
 
 Pass the reading, the observable effect that supports it, the matched row (if any) and the
-outcome to `start-or-resume.md` step 3, which finds or creates the work. Only then does
-`start-or-resume.md` step 6 size it with `size-and-route.md` and record the reading.
+outcome to `size-and-route.md` § 1, which sizes it. SKILL.md steps 3 and 4 then size and show the
+reading, and the user answers. After that answer, an action-skill reading goes to that skill
+(SKILL.md step 5), and any other reading goes to `start-or-resume.md` step 3, which finds or
+creates the work, and then to its step 6, which records the `intent:` block.

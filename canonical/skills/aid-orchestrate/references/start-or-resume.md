@@ -1,8 +1,9 @@
 # Start or Resume a Work
 
-Use this from SKILL.md step 1 onward. In order, it answers a project question, checks the
-reading, finds the work the request belongs to, creates one only when none exists, reads its
-resume point, handles a cancel, and sizes the work.
+Use this from SKILL.md step 1 onward. In order, it answers a project question, finds the work
+the request belongs to, creates one only when none exists, reads its resume point, handles a
+cancel, and records the intent. The reading is checked, sized and shown first (SKILL.md steps 2
+to 4). An action-skill reading never reaches this file: its skill's START creates the work.
 
 ## 1. Project question
 
@@ -17,14 +18,15 @@ says, where something stands -- starts no work. Answer it with `/aid-ask`:
 
 Then stop. The flow does not continue to the next step.
 
-## 2. Check the reading
+## 2. Check, size and show the reading
 
 Any other request is checked first: `references/check-intent.md` steps 1 to 5 read the
-Knowledge Base and the code and classify the reading. Nothing below runs before that check.
+Knowledge Base and the code and classify the reading. Then SKILL.md steps 3 and 4 size it
+(`size-and-route.md`) and show it, and the flow waits for the user's answer. Nothing below
+runs before that answer.
 
-An action-skill reading (`size-and-route.md` step 1) is handed to that skill now. No work is
-created here: the skill's START creates it through the gate. Otherwise carry the reading into
-step 3.
+An action-skill reading (`size-and-route.md` § 1) is handed to that skill now (SKILL.md step
+5). No work is created here. Otherwise carry the reading into step 3.
 
 ## 3. Find the work
 
@@ -73,11 +75,11 @@ the user's confirmed answer, and in this order:
 AID_STATE_FILE=<work>/STATE.yml AID_WORK_DIR=<work> bash .aid/runtime/scripts/execute/writeback-state.sh --pipeline --field Lifecycle --value Canceled
 ```
 
-## 6. Size and record
+## 6. Record the intent
 
-Size the work with `size-and-route.md`: it gives the phases and the depth. Then write the
-`intent:` block into the work's `STATE.yml` at once. The block is authored, so write it in
-block style and keep its keys to the three levels the readers allow:
+The reading was sized and shown before this step (SKILL.md steps 3 and 4), and the user has
+approved it. Write the `intent:` block into the new work's `STATE.yml` at once. The block is
+authored, so write it in block style and keep its keys to the three levels the readers allow:
 
 - `request` -- the user's words, short.
 - `reading` -- one of: bug fix, refactor, change, new capability, document, operational,

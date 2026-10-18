@@ -16,7 +16,7 @@ AID ships **112 skill directories** across four skill groups (Support, Knowledge
 
 Skills for configuring AID, managing tickets and connectors, and talking to a peer AI session. Start here if you're not sure which skill to use.
 
-- [`aid-orchestrate`](/skills/aid-orchestrate/) — Start, resume or cancel an AID work: find where it stands, size it and pick its phases.
+- [`aid-orchestrate`](/skills/aid-orchestrate/) — Start, resume, close or cancel an AID work: find where it stands, size it and pick its phases.
 - [`aid-config`](/skills/aid-config/) — View or update AID pipeline settings.
 - [`aid-chat`](/skills/aid-chat/) — Talk with another AI coding session so that sessions can coordinate their work.
 - [`aid-set-connector`](/skills/aid-set-connector/) — Add or change a connector to a tracker or tool.

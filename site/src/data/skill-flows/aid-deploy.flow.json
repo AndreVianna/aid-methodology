@@ -14,8 +14,8 @@
       "terminal": null,
       "provenance": {
         "file": "canonical/skills/aid-deploy/SKILL.md",
-        "startLine": 174,
-        "endLine": 174,
+        "startLine": 175,
+        "endLine": 175,
         "sourceKind": "skill",
         "excerpt": "| IDLE | `references/state-idle.md` | `aid-operator` | → SELECTING |"
       },
@@ -36,8 +36,8 @@
       "terminal": null,
       "provenance": {
         "file": "canonical/skills/aid-deploy/SKILL.md",
-        "startLine": 175,
-        "endLine": 175,
+        "startLine": 176,
+        "endLine": 176,
         "sourceKind": "skill",
         "excerpt": "| SELECTING | `references/state-selecting.md` | `aid-operator` | → VERIFYING |"
       },
@@ -58,8 +58,8 @@
       "terminal": null,
       "provenance": {
         "file": "canonical/skills/aid-deploy/SKILL.md",
-        "startLine": 176,
-        "endLine": 176,
+        "startLine": 177,
+        "endLine": 177,
         "sourceKind": "skill",
         "excerpt": "| VERIFYING | `references/state-verifying.md` | `aid-operator` | → PACKAGING |"
       },
@@ -80,8 +80,8 @@
       "terminal": null,
       "provenance": {
         "file": "canonical/skills/aid-deploy/SKILL.md",
-        "startLine": 177,
-        "endLine": 177,
+        "startLine": 178,
+        "endLine": 178,
         "sourceKind": "skill",
         "excerpt": "| PACKAGING | `references/state-packaging.md` | `aid-operator` | → DONE |"
       },
@@ -105,8 +105,8 @@
       },
       "provenance": {
         "file": "canonical/skills/aid-deploy/SKILL.md",
-        "startLine": 178,
-        "endLine": 178,
+        "startLine": 179,
+        "endLine": 179,
         "sourceKind": "skill",
         "excerpt": "| DONE | `references/state-done.md` | `inline` | → halt |"
       },
@@ -130,8 +130,8 @@
       },
       "provenance": {
         "file": "canonical/skills/aid-deploy/SKILL.md",
-        "startLine": 179,
-        "endLine": 179,
+        "startLine": 180,
+        "endLine": 180,
         "sourceKind": "skill",
         "excerpt": "| RE-RUN | `references/state-re-run.md` | `inline` | → halt |"
       },

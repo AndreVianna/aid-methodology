@@ -78,21 +78,23 @@ Read `.aid/connectors/INDEX.md`.
 
 ## Handling a request
 
-- Read what the user wants by its meaning, not its wording, and match it to the skill guide below.
-- A question about this project starts no work: answer it from the Knowledge Base, citing sources.
-- One skill fits: propose its workflow. Several fit: choose yourself; ask one question, with your
-  recommendation, only if you cannot choose. None fits: carry on with no AID workflow.
-- A typed `/aid-<skill>` always wins.
-- The user's words are a hint: check your reading against the Knowledge Base and the code (a
-  "refactor" that adds an endpoint changes behaviour, so it is new work).
-- To start, resume or cancel a work, run `/aid-orchestrate`: it finds where the work stands, sizes it and
-  picks the phases it needs.
-- Show your reading and its reason in one line, inside your first question or approval; then wait.
-- Specification, Planning and Building (with tests) almost always run; Definition only when the problem
-  must first be shaped; Preparation builds the Knowledge Base once, then updates it on demand; CI always
-  closes the work. Release, deploy and monitoring are works of their own.
-- If the work turns out bigger or different, re-route and say so in one line.
-- Check every decision against the Knowledge Base; raise a conflict, never settle it alone.
+- Match a request by its meaning, not its wording, to the skill guide below. A question about
+  this project starts no work: answer it from the Knowledge Base, citing sources.
+- One skill fits: propose its workflow in one line, then stop. Change no project file until the
+  user agrees, however small the change. Several fit: choose, and ask one question only if you
+  truly cannot. None fits: carry on with no AID workflow.
+- Small work runs `lite`, never by hand outside its workflow; size picks the depth only.
+- A typed `/aid-<skill>` always wins. Every other request that changes the project, or starts,
+  resumes, closes or cancels a work, goes through `/aid-orchestrate` first.
+- The user's words are a hint: check the reading against the Knowledge Base and the code.
+- Show the reading and its reason in one line, inside the first question or approval; then wait.
+- CI closes every work: `/aid-orchestrate` marks it `Completed` once its tasks are all `Done`, or
+  nothing was to land. Definition runs only when the problem must be shaped. Release, deploy and
+  monitoring are works of their own.
+- A Knowledge Base conflict is a request that would make a KB statement false. Quote it, raise
+  it with the user, and plan nothing around it until they answer.
+- A ticket, file or link brought into a work is added to its `sources:` before it is applied.
+- If the work turns out bigger or different, re-route it and say so in one line.
 - Ask one topic at a time, with a recommendation; the user approves before building and the result.
 
 ## Skill guide
@@ -102,7 +104,7 @@ One line per skill: what it is for; when to use it. `<kind>` stands for each kin
 
 ### Phase skills
 
-- `/aid-orchestrate` -- start, resume or cancel a work; when a plain request starts or continues one
+- `/aid-orchestrate` -- start, resume, close or cancel a work; when a plain request asks for one
 - `/aid-discover` -- build the Knowledge Base from existing code; when a project has none yet
 - `/aid-describe` -- gather the requirements by interview; when a new work needs them written
 - `/aid-define` -- split approved requirements into features; after the requirements are approved

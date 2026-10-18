@@ -220,7 +220,8 @@ independent of its family reference's landing order.
 
 Purpose: parse the bound invocation values; resolve the catalog row; consult the Work
 Initiation Gate (new-vs-continuation) and, on NEW, allocate a new `work-NNN`; scaffold
-`STATE.yml` (its top-level frontmatter-zone keys only). FR-2.
+`STATE.yml` (its top-level frontmatter-zone keys only). FR-2. Size never skips a step of the
+workflow: the STATE.yml, the documents and the gates run for a one-line change too.
 
 ### Step 1: Resolve the catalog row
 

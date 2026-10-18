@@ -76,7 +76,8 @@ Step 0):
   `{verb}=deploy`, `{artifact}=""`, `{description}=<the given text>`, then delegate
   directly to `.aid/runtime/templates/shortcut-engine.md § State: INTAKE` — Steps 1–6
   below do not run for this path (that pre-flight belongs to the post-Execute pipeline
-  role, not the shortcut entry).
+  role, not the shortcut entry). Size never skips a step of this workflow: the STATE.yml writes,
+  the documents and the gates run for a one-line package too.
 - **Neither `work-NNN` nor a description** → print the `## Argument-Hint` usage block
   and exit.
 
