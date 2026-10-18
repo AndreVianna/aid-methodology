@@ -5,7 +5,7 @@ deterministic five-step next-move selector that runs every subsequent turn (D2).
 is NOT a question list -- it is an adaptive analyst. Three parameters supplied by the
 caller let feature-003 (greenfield seed authoring) CONSUME this engine without
 re-implementing it (D3). Plain-request routing (`rules.md` § Handling a request) is not a live three-parameter
-consumer of this engine either -- see "Consumption Contract" below.
+consumer of this engine -- see "Consumption Contract" below.
 
 **Audience.** Two readers at once: a junior maintainer learning how the interview
 works, and the feature implementations that invoke or extend the engine.
