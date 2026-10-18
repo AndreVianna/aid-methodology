@@ -7,6 +7,7 @@ sources:
   - tests/run-all.sh
   - tests/canonical/
   - tests/canonical/select-suites.sh
+  - tests/conversation/
   - tests/coverage-parity.sh
   - tests/lib/
   - tests/windows/Test-AidInstaller.ps1
@@ -68,6 +69,7 @@ live in `quality-gates.md`.
 - [Test Framework Inventory](#test-framework-inventory)
 - [The Canonical Helper Suites](#the-canonical-helper-suites)
 - [Installer Tests (Linux + Windows)](#installer-tests-linux--windows)
+- [The Skill Guide and Conversation Suites](#the-skill-guide-and-conversation-suites)
 - [CI Lanes and Where They Run](#ci-lanes-and-where-they-run)
 - [The WinPS 5.1 Compat Lane](#the-winps-51-compat-lane)
 - [Render-Drift and Generator Self-Tests](#render-drift-and-generator-self-tests)
@@ -113,6 +115,7 @@ because it must validate Bash, PowerShell, Python, and Node code paths.
 | Playwright (Chromium, headless) | Visual fidelity (E2E render) | `canonical/aid/scripts/summarize/validate-visuals.mjs` | Validates `kb.html` authored visuals; gated in CI. |
 | Generator `--self-test` harness | Self-test | `.claude/skills/generate-profile/scripts/*.py` | `render_lib`, `render`, `verify_deterministic`, `verify_advisory`. |
 | Astro / TypeScript tests | Unit | `site/src/data/__tests__/`, `site/scripts/__tests__/` | Site data + docs-sync tests (separate build). |
+| Conversation suite (scripted agent conversations) | Agent behaviour, run by hand | `tests/conversation/run.py` (Python 3, standard library) | Drives the installed agent through sample conversations and has a judge rule on each transcript. Not in `run-all.sh` and not in CI; see [The Skill Guide and Conversation Suites](#the-skill-guide-and-conversation-suites). |
 
 **The `STATE.yml`-specific pytest suites, named.** Three are load-bearing for the state-file
 parse path and are distinct from the general "reader/server parsers + fixtures" description
@@ -180,7 +183,7 @@ Representative suite families (the full set covers far more than these):
 | KB / discovery engine | `test-kb-citation-lint.sh`, `test-frontmatter-lint.sh`, `test-build-kb-index.sh`, `test-closure-check.sh`, `test-harvest-coined-terms.sh`, `test-spine-depth-coverage.sh`, `test-dual-intent-self-eval.sh` | the discovery/KB tooling |
 | Pipeline / execute | `test-writeback-state.sh`, `test-complexity-score.sh`, `test-compute-block-radius.sh`, `test-delivery-gate-aggregate.sh`, `test-grade.sh` | state writeback + delivery gating |
 | State-file review exclusion | `test-state-review-surface.sh` (SR00-SR17) | asserts `filter_reviewable_artifacts` (extracted from `reviewer-dispatch.md`) drops every `STATE.md`/`STATE.yml` path shape at all three work-tree levels, both layouts, and keeps every authored-artifact path; the sibling of `test-kb-review-surface.sh` (which covers the KB's own `list_reviewable` exclusion) |
-| Shortcut / Lite path (+v2.1.0 follow-on) | `test-catalog-dirs-parity.sh`, `test-triage-routing.sh`, `test-describe-full-only.sh`, `test-cutover-no-dangling.sh`, `test-deploy-monitor-repurpose.sh`, `test-executor-graph-flat-plan.sh`, `test-shortcut-engine-contract.sh`, and the six `test-*-family-scaffold.sh` suites (`create`, `change-refactor`, `fix`, `document`, `prototype`, `test-experiment`) | the 34 verb-first shortcut skills, the shortcut engine's GATE/APPROVAL-HALT batching (`test-shortcut-engine-contract.sh` SEC00–SEC07), `/aid-triage` routing, the recipe-removal cutover (no dangling `recipes/`/`parse-recipe.sh`), `/aid-describe` full-only, and the flattened Lite work layout. The 5 families the v2.1.0 follow-on added (`remove`, `deprecate`, `migrate`, `review`, `research`) have no dedicated `test-*-family-scaffold.sh` of their own yet, and neither does the `analyze-report` scaffolding family — all six are covered by `test-catalog-dirs-parity.sh`'s count-agnostic catalog↔dirs parity check instead. |
+| Shortcut / Lite path (+v2.1.0 follow-on) | `test-catalog-dirs-parity.sh`, `test-describe-full-only.sh`, `test-cutover-no-dangling.sh`, `test-deploy-monitor-repurpose.sh`, `test-executor-graph-flat-plan.sh`, `test-shortcut-engine-contract.sh`, and the six `test-*-family-scaffold.sh` suites (`create`, `change-refactor`, `fix`, `document`, `prototype`, `test-experiment`) | the 34 verb-first shortcut skills, the shortcut engine's GATE/APPROVAL-HALT batching (`test-shortcut-engine-contract.sh` SEC00–SEC07), the recipe-removal cutover (no dangling `recipes/`/`parse-recipe.sh`), `/aid-describe` full-only, and the flattened Lite work layout. The 5 families the v2.1.0 follow-on added (`remove`, `deprecate`, `migrate`, `review`, `research`) have no dedicated `test-*-family-scaffold.sh` of their own yet, and neither does the `analyze-report` scaffolding family — all six are covered by `test-catalog-dirs-parity.sh`'s count-agnostic catalog↔dirs parity check instead. |
 | Dashboard | `test-dashboard-reader.sh`, `test-dashboard-parity.sh`, `test-dashboard-parity-h.sh`, `test-aid-dashboard-cli.sh` | reader/server parity |
 | Connectors / reconcile | `test-connector-registry.sh`, `test-connectors-registry-integration.sh`, `test-build-connectors-index.sh`, `test-connector-secret.sh`, `test-connector-secret-ps1.sh`, `test-connector-secret-ac3-leak-sweep.sh` (security: no-leak sweep of AC-3), `test-connector-twins-ps1-parity.sh` (bash↔PowerShell twin parity), `test-reconcile-scenarios.sh` | the `.aid/connectors/` catalog + INDEX generation, registry accessor integration, no-echo/path-confined secret handling, and settings reconcile behavior |
 | Compat / hygiene | `test-ps51-compat.sh`, `test-ascii-only.sh`, `test-payload-size.sh`, `test-multitool-isolation.sh`, `test-dogfood-byte-identity.sh` | portability + content isolation |
@@ -210,6 +213,56 @@ discovered by `tests/run-all.sh`. A green local `run-all.sh` does not exercise i
 [Known Test Gaps](#known-test-gaps).
 
 ---
+
+## The Skill Guide and Conversation Suites
+
+Two suites cover the skill guide in `canonical/aid/rules.md` (`## Skill guide`). The static suite checks
+the guide's text against the shipped files; the conversation suite runs the agent through scripted
+conversations that the guide routes. They differ in how they run.
+
+**Skill guide suite: `tests/canonical/test-skill-guide.sh`** (static, bash harness).
+
+- **Runs in two places.** `tests/run-all.sh` picks it up through the glob, and it is in the
+  `SUITES` list of the `bash-harness` lane of `.github/workflows/installer-tests.yml`, which runs on
+  `ubuntu-latest` for every branch except `master`.
+- **COVERS headers.** `canonical/aid/rules.md`, `canonical/skills/`, `canonical/agents/`,
+  `canonical/aid/templates/shortcut-catalog.yml` and `tests/lib/bundle.sh`. `select-suites.sh` selects
+  it when any of those change.
+- **Groups.** Run one with `--group SG-01` (comma-separated for several); `--self-mutate` adds the
+  mutation matrix.
+  - `SG-01`: the `## Handling a request` section counts at most 20 lines, from its heading through the
+    last non-blank line before the next `## ` heading.
+  - `SG-02`: the skill guide names exactly the skills in `canonical/skills/`, in both directions; a
+    `<kind>` line expands to the catalog rows of that verb in `shortcut-catalog.yml`.
+  - `SG-03`: every skill-guide line is at most 100 characters.
+  - `SG-04`: every non-exempt `description:` has the what/when shape; every exempt skill still exists;
+    with `AID_RELEASE_CHECK=1` the exempt list must be empty.
+  - `SG-05`: no front-door skill (`canonical/skills/aid/` is absent), no `aid-orchestrator` agent, and
+    `aid-developer` and `aid-tech-writer` are present.
+  - `SG-06`: one bundle staged by `tests/lib/bundle.sh` is installed for each of the five tools; every
+    skill sits at that tool's skills path, is byte-identical to `canonical/`, has a `name` equal to its
+    folder and a non-empty `description`, and carries no flag that blocks slash or agent invocation.
+
+**Conversation suite: `tests/conversation/`** (NFR-T; agent behaviour, judged by an agent).
+
+- **Run it by hand.** `python3 tests/conversation/run.py --feature 001` runs every sample in
+  `tests/conversation/samples/feature-001/`. `--sample ID` runs one sample. `--hosts` names the tools;
+  Claude Code always runs, and the other tools run only when named (this build has an adapter for
+  Claude Code only). `--validate` parses the samples without running them. Exit codes: 0 every run
+  passes, 1 any failure, 2 invocation error.
+- **Three runs per sample.** Each sample runs 3 times (`--runs`, default 3) and passes only if all 3
+  runs pass. `tests/conversation/judge.md` rules each transcript; a Pending row in the judge's ledger
+  fails the run.
+- **Never in CI and never in `run-all.sh`.** `run-all.sh` discovers only `tests/canonical/test-*.sh`,
+  and no workflow under `.github/workflows/` invokes `tests/conversation/`. The suite runs on the
+  maintainer's machine.
+- **Where it captures.** Each run writes `.aid/.temp/conversation-tests/<run-id>/<sample>/run-<n>/`,
+  holding `transcript.jsonl`, `transcript.md`, `files.diff`, `checks.txt` and `ledger.md`. The judge's
+  ledger is also saved in the throwaway fixture's `.aid/.temp/review-pending/`.
+- **Its own guard: `tests/canonical/test-conversation-runner.sh`.** It runs in `run-all.sh` and guards
+  `run.py` without calling a model: a stub `claude` is put first on `PATH`, and the suite builds its
+  own samples, fixtures and briefs. Its groups are `EXIT`, `VALIDATE`, `CAPTURE`, `FLAGS`, `DIFF`,
+  `CHECKS`, `CLEAN`, `LEDGER`, `SAMPLES` and `CAP`. It skips with a notice when `python3` is absent.
 
 ## CI Lanes and Where They Run
 
@@ -323,7 +376,9 @@ lands, suite-presence + dogfooding is the floor, not the target.
 | Profile renderer / generator | Strong | render-drift + 4 self-tests + `test-assemble-determinism.sh` |
 | Discovery / KB engine | Strong | ~20 `test-*` suites (closure, harvest, citation/frontmatter lint, dual-intent, spine-depth) |
 | Pipeline execute / state writeback | Strong | `test-writeback-state.sh`, `test-delivery-gate-aggregate.sh`, `test-complexity-score.sh` |
-| Shortcut engine / Lite path | Strong | catalog↔dirs parity, `/aid-triage` routing, the seven family-scaffold suites, `test-shortcut-engine-contract.sh` (`SEC00`–`SEC07`) engine/gate/halt contract, flat-plan execution graph, recipe-removal cutover, describe-full-only |
+| Shortcut engine / Lite path | Strong | catalog↔dirs parity, the seven family-scaffold suites, `test-shortcut-engine-contract.sh` (`SEC00`–`SEC07`) engine/gate/halt contract, flat-plan execution graph, recipe-removal cutover, describe-full-only |
+| Skill guide and skill set | Moderate (static only) | `test-skill-guide.sh` (`SG-01`–`SG-06`): guide length, guide↔`canonical/skills/` match, line width, description shape, bundle install for each tool |
+| Agent behaviour (skill routing, conversations) | Not machine-gated in CI | `tests/conversation/` (run by hand, 3 runs per sample, judged by an agent); see [The Skill Guide and Conversation Suites](#the-skill-guide-and-conversation-suites) |
 | Dashboard reader/server | Strong | pytest suites + parity suites, incl. the `STATE.yml` conformance corpus and cross-format characterization suites (see [Test Framework Inventory](#test-framework-inventory)) |
 | Astro site | Moderate | `site/src/data/__tests__`, `site/scripts/__tests__`; build is the main gate |
 | Prompt-driven skill state machines | Not machine-tested (by design) | dogfooding + human/AI review only |
@@ -355,6 +410,7 @@ canaries that scan `REAL_HOME` for `.aid` must snapshot before/after. See `tech-
 |---|---|---|---|
 | Windows installer | `Test-AidInstaller.ps1` runs only on Windows CI, never in `run-all.sh` | Medium | CLI behavior changes must migrate this test too; a green local `run-all.sh` does not cover it. |
 | Canonical suite on feature branches | Full `run-all.sh` runs on master/tag only | Medium | Run `bash tests/run-all.sh` + `site` build locally before merge. |
+| Conversation suite (NFR-T) | `tests/conversation/run.py` is in neither `run-all.sh` nor any CI workflow; agent behaviour is checked only when run by hand | Medium | Run `python3 tests/conversation/run.py --feature 001` by hand before merging a change to the skill guide, the rules or a skill's routing. |
 | Test-suite effectiveness | No line-coverage (deliberate, D26) AND no effectiveness measure for the deterministic machinery | **High** | Tracked as **tech-debt L4** (P1, next release): mutation testing + invariant-anchoring + behavioral-surface + escaped-defect ledger (dogfooding already covers the prompt layer). |
 | Prompt-driven skills | State machines not machine-tested | Accepted (by design) | Covered by dogfooding + AI/human review; not automatable here. |
 | Web-output review | Source inspection is not a valid review of rendered pages | High (process) | Any review touching `kb.html` / site MUST visually validate via Playwright (the `visual-fidelity` gate + reviewer rule). |
@@ -374,6 +430,12 @@ bash tests/run-all.sh -v
 
 # Run one suite directly
 bash tests/canonical/test-aid-cli.sh
+
+# Static skill-guide suite (SG-01 to SG-06; add --group SG-02 to run one group)
+bash tests/canonical/test-skill-guide.sh
+
+# Conversation suite (not in run-all.sh or CI; runs every sample under samples/feature-001/, 3 runs each, from the maintainer's machine)
+python3 tests/conversation/run.py --feature 001
 
 # Render-drift check (must show no diff under profiles/)
 python .claude/skills/generate-profile/scripts/run_generator.py && git diff --exit-code -- profiles/
