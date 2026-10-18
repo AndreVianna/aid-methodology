@@ -1,0 +1,12 @@
+qa:
+  - id: Q1
+    category: Connections
+    impact: High
+    state: Skipped
+    asked_by: aid-set-connector
+    step: --
+    context: 'Reach the team''s Jira through the tool''s own connection? AID stores no passwords'
+    suggested: 'Yes -- the tool is already signed in to Jira'
+    answer: '--'
+    answered_by: 'Andre Vianna'
+    applied_to: 'connector jira'
