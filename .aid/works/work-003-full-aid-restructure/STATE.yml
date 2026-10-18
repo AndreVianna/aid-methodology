@@ -112,7 +112,7 @@ minimum_grade: A
 # [W] 'yes' | 'no' -- quoted, see NFR-2 / D-5
 user_approved: 'yes'
 # [W] Running | Paused-Awaiting-Input | Blocked | Completed | Canceled
-lifecycle: Paused-Awaiting-Input
+lifecycle: Running
 # [W] Describe | Define | Specify | Plan | Detail | Execute
 phase: Execute
 # [W] aid-{skill} | none
@@ -120,7 +120,7 @@ active_skill: aid-execute
 # [W]
 updated: '2026-10-17T19:10:35Z'
 # [W] set only when lifecycle = Paused-Awaiting-Input
-pause_reason: 'Delivery-001: all 19 tasks Done; waiting on the maintainer''s choice (A fix now / B defer / C diagnose first) for the Feature 001 conversation samples (3 of 16 pass one smoke run each; the gate needs 3 of 3), before the delivery''s Opus review.'
+pause_reason: --
 # [W] set only when lifecycle = Blocked
 block_reason: --
 # [W] e.g. IMPEDIMENT-task-NNN.md, or the failed gate
@@ -1723,3 +1723,11 @@ qa:
     suggested: 'A: targeted tests per task, the full test step once per wave; B: A plus parallel tasks of one wave in separate worktrees; C: add # COVERS: headers to the suites'
     answer: 'B (maintainer). Per task: spawn-free checks, the suites the task changes, the suites that read the files it changes (git grep of its changed paths under tests/ and site/), the suites its criteria name, and site npm test when it touches canonical/skills, canonical/agents, canonical/aid/templates, docs/ or site/. The task file''s full test step runs ONCE per wave on work-003 after every task of the wave is integrated; a task''s "test step reports no failure" criterion is met by that wave run, and no task of the wave is marked Done before it passes. Parallel: each task of a wave with more than one task runs in its own git worktree under .claude/worktrees/, on a temporary LOCAL branch cut from work-003 (never pushed; removed with its worktree after integration); at most 4 at once. Each task is committed in its worktree, reviewed and fixed there, then cherry-picked onto work-003 in the delivery''s order; overlapping edits are resolved at that point, and generated site output is regenerated on work-003 after the wave''s cherry-picks, never conflict-merged by hand. State writes (In Progress, In Review, Done) are made on work-003 only. Q112 (no delivery branches) holds: the temporary task branches never reach the remote and no delivery branch exists. C goes to the KB backlog as a separate improvement.'
     applied_to: 'Every task from delivery-001 wave 7 on; replaces the per-task full test step of each task file (the full step now runs per wave)'
+  - id: Q147
+    category: Building
+    impact: High
+    state: Answered
+    context: 'Delivery-001: the Feature 001 conversation samples pass 3 of 16 on one real run each (agent edits without proposing or starting a work, asks several things at once, skips sources and the close); one more fails on the judge input size. The delivery gate needs every sample 3 of 3.'
+    suggested: 'A fix the product now; B defer the 3-of-3 gate to the final integration run; C diagnose the failing transcripts first, then choose A or B'
+    answer: 'C (maintainer): diagnose the failing transcripts first (rule wording, rule placement, or model limit), then bring the A/B choice back with facts.'
+    applied_to: 'delivery-001 verification, before the delivery Opus review'
