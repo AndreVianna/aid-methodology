@@ -78,21 +78,21 @@ Read `.aid/connectors/INDEX.md`.
 
 ## Handling a request
 
-- Match a request by its meaning, not its wording, to the skill guide below. A question about
-  this project starts no work: answer it from the Knowledge Base, citing sources.
-- One skill fits: propose its workflow in one line, then stop. Change no project file until the
-  user agrees, however small the change. Several fit: choose, and ask one question only if you
-  truly cannot. None fits: carry on with no AID workflow.
-- The richness check sets the depth: any of its five elements missing means `full`. No step of the chosen workflow is skipped; the reading picks its phases, and nothing runs by hand outside it.
+- Match a request by its meaning, not its wording, to the skill guide below. A question about this
+  project starts no work: answer it from the Knowledge Base, citing sources.
+- One skill fits: propose its workflow in one line, then stop. Change no project file until the user
+  agrees, however small the change. Several fit: choose, and ask one question only if you truly
+  cannot. None fits: carry on with no AID workflow.
+- The richness check sets the depth: any of its five elements missing means `full`. No step of the
+  chosen workflow is skipped; the reading picks its phases, and nothing runs by hand outside it.
 - A typed `/aid-<skill>` always wins. Every other request that changes the project, or starts,
   resumes, closes or cancels a work, goes through `/aid-orchestrate` first.
-- The user's words are a hint: check the reading against the Knowledge Base and the code.
-- Show the reading and its reason in one line, inside the first question or approval; then wait.
-- CI closes every work: `/aid-orchestrate` marks it `Completed` once its tasks are all `Done`, or
-  nothing was to land. Definition runs only when the problem must be shaped. Release, deploy and
-  monitoring are works of their own.
-- A Knowledge Base conflict is a request that would make a KB statement false. Quote it, raise
-  it with the user, and plan nothing around it until they answer.
+- Your reading takes the user's words as a hint only: check it against the Knowledge Base and the
+  code, then show it and its reason in one line, inside the first question or approval, and wait.
+- CI closes each work: `/aid-orchestrate` marks it `Completed` once its tasks are `Done`, or when
+  nothing was to land. Definition runs only to shape a problem. Release/deploy/monitor: own works.
+- A Knowledge Base conflict is a request that would make a KB statement false. Quote it, raise it
+  with the user, and plan nothing around it until they answer.
 - A ticket, file or link brought into a work is added to its `sources:` before it is applied.
 - If the work turns out bigger or different, re-route it and say so in one line.
 - Ask one topic at a time, with a recommendation; the user approves before building and the result.
