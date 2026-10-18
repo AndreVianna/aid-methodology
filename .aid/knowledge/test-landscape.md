@@ -393,7 +393,7 @@ lands, suite-presence + dogfooding is the floor, not the target.
 | Profile renderer / generator | Strong | render-drift + 4 self-tests + `test-assemble-determinism.sh` |
 | Discovery / KB engine | Strong | ~20 `test-*` suites (closure, harvest, citation/frontmatter lint, dual-intent, spine-depth) |
 | Pipeline execute / state writeback | Strong | `test-writeback-state.sh`, `test-delivery-gate-aggregate.sh`, `test-complexity-score.sh` |
-| Shortcut engine / Lite path | Strong | catalog↔dirs parity, the seven family-scaffold suites, `test-shortcut-engine-contract.sh` (`SEC00`–`SEC07`) engine/gate/halt contract, flat-plan execution graph, recipe-removal cutover, describe-full-only |
+| Shortcut engine / Lite path | Strong | catalog↔dirs parity, the six family-scaffold suites, `test-shortcut-engine-contract.sh` (`SEC00`–`SEC07`) engine/gate/halt contract, flat-plan execution graph, recipe-removal cutover, describe-full-only |
 | Skill guide and skill set | Moderate (static only) | `test-skill-guide.sh` (`SG-01`–`SG-06`): guide length, guide↔`canonical/skills/` match, line width, description shape, bundle install for each tool |
 | Agent behaviour (skill routing, conversations) | Not machine-gated in CI | `tests/conversation/` (run by hand, 3 runs per sample, judged by an agent); see [The Skill Guide and Conversation Suites](#the-skill-guide-and-conversation-suites) |
 | Dashboard reader/server | Strong | pytest suites + parity suites, incl. the `STATE.yml` conformance corpus and cross-format characterization suites (see [Test Framework Inventory](#test-framework-inventory)) |

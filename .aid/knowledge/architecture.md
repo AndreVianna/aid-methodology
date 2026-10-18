@@ -205,8 +205,8 @@ shortcut doorways plus 60 hand-authored `repurpose` skills):
 | Review | (inside `aid-execute`) | No | A state of the Execute loop (EXECUTE -> REVIEW -> FIX -> DONE), not a phase. |
 | Test | `aid-execute` | No | A task type (TEST) inside Execute, not a phase. |
 | Deploy | `aid-deploy` | No (Definition shortcut path) | On-demand optional shortcut path in the Definition group; not a numbered phase. |
-| Track / Monitor | `aid-monitor` | No (Definition shortcut path) | On-demand observe -> classify -> route; not a numbered phase. ("Track" has no separate referent.) Routes findings out: bug -> `/aid-fix`, change request -> a new work through `/aid-orchestrate`. |
-| Triage | the skill guide in `rules.md` with `/aid-orchestrate` as its intake | No | Reads a plain request by its meaning and matches it to a skill, or answers a project question from the KB; it writes nothing itself. The former standalone suggest-only router is folded into the skill guide. Monitor still classifies its own findings. |
+| Track / Monitor | `aid-monitor` | No (Definition shortcut path) | On-demand observe -> classify -> route; not a numbered phase. ("Track" has no separate referent.) Routes findings out: bug -> a fix request through `rules.md` § Handling a request, change request -> a new work through `/aid-orchestrate`. |
+| Triage | the skill guide in `rules.md` with `/aid-orchestrate` as its intake | No | Reads a plain request by its meaning and matches it to a skill, or answers a project question from the KB. The intake checks and sizes the reading and shows it before any work exists; it creates the work and writes its `intent:` only for a reading that is not handed to an action skill. Monitor still classifies its own findings. |
 | Design | 22 `aid-design[-<artifact>]` skills + `aid-brainstorm` | No (pre-build stage) | Develops an idea into a **design seed** under `.aid/design/`; writes no code and no KB document. `create` realizes the seed, `update` revises what `create` committed. |
 | Shortcut (Lite path) | 34 `aid-<verb>[-<artifact>]` skills + the shared shortcut engine | No (collapses Describe→Detail) | Verb-first direct-entry doorways (`/aid-fix`, `/aid-create-api`, …) that delegate to `canonical/aid/templates/shortcut-engine.md` (INTAKE -> CAPTURE -> SPEC -> PLAN -> DETAIL -> GATE -> APPROVAL-HALT). The autonomous Lite path — enter by naming your change. |
 
@@ -238,7 +238,7 @@ and §4 "The Phases"):
   mostly-autonomous run (it never skips a phase — it collapses the information capture within each),
   grades every generated document at GATE, then halts for approval before `/aid-execute`. The
   default for a known, single-target change.
-- **Plain request.** Say what you want in your own words. The skill guide in `.aid/runtime/rules.md` matches it to one skill, or the agent answers a project question from the KB with sources and starts no work. `/aid-orchestrate` then finds or creates the work, sizes it (lite or full) and picks its phases.
+- **Plain request.** Say what you want in your own words. The skill guide in `.aid/runtime/rules.md` matches it to one skill, or the agent answers a project question from the KB with sources and starts no work. `/aid-orchestrate` then checks the reading, sizes it (lite or full, offering Preparation when there is no KB) and shows it for approval; only then does an action-skill reading go to its skill, and any other reading finds or creates the work, records its `intent:`, and hands over its phases.
 
 CONFIRMED in `canonical/aid/templates/shortcut-engine.md`, `canonical/aid/rules.md` (`## Handling a request`), `canonical/skills/aid-orchestrate/SKILL.md`,
 and `docs/aid-methodology.md` §4.
@@ -246,7 +246,7 @@ and `docs/aid-methodology.md` §4.
 **Eleven formal feedback loops** let any phase revise an upstream artifact (8 within
 development, 2 from production, 1 cross-cutting). CONFIRMED in `docs/aid-methodology.md` §6
 "The Eleven Loops". The two production loops now run out to the entry layer (L9 Monitor ->
-`/aid-fix`, L10 Monitor -> `/aid-orchestrate`; see `.aid/knowledge/pipeline-contracts.md`). The
+a fix request through `rules.md` § Handling a request, L10 Monitor -> `/aid-orchestrate`; see `.aid/knowledge/pipeline-contracts.md`). The
 cross-cutting Loop 11 (Any phase -> Discover, targeted re-discovery) is what makes the KB the
 gravitational center in practice.
 
@@ -419,7 +419,7 @@ CONFIRMED in `README.md` "Install", `docs/aid-methodology.md` §10 and `lib/aid-
        plain request: the skill guide in rules.md -> /aid-orchestrate sizes it and picks an entry
   -> work in its tracked work folder  -> approval halt -> /aid-execute   (numbered sequence ends here)
   separate on-demand paths (own entry, not sequential): /aid-deploy, /aid-monitor
-       (Monitor: bug -> /aid-fix; change request -> /aid-orchestrate)
+       (Monitor: bug -> fix request via rules.md; change request -> /aid-orchestrate)
   (any phase -> Q&A entry in a STATE.md -> targeted re-discovery)
 ```
 CONFIRMED in `README.md` "Quick Start", `docs/aid-methodology.md` §4, and

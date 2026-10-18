@@ -105,7 +105,7 @@ review-criteria:
 | D26 | No line-coverage metric; effectiveness measured via a dedicated program (tech-debt L4) | Accepted (line-coverage); L4 program open | `test-landscape.md` §Coverage Assessment; `tech-debt.md` L4 |
 | D29 | One requirements document per work (`SPEC.md` + `BLUEPRINT.md` retired) | Accepted (supersedes D23) | `canonical/skills/aid-define/SKILL.md`; `canonical/aid/templates/shortcut-engine.md` |
 | D30 | A chat member's position is a scalar into its own hub's arrival order | Accepted | `chat-node/server/store.mjs`; `chat-node/server/core.mjs`; `tests/canonical/test-chat-node-core.sh` |
-| D31 | The agent-facing chat surface omits every operation that reaches another session | — (section has no Status line) | `canonical/skills/aid-chat/SKILL.md`; `tests/canonical/test-chat-node-wake.sh`; `tests/canonical/test-chat-node-hub.sh` |
+| D31 | The agent-facing chat surface omits every operation that reaches another session | Accepted | `canonical/skills/aid-chat/SKILL.md`; `tests/canonical/test-chat-node-wake.sh`; `tests/canonical/test-chat-node-hub.sh` |
 | D32 | The host agent orchestrates; no orchestrator actor and no router skill | Accepted (supersedes D21 and D25; amends D14 and D15) | `canonical/aid/rules.md` § Handling a request; `canonical/skills/aid-orchestrate/SKILL.md` |
 
 ---
@@ -731,6 +731,8 @@ description-first TRIAGE-inside-`aid-describe` routing with its delivery/task `S
 - **Consequences:** Adding a chat verb means deciding which side of the line it falls on, and the
   guards make that decision explicit rather than incidental: the permitted list is asserted against the
   canonical skill, so a verb added to the skill without being added here fails.
+- **Status:** Accepted. CONFIRMED `canonical/skills/aid-chat/SKILL.md` (it documents the eleven verbs and
+  none of the omitted set); `tests/canonical/test-chat-node-wake.sh` and `tests/canonical/test-chat-node-hub.sh`.
 
 ## D32 — The host agent orchestrates
 

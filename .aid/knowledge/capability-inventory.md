@@ -66,7 +66,7 @@ skill guide in `rules.md`, with `/aid-orchestrate` as its intake.)
 | Break down into tasks | `/aid-detail` | Decomposes deliverables into small, typed, dependency-ordered tasks with an execution graph, emitting a `DETAIL.md` per task (the delivery definition is its `PLAN.md` stanza). |
 | Execute a task | `/aid-execute` | Runs a task by type (Implement/Test/Refactor/etc.) with a built-in review→fix loop; one git branch per delivery. |
 | Ship a release | `/aid-deploy` | Packages completed deliveries, verifies the combined build, generates release notes. |
-| Observe production | `/aid-monitor` | Interprets telemetry, classifies findings, and routes them back into the pipeline: bugs to `/aid-fix`, change requests to new works through `/aid-orchestrate`, infrastructure to ops. |
+| Observe production | `/aid-monitor` | Interprets telemetry, classifies findings, and routes them back into the pipeline: bugs back as a fix request through `rules.md` § Handling a request, change requests to new works through `/aid-orchestrate`, infrastructure to ops. |
 
 > The "Init / Review / Test / Track / Triage" labels are **not numbered phases**: Init is the
 > `aid-config` bootstrap; Review (a state) and Test (a task type) run inside `/aid-execute`;
@@ -207,7 +207,7 @@ with `/aid-research`.
 
 ### The plain-request intake (`/aid-orchestrate`)
 
-Plain requests are read against the skill guide in `canonical/aid/rules.md` (`## Handling a request` and `## Skill guide`). The guide matches a request by its meaning: a question about the project is answered from the Knowledge Base with sources and starts no work; one matching skill is proposed; several are chosen among; none carries on with no AID workflow. `/aid-orchestrate` (`canonical/skills/aid-orchestrate/SKILL.md`) then finds or creates the work, checks the reading against the Knowledge Base and the code, sizes it (lite or full) and picks its phases. It runs in the main conversation and dispatches no sub-agent. `/aid-monitor` hands its bug and change-request findings back through the same intake.
+Plain requests are read against the skill guide in `canonical/aid/rules.md` (`## Handling a request` and `## Skill guide`). The guide matches a request by its meaning: a question about the project is answered from the Knowledge Base with sources and starts no work; one matching skill is proposed; several are chosen among; none carries on with no AID workflow. `/aid-orchestrate` (`canonical/skills/aid-orchestrate/SKILL.md`) then checks the reading against the Knowledge Base and the code, sizes it (lite or full) and offers Preparation when there is no Knowledge Base, all before any work exists. It shows the reading for approval. An action-skill reading is handed to that skill, which creates the work through the gate and writes the `intent:` block; any other reading finds or creates the work and records its `intent:` in `STATE.yml`. A named work is cancelled or closed here, a close setting `phase` and `lifecycle`. Then the first phase is handed over. It runs in the main conversation and dispatches no sub-agent. `/aid-monitor` hands its change-request findings back through the same intake; a bug goes back as a fix request through `rules.md` § Handling a request.
 
 ## On-demand skills
 

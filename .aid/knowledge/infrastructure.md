@@ -267,7 +267,7 @@ own MCP and AID stores no credential) — see [integration-map.md](integration-m
 `## Connectors` for the catalog model and the two management modes. Outward ticket interaction
 happens **only** through three dedicated, user-invoked skills — `/aid-read-ticket`
 (non-destructive fetch), `/aid-create-ticket` (`--level` / `--parent`; preview + confirm), and
-`/aid-update-ticket` (description / comment / status; preview + confirm) — which resolve the
+`/aid-update-ticket` (description / comment / status / attachment; preview + confirm) — which resolve the
 connector via the shared connector-resolution ladder and fetch/write through the host tool's own
 MCP. There is **no automated ticket write embedded in any pipeline skill**: the pipeline never
 creates, mirrors, or comments on a tracker item on its own; where a skill mentions a tracker it
