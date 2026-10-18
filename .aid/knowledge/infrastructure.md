@@ -272,8 +272,9 @@ connector via the shared connector-resolution ladder and fetch/write through the
 MCP. There is **no automated ticket write embedded in any pipeline skill**: the pipeline never
 creates, mirrors, or comments on a tracker item on its own; where a skill mentions a tracker it
 prints an optional, user-initiated suggestion, gated on a catalogued `issue-tracker` connector and
-silent when none exists — so a project with no such connector is unaffected. Internal `ticket_ref`
-traceability is recorded in STATE frontmatter only from a user-supplied ref, never auto-created.
+silent when none exists — so a project with no such connector is unaffected. Traceability to a
+ticket is recorded in the work's `sources:` list in `STATE.yml`, only from a user-supplied ref, and
+never auto-created.
 CONFIRMED: `canonical/skills/aid-read-ticket/`, `canonical/skills/aid-create-ticket/`,
 `canonical/skills/aid-update-ticket/`, and the shared ladder
 `canonical/aid/templates/connectors/ticket-resolution.md`.

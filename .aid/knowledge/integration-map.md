@@ -281,6 +281,15 @@ Q10 — derived from `connection_type`)"); `canonical/skills/aid-discover/refere
 listed is declared as `custom`. CONFIRMED: `canonical/aid/templates/connectors/preset-catalog.md`
 ("## Presets").
 
+**Tickets a work uses.** A work records the sources it pulls in (tickets, issues, documents, links
+and files) in the `sources:` list of its own `STATE.yml`, and each ref is `<connector-stem>:<external-id>`,
+a URL or a repo-relative path. A ticket is read through `/aid-read-ticket`, and the connector is
+resolved by the shared ladder. A write back to a ticket happens only on the user's request, through
+`/aid-update-ticket`, and each one is recorded in the work's `write_backs:` list. The host agent's
+reading of a request is recorded in the work's `intent:` block. CONFIRMED:
+`canonical/aid/templates/work-state-template.yml` (the `sources:`, `write_backs:` and `intent:` keys);
+`canonical/aid/templates/connectors/consumption-protocol.md` ("### Write-backs (`write_backs:`)").
+
 **`.mcp.json`** (repo root) is this project's *own* MCP client configuration — distinct from the
 connectors registry above (that registry is a catalog for the pipeline's agents to discover and
 request tool integrations; `.mcp.json` is the actual host-tool wiring for one specific

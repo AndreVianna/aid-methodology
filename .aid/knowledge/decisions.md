@@ -51,7 +51,7 @@ review-criteria:
 - [D12 — CLI install scope: cwd-driven, no scan, CODE/STATE split](#d12--cli-install-scope-cwd-driven-no-scan-codestate-split)
 - [D13 — Per-repo `format_version` stamp (git model)](#d13--per-repo-format_version-stamp-git-model)
 - [D14 — Lite path + description-first TRIAGE](#d14--lite-path--description-first-triage)
-- [D15 — Nine agents in three tiers (role consolidation)](#d15--nine-agents-in-three-tiers-role-consolidation)
+- [D15 — Eight agents in three tiers (role consolidation)](#d15--eight-agents-in-three-tiers-role-consolidation)
 - [D16 — PowerShell 5.1 compatibility floor](#d16--powershell-51-compatibility-floor)
 - [D17 — Prose over scripts in skill definitions](#d17--prose-over-scripts-in-skill-definitions)
 - [D18 — KB forbids diagrams; the HTML summary embraces them](#d18--kb-forbids-diagrams-the-html-summary-embraces-them)
@@ -66,6 +66,7 @@ review-criteria:
 - [D27 — `design` / `create` / `update` as the verbs, not `export` or `document-`](#d27--design--create--update-as-the-verbs-not-export-or-document-)
 - [D28 — Forward-looking documents in a Knowledge Base that describes what *is*](#d28--forward-looking-documents-in-a-knowledge-base-that-describes-what-is)
 - [D29 — One requirements document per work: features, delivery definitions and the Lite path folded in](#d29--one-requirements-document-per-work-features-delivery-definitions-and-the-lite-path-folded-in)
+- [D32 — The host agent orchestrates](#d32--the-host-agent-orchestrates)
 - [Still Load-Bearing](#still-load-bearing)
 
 ---
@@ -87,20 +88,21 @@ review-criteria:
 | D11 | Content isolation + AID:BEGIN/END markers | Accepted (supersedes .aid-new) | `README.md` |
 | D12 | cwd-driven CLI, no scan, CODE/STATE split | Settled, partial impl | `bin/aid` (`AID_CODE_HOME` / `AID_STATE_HOME`) |
 | D13 | Per-repo `format_version` stamp | Settled | `bin/aid` (`AID_SUPPORTED_FORMAT`) |
-| D14 | Lite path + description-first TRIAGE | Superseded by D20/D21/D24 | `docs/aid-methodology.md` §4 |
-| D15 | 9 agents / 3 tiers (consolidation) | Accepted (supersedes prior roster) | `docs/aid-methodology.md` §5 |
+| D14 | Lite path + description-first TRIAGE | Superseded by D20/D24/D32 | `docs/aid-methodology.md` §4 |
+| D15 | 8 agents / 3 tiers (consolidation) | Accepted (supersedes prior roster; amended by D32) | `docs/aid-methodology.md` §5 |
 | D16 | PowerShell 5.1 floor | Accepted | `README.md`; project memory |
 | D17 | Prose over scripts in skills | Accepted | project practice; `tests/run-all.sh` header |
 | D18 | KB no-diagrams; HTML summary yes-diagrams | Accepted | authoring standard; `canonical/aid/scripts/summarize/assemble.sh` |
 | D19 | Connectors registry is a catalog, not a connection manager | Accepted (delivery-002 withdrawn) | `canonical/aid/templates/connectors/preset-catalog.md`; `canonical/skills/aid-discover/references/state-elicit.md` |
 | D20 | Direct-entry shortcut system + shared engine | Accepted | `canonical/aid/templates/shortcut-engine.md`; feature-003 |
-| D21 | `/aid-triage` extracted as a suggest-only router | Accepted | `canonical/skills/aid-triage/SKILL.md`; feature-014 |
+| D21 | `/aid-triage` extracted as a suggest-only router | Superseded by D32 | `canonical/aid/rules.md` § Handling a request |
 | D22 | Recipe-catalog removal | Accepted (supersedes recipes) | feature-002; `canonical/aid/templates/shortcut-scaffolding/` |
 | D23 | Delivery/task rename (BLUEPRINT.md / DETAIL.md) + nested `deliveries/` | Accepted (supersedes delivery/task SPEC.md) | feature-001; feature-015 |
 | D24 | `/aid-describe` reduced to full-path-only | Accepted | `canonical/skills/aid-describe/SKILL.md`; feature-013 |
-| D25 | `/aid-monitor` re-point (BUG -> `/aid-fix`, CR -> `/aid-triage`) | Accepted | `canonical/skills/aid-monitor/SKILL.md`; feature-012 |
+| D25 | `/aid-monitor` re-point (BUG and change request routed back into the pipeline) | Superseded by D32 | `canonical/skills/aid-monitor/SKILL.md` |
 | D26 | No line-coverage metric; effectiveness measured via a dedicated program (tech-debt L4) | Accepted (line-coverage); L4 program open | `test-landscape.md` §Coverage Assessment; `tech-debt.md` L4 |
 | D29 | One requirements document per work (`SPEC.md` + `BLUEPRINT.md` retired) | Accepted (supersedes D23) | `canonical/skills/aid-define/SKILL.md`; `canonical/aid/templates/shortcut-engine.md` |
+| D32 | The host agent orchestrates; no orchestrator actor and no router skill | Accepted (supersedes D21 and D25; amends D14 and D15) | `canonical/aid/rules.md` § Handling a request; `canonical/skills/aid-orchestrate/SKILL.md` |
 
 ---
 
@@ -306,20 +308,20 @@ review-criteria:
   explicit anti-pattern); a user-picked work-type menu (rejected in favor of inference — "You
   never pick this from a menu"). The old `single-doc` work-type was also removed (folded into
   new-feature/refactor).
-- **Status:** **Superseded by D20/D21/D24.** The *proportionality
+- **Status:** **Superseded by D20/D24/D32.** The *proportionality
   principle* this decision established survives — small work should not pay full-pipeline
   overhead — but its *mechanism* (description-first TRIAGE inside every `aid-describe` interview
-  + recipe matching) was replaced by the three-door direct-entry model: routing extracted to the
-  standalone `/aid-triage` router (D21), lite work entered by naming the change through a shortcut
-  into the shared shortcut engine (D20), and `aid-describe` reduced to full-path only with no
-  TRIAGE state (D24). The recipe catalog the match depended on was removed (D22). The current
-  three-door model is documented in D20/D21/D24 and `docs/aid-methodology.md` §4 "The Lite Path:
-  Direct-Entry Shortcuts".
+  + recipe matching) was replaced. Routing was first extracted to a standalone router (D21) and
+  is now the host agent's job, guided by `rules.md` (D32). Lite work is entered by naming the
+  change through a shortcut into the shared shortcut engine (D20), and `aid-describe` was reduced
+  to full path only with no TRIAGE state (D24). The recipe catalog the match depended on was
+  removed (D22). The current entry model is documented in D20/D24/D32 and `docs/aid-methodology.md`
+  §4 "The Lite Path: Direct-Entry Shortcuts".
 
-## D15 — Nine agents in three tiers (role consolidation)
+## D15 — Eight agents in three tiers (role consolidation)
 
-- **What:** 9 specialist agents across Large/Medium/Small tiers, mapped per profile to
-  concrete models.
+- **What:** 8 specialist agents across Large/Medium/Small tiers, mapped per profile to
+  concrete models. The orchestrator is no longer an agent (D32), so it is not counted.
 - **Why:** Match model cost to task stakes; one mechanical Small-tier `aid-clerk` avoids
   Large-tier overhead for glob/extract work.
 - **Rejected / superseded:** The former larger roster — the five discovery-* agents
@@ -328,7 +330,8 @@ review-criteria:
   `aid-architect` absorbed the former ux-designer advisory work. CONFIRMED
   `docs/aid-methodology.md` §5 (search: "replaces the former five separate discovery-* agents"
   and "absorbs former data-engineer and devops roles").
-- **Status:** Accepted (supersedes the prior agent roster).
+- **Status:** Accepted (supersedes the prior agent roster). Amended by D32: the agent count is
+  eight, because the orchestrator sub-agent retired.
 
 ## D16 — PowerShell 5.1 compatibility floor
 
@@ -434,7 +437,7 @@ review-criteria:
 ## D21 — /aid-triage extracted as a suggest-only router
 
 - **What:** Extract the routing judgment formerly embedded in `aid-describe`'s TRIAGE state into a
-  standalone `canonical/skills/aid-triage/SKILL.md` — a **stateless, write-free, suggest-only**
+  standalone `aid-triage` skill — a **stateless, write-free, suggest-only**
   router (`INTAKE -> CLASSIFY -> SUGGEST -> HALT`). It captures one free-form description, infers
   work-type + scope, then suggests exactly one next step (a matching canonical shortcut, or the
   full path `/aid-describe`) and stops. It creates no work folder, no `STATE.md`, runs no
@@ -447,9 +450,10 @@ review-criteria:
   interview and forced a work folder for a decision that writes nothing); a multi-turn triage
   interview / dedicated agent (rejected as over-engineering, NFR-8 — one reflect-back turn
   suffices; it reuses the D1 opener's `Suggested:`/`Why:` UX shape as a UX-shape consumer only).
-- **Status:** Accepted. CONFIRMED `canonical/skills/aid-triage/SKILL.md` and
-  `canonical/skills/aid-describe/references/elicitation-engine.md` ("The in-skill guided-triage
-  consumer has been removed").
+- **Status:** **Superseded by D32.** The router skill is gone. Its suggest-only job now belongs to
+  the host agent, guided by `canonical/aid/rules.md` § Handling a request, which proposes one
+  workflow and waits for the user's approval. The write-free rule this decision set for the router
+  does not carry over to the host agent.
 
 ## D22 — Recipe-catalog removal
 
@@ -499,29 +503,31 @@ review-criteria:
   /aid-define]`. It no longer hosts a TRIAGE state and no longer emits lite work (the former
   CONDENSED-INTAKE / TASK-BREAKDOWN / LITE-* states are gone). Its seasoned-analyst elicitation
   engine is preserved unchanged.
-- **Why:** With routing extracted to `/aid-triage` (D21) and lite work entered through shortcuts
-  (D20), `aid-describe`'s only remaining job is the broad / new-project interview. Removing the
-  triage + lite branches reduces the skill to one responsibility.
+- **Why:** With routing moved out of `aid-describe` (D21, then D32) and lite work entered through
+  shortcuts (D20), `aid-describe`'s only remaining job is the broad / new-project interview.
+  Removing the triage + lite branches reduces the skill to one responsibility.
 - **Rejected:** Keeping the lite path inside `aid-describe` (rejected — superseded by the shortcut
   engine); deleting the elicitation engine (rejected — it remains the full-path interview driver
-  and the `/aid-triage` reflect-back's UX-shape precedent).
+  and the one-turn reflect-back UX shape that the router of D21 reused).
 - **Status:** Accepted. CONFIRMED `canonical/skills/aid-describe/SKILL.md` (frontmatter state
   machine) and `canonical/skills/aid-describe/references/elicitation-engine.md` ("`aid-describe`
   no longer hosts a TRIAGE state").
 
 ## D25 — /aid-monitor re-point (BUG and Change-Request routing)
 
-- **What:** Re-point Monitor's finding routing: a finding classified **BUG** now routes to the
+- **What:** Re-point Monitor's finding routing: a finding classified **BUG** routes to the
   `/aid-fix` shortcut (creates + implements the fix work), and a **Change Request** routes to
-  `/aid-triage` (which suggests the right entry). Formerly both went into `aid-describe` (BUG -> its
-  LITE-BUG-FIX state; change-request -> the interview).
+  the `/aid-triage` router (which suggests the right entry). Formerly both went into `aid-describe`
+  (BUG -> its LITE-BUG-FIX state; change-request -> the interview).
 - **Why:** The lite-bug-fix path inside `aid-describe` no longer exists (D24); `/aid-fix` is its
-  direct-entry replacement, and `/aid-triage` is the correct home for the "which entry?" judgment a
-  change request needs. This keeps the L9/L10 feedback loops pointed at live entries.
+  direct-entry replacement, and a change request needs a "which entry?" judgment. This keeps the
+  L9/L10 feedback loops pointed at live entries.
 - **Rejected:** Continuing to route findings into `aid-describe` (rejected — those describe states
   were removed by D24).
-- **Status:** Accepted. CONFIRMED `canonical/skills/aid-monitor/SKILL.md` ("BUG -> /aid-fix",
-  "Change Request -> /aid-triage"); matches `pipeline-contracts.md` L9/L10.
+- **Status:** **Superseded by D32.** Both routes now go back as plain requests, handled through
+  `canonical/aid/rules.md` § Handling a request: a bug as a fix request, a change request as a
+  new-work request (`canonical/skills/aid-monitor/SKILL.md`). Neither route names `/aid-fix` or
+  `/aid-triage` any longer, and no router is involved.
 
 ---
 
@@ -721,4 +727,29 @@ description-first TRIAGE-inside-`aid-describe` routing with its delivery/task `S
 - **Consequences:** Adding a chat verb means deciding which side of the line it falls on, and the
   guards make that decision explicit rather than incidental: the permitted list is asserted against the
   canonical skill, so a verb added to the skill without being added here fails.
+
+## D32 — The host agent orchestrates
+
+- **What:** The agent in the tool the user is talking to is the orchestrator. AID adds no
+  orchestrator actor: there is no orchestrator sub-agent and no front-door router skill.
+  `canonical/aid/rules.md` (loaded at every session start) carries an orchestration section under
+  its `## Handling a request` heading and a skill guide. The host agent reads the user's request by
+  its meaning, matches it to one skill, and proposes that skill's workflow. The detailed procedures
+  live in `/aid-orchestrate`, an on-demand playbook skill that runs in the main conversation and
+  dispatches no sub-agent. Two things are retired: the `aid-orchestrator` agent and the
+  `/aid-triage` router.
+- **Why:** Only the main conversation can talk with the user, and choosing a route is a reading of
+  the request, not a separate actor. A router the user must find before the work can start adds a
+  hop. A sub-agent that routes on the user's behalf cannot ask the user anything and repeats what
+  the host agent already does. Rules loaded at every session start keep the guidance in force
+  without a command.
+- **Rejected:** Keeping `/aid-triage` as a suggest-only router (D21), because it is a second front
+  door the user must choose before the work begins. Keeping the orchestrator sub-agent, because it
+  cannot hold a conversation with the user and its routing duplicates the host agent's.
+- **Supersedes:** D21 (the router) and D25 (its routes now run as plain requests).
+- **Amends:** D14, whose pointer to D21 now points here; D15, whose agent count is now eight.
+- **Status:** Accepted. CONFIRMED `canonical/aid/rules.md` § Handling a request;
+  `canonical/skills/aid-orchestrate/SKILL.md` (its opening paragraph: "runs in the main
+  conversation and dispatches no sub-agent"); and the `canonical/agents/` folder, which holds eight
+  agent directories and none for the orchestrator.
 

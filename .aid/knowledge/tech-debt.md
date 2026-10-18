@@ -89,7 +89,6 @@ urgent.
 | | | *IDs in this table share the `W<n>-<m>` namespace with the main Debt Inventory above, and that namespace is flat: see the ID rule there before adding a row. The highest id in THIS table is not the highest in the document.* | | | | |
 | **W1-3** | Graceful-degradation gap | Client-side mermaid rendering means a reader without JavaScript sees raw `flowchart TB …` source inside an animated placeholder. Accepted at design time (the below-chart ordered list is static markdown and carries the same information), but it now affects all 75 skill detail pages rather than 4. | `astro-mermaid-integration.js`:64, 316-318 | Low | M | P3 |
 | **W1-5** | Extractor gap | The `X (optional) then Y` advance form is not split by the flow extractor, so a state carrying it renders one edge where two are meant. | `site/scripts/lib/flow-graph/advance.mjs` | Low | S | P3 |
-| **W1-6** | Stale curated roster | `SKILL_GROUPS` files `aid-triage` under *Definition* where FR-5 puts it in *Support*. No longer rendered anywhere, but still read by the corpus drift guard, by `skill-counts.mjs`'s `curatedOnly`, and by the derived grouping-divergence note on `/skills/` — so correcting it is a real change with real consequences, deliberately not folded into delivery-006. | `site/scripts/skills/curated-roster.mjs` | Low | S | P3 |
 | **W1-7** | Misleading signal | `data-processed` on a mermaid container means "render attempted", not "SVG present" — an error `<div>` also carries it. Consumers must check for an actual `<svg>`. | `astro-mermaid-integration.js` | Low | S | P3 |
 | **W1-8** | Missing re-entrancy guard | `initMermaid()` has no re-entrancy guard, so rapid theme toggling can interleave two render passes over the same container. | `astro-mermaid-integration.js` | Low | S | P3 |
 | **W1-9** | Contradictory templates | The two task templates disagree with each other, and one claims a conformance property it does not enforce. | `canonical/aid/templates/delivery-plans/` | Low | S | P3 |
@@ -130,7 +129,7 @@ pointer: this section deliberately carries **no path** to the work's issue file,
 is the section whose entire purpose is to outlive that folder being pruned. Everything a later
 reader needs is restated in the rows above.
 
-The still-open ones are listed above as `W1-1`..`W1-3`, `W1-5`..`W1-15` and `W1-17` — **fifteen items** —
+The still-open ones are listed above as `W1-1`..`W1-3`, `W1-5`, `W1-7`..`W1-15` and `W1-17` — **fourteen items** —
 because of the project's own rule that **work folders are transient**: `.aid/works/work-NNN-*/`
 may be pruned once a work ships, and no permanent artifact may depend on it. Left only there, they
 would have been deleted along with the folder — including a Medium-priority Windows worktree trap
