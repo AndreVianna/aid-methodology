@@ -1775,3 +1775,11 @@ qa:
     suggested: 'Prove the channel with h000 (handshake) and h001 (delivery-001 review) first, then give Codex the Codex adapter as h002'
     answer: 'A then B (maintainer): h000 and h001 first; if both go cleanly, Codex builds only the Codex adapter of task-365 as h002. The Cursor, Copilot CLI and Antigravity adapters stay in task-365 at delivery-014.'
     applied_to: 'handoff queue; task-365 scope split'
+  - id: Q153
+    category: Building
+    impact: Medium
+    state: Answered
+    context: 'The delivery-001 gate re-records tests/coverage-baseline.tsv. The cloud build session runs as root without the en_US.UTF-8 locale, so 29 assertions do not run there; the Codex workspace is not root and has the locale.'
+    suggested: 'Codex collects the coverage inventory on its machine (h003); the baseline is recorded from both runs, and an assertion that runs on neither keeps its baseline row'
+    answer: 'C (maintainer): Codex collects the inventory as h003, after h001; Claude records the baseline from both runs.'
+    applied_to: 'delivery-001 gate, G0 coverage baseline; handoff h003'
