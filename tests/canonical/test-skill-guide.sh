@@ -14,8 +14,8 @@
 #   SG-03  the skill guide has at least one line, and every skill-guide line is at most 100 characters
 #   SG-04  every non-exempt description has the what/when shape ("Use when" after a what-sentence);
 #          every exempt skill still exists; with AID_RELEASE_CHECK=1 the exempt list must be empty
-#   SG-05  no front-door skill (canonical/skills/aid/), no aid-orchestrator agent, and aid-developer
-#          and aid-tech-writer present
+#   SG-05  no front-door skill (canonical/skills/aid/), no aid-triage skill (canonical/skills/aid-triage/),
+#          no aid-orchestrator agent, and aid-developer and aid-tech-writer present
 #   SG-06  one bundle staged by tests/lib/bundle.sh, installed for each of the five tools: every skill
 #          at the tool's own skills path (.claude/skills/ for claude-code, .agents/skills/ for the
 #          others), byte-identical to canonical/, name equal to its folder, a non-empty description,
@@ -246,6 +246,11 @@ group_sg05() {
     else
         pass "SG-05 no front-door skill: canonical/skills/aid/ is absent"
     fi
+    if [[ -e "$c/skills/aid-triage" ]]; then
+        fail "SG-05 retired skill still present: canonical/skills/aid-triage/"
+    else
+        pass "SG-05 no aid-triage skill: canonical/skills/aid-triage/ is absent"
+    fi
     if [[ -e "$c/agents/aid-orchestrator" ]]; then
         fail "SG-05 orchestrator agent still present: canonical/agents/aid-orchestrator/"
     else
@@ -446,6 +451,13 @@ m_sg05_front_door() {
     group_sg05
 }
 
+m_sg05_triage_skill() {
+    mut_root sg05d
+    mkdir -p "$SG_ROOT/canonical/skills/aid-triage"
+    printf -- '---\nname: aid-triage\ndescription: >\n  Triage. Use when a test adds one.\n---\n' > "$SG_ROOT/canonical/skills/aid-triage/SKILL.md"
+    group_sg05
+}
+
 m_sg05_orchestrator_agent() {
     mut_root sg05b
     mkdir -p "$SG_ROOT/canonical/agents/aid-orchestrator"
@@ -511,6 +523,7 @@ if [[ $SELF_MUTATE -eq 1 ]]; then
     run_mutant SG-04 sg04-exempt-row-missing m_sg04_exempt_row_missing
     run_mutant SG-04 sg04-release-check-nonempty m_sg04_release_check
     run_mutant SG-05 sg05-front-door m_sg05_front_door
+    run_mutant SG-05 sg05-triage-skill m_sg05_triage_skill
     run_mutant SG-05 sg05-orchestrator-agent m_sg05_orchestrator_agent
     run_mutant SG-05 sg05-developer-removed m_sg05_developer_removed
     run_mutant SG-06 sg06-installed-byte m_sg06_installed_byte

@@ -75,7 +75,7 @@
 - **Severity:** High
 - **Affects:** Feature 001 — Ask for Work in Plain Language
 - **Source:** `tests/conversation/samples/feature-001/` (every sample except 001-03, 001-04 and 001-15); per-run results, causes and run folders in `analysis/delivery-001-sample-runs.md` (work folder)
-- **Description:** After the delivery-001 fix round (rules wording, size-first routing through `/aid-orchestrate`, harness and sample fixes), all 16 Feature 001 samples were run 3 times each on the real claude CLI (default model `claude-sonnet-5-5`). 23 of 48 runs pass; only 001-03, 001-04 and 001-15 pass 3 of 3. Every remaining failure is agent behaviour against a clear expectation that was in context:
+- **Description:** After the delivery-001 fix round (rules wording, size-first routing through `/aid-orchestrate`, harness and sample fixes), all 16 Feature 001 samples were run 3 times each on the real claude CLI (default model `claude-sonnet-5-5`). 23 of 48 runs pass; only 001-03, 001-04 and 001-15 pass 3 of 3. Every remaining failure except 001-16 is agent behaviour against a clear expectation that was in context (001-16's failing run followed the product, see its line below):
   - 001-01 (AC-1), 2/3: the bug reading omits its Knowledge Base basis.
   - 001-02 (AC-2), 0/3: no read-only investigation workflow named with its reason; once asks the user to pick.
   - 001-05 (AC-4), 2/3: a speculative addition in a Knowledge Base answer (borderline).
@@ -88,7 +88,7 @@
   - 001-12 (AC-29), 2/3: a weak recommendation at the tool limit (borderline).
   - 001-13 (AC-29), 1/3: the project source is attached to the work's `sources:`.
   - 001-14 (AC-1), 1/3: the lite path shows no CI step in one run, and another run says the `add` and `list` behaviour is unchanged.
-  - 001-16 (AC-14), 2/3: the work is closed by the write-back script instead of the closing step.
+  - 001-16 (AC-14), 2/3: a sample cause, not agent behaviour. EO-1 expected a "closing step" the product does not define; the failing run closed the work with the two write-back script calls of `/aid-orchestrate`'s Close step (phase Execute, then lifecycle Completed), which is what the product defines. The sample's EO-1 now expects that close, so this row is no longer a failure of the agent.
   The judge's six-column table, which the runner read as no table in 001-03 run 3 and 001-14 run 2, is fixed in the harness: both samples were re-run after the fix, and no run in this table fails on a judge-format fault.
 - **See also:** backlog item W7-14 (hooks): a pre-approval guard that blocks source edits until the user agrees is the mechanical fix for the compliance-bound cases.
 - **Status:** Open. Re-checked at the full integration run at delivery-014's gate. Does not block delivery-001 (Q149).

@@ -92,7 +92,9 @@ MODEL_ENV = "AID_CONV_MODEL"
 REQUIRED_KEYS = ("id", "covers", "fixture")
 REQUIRED_SECTIONS = ("User", "Answer sheet", "Expected outcome", "Must not", "Checks")
 CHECK_VERBS = ("exists", "absent", "contains", "no-new-dir", "no-push", "tool-called", "tool-not-called")
-CREDENTIAL_RE = re.compile(r"(?i)(credential|secret|token)|\.(pem|key)$")
+# the credential files under HOME, never recorded in files.diff: the known credential file names, and private
+# key or certificate files by extension (a note whose name merely says token or secret is kept)
+CREDENTIAL_RE = re.compile(r"(?i)^(\.credentials\.json|\.netrc|\.npmrc|\.pypirc|\.git-credentials|\.env|id_(rsa|dsa|ecdsa|ed25519)|.+\.(pem|key|p12|pfx))$")
 # the agent's environment: the parent session's identity and wiring are dropped (the deny-list below);
 # every auth and provider variable, proxy and CA variable is kept, so the agent can still authenticate
 ENV_DROP_NAMES = (

@@ -31,6 +31,6 @@ I have an idea: I want to tag my notes so that I can filter them later.
 ## Checks
 
 - tool-called Skill aid-brainstorm
-- tool-not-called Edit src/*
-- tool-not-called Write src/*
+- tool-not-called Edit *src/*
+- tool-not-called Write *src/*
 - no-push

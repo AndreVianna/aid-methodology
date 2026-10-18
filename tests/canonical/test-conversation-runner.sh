@@ -16,7 +16,7 @@
 # COVERS: tests/conversation/
 #
 # Groups (a filter, so a failing group can be re-run alone):
-#   EXIT VALIDATE CAPTURE FLAGS DIFF JUDGE ENV END BRIEFS CHECKS CLEAN LEDGER SAMPLES CAP
+#   EXIT VALIDATE CAPTURE FLAGS DIFF JUDGE ENV END BRIEFS CHECKS CLEAN LEDGER SAMPLES VSAMPLES CAP
 #
 # Each behaviour of the harness that a group guards has a mutation: a throwaway copy of run.py (or of
 # a brief) with that one behaviour broken. The group asserts that its check fails on the mutant, so a
@@ -45,7 +45,7 @@ while [ $# -gt 0 ]; do
         *) echo "unknown argument: $1" >&2; exit 2 ;;
     esac
 done
-ALL_GROUPS="EXIT VALIDATE CAPTURE FLAGS DIFF JUDGE ENV END BRIEFS CHECKS CLEAN LEDGER SAMPLES CAP"
+ALL_GROUPS="EXIT VALIDATE CAPTURE FLAGS DIFF JUDGE ENV END BRIEFS CHECKS CLEAN LEDGER SAMPLES VSAMPLES CAP"
 if [ -n "$GROUP" ] && ! [[ " $ALL_GROUPS " == *" $GROUP "* ]]; then
     echo "unknown group: $GROUP (groups: $ALL_GROUPS)" >&2
     exit 2
@@ -77,8 +77,15 @@ TEMP_EXISTED=0
 if [ -d "$RUN_ROOT" ]; then ls -A "$RUN_ROOT" > "$RUN_SNAP"; else : > "$RUN_SNAP"; fi
 
 MUT_FILES=()
+PYCACHE="$REPO_ROOT/tests/conversation/__pycache__"
+PYCACHE_EXISTED=0
+[ -d "$PYCACHE" ] && PYCACHE_EXISTED=1
 cleanup() {
     rm -f -- "${MUT_FILES[@]}"
+    # the mutant copies are loaded by the suite (spec_from_file_location); the bytecode they leave is removed,
+    # and a __pycache__ the suite itself created is removed with them
+    rm -f -- "$PYCACHE"/mut-*.pyc
+    [ "$PYCACHE_EXISTED" -eq 1 ] || rmdir "$PYCACHE" 2>/dev/null
     # run.py names each run folder <timestamp>-<host>-<pid> with the pid of its own process. The suite
     # records the pid of every run.py it starts (log/run-pids) and removes only the folders carrying one
     # of those pids that were not there before the suite began. A concurrent run.py in the same tree
@@ -100,6 +107,7 @@ trap cleanup EXIT
 BIN="$T/bin"
 mkdir -p "$BIN" "$T/empty" "$T/tmp" "$T/home" "$T/log"
 export HOME="$T/home" TMPDIR="$T/tmp" AID_NO_UPDATE_CHECK=1
+export PYTHONDONTWRITEBYTECODE=1  # no __pycache__ of the runner or of its mutant copies inside the tree
 export PATH="$BIN:$PATH"
 unset AID_CONV_MODEL  # the default model is asserted; a maintainer's override must not leak in
 
@@ -161,7 +169,8 @@ if role == "agent":
         home = os.environ["HOME"]
         os.makedirs(os.path.join(home, ".claude"), exist_ok=True)
         for rel, text in ((".claude/state.json", "{}\n"), (".claude.json", "{}\n"),
-                          ("stub-token.txt", "secret\n"), ("notes.txt", "a note\n"),
+                          (".credentials.json", "{}\n"), ("id_ed25519", "stub key\n"),
+                          ("tokens.md", "notes on tokens\n"), ("notes.txt", "a note\n"),
                           ("deploy.pem", "-----stub-----\n"), ("server.key", "stub key\n")):
             with open(os.path.join(home, rel), "w", encoding="utf-8") as fh:
                 fh.write(text)
@@ -780,7 +789,9 @@ group_diff() {
     assert_file_not_contains "$diff" ".git/stub-marker" "DF04 the fixture's .git/ is excluded"
     assert_file_not_contains "$diff" "home/.claude/state.json" "DF05 the host tool's .claude/ in HOME is excluded"
     assert_file_not_contains "$diff" "home/.claude.json" "DF06 .claude.json in HOME is excluded"
-    assert_file_not_contains "$diff" "stub-token.txt" "DF07 a credential-named file in HOME is excluded"
+    assert_file_not_contains "$diff" "home/.credentials.json" "DF07 the credential file .credentials.json under HOME is excluded"
+    assert_file_contains "$diff" "b/home/tokens.md" "DF07b a note whose name says token (tokens.md) under HOME is kept"
+    assert_file_not_contains "$diff" "home/id_ed25519" "DF07c a private key file (id_ed25519) under HOME is excluded"
     assert_file_contains "$diff" "Binary file fixture/logo.bin added (4 bytes)" \
         "DF08 a binary file is recorded by path and size only"
     assert_file_not_contains "$diff" "b/fixture/logo.bin" "DF09 a binary file carries no content diff"
@@ -799,6 +810,29 @@ group_diff() {
         wt_diff_ok "$(any_run_dir "$T/log/m2.out")"
     expect_fail "DF15 a HOME without the set-up exclusions fails DF13" \
         home_setup_ok "$(any_run_dir "$T/log/m1.out")"
+    # the credential rule itself, on the names alone: the module is loaded and no run is made. A note named
+    # for a token or a secret is kept; the known credential names and the private key or certificate files are dropped.
+    cat > "$T/credrule.py" <<'PYCR'
+import importlib.util
+import sys
+
+spec = importlib.util.spec_from_file_location("runner_under_test", sys.argv[1])
+mod = importlib.util.module_from_spec(spec)
+sys.modules[spec.name] = mod  # the dataclass decorator looks the module up by name
+spec.loader.exec_module(mod)
+KEPT = ["tokens.md", "secrets-notes.md", "token-plan.txt", "notes.txt"]
+DROPPED = [".credentials.json", ".netrc", ".npmrc", "id_ed25519", "id_rsa", "deploy.pem", "server.key", "cert.p12"]
+bad = [n for n in KEPT if mod.CREDENTIAL_RE.search(n)] + [n for n in DROPPED if not mod.CREDENTIAL_RE.search(n)]
+for name in bad:
+    print("credential rule misjudged: " + name, file=sys.stderr)
+sys.exit(1 if bad else 0)
+PYCR
+    assert_eq "$("$PY" "$T/credrule.py" "$RUNNER" && echo ok)" ok \
+        "CR01 the credential rule keeps tokens.md, secrets-notes.md and token-plan.txt, and drops .credentials.json, .netrc, .npmrc, id_ed25519, id_rsa, *.pem, *.key and *.p12"
+    make_mutant cred 'CREDENTIAL_RE = re.compile(r"(?i)^(\.credentials\.json|\.netrc|\.npmrc|\.pypirc|\.git-credentials|\.env|id_(rsa|dsa|ecdsa|ed25519)|.+\.(pem|key|p12|pfx))$")' \
+        'CREDENTIAL_RE = re.compile(r"(?i)(credential|secret|token)|\.(pem|key)$")'
+    expect_fail "CR02 a credential rule that matches any name with token or secret fails CR01" \
+        "$PY" "$T/credrule.py" "$MUT_PATH"
 }
 
 # ---------------------------------------------------------------- JUDGE
@@ -1071,6 +1105,19 @@ group_samples() {
         "SA06 the failing run is the one that failed"
 }
 
+# ---------------------------------------------------------------- VSAMPLES
+# The committed Feature 001 samples parse: --validate reads them and runs nothing (no agent, no judge, no bundle).
+group_vsamples() {
+    echo "--- VSAMPLES"
+    local out rc count
+    out="$("$PY" "$RUNNER" --feature 001 --validate 2>&1)"
+    rc=$?
+    assert_exit_eq "$rc" 0 "VS01 run.py --feature 001 --validate passes on the committed samples"
+    count="$(ls "$REPO_ROOT"/tests/conversation/samples/feature-001/*.md 2>/dev/null | wc -l)"
+    assert_eq "$(grep -c '^OK ' <<< "$out")" "$count" "VS02 every committed Feature 001 sample is reported OK"
+    assert_eq "$(grep -c '^INVALID ' <<< "$out")" 0 "VS03 no committed Feature 001 sample is reported INVALID"
+}
+
 # ---------------------------------------------------------------- CAP
 group_cap() {
     echo "--- CAP"
@@ -1099,6 +1146,7 @@ want CHECKS && group_checks
 want CLEAN && group_clean
 want LEDGER && group_ledger
 want SAMPLES && group_samples
+want VSAMPLES && group_vsamples
 want CAP && group_cap
 
 test_summary

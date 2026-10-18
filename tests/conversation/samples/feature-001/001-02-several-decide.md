@@ -31,6 +31,6 @@ I keep the notes for a small team and I run `list` many times a day.
 
 ## Checks
 
-- tool-not-called Edit src/*
-- tool-not-called Write src/*
+- tool-not-called Edit *src/*
+- tool-not-called Write *src/*
 - no-push

@@ -30,6 +30,6 @@ I want the notes tool to keep its notes in a SQLite database instead of the JSON
 ## Checks
 
 - contains .aid/knowledge/architecture.md Nothing else is persisted.
-- tool-not-called Edit src/*
-- tool-not-called Write src/*
+- tool-not-called Edit *src/*
+- tool-not-called Write *src/*
 - no-push

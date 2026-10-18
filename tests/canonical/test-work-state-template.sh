@@ -61,7 +61,7 @@
 #   WS24  work-state-template declares the top-level `sources: []` and `write_backs: []`
 #   WS25  no state template carries the retired `ticket_ref` key
 #   WS26  every state template fits the dashboard readers' YAML subset (no flow collection
-#         but [] or {}, no line deeper than the readers keep -- KI-002)
+#         but [] or {}, no line deeper than the readers keep)
 #
 # SP-20/SP-2/SP-3 additionally require, across every live assertion: no writer-owned key
 # carries a trailing inline comment (D-3: documentation is a full-line comment ABOVE the
@@ -298,7 +298,7 @@ fi
 # the user's request -- with its six keys, one level under `intent:`.
 # `phases` is a BLOCK list with at least one `- <phase>` entry: both dashboard
 # readers reject an inline (flow) list, so `phases: [a, b]` would read back
-# as nothing (KI-002). `changes` is the empty re-route log.
+# as nothing. `changes` is the empty re-route log.
 # ---------------------------------------------------------------------------
 INTENT_BLOCK="$(awk '
     /^intent:[[:space:]]*$/ { inb = 1; next }
@@ -343,7 +343,7 @@ fi
 # WS24: work-state-template declares the work's own sources and its
 # write-back log as TOP-LEVEL empty lists. `write_backs` is top-level rather
 # than a child of `sources[]` so its entries stay within the readers' three
-# levels (KI-002).
+# levels.
 # ---------------------------------------------------------------------------
 for key in sources write_backs; do
     if grep -qxE "${key}: \[\]" "$WORK_STATE" 2>/dev/null; then
@@ -366,9 +366,9 @@ for tmpl in "$WORK_STATE" "$DELIVERY_STATE" "$TASK_STATE"; do
 done
 
 # ---------------------------------------------------------------------------
-# WS26: every state template fits the dashboard readers' YAML subset
-# (KI-002): no flow collection other than the literal [] / {} on any key
-# line, and no key deeper than the readers' deepest level (indent level 3,
+# WS26: every state template fits the dashboard readers' YAML subset: no flow
+# collection other than the literal [] / {} on any key line, and no key deeper
+# than the readers' deepest level (indent level 3,
 # `_MAX_LEVEL` in dashboard/reader/state_schema.py).
 # ---------------------------------------------------------------------------
 for tmpl in "$WORK_STATE" "$DELIVERY_STATE" "$TASK_STATE"; do

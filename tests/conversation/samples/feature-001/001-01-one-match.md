@@ -34,6 +34,6 @@ I maintain this notes tool. I found the problem this morning and want it fixed i
 
 ## Checks
 
-- tool-not-called Edit src/*
-- tool-not-called Write src/*
+- tool-not-called Edit *src/*
+- tool-not-called Write *src/*
 - no-push

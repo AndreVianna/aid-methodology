@@ -30,6 +30,6 @@ I have not looked at the code for a while, so I do not have a list of problems.
 
 ## Checks
 
-- tool-not-called Edit src/*
-- tool-not-called Write src/*
+- tool-not-called Edit *src/*
+- tool-not-called Write *src/*
 - no-push

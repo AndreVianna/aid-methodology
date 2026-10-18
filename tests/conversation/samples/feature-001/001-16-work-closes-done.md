@@ -20,7 +20,7 @@ Persona: a developer on the notes team who finished the export work and wants it
 
 ## Expected outcome
 
-- The agent recognises that every task of the work is done, and closes the work through the closing step of the pipeline.
+- The agent recognises that every task of the work is done, and closes the work the way the pipeline's Close step does: it writes the work's phase as Execute and then its lifecycle as Completed in the work's state file, through the write-back script.
 - The agent records the work as completed in its state file, and says so in plain words.
 - The agent makes no code change to the export.
 

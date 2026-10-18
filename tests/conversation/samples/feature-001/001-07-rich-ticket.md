@@ -34,6 +34,6 @@ Please take this ticket from here, it is complete as written. Objective: let the
 
 - tool-called Skill
 - tool-not-called Skill aid-brainstorm
-- tool-not-called Edit src/*
-- tool-not-called Write src/*
+- tool-not-called Edit *src/*
+- tool-not-called Write *src/*
 - no-push
