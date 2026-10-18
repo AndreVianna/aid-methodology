@@ -279,7 +279,7 @@ Hits: **406** lines in **129** files: 54 `PAUSE-FOR-USER-ACTION` and 47 `PAUSE-F
 |---|---|---|---|---|---|---|
 | 1 | `canonical/aid/templates/connectors/ticket-resolution.md` | 136 | 0 | 1 | - | task-043 |
 | 2 | `canonical/aid/templates/shortcut-engine.md` | 103, 371, 473, 536, 609, 706, 713, 895, 945 | 0 | 0 | CHAIN x7, HALT x1 | task-037 |
-| 3 | `canonical/aid/templates/state-machine-chaining.md` | 17, 24, 32, 41, 46, 51, 61, 69, 71, 85, 93, 105 | 4 | 3 | Stop x2 | task-050 (exempt row for SS-03; the file is deleted by task-074, delivery-003; see Delta D7) |
+| 3 | `canonical/aid/templates/state-machine-chaining.md` | 17, 24, 32, 41, 46, 51, 61, 69, 71, 85, 93, 105 | 4 | 3 | Stop x2 | task-050 (exempt row for SS-03; the file is removed by delivery-003, see Delta D7) |
 | 4 | `canonical/skills/aid-brainstorm/SKILL.md` | 48, 62, 71, 81 | 0 | 0 | DESIGN x1, VERIFY x1, PRESENT x1, DONE x1 | task-034 |
 | 5 | `canonical/skills/aid-create-architecture/SKILL.md` | 56, 94, 103, 113 | 0 | 0 | CREATE x1, VERIFY x1, PRESENT x1, DONE x1 | task-036 |
 | 6 | `canonical/skills/aid-create-backlog/SKILL.md` | 51, 65, 168, 187, 197, 210 | 0 | 0 | GUARD x1, REALIZE x1, REGISTER x1, VERIFY x1, PRESENT x1, DONE x1 | task-036 |
@@ -509,15 +509,15 @@ NM-01 (`git merge`, `git pull` without `--ff-only`) and NM-02 (merge endpoints, 
 
 ## P8 Q106 map: suites that read edit-list files
 
-Command (run from the repo root). Each token is a basename of an edit-list file of delivery-002 (the files the tasks of this delivery change, from their Scopes and the spec's Files and layout), and each skill name is an edit-list skill (every skill in the groups of the owner table, including the no-change ones). The match is by basename or name, in the four suite trees, so it over-includes (for example `rules.md` also matches `shared-rules.md`); each row still names the owner that must re-point or update that suite:
+Command (run from the repo root). Each token is a basename of an edit-list file of delivery-002 (the files the tasks of this delivery change, from their Scopes and the spec's Files and layout), and each skill name is an edit-list skill (every skill in the groups of the owner table, including the no-change ones). The match is a plain substring match, by basename or name, in the four suite trees, so it over-includes: `rules.md` also matches `shared-rules.md`, and `aid-create` also matches `aid-create-api`: in `site/scripts/__tests__/flow-graph-doorways.test.mjs` it matches 27 lines (row 709), of which one is the exact name `'aid-create'`, at line 354. Each row still names the owner that must re-point or update that suite. The rows for the two baseline files take `baseline, re-recorded at the gate`:
 
 ```bash
 TESTDIRS="tests site/scripts/__tests__ site/src/lib/__tests__ dashboard/reader/tests dashboard/server/tests"
 for tok in work-state-template.yml project-state-template.yml question-protocol.md skill-steps.md advance.mjs writeback-state.sh work-initiation-gate.md start-or-resume.md rules.md home.html models.py parsers.py state_schema.py reader.py server.py reader.mjs server.mjs design-lifecycle.md shortcut-engine.md decisions.md artifact-schemas.md domain-glossary.md backlog.md pipeline-contracts.md architecture.md test-landscape.md INDEX.md ticket-resolution.md release.yml installer-tests.yml release.sh; do git grep -n -F -e "$tok" 06d32a1ba63e1c8810e16978165e5581034f4c87 -- $TESTDIRS; done
-for n in $(ls canonical/skills); do git grep -n -F -e "skills/$n/" -e "'$n'" -e "\"$n\"" -e "\`$n\`" 06d32a1ba63e1c8810e16978165e5581034f4c87 -- $TESTDIRS; done
+for n in $(ls canonical/skills); do git grep -n -F -e "$n" 06d32a1ba63e1c8810e16978165e5581034f4c87 -- $TESTDIRS; done
 ```
 
-Hits: 761 (suite, owner) rows covering 7051 (token or name, line) matches in 356 suite files. Rows with owner `history, left as is` are references to edit-list skills that no task edits (their text stays); the rest are owned by the task that changes the asserted file, or, for a suite a task names, by that task.
+Hits: 761 (suite, owner) rows covering 7050 (token or name, line) matches in 356 suite files. Re-run at the base with the command above: 7050 output lines (2118 for the token loop, 4932 for the name loop), 356 distinct files. Rows with owner `history, left as is` are references to edit-list skills that no task edits (their text stays); the rows for the two baseline files are `baseline, re-recorded at the gate`; the rest are owned by the task that changes the asserted file, or, for a suite a task names, by that task.
 
 | # | Suite | Owner | Edit-list names it matches (matching lines) |
 |---|---|---|---|
@@ -533,7 +533,7 @@ Hits: 761 (suite, owner) rows covering 7051 (token or name, line) matches in 356
 | 10 | `tests/canonical/test-work-state-template.sh` | task-021 | `work-state-template.yml` 12 |
 | 11 | `tests/canonical/test-writeback-state.sh` | task-021 | `work-state-template.yml` 3 |
 | 12 | `tests/coverage-accepted-removals.tsv` | task-021 | `work-state-template.yml` 1 |
-| 13 | `tests/coverage-baseline.tsv` | task-021 | `work-state-template.yml` 1 |
+| 13 | `tests/coverage-baseline.tsv` | baseline, re-recorded at the gate | `work-state-template.yml` 1 |
 | 14 | `tests/coverage-rehome-allowlist.tsv` | task-021 | `work-state-template.yml` 1 |
 | 15 | `site/scripts/__tests__/flow-advance.test.mjs` | task-024 | `advance.mjs` 4 |
 | 16 | `site/scripts/__tests__/flow-extract-dispatch.test.mjs` | task-024 | `advance.mjs` 1 |
@@ -566,19 +566,19 @@ Hits: 761 (suite, owner) rows covering 7051 (token or name, line) matches in 356
 | 43 | `tests/canonical/test-lite-work-end-to-end.sh` | task-025 | `writeback-state.sh` 3 |
 | 44 | `tests/canonical/test-pipeline-status-walkthrough.sh` | task-025 | `writeback-state.sh` 17 |
 | 45 | `tests/canonical/test-pipeline-status-walkthrough.sh` | task-039 | `writeback-state.sh` 1, `aid-define` 6, `aid-specify` 20 |
-| 46 | `tests/canonical/test-pipeline-status-walkthrough.sh` | task-040 | `writeback-state.sh` 1, `aid-detail` 5, `aid-execute` 14, `aid-plan` 5 |
+| 46 | `tests/canonical/test-pipeline-status-walkthrough.sh` | task-040 | `aid-detail` 5, `aid-execute` 14, `aid-plan` 5 |
 | 47 | `tests/canonical/test-shortcut-engine-contract.sh` | task-025 | `writeback-state.sh` 1 |
 | 48 | `tests/canonical/test-state-review-surface.sh` | task-025 | `writeback-state.sh` 1 |
 | 49 | `tests/canonical/test-task-state-transitions.sh` | task-025 | `writeback-state.sh` 6 |
 | 50 | `tests/canonical/test-version-sync.sh` | task-025 | `writeback-state.sh` 1 |
 | 51 | `tests/canonical/test-writeback-state.sh` | task-025 | `writeback-state.sh` 3 |
 | 52 | `tests/conversation/samples/feature-001/001-10-release-own-work.md` | task-025 | `writeback-state.sh` 1 |
-| 53 | `tests/coverage-baseline.tsv` | task-025 | `writeback-state.sh` 380 |
+| 53 | `tests/coverage-baseline.tsv` | baseline, re-recorded at the gate | `writeback-state.sh` 380 |
 | 54 | `site/scripts/__tests__/flow-engine-core.test.mjs` | task-030 | `work-initiation-gate.md` 5 |
 | 55 | `site/scripts/__tests__/flow-graph-doorways.test.mjs` | task-030 | `work-initiation-gate.md` 1 |
 | 56 | `tests/canonical/test-work-initiation-gate.sh` | task-030 | `work-initiation-gate.md` 5 |
-| 57 | `tests/cost-baseline.tsv` | task-030 | `work-initiation-gate.md` 1 |
-| 58 | `tests/coverage-baseline.tsv` | task-030 | `work-initiation-gate.md` 1 |
+| 57 | `tests/cost-baseline.tsv` | baseline, re-recorded at the gate | `work-initiation-gate.md` 1 |
+| 58 | `tests/coverage-baseline.tsv` | baseline, re-recorded at the gate | `work-initiation-gate.md` 1 |
 | 59 | `tests/canonical/test-aid-cli-parity.sh` | task-032 | `rules.md` 7 |
 | 60 | `tests/canonical/test-aid-migrate.sh` | task-032 | `rules.md` 29 |
 | 61 | `tests/canonical/test-aid-status-drift.sh` | task-032 | `rules.md` 1 |
@@ -598,7 +598,7 @@ Hits: 761 (suite, owner) rows covering 7051 (token or name, line) matches in 356
 | 75 | `tests/canonical/test-shared-layout-sources.sh` | task-032 | `rules.md` 1 |
 | 76 | `tests/canonical/test-shared-remove.sh` | task-032 | `rules.md` 13 |
 | 77 | `tests/canonical/test-skill-guide.sh` | task-032 | `rules.md` 10 |
-| 78 | `tests/coverage-baseline.tsv` | task-032 | `rules.md` 1 |
+| 78 | `tests/coverage-baseline.tsv` | baseline, re-recorded at the gate | `rules.md` 1 |
 | 79 | `tests/coverage-rehome-allowlist.tsv` | task-032 | `rules.md` 6 |
 | 80 | `tests/windows/Test-AidInstaller.ps1` | task-032 | `rules.md` 19 |
 | 81 | `tests/windows/Test-InstallProvisioning.ps1` | task-032 | `rules.md` 2 |
@@ -629,7 +629,7 @@ Hits: 761 (suite, owner) rows covering 7051 (token or name, line) matches in 356
 | 106 | `tests/canonical/test-install-parity.sh` | task-033 | `home.html` 5 |
 | 107 | `tests/canonical/test-release-migrate-smoke.sh` | task-033 | `home.html` 1 |
 | 108 | `tests/coverage-accepted-removals.tsv` | task-033 | `home.html` 4 |
-| 109 | `tests/coverage-baseline.tsv` | task-033 | `home.html` 7 |
+| 109 | `tests/coverage-baseline.tsv` | baseline, re-recorded at the gate | `home.html` 7 |
 | 110 | `tests/lib/sandbox.sh` | task-033 | `home.html` 1 |
 | 111 | `tests/ui/README.md` | task-033 | `home.html` 1 |
 | 112 | `tests/ui/edit-surfaces.spec.mjs` | task-033 | `home.html` 1 |
@@ -682,7 +682,7 @@ Hits: 761 (suite, owner) rows covering 7051 (token or name, line) matches in 356
 | 159 | `tests/canonical/test-aid-remote.sh` | task-031 | `server.py` 2, `reader.mjs` 1, `server.mjs` 2 |
 | 160 | `tests/canonical/test-ascii-only.sh` | task-031 | `server.py` 1, `reader.mjs` 1, `server.mjs` 1 |
 | 161 | `tests/canonical/test-dashboard-parity.sh` | task-031 | `server.py` 2, `server.mjs` 2 |
-| 162 | `tests/coverage-baseline.tsv` | task-031 | `server.py` 6, `server.mjs` 4 |
+| 162 | `tests/coverage-baseline.tsv` | baseline, re-recorded at the gate | `server.py` 6, `server.mjs` 4 |
 | 163 | `tests/ui/README.md` | task-031 | `server.py` 1, `server.mjs` 1 |
 | 164 | `tests/ui/serve.mjs` | task-031 | `server.py` 1, `server.mjs` 1 |
 | 165 | `dashboard/reader/tests/test_resolve_work_dir_cross_runtime_parity.py` | task-031 | `reader.mjs` 3 |
@@ -706,7 +706,7 @@ Hits: 761 (suite, owner) rows covering 7051 (token or name, line) matches in 356
 | 183 | `dashboard/server/tests/test_task011_dispatch_round_trip.mjs` | task-031 | `server.mjs` 13 |
 | 184 | `dashboard/server/tests/test_task015_tools_update_ops.mjs` | task-031 | `server.mjs` 14 |
 | 185 | `tests/canonical/test-kb-citation-lint.sh` | task-031 | `server.mjs` 3 |
-| 186 | `tests/cost-baseline.tsv` | task-034 | `design-lifecycle.md` 1, `aid-brainstorm` 5, `aid-design` 110 |
+| 186 | `tests/cost-baseline.tsv` | baseline, re-recorded at the gate | `design-lifecycle.md` 1, `aid-brainstorm` 5, `aid-design` 110 |
 | 187 | `site/scripts/__tests__/flow-classify.test.mjs` | task-037 | `shortcut-engine.md` 4 |
 | 188 | `site/scripts/__tests__/flow-compose.test.mjs` | task-037 | `shortcut-engine.md` 5 |
 | 189 | `site/scripts/__tests__/flow-engine-core.test.mjs` | task-037 | `shortcut-engine.md` 6 |
@@ -730,8 +730,8 @@ Hits: 761 (suite, owner) rows covering 7051 (token or name, line) matches in 356
 | 207 | `tests/canonical/test-test-experiment-family-scaffold.sh` | task-037 | `shortcut-engine.md` 2 |
 | 208 | `tests/canonical/test-ticket-retirement-structural.sh` | task-037 | `shortcut-engine.md` 5 |
 | 209 | `tests/canonical/test-work-initiation-gate.sh` | task-037 | `shortcut-engine.md` 3 |
-| 210 | `tests/cost-baseline.tsv` | task-037 | `shortcut-engine.md` 1 |
-| 211 | `tests/coverage-baseline.tsv` | task-037 | `shortcut-engine.md` 4 |
+| 210 | `tests/cost-baseline.tsv` | baseline, re-recorded at the gate | `shortcut-engine.md` 1 |
+| 211 | `tests/coverage-baseline.tsv` | baseline, re-recorded at the gate | `shortcut-engine.md` 4 |
 | 212 | `tests/canonical/fixtures/dual-intent/content/doc-set.tsv` | task-045 | `decisions.md` 1, `domain-glossary.md` 1 |
 | 213 | `tests/canonical/fixtures/dual-intent/data-ml/doc-set.tsv` | task-045 | `decisions.md` 1, `domain-glossary.md` 1 |
 | 214 | `tests/canonical/fixtures/dual-intent/design/doc-set.tsv` | task-045 | `decisions.md` 1, `domain-glossary.md` 1 |
@@ -754,16 +754,16 @@ Hits: 761 (suite, owner) rows covering 7051 (token or name, line) matches in 356
 | 231 | `tests/canonical/test-essence-capture.sh` | task-045 | `domain-glossary.md` 2 |
 | 232 | `tests/canonical/test-output-root-isolation.sh` | task-045 | `domain-glossary.md` 4 |
 | 233 | `tests/canonical/test-teachback-fixtures.sh` | task-045 | `domain-glossary.md` 5 |
-| 234 | `tests/cost-baseline.tsv` | task-045 | `domain-glossary.md` 1 |
-| 235 | `tests/coverage-baseline.tsv` | task-045 | `domain-glossary.md` 2 |
+| 234 | `tests/cost-baseline.tsv` | baseline, re-recorded at the gate | `domain-glossary.md` 1 |
+| 235 | `tests/coverage-baseline.tsv` | baseline, re-recorded at the gate | `domain-glossary.md` 2 |
 | 236 | `tests/canonical/fixtures/actback-task/docset-contract.tsv` | task-049 | `pipeline-contracts.md` 1 |
 | 237 | `tests/canonical/test-actback-task.sh` | task-049 | `pipeline-contracts.md` 1, `architecture.md` 3 |
 | 238 | `tests/canonical/test-deploy-monitor-repurpose.sh` | task-049 | `pipeline-contracts.md` 8 |
 | 239 | `tests/canonical/test-doc-set-mapping.sh` | task-049 | `pipeline-contracts.md` 9, `architecture.md` 10 |
 | 240 | `tests/canonical/test-doc-set-propose-confirm.sh` | task-049 | `pipeline-contracts.md` 2, `architecture.md` 4 |
 | 241 | `tests/canonical/test-doc-set-read.sh` | task-049 | `pipeline-contracts.md` 5, `architecture.md` 13 |
-| 242 | `tests/cost-baseline.tsv` | task-049 | `pipeline-contracts.md` 1, `architecture.md` 1 |
-| 243 | `tests/coverage-baseline.tsv` | task-049 | `pipeline-contracts.md` 4, `architecture.md` 12 |
+| 242 | `tests/cost-baseline.tsv` | baseline, re-recorded at the gate | `pipeline-contracts.md` 1, `architecture.md` 1 |
+| 243 | `tests/coverage-baseline.tsv` | baseline, re-recorded at the gate | `pipeline-contracts.md` 4, `architecture.md` 12 |
 | 244 | `dashboard/reader/tests/test_reader.py` | task-049 | `architecture.md` 1 |
 | 245 | `tests/canonical/fixtures/actback-task/docset-component.tsv` | task-049 | `architecture.md` 1 |
 | 246 | `tests/canonical/fixtures/kb-essence/paths/brownfield-large/generated/project-index.md` | task-049 | `architecture.md` 1 |
@@ -794,8 +794,8 @@ Hits: 761 (suite, owner) rows covering 7051 (token or name, line) matches in 356
 | 271 | `tests/canonical/test-doc-set-mapping.sh` | task-057 | `test-landscape.md` 13 |
 | 272 | `tests/canonical/test-doc-set-propose-confirm.sh` | task-057 | `test-landscape.md` 9 |
 | 273 | `tests/canonical/test-validator-behavior.sh` | task-057 | `test-landscape.md` 1, `INDEX.md` 5 |
-| 274 | `tests/cost-baseline.tsv` | task-057 | `test-landscape.md` 1 |
-| 275 | `tests/coverage-baseline.tsv` | task-057 | `test-landscape.md` 5, `INDEX.md` 7 |
+| 274 | `tests/cost-baseline.tsv` | baseline, re-recorded at the gate | `test-landscape.md` 1 |
+| 275 | `tests/coverage-baseline.tsv` | baseline, re-recorded at the gate | `test-landscape.md` 5, `INDEX.md` 7 |
 | 276 | `dashboard/reader/tests/test_task019_connectors.py` | task-057 | `INDEX.md` 3 |
 | 277 | `dashboard/server/tests/test_task019_connector_ops.mjs` | task-057 | `INDEX.md` 2 |
 | 278 | `dashboard/server/tests/test_task019_connector_ops.py` | task-057 | `INDEX.md` 2 |
@@ -818,8 +818,8 @@ Hits: 761 (suite, owner) rows covering 7051 (token or name, line) matches in 356
 | 295 | `tests/cost-meter.py` | task-057 | `INDEX.md` 1 |
 | 296 | `tests/canonical/test-connector-skills-structural.sh` | task-043 | `ticket-resolution.md` 2, `aid-config` 2, `aid-set-connector` 14, `aid-unset-connector` 13 |
 | 297 | `tests/canonical/test-ticket-skills-structural.sh` | task-043 | `ticket-resolution.md` 10, `aid-create-ticket` 35, `aid-read-ticket` 18, `aid-update-ticket` 32 |
-| 298 | `tests/cost-baseline.tsv` | task-043 | `ticket-resolution.md` 1, `aid-chat` 5, `aid-config` 5, `aid-create-ticket` 5, `aid-deploy` 5, `aid-monitor` 5, `aid-read-ticket` 5, `aid-set-connector` 5, `aid-unset-connector` 5, `aid-update-ticket` 5 |
-| 299 | `tests/coverage-baseline.tsv` | task-043 | `ticket-resolution.md` 3, `aid-create-ticket` 33, `aid-deploy` 9, `aid-monitor` 6, `aid-read-ticket` 16, `aid-update-ticket` 25 |
+| 298 | `tests/cost-baseline.tsv` | baseline, re-recorded at the gate | `ticket-resolution.md` 1, `aid-chat` 5, `aid-config` 5, `aid-create-ticket` 5, `aid-deploy` 5, `aid-monitor` 5, `aid-read-ticket` 5, `aid-set-connector` 5, `aid-unset-connector` 5, `aid-update-ticket` 5 |
+| 299 | `tests/coverage-baseline.tsv` | baseline, re-recorded at the gate | `ticket-resolution.md` 3, `aid-create-ticket` 33, `aid-deploy` 9, `aid-monitor` 6, `aid-read-ticket` 16, `aid-update-ticket` 25 |
 | 300 | `tests/canonical/test-version-sync.sh` | task-056 | `release.yml` 15 |
 | 301 | `tests/canonical/test-writeback-state.sh` | task-056 | `release.yml` 1 |
 | 302 | `tests/canonical/test-aid-cli-parity.sh` | task-056 | `installer-tests.yml` 1, `release.sh` 1 |
@@ -843,7 +843,7 @@ Hits: 761 (suite, owner) rows covering 7051 (token or name, line) matches in 356
 | 320 | `tests/canonical/test-shortcut-builder-invariants.sh` | task-056 | `release.sh` 1 |
 | 321 | `tests/canonical/test-shortcut-engine-contract.sh` | task-056 | `release.sh` 1 |
 | 322 | `tests/coverage-accepted-removals.tsv` | task-056 | `release.sh` 2 |
-| 323 | `tests/coverage-baseline.tsv` | task-056 | `release.sh` 17 |
+| 323 | `tests/coverage-baseline.tsv` | baseline, re-recorded at the gate | `release.sh` 17 |
 | 324 | `tests/lib/bundle.sh` | task-056 | `release.sh` 2 |
 | 325 | `site/scripts/__tests__/provenance.test.mjs` | task-042 | `aid-ask` 2 |
 | 326 | `site/src/lib/__tests__/feature-006-head-gate.test.ts` | task-042 | `aid-ask` 15 |
@@ -864,8 +864,8 @@ Hits: 761 (suite, owner) rows covering 7051 (token or name, line) matches in 356
 | 341 | `tests/canonical/test-connector-consumption-linkage.sh` | task-042 | `aid-ask` 1 |
 | 342 | `tests/canonical/test-deploy-monitor-repurpose.sh` | task-042 | `aid-ask` 1 |
 | 343 | `tests/canonical/test-skill-guide.sh` | task-042 | `aid-ask` 1, `aid-housekeep` 1, `aid-summarize` 1, `aid-update-kb` 1 |
-| 344 | `tests/cost-baseline.tsv` | task-042 | `aid-ask` 5, `aid-housekeep` 5, `aid-summarize` 5, `aid-update-kb` 5 |
-| 345 | `tests/coverage-baseline.tsv` | task-042 | `aid-ask` 2, `aid-housekeep` 1, `aid-update-kb` 1 |
+| 344 | `tests/cost-baseline.tsv` | baseline, re-recorded at the gate | `aid-ask` 5, `aid-housekeep` 5, `aid-summarize` 5, `aid-update-kb` 5 |
+| 345 | `tests/coverage-baseline.tsv` | baseline, re-recorded at the gate | `aid-ask` 2, `aid-housekeep` 1, `aid-update-kb` 1 |
 | 346 | `tests/conversation/samples/feature-001/001-07-rich-ticket.md` | task-034 | `aid-brainstorm` 1 |
 | 347 | `tests/conversation/samples/feature-001/001-08-bare-idea.md` | task-034 | `aid-brainstorm` 1 |
 | 348 | `tests/conversation/samples/feature-001/001-09-bug-fix-phases.md` | task-034 | `aid-brainstorm` 1 |
@@ -882,7 +882,7 @@ Hits: 761 (suite, owner) rows covering 7051 (token or name, line) matches in 356
 | 359 | `tests/canonical/test-aid-cli-parity.sh` | task-043 | `aid-config` 2 |
 | 360 | `tests/canonical/test-skill-guide.sh` | task-043 | `aid-config` 1, `aid-create-ticket` 1, `aid-update-ticket` 1 |
 | 361 | `tests/canonical/test-skill-guide.sh` | task-036 | `aid-create-architecture` 1, `aid-create-backlog` 1, `aid-create-cicd` 1, `aid-create-mvp` 1, `aid-create-roadmap` 1, `aid-create-stack` 1, `aid-create-testing-strategy` 1, `aid-update-architecture` 1, `aid-update-backlog` 1, `aid-update-cicd` 1, `aid-update-mvp` 1, `aid-update-roadmap` 1, `aid-update-stack` 1, `aid-update-testing-strategy` 1 |
-| 362 | `tests/cost-baseline.tsv` | task-036 | `aid-create-architecture` 5, `aid-create-backlog` 5, `aid-create-cicd` 5, `aid-create-mvp` 5, `aid-create-roadmap` 5, `aid-create-stack` 5, `aid-create-testing-strategy` 5, `aid-update-architecture` 5, `aid-update-backlog` 5, `aid-update-cicd` 5, `aid-update-mvp` 5, `aid-update-roadmap` 5, `aid-update-stack` 5, `aid-update-testing-strategy` 5 |
+| 362 | `tests/cost-baseline.tsv` | baseline, re-recorded at the gate | `aid-create-architecture` 5, `aid-create-backlog` 5, `aid-create-cicd` 5, `aid-create-mvp` 5, `aid-create-roadmap` 5, `aid-create-stack` 5, `aid-create-testing-strategy` 5, `aid-update-architecture` 5, `aid-update-backlog` 5, `aid-update-cicd` 5, `aid-update-mvp` 5, `aid-update-roadmap` 5, `aid-update-stack` 5, `aid-update-testing-strategy` 5 |
 | 363 | `tests/canonical/test-work-initiation-gate.sh` | task-044 | `aid-create-document` 3, `aid-prototype` 9, `aid-report` 3, `aid-research` 10, `aid-review` 11, `aid-test` 3, `aid-update-document` 5 |
 | 364 | `site/scripts/__tests__/flow-compose.test.mjs` | task-044 | `aid-create-document` 4, `aid-test` 8 |
 | 365 | `site/scripts/__tests__/flow-extract-inline.test.mjs` | task-044 | `aid-create-document` 2, `aid-prototype` 1, `aid-report` 2, `aid-research` 1, `aid-review` 5, `aid-test` 5, `aid-update-document` 5 |
@@ -890,8 +890,8 @@ Hits: 761 (suite, owner) rows covering 7051 (token or name, line) matches in 356
 | 367 | `tests/canonical/test-create-family-scaffold.sh` | task-044 | `aid-create-document` 3, `aid-report` 3, `aid-review` 1, `aid-test` 3 |
 | 368 | `tests/canonical/test-document-family-scaffold.sh` | task-044 | `aid-create-document` 2, `aid-report` 2, `aid-review` 1, `aid-update-document` 1 |
 | 369 | `tests/canonical/test-skill-guide.sh` | task-044 | `aid-create-document` 1, `aid-prototype` 1, `aid-test` 2, `aid-update-document` 1 |
-| 370 | `tests/cost-baseline.tsv` | task-044 | `aid-create-document` 5, `aid-prototype` 10, `aid-report` 5, `aid-research` 6, `aid-review` 6, `aid-test` 20, `aid-update-document` 5 |
-| 371 | `tests/coverage-baseline.tsv` | task-044 | `aid-create-document` 3, `aid-prototype` 5, `aid-report` 4, `aid-research` 24, `aid-review` 15, `aid-test` 3, `aid-update-document` 3 |
+| 370 | `tests/cost-baseline.tsv` | baseline, re-recorded at the gate | `aid-create-document` 5, `aid-prototype` 10, `aid-report` 5, `aid-research` 6, `aid-review` 6, `aid-test` 20, `aid-update-document` 5 |
+| 371 | `tests/coverage-baseline.tsv` | baseline, re-recorded at the gate | `aid-create-document` 3, `aid-prototype` 5, `aid-report` 4, `aid-research` 24, `aid-review` 15, `aid-test` 3, `aid-update-document` 3 |
 | 372 | `site/scripts/__tests__/flow-advance.test.mjs` | task-043 | `aid-create-ticket` 4, `aid-deploy` 1 |
 | 373 | `tests/canonical/test-ticket-retirement-structural.sh` | task-043 | `aid-create-ticket` 9, `aid-deploy` 10, `aid-monitor` 11, `aid-read-ticket` 9, `aid-set-connector` 1, `aid-update-ticket` 14 |
 | 374 | `tests/canonical/test-aid-cli-parity.sh` | task-039 | `aid-define` 1 |
@@ -910,8 +910,8 @@ Hits: 761 (suite, owner) rows covering 7051 (token or name, line) matches in 356
 | 387 | `tests/canonical/test-scoped-review-cycles.sh` | task-039 | `aid-define` 1, `aid-specify` 5 |
 | 388 | `tests/canonical/test-skill-guide.sh` | task-039 | `aid-define` 1 |
 | 389 | `tests/canonical/test-work-state-template.sh` | task-039 | `aid-define` 2, `aid-specify` 1 |
-| 390 | `tests/cost-baseline.tsv` | task-039 | `aid-define` 5, `aid-specify` 5 |
-| 391 | `tests/coverage-baseline.tsv` | task-039 | `aid-define` 14, `aid-specify` 16 |
+| 390 | `tests/cost-baseline.tsv` | baseline, re-recorded at the gate | `aid-define` 5, `aid-specify` 5 |
+| 391 | `tests/coverage-baseline.tsv` | baseline, re-recorded at the gate | `aid-define` 14, `aid-specify` 16 |
 | 392 | `tests/coverage-rehome-allowlist.tsv` | task-039 | `aid-define` 1, `aid-specify` 1 |
 | 393 | `tests/canonical/test-downstream-worktree-entry.sh` | task-043 | `aid-deploy` 10 |
 | 394 | `tests/canonical/test-pipeline-status-walkthrough.sh` | task-043 | `aid-deploy` 1 |
@@ -946,15 +946,15 @@ Hits: 761 (suite, owner) rows covering 7051 (token or name, line) matches in 356
 | 423 | `tests/canonical/test-skill-guide.sh` | task-038 | `aid-describe` 1 |
 | 424 | `tests/conversation/fixtures/done-work/.aid/works/work-001-csv-export/STATE.yml` | task-038 | `aid-describe` 1 |
 | 425 | `tests/conversation/fixtures/ticket-mid-work/.aid/works/work-001-retry-policy/STATE.yml` | task-038 | `aid-describe` 1 |
-| 426 | `tests/cost-baseline.tsv` | task-038 | `aid-describe` 5 |
-| 427 | `tests/coverage-baseline.tsv` | task-038 | `aid-describe` 12 |
+| 426 | `tests/cost-baseline.tsv` | baseline, re-recorded at the gate | `aid-describe` 5 |
+| 427 | `tests/coverage-baseline.tsv` | baseline, re-recorded at the gate | `aid-describe` 12 |
 | 428 | `tests/canonical/test-work-initiation-gate.sh` | task-034 | `aid-design` 3 |
 | 429 | `site/scripts/__tests__/flow-advance.test.mjs` | task-034 | `aid-design` 1 |
 | 430 | `site/scripts/__tests__/flow-extract-inline.test.mjs` | task-034 | `aid-design` 4 |
 | 431 | `tests/canonical/test-skill-guide.sh` | task-034 | `aid-design` 5 |
-| 432 | `tests/coverage-baseline.tsv` | task-034 | `aid-design` 3 |
+| 432 | `tests/coverage-baseline.tsv` | baseline, re-recorded at the gate | `aid-design` 3 |
 | 433 | `tests/canonical/test-skill-guide.sh` | task-035 | `aid-design-api` 1, `aid-design-architecture` 1, `aid-design-backlog` 1, `aid-design-cicd` 1, `aid-design-cli` 1, `aid-design-config` 1, `aid-design-dashboard` 1, `aid-design-data-model` 1, `aid-design-data-pipeline` 1, `aid-design-document` 1, `aid-design-infra` 1, `aid-design-integration` 1, `aid-design-job` 1, `aid-design-messaging` 1, `aid-design-mvp` 1, `aid-design-roadmap` 1, `aid-design-stack` 1, `aid-design-test` 1, `aid-design-testing-strategy` 1, `aid-design-theme` 1, `aid-design-ui` 1 |
-| 434 | `tests/cost-baseline.tsv` | task-035 | `aid-design-api` 5, `aid-design-architecture` 5, `aid-design-backlog` 5, `aid-design-cicd` 5, `aid-design-cli` 5, `aid-design-config` 5, `aid-design-dashboard` 5, `aid-design-data-model` 5, `aid-design-data-pipeline` 5, `aid-design-document` 5, `aid-design-infra` 5, `aid-design-integration` 5, `aid-design-job` 5, `aid-design-messaging` 5, `aid-design-mvp` 5, `aid-design-roadmap` 5, `aid-design-stack` 5, `aid-design-test` 10, `aid-design-testing-strategy` 5, `aid-design-theme` 5, `aid-design-ui` 5 |
+| 434 | `tests/cost-baseline.tsv` | baseline, re-recorded at the gate | `aid-design-api` 5, `aid-design-architecture` 5, `aid-design-backlog` 5, `aid-design-cicd` 5, `aid-design-cli` 5, `aid-design-config` 5, `aid-design-dashboard` 5, `aid-design-data-model` 5, `aid-design-data-pipeline` 5, `aid-design-document` 5, `aid-design-infra` 5, `aid-design-integration` 5, `aid-design-job` 5, `aid-design-messaging` 5, `aid-design-mvp` 5, `aid-design-roadmap` 5, `aid-design-stack` 5, `aid-design-test` 10, `aid-design-testing-strategy` 5, `aid-design-theme` 5, `aid-design-ui` 5 |
 | 435 | `dashboard/reader/tests/test_feature009.py` | task-040 | `aid-detail` 9, `aid-execute` 2 |
 | 436 | `tests/canonical/test-artifact-discipline.sh` | task-040 | `aid-detail` 1, `aid-plan` 2 |
 | 437 | `tests/canonical/test-downstream-worktree-entry.sh` | task-040 | `aid-detail` 7, `aid-execute` 10, `aid-plan` 7 |
@@ -968,8 +968,8 @@ Hits: 761 (suite, owner) rows covering 7051 (token or name, line) matches in 356
 | 445 | `tests/canonical/test-derive-waves.sh` | task-040 | `aid-detail` 1 |
 | 446 | `tests/canonical/test-scoped-review-cycles.sh` | task-040 | `aid-detail` 1, `aid-plan` 2 |
 | 447 | `tests/canonical/test-skill-guide.sh` | task-040 | `aid-detail` 1 |
-| 448 | `tests/cost-baseline.tsv` | task-040 | `aid-detail` 5, `aid-execute` 5, `aid-plan` 5 |
-| 449 | `tests/coverage-baseline.tsv` | task-040 | `aid-detail` 16, `aid-execute` 22, `aid-plan` 19 |
+| 448 | `tests/cost-baseline.tsv` | baseline, re-recorded at the gate | `aid-detail` 5, `aid-execute` 5, `aid-plan` 5 |
+| 449 | `tests/coverage-baseline.tsv` | baseline, re-recorded at the gate | `aid-detail` 16, `aid-execute` 22, `aid-plan` 19 |
 | 450 | `tests/coverage-rehome-allowlist.tsv` | task-040 | `aid-detail` 1, `aid-execute` 1, `aid-plan` 1 |
 | 451 | `site/scripts/__tests__/flow-advance.test.mjs` | task-041 | `aid-discover` 2 |
 | 452 | `tests/canonical/test-connector-skills-structural.sh` | task-041 | `aid-discover` 5 |
@@ -1006,7 +1006,7 @@ Hits: 761 (suite, owner) rows covering 7051 (token or name, line) matches in 356
 | 483 | `tests/canonical/test-ticket-retirement-structural.sh` | task-041 | `aid-discover` 1 |
 | 484 | `tests/canonical/test-write-external-source.sh` | task-041 | `aid-discover` 3 |
 | 485 | `tests/conversation/samples/feature-001/001-15-no-kb-offers-preparation.md` | task-041 | `aid-discover` 1 |
-| 486 | `tests/cost-baseline.tsv` | task-041 | `aid-discover` 5 |
+| 486 | `tests/cost-baseline.tsv` | baseline, re-recorded at the gate | `aid-discover` 5 |
 | 487 | `tests/canonical/test-compute-block-radius.sh` | task-040 | `aid-execute` 1 |
 | 488 | `tests/canonical/test-delivery-gate-aggregate.sh` | task-040 | `aid-execute` 4 |
 | 489 | `tests/canonical/test-task-state-transitions.sh` | task-040 | `aid-execute` 5 |
@@ -1075,7 +1075,7 @@ Hits: 761 (suite, owner) rows covering 7051 (token or name, line) matches in 356
 | 552 | `site/scripts/__tests__/gen-skills-index.test.mjs` | task-032 | `aid-orchestrate` 4 |
 | 553 | `site/scripts/__tests__/skills-groups.test.mjs` | task-032 | `aid-orchestrate` 10 |
 | 554 | `site/scripts/__tests__/skills-render-index.test.mjs` | task-032 | `aid-orchestrate` 4 |
-| 555 | `tests/cost-baseline.tsv` | task-032 | `aid-orchestrate` 5 |
+| 555 | `tests/cost-baseline.tsv` | baseline, re-recorded at the gate | `aid-orchestrate` 5 |
 | 556 | `tests/canonical/test-aid-migrate.sh` | task-040 | `aid-plan` 2 |
 | 557 | `tests/canonical/test-multitool-isolation.sh` | task-040 | `aid-plan` 4 |
 | 558 | `tests/windows/Test-AidInstaller.ps1` | task-040 | `aid-plan` 4 |
@@ -1246,8 +1246,8 @@ Hits: 761 (suite, owner) rows covering 7051 (token or name, line) matches in 356
 | 723 | `tests/canonical/test-ticket-retirement-structural.sh` | history, left as is | `aid-create` 9, `aid-update` 14 |
 | 724 | `tests/canonical/test-ticket-skills-structural.sh` | history, left as is | `aid-create` 35, `aid-update` 32 |
 | 725 | `tests/canonical/test-work-initiation-gate.sh` | history, left as is | `aid-create` 3, `aid-update` 5 |
-| 726 | `tests/cost-baseline.tsv` | history, left as is | `aid-create` 120, `aid-create-api` 5, `aid-create-cli` 5, `aid-create-config` 5, `aid-create-dashboard` 5, `aid-create-data-model` 5, `aid-create-data-pipeline` 5, `aid-create-diagram` 5, `aid-create-infra` 5, `aid-create-integration` 5, `aid-create-job` 5, `aid-create-messaging` 5, `aid-create-test` 10, `aid-create-theme` 5, `aid-create-ui` 5, `aid-deprecate` 5, `aid-document` 40, `aid-document-architecture` 5, `aid-document-changelog` 5, `aid-document-decision` 5, `aid-document-guideline` 5, `aid-document-runbook` 5, `aid-document-standard` 5, `aid-document-tutorial` 5, `aid-experiment` 5, `aid-fix` 5, `aid-migrate` 5, `aid-prototype-ui` 5, `aid-refactor` 5, `aid-remove` 5, `aid-test-data-quality` 5, `aid-test-performance` 5, `aid-test-security` 5, `aid-update` 120, `aid-update-api` 5, `aid-update-cli` 5, `aid-update-config` 5, `aid-update-dashboard` 5, `aid-update-data-model` 5, `aid-update-data-pipeline` 5, `aid-update-infra` 5, `aid-update-integration` 5, `aid-update-job` 5, `aid-update-messaging` 5, `aid-update-test` 10, `aid-update-theme` 5, `aid-update-ui` 5 |
-| 727 | `tests/coverage-baseline.tsv` | history, left as is | `aid-create` 36, `aid-migrate` 273, `aid-refactor` 1, `aid-update` 29 |
+| 726 | `tests/cost-baseline.tsv` | baseline, re-recorded at the gate | `aid-create` 120, `aid-create-api` 5, `aid-create-cli` 5, `aid-create-config` 5, `aid-create-dashboard` 5, `aid-create-data-model` 5, `aid-create-data-pipeline` 5, `aid-create-diagram` 5, `aid-create-infra` 5, `aid-create-integration` 5, `aid-create-job` 5, `aid-create-messaging` 5, `aid-create-test` 10, `aid-create-theme` 5, `aid-create-ui` 5, `aid-deprecate` 5, `aid-document` 40, `aid-document-architecture` 5, `aid-document-changelog` 5, `aid-document-decision` 5, `aid-document-guideline` 5, `aid-document-runbook` 5, `aid-document-standard` 5, `aid-document-tutorial` 5, `aid-experiment` 5, `aid-fix` 5, `aid-migrate` 5, `aid-prototype-ui` 5, `aid-refactor` 5, `aid-remove` 5, `aid-test-data-quality` 5, `aid-test-performance` 5, `aid-test-security` 5, `aid-update` 120, `aid-update-api` 5, `aid-update-cli` 5, `aid-update-config` 5, `aid-update-dashboard` 5, `aid-update-data-model` 5, `aid-update-data-pipeline` 5, `aid-update-infra` 5, `aid-update-integration` 5, `aid-update-job` 5, `aid-update-messaging` 5, `aid-update-test` 10, `aid-update-theme` 5, `aid-update-ui` 5 |
+| 727 | `tests/coverage-baseline.tsv` | baseline, re-recorded at the gate | `aid-create` 36, `aid-migrate` 273, `aid-refactor` 1, `aid-update` 29 |
 | 728 | `tests/canonical/test-fix-family-scaffold.sh` | history, left as is | `aid-document` 1, `aid-document-runbook` 1, `aid-fix` 28, `aid-refactor` 1, `aid-test-security` 2, `aid-update` 4, `aid-update-infra` 3 |
 | 729 | `tests/canonical/test-multitool-isolation.sh` | history, left as is | `aid-fix` 3 |
 | 730 | `tests/windows/Test-AidInstaller.ps1` | history, left as is | `aid-fix` 2 |
@@ -1326,8 +1326,7 @@ Hits: **48** lines (42 from the first command, 6 from the second). Rule (task-02
 | 23 | `dashboard/reader/tests/test_work003_state_schema.py:357` | `self.assertEqual(pw.phase, Phase.Define)` | reader output assertion | task-031 |
 | 24 | `dashboard/reader/tests/test_work003_state_schema.py:861` | `for phase_value in ("Describe", "Define"):` | fixture input or mapping | task-031 |
 | 25 | `tests/canonical/test-diagram-content.sh:45` | `"requires": ["Discover", "Describe", "Define", "Specify", "Plan", "Detail", "Execute"],` | fixture input or mapping | history, left as is |
-| 26 | `tests/canonical/test-pipeline-status-walkthrough.sh:346` | `if grep -qF "writeback-state.sh --pipeline --field Phase --value ${expected_phase}" "$sfile" 2>/d...` | writer-fed value | task-039 (B1 for aid-define, aid-specify) |
-| 26 | `tests/canonical/test-pipeline-status-walkthrough.sh:346` | `if grep -qF "writeback-state.sh --pipeline --field Phase --value ${expected_phase}" "$sfile" 2>/d...` | writer-fed value | task-040 (B1 for aid-plan, aid-detail, aid-execute) |
+| 26 | `tests/canonical/test-pipeline-status-walkthrough.sh:346` | `if grep -qF "writeback-state.sh --pipeline --field Phase --value ${expected_phase}" "$sfile" 2>/d...` | writer-fed value | task-039 (B1 loop; the expected-phase rows for aid-define, aid-specify) |
 | 27 | `tests/canonical/test-pipeline-status-walkthrough.sh:614` | `bash canonical/aid/scripts/execute/writeback-state.sh --pipeline --field Phase --value Specify` | writer-fed value | task-025 |
 | 28 | `tests/canonical/test-writeback-state.sh:574` | `AID_STATE_FILE="$PIPE_STATE" bash "$SCRIPT" --pipeline --field Phase --value Execute 2>/dev/null ...` | writer-fed value | task-025 |
 | 29 | `tests/canonical/test-writeback-state.sh:623` | `AID_STATE_FILE="$PIPE_STATE_G" bash "$SCRIPT" --pipeline --field Phase --value Plan 2>/dev/null \...` | writer-fed value | task-025 |
@@ -1351,7 +1350,7 @@ Hits: **48** lines (42 from the first command, 6 from the second). Rule (task-02
 | 47 | `dashboard/reader/tests/test_integration.py:423` | `self._produce("Phase", "Execute")` | writer-fed value | task-025 |
 | 48 | `dashboard/reader/tests/test_integration.py:481` | `self._produce("Phase", "Execute")` | writer-fed value | task-025 |
 
-Notes: line 346 of `test-pipeline-status-walkthrough.sh` is one hit with two owners, one row for each B1 group (task-039, task-040), because the loop over `aid-define aid-specify aid-plan aid-detail aid-execute` checks each skill's own expected phase; task-040 depends on task-039 (the B1 table is edited by both). `test-diagram-content.sh` lists the phase names as diagram text, which the spec leaves as it is. The golden JSON fixtures are outputs and change to `Building`.
+Notes: line 346 of `test-pipeline-status-walkthrough.sh` is one hit with one owner, task-039. The line is the shared loop body of B1 (the loop over `aid-define aid-specify aid-plan aid-detail aid-execute`) and neither task names it in its Scope; both edit the B1 expected-phase table it reads. The tie goes to the earlier task in the run order, task-039, because task-040 depends on task-039 (the two-owner suites table records that order). `test-diagram-content.sh` lists the phase names as diagram text, which the spec leaves as it is. The golden JSON fixtures are outputs and change to `Building`.
 
 ## P10 Are today's writes atomic?
 
@@ -1379,7 +1378,7 @@ Hits: 835 lines in 39 site test files, grouped below per (test file, target, own
 |---|---|---|---|---|
 | 1 | `site/scripts/__tests__/flow-advance.test.mjs` | `canonical/skills/aid-fixture/ (no such skill; fixture path)` | history, left as is | 4 |
 | 2 | `site/scripts/__tests__/flow-advance.test.mjs` | `canonical/skills/aid-update-kb/SKILL.md` | task-042 | 1 |
-| 3 | `site/scripts/__tests__/flow-advance.test.mjs` | `canonical/skills/aid-discover/SKILL.md` | task-041 | 1 |
+| 3 | `site/scripts/__tests__/flow-advance.test.mjs` | `canonical/skills/aid-discover/references/state-q-and-a.md` | task-041 | 1 |
 | 4 | `site/scripts/__tests__/flow-advance.test.mjs` | `canonical/skills/aid-test/SKILL.md` | task-044 | 4 |
 | 5 | `site/scripts/__tests__/flow-advance.test.mjs` | `skill aid-test` | task-044 | 1 |
 | 6 | `site/scripts/__tests__/flow-classify.test.mjs` | `skill aid-review` | task-044 | 2 |
@@ -1424,279 +1423,282 @@ Hits: 835 lines in 39 site test files, grouped below per (test file, target, own
 | 45 | `site/scripts/__tests__/flow-extract-dispatch.test.mjs` | `skill aid-summarize` | task-042 | 1 |
 | 46 | `site/scripts/__tests__/flow-extract-dispatch.test.mjs` | `skill aid-update-kb` | task-042 | 2 |
 | 47 | `site/scripts/__tests__/flow-extract-dispatch.test.mjs` | `name aid-keyword-states (no such skill; fixture name)` | history, left as is | 1 |
-| 48 | `site/scripts/__tests__/flow-extract-dispatch.test.mjs` | `canonical/skills/aid-describe/SKILL.md` | task-038 | 2 |
-| 49 | `site/scripts/__tests__/flow-extract-engine.test.mjs` | `skill aid-create-api` | history, left as is | 3 |
-| 50 | `site/scripts/__tests__/flow-extract-engine.test.mjs` | `skill aid-fix` | history, left as is | 1 |
-| 51 | `site/scripts/__tests__/flow-extract-engine.test.mjs` | `canonical/skills/aid-create-api/SKILL.md` | history, left as is | 3 |
-| 52 | `site/scripts/__tests__/flow-extract-engine.test.mjs` | `canonical/aid/templates/shortcut-engine.md` | task-037 | 2 |
-| 53 | `site/scripts/__tests__/flow-extract-engine.test.mjs` | `name aid-synthetic-long (no such skill; fixture name)` | history, left as is | 1 |
-| 54 | `site/scripts/__tests__/flow-extract-engine.test.mjs` | `canonical/skills/aid-synthetic-long/ (no such skill; fixture path)` | history, left as is | 1 |
-| 55 | `site/scripts/__tests__/flow-extract-inline.test.mjs` | `skill aid-review` | task-044 | 2 |
-| 56 | `site/scripts/__tests__/flow-extract-inline.test.mjs` | `skill aid-test` | task-044 | 2 |
-| 57 | `site/scripts/__tests__/flow-extract-inline.test.mjs` | `skill aid-create-document` | task-044 | 1 |
-| 58 | `site/scripts/__tests__/flow-extract-inline.test.mjs` | `skill aid-design` | task-034 | 1 |
-| 59 | `site/scripts/__tests__/flow-extract-inline.test.mjs` | `skill aid-prototype` | task-044 | 1 |
-| 60 | `site/scripts/__tests__/flow-extract-inline.test.mjs` | `skill aid-report` | task-044 | 1 |
-| 61 | `site/scripts/__tests__/flow-extract-inline.test.mjs` | `skill aid-research` | task-044 | 1 |
-| 62 | `site/scripts/__tests__/flow-extract-inline.test.mjs` | `skill aid-update-document` | task-044 | 1 |
-| 63 | `site/scripts/__tests__/flow-extract-residual.test.mjs` | `canonical/skills/test-fixture/ (no such skill; fixture path)` | history, left as is | 1 |
-| 64 | `site/scripts/__tests__/flow-extract-residual.test.mjs` | `skill aid-create-ticket` | task-043 | 3 |
-| 65 | `site/scripts/__tests__/flow-extract-residual.test.mjs` | `skill aid-read-ticket` | task-043 | 1 |
-| 66 | `site/scripts/__tests__/flow-extract-residual.test.mjs` | `skill aid-update-ticket` | task-043 | 1 |
-| 67 | `site/scripts/__tests__/flow-extract-residual.test.mjs` | `skill aid-config` | task-043 | 4 |
-| 68 | `site/scripts/__tests__/flow-extract-residual.test.mjs` | `skill aid-ask` | task-042 | 2 |
-| 69 | `site/scripts/__tests__/flow-extract-residual.test.mjs` | `skill aid-create` | history, left as is | 1 |
-| 70 | `site/scripts/__tests__/flow-extract-residual.test.mjs` | `skill aid-update-api` | history, left as is | 1 |
-| 71 | `site/scripts/__tests__/flow-extract-residual.test.mjs` | `skill aid-deprecate` | history, left as is | 1 |
-| 72 | `site/scripts/__tests__/flow-extract-residual.test.mjs` | `skill aid-document` | history, left as is | 1 |
-| 73 | `site/scripts/__tests__/flow-extract-residual.test.mjs` | `skill aid-document-runbook` | history, left as is | 1 |
-| 74 | `site/scripts/__tests__/flow-extract-residual.test.mjs` | `skill aid-test-security` | history, left as is | 1 |
-| 75 | `site/scripts/__tests__/flow-extract-residual.test.mjs` | `name aid-fixture (no such skill; fixture name)` | history, left as is | 1 |
-| 76 | `site/scripts/__tests__/flow-extract-residual.test.mjs` | `canonical/skills/aid-fixture/ (no such skill; fixture path)` | history, left as is | 1 |
-| 77 | `site/scripts/__tests__/flow-extract-residual.test.mjs` | `skill aid-set-connector` | task-043 | 1 |
-| 78 | `site/scripts/__tests__/flow-extract-residual.test.mjs` | `skill aid-unset-connector` | task-043 | 1 |
-| 79 | `site/scripts/__tests__/flow-extract-residual.test.mjs` | `canonical/skills/aid-config/SKILL.md` | task-043 | 1 |
-| 80 | `site/scripts/__tests__/flow-extract-sibling.test.mjs` | `canonical/skills/fake-cap-2/ (no such skill; fixture path)` | history, left as is | 1 |
-| 81 | `site/scripts/__tests__/flow-extract-sibling.test.mjs` | `canonical/skills/fake-cap-3/ (no such skill; fixture path)` | history, left as is | 1 |
-| 82 | `site/scripts/__tests__/flow-extract-sibling.test.mjs` | `canonical/skills/fake-cap-4/ (no such skill; fixture path)` | history, left as is | 1 |
-| 83 | `site/scripts/__tests__/flow-extract-sibling.test.mjs` | `canonical/skills/fake-cap-5/ (no such skill; fixture path)` | history, left as is | 1 |
-| 84 | `site/scripts/__tests__/flow-extract-sibling.test.mjs` | `skill aid-test-security` | history, left as is | 5 |
-| 85 | `site/scripts/__tests__/flow-extract-sibling.test.mjs` | `skill aid-test-performance` | history, left as is | 2 |
-| 86 | `site/scripts/__tests__/flow-extract-sibling.test.mjs` | `skill aid-test` | task-044 | 12 |
-| 87 | `site/scripts/__tests__/flow-extract-sibling.test.mjs` | `canonical/skills/aid-test/SKILL.md` | task-044 | 8 |
-| 88 | `site/scripts/__tests__/flow-extract-sibling.test.mjs` | `canonical/skills/aid-create/SKILL.md` | history, left as is | 1 |
-| 89 | `site/scripts/__tests__/flow-extract-sibling.test.mjs` | `canonical/skills/aid-test-security/SKILL.md` | history, left as is | 1 |
-| 90 | `site/scripts/__tests__/flow-extract-sibling.test.mjs` | `skill aid-document-architecture` | history, left as is | 3 |
-| 91 | `site/scripts/__tests__/flow-extract-sibling.test.mjs` | `skill aid-document-changelog` | history, left as is | 2 |
-| 92 | `site/scripts/__tests__/flow-extract-sibling.test.mjs` | `skill aid-create-document` | task-044 | 3 |
-| 93 | `site/scripts/__tests__/flow-extract-sibling.test.mjs` | `name aid-alias-synth (no such skill; fixture name)` | history, left as is | 1 |
-| 94 | `site/scripts/__tests__/flow-extract-sibling.test.mjs` | `name aid-neither-synth (no such skill; fixture name)` | history, left as is | 1 |
-| 95 | `site/scripts/__tests__/flow-extract-sibling.test.mjs` | `name aid-approx-parent (no such skill; fixture name)` | history, left as is | 2 |
-| 96 | `site/scripts/__tests__/flow-extract-sibling.test.mjs` | `canonical/skills/aid-approx-parent/ (no such skill; fixture path)` | history, left as is | 1 |
-| 97 | `site/scripts/__tests__/flow-extract-sibling.test.mjs` | `name aid-cycle-synth (no such skill; fixture name)` | history, left as is | 1 |
-| 98 | `site/scripts/__tests__/flow-extract-sibling.test.mjs` | `canonical/skills/aid-cycle-synth/ (no such skill; fixture path)` | history, left as is | 1 |
-| 99 | `site/scripts/__tests__/flow-extract-sibling.test.mjs` | `name aid-cap-synth (no such skill; fixture name)` | history, left as is | 1 |
-| 100 | `site/scripts/__tests__/flow-extract-sibling.test.mjs` | `canonical/skills/fake-cap-1/ (no such skill; fixture path)` | history, left as is | 1 |
-| 101 | `site/scripts/__tests__/flow-extract-sibling.test.mjs` | `skill aid-test-data-quality` | history, left as is | 1 |
-| 102 | `site/scripts/__tests__/flow-extract-sibling.test.mjs` | `skill aid-document` | history, left as is | 1 |
-| 103 | `site/scripts/__tests__/flow-facade.test.mjs` | `canonical/skills/aid-review/SKILL.md` | task-044 | 1 |
-| 104 | `site/scripts/__tests__/flow-facade.test.mjs` | `skill aid-describe` | task-038 | 6 |
-| 105 | `site/scripts/__tests__/flow-facade.test.mjs` | `skill aid-review` | task-044 | 13 |
-| 106 | `site/scripts/__tests__/flow-facade.test.mjs` | `skill aid-config` | task-043 | 11 |
-| 107 | `site/scripts/__tests__/flow-facade.test.mjs` | `skill aid-document-architecture` | history, left as is | 2 |
-| 108 | `site/scripts/__tests__/flow-facade.test.mjs` | `skill aid-create` | history, left as is | 4 |
-| 109 | `site/scripts/__tests__/flow-facade.test.mjs` | `skill aid-test-security` | history, left as is | 1 |
-| 110 | `site/scripts/__tests__/flow-facade.test.mjs` | `skill aid-summarize` | task-042 | 1 |
-| 111 | `site/scripts/__tests__/flow-graph-doorways.test.mjs` | `canonical/aid/templates/shortcut-engine.md` | task-037 | 3 |
-| 112 | `site/scripts/__tests__/flow-graph-doorways.test.mjs` | `canonical/skills/aid-create-api/SKILL.md` | history, left as is | 1 |
-| 113 | `site/scripts/__tests__/flow-graph-doorways.test.mjs` | `canonical/skills/aid-fix/SKILL.md` | history, left as is | 1 |
-| 114 | `site/scripts/__tests__/flow-graph-doorways.test.mjs` | `canonical/skills/aid-test-quality/ (no such skill; fixture path)` | history, left as is | 1 |
-| 115 | `site/scripts/__tests__/flow-graph-doorways.test.mjs` | `canonical/skills/aid-document/SKILL.md` | history, left as is | 1 |
-| 116 | `site/scripts/__tests__/flow-graph-doorways.test.mjs` | `canonical/skills/aid-add/ (no such skill; fixture path)` | history, left as is | 1 |
-| 117 | `site/scripts/__tests__/flow-graph-doorways.test.mjs` | `skill aid-create` | history, left as is | 1 |
-| 118 | `site/scripts/__tests__/flow-graph-doorways.test.mjs` | `canonical/skills/aid-unknown/ (no such skill; fixture path)` | history, left as is | 2 |
-| 119 | `site/scripts/__tests__/flow-graph-doorways.test.mjs` | `canonical/skills/purity-doorway/ (no such skill; fixture path)` | history, left as is | 1 |
-| 120 | `site/scripts/__tests__/flow-graph-doorways.test.mjs` | `canonical/skills/w1-doorway/ (no such skill; fixture path)` | history, left as is | 1 |
-| 121 | `site/scripts/__tests__/flow-graph-doorways.test.mjs` | `canonical/skills/w5-doorway/ (no such skill; fixture path)` | history, left as is | 1 |
-| 122 | `site/scripts/__tests__/flow-graph-doorways.test.mjs` | `skill aid-create-api` | history, left as is | 12 |
-| 123 | `site/scripts/__tests__/flow-graph-doorways.test.mjs` | `skill aid-fix` | history, left as is | 1 |
-| 124 | `site/scripts/__tests__/flow-graph-doorways.test.mjs` | `skill aid-test-security` | history, left as is | 10 |
-| 125 | `site/scripts/__tests__/flow-graph-doorways.test.mjs` | `skill aid-test` | task-044 | 1 |
-| 126 | `site/scripts/__tests__/flow-graph.test.mjs` | `canonical/skills/aid-test/SKILL.md` | task-044 | 15 |
-| 127 | `site/scripts/__tests__/flow-graph.test.mjs` | `canonical/skills/aid-foo/ (no such skill; fixture path)` | history, left as is | 2 |
-| 128 | `site/scripts/__tests__/flow-graph.test.mjs` | `skill aid-test` | task-044 | 50 |
-| 129 | `site/scripts/__tests__/flow-graph.test.mjs` | `name aid-example (no such skill; fixture name)` | history, left as is | 6 |
-| 130 | `site/scripts/__tests__/flow-graph.test.mjs` | `canonical/skills/aid-example/ (no such skill; fixture path)` | history, left as is | 2 |
-| 131 | `site/scripts/__tests__/flow-graph.test.mjs` | `name aid-foo (no such skill; fixture name)` | history, left as is | 8 |
-| 132 | `site/scripts/__tests__/flow-graph.test.mjs` | `canonical/skills/foo/ (no such skill; fixture path)` | history, left as is | 4 |
-| 133 | `site/scripts/__tests__/flow-graph.test.mjs` | `canonical/skills/x/ (no such skill; fixture path)` | history, left as is | 1 |
-| 134 | `site/scripts/__tests__/flow-graph.test.mjs` | `canonical/skills/aid-review/SKILL.md` | task-044 | 2 |
-| 135 | `site/scripts/__tests__/flow-graph.test.mjs` | `name aid-no-exit (no such skill; fixture name)` | history, left as is | 1 |
-| 136 | `site/scripts/__tests__/flow-graph.test.mjs` | `canonical/skills/aid-base/ (no such skill; fixture path)` | history, left as is | 6 |
-| 137 | `site/scripts/__tests__/flow-graph.test.mjs` | `name aid-base (no such skill; fixture name)` | history, left as is | 2 |
-| 138 | `site/scripts/__tests__/flow-graph.test.mjs` | `canonical/skills/aid-beta/ (no such skill; fixture path)` | history, left as is | 1 |
-| 139 | `site/scripts/__tests__/flow-graph.test.mjs` | `canonical/skills/aid-alpha/ (no such skill; fixture path)` | history, left as is | 1 |
-| 140 | `site/scripts/__tests__/flow-graph.test.mjs` | `canonical/aid/templates/shortcut-engine.md` | task-037 | 1 |
-| 141 | `site/scripts/__tests__/flow-graph.test.mjs` | `canonical/aid/templates/shortcut-engine.md.` | history, left as is | 1 |
-| 142 | `site/scripts/__tests__/flow-graph.test.mjs` | `skill aid-housekeep` | task-042 | 1 |
-| 143 | `site/scripts/__tests__/flow-graph.test.mjs` | `skill aid-update-kb` | task-042 | 1 |
-| 144 | `site/scripts/__tests__/flow-graph.test.mjs` | `skill aid-describe` | task-038 | 1 |
-| 145 | `site/scripts/__tests__/flow-graph.test.mjs` | `skill aid-review` | task-044 | 1 |
-| 146 | `site/scripts/__tests__/flow-render-mermaid.test.mjs` | `canonical/skills/aid-test/SKILL.md` | task-044 | 1 |
-| 147 | `site/scripts/__tests__/flow-render-mermaid.test.mjs` | `name aid-fixture (no such skill; fixture name)` | history, left as is | 1 |
-| 148 | `site/scripts/__tests__/flow-render-mermaid.test.mjs` | `canonical/skills/aid-fixture/ (no such skill; fixture path)` | history, left as is | 1 |
-| 149 | `site/scripts/__tests__/flow-validate.test.mjs` | `canonical/skills/aid-test/SKILL.md` | task-044 | 6 |
-| 150 | `site/scripts/__tests__/flow-validate.test.mjs` | `skill aid-test` | task-044 | 1 |
-| 151 | `site/scripts/__tests__/flow-validate.test.mjs` | `name aid-x (no such skill; fixture name)` | history, left as is | 5 |
-| 152 | `site/scripts/__tests__/flow-validate.test.mjs` | `canonical/skills/aid-x/ (no such skill; fixture path)` | history, left as is | 5 |
-| 153 | `site/scripts/__tests__/gen-reference.test.mjs` | `canonical/aid/templates/shortcut-engine.md` | task-037 | 1 |
-| 154 | `site/scripts/__tests__/gen-reference.test.mjs` | `canonical/aid/templates/shortcut-catalog.yml` | history, left as is | 1 |
-| 155 | `site/scripts/__tests__/gen-reference.test.mjs` | `skill aid-summarize` | task-042 | 1 |
-| 156 | `site/scripts/__tests__/gen-reference.test.mjs` | `skill aid-discover` | task-041 | 1 |
-| 157 | `site/scripts/__tests__/gen-reference.test.mjs` | `skill aid-config` | task-043 | 1 |
-| 158 | `site/scripts/__tests__/gen-reference.test.mjs` | `skill aid-describe` | task-038 | 1 |
-| 159 | `site/scripts/__tests__/gen-reference.test.mjs` | `skill aid-define` | task-039 | 1 |
-| 160 | `site/scripts/__tests__/gen-reference.test.mjs` | `skill aid-specify` | task-039 | 1 |
-| 161 | `site/scripts/__tests__/gen-reference.test.mjs` | `skill aid-plan` | task-040 | 1 |
-| 162 | `site/scripts/__tests__/gen-reference.test.mjs` | `skill aid-detail` | task-040 | 1 |
-| 163 | `site/scripts/__tests__/gen-reference.test.mjs` | `skill aid-execute` | task-040 | 1 |
-| 164 | `site/scripts/__tests__/gen-reference.test.mjs` | `skill aid-deploy` | task-043 | 1 |
-| 165 | `site/scripts/__tests__/gen-reference.test.mjs` | `skill aid-monitor` | task-043 | 1 |
-| 166 | `site/scripts/__tests__/gen-reference.test.mjs` | `skill aid-housekeep` | task-042 | 1 |
-| 167 | `site/scripts/__tests__/gen-reference.test.mjs` | `skill aid-ask` | task-042 | 1 |
-| 168 | `site/scripts/__tests__/gen-reference.test.mjs` | `skill aid-update-kb` | task-042 | 1 |
-| 169 | `site/scripts/__tests__/gen-reference.test.mjs` | `skill aid-set-connector` | task-043 | 1 |
-| 170 | `site/scripts/__tests__/gen-reference.test.mjs` | `skill aid-unset-connector` | task-043 | 1 |
-| 171 | `site/scripts/__tests__/gen-reference.test.mjs` | `skill aid-update-ticket` | task-043 | 1 |
-| 172 | `site/scripts/__tests__/gen-reference.test.mjs` | `skill aid-create-ticket` | task-043 | 1 |
-| 173 | `site/scripts/__tests__/gen-reference.test.mjs` | `skill aid-read-ticket` | task-043 | 1 |
-| 174 | `site/scripts/__tests__/gen-reference.test.mjs` | `skill aid-orchestrate` | task-032 | 1 |
-| 175 | `site/scripts/__tests__/gen-reference.test.mjs` | `skill aid-chat` | task-043 | 1 |
-| 176 | `site/scripts/__tests__/gen-reference.test.mjs` | `canonical/aid/templates/knowledge-base/` | history, left as is | 1 |
-| 177 | `site/scripts/__tests__/gen-skills-index.test.mjs` | `skill aid-describe` | task-038 | 1 |
-| 178 | `site/scripts/__tests__/gen-skills-index.test.mjs` | `skill aid-plan` | task-040 | 1 |
-| 179 | `site/scripts/__tests__/gen-skills-index.test.mjs` | `skill aid-specify` | task-039 | 1 |
-| 180 | `site/scripts/__tests__/gen-skills-index.test.mjs` | `skill aid-define` | task-039 | 1 |
-| 181 | `site/scripts/__tests__/gen-skills-index.test.mjs` | `skill aid-detail` | task-040 | 1 |
-| 182 | `site/scripts/__tests__/gen-skills-index.test.mjs` | `skill aid-orchestrate` | task-032 | 1 |
-| 183 | `site/scripts/__tests__/gen-skills-index.test.mjs` | `skill aid-deploy` | task-043 | 3 |
-| 184 | `site/scripts/__tests__/gen-skills-index.test.mjs` | `skill aid-monitor` | task-043 | 3 |
-| 185 | `site/scripts/__tests__/gen-skills.test.mjs` | `canonical/skills/some-dir-name/ (no such skill; fixture path)` | history, left as is | 1 |
-| 186 | `site/scripts/__tests__/gen-skills.test.mjs` | `skill aid-read-ticket` | task-043 | 1 |
-| 187 | `site/scripts/__tests__/gen-skills.test.mjs` | `canonical/skills/aid-read-ticket/SKILL.md` | task-043 | 1 |
-| 188 | `site/scripts/__tests__/gen-skills.test.mjs` | `canonical/skills/*/ (no such skill; fixture path)` | history, left as is | 4 |
-| 189 | `site/scripts/__tests__/gen-skills.test.mjs` | `canonical/aid/templates/shortcut-catalog.yml` | history, left as is | 4 |
-| 190 | `site/scripts/__tests__/gen-skills.test.mjs` | `name aid-deleted (no such skill; fixture name)` | history, left as is | 4 |
-| 191 | `site/scripts/__tests__/gen-skills.test.mjs` | `skill aid-update-kb` | task-042 | 8 |
-| 192 | `site/scripts/__tests__/gen-skills.test.mjs` | `skill aid-execute` | task-040 | 1 |
-| 193 | `site/scripts/__tests__/gen-skills.test.mjs` | `skill aid-discover` | task-041 | 1 |
-| 194 | `site/scripts/__tests__/provenance-appender.test.mjs` | `canonical/aid/templates/shortcut-engine.md` | task-037 | 3 |
-| 195 | `site/scripts/__tests__/provenance-appender.test.mjs` | `name aid-add-api (no such skill; fixture name)` | history, left as is | 3 |
-| 196 | `site/scripts/__tests__/provenance-appender.test.mjs` | `name aid-add-cli (no such skill; fixture name)` | history, left as is | 1 |
-| 197 | `site/scripts/__tests__/provenance-appender.test.mjs` | `skill aid-review` | task-044 | 9 |
-| 198 | `site/scripts/__tests__/provenance-appender.test.mjs` | `skill aid-create-api` | history, left as is | 3 |
-| 199 | `site/scripts/__tests__/provenance-appender.test.mjs` | `skill aid-ask` | task-042 | 3 |
-| 200 | `site/scripts/__tests__/provenance-deep-link.test.mjs` | `canonical/skills/aid-foo/ (no such skill; fixture path)` | history, left as is | 5 |
-| 201 | `site/scripts/__tests__/provenance-deep-link.test.mjs` | `canonical/skills/aid-bar/ (no such skill; fixture path)` | history, left as is | 1 |
-| 202 | `site/scripts/__tests__/provenance-deep-link.test.mjs` | `canonical/skills/aid-baz/ (no such skill; fixture path)` | history, left as is | 2 |
-| 203 | `site/scripts/__tests__/provenance-deep-link.test.mjs` | `canonical/skills/aid-create-api/SKILL.md` | history, left as is | 1 |
-| 204 | `site/scripts/__tests__/provenance-render-list.test.mjs` | `canonical/skills/aid-test/SKILL.md` | task-044 | 7 |
-| 205 | `site/scripts/__tests__/provenance-render-list.test.mjs` | `name aid-fixture (no such skill; fixture name)` | history, left as is | 1 |
-| 206 | `site/scripts/__tests__/provenance-verify.test.mjs` | `canonical/skills/test-skill/ (no such skill; fixture path)` | history, left as is | 26 |
-| 207 | `site/scripts/__tests__/provenance-verify.test.mjs` | `canonical/skills/nonexistent/ (no such skill; fixture path)` | history, left as is | 6 |
-| 208 | `site/scripts/__tests__/provenance.test.mjs` | `skill aid-test` | task-044 | 2 |
-| 209 | `site/scripts/__tests__/provenance.test.mjs` | `canonical/skills/aid-review/SKILL.md` | task-044 | 4 |
-| 210 | `site/scripts/__tests__/provenance.test.mjs` | `canonical/skills/test-skill/ (no such skill; fixture path)` | history, left as is | 4 |
-| 211 | `site/scripts/__tests__/provenance.test.mjs` | `canonical/skills/../ (no such skill; fixture path)` | history, left as is | 1 |
-| 212 | `site/scripts/__tests__/provenance.test.mjs` | `canonical/skills/aid-ask/SKILL.md` | task-042 | 1 |
-| 213 | `site/scripts/__tests__/provenance.test.mjs` | `skill aid-review` | task-044 | 1 |
-| 214 | `site/scripts/__tests__/skill-counts.test.mjs` | `skill aid-ask` | task-042 | 1 |
-| 215 | `site/scripts/__tests__/skill-node-panel-lifecycle.test.mjs` | `name aid-flow-data (no such skill; fixture name)` | history, left as is | 3 |
-| 216 | `site/scripts/__tests__/skill-node-panel-lifecycle.test.mjs` | `name aid-node-panel (no such skill; fixture name)` | history, left as is | 1 |
-| 217 | `site/scripts/__tests__/skill-node-panel-panel.test.mjs` | `name aid-fixture (no such skill; fixture name)` | history, left as is | 1 |
-| 218 | `site/scripts/__tests__/skill-node-panel-panel.test.mjs` | `canonical/skills/a/ (no such skill; fixture path)` | history, left as is | 4 |
-| 219 | `site/scripts/__tests__/skill-node-panel-panel.test.mjs` | `name aid-flow-data (no such skill; fixture name)` | history, left as is | 1 |
-| 220 | `site/scripts/__tests__/skill-node-panel-panel.test.mjs` | `name aid-node-panel (no such skill; fixture name)` | history, left as is | 4 |
-| 221 | `site/scripts/__tests__/skills-body.test.mjs` | `name aid-fixture (no such skill; fixture name)` | history, left as is | 3 |
-| 222 | `site/scripts/__tests__/skills-body.test.mjs` | `skill aid-review` | task-044 | 2 |
-| 223 | `site/scripts/__tests__/skills-body.test.mjs` | `name aid-multi (no such skill; fixture name)` | history, left as is | 2 |
-| 224 | `site/scripts/__tests__/skills-body.test.mjs` | `skill aid-create-api` | history, left as is | 1 |
-| 225 | `site/scripts/__tests__/skills-catalog.test.mjs` | `canonical/aid/templates/shortcut-catalog.yml` | history, left as is | 1 |
-| 226 | `site/scripts/__tests__/skills-catalog.test.mjs` | `name aid-catalog- (no such skill; fixture name)` | history, left as is | 1 |
-| 227 | `site/scripts/__tests__/skills-catalog.test.mjs` | `name aid-middle (no such skill; fixture name)` | history, left as is | 1 |
-| 228 | `site/scripts/__tests__/skills-catalog.test.mjs` | `name aid-alpha (no such skill; fixture name)` | history, left as is | 1 |
-| 229 | `site/scripts/__tests__/skills-catalog.test.mjs` | `name aid-zap (no such skill; fixture name)` | history, left as is | 1 |
-| 230 | `site/scripts/__tests__/skills-catalog.test.mjs` | `skill aid-deploy` | task-043 | 3 |
-| 231 | `site/scripts/__tests__/skills-catalog.test.mjs` | `skill aid-monitor` | task-043 | 1 |
-| 232 | `site/scripts/__tests__/skills-catalog.test.mjs` | `name aid-bad (no such skill; fixture name)` | history, left as is | 1 |
-| 233 | `site/scripts/__tests__/skills-catalog.test.mjs` | `skill aid-fix` | history, left as is | 1 |
-| 234 | `site/scripts/__tests__/skills-discover.test.mjs` | `skill aid-test` | task-044 | 45 |
-| 235 | `site/scripts/__tests__/skills-discover.test.mjs` | `name aid-missing (no such skill; fixture name)` | history, left as is | 2 |
-| 236 | `site/scripts/__tests__/skills-discover.test.mjs` | `name aid-bad- (no such skill; fixture name)` | history, left as is | 1 |
-| 237 | `site/scripts/__tests__/skills-discover.test.mjs` | `name aid--double (no such skill; fixture name)` | history, left as is | 1 |
-| 238 | `site/scripts/__tests__/skills-discover.test.mjs` | `name aid-mismatch (no such skill; fixture name)` | history, left as is | 2 |
-| 239 | `site/scripts/__tests__/skills-discover.test.mjs` | `canonical/skills/aid-test/SKILL.md` | task-044 | 2 |
-| 240 | `site/scripts/__tests__/skills-discover.test.mjs` | `name aid-foo-bar (no such skill; fixture name)` | history, left as is | 6 |
-| 241 | `site/scripts/__tests__/skills-discover.test.mjs` | `canonical/skills/aid-foo-bar/ (no such skill; fixture path)` | history, left as is | 1 |
-| 242 | `site/scripts/__tests__/skills-discover.test.mjs` | `name aid-alpha (no such skill; fixture name)` | history, left as is | 1 |
-| 243 | `site/scripts/__tests__/skills-discover.test.mjs` | `name aid-beta (no such skill; fixture name)` | history, left as is | 1 |
-| 244 | `site/scripts/__tests__/skills-discover.test.mjs` | `name aid-z (no such skill; fixture name)` | history, left as is | 2 |
-| 245 | `site/scripts/__tests__/skills-discover.test.mjs` | `name aid-a (no such skill; fixture name)` | history, left as is | 2 |
-| 246 | `site/scripts/__tests__/skills-discover.test.mjs` | `name aid-m (no such skill; fixture name)` | history, left as is | 2 |
-| 247 | `site/scripts/__tests__/skills-discover.test.mjs` | `name aid-a-b (no such skill; fixture name)` | history, left as is | 2 |
-| 248 | `site/scripts/__tests__/skills-discover.test.mjs` | `name aid-ab (no such skill; fixture name)` | history, left as is | 2 |
-| 249 | `site/scripts/__tests__/skills-discover.test.mjs` | `name aid-good (no such skill; fixture name)` | history, left as is | 1 |
-| 250 | `site/scripts/__tests__/skills-discover.test.mjs` | `name aid-bad (no such skill; fixture name)` | history, left as is | 1 |
-| 251 | `site/scripts/__tests__/skills-frontmatter.test.mjs` | `canonical/skills/foo/ (no such skill; fixture path)` | history, left as is | 1 |
-| 252 | `site/scripts/__tests__/skills-frontmatter.test.mjs` | `name aid-foo (no such skill; fixture name)` | history, left as is | 1 |
-| 253 | `site/scripts/__tests__/skills-frontmatter.test.mjs` | `canonical/skills/x/ (no such skill; fixture path)` | history, left as is | 4 |
-| 254 | `site/scripts/__tests__/skills-frontmatter.test.mjs` | `canonical/skills/z/ (no such skill; fixture path)` | history, left as is | 2 |
-| 255 | `site/scripts/__tests__/skills-frontmatter.test.mjs` | `canonical/skills/*/ (no such skill; fixture path)` | history, left as is | 1 |
-| 256 | `site/scripts/__tests__/skills-groups.test.mjs` | `name aid-totally-unknown-xyz (no such skill; fixture name)` | history, left as is | 1 |
-| 257 | `site/scripts/__tests__/skills-groups.test.mjs` | `name aid-mystery-skill (no such skill; fixture name)` | history, left as is | 1 |
-| 258 | `site/scripts/__tests__/skills-groups.test.mjs` | `skill aid-orchestrate` | task-032 | 4 |
-| 259 | `site/scripts/__tests__/skills-groups.test.mjs` | `skill aid-config` | task-043 | 4 |
-| 260 | `site/scripts/__tests__/skills-groups.test.mjs` | `skill aid-describe` | task-038 | 2 |
-| 261 | `site/scripts/__tests__/skills-groups.test.mjs` | `skill aid-plan` | task-040 | 8 |
-| 262 | `site/scripts/__tests__/skills-groups.test.mjs` | `skill aid-specify` | task-039 | 1 |
-| 263 | `site/scripts/__tests__/skills-groups.test.mjs` | `skill aid-define` | task-039 | 1 |
-| 264 | `site/scripts/__tests__/skills-groups.test.mjs` | `skill aid-detail` | task-040 | 1 |
-| 265 | `site/scripts/__tests__/skills-groups.test.mjs` | `skill aid-deploy` | task-043 | 7 |
-| 266 | `site/scripts/__tests__/skills-groups.test.mjs` | `skill aid-monitor` | task-043 | 4 |
-| 267 | `site/scripts/__tests__/skills-paths.test.mjs` | `skill aid-create-api` | history, left as is | 3 |
-| 268 | `site/scripts/__tests__/skills-paths.test.mjs` | `canonical/skills/aid-create-api/SKILL.md` | history, left as is | 2 |
-| 269 | `site/scripts/__tests__/skills-paths.test.mjs` | `name aid-foo (no such skill; fixture name)` | history, left as is | 8 |
-| 270 | `site/scripts/__tests__/skills-paths.test.mjs` | `name aid-bar-baz (no such skill; fixture name)` | history, left as is | 2 |
-| 271 | `site/scripts/__tests__/skills-render-index.test.mjs` | `canonical/skills/*/ (no such skill; fixture path)` | history, left as is | 2 |
-| 272 | `site/scripts/__tests__/skills-render-index.test.mjs` | `canonical/aid/templates/shortcut-catalog.yml` | history, left as is | 2 |
-| 273 | `site/scripts/__tests__/skills-render-index.test.mjs` | `skill aid-deploy` | task-043 | 1 |
-| 274 | `site/scripts/__tests__/skills-render-index.test.mjs` | `skill aid-monitor` | task-043 | 1 |
-| 275 | `site/scripts/__tests__/skills-render-index.test.mjs` | `skill aid-orchestrate` | task-032 | 2 |
-| 276 | `site/scripts/__tests__/skills-render-index.test.mjs` | `name aid-beta (no such skill; fixture name)` | history, left as is | 1 |
-| 277 | `site/scripts/__tests__/skills-render-index.test.mjs` | `name aid-alpha (no such skill; fixture name)` | history, left as is | 1 |
-| 278 | `site/scripts/__tests__/skills-render-page.test.mjs` | `name aid-test-skill (no such skill; fixture name)` | history, left as is | 5 |
-| 279 | `site/scripts/__tests__/skills-render-page.test.mjs` | `canonical/skills/aid-review/SKILL.md` | task-044 | 1 |
-| 280 | `site/scripts/__tests__/skills-render-page.test.mjs` | `skill aid-review` | task-044 | 2 |
-| 281 | `site/scripts/__tests__/skills-render-page.test.mjs` | `canonical/skills/aid-test-skill/ (no such skill; fixture path)` | history, left as is | 4 |
-| 282 | `site/scripts/__tests__/skills-render-page.test.mjs` | `skill aid-create-api` | history, left as is | 1 |
-| 283 | `site/scripts/__tests__/skills-render-page.test.mjs` | `canonical/skills/aid-create-api/SKILL.md` | history, left as is | 1 |
-| 284 | `site/scripts/__tests__/skills-render-page.test.mjs` | `name aid-list-test (no such skill; fixture name)` | history, left as is | 2 |
-| 285 | `site/scripts/__tests__/skills-render-page.test.mjs` | `name aid-pipe-test (no such skill; fixture name)` | history, left as is | 2 |
-| 286 | `site/scripts/__tests__/skills-render-page.test.mjs` | `name aid-angle-test (no such skill; fixture name)` | history, left as is | 2 |
-| 287 | `site/scripts/__tests__/skills-render-page.test.mjs` | `name aid-synthetic-test (no such skill; fixture name)` | history, left as is | 2 |
-| 288 | `site/scripts/__tests__/skills-render-page.test.mjs` | `name aid-folded-test (no such skill; fixture name)` | history, left as is | 2 |
-| 289 | `site/scripts/__tests__/skills-render-page.test.mjs` | `name aid-fullfield-test (no such skill; fixture name)` | history, left as is | 2 |
-| 290 | `site/scripts/__tests__/skills-render-page.test.mjs` | `name aid-nosidebar-test (no such skill; fixture name)` | history, left as is | 1 |
-| 291 | `site/scripts/__tests__/skills-render-page.test.mjs` | `name aid-desc-test (no such skill; fixture name)` | history, left as is | 2 |
-| 292 | `site/scripts/__tests__/skills-render-page.test.mjs` | `name aid-nodesc (no such skill; fixture name)` | history, left as is | 1 |
-| 293 | `site/scripts/__tests__/skills-render-page.test.mjs` | `name aid-quote-test (no such skill; fixture name)` | history, left as is | 2 |
-| 294 | `site/scripts/__tests__/skills-render-value.test.mjs` | `canonical/skills/aid-read-ticket/SKILL.md` | task-043 | 1 |
-| 295 | `site/scripts/__tests__/skills-summary.test.mjs` | `skill aid-test` | task-044 | 10 |
-| 296 | `site/scripts/__tests__/skills-summary.test.mjs` | `name aid-some-skill (no such skill; fixture name)` | history, left as is | 1 |
-| 297 | `site/scripts/__tests__/skills-summary.test.mjs` | `name aid-custom-dir (no such skill; fixture name)` | history, left as is | 1 |
-| 298 | `site/scripts/__tests__/skills-summary.test.mjs` | `name aid-x (no such skill; fixture name)` | history, left as is | 2 |
-| 299 | `site/src/lib/__tests__/feature-006-head-gate.test.ts` | `canonical/aid/templates/knowledge-base/` | history, left as is | 1 |
-| 300 | `site/src/lib/__tests__/feature-006-head-gate.test.ts` | `canonical/aid/templates/shortcut-engine.md` | task-037 | 1 |
-| 301 | `site/src/lib/__tests__/feature-006-head-gate.test.ts` | `canonical/aid/templates/shortcut-catalog.yml` | history, left as is | 2 |
-| 302 | `site/src/lib/__tests__/feature-006-head-gate.test.ts` | `canonical/skills/*/ (no such skill; fixture path)` | history, left as is | 1 |
-| 303 | `site/src/lib/__tests__/feature-006-head-gate.test.ts` | `canonical/skills/aid-ask/SKILL.md` | task-042 | 6 |
-| 304 | `site/src/lib/__tests__/feature-006-head-gate.test.ts` | `skill aid-ask` | task-042 | 9 |
-| 305 | `site/src/lib/__tests__/feature-009-releases-banner.test.ts` | `name aid-banner-dismissed (no such skill; fixture name)` | history, left as is | 2 |
-| 306 | `site/src/lib/__tests__/skill-node-panel.dom.test.ts` | `name aid-fixture (no such skill; fixture name)` | history, left as is | 1 |
-| 307 | `site/src/lib/__tests__/skill-node-panel.dom.test.ts` | `canonical/skills/a/ (no such skill; fixture path)` | history, left as is | 3 |
-| 308 | `site/src/lib/__tests__/skill-node-panel.dom.test.ts` | `name aid-flow-data (no such skill; fixture name)` | history, left as is | 1 |
-| 309 | `site/src/lib/__tests__/skill-node-panel.dom.test.ts` | `name aid-node-panel (no such skill; fixture name)` | history, left as is | 1 |
-| 310 | `site/src/lib/__tests__/skill-node-panel.test.ts` | `canonical/skills/aid-ask/SKILL.md` | task-042 | 13 |
-| 311 | `site/src/lib/__tests__/skill-node-panel.test.ts` | `skill aid-ask` | task-042 | 7 |
-| 312 | `site/src/lib/__tests__/skill-node-panel.test.ts` | `skill aid-plan` | task-040 | 2 |
-| 313 | `site/src/lib/__tests__/skill-node-panel.test.ts` | `skill aid-execute` | task-040 | 1 |
-| 314 | `site/src/lib/__tests__/skill-node-panel.test.ts` | `canonical/skills/aid-plan/SKILL.md` | task-040 | 3 |
-| 315 | `site/src/lib/__tests__/skill-node-panel.test.ts` | `canonical/skills/Aid-Ask/ (no such skill; fixture path)` | history, left as is | 1 |
-| 316 | `site/src/lib/__tests__/skill-node-panel.test.ts` | `canonical/skills/aid_ask/ (no such skill; fixture path)` | history, left as is | 1 |
-| 317 | `site/src/lib/__tests__/skill-node-panel.test.ts` | `canonical/skills/aid-audit/ (no such skill; fixture path)` | history, left as is | 1 |
-| 318 | `site/src/lib/__tests__/skill-node-panel.test.ts` | `canonical/skills/*/ (no such skill; fixture path)` | history, left as is | 1 |
-| 319 | `site/src/lib/__tests__/skill-node-panel.test.ts` | `canonical/aid/templates/shortcut-catalog.yml` | history, left as is | 1 |
-| 320 | `site/src/lib/__tests__/skill-node-panel.test.ts` | `canonical/skills/aid-not-a-real-skill/ (no such skill; fixture path)` | history, left as is | 1 |
+| 48 | `site/scripts/__tests__/flow-extract-dispatch.test.mjs` | `canonical/skills/aid-describe/SKILL.md` | task-038 | 1 |
+| 49 | `site/scripts/__tests__/flow-extract-dispatch.test.mjs` | `canonical/skills/aid-describe/references/state-completion.md` | task-038 | 1 |
+| 50 | `site/scripts/__tests__/flow-extract-engine.test.mjs` | `skill aid-create-api` | history, left as is | 3 |
+| 51 | `site/scripts/__tests__/flow-extract-engine.test.mjs` | `skill aid-fix` | history, left as is | 1 |
+| 52 | `site/scripts/__tests__/flow-extract-engine.test.mjs` | `canonical/skills/aid-create-api/SKILL.md` | history, left as is | 3 |
+| 53 | `site/scripts/__tests__/flow-extract-engine.test.mjs` | `canonical/aid/templates/shortcut-engine.md` | task-037 | 2 |
+| 54 | `site/scripts/__tests__/flow-extract-engine.test.mjs` | `name aid-synthetic-long (no such skill; fixture name)` | history, left as is | 1 |
+| 55 | `site/scripts/__tests__/flow-extract-engine.test.mjs` | `canonical/skills/aid-synthetic-long/ (no such skill; fixture path)` | history, left as is | 1 |
+| 56 | `site/scripts/__tests__/flow-extract-inline.test.mjs` | `skill aid-review` | task-044 | 2 |
+| 57 | `site/scripts/__tests__/flow-extract-inline.test.mjs` | `skill aid-test` | task-044 | 2 |
+| 58 | `site/scripts/__tests__/flow-extract-inline.test.mjs` | `skill aid-create-document` | task-044 | 1 |
+| 59 | `site/scripts/__tests__/flow-extract-inline.test.mjs` | `skill aid-design` | task-034 | 1 |
+| 60 | `site/scripts/__tests__/flow-extract-inline.test.mjs` | `skill aid-prototype` | task-044 | 1 |
+| 61 | `site/scripts/__tests__/flow-extract-inline.test.mjs` | `skill aid-report` | task-044 | 1 |
+| 62 | `site/scripts/__tests__/flow-extract-inline.test.mjs` | `skill aid-research` | task-044 | 1 |
+| 63 | `site/scripts/__tests__/flow-extract-inline.test.mjs` | `skill aid-update-document` | task-044 | 1 |
+| 64 | `site/scripts/__tests__/flow-extract-residual.test.mjs` | `canonical/skills/test-fixture/ (no such skill; fixture path)` | history, left as is | 1 |
+| 65 | `site/scripts/__tests__/flow-extract-residual.test.mjs` | `skill aid-create-ticket` | task-043 | 3 |
+| 66 | `site/scripts/__tests__/flow-extract-residual.test.mjs` | `skill aid-read-ticket` | task-043 | 1 |
+| 67 | `site/scripts/__tests__/flow-extract-residual.test.mjs` | `skill aid-update-ticket` | task-043 | 1 |
+| 68 | `site/scripts/__tests__/flow-extract-residual.test.mjs` | `skill aid-config` | task-043 | 4 |
+| 69 | `site/scripts/__tests__/flow-extract-residual.test.mjs` | `skill aid-ask` | task-042 | 2 |
+| 70 | `site/scripts/__tests__/flow-extract-residual.test.mjs` | `skill aid-create` | history, left as is | 1 |
+| 71 | `site/scripts/__tests__/flow-extract-residual.test.mjs` | `skill aid-update-api` | history, left as is | 1 |
+| 72 | `site/scripts/__tests__/flow-extract-residual.test.mjs` | `skill aid-deprecate` | history, left as is | 1 |
+| 73 | `site/scripts/__tests__/flow-extract-residual.test.mjs` | `skill aid-document` | history, left as is | 1 |
+| 74 | `site/scripts/__tests__/flow-extract-residual.test.mjs` | `skill aid-document-runbook` | history, left as is | 1 |
+| 75 | `site/scripts/__tests__/flow-extract-residual.test.mjs` | `skill aid-test-security` | history, left as is | 1 |
+| 76 | `site/scripts/__tests__/flow-extract-residual.test.mjs` | `name aid-fixture (no such skill; fixture name)` | history, left as is | 1 |
+| 77 | `site/scripts/__tests__/flow-extract-residual.test.mjs` | `canonical/skills/aid-fixture/ (no such skill; fixture path)` | history, left as is | 1 |
+| 78 | `site/scripts/__tests__/flow-extract-residual.test.mjs` | `skill aid-set-connector` | task-043 | 1 |
+| 79 | `site/scripts/__tests__/flow-extract-residual.test.mjs` | `skill aid-unset-connector` | task-043 | 1 |
+| 80 | `site/scripts/__tests__/flow-extract-residual.test.mjs` | `canonical/skills/aid-config/SKILL.md` | task-043 | 1 |
+| 81 | `site/scripts/__tests__/flow-extract-sibling.test.mjs` | `canonical/skills/fake-cap-2/ (no such skill; fixture path)` | history, left as is | 1 |
+| 82 | `site/scripts/__tests__/flow-extract-sibling.test.mjs` | `canonical/skills/fake-cap-3/ (no such skill; fixture path)` | history, left as is | 1 |
+| 83 | `site/scripts/__tests__/flow-extract-sibling.test.mjs` | `canonical/skills/fake-cap-4/ (no such skill; fixture path)` | history, left as is | 1 |
+| 84 | `site/scripts/__tests__/flow-extract-sibling.test.mjs` | `canonical/skills/fake-cap-5/ (no such skill; fixture path)` | history, left as is | 1 |
+| 85 | `site/scripts/__tests__/flow-extract-sibling.test.mjs` | `skill aid-test-security` | history, left as is | 5 |
+| 86 | `site/scripts/__tests__/flow-extract-sibling.test.mjs` | `skill aid-test-performance` | history, left as is | 2 |
+| 87 | `site/scripts/__tests__/flow-extract-sibling.test.mjs` | `skill aid-test` | task-044 | 12 |
+| 88 | `site/scripts/__tests__/flow-extract-sibling.test.mjs` | `canonical/skills/aid-test/SKILL.md` | task-044 | 8 |
+| 89 | `site/scripts/__tests__/flow-extract-sibling.test.mjs` | `canonical/skills/aid-create/SKILL.md` | history, left as is | 1 |
+| 90 | `site/scripts/__tests__/flow-extract-sibling.test.mjs` | `canonical/skills/aid-test-security/SKILL.md` | history, left as is | 1 |
+| 91 | `site/scripts/__tests__/flow-extract-sibling.test.mjs` | `skill aid-document-architecture` | history, left as is | 3 |
+| 92 | `site/scripts/__tests__/flow-extract-sibling.test.mjs` | `skill aid-document-changelog` | history, left as is | 2 |
+| 93 | `site/scripts/__tests__/flow-extract-sibling.test.mjs` | `skill aid-create-document` | task-044 | 3 |
+| 94 | `site/scripts/__tests__/flow-extract-sibling.test.mjs` | `name aid-alias-synth (no such skill; fixture name)` | history, left as is | 1 |
+| 95 | `site/scripts/__tests__/flow-extract-sibling.test.mjs` | `name aid-neither-synth (no such skill; fixture name)` | history, left as is | 1 |
+| 96 | `site/scripts/__tests__/flow-extract-sibling.test.mjs` | `name aid-approx-parent (no such skill; fixture name)` | history, left as is | 2 |
+| 97 | `site/scripts/__tests__/flow-extract-sibling.test.mjs` | `canonical/skills/aid-approx-parent/ (no such skill; fixture path)` | history, left as is | 1 |
+| 98 | `site/scripts/__tests__/flow-extract-sibling.test.mjs` | `name aid-cycle-synth (no such skill; fixture name)` | history, left as is | 1 |
+| 99 | `site/scripts/__tests__/flow-extract-sibling.test.mjs` | `canonical/skills/aid-cycle-synth/ (no such skill; fixture path)` | history, left as is | 1 |
+| 100 | `site/scripts/__tests__/flow-extract-sibling.test.mjs` | `name aid-cap-synth (no such skill; fixture name)` | history, left as is | 1 |
+| 101 | `site/scripts/__tests__/flow-extract-sibling.test.mjs` | `canonical/skills/fake-cap-1/ (no such skill; fixture path)` | history, left as is | 1 |
+| 102 | `site/scripts/__tests__/flow-extract-sibling.test.mjs` | `skill aid-test-data-quality` | history, left as is | 1 |
+| 103 | `site/scripts/__tests__/flow-extract-sibling.test.mjs` | `skill aid-document` | history, left as is | 1 |
+| 104 | `site/scripts/__tests__/flow-facade.test.mjs` | `canonical/skills/aid-review/SKILL.md` | task-044 | 1 |
+| 105 | `site/scripts/__tests__/flow-facade.test.mjs` | `skill aid-describe` | task-038 | 6 |
+| 106 | `site/scripts/__tests__/flow-facade.test.mjs` | `skill aid-review` | task-044 | 13 |
+| 107 | `site/scripts/__tests__/flow-facade.test.mjs` | `skill aid-config` | task-043 | 11 |
+| 108 | `site/scripts/__tests__/flow-facade.test.mjs` | `skill aid-document-architecture` | history, left as is | 2 |
+| 109 | `site/scripts/__tests__/flow-facade.test.mjs` | `skill aid-create` | history, left as is | 4 |
+| 110 | `site/scripts/__tests__/flow-facade.test.mjs` | `skill aid-test-security` | history, left as is | 1 |
+| 111 | `site/scripts/__tests__/flow-facade.test.mjs` | `skill aid-summarize` | task-042 | 1 |
+| 112 | `site/scripts/__tests__/flow-graph-doorways.test.mjs` | `canonical/aid/templates/shortcut-engine.md` | task-037 | 3 |
+| 113 | `site/scripts/__tests__/flow-graph-doorways.test.mjs` | `canonical/skills/aid-create-api/SKILL.md` | history, left as is | 1 |
+| 114 | `site/scripts/__tests__/flow-graph-doorways.test.mjs` | `canonical/skills/aid-fix/SKILL.md` | history, left as is | 1 |
+| 115 | `site/scripts/__tests__/flow-graph-doorways.test.mjs` | `canonical/skills/aid-test-quality/ (no such skill; fixture path)` | history, left as is | 1 |
+| 116 | `site/scripts/__tests__/flow-graph-doorways.test.mjs` | `canonical/skills/aid-document/SKILL.md` | history, left as is | 1 |
+| 117 | `site/scripts/__tests__/flow-graph-doorways.test.mjs` | `canonical/skills/aid-add/ (no such skill; fixture path)` | history, left as is | 1 |
+| 118 | `site/scripts/__tests__/flow-graph-doorways.test.mjs` | `skill aid-create` | history, left as is | 1 |
+| 119 | `site/scripts/__tests__/flow-graph-doorways.test.mjs` | `canonical/skills/aid-unknown/ (no such skill; fixture path)` | history, left as is | 2 |
+| 120 | `site/scripts/__tests__/flow-graph-doorways.test.mjs` | `canonical/skills/purity-doorway/ (no such skill; fixture path)` | history, left as is | 1 |
+| 121 | `site/scripts/__tests__/flow-graph-doorways.test.mjs` | `canonical/skills/w1-doorway/ (no such skill; fixture path)` | history, left as is | 1 |
+| 122 | `site/scripts/__tests__/flow-graph-doorways.test.mjs` | `canonical/skills/w5-doorway/ (no such skill; fixture path)` | history, left as is | 1 |
+| 123 | `site/scripts/__tests__/flow-graph-doorways.test.mjs` | `skill aid-create-api` | history, left as is | 12 |
+| 124 | `site/scripts/__tests__/flow-graph-doorways.test.mjs` | `skill aid-fix` | history, left as is | 1 |
+| 125 | `site/scripts/__tests__/flow-graph-doorways.test.mjs` | `skill aid-test-security` | history, left as is | 10 |
+| 126 | `site/scripts/__tests__/flow-graph-doorways.test.mjs` | `skill aid-test` | task-044 | 1 |
+| 127 | `site/scripts/__tests__/flow-graph.test.mjs` | `canonical/skills/aid-test/SKILL.md` | task-044 | 14 |
+| 128 | `site/scripts/__tests__/flow-graph.test.mjs` | `canonical/skills/aid-test/references/z.md` | task-044 | 1 |
+| 129 | `site/scripts/__tests__/flow-graph.test.mjs` | `canonical/skills/aid-foo/ (no such skill; fixture path)` | history, left as is | 2 |
+| 130 | `site/scripts/__tests__/flow-graph.test.mjs` | `skill aid-test` | task-044 | 50 |
+| 131 | `site/scripts/__tests__/flow-graph.test.mjs` | `name aid-example (no such skill; fixture name)` | history, left as is | 6 |
+| 132 | `site/scripts/__tests__/flow-graph.test.mjs` | `canonical/skills/aid-example/ (no such skill; fixture path)` | history, left as is | 2 |
+| 133 | `site/scripts/__tests__/flow-graph.test.mjs` | `name aid-foo (no such skill; fixture name)` | history, left as is | 8 |
+| 134 | `site/scripts/__tests__/flow-graph.test.mjs` | `canonical/skills/foo/ (no such skill; fixture path)` | history, left as is | 4 |
+| 135 | `site/scripts/__tests__/flow-graph.test.mjs` | `canonical/skills/x/ (no such skill; fixture path)` | history, left as is | 1 |
+| 136 | `site/scripts/__tests__/flow-graph.test.mjs` | `canonical/skills/aid-review/SKILL.md` | task-044 | 2 |
+| 137 | `site/scripts/__tests__/flow-graph.test.mjs` | `name aid-no-exit (no such skill; fixture name)` | history, left as is | 1 |
+| 138 | `site/scripts/__tests__/flow-graph.test.mjs` | `canonical/skills/aid-base/ (no such skill; fixture path)` | history, left as is | 6 |
+| 139 | `site/scripts/__tests__/flow-graph.test.mjs` | `name aid-base (no such skill; fixture name)` | history, left as is | 2 |
+| 140 | `site/scripts/__tests__/flow-graph.test.mjs` | `canonical/skills/aid-beta/ (no such skill; fixture path)` | history, left as is | 1 |
+| 141 | `site/scripts/__tests__/flow-graph.test.mjs` | `canonical/skills/aid-alpha/ (no such skill; fixture path)` | history, left as is | 1 |
+| 142 | `site/scripts/__tests__/flow-graph.test.mjs` | `canonical/aid/templates/shortcut-engine.md` | task-037 | 1 |
+| 143 | `site/scripts/__tests__/flow-graph.test.mjs` | `canonical/aid/templates/shortcut-engine.md.` | history, left as is | 1 |
+| 144 | `site/scripts/__tests__/flow-graph.test.mjs` | `skill aid-housekeep` | task-042 | 1 |
+| 145 | `site/scripts/__tests__/flow-graph.test.mjs` | `skill aid-update-kb` | task-042 | 1 |
+| 146 | `site/scripts/__tests__/flow-graph.test.mjs` | `skill aid-describe` | task-038 | 1 |
+| 147 | `site/scripts/__tests__/flow-graph.test.mjs` | `skill aid-review` | task-044 | 1 |
+| 148 | `site/scripts/__tests__/flow-render-mermaid.test.mjs` | `canonical/skills/aid-test/SKILL.md` | task-044 | 1 |
+| 149 | `site/scripts/__tests__/flow-render-mermaid.test.mjs` | `name aid-fixture (no such skill; fixture name)` | history, left as is | 1 |
+| 150 | `site/scripts/__tests__/flow-render-mermaid.test.mjs` | `canonical/skills/aid-fixture/ (no such skill; fixture path)` | history, left as is | 1 |
+| 151 | `site/scripts/__tests__/flow-validate.test.mjs` | `canonical/skills/aid-test/SKILL.md` | task-044 | 6 |
+| 152 | `site/scripts/__tests__/flow-validate.test.mjs` | `skill aid-test` | task-044 | 1 |
+| 153 | `site/scripts/__tests__/flow-validate.test.mjs` | `name aid-x (no such skill; fixture name)` | history, left as is | 5 |
+| 154 | `site/scripts/__tests__/flow-validate.test.mjs` | `canonical/skills/aid-x/ (no such skill; fixture path)` | history, left as is | 5 |
+| 155 | `site/scripts/__tests__/gen-reference.test.mjs` | `canonical/aid/templates/shortcut-engine.md` | task-037 | 1 |
+| 156 | `site/scripts/__tests__/gen-reference.test.mjs` | `canonical/aid/templates/shortcut-catalog.yml` | history, left as is | 1 |
+| 157 | `site/scripts/__tests__/gen-reference.test.mjs` | `skill aid-summarize` | task-042 | 1 |
+| 158 | `site/scripts/__tests__/gen-reference.test.mjs` | `skill aid-discover` | task-041 | 1 |
+| 159 | `site/scripts/__tests__/gen-reference.test.mjs` | `skill aid-config` | task-043 | 1 |
+| 160 | `site/scripts/__tests__/gen-reference.test.mjs` | `skill aid-describe` | task-038 | 1 |
+| 161 | `site/scripts/__tests__/gen-reference.test.mjs` | `skill aid-define` | task-039 | 1 |
+| 162 | `site/scripts/__tests__/gen-reference.test.mjs` | `skill aid-specify` | task-039 | 1 |
+| 163 | `site/scripts/__tests__/gen-reference.test.mjs` | `skill aid-plan` | task-040 | 1 |
+| 164 | `site/scripts/__tests__/gen-reference.test.mjs` | `skill aid-detail` | task-040 | 1 |
+| 165 | `site/scripts/__tests__/gen-reference.test.mjs` | `skill aid-execute` | task-040 | 1 |
+| 166 | `site/scripts/__tests__/gen-reference.test.mjs` | `skill aid-deploy` | task-043 | 1 |
+| 167 | `site/scripts/__tests__/gen-reference.test.mjs` | `skill aid-monitor` | task-043 | 1 |
+| 168 | `site/scripts/__tests__/gen-reference.test.mjs` | `skill aid-housekeep` | task-042 | 1 |
+| 169 | `site/scripts/__tests__/gen-reference.test.mjs` | `skill aid-ask` | task-042 | 1 |
+| 170 | `site/scripts/__tests__/gen-reference.test.mjs` | `skill aid-update-kb` | task-042 | 1 |
+| 171 | `site/scripts/__tests__/gen-reference.test.mjs` | `skill aid-set-connector` | task-043 | 1 |
+| 172 | `site/scripts/__tests__/gen-reference.test.mjs` | `skill aid-unset-connector` | task-043 | 1 |
+| 173 | `site/scripts/__tests__/gen-reference.test.mjs` | `skill aid-update-ticket` | task-043 | 1 |
+| 174 | `site/scripts/__tests__/gen-reference.test.mjs` | `skill aid-create-ticket` | task-043 | 1 |
+| 175 | `site/scripts/__tests__/gen-reference.test.mjs` | `skill aid-read-ticket` | task-043 | 1 |
+| 176 | `site/scripts/__tests__/gen-reference.test.mjs` | `skill aid-orchestrate` | task-032 | 1 |
+| 177 | `site/scripts/__tests__/gen-reference.test.mjs` | `skill aid-chat` | task-043 | 1 |
+| 178 | `site/scripts/__tests__/gen-reference.test.mjs` | `canonical/aid/templates/knowledge-base/` | history, left as is | 1 |
+| 179 | `site/scripts/__tests__/gen-skills-index.test.mjs` | `skill aid-describe` | task-038 | 1 |
+| 180 | `site/scripts/__tests__/gen-skills-index.test.mjs` | `skill aid-plan` | task-040 | 1 |
+| 181 | `site/scripts/__tests__/gen-skills-index.test.mjs` | `skill aid-specify` | task-039 | 1 |
+| 182 | `site/scripts/__tests__/gen-skills-index.test.mjs` | `skill aid-define` | task-039 | 1 |
+| 183 | `site/scripts/__tests__/gen-skills-index.test.mjs` | `skill aid-detail` | task-040 | 1 |
+| 184 | `site/scripts/__tests__/gen-skills-index.test.mjs` | `skill aid-orchestrate` | task-032 | 1 |
+| 185 | `site/scripts/__tests__/gen-skills-index.test.mjs` | `skill aid-deploy` | task-043 | 3 |
+| 186 | `site/scripts/__tests__/gen-skills-index.test.mjs` | `skill aid-monitor` | task-043 | 3 |
+| 187 | `site/scripts/__tests__/gen-skills.test.mjs` | `canonical/skills/some-dir-name/ (no such skill; fixture path)` | history, left as is | 1 |
+| 188 | `site/scripts/__tests__/gen-skills.test.mjs` | `skill aid-read-ticket` | task-043 | 1 |
+| 189 | `site/scripts/__tests__/gen-skills.test.mjs` | `canonical/skills/aid-read-ticket/SKILL.md` | task-043 | 1 |
+| 190 | `site/scripts/__tests__/gen-skills.test.mjs` | `canonical/skills/*/ (no such skill; fixture path)` | history, left as is | 4 |
+| 191 | `site/scripts/__tests__/gen-skills.test.mjs` | `canonical/aid/templates/shortcut-catalog.yml` | history, left as is | 4 |
+| 192 | `site/scripts/__tests__/gen-skills.test.mjs` | `name aid-deleted (no such skill; fixture name)` | history, left as is | 4 |
+| 193 | `site/scripts/__tests__/gen-skills.test.mjs` | `skill aid-update-kb` | task-042 | 8 |
+| 194 | `site/scripts/__tests__/gen-skills.test.mjs` | `skill aid-execute` | task-040 | 1 |
+| 195 | `site/scripts/__tests__/gen-skills.test.mjs` | `skill aid-discover` | task-041 | 1 |
+| 196 | `site/scripts/__tests__/provenance-appender.test.mjs` | `canonical/aid/templates/shortcut-engine.md` | task-037 | 3 |
+| 197 | `site/scripts/__tests__/provenance-appender.test.mjs` | `name aid-add-api (no such skill; fixture name)` | history, left as is | 3 |
+| 198 | `site/scripts/__tests__/provenance-appender.test.mjs` | `name aid-add-cli (no such skill; fixture name)` | history, left as is | 1 |
+| 199 | `site/scripts/__tests__/provenance-appender.test.mjs` | `skill aid-review` | task-044 | 9 |
+| 200 | `site/scripts/__tests__/provenance-appender.test.mjs` | `skill aid-create-api` | history, left as is | 3 |
+| 201 | `site/scripts/__tests__/provenance-appender.test.mjs` | `skill aid-ask` | task-042 | 3 |
+| 202 | `site/scripts/__tests__/provenance-deep-link.test.mjs` | `canonical/skills/aid-foo/ (no such skill; fixture path)` | history, left as is | 5 |
+| 203 | `site/scripts/__tests__/provenance-deep-link.test.mjs` | `canonical/skills/aid-bar/ (no such skill; fixture path)` | history, left as is | 1 |
+| 204 | `site/scripts/__tests__/provenance-deep-link.test.mjs` | `canonical/skills/aid-baz/ (no such skill; fixture path)` | history, left as is | 2 |
+| 205 | `site/scripts/__tests__/provenance-deep-link.test.mjs` | `canonical/skills/aid-create-api/SKILL.md` | history, left as is | 1 |
+| 206 | `site/scripts/__tests__/provenance-render-list.test.mjs` | `canonical/skills/aid-test/SKILL.md` | task-044 | 7 |
+| 207 | `site/scripts/__tests__/provenance-render-list.test.mjs` | `name aid-fixture (no such skill; fixture name)` | history, left as is | 1 |
+| 208 | `site/scripts/__tests__/provenance-verify.test.mjs` | `canonical/skills/test-skill/ (no such skill; fixture path)` | history, left as is | 26 |
+| 209 | `site/scripts/__tests__/provenance-verify.test.mjs` | `canonical/skills/nonexistent/ (no such skill; fixture path)` | history, left as is | 6 |
+| 210 | `site/scripts/__tests__/provenance.test.mjs` | `skill aid-test` | task-044 | 2 |
+| 211 | `site/scripts/__tests__/provenance.test.mjs` | `canonical/skills/aid-review/SKILL.md` | task-044 | 4 |
+| 212 | `site/scripts/__tests__/provenance.test.mjs` | `canonical/skills/test-skill/ (no such skill; fixture path)` | history, left as is | 4 |
+| 213 | `site/scripts/__tests__/provenance.test.mjs` | `canonical/skills/../ (no such skill; fixture path)` | history, left as is | 1 |
+| 214 | `site/scripts/__tests__/provenance.test.mjs` | `canonical/skills/aid-ask/SKILL.md` | task-042 | 1 |
+| 215 | `site/scripts/__tests__/provenance.test.mjs` | `skill aid-review` | task-044 | 1 |
+| 216 | `site/scripts/__tests__/skill-counts.test.mjs` | `skill aid-ask` | task-042 | 1 |
+| 217 | `site/scripts/__tests__/skill-node-panel-lifecycle.test.mjs` | `name aid-flow-data (no such skill; fixture name)` | history, left as is | 3 |
+| 218 | `site/scripts/__tests__/skill-node-panel-lifecycle.test.mjs` | `name aid-node-panel (no such skill; fixture name)` | history, left as is | 1 |
+| 219 | `site/scripts/__tests__/skill-node-panel-panel.test.mjs` | `name aid-fixture (no such skill; fixture name)` | history, left as is | 1 |
+| 220 | `site/scripts/__tests__/skill-node-panel-panel.test.mjs` | `canonical/skills/a/ (no such skill; fixture path)` | history, left as is | 4 |
+| 221 | `site/scripts/__tests__/skill-node-panel-panel.test.mjs` | `name aid-flow-data (no such skill; fixture name)` | history, left as is | 1 |
+| 222 | `site/scripts/__tests__/skill-node-panel-panel.test.mjs` | `name aid-node-panel (no such skill; fixture name)` | history, left as is | 4 |
+| 223 | `site/scripts/__tests__/skills-body.test.mjs` | `name aid-fixture (no such skill; fixture name)` | history, left as is | 3 |
+| 224 | `site/scripts/__tests__/skills-body.test.mjs` | `skill aid-review` | task-044 | 2 |
+| 225 | `site/scripts/__tests__/skills-body.test.mjs` | `name aid-multi (no such skill; fixture name)` | history, left as is | 2 |
+| 226 | `site/scripts/__tests__/skills-body.test.mjs` | `skill aid-create-api` | history, left as is | 1 |
+| 227 | `site/scripts/__tests__/skills-catalog.test.mjs` | `canonical/aid/templates/shortcut-catalog.yml` | history, left as is | 1 |
+| 228 | `site/scripts/__tests__/skills-catalog.test.mjs` | `name aid-catalog- (no such skill; fixture name)` | history, left as is | 1 |
+| 229 | `site/scripts/__tests__/skills-catalog.test.mjs` | `name aid-middle (no such skill; fixture name)` | history, left as is | 1 |
+| 230 | `site/scripts/__tests__/skills-catalog.test.mjs` | `name aid-alpha (no such skill; fixture name)` | history, left as is | 1 |
+| 231 | `site/scripts/__tests__/skills-catalog.test.mjs` | `name aid-zap (no such skill; fixture name)` | history, left as is | 1 |
+| 232 | `site/scripts/__tests__/skills-catalog.test.mjs` | `skill aid-deploy` | task-043 | 3 |
+| 233 | `site/scripts/__tests__/skills-catalog.test.mjs` | `skill aid-monitor` | task-043 | 1 |
+| 234 | `site/scripts/__tests__/skills-catalog.test.mjs` | `name aid-bad (no such skill; fixture name)` | history, left as is | 1 |
+| 235 | `site/scripts/__tests__/skills-catalog.test.mjs` | `skill aid-fix` | history, left as is | 1 |
+| 236 | `site/scripts/__tests__/skills-discover.test.mjs` | `skill aid-test` | task-044 | 45 |
+| 237 | `site/scripts/__tests__/skills-discover.test.mjs` | `name aid-missing (no such skill; fixture name)` | history, left as is | 2 |
+| 238 | `site/scripts/__tests__/skills-discover.test.mjs` | `name aid-bad- (no such skill; fixture name)` | history, left as is | 1 |
+| 239 | `site/scripts/__tests__/skills-discover.test.mjs` | `name aid--double (no such skill; fixture name)` | history, left as is | 1 |
+| 240 | `site/scripts/__tests__/skills-discover.test.mjs` | `name aid-mismatch (no such skill; fixture name)` | history, left as is | 2 |
+| 241 | `site/scripts/__tests__/skills-discover.test.mjs` | `canonical/skills/aid-test/SKILL.md` | task-044 | 1 |
+| 242 | `site/scripts/__tests__/skills-discover.test.mjs` | `canonical/skills/aid-test/references` (directory) | task-044 | 1 |
+| 243 | `site/scripts/__tests__/skills-discover.test.mjs` | `name aid-foo-bar (no such skill; fixture name)` | history, left as is | 6 |
+| 244 | `site/scripts/__tests__/skills-discover.test.mjs` | `canonical/skills/aid-foo-bar/ (no such skill; fixture path)` | history, left as is | 1 |
+| 245 | `site/scripts/__tests__/skills-discover.test.mjs` | `name aid-alpha (no such skill; fixture name)` | history, left as is | 1 |
+| 246 | `site/scripts/__tests__/skills-discover.test.mjs` | `name aid-beta (no such skill; fixture name)` | history, left as is | 1 |
+| 247 | `site/scripts/__tests__/skills-discover.test.mjs` | `name aid-z (no such skill; fixture name)` | history, left as is | 2 |
+| 248 | `site/scripts/__tests__/skills-discover.test.mjs` | `name aid-a (no such skill; fixture name)` | history, left as is | 2 |
+| 249 | `site/scripts/__tests__/skills-discover.test.mjs` | `name aid-m (no such skill; fixture name)` | history, left as is | 2 |
+| 250 | `site/scripts/__tests__/skills-discover.test.mjs` | `name aid-a-b (no such skill; fixture name)` | history, left as is | 2 |
+| 251 | `site/scripts/__tests__/skills-discover.test.mjs` | `name aid-ab (no such skill; fixture name)` | history, left as is | 2 |
+| 252 | `site/scripts/__tests__/skills-discover.test.mjs` | `name aid-good (no such skill; fixture name)` | history, left as is | 1 |
+| 253 | `site/scripts/__tests__/skills-discover.test.mjs` | `name aid-bad (no such skill; fixture name)` | history, left as is | 1 |
+| 254 | `site/scripts/__tests__/skills-frontmatter.test.mjs` | `canonical/skills/foo/ (no such skill; fixture path)` | history, left as is | 1 |
+| 255 | `site/scripts/__tests__/skills-frontmatter.test.mjs` | `name aid-foo (no such skill; fixture name)` | history, left as is | 1 |
+| 256 | `site/scripts/__tests__/skills-frontmatter.test.mjs` | `canonical/skills/x/ (no such skill; fixture path)` | history, left as is | 4 |
+| 257 | `site/scripts/__tests__/skills-frontmatter.test.mjs` | `canonical/skills/z/ (no such skill; fixture path)` | history, left as is | 2 |
+| 258 | `site/scripts/__tests__/skills-frontmatter.test.mjs` | `canonical/skills/*/ (no such skill; fixture path)` | history, left as is | 1 |
+| 259 | `site/scripts/__tests__/skills-groups.test.mjs` | `name aid-totally-unknown-xyz (no such skill; fixture name)` | history, left as is | 1 |
+| 260 | `site/scripts/__tests__/skills-groups.test.mjs` | `name aid-mystery-skill (no such skill; fixture name)` | history, left as is | 1 |
+| 261 | `site/scripts/__tests__/skills-groups.test.mjs` | `skill aid-orchestrate` | task-032 | 4 |
+| 262 | `site/scripts/__tests__/skills-groups.test.mjs` | `skill aid-config` | task-043 | 4 |
+| 263 | `site/scripts/__tests__/skills-groups.test.mjs` | `skill aid-describe` | task-038 | 2 |
+| 264 | `site/scripts/__tests__/skills-groups.test.mjs` | `skill aid-plan` | task-040 | 8 |
+| 265 | `site/scripts/__tests__/skills-groups.test.mjs` | `skill aid-specify` | task-039 | 1 |
+| 266 | `site/scripts/__tests__/skills-groups.test.mjs` | `skill aid-define` | task-039 | 1 |
+| 267 | `site/scripts/__tests__/skills-groups.test.mjs` | `skill aid-detail` | task-040 | 1 |
+| 268 | `site/scripts/__tests__/skills-groups.test.mjs` | `skill aid-deploy` | task-043 | 7 |
+| 269 | `site/scripts/__tests__/skills-groups.test.mjs` | `skill aid-monitor` | task-043 | 4 |
+| 270 | `site/scripts/__tests__/skills-paths.test.mjs` | `skill aid-create-api` | history, left as is | 3 |
+| 271 | `site/scripts/__tests__/skills-paths.test.mjs` | `canonical/skills/aid-create-api/SKILL.md` | history, left as is | 2 |
+| 272 | `site/scripts/__tests__/skills-paths.test.mjs` | `name aid-foo (no such skill; fixture name)` | history, left as is | 8 |
+| 273 | `site/scripts/__tests__/skills-paths.test.mjs` | `name aid-bar-baz (no such skill; fixture name)` | history, left as is | 2 |
+| 274 | `site/scripts/__tests__/skills-render-index.test.mjs` | `canonical/skills/*/ (no such skill; fixture path)` | history, left as is | 2 |
+| 275 | `site/scripts/__tests__/skills-render-index.test.mjs` | `canonical/aid/templates/shortcut-catalog.yml` | history, left as is | 2 |
+| 276 | `site/scripts/__tests__/skills-render-index.test.mjs` | `skill aid-deploy` | task-043 | 1 |
+| 277 | `site/scripts/__tests__/skills-render-index.test.mjs` | `skill aid-monitor` | task-043 | 1 |
+| 278 | `site/scripts/__tests__/skills-render-index.test.mjs` | `skill aid-orchestrate` | task-032 | 2 |
+| 279 | `site/scripts/__tests__/skills-render-index.test.mjs` | `name aid-beta (no such skill; fixture name)` | history, left as is | 1 |
+| 280 | `site/scripts/__tests__/skills-render-index.test.mjs` | `name aid-alpha (no such skill; fixture name)` | history, left as is | 1 |
+| 281 | `site/scripts/__tests__/skills-render-page.test.mjs` | `name aid-test-skill (no such skill; fixture name)` | history, left as is | 5 |
+| 282 | `site/scripts/__tests__/skills-render-page.test.mjs` | `canonical/skills/aid-review/SKILL.md` | task-044 | 1 |
+| 283 | `site/scripts/__tests__/skills-render-page.test.mjs` | `skill aid-review` | task-044 | 2 |
+| 284 | `site/scripts/__tests__/skills-render-page.test.mjs` | `canonical/skills/aid-test-skill/ (no such skill; fixture path)` | history, left as is | 4 |
+| 285 | `site/scripts/__tests__/skills-render-page.test.mjs` | `skill aid-create-api` | history, left as is | 1 |
+| 286 | `site/scripts/__tests__/skills-render-page.test.mjs` | `canonical/skills/aid-create-api/SKILL.md` | history, left as is | 1 |
+| 287 | `site/scripts/__tests__/skills-render-page.test.mjs` | `name aid-list-test (no such skill; fixture name)` | history, left as is | 2 |
+| 288 | `site/scripts/__tests__/skills-render-page.test.mjs` | `name aid-pipe-test (no such skill; fixture name)` | history, left as is | 2 |
+| 289 | `site/scripts/__tests__/skills-render-page.test.mjs` | `name aid-angle-test (no such skill; fixture name)` | history, left as is | 2 |
+| 290 | `site/scripts/__tests__/skills-render-page.test.mjs` | `name aid-synthetic-test (no such skill; fixture name)` | history, left as is | 2 |
+| 291 | `site/scripts/__tests__/skills-render-page.test.mjs` | `name aid-folded-test (no such skill; fixture name)` | history, left as is | 2 |
+| 292 | `site/scripts/__tests__/skills-render-page.test.mjs` | `name aid-fullfield-test (no such skill; fixture name)` | history, left as is | 2 |
+| 293 | `site/scripts/__tests__/skills-render-page.test.mjs` | `name aid-nosidebar-test (no such skill; fixture name)` | history, left as is | 1 |
+| 294 | `site/scripts/__tests__/skills-render-page.test.mjs` | `name aid-desc-test (no such skill; fixture name)` | history, left as is | 2 |
+| 295 | `site/scripts/__tests__/skills-render-page.test.mjs` | `name aid-nodesc (no such skill; fixture name)` | history, left as is | 1 |
+| 296 | `site/scripts/__tests__/skills-render-page.test.mjs` | `name aid-quote-test (no such skill; fixture name)` | history, left as is | 2 |
+| 297 | `site/scripts/__tests__/skills-render-value.test.mjs` | `canonical/skills/aid-read-ticket/SKILL.md` | task-043 | 1 |
+| 298 | `site/scripts/__tests__/skills-summary.test.mjs` | `skill aid-test` | task-044 | 10 |
+| 299 | `site/scripts/__tests__/skills-summary.test.mjs` | `name aid-some-skill (no such skill; fixture name)` | history, left as is | 1 |
+| 300 | `site/scripts/__tests__/skills-summary.test.mjs` | `name aid-custom-dir (no such skill; fixture name)` | history, left as is | 1 |
+| 301 | `site/scripts/__tests__/skills-summary.test.mjs` | `name aid-x (no such skill; fixture name)` | history, left as is | 2 |
+| 302 | `site/src/lib/__tests__/feature-006-head-gate.test.ts` | `canonical/aid/templates/knowledge-base/` | history, left as is | 1 |
+| 303 | `site/src/lib/__tests__/feature-006-head-gate.test.ts` | `canonical/aid/templates/shortcut-engine.md` | task-037 | 1 |
+| 304 | `site/src/lib/__tests__/feature-006-head-gate.test.ts` | `canonical/aid/templates/shortcut-catalog.yml` | history, left as is | 2 |
+| 305 | `site/src/lib/__tests__/feature-006-head-gate.test.ts` | `canonical/skills/*/ (no such skill; fixture path)` | history, left as is | 1 |
+| 306 | `site/src/lib/__tests__/feature-006-head-gate.test.ts` | `canonical/skills/aid-ask/SKILL.md` | task-042 | 6 |
+| 307 | `site/src/lib/__tests__/feature-006-head-gate.test.ts` | `skill aid-ask` | task-042 | 9 |
+| 308 | `site/src/lib/__tests__/feature-009-releases-banner.test.ts` | `name aid-banner-dismissed (no such skill; fixture name)` | history, left as is | 2 |
+| 309 | `site/src/lib/__tests__/skill-node-panel.dom.test.ts` | `name aid-fixture (no such skill; fixture name)` | history, left as is | 1 |
+| 310 | `site/src/lib/__tests__/skill-node-panel.dom.test.ts` | `canonical/skills/a/ (no such skill; fixture path)` | history, left as is | 3 |
+| 311 | `site/src/lib/__tests__/skill-node-panel.dom.test.ts` | `name aid-flow-data (no such skill; fixture name)` | history, left as is | 1 |
+| 312 | `site/src/lib/__tests__/skill-node-panel.dom.test.ts` | `name aid-node-panel (no such skill; fixture name)` | history, left as is | 1 |
+| 313 | `site/src/lib/__tests__/skill-node-panel.test.ts` | `canonical/skills/aid-ask/SKILL.md` | task-042 | 13 |
+| 314 | `site/src/lib/__tests__/skill-node-panel.test.ts` | `skill aid-ask` | task-042 | 7 |
+| 315 | `site/src/lib/__tests__/skill-node-panel.test.ts` | `skill aid-plan` | task-040 | 2 |
+| 316 | `site/src/lib/__tests__/skill-node-panel.test.ts` | `skill aid-execute` | task-040 | 1 |
+| 317 | `site/src/lib/__tests__/skill-node-panel.test.ts` | `canonical/skills/aid-plan/SKILL.md` | task-040 | 3 |
+| 318 | `site/src/lib/__tests__/skill-node-panel.test.ts` | `canonical/skills/Aid-Ask/ (no such skill; fixture path)` | history, left as is | 1 |
+| 319 | `site/src/lib/__tests__/skill-node-panel.test.ts` | `canonical/skills/aid_ask/ (no such skill; fixture path)` | history, left as is | 1 |
+| 320 | `site/src/lib/__tests__/skill-node-panel.test.ts` | `canonical/skills/aid-audit/ (no such skill; fixture path)` | history, left as is | 1 |
+| 321 | `site/src/lib/__tests__/skill-node-panel.test.ts` | `canonical/skills/*/ (no such skill; fixture path)` | history, left as is | 1 |
+| 322 | `site/src/lib/__tests__/skill-node-panel.test.ts` | `canonical/aid/templates/shortcut-catalog.yml` | history, left as is | 1 |
+| 323 | `site/src/lib/__tests__/skill-node-panel.test.ts` | `canonical/skills/aid-not-a-real-skill/ (no such skill; fixture path)` | history, left as is | 1 |
 
 ## KB sources (G17)
 
@@ -2152,13 +2154,11 @@ A suite is listed when the hits in it are owned by two or more tasks of delivery
 | 143 | `tests/conversation/fixtures/done-work/.aid/works/work-001-csv-export/STATE.yml` | task-038, task-040 | task-038/task-040 | - | task-038 -> task-040 |
 | 144 | `tests/conversation/fixtures/ticket-mid-work/.aid/works/work-001-retry-policy/STATE.yml` | task-038, task-039 | task-038/task-039 | - | task-038 -> task-039 |
 | 145 | `tests/conversation/samples/feature-001/001-15-no-kb-offers-preparation.md` | task-039, task-041 | task-039/task-041 | - | task-039 -> task-041 |
-| 146 | `tests/cost-baseline.tsv` | task-030, task-032, task-034, task-035, task-036, task-037, task-038, task-039, task-040, task-041, task-042, task-043, task-044, task-045, task-049, task-057 | task-032/task-034, task-032/task-035, task-032/task-036, task-032/task-037, task-032/task-038, task-032/task-039, task-032/task-040, task-032/task-041, task-032/task-042, task-032/task-043, task-032/task-044, task-032/task-045, task-034/task-035, task-034/task-036, task-034/task-037, task-034/task-038, task-034/task-039, task-034/task-040, task-034/task-041, task-034/task-042, task-034/task-043, task-034/task-044, task-034/task-045, task-035/task-036, task-035/task-037, task-035/task-038, task-035/task-039, task-035/task-040, task-035/task-041, task-035/task-042, task-035/task-043, task-035/task-044, task-035/task-045, task-036/task-037, task-036/task-038, task-036/task-039, task-036/task-040, task-036/task-041, task-036/task-042, task-036/task-043, task-036/task-044, task-036/task-045, task-037/task-038, task-037/task-039, task-037/task-040, task-037/task-041, task-037/task-042, task-037/task-043, task-037/task-044, task-037/task-045, task-038/task-039, task-038/task-040, task-038/task-041, task-038/task-042, task-038/task-043, task-038/task-044, task-038/task-045, task-039/task-041, task-039/task-042, task-039/task-043, task-039/task-044, task-039/task-045, task-040/task-041, task-040/task-042, task-040/task-043, task-040/task-044, task-040/task-045, task-041/task-042, task-041/task-043, task-041/task-044, task-041/task-045, task-042/task-043, task-042/task-044, task-042/task-045, task-043/task-044, task-043/task-045, task-044/task-045, task-045/task-049 | task-032 after task-030; task-034 after task-030; task-035 after task-030; task-036 after task-030; task-037 after task-030; task-038 after task-030; task-039 after task-030; task-040 after task-030; task-041 after task-030; task-042 after task-030; task-043 after task-030; task-044 after task-030; task-045 after task-030; task-049 after task-030; task-057 after task-030; task-049 after task-032; task-057 after task-032; task-049 after task-034; task-057 after task-034; task-049 after task-035; task-057 after task-035; task-049 after task-036; task-057 after task-036; task-049 after task-037; task-057 after task-037; task-049 after task-038; task-057 after task-038; task-040 after task-039; task-049 after task-039; task-057 after task-039; task-049 after task-040; task-057 after task-040; task-049 after task-041; task-057 after task-041; task-049 after task-042; task-057 after task-042; task-049 after task-043; task-057 after task-043; task-049 after task-044; task-057 after task-044; task-057 after task-045; task-057 after task-049 | task-030 -> task-032 -> task-034 -> task-035 -> task-036 -> task-037 -> task-038 -> task-039 -> task-040 -> task-041 -> task-042 -> task-043 -> task-044 -> task-045 -> task-049 -> task-057 |
-| 147 | `tests/cost-meter.py` | task-040, task-044, task-057 | task-040/task-044 | task-057 after task-040; task-057 after task-044 | task-040 -> task-044 -> task-057 |
-| 148 | `tests/coverage-accepted-removals.tsv` | task-021, task-033, task-043, task-056 | task-033/task-043 | task-033 after task-021; task-043 after task-021; task-056 after task-021; task-056 after task-033; task-056 after task-043 | task-021 -> task-033 -> task-043 -> task-056 |
-| 149 | `tests/coverage-baseline.tsv` | task-021, task-025, task-030, task-031, task-032, task-033, task-034, task-037, task-038, task-039, task-040, task-042, task-043, task-044, task-045, task-049, task-056, task-057 | task-025/task-033, task-030/task-033, task-032/task-033, task-032/task-034, task-032/task-037, task-032/task-038, task-032/task-039, task-032/task-040, task-032/task-042, task-032/task-043, task-032/task-044, task-032/task-045, task-033/task-034, task-033/task-037, task-033/task-038, task-033/task-039, task-033/task-040, task-033/task-042, task-033/task-043, task-033/task-044, task-033/task-045, task-033/task-049, task-034/task-037, task-034/task-038, task-034/task-039, task-034/task-040, task-034/task-042, task-034/task-043, task-034/task-044, task-034/task-045, task-037/task-038, task-037/task-039, task-037/task-040, task-037/task-042, task-037/task-043, task-037/task-044, task-037/task-045, task-038/task-039, task-038/task-040, task-038/task-042, task-038/task-043, task-038/task-044, task-038/task-045, task-039/task-042, task-039/task-043, task-039/task-044, task-039/task-045, task-040/task-042, task-040/task-043, task-040/task-044, task-040/task-045, task-042/task-043, task-042/task-044, task-042/task-045, task-043/task-044, task-043/task-045, task-044/task-045, task-045/task-049, task-045/task-056, task-049/task-056 | task-025 after task-021; task-030 after task-021; task-031 after task-021; task-032 after task-021; task-033 after task-021; task-034 after task-021; task-037 after task-021; task-038 after task-021; task-039 after task-021; task-040 after task-021; task-042 after task-021; task-043 after task-021; task-044 after task-021; task-045 after task-021; task-049 after task-021; task-056 after task-021; task-057 after task-021; task-030 after task-025; task-025 after task-031; task-032 after task-025; task-034 after task-025; task-037 after task-025; task-038 after task-025; task-039 after task-025; task-040 after task-025; task-042 after task-025; task-043 after task-025; task-044 after task-025; task-045 after task-025; task-049 after task-025; task-056 after task-025; task-057 after task-025; task-030 after task-031; task-032 after task-030; task-034 after task-030; task-037 after task-030; task-038 after task-030; task-039 after task-030; task-040 after task-030; task-042 after task-030; task-043 after task-030; task-044 after task-030; task-045 after task-030; task-049 after task-030; task-056 after task-030; task-057 after task-030; task-032 after task-031; task-033 after task-031; task-034 after task-031; task-037 after task-031; task-038 after task-031; task-039 after task-031; task-040 after task-031; task-042 after task-031; task-043 after task-031; task-044 after task-031; task-045 after task-031; task-049 after task-031; task-056 after task-031; task-057 after task-031; task-049 after task-032; task-056 after task-032; task-057 after task-032; task-056 after task-033; task-057 after task-033; task-049 after task-034; task-056 after task-034; task-057 after task-034; task-049 after task-037; task-056 after task-037; task-057 after task-037; task-049 after task-038; task-056 after task-038; task-057 after task-038; task-040 after task-039; task-049 after task-039; task-056 after task-039; task-057 after task-039; task-049 after task-040; task-056 after task-040; task-057 after task-040; task-049 after task-042; task-056 after task-042; task-057 after task-042; task-049 after task-043; task-056 after task-043; task-057 after task-043; task-049 after task-044; task-056 after task-044; task-057 after task-044; task-057 after task-045; task-057 after task-049; task-057 after task-056 | task-021 -> task-031 -> task-025 -> task-030 -> task-032 -> task-033 -> task-034 -> task-037 -> task-038 -> task-039 -> task-040 -> task-042 -> task-043 -> task-044 -> task-045 -> task-049 -> task-056 -> task-057 |
-| 150 | `tests/coverage-rehome-allowlist.tsv` | task-021, task-032, task-039, task-040, task-043 | task-032/task-039, task-032/task-040, task-032/task-043, task-039/task-043, task-040/task-043 | task-032 after task-021; task-039 after task-021; task-040 after task-021; task-043 after task-021; task-040 after task-039 | task-021 -> task-032 -> task-039 -> task-040 -> task-043 |
-| 151 | `tests/ui/README.md` | task-031, task-033 | - | task-033 after task-031 | task-031 -> task-033 |
-| 152 | `tests/windows/Test-AidInstaller.ps1` | task-032, task-040, task-042, task-056 | task-032/task-040, task-032/task-042, task-040/task-042 | task-056 after task-032; task-056 after task-040; task-056 after task-042 | task-032 -> task-040 -> task-042 -> task-056 |
+| 146 | `tests/cost-meter.py` | task-040, task-044, task-057 | task-040/task-044 | task-057 after task-040; task-057 after task-044 | task-040 -> task-044 -> task-057 |
+| 147 | `tests/coverage-accepted-removals.tsv` | task-021, task-033, task-043, task-056 | task-033/task-043 | task-033 after task-021; task-043 after task-021; task-056 after task-021; task-056 after task-033; task-056 after task-043 | task-021 -> task-033 -> task-043 -> task-056 |
+| 148 | `tests/coverage-rehome-allowlist.tsv` | task-021, task-032, task-039, task-040, task-043 | task-032/task-039, task-032/task-040, task-032/task-043, task-039/task-043, task-040/task-043 | task-032 after task-021; task-039 after task-021; task-040 after task-021; task-043 after task-021; task-040 after task-039 | task-021 -> task-032 -> task-039 -> task-040 -> task-043 |
+| 149 | `tests/ui/README.md` | task-031, task-033 | - | task-033 after task-031 | task-031 -> task-033 |
+| 150 | `tests/windows/Test-AidInstaller.ps1` | task-032, task-040, task-042, task-056 | task-032/task-040, task-032/task-042, task-040/task-042 | task-056 after task-032; task-056 after task-040; task-056 after task-042 | task-032 -> task-040 -> task-042 -> task-056 |
 
 152 suites have hits owned by two or more tasks. Every one runs after all its tasks, in the order shown.
 
@@ -2176,7 +2176,7 @@ Each item is a difference between a search result and a statement of the spec (R
 | D6 | P4: "Today 42 skill files do it" (SS-12, Work state layout) | 43 lines in 43 files: the 42, plus `aid-deploy/references/state-done.md`, whose prose quotes `lifecycle: Completed` and which task-043 rewords | None once the deploy prose is counted; the spec says it is reworded for that reason. |
 | D7 | P5 and SS-02: `canonical/aid/templates/state-machine-chaining.md` carries `**Advance:**` lines (12 in P5) | The file is deleted by delivery-003 (task-074), not by delivery-002 | Its hits are owned by task-050 (the exempt-list row for SS-03, per task-050's Scope). The owner classes name no delivery-003 task; the row points at task-074 for the removal. Please confirm this reading. |
 | D8 | SS-02: "every `SKILL.md` with a Dispatch table or a `## State:` section" | 58 files; `aid-ask` and `aid-read-ticket` have a `## Dispatch table` heading and a table | None. Note: `aid-orchestrate` has neither, but task-032's Scope says its `SKILL.md` cites `skill-steps.md`. That is a task-level addition, not an SS-02 requirement; owner task-032. |
-| D9 | Owner classes | The spec's "left as they are" items (`site/src/data/skill-flows/`, `tests/coverage-baseline.tsv`, `tests/canonical/test-diagram-content.sh`, `canonical/aid/scripts/summarize/`, documentation prose in `docs/` and `site/src/content/docs/`) have no class of their own; G11 synthetic fixture names (`aid-fixture`, `aid-parent`, `door-skill`) name no real file; some tests name unchanged skills | Assigned to `history, left as is` (the class for a hit that stays). Please confirm; the alternative is a fifth class. `site/src/data/skill-flows/` is regenerated by the G1 generator run of each task that changes a skill (task-021 first). |
+| D9 | Owner classes | The spec's "left as they are" items (`site/src/data/skill-flows/`, `tests/canonical/test-diagram-content.sh`, `canonical/aid/scripts/summarize/`, documentation prose in `docs/` and `site/src/content/docs/`) have no class of their own; G11 synthetic fixture names (`aid-fixture`, `aid-parent`, `door-skill`) name no real file; some tests name unchanged skills | Those items are assigned to `history, left as is` (the class for a hit that stays). The two baseline files, `tests/cost-baseline.tsv` and `tests/coverage-baseline.tsv`, are not history: every hit in them is owned by `baseline, re-recorded at the gate` (Q134 D11), and no task edits them. Please confirm; the alternative is a fifth class. `site/src/data/skill-flows/` is regenerated by the G1 generator run of each task that changes a skill (task-021 first). |
 | D10 | Tests rule (Feature 002 § 2): "`test-describe-full-only.sh`" is named among the suites that change | it has 12 edit-list matches (owners: task-021, task-038, task-044) | No task Scope names this suite. Its owner is the task that changes the file it reads (per P8). Please confirm that the matches are the only edit it needs. |
 | D11 | P7: "Run against today's tree with these globs, only the two exemptions fire" (NM) | NM-03: 1 hit (aid-housekeep, exempt). NM-04: 3 hits (aid-execute, exempt). NM-01 and NM-02: none | None. |
 | D12 | P8: suites named by a task Scope (for example `test-pipeline-status-walkthrough.sh` A1 and B1, `test-work-initiation-gate.sh`, `test-skill-guide.sh`) | The name-based match of P8 finds the files each task names, plus other suites (for example `test_reader.py`, `test-release.sh`) | Each extra suite gets the owner of the file it reads. None is left without an owner. |
