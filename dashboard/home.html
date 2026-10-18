@@ -1125,10 +1125,10 @@ footer {
   // form a work's own `phase:` field can hold. Discover is deliberately absent -- it is
   // NOT a pipeline phase: aid-discover builds the KB BEFORE the pipeline (a prerequisite,
   // like aid-config), so it is NOT shown in the stepper at all (KB state is surfaced via
-  // the KB card). The pipeline STARTS at Describe (full path) or a shortcut skill (Lite
-  // path). Deploy is also absent -- the numbered sequence ends at Execute; /aid-deploy
-  // is a separate path (no longer a work phase:), so it is never a stepper slot.
-  var PHASE_ORDER = ['Describe', 'Define', 'Specify', 'Plan', 'Detail', 'Execute'];
+  // the KB card). The pipeline STARTS at Definition. Deploy is also absent -- the numbered
+  // sequence ends at CI; /aid-deploy is a separate path (no longer a work phase:), so it
+  // is never a stepper slot. A work's own intent.phases (when it has them) drives its rail.
+  var PHASE_ORDER = ['Definition', 'Specification', 'Planning', 'Building', 'CI'];
 
   // ---------------------------------------------------------------------------
   // State
@@ -2027,16 +2027,16 @@ footer {
   }
 
   // Two-part progress model:
-  //  - Readiness: progress through the pre-execution pipeline (Describe->Define->Specify->
-  //    Plan->Detail), i.e. how close to having an approved task list. 5 steps; the
+  //  - Readiness: progress through the pre-execution pipeline (Definition->Specification->
+  //    Planning), i.e. how close to having an approved task list. 3 steps; the
   //    in-progress phase counts half.
   //  - Execution: completed tasks / total (Canceled excluded), once the task list exists.
-  var PRE_EXEC_STEPS = 5; // Describe, Define, Specify, Plan, Detail (index of Execute in PHASE_ORDER)
+  var PRE_EXEC_STEPS = 3; // Definition, Specification, Planning (index of Building in PHASE_ORDER)
 
   function _readinessPct(work) {
     var idx = PHASE_ORDER.indexOf(work.phase);
     if (idx === -1) return null;                 // unknown phase
-    if (idx >= PRE_EXEC_STEPS) return 100;       // Execute or later -> task list ready
+    if (idx >= PRE_EXEC_STEPS) return 100;       // Building or later -> task list ready
     return Math.round(((idx + 0.5) / PRE_EXEC_STEPS) * 100);
   }
 
@@ -4236,30 +4236,21 @@ footer {
   // Stage rail (UI-2)
   // ---------------------------------------------------------------------------
 
-  // Discover is NOT a pipeline phase: aid-discover builds the KB BEFORE the pipeline
-  // (a prerequisite, like aid-config), never a per-work phase. The pipeline starts at
-  // Describe (full path) or a shortcut skill (Lite path), so the stepper shows NO
-  // Discover pill; KB/Discovery state is surfaced via the KB card only
-  // (work-003-state-schema task-010).
+  // One stage rail per work (Q75): the work's own intent.phases (Feature 001), in
+  // order, plus Done. A work with no intent.phases draws the canonical PHASE_ORDER.
+  // The stage is Done when lifecycle is Completed; otherwise it is the one phase the
+  // work's STATE names. A phase outside the rail (or none) shows the not-yet-recorded
+  // sentinel (PF-7 forward-compat).
   function renderStageRail(work) {
     var rail = document.getElementById('stage-rail');
     if (!rail) return;
     rail.innerHTML = '';
 
-    // Lite/shortcut works render a DISTINCT compact rail, never the full 6-phase
-    // stepper below -- the shortcut engine (INTAKE→…→GATE) collapses Describe→
-    // Detail into a single "Describe" step, so the full stepper would read as
-    // mostly-skipped noise. Checked FIRST (before any phase validity gate) and
-    // driven only by work_path + this work's own phase/lifecycle, never by
-    // reinterpreting the full-path PHASE_ORDER index (work-003-state-schema
-    // task-010 -- removes task-002's original currentIdx-reuse of the full order).
-    if ((work.work_path || '').toLowerCase() === 'lite') {
-      _renderLiteStageRail(rail, work);
-      return;
-    }
-
-    var phase = work.phase; // may be null or "Unknown" (unrecognized/retired)
-    if (!phase || phase === 'Unknown') {
+    var stages = (Array.isArray(work.phases) && work.phases.length) ? work.phases : PHASE_ORDER;
+    var currentIdx = work.lifecycle === 'Completed'
+      ? stages.length                   // Done
+      : stages.indexOf(work.phase);     // null or "Unknown" -> -1
+    if (currentIdx === -1) {
       // PF-4/PF-7: neutral sentinel — not a garbage "phase unknown" error badge
       var notYetPill = document.createElement('span');
       notYetPill.className = 'badge badge-dim';
@@ -4269,20 +4260,9 @@ footer {
       return;
     }
 
-    var currentIdx = PHASE_ORDER.indexOf(phase);
-    // If phase not in canonical order (future/unrecognized), treat as
-    // not-yet-recorded (PF-7 forward-compat)
-    if (currentIdx === -1) {
-      var notYetPill2 = document.createElement('span');
-      notYetPill2.className = 'badge badge-dim';
-      notYetPill2.setAttribute('role', 'listitem');
-      notYetPill2.textContent = '— phase not yet recorded';
-      rail.appendChild(notYetPill2);
-      return;
-    }
-
-    for (var i = 0; i < PHASE_ORDER.length; i++) {
-      var p = PHASE_ORDER[i];
+    var labels = stages.concat(['Done']);
+    for (var i = 0; i < labels.length; i++) {
+      var p = labels[i];
       var pill = document.createElement('span');
       pill.setAttribute('role', 'listitem');
       pill.setAttribute('aria-current', i === currentIdx ? 'step' : 'false');
@@ -4299,46 +4279,6 @@ footer {
         // Later — upcoming
         pill.className = 'badge badge-dim';
         pill.textContent = '○ ' + p;
-      }
-      rail.appendChild(pill);
-    }
-  }
-
-  // Compact 3-stage rail for lite/shortcut works — a DISTINCT display from the
-  // full 6-phase stepper above (user requirement, work-003-state-schema task-010).
-  // Driven directly by this work's own real phase/lifecycle signals (never by
-  // reinterpreting the full-path PHASE_ORDER index):
-  //   lifecycle Completed                  -> Done
-  //   phase Execute                        -> Execute
-  //   anything else (Describe/Define/Specify/Plan/Detail, or not yet recorded)
-  //                                         -> Describe
-  // The shortcut engine's real states (INTAKE→CAPTURE→SPEC→PLAN→DETAIL→GATE→
-  // APPROVAL-HALT, which halts pre-Execute) all collapse into "Describe" until
-  // /aid-execute starts. Labels use the same imperative form as the full-path
-  // stepper (Describe/Execute) for cross-path grammatical consistency.
-  function _renderLiteStageRail(rail, work) {
-    var LITE_STAGES = ['Describe', 'Execute', 'Done'];
-    var stageIdx;
-    if (work.lifecycle === 'Completed') {
-      stageIdx = 2;
-    } else if (work.phase === 'Execute') {
-      stageIdx = 1;
-    } else {
-      stageIdx = 0;
-    }
-    for (var i = 0; i < LITE_STAGES.length; i++) {
-      var pill = document.createElement('span');
-      pill.setAttribute('role', 'listitem');
-      pill.setAttribute('aria-current', i === stageIdx ? 'step' : 'false');
-      if (i < stageIdx) {
-        pill.className = 'badge badge-ok';
-        pill.textContent = '✓ ' + LITE_STAGES[i];
-      } else if (i === stageIdx) {
-        pill.className = 'badge badge-primary';
-        pill.textContent = '▸ ' + LITE_STAGES[i];
-      } else {
-        pill.className = 'badge badge-dim';
-        pill.textContent = '○ ' + LITE_STAGES[i];
       }
       rail.appendChild(pill);
     }

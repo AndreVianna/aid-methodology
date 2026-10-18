@@ -374,10 +374,10 @@ class TestEnumFallback(unittest.TestCase):
             self.assertIn(f"'{lit}':", self.src, f"TaskStatus literal {lit!r} not found in JS map")
 
     def test_phase_order_all_phases(self):
-        # Faithful numbered pipeline; ends at Execute. Describe..Execute are the
-        # PHASE_ORDER members. Deploy is retired (no longer a phase; /aid-deploy is a
-        # separate path), so 'Deploy' is not asserted present in the source.
-        for phase in ['Describe', 'Define', 'Specify', 'Plan', 'Detail', 'Execute']:
+        # Faithful numbered pipeline; ends at CI. Definition..CI are the PHASE_ORDER
+        # members. Deploy is retired (no longer a phase; /aid-deploy is a separate path),
+        # so 'Deploy' is not asserted present in the source.
+        for phase in ['Definition', 'Specification', 'Planning', 'Building', 'CI']:
             self.assertIn(f"'{phase}'", self.src, f"Phase {phase!r} not found in source")
 
     def test_attention_callout_warn_for_paused(self):
@@ -1282,13 +1282,12 @@ class TestFeature006CardRework(unittest.TestCase):
 
     def test_f6rw7_pre_exec_steps_constant(self):
         self.assertIn('PRE_EXEC_STEPS', self.src,
-                      "PRE_EXEC_STEPS constant must be defined (Describe/Define/Specify/Plan/Detail = 5)")
+                      "PRE_EXEC_STEPS constant must be defined (Definition/Specification/Planning = 3)")
 
-    def test_f6rw7_pre_exec_steps_value_5(self):
-        # work-003-state-schema task-010: Interview split into Describe+Define, so the
-        # pre-Execute pipeline grew from 4 to 5 steps.
-        self.assertIn('PRE_EXEC_STEPS = 5', self.src,
-                      "PRE_EXEC_STEPS must equal 5 (Describe, Define, Specify, Plan, Detail)")
+    def test_f6rw7_pre_exec_steps_value_3(self):
+        # The pre-Building pipeline is three steps: Definition, Specification, Planning.
+        self.assertIn('PRE_EXEC_STEPS = 3', self.src,
+                      "PRE_EXEC_STEPS must equal 3 (Definition, Specification, Planning)")
 
     def test_f6rw7_label_appended_before_track(self):
         # _renderProgress appends label before track (percentage above the bar)
