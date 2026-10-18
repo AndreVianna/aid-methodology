@@ -20,8 +20,12 @@
 #
 # Usage:
 #   bash test-conversation-runner.sh [--group NAME] [--verbose]
-#   AID_CONV_RUNNER=<path>  runs that run.py copy instead of tests/conversation/run.py
-#                           (used to check that each group fails when its behaviour is broken)
+#   AID_CONV_RUNNER=<path>  runs that run.py copy instead of tests/conversation/run.py (used to check
+#                           that each group fails when its behaviour is broken). The copy must sit
+#                           inside the repository tree at a path whose third parent is the repository
+#                           root, e.g. tests/conversation/<name>.py: run.py derives ROOT from its own
+#                           path, which sets its install bundle and its run folders. This suite cleans
+#                           up only under the repository's own .aid/.temp/conversation-tests.
 # Exit codes: 0 all pass (or SKIP without python3) / 1 any fail / 2 bad usage.
 
 set -uo pipefail
@@ -32,7 +36,7 @@ while [ $# -gt 0 ]; do
     case "$1" in
         -v|--verbose) VERBOSE=1; shift ;;
         --group) GROUP="${2:-}"; shift 2 ;;
-        -h|--help) sed -n '2,26p' "$0"; exit 0 ;;
+        -h|--help) sed -n '2,/^$/p' "$0"; exit 0 ;;
         *) echo "unknown argument: $1" >&2; exit 2 ;;
     esac
 done
@@ -68,11 +72,16 @@ TEMP_EXISTED=0
 if [ -d "$RUN_ROOT" ]; then ls -A "$RUN_ROOT" > "$RUN_SNAP"; else : > "$RUN_SNAP"; fi
 
 cleanup() {
-    # run.py writes run folders under the runner's own root; remove the ones this suite created.
+    # run.py names each run folder <timestamp>-<host>-<pid> with the pid of its own process. The suite
+    # records the pid of every run.py it starts (log/run-pids) and removes only the folders carrying one
+    # of those pids that were not there before the suite began. A concurrent run.py in the same tree
+    # keeps its folders.
     if [ -d "$RUN_ROOT" ]; then
         while IFS= read -r entry; do
             [ -n "$entry" ] || continue
-            grep -qxF -- "$entry" "$RUN_SNAP" || rm -rf -- "$RUN_ROOT/$entry"
+            grep -qxF -- "$entry" "$RUN_SNAP" && continue
+            pid="${entry##*-}"
+            grep -qxF -- "$pid" "$T/log/run-pids" 2>/dev/null && rm -rf -- "$RUN_ROOT/$entry"
         done < <(ls -A "$RUN_ROOT")
         [ "$RUN_ROOT_EXISTED" -eq 1 ] || rmdir "$RUN_ROOT" 2>/dev/null
     fi
@@ -114,8 +123,17 @@ if os.path.exists(log):
     with open(log, encoding="utf-8") as fh:
         prior = [json.loads(line) for line in fh if line.strip()]
 count = sum(1 for c in prior if c["role"] == role) + 1
+# run.py runs the judge from <run>/helper, and the fixture is <run>/project: the installed reviewer
+# body the judge is given is read from there.
+reviewer = None
+if role == "judge":
+    try:
+        with open(os.path.join("..", "project", ".claude", "agents", "aid-reviewer.md"), encoding="utf-8") as fh:
+            reviewer = fh.read()
+    except OSError:
+        reviewer = None
 record = {"role": role, "argv": argv, "cwd": os.getcwd(), "home": os.environ.get("HOME", ""),
-          "prompt": prompt}
+          "prompt": prompt, "reviewer": reviewer}
 with open(log, "a", encoding="utf-8") as fh:
     fh.write(json.dumps(record) + "\n")
 
@@ -133,9 +151,15 @@ if role == "agent":
         home = os.environ["HOME"]
         os.makedirs(os.path.join(home, ".claude"), exist_ok=True)
         for rel, text in ((".claude/state.json", "{}\n"), (".claude.json", "{}\n"),
-                          ("stub-token.txt", "secret\n"), ("notes.txt", "a note\n")):
+                          ("stub-token.txt", "secret\n"), ("notes.txt", "a note\n"),
+                          ("deploy.pem", "-----stub-----\n"), ("server.key", "stub key\n")):
             with open(os.path.join(home, rel), "w", encoding="utf-8") as fh:
                 fh.write(text)
+        os.makedirs("scratch", exist_ok=True)  # a new directory, for the no-new-dir checks
+        with open(os.path.join("scratch", "notes.txt"), "w", encoding="utf-8") as fh:
+            fh.write("scratch\n")
+        with open("logo.bin", "wb") as fh:  # a binary file: NUL bytes, four of them
+            fh.write(b"\x00\x01\x02\x03")
         here = os.getcwd()
         content += [
             {"type": "tool_use", "id": "t1", "name": "Skill", "input": {"skill": "aid-plan"}},
@@ -143,6 +167,14 @@ if role == "agent":
             {"type": "tool_use", "id": "t3", "name": "Read",
              "input": {"file_path": os.path.join(here, ".aid", "knowledge", "INDEX.md")}},
         ]
+        if os.environ.get("STUB_PUSH") == "1":  # the agent pushes, so no-push must fail
+            content.append({"type": "tool_use", "id": "t4", "name": "Bash",
+                            "input": {"command": "git push origin main"}})
+        review_dir = os.environ.get("CONV_STUB_REVIEW_DIR", "")
+        if review_dir:  # the fixture's review-pending folder points at a folder the suite can read
+            os.makedirs(review_dir, exist_ok=True)
+            os.makedirs(os.path.join(".aid", ".temp"), exist_ok=True)
+            os.symlink(review_dir, os.path.join(".aid", ".temp", "review-pending"))
     lines = [
         {"type": "system", "subtype": "init", "session_id": session},
         {"type": "assistant", "session_id": session, "message": {"content": content}},
@@ -177,7 +209,7 @@ import json
 import os
 import sys
 
-log, user_brief_path, judge_brief_path = sys.argv[1:4]
+log, user_brief_path, judge_brief_path, judge_prompt_out = sys.argv[1:5]
 calls = []
 if os.path.exists(log):
     with open(log, encoding="utf-8") as fh:
@@ -201,8 +233,23 @@ def system_of(call):
     return call["argv"][8] if len(call["argv"]) > 8 else ""
 
 
+def body_of(text):
+    # the same rule as run.py's split_frontmatter: the text after the closing --- of a frontmatter
+    lines = text.splitlines()
+    if not lines or lines[0].strip() != "---":
+        return text
+    end = next((i for i in range(1, len(lines)) if lines[i].strip() == "---"), None)
+    if end is None:
+        return text
+    return "\n".join(lines[end + 1:])
+
+
 def flag(value):
     return "1" if value else "0"
+
+
+with open(judge_prompt_out, "w", encoding="utf-8") as fh:
+    fh.write(judges[0]["prompt"] if judges else "")
 
 
 print(f"agent_calls={len(agents)}")
@@ -215,7 +262,8 @@ print("helper_flags_ok=" + flag(bool(helpers) and all(
     c["argv"][:8] == HELPER and len(c["argv"]) == 9 for c in helpers)))
 print("user_brief_ok=" + flag(bool(users) and all(system_of(c) == user_brief for c in users)))
 print("judge_system_ok=" + flag(bool(judges) and all(
-    system_of(c).endswith(judge_brief) and len(system_of(c)) > len(judge_brief) for c in judges)))
+    c["reviewer"] is not None and body_of(c["reviewer"]).strip() != ""
+    and system_of(c) == body_of(c["reviewer"]) + "\n\n" + judge_brief for c in judges)))
 print("helper_cwd_ok=" + flag(bool(helpers) and all(os.path.basename(c["cwd"]) == "helper" for c in helpers)))
 print("agent_cwd_ok=" + flag(bool(agents) and all(os.path.basename(c["cwd"]) == "project" for c in agents)))
 print("throwaway_home_ok=" + flag(bool(calls) and all("/aid-conv-run-" in c["home"] for c in calls)))
@@ -258,6 +306,8 @@ The persona asks for help with the stub feature.
 - tool-called Read .aid/knowledge/INDEX.md
 - tool-not-called Bash *push*
 - no-push
+- absent missing.txt
+- no-new-dir .aid/works
 EOF
 cat > "$T/samples/feature-900/s-checks-fail.md" <<'EOF'
 ---
@@ -288,6 +338,35 @@ I need help with the feature.
 - tool-not-called Bash git*
 - absent changed.txt
 - contains changed.txt not in the file
+EOF
+cat > "$T/samples/feature-900/s-grammar-fail.md" <<'EOF'
+---
+id: s-grammar-fail
+covers: a run whose exists, no-new-dir and no-push checks do not hold
+fixture: stub
+---
+
+## User
+
+I need help with the feature.
+
+## Answer sheet
+
+- The feature is the stub feature.
+
+## Expected outcome
+
+1. The assistant replies.
+
+## Must not
+
+1. Push anything.
+
+## Checks
+
+- exists missing.txt
+- no-new-dir scratch
+- no-push
 EOF
 cat > "$T/samples-bad/feature-900/s-bad.md" <<'EOF'
 ---
@@ -322,18 +401,23 @@ printf 'USER-BRIEF-MARK\nStand-in simulated-user brief for the suite.\n' > "$T/b
 printf 'JUDGE-BRIEF-MARK\nStand-in judge brief for the suite.\n' > "$T/briefs/judge.md"
 
 # --- runs: one run.py call each, memoised by key so groups share them ----------
-invoke() {  # KEY USER-MODE JUDGE-MODE run.py-args...
+invoke() {  # KEY USER-MODE JUDGE-MODE run.py-args...   (STUB_PUSH=1 in the caller makes the agent push)
     local key="$1" user="$2" judge="$3"
     shift 3
-    env STUB_USER="$user" STUB_JUDGE="$judge" CONV_STUB_LOG="$T/log/$key.jsonl" \
+    env STUB_USER="$user" STUB_JUDGE="$judge" STUB_PUSH="${STUB_PUSH:-0}" CONV_STUB_LOG="$T/log/$key.jsonl" \
+        CONV_STUB_REVIEW_DIR="$T/review-copy/$key" \
         "$PY" "$RUNNER" --feature 900 --samples-dir "$T/samples" --fixtures-dir "$T/fixtures" \
-        --briefs-dir "$T/briefs" "$@" > "$T/log/$key.out" 2>&1 < /dev/null
+        --briefs-dir "$T/briefs" "$@" > "$T/log/$key.out" 2>&1 < /dev/null &
+    local pid=$!
+    echo "$pid" >> "$T/log/run-pids"
+    wait "$pid"
     echo $? > "$T/log/$key.rc"
     "$PY" "$T/facts.py" "$T/log/$key.jsonl" "$T/briefs/simulated-user.md" "$T/briefs/judge.md" \
-        > "$T/log/$key.facts" 2>&1
+        "$T/log/$key.judge-prompt" > "$T/log/$key.facts" 2>&1
 }
 need_pass()    { [ -f "$T/log/pass.rc" ]    || invoke pass    two-turns clean   --sample s-pass --runs 1; }
 need_checks()  { [ -f "$T/log/checks.rc" ]  || invoke checks  two-turns clean   --sample s-checks-fail --runs 1; }
+need_grammar() { [ -f "$T/log/grammar.rc" ] || STUB_PUSH=1 invoke grammar two-turns clean --sample s-grammar-fail --runs 1; }
 need_pending() { [ -f "$T/log/pending.rc" ] || invoke pending end-after-one pending --sample s-pass --runs 1; }
 need_notable() { [ -f "$T/log/notable.rc" ] || invoke notable end-after-one no-table --sample s-pass --runs 1; }
 need_flaky()   { [ -f "$T/log/flaky.rc" ]   || invoke flaky   end-after-one flaky   --sample s-pass --runs 3; }
@@ -372,7 +456,7 @@ group_validate() {
         --samples-dir "$T/samples" 2>&1 < /dev/null)"
     code=$?
     assert_exit_eq "$code" 0 "VA01 --validate on well-formed samples"
-    assert_output_contains "$out" "OK s-pass (8 checks)" "VA02 --validate parses s-pass and counts its checks"
+    assert_output_contains "$out" "OK s-pass (10 checks)" "VA02 --validate parses s-pass and counts its checks"
     assert_output_contains "$out" "OK s-checks-fail (4 checks)" "VA03 --validate parses s-checks-fail"
     out="$(env CONV_STUB_LOG="$T/log/validate.jsonl" "$PY" "$RUNNER" --feature 900 --validate \
         --samples-dir "$T/samples-bad" 2>&1 < /dev/null)"
@@ -419,11 +503,34 @@ group_flags() {
     assert_eq "$(fact "$f" user_calls)" 2 "FL04 the simulated user is asked after each agent turn"
     assert_eq "$(fact "$f" user_brief_ok)" 1 "FL05 simulated-user calls use the user brief and no tools"
     assert_eq "$(fact "$f" judge_calls)" 1 "FL06 one judge call per run"
-    assert_eq "$(fact "$f" judge_system_ok)" 1 "FL07 judge system prompt is the reviewer body plus the judge brief"
+    assert_eq "$(fact "$f" judge_system_ok)" 1 "FL07 judge system prompt is exactly the installed reviewer body plus the judge brief"
     assert_eq "$(fact "$f" helper_flags_ok)" 1 "FL08 simulated-user and judge flags (text, no tools, safe mode)"
     assert_eq "$(fact "$f" helper_cwd_ok)" 1 "FL09 helper calls run from an empty folder, not the fixture"
     assert_eq "$(fact "$f" agent_cwd_ok)" 1 "FL10 agent turns run in the fixture folder"
     assert_eq "$(fact "$f" throwaway_home_ok)" 1 "FL11 every call runs with the throwaway HOME"
+    # the judge input (one prompt on stdin): every part the spec names, with its content
+    local jp="$T/log/pass.judge-prompt"
+    local all_in
+    all_in() {  # FILE TEXT... : 1 when every TEXT is in FILE
+        local file="$1" text
+        shift
+        for text in "$@"; do grep -qF -- "$text" "$file" || return 1; done
+        return 0
+    }
+    assert_eq "$(all_in "$jp" "## transcript.md" "## Turn 1 -- User" "## Turn 2 -- Agent" "Reply 2." && echo 1 || echo 0)" 1 \
+        "FL12 the judge input carries transcript.md (both turns of the conversation)"
+    assert_eq "$(all_in "$jp" "## files.diff" "b/fixture/changed.txt" "+hello from the stub" && echo 1 || echo 0)" 1 \
+        "FL13 the judge input carries files.diff (the recorded change and its content)"
+    assert_eq "$(all_in "$jp" "## checks.txt" "PASS exists changed.txt" && echo 1 || echo 0)" 1 \
+        "FL14 the judge input carries checks.txt (the evaluated checks)"
+    assert_eq "$(all_in "$jp" "## Expected outcome" "1. The assistant replies." "## Must not" "1. Push anything." && echo 1 || echo 0)" 1 \
+        "FL15 the judge input carries the sample's Expected outcome and Must not"
+    # the judge's ledger is also saved in the fixture's .aid/.temp/review-pending/ (the fixture holds a
+    # symlink to review-copy/pass, placed by the agent turn, so run.py's write lands in that folder)
+    local saved="$T/review-copy/pass/conversation-s-pass-run-1.md" led
+    led="$(run_dir_of "$T/log/pass.out" PASS s-pass 1)/ledger.md"
+    assert_eq "$([ -f "$saved" ] && [ "$(cat "$saved")" = "$(cat "$led")" ] && echo same || echo differ)" same \
+        "FL16 the judge's ledger is saved as .aid/.temp/review-pending/conversation-s-pass-run-1.md in the fixture (same text as ledger.md)"
 }
 
 # ---------------------------------------------------------------- DIFF
@@ -439,6 +546,11 @@ group_diff() {
     assert_file_not_contains "$diff" "home/.claude/state.json" "DF05 the host tool's .claude/ in HOME is excluded"
     assert_file_not_contains "$diff" "home/.claude.json" "DF06 .claude.json in HOME is excluded"
     assert_file_not_contains "$diff" "stub-token.txt" "DF07 a credential-named file in HOME is excluded"
+    assert_file_contains "$diff" "Binary file fixture/logo.bin added (4 bytes)" \
+        "DF08 a binary file is recorded by path and size only"
+    assert_file_not_contains "$diff" "b/fixture/logo.bin" "DF09 a binary file carries no content diff"
+    assert_file_not_contains "$diff" "deploy.pem" "DF10 a .pem credential in HOME is excluded"
+    assert_file_not_contains "$diff" "server.key" "DF11 a .key credential in HOME is excluded"
 }
 
 # ---------------------------------------------------------------- CHECKS
@@ -446,11 +558,21 @@ group_checks() {
     echo "--- CHECKS"
     need_pass
     need_checks
-    local dir_p dir_c
+    need_grammar
+    local dir_p dir_c dir_g
     dir_p="$(run_dir_of "$T/log/pass.out" PASS s-pass 1)"
     dir_c="$(run_dir_of "$T/log/checks.out" FAIL s-checks-fail 1)"
-    assert_eq "$(grep -c '^PASS ' "$dir_p/checks.txt")" 8 "CK01 every check of s-pass passes (tool-called, tool-not-called, exists, contains, no-push)"
+    dir_g="$(run_dir_of "$T/log/grammar.out" FAIL s-grammar-fail 1)"
+    assert_eq "$(grep -c '^PASS ' "$dir_p/checks.txt")" 10 "CK01 every check of s-pass passes (tool-called, tool-not-called, exists, contains, no-push, absent, no-new-dir)"
     assert_eq "$(grep -c '^FAIL ' "$dir_p/checks.txt")" 0 "CK02 s-pass records no failing check"
+    assert_file_contains "$dir_p/checks.txt" "PASS absent missing.txt" "CK13 absent on a missing path passes"
+    assert_file_contains "$dir_p/checks.txt" "PASS no-new-dir .aid/works" "CK14 no-new-dir on a path with no new folder passes"
+    assert_file_contains "$dir_g/checks.txt" "FAIL exists missing.txt -- missing" "CK15 exists on a missing path fails"
+    assert_file_contains "$dir_g/checks.txt" "FAIL no-new-dir scratch -- created: scratch" \
+        "CK16 no-new-dir on a folder the run created fails"
+    assert_file_contains "$dir_g/checks.txt" "FAIL no-push -- push call: git push origin main" \
+        "CK17 no-push with a push call fails"
+    assert_exit_eq "$(cat "$T/log/grammar.rc")" 1 "CK18 a run whose grammar checks fail exits 1"
     assert_file_contains "$dir_c/checks.txt" "FAIL tool-called Skill aid-execute -- no matching call" \
         "CK03 tool-called with no matching call fails"
     assert_file_contains "$dir_c/checks.txt" "FAIL tool-not-called Bash git* -- 1 matching call(s)" \
