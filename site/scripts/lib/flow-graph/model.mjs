@@ -20,7 +20,7 @@
 
 /**
  * @typedef {object} Terminal
- * @property {string}      advanceType  'CHAIN'|'HALT'|'PAUSE-FOR-USER-ACTION'|'PAUSE-FOR-USER-DECISION'|'UNSPECIFIED'
+ * @property {string}      advanceType  'CHAIN'|'HALT'|'ASK'|'WAIT'|'PASS'|'CALL'|'PAUSE-FOR-USER-ACTION'|'PAUSE-FOR-USER-DECISION'|'UNSPECIFIED'
  * @property {string|null} handoff      Verbatim prose from the advance clause, or null
  */
 
@@ -42,7 +42,7 @@
  * @property {string}      to          Node id
  * @property {string}      kind        'sequence'|'branch'|'loop-back'|'re-entry'
  * @property {string|null} condition   ≤ 80 code points or null
- * @property {string}      advanceType 'CHAIN'|'HALT'|'PAUSE-FOR-USER-ACTION'|'PAUSE-FOR-USER-DECISION'|'UNSPECIFIED'
+ * @property {string}      advanceType 'CHAIN'|'HALT'|'ASK'|'WAIT'|'PASS'|'CALL'|'PAUSE-FOR-USER-ACTION'|'PAUSE-FOR-USER-DECISION'|'UNSPECIFIED'
  * @property {Provenance}  provenance  The exact line the edge was read from
  */
 
@@ -150,7 +150,7 @@ export function makeNode({ order, name, label, provenance, terminal = null, deta
  * @param {string}    params.to          Target node id
  * @param {string}    params.kind        'sequence'|'branch'|'loop-back'|'re-entry'
  * @param {string|null} params.condition ≤ 80 code points or null
- * @param {string}    params.advanceType 'CHAIN'|'HALT'|'PAUSE-FOR-USER-ACTION'|'PAUSE-FOR-USER-DECISION'|'UNSPECIFIED'
+ * @param {string}    params.advanceType 'CHAIN'|'HALT'|'ASK'|'WAIT'|'PASS'|'CALL'|'PAUSE-FOR-USER-ACTION'|'PAUSE-FOR-USER-DECISION'|'UNSPECIFIED'
  * @param {Provenance} params.provenance The source line provenance
  * @returns {FlowEdge}
  */

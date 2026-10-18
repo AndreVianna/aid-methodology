@@ -30,10 +30,15 @@ import { truncate, makeProvenance } from './model.mjs';
 // ── Constants ─────────────────────────────────────────────────────────────────
 
 /**
- * The four advance-type keywords that appear in advance clause text.
+ * The advance-type keywords that appear in advance clause text: the step-by-step
+ * words (CHAIN, HALT, ASK, WAIT, PASS, CALL) and the two PAUSE words that predate
+ * them, which are still parsed so that today's skills keep their meaning.
  * UNSPECIFIED is a computed value (no keyword present), never written in text.
  */
-const ADVANCE_TYPES_IN_TEXT = ['CHAIN', 'HALT', 'PAUSE-FOR-USER-ACTION', 'PAUSE-FOR-USER-DECISION'];
+const ADVANCE_TYPES_IN_TEXT = [
+  'CHAIN', 'HALT', 'ASK', 'WAIT', 'PASS', 'CALL',
+  'PAUSE-FOR-USER-ACTION', 'PAUSE-FOR-USER-DECISION',
+];
 
 /**
  * Matches advance-type keywords that are NOT part of a hyphenated state name.
@@ -797,15 +802,20 @@ function _resolveTarget(text, stateByName) {
 /**
  * Detect the advance-type keyword present in a clause, following the precedence
  * order used by callers: HALT > PAUSE-FOR-USER-DECISION > PAUSE-FOR-USER-ACTION
- * > CHAIN.  `Stop here` prose maps to PAUSE-FOR-USER-ACTION.  Lowercase `halt`
- * maps to HALT.  Returns UNSPECIFIED when no keyword is found.
+ * > CHAIN > ASK > WAIT > PASS > CALL.  `Stop here` prose maps to
+ * PAUSE-FOR-USER-ACTION.  Lowercase `halt` maps to HALT.  Returns UNSPECIFIED
+ * when no keyword is found.
+ *
+ * ASK and WAIT are the step-by-step names for the two PAUSE words: a clause
+ * naming a declared state keeps that state as an ordinary edge target (they are
+ * not rule-9 pause-resume metadata). PASS and CALL are hand-offs to another skill.
  *
  * All patterns use lookbehind/lookahead to avoid matching keyword text that is
  * embedded in a hyphenated state name (e.g., "HALT" in "APPROVAL-HALT" or
  * "CHAIN" in a hypothetical "CHAIN-STATE" should not fire here).
  *
  * @param {string} clauseText
- * @returns {'CHAIN'|'HALT'|'PAUSE-FOR-USER-ACTION'|'PAUSE-FOR-USER-DECISION'|'UNSPECIFIED'}
+ * @returns {'CHAIN'|'HALT'|'ASK'|'WAIT'|'PASS'|'CALL'|'PAUSE-FOR-USER-ACTION'|'PAUSE-FOR-USER-DECISION'|'UNSPECIFIED'}
  */
 function _detectAdvanceType(clauseText) {
   if (/(?<![A-Za-z0-9-])HALT(?![A-Za-z0-9-])/.test(clauseText)) return 'HALT';
@@ -814,6 +824,13 @@ function _detectAdvanceType(clauseText) {
   if (/(?<![A-Za-z0-9-])PAUSE-FOR-USER-ACTION(?![A-Za-z0-9-])/.test(clauseText))
     return 'PAUSE-FOR-USER-ACTION';
   if (/(?<![A-Za-z0-9-])CHAIN(?![A-Za-z0-9-])/.test(clauseText)) return 'CHAIN';
+  // The step-by-step words come last: a clause that already carries a word from
+  // today's vocabulary keeps that word's type. Uppercase PASS and CALL also occur
+  // in prose (a grade, a call-out), and the word order keeps those clauses as they are.
+  if (/(?<![A-Za-z0-9-])ASK(?![A-Za-z0-9-])/.test(clauseText)) return 'ASK';
+  if (/(?<![A-Za-z0-9-])WAIT(?![A-Za-z0-9-])/.test(clauseText)) return 'WAIT';
+  if (/(?<![A-Za-z0-9-])PASS(?![A-Za-z0-9-])/.test(clauseText)) return 'PASS';
+  if (/(?<![A-Za-z0-9-])CALL(?![A-Za-z0-9-])/.test(clauseText)) return 'CALL';
   if (/\bStop here\b/.test(clauseText)) return 'PAUSE-FOR-USER-ACTION';
   if (/(?<![A-Za-z0-9-])halt(?![A-Za-z0-9-])/.test(clauseText)) return 'HALT';
   return 'UNSPECIFIED';

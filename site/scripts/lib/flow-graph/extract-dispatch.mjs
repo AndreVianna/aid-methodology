@@ -55,7 +55,8 @@ const ARROW_TARGET_RE = /(?:→|--?>+)\s*([A-Z][A-Z0-9-]*)/g;
 
 /** Advance-type keywords (upper-case only) — excluded from absent-state warnings. */
 const ADVANCE_TYPE_KEYWORDS = new Set([
-  'CHAIN', 'HALT', 'PAUSE-FOR-USER-ACTION', 'PAUSE-FOR-USER-DECISION',
+  'CHAIN', 'HALT', 'ASK', 'WAIT', 'PASS', 'CALL',
+  'PAUSE-FOR-USER-ACTION', 'PAUSE-FOR-USER-DECISION',
 ]);
 
 /** Token scanner: letter then letters/digits/hyphens (same as advance.mjs). */

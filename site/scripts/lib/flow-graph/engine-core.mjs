@@ -171,7 +171,7 @@ function _buildEngineCore(override = {}) {
   // produce edges TO APPROVAL-HALT.  We handle it via keyword-state edge
   // recovery below, mirroring extract-dispatch.mjs's approach.
   const kwNamedStates = declaredStates.filter((s) =>
-    /^(HALT|CHAIN|PAUSE-FOR-USER-ACTION|PAUSE-FOR-USER-DECISION)$/i.test(s.name) ||
+    /^(HALT|CHAIN|ASK|WAIT|PASS|CALL|PAUSE-FOR-USER-ACTION|PAUSE-FOR-USER-DECISION)$/i.test(s.name) ||
     s.name.toUpperCase().includes('HALT')
   );
 

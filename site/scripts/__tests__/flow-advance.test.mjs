@@ -1586,3 +1586,127 @@ describe('V9 — the residual guard throws, and stays narrow', () => {
     expect(r.edges).toEqual([]);
   });
 });
+
+// ════════════════════════════════════════════════════════════════════════════
+// Step-by-step advance words: ASK, WAIT, PASS, CALL (delivery-002, task-024).
+//
+// The new words are read beside today's words, which keep their meaning. ASK and
+// WAIT name the step the user resumes at, so a declared state they name stays an
+// ordinary edge (they are not rule-9 pause-resume metadata). PASS and CALL hand the
+// work to another skill: with a declared state named, the edge carries the word as
+// its advanceType; with none, the terminal carries it and its handoff holds the prose.
+// ════════════════════════════════════════════════════════════════════════════
+
+describe('Advance words — ASK', () => {
+  it('ASK -> [State: X] yields an edge to X, advanceType ASK, and no terminal', () => {
+    const result = parse(advBlock('ASK -> [State: BETA]'), states('ALPHA', 'BETA'));
+    expect(result.edges).toHaveLength(1);
+    expect(result.edges[0].to).toBe('n2');
+    expect(result.edges[0].advanceType).toBe('ASK');
+    expect(result.edges[0].kind).toBe('sequence');
+    expect(result.terminal).toBeNull();
+  });
+
+  it('ASK with a condition yields a branch edge that keeps the condition text', () => {
+    const result = parse(advBlock('ASK -> [State: BETA] if grade is below minimum'), states('ALPHA', 'BETA'));
+    // A lone conditional edge also gets rule 5's self-loop; the ASK edge is the one to BETA.
+    const ask = result.edges.find((e) => e.to === 'n2');
+    expect(ask.kind).toBe('branch');
+    expect(ask.condition).toBe('if grade is below minimum');
+    expect(ask.advanceType).toBe('ASK');
+  });
+
+  it('ASK with no declared state is a terminal with advanceType ASK', () => {
+    const result = parse(advBlock('ASK'), states('ALPHA'));
+    expect(result.edges).toHaveLength(0);
+    expect(result.terminal.advanceType).toBe('ASK');
+  });
+});
+
+describe('Advance words — WAIT', () => {
+  it('WAIT -> [State: X] yields an edge to X, advanceType WAIT, and no terminal', () => {
+    const result = parse(advBlock('WAIT -> [State: BETA]'), states('ALPHA', 'BETA'));
+    expect(result.edges).toHaveLength(1);
+    expect(result.edges[0].to).toBe('n2');
+    expect(result.edges[0].advanceType).toBe('WAIT');
+    expect(result.terminal).toBeNull();
+  });
+
+  it('WAIT with no declared state is a terminal with advanceType WAIT', () => {
+    const result = parse(advBlock('WAIT'), states('ALPHA'));
+    expect(result.edges).toHaveLength(0);
+    expect(result.terminal.advanceType).toBe('WAIT');
+  });
+});
+
+describe('Advance words — PASS', () => {
+  it('a PASS with no declared state is a terminal with advanceType PASS and the hand-off prose', () => {
+    const result = parse(advBlock('PASS -> aid-plan, --phase Planning'), states('ALPHA'));
+    expect(result.edges).toHaveLength(0);
+    expect(result.terminal.advanceType).toBe('PASS');
+    expect(result.terminal.handoff).toContain('aid-plan');
+  });
+
+  it('PASS naming a declared state yields an edge carrying advanceType PASS', () => {
+    const result = parse(advBlock('PASS -> [State: BETA]'), states('ALPHA', 'BETA'));
+    expect(result.edges).toHaveLength(1);
+    expect(result.edges[0].to).toBe('n2');
+    expect(result.edges[0].advanceType).toBe('PASS');
+    expect(result.terminal).toBeNull();
+  });
+});
+
+describe('Advance words — CALL', () => {
+  it('a CALL with no declared state is a terminal with advanceType CALL and the hand-off prose', () => {
+    const result = parse(advBlock('CALL -> aid-kb-update, --returns yes'), states('ALPHA'));
+    expect(result.edges).toHaveLength(0);
+    expect(result.terminal.advanceType).toBe('CALL');
+    expect(result.terminal.handoff).toContain('aid-kb-update');
+  });
+
+  it('CALL naming a declared state yields an edge carrying advanceType CALL', () => {
+    const result = parse(advBlock('CALL -> [State: BETA]'), states('ALPHA', 'BETA'));
+    expect(result.edges).toHaveLength(1);
+    expect(result.edges[0].to).toBe('n2');
+    expect(result.edges[0].advanceType).toBe('CALL');
+    expect(result.terminal).toBeNull();
+  });
+});
+
+describe('Advance words — today\'s words keep their meaning beside the new ones', () => {
+  it('PAUSE-FOR-USER-DECISION still becomes a rule-9 terminal, with no edge', () => {
+    const result = parse(advBlock('PAUSE-FOR-USER-DECISION BETA'), states('ALPHA', 'BETA'));
+    expect(result.edges).toHaveLength(0);
+    expect(result.terminal.advanceType).toBe('PAUSE-FOR-USER-DECISION');
+    expect(result.terminal.handoff).toBe('BETA');
+  });
+
+  it('a lowercase "pass" or "call" in prose is not an advance word', () => {
+    const result = parse(advBlock('CHAIN -> [State: BETA] (pass the ledger along, call it done)'), states('ALPHA', 'BETA'));
+    const chain = result.edges.find((e) => e.to === 'n2');
+    expect(chain.advanceType).toBe('CHAIN');
+  });
+
+  it('a clause that carries CHAIN and PASS keeps CHAIN, the word of today\'s vocabulary', () => {
+    const result = parse(advBlock('CHAIN -> [State: BETA] (scope-diff already PASS)'), states('ALPHA', 'BETA'));
+    const chain = result.edges.find((e) => e.to === 'n2');
+    expect(chain.advanceType).toBe('CHAIN');
+  });
+});
+
+describe('Advance words — the vocabulary extends to the four new words', () => {
+  const VALID_NEW = new Set(['ASK', 'WAIT', 'PASS', 'CALL']);
+
+  it('every advanceType the new words produce is one of the four new words', () => {
+    const results = [
+      parse(advBlock('ASK -> [State: BETA]'), states('ALPHA', 'BETA')),
+      parse(advBlock('WAIT -> [State: BETA]'), states('ALPHA', 'BETA')),
+      parse(advBlock('PASS -> [State: BETA]'), states('ALPHA', 'BETA')),
+      parse(advBlock('CALL -> [State: BETA]'), states('ALPHA', 'BETA')),
+    ];
+    for (const r of results) {
+      expect(r.edges).toHaveLength(1);
+      expect(VALID_NEW.has(r.edges[0].advanceType)).toBe(true);
+    }
+  });
+});
