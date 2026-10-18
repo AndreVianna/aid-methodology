@@ -3,6 +3,8 @@ kb-category: meta
 source: hand-authored
 objective: Project sources the notes project uses across all of its works.
 summary: Lists the tickets and documents every work may read when it needs them. A work never attaches these.
+sources:
+  - tickets/PROJ-99.md
 tags: [meta, sources]
 ---
 

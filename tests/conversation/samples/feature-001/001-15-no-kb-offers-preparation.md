@@ -34,4 +34,5 @@ Persona: a developer who has just joined a small team and is starting a feature 
 
 ## Checks
 
-- exists src/notes/store.py
+- tool-not-called Skill aid-specify
+- tool-called Skill aid-discover

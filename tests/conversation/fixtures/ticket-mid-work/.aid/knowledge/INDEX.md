@@ -18,3 +18,4 @@ Read the document whose objective matches the question.
 | `capability-inventory.md` | What the tool can do today: each command and what it stores. |
 | `module-map.md` | Which source file holds which responsibility. |
 | `architecture.md` | How the parts fit together and where state lives. |
+| `external-sources.md` | The tickets and documents every work may read as project sources. |

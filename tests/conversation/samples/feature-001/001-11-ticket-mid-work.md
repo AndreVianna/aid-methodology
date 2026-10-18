@@ -33,8 +33,9 @@ Persona: a developer on the notes team, halfway through a feature. Writes plainl
 
 ## Checks
 
-- contains .aid/works/work-001-retry-policy/STATE.yml tickets/PROJ-42.md
+- contains .aid/works/work-001-retry-policy/STATE.yml ref: 'tickets/PROJ-42.md'
 - contains .aid/works/work-001-retry-policy/STATE.yml kind: ticket
-- contains .aid/works/work-001-retry-policy/STATE.yml state: Answered
+- contains .aid/works/work-001-retry-policy/STATE.yml 5 attempts
+- contains .aid/works/work-001-retry-policy/STATE.yml 30 seconds
 - tool-not-called Edit tickets/PROJ-42.md
 - tool-not-called Write tickets/PROJ-42.md

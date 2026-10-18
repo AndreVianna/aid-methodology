@@ -6,18 +6,19 @@ fixture: default
 
 ## User
 
-Let's cut the 1.4.0 release of the notes tool. All the changes for it are already on the master branch.
+Let's cut the 1.4.0 release of the notes tool. All the changes for it are already committed on the current branch.
 
 Persona: the maintainer of the notes tool. Plans releases carefully and wants each one tracked on its own.
 
 ## Answer sheet
 
 - The release is version 1.4.0 of the notes tool.
-- Every change for 1.4.0 is already committed on the master branch; nothing new is to be built.
+- Every change for 1.4.0 is already committed on the current branch; nothing new is to be built.
 - The project has no git remote. Nothing may be pushed anywhere.
 - The project's history is one baseline commit, so I have no list of changes. If the assistant needs release notes, they should describe what the tool does today.
 - I do not know whether a changelog file exists in the project.
 - I do not want a feature or a bug fix added to this release.
+- When the assistant asks for my approval to make the release, I give it.
 
 ## Expected outcome
 
@@ -35,3 +36,4 @@ Persona: the maintainer of the notes tool. Plans releases carefully and wants ea
 ## Checks
 
 - no-push
+- tool-called Bash *writeback-state.sh*Lifecycle*Completed*
