@@ -58,6 +58,7 @@ and act from this doc without reaching into the templates.
 - [Work STATE.yml](#work-stateyml)
 - [Delivery STATE.yml](#delivery-stateyml)
 - [Task STATE.yml](#task-stateyml)
+- [Project STATE.yml](#project-stateyml)
 - [Discovery STATE.md](#discovery-statemd)
 - [REQUIREMENTS.md](#requirementsmd)
 - [Feature section (`REQUIREMENTS.md § 11`)](#feature-section-requirementsmd--11)
@@ -100,6 +101,7 @@ it derives today).
   -> deliveries/delivery-NNN/STATE.yml                           (delivery level)
        -> tasks/task-NNN/STATE.yml                               (task level -- sole write target for task cells)
 .aid/knowledge/STATE.md                                          (discovery area -- KB + summary state; stays markdown)
+.aid/STATE.yml                                                   (project -- the question record only, `qa`; see Project STATE.yml)
 ```
 
 **Flattened Lite path** (exactly one delivery, no `deliveries/` folder, no per-task STATE.yml -- the work IS the delivery):
@@ -119,7 +121,8 @@ Cardinality: one work STATE.yml per work; one delivery STATE.yml per delivery on
 (zero on the flattened Lite path -- its single delivery's state lives in the work STATE.yml
 instead); one task STATE.yml per task on the full path (zero on the flattened Lite path -- task
 cells live in the work STATE.yml's `tasks_lifecycle` mapping); one discovery STATE.md per
-project (unchanged, out of this conversion).
+project (unchanged, out of this conversion); one project `.aid/STATE.yml` per project, created on
+first use.
 
 The **closed task State enum** and its reconcile ordering (SD-2) are shared by all
 three work-tree levels:
@@ -140,7 +143,8 @@ and **not represented on disk at all** -- no key of any kind).
 
 | Former section | Zone | YAML key(s) | Key fields / enums |
 |---------|------|-------------|--------------------|
-| Pipeline State | FRONTMATTER | `pipeline.path`, `pipeline.initiator`, `started`, `minimum_grade`, `user_approved`, `lifecycle`, `phase`, `active_skill`, `updated`, `pause_reason`, `block_reason`, `block_artifact` | `lifecycle`: `Running \| Paused-Awaiting-Input \| Blocked \| Completed \| Canceled`; `phase`: `Describe \| Define \| Specify \| Plan \| Detail \| Execute`; `active_skill`: `aid-{skill} \| none`; `updated` (ISO-8601); `pause_reason`/`block_reason`/`block_artifact` conditional (`--` when not applicable). |
+| Pipeline State | FRONTMATTER | `pipeline.path`, `pipeline.initiator`, `started`, `minimum_grade`, `user_approved`, `lifecycle`, `phase`, `active_skill`, `step`, `step_detail`, `updated`, `pause_reason`, `block_reason`, `block_artifact` | `lifecycle`: `Running \| Paused-Awaiting-Input \| Blocked \| Completed \| Canceled`; `phase`: `Definition \| Specification \| Planning \| Building \| CI` (a display label, shown to the user and on the dashboard, never used to route or resume); `active_skill`: `aid-{skill} \| none`; `step`: the active skill's current step, `--` when none; `step_detail`: where inside that step, in plain words, `--` when none; `active_skill`, `step` and `step_detail` are written together by the writer, and a write that sets `lifecycle` to `Completed` or `Canceled` also sets `active_skill` to `none` and clears `step` and `step_detail`; `updated` (ISO-8601); `pause_reason`/`block_reason`/`block_artifact` conditional (`--` when not applicable). |
+| Hand-offs | WRITER-ONLY list (`writeback-state.sh`; never a hand edit) | `handoffs[]` | append-only, newest last, one entry per hand-off: `at`, `from`, `from_step`, `from_detail` (the skill, step and detail the work left), `to`, `why`, `returns` (`yes` = a call, the work comes back to `from`; `no` = a pass at the end of a process), `returned` (`--` while the work is away, and always for a pass). The newest entry with `returns: 'yes'` and `returned: --` is the open call. |
 | Intent, Sources and Write-backs | AUTHORED (work-level, on both layouts) | `intent` (`request`, `reading`, `reason`, `depth`, `phases`, `changes`), `sources`, `write_backs` | `intent.depth`: `lite \| full`; `intent.changes[]` (`at`, `from`, `to`, `why`) gets one entry per re-route, appended. `sources[]` (`ref`, `kind`, `added`, `phase`, `effect`) gets one entry per ticket, issue, document, link or file the work pulls in, at any phase: `kind` is `ticket \| issue \| document \| link \| file`; single writer: the work's active branch. `write_backs[]` (`at`, `source`, `part`, `files`) gets one entry per write-back, made only on the user's request: `part` is `description \| comment \| status \| attachment`; `files` is set for `attachment` only. Project sources are never listed in `sources[]`. |
 | Interview State | AUTHORED | `interview` (`state`, `grade`, `sections[]`) | 10-entry `sections[]` (Objective..Priority), each `state: Pending \| ...`, `updated`; `interview.state` + `interview.grade`. |
 | Seed Authoring | **schema gap, not a template key** (tracked as tech-debt **SY-4**) | none declared | `aid-describe` DESCRIBE-SEED tracks `Status`/a 5-element checklist/`Coherence check`/`Review grade` for a greenfield work, but its own reference doc documents this as an ad hoc markdown block appended into the pre-conversion `STATE.md` -- never one of the three templates' declared keys, and now un-appendable into a pure-YAML `STATE.yml` without corrupting it. Carried as an open schema gap, not fixed by this conversion. |
@@ -150,7 +154,7 @@ and **not represented on disk at all** -- no key of any kind).
 | Deploy State | AUTHORED (by `aid-deploy` only) | `deploy[]` | one entry per delivery (`delivery`, `state`, `pr`, `kb_updated`, `tag`, `notes`). |
 | Delivery Lifecycle, Tasks lifecycle, Delivery Gate | AUTHORED -- **single-delivery FLATTENED (Lite) works only** (keys omitted entirely for full multi-delivery works) | `delivery_lifecycle` (+ nested `tasks_lifecycle`), `delivery_gate` | same shape as the full-path Delivery STATE.yml keys below, authored directly here because a flattened work has exactly one delivery and no `deliveries/` folder. `delivery_lifecycle` (`Pending-Spec`→`Specified` by the shortcut engine PLAN step, `Executing`→`Gated`→`Done`/`Blocked` by `aid-execute`); `tasks_lifecycle` (one entry per `task-NNN`, each with `state`/`review`/`elapsed`/`notes`/`display_name` -- the single-writer home for task cells, replacing the now-absent per-task `STATE.yml`; written by the engine DETAIL step and `writeback-state.sh --task-id NNN` flat-layout branch, targeting `tasks_lifecycle.task-NNN.<field>`); `delivery_gate.issue_list` (`aid-execute` delivery-gate result). |
 | Plan/Deliveries, Tasks State, Delivery Gates, Calibration Log, Dispatches | **DERIVED** (full path); on the flattened Lite path Plan/Deliveries, Delivery Gates, and the plural Tasks State view stay `_none yet_` (no per-delivery/per-task `STATE.yml` to union -- the authoritative task cells are the AUTHORED `tasks_lifecycle` mapping above) | none -- **no key at all**, on either layout | read-only unions over per-delivery / per-task `STATE.yml`; never written here, and never represented on disk (a reader seeing no key derives the same union it derives today). |
-| Cross-phase Q&A | **DERIVED** for full-path works (union of each delivery's Q&A + work-owner entries); **AUTHORED** for flattened Lite works (no delivery `STATE.yml` to derive from -- the single delivery's Q&A is written directly into this key) | `qa[]` -- **AUTHORED only on the flattened Lite path**; no key at all on the full path (DERIVED) | per-entry: `category`, `impact`, `state`, `context`, `suggested`, `answer`, `applied_to`. |
+| Question record (Cross-phase Q&A) | AUTHORED on **every** work, both layouts (the key is never omitted). The readers also merge any delivery-level `qa` until the delivery files are removed | `qa[]` | per-entry: `id` (`Q<n>`), `category`, `impact` (`High \| Medium \| Low`), `state` (`Pending \| Answered \| Skipped \| Assumed`), `asked_by`, `step` (where to resume), `context`, `suggested`, `answer`, `answered_by`, `applied_to`; approval entries (`category: Approval`) add `covers` and `commit`. Written only by the writer's `--ask` and `--answer` modes. An intake question, asked before the work exists, is recorded in the work's own record when it is created, not here. |
 
 Producer: `execute/writeback-state.sh --pipeline ...` + the orchestrator (single
 writer on the work's active branch). The `interview` key and greenfield Seed Authoring
@@ -203,6 +207,20 @@ in the work-root `STATE.yml`'s `tasks_lifecycle` mapping instead.
 | Task State | `state`, `review`, `elapsed`, `notes`, `display_name` | `state` (the closed 7-value enum above); `review` (tier + outcome, or `--`); `elapsed` (`HH:MM \| --`); `notes`; `display_name` (mutable override; documented as a documentation fix, not a schema change -- the writer already wrote it, it was simply never declared in the pre-conversion template). Written only by `writeback-state.sh --task-id NNN --field State --value V`. |
 | Quick Check Findings | `quick_check.{reviewer_tier,findings[]}` | `reviewer_tier`: `Small` (quick check is always Small); `findings[]`: `severity: CRITICAL \| HIGH` / `description` / `source` / `disposition: Fixed-on-spot \| Deferred-to-gate`. No grade (grading is per-delivery). |
 | Dispatch Log | `dispatch_log[]` | append-only sequence (`date`, `agent`, `eta_band`, `actual`, `outcome`); the work-level Calibration Log/Dispatches are derived unions of these. |
+
+---
+
+## Project STATE.yml
+
+Source: `project-state-template.yml`. Lives at `.aid/STATE.yml`, one per project, created on first use by
+the writer's `--ask --project` mode. It holds only the question record of the setup skills (configure,
+connectors): `qa[]`, with the same entry shape as a work's `qa[]`. Its single writer is
+`writeback-state.sh` (`--ask --project` and `--answer --project`). It is not in the install manifest, so
+`aid update` never touches it, and `aid remove` does not delete it either: it keeps `.aid/` in place.
+
+| Former section | YAML key(s) | Key fields |
+|---------|-------------|-----------|
+| Question record | `qa[]` | the entry shape of a work's `qa[]` (see Work STATE.yml); `impact`: `High \| Medium \| Low`; `state`: `Pending \| Answered \| Skipped \| Assumed`. |
 
 ---
 

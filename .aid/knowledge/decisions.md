@@ -69,6 +69,7 @@ review-criteria:
 - [D30 — A chat member's position is a scalar into its own hub's arrival order](#d30--a-chat-members-position-is-a-scalar-into-its-own-hubs-arrival-order)
 - [D31 — The agent-facing chat surface omits every operation that reaches another session](#d31--the-agent-facing-chat-surface-omits-every-operation-that-reaches-another-session)
 - [D32 — The host agent orchestrates](#d32--the-host-agent-orchestrates)
+- [D33 — One question protocol run by the main conversation; saved steps; pass and call](#d33--one-question-protocol-run-by-the-main-conversation-saved-steps-pass-and-call)
 - [Still Load-Bearing](#still-load-bearing)
 
 ---
@@ -107,6 +108,7 @@ review-criteria:
 | D30 | A chat member's position is a scalar into its own hub's arrival order | Accepted | `chat-node/server/store.mjs`; `chat-node/server/core.mjs`; `tests/canonical/test-chat-node-core.sh` |
 | D31 | The agent-facing chat surface omits every operation that reaches another session | Accepted | `canonical/skills/aid-chat/SKILL.md`; `tests/canonical/test-chat-node-wake.sh`; `tests/canonical/test-chat-node-hub.sh` |
 | D32 | The host agent orchestrates; no orchestrator actor and no router skill | Accepted (supersedes D21 and D25; amends D14 and D15) | `canonical/aid/rules.md` § Handling a request; `canonical/skills/aid-orchestrate/SKILL.md` |
+| D33 | One question protocol run by the main conversation; saved steps; pass and call | Accepted (supersedes the chaining rule; amends D17) | `canonical/aid/templates/question-protocol.md`; `canonical/aid/templates/skill-steps.md`; `canonical/aid/scripts/execute/writeback-state.sh` (writer modes) |
 
 ---
 
@@ -758,4 +760,32 @@ description-first TRIAGE-inside-`aid-describe` routing with its delivery/task `S
   `canonical/skills/aid-orchestrate/SKILL.md` (its opening paragraph: "runs in the main
   conversation and dispatches no sub-agent"); and the `canonical/agents/` folder, which holds eight
   agent directories and none for the orchestrator.
+
+## D33 — One question protocol run by the main conversation; saved steps; pass and call
+
+- **What:** Every question to the user is asked by one procedure, `canonical/aid/templates/question-protocol.md`,
+  run in the main conversation, the only conversation that can talk with the user. A sub-agent records its
+  open questions and lists them in its report; the main conversation asks them. Each skill moves through
+  saved steps: before a step's work begins, the work's `STATE.yml` holds the active skill, the step and a
+  short detail, so a stopped work resumes from the record. A step moves on by one of six advance words,
+  defined once in `canonical/aid/templates/skill-steps.md`: `CHAIN` (go on now), `ASK` (stop for the user,
+  then continue), `WAIT` (the user acts outside the conversation), `PASS` (end this skill's process and hand
+  the work to the next skill), `CALL` (hand the work to another skill in the middle of a process and return
+  to this step when it finishes) and `HALT` (this run is finished, after returning to an open call if there
+  is one). The hand-offs and the question record are written only by the writer modes of
+  `canonical/aid/scripts/execute/writeback-state.sh`.
+- **Why:** A work that stops for the user must resume where it stopped, and the work record is the one
+  place that holds the answers and the next step together. A chain of next-step names kept no saved step,
+  so a resumed work had to re-derive its step from the artifacts on disk, which can point at the wrong step.
+  The bookkeeping is a script because every skill runs it and it must be exact, which is the case D17 extracts
+  scripts for: non-trivial, reused and deterministic.
+- **Rejected:** The chaining rule, which named the next step in prose and saved none. A separate interviewer
+  agent that asked its own questions outside the work record. A host question picker, whose form the rest of
+  the conversation does not share. Routing by detecting artifacts, which can send a work to the wrong step.
+- **Supersedes:** The chaining rule of `canonical/aid/templates/state-machine-chaining.md`.
+- **Amends:** D17, for the hand-off and question bookkeeping, which is written by scripts; the prose rule
+  still holds for every other step.
+- **Status:** Accepted. CONFIRMED `canonical/aid/templates/question-protocol.md`,
+  `canonical/aid/templates/skill-steps.md` (the advance words and the writer modes) and the writer modes in
+  `canonical/aid/scripts/execute/writeback-state.sh`.
 
