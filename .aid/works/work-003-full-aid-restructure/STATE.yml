@@ -1851,3 +1851,11 @@ qa:
     suggested: 'Sonnet again for the cycle-3 fix round'
     answer: 'A (maintainer): Sonnet for the cycle-3 fix round.'
     applied_to: 'delivery-002 review cycle 3 fixes'
+  - id: Q162
+    category: Building
+    impact: High
+    state: Answered
+    context: 'Delivery-002 review cycle 4: 31 open rows (0 CRITICAL, 7 HIGH, 19 MEDIUM, 5 LOW). grade.sh gives A only with no open HIGH, MEDIUM or LOW, and each fresh full review finds new edge cases, so reaching zero could take several more rounds of 4 Opus reviewers and 4 Sonnet fixers.'
+    suggested: 'B: one Sonnet round fixes all 31; the next review verifies those fixes and reports new problems only at HIGH or CRITICAL; new MEDIUM or LOW findings go to the backlog'
+    answer: 'B (maintainer).'
+    applied_to: 'delivery-002 review cycle 4 fixes and the cycle-5 verify scope; .aid/knowledge/backlog.md for new MEDIUM/LOW findings'
