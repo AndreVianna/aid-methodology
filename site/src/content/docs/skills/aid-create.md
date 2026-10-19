@@ -142,7 +142,7 @@ Bind **VERB=`create`**, **ARTIFACT="" (bare verb)**, then run the shared engine 
 
 [Source: `canonical/aid/templates/shortcut-engine.md#L826`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/aid/templates/shortcut-engine.md#L826)
 
-<a id="fragment-n10"></a>**10 · `APPROVAL-HALT`** — Terminal state (FR-10 / NFR-10). · _exit_ · HALT
+<a id="fragment-n10"></a>**10 · `APPROVAL-HALT`** — Terminal state (FR-10 / NFR-10). · _exit_ · ASK
 
 ~~~~plaintext title="canonical/aid/templates/shortcut-engine.md#L97" wrap
 | APPROVAL-HALT | below | inline | ASK, then HALT |

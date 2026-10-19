@@ -56,7 +56,7 @@
       "label": "All findings are classified; propose and execute routing…",
       "kind": "exit",
       "terminal": {
-        "advanceType": "HALT",
+        "advanceType": "ASK",
         "handoff": "then once the user has approved or adjusted the routes in Step 4. The fix and new-work requests of Step 5 go back to /aid-orchestrate, the intake, as plain requests; this run ends after Step 6"
       },
       "provenance": {
@@ -139,7 +139,6 @@
     "canonical/skills/aid-monitor/references/state-route.md"
   ],
   "warnings": [
-    "[gen-skills] advance: multiple terminal clauses in 'ROUTE'; keeping last (canonical/skills/aid-monitor/SKILL.md:222: HALT (hand-offs to `/aid-orchestrate`))",
     "[gen-skills] extract-dispatch: inline detail for state 'DONE' has no matching ## State: section (canonical/skills/aid-monitor/SKILL.md)"
   ]
 }

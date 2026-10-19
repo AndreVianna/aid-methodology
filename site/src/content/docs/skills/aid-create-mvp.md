@@ -89,7 +89,7 @@ non-empty `## Open questions` section per `design-lifecycle.md`'s detection rule
 
 [Source: `canonical/skills/aid-create-mvp/SKILL.md#L76-L79`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-create-mvp/SKILL.md#L76-L79) · [full step: `canonical/skills/aid-create-mvp/SKILL.md#L76-L87`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-create-mvp/SKILL.md#L76-L87)
 
-<a id="fragment-n3"></a>**3 · `REALIZE`** · _exit_ · HALT
+<a id="fragment-n3"></a>**3 · `REALIZE`** · _exit_ · ASK
 
 ~~~~plaintext title="canonical/skills/aid-create-mvp/SKILL.md#L91-L94" wrap
 ## State: REALIZE

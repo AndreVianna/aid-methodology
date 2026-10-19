@@ -34,7 +34,7 @@
       "label": "Eligible deliveries are presented to the user for inclusion…",
       "kind": "exit",
       "terminal": {
-        "advanceType": "HALT",
+        "advanceType": "ASK",
         "handoff": "then when the user cancels, after the reset above"
       },
       "provenance": {
@@ -81,7 +81,7 @@
       "label": "The checks failed in VERIFYING.",
       "kind": "exit",
       "terminal": {
-        "advanceType": "HALT",
+        "advanceType": "ASK",
         "handoff": "then when the user loops back to /aid-execute, after the writes above"
       },
       "provenance": {
@@ -175,7 +175,7 @@
       "label": "When work STATE.md ## Deploy State is Done and the user…",
       "kind": "exit",
       "terminal": {
-        "advanceType": "HALT",
+        "advanceType": "ASK",
         "handoff": "then on [2] Review package-NNN (terminal — user re-invokes the skill when ready"
       },
       "provenance": {
@@ -384,9 +384,5 @@
     "canonical/skills/aid-deploy/references/state-selecting.md",
     "canonical/skills/aid-deploy/references/state-verifying.md"
   ],
-  "warnings": [
-    "[gen-skills] advance: multiple terminal clauses in 'SELECTING'; keeping last (canonical/skills/aid-deploy/SKILL.md:189: HALT on cancel)",
-    "[gen-skills] advance: multiple terminal clauses in 'FIX-DECISION'; keeping last (canonical/skills/aid-deploy/SKILL.md:191: HALT on loop back)",
-    "[gen-skills] advance: multiple terminal clauses in 'RE-RUN'; keeping last (canonical/skills/aid-deploy/SKILL.md:195: HALT on review)"
-  ]
+  "warnings": []
 }

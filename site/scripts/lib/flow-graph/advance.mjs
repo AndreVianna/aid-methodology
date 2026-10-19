@@ -177,7 +177,8 @@ export function parseAdvanceBlock({
   const edges = [];
   let terminal = null;
 
-  for (const clauseText of clauses) {
+  for (let ci = 0; ci < clauses.length; ci++) {
+    const clauseText = clauses[ci];
     const advanceType = _detectAdvanceType(clauseText);
     const targetState = _resolveTarget(clauseText, stateByName);
 
@@ -198,14 +199,27 @@ export function parseAdvanceBlock({
     ) {
       // Rule 4: recognized terminal keyword with no declared state target —
       // no edge; populate terminal and the node joins exits.
+      if (terminal !== null && terminal.advanceType === 'ASK' && advanceType === 'HALT') {
+        // ASK then HALT (task-372): the HALT clause closes the ASK ending the
+        // previous clause opened. One ending that asks first; no warning.
+        terminal = { advanceType: 'ASK', handoff: _extractHandoff(clauseText) };
+        continue;
+      }
       if (terminal !== null) {
         warnings.push(
           `[gen-skills] advance: multiple terminal clauses in '${fromNodeName}'; ` +
           `keeping last (${file}:${blockStartLine}: ${clauseText.slice(0, 60)})`
         );
       }
+      // `ASK -> [State: X], then HALT`: the HALT clause follows an ASK edge in the
+      // same Advance, so the ending asks first too (task-372).
+      const askedBefore =
+        advanceType === 'HALT' && ci > 0 &&
+        _detectAdvanceType(clauses[ci - 1]) === 'ASK' &&
+        (content.includes(`${clauses[ci - 1]} then ${clauseText}`) ||
+          content.includes(`${clauses[ci - 1]}, then ${clauseText}`));
       terminal = {
-        advanceType,
+        advanceType: _asksThenHalt(clauseText) || askedBefore ? 'ASK' : advanceType,
         handoff: _extractHandoff(clauseText),
       };
     }
@@ -810,6 +824,25 @@ function _resolveTarget(text, stateByName) {
     if (state && state.name === m[0]) return state;
   }
   return null;
+}
+
+/**
+ * True when a clause asks first and then stops: an ASK keyword followed by a HALT
+ * keyword, with only connector text between them ("ASK then HALT", "ASK, then
+ * HALT", "**ASK** → **HALT**"). task-372: such a clause is one ending that asks
+ * first; the caller records advanceType ASK for it.
+ *
+ * @param {string} clauseText
+ * @returns {boolean}
+ */
+function _asksThenHalt(clauseText) {
+  const askRe = /(?<![A-Za-z0-9-])ASK(?![A-Za-z0-9-])/g;
+  let m;
+  while ((m = askRe.exec(clauseText)) !== null) {
+    const rest = clauseText.slice(m.index + m[0].length);
+    if (/^(?:[\s*,]|→|->|then)*(?<![A-Za-z0-9-])HALT(?![A-Za-z0-9-])/.test(rest)) return true;
+  }
+  return false;
 }
 
 /**

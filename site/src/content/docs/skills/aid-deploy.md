@@ -73,7 +73,7 @@ Every node in the chart above, in chart order, with the exact `canonical/` text 
 
 [Source: `canonical/skills/aid-deploy/SKILL.md#L188`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-deploy/SKILL.md#L188) · [full step: `canonical/skills/aid-deploy/references/state-idle.md#L1-L34`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-deploy/references/state-idle.md#L1-L34)
 
-<a id="fragment-n2"></a>**2 · `SELECTING`** — Eligible deliveries are presented to the user for inclusion… · _exit_ · HALT
+<a id="fragment-n2"></a>**2 · `SELECTING`** — Eligible deliveries are presented to the user for inclusion… · _exit_ · ASK
 
 ~~~~plaintext title="canonical/skills/aid-deploy/SKILL.md#L189" wrap
 | SELECTING | `references/state-selecting.md` | `aid-operator` | ASK → VERIFYING; ASK then HALT on cancel |
@@ -89,7 +89,7 @@ Every node in the chart above, in chart order, with the exact `canonical/` text 
 
 [Source: `canonical/skills/aid-deploy/SKILL.md#L190`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-deploy/SKILL.md#L190) · [full step: `canonical/skills/aid-deploy/references/state-verifying.md#L1-L47`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-deploy/references/state-verifying.md#L1-L47)
 
-<a id="fragment-n4"></a>**4 · `FIX-DECISION`** — The checks failed in VERIFYING. · _exit_ · HALT
+<a id="fragment-n4"></a>**4 · `FIX-DECISION`** — The checks failed in VERIFYING. · _exit_ · ASK
 
 ~~~~plaintext title="canonical/skills/aid-deploy/SKILL.md#L191" wrap
 | FIX-DECISION | `references/state-fix-decision.md` | `inline` | ASK → RE-VERIFY; ASK then HALT on loop back |
@@ -121,7 +121,7 @@ Every node in the chart above, in chart order, with the exact `canonical/` text 
 
 [Source: `canonical/skills/aid-deploy/SKILL.md#L194`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-deploy/SKILL.md#L194) · [full step: `canonical/skills/aid-deploy/references/state-done.md#L1-L33`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-deploy/references/state-done.md#L1-L33)
 
-<a id="fragment-n8"></a>**8 · `RE-RUN`** — When work STATE.md ## Deploy State is Done and the user… · _exit_ · HALT
+<a id="fragment-n8"></a>**8 · `RE-RUN`** — When work STATE.md ## Deploy State is Done and the user… · _exit_ · ASK
 
 ~~~~plaintext title="canonical/skills/aid-deploy/SKILL.md#L195" wrap
 | RE-RUN | `references/state-re-run.md` | `inline` | ASK → IDLE; ASK then HALT on review |

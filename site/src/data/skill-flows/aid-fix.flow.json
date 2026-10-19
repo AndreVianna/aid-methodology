@@ -198,7 +198,7 @@
       "label": "Terminal state (FR-10 / NFR-10).",
       "kind": "exit",
       "terminal": {
-        "advanceType": "HALT",
+        "advanceType": "ASK",
         "handoff": "No branch is created; no tasks_lifecycle entry advances past Pending (the halt-proof fixture in feature-004's testing strategy asserts both"
       },
       "provenance": {
@@ -372,8 +372,5 @@
     "canonical/aid/templates/work-initiation-gate.md",
     "canonical/skills/aid-fix/SKILL.md"
   ],
-  "warnings": [
-    "[gen-skills] advance: multiple terminal clauses in 'APPROVAL-HALT'; keeping last (canonical/aid/templates/shortcut-engine.md:97: HALT)",
-    "[gen-skills] advance: multiple terminal clauses in 'APPROVAL-HALT'; keeping last (canonical/aid/templates/shortcut-engine.md:920: HALT. No branch is created; no `tasks_lifecycle` entry advan)"
-  ]
+  "warnings": []
 }

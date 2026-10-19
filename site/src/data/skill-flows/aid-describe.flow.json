@@ -100,7 +100,7 @@
       "label": "All sections are Complete or N/A in STATE.md ## Interview…",
       "kind": "exit",
       "terminal": {
-        "advanceType": "HALT",
+        "advanceType": "ASK",
         "handoff": "Name /aid-define {work} as the next skill in one plain line. Do not chain into it: this checkpoint needs an explicit user decision"
       },
       "provenance": {

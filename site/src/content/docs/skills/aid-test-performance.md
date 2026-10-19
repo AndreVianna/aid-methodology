@@ -166,7 +166,7 @@ each with its evidence; state pass/fail against any threshold; and a printed sug
 
 [Source: `canonical/skills/aid-test/SKILL.md#L119-L123`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-test/SKILL.md#L119-L123) · [full step: `canonical/skills/aid-test/SKILL.md#L119-L125`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-test/SKILL.md#L119-L125)
 
-<a id="fragment-n8"></a>**8 · `HANDOFF`** — optional; printed suggestions only · _exit_ · HALT
+<a id="fragment-n8"></a>**8 · `HANDOFF`** — optional; printed suggestions only · _exit_ · ASK
 
 ~~~~plaintext title="canonical/skills/aid-test/SKILL.md#L129-L133" wrap
 ## State: HANDOFF  (optional; printed suggestions only)

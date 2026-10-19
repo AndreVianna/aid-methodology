@@ -172,7 +172,7 @@ gaps are first-class, never buried under positives.
 
 [Source: `canonical/skills/aid-research/SKILL.md#L145-L150`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-research/SKILL.md#L145-L150) · [full step: `canonical/skills/aid-research/SKILL.md#L145-L152`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-research/SKILL.md#L145-L152)
 
-<a id="fragment-n8"></a>**8 · `HANDOFF`** — optional; printed suggestions only · _exit_ · HALT
+<a id="fragment-n8"></a>**8 · `HANDOFF`** — optional; printed suggestions only · _exit_ · ASK
 
 ~~~~plaintext title="canonical/skills/aid-research/SKILL.md#L156-L163" wrap
 ## State: HANDOFF  (optional; printed suggestions only)

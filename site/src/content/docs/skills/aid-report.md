@@ -145,7 +145,7 @@ conflicts with reasons, and gaps. Assert no resolution.
 
 [Source: `canonical/skills/aid-report/SKILL.md#L118-L122`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-report/SKILL.md#L118-L122) · [full step: `canonical/skills/aid-report/SKILL.md#L118-L124`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-report/SKILL.md#L118-L124)
 
-<a id="fragment-n7"></a>**7 · `HANDOFF`** — optional; printed suggestions only · _exit_ · HALT
+<a id="fragment-n7"></a>**7 · `HANDOFF`** — optional; printed suggestions only · _exit_ · ASK
 
 ~~~~plaintext title="canonical/skills/aid-report/SKILL.md#L128-L134" wrap
 ## State: HANDOFF  (optional; printed suggestions only)

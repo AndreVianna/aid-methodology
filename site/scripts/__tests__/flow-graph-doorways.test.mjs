@@ -1146,10 +1146,10 @@ describe('AC-4 fixture 1 — aid-create-api: exits (APPROVAL-HALT, CONTINUATION,
     expect(chart.exits).toContain(cbNode.id);
   });
 
-  it('APPROVAL-HALT terminal.advanceType is HALT', () => {
+  it('APPROVAL-HALT terminal.advanceType is ASK (ASK then HALT)', () => {
     const ahNode = chart.nodes.find((n) => n.name === 'APPROVAL-HALT');
     // Mutation-proof: changing advanceType in engine-core.mjs would break this.
-    expect(ahNode.terminal.advanceType).toBe('HALT');
+    expect(ahNode.terminal.advanceType).toBe('ASK');
   });
 
   it('APPROVAL-HALT terminal.handoff is a non-null string citing the halt behaviour', () => {

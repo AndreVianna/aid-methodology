@@ -2241,10 +2241,10 @@ describe('AC-4 corpus fixture — aid-describe (dispatch-table)', () => {
     expect(_reentry).toBeDefined();
   });
 
-  it('COMPLETION is in exits, HALT terminal, handoff mentioning /aid-define', () => {
+  it('COMPLETION is in exits, ASK terminal, handoff mentioning /aid-define', () => {
     expect(_dCompletion).toBeDefined();
     expect(_dChart.exits).toContain(_dCompletion.id);
-    expect(_dCompletion.terminal.advanceType).toBe('HALT');
+    expect(_dCompletion.terminal.advanceType).toBe('ASK');
 
     // The AC names `/aid-define` specifically, and asserting only `!== null` would have
     // passed while the handoff read "Run to decompose approved requirements into

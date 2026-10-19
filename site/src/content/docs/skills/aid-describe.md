@@ -84,7 +84,7 @@ Every node in the chart above, in chart order, with the exact `canonical/` text 
 
 [Source: `canonical/skills/aid-describe/SKILL.md#L242`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-describe/SKILL.md#L242) · [full step: `canonical/skills/aid-describe/references/state-describe-seed.md#L1-L527`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-describe/references/state-describe-seed.md#L1-L527)
 
-<a id="fragment-n5"></a>**5 · `COMPLETION`** — All sections are Complete or N/A in STATE.md ## Interview… · _exit_ · HALT
+<a id="fragment-n5"></a>**5 · `COMPLETION`** — All sections are Complete or N/A in STATE.md ## Interview… · _exit_ · ASK
 
 ~~~~plaintext title="canonical/skills/aid-describe/SKILL.md#L243" wrap
 | COMPLETION | `references/state-completion.md` | `aid-interviewer` | ASK → HALT, naming `/aid-define {work}` |

@@ -56,7 +56,7 @@
       "label": "REALIZE",
       "kind": "exit",
       "terminal": {
-        "advanceType": "HALT",
+        "advanceType": "ASK",
         "handoff": "naming the skill the route names"
       },
       "provenance": {

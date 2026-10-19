@@ -59,7 +59,7 @@ Every node in the chart above, in chart order, with the exact `canonical/` text 
 
 [Source: `canonical/skills/aid-monitor/SKILL.md#L221`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-monitor/SKILL.md#L221) · [full step: `canonical/skills/aid-monitor/references/state-classify.md#L1-L46`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-monitor/references/state-classify.md#L1-L46)
 
-<a id="fragment-n3"></a>**3 · `ROUTE`** — All findings are classified; propose and execute routing… · _exit_ · HALT
+<a id="fragment-n3"></a>**3 · `ROUTE`** — All findings are classified; propose and execute routing… · _exit_ · ASK
 
 ~~~~plaintext title="canonical/skills/aid-monitor/SKILL.md#L222" wrap
 | ROUTE | `references/state-route.md` | `inline` (main conversation) | ASK then HALT (hand-offs to `/aid-orchestrate`) |

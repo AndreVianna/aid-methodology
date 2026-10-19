@@ -147,7 +147,7 @@ What we learned · viable? (a conclusion, not a resolution).** Assert no resolut
 
 [Source: `canonical/skills/aid-prototype/SKILL.md#L112-L116`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-prototype/SKILL.md#L112-L116) · [full step: `canonical/skills/aid-prototype/SKILL.md#L112-L118`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-prototype/SKILL.md#L112-L118)
 
-<a id="fragment-n7"></a>**7 · `HANDOFF`** — optional; printed suggestions only · _exit_ · HALT
+<a id="fragment-n7"></a>**7 · `HANDOFF`** — optional; printed suggestions only · _exit_ · ASK
 
 ~~~~plaintext title="canonical/skills/aid-prototype/SKILL.md#L122-L127" wrap
 ## State: HANDOFF  (optional; printed suggestions only)

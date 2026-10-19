@@ -56,7 +56,7 @@
       "label": "Interview is complete, approved, features decomposed, and…",
       "kind": "exit",
       "terminal": {
-        "advanceType": "HALT",
+        "advanceType": "ASK",
         "handoff": "The question is the menu above; a requirements-level change hands off to /aid-describe in one plain line, then . This is the terminal state. Run /aid-define again only to add information or re-validate"
       },
       "provenance": {
@@ -145,7 +145,5 @@
     "canonical/skills/aid-define/references/state-done.md",
     "canonical/skills/aid-define/references/state-feature-decomposition.md"
   ],
-  "warnings": [
-    "[gen-skills] advance: multiple terminal clauses in 'DONE'; keeping last (canonical/skills/aid-define/references/state-done.md:37: The question is the menu above; a requirements-level change )"
-  ]
+  "warnings": []
 }

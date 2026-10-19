@@ -246,12 +246,12 @@ describe('extractDispatch — aid-describe: richest corpus fixture', () => {
     expect(names[4]).toBe('COMPLETION');
   });
 
-  it('COMPLETION is the only exit (has HALT terminal, reached after ASK)', () => {
+  it('COMPLETION is the only exit (has ASK terminal, reached after ASK)', () => {
     // Mutant: omit terminal for the ASK -> HALT advance → no exit node.
     expect(chart.exits).toContain('n5');
     const completion = chart.nodes.find((n) => n.name === 'COMPLETION');
     expect(completion.terminal).not.toBeNull();
-    expect(completion.terminal.advanceType).toBe('HALT');
+    expect(completion.terminal.advanceType).toBe('ASK');
   });
 
   it('FIRST-RUN is the entry', () => {
@@ -404,11 +404,11 @@ describe('extractDispatch — aid-define: HALT terminal and worker self-loops', 
   let chart;
   beforeAll(() => { chart = extractDispatch('aid-define', null, REPO_ROOT); });
 
-  it('DONE (n3) has a HALT terminal', () => {
+  it('DONE (n3) has an ASK terminal', () => {
     // Mutant: skip terminal extraction from row advance → terminal null.
     const done = chart.nodes.find((n) => n.name === 'DONE');
     expect(done.terminal).not.toBeNull();
-    expect(done.terminal.advanceType).toBe('HALT');
+    expect(done.terminal.advanceType).toBe('ASK');
   });
 
   it('DONE is the only exit', () => {

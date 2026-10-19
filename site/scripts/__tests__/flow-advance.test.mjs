@@ -1760,3 +1760,62 @@ describe('Advance words — the vocabulary extends to the four new words', () =>
     }
   });
 });
+
+// ════════════════════════════════════════════════════════════════════════════
+// ASK then HALT is one ending that asks first (task-372).
+// ════════════════════════════════════════════════════════════════════════════
+
+describe('ASK then HALT — one ending that asks first', () => {
+  // The separator forms the skills write: plain, comma, bold, and arrow.
+  const PAIRS = [
+    ['ASK, then HALT. No branch is created.', 'split clauses with a comma'],
+    ['ASK then HALT on cancel', 'plain connector'],
+    ['**ASK** then **HALT** when the user cancels', 'bold markers'],
+    ['**ASK** → **HALT**. The question is the menu above.', 'arrow connector'],
+  ];
+
+  for (const [text, label] of PAIRS) {
+    it(`"${text}" (${label}) is one exit recording ASK, with no warning`, () => {
+      const r = parse(advBlock(text), states('ALPHA'));
+      expect(r.warnings).toEqual([]);
+      expect(r.edges).toHaveLength(0);
+      expect(r.terminal).not.toBeNull();
+      expect(r.terminal.advanceType).toBe('ASK');
+    });
+  }
+
+  it('an ASK edge followed by "then HALT" keeps the edge and makes the exit record ASK', () => {
+    const r = parse(advBlock('ASK -> [State: BETA], then HALT.'), states('ALPHA', 'BETA'));
+    expect(r.warnings).toEqual([]);
+    expect(r.edges.map((e) => [e.to, e.advanceType])).toEqual([['n2', 'ASK']]);
+    expect(r.terminal.advanceType).toBe('ASK');
+  });
+
+  it('a later HALT clause restating the ASK ending adds no warning and keeps ASK', () => {
+    const r = parse(
+      advBlock('**ASK** → **HALT**. The question is the menu; a change hands off in one plain line, then HALT.'),
+      states('ALPHA'),
+    );
+    expect(r.warnings).toEqual([]);
+    expect(r.terminal.advanceType).toBe('ASK');
+  });
+
+  it('HALT alone is unchanged: advanceType HALT and no warning', () => {
+    const r = parse(advBlock('HALT'), states('ALPHA'));
+    expect(r.warnings).toEqual([]);
+    expect(r.terminal).toEqual({ advanceType: 'HALT', handoff: null });
+  });
+
+  it('two plain HALT terminal clauses still warn and keep the last', () => {
+    const r = parse(advBlock('HALT then HALT.'), states('ALPHA'));
+    expect(r.warnings).toHaveLength(1);
+    expect(r.warnings[0]).toContain('multiple terminal clauses');
+    expect(r.terminal.advanceType).toBe('HALT');
+  });
+
+  it('a HALT before an ASK-then-HALT ending still warns: two real endings', () => {
+    const r = parse(advBlock('HALT; ASK then HALT on cancel'), states('ALPHA'));
+    expect(r.warnings).toHaveLength(1);
+    expect(r.warnings[0]).toContain('multiple terminal clauses');
+  });
+});

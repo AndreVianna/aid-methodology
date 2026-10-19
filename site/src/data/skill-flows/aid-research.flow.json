@@ -166,7 +166,7 @@
       "label": "optional; printed suggestions only",
       "kind": "exit",
       "terminal": {
-        "advanceType": "HALT",
+        "advanceType": "ASK",
         "handoff": null
       },
       "provenance": {
