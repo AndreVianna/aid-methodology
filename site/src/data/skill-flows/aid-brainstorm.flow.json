@@ -90,7 +90,7 @@
         "startLine": 82,
         "endLine": 88,
         "sourceKind": "skill",
-        "excerpt": "## State: PRESENT (hard stop -- the user decides)\n\nSet `lifecycle: Paused-Awaiting-Input`. Present the seed clearly. Assert no resolution --\nthe user iterates (re-invoke this skill), promotes the seed into a `design` lifecycle\nentry, or takes it forward however they choose.\n\n**Advance:** CHAIN -> DONE."
+        "excerpt": "## State: PRESENT (hard stop -- the user decides)\n\nSet `lifecycle: Paused-Awaiting-Input`. Present the seed clearly. Assert no resolution --\nthe user iterates (re-invoke this skill), promotes the seed into a `design` lifecycle\nentry, or takes it forward however they choose.\n\n**Advance:** ASK -> DONE."
       }
     },
     {
@@ -181,13 +181,13 @@
       "to": "n5",
       "kind": "sequence",
       "condition": null,
-      "advanceType": "CHAIN",
+      "advanceType": "ASK",
       "provenance": {
         "file": "canonical/skills/aid-brainstorm/SKILL.md",
         "startLine": 88,
         "endLine": 88,
         "sourceKind": "skill",
-        "excerpt": "**Advance:** CHAIN -> DONE."
+        "excerpt": "**Advance:** ASK -> DONE."
       }
     }
   ],

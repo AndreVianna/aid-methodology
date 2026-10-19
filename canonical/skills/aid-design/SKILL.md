@@ -95,7 +95,7 @@ kept record).
 Set `lifecycle: Paused-Awaiting-Input`. Present `DESIGN.md` clearly. Assert no resolution --
 the user decides whether/when to build it.
 
-**Advance:** CHAIN -> HANDOFF (optional) then DONE.
+**Advance:** ASK -> HANDOFF (optional) then DONE.
 
 ---
 

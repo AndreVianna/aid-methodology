@@ -85,7 +85,7 @@ Set `lifecycle: Paused-Awaiting-Input`. Present the seed clearly. Assert no reso
 the user iterates (re-invoke this skill), promotes the seed into a `design` lifecycle
 entry, or takes it forward however they choose.
 
-**Advance:** CHAIN -> DONE.
+**Advance:** ASK -> DONE.
 
 ---
 

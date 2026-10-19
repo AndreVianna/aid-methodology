@@ -90,7 +90,7 @@
         "startLine": 93,
         "endLine": 98,
         "sourceKind": "skill",
-        "excerpt": "## State: PRESENT  (hard stop -- the user decides)\n\nSet `lifecycle: Paused-Awaiting-Input`. Present `DESIGN.md` clearly. Assert no resolution --\nthe user decides whether/when to build it.\n\n**Advance:** CHAIN -> HANDOFF (optional) then DONE."
+        "excerpt": "## State: PRESENT  (hard stop -- the user decides)\n\nSet `lifecycle: Paused-Awaiting-Input`. Present `DESIGN.md` clearly. Assert no resolution --\nthe user decides whether/when to build it.\n\n**Advance:** ASK -> HANDOFF (optional) then DONE."
       }
     },
     {
@@ -203,13 +203,13 @@
       "to": "n5",
       "kind": "branch",
       "condition": "optional",
-      "advanceType": "CHAIN",
+      "advanceType": "ASK",
       "provenance": {
         "file": "canonical/skills/aid-design/SKILL.md",
         "startLine": 98,
         "endLine": 98,
         "sourceKind": "skill",
-        "excerpt": "**Advance:** CHAIN -> HANDOFF (optional) then DONE."
+        "excerpt": "**Advance:** ASK -> HANDOFF (optional) then DONE."
       }
     },
     {
@@ -223,7 +223,7 @@
         "startLine": 98,
         "endLine": 98,
         "sourceKind": "skill",
-        "excerpt": "**Advance:** CHAIN -> HANDOFF (optional) then DONE."
+        "excerpt": "**Advance:** ASK -> HANDOFF (optional) then DONE."
       }
     },
     {

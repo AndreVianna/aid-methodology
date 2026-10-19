@@ -183,7 +183,8 @@ its nearest confusable neighbour as a negative route — the pattern `/aid-desig
 where the complete pair set is verified whole, is REQUIREMENTS FR-11 **CC-9**, referred to
 here and not restated.
 
-**States:** INTAKE → (DESIGN | CREATE | UPDATE) → VERIFY → PRESENT → DONE.
+**States:** INTAKE → (DESIGN | CREATE | UPDATE) → VERIFY → PRESENT → DONE. The steps, advance words and
+record writes follow `.aid/runtime/templates/skill-steps.md`; this contract restates none of them.
 
 **Allocation.** Consult the Work Initiation Gate
 (`.aid/runtime/templates/work-initiation-gate.md`) by running
