@@ -73,8 +73,8 @@ delivery_gate:
 #     work-owner-authored work-level entries. KB Q&A targets
 #     .aid/knowledge/STATE.md (separate file). One entry per question:
 #   - id / category (e.g. Architecture, Requirements, Security) /
-#     impact: High | Medium | Low | Required /
-#     state: Pending | Answered | Skipped /
+#     impact: High | Medium | Low /
+#     state: Pending | Answered | Skipped | Assumed /
 #     context / suggested / answer / applied_to
 qa: []
 # DERIVED: tasks rollup is a read-time union over tasks/task-NNN/STATE.yml. Not represented.

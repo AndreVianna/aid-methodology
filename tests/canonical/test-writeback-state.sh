@@ -2452,5 +2452,34 @@ rc=0; out27="$(cd "$R27C" && AID_STATE_FILE="$R27C_STATE" bash "$SCRIPT" --check
 assert_eq "$rc" "9" "27c: a saved skill absent from the declared skill folder exits 9"
 assert_eq "$(grep -c 'not installed' <<< "$out27")" "1" "27c: the PROBLEM names the uninstalled skill"
 
+# ---------------------------------------------------------------------------
+echo ""
+echo "=== Unit 28: staged writes keep the file mode (0644), including a new .aid/STATE.yml ==="
+
+# file_mode FILE: the octal permission bits (GNU stat, else BSD stat).
+file_mode() { stat -c %a "$1" 2>/dev/null || stat -f %Lp "$1"; }
+
+R28="${TMPDIR_BASE}/unit28"
+mkdir -p "${R28}/work"
+R28_STATE="${R28}/work/STATE.yml"
+cp "${SCRIPT_DIR}/../../canonical/aid/templates/work-state-template.yml" "$R28_STATE"
+chmod 644 "$R28_STATE"
+
+# 28a: a staged record write (--handoff) replaces the file but keeps its 0644 mode.
+code=0
+AID_STATE_FILE="$R28_STATE" bash "$SCRIPT" --handoff --to aid-fix --step s1 --why "mode check" --returns no >/dev/null 2>&1 || code=$?
+assert_exit_zero "$code" "28a: --handoff on a copy of the work template exits 0"
+assert_eq "$(file_mode "$R28_STATE")" "644" "28a: the staged write keeps the target's 0644 mode"
+
+# 28b: --ask --project creates .aid/STATE.yml from the template with the template's 0644 mode.
+R28P="${R28}/project"
+mkdir -p "$R28P"
+code=0
+(cd "$R28P" && bash "$SCRIPT" --ask --project --category Scope --impact High \
+    --context "mode check" --suggested "none" >/dev/null 2>&1) || code=$?
+assert_exit_zero "$code" "28b: --ask --project in an empty directory exits 0"
+assert_file_exists "$R28P/.aid/STATE.yml" "28b: --ask --project created .aid/STATE.yml"
+assert_eq "$(file_mode "$R28P/.aid/STATE.yml")" "644" "28b: the created .aid/STATE.yml is 0644, not the temporary 0600"
+
 test_summary
 exit $?

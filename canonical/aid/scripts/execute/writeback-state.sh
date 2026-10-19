@@ -2042,9 +2042,15 @@ mode_pipeline() {
 # the target, so each rename is a same-filesystem rename, and the target is
 # replaced only once every key has been written and verified.
 # ---------------------------------------------------------------------------
-# wb_mktemp_beside TARGET: a temporary file in TARGET's own directory.
+# wb_mktemp_beside TARGET: a temporary file in TARGET's own directory. mktemp
+# creates it 0600, so it takes TARGET's mode first (0644 for a target that does
+# not exist yet, matching the templates), and the rename then keeps that mode.
 wb_mktemp_beside() {
-    mktemp "$(dirname "$1")/.wb-state.XXXXXX"
+    local t mode
+    t=$(mktemp "$(dirname "$1")/.wb-state.XXXXXX") || return 1
+    mode=$(stat -c %a "$1" 2>/dev/null || stat -f %Lp "$1" 2>/dev/null || echo 644)
+    chmod "$mode" "$t" || return 1
+    printf '%s\n' "$t"
 }
 
 # wb_stage_begin SOURCE TARGET: the staged copy starts as SOURCE. SOURCE is
