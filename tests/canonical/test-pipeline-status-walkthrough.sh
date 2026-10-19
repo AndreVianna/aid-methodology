@@ -93,7 +93,7 @@ make_state "$A1_STATE"
 
 # Declare an ordered array of (Phase, Active Skill) pairs
 A1_PHASES=("Definition" "Specification" "Planning" "Building" "CI")
-A1_SKILLS=("aid-describe" "aid-specify" "aid-plan" "aid-execute" "aid-deploy")
+A1_SKILLS=("aid-describe" "aid-specify" "aid-plan" "aid-execute" "aid-orchestrate")
 
 for i in "${!A1_PHASES[@]}"; do
     phase="${A1_PHASES[$i]}"
@@ -327,6 +327,15 @@ M4_FILES["aid-plan"]="${REPO_ROOT}/canonical/skills/aid-plan/references/first-ru
 M4_FILES["aid-detail"]="${REPO_ROOT}/canonical/skills/aid-detail/references/first-run.md"
 M4_FILES["aid-execute"]="${REPO_ROOT}/canonical/skills/aid-execute/references/state-execute.md"
 
+SKILL_STEPS="${REPO_ROOT}/canonical/aid/templates/skill-steps.md"
+
+# The step entry each reference writes itself (--step --skill <skill> --name <STEP>).
+# specify and plan have no entry here: the hand-off sets their skill and step.
+declare -A M4_STEP_ARGS
+M4_STEP_ARGS["aid-define"]="--step --skill aid-define --name FEATURE-DECOMPOSITION"
+M4_STEP_ARGS["aid-detail"]="--step --skill aid-detail --name FIRST-RUN"
+M4_STEP_ARGS["aid-execute"]="--step --skill aid-execute --name EXECUTE"
+
 declare -A M4_PHASES
 M4_PHASES["aid-define"]="Specification"
 M4_PHASES["aid-specify"]="Specification"
@@ -348,11 +357,26 @@ for skill in "aid-define" "aid-specify" "aid-plan" "aid-detail" "aid-execute"; d
         fail "B1 $skill: --pipeline Phase=${expected_phase} emit NOT found in $sfile"
     fi
 
-    # The file must contain the Active Skill emit with the correct skill name
-    if grep -qF "writeback-state.sh --pipeline --field \"Active Skill\" --value ${skill}" "$sfile" 2>/dev/null; then
-        pass "B1 $skill: --pipeline Active Skill=${skill} emit present"
+    # The skill and its step are recorded by one of two routes (skill-steps.md):
+    #  - define, detail and execute write their own step entry in the reference:
+    #    --step --skill <skill> --name <STEP>;
+    #  - specify and plan write no step entry; the hand-off from the calling skill
+    #    sets their active skill and entry step in one locked write.
+    if [[ -n "${M4_STEP_ARGS[$skill]:-}" ]]; then
+        step_args="${M4_STEP_ARGS[$skill]}"
+        if grep -qF "writeback-state.sh ${step_args}" "$sfile" 2>/dev/null; then
+            pass "B1 $skill: ${step_args} emit present"
+        else
+            fail "B1 $skill: ${step_args} emit NOT found in $sfile"
+        fi
     else
-        fail "B1 $skill: --pipeline Active Skill=${skill} emit NOT found in $sfile"
+        if ! grep -qF "Active Skill" "$sfile" 2>/dev/null \
+           && ! grep -qF -- "--step --skill" "$sfile" 2>/dev/null \
+           && grep -qF "A hand-off writes the target skill and its entry step" "$SKILL_STEPS" 2>/dev/null; then
+            pass "B1 $skill: skill and step set by the hand-off, not an entry emit"
+        else
+            fail "B1 $skill: reference writes its own skill/step, or skill-steps.md no longer states the hand-off writes them ($sfile)"
+        fi
     fi
 
     # The file must contain the Lifecycle=Running emit
