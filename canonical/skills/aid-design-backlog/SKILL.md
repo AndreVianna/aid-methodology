@@ -32,6 +32,8 @@ seed into `backlog.md` -- including moving accepted rows out of `tech-debt.md` -
   rows to accept. Neither resolves anything on its own -- the user confirms every
   promotion at `/aid-create-backlog`'s own gate.
 - **Not a numbered pipeline phase**; does not route to `/aid-execute`.
+- **Step rules:** the advance words, the step procedure and the work record are
+  `.aid/runtime/templates/skill-steps.md`; this skill cites it and restates none of it.
 
 State machine: **INTAKE -> DESIGN -> VERIFY (loop) -> PRESENT [user decides] -> DONE**. Print
 the `[State: NAME] -- {purpose}` entry line on each state.
@@ -53,6 +55,10 @@ the `[State: NAME] -- {purpose}` entry line on each state.
    re-invocation iterates the same seed rather than starting over.
 5. **Classify complexity (model + effort)** for the `aid-architect` dispatch below;
    verifier tier >= producer tier (`agent-dispatch-tiering.md`).
+
+**State Detection** (`.aid/runtime/templates/skill-steps.md`): detection shapes the entry
+step of a fresh start (a prior seed in `.aid/design/` is iterated, not restarted), validates a
+saved step on resume, and never routes; the work record alone decides where a work continues.
 
 **Advance:** DESIGN.
 

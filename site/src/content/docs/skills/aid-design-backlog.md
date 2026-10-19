@@ -52,7 +52,7 @@ Every node in the chart above, in chart order, with the exact `canonical/` text 
 
 <a id="fragment-n1"></a>**1 · `INTAKE`** · _entry_
 
-~~~~plaintext title="canonical/skills/aid-design-backlog/SKILL.md#L41-L55" wrap
+~~~~plaintext title="canonical/skills/aid-design-backlog/SKILL.md#L43-L57" wrap
 ## State: INTAKE
 
 1. **Require a subject.** Empty argument -> ask one bootstrapping question ("What items do
@@ -70,11 +70,11 @@ Every node in the chart above, in chart order, with the exact `canonical/` text 
    verifier tier >= producer tier (`agent-dispatch-tiering.md`).
 ~~~~
 
-[Source: `canonical/skills/aid-design-backlog/SKILL.md#L41-L55`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-design-backlog/SKILL.md#L41-L55) · [full step: `canonical/skills/aid-design-backlog/SKILL.md#L41-L57`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-design-backlog/SKILL.md#L41-L57)
+[Source: `canonical/skills/aid-design-backlog/SKILL.md#L43-L57`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-design-backlog/SKILL.md#L43-L57) · [full step: `canonical/skills/aid-design-backlog/SKILL.md#L43-L63`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-design-backlog/SKILL.md#L43-L63)
 
 <a id="fragment-n2"></a>**2 · `DESIGN`** · _step_
 
-~~~~plaintext title="canonical/skills/aid-design-backlog/SKILL.md#L61-L67" wrap
+~~~~plaintext title="canonical/skills/aid-design-backlog/SKILL.md#L67-L73" wrap
 ## State: DESIGN
 
 Dispatch **`aid-architect`** (clean context, tiered) to develop or iterate the seed,
@@ -84,11 +84,11 @@ done-conditions and priorities; which `tech-debt.md` rows the user is accepting 
 plan.**
 ~~~~
 
-[Source: `canonical/skills/aid-design-backlog/SKILL.md#L61-L67`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-design-backlog/SKILL.md#L61-L67) · [full step: `canonical/skills/aid-design-backlog/SKILL.md#L61-L76`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-design-backlog/SKILL.md#L61-L76)
+[Source: `canonical/skills/aid-design-backlog/SKILL.md#L67-L73`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-design-backlog/SKILL.md#L67-L73) · [full step: `canonical/skills/aid-design-backlog/SKILL.md#L67-L82`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-design-backlog/SKILL.md#L67-L82)
 
 <a id="fragment-n3"></a>**3 · `VERIFY`** · _loop-back_
 
-~~~~plaintext title="canonical/skills/aid-design-backlog/SKILL.md#L80-L84" wrap
+~~~~plaintext title="canonical/skills/aid-design-backlog/SKILL.md#L86-L90" wrap
 ## State: VERIFY
 
 **Full verify** -- exactly as `design-lifecycle.md § Skill shape -- "Full verify"`
@@ -96,11 +96,11 @@ defines it. Not clean -> loop to DESIGN; the circuit-breaker there governs escal
 IMPEDIMENT + `lifecycle: Blocked`.
 ~~~~
 
-[Source: `canonical/skills/aid-design-backlog/SKILL.md#L80-L84`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-design-backlog/SKILL.md#L80-L84) · [full step: `canonical/skills/aid-design-backlog/SKILL.md#L80-L86`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-design-backlog/SKILL.md#L80-L86)
+[Source: `canonical/skills/aid-design-backlog/SKILL.md#L86-L90`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-design-backlog/SKILL.md#L86-L90) · [full step: `canonical/skills/aid-design-backlog/SKILL.md#L86-L92`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-design-backlog/SKILL.md#L86-L92)
 
 <a id="fragment-n4"></a>**4 · `PRESENT`** — hard stop -- the user decides · _step_
 
-~~~~plaintext title="canonical/skills/aid-design-backlog/SKILL.md#L90-L94" wrap
+~~~~plaintext title="canonical/skills/aid-design-backlog/SKILL.md#L96-L100" wrap
 ## State: PRESENT (hard stop -- the user decides)
 
 Set `lifecycle: Paused-Awaiting-Input`. Present the seed clearly. Assert no resolution --
@@ -108,11 +108,11 @@ the user decides whether to iterate further (re-invoke this skill) or realize it
 (`/aid-create-backlog`).
 ~~~~
 
-[Source: `canonical/skills/aid-design-backlog/SKILL.md#L90-L94`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-design-backlog/SKILL.md#L90-L94) · [full step: `canonical/skills/aid-design-backlog/SKILL.md#L90-L96`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-design-backlog/SKILL.md#L90-L96)
+[Source: `canonical/skills/aid-design-backlog/SKILL.md#L96-L100`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-design-backlog/SKILL.md#L96-L100) · [full step: `canonical/skills/aid-design-backlog/SKILL.md#L96-L102`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-design-backlog/SKILL.md#L96-L102)
 
 <a id="fragment-n5"></a>**5 · `DONE`** · _exit_ · UNSPECIFIED
 
-~~~~plaintext title="canonical/skills/aid-design-backlog/SKILL.md#L100-L104" wrap
+~~~~plaintext title="canonical/skills/aid-design-backlog/SKILL.md#L106-L110" wrap
 ## State: DONE
 
 Set `lifecycle: Completed`, `updated` now, append a `## Lifecycle History` row. The seed
@@ -120,4 +120,4 @@ stays at `.aid/design/backlog.md` -- consumption happens at `/aid-create-backlog
 here.
 ~~~~
 
-[Source: `canonical/skills/aid-design-backlog/SKILL.md#L100-L104`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-design-backlog/SKILL.md#L100-L104) · [full step: `canonical/skills/aid-design-backlog/SKILL.md#L100-L104`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-design-backlog/SKILL.md#L100-L104)
+[Source: `canonical/skills/aid-design-backlog/SKILL.md#L106-L110`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-design-backlog/SKILL.md#L106-L110) · [full step: `canonical/skills/aid-design-backlog/SKILL.md#L106-L110`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-design-backlog/SKILL.md#L106-L110)

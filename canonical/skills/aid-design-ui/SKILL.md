@@ -29,6 +29,8 @@ the built component/page is `/aid-create-ui`'s job, not this one's.
   to *validate* a direction; this one develops a **kept** design meant to *inform the
   build*. Kept vs throwaway is the distinction.
 - **Not a numbered pipeline phase**; does not route to `/aid-execute`.
+- **Step rules:** the advance words, the step procedure and the work record are
+  `.aid/runtime/templates/skill-steps.md`; this skill cites it and restates none of it.
 
 State machine: **INTAKE -> DESIGN -> VERIFY (loop) -> PRESENT [user decides] -> DONE**, as
 `design-lifecycle.md § Skill shape` defines it. Print the `[State: NAME] -- {purpose}`
@@ -46,6 +48,10 @@ entry line on each state.
 3. **Acquire `.aid/design/`** per the contract, then read `.aid/design/ui.md` if a prior
    seed exists -- re-invocation iterates it rather than starting over.
 4. **Classify complexity** for the `aid-architect` dispatch (verifier tier >= producer).
+
+**State Detection** (`.aid/runtime/templates/skill-steps.md`): detection shapes the entry
+step of a fresh start (a prior seed in `.aid/design/` is iterated, not restarted), validates a
+saved step on resume, and never routes; the work record alone decides where a work continues.
 
 **Advance:** DESIGN.
 

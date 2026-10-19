@@ -14,17 +14,17 @@
       "terminal": null,
       "provenance": {
         "file": "canonical/skills/aid-design-cicd/SKILL.md",
-        "startLine": 39,
-        "endLine": 49,
+        "startLine": 41,
+        "endLine": 51,
         "sourceKind": "skill",
         "excerpt": "## State: INTAKE\n\n1. **Require a subject.** Empty argument -> ask one bootstrapping question (\"What delivery\n   pipeline do you want to design -- its stages, triggers, environments, and promotion\n   flow?\") and wait.\n2. **Allocate** through the Work Initiation Gate exactly as the contract's Allocation rule\n   requires (`.agents/skills/aid-design/SKILL.md` INTAKE step 4 is the shape), with\n   `initiator: aid-design-cicd`. `phase` is not driven.\n3. **Acquire `.aid/design/`** per the contract, then read `.aid/design/cicd.md` if a prior\n   seed exists -- re-invocation iterates it rather than starting over.\n4. **Classify complexity** for the `aid-architect` dispatch (verifier tier >= producer)."
       },
       "detail": {
         "file": "canonical/skills/aid-design-cicd/SKILL.md",
-        "startLine": 39,
-        "endLine": 51,
+        "startLine": 41,
+        "endLine": 57,
         "sourceKind": "skill",
-        "excerpt": "## State: INTAKE\n\n1. **Require a subject.** Empty argument -> ask one bootstrapping question (\"What delivery\n   pipeline do you want to design -- its stages, triggers, environments, and promotion\n   flow?\") and wait.\n2. **Allocate** through the Work Initiation Gate exactly as the contract's Allocation rule\n   requires (`.agents/skills/aid-design/SKILL.md` INTAKE step 4 is the shape), with\n   `initiator: aid-design-cicd`. `phase` is not driven.\n3. **Acquire `.aid/design/`** per the contract, then read `.aid/design/cicd.md` if a prior\n   seed exists -- re-invocation iterates it rather than starting over.\n4. **Classify complexity** for the `aid-architect` dispatch (verifier tier >= producer).\n\n**Advance:** DESIGN."
+        "excerpt": "## State: INTAKE\n\n1. **Require a subject.** Empty argument -> ask one bootstrapping question (\"What delivery\n   pipeline do you want to design -- its stages, triggers, environments, and promotion\n   flow?\") and wait.\n2. **Allocate** through the Work Initiation Gate exactly as the contract's Allocation rule\n   requires (`.agents/skills/aid-design/SKILL.md` INTAKE step 4 is the shape), with\n   `initiator: aid-design-cicd`. `phase` is not driven.\n3. **Acquire `.aid/design/`** per the contract, then read `.aid/design/cicd.md` if a prior\n   seed exists -- re-invocation iterates it rather than starting over.\n4. **Classify complexity** for the `aid-architect` dispatch (verifier tier >= producer).\n\n**State Detection** (`.aid/runtime/templates/skill-steps.md`): detection shapes the entry\nstep of a fresh start (a prior seed in `.aid/design/` is iterated, not restarted), validates a\nsaved step on resume, and never routes; the work record alone decides where a work continues.\n\n**Advance:** DESIGN."
       }
     },
     {
@@ -36,15 +36,15 @@
       "terminal": null,
       "provenance": {
         "file": "canonical/skills/aid-design-cicd/SKILL.md",
-        "startLine": 55,
-        "endLine": 61,
+        "startLine": 61,
+        "endLine": 67,
         "sourceKind": "skill",
         "excerpt": "## State: DESIGN\n\nDispatch **`aid-architect`** (clean context, tiered) to write or iterate\n`.aid/design/cicd.md` in the seed shape the contract fixes (`design-seed.md`;\nfeature-002 §4), grounded in `.aid/knowledge/` and the project source plus any seed read\nin INTAKE. What this artifact's seed must settle: **the pipeline stages, triggers,\nenvironments, and promotion and release flow**."
       },
       "detail": {
         "file": "canonical/skills/aid-design-cicd/SKILL.md",
-        "startLine": 55,
-        "endLine": 75,
+        "startLine": 61,
+        "endLine": 81,
         "sourceKind": "skill",
         "excerpt": "## State: DESIGN\n\nDispatch **`aid-architect`** (clean context, tiered) to write or iterate\n`.aid/design/cicd.md` in the seed shape the contract fixes (`design-seed.md`;\nfeature-002 §4), grounded in `.aid/knowledge/` and the project source plus any seed read\nin INTAKE. What this artifact's seed must settle: **the pipeline stages, triggers,\nenvironments, and promotion and release flow**.\n\n**Destination resolution (by concern, not filename).** This skill binds concern **C8**\n(shipping & operation, `.aid/runtime/templates/kb-authoring/concern-model.md`), never a\nhardcoded filename. Resolve C8 against `.aid/settings.yml` `knowledge.doc_set`, falling\nback to the C8 row of `.aid/runtime/templates/kb-authoring/domain-doc-matrix.md`, and\n**confirm the resolution with the user** before writing. Write the resolved path into the\nseed's **`## Destination`** section. Where a realization is genuinely ambiguous, **ask --\nnever pick silently**.\n\n**Writes only `.aid/design/cicd.md`.** Never writes `.aid/knowledge/`, never writes\nproduction code, and **never writes a workflow file under `.github/`** -- the `design`\ninvariant (`design-lifecycle.md`).\n\n**Advance:** VERIFY."
       }
@@ -58,15 +58,15 @@
       "terminal": null,
       "provenance": {
         "file": "canonical/skills/aid-design-cicd/SKILL.md",
-        "startLine": 79,
-        "endLine": 82,
+        "startLine": 85,
+        "endLine": 88,
         "sourceKind": "skill",
         "excerpt": "## State: VERIFY\n\n**Full verify**, as `design-lifecycle.md` defines it. Not clean -> loop to DESIGN; the\n3-cycle circuit breaker there escalates to IMPEDIMENT + `lifecycle: Blocked`."
       },
       "detail": {
         "file": "canonical/skills/aid-design-cicd/SKILL.md",
-        "startLine": 79,
-        "endLine": 84,
+        "startLine": 85,
+        "endLine": 90,
         "sourceKind": "skill",
         "excerpt": "## State: VERIFY\n\n**Full verify**, as `design-lifecycle.md` defines it. Not clean -> loop to DESIGN; the\n3-cycle circuit breaker there escalates to IMPEDIMENT + `lifecycle: Blocked`.\n\n**Advance:** PRESENT."
       }
@@ -80,15 +80,15 @@
       "terminal": null,
       "provenance": {
         "file": "canonical/skills/aid-design-cicd/SKILL.md",
-        "startLine": 88,
-        "endLine": 91,
+        "startLine": 94,
+        "endLine": 97,
         "sourceKind": "skill",
         "excerpt": "## State: PRESENT (hard stop -- the user decides)\n\nSet `lifecycle: Paused-Awaiting-Input`. Present the seed clearly. Assert no resolution --\nthe user iterates (re-invoke this skill) or realizes it now (`/aid-create-cicd`)."
       },
       "detail": {
         "file": "canonical/skills/aid-design-cicd/SKILL.md",
-        "startLine": 88,
-        "endLine": 93,
+        "startLine": 94,
+        "endLine": 99,
         "sourceKind": "skill",
         "excerpt": "## State: PRESENT (hard stop -- the user decides)\n\nSet `lifecycle: Paused-Awaiting-Input`. Present the seed clearly. Assert no resolution --\nthe user iterates (re-invoke this skill) or realizes it now (`/aid-create-cicd`).\n\n**Advance:** DONE."
       }
@@ -105,15 +105,15 @@
       },
       "provenance": {
         "file": "canonical/skills/aid-design-cicd/SKILL.md",
-        "startLine": 97,
-        "endLine": 100,
+        "startLine": 103,
+        "endLine": 106,
         "sourceKind": "skill",
         "excerpt": "## State: DONE\n\nSet `lifecycle: Completed`, `updated` now, append a `## Lifecycle History` row. The seed\npersists at `.aid/design/cicd.md`; consumption happens at `/aid-create-cicd`."
       },
       "detail": {
         "file": "canonical/skills/aid-design-cicd/SKILL.md",
-        "startLine": 97,
-        "endLine": 100,
+        "startLine": 103,
+        "endLine": 106,
         "sourceKind": "skill",
         "excerpt": "## State: DONE\n\nSet `lifecycle: Completed`, `updated` now, append a `## Lifecycle History` row. The seed\npersists at `.aid/design/cicd.md`; consumption happens at `/aid-create-cicd`."
       }
@@ -128,8 +128,8 @@
       "advanceType": "UNSPECIFIED",
       "provenance": {
         "file": "canonical/skills/aid-design-cicd/SKILL.md",
-        "startLine": 51,
-        "endLine": 51,
+        "startLine": 57,
+        "endLine": 57,
         "sourceKind": "skill",
         "excerpt": "**Advance:** DESIGN."
       }
@@ -142,8 +142,8 @@
       "advanceType": "UNSPECIFIED",
       "provenance": {
         "file": "canonical/skills/aid-design-cicd/SKILL.md",
-        "startLine": 75,
-        "endLine": 75,
+        "startLine": 81,
+        "endLine": 81,
         "sourceKind": "skill",
         "excerpt": "**Advance:** VERIFY."
       }
@@ -156,8 +156,8 @@
       "advanceType": "UNSPECIFIED",
       "provenance": {
         "file": "canonical/skills/aid-design-cicd/SKILL.md",
-        "startLine": 81,
-        "endLine": 81,
+        "startLine": 87,
+        "endLine": 87,
         "sourceKind": "skill",
         "excerpt": "**Full verify**, as `design-lifecycle.md` defines it. Not clean -> loop to DESIGN; the"
       }
@@ -170,8 +170,8 @@
       "advanceType": "UNSPECIFIED",
       "provenance": {
         "file": "canonical/skills/aid-design-cicd/SKILL.md",
-        "startLine": 84,
-        "endLine": 84,
+        "startLine": 90,
+        "endLine": 90,
         "sourceKind": "skill",
         "excerpt": "**Advance:** PRESENT."
       }
@@ -184,8 +184,8 @@
       "advanceType": "UNSPECIFIED",
       "provenance": {
         "file": "canonical/skills/aid-design-cicd/SKILL.md",
-        "startLine": 93,
-        "endLine": 93,
+        "startLine": 99,
+        "endLine": 99,
         "sourceKind": "skill",
         "excerpt": "**Advance:** DONE."
       }

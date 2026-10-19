@@ -52,7 +52,7 @@ Every node in the chart above, in chart order, with the exact `canonical/` text 
 
 <a id="fragment-n1"></a>**1 · `INTAKE`** · _entry_
 
-~~~~plaintext title="canonical/skills/aid-design-data-model/SKILL.md#L36-L46" wrap
+~~~~plaintext title="canonical/skills/aid-design-data-model/SKILL.md#L38-L48" wrap
 ## State: INTAKE
 
 1. **Require a subject.** Empty argument -> ask one bootstrapping question ("What data
@@ -66,11 +66,11 @@ Every node in the chart above, in chart order, with the exact `canonical/` text 
 4. **Classify complexity** for the `aid-architect` dispatch (verifier tier >= producer).
 ~~~~
 
-[Source: `canonical/skills/aid-design-data-model/SKILL.md#L36-L46`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-design-data-model/SKILL.md#L36-L46) · [full step: `canonical/skills/aid-design-data-model/SKILL.md#L36-L48`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-design-data-model/SKILL.md#L36-L48)
+[Source: `canonical/skills/aid-design-data-model/SKILL.md#L38-L48`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-design-data-model/SKILL.md#L38-L48) · [full step: `canonical/skills/aid-design-data-model/SKILL.md#L38-L54`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-design-data-model/SKILL.md#L38-L54)
 
 <a id="fragment-n2"></a>**2 · `DESIGN`** · _step_
 
-~~~~plaintext title="canonical/skills/aid-design-data-model/SKILL.md#L52-L60" wrap
+~~~~plaintext title="canonical/skills/aid-design-data-model/SKILL.md#L58-L66" wrap
 ## State: DESIGN
 
 Dispatch **`aid-architect`** (clean context, tiered) to write or iterate
@@ -82,37 +82,37 @@ model and its migration land. **Never writes `.aid/knowledge/` and never writes 
 code** -- the `design` invariant (`design-lifecycle.md`).
 ~~~~
 
-[Source: `canonical/skills/aid-design-data-model/SKILL.md#L52-L60`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-design-data-model/SKILL.md#L52-L60) · [full step: `canonical/skills/aid-design-data-model/SKILL.md#L52-L62`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-design-data-model/SKILL.md#L52-L62)
+[Source: `canonical/skills/aid-design-data-model/SKILL.md#L58-L66`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-design-data-model/SKILL.md#L58-L66) · [full step: `canonical/skills/aid-design-data-model/SKILL.md#L58-L68`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-design-data-model/SKILL.md#L58-L68)
 
 <a id="fragment-n3"></a>**3 · `VERIFY`** · _loop-back_
 
-~~~~plaintext title="canonical/skills/aid-design-data-model/SKILL.md#L66-L69" wrap
+~~~~plaintext title="canonical/skills/aid-design-data-model/SKILL.md#L72-L75" wrap
 ## State: VERIFY
 
 **Full verify**, as `design-lifecycle.md` defines it. Not clean -> loop to DESIGN; the
 3-cycle circuit breaker there escalates to IMPEDIMENT + `lifecycle: Blocked`.
 ~~~~
 
-[Source: `canonical/skills/aid-design-data-model/SKILL.md#L66-L69`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-design-data-model/SKILL.md#L66-L69) · [full step: `canonical/skills/aid-design-data-model/SKILL.md#L66-L71`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-design-data-model/SKILL.md#L66-L71)
+[Source: `canonical/skills/aid-design-data-model/SKILL.md#L72-L75`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-design-data-model/SKILL.md#L72-L75) · [full step: `canonical/skills/aid-design-data-model/SKILL.md#L72-L77`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-design-data-model/SKILL.md#L72-L77)
 
 <a id="fragment-n4"></a>**4 · `PRESENT`** — hard stop -- the user decides · _step_
 
-~~~~plaintext title="canonical/skills/aid-design-data-model/SKILL.md#L75-L78" wrap
+~~~~plaintext title="canonical/skills/aid-design-data-model/SKILL.md#L81-L84" wrap
 ## State: PRESENT (hard stop -- the user decides)
 
 Set `lifecycle: Paused-Awaiting-Input`. Present the seed clearly. Assert no resolution --
 the user iterates (re-invoke this skill) or realizes it now (`/aid-create-data-model`).
 ~~~~
 
-[Source: `canonical/skills/aid-design-data-model/SKILL.md#L75-L78`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-design-data-model/SKILL.md#L75-L78) · [full step: `canonical/skills/aid-design-data-model/SKILL.md#L75-L80`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-design-data-model/SKILL.md#L75-L80)
+[Source: `canonical/skills/aid-design-data-model/SKILL.md#L81-L84`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-design-data-model/SKILL.md#L81-L84) · [full step: `canonical/skills/aid-design-data-model/SKILL.md#L81-L86`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-design-data-model/SKILL.md#L81-L86)
 
 <a id="fragment-n5"></a>**5 · `DONE`** · _exit_ · UNSPECIFIED
 
-~~~~plaintext title="canonical/skills/aid-design-data-model/SKILL.md#L84-L87" wrap
+~~~~plaintext title="canonical/skills/aid-design-data-model/SKILL.md#L90-L93" wrap
 ## State: DONE
 
 Set `lifecycle: Completed`, `updated` now, append a `## Lifecycle History` row. The seed
 persists at `.aid/design/data-model.md`; consumption happens at `/aid-create-data-model`.
 ~~~~
 
-[Source: `canonical/skills/aid-design-data-model/SKILL.md#L84-L87`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-design-data-model/SKILL.md#L84-L87) · [full step: `canonical/skills/aid-design-data-model/SKILL.md#L84-L87`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-design-data-model/SKILL.md#L84-L87)
+[Source: `canonical/skills/aid-design-data-model/SKILL.md#L90-L93`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-design-data-model/SKILL.md#L90-L93) · [full step: `canonical/skills/aid-design-data-model/SKILL.md#L90-L93`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-design-data-model/SKILL.md#L90-L93)
