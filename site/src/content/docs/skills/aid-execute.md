@@ -99,7 +99,7 @@ Every node in the chart above, in chart order, with the exact `canonical/` text 
 <a id="fragment-n6"></a>**6 · `DELIVERY-GATE`** — Per-delivery quality gate — runs once per delivery as the… · _exit_ · CHAIN
 
 ~~~~plaintext title="canonical/skills/aid-execute/SKILL.md#L227" wrap
-| DELIVERY-GATE | `references/state-delivery-gate.md` | `aid-reviewer` (tier = complexity score) | HALT (grade ≥ min) / CHAIN → FIX (grade < min) |
+| DELIVERY-GATE | `references/state-delivery-gate.md` | `aid-reviewer` (tier = complexity score) | HALT (grade ≥ min) / ASK → FIX (grade < min) |
 ~~~~
 
-[Source: `canonical/skills/aid-execute/SKILL.md#L227`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-execute/SKILL.md#L227) · [full step: `canonical/skills/aid-execute/references/state-delivery-gate.md#L1-L502`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-execute/references/state-delivery-gate.md#L1-L502)
+[Source: `canonical/skills/aid-execute/SKILL.md#L227`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-execute/SKILL.md#L227) · [full step: `canonical/skills/aid-execute/references/state-delivery-gate.md#L1-L520`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-execute/references/state-delivery-gate.md#L1-L520)

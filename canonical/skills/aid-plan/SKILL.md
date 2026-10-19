@@ -112,7 +112,7 @@ is on disk, and a mismatch goes to recovery, never to a silent re-route. Which s
 continues at come only from its work record.
 
 - No PLAN.md → **FIRST-RUN**
-- PLAN.md exists, grade below minimum or not yet graded → **REVIEW**
+- PLAN.md exists, grade below minimum or not yet graded → **CONFIRM** (the reopen question, then **REVIEW**)
 - PLAN.md exists, graded >= minimum, `deliveries/delivery-NNN/STATE.yml` written for all deliverables -> **DONE**
 
 Print the state-entry line and "you are here" map:
@@ -155,6 +155,7 @@ aid-plan  ▸ you are here
 | State | Detail | Worker | Advance |
 |-------|--------|--------|---------|
 | FIRST-RUN | `references/first-run-loop.md` | `aid-architect` | ASK → REVIEW |
+| CONFIRM | `references/review-deliverables.md` | `inline` | ASK → REVIEW |
 | REVIEW | `references/review-deliverables.md` | `aid-reviewer` | CHAIN → DONE |
 | DONE | _(inline — plan complete; print summary and exit)_ | `inline` | HALT |
 

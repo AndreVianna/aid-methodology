@@ -6,18 +6,22 @@ Load `references/task-decomposition.md` for task type rules, file format, and qu
 
 ---
 
-## REVIEW (re-run on existing tasks)
+## CONFIRM (re-run on existing tasks)
 
 `tasks/` has files and were previously completed.
 
 **Ask first:** _"Tasks for this work are already complete. Do you want to reopen for review?
 Is there something specific you want to re-examine?"_
 
-If user confirms → continue below.
-If user has a specific concern → record it as context for the review.
+**Advance:** **ASK** → [State: REVIEW]. A confirmation continues to the review; a specific concern
+the user gives is recorded as context for it.
+
+---
+
+## REVIEW (re-run on existing tasks)
 
 Enter **the same loop at step 4** — review tasks against
-current PLAN.md and feature sections.
+current PLAN.md and feature sections. Any concern the user gave at CONFIRM is context for this review.
 
 ### Load Current State
 

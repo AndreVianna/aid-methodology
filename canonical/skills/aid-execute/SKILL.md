@@ -224,7 +224,7 @@ KB docs are relevant to this task, then load them. Let the INDEX guide you.
 | FIX | `references/state-fix.md` | _(same type as EXECUTE)_ | CHAIN → REVIEW |
 | DONE | _(inline — task complete)_ | `inline` | HALT |
 | RE-RUN | `references/state-re-run.md` | `inline` | ASK → REVIEW or DONE |
-| DELIVERY-GATE | `references/state-delivery-gate.md` | `aid-reviewer` (tier = complexity score) | HALT (grade ≥ min) / CHAIN → FIX (grade < min) |
+| DELIVERY-GATE | `references/state-delivery-gate.md` | `aid-reviewer` (tier = complexity score) | HALT (grade ≥ min) / ASK → FIX (grade < min) |
 
 On state entry, print `[State: NAME]` + the "you are here" map from State Detection above.
 When a state completes, route by its `**Advance:**` type (per [`skill-steps.md`](../../aid/templates/skill-steps.md)):

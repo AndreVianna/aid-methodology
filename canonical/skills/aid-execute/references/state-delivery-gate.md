@@ -269,10 +269,21 @@ Gate grade: {grade}   Minimum: {min}   Cycle: {N}
 
 ## Step 4: ROUTE (Pass or Fix)
 
+A check only: it shows nothing to the user and asks nothing.
+
 | Condition | Action |
 |-----------|--------|
-| Grade ≥ Minimum Grade | Gate PASS → proceed to Step 6 (RECORD) |
-| Grade < Minimum Grade | → proceed to Step 5 (FIX) |
+| Grade ≥ Minimum Grade | Gate PASS → Step 6 (RECORD) |
+| Grade < Minimum Grade, CODE issues remain | → Step 4A (PRESENT) |
+| Grade < Minimum Grade, only non-CODE issues remain | → Step 4B (UPSTREAM) |
+
+**Advance:** **CHAIN** → Step 6 (RECORD) when grade ≥ minimum; **CHAIN** → Step 4A (PRESENT) when grade < minimum and CODE issues remain; **CHAIN** → Step 4B (UPSTREAM) when grade < minimum and only non-CODE issues remain.
+
+---
+
+## Step 4A: PRESENT (Ask Before Fixing CODE Issues)
+
+Reached only when grade < minimum and CODE issues remain.
 
 **Present all issues to the user:**
 
@@ -290,10 +301,6 @@ Deferred [HIGH]s from quick checks (from delivery-NNN-issues.md):
 | Source task | Severity | Description | Status |
 | task-NNN    | [HIGH]   | ...         | Open   |
 
-{If grade ≥ minimum:}
-✅ Gate PASS. Grade meets minimum. Proceeding to RECORD.
-
-{If grade < minimum:}
 Gate grade below minimum. Next steps:
 - CODE issues (#1, #3): I'll fix these automatically.
 - TASK issues (#2): Task spec update needed. {explain}
@@ -310,8 +317,18 @@ Gate grade below minimum. Next steps:
 - **KB** → Write Q&A to `.aid/knowledge/STATE.md` `## Q&A (Pending)` →
   suggest `/aid-discover`
 
-**If ONLY non-CODE issues remain:** **STOP.** The delivery is as good as it
-can be -- the problem is upstream. Present what needs to change and where.
+**Advance:** **ASK** → Step 5 (FIX). Ask the user, through the question protocol, whether to fix the
+CODE issues now, recommending yes. The TASK, SPEC and KB issues stay with the user. Continue to Step 5
+once the question is answered.
+
+---
+
+## Step 4B: UPSTREAM (Hand-Off for Non-CODE Issues Only)
+
+Reached only when grade < minimum and every remaining issue is TASK, SPEC or KB. The non-CODE
+issue handling in Step 4A applies here too.
+
+**STOP.** The delivery is as good as it can be -- the problem is upstream. Present what needs to change and where.
 Emit delivery and pipeline pause signals (silent state-writes -- no output, no gate):
 ```bash
 bash .aid/runtime/scripts/execute/writeback-state.sh --delivery-id NNN --lifecycle Blocked
@@ -320,7 +337,8 @@ bash .aid/runtime/scripts/execute/writeback-state.sh --pipeline --field "Pause R
 bash .aid/runtime/scripts/execute/writeback-state.sh --pipeline --field Updated --value "$(date -u +%Y-%m-%dT%H:%M:%SZ)"
 ```
 
-**Advance:** **CHAIN** → Step 5 (FIX) when grade < minimum; **CHAIN** → Step 6 (RECORD) when grade ≥ minimum.
+**Advance:** **ASK** the user to run `/aid-specify` (SPEC issues) or `/aid-discover` (KB issues), and to
+update the TASK issues, before re-running `/aid-execute`; then **HALT**.
 
 ---
 
@@ -335,7 +353,7 @@ the tasks — if mixed, use `aid-developer` as the default). Do NOT dispatch the
 reviewer ≠ executor invariant applies here too.
 
 **Executor fixes CODE issues only.** Non-CODE issues (TASK, SPEC, KB) were
-surfaced to the user in Step 4 and do not reach this step.
+surfaced to the user in Step 4A and do not reach this step.
 
 **Do NOT modify the ledger during FIX.** Status updates happen in the next REVIEW cycle
 when the reviewer re-verifies.

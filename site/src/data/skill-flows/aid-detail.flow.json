@@ -30,28 +30,53 @@
     {
       "id": "n2",
       "order": 2,
-      "name": "REVIEW",
+      "name": "CONFIRM",
       "label": "Existing task files found; re-review against current…",
-      "kind": "step",
+      "kind": "entry",
       "terminal": null,
       "provenance": {
         "file": "canonical/skills/aid-detail/SKILL.md",
         "startLine": 95,
         "endLine": 95,
         "sourceKind": "skill",
-        "excerpt": "| REVIEW | `references/review.md` | `aid-reviewer` | CHAIN → DONE |"
+        "excerpt": "| CONFIRM | `references/review.md` | `inline` | ASK → REVIEW |"
       },
       "detail": {
         "file": "canonical/skills/aid-detail/references/review.md",
         "startLine": 1,
-        "endLine": 83,
+        "endLine": 87,
         "sourceKind": "worker",
-        "excerpt": "# REVIEW — Re-review Existing Tasks\n\nExisting task files found; re-review against current PLAN.md and feature sections.\n\nLoad `references/task-decomposition.md` for task type rules, file format, and quality criteria.\n\n---\n\n## REVIEW (re-run on existing tasks)\n\n`tasks/` has files and were previously completed.\n\n**Ask first:** _\"Tasks for this work are already complete. Do you want to reopen for review?\nIs there something specific you want to re-examine?\"_\n\nIf user confirms → continue below.\nIf user has a specific concern → record it as context for the review.\n\nEnter **the same loop at step 4** — review tasks against\ncurrent PLAN.md and feature sections.\n\n### Load Current State\n\nRe-read PLAN.md, every `### Feature NNN` section of REQUIREMENTS.md § 11, and all\nexisting task files.\n\n### Review Each Deliverable's Tasks\n\nFor each deliverable, check its corresponding tasks:\n\n1. **PLAN.md changed** — deliverables added, removed, resequenced?\n2. **Feature sections changed** — feature content updated since tasks were written?\n3. **Orphan tasks** — tasks referencing deliverables/features that no longer exist?\n4. **Missing tasks** — new deliverables/features with no corresponding tasks?\n5. **Sequence broken** — task order invalid given changes?\n\n### Dispatch the Reviewer\n\nRender `references/reviewer-brief.md` with:\n- `{{SCOPE}}` = `whole-list`\n- `{{ARTIFACTS}}` = every `.aid/works/{work}/deliveries/delivery-NNN/tasks/task-NNN/DETAIL.md` (all deliveries) + the full `PLAN.md` (incl. Execution Graphs)\n- `{{CONTEXT}}` = `Re-review of all tasks for work-NNN after PLAN/SPEC changes.`\n\nInclude in the brief file (not in the dispatch prompt — `reviewer-dispatch.md` § Dispatch by path):\n- **Ledger lifecycle:** \"Read `{{LEDGER}}` if it exists.\n  For each existing row: verify on disk, update Status (Pending→Fixed if resolved;\n  Fixed→Recurred if regressed). Append new findings with Status: Pending.\n  Output per `.aid/runtime/templates/reviewer-ledger-schema.md` — ONE table, no narrative.\"\n\nDispatch the `aid-reviewer` subagent **at Large tier** (the executor is the Large\n`aid-architect`; reviewer tier >= executor tier per\n`.aid/runtime/templates/agent-dispatch-tiering.md`) with a pointer to the rendered brief file\n(`reviewer-dispatch.md` § Dispatch by path).\n\n### Grade Overall\n\nAfter aid-reviewer returns, run grade.sh:\n\n```bash\nbash .aid/runtime/scripts/grade.sh --explain {{LEDGER}}\n```\n\nCompare to minimum grade from `bash .aid/runtime/scripts/config/read-setting.sh --skill detail --key minimum_grade --default A`.\n\n| Condition | Action |\n|-----------|--------|\n| Grade ≥ minimum | Print summary, done. Delete ledger: `rm -f {{LEDGER}}` |\n| Grade < minimum, tasks fixable | List findings, re-enter loop for affected deliverables. |\n| Grade < minimum, most tasks orphaned | Recommend `--reset`. |\n\nFor grades below minimum: re-enter the loop for affected deliverables.\nUpdate task files, create new ones, delete orphans, renumber if needed.\n\n[State: REVIEW] complete.\n\n**Cycle 1 also runs the cross-document contradiction pass (Guard 2).** This review receives\nevery artifact of the phase at once, which is the only vantage point from which a\ncontradiction between two of them is visible. Run it on cycle 1 only -- that makes it\nonce per phase by construction. Definition:\n`reviewer-dispatch.md` section \"The cross-document contradiction pass (Guard 2)\".\n\n**Advance:** **CHAIN** → [State: DONE] (continue inline).\n"
+        "excerpt": "# REVIEW — Re-review Existing Tasks\n\nExisting task files found; re-review against current PLAN.md and feature sections.\n\nLoad `references/task-decomposition.md` for task type rules, file format, and quality criteria.\n\n---\n\n## CONFIRM (re-run on existing tasks)\n\n`tasks/` has files and were previously completed.\n\n**Ask first:** _\"Tasks for this work are already complete. Do you want to reopen for review?\nIs there something specific you want to re-examine?\"_\n\n**Advance:** **ASK** → [State: REVIEW]. A confirmation continues to the review; a specific concern\nthe user gives is recorded as context for it.\n\n---\n\n## REVIEW (re-run on existing tasks)\n\nEnter **the same loop at step 4** — review tasks against\ncurrent PLAN.md and feature sections. Any concern the user gave at CONFIRM is context for this review.\n\n### Load Current State\n\nRe-read PLAN.md, every `### Feature NNN` section of REQUIREMENTS.md § 11, and all\nexisting task files.\n\n### Review Each Deliverable's Tasks\n\nFor each deliverable, check its corresponding tasks:\n\n1. **PLAN.md changed** — deliverables added, removed, resequenced?\n2. **Feature sections changed** — feature content updated since tasks were written?\n3. **Orphan tasks** — tasks referencing deliverables/features that no longer exist?\n4. **Missing tasks** — new deliverables/features with no corresponding tasks?\n5. **Sequence broken** — task order invalid given changes?\n\n### Dispatch the Reviewer\n\nRender `references/reviewer-brief.md` with:\n- `{{SCOPE}}` = `whole-list`\n- `{{ARTIFACTS}}` = every `.aid/works/{work}/deliveries/delivery-NNN/tasks/task-NNN/DETAIL.md` (all deliveries) + the full `PLAN.md` (incl. Execution Graphs)\n- `{{CONTEXT}}` = `Re-review of all tasks for work-NNN after PLAN/SPEC changes.`\n\nInclude in the brief file (not in the dispatch prompt — `reviewer-dispatch.md` § Dispatch by path):\n- **Ledger lifecycle:** \"Read `{{LEDGER}}` if it exists.\n  For each existing row: verify on disk, update Status (Pending→Fixed if resolved;\n  Fixed→Recurred if regressed). Append new findings with Status: Pending.\n  Output per `.aid/runtime/templates/reviewer-ledger-schema.md` — ONE table, no narrative.\"\n\nDispatch the `aid-reviewer` subagent **at Large tier** (the executor is the Large\n`aid-architect`; reviewer tier >= executor tier per\n`.aid/runtime/templates/agent-dispatch-tiering.md`) with a pointer to the rendered brief file\n(`reviewer-dispatch.md` § Dispatch by path).\n\n### Grade Overall\n\nAfter aid-reviewer returns, run grade.sh:\n\n```bash\nbash .aid/runtime/scripts/grade.sh --explain {{LEDGER}}\n```\n\nCompare to minimum grade from `bash .aid/runtime/scripts/config/read-setting.sh --skill detail --key minimum_grade --default A`.\n\n| Condition | Action |\n|-----------|--------|\n| Grade ≥ minimum | Print summary, done. Delete ledger: `rm -f {{LEDGER}}` |\n| Grade < minimum, tasks fixable | List findings, re-enter loop for affected deliverables. |\n| Grade < minimum, most tasks orphaned | Recommend `--reset`. |\n\nFor grades below minimum: re-enter the loop for affected deliverables.\nUpdate task files, create new ones, delete orphans, renumber if needed.\n\n[State: REVIEW] complete.\n\n**Cycle 1 also runs the cross-document contradiction pass (Guard 2).** This review receives\nevery artifact of the phase at once, which is the only vantage point from which a\ncontradiction between two of them is visible. Run it on cycle 1 only -- that makes it\nonce per phase by construction. Definition:\n`reviewer-dispatch.md` section \"The cross-document contradiction pass (Guard 2)\".\n\n**Advance:** **CHAIN** → [State: DONE] (continue inline).\n"
       }
     },
     {
       "id": "n3",
       "order": 3,
+      "name": "REVIEW",
+      "label": "Existing task files found; re-review against current…",
+      "kind": "exit",
+      "terminal": {
+        "advanceType": "ASK",
+        "handoff": "State: REVIEW]. A confirmation continues to the review; a specific concern the user gives is recorded as context for it"
+      },
+      "provenance": {
+        "file": "canonical/skills/aid-detail/SKILL.md",
+        "startLine": 96,
+        "endLine": 96,
+        "sourceKind": "skill",
+        "excerpt": "| REVIEW | `references/review.md` | `aid-reviewer` | CHAIN → DONE |"
+      },
+      "detail": {
+        "file": "canonical/skills/aid-detail/references/review.md",
+        "startLine": 1,
+        "endLine": 87,
+        "sourceKind": "worker",
+        "excerpt": "# REVIEW — Re-review Existing Tasks\n\nExisting task files found; re-review against current PLAN.md and feature sections.\n\nLoad `references/task-decomposition.md` for task type rules, file format, and quality criteria.\n\n---\n\n## CONFIRM (re-run on existing tasks)\n\n`tasks/` has files and were previously completed.\n\n**Ask first:** _\"Tasks for this work are already complete. Do you want to reopen for review?\nIs there something specific you want to re-examine?\"_\n\n**Advance:** **ASK** → [State: REVIEW]. A confirmation continues to the review; a specific concern\nthe user gives is recorded as context for it.\n\n---\n\n## REVIEW (re-run on existing tasks)\n\nEnter **the same loop at step 4** — review tasks against\ncurrent PLAN.md and feature sections. Any concern the user gave at CONFIRM is context for this review.\n\n### Load Current State\n\nRe-read PLAN.md, every `### Feature NNN` section of REQUIREMENTS.md § 11, and all\nexisting task files.\n\n### Review Each Deliverable's Tasks\n\nFor each deliverable, check its corresponding tasks:\n\n1. **PLAN.md changed** — deliverables added, removed, resequenced?\n2. **Feature sections changed** — feature content updated since tasks were written?\n3. **Orphan tasks** — tasks referencing deliverables/features that no longer exist?\n4. **Missing tasks** — new deliverables/features with no corresponding tasks?\n5. **Sequence broken** — task order invalid given changes?\n\n### Dispatch the Reviewer\n\nRender `references/reviewer-brief.md` with:\n- `{{SCOPE}}` = `whole-list`\n- `{{ARTIFACTS}}` = every `.aid/works/{work}/deliveries/delivery-NNN/tasks/task-NNN/DETAIL.md` (all deliveries) + the full `PLAN.md` (incl. Execution Graphs)\n- `{{CONTEXT}}` = `Re-review of all tasks for work-NNN after PLAN/SPEC changes.`\n\nInclude in the brief file (not in the dispatch prompt — `reviewer-dispatch.md` § Dispatch by path):\n- **Ledger lifecycle:** \"Read `{{LEDGER}}` if it exists.\n  For each existing row: verify on disk, update Status (Pending→Fixed if resolved;\n  Fixed→Recurred if regressed). Append new findings with Status: Pending.\n  Output per `.aid/runtime/templates/reviewer-ledger-schema.md` — ONE table, no narrative.\"\n\nDispatch the `aid-reviewer` subagent **at Large tier** (the executor is the Large\n`aid-architect`; reviewer tier >= executor tier per\n`.aid/runtime/templates/agent-dispatch-tiering.md`) with a pointer to the rendered brief file\n(`reviewer-dispatch.md` § Dispatch by path).\n\n### Grade Overall\n\nAfter aid-reviewer returns, run grade.sh:\n\n```bash\nbash .aid/runtime/scripts/grade.sh --explain {{LEDGER}}\n```\n\nCompare to minimum grade from `bash .aid/runtime/scripts/config/read-setting.sh --skill detail --key minimum_grade --default A`.\n\n| Condition | Action |\n|-----------|--------|\n| Grade ≥ minimum | Print summary, done. Delete ledger: `rm -f {{LEDGER}}` |\n| Grade < minimum, tasks fixable | List findings, re-enter loop for affected deliverables. |\n| Grade < minimum, most tasks orphaned | Recommend `--reset`. |\n\nFor grades below minimum: re-enter the loop for affected deliverables.\nUpdate task files, create new ones, delete orphans, renumber if needed.\n\n[State: REVIEW] complete.\n\n**Cycle 1 also runs the cross-document contradiction pass (Guard 2).** This review receives\nevery artifact of the phase at once, which is the only vantage point from which a\ncontradiction between two of them is visible. Run it on cycle 1 only -- that makes it\nonce per phase by construction. Definition:\n`reviewer-dispatch.md` section \"The cross-document contradiction pass (Guard 2)\".\n\n**Advance:** **CHAIN** → [State: DONE] (continue inline).\n"
+      }
+    },
+    {
+      "id": "n4",
+      "order": 4,
       "name": "DONE",
       "label": "Done",
       "kind": "exit",
@@ -61,8 +86,8 @@
       },
       "provenance": {
         "file": "canonical/skills/aid-detail/SKILL.md",
-        "startLine": 96,
-        "endLine": 96,
+        "startLine": 97,
+        "endLine": 97,
         "sourceKind": "skill",
         "excerpt": "| DONE | — | `inline` | HALT |"
       },
@@ -86,7 +111,7 @@
     },
     {
       "from": "n1",
-      "to": "n2",
+      "to": "n3",
       "kind": "branch",
       "condition": "once the user has approved the task breakdown",
       "advanceType": "ASK",
@@ -100,24 +125,54 @@
     },
     {
       "from": "n2",
+      "to": "n2",
+      "kind": "loop-back",
+      "condition": "otherwise",
+      "advanceType": "UNSPECIFIED",
+      "provenance": {
+        "file": "canonical/skills/aid-detail/references/review.md",
+        "startLine": 16,
+        "endLine": 17,
+        "sourceKind": "worker",
+        "excerpt": "**Advance:** **ASK** → [State: REVIEW]. A confirmation continues to the review; a specific concern\nthe user gives is recorded as context for it."
+      }
+    },
+    {
+      "from": "n2",
       "to": "n3",
+      "kind": "branch",
+      "condition": "A confirmation continues to the review; a specific concern the user gives is…",
+      "advanceType": "ASK",
+      "provenance": {
+        "file": "canonical/skills/aid-detail/references/review.md",
+        "startLine": 16,
+        "endLine": 17,
+        "sourceKind": "worker",
+        "excerpt": "**Advance:** **ASK** → [State: REVIEW]. A confirmation continues to the review; a specific concern\nthe user gives is recorded as context for it."
+      }
+    },
+    {
+      "from": "n3",
+      "to": "n4",
       "kind": "sequence",
       "condition": null,
       "advanceType": "CHAIN",
       "provenance": {
-        "file": "canonical/skills/aid-detail/references/review.md",
-        "startLine": 82,
-        "endLine": 82,
-        "sourceKind": "worker",
-        "excerpt": "**Advance:** **CHAIN** → [State: DONE] (continue inline)."
+        "file": "canonical/skills/aid-detail/SKILL.md",
+        "startLine": 96,
+        "endLine": 96,
+        "sourceKind": "skill",
+        "excerpt": "**Advance:** CHAIN → DONE"
       }
     }
   ],
   "entries": [
-    "n1"
+    "n1",
+    "n2"
   ],
   "exits": [
-    "n3"
+    "n3",
+    "n4"
   ],
   "sources": [
     "canonical/skills/aid-detail/SKILL.md",
@@ -125,6 +180,6 @@
     "canonical/skills/aid-detail/references/review.md"
   ],
   "warnings": [
-    "[gen-skills] extract-dispatch: unrecognised detail cell '—' for state 'DONE' (canonical/skills/aid-detail/SKILL.md:96)"
+    "[gen-skills] extract-dispatch: unrecognised detail cell '—' for state 'DONE' (canonical/skills/aid-detail/SKILL.md:97)"
   ]
 }

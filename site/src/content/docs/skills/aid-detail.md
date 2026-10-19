@@ -26,17 +26,22 @@ flowchart TB
   classDef aidLoopBack fill:#1e3a8a,stroke:#1e3a8a,color:#fff
   classDef aidStep fill:#1a2035,stroke:#d4a853,color:#f1f5f9
   n1(["FIRST-RUN<br/>No task files exist yet."])
-  n2["REVIEW<br/>Existing task files found; re-review against current…"]
-  n3(["DONE"])
+  n2(["CONFIRM<br/>Existing task files found; re-review against current…"])
+  n3(["REVIEW<br/>Existing task files found; re-review against current…"])
+  n4(["DONE"])
   n1 -. "otherwise" .- n1
-  n1 -->|"once the user has approved the task breakdown"| n2
-  n2 --> n3
+  n1 -->|"once the user has approved the task breakdown"| n3
+  n2 -. "otherwise" .- n2
+  n2 -->|"A confirmation continues to the review; a specific concern the user gives is…"| n3
+  n3 --> n4
   class n1 aidEntry
-  class n2 aidStep
+  class n2 aidEntry
   class n3 aidExit
+  class n4 aidExit
   class n1 aidNode
   class n2 aidNode
   class n3 aidNode
+  class n4 aidNode
 ```
 ## Source fragments
 
@@ -50,18 +55,26 @@ Every node in the chart above, in chart order, with the exact `canonical/` text 
 
 [Source: `canonical/skills/aid-detail/SKILL.md#L94`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-detail/SKILL.md#L94) · [full step: `canonical/skills/aid-detail/references/first-run.md#L1-L129`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-detail/references/first-run.md#L1-L129)
 
-<a id="fragment-n2"></a>**2 · `REVIEW`** — Existing task files found; re-review against current… · _step_
+<a id="fragment-n2"></a>**2 · `CONFIRM`** — Existing task files found; re-review against current… · _entry_
 
 ~~~~plaintext title="canonical/skills/aid-detail/SKILL.md#L95" wrap
+| CONFIRM | `references/review.md` | `inline` | ASK → REVIEW |
+~~~~
+
+[Source: `canonical/skills/aid-detail/SKILL.md#L95`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-detail/SKILL.md#L95) · [full step: `canonical/skills/aid-detail/references/review.md#L1-L87`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-detail/references/review.md#L1-L87)
+
+<a id="fragment-n3"></a>**3 · `REVIEW`** — Existing task files found; re-review against current… · _exit_ · ASK
+
+~~~~plaintext title="canonical/skills/aid-detail/SKILL.md#L96" wrap
 | REVIEW | `references/review.md` | `aid-reviewer` | CHAIN → DONE |
 ~~~~
 
-[Source: `canonical/skills/aid-detail/SKILL.md#L95`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-detail/SKILL.md#L95) · [full step: `canonical/skills/aid-detail/references/review.md#L1-L83`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-detail/references/review.md#L1-L83)
+[Source: `canonical/skills/aid-detail/SKILL.md#L96`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-detail/SKILL.md#L96) · [full step: `canonical/skills/aid-detail/references/review.md#L1-L87`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-detail/references/review.md#L1-L87)
 
-<a id="fragment-n3"></a>**3 · `DONE`** · _exit_ · HALT
+<a id="fragment-n4"></a>**4 · `DONE`** · _exit_ · HALT
 
-~~~~plaintext title="canonical/skills/aid-detail/SKILL.md#L96" wrap
+~~~~plaintext title="canonical/skills/aid-detail/SKILL.md#L97" wrap
 | DONE | — | `inline` | HALT |
 ~~~~
 
-[Source: `canonical/skills/aid-detail/SKILL.md#L96`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-detail/SKILL.md#L96)
+[Source: `canonical/skills/aid-detail/SKILL.md#L97`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-detail/SKILL.md#L97)

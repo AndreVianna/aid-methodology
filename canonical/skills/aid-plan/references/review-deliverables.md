@@ -2,18 +2,22 @@
 
 PLAN.md exists and was previously completed; re-review deliverables against the current feature sections and KB.
 
-## REVIEW (re-run on existing PLAN.md)
+## CONFIRM (re-run on existing PLAN.md)
 
 PLAN.md exists and was previously completed.
 
 **Ask first:** _"This plan is already complete. Do you want to reopen it for review?
 Is there something specific you want to re-examine?"_
 
-If user confirms → continue below.
-If user has a specific concern → record it as context for the review.
+**Advance:** **ASK** → [State: REVIEW]. A confirmation continues to the review; a specific concern
+the user gives is recorded as context for it.
+
+---
+
+## REVIEW (re-run on existing PLAN.md)
 
 Enter **the same loop at step 4** — review each deliverable
-against current reality.
+against current reality. Any concern the user gave at CONFIRM is context for this review.
 
 ### Load Current State
 
