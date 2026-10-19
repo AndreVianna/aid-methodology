@@ -1,3 +1,8 @@
+# RETIRED (Q156)
+
+This channel is retired: the Codex session did not pick up jobs reliably. Its open jobs (h006, h007,
+h008) went back to Claude sub-agents. Nothing here is active; the file stays as the record of h000-h005.
+
 # Claude–Codex coordination for work-003
 
 Two AI sessions share the work-003 build:

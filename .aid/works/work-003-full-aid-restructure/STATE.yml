@@ -1803,3 +1803,11 @@ qa:
     suggested: 'Relax the rule for jobs that name the files Codex may write'
     answer: 'A (maintainer): the Codex environment now allows editing, in a new Codex session; h002 re-opened.'
     applied_to: 'handoff h002 revision 2; Q154 building tier available'
+  - id: Q156
+    category: Building
+    impact: High
+    state: Answered
+    context: 'The Codex hand-off stalled: its session did not pick up jobs reliably, and a full day was lost; h006, h007 and h008 were never started.'
+    suggested: 'Retire the Codex channel; every Codex job goes back to Claude sub-agents'
+    answer: 'Yes (maintainer): stop delegating to Codex. Task reviews go to Sonnet reviewers (Q141), fix rounds to Haiku, delivery reviews to Opus (Q143); machine-limited runs stay known limits. h006, h007 and h008 are reassigned. Replaces Q154.'
+    applied_to: 'handoff/PROTOCOL.md (retired); every task from delivery-002 wave 3 on'
