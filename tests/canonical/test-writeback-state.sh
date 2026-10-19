@@ -47,6 +47,9 @@
 #   Unit 23: Name -> display_name task field
 #   Unit 24: AID_WORK_DIR-only caller reaches mode_append_issue's work-dir branch
 #   Unit 25: --findings on the feature-001 flattened layout (quick_check stored as one verbatim scalar)
+#   Unit 29: record modes -- --create options and refusals, old phase names refused on write, failed
+#            writes (lock timeout, unwritable folder) leave the record unchanged, --check cases, finishing
+#            clears the saved skill, --step, --reroute, --repair, and both dashboard readers parse each record
 #
 # Exit codes (SPEC.md SS L-2):
 #   0 success | 1 STATE.yml/artifact missing | 2 lock contention | 3 writeback unverifiable |
@@ -2480,6 +2483,391 @@ code=0
 assert_exit_zero "$code" "28b: --ask --project in an empty directory exits 0"
 assert_file_exists "$R28P/.aid/STATE.yml" "28b: --ask --project created .aid/STATE.yml"
 assert_eq "$(file_mode "$R28P/.aid/STATE.yml")" "644" "28b: the created .aid/STATE.yml is 0644, not the temporary 0600"
+
+# ---------------------------------------------------------------------------
+echo ""
+echo "=== Unit 29: record modes (--create, --step, --reroute, --repair, --check, failed writes, phase names, readers) ==="
+
+# Every case works in a throwaway repo under R29. The work folder is
+# .aid/works/work-001-NAME, the path both dashboard readers scan, so the reader
+# checks read the record the way a real project is read. HOME is pinned for every
+# call, and AID_SKILLS_DIR is cleared unless a case sets W29_SKILLS, so the
+# --check skill rule is decided only where a case asks for it.
+R29="${TMPDIR_BASE}/unit29"
+R29_HOME="${R29}/home"
+mkdir -p "$R29_HOME"
+# Case 29d runs the writer as an unprivileged user, which must reach the fixtures.
+chmod 755 "$TMPDIR_BASE" "$R29"
+
+# The two dashboard readers, as one-line probes: the work count and the warnings.
+W29_PY="${TMPDIR_BASE}/w29-readers.py"
+cat > "$W29_PY" <<'PYEOF'
+import sys
+sys.dont_write_bytecode = True
+sys.path.insert(0, sys.argv[2])
+from reader.reader import read_repo
+m = read_repo(sys.argv[1])
+print("works=%d warnings=%d" % (len(m.works), len(m.read.parse_warnings)))
+for w in m.read.parse_warnings:
+    print("warning: " + w)
+PYEOF
+W29_MJS="${TMPDIR_BASE}/w29-readers.mjs"
+cat > "$W29_MJS" <<'MJSEOF'
+import { pathToFileURL } from "node:url";
+const [dash, root] = process.argv.slice(2);
+const { readRepo } = await import(pathToFileURL(`${dash}/server/reader.mjs`).href);
+const m = readRepo(root);
+console.log(`works=${m.works.length} warnings=${m.read.parse_warnings.length}`);
+for (const w of m.read.parse_warnings) console.log(`warning: ${w}`);
+MJSEOF
+
+W29_SKILLS=""
+RC29=0
+OUT29=""
+
+# w29 DIR ARGS...: one writer call in DIR against DIR/STATE.yml. Sets RC29 and OUT29.
+w29() {
+    local d="$1"
+    shift
+    RC29=0
+    OUT29="$(cd "$d" && HOME="$R29_HOME" AID_LOCK_TIMEOUT=1 AID_SKILLS_DIR="$W29_SKILLS" \
+        AID_STATE_FILE="$d/STATE.yml" bash "$SCRIPT" "$@" 2>&1)" || RC29=$?
+}
+
+# w29_new NAME: a fresh repo with an empty work folder. Sets W29_ROOT and W29_DIR
+# (no subshell, so a failed assertion inside a case still counts).
+w29_new() {
+    W29_ROOT="${R29}/$1"
+    W29_DIR="${W29_ROOT}/.aid/works/work-001-$1"
+    mkdir -p "$W29_DIR"
+}
+
+# w29_record NAME: a fresh work folder holding a healthy record, made by --create
+# (reading 'bug fix', saved skill aid-fix at step s1).
+w29_record() {
+    w29_new "$1"
+    w29 "$W29_DIR" --create --work-dir . --reading 'bug fix' --request 'the request' --skill aid-fix --step s1
+    assert_eq "$RC29" "0" "$1: setup --create exits 0"
+}
+
+# w29_sed FILE EXPR: an in-place edit that reads the same on GNU and BSD sed.
+w29_sed() {
+    sed "$2" "$1" > "$1.w29tmp" && mv "$1.w29tmp" "$1"
+}
+
+# w29_absent PATH: "absent" when PATH does not exist, else "present".
+w29_absent() {
+    if [[ -e "$1" ]]; then echo present; else echo absent; fi
+}
+
+# w29_readers_clean ROOT LABEL: both dashboard readers parse the repo's one work
+# with no warning. A missing interpreter skips its half with a passing line.
+w29_readers_clean() {
+    local out
+    if command -v python3 >/dev/null 2>&1; then
+        out="$(HOME="$R29_HOME" python3 "$W29_PY" "$1" "${SCRIPT_DIR}/../../dashboard" 2>&1)"
+        if [[ "$(head -n 1 <<< "$out")" == "works=1 warnings=0" ]]; then
+            pass "$2: the Python reader parses the record with no warning"
+        else
+            fail "$2: the Python reader reports -- $out"
+        fi
+    else
+        pass "$2: python3 not present; Python reader check skipped"
+    fi
+    if command -v node >/dev/null 2>&1; then
+        out="$(HOME="$R29_HOME" node "$W29_MJS" "${SCRIPT_DIR}/../../dashboard" "$1" 2>&1)"
+        if [[ "$(head -n 1 <<< "$out")" == "works=1 warnings=0" ]]; then
+            pass "$2: the Node reader parses the record with no warning"
+        else
+            fail "$2: the Node reader reports -- $out"
+        fi
+    else
+        pass "$2: node not present; Node reader check skipped"
+    fi
+}
+
+# --- 29a: --create writes every option in one write -------------------------
+echo ""
+echo "--- 29a: --create writes every option in one write ---"
+w29_new create-all
+S29A="$W29_DIR/STATE.yml"
+w29 "$W29_DIR" --create --work-dir . --reading 'bug fix' --request 'the request' --skill aid-fix \
+    --step s1 --phase Building --depth full --path full --minimum-grade B+
+assert_eq "$RC29" "0" "29a: --create with every option exits 0"
+assert_file_contains "$S29A" "  reading: 'bug fix'" "29a: intent.reading written"
+assert_file_contains "$S29A" "  request: 'the request'" "29a: intent.request written"
+assert_file_contains "$S29A" "  depth: full" "29a: intent.depth written"
+assert_file_contains "$S29A" "  path: full" "29a: pipeline.path written"
+assert_file_contains "$S29A" "  initiator: aid-fix" "29a: pipeline.initiator written"
+assert_file_contains "$S29A" "active_skill: aid-fix" "29a: active_skill written"
+assert_file_contains "$S29A" "step: s1" "29a: step written"
+assert_file_contains "$S29A" "phase: Building" "29a: phase written"
+assert_file_contains "$S29A" "lifecycle: Running" "29a: lifecycle written as Running"
+assert_file_contains "$S29A" "minimum_grade: B+" "29a: minimum grade written"
+assert_file_contains "$S29A" "started: '$(date -u +%Y-%m-%d)'" "29a: started written"
+assert_file_contains "$S29A" "event: 'Work created by aid-fix'" "29a: the creation entry names the creating skill"
+assert_file_not_contains "$S29A" "Initial scaffold by aid-config" "29a: the template's seed entry is replaced"
+assert_eq "$(ls -A "$W29_DIR")" "STATE.yml" "29a: no staging file is left beside the record"
+w29_readers_clean "$W29_ROOT" "29a"
+
+# --- 29b: --create refusals --------------------------------------------------
+echo ""
+echo "--- 29b: --create exits 5 on a missing option, 4 on a bad value, 8 on an existing record ---"
+w29_new create-refused
+D29B="$W29_DIR"
+w29 "$D29B" --create --work-dir . --request 'r' --skill aid-fix --step s1
+assert_eq "$RC29" "5" "29b: --create without --reading exits 5"
+w29 "$D29B" --create --work-dir . --reading 'bug fix' --skill aid-fix --step s1
+assert_eq "$RC29" "5" "29b: --create without --request exits 5"
+w29 "$D29B" --create --work-dir . --reading 'bug fix' --request 'r' --step s1
+assert_eq "$RC29" "5" "29b: --create without --skill exits 5"
+w29 "$D29B" --create --work-dir . --reading 'bug fix' --request 'r' --skill aid-fix
+assert_eq "$RC29" "5" "29b: --create without --step exits 5"
+assert_eq "$(w29_absent "$D29B/STATE.yml")" "absent" "29b: a refused --create writes no record"
+w29 "$D29B" --create --work-dir . --reading 'nonsense' --request 'r' --skill aid-fix --step s1
+assert_eq "$RC29" "4" "29b: --create with an invalid --reading exits 4"
+w29 "$D29B" --create --work-dir . --reading 'bug fix' --request 'r' --skill plan --step s1
+assert_eq "$RC29" "4" "29b: --create with a --skill outside aid-{skill} exits 4"
+w29 "$D29B" --create --work-dir . --reading 'bug fix' --request 'r' --skill aid-fix --step 's 1'
+assert_eq "$RC29" "4" "29b: --create with an invalid --step exits 4"
+w29 "$D29B" --create --work-dir . --reading 'bug fix' --request 'r' --skill aid-fix --step s1 --depth medium
+assert_eq "$RC29" "4" "29b: --create with an invalid --depth exits 4"
+w29 "$D29B" --create --work-dir . --reading 'bug fix' --request 'r' --skill aid-fix --step s1 --minimum-grade Z
+assert_eq "$RC29" "4" "29b: --create with an invalid --minimum-grade exits 4"
+w29 "$D29B" --create --work-dir . --reading 'bug fix' --request 'r' --skill aid-fix --step s1 --phase Execute
+assert_eq "$RC29" "4" "29b: --create with an old phase name exits 4"
+w29 "$D29B" --create --work-dir . --reading 'bug fix' --request 'r' --skill aid-fix --step s1
+assert_eq "$RC29" "0" "29b: --create on a clean folder exits 0"
+cp "$D29B/STATE.yml" "${R29}/29b.before"
+w29 "$D29B" --create --work-dir . --reading 'change' --request 'again' --skill aid-plan --step p1
+assert_eq "$RC29" "8" "29b: --create over an existing STATE.yml exits 8"
+assert_eq "$(cmp -s "${R29}/29b.before" "$D29B/STATE.yml" && echo same || echo changed)" "same" \
+    "29b: the refused --create leaves the record byte-for-byte unchanged"
+
+# --- 29c: an old phase name is refused on write ------------------------------
+echo ""
+echo "--- 29c: an old phase name is refused by --pipeline --field Phase ---"
+w29_record old-phase-write
+S29C="$W29_DIR/STATE.yml"
+cp "$S29C" "${R29}/29c.before"
+for old_phase in Describe Define Specify Plan Detail Execute; do
+    w29 "$W29_DIR" --pipeline --field Phase --value "$old_phase"
+    assert_eq "$RC29" "4" "29c: --pipeline --field Phase --value $old_phase exits 4"
+done
+assert_eq "$(cmp -s "${R29}/29c.before" "$S29C" && echo same || echo changed)" "same" \
+    "29c: the refused phase writes leave the record byte-for-byte unchanged"
+
+# --- 29d: a failed write leaves the record byte-for-byte unchanged -----------
+echo ""
+echo "--- 29d: a failed write (lock timeout, exit 2; unwritable folder) leaves the record unchanged ---"
+w29_record failed-write
+S29D="$W29_DIR/STATE.yml"
+cp "$S29D" "${R29}/29d.before"
+: > "$W29_DIR/.writeback-state.lock"
+w29 "$W29_DIR" --step --skill aid-plan --name p2
+assert_eq "$RC29" "2" "29d: --step against a held lock exits 2 (lock timeout)"
+w29 "$W29_DIR" --reroute --reading change --why 'x'
+assert_eq "$RC29" "2" "29d: --reroute against a held lock exits 2 (lock timeout)"
+w29 "$W29_DIR" --repair --skill aid-plan --name p2 --reading change
+assert_eq "$RC29" "2" "29d: --repair against a held lock exits 2 (lock timeout)"
+rm -f "$W29_DIR/.writeback-state.lock"
+assert_eq "$(cmp -s "${R29}/29d.before" "$S29D" && echo same || echo changed)" "same" \
+    "29d: the lock timeouts leave the record byte-for-byte unchanged"
+
+w29_new failed-create
+: > "$W29_DIR/.writeback-state.lock"
+w29 "$W29_DIR" --create --work-dir . --reading 'bug fix' --request 'r' --skill aid-fix --step s1
+assert_eq "$RC29" "2" "29d: --create against a held lock exits 2 (lock timeout)"
+assert_eq "$(w29_absent "$W29_DIR/STATE.yml")" "absent" "29d: the lock-timeout --create writes no record"
+rm -f "$W29_DIR/.writeback-state.lock"
+
+# An unwritable work folder: the staged copy cannot be created beside the record,
+# so the write exits 1 and the record is not touched. A root user ignores mode
+# bits, so for root this runs as nobody (setpriv); with neither, the case is skipped.
+w29_record unwritable
+S29D2="$W29_DIR/STATE.yml"
+cp "$S29D2" "${R29}/29d-ro.before"
+mkdir -p "${R29}/locks"
+chmod 777 "${R29}/locks"
+chmod 555 "$W29_DIR"
+RUN_AS=""
+RUN_RO=1
+if [[ "$(id -u)" -eq 0 ]]; then
+    if command -v setpriv >/dev/null 2>&1; then
+        RUN_AS="setpriv --reuid=65534 --regid=65534 --clear-groups"
+    else
+        RUN_RO=0
+    fi
+fi
+# The writer's --step mode needs no file beside it, so a copy under R29 lets an
+# unprivileged user run it wherever the repository itself sits.
+W29_WRITER="${R29}/bin/writeback-state.sh"
+mkdir -p "${R29}/bin"
+cp "$SCRIPT" "$W29_WRITER"
+if [[ "$RUN_RO" -eq 1 ]]; then
+    RC_RO=0
+    OUT_RO="$(cd "$W29_DIR" && $RUN_AS env HOME="$R29_HOME" AID_LOCK_DIR="${R29}/locks" AID_LOCK_TIMEOUT=1 \
+        AID_STATE_FILE="$W29_DIR/STATE.yml" bash "$W29_WRITER" --step --skill aid-plan --name p3 2>&1)" || RC_RO=$?
+    assert_eq "$RC_RO" "1" "29d: a write into an unwritable work folder exits 1"
+    assert_output_contains "$OUT_RO" "cannot create a temporary file beside" "29d: the unwritable folder is named in the error"
+    assert_eq "$(cmp -s "${R29}/29d-ro.before" "$S29D2" && echo same || echo changed)" "same" \
+        "29d: the unwritable-folder write leaves the record byte-for-byte unchanged"
+else
+    pass "29d: root without setpriv cannot be made to lack write access; unwritable-folder case skipped"
+fi
+chmod 755 "$W29_DIR"
+
+# --- 29e: --check ------------------------------------------------------------
+echo ""
+echo "--- 29e: --check exits 0 on a healthy record and 9 on each missing or inconsistent part ---"
+w29_record check-healthy
+w29 "$W29_DIR" --check
+assert_eq "$RC29" "0" "29e: --check passes a healthy record (exit 0)"
+
+w29_record check-missing-reading
+w29_sed "$W29_DIR/STATE.yml" 's/^  reading: .*/  reading: --/'
+w29 "$W29_DIR" --check
+assert_eq "$RC29" "9" "29e: --check on a record with no intent.reading exits 9"
+assert_output_contains "$OUT29" "PROBLEM: missing: no intent.reading" "29e: the missing reading is named"
+
+w29_record check-missing-skill
+w29_sed "$W29_DIR/STATE.yml" 's/^active_skill: .*/active_skill: none/'
+w29 "$W29_DIR" --check
+assert_eq "$RC29" "9" "29e: --check on a record with no saved skill exits 9"
+assert_output_contains "$OUT29" "PROBLEM: missing: no saved skill" "29e: the missing saved skill is named"
+
+w29_record check-missing-step
+w29_sed "$W29_DIR/STATE.yml" 's/^step: .*/step: --/'
+w29 "$W29_DIR" --check
+assert_eq "$RC29" "9" "29e: --check on a saved skill with no saved step exits 9"
+assert_output_contains "$OUT29" "PROBLEM: missing: the saved skill aid-fix has no saved step" "29e: the missing saved step is named"
+
+for done_state in Completed Canceled; do
+    w29_record "check-finished-$done_state"
+    w29_sed "$W29_DIR/STATE.yml" "s/^lifecycle: .*/lifecycle: $done_state/"
+    w29 "$W29_DIR" --check
+    assert_eq "$RC29" "9" "29e: --check on a $done_state work that still names a saved skill exits 9"
+    assert_output_contains "$OUT29" "PROBLEM: inconsistent: the work is $done_state but still names the saved skill aid-fix" \
+        "29e: the $done_state work with a saved skill is named"
+done
+
+w29_record check-not-installed
+mkdir -p "${W29_ROOT}/skills-empty"
+W29_SKILLS="${W29_ROOT}/skills-empty"
+w29 "$W29_DIR" --check
+assert_eq "$RC29" "9" "29e: --check with the saved skill absent from the skill folder exits 9"
+assert_output_contains "$OUT29" "PROBLEM: inconsistent: the saved skill aid-fix is not installed" "29e: the uninstalled skill is named"
+mkdir -p "${W29_ROOT}/skills-empty/aid-fix"
+printf -- '---\n' > "${W29_ROOT}/skills-empty/aid-fix/SKILL.md"
+w29 "$W29_DIR" --check
+assert_eq "$RC29" "0" "29e: --check with the saved skill installed in the skill folder exits 0"
+W29_SKILLS=""
+
+w29_record check-bad-returns
+w29 "$W29_DIR" --handoff --to aid-review --step r1 --why 'hand' --returns yes
+assert_eq "$RC29" "0" "29e: --handoff writes the call that the malformed case edits"
+w29_sed "$W29_DIR/STATE.yml" "s/^    returns: 'yes'/    returns: 'maybe'/"
+w29 "$W29_DIR" --check
+assert_eq "$RC29" "9" "29e: --check on a handoff whose returns is neither yes nor no exits 9"
+assert_output_contains "$OUT29" 'handoffs entry 1 has returns "maybe"' "29e: the malformed handoff entry is named"
+
+w29_record check-pass-returned
+w29 "$W29_DIR" --handoff --to aid-review --step r1 --why 'hand' --returns no
+assert_eq "$RC29" "0" "29e: --handoff as a pass writes the entry that the malformed case edits"
+w29_sed "$W29_DIR/STATE.yml" "s/^    returned: --/    returned: '2026-01-01T00:00:00Z'/"
+w29 "$W29_DIR" --check
+assert_eq "$RC29" "9" "29e: --check on a pass that has a returned time exits 9"
+assert_output_contains "$OUT29" "is a pass but has returned set" "29e: the pass with a returned time is named"
+
+# --- 29f: finishing clears the saved skill -----------------------------------
+echo ""
+echo "--- 29f: finishing a work clears its saved skill, and the finished record passes --check ---"
+for done_state in Completed Canceled; do
+    w29_record "finish-$done_state"
+    w29 "$W29_DIR" --pipeline --field Lifecycle --value "$done_state"
+    assert_eq "$RC29" "0" "29f: --pipeline --field Lifecycle --value $done_state exits 0"
+    assert_file_contains "$W29_DIR/STATE.yml" "active_skill: none" "29f: $done_state clears the saved skill"
+    assert_file_contains "$W29_DIR/STATE.yml" "step: --" "29f: $done_state clears the saved step"
+    assert_file_contains "$W29_DIR/STATE.yml" "step_detail: --" "29f: $done_state clears the saved step detail"
+    w29 "$W29_DIR" --check
+    assert_eq "$RC29" "0" "29f: the $done_state record passes --check"
+    w29_readers_clean "$W29_ROOT" "29f-$done_state"
+done
+
+# --- 29g: --step -------------------------------------------------------------
+echo ""
+echo "--- 29g: --step sets the saved skill, step and detail ---"
+w29_record step-mode
+S29G="$W29_DIR/STATE.yml"
+w29 "$W29_DIR" --step --skill aid-plan --name p2 --detail 'writing the plan'
+assert_eq "$RC29" "0" "29g: --step exits 0"
+assert_file_contains "$S29G" "active_skill: aid-plan" "29g: --step sets active_skill"
+assert_file_contains "$S29G" "step: p2" "29g: --step sets step"
+assert_file_contains "$S29G" "writing the plan" "29g: --step sets step_detail"
+w29 "$W29_DIR" --check
+assert_eq "$RC29" "0" "29g: the record after --step passes --check"
+w29_readers_clean "$W29_ROOT" "29g"
+w29 "$W29_DIR" --step --skill aid-plan --name
+assert_eq "$RC29" "5" "29g: --step without a step name exits 5"
+w29 "$W29_DIR" --step --name p3
+assert_eq "$RC29" "5" "29g: --step without --skill exits 5"
+w29 "$W29_DIR" --step --skill plan --name p3
+assert_eq "$RC29" "4" "29g: --step with a skill outside aid-{skill} exits 4"
+w29 "$W29_DIR" --step --skill aid-plan --name 'bad name'
+assert_eq "$RC29" "4" "29g: --step with an invalid step name exits 4"
+
+# --- 29h: --reroute ----------------------------------------------------------
+echo ""
+echo "--- 29h: --reroute sets the reading and depth, and appends one change entry ---"
+w29_record reroute-mode
+S29H="$W29_DIR/STATE.yml"
+w29 "$W29_DIR" --reroute --reading 'new capability' --depth full --why 'scope grew'
+assert_eq "$RC29" "0" "29h: --reroute exits 0"
+assert_file_contains "$S29H" "  reading: 'new capability'" "29h: --reroute sets intent.reading"
+assert_file_contains "$S29H" "  depth: full" "29h: --reroute sets intent.depth"
+assert_file_contains "$S29H" "      from: 'bug fix'" "29h: the change entry records the old reading"
+assert_file_contains "$S29H" "      to: 'new capability'" "29h: the change entry records the new reading"
+assert_file_contains "$S29H" "      why: 'scope grew'" "29h: the change entry records the reason"
+w29_readers_clean "$W29_ROOT" "29h"
+w29 "$W29_DIR" --reroute --reading 'nonsense' --why 'x'
+assert_eq "$RC29" "4" "29h: --reroute with an invalid reading exits 4"
+w29 "$W29_DIR" --reroute --reading change --depth huge --why 'x'
+assert_eq "$RC29" "4" "29h: --reroute with an invalid depth exits 4"
+w29 "$W29_DIR" --reroute --reading change
+assert_eq "$RC29" "5" "29h: --reroute without --why exits 5"
+w29 "$W29_DIR" --reroute --why 'x'
+assert_eq "$RC29" "5" "29h: --reroute without --reading exits 5"
+
+# --- 29i: --repair -----------------------------------------------------------
+echo ""
+echo "--- 29i: --repair writes the record and a lifecycle_history entry; a missing reading needs --reading ---"
+w29_record repair-mode
+S29I="$W29_DIR/STATE.yml"
+w29_sed "$S29I" 's/^  reading: .*/  reading: --/'
+cp "$S29I" "${R29}/29i.before"
+w29 "$W29_DIR" --repair --skill aid-describe --name s3
+assert_eq "$RC29" "5" "29i: --repair on a record with no reading and no --reading exits 5"
+assert_output_contains "$OUT29" "requires --reading" "29i: the refusal names the missing --reading"
+assert_eq "$(cmp -s "${R29}/29i.before" "$S29I" && echo same || echo changed)" "same" \
+    "29i: the refused --repair leaves the record byte-for-byte unchanged"
+w29 "$W29_DIR" --repair --skill aid-describe --name s3 --reading 'nonsense'
+assert_eq "$RC29" "4" "29i: --repair with an invalid --reading exits 4"
+w29 "$W29_DIR" --repair --skill aid-describe --name s3 --detail dd --reading change
+assert_eq "$RC29" "0" "29i: --repair with --reading exits 0"
+assert_file_contains "$S29I" "active_skill: aid-describe" "29i: --repair sets active_skill"
+assert_file_contains "$S29I" "step: s3" "29i: --repair sets step"
+assert_file_contains "$S29I" "step_detail: dd" "29i: --repair sets step_detail"
+assert_file_contains "$S29I" "  reading: change" "29i: --repair sets intent.reading"
+assert_file_contains "$S29I" "event: 'Record repaired'" "29i: --repair appends a lifecycle_history entry"
+assert_file_contains "$S29I" "intent.reading -- -> change" "29i: the entry names the old and the new reading"
+assert_eq "$(grep -c "event: 'Record repaired'" "$S29I")" "1" "29i: exactly one repair entry is appended"
+w29 "$W29_DIR" --check
+assert_eq "$RC29" "0" "29i: the repaired record passes --check"
+w29_readers_clean "$W29_ROOT" "29i"
+w29 "$W29_DIR" --repair --skill aid-plan --name p1
+assert_eq "$RC29" "0" "29i: --repair of a record that has a reading needs no --reading"
+assert_file_contains "$S29I" "  reading: change" "29i: a repair without --reading keeps intent.reading"
+assert_eq "$(grep -c "event: 'Record repaired'" "$S29I")" "2" "29i: a second repair appends a second entry"
 
 test_summary
 exit $?
