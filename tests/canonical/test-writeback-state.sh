@@ -2407,5 +2407,50 @@ note: plain value
 b: 2
 ' "REPLACED"
 
+
+# ---------------------------------------------------------------------------
+echo "=== Unit 27: record modes (--create seed entry, --reroute line breaks, --check skill folders) ==="
+
+R27="${TMPDIR_BASE}/unit27"
+mkdir -p "${R27}/work"
+R27_STATE="${R27}/work/STATE.yml"
+
+# 27a: --create replaces the template's seed lifecycle_history entry with one entry
+# for the creation itself: today's date, and an event naming the creating skill.
+(cd "$R27" && bash "$SCRIPT" --create --work-dir work --reading change --request 'make a thing' \
+    --skill aid-fix --step s1 >/dev/null 2>&1)
+assert_file_exists "$R27_STATE" "27a: --create wrote the work STATE.yml"
+assert_file_not_contains "$R27_STATE" "Initial scaffold by aid-config" "27a: the template's seed entry is gone"
+assert_eq "$(sed -n '/^lifecycle_history:/,/^$/p' "$R27_STATE" | grep -c '2026-01-01')" "0" "27a: no seed date survives in lifecycle_history"
+assert_eq "$(grep -c '^  - date:' "$R27_STATE")" "1" "27a: lifecycle_history holds exactly one entry"
+assert_file_contains "$R27_STATE" "  - date: '$(date -u +%Y-%m-%d)'" "27a: the creation entry is dated today"
+assert_file_contains "$R27_STATE" "event: 'Work created by aid-fix'" "27a: the creation entry names the creating skill"
+assert_eq "$(cd "$R27" && AID_STATE_FILE="$R27_STATE" bash "$SCRIPT" --check >/dev/null 2>&1; echo $?)" "0" "27a: the record --create wrote passes --check"
+
+# 27b: a line break in --why is written as a space; it cannot start a second
+# top-level key (the lifecycle: line would otherwise be planted at column 0).
+(cd "$R27" && AID_STATE_FILE="$R27_STATE" bash "$SCRIPT" --reroute --reading change \
+    --why "$(printf 'first\nlifecycle: Completed\nlast\r.')" >/dev/null 2>&1)
+assert_eq "$?" "0" "27b: --reroute with a line break in --why exits 0"
+assert_eq "$(grep -c '^lifecycle:' "$R27_STATE")" "1" "27b: a newline in --why cannot create a second lifecycle: line"
+assert_file_contains "$R27_STATE" "lifecycle: Running" "27b: the work is still Running"
+assert_file_contains "$R27_STATE" "why: 'first lifecycle: Completed last .'" "27b: the line breaks became spaces inside the why scalar"
+
+# 27c: --check reads the skill folders from host.conf's skill_mirror line, resolved
+# against the project root; a skill installed there passes, a missing one is a PROBLEM.
+R27C="${R27}/project"
+mkdir -p "${R27C}/.aid/runtime" "${R27C}/.testtool/skills/aid-fix" "${R27C}/work"
+printf 'worktree_root=.aid/.worktrees\nskill_mirror=.testtool/skills\n' > "${R27C}/.aid/runtime/host.conf"
+(cd "$R27C" && bash "$SCRIPT" --create --work-dir work --reading change --request 'r' \
+    --skill aid-fix --step s1 >/dev/null 2>&1)
+R27C_STATE="${R27C}/work/STATE.yml"
+printf -- '---\n' > "${R27C}/.testtool/skills/aid-fix/SKILL.md"
+rc=0; (cd "$R27C" && AID_STATE_FILE="$R27C_STATE" bash "$SCRIPT" --check >/dev/null 2>&1) || rc=$?
+assert_eq "$rc" "0" "27c: a saved skill present in the host.conf skill folder passes --check"
+rm -f "${R27C}/.testtool/skills/aid-fix/SKILL.md"
+rc=0; out27="$(cd "$R27C" && AID_STATE_FILE="$R27C_STATE" bash "$SCRIPT" --check 2>&1)" || rc=$?
+assert_eq "$rc" "9" "27c: a saved skill absent from the declared skill folder exits 9"
+assert_eq "$(grep -c 'not installed' <<< "$out27")" "1" "27c: the PROBLEM names the uninstalled skill"
+
 test_summary
 exit $?

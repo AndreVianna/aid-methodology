@@ -4,9 +4,17 @@
 #  THIS IS A DELIBERATE FORK, NOT A RENDER. Do not "resync" it blindly.
 #
 #  Source: canonical/aid/scripts/execute/writeback-state.sh
-#  Divergence, and the ONLY one: it additionally accepts `Deploy` as a Phase value,
-#  which canonical rejects. That is two lines -- the `Phase)` case list and its error
-#  message. Everything else must track canonical exactly.
+#  Its divergences from canonical, and only these:
+#    1. It additionally accepts `Deploy` as a Phase value, which canonical rejects
+#       (the `Phase)` case list and its error message).
+#    2. It has no record modes: --create, --step, --reroute, --check and --repair
+#       exist only in canonical. The dashboard never invokes them.
+#    3. Its write helpers are its own. It writes a temporary copy and renames it into
+#       place, as canonical does, but it does not use canonical's staged helpers
+#       (wb_stage, wb_stage_append, wb_stage_commit).
+#  Everything else must track canonical. In particular, a Lifecycle of Completed or
+#  Canceled clears active_skill, step and step_detail here too, as canonical does, so
+#  a finished work never names a saved skill.
 #
 #  RE-FORKED from canonical rather than patched, and the reason is the point of this
 #  banner. The previous fork was a full generation behind: it defaulted to
@@ -671,7 +679,7 @@ WB_SET_KV_AWK='
     }
 
     # See the identical guard in canonical/aid/scripts/execute/writeback-state.sh. This file is a
-    # DELIBERATE FORK of that one -- it additionally accepts `Deploy` as a Phase value -- so it is
+    # DELIBERATE FORK of that one (its divergences are listed in the banner at the top), so it is
     # never resynced wholesale. A defect in the shared logic still has to be fixed in both, and this
     # is that fix applied narrowly rather than by overwriting: replacing only the key line of a block
     # scalar orphans its indented body, and an orphaned line containing a colon makes the file
@@ -1691,6 +1699,18 @@ mode_pipeline() {
             mv "$tmp2" "$tmp"
             tmp2=$(mktemp)
             wb_set_kv "$tmp" "block_artifact" scalar "--" > "$tmp2"
+            mv "$tmp2" "$tmp"
+        fi
+        # Finishing (Completed or Canceled) leaves no saved skill, as canonical does.
+        if [[ "$FIELD_VALUE" == "Completed" || "$FIELD_VALUE" == "Canceled" ]]; then
+            tmp2=$(mktemp)
+            wb_set_kv "$tmp" "active_skill" scalar "none" > "$tmp2"
+            mv "$tmp2" "$tmp"
+            tmp2=$(mktemp)
+            wb_set_kv "$tmp" "step" scalar "--" > "$tmp2"
+            mv "$tmp2" "$tmp"
+            tmp2=$(mktemp)
+            wb_set_kv "$tmp" "step_detail" scalar "--" > "$tmp2"
             mv "$tmp2" "$tmp"
         fi
     fi

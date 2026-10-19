@@ -187,6 +187,8 @@
 #       intent.depth, active_skill (S), step (N), pipeline.initiator (S), phase (P,
 #       or `--` when omitted), lifecycle: Running, started and updated. Exits 8 when
 #       DIR already holds a STATE.yml. Exits 5 when a required option is missing.
+#       The template's seed lifecycle_history entry is replaced by one entry for the
+#       creation itself (today's date, an event naming S).
 #
 #   writeback-state.sh --step --skill S --name N [--detail D]
 #       Writes active_skill (S), step (N), step_detail (D, or `--`) and updated in one
@@ -194,11 +196,14 @@
 #
 #   writeback-state.sh --reroute --reading R [--depth lite|full] --why W
 #       Writes intent.reading (and intent.depth when given) and appends one
-#       intent.changes entry (at, from, to, why) in the same write.
+#       intent.changes entry (at, from, to, why) in the same write. Line breaks in
+#       --why are written as spaces, so the entry stays on its own lines.
 #
 #   writeback-state.sh --check
 #       Writes nothing. Prints one PROBLEM line for each missing or inconsistent part
-#       of the work record, and exits 9 when there is any, 0 otherwise.
+#       of the work record, and exits 9 when there is any, 0 otherwise. A saved skill
+#       is checked against the skill_mirror folders of .aid/runtime/host.conf
+#       (AID_SKILLS_DIR overrides them); with none declared the check passes.
 #
 #   writeback-state.sh --repair --skill S --name N [--detail D] [--reading R]
 #       Writes the whole repaired record in one write and appends a lifecycle_history
@@ -1991,6 +1996,24 @@ wb_stage() {
     STAGED="$t"
 }
 
+# wb_stage_drop_seed: the staged copy with the template's seed lifecycle_history
+# entries removed, the key left as an empty sequence for wb_stage_append to open.
+wb_stage_drop_seed() {
+    local t
+    t=$(wb_mktemp_beside "$STAGE_TARGET") || die "cannot create a temporary file beside $STAGE_TARGET" 1
+    if ! awk '/^lifecycle_history:/ { print "lifecycle_history: []"; skip = 1; next }
+              skip && /^[ \t]/ { next }
+              { skip = 0; print }' "$STAGED" > "$t" \
+        || [[ "$(grep -c '^lifecycle_history: \[\]$' "$t")" -ne 1 ]]; then
+        rm -f "$t"
+        die "writeback sanity check failed: no lifecycle_history block to replace; $STAGE_TARGET preserved" 3
+    fi
+    if [[ "$STAGED" != "$STAGE_BASE" ]]; then
+        rm -f "$STAGED"
+    fi
+    STAGED="$t"
+}
+
 # wb_stage_append KEY_PATH ENTRY: append block-style ENTRY lines (they carry
 # their own indentation) to the end of the block KEY_PATH names. KEY_PATH is
 # one segment (a top-level sequence) or two (a sequence under a mapping).
@@ -2068,10 +2091,14 @@ wb_read_scalar() {
 wb_now() { date -u +%Y-%m-%dT%H:%M:%SZ; }
 wb_today() { date -u +%Y-%m-%d; }
 
-# wb_sq VALUE: a block-style single-quoted scalar (`--` stays bare).
+# wb_sq VALUE: a block-style single-quoted scalar (`--` stays bare). A block-style
+# entry is one line per key, so a line break in the value would start a new line
+# at whatever column it landed in; CR and LF are written as spaces instead.
 wb_sq() {
     local v="$1"
     if [[ "$v" == "--" ]]; then printf '%s' "--"; return; fi
+    v="${v//$'\r'/ }"
+    v="${v//$'\n'/ }"
     v="${v//\'/\'\'}"
     printf "'%s'" "$v"
 }
@@ -2086,21 +2113,51 @@ wb_valid_depth() { [[ "$1" == lite || "$1" == full ]]; }
 wb_valid_skill() { [[ "$1" =~ ^aid-[a-zA-Z0-9_-]+$ ]]; }
 wb_valid_step_name() { [[ "$1" =~ ^[A-Za-z0-9][A-Za-z0-9_-]*$ ]]; }
 
-# wb_skill_installed SKILL: true when the skill is present in the project's
-# skill folder. With no skill folder at all there is nothing to check against,
-# and the check passes.
+# wb_host_root: the project root whose .aid/runtime/host.conf describes this host.
+# The main worktree's root when it holds one, else the current directory (the
+# order worktree-lifecycle.sh uses for worktree_root).
+wb_host_root() {
+    local gcd main=""
+    gcd="$(git rev-parse --git-common-dir 2>/dev/null)" || gcd=""
+    if [[ -n "$gcd" ]]; then
+        main="$(cd "$(dirname "$gcd")" 2>/dev/null && pwd -P)" || main=""
+    fi
+    if [[ -n "$main" && -f "$main/.aid/runtime/host.conf" ]]; then
+        printf '%s' "$main"
+    else
+        printf '%s' "$PWD"
+    fi
+}
+
+# wb_skill_folders: one skill folder per line, each resolved against the project
+# root. They are the skill_mirror= lines of host.conf, which the install writes
+# from each tool's profile. No host.conf, or none of those lines, gives no folder.
+wb_skill_folders() {
+    local root conf line
+    root="$(wb_host_root)"
+    conf="${root}/.aid/runtime/host.conf"
+    [[ -f "$conf" ]] || return 0
+    while IFS= read -r line || [[ -n "$line" ]]; do
+        line="${line%$'\r'}"
+        [[ "$line" == skill_mirror=* ]] || continue
+        printf '%s\n' "${root}/${line#skill_mirror=}"
+    done < "$conf"
+}
+
+# wb_skill_installed SKILL: true when the skill is present in a skill folder that
+# host.conf declares. AID_SKILLS_DIR, when set, is the one folder checked. With no
+# folder at all there is nothing to check against, and the check passes.
 wb_skill_installed() {
     local s="$1" d seen=0
     if [[ -n "${AID_SKILLS_DIR:-}" ]]; then
         [[ -f "$AID_SKILLS_DIR/$s/SKILL.md" ]]
         return
     fi
-    for d in .claude/skills .codex/skills .cursor/skills .github/skills .agents/skills; do
-        if [[ -d "$d" ]]; then
-            seen=1
-            [[ -f "$d/$s/SKILL.md" ]] && return 0
-        fi
-    done
+    while IFS= read -r d; do
+        [[ -d "$d" ]] || continue
+        seen=1
+        [[ -f "$d/$s/SKILL.md" ]] && return 0
+    done < <(wb_skill_folders)
     [[ "$seen" -eq 0 ]]
 }
 
@@ -2154,6 +2211,13 @@ mode_create() {
     wb_stage "lifecycle" "Running"
     wb_stage "started" "$(wb_today)"
     wb_stage "updated" "$(wb_now)"
+    wb_stage_drop_seed
+    local created
+    created="  - date: $(wb_sq "$(wb_today)")
+    event: $(wb_sq "Work created by $SKILL_ARG")
+    grade: --
+    notes: $(wb_sq "intent.reading $READING_ARG; step $STEP_VALUE")"
+    wb_stage_append "lifecycle_history" "$created"
     wb_stage_commit
     echo "OK: created $STATE_FILE"
 }
