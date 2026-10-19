@@ -322,7 +322,8 @@ The question is blocking: this step pauses on it, and the same step continues on
 The TASK, SPEC and KB issues stay with the user.
 
 **Next, inside this step:** Step 5 (FIX) when the user approves the CODE fixes. When the user declines,
-the CODE issues stay with the user too, and the run ends at this step (HALT).
+the CODE issues stay with the user too: set the lifecycle to `Paused-Awaiting-Input` and the pause reason to
+'Delivery gate below the minimum grade -- CODE issues left with the user' through the writer, and the run ends at this step (HALT).
 
 ---
 

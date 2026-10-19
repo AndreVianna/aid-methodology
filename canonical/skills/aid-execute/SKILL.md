@@ -220,7 +220,7 @@ KB docs are relevant to this task, then load them. Let the INDEX guide you.
 | State | Detail | Worker | Advance |
 |-------|--------|--------|---------|
 | EXECUTE | `references/state-execute.md` | _(type-specific — see state file; delivery-mode uses pool dispatch PD-0→PD-6)_ | CHAIN → REVIEW |
-| REVIEW | `references/state-review.md` | `aid-reviewer` (Small tier, quick-check only — no grade loop per FR2) | CHAIN → DONE |
+| REVIEW | `references/state-review.md` | `aid-reviewer` (Small tier, quick-check only — no grade loop per FR2) | CHAIN → DONE; HALT when a `[CRITICAL]` persists after the fix-on-spot |
 | FIX | `references/state-fix.md` | _(same type as EXECUTE)_ | CHAIN → REVIEW |
 | DONE | _(inline — task complete)_ | `inline` | HALT |
 | RE-RUN | `references/state-re-run.md` | `inline` | CHAIN → REVIEW when the user reopens; HALT when the task stays Done |

@@ -64,7 +64,7 @@ continues at come only from its work record.
 4. **Read the whole destination** if it exists, and note its `source:` field.
 5. **Classify complexity** for the `aid-architect` dispatch (verifier tier >= producer).
 
-**Advance:** CHAIN -> [State: CREATE].
+**Advance:** CHAIN → [State: CREATE] when the gate allocated a new work; HALT when the user continues an existing work (the gate's § 3b takes it over).
 
 ---
 
@@ -102,7 +102,9 @@ to `/aid-update-stack`. The seed is deleted only when everything its `## Destina
 was written; otherwise it stays in place carrying just the unrealized parts, which
 `/aid-update-stack` then consumes.
 
-**Advance:** CHAIN -> [State: VERIFY] when no condition above refuses; HALT when a refusal above leaves nothing to write.
+**A refusal pauses the work.** The step ends with the HALT case of the advance line, after these writes through the writer: bring the detail up to date with `--step` (done: nothing written; refused under the condition above that applied), set the lifecycle to `Paused-Awaiting-Input`, and set the pause reason to what the user must do next (produce the seed with `/aid-design-stack`, resolve the open questions or pass the override token, or leave the generated destination to its build script). The step stays saved; a resumed run sets the lifecycle back to `Running` through the writer and checks the three conditions again from the top.
+
+**Advance:** CHAIN → [State: VERIFY] when no condition above refuses; HALT when a refusal above leaves nothing to write.
 
 ---
 
@@ -111,18 +113,21 @@ was written; otherwise it stays in place carrying just the unrealized parts, whi
 **Full verify**, as `design-lifecycle.md` defines it. Not clean -> loop to CREATE; the
 3-cycle circuit breaker there escalates to IMPEDIMENT, and the lifecycle is set to `Blocked` through the writer.
 
-**Advance:** CHAIN -> [State: PRESENT] when the verify is clean; CHAIN -> [State: CREATE] when it is not clean and fewer than 3 cycles have run; HALT when the 3-cycle circuit breaker has tripped.
+**Advance:** CHAIN → [State: PRESENT] when the verify is clean; CHAIN → [State: CREATE] when it is not clean and fewer than 3 cycles have run; HALT when the 3-cycle circuit breaker has tripped.
 
 ---
 
 ## State: PRESENT (hard stop -- the user decides)
 
-Set the lifecycle to `Paused-Awaiting-Input` through the writer. Present the realized document and assert: the seed
+Present the realized document and assert: the seed
 was consumed only for what was written; on the creation path both registration surfaces were
 written; the rejected alternatives went to the D document; and anything routed to
 `/aid-update-stack` is named.
 
-**Advance:** ASK -> [State: DONE].
+Then ask the user to approve the result, through the question protocol. The approval blocks the work, so this step pauses on it (`.aid/runtime/templates/skill-steps.md`, part 3). Record it first with `bash .aid/runtime/scripts/execute/writeback-state.sh --ask --category Approval --impact High --context '<the approval, as shown>' --suggested 'Approve' --asked-by aid-create-stack --step PRESENT --covers 'the technology stack document'` (it prints the question's id), bring the step detail up to date with `--step` (done: presented; waiting for that id), and set the lifecycle to `Paused-Awaiting-Input` and the pause reason to that open question through the writer. An approval cannot be skipped: the step stays paused until the user approves or declines. Once it is answered, record the answer with `--answer --id <id> --state Answered --value '<Approved, or Declined with the changes asked>' --applied-to 'the technology stack document'`, set the lifecycle back to `Running` through the writer, and end the step with the advance below.
+If the user declines or asks for changes, CREATE applies exactly what was asked, in place, to what this run wrote; the three refusal conditions belong to the first pass, since this run consumed the seed. VERIFY and this step then run again.
+
+**Advance:** CHAIN → DONE when the user approves; CHAIN → CREATE when the user declines or asks for changes.
 
 ---
 

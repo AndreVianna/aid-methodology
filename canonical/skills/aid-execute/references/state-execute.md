@@ -779,4 +779,4 @@ leave the task's State at `In Progress` while surfacing an impediment -- an
 agent stuck mid-task and an agent that has genuinely failed must be
 distinguishable on the dashboard.
 
-**Advance:** **CHAIN** -> [State: REVIEW] (continue inline).
+**Advance:** **CHAIN** → [State: REVIEW] (continue inline).

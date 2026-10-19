@@ -54,13 +54,13 @@ continues at come only from its work record.
 2. **Allocate, exactly per `design-lifecycle.md § Skill shape -- Allocation`** -- the Work Initiation Gate, whose `--create` is given `--skill aid-create-roadmap`, `--step INTAKE` and `--path lite`; the record starts `Running`. `phase` is not driven.
 3. **Read the seed** at `.aid/design/roadmap.md`. If no seed exists, inform the user and
    ask whether to proceed without one (direction entered interactively) or to run
-   `/aid-design-roadmap` first; do not proceed silently. The question blocks the work: pause INTAKE on it, with its detail saying the work is allocated and the question is open, record it with `--ask`, set the lifecycle to `Paused-Awaiting-Input`, and then ask it. Once it is answered, INTAKE continues at step 4.
+   `/aid-design-roadmap` first; do not proceed silently. The question blocks the work: pause INTAKE on it, with its detail saying the work is allocated and the question is open, record it with `--ask`, set the lifecycle to `Paused-Awaiting-Input` and the pause reason to the open question, and then ask it. Once it is answered, record the answer with `--answer` and set the lifecycle back to `Running` through the writer. If the user proceeds without a seed, INTAKE continues at step 4. If the user chooses to design the seed first, bring the detail up to date with `--step` (done: work allocated; waiting for the seed from `/aid-design-roadmap`), set the lifecycle to `Paused-Awaiting-Input` and the pause reason to 'Waiting for the seed: run /aid-design-roadmap, then resume' through the writer, name `/aid-design-roadmap` in one plain line, and end the step with the HALT case of the advance line below.
 4. **Read the destination** at `.aid/knowledge/roadmap.md` if it exists. Classify its state:
    absent | present-horizon-empty | present-horizon-populated.
 5. **Classify complexity (model + effort)** for the `aid-architect` dispatch below;
    verifier tier >= producer tier (`agent-dispatch-tiering.md`).
 
-**Advance:** CHAIN -> [State: GUARD].
+**Advance:** CHAIN → [State: GUARD] once the seed question is settled; HALT when the run ends here (the user designs the seed first, or the gate's § 3b takes over an existing work).
 
 ---
 
@@ -71,10 +71,10 @@ continues at come only from its work record.
 
 - **Unresolved questions present, no override** → refuse. Name each unresolved question
   **and** the override flag `--override-open-questions` the user must supply to bypass the gate. Write nothing; leave
-  seed and destination byte-identical. Set the lifecycle to `Paused-Awaiting-Input` through the writer, and stop: this step stays saved, and a later run inspects the seed again from the top.
+  seed and destination byte-identical. Bring the detail up to date with `--step` (done: seed read; refused, open questions listed), set the lifecycle to `Paused-Awaiting-Input` and the pause reason to 'Waiting for the open questions in the seed to be resolved' through the writer, and stop: this step stays saved, and a resumed run sets the lifecycle back to `Running` through the writer and inspects the seed again from the top.
 - **No unresolved questions, or override supplied** → advance.
 
-**Advance:** CHAIN -> [State: REALIZE] when the gate passes; HALT when the gate refuses.
+**Advance:** CHAIN → [State: REALIZE] when the gate passes; HALT when the gate refuses.
 
 ---
 
@@ -88,7 +88,9 @@ asked by the main conversation.
 |---|---|
 | `roadmap.md` absent | **Create** the document: write frontmatter (§3a values below, verbatim), `# Roadmap` title, one-paragraph preamble (what this document holds and what it does not -- no items live here), `## Contents` with all four entries in heading order, then `## Now`, `## Next`, `## Later`. **Delete the seed.** |
 | Present, horizon sections empty or absent | Fill `## Now`, `## Next`, `## Later` from the seed; leave every byte outside those sections identical, including `## MVP` if present. **Delete the seed.** |
-| Present, horizon sections already carry committed content | **Route** to `/aid-update-roadmap`; write nothing; leave the seed in place for that run (CC-3). Set the lifecycle to `Paused-Awaiting-Input` through the writer. Then the main conversation asks the user, through the question protocol, whether to run the skill it routes to, naming it; the question is blocking, so this step pauses on it until it is answered, and REGISTER and VERIFY are not called. On a yes, name the skill's command to run, in one plain line. |
+| Present, horizon sections already carry committed content | **Route** to `/aid-update-roadmap`; write nothing; leave the seed in place for that run (CC-3). Then the main conversation asks the user whether to run the skill it routes to (*Route handling* below); REGISTER and VERIFY are not called. |
+
+**Route handling.** In a route case the question is a blocking one, so this step pauses on it: bring the detail up to date with `--step` (done: nothing written; routed to the skill named above; waiting for the route question), record the question with `--ask`, set the lifecycle to `Paused-Awaiting-Input` and the pause reason to the open question through the writer, and then ask it, naming the skill the route points to. Once it is answered, record the answer with `--answer`, and finish the work through the writer (`--pipeline --field Lifecycle --value Completed`): nothing lands here, and the seed stays in place for the routed skill. On a yes, name the command to run in one plain line. The step ends with the HALT case of the advance line below.
 
 **`## Contents` index** -- the fixed four-entry form (`feature-003 §3a`), always written
 at creation and always left intact on the fill path:
@@ -134,7 +136,7 @@ audience: [architect, pm, developer]
 compare a direction entry against (`decisions.md` carries the same value for the same
 reason; `feature-003 §3a` records the divergence from feature-004's `forward-authored`).
 
-**Advance:** CHAIN -> [State: REGISTER] when the document was created or filled; HALT when the route case applies and its question has been answered.
+**Advance:** CHAIN → [State: REGISTER] when the document is written; HALT when the route case applies.
 
 ---
 
@@ -153,7 +155,7 @@ in the same run, per `feature-003 §6b` (REQUIREMENTS CC-1, CC-2):
 
 Both writes must succeed in the same run. If either fails, report and halt.
 
-**Advance:** CHAIN -> [State: VERIFY].
+**Advance:** CHAIN → [State: VERIFY].
 
 ---
 
@@ -163,20 +165,23 @@ Both writes must succeed in the same run. If either fails, report and halt.
 defines it. Not clean -> loop to REALIZE; the circuit-breaker there governs escalation
 to IMPEDIMENT, and the lifecycle is set to `Blocked` through the writer.
 
-**Advance:** CHAIN -> [State: PRESENT] when the verify is clean; CHAIN -> [State: REALIZE] when it is not clean and fewer than 3 cycles have run; HALT when the 3-cycle circuit breaker has tripped.
+**Advance:** CHAIN → [State: PRESENT] when the verify is clean; CHAIN → [State: REALIZE] when it is not clean and fewer than 3 cycles have run; HALT when the 3-cycle circuit breaker has tripped.
 
 ---
 
 ## State: PRESENT (hard stop -- the user decides)
 
-Set the lifecycle to `Paused-Awaiting-Input` through the writer. Present the realized document clearly. Assert:
+Present the realized document clearly. Assert:
 
 - `## MVP` heading is absent (the `- [MVP](#mvp)` index entry is present).
 - On the creation path: both registration surfaces were written.
 - To revise horizon entries later, use `/aid-update-roadmap`.
 - To draw the MVP line, use `/aid-create-mvp`.
 
-**Advance:** ASK -> [State: DONE].
+Then ask the user to approve the result, through the question protocol. The approval blocks the work, so this step pauses on it (`.aid/runtime/templates/skill-steps.md`, part 3). Record it first with `bash .aid/runtime/scripts/execute/writeback-state.sh --ask --category Approval --impact High --context '<the approval, as shown>' --suggested 'Approve' --asked-by aid-create-roadmap --step PRESENT --covers 'the roadmap document'` (it prints the question's id), bring the step detail up to date with `--step` (done: presented; waiting for that id), and set the lifecycle to `Paused-Awaiting-Input` and the pause reason to that open question through the writer. An approval cannot be skipped: the step stays paused until the user approves or declines. Once it is answered, record the answer with `--answer --id <id> --state Answered --value '<Approved, or Declined with the changes asked>' --applied-to 'the roadmap document'`, set the lifecycle back to `Running` through the writer, and end the step with the advance below.
+If the user declines or asks for changes, REALIZE applies exactly what was asked, in place, to what this run wrote (the seed it consumed is not needed again, and the route cases belong to the first pass). VERIFY and this step then run again.
+
+**Advance:** CHAIN → DONE when the user approves; CHAIN → REALIZE when the user declines or asks for changes.
 
 ---
 

@@ -1081,4 +1081,4 @@ Print: `[N/N] Generation complete — Knowledge Base ready.` (where N = declared
 
 Print: `[State: GENERATE] complete.`
 
-**Advance:** **CHAIN** → [State: REVIEW] (continue inline).
+**Advance:** **CHAIN** → [State: REVIEW] (continue inline); **HALT** when the confirmed discovery path is greenfield (Step 0f prints the signpost and ends the step before any generation).

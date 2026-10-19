@@ -111,8 +111,4 @@ Print:
   002 — {Title}    §5 FR-3          AC-2          Must
 
 Every §5 requirement is mapped; every §9 criterion is owned exactly once.
-
-Next steps:
-- Review §11 in REQUIREMENTS.md if desired
-- Run /aid-specify feature-001 to begin technical specification
 ```

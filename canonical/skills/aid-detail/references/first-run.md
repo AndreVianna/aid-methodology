@@ -130,6 +130,7 @@ Execution graphs written to PLAN.md.
 
 [State: FIRST-RUN] complete.
 
-**Advance:** **CHAIN** → [State: REVIEW] once the task breakdown is approved and its files are written. The
-approval in Step 2 is a blocking question: this step pauses on it where it stands (its detail says which delivery's
+The approval in Step 2 is a blocking question: this step pauses on it where it stands (its detail says which delivery's
 proposal awaits approval), and goes on with Step 3 once it is answered.
+
+**Advance:** **CHAIN** → [State: REVIEW] once the task breakdown is approved and its files are written.

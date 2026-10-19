@@ -116,6 +116,15 @@ Question text format (keep brief, mention free-text via Other if the user might 
 New value for <key>?  (pick a suggestion or type your own via 'Other')
 ```
 
+**Recording.** This skill keeps no work record, so each question it asks is recorded in the project
+file `.aid/STATE.yml` (`.aid/runtime/templates/question-protocol.md` § Where each record lives).
+Before the question is shown:
+`bash .aid/runtime/scripts/execute/writeback-state.sh --project --ask --category Settings --impact <High|Medium|Low> --context '<the question>' --suggested '<the recommendation>' --asked-by aid-config`,
+which prints the question's id. Right after the answer:
+`bash .aid/runtime/scripts/execute/writeback-state.sh --project --answer --id Q<n> --state <Answered|Skipped> --value '<the answer>' --applied-to 'setting <key>'`.
+Choosing `Keep current value` is an `Answered` question whose `--applied-to` says the setting is unchanged. A re-prompt after a failed
+validation (Step 5) is a new question, recorded the same way. A non-zero exit stops the skill at once.
+
 ### Step 5: Validate
 
 Per the Validation table below. If invalid: print the validation error + re-prompt (loop back to Step 4).

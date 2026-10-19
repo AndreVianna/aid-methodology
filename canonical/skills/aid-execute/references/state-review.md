@@ -1,9 +1,9 @@
 # State: REVIEW
 
-Task output is graded by a lightweight quick-check pass first; then a clean-context reviewer agent produces the full grade. Routing to FIX or DONE follows from the computed grade.
+Task output goes through a lightweight quick-check pass by a clean-context reviewer agent. No grade is computed at the task level: the quick-check triage, the findings write and the task's terminal `State` write finish the step, and the full grade belongs to the per-delivery quality gate.
 
 > **Two-tier review model (feature-004):** Per-task REVIEW (this state) runs the
-> quick-check + full reviewer loop for an individual task. The **per-delivery
+> quick-check pass only for an individual task. The **per-delivery
 > quality gate** runs once for the whole delivery after all tasks are `Done` —
 > that is a separate state; see `references/state-delivery-gate.md`. The gate
 > is triggered from pool dispatch PD-5 (in `references/state-execute.md`), not
@@ -12,14 +12,14 @@ Task output is graded by a lightweight quick-check pass first; then a clean-cont
 > ⚠️ **MANDATORY State-Write Protocol applies in this state too:** this task's
 > `State` MUST be written the moment it changes -- to `Failed` if a
 > `[CRITICAL]` finding persists after fix-on-spot (below), and to `Done` at
-> this state's terminal chain. See `references/state-execute.md § MANDATORY:
+> this state's terminal chain when no `[CRITICAL]` persisted. See `references/state-execute.md § MANDATORY:
 > State-Write Protocol` for the full mandate -- it binds whoever is running
 > this state, main/orchestrator agent or dispatched sub-agent, no exceptions.
 
 ## Step 1.5: QUICK CHECK (Pre-Reviewer Triage)
 
-A lightweight single-pass reviewer runs **before** the full reviewer to catch
-obvious `[CRITICAL]` and `[HIGH]` issues early. No grade is computed, no loop
+A lightweight single-pass reviewer catches obvious `[CRITICAL]` and `[HIGH]` issues
+early. No grade is computed, no loop
 runs — this is a fast filter only.
 
 **Before dispatching, print:** `[Step 1.5] Dispatching aid-reviewer (quick-check, Small tier) for quick-check → subagent_type=aid-reviewer`.
@@ -69,7 +69,7 @@ After the quick-check reviewer responds, triage findings by severity:
 |---|---|
 | `[CRITICAL]` found | Fix inline immediately (see § CRITICAL Fix-on-Spot below) |
 | `[HIGH]` found | Mark `Deferred-to-gate` and write to delivery issues file (see § HIGH Deferral below) |
-| No `[CRITICAL]` or `[HIGH]` | Continue to Step 2 (full reviewer) |
+| No `[CRITICAL]` or `[HIGH]` | Continue to the findings write below |
 
 #### CRITICAL Fix-on-Spot
 
@@ -79,7 +79,9 @@ For each `[CRITICAL]` finding:
    (do not dispatch the reviewer — the reviewer ≠ executor invariant is preserved).
    Print: `[Quick-Check] CRITICAL found — applying fix-on-spot: {description}`.
 2. Re-verify build/lint/test gates after the fix.
-3. If the critical persists after the fix → **STOP.** Raise an IMPEDIMENT
+3. If the critical persists after the fix → **STOP.** The step ends here with **HALT**
+   (see the advance line): the terminal `Done` write below does not run, and the task
+   stays `Failed`. Raise an IMPEDIMENT
    (`type: architecture-conflict`). Do not attempt a second fix cycle.
    **MANDATORY (State-Write Protocol, `state-execute.md`) — update this
    task's own State to `Failed` before or alongside the pipeline block
@@ -118,8 +120,8 @@ For each `[HIGH]` finding:
    script creates the file (from the `delivery-issues.md` template) if it does
    not yet exist.
 
-3. Continue to Step 2 — `[HIGH]` findings do **not** block the full reviewer
-   dispatch. They are deferred to the per-delivery gate.
+3. Continue to the findings write below — `[HIGH]` findings do **not** block the
+   task. They are deferred to the per-delivery gate.
 
 ### Write Findings to STATE.yml
 
@@ -162,8 +164,9 @@ the task's own terminal state write for a **single-task invocation** (whether
 run directly by the main/orchestrator agent or by a sub-agent running its own
 per-task pipeline under pool dispatch, per `state-execute.md`'s `PD-2a`
 prompt template). It happens HERE, the moment REVIEW's quick-check triage
-completes — not deferred, not left for whatever process happens to touch
-this task next:
+completes with no `[CRITICAL]` left standing — not deferred, not left for whatever process
+happens to touch this task next. **When a `[CRITICAL]` persisted after the fix-on-spot, this
+write does not run:** the task keeps the `Failed` state written above. The findings block is still written (above), and then the step halts.
 
 ```bash
 bash .aid/runtime/scripts/execute/writeback-state.sh \
@@ -180,7 +183,7 @@ orchestrator side after the sub-agent reports back — that is a second,
 redundant, idempotent write, not a substitute for this one; the sub-agent
 must not skip its own write on the assumption "the orchestrator will do it.")
 
-**Advance:** **CHAIN** → [State: DONE] after triage, findings write, and the terminal State write above (continue inline).
+**Advance:** **CHAIN** → [State: DONE] after triage, findings write, and the terminal State write above (continue inline); **HALT** when a `[CRITICAL]` persists after the fix-on-spot (the task stays `Failed` and the work `Blocked`).
 
 > **Two-tier model contract (feature-004 SPEC §State Machines):** Per-task REVIEW
 > runs the quick-check pass only. **No grade is computed at the task level.**

@@ -55,7 +55,7 @@ the `[State: NAME] -- {purpose}` entry line on each state.
 step of a fresh start (a prior seed in `.aid/design/` is iterated, not restarted), validates a
 saved step on resume, and never routes; the work record alone decides where a work continues.
 
-**Advance:** CHAIN -> [State: DESIGN].
+**Advance:** CHAIN → [State: DESIGN] when the gate allocated a new work; HALT when the user continues an existing work (the gate's § 3b takes it over).
 
 ---
 
@@ -71,7 +71,7 @@ Writes `.aid/design/roadmap.md` **only**, in `design-seed.md`'s shape --
 accumulating rather than being replaced. **Never writes `.aid/knowledge/`; never writes
 production code** -- the `design` invariant, binding without exception.
 
-**Advance:** CHAIN -> [State: VERIFY].
+**Advance:** CHAIN → [State: VERIFY].
 
 ---
 
@@ -81,17 +81,20 @@ production code** -- the `design` invariant, binding without exception.
 defines it. Not clean -> loop to DESIGN; the circuit-breaker there governs escalation to
 IMPEDIMENT, and the lifecycle is set to `Blocked` through the writer.
 
-**Advance:** CHAIN -> [State: PRESENT] when the verify is clean; CHAIN -> [State: DESIGN] when it is not clean and fewer than 3 cycles have run; HALT when the 3-cycle circuit breaker has tripped.
+**Advance:** CHAIN → [State: PRESENT] when the verify is clean; CHAIN → [State: DESIGN] when it is not clean and fewer than 3 cycles have run; HALT when the 3-cycle circuit breaker has tripped.
 
 ---
 
 ## State: PRESENT (hard stop -- the user decides)
 
-Set the lifecycle to `Paused-Awaiting-Input` through the writer. Present the seed clearly. Assert no resolution --
+Present the seed clearly. Assert no resolution --
 the user decides whether to iterate further (re-invoke this skill) or realize it now
 (`/aid-create-roadmap`).
 
-**Advance:** ASK -> [State: DONE].
+Then ask the user to approve the result, through the question protocol. The approval blocks the work, so this step pauses on it (`.aid/runtime/templates/skill-steps.md`, part 3). Record it first with `bash .aid/runtime/scripts/execute/writeback-state.sh --ask --category Approval --impact High --context '<the approval, as shown>' --suggested 'Approve' --asked-by aid-design-roadmap --step PRESENT --covers 'the seed .aid/design/roadmap.md'` (it prints the question's id), bring the step detail up to date with `--step` (done: presented; waiting for that id), and set the lifecycle to `Paused-Awaiting-Input` and the pause reason to that open question through the writer. An approval cannot be skipped: the step stays paused until the user approves or declines. Once it is answered, record the answer with `--answer --id <id> --state Answered --value '<Approved, or Declined with the changes asked>' --applied-to 'the seed .aid/design/roadmap.md'`, set the lifecycle back to `Running` through the writer, and end the step with the advance below.
+If the user declines or asks for changes, DESIGN iterates the seed with exactly what was asked, and VERIFY and this step run again.
+
+**Advance:** CHAIN → DONE when the user approves; CHAIN → DESIGN when the user declines or asks for changes.
 
 ---
 

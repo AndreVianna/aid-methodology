@@ -63,7 +63,7 @@ INTAKE and INTAKE-ASK run before any work exists, so they save no steps (`skill-
    prior context before drafting; it is an input, never a substitute, and is not modified
    by this run.
 
-**Advance:** CHAIN -> [State: INTAKE-ASK] when a question must be put (empty argument, Guided path, works exist); CHAIN -> [State: ALLOCATE] when none is needed.
+**Advance:** CHAIN → [State: INTAKE-ASK] when a question must be put (empty argument, Guided path, works exist); CHAIN → [State: ALLOCATE] when none is needed.
 
 ---
 
@@ -76,7 +76,9 @@ Ask one topic at a time, through the question protocol, in this order and only f
 2. **Guided path** -> scope subject / audience / kind.
 3. **Works exist** -> the gate's new-vs-continuation question with the enumerated list.
 
-**Advance:** CHAIN -> [State: ALLOCATE] once the questions are answered; HALT when the user does not answer (nothing was created). Nothing is saved or recorded here, because no work exists yet.
+Nothing is saved or recorded here, because no work exists yet.
+
+**Advance:** CHAIN → [State: ALLOCATE] once the questions are answered; HALT when the user does not answer (nothing was created).
 
 ---
 
@@ -105,7 +107,7 @@ Allocate the work through the gate: the Work Initiation Gate
   work reads the binding back from the saved detail and drafts in the same genre and format.
 - **Continuation:** On continuation, follow the gate's § 3b: enter the chosen work's worktree and run the skill its record names, at its saved step.
 
-**Advance:** CHAIN -> [State: AUTHOR] on a new work; HALT when the user continues an existing work (the gate's § 3b takes it over).
+**Advance:** CHAIN → [State: AUTHOR] on a new work; HALT when the user continues an existing work (the gate's § 3b takes it over).
 
 ---
 
@@ -118,7 +120,7 @@ It drafts into the work folder (not yet placed). Text formats are produced nativ
 (markdown, mermaid, HTML, CSV/tables); for a format it cannot cleanly emit (native
 `.pptx`/`.xlsx`), it produces the best text form and notes the conversion handoff.
 
-**Advance:** CHAIN -> [State: VERIFY].
+**Advance:** CHAIN → [State: VERIFY].
 
 ---
 
@@ -132,7 +134,7 @@ It drafts into the work folder (not yet placed). Text formats are produced nativ
 3. **Grade:** `bash .aid/runtime/scripts/grade.sh --explain <ledger>`. Not clean -> loop
    to AUTHOR. Circuit-breaker: 3 cycles -> IMPEDIMENT, and the lifecycle set to `Blocked` through the writer.
 
-**Advance:** CHAIN -> [State: PRESENT] when the verify is clean; CHAIN -> [State: AUTHOR] when it is not clean and fewer than 3 cycles have run; HALT when the 3-cycle circuit breaker has tripped.
+**Advance:** CHAIN → [State: PRESENT] when the verify is clean; CHAIN → [State: AUTHOR] when it is not clean and fewer than 3 cycles have run; HALT when the 3-cycle circuit breaker has tripped.
 
 ---
 
@@ -142,7 +144,9 @@ The hard stop follows the ASK step of `skill-steps.md`. Present the drafted docu
 target location** (KB-informed: `docs/`, an ADR dir, `CHANGELOG.md`, a runbook path, ...).
 Await approval. **Never writes `.aid/knowledge/`.**
 
-**Advance:** ASK -> [State: PLACE].
+The approval cannot be skipped. Record it before it is shown, as a question of its own: `bash .aid/runtime/scripts/execute/writeback-state.sh --ask --category Approval --impact High --context '<the approval, as shown>' --suggested 'Approve' --asked-by aid-create-document --step PRESENT --covers 'the draft and its target location'`. The ASK ending then records the answer (`--answer`, `Approved` or `Declined`) and sets the lifecycle back to `Running`, and PLACE reads it: an approval places the document, a decline places nothing.
+
+**Advance:** ASK → [State: PLACE].
 
 ---
 
@@ -155,7 +159,7 @@ overwrite an existing doc. Then optionally print handoffs the user may act on: `
 (if it belongs in the KB), `/aid-create*` (if it describes something not yet built),
 `/aid-refactor` (an ADR mandating a refactor).
 
-**Advance:** CHAIN -> [State: DONE].
+**Advance:** CHAIN → [State: DONE].
 
 ---
 

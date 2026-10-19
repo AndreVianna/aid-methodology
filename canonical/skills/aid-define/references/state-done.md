@@ -37,4 +37,9 @@ Interview for {work} is complete and approved.
 The menu is a blocking question, asked through the question protocol: this step pauses on it until the user
 answers. A requirements-level change hands off to `/aid-describe` in one plain line.
 
-**Advance:** **CHAIN** → [State: CROSS-REFERENCE] when the user picks [2]; **HALT** when the user picks another option. This is the terminal state.
+**Before the run ends (the HALT case below), record why it stops** through the writer, so the work is never left
+`Running` with nothing running: `--pipeline --field Lifecycle --value Paused-Awaiting-Input`, then
+`--pipeline --field "Pause Reason" --value '<why>'`. The reason is 'Requirements change requested -- run /aid-describe {work}'
+after a requirements-level change in [1], and 'Features defined and cross-referenced -- run /aid-specify {work}' after [3].
+
+**Advance:** **CHAIN** → [State: CROSS-REFERENCE] when the user picks [2]; **HALT** when the user picks another option.

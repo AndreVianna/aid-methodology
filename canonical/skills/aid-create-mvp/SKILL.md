@@ -60,13 +60,13 @@ continues at come only from its work record.
 2. **Allocate, exactly per `design-lifecycle.md § Skill shape -- Allocation`** -- the Work Initiation Gate, whose `--create` is given `--skill aid-create-mvp`, `--step INTAKE` and `--path lite`; the record starts `Running`. `phase` is not driven.
 3. **Read the seed** at `.aid/design/mvp.md`. If no seed exists, inform the user and
    ask whether to proceed without one (slice entered interactively) or to run
-   `/aid-design-mvp` first; do not proceed silently. The question blocks the work: pause INTAKE on it, with its detail saying the work is allocated and the question is open, record it with `--ask`, set the lifecycle to `Paused-Awaiting-Input`, and then ask it. Once it is answered, INTAKE continues at step 4.
+   `/aid-design-mvp` first; do not proceed silently. The question blocks the work: pause INTAKE on it, with its detail saying the work is allocated and the question is open, record it with `--ask`, set the lifecycle to `Paused-Awaiting-Input` and the pause reason to the open question, and then ask it. Once it is answered, record the answer with `--answer` and set the lifecycle back to `Running` through the writer. If the user proceeds without a seed, INTAKE continues at step 4. If the user chooses to design the seed first, bring the detail up to date with `--step` (done: work allocated; waiting for the seed from `/aid-design-mvp`), set the lifecycle to `Paused-Awaiting-Input` and the pause reason to 'Waiting for the seed: run /aid-design-mvp, then resume' through the writer, name `/aid-design-mvp` in one plain line, and end the step with the HALT case of the advance line below.
 4. **Read the destination** at `.aid/knowledge/roadmap.md` if it exists. Classify its
    state: absent | present-MVP-absent | present-MVP-populated.
 5. **Classify complexity (model + effort)** for the `aid-architect` dispatch below;
    verifier tier >= producer tier (`agent-dispatch-tiering.md`).
 
-**Advance:** CHAIN -> [State: GUARD].
+**Advance:** CHAIN → [State: GUARD] once the seed question is settled; HALT when the run ends here (the user designs the seed first, or the gate's § 3b takes over an existing work).
 
 ---
 
@@ -77,10 +77,10 @@ non-empty `## Open questions` section per `design-lifecycle.md`'s detection rule
 
 - **Unresolved questions present, no override** → refuse. Name each unresolved
   question **and** the override flag `--override-open-questions` the user must supply to bypass the gate. Write
-  nothing; leave seed and destination byte-identical. Set the lifecycle to `Paused-Awaiting-Input` through the writer, and stop: this step stays saved, and a later run inspects the seed again from the top.
+  nothing; leave seed and destination byte-identical. Bring the detail up to date with `--step` (done: seed read; refused, open questions listed), set the lifecycle to `Paused-Awaiting-Input` and the pause reason to 'Waiting for the open questions in the seed to be resolved' through the writer, and stop: this step stays saved, and a resumed run sets the lifecycle back to `Running` through the writer and inspects the seed again from the top.
 - **No unresolved questions, or override supplied** → advance.
 
-**Advance:** CHAIN -> [State: REALIZE] when the gate passes; HALT when the gate refuses.
+**Advance:** CHAIN → [State: REALIZE] when the gate passes; HALT when the gate refuses.
 
 ---
 
@@ -92,9 +92,11 @@ asked by the main conversation.
 
 | Destination state | Action |
 |---|---|
-| `roadmap.md` absent | **Route** to `/aid-create-roadmap` -- an MVP is a section of a roadmap, not a document (REQUIREMENTS CC-5; feature-002 §3c *first-write rule*). Name `/aid-create-roadmap` explicitly in the response. Write nothing. Leave `.aid/design/mvp.md` in place for that run (CC-3). Set the lifecycle to `Paused-Awaiting-Input` through the writer. Then the main conversation asks the user, through the question protocol, whether to run the skill it routes to, naming it; the question is blocking, so this step pauses on it until it is answered, and VERIFY is not called. On a yes, name the skill's command to run, in one plain line. |
+| `roadmap.md` absent | **Route** to `/aid-create-roadmap` -- an MVP is a section of a roadmap, not a document (REQUIREMENTS CC-5; feature-002 §3c *first-write rule*). Name `/aid-create-roadmap` explicitly in the response. Write nothing. Leave `.aid/design/mvp.md` in place for that run (CC-3). Then the main conversation asks the user whether to run the skill it routes to (*Route handling* below); VERIFY is not called. |
 | `roadmap.md` present, `## MVP` absent | **Create** the `## MVP` section using the **byte-range write discipline** below. **Delete the seed.** |
-| `roadmap.md` present, `## MVP` already carries committed content | **Route** to `/aid-update-mvp`; write nothing; leave the seed in place for that run (CC-3). Set the lifecycle to `Paused-Awaiting-Input` through the writer. Then the main conversation asks the user, through the question protocol, whether to run the skill it routes to, naming it; the question is blocking, so this step pauses on it until it is answered, and VERIFY is not called. On a yes, name the skill's command to run, in one plain line. |
+| `roadmap.md` present, `## MVP` already carries committed content | **Route** to `/aid-update-mvp`; write nothing; leave the seed in place for that run (CC-3). Then the main conversation asks the user whether to run the skill it routes to (*Route handling* below); VERIFY is not called. |
+
+**Route handling.** In a route case the question is a blocking one, so this step pauses on it: bring the detail up to date with `--step` (done: nothing written; routed to the skill named above; waiting for the route question), record the question with `--ask`, set the lifecycle to `Paused-Awaiting-Input` and the pause reason to the open question through the writer, and then ask it, naming the skill the route points to. Once it is answered, record the answer with `--answer`, and finish the work through the writer (`--pipeline --field Lifecycle --value Completed`): nothing lands here, and the seed stays in place for the routed skill. On a yes, name the command to run in one plain line. The step ends with the HALT case of the advance line below.
 
 **Byte-range write discipline (binding; precondition for V7 and V8).** Read the
 whole `roadmap.md` file. Identify the `## MVP` byte range: the literal heading
@@ -124,7 +126,7 @@ would place the section above the document index and break KB layout order (feat
     - **Status:** Not started | In progress | Shipped <version> -- with the evidence
       anchor.
 
-**Advance:** CHAIN -> [State: VERIFY] when the section was created; HALT when a route case applies and its question has been answered.
+**Advance:** CHAIN → [State: VERIFY] when the section is written; HALT when a route case applies.
 
 ---
 
@@ -134,13 +136,13 @@ would place the section above the document index and break KB layout order (feat
 defines it. Not clean -> loop to REALIZE; the circuit-breaker there governs escalation
 to IMPEDIMENT, and the lifecycle is set to `Blocked` through the writer.
 
-**Advance:** CHAIN -> [State: PRESENT] when the verify is clean; CHAIN -> [State: REALIZE] when it is not clean and fewer than 3 cycles have run; HALT when the 3-cycle circuit breaker has tripped.
+**Advance:** CHAIN → [State: PRESENT] when the verify is clean; CHAIN → [State: REALIZE] when it is not clean and fewer than 3 cycles have run; HALT when the 3-cycle circuit breaker has tripped.
 
 ---
 
 ## State: PRESENT (hard stop -- the user decides)
 
-Set the lifecycle to `Paused-Awaiting-Input` through the writer. Present the realized `## MVP` section clearly.
+Present the realized `## MVP` section clearly.
 Assert:
 
 - `## Contents` is unchanged -- the `- [MVP](#mvp)` entry is present (written by
@@ -151,7 +153,10 @@ Assert:
 - Every byte outside the `## MVP` range is identical to what it was before this run.
 - To revise the MVP section later, use `/aid-update-mvp`.
 
-**Advance:** ASK -> [State: DONE].
+Then ask the user to approve the result, through the question protocol. The approval blocks the work, so this step pauses on it (`.aid/runtime/templates/skill-steps.md`, part 3). Record it first with `bash .aid/runtime/scripts/execute/writeback-state.sh --ask --category Approval --impact High --context '<the approval, as shown>' --suggested 'Approve' --asked-by aid-create-mvp --step PRESENT --covers 'the MVP section of the roadmap'` (it prints the question's id), bring the step detail up to date with `--step` (done: presented; waiting for that id), and set the lifecycle to `Paused-Awaiting-Input` and the pause reason to that open question through the writer. An approval cannot be skipped: the step stays paused until the user approves or declines. Once it is answered, record the answer with `--answer --id <id> --state Answered --value '<Approved, or Declined with the changes asked>' --applied-to 'the MVP section of the roadmap'`, set the lifecycle back to `Running` through the writer, and end the step with the advance below.
+If the user declines or asks for changes, REALIZE applies exactly what was asked, in place, to what this run wrote (the seed it consumed is not needed again, and the route cases belong to the first pass). VERIFY and this step then run again.
+
+**Advance:** CHAIN → DONE when the user approves; CHAIN → REALIZE when the user declines or asks for changes.
 
 ---
 

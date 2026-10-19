@@ -137,6 +137,10 @@ consideration. Step 5 (Process Approval Response) follows, inside this step, onc
     <description>`." Optional, user-initiated, never auto-invoked; silent (no output) if no
     issue-tracker connector is catalogued.
   - Print: `✅ Requirements approved.`
+  - Bring the step detail up to date, so a later `/aid-describe` does not run COMPLETION again from the top (silent state-write, no output; a failed write stops the run):
+    ```
+    bash .aid/runtime/scripts/execute/writeback-state.sh --step --skill aid-describe --name COMPLETION --detail 'done: requirements approved; next /aid-define {work}'
+    ```
   - Record the pause through the writer (silent state-write, no output; a failed write stops the run):
     ```
     bash .aid/runtime/scripts/execute/writeback-state.sh --pipeline --field Lifecycle --value "Paused-Awaiting-Input"
@@ -150,4 +154,6 @@ consideration. Step 5 (Process Approval Response) follows, inside this step, onc
   - Update STATE.md `## Interview State` section statuses if needed
   - End the step with the CHAIN case of the advance line below, which returns to the interview loop for any new gaps
 
-**Advance:** **CHAIN** → [State: CONTINUE] when the user adds a consideration; **HALT** when the user approves the requirements. Name `/aid-define {work}` as the next skill in one plain line. Do not chain into it: this checkpoint needs an explicit user decision.
+On approval, name `/aid-define {work}` as the next skill in one plain line. Do not chain into it: this checkpoint needs an explicit user decision.
+
+**Advance:** **CHAIN** → [State: CONTINUE] when the user adds a consideration; **HALT** when the user approves the requirements.

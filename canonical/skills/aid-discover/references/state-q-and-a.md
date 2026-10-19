@@ -61,4 +61,6 @@ remain, they MUST be resolved (self-answered or asked) before leaving this state
 Print: `[Q&A] Complete — {self} self-answered (confirmed from source), {asked} answered by user, 0 Pending.`
 Print: `[State: Q-AND-A] complete.`
 
-**Advance:** **CHAIN** → [State: FIX] when any answer implies a doc change; **CHAIN** → [State: APPROVAL] when no answer does, zero questions are Pending and the grade is at least the minimum. The questions in Step 2 pause this step until they are answered; with no question put to the user, the step continues at once.
+The questions in Step 2 pause this step until they are answered; with no question put to the user, the step continues at once.
+
+**Advance:** **CHAIN** → [State: FIX] when any answer implies a doc change; **CHAIN** → [State: APPROVAL] when no answer does, zero questions are Pending and the grade is at least the minimum.

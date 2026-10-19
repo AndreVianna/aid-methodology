@@ -24,7 +24,9 @@ Which deliveries should be in this release? [all ready / select / cancel]
 
 If user selects "all ready" → include all eligible.
 If user selects specific ones → include only those.
-If user cancels → reset work `STATE.md` `## Deploy State` to Idle. No package file is written, and the run ends (the advance line below).
+If user cancels → reset work `STATE.md` `## Deploy State` to Idle. No package file is written. Set the lifecycle to
+`Paused-Awaiting-Input` and the pause reason to 'Release selection canceled -- run /aid-deploy to select deliveries again'
+through the writer, and the run ends (the advance line below).
 
 Ask for:
 - Version/tag name (suggest based on versioning scheme from KB)

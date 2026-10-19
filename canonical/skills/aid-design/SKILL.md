@@ -60,7 +60,7 @@ on resume; it never routes. Which skill and step a work continues at come from i
    with `--path lite`, `--skill aid-design` and this skill's entry step; `phase` not driven).
    The gate writes the record; this skill adds nothing by hand.
 
-**Advance:** CHAIN -> DESIGN.
+**Advance:** CHAIN → DESIGN when the gate allocated a new work; HALT when the user continues an existing work (the gate's § 3b takes it over).
 
 ---
 
@@ -72,7 +72,7 @@ control/interaction, component or interface shape, and **accessibility notes**
 (`task-type-rules.md ## DESIGN`). It writes `DESIGN.md` into the work folder (the design's
 kept record).
 
-**Advance:** CHAIN -> VERIFY.
+**Advance:** CHAIN → VERIFY.
 
 ---
 
@@ -86,7 +86,7 @@ kept record).
 3. **Grade:** `bash .aid/runtime/scripts/grade.sh --explain <ledger>`. Not clean -> loop
    to DESIGN. Circuit-breaker: 3 cycles -> IMPEDIMENT, and the lifecycle is set to `Blocked` through the writer.
 
-**Advance:** CHAIN -> PRESENT when the verify is clean; CHAIN -> DESIGN when it is not clean and fewer than 3 cycles have run; HALT when the 3-cycle circuit breaker has tripped.
+**Advance:** CHAIN → PRESENT when the verify is clean; CHAIN → DESIGN when it is not clean and fewer than 3 cycles have run; HALT when the 3-cycle circuit breaker has tripped.
 
 ---
 
@@ -95,9 +95,10 @@ kept record).
 Present `DESIGN.md` clearly. Assert no resolution --
 the user decides whether/when to build it.
 
-The user's decision is a blocking question: this step pauses on it until the user answers.
+Then ask the user to approve the result, through the question protocol. The approval blocks the work, so this step pauses on it (`.aid/runtime/templates/skill-steps.md`, part 3). Record it first with `bash .aid/runtime/scripts/execute/writeback-state.sh --ask --category Approval --impact High --context '<the approval, as shown>' --suggested 'Approve' --asked-by aid-design --step PRESENT --covers 'the design DESIGN.md'` (it prints the question's id), bring the step detail up to date with `--step` (done: presented; waiting for that id), and set the lifecycle to `Paused-Awaiting-Input` and the pause reason to that open question through the writer. An approval cannot be skipped: the step stays paused until the user approves or declines. Once it is answered, record the answer with `--answer --id <id> --state Answered --value '<Approved, or Declined with the changes asked>' --applied-to 'the design DESIGN.md'`, set the lifecycle back to `Running` through the writer, and end the step with the advance below.
+If the user declines or asks for changes, DESIGN revises `DESIGN.md` with exactly what was asked, and VERIFY and this step run again.
 
-**Advance:** ASK -> HANDOFF.
+**Advance:** CHAIN → HANDOFF when the user approves; CHAIN → DESIGN when the user declines or asks for changes.
 
 ---
 
@@ -106,7 +107,7 @@ The user's decision is a blocking question: this step pauses on it until the use
 Printed suggestions: build it (`/aid-create*` / `/aid-update*`, referencing the design), or
 capture it as a formal doc (`/aid-create-document`). Never auto-invoked; never a resolution.
 
-**Advance:** CHAIN -> DONE.
+**Advance:** CHAIN → DONE.
 
 ---
 
