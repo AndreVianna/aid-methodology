@@ -69,6 +69,12 @@ const MAINTENANCE_NOTE_RE = />\s*\*\*Maintenance note:\*\*.*?are\s+([\w\-]+(?:\s
 
 const B1_TRIGGERS_RE = /\bHALTS\b|\bSTOP\b|does not run|instead of looping further/;
 
+// The one-line INTAKE continuation form, "On **continuation**, follow the gate's § 3b: ...",
+// names the gate section instead of a halt token. It is matched on the gate reference, not
+// on the whole sentence, so a re-wrap of the line does not change the result. The old form
+// keeps matching through B1_TRIGGERS_RE; this one is the second accepted form for INTAKE.
+const B1_GATE_REF_RE = /\bfollow\s+the\s+gate[’']s\s+§\s*3b\b/;
+
 // ── Module-level memo ──────────────────────────────────────────────────────────
 
 /** @type {EngineCore|null} */
@@ -575,8 +581,9 @@ function _buildEngineCore(override = {}) {
 /**
  * Apply B1 for a single state (INTAKE or GATE).
  *
- * For INTAKE: locates the "On **continuation**" arm whose sentence contains
- * "HALTS"/"does not run"; names the B1 node from work-initiation-gate.md.
+ * For INTAKE: locates the "On **continuation**" arm whose sentence either contains
+ * "HALTS"/"does not run" (the old form) or names "follow the gate's § 3b" (the one-line
+ * form); names the B1 node from work-initiation-gate.md.
  * For GATE: locates the "**Circuit breaker.**" arm whose sentence contains
  * "STOP"/"instead of looping further"; names the B1 node from shortcut-engine.md.
  *
@@ -668,20 +675,23 @@ function _applyB1(
 
 /**
  * Find the INTAKE B1 arm: "On **continuation**" whose context has HALTS /
- * "does not run".
+ * "does not run" (the old form), or "follow the gate's § 3b" (the one-line form).
  *
  * @param {string[]} sectionLines
  * @param {number}   headingLine  1-based
  * @returns {{ armText, armLineInFile, triggerContext, continueCondition } | null}
  */
 function _findIntakeB1Arm(sectionLines, headingLine) {
-  // Pattern: "On **arm**" where the bullet/paragraph context has a B1 trigger.
-  const ON_ARM_RE = /\bOn\s+(\*\*[^*]+\*\*)/;
+  // Pattern: "On **arm**". An arm is the clause from its own "On **arm**" to the next arm in
+  // the same paragraph, and it fires only when that clause holds a trigger. Testing the whole
+  // paragraph instead would let the one-line form, which can put "On **new work**" first on
+  // the line, hand the B1 edge to the wrong arm.
+  const ON_ARM_RE     = /\bOn\s+(\*\*[^*]+\*\*)/;
+  const ON_ARM_ALL_RE = /\bOn\s+(\*\*[^*]+\*\*)/g;
 
   for (let i = 0; i < sectionLines.length; i++) {
     const line = sectionLines[i];
-    const m    = line.match(ON_ARM_RE);
-    if (!m) continue;
+    if (!ON_ARM_RE.test(line)) continue;
 
     // Collect continuation lines.
     let context = line;
@@ -694,17 +704,36 @@ function _findIntakeB1Arm(sectionLines, headingLine) {
       j++;
     }
 
-    if (!B1_TRIGGERS_RE.test(context)) continue;
+    // Only arms that start on this line are candidates; the paragraph supplies their clauses.
+    const arms = [...context.matchAll(ON_ARM_ALL_RE)];
+    let found = null;
+    for (let k = 0; k < arms.length && arms[k].index < line.length; k++) {
+      const end    = k + 1 < arms.length ? arms[k + 1].index : context.length;
+      const clause = context.slice(arms[k].index, end);
+      if (B1_TRIGGERS_RE.test(clause) || B1_GATE_REF_RE.test(clause)) {
+        found = arms[k];
+        break;
+      }
+    }
+    if (!found) continue;
 
-    const armText       = m[1]; // e.g. `**continuation**`
+    const armText       = found[1]; // e.g. `**continuation**`
     const armLineInFile = headingLine + i;
 
     // Guard clause for the B1 arm: "On <arm>" stripped.
     const armStripped     = _stripEmphasis(armText).replace(/\.$/, '').trim();
     const triggerContext  = 'On ' + armStripped;
 
-    // Sibling arm: "On **new work**" in the same context.
-    const siblingMatch = context.match(/\bOn\s+(\*\*[^*]+\*\*)/g);
+    // Sibling arm: "On **new work**" in the same paragraph. The whole paragraph is searched,
+    // not only the lines from the arm down, because the one-line form can put the sibling
+    // on the line above the continuation arm.
+    let paragraphStart = i;
+    while (paragraphStart > 0 && sectionLines[paragraphStart - 1].trim() !== '' &&
+           !/^#{1,6}\s/.test(sectionLines[paragraphStart - 1])) {
+      paragraphStart--;
+    }
+    const paragraph = sectionLines.slice(paragraphStart, i).concat([context]).join(' ');
+    const siblingMatch = paragraph.match(/\bOn\s+(\*\*[^*]+\*\*)/g);
     let continueCondition = null;
     if (siblingMatch) {
       for (const sib of siblingMatch) {

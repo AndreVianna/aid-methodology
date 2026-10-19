@@ -655,6 +655,74 @@ describe('B1 trigger tokens — each is contract, so each gets a fixture', () =>
   });
 });
 
+describe('B1 one-line continuation form — same node and edges as the old form', () => {
+  // The one-line form, "On **continuation**, follow the gate's § 3b: ...", names the gate
+  // section instead of a halt token. It must give the same B1 node and edges as the old
+  // "this engine HALTS ... does not run" form, so the chart does not change when the
+  // wording does. Both fixtures are built on withIntake, so only the arm line differs.
+  const ONE_LINE =
+    "On **continuation**, follow the gate's § 3b: enter the chosen work's worktree and run " +
+    'the skill its record names, at its saved step. On **new work**, proceed with the allocation below.';
+  const OLD_FORM =
+    'On **continuation**, the gate routes to the chosen work\'s resume door and this engine ' +
+    'HALTS -- it allocates nothing and does not run. On **new work**, proceed with the allocation below.';
+
+  /** The chart's shape with ids replaced by names, so two derivations compare directly. */
+  function shape(core2) {
+    const nameOf = new Map(core2.nodes.map((n) => [n.id, n.name]));
+    return {
+      nodes: core2.nodes.map((n) => [n.name, n.kind, n.terminal?.advanceType ?? null]),
+      edges: core2.edges.map((e) => [nameOf.get(e.from), nameOf.get(e.to), e.kind, e.condition]),
+    };
+  }
+
+  it('the one-line form derives a CONTINUATION exit with a branch edge in', () => {
+    const core2 = getEngineCore({ engineText: withIntake([ONE_LINE]), gateText: INERT_GATE });
+    const names = core2.nodes.map((n) => n.name);
+    expect(names).toEqual(['INTAKE', 'CONTINUATION', 'GATE']);   // non-vacuity: B1 really fired
+    const b1 = core2.nodes.find((n) => n.name === 'CONTINUATION');
+    expect(b1.kind).toBe('exit');
+    expect(core2.edges.some((e) => e.to === b1.id && e.kind === 'branch')).toBe(true);
+  });
+
+  it('the one-line form gives the same nodes and edges as the old form', () => {
+    const oneLine = getEngineCore({ engineText: withIntake([ONE_LINE]), gateText: INERT_GATE });
+    const oldForm = getEngineCore({ engineText: withIntake([OLD_FORM]), gateText: INERT_GATE });
+    expect(shape(oneLine).nodes.length).toBeGreaterThan(0);      // non-vacuity
+    expect(shape(oneLine)).toEqual(shape(oldForm));
+    expect(oneLine.nodes.find((n) => n.name === 'CONTINUATION').provenance)
+      .toEqual(oldForm.nodes.find((n) => n.name === 'CONTINUATION').provenance);
+  });
+
+  it('the one-line form still gives the old form\'s chart when "On **new work**" comes first', () => {
+    // The order the one-line form is written in: the new-work arm opens the line, the
+    // continuation arm follows it. The B1 edge must still carry "On continuation".
+    const newFirst =
+      'On **new work**, proceed with the allocation below. On **continuation**, follow the ' +
+      "gate's § 3b: enter the chosen work's worktree and run the skill its record names, at its saved step.";
+    const reordered = getEngineCore({ engineText: withIntake([newFirst]), gateText: INERT_GATE });
+    const oldForm = getEngineCore({ engineText: withIntake([OLD_FORM]), gateText: INERT_GATE });
+    expect(reordered.nodes.map((n) => n.name)).toEqual(['INTAKE', 'CONTINUATION', 'GATE']);
+    expect(shape(reordered)).toEqual(shape(oldForm));
+  });
+
+  it('a re-wrapped gate reference still fires, because the match is on the reference', () => {
+    // The same one-line form, broken across two lines inside the paragraph.
+    const wrapped = ONE_LINE.replace("gate's § 3b", "gate's\n§ 3b");
+    const core2 = getEngineCore({ engineText: withIntake([wrapped]), gateText: INERT_GATE });
+    expect(core2.nodes.map((n) => n.name)).toEqual(['INTAKE', 'CONTINUATION', 'GATE']);
+  });
+
+  it('an On **continuation** arm with neither trigger nor gate reference emits no node', () => {
+    // Separability: the arm is still named continuation, but nothing in it fires B1.
+    const core2 = getEngineCore({
+      engineText: withIntake(['On **continuation**, carry on with the work as it was left.']),
+      gateText: INERT_GATE,
+    });
+    expect(core2.nodes.map((n) => n.name)).toEqual(['INTAKE', 'GATE']);
+  });
+});
+
 describe('L1 loop phrasing is narrow — "Loop back", not any "Loop"', () => {
   /** The self-edges on the GATE node, which is the only state L1 is applied to. */
   function gateSelfEdges(core2) {
