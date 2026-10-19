@@ -79,3 +79,6 @@ desktop.ini
 .claude/worktrees/
 .aid/runtime/**/node_modules/
 # <<< AID managed <<<
+
+# conversation-runner suite mutants (created and removed during a run)
+tests/conversation/mut-*.py
