@@ -180,6 +180,14 @@ State detection reads the files on disk, every run. Nothing remembered from an
 earlier run or from this conversation counts as state, because the files may
 have changed since.
 
+Steps move and record by `.aid/runtime/templates/skill-steps.md` (the step entry, the advance words and the
+work record); this skill restates none of them.
+
+**Detection shapes the entry step and validates a saved step, and never routes.** A fresh start on a work
+runs the checks below to decide how far the entry step goes. On resume the saved step is checked against what
+is on disk, and a mismatch goes to recovery, never to a silent re-route. Which skill and which step a work
+continues at come only from its work record.
+
 All paths below are relative to `.aid/works/{work}/`.
 
 ```plaintext
@@ -238,11 +246,11 @@ aid-define  ▸ you are here
 
 | State | Detail | Worker | Advance |
 |-------|--------|--------|---------|
-| FEATURE-DECOMPOSITION | `references/state-feature-decomposition.md` | `aid-architect` | → CROSS-REFERENCE |
-| CROSS-REFERENCE | `references/state-cross-reference.md` | `aid-reviewer` | → DONE |
-| DONE | `references/state-done.md` | `inline` | → halt |
+| FEATURE-DECOMPOSITION | `references/state-feature-decomposition.md` | `aid-architect` | CHAIN → CROSS-REFERENCE |
+| CROSS-REFERENCE | `references/state-cross-reference.md` | `aid-reviewer` | ASK → DONE |
+| DONE | `references/state-done.md` | `inline` | HALT |
 
 On state entry, print `[State: NAME]` + the "you are here" map from State Detection above.
-When a state completes, route by its `**Advance:**` type (per [`state-machine-chaining.md`](../../aid/templates/state-machine-chaining.md)):
+When a state completes, route by its `**Advance:**` type (per [`skill-steps.md`](../../aid/templates/skill-steps.md)):
 - **CHAIN** → begin the next state's reference doc within the same invocation; no exit.
 - **HALT** → print the closing summary and exit.

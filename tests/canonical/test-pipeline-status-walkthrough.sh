@@ -328,8 +328,8 @@ M4_FILES["aid-detail"]="${REPO_ROOT}/canonical/skills/aid-detail/references/firs
 M4_FILES["aid-execute"]="${REPO_ROOT}/canonical/skills/aid-execute/references/state-execute.md"
 
 declare -A M4_PHASES
-M4_PHASES["aid-define"]="Define"
-M4_PHASES["aid-specify"]="Specify"
+M4_PHASES["aid-define"]="Specification"
+M4_PHASES["aid-specify"]="Specification"
 M4_PHASES["aid-plan"]="Plan"
 M4_PHASES["aid-detail"]="Detail"
 M4_PHASES["aid-execute"]="Execute"
@@ -569,12 +569,12 @@ else
     fail "B4c chaining: resume-command instruction MISSING -- emit may have replaced it (C4 violation)"
 fi
 
-# B4d: aid-specify/state-blocked.md still has the PAUSE-FOR-USER-ACTION Advance line
+# B4d: aid-specify/state-blocked.md still has the WAIT Advance line
 # (the pause instruction is still there; the emit is additive).
-if grep -qF "PAUSE-FOR-USER-ACTION" "$SPECIFY_BLOCKED" 2>/dev/null; then
-    pass "B4d state-blocked: PAUSE-FOR-USER-ACTION advance instruction still present (additive)"
+if grep -qF "**WAIT**" "$SPECIFY_BLOCKED" 2>/dev/null; then
+    pass "B4d state-blocked: WAIT advance instruction still present (additive)"
 else
-    fail "B4d state-blocked: PAUSE-FOR-USER-ACTION advance instruction MISSING -- emit may have replaced it"
+    fail "B4d state-blocked: WAIT advance instruction MISSING -- emit may have replaced it"
 fi
 
 # B4e: aid-execute/state-execute.md still has the impediment-write instruction

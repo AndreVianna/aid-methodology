@@ -38,4 +38,4 @@ contradiction between two of them is visible. Run it on cycle 1 only -- that mak
 once per phase by construction. Definition:
 `reviewer-dispatch.md` section "The cross-document contradiction pass (Guard 2)".
 
-**Advance:** **CHAIN** → [State: DONE] when cross-reference completes (continue inline).
+**Advance:** **ASK** → [State: DONE] once the cross-reference questions are answered.

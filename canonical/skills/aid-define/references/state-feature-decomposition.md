@@ -5,7 +5,7 @@ Requirements are approved and `REQUIREMENTS.md § 11 Features` has no feature se
 Emit pipeline phase (silent state-write only — no output, no gate):
 ```
 bash .aid/runtime/scripts/execute/writeback-state.sh --pipeline --field Lifecycle --value Running
-bash .aid/runtime/scripts/execute/writeback-state.sh --pipeline --field Phase --value Define
+bash .aid/runtime/scripts/execute/writeback-state.sh --pipeline --field Phase --value Specification
 bash .aid/runtime/scripts/execute/writeback-state.sh --pipeline --field "Active Skill" --value aid-define
 bash .aid/runtime/scripts/execute/writeback-state.sh --pipeline --field Updated --value "$(date -u +%Y-%m-%dT%H:%M:%SZ)"
 ```

@@ -100,7 +100,7 @@ In the work's `.aid/works/{work}/STATE.yml`, update the `features:` sequence:
 Emit pipeline phase (silent state-write only — no output, no gate):
 ```
 bash .aid/runtime/scripts/execute/writeback-state.sh --pipeline --field Lifecycle --value Running
-bash .aid/runtime/scripts/execute/writeback-state.sh --pipeline --field Phase --value Specify
+bash .aid/runtime/scripts/execute/writeback-state.sh --pipeline --field Phase --value Specification
 bash .aid/runtime/scripts/execute/writeback-state.sh --pipeline --field "Active Skill" --value aid-specify
 bash .aid/runtime/scripts/execute/writeback-state.sh --pipeline --field Updated --value "$(date -u +%Y-%m-%dT%H:%M:%SZ)"
 ```
@@ -140,4 +140,4 @@ Does this look right? Answer the questions, and tell me if I'm missing anything.
 
 Process response → update this feature's `features:` entry in the work STATE.yml → begin **The Loop** for first Pending section.
 
-**Advance:** **CHAIN** → [State: CONTINUE] (continue inline).
+**Advance:** **ASK** → [State: CONTINUE] once the open questions are answered.

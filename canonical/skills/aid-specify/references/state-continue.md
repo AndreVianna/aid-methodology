@@ -5,7 +5,7 @@ The work `STATE.yml`'s `features:` entry for this feature shows `state: In Discu
 Emit pipeline phase (silent state-write only — no output, no gate):
 ```
 bash .aid/runtime/scripts/execute/writeback-state.sh --pipeline --field Lifecycle --value Running
-bash .aid/runtime/scripts/execute/writeback-state.sh --pipeline --field Phase --value Specify
+bash .aid/runtime/scripts/execute/writeback-state.sh --pipeline --field Phase --value Specification
 bash .aid/runtime/scripts/execute/writeback-state.sh --pipeline --field "Active Skill" --value aid-specify
 bash .aid/runtime/scripts/execute/writeback-state.sh --pipeline --field Updated --value "$(date -u +%Y-%m-%dT%H:%M:%SZ)"
 ```
@@ -111,4 +111,4 @@ in coding-standards.md §3.2 (composite indices discouraged). Let me re-propose.
   - Print summary with all completed sections
   - `/aid-specify` on this feature now enters **REVIEW** (step 4 on all sections)
 
-**Advance:** **CHAIN** → [State: REVIEW] when all sections are Complete (continue inline).
+**Advance:** **ASK** → [State: REVIEW] once all sections are Complete and the user has agreed to each.
