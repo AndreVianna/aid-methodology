@@ -188,7 +188,7 @@ runs the checks below to decide how far the entry step goes. On resume the saved
 is on disk, and a mismatch goes to recovery, never to a silent re-route. Which skill and which step a work
 continues at come only from its work record.
 
-All paths below are relative to `.aid/works/{work}/`.
+All paths below are relative to `.aid/works/{work}/`. The tables below describe how a fresh start picks its entry step; they are not routing.
 
 ```plaintext
 Precondition: Interview State: Approved in STATE.md -- HALT if not met (see below)
@@ -246,11 +246,11 @@ aid-define  ▸ you are here
 
 | State | Detail | Worker | Advance |
 |-------|--------|--------|---------|
-| FEATURE-DECOMPOSITION | `references/state-feature-decomposition.md` | `aid-architect` | CHAIN → CROSS-REFERENCE |
+| FEATURE-DECOMPOSITION | `references/state-feature-decomposition.md` | `aid-architect` | ASK → CROSS-REFERENCE |
 | CROSS-REFERENCE | `references/state-cross-reference.md` | `aid-reviewer` | ASK → DONE |
-| DONE | `references/state-done.md` | `inline` | HALT |
+| DONE | `references/state-done.md` | `inline` | ASK → HALT |
 
 On state entry, print `[State: NAME]` + the "you are here" map from State Detection above.
 When a state completes, route by its `**Advance:**` type (per [`skill-steps.md`](../../aid/templates/skill-steps.md)):
-- **CHAIN** → begin the next state's reference doc within the same invocation; no exit.
+- **ASK** → stop for the user through the question protocol, then continue to the step the line names.
 - **HALT** → print the closing summary and exit.

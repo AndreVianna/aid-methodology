@@ -29,7 +29,7 @@ flowchart TB
   n2["CROSS-REFERENCE<br/>Requirements are approved and features exist but…"]
   n3(["DONE<br/>Interview is complete, approved, features decomposed, and…"])
   n1 -. "otherwise" .- n1
-  n1 -->|"when decomposition completes"| n2
+  n1 -->|"once the user has approved the feature list"| n2
   n2 -. "otherwise" .- n2
   n2 -->|"once the cross-reference questions are answered"| n3
   class n1 aidEntry
@@ -46,7 +46,7 @@ Every node in the chart above, in chart order, with the exact `canonical/` text 
 <a id="fragment-n1"></a>**1 · `FEATURE-DECOMPOSITION`** — Requirements are approved and REQUIREMENTS.md § 11 Features… · _entry_
 
 ~~~~plaintext title="canonical/skills/aid-define/SKILL.md#L249" wrap
-| FEATURE-DECOMPOSITION | `references/state-feature-decomposition.md` | `aid-architect` | CHAIN → CROSS-REFERENCE |
+| FEATURE-DECOMPOSITION | `references/state-feature-decomposition.md` | `aid-architect` | ASK → CROSS-REFERENCE |
 ~~~~
 
 [Source: `canonical/skills/aid-define/SKILL.md#L249`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-define/SKILL.md#L249) · [full step: `canonical/skills/aid-define/references/state-feature-decomposition.md#L1-L21`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-define/references/state-feature-decomposition.md#L1-L21)
@@ -62,7 +62,7 @@ Every node in the chart above, in chart order, with the exact `canonical/` text 
 <a id="fragment-n3"></a>**3 · `DONE`** — Interview is complete, approved, features decomposed, and… · _exit_ · HALT
 
 ~~~~plaintext title="canonical/skills/aid-define/SKILL.md#L251" wrap
-| DONE | `references/state-done.md` | `inline` | HALT |
+| DONE | `references/state-done.md` | `inline` | ASK → HALT |
 ~~~~
 
 [Source: `canonical/skills/aid-define/SKILL.md#L251`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-define/SKILL.md#L251) · [full step: `canonical/skills/aid-define/references/state-done.md#L1-L38`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-define/references/state-done.md#L1-L38)

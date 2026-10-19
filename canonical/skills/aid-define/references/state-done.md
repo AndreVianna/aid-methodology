@@ -16,7 +16,7 @@ Interview for {work} is complete and approved.
   - Ask: _"What would you like to add or change?"_
   - If the user wants to change **requirements-level content** (Objective, Problem Statement,
     Functional Requirements, etc.) — print: `For requirements-level changes, run
-    /aid-describe {work} to reopen the requirements interview.` and exit.
+    /aid-describe {work} to reopen the requirements interview.` then HALT.
   - Otherwise, record the user's input into the relevant REQUIREMENTS.md section, update
     `interview.sections[].state` (STATE.yml) if needed, update the affected §11 feature section
     files if the change impacts a feature, and update KB documents if the new info is KB-relevant.
@@ -34,4 +34,4 @@ Interview for {work} is complete and approved.
     ```
   - Print: `✅ Interview complete. Requirements approved. Ready for /aid-specify.`
 
-**Advance:** **HALT**. This is the terminal state. Run `/aid-define` again only to add information or re-validate.
+**Advance:** **ASK** → **HALT**. The question is the menu above; a requirements-level change hands off to `/aid-describe` in one plain line, then HALT. This is the terminal state. Run `/aid-define` again only to add information or re-validate.

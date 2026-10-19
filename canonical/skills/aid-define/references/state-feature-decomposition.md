@@ -17,4 +17,4 @@ Read `references/feature-decomposition.md` for the full decomposition process
 (analyze, propose, create folders, update meta-documents).
 ✓ aid-architect done (record actual time) — or ✗ aid-architect failed: {reason}
 
-**Advance:** **CHAIN** → [State: CROSS-REFERENCE] when decomposition completes (continue inline).
+**Advance:** **ASK** → [State: CROSS-REFERENCE] once the user has approved the feature list (continue inline).
