@@ -327,8 +327,8 @@ assert_file_contains "$GATE_DOC" "NEW, no prompt" "F: doc documents the empty ->
 assert_file_contains "$GATE_DOC" "One or more works exist" "F: doc documents the non-empty -> ASK branch"
 # continuation -> route branch + routing targets
 assert_file_contains "$GATE_DOC" "CONTINUATION" "F: doc documents the continuation branch"
-assert_file_contains "$GATE_DOC" "/aid-execute" "F: routing table names the /aid-execute resume target (halted / mid-Execute work)"
-assert_file_contains "$GATE_DOC" "/aid-plan"    "F: routing table names a phase-skill resume target (partial full-path work)"
+assert_file_contains "$GATE_DOC" "/aid-execute" "F: legacy map names the /aid-execute target (halted / mid-Execute work)"
+assert_file_contains "$GATE_DOC" "/aid-plan"    "F: legacy map names a phase-skill target (partial full-path work)"
 # field contract the routing consumes
 assert_file_contains "$GATE_DOC" "enumerate-works.sh" "F: doc points starters at the shared enumeration helper"
 assert_file_contains "$GATE_DOC" '<work_id>\t<phase>\t<lifecycle>\t<branch_label>\t<title>' \
@@ -553,6 +553,27 @@ assert_file_contains "$AID_PROTOTYPE" "associate an opt-in git worktree so the t
     "Recon: aid-prototype's spike opt-in worktree sentence survives unchanged"
 assert_file_contains "$AID_PROTOTYPE" "gate's \`§ 3a\` step 2" \
     "Recon: aid-prototype references gate § 3a work-level create+enter at its allocation step"
+
+# ===========================================================================
+echo ""
+echo "=== Group H: work record contract -- § 3a --create, § 3b three-row table, legacy markers (feature-002 SS-14 (a), SS-11) ==="
+
+SECTION_3A=$(awk '/^### 3a\./{flag=1} /^### 3b\./{flag=0} flag' "$GATE_DOC")
+assert_output_contains "$SECTION_3A" "writeback-state.sh --create" "H: § 3a runs writeback-state.sh --create"
+assert_output_contains "$SECTION_3A" "--reading" "H: § 3a --create passes --reading"
+assert_output_contains "$SECTION_3A" "--skill" "H: § 3a --create passes --skill"
+assert_output_contains "$SECTION_3A" "--step" "H: § 3a --create passes --step"
+assert_output_contains "$SECTION_3A" "STATE.yml\` was created by the gate" "H: § 3a hand-back carries the one-line record notice"
+
+SECTION_3B_ROWS=$(awk '/^### 3b\./{flag=1} /^## Invariant/{flag=0} flag' "$GATE_DOC" | grep -cE '^ *\| [0-9]+ \|' || true)
+assert_eq "$SECTION_3B_ROWS" "3" "H: § 3b resume table has exactly three rows"
+
+assert_file_contains "$GATE_DOC" "<!-- legacy-phase-map: begin -->" "H: gate opens the legacy phase map block"
+assert_file_contains "$GATE_DOC" "<!-- legacy-phase-map: end -->" "H: gate closes the legacy phase map block"
+
+OLD_NAME_OUTSIDE_LEGACY=$(awk '/legacy-phase-map: begin/{skip=1; next} /legacy-phase-map: end/{skip=0; next} !skip' "$GATE_DOC" \
+    | grep -wE 'Describe|Define|Specify|Plan|Detail|Execute' || true)
+assert_eq "$OLD_NAME_OUTSIDE_LEGACY" "" "H: no old phase name appears in the gate outside the legacy markers (SS-11)"
 
 # ---------------------------------------------------------------------------
 echo ""

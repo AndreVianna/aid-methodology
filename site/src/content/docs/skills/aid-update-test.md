@@ -88,11 +88,11 @@ Bind **VERB=`update`**, **ARTIFACT=`test`**, then run the shared engine at `.aid
 
 <a id="fragment-n3"></a>**3 · `CONTINUATION`** · _exit_ · HALT
 
-~~~~plaintext title="canonical/aid/templates/work-initiation-gate.md#L127" wrap
-### 3b. CONTINUATION -> route to the chosen work's resume entry point, then STOP
+~~~~plaintext title="canonical/aid/templates/work-initiation-gate.md#L142" wrap
+### 3b. CONTINUATION -> the work's record decides where it resumes
 ~~~~
 
-[Source: `canonical/aid/templates/work-initiation-gate.md#L127`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/aid/templates/work-initiation-gate.md#L127)
+[Source: `canonical/aid/templates/work-initiation-gate.md#L142`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/aid/templates/work-initiation-gate.md#L142)
 
 <a id="fragment-n4"></a>**4 · `CAPTURE`** — Collapses Describe. · _step_
 
