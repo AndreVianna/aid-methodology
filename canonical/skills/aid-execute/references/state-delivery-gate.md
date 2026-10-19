@@ -15,7 +15,7 @@ Entered from pool dispatch **PD-5 Case A** (all tasks `Done`, no failures):
 ```
 [State: DELIVERY-GATE] — Per-delivery quality gate running.
 aid-execute  ▸ you are here
-  [✓ EXECUTE ] → [✓ REVIEW ] → [✓ FIX ] → [✓ DONE ] → [● DELIVERY-GATE ]
+  [✓ EXECUTE ] → [✓ REVIEW ] → [✓ DONE ] → [● DELIVERY-GATE ]
 ```
 
 Print this state-entry banner before proceeding to Step 0.

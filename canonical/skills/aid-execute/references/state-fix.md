@@ -13,7 +13,7 @@ review-criteria:
 
 # State: FIX
 
-CODE-source issues from the most recent REVIEW cycle are dispatched to the executor agent for repair; the loop returns to REVIEW on completion.
+FIX is entered only when resuming a task whose saved step is FIX; a new run fixes what its quick check finds inside REVIEW and never sends a task here. On that resume, the CODE-source issues the saved step lists are dispatched to the executor agent for repair, and the step then returns to REVIEW.
 
 > ⚠️ **State-Write Protocol note:** this state does NOT write the task's
 > `State` field itself -- the task correctly stays `In Review` for the

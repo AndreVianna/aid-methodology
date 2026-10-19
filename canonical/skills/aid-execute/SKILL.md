@@ -126,31 +126,28 @@ Print the state-entry line and "you are here" map:
 ```
 [State: EXECUTE] — Running the executor agent to produce task deliverables.
 aid-execute  ▸ you are here
-  [● EXECUTE ] → [ REVIEW ] → [ FIX ] → [ DONE ]
-                 ↑__________________|
+  [● EXECUTE ] → [ REVIEW ] → [ DONE ]
 ```
 
 **REVIEW:**
 ```
 [State: REVIEW] — Grading task output against acceptance criteria with a clean-context reviewer.
 aid-execute  ▸ you are here
-  [✓ EXECUTE ] → [● REVIEW ] → [ FIX ] → [ DONE ]
-                 ↑___________________|
+  [✓ EXECUTE ] → [● REVIEW ] → [ DONE ]
 ```
 
 **FIX:**
 ```
-[State: FIX] — Applying CODE-issue fixes and returning to REVIEW.
+[State: FIX] — Resuming a task saved at FIX: applying its CODE-issue fixes, then REVIEW.
 aid-execute  ▸ you are here
-  [✓ EXECUTE ] → [✓ REVIEW ] → [● FIX ] → [ DONE ]
-                 ↑____________________|
+  [✓ EXECUTE ] → [● FIX ] → [ REVIEW ] → [ DONE ]
 ```
 
 **DONE:**
 ```
 [State: DONE] — Grade meets minimum; task complete.
 aid-execute  ▸ you are here
-  [✓ EXECUTE ] → [✓ REVIEW ] → [✓ FIX ] → [● DONE ]
+  [✓ EXECUTE ] → [✓ REVIEW ] → [● DONE ]
 ```
 
 ## State Detection
@@ -164,7 +161,7 @@ or, on the flat path, the work-root `STATE.yml`'s `tasks_lifecycle` entry for `t
 |-----------|-------|
 | File absent or `State: _none yet_` | **EXECUTE** (Step 1) |
 | `State: In Progress`, no issues pending | **EXECUTE** (Step 1 — resume) |
-| `State: In Review`, issues listed | **FIX** (Step 3) |
+| `State: In Review` | **REVIEW** (it fixes what it finds in place; FIX runs only when the saved step is FIX) |
 | `State: Done` | **RE-RUN** (see Re-run below) |
 
 Steps move and record by `.aid/runtime/templates/skill-steps.md` (the step entry, the advance words and the

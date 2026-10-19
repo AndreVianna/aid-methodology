@@ -9,7 +9,7 @@ When the task is already `Done` and the user runs `/aid-execute task-NNN` again:
 ```
 [State: RE-RUN] — Task already Done; confirming whether to reopen for review.
 aid-execute  ▸ you are here
-  [✓ EXECUTE ] → [✓ REVIEW ] → [✓ FIX ] → [✓ DONE ] → [● RE-RUN ]
+  [✓ EXECUTE ] → [✓ REVIEW ] → [✓ DONE ] → [● RE-RUN ]
 ```
 
 1. Ask, through the question protocol: _"This task is marked Done. Do you want to reopen it for
