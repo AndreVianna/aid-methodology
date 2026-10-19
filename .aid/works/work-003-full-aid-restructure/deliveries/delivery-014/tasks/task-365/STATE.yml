@@ -51,7 +51,7 @@ review: --
 # [W] HH:MM | --
 elapsed: --
 # [W]
-notes: --
+notes: 'Codex adapter built early (Q152, h002 by Codex, fixed in 91e76afa and the h002 fix round; review C -> A+); live run with both CLIs, and the Cursor, Copilot CLI and Antigravity adapters, still owed here'
 # [W] mutable display-name override (writeback-state.sh:829). Documentation
 #     fix, not a schema change (SP-2's one documented exception): the writer
 #     already writes this key today; it was simply never declared here.
