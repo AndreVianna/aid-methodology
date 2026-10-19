@@ -1772,6 +1772,7 @@ describe('ASK then HALT — one ending that asks first', () => {
     ['ASK then HALT on cancel', 'plain connector'],
     ['**ASK** then **HALT** when the user cancels', 'bold markers'],
     ['**ASK** → **HALT**. The question is the menu above.', 'arrow connector'],
+    ['ASK, and then HALT on cancel', 'and-then connector'],
   ];
 
   for (const [text, label] of PAIRS) {
@@ -1791,13 +1792,17 @@ describe('ASK then HALT — one ending that asks first', () => {
     expect(r.terminal.advanceType).toBe('ASK');
   });
 
-  it('a later HALT clause restating the ASK ending adds no warning and keeps ASK', () => {
+  it('a HALT after an intervening hand-off clause is a second ending: it warns and keeps the last (task-372)', () => {
+    // The HALT is joined to the hand-off clause, not to the ASK clause, so the
+    // ASK ending and this HALT are two endings. Only a sequence joined directly to
+    // the ASK clause is one ending.
     const r = parse(
       advBlock('**ASK** → **HALT**. The question is the menu; a change hands off in one plain line, then HALT.'),
       states('ALPHA'),
     );
-    expect(r.warnings).toEqual([]);
-    expect(r.terminal.advanceType).toBe('ASK');
+    expect(r.warnings).toHaveLength(1);
+    expect(r.warnings[0]).toContain('multiple terminal clauses');
+    expect(r.terminal.advanceType).toBe('HALT');
   });
 
   it('HALT alone is unchanged: advanceType HALT and no warning', () => {
@@ -1812,6 +1817,22 @@ describe('ASK then HALT — one ending that asks first', () => {
     expect(r.warnings[0]).toContain('multiple terminal clauses');
     expect(r.terminal.advanceType).toBe('HALT');
   });
+
+  // ASK and HALT on separate arms are two endings, not one: the connector decides.
+  // Each must keep the existing "multiple terminal clauses" warning (task-372).
+  const SEPARATE_ARMS = [
+    ['ASK on approve; HALT on cancel', 'semicolon between arms'],
+    ['ASK; HALT', 'bare semicolon'],
+  ];
+
+  for (const [text, label] of SEPARATE_ARMS) {
+    it(`"${text}" (${label}) is two endings and still warns, keeping the last`, () => {
+      const r = parse(advBlock(text), states('ALPHA'));
+      expect(r.warnings).toHaveLength(1);
+      expect(r.warnings[0]).toContain('multiple terminal clauses');
+      expect(r.terminal.advanceType).toBe('HALT');
+    });
+  }
 
   it('a HALT before an ASK-then-HALT ending still warns: two real endings', () => {
     const r = parse(advBlock('HALT; ASK then HALT on cancel'), states('ALPHA'));

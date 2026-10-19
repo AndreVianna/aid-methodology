@@ -174,7 +174,17 @@ export function findStateSections(lines, file) {
     // If neither is found, the section extends to the last line of the file.
     let sectionEnd = lines.length; // default: past last line (corrected below)
 
+    // A fenced code block is sample text, not structure: a `---` or `## ` line
+    // inside one (a frontmatter example, say) must not end the section, or the
+    // Advance line written after the fence falls outside it and the state reads
+    // as an unspecified exit.
+    let inFence = false;
     for (let k = i + 1; k < lines.length; k++) {
+      if (/^```/.test(lines[k])) {
+        inFence = !inFence;
+        continue;
+      }
+      if (inFence) continue;
       if (_isSectionBoundary(lines[k])) {
         // Next section starts at 0-indexed k → last included line is k-1 (0-indexed)
         // = k (1-based).

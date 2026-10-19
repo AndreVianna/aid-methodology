@@ -148,4 +148,4 @@ Stop here (ASK): the summary approval is put to the user through the question pr
   - Update STATE.md `## Interview State` section statuses if needed
   - Return to Interview Loop for any new gaps
 
-**Advance:** **ASK** → **HALT**. Name `/aid-define {work}` as the next skill in one plain line. Do not chain into it: this checkpoint needs an explicit user decision.
+**Advance:** **ASK** then **HALT**. Name `/aid-define {work}` as the next skill in one plain line. Do not chain into it: this checkpoint needs an explicit user decision.

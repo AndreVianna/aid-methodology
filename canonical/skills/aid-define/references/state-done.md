@@ -34,4 +34,4 @@ Interview for {work} is complete and approved.
     ```
   - Print: `✅ Interview complete. Requirements approved. Ready for /aid-specify.`
 
-**Advance:** **ASK** → **HALT**. The question is the menu above; a requirements-level change hands off to `/aid-describe` in one plain line, then HALT. This is the terminal state. Run `/aid-define` again only to add information or re-validate.
+**Advance:** **ASK** then **HALT**. The question is the menu above; a requirements-level change hands off to `/aid-describe` in one plain line. This is the terminal state. Run `/aid-define` again only to add information or re-validate.

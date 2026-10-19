@@ -925,6 +925,29 @@ describe('findStateSections — detection', () => {
 });
 
 describe('findStateSections — line ranges', () => {
+  it('a --- or ## line inside a fenced block does not end the section (task-372)', () => {
+    // The frontmatter sample inside the fence holds a bare `---`. The Advance line
+    // after the fence belongs to the state, so the section must run past it.
+    const lines = [
+      '## State: REALIZE',           // idx 0 → line 1
+      'Dispatch the architect.',     // idx 1 → line 2
+      '',                            // idx 2 → line 3
+      '```yaml',                     // idx 3 → line 4
+      '---',                         // idx 4 → line 5 (inside the fence)
+      'kb-category: primary',        // idx 5 → line 6
+      '---',                         // idx 6 → line 7 (inside the fence)
+      '```',                         // idx 7 → line 8
+      '',                            // idx 8 → line 9
+      '**Advance:** CHAIN -> [State: REGISTER].', // idx 9 → line 10
+      '',                            // idx 10 → line 11
+      '---',                         // idx 11 → line 12 (real section end)
+      '## State: REGISTER',          // idx 12 → line 13
+    ];
+    const sections = findStateSections(lines, 'test.md');
+    expect(sections[0].name).toBe('REALIZE');
+    expect(sections[0].sectionEndLine).toBe(10);
+  });
+
   it('headingLine is the 1-based line of the ## State: heading', () => {
     // Lines: 0=---, 1=name:foo, 2=---, 3=empty, 4=## State: INTAKE (index 4 → 1-based 5)
     const lines = [

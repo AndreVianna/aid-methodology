@@ -56,8 +56,8 @@
       "label": "REALIZE",
       "kind": "exit",
       "terminal": {
-        "advanceType": "UNSPECIFIED",
-        "handoff": null
+        "advanceType": "ASK",
+        "handoff": "naming the skill the route names"
       },
       "provenance": {
         "file": "canonical/skills/aid-create-roadmap/SKILL.md",
@@ -69,9 +69,9 @@
       "detail": {
         "file": "canonical/skills/aid-create-roadmap/SKILL.md",
         "startLine": 84,
-        "endLine": 121,
+        "endLine": 139,
         "sourceKind": "skill",
-        "excerpt": "## State: REALIZE\n\nDispatch **`aid-architect`** (clean context, tiered) to realize the seed. Apply the case\ndetermined in INTAKE:\n\n| Destination state | Action |\n|---|---|\n| `roadmap.md` absent | **Create** the document: write frontmatter (§3a values below, verbatim), `# Roadmap` title, one-paragraph preamble (what this document holds and what it does not -- no items live here), `## Contents` with all four entries in heading order, then `## Now`, `## Next`, `## Later`. **Delete the seed.** |\n| Present, horizon sections empty or absent | Fill `## Now`, `## Next`, `## Later` from the seed; leave every byte outside those sections identical, including `## MVP` if present. **Delete the seed.** |\n| Present, horizon sections already carry committed content | **Route** to `/aid-update-roadmap`; write nothing; leave the seed in place for that run (CC-3). Set `lifecycle: Paused-Awaiting-Input`. Then `ASK` -> [State: DONE] and `HALT`, without calling REGISTER or VERIFY. |\n\n**`## Contents` index** -- the fixed four-entry form (`feature-003 §3a`), always written\nat creation and always left intact on the fill path:\n\n    - [MVP](#mvp)\n    - [Now](#now)\n    - [Next](#next)\n    - [Later](#later)\n\n**Never creates `## MVP`.** The `- [MVP](#mvp)` entry is a forward reference: the dead\nin-document anchor is accepted and is what makes REQUIREMENTS AC-6a literally true.\n\n**Entry schema** for each direction in a horizon section:\n\n    ### <Direction, as a noun phrase>\n\n    - **What:** the direction committed to, at roadmap altitude.\n    - **Why:** the constraint or trade-off that drove it.\n    - **Rejected:** each alternative considered, with the reason it lost.\n    - **Status:** Accepted | Superseded by <entry> -- followed by a durable evidence\n      anchor (path plus a grep-recoverable heading or search string), or the literal\n      `intent` when nothing has been built yet.\n\n**No summary table. No item ids anywhere.** (`feature-003 §3a`)\n\n**Frontmatter** (write verbatim on creation; `feature-003 §3a`):\n\n```yaml"
+        "excerpt": "## State: REALIZE\n\nDispatch **`aid-architect`** (clean context, tiered) to realize the seed. Apply the case\ndetermined in INTAKE:\n\n| Destination state | Action |\n|---|---|\n| `roadmap.md` absent | **Create** the document: write frontmatter (§3a values below, verbatim), `# Roadmap` title, one-paragraph preamble (what this document holds and what it does not -- no items live here), `## Contents` with all four entries in heading order, then `## Now`, `## Next`, `## Later`. **Delete the seed.** |\n| Present, horizon sections empty or absent | Fill `## Now`, `## Next`, `## Later` from the seed; leave every byte outside those sections identical, including `## MVP` if present. **Delete the seed.** |\n| Present, horizon sections already carry committed content | **Route** to `/aid-update-roadmap`; write nothing; leave the seed in place for that run (CC-3). Set `lifecycle: Paused-Awaiting-Input`. Then `ASK` -> [State: DONE] and `HALT`, without calling REGISTER or VERIFY. |\n\n**`## Contents` index** -- the fixed four-entry form (`feature-003 §3a`), always written\nat creation and always left intact on the fill path:\n\n    - [MVP](#mvp)\n    - [Now](#now)\n    - [Next](#next)\n    - [Later](#later)\n\n**Never creates `## MVP`.** The `- [MVP](#mvp)` entry is a forward reference: the dead\nin-document anchor is accepted and is what makes REQUIREMENTS AC-6a literally true.\n\n**Entry schema** for each direction in a horizon section:\n\n    ### <Direction, as a noun phrase>\n\n    - **What:** the direction committed to, at roadmap altitude.\n    - **Why:** the constraint or trade-off that drove it.\n    - **Rejected:** each alternative considered, with the reason it lost.\n    - **Status:** Accepted | Superseded by <entry> -- followed by a durable evidence\n      anchor (path plus a grep-recoverable heading or search string), or the literal\n      `intent` when nothing has been built yet.\n\n**No summary table. No item ids anywhere.** (`feature-003 §3a`)\n\n**Frontmatter** (write verbatim on creation; `feature-003 §3a`):\n\n```yaml\n---\nkb-category: primary\nsource: hand-authored\nobjective: Present commitment and future direction for {project} — what it has decided to do next, why, and what it deliberately did not choose.\nsummary: Read this to know where the project is going and what the first committed slice is; specific defined-and-prioritized items live in backlog.md and shipped work in release-tracking.md.\nsources: []\ntags: [D, roadmap, commitment, direction, mvp]\nsee_also: [backlog.md, decisions.md, release-tracking.md]\nowner: architect\naudience: [architect, pm, developer]\n---\n```\n\n`source: hand-authored` -- no as-built counterpart exists for the Conformance Lane to\ncompare a direction entry against (`decisions.md` carries the same value for the same\nreason; `feature-003 §3a` records the divergence from feature-004's `forward-authored`).\n\n**Advance:** CHAIN -> [State: REGISTER] (creation or fill path). Route path: ASK -> [State: DONE], then HALT, naming the skill the route names."
       }
     },
     {
@@ -79,7 +79,7 @@
       "order": 4,
       "name": "REGISTER",
       "label": "REGISTER",
-      "kind": "entry",
+      "kind": "step",
       "terminal": null,
       "provenance": {
         "file": "canonical/skills/aid-create-roadmap/SKILL.md",
@@ -196,6 +196,34 @@
       }
     },
     {
+      "from": "n3",
+      "to": "n4",
+      "kind": "branch",
+      "condition": "creation",
+      "advanceType": "CHAIN",
+      "provenance": {
+        "file": "canonical/skills/aid-create-roadmap/SKILL.md",
+        "startLine": 139,
+        "endLine": 139,
+        "sourceKind": "skill",
+        "excerpt": "**Advance:** CHAIN -> [State: REGISTER] (creation or fill path). Route path: ASK -> [State: DONE], then HALT, naming the skill the route names."
+      }
+    },
+    {
+      "from": "n3",
+      "to": "n7",
+      "kind": "sequence",
+      "condition": null,
+      "advanceType": "ASK",
+      "provenance": {
+        "file": "canonical/skills/aid-create-roadmap/SKILL.md",
+        "startLine": 139,
+        "endLine": 139,
+        "sourceKind": "skill",
+        "excerpt": "**Advance:** CHAIN -> [State: REGISTER] (creation or fill path). Route path: ASK -> [State: DONE], then HALT, naming the skill the route names."
+      }
+    },
+    {
       "from": "n4",
       "to": "n5",
       "kind": "sequence",
@@ -253,8 +281,7 @@
     }
   ],
   "entries": [
-    "n1",
-    "n4"
+    "n1"
   ],
   "exits": [
     "n3",

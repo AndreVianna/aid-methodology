@@ -248,7 +248,7 @@ aid-define  ▸ you are here
 |-------|--------|--------|---------|
 | FEATURE-DECOMPOSITION | `references/state-feature-decomposition.md` | `aid-architect` | ASK → CROSS-REFERENCE |
 | CROSS-REFERENCE | `references/state-cross-reference.md` | `aid-reviewer` | ASK → DONE |
-| DONE | `references/state-done.md` | `inline` | ASK → HALT |
+| DONE | `references/state-done.md` | `inline` | ASK then HALT |
 
 On state entry, print `[State: NAME]` + the "you are here" map from State Detection above.
 When a state completes, route by its `**Advance:**` type (per [`skill-steps.md`](../../aid/templates/skill-steps.md)):

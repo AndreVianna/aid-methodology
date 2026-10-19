@@ -28,12 +28,14 @@ flowchart TB
   n1(["INTAKE"])
   n2["GUARD"]
   n3(["REALIZE"])
-  n4(["REGISTER"])
+  n4["REGISTER"]
   n5["VERIFY"]
   n6["PRESENT<br/>hard stop -- the user decides"]
   n7(["DONE"])
   n1 --> n2
   n2 --> n3
+  n3 -->|"creation"| n4
+  n3 --> n7
   n4 --> n5
   n5 -.-> n3
   n5 --> n6
@@ -41,7 +43,7 @@ flowchart TB
   class n1 aidEntry
   class n2 aidStep
   class n3 aidExit
-  class n4 aidEntry
+  class n4 aidStep
   class n5 aidLoopBack
   class n6 aidStep
   class n7 aidExit
@@ -92,7 +94,7 @@ Every node in the chart above, in chart order, with the exact `canonical/` text 
 
 [Source: `canonical/skills/aid-create-backlog/SKILL.md#L67-L70`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-create-backlog/SKILL.md#L67-L70) · [full step: `canonical/skills/aid-create-backlog/SKILL.md#L67-L77`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-create-backlog/SKILL.md#L67-L77)
 
-<a id="fragment-n3"></a>**3 · `REALIZE`** · _exit_ · UNSPECIFIED
+<a id="fragment-n3"></a>**3 · `REALIZE`** · _exit_ · ASK
 
 ~~~~plaintext title="canonical/skills/aid-create-backlog/SKILL.md#L81-L84" wrap
 ## State: REALIZE
@@ -101,9 +103,9 @@ Dispatch **`aid-architect`** (clean context, tiered) to realize the seed. Apply 
 determined in INTAKE:
 ~~~~
 
-[Source: `canonical/skills/aid-create-backlog/SKILL.md#L81-L84`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-create-backlog/SKILL.md#L81-L84) · [full step: `canonical/skills/aid-create-backlog/SKILL.md#L81-L166`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-create-backlog/SKILL.md#L81-L166)
+[Source: `canonical/skills/aid-create-backlog/SKILL.md#L81-L84`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-create-backlog/SKILL.md#L81-L84) · [full step: `canonical/skills/aid-create-backlog/SKILL.md#L81-L180`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-create-backlog/SKILL.md#L81-L180)
 
-<a id="fragment-n4"></a>**4 · `REGISTER`** · _entry_
+<a id="fragment-n4"></a>**4 · `REGISTER`** · _step_
 
 ~~~~plaintext title="canonical/skills/aid-create-backlog/SKILL.md#L184-L187" wrap
 ## State: REGISTER

@@ -176,6 +176,7 @@ export function parseAdvanceBlock({
   // ── Rules 2–4: per-clause target resolution, condition capture, terminal ──
   const edges = [];
   let terminal = null;
+  let terminalClause = -1; // index of the clause that set `terminal`
 
   for (let ci = 0; ci < clauses.length; ci++) {
     const clauseText = clauses[ci];
@@ -199,10 +200,19 @@ export function parseAdvanceBlock({
     ) {
       // Rule 4: recognized terminal keyword with no declared state target —
       // no edge; populate terminal and the node joins exits.
-      if (terminal !== null && terminal.advanceType === 'ASK' && advanceType === 'HALT') {
+      // `X then HALT`: the HALT clause follows the clause that opened the ending,
+      // joined by a "then" connector. Only that sequence is one ending; HALT on a
+      // separate arm (`ASK on approve; HALT on cancel`) is a second ending and falls
+      // through to the warning below.
+      const joinedByThen =
+        ci > 0 && terminalClause === ci - 1 &&
+        (content.includes(`${clauses[ci - 1]} then ${clauseText}`) ||
+          content.includes(`${clauses[ci - 1]}, then ${clauseText}`));
+      if (terminal !== null && terminal.advanceType === 'ASK' && advanceType === 'HALT' && joinedByThen) {
         // ASK then HALT (task-372): the HALT clause closes the ASK ending the
         // previous clause opened. One ending that asks first; no warning.
         terminal = { advanceType: 'ASK', handoff: _extractHandoff(clauseText) };
+        terminalClause = ci;
         continue;
       }
       if (terminal !== null) {
@@ -222,6 +232,7 @@ export function parseAdvanceBlock({
         advanceType: _asksThenHalt(clauseText) || askedBefore ? 'ASK' : advanceType,
         handoff: _extractHandoff(clauseText),
       };
+      terminalClause = ci;
     }
     // Clauses that pass phase-2 but resolve to neither a declared state nor a
     // recognized terminal are silently skipped here; task-023's rule-10 / W-1

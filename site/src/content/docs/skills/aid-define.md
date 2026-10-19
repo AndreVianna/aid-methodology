@@ -62,7 +62,7 @@ Every node in the chart above, in chart order, with the exact `canonical/` text 
 <a id="fragment-n3"></a>**3 · `DONE`** — Interview is complete, approved, features decomposed, and… · _exit_ · ASK
 
 ~~~~plaintext title="canonical/skills/aid-define/SKILL.md#L251" wrap
-| DONE | `references/state-done.md` | `inline` | ASK → HALT |
+| DONE | `references/state-done.md` | `inline` | ASK then HALT |
 ~~~~
 
 [Source: `canonical/skills/aid-define/SKILL.md#L251`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-define/SKILL.md#L251) · [full step: `canonical/skills/aid-define/references/state-done.md#L1-L38`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-define/references/state-done.md#L1-L38)
