@@ -88,7 +88,7 @@ Update the run-state file:
 
 Print: `[APPROVAL] Approved. Advancing to DONE.`
 
-**Advance:** CHAIN -> DONE (continue inline).
+**Advance:** ASK -> DONE (continue inline once `[1] Approved` is answered).
 
 ---
 
@@ -150,5 +150,5 @@ re-scoping via SCOPE/CONFIRM (not a blind return to APPLY).
 Run /aid-update-kb again to address it and return to this gate.
 ```
 
-**Advance:** PAUSE-FOR-USER-ACTION -- return to SCOPE (or ANALYZE) on the
+**Advance:** WAIT -- return to SCOPE (or ANALYZE) on the
 next invocation; SCOPE auto-chains to CONFIRM once it has re-planned.

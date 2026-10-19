@@ -57,48 +57,48 @@ Every node in the chart above, in chart order, with the exact `canonical/` text 
 
 <a id="fragment-n1"></a>**1 · `STEP-1`** — Classify the question · _entry_
 
-~~~~plaintext title="canonical/skills/aid-ask/SKILL.md#L51" wrap
+~~~~plaintext title="canonical/skills/aid-ask/SKILL.md#L57" wrap
 ### Step 1 — Classify the question
 ~~~~
 
-[Source: `canonical/skills/aid-ask/SKILL.md#L51`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-ask/SKILL.md#L51)
+[Source: `canonical/skills/aid-ask/SKILL.md#L57`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-ask/SKILL.md#L57)
 
 <a id="fragment-n2"></a>**2 · `STEP-2A`** — Trivial question: answer inline · _step_
 
-~~~~plaintext title="canonical/skills/aid-ask/SKILL.md#L63" wrap
+~~~~plaintext title="canonical/skills/aid-ask/SKILL.md#L69" wrap
 ### Step 2a — Trivial question: answer inline
 ~~~~
 
-[Source: `canonical/skills/aid-ask/SKILL.md#L63`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-ask/SKILL.md#L63)
+[Source: `canonical/skills/aid-ask/SKILL.md#L69`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-ask/SKILL.md#L69)
 
 <a id="fragment-n3"></a>**3 · `STEP-2B`** — Broad/expensive question: dispatch aid-researcher · _step_
 
-~~~~plaintext title="canonical/skills/aid-ask/SKILL.md#L77" wrap
+~~~~plaintext title="canonical/skills/aid-ask/SKILL.md#L83" wrap
 ### Step 2b — Broad/expensive question: dispatch aid-researcher
 ~~~~
 
-[Source: `canonical/skills/aid-ask/SKILL.md#L77`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-ask/SKILL.md#L77)
+[Source: `canonical/skills/aid-ask/SKILL.md#L83`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-ask/SKILL.md#L83)
 
 <a id="fragment-n4"></a>**4 · `STEP-2C`** — Connector enrichment (optional) · _step_
 
-~~~~plaintext title="canonical/skills/aid-ask/SKILL.md#L102" wrap
+~~~~plaintext title="canonical/skills/aid-ask/SKILL.md#L108" wrap
 ### Step 2c — Connector enrichment (optional)
 ~~~~
 
-[Source: `canonical/skills/aid-ask/SKILL.md#L102`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-ask/SKILL.md#L102)
+[Source: `canonical/skills/aid-ask/SKILL.md#L108`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-ask/SKILL.md#L108)
 
 <a id="fragment-n5"></a>**5 · `STEP-3`** — Compose and emit the reply · _step_
 
-~~~~plaintext title="canonical/skills/aid-ask/SKILL.md#L112" wrap
+~~~~plaintext title="canonical/skills/aid-ask/SKILL.md#L118" wrap
 ### Step 3 — Compose and emit the reply
 ~~~~
 
-[Source: `canonical/skills/aid-ask/SKILL.md#L112`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-ask/SKILL.md#L112)
+[Source: `canonical/skills/aid-ask/SKILL.md#L118`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-ask/SKILL.md#L118)
 
 <a id="fragment-n6"></a>**6 · `STEP-4`** — Gap capture · _exit_ · UNSPECIFIED
 
-~~~~plaintext title="canonical/skills/aid-ask/SKILL.md#L159" wrap
+~~~~plaintext title="canonical/skills/aid-ask/SKILL.md#L165" wrap
 ### Step 4 -- Gap capture
 ~~~~
 
-[Source: `canonical/skills/aid-ask/SKILL.md#L159`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-ask/SKILL.md#L159)
+[Source: `canonical/skills/aid-ask/SKILL.md#L165`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-ask/SKILL.md#L165)

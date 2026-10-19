@@ -1496,15 +1496,16 @@ describe('flow warnings reach a human', () => {
     expect(lines).toEqual([]);
   });
 
-  it('counts charts and warnings separately — one chart can carry several', () => {
+  it('counts charts and warnings separately — two charts, one warning each', () => {
     resetFlowWarnings();
-    // aid-update-kb carries two: a multiple-terminal-clauses warning from the
-    // CONFIRM row and the W-1 residue from REVIEW's dropped fourth outcome.
+    // aid-update-kb carries the W-1 residue from REVIEW's dropped fourth outcome;
+    // aid-housekeep carries the W-1 residue from PREFLIGHT's clause extraction.
     buildFlowChart({ name: 'aid-update-kb', dir: REPO_ROOT });
+    buildFlowChart({ name: 'aid-housekeep', dir: REPO_ROOT });
     const s = summarizeFlowWarnings();
-    expect(s.charts).toBe(1);
-    expect(s.total).toBeGreaterThan(1);
-    expect(s.skills).toEqual(['aid-update-kb']);
+    expect(s.charts).toBe(2);
+    expect(s.total).toBe(2);
+    expect([...s.skills].sort()).toEqual(['aid-housekeep', 'aid-update-kb']);
     expect(s.messages).toHaveLength(s.total);
   });
 
@@ -1515,7 +1516,7 @@ describe('flow warnings reach a human', () => {
     const { total, charts } = reportFlowWarnings((m) => lines.push(m));
 
     expect(charts).toBe(1);
-    expect(lines[0]).toContain(`${total} warnings across 1 chart`);
+    expect(lines[0]).toMatch(new RegExp(`${total} warnings? across 1 chart`));
     expect(lines[0]).toContain('aid-update-kb');
     // One line per message, after the header.
     expect(lines).toHaveLength(total + 1);

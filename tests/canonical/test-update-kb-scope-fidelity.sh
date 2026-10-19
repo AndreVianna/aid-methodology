@@ -440,8 +440,8 @@ assert_eq "$RESOLVED_FLOOR" "$GLOBAL_FLOOR" \
 # re-plan Adjustments/Consideration channel wired to SCOPE/ANALYZE
 # =============================================================================
 
-assert_file_contains "$SKILL_MD" '`[1] Approved` -> CHAIN -> DONE' \
-  "UK92 SKILL.md Dispatch table's APPROVAL row is CHAIN-on-[1] (matches state-approval.md's own Advance: CHAIN -> DONE)"
+assert_file_contains "$SKILL_MD" '`[1] Approved` -> ASK -> DONE' \
+  "UK92 SKILL.md Dispatch table's APPROVAL row is ASK-on-[1] (matches state-approval.md's own Advance: ASK -> DONE)"
 
 assert_file_not_contains "$SKILL_MD" 'PAUSE-FOR-USER-ACTION -> DONE on approval' \
   "UK93 regression guard: SKILL.md no longer mislabels APPROVAL's [1] as PAUSE-FOR-USER-ACTION"

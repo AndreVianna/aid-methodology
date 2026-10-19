@@ -30,9 +30,9 @@ on-demand skill (REQUIREMENTS.md FR6). It is NOT inserted into the phase-to-skil
 pipeline mapping and no phase gate references it.
 
 **State machine — each `/aid-housekeep` invocation drives the state machine until
-it hits a natural pause point per
-[`.aid/runtime/templates/state-machine-chaining.md`](../../aid/templates/state-machine-chaining.md).
-Mechanical states auto-chain; only PAUSE-FOR-USER-ACTION and HALT stop the run.**
+it reaches an ASK, WAIT or HALT per
+[`.aid/runtime/templates/skill-steps.md`](../../aid/templates/skill-steps.md).
+Mechanical states CHAIN; only ASK, WAIT and HALT stop the run.**
 
 > ```
 > aid-housekeep  ▸ one step per run
@@ -117,6 +117,10 @@ State detection reads the files on disk, every run. Nothing remembered from an
 earlier run or from this conversation counts as state, because the files may
 have changed since.
 
+**State Detection** (`.aid/runtime/templates/skill-steps.md`): detection shapes the entry
+step of a fresh start, validates a saved step on resume, and never routes; the saved step
+is the `## Housekeep Status` block of the run-state file.
+
 Resolve `<STATE_FILE>` to the **project-level housekeep run-state file** under
 `.aid/.temp/` — `/aid-housekeep` is project maintenance, so its run-state does NOT
 live in any work-area `STATE.yml`. The file is transient (gitignored, never
@@ -134,7 +138,7 @@ fi
 [ -z "$STATE_FILE" ] && STATE_FILE=".aid/.temp/HOUSEKEEP_STATE_$(date +%Y%m%d%H%M).md"
 ```
 
-Then resolve the resume target from the `## Housekeep Status` block:
+Then validate the saved step in the `## Housekeep Status` block against disk:
 
 ```bash
 bash .aid/runtime/scripts/housekeep/housekeep-state.sh --state "$STATE_FILE" --resume
@@ -164,7 +168,7 @@ the first `--write`, and `--resume`/`--read` treat an absent file as "no section
 
 **Resume detection (the six-row re-entry table):**
 
-| # | Disk condition (read `## Housekeep Status`) | Resume target |
+| # | Disk condition (read `## Housekeep Status`) | Saved step, validated |
 |---|---------------------------------------------|---------------|
 | 1 | No `## Housekeep Status` section (fresh run), no `--cleanup-only` | PREFLIGHT → KB-DELTA |
 | 2 | No section, `--cleanup-only` flag | PREFLIGHT → CLEANUP (Mode=cleanup-only) |
@@ -226,8 +230,8 @@ aid-housekeep  ▸ you are here
 | State | Detail | Worker | Advance |
 |-------|--------|--------|---------|
 | PREFLIGHT | `references/state-preflight.md` | inline | CHAIN → KB-DELTA (or CLEANUP if Mode=cleanup-only) |
-| KB-DELTA | `references/state-kb-delta.md` | `aid-architect` (feat-002 dispatches sub-agents via `/aid-discover`) | CHAIN → SUMMARY-DELTA / PAUSE-FOR-USER-ACTION if stalled |
-| SUMMARY-DELTA | `references/state-summary-delta.md` | inline (delegates to `/aid-summarize`) | CHAIN → CLEANUP / PAUSE-FOR-USER-ACTION if stalled |
+| KB-DELTA | `references/state-kb-delta.md` | `aid-architect` (feat-002 dispatches sub-agents via `/aid-discover`) | CHAIN → SUMMARY-DELTA / WAIT if stalled |
+| SUMMARY-DELTA | `references/state-summary-delta.md` | inline (delegates to `/aid-summarize`) | CHAIN → CLEANUP / WAIT if stalled |
 | CLEANUP | `references/state-cleanup.md` | inline | CHAIN → DONE |
 | DONE | `references/state-done.md` | inline | HALT |
 
@@ -239,12 +243,12 @@ aid-housekeep  ▸ you are here
 > `references/state-kb-delta.md` (authored by task-004 / feature-002).
 
 On state entry, print `[State: NAME]` + the "you are here" map from State Detection above.
-When a state completes, route by its `**Advance:**` type (per [`state-machine-chaining.md`](../../aid/templates/state-machine-chaining.md)):
+When a state completes, route by its `**Advance:**` type (per [`skill-steps.md`](../../aid/templates/skill-steps.md)):
 - **CHAIN** → begin the next state's reference doc within the same invocation; no exit.
-- **PAUSE-FOR-USER-ACTION** → print the pause reason + resume command and exit.
+- **ASK** → ask the user through the question protocol, then continue at the named state.
+- **WAIT** → say what the user must do, plainly, and exit.
 - **HALT** → print the closing summary and exit.
 
-> **State-machine chaining:** Each `/aid-housekeep` invocation drives the state
-> machine until it hits a natural pause point per
-> `.aid/runtime/templates/state-machine-chaining.md`. Mechanical and inline-question
-> states auto-chain; only PAUSE-FOR-USER-ACTION / HALT stop the run.
+> **Step rules:** Each `/aid-housekeep` invocation drives the state machine until it
+> reaches an ASK, WAIT or HALT, per `.aid/runtime/templates/skill-steps.md`. Mechanical
+> states CHAIN; only ASK, WAIT and HALT stop the run.

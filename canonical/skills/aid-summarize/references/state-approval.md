@@ -50,4 +50,4 @@ On changes-needed: capture the user's notes in `.aid/knowledge/STATE.md` `## Kno
 
 Print: `[State: APPROVAL] complete.`
 
-**Advance:** If user approved: **CHAIN** → [State: WRITEBACK] (continue inline). If user rejected: **HALT** (exit; no writeback). If user said "changes needed": **CHAIN** → [State: FIX] (continue inline).
+**Advance:** **ASK** → [State: WRITEBACK] if the user approved (continue inline once answered); **HALT** if the user rejected (exit; no writeback); **ASK** → [State: FIX] if the user said "changes needed" (continue inline once answered).

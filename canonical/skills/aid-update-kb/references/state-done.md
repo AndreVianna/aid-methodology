@@ -96,7 +96,7 @@ an edit outside the confirmed contract. Escalate to the user instead:
    resolve at CONFIRM.
    ```
 
-4. Do NOT commit. **Advance:** PAUSE-FOR-USER-ACTION -- return to CONFIRM on
+4. Do NOT commit. **Advance:** WAIT -- return to CONFIRM on
    the next invocation (do not HALT-and-auto-resume at APPLY as in 1a).
 
 If closure passes (no new undefined terms), proceed.

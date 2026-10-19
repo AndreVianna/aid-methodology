@@ -281,7 +281,7 @@ Escalated as Q{N} in .aid/knowledge/STATE.md -- grade-chasing may not
 expand scope (HL-7). Run /aid-update-kb again to resolve at CONFIRM.
 ```
 
-**Advance:** PAUSE-FOR-USER-ACTION -- return to CONFIRM on the next
+**Advance:** WAIT -- return to CONFIRM on the next
 invocation. CONFIRM (`state-confirm.md § Step 2`) presents its ordinary
 `[1]/[2]/[3]` prompt; Q{N} is the open item the user resolves through it --
 the two answers are NOT symmetric, and only one of them is a plain `[1]`:

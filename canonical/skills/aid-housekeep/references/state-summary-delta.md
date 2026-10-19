@@ -341,7 +341,7 @@ bash .aid/runtime/scripts/housekeep/housekeep-state.sh \
     --state <STATE_FILE> --write --field "Stall Reason" --value "<stall-reason>"
 ```
 
-Print the resume banner, then PAUSE:
+Print the resume banner, then WAIT:
 
 ```
 ⏸  /aid-housekeep paused at SUMMARY-DELTA — <stall-reason>.
@@ -352,5 +352,5 @@ Print the resume banner, then PAUSE:
 
 **No commit** is made in this branch.
 
-**Advance:** **PAUSE-FOR-USER-ACTION** (re-run resumes at SUMMARY-DELTA via
+**Advance:** **WAIT** (re-run resumes at SUMMARY-DELTA via
 `SKILL.md § State Detection` row 4).

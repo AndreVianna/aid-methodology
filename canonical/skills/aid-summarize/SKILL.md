@@ -66,6 +66,10 @@ proceed; do NOT create any state files.
 
 ⚠️ **Filesystem is the only source of truth.** Always read actual files on disk.
 
+**State Detection** (`.aid/runtime/templates/skill-steps.md`): detection shapes the entry
+step of a fresh start, validates a saved step on resume, and never routes; the saved step
+in `.aid/knowledge/STATE.md` decides where a run continues.
+
 The state-detection logic determines which mode this run executes:
 
 ```
@@ -181,9 +185,10 @@ aid-summarize  ▸ you are here
 | DONE | `references/state-done.md` | inline | → halt |
 
 On state entry, print `[State: NAME]` + the "you are here" map from State Detection above.
-When a state completes, route by its `**Advance:**` type (per [`state-machine-chaining.md`](../../aid/templates/state-machine-chaining.md)):
+When a state completes, route by its `**Advance:**` type (per [`skill-steps.md`](../../aid/templates/skill-steps.md)):
 - **CHAIN** → begin the next state's reference doc within the same invocation; no exit.
-- **PAUSE-FOR-USER-ACTION** / **PAUSE-FOR-USER-DECISION** → print the pause reason + resume command and exit.
+- **ASK** → ask the user through the question protocol, then continue at the named state.
+- **WAIT** → say what the user must do, plainly, and exit.
 - **HALT** → print the closing summary and exit.
 
 > **Note on DONE extraction:** Unlike other AID skills (aid-deploy/aid-execute/aid-detail/aid-plan) which keep DONE inline as a trivial halt-message state, aid-summarize's DONE is a **composite state** (handles both Normal-completion-after-WRITEBACK and DONE-IDEMPOTENT-after-STALE-CHECK branches with distinct messaging). The 38-line state body warrants extraction to `references/state-done.md` per the thin-router principle. This asymmetry is intentional, not a defect.

@@ -14,8 +14,8 @@
       "terminal": null,
       "provenance": {
         "file": "canonical/skills/aid-summarize/SKILL.md",
-        "startLine": 172,
-        "endLine": 172,
+        "startLine": 176,
+        "endLine": 176,
         "sourceKind": "skill",
         "excerpt": "| PREFLIGHT | `references/state-preflight.md` | inline | → STALE-CHECK |"
       },
@@ -39,8 +39,8 @@
       },
       "provenance": {
         "file": "canonical/skills/aid-summarize/SKILL.md",
-        "startLine": 173,
-        "endLine": 173,
+        "startLine": 177,
+        "endLine": 177,
         "sourceKind": "skill",
         "excerpt": "| STALE-CHECK | `references/state-stale-check.md` | inline | → PROFILE |"
       },
@@ -61,8 +61,8 @@
       "terminal": null,
       "provenance": {
         "file": "canonical/skills/aid-summarize/SKILL.md",
-        "startLine": 174,
-        "endLine": 174,
+        "startLine": 178,
+        "endLine": 178,
         "sourceKind": "skill",
         "excerpt": "| PROFILE | `references/state-profile.md` | inline | → GENERATE |"
       },
@@ -83,8 +83,8 @@
       "terminal": null,
       "provenance": {
         "file": "canonical/skills/aid-summarize/SKILL.md",
-        "startLine": 175,
-        "endLine": 175,
+        "startLine": 179,
+        "endLine": 179,
         "sourceKind": "skill",
         "excerpt": "| GENERATE | `references/state-generate.md` | inline | → VALIDATE |"
       },
@@ -105,8 +105,8 @@
       "terminal": null,
       "provenance": {
         "file": "canonical/skills/aid-summarize/SKILL.md",
-        "startLine": 176,
-        "endLine": 176,
+        "startLine": 180,
+        "endLine": 180,
         "sourceKind": "skill",
         "excerpt": "| VALIDATE | `references/state-validate.md` | inline | → MANUAL-CHECKLIST (grade ≥ min) / → FIX (grade < min) |"
       },
@@ -127,8 +127,8 @@
       "terminal": null,
       "provenance": {
         "file": "canonical/skills/aid-summarize/SKILL.md",
-        "startLine": 177,
-        "endLine": 177,
+        "startLine": 181,
+        "endLine": 181,
         "sourceKind": "skill",
         "excerpt": "| MANUAL-CHECKLIST | `references/state-manual-checklist.md` | inline | → APPROVAL |"
       },
@@ -149,8 +149,8 @@
       "terminal": null,
       "provenance": {
         "file": "canonical/skills/aid-summarize/SKILL.md",
-        "startLine": 178,
-        "endLine": 178,
+        "startLine": 182,
+        "endLine": 182,
         "sourceKind": "skill",
         "excerpt": "| FIX | `references/state-fix.md` | inline | → VALIDATE |"
       },
@@ -170,12 +170,12 @@
       "kind": "exit",
       "terminal": {
         "advanceType": "HALT",
-        "handoff": "If user rejected: (exit"
+        "handoff": "if the user rejected (exit"
       },
       "provenance": {
         "file": "canonical/skills/aid-summarize/SKILL.md",
-        "startLine": 179,
-        "endLine": 179,
+        "startLine": 183,
+        "endLine": 183,
         "sourceKind": "skill",
         "excerpt": "| APPROVAL | `references/state-approval.md` | inline | → WRITEBACK |"
       },
@@ -184,7 +184,7 @@
         "startLine": 1,
         "endLine": 54,
         "sourceKind": "worker",
-        "excerpt": "# State: APPROVAL\n\nAPPROVAL presents the graded summary to the user for final sign-off; it is selected when both Machine Grade and Human Grade meet the minimum, or when STALE-CHECK finds the HTML is current but not yet approved.\n\n**Pre-condition:** Both Machine Grade AND Human Grade must already be computed and ≥ minimum. If Human Grade is `Pending`, refuse to enter APPROVAL — print: `❌ Cannot approve: Human Grade not yet scored. Run /aid-summarize again to enter MANUAL-CHECKLIST.`\n\nPrint summary in the standard format:\n\n```\n✅ kb.html ready for approval\n   Path:           .aid/knowledge/kb.html\n   Size:           {MB}\n   Domain:         {domain value from .aid/knowledge/STATE.md ## Discovery Domain}\n   Doc-set:        {N resolved} of {M total} docs covered\n   Machine Grade:  {grade} ({score}/68) — script-verified AUTO_POOL (COV + D1/D2/L1/L2/H1/A1-A5/C1/C2/S2)\n   Human Grade:    {grade} ({score}/30) — manual-checklist MANUAL_POOL (K1+K2+V1)\n   Overall Grade:  {min of above} (target: {min})\n   Theme:          light + dark, both pass WCAG AA\n   Trigger:        {reason}\n\nPreview:  python -m http.server 8000   # then open\n          http://localhost:8000/.aid/knowledge/kb.html\n   Or open the file directly in your browser.\n```\n\nUse `AskUserQuestion` to ask:\n> Approve this summary?\n> - **Approve** — record approval and update `.aid/knowledge/STATE.md` `## Summarization History`\n> - **Reject** — exit without recording\n> - **Changes needed** — describe what to change, transition to FIX\n\nThe summary's approval scalar (`summary_approved`) and its last-run date (`last_summary`)\nlive in `.aid/knowledge/STATE.md`'s leading YAML frontmatter block. Write via the\nsurgical frontmatter helper (never hand-edit\nthe bold line again):\n\nOn approval:\n```bash\nbash .aid/runtime/scripts/summarize/writeback-state.sh --set summary_approved yes --set last_summary \"$(date -u +%Y-%m-%d)\"\n```\nthen transition to WRITEBACK.\n\nOn rejection:\n```bash\nbash .aid/runtime/scripts/summarize/writeback-state.sh --set summary_approved no\n```\nexit. `## Summarization History` is NOT updated.\n\nOn changes-needed: capture the user's notes in `.aid/knowledge/STATE.md` `## Knowledge Summary Status` `### Pending Changes` (unaffected markdown-body content), transition to FIX.\n\nPrint: `[State: APPROVAL] complete.`\n\n**Advance:** If user approved: **CHAIN** → [State: WRITEBACK] (continue inline). If user rejected: **HALT** (exit; no writeback). If user said \"changes needed\": **CHAIN** → [State: FIX] (continue inline).\n"
+        "excerpt": "# State: APPROVAL\n\nAPPROVAL presents the graded summary to the user for final sign-off; it is selected when both Machine Grade and Human Grade meet the minimum, or when STALE-CHECK finds the HTML is current but not yet approved.\n\n**Pre-condition:** Both Machine Grade AND Human Grade must already be computed and ≥ minimum. If Human Grade is `Pending`, refuse to enter APPROVAL — print: `❌ Cannot approve: Human Grade not yet scored. Run /aid-summarize again to enter MANUAL-CHECKLIST.`\n\nPrint summary in the standard format:\n\n```\n✅ kb.html ready for approval\n   Path:           .aid/knowledge/kb.html\n   Size:           {MB}\n   Domain:         {domain value from .aid/knowledge/STATE.md ## Discovery Domain}\n   Doc-set:        {N resolved} of {M total} docs covered\n   Machine Grade:  {grade} ({score}/68) — script-verified AUTO_POOL (COV + D1/D2/L1/L2/H1/A1-A5/C1/C2/S2)\n   Human Grade:    {grade} ({score}/30) — manual-checklist MANUAL_POOL (K1+K2+V1)\n   Overall Grade:  {min of above} (target: {min})\n   Theme:          light + dark, both pass WCAG AA\n   Trigger:        {reason}\n\nPreview:  python -m http.server 8000   # then open\n          http://localhost:8000/.aid/knowledge/kb.html\n   Or open the file directly in your browser.\n```\n\nUse `AskUserQuestion` to ask:\n> Approve this summary?\n> - **Approve** — record approval and update `.aid/knowledge/STATE.md` `## Summarization History`\n> - **Reject** — exit without recording\n> - **Changes needed** — describe what to change, transition to FIX\n\nThe summary's approval scalar (`summary_approved`) and its last-run date (`last_summary`)\nlive in `.aid/knowledge/STATE.md`'s leading YAML frontmatter block. Write via the\nsurgical frontmatter helper (never hand-edit\nthe bold line again):\n\nOn approval:\n```bash\nbash .aid/runtime/scripts/summarize/writeback-state.sh --set summary_approved yes --set last_summary \"$(date -u +%Y-%m-%d)\"\n```\nthen transition to WRITEBACK.\n\nOn rejection:\n```bash\nbash .aid/runtime/scripts/summarize/writeback-state.sh --set summary_approved no\n```\nexit. `## Summarization History` is NOT updated.\n\nOn changes-needed: capture the user's notes in `.aid/knowledge/STATE.md` `## Knowledge Summary Status` `### Pending Changes` (unaffected markdown-body content), transition to FIX.\n\nPrint: `[State: APPROVAL] complete.`\n\n**Advance:** **ASK** → [State: WRITEBACK] if the user approved (continue inline once answered); **HALT** if the user rejected (exit; no writeback); **ASK** → [State: FIX] if the user said \"changes needed\" (continue inline once answered).\n"
       }
     },
     {
@@ -196,8 +196,8 @@
       "terminal": null,
       "provenance": {
         "file": "canonical/skills/aid-summarize/SKILL.md",
-        "startLine": 180,
-        "endLine": 180,
+        "startLine": 184,
+        "endLine": 184,
         "sourceKind": "skill",
         "excerpt": "| WRITEBACK | `references/state-writeback.md` | inline | → DONE |"
       },
@@ -221,8 +221,8 @@
       },
       "provenance": {
         "file": "canonical/skills/aid-summarize/SKILL.md",
-        "startLine": 181,
-        "endLine": 181,
+        "startLine": 185,
+        "endLine": 185,
         "sourceKind": "skill",
         "excerpt": "| DONE | `references/state-done.md` | inline | → halt |"
       },
@@ -367,27 +367,27 @@
       "to": "n7",
       "kind": "sequence",
       "condition": null,
-      "advanceType": "CHAIN",
+      "advanceType": "ASK",
       "provenance": {
         "file": "canonical/skills/aid-summarize/references/state-approval.md",
         "startLine": 53,
         "endLine": 53,
         "sourceKind": "worker",
-        "excerpt": "**Advance:** If user approved: **CHAIN** → [State: WRITEBACK] (continue inline). If user rejected: **HALT** (exit; no writeback). If user said \"changes needed\": **CHAIN** → [State: FIX] (continue inline)."
+        "excerpt": "**Advance:** **ASK** → [State: WRITEBACK] if the user approved (continue inline once answered); **HALT** if the user rejected (exit; no writeback); **ASK** → [State: FIX] if the user said \"changes needed\" (continue inline once answered)."
       }
     },
     {
       "from": "n8",
       "to": "n9",
       "kind": "branch",
-      "condition": "If user approved",
-      "advanceType": "CHAIN",
+      "condition": "if the user approved",
+      "advanceType": "ASK",
       "provenance": {
         "file": "canonical/skills/aid-summarize/references/state-approval.md",
         "startLine": 53,
         "endLine": 53,
         "sourceKind": "worker",
-        "excerpt": "**Advance:** If user approved: **CHAIN** → [State: WRITEBACK] (continue inline). If user rejected: **HALT** (exit; no writeback). If user said \"changes needed\": **CHAIN** → [State: FIX] (continue inline)."
+        "excerpt": "**Advance:** **ASK** → [State: WRITEBACK] if the user approved (continue inline once answered); **HALT** if the user rejected (exit; no writeback); **ASK** → [State: FIX] if the user said \"changes needed\" (continue inline once answered)."
       }
     },
     {

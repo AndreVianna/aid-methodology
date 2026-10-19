@@ -475,7 +475,7 @@ its f007 `current` verdict are UNCHANGED by this step. The default for every unr
 divergence is to FLAG it for the human, never to silently change the design. Authority
 stays design->code until the human explicitly reconciles.
 
-#### Sub-step 2a -- Present the divergence set (PAUSE-FOR-USER-DECISION)
+#### Sub-step 2a -- Present the divergence set (ASK)
 
 Present the classified divergence set from CL-Step 1, grouped by class, and pause for the
 user to supply a per-item choice (NFR3 transparency -- no silent KB edits). State that the
@@ -648,7 +648,7 @@ Proposed KB refresh scope:
 - `[1]` -> carry the confirmed doc list to Step 4.
 - `[2]` -> the user adds or drops docs; recompute the confirmed list.
 - `[3]` -> write `**KB Stage:** stalled` + `**Stall Reason:** KB refresh scope
-  cancelled` and PAUSE (stalled exit below).
+  cancelled` and WAIT (stalled exit below).
 
 ## Step 4 -- Synthesize an `Impact: Required` Q&A entry + invoke `/aid-discover` (AC3)
 
@@ -873,7 +873,7 @@ bash .aid/runtime/scripts/housekeep/housekeep-state.sh \
     --state <STATE_FILE> --write --field "Stall Reason" --value "<reason>"
 ```
 
-Print the resume banner, then PAUSE:
+Print the resume banner, then WAIT:
 
 ```
 [!] /aid-housekeep paused at KB-DELTA -- <reason>.
@@ -881,5 +881,5 @@ Print the resume banner, then PAUSE:
    Resume: re-run /aid-housekeep -- it will pick up at KB-DELTA (not job 1).
 ```
 
-**Advance:** PAUSE-FOR-USER-ACTION (re-run resumes at KB-DELTA via `SKILL.md S
+**Advance:** WAIT (re-run resumes at KB-DELTA via `SKILL.md S
 State Detection` row 3).
