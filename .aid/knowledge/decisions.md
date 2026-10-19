@@ -94,7 +94,7 @@ review-criteria:
 | D14 | Lite path + description-first TRIAGE | Superseded by D20/D24/D32 | `docs/aid-methodology.md` §4 |
 | D15 | 8 agents / 3 tiers (consolidation) | Accepted (supersedes prior roster; amended by D32) | `docs/aid-methodology.md` §5 |
 | D16 | PowerShell 5.1 floor | Accepted | `README.md`; project memory |
-| D17 | Prose over scripts in skills | Accepted | project practice; `tests/run-all.sh` header |
+| D17 | Prose over scripts in skills | Accepted (amended by D33) | project practice; `tests/run-all.sh` header |
 | D18 | KB no-diagrams; HTML summary yes-diagrams | Accepted | authoring standard; `canonical/aid/scripts/summarize/assemble.sh` |
 | D19 | Connectors registry is a catalog, not a connection manager | Accepted (delivery-002 withdrawn) | `canonical/aid/templates/connectors/preset-catalog.md`; `canonical/skills/aid-discover/references/state-elicit.md` |
 | D20 | Direct-entry shortcut system + shared engine | Accepted | `canonical/aid/templates/shortcut-engine.md`; feature-003 |
@@ -360,7 +360,7 @@ review-criteria:
   rather than back-filled with infrastructure.
 - **Rejected:** Scripting every step — rejected as over-engineering. CONFIRMED project memory
   (prose-over-scripts) and the script-extraction pattern visible under `canonical/aid/scripts/`.
-- **Status:** Accepted. LIKELY (rationale grounded in practice + memory, not a single ADR).
+- **Status:** Accepted. Amended by D33: hand-off and question bookkeeping is written by scripts; the prose rule still holds for every other step. LIKELY (rationale grounded in practice + memory, not a single ADR).
 
 ## D18 — KB forbids diagrams; the HTML summary embraces them
 

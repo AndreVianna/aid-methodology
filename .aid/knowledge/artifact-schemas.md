@@ -178,7 +178,7 @@ under).
 |---------|------|-------------|--------------------|
 | Delivery Lifecycle | FRONTMATTER + AUTHORED | `delivery_state`, `gate_tier`, `gate_grade`, `gate_timestamp` (FRONTMATTER); `delivery_lifecycle.{updated,block_reason,block_artifact}` (AUTHORED) | `delivery_state`: `Pending-Spec \| Specified \| Executing \| Gated \| Done \| Blocked` (independently authored -- NOT a task rollup, per SD-9); conditional `block_reason`/`block_artifact`. |
 | Delivery Gate | FRONTMATTER + AUTHORED | `gate_tier`, `gate_grade`, `gate_timestamp` (FRONTMATTER); `delivery_gate.issue_list` (AUTHORED) | `gate_tier`: `Small \| Medium \| Large`; `gate_grade`; `issue_list` (severity-tagged strings, or `[]` when clean); `gate_timestamp`. |
-| Cross-phase Q&A | AUTHORED | `qa[]` | per-entry: `category`, `impact` (`High \| Medium \| Low \| Required`), `state` (`Pending \| Answered \| Skipped`), `context`, `suggested`, `answer`, `applied_to`. |
+| Cross-phase Q&A | NOT WRITTEN -- the key stays in the template, but nothing writes it; questions are recorded on the work or project file by `writeback-state.sh`, and the readers only read and merge any delivery-level `qa` | `qa[]` | per-entry: `category`, `impact` (`High \| Medium \| Low`), `state` (`Pending \| Answered \| Skipped \| Assumed`), `context`, `suggested`, `answer`, `applied_to`. |
 | Tasks State | **DERIVED** -- no key at all | none | rollup from `tasks/task-NNN/STATE.yml` (relative to this delivery folder); never written here, never represented on disk. |
 
 Producer: `aid-plan` (creates, `Pending-Spec`, at `deliveries/delivery-NNN/STATE.yml`),
