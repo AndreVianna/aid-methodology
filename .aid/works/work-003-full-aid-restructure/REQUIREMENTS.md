@@ -1416,7 +1416,8 @@ Advance words (the `**Advance:**` line of every step; internal, never shown to t
 | Word | Meaning | Replaces |
 |---|---|---|
 | `CHAIN` | Go on to the next step now | `CHAIN` |
-| `ASK` | Stop for the user through the question protocol, then continue to the step the line names once answered | `PAUSE-FOR-USER-DECISION`, without "re-run the command" |
+| `ASK` | The step ends with a blocking question: it pauses on it, and once every question is answered or skipped the work goes on to the step the line names (Q159) | `PAUSE-FOR-USER-DECISION`, without "re-run the command" |
+| `ASK then HALT` | One ending: the run ends with a blocking question open; any resume shows it first, and once it is answered or skipped the run ends as `HALT` does (Q159) | a hand-off "PAUSE" |
 | `WAIT` | The user must do something outside the conversation; say what, plainly | `PAUSE-FOR-USER-ACTION` |
 | `PASS` | End of this skill's process: hand the work to the next skill | (new) |
 | `CALL` | In the middle of the process: hand the work to another skill, then come back to this step | (new) |
@@ -1426,11 +1427,16 @@ Each step:
 1. **Enter**: the main conversation runs `writeback-state.sh --step --skill <skill> --name <STEP>
    [--detail '<where>']` before doing or dispatching the step's work (FR-20.2).
 2. **Work**: inline or by a worker; a worker returns its questions, never asks them.
-3. **`ASK`**: save the step the `**Advance:**` line names as the next one (`--step`, with `--detail
-   'waiting for Q12, Q13'`); record the questions (`--ask`); set `lifecycle: Paused-Awaiting-Input` with
-   `pause_reason: 'Waiting for the user: Q12, Q13'`; ask. Answered in the same conversation: record the
-   answers, back to `Running`, and continue to that step in the same run. Answered later: the session that
-   resumes finds the saved step and the open entries, asks them first, then continues there.
+3. **Questions, at any point** (Q159): the agent may ask anything at any point of a step. A question that
+   does not block is asked and the step carries on. A blocking question pauses the step where it stands:
+   the same step stays saved and its detail says what is done and which question is open (`--step`,
+   `--detail 'done: X; waiting for Q12, Q13'`); record the questions (`--ask`); set
+   `lifecycle: Paused-Awaiting-Input` with `pause_reason: 'Waiting for the user: Q12, Q13'`; ask. Answered
+   in the same conversation: record the answers, back to `Running`, and continue the same step. Answered
+   later: any session that resumes finds the saved step and the open entries, asks them first until each
+   is answered or skipped, then continues the same step from its detail without redoing what is done. An
+   `ASK` advance is this pause at the end of a step; once answered or skipped, the work goes on to the step
+   the line names.
 4. **`PASS`**: if the approvals table requires an approval here at the work's depth, `ASK` it first. Then
    `--handoff --to <skill> --step <its entry step> --why '<reason>' --returns no --phase <phase>`, and start that skill in the same
    turn (FR-8); where a tool cannot start a skill itself, name the command (Feature 001's fallback). This is

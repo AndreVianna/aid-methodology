@@ -27,7 +27,11 @@ Each skill has one table of its steps, with these columns:
 | Advance | the advance word for the step, and the step it names when that is needed |
 
 Every step ends with exactly one advance word, on its advance line. A line that names only its next
-step is a `CHAIN`.
+step is a `CHAIN`. `ASK then HALT` is one ending, not two words: see below.
+
+The step an advance line names is a step of the same skill's table, by its name. It is never a part
+of a step, such as "Step 5" or "GENERATE -- Step 0d". When the next step depends on what the user
+answers, the line names the one step that reads the answer and moves on from there.
 
 ## The advance words
 
@@ -36,8 +40,9 @@ The advance words are internal. They are never shown to the user.
 | Word | Meaning |
 |------|---------|
 | `CHAIN` | Go on to the next step now, in the same run. |
-| `ASK` | Stop for the user through the question protocol, then continue to the step the line names once every question is answered. |
-| `WAIT` | The user must do something outside the conversation. Say what, plainly, and stop. |
+| `ASK` | The step ends with a question that blocks the work. The step pauses on it; once every question is answered or skipped, the step is finished and the work goes on to the step the line names. |
+| `ASK then HALT` | The run ends with a question that blocks the work, such as which skill to run next. The question stays open; any resume shows it first, and once it is answered or skipped the run ends as `HALT` does. |
+| `WAIT` | The user must do something outside the conversation. Say what, plainly, and stop. The step stays saved and its detail says what is waited for; once the user says it is done, the work goes on to the step the line names. |
 | `PASS` | End of this skill's process. Hand the work to the next skill and start it in the same turn. |
 | `CALL` | In the middle of this skill's process. Hand the work to another skill, and come back to this step when it finishes. |
 | `HALT` | This run is finished. After returning to an open call, if there is one; otherwise the run ends here. |
@@ -52,13 +57,21 @@ Every step runs these six parts, in this order.
    The saved step is written first, so a session that stops during the step resumes at it.
 2. **Work.** Inline, or by a worker. A worker returns its questions to the main conversation; it
    never asks them.
-3. **`ASK`.** Save the step the advance line names as the next one, with `--step` and a detail that
-   says what is waited for. Record each question with `--ask`. Set the lifecycle to
-   `Paused-Awaiting-Input` and the pause reason through the writer. Then ask.
+3. **Questions, at any point.** The main conversation may ask the user anything at any point of a
+   step, through the question protocol, whenever it needs to.
+   - A question that does not block the work is asked, and the step carries on.
+   - A question that blocks the work pauses the step where it stands. Keep the same step saved and
+     bring its detail up to date with `--step`: what is done, and which question is open. Record each
+     question with `--ask`. Set the lifecycle to `Paused-Awaiting-Input` and the pause reason through
+     the writer. Then ask.
    - Answered in the same conversation: record each answer with `--answer`, set the lifecycle back to
-     `Running`, and continue to the named step in the same run.
-   - Answered later: the session that resumes finds the saved step and the open questions, asks the
-     open questions first, then continues at that step.
+     `Running`, and continue the same step from where it stopped.
+   - Answered later: any session that resumes finds the saved step and the open questions, and asks
+     the open questions first, until each is answered or skipped. Then it continues the same step from
+     its detail, and does not redo what the detail says is done.
+   - An `ASK` advance is this pause at the end of a step. Once its questions are answered or skipped,
+     the step is finished, and the work goes on to the step the line names, which is then saved with
+     `--step`.
 4. **`PASS`.** If the approvals table requires an approval at this depth at this point, `ASK` it
    first. Then run
    `--handoff --to <skill> --step <its entry step> --why '<reason>' --returns no --phase <phase>`,
@@ -77,6 +90,19 @@ The work record is the work's `STATE.yml` keys that say where it is: `intent.rea
 `active_skill`, `step` and `step_detail`. It is the only thing that decides where a work continues.
 Every record write goes through the writer, `.aid/runtime/scripts/execute/writeback-state.sh`, and
 never by hand. The record's template is `.aid/runtime/templates/work-state-template.yml`.
+
+The writer finds the record itself: the file `AID_STATE_FILE` names when it is set; otherwise the
+`STATE.yml` of the work folder it runs in, or under; otherwise the one work whose worktree it runs in.
+A skill passes no path. When none of these finds exactly one work, the writer exits 1 and says so.
+
+### Before a work exists
+
+Steps that run before the gate creates the work, such as a skill's intake and its new-or-continue
+question, save nothing, because there is no record yet. Their questions are asked through the
+question protocol, and their answers go into the record when the gate creates it: the user's words
+into `intent.request`, and the step the caller names into `step`. A skill that never creates a work,
+such as a Knowledge Base, ticket, connector, setting or chat skill, saves no steps; it records its
+questions in the project file `.aid/STATE.yml`, with `--ask --project`.
 
 ### When the record is written
 
@@ -160,6 +186,10 @@ file is then unchanged.
 | `--handoff-return` | `returned` on the open call, and `active_skill`, `step` and `step_detail` restored from it. Exit 7 when there is no open call |
 | `--ask ...` | a `Pending` entry in `qa`, and its id printed |
 | `--answer --id Q<n> --state Answered or Skipped or Assumed ...` | that entry |
+
+A mode that appends to a list the record does not have yet (`handoffs`, `qa`, `intent.changes` or
+`lifecycle_history`) adds the list first, in the same write. A work created before these lists
+existed needs no repair for them.
 
 Finishing clears the saved skill. Whenever the writer sets the lifecycle to `Completed` or `Canceled`,
 it also sets `active_skill` to `none` and clears `step` and `step_detail` in the same locked write.
