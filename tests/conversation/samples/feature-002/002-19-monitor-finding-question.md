@@ -13,7 +13,7 @@ Persona: a developer who looks after the notes tool in production and has a vagu
 
 ## Answer sheet
 
-- The slow export complaint was about the export command, which writes all notes to a CSV file.
+- The slow export complaint was about exporting notes; you do not know which command does the export.
 - You do not know the finding's number and you have no record of it in this session.
 - You do not know where the production logs are kept; if asked, say you do not know.
 - You want to know, in plain words, whether the export is still slow.

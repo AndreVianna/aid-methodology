@@ -37,4 +37,9 @@ Persona: the maintainer of the notes tool, who has a usage export and wants to k
 - tool-called Skill aid-report
 - tool-called Read *usage-events.csv*
 - tool-not-called Edit *data/*
+- tool-not-called Write *usage-events.csv*
+- tool-not-called Edit *src/*
+- tool-not-called Write *src/*
+- tool-not-called Edit *tests/*
+- tool-not-called Write *tests/*
 - no-push
