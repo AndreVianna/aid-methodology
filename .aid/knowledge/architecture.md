@@ -1,7 +1,7 @@
 ---
 kb-category: primary
 source: hand-authored
-objective: How the AID system is built and why it is shaped this way — its dual product/dogfood anatomy, the canonical→profiles→release render-and-distribute architecture, and the six-phase gated process architecture (pipeline, skill state machines, agent dispatch).
+objective: How the AID system is built and why it is shaped this way — its dual product/dogfood anatomy, the canonical→profiles→release render-and-distribute architecture, and the phase-gated process architecture (pipeline, skill state machines, agent dispatch).
 summary: Read this to understand HOW AID hangs together as both a runnable CLI installer and a process methodology — the boundaries, the source-of-truth flow, the pipeline, and the invariants a change must never break.
 sources:
   - docs/aid-methodology.md
@@ -23,7 +23,7 @@ review-criteria: []  # nothing is true of this doc alone -- the global level and
 
 # Architecture
 
-> **Source:** aid-discover (Phase 1)
+> **Source:** aid-discover (KB preparation)
 > **Status:** Complete
 
 ## Contents
@@ -32,7 +32,7 @@ review-criteria: []  # nothing is true of this doc alone -- the global level and
 - [The Two Faces (Product vs Dogfood)](#the-two-faces-product-vs-dogfood)
 - [Load-Bearing Boundaries](#load-bearing-boundaries)
 - [Build & Distribute Architecture (canonical -> profiles -> packages)](#build--distribute-architecture-canonical---profiles---packages)
-- [Process Architecture: The Six-Phase Pipeline](#process-architecture-the-six-phase-pipeline)
+- [Process Architecture: The Work Phases](#process-architecture-the-work-phases)
 - [Skill State-Machine Model](#skill-state-machine-model)
 - [Agent / Sub-Agent Dispatch Model](#agent--sub-agent-dispatch-model)
 - [The Knowledge Base as the Center](#the-knowledge-base-as-the-center)
@@ -167,48 +167,49 @@ same shape, and `.aid/.aid-manifest.json` (format 3) records every entry.
   the drifted file to `.aid/.trash/<original path>` and rewriting it from the verified payload.
 - **One AID version per repo.** The manifest carries one top-level `aid_version`, and `aid update` moves
   every installed tool to it together.
-## Process Architecture: The Six-Phase Pipeline
+## Process Architecture: The Work Phases
 
 AID's other architecture is a **process**: a linear, human-gated pipeline of phases with
 formal feedback loops. The pipeline is the methodology's backbone.
 
-**The six numbered phases** (CONFIRMED in `docs/aid-methodology.md` §1 "The Pipeline" and
+**The work phases** (CONFIRMED in `docs/aid-methodology.md` §1 "The Pipeline" and
 its "Skill Inventory" table):
 
 ```
-Discover -> Describe/Define (2a/2b) -> Specify -> Plan -> Detail -> Execute
+aid-discover (brownfield KB) -> Definition -> Specification -> Planning -> Building -> CI
 ```
 
-These six map onto skills (Phase 1-6), organized into **four skill groups** (Support,
+These skills map onto the work phases (`aid-discover` prepares the KB on brownfield projects; `aid-describe` is Definition; `aid-define` and `aid-specify` are Specification; `aid-plan` and `aid-detail` are Planning; `aid-execute` is Building; CI closes the work), organized into **four skill groups** (Support,
 Knowledge Base Maintenance, Definition, Execution). Groups organize the skills; they are
-not a running order (the numbered phases carry the sequence). Phase 2 (Describe → Define) is realized by **two** skills —
-`aid-describe` (2a) and `aid-define` (2b) — after the `aid-interview` split (see "The
-Describe → Define Phase" below); every other numbered phase is one skill. Several lifecycle labels
-from everyday SDLC talk — Init, Implement, Review, Test, Track, Triage — are **not numbered
+not a running order (the phase sequence carries it). `aid-describe` and `aid-define` are **two** chained skills —
+the former `aid-interview` skill was split (see "The
+Definition and Specification Skills" below); every other pipeline phase is one skill. Several lifecycle labels
+from everyday SDLC talk — Init, Implement, Review, Test, Track, Triage — are **not work
 phases**; the table below maps each label to what it really is (CONFIRMED in
 `docs/aid-methodology.md` "Skill Inventory" and the `canonical/skills/` listing — **112 skill
 directories**: 18 curated pipeline / on-demand / supporting skills (the `/aid-orchestrate`
 intake among them) and the 94-row shortcut catalog's skills — 34 verb-first direct-entry
 shortcut doorways plus 60 hand-authored `repurpose` skills):
 
-| Workflow label | Skill(s) | Numbered phase? | What it really is |
+| Workflow label | Skill(s) | Work phase? | What it really is |
 |----------------|----------|-----------------|-------------------|
-| Discover | `aid-discover` | **Phase 1** | Brownfield only; builds the KB. (`aid-summarize` is an optional viewer here.) |
-| Describe | `aid-describe` | **Phase 2a** | Describe (2a) half, **full path only**: adaptive interview + COMPLETION + (greenfield) KB seed. It does not triage or emit lite work. Driven by the seasoned-analyst engine; the `aid-interviewer` AGENT does the dialogue. |
-| Define | `aid-define` | **Phase 2b** | Decomposition half: feature decomposition + cross-reference (full path only); hands off to Specify. |
-| Specify | `aid-specify` | **Phase 3** | Full path only. |
-| Plan | `aid-plan` | **Phase 4** | Full path only. |
-| Detail | `aid-detail` | **Phase 5** | Full path only. |
-| Execute | `aid-execute` | **Phase 6** | 8 task types; graded review loop. |
+| Discover | `aid-discover` | No (KB preparation, before the work phases) | Brownfield only; builds the KB. (`aid-summarize` is an optional viewer here.) |
+| Describe | `aid-describe` | **Definition** | Definition, **full path only**: adaptive interview + COMPLETION + (greenfield) KB seed. It does not triage or emit lite work. Driven by the seasoned-analyst engine; the `aid-interviewer` AGENT does the dialogue. |
+| Define | `aid-define` | **Specification** | Decomposition half: feature decomposition + cross-reference (full path only); hands off to `aid-specify`. |
+| Specify | `aid-specify` | **Specification** | Full path only. |
+| Plan | `aid-plan` | **Planning** | Full path only. |
+| Detail | `aid-detail` | **Planning** | Full path only. |
+| Execute | `aid-execute` | **Building** | 8 task types; graded review loop. |
+| CI | (no skill; closes the work) | **CI** | Once every task is `Done`, `/aid-orchestrate` marks the work `Completed`. Release, deploy and monitoring are works of their own. |
 | Init | `aid-config` | No (bootstrap) | Run once; scaffolds `.aid/` + KB placeholders. |
 | Implement | `aid-execute` | No | One of Execute's 8 task types (IMPLEMENT), not a phase. |
 | Review | (inside `aid-execute`) | No | A state of the Execute loop (EXECUTE -> REVIEW -> FIX -> DONE), not a phase. |
 | Test | `aid-execute` | No | A task type (TEST) inside Execute, not a phase. |
-| Deploy | `aid-deploy` | No (Definition shortcut path) | On-demand optional shortcut path in the Definition group; not a numbered phase. |
-| Track / Monitor | `aid-monitor` | No (Definition shortcut path) | On-demand observe -> classify -> route; not a numbered phase. ("Track" has no separate referent.) Routes findings out: bug -> a fix request through `rules.md` § Handling a request, change request -> a new work through `/aid-orchestrate`. |
+| Deploy | `aid-deploy` | No (on-demand; its own work) | On-demand optional shortcut path in the Definition group; not a numbered phase. |
+| Track / Monitor | `aid-monitor` | No (on-demand; its own work) | On-demand observe -> classify -> route; not a numbered phase. ("Track" has no separate referent.) Routes findings out: bug -> a fix request through `rules.md` § Handling a request, change request -> a new work through `/aid-orchestrate`. |
 | Triage | the skill guide in `rules.md` with `/aid-orchestrate` as its intake | No | Reads a plain request by its meaning and matches it to a skill, or answers a project question from the KB. The intake checks and sizes the reading and shows it before any work exists; it creates the work and writes its `intent:` only for a reading that is not handed to an action skill. Monitor still classifies its own findings. |
 | Design | 22 `aid-design[-<artifact>]` skills + `aid-brainstorm` | No (pre-build stage) | Develops an idea into a **design seed** under `.aid/design/`; writes no code and no KB document. `create` realizes the seed, `update` revises what `create` committed. |
-| Shortcut (Lite path) | 34 `aid-<verb>[-<artifact>]` skills + the shared shortcut engine | No (collapses Describe→Detail) | Verb-first direct-entry doorways (`/aid-fix`, `/aid-create-api`, …) that delegate to `canonical/aid/templates/shortcut-engine.md` (INTAKE -> CAPTURE -> SPEC -> PLAN -> DETAIL -> GATE -> APPROVAL-HALT). The autonomous Lite path — enter by naming your change. |
+| Shortcut (Lite path) | 34 `aid-<verb>[-<artifact>]` skills + the shared shortcut engine | No (collapses `aid-describe` through `aid-detail`) | Verb-first direct-entry doorways (`/aid-fix`, `/aid-create-api`, …) that delegate to `canonical/aid/templates/shortcut-engine.md` (INTAKE -> CAPTURE -> SPEC -> PLAN -> DETAIL -> GATE -> APPROVAL-HALT). The autonomous Lite path — enter by naming your change. |
 
 
 **The `design` stage and the shared lifecycle contract.** `design` is a pre-build grid verb
@@ -224,17 +225,17 @@ new state machine. `/aid-brainstorm` sits beside the grid as an exploratory door
 Knowledge Base Maintenance group (on-demand, off the numbered pipeline): `aid-housekeep`
 (KB drift reconciliation), `aid-ask` (Q&A + gap capture),
 `aid-update-kb` (targeted KB delta), `aid-summarize` (HTML KB viewer) — alongside
-`aid-discover` (Phase 1). CONFIRMED in `docs/aid-methodology.md` "Skill Inventory".
+`aid-discover` (KB preparation). CONFIRMED in `docs/aid-methodology.md` "Skill Inventory".
 
 **Entry points, two paths** (CONFIRMED in `docs/aid-methodology.md` §1 "Three Doors In"
 and §4 "The Phases"):
 
-- **Full path** — `/aid-describe` (2a) -> `/aid-define` (2b) -> `/aid-specify` -> `/aid-plan` ->
+- **Full path** — `/aid-describe` -> `/aid-define` -> `/aid-specify` -> `/aid-plan` ->
   `/aid-detail` -> `/aid-execute` (brownfield enters at `/aid-discover` first). For broad,
   multi-target, or ambiguous work.
 - **Lite path** — a verb-first **shortcut** (`/aid-fix`, `/aid-create-api`, …) drives the shared
   **shortcut engine** (`canonical/aid/templates/shortcut-engine.md`): INTAKE -> CAPTURE -> SPEC ->
-  PLAN -> DETAIL -> GATE -> APPROVAL-HALT. The engine collapses Describe->Detail into one fast,
+  PLAN -> DETAIL -> GATE -> APPROVAL-HALT. The engine collapses `aid-describe` through `aid-detail` into one fast,
   mostly-autonomous run (it never skips a phase — it collapses the information capture within each),
   grades every generated document at GATE, then halts for approval before `/aid-execute`. The
   default for a known, single-target change.
@@ -247,22 +248,22 @@ and `docs/aid-methodology.md` §4.
 development, 2 from production, 1 cross-cutting). CONFIRMED in `docs/aid-methodology.md` §6
 "The Eleven Loops". The two production loops now run out to the entry layer (L9 Monitor ->
 a fix request through `rules.md` § Handling a request, L10 Monitor -> `/aid-orchestrate`; see `.aid/knowledge/pipeline-contracts.md`). The
-cross-cutting Loop 11 (Any phase -> Discover, targeted re-discovery) is what makes the KB the
+cross-cutting Loop 11 (any phase -> the KB via `aid-discover`, targeted re-discovery) is what makes the KB the
 gravitational center in practice.
 
-### Phase 2 (Describe → Define): Describe (2a) + Define (2b)
+### The Definition and Specification Skills
 
-Phase 2 (Describe → Define) is realized by **two chained skills**, not one. The former
+`aid-describe` and `aid-define` are **two chained skills**, not one. The former
 `aid-interview` SKILL was split; the `aid-interviewer` AGENT keeps its name (only the skill
 split). CONFIRMED: `canonical/skills/` has `aid-describe/` and `aid-define/` and no
 `aid-interview/`; `canonical/agents/aid-interviewer/` is unchanged.
 
-- **`aid-describe` (Phase 2a)** — adaptive interview + COMPLETION and (greenfield) the KB seed,
+- **`aid-describe` (Definition)** — adaptive interview + COMPLETION and (greenfield) the KB seed,
   **full path only** (no TRIAGE, no lite states — the plain-request intake lives in `/aid-orchestrate`).
   State machine: FIRST-RUN -> Q-AND-A -> CONTINUE ->
   {greenfield: DESCRIBE-SEED ->} COMPLETION (`ASK` then `HALT`, naming `/aid-define`). CONFIRMED in
   `canonical/skills/aid-describe/SKILL.md` (frontmatter `State machine:`).
-- **`aid-define` (Phase 2b)** — feature decomposition + cross-reference, from an approved
+- **`aid-define` (Specification)** — feature decomposition + cross-reference, from an approved
   `REQUIREMENTS.md`. State machine: FEATURE-DECOMPOSITION -> CROSS-REFERENCE -> DONE (`ASK` then
   `HALT`). CONFIRMED in `canonical/skills/aid-define/SKILL.md`.
 
@@ -283,7 +284,7 @@ DESCRIBE-SEED state forward-authors a 5-element KB seed from elicited intent —
 (`coding-standards.md`) + tech stack (`technology-stack.md`) + decisions (`decisions.md`) —
 written to `.aid/knowledge/` stamped `source: forward-authored`. THE INVERSION: in greenfield
 the **docs are the source of truth and code conforms**, the opposite of brownfield where code
-is truth and Discover extracts the KB. CONFIRMED in
+is truth and `aid-discover` extracts the KB. CONFIRMED in
 `canonical/skills/aid-describe/references/state-describe-seed.md` ("Record Sink").
 
 **Build conformance check (flag-not-overwrite).** Because greenfield design docs lead the
@@ -369,7 +370,7 @@ profiles, only model names and agent format differ. CONFIRMED in
 `profiles/claude-code.toml` (search: "[model_tiers]") and `docs/aid-methodology.md` "Tier
 Mapping per Profile".
 
-**Discovery fan-out:** Discover dispatches a pre-scan `aid-researcher` (alone), then a pool
+**Discovery fan-out:** `aid-discover` dispatches a pre-scan `aid-researcher` (alone), then a pool
 of parallel `aid-researcher` instances (one per confirmed doc-set scope), then an
 `aid-reviewer` for adversarial grading. This pool replaced the five former discovery-*
 agents. CONFIRMED in `docs/aid-methodology.md` (search: "replaces the former five separate
@@ -395,7 +396,7 @@ can revise it. CONFIRMED in `docs/aid-methodology.md` §3.
 - **Forward-authored seeds (greenfield):** on a greenfield project the KB is not extracted
   from code but **forward-authored** by `aid-describe` DESCRIBE-SEED and stamped
   `source: forward-authored` — the docs are the source of truth and code conforms (see "The
-  Describe → Define Phase" above).
+  Definition and Specification Skills" above).
 
 ---
 

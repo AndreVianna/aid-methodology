@@ -57,9 +57,11 @@ server, is documented in [integration-map.md](integration-map.md).)
 
 ## How the Pipeline Works
 
-AID is a six-phase sequential pipeline with formal feedback loops. Each phase is a skill
-(a slash command resolving to a `SKILL.md` state machine); Phase 2 (Describe → Define) is realized
-by two chained skills, `aid-describe` (2a) and `aid-define` (2b). The human approves every
+AID is a sequential pipeline of skills with formal feedback loops. Each skill is a slash command
+resolving to a `SKILL.md` state machine. A work moves through five phases: Definition, Specification,
+Planning, Building and CI. `aid-describe` is Definition; `aid-define` and `aid-specify` are
+Specification; `aid-plan` and `aid-detail` are Planning; `aid-execute` is Building; CI closes the work.
+On brownfield projects `aid-discover` prepares the Knowledge Base before them (not a work phase). The human approves every
 phase transition — the pipeline never auto-advances. CONFIRMED: `docs/aid-methodology.md`
 ("## 1. The Pipeline", "Between phases, the human gives the OK to advance").
 
@@ -68,27 +70,28 @@ Two contract facts shape every hand-off:
 - **Artifacts are typed markdown files under `.aid/`.** Each phase reads named files from a
   prior phase and writes named files for the next. The file name and location are the
   contract — downstream skills navigate by convention, never by search.
-- **Entry doors, two paths.** The first door is a *plain request*: the agent reads it by its meaning against the skill guide in `.aid/runtime/rules.md` (`canonical/aid/rules.md` § Handling a request), and `/aid-orchestrate` checks the reading and sizes it before any work exists, then finds, resumes or creates the work. A request either reaches a skill, is answered as a project question from the KB (no work created), or carries on with no AID workflow. A typed `/aid-<skill>` always wins. The *full path* runs every numbered phase and is entered by `/aid-describe` (broad or new-project work). The *flattened Lite path* is entered by naming the change with a verb-first **shortcut** (`/aid-<verb>[-<artifact>]`, e.g. `/aid-fix`, `/aid-create-api`) — each shortcut is a thin doorway into the shared **shortcut engine** (`shortcut-engine.md`) that collapses Describe → Define → Specify → Plan → Detail into one fast, mostly-autonomous run. `/aid-describe` is **full-path only** — it no longer triages or emits Lite work. CONFIRMED: `docs/aid-methodology.md` ("## 4. The Phases", "The Lite Path: Direct-Entry Shortcuts"); `canonical/aid/rules.md` (`## Handling a request`, `## Skill guide`); `canonical/skills/aid-orchestrate/SKILL.md`; `canonical/aid/templates/shortcut-engine.md`; `canonical/skills/aid-describe/SKILL.md` (frontmatter `State machine:` — no TRIAGE/lite states).
+- **Entry doors, two paths.** The first door is a *plain request*: the agent reads it by its meaning against the skill guide in `.aid/runtime/rules.md` (`canonical/aid/rules.md` § Handling a request), and `/aid-orchestrate` checks the reading and sizes it before any work exists, then finds, resumes or creates the work. A request either reaches a skill, is answered as a project question from the KB (no work created), or carries on with no AID workflow. A typed `/aid-<skill>` always wins. The *full path* runs every pipeline skill, from `/aid-describe` through `/aid-execute`, and is entered by `/aid-describe` (broad or new-project work). The *flattened Lite path* is entered by naming the change with a verb-first **shortcut** (`/aid-<verb>[-<artifact>]`, e.g. `/aid-fix`, `/aid-create-api`) — each shortcut is a thin doorway into the shared **shortcut engine** (`shortcut-engine.md`) that collapses `/aid-describe` through `/aid-detail` (Definition, Specification and Planning) into one fast, mostly-autonomous run. `/aid-describe` is **full-path only** — it no longer triages or emits Lite work. CONFIRMED: `docs/aid-methodology.md` ("## 4. The Phases", "The Lite Path: Direct-Entry Shortcuts"); `canonical/aid/rules.md` (`## Handling a request`, `## Skill guide`); `canonical/skills/aid-orchestrate/SKILL.md`; `canonical/aid/templates/shortcut-engine.md`; `canonical/skills/aid-describe/SKILL.md` (frontmatter `State machine:` — no TRIAGE/lite states).
 
 ---
 
 ## Phase Input/Output Contracts
 
-The mandatory pipeline is six numbered phases; `aid-config` precedes it (bootstrap) and
+The mandatory pipeline is the work phases Definition, Specification, Planning, Building and CI, with `aid-discover` preparing the KB before them on brownfield projects; `aid-config` precedes it (bootstrap) and
 `aid-summarize`, `aid-deploy`, `aid-monitor`, `aid-housekeep`, `aid-ask`,
 `aid-update-kb` are off-pipeline or optional. The 34 verb-first shortcuts are direct-entry skills, and `/aid-orchestrate` is the plain-request intake; both sit outside the numbered pipeline (the shortcuts drive the shortcut engine; the intake only routes). CONFIRMED: `docs/aid-methodology.md` ("Skill
 Inventory" table, "§4 The Phases").
 
-| # | Phase (skill) | Consumes | Produces | Gate |
+| Phase | Skill | Consumes | Produces | Gate |
 |---|---------------|----------|----------|------|
 | — | `aid-config` (bootstrap) | user metadata (greenfield/brownfield, name, min grade) | `.aid/` scaffold · KB placeholders · context file (`CLAUDE.md`/`AGENTS.md`) · seeded `STATE.yml` · `settings.yml` | none (setup) |
-| 1 | `aid-discover` (full path; brownfield) | repository source · `project-index.md` pre-pass · confirmed `discovery.doc_set` | the confirmed KB doc-set · `INDEX.md` · `README.md` · discovery-area `STATE.md` grade/Q&A · ELICIT E1: `## External Documentation` in `.aid/knowledge/STATE.md` (population signal into `external-sources.md`, written by Scout) · ELICIT E2: `.aid/connectors/` registry (descriptors + `INDEX.md`) | deterministic grade ≥ minimum + human approval |
-| 2a | `aid-describe` (full path only) | `.aid/knowledge/` · user answers | approved `REQUIREMENTS.md` (+ greenfield: a forward-authored KB seed in `.aid/knowledge/`) | grade ≥ minimum + human approval |
-| 2b | `aid-define` (full path only) | approved `REQUIREMENTS.md` · KB · codebase | one `### Feature NNN` section per feature under `REQUIREMENTS.md § 11` + cross-reference Q&A | grade ≥ minimum + human approval |
-| 3 | `aid-specify` (full path only) | a feature's `§ 11` section (requirements side) · the `§ 5`/`§ 9` slice it cites · KB · codebase | `#### Technical Specification` appended to that feature section | per-section grade ≥ minimum |
-| 4 | `aid-plan` (full path only) | `§ 11` feature sections marked `Ready` · `REQUIREMENTS.md` · KB | `PLAN.md` — ordered deliveries, each stanza carrying that delivery's definition (objective/scope/gate criteria) + delivery `STATE.yml` (`Pending-Spec`) | grade ≥ minimum |
-| 5 | `aid-detail` (full path only) | `PLAN.md` · the `§ 11` feature sections · KB | per-task `DETAIL.md` files + execution graph appended to `PLAN.md` | grade ≥ minimum |
-| 6 | `aid-execute` | task `DETAIL.md` (with Type) · `PLAN.md` · the requirements SLICE the task cites (`slice-requirements.sh`) · `INDEX.md` · `known-issues.md` (if present) | reviewed/graded artifacts to grade ≥ minimum; results in delivery/task `STATE.yml` | per-task quick-check + delivery-gate grade ≥ minimum |
+| — (KB preparation, not a work phase) | `aid-discover` (brownfield) | repository source · `project-index.md` pre-pass · confirmed `discovery.doc_set` | the confirmed KB doc-set · `INDEX.md` · `README.md` · discovery-area `STATE.md` grade/Q&A · ELICIT E1: `## External Documentation` in `.aid/knowledge/STATE.md` (population signal into `external-sources.md`, written by Scout) · ELICIT E2: `.aid/connectors/` registry (descriptors + `INDEX.md`) | deterministic grade ≥ minimum + human approval |
+| Definition | `aid-describe` (full path only) | `.aid/knowledge/` · user answers | approved `REQUIREMENTS.md` (+ greenfield: a forward-authored KB seed in `.aid/knowledge/`) | grade ≥ minimum + human approval |
+| Specification | `aid-define` (full path only) | approved `REQUIREMENTS.md` · KB · codebase | one `### Feature NNN` section per feature under `REQUIREMENTS.md § 11` + cross-reference Q&A | grade ≥ minimum + human approval |
+| Specification | `aid-specify` (full path only) | a feature's `§ 11` section (requirements side) · the `§ 5`/`§ 9` slice it cites · KB · codebase | `#### Technical Specification` appended to that feature section | per-section grade ≥ minimum |
+| Planning | `aid-plan` (full path only) | `§ 11` feature sections marked `Ready` · `REQUIREMENTS.md` · KB | `PLAN.md` — ordered deliveries, each stanza carrying that delivery's definition (objective/scope/gate criteria) + delivery `STATE.yml` (`Pending-Spec`) | grade ≥ minimum |
+| Planning | `aid-detail` (full path only) | `PLAN.md` · the `§ 11` feature sections · KB | per-task `DETAIL.md` files + execution graph appended to `PLAN.md` | grade ≥ minimum |
+| Building | `aid-execute` | task `DETAIL.md` (with Type) · `PLAN.md` · the requirements SLICE the task cites (`slice-requirements.sh`) · `INDEX.md` · `known-issues.md` (if present) | reviewed/graded artifacts to grade ≥ minimum; results in delivery/task `STATE.yml` | per-task quick-check + delivery-gate grade ≥ minimum |
+| CI | none; `/aid-orchestrate` closes the work | all tasks `Done` | the work marked `Completed` | all tasks `Done` |
 
 CONFIRMED by the per-phase deep-dives in `docs/aid-methodology.md` ("## 4. The Phases"),
 the artifact table ("Skill Inventory"), and the `aid-describe` / `aid-define`
@@ -99,7 +102,7 @@ path** collapses further, to two artifact types at the work root: the shortcut e
 delivery means no sequencing decision to record — see the On-Disk Work Hierarchy below. CONFIRMED: `canonical/aid/templates/shortcut-engine.md` (CAPTURE/SPEC/PLAN/DETAIL steps);
 `docs/aid-methodology.md` ("Skill Inventory" shortcut row, "The Lite Path").
 
-Greenfield projects skip phase 1 (no existing system) and enter at Describe (2a). Instead of
+Greenfield projects skip `aid-discover` (no existing system) and enter at `aid-describe` (Definition). Instead of
 "a minimal KB", `aid-describe`'s DESCRIBE-SEED state **forward-authors** a 5-element KB seed
 (concept-spine + intended architecture + conventions + tech stack + decisions) into
 `.aid/knowledge/`, stamped `source: forward-authored` — the docs are authored as the source of
@@ -112,7 +115,7 @@ truth before any code exists. CONFIRMED:
 ## The On-Disk Work Hierarchy
 
 A *work* is a self-contained scope unit under `.aid/`. The shape diverges by path. On the
-**full path** (via `/aid-describe` → the numbered phases) deliveries are nested under a
+**full path** (via `/aid-describe` → the pipeline skills) deliveries are nested under a
 `deliveries/` parent (mirroring `features/`). On the **flattened Lite path** (via a verb-first
 shortcut → the shortcut engine) there is exactly one delivery and **no `deliveries/` folder at
 all** — the work IS the delivery, and the delivery's definition, lifecycle, gate, and task
@@ -128,17 +131,17 @@ cells are authored directly at the work root.
       STATE.yml                                 # work-area run-state (DERIVED rollups + Q&A)
       REQUIREMENTS.md                           # full path only; § 11 holds one
                                                 #   `### Feature NNN` section per feature:
-                                                #   definition (Define) + tech spec (Specify)
+                                                #   definition (aid-define) + tech spec (aid-specify)
       PLAN.md                                   # full path only; each `### delivery-NNN`
                                                 #   stanza IS that delivery's definition
                                                 #   (objective/scope/gate criteria).
-                                                #   Detail appends the execution graph
+                                                #   aid-detail appends the execution graph
       deliveries/delivery-NNN/
         STATE.yml                               # delivery lifecycle + gate + delivery-scoped Q&A
         tasks/task-NNN/
           DETAIL.md                             # the task definition (Type, Source, Depends on, Scope, AC)
           STATE.yml                             # mutable task cells (State, Review, Elapsed, Notes)
-      IMPEDIMENT-task-NNN.md                     # written by Execute on an unresolved contradiction
+      IMPEDIMENT-task-NNN.md                     # written by aid-execute on an unresolved contradiction
       packages/package-NNN-{slug}.md             # written by Deploy
       DEPLOYMENT-STATE.md · MONITOR-STATE.md     # written by Deploy / Monitor
 ```
@@ -163,7 +166,7 @@ cells are authored directly at the work root.
       tasks/task-NNN/
         DETAIL.md                               # the task definition — IMMUTABLE, no sibling STATE.yml;
                                                  # mutable cells live in STATE.yml's `tasks_lifecycle` mapping
-      IMPEDIMENT-task-NNN.md                     # written by Execute on an unresolved contradiction
+      IMPEDIMENT-task-NNN.md                     # written by aid-execute on an unresolved contradiction
       packages/package-NNN-{slug}.md             # written by Deploy
       DEPLOYMENT-STATE.md · MONITOR-STATE.md     # written by Deploy / Monitor
 ```
@@ -173,7 +176,7 @@ blocks for the full path; the AUTHORED `delivery_lifecycle` / `tasks_lifecycle` 
 `delivery_gate` keys for the single-delivery flattened work) and
 `canonical/aid/templates/delivery-state-template.yml` (a full-path-only header note; the
 flattened work authors the same keys directly in its work-root STATE.yml). The `§ 11` feature
-sections are written by `aid-define` (2b) FEATURE-DECOMPOSITION, not by the interview half --
+sections are written by `aid-define` FEATURE-DECOMPOSITION, not by the interview half --
 CONFIRMED: `canonical/skills/aid-define/SKILL.md`.
 
 The flattened Lite path omits `deliveries/` and `delivery-NNN/`, and creates **no per-task
@@ -194,17 +197,17 @@ is the contract a producing phase must satisfy and a consuming phase relies on.
 
 | Artifact | Produced by | Consumed by | Required shape (load-bearing fields) | Lifecycle |
 |----------|-------------|-------------|--------------------------------------|-----------|
-| KB doc-set | Discover (brownfield) / `aid-describe` DESCRIBE-SEED (greenfield seed) | all phases | per-doc frontmatter (`kb-category`, `source`, `objective`, `summary`, `sources`, `tags`, `audience`, `owner`) + `# Title` + content | living |
-| `INDEX.md` | config/Discover/Describe | all phases | one 2–3 line summary row per KB doc | regenerated, never hand-maintained |
-| `STATE.md` (discovery area) | config/Discover/Summarize | Discover (resume), all phases | grade, Q&A (Pending), review & summarization history, calibration log; ELICIT (State 0) additionally writes `## Discovery Elicitation` (Sources/Tools/Tools step/Skipped/Resolved) and `## External Documentation` (Path/Type/Accessible/Notes, one row per declared source — E1) | living |
+| KB doc-set | `aid-discover` (brownfield) / `aid-describe` DESCRIBE-SEED (greenfield seed) | all phases | per-doc frontmatter (`kb-category`, `source`, `objective`, `summary`, `sources`, `tags`, `audience`, `owner`) + `# Title` + content | living |
+| `INDEX.md` | config, `aid-discover` or `aid-describe` | all phases | one 2–3 line summary row per KB doc | regenerated, never hand-maintained |
+| `STATE.md` (discovery area) | config, `aid-discover` or `aid-summarize` | `aid-discover` (resume), all phases | grade, Q&A (Pending), review & summarization history, calibration log; ELICIT (State 0) additionally writes `## Discovery Elicitation` (Sources/Tools/Tools step/Skipped/Resolved) and `## External Documentation` (Path/Type/Accessible/Notes, one row per declared source — E1) | living |
 | `.aid/connectors/` registry | `aid-discover` ELICIT (State 0, Step E2) | all phases (agents requesting a declared integration) | one `<stem>.md` descriptor per connector (`name`, `connection_type`, `endpoint`, `auth_method`, `secret_reference` [aid-managed only], `preset`, `objective`, `summary`, `tags`, `audience`) + generated `INDEX.md` | living, reconciled (add/update/remove) each ELICIT cycle |
-| `REQUIREMENTS.md` | `aid-describe` (full) or shortcut engine CAPTURE (flattened Lite) | Define, Specify, Plan (full); SPEC/PLAN/DETAIL (engine) | 10 numbered sections (Objective … Priority) | frozen after approval; history in git |
-| feature section (`REQUIREMENTS.md § 11`) | `aid-define` + Specify | Plan, Detail, Execute | Description · User Stories · Priority · cited `§ 5 FR-N` / `§ 9 AC-N` · `#### Technical Specification` | one section per feature |
-| `PLAN.md` | Plan (full) or shortcut engine PLAN (flattened Lite) | Detail, Deploy | `## Deliverables` (ordered, each with What/Features/Depends on/Priority) + execution graph (Detail) | living; history in git |
-| delivery stanza (`PLAN.md` `### delivery-NNN`) | `aid-plan` (full path) | Detail, Execute, Deploy | Objective · Scope / Out of scope · **Gate Criteria** · Notes | one stanza per delivery; the Lite path has no plan |
-| task `DETAIL.md` | `aid-detail` (full) or shortcut engine DETAIL (flattened Lite) | Execute | `Type` ∈ {RESEARCH, DESIGN, IMPLEMENT, TEST, DOCUMENT, MIGRATE, REFACTOR, CONFIGURE} · Source · Depends on · Scope · Acceptance Criteria | immutable (rev-tracked if amended) |
-| `IMPEDIMENT-task-NNN.md` | Execute | Specify, Detail, Discover | Summary · Type ∈ {wrong-assumption, missing-dependency, architecture-conflict, kb-gap} · Options · Recommendation | closed when resolved |
-| `package-NNN-{slug}.md` | Deploy | Monitor, stakeholders | deliveries included · verification results · environment · release notes | one per shipped release |
+| `REQUIREMENTS.md` | `aid-describe` (full) or shortcut engine CAPTURE (flattened Lite) | `aid-define`, `aid-specify`, `aid-plan` (full); SPEC/PLAN/DETAIL (engine) | 10 numbered sections (Objective … Priority) | frozen after approval; history in git |
+| feature section (`REQUIREMENTS.md § 11`) | `aid-define` + `aid-specify` | `aid-plan`, `aid-detail`, `aid-execute` | Description · User Stories · Priority · cited `§ 5 FR-N` / `§ 9 AC-N` · `#### Technical Specification` | one section per feature |
+| `PLAN.md` | `aid-plan` (full) or shortcut engine PLAN (flattened Lite) | `aid-detail`, `aid-deploy` | `## Deliverables` (ordered, each with What/Features/Depends on/Priority) + execution graph (`aid-detail`) | living; history in git |
+| delivery stanza (`PLAN.md` `### delivery-NNN`) | `aid-plan` (full path) | `aid-detail`, `aid-execute`, `aid-deploy` | Objective · Scope / Out of scope · **Gate Criteria** · Notes | one stanza per delivery; the Lite path has no plan |
+| task `DETAIL.md` | `aid-detail` (full) or shortcut engine DETAIL (flattened Lite) | `aid-execute` | `Type` ∈ {RESEARCH, DESIGN, IMPLEMENT, TEST, DOCUMENT, MIGRATE, REFACTOR, CONFIGURE} · Source · Depends on · Scope · Acceptance Criteria | immutable (rev-tracked if amended) |
+| `IMPEDIMENT-task-NNN.md` | `aid-execute` | `aid-specify`, `aid-detail`, `aid-discover` | Summary · Type ∈ {wrong-assumption, missing-dependency, architecture-conflict, kb-gap} · Options · Recommendation | closed when resolved |
+| `package-NNN-{slug}.md` | `aid-deploy` | Monitor, stakeholders | deliveries included · verification results · environment · release notes | one per shipped release |
 | `MONITOR-STATE.md` | Monitor | the fix request through `rules.md` § Handling a request (bugs), `/aid-orchestrate` (CRs) | Last Run · Active Findings (Classification/Severity/Evidence/Routing) · Resolved Findings | living |
 
 CONFIRMED by the template files under `canonical/aid/templates/` and the artifact reference
@@ -320,7 +323,7 @@ skill follows the rules above, and each step's advance word is on that step's `*
 | Skill | Steps (in order) |
 |-------|------------------|
 | `aid-discover` | ELICIT → GENERATE → REVIEW → Q-AND-A → FIX → APPROVAL → DONE. Builds the Knowledge Base; no work phase. |
-| `aid-describe` (full) | FIRST-RUN → Q-AND-A → CONTINUE → [greenfield: DESCRIBE-SEED →] COMPLETION. COMPLETION is `ASK` then `HALT`, naming `/aid-define`, until the phase skill that follows takes over with a `PASS`. |
+| `aid-describe` (full) | FIRST-RUN → Q-AND-A → CONTINUE → [greenfield: DESCRIBE-SEED →] COMPLETION. COMPLETION is `ASK` then `HALT`, naming `/aid-define`. |
 | `aid-define` | FEATURE-DECOMPOSITION → CROSS-REFERENCE → DONE. DONE is `ASK` then `HALT`; a requirements-level change is named in one plain line. |
 | `aid-specify` | Per-section universal loop: Propose → Discuss → Write → Review. A re-run enters at Review. |
 | `aid-plan` | Universal loop applied per delivery: Propose → Discuss → Write → Review. |
@@ -393,20 +396,20 @@ CONFIRMED: `docs/aid-methodology.md` ("## 6. Feedback Loops").
 
 | Loop | From | To | Trigger | Record |
 |------|------|----|---------|--------|
-| L1 | Describe (2a) | Discover | an answer reveals the KB is wrong/incomplete | Q&A in `.aid/knowledge/STATE.md` |
-| L2 | Specify | Discover | spec exposes insufficient subsystem understanding | Q&A in `.aid/knowledge/STATE.md` |
-| L3 | Plan | Discover | codebase more complex than the KB captured | Q&A in `.aid/knowledge/STATE.md` |
-| L4 | Plan | Specify | KB complete but a SPEC is ambiguous/contradictory | Q&A in the feature `STATE.md` |
-| L5 | Detail | Plan | plan too vague to decompose into tasks | flag on the under-specified deliverable |
-| L6 | Execute | Discover / Specify / Detail | an assumption does not hold | `IMPEDIMENT-task-NNN.md` (routed by Type) |
-| L7 | Execute Review | any upstream phase | reviewer finds TASK/SPEC/KB-sourced issues | source-tagged issue → loopback |
-| L8 | Deploy | Execute | final verification (build+tests+lint) fails | routed back to `/aid-execute` |
+| L1 | Definition (`aid-describe`) | KB (`aid-discover`) | an answer reveals the KB is wrong/incomplete | Q&A in `.aid/knowledge/STATE.md` |
+| L2 | Specification (`aid-specify`) | KB (`aid-discover`) | spec exposes insufficient subsystem understanding | Q&A in `.aid/knowledge/STATE.md` |
+| L3 | Planning (`aid-plan`) | KB (`aid-discover`) | codebase more complex than the KB captured | Q&A in `.aid/knowledge/STATE.md` |
+| L4 | Planning (`aid-plan`) | Specification (`aid-specify`) | KB complete but a SPEC is ambiguous/contradictory | Q&A in the feature `STATE.md` |
+| L5 | Planning (`aid-detail`) | Planning (`aid-plan`) | plan too vague to decompose into tasks | flag on the under-specified deliverable |
+| L6 | Building (`aid-execute`) | KB (`aid-discover`) / Specification (`aid-specify`) / Planning (`aid-detail`) | an assumption does not hold | `IMPEDIMENT-task-NNN.md` (routed by Type) |
+| L7 | Building (`aid-execute` review) | any upstream phase | reviewer finds TASK/SPEC/KB-sourced issues | source-tagged issue → loopback |
+| L8 | `aid-deploy` (its own work) | Building (`aid-execute`) | final verification (build+tests+lint) fails | routed back to `/aid-execute` |
 | L9 | Monitor | fix request through `rules.md` § Handling a request (plain request, no typed skill) | finding classified BUG | `MONITOR-STATE.md` finding |
 | L10 | Monitor | `/aid-orchestrate` (plain request through `rules.md` § Handling a request) | finding classified Change Request | `MONITOR-STATE.md` finding |
-| L11 | any phase | Discover | KB found wrong/incomplete/stale | targeted re-discovery Q&A |
+| L11 | any phase | KB (`aid-discover`) | KB found wrong/incomplete/stale | targeted re-discovery Q&A |
 
-The IMPEDIMENT routing (L6) is by Type: `kb-gap` routes to Discover, `architecture-conflict`
-to Specify, `missing-dependency` to Detail, and `wrong-assumption` to a task/SPEC update.
+The IMPEDIMENT routing (L6) is by Type: `kb-gap` routes to KB (`aid-discover`), `architecture-conflict`
+to Specification (`aid-specify`), `missing-dependency` to Planning (`aid-detail`), and `wrong-assumption` to a task/SPEC update.
 CONFIRMED: `docs/aid-methodology.md` ("Loop 6"). The Monitor re-points (L9/L10) are CONFIRMED:
 `canonical/skills/aid-monitor/SKILL.md` (bugs back as a fix request, change requests as a new-work request, both through `rules.md` § Handling a request).
 
@@ -572,10 +575,11 @@ Load-bearing keys: `project.{name,description,type}`, `tools.installed`,
 - **Every inter-phase artifact is a typed markdown contract.** A phase consumes and produces
   the declared artifacts (see the Phase Input/Output Contracts table); a phase cannot start
   until its inputs exist and its predecessor's gate has passed.
-- **Phase order is fixed.** The six numbered phases run Discover -> Describe/Define (Phase
-  2a/2b) -> Specify -> Plan -> Detail -> Execute on the full path; the flattened Lite path (via
-  the shortcut engine) collapses Describe through Detail into one autonomous run and hands off to
-  Execute, but never reorders or renumbers the phases.
+- **Phase order is fixed.** On the full path a work runs Definition (`aid-describe`, `aid-define`)
+  -> Specification (`aid-specify`) -> Planning (`aid-plan`, `aid-detail`) -> Building (`aid-execute`)
+  -> CI, with `aid-discover` preparing the KB first on brownfield projects. The flattened Lite path
+  (via the shortcut engine) collapses Definition through Planning into one autonomous run and hands
+  off to Building, but never reorders the phases.
 - **Forward-authored design is never auto-overwritten.** The conformance check flags
   code↔design divergence for the human; authority stays design -> code until the human
   explicitly evolves the design (see the Feedback Loop Contracts conformance subsection).
