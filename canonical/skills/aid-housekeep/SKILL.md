@@ -166,6 +166,10 @@ the first `--write`, and `--resume`/`--read` treat an absent file as "no section
        Usage: /aid-housekeep [--cleanup-only] [--grade X]
    ```
 
+This table describes how a fresh start picks its entry step (rows 1 and 2); on a resume, the
+saved step in the `## Housekeep Status` block decides, and the table only validates it (rows 3
+to 6).
+
 **Resume detection (the six-row re-entry table):**
 
 | # | Disk condition (read `## Housekeep Status`) | Saved step, validated |
@@ -230,9 +234,9 @@ aid-housekeep  ▸ you are here
 | State | Detail | Worker | Advance |
 |-------|--------|--------|---------|
 | PREFLIGHT | `references/state-preflight.md` | inline | CHAIN → KB-DELTA (or CLEANUP if Mode=cleanup-only) |
-| KB-DELTA | `references/state-kb-delta.md` | `aid-architect` (feat-002 dispatches sub-agents via `/aid-discover`) | CHAIN → SUMMARY-DELTA / WAIT if stalled |
+| KB-DELTA | `references/state-kb-delta.md` | `aid-architect` (feat-002 dispatches sub-agents via `/aid-discover`) | ASK (scope confirm, Step 3) · CHAIN → SUMMARY-DELTA / WAIT if stalled |
 | SUMMARY-DELTA | `references/state-summary-delta.md` | inline (delegates to `/aid-summarize`) | CHAIN → CLEANUP / WAIT if stalled |
-| CLEANUP | `references/state-cleanup.md` | inline | CHAIN → DONE |
+| CLEANUP | `references/state-cleanup.md` | inline | ASK (checklist and teardown offers) · CHAIN → DONE |
 | DONE | `references/state-done.md` | inline | HALT |
 
 > **KB-DELTA sub-agent dispatch (feature-002).** The `aid-architect` Worker for

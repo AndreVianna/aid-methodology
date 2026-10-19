@@ -327,9 +327,12 @@ fi
     STATE_FILE=".aid/.temp/UPDATEKB_STATE_$(date +%Y%m%d%H%M).md"
 ```
 
+This table describes how a fresh start picks its entry step (row 1); on a resume, the saved
+`**State:**` in the run-state file decides, and the table only validates it (rows 2 to 8).
+
 **Resume detection:**
 
-| # | Disk condition (read run-state file) | Resume target |
+| # | Disk condition (read run-state file) | Entry step |
 |---|--------------------------------------|---------------|
 | 1 | No run-state file (fresh run, just isolated by Pre-flight) | ANALYZE |
 | 2 | `**State:** ANALYZE` present | ANALYZE |

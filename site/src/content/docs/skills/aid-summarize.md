@@ -74,80 +74,80 @@ Every node in the chart above, in chart order, with the exact `canonical/` text 
 
 <a id="fragment-n1"></a>**1 · `PREFLIGHT`** — PREFLIGHT is the synchronous gate that verifies all… · _entry_
 
-~~~~plaintext title="canonical/skills/aid-summarize/SKILL.md#L176" wrap
-| PREFLIGHT | `references/state-preflight.md` | inline | → STALE-CHECK |
+~~~~plaintext title="canonical/skills/aid-summarize/SKILL.md#L179" wrap
+| PREFLIGHT | `references/state-preflight.md` | inline | CHAIN → STALE-CHECK |
 ~~~~
 
-[Source: `canonical/skills/aid-summarize/SKILL.md#L176`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-summarize/SKILL.md#L176) · [full step: `canonical/skills/aid-summarize/references/state-preflight.md#L1-L24`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-summarize/references/state-preflight.md#L1-L24)
+[Source: `canonical/skills/aid-summarize/SKILL.md#L179`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-summarize/SKILL.md#L179) · [full step: `canonical/skills/aid-summarize/references/state-preflight.md#L1-L24`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-summarize/references/state-preflight.md#L1-L24)
 
 <a id="fragment-n2"></a>**2 · `STALE-CHECK`** — STALE-CHECK compares the KB review date against the last… · _exit_ · HALT
 
-~~~~plaintext title="canonical/skills/aid-summarize/SKILL.md#L177" wrap
-| STALE-CHECK | `references/state-stale-check.md` | inline | → PROFILE |
+~~~~plaintext title="canonical/skills/aid-summarize/SKILL.md#L180" wrap
+| STALE-CHECK | `references/state-stale-check.md` | inline | CHAIN → PROFILE |
 ~~~~
 
-[Source: `canonical/skills/aid-summarize/SKILL.md#L177`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-summarize/SKILL.md#L177) · [full step: `canonical/skills/aid-summarize/references/state-stale-check.md#L1-L33`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-summarize/references/state-stale-check.md#L1-L33)
+[Source: `canonical/skills/aid-summarize/SKILL.md#L180`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-summarize/SKILL.md#L180) · [full step: `canonical/skills/aid-summarize/references/state-stale-check.md#L1-L33`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-summarize/references/state-stale-check.md#L1-L33)
 
 <a id="fragment-n3"></a>**3 · `PROFILE`** — PROFILE reads the doc-set and domain from feature-014… · _step_
 
-~~~~plaintext title="canonical/skills/aid-summarize/SKILL.md#L178" wrap
-| PROFILE | `references/state-profile.md` | inline | → GENERATE |
+~~~~plaintext title="canonical/skills/aid-summarize/SKILL.md#L181" wrap
+| PROFILE | `references/state-profile.md` | inline | CHAIN → GENERATE |
 ~~~~
 
-[Source: `canonical/skills/aid-summarize/SKILL.md#L178`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-summarize/SKILL.md#L178) · [full step: `canonical/skills/aid-summarize/references/state-profile.md#L1-L163`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-summarize/references/state-profile.md#L1-L163)
+[Source: `canonical/skills/aid-summarize/SKILL.md#L181`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-summarize/SKILL.md#L181) · [full step: `canonical/skills/aid-summarize/references/state-profile.md#L1-L163`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-summarize/references/state-profile.md#L1-L163)
 
 <a id="fragment-n4"></a>**4 · `GENERATE`** — GENERATE builds kb.html from KB content using the resolved… · _step_
 
-~~~~plaintext title="canonical/skills/aid-summarize/SKILL.md#L179" wrap
-| GENERATE | `references/state-generate.md` | inline | → VALIDATE |
+~~~~plaintext title="canonical/skills/aid-summarize/SKILL.md#L182" wrap
+| GENERATE | `references/state-generate.md` | inline | CHAIN → VALIDATE |
 ~~~~
 
-[Source: `canonical/skills/aid-summarize/SKILL.md#L179`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-summarize/SKILL.md#L179) · [full step: `canonical/skills/aid-summarize/references/state-generate.md#L1-L378`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-summarize/references/state-generate.md#L1-L378)
+[Source: `canonical/skills/aid-summarize/SKILL.md#L182`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-summarize/SKILL.md#L182) · [full step: `canonical/skills/aid-summarize/references/state-generate.md#L1-L378`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-summarize/references/state-generate.md#L1-L378)
 
 <a id="fragment-n5"></a>**5 · `VALIDATE`** — VALIDATE runs the machine-verifiable quality checks… · _decision_
 
-~~~~plaintext title="canonical/skills/aid-summarize/SKILL.md#L180" wrap
-| VALIDATE | `references/state-validate.md` | inline | → MANUAL-CHECKLIST (grade ≥ min) / → FIX (grade < min) |
+~~~~plaintext title="canonical/skills/aid-summarize/SKILL.md#L183" wrap
+| VALIDATE | `references/state-validate.md` | inline | CHAIN → MANUAL-CHECKLIST (grade ≥ min) / CHAIN → FIX (grade < min) |
 ~~~~
 
-[Source: `canonical/skills/aid-summarize/SKILL.md#L180`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-summarize/SKILL.md#L180) · [full step: `canonical/skills/aid-summarize/references/state-validate.md#L1-L63`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-summarize/references/state-validate.md#L1-L63)
+[Source: `canonical/skills/aid-summarize/SKILL.md#L183`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-summarize/SKILL.md#L183) · [full step: `canonical/skills/aid-summarize/references/state-validate.md#L1-L63`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-summarize/references/state-validate.md#L1-L63)
 
 <a id="fragment-n6"></a>**6 · `MANUAL-CHECKLIST`** — MANUAL-CHECKLIST elicits human-judgment answers for the… · _decision_
 
-~~~~plaintext title="canonical/skills/aid-summarize/SKILL.md#L181" wrap
-| MANUAL-CHECKLIST | `references/state-manual-checklist.md` | inline | → APPROVAL |
+~~~~plaintext title="canonical/skills/aid-summarize/SKILL.md#L184" wrap
+| MANUAL-CHECKLIST | `references/state-manual-checklist.md` | inline | ASK → APPROVAL (Overall grade ≥ min) / ASK → FIX (otherwise) |
 ~~~~
 
-[Source: `canonical/skills/aid-summarize/SKILL.md#L181`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-summarize/SKILL.md#L181) · [full step: `canonical/skills/aid-summarize/references/state-manual-checklist.md#L1-L40`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-summarize/references/state-manual-checklist.md#L1-L40)
+[Source: `canonical/skills/aid-summarize/SKILL.md#L184`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-summarize/SKILL.md#L184) · [full step: `canonical/skills/aid-summarize/references/state-manual-checklist.md#L1-L40`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-summarize/references/state-manual-checklist.md#L1-L40)
 
 <a id="fragment-n7"></a>**7 · `FIX`** — FIX handles objective machine-pool failures autonomously… · _step_
 
-~~~~plaintext title="canonical/skills/aid-summarize/SKILL.md#L182" wrap
-| FIX | `references/state-fix.md` | inline | → VALIDATE |
+~~~~plaintext title="canonical/skills/aid-summarize/SKILL.md#L185" wrap
+| FIX | `references/state-fix.md` | inline | CHAIN → VALIDATE |
 ~~~~
 
-[Source: `canonical/skills/aid-summarize/SKILL.md#L182`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-summarize/SKILL.md#L182) · [full step: `canonical/skills/aid-summarize/references/state-fix.md#L1-L39`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-summarize/references/state-fix.md#L1-L39)
+[Source: `canonical/skills/aid-summarize/SKILL.md#L185`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-summarize/SKILL.md#L185) · [full step: `canonical/skills/aid-summarize/references/state-fix.md#L1-L39`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-summarize/references/state-fix.md#L1-L39)
 
 <a id="fragment-n8"></a>**8 · `APPROVAL`** — APPROVAL presents the graded summary to the user for final… · _exit_ · HALT
 
-~~~~plaintext title="canonical/skills/aid-summarize/SKILL.md#L183" wrap
-| APPROVAL | `references/state-approval.md` | inline | → WRITEBACK |
+~~~~plaintext title="canonical/skills/aid-summarize/SKILL.md#L186" wrap
+| APPROVAL | `references/state-approval.md` | inline | ASK → WRITEBACK (approved) / HALT (rejected) / ASK → FIX (changes needed) |
 ~~~~
 
-[Source: `canonical/skills/aid-summarize/SKILL.md#L183`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-summarize/SKILL.md#L183) · [full step: `canonical/skills/aid-summarize/references/state-approval.md#L1-L54`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-summarize/references/state-approval.md#L1-L54)
+[Source: `canonical/skills/aid-summarize/SKILL.md#L186`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-summarize/SKILL.md#L186) · [full step: `canonical/skills/aid-summarize/references/state-approval.md#L1-L54`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-summarize/references/state-approval.md#L1-L54)
 
 <a id="fragment-n9"></a>**9 · `WRITEBACK`** — WRITEBACK atomically records the approved summarization… · _step_
 
-~~~~plaintext title="canonical/skills/aid-summarize/SKILL.md#L184" wrap
-| WRITEBACK | `references/state-writeback.md` | inline | → DONE |
+~~~~plaintext title="canonical/skills/aid-summarize/SKILL.md#L187" wrap
+| WRITEBACK | `references/state-writeback.md` | inline | CHAIN → DONE |
 ~~~~
 
-[Source: `canonical/skills/aid-summarize/SKILL.md#L184`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-summarize/SKILL.md#L184) · [full step: `canonical/skills/aid-summarize/references/state-writeback.md#L1-L33`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-summarize/references/state-writeback.md#L1-L33)
+[Source: `canonical/skills/aid-summarize/SKILL.md#L187`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-summarize/SKILL.md#L187) · [full step: `canonical/skills/aid-summarize/references/state-writeback.md#L1-L33`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-summarize/references/state-writeback.md#L1-L33)
 
 <a id="fragment-n10"></a>**10 · `DONE`** — DONE confirms the summarization is complete and the… · _exit_ · HALT
 
-~~~~plaintext title="canonical/skills/aid-summarize/SKILL.md#L185" wrap
-| DONE | `references/state-done.md` | inline | → halt |
+~~~~plaintext title="canonical/skills/aid-summarize/SKILL.md#L188" wrap
+| DONE | `references/state-done.md` | inline | HALT |
 ~~~~
 
-[Source: `canonical/skills/aid-summarize/SKILL.md#L185`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-summarize/SKILL.md#L185) · [full step: `canonical/skills/aid-summarize/references/state-done.md#L1-L45`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-summarize/references/state-done.md#L1-L45)
+[Source: `canonical/skills/aid-summarize/SKILL.md#L188`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-summarize/SKILL.md#L188) · [full step: `canonical/skills/aid-summarize/references/state-done.md#L1-L45`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-summarize/references/state-done.md#L1-L45)

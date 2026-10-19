@@ -36,4 +36,4 @@ Re-run `grade-summary.sh` — it reads `manual-checklist.json`, computes the Hum
 
 Print: `[State: MANUAL-CHECKLIST] complete.`
 
-**Advance:** **CHAIN** → [State: APPROVAL] if Overall Grade ≥ minimum; **CHAIN** → [State: FIX] otherwise. Both continue inline.
+**Advance:** **ASK** → [State: APPROVAL] if Overall Grade ≥ minimum; **ASK** → [State: FIX] otherwise. Both continue inline once every question is answered.

@@ -436,7 +436,7 @@ assert_eq "$RESOLVED_FLOOR" "$GLOBAL_FLOOR" \
   "UK91 aid-update-kb's floor resolves (via read-setting.sh) to the project's global minimum_grade ('${GLOBAL_FLOOR}') -- i.e. no per-skill override shadows it"
 
 # =============================================================================
-# UK92-UK98 -- delivery-gate FIX cycle-2 (rows 7/8): APPROVAL row CHAIN-on-[1];
+# UK92-UK98 -- delivery-gate FIX cycle-2 (rows 7/8): APPROVAL row ASK-on-[1];
 # re-plan Adjustments/Consideration channel wired to SCOPE/ANALYZE
 # =============================================================================
 

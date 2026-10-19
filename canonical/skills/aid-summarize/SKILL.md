@@ -70,6 +70,9 @@ proceed; do NOT create any state files.
 step of a fresh start, validates a saved step on resume, and never routes; the saved step
 in `.aid/knowledge/STATE.md` decides where a run continues.
 
+This block describes how a fresh start picks its entry step; on a resume, the saved step in
+`.aid/knowledge/STATE.md` decides, and the block only validates it against the files on disk.
+
 The state-detection logic determines which mode this run executes:
 
 ```
@@ -173,16 +176,16 @@ aid-summarize  ▸ you are here
 
 | State | Detail | Worker | Advance |
 |-------|--------|--------|---------|
-| PREFLIGHT | `references/state-preflight.md` | inline | → STALE-CHECK |
-| STALE-CHECK | `references/state-stale-check.md` | inline | → PROFILE |
-| PROFILE | `references/state-profile.md` | inline | → GENERATE |
-| GENERATE | `references/state-generate.md` | inline | → VALIDATE |
-| VALIDATE | `references/state-validate.md` | inline | → MANUAL-CHECKLIST (grade ≥ min) / → FIX (grade < min) |
-| MANUAL-CHECKLIST | `references/state-manual-checklist.md` | inline | → APPROVAL |
-| FIX | `references/state-fix.md` | inline | → VALIDATE |
-| APPROVAL | `references/state-approval.md` | inline | → WRITEBACK |
-| WRITEBACK | `references/state-writeback.md` | inline | → DONE |
-| DONE | `references/state-done.md` | inline | → halt |
+| PREFLIGHT | `references/state-preflight.md` | inline | CHAIN → STALE-CHECK |
+| STALE-CHECK | `references/state-stale-check.md` | inline | CHAIN → PROFILE |
+| PROFILE | `references/state-profile.md` | inline | CHAIN → GENERATE |
+| GENERATE | `references/state-generate.md` | inline | CHAIN → VALIDATE |
+| VALIDATE | `references/state-validate.md` | inline | CHAIN → MANUAL-CHECKLIST (grade ≥ min) / CHAIN → FIX (grade < min) |
+| MANUAL-CHECKLIST | `references/state-manual-checklist.md` | inline | ASK → APPROVAL (Overall grade ≥ min) / ASK → FIX (otherwise) |
+| FIX | `references/state-fix.md` | inline | CHAIN → VALIDATE |
+| APPROVAL | `references/state-approval.md` | inline | ASK → WRITEBACK (approved) / HALT (rejected) / ASK → FIX (changes needed) |
+| WRITEBACK | `references/state-writeback.md` | inline | CHAIN → DONE |
+| DONE | `references/state-done.md` | inline | HALT |
 
 On state entry, print `[State: NAME]` + the "you are here" map from State Detection above.
 When a state completes, route by its `**Advance:**` type (per [`skill-steps.md`](../../aid/templates/skill-steps.md)):

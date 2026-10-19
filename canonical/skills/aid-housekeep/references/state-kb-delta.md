@@ -648,7 +648,10 @@ Proposed KB refresh scope:
 - `[1]` -> carry the confirmed doc list to Step 4.
 - `[2]` -> the user adds or drops docs; recompute the confirmed list.
 - `[3]` -> write `**KB Stage:** stalled` + `**Stall Reason:** KB refresh scope
-  cancelled` and WAIT (stalled exit below).
+  cancelled` and HALT (stalled exit below).
+
+**Advance:** **ASK**, then continue at Step 4 once `[1]` or `[2]` is answered; **HALT** on
+`[3]` (after the stall fields are written).
 
 ## Step 4 -- Synthesize an `Impact: Required` Q&A entry + invoke `/aid-discover` (AC3)
 
