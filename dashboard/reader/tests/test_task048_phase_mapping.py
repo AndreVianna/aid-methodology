@@ -159,6 +159,10 @@ class TestPhaseMappingParity(unittest.TestCase):
         self._assert_parity_and_phase("Building", "Building", lifecycle="Completed")
 
     @unittest.skipUnless(_node_available(), "node not available on PATH")
+    def test_completed_ci_work_keeps_its_phase_in_both_readers(self):
+        self._assert_parity_and_phase("CI", "CI", lifecycle="Completed")
+
+    @unittest.skipUnless(_node_available(), "node not available on PATH")
     def test_old_phase_names_map_by_the_spec_table_in_both_readers(self):
         for old, new in _OLD_TO_NEW.items():
             with self.subTest(old=old):
