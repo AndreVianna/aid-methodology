@@ -261,11 +261,13 @@ split). CONFIRMED: `canonical/skills/` has `aid-describe/` and `aid-define/` and
 - **`aid-describe` (Definition)** — adaptive interview + COMPLETION and (greenfield) the KB seed,
   **full path only** (no TRIAGE, no lite states — the plain-request intake lives in `/aid-orchestrate`).
   State machine: FIRST-RUN -> Q-AND-A -> CONTINUE ->
-  {greenfield: DESCRIBE-SEED ->} COMPLETION (`ASK` then `HALT`, naming `/aid-define`). CONFIRMED in
-  `canonical/skills/aid-describe/SKILL.md` (frontmatter `State machine:`).
+  {greenfield: DESCRIBE-SEED ->} COMPLETION (the user's approval ends the run with `HALT`, naming
+  `/aid-define`; a consideration the user adds chains back to CONTINUE). CONFIRMED in
+  `canonical/skills/aid-describe/SKILL.md` (Dispatch table).
 - **`aid-define` (Specification)** — feature decomposition + cross-reference, from an approved
-  `REQUIREMENTS.md`. State machine: FEATURE-DECOMPOSITION -> CROSS-REFERENCE -> DONE (`ASK` then
-  `HALT`). CONFIRMED in `canonical/skills/aid-define/SKILL.md`.
+  `REQUIREMENTS.md`. State machine: FEATURE-DECOMPOSITION -> CROSS-REFERENCE -> DONE (DONE chains back to
+  CROSS-REFERENCE when the user asks for a re-check, and ends the run with `HALT` otherwise). CONFIRMED in
+  `canonical/skills/aid-define/SKILL.md` (Dispatch table).
 
 **Seasoned-analyst elicitation engine.** The full-path interview is no longer free-form:
 `aid-describe` drives it through a deterministic engine
@@ -306,9 +308,10 @@ step table lives in its `SKILL.md`, and the per-state behavior lives in
 between steps are one shared file, `canonical/aid/templates/skill-steps.md`, which every skill cites
 instead of restating. CONFIRMED via that file and the directory inventory.
 
-- **Advance words** label the end of every step: `CHAIN` (go on now), `ASK` (stop for the user through
-  the question protocol, then continue to the step the line names), `ASK then HALT` (stop for the user,
-  then end the run), `WAIT` (the user acts outside the conversation; the step stays saved), `PASS` (end
+- **Advance words** label the end of every step: `CHAIN` (go on now; a step that has read the user's
+  answer branches on one `CHAIN` line, one named step per case, with `HALT when ...` for the case that
+  ends the run), `ASK` (stop for the user through the question protocol, then continue to the step the
+  line names), `ASK then HALT` (stop for the user, then end the run), `WAIT` (the user acts outside the conversation; the step stays saved), `PASS` (end
   this skill's process and start the next one), `CALL` (hand off and come back to this step), and
   `HALT` (the run is finished, or returns from an open call).
 - **The work record** is the set of keys in the work's `STATE.yml` that say where the work is:
@@ -321,19 +324,23 @@ instead of restating. CONFIRMED via that file and the directory inventory.
   step on resume; it never routes. A detected mismatch goes to recovery, where the user confirms one
   repaired record before anything runs.
 - **Hand-offs are one locked write.** `PASS` moves the work to the next skill and its entry step with
-  `--returns no`, and sets the phase when the phase changes. `CALL` appends an open `handoffs` entry
+  `--returns no`, and sets the phase when the phase changes. The one exception is `aid-orchestrate`'s `PASS` for a
+  continued work, which writes no hand-off: the record already names the skill and the step, so the skill is
+  started from the record (`skill-steps.md` § Acting on an existing work). `CALL` appends an open `handoffs` entry
   with `--returns yes`, and `HALT` with an open call restores the caller's skill, step and detail
   from that entry. Calls nest, newest first.
 - **Phase** is a display label of the work, one of `Definition`, `Specification`, `Planning`,
   `Building` and `CI`. It never routes a work.
-- Example: `aid-define` runs FEATURE-DECOMPOSITION -> CROSS-REFERENCE -> DONE, and its DONE step is
-  `ASK` then `HALT`. `aid-execute` runs its per-task loop inside a parallel pool, and it drives the
-  Building phase. The full per-skill step list is in
-  [pipeline-contracts.md](pipeline-contracts.md) § Per-Skill State Machines.
+- Example: `aid-define` runs FEATURE-DECOMPOSITION -> CROSS-REFERENCE -> DONE, and its DONE step reads
+  the user's choice and branches on one `CHAIN` line (back to CROSS-REFERENCE, or `HALT`).
+  `aid-execute` runs its per-task loop inside a parallel pool, and it drives the Building phase. The
+  full per-skill step list is in [pipeline-contracts.md](pipeline-contracts.md) § Per-Skill State Machines.
 
-Today the phase skills hand the work on by `ASK` then `HALT`, which ends their run and names the next
-skill; the hand-off is then taken by a new run. Only `aid-orchestrate` ends a step with `PASS` (its
-START-ACTION and HAND-OVER steps start the next skill in the same turn). The `CALL` word (the called
+Today the phase skills end their run with `HALT` once the user has answered (for example
+`aid-describe`'s COMPLETION names `/aid-define`), and the hand-off is then taken by a new run; no
+skill's advance line uses `ASK then HALT` now, though `skill-steps.md` still defines it. Only
+`aid-orchestrate` ends a step with `PASS` (its START-ACTION and HAND-OVER steps start the next skill
+in the same turn). The `CALL` word (the called
 skill returns to the caller's step) is defined in `skill-steps.md`, and no skill's `**Advance:**` line
 uses it yet. Step names are never shown to the user; they appear only as the
 target of an advance line.

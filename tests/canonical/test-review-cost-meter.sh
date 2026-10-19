@@ -13,7 +13,7 @@
 #          section's paths inflated the surface by ~2.5x.
 #   RCM13  the TSV append was unchecked: a failed redirect was swallowed and
 #          the success message printed over a row that was never written --
-#          the W5-5 silent-write-failure class this tool helps expose.
+#          the silent-write-failure class this tool helps expose.
 #   RCM14  a brief naming no paths recorded 0 bytes with a success message and
 #          no warning, which is indistinguishable from a cycle that genuinely
 #          read nothing.
@@ -172,7 +172,7 @@ ROWS_AFTER="$(wc -l <"${D5}/review-cost.tsv")"
 if [[ "$RC13" -ne 0 ]] || [[ "$ROWS_BEFORE" == "$ROWS_AFTER" && "$OUT13" == *REFUSED* ]]; then
     pass "RCM13 an unwritable TSV refuses; no success message over an unwritten row"
 else
-    fail "RCM13 an unwritable TSV reported success (W5-5 class) -- rc=$RC13 out=$OUT13"
+    fail "RCM13 an unwritable TSV reported success (silent-write class) -- rc=$RC13 out=$OUT13"
 fi
 
 # ---------------------------------------------------------------------------

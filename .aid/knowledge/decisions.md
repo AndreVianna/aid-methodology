@@ -505,8 +505,8 @@ review-criteria:
 ## D24 — /aid-describe reduced to full-path-only
 
 - **What:** Strip `aid-describe` down to the full-path requirements interview — state machine
-  `FIRST-RUN -> Q-AND-A -> CONTINUE -> {greenfield: DESCRIBE-SEED ->} COMPLETION [PAUSE ->
-  /aid-define]`. It no longer hosts a TRIAGE state and no longer emits lite work (the former
+  `FIRST-RUN -> Q-AND-A -> CONTINUE -> {greenfield: DESCRIBE-SEED ->} COMPLETION [approval,
+  then HALT: /aid-define]`. It no longer hosts a TRIAGE state and no longer emits lite work (the former
   CONDENSED-INTAKE / TASK-BREAKDOWN / LITE-* states are gone). Its seasoned-analyst elicitation
   engine is preserved unchanged.
 - **Why:** With routing moved out of `aid-describe` (D21, then D32) and lite work entered through

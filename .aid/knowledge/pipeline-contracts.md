@@ -291,7 +291,10 @@ Each step runs the same parts, in this order:
    paused, until the user approves or declines. Every other question may be skipped.
 4. **`PASS`.** If the approvals table requires an approval at this point for the work's depth, `ASK`
    it first. Then one locked write hands the work to the next skill and its entry step, with
-   `--returns no` and the phase when the phase changes; the next skill starts in the same turn.
+   `--returns no` and the phase when the phase changes; the next skill starts in the same turn. The one exception is
+   `aid-orchestrate`'s `PASS` for a continued work: it writes no hand-off, because the record already
+   names the skill and the step, and the skill is started from the record (`skill-steps.md`, Acting on an
+   existing work).
 5. **`CALL`.** Record what is done, then one locked write appends a `handoffs` entry with
    `--returns yes` (the hand-off's from-skill, from-step and from-detail, and the reason) and moves the
    work to the called skill's entry step. The phase does not change.
@@ -333,16 +336,16 @@ skill follows the rules above, and each step's advance word is on that step's `*
 | Skill | Steps (in order) |
 |-------|------------------|
 | `aid-discover` | ELICIT → GENERATE → REVIEW → Q-AND-A → FIX → APPROVAL → DONE. Builds the Knowledge Base; no work phase. |
-| `aid-describe` (full) | FIRST-RUN → Q-AND-A → CONTINUE → [greenfield: DESCRIBE-SEED →] COMPLETION. COMPLETION is `ASK` then `HALT`, naming `/aid-define`. |
-| `aid-define` | FEATURE-DECOMPOSITION → CROSS-REFERENCE → DONE. DONE is `ASK` then `HALT`; a requirements-level change is named in one plain line. |
-| `aid-specify` | Per-section universal loop: Propose → Discuss → Write → Review. A re-run enters at Review. |
-| `aid-plan` | Universal loop applied per delivery: Propose → Discuss → Write → Review. |
-| `aid-detail` | Universal loop per delivery, producing the task files, then the execution graph. |
-| `aid-execute` | Per-task loop inside a parallel pool: read type → execute → gates → reviewer dispatch → grade → fix or loopback. |
-| `aid-orchestrate` | No step table. Numbered steps run in the main conversation: project question, check the reading, size it, show the reading, then hand an action-skill reading to its skill (which creates the work), or find or create the work, or cancel or close it, and hand over the first phase. |
+| `aid-describe` (full) | FIRST-RUN → Q-AND-A → CONTINUE → [greenfield: DESCRIBE-SEED →] COMPLETION. COMPLETION chains back to CONTINUE when the user adds a consideration, and ends with `HALT` when the user approves, naming `/aid-define`. |
+| `aid-define` | FEATURE-DECOMPOSITION → CROSS-REFERENCE → DONE. DONE chains back to CROSS-REFERENCE when the user asks for a re-check, and ends with `HALT` otherwise; a requirements-level change is named in one plain line. |
+| `aid-specify` | INITIALIZE → CONTINUE → REVIEW → DONE; CONTINUE goes to SPIKE or BLOCKED when it must wait, and both `WAIT` and return to CONTINUE. A re-run enters at REVIEW. |
+| `aid-plan` | FIRST-RUN → CONFIRM → REVIEW → DONE; REVIEW goes back to FIRST-RUN when the grade is below the minimum and the deliverables are fixable. |
+| `aid-detail` | FIRST-RUN → CONFIRM → REVIEW → DONE, producing the task files and then the execution graph. |
+| `aid-execute` | EXECUTE → REVIEW → DONE per task, with FIX looping back to REVIEW, RE-RUN reopening a `Done` task, and DELIVERY-GATE closing a delivery. In delivery mode the per-task loop runs inside a parallel pool. |
+| `aid-orchestrate` | A numbered flow in the main conversation, with named steps: PROJECT-QUESTION, CHECK-READING, SIZE-READING, SHOW-READING, ACTION-HANDOVER, START-ACTION, FIND-OR-CREATE, ASK-FIRST, RECORD-INTENT, CANCEL, CLOSE, HAND-OVER and DURING-WORK. It hands an action-skill reading to its skill (which creates the work), or finds or creates the work, or cancels or closes it, and hands over the first phase. |
 | Shortcut skills (`/aid-<verb>[-<artifact>]`, shared `shortcut-engine.md`) | INTAKE → CAPTURE → SPEC → PLAN → DETAIL → GATE → APPROVAL-HALT. The engine runs the Definition-to-Planning path as one autonomous run and never executes. |
-| `aid-deploy` | Package selection → final verification → package record → packaging → doc routing → status update. |
-| `aid-monitor` | Observe → Classify → Analyze → Propose → Act. |
+| `aid-deploy` | IDLE → SELECTING → VERIFYING → PACKAGING → DONE; a failed check goes to FIX-DECISION and then RE-VERIFY, which returns to PACKAGING; RE-RUN reopens a finished release. |
+| `aid-monitor` | OBSERVE → CLASSIFY → ROUTE → DONE. |
 | `aid-housekeep` | PREFLIGHT → KB-DELTA → SUMMARY-DELTA → CLEANUP → DONE. |
 | `aid-update-kb` | ANALYZE → SCOPE → CONFIRM → APPLY → REVIEW → APPROVAL → DONE. The CONFIRM step precedes any edit; the FIX loop sits inside REVIEW. |
 

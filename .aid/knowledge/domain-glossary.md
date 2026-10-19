@@ -378,7 +378,7 @@ produces the approved `REQUIREMENTS.md` (**full path only**; it no longer triage
 work — routing moved to the plain-request intake (`/aid-orchestrate`), and lite work is entered through the
 shortcut engine), and on greenfield authors the forward-authored KB seed (DESCRIBE-SEED). Its
 state machine is `FIRST-RUN → Q-AND-A → CONTINUE → {greenfield: DESCRIBE-SEED →} COMPLETION
-[PAUSE → /aid-define]`. **`aid-define`** (Phase 2b, full path only) begins from the approved
+[approval, then HALT: /aid-define]`. **`aid-define`** (Phase 2b, full path only) begins from the approved
 `REQUIREMENTS.md` and decomposes it into `### Feature NNN` sections of its section 11 (FEATURE-DECOMPOSITION),
 then cross-references them against the KB and codebase (CROSS-REFERENCE). This pair replaced the
 single former `aid-interview` skill — `aid-describe` is renamed-and-scoped to "describe the work,"
