@@ -104,7 +104,7 @@ Every node in the chart above, in chart order, with the exact `canonical/` text 
 
 [Source: `canonical/skills/aid-update-cicd/SKILL.md#L96-L99`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-update-cicd/SKILL.md#L96-L99) · [full step: `canonical/skills/aid-update-cicd/SKILL.md#L96-L101`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-update-cicd/SKILL.md#L96-L101)
 
-<a id="fragment-n4"></a>**4 · `PRESENT`** — hard stop -- the user decides · _exit_ · CHAIN
+<a id="fragment-n4"></a>**4 · `PRESENT`** — hard stop -- the user decides · _exit_ · ASK
 
 ~~~~plaintext title="canonical/skills/aid-update-cicd/SKILL.md#L105-L109" wrap
 ## State: PRESENT (hard stop -- the user decides)

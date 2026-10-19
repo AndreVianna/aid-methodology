@@ -90,7 +90,7 @@ determined in INTAKE:
 |---|---|
 | `roadmap.md` absent | **Create** the document: write frontmatter (§3a values below, verbatim), `# Roadmap` title, one-paragraph preamble (what this document holds and what it does not -- no items live here), `## Contents` with all four entries in heading order, then `## Now`, `## Next`, `## Later`. **Delete the seed.** |
 | Present, horizon sections empty or absent | Fill `## Now`, `## Next`, `## Later` from the seed; leave every byte outside those sections identical, including `## MVP` if present. **Delete the seed.** |
-| Present, horizon sections already carry committed content | **Route** to `/aid-update-roadmap`; write nothing; leave the seed in place for that run (CC-3). Set `lifecycle: Paused-Awaiting-Input`. Advance to DONE without calling REGISTER or VERIFY. |
+| Present, horizon sections already carry committed content | **Route** to `/aid-update-roadmap`; write nothing; leave the seed in place for that run (CC-3). Set `lifecycle: Paused-Awaiting-Input`. Then `ASK` -> [State: DONE] and `HALT`, without calling REGISTER or VERIFY. |
 
 **`## Contents` index** -- the fixed four-entry form (`feature-003 §3a`), always written
 at creation and always left intact on the fill path:
@@ -136,7 +136,7 @@ audience: [architect, pm, developer]
 compare a direction entry against (`decisions.md` carries the same value for the same
 reason; `feature-003 §3a` records the divergence from feature-004's `forward-authored`).
 
-**Advance:** CHAIN -> [State: REGISTER] (creation or fill path). Route path: CHAIN -> [State: DONE] directly.
+**Advance:** CHAIN -> [State: REGISTER] (creation or fill path). Route path: ASK -> [State: DONE], then HALT, naming the skill the route names.
 
 ---
 
@@ -178,7 +178,7 @@ Set `lifecycle: Paused-Awaiting-Input`. Present the realized document clearly. A
 - To revise horizon entries later, use `/aid-update-roadmap`.
 - To draw the MVP line, use `/aid-create-mvp`.
 
-**Advance:** CHAIN -> [State: DONE].
+**Advance:** ASK -> [State: DONE].
 
 ---
 

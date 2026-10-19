@@ -90,7 +90,7 @@
         "startLine": 122,
         "endLine": 128,
         "sourceKind": "skill",
-        "excerpt": "## State: PRESENT (hard stop -- the user decides)\n\nSet `lifecycle: Paused-Awaiting-Input`. Present the realized document and assert: whether a\nworkflow file was emitted and that it was asked for; on the creation path both registration\nsurfaces were written; and anything routed to `/aid-update-cicd` is named.\n\n**Advance:** CHAIN -> [State: DONE]."
+        "excerpt": "## State: PRESENT (hard stop -- the user decides)\n\nSet `lifecycle: Paused-Awaiting-Input`. Present the realized document and assert: whether a\nworkflow file was emitted and that it was asked for; on the creation path both registration\nsurfaces were written; and anything routed to `/aid-update-cicd` is named.\n\n**Advance:** ASK -> [State: DONE]."
       }
     },
     {
@@ -181,13 +181,13 @@
       "to": "n5",
       "kind": "sequence",
       "condition": null,
-      "advanceType": "CHAIN",
+      "advanceType": "ASK",
       "provenance": {
         "file": "canonical/skills/aid-create-cicd/SKILL.md",
         "startLine": 128,
         "endLine": 128,
         "sourceKind": "skill",
-        "excerpt": "**Advance:** CHAIN -> [State: DONE]."
+        "excerpt": "**Advance:** ASK -> [State: DONE]."
       }
     }
   ],

@@ -90,7 +90,7 @@
         "startLine": 101,
         "endLine": 106,
         "sourceKind": "skill",
-        "excerpt": "## State: PRESENT (hard stop -- the user decides)\n\nSet `lifecycle: Paused-Awaiting-Input`. Present the revision, name every output touched, and\nassert that a consumed seed is gone.\n\n**Advance:** CHAIN -> [State: DONE]."
+        "excerpt": "## State: PRESENT (hard stop -- the user decides)\n\nSet `lifecycle: Paused-Awaiting-Input`. Present the revision, name every output touched, and\nassert that a consumed seed is gone.\n\n**Advance:** ASK -> [State: DONE]."
       }
     },
     {
@@ -181,13 +181,13 @@
       "to": "n5",
       "kind": "sequence",
       "condition": null,
-      "advanceType": "CHAIN",
+      "advanceType": "ASK",
       "provenance": {
         "file": "canonical/skills/aid-update-architecture/SKILL.md",
         "startLine": 106,
         "endLine": 106,
         "sourceKind": "skill",
-        "excerpt": "**Advance:** CHAIN -> [State: DONE]."
+        "excerpt": "**Advance:** ASK -> [State: DONE]."
       }
     }
   ],

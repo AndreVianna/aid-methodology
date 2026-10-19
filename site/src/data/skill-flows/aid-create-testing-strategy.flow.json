@@ -90,7 +90,7 @@
         "startLine": 117,
         "endLine": 123,
         "sourceKind": "skill",
-        "excerpt": "## State: PRESENT (hard stop -- the user decides)\n\nSet `lifecycle: Paused-Awaiting-Input`. Present both realized documents and assert: which\nhalf went where; on a creation path both registration surfaces were written; and anything\nrouted to `/aid-update-testing-strategy` is named.\n\n**Advance:** CHAIN -> [State: DONE]."
+        "excerpt": "## State: PRESENT (hard stop -- the user decides)\n\nSet `lifecycle: Paused-Awaiting-Input`. Present both realized documents and assert: which\nhalf went where; on a creation path both registration surfaces were written; and anything\nrouted to `/aid-update-testing-strategy` is named.\n\n**Advance:** ASK -> [State: DONE]."
       }
     },
     {
@@ -181,13 +181,13 @@
       "to": "n5",
       "kind": "sequence",
       "condition": null,
-      "advanceType": "CHAIN",
+      "advanceType": "ASK",
       "provenance": {
         "file": "canonical/skills/aid-create-testing-strategy/SKILL.md",
         "startLine": 123,
         "endLine": 123,
         "sourceKind": "skill",
-        "excerpt": "**Advance:** CHAIN -> [State: DONE]."
+        "excerpt": "**Advance:** ASK -> [State: DONE]."
       }
     }
   ],

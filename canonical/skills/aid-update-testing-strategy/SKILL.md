@@ -103,7 +103,7 @@ continues at come only from its work record.
 Set `lifecycle: Paused-Awaiting-Input`. Present the revision, say which C6 half each change
 went to, name every output touched, and assert that a consumed seed is gone.
 
-**Advance:** CHAIN -> [State: DONE].
+**Advance:** ASK -> [State: DONE].
 
 ---
 

@@ -95,9 +95,9 @@ case determined in INTAKE:
 
 | Destination state | Action |
 |---|---|
-| `roadmap.md` absent | **Route** to `/aid-create-roadmap` -- an MVP is a section of a roadmap, not a document (REQUIREMENTS CC-5; feature-002 §3c *first-write rule*). Name `/aid-create-roadmap` explicitly in the response. Write nothing. Leave `.aid/design/mvp.md` in place for that run (CC-3). Set `lifecycle: Paused-Awaiting-Input`. Advance to DONE without calling VERIFY. |
+| `roadmap.md` absent | **Route** to `/aid-create-roadmap` -- an MVP is a section of a roadmap, not a document (REQUIREMENTS CC-5; feature-002 §3c *first-write rule*). Name `/aid-create-roadmap` explicitly in the response. Write nothing. Leave `.aid/design/mvp.md` in place for that run (CC-3). Set `lifecycle: Paused-Awaiting-Input`. Then `ASK` -> [State: DONE] and `HALT`, without calling VERIFY. |
 | `roadmap.md` present, `## MVP` absent | **Create** the `## MVP` section using the **byte-range write discipline** below. **Delete the seed.** |
-| `roadmap.md` present, `## MVP` already carries committed content | **Route** to `/aid-update-mvp`; write nothing; leave the seed in place for that run (CC-3). Set `lifecycle: Paused-Awaiting-Input`. Advance to DONE without calling VERIFY. |
+| `roadmap.md` present, `## MVP` already carries committed content | **Route** to `/aid-update-mvp`; write nothing; leave the seed in place for that run (CC-3). Set `lifecycle: Paused-Awaiting-Input`. Then `ASK` -> [State: DONE] and `HALT`, without calling VERIFY. |
 
 **Byte-range write discipline (binding; precondition for V7 and V8).** Read the
 whole `roadmap.md` file. Identify the `## MVP` byte range: the literal heading
@@ -127,7 +127,7 @@ would place the section above the document index and break KB layout order (feat
     - **Status:** Not started | In progress | Shipped <version> -- with the evidence
       anchor.
 
-**Advance:** CHAIN -> [State: VERIFY] (creation path). Route path: CHAIN -> [State: DONE] directly.
+**Advance:** CHAIN -> [State: VERIFY] (creation path). Route path: ASK -> [State: DONE], then HALT, naming the skill the route names.
 
 ---
 
@@ -154,7 +154,7 @@ Assert:
 - Every byte outside the `## MVP` range is identical to what it was before this run.
 - To revise the MVP section later, use `/aid-update-mvp`.
 
-**Advance:** CHAIN -> [State: DONE].
+**Advance:** ASK -> [State: DONE].
 
 ---
 

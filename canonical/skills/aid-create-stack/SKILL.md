@@ -122,7 +122,7 @@ was consumed only for what was written; on the creation path both registration s
 written; the rejected alternatives went to the D document; and anything routed to
 `/aid-update-stack` is named.
 
-**Advance:** CHAIN -> [State: DONE].
+**Advance:** ASK -> [State: DONE].
 
 ---
 

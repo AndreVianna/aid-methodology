@@ -125,7 +125,7 @@ Set `lifecycle: Paused-Awaiting-Input`. Present the realized document and assert
 workflow file was emitted and that it was asked for; on the creation path both registration
 surfaces were written; and anything routed to `/aid-update-cicd` is named.
 
-**Advance:** CHAIN -> [State: DONE].
+**Advance:** ASK -> [State: DONE].
 
 ---
 

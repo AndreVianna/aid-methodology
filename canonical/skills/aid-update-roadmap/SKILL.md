@@ -57,7 +57,7 @@ continues at come only from its work record.
    driven.
 3. **Read the destination** at `.aid/knowledge/roadmap.md`. If absent, **route** to
    `/aid-create-roadmap` -- name it explicitly in the response -- and write nothing.
-   Set `lifecycle: Paused-Awaiting-Input`. Advance to DONE without proceeding further.
+   Set `lifecycle: Paused-Awaiting-Input`. Then `ASK` -> [State: DONE] and `HALT`, without proceeding further.
 4. **Read the seed** at `.aid/design/roadmap.md` if one exists. Note its presence or
    absence; do not require it.
 5. **Ask the derived-outputs question** -- every run, unconditionally: "Which previously
@@ -146,7 +146,7 @@ Set `lifecycle: Paused-Awaiting-Input`. Present the revised document clearly. As
 - No tracking metadata was written to any output.
 - To revise the MVP section, use `/aid-update-mvp`.
 
-**Advance:** CHAIN -> [State: DONE].
+**Advance:** ASK -> [State: DONE].
 
 ---
 

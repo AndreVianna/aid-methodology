@@ -108,7 +108,7 @@ Set `lifecycle: Paused-Awaiting-Input`. Present the revision, say whether a work
 touched and that it was asked for, name every output touched, and assert that a consumed seed
 is gone.
 
-**Advance:** CHAIN -> [State: DONE].
+**Advance:** ASK -> [State: DONE].
 
 ---
 

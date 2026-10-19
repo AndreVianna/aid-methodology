@@ -101,7 +101,7 @@ continues at come only from its work record.
 Set `lifecycle: Paused-Awaiting-Input`. Present the revision, name every output touched, state
 where any rejected alternative went, and assert that a consumed seed is gone.
 
-**Advance:** CHAIN -> [State: DONE].
+**Advance:** ASK -> [State: DONE].
 
 ---
 

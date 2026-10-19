@@ -52,7 +52,7 @@ continues at come only from its work record.
    driven.
 3. **Read the destination** at `.aid/knowledge/backlog.md`. If absent, **route** to
    `/aid-create-backlog` -- name it explicitly in the response -- and write nothing.
-   Set `lifecycle: Paused-Awaiting-Input`. Advance to DONE without proceeding further.
+   Set `lifecycle: Paused-Awaiting-Input`. Then `ASK` -> [State: DONE] and `HALT`, without proceeding further.
 4. **Read the seed** at `.aid/design/backlog.md` if one exists. Note its presence or
    absence; do not require it.
 5. **Read `tech-debt.md`** at `.aid/knowledge/tech-debt.md` if it exists. The seed or the
@@ -181,7 +181,7 @@ Set `lifecycle: Paused-Awaiting-Input`. Present the revised document clearly. As
 - No tracking metadata was written to any output.
 - To create a backlog for the first time, use `/aid-create-backlog`.
 
-**Advance:** CHAIN -> [State: DONE].
+**Advance:** ASK -> [State: DONE].
 
 ---
 

@@ -120,7 +120,7 @@ Set `lifecycle: Paused-Awaiting-Input`. Present both realized documents and asse
 half went where; on a creation path both registration surfaces were written; and anything
 routed to `/aid-update-testing-strategy` is named.
 
-**Advance:** CHAIN -> [State: DONE].
+**Advance:** ASK -> [State: DONE].
 
 ---
 

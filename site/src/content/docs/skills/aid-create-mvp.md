@@ -27,20 +27,20 @@ flowchart TB
   classDef aidStep fill:#1a2035,stroke:#d4a853,color:#f1f5f9
   n1(["INTAKE"])
   n2["GUARD"]
-  n3{"REALIZE"}
+  n3(["REALIZE"])
   n4["VERIFY"]
   n5["PRESENT<br/>hard stop -- the user decides"]
   n6(["DONE"])
   n1 --> n2
   n2 --> n3
   n3 -->|"creation path"| n4
-  n3 -->|"Route path: directly"| n6
+  n3 -->|"Route path"| n6
   n4 -.-> n3
   n4 --> n5
   n5 --> n6
   class n1 aidEntry
   class n2 aidStep
-  class n3 aidDecision
+  class n3 aidExit
   class n4 aidLoopBack
   class n5 aidStep
   class n6 aidExit
@@ -89,7 +89,7 @@ non-empty `## Open questions` section per `design-lifecycle.md`'s detection rule
 
 [Source: `canonical/skills/aid-create-mvp/SKILL.md#L76-L79`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-create-mvp/SKILL.md#L76-L79) · [full step: `canonical/skills/aid-create-mvp/SKILL.md#L76-L87`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-create-mvp/SKILL.md#L76-L87)
 
-<a id="fragment-n3"></a>**3 · `REALIZE`** · _decision_
+<a id="fragment-n3"></a>**3 · `REALIZE`** · _exit_ · HALT
 
 ~~~~plaintext title="canonical/skills/aid-create-mvp/SKILL.md#L91-L94" wrap
 ## State: REALIZE

@@ -78,7 +78,7 @@
       "label": "hard stop -- the user decides",
       "kind": "exit",
       "terminal": {
-        "advanceType": "CHAIN",
+        "advanceType": "ASK",
         "handoff": "State: DONE"
       },
       "provenance": {
@@ -93,7 +93,7 @@
         "startLine": 105,
         "endLine": 111,
         "sourceKind": "skill",
-        "excerpt": "## State: PRESENT (hard stop -- the user decides)\n\nSet `lifecycle: Paused-Awaiting-Input`. Present the revision, say whether a workflow file was\ntouched and that it was asked for, name every output touched, and assert that a consumed seed\nis gone.\n\n**Advance:** CHAIN -> [State: DONE]."
+        "excerpt": "## State: PRESENT (hard stop -- the user decides)\n\nSet `lifecycle: Paused-Awaiting-Input`. Present the revision, say whether a workflow file was\ntouched and that it was asked for, name every output touched, and assert that a consumed seed\nis gone.\n\n**Advance:** ASK -> [State: DONE]."
       }
     }
   ],

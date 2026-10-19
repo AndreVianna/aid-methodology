@@ -17,14 +17,14 @@
         "startLine": 49,
         "endLine": 67,
         "sourceKind": "skill",
-        "excerpt": "## State: INTAKE\n\n1. **Require a subject.** Empty argument -> ask one bootstrapping question (\"What would\n   you like to revise in the roadmap -- entries to add, update, supersede, or move between\n   horizons?\") and wait.\n2. **Allocate, exactly per `design-lifecycle.md § Skill shape -- Allocation`** -- the Work\n   Initiation Gate, then `initiator: aid-update-roadmap`, `active_skill:\n   aid-update-roadmap`, `pipeline.path: lite`, `lifecycle: Running`. `phase` is not\n   driven.\n3. **Read the destination** at `.aid/knowledge/roadmap.md`. If absent, **route** to\n   `/aid-create-roadmap` -- name it explicitly in the response -- and write nothing.\n   Set `lifecycle: Paused-Awaiting-Input`. Advance to DONE without proceeding further.\n4. **Read the seed** at `.aid/design/roadmap.md` if one exists. Note its presence or\n   absence; do not require it.\n5. **Ask the derived-outputs question** -- every run, unconditionally: \"Which previously\n   created outputs should be updated alongside roadmap.md?\" Wait for the user's answer\n   before proceeding. Write no stored list and no tracking metadata anywhere.\n6. **Classify complexity (model + effort)** for the `aid-architect` dispatch below;\n   verifier tier >= producer tier (`agent-dispatch-tiering.md`)."
+        "excerpt": "## State: INTAKE\n\n1. **Require a subject.** Empty argument -> ask one bootstrapping question (\"What would\n   you like to revise in the roadmap -- entries to add, update, supersede, or move between\n   horizons?\") and wait.\n2. **Allocate, exactly per `design-lifecycle.md § Skill shape -- Allocation`** -- the Work\n   Initiation Gate, then `initiator: aid-update-roadmap`, `active_skill:\n   aid-update-roadmap`, `pipeline.path: lite`, `lifecycle: Running`. `phase` is not\n   driven.\n3. **Read the destination** at `.aid/knowledge/roadmap.md`. If absent, **route** to\n   `/aid-create-roadmap` -- name it explicitly in the response -- and write nothing.\n   Set `lifecycle: Paused-Awaiting-Input`. Then `ASK` -> [State: DONE] and `HALT`, without proceeding further.\n4. **Read the seed** at `.aid/design/roadmap.md` if one exists. Note its presence or\n   absence; do not require it.\n5. **Ask the derived-outputs question** -- every run, unconditionally: \"Which previously\n   created outputs should be updated alongside roadmap.md?\" Wait for the user's answer\n   before proceeding. Write no stored list and no tracking metadata anywhere.\n6. **Classify complexity (model + effort)** for the `aid-architect` dispatch below;\n   verifier tier >= producer tier (`agent-dispatch-tiering.md`)."
       },
       "detail": {
         "file": "canonical/skills/aid-update-roadmap/SKILL.md",
         "startLine": 49,
         "endLine": 69,
         "sourceKind": "skill",
-        "excerpt": "## State: INTAKE\n\n1. **Require a subject.** Empty argument -> ask one bootstrapping question (\"What would\n   you like to revise in the roadmap -- entries to add, update, supersede, or move between\n   horizons?\") and wait.\n2. **Allocate, exactly per `design-lifecycle.md § Skill shape -- Allocation`** -- the Work\n   Initiation Gate, then `initiator: aid-update-roadmap`, `active_skill:\n   aid-update-roadmap`, `pipeline.path: lite`, `lifecycle: Running`. `phase` is not\n   driven.\n3. **Read the destination** at `.aid/knowledge/roadmap.md`. If absent, **route** to\n   `/aid-create-roadmap` -- name it explicitly in the response -- and write nothing.\n   Set `lifecycle: Paused-Awaiting-Input`. Advance to DONE without proceeding further.\n4. **Read the seed** at `.aid/design/roadmap.md` if one exists. Note its presence or\n   absence; do not require it.\n5. **Ask the derived-outputs question** -- every run, unconditionally: \"Which previously\n   created outputs should be updated alongside roadmap.md?\" Wait for the user's answer\n   before proceeding. Write no stored list and no tracking metadata anywhere.\n6. **Classify complexity (model + effort)** for the `aid-architect` dispatch below;\n   verifier tier >= producer tier (`agent-dispatch-tiering.md`).\n\n**Advance:** CHAIN -> [State: GUARD]."
+        "excerpt": "## State: INTAKE\n\n1. **Require a subject.** Empty argument -> ask one bootstrapping question (\"What would\n   you like to revise in the roadmap -- entries to add, update, supersede, or move between\n   horizons?\") and wait.\n2. **Allocate, exactly per `design-lifecycle.md § Skill shape -- Allocation`** -- the Work\n   Initiation Gate, then `initiator: aid-update-roadmap`, `active_skill:\n   aid-update-roadmap`, `pipeline.path: lite`, `lifecycle: Running`. `phase` is not\n   driven.\n3. **Read the destination** at `.aid/knowledge/roadmap.md`. If absent, **route** to\n   `/aid-create-roadmap` -- name it explicitly in the response -- and write nothing.\n   Set `lifecycle: Paused-Awaiting-Input`. Then `ASK` -> [State: DONE] and `HALT`, without proceeding further.\n4. **Read the seed** at `.aid/design/roadmap.md` if one exists. Note its presence or\n   absence; do not require it.\n5. **Ask the derived-outputs question** -- every run, unconditionally: \"Which previously\n   created outputs should be updated alongside roadmap.md?\" Wait for the user's answer\n   before proceeding. Write no stored list and no tracking metadata anywhere.\n6. **Classify complexity (model + effort)** for the `aid-architect` dispatch below;\n   verifier tier >= producer tier (`agent-dispatch-tiering.md`).\n\n**Advance:** CHAIN -> [State: GUARD]."
       }
     },
     {
@@ -112,7 +112,7 @@
         "startLine": 138,
         "endLine": 149,
         "sourceKind": "skill",
-        "excerpt": "## State: PRESENT (hard stop -- the user decides)\n\nSet `lifecycle: Paused-Awaiting-Input`. Present the revised document clearly. Assert:\n\n- `## MVP` content is byte-identical to what it was before this run (or still absent if\n  it was absent).\n- The `- [MVP](#mvp)` index entry in `## Contents` is present and unchanged.\n- If a seed was consumed: `.aid/design/roadmap.md` no longer exists.\n- No tracking metadata was written to any output.\n- To revise the MVP section, use `/aid-update-mvp`.\n\n**Advance:** CHAIN -> [State: DONE]."
+        "excerpt": "## State: PRESENT (hard stop -- the user decides)\n\nSet `lifecycle: Paused-Awaiting-Input`. Present the revised document clearly. Assert:\n\n- `## MVP` content is byte-identical to what it was before this run (or still absent if\n  it was absent).\n- The `- [MVP](#mvp)` index entry in `## Contents` is present and unchanged.\n- If a seed was consumed: `.aid/design/roadmap.md` no longer exists.\n- No tracking metadata was written to any output.\n- To revise the MVP section, use `/aid-update-mvp`.\n\n**Advance:** ASK -> [State: DONE]."
       }
     },
     {
@@ -217,13 +217,13 @@
       "to": "n6",
       "kind": "sequence",
       "condition": null,
-      "advanceType": "CHAIN",
+      "advanceType": "ASK",
       "provenance": {
         "file": "canonical/skills/aid-update-roadmap/SKILL.md",
         "startLine": 149,
         "endLine": 149,
         "sourceKind": "skill",
-        "excerpt": "**Advance:** CHAIN -> [State: DONE]."
+        "excerpt": "**Advance:** ASK -> [State: DONE]."
       }
     }
   ],

@@ -87,7 +87,7 @@ determined in INTAKE:
 |---|---|
 | `backlog.md` absent | **Create** the document: write frontmatter (§3b values below, verbatim), `# Backlog` title, one-paragraph preamble (what this document holds and the promotion criterion -- an item moves here when it is **accepted into the plan**, an explicit human decision at a per-item confirm gate), `## Contents` with all three entries in heading order, then `## Next Release`, `## Prioritized`, `## Gotchas`. Then run the **promotion pass** below. **Delete the seed.** |
 | Present, item sections empty or absent | Fill `## Next Release`, `## Prioritized`, `## Gotchas` from the seed; leave every byte outside those sections identical. Then run the **promotion pass**. **Delete the seed.** |
-| Present, item sections already carry committed content | **Route** to `/aid-update-backlog`; write nothing; leave the seed in place for that run (CC-3). Set `lifecycle: Paused-Awaiting-Input`. Advance to DONE without calling REGISTER or VERIFY. |
+| Present, item sections already carry committed content | **Route** to `/aid-update-backlog`; write nothing; leave the seed in place for that run (CC-3). Set `lifecycle: Paused-Awaiting-Input`. Then `ASK` -> [State: DONE] and `HALT`, without calling REGISTER or VERIFY. |
 
 **`## Contents` index** -- the fixed three-entry form (`feature-003 §3b`), always written
 at creation and always left intact on the fill path:
@@ -177,7 +177,7 @@ audience: [developer, architect, pm]
 ---
 ```
 
-**Advance:** CHAIN -> [State: REGISTER] (creation or fill path). Route path: CHAIN -> [State: DONE] directly.
+**Advance:** CHAIN -> [State: REGISTER] (creation or fill path). Route path: ASK -> [State: DONE], then HALT, naming the skill the route names.
 
 ---
 
@@ -219,7 +219,7 @@ Set `lifecycle: Paused-Awaiting-Input`. Present the realized document clearly. A
 - Every promoted row was deleted from `tech-debt.md` in this run.
 - To revise items later, use `/aid-update-backlog`.
 
-**Advance:** CHAIN -> [State: DONE].
+**Advance:** ASK -> [State: DONE].
 
 ---
 

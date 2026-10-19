@@ -71,7 +71,7 @@
         "startLine": 84,
         "endLine": 121,
         "sourceKind": "skill",
-        "excerpt": "## State: REALIZE\n\nDispatch **`aid-architect`** (clean context, tiered) to realize the seed. Apply the case\ndetermined in INTAKE:\n\n| Destination state | Action |\n|---|---|\n| `roadmap.md` absent | **Create** the document: write frontmatter (§3a values below, verbatim), `# Roadmap` title, one-paragraph preamble (what this document holds and what it does not -- no items live here), `## Contents` with all four entries in heading order, then `## Now`, `## Next`, `## Later`. **Delete the seed.** |\n| Present, horizon sections empty or absent | Fill `## Now`, `## Next`, `## Later` from the seed; leave every byte outside those sections identical, including `## MVP` if present. **Delete the seed.** |\n| Present, horizon sections already carry committed content | **Route** to `/aid-update-roadmap`; write nothing; leave the seed in place for that run (CC-3). Set `lifecycle: Paused-Awaiting-Input`. Advance to DONE without calling REGISTER or VERIFY. |\n\n**`## Contents` index** -- the fixed four-entry form (`feature-003 §3a`), always written\nat creation and always left intact on the fill path:\n\n    - [MVP](#mvp)\n    - [Now](#now)\n    - [Next](#next)\n    - [Later](#later)\n\n**Never creates `## MVP`.** The `- [MVP](#mvp)` entry is a forward reference: the dead\nin-document anchor is accepted and is what makes REQUIREMENTS AC-6a literally true.\n\n**Entry schema** for each direction in a horizon section:\n\n    ### <Direction, as a noun phrase>\n\n    - **What:** the direction committed to, at roadmap altitude.\n    - **Why:** the constraint or trade-off that drove it.\n    - **Rejected:** each alternative considered, with the reason it lost.\n    - **Status:** Accepted | Superseded by <entry> -- followed by a durable evidence\n      anchor (path plus a grep-recoverable heading or search string), or the literal\n      `intent` when nothing has been built yet.\n\n**No summary table. No item ids anywhere.** (`feature-003 §3a`)\n\n**Frontmatter** (write verbatim on creation; `feature-003 §3a`):\n\n```yaml"
+        "excerpt": "## State: REALIZE\n\nDispatch **`aid-architect`** (clean context, tiered) to realize the seed. Apply the case\ndetermined in INTAKE:\n\n| Destination state | Action |\n|---|---|\n| `roadmap.md` absent | **Create** the document: write frontmatter (§3a values below, verbatim), `# Roadmap` title, one-paragraph preamble (what this document holds and what it does not -- no items live here), `## Contents` with all four entries in heading order, then `## Now`, `## Next`, `## Later`. **Delete the seed.** |\n| Present, horizon sections empty or absent | Fill `## Now`, `## Next`, `## Later` from the seed; leave every byte outside those sections identical, including `## MVP` if present. **Delete the seed.** |\n| Present, horizon sections already carry committed content | **Route** to `/aid-update-roadmap`; write nothing; leave the seed in place for that run (CC-3). Set `lifecycle: Paused-Awaiting-Input`. Then `ASK` -> [State: DONE] and `HALT`, without calling REGISTER or VERIFY. |\n\n**`## Contents` index** -- the fixed four-entry form (`feature-003 §3a`), always written\nat creation and always left intact on the fill path:\n\n    - [MVP](#mvp)\n    - [Now](#now)\n    - [Next](#next)\n    - [Later](#later)\n\n**Never creates `## MVP`.** The `- [MVP](#mvp)` entry is a forward reference: the dead\nin-document anchor is accepted and is what makes REQUIREMENTS AC-6a literally true.\n\n**Entry schema** for each direction in a horizon section:\n\n    ### <Direction, as a noun phrase>\n\n    - **What:** the direction committed to, at roadmap altitude.\n    - **Why:** the constraint or trade-off that drove it.\n    - **Rejected:** each alternative considered, with the reason it lost.\n    - **Status:** Accepted | Superseded by <entry> -- followed by a durable evidence\n      anchor (path plus a grep-recoverable heading or search string), or the literal\n      `intent` when nothing has been built yet.\n\n**No summary table. No item ids anywhere.** (`feature-003 §3a`)\n\n**Frontmatter** (write verbatim on creation; `feature-003 §3a`):\n\n```yaml"
       }
     },
     {
@@ -137,7 +137,7 @@
         "startLine": 172,
         "endLine": 181,
         "sourceKind": "skill",
-        "excerpt": "## State: PRESENT (hard stop -- the user decides)\n\nSet `lifecycle: Paused-Awaiting-Input`. Present the realized document clearly. Assert:\n\n- `## MVP` heading is absent (the `- [MVP](#mvp)` index entry is present).\n- On the creation path: both registration surfaces were written.\n- To revise horizon entries later, use `/aid-update-roadmap`.\n- To draw the MVP line, use `/aid-create-mvp`.\n\n**Advance:** CHAIN -> [State: DONE]."
+        "excerpt": "## State: PRESENT (hard stop -- the user decides)\n\nSet `lifecycle: Paused-Awaiting-Input`. Present the realized document clearly. Assert:\n\n- `## MVP` heading is absent (the `- [MVP](#mvp)` index entry is present).\n- On the creation path: both registration surfaces were written.\n- To revise horizon entries later, use `/aid-update-roadmap`.\n- To draw the MVP line, use `/aid-create-mvp`.\n\n**Advance:** ASK -> [State: DONE]."
       }
     },
     {
@@ -242,13 +242,13 @@
       "to": "n7",
       "kind": "sequence",
       "condition": null,
-      "advanceType": "CHAIN",
+      "advanceType": "ASK",
       "provenance": {
         "file": "canonical/skills/aid-create-roadmap/SKILL.md",
         "startLine": 181,
         "endLine": 181,
         "sourceKind": "skill",
-        "excerpt": "**Advance:** CHAIN -> [State: DONE]."
+        "excerpt": "**Advance:** ASK -> [State: DONE]."
       }
     }
   ],

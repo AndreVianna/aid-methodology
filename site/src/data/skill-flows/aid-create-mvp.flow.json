@@ -54,8 +54,11 @@
       "order": 3,
       "name": "REALIZE",
       "label": "REALIZE",
-      "kind": "decision",
-      "terminal": null,
+      "kind": "exit",
+      "terminal": {
+        "advanceType": "HALT",
+        "handoff": "naming the skill the route names"
+      },
       "provenance": {
         "file": "canonical/skills/aid-create-mvp/SKILL.md",
         "startLine": 91,
@@ -68,7 +71,7 @@
         "startLine": 91,
         "endLine": 130,
         "sourceKind": "skill",
-        "excerpt": "## State: REALIZE\n\nDispatch **`aid-architect`** (clean context, tiered) to realize the seed. Apply the\ncase determined in INTAKE:\n\n| Destination state | Action |\n|---|---|\n| `roadmap.md` absent | **Route** to `/aid-create-roadmap` -- an MVP is a section of a roadmap, not a document (REQUIREMENTS CC-5; feature-002 §3c *first-write rule*). Name `/aid-create-roadmap` explicitly in the response. Write nothing. Leave `.aid/design/mvp.md` in place for that run (CC-3). Set `lifecycle: Paused-Awaiting-Input`. Advance to DONE without calling VERIFY. |\n| `roadmap.md` present, `## MVP` absent | **Create** the `## MVP` section using the **byte-range write discipline** below. **Delete the seed.** |\n| `roadmap.md` present, `## MVP` already carries committed content | **Route** to `/aid-update-mvp`; write nothing; leave the seed in place for that run (CC-3). Set `lifecycle: Paused-Awaiting-Input`. Advance to DONE without calling VERIFY. |\n\n**Byte-range write discipline (binding; precondition for V7 and V8).** Read the\nwhole `roadmap.md` file. Identify the `## MVP` byte range: the literal heading\n`## MVP`, matched exactly, through to (but not including) the next heading of level 2\nor shallower, or EOF if none follows. Replace only that byte range with the new\nsection content. Write the file back with every byte outside that range\n**byte-identical** -- no reformatting, no whitespace change, no re-ordering of any\nother region.\n\n**Never edits `## Contents`.** The `## Contents` block is outside the `## MVP` byte\nrange and belongs to `/aid-create-roadmap` (feature-003 AC-6a). The byte-range write\ndiscipline makes this structurally true: the discipline reads the whole file and\nreplaces only the owned range, so no byte in `## Contents` is touched.\n\n**Anchor position when creating the section.** Insert `## MVP` immediately after the\n`## Contents` block and before `## Now` -- not \"before the first other `##`\", which\nwould place the section above the document index and break KB layout order (feature-003\n§3c; feature-002 §3c *Position when created*).\n\n**`## MVP` section shape** (`feature-003 §3c`):\n\n    ## MVP\n\n    - **What:** the first shippable slice, itemized.\n    - **Why:** why the line falls there.\n    - **Rejected:** what was cut from the slice, each with the reason for the cut.\n    - **Status:** Not started | In progress | Shipped <version> -- with the evidence\n      anchor.\n\n**Advance:** CHAIN -> [State: VERIFY] (creation path). Route path: CHAIN -> [State: DONE] directly."
+        "excerpt": "## State: REALIZE\n\nDispatch **`aid-architect`** (clean context, tiered) to realize the seed. Apply the\ncase determined in INTAKE:\n\n| Destination state | Action |\n|---|---|\n| `roadmap.md` absent | **Route** to `/aid-create-roadmap` -- an MVP is a section of a roadmap, not a document (REQUIREMENTS CC-5; feature-002 §3c *first-write rule*). Name `/aid-create-roadmap` explicitly in the response. Write nothing. Leave `.aid/design/mvp.md` in place for that run (CC-3). Set `lifecycle: Paused-Awaiting-Input`. Then `ASK` -> [State: DONE] and `HALT`, without calling VERIFY. |\n| `roadmap.md` present, `## MVP` absent | **Create** the `## MVP` section using the **byte-range write discipline** below. **Delete the seed.** |\n| `roadmap.md` present, `## MVP` already carries committed content | **Route** to `/aid-update-mvp`; write nothing; leave the seed in place for that run (CC-3). Set `lifecycle: Paused-Awaiting-Input`. Then `ASK` -> [State: DONE] and `HALT`, without calling VERIFY. |\n\n**Byte-range write discipline (binding; precondition for V7 and V8).** Read the\nwhole `roadmap.md` file. Identify the `## MVP` byte range: the literal heading\n`## MVP`, matched exactly, through to (but not including) the next heading of level 2\nor shallower, or EOF if none follows. Replace only that byte range with the new\nsection content. Write the file back with every byte outside that range\n**byte-identical** -- no reformatting, no whitespace change, no re-ordering of any\nother region.\n\n**Never edits `## Contents`.** The `## Contents` block is outside the `## MVP` byte\nrange and belongs to `/aid-create-roadmap` (feature-003 AC-6a). The byte-range write\ndiscipline makes this structurally true: the discipline reads the whole file and\nreplaces only the owned range, so no byte in `## Contents` is touched.\n\n**Anchor position when creating the section.** Insert `## MVP` immediately after the\n`## Contents` block and before `## Now` -- not \"before the first other `##`\", which\nwould place the section above the document index and break KB layout order (feature-003\n§3c; feature-002 §3c *Position when created*).\n\n**`## MVP` section shape** (`feature-003 §3c`):\n\n    ## MVP\n\n    - **What:** the first shippable slice, itemized.\n    - **Why:** why the line falls there.\n    - **Rejected:** what was cut from the slice, each with the reason for the cut.\n    - **Status:** Not started | In progress | Shipped <version> -- with the evidence\n      anchor.\n\n**Advance:** CHAIN -> [State: VERIFY] (creation path). Route path: ASK -> [State: DONE], then HALT, naming the skill the route names."
       }
     },
     {
@@ -112,7 +115,7 @@
         "startLine": 144,
         "endLine": 157,
         "sourceKind": "skill",
-        "excerpt": "## State: PRESENT (hard stop -- the user decides)\n\nSet `lifecycle: Paused-Awaiting-Input`. Present the realized `## MVP` section clearly.\nAssert:\n\n- `## Contents` is unchanged -- the `- [MVP](#mvp)` entry is present (written by\n  `/aid-create-roadmap`) and no new entry was added.\n- No `.aid/settings.yml` `knowledge.doc_set` entry was written and no\n  `.aid/knowledge/README.md` Completeness row was written -- this skill creates no\n  document.\n- Every byte outside the `## MVP` range is identical to what it was before this run.\n- To revise the MVP section later, use `/aid-update-mvp`.\n\n**Advance:** CHAIN -> [State: DONE]."
+        "excerpt": "## State: PRESENT (hard stop -- the user decides)\n\nSet `lifecycle: Paused-Awaiting-Input`. Present the realized `## MVP` section clearly.\nAssert:\n\n- `## Contents` is unchanged -- the `- [MVP](#mvp)` entry is present (written by\n  `/aid-create-roadmap`) and no new entry was added.\n- No `.aid/settings.yml` `knowledge.doc_set` entry was written and no\n  `.aid/knowledge/README.md` Completeness row was written -- this skill creates no\n  document.\n- Every byte outside the `## MVP` range is identical to what it was before this run.\n- To revise the MVP section later, use `/aid-update-mvp`.\n\n**Advance:** ASK -> [State: DONE]."
       }
     },
     {
@@ -181,21 +184,21 @@
         "startLine": 130,
         "endLine": 130,
         "sourceKind": "skill",
-        "excerpt": "**Advance:** CHAIN -> [State: VERIFY] (creation path). Route path: CHAIN -> [State: DONE] directly."
+        "excerpt": "**Advance:** CHAIN -> [State: VERIFY] (creation path). Route path: ASK -> [State: DONE], then HALT, naming the skill the route names."
       }
     },
     {
       "from": "n3",
       "to": "n6",
       "kind": "branch",
-      "condition": "Route path: directly",
-      "advanceType": "CHAIN",
+      "condition": "Route path",
+      "advanceType": "ASK",
       "provenance": {
         "file": "canonical/skills/aid-create-mvp/SKILL.md",
         "startLine": 130,
         "endLine": 130,
         "sourceKind": "skill",
-        "excerpt": "**Advance:** CHAIN -> [State: VERIFY] (creation path). Route path: CHAIN -> [State: DONE] directly."
+        "excerpt": "**Advance:** CHAIN -> [State: VERIFY] (creation path). Route path: ASK -> [State: DONE], then HALT, naming the skill the route names."
       }
     },
     {
@@ -231,13 +234,13 @@
       "to": "n6",
       "kind": "sequence",
       "condition": null,
-      "advanceType": "CHAIN",
+      "advanceType": "ASK",
       "provenance": {
         "file": "canonical/skills/aid-create-mvp/SKILL.md",
         "startLine": 157,
         "endLine": 157,
         "sourceKind": "skill",
-        "excerpt": "**Advance:** CHAIN -> [State: DONE]."
+        "excerpt": "**Advance:** ASK -> [State: DONE]."
       }
     }
   ],
@@ -245,6 +248,7 @@
     "n1"
   ],
   "exits": [
+    "n3",
     "n6"
   ],
   "sources": [

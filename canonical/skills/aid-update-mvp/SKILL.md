@@ -62,7 +62,7 @@ continues at come only from its work record.
    `pipeline.path: lite`, `lifecycle: Running`. `phase` is not driven.
 3. **Read the destination** at `.aid/knowledge/roadmap.md`. If absent, **route** to
    `/aid-create-roadmap` -- name it explicitly in the response -- and write nothing.
-   Set `lifecycle: Paused-Awaiting-Input`. Advance to DONE without proceeding further.
+   Set `lifecycle: Paused-Awaiting-Input`. Then `ASK` -> [State: DONE] and `HALT`, without proceeding further.
 4. **Read the seed** at `.aid/design/mvp.md` if one exists. Note its presence or absence;
    do not require it.
 5. **Ask the derived-outputs question** -- every run, unconditionally: "Which previously
@@ -160,7 +160,7 @@ Assert:
 - No tracking metadata was written to any output.
 - To revise the direction entries outside MVP, use `/aid-update-roadmap`.
 
-**Advance:** CHAIN -> [State: DONE].
+**Advance:** ASK -> [State: DONE].
 
 ---
 

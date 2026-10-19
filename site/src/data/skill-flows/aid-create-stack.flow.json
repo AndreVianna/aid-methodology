@@ -90,7 +90,7 @@
         "startLine": 118,
         "endLine": 125,
         "sourceKind": "skill",
-        "excerpt": "## State: PRESENT (hard stop -- the user decides)\n\nSet `lifecycle: Paused-Awaiting-Input`. Present the realized document and assert: the seed\nwas consumed only for what was written; on the creation path both registration surfaces were\nwritten; the rejected alternatives went to the D document; and anything routed to\n`/aid-update-stack` is named.\n\n**Advance:** CHAIN -> [State: DONE]."
+        "excerpt": "## State: PRESENT (hard stop -- the user decides)\n\nSet `lifecycle: Paused-Awaiting-Input`. Present the realized document and assert: the seed\nwas consumed only for what was written; on the creation path both registration surfaces were\nwritten; the rejected alternatives went to the D document; and anything routed to\n`/aid-update-stack` is named.\n\n**Advance:** ASK -> [State: DONE]."
       }
     },
     {
@@ -181,13 +181,13 @@
       "to": "n5",
       "kind": "sequence",
       "condition": null,
-      "advanceType": "CHAIN",
+      "advanceType": "ASK",
       "provenance": {
         "file": "canonical/skills/aid-create-stack/SKILL.md",
         "startLine": 125,
         "endLine": 125,
         "sourceKind": "skill",
-        "excerpt": "**Advance:** CHAIN -> [State: DONE]."
+        "excerpt": "**Advance:** ASK -> [State: DONE]."
       }
     }
   ],

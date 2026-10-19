@@ -122,7 +122,7 @@ Set `lifecycle: Paused-Awaiting-Input`. Present the realized document and assert
 was consumed only for what was written; on the creation path both registration surfaces were
 written; and anything routed to `/aid-update-architecture` is named.
 
-**Advance:** CHAIN -> [State: DONE].
+**Advance:** ASK -> [State: DONE].
 
 ---
 
