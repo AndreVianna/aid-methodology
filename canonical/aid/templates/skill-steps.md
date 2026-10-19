@@ -84,7 +84,7 @@ never by hand. The record's template is `.aid/runtime/templates/work-state-templ
   slash command, or a one-pass doorway skill. The gate is the only creator of a work's record, as
   `.aid/runtime/templates/work-initiation-gate.md` § 3a describes. The gate runs the writer's
   create mode before it hands the new work back:
-  `--create --work-dir <dir> --reading <type> --request '<words>' --skill <caller> --step <first step> [--phase <phase>] [--depth lite or full]`.
+  `--create --work-dir <dir> --reading <type> --request '<words>' --skill <caller> --step <first step> [--phase <phase>] [--depth lite or full] [--path lite or full] [--minimum-grade G]`.
   One locked write creates the record with the type, the request, the saved skill and step, the phase
   when there is one, and the lifecycle `Running`. No work exists without its record.
 - **At every step entry**, before any work in that step.
@@ -150,7 +150,7 @@ file is then unchanged.
 
 | Mode | Writes |
 |------|--------|
-| `--create` | the record, from the template, in one write. Run only by the gate. Exit 8 when the work already has a `STATE.yml`; exit 5 when a required option is missing; exit 4 when a value is invalid |
+| `--create` | the record, from the template, in one write, with `pipeline.path` and `minimum_grade` set when `--path` and `--minimum-grade` are given. Run only by the gate. Exit 8 when the work already has a `STATE.yml`; exit 5 when a required option is missing; exit 4 when a value is invalid |
 | `--step --skill S --name N [--detail D]` | `active_skill`, `step`, `step_detail` (`--` when no detail), and `updated` |
 | `--reroute --reading R [--depth D] --why W` | `intent.reading` and `intent.depth`, plus an `intent.changes` entry |
 | `--check` | nothing. Exit 9 when there is a problem, 0 when the record is healthy |
