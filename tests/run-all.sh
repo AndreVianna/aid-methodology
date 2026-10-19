@@ -5,7 +5,7 @@
 # development — so a contributor runs the exact same gate locally before pushing.
 #
 # Discovers suites by glob (tests/canonical/test-*.sh), so adding a suite needs no edit here.
-# Each suite is run under `timeout 300` (1500 for the heavy parity, migrate and shared-install
+# Each suite is run under `timeout 300` (1500 for the heavy parity, migrate, shared-install and conversation-runner
 # suites) in its own bash process (isolated state).
 #
 # Suites run CONCURRENTLY under bounded parallelism (`xargs -P`), then their captured output is
@@ -93,7 +93,7 @@ if [[ "${1:-}" == "--__run-one" ]]; then
 
   # Heavy end-to-end suites (staged release bundles, both shells) get a longer budget.
   case "$__base" in
-    test-aid-cli-parity.sh | test-aid-migrate.sh | test-shared-install.sh) __timeout=1500 ;;
+    test-aid-cli-parity.sh | test-aid-migrate.sh | test-shared-install.sh | test-conversation-runner.sh) __timeout=1500 ;;
     *) __timeout=300 ;;
   esac
   timeout "$__timeout" bash "$__suite" "${__run_one_args[@]}" >"${__results}/${__base}.log" 2>&1
