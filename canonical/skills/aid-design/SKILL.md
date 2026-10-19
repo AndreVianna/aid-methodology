@@ -30,9 +30,16 @@ It fills the DESIGN lite gap (DESIGN is a task type, but there was no lite entry
 State machine: **INTAKE -> DESIGN -> VERIFY (loop) -> PRESENT [user decides] -> HANDOFF? ->
 DONE**. Print the `[State: NAME] -- {purpose}` entry line on each state.
 
+Steps, advance words, record writes and hand-offs follow `.aid/runtime/templates/skill-steps.md`;
+this skill keeps only its own step table.
+
 ---
 
 ## State: INTAKE
+
+**State Detection.** Detection shapes the entry step of a fresh start and validates a saved step
+on resume; it never routes. Which skill and step a work continues at come from its work record
+(`.aid/runtime/templates/skill-steps.md`, § State Detection).
 
 1. **Require a subject.** Empty argument -> ask one bootstrapping question ("What do you
    want designed, and what will it need to support?") and wait.
@@ -42,17 +49,18 @@ DONE**. Print the `[State: NAME] -- {purpose}` entry line on each state.
 3. **Classify complexity (model + effort):** simple (one component/flow) -> `aid-architect`
    at **sonnet / medium**; complex (a system architecture, a multi-screen flow) -> **opus /
    high**. Verifier tier >= producer tier.
-4. **Consult the Work Initiation Gate, then allocate the work folder + STATE.** First run
-   the gate (`.aid/runtime/templates/work-initiation-gate.md`):
+4. **Consult the Work Initiation Gate, then allocate the work.** First run the gate
+   (`.aid/runtime/templates/work-initiation-gate.md`):
    `bash .aid/runtime/scripts/works/enumerate-works.sh` (main tree + every git worktree).
-   Empty -> allocate, no prompt. Works exist -> ask new-vs-continuation; on **continuation**
-   route to the chosen work's resume door and STOP (allocate nothing); on **new work**:
-   create and enter the worktree per the gate's `§ 3a` step 2
-   (`worktree-lifecycle.sh create <work-id> <name>`, STOP on a non-zero exit or empty path,
-   else enter the resolved path), **then** allocate (`pipeline.path: lite`, `initiator:
-   aid-design`, `lifecycle: Running`, `active_skill: aid-design`; `phase` not driven).
+   Empty -> allocate, no prompt. Works exist -> ask new-vs-continuation. On **continuation**,
+   follow the gate's § 3b: enter the chosen work's worktree and run the skill its record names,
+   at its saved step; allocate nothing. On **new work**, follow the gate's `§ 3a`: create and
+   enter the worktree (`worktree-lifecycle.sh create <work-id> <name>`, STOP on a non-zero exit
+   or empty path, else enter the resolved path), **then** allocate (`writeback-state.sh --create`
+   with `--path lite`, `--skill aid-design` and this skill's entry step; `phase` not driven).
+   The gate writes the record; this skill adds nothing by hand.
 
-**Advance:** DESIGN.
+**Advance:** CHAIN -> DESIGN.
 
 ---
 
@@ -64,7 +72,7 @@ control/interaction, component or interface shape, and **accessibility notes**
 (`task-type-rules.md ## DESIGN`). It writes `DESIGN.md` into the work folder (the design's
 kept record).
 
-**Advance:** VERIFY.
+**Advance:** CHAIN -> VERIFY.
 
 ---
 
@@ -78,7 +86,7 @@ kept record).
 3. **Grade:** `bash .aid/runtime/scripts/grade.sh --explain <ledger>`. Not clean -> loop
    to DESIGN. Circuit-breaker: 3 cycles -> IMPEDIMENT + `lifecycle: Blocked`.
 
-**Advance:** PRESENT.
+**Advance:** CHAIN -> PRESENT.
 
 ---
 
@@ -87,7 +95,7 @@ kept record).
 Set `lifecycle: Paused-Awaiting-Input`. Present `DESIGN.md` clearly. Assert no resolution --
 the user decides whether/when to build it.
 
-**Advance:** HANDOFF (optional) then DONE.
+**Advance:** CHAIN -> HANDOFF (optional) then DONE.
 
 ---
 
@@ -96,7 +104,7 @@ the user decides whether/when to build it.
 Printed suggestions: build it (`/aid-create*` / `/aid-update*`, referencing the design), or
 capture it as a formal doc (`/aid-create-document`). Never auto-invoked; never a resolution.
 
-**Advance:** DONE.
+**Advance:** CHAIN -> DONE.
 
 ---
 

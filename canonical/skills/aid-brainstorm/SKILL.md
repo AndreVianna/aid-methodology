@@ -26,9 +26,16 @@ State machine: **INTAKE -> DESIGN -> VERIFY (loop) -> PRESENT [user decides] -> 
 `design-lifecycle.md § Skill shape` defines it. Print the `[State: NAME] -- {purpose}`
 entry line on each state.
 
+Steps, advance words, record writes and hand-offs follow `.aid/runtime/templates/skill-steps.md`;
+this skill keeps only its own step table.
+
 ---
 
 ## State: INTAKE
+
+**State Detection.** Detection shapes the entry step of a fresh start and validates a saved step
+on resume; it never routes. Which skill and step a work continues at come from its work record
+(`.aid/runtime/templates/skill-steps.md`, § State Detection).
 
 1. **Require a subject.** Empty argument -> ask one bootstrapping question ("What problem
    or theme do you want to explore?") and wait. The subject may be fuzzy -- an unformed
@@ -45,7 +52,7 @@ entry line on each state.
    `STATE.md` and the review gate live, even though the seed is the deliverable.
 4. **Classify complexity** for the `aid-architect` dispatch (verifier tier >= producer).
 
-**Advance:** DESIGN.
+**Advance:** CHAIN -> DESIGN.
 
 ---
 
@@ -59,7 +66,7 @@ worth pursuing. The seed's `## Destination` is **optional** here: brainstorm has
 destination until the user promotes the seed. **Never writes `.aid/knowledge/` and never
 writes production code** -- the `design` invariant (`design-lifecycle.md`).
 
-**Advance:** VERIFY.
+**Advance:** CHAIN -> VERIFY.
 
 ---
 
@@ -68,7 +75,7 @@ writes production code** -- the `design` invariant (`design-lifecycle.md`).
 **Full verify**, as `design-lifecycle.md` defines it. Not clean -> loop to DESIGN; the
 3-cycle circuit breaker there escalates to IMPEDIMENT + `lifecycle: Blocked`.
 
-**Advance:** PRESENT.
+**Advance:** CHAIN -> PRESENT.
 
 ---
 
@@ -78,7 +85,7 @@ Set `lifecycle: Paused-Awaiting-Input`. Present the seed clearly. Assert no reso
 the user iterates (re-invoke this skill), promotes the seed into a `design` lifecycle
 entry, or takes it forward however they choose.
 
-**Advance:** DONE.
+**Advance:** CHAIN -> DONE.
 
 ---
 
