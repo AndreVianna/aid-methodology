@@ -24,6 +24,7 @@ Persona: Priya, a developer who joined the team last week. She knows the team's 
 - The assistant shows the open question left by the earlier user first, with its reason and a recommendation.
 - Once Priya answers, the entry changes from Skipped to Answered.
 - The answer is recorded with the name of the person answering now (the session's git user name), which differs from the answered_by the earlier entry holds.
+- The entry's `answered_by` changes from `'Andre Vianna'` (the earlier user's value, held by the fixture's `.aid/STATE.yml`) to the session's git user name; `'Andre Vianna'` must not remain on the answered entry.
 - The assistant creates no work, and says so in plain words if it does not need one.
 
 ## Must not
