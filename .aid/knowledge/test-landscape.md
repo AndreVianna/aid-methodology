@@ -111,7 +111,7 @@ because it must validate Bash, PowerShell, Python, and Node code paths.
 | Bespoke Bash test harness | Unit + integration | `tests/canonical/test-*.sh` | The dominant suite; run via `tests/run-all.sh`. **The count is deliberately not stated** -- `ls tests/canonical/test-*.sh \| wc -l` is the only reliable answer, and a figure here went stale three times before it was removed. |
 | Bespoke PowerShell test (`T<NN>` IDs) | Installer integration | `tests/windows/Test-AidInstaller.ps1` | Windows-only; not in `run-all.sh`. |
 | `pytest` | Unit | `dashboard/reader/tests/`, `dashboard/server/tests/` | Python reader/server parsers + fixtures. |
-| Node built-in test | Unit | `dashboard/server/tests/test_server_node.mjs` | Node `.mjs` server tests. |
+| Node built-in test | Unit | `dashboard/server/tests/test_server_node.mjs`, `dashboard/server/tests/test_home_stage_rails.mjs` | Node `.mjs` server tests. The stage-rail test takes `PHASE_ORDER` and `renderStageRail` from `home.html` by name and runs them under `node:vm` against a stand-in for the page. |
 | Playwright (Chromium, headless) | Visual fidelity (E2E render) | `canonical/aid/scripts/summarize/validate-visuals.mjs` | Validates `kb.html` authored visuals; gated in CI. |
 | Generator `--self-test` harness | Self-test | `.claude/skills/generate-profile/scripts/*.py` | `render_lib`, `render`, `verify_deterministic`, `verify_advisory`. |
 | Astro / TypeScript tests | Unit | `site/src/data/__tests__/`, `site/scripts/__tests__/` | Site data + docs-sync tests (separate build). |
@@ -201,7 +201,7 @@ splits coverage by OS:
 
 | OS lane | Mode | What runs |
 |---|---|---|
-| `ubuntu-latest` | `bash-harness` | A curated subset of installer/CLI/release suites: `test-install`, `test-install-ps1`, `test-install-parity`, `test-aid-cli`, `test-aid-cli-ps1`, `test-aid-cli-parity`, `test-release`, `test-release-install-e2e`, `test-npm-installer`, `test-pypi-installer`, `test-skill-guide`. |
+| `ubuntu-latest` | `bash-harness` | A curated subset of installer/CLI/release suites: `test-install`, `test-install-ps1`, `test-install-parity`, `test-aid-cli`, `test-aid-cli-ps1`, `test-aid-cli-parity`, `test-release`, `test-release-install-e2e`, `test-npm-installer`, `test-pypi-installer`, `test-skill-guide`, `test-skill-steps`, `test-never-merges`, `test-deferred-tests`. |
 | `windows-latest` | `native-ps1` | `tests/windows/Test-AidInstaller.ps1` under both `pwsh` (7) and `powershell` (5.1); plus a dashboard-CLI smoke and npm + PyPI channel Windows smoke tests (pack/build → install → `aid status` / `aid add`). |
 
 CONFIRMED in `.github/workflows/installer-tests.yml` (the `installer` matrix job). The bash
@@ -242,6 +242,39 @@ conversations that the guide routes. They differ in how they run.
   - `SG-06`: one bundle staged by `tests/lib/bundle.sh` is installed for each of the five tools; every
     skill sits at that tool's skills path, is byte-identical to `canonical/`, has a `name` equal to its
     folder and a non-empty `description`, and carries no flag that blocks slash or agent invocation.
+
+**Step, never-merge and deferred-list suites** (static, bash harness). Three suites guard the rules of the
+step-by-step decision protocol. Each is picked up by `tests/run-all.sh` through the glob, and each is in the
+`bash-harness` lane of `.github/workflows/installer-tests.yml` (ubuntu, feature branches). The master
+`canonical-tests` job and the release `gate` reach them through `run-all.sh`.
+
+- **`tests/canonical/test-skill-steps.sh`** -- groups `SS-02`, `SS-03`, `SS-08`, `SS-11`, `SS-12` and `SS-14`
+  over `canonical/skills/`,
+  `canonical/aid/templates/`, `canonical/aid/scripts/`, `dashboard/` and the shared exempt list
+  `tests/canonical/skill-steps-exempt.tsv`. It covers the advance words (`CHAIN`, `ASK`, `WAIT`, `PASS`,
+  `CALL`, `HALT`) on `**Advance:**` lines, the citation of `skill-steps.md` by every skill that has a
+  Dispatch table or a `## State:` section, the old phase names kept out of logic, no hand-written
+  `lifecycle: Completed` or `Canceled`, and the rule that only the work-initiation gate creates and writes
+  the work record. Each exempt row names a skill or path that a later change rebuilds or retires; the
+  test fails when an exempt row no longer exists on disk, and under `AID_RELEASE_CHECK=1` while the list
+  is not empty.
+- **`tests/canonical/test-never-merges.sh`** -- groups `NM-01` to `NM-04` over the tracked files under
+  `canonical/`, `bin/`, `lib/`, `dashboard/`, `chat-node/`, `scripts/` and the release and install scripts,
+  excluding every path with a `tests/` or `__tests__/` folder. It asserts that AID never runs a merge
+  (`git merge`, `git pull` without `--ff-only`), never merges or opens a pull request outside the
+  monitor skill, and never names "merge to main" in a skill. Its exemptions are named in its header, and
+  each one is a file that a later change retires.
+- **`tests/canonical/test-deferred-tests.sh`** -- groups `DT-01` and `DT-02` over the deferred list
+  `tests/conversation/deferred.tsv`. The list records each conversation sample that cannot run yet, with
+  the criterion it covers and what it waits for: a sample row names a file under
+  `tests/conversation/samples/`, and a `skill:` row names a skill or glob that a later change will rebuild
+  or retire. A row leaves the list when what it waits for has landed and its sample passes three runs of
+  three. `DT-02` is the release check: with `AID_RELEASE_CHECK=1` the list must be empty.
+- **Release check.** `.github/workflows/release.yml` sets `AID_RELEASE_CHECK=1` on its `run-all.sh` step in
+  the `gate` job, and `release.sh` runs the same three checks (`test-deferred-tests`, `test-skill-steps`,
+  `test-skill-guide`) with that variable set on a live publish, and stops before anything is staged when one
+  fails. A dry run or a stage-only run skips them. A release is therefore not gated while the deferred list
+  or the exempt list holds a row.
 
 **Conversation suite: `tests/conversation/`** (NFR-T; agent behaviour, judged by an agent).
 
@@ -395,6 +428,7 @@ lands, suite-presence + dogfooding is the floor, not the target.
 | Pipeline execute / state writeback | Strong | `test-writeback-state.sh`, `test-delivery-gate-aggregate.sh`, `test-complexity-score.sh` |
 | Shortcut engine / Lite path | Strong | catalog↔dirs parity, the six family-scaffold suites, `test-shortcut-engine-contract.sh` (`SEC00`–`SEC07`) engine/gate/halt contract, flat-plan execution graph, recipe-removal cutover, describe-full-only |
 | Skill guide and skill set | Moderate (static only) | `test-skill-guide.sh` (`SG-01`–`SG-06`): guide length, guide↔`canonical/skills/` match, line width, description shape, bundle install for each tool |
+| Skill step protocol and never-merge rules | Moderate (static only) | `test-skill-steps.sh` (`SS-02`, `SS-03`, `SS-08`, `SS-11`, `SS-12`, `SS-14`), `test-never-merges.sh` (`NM-01`–`NM-04`), `test-deferred-tests.sh` (`DT-01`, `DT-02`); the step behaviour itself is checked by the conversation samples |
 | Agent behaviour (skill routing, conversations) | Not machine-gated in CI | `tests/conversation/` (run by hand, 3 runs per sample, judged by an agent); see [The Skill Guide and Conversation Suites](#the-skill-guide-and-conversation-suites) |
 | Dashboard reader/server | Strong | pytest suites + parity suites, incl. the `STATE.yml` conformance corpus and cross-format characterization suites (see [Test Framework Inventory](#test-framework-inventory)) |
 | Astro site | Moderate | `site/src/data/__tests__`, `site/scripts/__tests__`; build is the main gate |
@@ -450,6 +484,14 @@ bash tests/canonical/test-aid-cli.sh
 
 # Static skill-guide suite (SG-01 to SG-06; add --group SG-02 to run one group)
 bash tests/canonical/test-skill-guide.sh
+
+# Step, never-merge and deferred-list suites (test-skill-steps.sh takes a group name, e.g. SS-03)
+bash tests/canonical/test-skill-steps.sh
+bash tests/canonical/test-never-merges.sh
+bash tests/canonical/test-deferred-tests.sh
+
+# Release form of the three checks (fails while the exempt list or the deferred list holds a row)
+AID_RELEASE_CHECK=1 bash tests/canonical/test-deferred-tests.sh
 
 # Conversation suite (not in run-all.sh or CI; runs every sample under samples/feature-001/, 3 runs each, from the maintainer's machine)
 python3 tests/conversation/run.py --feature 001
