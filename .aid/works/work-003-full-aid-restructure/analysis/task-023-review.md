@@ -1,0 +1,3 @@
+| # | Severity | Status | Doc | Line | Description | Evidence |
+|---|---|---|---|---|---|---|
+| 1 | [LOW] | Pending | canonical/aid/templates/skill-steps.md | 87 | G-09/SR-01 area, severity judged: the `--create` invocation and the Writer modes row (line 153) omit `--path` and `--minimum-grade`, which the spec's `--create` row lists and the script header documents; a skill author reading this file as the one rule set would not know the converted scaffolds' options exist, so the file understates the writer's contract | REQUIREMENTS.md Feature 002 section 4 `--create ... [--path P] [--minimum-grade G]`; canonical/aid/scripts/execute/writeback-state.sh header lines 183-184; severity: judged |
