@@ -1835,3 +1835,11 @@ qa:
     suggested: 'Approve R1-R8 as proposed'
     answer: 'R1, R3, R5, R7, R8 as proposed. R2: option C -- keep today''s model now (design skills open their own work; questions before allocation are asked and land in intent.request at --create; skills that never create a work record questions in the project .aid/STATE.yml), and record "design comes before any work" as backlog W7-19. R4 and R6 changed by the maintainer: a question may come at any point in a step; a blocking question pauses the step where it stands (the saved step stays the current one, its detail says what is done and which question is open); any resume shows the open question first until it is answered or skipped, then the step continues; at the end of a skill the run halts with the question open.'
     applied_to: 'canonical/aid/templates/skill-steps.md; REQUIREMENTS.md section 11 Feature 002 Each step; writeback-state.sh; .aid/knowledge/backlog.md W7-19; delivery-002 review cycle 1 fixes'
+  - id: Q160
+    category: Building
+    impact: High
+    state: Answered
+    context: 'Delivery-002 review cycle 2: (1) under Q159 a skipped question lets an ASK step finish, and nothing exempts approvals, so a skipped approval before building would let the work proceed (V1-4); (2) the cycle-1 Haiku fix round introduced about 40 new findings across many files.'
+    suggested: '(1) an approval cannot be skipped; (2) Sonnet for the cycle-2 fix round, each helper re-checking its edits against skill-steps.md'
+    answer: '1A: an approval cannot be skipped -- it stays open, and its step stays paused, until the user approves or declines. 2A: Sonnet does the cycle-2 fix round (this round only; Q141 stands for task builds).'
+    applied_to: 'canonical/aid/templates/skill-steps.md (approvals); delivery-002 review cycle 2 fixes'

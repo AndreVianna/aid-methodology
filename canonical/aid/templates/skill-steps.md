@@ -70,7 +70,8 @@ Every step runs these six parts, in this order.
    - Answered in the same conversation: record each answer with `--answer`, set the lifecycle back to
      `Running`, and continue the same step from where it stopped.
    - Answered later: any session that resumes finds the saved step and the open questions, and asks
-     the open questions first, until each is answered or skipped. Then it continues the same step from
+     the open questions first, until each is answered or skipped (an approval is never skipped: see
+     When approvals happen). Then it continues the same step from
      its detail, and does not redo what the detail says is done.
    - An `ASK` advance is this pause at the end of a step. Once its questions are answered or skipped,
      the step is finished, and the work goes on to the step the line names, which is then saved with
@@ -225,6 +226,8 @@ Approvals are asked by the main conversation, at the moments below. The depth is
 | End of the whole build | approve | approve |
 | The final result | approve | approve |
 
+- **An approval cannot be skipped (Q160).** It stays open, and its step stays paused, until the
+  user approves or declines. Every other question may be skipped.
 - **Coinciding approvals are one approval (M11).** Approvals that fall at the same moment are one
   approval. On a work with one delivery, the delivery, whole-build and final-result approvals are
   one.
