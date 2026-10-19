@@ -1827,3 +1827,11 @@ qa:
     suggested: 'Fix now as task-037b (id task-372), as with Q157'
     answer: 'Fix now (maintainer).'
     applied_to: 'PLAN.md (task-372); deliveries/delivery-002/tasks/task-372/'
+  - id: Q159
+    category: Building
+    impact: High
+    state: Answered
+    context: 'Delivery-002 review cycle 1 (81 rows, 1 CRITICAL, 26 HIGH): most HIGH rows trace to gaps in skill-steps.md. Proposed rules R1-R8 (R1 the writer finds the work record itself; R2 questions before a work exists; R3 answer-dependent next step; R4 questions end a step; R5 targets are table step names; R6 ASK then HALT defined; R7 WAIT saves its step; R8 the writer adds a missing list key on first append).'
+    suggested: 'Approve R1-R8 as proposed'
+    answer: 'R1, R3, R5, R7, R8 as proposed. R2: option C -- keep today''s model now (design skills open their own work; questions before allocation are asked and land in intent.request at --create; skills that never create a work record questions in the project .aid/STATE.yml), and record "design comes before any work" as backlog W7-19. R4 and R6 changed by the maintainer: a question may come at any point in a step; a blocking question pauses the step where it stands (the saved step stays the current one, its detail says what is done and which question is open); any resume shows the open question first until it is answered or skipped, then the step continues; at the end of a skill the run halts with the question open.'
+    applied_to: 'canonical/aid/templates/skill-steps.md; REQUIREMENTS.md section 11 Feature 002 Each step; writeback-state.sh; .aid/knowledge/backlog.md W7-19; delivery-002 review cycle 1 fixes'
