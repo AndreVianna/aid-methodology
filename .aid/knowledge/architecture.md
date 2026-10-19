@@ -260,11 +260,11 @@ split). CONFIRMED: `canonical/skills/` has `aid-describe/` and `aid-define/` and
 - **`aid-describe` (Phase 2a)** — adaptive interview + COMPLETION and (greenfield) the KB seed,
   **full path only** (no TRIAGE, no lite states — the plain-request intake lives in `/aid-orchestrate`).
   State machine: FIRST-RUN -> Q-AND-A -> CONTINUE ->
-  {greenfield: DESCRIBE-SEED ->} COMPLETION [PAUSE -> `/aid-define`]. CONFIRMED in
+  {greenfield: DESCRIBE-SEED ->} COMPLETION (`ASK` then `HALT`, naming `/aid-define`). CONFIRMED in
   `canonical/skills/aid-describe/SKILL.md` (frontmatter `State machine:`).
 - **`aid-define` (Phase 2b)** — feature decomposition + cross-reference, from an approved
-  `REQUIREMENTS.md`. State machine: FEATURE-DECOMPOSITION -> CROSS-REFERENCE -> DONE (hands off
-  to `/aid-specify`). CONFIRMED in `canonical/skills/aid-define/SKILL.md`.
+  `REQUIREMENTS.md`. State machine: FEATURE-DECOMPOSITION -> CROSS-REFERENCE -> DONE (`ASK` then
+  `HALT`). CONFIRMED in `canonical/skills/aid-define/SKILL.md`.
 
 **Seasoned-analyst elicitation engine.** The full-path interview is no longer free-form:
 `aid-describe` drives it through a deterministic engine
@@ -299,23 +299,39 @@ is NEVER auto-overwritten with as-built. CONFIRMED in
 
 ## Skill State-Machine Model
 
-Each skill is a **prose-defined state machine**, not a script. One invocation advances one
-state; the pipeline never auto-advances (human approves each transition — a SYNTHESIS
-concept, "human-gated phase advancement"; see Invariants).
+Each skill is a **prose-defined state machine**, not a script. Its steps are its states. A skill's
+step table lives in its `SKILL.md`, and the per-state behavior lives in
+`canonical/skills/<name>/references/state-*.md` (or the step's own reference). The rules for moving
+between steps are one shared file, `canonical/aid/templates/skill-steps.md`, which every skill cites
+instead of restating. CONFIRMED via that file and the directory inventory.
 
-- A skill's entry file is `canonical/skills/<name>/SKILL.md`; per-state behavior lives in
-  `canonical/skills/<name>/references/state-*.md`. CONFIRMED via the directory inventory
-  (e.g. `aid-discover/references/state-generate.md`, `state-review.md`, `state-fix.md`).
-- Example — Discover runs ELICIT -> GENERATE -> REVIEW -> Q-AND-A -> FIX -> APPROVAL -> DONE
-  (ELICIT captures external sources and tool integrations before GENERATE runs). CONFIRMED in
-  `canonical/skills/aid-discover/SKILL.md` (search: "State-machine: ELICIT → GENERATE → REVIEW
-  → Q-AND-A → FIX → APPROVAL → DONE").
-- State machines are *chained* across skills (a DONE state hands off to the next skill).
-  CONFIRMED via `canonical/aid/templates/state-machine-chaining.md`.
-- Trivial state/arg work is done in SKILL.md prose, not bash. Only non-trivial,
-  reused, deterministic operations are extracted to `canonical/aid/scripts/` (grouped by
-  phase: `kb/`, `execute/`, `housekeep/`, `connectors/`, `summarize/`, `release/`,
-  `migrate/`, `config/`). CONFIRMED via the `canonical/aid/scripts/` subtree.
+- **Advance words** label the end of every step: `CHAIN` (go on now), `ASK` (stop for the user through
+  the question protocol, then continue), `WAIT` (the user acts outside the conversation), `PASS` (end
+  this skill's process and start the next one), `CALL` (hand off and come back to this step), and
+  `HALT` (the run is finished, or returns from an open call).
+- **The work record** is the set of keys in the work's `STATE.yml` that say where the work is:
+  `intent.reading`, `active_skill`, `step` and `step_detail`. Only the writer,
+  `canonical/aid/scripts/execute/writeback-state.sh`, writes it, and only the gate creates it.
+  The record is written at every step entry, before any work in that step, and at every hand-off,
+  return, re-route and finish. A failed write stops the skill.
+- **Resume reads the record, never artifacts.** A resumed session runs the writer's `--check` first.
+  A skill's artifact detection shapes a skill's entry step when it starts fresh and validates a saved
+  step on resume; it never routes. A detected mismatch goes to recovery, where the user confirms one
+  repaired record before anything runs.
+- **Hand-offs are one locked write.** `PASS` moves the work to the next skill and its entry step with
+  `--returns no`, and sets the phase when the phase changes. `CALL` appends an open `handoffs` entry
+  with `--returns yes`, and `HALT` with an open call restores the caller's skill, step and detail
+  from that entry. Calls nest, newest first.
+- **Phase** is a display label of the work, one of `Definition`, `Specification`, `Planning`,
+  `Building` and `CI`. It never routes a work.
+- Example: `aid-define` runs FEATURE-DECOMPOSITION -> CROSS-REFERENCE -> DONE, and its DONE step is
+  `ASK` then `HALT`. `aid-execute` runs its per-task loop inside a parallel pool, and it drives the
+  Building phase. The full per-skill step list is in
+  [pipeline-contracts.md](pipeline-contracts.md) § Per-Skill State Machines.
+
+State machines are *chained* across skills by `PASS` (the next skill starts in the same turn) and by
+`CALL` (the called skill returns to the caller's step). Step names are never shown to the user; they
+appear only as the target of an advance line.
 
 ---
 
@@ -474,7 +490,8 @@ What a change must never break (each stated as a hard rule + where enforced):
 - **Reviewer tier >= executor tier; writer never grades own work.** Enforced by skill
   dispatch and stated in `docs/aid-methodology.md` (search: "never grades its own work").
 - **Human-gated advancement:** the pipeline MUST NOT auto-advance; the human approves every
-  phase transition. Enforced by skill state machines (one invocation = one state).
+  phase transition. Enforced by the skill steps: an approval the approvals table requires is an
+  `ASK` before the `PASS` that moves the work on (`canonical/aid/templates/skill-steps.md`).
   `docs/aid-methodology.md` (search: "The pipeline never auto-advances").
 - **Deterministic grade:** the letter grade MUST be computed by `grade.sh` from bracketed
   severity tags, never hand-picked by the reviewer. Enforced in

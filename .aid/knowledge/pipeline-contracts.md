@@ -223,43 +223,126 @@ the executor works and how the reviewer evaluates the task. CONFIRMED:
 
 ## Per-Skill State Machines
 
-Every graded skill is a state machine: one invocation advances one state, then stops. No
-auto-advance between states. CONFIRMED: `docs/aid-methodology.md` ("Discover runs as a state
-machine … One invocation per state. No auto-advance").
+Every skill that runs a process moves through its steps by one shared rule set,
+`canonical/aid/templates/skill-steps.md`. A skill keeps only its own step table (its steps, the
+reference file that does each step, the worker, and the advance word) and a fallback detection
+from its artifacts. No skill restates how to move; each one cites that file. The steps of a skill
+are its states: one run of a skill carries the work through as many steps as its advance words
+allow, and it stops only at an `ASK`, a `WAIT`, a `PASS` or `CALL` that hands the work on, or a `HALT`.
 
-| Skill | States (in order) |
-|-------|-------------------|
-| `aid-discover` | ELICIT → GENERATE → REVIEW → Q-AND-A → FIX → APPROVAL → DONE |
-| `aid-describe` (full, Phase 2a) | FIRST-RUN → Q-AND-A → CONTINUE → [greenfield: DESCRIBE-SEED →] COMPLETION (pauses → `/aid-define`) |
-| `aid-define` (Phase 2b) | FEATURE-DECOMPOSITION → CROSS-REFERENCE → DONE (hands off → `/aid-specify`) |
-| `aid-specify` | per-section universal loop: Propose → Discuss → Write → Review (re-run enters at Review) |
-| `aid-plan` | universal loop applied per delivery: Propose → Discuss → Write → Review |
-| `aid-detail` | universal loop per delivery producing task files → build execution graph |
-| `aid-execute` | per-task universal loop (read type → execute → gates → reviewer dispatch → grade → fix/loopback) inside a parallel pool |
-| `aid-orchestrate` | no state machine; numbered steps (project question → check the reading → size it, offering Preparation when there is no KB → show the reading → hand an action-skill reading to its skill, which creates the work → otherwise find or create the work and record `intent:` → cancel or close a named work → hand over the first phase), run in the main conversation |
-| shortcut skills (`/aid-<verb>[-<artifact>]`, shared `shortcut-engine.md`) | INTAKE → CAPTURE → SPEC → PLAN → DETAIL → GATE → APPROVAL-HALT (Describe→Detail collapsed & autonomous; never executes) |
-| `aid-deploy` | package selection → final verification → package record → packaging → doc routing → status update |
-| `aid-monitor` | Observe → Classify → Analyze → Propose → Act |
-| `aid-housekeep` | PREFLIGHT → KB-DELTA → SUMMARY-DELTA → CLEANUP → DONE |
-| `aid-update-kb` | ANALYZE → SCOPE → CONFIRM → APPLY → REVIEW → APPROVAL → DONE (Pre-flight worktree isolation; CONFIRM gate before any edit; FIX loop inside REVIEW) |
+### Advance words
 
-CONFIRMED: per-skill `SKILL.md` files under `canonical/skills/` (`aid-describe/SKILL.md`
-frontmatter `State machine:` + Dispatch table; `aid-define/SKILL.md`; `aid-orchestrate/SKILL.md`);
-`canonical/aid/templates/shortcut-engine.md` (the shared engine state machine); the
-lite/housekeep/update sequences additionally in `docs/glossary.md` ("aid-housekeep",
-"aid-update-kb"). **Phase 2 was one skill (`aid-interview`); it is now two:** the interview and
-greenfield-seed states belong to `aid-describe` (2a) and feature-decomposition + cross-reference
-belong to `aid-define` (2b). `aid-describe` no longer triages or emits Lite work — routing moved
-to `/aid-orchestrate` and Lite authoring moved to the shortcut engine. The `aid-interviewer` AGENT
-was NOT renamed — only the skill split.
+Every step ends with exactly one advance word on its `**Advance:**` line. The words are internal
+and never shown to the user.
+
+| Word | Meaning |
+|------|---------|
+| `CHAIN` | Go on to the next step now, in the same run. Used when nothing is for the user to decide at that point. |
+| `ASK` | Stop for the user through the question protocol (`canonical/aid/templates/question-protocol.md`), then continue to the step the line names once every question is answered. |
+| `WAIT` | The user must act outside the conversation. Say what, plainly, and stop. |
+| `PASS` | End of this skill's process. Hand the work to the next skill and start it in the same turn. |
+| `CALL` | In the middle of this skill's process. Hand the work to another skill, then come back to this step when it finishes. |
+| `HALT` | This run is finished: after returning to an open call, if there is one; otherwise the run ends. |
+
+### The work record
+
+The work record is the set of `STATE.yml` keys that say where a work is: `intent.reading` (its
+type), `active_skill`, `step` and `step_detail`. It is the only thing that
+decides where a work continues, in the gate, in `/aid-orchestrate` and inside every skill. `phase`
+is a display label, shown to the user and on the dashboard; it never routes or resumes a work.
+
+- **Phase values** are the five names `Definition`, `Specification`, `Planning`, `Building` and `CI`.
+  Preparation is not a work phase: the Knowledge Base's own state records it.
+- **One writer.** Only `canonical/aid/scripts/execute/writeback-state.sh` writes the record, and
+  every write is one locked write that leaves the file untouched on failure. The gate
+  (`canonical/aid/templates/work-initiation-gate.md` § 3a) is the only creator of a work's
+  `STATE.yml`, through the writer's create mode, before it hands the new work back.
+- **When it is written:** at creation; at each step entry, before any work in that step; at every
+  hand-off and return; at every re-route; and at finish. A non-zero exit from any record write stops
+  the skill at once and the agent says so in one plain line (fail-closed).
+- **Finishing clears the saved skill.** Setting the lifecycle to `Completed` or `Canceled` also sets
+  `active_skill` to `none` and clears `step` and `step_detail` in the same locked write.
+
+### Steps, questions and hand-offs
+
+Each step runs the same parts, in this order:
+
+1. **Enter.** The main conversation writes the step (`--step --skill <skill> --name <STEP>`) before
+   doing or dispatching any of the step's work.
+2. **Work.** Inline, or by a worker. A worker returns its open questions to the main conversation;
+   it never asks them.
+3. **`ASK`.** Save the step the advance line names as the next one, record each question, set the
+   lifecycle to `Paused-Awaiting-Input`, and ask. If the answers come in the same conversation, record
+   them, set the lifecycle back to `Running`, and continue to the named step. If they come later, the
+   session that resumes finds the saved step and the open questions, asks the open questions first,
+   and then continues at that step.
+4. **`PASS`.** If the approvals table requires an approval at this point for the work's depth, `ASK`
+   it first. Then one locked write hands the work to the next skill and its entry step, with
+   `--returns no` and the phase when the phase changes; the next skill starts in the same turn.
+5. **`CALL`.** Record what is done, then one locked write appends a `handoffs` entry with
+   `--returns yes` (the hand-off's from-skill, from-step and from-detail, and the reason) and moves the
+   work to the called skill's entry step. The phase does not change.
+6. **`HALT`.** With an open call, `--handoff-return` restores the caller's skill, step and detail,
+   and the caller continues at that step. Calls nest, and the newest call returns first. Without an
+   open call, the run ends.
+
+A hand-off writes the target skill and its entry step in the same write, so a work never has a
+skill without a step, even when a hand-off is interrupted.
+
+### Resume and recovery
+
+Resume is decided by the record alone. The first thing a resumed session does is run
+`writeback-state.sh --check`, which writes nothing, prints one line per problem and exits 9 when
+there is one. The gate's resume table (`work-initiation-gate.md` § 3b) then routes:
+
+- a finished work (`Completed` or `Canceled`) is reported as finished, and the session stops;
+- a record that `--check` reports as missing or inconsistent goes to recovery;
+- any other open work continues at its saved `active_skill` and `step`. With an open call, it continues
+  inside the called skill.
+
+A skill's own artifact detection never routes a work. A skill starting fresh on a work (through a
+`PASS`, a `CALL`, or a typed command for another skill) uses detection only to decide how far its
+entry step goes. A resumed skill uses detection only to validate the saved step against what is on
+disk. A mismatch goes to recovery, never to a silent re-route.
+
+Recovery never repairs on its own. The agent tells the user what `--check` found and proposes the
+whole repaired record (the type, the skill and the step) as one confirmation question, with its
+recommendation. Only after the user confirms, or corrects a part in the same answer, does it run
+`--repair`. That write requires `--reading` when the record has none, and appends a
+`lifecycle_history` entry that names the old and the new record. After one confirmed repair the
+record is complete and `--check` passes.
+
+### Per-skill steps
+
+The table lists each skill's steps in order, as its `SKILL.md` and `references/` files name them. Every
+skill follows the rules above, and each step's advance word is on that step's `**Advance:**` line.
+
+| Skill | Steps (in order) |
+|-------|------------------|
+| `aid-discover` | ELICIT → GENERATE → REVIEW → Q-AND-A → FIX → APPROVAL → DONE. Builds the Knowledge Base; no work phase. |
+| `aid-describe` (full) | FIRST-RUN → Q-AND-A → CONTINUE → [greenfield: DESCRIBE-SEED →] COMPLETION. COMPLETION is `ASK` then `HALT`, naming `/aid-define`, until the phase skill that follows takes over with a `PASS`. |
+| `aid-define` | FEATURE-DECOMPOSITION → CROSS-REFERENCE → DONE. DONE is `ASK` then `HALT`; a requirements-level change is named in one plain line. |
+| `aid-specify` | Per-section universal loop: Propose → Discuss → Write → Review. A re-run enters at Review. |
+| `aid-plan` | Universal loop applied per delivery: Propose → Discuss → Write → Review. |
+| `aid-detail` | Universal loop per delivery, producing the task files, then the execution graph. |
+| `aid-execute` | Per-task loop inside a parallel pool: read type → execute → gates → reviewer dispatch → grade → fix or loopback. |
+| `aid-orchestrate` | No step table. Numbered steps run in the main conversation: project question, check the reading, size it, show the reading, then hand an action-skill reading to its skill (which creates the work), or find or create the work, or cancel or close it, and hand over the first phase. |
+| Shortcut skills (`/aid-<verb>[-<artifact>]`, shared `shortcut-engine.md`) | INTAKE → CAPTURE → SPEC → PLAN → DETAIL → GATE → APPROVAL-HALT. The engine runs the Definition-to-Planning path as one autonomous run and never executes. |
+| `aid-deploy` | Package selection → final verification → package record → packaging → doc routing → status update. |
+| `aid-monitor` | Observe → Classify → Analyze → Propose → Act. |
+| `aid-housekeep` | PREFLIGHT → KB-DELTA → SUMMARY-DELTA → CLEANUP → DONE. |
+| `aid-update-kb` | ANALYZE → SCOPE → CONFIRM → APPLY → REVIEW → APPROVAL → DONE. The CONFIRM step precedes any edit; the FIX loop sits inside REVIEW. |
+
+A skill that drives a phase sets it through the writer with `--phase`; an on-demand skill that
+drives none sets no phase, and the work's current phase stays.
 
 The **universal loop** (Propose, then Discuss, then Write, then Review) is shared by every full-path
-design phase. Re-running a completed phase re-enters at Review and re-grades existing content
-against current reality — the same loop handles creation and maintenance. The flattened Lite
-path does NOT use the universal loop: the shortcut engine runs CAPTURE/SPEC/PLAN/DETAIL without
-a per-state human checkpoint (the only interactive moments are a rare CAPTURE gap-question and
-the terminal APPROVAL-HALT), and quality is enforced once at GATE. CONFIRMED:
-`docs/aid-methodology.md` ("The universal loop", "The Lite Path: Direct-Entry Shortcuts").
+design step. Re-running a completed step re-enters at Review and re-grades existing content against
+current reality, so the same loop handles creation and maintenance. The flattened Lite path does NOT
+use the universal loop: the shortcut engine runs CAPTURE/SPEC/PLAN/DETAIL without a per-step human
+checkpoint (the only interactive moments are a rare CAPTURE gap-question and the terminal
+APPROVAL-HALT), and quality is enforced once at GATE. CONFIRMED: `docs/aid-methodology.md` ("The
+universal loop", "The Lite Path: Direct-Entry Shortcuts").
 
 **Execute parallel-pool contract:** in delivery mode Execute runs a continuous parallel pool
 of up to `execution.max_parallel_tasks` tasks (default 5). A failed task blocks its transitive
@@ -440,8 +523,8 @@ Load-bearing keys: `project.{name,description,type}`, `tools.installed`,
 > How this project adds or changes a pipeline boundary.
 
 - **A new phase/skill** is authored once in `canonical/skills/<name>/SKILL.md` as a state
-  machine (states advance one invocation at a time), then shipped in the shared payload and installed to
-  `.agents/skills/aid-*` for every tool. Never edit an installed copy. A new verb-first shortcut is added as a row in
+  machine (its steps follow `canonical/aid/templates/skill-steps.md`), then shipped in the shared
+  payload and installed to `.agents/skills/aid-*` for every tool. Never edit an installed copy. A new verb-first shortcut is added as a row in
   `canonical/aid/templates/shortcut-catalog.yml` and regenerated — the shortcut doorway is a
   thin delegate to `shortcut-engine.md`, never a hand-authored state machine.
 - **A new artifact type** gets a template under `canonical/aid/templates/`, a fixed location
