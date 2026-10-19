@@ -334,6 +334,9 @@ assert_file_contains "$GATE_DOC" "One or more works exist" "F: doc documents the
 assert_file_contains "$GATE_DOC" "CONTINUATION" "F: doc documents the continuation branch"
 assert_file_contains "$GATE_DOC" "/aid-execute" "F: legacy map names the /aid-execute target (halted / mid-Execute work)"
 assert_file_contains "$GATE_DOC" "/aid-plan"    "F: legacy map names a phase-skill target (partial full-path work)"
+# the legacy map proposes a step as well as a skill: --repair needs --name (writer exit 5 without it)
+assert_file_contains "$GATE_DOC" "| Old record | Proposed skill | Proposed step |" "F: legacy map has a Proposed step column"
+assert_file_contains "$GATE_DOC" "| \`phase: Execute\` | \`/aid-execute <work>\` | \`EXECUTE\` |" "F: legacy map proposes EXECUTE as the step for an Execute work"
 # field contract the routing consumes
 assert_file_contains "$GATE_DOC" "enumerate-works.sh" "F: doc points starters at the shared enumeration helper"
 assert_file_contains "$GATE_DOC" '<work_id>\t<phase>\t<lifecycle>\t<branch_label>\t<title>' \

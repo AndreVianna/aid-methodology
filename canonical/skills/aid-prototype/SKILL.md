@@ -92,7 +92,7 @@ job is production code), keeping the throwaway/non-production boundary crisp. Al
 stay in the work folder / opt-in worktree and **never touch production modules**. It writes
 a validation assessment (see [Deliverable](#deliverable)) into the work folder.
 
-**Advance:** VERIFY.
+**Advance:** CHAIN -> [State: VERIFY].
 
 ---
 
@@ -105,7 +105,7 @@ actually built, and (b) the **throwaway scope was respected** -- no production c
 nothing was committed to real modules. If the check fails, return to BUILD once to correct;
 do not loop on polish.
 
-**Advance:** PRESENT.
+**Advance:** CHAIN -> [State: PRESENT].
 
 ---
 

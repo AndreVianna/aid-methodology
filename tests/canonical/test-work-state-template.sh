@@ -329,10 +329,15 @@ for key in request reading reason depth; do
         fail "WS23 intent: is missing an instantiated '  ${key}: <value>' line"
     fi
 done
-if grep -qxE '  depth: (lite|full)' <<<"$INTENT_BLOCK"; then
-    pass "WS23 intent.depth holds a closed-enum value (lite or full)"
+if grep -qxE '  depth: (lite|full|--)' <<<"$INTENT_BLOCK"; then
+    pass "WS23 intent.depth holds a closed-enum value (lite or full), or -- when none is recorded"
 else
-    fail "WS23 intent.depth is not 'lite' or 'full'"
+    fail "WS23 intent.depth is not 'lite', 'full' or '--'"
+fi
+if grep -qxE '  depth: --' <<<"$INTENT_BLOCK" && grep -qx '    - Definition' <<<"$INTENT_BLOCK"; then
+    pass "WS23 intent rest values: no depth recorded, and the phase list starts at Definition"
+else
+    fail "WS23 intent rest values do not match the rule (depth -- when none recorded; Definition in phases)"
 fi
 PHASES_ITEMS="$(awk '
     /^  phases:[[:space:]]*$/ { inp = 1; next }

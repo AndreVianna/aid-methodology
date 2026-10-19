@@ -6,7 +6,8 @@ worktree-aware, and implemented once, so no starter silently assumes either
 branch. This is the Concern B counterpart to Concern A's `.aid/works/` container
 (the enumeration target below).
 
-Consulted by: the direct-entry shortcut engine's INTAKE
+Consulted by: `/aid-orchestrate` (its start-or-resume flow creates each new work
+through § 3a), the direct-entry shortcut engine's INTAKE
 (`.aid/runtime/templates/shortcut-engine.md`), `aid-describe`, and the
 collapse/standalone starters `aid-review`, `aid-research`, `aid-design`,
 `aid-report`, `aid-test`, `aid-prototype`, `aid-create-document`,
@@ -192,17 +193,21 @@ The gate allocates **nothing**. The work's record -- `intent.reading`, `active_s
 
 **Legacy map (never routes).** A work started before the record existed has no `active_skill`, so its phase and file names are the only evidence. Recovery reads this block only to propose a skill and step for such a work; its type comes from the evidence named above. Nothing here routes a work.
 
-| Old record | Proposed skill |
-|---|---|
-| `phase: Describe` | `/aid-describe <work>` |
-| `phase: Define` | `/aid-define <work>` |
-| `phase: Specify` | `/aid-specify <work>` |
-| `phase: Plan` | `/aid-plan <work>` |
-| `phase: Detail` | `/aid-detail <work>` |
-| `phase: Execute` | `/aid-execute <work>` |
-| `lifecycle: Paused-Awaiting-Input` with `delivery_state: Specified` (a flattened Lite work halted at APPROVAL-HALT) | `/aid-execute <work>` |
-| `delivery_state: Executing`, `Gated` or `Done` | `/aid-execute <work>` |
-| `active_skill: aid-deploy` (an interrupted deploy) | `/aid-deploy <work>` |
+The proposed step is the skill's entry step, or the step the old record's state names; the
+skill's own validation on resume moves it on when the work is further along.
+
+| Old record | Proposed skill | Proposed step |
+|---|---|---|
+| `phase: Describe` | `/aid-describe <work>` | `FIRST-RUN` |
+| `phase: Define` | `/aid-define <work>` | `FEATURE-DECOMPOSITION` |
+| `phase: Specify` | `/aid-specify <work>` | `INITIALIZE` |
+| `phase: Plan` | `/aid-plan <work>` | `FIRST-RUN` |
+| `phase: Detail` | `/aid-detail <work>` | `FIRST-RUN` |
+| `phase: Execute` | `/aid-execute <work>` | `EXECUTE` |
+| `lifecycle: Paused-Awaiting-Input` with `delivery_state: Specified` (a flattened Lite work halted at APPROVAL-HALT) | `/aid-execute <work>` | `EXECUTE` |
+| `delivery_state: Executing` | `/aid-execute <work>` | `EXECUTE` |
+| `delivery_state: Gated` or `Done` | `/aid-execute <work>` | `DELIVERY-GATE` |
+| `active_skill: aid-deploy` (an interrupted deploy) | `/aid-deploy <work>` | `IDLE` |
 
 <!-- legacy-phase-map: end -->
 

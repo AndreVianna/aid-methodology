@@ -1,7 +1,9 @@
 # Project State -- .aid/STATE.yml
 #
 # This is the PROJECT-LEVEL state file. It holds the project's question record
-# only (`qa`): the questions the AID skills asked across works, and the answers.
+# only (`qa`): the questions that belong to the project rather than to a work --
+# setup-skill questions (configure, connectors) and questions from skills that
+# keep no work record. A work's own questions stay in that work's STATE.yml.
 # It is created on first use by `writeback-state.sh --ask --project`.
 #
 # Writer legend -- stated in full-line comments above each key, NEVER as a

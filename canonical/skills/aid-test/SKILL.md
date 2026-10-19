@@ -99,7 +99,7 @@ workload/environment noted; data-quality: per-check pass/fail with thresholds; f
 pass/fail + failures; model-eval: metric vs threshold. Every finding cites its evidence
 (the run output + a `file:line` where applicable).
 
-**Advance:** VERIFY.
+**Advance:** CHAIN -> [State: VERIFY].
 
 ---
 
@@ -114,7 +114,7 @@ pass/fail + failures; model-eval: metric vs threshold. Every finding cites its e
 3. **Grade:** `bash .aid/runtime/scripts/grade.sh --explain <ledger>`. Not clean -> loop
    to RUN/consolidate. Circuit-breaker: 3 cycles -> IMPEDIMENT, and the lifecycle set to `Blocked` through the writer.
 
-**Advance:** PRESENT.
+**Advance:** CHAIN -> [State: PRESENT].
 
 ---
 

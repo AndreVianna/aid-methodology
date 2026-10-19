@@ -96,7 +96,7 @@ analyze + consolidate:
   data-vs-KB-assumption contradiction is surfaced with its reason, never resolved.
 - It writes `REPORT.md` into the work folder (see [Response shape](#response-shape)).
 
-**Advance:** VERIFY.
+**Advance:** CHAIN -> [State: VERIFY].
 
 ---
 
@@ -112,7 +112,7 @@ analyze + consolidate:
 3. **Grade:** `bash .aid/runtime/scripts/grade.sh --explain <ledger>`. Not clean -> loop
    to ANALYZE. Circuit-breaker: 3 cycles -> IMPEDIMENT, and the lifecycle set to `Blocked` through the writer.
 
-**Advance:** PRESENT.
+**Advance:** CHAIN -> [State: PRESENT].
 
 ---
 

@@ -212,8 +212,6 @@ for path in sys.argv[1:]:
         word = t.group(0)
         if word in SIX:
             continue
-        if word == word.upper() and "PAUSE-FOR-USER" not in rest:
-            continue
         print(f"{path}:{num}: **Advance:** word {word} is not CHAIN, ASK, WAIT, PASS, CALL or HALT")
 ' "${files[@]}" 2>&1) || true
         if [[ -z "$hits" ]]; then

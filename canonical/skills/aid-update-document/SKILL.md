@@ -97,7 +97,7 @@ Dispatch **`aid-tech-writer`** (clean context, tiered) to produce the **revised*
 (a draft in the work folder, not yet written back), grounded in and accurate to the KB +
 project source, preserving the document's existing genre structure.
 
-**Advance:** VERIFY.
+**Advance:** CHAIN -> [State: VERIFY].
 
 ---
 
@@ -107,7 +107,7 @@ Same as `/aid-create-document`: mechanical grounding check + a clean-context **`
 adversarial check (accurate, complete, no fabrication, structure preserved) -> `grade.sh`
 -> loop on failure (3-cycle circuit-breaker -> IMPEDIMENT, and the lifecycle set to `Blocked` through the writer).
 
-**Advance:** PRESENT.
+**Advance:** CHAIN -> [State: PRESENT].
 
 ---
 
@@ -126,7 +126,7 @@ If the user declined, write nothing: the draft stays in the work folder, and the
 DONE. Otherwise write the revision back to the existing document (the diff was already reviewed at
 PRESENT). Then optionally print handoffs (`/aid-update-kb`, `/aid-create*`, ...).
 
-**Advance:** DONE.
+**Advance:** CHAIN -> [State: DONE].
 
 ---
 

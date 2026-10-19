@@ -122,14 +122,14 @@ exempt_exists() {
 }
 
 # NM-01: git merge / git pull without --ff-only.
-nm01_hits=$(scan_hits 'git (merge|pull)' \
+nm01_hits=$(scan_hits 'git( +-[-A-Za-z]+( +[^ -][^ ]*)?)* +(merge|pull)( |$)' \
     | grep -v -E 'git merge-(base|tree)' \
     | grep -v -E 'git pull.*--ff-only' \
     | grep -v -E "^${MERGE_ALLOWED_PATH}:" || true)
 judge "NM-01 git merge / git pull" "" "$nm01_hits"
 
 # NM-02: merge commands, merge endpoints, git push to main or master.
-nm02_hits=$(scan_hits 'gh pr merge|glab mr merge|pulls/[^ ]*/merge|merge_requests/[^ ]*/merge|git push[^|;]* (main|master)\b' || true)
+nm02_hits=$(scan_hits 'gh pr merge|glab mr merge|pulls/[^ ]*/merge|merge_requests/[^ ]*/merge|git push[^|;]*[ :](main|master)\b' || true)
 judge "NM-02 merge command / endpoint / push to main" "" "$nm02_hits"
 
 # NM-03: PR or MR creation only under the monitor pipeline skill.

@@ -149,7 +149,7 @@ Purpose: gather evidence and produce the grounded findings ledger.
    `# | Severity | Status | Doc | Line | Description | Evidence`) to
    `.aid/.temp/review-pending/<work>-review.md`.
 
-**Advance:** VERIFY.
+**Advance:** CHAIN -> [State: VERIFY].
 
 ---
 
@@ -173,7 +173,7 @@ Purpose: ensure the review is grounded, correct, and complete before the human s
 Note: the *target's* grade (`grade.sh --explain` on the review ledger) is computed for
 the presentation as information only -- it does NOT drive a fix loop here.
 
-**Advance:** PRESENT-FINDINGS.
+**Advance:** CHAIN -> [State: PRESENT-FINDINGS].
 
 ---
 
@@ -206,7 +206,7 @@ inline-comment suggestions) for code; inline notes for a document. **Graceful fa
 no catalogued connector / unknown target -> present the exact text for the human to paste.
 Publishing is optional and never blocks DONE.
 
-**Advance:** DONE.
+**Advance:** CHAIN -> [State: DONE].
 
 ---
 

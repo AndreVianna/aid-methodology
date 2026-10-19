@@ -104,7 +104,7 @@
 
 # [W]
 #   path: lite | full  -- lite = flattened (no deliveries/ wrapper); full = deliveries/delivery-NNN/ wrapper
-#   initiator: aid-describe | aid-{shortcut-skill}  -- the pipeline-starting skill: aid-describe, or a shortcut-catalog.yml skill (e.g. aid-fix, aid-refactor, aid-create-api)
+#   initiator: aid-{skill}  -- the skill that called the work-initiation gate: aid-describe, a shortcut-catalog.yml skill (e.g. aid-fix, aid-refactor, aid-create-api), or an entry skill such as aid-orchestrate or aid-research
 pipeline:
   path: lite
   initiator: aid-describe
@@ -146,16 +146,18 @@ gate_grade: Pending
 # [W]
 gate_timestamp: --
 
-# [A] how this work reads the user's request; written by /aid-orchestrate
-#     on this work's active branch (single writer) when it starts or resumes
-#     the work, and re-written when the work is re-routed. The values below
-#     are the rest values until the first write: no reading yet, and the
-#     default route of a clear request.
+# [W] request, reading, depth and changes: how this work reads the user's
+#     request. Only the writer sets them: `--create` when the work starts
+#     (request, reading, and depth when given), and `--reroute` on a re-route
+#     (reading, depth, and one changes entry). Never by hand. reason and phases
+#     are set by the routing skill until the writer has modes for them.
+#     The values below are the rest values until the first write: no reading
+#     yet, and no depth recorded (a work with no recorded depth takes full).
 #   request: the user's words, short (quoted)
 #   reading: bug fix | refactor | change | new capability | document |
 #            operational | knowledge update | investigation
 #   reason:  one line on why the reading holds (quoted)
-#   depth:   lite | full -- how much the user reviews
+#   depth:   lite | full -- how much the user reviews; -- when none is recorded
 #   phases:  the phases this work runs, in order, one `- <phase>` line each
 #            (block style: the readers reject an inline list). Names are
 #            the routing phases -- Preparation, Definition, Specification,
@@ -165,8 +167,9 @@ intent:
   request: --
   reading: --
   reason: --
-  depth: lite
+  depth: --
   phases:
+    - Definition
     - Specification
     - Planning
     - Building

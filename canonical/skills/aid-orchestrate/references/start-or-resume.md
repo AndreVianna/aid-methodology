@@ -37,7 +37,8 @@ gate (`.aid/runtime/templates/work-initiation-gate.md`) as written.
 - A matching work is continued. Its `STATE.yml` already holds the `intent:` block, which stands
   unless the check found a new fact.
 - No match: the gate's § 3a runs `writeback-state.sh --create` with `--skill aid-orchestrate --step
-  RECORD-INTENT`, the step the work continues at once it exists (the steps before it save nothing).
+  RECORD-INTENT`, the step the work continues at once it exists (the steps before it save nothing),
+  and with `--reason '<the reading's reason>'` and `--phases <P1,P2,...>` from the shown reading.
   The flow creates no work by hand.
 - Several plausible works: section 3a asks which one.
 
@@ -107,9 +108,10 @@ the user has approved it. The record's keys are set through the writer only, nev
 
 - The gate's `--create` (section 3) has already written `intent.request`, `intent.reading` and
   `intent.depth`, from the user's words, the reading and the depth. Nothing else writes them.
-- `intent.reason`, `intent.phases` and `intent.changes` have no writer mode yet. A new work does not
-  write them by hand: the step stops and says so, and the work stays at this step, as the
-  fail-closed rule in `skill-steps.md` requires, until the writer can set them.
+- The same `--create` wrote `intent.reason` and `intent.phases`, from `--reason` and `--phases`. If
+  either is missing from the record, set it with `writeback-state.sh --intent --reason '<reason>'
+  --phases <P1,P2,...>`; a non-zero exit stops the flow, as the fail-closed rule in `skill-steps.md`
+  requires.
 - A resumed work keeps its `intent:` block. Change it only through a re-route (`--reroute`), which
   appends the re-route to `changes`.
 

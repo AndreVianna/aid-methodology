@@ -36,7 +36,8 @@
 # writeback-state.sh -- row-level write coordination for FR6 parallel pool
 # x per-unit STATE writes in AID aid-execute.
 #
-# Provides 12 safe write modes targeting PER-UNIT STATE.yml files (Pillar 2).
+# Provides 16 modes targeting PER-UNIT STATE.yml files (Pillar 2): fifteen that
+# write, and --check, which writes nothing.
 # Uses a sentinel-file lock (set -o noclobber + atomic create + sleep-poll retry)
 # to prevent races when multiple parallel tasks dispatch reviewers concurrently.
 #
@@ -182,6 +183,7 @@
 #
 #   writeback-state.sh --create --work-dir DIR --reading R --request T --skill S --step N
 #                       [--phase P] [--depth lite|full] [--path lite|full] [--minimum-grade G]
+#                       [--reason R] [--phases P1,P2,...]
 #       Run only by the work-initiation gate. Copies work-state-template.yml into DIR
 #       and fills the work record in one write: intent.reading, intent.request,
 #       intent.depth, active_skill (S), step (N), pipeline.initiator (S), phase (P,
@@ -192,7 +194,13 @@
 #
 #   writeback-state.sh --step --skill S --name N [--detail D]
 #       Writes active_skill (S), step (N), step_detail (D, or `--`) and updated in one
-#       write, on the work STATE.yml (AID_STATE_FILE).
+#       write, on the work record (see "Work record discovery" below).
+#
+#   writeback-state.sh --intent [--reason R] [--phases P1,P2,...]
+#       Sets intent.reason and/or intent.phases on an existing work record, in one
+#       locked write. --phases replaces the whole list. At least one of the two is
+#       required (exit 5). Phase names: Preparation, Definition, Specification,
+#       Planning, Building, CI (exit 4 for any other, or an empty item).
 #
 #   writeback-state.sh --reroute --reading R [--depth lite|full] --why W
 #       Writes intent.reading (and intent.depth when given) and appends one
@@ -202,8 +210,10 @@
 #   writeback-state.sh --check
 #       Writes nothing. Prints one PROBLEM line for each missing or inconsistent part
 #       of the work record, and exits 9 when there is any, 0 otherwise. A saved skill
-#       is checked against the skill_mirror folders of .aid/runtime/host.conf
-#       (AID_SKILLS_DIR overrides them); with none declared the check passes.
+#       is checked against the installed skill folders: the shared .agents/skills,
+#       the skill_mirror lines of .aid/runtime/host.conf, and the tool mirrors that
+#       .aid/.aid-manifest.json records (AID_SKILLS_DIR overrides them all). With no
+#       folder present at all the check passes.
 #
 #   writeback-state.sh --repair --skill S --name N [--detail D] [--reading R]
 #       Writes the whole repaired record in one write and appends a lifecycle_history
@@ -235,6 +245,16 @@
 #       holds no question with that id.
 #
 #   writeback-state.sh -h | --help
+#
+# Work record discovery (the record modes: --step, --reroute, --check, --repair,
+# --handoff, --handoff-return, and --ask or --answer without --project). The
+# record is the first of these that applies:
+#   1. AID_STATE_FILE, when set;
+#   2. the STATE.yml of the work folder (.aid/works/work-NNN-*/) the current
+#      directory is in or under;
+#   3. the one work folder in this worktree's .aid/works whose name matches the
+#      worktree's branch or directory name (work-NNN or the full folder name).
+# Otherwise the writer exits 1 and says why. A skill never passes a path.
 #
 # Flattened single-delivery layout (feature-001) detection: `pipeline.path: lite`
 # in the work-root STATE.yml; for an un-migrated work declaring nothing, at least
@@ -291,7 +311,7 @@ usage() {
     # Upper bound tracks the end of the Exit codes stanza. Bump it whenever
     # lines are added to the header block above it, or --help silently
     # starts truncating (or over-printing) the usage text.
-    sed -n '2,255p' "$0" | sed 's/^# \{0,1\}//'
+    sed -n '2,275p' "$0" | sed 's/^# \{0,1\}//'
 }
 
 die() { echo "ERROR: writeback-state.sh: $*" >&2; exit "${2:-1}"; }
@@ -583,6 +603,9 @@ CREATE_FLAG=0
 STEP_FLAG=0
 STEP_VALUE=""
 REROUTE_FLAG=0
+INTENT_FLAG=0
+REASON_ARG=""
+PHASES_ARG=""
 CHECK_FLAG=0
 REPAIR_FLAG=0
 HANDOFF_FLAG=0
@@ -668,6 +691,9 @@ while [[ $# -gt 0 ]]; do
         --check)      CHECK_FLAG=1; shift ;;
         --repair)     REPAIR_FLAG=1; shift ;;
         --reroute)    REROUTE_FLAG=1; shift ;;
+        --intent)     INTENT_FLAG=1; shift ;;
+        --reason)     [[ $# -lt 2 ]] && die "--reason requires a value" 5; REASON_ARG="$2"; shift 2 ;;
+        --phases)     [[ $# -lt 2 ]] && die "--phases requires a value" 5; PHASES_ARG="$2"; shift 2 ;;
         --handoff)    HANDOFF_FLAG=1; shift ;;
         --handoff-return) HANDOFF_RETURN_FLAG=1; shift ;;
         --ask)        ASK_FLAG=1; shift ;;
@@ -722,7 +748,7 @@ if [[ "$STEP_FLAG" -eq 1 || -n "$STEP_VALUE" ]]; then
         STEP_MODE=1
     fi
 fi
-NEW_MODE_COUNT=$(( CREATE_FLAG + REROUTE_FLAG + CHECK_FLAG + REPAIR_FLAG ))
+NEW_MODE_COUNT=$(( CREATE_FLAG + REROUTE_FLAG + CHECK_FLAG + REPAIR_FLAG + INTENT_FLAG ))
 NEW_MODE_COUNT=$(( NEW_MODE_COUNT + HANDOFF_FLAG + HANDOFF_RETURN_FLAG + ASK_FLAG + ANSWER_FLAG + STEP_MODE ))
 if [[ "$NEW_MODE_COUNT" -gt 1 ]]; then
     die "one record mode per call: use one of --create, --step, --reroute, --check, --repair, --handoff, --handoff-return, --ask, --answer" 5
@@ -735,6 +761,8 @@ elif [[ "$REROUTE_FLAG" -eq 1 ]]; then
     MODE="reroute"
 elif [[ "$CHECK_FLAG" -eq 1 ]]; then
     MODE="check"
+elif [[ "$INTENT_FLAG" -eq 1 ]]; then
+    MODE="intent"
 elif [[ "$REPAIR_FLAG" -eq 1 ]]; then
     MODE="repair"
 elif [[ "$HANDOFF_FLAG" -eq 1 ]]; then
@@ -2099,14 +2127,20 @@ wb_stage_drop_seed() {
 # one segment (a top-level sequence) or two (a sequence under a mapping).
 wb_stage_append() {
     local keypath="$1" entry="$2" t
-    local t1="" t2="" depth before after added
+    local t1="" t2="" depth before after added grown
     IFS='.' read -r t1 t2 <<< "$keypath"
     depth=$(( $(grep -o '\.' <<< "$keypath" | wc -l) + 1 ))
     t=$(wb_mktemp_beside "$STAGE_TARGET") || die "cannot create a temporary file beside $STAGE_TARGET" 1
     before=$(wc -l < "$STAGED")
     added=$(printf '%s\n' "$entry" | wc -l)
-    if ! WB_APPEND_TEXT="$entry" awk -v t1="$t1" -v t2="$t2" -v n="$depth" "$WB_APPEND_AWK" "$STAGED" > "$t" \
-        || [[ "$(wc -l < "$t")" -ne $(( before + added )) ]]; then
+    # A missing list (or a missing parent mapping) is created in this same write,
+    # so the output grows by the entry plus at most the two header lines.
+    if ! WB_APPEND_TEXT="$entry" awk -v t1="$t1" -v t2="$t2" -v n="$depth" "$WB_APPEND_AWK" "$STAGED" > "$t"; then
+        rm -f "$t"
+        die "writeback sanity check failed: '$keypath' was not found to append to; $STAGE_TARGET preserved" 3
+    fi
+    grown=$(( $(wc -l < "$t") - before ))
+    if [[ "$grown" -lt "$added" || "$grown" -gt $(( added + 2 )) ]]; then
         rm -f "$t"
         die "writeback sanity check failed: '$keypath' was not found to append to; $STAGE_TARGET preserved" 3
     fi
@@ -2117,18 +2151,40 @@ wb_stage_append() {
 }
 
 # Appends ENTRY after the last line of the block KEY (indent 0 for one
-# segment, indent 2 for two). A `key: []` line is opened into block style.
+# segment, indent 2 for two). A `key: []` line is opened into block style. A key
+# the record does not have yet is created first: a top-level list at the end of
+# the file, or a two-segment list at the end of its parent mapping (the parent is
+# created at the end of the file when it is missing too).
 WB_APPEND_AWK='
 function indent_of(s,    m) { match(s, /^ */); return RLENGTH }
+function insert_after(pos, text,   j) {
+    for (j = NR; j > pos; j--) L[j + 1] = L[j]
+    L[pos + 1] = text
+    NR++
+}
 { L[NR] = $0 }
 END {
-    k = 0; inparent = (n == 1)
+    k = 0; inparent = (n == 1); pk = 0; plast = 0
     for (i = 1; i <= NR; i++) {
         if (n == 2) {
-            if (L[i] ~ ("^" t1 ":[ \t]*$")) { inparent = 1; continue }
+            if (L[i] ~ ("^" t1 ":[ \t]*$")) { inparent = 1; pk = i; plast = i; continue }
             if (inparent && L[i] ~ /^[^ \t#]/) inparent = 0
             if (inparent && L[i] ~ ("^  " t2 ":")) { k = i; break }
+            if (inparent && L[i] ~ /^[ \t]+[^ \t]/) plast = i
         } else if (L[i] ~ ("^" t1 ":")) { k = i; break }
+    }
+    if (k == 0) {
+        if (n == 2 && pk > 0) {
+            insert_after(plast, "  " t2 ":")
+            k = plast + 1
+        } else if (n == 2) {
+            insert_after(NR, t1 ":")
+            insert_after(NR, "  " t2 ":")
+            k = NR
+        } else {
+            insert_after(NR, t1 ":")
+            k = NR
+        }
     }
     if (k == 0) { exit 3 }
     kind_indent = (n == 2) ? 2 : 0
@@ -2209,24 +2265,40 @@ wb_host_root() {
     fi
 }
 
-# wb_skill_folders: one skill folder per line, each resolved against the project
-# root. They are the skill_mirror= lines of host.conf, which the install writes
-# from each tool's profile. No host.conf, or none of those lines, gives no folder.
+# wb_skill_folders: one installed skill folder per line, each resolved against the
+# project root. The install writes these in two places: the shared .agents/skills,
+# and each tool's mirror, which it records as tools.<tool>.mirrors in
+# .aid/.aid-manifest.json (host.conf holds only worktree_root). A host.conf
+# skill_mirror= line, where one is declared, names a folder too.
 wb_skill_folders() {
-    local root conf line
+    local root conf line manifest
     root="$(wb_host_root)"
+    printf '%s\n' "${root}/.agents/skills"
     conf="${root}/.aid/runtime/host.conf"
-    [[ -f "$conf" ]] || return 0
-    while IFS= read -r line || [[ -n "$line" ]]; do
-        line="${line%$'\r'}"
-        [[ "$line" == skill_mirror=* ]] || continue
-        printf '%s\n' "${root}/${line#skill_mirror=}"
-    done < "$conf"
+    if [[ -f "$conf" ]]; then
+        while IFS= read -r line || [[ -n "$line" ]]; do
+            line="${line%$'\r'}"
+            [[ "$line" == skill_mirror=* ]] || continue
+            printf '%s\n' "${root}/${line#skill_mirror=}"
+        done < "$conf"
+    fi
+    manifest="${root}/.aid/.aid-manifest.json"
+    if [[ -f "$manifest" ]]; then
+        awk '
+            /"mirrors": \[\]/ { next }
+            /"mirrors": \[/ { inm = 1; next }
+            inm && /\]/ { inm = 0; next }
+            inm { gsub(/[ ",\r\t]/, ""); if ($0 != "") print }
+        ' "$manifest" | while IFS= read -r line; do
+            printf '%s\n' "${root}/${line}"
+        done
+    fi
 }
 
-# wb_skill_installed SKILL: true when the skill is present in a skill folder that
-# host.conf declares. AID_SKILLS_DIR, when set, is the one folder checked. With no
-# folder at all there is nothing to check against, and the check passes.
+# wb_skill_installed SKILL: true when the skill is present in one of the installed
+# skill folders (wb_skill_folders). AID_SKILLS_DIR, when set, is the one folder
+# checked. With no folder present at all there is nothing to check against, and
+# the check passes.
 wb_skill_installed() {
     local s="$1" d seen=0
     if [[ -n "${AID_SKILLS_DIR:-}" ]]; then
@@ -2239,6 +2311,54 @@ wb_skill_installed() {
         [[ -f "$d/$s/SKILL.md" ]] && return 0
     done < <(wb_skill_folders)
     [[ "$seen" -eq 0 ]]
+}
+
+# wb_phase_list CSV: validates a comma-separated list of routing phase names and
+# sets PHASE_ITEMS to its items. Exits 4 on an unknown or empty item.
+wb_phase_list() {
+    local csv="$1" p
+    case "$csv" in
+        ""|,*|*,|*,,*) die "invalid --phases '$csv'; a comma-separated list of: Preparation | Definition | Specification | Planning | Building | CI" 4 ;;
+    esac
+    IFS=',' read -r -a PHASE_ITEMS <<< "$csv"
+    for p in "${PHASE_ITEMS[@]}"; do
+        case "$p" in
+            Preparation|Definition|Specification|Planning|Building|CI) ;;
+            *) die "invalid --phases item '$p'; each must be one of: Preparation | Definition | Specification | Planning | Building | CI" 4 ;;
+        esac
+    done
+}
+
+# wb_stage_seq KEY_PATH ITEM...: set a block list on the staged copy (one `- item`
+# line each), replacing the list. Verified like wb_stage.
+wb_stage_seq() {
+    local key="$1" t
+    shift
+    t=$(wb_mktemp_beside "$STAGE_TARGET") || die "cannot create a temporary file beside $STAGE_TARGET" 1
+    if ! wb_set_kv "$STAGED" "$key" seq "$@" > "$t" || ! wb_state_verify "$t" "$key" seq "$@"; then
+        rm -f "$t"
+        die "writeback sanity check failed: list '$key' does not resolve in output; $STAGE_TARGET preserved" 3
+    fi
+    if [[ "$STAGED" != "$STAGE_BASE" ]]; then
+        rm -f "$STAGED"
+    fi
+    STAGED="$t"
+}
+
+# mode_intent: sets intent.reason and/or intent.phases on an existing work record.
+mode_intent() {
+    [[ -n "$REASON_ARG" || -n "$PHASES_ARG" ]] || die "--intent requires --reason or --phases" 5
+    if [[ -n "$PHASES_ARG" ]]; then wb_phase_list "$PHASES_ARG"; fi
+    [[ -f "$STATE_FILE" ]] || die "$STATE_FILE does not exist" 1
+
+    init_lock_file "$STATE_FILE"
+    acquire_lock
+    wb_stage_begin "$STATE_FILE"
+    if [[ -n "$REASON_ARG" ]]; then wb_stage "intent.reason" "$REASON_ARG"; fi
+    if [[ -n "$PHASES_ARG" ]]; then wb_stage_seq "intent.phases" "${PHASE_ITEMS[@]}"; fi
+    wb_stage "updated" "$(wb_now)"
+    wb_stage_commit
+    echo "OK: $STATE_FILE intent updated"
 }
 
 mode_create() {
@@ -2264,6 +2384,7 @@ mode_create() {
         [[ "$MIN_GRADE_ARG" =~ ^[A-F][+-]?$ ]] || die "invalid --minimum-grade '$MIN_GRADE_ARG'; must match ^[A-F][+-]?\$" 4
     fi
     [[ -d "$NEW_WORK_DIR" ]] || die "work folder does not exist: $NEW_WORK_DIR" 1
+    if [[ -n "$PHASES_ARG" ]]; then wb_phase_list "$PHASES_ARG"; fi
 
     local template
     template="$(dirname "${BASH_SOURCE[0]}")/../../templates/work-state-template.yml"
@@ -2285,6 +2406,8 @@ mode_create() {
     wb_stage "pipeline.initiator" "$SKILL_ARG"
     if [[ -n "$PATH_ARG" ]]; then wb_stage "pipeline.path" "$PATH_ARG"; fi
     if [[ -n "$MIN_GRADE_ARG" ]]; then wb_stage "minimum_grade" "$MIN_GRADE_ARG"; fi
+    if [[ -n "$REASON_ARG" ]]; then wb_stage "intent.reason" "$REASON_ARG"; fi
+    if [[ -n "$PHASES_ARG" ]]; then wb_stage_seq "intent.phases" "${PHASE_ITEMS[@]}"; fi
     local phase="--"
     if [[ -n "$PHASE_ARG" ]]; then phase="$PHASE_ARG"; fi
     wb_stage "phase" "$phase"
@@ -2459,7 +2582,9 @@ mode_check() {
 # Hand-off, question and project modes (--handoff, --handoff-return, --ask,
 # --answer). Each is one locked, staged write like the record modes above.
 # ---------------------------------------------------------------------------
-PROJECT_STATE_FILE=".aid/STATE.yml"
+# The one project file sits at the main project root, so a question asked from a
+# worktree lands in the same file as one asked from the main project.
+PROJECT_STATE_FILE="$(wb_host_root)/.aid/STATE.yml"
 
 # wb_stage_filter PROGRAM [awk -v OPTION...]: run an awk PROGRAM over the staged
 # copy and stage its output. The program exits non-zero when the entry it edits
@@ -2722,9 +2847,57 @@ mode_answer() {
     wb_stage_commit
 }
 
+# wb_find_state_file: when AID_STATE_FILE is unset, set STATE_FILE to the work
+# record the current directory belongs to (see "Work record discovery" in the
+# header). Exits 1 when no record, or more than one, is found.
+wb_find_state_file() {
+    if [[ -n "${AID_STATE_FILE:-}" ]]; then
+        return 0
+    fi
+    local dir="$PWD" parent base top branch wt cand cbase wid found="" hits=0
+    while :; do
+        base="$(basename "$dir")"
+        parent="$(dirname "$dir")"
+        if [[ "$base" =~ ^work-[0-9]+- && "$(basename "$parent")" == works && -f "$dir/STATE.yml" ]]; then
+            STATE_FILE="$dir/STATE.yml"
+            return 0
+        fi
+        [[ "$dir" == "$parent" ]] && break
+        dir="$parent"
+    done
+
+    top="$(git rev-parse --show-toplevel 2>/dev/null)" || top=""
+    if [[ -n "$top" ]]; then
+        branch="$(git -C "$top" branch --show-current 2>/dev/null)" || branch=""
+        wt="$(basename "$top")"
+        for cand in "$top"/.aid/works/work-*/; do
+            [[ -f "${cand}STATE.yml" ]] || continue
+            cand="${cand%/}"
+            cbase="$(basename "$cand")"
+            wid="$(sed -E 's/^(work-[0-9]+).*/\1/' <<< "$cbase")"
+            if [[ "$cbase" == "$branch" || "$wid" == "$branch" || "$cbase" == "$wt" || "$wid" == "$wt" ]]; then
+                found="$cand/STATE.yml"
+                hits=$(( hits + 1 ))
+            fi
+        done
+        if [[ "$hits" -eq 1 ]]; then
+            STATE_FILE="$found"
+            return 0
+        fi
+        if [[ "$hits" -gt 1 ]]; then
+            die "more than one work in this worktree matches its branch or name; set AID_STATE_FILE to the work record" 1
+        fi
+    fi
+    die "no work record found: AID_STATE_FILE is not set, the current directory is not in a work folder, and no work in this worktree's .aid/works matches its branch or name" 1
+}
+
 # ---------------------------------------------------------------------------
 # Dispatch
 # ---------------------------------------------------------------------------
+case "$MODE" in
+    step|reroute|check|repair|handoff|handoff-return|intent) wb_find_state_file ;;
+    ask|answer) if [[ "$PROJECT_FLAG" -eq 0 ]]; then wb_find_state_file; fi ;;
+esac
 case "$MODE" in
     pipeline)            mode_pipeline ;;
     field)               mode_field ;;
@@ -2736,6 +2909,7 @@ case "$MODE" in
     create)              mode_create ;;
     step)                mode_step ;;
     reroute)             mode_reroute ;;
+    intent)              mode_intent ;;
     check)               mode_check ;;
     repair)              mode_repair ;;
     handoff)             mode_handoff ;;

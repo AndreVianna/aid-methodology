@@ -138,7 +138,7 @@ analytically and state the resulting limit in the Gaps section.
 
 (Single grade -- the response *is* the deliverable; there is no separate target artifact.)
 
-**Advance:** PRESENT.
+**Advance:** CHAIN -> [State: PRESENT].
 
 ---
 

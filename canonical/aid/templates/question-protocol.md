@@ -78,7 +78,8 @@ with the reason, and move on.
 
 ### Rule 10 -- Record every question and answer
 
-Every question and its answer is recorded in the record shape below. A user who cannot answer
+Every question and its answer is recorded in the record shape below (a Knowledge Base question in
+the Q&A section of its state file, see Where each record lives). A user who cannot answer
 (lack of knowledge, and so on) may skip a question. A skipped question stays open, and is offered
 again later to the same user or to another one.
 
@@ -118,7 +119,7 @@ of a group comes first. `Required` is retired.
 
 ## The question record
 
-One shape is used for the work, the project file and the Knowledge Base state file alike:
+One shape is used for the work's record and the project file alike:
 
 ```yaml
 qa:
@@ -162,15 +163,16 @@ qa:
 
 ## Recording: `--ask` and `--answer`
 
-Every question is written through `writeback-state.sh`, the one writer of the record
-(`.aid/runtime/scripts/execute/writeback-state.sh`):
+A work's question and a project question are written through `writeback-state.sh`, the one writer
+of those records (`.aid/runtime/scripts/execute/writeback-state.sh`). A Knowledge Base question is
+written to the Knowledge Base state file instead, in the same states, until that file takes this shape.
 
 - **`--ask`** appends a `Pending` entry and prints its id. It runs **before** the question is shown.
 - **`--answer`** updates that entry with the state and the answer. It runs **right after** the
   answer is given.
 - **`--project`** points either mode at the project file `.aid/STATE.yml`, which is created from
-  the project-state template the first time it is needed. Without
-  `--project`, the target is the work's own `STATE.yml`.
+  the project-state template the first time it is needed. Without `--project`, the target is the
+  work the writer finds for the current directory, which is its own `STATE.yml`.
 
 ## Where each record lives
 
@@ -190,7 +192,8 @@ or by a starter before the gate creates the work.
 
 Their outcome is recorded where it lands: a new work's intent and name go into the record that
 creating the work writes, and the chosen work's own record is updated on resume. If the user does
-not answer, nothing is created and nothing needs resuming.
+not answer, nothing is created and nothing needs resuming. Until the work exists, the starter saves
+no step and writes no lifecycle, since there is no record to hold them.
 
 Questions from setup skills and from building the Knowledge Base are **not** intake questions. They
 follow the normal recording above.

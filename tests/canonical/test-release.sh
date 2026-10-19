@@ -249,6 +249,7 @@ _gate_reset; : > "${GATE_LOG}"; touch "${GATE_FAIL}"; rm -rf "${GATE_STAGE_DIR}"
 OUT=$(cd "${GATE_CLONE}" && PATH="${GATE_BIN}:${PATH}" bash ./release.sh 2>&1); RC=$?
 assert_output_contains "$OUT" "release check test-skill-guide failed; nothing was staged" \
     "RL11b live publish names the failed release check"
+assert_exit_nonzero "$RC" "RL11b live publish exits non-zero when a release check fails"
 STAGED_COUNT=$(find "${GATE_STAGE_DIR}" -maxdepth 1 -type f -name 'aid-*.tar.gz' 2>/dev/null | wc -l | tr -d ' ')
 assert_eq "$STAGED_COUNT" "0" "RL11b failed release check leaves no artifact staged"
 

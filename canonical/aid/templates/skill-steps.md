@@ -26,12 +26,15 @@ Each skill has one table of its steps, with these columns:
 | Worker | `inline`, or the agent that does the work |
 | Advance | the advance word for the step, and the step it names when that is needed |
 
-Every step ends with exactly one advance word, on its advance line. A line that names only its next
-step is a `CHAIN`. `ASK then HALT` is one ending, not two words: see below.
+Every step ends with exactly one ending, on its advance line: one advance word, or `ASK then HALT`,
+which is one composite ending and not two words (see the advance words below). A line that names
+only its next step is a `CHAIN`.
 
 The step an advance line names is a step of the same skill's table, by its name. It is never a part
 of a step, such as "Step 5" or "GENERATE -- Step 0d". When the next step depends on what the user
-answers, the line names the one step that reads the answer and moves on from there.
+answers, the line names the one step that reads the answer and moves on from there. A step that has
+read the answer may branch on one `CHAIN` line: one named step per case, and `HALT when ...` for the
+case on which the run ends.
 
 ## The advance words
 
@@ -102,7 +105,9 @@ question, save nothing, because there is no record yet. Their questions are aske
 question protocol, and their answers go into the record when the gate creates it: the user's words
 into `intent.request`, and the step the caller names into `step`. A skill that never creates a work,
 such as a Knowledge Base, ticket, connector, setting or chat skill, saves no steps; it records its
-questions in the project file `.aid/STATE.yml`, with `--ask --project`.
+questions where `question-protocol.md` § Where each record lives says (the Knowledge Base state file
+while building the Knowledge Base, the project file `.aid/STATE.yml` with `--project` while setting up
+the project).
 
 ### When the record is written
 
@@ -176,10 +181,11 @@ file is then unchanged.
 
 | Mode | Writes |
 |------|--------|
-| `--create` | the record, from the template, in one write, with `pipeline.path` and `minimum_grade` set when `--path` and `--minimum-grade` are given. Run only by the gate. Exit 8 when the work already has a `STATE.yml`; exit 5 when a required option is missing; exit 4 when a value is invalid |
+| `--create` | the record, from the template, in one write, with `pipeline.path` and `minimum_grade` set when `--path` and `--minimum-grade` are given, and `intent.reason` and `intent.phases` set when `--reason` and `--phases P1,P2,...` are given (phase names: Preparation, Definition, Specification, Planning, Building, CI). Run only by the gate. Exit 8 when the work already has a `STATE.yml`; exit 5 when a required option is missing; exit 4 when a value is invalid |
 | `--step --skill S --name N [--detail D]` | `active_skill`, `step`, `step_detail` (`--` when no detail), and `updated` |
 | `--reroute --reading R [--depth D] --why W` | `intent.reading` and `intent.depth`, plus an `intent.changes` entry |
 | `--check` | nothing. Exit 9 when there is a problem, 0 when the record is healthy |
+| `--intent [--reason R] [--phases P1,P2,...]` | `intent.reason` and/or `intent.phases` on an existing record, in one write; `--phases` replaces the whole list. Exit 5 when neither option is given; exit 4 for a phase name outside the six above |
 | `--repair --skill S --name N [--detail D] [--reading R]` | the record in one write, plus a `lifecycle_history` entry. Used only after the user confirms |
 | `--handoff --to S --step N --why W --returns yes` | a `handoffs` entry holding the current skill, step and detail as the `from` values; then `active_skill` S, `step` N and `step_detail` `--`, in the same write |
 | `--handoff --to S --step N --why W --returns no [--phase P]` | the same as the call, with no open call left; `phase` P is set only when `--phase` is given |

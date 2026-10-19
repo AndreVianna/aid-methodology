@@ -2443,21 +2443,42 @@ assert_eq "$(grep -c '^lifecycle:' "$R27_STATE")" "1" "27b: a newline in --why c
 assert_file_contains "$R27_STATE" "lifecycle: Running" "27b: the work is still Running"
 assert_file_contains "$R27_STATE" "why: 'first lifecycle: Completed last .'" "27b: the line breaks became spaces inside the why scalar"
 
-# 27c: --check reads the skill folders from host.conf's skill_mirror line, resolved
-# against the project root; a skill installed there passes, a missing one is a PROBLEM.
+# 27c: --check reads the installed skill folders. The install records each tool's
+# mirror in .aid/.aid-manifest.json (tools.<tool>.mirrors); a skill installed there
+# passes, a missing one is a PROBLEM. host.conf holds only worktree_root.
 R27C="${R27}/project"
 mkdir -p "${R27C}/.aid/runtime" "${R27C}/.testtool/skills/aid-fix" "${R27C}/work"
-printf 'worktree_root=.aid/.worktrees\nskill_mirror=.testtool/skills\n' > "${R27C}/.aid/runtime/host.conf"
+printf 'worktree_root=.aid/.worktrees\n' > "${R27C}/.aid/runtime/host.conf"
+cat > "${R27C}/.aid/.aid-manifest.json" <<'JSON'
+{
+  "format_version": 3,
+  "tools": {
+    "testtool": {
+      "version": "0.0.0",
+      "mirrors": [
+        ".testtool/skills"
+      ],
+      "files": []
+    }
+  }
+}
+JSON
 (cd "$R27C" && bash "$SCRIPT" --create --work-dir work --reading change --request 'r' \
     --skill aid-fix --step s1 >/dev/null 2>&1)
 R27C_STATE="${R27C}/work/STATE.yml"
 printf -- '---\n' > "${R27C}/.testtool/skills/aid-fix/SKILL.md"
 rc=0; (cd "$R27C" && AID_STATE_FILE="$R27C_STATE" bash "$SCRIPT" --check >/dev/null 2>&1) || rc=$?
-assert_eq "$rc" "0" "27c: a saved skill present in the host.conf skill folder passes --check"
+assert_eq "$rc" "0" "27c: a saved skill present in a tool mirror of the install manifest passes --check"
 rm -f "${R27C}/.testtool/skills/aid-fix/SKILL.md"
 rc=0; out27="$(cd "$R27C" && AID_STATE_FILE="$R27C_STATE" bash "$SCRIPT" --check 2>&1)" || rc=$?
-assert_eq "$rc" "9" "27c: a saved skill absent from the declared skill folder exits 9"
+assert_eq "$rc" "9" "27c: a saved skill absent from every installed skill folder exits 9"
 assert_eq "$(grep -c 'not installed' <<< "$out27")" "1" "27c: the PROBLEM names the uninstalled skill"
+# 27d: the shared .agents/skills folder is an installed skill folder too.
+mkdir -p "${R27C}/.agents/skills/aid-fix"
+printf -- '---\n' > "${R27C}/.agents/skills/aid-fix/SKILL.md"
+rc=0; (cd "$R27C" && AID_STATE_FILE="$R27C_STATE" bash "$SCRIPT" --check >/dev/null 2>&1) || rc=$?
+assert_eq "$rc" "0" "27d: a saved skill present in the shared .agents/skills folder passes --check"
+rm -rf "${R27C}/.agents/skills"
 
 # ---------------------------------------------------------------------------
 echo ""
@@ -3059,6 +3080,147 @@ assert_eq "$RC29" "4" "30h: --answer for a question that does not exist exits 4"
 assert_output_contains "$OUT29" "no question Q9" "30h: the refusal names the missing question"
 w29 "$W29_DIR" --answer --id Q1 --state Maybe --value 'x'
 assert_eq "$RC29" "4" "30h: --answer with a state outside Answered | Skipped | Assumed exits 4"
+
+# ---------------------------------------------------------------------------
+echo ""
+echo "=== Unit 31: work record discovery (R1) and list keys created on first append (R8) ==="
+
+R31="${TMPDIR_BASE}/unit31"
+R31_HOME="${R31}/home"
+mkdir -p "$R31_HOME"
+
+# w31_record FILE: a legacy-shaped work record, with no handoffs, qa or intent.changes
+# and a lifecycle_history (what an un-migrated work carries).
+w31_record() {
+    mkdir -p "$(dirname "$1")"
+    cat > "$1" <<'YAML'
+lifecycle: Running
+phase: Building
+active_skill: aid-fix
+step: s1
+step_detail: --
+intent:
+  reading: change
+  depth: full
+lifecycle_history:
+  - date: 2026-01-01
+    event: 'seed'
+    grade: --
+    notes: 'seed'
+YAML
+}
+
+# w31 DIR ARGS...: one writer call in DIR with AID_STATE_FILE and AID_SKILLS_DIR unset,
+# so the writer must find the record itself. Sets RC31 and OUT31.
+w31() {
+    local d="$1"
+    shift
+    RC31=0
+    OUT31="$(cd "$d" && env -u AID_STATE_FILE -u AID_SKILLS_DIR HOME="$R31_HOME" AID_LOCK_TIMEOUT=1 \
+        bash "$SCRIPT" "$@" 2>&1)" || RC31=$?
+}
+
+# w31_repo DIR BRANCH: a git repository on BRANCH with one commit and no work yet.
+w31_repo() {
+    mkdir -p "$1"
+    (cd "$1" && git init -q && git symbolic-ref HEAD "refs/heads/$2" \
+        && git -c user.email=t@example.test -c user.name=t commit -q --allow-empty -m init)
+}
+
+# 31a: from inside a work folder (a delivery folder below it), --step finds the record.
+R31A="${R31}/inside"
+w31_record "${R31A}/.aid/works/work-001-demo/STATE.yml"
+mkdir -p "${R31A}/.aid/works/work-001-demo/deliveries/delivery-001"
+w31 "${R31A}/.aid/works/work-001-demo/deliveries/delivery-001" --step --skill aid-fix --name s2
+assert_eq "$RC31" "0" "31a: --step run inside a work folder finds that folder's record and exits 0"
+assert_file_contains "${R31A}/.aid/works/work-001-demo/STATE.yml" "step: s2" "31a: the step is written to the record found from inside the folder"
+
+# 31b: from the worktree root, the one work whose id matches the branch is the record.
+R31B="${R31}/branch"
+w31_repo "$R31B" work-001
+w31_record "${R31B}/.aid/works/work-001-demo/STATE.yml"
+w31 "$R31B" --step --skill aid-fix --name s3
+assert_eq "$RC31" "0" "31b: --step from the worktree root finds the work matching the branch and exits 0"
+assert_file_contains "${R31B}/.aid/works/work-001-demo/STATE.yml" "step: s3" "31b: the step is written to the branch's work record"
+
+# 31c: AID_STATE_FILE, when set, wins over the work the directory is in.
+R31C="${R31}/explicit"
+w31_repo "$R31C" work-001
+w31_record "${R31C}/.aid/works/work-001-demo/STATE.yml"
+w31_record "${R31C}/elsewhere/STATE.yml"
+rc=0; (cd "${R31C}/.aid/works/work-001-demo" && env HOME="$R31_HOME" AID_STATE_FILE="${R31C}/elsewhere/STATE.yml" \
+    bash "$SCRIPT" --step --skill aid-fix --name s4 >/dev/null 2>&1) || rc=$?
+assert_eq "$rc" "0" "31c: an AID_STATE_FILE outside the work folder is honoured and exits 0"
+assert_file_contains "${R31C}/elsewhere/STATE.yml" "step: s4" "31c: the explicit record is the one written"
+assert_file_not_contains "${R31C}/.aid/works/work-001-demo/STATE.yml" "step: s4" "31c: the work folder the directory is in is left alone"
+
+# 31d: two works in the worktree match its branch: the writer refuses and writes nothing.
+R31D="${R31}/two"
+w31_repo "$R31D" work-002
+w31_record "${R31D}/.aid/works/work-002-a/STATE.yml"
+w31_record "${R31D}/.aid/works/work-002-b/STATE.yml"
+w31 "$R31D" --step --skill aid-fix --name s5
+assert_eq "$RC31" "1" "31d: two matching works exit 1 (no guess)"
+assert_output_contains "$OUT31" "more than one work" "31d: the refusal says more than one work matches"
+assert_file_not_contains "${R31D}/.aid/works/work-002-a/STATE.yml" "step: s5" "31d: neither record is written"
+
+# 31e: no work folder at all: exit 1 with a message that names the way to fix it.
+R31E="${R31}/none"
+w31_repo "$R31E" work-003
+w31 "$R31E" --step --skill aid-fix --name s6
+assert_eq "$RC31" "1" "31e: no work record found exits 1"
+assert_output_contains "$OUT31" "no work record found" "31e: the message says no work record was found"
+
+# R8: a record without handoffs, qa or intent.changes takes the first append of each.
+R8="${R31}/legacy"
+w31_record "${R8}/STATE.yml"
+w8() { RC31=0; OUT31="$(cd "$R8" && env -u AID_SKILLS_DIR HOME="$R31_HOME" AID_LOCK_TIMEOUT=1 AID_STATE_FILE="${R8}/STATE.yml" bash "$SCRIPT" "$@" 2>&1)" || RC31=$?; }
+w8 --handoff --to aid-plan --step s2 --why 'pass to plan' --returns no
+assert_eq "$RC31" "0" "31f: --handoff on a record with no handoffs list exits 0 (R8)"
+assert_file_contains "${R8}/STATE.yml" "    to: 'aid-plan'" "31f: the first handoff entry is written under a new handoffs list"
+w8 --ask --category Scope --impact High --context 'first question' --suggested 'a'
+assert_eq "$RC31" "0" "31g: --ask on a record with no qa list exits 0 (R8)"
+assert_eq "$OUT31" "Q1" "31g: the first question is Q1"
+assert_file_contains "${R8}/STATE.yml" "  - id: Q1" "31g: the question is written under a new qa list"
+w8 --reroute --reading 'bug fix' --why 'a reason'
+assert_eq "$RC31" "0" "31h: --reroute on a record with no intent.changes exits 0 (R8)"
+assert_file_contains "${R8}/STATE.yml" "    why: 'a reason'" "31h: the change is written under a new intent.changes list"
+assert_eq "$(grep -c '^lifecycle_history:' "${R8}/STATE.yml")" "1" "31h: the existing lifecycle_history is not duplicated"
+w8 --repair --skill aid-plan --name s3
+assert_eq "$RC31" "0" "31i: --repair on a record with a lifecycle_history exits 0"
+assert_eq "$(grep -c '  - date:' "${R8}/STATE.yml")" "2" "31i: the repair appends its entry to the existing history"
+w8 --check
+assert_eq "$RC31" "0" "31j: the record grown by first appends passes --check"
+
+# Intent: --create and --intent write intent.reason and the intent.phases block list.
+RI="${R31}/intent"
+mkdir -p "${RI}/new" "${RI}/old"
+w31_record "${RI}/old/STATE.yml"
+rc=0; (cd "$RI" && env HOME="$R31_HOME" bash "$SCRIPT" --create --work-dir new --reading change --request 'r' \
+    --skill aid-orchestrate --step s1 --reason 'one line why' --phases Definition,Planning,Building >/dev/null 2>&1) || rc=$?
+assert_eq "$rc" "0" "31k: --create with --reason and --phases exits 0"
+assert_file_contains "${RI}/new/STATE.yml" "  reason: 'one line why'" "31k: --create writes intent.reason"
+assert_eq "$(sed -n '/^  phases:/,/^  changes/p' "${RI}/new/STATE.yml" | grep -c '^    - ')" "3" "31k: --create writes intent.phases as a three-item block list"
+assert_file_contains "${RI}/new/STATE.yml" "    - Planning" "31k: the phase names are written as the list items"
+mkdir -p "${RI}/new2"
+rc=0; (cd "$RI" && env HOME="$R31_HOME" bash "$SCRIPT" --create --work-dir new2 --reading change --request r \
+    --skill aid-fix --step s1 --phases Bogus >/dev/null 2>&1) || rc=$?
+assert_eq "$rc" "4" "31l: --create with an unknown phase name exits 4"
+rc=0; (cd "$RI" && env HOME="$R31_HOME" bash "$SCRIPT" --create --work-dir new2 --reading change --request r \
+    --skill aid-fix --step s1 --phases 'Definition,' >/dev/null 2>&1) || rc=$?
+assert_eq "$rc" "4" "31l: an empty phase item exits 4"
+assert_eq "$(ls "${RI}/new2" | wc -l | tr -d ' ')" "0" "31l: the refused create wrote no record"
+rc=0; (cd "$RI" && env HOME="$R31_HOME" AID_STATE_FILE="${RI}/old/STATE.yml" bash "$SCRIPT" --intent \
+    --phases Specification,Planning --reason 'set later' >/dev/null 2>&1) || rc=$?
+assert_eq "$rc" "0" "31m: --intent on an existing record exits 0"
+assert_file_contains "${RI}/old/STATE.yml" "  reason: 'set later'" "31m: --intent writes intent.reason on the existing record"
+assert_eq "$(sed -n '/^  phases:/,/^  changes/p' "${RI}/old/STATE.yml" | grep -c '^    - ')" "2" "31m: --intent writes the phase list"
+rc=0; (cd "$RI" && env HOME="$R31_HOME" AID_STATE_FILE="${RI}/old/STATE.yml" bash "$SCRIPT" --intent --phases CI >/dev/null 2>&1) || rc=$?
+assert_eq "$(sed -n '/^  phases:/,/^  changes/p' "${RI}/old/STATE.yml" | grep -c '^    - ')" "1" "31m: a second --intent replaces the whole list"
+rc=0; (cd "$RI" && env HOME="$R31_HOME" AID_STATE_FILE="${RI}/old/STATE.yml" bash "$SCRIPT" --intent >/dev/null 2>&1) || rc=$?
+assert_eq "$rc" "5" "31n: --intent with neither --reason nor --phases exits 5"
+rc=0; (cd "$RI" && env HOME="$R31_HOME" AID_STATE_FILE="${RI}/old/STATE.yml" bash "$SCRIPT" --intent --phases Nope >/dev/null 2>&1) || rc=$?
+assert_eq "$rc" "4" "31n: --intent with an unknown phase exits 4"
 
 test_summary
 exit $?
