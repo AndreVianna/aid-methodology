@@ -50,6 +50,10 @@
 #   Unit 29: record modes -- --create options and refusals, old phase names refused on write, failed
 #            writes (lock timeout, unwritable folder) leave the record unchanged, --check cases, finishing
 #            clears the saved skill, --step, --reroute, --repair, and both dashboard readers parse each record
+#   Unit 30: hand-off, return, question and answer modes -- --handoff as a call, as a pass with --phase and
+#            as a pass without it; --handoff-return with nested calls and with none; --ask numbering and
+#            --ask/--answer --project creating and updating .aid/STATE.yml; --answer for each state, with an
+#            approval's --covers and --commit
 #
 # Exit codes (SPEC.md SS L-2):
 #   0 success | 1 STATE.yml/artifact missing | 2 lock contention | 3 writeback unverifiable |
@@ -2882,6 +2886,179 @@ w29 "$W29_DIR" --repair --skill aid-plan --name p1
 assert_eq "$RC29" "0" "29i: --repair of a record that has a reading needs no --reading"
 assert_file_contains "$S29I" "  reading: change" "29i: a repair without --reading keeps intent.reading"
 assert_eq "$(grep -c "event: 'Record repaired'" "$S29I")" "2" "29i: a second repair appends a second entry"
+
+# ---------------------------------------------------------------------------
+echo ""
+echo "=== Unit 30: hand-off, return, question and answer modes (--handoff, --handoff-return, --ask, --answer, --project) ==="
+
+R30="${TMPDIR_BASE}/unit30"
+mkdir -p "$R30"
+
+# w30_returned FILE: the returned value of each handoffs entry, oldest first.
+w30_returned() {
+    grep '^    returned:' "$1" | sed 's/^    returned: //'
+}
+
+# w30_qa_field FILE QID KEY: the value of KEY in question QID's entry of the qa list.
+w30_qa_field() {
+    awk -v id="  - id: $2" -v key="$3" '
+        $0 == id { inq = 1; next }
+        /^  - id: / { inq = 0 }
+        inq && index($0, "    " key ": ") == 1 { sub("^    " key ": ", ""); print; exit }' "$1"
+}
+
+# --- 30a: --handoff as a call ------------------------------------------------
+echo ""
+echo "--- 30a: --handoff as a call moves the skill and step, records the caller, and leaves the call open ---"
+w29_record u30-call
+S30A="$W29_DIR/STATE.yml"
+w29 "$W29_DIR" --handoff --to aid-review --step r1 --why 'needs a review' --returns yes
+assert_eq "$RC29" "0" "30a: --handoff as a call exits 0"
+assert_file_contains "$S30A" "active_skill: aid-review" "30a: the call sets active_skill to the target"
+assert_file_contains "$S30A" "step: r1" "30a: the call sets step to the target's entry step"
+assert_file_contains "$S30A" "step_detail: --" "30a: the call clears step_detail"
+assert_file_contains "$S30A" "    from: 'aid-fix'" "30a: the entry records the caller as from"
+assert_file_contains "$S30A" "    from_step: 's1'" "30a: the entry records the caller's step as from_step"
+assert_file_contains "$S30A" "    returns: 'yes'" "30a: the entry is a call"
+assert_eq "$(w30_returned "$S30A")" "--" "30a: the call is open (returned --)"
+w29 "$W29_DIR" --handoff --to aid-review --step r1 --why 'with a phase' --returns yes --phase Building
+assert_eq "$RC29" "4" "30a: --phase with a call exits 4"
+assert_eq "$(grep -c '^    returns:' "$S30A")" "1" "30a: the refused --phase call writes no entry"
+
+# --- 30b: --handoff as a pass with --phase -----------------------------------
+echo ""
+echo "--- 30b: --handoff as a pass with --phase sets the phase and leaves no open call ---"
+w29_record u30-pass-phase
+S30B="$W29_DIR/STATE.yml"
+w29 "$W29_DIR" --handoff --to aid-review --step r1 --why 'the build is done' --returns no --phase Building
+assert_eq "$RC29" "0" "30b: --handoff as a pass with --phase exits 0"
+assert_file_contains "$S30B" "phase: Building" "30b: --phase sets the phase"
+assert_file_contains "$S30B" "    returns: 'no'" "30b: the entry is a pass"
+assert_eq "$(w30_returned "$S30B")" "--" "30b: a pass has returned --"
+w29 "$W29_DIR" --handoff-return
+assert_eq "$RC29" "7" "30b: a pass leaves no open call, so --handoff-return exits 7"
+
+# --- 30c: --handoff as a pass without --phase --------------------------------
+echo ""
+echo "--- 30c: --handoff as a pass without --phase keeps the phase and leaves no open call ---"
+w29_record u30-pass-plain
+S30C="$W29_DIR/STATE.yml"
+w29 "$W29_DIR" --handoff --to aid-fix --step s1 --why 'enter Definition' --returns no --phase Definition
+assert_file_contains "$S30C" "phase: Definition" "30c: setup pass sets the phase to Definition"
+w29 "$W29_DIR" --handoff --to aid-review --step r1 --why 'user ran /aid-review' --returns no
+assert_eq "$RC29" "0" "30c: --handoff as a pass without --phase exits 0"
+assert_file_contains "$S30C" "phase: Definition" "30c: the phase stays as it was"
+assert_file_contains "$S30C" "active_skill: aid-review" "30c: the pass still moves the active skill"
+assert_eq "$(w30_returned "$S30C" | tail -n 1)" "--" "30c: the pass has returned --"
+w29 "$W29_DIR" --handoff-return
+assert_eq "$RC29" "7" "30c: a pass without --phase leaves no open call, so --handoff-return exits 7"
+
+# --- 30d: --handoff-return with two nested calls, newest first ---------------
+echo ""
+echo "--- 30d: --handoff-return ends the newest open call first, then the outer one; a third exits 7 ---"
+w29_record u30-nested
+S30D="$W29_DIR/STATE.yml"
+w29 "$W29_DIR" --handoff --to aid-review --step r1 --why 'outer call' --returns yes
+w29 "$W29_DIR" --handoff --to aid-define --step d1 --why 'inner call' --returns yes
+assert_eq "$RC29" "0" "30d: the second, nested --handoff exits 0"
+assert_file_contains "$S30D" "active_skill: aid-define" "30d: the nested call is the active skill"
+w29 "$W29_DIR" --handoff-return
+assert_eq "$RC29" "0" "30d: the first --handoff-return exits 0"
+assert_file_contains "$S30D" "active_skill: aid-review" "30d: the first return restores the newest call's caller"
+assert_file_contains "$S30D" "step: r1" "30d: the first return restores that caller's step"
+assert_eq "$(w30_returned "$S30D" | sed -n 1p)" "--" "30d: the outer call stays open after the inner one returns"
+assert_eq "$(w30_returned "$S30D" | sed -n 2p | grep -c "^'")" "1" "30d: the inner call is stamped with its return time"
+w29 "$W29_DIR" --handoff-return
+assert_eq "$RC29" "0" "30d: the second --handoff-return exits 0"
+assert_file_contains "$S30D" "active_skill: aid-fix" "30d: the second return restores the outer call's caller"
+assert_file_contains "$S30D" "step: s1" "30d: the second return restores the original step"
+assert_eq "$(w30_returned "$S30D" | grep -c '^--$')" "0" "30d: both calls are now returned"
+w29 "$W29_DIR" --handoff-return
+assert_eq "$RC29" "7" "30d: a third --handoff-return, with no open call, exits 7"
+
+# --- 30e: --handoff-return with no call leaves the record unchanged ----------
+echo ""
+echo "--- 30e: --handoff-return with no open call exits 7 and writes nothing ---"
+w29_record u30-none
+S30E="$W29_DIR/STATE.yml"
+cp "$S30E" "${R30}/30e.before"
+w29 "$W29_DIR" --handoff-return
+assert_eq "$RC29" "7" "30e: --handoff-return with no handoffs exits 7"
+assert_eq "$(cmp -s "${R30}/30e.before" "$S30E" && echo same || echo changed)" "same" \
+    "30e: the refused --handoff-return leaves the record byte-for-byte unchanged"
+
+# --- 30f: --ask numbering on a work --------------------------------------------
+echo ""
+echo "--- 30f: --ask prints the next free question id and appends a Pending entry ---"
+w29_record u30-ask
+S30F="$W29_DIR/STATE.yml"
+w29 "$W29_DIR" --ask --category Scope --impact High --context 'first question' --suggested 'option a'
+assert_eq "$RC29" "0" "30f: the first --ask exits 0"
+assert_eq "$OUT29" "Q1" "30f: the first question is Q1 and the only output"
+w29 "$W29_DIR" --ask --category Scope --impact Low --context 'second question' --suggested 'option b' --covers 'AC-9'
+assert_eq "$RC29" "0" "30f: the second --ask exits 0"
+assert_eq "$OUT29" "Q2" "30f: the next question is Q2, one above the highest id"
+assert_eq "$(grep -c '^  - id: Q' "$S30F")" "2" "30f: the qa list holds exactly the two questions"
+assert_eq "$(w30_qa_field "$S30F" Q2 state)" "Pending" "30f: a new question is Pending"
+assert_eq "$(w30_qa_field "$S30F" Q2 covers)" "'AC-9'" "30f: --covers is written to the question"
+assert_eq "$(w30_qa_field "$S30F" Q1 impact)" "High" "30f: the earlier question is unchanged"
+
+# --- 30g: --ask --project creates .aid/STATE.yml; --answer --project updates it --
+echo ""
+echo "--- 30g: --ask --project creates .aid/STATE.yml from the template and numbers from Q1 ---"
+P30="${R30}/project"
+mkdir -p "$P30"
+code=0
+OUT30="$(cd "$P30" && HOME="$R29_HOME" AID_LOCK_TIMEOUT=1 bash "$SCRIPT" --ask --project \
+    --category Scope --impact High --context 'project first' --suggested 'x' 2>&1)" || code=$?
+assert_eq "$code" "0" "30g: --ask --project in an empty directory exits 0"
+assert_eq "$OUT30" "Q1" "30g: the first project question is Q1"
+assert_file_exists "$P30/.aid/STATE.yml" "30g: --ask --project creates .aid/STATE.yml"
+assert_eq "$(grep -c '^[a-z_]*:' "$P30/.aid/STATE.yml")" "1" "30g: the project file holds only the qa key"
+code=0
+OUT30="$(cd "$P30" && HOME="$R29_HOME" AID_LOCK_TIMEOUT=1 bash "$SCRIPT" --ask --project \
+    --category Scope --impact Medium --context 'project second' --suggested 'y' 2>&1)" || code=$?
+assert_eq "$code" "0" "30g: a second --ask --project exits 0"
+assert_eq "$OUT30" "Q2" "30g: the second project question is Q2"
+code=0
+OUT30="$(cd "$P30" && HOME="$R29_HOME" AID_LOCK_TIMEOUT=1 bash "$SCRIPT" --answer --project --id Q1 \
+    --state Answered --value 'project answer' --by 'Ada' 2>&1)" || code=$?
+assert_eq "$code" "0" "30g: --answer --project exits 0"
+assert_eq "$(w30_qa_field "$P30/.aid/STATE.yml" Q1 state)" "Answered" "30g: --answer --project sets the project question's state"
+assert_eq "$(w30_qa_field "$P30/.aid/STATE.yml" Q2 state)" "Pending" "30g: the other project question stays Pending"
+
+# --- 30h: --answer for each state, and an approval's --covers and --commit ----
+echo ""
+echo "--- 30h: --answer sets the state, the answer and who answered; an approval also takes --covers and --commit ---"
+w29_record u30-answer
+S30H="$W29_DIR/STATE.yml"
+w29 "$W29_DIR" --ask --category Scope --impact High --context 'q one' --suggested 'a'
+w29 "$W29_DIR" --ask --category Scope --impact High --context 'q two' --suggested 'b'
+w29 "$W29_DIR" --ask --category Approval --impact High --context 'approve the result' --suggested 'approve'
+w29 "$W29_DIR" --answer --id Q1 --state Answered --value 'yes, go ahead' --by 'Ada'
+assert_eq "$RC29" "0" "30h: --answer Answered exits 0"
+assert_eq "$(w30_qa_field "$S30H" Q1 state)" "Answered" "30h: Answered sets the state"
+assert_eq "$(w30_qa_field "$S30H" Q1 answer)" "'yes, go ahead'" "30h: Answered sets the answer"
+assert_eq "$(w30_qa_field "$S30H" Q1 answered_by)" "'Ada'" "30h: --by sets answered_by"
+w29 "$W29_DIR" --answer --id Q2 --state Skipped
+assert_eq "$RC29" "0" "30h: --answer Skipped exits 0"
+assert_eq "$(w30_qa_field "$S30H" Q2 state)" "Skipped" "30h: Skipped sets the state"
+assert_eq "$(w30_qa_field "$S30H" Q2 answer)" "--" "30h: Skipped without --value leaves the answer --"
+w29 "$W29_DIR" --answer --id Q2 --state Assumed --value 'assume the default' --by 'Ada'
+assert_eq "$(w30_qa_field "$S30H" Q2 state)" "Assumed" "30h: a later --answer may set Assumed"
+assert_eq "$(w30_qa_field "$S30H" Q2 answer)" "'assume the default'" "30h: Assumed takes the value as the answer"
+w29 "$W29_DIR" --answer --id Q3 --state Answered --value 'approved' --by 'Ada' \
+    --covers 'final result' --commit 'abc1234'
+assert_eq "$RC29" "0" "30h: an approval answer with --covers and --commit exits 0"
+assert_eq "$(w30_qa_field "$S30H" Q3 state)" "Answered" "30h: the approval is Answered"
+assert_eq "$(w30_qa_field "$S30H" Q3 covers)" "'final result'" "30h: the approval's --covers is written"
+assert_eq "$(w30_qa_field "$S30H" Q3 commit)" "'abc1234'" "30h: the approval's --commit is written"
+assert_eq "$(w30_qa_field "$S30H" Q1 state)" "Answered" "30h: the earlier answer is untouched by a later one"
+w29 "$W29_DIR" --answer --id Q9 --state Answered --value 'x'
+assert_eq "$RC29" "4" "30h: --answer for a question that does not exist exits 4"
+assert_output_contains "$OUT29" "no question Q9" "30h: the refusal names the missing question"
+w29 "$W29_DIR" --answer --id Q1 --state Maybe --value 'x'
+assert_eq "$RC29" "4" "30h: --answer with a state outside Answered | Skipped | Assumed exits 4"
 
 test_summary
 exit $?

@@ -255,4 +255,16 @@ assert d['shared']['claude_md']['region_sha256']==hashlib.sha256(region).hexdige
 PY
 then pass 'CLAUDE.md region and its manifest hash follow the inline state on remove'; else fail 'CLAUDE.md region and its manifest hash follow the inline state on remove'; fi
 
+# The project question file .aid/STATE.yml is not install-owned: it holds the
+# user's answers, so it survives the last tool's removal and keeps .aid/ in place.
+PROJ="${TMP}/project-state"; mkdir -p "$PROJ"
+run_aid add claude-code,cursor --from-bundle "$BUNDLE" --target "$PROJ" >/dev/null 2>&1 || exit 1
+printf 'qa:\n  - id: Q1\n    state: Answered\n    answer: '"'"'kept answer'"'"'\n' > "$PROJ/.aid/STATE.yml"
+PROJ_STATE_SHA="$(sha256sum "$PROJ/.aid/STATE.yml" | awk '{print $1}')"
+run_aid remove claude-code --target "$PROJ" >/dev/null 2>&1 || exit 1
+run_aid remove cursor --target "$PROJ" >/dev/null 2>&1 || exit 1
+assert_file_exists "$PROJ/.aid/STATE.yml" 'Last tool removal keeps the project question file .aid/STATE.yml'
+assert_eq "$(sha256sum "$PROJ/.aid/STATE.yml" | awk '{print $1}')" "$PROJ_STATE_SHA" 'Last tool removal leaves .aid/STATE.yml bytes unchanged'
+assert_dir_exists "$PROJ/.aid" 'The .aid/ folder stays while .aid/STATE.yml is in it'
+
 test_summary
