@@ -37,23 +37,31 @@ continues one of those works or needs a new one. Follow the gate as written.
 
 - A matching work is continued. Its `STATE.yml` already holds the `intent:` block, which stands
   unless the check found a new fact.
-- No match: the gate creates the work. This is the first write the flow makes.
+- No match: the gate's § 3a runs `writeback-state.sh --create`, which writes the new work's
+  `STATE.yml` in one write. This is the first write the flow makes; the flow creates no work
+  by hand.
 - Several plausible works: ask one question -- which work the request continues. Give its reason
   (the request could fit more than one), your recommendation (the work whose phase fits best),
   the plausible works by name plus "a new work", and a free-text answer.
 
 ## 4. Read the resume point
 
-Read the work's `STATE.yml` and take the resume point from these keys:
+Resume reads the work record only: the work's `STATE.yml`. Take the resume point from these keys,
+and from no other file or folder. `phase:` is a display label and never routes.
 
 - `lifecycle:` -- `Running`, `Paused-Awaiting-Input`, `Blocked`, `Completed` or `Canceled`.
-- `phase:` and `active_skill:` -- the phase and the skill that was running.
+- `active_skill:`, `step:` and `step_detail:` -- the skill and the step that were running. An open
+  call means the work continues inside the called skill.
 - `pause_reason:` and `block_reason:` -- why the work stopped, when it did.
 - `intent.phases` -- the phases the work runs, in order.
-- `qa:` -- the open questions, when the work is in Specification or later.
+- `qa:` -- the open questions.
+
+Ask the open questions first: every `qa:` entry in state `Pending` or `Skipped`, in the usual
+groups (FR-17), before the work goes on. A `Skipped` question is offered again here.
 
 A work that is `Paused-Awaiting-Input` resumes by asking the question it is waiting on. A work
-that is `Blocked` says what blocks it before anything else runs.
+that is `Blocked` says what blocks it before anything else runs. A work that is `Completed` or
+`Canceled` is finished: say so and stop.
 
 ## 5. Cancel a named work
 
@@ -74,6 +82,9 @@ the user's confirmed answer, and in this order:
 ```bash
 AID_STATE_FILE=<work>/STATE.yml AID_WORK_DIR=<work> bash .aid/runtime/scripts/execute/writeback-state.sh --pipeline --field Lifecycle --value Canceled
 ```
+
+The writer also clears the saved skill and step. The cancel creates no new work and writes
+nothing else. When the user answers "keep", nothing is written.
 
 ## 6. Record the intent
 

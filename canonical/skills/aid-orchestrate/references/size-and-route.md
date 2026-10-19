@@ -47,7 +47,7 @@ for an investigation, when nothing was to land). It sets the phase to the last o
 lifecycle. Both writes name the work, as the cancel step does, so they land on that work and on no other:
 
 ```bash
-AID_STATE_FILE=<work>/STATE.yml AID_WORK_DIR=<work> bash .aid/runtime/scripts/execute/writeback-state.sh --pipeline --field Phase --value Execute
+AID_STATE_FILE=<work>/STATE.yml AID_WORK_DIR=<work> bash .aid/runtime/scripts/execute/writeback-state.sh --pipeline --field Phase --value Building
 AID_STATE_FILE=<work>/STATE.yml AID_WORK_DIR=<work> bash .aid/runtime/scripts/execute/writeback-state.sh --pipeline --field Lifecycle --value Completed
 ```
 

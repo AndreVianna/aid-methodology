@@ -15,8 +15,8 @@ another skill never runs here.
 
 ## Steps
 
-Work through the steps in order. Load each reference when its step comes up. No work is
-created before step 6.
+Work through the steps in order, as `.aid/runtime/templates/skill-steps.md` sets them. Load
+each reference when its step comes up. No work is created before step 6.
 
 1. **Project question.** `references/check-intent.md` step 0 spots a question about the
    project; `references/start-or-resume.md` step 1 answers it from the Knowledge Base, with
@@ -44,7 +44,7 @@ created before step 6.
    into the new work's `STATE.yml` at once.
 8. **Cancel a named work.** `references/start-or-resume.md` step 5. The flow stops there.
 9. **Close a work.** `references/size-and-route.md` section 3: when every task is `Done` (or, for an
-   investigation, when nothing was to land), set `phase` to `Execute` and `lifecycle` to
+   investigation, when nothing was to land), set `phase` to `Building` and `lifecycle` to
    `Completed`. The flow stops there.
 10. **Hand over.** Start the first phase skill yourself. Where the tool cannot start a skill,
     name its slash command instead and let the user run it.
@@ -74,5 +74,7 @@ created before step 6.
   - Record every question and answer. A skipped question stays open and is resumed later.
 - The user always decides how a work is persisted. When a tool cannot hold what must be
   written, stop, say so, and offer the workable options under the same question rule.
+- State Detection (`skill-steps.md`): detection shapes the entry step and validates a saved
+  step on resume; it never routes. The work record decides where a work continues.
 - AID stores no credential. Reads and writes to a tracker go through the host tool's own
   connection.
