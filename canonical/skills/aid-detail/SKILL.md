@@ -61,7 +61,7 @@ is on disk, and a mismatch goes to recovery, never to a silent re-route. Which s
 continues at come only from its work record.
 
 - No `deliveries/delivery-NNN/tasks/task-NNN/DETAIL.md` exists under `.aid/works/{work}/` → **FIRST-RUN**
-- At least one `deliveries/delivery-NNN/tasks/task-NNN/DETAIL.md` exists → **CONFIRM** (the reopen question, then **REVIEW**)
+- At least one `deliveries/delivery-NNN/tasks/task-NNN/DETAIL.md` exists → **CONFIRM** (the reopen question, then **REVIEW** on a yes or **DONE** on a no)
 - Tasks complete and grade ≥ minimum → **DONE**
 
 Print the state-entry line and "you are here" map:
@@ -92,7 +92,7 @@ aid-detail  ▸ you are here
 | State | Detail | Worker | Advance |
 |-------|--------|--------|---------|
 | FIRST-RUN | `references/first-run.md` | `aid-architect` | CHAIN → REVIEW |
-| CONFIRM | `references/confirm.md` | `inline` | CHAIN → REVIEW |
+| CONFIRM | `references/confirm.md` | `inline` | CHAIN → REVIEW when the user reopens; CHAIN → DONE when the user keeps the list |
 | REVIEW | `references/review.md` | `aid-reviewer` | CHAIN → DONE |
 | DONE | — | `inline` | HALT |
 

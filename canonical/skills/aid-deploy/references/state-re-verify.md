@@ -13,4 +13,4 @@ The user chose to fix the failed checks here. Fix them, then run the checks agai
 When every check passes (ledger is empty → grade A+): delete the ledger (`rm -f {{LEDGER}}`), update
 work `STATE.yml`'s Deploy State (`deploy` key): Status → Packaging.
 
-**Advance:** **CHAIN** → [State: PACKAGING] (continue inline) when every check passes; **CHAIN** → [State: FIX-DECISION] (continue inline) otherwise.
+**Advance:** **CHAIN** → [State: PACKAGING] (continue inline) when every check passes; **CHAIN** → [State: FIX-DECISION] (continue inline) when a check still fails.

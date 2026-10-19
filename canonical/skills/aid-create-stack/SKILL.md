@@ -102,7 +102,7 @@ to `/aid-update-stack`. The seed is deleted only when everything its `## Destina
 was written; otherwise it stays in place carrying just the unrealized parts, which
 `/aid-update-stack` then consumes.
 
-**Advance:** CHAIN -> [State: VERIFY].
+**Advance:** CHAIN -> [State: VERIFY] when no condition above refuses; HALT when a refusal above leaves nothing to write.
 
 ---
 
@@ -111,7 +111,7 @@ was written; otherwise it stays in place carrying just the unrealized parts, whi
 **Full verify**, as `design-lifecycle.md` defines it. Not clean -> loop to CREATE; the
 3-cycle circuit breaker there escalates to IMPEDIMENT, and the lifecycle is set to `Blocked` through the writer.
 
-**Advance:** CHAIN -> [State: PRESENT].
+**Advance:** CHAIN -> [State: PRESENT] when the verify is clean; CHAIN -> [State: CREATE] when it is not clean and fewer than 3 cycles have run; HALT when the 3-cycle circuit breaker has tripped.
 
 ---
 
@@ -128,7 +128,7 @@ written; the rejected alternatives went to the D document; and anything routed t
 
 ## State: DONE
 
-Set the lifecycle to `Completed` through the writer, `updated` now, append a `## Lifecycle History` row.
+Set the lifecycle to `Completed` through the writer.
 
 ---
 
@@ -183,4 +183,4 @@ report and halt.
 - **Full verify**, per `design-lifecycle.md`.
 - **Seed consumed on the realizing path**, and left in place for the parts that routed.
 - **Clean context**; verification always an `aid-reviewer` sub-agent dispatch.
-- **Tracking:** write STATE `lifecycle` at every transition.
+- **Tracking:** set the STATE lifecycle through the writer at every transition.

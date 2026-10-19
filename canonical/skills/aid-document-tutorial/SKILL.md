@@ -24,3 +24,7 @@ document **genre bound to tutorial** (structure: prerequisites -> worked steps -
 outcome) and the **format = markdown**. Substitute only the invocation name in any
 printed usage example (`/aid-document-tutorial` instead of `/aid-create-document`).
 Deeper genre structures: `.aid/runtime/templates/shortcut-scaffolding/document.md`.
+
+The work is recorded under `aid-create-document`, whose record alone decides a resume. So that a
+resumed work keeps the bound genre and format, pass them in the `--detail` of every step the run
+enters (`genre: tutorial; format: markdown`), as `aid-create-document` ALLOCATE says.

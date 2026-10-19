@@ -7,6 +7,8 @@ GENERATE generates KB documents that are missing or still at "Pending" status; i
 > any bash context that needs them; they are the shared accessor for the declared doc-set.
 > `REPO` must be set to the repository root (e.g. `REPO="$(pwd)"`) before calling.
 
+**Who asks.** The `aid-architect` worker never asks the user. Each gate below marked ASK (0cx, 0d, 0f and the coined terms of Step 5c) is put to the user by the main conversation, through the question protocol: the worker returns the gate's question and stops, and the main conversation asks it, records the answer and resumes the worker with it.
+
 ### Step 0: Check Existing KB
 
 **First, trace the GENERATE front for the user** so every step ahead is visible (traceability —

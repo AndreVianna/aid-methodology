@@ -269,11 +269,17 @@ aid-discover  ▸ you are here
 |-------|--------|--------|---------|
 | ELICIT | `references/state-elicit.md` | inline | CHAIN → GENERATE |
 | GENERATE | `references/state-generate.md` | `aid-architect` | CHAIN → REVIEW; HALT on greenfield |
-| REVIEW | `references/state-review.md` | `aid-architect` | CHAIN → Q-AND-A or FIX |
-| Q-AND-A | `references/state-q-and-a.md` | inline | CHAIN → FIX or APPROVAL |
-| FIX | `references/state-fix.md` | `aid-architect` | CHAIN → REVIEW or APPROVAL |
+| REVIEW | `references/state-review.md` | `aid-architect` | CHAIN → Q-AND-A when a question is pending; CHAIN → FIX when none is |
+| Q-AND-A | `references/state-q-and-a.md` | inline | CHAIN → FIX when an answer implies a doc change; CHAIN → APPROVAL when none does |
+| FIX | `references/state-fix.md` | `aid-architect` | CHAIN → REVIEW when the grade is below the minimum; CHAIN → APPROVAL when it is not |
 | APPROVAL | `references/state-approval.md` | inline | CHAIN → DONE; HALT on a consideration |
-| DONE | `references/state-done.md` | inline | HALT |
+| DONE | `references/state-done.md` | inline | CHAIN → REVIEW when the user reopens; HALT when the user keeps the discovery |
+
+> **Questions in GENERATE.** The `aid-architect` Worker never asks the user. The four gates of
+> GENERATE (the domain, the doc-set, the discovery path and the coined terms) are put to the
+> user by the main conversation, through the question protocol: the worker measures or drafts,
+> returns the gate's question and stops, and the main conversation asks it, records the answer
+> and resumes the worker with it.
 
 > **Sub-agent fanout (GENERATE):** The `aid-architect` Worker for GENERATE dispatches
 > discovery sub-agents internally — `aid-researcher` (Step 1 pre-scan, sequential), then

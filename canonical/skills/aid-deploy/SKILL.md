@@ -189,7 +189,7 @@ dispatch in this skill.
 | SELECTING | `references/state-selecting.md` | `inline` | CHAIN → VERIFYING; HALT on cancel |
 | VERIFYING | `references/state-verifying.md` | `aid-operator` | CHAIN → PACKAGING when every check passes; CHAIN → FIX-DECISION when a check fails |
 | FIX-DECISION | `references/state-fix-decision.md` | `inline` | CHAIN → RE-VERIFY; HALT on loop back |
-| RE-VERIFY | `references/state-re-verify.md` | `aid-operator` | CHAIN → PACKAGING when every check passes; CHAIN → FIX-DECISION otherwise |
+| RE-VERIFY | `references/state-re-verify.md` | `aid-operator` | CHAIN → PACKAGING when every check passes; CHAIN → FIX-DECISION when a check still fails |
 | PACKAGING | `references/state-packaging.md` | `aid-operator` | CHAIN → DONE |
 | DONE | `references/state-done.md` | `inline` | HALT |
 | RE-RUN | `references/state-re-run.md` | `inline` | CHAIN → IDLE; HALT on review |

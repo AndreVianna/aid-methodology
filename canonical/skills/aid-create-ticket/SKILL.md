@@ -99,7 +99,7 @@ Per-flag handling:
   Example: /aid-create-ticket --level story --parent PROJ-12 "Add pagination to the /orders list"
   ```
 
-**Advance:** **CHAIN** → State: RESOLVE-CONNECTOR (continue inline).
+**Advance:** **CHAIN** → State: RESOLVE-CONNECTOR when the arguments parse; **HALT** when the usage line was printed.
 
 ### State 2 — RESOLVE-CONNECTOR
 
@@ -113,9 +113,9 @@ silent fall-through) → the sole catalogued `mcp`+`issue-tracker` match (silent
 further than that. When a connector resolves silently, `$CONNECTOR` holds its stem for every later
 state; when two or more match, State 2a settles it.
 
-**Advance:** **CHAIN** → State: COMPOSE when the connector resolves silently (explicit stem, sole
-match, or host MCP); **CHAIN** → State: PICK-CONNECTOR when two or more match; **HALT** on an unknown stem or
-the notify exit above.
+A connector resolves silently as the explicit stem, the sole match or the host MCP.
+
+**Advance:** **CHAIN** → State: COMPOSE when the connector resolves silently; **CHAIN** → State: PICK-CONNECTOR when several connectors match; **HALT** on an unknown stem and on the notify exit above.
 
 ### State 2a — PICK-CONNECTOR
 

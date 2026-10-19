@@ -4,7 +4,7 @@ Release complete. Emit the normalized Completed lifecycle state.
 
 ### Step 10: Emit Completed lifecycle state
 
-Emit the normalized Completed lifecycle state (silent state-write only — no output, no gate):
+Emit the normalized Completed lifecycle state (silent state-write only — no output; a failed write stops the run):
 
 ```
 bash .aid/runtime/scripts/execute/writeback-state.sh --pipeline --field Lifecycle --value Completed

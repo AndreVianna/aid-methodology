@@ -95,8 +95,9 @@ period on the Name; Description is one sentence ending with a period.
 **This step is mandatory at COMPLETION** (not optional, not skippable). If `## 1. Objective`
 is `*(pending)*` or absent, ask the user for a one-sentence description before proceeding.
 
-Stop here (ASK): the identity question is put to the user through the question protocol, and Step 4
-(Present Summary) follows once the identity fields are confirmed and written.
+The identity question is put to the user through the question protocol. It blocks the work, so this step
+pauses on it until the user answers; Step 4 (Present Summary) follows, inside this step, once the identity
+fields are confirmed and written.
 
 ### Step 4: Present Summary
 
@@ -120,8 +121,9 @@ Is there anything else we should consider, or are the requirements ready?
 [2] Additional consideration: ___
 ```
 
-Stop here (ASK): the summary approval is put to the user through the question protocol, and Step 5
-(Process Approval Response) follows once the user answers.
+The summary approval is put to the user through the question protocol. An approval cannot be skipped: it
+blocks the work, so this step pauses on it, with this step saved, until the user approves or adds a
+consideration. Step 5 (Process Approval Response) follows, inside this step, once the user answers.
 
 ### Step 5: Process Approval Response
 
@@ -135,17 +137,17 @@ Stop here (ASK): the summary approval is put to the user through the question pr
     <description>`." Optional, user-initiated, never auto-invoked; silent (no output) if no
     issue-tracker connector is catalogued.
   - Print: `✅ Requirements approved.`
-  - Emit pipeline pause signal (silent state-write — no output, no gate):
+  - Record the pause through the writer (silent state-write, no output; a failed write stops the run):
     ```
     bash .aid/runtime/scripts/execute/writeback-state.sh --pipeline --field Lifecycle --value "Paused-Awaiting-Input"
     bash .aid/runtime/scripts/execute/writeback-state.sh --pipeline --field "Pause Reason" --value "Requirements approved — run /aid-define {work} to decompose into features"
     bash .aid/runtime/scripts/execute/writeback-state.sh --pipeline --field Updated --value "$(date -u +%Y-%m-%dT%H:%M:%SZ)"
     ```
-  - Name the next skill in one plain line: `/aid-define {work}` decomposes the approved requirements into features. Then HALT (this state is **ASK** then **HALT** — does NOT auto-chain).
+  - Name the next skill in one plain line: `/aid-define {work}` decomposes the approved requirements into features. Then end the step with the HALT case of the advance line below; it does NOT auto-chain.
 
 - **[2] Additional consideration:**
   - Incorporate into relevant section(s) of REQUIREMENTS.md
   - Update STATE.md `## Interview State` section statuses if needed
-  - Return to Interview Loop for any new gaps
+  - End the step with the CHAIN case of the advance line below, which returns to the interview loop for any new gaps
 
-**Advance:** **ASK** then **HALT**. Name `/aid-define {work}` as the next skill in one plain line. Do not chain into it: this checkpoint needs an explicit user decision.
+**Advance:** **CHAIN** → [State: CONTINUE] when the user adds a consideration; **HALT** when the user approves the requirements. Name `/aid-define {work}` as the next skill in one plain line. Do not chain into it: this checkpoint needs an explicit user decision.

@@ -71,20 +71,22 @@ continues at come only from its work record.
   seed and destination byte-identical. Set the lifecycle to `Paused-Awaiting-Input` through the writer, and stop: this step stays saved, and a later run inspects the seed again from the top.
 - **No unresolved questions, or override supplied** → advance.
 
-**Advance:** CHAIN -> [State: REALIZE] when no question is unresolved or the override is supplied; HALT when a question is unresolved and no override is supplied (the refusal above).
+**Advance:** CHAIN -> [State: REALIZE] when the gate passes; HALT when the gate refuses.
 
 ---
 
 ## State: REALIZE
 
 Dispatch **`aid-architect`** (clean context, tiered) to realize the seed. Apply the case
-determined in INTAKE:
+determined in INTAKE. The worker never asks the user: it returns the questions below
+(the route question, each per-item confirm gate and any undetermined `Tag`) and the main
+conversation asks them, through the question protocol.
 
 | Destination state | Action |
 |---|---|
 | `backlog.md` absent | **Create** the document: write frontmatter (§3b values below, verbatim), `# Backlog` title, one-paragraph preamble (what this document holds and the promotion criterion -- an item moves here when it is **accepted into the plan**, an explicit human decision at a per-item confirm gate), `## Contents` with all three entries in heading order, then `## Next Release`, `## Prioritized`, `## Gotchas`. Then run the **promotion pass** below. **Delete the seed.** |
 | Present, item sections empty or absent | Fill `## Next Release`, `## Prioritized`, `## Gotchas` from the seed; leave every byte outside those sections identical. Then run the **promotion pass**. **Delete the seed.** |
-| Present, item sections already carry committed content | **Route** to `/aid-update-backlog`; write nothing; leave the seed in place for that run (CC-3). Set the lifecycle to `Paused-Awaiting-Input` through the writer. Then ask the user, through the question protocol, whether to run the skill it routes to, naming it; the question is blocking and stays open, and REGISTER and VERIFY are not called. |
+| Present, item sections already carry committed content | **Route** to `/aid-update-backlog`; write nothing; leave the seed in place for that run (CC-3). Set the lifecycle to `Paused-Awaiting-Input` through the writer. Then the main conversation asks the user, through the question protocol, whether to run the skill it routes to, naming it; the question is blocking, so this step pauses on it until it is answered, and REGISTER and VERIFY are not called. On a yes, name `/aid-update-backlog` as the command to run, in one plain line. |
 
 **`## Contents` index** -- the fixed three-entry form (`feature-003 §3b`), always written
 at creation and always left intact on the fill path:
@@ -96,9 +98,10 @@ at creation and always left intact on the fill path:
 **Promotion pass.** For each item the seed proposes as a candidate for promotion from
 `tech-debt.md`:
 
-1. Present a **per-item confirm gate** showing the source row and the proposed column
-   mapping (see the two arms below). Always propose a `Tag` default; never write an empty
-   `Tag`.
+1. The main conversation presents a **per-item confirm gate**, one blocking question per
+   item, showing the source row and the proposed column mapping (see the two arms below).
+   Always propose a `Tag` default; never write an empty `Tag`. The worker writes a row only
+   after its gate is answered.
 2. If the user confirms: add the fully-populated row (all seven columns) to the appropriate
    section in `backlog.md`. Delete the source row from `tech-debt.md` in the **same run**,
    keyed on the `ID` column — a whole-row deletion, never a rewrite of any other row and
@@ -174,7 +177,7 @@ audience: [developer, architect, pm]
 ---
 ```
 
-**Advance:** CHAIN -> [State: REGISTER] (creation or fill path); HALT on the route case (the question above stays open and the run ends).
+**Advance:** CHAIN -> [State: REGISTER] when the document was created or filled; HALT when the route case applies and its question has been answered.
 
 ---
 
@@ -203,7 +206,7 @@ Both writes must succeed in the same run. If either fails, report and halt.
 defines it. Not clean -> loop to REALIZE; the circuit-breaker there governs escalation
 to IMPEDIMENT, and the lifecycle is set to `Blocked` through the writer.
 
-**Advance:** CHAIN -> [State: PRESENT].
+**Advance:** CHAIN -> [State: PRESENT] when the verify is clean; CHAIN -> [State: REALIZE] when it is not clean and fewer than 3 cycles have run; HALT when the 3-cycle circuit breaker has tripped.
 
 ---
 
@@ -222,7 +225,7 @@ Set the lifecycle to `Paused-Awaiting-Input` through the writer. Present the rea
 
 ## State: DONE
 
-Set the lifecycle to `Completed` through the writer, `updated` now, append a `## Lifecycle History` row.
+Set the lifecycle to `Completed` through the writer.
 
 ---
 

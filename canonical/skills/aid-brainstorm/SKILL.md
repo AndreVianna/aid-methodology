@@ -75,7 +75,7 @@ writes production code** -- the `design` invariant (`design-lifecycle.md`).
 **Full verify**, as `design-lifecycle.md` defines it. Not clean -> loop to DESIGN; the
 3-cycle circuit breaker there escalates to IMPEDIMENT, and the lifecycle is set to `Blocked` through the writer.
 
-**Advance:** CHAIN -> PRESENT.
+**Advance:** CHAIN -> PRESENT when the verify is clean; CHAIN -> DESIGN when it is not clean and fewer than 3 cycles have run; HALT when the 3-cycle circuit breaker has tripped.
 
 ---
 
@@ -91,5 +91,5 @@ entry, or takes it forward however they choose.
 
 ## State: DONE
 
-Set the lifecycle to `Completed` through the writer, `updated` now, append a `## Lifecycle History` row. The seed
+Set the lifecycle to `Completed` through the writer. The seed
 persists at `.aid/design/<slug>.md`; brainstorm has no `create` counterpart to consume it.

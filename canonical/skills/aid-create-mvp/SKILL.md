@@ -80,20 +80,21 @@ non-empty `## Open questions` section per `design-lifecycle.md`'s detection rule
   nothing; leave seed and destination byte-identical. Set the lifecycle to `Paused-Awaiting-Input` through the writer, and stop: this step stays saved, and a later run inspects the seed again from the top.
 - **No unresolved questions, or override supplied** → advance.
 
-**Advance:** CHAIN -> [State: REALIZE] when no question is unresolved or the override is supplied; HALT when a question is unresolved and no override is supplied (the refusal above).
+**Advance:** CHAIN -> [State: REALIZE] when the gate passes; HALT when the gate refuses.
 
 ---
 
 ## State: REALIZE
 
 Dispatch **`aid-architect`** (clean context, tiered) to realize the seed. Apply the
-case determined in INTAKE:
+case determined in INTAKE. The worker never asks the user: the route question below is
+asked by the main conversation.
 
 | Destination state | Action |
 |---|---|
-| `roadmap.md` absent | **Route** to `/aid-create-roadmap` -- an MVP is a section of a roadmap, not a document (REQUIREMENTS CC-5; feature-002 §3c *first-write rule*). Name `/aid-create-roadmap` explicitly in the response. Write nothing. Leave `.aid/design/mvp.md` in place for that run (CC-3). Set the lifecycle to `Paused-Awaiting-Input` through the writer. Then ask the user, through the question protocol, whether to run the skill it routes to, naming it; the question is blocking and stays open, and VERIFY is not called. |
+| `roadmap.md` absent | **Route** to `/aid-create-roadmap` -- an MVP is a section of a roadmap, not a document (REQUIREMENTS CC-5; feature-002 §3c *first-write rule*). Name `/aid-create-roadmap` explicitly in the response. Write nothing. Leave `.aid/design/mvp.md` in place for that run (CC-3). Set the lifecycle to `Paused-Awaiting-Input` through the writer. Then the main conversation asks the user, through the question protocol, whether to run the skill it routes to, naming it; the question is blocking, so this step pauses on it until it is answered, and VERIFY is not called. On a yes, name the skill's command to run, in one plain line. |
 | `roadmap.md` present, `## MVP` absent | **Create** the `## MVP` section using the **byte-range write discipline** below. **Delete the seed.** |
-| `roadmap.md` present, `## MVP` already carries committed content | **Route** to `/aid-update-mvp`; write nothing; leave the seed in place for that run (CC-3). Set the lifecycle to `Paused-Awaiting-Input` through the writer. Then ask the user, through the question protocol, whether to run the skill it routes to, naming it; the question is blocking and stays open, and VERIFY is not called. |
+| `roadmap.md` present, `## MVP` already carries committed content | **Route** to `/aid-update-mvp`; write nothing; leave the seed in place for that run (CC-3). Set the lifecycle to `Paused-Awaiting-Input` through the writer. Then the main conversation asks the user, through the question protocol, whether to run the skill it routes to, naming it; the question is blocking, so this step pauses on it until it is answered, and VERIFY is not called. On a yes, name the skill's command to run, in one plain line. |
 
 **Byte-range write discipline (binding; precondition for V7 and V8).** Read the
 whole `roadmap.md` file. Identify the `## MVP` byte range: the literal heading
@@ -123,7 +124,7 @@ would place the section above the document index and break KB layout order (feat
     - **Status:** Not started | In progress | Shipped <version> -- with the evidence
       anchor.
 
-**Advance:** CHAIN -> [State: VERIFY] (creation path); HALT on a route case (the question above stays open and the run ends).
+**Advance:** CHAIN -> [State: VERIFY] when the section was created; HALT when a route case applies and its question has been answered.
 
 ---
 
@@ -133,7 +134,7 @@ would place the section above the document index and break KB layout order (feat
 defines it. Not clean -> loop to REALIZE; the circuit-breaker there governs escalation
 to IMPEDIMENT, and the lifecycle is set to `Blocked` through the writer.
 
-**Advance:** CHAIN -> [State: PRESENT].
+**Advance:** CHAIN -> [State: PRESENT] when the verify is clean; CHAIN -> [State: REALIZE] when it is not clean and fewer than 3 cycles have run; HALT when the 3-cycle circuit breaker has tripped.
 
 ---
 
@@ -156,7 +157,7 @@ Assert:
 
 ## State: DONE
 
-Set the lifecycle to `Completed` through the writer, `updated` now, append a `## Lifecycle History` row.
+Set the lifecycle to `Completed` through the writer.
 
 ---
 

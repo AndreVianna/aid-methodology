@@ -475,12 +475,12 @@ Remove `task-{NNN}` from the in-flight set.
    writeback-state.sh --delivery-id DDD --task-id NNN --field State --value "Failed"
    ```
 
-   Advance delivery lifecycle to Blocked (silent state-write -- no output, no gate):
+   Advance delivery lifecycle to Blocked (silent state-write -- no output; a failed write stops the run):
    ```bash
    bash .aid/runtime/scripts/execute/writeback-state.sh --delivery-id DDD --lifecycle Blocked
    ```
 
-   Emit pipeline block signal (silent state-write -- no output, no gate):
+   Emit pipeline block signal (silent state-write -- no output; a failed write stops the run):
    ```bash
    bash .aid/runtime/scripts/execute/writeback-state.sh --pipeline --field Lifecycle --value Blocked
    bash .aid/runtime/scripts/execute/writeback-state.sh --pipeline --field "Block Reason" --value "Task failed with unresolved impediment -- task-{NNN}"
@@ -728,7 +728,7 @@ bash .aid/runtime/scripts/execute/writeback-state.sh \
     --delivery-id DDD --lifecycle Executing
 ```
 
-Emit pipeline phase (silent state-write only -- no output, no gate):
+Emit pipeline phase (silent state-write only -- no output; a failed write stops the run):
 ```
 bash .aid/runtime/scripts/execute/writeback-state.sh --pipeline --field Lifecycle --value Running
 bash .aid/runtime/scripts/execute/writeback-state.sh --pipeline --field Phase --value Building

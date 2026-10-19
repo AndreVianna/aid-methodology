@@ -72,4 +72,6 @@ the delegated read is non-destructive, so no extra confirm is added.
 
 ---
 
-**Advance:** **CHAIN** → [State: CONTINUE] after scaffolding is complete (continue inline). CONTINUE emits the D1 opener and runs the full-path interview.
+CONTINUE emits the D1 opener and runs the full-path interview.
+
+**Advance:** **CHAIN** → [State: CONTINUE] after scaffolding is complete (continue inline).

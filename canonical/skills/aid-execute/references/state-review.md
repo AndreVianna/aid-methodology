@@ -89,7 +89,7 @@ For each `[CRITICAL]` finding:
    bash .aid/runtime/scripts/execute/writeback-state.sh --delivery-id DDD --task-id NNN --field State --value "Failed"
    ```
    Write the IMPEDIMENT to `.aid/works/{work}/IMPEDIMENT-task-{NNN}.md` and emit the pipeline block
-   signal (silent state-write — no output, no gate):
+   signal (silent state-write — no output; a failed write stops the run):
    ```bash
    bash .aid/runtime/scripts/execute/writeback-state.sh --pipeline --field Lifecycle --value Blocked
    bash .aid/runtime/scripts/execute/writeback-state.sh --pipeline --field "Block Reason" --value "Critical finding persists after fix attempt — architecture-conflict impediment raised"

@@ -86,7 +86,7 @@ kept record).
 3. **Grade:** `bash .aid/runtime/scripts/grade.sh --explain <ledger>`. Not clean -> loop
    to DESIGN. Circuit-breaker: 3 cycles -> IMPEDIMENT, and the lifecycle is set to `Blocked` through the writer.
 
-**Advance:** CHAIN -> PRESENT.
+**Advance:** CHAIN -> PRESENT when the verify is clean; CHAIN -> DESIGN when it is not clean and fewer than 3 cycles have run; HALT when the 3-cycle circuit breaker has tripped.
 
 ---
 
@@ -112,7 +112,7 @@ capture it as a formal doc (`/aid-create-document`). Never auto-invoked; never a
 
 ## State: DONE
 
-Set the lifecycle to `Completed` through the writer, `updated` now, append a `## Lifecycle History` row. Keep
+Set the lifecycle to `Completed` through the writer. Keep
 `DESIGN.md` in the work folder as the kept design record.
 
 ---
@@ -126,4 +126,4 @@ Set the lifecycle to `Completed` through the writer, `updated` now, append a `##
 - **Resolves nothing** -- presents the design; the build is a separate `/aid-create*` step.
 - **Clean context**; **verification always a sub-agent dispatch** (`aid-reviewer`).
 - **Throwaway validation is `/aid-prototype`, not this.**
-- **Tracking:** write STATE `lifecycle` at every transition.
+- **Tracking:** set the STATE lifecycle through the writer at every transition.

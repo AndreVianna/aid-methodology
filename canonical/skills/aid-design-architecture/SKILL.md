@@ -90,7 +90,7 @@ The destination confirmation is a blocking question, asked before the dispatch w
 **Full verify**, as `design-lifecycle.md` defines it. Not clean -> loop to DESIGN; the
 3-cycle circuit breaker there escalates to IMPEDIMENT, and the lifecycle is set to `Blocked` through the writer.
 
-**Advance:** CHAIN -> [State: PRESENT].
+**Advance:** CHAIN -> [State: PRESENT] when the verify is clean; CHAIN -> [State: DESIGN] when it is not clean and fewer than 3 cycles have run; HALT when the 3-cycle circuit breaker has tripped.
 
 ---
 
@@ -105,6 +105,6 @@ the user iterates (re-invoke this skill) or realizes it now (`/aid-create-archit
 
 ## State: DONE
 
-Set the lifecycle to `Completed` through the writer, `updated` now, append a `## Lifecycle History` row. The seed
+Set the lifecycle to `Completed` through the writer. The seed
 persists at `.aid/design/architecture.md`; consumption happens at
 `/aid-create-architecture`.

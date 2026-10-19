@@ -2,7 +2,7 @@
 
 Requirements are approved and `REQUIREMENTS.md § 11 Features` has no feature sections yet; decompose Functional Requirements (§5) into discrete, independently implementable features, each a `### Feature NNN` subsection of §11.
 
-Emit pipeline phase (silent state-write only — no output, no gate):
+Emit pipeline phase (silent state-write only — no output; a failed write stops the run):
 ```
 bash .aid/runtime/scripts/execute/writeback-state.sh --step --skill aid-define --name FEATURE-DECOMPOSITION
 bash .aid/runtime/scripts/execute/writeback-state.sh --pipeline --field Lifecycle --value Running

@@ -74,20 +74,21 @@ continues at come only from its work record.
   seed and destination byte-identical. Set the lifecycle to `Paused-Awaiting-Input` through the writer, and stop: this step stays saved, and a later run inspects the seed again from the top.
 - **No unresolved questions, or override supplied** → advance.
 
-**Advance:** CHAIN -> [State: REALIZE] when no question is unresolved or the override is supplied; HALT when a question is unresolved and no override is supplied (the refusal above).
+**Advance:** CHAIN -> [State: REALIZE] when the gate passes; HALT when the gate refuses.
 
 ---
 
 ## State: REALIZE
 
 Dispatch **`aid-architect`** (clean context, tiered) to realize the seed. Apply the case
-determined in INTAKE:
+determined in INTAKE. The worker never asks the user: the route question below is
+asked by the main conversation.
 
 | Destination state | Action |
 |---|---|
 | `roadmap.md` absent | **Create** the document: write frontmatter (§3a values below, verbatim), `# Roadmap` title, one-paragraph preamble (what this document holds and what it does not -- no items live here), `## Contents` with all four entries in heading order, then `## Now`, `## Next`, `## Later`. **Delete the seed.** |
 | Present, horizon sections empty or absent | Fill `## Now`, `## Next`, `## Later` from the seed; leave every byte outside those sections identical, including `## MVP` if present. **Delete the seed.** |
-| Present, horizon sections already carry committed content | **Route** to `/aid-update-roadmap`; write nothing; leave the seed in place for that run (CC-3). Set the lifecycle to `Paused-Awaiting-Input` through the writer. Then ask the user, through the question protocol, whether to run the skill it routes to, naming it; the question is blocking and stays open, and REGISTER and VERIFY are not called. |
+| Present, horizon sections already carry committed content | **Route** to `/aid-update-roadmap`; write nothing; leave the seed in place for that run (CC-3). Set the lifecycle to `Paused-Awaiting-Input` through the writer. Then the main conversation asks the user, through the question protocol, whether to run the skill it routes to, naming it; the question is blocking, so this step pauses on it until it is answered, and REGISTER and VERIFY are not called. On a yes, name the skill's command to run, in one plain line. |
 
 **`## Contents` index** -- the fixed four-entry form (`feature-003 §3a`), always written
 at creation and always left intact on the fill path:
@@ -133,7 +134,7 @@ audience: [architect, pm, developer]
 compare a direction entry against (`decisions.md` carries the same value for the same
 reason; `feature-003 §3a` records the divergence from feature-004's `forward-authored`).
 
-**Advance:** CHAIN -> [State: REGISTER] (creation or fill path); HALT on the route case (the question above stays open and the run ends).
+**Advance:** CHAIN -> [State: REGISTER] when the document was created or filled; HALT when the route case applies and its question has been answered.
 
 ---
 
@@ -162,7 +163,7 @@ Both writes must succeed in the same run. If either fails, report and halt.
 defines it. Not clean -> loop to REALIZE; the circuit-breaker there governs escalation
 to IMPEDIMENT, and the lifecycle is set to `Blocked` through the writer.
 
-**Advance:** CHAIN -> [State: PRESENT].
+**Advance:** CHAIN -> [State: PRESENT] when the verify is clean; CHAIN -> [State: REALIZE] when it is not clean and fewer than 3 cycles have run; HALT when the 3-cycle circuit breaker has tripped.
 
 ---
 
@@ -181,7 +182,7 @@ Set the lifecycle to `Paused-Awaiting-Input` through the writer. Present the rea
 
 ## State: DONE
 
-Set the lifecycle to `Completed` through the writer, `updated` now, append a `## Lifecycle History` row.
+Set the lifecycle to `Completed` through the writer.
 
 ---
 

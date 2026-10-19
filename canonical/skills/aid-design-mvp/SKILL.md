@@ -80,7 +80,7 @@ the `design` invariant, binding without exception.
 defines it. Not clean -> loop to DESIGN; the circuit-breaker there governs escalation to
 IMPEDIMENT, and the lifecycle is set to `Blocked` through the writer.
 
-**Advance:** CHAIN -> [State: PRESENT].
+**Advance:** CHAIN -> [State: PRESENT] when the verify is clean; CHAIN -> [State: DESIGN] when it is not clean and fewer than 3 cycles have run; HALT when the 3-cycle circuit breaker has tripped.
 
 ---
 
@@ -96,7 +96,7 @@ the user decides whether to iterate further (re-invoke this skill) or realize it
 
 ## State: DONE
 
-Set the lifecycle to `Completed` through the writer, `updated` now, append a `## Lifecycle History` row. The seed
+Set the lifecycle to `Completed` through the writer. The seed
 stays at `.aid/design/mvp.md` -- consumption happens at `/aid-create-mvp`, not here.
 
 ---
@@ -111,4 +111,4 @@ stays at `.aid/design/mvp.md` -- consumption happens at `/aid-create-mvp`, not h
 - **Iterative, not terminal** -- re-invocation rewrites `## Current direction` and
   accumulates `## Options considered`; the user decides when to stop.
 - **Clean context**; **verification always a sub-agent dispatch** (`aid-reviewer`).
-- **Tracking:** write STATE `lifecycle` at every transition.
+- **Tracking:** set the STATE lifecycle through the writer at every transition.

@@ -20,7 +20,7 @@ aid-execute  ▸ you are here
 
 Print this state-entry banner before proceeding to Step 0.
 
-Advance delivery lifecycle to Gated (silent state-write -- no output, no gate):
+Advance delivery lifecycle to Gated (silent state-write -- no output; a failed write stops the run):
 ```bash
 bash .aid/runtime/scripts/execute/writeback-state.sh --delivery-id NNN --lifecycle Gated
 ```
@@ -332,7 +332,7 @@ Reached only when grade < minimum and every remaining issue is TASK, SPEC or KB.
 issue handling in Step 4A applies here too.
 
 **STOP.** The delivery is as good as it can be -- the problem is upstream. Present what needs to change and where.
-Emit delivery and pipeline pause signals (silent state-writes -- no output, no gate):
+Emit delivery and pipeline pause signals (silent state-writes -- no output; a failed write stops the run):
 ```bash
 bash .aid/runtime/scripts/execute/writeback-state.sh --delivery-id NNN --lifecycle Blocked
 bash .aid/runtime/scripts/execute/writeback-state.sh --pipeline --field Lifecycle --value "Paused-Awaiting-Input"
@@ -382,7 +382,7 @@ Options:
 ```
 
 Write impediment to `.aid/works/{work}/IMPEDIMENT-delivery-NNN.md` if stopping. When the impediment
-is written, emit the delivery and pipeline block signals (silent state-writes -- no output, no gate):
+is written, emit the delivery and pipeline block signals (silent state-writes -- no output; a failed write stops the run):
 ```bash
 bash .aid/runtime/scripts/execute/writeback-state.sh --delivery-id NNN --lifecycle Blocked
 bash .aid/runtime/scripts/execute/writeback-state.sh --pipeline --field Lifecycle --value Blocked
@@ -502,9 +502,11 @@ delivery-NNN  ·  {N} tasks  ·  gate grade {grade}  ·  Done at {timestamp}
 | task-NNN | TEST | Done | none | — |
 ```
 
-**Advance:** **HALT** (DELIVERY-GATE is the terminal state for a delivery). This one ending closes the step in
-every case: the gate passed (Step 6), the user declined the CODE fixes (Step 4A), or upstream issues wait on
-the user (Step 4B, question open).
+DELIVERY-GATE is the terminal state for a delivery. This one ending closes the step in every case: the gate
+passed (Step 6), the user declined the CODE fixes (Step 4A), or upstream issues wait on the user (Step 4B,
+question open).
+
+**Advance:** **HALT**.
 
 ---
 

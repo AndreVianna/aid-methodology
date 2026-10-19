@@ -14,7 +14,7 @@ holds the Step 2 discussion and puts the approval, through the question protocol
 
 ### Step 0: Emit pipeline phase
 
-Emit pipeline phase (silent state-write only — no output, no gate):
+Emit pipeline phase (silent state-write only — no output; a failed write stops the run):
 ```
 bash .aid/runtime/scripts/execute/writeback-state.sh --step --skill aid-detail --name FIRST-RUN
 bash .aid/runtime/scripts/execute/writeback-state.sh --pipeline --field Lifecycle --value Running

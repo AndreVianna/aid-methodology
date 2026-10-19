@@ -14,7 +14,7 @@ argument-hint: "[work-001] resume work"
 
 # Conversational Requirements Gathering
 
-State machine: FIRST-RUN -> Q-AND-A -> CONTINUE -> {greenfield: DESCRIBE-SEED ->} COMPLETION [ASK -> HALT: /aid-define].
+State machine: FIRST-RUN -> Q-AND-A -> CONTINUE -> {greenfield: DESCRIBE-SEED ->} COMPLETION [approval, then HALT: /aid-define].
 
 ## Agents Involved
 
@@ -242,7 +242,7 @@ aid-describe  ▸ you are here
 | Q-AND-A | `references/state-q-and-a.md` | `aid-interviewer` | CHAIN → CONTINUE |
 | CONTINUE | `references/state-continue.md` | `aid-interviewer` | CHAIN → DESCRIBE-SEED (greenfield: no brownfield KB on disk and seed not yet complete) / CHAIN → COMPLETION (brownfield or seed already complete) |
 | DESCRIBE-SEED | `references/state-describe-seed.md` | `aid-interviewer` | CHAIN → COMPLETION |
-| COMPLETION | `references/state-completion.md` | `aid-interviewer` | ASK then HALT, naming `/aid-define {work}` |
+| COMPLETION | `references/state-completion.md` | `aid-interviewer` | CHAIN → CONTINUE when the user adds a consideration; HALT when the user approves, naming `/aid-define {work}` |
 
 On state entry, print `[State: NAME]` + the "you are here" map from State Detection above.
 When a state completes, route by its `**Advance:**` type (per [`skill-steps.md`](../../aid/templates/skill-steps.md)):

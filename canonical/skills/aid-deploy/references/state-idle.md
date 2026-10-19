@@ -20,7 +20,7 @@ project gets packaged and deployed, in the same question exchange (see `referenc
 
 Update work `STATE.md` `## Deploy State`: Status → Selecting.
 
-Emit pipeline lifecycle state (silent state-write only — no output, no gate). Deploy is a
+Emit pipeline lifecycle state (silent state-write only — no output; a failed write stops the run). Deploy is a
 separate path, not a numbered phase, so this does NOT change the work's `Phase`; it only marks the
 Running lifecycle + active skill so the work-initiation gate can
 resume an interrupted deploy via `active_skill: aid-deploy`:

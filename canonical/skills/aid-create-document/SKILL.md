@@ -63,8 +63,7 @@ INTAKE and INTAKE-ASK run before any work exists, so they save no steps (`skill-
    prior context before drafting; it is an input, never a substitute, and is not modified
    by this run.
 
-**Advance:** CHAIN -> [State: INTAKE-ASK] when the argument is empty, the path is Guided, or works
-exist; otherwise CHAIN -> [State: ALLOCATE].
+**Advance:** CHAIN -> [State: INTAKE-ASK] when a question must be put (empty argument, Guided path, works exist); CHAIN -> [State: ALLOCATE] when none is needed.
 
 ---
 
@@ -99,9 +98,14 @@ Allocate the work through the gate: the Work Initiation Gate
   (`--intent --reason '<reason>' --phases P1,P2,...`), as the engine's INTAKE Step 5 does
   (`.aid/runtime/templates/shortcut-engine.md`); a typed `/aid-create-document` (or
   `/aid-document`, which runs this skill) sets none.
+- **Bound genre and format.** A kind-sibling (`/aid-document`, `/aid-document-<kind>` or `/aid-create-diagram`)
+  binds a genre and a format and runs this skill. The work is recorded under `aid-create-document`, and
+  nothing else in the record holds the binding, so every step entry (`--step ... --detail`) from AUTHOR on
+  carries it (`genre: <genre>; format: <format>`, with the genre left out when none is bound). A resumed
+  work reads the binding back from the saved detail and drafts in the same genre and format.
 - **Continuation:** On continuation, follow the gate's § 3b: enter the chosen work's worktree and run the skill its record names, at its saved step.
 
-**Advance:** CHAIN -> [State: AUTHOR] on a new work; a continuation follows the gate's § 3b instead.
+**Advance:** CHAIN -> [State: AUTHOR] on a new work; HALT when the user continues an existing work (the gate's § 3b takes it over).
 
 ---
 
@@ -128,7 +132,7 @@ It drafts into the work folder (not yet placed). Text formats are produced nativ
 3. **Grade:** `bash .aid/runtime/scripts/grade.sh --explain <ledger>`. Not clean -> loop
    to AUTHOR. Circuit-breaker: 3 cycles -> IMPEDIMENT, and the lifecycle set to `Blocked` through the writer.
 
-**Advance:** CHAIN -> [State: PRESENT].
+**Advance:** CHAIN -> [State: PRESENT] when the verify is clean; CHAIN -> [State: AUTHOR] when it is not clean and fewer than 3 cycles have run; HALT when the 3-cycle circuit breaker has tripped.
 
 ---
 

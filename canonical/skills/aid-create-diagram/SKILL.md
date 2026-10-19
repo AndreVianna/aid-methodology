@@ -26,3 +26,7 @@ sequence, ER, C4, state, ... -- that fits the subject). Substitute only the invo
 name in any printed usage example (`/aid-create-diagram` instead of
 `/aid-create-document`). Deeper genre/format structures:
 `.aid/runtime/templates/shortcut-scaffolding/document.md`.
+
+The work is recorded under `aid-create-document`, whose record alone decides a resume. So that a
+resumed work keeps the bound format (`diagram`), pass them in the `--detail` of every step the run
+enters (`format: diagram`), as `aid-create-document` ALLOCATE says.

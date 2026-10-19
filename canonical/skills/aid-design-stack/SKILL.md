@@ -60,7 +60,7 @@ saved step on resume, and never routes; the work record alone decides where a wo
 
 ## State: DESIGN
 
-Dispatch **`aid-architect`** (clean context, tiered) to write or iterate
+Resolve and confirm the destination first (below); then dispatch **`aid-architect`** (clean context, tiered) to write or iterate
 `.aid/design/stack.md` in the seed shape the contract fixes (`design-seed.md`;
 feature-002 §4), grounded in `.aid/knowledge/` and the project source plus any seed read
 in INTAKE. What this artifact's seed must settle: **the languages, runtimes, frameworks and
@@ -78,7 +78,9 @@ rationale (§7d). Where a realization is genuinely ambiguous, **ask -- never pic
 **Writes only `.aid/design/stack.md`.** Never writes `.aid/knowledge/`, never writes
 production code -- the `design` invariant (`design-lifecycle.md`).
 
-**Advance:** ASK -> [State: VERIFY].
+The destination confirmation is a blocking question, asked before the dispatch writes anything: this step pauses on it until the user answers.
+
+**Advance:** CHAIN -> [State: VERIFY].
 
 ---
 
@@ -87,7 +89,7 @@ production code -- the `design` invariant (`design-lifecycle.md`).
 **Full verify**, as `design-lifecycle.md` defines it. Not clean -> loop to DESIGN; the
 3-cycle circuit breaker there escalates to IMPEDIMENT, and the lifecycle is set to `Blocked` through the writer.
 
-**Advance:** CHAIN -> [State: PRESENT].
+**Advance:** CHAIN -> [State: PRESENT] when the verify is clean; CHAIN -> [State: DESIGN] when it is not clean and fewer than 3 cycles have run; HALT when the 3-cycle circuit breaker has tripped.
 
 ---
 
@@ -102,5 +104,5 @@ the user iterates (re-invoke this skill) or realizes it now (`/aid-create-stack`
 
 ## State: DONE
 
-Set the lifecycle to `Completed` through the writer, `updated` now, append a `## Lifecycle History` row. The seed
+Set the lifecycle to `Completed` through the writer. The seed
 persists at `.aid/design/stack.md`; consumption happens at `/aid-create-stack`.

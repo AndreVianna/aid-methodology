@@ -11,5 +11,5 @@ Is there something specific you want to re-examine?"_
 
 The question is blocking: this step pauses on it until the user answers.
 
-**Advance:** **CHAIN** → [State: REVIEW] once the user confirms the reopen. A specific concern the user gives is
+**Advance:** **CHAIN** → [State: REVIEW] when the user confirms the reopen; **CHAIN** → [State: DONE] when the user keeps the task list as it is. A specific concern the user gives is
 recorded as context for the review.
