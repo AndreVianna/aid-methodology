@@ -414,7 +414,7 @@ assert_eq "${#STARTERS[@]}" "10" "G: exactly ten affected work-starters under co
 # `create` mention).
 declare -A STARTER_ALLOC_ANCHOR=(
     ["canonical/aid/templates/shortcut-engine.md"]="### Step 4: Scaffold STATE.yml"
-    ["canonical/skills/aid-describe/SKILL.md"]="create \`.aid/works/work-001-{name}/\`"
+    ["canonical/skills/aid-describe/SKILL.md"]="creates the work record through the writer"
     ["canonical/skills/aid-review/SKILL.md"]="STATE.yml"
     ["canonical/skills/aid-research/SKILL.md"]="STATE.yml"
     ["canonical/skills/aid-design/SKILL.md"]="**then** allocate (\`"

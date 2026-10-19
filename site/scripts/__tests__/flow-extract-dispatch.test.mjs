@@ -246,12 +246,12 @@ describe('extractDispatch — aid-describe: richest corpus fixture', () => {
     expect(names[4]).toBe('COMPLETION');
   });
 
-  it('COMPLETION is the only exit (has PAUSE-FOR-USER-DECISION terminal)', () => {
-    // Mutant: omit terminal for PAUSE-FOR-USER-DECISION → no exit node.
+  it('COMPLETION is the only exit (has HALT terminal, reached after ASK)', () => {
+    // Mutant: omit terminal for the ASK -> HALT advance → no exit node.
     expect(chart.exits).toContain('n5');
     const completion = chart.nodes.find((n) => n.name === 'COMPLETION');
     expect(completion.terminal).not.toBeNull();
-    expect(completion.terminal.advanceType).toBe('PAUSE-FOR-USER-DECISION');
+    expect(completion.terminal.advanceType).toBe('HALT');
   });
 
   it('FIRST-RUN is the entry', () => {
@@ -322,8 +322,8 @@ describe('extractDispatch — artifact condition normalization', () => {
   beforeAll(() => { chart = extractDispatch('aid-describe', null, REPO_ROOT); });
 
   it('Q-AND-A→CONTINUE edge has null condition (worker artifact condition cleared)', () => {
-    // Q-AND-A worker advance: "**CHAIN** → [State: CONTINUE] (continue inline)."
-    // After stripping CHAIN keyword + state name, condition is "** ** ( inline" — artifact.
+    // Q-AND-A worker advance: "**ASK** → [State: CONTINUE] (continue inline)."
+    // After stripping ASK keyword + state name, condition is "** ** ( inline" — artifact.
     // _isArtifactCondition must recognise "( inline" and clear to null, then the row's
     // unconditional edge wins.
     // Mutant: remove _isArtifactCondition check → worker cond kept → condition non-null.
@@ -334,7 +334,7 @@ describe('extractDispatch — artifact condition normalization', () => {
   });
 
   it('DESCRIBE-SEED→COMPLETION edge has null condition (worker "**" artifact cleared)', () => {
-    // DESCRIBE-SEED worker advance: "**Advance: CHAIN -> [State: COMPLETION]**"
+    // DESCRIBE-SEED worker advance: "**Advance: ASK -> [State: COMPLETION]**"
     // Trailing "**" is a standalone-asterisk artifact.
     // Mutant: remove standalone-asterisk guard → "**" kept → condition non-null.
     const e = chart.edges.find((e) => e.from === 'n4' && e.to === 'n5');

@@ -9,57 +9,32 @@ already known about the project. This context prevents asking questions the KB a
 
 If no KB exists, that's fine — this is a greenfield project.
 
-### 1b. Create or update STATE.yml
+### 1b. Work record (created by the gate)
 
-Ensure `.aid/works/{work}/STATE.yml` exists and has its `interview` key and `qa` key.
-Copy from `../../../aid/templates/work-state-template.yml` if the file does not yet exist.
+The gate's `§ 3a` (`.aid/runtime/templates/work-initiation-gate.md`) creates `.aid/works/{work}/STATE.yml`
+before this state runs. Do not copy the template and do not write the record's keys by hand; set any
+other key through the writer.
 
-### 1b-ii. Seed the frontmatter keys
+### 1b-ii. Seed the record through the writer
 
-After the STATE.yml file exists (created from the template above or already present), write
-the opening scalar values directly into `.aid/works/{work}/STATE.yml`'s frontmatter-zone
-top-level keys, replacing every placeholder value the template ships with the actual opening
-values. Resolve this work's own minimum grade first:
+The gate's `§ 3a` writes the opening record in one locked write, with the writer's create mode and
+this skill as the caller, its first step and the Definition phase:
 
 ```bash
-bash .aid/runtime/scripts/config/read-setting.sh --skill describe --key minimum_grade --default A
+bash .aid/runtime/scripts/execute/writeback-state.sh --create \
+  --work-dir .aid/works/{work} --reading {type} --request '{the user's words}' \
+  --skill aid-describe --step FIRST-RUN --phase Definition --depth full \
+  --minimum-grade "{resolved value of: bash .aid/runtime/scripts/config/read-setting.sh --skill describe --key minimum_grade --default A}"
 ```
 
-then write the whole block:
+The record then holds this skill as the caller and as the saved skill, the step `FIRST-RUN`, the phase
+`Definition`, `lifecycle: Running`, `started` and `updated`. Its pause and block keys hold `--`.
+`pipeline.path` is `full`: `aid-describe` is the FULL-pipeline starting skill, never a flattened Lite
+shortcut. This write is silent (no user-visible output, no gate, no prompt). CONTINUE begins
+immediately after it.
 
-```yaml
-pipeline:
-  path: full
-  initiator: aid-describe
-started: "{today, YYYY-MM-DD}"
-minimum_grade: "{resolved value from the read-setting.sh call above}"
-user_approved: no
-lifecycle: Running
-phase: Describe
-active_skill: aid-describe
-updated: "{YYYY-MM-DDTHH:MM:SSZ}"         ← today's UTC timestamp, e.g. 2026-06-10T14:32:00Z
-pause_reason: --
-block_reason: --
-block_artifact: --
-```
-
-(`pipeline.path` is always `full` here -- `aid-describe` is the FULL-pipeline starting
-skill, never a flattened Lite shortcut; the flattened-only `delivery_state`/`gate_tier`/
-`gate_grade`/`gate_timestamp` group is left untouched -- it is not even present in a
-full-layout `STATE.yml`, since a full-path work's delivery lifecycle/gate lives in its own
-`delivery-NNN/STATE.yml` instead.)
-
-This side-effect is a state-write only (no user-visible output, no gate, no prompt). It does
-not change any observable interview behavior — CONTINUE begins immediately after scaffolding.
-The `pause_reason`, `block_reason`, and `block_artifact` keys are included with the sentinel
-value `--` so every conditional key is structurally present from the start. All values are
-valid opening members of the closed enums declared in the template. The template's own
-STATE ADVANCEMENT ORDERING `#` comment block is static and is never rewritten here
-or by any later `writeback-state.sh --pipeline` call.
-
-**Idempotency:** if the frontmatter already has `lifecycle: Running` (the work was
-previously scaffolded), skip this step — do not overwrite values that may have been advanced
-by a later phase.
+**Idempotency:** `--create` refuses a work that already has a `STATE.yml` (exit 8), so this write
+happens once. On a resume, the record decides the step; do not write it again.
 
 ### 1c. Create REQUIREMENTS.md scaffold
 

@@ -135,11 +135,11 @@ Is there anything else we should consider, or are the requirements ready?
     bash .aid/runtime/scripts/execute/writeback-state.sh --pipeline --field "Pause Reason" --value "Requirements approved — run /aid-define {work} to decompose into features"
     bash .aid/runtime/scripts/execute/writeback-state.sh --pipeline --field Updated --value "$(date -u +%Y-%m-%dT%H:%M:%SZ)"
     ```
-  - Print the pause reason and resume command: `[Pause] Requirements approved. Run /aid-define {work} to decompose into features.` and exit (this state is **PAUSE-FOR-USER-DECISION** — does NOT auto-chain).
+  - Name the next skill in one plain line: `/aid-define {work}` decomposes the approved requirements into features. Then HALT (this state is **ASK** then **HALT** — does NOT auto-chain).
 
 - **[2] Additional consideration:**
   - Incorporate into relevant section(s) of REQUIREMENTS.md
   - Update STATE.md `## Interview State` section statuses if needed
   - Return to Interview Loop for any new gaps
 
-**Advance:** **PAUSE-FOR-USER-DECISION** — on approval, print the pause reason + resume command and exit. Run `/aid-define {work}` to decompose approved requirements into features. Do not chain into it: this checkpoint needs an explicit user decision.
+**Advance:** **ASK** → **HALT**. Name `/aid-define {work}` as the next skill in one plain line. Do not chain into it: this checkpoint needs an explicit user decision.

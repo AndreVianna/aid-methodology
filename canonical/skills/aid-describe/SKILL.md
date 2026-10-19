@@ -9,12 +9,12 @@ description: >
   wherever it is still incomplete. It ends by presenting the finished requirements for your
   approval and handing off to `/aid-define`.
 allowed-tools: Read Glob Grep Bash Shell Terminal Write Edit
-argument-hint: "[work-001] resume work  [--reset work-001] clear and restart"
+argument-hint: "[work-001] resume work"
 ---
 
 # Conversational Requirements Gathering
 
-State machine: FIRST-RUN -> Q-AND-A -> CONTINUE -> {greenfield: DESCRIBE-SEED ->} COMPLETION [PAUSE -> /aid-define].
+State machine: FIRST-RUN -> Q-AND-A -> CONTINUE -> {greenfield: DESCRIBE-SEED ->} COMPLETION [ASK -> HALT: /aid-define].
 
 ## Agents Involved
 
@@ -78,32 +78,16 @@ Exit. Do not proceed.
 
 | Argument | Effect |
 |----------|--------|
-| `work-NNN` | Work on the specified work item. |
-| `--reset work-NNN` | Delete the work folder and restart from scratch. |
+| `work-NNN` | Work on the specified work item, through the gate (`.aid/runtime/templates/work-initiation-gate.md`). |
 | *(no argument)* | Task routing (see below). |
 
-### Direct `work-NNN` / `--reset work-NNN` argument -- locate + enter first
+### Direct `work-NNN` argument -- through the gate
 
-A direct `work-NNN` (or `--reset work-NNN`) argument **bypasses Task Routing and the Work
-Initiation Gate entirely** -- there is no enumeration, no new-vs-continuation ASK. Because
-this still resumes an existing work's isolated worktree, locate + enter it **before** State
-Detection reads `.aid/works/{work}/STATE.md`:
-
-1. **Normalize** to the bare `work-NNN` branch name:
-   `[[ "$work" =~ ^(work-[0-9]+) ]] && work_id="${BASH_REMATCH[1]}"` (idempotent if already
-   bare -- identical normalization to the gate's `§ 3b` step 1 / feature-003 § 3.3).
-2. **Locate and enter:**
-   `bash .aid/runtime/scripts/works/worktree-lifecycle.sh locate <work_id>` -- resolves via
-   the 4-rung ladder and **exits 0 always**, printing `<abs_path>\t<status>` (split on the
-   TAB); on an unrecoverable git state it degrades to a non-empty `<cwd-abs>\tcurrent` --
-   it never fails the caller. Keep the **defensive** non-zero-exit/empty-path backstop guard
-   (surface the error and STOP; this cannot fire against the real helper). Enter the
-   resolved path unless `<status>` is `current` (host-native `EnterWorktree` where
-   available, else treat the path as the working directory and surface it --
-   `worktree-lifecycle.md § Step 2`).
-3. **Only then** proceed to State Detection for `<work_id>`. This applies identically to
-   `--reset work-NNN` -- the reset's delete-and-recreate (State Detection Step 1) runs
-   after locate+enter has already placed the agent inside the work's own isolated worktree.
+A direct `work-NNN` argument goes through the gate's `§ 3a` (new) or `§ 3b` (continuation),
+as Task Routing below does. An existing work is resumed through `§ 3b`: the gate locates and
+enters its worktree, checks its record, and runs the skill the record names at its saved step.
+A named `work-NNN` that does not exist is said so in one line, and then goes through the gate's
+`§ 3a` like any new work, which gives it the next id.
 
 ---
 
@@ -120,18 +104,14 @@ bash .aid/runtime/scripts/works/enumerate-works.sh
 
 ### No works exist (empty output) -> NEW, no prompt
 
-1. Ask for a short name for this work:
-   ```
-   What's a short name for this work? (e.g., "user-auth", "reporting", "api-v2")
-   ```
-2. **Create and enter the worktree, before authoring anything** (gate `§ 3a` step 2):
-   `bash .aid/runtime/scripts/works/worktree-lifecycle.sh create work-001 {name}` --
-   idempotent; prints the worktree's absolute path on success/no-op; on a non-zero exit or
-   an empty path, surface the error and **STOP** (do not create the work folder on the
-   current, possibly `master`, tree); on success, enter the resolved path (host-native
-   `EnterWorktree` where available, else cwd + surface -- `worktree-lifecycle.md § Step 2`).
-3. **Only now**, inside the entered worktree, create `.aid/works/work-001-{name}/`.
-4. Proceed to State Detection with this work.
+Run the gate's `§ 3a` (`.aid/runtime/templates/work-initiation-gate.md`) with this skill as the
+caller, its first step `FIRST-RUN` and phase `Definition`. The gate resolves the id, runs
+`worktree-lifecycle.sh create <work-id> <name>` to create and enter the worktree, reads the work's
+type, and creates the work record through the writer before it hands the work back. The gate
+derives the work's short name. If the user gave no words, ask what they want to build, as
+`.aid/runtime/templates/question-protocol.md` says; that answer is the request.
+
+Then proceed to State Detection with this work.
 
 ### One or more works exist -> ASK (never auto-continue)
 
@@ -143,9 +123,9 @@ label from the helper's record columns):
 Works already exist. Is this a NEW work, or a CONTINUATION of an existing one?
 
 Existing works:
-  work-001-user-auth        [Describe · Running]                (main)
-  work-002-reporting        [Plan · Running]                    (main)
-  work-016-numberless-...   [Specify · Paused-Awaiting-Input]   (worktree: work-016)
+  work-001-user-auth        [Definition · Running]                (main)
+  work-002-reporting        [Planning · Running]                 (main)
+  work-016-numberless-...   [Specification · Paused-Awaiting-Input] (worktree: work-016)
 
 [N] New work
 [1] Continue work-001-user-auth
@@ -155,29 +135,8 @@ Existing works:
 
 Wait for the response, then act per the gate:
 
-- **New work:** ask for a name; **resolve `<work-id>`** as `work-{NNN+1}`, where `NNN` is
-  the maximum `work-NNN` numeric prefix across every record the enumeration above already
-  returned (cross-worktree by construction -- never re-scan a local `.aid/works/` glob;
-  gate `§ 3a` step 1; `work-001` if the enumeration returned no records). **Create and
-  enter the worktree, before authoring anything** (gate `§ 3a` step 2):
-  `bash .aid/runtime/scripts/works/worktree-lifecycle.sh create <work-id> {name}` -- STOP
-  on a non-zero exit or empty path (do not create the work folder on the current tree),
-  else enter the resolved path. **Only then** create `.aid/works/<work-id>-{name}/` and
-  proceed to State Detection.
-- **Continuation:** route per the chosen work's `STATE.md` `phase`/`lifecycle` (gate
-  Step 3b). When the gate resolves to **`/aid-describe <work>`** (the chosen work is a
-  Describe-phase work), **first normalize** the chosen work's id to its bare `work-NNN`
-  branch name (`[[ "$chosen_work" =~ ^(work-[0-9]+) ]] && work_id="${BASH_REMATCH[1]}"` --
-  the enumeration supplies the full folder slug, but `locate` keys on the bare branch name;
-  gate `§ 3b` step 1), then **locate and enter** that work's worktree per the gate's `§ 3b`
-  steps 2-4 (`worktree-lifecycle.sh locate <work_id>` -- always exits 0, degrading to a
-  non-empty `<cwd-abs>\tcurrent` on a git-broken state; keep the defensive non-zero-exit/
-  empty-path backstop guard, which cannot fire against the real helper; enter unless
-  `<status>` is `current`), and **only then** proceed straight to **State Detection** for
-  that work in this same invocation -- that IS aid-describe resuming. When it resolves to a
-  **different** door (a later-phase full-path work, or a halted shortcut work ->
-  `/aid-execute`), print the resolved resume command and STOP; do not create or drive a
-  work here (the locate+enter for that target happens inside the routed command's own run).
+- **New work:** the gate's `§ 3a`, as above (`FIRST-RUN`, phase `Definition`).
+- **Continuation:** On continuation, follow the gate's § 3b: enter the chosen work's worktree and run the skill its record names, at its saved step.
 
 > There is **no** auto-continue shortcut: a lone unapproved work is never silently
 > resumed. The gate always asks when any work exists (deliberate UX change; the previous
@@ -191,6 +150,10 @@ Wait for the response, then act per the gate:
 State detection reads the files on disk, every run. Nothing remembered from an
 earlier run or from this conversation counts as state, because the files may
 have changed since.
+
+Per `.aid/runtime/templates/skill-steps.md` § State Detection, this detection shapes the entry
+step of a fresh start and validates a saved step on resume; it never routes. The work record
+decides where a work continues.
 
 All paths below are relative to `.aid/works/{work}/`.
 
@@ -207,10 +170,9 @@ Approved: Interview State: Approved                                 -> hand-off 
 
 **Detection logic:**
 
-1. If `--reset` → delete the work folder → recreate → proceed as State 1
-2. Check for `STATE.md` in the work folder and look for the `## Interview State` section
-3. If missing → **State 1: FIRST-RUN**
-4. If exists:
+1. Check for `STATE.md` in the work folder and look for the `## Interview State` section
+2. If missing → **State 1: FIRST-RUN**
+3. If exists:
    a. Check `## Cross-phase Q&A` section for entries with `**Status:** Pending`
    b. If Pending entries exist → **State 2: Q-AND-A**
    c. Read `**Interview State:**` field in `## Interview State`
@@ -278,12 +240,13 @@ aid-describe  ▸ you are here
 | Q-AND-A | `references/state-q-and-a.md` | `aid-interviewer` | → CONTINUE |
 | CONTINUE | `references/state-continue.md` | `aid-interviewer` | → DESCRIBE-SEED (greenfield: no brownfield KB on disk and seed not yet complete) / → COMPLETION (brownfield or seed already complete) |
 | DESCRIBE-SEED | `references/state-describe-seed.md` | `aid-interviewer` | → COMPLETION |
-| COMPLETION | `references/state-completion.md` | `aid-interviewer` | PAUSE-FOR-USER-DECISION → Run /aid-define {work} |
+| COMPLETION | `references/state-completion.md` | `aid-interviewer` | ASK → HALT, naming `/aid-define {work}` |
 
 On state entry, print `[State: NAME]` + the "you are here" map from State Detection above.
-When a state completes, route by its `**Advance:**` type (per [`state-machine-chaining.md`](../../aid/templates/state-machine-chaining.md)):
+When a state completes, route by its `**Advance:**` type (per [`skill-steps.md`](../../aid/templates/skill-steps.md)):
 - **CHAIN** → begin the next state's reference doc within the same invocation; no exit.
-- **PAUSE-FOR-USER-ACTION** / **PAUSE-FOR-USER-DECISION** → print the pause reason + resume command and exit.
+- **ASK** → stop for the user through the question protocol, then continue to the step the line names once answered.
+- **WAIT** → say what the user must do outside the conversation, plainly, and stop.
 - **HALT** → print the closing summary and exit.
 
 ---

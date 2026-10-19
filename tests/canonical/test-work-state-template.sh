@@ -517,8 +517,7 @@ assert_file_contains \
 
 # ---------------------------------------------------------------------------
 # WS19: aid-describe state-first-run seeds the pipeline scalar keys.
-# Unchanged in substance -- these were already frontmatter keys pre-refactor;
-# only the dogfood path this section resolves (`### 1b-ii`) changed.
+# The gate's writer create mode now seeds the record; `### 1b-ii` names it.
 # ---------------------------------------------------------------------------
 if [[ -f "$FIRST_RUN" ]]; then
     assert_file_contains \
@@ -527,12 +526,12 @@ if [[ -f "$FIRST_RUN" ]]; then
         "WS19 aid-describe state-first-run seeds lifecycle: Running"
     assert_file_contains \
         "$FIRST_RUN" \
-        "phase: Describe" \
-        "WS19 aid-describe state-first-run seeds phase: Describe"
+        "--phase Definition" \
+        "WS19 aid-describe state-first-run seeds the record with --phase Definition"
     assert_file_contains \
         "$FIRST_RUN" \
-        "active_skill: aid-describe" \
-        "WS19 aid-describe state-first-run seeds active_skill: aid-describe"
+        "--skill aid-describe" \
+        "WS19 aid-describe state-first-run seeds the record with --skill aid-describe"
 else
     fail "WS19 state-first-run.md not found: $FIRST_RUN"
 fi

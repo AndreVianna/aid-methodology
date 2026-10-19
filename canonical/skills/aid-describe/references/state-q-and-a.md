@@ -61,4 +61,4 @@ as the answer requires.
 When all questions addressed:
 `[Q&A] Complete. {answered} answered, {skipped} skipped.`
 
-**Advance:** **CHAIN** → [State: CONTINUE] (continue inline).
+**Advance:** **ASK** → [State: CONTINUE] (continue inline).
