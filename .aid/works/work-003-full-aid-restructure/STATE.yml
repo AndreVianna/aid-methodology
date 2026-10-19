@@ -1819,3 +1819,11 @@ qa:
     suggested: 'A: accept the loss, update the tests, backlog the builder change'
     answer: 'B (maintainer): fix the builder now, not later, so the correction is not lost. A new task (display name task-037a, id task-371) teaches the builder the one-line form; task-037 waits for it and then keeps its Continuation branches.'
     applied_to: 'PLAN.md (task-371, task-037 depends on it); deliveries/delivery-002/tasks/task-371/'
+  - id: Q158
+    category: Building
+    impact: Medium
+    state: Answered
+    context: 'Many steps now end "ASK, then HALT" (ask the user, then stop). The site flow-chart builder (site/scripts/lib/flow-graph/advance.mjs) reads that as two terminal clauses and keeps only HALT: the charts lose that the user is asked first, and the generator warns 73 times (68 on the shortcut engine APPROVAL-HALT).'
+    suggested: 'Fix now as task-037b (id task-372), as with Q157'
+    answer: 'Fix now (maintainer).'
+    applied_to: 'PLAN.md (task-372); deliveries/delivery-002/tasks/task-372/'
