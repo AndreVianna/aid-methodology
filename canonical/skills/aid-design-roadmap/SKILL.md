@@ -94,7 +94,7 @@ Set `lifecycle: Paused-Awaiting-Input`. Present the seed clearly. Assert no reso
 the user decides whether to iterate further (re-invoke this skill) or realize it now
 (`/aid-create-roadmap`).
 
-**Advance:** DONE.
+**Advance:** ASK -> [State: DONE].
 
 ---
 

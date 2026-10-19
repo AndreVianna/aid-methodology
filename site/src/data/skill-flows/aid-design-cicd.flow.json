@@ -46,7 +46,7 @@
         "startLine": 61,
         "endLine": 81,
         "sourceKind": "skill",
-        "excerpt": "## State: DESIGN\n\nDispatch **`aid-architect`** (clean context, tiered) to write or iterate\n`.aid/design/cicd.md` in the seed shape the contract fixes (`design-seed.md`;\nfeature-002 §4), grounded in `.aid/knowledge/` and the project source plus any seed read\nin INTAKE. What this artifact's seed must settle: **the pipeline stages, triggers,\nenvironments, and promotion and release flow**.\n\n**Destination resolution (by concern, not filename).** This skill binds concern **C8**\n(shipping & operation, `.aid/runtime/templates/kb-authoring/concern-model.md`), never a\nhardcoded filename. Resolve C8 against `.aid/settings.yml` `knowledge.doc_set`, falling\nback to the C8 row of `.aid/runtime/templates/kb-authoring/domain-doc-matrix.md`, and\n**confirm the resolution with the user** before writing. Write the resolved path into the\nseed's **`## Destination`** section. Where a realization is genuinely ambiguous, **ask --\nnever pick silently**.\n\n**Writes only `.aid/design/cicd.md`.** Never writes `.aid/knowledge/`, never writes\nproduction code, and **never writes a workflow file under `.github/`** -- the `design`\ninvariant (`design-lifecycle.md`).\n\n**Advance:** VERIFY."
+        "excerpt": "## State: DESIGN\n\nDispatch **`aid-architect`** (clean context, tiered) to write or iterate\n`.aid/design/cicd.md` in the seed shape the contract fixes (`design-seed.md`;\nfeature-002 §4), grounded in `.aid/knowledge/` and the project source plus any seed read\nin INTAKE. What this artifact's seed must settle: **the pipeline stages, triggers,\nenvironments, and promotion and release flow**.\n\n**Destination resolution (by concern, not filename).** This skill binds concern **C8**\n(shipping & operation, `.aid/runtime/templates/kb-authoring/concern-model.md`), never a\nhardcoded filename. Resolve C8 against `.aid/settings.yml` `knowledge.doc_set`, falling\nback to the C8 row of `.aid/runtime/templates/kb-authoring/domain-doc-matrix.md`, and\n**confirm the resolution with the user** before writing. Write the resolved path into the\nseed's **`## Destination`** section. Where a realization is genuinely ambiguous, **ask --\nnever pick silently**.\n\n**Writes only `.aid/design/cicd.md`.** Never writes `.aid/knowledge/`, never writes\nproduction code, and **never writes a workflow file under `.github/`** -- the `design`\ninvariant (`design-lifecycle.md`).\n\n**Advance:** ASK -> [State: VERIFY]."
       }
     },
     {
@@ -90,7 +90,7 @@
         "startLine": 94,
         "endLine": 99,
         "sourceKind": "skill",
-        "excerpt": "## State: PRESENT (hard stop -- the user decides)\n\nSet `lifecycle: Paused-Awaiting-Input`. Present the seed clearly. Assert no resolution --\nthe user iterates (re-invoke this skill) or realizes it now (`/aid-create-cicd`).\n\n**Advance:** DONE."
+        "excerpt": "## State: PRESENT (hard stop -- the user decides)\n\nSet `lifecycle: Paused-Awaiting-Input`. Present the seed clearly. Assert no resolution --\nthe user iterates (re-invoke this skill) or realizes it now (`/aid-create-cicd`).\n\n**Advance:** ASK -> [State: DONE]."
       }
     },
     {
@@ -139,13 +139,13 @@
       "to": "n3",
       "kind": "sequence",
       "condition": null,
-      "advanceType": "UNSPECIFIED",
+      "advanceType": "ASK",
       "provenance": {
         "file": "canonical/skills/aid-design-cicd/SKILL.md",
         "startLine": 81,
         "endLine": 81,
         "sourceKind": "skill",
-        "excerpt": "**Advance:** VERIFY."
+        "excerpt": "**Advance:** ASK -> [State: VERIFY]."
       }
     },
     {
@@ -181,13 +181,13 @@
       "to": "n5",
       "kind": "sequence",
       "condition": null,
-      "advanceType": "UNSPECIFIED",
+      "advanceType": "ASK",
       "provenance": {
         "file": "canonical/skills/aid-design-cicd/SKILL.md",
         "startLine": 99,
         "endLine": 99,
         "sourceKind": "skill",
-        "excerpt": "**Advance:** DONE."
+        "excerpt": "**Advance:** ASK -> [State: DONE]."
       }
     }
   ],

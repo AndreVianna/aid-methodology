@@ -79,7 +79,7 @@ realization is genuinely ambiguous, **ask -- never pick silently**.
 **Writes only `.aid/design/architecture.md`.** Never writes `.aid/knowledge/`, never writes
 production code -- the `design` invariant (`design-lifecycle.md`).
 
-**Advance:** VERIFY.
+**Advance:** ASK -> [State: VERIFY].
 
 ---
 
@@ -97,7 +97,7 @@ production code -- the `design` invariant (`design-lifecycle.md`).
 Set `lifecycle: Paused-Awaiting-Input`. Present the seed clearly. Assert no resolution --
 the user iterates (re-invoke this skill) or realizes it now (`/aid-create-architecture`).
 
-**Advance:** DONE.
+**Advance:** ASK -> [State: DONE].
 
 ---
 

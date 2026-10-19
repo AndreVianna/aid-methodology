@@ -90,7 +90,7 @@
         "startLine": 80,
         "endLine": 85,
         "sourceKind": "skill",
-        "excerpt": "## State: PRESENT (hard stop -- the user decides)\n\nSet `lifecycle: Paused-Awaiting-Input`. Present the seed clearly. Assert no resolution --\nthe user iterates (re-invoke this skill) or realizes it now (`/aid-create-integration`).\n\n**Advance:** DONE."
+        "excerpt": "## State: PRESENT (hard stop -- the user decides)\n\nSet `lifecycle: Paused-Awaiting-Input`. Present the seed clearly. Assert no resolution --\nthe user iterates (re-invoke this skill) or realizes it now (`/aid-create-integration`).\n\n**Advance:** ASK -> [State: DONE]."
       }
     },
     {
@@ -181,13 +181,13 @@
       "to": "n5",
       "kind": "sequence",
       "condition": null,
-      "advanceType": "UNSPECIFIED",
+      "advanceType": "ASK",
       "provenance": {
         "file": "canonical/skills/aid-design-integration/SKILL.md",
         "startLine": 85,
         "endLine": 85,
         "sourceKind": "skill",
-        "excerpt": "**Advance:** DONE."
+        "excerpt": "**Advance:** ASK -> [State: DONE]."
       }
     }
   ],

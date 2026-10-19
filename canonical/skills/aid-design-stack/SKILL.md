@@ -78,7 +78,7 @@ rationale (§7d). Where a realization is genuinely ambiguous, **ask -- never pic
 **Writes only `.aid/design/stack.md`.** Never writes `.aid/knowledge/`, never writes
 production code -- the `design` invariant (`design-lifecycle.md`).
 
-**Advance:** VERIFY.
+**Advance:** ASK -> [State: VERIFY].
 
 ---
 
@@ -96,7 +96,7 @@ production code -- the `design` invariant (`design-lifecycle.md`).
 Set `lifecycle: Paused-Awaiting-Input`. Present the seed clearly. Assert no resolution --
 the user iterates (re-invoke this skill) or realizes it now (`/aid-create-stack`).
 
-**Advance:** DONE.
+**Advance:** ASK -> [State: DONE].
 
 ---
 

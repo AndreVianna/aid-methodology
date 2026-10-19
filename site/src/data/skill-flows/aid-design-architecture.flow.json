@@ -46,7 +46,7 @@
         "startLine": 60,
         "endLine": 82,
         "sourceKind": "skill",
-        "excerpt": "## State: DESIGN\n\nDispatch **`aid-architect`** (clean context, tiered) to write or iterate\n`.aid/design/architecture.md` in the seed shape the contract fixes (`design-seed.md`;\nfeature-002 §4), grounded in `.aid/knowledge/` and the project source plus any seed read\nin INTAKE. What this artifact's seed must settle: **the components, their boundaries and\ninteractions, the invariants, and what is deliberately NOT a component**.\n\n**Destination resolution (by concern, not filename).** This skill binds concern **C1**\n(build & shape, `.aid/runtime/templates/kb-authoring/concern-model.md`), never a hardcoded\nfilename. Resolve C1 against the project's declared doc-set (`.aid/settings.yml`\n`knowledge.doc_set`), falling back to the C1 row of\n`.aid/runtime/templates/kb-authoring/domain-doc-matrix.md`, and **confirm the resolution\nwith the user** before writing. Write the resolved path into the seed's **`## Destination`**\nsection (required for a class-1 seed). C1's default set holds both `project-structure.md`\nand `architecture.md`; this skill resolves to the document describing the system's shape\nand **never** `project-structure.md`, which describes the repo layout. Where the\nrealization is genuinely ambiguous, **ask -- never pick silently**.\n\n**Writes only `.aid/design/architecture.md`.** Never writes `.aid/knowledge/`, never writes\nproduction code -- the `design` invariant (`design-lifecycle.md`).\n\n**Advance:** VERIFY."
+        "excerpt": "## State: DESIGN\n\nDispatch **`aid-architect`** (clean context, tiered) to write or iterate\n`.aid/design/architecture.md` in the seed shape the contract fixes (`design-seed.md`;\nfeature-002 §4), grounded in `.aid/knowledge/` and the project source plus any seed read\nin INTAKE. What this artifact's seed must settle: **the components, their boundaries and\ninteractions, the invariants, and what is deliberately NOT a component**.\n\n**Destination resolution (by concern, not filename).** This skill binds concern **C1**\n(build & shape, `.aid/runtime/templates/kb-authoring/concern-model.md`), never a hardcoded\nfilename. Resolve C1 against the project's declared doc-set (`.aid/settings.yml`\n`knowledge.doc_set`), falling back to the C1 row of\n`.aid/runtime/templates/kb-authoring/domain-doc-matrix.md`, and **confirm the resolution\nwith the user** before writing. Write the resolved path into the seed's **`## Destination`**\nsection (required for a class-1 seed). C1's default set holds both `project-structure.md`\nand `architecture.md`; this skill resolves to the document describing the system's shape\nand **never** `project-structure.md`, which describes the repo layout. Where the\nrealization is genuinely ambiguous, **ask -- never pick silently**.\n\n**Writes only `.aid/design/architecture.md`.** Never writes `.aid/knowledge/`, never writes\nproduction code -- the `design` invariant (`design-lifecycle.md`).\n\n**Advance:** ASK -> [State: VERIFY]."
       }
     },
     {
@@ -90,7 +90,7 @@
         "startLine": 95,
         "endLine": 100,
         "sourceKind": "skill",
-        "excerpt": "## State: PRESENT (hard stop -- the user decides)\n\nSet `lifecycle: Paused-Awaiting-Input`. Present the seed clearly. Assert no resolution --\nthe user iterates (re-invoke this skill) or realizes it now (`/aid-create-architecture`).\n\n**Advance:** DONE."
+        "excerpt": "## State: PRESENT (hard stop -- the user decides)\n\nSet `lifecycle: Paused-Awaiting-Input`. Present the seed clearly. Assert no resolution --\nthe user iterates (re-invoke this skill) or realizes it now (`/aid-create-architecture`).\n\n**Advance:** ASK -> [State: DONE]."
       }
     },
     {
@@ -139,13 +139,13 @@
       "to": "n3",
       "kind": "sequence",
       "condition": null,
-      "advanceType": "UNSPECIFIED",
+      "advanceType": "ASK",
       "provenance": {
         "file": "canonical/skills/aid-design-architecture/SKILL.md",
         "startLine": 82,
         "endLine": 82,
         "sourceKind": "skill",
-        "excerpt": "**Advance:** VERIFY."
+        "excerpt": "**Advance:** ASK -> [State: VERIFY]."
       }
     },
     {
@@ -181,13 +181,13 @@
       "to": "n5",
       "kind": "sequence",
       "condition": null,
-      "advanceType": "UNSPECIFIED",
+      "advanceType": "ASK",
       "provenance": {
         "file": "canonical/skills/aid-design-architecture/SKILL.md",
         "startLine": 100,
         "endLine": 100,
         "sourceKind": "skill",
-        "excerpt": "**Advance:** DONE."
+        "excerpt": "**Advance:** ASK -> [State: DONE]."
       }
     }
   ],

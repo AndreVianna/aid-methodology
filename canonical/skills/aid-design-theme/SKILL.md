@@ -80,7 +80,7 @@ never writes production code** -- the `design` invariant (`design-lifecycle.md`)
 Set `lifecycle: Paused-Awaiting-Input`. Present the seed clearly. Assert no resolution --
 the user iterates (re-invoke this skill) or realizes it now (`/aid-create-theme`).
 
-**Advance:** DONE.
+**Advance:** ASK -> [State: DONE].
 
 ---
 

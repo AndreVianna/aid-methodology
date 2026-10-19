@@ -79,7 +79,7 @@ silently**.
 **Writes only `.aid/design/testing-strategy.md`.** Never writes `.aid/knowledge/`, never
 writes test code -- the `design` invariant (`design-lifecycle.md`).
 
-**Advance:** VERIFY.
+**Advance:** ASK -> [State: VERIFY].
 
 ---
 
@@ -98,7 +98,7 @@ Set `lifecycle: Paused-Awaiting-Input`. Present the seed clearly. Assert no reso
 the user iterates (re-invoke this skill) or realizes it now
 (`/aid-create-testing-strategy`).
 
-**Advance:** DONE.
+**Advance:** ASK -> [State: DONE].
 
 ---
 

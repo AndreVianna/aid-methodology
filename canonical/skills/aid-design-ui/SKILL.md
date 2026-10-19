@@ -85,7 +85,7 @@ component/page lands. **Never writes `.aid/knowledge/` and never writes producti
 Set `lifecycle: Paused-Awaiting-Input`. Present the seed clearly. Assert no resolution --
 the user iterates (re-invoke this skill) or realizes it now (`/aid-create-ui`).
 
-**Advance:** DONE.
+**Advance:** ASK -> [State: DONE].
 
 ---
 

@@ -78,7 +78,7 @@ never pick silently**.
 production code, and **never writes a workflow file under `.github/`** -- the `design`
 invariant (`design-lifecycle.md`).
 
-**Advance:** VERIFY.
+**Advance:** ASK -> [State: VERIFY].
 
 ---
 
@@ -96,7 +96,7 @@ invariant (`design-lifecycle.md`).
 Set `lifecycle: Paused-Awaiting-Input`. Present the seed clearly. Assert no resolution --
 the user iterates (re-invoke this skill) or realizes it now (`/aid-create-cicd`).
 
-**Advance:** DONE.
+**Advance:** ASK -> [State: DONE].
 
 ---
 

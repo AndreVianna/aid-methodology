@@ -80,7 +80,7 @@ writes `.aid/knowledge/` and never writes production code** -- the `design` inva
 Set `lifecycle: Paused-Awaiting-Input`. Present the seed clearly. Assert no resolution --
 the user iterates (re-invoke this skill) or realizes it now (`/aid-create-data-pipeline`).
 
-**Advance:** DONE.
+**Advance:** ASK -> [State: DONE].
 
 ---
 
