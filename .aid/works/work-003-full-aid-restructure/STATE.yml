@@ -1843,3 +1843,11 @@ qa:
     suggested: '(1) an approval cannot be skipped; (2) Sonnet for the cycle-2 fix round, each helper re-checking its edits against skill-steps.md'
     answer: '1A: an approval cannot be skipped -- it stays open, and its step stays paused, until the user approves or declines. 2A: Sonnet does the cycle-2 fix round (this round only; Q141 stands for task builds).'
     applied_to: 'canonical/aid/templates/skill-steps.md (approvals); delivery-002 review cycle 2 fixes'
+  - id: Q161
+    category: Building
+    impact: Medium
+    state: Answered
+    context: 'Delivery-002 review cycle 3: 42 open rows (0 CRITICAL, 11 HIGH). Q160 approved Sonnet for the cycle-2 fix round only.'
+    suggested: 'Sonnet again for the cycle-3 fix round'
+    answer: 'A (maintainer): Sonnet for the cycle-3 fix round.'
+    applied_to: 'delivery-002 review cycle 3 fixes'
