@@ -199,6 +199,72 @@ fi
 assert_file_contains "${CLONE_STAGE}/release-notes-stub.md" "v4 requires CLI v4" \
     "RL09 stage-only release notes state v4 requires CLI v4"
 
+# RL11: Step 2b runs the three release checks with AID_RELEASE_CHECK=1 before
+#       staging, in live publish mode only; a failing check stops the release
+#       before anything is staged. Stub suites and a gh shim keep it offline.
+GATE_LOG="${TMP}/gate-check.log"
+GATE_FAIL="${TMP}/gate-fail-guide"
+GATE_BIN="${TMP}/gate-bin"
+GATE_CLONE="${TMP}/clone-release-gate"
+GATE_EXPECTED="$(printf '%s\n' \
+    'test-deferred-tests AID_RELEASE_CHECK=1' \
+    'test-skill-steps AID_RELEASE_CHECK=1' \
+    'test-skill-guide AID_RELEASE_CHECK=1')"
+mkdir -p "${GATE_BIN}"
+printf '#!/usr/bin/env bash\nexit 1\n' > "${GATE_BIN}/gh"
+chmod +x "${GATE_BIN}/gh"
+git clone --no-hardlinks --quiet "${REPO_ROOT}" "${GATE_CLONE}"
+cp "${SUT}" "${GATE_CLONE}/release.sh"
+for _gate_suite in test-deferred-tests test-skill-steps test-skill-guide; do
+    cat > "${GATE_CLONE}/tests/canonical/${_gate_suite}.sh" <<EOF
+#!/usr/bin/env bash
+echo "${_gate_suite} AID_RELEASE_CHECK=\${AID_RELEASE_CHECK:-unset}" >> "${GATE_LOG}"
+if [[ "${_gate_suite}" == "test-skill-guide" && -e "${GATE_FAIL}" ]]; then exit 1; fi
+exit 0
+EOF
+done
+git -C "${GATE_CLONE}" config user.email "test@example.com"
+git -C "${GATE_CLONE}" config user.name "Test"
+git -C "${GATE_CLONE}" add release.sh tests/canonical/test-deferred-tests.sh \
+    tests/canonical/test-skill-steps.sh tests/canonical/test-skill-guide.sh
+git -C "${GATE_CLONE}" commit --quiet -m "test: stub release check suites"
+GATE_VERSION="$(tr -d '[:space:]' < "${GATE_CLONE}/VERSION")"
+git -C "${GATE_CLONE}" tag -d "v${GATE_VERSION}" >/dev/null 2>&1 || true
+GATE_STAGE_DIR="${GATE_CLONE}/.aid/.temp/release-${GATE_VERSION}"
+# Run_generator.py rewrites tracked dogfood trees, so each run starts from a clean HEAD.
+_gate_reset() {
+    git -C "${GATE_CLONE}" checkout -q -- .
+    git -C "${GATE_CLONE}" clean -qfdx
+}
+
+# RL11a: live publish runs the three checks in order with AID_RELEASE_CHECK=1.
+_gate_reset; : > "${GATE_LOG}"; rm -f "${GATE_FAIL}"
+OUT=$(cd "${GATE_CLONE}" && PATH="${GATE_BIN}:${PATH}" bash ./release.sh 2>&1); RC=$?
+assert_output_contains "$OUT" "release checks passed" "RL11a live publish reports the release checks passed"
+assert_eq "$(cat "${GATE_LOG}")" "${GATE_EXPECTED}" \
+    "RL11a live publish runs the three release checks in order with AID_RELEASE_CHECK=1"
+
+# RL11b: a failing release check stops the live publish before staging.
+_gate_reset; : > "${GATE_LOG}"; touch "${GATE_FAIL}"; rm -rf "${GATE_STAGE_DIR}"
+OUT=$(cd "${GATE_CLONE}" && PATH="${GATE_BIN}:${PATH}" bash ./release.sh 2>&1); RC=$?
+assert_output_contains "$OUT" "release check test-skill-guide failed; nothing was staged" \
+    "RL11b live publish names the failed release check"
+STAGED_COUNT=$(find "${GATE_STAGE_DIR}" -maxdepth 1 -type f -name 'aid-*.tar.gz' 2>/dev/null | wc -l | tr -d ' ')
+assert_eq "$STAGED_COUNT" "0" "RL11b failed release check leaves no artifact staged"
+
+# RL11c: --dry-run skips the release checks.
+_gate_reset; : > "${GATE_LOG}"; touch "${GATE_FAIL}"; rm -rf "${GATE_STAGE_DIR}"
+OUT=$(cd "${GATE_CLONE}" && PATH="${GATE_BIN}:${PATH}" bash ./release.sh --dry-run 2>&1); RC=$?
+assert_exit_zero "$RC" "RL11c --dry-run completes although a release check would fail"
+assert_eq "$(cat "${GATE_LOG}")" "" "RL11c --dry-run runs no release check"
+
+# RL11d: --stage-only skips the release checks.
+_gate_reset; : > "${GATE_LOG}"; touch "${GATE_FAIL}"
+GATE_STAGE_ONLY_DIR="${TMP}/gate-stage-only"
+OUT=$(cd "${GATE_CLONE}" && PATH="${GATE_BIN}:${PATH}" bash ./release.sh --stage-only --out "${GATE_STAGE_ONLY_DIR}" 2>&1); RC=$?
+assert_exit_zero "$RC" "RL11d --stage-only completes although a release check would fail"
+assert_eq "$(cat "${GATE_LOG}")" "" "RL11d --stage-only runs no release check"
+
 # Unknown flag remains exit 2.
 OUT=$(bash "${SUT}" --unknown-flag-xyz 2>&1); RC=$?
 assert_exit_eq "$RC" 2 "RL08b unknown flag exits 2"
