@@ -28,20 +28,19 @@ flowchart TB
   n1(["INTAKE"])
   n2["INVESTIGATE"]
   n3["VERIFY<br/>who reviews the researcher"]
-  n4{"PRESENT"}
+  n4["PRESENT<br/>always a hard stop -- the user resolves"]
   n5["HANDOFF<br/>optional; printed suggestions only"]
   n6(["DONE"])
   n1 --> n2
   n2 --> n3
   n3 -.-> n2
   n3 --> n4
-  n4 -->|"optional"| n5
-  n4 --> n6
+  n4 --> n5
   n5 --> n6
   class n1 aidEntry
   class n2 aidStep
   class n3 aidLoopBack
-  class n4 aidDecision
+  class n4 aidStep
   class n5 aidStep
   class n6 aidExit
   class n1 aidNode
@@ -57,7 +56,7 @@ Every node in the chart above, in chart order, with the exact `canonical/` text 
 
 <a id="fragment-n1"></a>**1 · `INTAKE`** · _entry_
 
-~~~~plaintext title="canonical/skills/aid-research/SKILL.md#L29-L59" wrap
+~~~~plaintext title="canonical/skills/aid-research/SKILL.md#L36-L62" wrap
 ## State: INTAKE
 
 1. **Require a question.** If the argument is empty, ask one bootstrapping question ("What
@@ -72,41 +71,37 @@ Every node in the chart above, in chart order, with the exact `canonical/` text 
    <=1 web source) -> `aid-researcher` at **sonnet / medium**; standard/complex (broad
    options analysis, deep traversal, many web sources, a spike) -> **opus / high**.
    Verifier tier is always >= producer tier.
-4. **Consult the Work Initiation Gate, then allocate the work folder + STATE.** First run
-   the gate (`.aid/runtime/templates/work-initiation-gate.md`):
-   `bash .aid/runtime/scripts/works/enumerate-works.sh` (main tree + every git worktree).
-   Empty -> allocate below, no prompt. Works exist -> ask new-vs-continuation with the
-   enumerated list; on **continuation** route to the chosen work's resume door and STOP
-   (allocate nothing); on **new work**: resolve `<work-id>` as `work-{NNN+1}`, where `NNN`
-   is the maximum `work-NNN` numeric prefix across every record the enumeration above
-   already returned (cross-worktree by construction -- never a local `.aid/works/` glob;
-   gate `§ 3a` step 1); create and enter the worktree per the gate's `§ 3a` step 2
-   (`worktree-lifecycle.sh create <work-id> <name>`, STOP on a non-zero exit or empty path,
-   else enter the resolved path); **only then** allocate: `.aid/works/<work-id>-<slug>/`
-   under `.aid/works/`; slug from the question. Copy
-   `.aid/runtime/templates/work-state-template.yml` to
-   `.aid/works/work-NNN-<slug>/STATE.yml`; write opening frontmatter (`pipeline.path: lite`,
-   `initiator: aid-research`, `lifecycle: Running`, `active_skill: aid-research`,
-   `started`/`updated`). Do NOT drive the 7-phase `phase` scalar. Associate a git worktree
-   only if a spike is later authorized (INVESTIGATE).
+4. **Allocate the work through the gate.** Run the Work Initiation Gate
+   (`.aid/runtime/templates/work-initiation-gate.md`): `bash .aid/runtime/scripts/works/enumerate-works.sh`
+   (main tree + every git worktree). Empty -> no prompt. Works exist -> ask the gate's
+   new-vs-continuation question with the enumerated list.
+   - **New work:** call the gate's `§ 3a` with the user's words, this skill's name (`aid-research`),
+     its first step (`INTAKE`), `--path lite`, and a kebab-case slug from the question. The gate's `§ 3a` step 2 creates and enters the worktree
+     (`worktree-lifecycle.sh create <work-id> <name>`),
+     **then** allocate (`.aid/works/<work-id>-<slug>/`) the work folder and write its record through
+     the writer, before it hands back: "`STATE.yml` was created by the gate;
+     skip any instruction to write `initiator`, `active_skill`, `lifecycle` or `phase` by hand;
+     set other keys through the writer." This skill drives no `phase`. Associate a git worktree only
+     if a spike is later authorized (INVESTIGATE).
+   - **Continuation:** On continuation, follow the gate's § 3b: enter the chosen work's worktree and run the skill its record names, at its saved step.
 ~~~~
 
-[Source: `canonical/skills/aid-research/SKILL.md#L29-L59`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-research/SKILL.md#L29-L59) · [full step: `canonical/skills/aid-research/SKILL.md#L29-L61`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-research/SKILL.md#L29-L61)
+[Source: `canonical/skills/aid-research/SKILL.md#L36-L62`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-research/SKILL.md#L36-L62) · [full step: `canonical/skills/aid-research/SKILL.md#L36-L64`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-research/SKILL.md#L36-L64)
 
 <a id="fragment-n2"></a>**2 · `INVESTIGATE`** · _step_
 
-~~~~plaintext title="canonical/skills/aid-research/SKILL.md#L65-L68" wrap
+~~~~plaintext title="canonical/skills/aid-research/SKILL.md#L68-L71" wrap
 ## State: INVESTIGATE
 
 Dispatch **`aid-researcher`** (clean context, model+effort from INTAKE Step 3) to gather
 and curate the evidence:
 ~~~~
 
-[Source: `canonical/skills/aid-research/SKILL.md#L65-L68`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-research/SKILL.md#L65-L68) · [full step: `canonical/skills/aid-research/SKILL.md#L65-L85`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-research/SKILL.md#L65-L85)
+[Source: `canonical/skills/aid-research/SKILL.md#L68-L71`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-research/SKILL.md#L68-L71) · [full step: `canonical/skills/aid-research/SKILL.md#L68-L88`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-research/SKILL.md#L68-L88)
 
 <a id="fragment-n3"></a>**3 · `VERIFY`** — who reviews the researcher · _loop-back_
 
-~~~~plaintext title="canonical/skills/aid-research/SKILL.md#L89-L103" wrap
+~~~~plaintext title="canonical/skills/aid-research/SKILL.md#L92-L106" wrap
 ## State: VERIFY  (who reviews the researcher)
 
 1. **Mechanical grounding check** (no dispatch): every project claim carries a KB/source
@@ -120,28 +115,28 @@ and curate the evidence:
    `.aid/.temp/review-pending/<work>-verify.md`.
 3. **Grade the response:** `bash .aid/runtime/scripts/grade.sh --explain <ledger>`. Not
    clean -> loop back to INVESTIGATE for the researcher to revise. **Circuit-breaker: 3
-   cycles** -> write `.aid/works/{work}/IMPEDIMENT-research.md`, set STATE `lifecycle: Blocked`,
+   cycles** -> write `.aid/works/{work}/IMPEDIMENT-research.md`, and set the lifecycle to `Blocked` through the writer,
    surface it.
 ~~~~
 
-[Source: `canonical/skills/aid-research/SKILL.md#L89-L103`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-research/SKILL.md#L89-L103) · [full step: `canonical/skills/aid-research/SKILL.md#L89-L107`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-research/SKILL.md#L89-L107)
+[Source: `canonical/skills/aid-research/SKILL.md#L92-L106`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-research/SKILL.md#L92-L106) · [full step: `canonical/skills/aid-research/SKILL.md#L92-L110`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-research/SKILL.md#L92-L110)
 
-<a id="fragment-n4"></a>**4 · `PRESENT`** — always a hard stop -- the user resolves · _decision_
+<a id="fragment-n4"></a>**4 · `PRESENT`** — always a hard stop -- the user resolves · _step_
 
-~~~~plaintext title="canonical/skills/aid-research/SKILL.md#L111-L116" wrap
+~~~~plaintext title="canonical/skills/aid-research/SKILL.md#L114-L119" wrap
 ## State: PRESENT  (always a hard stop -- the user resolves)
 
-Set STATE `lifecycle: Paused-Awaiting-Input`. Present `RESEARCH.md` **clearly and simply**:
+The hard stop follows the ASK step of `skill-steps.md`. Present `RESEARCH.md` **clearly and simply**:
 the in-depth answer, conclusions (positive **and** negative), conflicts/contradictions
 **with their reasons**, and gaps. Assert no resolution -- the user decides. Negatives and
 gaps are first-class, never buried under positives.
 ~~~~
 
-[Source: `canonical/skills/aid-research/SKILL.md#L111-L116`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-research/SKILL.md#L111-L116) · [full step: `canonical/skills/aid-research/SKILL.md#L111-L118`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-research/SKILL.md#L111-L118)
+[Source: `canonical/skills/aid-research/SKILL.md#L114-L119`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-research/SKILL.md#L114-L119) · [full step: `canonical/skills/aid-research/SKILL.md#L114-L121`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-research/SKILL.md#L114-L121)
 
 <a id="fragment-n5"></a>**5 · `HANDOFF`** — optional; printed suggestions only · _step_
 
-~~~~plaintext title="canonical/skills/aid-research/SKILL.md#L122-L128" wrap
+~~~~plaintext title="canonical/skills/aid-research/SKILL.md#L125-L131" wrap
 ## State: HANDOFF  (optional; printed suggestions only)
 
 Offer the natural next steps as **printed suggestions**, each requiring the user to act:
@@ -151,15 +146,14 @@ a source ticket (`/aid-update-ticket comment [<connector>:]<ticket-id> <text>`).
 auto-invoked; never a resolution.
 ~~~~
 
-[Source: `canonical/skills/aid-research/SKILL.md#L122-L128`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-research/SKILL.md#L122-L128) · [full step: `canonical/skills/aid-research/SKILL.md#L122-L130`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-research/SKILL.md#L122-L130)
+[Source: `canonical/skills/aid-research/SKILL.md#L125-L131`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-research/SKILL.md#L125-L131) · [full step: `canonical/skills/aid-research/SKILL.md#L125-L133`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-research/SKILL.md#L125-L133)
 
-<a id="fragment-n6"></a>**6 · `DONE`** · _exit_ · UNSPECIFIED
+<a id="fragment-n6"></a>**6 · `DONE`** · _exit_ · HALT
 
-~~~~plaintext title="canonical/skills/aid-research/SKILL.md#L134-L137" wrap
+~~~~plaintext title="canonical/skills/aid-research/SKILL.md#L137-L139" wrap
 ## State: DONE
 
-Set STATE `lifecycle: Completed`, `updated` now, append a `## Lifecycle History` row. Keep
-the work folder (`RESEARCH.md`, any spike scratch, the verify ledger) as the audit record.
+Finish through the writer: `bash .aid/runtime/scripts/execute/writeback-state.sh --pipeline --field Lifecycle --value Completed`, which also clears the saved skill and step. Keep the work folder (`RESEARCH.md`, any spike scratch, the verify ledger) as the audit record.
 ~~~~
 
-[Source: `canonical/skills/aid-research/SKILL.md#L134-L137`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-research/SKILL.md#L134-L137) · [full step: `canonical/skills/aid-research/SKILL.md#L134-L137`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-research/SKILL.md#L134-L137)
+[Source: `canonical/skills/aid-research/SKILL.md#L137-L139`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-research/SKILL.md#L137-L139) · [full step: `canonical/skills/aid-research/SKILL.md#L137-L141`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-research/SKILL.md#L137-L141)

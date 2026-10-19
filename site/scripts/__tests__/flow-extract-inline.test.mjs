@@ -704,10 +704,10 @@ describe('aid-review — 6 inline states, loop-back, branch decision, DONE exit'
     expect(edge.condition).toBe('otherwise');
   });
 
-  it('DONE has no Advance line → terminal UNSPECIFIED, in exits', () => {
-    // Mutant: skip no-advance exit logic → DONE.terminal = null → not in exits.
+  it('DONE advance HALT → terminal HALT, in exits', () => {
+    // Mutant: skip the HALT advance → DONE.terminal = null → not in exits.
     const done = chart.nodes.find((n) => n.name === 'DONE');
-    expect(done.terminal).toEqual({ advanceType: 'UNSPECIFIED', handoff: null });
+    expect(done.terminal).toEqual({ advanceType: 'HALT', handoff: null });
     expect(chart.exits).toContain(done.id);
   });
 
@@ -739,7 +739,7 @@ describe('aid-review — 6 inline states, loop-back, branch decision, DONE exit'
 
 // ── aid-test corpus (`then` clause, KI-008 fix) ───────────────────────────────
 
-describe('aid-test — PRESENT: HANDOFF (optional) then DONE (KI-008 pin)', () => {
+describe('aid-test — PRESENT: ASK to HANDOFF, then DONE', () => {
   const params = loadSkill('aid-test');
   const chart = extractInline(params);
 
@@ -749,51 +749,28 @@ describe('aid-test — PRESENT: HANDOFF (optional) then DONE (KI-008 pin)', () =
     expect(chart.nodes.length).toBe(6);
   });
 
-  it('PRESENT has exactly 2 outgoing edges', () => {
-    // Mutant: `then` separator not parsed → only 1 edge (HANDOFF), DONE dropped.
+  it('PRESENT has exactly 1 outgoing edge, to HANDOFF, advanced by ASK', () => {
+    // The hard stop is an ASK (skill-steps.md); DONE is reached through HANDOFF only.
     const present = chart.nodes.find((n) => n.name === 'PRESENT');
+    const handoff = chart.nodes.find((n) => n.name === 'HANDOFF');
     const edgesFromPresent = chart.edges.filter((e) => e.from === present.id);
-    expect(edgesFromPresent).toHaveLength(2);
+    expect(edgesFromPresent).toHaveLength(1);
+    expect(edgesFromPresent[0].to).toBe(handoff.id);
+    expect(edgesFromPresent[0].advanceType).toBe('ASK');
   });
 
-  it('PRESENT → HANDOFF is a branch edge with condition "optional"', () => {
-    // Mutant: optionality marker not extracted → condition null or different.
+  it('PRESENT → HANDOFF is a sequence edge with no condition', () => {
     const present = chart.nodes.find((n) => n.name === 'PRESENT');
     const handoff = chart.nodes.find((n) => n.name === 'HANDOFF');
     const edge = chart.edges.find(
       (e) => e.from === present.id && e.to === handoff.id
     );
     expect(edge).toBeDefined();
-    expect(edge.kind).toBe('branch');
-    expect(edge.condition).toBe('optional');
-  });
-
-  it('PRESENT → DONE is a branch edge with condition null', () => {
-    // The skip-HANDOFF path. Mutant: emit PRESENT→DONE as sequence → kind would be sequence.
-    const present = chart.nodes.find((n) => n.name === 'PRESENT');
-    const done = chart.nodes.find((n) => n.name === 'DONE');
-    const edge = chart.edges.find(
-      (e) => e.from === present.id && e.to === done.id
-    );
-    expect(edge).toBeDefined();
-    expect(edge.kind).toBe('branch');
+    expect(edge.kind).toBe('sequence');
     expect(edge.condition).toBeNull();
   });
 
-  it('PRESENT → HANDOFF advanceType is UNSPECIFIED', () => {
-    // Mutant: set advanceType from keyword → no keyword in "HANDOFF (optional) then DONE",
-    //         so UNSPECIFIED is correct; any other value is a bug.
-    const present = chart.nodes.find((n) => n.name === 'PRESENT');
-    const handoff = chart.nodes.find((n) => n.name === 'HANDOFF');
-    const edge = chart.edges.find(
-      (e) => e.from === present.id && e.to === handoff.id
-    );
-    expect(edge.advanceType).toBe('UNSPECIFIED');
-  });
-
   it('HANDOFF → DONE sequence edge exists (through-path)', () => {
-    // Distinguished from the PRESENT→DONE skip-path above.
-    // Mutant: skip HANDOFF advance parsing → no HANDOFF→DONE edge.
     const handoff = chart.nodes.find((n) => n.name === 'HANDOFF');
     const done = chart.nodes.find((n) => n.name === 'DONE');
     const edge = chart.edges.find(
@@ -803,10 +780,9 @@ describe('aid-test — PRESENT: HANDOFF (optional) then DONE (KI-008 pin)', () =
     expect(edge.kind).toBe('sequence');
   });
 
-  it('PRESENT.kind === decision (2 branch edges out)', () => {
-    // Mutant: emit PRESENT edges as sequence → no decision kind.
+  it('PRESENT.kind === step (a hard stop is ASK, not a decision)', () => {
     const present = chart.nodes.find((n) => n.name === 'PRESENT');
-    expect(present.kind).toBe('decision');
+    expect(present.kind).toBe('step');
   });
 
   it('VERIFY emits a loop-back to RUN from body text "loop to RUN/consolidate"', () => {
@@ -820,9 +796,9 @@ describe('aid-test — PRESENT: HANDOFF (optional) then DONE (KI-008 pin)', () =
     expect(loopEdge).toBeDefined();
   });
 
-  it('DONE is exit with UNSPECIFIED terminal', () => {
+  it('DONE is exit with HALT terminal', () => {
     const done = chart.nodes.find((n) => n.name === 'DONE');
-    expect(done.terminal).toEqual({ advanceType: 'UNSPECIFIED', handoff: null });
+    expect(done.terminal).toEqual({ advanceType: 'HALT', handoff: null });
     expect(chart.exits).toContain(done.id);
   });
 

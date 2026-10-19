@@ -57,47 +57,47 @@ Every node in the chart above, in chart order, with the exact `canonical/` text 
 
 <a id="fragment-n1"></a>**1 · `INTAKE`** · _entry_
 
-~~~~plaintext title="canonical/skills/aid-review/SKILL.md#L29-L31" wrap
+~~~~plaintext title="canonical/skills/aid-review/SKILL.md#L36-L38" wrap
 ## State: INTAKE
 
 Purpose: resolve the target + criteria, pick the path, allocate the work folder.
 ~~~~
 
-[Source: `canonical/skills/aid-review/SKILL.md#L29-L31`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-review/SKILL.md#L29-L31) · [full step: `canonical/skills/aid-review/SKILL.md#L29-L109`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-review/SKILL.md#L29-L109)
+[Source: `canonical/skills/aid-review/SKILL.md#L36-L38`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-review/SKILL.md#L36-L38) · [full step: `canonical/skills/aid-review/SKILL.md#L36-L103`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-review/SKILL.md#L36-L103)
 
 <a id="fragment-n2"></a>**2 · `REVIEW`** · _step_
 
-~~~~plaintext title="canonical/skills/aid-review/SKILL.md#L113-L115" wrap
+~~~~plaintext title="canonical/skills/aid-review/SKILL.md#L107-L109" wrap
 ## State: REVIEW
 
 Purpose: gather evidence and produce the grounded findings ledger.
 ~~~~
 
-[Source: `canonical/skills/aid-review/SKILL.md#L113-L115`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-review/SKILL.md#L113-L115) · [full step: `canonical/skills/aid-review/SKILL.md#L113-L134`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-review/SKILL.md#L113-L134)
+[Source: `canonical/skills/aid-review/SKILL.md#L107-L109`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-review/SKILL.md#L107-L109) · [full step: `canonical/skills/aid-review/SKILL.md#L107-L128`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-review/SKILL.md#L107-L128)
 
 <a id="fragment-n3"></a>**3 · `VERIFY`** — who reviews the reviewer · _loop-back_
 
-~~~~plaintext title="canonical/skills/aid-review/SKILL.md#L138-L140" wrap
+~~~~plaintext title="canonical/skills/aid-review/SKILL.md#L132-L134" wrap
 ## State: VERIFY  (who reviews the reviewer)
 
 Purpose: ensure the review is grounded, correct, and complete before the human sees it.
 ~~~~
 
-[Source: `canonical/skills/aid-review/SKILL.md#L138-L140`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-review/SKILL.md#L138-L140) · [full step: `canonical/skills/aid-review/SKILL.md#L138-L158`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-review/SKILL.md#L138-L158)
+[Source: `canonical/skills/aid-review/SKILL.md#L132-L134`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-review/SKILL.md#L132-L134) · [full step: `canonical/skills/aid-review/SKILL.md#L132-L152`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-review/SKILL.md#L132-L152)
 
 <a id="fragment-n4"></a>**4 · `PRESENT-FINDINGS`** — always a hard stop -- human final say · _decision_
 
-~~~~plaintext title="canonical/skills/aid-review/SKILL.md#L162-L164" wrap
+~~~~plaintext title="canonical/skills/aid-review/SKILL.md#L156-L158" wrap
 ## State: PRESENT-FINDINGS  (always a hard stop -- human final say)
 
-Set STATE `lifecycle: Paused-Awaiting-Input`. Present:
+The hard stop follows the ASK step of `skill-steps.md`. Present:
 ~~~~
 
-[Source: `canonical/skills/aid-review/SKILL.md#L162-L164`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-review/SKILL.md#L162-L164) · [full step: `canonical/skills/aid-review/SKILL.md#L162-L175`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-review/SKILL.md#L162-L175)
+[Source: `canonical/skills/aid-review/SKILL.md#L156-L158`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-review/SKILL.md#L156-L158) · [full step: `canonical/skills/aid-review/SKILL.md#L156-L169`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-review/SKILL.md#L156-L169)
 
 <a id="fragment-n5"></a>**5 · `PUBLISH`** — only on approval · _step_
 
-~~~~plaintext title="canonical/skills/aid-review/SKILL.md#L179-L188" wrap
+~~~~plaintext title="canonical/skills/aid-review/SKILL.md#L173-L182" wrap
 ## State: PUBLISH  (only on approval)
 
 Deliver by the method appropriate to the target, chosen by judgment (not a hardcoded
@@ -110,16 +110,14 @@ no catalogued connector / unknown target -> present the exact text for the human
 Publishing is optional and never blocks DONE.
 ~~~~
 
-[Source: `canonical/skills/aid-review/SKILL.md#L179-L188`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-review/SKILL.md#L179-L188) · [full step: `canonical/skills/aid-review/SKILL.md#L179-L190`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-review/SKILL.md#L179-L190)
+[Source: `canonical/skills/aid-review/SKILL.md#L173-L182`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-review/SKILL.md#L173-L182) · [full step: `canonical/skills/aid-review/SKILL.md#L173-L184`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-review/SKILL.md#L173-L184)
 
-<a id="fragment-n6"></a>**6 · `DONE`** · _exit_ · UNSPECIFIED
+<a id="fragment-n6"></a>**6 · `DONE`** · _exit_ · HALT
 
-~~~~plaintext title="canonical/skills/aid-review/SKILL.md#L194-L198" wrap
+~~~~plaintext title="canonical/skills/aid-review/SKILL.md#L188-L190" wrap
 ## State: DONE
 
-Set STATE `lifecycle: Completed`, `updated` now, append a `## Lifecycle History` row.
-Leave the findings ledger on disk (`.aid/.temp/review-pending/<work>-review.md`) so a
-follow-up `/aid-fix` can consume it. Keep the work folder as the audit record.
+Finish through the writer: `bash .aid/runtime/scripts/execute/writeback-state.sh --pipeline --field Lifecycle --value Completed`, which also clears the saved skill and step. Leave the findings ledger on disk (`.aid/.temp/review-pending/<work>-review.md`) so a follow-up `/aid-fix` can consume it. Keep the work folder as the audit record.
 ~~~~
 
-[Source: `canonical/skills/aid-review/SKILL.md#L194-L198`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-review/SKILL.md#L194-L198) · [full step: `canonical/skills/aid-review/SKILL.md#L194-L198`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-review/SKILL.md#L194-L198)
+[Source: `canonical/skills/aid-review/SKILL.md#L188-L190`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-review/SKILL.md#L188-L190) · [full step: `canonical/skills/aid-review/SKILL.md#L188-L192`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-review/SKILL.md#L188-L192)

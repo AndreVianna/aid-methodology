@@ -2372,23 +2372,17 @@ describe('AC-4 corpus fixture — aid-test (inline-states, KI-008 pin)', () => {
     expect(_lb).toBeDefined();
   });
 
-  it('PRESENT.kind === decision', () => {
+  it('PRESENT.kind === step (a hard stop is ASK, not a decision)', () => {
     expect(_atPresent).toBeDefined();
-    expect(_atPresent.kind).toBe('decision');
+    expect(_atPresent.kind).toBe('step');
   });
 
-  it('PRESENT has exactly two branch edges: HANDOFF (condition optional) and DONE (condition null)', () => {
-    // Pins the " then " marked-arm separator form per KI-008 scope note.
-    const _branches = _atChart.edges.filter(
-      (e) => e.from === _atPresent.id && e.kind === 'branch'
-    );
-    expect(_branches).toHaveLength(2);
-    const _toHandoff = _branches.find((e) => e.to === _atHandoff?.id);
-    const _toDone = _branches.find((e) => e.to === _atDone?.id);
-    expect(_toHandoff).toBeDefined();
-    expect(_toHandoff.condition).toBe('optional');
-    expect(_toDone).toBeDefined();
-    expect(_toDone.condition).toBeNull();
+  it('PRESENT has exactly one outgoing edge: ASK to HANDOFF', () => {
+    // The ASK advance (skill-steps.md) replaces the old "HANDOFF (optional) then DONE" arms.
+    const _out = _atChart.edges.filter((e) => e.from === _atPresent.id);
+    expect(_out).toHaveLength(1);
+    expect(_out[0].to).toBe(_atHandoff?.id);
+    expect(_out[0].advanceType).toBe('ASK');
   });
 
   it('HANDOFF -> DONE is a sequence edge (through-path distinct from skip-path)', () => {

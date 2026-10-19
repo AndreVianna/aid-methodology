@@ -1319,33 +1319,20 @@ describe('AC-4 fixture 2 — aid-test-security: VERIFY→RUN loop-back', () => {
   });
 });
 
-describe('AC-4 fixture 2 — aid-test-security: PRESENT decision branches', () => {
+describe('AC-4 fixture 2 — aid-test-security: PRESENT is an ASK step', () => {
   const chart = liveChart('aid-test-security');
   const presentNode = chart.nodes.find((n) => n.name === 'PRESENT');
-  const presentBranches = chart.edges.filter(
-    (e) => e.from === presentNode.id && e.kind === 'branch'
-  );
+  const presentEdges = chart.edges.filter((e) => e.from === presentNode.id);
 
-  it('PRESENT node kind is decision', () => {
-    expect(presentNode.kind).toBe('decision');
+  it('PRESENT node kind is step', () => {
+    expect(presentNode.kind).toBe('step');
   });
 
-  it('PRESENT has exactly two branch edges', () => {
-    expect(presentBranches).toHaveLength(2);
-  });
-
-  it('PRESENT has a branch edge to HANDOFF with condition optional (verbatim)', () => {
+  it('PRESENT has exactly one outgoing edge, to HANDOFF, advanced by ASK', () => {
     const handoffNode = chart.nodes.find((n) => n.name === 'HANDOFF');
-    const edge = presentBranches.find((e) => e.to === handoffNode.id);
-    expect(edge).toBeDefined();
-    expect(edge.condition).toBe('optional');
-  });
-
-  it('PRESENT has a branch edge to DONE with condition null', () => {
-    const doneNode = chart.nodes.find((n) => n.name === 'DONE');
-    const edge = presentBranches.find((e) => e.to === doneNode.id);
-    expect(edge).toBeDefined();
-    expect(edge.condition).toBeNull();
+    expect(presentEdges).toHaveLength(1);
+    expect(presentEdges[0].to).toBe(handoffNode.id);
+    expect(presentEdges[0].advanceType).toBe('ASK');
   });
 });
 
@@ -1357,9 +1344,9 @@ describe('AC-4 fixture 2 — aid-test-security: DONE exit and terminal', () => {
     expect(chart.exits).toContain(doneNode.id);
   });
 
-  it('DONE terminal.advanceType is UNSPECIFIED', () => {
+  it('DONE terminal.advanceType is HALT', () => {
     // Mutation-proof: changing the terminal type in aid-test SKILL.md would fail.
-    expect(doneNode.terminal.advanceType).toBe('UNSPECIFIED');
+    expect(doneNode.terminal.advanceType).toBe('HALT');
   });
 });
 

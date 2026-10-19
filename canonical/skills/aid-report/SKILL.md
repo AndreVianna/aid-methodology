@@ -21,6 +21,13 @@ rather than an open question.
 
 State machine: **INTAKE -> ANALYZE -> VERIFY (loop) -> PRESENT [user resolves] -> HANDOFF?
 -> DONE**. Print the `[State: NAME] -- {purpose}` entry line on each state.
+Steps, hand-offs and the work record follow [`skill-steps.md`](../../aid/templates/skill-steps.md).
+
+---
+
+## State Detection
+
+**Detection shapes the entry step and validates a saved step, and never routes** (`skill-steps.md`, § State Detection). A fresh start enters INTAKE. A resume continues at the step the work record saves, which the gate's § 3b routes to; the saved step's artifact is checked against disk, and a mismatch goes to recovery, never to a silent re-route.
 
 ---
 
@@ -35,18 +42,20 @@ State machine: **INTAKE -> ANALYZE -> VERIFY (loop) -> PRESENT [user resolves] -
 3. **Classify complexity (model + effort):** simple (small dataset, one metric) ->
    `aid-researcher` at **sonnet / medium**; standard/complex (large data, A/B significance,
    deep telemetry) -> **opus / high**. Verifier tier >= producer tier.
-4. **Consult the Work Initiation Gate, then allocate the work folder + STATE.** First run
-   the gate (`.aid/runtime/templates/work-initiation-gate.md`):
-   `bash .aid/runtime/scripts/works/enumerate-works.sh` (main tree + every git worktree).
-   Empty -> allocate, no prompt. Works exist -> ask new-vs-continuation; on **continuation**
-   route to the chosen work's resume door and STOP (allocate nothing); on **new work**:
-   create and enter the worktree per the gate's `§ 3a` step 2
-   (`worktree-lifecycle.sh create <work-id> <name>`, STOP on a non-zero exit or empty path,
-   else enter the resolved path), **then** allocate (`pipeline.path: lite`, `initiator:
-   aid-report`, `lifecycle: Running`, `active_skill: aid-report`; `phase` not driven), same
-   as the other collapse skills.
+4. **Allocate the work through the gate.** Run the Work Initiation Gate
+   (`.aid/runtime/templates/work-initiation-gate.md`): `bash .aid/runtime/scripts/works/enumerate-works.sh`
+   (main tree + every git worktree). Empty -> no prompt. Works exist -> ask the gate's
+   new-vs-continuation question with the enumerated list.
+   - **New work:** call the gate's `§ 3a` with the user's words, this skill's name (`aid-report`),
+     its first step (`INTAKE`), `--path lite`, and a kebab-case slug from the subject. The gate's `§ 3a` step 2 creates and enters the worktree
+     (`worktree-lifecycle.sh create <work-id> <name>`),
+     **then** allocate (`.aid/works/<work-id>-<slug>/`) the work folder and write its record through
+     the writer, before it hands back: "`STATE.yml` was created by the gate;
+     skip any instruction to write `initiator`, `active_skill`, `lifecycle` or `phase` by hand;
+     set other keys through the writer." This skill drives no `phase`.
+   - **Continuation:** On continuation, follow the gate's § 3b: enter the chosen work's worktree and run the skill its record names, at its saved step.
 
-**Advance:** ANALYZE.
+**Advance:** ASK -> [State: ANALYZE].
 
 ---
 
@@ -79,7 +88,7 @@ analyze + consolidate:
    conclusions not overstated into resolutions. Writes a review-quality ledger to
    `.aid/.temp/review-pending/<work>-verify.md`.
 3. **Grade:** `bash .aid/runtime/scripts/grade.sh --explain <ledger>`. Not clean -> loop
-   to ANALYZE. Circuit-breaker: 3 cycles -> IMPEDIMENT + `lifecycle: Blocked`.
+   to ANALYZE. Circuit-breaker: 3 cycles -> IMPEDIMENT, and the lifecycle set to `Blocked` through the writer.
 
 **Advance:** PRESENT.
 
@@ -87,11 +96,11 @@ analyze + consolidate:
 
 ## State: PRESENT  (hard stop -- the user resolves)
 
-Set `lifecycle: Paused-Awaiting-Input`. Present `REPORT.md` clearly: findings
+The hard stop follows the ASK step of `skill-steps.md`. Present `REPORT.md` clearly: findings
 (metrics/tables), conclusions (+/-), **caveats & data-quality gaps** (first-class),
 conflicts with reasons, and gaps. Assert no resolution.
 
-**Advance:** HANDOFF (optional) then DONE.
+**Advance:** ASK -> [State: HANDOFF].
 
 ---
 
@@ -108,8 +117,9 @@ Never auto-invoked; never a resolution.
 
 ## State: DONE
 
-Set `lifecycle: Completed`, `updated` now, append a `## Lifecycle History` row. Keep the
-work folder (`REPORT.md`, the verify ledger) as the audit record.
+Finish through the writer: `bash .aid/runtime/scripts/execute/writeback-state.sh --pipeline --field Lifecycle --value Completed`, which also clears the saved skill and step. Keep the work folder (`REPORT.md`, the verify ledger) as the audit record.
+
+**Advance:** HALT.
 
 ---
 
@@ -138,4 +148,4 @@ work folder (`REPORT.md`, the verify ledger) as the audit record.
 - **Caveats are mandatory** -- a metric/A-B conclusion without its caveat fails VERIFY.
 - **Clean context**; **verification always a sub-agent** (`aid-reviewer`).
 - **Boundary:** durable/refreshable dashboards are `/aid-create-dashboard`, not this.
-- **Tracking:** write STATE `lifecycle` at every transition.
+- **Tracking:** every record change goes through the writer (`skill-steps.md`, § The work record).

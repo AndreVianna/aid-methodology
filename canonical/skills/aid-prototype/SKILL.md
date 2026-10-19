@@ -18,6 +18,13 @@ its output is **not** production. For a design you intend to **keep and build**,
 
 State machine: **INTAKE -> BUILD -> VERIFY (light) -> PRESENT [user decides] -> HANDOFF? ->
 DONE**. Print the `[State: NAME] -- {purpose}` entry line on each state.
+Steps, hand-offs and the work record follow [`skill-steps.md`](../../aid/templates/skill-steps.md).
+
+---
+
+## State Detection
+
+**Detection shapes the entry step and validates a saved step, and never routes** (`skill-steps.md`, § State Detection). A fresh start enters INTAKE. A resume continues at the step the work record saves, which the gate's § 3b routes to; the saved step's artifact is checked against disk, and a mismatch goes to recovery, never to a silent re-route.
 
 ---
 
@@ -33,21 +40,24 @@ DONE**. Print the `[State: NAME] -- {purpose}` entry line on each state.
    signal / fidelity first.
 4. **Classify complexity (model + effort):** simple -> `aid-architect` at **sonnet /
    medium**; complex (a runnable spike, a rich flow) -> **opus / high**.
-5. **Consult the Work Initiation Gate, then allocate the work folder + STATE.** First run
-   the gate (`.aid/runtime/templates/work-initiation-gate.md`):
-   `bash .aid/runtime/scripts/works/enumerate-works.sh` (main tree + every git worktree).
-   Empty -> allocate, no prompt. Works exist -> ask new-vs-continuation; on **continuation**
-   route to the chosen work's resume door and STOP (allocate nothing); on **new work**:
-   create and enter the worktree per the gate's `§ 3a` step 2
-   (`worktree-lifecycle.sh create <work-id> <name>`, STOP on a non-zero exit or empty path,
-   else enter the resolved path), **then** allocate (`pipeline.path: lite`, `initiator:
-   aid-prototype`, `lifecycle: Running`, `active_skill: aid-prototype`; `phase` not
-   driven). For a **runnable spike**, associate an opt-in git worktree so the throwaway
-   code is isolated. When `/aid-orchestrate` passed an `intent:` block, write it into that
-   STATE.yml as the engine's INTAKE Step 5 does (`.aid/runtime/templates/shortcut-engine.md`); a typed
-   `/aid-prototype` writes none.
+5. **Allocate the work through the gate.** Run the Work Initiation Gate
+   (`.aid/runtime/templates/work-initiation-gate.md`): `bash .aid/runtime/scripts/works/enumerate-works.sh`
+   (main tree + every git worktree). Empty -> no prompt. Works exist -> ask the gate's
+   new-vs-continuation question with the enumerated list.
+   - **New work:** call the gate's `§ 3a` with the user's words, this skill's name
+     (`aid-prototype`), its first step (`INTAKE`), `--path lite`, and a kebab-case slug from the
+     direction. The gate's `§ 3a` step 2 creates and enters the worktree
+     (`worktree-lifecycle.sh create <work-id> <name>`),
+     **then** allocate (`.aid/works/<work-id>-<slug>/`) the work folder and write its record through
+     the writer, before it hands back: "`STATE.yml` was created by the gate;
+     skip any instruction to write `initiator`, `active_skill`, `lifecycle` or `phase` by hand;
+     set other keys through the writer." This skill drives no `phase`. For a **runnable spike**,
+     associate an opt-in git worktree so the throwaway code is isolated. When `/aid-orchestrate`
+     passed an `intent:` block, write it into that STATE.yml as the engine's INTAKE Step 5 does
+     (`.aid/runtime/templates/shortcut-engine.md`); a typed `/aid-prototype` writes none.
+   - **Continuation:** On continuation, follow the gate's § 3b: enter the chosen work's worktree and run the skill its record names, at its saved step.
 
-**Advance:** BUILD.
+**Advance:** ASK -> [State: BUILD].
 
 ---
 
@@ -79,11 +89,11 @@ do not loop on polish.
 
 ## State: PRESENT  (hard stop -- the user decides)
 
-Set `lifecycle: Paused-Awaiting-Input`. Present the throwaway model + the validation
+The hard stop follows the ASK step of `skill-steps.md`. Present the throwaway model + the validation
 assessment: **Direction · What was built (fidelity) · Success signal — observed or not ·
 What we learned · viable? (a conclusion, not a resolution).** Assert no resolution.
 
-**Advance:** HANDOFF (optional) then DONE.
+**Advance:** ASK -> [State: HANDOFF].
 
 ---
 
@@ -99,9 +109,9 @@ Printed suggestions the user may act on: build the validated thing for real
 
 ## State: DONE
 
-Set `lifecycle: Completed`, `updated` now, append a `## Lifecycle History` row. Keep the
-throwaway artifacts + assessment in the work folder as the audit record; nothing is promoted
-to production.
+Finish through the writer: `bash .aid/runtime/scripts/execute/writeback-state.sh --pipeline --field Lifecycle --value Completed`, which also clears the saved skill and step. Keep the throwaway artifacts + assessment in the work folder as the audit record; nothing is promoted to production.
+
+**Advance:** HALT.
 
 ---
 
@@ -121,4 +131,4 @@ alongside the throwaway model/spike artifacts.
 - **LIGHT verify** -- honesty + throwaway-scope check on the assessment, not a polish-grade.
 - **Verification is always a sub-agent dispatch** (`aid-reviewer`), never inline.
 - **Kept design is `/aid-design`, not this.**
-- **Tracking:** write STATE `lifecycle` at every transition.
+- **Tracking:** every record change goes through the writer (`skill-steps.md`, § The work record).

@@ -26,6 +26,13 @@ the human gate (overwrite care is central).
 
 State machine: **INTAKE -> AUTHOR -> VERIFY (loop) -> PRESENT [human gate, diff] -> WRITE
 (on approval) -> DONE**. Print the `[State: NAME] -- {purpose}` entry line on each state.
+Steps, hand-offs and the work record follow [`skill-steps.md`](../../aid/templates/skill-steps.md).
+
+---
+
+## State Detection
+
+**Detection shapes the entry step and validates a saved step, and never routes** (`skill-steps.md`, § State Detection). A fresh start enters INTAKE. A resume continues at the step the work record saves, which the gate's § 3b routes to; the saved step's artifact is checked against disk, and a mismatch goes to recovery, never to a silent re-route.
 
 ---
 
@@ -38,20 +45,24 @@ State machine: **INTAKE -> AUTHOR -> VERIFY (loop) -> PRESENT [human gate, diff]
 3. **Pick the path** (fast if the document + change are clear; guided otherwise) and
    **classify complexity** -> `aid-tech-writer` model/effort (sonnet/medium default; opus/high
    for a large rewrite). Verifier tier >= producer.
-4. **Consult the Work Initiation Gate, then allocate the work folder + STATE.** First run
-   the gate (`.aid/runtime/templates/work-initiation-gate.md`):
-   `bash .aid/runtime/scripts/works/enumerate-works.sh` (main tree + every git worktree).
-   Empty -> allocate, no prompt. Works exist -> ask new-vs-continuation; on **continuation**
-   route to the chosen work's resume door and STOP (allocate nothing); on **new work**:
-   create and enter the worktree per the gate's `§ 3a` step 2
-   (`worktree-lifecycle.sh create <work-id> <name>`, STOP on a non-zero exit or empty path,
-   else enter the resolved path), **then** allocate (`initiator: aid-update-document`;
-   `phase` not driven).
+4. **Allocate the work through the gate.** Run the Work Initiation Gate
+   (`.aid/runtime/templates/work-initiation-gate.md`): `bash .aid/runtime/scripts/works/enumerate-works.sh`
+   (main tree + every git worktree). Empty -> no prompt. Works exist -> ask the gate's
+   new-vs-continuation question with the enumerated list.
+   - **New work:** call the gate's `§ 3a` with the user's words, this skill's name
+     (`aid-update-document`), its first step (`INTAKE`), and a kebab-case slug from the document.
+     The gate's `§ 3a` step 2 creates and enters the worktree
+     (`worktree-lifecycle.sh create <work-id> <name>`),
+     **then** allocate (`.aid/works/<work-id>-<slug>/`) the work folder and write its record through
+     the writer, before it hands back: "`STATE.yml` was created by the gate;
+     skip any instruction to write `initiator`, `active_skill`, `lifecycle` or `phase` by hand;
+     set other keys through the writer." This skill drives no `phase`.
+   - **Continuation:** On continuation, follow the gate's § 3b: enter the chosen work's worktree and run the skill its record names, at its saved step.
 5. **Read the design seed, if present.** If `.aid/design/document.md` exists, read it as
    prior context before drafting; it is an input, never a substitute, and is not modified
    by this run.
 
-**Advance:** AUTHOR.
+**Advance:** ASK -> [State: AUTHOR].
 
 ---
 
@@ -69,7 +80,7 @@ project source, preserving the document's existing genre structure.
 
 Same as `/aid-create-document`: mechanical grounding check + a clean-context **`aid-reviewer`**
 adversarial check (accurate, complete, no fabrication, structure preserved) -> `grade.sh`
--> loop on failure (3-cycle circuit-breaker -> IMPEDIMENT + `lifecycle: Blocked`).
+-> loop on failure (3-cycle circuit-breaker -> IMPEDIMENT, and the lifecycle set to `Blocked` through the writer).
 
 **Advance:** PRESENT.
 
@@ -77,10 +88,10 @@ adversarial check (accurate, complete, no fabrication, structure preserved) -> `
 
 ## State: PRESENT  (hard stop -- human final say)
 
-Set `lifecycle: Paused-Awaiting-Input`. Present the revised document **as a diff against
+The hard stop follows the ASK step of `skill-steps.md`. Present the revised document **as a diff against
 the current file** + the target path. Await approval. Never writes `.aid/knowledge/`.
 
-**Advance:** WRITE on approval; else DONE (draft kept in the work folder).
+**Advance:** ASK -> [State: WRITE] on approval; otherwise [State: DONE] (draft kept in the work folder).
 
 ---
 
@@ -95,7 +106,9 @@ Then optionally print handoffs (`/aid-update-kb`, `/aid-create*`, ...).
 
 ## State: DONE
 
-Set `lifecycle: Completed`, `updated` now, append a `## Lifecycle History` row.
+Finish through the writer: `bash .aid/runtime/scripts/execute/writeback-state.sh --pipeline --field Lifecycle --value Completed`, which also clears the saved skill and step.
+
+**Advance:** HALT.
 
 ---
 
@@ -105,4 +118,4 @@ Set `lifecycle: Completed`, `updated` now, append a `## Lifecycle History` row.
 - **Reads the existing document first**; shows a **diff**; never silently overwrites.
 - **Grounded + accurate** to KB + source; **NEVER writes `.aid/knowledge/`**.
 - **Clean context**; **verification always a sub-agent dispatch** (`aid-reviewer`).
-- **Tracking:** write STATE `lifecycle` at every transition.
+- **Tracking:** every record change goes through the writer (`skill-steps.md`, § The work record).

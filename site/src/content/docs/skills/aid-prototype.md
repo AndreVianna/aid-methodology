@@ -28,20 +28,19 @@ flowchart TB
   n1(["INTAKE"])
   n2["BUILD"]
   n3["VERIFY<br/>LIGHT -- do not polish-grade a rough model"]
-  n4{"PRESENT"}
+  n4["PRESENT<br/>hard stop -- the user decides"]
   n5["HANDOFF<br/>optional; printed suggestions only"]
   n6(["DONE"])
   n1 --> n2
   n2 --> n3
   n3 -.-> n2
   n3 --> n4
-  n4 -->|"optional"| n5
-  n4 --> n6
+  n4 --> n5
   n5 --> n6
   class n1 aidEntry
   class n2 aidStep
   class n3 aidLoopBack
-  class n4 aidDecision
+  class n4 aidStep
   class n5 aidStep
   class n6 aidExit
   class n1 aidNode
@@ -57,7 +56,7 @@ Every node in the chart above, in chart order, with the exact `canonical/` text 
 
 <a id="fragment-n1"></a>**1 · `INTAKE`** · _entry_
 
-~~~~plaintext title="canonical/skills/aid-prototype/SKILL.md#L24-L48" wrap
+~~~~plaintext title="canonical/skills/aid-prototype/SKILL.md#L31-L58" wrap
 ## State: INTAKE
 
 1. **Require a direction.** Empty argument -> ask one bootstrapping question ("What
@@ -70,26 +69,29 @@ Every node in the chart above, in chart order, with the exact `canonical/` text 
    signal / fidelity first.
 4. **Classify complexity (model + effort):** simple -> `aid-architect` at **sonnet /
    medium**; complex (a runnable spike, a rich flow) -> **opus / high**.
-5. **Consult the Work Initiation Gate, then allocate the work folder + STATE.** First run
-   the gate (`.aid/runtime/templates/work-initiation-gate.md`):
-   `bash .aid/runtime/scripts/works/enumerate-works.sh` (main tree + every git worktree).
-   Empty -> allocate, no prompt. Works exist -> ask new-vs-continuation; on **continuation**
-   route to the chosen work's resume door and STOP (allocate nothing); on **new work**:
-   create and enter the worktree per the gate's `§ 3a` step 2
-   (`worktree-lifecycle.sh create <work-id> <name>`, STOP on a non-zero exit or empty path,
-   else enter the resolved path), **then** allocate (`pipeline.path: lite`, `initiator:
-   aid-prototype`, `lifecycle: Running`, `active_skill: aid-prototype`; `phase` not
-   driven). For a **runnable spike**, associate an opt-in git worktree so the throwaway
-   code is isolated. When `/aid-orchestrate` passed an `intent:` block, write it into that
-   STATE.yml as the engine's INTAKE Step 5 does (`.aid/runtime/templates/shortcut-engine.md`); a typed
-   `/aid-prototype` writes none.
+5. **Allocate the work through the gate.** Run the Work Initiation Gate
+   (`.aid/runtime/templates/work-initiation-gate.md`): `bash .aid/runtime/scripts/works/enumerate-works.sh`
+   (main tree + every git worktree). Empty -> no prompt. Works exist -> ask the gate's
+   new-vs-continuation question with the enumerated list.
+   - **New work:** call the gate's `§ 3a` with the user's words, this skill's name
+     (`aid-prototype`), its first step (`INTAKE`), `--path lite`, and a kebab-case slug from the
+     direction. The gate's `§ 3a` step 2 creates and enters the worktree
+     (`worktree-lifecycle.sh create <work-id> <name>`),
+     **then** allocate (`.aid/works/<work-id>-<slug>/`) the work folder and write its record through
+     the writer, before it hands back: "`STATE.yml` was created by the gate;
+     skip any instruction to write `initiator`, `active_skill`, `lifecycle` or `phase` by hand;
+     set other keys through the writer." This skill drives no `phase`. For a **runnable spike**,
+     associate an opt-in git worktree so the throwaway code is isolated. When `/aid-orchestrate`
+     passed an `intent:` block, write it into that STATE.yml as the engine's INTAKE Step 5 does
+     (`.aid/runtime/templates/shortcut-engine.md`); a typed `/aid-prototype` writes none.
+   - **Continuation:** On continuation, follow the gate's § 3b: enter the chosen work's worktree and run the skill its record names, at its saved step.
 ~~~~
 
-[Source: `canonical/skills/aid-prototype/SKILL.md#L24-L48`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-prototype/SKILL.md#L24-L48) · [full step: `canonical/skills/aid-prototype/SKILL.md#L24-L50`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-prototype/SKILL.md#L24-L50)
+[Source: `canonical/skills/aid-prototype/SKILL.md#L31-L58`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-prototype/SKILL.md#L31-L58) · [full step: `canonical/skills/aid-prototype/SKILL.md#L31-L60`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-prototype/SKILL.md#L31-L60)
 
 <a id="fragment-n2"></a>**2 · `BUILD`** · _step_
 
-~~~~plaintext title="canonical/skills/aid-prototype/SKILL.md#L54-L61" wrap
+~~~~plaintext title="canonical/skills/aid-prototype/SKILL.md#L64-L71" wrap
 ## State: BUILD
 
 Dispatch **`aid-architect`** (clean context, tiered) to build the low-fidelity model of
@@ -100,11 +102,11 @@ stay in the work folder / opt-in worktree and **never touch production modules**
 a validation assessment (see [Deliverable](#deliverable)) into the work folder.
 ~~~~
 
-[Source: `canonical/skills/aid-prototype/SKILL.md#L54-L61`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-prototype/SKILL.md#L54-L61) · [full step: `canonical/skills/aid-prototype/SKILL.md#L54-L63`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-prototype/SKILL.md#L54-L63)
+[Source: `canonical/skills/aid-prototype/SKILL.md#L64-L71`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-prototype/SKILL.md#L64-L71) · [full step: `canonical/skills/aid-prototype/SKILL.md#L64-L73`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-prototype/SKILL.md#L64-L73)
 
 <a id="fragment-n3"></a>**3 · `VERIFY`** — LIGHT -- do not polish-grade a rough model · _loop-back_
 
-~~~~plaintext title="canonical/skills/aid-prototype/SKILL.md#L67-L74" wrap
+~~~~plaintext title="canonical/skills/aid-prototype/SKILL.md#L77-L84" wrap
 ## State: VERIFY  (LIGHT -- do not polish-grade a rough model)
 
 A prototype is *deliberately* low-fidelity, so this is a single light clean-context check
@@ -115,23 +117,23 @@ nothing was committed to real modules. If the check fails, return to BUILD once 
 do not loop on polish.
 ~~~~
 
-[Source: `canonical/skills/aid-prototype/SKILL.md#L67-L74`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-prototype/SKILL.md#L67-L74) · [full step: `canonical/skills/aid-prototype/SKILL.md#L67-L76`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-prototype/SKILL.md#L67-L76)
+[Source: `canonical/skills/aid-prototype/SKILL.md#L77-L84`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-prototype/SKILL.md#L77-L84) · [full step: `canonical/skills/aid-prototype/SKILL.md#L77-L86`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-prototype/SKILL.md#L77-L86)
 
-<a id="fragment-n4"></a>**4 · `PRESENT`** — hard stop -- the user decides · _decision_
+<a id="fragment-n4"></a>**4 · `PRESENT`** — hard stop -- the user decides · _step_
 
-~~~~plaintext title="canonical/skills/aid-prototype/SKILL.md#L80-L84" wrap
+~~~~plaintext title="canonical/skills/aid-prototype/SKILL.md#L90-L94" wrap
 ## State: PRESENT  (hard stop -- the user decides)
 
-Set `lifecycle: Paused-Awaiting-Input`. Present the throwaway model + the validation
+The hard stop follows the ASK step of `skill-steps.md`. Present the throwaway model + the validation
 assessment: **Direction · What was built (fidelity) · Success signal — observed or not ·
 What we learned · viable? (a conclusion, not a resolution).** Assert no resolution.
 ~~~~
 
-[Source: `canonical/skills/aid-prototype/SKILL.md#L80-L84`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-prototype/SKILL.md#L80-L84) · [full step: `canonical/skills/aid-prototype/SKILL.md#L80-L86`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-prototype/SKILL.md#L80-L86)
+[Source: `canonical/skills/aid-prototype/SKILL.md#L90-L94`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-prototype/SKILL.md#L90-L94) · [full step: `canonical/skills/aid-prototype/SKILL.md#L90-L96`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-prototype/SKILL.md#L90-L96)
 
 <a id="fragment-n5"></a>**5 · `HANDOFF`** — optional; printed suggestions only · _step_
 
-~~~~plaintext title="canonical/skills/aid-prototype/SKILL.md#L90-L94" wrap
+~~~~plaintext title="canonical/skills/aid-prototype/SKILL.md#L100-L104" wrap
 ## State: HANDOFF  (optional; printed suggestions only)
 
 Printed suggestions the user may act on: build the validated thing for real
@@ -139,16 +141,14 @@ Printed suggestions the user may act on: build the validated thing for real
 (`/aid-experiment` / `/aid-test`). Never auto-invoked; never a resolution.
 ~~~~
 
-[Source: `canonical/skills/aid-prototype/SKILL.md#L90-L94`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-prototype/SKILL.md#L90-L94) · [full step: `canonical/skills/aid-prototype/SKILL.md#L90-L96`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-prototype/SKILL.md#L90-L96)
+[Source: `canonical/skills/aid-prototype/SKILL.md#L100-L104`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-prototype/SKILL.md#L100-L104) · [full step: `canonical/skills/aid-prototype/SKILL.md#L100-L106`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-prototype/SKILL.md#L100-L106)
 
-<a id="fragment-n6"></a>**6 · `DONE`** · _exit_ · UNSPECIFIED
+<a id="fragment-n6"></a>**6 · `DONE`** · _exit_ · HALT
 
-~~~~plaintext title="canonical/skills/aid-prototype/SKILL.md#L100-L104" wrap
+~~~~plaintext title="canonical/skills/aid-prototype/SKILL.md#L110-L112" wrap
 ## State: DONE
 
-Set `lifecycle: Completed`, `updated` now, append a `## Lifecycle History` row. Keep the
-throwaway artifacts + assessment in the work folder as the audit record; nothing is promoted
-to production.
+Finish through the writer: `bash .aid/runtime/scripts/execute/writeback-state.sh --pipeline --field Lifecycle --value Completed`, which also clears the saved skill and step. Keep the throwaway artifacts + assessment in the work folder as the audit record; nothing is promoted to production.
 ~~~~
 
-[Source: `canonical/skills/aid-prototype/SKILL.md#L100-L104`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-prototype/SKILL.md#L100-L104) · [full step: `canonical/skills/aid-prototype/SKILL.md#L100-L104`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-prototype/SKILL.md#L100-L104)
+[Source: `canonical/skills/aid-prototype/SKILL.md#L110-L112`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-prototype/SKILL.md#L110-L112) · [full step: `canonical/skills/aid-prototype/SKILL.md#L110-L114`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-prototype/SKILL.md#L110-L114)
