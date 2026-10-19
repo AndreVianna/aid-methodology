@@ -144,7 +144,7 @@ prior_domain_status="$(grep -m1 '^\*\*Confirmed:\*\*' .aid/knowledge/STATE.md 2>
   Re-read the source signals and check whether the measured domain is consistent with the prior
   confirmed domain. If consistent, show "was `<prior_domain>`; still measures `<prior_domain>`"
   and ask the user to re-confirm or change it. If the fresh measurement differs, present the
-  diff ("was `<prior_domain>`; now measures `<new_domain>`") and pause for user decision. This
+  diff ("was `<prior_domain>`; now measures `<new_domain>`") and ask the user to decide. This
   is idempotent re-entry — the domain is re-measured every run; the user is always the final
   authority.
 - **No confirmed domain** (first run, or prior run paused before user confirmed): proceed to
@@ -241,7 +241,7 @@ Domain classification
 
 #### On confirm (resume path) -- write the record
 
-When the user re-runs `/aid-discover` and the session resumes after the pause:
+When the user answers the question, in this conversation or in a later session that resumes at the saved step:
 
 1. Read the user's response:
    - **`confirm` or default:** use the proposed domain label.
@@ -428,12 +428,12 @@ Then ask the user to confirm or edit:
 
 **This is a genuine ASK.** Stop here after presenting the proposal.
 
-**Advance:** **ASK** → [State: GENERATE — Step 1] (contracted checkpoint per SPEC feature-004 §3.1 and
+**Advance:** **ASK** → [State: GENERATE — Step 0e] (contracted checkpoint per SPEC feature-004 §3.1 and
 `.aid/runtime/templates/skill-steps.md`).
 
 #### On confirm (resume path)
 
-When the user re-runs `/aid-discover` and the session resumes after the pause:
+When the user answers the question, in this conversation or in a later session that resumes at the saved step:
 
 1. Read the user's response:
    - **`confirm` or default (no change to proposal):** If the proposal equals the default seed, **write nothing** to `.aid/settings.yml` (absent section ⇒ default seed — AC: accepting default writes nothing). If the proposal differs from the default, write the confirmed set to `.aid/settings.yml` as described below.

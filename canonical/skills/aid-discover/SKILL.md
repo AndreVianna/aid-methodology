@@ -268,7 +268,7 @@ aid-discover  ▸ you are here
 | ELICIT | `references/state-elicit.md` | inline | CHAIN → GENERATE |
 | GENERATE | `references/state-generate.md` | `aid-architect` | CHAIN → REVIEW |
 | REVIEW | `references/state-review.md` | `aid-architect` | CHAIN → Q-AND-A |
-| Q-AND-A | `references/state-q-and-a.md` | inline | ASK → FIX |
+| Q-AND-A | `references/state-q-and-a.md` | inline | ASK → FIX; CHAIN → APPROVAL |
 | FIX | `references/state-fix.md` | `aid-architect` | CHAIN → APPROVAL |
 | APPROVAL | `references/state-approval.md` | inline | ASK → DONE |
 | DONE | `references/state-done.md` | inline | HALT |

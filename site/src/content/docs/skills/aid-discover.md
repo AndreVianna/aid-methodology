@@ -88,7 +88,7 @@ Every node in the chart above, in chart order, with the exact `canonical/` text 
 <a id="fragment-n4"></a>**4 · `Q-AND-A`** — Q-AND-A drives EVERY pending question to a terminal answer. · _decision_
 
 ~~~~plaintext title="canonical/skills/aid-discover/SKILL.md#L271" wrap
-| Q-AND-A | `references/state-q-and-a.md` | inline | ASK → FIX |
+| Q-AND-A | `references/state-q-and-a.md` | inline | ASK → FIX; CHAIN → APPROVAL |
 ~~~~
 
 [Source: `canonical/skills/aid-discover/SKILL.md#L271`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-discover/SKILL.md#L271) · [full step: `canonical/skills/aid-discover/references/state-q-and-a.md#L1-L65`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-discover/references/state-q-and-a.md#L1-L65)
