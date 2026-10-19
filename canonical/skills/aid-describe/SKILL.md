@@ -236,10 +236,10 @@ aid-describe  ▸ you are here
 
 | State | Detail | Worker | Advance |
 |-------|--------|--------|---------|
-| FIRST-RUN | `references/state-first-run.md` | `aid-interviewer` | → CONTINUE |
-| Q-AND-A | `references/state-q-and-a.md` | `aid-interviewer` | → CONTINUE |
-| CONTINUE | `references/state-continue.md` | `aid-interviewer` | → DESCRIBE-SEED (greenfield: no brownfield KB on disk and seed not yet complete) / → COMPLETION (brownfield or seed already complete) |
-| DESCRIBE-SEED | `references/state-describe-seed.md` | `aid-interviewer` | → COMPLETION |
+| FIRST-RUN | `references/state-first-run.md` | `aid-interviewer` | CHAIN → CONTINUE |
+| Q-AND-A | `references/state-q-and-a.md` | `aid-interviewer` | CHAIN → CONTINUE |
+| CONTINUE | `references/state-continue.md` | `aid-interviewer` | CHAIN → DESCRIBE-SEED (greenfield: no brownfield KB on disk and seed not yet complete) / CHAIN → COMPLETION (brownfield or seed already complete) |
+| DESCRIBE-SEED | `references/state-describe-seed.md` | `aid-interviewer` | CHAIN → COMPLETION |
 | COMPLETION | `references/state-completion.md` | `aid-interviewer` | ASK → HALT, naming `/aid-define {work}` |
 
 On state entry, print `[State: NAME]` + the "you are here" map from State Detection above.

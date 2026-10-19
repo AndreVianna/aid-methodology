@@ -513,7 +513,7 @@ Update STATE.md `## Seed Authoring` `**Status:** Complete`.
 
 ## Advance
 
-**Advance: ASK -> [State: COMPLETION]**
+**Advance:** **CHAIN** → [State: COMPLETION]
 
 When step 5 passes (grade >= minimum, essence PASS, assertiveness PASS), chain inline to COMPLETION
 (`references/state-completion.md`). The seed docs are now a forward-authored KB in `.aid/knowledge/`;

@@ -343,16 +343,15 @@ describe('extractDispatch — artifact condition normalization', () => {
     expect(e.kind).toBe('sequence');
   });
 
-  it('near-miss: CONTINUE→COMPLETION condition is non-null (has real content)', () => {
-    // CONTINUE worker: "**CHAIN** → [State: COMPLETION] when all sections are Complete or N/A
-    // (continue inline)."  After stripping, the real content "when all sections are..."
-    // remains — _isArtifactCondition must return false here.
-    // Mutant: strip all conditions → CONTINUE→COMPLETION would have null condition.
+  it('CONTINUE→COMPLETION is the unconditioned fall-through after the greenfield branch', () => {
+    // CONTINUE now advances with CHAIN, and its greenfield branch to DESCRIBE-SEED is the only
+    // conditioned edge. The COMPLETION edge is the fall-through sequence: no condition is
+    // attached, so _isArtifactCondition is never consulted for it.
+    // Mutant: attach the greenfield guard to the fall-through edge → condition non-null.
     const e = chart.edges.find((e) => e.from === 'n3' && e.to === 'n5');
     expect(e).toBeDefined();
-    expect(e.condition).not.toBeNull();
-    // Actual condition retains the guard (with some noise from advance.mjs):
-    expect(e.condition).toMatch(/when all sections are/);
+    expect(e.kind).toBe('sequence');
+    expect(e.condition).toBeNull();
   });
 
   it('near-miss: FIRST-RUN→CONTINUE condition contains real content', () => {
@@ -652,21 +651,22 @@ describe('extractDispatch — invalid skill throws with error message', () => {
 describe('extractDispatch — rule 7 vs rule 8: loop-back vs re-entry', () => {
   const chart = extractDispatch('aid-describe', null, REPO_ROOT);
 
-  it('aid-describe has at least one loop-back edge (rule 7: self-loop otherwise)', () => {
-    // CONTINUE and Q-AND-A and DESCRIBE-SEED all have loop-back self-loops.
-    // Mutant: classify all cycles as re-entry → would fail this test.
+  it('aid-describe has no loop-back edge (every state CHAINs or ASKs forward; rule 7 is covered by flow-advance fixtures)', () => {
+    // Q-AND-A, CONTINUE and DESCRIBE-SEED all CHAIN, so no state names itself as its next step.
+    // The only backward edge is the re-entry from COMPLETION (Targeted Interview).
+    // Mutant: re-introduce an ASK self-loop on CONTINUE → a loop-back edge appears here.
     const loopBacks = chart.edges.filter((e) => e.kind === 'loop-back');
-    expect(loopBacks.length).toBeGreaterThan(0);
+    expect(loopBacks).toHaveLength(0);
   });
 
-  it('aid-describe CONTINUE self-loop is loop-back, not re-entry', () => {
-    // The self-loop on CONTINUE (n3→n3, "otherwise") is a Rule 5 loop-back.
-    // Rule 8 only fires for explicit re-entry headings, not self-loops.
-    // Mutant: treat n3→n3 as re-entry → kind would be re-entry.
+  it('aid-describe CONTINUE has no self-loop; its only backward edge is re-entry', () => {
+    // Rule 8 fires for the explicit re-entry heading; a self-loop would be a Rule 5 loop-back.
+    // Mutant: a CONTINUE self-edge would appear as n3→n3 with kind loop-back.
     const selfLoop = chart.edges.find((e) => e.from === 'n3' && e.to === 'n3');
-    expect(selfLoop).toBeDefined();
-    expect(selfLoop.kind).toBe('loop-back');
-    expect(selfLoop.kind).not.toBe('re-entry');
+    expect(selfLoop).toBeUndefined();
+    const reentry = chart.edges.find((e) => e.from === 'n5' && e.to === 'n2');
+    expect(reentry).toBeDefined();
+    expect(reentry.kind).toBe('re-entry');
   });
 });
 

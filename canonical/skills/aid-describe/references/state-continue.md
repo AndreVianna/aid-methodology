@@ -40,4 +40,4 @@ Read REQUIREMENTS.md to know what's already captured.
 **See `references/interview-loop.md`** for the loop body (shared between FIRST-RUN and CONTINUE),
 which delegates next-move selection to `references/elicitation-engine.md`.
 
-**Advance:** **ASK** → [State: COMPLETION] when all sections are Complete or N/A (continue inline).
+**Advance:** **CHAIN** → [State: DESCRIBE-SEED] (greenfield: no brownfield KB on disk and seed not yet complete); **CHAIN** → [State: COMPLETION] (brownfield or seed already complete), when all sections are Complete or N/A (continue inline).

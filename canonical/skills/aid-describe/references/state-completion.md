@@ -95,6 +95,9 @@ period on the Name; Description is one sentence ending with a period.
 **This step is mandatory at COMPLETION** (not optional, not skippable). If `## 1. Objective`
 is `*(pending)*` or absent, ask the user for a one-sentence description before proceeding.
 
+Stop here (ASK): the identity question is put to the user through the question protocol, and Step 4
+(Present Summary) follows once the identity fields are confirmed and written.
+
 ### Step 4: Present Summary
 
 **G2 whole-picture read-back (elicitation-engine.md Invariant 8):** this step fulfils
@@ -116,6 +119,9 @@ Is there anything else we should consider, or are the requirements ready?
 [1] Approved — requirements are ready
 [2] Additional consideration: ___
 ```
+
+Stop here (ASK): the summary approval is put to the user through the question protocol, and Step 5
+(Process Approval Response) follows once the user answers.
 
 ### Step 5: Process Approval Response
 

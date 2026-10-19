@@ -2221,19 +2221,16 @@ describe('AC-4 corpus fixture — aid-describe (dispatch-table)', () => {
     expect(_dChart.exits.length).toBeGreaterThanOrEqual(1);
   });
 
-  it('CONTINUE.kind === decision', () => {
+  it('CONTINUE.kind === step (CHAIN, no user decision at its exit)', () => {
     expect(_dContinue).toBeDefined();
-    expect(_dContinue.kind).toBe('decision');
+    expect(_dContinue.kind).toBe('step');
   });
 
-  it('CONTINUE out-degree 3 with kinds {branch, branch, loop-back}', () => {
+  it('CONTINUE out-degree 2 with kinds {branch, sequence}', () => {
     // Kind-list assertion so a rule-5 change or KI-008 regression cannot pass silently.
-    expect(_dContOut).toHaveLength(3);
-    expect(_dContOut.map((e) => e.kind).sort()).toEqual([
-      'branch',
-      'branch',
-      'loop-back',
-    ]);
+    // Greenfield branch to DESCRIBE-SEED, fall-through sequence to COMPLETION.
+    expect(_dContOut).toHaveLength(2);
+    expect(_dContOut.map((e) => e.kind).sort()).toEqual(['branch', 'sequence']);
   });
 
   it('a re-entry edge enters Q-AND-A', () => {
