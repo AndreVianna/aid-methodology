@@ -64,7 +64,7 @@ Example: /aid-create-ticket --level story --parent PROJ-12 "Add pagination to th
 
 ## States
 
-This skill creates no work, so it saves no steps through the work-record writer (`skill-steps.md`, "Before a work exists"). Its questions are asked through the question protocol and recorded with `--ask --project`.
+This skill creates no work, so it saves no steps through the work-record writer (`skill-steps.md`, "Before a work exists"). Its questions are asked through the question protocol and recorded nowhere: it writes no local file and has no shell to run the writer.
 
 ### State 1 — PARSE-ARGS
 
@@ -114,8 +114,8 @@ further than that. When a connector resolves silently, `$CONNECTOR` holds its st
 state; when two or more match, State 2a settles it.
 
 **Advance:** **CHAIN** → State: COMPOSE when the connector resolves silently (explicit stem, sole
-match, or host MCP); **CHAIN** → State: PICK-CONNECTOR when two or more match. An unknown stem or the
-notify exit above ends the run here (HALT).
+match, or host MCP); **CHAIN** → State: PICK-CONNECTOR when two or more match; **HALT** on an unknown stem or
+the notify exit above.
 
 ### State 2a — PICK-CONNECTOR
 
@@ -154,7 +154,7 @@ neither silently**:
 Assemble the draft payload: a title/summary derived from `<description>`, the level (a tier, a
 quoted literal, or unset), and the parent ref (or none). Nothing is sent anywhere yet.
 
-**Advance:** **CHAIN** → State: LEVEL-RESOLVE (continue inline). The cross-tracker stop above ends the run here (HALT).
+**Advance:** **CHAIN** → State: LEVEL-RESOLVE (continue inline); **HALT** on the cross-tracker stop above.
 
 ### State 4 — LEVEL-RESOLVE
 
@@ -209,9 +209,8 @@ straight to `FILE` that skips this gate.
 
 The confirm is a blocking question: this state pauses on it until the user answers.
 
-**Advance:** **CHAIN** → State: FILE once the user has chosen `[1] File it`. On `[2] Edit` the flow goes back
-to State: COMPOSE (continue inline), with the user's requested change folded into the payload. On `[3] Cancel`
-nothing is sent or filed, and the run ends here (HALT).
+**Advance:** **CHAIN** → State: FILE once the user has chosen `[1] File it`; **CHAIN** → State: COMPOSE on `[2] Edit`,
+with the user's requested change folded into the payload; **HALT** on `[3] Cancel` (nothing is sent or filed).
 
 ### State 6 — FILE
 

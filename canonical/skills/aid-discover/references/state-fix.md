@@ -118,7 +118,7 @@ Wait for completion.
 
 Read new `.aid/knowledge/STATE.md`. Verify Review History preserved (append, not replace under `## Review History`).
 
-Print: `[Fix 3/3] Complete. Grade: {old} → {new}. Run /aid-discover again to {fix remaining issues|proceed}.`
+Print: `[Fix 3/3] Complete. Grade: {old} → {new}.`
 
 Print: `[State: FIX] complete.`
 

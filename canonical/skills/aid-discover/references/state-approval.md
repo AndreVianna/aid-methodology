@@ -1,6 +1,6 @@
 # State: APPROVAL
 
-APPROVAL presents the KB summary and asks the user to confirm it is ready for the Interview phase; it is selected when the KB meets minimum grade, **`## Q&A (Pending)` has ZERO Pending entries** (every question was self-answered from source or answered by the user in Q-AND-A — discovery is not complete while any question is unanswered), and it has not yet received user approval.
+APPROVAL presents the KB summary and asks the user to confirm it is ready for the Definition phase; it is selected when the KB meets minimum grade, **`## Q&A (Pending)` has ZERO Pending entries** (every question was self-answered from source or answered by the user in Q-AND-A — discovery is not complete while any question is unanswered), and it has not yet received user approval.
 
 ### Step 1: Present Summary
 
@@ -29,12 +29,12 @@ Please review .aid/knowledge/ and let us know if there is anything else to consi
   bash .aid/runtime/scripts/summarize/writeback-state.sh --set kb_status Approved
   ```
   Add Review History entry under `## Review History`.
-  Print: `✅ Discovery complete. Grade: {grade}. KB approved and ready for the Interview phase.`
+  Print: `✅ Discovery complete. Grade: {grade}. KB approved and ready for the Definition phase.`
 - **[2] Consideration:** Add as new Q&A entry in STATE.md `## Q&A (Pending)` (Category: `User Feedback`, Impact: `High`, Status: `Pending`).
-  Print: `[Approval] Consideration recorded as Q{N}.` The run ends here (HALT); the pending Q&A is addressed by the Q-AND-A state of the next run.
+  Print: `[Approval] Consideration recorded as Q{N}.` The pending Q&A is addressed by the Q-AND-A state of the next run.
 
 Print: `[State: APPROVAL] complete.`
 
 The approval is a blocking question: this step pauses on it until the user answers.
 
-**Advance:** **CHAIN** → [State: DONE] on approval; on a consideration the run ends here (HALT).
+**Advance:** **CHAIN** → [State: DONE] on approval; **HALT** on a consideration.

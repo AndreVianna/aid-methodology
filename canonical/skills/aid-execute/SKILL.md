@@ -224,7 +224,7 @@ KB docs are relevant to this task, then load them. Let the INDEX guide you.
 | FIX | `references/state-fix.md` | _(same type as EXECUTE)_ | CHAIN → REVIEW |
 | DONE | _(inline — task complete)_ | `inline` | HALT |
 | RE-RUN | `references/state-re-run.md` | `inline` | CHAIN → REVIEW when the user reopens; HALT when the task stays Done |
-| DELIVERY-GATE | `references/state-delivery-gate.md` | `aid-reviewer` (tier = complexity score) | HALT (grade ≥ min); CHAIN → FIX when the user approves the CODE fixes; ASK then HALT for upstream (non-CODE) issues |
+| DELIVERY-GATE | `references/state-delivery-gate.md` | `aid-reviewer` (tier = complexity score) | HALT |
 
 On state entry, print `[State: NAME]` + the "you are here" map from State Detection above.
 When a state completes, route by its `**Advance:**` type (per [`skill-steps.md`](../../aid/templates/skill-steps.md)):
@@ -323,7 +323,7 @@ create branch aid/{work}-delivery-001
   → /aid-execute work-001 task-004 [IMPLEMENT]  ┘  ← parallel (both depend on task-002)
   → /aid-execute work-001 task-005 [TEST]          ← waits for task-003 + task-004
   → /aid-execute work-001 task-006 [DOCUMENT]      ← ADR → review → ✅
-  → merge to main
+  → delivery gate (review of the whole delivery)
 ```
 
 All tasks in a delivery accumulate on the same branch.

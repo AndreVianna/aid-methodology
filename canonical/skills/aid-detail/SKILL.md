@@ -92,7 +92,7 @@ aid-detail  ▸ you are here
 | State | Detail | Worker | Advance |
 |-------|--------|--------|---------|
 | FIRST-RUN | `references/first-run.md` | `aid-architect` | CHAIN → REVIEW |
-| CONFIRM | `references/review.md` | `inline` | CHAIN → REVIEW |
+| CONFIRM | `references/confirm.md` | `inline` | CHAIN → REVIEW |
 | REVIEW | `references/review.md` | `aid-reviewer` | CHAIN → DONE |
 | DONE | — | `inline` | HALT |
 

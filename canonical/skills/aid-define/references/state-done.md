@@ -20,10 +20,10 @@ Interview for {work} is complete and approved.
   - Otherwise, record the user's input into the relevant REQUIREMENTS.md section, update
     `interview.sections[].state` (STATE.yml) if needed, update the affected §11 feature section
     files if the change impacts a feature, and update KB documents if the new info is KB-relevant.
-  - Print: `✅ Updated. Run /aid-define {work} again to re-validate.`
+  - Print: `✅ Updated.` and show the menu again.
 
 - **[2] Re-run cross-reference:**
-  - Proceed to State 6 (CROSS-REFERENCE) for a fresh validation pass
+  - Go on to CROSS-REFERENCE for a fresh validation pass
 
 - **[3] Done:**
   - Delete review ledgers:
@@ -35,7 +35,6 @@ Interview for {work} is complete and approved.
   - Print: `✅ Interview complete. Requirements approved. Ready for /aid-specify.`
 
 The menu is a blocking question, asked through the question protocol: this step pauses on it until the user
-answers. A requirements-level change hands off to `/aid-describe` in one plain line. Run `/aid-define` again
-only to add information or re-validate.
+answers. A requirements-level change hands off to `/aid-describe` in one plain line.
 
 **Advance:** **CHAIN** → [State: CROSS-REFERENCE] when the user picks [2]; **HALT** when the user picks another option. This is the terminal state.

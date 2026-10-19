@@ -36,7 +36,7 @@
 # writeback-state.sh -- row-level write coordination for FR6 parallel pool
 # x per-unit STATE writes in AID aid-execute.
 #
-# Provides 16 modes targeting PER-UNIT STATE.yml files (Pillar 2): fifteen that
+# Provides 17 modes targeting PER-UNIT STATE.yml files (Pillar 2): sixteen that
 # write, and --check, which writes nothing.
 # Uses a sentinel-file lock (set -o noclobber + atomic create + sleep-poll retry)
 # to prevent races when multiple parallel tasks dispatch reviewers concurrently.
@@ -246,8 +246,9 @@
 #
 #   writeback-state.sh -h | --help
 #
-# Work record discovery (the record modes: --step, --reroute, --check, --repair,
-# --handoff, --handoff-return, and --ask or --answer without --project). The
+# Work record discovery (the record modes: --pipeline, --step, --reroute, --intent,
+# --check, --repair, --handoff, --handoff-return, and --ask or --answer without
+# --project). The
 # record is the first of these that applies:
 #   1. AID_STATE_FILE, when set;
 #   2. the STATE.yml of the work folder (.aid/works/work-NNN-*/) the current
@@ -751,7 +752,7 @@ fi
 NEW_MODE_COUNT=$(( CREATE_FLAG + REROUTE_FLAG + CHECK_FLAG + REPAIR_FLAG + INTENT_FLAG ))
 NEW_MODE_COUNT=$(( NEW_MODE_COUNT + HANDOFF_FLAG + HANDOFF_RETURN_FLAG + ASK_FLAG + ANSWER_FLAG + STEP_MODE ))
 if [[ "$NEW_MODE_COUNT" -gt 1 ]]; then
-    die "one record mode per call: use one of --create, --step, --reroute, --check, --repair, --handoff, --handoff-return, --ask, --answer" 5
+    die "one record mode per call: use one of --create, --step, --reroute, --intent, --check, --repair, --handoff, --handoff-return, --ask, --answer" 5
 fi
 if [[ "$CREATE_FLAG" -eq 1 ]]; then
     MODE="create"
@@ -792,6 +793,11 @@ elif [[ -n "$DELIVERY_ID" && -n "$ISSUE_ROW" ]]; then
     MODE="append-issue"
 else
     die "no valid mode detected; use --help for usage" 5
+fi
+
+# --reason and --phases belong to --create and --intent alone.
+if [[ ( -n "$REASON_ARG" || -n "$PHASES_ARG" ) && "$MODE" != "create" && "$MODE" != "intent" ]]; then
+    die "--reason and --phases are options of --create and --intent only" 5
 fi
 
 # Validate NNN pattern (1-3 digits; allow zero-padded like 019)
@@ -2888,6 +2894,9 @@ wb_find_state_file() {
             die "more than one work in this worktree matches its branch or name; set AID_STATE_FILE to the work record" 1
         fi
     fi
+    if [[ -z "$top" ]]; then
+        die "no work record found: AID_STATE_FILE is not set, the current directory is not in a work folder, and git cannot name this worktree (git is missing, or this is not a git checkout), so its work cannot be found" 1
+    fi
     die "no work record found: AID_STATE_FILE is not set, the current directory is not in a work folder, and no work in this worktree's .aid/works matches its branch or name" 1
 }
 
@@ -2895,7 +2904,7 @@ wb_find_state_file() {
 # Dispatch
 # ---------------------------------------------------------------------------
 case "$MODE" in
-    step|reroute|check|repair|handoff|handoff-return|intent) wb_find_state_file ;;
+    pipeline|step|reroute|check|repair|handoff|handoff-return|intent) wb_find_state_file ;;
     ask|answer) if [[ "$PROJECT_FLAG" -eq 0 ]]; then wb_find_state_file; fi ;;
 esac
 case "$MODE" in

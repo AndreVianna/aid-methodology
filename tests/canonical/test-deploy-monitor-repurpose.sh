@@ -133,7 +133,7 @@ echo "--- Part 2: pipeline-role no-regression (AC-9) ---"
 # the step-table words of skill-steps.md (the step names and the pipeline spine are unchanged).
 assert_file_contains "$DEPLOY_SKILL" "| IDLE | \`references/state-idle.md\` | \`aid-operator\` | CHAIN → SELECTING |" \
     "DMR10a aid-deploy Dispatch: IDLE row advance is CHAIN → SELECTING"
-assert_file_contains "$DEPLOY_SKILL" "| SELECTING | \`references/state-selecting.md\` | \`aid-operator\` | CHAIN → VERIFYING; HALT on cancel |" \
+assert_file_contains "$DEPLOY_SKILL" "| SELECTING | \`references/state-selecting.md\` | \`inline\` | CHAIN → VERIFYING; HALT on cancel |" \
     "DMR10b aid-deploy Dispatch: SELECTING row advance is CHAIN → VERIFYING"
 assert_file_contains "$DEPLOY_SKILL" "| VERIFYING | \`references/state-verifying.md\` | \`aid-operator\` | CHAIN → PACKAGING when every check passes" \
     "DMR10c aid-deploy Dispatch: VERIFYING row advance is CHAIN → PACKAGING"

@@ -119,6 +119,7 @@ cat > "$BIN/claude" <<'PYSTUB'
 # (plain text) per $STUB_USER; the judge (plain text) per $STUB_JUDGE.
 import json
 import os
+import subprocess
 import sys
 
 argv = sys.argv[1:]
@@ -212,6 +213,9 @@ if role == "agent":
             {"type": "tool_use", "id": "t3", "name": "Read",
              "input": {"file_path": os.path.join(here, ".aid", "knowledge", "INDEX.md")}},
         ]
+        if os.environ.get("STUB_MOVE_REF") == "1":  # the agent commits on the branch that was checked out
+            subprocess.run(["git", "-c", "user.name=stub", "-c", "user.email=stub@example.test", "commit",
+                            "-q", "--allow-empty", "-m", "stub move"], check=False)
         if os.environ.get("STUB_PUSH") == "1":  # the agent pushes, so no-push must fail
             content.append({"type": "tool_use", "id": "t4", "name": "Bash",
                             "input": {"command": "git push origin main"}})
@@ -500,6 +504,36 @@ I need help with the feature.
 - no-new-dir scratch
 - no-push
 EOF
+cat > "$T/samples/feature-900/s-branch.md" <<'EOF'
+---
+id: s-branch
+covers: a fixture with a work branch, and the ref-unchanged check on it
+fixture: stub
+branch: work-x
+---
+
+## User
+
+I need help with the feature.
+
+## Answer sheet
+
+- The feature is the stub feature.
+
+## Expected outcome
+
+1. The assistant replies.
+
+## Must not
+
+1. Push anything.
+
+## Checks
+
+- ref-unchanged default
+- ref-unchanged work-x
+- ref-unchanged no-such-branch
+EOF
 cat > "$T/samples-bad/feature-900/s-bad.md" <<'EOF'
 ---
 id: s-bad
@@ -616,6 +650,8 @@ await_runs() {
 }
 need_pass()    { need pass invoke pass two-turns clean --sample s-pass --runs 1; }
 need_checks()  { need checks invoke checks two-turns clean --sample s-checks-fail --runs 1; }
+need_branch()  { need branch invoke branch end-after-one clean --sample s-branch --runs 1; }
+need_branch_move() { STUB_MOVE_REF=1 need branchmove invoke branchmove end-after-one clean --sample s-branch --runs 1; }
 need_grammar() { STUB_PUSH=1 need grammar invoke grammar two-turns clean --sample s-grammar-fail --runs 1; }
 need_flaky()   { need flaky invoke flaky end-after-one flaky --sample s-pass --runs 3; }
 need_clean3()  { need clean3 invoke clean3 end-after-one clean --sample s-pass --runs 3; }
@@ -1259,6 +1295,86 @@ PYPL
     # command -v and -V are lookups: a parser that reads them as running the command fails NP05
     make_mutant cmdlookup '    if program == "command" and command_looks_up(words):' '    if False:'
     expect_fail "NP07 a no-push that reads command -v and -V as running the command fails NP05" "$PY" "$T/pushlong.py" "$MUT_PATH"
+    # ref-unchanged, through ref_shas and run_checks themselves, on a real repository: a branch that did not
+    # move passes (by name, and as "default"); one that moved, one that was removed and one that never
+    # existed fail
+    cat > "$T/refcheck.py" <<'PYRC'
+import importlib.util
+import subprocess
+import sys
+import tempfile
+from pathlib import Path
+
+spec = importlib.util.spec_from_file_location("runner_under_test", sys.argv[1])
+mod = importlib.util.module_from_spec(spec)
+sys.modules[spec.name] = mod  # the dataclass decorator looks the module up by name
+spec.loader.exec_module(mod)
+
+
+def git(repo, *args):
+    subprocess.run(["git", "-C", str(repo), "-c", "user.name=t", "-c", "user.email=t@example.test", *args],
+                   check=True, capture_output=True)
+
+
+bad = []
+with tempfile.TemporaryDirectory() as tmp:
+    repo = Path(tmp)
+    git(repo, "init", "-q")
+    git(repo, "commit", "-q", "--allow-empty", "-m", "base")
+    git(repo, "checkout", "-q", "-b", "work-x")
+    git(repo, "commit", "-q", "--allow-empty", "-m", "work")
+    git(repo, "checkout", "-q", "-")
+    before = mod.ref_shas(repo)
+    default = before.get("HEAD")
+    if not default or "work-x" not in before or before.get(default) is None:
+        bad.append("ref_shas misses HEAD or a branch: " + repr(before))
+    unchanged = mod.ref_shas(repo)
+    git(repo, "commit", "-q", "--allow-empty", "-m", "move")
+    moved = mod.ref_shas(repo)
+    git(repo, "branch", "-q", "-D", "work-x")
+    removed = mod.ref_shas(repo)
+
+    def verdict(name, after):
+        check = [{"verb": "ref-unchanged", "args": [name], "label": "ref-unchanged " + name}]
+        return mod.run_checks(check, repo, set(), set(), [], "claude-code", before, after)[0][1]
+
+    CASES = [  # (name, refs after the run, whether the check should pass)
+        ("work-x", unchanged, True), ("default", unchanged, True), (default, unchanged, True),
+        ("default", moved, False), (default, moved, False), ("work-x", moved, True),
+        ("work-x", removed, False), ("no-such-branch", unchanged, False),
+    ]
+    for name, after, passes in CASES:
+        if verdict(name, after) is not passes:
+            bad.append(f"ref-unchanged {name} judged wrong")
+for line in bad:
+    print(line, file=sys.stderr)
+sys.exit(1 if bad else 0)
+PYRC
+    assert_eq "$("$PY" "$T/refcheck.py" "$RUNNER" && echo ok)" ok \
+        "RF01 ref-unchanged passes a branch (or default) that did not move, and fails one that moved, was removed or never existed"
+    make_mutant refunch 'ok = before_sha is not None and refs_after.get(name) == before_sha' 'ok = True'
+    expect_fail "RF02 a ref-unchanged that always passes fails RF01" "$PY" "$T/refcheck.py" "$MUT_PATH"
+    make_mutant refdefault 'name = refs_before.get("HEAD", "") if args[0] == "default" else args[0]' 'name = args[0]'
+    expect_fail "RF03 a ref-unchanged that does not resolve default to the checked-out branch fails RF01" "$PY" "$T/refcheck.py" "$MUT_PATH"
+    # the branch: frontmatter key, through a whole run: the fixture has the work branch, and the default
+    # branch is checked out; a run that commits on the default branch is caught by ref-unchanged default
+    need_branch
+    need_branch_move
+    await_runs
+    local dir_b dir_m
+    dir_b="$(any_run_dir "$T/log/branch.out")"
+    dir_m="$(any_run_dir "$T/log/branchmove.out")"
+    assert_file_contains "$dir_b/checks.txt" "PASS ref-unchanged default" "RF04 ref-unchanged default passes when the run leaves the default branch alone"
+    assert_file_contains "$dir_b/checks.txt" "PASS ref-unchanged work-x" \
+        "RF05 a sample with branch: gets that branch in its fixture (ref-unchanged on it finds it)"
+    assert_file_contains "$dir_b/checks.txt" "FAIL ref-unchanged no-such-branch -- no branch 'no-such-branch' before the run" \
+        "RF06 ref-unchanged on a branch the fixture never had fails"
+    assert_file_contains "$dir_m/checks.txt" "FAIL ref-unchanged default" "RF07 ref-unchanged default fails when the run commits on the default branch"
+    assert_file_contains "$dir_m/checks.txt" "PASS ref-unchanged work-x" "RF08 a commit on the default branch leaves the work branch unchanged"
+    make_mutant nobranch 'if branch:  # a work branch' 'if False:  # a work branch'
+    INVOKE_RUNNER="$MUT_PATH" invoke nobranch end-after-one clean --sample s-branch --runs 1
+    assert_file_contains "$(any_run_dir "$T/log/nobranch.out")/checks.txt" "FAIL ref-unchanged work-x -- no branch 'work-x' before the run" \
+        "RF09 a runner that ignores branch: leaves the fixture without the work branch, and RF05 fails on it"
 }
 
 # ---------------------------------------------------------------- CLEAN

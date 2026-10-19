@@ -174,7 +174,7 @@ of per-task reviews. The package wrapper is the universal brief at
 `references/reviewer-brief.md` rendered with:
 - `{{MODE}}` = `per-delivery`
 - `{{ARTIFACTS}}` = the full delivery branch diff + every task's STATE.yml state + the delivery's criteria (its `PLAN.md` stanza on the full path; `REQUIREMENTS.md § 9` on the flat/Lite path)
-- `{{CONTEXT}}` = `delivery-NNN aggregates tasks {NNN..MMM}; this is the post-execution quality gate before merge to main.`
+- `{{CONTEXT}}` = `delivery-NNN aggregates tasks {NNN..MMM}; this is the post-execution quality gate for the delivery.`
 
 Include in the brief file (not in the dispatch prompt — `reviewer-dispatch.md` § Dispatch by path):
 - **Ledger lifecycle:** "Read the existing `.aid/.temp/review-pending/execute-delivery-NNN.md`
@@ -277,7 +277,7 @@ A check only: it shows nothing to the user and asks nothing.
 | Grade < Minimum Grade, CODE issues remain | → Step 4A (PRESENT) |
 | Grade < Minimum Grade, only non-CODE issues remain | → Step 4B (UPSTREAM) |
 
-**Next, inside this step:** Step 6 (RECORD) when grade ≥ minimum; **CHAIN** → Step 4A (PRESENT) when grade < minimum and CODE issues remain; **CHAIN** → Step 4B (UPSTREAM) when grade < minimum and only non-CODE issues remain.
+**Next, inside this step:** Step 6 (RECORD) when grade ≥ minimum; Step 4A (PRESENT) when grade < minimum and CODE issues remain; Step 4B (UPSTREAM) when grade < minimum and only non-CODE issues remain.
 
 ---
 
@@ -340,8 +340,9 @@ bash .aid/runtime/scripts/execute/writeback-state.sh --pipeline --field "Pause R
 bash .aid/runtime/scripts/execute/writeback-state.sh --pipeline --field Updated --value "$(date -u +%Y-%m-%dT%H:%M:%SZ)"
 ```
 
-**Advance:** **ASK then HALT**. Ask the user to run `/aid-specify` (SPEC issues) or `/aid-discover` (KB
-issues), and to update the TASK issues, before re-running `/aid-execute`. The question stays open and the run ends.
+Ask the user, through the question protocol, to run `/aid-specify` (SPEC issues) or `/aid-discover` (KB
+issues), and to update the TASK issues, before re-running `/aid-execute`. The question is blocking and stays
+open. **Next, inside this step:** the run ends here with the question open (the step's ending, below).
 
 ---
 
@@ -390,7 +391,7 @@ bash .aid/runtime/scripts/execute/writeback-state.sh --pipeline --field "Block A
 bash .aid/runtime/scripts/execute/writeback-state.sh --pipeline --field Updated --value "$(date -u +%Y-%m-%dT%H:%M:%SZ)"
 ```
 
-**Advance:** **CHAIN** → back to Step 2 (REVIEW) — fresh reviewer, clean context.
+**Next, inside this step:** back to Step 2 (REVIEW) — fresh reviewer, clean context.
 
 ---
 
@@ -501,7 +502,9 @@ delivery-NNN  ·  {N} tasks  ·  gate grade {grade}  ·  Done at {timestamp}
 | task-NNN | TEST | Done | none | — |
 ```
 
-**Advance:** **HALT** (DELIVERY-GATE is the terminal state for a delivery).
+**Advance:** **HALT** (DELIVERY-GATE is the terminal state for a delivery). This one ending closes the step in
+every case: the gate passed (Step 6), the user declined the CODE fixes (Step 4A), or upstream issues wait on
+the user (Step 4B, question open).
 
 ---
 

@@ -6,7 +6,7 @@ Print: _"Discovery is complete and approved (Grade: {grade}). Do you want to reo
 
 - User confirms → set state to REVIEW
 - User has specific concern → record as context for reviewer
-- User says no → `✅ Discovery complete. Grade: {grade}. Minimum: {minimum}. KB approved and ready for the Interview phase.`
+- User says no → `✅ Discovery complete. Grade: {grade}. Minimum: {minimum}. KB approved and ready for the Definition phase.`
 
 ### Ledger cleanup
 

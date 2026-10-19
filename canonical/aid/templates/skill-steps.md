@@ -43,8 +43,8 @@ The advance words are internal. They are never shown to the user.
 | Word | Meaning |
 |------|---------|
 | `CHAIN` | Go on to the next step now, in the same run. |
-| `ASK` | The step ends with a question that blocks the work. The step pauses on it; once every question is answered or skipped, the step is finished and the work goes on to the step the line names. |
-| `ASK then HALT` | The run ends with a question that blocks the work, such as which skill to run next. The question stays open; any resume shows it first, and once it is answered or skipped the run ends as `HALT` does. |
+| `ASK` | The step ends with a question that blocks the work. The step pauses on it; once every question is answered or skipped (an approval is never skipped: it stays open until the user approves or declines), the step is finished and the work goes on to the step the line names. |
+| `ASK then HALT` | The run ends with a question that blocks the work, such as which skill to run next. The question stays open; any resume shows it first, and once it is answered or skipped (an approval is never skipped) the run ends as `HALT` does. |
 | `WAIT` | The user must do something outside the conversation. Say what, plainly, and stop. The step stays saved and its detail says what is waited for; once the user says it is done, the work goes on to the step the line names. |
 | `PASS` | End of this skill's process. Hand the work to the next skill and start it in the same turn. |
 | `CALL` | In the middle of this skill's process. Hand the work to another skill, and come back to this step when it finishes. |
@@ -65,17 +65,19 @@ Every step runs these six parts, in this order.
    - A question that does not block the work is asked, and the step carries on.
    - A question that blocks the work pauses the step where it stands. Keep the same step saved and
      bring its detail up to date with `--step`: what is done, and which question is open. Record each
-     question with `--ask`. Set the lifecycle to `Paused-Awaiting-Input` and the pause reason through
-     the writer. Then ask.
+     question with `--ask`. Set the lifecycle and the pause reason through the writer
+     (`--pipeline --field Lifecycle --value Paused-Awaiting-Input`, then
+     `--pipeline --field "Pause Reason" --value '<why>'`). Then ask.
    - Answered in the same conversation: record each answer with `--answer`, set the lifecycle back to
-     `Running`, and continue the same step from where it stopped.
+     `Running` (`--pipeline --field Lifecycle --value Running`), and continue the same step from
+     where it stopped.
    - Answered later: any session that resumes finds the saved step and the open questions, and asks
      the open questions first, until each is answered or skipped (an approval is never skipped: see
      When approvals happen). Then it continues the same step from
      its detail, and does not redo what the detail says is done.
-   - An `ASK` advance is this pause at the end of a step. Once its questions are answered or skipped,
-     the step is finished, and the work goes on to the step the line names, which is then saved with
-     `--step`.
+   - An `ASK` advance is this pause at the end of a step. Once its questions are answered or skipped
+     (an approval is never skipped), the step is finished, and the work goes on to the step the line
+     names, which is then saved with `--step`.
 4. **`PASS`.** If the approvals table requires an approval at this depth at this point, `ASK` it
    first. Then run
    `--handoff --to <skill> --step <its entry step> --why '<reason>' --returns no --phase <phase>`,
@@ -97,7 +99,9 @@ never by hand. The record's template is `.aid/runtime/templates/work-state-templ
 
 The writer finds the record itself: the file `AID_STATE_FILE` names when it is set; otherwise the
 `STATE.yml` of the work folder it runs in, or under; otherwise the one work whose worktree it runs in.
-A skill passes no path. When none of these finds exactly one work, the writer exits 1 and says so.
+A skill passes no path. This holds for every mode that writes the work's record, `--pipeline`
+(lifecycle, phase, pause and block reasons) included. When none of these finds exactly one work, the
+writer exits 1 and says so; the third way needs git, and the message says when git is the cause.
 
 ### Before a work exists
 
@@ -107,8 +111,9 @@ question protocol, and their answers go into the record when the gate creates it
 into `intent.request`, and the step the caller names into `step`. A skill that never creates a work,
 such as a Knowledge Base, ticket, connector, setting or chat skill, saves no steps; it records its
 questions where `question-protocol.md` § Where each record lives says (the Knowledge Base state file
-while building the Knowledge Base, the project file `.aid/STATE.yml` with `--project` while setting up
-the project).
+while building the Knowledge Base, the project file `.aid/STATE.yml` with `--project` for every other
+skill that keeps no work record and can run the writer: setting up the project, chat). The ticket
+skills cannot run the writer; they ask only their one confirmation, and record nothing.
 
 ### When the record is written
 
@@ -116,7 +121,7 @@ the project).
   slash command, or a one-pass doorway skill. The gate is the only creator of a work's record, as
   `.aid/runtime/templates/work-initiation-gate.md` § 3a describes. The gate runs the writer's
   create mode before it hands the new work back:
-  `--create --work-dir <dir> --reading <type> --request '<words>' --skill <caller> --step <first step> [--phase <phase>] [--depth lite or full] [--path lite or full] [--minimum-grade G]`.
+  `--create --work-dir <dir> --reading <type> --request '<words>' --skill <caller> --step <first step> [--phase <phase>] [--depth lite or full] [--path lite or full] [--minimum-grade G] [--reason R] [--phases P1,P2,...]`.
   One locked write creates the record with the type, the request, the saved skill and step, the phase
   when there is one, and the lifecycle `Running`. No work exists without its record.
 - **At every step entry**, before any work in that step.
@@ -183,6 +188,7 @@ file is then unchanged.
 | Mode | Writes |
 |------|--------|
 | `--create` | the record, from the template, in one write, with `pipeline.path` and `minimum_grade` set when `--path` and `--minimum-grade` are given, and `intent.reason` and `intent.phases` set when `--reason` and `--phases P1,P2,...` are given (phase names: Preparation, Definition, Specification, Planning, Building, CI). Run only by the gate. Exit 8 when the work already has a `STATE.yml`; exit 5 when a required option is missing; exit 4 when a value is invalid |
+| `--pipeline --field F --value V` | one work-level key: `Lifecycle`, `Phase`, `Active Skill`, `Updated`, `Pause Reason`, `Block Reason`, `Block Artifact`, `Started`, `Minimum Grade`, `User Approved`, `Pipeline Path` or `Pipeline Initiator`. The record is found as above |
 | `--step --skill S --name N [--detail D]` | `active_skill`, `step`, `step_detail` (`--` when no detail), and `updated` |
 | `--reroute --reading R [--depth D] --why W` | `intent.reading` and `intent.depth`, plus an `intent.changes` entry |
 | `--check` | nothing. Exit 9 when there is a problem, 0 when the record is healthy |

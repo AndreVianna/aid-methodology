@@ -229,4 +229,4 @@ print a suggestion: consider filing a ticket per task via `/aid-create-ticket`. 
 user-initiated, never auto-invoked; silent (no output) if no issue-tracker connector is
 catalogued.
 
-**Advance:** **CHAIN** → continue with the parent state's flow.
+Continue with the step that loaded this reference.

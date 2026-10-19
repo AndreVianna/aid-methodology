@@ -2,6 +2,8 @@
 
 Eligible deliveries are presented to the user for inclusion in this release; a package file is created.
 
+**Who asks.** This step runs in the main conversation (inline), because it puts questions to the user; a worker never asks. It uses what IDLE gathered (the eligible deliveries and the knowledge-base facts).
+
 ### Step 2: Select Deliveries
 
 Present eligible deliveries to the user:
@@ -22,7 +24,7 @@ Which deliveries should be in this release? [all ready / select / cancel]
 
 If user selects "all ready" → include all eligible.
 If user selects specific ones → include only those.
-If user cancels → reset work `STATE.md` `## Deploy State` to Idle, and end the run here (HALT). No package file is written.
+If user cancels → reset work `STATE.md` `## Deploy State` to Idle. No package file is written, and the run ends (the advance line below).
 
 Ask for:
 - Version/tag name (suggest based on versioning scheme from KB)
@@ -42,4 +44,4 @@ Update work `STATE.md` `## Deploy State`: Status → Verifying, Active Package �
 The questions above are blocking: this step pauses on them until they are answered, and then carries on
 through the package file and the status update.
 
-**Advance:** **CHAIN** → [State: VERIFYING] once the user has chosen the deliveries, given the version and package name, and answered any packaging question.
+**Advance:** **CHAIN** → [State: VERIFYING] once the user has chosen the deliveries, given the version and package name, and answered any packaging question; **HALT** when the user cancels.

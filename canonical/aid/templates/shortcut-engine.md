@@ -91,7 +91,7 @@ to directly.
 | PLAN | below | `aid-architect` (Large) | CHAIN -> DETAIL |
 | DETAIL | below | `aid-architect` (Large) | CHAIN -> GATE |
 | GATE | below | `aid-reviewer` (Large) | CHAIN -> APPROVAL-HALT |
-| APPROVAL-HALT | below | inline | ASK, then HALT |
+| APPROVAL-HALT | below | inline | ASK then HALT |
 
 Print the state-entry line on entry to each state (`[State: NAME] -- {one-line
 purpose}`), matching the convention every other AID skill uses. On entry, before its work,
@@ -345,10 +345,18 @@ that carry no key at all are, by construction, never written by this engine.
 
 When `{intent}` is bound (Invocation Contract), Step 4 has already written its `request`,
 `reading` and `depth` on the record, and `--reroute` is the only later way to change them. This
-step sets the two keys the writer has no mode for, `reason` and `phases`, by a direct edit of the
-`intent:` block in block style, `phases` as one `- <phase>` line each. `changes` is never copied
-from `{intent}`: only `--reroute` appends to it. When `{intent}` is not bound (a typed
-`/aid-<skill>`), write nothing; the rest values stay.
+step sets `reason` and `phases` through the writer, in one write:
+
+```bash
+bash .aid/runtime/scripts/execute/writeback-state.sh --intent \
+  --reason '<reason of {intent}>' --phases <P1,P2,...>
+```
+
+`--phases` is the comma-separated phase names of `{intent}` (Preparation, Definition,
+Specification, Planning, Building, CI); the writer stores them as a block list. A work whose
+`--create` call already carried `--reason` and `--phases` needs no second write. `changes` is
+never copied from `{intent}`: only `--reroute` appends to it. When `{intent}` is not bound (a
+typed `/aid-<skill>`), write nothing; the rest values stay.
 
 **Idempotency:** this state never re-runs within an invocation -- an invocation that reaches
 allocation (the gate's NEW branch, Step 3) allocates exactly one brand-new work (Design Notes);
@@ -922,7 +930,7 @@ entry, but none has executed); APPROVAL-HALT does not touch it -- `Specified`
 is exactly the value FR-10/AC-3 requires at halt (tasks defined, not yet
 `Executing`).
 
-**Advance:** ASK, then HALT. No branch is created; no `tasks_lifecycle` entry
+**Advance:** ASK then HALT. No branch is created; no `tasks_lifecycle` entry
 advances past `Pending` (the halt-proof fixture in feature-004's testing
 strategy asserts both).
 

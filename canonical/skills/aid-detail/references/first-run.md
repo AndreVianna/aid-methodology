@@ -4,6 +4,10 @@ No task files exist yet. Begin proposing task breakdown per deliverable.
 
 Load `references/task-decomposition.md` for task type rules, file format, and quality criteria.
 
+**Who asks.** The worker (`aid-architect`) drafts the proposal of Step 1 and writes the files of Step 3, and
+returns its open questions in its report; it never asks the user. The main conversation shows the proposal,
+holds the Step 2 discussion and puts the approval, through the question protocol.
+
 ---
 
 ## FIRST RUN — The Loop
@@ -12,9 +16,9 @@ Load `references/task-decomposition.md` for task type rules, file format, and qu
 
 Emit pipeline phase (silent state-write only — no output, no gate):
 ```
+bash .aid/runtime/scripts/execute/writeback-state.sh --step --skill aid-detail --name FIRST-RUN
 bash .aid/runtime/scripts/execute/writeback-state.sh --pipeline --field Lifecycle --value Running
 bash .aid/runtime/scripts/execute/writeback-state.sh --pipeline --field Phase --value Planning
-bash .aid/runtime/scripts/execute/writeback-state.sh --step --skill aid-detail --name FIRST-RUN
 bash .aid/runtime/scripts/execute/writeback-state.sh --pipeline --field Updated --value "$(date -u +%Y-%m-%dT%H:%M:%SZ)"
 ```
 
@@ -65,7 +69,8 @@ The user may:
 
 ⚠️ **Merge rule:** only merge tasks of the same type. Never merge across types.
 
-Respond to each concern, re-present affected tasks. Loop until approved.
+Respond to each concern, re-present affected tasks. Loop until approved. This is the main conversation's part: the
+worker is dispatched again to apply an adjustment when one is needed.
 
 ### Step 3: Write
 
@@ -126,5 +131,5 @@ Execution graphs written to PLAN.md.
 [State: FIRST-RUN] complete.
 
 **Advance:** **CHAIN** → [State: REVIEW] once the task breakdown is approved and its files are written. The
-approval in Step 2 is a blocking question: this step pauses on it, and the same step goes on with Step 3 once
-it is answered.
+approval in Step 2 is a blocking question: this step pauses on it where it stands (its detail says which delivery's
+proposal awaits approval), and goes on with Step 3 once it is answered.

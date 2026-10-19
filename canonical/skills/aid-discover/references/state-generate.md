@@ -266,7 +266,7 @@ When the user answers the question, in this conversation or in a later session t
 
 3. Print: `[0cx] Domain confirmed: <domain>. Proceeding to doc-set proposal.`
 
-4. **CHAIN -> Step 0d** — the confirmed domain is the anchor the doc-set step consumes.
+4. Go on to Step 0d — the confirmed domain is the anchor the doc-set step consumes.
 
 #### Relationship to Step 0f (path-triage)
 
@@ -489,7 +489,7 @@ When the user answers the question, in this conversation or in a later session t
    When the provenance is `curated` (matrix hit), skip the candidate emit — the row is already
    in the canonical matrix.
 
-5. **CHAIN → Step 1** with the confirmed set driving the data-driven dispatch (Steps 2-5 §2.5).
+5. Go on to Step 1 with the confirmed set driving the data-driven dispatch (Steps 2-5 §2.5).
 
 ### Step 0e: Harvest Coined Terms
 
@@ -608,7 +608,7 @@ an override-record convention used elsewhere in AID's triage-style confirmations
 
 Then **branch on the confirmed path**:
 
-- **Brownfield (small or large):** CHAIN -> Step 1 with the confirmed path parameterizing the
+- **Brownfield (small or large):** go on to Step 1 with the confirmed path parameterizing the
   rest of GENERATE (Steps 2-5 fan-out + Step 5b closure caps; see `references/path-config.md`).
 
 - **Greenfield:** **do NOT chain to Step 1.** Print the **signpost and HALT** --
@@ -1073,7 +1073,7 @@ consumes. Writing it here (producer-side, once, at the end of GENERATE) ensures 
 in REVIEW always finds a fresh, authoritative copy that matches the confirmed doc-set for this
 run.
 
-Print: `[N/N] Generation complete — Knowledge Base ready. Run /aid-discover again to review.` (where N = declared-set size)
+Print: `[N/N] Generation complete — Knowledge Base ready.` (where N = declared-set size)
 
 (File-presence was confirmed in the **Verify All Declared Files** step above; semantic quality is the **REVIEW** state's job — no additional pre-REVIEW check needed.)
 

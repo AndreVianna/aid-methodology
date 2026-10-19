@@ -40,4 +40,8 @@ contradiction between two of them is visible. Run it on cycle 1 only -- that mak
 once per phase by construction. Definition:
 `reviewer-dispatch.md` section "The cross-document contradiction pass (Guard 2)".
 
-**Advance:** **ASK** → [State: DONE] once the cross-reference questions are answered.
+The cross-reference questions pause this step where it stands (a blocking question). After each answer the step
+applies it (`cross-reference.md` § 6e) and, once every question is answered or skipped, records the cross-reference
+(§ 6f); only then does the step end.
+
+**Advance:** **CHAIN** → [State: DONE] once the cross-reference questions are answered and their answers applied.

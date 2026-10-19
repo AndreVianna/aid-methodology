@@ -42,7 +42,7 @@ entry line on each state.
    wait.
 2. **Allocate** through the Work Initiation Gate exactly as the contract's Allocation rule
    requires (`.agents/skills/aid-design/SKILL.md` INTAKE step 4 is the shape), with
-   `initiator: aid-design-data-model`. `phase` is not driven.
+   `--skill aid-design-data-model` given to the gate's `--create`. `phase` is not driven.
 3. **Acquire `.aid/design/`** per the contract, then read `.aid/design/data-model.md` if a
    prior seed exists -- re-invocation iterates it rather than starting over.
 4. **Classify complexity** for the `aid-architect` dispatch (verifier tier >= producer).
@@ -72,7 +72,7 @@ code** -- the `design` invariant (`design-lifecycle.md`).
 ## State: VERIFY
 
 **Full verify**, as `design-lifecycle.md` defines it. Not clean -> loop to DESIGN; the
-3-cycle circuit breaker there escalates to IMPEDIMENT + `lifecycle: Blocked`.
+3-cycle circuit breaker there escalates to IMPEDIMENT, and the lifecycle is set to `Blocked` through the writer.
 
 **Advance:** CHAIN -> [State: PRESENT].
 
@@ -80,7 +80,7 @@ code** -- the `design` invariant (`design-lifecycle.md`).
 
 ## State: PRESENT (hard stop -- the user decides)
 
-Set `lifecycle: Paused-Awaiting-Input`. Present the seed clearly. Assert no resolution --
+Set the lifecycle to `Paused-Awaiting-Input` through the writer. Present the seed clearly. Assert no resolution --
 the user iterates (re-invoke this skill) or realizes it now (`/aid-create-data-model`).
 
 **Advance:** ASK -> [State: DONE].
@@ -89,5 +89,5 @@ the user iterates (re-invoke this skill) or realizes it now (`/aid-create-data-m
 
 ## State: DONE
 
-Set `lifecycle: Completed`, `updated` now, append a `## Lifecycle History` row. The seed
+Set the lifecycle to `Completed` through the writer, `updated` now, append a `## Lifecycle History` row. The seed
 persists at `.aid/design/data-model.md`; consumption happens at `/aid-create-data-model`.

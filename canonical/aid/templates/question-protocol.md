@@ -180,7 +180,8 @@ written to the Knowledge Base state file instead, in the same states, until that
 |-------------|--------|
 | working on a work | the work's `STATE.yml`, in its `qa` list |
 | building the Knowledge Base | the Knowledge Base state file, `.aid/knowledge/STATE.md` |
-| setting up the project (configure, connectors) | the project file `.aid/STATE.yml`, with `--project` |
+| setting up the project (configure, connectors), or in chat | the project file `.aid/STATE.yml`, with `--project` |
+| in a ticket skill (no shell, so no writer) | nothing: the skill's one confirmation is not recorded |
 
 ## The intake-question exception
 

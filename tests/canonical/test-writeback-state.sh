@@ -3222,5 +3222,38 @@ assert_eq "$rc" "5" "31n: --intent with neither --reason nor --phases exits 5"
 rc=0; (cd "$RI" && env HOME="$R31_HOME" AID_STATE_FILE="${RI}/old/STATE.yml" bash "$SCRIPT" --intent --phases Nope >/dev/null 2>&1) || rc=$?
 assert_eq "$rc" "4" "31n: --intent with an unknown phase exits 4"
 
+# 31o: --pipeline finds the record the same way the other modes do (AID_STATE_FILE, else the
+# work folder, else the worktree's work), and a skill passes no path.
+R31O="${R31}/pipeline"
+w31_repo "$R31O" work-001
+w31_record "${R31O}/.aid/works/work-001-demo/STATE.yml"
+w31 "$R31O" --pipeline --field Lifecycle --value Paused-Awaiting-Input
+assert_eq "$RC31" "0" "31o: --pipeline from the worktree root finds the work matching the branch and exits 0"
+assert_file_contains "${R31O}/.aid/works/work-001-demo/STATE.yml" "lifecycle: Paused-Awaiting-Input" "31o: the lifecycle is written to the branch's work record"
+mkdir -p "${R31O}/.aid/works/work-001-demo/deliveries/delivery-001"
+w31 "${R31O}/.aid/works/work-001-demo/deliveries/delivery-001" --pipeline --field Lifecycle --value Running
+assert_eq "$RC31" "0" "31o: --pipeline run inside a work folder finds that folder's record and exits 0"
+assert_file_contains "${R31O}/.aid/works/work-001-demo/STATE.yml" "lifecycle: Running" "31o: the lifecycle is written to the record found from inside the folder"
+rc=0; (cd "$R31O" && env HOME="$R31_HOME" AID_STATE_FILE="${R31O}/elsewhere/STATE.yml" bash "$SCRIPT" --pipeline --field Lifecycle --value Blocked >/dev/null 2>&1) || rc=$?
+assert_eq "$rc" "1" "31o: an AID_STATE_FILE that names no file is honoured and exits 1"
+assert_file_not_contains "${R31O}/.aid/works/work-001-demo/STATE.yml" "lifecycle: Blocked" "31o: the work the directory belongs to is left alone"
+w31 "$R31E" --pipeline --field Lifecycle --value Running
+assert_eq "$RC31" "1" "31o: --pipeline with no work record exits 1"
+assert_output_contains "$OUT31" "no work record found" "31o: the message says no work record was found, not a placeholder path"
+
+# 31p: --reason and --phases are refused by every mode but --create and --intent; the error that
+# lists the record modes names --intent.
+rc=0; OUT31="$(cd "$RI" && env HOME="$R31_HOME" AID_STATE_FILE="${RI}/old/STATE.yml" bash "$SCRIPT" --step --skill aid-fix --name S2 --phases CI 2>&1)" || rc=$?
+assert_eq "$rc" "5" "31p: --phases given to --step exits 5 instead of being dropped"
+rc=0; OUT31="$(cd "$RI" && env HOME="$R31_HOME" AID_STATE_FILE="${RI}/old/STATE.yml" bash "$SCRIPT" --step --check 2>&1)" || rc=$?
+assert_output_contains "$OUT31" "--intent" "31p: the one-record-mode error lists --intent"
+
+# 31q: with git unable to name the worktree, the refusal says so.
+R31Q="${R31}/nogit"
+mkdir -p "$R31Q"
+rc=0; OUT31="$(cd "$R31Q" && env -u AID_STATE_FILE HOME="$R31_HOME" GIT_CEILING_DIRECTORIES="$R31" bash "$SCRIPT" --step --skill aid-fix --name s7 2>&1)" || rc=$?
+assert_eq "$rc" "1" "31q: --step with no git checkout and no work folder exits 1"
+assert_output_contains "$OUT31" "git" "31q: the message names git as the cause"
+
 test_summary
 exit $?

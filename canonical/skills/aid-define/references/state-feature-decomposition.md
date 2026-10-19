@@ -4,21 +4,23 @@ Requirements are approved and `REQUIREMENTS.md § 11 Features` has no feature se
 
 Emit pipeline phase (silent state-write only — no output, no gate):
 ```
+bash .aid/runtime/scripts/execute/writeback-state.sh --step --skill aid-define --name FEATURE-DECOMPOSITION
 bash .aid/runtime/scripts/execute/writeback-state.sh --pipeline --field Lifecycle --value Running
 bash .aid/runtime/scripts/execute/writeback-state.sh --pipeline --field Phase --value Specification
-bash .aid/runtime/scripts/execute/writeback-state.sh --step --skill aid-define --name FEATURE-DECOMPOSITION
 bash .aid/runtime/scripts/execute/writeback-state.sh --pipeline --field Updated --value "$(date -u +%Y-%m-%dT%H:%M:%SZ)"
 ```
 
 **Agent:** This is design work, not interview work. Dispatch with `subagent_type: aid-architect` (overriding the default `aid-interviewer`). Print before dispatch: `[State 5] Dispatching aid-architect for Feature Decomposition.`
 
 ▶ aid-architect starting (~2–4 min)
-Read `references/feature-decomposition.md` for the full decomposition process
-(analyze, propose, create folders, update meta-documents).
+Read `references/feature-decomposition.md`. The worker does Steps 1 and 2 only (analyze, propose): it returns
+the proposed feature table and its open questions, and never asks the user.
 ✓ aid-architect done (record actual time) — or ✗ aid-architect failed: {reason}
 
-The approval of the feature list is a blocking question: this step pauses on it until the user answers.
-Once it is approved, the same step writes the feature sections and updates the meta-documents
-(`feature-decomposition.md` Steps 4 and 5), then goes on.
+The main conversation puts the approval of the feature list to the user (`feature-decomposition.md` Steps 2 and 3),
+through the question protocol. It is a blocking question: this step pauses on it where it stands, with its detail
+saying the list is proposed and the approval is open, until the user answers. An adjustment is applied and the list
+is put again. Once the list is approved, the same step dispatches aid-architect again to write the feature
+sections and update the meta-documents (`feature-decomposition.md` Steps 4 and 5), then goes on.
 
 **Advance:** **CHAIN** → [State: CROSS-REFERENCE] once the feature sections are written (continue inline).

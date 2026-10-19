@@ -77,7 +77,7 @@ Ask one topic at a time, through the question protocol, in this order and only f
 2. **Guided path** -> scope subject / audience / kind.
 3. **Works exist** -> the gate's new-vs-continuation question with the enumerated list.
 
-**Advance:** ASK -> [State: ALLOCATE].
+**Advance:** CHAIN -> [State: ALLOCATE] once the questions are answered; HALT when the user does not answer (nothing was created). Nothing is saved or recorded here, because no work exists yet.
 
 ---
 
@@ -94,10 +94,11 @@ Allocate the work through the gate: the Work Initiation Gate
   the writer, before it hands back: "`STATE.yml` was created by the gate;
   skip any instruction to write `initiator`, `active_skill`, `lifecycle` or `phase` by hand;
   set other keys through the writer." This skill drives no `phase`. When `/aid-orchestrate`
-  passed an `intent:` block, write it into that STATE.yml in block style, keys as passed,
-  replacing the template's `intent:` rest value, as the engine's INTAKE Step 5 does
+  passed an `intent:` block, its request, reading and depth are already on the record from the
+  gate's `--create`; set its `reason` and `phases` through the writer
+  (`--intent --reason '<reason>' --phases P1,P2,...`), as the engine's INTAKE Step 5 does
   (`.aid/runtime/templates/shortcut-engine.md`); a typed `/aid-create-document` (or
-  `/aid-document`, which runs this skill) writes none.
+  `/aid-document`, which runs this skill) sets none.
 - **Continuation:** On continuation, follow the gate's § 3b: enter the chosen work's worktree and run the skill its record names, at its saved step.
 
 **Advance:** CHAIN -> [State: AUTHOR] on a new work; a continuation follows the gate's § 3b instead.

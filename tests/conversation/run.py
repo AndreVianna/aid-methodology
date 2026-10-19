@@ -25,8 +25,9 @@ Claude Code model. The agent's environment drops the parent session's identity
 and wiring (ENV_DROP_NAMES, ENV_DROP_PREFIXES); auth, provider, proxy and CA variables are kept.
 
 Sample file (samples/feature-NNN/<id>.md):
-  frontmatter        id, covers, fixture (required); any other key is kept and ignored
-                     (Feature 002's samples add skills:)
+  frontmatter        id, covers, fixture (required); branch (optional: the fixture gets a work branch of
+                     that name with one commit of its own, and the default branch stays checked out);
+                     any other key is kept and ignored (Feature 002's samples add skills:)
   ## User            the first paragraph is the opening message; the whole section is the persona
   ## Answer sheet    all the simulated user knows
   ## Expected outcome  items the judge rules on one by one

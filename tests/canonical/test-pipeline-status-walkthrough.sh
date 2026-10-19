@@ -327,14 +327,16 @@ M4_FILES["aid-plan"]="${REPO_ROOT}/canonical/skills/aid-plan/references/first-ru
 M4_FILES["aid-detail"]="${REPO_ROOT}/canonical/skills/aid-detail/references/first-run.md"
 M4_FILES["aid-execute"]="${REPO_ROOT}/canonical/skills/aid-execute/references/state-execute.md"
 
-SKILL_STEPS="${REPO_ROOT}/canonical/aid/templates/skill-steps.md"
-
 # The step entry each reference writes itself (--step --skill <skill> --name <STEP>).
-# specify and plan have no entry here: the hand-off sets their skill and step.
+# specify and plan state it once in their SKILL.md (§ Saving the step), for every step.
 declare -A M4_STEP_ARGS
 M4_STEP_ARGS["aid-define"]="--step --skill aid-define --name FEATURE-DECOMPOSITION"
 M4_STEP_ARGS["aid-detail"]="--step --skill aid-detail --name FIRST-RUN"
 M4_STEP_ARGS["aid-execute"]="--step --skill aid-execute --name EXECUTE"
+
+declare -A M4_ENTRY
+M4_ENTRY["aid-specify"]="INITIALIZE"
+M4_ENTRY["aid-plan"]="FIRST-RUN"
 
 declare -A M4_PHASES
 M4_PHASES["aid-define"]="Specification"
@@ -360,8 +362,9 @@ for skill in "aid-define" "aid-specify" "aid-plan" "aid-detail" "aid-execute"; d
     # The skill and its step are recorded by one of two routes (skill-steps.md):
     #  - define, detail and execute write their own step entry in the reference:
     #    --step --skill <skill> --name <STEP>;
-    #  - specify and plan write no step entry; the hand-off from the calling skill
-    #    sets their active skill and entry step in one locked write.
+    #  - specify and plan state the entry write once for every step, in their SKILL.md:
+    #    --step --skill <skill> --name <STEP>, and name the steps it covers; a typed start
+    #    first records the hand-off (--handoff --to <skill> --step <entry step>).
     if [[ -n "${M4_STEP_ARGS[$skill]:-}" ]]; then
         step_args="${M4_STEP_ARGS[$skill]}"
         if grep -qF "writeback-state.sh ${step_args}" "$sfile" 2>/dev/null; then
@@ -370,12 +373,16 @@ for skill in "aid-define" "aid-specify" "aid-plan" "aid-detail" "aid-execute"; d
             fail "B1 $skill: ${step_args} emit NOT found in $sfile"
         fi
     else
-        if ! grep -qF "Active Skill" "$sfile" 2>/dev/null \
-           && ! grep -qF -- "--step --skill" "$sfile" 2>/dev/null \
-           && grep -qF "A hand-off writes the target skill and its entry step" "$SKILL_STEPS" 2>/dev/null; then
-            pass "B1 $skill: skill and step set by the hand-off, not an entry emit"
+        skill_md="${REPO_ROOT}/canonical/skills/${skill}/SKILL.md"
+        if grep -qF "writeback-state.sh --step --skill ${skill} --name <STEP>" "$skill_md" 2>/dev/null; then
+            pass "B1 $skill: --step --skill ${skill} --name <STEP> entry write present"
         else
-            fail "B1 $skill: reference writes its own skill/step, or skill-steps.md no longer states the hand-off writes them ($sfile)"
+            fail "B1 $skill: --step --skill ${skill} --name <STEP> entry write NOT found in $skill_md"
+        fi
+        if grep -qF -- "--handoff --to ${skill} --step ${M4_ENTRY[$skill]}" "$skill_md" 2>/dev/null; then
+            pass "B1 $skill: typed start records the hand-off to ${M4_ENTRY[$skill]}"
+        else
+            fail "B1 $skill: typed-start hand-off to ${M4_ENTRY[$skill]} NOT found in $skill_md"
         fi
     fi
 

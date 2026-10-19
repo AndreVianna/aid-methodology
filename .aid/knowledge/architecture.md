@@ -307,7 +307,8 @@ between steps are one shared file, `canonical/aid/templates/skill-steps.md`, whi
 instead of restating. CONFIRMED via that file and the directory inventory.
 
 - **Advance words** label the end of every step: `CHAIN` (go on now), `ASK` (stop for the user through
-  the question protocol, then continue), `WAIT` (the user acts outside the conversation), `PASS` (end
+  the question protocol, then continue to the step the line names), `ASK then HALT` (stop for the user,
+  then end the run), `WAIT` (the user acts outside the conversation; the step stays saved), `PASS` (end
   this skill's process and start the next one), `CALL` (hand off and come back to this step), and
   `HALT` (the run is finished, or returns from an open call).
 - **The work record** is the set of keys in the work's `STATE.yml` that say where the work is:

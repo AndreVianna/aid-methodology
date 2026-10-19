@@ -14,5 +14,5 @@ The checks failed in VERIFYING. The user decides whether to fix the failures her
 The question is blocking: this step pauses on it until the user answers, and then goes on with the
 branch the user chose.
 
-**Advance:** **CHAIN** → [State: RE-VERIFY] when the user chooses to fix here. When the user loops back to
-`/aid-execute`, the run ends here (HALT), after the writes above.
+**Advance:** **CHAIN** → [State: RE-VERIFY] when the user chooses to fix here; **HALT** when the user loops back to
+`/aid-execute` (after the writes above).

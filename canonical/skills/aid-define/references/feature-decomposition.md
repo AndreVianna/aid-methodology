@@ -32,6 +32,8 @@ to understand existing features/modules that may influence decomposition.
 
 ## Step 2: Propose Feature List
 
+The worker builds the table and returns it; the main conversation shows it and puts the question below.
+
 ```
 Based on the functional requirements, I've identified {N} features:
 

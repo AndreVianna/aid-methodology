@@ -84,7 +84,7 @@ kept record).
    grounded, complete, internally consistent, consistent with KB conventions + a11y, and
    buildable. Writes a review-quality ledger to `.aid/.temp/review-pending/<work>-verify.md`.
 3. **Grade:** `bash .aid/runtime/scripts/grade.sh --explain <ledger>`. Not clean -> loop
-   to DESIGN. Circuit-breaker: 3 cycles -> IMPEDIMENT + `lifecycle: Blocked`.
+   to DESIGN. Circuit-breaker: 3 cycles -> IMPEDIMENT, and the lifecycle is set to `Blocked` through the writer.
 
 **Advance:** CHAIN -> PRESENT.
 
@@ -112,7 +112,7 @@ capture it as a formal doc (`/aid-create-document`). Never auto-invoked; never a
 
 ## State: DONE
 
-Set `lifecycle: Completed`, `updated` now, append a `## Lifecycle History` row. Keep
+Set the lifecycle to `Completed` through the writer, `updated` now, append a `## Lifecycle History` row. Keep
 `DESIGN.md` in the work folder as the kept design record.
 
 ---

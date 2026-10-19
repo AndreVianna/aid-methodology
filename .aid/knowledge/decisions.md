@@ -767,9 +767,10 @@ description-first TRIAGE-inside-`aid-describe` routing with its delivery/task `S
   run in the main conversation, the only conversation that can talk with the user. A sub-agent records its
   open questions and lists them in its report; the main conversation asks them. Each skill moves through
   saved steps: before a step's work begins, the work's `STATE.yml` holds the active skill, the step and a
-  short detail, so a stopped work resumes from the record. A step moves on by one of six advance words,
+  short detail, so a stopped work resumes from the record. A step moves on by one of seven advance words,
   defined once in `canonical/aid/templates/skill-steps.md`: `CHAIN` (go on now), `ASK` (stop for the user,
-  then continue), `WAIT` (the user acts outside the conversation), `PASS` (end this skill's process and hand
+  then continue), `ASK then HALT` (stop for the user, then end the run), `WAIT` (the user acts outside the
+  conversation), `PASS` (end this skill's process and hand
   the work to the next skill), `CALL` (hand the work to another skill in the middle of a process and return
   to this step when it finishes) and `HALT` (this run is finished, after returning to an open call if there
   is one). The hand-offs and the question record are written only by the writer modes of

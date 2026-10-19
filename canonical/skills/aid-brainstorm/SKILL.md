@@ -48,7 +48,7 @@ on resume; it never routes. Which skill and step a work continues at come from i
    `.aid/design/<slug>.md`.
 3. **Allocate** through the Work Initiation Gate exactly as the contract's Allocation rule
    requires (`.agents/skills/aid-design/SKILL.md` INTAKE step 4 is the shape), with
-   `initiator: aid-brainstorm`. `phase` is not driven. The `work-NNN` folder is where
+   `--skill aid-brainstorm` given to the gate's `--create`. `phase` is not driven. The `work-NNN` folder is where
    `STATE.md` and the review gate live, even though the seed is the deliverable.
 4. **Classify complexity** for the `aid-architect` dispatch (verifier tier >= producer).
 
@@ -73,7 +73,7 @@ writes production code** -- the `design` invariant (`design-lifecycle.md`).
 ## State: VERIFY
 
 **Full verify**, as `design-lifecycle.md` defines it. Not clean -> loop to DESIGN; the
-3-cycle circuit breaker there escalates to IMPEDIMENT + `lifecycle: Blocked`.
+3-cycle circuit breaker there escalates to IMPEDIMENT, and the lifecycle is set to `Blocked` through the writer.
 
 **Advance:** CHAIN -> PRESENT.
 
@@ -81,7 +81,7 @@ writes production code** -- the `design` invariant (`design-lifecycle.md`).
 
 ## State: PRESENT (hard stop -- the user decides)
 
-Set `lifecycle: Paused-Awaiting-Input`. Present the seed clearly. Assert no resolution --
+Set the lifecycle to `Paused-Awaiting-Input` through the writer. Present the seed clearly. Assert no resolution --
 the user iterates (re-invoke this skill), promotes the seed into a `design` lifecycle
 entry, or takes it forward however they choose.
 
@@ -91,5 +91,5 @@ entry, or takes it forward however they choose.
 
 ## State: DONE
 
-Set `lifecycle: Completed`, `updated` now, append a `## Lifecycle History` row. The seed
+Set the lifecycle to `Completed` through the writer, `updated` now, append a `## Lifecycle History` row. The seed
 persists at `.aid/design/<slug>.md`; brainstorm has no `create` counterpart to consume it.

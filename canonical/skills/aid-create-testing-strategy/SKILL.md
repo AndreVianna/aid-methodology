@@ -52,7 +52,7 @@ continues at come only from its work record.
 
 1. **Allocate** through the Work Initiation Gate exactly as the contract's Allocation rule
    requires (`.agents/skills/aid-design/SKILL.md` INTAKE step 4 is the shape), with
-   `initiator: aid-create-testing-strategy`. `phase` is not driven.
+   `--skill aid-create-testing-strategy` given to the gate's `--create`. `phase` is not driven.
 2. **Read the seed** at `.aid/design/testing-strategy.md`.
 3. **Resolve the destinations by concern, not filename.** This skill binds concern **C6**
    (quality & testing, `.aid/runtime/templates/kb-authoring/concern-model.md`) and owns
@@ -108,7 +108,7 @@ parts, which `/aid-update-testing-strategy` then consumes.
 ## State: VERIFY
 
 **Full verify**, as `design-lifecycle.md` defines it. Not clean -> loop to CREATE; the
-3-cycle circuit breaker there escalates to IMPEDIMENT + `lifecycle: Blocked`.
+3-cycle circuit breaker there escalates to IMPEDIMENT, and the lifecycle is set to `Blocked` through the writer.
 
 **Advance:** CHAIN -> [State: PRESENT].
 
@@ -116,7 +116,7 @@ parts, which `/aid-update-testing-strategy` then consumes.
 
 ## State: PRESENT (hard stop -- the user decides)
 
-Set `lifecycle: Paused-Awaiting-Input`. Present both realized documents and assert: which
+Set the lifecycle to `Paused-Awaiting-Input` through the writer. Present both realized documents and assert: which
 half went where; on a creation path both registration surfaces were written; and anything
 routed to `/aid-update-testing-strategy` is named.
 
@@ -126,7 +126,7 @@ routed to `/aid-update-testing-strategy` is named.
 
 ## State: DONE
 
-Set `lifecycle: Completed`, `updated` now, append a `## Lifecycle History` row.
+Set the lifecycle to `Completed` through the writer, `updated` now, append a `## Lifecycle History` row.
 
 ---
 

@@ -175,8 +175,8 @@ run_ss02() {
 
 # ---------------------------------------------------------------------------
 # SS-03: advance words; no PAUSE-FOR-USER word in canonical/.
-# A `**Advance:**` line names one word: CHAIN, ASK, WAIT, PASS, CALL or HALT. A plain
-# step name (an upper-case identifier, or an arrow to the next State) is a CHAIN.
+# A `**Advance:**` line names one word: CHAIN, ASK, WAIT, PASS, CALL or HALT (`ASK then HALT` starts with
+# ASK). A bare `**Advance:**` takes its word from the next non-blank line; one with no word at all fails.
 # ---------------------------------------------------------------------------
 run_ss03() {
     group_begin "SS-03 advance words and PAUSE-FOR-USER"
@@ -191,7 +191,7 @@ run_ss03() {
         hits=$(python3 -c '
 import re, sys
 SIX = ("CHAIN", "ASK", "WAIT", "PASS", "CALL", "HALT")
-ADV = re.compile(r"(?<![`])\*\*Advance:\*\*[ \t]+(.*)$")
+ADV = re.compile(r"(?<![`])\*\*Advance:\*\*[ \t]*(.*)$")
 TOK = re.compile(r"[A-Za-z][A-Za-z0-9-]*")
 for path in sys.argv[1:]:
     with open(path, encoding="utf-8", errors="replace") as fh:
@@ -203,7 +203,15 @@ for path in sys.argv[1:]:
         if not m:
             continue
         rest = m.group(1).lstrip("*` \t")
-        if not rest or rest.startswith(chr(0x2192)):
+        if not rest:  # the word wraps to the next line: read the next non-blank line
+            nxt = num
+            while nxt < len(lines) and not lines[nxt].strip():
+                nxt += 1
+            rest = lines[nxt].strip().lstrip("*` \t") if nxt < len(lines) else ""
+            if not rest:
+                print(f"{path}:{num}: **Advance:** names no advance word")
+                continue
+        if rest.startswith(chr(0x2192)):
             continue
         t = TOK.match(rest)
         if not t:

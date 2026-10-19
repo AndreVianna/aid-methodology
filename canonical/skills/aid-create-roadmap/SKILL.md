@@ -51,10 +51,7 @@ continues at come only from its work record.
 
 1. **Require a subject.** Empty argument -> ask one bootstrapping question ("What direction
    do you want to realize into roadmap.md -- or run `/aid-design-roadmap` first?") and wait.
-2. **Allocate, exactly per `design-lifecycle.md § Skill shape -- Allocation`** -- the Work
-   Initiation Gate, then `initiator: aid-create-roadmap`, `active_skill:
-   aid-create-roadmap`, `pipeline.path: lite`, `lifecycle: Running`. `phase` is not
-   driven.
+2. **Allocate, exactly per `design-lifecycle.md § Skill shape -- Allocation`** -- the Work Initiation Gate, whose `--create` is given `--skill aid-create-roadmap`, `--step INTAKE` and `--path lite`; the record starts `Running`. `phase` is not driven.
 3. **Read the seed** at `.aid/design/roadmap.md`. If no seed exists, inform the user and
    ask whether to proceed without one (direction entered interactively) or to run
    `/aid-design-roadmap` first; do not proceed silently. The question blocks the work: pause INTAKE on it, with its detail saying the work is allocated and the question is open, record it with `--ask`, set the lifecycle to `Paused-Awaiting-Input`, and then ask it. Once it is answered, INTAKE continues at step 4.
@@ -74,10 +71,10 @@ continues at come only from its work record.
 
 - **Unresolved questions present, no override** → refuse. Name each unresolved question
   **and** the override flag `--override-open-questions` the user must supply to bypass the gate. Write nothing; leave
-  seed and destination byte-identical. Set `lifecycle: Paused-Awaiting-Input`.
+  seed and destination byte-identical. Set the lifecycle to `Paused-Awaiting-Input` through the writer, and stop: this step stays saved, and a later run inspects the seed again from the top.
 - **No unresolved questions, or override supplied** → advance.
 
-**Advance:** CHAIN -> [State: REALIZE] when no question is unresolved or the override is supplied. On a refusal: WAIT. Say that the user must resolve the questions or re-run with `--override-open-questions`, and stop. The step stays saved, and the work goes on to REALIZE once the user says it is done.
+**Advance:** CHAIN -> [State: REALIZE] when no question is unresolved or the override is supplied; HALT when a question is unresolved and no override is supplied (the refusal above).
 
 ---
 
@@ -90,7 +87,7 @@ determined in INTAKE:
 |---|---|
 | `roadmap.md` absent | **Create** the document: write frontmatter (§3a values below, verbatim), `# Roadmap` title, one-paragraph preamble (what this document holds and what it does not -- no items live here), `## Contents` with all four entries in heading order, then `## Now`, `## Next`, `## Later`. **Delete the seed.** |
 | Present, horizon sections empty or absent | Fill `## Now`, `## Next`, `## Later` from the seed; leave every byte outside those sections identical, including `## MVP` if present. **Delete the seed.** |
-| Present, horizon sections already carry committed content | **Route** to `/aid-update-roadmap`; write nothing; leave the seed in place for that run (CC-3). Set `lifecycle: Paused-Awaiting-Input`. Then **ASK then HALT**, naming the skill it routes to, without calling REGISTER or VERIFY. |
+| Present, horizon sections already carry committed content | **Route** to `/aid-update-roadmap`; write nothing; leave the seed in place for that run (CC-3). Set the lifecycle to `Paused-Awaiting-Input` through the writer. Then ask the user, through the question protocol, whether to run the skill it routes to, naming it; the question is blocking and stays open, and REGISTER and VERIFY are not called. |
 
 **`## Contents` index** -- the fixed four-entry form (`feature-003 §3a`), always written
 at creation and always left intact on the fill path:
@@ -136,7 +133,7 @@ audience: [architect, pm, developer]
 compare a direction entry against (`decisions.md` carries the same value for the same
 reason; `feature-003 §3a` records the divergence from feature-004's `forward-authored`).
 
-**Advance:** CHAIN -> [State: REGISTER] (creation or fill path). On the route path: **ASK then HALT**, naming the skill the route names.
+**Advance:** CHAIN -> [State: REGISTER] (creation or fill path); HALT on the route case (the question above stays open and the run ends).
 
 ---
 
@@ -163,7 +160,7 @@ Both writes must succeed in the same run. If either fails, report and halt.
 
 **Full verify** -- exactly as `design-lifecycle.md § Skill shape -- "Full verify"`
 defines it. Not clean -> loop to REALIZE; the circuit-breaker there governs escalation
-to IMPEDIMENT + `lifecycle: Blocked`.
+to IMPEDIMENT, and the lifecycle is set to `Blocked` through the writer.
 
 **Advance:** CHAIN -> [State: PRESENT].
 
@@ -171,7 +168,7 @@ to IMPEDIMENT + `lifecycle: Blocked`.
 
 ## State: PRESENT (hard stop -- the user decides)
 
-Set `lifecycle: Paused-Awaiting-Input`. Present the realized document clearly. Assert:
+Set the lifecycle to `Paused-Awaiting-Input` through the writer. Present the realized document clearly. Assert:
 
 - `## MVP` heading is absent (the `- [MVP](#mvp)` index entry is present).
 - On the creation path: both registration surfaces were written.
@@ -184,7 +181,7 @@ Set `lifecycle: Paused-Awaiting-Input`. Present the realized document clearly. A
 
 ## State: DONE
 
-Set `lifecycle: Completed`, `updated` now, append a `## Lifecycle History` row.
+Set the lifecycle to `Completed` through the writer, `updated` now, append a `## Lifecycle History` row.
 
 ---
 
@@ -201,4 +198,4 @@ Set `lifecycle: Completed`, `updated` now, append a `## Lifecycle History` row.
 - **C-3 compliance**: `roadmap.md` carries no `## Change Log`, no `## Revision History`,
   no `changelog:` frontmatter field, no work id, and no work-folder path.
 - **Clean context**; **verification always a sub-agent dispatch** (`aid-reviewer`).
-- **Tracking:** write STATE `lifecycle` at every transition.
+- **Tracking:** write the STATE lifecycle through the writer at every transition.

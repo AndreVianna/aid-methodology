@@ -186,7 +186,7 @@ dispatch in this skill.
 | State | Detail | Worker | Advance |
 |-------|--------|--------|---------|
 | IDLE | `references/state-idle.md` | `aid-operator` | CHAIN → SELECTING |
-| SELECTING | `references/state-selecting.md` | `aid-operator` | CHAIN → VERIFYING; HALT on cancel |
+| SELECTING | `references/state-selecting.md` | `inline` | CHAIN → VERIFYING; HALT on cancel |
 | VERIFYING | `references/state-verifying.md` | `aid-operator` | CHAIN → PACKAGING when every check passes; CHAIN → FIX-DECISION when a check fails |
 | FIX-DECISION | `references/state-fix-decision.md` | `inline` | CHAIN → RE-VERIFY; HALT on loop back |
 | RE-VERIFY | `references/state-re-verify.md` | `aid-operator` | CHAIN → PACKAGING when every check passes; CHAIN → FIX-DECISION otherwise |

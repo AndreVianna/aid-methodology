@@ -18,6 +18,6 @@ aid-execute  ▸ you are here
 2. If the user confirms a reopen → set State to `In Review` (full path: this task's own `STATE.yml`;
    flat path: the work-root `STATE.yml`'s `tasks_lifecycle` entry for this task). Record any specific
    concern as context for the reviewer. The step then goes on to REVIEW.
-3. If the user keeps the task Done → change nothing, and the run ends here (HALT). The task stays `Done`.
+3. If the user keeps the task Done → change nothing. The task stays `Done`.
 
-**Advance:** **CHAIN** → [State: REVIEW], once the user has confirmed the reopen.
+**Advance:** **CHAIN** → [State: REVIEW], once the user has confirmed the reopen; **HALT** when the task stays Done.

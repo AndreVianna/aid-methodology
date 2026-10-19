@@ -52,7 +52,7 @@ continues at come only from its work record.
 
 1. **Allocate** through the Work Initiation Gate exactly as the contract's Allocation rule
    requires (`.agents/skills/aid-design/SKILL.md` INTAKE step 4 is the shape), with
-   `initiator: aid-create-stack`. `phase` is not driven.
+   `--skill aid-create-stack` given to the gate's `--create`. `phase` is not driven.
 2. **Read the seed** at `.aid/design/stack.md`.
 3. **Resolve the destination by concern, not filename.** This skill binds concern **C0**
    (technology, `.aid/runtime/templates/kb-authoring/concern-model.md`). The seed's
@@ -109,7 +109,7 @@ was written; otherwise it stays in place carrying just the unrealized parts, whi
 ## State: VERIFY
 
 **Full verify**, as `design-lifecycle.md` defines it. Not clean -> loop to CREATE; the
-3-cycle circuit breaker there escalates to IMPEDIMENT + `lifecycle: Blocked`.
+3-cycle circuit breaker there escalates to IMPEDIMENT, and the lifecycle is set to `Blocked` through the writer.
 
 **Advance:** CHAIN -> [State: PRESENT].
 
@@ -117,7 +117,7 @@ was written; otherwise it stays in place carrying just the unrealized parts, whi
 
 ## State: PRESENT (hard stop -- the user decides)
 
-Set `lifecycle: Paused-Awaiting-Input`. Present the realized document and assert: the seed
+Set the lifecycle to `Paused-Awaiting-Input` through the writer. Present the realized document and assert: the seed
 was consumed only for what was written; on the creation path both registration surfaces were
 written; the rejected alternatives went to the D document; and anything routed to
 `/aid-update-stack` is named.
@@ -128,7 +128,7 @@ written; the rejected alternatives went to the D document; and anything routed t
 
 ## State: DONE
 
-Set `lifecycle: Completed`, `updated` now, append a `## Lifecycle History` row.
+Set the lifecycle to `Completed` through the writer, `updated` now, append a `## Lifecycle History` row.
 
 ---
 

@@ -129,8 +129,11 @@ The gate performs the steps below in this order, and only then hands the new wor
      --work-dir .aid/works/<work-id>-<name> \
      --reading <type from step 3> --request '<the user's words>' \
      --skill <calling skill> --step <its first step> \
-     [--phase <phase>] [--depth lite|full] [--path lite|full] [--minimum-grade <grade>]
+     [--phase <phase>] [--depth lite|full] [--path lite|full] [--minimum-grade <grade>] \
+     [--reason '<why the reading holds>'] [--phases <P1,P2,...>]
    ```
+
+   A caller that was handed an intent (the reason and the phases it chose) passes `--reason` and `--phases` here, so the work starts with them; the writer's `--intent` sets them later.
 
    `--create` copies `work-state-template.yml` and fills the record in that one write: `intent.reading`, `intent.request`, `active_skill`, `step`, `pipeline.initiator` (the calling skill), `lifecycle: Running`, `started` and `updated`. It exits 8 when the folder already holds a `STATE.yml`. A skill started by a bare slash command with no words takes its request from its first question (`.aid/runtime/templates/question-protocol.md`); if the user does not answer, no work is created.
 
@@ -193,8 +196,7 @@ The gate allocates **nothing**. The work's record -- `intent.reading`, `active_s
 
 **Legacy map (never routes).** A work started before the record existed has no `active_skill`, so its phase and file names are the only evidence. Recovery reads this block only to propose a skill and step for such a work; its type comes from the evidence named above. Nothing here routes a work.
 
-The proposed step is the skill's entry step, or the step the old record's state names; the
-skill's own validation on resume moves it on when the work is further along.
+The proposed step is the skill's entry step, or the step the old record's state names. When the work is further along, the user corrects the step in the same confirmation.
 
 | Old record | Proposed skill | Proposed step |
 |---|---|---|

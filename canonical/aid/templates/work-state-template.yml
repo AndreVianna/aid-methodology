@@ -150,7 +150,8 @@ gate_timestamp: --
 #     request. Only the writer sets them: `--create` when the work starts
 #     (request, reading, and depth when given), and `--reroute` on a re-route
 #     (reading, depth, and one changes entry). Never by hand. reason and phases
-#     are set by the routing skill until the writer has modes for them.
+#     are set by `--create --reason --phases` when the work starts, and later
+#     by `--intent`.
 #     The values below are the rest values until the first write: no reading
 #     yet, and no depth recorded (a work with no recorded depth takes full).
 #   request: the user's words, short (quoted)
