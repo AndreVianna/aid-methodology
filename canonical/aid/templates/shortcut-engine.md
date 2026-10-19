@@ -484,9 +484,10 @@ bash .aid/runtime/scripts/execute/writeback-state.sh --pipeline --field "Active 
 bash .aid/runtime/scripts/execute/writeback-state.sh --pipeline --field Updated --value "$(date -u +%Y-%m-%dT%H:%M:%SZ)"
 ```
 
-(Silent state-write only -- no output, no gate; the same convention every other skill
-uses for per-state phase emission, e.g. `aid-detail`'s
-`.agents/skills/aid-detail/references/first-run.md § Step 0`.)
+(No output beyond the writes; the same convention every other skill uses for per-state phase
+emission, e.g. `aid-detail`'s `.agents/skills/aid-detail/references/first-run.md § Step 0`. A
+non-zero exit from any of these writes stops the run at once, as skill-steps.md "Fail-closed"
+says.)
 
 ### Step 2: Dispatch aid-architect to author the feature section
 
@@ -911,12 +912,19 @@ work-{NNN}-{slug}  (/{name})
 
 GATE: Pass 1 (definition docs) {pass-1-grade}  ·  Pass 2 (task set) {pass-2-grade}  ·  floor {floor}
 
-Nothing has executed. Review the documents above, then run
-/aid-execute {name-or-work-id} when ready -- that is a separate,
-user-initiated step this engine never triggers on its own.
+Nothing has executed. Review the documents above.
 ```
 
-### Step 2: Halt the pipeline
+### Step 2: Record the approval, pause, and ask
+
+Record the approval before it is shown (`.aid/runtime/templates/question-protocol.md`; an approval
+cannot be skipped, so it stays open until the user approves or declines):
+
+```bash
+bash .aid/runtime/scripts/execute/writeback-state.sh --ask --category Approval --impact High --asked-by {name} --step APPROVAL-HALT --covers "flattened work: requirements and task set" --context "Approve the flattened work so /aid-execute can start?" --suggested "Yes, once you have reviewed the documents above"
+```
+
+Then pause the pipeline:
 
 ```bash
 bash .aid/runtime/scripts/execute/writeback-state.sh --pipeline --field Lifecycle --value Paused-Awaiting-Input
@@ -929,6 +937,11 @@ DETAIL Step 4 -- every task has a `DETAIL.md` and a `tasks_lifecycle`
 entry, but none has executed); APPROVAL-HALT does not touch it -- `Specified`
 is exactly the value FR-10/AC-3 requires at halt (tasks defined, not yet
 `Executing`).
+
+Then ask the approval, in the question protocol's form. The user's answer is recorded with
+`--answer`, and the lifecycle goes back to `Running` only when `/aid-execute` takes the work up;
+`/aid-execute {name-or-work-id}` is a separate, user-initiated run this engine never triggers on its
+own. A resumed session offers the approval again first (skill-steps.md, "Questions, at any point").
 
 **Advance:** ASK then HALT. No branch is created; no `tasks_lifecycle` entry
 advances past `Pending` (the halt-proof fixture in feature-004's testing

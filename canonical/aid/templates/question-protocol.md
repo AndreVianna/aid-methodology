@@ -49,7 +49,8 @@ Never offer an option that could lead to an error or a worse result.
 - **Rule 5.3 -- No obvious questions.** Do not ask a question whose answer is obvious and needs no
   confirmation.
 - **Rule 5.4 -- Free text always.** The closing line always lets the user give a different answer,
-  ask for an explanation, or skip the question, in free text.
+  ask for an explanation, or skip the question, in free text. An approval offers no skip: it stays
+  open until the user approves or declines (see Reviews and small decisions).
 
 ### Rule 6 -- Grouped by subject, most important first
 
@@ -80,8 +81,8 @@ with the reason, and move on.
 
 Every question and its answer is recorded in the record shape below (a Knowledge Base question in
 the Q&A section of its state file, see Where each record lives). A user who cannot answer
-(lack of knowledge, and so on) may skip a question. A skipped question stays open, and is offered
-again later to the same user or to another one.
+(lack of knowledge, and so on) may skip a question, except an approval, which cannot be skipped. A
+skipped question stays open, and is offered again later to the same user or to another one.
 
 ## One question
 
@@ -115,6 +116,8 @@ of a group comes first. `Required` is retired.
   `Assumed`. It is confirmed in one batch with the next approval that covers it: the document's
   approval at `full` depth, the confirmation before building at `lite` depth, or the next milestone
   while building. No extra approval is asked for it.
+- **An approval cannot be skipped.** It is shown without a skip option, and it stays open, with its
+  step paused, until the user approves or declines.
 - **A rejected decision reopens** as an ordinary question, in the usual group.
 
 ## The question record
@@ -180,8 +183,8 @@ written to the Knowledge Base state file instead, in the same states, until that
 |-------------|--------|
 | working on a work | the work's `STATE.yml`, in its `qa` list |
 | building the Knowledge Base | the Knowledge Base state file, `.aid/knowledge/STATE.md` |
-| setting up the project (configure, connectors), or in chat | the project file `.aid/STATE.yml`, with `--project` |
-| in a ticket skill (no shell, so no writer) | nothing: the skill's one confirmation is not recorded |
+| setting up the project (configure, connectors), in chat, or in any other skill that keeps no work record and can run the writer | the project file `.aid/STATE.yml`, with `--project` |
+| in a ticket skill (no shell, so no writer) | nothing: the skill's own questions (the connector pick, the confirmation) are not recorded |
 
 ## The intake-question exception
 

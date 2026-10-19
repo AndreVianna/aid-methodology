@@ -11,7 +11,12 @@
 #       --handoff, --handoff-return, --ask, --answer and --intent (with its --reason
 #       and --phases options) exist only in canonical. The dashboard never invokes
 #       them.
-#    3. Its write helpers are its own. It writes a temporary copy and renames it into
+#    3. It does not find the work record itself. Canonical's wb_find_state_file locates
+#       the record for --pipeline (and its other record modes) when AID_STATE_FILE is
+#       unset; here STATE_FILE defaults to the placeholder `.aid/works/work/STATE.yml`,
+#       so a caller must export AID_STATE_FILE (or, for the task and delivery modes,
+#       AID_WORK_DIR). The dashboard server always passes the path, so its writes work.
+#    4. Its write helpers are its own. It writes a temporary copy and renames it into
 #       place, as canonical does, but it does not use canonical's staged helpers
 #       (wb_stage, wb_stage_append, wb_stage_commit).
 #  Everything else must track canonical. In particular, a Lifecycle of Completed or

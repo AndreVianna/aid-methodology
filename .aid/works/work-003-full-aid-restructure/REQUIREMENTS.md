@@ -1629,7 +1629,7 @@ suite list of `.github/workflows/installer-tests.yml`):
 |---|---|
 | SS-01 | No banner form (Steps and hand-offs) under `canonical/skills/` or `canonical/aid/templates/` |
 | SS-02 | `state-machine-chaining.md` is absent and cited nowhere; every `SKILL.md` with a Dispatch table or a `## State:` section, and, while they exist, `shortcut-engine.md` (deleted by Feature 009) and `design-lifecycle.md` (deleted by Feature 004), cite `skill-steps.md`, whose step-entry rule writes the record before any work in the step |
-| SS-03 | No `**Advance:**` line uses a word other than `CHAIN`, `ASK`, `WAIT`, `PASS`, `CALL`, `HALT` (a line naming only its next step is a `CHAIN`, as today) |
+| SS-03 | No `**Advance:**` line uses a word other than `CHAIN`, `ASK`, `WAIT`, `PASS`, `CALL`, `HALT` (a line naming only its next step is a `CHAIN`, written `CHAIN → NAME`) |
 | SS-04 | Every hand-authored `SKILL.md`, and, until Feature 009 deletes it, `shortcut-engine.md` for the generated ones, cites `question-protocol.md`, except the test's never-asks list (each listed skill must exist); no `AskUserQuestion` in any `allowed-tools` |
 | SS-05 | No `canonical/agents/aid-interviewer/`; the word `interviewer`, in any case, appears nowhere in `canonical/agents/`, `canonical/skills/`, `canonical/aid/templates/`, `docs/`, `examples/` or `site/src/content/` |
 | SS-06 | No file under `canonical/skills/` names `## Cross-phase Q&A` or sends a question to a delivery-level `qa` (the migration scripts, which must read the old shapes, are outside its scope) |
@@ -1735,7 +1735,8 @@ label -- to every sample, of any feature, that covers AC-8 or AC-28.
 | `002-18-report-what-to-analyze` (`/aid-report`) | AC-28 | now |
 | `002-19-monitor-finding-question` (`/aid-monitor`) | AC-28 | now |
 | `002-20-record-recovery` -- fixture: a work whose saved step names an artifact that is not on disk; the user asks to continue; check: the agent says so, proposes the repaired record as one question, writes nothing before the yes, then resumes there | AC-37 | now |
-| `002-21-cancel-work` -- fixture: an open work; the user says "cancel work-NNN"; check: no new work is created, the agent asks one confirmation question, and only after yes the record shows `lifecycle: Canceled` with no saved skill; the next resume reports the work as finished (runs now) |
+| `002-21-cancel-work` -- fixture: an open work; the user says "cancel work-NNN"; check: no new work is created, the agent asks one confirmation question, and only after yes the record shows `lifecycle: Canceled` with no saved skill | AC-37 | now |
+| `002-21b-resume-canceled-work` -- fixture: a canceled work (lifecycle `Canceled`, no saved skill, an old open question); the user asks to carry on with it in a new session; check: the agent reports the work as finished, does not resume it or ask its old question, creates no work, and the record is unchanged (resume-table row 1) | AC-37 | now |
 | `002-06-review-in-chunks` | AC-9 | deferred: Feature 005 |
 | `002-07-small-decisions-with-approval` | AC-9, AC-10 | deferred: Features 005, 007 |
 | `002-08-full-confirms-each-document` | AC-10 | deferred: Features 003, 005, 006, 007 |
@@ -1754,7 +1755,7 @@ label -- to every sample, of any feature, that covers AC-8 or AC-28.
 | AC-10 | Approvals and the merge boundary | writer unit tests (approval record); `002-07`, `002-08`, `002-09` (deferred) |
 | AC-11 | Approvals and the merge boundary (never merges) | NM-01 to NM-04; `002-05`; `002-10` (deferred) |
 | AC-28 | Question protocol | `002-01` to `002-04`, `002-14` to `002-19`; SS-09 with the coverage table (a sample or a `skill:` row per asking skill); `protocol-checks.md` |
-| AC-37 | Steps and hand-offs (what the user sees, resume); Work state layout (The work record) | SS-01, SS-02, SS-14; writer unit tests (`--create`, `--step`, `--check`, `--repair`, failed writes); gate `--check` fixtures; `002-20`; `002-11` (deferred); `002-21` |
+| AC-37 | Steps and hand-offs (what the user sees, resume); Work state layout (The work record) | SS-01, SS-02, SS-14; writer unit tests (`--create`, `--step`, `--check`, `--repair`, failed writes); gate `--check` fixtures; `002-20`; `002-11` (deferred); `002-21`; `002-21b` |
 | AC-38 | Steps and hand-offs (`PASS`, `CALL`, `HALT`) | writer unit tests (`--handoff`, `--handoff-return`, nesting); `002-12`, `002-13` (deferred) |
 | AC-40 | Question protocol (sub-agents never ask); Migration | SS-05, SS-10 |
 | AC-41 | Dashboard and chat | dashboard fixtures and parity test; SS-07 |

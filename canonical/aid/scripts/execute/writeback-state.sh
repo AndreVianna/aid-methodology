@@ -246,9 +246,11 @@
 #
 #   writeback-state.sh -h | --help
 #
-# Work record discovery (the record modes: --pipeline, --step, --reroute, --intent,
-# --check, --repair, --handoff, --handoff-return, and --ask or --answer without
-# --project). The
+# Work record discovery (every mode that writes the work's record: --pipeline, --step,
+# --reroute, --intent, --check, --repair, --handoff, --handoff-return, --ask or --answer
+# without --project, and the task and delivery modes --task-id --field, --findings,
+# --block, --lifecycle, --gate-field, --append-issue; the task and delivery modes skip
+# it when AID_WORK_DIR, AID_DELIVERY_DIR or their own file override is set). The
 # record is the first of these that applies:
 #   1. AID_STATE_FILE, when set;
 #   2. the STATE.yml of the work folder (.aid/works/work-NNN-*/) the current
@@ -312,7 +314,7 @@ usage() {
     # Upper bound tracks the end of the Exit codes stanza. Bump it whenever
     # lines are added to the header block above it, or --help silently
     # starts truncating (or over-printing) the usage text.
-    sed -n '2,275p' "$0" | sed 's/^# \{0,1\}//'
+    sed -n '2,278p' "$0" | sed 's/^# \{0,1\}//'
 }
 
 die() { echo "ERROR: writeback-state.sh: $*" >&2; exit "${2:-1}"; }
@@ -2906,6 +2908,15 @@ wb_find_state_file() {
 case "$MODE" in
     pipeline|step|reroute|check|repair|handoff|handoff-return|intent) wb_find_state_file ;;
     ask|answer) if [[ "$PROJECT_FLAG" -eq 0 ]]; then wb_find_state_file; fi ;;
+    # The task and delivery modes find the record the same way, unless the caller has
+    # already named where the work lives (AID_WORK_DIR, AID_DELIVERY_DIR or the
+    # file/dir override for that mode).
+    field|findings)
+        if [[ -z "$WORK_DIR" && -z "$TASK_STATE_FILE" && -z "$DELIVERY_DIR_BASE" ]]; then wb_find_state_file; fi ;;
+    delivery-block|delivery-lifecycle|gate-field)
+        if [[ -z "$WORK_DIR" && -z "$DELIVERY_STATE_FILE" && -z "$DELIVERY_DIR_BASE" ]]; then wb_find_state_file; fi ;;
+    append-issue)
+        if [[ -z "$WORK_DIR" && "$DELIVERY_ISSUES_DIR" == ".aid/works/work" ]]; then wb_find_state_file; fi ;;
 esac
 case "$MODE" in
     pipeline)            mode_pipeline ;;

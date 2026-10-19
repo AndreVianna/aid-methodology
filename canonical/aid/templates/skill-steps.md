@@ -28,7 +28,7 @@ Each skill has one table of its steps, with these columns:
 
 Every step ends with exactly one ending, on its advance line: one advance word, or `ASK then HALT`,
 which is one composite ending and not two words (see the advance words below). A line that names
-only its next step is a `CHAIN`.
+only its next step is a `CHAIN`, and is written with the word and the arrow: `CHAIN → NAME`.
 
 The step an advance line names is a step of the same skill's table, by its name. It is never a part
 of a step, such as "Step 5" or "GENERATE -- Step 0d". When the next step depends on what the user
@@ -43,7 +43,7 @@ The advance words are internal. They are never shown to the user.
 | Word | Meaning |
 |------|---------|
 | `CHAIN` | Go on to the next step now, in the same run. |
-| `ASK` | The step ends with a question that blocks the work. The step pauses on it; once every question is answered or skipped (an approval is never skipped: it stays open until the user approves or declines), the step is finished and the work goes on to the step the line names. |
+| `ASK` | The step ends with a question that blocks the work. The step pauses on it; once every question is answered or skipped (an approval is never skipped: it stays open until the user approves or declines), the step is finished and the work goes on to the step the line names. Use it only when no write that depends on the answer remains in the step; if any does, the question is a pause inside the step (part 3 of the step procedure), and the step ends with the advance that follows that work. |
 | `ASK then HALT` | The run ends with a question that blocks the work, such as which skill to run next. The question stays open; any resume shows it first, and once it is answered or skipped (an approval is never skipped) the run ends as `HALT` does. |
 | `WAIT` | The user must do something outside the conversation. Say what, plainly, and stop. The step stays saved and its detail says what is waited for; once the user says it is done, the work goes on to the step the line names. |
 | `PASS` | End of this skill's process. Hand the work to the next skill and start it in the same turn. |
@@ -73,11 +73,15 @@ Every step runs these six parts, in this order.
      where it stopped.
    - Answered later: any session that resumes finds the saved step and the open questions, and asks
      the open questions first, until each is answered or skipped (an approval is never skipped: see
-     When approvals happen). Then it continues the same step from
-     its detail, and does not redo what the detail says is done.
-   - An `ASK` advance is this pause at the end of a step. Once its questions are answered or skipped
-     (an approval is never skipped), the step is finished, and the work goes on to the step the line
-     names, which is then saved with `--step`.
+     When approvals happen). It records each answer with `--answer` and sets the lifecycle back to
+     `Running` with `--pipeline --field Lifecycle --value Running`, the same call as in the bullet
+     above. Then it continues the same step from its detail, and does not redo what the detail says
+     is done.
+   - An `ASK` advance is this pause at the end of a step, used only when no write that depends on
+     the answer remains in the step. Once its questions are answered or skipped (an approval is never
+     skipped), whichever session reads the answer records it with `--answer`, sets the lifecycle back
+     to `Running` with `--pipeline --field Lifecycle --value Running`, and the step is finished: the
+     work goes on to the step the line names, which is then saved with `--step`.
 4. **`PASS`.** If the approvals table requires an approval at this depth at this point, `ASK` it
    first. Then run
    `--handoff --to <skill> --step <its entry step> --why '<reason>' --returns no --phase <phase>`,
@@ -100,7 +104,10 @@ never by hand. The record's template is `.aid/runtime/templates/work-state-templ
 The writer finds the record itself: the file `AID_STATE_FILE` names when it is set; otherwise the
 `STATE.yml` of the work folder it runs in, or under; otherwise the one work whose worktree it runs in.
 A skill passes no path. This holds for every mode that writes the work's record, `--pipeline`
-(lifecycle, phase, pause and block reasons) included. When none of these finds exactly one work, the
+(lifecycle, phase, pause and block reasons) included, and the task and delivery modes (`--task-id
+--field`, `--findings`, `--block`, `--lifecycle`, `--gate-field`, `--append-issue`) too; those find
+the work the same way unless the caller names the work root or the file itself with `AID_WORK_DIR`,
+`AID_DELIVERY_DIR` or `AID_TASK_STATE_FILE`/`AID_DELIVERY_STATE_FILE`. When none of these finds exactly one work, the
 writer exits 1 and says so; the third way needs git, and the message says when git is the cause.
 
 ### Before a work exists
@@ -113,7 +120,8 @@ such as a Knowledge Base, ticket, connector, setting or chat skill, saves no ste
 questions where `question-protocol.md` § Where each record lives says (the Knowledge Base state file
 while building the Knowledge Base, the project file `.aid/STATE.yml` with `--project` for every other
 skill that keeps no work record and can run the writer: setting up the project, chat). The ticket
-skills cannot run the writer; they ask only their one confirmation, and record nothing.
+skills cannot run the writer; they ask their own questions (the connector pick, and the confirmation
+before a ticket is filed or changed), and record nothing.
 
 ### When the record is written
 

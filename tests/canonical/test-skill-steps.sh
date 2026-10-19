@@ -11,7 +11,9 @@
 #   SS-02  every SKILL.md with a Dispatch table or a `## State:` section cites skill-steps.md;
 #          shortcut-engine.md and design-lifecycle.md, while they exist, cite it too
 #   SS-03  no `**Advance:**` line uses a word other than CHAIN, ASK, WAIT, PASS, CALL, HALT
-#          (a line naming only its next step is a CHAIN); no PAUSE-FOR-USER word in canonical/
+#          (a line naming only its next step is a CHAIN, written with the arrow: `**Advance:** -> NAME`;
+#          a bare name with no arrow is flagged, because it cannot be told from an invented word);
+#          no PAUSE-FOR-USER word in canonical/
 #   SS-08  work-state-template.yml and project-state-template.yml parse through the dashboard
 #          reader with no warning
 #   SS-11  no old phase name (Describe, Define, Specify, Plan, Detail, Execute) as data or logic
@@ -177,6 +179,8 @@ run_ss02() {
 # SS-03: advance words; no PAUSE-FOR-USER word in canonical/.
 # A `**Advance:**` line names one word: CHAIN, ASK, WAIT, PASS, CALL or HALT (`ASK then HALT` starts with
 # ASK). A bare `**Advance:**` takes its word from the next non-blank line; one with no word at all fails.
+# A line that starts with the arrow names only its next step, which is a CHAIN (skill-steps.md, The step
+# table); it passes when an upper-case step name follows the arrow, and fails when none does.
 # ---------------------------------------------------------------------------
 run_ss03() {
     group_begin "SS-03 advance words and PAUSE-FOR-USER"
@@ -212,6 +216,8 @@ for path in sys.argv[1:]:
                 print(f"{path}:{num}: **Advance:** names no advance word")
                 continue
         if rest.startswith(chr(0x2192)):
+            if not re.match(r"[A-Z][A-Z0-9-]*", rest[1:].lstrip(" `*")):
+                print(f"{path}:{num}: **Advance:** arrow names no step")
             continue
         t = TOK.match(rest)
         if not t:
@@ -219,6 +225,8 @@ for path in sys.argv[1:]:
             continue
         word = t.group(0)
         if word in SIX:
+            continue
+        if word in ("line", "lines"):  # a plain note that points at an advance line, not a line itself
             continue
         print(f"{path}:{num}: **Advance:** word {word} is not CHAIN, ASK, WAIT, PASS, CALL or HALT")
 ' "${files[@]}" 2>&1) || true

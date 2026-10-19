@@ -3255,5 +3255,58 @@ rc=0; OUT31="$(cd "$R31Q" && env -u AID_STATE_FILE HOME="$R31_HOME" GIT_CEILING_
 assert_eq "$rc" "1" "31q: --step with no git checkout and no work folder exits 1"
 assert_output_contains "$OUT31" "git" "31q: the message names git as the cause"
 
+# 31r: the task and delivery modes find the record the same way the record modes do (W1-1): from
+# the worktree root, or from inside the work folder, with no AID_STATE_FILE, AID_WORK_DIR or
+# AID_DELIVERY_ISSUES_DIR. Nested layout first.
+w31x() {
+    local d="$1"
+    shift
+    RC31=0
+    OUT31="$(cd "$d" && env -u AID_STATE_FILE -u AID_SKILLS_DIR -u AID_WORK_DIR -u AID_DELIVERY_ISSUES_DIR \
+        -u AID_TASK_STATE_FILE -u AID_DELIVERY_STATE_FILE -u AID_DELIVERY_DIR \
+        HOME="$R31_HOME" AID_LOCK_TIMEOUT=1 bash "$SCRIPT" "$@" 2>&1)" || RC31=$?
+}
+R31R="${R31}/taskmodes"
+w31_repo "$R31R" work-001
+w31_record "${R31R}/.aid/works/work-001-demo/STATE.yml"
+make_task_state "${R31R}/.aid/works/work-001-demo/deliveries/delivery-001" 1
+make_delivery_state "${R31R}/.aid/works/work-001-demo" 1
+W31R="${R31R}/.aid/works/work-001-demo"
+w31x "$R31R" --delivery-id 1 --task-id 1 --field State --value "In Progress"
+assert_eq "$RC31" "0" "31r: --task-id --field from the worktree root finds the work and exits 0"
+assert_file_contains "${W31R}/deliveries/delivery-001/tasks/task-001/STATE.yml" "state: 'In Progress'" "31r: the task state is written under the found work"
+w31x "$W31R/deliveries/delivery-001" --delivery-id 1 --task-id 1 --field State --value "In Review"
+assert_eq "$RC31" "0" "31r: --task-id --field from inside the work folder exits 0"
+assert_file_contains "${W31R}/deliveries/delivery-001/tasks/task-001/STATE.yml" "state: 'In Review'" "31r: the task state is written from inside the folder"
+w31x "$R31R" --delivery-id 1 --task-id 1 --findings "- [LOW] a finding"
+assert_eq "$RC31" "0" "31r: --findings from the worktree root exits 0"
+w31x "$R31R" --delivery-id 1 --block "- **Complexity Score:** 3
+- **Cycles:** 1
+- **Issue List:**
+  - [LOW] minor"
+assert_eq "$RC31" "0" "31r: --block from the worktree root exits 0"
+w31x "$R31R" --delivery-id 1 --lifecycle Gated
+assert_eq "$RC31" "0" "31r: --lifecycle from the worktree root exits 0"
+assert_file_contains "${W31R}/deliveries/delivery-001/STATE.yml" "delivery_state: Gated" "31r: the delivery lifecycle is written under the found work"
+w31x "$R31R" --delivery-id 1 --gate-field Tier --gate-value Medium
+assert_eq "$RC31" "0" "31r: --gate-field from the worktree root exits 0"
+w31x "$R31R" --delivery-id 1 --append-issue "| task-003 | [HIGH] | a gap | Open |"
+assert_eq "$RC31" "0" "31r: --append-issue from the worktree root exits 0"
+assert_file_contains "${W31R}/delivery-001-issues.md" "task-003" "31r: the issue row lands in the found work folder"
+# No work to find: a task write refuses and says why, instead of naming a placeholder path.
+w31x "$R31E" --delivery-id 1 --task-id 1 --field State --value "In Progress"
+assert_eq "$RC31" "1" "31r: --task-id --field with no work record exits 1"
+assert_output_contains "$OUT31" "no work record found" "31r: the message says no work record was found"
+# Flat layout: the delivery modes write the work's own record.
+R31S="${R31}/taskflat"
+w31_repo "$R31S" work-001
+w31_record "${R31S}/.aid/works/work-001-demo/STATE.yml"
+printf 'pipeline:\n  path: lite\n' >> "${R31S}/.aid/works/work-001-demo/STATE.yml"
+w31x "$R31S" --delivery-id 1 --gate-field Grade --gate-value A
+assert_eq "$RC31" "0" "31r: --gate-field on the flat layout finds the work's own record and exits 0"
+w31x "$R31S" --delivery-id 1 --lifecycle Gated
+assert_eq "$RC31" "0" "31r: --lifecycle on the flat layout exits 0"
+assert_file_contains "${R31S}/.aid/works/work-001-demo/STATE.yml" "delivery_state: Gated" "31r: the flat delivery lifecycle is written to the work record"
+
 test_summary
 exit $?

@@ -2,8 +2,11 @@
 #
 # This is the PROJECT-LEVEL state file. It holds the project's question record
 # only (`qa`): the questions that belong to the project rather than to a work --
-# setup-skill questions (configure, connectors) and questions from skills that
-# keep no work record. A work's own questions stay in that work's STATE.yml.
+# setup-skill questions (configure, connectors) and questions from the other
+# skills that keep no work record and can run the writer (chat, and any skill
+# that is not building the Knowledge Base). Knowledge Base questions go to
+# .aid/knowledge/STATE.md, and ticket skills record nothing. A work's own
+# questions stay in that work's STATE.yml.
 # It is created on first use by `writeback-state.sh --ask --project`.
 #
 # Writer legend -- stated in full-line comments above each key, NEVER as a

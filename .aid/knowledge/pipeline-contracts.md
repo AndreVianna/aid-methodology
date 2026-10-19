@@ -237,7 +237,7 @@ allow, and it stops only at an `ASK`, a `WAIT`, a `PASS` or `CALL` that hands th
 
 Every step ends with exactly one advance ending on its `**Advance:**` line: one advance word, or
 `ASK then HALT`, which is one composite ending and not two words. A line that names only its next
-step is a `CHAIN`. The step a line names is a step of the same skill's table, by its name, never a
+step is a `CHAIN`, written `CHAIN → NAME`. The step a line names is a step of the same skill's table, by its name, never a
 part of a step. A step that has already read the user's answer may branch on one `CHAIN` line: one
 named step per case, and `HALT when ...` for the case on which the run ends. The words are internal
 and never shown to the user.
@@ -245,8 +245,8 @@ and never shown to the user.
 | Word | Meaning |
 |------|---------|
 | `CHAIN` | Go on to the next step now, in the same run. Used when nothing is for the user to decide at that point. |
-| `ASK` | Stop for the user through the question protocol (`canonical/aid/templates/question-protocol.md`). A question may come at any point of a step; a blocking one pauses the step where it stands, and the step stays saved. At the end of a step, `ASK` pauses there and names the one next step, which the work goes on to, and which is saved then, once every question is answered or skipped. Used only when no write that depends on the answer remains in the step. A resumed work asks its open questions first, then continues the same step. |
-| `ASK then HALT` | The run ends with a question that blocks the work, such as which skill to run next. The question stays open and any resume shows it first; once it is answered or skipped, the run ends as `HALT` does. |
+| `ASK` | Stop for the user through the question protocol (`canonical/aid/templates/question-protocol.md`). A question may come at any point of a step; a blocking one pauses the step where it stands, and the step stays saved. At the end of a step, `ASK` pauses there and names the one next step, which the work goes on to, and which is saved then, once every question is answered or skipped; an approval is never skipped, and stays open until the user approves or declines. `ASK` ends a step only when no write that depends on the answer remains in it; otherwise the question is a pause in the middle of the step, and the step ends with the advance that follows that work (`canonical/aid/templates/skill-steps.md`). A resumed work asks its open questions first, then continues the same step. |
+| `ASK then HALT` | The run ends with a question that blocks the work, such as which skill to run next. The question stays open and any resume shows it first; once it is answered or skipped (an approval is never skipped), the run ends as `HALT` does. |
 | `WAIT` | The user must act outside the conversation. Say what, plainly, and stop. The step stays saved and its detail says what is waited for; once the user says it is done, the work goes on to the step the line names. |
 | `PASS` | End of this skill's process. Hand the work to the next skill and start it in the same turn. |
 | `CALL` | In the middle of this skill's process. Hand the work to another skill, then come back to this step when it finishes. |

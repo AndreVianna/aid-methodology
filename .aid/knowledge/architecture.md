@@ -331,10 +331,11 @@ instead of restating. CONFIRMED via that file and the directory inventory.
   Building phase. The full per-skill step list is in
   [pipeline-contracts.md](pipeline-contracts.md) § Per-Skill State Machines.
 
-Today a skill hands the work on by `ASK` then `HALT`, which ends its run and names the next skill; the
-hand-off is then taken by a new run. The `PASS` (the next skill starts in the same turn) and `CALL` (the
-called skill returns to the caller's step) words are defined in `skill-steps.md`, and no skill's
-`**Advance:**` line uses them yet. Step names are never shown to the user; they appear only as the
+Today the phase skills hand the work on by `ASK` then `HALT`, which ends their run and names the next
+skill; the hand-off is then taken by a new run. Only `aid-orchestrate` ends a step with `PASS` (its
+START-ACTION and HAND-OVER steps start the next skill in the same turn). The `CALL` word (the called
+skill returns to the caller's step) is defined in `skill-steps.md`, and no skill's `**Advance:**` line
+uses it yet. Step names are never shown to the user; they appear only as the
 target of an advance line.
 
 ---

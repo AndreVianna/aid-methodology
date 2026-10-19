@@ -213,8 +213,8 @@ in the work-root `STATE.yml`'s `tasks_lifecycle` mapping instead.
 ## Project STATE.yml
 
 Source: `project-state-template.yml`. Lives at `.aid/STATE.yml`, one per project, created on first use by
-the writer's `--ask --project` mode. It holds only the question record of the setup skills (configure,
-connectors): `qa[]`, with the same entry shape as a work's `qa[]`. Its single writer is
+the writer's `--ask --project` mode. It holds only the question record of the skills that keep no work
+record and can run the writer (setting up the project: configure, connectors; and chat): `qa[]`, with the same entry shape as a work's `qa[]`. Its single writer is
 `writeback-state.sh` (`--ask --project` and `--answer --project`). It is not in the install manifest, so
 `aid update` never touches it, and `aid remove` does not delete it either: it keeps `.aid/` in place.
 
