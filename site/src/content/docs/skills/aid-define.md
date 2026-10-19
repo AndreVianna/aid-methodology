@@ -31,7 +31,7 @@ flowchart TB
   n1 -. "otherwise" .- n1
   n1 -->|"once the feature sections are written"| n2
   n2 -. "otherwise" .- n2
-  n2 -->|"once the cross-reference questions are answered"| n3
+  n2 -->|"once the cross-reference questions are answered and their answers applied"| n3
   n3 -->|"when the user picks [2"| n2
   class n1 aidEntry
   class n2 aidLoopBack
@@ -50,15 +50,15 @@ Every node in the chart above, in chart order, with the exact `canonical/` text 
 | FEATURE-DECOMPOSITION | `references/state-feature-decomposition.md` | `aid-architect` | CHAIN → CROSS-REFERENCE |
 ~~~~
 
-[Source: `canonical/skills/aid-define/SKILL.md#L249`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-define/SKILL.md#L249) · [full step: `canonical/skills/aid-define/references/state-feature-decomposition.md#L1-L25`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-define/references/state-feature-decomposition.md#L1-L25)
+[Source: `canonical/skills/aid-define/SKILL.md#L249`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-define/SKILL.md#L249) · [full step: `canonical/skills/aid-define/references/state-feature-decomposition.md#L1-L27`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-define/references/state-feature-decomposition.md#L1-L27)
 
 <a id="fragment-n2"></a>**2 · `CROSS-REFERENCE`** — Requirements are approved and features exist but… · _loop-back_
 
 ~~~~plaintext title="canonical/skills/aid-define/SKILL.md#L250" wrap
-| CROSS-REFERENCE | `references/state-cross-reference.md` | `aid-reviewer` | ASK → DONE |
+| CROSS-REFERENCE | `references/state-cross-reference.md` | `aid-reviewer` | CHAIN → DONE |
 ~~~~
 
-[Source: `canonical/skills/aid-define/SKILL.md#L250`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-define/SKILL.md#L250) · [full step: `canonical/skills/aid-define/references/state-cross-reference.md#L1-L44`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-define/references/state-cross-reference.md#L1-L44)
+[Source: `canonical/skills/aid-define/SKILL.md#L250`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-define/SKILL.md#L250) · [full step: `canonical/skills/aid-define/references/state-cross-reference.md#L1-L48`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-define/references/state-cross-reference.md#L1-L48)
 
 <a id="fragment-n3"></a>**3 · `DONE`** — Interview is complete, approved, features decomposed, and… · _exit_ · HALT
 
@@ -66,4 +66,4 @@ Every node in the chart above, in chart order, with the exact `canonical/` text 
 | DONE | `references/state-done.md` | `inline` | CHAIN → CROSS-REFERENCE when the user picks [2]; HALT when the user picks another option |
 ~~~~
 
-[Source: `canonical/skills/aid-define/SKILL.md#L251`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-define/SKILL.md#L251) · [full step: `canonical/skills/aid-define/references/state-done.md#L1-L42`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-define/references/state-done.md#L1-L42)
+[Source: `canonical/skills/aid-define/SKILL.md#L251`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-define/SKILL.md#L251) · [full step: `canonical/skills/aid-define/references/state-done.md#L1-L41`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-define/references/state-done.md#L1-L41)

@@ -59,7 +59,7 @@ Every node in the chart above, in chart order, with the exact `canonical/` text 
    command(s) do you want to design -- their shape, flags, and output?") and wait.
 2. **Allocate** through the Work Initiation Gate exactly as the contract's Allocation rule
    requires (`.agents/skills/aid-design/SKILL.md` INTAKE step 4 is the shape), with
-   `initiator: aid-design-cli`. `phase` is not driven.
+   `--skill aid-design-cli` given to the gate's `--create`. `phase` is not driven.
 3. **Acquire `.aid/design/`** per the contract, then read `.aid/design/cli.md` if a prior
    seed exists -- re-invocation iterates it rather than starting over.
 4. **Classify complexity** for the `aid-architect` dispatch (verifier tier >= producer).
@@ -89,7 +89,7 @@ production code** -- the `design` invariant (`design-lifecycle.md`).
 ## State: VERIFY
 
 **Full verify**, as `design-lifecycle.md` defines it. Not clean -> loop to DESIGN; the
-3-cycle circuit breaker there escalates to IMPEDIMENT + `lifecycle: Blocked`.
+3-cycle circuit breaker there escalates to IMPEDIMENT, and the lifecycle is set to `Blocked` through the writer.
 ~~~~
 
 [Source: `canonical/skills/aid-design-cli/SKILL.md#L69-L72`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-design-cli/SKILL.md#L69-L72) · [full step: `canonical/skills/aid-design-cli/SKILL.md#L69-L74`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-design-cli/SKILL.md#L69-L74)
@@ -99,7 +99,7 @@ production code** -- the `design` invariant (`design-lifecycle.md`).
 ~~~~plaintext title="canonical/skills/aid-design-cli/SKILL.md#L78-L81" wrap
 ## State: PRESENT (hard stop -- the user decides)
 
-Set `lifecycle: Paused-Awaiting-Input`. Present the seed clearly. Assert no resolution --
+Set the lifecycle to `Paused-Awaiting-Input` through the writer. Present the seed clearly. Assert no resolution --
 the user iterates (re-invoke this skill) or realizes it now (`/aid-create-cli`).
 ~~~~
 
@@ -110,7 +110,7 @@ the user iterates (re-invoke this skill) or realizes it now (`/aid-create-cli`).
 ~~~~plaintext title="canonical/skills/aid-design-cli/SKILL.md#L87-L90" wrap
 ## State: DONE
 
-Set `lifecycle: Completed`, `updated` now, append a `## Lifecycle History` row. The seed
+Set the lifecycle to `Completed` through the writer, `updated` now, append a `## Lifecycle History` row. The seed
 persists at `.aid/design/cli.md`; consumption happens at `/aid-create-cli`.
 ~~~~
 

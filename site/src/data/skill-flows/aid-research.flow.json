@@ -66,9 +66,9 @@
       "detail": {
         "file": "canonical/skills/aid-research/SKILL.md",
         "startLine": 71,
-        "endLine": 86,
+        "endLine": 89,
         "sourceKind": "skill",
-        "excerpt": "## State: ALLOCATE\n\nAllocate the work through the gate: the Work Initiation Gate\n(`.aid/runtime/templates/work-initiation-gate.md`).\n\n- **New work:** call the gate's `§ 3a` with the user's words, this skill's name (`aid-research`),\n  its saved step (`INVESTIGATE`), the step the work continues at once it exists (INTAKE and INTAKE-ASK run before the record and save nothing), `--path lite`, and a kebab-case slug from the question. The gate's `§ 3a` step 2 creates and enters the worktree\n  (`worktree-lifecycle.sh create <work-id> <name>`),\n  **then** allocate (`.aid/works/<work-id>-<slug>/`) the work folder and write its record through\n  the writer, before it hands back: \"`STATE.yml` was created by the gate;\n  skip any instruction to write `initiator`, `active_skill`, `lifecycle` or `phase` by hand;\n  set other keys through the writer.\" This skill drives no `phase`. Associate a git worktree only\n  if a spike is later authorized (PROPOSE-SPIKE).\n- **Continuation:** On continuation, follow the gate's § 3b: enter the chosen work's worktree and run the skill its record names, at its saved step.\n\n**Advance:** CHAIN -> [State: INVESTIGATE]."
+        "excerpt": "## State: ALLOCATE\n\nAllocate the work through the gate: the Work Initiation Gate\n(`.aid/runtime/templates/work-initiation-gate.md`).\n\n- **New work:** call the gate's `§ 3a` with the user's words, this skill's name (`aid-research`),\n  its saved step (`INVESTIGATE`), the step the work continues at once it exists (INTAKE and INTAKE-ASK run before the record and save nothing), `--path lite`, and a kebab-case slug from the question. The gate's `§ 3a` step 2 creates and enters the worktree\n  (`worktree-lifecycle.sh create <work-id> <name>`),\n  **then** allocate (`.aid/works/<work-id>-<slug>/`) the work folder and write its record through\n  the writer, before it hands back: \"`STATE.yml` was created by the gate;\n  skip any instruction to write `initiator`, `active_skill`, `lifecycle` or `phase` by hand;\n  set other keys through the writer.\" This skill drives no `phase`. Associate a git worktree only\n  if a spike is later authorized (PROPOSE-SPIKE).\n- **Continuation:** On continuation, follow the gate's § 3b: enter the chosen work's worktree and run the skill its record names, at its saved step.\n\nEvery `--step` call in this skill passes in its `--detail` the scoped question, the path and the complexity tier, so a\nresume finds them in the record.\n\n**Advance:** CHAIN -> [State: INVESTIGATE]."
       }
     },
     {
@@ -80,15 +80,15 @@
       "terminal": null,
       "provenance": {
         "file": "canonical/skills/aid-research/SKILL.md",
-        "startLine": 90,
-        "endLine": 93,
+        "startLine": 93,
+        "endLine": 96,
         "sourceKind": "skill",
         "excerpt": "## State: INVESTIGATE\n\nDispatch **`aid-researcher`** (clean context, model+effort from INTAKE Step 3) to gather\nand curate the evidence:"
       },
       "detail": {
         "file": "canonical/skills/aid-research/SKILL.md",
-        "startLine": 90,
-        "endLine": 107,
+        "startLine": 93,
+        "endLine": 110,
         "sourceKind": "skill",
         "excerpt": "## State: INVESTIGATE\n\nDispatch **`aid-researcher`** (clean context, model+effort from INTAKE Step 3) to gather\nand curate the evidence:\n\n- **Two-tier grounding (enforced):** read the KB (`.aid/knowledge/`) + the project source\n  as the **authoritative** base; enrich with external/web sources as needed, **cited with\n  URL + access date**. Every project claim cites a KB doc or `file:line`; every external\n  claim cites a URL+date.\n- It writes a structured `RESEARCH.md` into the work folder (see [Response shape](#response-shape)).\n\n**Spike escalation (conditional, human-authorized).** Default is **analytical-with-\nhandoff** -- no code is written. If the researcher determines a gap genuinely cannot be\nclosed on paper, it returns a **spike proposal** instead of a final answer; the step then\ngoes to **PROPOSE-SPIKE**. Otherwise it goes on to VERIFY.\n\n**Advance:** CHAIN -> [State: VERIFY]; when the researcher returned a spike proposal,\nCHAIN -> [State: PROPOSE-SPIKE] instead."
       }
@@ -102,15 +102,15 @@
       "terminal": null,
       "provenance": {
         "file": "canonical/skills/aid-research/SKILL.md",
-        "startLine": 111,
-        "endLine": 117,
+        "startLine": 114,
+        "endLine": 120,
         "sourceKind": "skill",
         "excerpt": "## State: PROPOSE-SPIKE  (only when a spike is proposed; the user decides)\n\nPresent *what* the spike would build, *where* (isolated in the work folder / opt-in worktree,\nnever touching production), and *what it would learn*. Ask the user to authorize or decline it.\nOnce the user answers: on **authorization** -> re-dispatch `aid-researcher` to write the\nthrowaway spike (isolated) and fold the finding into `RESEARCH.md`; on **decline** -> proceed\nanalytically and state the resulting limit in the Gaps section."
       },
       "detail": {
         "file": "canonical/skills/aid-research/SKILL.md",
-        "startLine": 111,
-        "endLine": 119,
+        "startLine": 114,
+        "endLine": 122,
         "sourceKind": "skill",
         "excerpt": "## State: PROPOSE-SPIKE  (only when a spike is proposed; the user decides)\n\nPresent *what* the spike would build, *where* (isolated in the work folder / opt-in worktree,\nnever touching production), and *what it would learn*. Ask the user to authorize or decline it.\nOnce the user answers: on **authorization** -> re-dispatch `aid-researcher` to write the\nthrowaway spike (isolated) and fold the finding into `RESEARCH.md`; on **decline** -> proceed\nanalytically and state the resulting limit in the Gaps section.\n\n**Advance:** ASK -> [State: VERIFY]."
       }
@@ -124,15 +124,15 @@
       "terminal": null,
       "provenance": {
         "file": "canonical/skills/aid-research/SKILL.md",
-        "startLine": 123,
-        "endLine": 137,
+        "startLine": 126,
+        "endLine": 140,
         "sourceKind": "skill",
         "excerpt": "## State: VERIFY  (who reviews the researcher)\n\n1. **Mechanical grounding check** (no dispatch): every project claim carries a KB/source\n   cite; every external claim a URL+date; the **Conflicts** and **Gaps** sections exist\n   (empty-but-present is allowed; silently-omitted is not).\n2. **Adversarial verification** -- dispatch a clean-context **`aid-reviewer`** to check\n   `RESEARCH.md`: claims grounded and correctly attributed; conclusions evidence-backed\n   and **not overstated into resolutions**; every KB<->web conflict surfaced with its\n   reason; no material angle of the question left silently unaddressed. It writes a\n   review-quality 7-column ledger (`reviewer-ledger-schema.md`) to\n   `.aid/.temp/review-pending/<work>-verify.md`.\n3. **Grade the response:** `bash .aid/runtime/scripts/grade.sh --explain <ledger>`. Not\n   clean -> loop back to INVESTIGATE for the researcher to revise. **Circuit-breaker: 3\n   cycles** -> write `.aid/works/{work}/IMPEDIMENT-research.md`, and set the lifecycle to `Blocked` through the writer,\n   surface it."
       },
       "detail": {
         "file": "canonical/skills/aid-research/SKILL.md",
-        "startLine": 123,
-        "endLine": 141,
+        "startLine": 126,
+        "endLine": 144,
         "sourceKind": "skill",
         "excerpt": "## State: VERIFY  (who reviews the researcher)\n\n1. **Mechanical grounding check** (no dispatch): every project claim carries a KB/source\n   cite; every external claim a URL+date; the **Conflicts** and **Gaps** sections exist\n   (empty-but-present is allowed; silently-omitted is not).\n2. **Adversarial verification** -- dispatch a clean-context **`aid-reviewer`** to check\n   `RESEARCH.md`: claims grounded and correctly attributed; conclusions evidence-backed\n   and **not overstated into resolutions**; every KB<->web conflict surfaced with its\n   reason; no material angle of the question left silently unaddressed. It writes a\n   review-quality 7-column ledger (`reviewer-ledger-schema.md`) to\n   `.aid/.temp/review-pending/<work>-verify.md`.\n3. **Grade the response:** `bash .aid/runtime/scripts/grade.sh --explain <ledger>`. Not\n   clean -> loop back to INVESTIGATE for the researcher to revise. **Circuit-breaker: 3\n   cycles** -> write `.aid/works/{work}/IMPEDIMENT-research.md`, and set the lifecycle to `Blocked` through the writer,\n   surface it.\n\n(Single grade -- the response *is* the deliverable; there is no separate target artifact.)\n\n**Advance:** CHAIN -> [State: PRESENT]."
       }
@@ -146,15 +146,15 @@
       "terminal": null,
       "provenance": {
         "file": "canonical/skills/aid-research/SKILL.md",
-        "startLine": 145,
-        "endLine": 150,
+        "startLine": 148,
+        "endLine": 153,
         "sourceKind": "skill",
         "excerpt": "## State: PRESENT  (always a hard stop -- the user resolves)\n\nThe hard stop follows the ASK step of `skill-steps.md`. Present `RESEARCH.md` **clearly and simply**:\nthe in-depth answer, conclusions (positive **and** negative), conflicts/contradictions\n**with their reasons**, and gaps. Assert no resolution -- the user decides. Negatives and\ngaps are first-class, never buried under positives."
       },
       "detail": {
         "file": "canonical/skills/aid-research/SKILL.md",
-        "startLine": 145,
-        "endLine": 152,
+        "startLine": 148,
+        "endLine": 155,
         "sourceKind": "skill",
         "excerpt": "## State: PRESENT  (always a hard stop -- the user resolves)\n\nThe hard stop follows the ASK step of `skill-steps.md`. Present `RESEARCH.md` **clearly and simply**:\nthe in-depth answer, conclusions (positive **and** negative), conflicts/contradictions\n**with their reasons**, and gaps. Assert no resolution -- the user decides. Negatives and\ngaps are first-class, never buried under positives.\n\n**Advance:** ASK -> [State: HANDOFF]."
       }
@@ -168,15 +168,15 @@
       "terminal": null,
       "provenance": {
         "file": "canonical/skills/aid-research/SKILL.md",
-        "startLine": 156,
-        "endLine": 163,
+        "startLine": 159,
+        "endLine": 166,
         "sourceKind": "skill",
         "excerpt": "## State: HANDOFF  (optional; printed suggestions only)\n\nOffer the natural next steps as **printed suggestions**, each requiring the user to act:\nrecord an ADR (`/aid-document-decision` -> once landed, `/aid-create-document`), update the\nKB (`/aid-update-kb`), act on a conclusion (`/aid-create*` / `/aid-update*`), or comment on\na source ticket (`/aid-update-ticket comment [<connector>:]<ticket-id> <text>`). Never\nauto-invoked; never a resolution. Ask which one, if any, the user takes; a picked one is named\nin one plain line."
       },
       "detail": {
         "file": "canonical/skills/aid-research/SKILL.md",
-        "startLine": 156,
-        "endLine": 165,
+        "startLine": 159,
+        "endLine": 168,
         "sourceKind": "skill",
         "excerpt": "## State: HANDOFF  (optional; printed suggestions only)\n\nOffer the natural next steps as **printed suggestions**, each requiring the user to act:\nrecord an ADR (`/aid-document-decision` -> once landed, `/aid-create-document`), update the\nKB (`/aid-update-kb`), act on a conclusion (`/aid-create*` / `/aid-update*`), or comment on\na source ticket (`/aid-update-ticket comment [<connector>:]<ticket-id> <text>`). Never\nauto-invoked; never a resolution. Ask which one, if any, the user takes; a picked one is named\nin one plain line.\n\n**Advance:** ASK -> [State: DONE]."
       }
@@ -193,15 +193,15 @@
       },
       "provenance": {
         "file": "canonical/skills/aid-research/SKILL.md",
-        "startLine": 169,
-        "endLine": 171,
+        "startLine": 172,
+        "endLine": 174,
         "sourceKind": "skill",
         "excerpt": "## State: DONE\n\nFinish through the writer: `bash .aid/runtime/scripts/execute/writeback-state.sh --pipeline --field Lifecycle --value Completed`, which also clears the saved skill and step. Keep the work folder (`RESEARCH.md`, any spike scratch, the verify ledger) as the audit record."
       },
       "detail": {
         "file": "canonical/skills/aid-research/SKILL.md",
-        "startLine": 169,
-        "endLine": 173,
+        "startLine": 172,
+        "endLine": 176,
         "sourceKind": "skill",
         "excerpt": "## State: DONE\n\nFinish through the writer: `bash .aid/runtime/scripts/execute/writeback-state.sh --pipeline --field Lifecycle --value Completed`, which also clears the saved skill and step. Keep the work folder (`RESEARCH.md`, any spike scratch, the verify ledger) as the audit record.\n\n**Advance:** HALT."
       }
@@ -258,8 +258,8 @@
       "advanceType": "CHAIN",
       "provenance": {
         "file": "canonical/skills/aid-research/SKILL.md",
-        "startLine": 86,
-        "endLine": 86,
+        "startLine": 89,
+        "endLine": 89,
         "sourceKind": "skill",
         "excerpt": "**Advance:** CHAIN -> [State: INVESTIGATE]."
       }
@@ -272,8 +272,8 @@
       "advanceType": "CHAIN",
       "provenance": {
         "file": "canonical/skills/aid-research/SKILL.md",
-        "startLine": 106,
-        "endLine": 107,
+        "startLine": 109,
+        "endLine": 110,
         "sourceKind": "skill",
         "excerpt": "**Advance:** CHAIN -> [State: VERIFY]; when the researcher returned a spike proposal,\nCHAIN -> [State: PROPOSE-SPIKE] instead."
       }
@@ -286,8 +286,8 @@
       "advanceType": "CHAIN",
       "provenance": {
         "file": "canonical/skills/aid-research/SKILL.md",
-        "startLine": 106,
-        "endLine": 107,
+        "startLine": 109,
+        "endLine": 110,
         "sourceKind": "skill",
         "excerpt": "**Advance:** CHAIN -> [State: VERIFY]; when the researcher returned a spike proposal,\nCHAIN -> [State: PROPOSE-SPIKE] instead."
       }
@@ -300,8 +300,8 @@
       "advanceType": "ASK",
       "provenance": {
         "file": "canonical/skills/aid-research/SKILL.md",
-        "startLine": 119,
-        "endLine": 119,
+        "startLine": 122,
+        "endLine": 122,
         "sourceKind": "skill",
         "excerpt": "**Advance:** ASK -> [State: VERIFY]."
       }
@@ -314,8 +314,8 @@
       "advanceType": "UNSPECIFIED",
       "provenance": {
         "file": "canonical/skills/aid-research/SKILL.md",
-        "startLine": 135,
-        "endLine": 135,
+        "startLine": 138,
+        "endLine": 138,
         "sourceKind": "skill",
         "excerpt": "   clean -> loop back to INVESTIGATE for the researcher to revise. **Circuit-breaker: 3"
       }
@@ -328,8 +328,8 @@
       "advanceType": "CHAIN",
       "provenance": {
         "file": "canonical/skills/aid-research/SKILL.md",
-        "startLine": 141,
-        "endLine": 141,
+        "startLine": 144,
+        "endLine": 144,
         "sourceKind": "skill",
         "excerpt": "**Advance:** CHAIN -> [State: PRESENT]."
       }
@@ -342,8 +342,8 @@
       "advanceType": "ASK",
       "provenance": {
         "file": "canonical/skills/aid-research/SKILL.md",
-        "startLine": 152,
-        "endLine": 152,
+        "startLine": 155,
+        "endLine": 155,
         "sourceKind": "skill",
         "excerpt": "**Advance:** ASK -> [State: HANDOFF]."
       }
@@ -356,8 +356,8 @@
       "advanceType": "ASK",
       "provenance": {
         "file": "canonical/skills/aid-research/SKILL.md",
-        "startLine": 165,
-        "endLine": 165,
+        "startLine": 168,
+        "endLine": 168,
         "sourceKind": "skill",
         "excerpt": "**Advance:** ASK -> [State: DONE]."
       }

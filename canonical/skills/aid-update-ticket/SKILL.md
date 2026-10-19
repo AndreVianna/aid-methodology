@@ -108,7 +108,9 @@ reaches COMPOSE/CONFIRM/WRITE for that attempt.
 capability gap, not an error) is a *different*, expected outcome — see Status Validation below,
 which is the only place that distinction matters.
 
-**Advance:** **CHAIN** → COMPOSE. A missing file is asked in the step first; the step carries on once it is answered.
+A missing file is asked inside this step, and the step goes on once the user answers.
+
+**Advance:** **CHAIN** → COMPOSE.
 
 ### State 4 — COMPOSE
 
@@ -169,14 +171,14 @@ The stop, for every case:
    option the user did not pick, and never retries a blocked file. A chosen option (a) is a fresh
    `comment` mutation and goes through COMPOSE and CONFIRM as one.
 
-**Advance:** **CHAIN** → CONFIRM.
+**Advance:** **CHAIN** → CONFIRM; **HALT** when the status has no matching transition, or the user ends the run at the attachment stop.
 
 ### State 5 — CONFIRM
 
 A single in-invocation confirm, asked and answered inline before WRITE — the skill never exits
 mid-run to collect this answer (`ticket-resolution.md` § "Write Preview + Confirm Gate";
-[`skill-steps.md`](../../aid/templates/skill-steps.md) § "The advance words" — the user decides
-here, so the step advances with `ASK`). Show the
+[`skill-steps.md`](../../aid/templates/skill-steps.md) § "The step procedure" part 3 — the user decides
+here, so the question pauses the step where it stands, and the step then branches on the answer). Show the
 **exact** change for whichever PART is being mutated:
 
 - **`description`** → the before/after pair from COMPOSE.
@@ -196,11 +198,11 @@ Close with the shared reference's confirm-gate button row, reused **verbatim**
 
 - **`[1] File it`** → proceed to WRITE.
 - **`[2] Edit`** → collect a revised **CONTENT** for the same **PART**/**REF** and re-run
-  COMPOSE → Status Validation (if applicable) → CONFIRM against it — still inline, still ASK.
+  COMPOSE → Status Validation (if applicable) → CONFIRM against it — still inline.
   For `attachment`, a revised CONTENT re-runs LOAD-CONTEXT's preview as well.
 - **`[3] Cancel`** → exit. No MCP call is made.
 
-**Advance:** **ASK** → WRITE on `[1] File it`; `[2] Edit` goes back to COMPOSE, and `[3] Cancel` ends the run with **HALT**.
+**Advance:** **CHAIN** → WRITE when the user files it; **CHAIN** → COMPOSE when the user edits it; **HALT** when the user cancels.
 
 ### State 6 — WRITE
 
@@ -219,9 +221,9 @@ Attachment Tool Limit stop above, which names the files that did not go in and d
 them. This is distinct from — and, for `status`, can only be reached *after* — the Status
 Validation branch above, which can already have stopped the run before CONFIRM was ever asked.
 
----
-
 **Advance:** **HALT**, after the one mutation call (or its failure) is reported.
+
+---
 
 ## Worked examples
 

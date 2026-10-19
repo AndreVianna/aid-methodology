@@ -57,7 +57,7 @@ Every node in the chart above, in chart order, with the exact `canonical/` text 
 
 1. **Allocate** through the Work Initiation Gate exactly as the contract's Allocation rule
    requires (`.agents/skills/aid-design/SKILL.md` INTAKE step 4 is the shape), with
-   `initiator: aid-create-architecture`. `phase` is not driven.
+   `--skill aid-create-architecture` given to the gate's `--create`. `phase` is not driven.
 2. **Read the seed** at `.aid/design/architecture.md`.
 3. **Resolve the destination by concern, not filename.** This skill binds concern **C1**
    (build & shape, `.aid/runtime/templates/kb-authoring/concern-model.md`). The seed's
@@ -89,7 +89,7 @@ Every node in the chart above, in chart order, with the exact `canonical/` text 
 ## State: VERIFY
 
 **Full verify**, as `design-lifecycle.md` defines it. Not clean -> loop to CREATE; the
-3-cycle circuit breaker there escalates to IMPEDIMENT + `lifecycle: Blocked`.
+3-cycle circuit breaker there escalates to IMPEDIMENT, and the lifecycle is set to `Blocked` through the writer.
 ~~~~
 
 [Source: `canonical/skills/aid-create-architecture/SKILL.md#L110-L113`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-create-architecture/SKILL.md#L110-L113) · [full step: `canonical/skills/aid-create-architecture/SKILL.md#L110-L115`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-create-architecture/SKILL.md#L110-L115)
@@ -99,7 +99,7 @@ Every node in the chart above, in chart order, with the exact `canonical/` text 
 ~~~~plaintext title="canonical/skills/aid-create-architecture/SKILL.md#L119-L123" wrap
 ## State: PRESENT (hard stop -- the user decides)
 
-Set `lifecycle: Paused-Awaiting-Input`. Present the realized document and assert: the seed
+Set the lifecycle to `Paused-Awaiting-Input` through the writer. Present the realized document and assert: the seed
 was consumed only for what was written; on the creation path both registration surfaces were
 written; and anything routed to `/aid-update-architecture` is named.
 ~~~~
@@ -111,7 +111,7 @@ written; and anything routed to `/aid-update-architecture` is named.
 ~~~~plaintext title="canonical/skills/aid-create-architecture/SKILL.md#L129-L131" wrap
 ## State: DONE
 
-Set `lifecycle: Completed`, `updated` now, append a `## Lifecycle History` row.
+Set the lifecycle to `Completed` through the writer, `updated` now, append a `## Lifecycle History` row.
 ~~~~
 
 [Source: `canonical/skills/aid-create-architecture/SKILL.md#L129-L131`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-create-architecture/SKILL.md#L129-L131) · [full step: `canonical/skills/aid-create-architecture/SKILL.md#L129-L131`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-create-architecture/SKILL.md#L129-L131)

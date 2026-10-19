@@ -29,10 +29,9 @@ gate resumes at the stalled stage — not job 1.
 on-demand skill (REQUIREMENTS.md FR6). It is NOT inserted into the phase-to-skill
 pipeline mapping and no phase gate references it.
 
-**State machine — each `/aid-housekeep` invocation drives the state machine until
-it reaches an ASK, WAIT or HALT per
-[`.aid/runtime/templates/skill-steps.md`](../../aid/templates/skill-steps.md).
-Mechanical states CHAIN; only ASK, WAIT and HALT stop the run.**
+**State machine — the steps move by
+[`.aid/runtime/templates/skill-steps.md`](../../aid/templates/skill-steps.md), which sets the
+advance words and what each one does.**
 
 > ```
 > aid-housekeep  ▸ one step per run
@@ -233,7 +232,7 @@ aid-housekeep  ▸ you are here
 
 | State | Detail | Worker | Advance |
 |-------|--------|--------|---------|
-| PREFLIGHT | `references/state-preflight.md` | inline | CHAIN → KB-DELTA (or CLEANUP if Mode=cleanup-only) |
+| PREFLIGHT | `references/state-preflight.md` | inline | CHAIN → CLEANUP if Mode=cleanup-only; otherwise CHAIN → KB-DELTA |
 | KB-DELTA | `references/state-kb-delta.md` | `aid-architect` (feat-002 dispatches sub-agents via `/aid-discover`) | CHAIN → SUMMARY-DELTA / WAIT if stalled (the scope question is asked inside the step) |
 | SUMMARY-DELTA | `references/state-summary-delta.md` | inline (delegates to `/aid-summarize`) | CHAIN → CLEANUP / WAIT if stalled |
 | CLEANUP | `references/state-cleanup.md` | inline | CHAIN → DONE (the checklist and teardown offers are asked inside the step) |
@@ -249,5 +248,4 @@ aid-housekeep  ▸ you are here
 On state entry, print `[State: NAME]` + the "you are here" map from State Detection above.
 When a state completes, its `**Advance:**` line decides the next move, as [`skill-steps.md`](../../aid/templates/skill-steps.md) § The advance words sets it. A HALT with an open call returns to the caller.
 
-> **Step rules:** Each `/aid-housekeep` invocation drives the state machine until it
-> reaches its stop words, as `skill-steps.md` § The advance words sets them.
+> **Step rules:** The steps move as `skill-steps.md` § The advance words sets.

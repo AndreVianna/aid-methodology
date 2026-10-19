@@ -69,8 +69,8 @@ Teach-back: {verdict}, Act-back: {verdict}).
 [2] Additional consideration / re-scope: ___
 ```
 
-Wait for the user's explicit response. Do not advance until a response is
-received.
+Wait for the user's explicit response. This approval cannot be skipped: the question
+pauses the step where it stands, and the step does not go on until the user answers.
 
 ---
 
@@ -88,7 +88,7 @@ Update the run-state file:
 
 Print: `[APPROVAL] Approved. Advancing to DONE.`
 
-**Advance:** ASK -> DONE (continue inline once `[1] Approved` is answered).
+The step ends with CHAIN to DONE (see the Advance line at the end of this file).
 
 ---
 
@@ -147,7 +147,8 @@ Print:
 ```
 [APPROVAL] Consideration recorded as Q{N} in .aid/knowledge/STATE.md --
 re-scoping via SCOPE/CONFIRM (not a blind return to APPLY).
-Run /aid-update-kb again to address it and return to this gate.
 ```
 
-**Advance:** CHAIN -- return to SCOPE (or ANALYZE) in this invocation; SCOPE auto-chains to CONFIRM once it has re-planned.
+SCOPE auto-chains to CONFIRM once it has re-planned.
+
+**Advance:** CHAIN -> DONE when the user approves; CHAIN -> SCOPE when the user adds a consideration; CHAIN -> ANALYZE when the consideration challenges the Understanding itself.

@@ -26,7 +26,7 @@ flowchart TB
   classDef aidLoopBack fill:#1e3a8a,stroke:#1e3a8a,color:#fff
   classDef aidStep fill:#1a2035,stroke:#d4a853,color:#f1f5f9
   n1(["PREFLIGHT<br/>PREFLIGHT is the synchronous gate that verifies all…"])
-  n2(["STALE-CHECK<br/>STALE-CHECK compares the KB review date against the last…"])
+  n2{"STALE-CHECK"}
   n3["PROFILE<br/>PROFILE reads the doc-set and domain from feature-014…"]
   n4["GENERATE<br/>GENERATE builds kb.html from KB content using the resolved…"]
   n5{"VALIDATE"}
@@ -36,19 +36,21 @@ flowchart TB
   n9["WRITEBACK<br/>WRITEBACK atomically records the approved summarization…"]
   n10(["DONE<br/>DONE confirms the summarization is complete and the…"])
   n1 --> n2
-  n2 --> n3
+  n2 -->|"when the result is STALE"| n3
+  n2 -->|"when it is CURRENT_UNAPPROVED"| n8
+  n2 -->|"when it is CURRENT_APPROVED (the DONE-IDEMPOTENT branch"| n10
   n3 --> n4
   n4 --> n5
   n5 -->|"if Machine Grade &gt;= minimum"| n6
   n5 -->|"otherwise"| n7
-  n6 -->|"otherwise, once every question is answered"| n7
+  n6 -->|"otherwise"| n7
   n6 -->|"when Overall Grade ≥ minimum"| n8
   n7 --> n5
-  n8 -->|"changes needed"| n7
-  n8 -->|"approved"| n9
+  n8 -->|"when changes are needed"| n7
+  n8 -->|"when the user approves"| n9
   n9 --> n10
   class n1 aidEntry
-  class n2 aidExit
+  class n2 aidDecision
   class n3 aidStep
   class n4 aidStep
   class n5 aidDecision
@@ -80,10 +82,10 @@ Every node in the chart above, in chart order, with the exact `canonical/` text 
 
 [Source: `canonical/skills/aid-summarize/SKILL.md#L179`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-summarize/SKILL.md#L179) · [full step: `canonical/skills/aid-summarize/references/state-preflight.md#L1-L24`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-summarize/references/state-preflight.md#L1-L24)
 
-<a id="fragment-n2"></a>**2 · `STALE-CHECK`** — STALE-CHECK compares the KB review date against the last… · _exit_ · HALT
+<a id="fragment-n2"></a>**2 · `STALE-CHECK`** — STALE-CHECK compares the KB review date against the last… · _decision_
 
 ~~~~plaintext title="canonical/skills/aid-summarize/SKILL.md#L180" wrap
-| STALE-CHECK | `references/state-stale-check.md` | inline | CHAIN → PROFILE |
+| STALE-CHECK | `references/state-stale-check.md` | inline | CHAIN → PROFILE (stale) / CHAIN → APPROVAL (current, not approved) / CHAIN → DONE (current and approved) |
 ~~~~
 
 [Source: `canonical/skills/aid-summarize/SKILL.md#L180`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-summarize/SKILL.md#L180) · [full step: `canonical/skills/aid-summarize/references/state-stale-check.md#L1-L33`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-summarize/references/state-stale-check.md#L1-L33)
@@ -115,7 +117,7 @@ Every node in the chart above, in chart order, with the exact `canonical/` text 
 <a id="fragment-n6"></a>**6 · `MANUAL-CHECKLIST`** — MANUAL-CHECKLIST elicits human-judgment answers for the… · _decision_
 
 ~~~~plaintext title="canonical/skills/aid-summarize/SKILL.md#L184" wrap
-| MANUAL-CHECKLIST | `references/state-manual-checklist.md` | inline | ASK → APPROVAL (Overall grade ≥ min) / ASK → FIX (otherwise) |
+| MANUAL-CHECKLIST | `references/state-manual-checklist.md` | inline | CHAIN → APPROVAL (Overall grade ≥ min) / CHAIN → FIX (otherwise) |
 ~~~~
 
 [Source: `canonical/skills/aid-summarize/SKILL.md#L184`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-summarize/SKILL.md#L184) · [full step: `canonical/skills/aid-summarize/references/state-manual-checklist.md#L1-L40`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-summarize/references/state-manual-checklist.md#L1-L40)
@@ -131,10 +133,10 @@ Every node in the chart above, in chart order, with the exact `canonical/` text 
 <a id="fragment-n8"></a>**8 · `APPROVAL`** — APPROVAL presents the graded summary to the user for final… · _exit_ · HALT
 
 ~~~~plaintext title="canonical/skills/aid-summarize/SKILL.md#L186" wrap
-| APPROVAL | `references/state-approval.md` | inline | ASK → WRITEBACK (approved) / HALT (rejected) / ASK → FIX (changes needed) |
+| APPROVAL | `references/state-approval.md` | inline | CHAIN → WRITEBACK (approved) / CHAIN → FIX (changes needed) / HALT (rejected) |
 ~~~~
 
-[Source: `canonical/skills/aid-summarize/SKILL.md#L186`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-summarize/SKILL.md#L186) · [full step: `canonical/skills/aid-summarize/references/state-approval.md#L1-L54`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-summarize/references/state-approval.md#L1-L54)
+[Source: `canonical/skills/aid-summarize/SKILL.md#L186`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-summarize/SKILL.md#L186) · [full step: `canonical/skills/aid-summarize/references/state-approval.md#L1-L57`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-summarize/references/state-approval.md#L1-L57)
 
 <a id="fragment-n9"></a>**9 · `WRITEBACK`** — WRITEBACK atomically records the approved summarization… · _step_
 

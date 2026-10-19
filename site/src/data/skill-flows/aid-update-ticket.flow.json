@@ -42,7 +42,7 @@
       "order": 3,
       "name": "LOAD-CONTEXT",
       "label": "LOAD-CONTEXT",
-      "kind": "loop-back",
+      "kind": "step",
       "terminal": null,
       "provenance": {
         "file": "canonical/skills/aid-update-ticket/SKILL.md",
@@ -58,12 +58,15 @@
       "order": 4,
       "name": "COMPOSE",
       "label": "COMPOSE",
-      "kind": "step",
-      "terminal": null,
+      "kind": "exit",
+      "terminal": {
+        "advanceType": "HALT",
+        "handoff": "when the status has no matching transition, or the user ends the run at the attachment stop"
+      },
       "provenance": {
         "file": "canonical/skills/aid-update-ticket/SKILL.md",
-        "startLine": 113,
-        "endLine": 113,
+        "startLine": 115,
+        "endLine": 115,
         "sourceKind": "skill",
         "excerpt": "### State 4 — COMPOSE"
       },
@@ -74,12 +77,15 @@
       "order": 5,
       "name": "CONFIRM",
       "label": "CONFIRM",
-      "kind": "loop-back",
-      "terminal": null,
+      "kind": "exit",
+      "terminal": {
+        "advanceType": "HALT",
+        "handoff": "when the user cancels"
+      },
       "provenance": {
         "file": "canonical/skills/aid-update-ticket/SKILL.md",
-        "startLine": 174,
-        "endLine": 174,
+        "startLine": 176,
+        "endLine": 176,
         "sourceKind": "skill",
         "excerpt": "### State 5 — CONFIRM"
       },
@@ -97,8 +103,8 @@
       },
       "provenance": {
         "file": "canonical/skills/aid-update-ticket/SKILL.md",
-        "startLine": 205,
-        "endLine": 205,
+        "startLine": 207,
+        "endLine": 207,
         "sourceKind": "skill",
         "excerpt": "### State 6 — WRITE"
       },
@@ -136,30 +142,16 @@
     },
     {
       "from": "n3",
-      "to": "n3",
-      "kind": "loop-back",
-      "condition": "otherwise",
-      "advanceType": "UNSPECIFIED",
-      "provenance": {
-        "file": "canonical/skills/aid-update-ticket/SKILL.md",
-        "startLine": 111,
-        "endLine": 111,
-        "sourceKind": "skill",
-        "excerpt": "**Advance:** **CHAIN** → COMPOSE. A missing file is asked in the step first; the step carries on once it is answered."
-      }
-    },
-    {
-      "from": "n3",
       "to": "n4",
-      "kind": "branch",
-      "condition": "A missing file is asked in the step first; the step carries once it is answered",
+      "kind": "sequence",
+      "condition": null,
       "advanceType": "CHAIN",
       "provenance": {
         "file": "canonical/skills/aid-update-ticket/SKILL.md",
-        "startLine": 111,
-        "endLine": 111,
+        "startLine": 113,
+        "endLine": 113,
         "sourceKind": "skill",
-        "excerpt": "**Advance:** **CHAIN** → COMPOSE. A missing file is asked in the step first; the step carries on once it is answered."
+        "excerpt": "**Advance:** **CHAIN** → COMPOSE."
       }
     },
     {
@@ -170,38 +162,38 @@
       "advanceType": "CHAIN",
       "provenance": {
         "file": "canonical/skills/aid-update-ticket/SKILL.md",
-        "startLine": 172,
-        "endLine": 172,
+        "startLine": 174,
+        "endLine": 174,
         "sourceKind": "skill",
-        "excerpt": "**Advance:** **CHAIN** → CONFIRM."
+        "excerpt": "**Advance:** **CHAIN** → CONFIRM; **HALT** when the status has no matching transition, or the user ends the run at the attachment stop."
       }
     },
     {
       "from": "n5",
       "to": "n4",
       "kind": "loop-back",
-      "condition": "goes back to , and ends the run with",
-      "advanceType": "HALT",
+      "condition": "when the user edits it",
+      "advanceType": "CHAIN",
       "provenance": {
         "file": "canonical/skills/aid-update-ticket/SKILL.md",
-        "startLine": 203,
-        "endLine": 203,
+        "startLine": 205,
+        "endLine": 205,
         "sourceKind": "skill",
-        "excerpt": "**Advance:** **ASK** → WRITE on `[1] File it`; `[2] Edit` goes back to COMPOSE, and `[3] Cancel` ends the run with **HALT**."
+        "excerpt": "**Advance:** **CHAIN** → WRITE when the user files it; **CHAIN** → COMPOSE when the user edits it; **HALT** when the user cancels."
       }
     },
     {
       "from": "n5",
       "to": "n6",
       "kind": "branch",
-      "condition": "on",
-      "advanceType": "ASK",
+      "condition": "when the user files it",
+      "advanceType": "CHAIN",
       "provenance": {
         "file": "canonical/skills/aid-update-ticket/SKILL.md",
-        "startLine": 203,
-        "endLine": 203,
+        "startLine": 205,
+        "endLine": 205,
         "sourceKind": "skill",
-        "excerpt": "**Advance:** **ASK** → WRITE on `[1] File it`; `[2] Edit` goes back to COMPOSE, and `[3] Cancel` ends the run with **HALT**."
+        "excerpt": "**Advance:** **CHAIN** → WRITE when the user files it; **CHAIN** → COMPOSE when the user edits it; **HALT** when the user cancels."
       }
     }
   ],
@@ -209,6 +201,8 @@
     "n1"
   ],
   "exits": [
+    "n4",
+    "n5",
     "n6"
   ],
   "sources": [

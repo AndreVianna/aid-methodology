@@ -1376,15 +1376,37 @@ description: R4 advance fixture
 });
 
 describe('real skills — aid-orchestrate, aid-read-ticket, aid-update-ticket follow their advance lines', () => {
-  it('aid-orchestrate: 12 steps, including 6a', () => {
+  it('aid-orchestrate: 13 steps, named as the skill names them, including 5a and 6a', () => {
     const chart = extractResidual(loadSkill('aid-orchestrate'));
-    expect(chart.nodes.length).toBe(12);
+    expect(chart.nodes.length).toBe(13);
+    const names = chart.nodes.map((n) => n.name);
+    expect(names.slice(0, 4)).toEqual(['PROJECT-QUESTION', 'CHECK-READING', 'SIZE-READING', 'SHOW-READING']);
+    expect(names).toContain('START-ACTION');
+    expect(names).toContain('ASK-FIRST');
+    expect(names.some((n) => /^STEP-/.test(n))).toBe(false);
   });
 
-  it('aid-orchestrate: FIND-OR-CREATE (step 6) branches to ASK-FIRST (6a) and to RECORD-INTENT (7)', () => {
+  it('aid-orchestrate: FIND-OR-CREATE branches to ASK-FIRST and to RECORD-INTENT', () => {
     const chart = extractResidual(loadSkill('aid-orchestrate'));
-    const out = chart.edges.filter((e) => e.from === 'n6').map((e) => e.to).sort();
-    expect(out).toEqual(['n7', 'n8']);
+    const id = (name) => chart.nodes.find((n) => n.name === name).id;
+    const out = chart.edges.filter((e) => e.from === id('FIND-OR-CREATE')).map((e) => e.to).sort();
+    expect(out).toEqual([id('ASK-FIRST'), id('RECORD-INTENT')].sort());
+  });
+
+  it('aid-orchestrate: CANCEL and CLOSE are reached from CHECK-READING, and no step loops on itself', () => {
+    const chart = extractResidual(loadSkill('aid-orchestrate'));
+    const id = (name) => chart.nodes.find((n) => n.name === name).id;
+    const from = chart.edges.filter((e) => e.from === id('CHECK-READING')).map((e) => e.to);
+    expect(from).toContain(id('CANCEL'));
+    expect(from).toContain(id('CLOSE'));
+    expect(chart.edges.filter((e) => e.from === e.to)).toEqual([]);
+  });
+
+  it('aid-orchestrate: HAND-OVER and START-ACTION end with PASS', () => {
+    const chart = extractResidual(loadSkill('aid-orchestrate'));
+    for (const name of ['HAND-OVER', 'START-ACTION']) {
+      expect(chart.nodes.find((n) => n.name === name).terminal.advanceType).toBe('PASS');
+    }
   });
 
   it('aid-orchestrate: step 1 ends the run with HALT, and no exit is left unspecified', () => {
@@ -1401,10 +1423,15 @@ describe('real skills — aid-orchestrate, aid-read-ticket, aid-update-ticket fo
     expect(chart.edges.some((e) => e.from === id('PICK-CONNECTOR') && e.to === id('FETCH') && e.advanceType === 'ASK')).toBe(true);
   });
 
-  it('aid-update-ticket: CONFIRM asks before WRITE, and WRITE ends the run with HALT', () => {
+  it('aid-update-ticket: CONFIRM branches on the answer, and WRITE ends the run with HALT', () => {
     const chart = extractResidual(loadSkill('aid-update-ticket'));
     const id = (name) => chart.nodes.find((n) => n.name === name).id;
-    expect(chart.edges.some((e) => e.from === id('CONFIRM') && e.to === id('WRITE') && e.advanceType === 'ASK')).toBe(true);
+    // CONFIRM reads the answer in its own step, so it branches with CHAIN: to WRITE when filed,
+    // back to COMPOSE when edited, and it ends the run with HALT when cancelled.
+    expect(chart.edges.some((e) => e.from === id('CONFIRM') && e.to === id('WRITE') && e.advanceType === 'CHAIN')).toBe(true);
+    expect(chart.edges.some((e) => e.from === id('CONFIRM') && e.to === id('COMPOSE') && e.advanceType === 'CHAIN')).toBe(true);
+    expect(chart.nodes.find((n) => n.name === 'CONFIRM').terminal.advanceType).toBe('HALT');
+    expect(chart.nodes.find((n) => n.name === 'COMPOSE').terminal.advanceType).toBe('HALT');
     expect(chart.nodes.find((n) => n.name === 'WRITE').terminal.advanceType).toBe('HALT');
   });
 });

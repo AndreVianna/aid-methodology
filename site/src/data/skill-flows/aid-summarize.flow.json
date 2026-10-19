@@ -32,24 +32,21 @@
       "order": 2,
       "name": "STALE-CHECK",
       "label": "STALE-CHECK compares the KB review date against the last…",
-      "kind": "exit",
-      "terminal": {
-        "advanceType": "HALT",
-        "handoff": "For DONE-IDEMPOTENT branch:"
-      },
+      "kind": "decision",
+      "terminal": null,
       "provenance": {
         "file": "canonical/skills/aid-summarize/SKILL.md",
         "startLine": 180,
         "endLine": 180,
         "sourceKind": "skill",
-        "excerpt": "| STALE-CHECK | `references/state-stale-check.md` | inline | CHAIN → PROFILE |"
+        "excerpt": "| STALE-CHECK | `references/state-stale-check.md` | inline | CHAIN → PROFILE (stale) / CHAIN → APPROVAL (current, not approved) / CHAIN → DONE (current and approved) |"
       },
       "detail": {
         "file": "canonical/skills/aid-summarize/references/state-stale-check.md",
         "startLine": 1,
         "endLine": 33,
         "sourceKind": "worker",
-        "excerpt": "# State: STALE-CHECK\n\nSTALE-CHECK compares the KB review date against the last summary date to determine if regeneration is needed; it is selected immediately after PREFLIGHT passes.\n\nNote: PREFLIGHT's FR31 migration step (step 6) relocates a pre-d009 `knowledge-summary.html`\nto `.aid/knowledge/kb.html` before STALE-CHECK runs, so a just-migrated file is seen here\nat the new path and treated as `CURRENT_APPROVED` when the summary is still current -- no\nregeneration is needed.\n\nRun `.aid/runtime/scripts/summarize/stale-check.sh`. It outputs one of:\n\n- `STALE` — KB is newer than last summary (or first run). Continue to PROFILE/GENERATE.\n- `CURRENT_APPROVED` — HTML is up-to-date and approved. Print:\n  ```\n  ✅ kb.html is already up-to-date with the current KB. Nothing to do.\n  ```\n  Exit cleanly.\n- `CURRENT_UNAPPROVED` — HTML is up-to-date but not yet approved. Print:\n  ```\n  ℹ️  HTML is current with KB but pending your approval.\n  ```\n  Skip to APPROVAL.\n\nIf STALE: tell the user *why* it's stale:\n```\nℹ️  KB was reviewed on {LAST_KB_CHANGE_DATE}, last summary was {LAST_SUMMARY_DATE}.\n   Regenerating to match latest KB...\n```\n\nPrint: `[State: STALE-CHECK] complete.`\n\n**Advance:** **CHAIN** → [State: PROFILE] (continue inline). For DONE-IDEMPOTENT branch: **HALT**.\n"
+        "excerpt": "# State: STALE-CHECK\n\nSTALE-CHECK compares the KB review date against the last summary date to determine if regeneration is needed; it is selected immediately after PREFLIGHT passes.\n\nNote: PREFLIGHT's FR31 migration step (step 6) relocates a pre-d009 `knowledge-summary.html`\nto `.aid/knowledge/kb.html` before STALE-CHECK runs, so a just-migrated file is seen here\nat the new path and treated as `CURRENT_APPROVED` when the summary is still current -- no\nregeneration is needed.\n\nRun `.aid/runtime/scripts/summarize/stale-check.sh`. It outputs one of:\n\n- `STALE` — KB is newer than last summary (or first run). Continue to PROFILE/GENERATE.\n- `CURRENT_APPROVED` — HTML is up-to-date and approved. Print:\n  ```\n  ✅ kb.html is already up-to-date with the current KB. Nothing to do.\n  ```\n  Exit cleanly.\n- `CURRENT_UNAPPROVED` — HTML is up-to-date but not yet approved. Print:\n  ```\n  ℹ️  HTML is current with KB but pending your approval.\n  ```\n  Skip to APPROVAL.\n\nIf STALE: tell the user *why* it's stale:\n```\nℹ️  KB was reviewed on {LAST_KB_CHANGE_DATE}, last summary was {LAST_SUMMARY_DATE}.\n   Regenerating to match latest KB...\n```\n\nPrint: `[State: STALE-CHECK] complete.`\n\n**Advance:** **CHAIN** → [State: PROFILE] when the result is `STALE`; **CHAIN** → [State: APPROVAL] when it is `CURRENT_UNAPPROVED`; **CHAIN** → [State: DONE] when it is `CURRENT_APPROVED` (the DONE-IDEMPOTENT branch).\n"
       }
     },
     {
@@ -130,14 +127,14 @@
         "startLine": 184,
         "endLine": 184,
         "sourceKind": "skill",
-        "excerpt": "| MANUAL-CHECKLIST | `references/state-manual-checklist.md` | inline | ASK → APPROVAL (Overall grade ≥ min) / ASK → FIX (otherwise) |"
+        "excerpt": "| MANUAL-CHECKLIST | `references/state-manual-checklist.md` | inline | CHAIN → APPROVAL (Overall grade ≥ min) / CHAIN → FIX (otherwise) |"
       },
       "detail": {
         "file": "canonical/skills/aid-summarize/references/state-manual-checklist.md",
         "startLine": 1,
         "endLine": 40,
         "sourceKind": "worker",
-        "excerpt": "# State: MANUAL-CHECKLIST\n\nMANUAL-CHECKLIST elicits human-judgment answers for the MANUAL_POOL (K1 KB-completeness, K2 fact-grounding, V1 mandatory human visual gate); it is selected after VALIDATE passes the Machine Grade minimum.\n\nThe MANUAL_POOL (K1 KB-completeness, K2 fact-grounding) needs human judgment — the script cannot verify it. **This is agent-driven elicitation, not an interactive shell script** (the skill runs inside a host AI tool's chat — the agent gathers the answers, then writes the result file the scoring script consumes).\n\n### Step 1 — generate the fact spot-check report (helps the user answer K2)\n\nRun `.aid/runtime/scripts/summarize/spot-check-facts.sh`. It extracts numeric/named claims from the HTML, greps the source KB, and writes `.aid/.temp/summarize/spot-check-facts.txt` (each line: `[OK|MISS] HTML-claim | KB-evidence`). Show the user the `MISS` lines, if any.\n\n### Step 2 — elicit the human-judgment answers via `AskUserQuestion`\n\nAsk the user (use `AskUserQuestion`; the user must have actually opened the HTML in a browser first — say so):\n\n- **K1 — KB completeness (10 pts):** \"Open the generated HTML. Does it represent every populated KB doc you care about?\" → Full (10) / Partial (5) / No (0).\n- **K2 — facts grounded (15 pts):** \"Using the spot-check report above, are the HTML's numeric/named facts accurate against the source KB?\" → Full (15) / Partial (8) / No (0).\n- **V1 — human visual gate (5 pts, MANDATORY):** \"Open the HTML in a real browser. Confirm ALL of: (a) every diagram renders, no error blocks; (b) diagram + node text is legible in BOTH light AND dark themes — including the EXPANDED lightbox view; (c) theme toggle works; (d) lightbox opens / Esc closes / Tab cycles.\" → Pass (5) / Fail (0). **V1 is a gate: a Fail forces Human Grade = F and blocks APPROVAL.** No automated check covers diagram-internal legibility — this is the only safeguard.\n- **Free-text:** \"Anything else off — framing, depth, tone, missing content?\" — capture verbatim.\n\n### Step 3 — write the result file\n\nThe agent passes the answers to `manual-checklist.sh` (non-interactive mode — it computes the scores and writes the JSON, so the script stays the single source of truth for scoring):\n```\nbash .aid/runtime/scripts/summarize/manual-checklist.sh \\\n  --k1 <y|p|n> --k2 <y|p|n> --v1 <y|n> --notes \"...\" --html .aid/knowledge/kb.html\n```\nThis writes `.aid/.temp/summarize/manual-checklist.json` with `K1_score`, `K2_score`, `V1_score`, the answers, notes, and timestamp. (A contributor in a raw terminal can instead run `manual-checklist.sh --interactive`.)\n\n### Step 4 — score and route\n\nRe-run `grade-summary.sh` — it reads `manual-checklist.json`, computes the Human Grade from MANUAL_POOL (K1+K2+V1, 30 pts), and the Overall Grade = `min(Machine_letter, Human_letter)`. (`grade.sh` does neither: it grades a reviewer ledger and never opens `manual-checklist.json`.) Persist Machine + Human + Overall Grade to `.aid/knowledge/STATE.md` `## Knowledge Summary Status` `### Findings (last validation)`.\n\n- Overall Grade ≥ minimum → APPROVAL.\n- **V1 failed → mandatory: Human Grade is forced to F.** Go to FIX; the visual defect must be fixed and V1 re-confirmed before APPROVAL.\n- Overall Grade < minimum → FIX. **If the shortfall is in MANUAL_POOL** (K1/K2 partial-or-no, or V1 fail) or the free-text notes flagged something, FIX uses the **expose → propose → ask** loop (see `references/state-fix.md`) — never silent guess-fixing.\n\nPrint: `[State: MANUAL-CHECKLIST] complete.`\n\n**Advance:** **CHAIN** → [State: APPROVAL] when Overall Grade ≥ minimum; **CHAIN** → [State: FIX] otherwise, once every question is answered.\n"
+        "excerpt": "# State: MANUAL-CHECKLIST\n\nMANUAL-CHECKLIST elicits human-judgment answers for the MANUAL_POOL (K1 KB-completeness, K2 fact-grounding, V1 mandatory human visual gate); it is selected after VALIDATE passes the Machine Grade minimum.\n\nThe MANUAL_POOL (K1 KB-completeness, K2 fact-grounding) needs human judgment — the script cannot verify it. **This is agent-driven elicitation, not an interactive shell script** (the skill runs inside a host AI tool's chat — the agent gathers the answers, then writes the result file the scoring script consumes).\n\n### Step 1 — generate the fact spot-check report (helps the user answer K2)\n\nRun `.aid/runtime/scripts/summarize/spot-check-facts.sh`. It extracts numeric/named claims from the HTML, greps the source KB, and writes `.aid/.temp/summarize/spot-check-facts.txt` (each line: `[OK|MISS] HTML-claim | KB-evidence`). Show the user the `MISS` lines, if any.\n\n### Step 2 — elicit the human-judgment answers via `AskUserQuestion`\n\nAsk the user (use `AskUserQuestion`; the user must have actually opened the HTML in a browser first — say so):\n\n- **K1 — KB completeness (10 pts):** \"Open the generated HTML. Does it represent every populated KB doc you care about?\" → Full (10) / Partial (5) / No (0).\n- **K2 — facts grounded (15 pts):** \"Using the spot-check report above, are the HTML's numeric/named facts accurate against the source KB?\" → Full (15) / Partial (8) / No (0).\n- **V1 — human visual gate (5 pts, MANDATORY):** \"Open the HTML in a real browser. Confirm ALL of: (a) every diagram renders, no error blocks; (b) diagram + node text is legible in BOTH light AND dark themes — including the EXPANDED lightbox view; (c) theme toggle works; (d) lightbox opens / Esc closes / Tab cycles.\" → Pass (5) / Fail (0). **V1 is a gate: a Fail forces Human Grade = F and blocks APPROVAL.** No automated check covers diagram-internal legibility — this is the only safeguard.\n- **Free-text:** \"Anything else off — framing, depth, tone, missing content?\" — capture verbatim.\n\n### Step 3 — write the result file\n\nThe agent passes the answers to `manual-checklist.sh` (non-interactive mode — it computes the scores and writes the JSON, so the script stays the single source of truth for scoring):\n```\nbash .aid/runtime/scripts/summarize/manual-checklist.sh \\\n  --k1 <y|p|n> --k2 <y|p|n> --v1 <y|n> --notes \"...\" --html .aid/knowledge/kb.html\n```\nThis writes `.aid/.temp/summarize/manual-checklist.json` with `K1_score`, `K2_score`, `V1_score`, the answers, notes, and timestamp. (A contributor in a raw terminal can instead run `manual-checklist.sh --interactive`.)\n\n### Step 4 — score and route\n\nRe-run `grade-summary.sh` — it reads `manual-checklist.json`, computes the Human Grade from MANUAL_POOL (K1+K2+V1, 30 pts), and the Overall Grade = `min(Machine_letter, Human_letter)`. (`grade.sh` does neither: it grades a reviewer ledger and never opens `manual-checklist.json`.) Persist Machine + Human + Overall Grade to `.aid/knowledge/STATE.md` `## Knowledge Summary Status` `### Findings (last validation)`.\n\n- Overall Grade ≥ minimum → APPROVAL.\n- **V1 failed → mandatory: Human Grade is forced to F.** Go to FIX; the visual defect must be fixed and V1 re-confirmed before APPROVAL.\n- Overall Grade < minimum → FIX. **If the shortfall is in MANUAL_POOL** (K1/K2 partial-or-no, or V1 fail) or the free-text notes flagged something, FIX uses the **expose → propose → ask** loop (see `references/state-fix.md`) — never silent guess-fixing.\n\nPrint: `[State: MANUAL-CHECKLIST] complete.`\n\n**Advance:** **CHAIN** → [State: APPROVAL] when Overall Grade ≥ minimum; **CHAIN** → [State: FIX] otherwise.\n"
       }
     },
     {
@@ -170,21 +167,21 @@
       "kind": "exit",
       "terminal": {
         "advanceType": "HALT",
-        "handoff": "rejected"
+        "handoff": "when the user rejects (no writeback)"
       },
       "provenance": {
         "file": "canonical/skills/aid-summarize/SKILL.md",
         "startLine": 186,
         "endLine": 186,
         "sourceKind": "skill",
-        "excerpt": "| APPROVAL | `references/state-approval.md` | inline | ASK → WRITEBACK (approved) / HALT (rejected) / ASK → FIX (changes needed) |"
+        "excerpt": "| APPROVAL | `references/state-approval.md` | inline | CHAIN → WRITEBACK (approved) / CHAIN → FIX (changes needed) / HALT (rejected) |"
       },
       "detail": {
         "file": "canonical/skills/aid-summarize/references/state-approval.md",
         "startLine": 1,
-        "endLine": 54,
+        "endLine": 57,
         "sourceKind": "worker",
-        "excerpt": "# State: APPROVAL\n\nAPPROVAL presents the graded summary to the user for final sign-off; it is selected when both Machine Grade and Human Grade meet the minimum, or when STALE-CHECK finds the HTML is current but not yet approved.\n\n**Pre-condition:** Both Machine Grade AND Human Grade must already be computed and ≥ minimum. If Human Grade is `Pending`, refuse to enter APPROVAL — print: `❌ Cannot approve: Human Grade not yet scored. Run /aid-summarize again to enter MANUAL-CHECKLIST.`\n\nPrint summary in the standard format:\n\n```\n✅ kb.html ready for approval\n   Path:           .aid/knowledge/kb.html\n   Size:           {MB}\n   Domain:         {domain value from .aid/knowledge/STATE.md ## Discovery Domain}\n   Doc-set:        {N resolved} of {M total} docs covered\n   Machine Grade:  {grade} ({score}/68) — script-verified AUTO_POOL (COV + D1/D2/L1/L2/H1/A1-A5/C1/C2/S2)\n   Human Grade:    {grade} ({score}/30) — manual-checklist MANUAL_POOL (K1+K2+V1)\n   Overall Grade:  {min of above} (target: {min})\n   Theme:          light + dark, both pass WCAG AA\n   Trigger:        {reason}\n\nPreview:  python -m http.server 8000   # then open\n          http://localhost:8000/.aid/knowledge/kb.html\n   Or open the file directly in your browser.\n```\n\nUse `AskUserQuestion` to ask:\n> Approve this summary?\n> - **Approve** — record approval and update `.aid/knowledge/STATE.md` `## Summarization History`\n> - **Reject** — exit without recording\n> - **Changes needed** — describe what to change, transition to FIX\n\nThe summary's approval scalar (`summary_approved`) and its last-run date (`last_summary`)\nlive in `.aid/knowledge/STATE.md`'s leading YAML frontmatter block. Write via the\nsurgical frontmatter helper (never hand-edit\nthe bold line again):\n\nOn approval:\n```bash\nbash .aid/runtime/scripts/summarize/writeback-state.sh --set summary_approved yes --set last_summary \"$(date -u +%Y-%m-%d)\"\n```\nthen transition to WRITEBACK.\n\nOn rejection:\n```bash\nbash .aid/runtime/scripts/summarize/writeback-state.sh --set summary_approved no\n```\nexit. `## Summarization History` is NOT updated.\n\nOn changes-needed: capture the user's notes in `.aid/knowledge/STATE.md` `## Knowledge Summary Status` `### Pending Changes` (unaffected markdown-body content), transition to FIX.\n\nPrint: `[State: APPROVAL] complete.`\n\n**Advance:** **ASK** → [State: WRITEBACK], the step that reads the answer: an approval goes on to WRITEBACK, \"changes needed\" goes to FIX from there, and a rejection ends the run with **HALT** (no writeback).\n"
+        "excerpt": "# State: APPROVAL\n\nAPPROVAL presents the graded summary to the user for final sign-off; it is selected when both Machine Grade and Human Grade meet the minimum, or when STALE-CHECK finds the HTML is current but not yet approved.\n\n**Pre-condition:** Both Machine Grade AND Human Grade must already be computed and ≥ minimum. If Human Grade is `Pending`, refuse to enter APPROVAL — print: `❌ Cannot approve: Human Grade not yet scored. Run /aid-summarize again to enter MANUAL-CHECKLIST.`\n\nPrint summary in the standard format:\n\n```\n✅ kb.html ready for approval\n   Path:           .aid/knowledge/kb.html\n   Size:           {MB}\n   Domain:         {domain value from .aid/knowledge/STATE.md ## Discovery Domain}\n   Doc-set:        {N resolved} of {M total} docs covered\n   Machine Grade:  {grade} ({score}/68) — script-verified AUTO_POOL (COV + D1/D2/L1/L2/H1/A1-A5/C1/C2/S2)\n   Human Grade:    {grade} ({score}/30) — manual-checklist MANUAL_POOL (K1+K2+V1)\n   Overall Grade:  {min of above} (target: {min})\n   Theme:          light + dark, both pass WCAG AA\n   Trigger:        {reason}\n\nPreview:  python -m http.server 8000   # then open\n          http://localhost:8000/.aid/knowledge/kb.html\n   Or open the file directly in your browser.\n```\n\nUse `AskUserQuestion` to ask:\n> Approve this summary?\n> - **Approve** — record approval and update `.aid/knowledge/STATE.md` `## Summarization History`\n> - **Reject** — exit without recording\n> - **Changes needed** — describe what to change, transition to FIX\n\nThe summary's approval scalar (`summary_approved`) and its last-run date (`last_summary`)\nlive in `.aid/knowledge/STATE.md`'s leading YAML frontmatter block. Write via the\nsurgical frontmatter helper (never hand-edit\nthe bold line again):\n\nOn approval:\n```bash\nbash .aid/runtime/scripts/summarize/writeback-state.sh --set summary_approved yes --set last_summary \"$(date -u +%Y-%m-%d)\"\n```\nthen transition to WRITEBACK.\n\nOn rejection:\n```bash\nbash .aid/runtime/scripts/summarize/writeback-state.sh --set summary_approved no\n```\nexit. `## Summarization History` is NOT updated.\n\nOn changes-needed: capture the user's notes in `.aid/knowledge/STATE.md` `## Knowledge Summary Status` `### Pending Changes` (unaffected markdown-body content), transition to FIX.\n\nThis approval cannot be skipped: the question pauses the step where it stands, and the step stays open until the\nuser approves, rejects or asks for changes.\n\nPrint: `[State: APPROVAL] complete.`\n\n**Advance:** **CHAIN** → [State: WRITEBACK] when the user approves; **CHAIN** → [State: FIX] when changes are needed; **HALT** when the user rejects (no writeback).\n"
       }
     },
     {
@@ -253,15 +250,43 @@
     {
       "from": "n2",
       "to": "n3",
-      "kind": "sequence",
-      "condition": null,
+      "kind": "branch",
+      "condition": "when the result is STALE",
       "advanceType": "CHAIN",
       "provenance": {
         "file": "canonical/skills/aid-summarize/references/state-stale-check.md",
         "startLine": 32,
         "endLine": 32,
         "sourceKind": "worker",
-        "excerpt": "**Advance:** **CHAIN** → [State: PROFILE] (continue inline). For DONE-IDEMPOTENT branch: **HALT**."
+        "excerpt": "**Advance:** **CHAIN** → [State: PROFILE] when the result is `STALE`; **CHAIN** → [State: APPROVAL] when it is `CURRENT_UNAPPROVED`; **CHAIN** → [State: DONE] when it is `CURRENT_APPROVED` (the DONE-IDEMPOTENT branch)."
+      }
+    },
+    {
+      "from": "n2",
+      "to": "n8",
+      "kind": "branch",
+      "condition": "when it is CURRENT_UNAPPROVED",
+      "advanceType": "CHAIN",
+      "provenance": {
+        "file": "canonical/skills/aid-summarize/references/state-stale-check.md",
+        "startLine": 32,
+        "endLine": 32,
+        "sourceKind": "worker",
+        "excerpt": "**Advance:** **CHAIN** → [State: PROFILE] when the result is `STALE`; **CHAIN** → [State: APPROVAL] when it is `CURRENT_UNAPPROVED`; **CHAIN** → [State: DONE] when it is `CURRENT_APPROVED` (the DONE-IDEMPOTENT branch)."
+      }
+    },
+    {
+      "from": "n2",
+      "to": "n10",
+      "kind": "branch",
+      "condition": "when it is CURRENT_APPROVED (the DONE-IDEMPOTENT branch",
+      "advanceType": "CHAIN",
+      "provenance": {
+        "file": "canonical/skills/aid-summarize/references/state-stale-check.md",
+        "startLine": 32,
+        "endLine": 32,
+        "sourceKind": "worker",
+        "excerpt": "**Advance:** **CHAIN** → [State: PROFILE] when the result is `STALE`; **CHAIN** → [State: APPROVAL] when it is `CURRENT_UNAPPROVED`; **CHAIN** → [State: DONE] when it is `CURRENT_APPROVED` (the DONE-IDEMPOTENT branch)."
       }
     },
     {
@@ -324,14 +349,14 @@
       "from": "n6",
       "to": "n7",
       "kind": "branch",
-      "condition": "otherwise, once every question is answered",
+      "condition": "otherwise",
       "advanceType": "CHAIN",
       "provenance": {
         "file": "canonical/skills/aid-summarize/references/state-manual-checklist.md",
         "startLine": 39,
         "endLine": 39,
         "sourceKind": "worker",
-        "excerpt": "**Advance:** **CHAIN** → [State: APPROVAL] when Overall Grade ≥ minimum; **CHAIN** → [State: FIX] otherwise, once every question is answered."
+        "excerpt": "**Advance:** **CHAIN** → [State: APPROVAL] when Overall Grade ≥ minimum; **CHAIN** → [State: FIX] otherwise."
       }
     },
     {
@@ -345,7 +370,7 @@
         "startLine": 39,
         "endLine": 39,
         "sourceKind": "worker",
-        "excerpt": "**Advance:** **CHAIN** → [State: APPROVAL] when Overall Grade ≥ minimum; **CHAIN** → [State: FIX] otherwise, once every question is answered."
+        "excerpt": "**Advance:** **CHAIN** → [State: APPROVAL] when Overall Grade ≥ minimum; **CHAIN** → [State: FIX] otherwise."
       }
     },
     {
@@ -366,28 +391,28 @@
       "from": "n8",
       "to": "n7",
       "kind": "branch",
-      "condition": "changes needed",
-      "advanceType": "ASK",
+      "condition": "when changes are needed",
+      "advanceType": "CHAIN",
       "provenance": {
-        "file": "canonical/skills/aid-summarize/SKILL.md",
-        "startLine": 186,
-        "endLine": 186,
-        "sourceKind": "skill",
-        "excerpt": "**Advance:** ASK → WRITEBACK (approved) / HALT (rejected) / ASK → FIX (changes needed)"
+        "file": "canonical/skills/aid-summarize/references/state-approval.md",
+        "startLine": 56,
+        "endLine": 56,
+        "sourceKind": "worker",
+        "excerpt": "**Advance:** **CHAIN** → [State: WRITEBACK] when the user approves; **CHAIN** → [State: FIX] when changes are needed; **HALT** when the user rejects (no writeback)."
       }
     },
     {
       "from": "n8",
       "to": "n9",
       "kind": "branch",
-      "condition": "approved",
-      "advanceType": "ASK",
+      "condition": "when the user approves",
+      "advanceType": "CHAIN",
       "provenance": {
-        "file": "canonical/skills/aid-summarize/SKILL.md",
-        "startLine": 186,
-        "endLine": 186,
-        "sourceKind": "skill",
-        "excerpt": "**Advance:** ASK → WRITEBACK (approved) / HALT (rejected) / ASK → FIX (changes needed)"
+        "file": "canonical/skills/aid-summarize/references/state-approval.md",
+        "startLine": 56,
+        "endLine": 56,
+        "sourceKind": "worker",
+        "excerpt": "**Advance:** **CHAIN** → [State: WRITEBACK] when the user approves; **CHAIN** → [State: FIX] when changes are needed; **HALT** when the user rejects (no writeback)."
       }
     },
     {
@@ -409,7 +434,6 @@
     "n1"
   ],
   "exits": [
-    "n2",
     "n8",
     "n10"
   ],
@@ -426,7 +450,5 @@
     "canonical/skills/aid-summarize/references/state-validate.md",
     "canonical/skills/aid-summarize/references/state-writeback.md"
   ],
-  "warnings": [
-    "[gen-skills] extract-dispatch: W-V9 in worker 'canonical/skills/aid-summarize/references/state-approval.md' for state 'APPROVAL': [gen-skills] V9: 'APPROVAL' (canonical/skills/aid-summarize/references/state-approval.md:53): declared state 'FIX' is referenced in the advance text but is not an edge target or pause-resume handoff — possible dropped edge. Advance: '**ASK** → [State: WRITEBACK], the step that reads the…'"
-  ]
+  "warnings": []
 }

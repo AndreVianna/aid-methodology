@@ -23,7 +23,7 @@ A reading that matches an action skill -- `/aid-create`, `/aid-update`, `/aid-fi
 `/aid-refactor`, `/aid-document`, `/aid-test`, `/aid-prototype` -- is sized here first, like any
 other reading: Preparation is offered when the project has no Knowledge Base, the phases and the
 depth are shown in one line, and only after the user answers is the reading handed to that skill
-(SKILL.md steps SIZE-READING to ACTION-HANDOVER). Its START creates the work through the gate, and the `intent:` record is
+(SKILL.md steps SIZE-READING to START-ACTION). Its START creates the work through the gate, and the `intent:` record is
 written into that work. A typed `/aid-<skill>` still goes straight to that skill.
 
 ## 2. How much the user reviews

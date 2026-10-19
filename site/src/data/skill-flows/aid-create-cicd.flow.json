@@ -17,14 +17,14 @@
         "startLine": 53,
         "endLine": 69,
         "sourceKind": "skill",
-        "excerpt": "## State: INTAKE\n\n1. **Allocate** through the Work Initiation Gate exactly as the contract's Allocation rule\n   requires (`.agents/skills/aid-design/SKILL.md` INTAKE step 4 is the shape), with\n   `initiator: aid-create-cicd`. `phase` is not driven.\n2. **Read the seed** at `.aid/design/cicd.md`.\n3. **Resolve the destination by concern, not filename.** This skill binds concern **C8**\n   (shipping & operation, `.aid/runtime/templates/kb-authoring/concern-model.md`). The seed's\n   `## Destination` names the resolved path; where it does not, resolve C8 against\n   `.aid/settings.yml` `knowledge.doc_set`, falling back to the C8 row of\n   `.aid/runtime/templates/kb-authoring/domain-doc-matrix.md`, and confirm with the user. An\n   ambiguous realization is **asked**, never picked silently.\n4. **Read the whole destination** if it exists, and note its `source:` field.\n5. **Ask whether the user also wants production config this run.** Emitting a workflow file\n   is **opt-in per run and never the default**; the KB record is what this skill writes\n   unless the user asks in this run.\n6. **Classify complexity** for the `aid-architect` dispatch (verifier tier >= producer)."
+        "excerpt": "## State: INTAKE\n\n1. **Allocate** through the Work Initiation Gate exactly as the contract's Allocation rule\n   requires (`.agents/skills/aid-design/SKILL.md` INTAKE step 4 is the shape), with\n   `--skill aid-create-cicd` given to the gate's `--create`. `phase` is not driven.\n2. **Read the seed** at `.aid/design/cicd.md`.\n3. **Resolve the destination by concern, not filename.** This skill binds concern **C8**\n   (shipping & operation, `.aid/runtime/templates/kb-authoring/concern-model.md`). The seed's\n   `## Destination` names the resolved path; where it does not, resolve C8 against\n   `.aid/settings.yml` `knowledge.doc_set`, falling back to the C8 row of\n   `.aid/runtime/templates/kb-authoring/domain-doc-matrix.md`, and confirm with the user. An\n   ambiguous realization is **asked**, never picked silently.\n4. **Read the whole destination** if it exists, and note its `source:` field.\n5. **Ask whether the user also wants production config this run.** Emitting a workflow file\n   is **opt-in per run and never the default**; the KB record is what this skill writes\n   unless the user asks in this run.\n6. **Classify complexity** for the `aid-architect` dispatch (verifier tier >= producer)."
       },
       "detail": {
         "file": "canonical/skills/aid-create-cicd/SKILL.md",
         "startLine": 53,
         "endLine": 71,
         "sourceKind": "skill",
-        "excerpt": "## State: INTAKE\n\n1. **Allocate** through the Work Initiation Gate exactly as the contract's Allocation rule\n   requires (`.agents/skills/aid-design/SKILL.md` INTAKE step 4 is the shape), with\n   `initiator: aid-create-cicd`. `phase` is not driven.\n2. **Read the seed** at `.aid/design/cicd.md`.\n3. **Resolve the destination by concern, not filename.** This skill binds concern **C8**\n   (shipping & operation, `.aid/runtime/templates/kb-authoring/concern-model.md`). The seed's\n   `## Destination` names the resolved path; where it does not, resolve C8 against\n   `.aid/settings.yml` `knowledge.doc_set`, falling back to the C8 row of\n   `.aid/runtime/templates/kb-authoring/domain-doc-matrix.md`, and confirm with the user. An\n   ambiguous realization is **asked**, never picked silently.\n4. **Read the whole destination** if it exists, and note its `source:` field.\n5. **Ask whether the user also wants production config this run.** Emitting a workflow file\n   is **opt-in per run and never the default**; the KB record is what this skill writes\n   unless the user asks in this run.\n6. **Classify complexity** for the `aid-architect` dispatch (verifier tier >= producer).\n\n**Advance:** CHAIN -> [State: CREATE]."
+        "excerpt": "## State: INTAKE\n\n1. **Allocate** through the Work Initiation Gate exactly as the contract's Allocation rule\n   requires (`.agents/skills/aid-design/SKILL.md` INTAKE step 4 is the shape), with\n   `--skill aid-create-cicd` given to the gate's `--create`. `phase` is not driven.\n2. **Read the seed** at `.aid/design/cicd.md`.\n3. **Resolve the destination by concern, not filename.** This skill binds concern **C8**\n   (shipping & operation, `.aid/runtime/templates/kb-authoring/concern-model.md`). The seed's\n   `## Destination` names the resolved path; where it does not, resolve C8 against\n   `.aid/settings.yml` `knowledge.doc_set`, falling back to the C8 row of\n   `.aid/runtime/templates/kb-authoring/domain-doc-matrix.md`, and confirm with the user. An\n   ambiguous realization is **asked**, never picked silently.\n4. **Read the whole destination** if it exists, and note its `source:` field.\n5. **Ask whether the user also wants production config this run.** Emitting a workflow file\n   is **opt-in per run and never the default**; the KB record is what this skill writes\n   unless the user asks in this run.\n6. **Classify complexity** for the `aid-architect` dispatch (verifier tier >= producer).\n\n**Advance:** CHAIN -> [State: CREATE]."
       }
     },
     {
@@ -61,14 +61,14 @@
         "startLine": 113,
         "endLine": 116,
         "sourceKind": "skill",
-        "excerpt": "## State: VERIFY\n\n**Full verify**, as `design-lifecycle.md` defines it. Not clean -> loop to CREATE; the\n3-cycle circuit breaker there escalates to IMPEDIMENT + `lifecycle: Blocked`."
+        "excerpt": "## State: VERIFY\n\n**Full verify**, as `design-lifecycle.md` defines it. Not clean -> loop to CREATE; the\n3-cycle circuit breaker there escalates to IMPEDIMENT, and the lifecycle is set to `Blocked` through the writer."
       },
       "detail": {
         "file": "canonical/skills/aid-create-cicd/SKILL.md",
         "startLine": 113,
         "endLine": 118,
         "sourceKind": "skill",
-        "excerpt": "## State: VERIFY\n\n**Full verify**, as `design-lifecycle.md` defines it. Not clean -> loop to CREATE; the\n3-cycle circuit breaker there escalates to IMPEDIMENT + `lifecycle: Blocked`.\n\n**Advance:** CHAIN -> [State: PRESENT]."
+        "excerpt": "## State: VERIFY\n\n**Full verify**, as `design-lifecycle.md` defines it. Not clean -> loop to CREATE; the\n3-cycle circuit breaker there escalates to IMPEDIMENT, and the lifecycle is set to `Blocked` through the writer.\n\n**Advance:** CHAIN -> [State: PRESENT]."
       }
     },
     {
@@ -83,14 +83,14 @@
         "startLine": 122,
         "endLine": 126,
         "sourceKind": "skill",
-        "excerpt": "## State: PRESENT (hard stop -- the user decides)\n\nSet `lifecycle: Paused-Awaiting-Input`. Present the realized document and assert: whether a\nworkflow file was emitted and that it was asked for; on the creation path both registration\nsurfaces were written; and anything routed to `/aid-update-cicd` is named."
+        "excerpt": "## State: PRESENT (hard stop -- the user decides)\n\nSet the lifecycle to `Paused-Awaiting-Input` through the writer. Present the realized document and assert: whether a\nworkflow file was emitted and that it was asked for; on the creation path both registration\nsurfaces were written; and anything routed to `/aid-update-cicd` is named."
       },
       "detail": {
         "file": "canonical/skills/aid-create-cicd/SKILL.md",
         "startLine": 122,
         "endLine": 128,
         "sourceKind": "skill",
-        "excerpt": "## State: PRESENT (hard stop -- the user decides)\n\nSet `lifecycle: Paused-Awaiting-Input`. Present the realized document and assert: whether a\nworkflow file was emitted and that it was asked for; on the creation path both registration\nsurfaces were written; and anything routed to `/aid-update-cicd` is named.\n\n**Advance:** ASK -> [State: DONE]."
+        "excerpt": "## State: PRESENT (hard stop -- the user decides)\n\nSet the lifecycle to `Paused-Awaiting-Input` through the writer. Present the realized document and assert: whether a\nworkflow file was emitted and that it was asked for; on the creation path both registration\nsurfaces were written; and anything routed to `/aid-update-cicd` is named.\n\n**Advance:** ASK -> [State: DONE]."
       }
     },
     {
@@ -108,14 +108,14 @@
         "startLine": 132,
         "endLine": 134,
         "sourceKind": "skill",
-        "excerpt": "## State: DONE\n\nSet `lifecycle: Completed`, `updated` now, append a `## Lifecycle History` row."
+        "excerpt": "## State: DONE\n\nSet the lifecycle to `Completed` through the writer, `updated` now, append a `## Lifecycle History` row."
       },
       "detail": {
         "file": "canonical/skills/aid-create-cicd/SKILL.md",
         "startLine": 132,
         "endLine": 134,
         "sourceKind": "skill",
-        "excerpt": "## State: DONE\n\nSet `lifecycle: Completed`, `updated` now, append a `## Lifecycle History` row."
+        "excerpt": "## State: DONE\n\nSet the lifecycle to `Completed` through the writer, `updated` now, append a `## Lifecycle History` row."
       }
     }
   ],

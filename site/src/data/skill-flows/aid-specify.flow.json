@@ -14,8 +14,8 @@
       "terminal": null,
       "provenance": {
         "file": "canonical/skills/aid-specify/SKILL.md",
-        "startLine": 224,
-        "endLine": 224,
+        "startLine": 231,
+        "endLine": 231,
         "sourceKind": "skill",
         "excerpt": "| INITIALIZE | `references/state-initialize.md` | `aid-architect` | ASK → CONTINUE |"
       },
@@ -36,8 +36,8 @@
       "terminal": null,
       "provenance": {
         "file": "canonical/skills/aid-specify/SKILL.md",
-        "startLine": 225,
-        "endLine": 225,
+        "startLine": 232,
+        "endLine": 232,
         "sourceKind": "skill",
         "excerpt": "| CONTINUE | `references/state-continue.md` | `aid-architect` | ASK → REVIEW |"
       },
@@ -58,8 +58,8 @@
       "terminal": null,
       "provenance": {
         "file": "canonical/skills/aid-specify/SKILL.md",
-        "startLine": 226,
-        "endLine": 226,
+        "startLine": 233,
+        "endLine": 233,
         "sourceKind": "skill",
         "excerpt": "| SPIKE | `references/state-spike.md` | `inline` | WAIT → CONTINUE |"
       },
@@ -80,8 +80,8 @@
       "terminal": null,
       "provenance": {
         "file": "canonical/skills/aid-specify/SKILL.md",
-        "startLine": 227,
-        "endLine": 227,
+        "startLine": 234,
+        "endLine": 234,
         "sourceKind": "skill",
         "excerpt": "| BLOCKED | `references/state-blocked.md` | `inline` | WAIT → CONTINUE |"
       },
@@ -102,8 +102,8 @@
       "terminal": null,
       "provenance": {
         "file": "canonical/skills/aid-specify/SKILL.md",
-        "startLine": 228,
-        "endLine": 228,
+        "startLine": 235,
+        "endLine": 235,
         "sourceKind": "skill",
         "excerpt": "| REVIEW | `references/state-review.md` | `aid-reviewer` | ASK → DONE |"
       },
@@ -127,8 +127,8 @@
       },
       "provenance": {
         "file": "canonical/skills/aid-specify/SKILL.md",
-        "startLine": 229,
-        "endLine": 229,
+        "startLine": 236,
+        "endLine": 236,
         "sourceKind": "skill",
         "excerpt": "| DONE | `references/state-done.md` | `inline` | HALT |"
       },

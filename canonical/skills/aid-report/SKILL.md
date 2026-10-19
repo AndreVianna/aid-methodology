@@ -77,6 +77,9 @@ Allocate the work through the gate: the Work Initiation Gate
   set other keys through the writer." This skill drives no `phase`.
 - **Continuation:** On continuation, follow the gate's § 3b: enter the chosen work's worktree and run the skill its record names, at its saved step.
 
+Every `--step` call in this skill passes in its `--detail` the data, the metrics, the question and the complexity tier,
+so a resume finds them in the record.
+
 **Advance:** CHAIN -> [State: ANALYZE].
 
 ---

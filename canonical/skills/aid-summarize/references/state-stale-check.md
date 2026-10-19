@@ -29,4 +29,4 @@ If STALE: tell the user *why* it's stale:
 
 Print: `[State: STALE-CHECK] complete.`
 
-**Advance:** **CHAIN** → [State: PROFILE] (continue inline). For DONE-IDEMPOTENT branch: **HALT**.
+**Advance:** **CHAIN** → [State: PROFILE] when the result is `STALE`; **CHAIN** → [State: APPROVAL] when it is `CURRENT_UNAPPROVED`; **CHAIN** → [State: DONE] when it is `CURRENT_APPROVED` (the DONE-IDEMPOTENT branch).

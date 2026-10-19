@@ -17,14 +17,14 @@
         "startLine": 51,
         "endLine": 66,
         "sourceKind": "skill",
-        "excerpt": "## State: INTAKE\n\n1. **Allocate** through the Work Initiation Gate exactly as the contract's Allocation rule\n   requires (`.agents/skills/aid-design/SKILL.md` INTAKE step 4 is the shape), with\n   `initiator: aid-create-architecture`. `phase` is not driven.\n2. **Read the seed** at `.aid/design/architecture.md`.\n3. **Resolve the destination by concern, not filename.** This skill binds concern **C1**\n   (build & shape, `.aid/runtime/templates/kb-authoring/concern-model.md`). The seed's\n   `## Destination` names the resolved path; where it does not, resolve C1 against\n   `.aid/settings.yml` `knowledge.doc_set`, falling back to the C1 row of\n   `.aid/runtime/templates/kb-authoring/domain-doc-matrix.md`, and confirm with the user.\n   C1's default set holds both `project-structure.md` and `architecture.md`; this skill\n   targets the document describing the system's shape and **never**\n   `project-structure.md`. An ambiguous realization is **asked**, never picked silently.\n4. **Read the whole destination** if it exists, and note its `source:` field.\n5. **Classify complexity** for the `aid-architect` dispatch (verifier tier >= producer)."
+        "excerpt": "## State: INTAKE\n\n1. **Allocate** through the Work Initiation Gate exactly as the contract's Allocation rule\n   requires (`.agents/skills/aid-design/SKILL.md` INTAKE step 4 is the shape), with\n   `--skill aid-create-architecture` given to the gate's `--create`. `phase` is not driven.\n2. **Read the seed** at `.aid/design/architecture.md`.\n3. **Resolve the destination by concern, not filename.** This skill binds concern **C1**\n   (build & shape, `.aid/runtime/templates/kb-authoring/concern-model.md`). The seed's\n   `## Destination` names the resolved path; where it does not, resolve C1 against\n   `.aid/settings.yml` `knowledge.doc_set`, falling back to the C1 row of\n   `.aid/runtime/templates/kb-authoring/domain-doc-matrix.md`, and confirm with the user.\n   C1's default set holds both `project-structure.md` and `architecture.md`; this skill\n   targets the document describing the system's shape and **never**\n   `project-structure.md`. An ambiguous realization is **asked**, never picked silently.\n4. **Read the whole destination** if it exists, and note its `source:` field.\n5. **Classify complexity** for the `aid-architect` dispatch (verifier tier >= producer)."
       },
       "detail": {
         "file": "canonical/skills/aid-create-architecture/SKILL.md",
         "startLine": 51,
         "endLine": 68,
         "sourceKind": "skill",
-        "excerpt": "## State: INTAKE\n\n1. **Allocate** through the Work Initiation Gate exactly as the contract's Allocation rule\n   requires (`.agents/skills/aid-design/SKILL.md` INTAKE step 4 is the shape), with\n   `initiator: aid-create-architecture`. `phase` is not driven.\n2. **Read the seed** at `.aid/design/architecture.md`.\n3. **Resolve the destination by concern, not filename.** This skill binds concern **C1**\n   (build & shape, `.aid/runtime/templates/kb-authoring/concern-model.md`). The seed's\n   `## Destination` names the resolved path; where it does not, resolve C1 against\n   `.aid/settings.yml` `knowledge.doc_set`, falling back to the C1 row of\n   `.aid/runtime/templates/kb-authoring/domain-doc-matrix.md`, and confirm with the user.\n   C1's default set holds both `project-structure.md` and `architecture.md`; this skill\n   targets the document describing the system's shape and **never**\n   `project-structure.md`. An ambiguous realization is **asked**, never picked silently.\n4. **Read the whole destination** if it exists, and note its `source:` field.\n5. **Classify complexity** for the `aid-architect` dispatch (verifier tier >= producer).\n\n**Advance:** CHAIN -> [State: CREATE]."
+        "excerpt": "## State: INTAKE\n\n1. **Allocate** through the Work Initiation Gate exactly as the contract's Allocation rule\n   requires (`.agents/skills/aid-design/SKILL.md` INTAKE step 4 is the shape), with\n   `--skill aid-create-architecture` given to the gate's `--create`. `phase` is not driven.\n2. **Read the seed** at `.aid/design/architecture.md`.\n3. **Resolve the destination by concern, not filename.** This skill binds concern **C1**\n   (build & shape, `.aid/runtime/templates/kb-authoring/concern-model.md`). The seed's\n   `## Destination` names the resolved path; where it does not, resolve C1 against\n   `.aid/settings.yml` `knowledge.doc_set`, falling back to the C1 row of\n   `.aid/runtime/templates/kb-authoring/domain-doc-matrix.md`, and confirm with the user.\n   C1's default set holds both `project-structure.md` and `architecture.md`; this skill\n   targets the document describing the system's shape and **never**\n   `project-structure.md`. An ambiguous realization is **asked**, never picked silently.\n4. **Read the whole destination** if it exists, and note its `source:` field.\n5. **Classify complexity** for the `aid-architect` dispatch (verifier tier >= producer).\n\n**Advance:** CHAIN -> [State: CREATE]."
       }
     },
     {
@@ -61,14 +61,14 @@
         "startLine": 110,
         "endLine": 113,
         "sourceKind": "skill",
-        "excerpt": "## State: VERIFY\n\n**Full verify**, as `design-lifecycle.md` defines it. Not clean -> loop to CREATE; the\n3-cycle circuit breaker there escalates to IMPEDIMENT + `lifecycle: Blocked`."
+        "excerpt": "## State: VERIFY\n\n**Full verify**, as `design-lifecycle.md` defines it. Not clean -> loop to CREATE; the\n3-cycle circuit breaker there escalates to IMPEDIMENT, and the lifecycle is set to `Blocked` through the writer."
       },
       "detail": {
         "file": "canonical/skills/aid-create-architecture/SKILL.md",
         "startLine": 110,
         "endLine": 115,
         "sourceKind": "skill",
-        "excerpt": "## State: VERIFY\n\n**Full verify**, as `design-lifecycle.md` defines it. Not clean -> loop to CREATE; the\n3-cycle circuit breaker there escalates to IMPEDIMENT + `lifecycle: Blocked`.\n\n**Advance:** CHAIN -> [State: PRESENT]."
+        "excerpt": "## State: VERIFY\n\n**Full verify**, as `design-lifecycle.md` defines it. Not clean -> loop to CREATE; the\n3-cycle circuit breaker there escalates to IMPEDIMENT, and the lifecycle is set to `Blocked` through the writer.\n\n**Advance:** CHAIN -> [State: PRESENT]."
       }
     },
     {
@@ -83,14 +83,14 @@
         "startLine": 119,
         "endLine": 123,
         "sourceKind": "skill",
-        "excerpt": "## State: PRESENT (hard stop -- the user decides)\n\nSet `lifecycle: Paused-Awaiting-Input`. Present the realized document and assert: the seed\nwas consumed only for what was written; on the creation path both registration surfaces were\nwritten; and anything routed to `/aid-update-architecture` is named."
+        "excerpt": "## State: PRESENT (hard stop -- the user decides)\n\nSet the lifecycle to `Paused-Awaiting-Input` through the writer. Present the realized document and assert: the seed\nwas consumed only for what was written; on the creation path both registration surfaces were\nwritten; and anything routed to `/aid-update-architecture` is named."
       },
       "detail": {
         "file": "canonical/skills/aid-create-architecture/SKILL.md",
         "startLine": 119,
         "endLine": 125,
         "sourceKind": "skill",
-        "excerpt": "## State: PRESENT (hard stop -- the user decides)\n\nSet `lifecycle: Paused-Awaiting-Input`. Present the realized document and assert: the seed\nwas consumed only for what was written; on the creation path both registration surfaces were\nwritten; and anything routed to `/aid-update-architecture` is named.\n\n**Advance:** ASK -> [State: DONE]."
+        "excerpt": "## State: PRESENT (hard stop -- the user decides)\n\nSet the lifecycle to `Paused-Awaiting-Input` through the writer. Present the realized document and assert: the seed\nwas consumed only for what was written; on the creation path both registration surfaces were\nwritten; and anything routed to `/aid-update-architecture` is named.\n\n**Advance:** ASK -> [State: DONE]."
       }
     },
     {
@@ -108,14 +108,14 @@
         "startLine": 129,
         "endLine": 131,
         "sourceKind": "skill",
-        "excerpt": "## State: DONE\n\nSet `lifecycle: Completed`, `updated` now, append a `## Lifecycle History` row."
+        "excerpt": "## State: DONE\n\nSet the lifecycle to `Completed` through the writer, `updated` now, append a `## Lifecycle History` row."
       },
       "detail": {
         "file": "canonical/skills/aid-create-architecture/SKILL.md",
         "startLine": 129,
         "endLine": 131,
         "sourceKind": "skill",
-        "excerpt": "## State: DONE\n\nSet `lifecycle: Completed`, `updated` now, append a `## Lifecycle History` row."
+        "excerpt": "## State: DONE\n\nSet the lifecycle to `Completed` through the writer, `updated` now, append a `## Lifecycle History` row."
       }
     }
   ],

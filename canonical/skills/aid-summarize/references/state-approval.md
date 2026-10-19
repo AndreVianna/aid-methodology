@@ -48,6 +48,9 @@ exit. `## Summarization History` is NOT updated.
 
 On changes-needed: capture the user's notes in `.aid/knowledge/STATE.md` `## Knowledge Summary Status` `### Pending Changes` (unaffected markdown-body content), transition to FIX.
 
+This approval cannot be skipped: the question pauses the step where it stands, and the step stays open until the
+user approves, rejects or asks for changes.
+
 Print: `[State: APPROVAL] complete.`
 
-**Advance:** **ASK** → [State: WRITEBACK], the step that reads the answer: an approval goes on to WRITEBACK, "changes needed" goes to FIX from there, and a rejection ends the run with **HALT** (no writeback).
+**Advance:** **CHAIN** → [State: WRITEBACK] when the user approves; **CHAIN** → [State: FIX] when changes are needed; **HALT** when the user rejects (no writeback).

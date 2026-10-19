@@ -177,13 +177,13 @@ aid-summarize  ▸ you are here
 | State | Detail | Worker | Advance |
 |-------|--------|--------|---------|
 | PREFLIGHT | `references/state-preflight.md` | inline | CHAIN → STALE-CHECK |
-| STALE-CHECK | `references/state-stale-check.md` | inline | CHAIN → PROFILE |
+| STALE-CHECK | `references/state-stale-check.md` | inline | CHAIN → PROFILE (stale) / CHAIN → APPROVAL (current, not approved) / CHAIN → DONE (current and approved) |
 | PROFILE | `references/state-profile.md` | inline | CHAIN → GENERATE |
 | GENERATE | `references/state-generate.md` | inline | CHAIN → VALIDATE |
 | VALIDATE | `references/state-validate.md` | inline | CHAIN → MANUAL-CHECKLIST (grade ≥ min) / CHAIN → FIX (grade < min) |
-| MANUAL-CHECKLIST | `references/state-manual-checklist.md` | inline | ASK → APPROVAL (Overall grade ≥ min) / ASK → FIX (otherwise) |
+| MANUAL-CHECKLIST | `references/state-manual-checklist.md` | inline | CHAIN → APPROVAL (Overall grade ≥ min) / CHAIN → FIX (otherwise) |
 | FIX | `references/state-fix.md` | inline | CHAIN → VALIDATE |
-| APPROVAL | `references/state-approval.md` | inline | ASK → WRITEBACK (approved) / HALT (rejected) / ASK → FIX (changes needed) |
+| APPROVAL | `references/state-approval.md` | inline | CHAIN → WRITEBACK (approved) / CHAIN → FIX (changes needed) / HALT (rejected) |
 | WRITEBACK | `references/state-writeback.md` | inline | CHAIN → DONE |
 | DONE | `references/state-done.md` | inline | HALT |
 

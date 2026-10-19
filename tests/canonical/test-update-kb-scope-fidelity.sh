@@ -436,12 +436,12 @@ assert_eq "$RESOLVED_FLOOR" "$GLOBAL_FLOOR" \
   "UK91 aid-update-kb's floor resolves (via read-setting.sh) to the project's global minimum_grade ('${GLOBAL_FLOOR}') -- i.e. no per-skill override shadows it"
 
 # =============================================================================
-# UK92-UK98 -- delivery-gate FIX cycle-2 (rows 7/8): APPROVAL row ASK-on-[1];
+# UK92-UK98 -- delivery-gate FIX cycle-2 (rows 7/8): APPROVAL row CHAINs to DONE on approval;
 # re-plan Adjustments/Consideration channel wired to SCOPE/ANALYZE
 # =============================================================================
 
-assert_file_contains "$SKILL_MD" '`[1] Approved` -> ASK -> DONE' \
-  "UK92 SKILL.md Dispatch table's APPROVAL row is ASK-on-[1] (matches state-approval.md's own Advance: ASK -> DONE)"
+assert_file_contains "$SKILL_MD" 'CHAIN -> DONE when the user approves' \
+  "UK92 SKILL.md Dispatch table's APPROVAL row reads the answer and CHAINs to DONE on approval (Q159)"
 
 assert_file_not_contains "$SKILL_MD" 'PAUSE-FOR-USER-ACTION -> DONE on approval' \
   "UK93 regression guard: SKILL.md no longer mislabels APPROVAL's [1] as PAUSE-FOR-USER-ACTION"

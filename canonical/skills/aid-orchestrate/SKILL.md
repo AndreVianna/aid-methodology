@@ -21,23 +21,28 @@ each reference when its step comes up. No work is created before FIND-OR-CREATE.
    project; `references/start-or-resume.md` step 1 answers it from the Knowledge Base, with
    sources. No work is created. **Advance:** **HALT**.
 2. **Check the reading** (`CHECK-READING`). `references/check-intent.md` steps 1 to 5 compare the request with
-   the Knowledge Base and the code, and classify it by its observable effect. **Advance:** **CHAIN** → SIZE-READING;
-   a request that names a work to cancel goes to CANCEL, and one that names a work to close goes to CLOSE.
+   the Knowledge Base and the code, and classify it by its observable effect. **Advance:** **CHAIN** → CANCEL when the request names a work to cancel;
+   **CHAIN** → CLOSE when it names a work to close; otherwise **CHAIN** → SIZE-READING.
 3. **Size the reading** (`SIZE-READING`). `references/size-and-route.md` sections 1 and 2 pick the phases and the
    depth. When the project has no Knowledge Base, offer Preparation too
    (`references/size-and-route.md` section 5). **Advance:** **CHAIN** → SHOW-READING.
 4. **Show the reading** (`SHOW-READING`). One line with its reason, the phases and the depth, in the same
    message as the first real question or approval. Then wait for the answer; it is never a
    turn of its own. **Advance:** **ASK** → ACTION-HANDOVER.
-5. **Hand over an action-skill reading** (`ACTION-HANDOVER`). Once the user approves, a reading that matches an
+5. **Read the answer** (`ACTION-HANDOVER`). The user's answer to SHOW-READING decides. A reading that matches an
    action skill (`/aid-create`, `/aid-update`, `/aid-fix`, `/aid-refactor`, `/aid-document`,
-   `/aid-test`, `/aid-prototype`) goes to that skill with the block as an `intent:` line (see
-   `.aid/runtime/templates/work-state-template.yml`); its START creates the work. Any other reading goes on
-   to FIND-OR-CREATE. **Advance:** **CHAIN** → FIND-OR-CREATE when the reading matches no action skill;
-   otherwise **ASK** then **HALT**: the user confirms the hand-over, and that skill starts.
+   `/aid-test`, `/aid-prototype`) goes to START-ACTION; any other reading goes on to FIND-OR-CREATE. A
+   correction goes back to the check. **Advance:** **CHAIN** → START-ACTION when the approved reading matches an
+   action skill; **CHAIN** → FIND-OR-CREATE when it matches none; **CHAIN** → CHECK-READING when the user corrects it;
+   **HALT** when the user declines.
+5a. **Start an action skill** (`START-ACTION`). Start that skill in this turn, with the reading as an `intent:`
+   block (see `.aid/runtime/templates/work-state-template.yml`); where the tool cannot start it, name its
+   command. No work exists yet, so there is no hand-off to write; its START creates the work.
+   **Advance:** **PASS**.
 6. **Find or create the work** (`FIND-OR-CREATE`). `references/start-or-resume.md` section 3. A matching work is
    continued from its resume point and keeps its reading; otherwise the gate creates the work,
-   the flow's first write. **Advance:** **CHAIN** → RECORD-INTENT, or ASK-FIRST when several works plausibly match.
+   the flow's first write. **Advance:** **CHAIN** → ASK-FIRST when several works plausibly match;
+   otherwise **CHAIN** → RECORD-INTENT.
 6a. **Ask before going on** (`ASK-FIRST`). Ask one question when several works plausibly match
    (`references/start-or-resume.md` section 3a), and ask every open `qa:` question of a resumed
    work (section 4). Skip this step when neither applies. **Advance:** **ASK** → RECORD-INTENT.
@@ -45,17 +50,18 @@ each reference when its step comes up. No work is created before FIND-OR-CREATE.
    through the writer only, never by hand; a continued work already holds its intent and writes nothing.
    **Advance:** **CHAIN** → HAND-OVER.
 8. **Cancel a named work** (`CANCEL`). `references/start-or-resume.md` section 5: one confirmation question,
-   then the writer on a confirmed cancel. No new work is created. **Advance:** **ASK** then **HALT**.
+   asked in this step, then the writer on a confirmed cancel. No new work is created. **Advance:** **HALT**.
 9. **Close a work** (`CLOSE`). `references/size-and-route.md` section 3: when every task is `Done` (or, for an
    investigation, when nothing was to land), set `phase` to `CI` and `lifecycle` to
    `Completed`. The flow stops there. **Advance:** **HALT**.
-10. **Hand over** (`HAND-OVER`). Ask the user to go ahead, then start the first phase skill of a new work
-    (`intent.phases`), or, for a continued work, the skill its record names at its saved step
-    (`references/start-or-resume.md` section 4), or name its slash command where the tool cannot.
-    **Advance:** **ASK** then **HALT**.
+10. **Hand over** (`HAND-OVER`). The user approved the reading at SHOW-READING, so nothing more is asked. Start the
+    first phase skill of a new work (`intent.phases`), or, for a continued work, the skill its record names at
+    its saved step (`references/start-or-resume.md` section 4), in this turn; where the tool cannot, name its
+    slash command. **Advance:** **PASS**.
 11. **During the work** (`DURING-WORK`). Load `references/external-sources.md` when a source is pulled in, applied
     or written back, and `references/feedback-routing.md` when feedback arrives. A re-route is said
-    in one line and added to `intent.changes`. **Advance:** **CHAIN** → CHECK-READING on a new fact.
+    in one line and added to `intent.changes`. **Advance:** **CHAIN** → CHECK-READING when a new fact arrives;
+    **HALT** when none does.
 
 ## Rules
 

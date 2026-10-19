@@ -50,80 +50,82 @@ flowchart TB
 
 Every node in the chart above, in chart order, with the exact `canonical/` text it was derived from.
 
-<a id="fragment-n1"></a>**1 · `INTAKE`** · _exit_ · ASK
+<a id="fragment-n1"></a>**1 · `INTAKE`** · _exit_ · HALT
 
-~~~~plaintext title="canonical/skills/aid-update-architecture/SKILL.md#L50-L70" wrap
+~~~~plaintext title="canonical/skills/aid-update-architecture/SKILL.md#L50-L75" wrap
 ## State: INTAKE
 
 1. **Require a stated change.** Empty argument -> ask one bootstrapping question ("What
    should change in the architecture record?") and wait.
-2. **Allocate** through the Work Initiation Gate exactly as the contract's Allocation rule
-   requires (`.agents/skills/aid-design/SKILL.md` INTAKE step 4 is the shape), with
-   `initiator: aid-update-architecture`. `phase` is not driven.
-3. **No seed is required.** The change stated in this run is a sufficient input, and this
+2. **No seed is required.** The change stated in this run is a sufficient input, and this
    skill completes without a seed. **Read and consume one when present** at
    `.aid/design/architecture.md`, carrying its `## Current direction` into the destination and
    deleting it once realized.
-4. **Resolve the destination by concern.** This skill binds concern **C1** (build & shape).
+3. **Resolve the destination by concern.** This skill binds concern **C1** (build & shape).
    Where a seed supplied a `## Destination`, use it; otherwise apply the concern rule here --
    resolve C1 against `.aid/settings.yml` `knowledge.doc_set`, falling back to the C1 row of
    `.aid/runtime/templates/kb-authoring/domain-doc-matrix.md` -- and **confirm the resolution
    with the user before writing**. Never resolve silently. C1's default set holds both
    `project-structure.md` and `architecture.md`; this skill targets the document describing
    the system's shape, never `project-structure.md`.
-5. **Read the whole destination**, and note its `source:` field. Absent destination -> close the
-   allocated work as `Canceled` through the writer, route to `/aid-create-architecture`, and write nothing.
+4. **Read the whole destination**, and note its `source:` field. Absent destination -> allocate nothing and
+   write nothing: tell the user to run `/aid-create-architecture`, and end the run.
+5. **Ask, every run, which derived outputs to update alongside this one.** This question is
+   unconditional -- it is asked on every invocation, and the answer is **stored nowhere** but this
+   run's step detail: no frontmatter backlink, no manifest, no registry, and no state carried
+   between runs. The question is asked afresh each time, and UPDATE applies the answer.
 6. **Classify complexity** for the `aid-architect` dispatch (verifier tier >= producer).
+7. **Allocate** once the destination is present, so a route leaves no work behind. Go through the Work
+   Initiation Gate exactly as the contract's Allocation rule requires
+   (`.agents/skills/aid-design/SKILL.md` INTAKE step 4 is the shape), with
+   `initiator: aid-update-architecture`, saved step `UPDATE` (INTAKE runs before the record and saves nothing). `phase` is not driven.
 ~~~~
 
-[Source: `canonical/skills/aid-update-architecture/SKILL.md#L50-L70`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-update-architecture/SKILL.md#L50-L70) · [full step: `canonical/skills/aid-update-architecture/SKILL.md#L50-L73`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-update-architecture/SKILL.md#L50-L73)
+[Source: `canonical/skills/aid-update-architecture/SKILL.md#L50-L75`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-update-architecture/SKILL.md#L50-L75) · [full step: `canonical/skills/aid-update-architecture/SKILL.md#L50-L80`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-update-architecture/SKILL.md#L50-L80)
 
 <a id="fragment-n2"></a>**2 · `UPDATE`** · _step_
 
-~~~~plaintext title="canonical/skills/aid-update-architecture/SKILL.md#L77-L87" wrap
+~~~~plaintext title="canonical/skills/aid-update-architecture/SKILL.md#L84-L91" wrap
 ## State: UPDATE
 
 1. **Apply only the change the user named in this run**, to the owned C1 content, per the
    content rules below.
-2. **Ask, every run, which derived outputs to update alongside this one.** This step is
-   unconditional -- it runs on every invocation, and the answer is **stored nowhere**: no
-   frontmatter backlink, no manifest, no registry, and no state carried between runs. The
-   question is asked afresh each time.
+2. **Update the derived outputs the user named in INTAKE**, and only those, each by the same rules.
 3. **Write no tracking metadata** into any output this run touches -- no `derived-from`, no
    `source-doc`, no `generated-by`, no `aid-tracked` field, and no skill-attribution line.
 4. **`source: generated` refuses.** A registered build script owns that content.
 ~~~~
 
-[Source: `canonical/skills/aid-update-architecture/SKILL.md#L77-L87`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-update-architecture/SKILL.md#L77-L87) · [full step: `canonical/skills/aid-update-architecture/SKILL.md#L77-L91`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-update-architecture/SKILL.md#L77-L91)
+[Source: `canonical/skills/aid-update-architecture/SKILL.md#L84-L91`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-update-architecture/SKILL.md#L84-L91) · [full step: `canonical/skills/aid-update-architecture/SKILL.md#L84-L93`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-update-architecture/SKILL.md#L84-L93)
 
 <a id="fragment-n3"></a>**3 · `VERIFY`** · _loop-back_
 
-~~~~plaintext title="canonical/skills/aid-update-architecture/SKILL.md#L95-L98" wrap
+~~~~plaintext title="canonical/skills/aid-update-architecture/SKILL.md#L97-L100" wrap
 ## State: VERIFY
 
 **Full verify**, as `design-lifecycle.md` defines it. Not clean -> loop to UPDATE; the
 3-cycle circuit breaker there escalates to IMPEDIMENT + `lifecycle: Blocked`.
 ~~~~
 
-[Source: `canonical/skills/aid-update-architecture/SKILL.md#L95-L98`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-update-architecture/SKILL.md#L95-L98) · [full step: `canonical/skills/aid-update-architecture/SKILL.md#L95-L100`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-update-architecture/SKILL.md#L95-L100)
+[Source: `canonical/skills/aid-update-architecture/SKILL.md#L97-L100`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-update-architecture/SKILL.md#L97-L100) · [full step: `canonical/skills/aid-update-architecture/SKILL.md#L97-L102`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-update-architecture/SKILL.md#L97-L102)
 
 <a id="fragment-n4"></a>**4 · `PRESENT`** — hard stop -- the user decides · _step_
 
-~~~~plaintext title="canonical/skills/aid-update-architecture/SKILL.md#L104-L107" wrap
+~~~~plaintext title="canonical/skills/aid-update-architecture/SKILL.md#L106-L109" wrap
 ## State: PRESENT (hard stop -- the user decides)
 
 Set `lifecycle` to `Paused-Awaiting-Input` through the writer, with its pause reason. Present the
 revision, name every output touched, and assert that a consumed seed is gone.
 ~~~~
 
-[Source: `canonical/skills/aid-update-architecture/SKILL.md#L104-L107`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-update-architecture/SKILL.md#L104-L107) · [full step: `canonical/skills/aid-update-architecture/SKILL.md#L104-L109`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-update-architecture/SKILL.md#L104-L109)
+[Source: `canonical/skills/aid-update-architecture/SKILL.md#L106-L109`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-update-architecture/SKILL.md#L106-L109) · [full step: `canonical/skills/aid-update-architecture/SKILL.md#L106-L111`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-update-architecture/SKILL.md#L106-L111)
 
 <a id="fragment-n5"></a>**5 · `DONE`** · _exit_ · HALT
 
-~~~~plaintext title="canonical/skills/aid-update-architecture/SKILL.md#L113-L115" wrap
+~~~~plaintext title="canonical/skills/aid-update-architecture/SKILL.md#L115-L117" wrap
 ## State: DONE
 
 Set `lifecycle` to `Completed` through the writer, `updated` now, and append a `## Lifecycle History` row.
 ~~~~
 
-[Source: `canonical/skills/aid-update-architecture/SKILL.md#L113-L115`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-update-architecture/SKILL.md#L113-L115) · [full step: `canonical/skills/aid-update-architecture/SKILL.md#L113-L117`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-update-architecture/SKILL.md#L113-L117)
+[Source: `canonical/skills/aid-update-architecture/SKILL.md#L115-L117`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-update-architecture/SKILL.md#L115-L117) · [full step: `canonical/skills/aid-update-architecture/SKILL.md#L115-L119`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-update-architecture/SKILL.md#L115-L119)

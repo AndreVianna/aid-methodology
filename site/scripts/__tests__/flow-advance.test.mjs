@@ -1183,14 +1183,14 @@ describe('Rule 3 — condition regression: routing footnote "— see" (aid-house
   // meaningless routing footnote ("see `SKILL.md § Arguments`" → "see").
   // The trailing routing-reference strip removes it; the subject-stripped
   // conditional guard then catches "if was set, but is rejected" (no subject).
-  it('clause "if `--flag` was set, but … in delivery-001 — see `…`" returns null', () => {
+  it('clause "if `--flag` was set, but … in delivery-001 — see `…`" keeps the flag and drops the footnote', () => {
     const result = parse(
       advBlock('DONE if `--flag` was set, but `--flag` is rejected in delivery-001 — see `SKILL.md § Arguments`'),
       states('DONE'),
     );
     const cond = result.edges[0]?.condition ?? null;
-    // Must not produce "if was set, but is rejected in delivery-001 — see"
-    expect(cond).toBeNull();
+    // A code span that names a value stays in the condition; a "see `file §`" footnote does not.
+    expect(cond).toBe('if --flag was set, but --flag is rejected in delivery-001');
   });
 });
 
@@ -1838,5 +1838,56 @@ describe('ASK then HALT — one ending that asks first', () => {
     const r = parse(advBlock('HALT; ASK then HALT on cancel'), states('ALPHA'));
     expect(r.warnings).toHaveLength(1);
     expect(r.warnings[0]).toContain('multiple terminal clauses');
+  });
+});
+
+describe('Cycle-2 label repairs — pause arms, parentheses, code spans and hand-offs', () => {
+  it('an ASK arm with a condition gets no "otherwise" self-loop', () => {
+    const r = parse(advBlock('ASK → FETCH once the user has picked'), states('PICK', 'FETCH'));
+    expect(r.edges).toHaveLength(1);
+    expect(r.edges[0].to).toBe('n2');
+  });
+
+  it('a WAIT arm with a condition gets no "otherwise" self-loop', () => {
+    const r = parse(advBlock('WAIT → FETCH when the user says it is done'), states('PICK', 'FETCH'));
+    expect(r.edges).toHaveLength(1);
+  });
+
+  it('a CHAIN arm with a condition still gets the self-loop', () => {
+    const r = parse(advBlock('CHAIN → FETCH when the grade is met'), states('PICK', 'FETCH'));
+    expect(r.edges.some((e) => e.to === 'n1' && e.condition === 'otherwise')).toBe(true);
+  });
+
+  it('a separator inside a parenthetical does not cut the clause', () => {
+    const r = parse(
+      advBlock('HALT when the user loops back (after the writes above; see the note). CHAIN → B'),
+      states('A', 'B'),
+    );
+    expect(r.terminal.handoff).toBe('when the user loops back (after the writes above; see the note)');
+  });
+
+  it('a hand-off keeps the closing parenthesis of its parenthetical', () => {
+    const r = parse(advBlock('HALT when the user rejects (no writeback)'), states('A', 'B'));
+    expect(r.terminal.handoff).toBe('when the user rejects (no writeback)');
+  });
+
+  it('"ASK then HALT" leaves no "then" in the hand-off', () => {
+    const r = parse(advBlock('**ASK** then **HALT**. Name the next skill.'), states('A', 'B'));
+    expect(r.terminal.handoff).toBe('Name the next skill');
+  });
+
+  it('a keyword in parentheses leaves no empty pair behind', () => {
+    const r = parse(advBlock('HALT when done (HALT)'), states('A', 'B'));
+    expect(r.terminal.handoff).toBe('when done');
+  });
+
+  it('a condition that ends on a bare "on" is dropped', () => {
+    const r = parse(advBlock('CHAIN → B on'), states('A', 'B'));
+    expect(r.edges[0].condition).toBeNull();
+  });
+
+  it('a code span that names a value stays in the condition', () => {
+    const r = parse(advBlock('CHAIN → B when the result is `STALE`; CHAIN → A otherwise'), states('A', 'B'));
+    expect(r.edges.find((e) => e.to === 'n2').condition).toBe('when the result is STALE');
   });
 });

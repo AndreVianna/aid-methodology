@@ -101,7 +101,7 @@
       "kind": "exit",
       "terminal": {
         "advanceType": "ASK",
-        "handoff": "then . Name /aid-define {work} as the next skill in one plain line. Do not chain into it: this checkpoint needs an explicit user decision"
+        "handoff": "Name /aid-define {work} as the next skill in one plain line. Do not chain into it: this checkpoint needs an explicit user decision"
       },
       "provenance": {
         "file": "canonical/skills/aid-describe/SKILL.md",

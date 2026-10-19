@@ -24,7 +24,7 @@
         "startLine": 34,
         "endLine": 55,
         "sourceKind": "skill",
-        "excerpt": "## State: INTAKE\n\n**State Detection.** Detection shapes the entry step of a fresh start and validates a saved step\non resume; it never routes. Which skill and step a work continues at come from its work record\n(`.aid/runtime/templates/skill-steps.md`, § State Detection).\n\n1. **Require a subject.** Empty argument -> ask one bootstrapping question (\"What problem\n   or theme do you want to explore?\") and wait. The subject may be fuzzy -- an unformed\n   problem is exactly this skill's case, so INTAKE never refuses an argument for not being\n   a question.\n2. **Name the seed.** Because `artifact` is empty, feature-002 §4's `<token>` = `artifact`\n   rule does not apply: derive a kebab-case `<slug>` from the subject and state it in the same\n   message as your first question about the idea (for example \"I'll call the seed\n   `note-tagging`; first question: ...\"), not as a question of its own. The seed is then\n   `.aid/design/<slug>.md`.\n3. **Allocate** through the Work Initiation Gate exactly as the contract's Allocation rule\n   requires (`.agents/skills/aid-design/SKILL.md` INTAKE step 4 is the shape), with\n   `initiator: aid-brainstorm`. `phase` is not driven. The `work-NNN` folder is where\n   `STATE.md` and the review gate live, even though the seed is the deliverable.\n4. **Classify complexity** for the `aid-architect` dispatch (verifier tier >= producer).\n\n**Advance:** CHAIN -> DESIGN."
+        "excerpt": "## State: INTAKE\n\n**State Detection.** Detection shapes the entry step of a fresh start and validates a saved step\non resume; it never routes. Which skill and step a work continues at come from its work record\n(`.aid/runtime/templates/skill-steps.md`, § State Detection).\n\n1. **Require a subject.** Empty argument -> ask one bootstrapping question (\"What problem\n   or theme do you want to explore?\") and wait. The subject may be fuzzy -- an unformed\n   problem is exactly this skill's case, so INTAKE never refuses an argument for not being\n   a question.\n2. **Name the seed.** Because `artifact` is empty, feature-002 §4's `<token>` = `artifact`\n   rule does not apply: derive a kebab-case `<slug>` from the subject and state it in the same\n   message as your first question about the idea (for example \"I'll call the seed\n   `note-tagging`; first question: ...\"), not as a question of its own. The seed is then\n   `.aid/design/<slug>.md`.\n3. **Allocate** through the Work Initiation Gate exactly as the contract's Allocation rule\n   requires (`.agents/skills/aid-design/SKILL.md` INTAKE step 4 is the shape), with\n   `--skill aid-brainstorm` given to the gate's `--create`. `phase` is not driven. The `work-NNN` folder is where\n   `STATE.md` and the review gate live, even though the seed is the deliverable.\n4. **Classify complexity** for the `aid-architect` dispatch (verifier tier >= producer).\n\n**Advance:** CHAIN -> DESIGN."
       }
     },
     {
@@ -61,14 +61,14 @@
         "startLine": 73,
         "endLine": 76,
         "sourceKind": "skill",
-        "excerpt": "## State: VERIFY\n\n**Full verify**, as `design-lifecycle.md` defines it. Not clean -> loop to DESIGN; the\n3-cycle circuit breaker there escalates to IMPEDIMENT + `lifecycle: Blocked`."
+        "excerpt": "## State: VERIFY\n\n**Full verify**, as `design-lifecycle.md` defines it. Not clean -> loop to DESIGN; the\n3-cycle circuit breaker there escalates to IMPEDIMENT, and the lifecycle is set to `Blocked` through the writer."
       },
       "detail": {
         "file": "canonical/skills/aid-brainstorm/SKILL.md",
         "startLine": 73,
         "endLine": 78,
         "sourceKind": "skill",
-        "excerpt": "## State: VERIFY\n\n**Full verify**, as `design-lifecycle.md` defines it. Not clean -> loop to DESIGN; the\n3-cycle circuit breaker there escalates to IMPEDIMENT + `lifecycle: Blocked`.\n\n**Advance:** CHAIN -> PRESENT."
+        "excerpt": "## State: VERIFY\n\n**Full verify**, as `design-lifecycle.md` defines it. Not clean -> loop to DESIGN; the\n3-cycle circuit breaker there escalates to IMPEDIMENT, and the lifecycle is set to `Blocked` through the writer.\n\n**Advance:** CHAIN -> PRESENT."
       }
     },
     {
@@ -83,14 +83,14 @@
         "startLine": 82,
         "endLine": 86,
         "sourceKind": "skill",
-        "excerpt": "## State: PRESENT (hard stop -- the user decides)\n\nSet `lifecycle: Paused-Awaiting-Input`. Present the seed clearly. Assert no resolution --\nthe user iterates (re-invoke this skill), promotes the seed into a `design` lifecycle\nentry, or takes it forward however they choose."
+        "excerpt": "## State: PRESENT (hard stop -- the user decides)\n\nSet the lifecycle to `Paused-Awaiting-Input` through the writer. Present the seed clearly. Assert no resolution --\nthe user iterates (re-invoke this skill), promotes the seed into a `design` lifecycle\nentry, or takes it forward however they choose."
       },
       "detail": {
         "file": "canonical/skills/aid-brainstorm/SKILL.md",
         "startLine": 82,
         "endLine": 88,
         "sourceKind": "skill",
-        "excerpt": "## State: PRESENT (hard stop -- the user decides)\n\nSet `lifecycle: Paused-Awaiting-Input`. Present the seed clearly. Assert no resolution --\nthe user iterates (re-invoke this skill), promotes the seed into a `design` lifecycle\nentry, or takes it forward however they choose.\n\n**Advance:** ASK -> DONE."
+        "excerpt": "## State: PRESENT (hard stop -- the user decides)\n\nSet the lifecycle to `Paused-Awaiting-Input` through the writer. Present the seed clearly. Assert no resolution --\nthe user iterates (re-invoke this skill), promotes the seed into a `design` lifecycle\nentry, or takes it forward however they choose.\n\n**Advance:** ASK -> DONE."
       }
     },
     {
@@ -108,14 +108,14 @@
         "startLine": 92,
         "endLine": 95,
         "sourceKind": "skill",
-        "excerpt": "## State: DONE\n\nSet `lifecycle: Completed`, `updated` now, append a `## Lifecycle History` row. The seed\npersists at `.aid/design/<slug>.md`; brainstorm has no `create` counterpart to consume it."
+        "excerpt": "## State: DONE\n\nSet the lifecycle to `Completed` through the writer, `updated` now, append a `## Lifecycle History` row. The seed\npersists at `.aid/design/<slug>.md`; brainstorm has no `create` counterpart to consume it."
       },
       "detail": {
         "file": "canonical/skills/aid-brainstorm/SKILL.md",
         "startLine": 92,
         "endLine": 95,
         "sourceKind": "skill",
-        "excerpt": "## State: DONE\n\nSet `lifecycle: Completed`, `updated` now, append a `## Lifecycle History` row. The seed\npersists at `.aid/design/<slug>.md`; brainstorm has no `create` counterpart to consume it."
+        "excerpt": "## State: DONE\n\nSet the lifecycle to `Completed` through the writer, `updated` now, append a `## Lifecycle History` row. The seed\npersists at `.aid/design/<slug>.md`; brainstorm has no `create` counterpart to consume it."
       }
     }
   ],

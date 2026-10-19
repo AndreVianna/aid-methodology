@@ -26,19 +26,19 @@ flowchart TB
   classDef aidLoopBack fill:#1e3a8a,stroke:#1e3a8a,color:#fff
   classDef aidStep fill:#1a2035,stroke:#d4a853,color:#f1f5f9
   n1(["INTAKE"])
-  n2["GUARD"]
+  n2(["GUARD"])
   n3["UPDATE"]
   n4["VERIFY"]
   n5["PRESENT<br/>hard stop -- the user decides"]
   n6(["DONE"])
   n1 --> n2
-  n2 --> n3
+  n2 -->|"when no seed was found, it has no unresolved question"| n3
   n3 --> n4
   n4 -.-> n3
   n4 --> n5
   n5 --> n6
   class n1 aidExit
-  class n2 aidStep
+  class n2 aidExit
   class n3 aidStep
   class n4 aidLoopBack
   class n5 aidStep
@@ -54,59 +54,58 @@ flowchart TB
 
 Every node in the chart above, in chart order, with the exact `canonical/` text it was derived from.
 
-<a id="fragment-n1"></a>**1 · `INTAKE`** · _exit_ · ASK
+<a id="fragment-n1"></a>**1 · `INTAKE`** · _exit_ · HALT
 
-~~~~plaintext title="canonical/skills/aid-update-backlog/SKILL.md#L44-L65" wrap
+~~~~plaintext title="canonical/skills/aid-update-backlog/SKILL.md#L44-L64" wrap
 ## State: INTAKE
 
 1. **Require a subject.** Empty argument -> ask one bootstrapping question ("What would
    you like to revise in the backlog -- items to add, re-prioritize, promote from
    tech-debt.md, or move between sections?") and wait.
-2. **Allocate, exactly per `design-lifecycle.md § Skill shape -- Allocation`** -- the
-   Work Initiation Gate, then `initiator: aid-update-backlog`, `active_skill:
-   aid-update-backlog`, `pipeline.path: lite`, `lifecycle: Running`. `phase` is not
-   driven.
-3. **Read the destination** at `.aid/knowledge/backlog.md`. If absent, **route** to
-   `/aid-create-backlog` -- name it explicitly in the response -- and write nothing.
-   Set `lifecycle` to `Paused-Awaiting-Input` through the writer. Then `ASK` -> [State: DONE] and `HALT`, without proceeding further.
-4. **Read the seed** at `.aid/design/backlog.md` if one exists. Note its presence or
+2. **Read the destination** at `.aid/knowledge/backlog.md`. If absent, **route**: allocate nothing and
+   write nothing, name `/aid-create-backlog` explicitly in the response, and end the run.
+3. **Read the seed** at `.aid/design/backlog.md` if one exists. Note its presence or
    absence; do not require it.
-5. **Read `tech-debt.md`** at `.aid/knowledge/tech-debt.md` if it exists. The seed or the
+4. **Read `tech-debt.md`** at `.aid/knowledge/tech-debt.md` if it exists. The seed or the
    user may name candidate rows to promote; know their current state before the confirm
    gate runs.
-6. **Ask the derived-outputs question** -- every run, unconditionally: "Which previously
+5. **Ask the derived-outputs question** -- every run, unconditionally: "Which previously
    created outputs should be updated alongside backlog.md?" Wait for the user's answer
    before proceeding. Write no stored list and no tracking metadata anywhere.
-7. **Classify complexity (model + effort)** for the `aid-architect` dispatch below;
+6. **Classify complexity (model + effort)** for the `aid-architect` dispatch below;
    verifier tier >= producer tier (`agent-dispatch-tiering.md`).
+7. **Allocate** once the destination is present, so a route leaves no work behind, exactly per
+   `design-lifecycle.md § Skill shape -- Allocation`: the Work Initiation Gate, with
+   `initiator: aid-update-backlog`, `--path lite` and the saved step `GUARD` (INTAKE runs before the
+   record and saves nothing). `phase` is not driven.
 ~~~~
 
-[Source: `canonical/skills/aid-update-backlog/SKILL.md#L44-L65`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-update-backlog/SKILL.md#L44-L65) · [full step: `canonical/skills/aid-update-backlog/SKILL.md#L44-L67`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-update-backlog/SKILL.md#L44-L67)
+[Source: `canonical/skills/aid-update-backlog/SKILL.md#L44-L64`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-update-backlog/SKILL.md#L44-L64) · [full step: `canonical/skills/aid-update-backlog/SKILL.md#L44-L69`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-update-backlog/SKILL.md#L44-L69)
 
-<a id="fragment-n2"></a>**2 · `GUARD`** · _step_
+<a id="fragment-n2"></a>**2 · `GUARD`** · _exit_ · HALT
 
-~~~~plaintext title="canonical/skills/aid-update-backlog/SKILL.md#L71-L74" wrap
+~~~~plaintext title="canonical/skills/aid-update-backlog/SKILL.md#L73-L76" wrap
 ## State: GUARD
 
 **Readiness gate (class-1 contract, feature-002 §3b).** Only applies when a seed was
 found in INTAKE.
 ~~~~
 
-[Source: `canonical/skills/aid-update-backlog/SKILL.md#L71-L74`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-update-backlog/SKILL.md#L71-L74) · [full step: `canonical/skills/aid-update-backlog/SKILL.md#L71-L82`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-update-backlog/SKILL.md#L71-L82)
+[Source: `canonical/skills/aid-update-backlog/SKILL.md#L73-L76`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-update-backlog/SKILL.md#L73-L76) · [full step: `canonical/skills/aid-update-backlog/SKILL.md#L73-L86`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-update-backlog/SKILL.md#L73-L86)
 
 <a id="fragment-n3"></a>**3 · `UPDATE`** · _step_
 
-~~~~plaintext title="canonical/skills/aid-update-backlog/SKILL.md#L86-L88" wrap
+~~~~plaintext title="canonical/skills/aid-update-backlog/SKILL.md#L90-L92" wrap
 ## State: UPDATE
 
 Dispatch **`aid-architect`** (clean context, tiered) to revise the document.
 ~~~~
 
-[Source: `canonical/skills/aid-update-backlog/SKILL.md#L86-L88`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-update-backlog/SKILL.md#L86-L88) · [full step: `canonical/skills/aid-update-backlog/SKILL.md#L86-L158`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-update-backlog/SKILL.md#L86-L158)
+[Source: `canonical/skills/aid-update-backlog/SKILL.md#L90-L92`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-update-backlog/SKILL.md#L90-L92) · [full step: `canonical/skills/aid-update-backlog/SKILL.md#L90-L162`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-update-backlog/SKILL.md#L90-L162)
 
 <a id="fragment-n4"></a>**4 · `VERIFY`** · _loop-back_
 
-~~~~plaintext title="canonical/skills/aid-update-backlog/SKILL.md#L162-L166" wrap
+~~~~plaintext title="canonical/skills/aid-update-backlog/SKILL.md#L166-L170" wrap
 ## State: VERIFY
 
 **Full verify** -- exactly as `design-lifecycle.md § Skill shape -- "Full verify"`
@@ -114,24 +113,24 @@ defines it. Not clean -> loop to UPDATE; the circuit-breaker there governs escal
 to IMPEDIMENT + `lifecycle: Blocked`.
 ~~~~
 
-[Source: `canonical/skills/aid-update-backlog/SKILL.md#L162-L166`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-update-backlog/SKILL.md#L162-L166) · [full step: `canonical/skills/aid-update-backlog/SKILL.md#L162-L168`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-update-backlog/SKILL.md#L162-L168)
+[Source: `canonical/skills/aid-update-backlog/SKILL.md#L166-L170`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-update-backlog/SKILL.md#L166-L170) · [full step: `canonical/skills/aid-update-backlog/SKILL.md#L166-L172`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-update-backlog/SKILL.md#L166-L172)
 
 <a id="fragment-n5"></a>**5 · `PRESENT`** — hard stop -- the user decides · _step_
 
-~~~~plaintext title="canonical/skills/aid-update-backlog/SKILL.md#L172-L174" wrap
+~~~~plaintext title="canonical/skills/aid-update-backlog/SKILL.md#L176-L178" wrap
 ## State: PRESENT (hard stop -- the user decides)
 
 Set `lifecycle` to `Paused-Awaiting-Input` through the writer. Present the revised document clearly. Assert:
 ~~~~
 
-[Source: `canonical/skills/aid-update-backlog/SKILL.md#L172-L174`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-update-backlog/SKILL.md#L172-L174) · [full step: `canonical/skills/aid-update-backlog/SKILL.md#L172-L183`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-update-backlog/SKILL.md#L172-L183)
+[Source: `canonical/skills/aid-update-backlog/SKILL.md#L176-L178`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-update-backlog/SKILL.md#L176-L178) · [full step: `canonical/skills/aid-update-backlog/SKILL.md#L176-L187`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-update-backlog/SKILL.md#L176-L187)
 
 <a id="fragment-n6"></a>**6 · `DONE`** · _exit_ · HALT
 
-~~~~plaintext title="canonical/skills/aid-update-backlog/SKILL.md#L187-L189" wrap
+~~~~plaintext title="canonical/skills/aid-update-backlog/SKILL.md#L191-L193" wrap
 ## State: DONE
 
 Set `lifecycle` to `Completed` through the writer, `updated` now, and append a `## Lifecycle History` row.
 ~~~~
 
-[Source: `canonical/skills/aid-update-backlog/SKILL.md#L187-L189`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-update-backlog/SKILL.md#L187-L189) · [full step: `canonical/skills/aid-update-backlog/SKILL.md#L187-L191`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-update-backlog/SKILL.md#L187-L191)
+[Source: `canonical/skills/aid-update-backlog/SKILL.md#L191-L193`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-update-backlog/SKILL.md#L191-L193) · [full step: `canonical/skills/aid-update-backlog/SKILL.md#L191-L195`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-update-backlog/SKILL.md#L191-L195)

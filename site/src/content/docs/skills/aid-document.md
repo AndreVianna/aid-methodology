@@ -27,7 +27,7 @@ flowchart TB
   classDef aidStep fill:#1a2035,stroke:#d4a853,color:#f1f5f9
   n1(["aid-document<br/>{verb: document, artifact: &quot;&quot;}"])
   n2(["INTAKE"])
-  n3["INTAKE-ASK<br/>only when a question must be put"]
+  n3(["INTAKE-ASK<br/>only when a question must be put"])
   n4["ALLOCATE"]
   n5["AUTHOR"]
   n6["VERIFY"]
@@ -37,7 +37,7 @@ flowchart TB
   n1 --> n2
   n2 -->|"when the argument is empty, the path is Guided"| n3
   n2 -->|"works exist; otherwise"| n4
-  n3 --> n4
+  n3 -->|"once the questions are answered"| n4
   n4 -. "otherwise" .- n4
   n4 -->|"on a new work; a continuation follows the gate's § 3b instead"| n5
   n5 --> n6
@@ -47,7 +47,7 @@ flowchart TB
   n8 --> n9
   class n1 aidEntry
   class n2 aidEntry
-  class n3 aidStep
+  class n3 aidExit
   class n4 aidLoopBack
   class n5 aidStep
   class n6 aidLoopBack
@@ -86,7 +86,7 @@ INTAKE and INTAKE-ASK run before any work exists, so they save no steps (`skill-
 
 [Source: `canonical/skills/aid-create-document/SKILL.md#L48-L50`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-create-document/SKILL.md#L48-L50) · [full step: `canonical/skills/aid-create-document/SKILL.md#L48-L67`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-create-document/SKILL.md#L48-L67)
 
-<a id="fragment-n3"></a>**3 · `INTAKE-ASK`** — only when a question must be put · _step_
+<a id="fragment-n3"></a>**3 · `INTAKE-ASK`** — only when a question must be put · _exit_ · HALT
 
 ~~~~plaintext title="canonical/skills/aid-create-document/SKILL.md#L71-L73" wrap
 ## State: INTAKE-ASK  (only when a question must be put)
@@ -105,11 +105,11 @@ Allocate the work through the gate: the Work Initiation Gate
 (`.aid/runtime/templates/work-initiation-gate.md`).
 ~~~~
 
-[Source: `canonical/skills/aid-create-document/SKILL.md#L84-L87`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-create-document/SKILL.md#L84-L87) · [full step: `canonical/skills/aid-create-document/SKILL.md#L84-L103`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-create-document/SKILL.md#L84-L103)
+[Source: `canonical/skills/aid-create-document/SKILL.md#L84-L87`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-create-document/SKILL.md#L84-L87) · [full step: `canonical/skills/aid-create-document/SKILL.md#L84-L104`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-create-document/SKILL.md#L84-L104)
 
 <a id="fragment-n5"></a>**5 · `AUTHOR`** · _step_
 
-~~~~plaintext title="canonical/skills/aid-create-document/SKILL.md#L107-L114" wrap
+~~~~plaintext title="canonical/skills/aid-create-document/SKILL.md#L108-L115" wrap
 ## State: AUTHOR
 
 Dispatch **`aid-tech-writer`** (clean context, tiered) to write the document in the resolved
@@ -120,11 +120,11 @@ It drafts into the work folder (not yet placed). Text formats are produced nativ
 `.pptx`/`.xlsx`), it produces the best text form and notes the conversion handoff.
 ~~~~
 
-[Source: `canonical/skills/aid-create-document/SKILL.md#L107-L114`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-create-document/SKILL.md#L107-L114) · [full step: `canonical/skills/aid-create-document/SKILL.md#L107-L116`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-create-document/SKILL.md#L107-L116)
+[Source: `canonical/skills/aid-create-document/SKILL.md#L108-L115`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-create-document/SKILL.md#L108-L115) · [full step: `canonical/skills/aid-create-document/SKILL.md#L108-L117`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-create-document/SKILL.md#L108-L117)
 
 <a id="fragment-n6"></a>**6 · `VERIFY`** · _loop-back_
 
-~~~~plaintext title="canonical/skills/aid-create-document/SKILL.md#L120-L128" wrap
+~~~~plaintext title="canonical/skills/aid-create-document/SKILL.md#L121-L129" wrap
 ## State: VERIFY
 
 1. **Mechanical grounding check** (no dispatch): claims about the project cite a KB doc or
@@ -136,11 +136,11 @@ It drafts into the work folder (not yet placed). Text formats are produced nativ
    to AUTHOR. Circuit-breaker: 3 cycles -> IMPEDIMENT, and the lifecycle set to `Blocked` through the writer.
 ~~~~
 
-[Source: `canonical/skills/aid-create-document/SKILL.md#L120-L128`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-create-document/SKILL.md#L120-L128) · [full step: `canonical/skills/aid-create-document/SKILL.md#L120-L130`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-create-document/SKILL.md#L120-L130)
+[Source: `canonical/skills/aid-create-document/SKILL.md#L121-L129`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-create-document/SKILL.md#L121-L129) · [full step: `canonical/skills/aid-create-document/SKILL.md#L121-L131`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-create-document/SKILL.md#L121-L131)
 
 <a id="fragment-n7"></a>**7 · `PRESENT`** — hard stop -- human final say before placing · _step_
 
-~~~~plaintext title="canonical/skills/aid-create-document/SKILL.md#L134-L138" wrap
+~~~~plaintext title="canonical/skills/aid-create-document/SKILL.md#L135-L139" wrap
 ## State: PRESENT  (hard stop -- human final say before placing)
 
 The hard stop follows the ASK step of `skill-steps.md`. Present the drafted document **and the proposed
@@ -148,11 +148,11 @@ target location** (KB-informed: `docs/`, an ADR dir, `CHANGELOG.md`, a runbook p
 Await approval. **Never writes `.aid/knowledge/`.**
 ~~~~
 
-[Source: `canonical/skills/aid-create-document/SKILL.md#L134-L138`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-create-document/SKILL.md#L134-L138) · [full step: `canonical/skills/aid-create-document/SKILL.md#L134-L140`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-create-document/SKILL.md#L134-L140)
+[Source: `canonical/skills/aid-create-document/SKILL.md#L135-L139`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-create-document/SKILL.md#L135-L139) · [full step: `canonical/skills/aid-create-document/SKILL.md#L135-L141`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-create-document/SKILL.md#L135-L141)
 
 <a id="fragment-n8"></a>**8 · `PLACE`** — only on approval · _step_
 
-~~~~plaintext title="canonical/skills/aid-create-document/SKILL.md#L144-L151" wrap
+~~~~plaintext title="canonical/skills/aid-create-document/SKILL.md#L145-L152" wrap
 ## State: PLACE  (only on approval)
 
 If the user declined, place nothing: the draft stays in the work folder, and the step goes on to
@@ -163,14 +163,14 @@ overwrite an existing doc. Then optionally print handoffs the user may act on: `
 `/aid-refactor` (an ADR mandating a refactor).
 ~~~~
 
-[Source: `canonical/skills/aid-create-document/SKILL.md#L144-L151`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-create-document/SKILL.md#L144-L151) · [full step: `canonical/skills/aid-create-document/SKILL.md#L144-L153`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-create-document/SKILL.md#L144-L153)
+[Source: `canonical/skills/aid-create-document/SKILL.md#L145-L152`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-create-document/SKILL.md#L145-L152) · [full step: `canonical/skills/aid-create-document/SKILL.md#L145-L154`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-create-document/SKILL.md#L145-L154)
 
 <a id="fragment-n9"></a>**9 · `DONE`** · _exit_ · HALT
 
-~~~~plaintext title="canonical/skills/aid-create-document/SKILL.md#L157-L159" wrap
+~~~~plaintext title="canonical/skills/aid-create-document/SKILL.md#L158-L160" wrap
 ## State: DONE
 
 Finish through the writer: `bash .aid/runtime/scripts/execute/writeback-state.sh --pipeline --field Lifecycle --value Completed`, which also clears the saved skill and step. Keep the work folder (draft + verify ledger) as the audit record.
 ~~~~
 
-[Source: `canonical/skills/aid-create-document/SKILL.md#L157-L159`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-create-document/SKILL.md#L157-L159) · [full step: `canonical/skills/aid-create-document/SKILL.md#L157-L161`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-create-document/SKILL.md#L157-L161)
+[Source: `canonical/skills/aid-create-document/SKILL.md#L158-L160`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-create-document/SKILL.md#L158-L160) · [full step: `canonical/skills/aid-create-document/SKILL.md#L158-L162`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-create-document/SKILL.md#L158-L162)

@@ -33,7 +33,6 @@ flowchart TB
   n7(["DONE<br/>Release complete."])
   n8(["RE-RUN<br/>When work STATE.md ## Deploy State is Done and the user…"])
   n1 --> n2
-  n2 -. "otherwise" .- n2
   n2 -->|"once the user has chosen the deliveries, given the version and package name…"| n3
   n3 -->|"when any check fails"| n4
   n3 -->|"when every check passes"| n6
@@ -74,10 +73,10 @@ Every node in the chart above, in chart order, with the exact `canonical/` text 
 <a id="fragment-n2"></a>**2 · `SELECTING`** — Eligible deliveries are presented to the user for inclusion… · _exit_ · HALT
 
 ~~~~plaintext title="canonical/skills/aid-deploy/SKILL.md#L189" wrap
-| SELECTING | `references/state-selecting.md` | `aid-operator` | CHAIN → VERIFYING; HALT on cancel |
+| SELECTING | `references/state-selecting.md` | `inline` | CHAIN → VERIFYING; HALT on cancel |
 ~~~~
 
-[Source: `canonical/skills/aid-deploy/SKILL.md#L189`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-deploy/SKILL.md#L189) · [full step: `canonical/skills/aid-deploy/references/state-selecting.md#L1-L46`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-deploy/references/state-selecting.md#L1-L46)
+[Source: `canonical/skills/aid-deploy/SKILL.md#L189`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-deploy/SKILL.md#L189) · [full step: `canonical/skills/aid-deploy/references/state-selecting.md#L1-L48`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-deploy/references/state-selecting.md#L1-L48)
 
 <a id="fragment-n3"></a>**3 · `VERIFYING`** — Full build, tests, and lint are run against the combined… · _decision_
 
@@ -125,4 +124,4 @@ Every node in the chart above, in chart order, with the exact `canonical/` text 
 | RE-RUN | `references/state-re-run.md` | `inline` | CHAIN → IDLE; HALT on review |
 ~~~~
 
-[Source: `canonical/skills/aid-deploy/SKILL.md#L195`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-deploy/SKILL.md#L195) · [full step: `canonical/skills/aid-deploy/references/state-re-run.md#L1-L21`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-deploy/references/state-re-run.md#L1-L21)
+[Source: `canonical/skills/aid-deploy/SKILL.md#L195`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-deploy/SKILL.md#L195) · [full step: `canonical/skills/aid-deploy/references/state-re-run.md#L1-L20`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-deploy/references/state-re-run.md#L1-L20)

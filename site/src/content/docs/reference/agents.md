@@ -44,7 +44,7 @@ Conducts adaptive one-question-at-a-time dialogue with human stakeholders to gat
 
 **Tools:** Read, Glob, Grep, Bash, Write
 
-Runs final release verification, packages artifacts, creates PRs and release notes, manages releases, and updates the KB on ship. Safety-first, verification-focused.
+Runs final release verification, packages artifacts, writes PR descriptions and release notes, manages releases, and updates the KB on ship. Safety-first, verification-focused.
 
 [Definition: `canonical/agents/aid-operator/AGENT.md`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/agents/aid-operator/AGENT.md)
 

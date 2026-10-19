@@ -26,20 +26,19 @@ flowchart TB
   classDef aidLoopBack fill:#1e3a8a,stroke:#1e3a8a,color:#fff
   classDef aidStep fill:#1a2035,stroke:#d4a853,color:#f1f5f9
   n1(["INTAKE"])
-  n2{"GUARD"}
+  n2(["GUARD"])
   n3(["REALIZE"])
   n4["VERIFY"]
   n5["PRESENT<br/>hard stop -- the user decides"]
   n6(["DONE"])
   n1 --> n2
-  n2 -->|"the override is supplied. On a refusal: . Say that the user must resolve the…"| n3
   n2 -->|"when no question is unresolved"| n3
   n3 -->|"creation path"| n4
   n4 -.-> n3
   n4 --> n5
   n5 --> n6
   class n1 aidEntry
-  class n2 aidDecision
+  class n2 aidExit
   class n3 aidExit
   class n4 aidLoopBack
   class n5 aidStep
@@ -57,16 +56,13 @@ Every node in the chart above, in chart order, with the exact `canonical/` text 
 
 <a id="fragment-n1"></a>**1 · `INTAKE`** · _entry_
 
-~~~~plaintext title="canonical/skills/aid-create-mvp/SKILL.md#L55-L70" wrap
+~~~~plaintext title="canonical/skills/aid-create-mvp/SKILL.md#L55-L67" wrap
 ## State: INTAKE
 
 1. **Require a subject.** Empty argument -> ask one bootstrapping question ("What
    belongs in the first shippable slice, and where does the line fall -- or run
    `/aid-design-mvp` first?") and wait.
-2. **Allocate, exactly per `design-lifecycle.md § Skill shape -- Allocation`** -- the
-   Work Initiation Gate, then `initiator: aid-create-mvp`, `active_skill:
-   aid-create-mvp`, `pipeline.path: lite`, `lifecycle: Running`. `phase` is not
-   driven.
+2. **Allocate, exactly per `design-lifecycle.md § Skill shape -- Allocation`** -- the Work Initiation Gate, whose `--create` is given `--skill aid-create-mvp`, `--step INTAKE` and `--path lite`; the record starts `Running`. `phase` is not driven.
 3. **Read the seed** at `.aid/design/mvp.md`. If no seed exists, inform the user and
    ask whether to proceed without one (slice entered interactively) or to run
    `/aid-design-mvp` first; do not proceed silently. The question blocks the work: pause INTAKE on it, with its detail saying the work is allocated and the question is open, record it with `--ask`, set the lifecycle to `Paused-Awaiting-Input`, and then ask it. Once it is answered, INTAKE continues at step 4.
@@ -76,59 +72,59 @@ Every node in the chart above, in chart order, with the exact `canonical/` text 
    verifier tier >= producer tier (`agent-dispatch-tiering.md`).
 ~~~~
 
-[Source: `canonical/skills/aid-create-mvp/SKILL.md#L55-L70`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-create-mvp/SKILL.md#L55-L70) · [full step: `canonical/skills/aid-create-mvp/SKILL.md#L55-L72`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-create-mvp/SKILL.md#L55-L72)
+[Source: `canonical/skills/aid-create-mvp/SKILL.md#L55-L67`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-create-mvp/SKILL.md#L55-L67) · [full step: `canonical/skills/aid-create-mvp/SKILL.md#L55-L69`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-create-mvp/SKILL.md#L55-L69)
 
-<a id="fragment-n2"></a>**2 · `GUARD`** · _decision_
+<a id="fragment-n2"></a>**2 · `GUARD`** · _exit_ · HALT
 
-~~~~plaintext title="canonical/skills/aid-create-mvp/SKILL.md#L76-L79" wrap
+~~~~plaintext title="canonical/skills/aid-create-mvp/SKILL.md#L73-L76" wrap
 ## State: GUARD
 
 **Readiness gate (class-1 contract, feature-002 §3b).** Inspect the seed for a
 non-empty `## Open questions` section per `design-lifecycle.md`'s detection rule.
 ~~~~
 
-[Source: `canonical/skills/aid-create-mvp/SKILL.md#L76-L79`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-create-mvp/SKILL.md#L76-L79) · [full step: `canonical/skills/aid-create-mvp/SKILL.md#L76-L87`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-create-mvp/SKILL.md#L76-L87)
+[Source: `canonical/skills/aid-create-mvp/SKILL.md#L73-L76`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-create-mvp/SKILL.md#L73-L76) · [full step: `canonical/skills/aid-create-mvp/SKILL.md#L73-L83`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-create-mvp/SKILL.md#L73-L83)
 
-<a id="fragment-n3"></a>**3 · `REALIZE`** · _exit_ · ASK
+<a id="fragment-n3"></a>**3 · `REALIZE`** · _exit_ · HALT
 
-~~~~plaintext title="canonical/skills/aid-create-mvp/SKILL.md#L91-L94" wrap
+~~~~plaintext title="canonical/skills/aid-create-mvp/SKILL.md#L87-L90" wrap
 ## State: REALIZE
 
 Dispatch **`aid-architect`** (clean context, tiered) to realize the seed. Apply the
 case determined in INTAKE:
 ~~~~
 
-[Source: `canonical/skills/aid-create-mvp/SKILL.md#L91-L94`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-create-mvp/SKILL.md#L91-L94) · [full step: `canonical/skills/aid-create-mvp/SKILL.md#L91-L130`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-create-mvp/SKILL.md#L91-L130)
+[Source: `canonical/skills/aid-create-mvp/SKILL.md#L87-L90`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-create-mvp/SKILL.md#L87-L90) · [full step: `canonical/skills/aid-create-mvp/SKILL.md#L87-L126`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-create-mvp/SKILL.md#L87-L126)
 
 <a id="fragment-n4"></a>**4 · `VERIFY`** · _loop-back_
 
-~~~~plaintext title="canonical/skills/aid-create-mvp/SKILL.md#L134-L138" wrap
+~~~~plaintext title="canonical/skills/aid-create-mvp/SKILL.md#L130-L134" wrap
 ## State: VERIFY
 
 **Full verify** -- exactly as `design-lifecycle.md § Skill shape -- "Full verify"`
 defines it. Not clean -> loop to REALIZE; the circuit-breaker there governs escalation
-to IMPEDIMENT + `lifecycle: Blocked`.
+to IMPEDIMENT, and the lifecycle is set to `Blocked` through the writer.
 ~~~~
 
-[Source: `canonical/skills/aid-create-mvp/SKILL.md#L134-L138`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-create-mvp/SKILL.md#L134-L138) · [full step: `canonical/skills/aid-create-mvp/SKILL.md#L134-L140`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-create-mvp/SKILL.md#L134-L140)
+[Source: `canonical/skills/aid-create-mvp/SKILL.md#L130-L134`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-create-mvp/SKILL.md#L130-L134) · [full step: `canonical/skills/aid-create-mvp/SKILL.md#L130-L136`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-create-mvp/SKILL.md#L130-L136)
 
 <a id="fragment-n5"></a>**5 · `PRESENT`** — hard stop -- the user decides · _step_
 
-~~~~plaintext title="canonical/skills/aid-create-mvp/SKILL.md#L144-L147" wrap
+~~~~plaintext title="canonical/skills/aid-create-mvp/SKILL.md#L140-L143" wrap
 ## State: PRESENT (hard stop -- the user decides)
 
-Set `lifecycle: Paused-Awaiting-Input`. Present the realized `## MVP` section clearly.
+Set the lifecycle to `Paused-Awaiting-Input` through the writer. Present the realized `## MVP` section clearly.
 Assert:
 ~~~~
 
-[Source: `canonical/skills/aid-create-mvp/SKILL.md#L144-L147`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-create-mvp/SKILL.md#L144-L147) · [full step: `canonical/skills/aid-create-mvp/SKILL.md#L144-L157`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-create-mvp/SKILL.md#L144-L157)
+[Source: `canonical/skills/aid-create-mvp/SKILL.md#L140-L143`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-create-mvp/SKILL.md#L140-L143) · [full step: `canonical/skills/aid-create-mvp/SKILL.md#L140-L153`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-create-mvp/SKILL.md#L140-L153)
 
 <a id="fragment-n6"></a>**6 · `DONE`** · _exit_ · UNSPECIFIED
 
-~~~~plaintext title="canonical/skills/aid-create-mvp/SKILL.md#L161-L163" wrap
+~~~~plaintext title="canonical/skills/aid-create-mvp/SKILL.md#L157-L159" wrap
 ## State: DONE
 
-Set `lifecycle: Completed`, `updated` now, append a `## Lifecycle History` row.
+Set the lifecycle to `Completed` through the writer, `updated` now, append a `## Lifecycle History` row.
 ~~~~
 
-[Source: `canonical/skills/aid-create-mvp/SKILL.md#L161-L163`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-create-mvp/SKILL.md#L161-L163) · [full step: `canonical/skills/aid-create-mvp/SKILL.md#L161-L163`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-create-mvp/SKILL.md#L161-L163)
+[Source: `canonical/skills/aid-create-mvp/SKILL.md#L157-L159`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-create-mvp/SKILL.md#L157-L159) · [full step: `canonical/skills/aid-create-mvp/SKILL.md#L157-L159`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-create-mvp/SKILL.md#L157-L159)

@@ -1498,31 +1498,30 @@ describe('flow warnings reach a human', () => {
 
   it('counts charts and warnings separately — two charts, one warning each', () => {
     resetFlowWarnings();
-    // aid-update-kb carries the W-1 residue from REVIEW's dropped fourth outcome;
-    // aid-housekeep carries the W-1 residue from PREFLIGHT's clause extraction.
-    buildFlowChart({ name: 'aid-update-kb', dir: REPO_ROOT });
-    buildFlowChart({ name: 'aid-housekeep', dir: REPO_ROOT });
+    // aid-plan and aid-monitor each carry one warning: their inline DONE row has no
+    // matching `## State:` section.
+    buildFlowChart({ name: 'aid-plan', dir: REPO_ROOT });
+    buildFlowChart({ name: 'aid-monitor', dir: REPO_ROOT });
     const s = summarizeFlowWarnings();
     expect(s.charts).toBe(2);
     expect(s.total).toBe(2);
-    expect([...s.skills].sort()).toEqual(['aid-housekeep', 'aid-update-kb']);
+    expect([...s.skills].sort()).toEqual(['aid-monitor', 'aid-plan']);
     expect(s.messages).toHaveLength(s.total);
   });
 
   it('prints the count, the skill names, and every message', () => {
     resetFlowWarnings();
-    buildFlowChart({ name: 'aid-update-kb', dir: REPO_ROOT });
+    buildFlowChart({ name: 'aid-plan', dir: REPO_ROOT });
     const lines = [];
     const { total, charts } = reportFlowWarnings((m) => lines.push(m));
 
     expect(charts).toBe(1);
     expect(lines[0]).toMatch(new RegExp(`${total} warnings? across 1 chart`));
-    expect(lines[0]).toContain('aid-update-kb');
+    expect(lines[0]).toContain('aid-plan');
     // One line per message, after the header.
     expect(lines).toHaveLength(total + 1);
-    // The dropped outcome from row 19 is among them — the specific thing whose
-    // invisibility made row 19's justification hollow before this existed.
-    expect(lines.join('\n')).toContain('grade/teach-back/act-back/TRACE-1');
+    // The message itself is printed, not only counted.
+    expect(lines.join('\n')).toContain('has no matching ## State: section');
   });
 
   it('rebuilding the SAME chart does not double its warnings', () => {
@@ -1532,28 +1531,28 @@ describe('flow warnings reach a human', () => {
     // twice, making the count a property of how often the generator asked rather than
     // of the corpus.
     resetFlowWarnings();
-    buildFlowChart({ name: 'aid-update-kb', dir: REPO_ROOT });
+    buildFlowChart({ name: 'aid-plan', dir: REPO_ROOT });
     const once = summarizeFlowWarnings();
     expect(once.total).toBeGreaterThan(0);
 
-    buildFlowChart({ name: 'aid-update-kb', dir: REPO_ROOT });
+    buildFlowChart({ name: 'aid-plan', dir: REPO_ROOT });
     expect(summarizeFlowWarnings()).toEqual(once);
   });
 
   it('resetFlowWarnings makes a second run report its own total, not a running one', () => {
     resetFlowWarnings();
-    buildFlowChart({ name: 'aid-update-kb', dir: REPO_ROOT });
+    buildFlowChart({ name: 'aid-plan', dir: REPO_ROOT });
     const first = summarizeFlowWarnings().total;
     expect(first).toBeGreaterThan(0);
 
     // A DIFFERENT warning-carrying skill, to show the accumulator does grow — so the
     // reset assertion below cannot pass merely because nothing accumulates.
-    buildFlowChart({ name: 'aid-execute', dir: REPO_ROOT });
+    buildFlowChart({ name: 'aid-monitor', dir: REPO_ROOT });
     expect(summarizeFlowWarnings().total).toBeGreaterThan(first);
     expect(summarizeFlowWarnings().charts).toBe(2);
 
     resetFlowWarnings();
-    buildFlowChart({ name: 'aid-update-kb', dir: REPO_ROOT });
+    buildFlowChart({ name: 'aid-plan', dir: REPO_ROOT });
     expect(summarizeFlowWarnings().total).toBe(first);
     expect(summarizeFlowWarnings().charts).toBe(1);
   });

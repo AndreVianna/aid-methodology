@@ -72,7 +72,7 @@ INTAKE and INTAKE-ASK run before the work record exists, so they save no steps (
 
 [Source: `canonical/skills/aid-update-document/SKILL.md#L39-L41`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-update-document/SKILL.md#L39-L41) · [full step: `canonical/skills/aid-update-document/SKILL.md#L39-L55`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-update-document/SKILL.md#L39-L55)
 
-<a id="fragment-n2"></a>**2 · `INTAKE-ASK`** — only when a question must be put · _exit_ · ASK
+<a id="fragment-n2"></a>**2 · `INTAKE-ASK`** — only when a question must be put · _exit_ · HALT
 
 ~~~~plaintext title="canonical/skills/aid-update-document/SKILL.md#L59-L61" wrap
 ## State: INTAKE-ASK  (only when a question must be put)
@@ -91,11 +91,11 @@ Allocate the work through the gate: the Work Initiation Gate
 (`.aid/runtime/templates/work-initiation-gate.md`).
 ~~~~
 
-[Source: `canonical/skills/aid-update-document/SKILL.md#L75-L78`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-update-document/SKILL.md#L75-L78) · [full step: `canonical/skills/aid-update-document/SKILL.md#L75-L90`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-update-document/SKILL.md#L75-L90)
+[Source: `canonical/skills/aid-update-document/SKILL.md#L75-L78`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-update-document/SKILL.md#L75-L78) · [full step: `canonical/skills/aid-update-document/SKILL.md#L75-L93`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-update-document/SKILL.md#L75-L93)
 
 <a id="fragment-n4"></a>**4 · `AUTHOR`** · _step_
 
-~~~~plaintext title="canonical/skills/aid-update-document/SKILL.md#L94-L98" wrap
+~~~~plaintext title="canonical/skills/aid-update-document/SKILL.md#L97-L101" wrap
 ## State: AUTHOR
 
 Dispatch **`aid-tech-writer`** (clean context, tiered) to produce the **revised** document
@@ -103,11 +103,11 @@ Dispatch **`aid-tech-writer`** (clean context, tiered) to produce the **revised*
 project source, preserving the document's existing genre structure.
 ~~~~
 
-[Source: `canonical/skills/aid-update-document/SKILL.md#L94-L98`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-update-document/SKILL.md#L94-L98) · [full step: `canonical/skills/aid-update-document/SKILL.md#L94-L100`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-update-document/SKILL.md#L94-L100)
+[Source: `canonical/skills/aid-update-document/SKILL.md#L97-L101`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-update-document/SKILL.md#L97-L101) · [full step: `canonical/skills/aid-update-document/SKILL.md#L97-L103`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-update-document/SKILL.md#L97-L103)
 
 <a id="fragment-n5"></a>**5 · `VERIFY`** · _step_
 
-~~~~plaintext title="canonical/skills/aid-update-document/SKILL.md#L104-L108" wrap
+~~~~plaintext title="canonical/skills/aid-update-document/SKILL.md#L107-L111" wrap
 ## State: VERIFY
 
 Same as `/aid-create-document`: mechanical grounding check + a clean-context **`aid-reviewer`**
@@ -115,22 +115,22 @@ adversarial check (accurate, complete, no fabrication, structure preserved) -> `
 -> loop on failure (3-cycle circuit-breaker -> IMPEDIMENT, and the lifecycle set to `Blocked` through the writer).
 ~~~~
 
-[Source: `canonical/skills/aid-update-document/SKILL.md#L104-L108`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-update-document/SKILL.md#L104-L108) · [full step: `canonical/skills/aid-update-document/SKILL.md#L104-L110`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-update-document/SKILL.md#L104-L110)
+[Source: `canonical/skills/aid-update-document/SKILL.md#L107-L111`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-update-document/SKILL.md#L107-L111) · [full step: `canonical/skills/aid-update-document/SKILL.md#L107-L113`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-update-document/SKILL.md#L107-L113)
 
 <a id="fragment-n6"></a>**6 · `PRESENT`** — hard stop -- human final say · _step_
 
-~~~~plaintext title="canonical/skills/aid-update-document/SKILL.md#L114-L117" wrap
+~~~~plaintext title="canonical/skills/aid-update-document/SKILL.md#L117-L120" wrap
 ## State: PRESENT  (hard stop -- human final say)
 
 The hard stop follows the ASK step of `skill-steps.md`. Present the revised document **as a diff against
 the current file** + the target path. Await approval. Never writes `.aid/knowledge/`.
 ~~~~
 
-[Source: `canonical/skills/aid-update-document/SKILL.md#L114-L117`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-update-document/SKILL.md#L114-L117) · [full step: `canonical/skills/aid-update-document/SKILL.md#L114-L119`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-update-document/SKILL.md#L114-L119)
+[Source: `canonical/skills/aid-update-document/SKILL.md#L117-L120`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-update-document/SKILL.md#L117-L120) · [full step: `canonical/skills/aid-update-document/SKILL.md#L117-L122`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-update-document/SKILL.md#L117-L122)
 
 <a id="fragment-n7"></a>**7 · `WRITE`** — only on approval · _step_
 
-~~~~plaintext title="canonical/skills/aid-update-document/SKILL.md#L123-L127" wrap
+~~~~plaintext title="canonical/skills/aid-update-document/SKILL.md#L126-L130" wrap
 ## State: WRITE  (only on approval)
 
 If the user declined, write nothing: the draft stays in the work folder, and the step goes on to
@@ -138,14 +138,14 @@ DONE. Otherwise write the revision back to the existing document (the diff was a
 PRESENT). Then optionally print handoffs (`/aid-update-kb`, `/aid-create*`, ...).
 ~~~~
 
-[Source: `canonical/skills/aid-update-document/SKILL.md#L123-L127`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-update-document/SKILL.md#L123-L127) · [full step: `canonical/skills/aid-update-document/SKILL.md#L123-L129`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-update-document/SKILL.md#L123-L129)
+[Source: `canonical/skills/aid-update-document/SKILL.md#L126-L130`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-update-document/SKILL.md#L126-L130) · [full step: `canonical/skills/aid-update-document/SKILL.md#L126-L132`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-update-document/SKILL.md#L126-L132)
 
 <a id="fragment-n8"></a>**8 · `DONE`** · _exit_ · HALT
 
-~~~~plaintext title="canonical/skills/aid-update-document/SKILL.md#L133-L135" wrap
+~~~~plaintext title="canonical/skills/aid-update-document/SKILL.md#L136-L138" wrap
 ## State: DONE
 
 Finish through the writer: `bash .aid/runtime/scripts/execute/writeback-state.sh --pipeline --field Lifecycle --value Completed`, which also clears the saved skill and step.
 ~~~~
 
-[Source: `canonical/skills/aid-update-document/SKILL.md#L133-L135`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-update-document/SKILL.md#L133-L135) · [full step: `canonical/skills/aid-update-document/SKILL.md#L133-L137`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-update-document/SKILL.md#L133-L137)
+[Source: `canonical/skills/aid-update-document/SKILL.md#L136-L138`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-update-document/SKILL.md#L136-L138) · [full step: `canonical/skills/aid-update-document/SKILL.md#L136-L140`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-update-document/SKILL.md#L136-L140)

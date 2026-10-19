@@ -50,67 +50,69 @@ flowchart TB
 
 Every node in the chart above, in chart order, with the exact `canonical/` text it was derived from.
 
-<a id="fragment-n1"></a>**1 · `INTAKE`** · _exit_ · ASK
+<a id="fragment-n1"></a>**1 · `INTAKE`** · _exit_ · HALT
 
-~~~~plaintext title="canonical/skills/aid-update-cicd/SKILL.md#L53-L74" wrap
+~~~~plaintext title="canonical/skills/aid-update-cicd/SKILL.md#L53-L79" wrap
 ## State: INTAKE
 
 1. **Require a stated change.** Empty argument -> ask one bootstrapping question ("What should
    change in the delivery-pipeline record?") and wait.
-2. **Allocate** through the Work Initiation Gate exactly as the contract's Allocation rule
-   requires (`.agents/skills/aid-design/SKILL.md` INTAKE step 4 is the shape), with
-   `initiator: aid-update-cicd`. `phase` is not driven.
-3. **No seed is required.** The change stated in this run is a sufficient input, and this
+2. **No seed is required.** The change stated in this run is a sufficient input, and this
    skill completes without a seed. **Read and consume one when present** at
    `.aid/design/cicd.md`, carrying its `## Current direction` into the destination and
    deleting it once realized.
-4. **Resolve the destination by concern.** This skill binds concern **C8** (shipping &
+3. **Resolve the destination by concern.** This skill binds concern **C8** (shipping &
    operation). Where a seed supplied a `## Destination`, use it; otherwise apply the concern
    rule here -- resolve C8 against `.aid/settings.yml` `knowledge.doc_set`, falling back to the
    C8 row of `.aid/runtime/templates/kb-authoring/domain-doc-matrix.md` -- and **confirm the
    resolution with the user before writing**. Never resolve silently.
-5. **Read the whole destination**, and note its `source:` field. Absent destination -> route to
-   `/aid-create-cicd` and write nothing.
-6. **Ask whether the user also wants production config this run.** Touching a workflow file is
+4. **Read the whole destination**, and note its `source:` field. Absent destination -> allocate nothing and
+   write nothing: tell the user to run `/aid-create-cicd`, and end the run.
+5. **Ask whether the user also wants production config this run.** Touching a workflow file is
    **opt-in per run and never the default**; the KB record is what this skill revises unless
    the user asks in this run.
+6. **Ask, every run, which derived outputs to update alongside this one.** This question is
+   unconditional -- it is asked on every invocation, and the answer is **stored nowhere** but this
+   run's step detail: no frontmatter backlink, no manifest, no registry, and no state carried
+   between runs. The question is asked afresh each time, and UPDATE applies the answer.
 7. **Classify complexity** for the `aid-architect` dispatch (verifier tier >= producer).
+8. **Allocate** once the destination is present, so a route leaves no work behind. Go through the Work
+   Initiation Gate exactly as the contract's Allocation rule requires
+   (`.agents/skills/aid-design/SKILL.md` INTAKE step 4 is the shape), with
+   `initiator: aid-update-cicd`, saved step `UPDATE` (INTAKE runs before the record and saves nothing). `phase` is not driven.
 ~~~~
 
-[Source: `canonical/skills/aid-update-cicd/SKILL.md#L53-L74`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-update-cicd/SKILL.md#L53-L74) · [full step: `canonical/skills/aid-update-cicd/SKILL.md#L53-L76`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-update-cicd/SKILL.md#L53-L76)
+[Source: `canonical/skills/aid-update-cicd/SKILL.md#L53-L79`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-update-cicd/SKILL.md#L53-L79) · [full step: `canonical/skills/aid-update-cicd/SKILL.md#L53-L84`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-update-cicd/SKILL.md#L53-L84)
 
 <a id="fragment-n2"></a>**2 · `UPDATE`** · _step_
 
-~~~~plaintext title="canonical/skills/aid-update-cicd/SKILL.md#L80-L90" wrap
+~~~~plaintext title="canonical/skills/aid-update-cicd/SKILL.md#L88-L95" wrap
 ## State: UPDATE
 
 1. **Apply only the change the user named in this run**, to the owned C8 content, per the
    content rules below.
-2. **Ask, every run, which derived outputs to update alongside this one.** This step is
-   unconditional -- it runs on every invocation, and the answer is **stored nowhere**: no
-   frontmatter backlink, no manifest, no registry, and no state carried between runs. The
-   question is asked afresh each time.
+2. **Update the derived outputs the user named in INTAKE**, and only those, each by the same rules.
 3. **Write no tracking metadata** into any output this run touches -- no `derived-from`, no
    `source-doc`, no `generated-by`, no `aid-tracked` field, and no skill-attribution line.
 4. **`source: generated` refuses.** A registered build script owns that content.
 ~~~~
 
-[Source: `canonical/skills/aid-update-cicd/SKILL.md#L80-L90`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-update-cicd/SKILL.md#L80-L90) · [full step: `canonical/skills/aid-update-cicd/SKILL.md#L80-L94`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-update-cicd/SKILL.md#L80-L94)
+[Source: `canonical/skills/aid-update-cicd/SKILL.md#L88-L95`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-update-cicd/SKILL.md#L88-L95) · [full step: `canonical/skills/aid-update-cicd/SKILL.md#L88-L97`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-update-cicd/SKILL.md#L88-L97)
 
 <a id="fragment-n3"></a>**3 · `VERIFY`** · _loop-back_
 
-~~~~plaintext title="canonical/skills/aid-update-cicd/SKILL.md#L98-L101" wrap
+~~~~plaintext title="canonical/skills/aid-update-cicd/SKILL.md#L101-L104" wrap
 ## State: VERIFY
 
 **Full verify**, as `design-lifecycle.md` defines it. Not clean -> loop to UPDATE; the
 3-cycle circuit breaker there escalates to IMPEDIMENT + `lifecycle: Blocked`.
 ~~~~
 
-[Source: `canonical/skills/aid-update-cicd/SKILL.md#L98-L101`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-update-cicd/SKILL.md#L98-L101) · [full step: `canonical/skills/aid-update-cicd/SKILL.md#L98-L103`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-update-cicd/SKILL.md#L98-L103)
+[Source: `canonical/skills/aid-update-cicd/SKILL.md#L101-L104`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-update-cicd/SKILL.md#L101-L104) · [full step: `canonical/skills/aid-update-cicd/SKILL.md#L101-L106`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-update-cicd/SKILL.md#L101-L106)
 
 <a id="fragment-n4"></a>**4 · `PRESENT`** — hard stop -- the user decides · _step_
 
-~~~~plaintext title="canonical/skills/aid-update-cicd/SKILL.md#L107-L111" wrap
+~~~~plaintext title="canonical/skills/aid-update-cicd/SKILL.md#L110-L114" wrap
 ## State: PRESENT (hard stop -- the user decides)
 
 Set `lifecycle` to `Paused-Awaiting-Input` through the writer. Present the revision, say whether a workflow file was
@@ -118,14 +120,14 @@ touched and that it was asked for, name every output touched, and assert that a 
 is gone.
 ~~~~
 
-[Source: `canonical/skills/aid-update-cicd/SKILL.md#L107-L111`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-update-cicd/SKILL.md#L107-L111) · [full step: `canonical/skills/aid-update-cicd/SKILL.md#L107-L113`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-update-cicd/SKILL.md#L107-L113)
+[Source: `canonical/skills/aid-update-cicd/SKILL.md#L110-L114`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-update-cicd/SKILL.md#L110-L114) · [full step: `canonical/skills/aid-update-cicd/SKILL.md#L110-L116`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-update-cicd/SKILL.md#L110-L116)
 
 <a id="fragment-n5"></a>**5 · `DONE`** · _exit_ · HALT
 
-~~~~plaintext title="canonical/skills/aid-update-cicd/SKILL.md#L117-L119" wrap
+~~~~plaintext title="canonical/skills/aid-update-cicd/SKILL.md#L120-L122" wrap
 ## State: DONE
 
 Set `lifecycle` to `Completed` through the writer, `updated` now, and append a `## Lifecycle History` row.
 ~~~~
 
-[Source: `canonical/skills/aid-update-cicd/SKILL.md#L117-L119`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-update-cicd/SKILL.md#L117-L119) · [full step: `canonical/skills/aid-update-cicd/SKILL.md#L117-L121`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-update-cicd/SKILL.md#L117-L121)
+[Source: `canonical/skills/aid-update-cicd/SKILL.md#L120-L122`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-update-cicd/SKILL.md#L120-L122) · [full step: `canonical/skills/aid-update-cicd/SKILL.md#L120-L124`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-update-cicd/SKILL.md#L120-L124)

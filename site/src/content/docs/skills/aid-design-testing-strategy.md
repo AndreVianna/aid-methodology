@@ -60,7 +60,7 @@ Every node in the chart above, in chart order, with the exact `canonical/` text 
    gates?") and wait.
 2. **Allocate** through the Work Initiation Gate exactly as the contract's Allocation rule
    requires (`.agents/skills/aid-design/SKILL.md` INTAKE step 4 is the shape), with
-   `initiator: aid-design-testing-strategy`. `phase` is not driven.
+   `--skill aid-design-testing-strategy` given to the gate's `--create`. `phase` is not driven.
 3. **Acquire `.aid/design/`** per the contract, then read `.aid/design/testing-strategy.md`
    if a prior seed exists -- re-invocation iterates it rather than starting over.
 4. **Classify complexity** for the `aid-architect` dispatch (verifier tier >= producer).
@@ -88,7 +88,7 @@ which gates block a merge, and who may waive one**.
 ## State: VERIFY
 
 **Full verify**, as `design-lifecycle.md` defines it. Not clean -> loop to DESIGN; the
-3-cycle circuit breaker there escalates to IMPEDIMENT + `lifecycle: Blocked`.
+3-cycle circuit breaker there escalates to IMPEDIMENT, and the lifecycle is set to `Blocked` through the writer.
 ~~~~
 
 [Source: `canonical/skills/aid-design-testing-strategy/SKILL.md#L88-L91`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-design-testing-strategy/SKILL.md#L88-L91) · [full step: `canonical/skills/aid-design-testing-strategy/SKILL.md#L88-L93`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-design-testing-strategy/SKILL.md#L88-L93)
@@ -98,7 +98,7 @@ which gates block a merge, and who may waive one**.
 ~~~~plaintext title="canonical/skills/aid-design-testing-strategy/SKILL.md#L97-L101" wrap
 ## State: PRESENT (hard stop -- the user decides)
 
-Set `lifecycle: Paused-Awaiting-Input`. Present the seed clearly. Assert no resolution --
+Set the lifecycle to `Paused-Awaiting-Input` through the writer. Present the seed clearly. Assert no resolution --
 the user iterates (re-invoke this skill) or realizes it now
 (`/aid-create-testing-strategy`).
 ~~~~
@@ -110,7 +110,7 @@ the user iterates (re-invoke this skill) or realizes it now
 ~~~~plaintext title="canonical/skills/aid-design-testing-strategy/SKILL.md#L107-L111" wrap
 ## State: DONE
 
-Set `lifecycle: Completed`, `updated` now, append a `## Lifecycle History` row. The seed
+Set the lifecycle to `Completed` through the writer, `updated` now, append a `## Lifecycle History` row. The seed
 persists at `.aid/design/testing-strategy.md`; consumption happens at
 `/aid-create-testing-strategy`.
 ~~~~

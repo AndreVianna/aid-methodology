@@ -84,7 +84,7 @@ writes production code** -- the `design` invariant (`design-lifecycle.md`).
 ## State: VERIFY
 
 **Full verify**, as `design-lifecycle.md` defines it. Not clean -> loop to DESIGN; the
-3-cycle circuit breaker there escalates to IMPEDIMENT + `lifecycle: Blocked`.
+3-cycle circuit breaker there escalates to IMPEDIMENT, and the lifecycle is set to `Blocked` through the writer.
 ~~~~
 
 [Source: `canonical/skills/aid-brainstorm/SKILL.md#L73-L76`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-brainstorm/SKILL.md#L73-L76) · [full step: `canonical/skills/aid-brainstorm/SKILL.md#L73-L78`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-brainstorm/SKILL.md#L73-L78)
@@ -94,7 +94,7 @@ writes production code** -- the `design` invariant (`design-lifecycle.md`).
 ~~~~plaintext title="canonical/skills/aid-brainstorm/SKILL.md#L82-L86" wrap
 ## State: PRESENT (hard stop -- the user decides)
 
-Set `lifecycle: Paused-Awaiting-Input`. Present the seed clearly. Assert no resolution --
+Set the lifecycle to `Paused-Awaiting-Input` through the writer. Present the seed clearly. Assert no resolution --
 the user iterates (re-invoke this skill), promotes the seed into a `design` lifecycle
 entry, or takes it forward however they choose.
 ~~~~
@@ -106,7 +106,7 @@ entry, or takes it forward however they choose.
 ~~~~plaintext title="canonical/skills/aid-brainstorm/SKILL.md#L92-L95" wrap
 ## State: DONE
 
-Set `lifecycle: Completed`, `updated` now, append a `## Lifecycle History` row. The seed
+Set the lifecycle to `Completed` through the writer, `updated` now, append a `## Lifecycle History` row. The seed
 persists at `.aid/design/<slug>.md`; brainstorm has no `create` counterpart to consume it.
 ~~~~
 

@@ -14,8 +14,8 @@
       "terminal": null,
       "provenance": {
         "file": "canonical/skills/aid-plan/SKILL.md",
-        "startLine": 157,
-        "endLine": 157,
+        "startLine": 164,
+        "endLine": 164,
         "sourceKind": "skill",
         "excerpt": "| FIRST-RUN | `references/first-run-loop.md` | `aid-architect` | ASK → REVIEW |"
       },
@@ -36,8 +36,8 @@
       "terminal": null,
       "provenance": {
         "file": "canonical/skills/aid-plan/SKILL.md",
-        "startLine": 158,
-        "endLine": 158,
+        "startLine": 165,
+        "endLine": 165,
         "sourceKind": "skill",
         "excerpt": "| CONFIRM | `references/confirm-reopen.md` | `inline` | ASK → REVIEW |"
       },
@@ -46,7 +46,7 @@
         "startLine": 1,
         "endLine": 13,
         "sourceKind": "worker",
-        "excerpt": "# State: CONFIRM\n\n## CONFIRM (re-run on existing PLAN.md)\n\nPLAN.md exists and was previously completed.\n\n**Ask first:** _\"This plan is already complete. Do you want to reopen it for review?\nIs there something specific you want to re-examine?\"_\n\nA confirmation continues to the review; a specific concern the user gives is recorded as context for it.\n\n**Advance:** **ASK** → [State: REVIEW].\n"
+        "excerpt": "# State: CONFIRM\n\n## CONFIRM (re-run on existing PLAN.md)\n\nPLAN.md exists but is not complete yet: it is graded below the minimum, or it has not been graded.\n\n**Ask first:** _\"PLAN.md exists but is not complete yet (below the minimum grade, or not yet graded), so it will be\nreviewed now. Is there something specific you want to re-examine?\"_\n\nAny answer continues to the review; a specific concern the user gives is recorded as context for it.\n\n**Advance:** **ASK** → [State: REVIEW].\n"
       }
     },
     {
@@ -58,8 +58,8 @@
       "terminal": null,
       "provenance": {
         "file": "canonical/skills/aid-plan/SKILL.md",
-        "startLine": 159,
-        "endLine": 159,
+        "startLine": 166,
+        "endLine": 166,
         "sourceKind": "skill",
         "excerpt": "| REVIEW | `references/review-deliverables.md` | `aid-reviewer` | CHAIN → DONE |"
       },
@@ -83,8 +83,8 @@
       },
       "provenance": {
         "file": "canonical/skills/aid-plan/SKILL.md",
-        "startLine": 160,
-        "endLine": 160,
+        "startLine": 167,
+        "endLine": 167,
         "sourceKind": "skill",
         "excerpt": "| DONE | _(inline — plan complete; print summary and exit)_ | `inline` | HALT |"
       },

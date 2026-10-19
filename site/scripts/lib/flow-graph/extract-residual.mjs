@@ -828,17 +828,13 @@ function _tryR4(bodyLines, allLines, bodyStartLine, file) {
   if (items.length === 0) return null;
 
   const warnings = [];
-  const rawNodes = items.map((it, i) => makeNode({
-    order: i + 1,
-    name: `STEP-${i + 1}`,
-    label: _label(it.text),
-    provenance: buildProvenance(file, allLines, it.lineNum, it.lineNum, 'skill'),
-    terminal: null,
-  }));
 
-  // An item's state name is what its advance line refers to. It is taken from the item
-  // when the item declares one; otherwise the item keeps its STEP-N name. A name already
-  // taken by an earlier item also falls back, so declared names stay unique.
+  // An item's state name is what its advance line refers to, and it is also the name of
+  // the node: a reader of the chart finds the step by the name the skill gave it. It is
+  // taken from the item when the item declares one (`(`NAME`)` after its bold title);
+  // otherwise the item keeps its STEP-N name. A name already taken by an earlier item also
+  // falls back, so declared names stay unique. Numbering the nodes by position instead made
+  // `6a` and every item after it a different number from the one the skill prints.
   const used = new Set();
   const stateNames = items.map((it, i) => {
     const declared = _itemStateName(it.text);
@@ -846,6 +842,14 @@ function _tryR4(bodyLines, allLines, bodyStartLine, file) {
     used.add(name);
     return name;
   });
+
+  const rawNodes = items.map((it, i) => makeNode({
+    order: i + 1,
+    name: stateNames[i],
+    label: _label(it.text),
+    provenance: buildProvenance(file, allLines, it.lineNum, it.lineNum, 'skill'),
+    terminal: null,
+  }));
 
   const steps = items.map((it, i) => ({
     node: rawNodes[i],

@@ -50,80 +50,82 @@ flowchart TB
 
 Every node in the chart above, in chart order, with the exact `canonical/` text it was derived from.
 
-<a id="fragment-n1"></a>**1 · `INTAKE`** · _exit_ · ASK
+<a id="fragment-n1"></a>**1 · `INTAKE`** · _exit_ · HALT
 
-~~~~plaintext title="canonical/skills/aid-update-testing-strategy/SKILL.md#L50-L70" wrap
+~~~~plaintext title="canonical/skills/aid-update-testing-strategy/SKILL.md#L50-L75" wrap
 ## State: INTAKE
 
 1. **Require a stated change.** Empty argument -> ask one bootstrapping question ("What should
    change in the testing strategy or the gate policy?") and wait.
-2. **Allocate** through the Work Initiation Gate exactly as the contract's Allocation rule
-   requires (`.agents/skills/aid-design/SKILL.md` INTAKE step 4 is the shape), with
-   `initiator: aid-update-testing-strategy`. `phase` is not driven.
-3. **No seed is required.** The change stated in this run is a sufficient input, and this
+2. **No seed is required.** The change stated in this run is a sufficient input, and this
    skill completes without a seed. **Read and consume one when present** at
    `.aid/design/testing-strategy.md`, carrying its `## Current direction` into the
    destinations and deleting it once realized.
-4. **Resolve the destinations by concern.** This skill binds concern **C6** (quality &
+3. **Resolve the destinations by concern.** This skill binds concern **C6** (quality &
    testing) and owns **two** documents. Where a seed supplied a `## Destination`, use it;
    otherwise apply the concern rule here -- resolve C6 against `.aid/settings.yml`
    `knowledge.doc_set`, falling back to the C6 row of
    `.aid/runtime/templates/kb-authoring/domain-doc-matrix.md` -- and **confirm the resolution
    with the user before writing**. Never resolve silently.
-5. **Read both destinations** whole, and note each one's `source:` field. An absent
-   destination -> route to `/aid-create-testing-strategy` for that document and write nothing
-   there.
+4. **Read both destinations** whole, and note each one's `source:` field. An absent
+   destination is written nothing: tell the user to run `/aid-create-testing-strategy` for that document.
+   When neither document exists, allocate nothing and end the run.
+5. **Ask, every run, which derived outputs to update alongside this one.** This question is
+   unconditional -- it is asked on every invocation, and the answer is **stored nowhere** but this
+   run's step detail: no frontmatter backlink, no manifest, no registry, and no state carried
+   between runs. The question is asked afresh each time, and UPDATE applies the answer.
 6. **Classify complexity** for the `aid-architect` dispatch (verifier tier >= producer).
+7. **Allocate** once a destination is present, so a route leaves no work behind. Go through the Work
+   Initiation Gate exactly as the contract's Allocation rule requires
+   (`.agents/skills/aid-design/SKILL.md` INTAKE step 4 is the shape), with
+   `initiator: aid-update-testing-strategy`, saved step `UPDATE` (INTAKE runs before the record and saves nothing). `phase` is not driven.
 ~~~~
 
-[Source: `canonical/skills/aid-update-testing-strategy/SKILL.md#L50-L70`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-update-testing-strategy/SKILL.md#L50-L70) · [full step: `canonical/skills/aid-update-testing-strategy/SKILL.md#L50-L72`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-update-testing-strategy/SKILL.md#L50-L72)
+[Source: `canonical/skills/aid-update-testing-strategy/SKILL.md#L50-L75`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-update-testing-strategy/SKILL.md#L50-L75) · [full step: `canonical/skills/aid-update-testing-strategy/SKILL.md#L50-L80`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-update-testing-strategy/SKILL.md#L50-L80)
 
 <a id="fragment-n2"></a>**2 · `UPDATE`** · _step_
 
-~~~~plaintext title="canonical/skills/aid-update-testing-strategy/SKILL.md#L76-L86" wrap
+~~~~plaintext title="canonical/skills/aid-update-testing-strategy/SKILL.md#L84-L91" wrap
 ## State: UPDATE
 
 1. **Apply only the change the user named in this run**, to the owned C6 content, per the
    content rules below.
-2. **Ask, every run, which derived outputs to update alongside this one.** This step is
-   unconditional -- it runs on every invocation, and the answer is **stored nowhere**: no
-   frontmatter backlink, no manifest, no registry, and no state carried between runs. The
-   question is asked afresh each time.
+2. **Update the derived outputs the user named in INTAKE**, and only those, each by the same rules.
 3. **Write no tracking metadata** into any output this run touches -- no `derived-from`, no
    `source-doc`, no `generated-by`, no `aid-tracked` field, and no skill-attribution line.
 4. **`source: generated` refuses.** A registered build script owns that content.
 ~~~~
 
-[Source: `canonical/skills/aid-update-testing-strategy/SKILL.md#L76-L86`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-update-testing-strategy/SKILL.md#L76-L86) · [full step: `canonical/skills/aid-update-testing-strategy/SKILL.md#L76-L90`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-update-testing-strategy/SKILL.md#L76-L90)
+[Source: `canonical/skills/aid-update-testing-strategy/SKILL.md#L84-L91`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-update-testing-strategy/SKILL.md#L84-L91) · [full step: `canonical/skills/aid-update-testing-strategy/SKILL.md#L84-L93`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-update-testing-strategy/SKILL.md#L84-L93)
 
 <a id="fragment-n3"></a>**3 · `VERIFY`** · _loop-back_
 
-~~~~plaintext title="canonical/skills/aid-update-testing-strategy/SKILL.md#L94-L97" wrap
+~~~~plaintext title="canonical/skills/aid-update-testing-strategy/SKILL.md#L97-L100" wrap
 ## State: VERIFY
 
 **Full verify**, as `design-lifecycle.md` defines it. Not clean -> loop to UPDATE; the
 3-cycle circuit breaker there escalates to IMPEDIMENT + `lifecycle: Blocked`.
 ~~~~
 
-[Source: `canonical/skills/aid-update-testing-strategy/SKILL.md#L94-L97`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-update-testing-strategy/SKILL.md#L94-L97) · [full step: `canonical/skills/aid-update-testing-strategy/SKILL.md#L94-L99`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-update-testing-strategy/SKILL.md#L94-L99)
+[Source: `canonical/skills/aid-update-testing-strategy/SKILL.md#L97-L100`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-update-testing-strategy/SKILL.md#L97-L100) · [full step: `canonical/skills/aid-update-testing-strategy/SKILL.md#L97-L102`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-update-testing-strategy/SKILL.md#L97-L102)
 
 <a id="fragment-n4"></a>**4 · `PRESENT`** — hard stop -- the user decides · _step_
 
-~~~~plaintext title="canonical/skills/aid-update-testing-strategy/SKILL.md#L103-L106" wrap
+~~~~plaintext title="canonical/skills/aid-update-testing-strategy/SKILL.md#L106-L109" wrap
 ## State: PRESENT (hard stop -- the user decides)
 
 Set `lifecycle` to `Paused-Awaiting-Input` through the writer. Present the revision, say which C6 half each change
 went to, name every output touched, and assert that a consumed seed is gone.
 ~~~~
 
-[Source: `canonical/skills/aid-update-testing-strategy/SKILL.md#L103-L106`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-update-testing-strategy/SKILL.md#L103-L106) · [full step: `canonical/skills/aid-update-testing-strategy/SKILL.md#L103-L108`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-update-testing-strategy/SKILL.md#L103-L108)
+[Source: `canonical/skills/aid-update-testing-strategy/SKILL.md#L106-L109`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-update-testing-strategy/SKILL.md#L106-L109) · [full step: `canonical/skills/aid-update-testing-strategy/SKILL.md#L106-L111`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-update-testing-strategy/SKILL.md#L106-L111)
 
 <a id="fragment-n5"></a>**5 · `DONE`** · _exit_ · HALT
 
-~~~~plaintext title="canonical/skills/aid-update-testing-strategy/SKILL.md#L112-L114" wrap
+~~~~plaintext title="canonical/skills/aid-update-testing-strategy/SKILL.md#L115-L117" wrap
 ## State: DONE
 
 Set `lifecycle` to `Completed` through the writer, `updated` now, and append a `## Lifecycle History` row.
 ~~~~
 
-[Source: `canonical/skills/aid-update-testing-strategy/SKILL.md#L112-L114`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-update-testing-strategy/SKILL.md#L112-L114) · [full step: `canonical/skills/aid-update-testing-strategy/SKILL.md#L112-L116`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-update-testing-strategy/SKILL.md#L112-L116)
+[Source: `canonical/skills/aid-update-testing-strategy/SKILL.md#L115-L117`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-update-testing-strategy/SKILL.md#L115-L117) · [full step: `canonical/skills/aid-update-testing-strategy/SKILL.md#L115-L119`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-update-testing-strategy/SKILL.md#L115-L119)

@@ -164,6 +164,13 @@ runs the checks below to decide how far the entry step goes. On resume the saved
 is on disk, and a mismatch goes to recovery, never to a silent re-route. Which skill and which step a work
 continues at come only from its work record.
 
+**Saving the step.** Every step saves itself on entry, before any work, with
+`bash .aid/runtime/scripts/execute/writeback-state.sh --step --skill aid-specify --name <STEP> --detail '<where>'`,
+where `<STEP>` is one of INITIALIZE, CONTINUE, SPIKE, BLOCKED, REVIEW or DONE. The detail holds what the step has
+settled: the work, the feature and the section being specified. When the work record does not already name
+`aid-specify` (the user typed `/aid-specify`; no skill handed the work on), the first step first records the typed
+start: `--handoff --to aid-specify --step INITIALIZE --why 'user ran the command' --returns no`, with no `--phase`.
+
 ```
 State 1: No features[] entry, or state Pending, in work STATE.yml -> INITIALIZE
 State 2: Feature State: In Discussion                         → CONTINUE

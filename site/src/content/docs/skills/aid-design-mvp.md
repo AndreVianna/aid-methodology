@@ -52,14 +52,12 @@ Every node in the chart above, in chart order, with the exact `canonical/` text 
 
 <a id="fragment-n1"></a>**1 · `INTAKE`** · _entry_
 
-~~~~plaintext title="canonical/skills/aid-design-mvp/SKILL.md#L41-L53" wrap
+~~~~plaintext title="canonical/skills/aid-design-mvp/SKILL.md#L41-L51" wrap
 ## State: INTAKE
 
 1. **Require a subject.** Empty argument -> ask one bootstrapping question ("What
    belongs in the first shippable slice, and what should defer?") and wait.
-2. **Allocate, exactly per `design-lifecycle.md § Skill shape -- Allocation`** -- the Work
-   Initiation Gate, then `initiator: aid-design-mvp`, `active_skill: aid-design-mvp`,
-   `pipeline.path: lite`, `lifecycle: Running`. `phase` is not driven.
+2. **Allocate, exactly per `design-lifecycle.md § Skill shape -- Allocation`** -- the Work Initiation Gate, whose `--create` is given `--skill aid-design-mvp`, `--step INTAKE` and `--path lite`; the record starts `Running`. `phase` is not driven.
 3. **Acquire `.aid/design/`.** Per `design-lifecycle.md § Before writing a seed` -- ensure
    the folder exists and seed its `README.md` on first use, before writing anything.
 4. **Read the existing seed, if one is present.** `.aid/design/mvp.md` -- re-invocation
@@ -68,11 +66,11 @@ Every node in the chart above, in chart order, with the exact `canonical/` text 
    verifier tier >= producer tier (`agent-dispatch-tiering.md`).
 ~~~~
 
-[Source: `canonical/skills/aid-design-mvp/SKILL.md#L41-L53`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-design-mvp/SKILL.md#L41-L53) · [full step: `canonical/skills/aid-design-mvp/SKILL.md#L41-L59`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-design-mvp/SKILL.md#L41-L59)
+[Source: `canonical/skills/aid-design-mvp/SKILL.md#L41-L51`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-design-mvp/SKILL.md#L41-L51) · [full step: `canonical/skills/aid-design-mvp/SKILL.md#L41-L57`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-design-mvp/SKILL.md#L41-L57)
 
 <a id="fragment-n2"></a>**2 · `DESIGN`** · _step_
 
-~~~~plaintext title="canonical/skills/aid-design-mvp/SKILL.md#L63-L68" wrap
+~~~~plaintext title="canonical/skills/aid-design-mvp/SKILL.md#L61-L66" wrap
 ## State: DESIGN
 
 Dispatch **`aid-architect`** (clean context, tiered) to develop or iterate the seed,
@@ -81,39 +79,39 @@ exists. Draws out: **the line -- what is in the first shippable slice, what defe
 the reason for each cut.**
 ~~~~
 
-[Source: `canonical/skills/aid-design-mvp/SKILL.md#L63-L68`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-design-mvp/SKILL.md#L63-L68) · [full step: `canonical/skills/aid-design-mvp/SKILL.md#L63-L75`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-design-mvp/SKILL.md#L63-L75)
+[Source: `canonical/skills/aid-design-mvp/SKILL.md#L61-L66`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-design-mvp/SKILL.md#L61-L66) · [full step: `canonical/skills/aid-design-mvp/SKILL.md#L61-L73`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-design-mvp/SKILL.md#L61-L73)
 
 <a id="fragment-n3"></a>**3 · `VERIFY`** · _loop-back_
 
-~~~~plaintext title="canonical/skills/aid-design-mvp/SKILL.md#L79-L83" wrap
+~~~~plaintext title="canonical/skills/aid-design-mvp/SKILL.md#L77-L81" wrap
 ## State: VERIFY
 
 **Full verify** -- exactly as `design-lifecycle.md § Skill shape -- "Full verify"`
 defines it. Not clean -> loop to DESIGN; the circuit-breaker there governs escalation to
-IMPEDIMENT + `lifecycle: Blocked`.
+IMPEDIMENT, and the lifecycle is set to `Blocked` through the writer.
 ~~~~
 
-[Source: `canonical/skills/aid-design-mvp/SKILL.md#L79-L83`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-design-mvp/SKILL.md#L79-L83) · [full step: `canonical/skills/aid-design-mvp/SKILL.md#L79-L85`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-design-mvp/SKILL.md#L79-L85)
+[Source: `canonical/skills/aid-design-mvp/SKILL.md#L77-L81`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-design-mvp/SKILL.md#L77-L81) · [full step: `canonical/skills/aid-design-mvp/SKILL.md#L77-L83`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-design-mvp/SKILL.md#L77-L83)
 
 <a id="fragment-n4"></a>**4 · `PRESENT`** — hard stop -- the user decides · _step_
 
-~~~~plaintext title="canonical/skills/aid-design-mvp/SKILL.md#L89-L93" wrap
+~~~~plaintext title="canonical/skills/aid-design-mvp/SKILL.md#L87-L91" wrap
 ## State: PRESENT (hard stop -- the user decides)
 
-Set `lifecycle: Paused-Awaiting-Input`. Present the seed clearly. Assert no resolution --
+Set the lifecycle to `Paused-Awaiting-Input` through the writer. Present the seed clearly. Assert no resolution --
 the user decides whether to iterate further (re-invoke this skill) or realize it now
 (`/aid-create-mvp`).
 ~~~~
 
-[Source: `canonical/skills/aid-design-mvp/SKILL.md#L89-L93`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-design-mvp/SKILL.md#L89-L93) · [full step: `canonical/skills/aid-design-mvp/SKILL.md#L89-L95`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-design-mvp/SKILL.md#L89-L95)
+[Source: `canonical/skills/aid-design-mvp/SKILL.md#L87-L91`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-design-mvp/SKILL.md#L87-L91) · [full step: `canonical/skills/aid-design-mvp/SKILL.md#L87-L93`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-design-mvp/SKILL.md#L87-L93)
 
 <a id="fragment-n5"></a>**5 · `DONE`** · _exit_ · UNSPECIFIED
 
-~~~~plaintext title="canonical/skills/aid-design-mvp/SKILL.md#L99-L102" wrap
+~~~~plaintext title="canonical/skills/aid-design-mvp/SKILL.md#L97-L100" wrap
 ## State: DONE
 
-Set `lifecycle: Completed`, `updated` now, append a `## Lifecycle History` row. The seed
+Set the lifecycle to `Completed` through the writer, `updated` now, append a `## Lifecycle History` row. The seed
 stays at `.aid/design/mvp.md` -- consumption happens at `/aid-create-mvp`, not here.
 ~~~~
 
-[Source: `canonical/skills/aid-design-mvp/SKILL.md#L99-L102`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-design-mvp/SKILL.md#L99-L102) · [full step: `canonical/skills/aid-design-mvp/SKILL.md#L99-L102`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-design-mvp/SKILL.md#L99-L102)
+[Source: `canonical/skills/aid-design-mvp/SKILL.md#L97-L100`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-design-mvp/SKILL.md#L97-L100) · [full step: `canonical/skills/aid-design-mvp/SKILL.md#L97-L100`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-design-mvp/SKILL.md#L97-L100)

@@ -70,5 +70,5 @@ Record one of three outcomes:
 Pass the reading, the observable effect that supports it, the matched row (if any) and the
 outcome to `size-and-route.md` section 1, which sizes it. SKILL.md steps 3 and 4 then size and show the
 reading, and the user answers. After that answer, an action-skill reading goes to that skill
-(SKILL.md step ACTION-HANDOVER), and any other reading goes to `start-or-resume.md` section 3, which finds or
+(SKILL.md steps ACTION-HANDOVER and START-ACTION), and any other reading goes to `start-or-resume.md` section 3, which finds or
 creates the work, and then to its section 6, which records the `intent:` block.

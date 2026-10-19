@@ -24,9 +24,8 @@ Then stop. The flow does not continue to the next step.
 
 Any other request is checked first: `references/check-intent.md` steps 1 to 5 classify the
 reading, SKILL.md steps 3 and 4 size and show it, and the flow waits for the answer. An
-action-skill reading goes to ACTION-HANDOVER and creates no work here.
-
-**Advance:** **CHAIN** → FIND-OR-CREATE.
+action-skill reading goes to START-ACTION and creates no work here. Every other reading goes on to
+section 3.
 
 ## 3. Find the work
 
@@ -42,7 +41,7 @@ gate (`.aid/runtime/templates/work-initiation-gate.md`) as written.
   The flow creates no work by hand.
 - Several plausible works: section 3a asks which one.
 
-**Advance:** **CHAIN** → RECORD-INTENT, or ASK-FIRST when several works plausibly match.
+**Advance:** **CHAIN** → ASK-FIRST when several works plausibly match; otherwise **CHAIN** → RECORD-INTENT.
 
 ## 3a. Ask which work
 
@@ -68,9 +67,10 @@ groups (FR-17), before the work goes on. A `Skipped` question is offered again h
 
 A work that is `Paused-Awaiting-Input` resumes by asking the question it is waiting on. A work
 that is `Blocked` says what blocks it before anything else runs. A work that is `Completed` or
-`Canceled` is finished: say so and stop, with no advance.
+`Canceled` is finished: say so and end the run.
 
-**Advance:** **CHAIN** → ASK-FIRST, which asks the open questions before the work goes on.
+A continued work resumes at the skill and step its record names, which HAND-OVER starts once the open
+questions above are asked (ASK-FIRST).
 
 ## 5. Cancel a named work
 
@@ -85,10 +85,8 @@ the user's confirmed answer, and in this order:
    folder, so the write lands on that work and on no other.
 3. **Confirm once.** Ask one question: whether to cancel the work, named with its id and phase.
    Give the reason (a canceled work stops for good), your recommendation (keep it paused when
-   the user is unsure), the options "cancel" and "keep", and a free-text answer.
-
-**Advance:** **ASK** → 4.
-
+   the user is unsure), the options "cancel" and "keep", and a free-text answer. The question
+   pauses this step where it stands; once it is answered, the step goes on to the write.
 4. **Write.** When the user confirms, run:
 
 ```bash

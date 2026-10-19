@@ -12,22 +12,22 @@
       "label": "INTAKE",
       "kind": "exit",
       "terminal": {
-        "advanceType": "ASK",
-        "handoff": "A route to the create skill is then instead, after the allocated work, if any, is closed as Canceled through the writer"
+        "advanceType": "HALT",
+        "handoff": "when the destination is absent (the route above)"
       },
       "provenance": {
         "file": "canonical/skills/aid-update-stack/SKILL.md",
         "startLine": 50,
-        "endLine": 68,
+        "endLine": 73,
         "sourceKind": "skill",
-        "excerpt": "## State: INTAKE\n\n1. **Require a stated change.** Empty argument -> ask one bootstrapping question (\"What\n   should change in the technology-stack record?\") and wait.\n2. **Allocate** through the Work Initiation Gate exactly as the contract's Allocation rule\n   requires (`.agents/skills/aid-design/SKILL.md` INTAKE step 4 is the shape), with\n   `initiator: aid-update-stack`. `phase` is not driven.\n3. **No seed is required.** The change stated in this run is a sufficient input, and this\n   skill completes without a seed. **Read and consume one when present** at\n   `.aid/design/stack.md`, carrying its `## Current direction` into the destination and\n   deleting it once realized.\n4. **Resolve the destination by concern.** This skill binds concern **C0** (technology). Where\n   a seed supplied a `## Destination`, use it; otherwise apply the concern rule here --\n   resolve C0 against `.aid/settings.yml` `knowledge.doc_set`, falling back to the C0 row of\n   `.aid/runtime/templates/kb-authoring/domain-doc-matrix.md` -- and **confirm the resolution\n   with the user before writing**. Never resolve silently.\n5. **Read the whole destination**, and note its `source:` field. Absent destination -> route\n   to `/aid-create-stack` and write nothing.\n6. **Classify complexity** for the `aid-architect` dispatch (verifier tier >= producer)."
+        "excerpt": "## State: INTAKE\n\n1. **Require a stated change.** Empty argument -> ask one bootstrapping question (\"What\n   should change in the technology-stack record?\") and wait.\n2. **No seed is required.** The change stated in this run is a sufficient input, and this\n   skill completes without a seed. **Read and consume one when present** at\n   `.aid/design/stack.md`, carrying its `## Current direction` into the destination and\n   deleting it once realized.\n3. **Resolve the destination by concern.** This skill binds concern **C0** (technology). Where\n   a seed supplied a `## Destination`, use it; otherwise apply the concern rule here --\n   resolve C0 against `.aid/settings.yml` `knowledge.doc_set`, falling back to the C0 row of\n   `.aid/runtime/templates/kb-authoring/domain-doc-matrix.md` -- and **confirm the resolution\n   with the user before writing**. Never resolve silently.\n4. **Read the whole destination**, and note its `source:` field. Absent destination -> allocate nothing and\n   write nothing: tell the user to run `/aid-create-stack`, and end the run.\n5. **Ask, every run, which derived outputs to update alongside this one.** This question is\n   unconditional -- it is asked on every invocation, and the answer is **stored nowhere** but this\n   run's step detail: no frontmatter backlink, no manifest, no registry, and no state carried\n   between runs. The question is asked afresh each time, and UPDATE applies the answer.\n6. **Classify complexity** for the `aid-architect` dispatch (verifier tier >= producer).\n7. **Allocate** once the destination is present, so a route leaves no work behind. Go through the Work\n   Initiation Gate exactly as the contract's Allocation rule requires\n   (`.agents/skills/aid-design/SKILL.md` INTAKE step 4 is the shape), with\n   `initiator: aid-update-stack`, saved step `UPDATE` (INTAKE runs before the record and saves nothing). `phase` is not driven."
       },
       "detail": {
         "file": "canonical/skills/aid-update-stack/SKILL.md",
         "startLine": 50,
-        "endLine": 70,
+        "endLine": 78,
         "sourceKind": "skill",
-        "excerpt": "## State: INTAKE\n\n1. **Require a stated change.** Empty argument -> ask one bootstrapping question (\"What\n   should change in the technology-stack record?\") and wait.\n2. **Allocate** through the Work Initiation Gate exactly as the contract's Allocation rule\n   requires (`.agents/skills/aid-design/SKILL.md` INTAKE step 4 is the shape), with\n   `initiator: aid-update-stack`. `phase` is not driven.\n3. **No seed is required.** The change stated in this run is a sufficient input, and this\n   skill completes without a seed. **Read and consume one when present** at\n   `.aid/design/stack.md`, carrying its `## Current direction` into the destination and\n   deleting it once realized.\n4. **Resolve the destination by concern.** This skill binds concern **C0** (technology). Where\n   a seed supplied a `## Destination`, use it; otherwise apply the concern rule here --\n   resolve C0 against `.aid/settings.yml` `knowledge.doc_set`, falling back to the C0 row of\n   `.aid/runtime/templates/kb-authoring/domain-doc-matrix.md` -- and **confirm the resolution\n   with the user before writing**. Never resolve silently.\n5. **Read the whole destination**, and note its `source:` field. Absent destination -> route\n   to `/aid-create-stack` and write nothing.\n6. **Classify complexity** for the `aid-architect` dispatch (verifier tier >= producer).\n\n**Advance:** ASK -> [State: UPDATE]. A route to the create skill is ASK then HALT instead, after the allocated work, if any, is closed as `Canceled` through the writer."
+        "excerpt": "## State: INTAKE\n\n1. **Require a stated change.** Empty argument -> ask one bootstrapping question (\"What\n   should change in the technology-stack record?\") and wait.\n2. **No seed is required.** The change stated in this run is a sufficient input, and this\n   skill completes without a seed. **Read and consume one when present** at\n   `.aid/design/stack.md`, carrying its `## Current direction` into the destination and\n   deleting it once realized.\n3. **Resolve the destination by concern.** This skill binds concern **C0** (technology). Where\n   a seed supplied a `## Destination`, use it; otherwise apply the concern rule here --\n   resolve C0 against `.aid/settings.yml` `knowledge.doc_set`, falling back to the C0 row of\n   `.aid/runtime/templates/kb-authoring/domain-doc-matrix.md` -- and **confirm the resolution\n   with the user before writing**. Never resolve silently.\n4. **Read the whole destination**, and note its `source:` field. Absent destination -> allocate nothing and\n   write nothing: tell the user to run `/aid-create-stack`, and end the run.\n5. **Ask, every run, which derived outputs to update alongside this one.** This question is\n   unconditional -- it is asked on every invocation, and the answer is **stored nowhere** but this\n   run's step detail: no frontmatter backlink, no manifest, no registry, and no state carried\n   between runs. The question is asked afresh each time, and UPDATE applies the answer.\n6. **Classify complexity** for the `aid-architect` dispatch (verifier tier >= producer).\n7. **Allocate** once the destination is present, so a route leaves no work behind. Go through the Work\n   Initiation Gate exactly as the contract's Allocation rule requires\n   (`.agents/skills/aid-design/SKILL.md` INTAKE step 4 is the shape), with\n   `initiator: aid-update-stack`, saved step `UPDATE` (INTAKE runs before the record and saves nothing). `phase` is not driven.\n\nEvery `--step` call after the allocation passes in its `--detail` the change, the destination, the derived outputs the user\nnamed and the complexity tier, so a resume finds them in the record.\n\n**Advance:** CHAIN -> [State: UPDATE]; HALT when the destination is absent (the route above)."
       }
     },
     {
@@ -39,17 +39,17 @@
       "terminal": null,
       "provenance": {
         "file": "canonical/skills/aid-update-stack/SKILL.md",
-        "startLine": 74,
-        "endLine": 84,
+        "startLine": 82,
+        "endLine": 89,
         "sourceKind": "skill",
-        "excerpt": "## State: UPDATE\n\n1. **Apply only the change the user named in this run**, to the owned C0 content, per the\n   content rules below.\n2. **Ask, every run, which derived outputs to update alongside this one.** This step is\n   unconditional -- it runs on every invocation, and the answer is **stored nowhere**: no\n   frontmatter backlink, no manifest, no registry, and no state carried between runs. The\n   question is asked afresh each time.\n3. **Write no tracking metadata** into any output this run touches -- no `derived-from`, no\n   `source-doc`, no `generated-by`, no `aid-tracked` field, and no skill-attribution line.\n4. **`source: generated` refuses.** A registered build script owns that content."
+        "excerpt": "## State: UPDATE\n\n1. **Apply only the change the user named in this run**, to the owned C0 content, per the\n   content rules below.\n2. **Update the derived outputs the user named in INTAKE**, and only those, each by the same rules.\n3. **Write no tracking metadata** into any output this run touches -- no `derived-from`, no\n   `source-doc`, no `generated-by`, no `aid-tracked` field, and no skill-attribution line.\n4. **`source: generated` refuses.** A registered build script owns that content."
       },
       "detail": {
         "file": "canonical/skills/aid-update-stack/SKILL.md",
-        "startLine": 74,
-        "endLine": 88,
+        "startLine": 82,
+        "endLine": 91,
         "sourceKind": "skill",
-        "excerpt": "## State: UPDATE\n\n1. **Apply only the change the user named in this run**, to the owned C0 content, per the\n   content rules below.\n2. **Ask, every run, which derived outputs to update alongside this one.** This step is\n   unconditional -- it runs on every invocation, and the answer is **stored nowhere**: no\n   frontmatter backlink, no manifest, no registry, and no state carried between runs. The\n   question is asked afresh each time.\n3. **Write no tracking metadata** into any output this run touches -- no `derived-from`, no\n   `source-doc`, no `generated-by`, no `aid-tracked` field, and no skill-attribution line.\n4. **`source: generated` refuses.** A registered build script owns that content.\n\nThe step ends with the derived-outputs question of step 2, asked on every run.\n\n**Advance:** ASK -> [State: VERIFY]."
+        "excerpt": "## State: UPDATE\n\n1. **Apply only the change the user named in this run**, to the owned C0 content, per the\n   content rules below.\n2. **Update the derived outputs the user named in INTAKE**, and only those, each by the same rules.\n3. **Write no tracking metadata** into any output this run touches -- no `derived-from`, no\n   `source-doc`, no `generated-by`, no `aid-tracked` field, and no skill-attribution line.\n4. **`source: generated` refuses.** A registered build script owns that content.\n\n**Advance:** CHAIN -> [State: VERIFY]."
       }
     },
     {
@@ -61,15 +61,15 @@
       "terminal": null,
       "provenance": {
         "file": "canonical/skills/aid-update-stack/SKILL.md",
-        "startLine": 92,
-        "endLine": 95,
+        "startLine": 95,
+        "endLine": 98,
         "sourceKind": "skill",
         "excerpt": "## State: VERIFY\n\n**Full verify**, as `design-lifecycle.md` defines it. Not clean -> loop to UPDATE; the\n3-cycle circuit breaker there escalates to IMPEDIMENT + `lifecycle: Blocked`."
       },
       "detail": {
         "file": "canonical/skills/aid-update-stack/SKILL.md",
-        "startLine": 92,
-        "endLine": 97,
+        "startLine": 95,
+        "endLine": 100,
         "sourceKind": "skill",
         "excerpt": "## State: VERIFY\n\n**Full verify**, as `design-lifecycle.md` defines it. Not clean -> loop to UPDATE; the\n3-cycle circuit breaker there escalates to IMPEDIMENT + `lifecycle: Blocked`.\n\n**Advance:** CHAIN -> [State: PRESENT]."
       }
@@ -83,15 +83,15 @@
       "terminal": null,
       "provenance": {
         "file": "canonical/skills/aid-update-stack/SKILL.md",
-        "startLine": 101,
-        "endLine": 104,
+        "startLine": 104,
+        "endLine": 107,
         "sourceKind": "skill",
         "excerpt": "## State: PRESENT (hard stop -- the user decides)\n\nSet `lifecycle` to `Paused-Awaiting-Input` through the writer. Present the revision, name every output touched, state\nwhere any rejected alternative went, and assert that a consumed seed is gone."
       },
       "detail": {
         "file": "canonical/skills/aid-update-stack/SKILL.md",
-        "startLine": 101,
-        "endLine": 106,
+        "startLine": 104,
+        "endLine": 109,
         "sourceKind": "skill",
         "excerpt": "## State: PRESENT (hard stop -- the user decides)\n\nSet `lifecycle` to `Paused-Awaiting-Input` through the writer. Present the revision, name every output touched, state\nwhere any rejected alternative went, and assert that a consumed seed is gone.\n\n**Advance:** ASK -> [State: DONE]."
       }
@@ -108,15 +108,15 @@
       },
       "provenance": {
         "file": "canonical/skills/aid-update-stack/SKILL.md",
-        "startLine": 110,
-        "endLine": 112,
+        "startLine": 113,
+        "endLine": 115,
         "sourceKind": "skill",
         "excerpt": "## State: DONE\n\nSet `lifecycle` to `Completed` through the writer, `updated` now, and append a `## Lifecycle History` row."
       },
       "detail": {
         "file": "canonical/skills/aid-update-stack/SKILL.md",
-        "startLine": 110,
-        "endLine": 114,
+        "startLine": 113,
+        "endLine": 117,
         "sourceKind": "skill",
         "excerpt": "## State: DONE\n\nSet `lifecycle` to `Completed` through the writer, `updated` now, and append a `## Lifecycle History` row.\n\n**Advance:** HALT."
       }
@@ -128,13 +128,13 @@
       "to": "n2",
       "kind": "sequence",
       "condition": null,
-      "advanceType": "ASK",
+      "advanceType": "CHAIN",
       "provenance": {
         "file": "canonical/skills/aid-update-stack/SKILL.md",
-        "startLine": 70,
-        "endLine": 70,
+        "startLine": 78,
+        "endLine": 78,
         "sourceKind": "skill",
-        "excerpt": "**Advance:** ASK -> [State: UPDATE]. A route to the create skill is ASK then HALT instead, after the allocated work, if any, is closed as `Canceled` through the writer."
+        "excerpt": "**Advance:** CHAIN -> [State: UPDATE]; HALT when the destination is absent (the route above)."
       }
     },
     {
@@ -142,13 +142,13 @@
       "to": "n3",
       "kind": "sequence",
       "condition": null,
-      "advanceType": "ASK",
+      "advanceType": "CHAIN",
       "provenance": {
         "file": "canonical/skills/aid-update-stack/SKILL.md",
-        "startLine": 88,
-        "endLine": 88,
+        "startLine": 91,
+        "endLine": 91,
         "sourceKind": "skill",
-        "excerpt": "**Advance:** ASK -> [State: VERIFY]."
+        "excerpt": "**Advance:** CHAIN -> [State: VERIFY]."
       }
     },
     {
@@ -159,8 +159,8 @@
       "advanceType": "UNSPECIFIED",
       "provenance": {
         "file": "canonical/skills/aid-update-stack/SKILL.md",
-        "startLine": 94,
-        "endLine": 94,
+        "startLine": 97,
+        "endLine": 97,
         "sourceKind": "skill",
         "excerpt": "**Full verify**, as `design-lifecycle.md` defines it. Not clean -> loop to UPDATE; the"
       }
@@ -173,8 +173,8 @@
       "advanceType": "CHAIN",
       "provenance": {
         "file": "canonical/skills/aid-update-stack/SKILL.md",
-        "startLine": 97,
-        "endLine": 97,
+        "startLine": 100,
+        "endLine": 100,
         "sourceKind": "skill",
         "excerpt": "**Advance:** CHAIN -> [State: PRESENT]."
       }
@@ -187,8 +187,8 @@
       "advanceType": "ASK",
       "provenance": {
         "file": "canonical/skills/aid-update-stack/SKILL.md",
-        "startLine": 106,
-        "endLine": 106,
+        "startLine": 109,
+        "endLine": 109,
         "sourceKind": "skill",
         "excerpt": "**Advance:** ASK -> [State: DONE]."
       }

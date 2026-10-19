@@ -63,12 +63,12 @@ Ask one topic at a time, through the question protocol, in this order and only f
 1. **Empty argument** -> the bootstrapping question ("Which document should I update, and what
    change?"). The answer is the target and the change; the path and complexity are then set from it.
 2. **Document does not resolve** -> ask which document is meant, or suggest
-   `/aid-create-document` if the user meant a new one.
+   `/aid-create-document` if the user meant a new one. In that case nothing is allocated, and the run
+   ends there naming that skill.
 3. **Guided path** -> scope the change.
 4. **Works exist** -> the gate's new-vs-continuation question with the enumerated list.
 
-**Advance:** ASK -> [State: ALLOCATE]. A route to `/aid-create-document` is ASK then HALT instead: the run
-ends there, names that skill, and nothing is allocated.
+**Advance:** CHAIN -> [State: ALLOCATE]; HALT when the user meant a new document (item 2).
 
 ---
 
@@ -86,6 +86,9 @@ Allocate the work through the gate: the Work Initiation Gate
   skip any instruction to write `initiator`, `active_skill`, `lifecycle` or `phase` by hand;
   set other keys through the writer." This skill drives no `phase`.
 - **Continuation:** On continuation, follow the gate's § 3b: enter the chosen work's worktree and run the skill its record names, at its saved step.
+
+Every `--step` call in this skill passes in its `--detail` the target document, the change, the path and the
+complexity tier, so a resume finds them in the record.
 
 **Advance:** CHAIN -> [State: AUTHOR].
 

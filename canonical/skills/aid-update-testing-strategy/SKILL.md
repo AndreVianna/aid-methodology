@@ -51,25 +51,33 @@ continues at come only from its work record.
 
 1. **Require a stated change.** Empty argument -> ask one bootstrapping question ("What should
    change in the testing strategy or the gate policy?") and wait.
-2. **Allocate** through the Work Initiation Gate exactly as the contract's Allocation rule
-   requires (`.agents/skills/aid-design/SKILL.md` INTAKE step 4 is the shape), with
-   `initiator: aid-update-testing-strategy`. `phase` is not driven.
-3. **No seed is required.** The change stated in this run is a sufficient input, and this
+2. **No seed is required.** The change stated in this run is a sufficient input, and this
    skill completes without a seed. **Read and consume one when present** at
    `.aid/design/testing-strategy.md`, carrying its `## Current direction` into the
    destinations and deleting it once realized.
-4. **Resolve the destinations by concern.** This skill binds concern **C6** (quality &
+3. **Resolve the destinations by concern.** This skill binds concern **C6** (quality &
    testing) and owns **two** documents. Where a seed supplied a `## Destination`, use it;
    otherwise apply the concern rule here -- resolve C6 against `.aid/settings.yml`
    `knowledge.doc_set`, falling back to the C6 row of
    `.aid/runtime/templates/kb-authoring/domain-doc-matrix.md` -- and **confirm the resolution
    with the user before writing**. Never resolve silently.
-5. **Read both destinations** whole, and note each one's `source:` field. An absent
-   destination -> route to `/aid-create-testing-strategy` for that document and write nothing
-   there.
+4. **Read both destinations** whole, and note each one's `source:` field. An absent
+   destination is written nothing: tell the user to run `/aid-create-testing-strategy` for that document.
+   When neither document exists, allocate nothing and end the run.
+5. **Ask, every run, which derived outputs to update alongside this one.** This question is
+   unconditional -- it is asked on every invocation, and the answer is **stored nowhere** but this
+   run's step detail: no frontmatter backlink, no manifest, no registry, and no state carried
+   between runs. The question is asked afresh each time, and UPDATE applies the answer.
 6. **Classify complexity** for the `aid-architect` dispatch (verifier tier >= producer).
+7. **Allocate** once a destination is present, so a route leaves no work behind. Go through the Work
+   Initiation Gate exactly as the contract's Allocation rule requires
+   (`.agents/skills/aid-design/SKILL.md` INTAKE step 4 is the shape), with
+   `initiator: aid-update-testing-strategy`, saved step `UPDATE` (INTAKE runs before the record and saves nothing). `phase` is not driven.
 
-**Advance:** ASK -> [State: UPDATE]. A route to the create skill is ASK then HALT instead, after the allocated work, if any, is closed as `Canceled` through the writer.
+Every `--step` call after the allocation passes in its `--detail` the change, the destination, the derived outputs the user
+named and the complexity tier, so a resume finds them in the record.
+
+**Advance:** CHAIN -> [State: UPDATE]; HALT when neither destination exists (the route above).
 
 ---
 
@@ -77,17 +85,12 @@ continues at come only from its work record.
 
 1. **Apply only the change the user named in this run**, to the owned C6 content, per the
    content rules below.
-2. **Ask, every run, which derived outputs to update alongside this one.** This step is
-   unconditional -- it runs on every invocation, and the answer is **stored nowhere**: no
-   frontmatter backlink, no manifest, no registry, and no state carried between runs. The
-   question is asked afresh each time.
+2. **Update the derived outputs the user named in INTAKE**, and only those, each by the same rules.
 3. **Write no tracking metadata** into any output this run touches -- no `derived-from`, no
    `source-doc`, no `generated-by`, no `aid-tracked` field, and no skill-attribution line.
 4. **`source: generated` refuses.** A registered build script owns that content.
 
-The step ends with the derived-outputs question of step 2, asked on every run.
-
-**Advance:** ASK -> [State: VERIFY].
+**Advance:** CHAIN -> [State: VERIFY].
 
 ---
 

@@ -61,14 +61,14 @@
         "startLine": 79,
         "endLine": 87,
         "sourceKind": "skill",
-        "excerpt": "## State: VERIFY  (full -- a kept design drives a build)\n\n1. **Mechanical grounding check** (no dispatch): design decisions cite the KB/source they\n   build on; accessibility is addressed.\n2. **Adversarial verification** -- clean-context **`aid-reviewer`** checks `DESIGN.md`:\n   grounded, complete, internally consistent, consistent with KB conventions + a11y, and\n   buildable. Writes a review-quality ledger to `.aid/.temp/review-pending/<work>-verify.md`.\n3. **Grade:** `bash .aid/runtime/scripts/grade.sh --explain <ledger>`. Not clean -> loop\n   to DESIGN. Circuit-breaker: 3 cycles -> IMPEDIMENT + `lifecycle: Blocked`."
+        "excerpt": "## State: VERIFY  (full -- a kept design drives a build)\n\n1. **Mechanical grounding check** (no dispatch): design decisions cite the KB/source they\n   build on; accessibility is addressed.\n2. **Adversarial verification** -- clean-context **`aid-reviewer`** checks `DESIGN.md`:\n   grounded, complete, internally consistent, consistent with KB conventions + a11y, and\n   buildable. Writes a review-quality ledger to `.aid/.temp/review-pending/<work>-verify.md`.\n3. **Grade:** `bash .aid/runtime/scripts/grade.sh --explain <ledger>`. Not clean -> loop\n   to DESIGN. Circuit-breaker: 3 cycles -> IMPEDIMENT, and the lifecycle is set to `Blocked` through the writer."
       },
       "detail": {
         "file": "canonical/skills/aid-design/SKILL.md",
         "startLine": 79,
         "endLine": 89,
         "sourceKind": "skill",
-        "excerpt": "## State: VERIFY  (full -- a kept design drives a build)\n\n1. **Mechanical grounding check** (no dispatch): design decisions cite the KB/source they\n   build on; accessibility is addressed.\n2. **Adversarial verification** -- clean-context **`aid-reviewer`** checks `DESIGN.md`:\n   grounded, complete, internally consistent, consistent with KB conventions + a11y, and\n   buildable. Writes a review-quality ledger to `.aid/.temp/review-pending/<work>-verify.md`.\n3. **Grade:** `bash .aid/runtime/scripts/grade.sh --explain <ledger>`. Not clean -> loop\n   to DESIGN. Circuit-breaker: 3 cycles -> IMPEDIMENT + `lifecycle: Blocked`.\n\n**Advance:** CHAIN -> PRESENT."
+        "excerpt": "## State: VERIFY  (full -- a kept design drives a build)\n\n1. **Mechanical grounding check** (no dispatch): design decisions cite the KB/source they\n   build on; accessibility is addressed.\n2. **Adversarial verification** -- clean-context **`aid-reviewer`** checks `DESIGN.md`:\n   grounded, complete, internally consistent, consistent with KB conventions + a11y, and\n   buildable. Writes a review-quality ledger to `.aid/.temp/review-pending/<work>-verify.md`.\n3. **Grade:** `bash .aid/runtime/scripts/grade.sh --explain <ledger>`. Not clean -> loop\n   to DESIGN. Circuit-breaker: 3 cycles -> IMPEDIMENT, and the lifecycle is set to `Blocked` through the writer.\n\n**Advance:** CHAIN -> PRESENT."
       }
     },
     {
@@ -130,14 +130,14 @@
         "startLine": 113,
         "endLine": 116,
         "sourceKind": "skill",
-        "excerpt": "## State: DONE\n\nSet `lifecycle: Completed`, `updated` now, append a `## Lifecycle History` row. Keep\n`DESIGN.md` in the work folder as the kept design record."
+        "excerpt": "## State: DONE\n\nSet the lifecycle to `Completed` through the writer, `updated` now, append a `## Lifecycle History` row. Keep\n`DESIGN.md` in the work folder as the kept design record."
       },
       "detail": {
         "file": "canonical/skills/aid-design/SKILL.md",
         "startLine": 113,
         "endLine": 116,
         "sourceKind": "skill",
-        "excerpt": "## State: DONE\n\nSet `lifecycle: Completed`, `updated` now, append a `## Lifecycle History` row. Keep\n`DESIGN.md` in the work folder as the kept design record."
+        "excerpt": "## State: DONE\n\nSet the lifecycle to `Completed` through the writer, `updated` now, append a `## Lifecycle History` row. Keep\n`DESIGN.md` in the work folder as the kept design record."
       }
     }
   ],
@@ -181,7 +181,7 @@
         "startLine": 87,
         "endLine": 87,
         "sourceKind": "skill",
-        "excerpt": "   to DESIGN. Circuit-breaker: 3 cycles -> IMPEDIMENT + `lifecycle: Blocked`."
+        "excerpt": "   to DESIGN. Circuit-breaker: 3 cycles -> IMPEDIMENT, and the lifecycle is set to `Blocked` through the writer."
       }
     },
     {

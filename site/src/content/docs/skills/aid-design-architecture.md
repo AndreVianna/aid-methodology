@@ -59,7 +59,7 @@ Every node in the chart above, in chart order, with the exact `canonical/` text 
    subsystem do you want to design -- its components, boundaries, and invariants?") and wait.
 2. **Allocate** through the Work Initiation Gate exactly as the contract's Allocation rule
    requires (`.agents/skills/aid-design/SKILL.md` INTAKE step 4 is the shape), with
-   `initiator: aid-design-architecture`. `phase` is not driven.
+   `--skill aid-design-architecture` given to the gate's `--create`. `phase` is not driven.
 3. **Acquire `.aid/design/`** per the contract, then read `.aid/design/architecture.md` if a
    prior seed exists -- re-invocation iterates it rather than starting over.
 4. **Classify complexity** for the `aid-architect` dispatch (verifier tier >= producer).
@@ -87,7 +87,7 @@ interactions, the invariants, and what is deliberately NOT a component**.
 ## State: VERIFY
 
 **Full verify**, as `design-lifecycle.md` defines it. Not clean -> loop to DESIGN; the
-3-cycle circuit breaker there escalates to IMPEDIMENT + `lifecycle: Blocked`.
+3-cycle circuit breaker there escalates to IMPEDIMENT, and the lifecycle is set to `Blocked` through the writer.
 ~~~~
 
 [Source: `canonical/skills/aid-design-architecture/SKILL.md#L88-L91`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-design-architecture/SKILL.md#L88-L91) · [full step: `canonical/skills/aid-design-architecture/SKILL.md#L88-L93`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-design-architecture/SKILL.md#L88-L93)
@@ -97,7 +97,7 @@ interactions, the invariants, and what is deliberately NOT a component**.
 ~~~~plaintext title="canonical/skills/aid-design-architecture/SKILL.md#L97-L100" wrap
 ## State: PRESENT (hard stop -- the user decides)
 
-Set `lifecycle: Paused-Awaiting-Input`. Present the seed clearly. Assert no resolution --
+Set the lifecycle to `Paused-Awaiting-Input` through the writer. Present the seed clearly. Assert no resolution --
 the user iterates (re-invoke this skill) or realizes it now (`/aid-create-architecture`).
 ~~~~
 
@@ -108,7 +108,7 @@ the user iterates (re-invoke this skill) or realizes it now (`/aid-create-archit
 ~~~~plaintext title="canonical/skills/aid-design-architecture/SKILL.md#L106-L110" wrap
 ## State: DONE
 
-Set `lifecycle: Completed`, `updated` now, append a `## Lifecycle History` row. The seed
+Set the lifecycle to `Completed` through the writer, `updated` now, append a `## Lifecycle History` row. The seed
 persists at `.aid/design/architecture.md`; consumption happens at
 `/aid-create-architecture`.
 ~~~~

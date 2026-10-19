@@ -111,8 +111,15 @@ runs the checks below to decide how far the entry step goes. On resume the saved
 is on disk, and a mismatch goes to recovery, never to a silent re-route. Which skill and which step a work
 continues at come only from its work record.
 
+**Saving the step.** Every step saves itself on entry, before any work, with
+`bash .aid/runtime/scripts/execute/writeback-state.sh --step --skill aid-plan --name <STEP> --detail '<where>'`,
+where `<STEP>` is one of FIRST-RUN, CONFIRM, REVIEW or DONE. The detail holds what the step has settled: the work
+id, the deliveries agreed so far and any concern the user raised at CONFIRM. When the work record does not already
+name `aid-plan` (the user typed `/aid-plan`; no skill handed the work on), the first step first records the typed
+start: `--handoff --to aid-plan --step FIRST-RUN --why 'user ran the command' --returns no`, with no `--phase`.
+
 - No PLAN.md → **FIRST-RUN**
-- PLAN.md exists, grade below minimum or not yet graded → **CONFIRM** (the reopen question, then **REVIEW**)
+- PLAN.md exists, grade below minimum or not yet graded → **CONFIRM** (the step asks if anything specific should be re-examined, then **REVIEW**)
 - PLAN.md exists, graded >= minimum, `deliveries/delivery-NNN/STATE.yml` written for all deliverables -> **DONE**
 
 Print the state-entry line and "you are here" map:

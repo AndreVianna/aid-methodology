@@ -190,7 +190,7 @@ record writes follow `.aid/runtime/templates/skill-steps.md`; this contract rest
 (`.aid/runtime/templates/work-initiation-gate.md`) by running
 `bash .aid/runtime/scripts/works/enumerate-works.sh`. On new work, follow `work-initiation-gate.md`
 § 3a: it creates and enters the worktree, then its writer creates the work record with
-`--path lite`, the calling skill as the initiator, and the skill's first step. **`phase` is
+`--path lite`, the calling skill as the initiator, and the first step the work continues at (the steps before the work exists save nothing). **`phase` is
 not driven** by any of the 36 — that is what keeps NFR-3 and AC-10 true without touching
 the enum. The gate creates `STATE.yml`; "`STATE.yml` was created by the gate; skip any
 instruction to write `initiator`, `active_skill`, `lifecycle` or `phase` by hand; set other

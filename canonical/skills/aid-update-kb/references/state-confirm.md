@@ -93,7 +93,7 @@ hard-fails on any divergence between it and the disk-derived edited set.
 
 Print: `[CONFIRM] Confirmed. {N} doc(s) in scope. Advancing to APPLY.`
 
-**Advance:** ASK -> APPLY (continue inline once `[1]` is answered).
+The step ends with CHAIN to APPLY (see the Advance line at the end of this file).
 
 ---
 
@@ -109,9 +109,8 @@ Record the adjustment as a new Q&A entry in `.aid/knowledge/STATE.md ## Q&A
 - **Status:** Pending
 - **Context:** User adjusted /aid-update-kb CONFIRM for instruction:
   "<prompt>". Adjustment: "<the user's text>".
-- **Suggested:** Address the adjustment; re-run /aid-update-kb to re-enter
-  SCOPE (or ANALYZE, if the adjustment changes the Understanding itself),
-  then return to CONFIRM.
+- **Suggested:** Address the adjustment: re-enter SCOPE (or ANALYZE, if the
+  adjustment changes the Understanding itself), then return to CONFIRM.
 ```
 
 Update the run-state file:
@@ -129,10 +128,11 @@ Print:
 
 ```
 [CONFIRM] Adjustment recorded as Q{N} in .aid/knowledge/STATE.md.
-Run /aid-update-kb again to address it and return to this gate.
+Re-planning now; this gate returns once SCOPE has re-planned.
 ```
 
-**Advance:** CHAIN -- return to SCOPE (or ANALYZE) in this invocation.
+The step ends with CHAIN to SCOPE, or to ANALYZE when the adjustment corrects the Understanding itself (see
+the Advance line at the end of this file).
 
 ---
 
@@ -151,4 +151,4 @@ Print:
 [CONFIRM] Cancelled -- no KB edit made. Run-state cleaned.
 ```
 
-**Advance:** HALT.
+**Advance:** CHAIN -> APPLY when the user confirms; CHAIN -> SCOPE when the user adjusts; CHAIN -> ANALYZE when the adjustment corrects the Understanding itself; HALT when the user cancels.

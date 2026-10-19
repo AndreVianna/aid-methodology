@@ -14,17 +14,17 @@
       "terminal": null,
       "provenance": {
         "file": "canonical/skills/aid-housekeep/SKILL.md",
-        "startLine": 236,
-        "endLine": 236,
+        "startLine": 235,
+        "endLine": 235,
         "sourceKind": "skill",
-        "excerpt": "| PREFLIGHT | `references/state-preflight.md` | inline | CHAIN → KB-DELTA (or CLEANUP if Mode=cleanup-only) |"
+        "excerpt": "| PREFLIGHT | `references/state-preflight.md` | inline | CHAIN → CLEANUP if Mode=cleanup-only; otherwise CHAIN → KB-DELTA |"
       },
       "detail": {
         "file": "canonical/skills/aid-housekeep/references/state-preflight.md",
         "startLine": 1,
-        "endLine": 118,
+        "endLine": 117,
         "sourceKind": "worker",
-        "excerpt": "# State: PREFLIGHT\n\nPREFLIGHT is the synchronous gate that verifies all prerequisites before any\nhousekeeping state runs; it is selected on every invocation before state\ndetection proceeds to the resume-detection table.\n\n**Do NOT create any `## Housekeep Status` state during this state.** If PREFLIGHT\nfails, the skill exits non-zero with an actionable message and the work-area\nSTATE.md is left untouched.\n\n---\n\n## Checks\n\nRun the following verifications in order. Stop at the first failure.\n\n### Check 1 — `.aid/` directory exists\n\n```bash\n[ -d \".aid\" ] || exit 1\n```\n\nIf `.aid/` is absent, print and exit non-zero:\n```\n⚠️  /aid-housekeep requires a .aid/ directory.\n    Run /aid-config first to initialise the project.\n```\n\n### Check 2 — Knowledge Base is present\n\n`/aid-housekeep` is **project-level maintenance** — it does NOT require any\nwork-area folder to exist (its run-state lives in `.aid/.temp/`, not in a work\nfolder). It does need a Knowledge Base to reconcile, so verify\n`.aid/knowledge/STATE.md` exists:\n\n```bash\n[ -f \".aid/knowledge/STATE.md\" ] || exit 1\n```\n\nIf absent, print and exit non-zero:\n```\n⚠️  /aid-housekeep requires a Knowledge Base (.aid/knowledge/STATE.md).\n    Run /aid-config then /aid-discover to populate the KB first.\n```\n\nThe `STATE_FILE` (the project-level run-state file `.aid/.temp/HOUSEKEEP_STATE_<ts>.md`)\nis resolved/created by `SKILL.md § State Detection`, not here — PREFLIGHT must not\ncreate it. Ensure the `.aid/.temp/` directory exists so later states can write it:\n\n```bash\nmkdir -p .aid/.temp\n```\n\n### Check 3 — Not in Plan Mode\n\nPlan Mode prevents writes. Check whether the current environment is Plan Mode\n(the skill context provides this information). If in Plan Mode, print and exit\nnon-zero:\n```\n⚠️  /aid-housekeep cannot run in Plan Mode — stages need write access.\n    Press Shift+Tab to exit Plan Mode, then re-run /aid-housekeep.\n```\n\n### Check 4 — Git repository present and clean enough to branch\n\n```bash\ngit rev-parse --git-dir > /dev/null 2>&1 || exit 1\n```\n\nIf not in a git repository, print and exit non-zero:\n```\n⚠️  /aid-housekeep requires a git repository.\n    Initialise git (git init) and make at least one commit, then re-run.\n```\n\nCheck that the current branch is either `master` or an existing\n`aid/housekeep-*` branch (i.e., a safe branching base):\n\n```bash\nCURRENT_BRANCH=$(git rev-parse --abbrev-ref HEAD 2>/dev/null)\n```\n\nIf the current branch is neither `master` nor `aid/housekeep-*`, print and\nexit non-zero:\n```\n⚠️  /aid-housekeep must start from 'master' or resume from an 'aid/housekeep-*'\n    branch. Currently on: <CURRENT_BRANCH>.\n    Switch to master (git checkout master) and re-run, or push and merge the\n    current branch first.\n```\n\nCheck for uncommitted changes that could conflict with branching:\n\n```bash\ngit diff --quiet && git diff --cached --quiet || echo \"dirty\"\n```\n\nIf the working tree has uncommitted changes and the current branch is `master`\n(i.e., a new branch would need to be created), print and exit non-zero:\n```\n⚠️  /aid-housekeep requires a clean working tree on 'master' before creating\n    an aid/housekeep-* branch.\n    Commit or stash your changes (git stash), then re-run.\n```\n\nIf the current branch is already an `aid/housekeep-*` branch (resume case),\nuncommitted changes are permitted — housekeeping is resuming mid-run.\n\n---\n\n## On Success\n\nPrint: `[State: PREFLIGHT] complete.`\n\n**Advance:** **CHAIN** → [State: KB-DELTA] (or [State: CLEANUP] if `--cleanup-only`\nwas set, but `--cleanup-only` is rejected in delivery-001 — see `SKILL.md § Arguments`).\nContinue inline.\n"
+        "excerpt": "# State: PREFLIGHT\n\nPREFLIGHT is the synchronous gate that verifies all prerequisites before any\nhousekeeping state runs; it is selected on every invocation before state\ndetection proceeds to the resume-detection table.\n\n**Do NOT create any `## Housekeep Status` state during this state.** If PREFLIGHT\nfails, the skill exits non-zero with an actionable message and the work-area\nSTATE.md is left untouched.\n\n---\n\n## Checks\n\nRun the following verifications in order. Stop at the first failure.\n\n### Check 1 — `.aid/` directory exists\n\n```bash\n[ -d \".aid\" ] || exit 1\n```\n\nIf `.aid/` is absent, print and exit non-zero:\n```\n⚠️  /aid-housekeep requires a .aid/ directory.\n    Run /aid-config first to initialise the project.\n```\n\n### Check 2 — Knowledge Base is present\n\n`/aid-housekeep` is **project-level maintenance** — it does NOT require any\nwork-area folder to exist (its run-state lives in `.aid/.temp/`, not in a work\nfolder). It does need a Knowledge Base to reconcile, so verify\n`.aid/knowledge/STATE.md` exists:\n\n```bash\n[ -f \".aid/knowledge/STATE.md\" ] || exit 1\n```\n\nIf absent, print and exit non-zero:\n```\n⚠️  /aid-housekeep requires a Knowledge Base (.aid/knowledge/STATE.md).\n    Run /aid-config then /aid-discover to populate the KB first.\n```\n\nThe `STATE_FILE` (the project-level run-state file `.aid/.temp/HOUSEKEEP_STATE_<ts>.md`)\nis resolved/created by `SKILL.md § State Detection`, not here — PREFLIGHT must not\ncreate it. Ensure the `.aid/.temp/` directory exists so later states can write it:\n\n```bash\nmkdir -p .aid/.temp\n```\n\n### Check 3 — Not in Plan Mode\n\nPlan Mode prevents writes. Check whether the current environment is Plan Mode\n(the skill context provides this information). If in Plan Mode, print and exit\nnon-zero:\n```\n⚠️  /aid-housekeep cannot run in Plan Mode — stages need write access.\n    Press Shift+Tab to exit Plan Mode, then re-run /aid-housekeep.\n```\n\n### Check 4 — Git repository present and clean enough to branch\n\n```bash\ngit rev-parse --git-dir > /dev/null 2>&1 || exit 1\n```\n\nIf not in a git repository, print and exit non-zero:\n```\n⚠️  /aid-housekeep requires a git repository.\n    Initialise git (git init) and make at least one commit, then re-run.\n```\n\nCheck that the current branch is either `master` or an existing\n`aid/housekeep-*` branch (i.e., a safe branching base):\n\n```bash\nCURRENT_BRANCH=$(git rev-parse --abbrev-ref HEAD 2>/dev/null)\n```\n\nIf the current branch is neither `master` nor `aid/housekeep-*`, print and\nexit non-zero:\n```\n⚠️  /aid-housekeep must start from 'master' or resume from an 'aid/housekeep-*'\n    branch. Currently on: <CURRENT_BRANCH>.\n    Switch to master (git checkout master) and re-run, or push and merge the\n    current branch first.\n```\n\nCheck for uncommitted changes that could conflict with branching:\n\n```bash\ngit diff --quiet && git diff --cached --quiet || echo \"dirty\"\n```\n\nIf the working tree has uncommitted changes and the current branch is `master`\n(i.e., a new branch would need to be created), print and exit non-zero:\n```\n⚠️  /aid-housekeep requires a clean working tree on 'master' before creating\n    an aid/housekeep-* branch.\n    Commit or stash your changes (git stash), then re-run.\n```\n\nIf the current branch is already an `aid/housekeep-*` branch (resume case),\nuncommitted changes are permitted — housekeeping is resuming mid-run.\n\n---\n\n## On Success\n\nPrint: `[State: PREFLIGHT] complete.`\n\n**Advance:** **CHAIN** → [State: CLEANUP] when `--cleanup-only` was set (see `SKILL.md § Arguments`);\notherwise **CHAIN** → [State: KB-DELTA].\n"
       }
     },
     {
@@ -35,12 +35,12 @@
       "kind": "exit",
       "terminal": {
         "advanceType": "WAIT",
-        "handoff": "if stalled (the scope question is asked inside the step"
+        "handoff": "if stalled (the scope question is asked inside the step)"
       },
       "provenance": {
         "file": "canonical/skills/aid-housekeep/SKILL.md",
-        "startLine": 237,
-        "endLine": 237,
+        "startLine": 236,
+        "endLine": 236,
         "sourceKind": "skill",
         "excerpt": "| KB-DELTA | `references/state-kb-delta.md` | `aid-architect` (feat-002 dispatches sub-agents via `/aid-discover`) | CHAIN → SUMMARY-DELTA / WAIT if stalled (the scope question is asked inside the step) |"
       },
@@ -64,8 +64,8 @@
       },
       "provenance": {
         "file": "canonical/skills/aid-housekeep/SKILL.md",
-        "startLine": 238,
-        "endLine": 238,
+        "startLine": 237,
+        "endLine": 237,
         "sourceKind": "skill",
         "excerpt": "| SUMMARY-DELTA | `references/state-summary-delta.md` | inline (delegates to `/aid-summarize`) | CHAIN → CLEANUP / WAIT if stalled |"
       },
@@ -86,8 +86,8 @@
       "terminal": null,
       "provenance": {
         "file": "canonical/skills/aid-housekeep/SKILL.md",
-        "startLine": 239,
-        "endLine": 239,
+        "startLine": 238,
+        "endLine": 238,
         "sourceKind": "skill",
         "excerpt": "| CLEANUP | `references/state-cleanup.md` | inline | CHAIN → DONE (the checklist and teardown offers are asked inside the step) |"
       },
@@ -111,8 +111,8 @@
       },
       "provenance": {
         "file": "canonical/skills/aid-housekeep/SKILL.md",
-        "startLine": 240,
-        "endLine": 240,
+        "startLine": 239,
+        "endLine": 239,
         "sourceKind": "skill",
         "excerpt": "| DONE | `references/state-done.md` | inline | HALT |"
       },
@@ -129,29 +129,29 @@
     {
       "from": "n1",
       "to": "n2",
-      "kind": "sequence",
-      "condition": null,
+      "kind": "branch",
+      "condition": "otherwise",
       "advanceType": "CHAIN",
       "provenance": {
         "file": "canonical/skills/aid-housekeep/references/state-preflight.md",
         "startLine": 115,
-        "endLine": 117,
+        "endLine": 116,
         "sourceKind": "worker",
-        "excerpt": "**Advance:** **CHAIN** → [State: KB-DELTA] (or [State: CLEANUP] if `--cleanup-only`\nwas set, but `--cleanup-only` is rejected in delivery-001 — see `SKILL.md § Arguments`).\nContinue inline."
+        "excerpt": "**Advance:** **CHAIN** → [State: CLEANUP] when `--cleanup-only` was set (see `SKILL.md § Arguments`);\notherwise **CHAIN** → [State: KB-DELTA]."
       }
     },
     {
       "from": "n1",
       "to": "n4",
-      "kind": "sequence",
-      "condition": null,
-      "advanceType": "UNSPECIFIED",
+      "kind": "branch",
+      "condition": "when --cleanup-only was set",
+      "advanceType": "CHAIN",
       "provenance": {
         "file": "canonical/skills/aid-housekeep/references/state-preflight.md",
         "startLine": 115,
-        "endLine": 117,
+        "endLine": 116,
         "sourceKind": "worker",
-        "excerpt": "**Advance:** **CHAIN** → [State: KB-DELTA] (or [State: CLEANUP] if `--cleanup-only`\nwas set, but `--cleanup-only` is rejected in delivery-001 — see `SKILL.md § Arguments`).\nContinue inline."
+        "excerpt": "**Advance:** **CHAIN** → [State: CLEANUP] when `--cleanup-only` was set (see `SKILL.md § Arguments`);\notherwise **CHAIN** → [State: KB-DELTA]."
       }
     },
     {
@@ -190,8 +190,8 @@
       "advanceType": "UNSPECIFIED",
       "provenance": {
         "file": "canonical/skills/aid-housekeep/SKILL.md",
-        "startLine": 239,
-        "endLine": 239,
+        "startLine": 238,
+        "endLine": 238,
         "sourceKind": "skill",
         "excerpt": "**Advance:** CHAIN → DONE (the checklist and teardown offers are asked inside the step)"
       }
@@ -227,7 +227,5 @@
     "canonical/skills/aid-housekeep/references/state-preflight.md",
     "canonical/skills/aid-housekeep/references/state-summary-delta.md"
   ],
-  "warnings": [
-    "[gen-skills] advance: W-1: 'PREFLIGHT' in 'canonical/skills/aid-housekeep/references/state-preflight.md:115': non-commentary residue after clause extraction: '**CHAIN** → [State: KB-DELTA] (or ). Continue inline.'"
-  ]
+  "warnings": []
 }

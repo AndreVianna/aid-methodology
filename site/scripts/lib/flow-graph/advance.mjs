@@ -359,10 +359,16 @@ export function parseAdvanceBlock({
   // Not suppressed by dispatch-row branches (merged later by the extractor).
   // A block that also ends the run (a HALT clause) already says where the
   // unmet guard goes, so it gets no self-loop.
+  // An ASK or WAIT arm is not a guard that can stay unmet: the step is paused on its
+  // question (or on the user's action) and goes on to the named step once it is answered or
+  // done. A condition such as "once the user has picked" says when the pause ends; it does
+  // not describe a second way the step can end, so no "otherwise" self-loop is drawn.
   if (
     edges.length === 1 &&
     edges[0].condition !== null &&
     edges[0].to !== fromNodeId &&
+    edges[0].advanceType !== 'ASK' &&
+    edges[0].advanceType !== 'WAIT' &&
     terminal === null
   ) {
     edges.push({
@@ -548,11 +554,21 @@ function _proposeSeparatorPositions(content) {
   const mask = _buildBacktickMask(content);
   const cuts = [];
   const len = content.length;
+  // Depth of ordinary parentheses at the scan position. A separator inside a
+  // parenthetical ("(after the writes above; see ...)") belongs to the aside, not to the
+  // Advance clause list: cutting there leaves an unbalanced "(" in one half, which then
+  // reaches the page as a hand-off such as "the run ends here (". Only `(or X ...)`,
+  // handled below, is a separator in its own right.
+  let parenDepth = 0;
 
   for (let i = 0; i < len; i++) {
     if (mask[i]) continue; // skip positions inside backtick spans
 
     const ch = content[i];
+
+    if (ch === '(' && !content.startsWith('(or ', i)) { parenDepth++; continue; }
+    if (ch === ')' && parenDepth > 0) { parenDepth--; continue; }
+    if (parenDepth > 0) continue;
 
     // `;` — straight split
     if (ch === ';') {
@@ -925,6 +941,32 @@ function _tokenBoundaryRe(name, flags = '') {
 }
 
 /**
+ * Trim routing punctuation from both ends of `text`, keeping a closing parenthesis that
+ * closes an opening one inside the text.
+ *
+ * The plain trim (`/^[[\]().,;:!?→>-]+|[[\]().,;:!?→>-]+$/`) removed the `)` of a
+ * parenthetical that ends a hand-off or a condition, so the page showed "when the user
+ * rejects (no writeback" and, for a nested pair, cut the text back to the outer `(`. A `)`
+ * with no `(` before it is still debris and is still removed.
+ *
+ * @param {string} text
+ * @returns {string}
+ */
+function _trimEdgePunct(text) {
+  let s = text.replace(/^[[\]().,;:!?→>-]+/, '').trim();
+  for (;;) {
+    const m = s.match(/[[\](.,;:!?→>-]+$/);
+    if (m) { s = s.slice(0, s.length - m[0].length).trim(); continue; }
+    if (s.endsWith(')')) {
+      const opens = (s.match(/\(/g) || []).length;
+      const closes = (s.match(/\)/g) || []).length;
+      if (closes > opens) { s = s.slice(0, -1).trim(); continue; }
+    }
+    return s;
+  }
+}
+
+/**
  * Extract the edge condition from a clause (rule 3): the text that remains
  * after removing `[State: X]` wrappers, arrows, advance-type keywords, the
  * target state name, standalone `State:` prefix, backtick spans, and routing
@@ -987,8 +1029,14 @@ function _extractCondition(clauseText, targetName) {
 
   // (5) Strip standalone "State:" prefix artifacts
   text = text.replace(/\bState:\s*/g, ' ');
-  // (6) Strip backtick spans (routing notation such as `[1] File it`)
-  text = text.replace(/`[^`]*`/g, ' ');
+  // (6) Backtick spans. A span that points at another file or section ("see `SKILL.md §
+  //     Arguments`", "`references/x.md`") is a footnote and is removed. Any other span is
+  //     part of the condition itself, a value or an option the guard names ("the result is
+  //     `STALE`", "when `--cleanup-only` was set", "when the user picks `[1] File it`"), and
+  //     is kept, unwrapped. Removing every span left "when the result is" and "when was set".
+  text = text.replace(/`([^`]*)`/g, (_m, inner) =>
+    /§|\.(?:md|sh|mjs|yml|json|py)\b|\//.test(inner) ? ' ' : ` ${inner} `
+  );
   // (7) Strip markdown emphasis markers.  Removing a BOLDED keyword leaves its
   //     `**` delimiters behind; without this strip they reach the rendered page.
   text = text.replace(/\*+/g, ' ');
@@ -1016,7 +1064,7 @@ function _extractCondition(clauseText, targetName) {
   text = text.replace(/\s+/g, ' ').trim();
 
   // (10) Strip leading/trailing routing punctuation
-  text = text.replace(/^[[\]().,;:!?→>-]+|[[\]().,;:!?→>-]+$/g, '').trim();
+  text = _trimEdgePunct(text);
 
   // (11) Orphaned open-bracket guard.  Authors write asides like
   //      "(continue inline; state-apply.md § Step 1)", and stripping the state
@@ -1059,7 +1107,7 @@ function _extractCondition(clauseText, targetName) {
   //      stripping the state reference leaves a dangling preposition at the end.
   //      No corpus condition ends with a bare preposition, so returning null is
   //      safe and avoids a label like "Re-run … to continue to".
-  if (/\b(?:to|in|at|by|for|from|of)\s*$/i.test(text)) return null;
+  if (/\b(?:to|in|at|by|for|from|of|on)\s*$/i.test(text)) return null;
 
   // (15) Subject-stripped conditional guard.  When a backtick span held the
   //      grammatical subject of an `if` clause (e.g. "`--cleanup-only` was set"),
@@ -1091,6 +1139,11 @@ function _extractCondition(clauseText, targetName) {
  */
 function _extractHandoff(clauseText) {
   let text = clauseText;
+  // "ASK then HALT" is one composite ending. Both words are removed below, and the "then"
+  // that joined them would be left behind as the first word of the hand-off.
+  text = text.replace(
+    /(?<![A-Za-z0-9-])ASK(?![A-Za-z0-9-])[\s*,]*(?:→|->)?[\s*,]*then[\s*,]*(?=(?<![A-Za-z0-9-])HALT(?![A-Za-z0-9-]))/g, ' '
+  );
   text = text.replace(ADVANCE_KW_RE, ' ');
   text = text.replace(ARROW_RE, ' ');
   text = text.replace(/\bStop here\b/g, ' ');
@@ -1108,8 +1161,10 @@ function _extractHandoff(clauseText) {
   // reaches the `.flow.json` sidecar and feature-005's provenance panel, so a reader
   // would see it.
   text = text.replace(/\*+/g, ' ');
+  // A keyword written inside a parenthetical, "(HALT)", leaves an empty pair behind.
+  text = text.replace(/\(\s*\)/g, ' ');
   text = text.replace(/\s+/g, ' ').trim();
-  text = text.replace(/^[[\]().,;:!?→>-]+|[[\]().,;:!?→>-]+$/g, '').trim();
+  text = _trimEdgePunct(text);
   return text || null;
 }
 

@@ -51,22 +51,24 @@ continues at come only from its work record.
 1. **Require a subject.** Empty argument -> ask one bootstrapping question ("What would
    you like to revise in the roadmap -- entries to add, update, supersede, or move between
    horizons?") and wait.
-2. **Allocate, exactly per `design-lifecycle.md § Skill shape -- Allocation`** -- the Work
-   Initiation Gate, then `initiator: aid-update-roadmap`, `active_skill:
-   aid-update-roadmap`, `pipeline.path: lite`, `lifecycle: Running`. `phase` is not
-   driven.
-3. **Read the destination** at `.aid/knowledge/roadmap.md`. If absent, **route** to
-   `/aid-create-roadmap` -- name it explicitly in the response -- and write nothing.
-   Set `lifecycle` to `Paused-Awaiting-Input` through the writer. Then `ASK` -> [State: DONE] and `HALT`, without proceeding further.
-4. **Read the seed** at `.aid/design/roadmap.md` if one exists. Note its presence or
+2. **Read the destination** at `.aid/knowledge/roadmap.md`. If absent, **route**: allocate nothing and
+   write nothing, name `/aid-create-roadmap` explicitly in the response, and end the run.
+3. **Read the seed** at `.aid/design/roadmap.md` if one exists. Note its presence or
    absence; do not require it.
-5. **Ask the derived-outputs question** -- every run, unconditionally: "Which previously
+4. **Ask the derived-outputs question** -- every run, unconditionally: "Which previously
    created outputs should be updated alongside roadmap.md?" Wait for the user's answer
    before proceeding. Write no stored list and no tracking metadata anywhere.
-6. **Classify complexity (model + effort)** for the `aid-architect` dispatch below;
+5. **Classify complexity (model + effort)** for the `aid-architect` dispatch below;
    verifier tier >= producer tier (`agent-dispatch-tiering.md`).
+6. **Allocate** once the destination is present, so a route leaves no work behind, exactly per
+   `design-lifecycle.md § Skill shape -- Allocation`: the Work Initiation Gate, with
+   `initiator: aid-update-roadmap`, `--path lite` and the saved step `GUARD` (INTAKE runs before the
+   record and saves nothing). `phase` is not driven.
 
-**Advance:** ASK -> [State: GUARD]. A route to the create skill is ASK then HALT instead, after the allocated work, if any, is closed as `Canceled` through the writer.
+Every `--step` call after the allocation passes in its `--detail` the subject, whether a seed was found, the
+derived outputs the user named and the complexity tier, so a resume finds them in the record.
+
+**Advance:** CHAIN -> [State: GUARD]; HALT when the destination is absent (the route above).
 
 ---
 
@@ -81,7 +83,9 @@ found in INTAKE.
 - **No seed present** → advance (gate does not apply).
 - **Seed present, no unresolved questions, or override supplied** → advance.
 
-**Advance:** CHAIN -> [State: UPDATE].
+The run ends at a refusal, with the work paused at this step; a resume runs GUARD again and re-reads the seed.
+
+**Advance:** CHAIN -> [State: UPDATE] when no seed was found, it has no unresolved question, or the override is supplied; HALT when the guard refuses.
 
 ---
 

@@ -57,7 +57,7 @@
       "kind": "exit",
       "terminal": {
         "advanceType": "ASK",
-        "handoff": "then once the user has approved or adjusted the routes in Step 4. The fix and new-work requests of Step 5 go back to /aid-orchestrate, the intake, as plain requests; this run ends after Step 6"
+        "handoff": "once the user has approved or adjusted the routes in Step 4. The fix and new-work requests of Step 5 go back to /aid-orchestrate, the intake, as plain requests; this run ends after Step 6"
       },
       "provenance": {
         "file": "canonical/skills/aid-monitor/SKILL.md",

@@ -83,6 +83,9 @@ Allocate the work through the gate: the Work Initiation Gate
   if a spike is later authorized (PROPOSE-SPIKE).
 - **Continuation:** On continuation, follow the gate's § 3b: enter the chosen work's worktree and run the skill its record names, at its saved step.
 
+Every `--step` call in this skill passes in its `--detail` the scoped question, the path and the complexity tier, so a
+resume finds them in the record.
+
 **Advance:** CHAIN -> [State: INVESTIGATE].
 
 ---

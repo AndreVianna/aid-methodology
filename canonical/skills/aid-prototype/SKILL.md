@@ -76,8 +76,11 @@ Allocate the work through the gate: the Work Initiation Gate
   skip any instruction to write `initiator`, `active_skill`, `lifecycle` or `phase` by hand;
   set other keys through the writer." This skill drives no `phase`. For a **runnable spike**,
   associate an opt-in git worktree so the throwaway code is isolated. When `/aid-orchestrate`
-  passed an `intent:` block, the gate's `--create` has already written its `reading` and `depth`; the record is never written by hand, so the rest of the block stays in the conversation (`.aid/runtime/templates/shortcut-engine.md`); a typed `/aid-prototype` writes none.
+  passed an `intent:` block, the gate's `--create` has already written its `reading` and `depth`; set its `reason` and `phases` through the writer (`writeback-state.sh --intent --reason '<reason>' --phases <P1,P2,...>`, as `.aid/runtime/templates/shortcut-engine.md` Step 5 says), unless `--create` already carried them; a typed `/aid-prototype` writes none.
 - **Continuation:** On continuation, follow the gate's § 3b: enter the chosen work's worktree and run the skill its record names, at its saved step.
+
+Every `--step` call in this skill passes in its `--detail` the direction, the fidelity, the success signal, the scope
+boundary and the complexity tier, so a resume finds them in the record.
 
 **Advance:** CHAIN -> [State: BUILD].
 

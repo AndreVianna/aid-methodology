@@ -2179,20 +2179,6 @@ const _t032Root = resolve(
 // Any other throw is re-propagated so the corpus build itself fails.
 
 const _t032Allowlist = [
-  {
-    key: 'aid-housekeep:PREFLIGHT',
-    skill: 'aid-housekeep',
-    state: 'PREFLIGHT',
-    reason:
-      'empty (or ) alternative — the parenthetical yields no second target',
-  },
-  {
-    key: 'aid-update-kb:REVIEW',
-    skill: 'aid-update-kb',
-    state: 'REVIEW',
-    reason:
-      'four-outcome table cell; third outcome routes to FIX (undeclared state), dropping that span as residue',
-  },
 ];
 
 const _t032SkillDirs = readdirSync(join(_t032Root, 'canonical/skills'), {
@@ -2482,8 +2468,7 @@ describe('Unparsed-advance allow-list — W-1 residual-text guard', () => {
   const _alExpected = new Set(_t032Allowlist.map((e) => e.key));
   const _alObserved = new Set(_t032W1Observed);
 
-  it('allow-list is non-empty and every entry carries a non-empty reason', () => {
-    expect(_t032Allowlist.length).toBeGreaterThan(0);
+  it('every allow-list entry carries a non-empty reason (the list may be empty)', () => {
     for (const _entry of _t032Allowlist) {
       expect(typeof _entry.reason).toBe('string');
       expect(_entry.reason.length).toBeGreaterThan(0);

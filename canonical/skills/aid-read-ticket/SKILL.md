@@ -66,7 +66,7 @@ ref" rule: the token contains a `:` → split on the **first** `:` (the stem bef
 connector; the remainder is `<external-id>`). Otherwise the whole token is `<external-id>` and
 the connector is left to be resolved by the ladder (State 2).
 
-**Advance:** CHAIN → State 2 (RESOLVE-CONNECTOR).
+**Advance:** **CHAIN** → RESOLVE-CONNECTOR.
 
 ### State 2 — RESOLVE-CONNECTOR
 
@@ -89,8 +89,8 @@ catalog/tag-validation mechanics and `INDEX.md` scan details live solely in that
   ```
   and exit (AC-6).
 
-**Advance:** **CHAIN** → State 3 (FETCH) once a connector resolves without asking (explicit stem,
-single match, or host MCP); **CHAIN** → State 2a (PICK-CONNECTOR) on the two-or-more branch;
+**Advance:** **CHAIN** → FETCH when a connector resolves without asking (explicit stem,
+single match, or host MCP); **CHAIN** → PICK-CONNECTOR on the two-or-more branch;
 **HALT** on the unknown-stem or notify branches above.
 
 ### State 2a — PICK-CONNECTOR
@@ -99,7 +99,7 @@ Reached only on the two-or-more branch of State 2. `AskUserQuestion` lists the c
 skill's **only** use of `AskUserQuestion` — a connector pick, never a write confirm, since read has
 no write to confirm). The picked stem is the connector for State 3.
 
-**Advance:** **ASK** → State 3 (FETCH) once the user has picked the connector.
+**Advance:** **ASK** → FETCH.
 
 ### State 3 — FETCH
 
@@ -113,7 +113,7 @@ tracker's own error **verbatim** and exits non-destructively — never retry sil
 back to a different connector, never fabricate a placeholder result (feature-001 § Feature Flow,
 "MCP-call failure policy").
 
-**Advance:** CHAIN → State 4 (DISPLAY) on success; HALT on failure per the policy above.
+**Advance:** **CHAIN** → DISPLAY on success; **HALT** on failure per the policy above.
 
 ### State 4 — DISPLAY
 
@@ -129,8 +129,10 @@ Status: <status>    Assignee: <assignee>
 <comments, if any>
 ```
 
-Exit 0. Nothing is written locally or remotely anywhere in this flow — the only side effect in
+Nothing is written locally or remotely anywhere in this flow — the only side effect in
 the whole run is State 3's single read.
+
+**Advance:** **HALT**.
 
 ---
 

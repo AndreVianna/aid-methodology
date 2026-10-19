@@ -232,7 +232,7 @@ coined term that cannot be grounded from `.aid/knowledge/` or the
      ```
      [ANALYZE] Pausing -- concept "<term>" cannot be grounded from available
      artifacts. Q{N} appended to .aid/knowledge/STATE.md. Provide a definition
-     or source pointer, then run /aid-update-kb again to resume.
+     or source pointer.
      ```
 
   4. ASK -- put the definition question in the chat; do NOT advance to SCOPE until it is answered.

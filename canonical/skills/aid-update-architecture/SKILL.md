@@ -51,26 +51,33 @@ continues at come only from its work record.
 
 1. **Require a stated change.** Empty argument -> ask one bootstrapping question ("What
    should change in the architecture record?") and wait.
-2. **Allocate** through the Work Initiation Gate exactly as the contract's Allocation rule
-   requires (`.agents/skills/aid-design/SKILL.md` INTAKE step 4 is the shape), with
-   `initiator: aid-update-architecture`. `phase` is not driven.
-3. **No seed is required.** The change stated in this run is a sufficient input, and this
+2. **No seed is required.** The change stated in this run is a sufficient input, and this
    skill completes without a seed. **Read and consume one when present** at
    `.aid/design/architecture.md`, carrying its `## Current direction` into the destination and
    deleting it once realized.
-4. **Resolve the destination by concern.** This skill binds concern **C1** (build & shape).
+3. **Resolve the destination by concern.** This skill binds concern **C1** (build & shape).
    Where a seed supplied a `## Destination`, use it; otherwise apply the concern rule here --
    resolve C1 against `.aid/settings.yml` `knowledge.doc_set`, falling back to the C1 row of
    `.aid/runtime/templates/kb-authoring/domain-doc-matrix.md` -- and **confirm the resolution
    with the user before writing**. Never resolve silently. C1's default set holds both
    `project-structure.md` and `architecture.md`; this skill targets the document describing
    the system's shape, never `project-structure.md`.
-5. **Read the whole destination**, and note its `source:` field. Absent destination -> close the
-   allocated work as `Canceled` through the writer, route to `/aid-create-architecture`, and write nothing.
+4. **Read the whole destination**, and note its `source:` field. Absent destination -> allocate nothing and
+   write nothing: tell the user to run `/aid-create-architecture`, and end the run.
+5. **Ask, every run, which derived outputs to update alongside this one.** This question is
+   unconditional -- it is asked on every invocation, and the answer is **stored nowhere** but this
+   run's step detail: no frontmatter backlink, no manifest, no registry, and no state carried
+   between runs. The question is asked afresh each time, and UPDATE applies the answer.
 6. **Classify complexity** for the `aid-architect` dispatch (verifier tier >= producer).
+7. **Allocate** once the destination is present, so a route leaves no work behind. Go through the Work
+   Initiation Gate exactly as the contract's Allocation rule requires
+   (`.agents/skills/aid-design/SKILL.md` INTAKE step 4 is the shape), with
+   `initiator: aid-update-architecture`, saved step `UPDATE` (INTAKE runs before the record and saves nothing). `phase` is not driven.
 
-**Advance:** ASK -> [State: UPDATE]. The questions of steps 1 and 4 are asked in this step. The route of step 5
-is ASK then HALT instead.
+Every `--step` call after the allocation passes in its `--detail` the change, the destination, the derived outputs the user
+named and the complexity tier, so a resume finds them in the record.
+
+**Advance:** CHAIN -> [State: UPDATE]; HALT when the destination is absent (the route above).
 
 ---
 
@@ -78,17 +85,12 @@ is ASK then HALT instead.
 
 1. **Apply only the change the user named in this run**, to the owned C1 content, per the
    content rules below.
-2. **Ask, every run, which derived outputs to update alongside this one.** This step is
-   unconditional -- it runs on every invocation, and the answer is **stored nowhere**: no
-   frontmatter backlink, no manifest, no registry, and no state carried between runs. The
-   question is asked afresh each time.
+2. **Update the derived outputs the user named in INTAKE**, and only those, each by the same rules.
 3. **Write no tracking metadata** into any output this run touches -- no `derived-from`, no
    `source-doc`, no `generated-by`, no `aid-tracked` field, and no skill-attribution line.
 4. **`source: generated` refuses.** A registered build script owns that content.
 
-The step ends with the question of step 2, asked on every run.
-
-**Advance:** ASK -> [State: VERIFY].
+**Advance:** CHAIN -> [State: VERIFY].
 
 ---
 

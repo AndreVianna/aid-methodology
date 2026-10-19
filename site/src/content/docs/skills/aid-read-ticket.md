@@ -33,14 +33,13 @@ flowchart TB
   n4(["FETCH"])
   n5(["DISPLAY"])
   n1 --> n2
-  n2 --> n3
-  n2 -->|"once a connector resolves without asking"| n4
-  n3 -. "otherwise" .- n3
-  n3 -->|"once the user has picked the connector"| n4
+  n2 -->|"on the two-or-more branch"| n3
+  n2 -->|"when a connector resolves without asking (explicit stem, single match, or host…"| n4
+  n3 --> n4
   n4 -->|"on success"| n5
   class n1 aidEntry
   class n2 aidExit
-  class n3 aidLoopBack
+  class n3 aidStep
   class n4 aidExit
   class n5 aidExit
   class n1 aidNode
@@ -69,7 +68,7 @@ Every node in the chart above, in chart order, with the exact `canonical/` text 
 
 [Source: `canonical/skills/aid-read-ticket/SKILL.md#L71`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-read-ticket/SKILL.md#L71)
 
-<a id="fragment-n3"></a>**3 · `PICK-CONNECTOR`** · _loop-back_
+<a id="fragment-n3"></a>**3 · `PICK-CONNECTOR`** · _step_
 
 ~~~~plaintext title="canonical/skills/aid-read-ticket/SKILL.md#L96" wrap
 ### State 2a — PICK-CONNECTOR
@@ -85,7 +84,7 @@ Every node in the chart above, in chart order, with the exact `canonical/` text 
 
 [Source: `canonical/skills/aid-read-ticket/SKILL.md#L104`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-read-ticket/SKILL.md#L104)
 
-<a id="fragment-n5"></a>**5 · `DISPLAY`** · _exit_ · UNSPECIFIED
+<a id="fragment-n5"></a>**5 · `DISPLAY`** · _exit_ · HALT
 
 ~~~~plaintext title="canonical/skills/aid-read-ticket/SKILL.md#L118" wrap
 ### State 4 — DISPLAY
